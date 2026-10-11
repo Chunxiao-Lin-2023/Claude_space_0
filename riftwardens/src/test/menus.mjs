@@ -1,0 +1,27 @@
+import {chromium} from '/opt/npm-tools/node_modules/playwright/index.mjs';
+import http from 'node:http'; import fs from 'node:fs'; import path from 'node:path';
+const ROOT='/home/claude/riftwork/out', SH='/home/claude/riftwork/test/shots';
+const srv=http.createServer((q,s)=>{fs.readFile(path.join(ROOT,q.url.split('?')[0]),(e,d)=>{if(e){s.writeHead(404);s.end();return;}s.writeHead(200,{'content-type':'text/html'});s.end(d);});}).listen(0);
+const browser=await chromium.launch({executablePath:'/opt/pw-browsers/chromium-1194/chrome-linux/chrome',args:['--disable-gpu']});
+const page=await browser.newPage({viewport:{width:1280,height:760}});
+const errs=[]; page.on('pageerror',e=>errs.push(e.message+'\n'+(e.stack||'').split('\n').slice(0,3).join('\n')));
+await page.goto(`http://127.0.0.1:${srv.address().port}/test.html`);
+await page.waitForFunction(()=>window.__dbg&&document.querySelector('#bSolo'));
+await page.waitForTimeout(2500); await page.screenshot({path:SH+'/m0_title.png'});
+await page.click('.hcard:nth-child(2)'); await page.fill('#nm','Monster');
+await page.click('#bHelp'); await page.waitForTimeout(200); await page.screenshot({path:SH+'/m1_help.png'}); await page.click('#bBack');
+await page.click('#bSolo'); await page.waitForTimeout(300);
+console.log('locked lvl2', await page.evaluate(()=>document.querySelectorAll('.lv.lock').length));
+await page.evaluate(()=>{__dbg.SAVE.best={m1:5,m2:4}; }); 
+await page.click('#tbArm'); await page.waitForTimeout(200);
+await page.screenshot({path:SH+'/m2_armory.png'});
+const btns = await page.$$('#arm .btn:not([disabled])'); console.log('enabled armory buttons', btns.length);
+if (btns.length) { await btns[0].click(); await page.waitForTimeout(200); }
+console.log('save after', await page.evaluate(()=>JSON.stringify({spent:__dbg.SAVE.spent, traps:__dbg.SAVE.traps})));
+await page.click('#tbLv'); await page.waitForTimeout(200); await page.screenshot({path:SH+'/m3_levels.png'});
+await page.click('.lv:nth-child(2)'); await page.click('#bStart'); await page.waitForTimeout(800);
+await page.keyboard.press('Escape'); await page.waitForTimeout(200); await page.screenshot({path:SH+'/m4_pause.png'});
+await page.click('#pRes'); await page.keyboard.press('Escape'); await page.click('#pQuit'); await page.waitForTimeout(500);
+console.log('state', await page.evaluate(()=>__dbg.STATE));
+await page.click('#bBack'); await page.waitForTimeout(1500); await page.screenshot({path:SH+'/m5_title2.png'});
+console.log(errs.length?'ERRORS:\n'+errs.join('\n---\n'):'no page errors'); await browser.close(); srv.close();
