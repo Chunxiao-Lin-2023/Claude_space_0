@@ -19,6 +19,7 @@ window.addEventListener('keydown', e => {
   if ((c === 'KeyZ' || c === 'KeyU') && !e.repeat) undoPlace();
   if (c === 'KeyV' && !e.repeat) toggleOverview();
   if (c === 'KeyF' && !e.repeat) toggleSpeed();
+  if (c === 'KeyT' && !e.repeat) act({t: 'ping', x: Math.round(INP.wx), y: Math.round(INP.wy)});
   if (/^Digit[1-9]$/.test(c)) selectSlot(+c.slice(5) - 1);
   if (c === 'Tab') { e.preventDefault(); }
 });
@@ -70,6 +71,7 @@ function defaultTouchTile() { if (!ME) return null; const tx = Math.floor((ME.x 
 function hotbar() { const out = ['weapon']; for (const k of TRAP_KEYS) if ((SAVE.traps[k] || 0) > 0) out.push(k); return out; }
 function selectSlot(i) {
   const hb = hotbar(); if (i < 0 || i >= hb.length || !ME) return;
+  if (i === 0 && ME.slot === 0 && SAVE.weapons[ME.hero]) { ME.wpn = ME.wpn ? 0 : 1; SAVE.wsel[ME.hero] = ME.wpn; saveGame(); act({t: 'wpn', w: ME.wpn}); toast('切换武器：' + primOf(ME).name); }
   ME.slot = i; INP.fire = false; INP.touchTile = null; sfx('click'); buildBar();
 }
 const curTrap = () => ME && ME.slot > 0 ? hotbar()[ME.slot] : null;
@@ -85,7 +87,7 @@ function useAlt() {
   const [tx, ty] = aimTarget(p, 260);
   const r = act({t: 'alt', a: +p.aim.toFixed(3), x: Math.round(tx), y: Math.round(ty)});
   if (r === 'none') { ftxt(p.x, p.y - 70, '没有目标', '#ffb0e8'); sfx('deny'); return; }
-  p.cdAlt = A.cd; if (!IS_HOST) p.mp -= A.mp;
+  p.cdAlt = A.cd * (p.mods ? p.mods.cdr : 1); if (!IS_HOST) p.mp -= A.mp; TUT.used = true;
   if (p.hero === 'blade' || p.hero === 'ranger') p.atk = 0.3; else if (p.hero === 'paladin') p.guard = A.dur; else p.cast = 0.5;
 }
 function useSkill() {
@@ -93,14 +95,14 @@ function useSkill() {
   if (p.cdSkill > 0) return; if (p.mp < S.mp) { ftxt(p.x, p.y - 70, '法力不足', '#7fb8ff'); sfx('deny'); return; }
   const [tx, ty] = aimTarget(p, 360);
   act({t: 'skill', a: +p.aim.toFixed(3), x: Math.round(tx), y: Math.round(ty)});
-  p.cdSkill = S.cd; if (!IS_HOST) p.mp -= S.mp;
+  p.cdSkill = S.cd * (p.mods ? p.mods.cdr : 1); if (!IS_HOST) p.mp -= S.mp; TUT.used = true;
   if (p.hero === 'blade') { p.spin = S.dur; } else p.cast = 0.5;
 }
 function useDash() {
   const p = ME; if (!p || p.dead || STATE !== 'play' || p.cdDash > 0) return; const Dd = HEROES[p.hero].dash;
   let dx = p.mvx, dy = p.mvy; if (Math.hypot(dx, dy) < 0.2 || Dd.back) { dx = Math.cos(p.aim); dy = Math.sin(p.aim); if (Dd.back) { dx = -dx; dy = -dy; } }
   const L = Math.hypot(dx, dy); dx /= L; dy /= L;
-  p.cdDash = Dd.cd; const ox = p.x, oy = p.y;
+  p.cdDash = Dd.cd * (p.mods ? p.mods.cdr : 1); const ox = p.x, oy = p.y;
   let ex = ox + dx * Dd.dist, ey = oy + dy * Dd.dist;
   if (p.hero === 'sorc') { // blink
     let d = 0; while (d < Dd.dist) { const nx = ox + dx * (d + 8), ny = oy + dy * (d + 8); if (blockedAt(nx, ny, 12, solidWalk)) break; d += 8; }
@@ -168,20 +170,25 @@ function updLocal(dt) {
   if (p.spin > 0 && Math.random() < 0.5) swingFx(p, rnd(TAU), true);
   if (!IS_HOST) { p.inv = Math.max(0, p.inv - dt); p.mp = Math.min(p.mmp, p.mp + H.mpRegen * dt); }
   [INP.wx, INP.wy] = screenToWorld(INP.mx, INP.my);
+  padPoll();
   if (p.dead || PAUSED) { p.anim = 'idle'; INP.fire = false; return; }
   // move input
   let mx = 0, my = 0;
   if (INP.keys.has('l')) mx -= 1; if (INP.keys.has('r')) mx += 1; if (INP.keys.has('u')) my -= 1; if (INP.keys.has('d')) my += 1;
   if (TOUCH.L) { mx = TOUCH.L.dx / 50; my = TOUCH.L.dy / 50; }
+  if (PAD.active && (PAD.ax || PAD.ay)) { mx = PAD.ax; my = PAD.ay; }
   const ml = Math.hypot(mx, my); if (ml > 1) { mx /= ml; my /= ml; }
   p.mvx = mx; p.mvy = my;
   // aim
   let firing = INP.fire && p.slot === 0;
+  if (PAD.active && (PAD.rx || PAD.ry)) { p.aim = Math.atan2(PAD.ry, PAD.rx); INP.aimT = 0.6; INP.mouse = false; }
+  if (PAD.active && PAD.fire && p.slot === 0) firing = true;
   if (TOUCH.R && p.slot === 0) { const L = Math.hypot(TOUCH.R.dx, TOUCH.R.dy); if (L > 8) { p.aim = Math.atan2(TOUCH.R.dy, TOUCH.R.dx); INP.aimT = 0.6; } firing = L > 18; }
+  else if (PAD.active && (PAD.rx || PAD.ry)) {}
   else if (!IS_TOUCH && INP.mouse) p.aim = Math.atan2(INP.wy - (p.y - 24), INP.wx - p.x);
   else { INP.aimT -= dt; if (INP.aimT <= 0 && ml > 0.2) p.aim = Math.atan2(my, mx); }
   // movement
-  const sm = (p.cast > 0 ? 0.65 : 1) * (p.spin > 0 ? 1.3 : 1) * (p.guard > 0 ? 0.7 : 1);
+  const sm = (p.cast > 0 ? 0.65 : 1) * (p.spin > 0 ? 1.3 : 1) * (p.guard > 0 ? 0.7 : 1) * (p.mods ? p.mods.spd : 1);
   let vx = mx * H.speed * sm, vy = my * H.speed * sm;
   if (p.dash > 0) { p.dash -= dt; vx = p.dvx; vy = p.dvy; if (Math.random() < 0.6) fx({k: 'ghost', u: H.atlas, fi: 0, d: dirOf(p.aim), x: p.x, y: p.y, life: 0.25, tint: 'rgba(255,200,140,.5)'}); }
   if (p.kbT > 0) { p.kbT -= dt; vx += p.kbx; vy += p.kby; }
@@ -191,13 +198,14 @@ function updLocal(dt) {
   if (firing && G.phase !== 'won' && G.phase !== 'lost') {
     p.fireT -= dt;
     if (p.fireT <= 0) {
-      p.fireT += 1 / H.primary.rate;
-      const a = p.aim + rnd(-0.03, 0.03), Pr = H.primary; p.atk = 0.3;
+      const Pr = primOf(p); p.fireT += 1 / (Pr.rate * (p.mods ? p.mods.rate : 1));
+      const a = p.aim + rnd(-0.03, 0.03); p.atk = 0.3;
       const [tx, ty] = Pr.kind === 'flask' ? aimTarget(p, 300) : [0, 0];
-      act({t: 'fire', a: +a.toFixed(3), x: Math.round(tx), y: Math.round(ty)});
+      act({t: 'fire', a: +a.toFixed(3), x: Math.round(tx), y: Math.round(ty), w: p.wpn || 0});
       if (Pr.kind === 'melee') { swingFx(p, a, false); sfx('swing'); }
+      else if (Pr.kind === 'chain') { sfx('zap'); }
       else {
-        if (!IS_HOST) { const fl = Pr.kind === 'flask', life = fl ? clamp(Math.hypot(tx - p.x, ty - p.y), 40, Pr.max) / Pr.speed : Pr.life; CL.local.push({k: Pr.kind, x: p.x + Math.cos(a) * 22, y: p.y - (fl ? 0 : 26) + Math.sin(a) * 22, vx: Math.cos(a) * Pr.speed, vy: Math.sin(a) * Pr.speed, life, L: life, lob: fl ? 1 : 0, local: 1}); }
+        if (!IS_HOST) { const fl = Pr.kind === 'flask', life = fl ? clamp(Math.hypot(tx - p.x, ty - p.y), 40, Pr.max) / Pr.speed : Pr.life, n = Pr.n || 1; for (let k = 0; k < n; k++) { const b = a + (n > 1 ? (k - (n - 1) / 2) * Pr.spread / (n - 1) : 0); CL.local.push({k: Pr.kind, x: p.x + Math.cos(b) * 22, y: p.y - (fl ? 0 : 26) + Math.sin(b) * 22, vx: Math.cos(b) * Pr.speed, vy: Math.sin(b) * Pr.speed, life, L: life, lob: fl ? 1 : 0, local: 1}); } }
         sfx({orb: 'orb', flask: 'throw', parrow: 'arrow'}[Pr.kind] || 'bolt');
         fx({k: 'glow', x: p.x + Math.cos(a) * 26, y: p.y - 26 + Math.sin(a) * 26, s: 14, life: 0.08, col: Pr.kind === 'orb' ? '120,220,255' : '255,210,140'});
       }
@@ -226,6 +234,7 @@ function updCamera(dt) {
   const hw = VW / 2 / CAM.z, hh = VH / 2 / CAM.z, W = G.map.w * T, H = G.map.h * T;
   CAM.x = W > hw * 2 ? clamp(CAM.x, hw - T, W - hw + T) : W / 2;
   CAM.y = H > hh * 2 ? clamp(CAM.y, hh - T * 1.5, H - hh + T) : H / 2;
+  if (CAM.shake > 0 && SAVE.shake === false) CAM.shake = 0;
   if (CAM.shake > 0) { CAM.shake = Math.max(0, CAM.shake - dt * 30); CAM.x += rnd(-CAM.shake, CAM.shake); CAM.y += rnd(-CAM.shake, CAM.shake); }
 }
 
@@ -245,12 +254,14 @@ function drawGhost(g, now) {
   g.fillRect(tx * T, ty * T + oy, T, T); g.strokeRect(tx * T + 1, ty * T + oy + 1, T - 2, T - 2);
   let rot = ME.rot; if (wall) rot = wallFacing(tx, ty, ME.x, ME.y);
   if (ok && rot >= 0) {
-    const fake = {k, tx, ty, rot, anim: 0, hp: 1, mhp: 1, id: 0};
-    g.globalAlpha = 0.65; drawProp(g, trapFrame(fake, now), x, y + oy + (wall ? 4 : 0), wall ? 0.92 : 1); g.globalAlpha = 1;
+    const fake = {k, tx, ty, rot, anim: 0, hp: 1, mhp: 1, id: 0, lv: 0};
+    g.globalAlpha = 0.65; if (D.unit) drawGuardian(g, fake, now); else if (D.proc) drawPendulum(g, fake, now); else drawProp(g, trapFrame(fake, now), x, y + oy + (wall ? 4 : 0), wall ? 0.92 : 1); g.globalAlpha = 1;
   }
   // area previews
   g.fillStyle = 'rgba(255,220,120,.12)';
   if (k === 'brim' || k === 'frost') g.fillRect((tx - 1) * T, (ty - 1) * T, T * 3, T * 3);
+  if (k === 'pendulum') { const ax = rot % 2 === 0 ? [1, 0] : [0, 1]; for (const s of [-1, 0, 1]) g.fillRect((tx + ax[0] * s) * T + 4, (ty + ax[1] * s) * T + 4, T - 8, T - 8); }
+  if (k === 'gxbow') { g.beginPath(); g.ellipse(x, y, D.range * T, D.range * T, 0, 0, TAU); g.fill(); }
   if ((k === 'arrow' || k === 'grinder') && rot >= 0) {
     const [dx, dy] = DIRV[rot]; const n = k === 'arrow' ? D.range : 1;
     for (let i = 1; i <= n; i++) { const xx = tx + dx * i, yy = ty + dy * i; if (solidShot(xx, yy)) break; g.fillRect(xx * T + 4, yy * T + 4, T - 8, T - 8); }
@@ -271,6 +282,12 @@ function drawAimAid(g) {
 function toast(s) { const el = document.createElement('div'); el.className = 'toast'; el.textContent = s; $('toasts').appendChild(el); setTimeout(() => el.remove(), 2400); while ($('toasts').children.length > 4) $('toasts').firstChild.remove(); }
 let bannerT = 0;
 function banner(s, sub) { const b = $('banner'); b.innerHTML = s + (sub ? '<small>' + sub + '</small>' : ''); b.style.opacity = 1; clearTimeout(bannerT); bannerT = setTimeout(() => b.style.opacity = 0, 2200); }
+function trapIcon(cvs, k, s = 0.82) {
+  const D = TRAPS[k], g = cvs.getContext('2d');
+  if (D.unit) { g.clearRect(0, 0, cvs.width, cvs.height); const A = ATLAS.units[D.unit], im = IMG[D.unit]; if (!A || !im) return; const col = A.anims.idle[0], [x0, y0, x1, y1] = unitBox(D.unit, col, 2), bw = x1 - x0, bh = y1 - y0, kk = Math.min(cvs.width / bw, cvs.height / bh) * s; g.drawImage(im, col * A.cw + x0, 2 * A.ch + y0, bw, bh, (cvs.width - bw * kk) / 2, (cvs.height - bh * kk) / 2, bw * kk, bh * kk); return; }
+  if (D.proc === 'pendulum') { g.clearRect(0, 0, cvs.width, cvs.height); const w = cvs.width, h = cvs.height; g.strokeStyle = '#8a8f99'; g.lineWidth = w * 0.04; g.beginPath(); g.moveTo(w * .5, h * .08); g.lineTo(w * .62, h * .55); g.stroke(); const gr = g.createLinearGradient(w * .4, 0, w * .85, 0); gr.addColorStop(0, '#3c4048'); gr.addColorStop(.45, '#b8bfca'); gr.addColorStop(1, '#2c2f36'); g.fillStyle = gr; g.fillRect(w * .42, h * .5, w * .42, h * .3); g.fillStyle = '#d9a84a'; g.fillRect(w * .42, h * .62, w * .42, h * .05); g.fillStyle = '#c8ced6'; g.beginPath(); g.moveTo(w * .84, h * .52); g.lineTo(w * .96, h * .65); g.lineTo(w * .84, h * .78); g.fill(); g.beginPath(); g.moveTo(w * .42, h * .52); g.lineTo(w * .3, h * .65); g.lineTo(w * .42, h * .78); g.fill(); return; }
+  iconCanvas(cvs, D.spr + '_0_2', s);
+}
 function iconCanvas(cvs, key, s = 0.82, dy = 0) {
   const g = cvs.getContext('2d'); g.clearRect(0, 0, cvs.width, cvs.height);
   const r = ATLAS.props[key]; if (!r || !IMG.props) return;
@@ -336,9 +353,11 @@ function buildBar() {
   const el = $('bar'); el.innerHTML = '';
   hotbar().forEach((k, i) => {
     const d = document.createElement('div'); d.className = 'slot' + (ME && ME.slot === i ? ' sel' : ''); d.dataset.k = k;
-    if (k === 'weapon') { d.innerHTML = `<span class="key">1</span><canvas width="88" height="80"></canvas><span class="cost" style="color:#d9cfe8">武器</span>`; portraitCanvas(d.querySelector('canvas'), ME.hero); }
-    else { const D = TRAPS[k], lv = SAVE.traps[k] || 1; d.innerHTML = `<span class="key">${IS_TOUCH ? '' : i + 1}</span><span class="slv">${'★'.repeat(lv - 1)}</span><canvas width="88" height="80"></canvas><span class="cost">${costFor(ME, k)}</span>`; iconCanvas(d.querySelector('canvas'), D.spr + '_0_' + (D.place === 'wall' || D.dir ? 2 : 2)); d.title = D.name + '：' + D.desc; }
+    if (k === 'weapon') { d.innerHTML = `<span class="key">1</span><canvas width="88" height="80"></canvas><span class="cost" style="color:#d9cfe8">${SAVE.weapons[ME.hero] ? (ME.wpn ? '武器Ⅱ' : '武器Ⅰ') : '武器'}</span>`; portraitCanvas(d.querySelector('canvas'), ME.hero); d.title = primOf(ME).name + (SAVE.weapons[ME.hero] ? '（再按一次切换）' : ''); }
+    else { const D = TRAPS[k], lv = SAVE.traps[k] || 1; d.innerHTML = `<span class="key">${IS_TOUCH ? '' : i + 1}</span><span class="slv">${'★'.repeat(lv - 1)}</span><canvas width="88" height="80"></canvas><span class="cost">${costFor(ME, k)}</span>`; trapIcon(d.querySelector('canvas'), k); d.title = D.name + '：' + D.desc; }
     d.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); audioInit(); selectSlot(ME.slot === i && i > 0 ? 0 : i); });
+    if (G && G.allowT && k !== 'weapon' && !G.allowT.includes(k)) d.style.opacity = 0.3;
+    if (G && G.mod === 'nobar' && k === 'barricade') d.style.opacity = 0.3;
     el.appendChild(d);
   });
 }
@@ -350,7 +369,7 @@ function updHud(dt) {
   $('gold').textContent = G.gold;
   if (G.gold !== lastGold) { const d = G.gold - lastGold; if (lastGold && Math.abs(d) > 0) { $('goldD').textContent = (d > 0 ? '+' : '') + d; clearTimeout(updHud.gt); updHud.gt = setTimeout(() => $('goldD').textContent = '', 900); } lastGold = G.gold; }
   const L = LEVELS[G.li];
-  $('waveTxt').textContent = `${L.name} · 第 ${Math.min(G.wave + 1, G.nWaves)} / ${G.nWaves} 波`;
+  $('waveTxt').textContent = G.mode === 'endless' ? `无尽 · ${L.name} · 第 ${G.wave + 1} 波` : `${G.mode === 'daily' ? '每日 · ' : ''}${L.name} · 第 ${Math.min(G.wave + 1, G.nWaves)} / ${G.nWaves} 波` + (ME && ME.lvl > 1 ? ` · Lv${ME.lvl}` : '');
   const rb = $('readyBtn');
   if (G.phase === 'build') {
     const others = P.filter(p => p && p !== ME);
@@ -392,6 +411,7 @@ function drawMini() {
   g.fillStyle = '#ff4a2a'; for (const gt of G.map.gates) { g.beginPath(); g.arc(tc(gt.x) / T * s, tc(gt.y) / T * s, s * 0.9, 0, TAU); g.fill(); }
   g.fillStyle = '#56c8ff'; for (const r of G.map.rifts) { g.beginPath(); g.arc(tc(r.x) / T * s, tc(r.y) / T * s, s * 1.1, 0, TAU); g.fill(); }
   for (const e of viewEnemies()) { if (e.dead || e.fall) continue; g.fillStyle = e.charm > 0 ? '#ff7adf' : ORCS[e.type].boss ? '#ff00ff' : '#ff3030'; const r = ORCS[e.type].mass >= 4 ? 2.4 : 1.4; g.fillRect(e.x / T * s - r, e.y / T * s - r, r * 2, r * 2); }
+  for (const q of PINGS) { g.strokeStyle = q.mine ? '#f3d27a' : '#9fe3ff'; g.lineWidth = 2; g.beginPath(); g.arc(q.x / T * s, q.y / T * s, 4 + (q.t * 6 % 5), 0, TAU); g.stroke(); }
   for (const p of P) if (p && !p.dead) { g.fillStyle = p === ME ? '#ffffff' : '#9fe3ff'; g.beginPath(); g.arc(p.x / T * s, p.y / T * s, 3, 0, TAU); g.fill(); }
   // view rect
   const hw = VW / 2 / CAM.z, hh = VH / 2 / CAM.z; g.strokeStyle = 'rgba(255,255,255,.35)'; g.lineWidth = 1; g.strokeRect((CAM.x - hw) / T * s, (CAM.y - hh) / T * s, hw * 2 / T * s, hh * 2 / T * s);
@@ -413,10 +433,10 @@ function swingFx(p, a, spin) {
 }
 
 function wavePreview() {
-  const W = LEVELS[G.li].waves[G.wave]; const key = G.li + '|' + G.wave + '|' + G.coop; if (wavePreview.key === key) return; wavePreview.key = key;
+  const W = waveDef(G.wave); const key = G.li + '|' + G.wave + '|' + G.coop + '|' + G.mode; if (wavePreview.key === key) return; wavePreview.key = key;
   if (!W) { $('wavePrev').innerHTML = ''; return; }
   const agg = new Map();
-  for (const [g, type, n] of W) { const gi = Math.min(g, G.map.gates.length - 1); const k = gi + '|' + type; agg.set(k, (agg.get(k) || 0) + (G.coop && !ORCS[type].boss ? Math.round(n * B.coopCount) : n)); }
+  for (const [g, type, n] of W) { const gi = Math.min(g, G.map.gates.length - 1); const k = gi + '|' + type; agg.set(k, (agg.get(k) || 0) + (G.coop && !ORCS[type].boss ? Math.round(n * B.coopCount * (G.countMul || 1)) : Math.round(n * (ORCS[type].boss ? 1 : G.countMul || 1)))); }
   $('wavePrev').innerHTML = [...agg].sort().map(([k, n]) => { const [gi, type] = k.split('|'); return `<span class="wc"><b style="color:${GATE_COL[gi % 3]}">${'ABC'[gi]}</b>${ORCS[type].name}×${n}</span>`; }).join('');
 }
 
@@ -435,3 +455,20 @@ function reuseLayout() {
   for (const [k, tx, ty, rot] of L) { if (!(SAVE.traps[k] > 0)) { skip++; continue; } if (!placeTrap(ME, k, tx, ty, rot)) { n++; (ME.placed = ME.placed || []).push([tx, ty]); } else skip++; }
   toast(`已复用 ${n} 个陷阱` + (skip ? `，${skip} 个因金币或位置不足跳过` : ''));
 }
+
+/* ---------- level-up perk picker ---------- */
+let perkKey = '';
+function updPerkUI() {
+  const el = $('perks'); const pk = ME && ME.pick && ME.pick[0];
+  const key = pk ? pk.join(',') + '|' + ME.lvl : '';
+  if (key === perkKey) return; perkKey = key;
+  if (!pk) { el.style.display = 'none'; return; }
+  el.style.display = 'flex';
+  el.innerHTML = `<div class="ptitle">升级！Lv ${ME.lvl} · 选择一项强化</div>` + pk.map((id, i) => `<button class="pk" data-id="${id}"><b>${PERKS[id].name}</b><span>${PERKS[id].desc}</span>${(ME.perks && ME.perks[id]) ? `<i>已有 ${ME.perks[id]} 层</i>` : ''}</button>`).join('');
+  for (const b of el.querySelectorAll('.pk')) b.onpointerdown = e => { e.preventDefault(); e.stopPropagation(); audioInit(); sfx('ready'); const id = b.dataset.id; if (IS_HOST) takePerk(ME, id); else { act({t: 'perk', id}); ME.pick.shift(); } perkKey = '#'; updPerkUI(); };
+}
+$('mini').addEventListener('pointerdown', e => {
+  if (!G || STATE !== 'play') return; e.preventDefault(); e.stopPropagation();
+  const r = $('mini').getBoundingClientRect(); const x = (e.clientX - r.left) / r.width * G.map.w * T, y = (e.clientY - r.top) / r.height * G.map.h * T;
+  act({t: 'ping', x: Math.round(x), y: Math.round(y)});
+});

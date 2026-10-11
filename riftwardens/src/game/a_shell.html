@@ -39,6 +39,16 @@ button{font:inherit;color:inherit;cursor:pointer}
 #streak{position:absolute;right:calc(14px + var(--sar));top:calc(140px + var(--sat));font-weight:900;font-size:22px;color:#ffcf6a;text-shadow:0 2px 0 #000,0 0 12px rgba(255,150,40,.6);opacity:0;transition:opacity .2s;letter-spacing:.06em}
 #streak small{display:block;font-size:11px;color:var(--ink);text-align:right}
 #bSpeed.on{border-color:var(--gold2);color:var(--gold2)}
+#perks{position:absolute;left:50%;top:calc(150px + var(--sat));transform:translateX(-50%);display:none;gap:8px;flex-wrap:wrap;justify-content:center;pointer-events:auto;max-width:min(640px,94vw)}
+#perks .ptitle{width:100%;text-align:center;font-weight:900;color:var(--gold2);text-shadow:0 2px 0 #000;letter-spacing:.1em}
+#perks .pk{display:flex;flex-direction:column;gap:2px;min-width:150px;padding:8px 12px;border-radius:10px;border:1.5px solid var(--gold);background:var(--panel2);color:var(--ink);min-height:56px;text-align:left}
+#perks .pk b{color:var(--gold2)}#perks .pk span{font-size:12px;color:var(--dim)}#perks .pk i{font-size:11px;color:#9fe3ff;font-style:normal}
+#tut{position:absolute;left:50%;bottom:calc(150px + var(--sab));transform:translateX(-50%);display:none;max-width:min(520px,92vw);padding:10px 14px;border-radius:10px;border:1.5px solid #9fe3ff;background:rgba(14,22,32,.92);font-size:14px;line-height:1.5;text-align:center;pointer-events:auto}
+#tut .btn{min-height:32px;padding:3px 10px;font-size:12px;margin-left:10px}
+.modes{display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap}
+.mtab{padding:6px 14px;border-radius:18px;border:1.5px solid #4a3f52;background:#1d1824;color:var(--dim);min-height:40px}.mtab.on{border-color:var(--gold2);color:var(--gold2);background:#2c2230}
+.chals{margin-top:8px;display:flex;flex-direction:column;gap:3px}.chal{font-size:12px;color:var(--dim)}.chal b{color:var(--ink)}.chal.ok{color:#8ee39a}.chal i{color:#f3e6c4;font-style:normal;font-size:11px}
+.ac.eq{border-color:var(--gold2)}
 #mini{position:absolute;right:calc(10px + var(--sar));top:calc(10px + var(--sat));border-radius:8px;border:1px solid var(--line);background:rgba(10,8,14,.75);pointer-events:auto}
 #bl{position:absolute;left:calc(10px + var(--sal));bottom:calc(10px + var(--sab));padding:8px 10px;display:flex;gap:10px;align-items:center}
 #portrait{width:58px;height:58px;border-radius:8px;border:1.5px solid var(--gold);background:#1b1622}
@@ -118,6 +128,7 @@ h2{margin:0 0 10px;color:var(--gold2);letter-spacing:.12em}
 .lv{position:relative;border-radius:10px;border:1.5px solid #4a3f52;background:var(--panel2);padding:8px;cursor:pointer}
 .lv.sel{border-color:var(--gold2);box-shadow:0 0 14px rgba(243,210,122,.35)}
 .lv.lock{filter:grayscale(1) brightness(.5);cursor:default}
+.lvls .lv:only-child{max-width:380px}
 .lv canvas{width:100%;aspect-ratio:16/10;border-radius:6px;background:#000;display:block}
 .lv b{display:block;margin-top:6px;color:var(--gold2)}
 .lv small{color:var(--dim);font-size:12px}
@@ -170,6 +181,8 @@ table.st{margin:10px auto;border-collapse:collapse;font-size:14px}table.st td{pa
  #wavePrev .wc{font-size:10px;padding:1px 6px}
  #tcBtns .mini{min-height:40px;padding:2px 8px;margin-top:4px}
  #streak{top:calc(120px + var(--sat));font-size:16px}
+ #perks{top:calc(130px + var(--sat))}#perks .pk{min-width:110px;padding:6px 8px}
+ #tut{bottom:calc(120px + var(--sab));font-size:12px}
  .coarse #hudBtns{top:calc(8px + var(--sat));bottom:auto;right:max(8px, var(--sar));gap:4px}
  .ib{width:40px;height:40px;font-size:14px}
  #mini{right:max(8px, var(--sar));top:calc(54px + var(--sat));transform:none}
@@ -186,7 +199,9 @@ table.st{margin:10px auto;border-collapse:collapse;font-size:14px}table.st td{pa
  #tl{left:max(8px, var(--sal));top:calc(8px + var(--sat))}
  #tc{left:max(8px, var(--sal));right:calc(max(8px, var(--sar)) + 96px);top:calc(62px + var(--sat));transform:none}
  #ally{display:none!important}
- #bar{left:max(6px, var(--sal));right:max(6px, var(--sar));transform:none;justify-content:center}
+ #bar{left:max(6px, var(--sal));right:max(6px, var(--sar));transform:none;justify-content:flex-start;overflow-x:auto;overscroll-behavior:contain;scrollbar-width:none;touch-action:pan-x}
+ #bar::-webkit-scrollbar{display:none}
+ #bar .slot{flex:none}
  .coarse #bar{left:max(6px, var(--sal))}
  #bl{left:max(8px, var(--sal));bottom:calc(66px + var(--sab))}
  #tAlt,#tPlace{right:max(10px, var(--sar));bottom:calc(132px + var(--sab))}
@@ -206,7 +221,9 @@ table.st{margin:10px auto;border-collapse:collapse;font-size:14px}table.st td{pa
  #mini{top:calc(50px + var(--sat))}
  #bl{left:max(8px, var(--sal));top:calc(66px + var(--sat));bottom:auto}
  #ally{top:calc(122px + var(--sat))}
- #bar{left:max(8px, var(--sal));transform:none}
+ #bar{left:max(8px, var(--sal));transform:none;max-width:calc(100% - 190px - var(--sal) - var(--sar));overflow-x:auto;scrollbar-width:none;touch-action:pan-x}
+ #bar::-webkit-scrollbar{display:none}
+ #bar .slot{flex:none}
  .coarse #bar{left:max(8px, var(--sal))}
  #tAlt,#tPlace{right:max(10px, var(--sar));bottom:calc(64px + var(--sab))}
  #tSkill,#tRot{right:calc(max(10px, var(--sar)) + 58px);bottom:calc(104px + var(--sab))}
@@ -222,6 +239,8 @@ table.st{margin:10px auto;border-collapse:collapse;font-size:14px}table.st td{pa
  </div>
  <div id="tc" class="pnl"><div id="waveTxt"></div><div id="phaseTxt"></div><div id="wavePrev"></div><div id="tcBtns"><button id="readyBtn" class="btn">准备开战 (G)</button><button class="btn sec mini" id="bUndo" title="撤销上一次放置 (Z)">↶ 撤销</button><button class="btn sec mini" id="bOver" title="全图视角 (V)">全图</button><button class="btn sec mini" id="bReuse">复用上次布局</button></div></div>
  <div id="streak"></div>
+ <div id="perks"></div>
+ <div id="tut"></div>
  <canvas id="mini"></canvas>
  <div id="ally" class="pnl"></div>
  <div id="bl" class="pnl">

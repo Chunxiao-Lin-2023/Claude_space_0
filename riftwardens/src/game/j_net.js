@@ -64,12 +64,12 @@ function peerGone() {
 function hostRecv(m) {
   if (m.t === 'hello') {
     NET.peerInfo = {hero: HEROES[m.hero] ? m.hero : 'warmage', name: String(m.name || '队友').slice(0, 8), lo: m.lo || {up: 0, traps: {}}};
-    if (m.upd) { if (P[1]) { P[1].trapLv = NET.peerInfo.lo.traps || {}; P[1].up = NET.peerInfo.lo.up | 0; } return; }
+    if (m.upd) { if (P[1]) { P[1].trapLv = NET.peerInfo.lo.traps || {}; P[1].up = NET.peerInfo.lo.up | 0; P[1].trinkets = NET.peerInfo.lo.trinkets || []; applyMods(P[1]); } return; }
     netSend({t: 'welcome', code: NET.code, h: {hero: SAVE.hero, name: myName()}});
     toast(NET.peerInfo.name + ' 加入了房间'); sfx('ready');
     if (STATE === 'play' && G && G.phase !== 'won' && G.phase !== 'lost') { // join mid-level
-      const pi = NET.peerInfo; P[1] = mkPlayer(1, pi.hero, pi.name, pi.lo); G.coop = true;
-      netSend({t: 'start', li: G.li, diff: G.diff, h: {hero: SAVE.hero, name: myName()}}); NET.tvSent = 0;
+      const pi = NET.peerInfo; P[1] = initPlayer(mkPlayer(1, pi.hero, pi.name, pi.lo)); G.coop = true;
+      netSend({t: 'start', li: G.li, diff: G.diff, mode: G.mode, mod: G.mod, seed: G.seed, tri: G.allowT, h: {hero: SAVE.hero, name: myName()}}); NET.tvSent = 0;
     } else refreshLobby();
     return;
   }
@@ -98,8 +98,8 @@ function snapFor() {
     pj: G.projs.filter(q => !(q.own === 1 && q.pred)).map(q => [q.id, PK.indexOf(q.k), r1(q.x), r1(q.y), r1(q.vx), r1(q.vy), Math.round(q.life * 100), Math.round((q.L || 0) * 100)]),
     tu: G.turrets.map(t => [t.id, r1(t.x), r1(t.y), t.dir, +t.t.toFixed(1)]), pe: G.pets.map(f => [f.id, r1(f.x), r1(f.y), +(f.dir || 0).toFixed(2)]), zo: G.zones.map(z => [z.id, z.k === 'fog' ? 0 : 1, r1(z.x), r1(z.y), z.r, +z.t.toFixed(1), z.T]),
     dr: G.drops.map(d => [d.id, d.k === 'hp' ? 0 : 1, r1(d.x), r1(d.y)]),
-    ta: G.traps.filter(t => t.anim > 0 || (t.hp != null && t.hp < t.mhp) || t.cd > 0).map(t => [t.id, Math.round(t.anim * 100), t.hp != null ? Math.round(t.hp) : -1, Math.round(t.cd * 10)]),
-    me: {hp: r1(me.hp), mp: r1(me.mp), d: me.dead ? 1 : 0, rt: +me.rt.toFixed(1), inv: +me.inv.toFixed(2), wp: me.warp, x: r1(me.x), y: r1(me.y), kb: me.kbSeq ? [me.kbSeq, +me.kbA.toFixed(2), me.kbS] : null},
+    ta: G.traps.filter(t => t.anim > 0 || (t.hp != null && t.hp < t.mhp) || t.cd > 0).map(t => [t.id, Math.round(t.anim * 100), t.hp != null ? Math.round(t.hp) : -1, Math.round(t.cd * 10), t.face == null ? -1 : t.face, t.side || 0]),
+    me: {md: me.mods ? {r: me.mods.rate, s: me.mods.spd, c: me.mods.cdr, g: me.mods.regen} : null, mmp: me.mmp, mhp: me.mhp, pk: me.pick && me.pick[0] || null, lv: me.lvl, xp: me.xp, rv: me.reviving > 0 ? 1 : 0, hp: r1(me.hp), mp: r1(me.mp), d: me.dead ? 1 : 0, rt: +me.rt.toFixed(1), inv: +me.inv.toFixed(2), wp: me.warp, x: r1(me.x), y: r1(me.y), kb: me.kbSeq ? [me.kbSeq, +me.kbA.toFixed(2), me.kbS] : null},
     o: {x: r1(o.x), y: r1(o.y), a: +o.aim.toFixed(2), an: o.anim === 'walk' ? 1 : 0, c: +o.cast.toFixed(2), hp: r1(o.hp), mhp: o.mhp, d: o.dead ? 1 : 0, rt: +o.rt.toFixed(1), inv: +o.inv.toFixed(2), h: o.hero, n: o.name, mp: r1(o.mp), ht: +o.hurtT.toFixed(2), at: +(o.atk || 0).toFixed(2), sp: +(o.spin || 0).toFixed(2), gd: +(o.guard || 0).toFixed(2)},
     ev: G.ev.filter(e => e.tt > G.time - 0.7)};
 }
@@ -119,8 +119,8 @@ function guestRecv(m) {
   if (m.t === 'start') {
     clearTimeout(NET.timer); NET.hello = true; NET.peerInfo = m.h;
     IS_HOST = false; MEI = 1;
-    newWorld(m.li, 2, m.diff || 'normal');
-    P = [mkPlayer(0, m.h.hero, m.h.name), mkPlayer(1, SAVE.hero, myName(), loadout())];
+    newWorld(m.li, 2, m.diff || 'normal', m.mode || 'campaign', {mod: m.mod, seed: m.seed, tri: m.tri});
+    P = [initPlayer(mkPlayer(0, m.h.hero, m.h.name)), initPlayer(mkPlayer(1, SAVE.hero, myName(), loadout()))];
     ME = P[1]; NET.lastWp = -1;
     enterPlay(); return;
   }
@@ -143,6 +143,7 @@ function applySnap(s) {
   P.forEach((p, i) => { if (p && i !== MEI) p.ready = !!s.rdy[i]; }); ME.ready = !!s.rdy[MEI];
   // me
   const me = s.me, p = ME;
+  if (me.md) p.mods = Object.assign(p.mods || calcMods(p), {rate: me.md.r, spd: me.md.s, cdr: me.md.c, regen: me.md.g}); if (me.mhp) p.mhp = me.mhp; if (me.mmp) p.mmp = me.mmp; p.pick = me.pk ? [me.pk] : []; p.lvl = me.lv || 1; p.xp = me.xp || 0; p.reviving = me.rv;
   p.hp = me.hp; p.mp = me.mp; p.dead = !!me.d; p.rt = me.rt; p.inv = Math.max(p.inv, me.inv);
   if (NET.lastWp !== me.wp) { if (NET.lastWp >= 0 || p.dead) { p.x = me.x; p.y = me.y; } NET.lastWp = me.wp; }
   if (me.kb && me.kb[0] !== NET.kbSeq) { NET.kbSeq = me.kb[0]; p.kbx = Math.cos(me.kb[1]) * me.kb[2]; p.kby = Math.sin(me.kb[1]) * me.kb[2]; p.kbT = 0.22; }
@@ -168,7 +169,7 @@ function applySnap(s) {
   CL.projs = s.pj.map(([id, k, x, y, vx, vy, life, L]) => ({id, k: PK[k], x, y, vx, vy, life: life / 100, L: L / 100}));
   CL.drops = s.dr.map(([id, k, x, y]) => ({id, k: k ? 'mp' : 'hp', x, y}));
   const ta = new Map(s.ta.map(a => [a[0], a]));
-  for (const t of G.traps) { const a = ta.get(t.id); if (a) { t.anim = Math.max(t.anim > 0 ? t.anim : 0, a[1] / 100); if (a[2] >= 0) t.hp = a[2]; t.cd = a[3] / 10; } else { t.cd = 0; if (t.mhp) t.hp = t.mhp; } }
+  for (const t of G.traps) { const a = ta.get(t.id); if (a) { t.anim = Math.max(t.anim > 0 ? t.anim : 0, a[1] / 100); if (a[2] >= 0) t.hp = a[2]; t.cd = a[3] / 10; if (a[4] >= 0) t.face = a[4]; t.side = a[5]; } else { t.cd = 0; if (t.mhp) t.hp = t.mhp; } }
   for (const e of s.ev) if (e.id > CL.evMax) { CL.evMax = e.id; playEv(e); }
 }
 function guestInterp(dt) {
@@ -205,7 +206,7 @@ function playEv(o) {
       sfx(o.b ? 'hitB' : 'hit', o.x, o.y, 0.8); break;
     }
     case 'gold': ftxt(o.x, o.y - 10, '+' + o.v, '#f3d27a'); sfx('coin', o.x, o.y, 0.6); break;
-    case 'die': { const t = ORC_KEYS[o.t]; burst(o.x, o.y - 16, 12, t === 'bat' ? '#5a1822' : '#4f8a2a', 180, 0.6, 3, 500); fx({k: 'smoke', x: o.x, y: o.y - 8, vy: -20, life: 0.8, s: 10}); sfx(t === 'bat' ? 'batDie' : 'orcDie', o.x, o.y); break; }
+    case 'die': { const t = ORC_KEYS[o.t]; if (ORCS[t].boss) { FXT.slow = 1.6; banner('督军倒下了！', '残余兽人仍在进攻'); } burst(o.x, o.y - 16, 12, t === 'bat' ? '#5a1822' : '#4f8a2a', 180, 0.6, 3, 500); fx({k: 'smoke', x: o.x, y: o.y - 8, vy: -20, life: 0.8, s: 10}); sfx(t === 'bat' ? 'batDie' : 'orcDie', o.x, o.y); break; }
     case 'fall': if (o.lava) { burst(o.x, o.y, 16, '#ffb02e', 160, 0.7, 3.5, -50); fx({k: 'glow', x: o.x, y: o.y, s: 60, life: 0.5, col: '255,140,40', light: 140, lc: '255,140,40'}); sfx('burn', o.x, o.y); } sfx('fall', o.x, o.y); break;
     case 'rift': if (G) G._riftFlash = now + 0.4; sfx('rift'); CAM.shake = 5; toast('裂隙受损 -' + o.v); fx({k: 'ring', x: o.x, y: o.y, s: 10, r1: 70, life: 0.5, col: '#6be6ff', w: 5}); break;
     case 'shoot': sfx('arrow', o.x, o.y, 0.6); break;
@@ -213,7 +214,7 @@ function playEv(o) {
     case 'blast': { const a = o.a; fx({k: 'cone', x: o.x + Math.cos(a) * 10, y: o.y - 20 + Math.sin(a) * 10, ang: a, arc: HEROES.warmage.alt.arc, r1: HEROES.warmage.alt.r + 20, life: 0.35}); for (let i = 0; i < 10; i++) { const b = a + rnd(-0.9, 0.9), v = rnd(200, 420); fx({k: 'p', x: o.x, y: o.y - 20, vx: Math.cos(b) * v, vy: Math.sin(b) * v, life: 0.35, col: '#fff0c8', s: 2.5, drag: 4}); } sfx('blast', o.x, o.y); if (o.p === MEI) CAM.shake = 4; break; }
     case 'charm': for (let i = 0; i < 6; i++) fx({k: 'heart', x: o.x + rnd(-14, 14), y: o.y - 40 - rnd(10), vy: -50, vx: rnd(-20, 20), life: 0.9}); fx({k: 'ring', x: o.x, y: o.y, s: 8, r1: 40, life: 0.5, col: '#ff7adf', w: 4}); sfx('charm', o.x, o.y); break;
     case 'uncharm': break;
-    case 'boom': fx({k: 'glow', x: o.x, y: o.y, s: 110, life: 0.45, col: '255,150,50', grow: 0.3, light: 260, lc: '255,140,40'}); fx({k: 'ring', x: o.x, y: o.y + 10, s: 20, r1: 110, life: 0.45, col: '#ffb46a', w: 8}); burst(o.x, o.y, 26, '#ff8a2a', 300, 0.6, 4, 100); for (let i = 0; i < 8; i++) fx({k: 'smoke', x: o.x + rnd(-30, 30), y: o.y + rnd(-20, 20), vy: -30, life: 1.2, s: 14}); CAM.shake = 8; sfx('boom', o.x, o.y); break;
+    case 'boom': FXT.stop = Math.max(FXT.stop, 0.045); fx({k: 'glow', x: o.x, y: o.y, s: 110, life: 0.45, col: '255,150,50', grow: 0.3, light: 260, lc: '255,140,40'}); fx({k: 'ring', x: o.x, y: o.y + 10, s: 20, r1: 110, life: 0.45, col: '#ffb46a', w: 8}); burst(o.x, o.y, 26, '#ff8a2a', 300, 0.6, 4, 100); for (let i = 0; i < 8; i++) fx({k: 'smoke', x: o.x + rnd(-30, 30), y: o.y + rnd(-20, 20), vy: -30, life: 1.2, s: 14}); CAM.shake = 8; sfx('boom', o.x, o.y); break;
     case 'fbcast': sfx('fireball', o.x, o.y); break;
     case 'nova': fx({k: 'ring', x: o.x, y: o.y, s: 20, r1: HEROES.sorc.skill.r, life: 0.5, col: '#bff4ff', w: 10, flat: 0.62}); fx({k: 'glow', x: o.x, y: o.y, s: 140, life: 0.4, col: '120,220,255', light: 240, lc: '140,220,255'}); for (let i = 0; i < 24; i++) { const a = rnd(TAU), v = rnd(200, 420); fx({k: 'shard', x: o.x, y: o.y - 10, vx: Math.cos(a) * v, vy: Math.sin(a) * v * 0.62, life: 0.5, col: '#dff8ff', s: 5, rot: a, drag: 3}); } sfx('nova', o.x, o.y); break;
     case 'dash': if (o.p !== MEI) { const p = P[o.p]; if (p && o.h !== 'sorc') { for (let k = 0; k < 5; k++) fx({k: 'ghost', u: HEROES[p.hero].atlas, fi: 0, d: dirOf(Math.atan2(o.y - o.y0, o.x - o.x0)), x: lerp(o.x0, o.x, k / 5), y: lerp(o.y0, o.y, k / 5), life: 0.3, tint: 'rgba(255,220,160,.5)'}); } if (p && o.h === 'sorc') { for (let k = 0; k < 4; k++) fx({k: 'ghost', u: 'sorc', fi: 0, d: dirOf(p.aim), x: lerp(p.rx || p.x, o.x, k / 4), y: lerp(p.ry || p.y, o.y, k / 4), life: 0.35, tint: 'rgba(120,220,255,.6)'}); if (p.rx != null) { p.rx = o.x; p.ry = o.y; } } sfx(o.h === 'sorc' ? 'blink' : 'dash', o.x, o.y, 0.7); } break;
@@ -238,7 +239,15 @@ function playEv(o) {
     case 'wave': banner('第 ' + (o.w + 1) + ' 波', '兽人来袭！'); sfx('horn'); if (ME) ME.placed = []; CAM.over = false; break;
     case 'waveEnd': banner('第 ' + o.w + ' 波已击退', '奖励 +' + o.b + ' 金币'); sfx('win', null, null, 0.6); break;
     case 'boss': banner('兽人督军来袭！', '集中火力！'); sfx('horn'); CAM.shake = 10; break;
-    case 'end': break;
+    case 'end': if (!IS_HOST && G) { G.stats = Object.assign(G.stats || {}, o.st || {}); G.endWave = o.w; } break;
+    case 'lvlup': if (o.p === MEI) { banner('升级！Lv ' + o.l, '选择一项强化'); sfx('win', null, null, 0.7); } else toast('队友升到了 Lv ' + o.l); { const p = P[o.p]; if (p) for (let i = 0; i < 14; i++) fx({k: 'p', x: p.x + rnd(-16, 16), y: p.y - rnd(0, 50), vy: -110, life: 0.8, col: '#ffe08a', s: 2.4}); } break;
+    case 'perk': break;
+    case 'chain': { const pts = o.pts; for (let i = 1; i < pts.length; i++) { const [x0, y0] = pts[i - 1], [x1, y1] = pts[i]; const n = 6; let px = x0, py = y0; for (let k = 1; k <= n; k++) { const x = x0 + (x1 - x0) * k / n + (k < n ? rnd(-10, 10) : 0), y = y0 + (y1 - y0) * k / n + (k < n ? rnd(-10, 10) : 0); fx({k: 'bolt', x: px, y: py, x2: x, y2: y, life: 0.18}); px = x; py = y; } fx({k: 'glow', x: x1, y: y1, s: 26, life: 0.2, col: '160,200,255'}); } if (o.p !== MEI) sfx('zap', pts[0][0], pts[0][1], 0.6); break; }
+    case 'ping': PINGS.push({x: o.x, y: o.y, t: 0, mine: o.p === MEI}); sfx('click', o.x, o.y, 1); break;
+    case 'erupt0': (G.warn = G.warn || []).push({x: o.x, y: o.y, t: 1.3}); break;
+    case 'erupt': fx({k: 'glow', x: o.x, y: o.y, s: 120, life: 0.6, col: '255,130,30', light: 260, lc: '255,130,40'}); burst(o.x, o.y, 30, '#ffb02e', 300, 0.8, 4.5, 200); for (let i = 0; i < 6; i++) fx({k: 'smoke', x: o.x + rnd(-30, 30), y: o.y + rnd(-20, 20), vy: -40, life: 1.2, s: 16}); CAM.shake = Math.max(CAM.shake || 0, 7); sfx('boom', o.x, o.y); break;
+    case 'doors': if (!IS_HOST && G) openDoors(); banner('闸门开启！', '新的通路出现了'); sfx('horn'); break;
+    case 'gdie': burst(o.x, o.y - 20, 16, '#a0a8b8', 200, 0.6, 3, 500); sfx('barBreak', o.x, o.y); toast('守卫倒下了'); break;
     case 'combo': ftxt(o.x, o.y, o.s + ' +' + o.b, '#ffb84a', true); fx({k: 'glow', x: o.x, y: o.y + 20, s: 40, life: 0.4, col: '255,170,60'}); sfx('coin', o.x, o.y); break;
     case 'streak': banner('连杀 ×' + o.n, '奖励 +' + o.b + ' 金币'); sfx('win', null, null, 0.5); break;
     case 'heal': fx({k: 'ring', x: o.x, y: o.y, s: 10, r1: ORCS.shaman.healR, life: 0.6, col: '#7cff6a', w: 4}); for (let i = 0; i < 6; i++) fx({k: 'p', x: o.x + rnd(-60, 60), y: o.y - rnd(10, 40), vy: -50, life: 0.7, col: '#9dff8a', s: 2.5}); sfx('potion', o.x, o.y, 0.4); break;

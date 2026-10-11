@@ -22,10 +22,12 @@ function demoTick(dt) {
 
 /* =================== main loop =================== */
 let lastT = performance.now();
+const FXT = {stop: 0, slow: 0};
 function frame(t) {
   requestAnimationFrame(frame);
   const rdt = Math.min(0.05, Math.max(0, (t - lastT) / 1000)); lastT = t; const now = t / 1000;
-  const dt = STATE === 'play' && NET.mode !== 'online' ? rdt * TIME_SCALE : rdt;
+  let dt = STATE === 'play' && NET.mode !== 'online' ? rdt * TIME_SCALE : rdt;
+  if (NET.mode !== 'online') { if (FXT.stop > 0) { FXT.stop -= rdt; dt = 0; } else if (FXT.slow > 0) { FXT.slow -= rdt; dt *= 0.3; } }
   if (G && G.demo) { if (STATE === 'title') demoTick(dt); }
   else if (STATE === 'play' && G) {
     if (!PAUSED) {
@@ -34,7 +36,7 @@ function frame(t) {
       else { updLocalCosmetics(dt); guestInterp(dt); netGuestTick(dt); }
       if (G.phase === 'won' || G.phase === 'lost') { G.endT2 = (G.endT2 || 0) + dt; if (G.endT2 > 2.6 && !G.resShown) showResult(); }
     }
-    updCamera(dt); updHud(dt);
+    updCamera(rdt); updHud(rdt); tutTick(rdt); updPerkUI();
   } else if (STATE === 'title' && !G) demoInit();
   if (!PAUSED) updFx(dt);
   render(now);

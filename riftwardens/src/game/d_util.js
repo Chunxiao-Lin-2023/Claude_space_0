@@ -15,10 +15,10 @@ const PHONE = matchMedia('(pointer:coarse) and (max-height:500px), (pointer:coar
 
 /* =================== save data =================== */
 const SAVE_KEY = 'riftwardens_v1';
-function defSave() { return {hero: 'warmage', best: {}, bestN: {}, spent: 0, traps: {spikes: 1, barricade: 1, tar: 1, arrow: 1}, heroUp: {warmage: 0, sorc: 0, paladin: 0, ranger: 0, alch: 0, blade: 0}, mute: false, name: '', diff: 'normal', bright: 2}; }
-let SAVE = (() => { try { const s = JSON.parse(localStorage.getItem(SAVE_KEY)); if (s && s.best) { const d = defSave(); const o = Object.assign(d, s); o.heroUp = Object.assign(defSave().heroUp, s.heroUp || {}); o.bestN = s.bestN || {}; return o; } } catch (e) {} return defSave(); })();
+function defSave() { return {hero: 'warmage', best: {}, bestN: {}, spent: 0, traps: {spikes: 1, barricade: 1, tar: 1, arrow: 1}, heroUp: {warmage: 0, sorc: 0, paladin: 0, ranger: 0, alch: 0, blade: 0}, mute: false, name: '', diff: 'normal', bright: 2, music: true, shake: true, trinkets: [], equip: [], weapons: {}, wsel: {}, chal: {}, endless: {}, daily: {}, badges: 0, layouts: {}}; }
+let SAVE = (() => { try { const s = JSON.parse(localStorage.getItem(SAVE_KEY)); if (s && s.best) { const d = defSave(); const o = Object.assign(d, s); o.heroUp = Object.assign(defSave().heroUp, s.heroUp || {}); o.bestN = s.bestN || {}; for (const k of ['chal', 'endless', 'daily', 'weapons', 'wsel', 'layouts']) o[k] = s[k] || {}; o.trinkets = s.trinkets || []; o.equip = s.equip || []; return o; } } catch (e) {} return defSave(); })();
 function saveGame() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(SAVE)); } catch (e) {} }
-const skullsEarned = () => Object.values(SAVE.best).reduce((a, b) => a + b, 0) + Object.values(SAVE.bestN || {}).reduce((a, b) => a + b, 0);
+const skullsEarned = () => Object.values(SAVE.best).reduce((a, b) => a + b, 0) + Object.values(SAVE.bestN || {}).reduce((a, b) => a + b, 0) + Object.keys(SAVE.chal || {}).length;
 const skullsFree = () => skullsEarned() - SAVE.spent;
 const levelOpen = i => i === 0 || (SAVE.best[LEVELS[i - 1].id] || 0) > 0 || QS.has('unlockall');
 
@@ -89,6 +89,7 @@ const SFX = {
   click: v => { tone('square', 700, 600, 0.04, 0.05 * v, 0, 3000); },
   slam: v => { noise(0.5, 0.8 * v, 'lowpass', 900, 60, 0.6); tone('sine', 70, 30, 0.5, 0.6 * v); },
   ready: v => { tone('triangle', 660, 660, 0.1, 0.1 * v); tone('triangle', 990, 990, 0.14, 0.1 * v, 0.09); },
+  zap: v => { noise(0.14, 0.3 * v, 'highpass', 3500, 6000, 1); tone('square', 900, 1800, 0.08, 0.05 * v, 0, 4000); },
   swing: v => { noise(0.12, 0.35 * v, 'bandpass', 700, 2200, 1.2); },
   throw: v => { noise(0.1, 0.18 * v, 'bandpass', 1400, 600, 1.5); },
   splash: v => { noise(0.25, 0.4 * v, 'bandpass', 900, 300, 0.9); tone('sine', 520, 200, 0.18, 0.08 * v); },
@@ -112,7 +113,7 @@ function sfx(name, x, y, vol = 1) {
 
 /* =================== atlases =================== */
 const ATLAS = __ATLAS_META__;
-const SHEET_SRC = {warmage: '__SHEET_warmage__', sorc: '__SHEET_sorc__', paladin: '__SHEET_paladin__', ranger: '__SHEET_ranger__', alch: '__SHEET_alch__', blade: '__SHEET_blade__', grunt: '__SHEET_grunt__', shield: '__SHEET_shield__', sapper: '__SHEET_sapper__', shaman: '__SHEET_shaman__', kobold: '__SHEET_kobold__', archer: '__SHEET_archer__', ogre: '__SHEET_ogre__', bat: '__SHEET_bat__', chief: '__SHEET_chief__', props: '__SHEET_props__'};
+const SHEET_SRC = {warmage: '__SHEET_warmage__', sorc: '__SHEET_sorc__', paladin: '__SHEET_paladin__', ranger: '__SHEET_ranger__', alch: '__SHEET_alch__', blade: '__SHEET_blade__', grunt: '__SHEET_grunt__', shield: '__SHEET_shield__', gxbow: '__SHEET_gxbow__', gknight: '__SHEET_gknight__', sapper: '__SHEET_sapper__', shaman: '__SHEET_shaman__', kobold: '__SHEET_kobold__', archer: '__SHEET_archer__', ogre: '__SHEET_ogre__', bat: '__SHEET_bat__', chief: '__SHEET_chief__', props: '__SHEET_props__'};
 const IMG = {};
 function loadSheets() {
   return Promise.all(Object.entries(SHEET_SRC).map(([k, src]) => new Promise(res => { const im = new Image(); im.onload = () => { IMG[k] = im; res(); }; im.onerror = () => res(); im.src = src; })));

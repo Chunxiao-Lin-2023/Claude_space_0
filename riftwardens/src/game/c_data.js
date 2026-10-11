@@ -82,7 +82,7 @@ HEROES.warmage.role = '远程控场'; HEROES.sorc.role = '法术控制';
 HEROES.warmage.passive = '连弩命中有轻微击退'; HEROES.sorc.passive = '奥术飞弹会追踪敌人';
 /* =================== difficulty =================== */
 const DIFF = {
-  easy: {name: '简单', hp: 0.75, gold: 1.25, rift: 30, cap: 3, spd: 1},
+  easy: {name: '简单', hp: 0.65, gold: 1.4, rift: 40, cap: 3, spd: 1, cnt: 0.8},
   normal: {name: '普通', hp: 1, gold: 1, rift: 20, cap: 5, spd: 1},
   nightmare: {name: '噩梦', hp: 1.45, gold: 0.9, rift: 12, cap: 5, spd: 1.1},
 };

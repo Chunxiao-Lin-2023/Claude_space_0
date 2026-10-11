@@ -30,6 +30,8 @@ export const ANIMS = {
   ogre: {idle: 1, walk: 8, attack: 7, die: 5},
   bat: {walk: 6, attack: 5, die: 5},
   chief: {idle: 1, walk: 8, attack: 7, die: 5},
+  gxbow: {idle: 1, walk: 2, attack: 4},
+  gknight: {idle: 1, walk: 2, attack: 5},
   shield: {idle: 1, walk: 8, attack: 6},
   sapper: {idle: 1, walk: 8, attack: 5},
   shaman: {idle: 1, walk: 8, attack: 6},

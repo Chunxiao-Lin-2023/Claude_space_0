@@ -115,6 +115,7 @@ function prerenderMap() {
     if (t(x + 1, y) !== TW) w.fillRect(X + T - 3, Y, 3, T);
     if (t(x, y + 1) !== TW) drawFace(w, X, (y + 1) * T - WH, R);
   }
+  for (const d of m.doors || []) if (t(d.x, d.y) === TW) { const X = d.x * T, Y = d.y * T - WH; w.fillStyle = '#2a1a10'; w.fillRect(X + 2, Y + 2, T - 4, T + WH - 4); w.fillStyle = '#7a7f88'; for (let i = 0; i < 5; i++) w.fillRect(X + 5 + i * 9, Y + 2, 3, T + WH - 4); w.fillRect(X + 2, Y + 14, T - 4, 3); w.fillRect(X + 2, Y + T, T - 4, 3); }
   LAYER.floor = fl; LAYER.walls = wl; LAYER.id = m.id;
   // minimap base
   const ms = 4, mm = document.createElement('canvas'); mm.width = m.w * ms; mm.height = m.h * ms; const mg = mm.getContext('2d');
@@ -173,6 +174,7 @@ function drawFx(g) {
     else if (f.k === 'smoke') { g.globalAlpha = a * 0.5; g.fillStyle = f.col || '#3a3238'; g.beginPath(); g.arc(f.x, f.y, f.s * (1 + k * 1.5), 0, TAU); g.fill(); }
     else if (f.k === 'ghost') { g.globalAlpha = a * 0.45; drawUnit(g, f.u, 'walk', f.fi, f.d, f.x, f.y, {tint: f.tint}); }
     else if (f.k === 'slash') { g.globalCompositeOperation = 'lighter'; g.globalAlpha = a; g.strokeStyle = `rgba(${f.col},1)`; g.lineCap = 'round'; const r = f.r1 * (0.75 + 0.25 * k); for (let i = 0; i < 3; i++) { g.lineWidth = (7 - i * 2.5) * (1 - k * 0.5); g.globalAlpha = a * (0.35 + i * 0.3); g.beginPath(); g.ellipse(f.x, f.y + 18, r - i * 6, (r - i * 6) * 0.72, 0, f.ang - f.arc * (0.3 + k * 0.7), f.ang + f.arc * (0.3 + k * 0.7)); g.stroke(); } g.globalCompositeOperation = 'source-over'; }
+    else if (f.k === 'bolt') { g.globalCompositeOperation = 'lighter'; g.globalAlpha = a; g.strokeStyle = '#bfe0ff'; g.lineWidth = 3 * (1 - k) + 1; g.beginPath(); g.moveTo(f.x, f.y); g.lineTo(f.x2, f.y2); g.stroke(); g.strokeStyle = '#ffffff'; g.lineWidth = 1; g.stroke(); g.globalCompositeOperation = 'source-over'; }
     else if (f.k === 'heart') { g.globalAlpha = a; g.fillStyle = '#ff6fd8'; g.font = 'bold 14px sans-serif'; g.textAlign = 'center'; g.fillText('♥', f.x, f.y); }
     else if (f.k === 'shard') { g.globalAlpha = a; g.fillStyle = f.col; g.save(); g.translate(f.x, f.y); g.rotate(f.rot || 0); g.fillRect(-f.s, -f.s * 0.35, f.s * 2, f.s * 0.7); g.restore(); }
     else if (f.k === 'pillar') { g.globalCompositeOperation = 'lighter'; g.globalAlpha = a; const h = f.h * Math.sin(Math.min(1, k * 3) * Math.PI / 2); const gr = g.createLinearGradient(0, f.y - h, 0, f.y); gr.addColorStop(0, `rgba(${f.col},0)`); gr.addColorStop(1, `rgba(${f.col},.85)`); g.fillStyle = gr; g.fillRect(f.x - f.s, f.y - h, f.s * 2, h); g.globalCompositeOperation = 'source-over'; }
@@ -204,7 +206,8 @@ function drawEnemy(g, e, now) {
   if (e.charm > 0) { g.strokeStyle = 'rgba(255,110,220,.8)'; g.lineWidth = 2; g.beginPath(); g.ellipse(x, y, D.r * 1.4, D.r * 0.6, 0, 0, TAU); g.stroke(); }
   const [an, fi] = frameOf(e);
   let tint = null; if (e.frz > 0) tint = 'rgba(150,225,255,.55)'; else if (e.enr) tint = 'rgba(255,40,20,.3)'; else if (e.haste > 0) tint = 'rgba(255,140,40,.2)'; else if (e.charm > 0) tint = 'rgba(255,110,220,.25)'; else if (e.burn > 0) tint = 'rgba(255,120,30,.22)';
-  drawUnit(g, e.type, an, fi, e.dir, x, y - lift, {tint, flash: e.flash > 0 ? 0.65 : 0});
+  if (lift > 2) { g.save(); g.translate(x, y - lift - 30); g.rotate(now * 14 + e.id); drawUnit(g, e.type, an, fi, e.dir, 0, 30, {tint, flash: e.flash > 0 ? 0.65 : 0}); g.restore(); }
+  else drawUnit(g, e.type, an, fi, e.dir, x, y - lift, {tint, flash: e.flash > 0 ? 0.65 : 0});
   if (e.frz > 0) { g.fillStyle = 'rgba(200,240,255,.35)'; g.strokeStyle = 'rgba(230,250,255,.7)'; g.lineWidth = 1; const h = D.fly ? 56 : D.r * 3.2, b = D.fly ? 34 : 0; rrect(g, x - D.r * 1.2, y - h - b - lift, D.r * 2.4, h, 6); g.fill(); g.stroke(); }
   if (e.burn > 0 && Math.random() < 0.4) fx({k: 'p', x: x + rnd(-D.r, D.r), y: y - rnd(D.r * 2) - lift, vy: -60, life: 0.4, col: Math.random() < 0.5 ? '#ffb02e' : '#ff5a1a', s: 3});
   if ((e.hpShow > 0 || (e.hp < e.mhp && D.mass >= 4)) && !D.boss) {
@@ -386,7 +389,8 @@ function render(now) {
   const rows = new Map(); const add = (y, f) => { const r = clamp(Math.floor(y / T), 0, m.h - 1); if (!rows.has(r)) rows.set(r, []); rows.get(r).push([y, f]); };
   for (const e of viewEnemies()) { const ey = e.ry != null ? e.ry : e.y; add(ey + (ORCS[e.type].fly ? T * 0.6 : 0), () => drawEnemy(ctx, e, now)); }
   for (const p of P) if (p) add(p.ry != null ? p.ry : p.y, () => drawHero(ctx, p, now));
-  for (const tr of traps) if (TRAPS[tr.k].tall) add(tc(tr.ty) + 8, () => { drawProp(ctx, trapFrame(tr, now), tc(tr.tx), tc(tr.ty) + 6, 0.95); if (tr.hp < tr.mhp) { ctx.fillStyle = 'rgba(0,0,0,.7)'; ctx.fillRect(tc(tr.tx) - 17, tc(tr.ty) - 48, 34, 5); ctx.fillStyle = '#d9ae4e'; ctx.fillRect(tc(tr.tx) - 16, tc(tr.ty) - 47, 32 * tr.hp / tr.mhp, 3); } });
+  for (const tr of traps) if (TRAPS[tr.k].unit) add(tc(tr.ty) + 8, () => drawGuardian(ctx, tr, now)); else if (TRAPS[tr.k].proc) add(tc(tr.ty) + 4, () => drawPendulum(ctx, tr, now));
+  for (const tr of traps) if (TRAPS[tr.k].tall && !TRAPS[tr.k].unit && !TRAPS[tr.k].proc) add(tc(tr.ty) + 8, () => { drawProp(ctx, trapFrame(tr, now), tc(tr.tx), tc(tr.ty) + 6, 0.95); if (tr.hp < tr.mhp) { ctx.fillStyle = 'rgba(0,0,0,.7)'; ctx.fillRect(tc(tr.tx) - 17, tc(tr.ty) - 48, 34, 5); ctx.fillStyle = '#d9ae4e'; ctx.fillRect(tc(tr.tx) - 16, tc(tr.ty) - 47, 32 * tr.hp / tr.mhp, 3); } });
   for (const d of m.decor) if (!d.flat) add(tc(d.y) + 10, () => { drawProp(ctx, d.k + '_0_2', tc(d.x), tc(d.y) + 8, d.k === 'brazier' ? 0.9 : 0.85); if (d.k === 'brazier') brazierFire(ctx, tc(d.x), tc(d.y) - 22, now); });
   for (const pl of m.pillars) add((pl.y + 1) * T - 6, () => drawPillar(ctx, pl.x, pl.y));
   for (const r of m.rifts) add(tc(r.y) + 6, () => drawRift(ctx, r, now));
@@ -403,6 +407,9 @@ function render(now) {
   }
   for (const q of viewProjs()) drawProj(ctx, q, now);
   for (const f of (G.pets || [])) drawFalcon(ctx, f, now);
+  drawPings(ctx, now);
+  for (const w of (G.warn || [])) { const k = clamp(w.t / 1.3, 0, 1); ctx.strokeStyle = `rgba(255,${120 + 100 * k | 0},40,${0.4 + 0.5 * Math.abs(Math.sin(now * 12))})`; ctx.lineWidth = 3; ctx.beginPath(); ctx.ellipse(w.x, w.y, 95, 66, 0, 0, TAU); ctx.stroke(); w.t -= 1 / 60; }
+  if (G.warn) G.warn = G.warn.filter(w => w.t > 0);
   drawGateLabels(ctx);
   drawFx(ctx);
   drawLighting(ctx, now, x0, y0, x1, y1);
@@ -437,7 +444,7 @@ let PATHC = {key: '', paths: []};
 function gatePaths() {
   const key = G.li + '|' + (G.flowV || 0) + '|' + G.wave;
   if (PATHC.key === key) return PATHC.paths;
-  const out = []; const W = LEVELS[G.li].waves[G.wave] || [];
+  const out = []; const W = waveDef(G.wave) || [];
   const flyGates = new Set(W.filter(g => ORCS[g[1]].fly).map(g => g[0])), groundGates = new Set(W.filter(g => !ORCS[g[1]].fly).map(g => g[0]));
   G.map.gates.forEach((gt, gi) => {
     for (const fly of [false, true]) {

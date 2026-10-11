@@ -5,14 +5,16 @@ const costFor = (p, k) => Math.round(TRAPS[k].cost * (p && p.hero === 'ranger' ?
 function spawnProj(o) { const q = Object.assign({id: G.nid++, team: 'p', r: 6, pierce: 0, hit: []}, o); q.L = q.life; G.projs.push(q); return q; }
 
 function heroFire(p, m) {
-  const H = HEROES[p.hero], Pr = H.primary, a = +m.a || 0, mul = heroDmgMul(p);
+  const H = HEROES[p.hero], a = +m.a || 0, mul = heroDmgMul(p);
+  if (m.w != null) p.wpn = m.w ? 1 : 0; const Pr = primOf(p);
   p.atk = 0.3;
   if (Pr.kind === 'melee') { meleeSwing(p, a, Pr, mul); return; }
+  if (Pr.kind === 'chain') { chainFire(p, a, Pr, mul); return; }
   const ox = Math.cos(a) * 22, oy = Math.sin(a) * 22 - 26;
   if (Pr.kind === 'flask') {
     const d = clamp(Math.hypot(+m.x - p.x, +m.y - p.y), 40, Pr.max);
-    spawnProj({k: 'flask', x: p.x + ox, y: p.y + oy + 26, vx: Math.cos(a) * Pr.speed, vy: Math.sin(a) * Pr.speed, life: d / Pr.speed, dmg: Pr.dmg * mul, own: p.i, r: Pr.r, lob: 1, pred: 1});
-  } else spawnProj({k: Pr.kind, x: p.x + ox, y: p.y + oy, vx: Math.cos(a) * Pr.speed, vy: Math.sin(a) * Pr.speed, life: Pr.life, dmg: Pr.dmg * mul, own: p.i, r: Pr.kind === 'orb' ? 8 : 6, pierce: Pr.pierce || 0, pred: 1});
+    spawnProj({k: 'flask', x: p.x + ox, y: p.y + oy + 26, vx: Math.cos(a) * Pr.speed, vy: Math.sin(a) * Pr.speed, life: d / Pr.speed, dmg: Pr.dmg * mul, own: p.i, r: Pr.r, lob: 1, pred: 1, burn: Pr.burn || 0});
+  } else { const n = Pr.n || 1; for (let k = 0; k < n; k++) { const b = a + (n > 1 ? (k - (n - 1) / 2) * Pr.spread / (n - 1) : 0); spawnProj({k: Pr.kind, x: p.x + Math.cos(b) * 22, y: p.y - 26 + Math.sin(b) * 22, vx: Math.cos(b) * Pr.speed, vy: Math.sin(b) * Pr.speed, life: Pr.life, dmg: Pr.dmg * mul, own: p.i, r: Pr.kind === 'orb' ? 8 : 6, pierce: Pr.pierce || 0, pred: 1}); } }
   if (p.i !== MEI) ev('pfire', {p: p.i});
 }
 function meleeSwing(p, a, Pr, mul) {
@@ -53,7 +55,7 @@ function heroSkill(p, m) {
   switch (p.hero) {
     case 'paladin': {
       const cx = p.x + Math.cos(a) * 40, cy = p.y + Math.sin(a) * 40;
-      ev('judg', {x: Math.round(cx), y: Math.round(cy)});
+      ev('judg', {x: Math.round(cx), y: Math.round(cy)}); FXT.stop = Math.max(FXT.stop, 0.05);
       for (const e of G.enemies) { if (!alive(e) || e.charm > 0) continue; const d = Math.hypot(e.x - cx, e.y - cy); if (d > S.r + ORCS[e.type].r) continue; hurtEnemy(e, S.dmg * mul, {p: p.i}); if (alive(e)) { e.stun = Math.max(e.stun, S.stun * (ORCS[e.type].boss ? 0.4 : 1)); e.act = null; } }
       return ''; }
     case 'ranger':

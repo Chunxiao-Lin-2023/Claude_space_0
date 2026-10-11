@@ -11,7 +11,7 @@ const TXT = [];          // floating texts
 /* ---------- map ---------- */
 function buildMap(id) {
   const rows = MAPS[id], h = rows.length, w = rows[0].length;
-  const m = {id, w, h, t: new Uint8Array(w * h), gates: [], rifts: [], spawn: {x: 1, y: 1}, torches: [], decor: [], pillars: [], lights: []};
+  const m = {id, w, h, t: new Uint8Array(w * h), gates: [], rifts: [], spawn: {x: 1, y: 1}, torches: [], decor: [], pillars: [], lights: [], doors: []};
   for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
     const ch = rows[y][x], i = y * w + x; let t = TF;
     if (ch === '#') t = TW;
@@ -26,6 +26,7 @@ function buildMap(id) {
     else if (ch === 'G') m.gates.push({x, y});
     else if (ch === 'R') m.rifts.push({x, y});
     else if (ch === 'P') m.spawn = {x, y};
+    else if (ch === 'D') { t = TW; m.doors.push({x, y}); }
     m.t[i] = t;
   }
   return m;
@@ -34,7 +35,7 @@ const tAt = (tx, ty) => (tx < 0 || ty < 0 || tx >= G.map.w || ty >= G.map.h) ? T
 const tIdx = (tx, ty) => ty * G.map.w + tx;
 const tc = v => v * T + T / 2;
 const isSpecialTile = (tx, ty) => G.map.gates.some(g => g.x === tx && g.y === ty) || G.map.rifts.some(g => g.x === tx && g.y === ty) || (G.map.spawn.x === tx && G.map.spawn.y === ty);
-function barricadeAt(tx, ty) { if (tx < 0 || ty < 0 || tx >= G.map.w || ty >= G.map.h) return false; const id = G.trapAt[tIdx(tx, ty)]; if (id < 0) return false; const tr = trapById(id); return !!tr && tr.k === 'barricade'; }
+function barricadeAt(tx, ty) { if (tx < 0 || ty < 0 || tx >= G.map.w || ty >= G.map.h) return false; const id = G.trapAt[tIdx(tx, ty)]; if (id < 0) return false; const tr = trapById(id); return !!tr && !!TRAPS[tr.k].block; }
 // solidity predicates (tile coords)
 const solidWalk = (tx, ty) => { const t = tAt(tx, ty); return t !== TF; };
 const solidOrc = (tx, ty) => solidWalk(tx, ty) || barricadeAt(tx, ty);
@@ -104,14 +105,20 @@ function nextStep(e, fly) {
 }
 
 /* ---------- world creation ---------- */
-function newWorld(li, nPlayers, diff = 'normal') {
+function newWorld(li, nPlayers, diff = 'normal', mode = 'campaign', opt = {}) {
   const L = LEVELS[li], Df = DIFF[diff] || DIFF.normal;
-  G = {li, map: buildMap(L.id), phase: 'build', wave: 0, nWaves: L.waves.length, waveT: 0, spawnQ: [],
+  G = {li, map: buildMap(L.id), phase: 'build', wave: 0, nWaves: mode === 'endless' ? Infinity : L.waves.length, waveT: 0, spawnQ: [], mode, mod: opt.mod || null, seed: opt.seed || 1, allowT: opt.tri || null,
     gold: Math.round(L.gold * Df.gold * (nPlayers > 1 ? B.coopGold : 1)), rift: Df.rift, riftMax: Df.rift, diff, spdMul: Df.spd, turrets: [], pets: [], zones: [],
     enemies: [], projs: [], traps: [], drops: [], ev: [], evId: 1, time: 0, nid: 1, trapsV: 1,
     hpMul: L.hp * Df.hp * (nPlayers > 1 ? B.coopHp : 1), coop: nPlayers > 1, endT: 0, result: null,
-    stats: {kills: 0, trapKills: 0, falls: 0, leaks: 0, gold: 0, built: 0}};
+    stats: {kills: 0, trapKills: 0, falls: 0, leaks: 0, gold: 0, built: 0, bars: 0, deaths: 0, kinds: []}};
+  if (G.mod === 'fast') G.spdMul *= 1.25;
+  if (G.mod === 'poor') { G.gold = Math.round(G.gold * 0.6); G.goldMul = 1.5; }
+  if (G.mod === 'glass') { G.hpMul *= 0.7; G.heroHp = 0.6; }
+  G.countMul = Df.cnt || 1;
+  if (G.mod === 'swarm') { G.countMul *= 1.5; G.hpMul *= 0.75; }
   G.trapAt = new Int32Array(G.map.w * G.map.h).fill(-1);
+  setupHazards();
   refreshFlow();
   { const ds = G.map.gates.map(g => G.flow[tIdx(g.x, g.y)]).filter(d => d < 1e8); G.barCost = clamp(ds.length ? ds.reduce((a, b) => a + b, 0) / ds.length : 30, 12, 40); refreshFlow(); }
   return G;
@@ -129,16 +136,18 @@ function mkPlayer(i, hero, name, lv) {
   const H = HEROES[hero], s = spawnPoint();
   return {i, hero, name: name || H.name, x: s.x + (i ? 20 : -20), y: s.y, aim: -Math.PI / 2, hp: H.hp, mhp: H.hp, mp: H.mp, mmp: H.mp,
     dead: false, rt: 0, inv: 0, slot: 0, rot: 0, fireT: 0, cdAlt: 0, cdSkill: 0, cdDash: 0, dash: 0, dvx: 0, dvy: 0,
-    anim: 'idle', at: 0, cast: 0, mvx: 0, mvy: 0, ready: false, up: (lv && lv.up) || 0, trapLv: (lv && lv.traps) || {}, warp: 0, hurtT: 0, firing: false, seen: performance.now()};
+    anim: 'idle', at: 0, cast: 0, mvx: 0, mvy: 0, ready: false, up: (lv && lv.up) || 0, trapLv: (lv && lv.traps) || {}, warp: 0, hurtT: 0, firing: false, seen: performance.now(),
+    trinkets: (lv && lv.trinkets) || [], wpn: (lv && lv.wpn) || 0, perks: {}, lvl: 1, xp: 0, pick: []};
 }
+function initPlayer(p) { applyMods(p); if (G.heroHp) p.mhp = Math.round(p.mhp * G.heroHp); p.hp = p.mhp; p.mp = p.mmp; return p; }
 function hurtPlayer(p, dmg, src) {
   if (!p || p.dead || p.inv > 0 || G.phase === 'won' || G.phase === 'lost') return;
   if (p.guard > 0) dmg *= 0.3;
   p.hp -= dmg; p.hurtT = 0.25;
   ev('phit', {p: p.i, d: Math.round(dmg)});
-  if (p.hp <= 0) { p.hp = 0; p.dead = true; p.rt = Math.min(14, B.respawn + 1.2 * (G.wave || 0)); ev('pdie', {p: p.i, x: Math.round(p.x), y: Math.round(p.y)}); }
+  if (p.hp <= 0) { G.stats.deaths++; p.hp = 0; p.dead = true; p.rt = Math.min(14, B.respawn + 1.2 * (G.wave || 0)); ev('pdie', {p: p.i, x: Math.round(p.x), y: Math.round(p.y)}); }
 }
-function heroDmgMul(p) { return 1 + B.heroUpDmg * (p.up || 0); }
+function heroDmgMul(p) { const m = p.mods || {}; return (1 + B.heroUpDmg * (p.up || 0)) * (m.dmg || 1) * (m.rage && p.hp < p.mhp * 0.5 ? 1 + m.rage : 1); }
 
 /* ---------- enemies ---------- */
 const ATK_DUR = {}; // seconds of attack anim per type
@@ -157,15 +166,17 @@ function hurtEnemy(e, dmg, src, dot) {
   if (!alive(e)) return;
   if (e.charm > 0 && src && src.trap) return;
   if (e.frz > 0 && !dot && src && (src.p != null || src.trap === 'spikes')) { dmg *= 1.5; if (!(e.shatT > G.time)) { e.shatT = G.time + 1.5; combo(e, '碎冰', 5); } }
+  if (src && src.p != null && !dot && P[src.p] && P[src.p].mods && P[src.p].mods.vamp) { const q = P[src.p]; if (!q.dead) q.hp = Math.min(q.mhp, q.hp + dmg * q.mods.vamp); }
   e.hp -= dmg; e.hpShow = 2.5;
   if (!dot) { e.flash = 0.12; if (IS_HOST && dmg >= 1) ev('hit', {x: Math.round(e.x), y: Math.round(e.y - 20), d: Math.round(dmg), b: ORCS[e.type].mass >= 4 ? 1 : 0, c: src && src.p != null ? src.p : -1}); }
   if (e.hp <= 0) killEnemy(e, src);
 }
 function reward(e, src) {
-  const D = ORCS[e.type]; G.gold += D.gold; G.stats.gold += D.gold; G.stats.kills++;
+  const D = ORCS[e.type], killer = src && src.p != null ? P[src.p] : null, gold = Math.round(D.gold * (killer && killer.mods ? killer.mods.gold : 1) * (G.goldMul || 1));
+  G.gold += gold; G.stats.gold += gold; G.stats.kills++; if (killer) giveXp(killer.i, D.gold);
   const S = G.streak || (G.streak = {n: 0, last: -9}); S.n = G.time - S.last < B.streakWin ? S.n + 1 : 1; S.last = G.time; G.stats.best = Math.max(G.stats.best || 0, S.n);
   if (src && src.trap) G.stats.trapKills++;
-  ev('gold', {x: Math.round(e.x), y: Math.round(e.y - 34), v: D.gold});
+  ev('gold', {x: Math.round(e.x), y: Math.round(e.y - 34), v: gold});
   if (Math.random() < B.potionChance * (D.mass >= 4 ? 4 : 1)) G.drops.push({id: G.nid++, k: Math.random() < 0.6 ? 'hp' : 'mp', x: e.x, y: e.y, t: 0});
 }
 function combo(e, name, gold) { G.gold += gold; G.stats.gold += gold; G.stats.combos = (G.stats.combos || 0) + 1; ev('combo', {x: Math.round(e.x), y: Math.round(e.y - 56), s: name, b: gold}); }
@@ -228,6 +239,7 @@ function resolveHit(e) {
   const reach = D.range + (t.k === 'p' ? 14 : t.k === 't' ? 26 : ORCS[p.type].r) + 22;
   if (D.ranged) {
     const a = Math.atan2(p.y - e.y, p.x - e.x);
+    if (t.k === 't') { hurtTrap(trapById(t.id), D.dmg); const d = Math.hypot(p.x - e.x, p.y - e.y); G.projs.push({id: G.nid++, k: 'arrow', x: e.x, y: e.y - 18, vx: Math.cos(a) * 430, vy: Math.sin(a) * 430, life: d / 430, team: 'v', r: 4, hit: []}); return; }
     G.projs.push({id: G.nid++, k: 'arrow', x: e.x + Math.cos(a) * 16, y: e.y - 18 + Math.sin(a) * 16, vx: Math.cos(a) * 430, vy: Math.sin(a) * 430, life: 1.2, dmg: D.dmg, team: 'e', own: e.id, r: 5, hit: []});
     ev('shoot', {x: Math.round(e.x), y: Math.round(e.y)});
     return;
@@ -322,6 +334,10 @@ function updEnemy(e, dt) {
   }
   if (D.heal) { e.healT = (e.healT == null ? 1.5 : e.healT) - dt; if (e.healT <= 0) { e.healT = D.cd; e.act = {t: 0, tgt: null, hit: true}; e.anim = 'attack'; let n = 0; for (const o of G.enemies) if (alive(o) && o.charm <= 0 && o.hp < o.mhp && dist2(o.x, o.y, e.x, e.y) < D.healR * D.healR) { o.hp = Math.min(o.mhp, o.hp + D.heal * G.hpMul); n++; } ev('heal', {x: Math.round(e.x), y: Math.round(e.y)}); return; } }
   if (D.sapper && sapperAI(e, D, spd, dt)) return;
+  if (!D.sneaky && !D.heal && !D.fly) for (const tr of G.traps) {
+    if (!TRAPS[tr.k].guard) continue; const gx = tc(tr.tx), gy = tc(tr.ty), rr = D.ranged ? D.range : D.range + T * 0.5 + D.r;
+    if (dist2(e.x, e.y, gx, gy) < rr * rr && (!D.ranged || los(e.x, e.y, gx, gy))) { if (canAtk) { beginAttack(e, {k: 't', id: tr.id}); return; } if (!D.ranged) { e.anim = 'idle'; e.dir = dirOf(Math.atan2(gy - e.y, gx - e.x)); return; } }
+  }
   // follow the flow field
   const st = nextStep(e, D.fly);
   if (st.here <= 0.5 || (G.map.rifts.some(r => dist2(e.x, e.y, tc(r.x), tc(r.y)) < 30 * 30))) { leak(e); return; }
@@ -422,6 +438,8 @@ function canPlace(k, tx, ty, p) {
   if (tx < 0 || ty < 0 || tx >= G.map.w || ty >= G.map.h) return '无效位置';
   if (G.trapAt[tIdx(tx, ty)] >= 0) return '已有陷阱';
   const t = tAt(tx, ty);
+  if (G.mod === 'nobar' && k === 'barricade') return '本局禁用路障';
+  if (G.allowT && !G.allowT.includes(k)) return '本局只能使用指定陷阱';
   if (D.place === 'floor') { if (t !== TF || isSpecialTile(tx, ty)) return '只能放在地面'; if (D.tall && enemiesOnTile(tx, ty, false).length) return '有敌人'; }
   else { if (t !== TW) return '只能装在墙上'; if (wallFacing(tx, ty, p.x, p.y) < 0) return '墙面前方没有通路'; }
   if (k === 'barricade' && G.traps.filter(t => t.k === 'barricade').length >= B.maxBar) return '路障已达上限（' + B.maxBar + '）';
@@ -434,22 +452,23 @@ function placeTrap(p, k, tx, ty, rot) {
   const D = TRAPS[k], lv = clamp((p.trapLv[k] || 1) - 1, 0, 2);
   const cost = costFor(p, k); G.gold -= cost; G.stats.built++;
   const tr = {id: G.nid++, k, tx, ty, rot: D.place === 'wall' ? wallFacing(tx, ty, p.x, p.y) : (D.dir ? (rot | 0) & 3 : 0), lv, cd: 0, anim: 0, fuse: 0, spent: cost, own: p.i, fast: p.hero === 'ranger' ? 1 : 0};
-  if (k === 'barricade') { tr.hp = tr.mhp = D.hp[lv]; }
+  if (D.hp) { tr.hp = tr.mhp = D.hp[lv]; }
   G.traps.push(tr); G.trapAt[tIdx(tx, ty)] = tr.id; G.trapsV++;
-  if (k === 'barricade') refreshFlow();
+  if (!G.stats.kinds.includes(k)) G.stats.kinds.push(k); if (k === 'barricade') G.stats.bars++;
+  if (D.block) refreshFlow();
   ev('place', {x: tc(tx), y: tc(ty), p: p.i});
   return '';
 }
 function removeTrap(tr) {
   G.traps = G.traps.filter(t => t !== tr); G.trapAt[tIdx(tr.tx, tr.ty)] = -1; G.trapsV++;
-  if (tr.k === 'barricade') refreshFlow();
+  if (TRAPS[tr.k].block) refreshFlow();
 }
 function sellTrap(p, tx, ty) {
   if (tx < 0 || ty < 0 || tx >= G.map.w || ty >= G.map.h) return '无效';
   const id = G.trapAt[tIdx(tx, ty)]; if (id < 0) return '这里没有陷阱';
   const tr = trapById(id); if (!tr) return '无效';
   let v = Math.round(tr.spent * (G.phase === 'wave' ? B.sellWave : B.sellBuild));
-  if (tr.k === 'barricade') v = Math.round(v * tr.hp / tr.mhp);
+  if (tr.hp != null) v = Math.round(v * tr.hp / tr.mhp);
   G.gold += v; removeTrap(tr);
   ev('sell', {x: tc(tx), y: tc(ty), v});
   return '';
@@ -461,13 +480,13 @@ function upgradeTrap(p, tx, ty) {
   if (tr.lv >= 2) return '已满级';
   const c = upgCost(tr); if (G.gold < c) return '金币不足';
   G.gold -= c; tr.spent += c; tr.lv++; G.trapsV++;
-  if (tr.k === 'barricade') { const f = tr.hp / tr.mhp; tr.mhp = TRAPS.barricade.hp[tr.lv]; tr.hp = tr.mhp * f; }
+  if (tr.hp != null) { const f = tr.hp / tr.mhp; tr.mhp = TRAPS[tr.k].hp[tr.lv]; tr.hp = tr.mhp * f; }
   ev('upg', {x: tc(tx), y: tc(ty), lv: tr.lv});
   return '';
 }
 function hurtTrap(tr, dmg) {
-  if (!tr || tr.k !== 'barricade') return;
-  tr.hp -= dmg; if (tr.hp <= 0) { removeTrap(tr); ev('barBreak', {x: tc(tr.tx), y: tc(tr.ty)}); }
+  if (!tr || tr.hp == null) return;
+  tr.hp -= dmg; if (tr.hp <= 0) { removeTrap(tr); ev(tr.k === 'barricade' ? 'barBreak' : 'gdie', {x: tc(tr.tx), y: tc(tr.ty)}); }
 }
 function updTraps(dt) {
   for (const tr of G.traps.slice()) {
@@ -490,6 +509,7 @@ function updTraps(dt) {
         if (found) { tr.cd = D.cd[lv] * (tr.fast ? 0.8 : 1); tr.anim = 0.2; ev('trap', {i: tr.id, s: 'arrow', x: x0, y: y0});
           for (const off of [-11, 11]) G.projs.push({id: G.nid++, k: 'tarrow', x: x0 + dy * off, y: y0 + dx * off, vx: dx * 780, vy: dy * 780, life: len * T / 780 + 0.02, dmg: D.dmg[lv] / 2, team: 't', r: 6, pierce: 1, hit: []}); }
         break; }
+      case 'gxbow': case 'gknight': case 'pendulum': updGuardian(tr, D, lv, dt); break;
       case 'grinder': {
         const [dx, dy] = DIRV[tr.rot]; const vs = enemiesOnTile(tr.tx + dx, tr.ty + dy, false);
         if (vs.length) { tr.anim = 0.35; for (const e of vs) { hurtEnemy(e, D.dps[lv] * dt, {trap: 'grinder'}, true); if (Math.random() < dt * 8) { e.flash = 0.08; ev('grind', {x: Math.round(e.x), y: Math.round(e.y)}); } } }
@@ -501,6 +521,7 @@ function updTraps(dt) {
 /* ---------- projectiles ---------- */
 function updProjs(dt) {
   for (const q of G.projs) {
+    if (q.team === 'v') { q.x += q.vx * dt; q.y += q.vy * dt; q.life -= dt; continue; }
     if (q.lob) { q.x += q.vx * dt; q.y += q.vy * dt; q.life -= dt; if (q.life <= 0) splash(q); continue; }
     if (q.k === 'orb') { // gentle homing
       let best = null, bd = 150 * 150;
@@ -533,7 +554,7 @@ function updProjs(dt) {
 function splash(q) {
   if (q.done) return; q.done = true;
   ev('splash', {x: Math.round(q.x), y: Math.round(q.y)});
-  for (const e of G.enemies) { if (!alive(e) || e.charm > 0) continue; const d = Math.hypot(e.x - q.x, e.y - q.y); if (d < q.r + ORCS[e.type].r) hurtEnemy(e, q.dmg * (1 - 0.35 * d / q.r), {p: q.own}); }
+  for (const e of G.enemies) { if (!alive(e) || e.charm > 0) continue; const d = Math.hypot(e.x - q.x, e.y - q.y); if (d < q.r + ORCS[e.type].r) { hurtEnemy(e, q.dmg * (1 - 0.35 * d / q.r), {p: q.own}); if (q.burn && alive(e)) { e.burn = 3; e.burnDps = q.burn; e.burnBy = q.own; } } }
 }
 function explode(q) {
   if (q.done) return; q.done = true;
@@ -582,6 +603,9 @@ function doAction(p, m) {
     case 'place': return placeTrap(p, m.k, m.tx | 0, m.ty | 0, m.r | 0);
     case 'sell': return sellTrap(p, m.tx | 0, m.ty | 0);
     case 'upg': return upgradeTrap(p, m.tx | 0, m.ty | 0);
+    case 'perk': return takePerk(p, m.id);
+    case 'ping': ev('ping', {x: Math.round(+m.x), y: Math.round(+m.y), p: p.i}); return '';
+    case 'wpn': p.wpn = m.w ? 1 : 0; return '';
     case 'ready': if (G.phase === 'build') { p.ready = !!m.v; ev('ready', {p: p.i, v: p.ready ? 1 : 0}); checkReady(); } return '';
   }
   return '';
@@ -591,9 +615,9 @@ function checkReady() {
   if (G.phase === 'build' && ps.length && ps.every(p => p.ready)) startWave();
 }
 function startWave() {
-  const W = LEVELS[G.li].waves[G.wave]; if (!W) return;
+  const W = waveDef(G.wave); if (!W) return;
   G.phase = 'wave'; G.waveT = 0; G.spawnQ = [];
-  for (const [g, type, n0, delay, gap] of W) { const n = G.coop && !ORCS[type].boss ? Math.round(n0 * B.coopCount) : n0; for (let k = 0; k < n; k++) G.spawnQ.push({t: delay + k * gap + rnd(0, 0.25), g: Math.min(g, G.map.gates.length - 1), type}); }
+  for (const [g, type, n0, delay, gap] of W) { const n = ORCS[type].boss ? n0 : Math.round(n0 * (G.coop ? B.coopCount : 1) * (G.countMul || 1)); for (let k = 0; k < n; k++) G.spawnQ.push({t: delay + k * gap + rnd(0, 0.25), g: Math.min(g, G.map.gates.length - 1), type}); }
   G.spawnQ.sort((a, b) => a.t - b.t);
   for (const p of P) if (p) p.ready = false;
   saveLayout();
@@ -611,7 +635,7 @@ function skullsFor(won) { if (!won) return 0; const f = G.rift / G.riftMax; retu
 function endLevel(won) {
   if (G.phase === 'won' || G.phase === 'lost') return;
   G.phase = won ? 'won' : 'lost'; G.endT = 0; G.result = {won, skulls: skullsFor(won)};
-  ev('end', {won: won ? 1 : 0, s: G.result.skulls});
+  const st = G.stats; ev('end', {won: won ? 1 : 0, s: G.result.skulls, st: {kills: st.kills, trapKills: st.trapKills, falls: st.falls, built: st.built, bars: st.bars, deaths: st.deaths, kinds: st.kinds, combos: st.combos || 0, best: st.best || 0, sapped: st.sapped || 0}, w: G.wave});
 }
 
 /* ---------- host world tick ---------- */
@@ -628,6 +652,7 @@ function updWorld(dt) {
   } else if (G.phase === 'won' || G.phase === 'lost') G.endT += dt;
   updTraps(dt);
   updHeroStuff(dt);
+  updHazards(dt); updRevive(dt);
   for (const e of G.enemies) updEnemy(e, dt);
   separate();
   G.enemies = G.enemies.filter(e => !(e.dead > 0.9 || e.fall > 0.9));
@@ -646,7 +671,7 @@ function updWorld(dt) {
     if (!p) continue; const H = HEROES[p.hero];
     p.inv = Math.max(0, p.inv - dt); updPlayerKit(p, dt);
     if (p.dead) { p.rt -= dt; if (p.rt <= 0) { const s = spawnPoint(); p.dead = false; p.hp = p.mhp; p.mp = p.mmp; p.inv = B.respawnInv; p.x = s.x; p.y = s.y; p.warp++; ev('respawn', {p: p.i}); } continue; }
-    p.mp = Math.min(p.mmp, p.mp + H.mpRegen * dt);
+    p.mp = Math.min(p.mmp, p.mp + H.mpRegen * (p.mods ? p.mods.regen : 1) * dt);
     if (G.phase !== 'wave') p.hp = Math.min(p.mhp, p.hp + p.mhp * 0.08 * dt);
   }
   const S = G.streak; if (S && S.n > 0 && G.time - S.last > B.streakWin) { if (S.n >= 5) { const b = S.n * 4; G.gold += b; G.stats.gold += b; ev('streak', {n: S.n, b}); } S.n = 0; }
