@@ -3354,6 +3354,7 @@ function saveNote(){const el=$('saveNote');if(!el)return;el.textContent='游戏�
 $('mSave').onclick=()=>{saveMe();saveNote();toast('已保存（'+new Date().toLocaleTimeString()+'）');sfx('buy');};
 function exportSaves(){if(state==='play')saveMe();const a=loadSlots();if(!a.some(Boolean)){toast('还没有可以导出的存档');return;}
  const txt=JSON.stringify({game:'cloudisle',v:1,at:new Date().toISOString(),slots:a});const d=new Date(),name='cloudisle-save-'+d.getFullYear()+String(d.getMonth()+1).padStart(2,'0')+String(d.getDate()).padStart(2,'0')+'.json';
+ if(inArtifact()){try{navigator.clipboard.writeText(txt).then(()=>toast('预览页面不能下载文件：存档已复制到剪贴板，可粘贴保存为 '+name),()=>toast('预览页面不能导出，请用 GitHub Pages 网址打开'));}catch(e){toast('预览页面不能导出，请用 GitHub Pages 网址打开');}return;}
  try{const b=new Blob([txt],{type:'application/json'}),u=URL.createObjectURL(b),el=document.createElement('a');el.href=u;el.download=name;document.body.appendChild(el);el.click();el.remove();setTimeout(()=>URL.revokeObjectURL(u),2000);toast('已导出存档文件 '+name);}
  catch(e){try{navigator.clipboard.writeText(txt).then(()=>toast('无法下载文件，存档已复制到剪贴板'));}catch(e2){toast('导出失败');}}}
 $('mExport').onclick=exportSaves;$('bExport0').onclick=exportSaves;
