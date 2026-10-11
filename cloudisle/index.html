@@ -146,7 +146,7 @@ body.touch .navhint{display:none}
   <input id="joinCode" maxlength="4" placeholder="房间码" style="width:96px;text-transform:uppercase;text-align:center;letter-spacing:3px">
   <button id="bJoin">加入</button>
  </div>
- <div class="row" style="margin-top:10px"><button class="ghost" id="bHelp0">操作说明</button><button class="ghost" id="bKeys0">按键设置</button><button class="ghost" id="bImport">导入存档</button><button class="ghost" id="bExport0">导出存档</button><input type="file" id="fImport" accept=".json,application/json" style="display:none"></div>
+ <div class="row" style="margin-top:10px"><button class="ghost" id="bHelp0">操作说明</button><button class="ghost" id="bKeys0">按键设置</button><button class="ghost" id="bImport">导入存档</button><button class="ghost" id="bExport0">导出存档</button><button class="ghost hidden" id="bHub">‹ 游戏厅</button><input type="file" id="fImport" accept=".json,application/json" style="display:none"></div>
  <p class="navhint"></p>
  <p class="note" id="titleNote"></p>
 </div></div>
@@ -202,7 +202,7 @@ body.touch .navhint{display:none}
 <div id="wTalk" class="panel win hidden"><h2><span id="talkName"></span><button data-close>关闭</button></h2><p id="talkText" style="line-height:1.8;font-size:14.5px;margin:0 0 12px"></p><div class="row"><button id="talkNext">下一条</button></div><p class="navhint"></p></div>
 <div id="wMenu" class="panel win hidden" style="width:min(340px,92vw)"><h2><span>菜单</span><button data-close>关闭</button></h2>
  <div style="display:flex;flex-direction:column;gap:8px">
-  <button data-close>继续游戏</button><button id="mSave">保存游戏</button><button id="mExport">导出存档文件</button><button id="mTouch" class="hidden">触屏按键布局</button><button id="mKeys">按键设置</button><button id="mHelp">操作说明</button><button id="mMusic">音乐：开</button><button id="mMute">声音：开</button><button id="mFull">全屏</button><button id="mQuit">保存并返回标题</button><p class="note" id="saveNote" style="margin:4px 0 0;font-size:12.5px;opacity:.8"></p>
+  <button data-close>继续游戏</button><button id="mSave">保存游戏</button><button id="mExport">导出存档文件</button><button id="mTouch" class="hidden">触屏按键布局</button><button id="mKeys">按键设置</button><button id="mHelp">操作说明</button><button id="mMusic">音乐：开</button><button id="mMute">声音：开</button><button id="mFull">全屏</button><button id="mQuit">保存并返回标题</button><button id="mHub" class="hidden">保存并返回游戏厅</button><p class="note" id="saveNote" style="margin:4px 0 0;font-size:12.5px;opacity:.8"></p>
  </div><p class="navhint"></p></div>
 <div id="wTouch" class="panel hidden"><h2><span>触屏按键布局 <small>拖动按钮改位置，点按钮后可单独调大小</small></span><button class="pri" id="tDone">完成</button></h2>
  <div class="tg">
@@ -3401,6 +3401,10 @@ $('fImport').onchange=e=>{const f=e.target.files&&e.target.files[0];if(!f)return
   if(!Array.isArray(sl)||!sl.some(x=>x&&CLS[x.cls]))throw 0;const a=[0,1,2].map(i=>sl[i]&&CLS[sl[i].cls]?sl[i]:null);storeSlots(a);renderSlots();setTitleNote('已导入存档：'+a.filter(Boolean).map(x=>x.name+' Lv.'+x.lv).join('、'));sfx('buy');}
   catch(err){setTitleNote('导入失败：不是有效的云岛冒险存档文件');sfx('nope');}e.target.value='';};r.readAsText(f);};
 $('mQuit').onclick=()=>{saveMe();if(NET.role)netLeave();quitToTitle();};
+/* 游戏厅入口：只在部署于游戏厅文件夹（…/cloudisle/）时显示 */
+if(/\/cloudisle\/(index\.html)?$/.test(location.pathname)){$('bHub').classList.remove('hidden');$('mHub').classList.remove('hidden');}
+$('bHub').onclick=()=>{location.href='../';};
+$('mHub').onclick=()=>{saveMe();if(NET.role)netLeave();location.href='../';};
 $('bRespawn').onclick=()=>{req({t:'respawn'});};
 $('bRespawn2').onclick=()=>{req({t:'respawn',here:1});};
 function toggleFull(){const d=document,e=d.documentElement;try{if(d.fullscreenElement||d.webkitFullscreenElement){(d.exitFullscreen||d.webkitExitFullscreen).call(d);}else{(e.requestFullscreen||e.webkitRequestFullscreen).call(e);}}catch(err){}}

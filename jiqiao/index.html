@@ -79,6 +79,9 @@ img{display:block}
 /* menu */
 .menu{max-width:1120px;margin-inline:auto;display:grid;gap:18px;padding-block:4px 20px}
 .brand{display:grid;gap:4px}
+.hublink{justify-self:start;display:inline-flex;align-items:center;gap:6px;margin-bottom:6px;padding:6px 12px;border-radius:999px;border:1px solid var(--rule);color:var(--muted);font-size:13px;text-decoration:none;background:rgba(10,16,19,.55);touch-action:manipulation}
+.hublink:hover,.hublink:focus-visible{color:var(--fg);border-color:var(--muted)}
+@media (pointer:coarse){.hublink{padding:10px 16px;font-size:14px}}
 .eyebrow{font-size:12px;letter-spacing:.3em;color:var(--verdigris)}
 .brand h1{font-family:var(--font-display);font-weight:400;font-size:clamp(50px,10vw,92px);line-height:.95;margin:0;letter-spacing:.06em;
   background:linear-gradient(180deg,var(--brass-hi),var(--brass) 55%,#a2701f);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 4px 0 var(--brass-ink))}
@@ -847,7 +850,7 @@ let P={x:800,y:550,r:15,inv:0,face:0,moving:false,anim:0,mface:Math.PI/4,dface:M
 let enemies=[],spawns=[],projs=[],ebul=[],fxs=[],puddles=[],mines=[],turrets=[],texts=[],pickups=[],delayed=[];
 let stealPool=0;
 let tGame=0,waveTimer=0,spawnT=0,fairyT=0,regenAcc=0,stealN=0,stealClock=0,stormCD=0,trailT=0,dodgeBuff=0,shake=0,hpGhost=30;
-let selMap=0,selHero=0,selDiff=0,selWeapon=HEROES[0].weapon,abandonArm=false,lastSummary={harvest:0,interest:0};
+let selMap=0,selHero=0,selDiff=0,selWeapon=HEROES[0].weapon,abandonArm=false,hubArm=false,lastSummary={harvest:0,interest:0};
 let FLOOR=null,PORTRAIT={},VIGNETTE=null;
 let best={wave:0,wins:0};
 let selSkin=0;try{selSkin=+(localStorage.getItem('jqbz-skin')||0)===1?1:0;}catch(e){}
@@ -1690,7 +1693,7 @@ function buildTray(){
 }
 function spawnPos(i,n){return n<2?[WORLD.w/2,WORLD.h/2]:[WORLD.w/2+(i?40:-40),WORLD.h/2];}
 function startWave(){
- run.wave++;state='battle';paused=false;abandonArm=false;run.victory=false;
+ run.wave++;state='battle';paused=false;abandonArm=hubArm=false;run.victory=false;
  for(const p of PL){
   use(p);computeStats();run.hp=S.hp;p.down=false;p.ready=false;p.rv=0;p.rvk=0;p.revives=0;p.reviving=null;
   [P.x,P.y]=spawnPos(p.id,PL.length);P.inv=1;P.moving=false;
@@ -1736,8 +1739,8 @@ function endWave(){
 function ensurePrepChoices(){if(run.pendingLevels>0&&!run.lvChoices)run.lvChoices=rollLv();if(run.chests.length&&!run.chestItem)run.chestItem=pick(itemPool(run.chests[0])).n;}
 function togglePause(){
  if(state!=='battle')return;
- if(NET.mode!=='solo'){const pz=$('#pause');if(pz.hidden){abandonArm=false;renderPause();pz.hidden=false;}else pz.hidden=true;return;}
- paused=!paused;abandonArm=false;joy=null;
+ if(NET.mode!=='solo'){const pz=$('#pause');if(pz.hidden){abandonArm=hubArm=false;renderPause();pz.hidden=false;}else pz.hidden=true;return;}
+ paused=!paused;abandonArm=hubArm=false;joy=null;
  if(paused){renderPause();$('#pause').hidden=false;}else $('#pause').hidden=true;
 }
 function showOver(win){
@@ -1800,10 +1803,11 @@ function startBtn(){
  if(NET.role==='host')return `<button class="btn" data-act="start" ${NET.peerPick?'':'disabled'}>开始双人闯关</button>`;
  return `<button class="btn" data-act="start">开始闯关</button>`;
 }
+const HUB=/\/jiqiao\/(index\.html)?$/.test(location.pathname);
 function renderMenu(){
  const h=HEROES[selHero],gst=NET.role==='guest';
  $('#menu').innerHTML=`<div class="menu">
-  <header class="brand"><div class="eyebrow">机关兽来袭 · 十六波闯关</div><h1>机巧百战</h1><p>选一位英雄，扛住十六波机关兽。每波之间升级、开箱、逛商店，把武器一路合成到金阶。</p></header>
+  <header class="brand">${HUB?'<a class="hublink" href="../">‹ 游戏厅</a>':''}<div class="eyebrow">机关兽来袭 · 十六波闯关</div><h1>机巧百战</h1><p>选一位英雄，扛住十六波机关兽。每波之间升级、开箱、逛商店，把武器一路合成到金阶。</p></header>
   <div class="roster" role="listbox" aria-label="英雄">${HEROES.map((x,i)=>`
    <button class="rt" data-act="hero" data-i="${i}" aria-pressed="${i===selHero}"><img src="${PORTRAIT[x.key]}" alt=""><span class="n">${x.name}</span><span class="tg">${x.tag}</span></button>`).join('')}</div>
   <section class="detail frame">
@@ -1884,7 +1888,7 @@ function mateLine(){const m=mateInfo();if(!m)return '';const h=HEROES.find(x=>x.
  return `<span class="mateln"><img src="${porOfRun(m)}" alt="">队友 ${m.skin?'鲁班七号':h.name}<b class="${m.ready?'pos':'dim'}">${m.ready?'已准备':'挑选中…'}</b></span>`;}
 function renderPause(){
  $('#pause').innerHTML=`<div class="center"><section class="result frame"><img src="${porOf()}" alt=""><div style="display:grid;gap:12px"><div class="label">${NET.mode==='solo'?'已暂停':'联机中 · 游戏不会暂停'} · 第 ${run.wave} 波</div><h2>${NET.mode==='solo'?'喘口气':'菜单'}</h2>
-  <div class="row"><button class="btn" data-act="resume">继续</button><button class="btn ghost" data-act="abandon">${abandonArm?'再点一次确认':NET.mode==='solo'?'放弃本局':'退出联机'}</button></div></div></section></div>`;
+  <div class="row"><button class="btn" data-act="resume">继续</button><button class="btn ghost" data-act="abandon">${abandonArm?'再点一次确认':NET.mode==='solo'?'放弃本局':'退出联机'}</button>${HUB?`<button class="btn ghost" data-act="hub">${hubArm?'再点一次确认':'返回游戏厅'}</button>`:''}</div></div></section></div>`;
 }
 function renderOver(win){
  computeStats();
@@ -1997,8 +2001,11 @@ document.addEventListener('click',e=>{
    if(NET.role==='guest'&&state!=='over')break;
    state='menu';run=null;PL=[];CUR=null;G=null;renderMenu();show('menu');break;
   case 'resume':togglePause();break;
+  case 'hub':
+   if(!hubArm){hubArm=true;abandonArm=false;renderPause();break;}
+   location.href='../';break;
   case 'abandon':
-   if(!abandonArm){abandonArm=true;renderPause();break;}
+   if(!abandonArm){abandonArm=true;hubArm=false;renderPause();break;}
    $('#pause').hidden=true;
    if(NET.mode!=='solo'){netLeave('你离开了联机');state='menu';run=null;PL=[];CUR=null;G=null;renderMenu();show('menu');break;}
    showOver(false);break;
@@ -2188,7 +2195,7 @@ function guestWave(m){
  const mine=bindShared(m.me),mate=bindShared({hero:m.mate.hero,skin:m.mate.skin,weapons:[],hp:1});
  PL=[makePlayer(0,mate),makePlayer(1,mine)];CUR=null;use(PL[1]);computeStats();
  [P.x,P.y]=m.pos;P.inv=1;PL[0].P.x=WORLD.w/2-40;PL[0].P.y=WORLD.h/2;
- state='battle';paused=false;abandonArm=false;NET.meReady=false;
+ state='battle';paused=false;abandonArm=hubArm=false;NET.meReady=false;
  enemies=[];spawns=[];projs=[];ebul=[];fxs=[];puddles=[];mines=[];turrets=[];texts=[];delayed=[];pickups=[];emines=[];
  waveTimer=m.wt==null?Infinity:m.wt;NET.snapAge=0;NET.lastHs=null;NET.lastHp=run.hp=S.hp;NET.lastLvl=run.level;hpGhost=S.hp;
  if(m.banner)banner(m.banner,900);
