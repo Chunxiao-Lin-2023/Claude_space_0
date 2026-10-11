@@ -112,7 +112,7 @@ function sfx(name, x, y, vol = 1) {
 
 /* =================== atlases =================== */
 const ATLAS = __ATLAS_META__;
-const SHEET_SRC = {warmage: '__SHEET_warmage__', sorc: '__SHEET_sorc__', paladin: '__SHEET_paladin__', ranger: '__SHEET_ranger__', alch: '__SHEET_alch__', blade: '__SHEET_blade__', grunt: '__SHEET_grunt__', kobold: '__SHEET_kobold__', archer: '__SHEET_archer__', ogre: '__SHEET_ogre__', bat: '__SHEET_bat__', chief: '__SHEET_chief__', props: '__SHEET_props__'};
+const SHEET_SRC = {warmage: '__SHEET_warmage__', sorc: '__SHEET_sorc__', paladin: '__SHEET_paladin__', ranger: '__SHEET_ranger__', alch: '__SHEET_alch__', blade: '__SHEET_blade__', grunt: '__SHEET_grunt__', shield: '__SHEET_shield__', sapper: '__SHEET_sapper__', shaman: '__SHEET_shaman__', kobold: '__SHEET_kobold__', archer: '__SHEET_archer__', ogre: '__SHEET_ogre__', bat: '__SHEET_bat__', chief: '__SHEET_chief__', props: '__SHEET_props__'};
 const IMG = {};
 function loadSheets() {
   return Promise.all(Object.entries(SHEET_SRC).map(([k, src]) => new Promise(res => { const im = new Image(); im.onload = () => { IMG[k] = im; res(); }; im.onerror = () => res(); im.src = src; })));

@@ -90,10 +90,10 @@ const r1 = v => Math.round(v);
 function snapFor() {
   const o = P[0], me = P[1];
   return {t: 's', tm: +G.time.toFixed(2), ph: ['build', 'wave', 'won', 'lost'].indexOf(G.phase), w: G.wave, gold: G.gold, rift: G.rift, left: G.enemies.filter(alive).length + G.spawnQ.length, tv: G.trapsV,
-    rdy: P.map(p => p && p.ready ? 1 : 0), res: G.result ? G.result.skulls : -1,
+    rdy: P.map(p => p && p.ready ? 1 : 0), res: G.result ? G.result.skulls : -1, sk: G.streak && G.time - G.streak.last < B.streakWin ? G.streak.n : 0,
     e: G.enemies.map(e => [e.id, ORC_KEYS.indexOf(e.type), r1(e.x), r1(e.y), e.dir,
       Math.round(1000 * Math.max(0, e.hp) / e.mhp),
-      (e.flash > 0 ? 1 : 0) | (e.frz > 0 ? 2 : 0) | (e.charm > 0 ? 4 : 0) | (e.burn > 0 ? 8 : 0) | (e.dead ? 16 : 0) | (e.fall ? 32 : 0) | (e.leaked ? 64 : 0) | (e.hpShow > 0 ? 128 : 0),
+      (e.flash > 0 ? 1 : 0) | (e.frz > 0 ? 2 : 0) | (e.charm > 0 ? 4 : 0) | (e.burn > 0 ? 8 : 0) | (e.dead ? 16 : 0) | (e.fall ? 32 : 0) | (e.leaked ? 64 : 0) | (e.hpShow > 0 ? 128 : 0) | (e.haste > 0 ? 256 : 0) | (e.enr ? 512 : 0),
       e.anim === 'attack' ? 2 : e.anim === 'idle' ? 1 : 0, Math.round((e.act ? e.act.t : e.at) * 100) % 100000, Math.round((e.z || 0) * 100), Math.round((e.dead || e.fall) * 100)]),
     pj: G.projs.filter(q => !(q.own === 1 && q.pred)).map(q => [q.id, PK.indexOf(q.k), r1(q.x), r1(q.y), r1(q.vx), r1(q.vy), Math.round(q.life * 100), Math.round((q.L || 0) * 100)]),
     tu: G.turrets.map(t => [t.id, r1(t.x), r1(t.y), t.dir, +t.t.toFixed(1)]), pe: G.pets.map(f => [f.id, r1(f.x), r1(f.y), +(f.dir || 0).toFixed(2)]), zo: G.zones.map(z => [z.id, z.k === 'fog' ? 0 : 1, r1(z.x), r1(z.y), z.r, +z.t.toFixed(1), z.T]),
@@ -139,7 +139,7 @@ function guestRecv(m) {
 }
 function applySnap(s) {
   G.time = s.tm; const ph = ['build', 'wave', 'won', 'lost'][s.ph]; if (ph !== G.phase) { G.phase = ph; if (ph === 'won' || ph === 'lost') { G.endT = 0; G.result = {won: ph === 'won', skulls: s.res}; } }
-  G.wave = s.w; G.gold = s.gold; G.rift = s.rift; G.left = s.left; if (s.res >= 0 && G.result) G.result.skulls = s.res;
+  G.wave = s.w; G.gold = s.gold; G.sk = s.sk || 0; G.rift = s.rift; G.left = s.left; if (s.res >= 0 && G.result) G.result.skulls = s.res;
   P.forEach((p, i) => { if (p && i !== MEI) p.ready = !!s.rdy[i]; }); ME.ready = !!s.rdy[MEI];
   // me
   const me = s.me, p = ME;
@@ -159,7 +159,7 @@ function applySnap(s) {
     const type = ORC_KEYS[ti];
     if (!e) { e = {id, type, x, y, rx: x, ry: y, at: 0, mhp: 1000}; CL.enemies.set(id, e); }
     e.x = x; e.y = y; e.dir = dir; e.hp = hp; e.mhp = 1000;
-    e.flash = fl & 1 ? 0.1 : 0; e.frz = fl & 2 ? 1 : 0; e.charm = fl & 4 ? 1 : 0; e.burn = fl & 8 ? 1 : 0; e.hpShow = fl & 128 ? 1 : 0; e.leaked = fl & 64 ? 1 : 0;
+    e.flash = fl & 1 ? 0.1 : 0; e.frz = fl & 2 ? 1 : 0; e.charm = fl & 4 ? 1 : 0; e.burn = fl & 8 ? 1 : 0; e.hpShow = fl & 128 ? 1 : 0; e.leaked = fl & 64 ? 1 : 0; e.haste = fl & 256 ? 1 : 0; e.enr = fl & 512 ? 1 : 0;
     e.dead = fl & 16 ? Math.max(e.dead || 0, dt / 100) : 0; e.fall = fl & 32 ? Math.max(e.fall || 0, dt / 100) : 0;
     e.anim = an === 2 ? 'attack' : an === 1 ? 'idle' : 'walk'; e.z = z / 100;
     if (e.anim === 'attack') { e.act = {t: at / 100}; } else { e.act = null; if (Math.abs(e.at - at / 100) > 0.5) e.at = at / 100; }
@@ -235,10 +235,19 @@ function playEv(o) {
     case 'respawn': { const p = P[o.p]; if (p) { const s = spawnPoint(); fx({k: 'ring', x: s.x, y: s.y, s: 10, r1: 50, life: 0.6, col: '#9fe3ff', w: 4}); if (p.rx != null) { p.rx = s.x; p.ry = s.y; } } sfx('potion'); break; }
     case 'potion': ftxt(o.x, o.y - 20, o.k ? '法力' : '生命', o.k ? '#7fb8ff' : '#ff8a8a', true); sfx('potion', o.x, o.y); break;
     case 'ready': if (o.p !== MEI && o.v) toast('队友已准备'); break;
-    case 'wave': banner('第 ' + (o.w + 1) + ' 波', '兽人来袭！'); sfx('horn'); break;
+    case 'wave': banner('第 ' + (o.w + 1) + ' 波', '兽人来袭！'); sfx('horn'); if (ME) ME.placed = []; CAM.over = false; break;
     case 'waveEnd': banner('第 ' + o.w + ' 波已击退', '奖励 +' + o.b + ' 金币'); sfx('win', null, null, 0.6); break;
     case 'boss': banner('兽人督军来袭！', '集中火力！'); sfx('horn'); CAM.shake = 10; break;
     case 'end': break;
+    case 'combo': ftxt(o.x, o.y, o.s + ' +' + o.b, '#ffb84a', true); fx({k: 'glow', x: o.x, y: o.y + 20, s: 40, life: 0.4, col: '255,170,60'}); sfx('coin', o.x, o.y); break;
+    case 'streak': banner('连杀 ×' + o.n, '奖励 +' + o.b + ' 金币'); sfx('win', null, null, 0.5); break;
+    case 'heal': fx({k: 'ring', x: o.x, y: o.y, s: 10, r1: ORCS.shaman.healR, life: 0.6, col: '#7cff6a', w: 4}); for (let i = 0; i < 6; i++) fx({k: 'p', x: o.x + rnd(-60, 60), y: o.y - rnd(10, 40), vy: -50, life: 0.7, col: '#9dff8a', s: 2.5}); sfx('potion', o.x, o.y, 0.4); break;
+    case 'sapBoom': fx({k: 'glow', x: o.x, y: o.y, s: 90, life: 0.4, col: '255,150,50', light: 200, lc: '255,140,40'}); burst(o.x, o.y, 22, '#ff9a3a', 260, 0.6, 4, 200); for (let i = 0; i < 5; i++) fx({k: 'smoke', x: o.x + rnd(-20, 20), y: o.y, vy: -30, life: 1, s: 14}); CAM.shake = Math.max(CAM.shake || 0, 6); sfx('boom', o.x, o.y, 0.8); toast('工兵炸毁了一个陷阱！'); break;
+    case 'warcry': fx({k: 'ring', x: o.x, y: o.y, s: 20, r1: 260, life: 0.7, col: '#ff6a3a', w: 8}); banner('督军战吼！', '附近兽人加速'); sfx('horn'); break;
+    case 'charge': sfx('slam', o.x, o.y); CAM.shake = 8; toast('督军冲锋！'); break;
+    case 'enrage': banner('督军狂暴！', '攻击速度大幅提升'); sfx('horn'); break;
+    case 'upg': fx({k: 'ring', x: o.x, y: o.y, s: 8, r1: 34, life: 0.4, col: '#9fe3ff', w: 3}); for (let i = 0; i < 8; i++) fx({k: 'p', x: o.x + rnd(-16, 16), y: o.y, vy: -90, life: 0.6, col: '#bfefff', s: 2}); sfx('ready', o.x, o.y); break;
+    case 'block': burst(o.x, o.y, 4, '#ffe9a0', 140, 0.25, 2, 300); sfx('barHit', o.x, o.y, 0.6); break;
     case 'swing': if (o.p !== MEI) { const p = P[o.p]; if (p) { swingFx(p, o.a, false); sfx('swing', p.x, p.y, 0.6); } } break;
     case 'guard': fx({k: 'ring', x: o.x, y: o.y, s: 10, r1: HEROES.paladin.alt.taunt, life: 0.5, col: '#ffd86a', w: 5}); fx({k: 'glow', x: o.x, y: o.y - 30, s: 60, life: 0.4, col: '255,220,120'}); sfx('guard', o.x, o.y); break;
     case 'judg': fx({k: 'ring', x: o.x, y: o.y, s: 15, r1: HEROES.paladin.skill.r, life: 0.5, col: '#ffe9a0', w: 9}); fx({k: 'glow', x: o.x, y: o.y, s: 120, life: 0.4, col: '255,230,150', light: 220, lc: '255,230,150'}); burst(o.x, o.y, 16, '#b8a888', 220, 0.5, 4, 400); CAM.shake = Math.max(CAM.shake || 0, 7); sfx('judg', o.x, o.y); break;

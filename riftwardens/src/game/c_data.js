@@ -18,6 +18,9 @@ const B = {
   animFps: 10,
   heroUp: [2, 3, 4],    // skulls per weapon mastery level
   heroUpDmg: 0.15,
+  maxBar: 12,           // barricades per level
+  upgCost: 0.6,         // in-level trap upgrade = 60% of base cost per level
+  streakWin: 2.5,       // seconds between kills to keep a streak
   trapUp: [2, 3],       // skulls for trap lv2 / lv3
 };
 /* =================== heroes =================== */
@@ -90,6 +93,9 @@ const ORCS = {
   archer: {name: '兽人弓手', hp: 80,  speed: 62,  dmg: 12, atk: 0.6, cd: 1.6, range: 300, r: 14, gold: 26, rift: 1, mass: 0.9, aggro: 300, ranged: true},
   ogre:   {name: '食人魔',   hp: 900, speed: 46,  dmg: 45, atk: 0.7, cd: 2.0, range: 62, r: 27, gold: 120, rift: 5, mass: 4, aggro: 130, smash: 3},
   bat:    {name: '地狱蝙蝠', hp: 70,  speed: 96,  dmg: 9,  atk: 0.5, cd: 1.0, range: 36, r: 14, gold: 22, rift: 1, mass: 0.7, aggro: 70, fly: true},
+  shield: {name: '盾卫兽人', hp: 180, speed: 56, dmg: 16, atk: 0.6, cd: 1.3, range: 42, r: 16, gold: 32, rift: 1, mass: 1.6, aggro: 140, shield: 0.8},
+  sapper: {name: '工兵狗头人', hp: 60, speed: 112, dmg: 0, atk: 0.5, cd: 1.0, range: 30, r: 10, gold: 18, rift: 1, mass: 0.6, aggro: 0, sneaky: true, sapper: true},
+  shaman: {name: '兽人萨满', hp: 120, speed: 58, dmg: 0, atk: 0.5, cd: 3.0, range: 40, r: 14, gold: 40, rift: 2, mass: 1, aggro: 0, heal: 40, healR: 150},
   chief:  {name: '兽人督军', hp: 4200, speed: 52, dmg: 70, atk: 0.7, cd: 2.4, range: 72, r: 31, gold: 600, rift: 10, mass: 8, aggro: 220, smash: 5, boss: true},
 };
 const ORC_KEYS = Object.keys(ORCS);
@@ -121,31 +127,31 @@ const LEVELS = [
     waves: [
       [[0, 'grunt', 6, 0, 1.5], [1, 'grunt', 6, 3, 1.5]],
       [[0, 'grunt', 8, 0, 1.3], [1, 'kobold', 8, 4, 0.9]],
-      [[0, 'archer', 5, 0, 2], [1, 'grunt', 10, 0, 1.2], [0, 'grunt', 6, 10, 1.2]],
+      [[0, 'archer', 5, 0, 2], [1, 'grunt', 10, 0, 1.2], [0, 'grunt', 6, 10, 1.2], [1, 'shield', 3, 6, 2]],
       [[0, 'ogre', 1, 0, 0], [1, 'grunt', 12, 2, 1], [0, 'kobold', 8, 12, 0.7]],
-      [[0, 'grunt', 12, 0, 1], [1, 'grunt', 12, 0, 1], [0, 'archer', 6, 8, 1.6], [1, 'ogre', 2, 15, 6]],
-      [[0, 'grunt', 16, 0, 0.9], [1, 'kobold', 14, 0, 0.6], [0, 'ogre', 2, 12, 8], [1, 'archer', 8, 10, 1.5], [1, 'ogre', 1, 30, 0]],
+      [[0, 'grunt', 12, 0, 1], [1, 'grunt', 12, 0, 1], [0, 'archer', 6, 8, 1.6], [1, 'ogre', 2, 15, 6], [0, 'shield', 4, 4, 2]],
+      [[0, 'grunt', 16, 0, 0.9], [1, 'kobold', 14, 0, 0.6], [0, 'ogre', 2, 12, 8], [1, 'archer', 8, 10, 1.5], [1, 'ogre', 1, 30, 0], [0, 'shaman', 1, 10, 0]],
     ]},
-  {id: 'm3', name: '裂隙要塞', desc: '三面来袭，地狱蝙蝠会越过深渊直扑裂隙。墙面陷阱与冰霜是关键。', gold: 2600, hp: 1.25,
+  {id: 'm3', name: '裂隙要塞', desc: '三面来袭，地狱蝙蝠会越过深渊直扑裂隙，工兵会炸毁陷阱。墙面陷阱与冰霜是关键。', gold: 3000, hp: 1.25,
     waves: [
       [[0, 'grunt', 6, 0, 1.4], [2, 'grunt', 6, 0, 1.4]],
-      [[1, 'bat', 6, 0, 1.2], [0, 'grunt', 8, 3, 1.2]],
+      [[1, 'bat', 6, 0, 1.2], [0, 'grunt', 8, 3, 1.2], [0, 'sapper', 3, 10, 2]],
       [[2, 'grunt', 10, 0, 1.1], [1, 'bat', 8, 4, 1], [0, 'kobold', 8, 6, 0.7]],
-      [[0, 'ogre', 1, 0, 0], [2, 'ogre', 1, 6, 0], [1, 'grunt', 12, 0, 1], [1, 'archer', 6, 8, 1.6]],
-      [[0, 'grunt', 12, 0, 1], [2, 'grunt', 12, 0, 1], [1, 'bat', 12, 6, 0.8], [1, 'kobold', 10, 12, 0.6]],
-      [[1, 'ogre', 2, 0, 8], [0, 'archer', 8, 2, 1.4], [2, 'archer', 8, 2, 1.4], [0, 'grunt', 14, 10, 0.9], [2, 'bat', 10, 14, 0.8]],
-      [[0, 'grunt', 18, 0, 0.8], [1, 'grunt', 18, 0, 0.8], [2, 'grunt', 18, 0, 0.8], [0, 'ogre', 2, 12, 6], [2, 'ogre', 2, 12, 6], [1, 'bat', 16, 8, 0.6], [1, 'kobold', 14, 20, 0.5]],
+      [[0, 'ogre', 1, 0, 0], [2, 'ogre', 1, 6, 0], [1, 'grunt', 12, 0, 1], [1, 'archer', 6, 8, 1.6], [2, 'shaman', 1, 6, 0]],
+      [[0, 'grunt', 12, 0, 1], [2, 'grunt', 12, 0, 1], [1, 'bat', 12, 6, 0.8], [1, 'kobold', 10, 12, 0.6], [0, 'shield', 5, 3, 1.6]],
+      [[1, 'ogre', 2, 0, 8], [0, 'archer', 8, 2, 1.4], [2, 'archer', 8, 2, 1.4], [0, 'grunt', 14, 10, 0.9], [2, 'bat', 10, 14, 0.8], [2, 'sapper', 5, 4, 1.2]],
+      [[0, 'grunt', 18, 0, 0.8], [1, 'grunt', 18, 0, 0.8], [2, 'grunt', 18, 0, 0.8], [0, 'ogre', 2, 12, 6], [2, 'ogre', 2, 12, 6], [1, 'bat', 16, 8, 0.6], [1, 'kobold', 14, 20, 0.5], [0, 'shaman', 2, 8, 10], [2, 'shield', 6, 4, 1.5]],
     ]},
   {id: 'm4', name: '督军之门', desc: '兽人督军亲自率军。守住八波攻势，在最后一波击倒督军！', gold: 3200, hp: 1.4,
     waves: [
       [[0, 'grunt', 8, 0, 1.2], [1, 'grunt', 8, 0, 1.2]],
-      [[2, 'kobold', 10, 0, 0.7], [0, 'archer', 6, 2, 1.6], [1, 'grunt', 10, 4, 1.1]],
-      [[0, 'ogre', 1, 0, 0], [1, 'ogre', 1, 0, 0], [2, 'grunt', 14, 0, 0.9], [0, 'bat', 8, 8, 0.8]],
-      [[0, 'grunt', 14, 0, 0.9], [1, 'grunt', 14, 0, 0.9], [2, 'archer', 10, 4, 1.2], [1, 'bat', 10, 10, 0.7]],
-      [[2, 'ogre', 3, 0, 6], [0, 'kobold', 14, 0, 0.5], [1, 'kobold', 14, 0, 0.5], [0, 'archer', 8, 10, 1.2]],
-      [[0, 'grunt', 18, 0, 0.7], [1, 'grunt', 18, 0, 0.7], [2, 'grunt', 18, 0, 0.7], [0, 'bat', 12, 10, 0.6], [1, 'ogre', 2, 14, 6]],
-      [[0, 'ogre', 3, 0, 5], [1, 'ogre', 3, 0, 5], [2, 'archer', 12, 0, 1], [2, 'kobold', 16, 8, 0.4], [0, 'bat', 14, 12, 0.5]],
-      [[1, 'chief', 1, 0, 0], [0, 'grunt', 20, 0, 0.7], [2, 'grunt', 20, 0, 0.7], [1, 'grunt', 12, 6, 0.8], [0, 'ogre', 2, 15, 8], [2, 'ogre', 2, 15, 8], [1, 'bat', 16, 10, 0.6]],
+      [[2, 'kobold', 10, 0, 0.7], [0, 'archer', 6, 2, 1.6], [1, 'grunt', 10, 4, 1.1], [1, 'shield', 4, 6, 1.6]],
+      [[0, 'ogre', 1, 0, 0], [1, 'ogre', 1, 0, 0], [2, 'grunt', 14, 0, 0.9], [0, 'bat', 8, 8, 0.8], [2, 'sapper', 4, 4, 1.5]],
+      [[0, 'grunt', 14, 0, 0.9], [1, 'grunt', 14, 0, 0.9], [2, 'archer', 10, 4, 1.2], [1, 'bat', 10, 10, 0.7], [0, 'shaman', 1, 5, 0], [1, 'shaman', 1, 5, 0]],
+      [[2, 'ogre', 3, 0, 6], [0, 'kobold', 14, 0, 0.5], [1, 'kobold', 14, 0, 0.5], [0, 'archer', 8, 10, 1.2], [1, 'shield', 8, 2, 1.2]],
+      [[0, 'grunt', 18, 0, 0.7], [1, 'grunt', 18, 0, 0.7], [2, 'grunt', 18, 0, 0.7], [0, 'bat', 12, 10, 0.6], [1, 'ogre', 2, 14, 6], [2, 'sapper', 6, 6, 1]],
+      [[0, 'ogre', 3, 0, 5], [1, 'ogre', 3, 0, 5], [2, 'archer', 12, 0, 1], [2, 'kobold', 16, 8, 0.4], [0, 'bat', 14, 12, 0.5], [0, 'shaman', 2, 4, 8], [1, 'shield', 8, 0, 1]],
+      [[1, 'chief', 1, 0, 0], [0, 'grunt', 20, 0, 0.7], [2, 'grunt', 20, 0, 0.7], [1, 'grunt', 12, 6, 0.8], [0, 'ogre', 2, 15, 8], [2, 'ogre', 2, 15, 8], [1, 'bat', 16, 10, 0.6], [2, 'shaman', 2, 10, 6], [0, 'sapper', 6, 8, 1]],
     ]},
 ];
 /* tile codes */

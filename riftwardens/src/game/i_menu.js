@@ -64,6 +64,9 @@ function helpScreen(back, ingame) {
    <p><b>键鼠</b>：<kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> 移动 · 鼠标瞄准 · 左键射击 · 右键/<kbd>E</kbd> 副技能 · <kbd>Q</kbd> 大招 · <kbd>空格</kbd> 冲刺/闪现<br>
    <kbd>1</kbd> 武器 · <kbd>2</kbd>–<kbd>9</kbd> 选择陷阱（左键放置，右键出售/取消，<kbd>R</kbd> 旋转弹射板，<kbd>X</kbd> 出售）· 滚轮切换 · <kbd>M</kbd> 静音 · <kbd>Esc</kbd> 菜单</p>
    <p><b>触屏</b>：左半屏拖动移动，右半屏拖动瞄准并自动射击；点陷阱栏进入布置模式，点地面选格子，再点一次或按「放置」。</p>
+   <p><b>建造</b>：建造阶段可在全图任意位置放陷阱（战斗中只能放在身边）；<kbd>V</kbd> 全图视角、<kbd>Z</kbd> 撤销、对同类陷阱再点一次可就地升级（★），单人可按 <kbd>F</kbd> 两倍速。路障每关最多 12 个。</p>
+   <p><b>连携</b>：冰冻的敌人受到攻击会碎冰加伤；燃烧的敌人踩进焦油会焚油；被弹射板弹飞时击杀或弹入深渊都有额外金币。连续击杀 5 个以上有连杀奖励。</p>
+   <p><b>新敌人</b>：盾卫兽人挡下正面飞来的箭矢和法术（从侧后方或用陷阱打）；工兵狗头人会冲向附近的地面陷阱自爆；兽人萨满给周围兽人回血，优先击杀。督军半血召唤援军并战吼，三分之一血冲锋撞碎路障，最后狂暴。食人魔和督军不会被弹飞或推进深渊。</p>
    <p><b>技巧</b>：路障会迫使兽人绕路或停下砸墙；弹射板和震荡冲击能把兽人送进深渊或熔岩直接消灭；飞行的地狱蝙蝠无视地面陷阱，用箭墙、寒霜或武器对付。出售陷阱：建造阶段全额返还，战斗中返还一半。</p>
    <p><b>双人合作</b>：一人「创建房间」，把 4 位房间码发给队友；队友输入后加入。房主选关，金币共享。房主页面需要保持在前台。</p>
    <div class="btns"><button class="btn" id="bBack">返回</button></div></div>`, ingame);
@@ -160,6 +163,7 @@ function startLevel(li, guestInfo) {
   if (coop) netSend({t: 'start', li, diff: G.diff, h: {hero: SAVE.hero, name: myName()}});
 }
 function enterPlay() {
+  TIME_SCALE = 1; CAM.over = false; if (ME) ME.placed = [];
   STATE = 'play'; PAUSED = false; hideMenu(); FX.length = 0; TXT.length = 0; CL.enemies.clear(); CL.projs = []; CL.local = []; CL.drops = []; CL.evMax = 0;
   prerenderMap(); resize();
   const s = spawnPoint(); CAM.x = s.x; CAM.y = s.y;

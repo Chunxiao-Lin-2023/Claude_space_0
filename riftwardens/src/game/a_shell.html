@@ -34,6 +34,11 @@ button{font:inherit;color:inherit;cursor:pointer}
 #phaseTxt{font-size:12px;color:var(--dim);margin-top:2px}
 #readyBtn{pointer-events:auto;margin-top:6px;padding:6px 18px;min-height:36px;font-size:14px}
 #readyBtn.on{border-color:var(--green);color:#c8ffcf}
+#tcBtns{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;align-items:center}
+#tcBtns .mini{pointer-events:auto;margin-top:6px;padding:4px 10px;min-height:36px;font-size:12px}
+#streak{position:absolute;right:calc(14px + var(--sar));top:calc(140px + var(--sat));font-weight:900;font-size:22px;color:#ffcf6a;text-shadow:0 2px 0 #000,0 0 12px rgba(255,150,40,.6);opacity:0;transition:opacity .2s;letter-spacing:.06em}
+#streak small{display:block;font-size:11px;color:var(--ink);text-align:right}
+#bSpeed.on{border-color:var(--gold2);color:var(--gold2)}
 #mini{position:absolute;right:calc(10px + var(--sar));top:calc(10px + var(--sat));border-radius:8px;border:1px solid var(--line);background:rgba(10,8,14,.75);pointer-events:auto}
 #bl{position:absolute;left:calc(10px + var(--sal));bottom:calc(10px + var(--sab));padding:8px 10px;display:flex;gap:10px;align-items:center}
 #portrait{width:58px;height:58px;border-radius:8px;border:1.5px solid var(--gold);background:#1b1622}
@@ -138,6 +143,8 @@ table.st{margin:10px auto;border-collapse:collapse;font-size:14px}table.st td{pa
 .mut{color:var(--dim);font-size:12px}
 @media (max-width:640px){#tl{min-width:180px;padding:6px 8px}#gold{font-size:16px}#tc{min-width:200px;top:calc(56px + var(--sat))}#mini{transform:scale(.7);transform-origin:top right}.slot{width:44px;height:52px}.slot canvas{width:36px;height:32px}}
 
+/* tablet portrait: status panel would sit on top of the hotbar */
+@media (pointer:coarse) and (min-width:501px) and (max-width:900px) and (orientation:portrait){#bl{bottom:calc(84px + var(--sab))}}
 /* ================= iPhone (IPHONE.md): phone-only, desktop & iPad untouched ================= */
 .phoneOnly{display:none}
 @media (pointer:coarse) and (max-width:500px), (pointer:coarse) and (max-height:500px){
@@ -161,6 +168,8 @@ table.st{margin:10px auto;border-collapse:collapse;font-size:14px}table.st td{pa
  #tl{min-width:0;width:160px;padding:5px 8px}#tl .bar{height:12px}#gold{font-size:15px}.coin{width:13px;height:13px}
  #tc{min-width:0;padding:4px 10px}#waveTxt{font-size:12px}#phaseTxt{font-size:10px}#readyBtn{min-height:40px;padding:4px 14px;font-size:13px;margin-top:4px}
  #wavePrev .wc{font-size:10px;padding:1px 6px}
+ #tcBtns .mini{min-height:40px;padding:2px 8px;margin-top:4px}
+ #streak{top:calc(120px + var(--sat));font-size:16px}
  .coarse #hudBtns{top:calc(8px + var(--sat));bottom:auto;right:max(8px, var(--sar));gap:4px}
  .ib{width:40px;height:40px;font-size:14px}
  #mini{right:max(8px, var(--sar));top:calc(54px + var(--sat));transform:none}
@@ -211,7 +220,8 @@ table.st{margin:10px auto;border-collapse:collapse;font-size:14px}table.st td{pa
   <div class="row"><span style="font-size:12px;color:#9fe3ff;font-weight:800">裂隙</span><div class="bar" id="riftBar"><i></i><span></span></div></div>
   <div class="row" style="margin-top:6px"><span class="coin"></span><span id="gold">0</span><span id="goldD" class="mut"></span></div>
  </div>
- <div id="tc" class="pnl"><div id="waveTxt"></div><div id="phaseTxt"></div><div id="wavePrev"></div><button id="readyBtn" class="btn">准备开战 (G)</button></div>
+ <div id="tc" class="pnl"><div id="waveTxt"></div><div id="phaseTxt"></div><div id="wavePrev"></div><div id="tcBtns"><button id="readyBtn" class="btn">准备开战 (G)</button><button class="btn sec mini" id="bUndo" title="撤销上一次放置 (Z)">↶ 撤销</button><button class="btn sec mini" id="bOver" title="全图视角 (V)">全图</button><button class="btn sec mini" id="bReuse">复用上次布局</button></div></div>
+ <div id="streak"></div>
  <canvas id="mini"></canvas>
  <div id="ally" class="pnl"></div>
  <div id="bl" class="pnl">
@@ -224,7 +234,7 @@ table.st{margin:10px auto;border-collapse:collapse;font-size:14px}table.st td{pa
  </div>
  <div id="bar" class="pnl"></div>
  <div id="tipLine"></div>
- <div id="hudBtns"><button class="ib" id="bMute" title="静音 (M)">♪</button><button class="ib" id="bFull" title="全屏">⛶</button><button class="ib" id="bPause" title="菜单 (Esc)">❚❚</button></div>
+ <div id="hudBtns"><button class="ib" id="bMute" title="静音 (M)">♪</button><button class="ib" id="bFull" title="全屏">⛶</button><button class="ib" id="bSpeed" title="加速 (F)">1×</button><button class="ib" id="bPause" title="菜单 (Esc)">❚❚</button></div>
  <div id="toasts"></div>
  <div id="banner"></div>
 </div>

@@ -24,7 +24,8 @@ function demoTick(dt) {
 let lastT = performance.now();
 function frame(t) {
   requestAnimationFrame(frame);
-  const dt = Math.min(0.05, Math.max(0, (t - lastT) / 1000)); lastT = t; const now = t / 1000;
+  const rdt = Math.min(0.05, Math.max(0, (t - lastT) / 1000)); lastT = t; const now = t / 1000;
+  const dt = STATE === 'play' && NET.mode !== 'online' ? rdt * TIME_SCALE : rdt;
   if (G && G.demo) { if (STATE === 'title') demoTick(dt); }
   else if (STATE === 'play' && G) {
     if (!PAUSED) {

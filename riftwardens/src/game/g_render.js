@@ -6,8 +6,9 @@ function resize() {
   DPR = Math.min(window.devicePixelRatio || 1, 2);
   VW = window.innerWidth; VH = window.innerHeight;
   cv.width = Math.round(VW * DPR); cv.height = Math.round(VH * DPR);
-  CAM.z = clamp(Math.min(VW / (17 * T), VH / (10.5 * T)), 0.62, 1.5);
-  if (IS_TOUCH) CAM.z = clamp(Math.min(VW / (14 * T), VH / (9 * T)), 0.6, 1.4);
+  CAM.baseZ = clamp(Math.min(VW / (17 * T), VH / (10.5 * T)), 0.62, 1.5);
+  if (IS_TOUCH) CAM.baseZ = clamp(Math.min(VW / (14 * T), VH / (9 * T)), 0.6, 1.4);
+  if (!CAM.over) CAM.z = CAM.baseZ;
 }
 window.addEventListener('resize', resize);
 
@@ -202,7 +203,7 @@ function drawEnemy(g, e, now) {
   shadow(g, x, y, D.r * (D.fly ? 0.8 : 1.15), D.fly ? 0.22 : 0.35);
   if (e.charm > 0) { g.strokeStyle = 'rgba(255,110,220,.8)'; g.lineWidth = 2; g.beginPath(); g.ellipse(x, y, D.r * 1.4, D.r * 0.6, 0, 0, TAU); g.stroke(); }
   const [an, fi] = frameOf(e);
-  let tint = null; if (e.frz > 0) tint = 'rgba(150,225,255,.55)'; else if (e.charm > 0) tint = 'rgba(255,110,220,.25)'; else if (e.burn > 0) tint = 'rgba(255,120,30,.22)';
+  let tint = null; if (e.frz > 0) tint = 'rgba(150,225,255,.55)'; else if (e.enr) tint = 'rgba(255,40,20,.3)'; else if (e.haste > 0) tint = 'rgba(255,140,40,.2)'; else if (e.charm > 0) tint = 'rgba(255,110,220,.25)'; else if (e.burn > 0) tint = 'rgba(255,120,30,.22)';
   drawUnit(g, e.type, an, fi, e.dir, x, y - lift, {tint, flash: e.flash > 0 ? 0.65 : 0});
   if (e.frz > 0) { g.fillStyle = 'rgba(200,240,255,.35)'; g.strokeStyle = 'rgba(230,250,255,.7)'; g.lineWidth = 1; const h = D.fly ? 56 : D.r * 3.2, b = D.fly ? 34 : 0; rrect(g, x - D.r * 1.2, y - h - b - lift, D.r * 2.4, h, 6); g.fill(); g.stroke(); }
   if (e.burn > 0 && Math.random() < 0.4) fx({k: 'p', x: x + rnd(-D.r, D.r), y: y - rnd(D.r * 2) - lift, vy: -60, life: 0.4, col: Math.random() < 0.5 ? '#ffb02e' : '#ff5a1a', s: 3});
@@ -242,9 +243,10 @@ function trapFrame(tr, now) {
     case 'grinder': return 'grinder_' + (tr.anim > 0 ? Math.floor(now * 18) % 3 : 0) + '_' + ROT_DIR[tr.rot];
   }
 }
+function trapStars(g, tr, x, y) { if (!tr.lv) return; g.font = '900 10px sans-serif'; g.textAlign = 'right'; g.fillStyle = '#000'; g.fillText('★'.repeat(tr.lv), x + 22, y - 12); g.fillStyle = '#9fe3ff'; g.fillText('★'.repeat(tr.lv), x + 21, y - 13); }
 function drawFloorTrap(g, tr, now) {
   const x = tc(tr.tx), y = tc(tr.ty);
-  drawProp(g, trapFrame(tr, now), x, y);
+  drawProp(g, trapFrame(tr, now), x, y); trapStars(g, tr, x, y);
   if (tr.k === 'tar') { for (let k = 0; k < 2; k++) { const ph = (now * 0.7 + k * 0.5 + tr.id * 0.37) % 1; g.globalAlpha = 1 - ph; g.strokeStyle = 'rgba(160,150,190,.6)'; g.lineWidth = 1; g.beginPath(); g.arc(x - 8 + k * 14, y - 4 + k * 6, 2 + ph * 5, 0, TAU); g.stroke(); } g.globalAlpha = 1; }
   if (tr.k === 'brim' && tr.cd > 0 && tr.anim <= 0) { g.globalAlpha = 0.3; g.fillStyle = '#000'; g.fillRect(x - 18, y - 18, 36, 36); g.globalAlpha = 1; }
 }
@@ -333,7 +335,7 @@ function drawLighting(g, now, x0, y0, x1, y1) {
   const s = 0.33, w = Math.ceil(VW * s), h = Math.ceil(VH * s);
   if (LIT.width !== w || LIT.height !== h) { LIT.width = w; LIT.height = h; }
   lg.setTransform(1, 0, 0, 1, 0, 0); lg.globalCompositeOperation = 'source-over';
-  lg.fillStyle = `rgba(8,6,18,${BRIGHT[SAVE.bright] ?? BRIGHT[2]})`; lg.fillRect(0, 0, w, h);
+  lg.fillStyle = `rgba(8,6,18,${CAM.over ? 0.08 : (BRIGHT[SAVE.bright] ?? BRIGHT[2])})`; lg.fillRect(0, 0, w, h);
   lg.setTransform(s * CAM.z, 0, 0, s * CAM.z, w / 2 - CAM.x * s * CAM.z, h / 2 - CAM.y * s * CAM.z);
   lg.globalCompositeOperation = 'destination-out';
   const L = lightsNow(now);
@@ -396,7 +398,7 @@ function render(now) {
     const sy = y * T - WH;
     ctx.drawImage(LAYER.walls, Math.max(0, x0) * FS, (sy + WH) * FS, (Math.min(x1, m.w * T) - Math.max(0, x0)) * FS, T * FS, Math.max(0, x0), sy, Math.min(x1, m.w * T) - Math.max(0, x0), T);
     for (const tq of m.torches) if (tq.y === y - 1 && tq.x >= tx0 && tq.x <= tx1 && m.t[y * m.w + tq.x] !== TW) drawTorch(ctx, tq, now);
-    for (const tr of wallTraps) if (tr.ty === y) drawProp(ctx, trapFrame(tr, now), tc(tr.tx), tc(tr.ty) - WH + 4, 0.92);
+    for (const tr of wallTraps) if (tr.ty === y) { drawProp(ctx, trapFrame(tr, now), tc(tr.tx), tc(tr.ty) - WH + 4, 0.92); trapStars(ctx, tr, tc(tr.tx), tc(tr.ty) - WH); }
     const list = rows.get(y); if (list) { list.sort((a, b) => a[0] - b[0]); for (const [, f] of list) f(); }
   }
   for (const q of viewProjs()) drawProj(ctx, q, now);

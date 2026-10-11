@@ -11,7 +11,7 @@ meta = json.load(open(os.path.join(ATL, 'atlas.json')))
 def rep(s, old, new):
     assert s.count(old) == 1, (old, s.count(old)); return s.replace(old, new)
 g = rep(src, '__ATLAS_META__', json.dumps(meta, separators=(',', ':')))
-for k in ['warmage', 'sorc', 'paladin', 'ranger', 'alch', 'blade', 'grunt', 'kobold', 'archer', 'ogre', 'bat', 'chief', 'props']:
+for k in ['warmage', 'sorc', 'paladin', 'ranger', 'alch', 'blade', 'shield', 'sapper', 'shaman', 'grunt', 'kobold', 'archer', 'ogre', 'bat', 'chief', 'props']:
     b = base64.b64encode(open(os.path.join(ATL, k + '.webp'), 'rb').read()).decode()
     g = rep(g, f"'__SHEET_{k}__'", f"'data:image/webp;base64,{b}'")
 IOS = ('<meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes">'

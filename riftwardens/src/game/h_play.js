@@ -16,6 +16,9 @@ window.addEventListener('keydown', e => {
   if (c === 'KeyG' && !e.repeat) toggleReady();
   if (c === 'KeyR' && !e.repeat) { ME.rot = (ME.rot + 1) & 3; sfx('click'); }
   if (c === 'KeyX' && !e.repeat) trySell(INP.wx, INP.wy);
+  if ((c === 'KeyZ' || c === 'KeyU') && !e.repeat) undoPlace();
+  if (c === 'KeyV' && !e.repeat) toggleOverview();
+  if (c === 'KeyF' && !e.repeat) toggleSpeed();
   if (/^Digit[1-9]$/.test(c)) selectSlot(+c.slice(5) - 1);
   if (c === 'Tab') { e.preventDefault(); }
 });
@@ -134,10 +137,16 @@ function hoverTile(wx, wy) {
 function tryPlace(wx, wy) {
   const k = curTrap(); if (!k || !G) return;
   const t = IS_TOUCH && INP.touchTile ? INP.touchTile : hoverTile(wx, wy); if (!t) return;
+  const ex = viewTraps().find(q => q.tx === t[0] && q.ty === t[1]);
+  if (ex && ex.k === k) { // same trap: upgrade in place
+    if (ex.lv >= 2) { toast('已满级'); sfx('deny'); return; }
+    if (G.gold < upgCost(ex)) { toast('金币不足'); sfx('deny'); return; }
+    const r = act({t: 'upg', tx: t[0], ty: t[1]}); if (r) { toast(r); sfx('deny'); } return;
+  }
   const why = canPlace(k, t[0], t[1], ME);
   if (why) { toast(why); sfx('deny'); return; }
   const r = act({t: 'place', k, tx: t[0], ty: t[1], r: ME.rot});
-  if (r) { toast(r); sfx('deny'); }
+  if (r) { toast(r); sfx('deny'); } else { (ME.placed = ME.placed || []).push([t[0], t[1]]); }
 }
 function trySell(wx, wy, quiet) {
   if (!G) return false;
@@ -208,7 +217,10 @@ function updLocalCosmetics(dt) { // guest: own predicted shots
 /* =================== camera =================== */
 function updCamera(dt) {
   if (!G || !ME) return;
-  const tx = (ME.rx != null ? ME.rx : ME.x), ty = (ME.ry != null ? ME.ry : ME.y) - 20;
+  let tx = (ME.rx != null ? ME.rx : ME.x), ty = (ME.ry != null ? ME.ry : ME.y) - 20;
+  const fitZ = Math.min(VW / (G.map.w * T + T), VH / (G.map.h * T + T * 2));
+  if (CAM.over) { tx = G.map.w * T / 2; ty = G.map.h * T / 2; }
+  CAM.z += ((CAM.over ? fitZ : CAM.baseZ || CAM.z) - CAM.z) * (1 - Math.exp(-6 * dt));
   const k = 1 - Math.exp(-8 * dt);
   CAM.x += (tx - CAM.x) * k; CAM.y += (ty - CAM.y) * k;
   const hw = VW / 2 / CAM.z, hh = VH / 2 / CAM.z, W = G.map.w * T, H = G.map.h * T;
@@ -221,10 +233,12 @@ function updCamera(dt) {
 function drawGhost(g, now) {
   const k = curTrap(); if (!k || !ME || ME.dead) return;
   const D = TRAPS[k];
-  // range ring
-  g.strokeStyle = 'rgba(243,210,122,.18)'; g.lineWidth = 2; g.setLineDash([8, 8]); g.beginPath(); g.ellipse(ME.x, ME.y, B.placeRange, B.placeRange, 0, 0, TAU); g.stroke(); g.setLineDash([]);
+  // range ring (only limits placement during waves)
+  if (G.phase !== 'build') { g.strokeStyle = 'rgba(243,210,122,.18)'; g.lineWidth = 2; g.setLineDash([8, 8]); g.beginPath(); g.ellipse(ME.x, ME.y, B.placeRange, B.placeRange, 0, 0, TAU); g.stroke(); g.setLineDash([]); }
   const t = IS_TOUCH ? (INP.touchTile || defaultTouchTile()) : hoverTile(INP.wx, INP.wy); if (!t) return;
-  const [tx, ty] = t; const why = canPlace(k, tx, ty, ME); const ok = !why || why === '金币不足';
+  const [tx, ty] = t; const ex = viewTraps().find(q => q.tx === tx && q.ty === ty && q.k === k);
+  if (ex) { const x = tc(tx), y = tc(ty) + (D.place === 'wall' ? -WH : 0); g.strokeStyle = '#f3d27a'; g.lineWidth = 2; g.strokeRect(tx * T + 1, y - T / 2 + 1, T - 2, T - 2); const lab = ex.lv >= 2 ? '已满级' : '升级 ★' + (ex.lv + 1) + '  ' + upgCost(ex); g.font = '800 12px sans-serif'; g.textAlign = 'center'; g.fillStyle = '#000'; g.fillText(lab, x + 1, y - T / 2 - 5); g.fillStyle = ex.lv >= 2 ? '#aaa' : '#9fe3ff'; g.fillText(lab, x, y - T / 2 - 6); return; }
+  const why = canPlace(k, tx, ty, ME); const ok = !why || why === '金币不足';
   const x = tc(tx), y = tc(ty), wall = D.place === 'wall';
   const oy = wall ? -WH : 0;
   g.fillStyle = why ? 'rgba(224,73,62,.28)' : 'rgba(95,208,104,.25)'; g.strokeStyle = why ? '#e0493e' : '#5fd068'; g.lineWidth = 2;
@@ -363,7 +377,11 @@ function updHud(dt) {
   if (o) { al.style.display = 'block'; al.innerHTML = `<b style="color:#9fe3ff">${esc(o.name)}</b> · ${HEROES[o.hero].name}<div class="bar" style="height:8px;margin-top:4px"><i style="width:${o.hp / o.mhp * 100}%;background:#e0493e"></i></div>${o.dead ? '<span class="mut">阵亡，' + Math.ceil(o.rt || 0) + ' 秒后复活</span>' : ''}`; }
   else al.style.display = 'none';
   // tip
-  $('tipLine').textContent = tm ? '左键放置 · 右键出售/取消 · R 旋转 · 滚轮切换' : 'WASD 移动 · 左键射击 · 右键/E ' + H.alt.name + ' · Q ' + H.skill.name + ' · 空格 ' + H.dash.name + ' · 2-9 选陷阱';
+  $('tipLine').textContent = tm ? '左键放置（点已有同类陷阱 = 升级）· 右键出售/取消 · R 旋转 · Z 撤销 · V 全图' : 'WASD 移动 · 左键攻击 · 右键/E ' + H.alt.name + ' · Q ' + H.skill.name + ' · 空格 ' + H.dash.name + ' · 2-9 选陷阱 · V 全图 · F 加速';
+  const bp = G.phase === 'build'; $('bUndo').style.display = bp && ME.placed && ME.placed.length ? '' : 'none'; $('bOver').style.display = bp ? '' : 'none'; $('bOver').textContent = CAM.over ? '回到英雄' : '全图';
+  $('bReuse').style.display = bp && IS_HOST && G.wave === 0 && !G.traps.length && SAVE.layouts && SAVE.layouts[LEVELS[G.li].id] ? '' : 'none';
+  $('bSpeed').style.display = NET.mode === 'online' ? 'none' : ''; $('bSpeed').textContent = TIME_SCALE + '×'; $('bSpeed').classList.toggle('on', TIME_SCALE > 1);
+  const sk = IS_HOST ? (G.streak && G.time - G.streak.last < B.streakWin ? G.streak.n : 0) : (G.sk || 0); const se = $('streak'); if (sk >= 3) { se.innerHTML = '连杀 ×' + sk + '<small>' + (sk >= 5 ? '结束时 +' + sk * 4 + ' 金币' : '再 ' + (5 - sk) + ' 杀有奖励') + '</small>'; se.style.opacity = 1; } else se.style.opacity = 0;
   drawMini();
 }
 const esc = s => String(s).replace(/[&<>"]/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;'}[c]));
@@ -379,6 +397,10 @@ function drawMini() {
   const hw = VW / 2 / CAM.z, hh = VH / 2 / CAM.z; g.strokeStyle = 'rgba(255,255,255,.35)'; g.lineWidth = 1; g.strokeRect((CAM.x - hw) / T * s, (CAM.y - hh) / T * s, hw * 2 / T * s, hh * 2 / T * s);
 }
 $('readyBtn').addEventListener('click', () => { audioInit(); toggleReady(); });
+$('bUndo').addEventListener('click', () => { audioInit(); undoPlace(); });
+$('bOver').addEventListener('click', () => { audioInit(); toggleOverview(); });
+$('bSpeed').addEventListener('click', () => { audioInit(); toggleSpeed(); });
+$('bReuse').addEventListener('click', () => { audioInit(); reuseLayout(); });
 $('bMute').addEventListener('click', () => { audioInit(); setMute(!AU.muted); });
 $('bPause').addEventListener('click', () => togglePause());
 $('bFull').addEventListener('click', () => { const d = document; if (d.fullscreenElement || d.webkitFullscreenElement) (d.exitFullscreen || d.webkitExitFullscreen).call(d); else { const r = d.documentElement; (r.requestFullscreen || r.webkitRequestFullscreen || (() => {})).call(r); } });
@@ -396,4 +418,20 @@ function wavePreview() {
   const agg = new Map();
   for (const [g, type, n] of W) { const gi = Math.min(g, G.map.gates.length - 1); const k = gi + '|' + type; agg.set(k, (agg.get(k) || 0) + (G.coop && !ORCS[type].boss ? Math.round(n * B.coopCount) : n)); }
   $('wavePrev').innerHTML = [...agg].sort().map(([k, n]) => { const [gi, type] = k.split('|'); return `<span class="wc"><b style="color:${GATE_COL[gi % 3]}">${'ABC'[gi]}</b>${ORCS[type].name}×${n}</span>`; }).join('');
+}
+
+let TIME_SCALE = 1;
+function toggleSpeed() { if (NET.mode === 'online' || STATE !== 'play') return; TIME_SCALE = TIME_SCALE === 1 ? 2 : 1; sfx('click'); toast(TIME_SCALE > 1 ? '两倍速' : '正常速度'); }
+function toggleOverview() { if (STATE !== 'play') return; CAM.over = !CAM.over; sfx('click'); }
+function undoPlace() {
+  if (!G || G.phase !== 'build' || !ME) return;
+  const st = ME.placed || [];
+  while (st.length) { const [tx, ty] = st.pop(); if (viewTraps().some(q => q.tx === tx && q.ty === ty)) { act({t: 'sell', tx, ty}); return; } }
+  toast('没有可以撤销的放置');
+}
+function reuseLayout() {
+  if (!IS_HOST || !G || G.phase !== 'build') return; const L = SAVE.layouts && SAVE.layouts[LEVELS[G.li].id]; if (!L) return;
+  let n = 0, skip = 0;
+  for (const [k, tx, ty, rot] of L) { if (!(SAVE.traps[k] > 0)) { skip++; continue; } if (!placeTrap(ME, k, tx, ty, rot)) { n++; (ME.placed = ME.placed || []).push([tx, ty]); } else skip++; }
+  toast(`已复用 ${n} 个陷阱` + (skip ? `，${skip} 个因金币或位置不足跳过` : ''));
 }
