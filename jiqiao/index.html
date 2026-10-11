@@ -348,10 +348,51 @@ button.card:hover{transform:translateY(-2px);border-color:var(--sc)}
 .netrow{display:flex;flex-wrap:wrap;gap:8px 10px;align-items:center}
 .netcode{font:700 24px/1.2 var(--font-num);letter-spacing:.24em;color:var(--brass-hi);padding:2px 6px 2px 12px;border:1px dashed var(--brass);border-radius:6px;user-select:all;-webkit-user-select:all}
 .netin{-webkit-user-select:text;user-select:text;font:700 16px var(--font-num);letter-spacing:.2em;text-transform:uppercase;width:116px;padding:6px 10px;border-radius:6px;border:1px solid var(--rule);background:rgba(0,0,0,.3);color:var(--fg)}
+.gobar{display:none}
 .netin:focus{outline:2px solid var(--brass-hi);outline-offset:1px}
 .netst{font-size:13px;color:var(--muted)}.netst b{color:var(--fg);font-weight:500}
 .mate-pick{display:inline-flex;align-items:center;gap:6px}.mate-pick img{width:30px;height:30px}
 @media (prefers-reduced-motion:reduce){#banner,#toast,.rt,button.card{transition:none}}
+
+/* ===== iPhone（只对手机生效：粗指针 + 短边 ≤ 500px；桌面和 iPad 不受影响） ===== */
+@media (pointer:coarse) and (max-width:500px),(pointer:coarse) and (max-height:500px){
+  .gobar{display:flex;justify-content:center;position:sticky;bottom:0;z-index:4;margin:0 -16px -20px;padding:14px 16px calc(14px + env(safe-area-inset-bottom,0px));
+    background:linear-gradient(180deg,rgba(10,16,19,0),rgba(10,16,19,.96) 30%)}
+  .gobar .btn{flex:1 1 auto;max-width:360px}
+  .go .btn{display:none}
+  .wave{white-space:nowrap}
+}
+@media (pointer:coarse) and (max-width:500px){
+  .hud-top{gap:6px;padding-inline:max(10px,env(safe-area-inset-left,0px)) max(10px,env(safe-area-inset-right,0px))}
+  .vit{width:36vw;gap:7px;padding:4px 7px 4px 4px}
+  .portrait{width:40px;height:40px}
+  .meta{font-size:13px;gap:6px}
+  .hud-r{gap:5px}
+  .pausebtn,.fsbtn{width:40px;height:40px}
+  .mate{width:36vw}
+  .dial{width:50px;height:50px}.dial span{font-size:18px}
+  .wave{font-size:11px;letter-spacing:.06em;padding:1px 6px}
+  .screen{padding-inline:12px}
+  .detail{padding:14px;gap:16px}
+}
+@media (pointer:coarse) and (max-width:380px){
+  .vit{width:31vw}.hud-r{gap:4px}.hud-top{gap:4px}
+  .pausebtn,.fsbtn{width:38px;height:38px}
+}
+@media (pointer:coarse) and (max-height:500px){
+  .screen{padding-block:12px}
+  .hud-top{padding-top:max(8px,env(safe-area-inset-top,0px))}
+  .menu{gap:12px}
+  .brand h1{font-size:46px}
+  .brand p{font-size:13px}
+  .rt{flex-basis:96px}.rt img{width:64px;height:64px}.rt .n{font-size:17px}
+  .detail{grid-template-columns:minmax(0,220px) minmax(0,1fr);gap:18px;padding:14px}
+  .stage{max-width:220px}
+  .info h2{font-size:38px}
+  .center{padding-block:8px}
+  .result img{width:96px;height:96px}
+  .center h2{font-size:44px}
+}
 </style>
 </head>
 <body>
@@ -1827,6 +1868,7 @@ function renderMenu(){
    </div>
   </section>
   <p class="howto"><b>移动</b> WASD 或方向键；iPad / 手机上用手指按住屏幕任意位置拖动（虚拟摇杆跟着手指出现）。<b>攻击</b> 武器自动瞄准最近的敌人。金币掉在地上不会消失，下一波开局还能捡。击败抱着宝箱的金色小精灵可以拿到宝箱。第 5 波起会出现带词缀的精英怪，击败可能掉宝箱。第 8 波有精英首领，第 16 波是最终首领，击败它即通关。每张战场有自己的地形机关，敌人也会被机关伤到。Esc 或 P 暂停，M 开关音效。双人联机时队友倒地，站进他身边的绿圈就能救起：约 2 秒，救人时受到的伤害减少 40%，救起瞬间会震开周围的怪。</p>
+  <div class="gobar">${startBtn()}</div>
  </div>`;
 }
 function renderPrep(){
