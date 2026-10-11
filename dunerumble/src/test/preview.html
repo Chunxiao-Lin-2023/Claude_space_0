@@ -1,0 +1,17 @@
+<!doctype html><html><body style="margin:0;background:#e9c58f"><canvas id=c></canvas>
+<script src="../three.vendor.js"></script>
+<script src="../00_core.js"></script>
+<script src="../20_models.js"></script>
+<script>
+const W=1500,H=560,R=new THREE.WebGLRenderer({canvas:c,antialias:true});R.setSize(W,H);R.shadowMap.enabled=true;
+const S=new THREE.Scene();S.background=new THREE.Color(0xeac68b);
+S.add(new THREE.HemisphereLight(0xfff4e0,0x9a7a5a,1.7));const L=new THREE.DirectionalLight(0xfff1d6,2.4);L.position.set(-4,10,6);L.castShadow=true;L.shadow.camera.left=-10;L.shadow.camera.right=10;L.shadow.camera.top=6;L.shadow.camera.bottom=-6;L.shadow.mapSize.set(2048,2048);S.add(L);
+const gnd=new THREE.Mesh(new THREE.PlaneGeometry(40,20),new THREE.MeshToonMaterial({color:0xeac68b,gradientMap:GRAD}));gnd.rotation.x=-Math.PI/2;gnd.receiveShadow=true;S.add(gnd);
+const cam=new THREE.PerspectiveCamera(30,W/H,0.1,100);
+const view=+(new URLSearchParams(location.search).get('v')||0);
+cam.position.set(0,view?6:3.2,view?7:9);cam.lookAt(0,0.6,0);
+const Vs=[];HEROES.slice(+(new URLSearchParams(location.search).get("o")||0),+(new URLSearchParams(location.search).get("o")||0)+6).forEach((h,i)=>{const V=makeHero(h.k);V.root.position.x=(i-2.5)*1.45;V.root.rotation.y=view?0.2:0.35;S.add(V.root);Vs.push(V);});
+const pose=new URLSearchParams(location.search).get('p')||'idle';
+Vs.forEach(V=>animHero(V,{alive:true,moving:pose==='walk',atkAge:pose==='atk'?0.2:9,supAge:9},0.25,0));
+R.render(S,cam);window.done=1;
+</script></body></html>

@@ -7,7 +7,7 @@ p.on('pageerror',e=>errs.push('PAGEERR '+e.message));p.on('console',m=>{if(m.typ
 await p.goto('http://localhost:8765/test.html');await p.waitForTimeout(1500);
 for(const mode of (process.env.MODES||'solo,duo').split(',')) for(let r=0;r<(+process.env.RUNS||2);r++){
  const res=await p.evaluate(([mode,diff])=>{
-  SEL.mode=mode;SEL.diff=diff;SEL.hero=Math.floor(Math.random()*6);startGame({seed:(Math.random()*1e9)|0,theme:pickTheme(),mode,diff,roster:buildRoster(false)});
+  SEL.mode=mode;SEL.diff=diff;SEL.hero=Math.floor(Math.random()*HEROES.length);startGame({seed:(Math.random()*1e9)|0,theme:pickTheme(),mode,diff,roster:buildRoster(false)});
   const me=STATE.me;me.isBot=true;me.human=0; // let AI drive the human slot too
   const log=[];let firstKill=null;const t0=performance.now();
   for(let i=0;i<60*240&&!G.over;i++){stepGame(1/60); if(firstKill==null&&G.ents.some(e=>!e.alive))firstKill=G.t.toFixed(1);}

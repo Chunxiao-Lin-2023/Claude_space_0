@@ -42,6 +42,18 @@ function sfx(name, x, z, vol = 1) {
     case 'kite': noise(0.05, 0.3 * v, 'highpass', 1800, 4000); tone('square', 520, 180, 0.05, 0.12 * v, 0, 2400); break;
     case 'kiteS': for (let i = 0; i < 5; i++) noise(0.05, 0.25 * v, 'highpass', 2000, 4000, 1, i * 0.05); break;
     case 'sprocket': tone('sawtooth', 300, 1300, 0.13, 0.17 * v, 0, 2600); tone('sine', 1500, 600, 0.12, 0.12 * v); break;
+    case 'spore': tone('sine', 300, 650, 0.14, 0.22 * v); noise(0.1, 0.12 * v, 'bandpass', 900, 1800, 2); break;
+    case 'sporeS': case 'sporeHit': noise(0.3, 0.2 * v, 'bandpass', 600, 300, 2); tone('sine', 520, 380, 0.25, 0.12 * v); break;
+    case 'frost': tone('triangle', 600, 300, 0.12, 0.2 * v); noise(0.08, 0.12 * v, 'highpass', 3000, 5000); break;
+    case 'frostS': noise(0.6, 0.35 * v, 'highpass', 2500, 800); tone('sine', 1400, 900, 0.4, 0.08 * v); break;
+    case 'quill': noise(0.08, 0.35 * v, 'bandpass', 3000, 1200, 1.5); break;
+    case 'quillS': tone('sine', 200, 600, 0.25, 0.25 * v); break;
+    case 'wisp': tone('sine', 700, 900, 0.18, 0.15 * v); tone('sine', 1050, 1350, 0.18, 0.08 * v, 0.03); break;
+    case 'wispS': tone('sine', 900, 300, 0.4, 0.15 * v); noise(0.4, 0.1 * v, 'bandpass', 2000, 600, 3); break;
+    case 'bruin': noise(0.22, 0.5 * v, 'lowpass', 900, 120); tone('sine', 120, 50, 0.2, 0.3 * v); break;
+    case 'bruinS': noise(0.55, 0.75 * v, 'lowpass', 700, 60); tone('sawtooth', 70, 30, 0.5, 0.3 * v, 0, 400); break;
+    case 'zap': case 'zapHit': noise(0.12, 0.3 * v, 'highpass', 4000, 1500); tone('sawtooth', 1800, 400, 0.1, 0.1 * v, 0, 4000); break;
+    case 'zapS': tone('square', 330, 660, 0.3, 0.14 * v, 0, 2000); tone('square', 440, 880, 0.3, 0.1 * v, 0.05, 2000); break;
     case 'sprocketS': tone('square', 200, 800, 0.25, 0.18 * v, 0, 1800); tone('sine', 800, 1600, 0.2, 0.15 * v, 0.15); break;
     case 'hit': noise(0.07, 0.3 * v, 'lowpass', 2200, 500); tone('sine', 220, 90, 0.08, 0.2 * v); break;
     case 'hurt': tone('square', 230, 110, 0.13, 0.16 * v, 0, 1600); noise(0.08, 0.25 * v, 'lowpass', 1500, 300); break;

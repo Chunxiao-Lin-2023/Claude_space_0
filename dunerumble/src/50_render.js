@@ -326,19 +326,22 @@ function showAim(b, mode, ang, tx, tz, strength) {
   const a = mode === 'sup' ? b.H.sup : b.H.atk, col = mode === 'sup' ? 0xffd23f : 0xffffff, op = strength;
   const setM = (m, o = op) => { m.visible = true; m.material.color.setHex(col); m.material.opacity = o; };
   const rotY = Math.PI / 2 - ang;
-  if (a.type === 'lob' || a.type === 'turret') {
+  if (a.type === 'stealth' || a.type === 'shield') {
+    const rad = a.type === 'shield' ? a.range : 1.0;
+    setM(A.disc, op * 0.6); A.disc.position.set(b.x, 0, b.z); A.disc.scale.set(rad, 1, rad);
+  } else if (a.type === 'lob' || a.type === 'turret' || a.type === 'pool' || a.type === 'zone' || a.type === 'leap') {
     let dx = tx - b.x, dz = tz - b.z, L = Math.hypot(dx, dz); if (L < 0.01) { dx = Math.cos(ang); dz = Math.sin(ang); L = 1; }
-    const D = Math.min(L, a.range), px = b.x + dx / L * D, pz = b.z + dz / L * D, rad = a.type === 'lob' ? a.radius : 0.6;
+    const D = Math.min(L, a.range), px = b.x + dx / L * D, pz = b.z + dz / L * D, rad = a.type === 'zone' ? a.zone.r : a.type === 'turret' ? 0.6 : a.radius;
     setM(A.disc, op * 0.9); A.disc.position.set(px, 0, pz); A.disc.scale.set(rad, 1, rad);
     setM(A.rng, op * 0.8); A.rng.position.set(b.x, 0, b.z); A.rng.scale.set(a.range, 1, a.range);
   } else if (a.type === 'ring') {
     setM(A.disc, op * 0.6); A.disc.position.set(b.x, 0, b.z); A.disc.scale.set(a.range, 1, a.range);
-  } else if (a.type === 'spread' || a.type === 'flame' || (a.type === 'fan')) {
+  } else if (a.type === 'spread' || a.type === 'flame' || a.type === 'fan' || a.type === 'melee') {
     const sp = a.spread + (a.type === 'fan' ? 0.1 : 0.06);
     if (Math.abs(A.coneSpread - sp) > 1e-3) { A.cone.geometry.dispose(); A.cone.geometry = new THREE.CircleGeometry(1, 40, -Math.PI / 2 - sp / 2, sp).rotateX(-Math.PI / 2); A.coneSpread = sp; }
     setM(A.cone); A.cone.position.set(b.x, 0, b.z); A.cone.rotation.y = rotY; A.cone.scale.set(a.range, 1, a.range);
   } else {
-    const w = a.type === 'dash' ? 1.0 : (a.size || 0.2) * 2 + 0.25;
+    const w = a.type === 'dash' ? 1.0 : a.type === 'chain' ? 0.55 : (a.size || 0.2) * 2 + 0.25;
     setM(A.line); A.line.position.set(b.x, 0, b.z); A.line.rotation.y = rotY; A.line.scale.set(w, 1, a.range);
   }
 }
@@ -354,6 +357,8 @@ function makeVis(b) {
   const sr = new THREE.Mesh(new THREE.RingGeometry(0.56, 0.66, 32).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: 0xffd23f, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending }));
   sr.position.y = 0.04; sr.renderOrder = 6; V.root.add(sr); V.supM = sr;
   V.root.traverse(o => { if (o.isMesh && !o.userData.outline && o !== rm && o !== sr) o.castShadow = true; });
+  const sh = new THREE.Mesh(new THREE.SphereGeometry(0.72, 24, 16), new THREE.MeshBasicMaterial({ color: 0x2fb8ff, transparent: true, opacity: 0.3, depthWrite: false }));
+  sh.position.y = 0.7; sh.visible = false; sh.renderOrder = 8; V.root.add(sh); V.shieldM = sh;
   V.wasAlive = true; V.deadAt = 0; V.x = b.x; V.z = b.z; V.face = b.face;
   R3.entG.add(V.root); return V;
 }
@@ -369,13 +374,17 @@ const PROJ_LOOK = {
   bullet2: { g: () => GEO.cap(0.07, 0.22).rotateX(Math.PI / 2), m: () => glow(0xffb703, 2), trail: 0xffb703 },
   orb: { g: () => GEO.sph(0.2), m: () => glow(0x5ef2ff, 2.2), trail: 0x5ef2ff },
   tshot: { g: () => GEO.sph(0.1), m: () => glow(0x9df7ff, 2), trail: 0x5ef2ff },
+  spore: { g: () => GEO.ico(0.17, 1), m: () => glow(0xa45cff, 1.2), trail: 0x9cff57 },
+  snowball: { g: () => GEO.sph(0.17), m: () => toon(0xffffff), trail: 0xd8f1ff },
+  lantern: { g: () => GEO.box(0.2, 0.26, 0.2, 0.04), m: () => glow(0xffd36b, 1.8), trail: 0xffc04a },
+  quake: { g: () => GEO.dod(0.3), m: () => toon(0x8a6a4a), trail: 0xc8a878 },
 };
 const PLOOK_CACHE = {};
 function projMesh(k) {
   const L = PROJ_LOOK[k]; const c = PLOOK_CACHE[k] || (PLOOK_CACHE[k] = { g: L.g(), m: L.m() });
   const grp = new THREE.Group(); const m = new THREE.Mesh(c.g, c.m); grp.add(m); grp.userData.k = k;
   if (k === 'megabomb') { for (let i = 0; i < 3; i++) { const t = new THREE.Mesh(GEO.tor(0.34, 0.025, TAU, 6, 24), toon(0xc0397e)); t.rotation.set(i, i * 1.3, 0); grp.add(t); } }
-  if (k === 'bomb' || k === 'megabomb') {
+  if (LOB_KINDS.has(k)) {
     const sh = new THREE.Mesh(new THREE.CircleGeometry(k === 'megabomb' ? 0.4 : 0.2, 16).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.25, depthWrite: false }));
     grp.userData.shadow = sh; R3.fxG.add(sh);
     const tg = new THREE.Mesh(new THREE.RingGeometry(0.88, 1, 32).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: 0xff4040, transparent: true, opacity: 0.6, depthWrite: false }));
@@ -399,7 +408,10 @@ function syncScene(dt, now) {
     V.root.visible = visible && (b.alive || deadAge < 1.4);
     if (!V.root.visible) continue;
     V.x = b.x; V.z = b.z;
-    V.root.position.set(V.x, 0, V.z);
+    V.root.position.set(V.x, b.jy || 0, V.z);
+    V.shieldM.visible = b.alive && b.shield > 0; if (V.shieldM.visible) { V.shieldM.material.opacity = 0.26 + 0.08 * Math.sin(now * 6); V.shieldM.scale.setScalar(1 + Math.sin(now * 4) * 0.03); }
+    if (b.alive && b.slowT > 0 && Math.random() < dt * 10) emit({ x: b.x, z: b.z, y: 1.2, c: [0xffffff, 0xbfe9ff], s0: 0.06, s1: 0, life: 0.6, sp: 0.6, up: -0.2, g: 0.5, jr: 0.35 });
+    if (b.alive && b.stunT > 0.15 && Math.random() < dt * 14) { const a = now * 8 + Math.random(); emit({ x: b.x + Math.cos(a) * 0.35, z: b.z + Math.sin(a) * 0.35, y: 1.65, c: 0xffe14d, glow: 1, s0: 0.07, s1: 0, life: 0.25, g: 0 }); }
     if (b.atkSeq !== V.lastAtkSeq) { if (V.lastAtkSeq >= 0) { V.atkAge = 0; V.hand ^= 1; } V.lastAtkSeq = b.atkSeq; }
     if (b.supSeq !== V.lastSupSeq) { if (V.lastSupSeq >= 0) V.supAge = 0; V.lastSupSeq = b.supSeq; }
     V.atkAge += dt; V.supAge += dt;
@@ -410,9 +422,9 @@ function syncScene(dt, now) {
     V.face += angDiff(V.face, want) * Math.min(1, dt * 16);
     V.root.rotation.y = Math.PI / 2 - V.face;
     const fl = b.flashT > 0 ? 1 : 0; if (fl !== V.flash) { V.flash = fl; setHeroFlash(V, fl); }
-    setHeroOpacity(V, b.alive && b.inBush && b.team === myT ? 0.5 : 1);
+    setHeroOpacity(V, b.alive && b.stealthT > 0 ? 0.3 : b.alive && b.inBush && b.team === myT ? 0.5 : 1);
     V.ringM.visible = b.alive; V.supM.material.opacity = b.alive && b.sup >= 1 && b.team === myT ? 0.55 + 0.35 * Math.sin(now * 8) : 0;
-    animHero(V, { alive: b.alive, deadAge, moving: b.moving, atkAge: V.atkAge, supAge: V.supAge, aiming, stun: b.stunT > 0, dash: b.fm === 'dash' || (b.fm && b.fm.k === 'dash'), spin: b.burst === 'ring' || (b.burst && b.burst.k === 'ring') }, dt, now);
+    animHero(V, { alive: b.alive, deadAge, jy: b.jy || 0, moving: b.moving, atkAge: V.atkAge, supAge: V.supAge, aiming, stun: b.stunT > 0, dash: b.fm === 'dash' || (b.fm && b.fm.k === 'dash'), spin: b.burst === 'ring' || (b.burst && b.burst.k === 'ring') }, dt, now);
     // footstep dust
     if (b.moving && b.alive && Math.random() < dt * 8 && !b.inBush) emit({ x: b.x, z: b.z, y: 0.05, c: THEMES[M.theme].ice ? 0xffffff : shade(THEMES[M.theme].g1, 0.9), s0: 0.07, s1: 0.0, life: 0.45, sp: 0.4, up: 0.6, g: 1 });
     if (b.burst && (b.burst === 'ring' || b.burst.k === 'ring')) emit({ x: b.x, z: b.z, y: 0.7, c: 0xffd23f, glow: 1, s0: 0.06, s1: 0, life: 0.3, sp: 3 });
@@ -428,7 +440,7 @@ function syncScene(dt, now) {
     m.position.set(p.x, p.y, p.z);
     const k = p.k;
     if (k === 'flame') { const s = 0.6 + m.userData.age * 3.2; m.scale.setScalar(s); m.children[0].material.opacity = Math.max(0, 0.9 - m.userData.age * 1.6); if (Math.random() < 0.5) emit({ x: p.x, z: p.z, y: p.y, c: [0xff5a1a, 0xffb347, 0xffe08a], glow: 1, s0: 0.14, s1: 0, life: 0.3, up: 1, g: -1 }); }
-    else if (k === 'bomb' || k === 'megabomb') {
+    else if (LOB_KINDS.has(k)) {
       m.rotation.x += dt * 8; m.rotation.z += dt * 5;
       const sh = m.userData.shadow; sh.position.set(p.x, 0.04, p.z);
       if (p.lob) { m.userData.target.position.set(p.lob.tx, 0.05, p.lob.tz); const r = p.radius || 1; m.userData.target.scale.set(r, 1, r); }
@@ -437,6 +449,8 @@ function syncScene(dt, now) {
       m.rotation.y = Math.atan2(p.vx, p.vz);
       const L = PROJ_LOOK[k]; if (L && Math.random() < 0.8) emit({ x: p.x, z: p.z, y: p.y, c: L.trail, glow: 1, s0: k === 'orb' ? 0.13 : 0.07, s1: 0, life: 0.22, g: 0 });
       if (k === 'orb') m.scale.setScalar(1 + Math.sin(now * 20) * 0.12);
+      if (k === 'lantern') { m.rotation.y = now * 9; }
+      if (k === 'quake') { m.rotation.x = now * 7; m.position.y = 0.3; if (Math.random() < 0.7) emit({ x: p.x, z: p.z, y: 0.1, c: [0xc8a878, 0x9a7a5a], s0: 0.12, s1: 0, life: 0.5, sp: 1.5, up: 2, g: 6 }); }
     }
   }
   for (const [id, m] of R3.pvis) if (!pseen.has(id)) { R3.fxG.remove(m); if (m.userData.shadow) R3.fxG.remove(m.userData.shadow); if (m.userData.target) R3.fxG.remove(m.userData.target); R3.pvis.delete(id); }
@@ -487,6 +501,8 @@ function syncScene(dt, now) {
     for (const k of want) if (!R3.bushTouched.has(k) && R3.bushBase[k]) { m4.copy(R3.bushBase[k]).multiply(sc); R3.bushInst.setMatrixAt(k, m4); ch = true; }
     R3.bushTouched = want; if (ch) R3.bushInst.instanceMatrix.needsUpdate = true;
   }
+  syncZones(dt, now);
+  stepFxm(dt);
   // gas & water
   const gr = viewGasR();
   for (const gm of R3.gas) { gm.uniforms.uR.value = gr; gm.uniforms.uT.value = now; }
@@ -573,3 +589,54 @@ function drawOverlay(dt, now) {
   }
 }
 function addNum(x, z, v, c, big) { OV.nums.push({ x, z, v, c, t: 0, big, dx: (Math.random() - .5) * 26 }); if (OV.nums.length > 80) OV.nums.shift(); }
+
+/* ---------- zones & one-shot effect meshes ---------- */
+const ZONE_LOOK = { poison: { fill: 0x7ac943, edge: 0xa55cd6, p: [0x9cff57, 0xb070ff] }, heal: { fill: 0xff8fb8, edge: 0x6dff8f, p: [0xff9fd0, 0xb6ffc8] }, frost: { fill: 0x4fb4f0, edge: 0x2f8fd8, p: [0xffffff, 0xd8f1ff] } };
+R3.zvis = new Map();
+function syncZones(dt, now) {
+  const seen = new Set();
+  for (const z of viewZones()) {
+    seen.add(z.id); let V = R3.zvis.get(z.id); const L = ZONE_LOOK[z.k];
+    if (!V) {
+      const g = new THREE.Group(); g.position.set(z.x, 0.05, z.z);
+      const fill = new THREE.Mesh(new THREE.CircleGeometry(1, 48).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: L.fill, transparent: true, opacity: 0.32, depthWrite: false }));
+      const edge = new THREE.Mesh(new THREE.RingGeometry(0.9, 1, 48).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: L.edge, transparent: true, opacity: 0.85, depthWrite: false }));
+      fill.renderOrder = edge.renderOrder = 6; g.add(fill, edge);
+      if (z.k === 'heal') for (let i = 0; i < 6; i++) { const a = i * TAU / 6, m = new THREE.Group(); m.position.set(Math.cos(a) * 0.86, 0, Math.sin(a) * 0.86); P(m, GEO.cyl(0.035, 0.05, 0.14, 8).translate(0, 0.07, 0), toon(0xfff1de), 0, 0, 0, 0, 0, 0, null); P(m, GEO.half(0.09, 1, 0.7, 1).translate(0, 0.13, 0), toon(0xff6fa8), 0, 0, 0, 0, 0, 0, null); g.add(m); }
+      g.scale.set(z.r, 1, z.r); R3.fxG.add(g); V = { g, fill, edge, born: now }; R3.zvis.set(z.id, V);
+    }
+    const age = now - V.born, fin = Math.min(1, age / 0.25), fade = clamp(z.life / 0.5, 0, 1);
+    V.g.scale.set(z.r * (0.6 + 0.4 * fin), 1, z.r * (0.6 + 0.4 * fin));
+    V.fill.material.opacity = (0.26 + 0.08 * Math.sin(now * 5)) * fade; V.edge.material.opacity = 0.85 * fade;
+    if (Math.random() < dt * z.r * 9) { const a = Math.random() * TAU, rr2 = Math.sqrt(Math.random()) * z.r;
+      emit({ x: z.x + Math.cos(a) * rr2, z: z.z + Math.sin(a) * rr2, y: z.k === 'frost' ? 1.8 : 0.1, c: L.p, glow: z.k !== 'frost' ? 1 : 0, s0: z.k === 'frost' ? 0.06 : 0.09, s1: 0, life: z.k === 'frost' ? 1.2 : 0.8, up: z.k === 'frost' ? -1.4 : 1.2, g: z.k === 'frost' ? 0.2 : -0.6 }); }
+  }
+  for (const [id, V] of R3.zvis) if (!seen.has(id)) { R3.fxG.remove(V.g); R3.zvis.delete(id); }
+}
+const FXM = [];
+function fxMesh(m, life, grow) { R3.fxG.add(m); FXM.push({ m, t: 0, life, grow: grow || 0, o0: m.material.opacity }); }
+function stepFxm(dt) {
+  for (let i = FXM.length - 1; i >= 0; i--) {
+    const F = FXM[i]; F.t += dt; const f = F.t / F.life;
+    if (f >= 1) { R3.fxG.remove(F.m); F.m.geometry.dispose(); F.m.material.dispose(); FXM.splice(i, 1); continue; }
+    F.m.material.opacity = F.o0 * (1 - f); if (F.grow) F.m.scale.multiplyScalar(1 + F.grow * dt);
+  }
+}
+function arcFx(x, z, a, r, s, color) {
+  const g = new THREE.RingGeometry(r * 0.35, r, 28, 1, -a - s / 2, s).rotateX(-Math.PI / 2);
+  const m = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.55, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }));
+  m.position.set(x, 0.5, z); m.renderOrder = 9; fxMesh(m, 0.22);
+}
+function boltFx(pts) {
+  if (pts.length < 2) return;
+  const path = new THREE.CurvePath(); let prev = new THREE.Vector3(pts[0][0], 0.9, pts[0][1]);
+  for (let i = 1; i < pts.length; i++) {
+    const b = new THREE.Vector3(pts[i][0], 0.8, pts[i][1]), segs = Math.max(2, Math.round(prev.distanceTo(b) / 0.5));
+    for (let k = 1; k <= segs; k++) { const p = prev.clone().lerp(b, k / segs); if (k < segs) p.add(new THREE.Vector3(rr(-0.2, 0.2), rr(-0.15, 0.15), rr(-0.2, 0.2))); path.add(new THREE.LineCurve3(path.curves.length ? path.curves[path.curves.length - 1].v2 : prev.clone(), p)); }
+    prev = b;
+  }
+  for (const [r, c, o] of [[0.035, 0xffffff, 1], [0.1, 0xc77dff, 0.45]]) {
+    const m = new THREE.Mesh(new THREE.TubeGeometry(path, path.curves.length * 2, r, 5), new THREE.MeshBasicMaterial({ color: c, transparent: true, opacity: o, blending: THREE.AdditiveBlending, depthWrite: false }));
+    m.renderOrder = 9; fxMesh(m, 0.2);
+  }
+}

@@ -86,14 +86,15 @@ function hostStartOnline() {
   g.posSeq = 1; // guest positions are ignored until the guest has adopted this sequence from a snapshot
   netSend({ t: 'start', cfg: { seed: cfg.seed, theme: cfg.theme, mode: cfg.mode, diff: cfg.diff }, ents: G.ents.map(e => ({ id: e.id, hero: e.hero, name: e.name, team: e.team, human: e.human, x: +e.x.toFixed(2), z: +e.z.toFixed(2), f: +e.face.toFixed(2) })), you: g.id });
 }
-const BFL = { alive: 1, moving: 2, bush: 4, vis: 8, stun: 16, dash: 32, fm: 64, ring: 128, flash: 256 };
+const BFL = { alive: 1, moving: 2, bush: 4, vis: 8, stun: 16, dash: 32, fm: 64, ring: 128, flash: 256, slow: 512, stealth: 1024 };
 function snapFor(gb) {
   const r = v => Math.round(v * 100), T = gb.team;
   return {
     t: 's', tm: +G.t.toFixed(2), gr: +G.gasR.toFixed(3),
     b: G.ents.map(e => [e.id, r(e.x), r(e.z), r(e.face), r(e.mface), Math.ceil(e.hp), Math.round(e.mhp), e.cubes,
-      (e.alive ? 1 : 0) | (e.moving ? 2 : 0) | (e.inBush ? 4 : 0) | (visibleTo(e, T) ? 8 : 0) | (e.stunT > 0 ? 16 : 0) | (e.fm && e.fm.k === 'dash' ? 32 : 0) | (e.fm ? 64 : 0) | (e.burst && e.burst.k === 'ring' ? 128 : 0) | (e.flashT > 0 ? 256 : 0),
-      r(e.ammo), r(e.sup), e.atkSeq, e.supSeq, e.posSeq, e.respawnT ? +(e.respawnT - G.t).toFixed(1) : 0, e.kills, Math.round(e.dmg)]),
+      (e.alive ? 1 : 0) | (e.moving ? 2 : 0) | (e.inBush ? 4 : 0) | (visibleTo(e, T) ? 8 : 0) | (e.stunT > 0 ? 16 : 0) | (e.fm && e.fm.k === 'dash' ? 32 : 0) | (e.fm ? 64 : 0) | (e.burst && e.burst.k === 'ring' ? 128 : 0) | (e.flashT > 0 ? 256 : 0) | (e.slowT > 0 ? 512 : 0) | (e.stealthT > 0 ? 1024 : 0),
+      r(e.ammo), r(e.sup), e.atkSeq, e.supSeq, e.posSeq, e.respawnT ? +(e.respawnT - G.t).toFixed(1) : 0, e.kills, Math.round(e.dmg), r(e.jy || 0), Math.ceil(e.shield || 0)]),
+    zn: G.zones.map(z => [z.id, ZONE_KINDS.indexOf(z.k), r(z.x), r(z.z), r(z.r), z.team, +z.life.toFixed(2)]),
     p: G.projs.filter(p => !(p.delay > 0)).map(p => p.lob ? [p.id, PK_IDX[p.k], r(p.x), r(p.z), 0, 0, r(p.y), r(p.lob.tx), r(p.lob.tz), r(p.radius)] : [p.id, PK_IDX[p.k], r(p.x), r(p.z), r(p.vx), r(p.vz), r(p.y)]),
     c: G.cubes.map(c => [c.id, r(c.x), r(c.z)]),
     u: G.turrets.map(t => [t.id, r(t.x), r(t.z), Math.ceil(t.hp), Math.round(t.mhp), t.team, r(t.face), t.owner, t.flashT > 0 ? 1 : 0]),
@@ -113,7 +114,7 @@ function netHostTick(dt) {
 }
 
 /* ---------- guest side ---------- */
-const CL = { ents: new Map(), list: [], projs: new Map(), cubes: [], turrets: [], gasR: BAL.N / 2, t: 0, me: null, myId: 0, evSeq: 0, cfg: null, lastSnap: 0, sentFireT: -9, pendAmmo: 0, placement: {}, over: false, winner: -1, alive: 10 };
+const CL = { ents: new Map(), list: [], projs: new Map(), cubes: [], turrets: [], zones: [], gasR: BAL.N / 2, t: 0, me: null, myId: 0, evSeq: 0, cfg: null, lastSnap: 0, sentFireT: -9, pendAmmo: 0, placement: {}, over: false, winner: -1, alive: 10 };
 function guestRecv(m) {
   if (m.t === 'busy') { netLeave(); lobbyUI('房间已满'); return; }
   if (m.t === 'lobby') { NET.partner = { name: String(m.host || '房主').slice(0, 10), hero: m.hero | 0 }; lobbyUI(); if (STATE.mode !== 'menu') quitToMenu(true); return; }
@@ -122,7 +123,7 @@ function guestRecv(m) {
   if (m.t === 's') { if (STATE.mode === 'play' || STATE.mode === 'result' || STATE.mode === 'pause') guestSnap(m); return; }
 }
 function guestStart(m) {
-  CL.ents.clear(); CL.projs.clear(); CL.cubes = []; CL.turrets = []; CL.evSeq = 0; CL.cfg = m.cfg; CL.myId = m.you; CL.placement = {}; CL.over = false; CL.winner = -1; CL.t = 0;
+  CL.ents.clear(); CL.projs.clear(); CL.cubes = []; CL.turrets = []; CL.zones = []; CL.evSeq = 0; CL.cfg = m.cfg; CL.myId = m.you; CL.placement = {}; CL.over = false; CL.winner = -1; CL.t = 0;
   genMap(m.cfg.seed, m.cfg.theme);
   for (const e of m.ents) {
     const H = HEROES[e.hero];
@@ -149,7 +150,7 @@ function guestSnap(m) {
     o.hp = a[5]; o.mhp = a[6]; o.cubes = a[7]; o.alive = !!(f & BFL.alive); o.inBush = !!(f & BFL.bush); o.vis = !!(f & BFL.vis);
     o.stunT = f & BFL.stun ? 0.1 : 0; o.fm = f & BFL.dash ? 'dash' : (f & BFL.fm ? 'kb' : null); o.burst = f & BFL.ring ? 'ring' : null; o.flashT = f & BFL.flash ? 0.1 : 0;
     if (!isMe || performance.now() - CL.sentFireT > 250) o.ammo = a[9] / 100;
-    o.sup = a[10] / 100; o.atkSeq = a[11]; o.supSeq = a[12]; o.respawnIn = a[14]; o.kills = a[15]; o.dmg = a[16];
+    o.sup = a[10] / 100; o.atkSeq = a[11]; o.supSeq = a[12]; o.respawnIn = a[14]; o.kills = a[15]; o.dmg = a[16]; o.jy = (a[17] || 0) / 100; o.shield = a[18] || 0; o.slowT = f & BFL.slow ? 0.1 : 0; o.stealthT = f & BFL.stealth ? 0.1 : 0;
   }
   const ps = new Set();
   for (const a of m.p) {
@@ -159,6 +160,7 @@ function guestSnap(m) {
     if (a.length > 7) { p.lob = { tx: a[7] / 100, tz: a[8] / 100 }; p.radius = a[9] / 100; }
   }
   for (const id of [...CL.projs.keys()]) if (!ps.has(id)) CL.projs.delete(id);
+  CL.zones = (m.zn || []).map(a => ({ id: a[0], k: ZONE_KINDS[a[1]], x: a[2] / 100, z: a[3] / 100, r: a[4] / 100, team: a[5], life: a[6] }));
   CL.cubes = m.c.map(a => ({ id: a[0], x: a[1] / 100, z: a[2] / 100 }));
   CL.turrets = m.u.map(a => ({ id: a[0], x: a[1] / 100, z: a[2] / 100, hp: a[3], mhp: a[4], team: a[5], face: a[6] / 100, owner: a[7], flashT: a[8] ? 0.1 : 0 }));
   m.x.forEach((hp, i) => { const b = M.boxes[i]; if (!b) return; b.hp = hp; if (hp <= 0 && M.box[tIdx(b.tx, b.tz)] >= 0) M.box[tIdx(b.tx, b.tz)] = -1; });
@@ -178,7 +180,7 @@ function guestLocal(dt) {
   showAim(me, show && show.mode, show && show.ang, show && show.tx, show && show.tz, show ? show.strength : 0);
   const inp = me.inp;
   if (!me.hostFm && me.stunT <= 0) {
-    const ox = me.x, oz = me.z, sp = me.H.spd * (me.burst === 'ring' ? 0.4 : 1);
+    const ox = me.x, oz = me.z, sp = me.H.spd * (me.burst === 'ring' ? 0.4 : 1) * (me.slowT > 0 ? 0.6 : 1) * (me.stealthT > 0 ? 1.25 : 1);
     moveCircle(me, inp.mx * sp * dt, inp.mz * sp * dt);
     me.moving = Math.hypot(inp.mx, inp.mz) > 0.15; if (me.moving) me.mface = Math.atan2(inp.mz, inp.mx);
     me.vx = (me.x - ox) / dt; me.vz = (me.z - oz) / dt;

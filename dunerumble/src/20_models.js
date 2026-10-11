@@ -253,6 +253,157 @@ const HERO_BUILD = {
     return r;
   },
 };
+
+/* ---------- more heroes ---------- */
+const _UP = new THREE.Vector3(0, 1, 0);
+function spike(parent, len, r, x, y, z, dx, dy, dz, mat, ol = OUTLINE_THIN) {
+  const g = GEO.cone(r, len, 6).translate(0, len / 2, 0);
+  const m = new THREE.Mesh(g, mat); m.position.set(x, y, z); m.quaternion.setFromUnitVectors(_UP, new THREE.Vector3(dx, dy, dz).normalize()); m.castShadow = true;
+  if (ol) { const o = new THREE.Mesh(g, ol); o.userData.outline = true; m.add(o); }
+  parent.add(m); return m;
+}
+Object.assign(HERO_BUILD, {
+  spore() {
+    const r = baseRig({ scale: 0.96 }), skin = 0xf2d0b5, red = 0xd63a3a;
+    legs(r, 0x5b4a6b, 0x6b3f2a, { r: 0.07 });
+    P(r.torso, GEO.cyl(0.2, 0.31, 0.46, 18), toon(0x7d5ba6), 0, 0.17, 0);
+    P(r.torso, GEO.box(0.22, 0.28, 0.05, 0.03), toon(0xf6ecd8), 0, 0.15, 0.24, -0.15);
+    P(r.torso, GEO.tor(0.19, 0.07, TAU, 8, 20), toon(0x5a8f4e), 0, 0.4, 0, Math.PI / 2);
+    P(r.torso, GEO.box(0.1, 0.1, 0.1, 0.03), toon(0x5a8f4e), 0, 0.37, 0.2, 0.6, 0.8, 0);
+    const h = r.head;
+    P(h, GEO.sph(0.27, 1, 0.95, 1), toon(skin));
+    P(h, GEO.sph(0.13, 1, 1, 1), toon(0xd8d8e0), 0, 0.02, -0.25);
+    eyes(h, { y: 0.02, z: 0.235, s: 0.85, pupil: 0x3a2a1a });
+    for (const sx of [1, -1]) P(h, GEO.tor(0.055, 0.012, TAU, 6, 16), toon(0xc9a24a), sx * 0.1, 0.02, 0.27, 0, 0, 0, null);
+    P(h, GEO.box(0.06, 0.012, 0.012, 0.004), toon(0xc9a24a), 0, 0.03, 0.29, 0, 0, 0, null);
+    P(h, GEO.sph(0.04, 1, 0.9, 1), toon(0xe8a888), 0, -0.05, 0.27, 0, 0, 0, null);
+    for (const sx of [1, -1]) P(h, GEO.sph(0.035, 1, 0.6, 0.5), toon(0xf4a0a8), sx * 0.15, -0.06, 0.22, 0, 0, 0, null);
+    P(h, GEO.half(0.44, 1, 0.62, 1), toon(red), 0, 0.17, 0);
+    P(h, GEO.cyl(0.18, 0.22, 0.08, 16), toon(0xf6ecd8), 0, 0.15, 0);
+    for (const [a, e, s] of [[0.3, 0.5, 0.07], [1.6, 0.35, 0.06], [2.8, 0.55, 0.075], [4.2, 0.4, 0.065], [5.4, 0.6, 0.06], [0, 1.2, 0.07], [3.5, 1.1, 0.055]]) {
+      const x = Math.cos(a) * Math.cos(e) * 0.44, z = Math.sin(a) * Math.cos(e) * 0.44, y = 0.17 + Math.sin(e) * 0.44 * 0.62;
+      P(h, GEO.sph(s, 1, 0.4, 1), toon(0xfff4e8), x, y, z, 0, 0, 0, null);
+    }
+    arms(r, 0x7d5ba6, skin, { r: 0.065, hr: 0.075 });
+    const w = weaponGroup(r.armR);
+    P(w, GEO.cyl(0.02, 0.025, 0.55, 8), toon(0x7a5230), 0, 0, 0.12, Math.PI / 2);
+    P(w, GEO.sph(0.07), glow(0x9cff57, 1.6), 0, 0, 0.42, 0, 0, 0, null);
+    P(w, GEO.half(0.08, 1, 0.6, 1), toon(red), 0, 0.03, 0.42, 0, 0, 0, null);
+    r.style = 'throw';
+    return r;
+  },
+  frost() {
+    const r = baseRig({ scale: 0.95, headY: 0.58 }), navy = 0x1f2a44, blue = 0x3fa9f5;
+    legs(r, navy, 0xff9f1c, { r: 0.07 });
+    P(r.torso, GEO.sph(0.3, 1, 1.15, 0.95), toon(navy), 0, 0.2, 0);
+    P(r.torso, GEO.sph(0.24, 0.92, 1.05, 0.6), toon(0xf8fbff), 0, 0.18, 0.12);
+    P(r.torso, GEO.tor(0.17, 0.06, TAU, 8, 20), toon(blue), 0, 0.42, 0, Math.PI / 2);
+    P(r.torso, GEO.box(0.08, 0.22, 0.04, 0.02), toon(blue), 0.1, 0.3, 0.19, 0, 0, 0.2);
+    const h = r.head;
+    P(h, GEO.sph(0.27, 1, 0.95, 1), toon(navy));
+    P(h, GEO.sph(0.21, 1.1, 0.9, 0.62), toon(0xf8fbff), 0, -0.03, 0.12);
+    eyes(h, { y: 0.03, z: 0.235, s: 0.9 });
+    P(h, GEO.cone(0.065, 0.16, 10), toon(0xffa22a), 0, -0.07, 0.3, Math.PI / 2);
+    for (const sx of [1, -1]) P(h, GEO.sph(0.035, 1, 0.6, 0.5), toon(0xff9fb0), sx * 0.14, -0.06, 0.22, 0, 0, 0, null);
+    P(h, GEO.half(0.285, 1, 0.9, 1), toon(blue), 0, 0.07, -0.01);
+    P(h, GEO.tor(0.27, 0.045, TAU, 8, 24), toon(0xffffff), 0, 0.08, -0.01, Math.PI / 2);
+    P(h, GEO.sph(0.08), toon(0xffffff), 0, 0.36, -0.02);
+    arms(r, navy, navy, { r: 0.065, hr: 0.07 });
+    const w = weaponGroup(r.armR);
+    P(w, GEO.sph(0.1), toon(0xffffff), 0, 0, 0.06);
+    r.style = 'throw';
+    return r;
+  },
+  quill() {
+    const r = baseRig({ scale: 0.95 }), fur = 0xc68a52, spk = 0x5a3a22, cream = 0xf3dcb5;
+    legs(r, 0x6b4a2b, 0xc0392b, { r: 0.07 });
+    P(r.torso, GEO.sph(0.27, 1, 1.1, 0.95), toon(fur), 0, 0.2, 0);
+    P(r.torso, GEO.sph(0.2, 0.95, 1.1, 0.55), toon(cream), 0, 0.18, 0.13);
+    for (let i = 0; i < 9; i++) { const a = Math.PI * (0.15 + 0.7 * (i % 3) / 2), y = 0.12 + Math.floor(i / 3) * 0.13; spike(r.torso, 0.22, 0.06, Math.cos(a) * 0.2, y, -0.12 - Math.sin(a) * 0.08, Math.cos(a) * 0.6, 0.25, -1, toon(spk)); }
+    const h = r.head;
+    P(h, GEO.sph(0.27, 1, 0.95, 1), toon(fur));
+    P(h, GEO.sph(0.15, 0.9, 0.75, 1.1), toon(cream), 0, -0.06, 0.18);
+    P(h, GEO.sph(0.045), toon(0x221a1a), 0, -0.03, 0.34, 0, 0, 0, null);
+    eyes(h, { y: 0.05, z: 0.225, s: 0.9 });
+    for (const sx of [1, -1]) P(h, GEO.sph(0.06, 1, 1, 0.6), toon(fur), sx * 0.2, 0.18, 0.02);
+    for (const [x, y, z, dx, dy, dz] of [[0, 0.2, -0.05, 0, 0.9, -0.6], [0.12, 0.17, -0.08, 0.5, 0.6, -0.8], [-0.12, 0.17, -0.08, -0.5, 0.6, -0.8], [0, 0.08, -0.2, 0, 0.3, -1], [0.14, 0.02, -0.18, 0.5, 0.1, -1], [-0.14, 0.02, -0.18, -0.5, 0.1, -1], [0.06, 0.24, 0.06, 0.2, 1, -0.2], [-0.06, 0.24, 0.06, -0.2, 1, -0.2]]) spike(h, 0.24, 0.065, x, y, z, dx, dy, dz, toon(spk));
+    arms(r, fur, cream, { r: 0.062, hr: 0.08 });
+    for (const arm of [r.armR, r.armL]) { const w = weaponGroup(arm); if (arm === r.armL) w.name = 'weapon2'; for (const dx of [-0.04, 0, 0.04]) spike(w, 0.14, 0.022, dx, 0, 0.05, 0, 0, 1, toon(0xf6f1e6)); }
+    r.style = 'claw';
+    return r;
+  },
+  wisp() {
+    const r = baseRig({ scale: 1.0, hipY: 0.5, headY: 0.36 }), white = 0xeee8ff;
+    r.float = true;
+    const tail = G0(r.hips, 'tail', 0, -0.05, 0);
+    P(tail, GEO.cone(0.27, 0.42, 16).rotateX(Math.PI), toon(white), 0, -0.12, -0.02);
+    P(r.torso, GEO.sph(0.27, 1, 0.9, 1), toon(white), 0, 0.1, 0);
+    const h = r.head;
+    P(h, GEO.sph(0.31, 1, 0.95, 1), toon(white));
+    for (const sx of [1, -1]) { P(h, GEO.sph(0.07, 0.8, 1.2, 0.5), basic(0x241c3a), sx * 0.11, 0.02, 0.27, 0, sx * 0.2, 0, OUTLINE_THIN); P(h, GEO.sph(0.02), basic(0xffffff), sx * 0.11 + 0.02, 0.05, 0.3, 0, 0, 0, null); P(h, GEO.sph(0.04, 1, 0.6, 0.5), toon(0xffa8c8), sx * 0.17, -0.07, 0.24, 0, 0, 0, null); }
+    P(h, GEO.box(0.06, 0.03, 0.02, 0.01), basic(0x241c3a), 0, -0.07, 0.3, 0, 0, 0, null);
+    P(h, GEO.ico(0.1, 1).scale(0.8, 1.5, 0.8), glow(0xffb43a, 1.8), 0, 0.37, 0, 0, 0, 0, null);
+    P(h, GEO.ico(0.055, 1).scale(0.8, 1.5, 0.8), glow(0xfff1a8, 2.2), 0, 0.35, 0.02, 0, 0, 0, null);
+    arms(r, white, white, { r: 0.06, hr: 0.07 });
+    const w = weaponGroup(r.armR);
+    P(w, GEO.tor(0.05, 0.012, TAU, 6, 14), toon(0x3b2a1a), 0, -0.02, 0.05, 0, 0, 0, null);
+    // lantern points along +z when held forward: plates at each end, 4 posts, glowing core
+    for (const z of [0.08, 0.28]) P(w, GEO.box(0.17, 0.17, 0.035, 0.015), toon(0x3b2a1a), 0, 0, z);
+    for (const [x, y] of [[0.07, 0.07], [-0.07, 0.07], [0.07, -0.07], [-0.07, -0.07]]) P(w, GEO.box(0.02, 0.02, 0.2, 0.006), toon(0x3b2a1a), x, y, 0.18, 0, 0, 0, null);
+    P(w, GEO.sph(0.075, 1, 1, 1.25), glow(0xffd36b, 2.4), 0, 0, 0.18, 0, 0, 0, null);
+    r.style = 'throw';
+    return r;
+  },
+  bruin() {
+    const r = baseRig({ scale: 1.12, hipY: 0.34, shX: 0.34, shY: 0.36, headY: 0.64, legX: 0.15 }), fur = 0x8e5a36, light = 0xc89a6a, metal = 0x9aa3ad;
+    legs(r, fur, 0x3a2a22, { r: 0.11, hip: 0.34 });
+    P(r.torso, GEO.box(0.6, 0.5, 0.46, 0.18), toon(fur), 0, 0.25, 0);
+    P(r.torso, GEO.sph(0.2, 1.1, 1, 0.5), toon(light), 0, 0.2, 0.19);
+    P(r.torso, GEO.box(0.62, 0.08, 0.48, 0.03), toon(0x4a2f22), 0, 0.06, 0);
+    P(r.torso, GEO.box(0.1, 0.08, 0.04, 0.02), toon(0xf2c94c), 0, 0.06, 0.25, 0, 0, 0, null);
+    for (const sx of [1, -1]) P(r.torso, GEO.half(0.15, 1, 0.6, 1), toon(metal), sx * 0.3, 0.44, 0, 0, 0, sx * -0.3);
+    const h = r.head;
+    P(h, GEO.sph(0.3, 1.05, 0.95, 1), toon(fur));
+    P(h, GEO.sph(0.14, 1.1, 0.8, 0.9), toon(light), 0, -0.07, 0.22);
+    P(h, GEO.sph(0.05, 1.3, 0.8, 1), toon(0x221a1a), 0, -0.02, 0.33, 0, 0, 0, null);
+    eyes(h, { y: 0.06, z: 0.24, s: 0.8 });
+    for (const sx of [1, -1]) P(h, GEO.sph(0.08, 1, 1, 0.6), toon(fur), sx * 0.24, 0.2, -0.02);
+    P(h, GEO.half(0.3, 1.04, 0.85, 1.04), toon(metal), 0, 0.09, 0);
+    P(h, GEO.tor(0.305, 0.03, TAU, 6, 28), toon(0xd4a640), 0, 0.1, 0, Math.PI / 2);
+    for (const sx of [1, -1]) spike(h, 0.26, 0.06, sx * 0.27, 0.2, 0, sx * 1, 0.7, 0, toon(0xf3ead6), OUTLINE_THIN);
+    arms(r, fur, light, { r: 0.1, hr: 0.11 });
+    const w = weaponGroup(r.armR);
+    P(w, GEO.cyl(0.03, 0.035, 0.7, 8), toon(0x7a5230), 0, 0, 0.25, Math.PI / 2);
+    P(w, GEO.box(0.36, 0.26, 0.26, 0.05), toon(0x6d7680), 0, 0, 0.62);
+    P(w, GEO.box(0.38, 0.06, 0.28, 0.02), toon(0xd4a640), 0, 0, 0.62, 0, 0, Math.PI / 2, null);
+    r.style = 'melee';
+    return r;
+  },
+  zap() {
+    const r = baseRig({ scale: 1.0 }), skin = 0xf3c9a8, jacket = 0x2b2d42, mag = 0xff4fd8;
+    legs(r, 0x22223a, 0xf2f2f2, { r: 0.075 });
+    P(r.torso, GEO.box(0.44, 0.42, 0.34, 0.12), toon(jacket), 0, 0.21, 0);
+    P(r.torso, GEO.box(0.14, 0.34, 0.05, 0.02), toon(mag), 0, 0.22, 0.165);
+    for (const [x, y] of [[0.15, 0.36], [-0.15, 0.36], [0.17, 0.26], [-0.17, 0.26]]) P(r.torso, GEO.sph(0.018), toon(0xd8dce4), x, y, 0.17, 0, 0, 0, null);
+    P(r.torso, GEO.box(0.34, 0.05, 0.04, 0.02), toon(0x5a3a26), 0, 0.2, -0.18, 0, 0, 0.7);
+    const h = r.head;
+    P(h, GEO.sph(0.28, 1, 0.94, 1), toon(skin));
+    for (const [x, y, z, dx, dy, dz, l] of [[0, 0.2, 0.02, 0, 1, 0.1, 0.3], [0.12, 0.18, 0, 0.6, 1, -0.1, 0.26], [-0.12, 0.18, 0, -0.6, 1, -0.1, 0.26], [0.06, 0.16, -0.14, 0.3, 0.8, -0.8, 0.28], [-0.06, 0.16, -0.14, -0.3, 0.8, -0.8, 0.28], [0, 0.05, -0.24, 0, 0.3, -1, 0.26], [0.2, 0.06, -0.1, 1, 0.4, -0.5, 0.22], [-0.2, 0.06, -0.1, -1, 0.4, -0.5, 0.22]]) spike(h, l, 0.08, x, y, z, dx, dy, dz, toon(0xffe14d), OUTLINE);
+    P(h, GEO.box(0.38, 0.09, 0.08, 0.035), toon(0x1b1b2b), 0, 0.03, 0.24);
+    for (const sx of [1, -1]) P(h, GEO.box(0.08, 0.03, 0.02, 0.01), glow(mag, 1.4), sx * 0.09, 0.045, 0.285, 0, 0, 0, null);
+    P(h, GEO.box(0.1, 0.02, 0.02, 0.008), basic(0x8a3b2a), 0.01, -0.1, 0.255, 0, 0, -0.15, null);
+    arms(r, jacket, skin, { r: 0.065, hr: 0.075 });
+    const w = weaponGroup(r.armR);
+    P(w, GEO.cyl(0.13, 0.13, 0.06, 20), toon(mag), 0, 0, -0.04, 0, 0, Math.PI / 2);
+    P(w, GEO.cyl(0.1, 0.1, 0.06, 20), toon(mag), 0, 0, 0.1, 0, 0, Math.PI / 2);
+    P(w, GEO.box(0.05, 0.035, 0.42, 0.012), toon(0x3b2a1a), 0, 0, 0.32);
+    P(w, GEO.box(0.08, 0.05, 0.1, 0.02), toon(0x1b1b2b), 0, 0, 0.56);
+    P(w, GEO.ico(0.05, 0), glow(0xb47aff, 2.2), 0, 0, 0.64, 0, 0, 0, null);
+    r.style = 'gun2';
+    return r;
+  },
+});
+
 /* ---------- draw-call reduction: merge plain parts into vertex-coloured meshes ---------- */
 function mergeKey(m) {
   const mat = m.material; if (!m.isMesh || m.userData.outline || m.children.some(c => !c.userData.outline)) return null;
@@ -311,7 +462,7 @@ function makeHero(k) {
   });
   const get = n => root.getObjectByName(n);
   return {
-    k, root, mats, style: t.style, body: get('body'), hips: get('hips'), legL: get('legL'), legR: get('legR'), torso: get('torso'), head: get('head'),
+    k, root, mats, style: t.style, float: !!t.float, body: get('body'), hips: get('hips'), legL: get('legL'), legR: get('legR'), torso: get('torso'), head: get('head'),
     armL: get('armL'), armR: get('armR'), tail: get('tail'), earL: get('earL'), earR: get('earR'), hat: get('hat'),
     phase: Math.random() * TAU, face: 0, fade: 1, flash: 0, opac: 1, deadT: 0, lastAtkSeq: -1, lastSupSeq: -1, atkAge: 9, supAge: 9, hand: 0,
   };
@@ -344,7 +495,9 @@ function animHero(V, s, dt, now) {
   const sw = Math.sin(V.phase) * spd;
   const bob = s.moving ? Math.abs(Math.cos(V.phase)) * 0.05 : Math.sin(V.phase) * 0.012;
   V.hips.position.y = (V.hips.userData.y0 ?? (V.hips.userData.y0 = V.hips.position.y)) + bob;
+  if (V.float) V.hips.position.y = V.hips.userData.y0 + 0.08 + Math.sin(now * 3.2) * 0.07;
   V.legL.rotation.x = sw * 0.8; V.legR.rotation.x = -sw * 0.8;
+  if (V.tail && V.float) V.tail.rotation.x = -sw * 0.25 - (s.moving ? 0.35 : 0);
   V.torso.rotation.x = s.moving ? 0.12 : 0; V.torso.rotation.y = 0; V.torso.rotation.z = Math.sin(V.phase) * 0.04 * spd;
   V.head.rotation.x = s.moving ? -0.08 : Math.sin(V.phase * 0.5) * 0.03;
   // arms default swing
@@ -355,15 +508,18 @@ function animHero(V, s, dt, now) {
     if (st === 'gun2') { aR = -1.5 + rec * 0.35; aL = -1.25 + rec * 0.3; zL = -0.45; zR = -0.02; V.torso.rotation.y = 0.12; }
     else if (st === 'gun1') { aR = -1.55 + rec * 0.4; zR = -0.05; }
     else if (st === 'dual') { const h = V.hand; aR = -1.5 + (h ? 0 : rec * 0.45); aL = -1.5 + (h ? rec * 0.45 : 0); zL = 0.05; zR = -0.05; }
+    else if (st === 'claw') { const t = Math.min(1, s.atkAge / 0.18), h = V.hand; if (s.atkAge < 0.3) { if (h) { aR = lerp(-0.5, -1.7, t); zR = lerp(-0.9, 0.3, t); } else { aL = lerp(-0.5, -1.7, t); zL = lerp(0.9, -0.3, t); } } else { aL = aR = -1.0; } V.torso.rotation.y = s.atkAge < 0.3 ? (h ? -0.35 : 0.35) * (1 - t) : 0; }
+    else if (st === 'melee') { const t = Math.min(1, s.atkAge / 0.22); aR = s.atkAge < 0.4 ? lerp(-3.0, -0.55, t * t) : -1.0; aL = aR + 0.25; zR = -0.05; zL = 0.25; V.torso.rotation.x = s.atkAge < 0.4 ? lerp(-0.15, 0.25, t) : 0; }
     else if (st === 'throw') { const t = Math.min(1, s.atkAge / 0.28); aR = s.atkAge < 0.28 ? lerp(0.9, -2.4, t) : -1.2; zR = -0.1; V.torso.rotation.y = s.atkAge < 0.28 ? lerp(-0.3, 0.3, t) : 0; }
-    if (!st.startsWith('gun') && st !== 'dual' && st !== 'throw') { aR = -1.4; }
+    if (!st.startsWith('gun') && st !== 'dual' && st !== 'throw' && st !== 'claw' && st !== 'melee') { aR = -1.4; }
   }
   if (s.supAge < 0.5 && st === 'throw') { const t = Math.min(1, s.supAge / 0.35); aR = lerp(1.0, -2.8, t); aL = lerp(1.0, -2.8, t); }
   if (s.spin) { V.torso.rotation.y = now * 18; aL = aR = -1.5; zL = 0.5; zR = -0.5; }
   if (s.dash) { V.torso.rotation.x = 0.45; aL = aR = 0.6; }
   if (s.stun) { V.torso.rotation.z = Math.sin(now * 30) * 0.08; }
   V.armL.rotation.x = aL; V.armR.rotation.x = aR; V.armL.rotation.z = zL; V.armR.rotation.z = zR;
-  if (V.tail) V.tail.rotation.y = Math.sin(now * 5) * 0.35;
+  if (V.tail && !V.float) V.tail.rotation.y = Math.sin(now * 5) * 0.35;
+  if (s.jy > 0.05) { aL = aR = -2.6; V.armL.rotation.x = aL; V.armR.rotation.x = aR; V.body.rotation.x = -0.25; }
   if (V.earL) { V.earL.rotation.x = Math.sin(now * 3 + 1) * 0.12 - (s.moving ? 0.25 : 0); V.earR.rotation.x = Math.sin(now * 3) * 0.12 - (s.moving ? 0.25 : 0); }
   // squash on hit
   const f = V.flash; if (f > 0) { const k = 1 + f * 0.6; V.body.scale.set(heroScale(V) * k, heroScale(V) / k, heroScale(V) * k); }

@@ -93,8 +93,65 @@ const HEROES = [
     atkName: '弹跳能量球', atkDesc: '能量球撞墙会反弹一次。',
     supName: '兔兔炮台', supDesc: '放置一座自动射击的炮台。',
   },
+  {
+    k: 'spore', name: '蘑菇婆婆', title: '孢子药师', color: '#e67e9a', hp: 4000, spd: 2.95, reload: 1.7,
+    atk: { type: 'pool', range: 7.5, flight: 0.7, radius: 1.3, dmg: 400, proj: 'spore', zone: { k: 'poison', r: 1.5, life: 2.5, dps: 800 } },
+    sup: { type: 'zone', range: 6, zone: { k: 'heal', r: 2.6, life: 5, dps: 650 } },
+    charge: 0.07, ai: { pref: 6.2 },
+    desc: '戴蘑菇帽的老婆婆，毒雾封路、治疗队友。',
+    atkName: '毒孢弹', atkDesc: '抛出孢子弹，落地留下持续伤害的毒圈。',
+    supName: '回春蘑菇圈', supDesc: '种下一圈蘑菇，持续为自己和队友回血。',
+  },
+  {
+    k: 'frost', name: '冰冰', title: '雪原企鹅', color: '#5dade2', hp: 3500, spd: 3.0, reload: 1.45,
+    atk: { type: 'single', range: 8.5, speed: 15, dmg: 820, size: 0.22, proj: 'snowball', slow: 1.6 },
+    sup: { type: 'zone', range: 8, zone: { k: 'frost', r: 2.6, life: 4, dps: 520, slow: true } },
+    charge: 0.26, ai: { pref: 6.5 },
+    desc: '戴毛线帽的小企鹅，雪球会冻住敌人的脚。',
+    atkName: '冰冻雪球', atkDesc: '雪球命中后让敌人减速 1.6 秒。',
+    supName: '暴风雪', supDesc: '召唤一片暴风雪，区域内敌人持续受伤并减速。',
+  },
+  {
+    k: 'quill', name: '阿刺', title: '刺猬刺客', color: '#c27c3e', hp: 4700, spd: 3.35, reload: 1.0,
+    atk: { type: 'dash', range: 2.8, speed: 15, dmg: 1150 },
+    sup: { type: 'leap', range: 7, dmg: 1600, radius: 1.6 },
+    charge: 0.3, ai: { pref: 2.2 },
+    desc: '跑得飞快的刺猬，专门近身偷袭。',
+    atkName: '利爪突刺', atkDesc: '向前突进一小段，划伤路径上的敌人。',
+    supName: '刺球飞扑', supDesc: '跳向目标点，落地对周围造成伤害，可越过墙壁。',
+  },
+  {
+    k: 'wisp', name: '灯灯', title: '灯笼幽灵', color: '#f4c430', hp: 3300, spd: 3.1, reload: 1.6,
+    atk: { type: 'boomerang', range: 7, speed: 12, dmg: 800, size: 0.3, proj: 'lantern' },
+    sup: { type: 'stealth', dur: 4.5, range: 0 },
+    charge: 0.2, ai: { pref: 4.5 },
+    desc: '提着灯笼的小幽灵，灯笼能穿墙。',
+    atkName: '回旋灯笼', atkDesc: '灯笼穿墙飞出再飞回，去回各能打中一次。',
+    supName: '幽灵隐身', supDesc: '隐身 4.5 秒并加速，攻击会现形。',
+  },
+  {
+    k: 'bruin', name: '熊大锤', title: '北境战熊', color: '#8e6145', hp: 6000, spd: 2.8, reload: 1.6,
+    atk: { type: 'melee', range: 2.4, spread: 2.2, dmg: 1500 },
+    sup: { type: 'fan', n: 7, spread: 0.9, range: 6, speed: 13, dmg: 900, size: 0.35, proj: 'quake', pierce: true, stun: 1.2, breakWalls: true },
+    charge: 0.25, ai: { pref: 1.5 },
+    desc: '戴角盔的巨熊，一锤一个坑。',
+    atkName: '大锤横扫', atkDesc: '大范围近身锤击。',
+    supName: '震地波', supDesc: '扇形地震波，眩晕敌人 1.2 秒并震碎墙体。',
+  },
+  {
+    k: 'zap', name: '电光', title: '摇滚吉他手', color: '#d65ad6', hp: 3300, spd: 3.05, reload: 1.5,
+    atk: { type: 'chain', range: 7, dmg: 680, chains: 2, chainR: 3.2 },
+    sup: { type: 'shield', range: 3.8, amount: 1800, dur: 4.5 },
+    charge: 0.22, ai: { pref: 5.5 },
+    desc: '背着电吉他的摇滚歌手，闪电会在敌人之间跳跃。',
+    atkName: '连锁闪电', atkDesc: '闪电打中前方敌人，再跳向附近 2 个敌人。',
+    supName: '电磁护盾', supDesc: '给自己和附近队友加一层 1800 点护盾。',
+  },
 ];
 const HERO_IDX = Object.fromEntries(HEROES.map((h, i) => [h.k, i]));
 const BOT_NAMES = ['沙蝎', '仙人掌', '小旋风', '石头人', '阿呆', '豆豆', '火柴', '咕噜', '铁蛋', '跳跳', '团子', '闪电', '芒果', '奶糖', '大胃王', '麦芽', '风滚草', '橘子', '花卷', '饭团'];
-const PROJ_KINDS = ['pellet', 'slug', 'bolt', 'bolt2', 'flame', 'bomb', 'megabomb', 'bullet', 'bullet2', 'orb', 'tshot'];
+const PROJ_KINDS = ['pellet', 'slug', 'bolt', 'bolt2', 'flame', 'bomb', 'megabomb', 'bullet', 'bullet2', 'orb', 'tshot', 'spore', 'snowball', 'lantern', 'quake'];
+const LOB_KINDS = new Set(['bomb', 'megabomb', 'spore']);
+const ZONE_KINDS = ['poison', 'heal', 'frost'];
+const ignoresWalls = a => a.type === 'lob' || a.type === 'pool' || a.type === 'boomerang' || a.type === 'zone' || a.type === 'leap';
 const PK_IDX = Object.fromEntries(PROJ_KINDS.map((k, i) => [k, i]));

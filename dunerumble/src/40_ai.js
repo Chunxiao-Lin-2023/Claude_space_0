@@ -23,7 +23,7 @@ function freeTileNear(x, z) {
 }
 function aimAt(b, tx, tz, tvx, tvz, a, err) {
   const dd = dist(b.x, b.z, tx, tz);
-  const tFlight = a.type === 'lob' ? a.flight : a.type === 'dash' ? dd / (a.speed || 15) : dd / (a.speed || 15);
+  const tFlight = a.flight ? a.flight : (a.type === 'melee' || a.type === 'chain') ? 0.05 : a.type === 'zone' ? 0.6 : a.type === 'leap' ? 0.5 : dd / (a.speed || 15);
   const lead = rr(0.55, 1.0);
   let px = tx + tvx * tFlight * lead, pz = tz + tvz * tFlight * lead;
   const ang = Math.atan2(pz - b.z, px - b.x) + (Math.random() - 0.5) * 2 * err;
@@ -62,7 +62,7 @@ function botDecide(b, A, D) {
   }
   A.goal = null; A.dir = null;
   const gasDanger = inGas(b.x, b.z, G.gasR - 1.3) || (G.t > BAL.gasStart - 3 && inGas(b.x, b.z, gasRAt(G.t + 4) - 0.6));
-  const atk = H.atk, isLob = atk.type === 'lob';
+  const atk = H.atk, isLob = ignoresWalls(atk);
   const fireAt = (x, z, vx, vz, range, needLos) => {
     const dd = dist(b.x, b.z, x, z);
     if (dd > range || G.t < A.reactAt) return false;
@@ -74,7 +74,7 @@ function botDecide(b, A, D) {
     const dd = dist(b.x, b.z, tgt.x, tgt.z), pref = H.ai.pref, losOk = isLob || los(b.x, b.z, tgt.x, tgt.z);
     const tHp = tgt.hp / tgt.mhp;
     if (gasDanger) { A.goal = safePoint(b, 3); A.mode = 'gas'; }
-    else if ((hpF < 0.32 && tHp > hpF + 0.12 && dd < 9) || (hpF < 0.5 && b.ammo < 1 && tHp > 0.5)) {
+    else if (!(dd < atk.range + 1.2 && (atk.type === 'melee' || atk.type === 'dash') && hpF > 0.12) && ((hpF < 0.32 && tHp > hpF + 0.12 && dd < 9) || (hpF < 0.5 && b.ammo < 1 && tHp > 0.5))) {
       A.mode = 'flee';
       let bp = null, bs = -1e9;
       for (let k = 0; k < 12; k++) {
@@ -98,13 +98,18 @@ function botDecide(b, A, D) {
     if (b.sup >= 1 && G.t >= A.reactAt && Math.random() < D.superP) {
       const s = H.sup; let ok = false;
       if (s.type === 'spread') ok = dd < 5.5 && losOk;
-      else if (s.type === 'fan') ok = dd < 10 && los(b.x, b.z, tgt.x, tgt.z);
+      else if (s.type === 'fan') ok = dd < s.range * 0.9 && los(b.x, b.z, tgt.x, tgt.z);
       else if (s.type === 'dash') ok = dd < 5.8 && los(b.x, b.z, tgt.x, tgt.z);
       else if (s.type === 'lob') ok = dd < s.range;
       else if (s.type === 'ring') ok = dd < 4.6;
       else if (s.type === 'turret') ok = dd < 8.5;
+      else if (s.type === 'zone') ok = s.zone.k === 'heal' ? (hpF < 0.6 || (dd < 5 && hpF < 0.85)) : dd < s.range;
+      else if (s.type === 'leap') ok = dd < s.range && (tHp < 0.75 || dd > 3);
+      else if (s.type === 'stealth') ok = (dd < 7 && dd > 2.5) || hpF < 0.35;
+      else if (s.type === 'shield') ok = dd < 6.5;
       if (ok) {
-        if (s.type === 'turret') { const a = Math.atan2(tgt.z - b.z, tgt.x - b.x); inp.aim = a; inp.tx = b.x + Math.cos(a) * 3; inp.tz = b.z + Math.sin(a) * 3; }
+        if (s.type === 'zone' && s.zone.k === 'heal') { inp.aim = Math.atan2(tgt.z - b.z, tgt.x - b.x); inp.tx = b.x; inp.tz = b.z; }
+        else if (s.type === 'turret') { const a = Math.atan2(tgt.z - b.z, tgt.x - b.x); inp.aim = a; inp.tx = b.x + Math.cos(a) * 3; inp.tz = b.z + Math.sin(a) * 3; }
         else aimAt(b, tgt.x, tgt.z, tgt.vx, tgt.vz, s.type === 'lob' ? s : Object.assign({}, s, { speed: s.speed || 16 }), D.err * 0.7);
         inp.sup = true; inp.fire = false;
       }
@@ -137,6 +142,7 @@ function botDecide(b, A, D) {
       }
       A.heal = bp || safePoint(b, 3); A.healT = G.t + 4;
     }
+    if (b.sup >= 1 && ((H.sup.type === 'zone' && H.sup.zone.k === 'heal') || H.sup.type === 'shield' || H.sup.type === 'stealth')) { inp.tx = b.x; inp.tz = b.z; inp.sup = true; }
     A.goal = A.heal; A.mode = 'heal'; return;
   }
   // nearby cubes first, then boxes

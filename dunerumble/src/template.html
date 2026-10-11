@@ -39,13 +39,14 @@ input{font-family:var(--font);font-size:16px;border:3px solid var(--ink);border-
 .skill em{font-style:normal;color:var(--y1)}
 #panel{touch-action:pan-y;-webkit-overflow-scrolling:touch;margin-left:auto;width:min(430px,48vw);max-height:100%;overflow:auto;background:var(--panel);border:3px solid var(--ink);border-radius:20px;padding:14px;box-shadow:0 6px 0 rgba(0,0,0,.35);display:flex;flex-direction:column;gap:10px;scrollbar-width:thin}
 .sec>label{display:block;font-size:14px;color:var(--sub);margin:0 0 6px 2px}
-#heroGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-.hcard{position:relative;border:3px solid var(--ink);border-radius:14px;overflow:hidden;cursor:pointer;aspect-ratio:1/1;box-shadow:0 4px 0 var(--ink);background:#3a2a40;transition:transform .1s}
+#heroGrid{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}
+.hcard{position:relative;border:3px solid var(--ink);border-radius:14px;overflow:hidden;cursor:pointer;aspect-ratio:1/0.86;box-shadow:0 4px 0 var(--ink);background:#3a2a40;transition:transform .1s}
 .hcard img{width:100%;height:100%;object-fit:cover;display:block}
-.hcard span{position:absolute;left:0;right:0;bottom:0;text-align:center;font-size:15px;padding:2px 0 3px;background:linear-gradient(transparent,rgba(0,0,0,.7));-webkit-text-stroke:1px var(--ink);paint-order:stroke fill}
+.hcard span{position:absolute;left:0;right:0;bottom:0;text-align:center;font-size:14px;padding:2px 0 3px;background:linear-gradient(transparent,rgba(0,0,0,.7));-webkit-text-stroke:1px var(--ink);paint-order:stroke fill}
 .hcard.on{outline:4px solid var(--y1);transform:translateY(-2px)}
 .seg{display:flex;flex-wrap:wrap;gap:6px}
 .seg button{flex:1 1 auto;padding:6px 10px;font-size:15px}
+@media (pointer:fine){.seg button,#panel input{min-height:38px;padding-top:4px;padding-bottom:4px}#panel{gap:8px}}
 #startBtn{font-size:26px;min-height:60px;background:linear-gradient(var(--y1),var(--y2));letter-spacing:4px}
 #onlineBox{border:2px dashed var(--line);border-radius:14px;padding:10px;display:flex;flex-direction:column;gap:8px}
 #onlineBox .row{display:flex;gap:8px}

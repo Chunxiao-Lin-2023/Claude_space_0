@@ -12,6 +12,7 @@ function viewBrawlers() { return isGuest() ? CL.list : (G ? G.ents : []); }
 function viewProjs() { return isGuest() ? [...CL.projs.values()] : (G ? G.projs : []); }
 function viewCubes() { return isGuest() ? CL.cubes : (G ? G.cubes : []); }
 function viewTurrets() { return isGuest() ? CL.turrets : (G ? G.turrets : []); }
+function viewZones() { return isGuest() ? CL.zones : (G ? G.zones : []); }
 function viewGasR() { return isGuest() ? CL.gasR : (G ? G.gasR : BAL.N / 2); }
 function viewT() { return isGuest() ? CL.t : (G ? G.t : 0); }
 function viewEnt(id) { return isGuest() ? CL.ents.get(id) : (G ? entById(id) : null); }
@@ -118,7 +119,7 @@ function onLocalEvent(e) {
       const d = dist(e.x, e.z, R3.camT.x, R3.camT.z); R3.shake = Math.max(R3.shake, clamp((big ? 0.7 : 0.35) * (1 - d / 14), 0, 0.7));
       sfx('boom', e.x, e.z, big ? 1 : 0.75);
     } break;
-    case 'spark': emit({ x: e.x, z: e.z, y: 0.7, c: e.c === 1 ? [0xff7a1a, 0xffb347] : e.c === 2 ? 0x5ef2ff : [0xffffff, 0xffe08a], glow: 1, s0: 0.07, s1: 0, life: 0.22, sp: 3, up: 2, g: 4 }, 4); break;
+    case 'spark': emit({ x: e.x, z: e.z, y: 0.7, c: e.c === 1 ? [0xff7a1a, 0xffb347] : e.c === 2 ? 0x5ef2ff : e.c === 3 ? [0x9cff57, 0xb070ff] : [0xffffff, 0xffe08a], glow: 1, s0: 0.07, s1: 0, life: 0.22, sp: 3, up: 2, g: 4 }, 4); break;
     case 'kill': {
       const v = viewEnt(e.v), k = viewEnt(e.by);
       if (v && v.vis === false && v.team !== myTeam()) { /* still shown in feed */ }
@@ -135,6 +136,14 @@ function onLocalEvent(e) {
     case 'tshot': sfx('tshot', e.x, e.z, 0.6); break;
     case 'tdie': emit({ x: e.x, z: e.z, y: 0.5, c: [0xf2f5fb, 0x3a86ff, 0x2b2f3a], s0: 0.12, s1: 0.03, life: 0.8, sp: 4, up: 5, g: 12 }, 14); sfx('box', e.x, e.z, 0.6); break;
     case 'respawn': ring(e.x, e.z, 1.6, 0x7dffa0, 0.6); if (e.id === mid) sfx('respawn'); break;
+    case 'swing': { const b = viewEnt(e.id); arcFx(e.x, e.z, e.a, e.r, e.s, b && b.H.k === 'bruin' ? 0xffd9a0 : 0xffffff); emit({ x: e.x + Math.cos(e.a) * e.r * 0.7, z: e.z + Math.sin(e.a) * e.r * 0.7, y: 0.6, c: [0xffffff, 0xffe9c0], glow: 1, s0: 0.08, s1: 0, life: 0.2, sp: 3, a: e.a, ar: e.s / 2, g: 0 }, 6); } break;
+    case 'chain': boltFx(e.p); { const L = e.p[e.p.length - 1]; emit({ x: L[0], z: L[1], y: 0.8, c: [0xffffff, 0xc77dff], glow: 1, s0: 0.1, s1: 0, life: 0.3, sp: 4, up: 2, g: 3 }, 8); sfx('zapHit', L[0], L[1], 0.6); } break;
+    case 'land': ring(e.x, e.z, e.r * 1.2, 0xffd9a0, 0.4, 0.07, 0.25); emit({ x: e.x, z: e.z, y: 0.2, c: [0xc8a878, 0xe8d8b8, 0x9a7a5a], s0: 0.16, s1: 0.03, life: 0.7, sp: 5, up: 3, g: 8, jr: 0.4 }, 18); R3.shake = Math.max(R3.shake, clamp(0.4 * (1 - dist(e.x, e.z, R3.camT.x, R3.camT.z) / 12), 0, 0.4)); sfx('boom', e.x, e.z, 0.6); break;
+    case 'heal': addNum(e.x, e.z, '+' + e.v, '#6dff8f', false); break;
+    case 'shit': addNum(e.x, e.z, e.v, '#7ad8ff', false); emit({ x: e.x, z: e.z, y: 0.8, c: 0x7ad8ff, glow: 1, s0: 0.08, s1: 0, life: 0.25, sp: 3, up: 2 }, 4); sfx('bhit', e.x, e.z); break;
+    case 'stealth': emit({ x: e.x, z: e.z, y: 0.6, c: [0xe6dcff, 0xb9a6ff], glow: 1, s0: 0.15, s1: 0, life: 0.6, sp: 2.5, up: 2, g: -0.5, jr: 0.3 }, 18); sfx('wispS', e.x, e.z); break;
+    case 'shield': ring(e.x, e.z, e.r, 0x7ad8ff, 0.5, 0.07, 0.15); ring(e.x, e.z, e.r * 0.6, 0xffffff, 0.35); break;
+    case 'zone': ring(e.x, e.z, e.r, e.k === 'heal' ? 0x6dff8f : e.k === 'frost' ? 0xffffff : 0xb070ff, 0.4); sfx(e.k === 'heal' ? 'respawn' : e.k === 'frost' ? 'frostS' : 'sporeHit', e.x, e.z, 0.7); break;
   }
 }
 function addFeed(k, v) {
@@ -240,8 +249,8 @@ function renderShowcase(dt, now) {
 function refreshMenu() {
   const H = HEROES[SEL.hero];
   $('heroGrid').innerHTML = HEROES.map((h, i) => `<div class="hcard ${i === SEL.hero ? 'on' : ''}" data-i="${i}" style="background:${h.color}"><img src="${PORTRAITS[h.k] || ''}" alt=""><span>${h.name}</span></div>`).join('');
-  const maxHp = 5400, bar = (v, m) => `<div class="bar"><i style="width:${Math.round(clamp(v / m, 0.06, 1) * 100)}%"></i></div>`;
-  const dps = h => { const a = h.atk; const per = a.type === 'spread' || a.type === 'flame' || a.type === 'burst' ? a.dmg * a.n : a.dmg; return per; };
+  const maxHp = 6000, bar = (v, m) => `<div class="bar"><i style="width:${Math.round(clamp(v / m, 0.06, 1) * 100)}%"></i></div>`;
+  const dps = h => { const a = h.atk; return Math.round((a.type === 'spread' || a.type === 'flame' || a.type === 'burst' ? a.dmg * a.n : a.dmg) + (a.zone ? a.zone.dps * a.zone.life : 0)); };
   $('heroInfo').innerHTML = `<div><span class="nm" style="color:${H.color}">${H.name}</span><span class="tt">${H.title}</span></div><div class="ds">${H.desc}</div>
     <div class="stat"><b>生命</b>${bar(H.hp, maxHp)}<span>${Math.round(H.hp * BAL.hpMul)}</span></div>
     <div class="stat"><b>伤害</b>${bar(dps(H), 2300)}<span>${dps(H)}</span></div>
@@ -281,7 +290,7 @@ function lobbyUI(msg) {
 function saveSel() { LS.set('sel', SEL); }
 function menuKey(k, e) {
   if (k === 'ArrowLeft' || k === 'ArrowRight') { SEL.hero = (SEL.hero + (k === 'ArrowRight' ? 1 : HEROES.length - 1)) % HEROES.length; saveSel(); refreshMenu(); heroChanged(); sfx('click'); }
-  else if (k === 'ArrowUp' || k === 'ArrowDown') { SEL.hero = (SEL.hero + (k === 'ArrowDown' ? 3 : HEROES.length - 3)) % HEROES.length; saveSel(); refreshMenu(); heroChanged(); sfx('click'); }
+  else if (k === 'ArrowUp' || k === 'ArrowDown') { SEL.hero = (SEL.hero + (k === 'ArrowDown' ? 4 : HEROES.length - 4)) % HEROES.length; saveSel(); refreshMenu(); heroChanged(); sfx('click'); }
   else if (k === 'Enter') $('startBtn').click();
   else if (k === '1' || k === '2' || k === '3') { SEL.mode = ['solo', 'duo', 'online'][+k - 1]; saveSel(); refreshMenu(); }
 }
