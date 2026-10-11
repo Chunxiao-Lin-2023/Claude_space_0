@@ -104,6 +104,14 @@ body.touch #bar{display:none}
 body.touch #btns{top:calc(10px + var(--st));right:calc(222px + var(--sr));flex-direction:row}
 @media (max-height:520px){#tbtns{transform:scale(.74);transform-origin:right bottom}#mini{width:150px;height:72px}body.touch #btns{right:calc(172px + var(--sr))}#pinfo{width:200px;padding:6px 8px}#mate{top:calc(98px + var(--st))}}
 #wDeath{text-align:center}
+.kf{outline:3px solid var(--gold)!important;outline-offset:2px;box-shadow:0 0 0 7px rgba(255,207,90,.2)!important}
+.navhint{font-size:12px;opacity:.62;text-align:center;margin:10px 0 0;line-height:1.6}
+body.touch .navhint{display:none}
+.krow{display:grid;grid-template-columns:1fr auto;align-items:center;gap:10px;padding:5px 8px;border-radius:10px;background:rgba(255,255,255,.04);margin-bottom:5px;font-size:13.5px}
+.krow button{min-width:96px;min-height:34px;padding:4px 10px;font-weight:700}
+.krow button.wait{background:linear-gradient(#ffd56e,#e7a93a);color:#3a2408}
+.keys2{display:grid;grid-template-columns:1fr;gap:0}
+#wKeys{width:min(440px,94vw)}
 </style>
 </head>
 <body>
@@ -120,7 +128,8 @@ body.touch #btns{top:calc(10px + var(--st));right:calc(222px + var(--sr));flex-d
   <input id="joinCode" maxlength="4" placeholder="房间码" style="width:96px;text-transform:uppercase;text-align:center;letter-spacing:3px">
   <button id="bJoin">加入</button>
  </div>
- <div class="row" style="margin-top:10px"><button class="ghost" id="bHelp0">操作说明</button></div>
+ <div class="row" style="margin-top:10px"><button class="ghost" id="bHelp0">操作说明</button><button class="ghost" id="bKeys0">按键设置</button></div>
+ <p class="navhint"></p>
  <p class="note" id="titleNote"></p>
 </div></div>
 
@@ -130,6 +139,7 @@ body.touch #btns{top:calc(10px + var(--st));right:calc(222px + var(--sr));flex-d
  <div class="row"><span>名字</span><input id="cName" maxlength="8" style="width:180px"></div>
  <div class="cls" id="clsList"></div>
  <div class="row"><button class="ghost" id="cBack">返回</button><button class="pri" id="cOk">开始冒险</button></div>
+ <p class="navhint"></p>
 </div></div>
 
 <!-- HUD -->
@@ -158,28 +168,19 @@ body.touch #btns{top:calc(10px + var(--st));right:calc(222px + var(--sr));flex-d
 <div id="tpad" class="hidden"><div id="tzone"><div id="stick"><div id="knob"></div></div></div><div id="tbtns"></div></div>
 
 <!-- windows -->
-<div id="wSkill" class="panel win hidden"><h2><span>技能 <small id="spLeft" style="font-size:13px;color:var(--gold)"></small></span><button data-close>关闭</button></h2><div id="skList"></div><div class="kv" id="statKv" style="margin-top:8px"></div></div>
-<div id="wShop" class="panel win hidden"><h2><span>杂货商 · 莉卡 <small style="font-size:13px"><span class="coin"></span> <span id="shopMeso"></span></small></span><button data-close>关闭</button></h2><div id="shopList"></div></div>
-<div id="wTalk" class="panel win hidden"><h2><span id="talkName"></span><button data-close>关闭</button></h2><p id="talkText" style="line-height:1.8;font-size:14.5px;margin:0 0 12px"></p><div class="row"><button id="talkNext">下一条</button></div></div>
+<div id="wSkill" class="panel win hidden"><h2><span>技能 <small id="spLeft" style="font-size:13px;color:var(--gold)"></small></span><button data-close>关闭</button></h2><div id="skList"></div><div class="kv" id="statKv" style="margin-top:8px"></div><p class="navhint"></p></div>
+<div id="wShop" class="panel win hidden"><h2><span>杂货商 · 莉卡 <small style="font-size:13px"><span class="coin"></span> <span id="shopMeso"></span></small></span><button data-close>关闭</button></h2><div id="shopList"></div><p class="navhint"></p></div>
+<div id="wTalk" class="panel win hidden"><h2><span id="talkName"></span><button data-close>关闭</button></h2><p id="talkText" style="line-height:1.8;font-size:14.5px;margin:0 0 12px"></p><div class="row"><button id="talkNext">下一条</button></div><p class="navhint"></p></div>
 <div id="wMenu" class="panel win hidden" style="width:min(340px,92vw)"><h2><span>菜单</span><button data-close>关闭</button></h2>
  <div style="display:flex;flex-direction:column;gap:8px">
-  <button data-close>继续游戏</button><button id="mHelp">操作说明</button><button id="mMute">声音：开</button><button id="mFull">全屏</button><button id="mQuit">保存并返回标题</button>
- </div></div>
-<div id="wHelp" class="panel win hidden"><h2><span>操作说明</span><button data-close>关闭</button></h2>
- <div class="kv">
-  <b>移动</b><span>← →　（↓ 蹲下，↓ + 跳 从平台跳下）</span>
-  <b>跳跃</b><span>空格 或 C</span>
-  <b>攀爬</b><span>在绳子旁按 ↑ / ↓，爬绳时按 ← / → + 跳 离开</span>
-  <b>普通攻击</b><span>X 或 J（按住连续攻击）</span>
-  <b>技能</b><span>A S D F（或 1 2 3 4）</span>
-  <b>药水</b><span>Q 红药水　W 蓝药水</span>
-  <b>传送门 / 对话</b><span>站在传送门或 NPC 旁按 ↑</span>
-  <b>技能窗口</b><span>K（升级时获得技能点）</span>
-  <b>菜单</b><span>Esc</span>
-  <b>触屏</b><span>左半屏拖动摇杆移动（上推爬绳 / 进传送门），右下按钮攻击、跳跃、技能、药水</span>
-  <b>联机</b><span>一人「创建房间」，把 4 位房间码发给队友，队友输入后加入。同一地图里的队友分享经验（各得 75%），倒下的队友可以靠近按住 ↑ 复活。</span>
- </div></div>
-<div id="wDeath" class="panel win hidden" style="width:min(360px,92vw)"><h2 style="justify-content:center">你倒下了</h2><p style="opacity:.8;font-size:13.5px;line-height:1.7" id="deathTxt"></p><div class="row"><button class="pri" id="bRespawn">回到晨露村</button></div></div>
+  <button data-close>继续游戏</button><button id="mKeys">按键设置</button><button id="mHelp">操作说明</button><button id="mMute">声音：开</button><button id="mFull">全屏</button><button id="mQuit">保存并返回标题</button>
+ </div><p class="navhint"></p></div>
+<div id="wHelp" class="panel win hidden"><h2><span>操作说明</span><button data-close>关闭</button></h2><div class="kv" id="helpKv"></div><p class="navhint"></p></div>
+<div id="wKeys" class="panel win hidden"><h2><span>按键设置</span><button data-close>关闭</button></h2>
+ <div class="row" style="margin-bottom:10px"><button id="kWasd">WASD 布局</button><button id="kArrows">方向键布局</button></div>
+ <div class="keys2" id="keyList"></div>
+ <p class="navhint" id="keysNote"></p></div>
+<div id="wDeath" class="panel win hidden" style="width:min(360px,92vw)"><h2 style="justify-content:center">你倒下了</h2><p style="opacity:.8;font-size:13.5px;line-height:1.7" id="deathTxt"></p><div class="row"><button class="pri" id="bRespawn">回到晨露村</button></div><p class="navhint"></p></div>
 
 <script>
 'use strict';
@@ -374,8 +375,8 @@ const supportAt=(M,x,y)=>{for(const s of M.plats)if(x>=s.x-2&&x<=s.x+s.w+2&&Math
 /* ---------------- shop ---------------- */
 function shopItems(p){
  const c=CLS[p.cls],L=[];
- L.push({id:'pr1',ic:'红',col:'#e8394d',n:'红药水',d:`恢复 ${pc(BAL.potPct)} 最大 HP（Q）`,price:30},{id:'pr10',ic:'红',col:'#e8394d',n:'红药水 ×10',d:'批量购买',price:280});
- L.push({id:'pb1',ic:'蓝',col:'#2f7fe0',n:'蓝药水',d:`恢复 ${pc(BAL.potPct)} 最大 MP（W）`,price:30},{id:'pb10',ic:'蓝',col:'#2f7fe0',n:'蓝药水 ×10',d:'批量购买',price:280});
+ L.push({id:'pr1',ic:'红',col:'#e8394d',n:'红药水',d:`恢复 ${pc(BAL.potPct)} 最大 HP（${kn('potR')}）`,price:30},{id:'pr10',ic:'红',col:'#e8394d',n:'红药水 ×10',d:'批量购买',price:280});
+ L.push({id:'pb1',ic:'蓝',col:'#2f7fe0',n:'蓝药水',d:`恢复 ${pc(BAL.potPct)} 最大 MP（${kn('potB')}）`,price:30},{id:'pb10',ic:'蓝',col:'#2f7fe0',n:'蓝药水 ×10',d:'批量购买',price:280});
  for(let t=1;t<WEP.length;t++)L.push({id:'w'+t,ic:'武',col:TIERC[t],n:c.wep[t],d:`攻击 +${WEP[t].atk}　需要 Lv.${WEP[t].lv}`,price:WEP[t].price,lv:WEP[t].lv,own:p.wep>=t});
  for(let t=1;t<ARM.length;t++)L.push({id:'a'+t,ic:'甲',col:TIERC[t],n:ARM[t].n,d:`防御 +${ARM[t].def}　HP +${ARM[t].hp}　需要 Lv.${ARM[t].lv}`,price:ARM[t].price,lv:ARM[t].lv,own:p.arm>=t});
  return L;
@@ -713,18 +714,28 @@ function updDrops(ms,mi,dt){
  ms.drops=ms.drops.filter(d=>d.t>0);
 }
 
+/* ---------------- key bindings ---------------- */
+const ACTIONS=[['left','左移'],['right','右移'],['up','上 · 爬绳 · 传送门 · 对话'],['down','下 · 蹲下（+跳 落下平台）'],['jump','跳跃'],['atk','普通攻击'],['s0','技能 1'],['s1','技能 2'],['s2','技能 3'],['s3','技能 4'],['potR','红药水'],['potB','蓝药水'],['skills','技能窗口']];
+const PRESETS={
+ wasd:{left:'KeyA',right:'KeyD',up:'KeyW',down:'KeyS',jump:'KeyK',atk:'KeyJ',s0:'KeyU',s1:'KeyI',s2:'KeyO',s3:'KeyL',potR:'KeyQ',potB:'KeyE',skills:'KeyC'},
+ arrows:{left:'ArrowLeft',right:'ArrowRight',up:'ArrowUp',down:'ArrowDown',jump:'Space',atk:'KeyX',s0:'KeyA',s1:'KeyS',s2:'KeyD',s3:'KeyF',potR:'KeyQ',potB:'KeyW',skills:'KeyK'},
+};
+let BIND=Object.assign({},PRESETS.wasd);
+try{const b=JSON.parse(localStorage.getItem('cloudisle.keys.v1')||'null');if(b)for(const [a] of ACTIONS)if(typeof b[a]==='string')BIND[a]=b[a];}catch(e){}
+function saveBind(){try{localStorage.setItem('cloudisle.keys.v1',JSON.stringify(BIND));}catch(e){}}
+const KN={ArrowLeft:'←',ArrowRight:'→',ArrowUp:'↑',ArrowDown:'↓',Space:'空格',Enter:'回车',NumpadEnter:'回车',ShiftLeft:'左Shift',ShiftRight:'右Shift',ControlLeft:'左Ctrl',ControlRight:'右Ctrl',AltLeft:'左Alt',AltRight:'右Alt',MetaLeft:'左Cmd',MetaRight:'右Cmd',Tab:'Tab',Backspace:'退格',Semicolon:';',Quote:"'",Comma:',',Period:'.',Slash:'/',BracketLeft:'[',BracketRight:']',Backslash:'\\',Minus:'-',Equal:'=',Backquote:'`',CapsLock:'Caps',Delete:'Del'};
+function keyName(c){if(!c)return'—';if(KN[c])return KN[c];if(c.startsWith('Key'))return c.slice(3);if(c.startsWith('Digit'))return c.slice(5);if(c.startsWith('Numpad'))return'小键盘'+c.slice(6);return c;}
+const kn=a=>keyName(BIND[a]);
+const isBound=c=>Object.values(BIND).includes(c);
+
 /* ---------------- local player ---------------- */
 const KEY={},PRESS={};
 const TIN={left:false,right:false,up:false,down:false,atk:false,sk:[false,false,false,false],jumpP:false,upP:false};
 function readInput(){
- const k=c=>!!KEY[c],pr=c=>!!PRESS[c];
- return{
-  left:k('ArrowLeft')||TIN.left,right:k('ArrowRight')||TIN.right,up:k('ArrowUp')||TIN.up,down:k('ArrowDown')||TIN.down,
-  jumpP:pr('Space')||pr('KeyC')||TIN.jumpP,upP:pr('ArrowUp')||TIN.upP,
-  atk:k('KeyX')||k('KeyJ')||pr('KeyX')||pr('KeyJ')||TIN.atk,
-  sk:[['KeyA','Digit1'],['KeyS','Digit2'],['KeyD','Digit3'],['KeyF','Digit4']].map((cs,i)=>cs.some(c=>k(c)||pr(c))||TIN.sk[i]),
-  potR:pr('KeyQ'),potB:pr('KeyW'),
- };
+ const k=a=>!!KEY[BIND[a]],pr=a=>!!PRESS[BIND[a]];
+ return{left:k('left')||TIN.left,right:k('right')||TIN.right,up:k('up')||TIN.up,down:k('down')||TIN.down,
+  jumpP:pr('jump')||TIN.jumpP,upP:pr('up')||TIN.upP,atk:k('atk')||pr('atk')||TIN.atk,
+  sk:[0,1,2,3].map(i=>k('s'+i)||pr('s'+i)||TIN.sk[i]),potR:pr('potR'),potB:pr('potB')};
 }
 function stepLocal(p,inp,dt){
  const M=MAPS[p.map];
@@ -792,7 +803,7 @@ const toastGate={};
 function trySkill(k){
  const p=ME;if(!p||p.dead||p.climb||state!=='play')return;
  const def=skillDef(p,k);const lv=k==='b'?1:p.sk[k];
- if(k!=='b'&&lv<=0){if(PRESS_ANY_SKILL(k))toastOnce('还没学会「'+def.n+'」，按 K 打开技能窗口');return;}
+ if(k!=='b'&&lv<=0){if(PRESS_ANY_SKILL(k))toastOnce('还没学会「'+def.n+'」，按 '+kn('skills')+' 打开技能窗口');return;}
  if(p.cd[k]>0)return;
  const mp=k==='b'?0:def.mp(lv);if(p.mp<mp){toastOnce('MP 不足');return;}
  setAnim(p,def.anim);p.anim.k=def.anim;p.anim.t=0;p.atkLock=.26;
@@ -801,7 +812,7 @@ function trySkill(k){
  if(IS_HOST){hostSkill(p,k);}
  else{p.cd[k]=def.cd;p.mp-=mp;netSend({t:'act',k,x:Math.round(p.x),y:Math.round(p.y),f:p.face,map:p.map});}
 }
-function PRESS_ANY_SKILL(k){const codes=[['KeyA','Digit1'],['KeyS','Digit2'],['KeyD','Digit3'],['KeyF','Digit4']][k];return codes.some(c=>PRESS[c])||TIN.skP===k;}
+function PRESS_ANY_SKILL(k){return !!PRESS[BIND['s'+k]]||TIN.skP===k;}
 function usePot(k){const p=ME;if(!p||p.dead)return;if((k==='r'?p.pr:p.pb)<=0){toastOnce(k==='r'?'没有红药水了':'没有蓝药水了');return;}sfx('potion');req({t:'pot',k});}
 function req(m){if(IS_HOST)hostAct(ME,m);else netSend(m);}
 function usePortal(p,po){sfx('portal');const M2=MAPS[po.to],tp=M2.portals[po.ti];warpTo(p,po.to,tp.x,tp.y);}
@@ -985,7 +996,7 @@ function playEv(e){
   case 'rain':spawnFx({k:'rain',x:e.x,y:e.y,w:e.w,t:0,dur:e.dur,seed:Math.random()*1000});break;
   case 'die':spawnFx({k:'poof',x:e.x,y:e.y,t:0,dur:.5});parts(e.x,e.y,10,'#fff',140,.5,200,4);sfx(e.t==='boss'?'bossdie':'die');if(e.t==='boss')cam.shake=18;break;
   case 'exp':if(e.p===ME_I)addNum(e.x,e.y,e.v,'exp',14,0,'+'+e.v+' EXP');break;
-  case 'lvup':spawnFx({k:'lvup',x:e.x,y:e.y,t:0,dur:1.6});sfx('lvup');if(mine)toast('升级！Lv.'+e.lv+'　获得 '+BAL.spPerLv+' 技能点（按 K）');break;
+  case 'lvup':spawnFx({k:'lvup',x:e.x,y:e.y,t:0,dur:1.6});sfx('lvup');if(mine)toast('升级！Lv.'+e.lv+'　获得 '+BAL.spPerLv+' 技能点（按 '+kn('skills')+'）');break;
   case 'pick':if(mine){sfx('coin');addNum(e.x,e.y-20,0,'pick',14,0,e.dk==='meso'?'+'+e.v+' 金币':e.dk==='pr'?'+1 红药水':'+1 蓝药水');}break;
   case 'toast':if(mine){toast(e.s);sfx(e.snd||'click');}break;
   case 'boss':showBanner(e.s,'',2.6);sfx('boss');break;
@@ -1048,6 +1059,8 @@ const SFX={
  lvup:()=>{[523,659,784,1046,1318].forEach((f,i)=>tone('triangle',f,f,.3,.14,i*.08));},
  portal:()=>{tone('sine',300,900,.35,.15);tone('sine',450,1350,.35,.08,.05);},
  click:()=>tone('square',660,660,.05,.05),
+ tick:()=>tone('square',880,880,.03,.03),
+ nope:()=>tone('square',160,120,.08,.06),
  buy:()=>{tone('square',784,784,.07,.07);tone('square',1046,1046,.12,.07,.07);},
  learn:()=>{tone('triangle',660,990,.2,.12);},
  orb:()=>tone('sine',500,300,.2,.08),
@@ -1331,7 +1344,7 @@ function drawNpc(c,n,t){
  drawHero(c,{cls:shop?'archer':'mage',face:-1,a:'idle',at:t,alt:shop?1:0,wep:0},0,0,t);
  c.restore();
  nameTag(c,n.name,n.x,n.y,'#b9ffcf');
- if(ME&&Math.abs(ME.x-n.x)<56&&Math.abs(ME.y-n.y)<12){c.font='700 13px '+FONT;c.textAlign='center';c.fillStyle='#fff';c.strokeStyle='rgba(0,0,0,.6)';c.lineWidth=3;const s=TOUCH?'↑ 对话':'按 ↑ 对话';c.strokeText(s,n.x,n.y-96+Math.sin(t*4)*3);c.fillText(s,n.x,n.y-96+Math.sin(t*4)*3);}
+ if(ME&&Math.abs(ME.x-n.x)<56&&Math.abs(ME.y-n.y)<12){c.font='700 13px '+FONT;c.textAlign='center';c.fillStyle='#fff';c.strokeStyle='rgba(0,0,0,.6)';c.lineWidth=3;const s=TOUCH?'↑ 对话':'按 '+kn('up')+' 对话';c.strokeText(s,n.x,n.y-96+Math.sin(t*4)*3);c.fillText(s,n.x,n.y-96+Math.sin(t*4)*3);}
 }
 function nameTag(c,s,x,y,col){c.font='600 12px '+FONT;c.textAlign='center';const w=c.measureText(s).width+12;c.fillStyle='rgba(15,12,25,.72)';rr(c,x-w/2,y+5,w,17,6);c.fill();c.fillStyle=col||'#fff';c.fillText(s,x,y+18);}
 function drawFx(c,f,t){
@@ -1394,7 +1407,7 @@ function render(t){
  // players
  for(const p of P){if(!p||p.map!==ME.map)continue;const px=p===ME?p.x:p.sx,py=p===ME?p.y:p.sy;drawHero(c,heroVis(p),px,py,t);nameTag(c,p.name,px,py,p===ME?'#fff':'#9fe3ff');
   if(p.dead&&p.reviveT>0){c.strokeStyle='#7dff9a';c.lineWidth=4;c.beginPath();c.arc(px,py-50,16,-Math.PI/2,-Math.PI/2+TAU*Math.min(1,p.reviveT/BAL.reviveTime));c.stroke();}
-  if(p.dead&&p!==ME&&!ME.dead&&Math.abs(ME.x-px)<46&&Math.abs(ME.y-py)<70){c.font='700 13px '+FONT;c.textAlign='center';c.fillStyle='#b9ffcf';c.fillText(TOUCH?'上推摇杆不放 复活队友':'按住 ↑ 复活队友',px,py-80);}
+  if(p.dead&&p!==ME&&!ME.dead&&Math.abs(ME.x-px)<46&&Math.abs(ME.y-py)<70){c.font='700 13px '+FONT;c.textAlign='center';c.fillStyle='#b9ffcf';c.fillText(TOUCH?'上推摇杆不放 复活队友':'按住 '+kn('up')+' 复活队友',px,py-80);}
  }
  for(const q of viewProjs())drawProj(c,q,t);
  for(const f of FX)drawFx(c,f,t);
@@ -1402,7 +1415,7 @@ function render(t){
  for(const n of NUM)drawNum(c,n);
  // portal prompt
  const po=M.portals.find(q=>Math.abs(q.x-ME.x)<34&&Math.abs(q.y-ME.y)<12);
- if(po&&!ME.dead){c.font='700 13px '+FONT;c.textAlign='center';c.fillStyle='#fff';c.strokeStyle='rgba(0,0,0,.6)';c.lineWidth=3;const s=TOUCH?'上推摇杆 进入':'按 ↑ 进入';c.strokeText(s,po.x,po.y-120);c.fillText(s,po.x,po.y-120);}
+ if(po&&!ME.dead){c.font='700 13px '+FONT;c.textAlign='center';c.fillStyle='#fff';c.strokeStyle='rgba(0,0,0,.6)';c.lineWidth=3;const s=TOUCH?'上推摇杆 进入':'按 '+kn('up')+' 进入';c.strokeText(s,po.x,po.y-120);c.fillText(s,po.x,po.y-120);}
  c.restore();
  if(ME.dead){c.fillStyle='rgba(30,10,40,.25)';c.fillRect(0,0,VIEW.w,VIEW.h);}
 }
@@ -1425,12 +1438,12 @@ function toast(s){const e=$('toast');e.textContent=s;e.style.opacity=1;clearTime
 function toastOnce(s){const now=performance.now();if(toastGate[s]&&now-toastGate[s]<1500)return;toastGate[s]=now;toast(s);}
 let bannerH=null;
 function showBanner(t,s,dur=2){$('bnT').textContent=t;$('bnS').textContent=s||'';$('banner').style.opacity=1;clearTimeout(bannerH);bannerH=setTimeout(()=>$('banner').style.opacity=0,dur*1000);}
-const SLOTDEF=[{k:'b',key:'X'},{k:0,key:'A'},{k:1,key:'S'},{k:2,key:'D'},{k:3,key:'F'},{k:'r',key:'Q'},{k:'p',key:'W'}];
+const SLOTDEF=[{k:'b',a:'atk'},{k:0,a:'s0'},{k:1,a:'s1'},{k:2,a:'s2'},{k:3,a:'s3'},{k:'r',a:'potR'},{k:'p',a:'potB'}];
 function buildSlots(){
  const bar=$('bar'),tb=$('tbtns');bar.innerHTML='';tb.innerHTML='';
  const tpos={b:[214,164,'big'],j:[214,74,'jump'],0:[124,186],1:[110,112],2:[150,46],3:[226,4],r:[40,192],p:[40,124]};
  for(const sd of SLOTDEF){
-  const el=document.createElement('div');el.className='slotb';el.dataset.k=sd.k;el.innerHTML='<b></b><em>'+sd.key+'</em><span></span><i></i>';
+  const el=document.createElement('div');el.className='slotb';el.dataset.k=sd.k;el.innerHTML='<b></b><em>'+kn(sd.a)+'</em><span></span><i></i>';
   el.addEventListener('pointerdown',e=>{e.preventDefault();auInit();pressSlot(sd.k);});bar.appendChild(el);
   const t=document.createElement('div');t.className='slotb';t.dataset.k=sd.k;t.innerHTML='<b></b><span></span><i></i>';
   const [x,y,cls]=tpos[sd.k];t.style.left=x+'px';t.style.top=y+'px';if(cls)t.classList.add(cls);
@@ -1455,7 +1468,7 @@ function hudTick(dt){
  $('mpF').style.width=(100*p.mp/s.mmp)+'%';$('mpT').textContent=Math.round(p.mp)+' / '+s.mmp;
  $('hMeso').textContent=p.meso;
  const bf=[];if(p.bf.atk)bf.push('攻+'+pc(p.bf.atk.v)+' '+Math.ceil(p.bf.atk.t)+'s');if(p.bf.crit)bf.push('暴+'+pc(p.bf.crit.v)+' '+Math.ceil(p.bf.crit.t)+'s');$('hBuff').textContent=bf.join(' ');
- const need=BAL.expNeed(p.lv);$('expF').style.width=(p.lv>=BAL.maxLv?100:100*p.exp/need)+'%';$('expT').textContent=p.lv>=BAL.maxLv?'MAX':'EXP '+p.exp+' / '+need+'  ('+(100*p.exp/need).toFixed(1)+'%)'+(p.sp>0?'　　技能点 '+p.sp+'（K）':'');
+ const need=BAL.expNeed(p.lv);$('expF').style.width=(p.lv>=BAL.maxLv?100:100*p.exp/need)+'%';$('expT').textContent=p.lv>=BAL.maxLv?'MAX':'EXP '+p.exp+' / '+need+'  ('+(100*p.exp/need).toFixed(1)+'%)'+(p.sp>0?'　　技能点 '+p.sp+'（'+kn('skills')+'）':'');
  for(const el of document.querySelectorAll('.slotb[data-k]')){
   const k=el.dataset.k,b=el.querySelector('b'),sp=el.querySelector('span'),cdm=el.querySelector('i');
   if(k==='r'){b.textContent='红';b.style.color='#ff8a95';sp.textContent=p.pr;cdm.style.height='0';continue;}
@@ -1468,8 +1481,8 @@ function hudTick(dt){
  }
  // shop button
  const M=MAPS[p.map];const near=M.npcs.find(q=>Math.abs(q.x-p.x)<56&&Math.abs(q.y-p.y)<12);
- $('bShop').classList.toggle('hidden',!near);if(near)$('bShop').textContent=near.id==='shop'?'商店 ↑':'对话 ↑';
- $('bSkill').textContent='技能 K'+(p.sp>0?' ('+p.sp+')':'');
+ $('bShop').classList.toggle('hidden',!near);if(near)$('bShop').textContent=(near.id==='shop'?'商店 ':'对话 ')+kn('up');
+ $('bSkill').textContent='技能 '+kn('skills')+(p.sp>0?' ('+p.sp+')':'');
  $('mname').textContent=M.name;
  // mate
  const mate=P.find(q=>q&&q!==ME);
@@ -1483,17 +1496,18 @@ function hudTick(dt){
  else if(M.boss&&bt>0){$('bossbar').classList.remove('hidden');$('bossName').textContent='巨像将在 '+bt+' 秒后重新苏醒';$('bossF').style.width='0%';$('bossT').textContent='';}
  else $('bossbar').classList.add('hidden');
  // hint
- let h='';if(p.dead)h='';else if(p.lv===1&&p.exp<5&&M.safe)h=TOUCH?'右下按钮攻击 · 向右走进传送门去草原':'X 攻击 · A S D F 技能 · 向右走到传送门按 ↑';
+ let h='';if(p.dead)h='';else if(p.lv===1&&p.exp<5&&M.safe)h=TOUCH?'右下按钮攻击 · 向右走进传送门去草原':kn('atk')+' 攻击 · '+['s0','s1','s2','s3'].map(kn).join(' ')+' 技能 · 向右走到传送门按 '+kn('up')+' · Esc 菜单';
  $('hint').textContent=h;$('hint').classList.toggle('hidden',!h);
  // death window
- if(p.dead&&$('wDeath').classList.contains('hidden')){closeWins();$('wDeath').classList.remove('hidden');$('deathTxt').textContent=(MAPS[p.map].safe?'':'损失了少量经验值。')+(mate&&mate.map===p.map&&!mate.dead?'队友可以走到你身边按住 ↑ 把你救起来。':'');}
+ if(p.dead&&$('wDeath').classList.contains('hidden')){closeWins();$('wDeath').classList.remove('hidden');$('deathTxt').textContent=(MAPS[p.map].safe?'':'损失了少量经验值。')+(mate&&mate.map===p.map&&!mate.dead?'队友可以走到你身边按住 '+kn('up')+' 把你救起来。':'');}
  if(!p.dead&&!$('wDeath').classList.contains('hidden'))$('wDeath').classList.add('hidden');
  if(!$('wSkill').classList.contains('hidden'))renderSkillWin(true);
  if(!$('wShop').classList.contains('hidden'))renderShop(true);
  drawMini();
 }
-function winOpen(){return['wSkill','wShop','wTalk','wMenu','wHelp'].some(id=>!$(id).classList.contains('hidden'));}
-function closeWins(){for(const id of ['wSkill','wShop','wTalk','wMenu','wHelp'])$(id).classList.add('hidden');}
+const WINS=['wKeys','wHelp','wSkill','wShop','wTalk','wMenu'];
+function winOpen(){return WINS.some(id=>!$(id).classList.contains('hidden'));}
+function closeWins(){for(const id of WINS)$(id).classList.add('hidden');REBIND=null;}
 function toggleWin(id){const open=$(id).classList.contains('hidden');closeWins();if(open){$(id).classList.remove('hidden');if(id==='wSkill')renderSkillWin();if(id==='wShop')renderShop();}}
 let skSig='',shopSig='';
 function renderSkillWin(soft){
@@ -1502,7 +1516,7 @@ function renderSkillWin(soft){
  const L=$('skList');L.innerHTML='';
  c.skills.forEach((d,i)=>{const lv=p.sk[i];const row=document.createElement('div');row.className='item';
   const col=['#ffd27a','#9fe3ff','#c9a6ff','#9dff9b'][i];
-  row.innerHTML=`<div class="ic" style="background:rgba(255,255,255,.07);color:${col}">${d.g}</div><div class="tx"><b>${d.n}</b> <small>Lv.${lv}/${BAL.skMax}　按键 ${'ASDF'[i]}　MP ${d.mp(Math.max(1,lv))}　冷却 ${d.cd}s</small><br>${lv?d.desc(lv):'<small>需要 Lv.'+d.req+'</small>　'+d.desc(1)}${lv&&lv<BAL.skMax?'<br><small>下一级：'+d.desc(lv+1)+'</small>':''}</div>`;
+  row.innerHTML=`<div class="ic" style="background:rgba(255,255,255,.07);color:${col}">${d.g}</div><div class="tx"><b>${d.n}</b> <small>Lv.${lv}/${BAL.skMax}　按键 ${kn('s'+i)}　MP ${d.mp(Math.max(1,lv))}　冷却 ${d.cd}s</small><br>${lv?d.desc(lv):'<small>需要 Lv.'+d.req+'</small>　'+d.desc(1)}${lv&&lv<BAL.skMax?'<br><small>下一级：'+d.desc(lv+1)+'</small>':''}</div>`;
   const b=document.createElement('button');b.textContent=lv?'+1':'学习';b.disabled=p.sp<=0||lv>=BAL.skMax||p.lv<d.req;
   b.onclick=()=>{req({t:'learn',i});setTimeout(()=>renderSkillWin(),120);};row.appendChild(b);L.appendChild(row);});
  const s=stats(p);
@@ -1516,21 +1530,24 @@ function renderShop(soft){
   const b=document.createElement('button');b.textContent=it.own?'已拥有':it.price+' 金币';b.disabled=!!it.own||p.meso<it.price||(it.lv&&p.lv<it.lv);
   b.onclick=()=>{req({t:'buy',id:it.id});setTimeout(()=>renderShop(),120);};row.appendChild(b);L.appendChild(row);}
 }
-const TALK=['欢迎来到云岛！我是向导阿栗。往右走过传送门就是微风草原，橡果兵和蒲公英精很适合新手练手。',
- '每次升级会得到 2 点技能点，按 K 打开技能窗口学习技能。每个职业都有一个能帮助队友的技能哦。',
- '在绳子旁边按 ↑ 就能爬上高处的平台。按住 ↓ 再跳，可以从平台上跳下去。',
+const TALK=()=>['欢迎来到云岛！我是向导阿栗。往右走过传送门就是微风草原，橡果兵和蒲公英精很适合新手练手。',
+ `每次升级会得到 2 点技能点，按 ${kn('skills')} 打开技能窗口学习技能。每个职业都有一个能帮助队友的技能哦。`,
+ `在绳子旁边按 ${kn('up')} 就能爬上高处的平台。按住 ${kn('down')} 再按 ${kn('jump')}，可以从平台上跳下去。`,
  '打怪掉的金币可以在莉卡的小摊买药水和装备。武器和护甲有等级要求，记得常回来看看。',
  '风铃峡谷的最高处有一扇通往风车遗迹的门，里面沉睡着铁风车巨像。它踩地之前会举起双臂——那时候赶紧跳起来！',
- '和朋友一起冒险吧：在同一张地图里打怪，两人各得 75% 经验；同伴倒下时，走过去按住 ↑ 就能把他救起来。'];
+ `和朋友一起冒险吧：在同一张地图里打怪，两人各得 75% 经验；同伴倒下时，走过去按住 ${kn('up')} 就能把他救起来。`,
+ '不喜欢现在的按键？在菜单（Esc）里打开「按键设置」，可以换成方向键布局，或者逐个改键。'];
 let talkI=0;
-function openNpc(n){sfx('click');if(n.id==='shop'){closeWins();$('wShop').classList.remove('hidden');renderShop();}else{closeWins();$('talkName').textContent=n.name;$('talkText').textContent=TALK[talkI%TALK.length];$('wTalk').classList.remove('hidden');}}
-$('talkNext').onclick=()=>{talkI++;$('talkText').textContent=TALK[talkI%TALK.length];sfx('click');};
+function openNpc(n){sfx('click');if(n.id==='shop'){closeWins();$('wShop').classList.remove('hidden');renderShop();}else{closeWins();$('talkName').textContent=n.name;$('talkText').textContent=TALK()[talkI%TALK().length];$('wTalk').classList.remove('hidden');}}
+$('talkNext').onclick=()=>{talkI++;$('talkText').textContent=TALK()[talkI%TALK().length];sfx('click');};
 for(const b of document.querySelectorAll('[data-close]'))b.addEventListener('click',()=>{closeWins();sfx('click');});
 $('bSkill').onclick=()=>{auInit();toggleWin('wSkill');};
 $('bMenu').onclick=()=>{auInit();toggleWin('wMenu');};
 $('bShop').onclick=()=>{const M=MAPS[ME.map];const n=M.npcs.find(q=>Math.abs(q.x-ME.x)<56&&Math.abs(q.y-ME.y)<12);if(n)openNpc(n);};
-$('mHelp').onclick=()=>{closeWins();$('wHelp').classList.remove('hidden');};
-$('bHelp0').onclick=()=>{$('wHelp').classList.remove('hidden');};
+$('mHelp').onclick=()=>{closeWins();renderHelp();$('wHelp').classList.remove('hidden');};
+$('mKeys').onclick=()=>{closeWins();renderKeys();$('wKeys').classList.remove('hidden');};
+$('bKeys0').onclick=()=>{renderKeys();$('wKeys').classList.remove('hidden');};
+$('bHelp0').onclick=()=>{renderHelp();$('wHelp').classList.remove('hidden');};
 $('mMute').onclick=()=>setMute(!AU.muted);
 $('mFull').onclick=toggleFull;
 $('mQuit').onclick=()=>{saveMe();if(NET.role)netLeave();quitToTitle();};
@@ -1583,8 +1600,8 @@ $('cOk').onclick=()=>{const n=$('cName').value.trim().slice(0,8)||'旅人';const
 $('bSolo').onclick=()=>{auInit();startHost(false);};
 $('bHost').onclick=()=>{auInit();startHost(true);};
 $('bJoin').onclick=()=>{auInit();netJoin($('joinCode').value);};
-$('joinCode').addEventListener('keydown',e=>{if(e.key==='Enter')$('bJoin').click();e.stopPropagation();});
-$('cName').addEventListener('keydown',e=>e.stopPropagation());
+$('joinCode').addEventListener('keydown',e=>{e.stopPropagation();if(e.key==='Enter'){e.target.blur();$('bJoin').click();}else if(e.key==='Escape'||e.key==='ArrowUp'||e.key==='ArrowDown'||e.key==='Tab'){e.preventDefault();e.target.blur();}});
+$('cName').addEventListener('keydown',e=>{e.stopPropagation();if(e.key==='Enter'||e.key==='Escape'||e.key==='ArrowUp'||e.key==='ArrowDown'||e.key==='Tab'){e.preventDefault();e.target.blur();if(e.key!=='Escape'&&e.key!=='ArrowUp'){const els=navEls($('sCreate'));NAV.i=Math.max(0,els.findIndex(x=>x.classList.contains('ccard')&&x.classList.contains('sel')));}}});
 function startHost(online){
  const sv=loadSlots()[slotSel];if(!sv)return;
  IS_HOST=true;ME_I=0;newWorld();ME=mkPlayer(sv,0);P=[ME];
@@ -1601,18 +1618,119 @@ function quitToTitle(){
 }
 
 /* ---------------- input ---------------- */
-const GAMEKEYS=new Set(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Space','KeyX','KeyJ','KeyC','KeyA','KeyS','KeyD','KeyF','KeyQ','KeyW','Digit1','Digit2','Digit3','Digit4']);
+/* keyboard: UI navigation while a window or menu screen is up, game input otherwise */
+let REBIND=null;
+const NAV={root:null,i:0,el:null};
+function navRoot(){
+ const w=WINS.find(id=>!$(id).classList.contains('hidden'));if(w)return $(w);
+ if(state==='play'&&!$('wDeath').classList.contains('hidden'))return $('wDeath');
+ if(state==='title')return $('sTitle');if(state==='create')return $('sCreate');return null;
+}
+function navEls(root){
+ const all=[...root.querySelectorAll('button,input,.slot,.ccard')].filter(e=>e.offsetParent!==null&&!e.classList.contains('del'));
+ const head=all.filter(e=>e.matches('h2 [data-close]'));
+ return all.filter(e=>!head.includes(e)).concat(head);
+}
+function navStart(root,els){
+ const f=id=>els.indexOf($(id));
+ if(root.id==='sTitle'){const a=f('bSolo');if(!$('bSolo').disabled&&a>=0)return a;const sl=els.filter(e=>e.classList.contains('slot'));return Math.max(0,els.indexOf(sl[slotSel]));}
+ if(root.id==='sCreate')return Math.max(0,els.findIndex(e=>e.classList.contains('ccard')&&e.classList.contains('sel')));
+ if(root.id==='wTalk')return Math.max(0,f('talkNext'));
+ return 0;
+}
+function navSync(){
+ const root=navRoot();
+ if(!root||TOUCH){if(NAV.el){NAV.el.classList.remove('kf');NAV.el=null;}NAV.root=root;return;}
+ const els=navEls(root);
+ if(root!==NAV.root){NAV.root=root;NAV.i=navStart(root,els);}
+ NAV.i=clamp(NAV.i,0,Math.max(0,els.length-1));
+ const el=els[NAV.i]||null;
+ if(el!==NAV.el){if(NAV.el)NAV.el.classList.remove('kf');NAV.el=el;if(el){el.classList.add('kf');try{el.scrollIntoView({block:'nearest'});}catch(e){}}}
+}
+function navBack(root){
+ sfx('click');
+ if(root.id==='sCreate'){$('cBack').click();return;}
+ if(root.id==='sTitle')return;
+ if(root.id==='wDeath'){toggleWin('wMenu');return;}
+ const back=state==='play'&&(root.id==='wHelp'||root.id==='wKeys');
+ closeWins();if(back)toggleWin('wMenu');
+}
+function navKey(code,root){
+ if(root!==NAV.root){if(NAV.el){NAV.el.classList.remove('kf');NAV.el=null;}navSync();}
+ if(code==='Escape'){navBack(root);return;}
+ if(root.id==='wSkill'&&code===BIND.skills){closeWins();return;}
+ const els=navEls(root);if(!els.length)return;
+ const prev=code==='ArrowUp'||code==='ArrowLeft'||code===BIND.up||code===BIND.left||(code==='Tab'&&KEY.ShiftLeft);
+ const next=!prev&&(code==='ArrowDown'||code==='ArrowRight'||code===BIND.down||code===BIND.right||code==='Tab');
+ const ok=code==='Enter'||code==='NumpadEnter'||code==='Space'||code===BIND.atk;
+ if(prev||next){NAV.i=(NAV.i+(prev?-1:1)+els.length)%els.length;sfx('tick');
+  const el=els[NAV.i];if(root.id==='sCreate'&&el.classList.contains('ccard'))el.click();}
+ else if(ok){const el=els[NAV.i];if(!el)return;
+  if(el.tagName==='INPUT'){el.focus();el.select();return;}
+  if(el.disabled){sfx('nope');return;}
+  el.click();
+  if(el.classList.contains('ccard'))NAV.i=navEls(root).indexOf($('cOk'));
+  else if(el.classList.contains('slot')&&state==='title'&&loadSlots()[slotSel]){NAV.root=$('sTitle');NAV.i=navEls($('sTitle')).indexOf($('bSolo'));}
+ }
+ else if((code==='Delete'||code==='Backspace')&&root.id==='sTitle'){const el=els[NAV.i];const d=el&&el.querySelector&&el.querySelector('.del');if(d)d.click();}
+ if(NAV.el){NAV.el.classList.remove('kf');NAV.el=null;}
+ navSync();
+}
 addEventListener('keydown',e=>{
  if(e.target&&e.target.tagName==='INPUT')return;
  auInit();
- if(state==='play'){
-  if(e.code==='Escape'){if(winOpen())closeWins();else toggleWin('wMenu');e.preventDefault();return;}
-  if(e.code==='KeyK'){toggleWin('wSkill');return;}
-  if(e.code==='KeyM'){setMute(!AU.muted);return;}
+ const ae=document.activeElement;if(ae&&ae.tagName==='BUTTON')ae.blur();
+ if(REBIND){e.preventDefault();if(e.code!=='Escape')setBind(REBIND,e.code);REBIND=null;renderKeys();return;}
+ const root=navRoot();
+ if(root){
+  e.preventDefault();
+  for(const k in KEY)KEY[k]=false;KEY.ShiftLeft=e.shiftKey;
+  const moveKeys=['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',BIND.up,BIND.down,BIND.left,BIND.right];
+  if(e.repeat&&!moveKeys.includes(e.code))return;
+  navKey(e.code,root);return;
  }
- if(GAMEKEYS.has(e.code))e.preventDefault();
+ if(state==='play'){
+  if(e.code==='Escape'){toggleWin('wMenu');e.preventDefault();return;}
+  if(e.code===BIND.skills){toggleWin('wSkill');e.preventDefault();return;}
+  if(e.code==='KeyM'&&!isBound('KeyM')){setMute(!AU.muted);return;}
+ }
+ if(isBound(e.code)||e.code==='Space'||e.code==='Tab'||e.code.startsWith('Arrow')||e.code.startsWith('Alt'))e.preventDefault();
  if(!e.repeat)PRESS[e.code]=true;KEY[e.code]=true;
 });
+function setBind(a,code){
+ const other=ACTIONS.find(([x])=>x!==a&&BIND[x]===code);
+ if(other){BIND[other[0]]=BIND[a];toast('「'+other[1]+'」改为 '+keyName(BIND[a]));}
+ BIND[a]=code;saveBind();onBindChange();sfx('learn');
+}
+function onBindChange(){if(state==='play')buildSlots();renderHelp();updNavHints();for(const k in KEY)KEY[k]=false;}
+function renderKeys(){
+ const L=$('keyList');L.innerHTML='';
+ for(const [a,label] of ACTIONS){const r=document.createElement('div');r.className='krow';r.innerHTML='<span>'+label+'</span>';
+  const b=document.createElement('button');b.textContent=REBIND===a?'按下新按键…':kn(a);if(REBIND===a)b.classList.add('wait');
+  b.onclick=()=>{REBIND=a;renderKeys();};r.appendChild(b);L.appendChild(r);}
+ $('keysNote').textContent=REBIND?'按下想要的按键（Esc 取消）。如果这个键已被占用，两个动作会互换按键。':'选中一项后按 回车 或 '+kn('atk')+'，再按下新按键。Esc 返回。打开菜单固定用 Esc。';
+ if(NAV.el){NAV.el.classList.remove('kf');NAV.el=null;}
+}
+$('kWasd').onclick=()=>{BIND=Object.assign({},PRESETS.wasd);saveBind();onBindChange();renderKeys();toast('已切换为 WASD 布局');};
+$('kArrows').onclick=()=>{BIND=Object.assign({},PRESETS.arrows);saveBind();onBindChange();renderKeys();toast('已切换为方向键布局');};
+function renderHelp(){
+ const sk=['s0','s1','s2','s3'].map(kn).join(' ');
+ $('helpKv').innerHTML=[
+  ['移动',kn('left')+' '+kn('right')+'　（'+kn('down')+' 蹲下，'+kn('down')+' + '+kn('jump')+' 从平台跳下）'],
+  ['跳跃',kn('jump')],
+  ['攀爬','在绳子旁按 '+kn('up')+' / '+kn('down')+'，爬绳时按 '+kn('left')+' / '+kn('right')+' + '+kn('jump')+' 离开'],
+  ['普通攻击',kn('atk')+'（按住连续攻击）'],['技能',sk],['药水',kn('potR')+' 红药水　'+kn('potB')+' 蓝药水'],
+  ['传送门 / 对话 / 商店','站在传送门或 NPC 旁按 '+kn('up')],['技能窗口',kn('skills')],['菜单','Esc'],
+  ['窗口与菜单',kn('up')+' / '+kn('down')+'（或方向键）选择，回车 / 空格 / '+kn('atk')+' 确认，Esc 返回'],
+  ['改键','菜单 → 按键设置：WASD 布局、方向键布局，或逐个改键'],
+  ['触屏','左半屏拖动摇杆移动（上推爬绳 / 进传送门），右下按钮攻击、跳跃、技能、药水'],
+  ['联机','一人「创建房间」，把 4 位房间码发给队友，队友输入后加入。同一地图里的队友分享经验（各得 75%），倒下的队友可以靠近按住 '+kn('up')+' 复活。'],
+ ].map(([k,v])=>'<b>'+k+'</b><span>'+esc(v)+'</span>').join('');
+}
+function updNavHints(){
+ const t=kn('up')+' '+kn('down')+' 选择 · 回车 或 '+kn('atk')+' 确认 · Esc 返回';
+ for(const e of document.querySelectorAll('.navhint'))if(e.id!=='keysNote')e.textContent=e.closest('#sTitle')?t+' · Del 删除角色':t;
+}
 addEventListener('keyup',e=>{KEY[e.code]=false;});
 addEventListener('blur',()=>{for(const k in KEY)KEY[k]=false;});
 // touch joystick
@@ -1649,14 +1767,14 @@ function step(dt){
 function frame(now){
  requestAnimationFrame(frame);
  const dt=Math.min(.05,(now-last)/1000);last=now;
- step(dt);render(now/1000);
+ step(dt);render(now/1000);navSync();
  for(const k in PRESS)PRESS[k]=false;TIN.jumpP=false;TIN.upP=false;TIN.skP=null;
 }
 // keep the host simulating while its tab is in the background
 setInterval(()=>{if(document.hidden&&state==='play'&&IS_HOST&&connected()){const now=performance.now();const dt=Math.min(.1,(now-last)/1000);last=now;step(dt);}},100);
 addEventListener('pagehide',()=>{if(state==='play')saveMe();if(connected())netSend({t:'bye'});});
 document.addEventListener('visibilitychange',()=>{if(document.hidden&&state==='play')saveMe();});
-renderSlots();
+renderSlots();renderHelp();updNavHints();
 requestAnimationFrame(frame);
 if(window.__TEST)window.__dbg={get G(){return G;},get P(){return P;},get ME(){return ME;},MAPS,MOB,CLS,BAL,warpTo,hostAct,trySkill,gainExp,spawnMob,stats,get state(){return state;},get NET(){return NET;},CL,startHost,netJoin,toggleWin};
 </script>
