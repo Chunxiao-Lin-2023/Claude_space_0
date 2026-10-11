@@ -1195,6 +1195,7 @@ function hurt(d,kind='hit'){
  if(P.inv>0||state!=='battle'||run.victory||(CUR&&CUR.down))return;
  if(Math.random()*100<Math.min(dodgeCap(),S.dodge)){P.inv=0.3;hurtSnd(CUR,'dodge',0);addText(P.x,P.y-30,'闪避',C.verdigris,14);fxs.push({type:'after',pid:CUR?CUR.id:0,x:P.x,y:P.y,face:P.face,dface:P.dface,life:0.3,max:0.3});onDodge();return;}
  const A=S.armor;d*=A>=0?15/(15+A):(15-A)/15;
+ if(CUR&&CUR.reviving!=null)d*=REV.guard; // reviving a teammate: take less damage
  run.hp-=d;P.inv=0.5;if(isMe())shake=0.25;addText(P.x,P.y-30,'-'+Math.max(1,Math.round(d)),C.danger,15);
  hurtSnd(CUR,kind,d/Math.max(1,S.hp));
  if(run.hp<=0){
@@ -1210,12 +1211,15 @@ function playerDown(){
  banner(p===ME()?'你倒下了 · 等队友来救':'队友倒下 · 靠近他就能救起',1800);netEvent({banner:p===ME()?'队友倒下 · 靠近他就能救起':'你倒下了 · 等队友来救',sfx:'down',vol:p===ME()?0.55:1});
 }
 /* ---- teammate revive (co-op only) ----
-   Stand next to a downed teammate to fill the revive ring. Each revive in the same wave takes
-   longer; leaving the circle drains progress slowly. Getting hit while reviving does not interrupt it.
-   The revived player comes back with 35% HP and a short shield. If nobody revives them, they still
-   come back at the start of the next wave. */
-const REV={radius:48,base:3,step:1.5,hp:0.35,inv:1.6,decay:0.6};
-const revNeed=p=>REV.base+REV.step*(p.revives||0);
+   Stand inside a downed teammate's ring to fill it. Built to be doable in late waves:
+   - big ring (you only need to be near, not on top), 2s for the first revive, +0.75s per extra
+     revive in the same wave, capped at 4s; leaving the ring drains progress slowly
+   - the reviver takes 40% less damage while inside the ring, and getting hit never interrupts
+   - on revive a rescue shockwave knocks back and slows nearby enemies (bosses are only slowed),
+     and both players get a short shield
+   The revived player comes back with 40% HP. Nobody revives them -> back at the next wave. */
+const REV={radius:72,base:2,step:0.75,max:4,hp:0.4,inv:2,helperInv:1.2,decay:0.3,guard:0.6,blast:170};
+const revNeed=p=>Math.min(REV.max,REV.base+REV.step*(p.revives||0));
 function reviveUpdate(dt){
  for(const p of PL)p.reviving=null;
  if(PL.length<2)return;
@@ -1228,11 +1232,22 @@ function reviveUpdate(dt){
   if(d.rv>=revNeed(d)){
    const keep=CUR;use(d);
    d.down=false;d.rv=0;d.rvk=0;d.revives=(d.revives||0)+1;run.hp=Math.max(1,Math.round(S.hp*REV.hp));P.inv=REV.inv;
-   ringFx(P.x,P.y,70,C.good,0.45);fxs.push({type:'lvl',pid:d.id,life:0.9,max:0.9});addText(P.x,P.y-40,'救起！',C.good,17);
+   if(helper)helper.P.inv=Math.max(helper.P.inv,REV.helperInv);
+   rescueBlast(P.x,P.y);
+   fxs.push({type:'lvl',pid:d.id,life:0.9,max:0.9});addText(P.x,P.y-40,'救起！',C.good,17);
    sfx('revive');banner(d===ME()?'队友把你救起来了':'救起队友',1200);netEvent({banner:d===ME()?'救起队友':'队友把你救起来了',sfx:'revive'});
    use(keep);
   }
  }
+}
+// shockwave on revive: shove nearby enemies out of the ring, slow them, clear enemy bullets close by
+function rescueBlast(x,y){
+ const R=REV.blast;
+ ringFx(x,y,R,C.good,0.5);ringFx(x,y,R*0.6,'#ece4ce',0.35);fxs.push({type:'flash',x,y,r:R,col:GLOW.green,life:0.3,max:0.3});
+ for(const e of enemies){if(e.dead||e.seg)continue;const dx=e.x-x,dy=e.y-y,d=Math.hypot(dx,dy)||1;if(d>R+e.r)continue;
+  e.slowT=Math.max(e.slowT||0,2);
+  if(!e.boss){const push=Math.max(0,R+e.r-d)*0.9;e.x=clamp(e.x+dx/d*push,e.r,WORLD.w-e.r);e.y=clamp(e.y+dy/d*push,e.r,WORLD.h-e.r);e.flash=0.1;}}
+ for(const b of ebul)if(Math.hypot(b.x-x,b.y-y)<R)b.dead=true;
 }
 function onDodge(){
  if(H.key==='wind'){dodgeBuff=2;addXP(1);}
@@ -1807,7 +1822,7 @@ function renderMenu(){
     <div class="go">${startBtn()}<span class="dim">${best.wins?`已通关 ${best.wins} 次`:best.wave?`最好成绩：第 ${best.wave} 波`:'首次挑战'}</span></div>
    </div>
   </section>
-  <p class="howto"><b>移动</b> WASD 或方向键；iPad / 手机上用手指按住屏幕任意位置拖动（虚拟摇杆跟着手指出现）。<b>攻击</b> 武器自动瞄准最近的敌人。金币掉在地上不会消失，下一波开局还能捡。击败抱着宝箱的金色小精灵可以拿到宝箱。第 5 波起会出现带词缀的精英怪，击败可能掉宝箱。第 8 波有精英首领，第 16 波是最终首领，击败它即通关。每张战场有自己的地形机关，敌人也会被机关伤到。Esc 或 P 暂停，M 开关音效。双人联机时队友倒地，站到他身边的绿圈里就能救起（同一波里每救一次都更慢）。</p>
+  <p class="howto"><b>移动</b> WASD 或方向键；iPad / 手机上用手指按住屏幕任意位置拖动（虚拟摇杆跟着手指出现）。<b>攻击</b> 武器自动瞄准最近的敌人。金币掉在地上不会消失，下一波开局还能捡。击败抱着宝箱的金色小精灵可以拿到宝箱。第 5 波起会出现带词缀的精英怪，击败可能掉宝箱。第 8 波有精英首领，第 16 波是最终首领，击败它即通关。每张战场有自己的地形机关，敌人也会被机关伤到。Esc 或 P 暂停，M 开关音效。双人联机时队友倒地，站进他身边的绿圈就能救起：约 2 秒，救人时受到的伤害减少 40%，救起瞬间会震开周围的怪。</p>
  </div>`;
 }
 function renderPrep(){
