@@ -8,7 +8,7 @@ __IOS_META__
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;height:100%;background:#0b090e;overflow:hidden;overscroll-behavior:none;touch-action:none;color:var(--ink);
  font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans SC",system-ui,sans-serif;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
-canvas#cv{position:fixed;inset:0;width:100vw;height:100vh;display:block;cursor:crosshair}
+canvas#cv{position:fixed;inset:0;width:100vw;height:100vh;height:100dvh;display:block;cursor:crosshair}
 .serif{font-family:"Songti SC","STSong","Noto Serif SC","SimSun",serif}
 button{font:inherit;color:inherit;cursor:pointer}
 .btn{background:linear-gradient(#3b2d22,#251b14);border:1.5px solid var(--gold);border-radius:8px;padding:10px 18px;color:var(--gold2);font-weight:700;letter-spacing:.06em;
@@ -72,11 +72,15 @@ button{font:inherit;color:inherit;cursor:pointer}
 .coarse #tipLine{display:none}
 .coarse #hudBtns{top:calc(96px + var(--sat));bottom:auto}
 .coarse #bar{left:calc(50% - 40px)}
-@media (max-height:500px){.coarse #bl{transform:scale(.8);transform-origin:bottom left}.coarse #tc{top:calc(8px + var(--sat))}.coarse #tl{transform:scale(.85);transform-origin:top left}}
+#tAlt,#tPlace{right:calc(16px + var(--sar));bottom:calc(92px + var(--sab))}
+#tSkill,#tRot{right:calc(84px + var(--sar));bottom:calc(150px + var(--sab))}
+#tDash,#tCancel{right:calc(84px + var(--sar));bottom:calc(20px + var(--sab))}
+button{touch-action:manipulation}
 .coarse .slot{width:50px;height:58px}
 /* ---------- menus ---------- */
-#menu{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse at 50% 35%,rgba(60,36,30,.55),rgba(6,5,9,.94) 70%);overflow:auto;padding:calc(16px + var(--sat)) 16px calc(16px + var(--sab))}
+#menu{position:fixed;inset:0;display:flex;flex-direction:column;background:radial-gradient(ellipse at 50% 35%,rgba(60,36,30,.55),rgba(6,5,9,.94) 70%);overflow:auto;padding:calc(16px + var(--sat)) 16px calc(16px + var(--sab))}
 #menu.off{display:none}
+#menu>*{margin:auto}
 #menu{touch-action:pan-y}
 #menu.ingame{background:rgba(5,4,8,.72)}
 .scr{width:min(980px,100%);margin:auto}
@@ -133,6 +137,73 @@ table.st{margin:10px auto;border-collapse:collapse;font-size:14px}table.st td{pa
 .pc b{color:var(--gold2)}
 .mut{color:var(--dim);font-size:12px}
 @media (max-width:640px){#tl{min-width:180px;padding:6px 8px}#gold{font-size:16px}#tc{min-width:200px;top:calc(56px + var(--sat))}#mini{transform:scale(.7);transform-origin:top right}.slot{width:44px;height:52px}.slot canvas{width:36px;height:32px}}
+
+/* ================= iPhone (IPHONE.md): phone-only, desktop & iPad untouched ================= */
+.phoneOnly{display:none}
+@media (pointer:coarse) and (max-width:500px), (pointer:coarse) and (max-height:500px){
+ .phoneOnly{display:block}
+ #menu{padding:calc(8px + var(--sat)) max(10px, var(--sar)) calc(8px + var(--sab)) max(10px, var(--sal))}
+ .logo h1{font-size:40px}.logo p{font-size:11px;letter-spacing:.2em}.logo{margin:0 0 6px}
+ .cards{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+ .hcard{width:auto;max-width:none;min-width:0;flex:none;flex-direction:column;gap:2px;padding:5px 4px;text-align:center}
+ .hcard canvas{width:44px;height:52px}.hcard h3{font-size:13px;margin:0}.hcard p,.hcard .role{display:none}
+ #heroInfo{font-size:12px;color:var(--dim);text-align:center;margin:6px 4px 0;line-height:1.5}
+ .box{padding:10px}.btns{margin-top:8px;gap:8px}.join{margin-top:8px}.note{margin-top:6px;min-height:0}
+ .btn{padding:8px 14px}
+ h2{font-size:18px;margin-bottom:6px}
+ .lvls{grid-template-columns:repeat(2,1fr);gap:8px}.lv{padding:5px}.lv b{font-size:13px;margin-top:3px}.lv small{font-size:11px}
+ #lvInfo{position:sticky;bottom:calc(-8px - var(--sab));background:var(--panel);margin:8px -10px -10px;padding:8px 10px calc(8px + var(--sab));border-top:1px solid var(--line);z-index:2}
+ #lvInfo .mut{display:none}
+ .arm{grid-template-columns:1fr}.ac canvas{width:48px;height:44px}
+ .help{font-size:12px;line-height:1.6}
+ .res .big{font-size:38px}.res .skulls{font-size:26px}
+ /* HUD */
+ #tl{min-width:0;width:160px;padding:5px 8px}#tl .bar{height:12px}#gold{font-size:15px}.coin{width:13px;height:13px}
+ #tc{min-width:0;padding:4px 10px}#waveTxt{font-size:12px}#phaseTxt{font-size:10px}#readyBtn{min-height:40px;padding:4px 14px;font-size:13px;margin-top:4px}
+ #wavePrev .wc{font-size:10px;padding:1px 6px}
+ .coarse #hudBtns{top:calc(8px + var(--sat));bottom:auto;right:max(8px, var(--sar));gap:4px}
+ .ib{width:40px;height:40px;font-size:14px}
+ #mini{right:max(8px, var(--sar));top:calc(54px + var(--sat));transform:none}
+ #bl{padding:5px 7px;gap:6px}#portrait{width:40px;height:40px}#bl>div{width:120px!important}
+ #bar{padding:3px;gap:3px;bottom:calc(6px + var(--sab))}
+ .coarse .slot,.slot{width:38px;height:48px}.slot canvas{width:32px;height:28px;margin-top:2px}.slot .cost{font-size:10px;line-height:12px}.slot .key{display:none}
+ .tb{width:52px;height:52px;font-size:12px}
+ #banner{font-size:28px}#banner small{font-size:13px}
+ #toasts{top:calc(118px + var(--sat))}.toast{font-size:12px;padding:4px 10px}
+ #ally{top:calc(74px + var(--sat));min-width:0;font-size:11px;padding:4px 8px}
+}
+/* portrait phone */
+@media (pointer:coarse) and (max-width:500px){
+ #tl{left:max(8px, var(--sal));top:calc(8px + var(--sat))}
+ #tc{left:max(8px, var(--sal));right:calc(max(8px, var(--sar)) + 96px);top:calc(62px + var(--sat));transform:none}
+ #ally{display:none!important}
+ #bar{left:max(6px, var(--sal));right:max(6px, var(--sar));transform:none;justify-content:center}
+ .coarse #bar{left:max(6px, var(--sal))}
+ #bl{left:max(8px, var(--sal));bottom:calc(66px + var(--sab))}
+ #tAlt,#tPlace{right:max(10px, var(--sar));bottom:calc(132px + var(--sab))}
+ #tSkill,#tRot{right:calc(max(10px, var(--sar)) + 58px);bottom:calc(178px + var(--sab))}
+ #tDash,#tCancel{right:calc(max(10px, var(--sar)) + 62px);bottom:calc(72px + var(--sab))}
+}
+/* landscape phone */
+@media (pointer:coarse) and (max-height:500px){
+ .scr.title{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:10px;align-items:start}
+ .scr.title .logo{grid-column:1/-1}.scr.title .logo h1{font-size:30px}.scr.title .logo p{display:none}
+ .scr.title .box{margin-top:0!important}
+ .cards{grid-template-columns:repeat(3,1fr)}
+ .lvls{grid-template-columns:repeat(4,1fr)}
+ #tl{left:max(8px, var(--sal));top:calc(6px + var(--sat))}
+ #tc{top:calc(6px + var(--sat))}
+ .coarse #hudBtns{top:calc(6px + var(--sat))}
+ #mini{top:calc(50px + var(--sat))}
+ #bl{left:max(8px, var(--sal));top:calc(66px + var(--sat));bottom:auto}
+ #ally{top:calc(122px + var(--sat))}
+ #bar{left:max(8px, var(--sal));transform:none}
+ .coarse #bar{left:max(8px, var(--sal))}
+ #tAlt,#tPlace{right:max(10px, var(--sar));bottom:calc(64px + var(--sab))}
+ #tSkill,#tRot{right:calc(max(10px, var(--sar)) + 58px);bottom:calc(104px + var(--sab))}
+ #tDash,#tCancel{right:calc(max(10px, var(--sar)) + 62px);bottom:calc(10px + var(--sab))}
+ #toasts{top:calc(70px + var(--sat))}
+}
 </style></head><body>
 <canvas id="cv"></canvas>
 <div id="hud">
@@ -159,12 +230,12 @@ table.st{margin:10px auto;border-collapse:collapse;font-size:14px}table.st td{pa
 </div>
 <div id="touch">
  <div class="stick" id="stL"><i></i></div><div class="stick" id="stR"><i></i></div>
- <button class="tb" id="tAlt" style="right:calc(16px + var(--sar));bottom:calc(92px + var(--sab))"><span></span><div class="cd"></div></button>
- <button class="tb" id="tSkill" style="right:calc(84px + var(--sar));bottom:calc(150px + var(--sab))"><span></span><div class="cd"></div></button>
- <button class="tb" id="tDash" style="right:calc(84px + var(--sar));bottom:calc(20px + var(--sab))">冲刺<div class="cd"></div></button>
- <button class="tb" id="tPlace" style="right:calc(16px + var(--sar));bottom:calc(92px + var(--sab));display:none;border-color:#5fd068;color:#c8ffcf">放置</button>
- <button class="tb" id="tRot" style="right:calc(84px + var(--sar));bottom:calc(150px + var(--sab));display:none">旋转</button>
- <button class="tb" id="tCancel" style="right:calc(84px + var(--sar));bottom:calc(20px + var(--sab));display:none;border-color:#e0574a;color:#ffd6cf">武器</button>
+ <button class="tb" id="tAlt"><span></span><div class="cd"></div></button>
+ <button class="tb" id="tSkill"><span></span><div class="cd"></div></button>
+ <button class="tb" id="tDash">冲刺<div class="cd"></div></button>
+ <button class="tb" id="tPlace" style="display:none;border-color:#5fd068;color:#c8ffcf">放置</button>
+ <button class="tb" id="tRot" style="display:none">旋转</button>
+ <button class="tb" id="tCancel" style="display:none;border-color:#e0574a;color:#ffd6cf">武器</button>
 </div>
 <div id="menu"></div>
 <script>

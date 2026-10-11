@@ -119,7 +119,7 @@ function prerenderMap() {
   const ms = 4, mm = document.createElement('canvas'); mm.width = m.w * ms; mm.height = m.h * ms; const mg = mm.getContext('2d');
   for (let y = 0; y < m.h; y++) for (let x = 0; x < m.w; x++) { const v = t(x, y); mg.fillStyle = v === TW ? (nearOpen(x, y) ? '#3a3542' : 'rgba(0,0,0,0)') : v === TP ? '#050408' : v === TL ? '#b8400f' : '#6b6152'; mg.fillRect(x * ms, y * ms, ms, ms); }
   LAYER.mini = mm; LAYER.ms = ms;
-  const mc = $('mini'); mc.width = m.w * ms; mc.height = m.h * ms; mc.style.width = (m.w * ms * 0.75 | 0) + 'px'; mc.style.height = (m.h * ms * 0.75 | 0) + 'px';
+  const mc = $('mini'); mc.width = m.w * ms; mc.height = m.h * ms; const mf = PHONE.matches ? 0.45 : 0.75; mc.style.width = (m.w * ms * mf | 0) + 'px'; mc.style.height = (m.h * ms * mf | 0) + 'px';
   // static light list
   m.lights = [];
   for (const tq of m.torches) if (t(tq.x, tq.y + 1) !== TW) m.lights.push({x: tc(tq.x), y: (tq.y + 1) * T - WH * 0.5, r: 190, c: '255,170,80', f: 1, torch: 1});
@@ -421,7 +421,8 @@ function brazierFire(g, x, y, now) {
 }
 function drawBossBar(g) {
   const b = viewEnemies().find(e => ORCS[e.type].boss && !e.dead && !e.fall); if (!b) return;
-  const w = Math.min(420, VW * 0.6), x = VW / 2 - w / 2, y = (IS_TOUCH ? 96 : 92);
+  const w = Math.min(420, VW * 0.6), x = VW / 2 - w / 2; let y = (IS_TOUCH ? 96 : 92);
+  if (PHONE.matches) { const r = $('tc').getBoundingClientRect(); y = r.bottom + 10; }
   g.fillStyle = 'rgba(10,6,8,.85)'; g.fillRect(x - 4, y - 4, w + 8, 22); g.strokeStyle = '#a32020'; g.strokeRect(x - 4, y - 4, w + 8, 22);
   const f = clamp(b.hp / b.mhp, 0, 1); const gr = g.createLinearGradient(x, 0, x + w, 0); gr.addColorStop(0, '#7a0e0e'); gr.addColorStop(1, '#e23b2b'); g.fillStyle = gr; g.fillRect(x, y, w * f, 14);
   g.font = '800 12px sans-serif'; g.textAlign = 'center'; g.fillStyle = '#ffe1d6'; g.fillText('兽人督军', VW / 2, y + 11);

@@ -382,7 +382,7 @@ $('readyBtn').addEventListener('click', () => { audioInit(); toggleReady(); });
 $('bMute').addEventListener('click', () => { audioInit(); setMute(!AU.muted); });
 $('bPause').addEventListener('click', () => togglePause());
 $('bFull').addEventListener('click', () => { const d = document; if (d.fullscreenElement || d.webkitFullscreenElement) (d.exitFullscreen || d.webkitExitFullscreen).call(d); else { const r = d.documentElement; (r.requestFullscreen || r.webkitRequestFullscreen || (() => {})).call(r); } });
-if (!(document.documentElement.requestFullscreen || document.documentElement.webkitRequestFullscreen)) $('bFull').style.display = 'none';
+if (!(document.fullscreenEnabled || document.webkitFullscreenEnabled)) $('bFull').style.display = 'none';
 
 function swingFx(p, a, spin) {
   const x = p.rx != null && p !== ME ? p.rx : p.x, y = (p.ry != null && p !== ME ? p.ry : p.y) - 22, H = HEROES[p.hero];

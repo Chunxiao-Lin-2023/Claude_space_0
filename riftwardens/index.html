@@ -9,7 +9,7 @@
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;height:100%;background:#0b090e;overflow:hidden;overscroll-behavior:none;touch-action:none;color:var(--ink);
  font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans SC",system-ui,sans-serif;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
-canvas#cv{position:fixed;inset:0;width:100vw;height:100vh;display:block;cursor:crosshair}
+canvas#cv{position:fixed;inset:0;width:100vw;height:100vh;height:100dvh;display:block;cursor:crosshair}
 .serif{font-family:"Songti SC","STSong","Noto Serif SC","SimSun",serif}
 button{font:inherit;color:inherit;cursor:pointer}
 .btn{background:linear-gradient(#3b2d22,#251b14);border:1.5px solid var(--gold);border-radius:8px;padding:10px 18px;color:var(--gold2);font-weight:700;letter-spacing:.06em;
@@ -73,11 +73,15 @@ button{font:inherit;color:inherit;cursor:pointer}
 .coarse #tipLine{display:none}
 .coarse #hudBtns{top:calc(96px + var(--sat));bottom:auto}
 .coarse #bar{left:calc(50% - 40px)}
-@media (max-height:500px){.coarse #bl{transform:scale(.8);transform-origin:bottom left}.coarse #tc{top:calc(8px + var(--sat))}.coarse #tl{transform:scale(.85);transform-origin:top left}}
+#tAlt,#tPlace{right:calc(16px + var(--sar));bottom:calc(92px + var(--sab))}
+#tSkill,#tRot{right:calc(84px + var(--sar));bottom:calc(150px + var(--sab))}
+#tDash,#tCancel{right:calc(84px + var(--sar));bottom:calc(20px + var(--sab))}
+button{touch-action:manipulation}
 .coarse .slot{width:50px;height:58px}
 /* ---------- menus ---------- */
-#menu{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse at 50% 35%,rgba(60,36,30,.55),rgba(6,5,9,.94) 70%);overflow:auto;padding:calc(16px + var(--sat)) 16px calc(16px + var(--sab))}
+#menu{position:fixed;inset:0;display:flex;flex-direction:column;background:radial-gradient(ellipse at 50% 35%,rgba(60,36,30,.55),rgba(6,5,9,.94) 70%);overflow:auto;padding:calc(16px + var(--sat)) 16px calc(16px + var(--sab))}
 #menu.off{display:none}
+#menu>*{margin:auto}
 #menu{touch-action:pan-y}
 #menu.ingame{background:rgba(5,4,8,.72)}
 .scr{width:min(980px,100%);margin:auto}
@@ -134,6 +138,73 @@ table.st{margin:10px auto;border-collapse:collapse;font-size:14px}table.st td{pa
 .pc b{color:var(--gold2)}
 .mut{color:var(--dim);font-size:12px}
 @media (max-width:640px){#tl{min-width:180px;padding:6px 8px}#gold{font-size:16px}#tc{min-width:200px;top:calc(56px + var(--sat))}#mini{transform:scale(.7);transform-origin:top right}.slot{width:44px;height:52px}.slot canvas{width:36px;height:32px}}
+
+/* ================= iPhone (IPHONE.md): phone-only, desktop & iPad untouched ================= */
+.phoneOnly{display:none}
+@media (pointer:coarse) and (max-width:500px), (pointer:coarse) and (max-height:500px){
+ .phoneOnly{display:block}
+ #menu{padding:calc(8px + var(--sat)) max(10px, var(--sar)) calc(8px + var(--sab)) max(10px, var(--sal))}
+ .logo h1{font-size:40px}.logo p{font-size:11px;letter-spacing:.2em}.logo{margin:0 0 6px}
+ .cards{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+ .hcard{width:auto;max-width:none;min-width:0;flex:none;flex-direction:column;gap:2px;padding:5px 4px;text-align:center}
+ .hcard canvas{width:44px;height:52px}.hcard h3{font-size:13px;margin:0}.hcard p,.hcard .role{display:none}
+ #heroInfo{font-size:12px;color:var(--dim);text-align:center;margin:6px 4px 0;line-height:1.5}
+ .box{padding:10px}.btns{margin-top:8px;gap:8px}.join{margin-top:8px}.note{margin-top:6px;min-height:0}
+ .btn{padding:8px 14px}
+ h2{font-size:18px;margin-bottom:6px}
+ .lvls{grid-template-columns:repeat(2,1fr);gap:8px}.lv{padding:5px}.lv b{font-size:13px;margin-top:3px}.lv small{font-size:11px}
+ #lvInfo{position:sticky;bottom:calc(-8px - var(--sab));background:var(--panel);margin:8px -10px -10px;padding:8px 10px calc(8px + var(--sab));border-top:1px solid var(--line);z-index:2}
+ #lvInfo .mut{display:none}
+ .arm{grid-template-columns:1fr}.ac canvas{width:48px;height:44px}
+ .help{font-size:12px;line-height:1.6}
+ .res .big{font-size:38px}.res .skulls{font-size:26px}
+ /* HUD */
+ #tl{min-width:0;width:160px;padding:5px 8px}#tl .bar{height:12px}#gold{font-size:15px}.coin{width:13px;height:13px}
+ #tc{min-width:0;padding:4px 10px}#waveTxt{font-size:12px}#phaseTxt{font-size:10px}#readyBtn{min-height:40px;padding:4px 14px;font-size:13px;margin-top:4px}
+ #wavePrev .wc{font-size:10px;padding:1px 6px}
+ .coarse #hudBtns{top:calc(8px + var(--sat));bottom:auto;right:max(8px, var(--sar));gap:4px}
+ .ib{width:40px;height:40px;font-size:14px}
+ #mini{right:max(8px, var(--sar));top:calc(54px + var(--sat));transform:none}
+ #bl{padding:5px 7px;gap:6px}#portrait{width:40px;height:40px}#bl>div{width:120px!important}
+ #bar{padding:3px;gap:3px;bottom:calc(6px + var(--sab))}
+ .coarse .slot,.slot{width:38px;height:48px}.slot canvas{width:32px;height:28px;margin-top:2px}.slot .cost{font-size:10px;line-height:12px}.slot .key{display:none}
+ .tb{width:52px;height:52px;font-size:12px}
+ #banner{font-size:28px}#banner small{font-size:13px}
+ #toasts{top:calc(118px + var(--sat))}.toast{font-size:12px;padding:4px 10px}
+ #ally{top:calc(74px + var(--sat));min-width:0;font-size:11px;padding:4px 8px}
+}
+/* portrait phone */
+@media (pointer:coarse) and (max-width:500px){
+ #tl{left:max(8px, var(--sal));top:calc(8px + var(--sat))}
+ #tc{left:max(8px, var(--sal));right:calc(max(8px, var(--sar)) + 96px);top:calc(62px + var(--sat));transform:none}
+ #ally{display:none!important}
+ #bar{left:max(6px, var(--sal));right:max(6px, var(--sar));transform:none;justify-content:center}
+ .coarse #bar{left:max(6px, var(--sal))}
+ #bl{left:max(8px, var(--sal));bottom:calc(66px + var(--sab))}
+ #tAlt,#tPlace{right:max(10px, var(--sar));bottom:calc(132px + var(--sab))}
+ #tSkill,#tRot{right:calc(max(10px, var(--sar)) + 58px);bottom:calc(178px + var(--sab))}
+ #tDash,#tCancel{right:calc(max(10px, var(--sar)) + 62px);bottom:calc(72px + var(--sab))}
+}
+/* landscape phone */
+@media (pointer:coarse) and (max-height:500px){
+ .scr.title{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:10px;align-items:start}
+ .scr.title .logo{grid-column:1/-1}.scr.title .logo h1{font-size:30px}.scr.title .logo p{display:none}
+ .scr.title .box{margin-top:0!important}
+ .cards{grid-template-columns:repeat(3,1fr)}
+ .lvls{grid-template-columns:repeat(4,1fr)}
+ #tl{left:max(8px, var(--sal));top:calc(6px + var(--sat))}
+ #tc{top:calc(6px + var(--sat))}
+ .coarse #hudBtns{top:calc(6px + var(--sat))}
+ #mini{top:calc(50px + var(--sat))}
+ #bl{left:max(8px, var(--sal));top:calc(66px + var(--sat));bottom:auto}
+ #ally{top:calc(122px + var(--sat))}
+ #bar{left:max(8px, var(--sal));transform:none}
+ .coarse #bar{left:max(8px, var(--sal))}
+ #tAlt,#tPlace{right:max(10px, var(--sar));bottom:calc(64px + var(--sab))}
+ #tSkill,#tRot{right:calc(max(10px, var(--sar)) + 58px);bottom:calc(104px + var(--sab))}
+ #tDash,#tCancel{right:calc(max(10px, var(--sar)) + 62px);bottom:calc(10px + var(--sab))}
+ #toasts{top:calc(70px + var(--sat))}
+}
 </style></head><body>
 <canvas id="cv"></canvas>
 <div id="hud">
@@ -160,12 +231,12 @@ table.st{margin:10px auto;border-collapse:collapse;font-size:14px}table.st td{pa
 </div>
 <div id="touch">
  <div class="stick" id="stL"><i></i></div><div class="stick" id="stR"><i></i></div>
- <button class="tb" id="tAlt" style="right:calc(16px + var(--sar));bottom:calc(92px + var(--sab))"><span></span><div class="cd"></div></button>
- <button class="tb" id="tSkill" style="right:calc(84px + var(--sar));bottom:calc(150px + var(--sab))"><span></span><div class="cd"></div></button>
- <button class="tb" id="tDash" style="right:calc(84px + var(--sar));bottom:calc(20px + var(--sab))">冲刺<div class="cd"></div></button>
- <button class="tb" id="tPlace" style="right:calc(16px + var(--sar));bottom:calc(92px + var(--sab));display:none;border-color:#5fd068;color:#c8ffcf">放置</button>
- <button class="tb" id="tRot" style="right:calc(84px + var(--sar));bottom:calc(150px + var(--sab));display:none">旋转</button>
- <button class="tb" id="tCancel" style="right:calc(84px + var(--sar));bottom:calc(20px + var(--sab));display:none;border-color:#e0574a;color:#ffd6cf">武器</button>
+ <button class="tb" id="tAlt"><span></span><div class="cd"></div></button>
+ <button class="tb" id="tSkill"><span></span><div class="cd"></div></button>
+ <button class="tb" id="tDash">冲刺<div class="cd"></div></button>
+ <button class="tb" id="tPlace" style="display:none;border-color:#5fd068;color:#c8ffcf">放置</button>
+ <button class="tb" id="tRot" style="display:none">旋转</button>
+ <button class="tb" id="tCancel" style="display:none;border-color:#e0574a;color:#ffd6cf">武器</button>
 </div>
 <div id="menu"></div>
 <script>
@@ -342,6 +413,7 @@ const $ = id => document.getElementById(id);
 const QS = new URLSearchParams(location.search);
 const IS_TOUCH = matchMedia('(pointer:coarse)').matches || (navigator.maxTouchPoints > 1 && !matchMedia('(pointer:fine)').matches);
 if (IS_TOUCH) document.documentElement.classList.add('coarse');
+const PHONE = matchMedia('(pointer:coarse) and (max-height:500px), (pointer:coarse) and (max-width:500px)');
 
 /* =================== save data =================== */
 const SAVE_KEY = 'riftwardens_v1';
@@ -1337,7 +1409,7 @@ function prerenderMap() {
   const ms = 4, mm = document.createElement('canvas'); mm.width = m.w * ms; mm.height = m.h * ms; const mg = mm.getContext('2d');
   for (let y = 0; y < m.h; y++) for (let x = 0; x < m.w; x++) { const v = t(x, y); mg.fillStyle = v === TW ? (nearOpen(x, y) ? '#3a3542' : 'rgba(0,0,0,0)') : v === TP ? '#050408' : v === TL ? '#b8400f' : '#6b6152'; mg.fillRect(x * ms, y * ms, ms, ms); }
   LAYER.mini = mm; LAYER.ms = ms;
-  const mc = $('mini'); mc.width = m.w * ms; mc.height = m.h * ms; mc.style.width = (m.w * ms * 0.75 | 0) + 'px'; mc.style.height = (m.h * ms * 0.75 | 0) + 'px';
+  const mc = $('mini'); mc.width = m.w * ms; mc.height = m.h * ms; const mf = PHONE.matches ? 0.45 : 0.75; mc.style.width = (m.w * ms * mf | 0) + 'px'; mc.style.height = (m.h * ms * mf | 0) + 'px';
   // static light list
   m.lights = [];
   for (const tq of m.torches) if (t(tq.x, tq.y + 1) !== TW) m.lights.push({x: tc(tq.x), y: (tq.y + 1) * T - WH * 0.5, r: 190, c: '255,170,80', f: 1, torch: 1});
@@ -1639,7 +1711,8 @@ function brazierFire(g, x, y, now) {
 }
 function drawBossBar(g) {
   const b = viewEnemies().find(e => ORCS[e.type].boss && !e.dead && !e.fall); if (!b) return;
-  const w = Math.min(420, VW * 0.6), x = VW / 2 - w / 2, y = (IS_TOUCH ? 96 : 92);
+  const w = Math.min(420, VW * 0.6), x = VW / 2 - w / 2; let y = (IS_TOUCH ? 96 : 92);
+  if (PHONE.matches) { const r = $('tc').getBoundingClientRect(); y = r.bottom + 10; }
   g.fillStyle = 'rgba(10,6,8,.85)'; g.fillRect(x - 4, y - 4, w + 8, 22); g.strokeStyle = '#a32020'; g.strokeRect(x - 4, y - 4, w + 8, 22);
   const f = clamp(b.hp / b.mhp, 0, 1); const gr = g.createLinearGradient(x, 0, x + w, 0); gr.addColorStop(0, '#7a0e0e'); gr.addColorStop(1, '#e23b2b'); g.fillStyle = gr; g.fillRect(x, y, w * f, 14);
   g.font = '800 12px sans-serif'; g.textAlign = 'center'; g.fillStyle = '#ffe1d6'; g.fillText('兽人督军', VW / 2, y + 11);
@@ -2069,7 +2142,7 @@ $('readyBtn').addEventListener('click', () => { audioInit(); toggleReady(); });
 $('bMute').addEventListener('click', () => { audioInit(); setMute(!AU.muted); });
 $('bPause').addEventListener('click', () => togglePause());
 $('bFull').addEventListener('click', () => { const d = document; if (d.fullscreenElement || d.webkitFullscreenElement) (d.exitFullscreen || d.webkitExitFullscreen).call(d); else { const r = d.documentElement; (r.requestFullscreen || r.webkitRequestFullscreen || (() => {})).call(r); } });
-if (!(document.documentElement.requestFullscreen || document.documentElement.webkitRequestFullscreen)) $('bFull').style.display = 'none';
+if (!(document.fullscreenEnabled || document.webkitFullscreenEnabled)) $('bFull').style.display = 'none';
 
 function swingFx(p, a, spin) {
   const x = p.rx != null && p !== ME ? p.rx : p.x, y = (p.ry != null && p !== ME ? p.ry : p.y) - 22, H = HEROES[p.hero];
@@ -2095,13 +2168,16 @@ const skullStr = n => `<span class="skulls">${[0, 1, 2, 3, 4].map(i => `<span cl
 const inArtifact = () => !!(window.claude && typeof window.claude.use === 'function') || /(^|\.)(claudeusercontent\.com|claude\.ai|claude\.site)$/.test(location.hostname);
 const myName = () => (SAVE.name || '').trim() || HEROES[SAVE.hero].name;
 
+// 游戏厅入口：只在部署于游戏厅文件夹（…/riftwardens/）时显示
+const HUB = /\/riftwardens\/(index\.html)?$/.test(location.pathname);
+let hubArm = false;
 const BRIGHT_N = ['', '明亮', '标准', '昏暗'];
 function titleScreen(note = '') {
   STATE = 'title'; PAUSED = false; $('hud').classList.remove('on'); $('touch').classList.remove('on');
   const inRoom = NET.mode === 'online';
-  showMenu(`<div class="scr">
+  showMenu(`<div class="scr title">
    <div class="logo serif"><h1>裂隙守卫</h1><p>陷阱塔防 · 动作 · 双人合作</p></div>
-   <div class="cards" id="heroes"></div>
+   <div><div class="cards" id="heroes"></div><div id="heroInfo" class="phoneOnly"></div></div>
    <div class="box" style="margin-top:14px">
     <div class="join"><span class="mut">昵称</span><input id="nm" maxlength="8" placeholder="${HEROES[SAVE.hero].name}" value="${esc(SAVE.name || '')}" style="width:150px;font-size:16px;letter-spacing:0;text-transform:none"></div>
     <div class="btns">
@@ -2110,16 +2186,17 @@ function titleScreen(note = '') {
     </div>
     <div class="join"><input id="code" maxlength="4" placeholder="房间码" autocomplete="off" autocapitalize="characters"><button class="btn sec" id="bJoin">加入房间</button></div>
     <div class="note" id="tnote">${note}</div>
-    <div class="btns"><button class="btn sec" id="bHelp">玩法说明</button><button class="btn sec" id="bBright">亮度：${BRIGHT_N[SAVE.bright] || '标准'}</button></div>
+    <div class="btns"><button class="btn sec" id="bHelp">玩法说明</button><button class="btn sec" id="bBright">亮度：${BRIGHT_N[SAVE.bright] || '标准'}</button>${HUB ? '<button class="btn sec" id="bHub">‹ 游戏厅</button>' : ''}</div>
    </div></div>`);
   const hs = $('heroes');
   for (const k of Object.keys(HEROES)) {
     const H = HEROES[k], d = document.createElement('div'); d.className = 'hcard' + (SAVE.hero === k ? ' sel' : '');
     d.innerHTML = `<canvas width="192" height="220"></canvas><div style="min-width:0"><h3 class="serif">${H.name} <span class="role">${H.role || ''}</span></h3><p>${H.desc}</p><p style="margin-top:5px;color:#cbbfa6">生命 ${H.hp} · 法力 ${H.mp} · ${H.primary.name} / ${H.alt.name} / ${H.skill.name} / ${H.dash.name}</p>${H.passive ? `<p style="margin-top:3px;color:#9fe3ff">${H.passive}</p>` : ''}</div>`;
     portraitCanvas(d.firstChild, k, true);
-    d.onclick = () => { audioInit(); sfx('click'); SAVE.hero = k; saveGame(); for (const c of hs.children) c.classList.remove('sel'); d.classList.add('sel'); $('nm').placeholder = H.name; };
+    d.onclick = () => { audioInit(); sfx('click'); SAVE.hero = k; saveGame(); for (const c of hs.children) c.classList.remove('sel'); d.classList.add('sel'); $('nm').placeholder = H.name; heroInfo(); };
     hs.appendChild(d);
   }
+  heroInfo();
   $('nm').addEventListener('input', e => { SAVE.name = e.target.value.slice(0, 8); saveGame(); });
   on('bSolo', 'click', () => { if (NET.mode === 'online') netLeave(); levelScreen(); });
   on('bHost', 'click', () => {
@@ -2133,8 +2210,10 @@ function titleScreen(note = '') {
   });
   $('code').addEventListener('keydown', e => { if (e.key === 'Enter') { audioInit(); netJoin($('code').value); } });
   on('bHelp', 'click', () => helpScreen(() => titleScreen()));
+  on('bHub', 'click', () => { location.href = '../'; });
   on('bBright', 'click', () => { SAVE.bright = SAVE.bright % 3 + 1; saveGame(); $('bBright').textContent = '亮度：' + BRIGHT_N[SAVE.bright]; });
 }
+function heroInfo() { const H = HEROES[SAVE.hero], el = $('heroInfo'); if (el) el.innerHTML = `<b style="color:var(--gold2)">${H.name}</b> · ${H.role} · 生命 ${H.hp}<br>${H.primary.name} / ${H.alt.name} / ${H.skill.name} / ${H.dash.name}<br><span style="color:#9fe3ff">${H.passive}</span>`; }
 function setTitleNote(s) { const n = $('tnote'); if (n) n.textContent = s; else toast(s); }
 
 function helpScreen(back, ingame) {
@@ -2252,7 +2331,7 @@ function enterPlay() {
 function togglePause() {
   if (STATE !== 'play') return;
   if (!MENU.classList.contains('off')) { if (G && (G.phase === 'won' || G.phase === 'lost') && G.resShown) return; resume(); return; }
-  PAUSED = NET.mode !== 'online';
+  PAUSED = NET.mode !== 'online'; hubArm = false;
   const canRestart = IS_HOST;
   showMenu(`<div class="scr box" style="max-width:420px;text-align:center"><h2 class="serif">${PAUSED ? '已暂停' : '菜单'}</h2>
    ${NET.mode === 'online' ? '<div class="mut">联机中游戏不会暂停</div>' : ''}
@@ -2261,9 +2340,11 @@ function togglePause() {
     ${canRestart ? '<button class="btn sec" id="pRe">重新开始本关</button>' : ''}
     <button class="btn sec" id="pHelp">玩法说明</button>
     <button class="btn sec" id="pMute">${AU.muted ? '开启声音' : '静音'}</button>
+    ${HUB ? '<button class="btn sec" id="pHub">返回游戏厅</button>' : ''}
     <button class="btn sec" id="pBright">亮度：${BRIGHT_N[SAVE.bright] || '标准'}</button>
     <button class="btn red" id="pQuit">${NET.mode === 'online' && NET.role === 'guest' ? '离开房间' : '退出到关卡选择'}</button></div></div>`, true);
   on('pRes', 'click', resume);
+  on('pHub', 'click', e => { if (!hubArm) { hubArm = true; e.currentTarget.textContent = '再点一次确认（本关进度不保存）'; return; } location.href = '../'; });
   on('pRe', 'click', () => startLevel(G.li));
   on('pHelp', 'click', () => helpScreen(() => { MENU.classList.add('off'); togglePause(); }, true));
   on('pMute', 'click', () => { setMute(!AU.muted); MENU.classList.add('off'); togglePause(); });

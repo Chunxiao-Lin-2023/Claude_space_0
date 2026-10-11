@@ -11,6 +11,7 @@ const $ = id => document.getElementById(id);
 const QS = new URLSearchParams(location.search);
 const IS_TOUCH = matchMedia('(pointer:coarse)').matches || (navigator.maxTouchPoints > 1 && !matchMedia('(pointer:fine)').matches);
 if (IS_TOUCH) document.documentElement.classList.add('coarse');
+const PHONE = matchMedia('(pointer:coarse) and (max-height:500px), (pointer:coarse) and (max-width:500px)');
 
 /* =================== save data =================== */
 const SAVE_KEY = 'riftwardens_v1';
