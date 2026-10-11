@@ -94,15 +94,24 @@ input{font:inherit;color:#2a2233;background:#fff8ea;border:2px solid #e7c98a;bor
 /* touch */
 #tpad{position:fixed;inset:0;z-index:12;pointer-events:none}
 #tzone{position:absolute;left:0;top:25%;bottom:0;width:46%;pointer-events:auto}
-#stick{position:absolute;width:120px;height:120px;border-radius:50%;border:2px solid rgba(255,255,255,.25);background:rgba(255,255,255,.06);display:none;transform:translate(-50%,-50%)}
-#knob{position:absolute;left:50%;top:50%;width:52px;height:52px;border-radius:50%;background:rgba(255,255,255,.35);transform:translate(-50%,-50%)}
-#tbtns{position:absolute;right:calc(14px + var(--sr));bottom:calc(30px + var(--sb));width:300px;height:250px;pointer-events:none}
-#tbtns .slotb{position:absolute;pointer-events:auto;border-radius:50%;width:58px;height:58px}
-#tbtns .slotb.big{width:86px;height:86px}#tbtns .slotb.big b{font-size:30px}
+#stick{position:absolute;width:var(--stk,124px);height:var(--stk,124px);border-radius:50%;border:2px solid rgba(255,255,255,.25);background:rgba(255,255,255,.06);display:none;transform:translate(-50%,-50%)}
+#knob{position:absolute;left:50%;top:50%;width:44%;height:44%;border-radius:50%;background:rgba(255,255,255,.35);transform:translate(-50%,-50%)}
+#tbtns{position:absolute;left:var(--sl);top:var(--st);right:calc(6px + var(--sr));bottom:calc(20px + var(--sb));pointer-events:none}
+#tbtns .slotb{position:absolute;pointer-events:auto;border-radius:50%;touch-action:none;transform:translate(-50%,-50%);border-width:2px}
+#tbtns .slotb b{font-size:var(--fs,22px)}#tbtns .slotb span{font-size:calc(var(--fs,22px)*.5)}
+body.tedit #tbtns .slotb{outline:2px dashed rgba(255,255,255,.55);outline-offset:3px;cursor:move}
+body.tedit #tbtns .slotb.tsel{outline:3px solid var(--gold)}
+body.tedit #tzone{background:rgba(127,214,194,.08);outline:2px dashed rgba(127,214,194,.4);outline-offset:-6px}
+#wTouch{position:fixed;left:50%;top:calc(8px + var(--st));transform:translateX(-50%);z-index:26;width:min(560px,94vw);padding:12px 16px}
+#wTouch h2{margin:0 0 6px;font-size:16px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+#wTouch h2 small{font-weight:400;opacity:.7;font-size:12px}
+#wTouch .tg{display:grid;grid-template-columns:auto 1fr auto;gap:4px 10px;align-items:center;font-size:13px}
+#wTouch input[type=range]{min-height:0;padding:0;border:none;background:none;width:100%;accent-color:#ffcf5a;height:28px}
+#wTouch output{min-width:44px;text-align:right;font-variant-numeric:tabular-nums;color:var(--gold)}
 #tbtns .slotb.jump{background:linear-gradient(#4b8a7a,#2b5a4f)}
 body.touch #bar{display:none}
 body.touch #btns{top:calc(10px + var(--st));right:calc(222px + var(--sr));flex-direction:row}
-@media (max-height:520px){#tbtns{transform:scale(.74);transform-origin:right bottom}#mini{width:150px;height:72px}body.touch #btns{right:calc(172px + var(--sr))}#pinfo{width:200px;padding:6px 8px}#mate{top:calc(98px + var(--st))}}
+@media (max-height:520px){#mini{width:150px;height:72px}body.touch #btns{right:calc(172px + var(--sr))}#pinfo{width:200px;padding:6px 8px}#mate{top:calc(98px + var(--st))}}
 #wDeath{text-align:center}
 .kf{outline:3px solid var(--gold)!important;outline-offset:2px;box-shadow:0 0 0 7px rgba(255,207,90,.2)!important}
 .navhint{font-size:12px;opacity:.62;text-align:center;margin:10px 0 0;line-height:1.6}
@@ -173,8 +182,16 @@ body.touch .navhint{display:none}
 <div id="wTalk" class="panel win hidden"><h2><span id="talkName"></span><button data-close>关闭</button></h2><p id="talkText" style="line-height:1.8;font-size:14.5px;margin:0 0 12px"></p><div class="row"><button id="talkNext">下一条</button></div><p class="navhint"></p></div>
 <div id="wMenu" class="panel win hidden" style="width:min(340px,92vw)"><h2><span>菜单</span><button data-close>关闭</button></h2>
  <div style="display:flex;flex-direction:column;gap:8px">
-  <button data-close>继续游戏</button><button id="mKeys">按键设置</button><button id="mHelp">操作说明</button><button id="mMute">声音：开</button><button id="mFull">全屏</button><button id="mQuit">保存并返回标题</button>
+  <button data-close>继续游戏</button><button id="mTouch" class="hidden">触屏按键布局</button><button id="mKeys">按键设置</button><button id="mHelp">操作说明</button><button id="mMute">声音：开</button><button id="mFull">全屏</button><button id="mQuit">保存并返回标题</button>
  </div><p class="navhint"></p></div>
+<div id="wTouch" class="panel hidden"><h2><span>触屏按键布局 <small>拖动按钮改位置，点按钮后可单独调大小</small></span><button class="pri" id="tDone">完成</button></h2>
+ <div class="tg">
+  <span>整体大小</span><input type="range" id="tScale" min="60" max="180" step="5"><output id="oScale"></output>
+  <span id="tSelName">选中按钮</span><input type="range" id="tSize" min="50" max="220" step="5"><output id="oSize"></output>
+  <span>不透明度</span><input type="range" id="tOp" min="25" max="100" step="5"><output id="oOp"></output>
+  <span>摇杆大小</span><input type="range" id="tStick" min="60" max="180" step="5"><output id="oStick"></output>
+ </div>
+ <div class="row" style="margin-top:8px"><button id="tReset">恢复默认</button></div></div>
 <div id="wTele" class="panel win hidden"><h2><span>飞艇航线 · 去过的地区可直达</span><button data-close>关闭</button></h2><div id="teleList"></div><p class="navhint"></p></div>
 <div id="wHelp" class="panel win hidden"><h2><span>操作说明</span><button data-close>关闭</button></h2><div class="kv" id="helpKv"></div><p class="navhint"></p></div>
 <div id="wKeys" class="panel win hidden"><h2><span>按键设置</span><button data-close>关闭</button></h2>
@@ -947,12 +964,12 @@ const isBound=c=>Object.values(BIND).includes(c);
 
 /* ---------------- local player ---------------- */
 const KEY={},PRESS={};
-const TIN={left:false,right:false,up:false,down:false,atk:false,sk:[false,false,false,false],jumpP:false,upP:false};
+const TIN={left:false,right:false,up:false,down:false,atk:false,atkL:false,skL:[false,false,false,false],sk:[false,false,false,false],jumpP:false,upP:false};
 function readInput(){
  const k=a=>!!KEY[BIND[a]],pr=a=>!!PRESS[BIND[a]];
  return{left:k('left')||TIN.left,right:k('right')||TIN.right,up:k('up')||TIN.up,down:k('down')||TIN.down,
-  jumpP:pr('jump')||TIN.jumpP,upP:pr('up')||TIN.upP,atk:k('atk')||pr('atk')||TIN.atk,
-  sk:[0,1,2,3].map(i=>k('s'+i)||pr('s'+i)||TIN.sk[i]),potR:pr('potR'),potB:pr('potB')};
+  jumpP:pr('jump')||TIN.jumpP,upP:pr('up')||TIN.upP,atk:k('atk')||pr('atk')||TIN.atk||TIN.atkL,
+  sk:[0,1,2,3].map(i=>k('s'+i)||pr('s'+i)||TIN.sk[i]||TIN.skL[i]),potR:pr('potR'),potB:pr('potB')};
 }
 function groundMove(M,p,nx){
  let r=p.run;
@@ -2436,22 +2453,75 @@ function toastOnce(s){const now=performance.now();if(toastGate[s]&&now-toastGate
 let bannerH=null;
 function showBanner(t,s,dur=2){$('bnT').textContent=t;$('bnS').textContent=s||'';$('banner').style.opacity=1;clearTimeout(bannerH);bannerH=setTimeout(()=>$('banner').style.opacity=0,dur*1000);}
 const SLOTDEF=[{k:'b',a:'atk'},{k:0,a:'s0'},{k:1,a:'s1'},{k:2,a:'s2'},{k:3,a:'s3'},{k:'r',a:'potR'},{k:'p',a:'potB'}];
+/* touch layout: button centres are offsets from the bottom-right corner in units of u */
+const TDEF={b:[1.3,1.3,1.65],j:[3.25,.9,1.2],0:[3.05,2.35,1.05],1:[1.85,3.25,1.05],2:[.75,3.45,1.05],3:[4.35,2,1.05],r:[5.6,.75,.85],p:[5.6,1.75,.85]};
+const TNAME={b:'普通攻击',j:'跳跃',0:'技能 1',1:'技能 2',2:'技能 3',3:'技能 4',r:'红药水',p:'蓝药水'};
+let TL=null;
+function tlDefault(){return{scale:1,op:.9,stick:1,btn:Object.fromEntries(Object.entries(TDEF).map(([k,v])=>[k,{x:v[0],y:v[1],s:v[2]}]))};}
+function tlLoad(){TL=tlDefault();try{const o=JSON.parse(localStorage.getItem('cloudisle.touch.v1')||'null');if(o){for(const k of ['scale','op','stick'])if(typeof o[k]==='number')TL[k]=o[k];for(const k in TL.btn)if(o.btn&&o.btn[k])Object.assign(TL.btn[k],o.btn[k]);}}catch(e){}}
+function tlSave(){try{localStorage.setItem('cloudisle.touch.v1',JSON.stringify(TL));}catch(e){}}
+tlLoad();
+const tUnit=()=>clamp(Math.min(innerWidth,innerHeight)*.095,52,92)*TL.scale;
+function layoutTouch(){
+ const tb=$('tbtns');if(!tb)return;const W=tb.clientWidth,H=tb.clientHeight,u=tUnit();
+ for(const el of tb.children){const k=el.dataset.t,b=TL.btn[k];if(!b)continue;const sz=u*b.s;
+  const x=clamp(W-b.x*u,sz/2,W-sz/2),y=clamp(H-b.y*u,sz/2,H-sz/2);
+  el.style.width=el.style.height=sz+'px';el.style.left=x+'px';el.style.top=y+'px';el.style.setProperty('--fs',Math.round(sz*.38)+'px');}
+ tb.style.opacity=TL.op;
+ const stk=Math.round(124*TL.stick*clamp(Math.min(innerWidth,innerHeight)/700,.85,1.35));document.documentElement.style.setProperty('--stk',stk+'px');STK.max=stk*.4;
+ $('stick').style.opacity=TL.op;
+}
+addEventListener('resize',()=>{if(TOUCH)layoutTouch();});
 function buildSlots(){
  const bar=$('bar'),tb=$('tbtns');bar.innerHTML='';tb.innerHTML='';
- const tpos={b:[214,164,'big'],j:[214,74,'jump'],0:[124,186],1:[110,112],2:[150,46],3:[226,4],r:[40,192],p:[40,124]};
  for(const sd of SLOTDEF){
   const el=document.createElement('div');el.className='slotb';el.dataset.k=sd.k;el.innerHTML='<b></b><em>'+kn(sd.a)+'</em><span></span><i></i>';
   el.addEventListener('pointerdown',e=>{e.preventDefault();auInit();pressSlot(sd.k);});bar.appendChild(el);
-  const t=document.createElement('div');t.className='slotb';t.dataset.k=sd.k;t.innerHTML='<b></b><span></span><i></i>';
-  const [x,y,cls]=tpos[sd.k];t.style.left=x+'px';t.style.top=y+'px';if(cls)t.classList.add(cls);
+  const t=document.createElement('div');t.className='slotb';t.dataset.k=sd.k;t.dataset.t=sd.k;t.innerHTML='<b></b><span></span><i></i>';
+  if(sd.k==='b')t.classList.add('big');
   bindHold(t,sd.k);tb.appendChild(t);
  }
- const j=document.createElement('div');j.className='slotb jump';j.innerHTML='<b>跳</b>';j.style.left=tpos.j[0]+'px';j.style.top=tpos.j[1]+'px';
+ const j=document.createElement('div');j.className='slotb jump';j.dataset.t='j';j.innerHTML='<b>跳</b>';
  j.addEventListener('pointerdown',e=>{e.preventDefault();auInit();TIN.jumpP=true;});tb.appendChild(j);
+ layoutTouch();
 }
+/* edit mode: drag buttons, sliders for sizes */
+const TED={on:false,sel:'b',drag:null};
+function touchEdit(on){
+ if(on)closeWins();
+ TED.on=on;document.body.classList.toggle('tedit',on);
+ if(on){$('wTouch').classList.remove('hidden');$('tpad').classList.remove('hidden');tSelect(TED.sel);tSync();}
+ else{$('wTouch').classList.add('hidden');for(const el of $('tbtns').children)el.classList.remove('tsel');tlSave();toast('触屏按键布局已保存');}
+}
+function tSelect(k){TED.sel=k;for(const el of $('tbtns').children)el.classList.toggle('tsel',el.dataset.t===String(k));$('tSelName').textContent=TNAME[k]+' 大小';tSync();}
+function tSync(){const b=TL.btn[TED.sel];
+ $('tScale').value=Math.round(TL.scale*100);$('oScale').textContent=Math.round(TL.scale*100)+'%';
+ $('tSize').value=Math.round(b.s/TDEF[TED.sel][2]*100);$('oSize').textContent=Math.round(b.s/TDEF[TED.sel][2]*100)+'%';
+ $('tOp').value=Math.round(TL.op*100);$('oOp').textContent=Math.round(TL.op*100)+'%';
+ $('tStick').value=Math.round(TL.stick*100);$('oStick').textContent=Math.round(TL.stick*100)+'%';}
+$('tScale').addEventListener('input',e=>{TL.scale=e.target.value/100;layoutTouch();tSync();});
+$('tSize').addEventListener('input',e=>{TL.btn[TED.sel].s=TDEF[TED.sel][2]*e.target.value/100;layoutTouch();tSync();});
+$('tOp').addEventListener('input',e=>{TL.op=e.target.value/100;layoutTouch();tSync();});
+$('tStick').addEventListener('input',e=>{TL.stick=e.target.value/100;layoutTouch();tSync();stick.style.display='block';stick.style.left='30%';stick.style.top='60%';clearTimeout(TED.sh);TED.sh=setTimeout(()=>{if(STK.id==null)stick.style.display='none';},900);});
+$('tReset').onclick=()=>{TL=tlDefault();layoutTouch();tSync();tSelect(TED.sel);toast('已恢复默认布局');};
+$('tDone').onclick=()=>touchEdit(false);
+$('mTouch').onclick=()=>touchEdit(true);
+$('tbtns').addEventListener('pointerdown',e=>{
+ if(!TED.on)return;const el=e.target.closest('.slotb');if(!el)return;
+ e.preventDefault();e.stopPropagation();tSelect(el.dataset.t==='j'?'j':isNaN(+el.dataset.t)?el.dataset.t:+el.dataset.t);
+ const r=el.getBoundingClientRect();TED.drag={id:e.pointerId,el,dx:e.clientX-(r.left+r.width/2),dy:e.clientY-(r.top+r.height/2)};
+ try{$('tbtns').setPointerCapture(e.pointerId);}catch(err){}
+},true);
+$('tbtns').addEventListener('pointermove',e=>{
+ const d=TED.drag;if(!TED.on||!d||d.id!==e.pointerId)return;
+ const tb=$('tbtns').getBoundingClientRect(),u=tUnit(),b=TL.btn[TED.sel];
+ b.x=(tb.right-(e.clientX-d.dx))/u;b.y=(tb.bottom-(e.clientY-d.dy))/u;layoutTouch();
+});
+const tDragEnd=e=>{if(TED.drag&&TED.drag.id===e.pointerId){TED.drag=null;tlSave();}};
+$('tbtns').addEventListener('pointerup',tDragEnd);$('tbtns').addEventListener('pointercancel',tDragEnd);
 function bindHold(el,k){
- const on=e=>{e.preventDefault();auInit();el.setPointerCapture&&el.setPointerCapture(e.pointerId);
-  if(k==='b')TIN.atk=true;else if(k==='r')usePot('r');else if(k==='p')usePot('b');else{TIN.sk[k]=true;TIN.skP=k;}};
+ const on=e=>{if(TED.on)return;e.preventDefault();auInit();el.setPointerCapture&&el.setPointerCapture(e.pointerId);
+  if(k==='b'){TIN.atk=true;TIN.atkL=true;}else if(k==='r')usePot('r');else if(k==='p')usePot('b');else{TIN.sk[k]=true;TIN.skL[k]=true;TIN.skP=k;}};
  const off=e=>{if(k==='b')TIN.atk=false;else if(typeof k==='number')TIN.sk[k]=false;};
  el.addEventListener('pointerdown',on);el.addEventListener('pointerup',off);el.addEventListener('pointercancel',off);el.addEventListener('lostpointercapture',off);
 }
@@ -2502,9 +2572,9 @@ function hudTick(dt){
  if(!$('wShop').classList.contains('hidden'))renderShop(true);
  drawMini();
 }
-const WINS=['wKeys','wHelp','wSkill','wShop','wTalk','wTele','wMenu'];
+const WINS=['wKeys','wHelp','wSkill','wShop','wTalk','wTele','wTouch','wMenu'];
 function winOpen(){return WINS.some(id=>!$(id).classList.contains('hidden'));}
-function closeWins(){for(const id of WINS)$(id).classList.add('hidden');REBIND=null;}
+function closeWins(){if(TED.on){TED.on=false;document.body.classList.remove('tedit');tlSave();}for(const id of WINS)$(id).classList.add('hidden');REBIND=null;}
 function toggleWin(id){const open=$(id).classList.contains('hidden');closeWins();if(open){$(id).classList.remove('hidden');if(id==='wSkill')renderSkillWin();if(id==='wShop')renderShop();}}
 let skSig='',shopSig='';
 function renderSkillWin(soft){
@@ -2612,7 +2682,7 @@ function startHost(online){
 }
 function startPlay(){
  state='play';$('sTitle').classList.remove('on');$('sCreate').classList.remove('on');$('hud').classList.remove('hidden');
- $('tpad').classList.toggle('hidden',!TOUCH);buildSlots();FX.length=NUM.length=PART.length=0;closeWins();
+ $('tpad').classList.toggle('hidden',!TOUCH);buildSlots();if(TOUCH)requestAnimationFrame(layoutTouch);FX.length=NUM.length=PART.length=0;closeWins();
 }
 function quitToTitle(){
  state='title';ME=null;P=[];G=null;IS_HOST=true;ME_I=0;closeWins();$('wDeath').classList.add('hidden');
@@ -2725,7 +2795,7 @@ function renderHelp(){
   ['传送门 / 对话 / 商店','站在传送门或 NPC 旁按 '+kn('up')],['技能窗口',kn('skills')],['菜单','Esc'],
   ['窗口与菜单',kn('up')+' / '+kn('down')+'（或方向键）选择，回车 / 空格 / '+kn('atk')+' 确认，Esc 返回'],
   ['改键','菜单 → 按键设置：WASD 布局、方向键布局，或逐个改键'],
-  ['触屏','左半屏拖动摇杆移动（上推爬绳 / 进传送门），右下按钮攻击、跳跃、技能、药水'],
+  ['触屏','左半屏拖动摇杆移动（上推爬绳 / 进传送门），右下按钮攻击、跳跃、技能、药水。菜单 → 触屏按键布局 可拖动按钮、调大小和透明度'],
   ['联机','一人「创建房间」，把 4 位房间码发给队友，队友输入后加入。同一地图里的队友分享经验（各得 75%），倒下的队友可以靠近按住 '+kn('up')+' 复活。'],
  ].map(([k,v])=>'<b>'+k+'</b><span>'+esc(v)+'</span>').join('');
 }
@@ -2736,16 +2806,16 @@ function updNavHints(){
 addEventListener('keyup',e=>{KEY[e.code]=false;});
 addEventListener('blur',()=>{for(const k in KEY)KEY[k]=false;});
 // touch joystick
-const STK={id:null,ox:0,oy:0,upLatch:false};
-function enableTouch(){if(TOUCH)return;TOUCH=true;document.body.classList.add('touch');if(state==='play')$('tpad').classList.remove('hidden');}
+const STK={id:null,ox:0,oy:0,upLatch:false,max:50};
+function enableTouch(){if(TOUCH)return;TOUCH=true;document.body.classList.add('touch');$('mTouch').classList.remove('hidden');if(state==='play'){$('tpad').classList.remove('hidden');layoutTouch();}}
 addEventListener('touchstart',()=>{enableTouch();auInit();},{passive:true});
 if(matchMedia&&matchMedia('(pointer:coarse)').matches)enableTouch();
 const tz=$('tzone'),stick=$('stick'),knob=$('knob');
-tz.addEventListener('pointerdown',e=>{e.preventDefault();auInit();if(STK.id!=null)return;STK.id=e.pointerId;STK.ox=e.clientX;STK.oy=e.clientY;tz.setPointerCapture&&tz.setPointerCapture(e.pointerId);
+tz.addEventListener('pointerdown',e=>{e.preventDefault();auInit();if(STK.id!=null||TED.on)return;STK.id=e.pointerId;STK.ox=e.clientX;STK.oy=e.clientY;tz.setPointerCapture&&tz.setPointerCapture(e.pointerId);
  const r=tz.getBoundingClientRect();stick.style.display='block';stick.style.left=(e.clientX-r.left)+'px';stick.style.top=(e.clientY-r.top)+'px';knob.style.transform='translate(-50%,-50%)';});
-tz.addEventListener('pointermove',e=>{if(e.pointerId!==STK.id)return;let dx=e.clientX-STK.ox,dy=e.clientY-STK.oy;const d=Math.hypot(dx,dy),m=50;if(d>m){dx*=m/d;dy*=m/d;}
+tz.addEventListener('pointermove',e=>{if(e.pointerId!==STK.id)return;let dx=e.clientX-STK.ox,dy=e.clientY-STK.oy;const d=Math.hypot(dx,dy),m=STK.max;if(d>m){dx*=m/d;dy*=m/d;}
  knob.style.transform=`translate(calc(-50% + ${dx}px),calc(-50% + ${dy}px))`;
- TIN.left=dx<-16;TIN.right=dx>16;const up=dy<-26,dn=dy>26;if(up&&!TIN.up)TIN.upP=true;TIN.up=up;TIN.down=dn;});
+ TIN.left=dx<-m*.3;TIN.right=dx>m*.3;const up=dy<-m*.52,dn=dy>m*.52;if(up&&!TIN.up)TIN.upP=true;TIN.up=up;TIN.down=dn;});
 const stkEnd=e=>{if(e.pointerId!==STK.id)return;STK.id=null;TIN.left=TIN.right=TIN.up=TIN.down=false;stick.style.display='none';};
 tz.addEventListener('pointerup',stkEnd);tz.addEventListener('pointercancel',stkEnd);
 document.addEventListener('gesturestart',e=>e.preventDefault());
@@ -2771,7 +2841,7 @@ function frame(now){
  requestAnimationFrame(frame);
  const raw=(now-last)/1000,dt=clamp(raw,0,.05);last=now;qualTick(raw);
  step(dt);render(now/1000);navSync();
- for(const k in PRESS)PRESS[k]=false;TIN.jumpP=false;TIN.upP=false;TIN.skP=null;
+ for(const k in PRESS)PRESS[k]=false;TIN.jumpP=false;TIN.upP=false;TIN.skP=null;TIN.atkL=false;TIN.skL.fill(false);
 }
 // keep the host simulating while its tab is in the background
 setInterval(()=>{if(document.hidden&&state==='play'&&IS_HOST&&connected()){const now=performance.now();const dt=Math.min(.1,(now-last)/1000);last=now;step(dt);}},100);
