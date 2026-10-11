@@ -53,6 +53,8 @@ input{font:inherit;color:#2a2233;background:#fff8ea;border:2px solid #e7c98a;bor
 .coin{display:inline-block;width:12px;height:12px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#fff3b0,#f4b733 60%,#b07816);box-shadow:0 0 0 1px #8a5a10}
 #mate{position:absolute;left:calc(10px + var(--sl));top:calc(122px + var(--st));background:var(--panel);border:1px solid var(--edge);border-radius:12px;padding:6px 10px;width:190px;font-size:12px}
 #mate .bar{height:10px}
+#pauseOv{position:absolute;left:50%;top:40%;transform:translate(-50%,-50%);background:rgba(20,16,32,.82);border:1px solid var(--edge);border-radius:16px;padding:14px 28px;text-align:center;pointer-events:none}#pauseOv b{display:block;font-size:30px;letter-spacing:6px;color:var(--gold)}#pauseOv small{font-size:13px;opacity:.85}
+body.paused #cv{filter:saturate(.55) brightness(.8)}
 #quest{position:absolute;left:calc(10px + var(--sl));top:calc(122px + var(--st));background:rgba(20,16,32,.72);border:1px solid var(--edge);border-radius:12px;padding:6px 10px;width:230px;font-size:12.5px;line-height:1.5;pointer-events:none}#quest b{color:var(--gold)}#quest small{opacity:.85}
 #emoBar{position:absolute;right:calc(110px + var(--sr));top:calc(196px + var(--st));display:flex;flex-direction:column;gap:6px;pointer-events:auto}
 #topr{position:absolute;right:calc(10px + var(--sr));top:calc(10px + var(--st));display:flex;flex-direction:column;align-items:flex-end;gap:6px}
@@ -144,7 +146,7 @@ body.touch .navhint{display:none}
   <input id="joinCode" maxlength="4" placeholder="房间码" style="width:96px;text-transform:uppercase;text-align:center;letter-spacing:3px">
   <button id="bJoin">加入</button>
  </div>
- <div class="row" style="margin-top:10px"><button class="ghost" id="bHelp0">操作说明</button><button class="ghost" id="bKeys0">按键设置</button></div>
+ <div class="row" style="margin-top:10px"><button class="ghost" id="bHelp0">操作说明</button><button class="ghost" id="bKeys0">按键设置</button><button class="ghost" id="bImport">导入存档</button><button class="ghost" id="bExport0">导出存档</button><input type="file" id="fImport" accept=".json,application/json" style="display:none"></div>
  <p class="navhint"></p>
  <p class="note" id="titleNote"></p>
 </div></div>
@@ -187,6 +189,7 @@ body.touch .navhint{display:none}
  <div id="bar"></div>
  <div id="expbar"><i id="expF"></i><span id="expT"></span></div>
  <div id="toast"></div>
+ <div id="pauseOv" class="hidden"><b>已暂停</b><small></small></div>
  <div id="combo"></div>
 </div>
 
@@ -198,7 +201,7 @@ body.touch .navhint{display:none}
 <div id="wTalk" class="panel win hidden"><h2><span id="talkName"></span><button data-close>关闭</button></h2><p id="talkText" style="line-height:1.8;font-size:14.5px;margin:0 0 12px"></p><div class="row"><button id="talkNext">下一条</button></div><p class="navhint"></p></div>
 <div id="wMenu" class="panel win hidden" style="width:min(340px,92vw)"><h2><span>菜单</span><button data-close>关闭</button></h2>
  <div style="display:flex;flex-direction:column;gap:8px">
-  <button data-close>继续游戏</button><button id="mTouch" class="hidden">触屏按键布局</button><button id="mKeys">按键设置</button><button id="mHelp">操作说明</button><button id="mMusic">音乐：开</button><button id="mMute">声音：开</button><button id="mFull">全屏</button><button id="mQuit">保存并返回标题</button>
+  <button data-close>继续游戏</button><button id="mSave">保存游戏</button><button id="mExport">导出存档文件</button><button id="mTouch" class="hidden">触屏按键布局</button><button id="mKeys">按键设置</button><button id="mHelp">操作说明</button><button id="mMusic">音乐：开</button><button id="mMute">声音：开</button><button id="mFull">全屏</button><button id="mQuit">保存并返回标题</button><p class="note" id="saveNote" style="margin:4px 0 0;font-size:12.5px;opacity:.8"></p>
  </div><p class="navhint"></p></div>
 <div id="wTouch" class="panel hidden"><h2><span>触屏按键布局 <small>拖动按钮改位置，点按钮后可单独调大小</small></span><button class="pri" id="tDone">完成</button></h2>
  <div class="tg">
@@ -721,7 +724,7 @@ function saveOf(p){return{q:p.q,qp:p.qp,ach:p.ach,secs:p.secs,job2:p.job2,bag:p.
 const SKEY='cloudisle.slots.v1';
 function loadSlots(){try{const a=JSON.parse(localStorage.getItem(SKEY)||'[]');return[0,1,2].map(i=>a[i]||null);}catch(e){return[null,null,null];}}
 function storeSlots(a){try{localStorage.setItem(SKEY,JSON.stringify(a));}catch(e){}}
-function saveMe(){if(!ME)return;const a=loadSlots();a[slotSel]=saveOf(ME);storeSlots(a);}
+function saveMe(){if(!ME)return;const a=loadSlots();a[slotSel]=saveOf(ME);storeSlots(a);LAST_SAVE=Date.now();}
 
 /* ---------------- world (host) ---------------- */
 function newWorld(){
@@ -3248,7 +3251,7 @@ function hudTick(dt){
 const WINS=['wKeys','wHelp','wSkill','wShop','wTalk','wTele','wTouch','wMenu','wBag','wBook','wJob'];
 function winOpen(){return WINS.some(id=>!$(id).classList.contains('hidden'));}
 function closeWins(){if(TED.on){TED.on=false;document.body.classList.remove('tedit');tlSave();}for(const id of WINS)$(id).classList.add('hidden');REBIND=null;}
-function toggleWin(id){const open=$(id).classList.contains('hidden');closeWins();if(open){$(id).classList.remove('hidden');if(id==='wSkill')renderSkillWin();if(id==='wShop')renderShop();if(id==='wBag')renderBag();if(id==='wBook')renderBook();}}
+function toggleWin(id){const open=$(id).classList.contains('hidden');closeWins();if(open){$(id).classList.remove('hidden');if(id==='wSkill')renderSkillWin();if(id==='wShop')renderShop();if(id==='wMenu')saveNote();if(id==='wBag')renderBag();if(id==='wBook')renderBook();}}
 let skSig='',shopSig='',bagSig='',bookSig='';
 const itHtml=it=>`<div class="ic" style="background:${RAR[it.r].c}22;color:${RAR[it.r].c};border:1px solid ${RAR[it.r].c}66">${EQS[it.s].g}</div><div class="tx"><b style="color:${RAR[it.r].c}">${it.n}</b> <small>${RAR[it.r].n} · ${EQS[it.s].n} · Lv.${it.lv}</small><br><small style="opacity:.95">${it.a.map(afTxt).join('　')}</small></div>`;
 function renderBag(soft){
@@ -3331,7 +3334,7 @@ function renderTele(){const L=$('teleList');L.innerHTML='';
   const b=document.createElement('button');b.textContent=ok?'起飞':'未解锁';b.disabled=!ok;b.onclick=()=>{closeWins();sfx('portal');const po=MAPS[m].portals[0];warpTo(ME,m,po.x,po.y);};row.appendChild(b);L.appendChild(row);}}
 function openNpc(n){sfx('click');if(n.id==='tele'){closeWins();renderTele();$('wTele').classList.remove('hidden');return;}if(n.id==='shop'){closeWins();$('wShop').classList.remove('hidden');renderShop();}else if(n.id==='guide'&&ME.lv>=JOBLV&&!ME.job2){closeWins();renderJob();$('wJob').classList.remove('hidden');}else{closeWins();$('talkName').textContent=n.name;$('talkText').textContent=TALK()[talkI%TALK().length];$('wTalk').classList.remove('hidden');}}
 $('talkNext').onclick=()=>{talkI++;$('talkText').textContent=TALK()[talkI%TALK().length];sfx('click');};
-for(const b of document.querySelectorAll('[data-close]'))b.addEventListener('click',()=>{closeWins();sfx('click');});
+for(const b of document.querySelectorAll('[data-close]'))b.addEventListener('click',()=>{closeWins();PAUSE=false;sfx('click');});
 $('bSkill').onclick=()=>{auInit();toggleWin('wSkill');};
 $('bMenu').onclick=()=>{auInit();toggleWin('wMenu');};
 $('bBag').onclick=()=>{auInit();toggleWin('wBag');};
@@ -3347,6 +3350,17 @@ $('bHelp0').onclick=()=>{renderHelp();$('wHelp').classList.remove('hidden');};
 $('mMute').onclick=()=>setMute(!AU.muted);
 $('mMusic').onclick=()=>setMusic(!MUS.on);$('mMusic').textContent='音乐：'+(MUS.on?'开':'关');
 $('mFull').onclick=toggleFull;
+function saveNote(){const el=$('saveNote');if(!el)return;el.textContent='游戏每 5 秒自动保存到这台设备的浏览器里'+(LAST_SAVE?'，上次保存 '+new Date(LAST_SAVE).toLocaleTimeString():'')+'。换设备或清理浏览器数据前，请先「导出存档文件」。'+(canPause()?'打开菜单时游戏已暂停。':'联机时打开菜单不会暂停。');}
+$('mSave').onclick=()=>{saveMe();saveNote();toast('已保存（'+new Date().toLocaleTimeString()+'）');sfx('buy');};
+function exportSaves(){if(state==='play')saveMe();const a=loadSlots();if(!a.some(Boolean)){toast('还没有可以导出的存档');return;}
+ const txt=JSON.stringify({game:'cloudisle',v:1,at:new Date().toISOString(),slots:a});const d=new Date(),name='cloudisle-save-'+d.getFullYear()+String(d.getMonth()+1).padStart(2,'0')+String(d.getDate()).padStart(2,'0')+'.json';
+ try{const b=new Blob([txt],{type:'application/json'}),u=URL.createObjectURL(b),el=document.createElement('a');el.href=u;el.download=name;document.body.appendChild(el);el.click();el.remove();setTimeout(()=>URL.revokeObjectURL(u),2000);toast('已导出存档文件 '+name);}
+ catch(e){try{navigator.clipboard.writeText(txt).then(()=>toast('无法下载文件，存档已复制到剪贴板'));}catch(e2){toast('导出失败');}}}
+$('mExport').onclick=exportSaves;$('bExport0').onclick=exportSaves;
+$('bImport').onclick=()=>$('fImport').click();
+$('fImport').onchange=e=>{const f=e.target.files&&e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const o=JSON.parse(r.result),sl=Array.isArray(o)?o:o&&o.slots;
+  if(!Array.isArray(sl)||!sl.some(x=>x&&CLS[x.cls]))throw 0;const a=[0,1,2].map(i=>sl[i]&&CLS[sl[i].cls]?sl[i]:null);storeSlots(a);renderSlots();setTitleNote('已导入存档：'+a.filter(Boolean).map(x=>x.name+' Lv.'+x.lv).join('、'));sfx('buy');}
+  catch(err){setTitleNote('导入失败：不是有效的云岛冒险存档文件');sfx('nope');}e.target.value='';};r.readAsText(f);};
 $('mQuit').onclick=()=>{saveMe();if(NET.role)netLeave();quitToTitle();};
 $('bRespawn').onclick=()=>{req({t:'respawn'});};
 $('bRespawn2').onclick=()=>{req({t:'respawn',here:1});};
@@ -3492,7 +3506,8 @@ addEventListener('keydown',e=>{
   navKey(e.code,root);return;
  }
  if(state==='play'){
-  if(e.code==='Escape'){toggleWin('wMenu');e.preventDefault();return;}
+  if(e.code==='Escape'){if(PAUSE&&$('wMenu').classList.contains('hidden')){PAUSE=false;e.preventDefault();return;}toggleWin('wMenu');e.preventDefault();return;}
+  if(e.code==='KeyP'&&!isBound('KeyP')){togglePause();e.preventDefault();return;}
   if(e.code===BIND.skills){toggleWin('wSkill');e.preventDefault();return;}
   if(e.code===BIND.bag){toggleWin('wBag');e.preventDefault();return;}
   if(/^Digit[1-4]$/.test(e.code)&&!isBound(e.code)&&!e.repeat){emote(+e.code.slice(5)-1);return;}
@@ -3525,7 +3540,7 @@ function renderHelp(){
   ['跳跃',kn('jump')],
   ['攀爬','在绳子旁按 '+kn('up')+' / '+kn('down')+'，爬绳时按 '+kn('left')+' / '+kn('right')+' + '+kn('jump')+' 离开'],
   ['普通攻击',kn('atk')+'（按住连续攻击）'],['二段跳','空中再按一次 '+kn('jump')+'；爬绳时按 '+kn('jump')+' 可以直接向上跳'],['大招',kn('ult')+'：打怪积累怒气，满 100 后释放全屏大招，释放时短暂无敌'],['连击','连续命中越多伤害越高，每 10 连击 +5%，最多 +25%，2 秒不打就清零'],['技能',sk],['药水',kn('potR')+' 红药水　'+kn('potB')+' 蓝药水'],
-  ['传送门 / 对话 / 商店','站在传送门或 NPC 旁按 '+kn('up')],['技能窗口',kn('skills')],['背包 / 图鉴',kn('bag')+' 背包（装备戒指、项链、披风，出售）　'+kn('book')+' 怪物图鉴'],['转职',JOBLV+' 级后回村找向导阿栗，二选一，获得技能 5（'+kn('s4')+'）'],['任务','左上角显示当前任务，完成后自动领奖并接下一个'],['表情','数字键 1–4，或右上「表情」按钮'],['地区机关','峡谷有上升气流、雪原有滑索（按 '+kn('up')+'）、火山有会塌的石台、地狱有移动平台、丛林可以荡藤蔓'],['双人机关','两人同时站在地图两端的机关上，会出现两个宝箱。每张地图最高处还藏着一个秘密宝箱'],['菜单','Esc'],
+  ['传送门 / 对话 / 商店','站在传送门或 NPC 旁按 '+kn('up')],['技能窗口',kn('skills')],['背包 / 图鉴',kn('bag')+' 背包（装备戒指、项链、披风，出售）　'+kn('book')+' 怪物图鉴'],['转职',JOBLV+' 级后回村找向导阿栗，二选一，获得技能 5（'+kn('s4')+'）'],['任务','左上角显示当前任务，完成后自动领奖并接下一个'],['表情','数字键 1–4，或右上「表情」按钮'],['地区机关','峡谷有上升气流、雪原有滑索（按 '+kn('up')+'）、火山有会塌的石台、地狱有移动平台、丛林可以荡藤蔓'],['双人机关','两人同时站在地图两端的机关上，会出现两个宝箱。每张地图最高处还藏着一个秘密宝箱'],['暂停 / 存档','P 暂停（单人时打开菜单也会暂停）；每 5 秒自动保存，菜单里可以手动保存、导出存档文件，标题画面可导入'],['菜单','Esc'],
   ['窗口与菜单',kn('up')+' / '+kn('down')+'（或方向键）选择，回车 / 空格 / '+kn('atk')+' 确认，Esc 返回'],
   ['精英与事件','金色光环的「精英」怪更强，但掉落 4 倍经验和道具。每张练级图每隔几分钟会触发事件：怪物潮、流星雨、寻宝、宝箱怪'],
   ['宠物','在莉卡的商店购买，跟在身边自动拾取金币和药水'],
@@ -3563,6 +3578,9 @@ function step(dt){
  if(state==='title'||state==='create'){TITLE.t+=dt;const nm=TITLE_MAPS[Math.max(0,Math.floor(TITLE.t/10))%TITLE_MAPS.length];if(nm!==TITLE.map){TITLE.map=nm;AMB.length=0;}
   const M=MAPS[TITLE.map],ph=(TITLE.t%10)/10;cam.x=(.15+ph*.7)*(M.W-VIEW.w);cam.y=clamp(M.gy-VIEW.h*.72-(M.H>1300?260:0),0,M.H-VIEW.h);ambStep(M,dt,TITLE.t);if(state==='create')drawCreatePreviews(TITLE.t);return;}
  if(state!=='play'||!ME)return;
+ {const pz=canPause()&&(PAUSE||!$('wMenu').classList.contains('hidden'));if(pz!==PAUSED){PAUSED=pz;document.body.classList.toggle('paused',pz);$('pauseOv').classList.toggle('hidden',!pz||!$('wMenu').classList.contains('hidden'));
+   $('pauseOv').querySelector('small').textContent=TOUCH?'点「菜单」→「继续游戏」':'按 '+(isBound('KeyP')?'Esc':'P')+' 继续';}
+  if(pz){PAUSE_T+=dt;return;}}
  G.time+=dt;
  mechTick(MAPS[ME.map],dt);
  const inp=readInput();
@@ -3575,6 +3593,9 @@ function step(dt){
  hudTick(dt);
  saveT+=dt;if(saveT>5){saveT=0;saveMe();}
 }
+let PAUSE=false,PAUSED=false,PAUSE_T=0,LAST_SAVE=0;
+const canPause=()=>IS_HOST&&!connected();
+function togglePause(){if(state!=='play')return;if(!canPause()){toastOnce('联机时不能暂停（队友还在游戏中）');return;}PAUSE=!PAUSE;sfx('click');if(!PAUSE)closeWins();}
 function frame(now){
  requestAnimationFrame(frame);
  const raw=(now-last)/1000,dt=clamp(raw,0,.05);last=now;qualTick(raw);
