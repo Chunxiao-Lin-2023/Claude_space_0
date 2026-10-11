@@ -37,5 +37,16 @@ window.GAMES = [
     status: 'dev',
     tags: ['单人', '双人联机', 'iPad'],
     hue: 12
+  },
+  {
+    id: 'dunerumble',
+    title: '沙丘乱斗',
+    sub: '3D 吃鸡乱斗 · 英雄射击',
+    desc: '六位原创 Q 版英雄的俯视角吃鸡乱斗：草丛埋伏、开箱攒能量块、毒雾缩圈，单人对抗 9 个 AI，或和朋友组队对抗 4 支 AI 队伍。',
+    url: 'dunerumble/',
+    cover: 'covers/dunerumble.webp',
+    status: 'dev',
+    tags: ['单人', '双人联机', 'iPad'],
+    hue: 280
   }
 ];
