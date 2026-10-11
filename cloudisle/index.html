@@ -717,12 +717,17 @@ function updDrops(ms,mi,dt){
 /* ---------------- key bindings ---------------- */
 const ACTIONS=[['left','左移'],['right','右移'],['up','上 · 爬绳 · 传送门 · 对话'],['down','下 · 蹲下（+跳 落下平台）'],['jump','跳跃'],['atk','普通攻击'],['s0','技能 1'],['s1','技能 2'],['s2','技能 3'],['s3','技能 4'],['potR','红药水'],['potB','蓝药水'],['skills','技能窗口']];
 const PRESETS={
- wasd:{left:'KeyA',right:'KeyD',up:'KeyW',down:'KeyS',jump:'KeyK',atk:'KeyJ',s0:'KeyU',s1:'KeyI',s2:'KeyO',s3:'KeyL',potR:'KeyQ',potB:'KeyE',skills:'KeyC'},
+ wasd:{left:'KeyA',right:'KeyD',up:'KeyW',down:'KeyS',jump:'Space',atk:'KeyJ',s0:'KeyK',s1:'KeyL',s2:'KeyU',s3:'KeyI',potR:'KeyQ',potB:'KeyE',skills:'KeyC'},
  arrows:{left:'ArrowLeft',right:'ArrowRight',up:'ArrowUp',down:'ArrowDown',jump:'Space',atk:'KeyX',s0:'KeyA',s1:'KeyS',s2:'KeyD',s3:'KeyF',potR:'KeyQ',potB:'KeyW',skills:'KeyK'},
 };
 let BIND=Object.assign({},PRESETS.wasd);
-try{const b=JSON.parse(localStorage.getItem('cloudisle.keys.v1')||'null');if(b)for(const [a] of ACTIONS)if(typeof b[a]==='string')BIND[a]=b[a];}catch(e){}
-function saveBind(){try{localStorage.setItem('cloudisle.keys.v1',JSON.stringify(BIND));}catch(e){}}
+try{
+ const OLD_WASD={left:'KeyA',right:'KeyD',up:'KeyW',down:'KeyS',jump:'KeyK',atk:'KeyJ',s0:'KeyU',s1:'KeyI',s2:'KeyO',s3:'KeyL',potR:'KeyQ',potB:'KeyE',skills:'KeyC'};
+ let b=JSON.parse(localStorage.getItem('cloudisle.keys.v2')||'null');
+ if(!b){const o=JSON.parse(localStorage.getItem('cloudisle.keys.v1')||'null');if(o&&!ACTIONS.every(([a])=>o[a]===OLD_WASD[a]))b=o;}
+ if(b)for(const [a] of ACTIONS)if(typeof b[a]==='string')BIND[a]=b[a];
+}catch(e){}
+function saveBind(){try{localStorage.setItem('cloudisle.keys.v2',JSON.stringify(BIND));}catch(e){}}
 const KN={ArrowLeft:'←',ArrowRight:'→',ArrowUp:'↑',ArrowDown:'↓',Space:'空格',Enter:'回车',NumpadEnter:'回车',ShiftLeft:'左Shift',ShiftRight:'右Shift',ControlLeft:'左Ctrl',ControlRight:'右Ctrl',AltLeft:'左Alt',AltRight:'右Alt',MetaLeft:'左Cmd',MetaRight:'右Cmd',Tab:'Tab',Backspace:'退格',Semicolon:';',Quote:"'",Comma:',',Period:'.',Slash:'/',BracketLeft:'[',BracketRight:']',Backslash:'\\',Minus:'-',Equal:'=',Backquote:'`',CapsLock:'Caps',Delete:'Del'};
 function keyName(c){if(!c)return'—';if(KN[c])return KN[c];if(c.startsWith('Key'))return c.slice(3);if(c.startsWith('Digit'))return c.slice(5);if(c.startsWith('Numpad'))return'小键盘'+c.slice(6);return c;}
 const kn=a=>keyName(BIND[a]);
