@@ -175,6 +175,7 @@ body.touch .navhint{display:none}
  <div id="topr"><canvas id="mini" width="400" height="192"></canvas><div id="mname"></div><div id="room" class="hidden"></div></div>
  <div id="btns">
   <button id="bSkill">技能 K</button>
+  <button id="bTown">回城 T</button>
   <button id="bBag">背包 B</button>
   <button id="bBook">图鉴 N</button>
   <button id="bEmo">表情</button>
@@ -685,6 +686,7 @@ function shopItems(p){
  const c=CLS[p.cls],L=[];
  L.push({id:'pr1',ic:'红',col:'#e8394d',n:'红药水',d:`恢复 ${pc(BAL.potPct)} 最大 HP（${kn('potR')}）`,price:20},{id:'pr10',ic:'红',col:'#e8394d',n:'红药水 ×10',d:'批量购买',price:180});
  L.push({id:'pb1',ic:'蓝',col:'#2f7fe0',n:'蓝药水',d:`恢复 ${pc(BAL.potPct)} 最大 MP（${kn('potB')}）`,price:20},{id:'pb10',ic:'蓝',col:'#2f7fe0',n:'蓝药水 ×10',d:'批量购买',price:180});
+ L.push({id:'rs1',ic:'回',col:'#7fd0ff',n:'回城卷轴',d:`读条 1.2 秒后传送回晨露村（${kn('town')}）`,price:40},{id:'rs5',ic:'回',col:'#7fd0ff',n:'回城卷轴 ×5',d:'批量购买',price:180});
  for(let t=1;t<WEP.length;t++)L.push({id:'w'+t,ic:'武',col:TIERC[t],n:c.wep[t],d:`攻击 +${WEP[t].atk}　需要 Lv.${WEP[t].lv}`,price:WEP[t].price,lv:WEP[t].lv,own:p.wep>=t});
  for(let t=1;t<ARM.length;t++)L.push({id:'a'+t,ic:'甲',col:TIERC[t],n:ARM[t].n,d:`防御 +${ARM[t].def}　HP +${ARM[t].hp}　需要 Lv.${ARM[t].lv}`,price:ARM[t].price,lv:ARM[t].lv,own:p.arm>=t});
  for(const id in PETS)L.push({id,ic:'宠',col:PETS[id].c,n:'宠物：'+PETS[id].n,d:PETS[id].d+'（同时只能带一只）',price:PETS[id].price,own:p.pet===id});
@@ -707,7 +709,7 @@ const VIEW={w:960,h:540,s:1,dpr:1};
 function mkPlayer(sv,idx){
  const p={idx,name:sv.name||'旅人',cls:CLS[sv.cls]?sv.cls:'warrior',lv:clamp(sv.lv|0||1,1,BAL.maxLv),exp:Math.max(0,sv.exp|0),meso:Math.max(0,sv.meso|0),
   sp:sv.sp==null?BAL.spStart:Math.max(0,sv.sp|0),sk:[0,1,2,3,4].map(i=>clamp((sv.sk&&sv.sk[i])|0,0,BAL.skMax)),job2:JOB2[sv.job2]&&JOB2[sv.job2].cls===sv.cls?sv.job2:null,bag:(Array.isArray(sv.bag)?sv.bag.filter(itOK):[]).slice(0,BAGMAX),eq:Object.fromEntries(EQK.map(k=>[k,sv.eq&&itOK(sv.eq[k])&&sv.eq[k].s===k?sv.eq[k]:null])),book:sv.book&&typeof sv.book==='object'?Object.fromEntries(Object.entries(sv.book).filter(([t,n])=>MOB[t]).map(([t,n])=>[t,Math.max(0,n|0)])):{},invV:0,wep:clamp(sv.wep|0,0,MAXT),arm:clamp(sv.arm|0,0,MAXT),diff:DIFF[sv.diff]?sv.diff:'normal',pet:PETS[sv.pet]?sv.pet:null,vis:Array.isArray(sv.vis)?sv.vis.filter(n=>MAPS[n]):[0],bonus:{atk:clamp((sv.bonus&&sv.bonus.atk)|0,0,60),hp:clamp((sv.bonus&&sv.bonus.hp)|0,0,600)},q:sv.q==null?qStart(clamp(sv.lv|0||1,1,BAL.maxLv)):clamp(sv.q|0,0,QUESTS.length),qp:Math.max(0,sv.qp|0),ach:sv.ach&&typeof sv.ach==='object'?Object.fromEntries(Object.keys(sv.ach).filter(k=>ACH[k]).map(k=>[k,1])):{},secs:Array.isArray(sv.secs)?sv.secs.filter(n=>MAPS[n]):[],emo:null,run:null,dropRun:null,
-  pr:sv.pr==null?5:Math.max(0,sv.pr|0),pb:sv.pb==null?5:Math.max(0,sv.pb|0),
+  rs:sv.rs==null?3:Math.max(0,sv.rs|0),pr:sv.pr==null?5:Math.max(0,sv.pr|0),pb:sv.pb==null?5:Math.max(0,sv.pb|0),
   map:0,x:0,y:0,vx:0,vy:0,face:1,onGround:true,climb:null,dropT:0,dropPlat:null,ropeCd:0,atkLock:0,dashT:0,dashV:0,kbT:0,
   hp:1,mp:1,inv:0,cd:{b:0,0:0,1:0,2:0,3:0,4:0,u:0},combo:0,comboT:0,rage:0,dj:false,bf:{},anim:{k:'idle',t:0},dead:false,kbSeq:0,kbDir:0,warpSeq:0,warp:null,reviveT:0,up:false,
   sx:0,sy:0,tx:0,ty:0,rgT:0};
@@ -720,7 +722,7 @@ function stats(p){
  return{mhp,mmp:Math.round(c.mp0+c.mpLv*(lv-1)),atk:(c.atk0+c.atkLv*(lv-1)+W.atk+bo.atk+E.atk+B.atk)*(1+bA)*(1+(J.atk||0)),
   def:(c.def0+lv*.6+A.def+E.def)*(1+(J.def||0)),crit:BAL.critBase+bC+E.crit+(J.crit||0)+low,critMul:BAL.critMul+bC+(J.cm||0),spd:Math.min(.3,E.spd+(J.spd||0)),meso:E.meso,exp:E.exp};
 }
-function saveOf(p){return{q:p.q,qp:p.qp,ach:p.ach,secs:p.secs,job2:p.job2,bag:p.bag,eq:p.eq,book:p.book,pet:p.pet,diff:p.diff,name:p.name,cls:p.cls,lv:p.lv,exp:p.exp,meso:p.meso,sp:p.sp,sk:p.sk.slice(),wep:p.wep,arm:p.arm,pr:p.pr,pb:p.pb,vis:p.vis,bonus:p.bonus};}
+function saveOf(p){return{rs:p.rs,q:p.q,qp:p.qp,ach:p.ach,secs:p.secs,job2:p.job2,bag:p.bag,eq:p.eq,book:p.book,pet:p.pet,diff:p.diff,name:p.name,cls:p.cls,lv:p.lv,exp:p.exp,meso:p.meso,sp:p.sp,sk:p.sk.slice(),wep:p.wep,arm:p.arm,pr:p.pr,pb:p.pb,vis:p.vis,bonus:p.bonus};}
 const SKEY='cloudisle.slots.v1';
 function loadSlots(){try{const a=JSON.parse(localStorage.getItem(SKEY)||'[]');return[0,1,2].map(i=>a[i]||null);}catch(e){return[null,null,null];}}
 function storeSlots(a){try{localStorage.setItem(SKEY,JSON.stringify(a));}catch(e){}}
@@ -904,7 +906,7 @@ function hostAct(p,m){
  }else if(m.t==='buy'){
   const it=shopItems(p).find(i=>i.id===m.id);if(!it||it.own||p.meso<it.price||(it.lv&&p.lv<it.lv))return;
   p.meso-=it.price;
-  if(it.id==='pr1')p.pr++;else if(it.id==='pr10')p.pr+=10;else if(it.id==='pb1')p.pb++;else if(it.id==='pb10')p.pb+=10;
+  if(it.id==='rs1')p.rs++;else if(it.id==='rs5')p.rs+=5;else if(it.id==='pr1')p.pr++;else if(it.id==='pr10')p.pr+=10;else if(it.id==='pb1')p.pb++;else if(it.id==='pb10')p.pb+=10;
   else if(PETS[it.id])p.pet=it.id;
   else if(it.id[0]==='w'){p.wep=+it.id.slice(1);qProg(p,'buy');}else if(it.id[0]==='a'){p.arm=+it.id.slice(1);qProg(p,'buy');}
   ev({k:'toast',m:null,p:p.idx,s:'购买了 '+it.n,snd:'buy'});
@@ -927,6 +929,11 @@ function hostAct(p,m){
  }else if(m.t==='mech'){
   if(m.k==='crumble'){crumbleStart(m.m|0,m.i|0);const e={k:'crumble',m:m.m|0,i:m.i|0,id:G.evId++,tt:G.time};G.ev.push(e);}
   else if(m.k==='lfx'&&m.f&&m.m===ME.map)spawnFx(Object.assign({},m.f,{t:0}));
+ }else if(m.t==='recall'){
+  if(p.dead||p.rs<=0||MAPS[p.map].safe)return;p.rs--;
+  ev({k:'fx',f:'blink',m:p.map,x:p.x,y:p.y});const M=MAPS[0],sy=groundAt(M,M.spawnX);
+  if(p===ME)warpTo(p,0,M.spawnX,sy);else{p.warpSeq++;p.warp={map:0,x:M.spawnX,y:sy};p.map=0;p.x=M.spawnX;p.y=sy;}
+  ev({k:'toast',m:null,p:p.idx,s:'回到了晨露村（剩余回城卷轴 '+p.rs+'）。飞艇船长罗盘可以把你送回去过的地区',snd:'portal'});
  }else if(m.t==='emo'){p.emo={i:clamp(m.i|0,0,EMO.length-1),t:2.5};
  }else if(m.t==='respawn'){
   if(!p.dead)return;const s=stats(p),here=m.here&&!MAPS[p.map].safe;p.dead=false;p.hp=here?Math.round(s.mhp*.5):s.mhp;p.mp=here?Math.round(s.mmp*.5):s.mmp;p.inv=2.5;
@@ -1219,10 +1226,10 @@ function pwTick(mi,dt){
 }
 
 /* ---------------- key bindings ---------------- */
-const ACTIONS=[['left','左移'],['right','右移'],['up','上 · 爬绳 · 传送门 · 对话'],['down','下 · 蹲下（+跳 落下平台）'],['jump','跳跃'],['atk','普通攻击'],['s0','技能 1'],['s1','技能 2'],['s2','技能 3'],['s3','技能 4'],['s4','技能 5（转职）'],['ult','大招（怒气满时）'],['potR','红药水'],['potB','蓝药水'],['skills','技能窗口'],['bag','背包'],['book','怪物图鉴']];
+const ACTIONS=[['left','左移'],['right','右移'],['up','上 · 爬绳 · 传送门 · 对话'],['down','下 · 蹲下（+跳 落下平台）'],['jump','跳跃'],['atk','普通攻击'],['s0','技能 1'],['s1','技能 2'],['s2','技能 3'],['s3','技能 4'],['s4','技能 5（转职）'],['ult','大招（怒气满时）'],['potR','红药水'],['potB','蓝药水'],['skills','技能窗口'],['town','回城卷轴'],['bag','背包'],['book','怪物图鉴']];
 const PRESETS={
- wasd:{left:'KeyA',right:'KeyD',up:'KeyW',down:'KeyS',jump:'Space',atk:'KeyJ',s0:'KeyK',s1:'KeyL',s2:'KeyU',s3:'KeyI',s4:'KeyH',potR:'KeyQ',potB:'KeyE',skills:'KeyC',ult:'KeyO',bag:'KeyB',book:'KeyN'},
- arrows:{left:'ArrowLeft',right:'ArrowRight',up:'ArrowUp',down:'ArrowDown',jump:'Space',atk:'KeyX',s0:'KeyA',s1:'KeyS',s2:'KeyD',s3:'KeyF',s4:'KeyG',potR:'KeyQ',potB:'KeyW',skills:'KeyK',ult:'KeyE',bag:'KeyB',book:'KeyN'},
+ wasd:{left:'KeyA',right:'KeyD',up:'KeyW',down:'KeyS',jump:'Space',atk:'KeyJ',s0:'KeyK',s1:'KeyL',s2:'KeyU',s3:'KeyI',s4:'KeyH',potR:'KeyQ',potB:'KeyE',skills:'KeyC',town:'KeyT',ult:'KeyO',bag:'KeyB',book:'KeyN'},
+ arrows:{left:'ArrowLeft',right:'ArrowRight',up:'ArrowUp',down:'ArrowDown',jump:'Space',atk:'KeyX',s0:'KeyA',s1:'KeyS',s2:'KeyD',s3:'KeyF',s4:'KeyG',potR:'KeyQ',potB:'KeyW',skills:'KeyK',town:'KeyR',ult:'KeyE',bag:'KeyB',book:'KeyN'},
 };
 let BIND=Object.assign({},PRESETS.wasd);
 try{
@@ -1378,6 +1385,13 @@ function trySkill(k){
 function autoFace(p){let b=null,bd=1e9;for(const m of viewMobs()){if(m.dead)continue;const dx=m.x-p.x,dy=(m.y-m.h/2)-(p.y-30);if(Math.abs(dx)>520||Math.abs(dy)>140)continue;if(Math.abs(dx)<bd){bd=Math.abs(dx);b=dx;}}if(b!=null&&Math.abs(b)>4)p.face=sgn(b);}
 function PRESS_ANY_SKILL(k){return !!PRESS[BIND['s'+k]]||TIN.skP===k;}
 function usePot(k){const p=ME;if(!p||p.dead)return;if((p.potT||0)>0)return;if((k==='r'?p.pr:p.pb)<=0){toastOnce(k==='r'?'没有红药水了':'没有蓝药水了');return;}sfx('potion');req({t:'pot',k});}
+function useRecall(){const p=ME;if(!p||state!=='play'||p.dead)return;
+ if(MAPS[p.map].safe){toastOnce('已经在村子里了');return;}if((p.rs||0)<=0){toastOnce('没有回城卷轴了（莉卡的商店有卖）');return;}
+ if(p.recall){p.recall=null;toast('取消回城');return;}
+ p.recall={t:1.2,hp:p.hp};sfx('charge');toast('回城中… 移动或受伤会打断');}
+function recallTick(dt){const p=ME;if(!p||!p.recall)return;const r=p.recall;
+ if(p.dead||p.hp<r.hp||Math.abs(p.vx)>20||p.climb||p.swing||p.zip){p.recall=null;toastOnce('回城被打断');return;}
+ r.t-=dt;if(r.t<=0){p.recall=null;req({t:'recall'});}}
 function req(m){if(IS_HOST)hostAct(ME,m);else netSend(m);}
 function usePortal(p,po){sfx('portal');const M2=MAPS[po.to],tp=M2.portals[po.ti];warpTo(p,po.to,tp.x,tp.y);}
 function warpTo(p,mi,x,y){
@@ -1475,7 +1489,7 @@ function snapFor(p){
  const r=x=>Math.round(x);
  return{t:'s',sm:mi,tm:+G.time.toFixed(2),
   me:{hp:Math.round(p.hp),mp:Math.round(p.mp),lv:p.lv,exp:p.exp,meso:p.meso,sp:p.sp,sk:p.sk,wep:p.wep,arm:p.arm,pr:p.pr,pb:p.pb,dead:p.dead?1:0,rv:+p.reviveT.toFixed(2),
-   q:[p.q,p.qp],j2:p.job2,cd:[p.cd.b,p.cd[0],p.cd[1],p.cd[2],p.cd[3],p.cd.u||0,p.cd[4]||0].map(v=>+v.toFixed(2)),bf:Object.fromEntries(Object.entries(p.bf).map(([k,b])=>[k,[+b.v.toFixed(3),+b.t.toFixed(1)]])),bo:[p.bonus.atk,p.bonus.hp],pet:p.pet,
+   q:[p.q,p.qp],rs:p.rs,j2:p.job2,cd:[p.cd.b,p.cd[0],p.cd[1],p.cd[2],p.cd[3],p.cd.u||0,p.cd[4]||0].map(v=>+v.toFixed(2)),bf:Object.fromEntries(Object.entries(p.bf).map(([k,b])=>[k,[+b.v.toFixed(3),+b.t.toFixed(1)]])),bo:[p.bonus.atk,p.bonus.hp],pet:p.pet,
    inv:+p.inv.toFixed(2),pt:+(p.potT||0).toFixed(2),cb:p.combo||0,rg:Math.round(p.rage||0),kb:[p.kbSeq,p.kbDir],wp:p.warpSeq,w:p.warp},
   o:{n:h.name,c:h.cls,lv:h.lv,x:r(h.x),y:r(h.y),f:h.face,a:h.anim.k,at:+h.anim.t.toFixed(2),map:h.map,dead:h.dead?1:0,hp:Math.round(h.hp),mhp:stats(h).mhp,em:h.emo?h.emo.i:-1,sw:mechState(h).sw,mv:mechState(h).mv,bfk:Object.keys(h.bf).filter(k=>h.bf[k].t>0),wep:h.wep,arm:h.arm,pet:h.pet,inv:+h.inv.toFixed(2),rv:+h.reviveT.toFixed(2),c2:h.climb?1:0},
   m:ms.mobs.map(m=>[m.id,MK.indexOf(m.t),r(m.x),r(m.y),m.face,Math.round(1000*Math.max(0,m.hp)/m.maxHp),(m.flash>0?1:0)|(m.slowT>0?2:0)|(m.dead?4:0)|(m.hpShow>0?8:0)|(m.elite?16:0),MST.indexOf(m.st),Math.round(m.jy||0),m.aggro==null?-1:m.aggro]),
@@ -1520,7 +1534,7 @@ function applySnap(s){
  const me=s.me,p=ME;
  Object.assign(p,{hp:me.hp,mp:me.mp,lv:me.lv,exp:me.exp,meso:me.meso,sp:me.sp,sk:me.sk,wep:me.wep,arm:me.arm,pr:me.pr,pb:me.pb,reviveT:me.rv,potT:Math.max(me.pt||0,0),combo:me.cb||0,rage:me.rg||0});if(me.bo)p.bonus={atk:me.bo[0],hp:me.bo[1]};p.pet=me.pet||null;
  const wasDead=p.dead;p.dead=!!me.dead;if(p.dead&&!wasDead){p.climb=null;}
- ['b',0,1,2,3,'u',4].forEach((k,i)=>{p.cd[k]=Math.max(me.cd[i]||0,p.cd[k]||0);});p.job2=me.j2||null;if(me.q){p.q=me.q[0];p.qp=me.q[1];}
+ ['b',0,1,2,3,'u',4].forEach((k,i)=>{p.cd[k]=Math.max(me.cd[i]||0,p.cd[k]||0);});p.job2=me.j2||null;if(me.rs!=null)p.rs=me.rs;if(me.q){p.q=me.q[0];p.qp=me.q[1];}
  p.bf={};for(const k in me.bf)p.bf[k]={v:me.bf[k][0],t:me.bf[k][1]};
  p.inv=Math.max(p.inv,me.inv);
  if(me.kb[0]>(p.kbSeq||0)){p.kbSeq=me.kb[0];if(!p.dead)applyKb(p,me.kb[1]);}
@@ -3074,6 +3088,7 @@ function render(t){
  {const tg=new Set();for(const m of mobs)if(!m.dead&&WINDS.has(m.st)){const a=IS_HOST?m.aggro:m.ag;if(a!=null&&a>=0)tg.add(a);}
   for(const i of tg){const p=P[i];if(!p||p.map!==ME.map||p.dead)continue;const [px,py]=vpos(p),b=1+.15*Math.sin(t*16);c.save();c.translate(px,py-100);c.scale(b,b);circ(c,0,0,12);fo(c,'#ff4a4a',2);c.fillStyle='#fff';c.font='900 16px '+FONT;c.textAlign='center';c.fillText('!',0,6);c.restore();}}
  for(const p of P){if(!p||p.map!==ME.map)continue;const [ex,ey]=vpos(p);drawEmo(c,p,ex,ey);}
+ if(ME.recall){const k=1-ME.recall.t/1.2;glow(c,ME.x,ME.y-40,60,'#7fd0ff',.35+.3*k);c.strokeStyle='#bfefff';c.lineWidth=4;c.beginPath();c.arc(ME.x,ME.y-92,14,-Math.PI/2,-Math.PI/2+TAU*k);c.stroke();c.fillStyle='rgba(200,240,255,.9)';for(let i=0;i<6;i++){const a=t*4+i;c.fillRect(ME.x+Math.cos(a)*22-1.5,ME.y-10-((t*80+i*20)%80),3,3);}}
  for(const q of viewProjs())drawProj(c,q,t);
  for(const f of FX)drawFx(c,f,t);
  for(const q of PART){c.globalAlpha=Math.max(0,q.life/q.ml);c.fillStyle=q.col;c.fillRect(q.x-q.r/2,q.y-q.r/2,q.r,q.r);}c.globalAlpha=1;
@@ -3237,7 +3252,7 @@ function hudTick(dt){
  // shop button
  const M=MAPS[p.map];const near=M.npcs.find(q=>Math.abs(q.x-p.x)<56&&Math.abs(q.y-p.y)<12);
  $('bShop').classList.toggle('hidden',!near);if(near)$('bShop').textContent=(near.id==='shop'?'商店 ':'对话 ')+kn('up');
- $('bSkill').textContent='技能 '+kn('skills')+(p.sp>0?' ('+p.sp+')':'');$('bBag').textContent='背包 '+kn('bag')+(p.bag&&p.bag.length>=BAGMAX?' (满)':'');$('bBook').textContent='图鉴 '+kn('book');
+ $('bSkill').textContent='技能 '+kn('skills')+(p.sp>0?' ('+p.sp+')':'');$('bBag').textContent='背包 '+kn('bag')+(p.bag&&p.bag.length>=BAGMAX?' (满)':'');$('bBook').textContent='图鉴 '+kn('book');$('bTown').textContent='回城 '+kn('town')+' ('+(p.rs||0)+')';$('bTown').classList.toggle('hidden',!!M.safe);
  $('mname').textContent=M.name+' · '+DF().n;
  {const Q=QUESTS[p.q],el=$('quest');if(Q){el.classList.remove('hidden');el.innerHTML='<b>任务 '+(p.q+1)+'/'+QUESTS.length+' · '+Q.n+'</b><br><small>'+Q.d+(Q.k==='lv'?'（当前 Lv.'+p.lv+'）':Q.c>1?'（'+Math.min(p.qp||0,Q.c)+' / '+Q.c+'）':'')+'</small>';}else el.classList.add('hidden');}
  // mate
@@ -3341,6 +3356,7 @@ const TALK=()=>['欢迎来到云岛！我是向导阿栗。往右走过传送门
  '风铃峡谷的最高处有一扇通往风车遗迹的门，里面沉睡着铁风车巨像。它踩地之前会举起双臂——那时候赶紧跳起来！',
  `和朋友一起冒险吧：在同一张地图里打怪，两人各得 75% 经验；同伴倒下时，走过去按住 ${kn('up')} 就能把他救起来。`,
  '村子里的飞艇船长罗盘可以把你送到去过的任何地区，省得一张张地图走过去。',
+ `想回村子补给？按 ${kn('town')} 使用回城卷轴，莉卡的商店有卖。`,
  `到了 ${JOBLV} 级再来找我，我可以帮你转职：每个职业有两条路可选，会获得新的技能 5（按键 ${kn('s4')}）。`,
  `打怪偶尔会掉落戒指、项链和披风，精英怪、宝箱和 Boss 掉得更多。按 ${kn('bag')} 打开背包装备或出售；按 ${kn('book')} 看怪物图鉴，打得越多对它们伤害越高。`,
  '不喜欢现在的按键？在菜单（Esc）里打开「按键设置」，可以换成方向键布局，或者逐个改键。'];
@@ -3355,6 +3371,7 @@ for(const b of document.querySelectorAll('[data-close]'))b.addEventListener('cli
 $('bSkill').onclick=()=>{auInit();toggleWin('wSkill');};
 $('bMenu').onclick=()=>{auInit();toggleWin('wMenu');};
 $('bBag').onclick=()=>{auInit();toggleWin('wBag');};
+$('bTown').onclick=()=>{auInit();useRecall();};
 function emote(i){if(state!=='play'||!ME)return;ME.emo={i,t:2.5};if(!IS_HOST)netSend({t:'emo',i});$('emoBar').classList.add('hidden');sfx('click');}
 {const eb=$('emoBar');EMO.forEach((s,i)=>{const b=document.createElement('button');b.textContent=(i+1)+' '+s;b.onclick=()=>emote(i);eb.appendChild(b);});}
 $('bEmo').onclick=()=>{auInit();$('emoBar').classList.toggle('hidden');};
@@ -3528,6 +3545,7 @@ addEventListener('keydown',e=>{
   if(e.code==='KeyP'&&!isBound('KeyP')){togglePause();e.preventDefault();return;}
   if(e.code===BIND.skills){toggleWin('wSkill');e.preventDefault();return;}
   if(e.code===BIND.bag){toggleWin('wBag');e.preventDefault();return;}
+  if(e.code===BIND.town&&!e.repeat){useRecall();e.preventDefault();return;}
   if(/^Digit[1-4]$/.test(e.code)&&!isBound(e.code)&&!e.repeat){emote(+e.code.slice(5)-1);return;}
   if(e.code===BIND.book){toggleWin('wBook');e.preventDefault();return;}
   if(e.code==='KeyM'&&!isBound('KeyM')){setMute(!AU.muted);return;}
@@ -3558,7 +3576,7 @@ function renderHelp(){
   ['跳跃',kn('jump')],
   ['攀爬','在绳子旁按 '+kn('up')+' / '+kn('down')+'，爬绳时按 '+kn('left')+' / '+kn('right')+' + '+kn('jump')+' 离开'],
   ['普通攻击',kn('atk')+'（按住连续攻击）'],['二段跳','空中再按一次 '+kn('jump')+'；爬绳时按 '+kn('jump')+' 可以直接向上跳'],['大招',kn('ult')+'：打怪积累怒气，满 100 后释放全屏大招，释放时短暂无敌'],['连击','连续命中越多伤害越高，每 10 连击 +5%，最多 +25%，2 秒不打就清零'],['技能',sk],['药水',kn('potR')+' 红药水　'+kn('potB')+' 蓝药水'],
-  ['传送门 / 对话 / 商店','站在传送门或 NPC 旁按 '+kn('up')],['技能窗口',kn('skills')],['背包 / 图鉴',kn('bag')+' 背包（装备戒指、项链、披风，出售）　'+kn('book')+' 怪物图鉴'],['转职',JOBLV+' 级后回村找向导阿栗，二选一，获得技能 5（'+kn('s4')+'）'],['任务','左上角显示当前任务，完成后自动领奖并接下一个'],['表情','数字键 1–4，或右上「表情」按钮'],['地区机关','峡谷有上升气流、雪原有滑索（按 '+kn('up')+'）、火山有会塌的石台、地狱有移动平台、丛林可以荡藤蔓'],['双人机关','两人同时站在地图两端的机关上，会出现两个宝箱。每张地图最高处还藏着一个秘密宝箱'],['暂停 / 存档','P 暂停（单人时打开菜单也会暂停）；每 5 秒自动保存，菜单里可以手动保存、导出存档文件，标题画面可导入'],['菜单','Esc'],
+  ['传送门 / 对话 / 商店','站在传送门或 NPC 旁按 '+kn('up')],['技能窗口',kn('skills')],['回城',kn('town')+' 使用回城卷轴（读条 1.2 秒，移动或受伤会打断），回村后找飞艇船长罗盘可以直接飞回去过的地区'],['背包 / 图鉴',kn('bag')+' 背包（装备戒指、项链、披风，出售）　'+kn('book')+' 怪物图鉴'],['转职',JOBLV+' 级后回村找向导阿栗，二选一，获得技能 5（'+kn('s4')+'）'],['任务','左上角显示当前任务，完成后自动领奖并接下一个'],['表情','数字键 1–4，或右上「表情」按钮'],['地区机关','峡谷有上升气流、雪原有滑索（按 '+kn('up')+'）、火山有会塌的石台、地狱有移动平台、丛林可以荡藤蔓'],['双人机关','两人同时站在地图两端的机关上，会出现两个宝箱。每张地图最高处还藏着一个秘密宝箱'],['暂停 / 存档','P 暂停（单人时打开菜单也会暂停）；每 5 秒自动保存，菜单里可以手动保存、导出存档文件，标题画面可导入'],['菜单','Esc'],
   ['窗口与菜单',kn('up')+' / '+kn('down')+'（或方向键）选择，回车 / 空格 / '+kn('atk')+' 确认，Esc 返回'],
   ['精英与事件','金色光环的「精英」怪更强，但掉落 4 倍经验和道具。每张练级图每隔几分钟会触发事件：怪物潮、流星雨、寻宝、宝箱怪'],
   ['宠物','在莉卡的商店购买，跟在身边自动拾取金币和药水'],
@@ -3602,7 +3620,7 @@ function step(dt){
  G.time+=dt;
  mechTick(MAPS[ME.map],dt);
  const inp=readInput();
- stepLocal(ME,inp,dt);
+ stepLocal(ME,inp,dt);recallTick(dt);
  for(const q of P)if(q&&q.emo){q.emo.t-=dt;if(q.emo.t<=0)q.emo=null;}
  if(IS_HOST){hostUpdate(dt);netHostTick(dt);}else{guestUpdate(dt);netGuestTick(dt);}
  for(const p of P){if(!p||p===ME)continue;if(p.rsw){p.rswA=p.rswA==null?p.rsw[1]:p.rswA+(p.rsw[1]-p.rswA)*Math.min(1,dt*18);}else p.rswA=null;if(dt>0){const vx=(p.x-(p.px0==null?p.x:p.px0))/dt;p.vx=(p.vx||0)+(vx-(p.vx||0))*.2;p.px0=p.x;}const a=Math.min(1,dt*15);if(Math.abs(p.x-p.sx)>300||Math.abs(p.y-p.sy)>300){p.sx=p.x;p.sy=p.y;}p.sx+=(p.x-p.sx)*a;p.sy+=(p.y-p.sy)*a;p.anim.t+=dt;}
