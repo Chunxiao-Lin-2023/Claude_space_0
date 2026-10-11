@@ -1197,7 +1197,6 @@ function hurt(d,kind='hit'){
  const A=S.armor;d*=A>=0?15/(15+A):(15-A)/15;
  run.hp-=d;P.inv=0.5;if(isMe())shake=0.25;addText(P.x,P.y-30,'-'+Math.max(1,Math.round(d)),C.danger,15);
  hurtSnd(CUR,kind,d/Math.max(1,S.hp));
- if(CUR&&CUR.reviving!=null){const q=PL[CUR.reviving];if(q)q.rv=Math.max(0,q.rv-REV.hitLoss);} // getting hit while reviving costs progress
  if(run.hp<=0){
   if(FX.revive&&!run.revived){run.revived=true;run.items.splice(run.items.indexOf('不灭火种'),1);computeStats();run.hp=Math.ceil(S.hp*0.5);P.inv=2;if(isMe())banner('不灭火种');boomFx(P.x,P.y,230);aoe(P.x,P.y,230,flatDmg(30),{noSteal:1});ebul=[];return;}
   run.hp=0;playerDown();
@@ -1212,10 +1211,10 @@ function playerDown(){
 }
 /* ---- teammate revive (co-op only) ----
    Stand next to a downed teammate to fill the revive ring. Each revive in the same wave takes
-   longer; leaving the circle drains progress slowly; taking a hit while reviving costs progress.
+   longer; leaving the circle drains progress slowly. Getting hit while reviving does not interrupt it.
    The revived player comes back with 35% HP and a short shield. If nobody revives them, they still
    come back at the start of the next wave. */
-const REV={radius:48,base:3,step:1.5,hp:0.35,inv:1.6,decay:0.6,hitLoss:0.6};
+const REV={radius:48,base:3,step:1.5,hp:0.35,inv:1.6,decay:0.6};
 const revNeed=p=>REV.base+REV.step*(p.revives||0);
 function reviveUpdate(dt){
  for(const p of PL)p.reviving=null;
