@@ -10,7 +10,7 @@
 <meta name="theme-color" content="#151022">
 <title>云岛冒险</title>
 <style>
-:root{--ui:#f6f0e2;--gold:#ffcf5a;--hp:#ff5d6c;--mp:#4fa3ff;--exp:#ffe066;--panel:rgba(24,20,38,.86);--edge:rgba(255,255,255,.16);--acc:#7fd6c2;--sl:env(safe-area-inset-left,0px);--sr:env(safe-area-inset-right,0px);--st:env(safe-area-inset-top,0px);--sb:env(safe-area-inset-bottom,0px)}
+:root{color-scheme:dark;--ui:#f6f0e2;--gold:#ffcf5a;--hp:#ff5d6c;--mp:#4fa3ff;--exp:#ffe066;--panel:rgba(24,20,38,.86);--edge:rgba(255,255,255,.16);--acc:#7fd6c2;--sl:env(safe-area-inset-left,0px);--sr:env(safe-area-inset-right,0px);--st:env(safe-area-inset-top,0px);--sb:env(safe-area-inset-bottom,0px)}
 *{box-sizing:border-box}
 html,body{margin:0;height:100%;background:#151022;overflow:hidden;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;overscroll-behavior:none;font-family:"PingFang SC","Microsoft YaHei","Noto Sans SC",system-ui,sans-serif;color:var(--ui);-webkit-tap-highlight-color:transparent}
 #cv{position:fixed;inset:0;width:100%;height:100%;display:block}
@@ -1553,7 +1553,7 @@ function renderSlots(){
  a.forEach((sv,i)=>{const d=document.createElement('div');d.className='slot'+(i===slotSel?' sel':'');
   if(sv){const cv2=document.createElement('canvas');cv2.width=144;cv2.height=160;d.appendChild(cv2);const c=cv2.getContext('2d');c.scale(1.6,1.6);drawHero(c,{cls:sv.cls,face:1,a:'idle',at:0,wep:sv.wep||0},45,94,0);
    d.insertAdjacentHTML('beforeend',`<b>${esc(sv.name)}</b><small>Lv.${sv.lv} ${CLS[sv.cls].name}</small>`);
-   const del=document.createElement('button');del.className='del';del.textContent='删除';del.onclick=e=>{e.stopPropagation();if(confirm('删除角色「'+sv.name+'」？')){const b=loadSlots();b[i]=null;storeSlots(b);renderSlots();}};d.appendChild(del);}
+   const del=document.createElement('button');del.className='del';del.textContent='删除';del.onclick=e=>{e.stopPropagation();if(del.dataset.arm!=='1'){del.dataset.arm='1';del.textContent='确认删除？';del.style.opacity=1;del.style.color='#ff8a95';setTimeout(()=>{if(del.isConnected){del.dataset.arm='';del.textContent='删除';del.style.opacity='';del.style.color='';}},3000);return;}const b=loadSlots();b[i]=null;storeSlots(b);renderSlots();};d.appendChild(del);}
   else d.innerHTML='<b style="font-size:28px;opacity:.5">＋</b><small>新建角色</small>';
   d.onclick=()=>{auInit();slotSel=i;sfx('click');if(!loadSlots()[i])openCreate();else renderSlots();};L.appendChild(d);});
  const has=!!a[slotSel];$('bSolo').disabled=!has;
