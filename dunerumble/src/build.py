@@ -14,8 +14,9 @@ def page(kind):
     pre = {'standalone': '', 'artifact': 'window.__ARTIFACT__=true;', 'test': 'window.__dbg={speed:1};'}[kind]
     scripts = '<script>' + vendor + '</script>\n<script>\n' + pre + '\n' + game + '\n</script>'
     body = tpl.replace('__IOSMETA__', IOS if kind != 'artifact' else '').replace('__SCRIPTS__', scripts)
-    head = '<!doctype html>\n<html lang="zh-CN">\n<head>' if kind != 'artifact' else '<html lang="zh-CN">\n<head>'
-    return head + body.replace('<body>', '</head>\n<body>', 1) + '\n</html>\n'
+    if kind == 'artifact':  # artifact host supplies doctype/html/head/body itself
+        return body.replace('<body>', '', 1).replace('</body>', '') + '\n<style>:root{color-scheme:dark}</style>\n'
+    return '<!doctype html>\n<html lang="zh-CN">\n<head>' + body.replace('<body>', '</head>\n<body>', 1) + '\n</html>\n'
 out = os.path.join(D, 'out'); os.makedirs(out, exist_ok=True)
 for k, f in [('standalone', 'index.html'), ('artifact', 'artifact.html'), ('test', 'test.html')]:
     open(os.path.join(out, f), 'w', encoding='utf-8').write(page(k))
