@@ -22,8 +22,8 @@ async function mk(name, vp) {
 }
 const H = await mk('host', {width: 1100, height: 680});
 const Gp = await mk('guest', {width: 1024, height: 700});
-await Gp.evaluate(() => { __dbg.SAVE.hero = 'sorc'; __dbg.SAVE.name = '小明'; });
-await H.evaluate(() => { __dbg.SAVE.name = '房主'; });
+await Gp.evaluate(() => { __dbg.SAVE.hero = 'alch'; __dbg.SAVE.name = '小明'; });
+await H.evaluate(() => { __dbg.SAVE.name = '房主'; __dbg.SAVE.hero = 'paladin'; });
 await H.click('#bHost');
 await H.waitForFunction(() => __dbg.NET.peer && __dbg.NET.peer.open, null, {timeout: 20000});
 const code = await H.evaluate(() => __dbg.NET.code);
@@ -56,7 +56,7 @@ for (let i = 0; i < 6; i++) {
   await Gp.mouse.move(400, 300); await Gp.mouse.down(); await H.mouse.move(450, 300); await H.mouse.down();
   await Gp.waitForTimeout(1200);
   await Gp.mouse.up(); await H.mouse.up();
-  if (i === 3) { await Gp.keyboard.press('KeyQ'); await H.keyboard.press('KeyQ'); }
+  if (i === 3) { await Gp.keyboard.press('KeyQ'); await H.keyboard.press('KeyQ'); await Gp.mouse.click(420, 300, {button: 'right'}); }
 }
 await H.screenshot({path: SH + '/c03_host_fight.png'}); await Gp.screenshot({path: SH + '/c04_guest_fight.png'});
 const hs = await H.evaluate(() => ({ph: __dbg.G.phase, kills: __dbg.G.stats.kills, en: __dbg.G.enemies.length, p1: __dbg.P[1] && [Math.round(__dbg.P[1].x), Math.round(__dbg.P[1].y), __dbg.P[1].hp], hitsByGuest: 0}));

@@ -84,7 +84,7 @@ function computeFlow(fly) {
   }
   return d;
 }
-function refreshFlow() { G.flow = computeFlow(false); G.flowF = computeFlow(true); }
+function refreshFlow() { G.flow = computeFlow(false); G.flowF = computeFlow(true); G.flowV = (G.flowV || 0) + 1; }
 // best next tile center toward rift
 function nextStep(e, fly) {
   const d = fly ? G.flowF : G.flow, m = G.map;
@@ -104,12 +104,12 @@ function nextStep(e, fly) {
 }
 
 /* ---------- world creation ---------- */
-function newWorld(li, nPlayers) {
-  const L = LEVELS[li];
+function newWorld(li, nPlayers, diff = 'normal') {
+  const L = LEVELS[li], Df = DIFF[diff] || DIFF.normal;
   G = {li, map: buildMap(L.id), phase: 'build', wave: 0, nWaves: L.waves.length, waveT: 0, spawnQ: [],
-    gold: Math.round(L.gold * (nPlayers > 1 ? B.coopGold : 1)), rift: B.riftHP, riftMax: B.riftHP,
+    gold: Math.round(L.gold * Df.gold * (nPlayers > 1 ? B.coopGold : 1)), rift: Df.rift, riftMax: Df.rift, diff, spdMul: Df.spd, turrets: [], pets: [], zones: [],
     enemies: [], projs: [], traps: [], drops: [], ev: [], evId: 1, time: 0, nid: 1, trapsV: 1,
-    hpMul: L.hp * (nPlayers > 1 ? B.coopHp : 1), coop: nPlayers > 1, endT: 0, result: null,
+    hpMul: L.hp * Df.hp * (nPlayers > 1 ? B.coopHp : 1), coop: nPlayers > 1, endT: 0, result: null,
     stats: {kills: 0, trapKills: 0, falls: 0, leaks: 0, gold: 0, built: 0}};
   G.trapAt = new Int32Array(G.map.w * G.map.h).fill(-1);
   refreshFlow();
@@ -132,6 +132,7 @@ function mkPlayer(i, hero, name, lv) {
 }
 function hurtPlayer(p, dmg, src) {
   if (!p || p.dead || p.inv > 0 || G.phase === 'won' || G.phase === 'lost') return;
+  if (p.guard > 0) dmg *= 0.3;
   p.hp -= dmg; p.hurtT = 0.25;
   ev('phit', {p: p.i, d: Math.round(dmg)});
   if (p.hp <= 0) { p.hp = 0; p.dead = true; p.rt = B.respawn; ev('pdie', {p: p.i, x: Math.round(p.x), y: Math.round(p.y)}); }
@@ -143,7 +144,8 @@ const ATK_DUR = {}; // seconds of attack anim per type
 function atkDur(type) { if (!ATK_DUR[type]) { const a = ATLAS.units[type].anims.attack; ATK_DUR[type] = (a ? a[1] : 6) / B.animFps; } return ATK_DUR[type]; }
 function spawnOrc(type, x, y) {
   const D = ORCS[type];
-  const e = {id: G.nid++, type, x, y, vx: 0, vy: 0, hp: D.hp * G.hpMul, mhp: D.hp * G.hpMul, dir: 2, anim: 'walk', at: Math.random(),
+  const hp = D.hp * G.hpMul * (1 + B.waveHp * (G.wave || 0));
+  const e = {id: G.nid++, type, x, y, vx: 0, vy: 0, hp, mhp: hp, dir: 2, anim: 'walk', at: Math.random(),
     act: null, atkCd: rnd(0.4), slowF: 1, burn: 0, burnDps: 0, frz: 0, charm: 0, charmBy: -1, air: 0, z: D.fly ? 1 : 0, fall: 0, dead: 0, flash: 0,
     chase: 0, chaseCd: 0, ox: rnd(-10, 10), oy: rnd(-10, 10), lastX: x, lastY: y, stuckT: 0, hpShow: 0, stun: 0};
   G.enemies.push(e); return e;
@@ -262,7 +264,7 @@ function updEnemy(e, dt) {
   if (e.stun > 0) { e.stun -= dt; e.anim = 'idle'; return; }
   if (e.charm > 0) { e.charm -= dt; if (e.charm <= 0) ev('uncharm', {id: e.id}); }
   e.atkCd -= dt; e.chaseCd -= dt;
-  const spd = D.speed * e.slowF; e.slowF = 1;
+  const spd = D.speed * e.slowF * (G.spdMul || 1); e.slowF = 1;
   // attacking
   if (e.act) {
     e.act.t += dt; const dur = atkDur(e.type) / Math.max(0.5, Math.min(1, spd / D.speed + 0.3));
@@ -280,6 +282,14 @@ function updEnemy(e, dt) {
     if (best) { if (inReach(best, ORCS[best.type].r + D.r * 0.5)) { if (canAtk) beginAttack(e, {k: 'e', id: best.id}); else e.anim = 'idle'; } else steer(e, best.x, best.y, spd, dt); }
     else e.anim = 'idle';
     return;
+  }
+  // taunted by a paladin's shield
+  if (e.taunt && e.taunt.t > 0) {
+    e.taunt.t -= dt; const tp = P[e.taunt.i];
+    if (tp && !tp.dead && dist2(e.x, e.y, tp.x, tp.y) < 420 * 420) {
+      if (D.ranged || inReach(tp, 14 + D.r * 0.3)) { if (canAtk) { beginAttack(e, {k: 'p', i: tp.i}); return; } e.anim = 'idle'; e.dir = dirOf(Math.atan2(tp.y - e.y, tp.x - e.x)); return; }
+      steer(e, tp.x, tp.y, spd, dt); sepFix(e); return;
+    }
   }
   // hostile to charmed orcs nearby
   for (const o of G.enemies) {
@@ -358,14 +368,14 @@ function canPlace(k, tx, ty, p) {
   if (D.place === 'floor') { if (t !== TF || isSpecialTile(tx, ty)) return '只能放在地面'; if (D.tall && enemiesOnTile(tx, ty, false).length) return '有敌人'; }
   else { if (t !== TW) return '只能装在墙上'; if (wallFacing(tx, ty, p.x, p.y) < 0) return '墙面前方没有通路'; }
   if (dist2(p.x, p.y, tc(tx), tc(ty)) > B.placeRange * B.placeRange) return '太远了';
-  if (G.gold < D.cost) return '金币不足';
+  if (G.gold < costFor(p, k)) return '金币不足';
   return '';
 }
 function placeTrap(p, k, tx, ty, rot) {
   const why = canPlace(k, tx, ty, p); if (why) return why;
   const D = TRAPS[k], lv = clamp((p.trapLv[k] || 1) - 1, 0, 2);
-  G.gold -= D.cost; G.stats.built++;
-  const tr = {id: G.nid++, k, tx, ty, rot: D.place === 'wall' ? wallFacing(tx, ty, p.x, p.y) : (D.dir ? (rot | 0) & 3 : 0), lv, cd: 0, anim: 0, fuse: 0, spent: D.cost, own: p.i};
+  const cost = costFor(p, k); G.gold -= cost; G.stats.built++;
+  const tr = {id: G.nid++, k, tx, ty, rot: D.place === 'wall' ? wallFacing(tx, ty, p.x, p.y) : (D.dir ? (rot | 0) & 3 : 0), lv, cd: 0, anim: 0, fuse: 0, spent: cost, own: p.i, fast: p.hero === 'ranger' ? 1 : 0};
   if (k === 'barricade') { tr.hp = tr.mhp = D.hp[lv]; }
   G.traps.push(tr); G.trapAt[tIdx(tx, ty)] = tr.id; G.trapsV++;
   if (k === 'barricade') refreshFlow();
@@ -395,20 +405,20 @@ function updTraps(dt) {
     const D = TRAPS[tr.k], lv = tr.lv; tr.cd = Math.max(0, tr.cd - dt); tr.anim = Math.max(0, tr.anim - dt);
     const cx = tc(tr.tx), cy = tc(tr.ty);
     switch (tr.k) {
-      case 'spikes': if (tr.cd <= 0) { const vs = enemiesOnTile(tr.tx, tr.ty, false); if (vs.length) { tr.cd = D.cd[lv]; tr.anim = 0.45; ev('trap', {i: tr.id, s: 'spike', x: cx, y: cy}); for (const e of vs) hurtEnemy(e, D.dmg[lv], {trap: 'spikes'}); } } break;
+      case 'spikes': if (tr.cd <= 0) { const vs = enemiesOnTile(tr.tx, tr.ty, false); if (vs.length) { tr.cd = D.cd[lv] * (tr.fast ? 0.8 : 1); tr.anim = 0.45; ev('trap', {i: tr.id, s: 'spike', x: cx, y: cy}); for (const e of vs) hurtEnemy(e, D.dmg[lv], {trap: 'spikes'}); } } break;
       case 'tar': for (const e of enemiesOnTile(tr.tx, tr.ty, false)) e.slowF = Math.min(e.slowF, 1 - D.slow[lv]); break;
-      case 'spring': if (tr.cd <= 0) { const vs = enemiesOnTile(tr.tx, tr.ty, false); if (vs.length) { tr.cd = D.cd[lv]; tr.anim = 0.5; const [dx, dy] = DIRV[tr.rot]; ev('trap', {i: tr.id, s: 'spring', x: cx, y: cy}); for (const e of vs) { hurtEnemy(e, 8, {trap: 'spring'}); if (alive(e)) launch(e, dx, dy, D.push[lv], 0.6); } } } break;
+      case 'spring': if (tr.cd <= 0) { const vs = enemiesOnTile(tr.tx, tr.ty, false); if (vs.length) { tr.cd = D.cd[lv] * (tr.fast ? 0.8 : 1); tr.anim = 0.5; const [dx, dy] = DIRV[tr.rot]; ev('trap', {i: tr.id, s: 'spring', x: cx, y: cy}); for (const e of vs) { hurtEnemy(e, 8, {trap: 'spring'}); if (alive(e)) launch(e, dx, dy, D.push[lv], 0.6); } } } break;
       case 'brim':
         if (tr.fuse > 0) { tr.fuse -= dt; if (tr.fuse <= 0) { tr.anim = 1.1; ev('trap', {i: tr.id, s: 'brim', x: cx, y: cy}); for (const e of enemiesInRect(tr.tx - 1, tr.ty - 1, tr.tx + 1, tr.ty + 1, false)) { hurtEnemy(e, D.dmg[lv], {trap: 'brim'}); e.burn = 3; e.burnDps = D.burn[lv]; } } }
-        else if (tr.cd <= 0 && enemiesOnTile(tr.tx, tr.ty, false).length) { tr.fuse = 0.3; tr.cd = D.cd[lv]; tr.anim = 0.3; }
+        else if (tr.cd <= 0 && enemiesOnTile(tr.tx, tr.ty, false).length) { tr.fuse = 0.3; tr.cd = D.cd[lv] * (tr.fast ? 0.8 : 1); tr.anim = 0.3; }
         break;
-      case 'frost': if (tr.cd <= 0 && enemiesOnTile(tr.tx, tr.ty, true).length) { tr.cd = D.cd[lv]; tr.anim = 0.9; ev('trap', {i: tr.id, s: 'frost', x: cx, y: cy}); for (const e of enemiesInRect(tr.tx - 1, tr.ty - 1, tr.tx + 1, tr.ty + 1, true)) { e.frz = Math.max(e.frz, D.freeze[lv] * (ORCS[e.type].boss ? 0.4 : 1)); e.act = null; } } break;
+      case 'frost': if (tr.cd <= 0 && enemiesOnTile(tr.tx, tr.ty, true).length) { tr.cd = D.cd[lv] * (tr.fast ? 0.8 : 1); tr.anim = 0.9; ev('trap', {i: tr.id, s: 'frost', x: cx, y: cy}); for (const e of enemiesInRect(tr.tx - 1, tr.ty - 1, tr.tx + 1, tr.ty + 1, true)) { e.frz = Math.max(e.frz, D.freeze[lv] * (ORCS[e.type].boss ? 0.4 : 1)); e.act = null; } } break;
       case 'arrow': {
         if (tr.cd > 0) break; const [dx, dy] = DIRV[tr.rot]; let found = false, len = 0;
         for (let k = 1; k <= D.range; k++) { const x = tr.tx + dx * k, y = tr.ty + dy * k; if (solidShot(x, y)) break; len = k; }
         const x0 = tc(tr.tx) + dx * T / 2, y0 = tc(tr.ty) + dy * T / 2;
         for (const e of G.enemies) { if (!alive(e) || e.charm > 0) continue; const rx = e.x - x0, ry = e.y - y0; const along = rx * dx + ry * dy, lat = Math.abs(rx * dy - ry * dx); if (along > 0 && along < len * T && lat < T * 0.6) { found = true; break; } }
-        if (found) { tr.cd = D.cd[lv]; tr.anim = 0.2; ev('trap', {i: tr.id, s: 'arrow', x: x0, y: y0});
+        if (found) { tr.cd = D.cd[lv] * (tr.fast ? 0.8 : 1); tr.anim = 0.2; ev('trap', {i: tr.id, s: 'arrow', x: x0, y: y0});
           for (const off of [-11, 11]) G.projs.push({id: G.nid++, k: 'tarrow', x: x0 + dy * off, y: y0 + dx * off, vx: dx * 780, vy: dy * 780, life: len * T / 780 + 0.02, dmg: D.dmg[lv] / 2, team: 't', r: 6, pierce: 1, hit: []}); }
         break; }
       case 'grinder': {
@@ -422,6 +432,7 @@ function updTraps(dt) {
 /* ---------- projectiles ---------- */
 function updProjs(dt) {
   for (const q of G.projs) {
+    if (q.lob) { q.x += q.vx * dt; q.y += q.vy * dt; q.life -= dt; if (q.life <= 0) splash(q); continue; }
     if (q.k === 'orb') { // gentle homing
       let best = null, bd = 150 * 150;
       for (const e of G.enemies) { if (!alive(e) || e.charm > 0 || q.hit.includes(e.id)) continue; const d = dist2(q.x, q.y, e.x, e.y - 14); if (d < bd && (e.x - q.x) * q.vx + (e.y - q.y) * q.vy > 0) { bd = d; best = e; } }
@@ -448,6 +459,11 @@ function updProjs(dt) {
   }
   G.projs = G.projs.filter(q => q.life > 0);
 }
+function splash(q) {
+  if (q.done) return; q.done = true;
+  ev('splash', {x: Math.round(q.x), y: Math.round(q.y)});
+  for (const e of G.enemies) { if (!alive(e) || e.charm > 0) continue; const d = Math.hypot(e.x - q.x, e.y - q.y); if (d < q.r + ORCS[e.type].r) hurtEnemy(e, q.dmg * (1 - 0.35 * d / q.r), {p: q.own}); }
+}
 function explode(q) {
   if (q.done) return; q.done = true;
   const S = HEROES.warmage.skill, p = P[q.own]; const mul = p ? heroDmgMul(p) : 1;
@@ -460,18 +476,13 @@ function doAction(p, m) {
   if (!p || p.dead || !G || G.phase === 'won' || G.phase === 'lost') return '';
   const H = HEROES[p.hero];
   switch (m.t) {
-    case 'fire': {
-      const a = +m.a || 0, Pr = H.primary, ox = Math.cos(a) * 22, oy = Math.sin(a) * 22 - 26;
-      G.projs.push({id: G.nid++, k: Pr.kind, x: p.x + ox, y: p.y + oy, vx: Math.cos(a) * Pr.speed, vy: Math.sin(a) * Pr.speed, life: Pr.life, dmg: Pr.dmg * heroDmgMul(p), team: 'p', own: p.i, r: Pr.kind === 'orb' ? 8 : 6, pierce: Pr.pierce || 0, hit: []});
-      if (p.i !== MEI) ev('pfire', {p: p.i});
-      return '';
-    }
+    case 'fire': heroFire(p, m); return '';
     case 'alt': {
       const A = H.alt; if (p.mp < A.mp - 1) return 'mp'; p.mp = Math.max(0, p.mp - A.mp);
       if (p.hero === 'warmage') {
         const a = +m.a || 0; ev('blast', {x: Math.round(p.x), y: Math.round(p.y), a: +a.toFixed(2), p: p.i});
         for (const e of G.enemies) { if (!alive(e) || e.charm > 0) continue; const dx = e.x - p.x, dy = e.y - p.y, d = Math.hypot(dx, dy); if (d > A.r + ORCS[e.type].r) continue; if (Math.abs(angDiff(a, Math.atan2(dy, dx))) > A.arc && d > 30) continue; hurtEnemy(e, A.dmg * heroDmgMul(p), {p: p.i}); if (alive(e)) { const ea = Math.atan2(dy, dx); e.vx = 0; e.vy = 0; pushImpulse(e, Math.cos(ea * 0.5 + a * 0.5), Math.sin(ea * 0.5 + a * 0.5), A.push); } }
-      } else {
+      } else if (p.hero !== 'sorc') { const r = heroAlt(p, m); if (r) p.mp += A.mp; return r; } else {
         let best = null, bd = 95 * 95; const tx = +m.x, ty = +m.y;
         for (const e of G.enemies) { if (!alive(e) || e.charm > 0 || ORCS[e.type].boss) continue; const d = dist2(e.x, e.y - 16, tx, ty); if (d < bd && dist2(e.x, e.y, p.x, p.y) < 560 * 560) { bd = d; best = e; } }
         if (!best) { // fallback: nearest along aim
@@ -490,13 +501,13 @@ function doAction(p, m) {
         const a = +m.a || 0, d = clamp(Math.hypot(+m.x - p.x, +m.y - p.y), 60, 640);
         G.projs.push({id: G.nid++, k: 'fireball', x: p.x + Math.cos(a) * 20, y: p.y - 26 + Math.sin(a) * 20, vx: Math.cos(a) * 640, vy: Math.sin(a) * 640, life: d / 640, dmg: 0, team: 'p', own: p.i, r: 12, hit: []});
         ev('fbcast', {p: p.i, x: Math.round(p.x), y: Math.round(p.y)});
-      } else {
+      } else if (p.hero !== 'sorc') { const r = heroSkill(p, m); if (r) p.mp += S.mp; return r; } else {
         ev('nova', {x: Math.round(p.x), y: Math.round(p.y), p: p.i});
         for (const e of G.enemies) { if (!alive(e)) continue; const d = Math.hypot(e.x - p.x, e.y - p.y); if (d > S.r + ORCS[e.type].r || e.charm > 0) continue; hurtEnemy(e, S.dmg * heroDmgMul(p), {p: p.i}); if (alive(e)) { e.frz = Math.max(e.frz, S.freeze * (ORCS[e.type].boss ? 0.4 : 1)); e.act = null; } }
       }
       return '';
     }
-    case 'dash': p.inv = Math.max(p.inv, 0.3); ev('dash', {p: p.i, x: Math.round(+m.x || p.x), y: Math.round(+m.y || p.y), h: p.hero === 'sorc' ? 1 : 0}); return '';
+    case 'dash': return heroDash(p, m);
     case 'place': return placeTrap(p, m.k, m.tx | 0, m.ty | 0, m.r | 0);
     case 'sell': return sellTrap(p, m.tx | 0, m.ty | 0);
     case 'ready': if (G.phase === 'build') { p.ready = !!m.v; ev('ready', {p: p.i, v: p.ready ? 1 : 0}); checkReady(); } return '';
@@ -510,7 +521,7 @@ function checkReady() {
 function startWave() {
   const W = LEVELS[G.li].waves[G.wave]; if (!W) return;
   G.phase = 'wave'; G.waveT = 0; G.spawnQ = [];
-  for (const [g, type, n, delay, gap] of W) for (let k = 0; k < n; k++) G.spawnQ.push({t: delay + k * gap + rnd(0, 0.25), g: Math.min(g, G.map.gates.length - 1), type});
+  for (const [g, type, n0, delay, gap] of W) { const n = G.coop && !ORCS[type].boss ? Math.round(n0 * B.coopCount) : n0; for (let k = 0; k < n; k++) G.spawnQ.push({t: delay + k * gap + rnd(0, 0.25), g: Math.min(g, G.map.gates.length - 1), type}); }
   G.spawnQ.sort((a, b) => a.t - b.t);
   for (const p of P) if (p) p.ready = false;
   ev('wave', {w: G.wave});
@@ -542,6 +553,7 @@ function updWorld(dt) {
     if (!G.spawnQ.length && !G.enemies.some(e => alive(e))) endWave();
   } else if (G.phase === 'won' || G.phase === 'lost') G.endT += dt;
   updTraps(dt);
+  updHeroStuff(dt);
   for (const e of G.enemies) updEnemy(e, dt);
   separate();
   G.enemies = G.enemies.filter(e => !(e.dead > 0.9 || e.fall > 0.9));
@@ -550,7 +562,7 @@ function updWorld(dt) {
   for (const d of G.drops) {
     d.t += dt;
     for (const p of P) if (p && !p.dead && dist2(p.x, p.y, d.x, d.y) < 30 * 30) {
-      if (d.k === 'hp') p.hp = Math.min(p.mhp, p.hp + p.mhp * 0.4); else p.mp = Math.min(p.mmp, p.mp + p.mmp * 0.6);
+      const pm = p.hero === 'alch' ? 1.5 : 1; if (d.k === 'hp') p.hp = Math.min(p.mhp, p.hp + p.mhp * 0.4 * pm); else p.mp = Math.min(p.mmp, p.mp + p.mmp * 0.6 * pm);
       d.t = 99; ev('potion', {p: p.i, k: d.k === 'hp' ? 0 : 1, x: Math.round(d.x), y: Math.round(d.y)}); break;
     }
   }
@@ -558,7 +570,7 @@ function updWorld(dt) {
   // players: regen / respawn (authoritative for all)
   for (const p of P) {
     if (!p) continue; const H = HEROES[p.hero];
-    p.inv = Math.max(0, p.inv - dt);
+    p.inv = Math.max(0, p.inv - dt); updPlayerKit(p, dt);
     if (p.dead) { p.rt -= dt; if (p.rt <= 0) { const s = spawnPoint(); p.dead = false; p.hp = p.mhp; p.mp = p.mmp; p.inv = B.respawnInv; p.x = s.x; p.y = s.y; p.warp++; ev('respawn', {p: p.i}); } continue; }
     p.mp = Math.min(p.mmp, p.mp + H.mpRegen * dt);
     if (G.phase !== 'wave') p.hp = Math.min(p.mhp, p.hp + p.mhp * 0.08 * dt);

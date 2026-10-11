@@ -30,9 +30,13 @@ export const ANIMS = {
   ogre: {idle: 1, walk: 8, attack: 7, die: 5},
   bat: {walk: 6, attack: 5, die: 5},
   chief: {idle: 1, walk: 8, attack: 7, die: 5},
+  paladin: {idle: 1, walk: 8, attack: 5, cast: 5},
+  ranger: {idle: 1, walk: 8, attack: 5, cast: 5},
+  alch: {idle: 1, walk: 8, attack: 5, cast: 5},
+  blade: {idle: 1, walk: 8, attack: 5, cast: 6},
 };
-const PROPS = {spikes: 3, tar: 1, spring: 2, barricade: 2, arrowwall: 2, brimstone: 2, grinder: 3, frost: 2, rift: 1, barrel: 1, crate: 1, brazier: 1, bones: 1};
-const DIRS4 = {spring: [0, 2, 4, 6], arrowwall: [0, 2, 4, 6], grinder: [0, 2, 4, 6]};
+const PROPS = {spikes: 3, tar: 1, spring: 2, barricade: 2, arrowwall: 2, brimstone: 2, grinder: 3, frost: 2, rift: 1, barrel: 1, crate: 1, brazier: 1, bones: 1, turret: 1};
+const DIRS4 = {spring: [0, 2, 4, 6], arrowwall: [0, 2, 4, 6], grinder: [0, 2, 4, 6], turret: [0, 1, 2, 3, 4, 5, 6, 7]};
 
 function save(dir, name, r) {
   fs.mkdirSync(dir, {recursive: true});

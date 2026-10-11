@@ -4,7 +4,9 @@ const T = 48, WH = 24, TAU = Math.PI * 2;
 const VERSION = 'rw1';
 const B = {
   riftHP: 20,
-  coopHp: 1.5,          // enemy hp multiplier when 2 players
+  coopHp: 1.3,          // enemy hp multiplier when 2 players
+  coopCount: 1.25,      // enemy count multiplier when 2 players
+  waveHp: 0.06,         // +hp per wave index inside a level
   coopGold: 1.25,       // starting gold multiplier when 2 players
   respawn: 6,           // seconds
   respawnInv: 2,
@@ -36,6 +38,50 @@ const HEROES = {
     skill: {name: '冰霜新星', key: 'Q', mp: 45, cd: 7, dmg: 30, r: 175, freeze: 2.6},
     dash: {name: '闪现', key: '空格', cd: 3, dist: 175},
   },
+  paladin: {
+    name: '圣骑士', atlas: 'paladin', hp: 300, mp: 100, mpRegen: 8, speed: 178, r: 15, role: '近战坦克',
+    desc: '身披板甲的守护者。举盾嘲讽兽人替队友扛伤害，审判之锤震晕一片。',
+    passive: '光环：附近队友每秒回复 2% 生命',
+    primary: {name: '战锤横扫', rate: 1.7, dmg: 36, kind: 'melee', range: 78, arc: 1.0, push: 140},
+    alt: {name: '圣盾', key: '右键', mp: 30, cd: 8, dur: 3, taunt: 240},
+    skill: {name: '审判之锤', key: 'Q', mp: 45, cd: 7, dmg: 95, r: 135, stun: 1.6},
+    dash: {name: '冲锋', key: '空格', cd: 3, dist: 210, dmg: 22},
+  },
+  ranger: {
+    name: '游侠', atlas: 'ranger', hp: 180, mp: 110, mpRegen: 10, speed: 212, r: 13, role: '陷阱专家',
+    desc: '林地猎手，长弓箭矢可穿透多名敌人。猎鹰专抓飞行的地狱蝙蝠。',
+    passive: '陷阱专家：自己布置的陷阱便宜 15%，冷却快 20%',
+    primary: {name: '长弓', rate: 2.6, dmg: 30, speed: 1100, kind: 'parrow', life: 0.7, pierce: 2},
+    alt: {name: '散射', key: '右键', mp: 20, cd: 1.2, n: 5, spread: 0.55, dmg: 22},
+    skill: {name: '猎鹰', key: 'Q', mp: 45, cd: 14, dur: 12, dps: 34},
+    dash: {name: '后跃', key: '空格', cd: 2.5, dist: 170, back: true},
+  },
+  alch: {
+    name: '炼金术士', atlas: 'alch', hp: 190, mp: 130, mpRegen: 11, speed: 196, r: 13, role: '爆破辅助',
+    desc: '背着铜罐的发明家。投掷溅射酸液瓶，布置自动炮塔，药雾给队友回血。',
+    passive: '药剂学：拾取药水效果 +50%',
+    primary: {name: '酸液瓶', rate: 2.0, dmg: 26, speed: 520, kind: 'flask', r: 58, max: 430},
+    alt: {name: '自动炮塔', key: '右键', mp: 40, cd: 4, dur: 20, max: 2, dmg: 13, rate: 3, range: 300},
+    skill: {name: '药雾', key: 'Q', mp: 50, cd: 10, dur: 4.5, r: 150, heal: 0.06, dps: 28},
+    dash: {name: '烟雾翻滚', key: '空格', cd: 3, dist: 150, slow: 0.5},
+  },
+  blade: {
+    name: '刃舞者', atlas: 'blade', hp: 210, mp: 90, mpRegen: 9, speed: 228, r: 13, role: '高机动近战',
+    desc: '双刀刺客，连斩第三击加倍并击退。影步穿过敌群，剑刃风暴绞碎四周。',
+    passive: '连斩：每第三击伤害翻倍并击退',
+    primary: {name: '双刃连斩', rate: 3.4, dmg: 21, kind: 'melee', range: 68, arc: 0.95, combo: 3},
+    alt: {name: '飞刃', key: '右键', mp: 18, cd: 1.4, n: 3, dmg: 30, speed: 900, pierce: 3},
+    skill: {name: '剑刃风暴', key: 'Q', mp: 50, cd: 9, dur: 2.6, r: 92, tick: 0.25, dmg: 22},
+    dash: {name: '影步', key: '空格', cd: 2, dist: 200, dmg: 32},
+  },
+};
+HEROES.warmage.role = '远程控场'; HEROES.sorc.role = '法术控制';
+HEROES.warmage.passive = '连弩命中有轻微击退'; HEROES.sorc.passive = '奥术飞弹会追踪敌人';
+/* =================== difficulty =================== */
+const DIFF = {
+  easy: {name: '简单', hp: 0.75, gold: 1.25, rift: 30, cap: 3, spd: 1},
+  normal: {name: '普通', hp: 1, gold: 1, rift: 20, cap: 5, spd: 1},
+  nightmare: {name: '噩梦', hp: 1.45, gold: 0.9, rift: 12, cap: 5, spd: 1.1},
 };
 /* =================== orcs =================== */
 const ORCS = {

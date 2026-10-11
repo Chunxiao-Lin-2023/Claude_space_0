@@ -6,11 +6,9 @@ function hideMenu() { MENU.classList.add('off'); MENU.innerHTML = ''; }
 function on(id, ev, fn) { const el = $(id); if (el) el.addEventListener(ev, e => { audioInit(); sfx('click'); fn(e); }); }
 const skullStr = n => `<span class="skulls">${[0, 1, 2, 3, 4].map(i => `<span class="${i < n ? 'on' : ''}">☠</span>`).join('')}</span>`;
 const inArtifact = () => !!(window.claude && typeof window.claude.use === 'function') || /(^|\.)(claudeusercontent\.com|claude\.ai|claude\.site)$/.test(location.hostname);
-// 游戏厅入口：只在部署于游戏厅文件夹（…/riftwardens/）时显示
-const HUB = /\/riftwardens\/(index\.html)?$/.test(location.pathname);
-let hubArm = false;
 const myName = () => (SAVE.name || '').trim() || HEROES[SAVE.hero].name;
 
+const BRIGHT_N = ['', '明亮', '标准', '昏暗'];
 function titleScreen(note = '') {
   STATE = 'title'; PAUSED = false; $('hud').classList.remove('on'); $('touch').classList.remove('on');
   const inRoom = NET.mode === 'online';
@@ -25,12 +23,12 @@ function titleScreen(note = '') {
     </div>
     <div class="join"><input id="code" maxlength="4" placeholder="房间码" autocomplete="off" autocapitalize="characters"><button class="btn sec" id="bJoin">加入房间</button></div>
     <div class="note" id="tnote">${note}</div>
-    <div class="btns"><button class="btn sec" id="bHelp">玩法说明</button>${HUB ? '<button class="btn sec" id="bHub">‹ 游戏厅</button>' : ''}</div>
+    <div class="btns"><button class="btn sec" id="bHelp">玩法说明</button><button class="btn sec" id="bBright">亮度：${BRIGHT_N[SAVE.bright] || '标准'}</button></div>
    </div></div>`);
   const hs = $('heroes');
   for (const k of Object.keys(HEROES)) {
     const H = HEROES[k], d = document.createElement('div'); d.className = 'hcard' + (SAVE.hero === k ? ' sel' : '');
-    d.innerHTML = `<canvas width="192" height="220"></canvas><div><h3 class="serif">${H.name}</h3><p>${H.desc}</p><p style="margin-top:6px;color:#cbbfa6">生命 ${H.hp} · 法力 ${H.mp}<br>${H.primary.name} / ${H.alt.name} / ${H.skill.name} / ${H.dash.name}</p></div>`;
+    d.innerHTML = `<canvas width="192" height="220"></canvas><div style="min-width:0"><h3 class="serif">${H.name} <span class="role">${H.role || ''}</span></h3><p>${H.desc}</p><p style="margin-top:5px;color:#cbbfa6">生命 ${H.hp} · 法力 ${H.mp} · ${H.primary.name} / ${H.alt.name} / ${H.skill.name} / ${H.dash.name}</p>${H.passive ? `<p style="margin-top:3px;color:#9fe3ff">${H.passive}</p>` : ''}</div>`;
     portraitCanvas(d.firstChild, k, true);
     d.onclick = () => { audioInit(); sfx('click'); SAVE.hero = k; saveGame(); for (const c of hs.children) c.classList.remove('sel'); d.classList.add('sel'); $('nm').placeholder = H.name; };
     hs.appendChild(d);
@@ -48,7 +46,7 @@ function titleScreen(note = '') {
   });
   $('code').addEventListener('keydown', e => { if (e.key === 'Enter') { audioInit(); netJoin($('code').value); } });
   on('bHelp', 'click', () => helpScreen(() => titleScreen()));
-  on('bHub', 'click', () => { location.href = '../'; });
+  on('bBright', 'click', () => { SAVE.bright = SAVE.bright % 3 + 1; saveGame(); $('bBright').textContent = '亮度：' + BRIGHT_N[SAVE.bright]; });
 }
 function setTitleNote(s) { const n = $('tnote'); if (n) n.textContent = s; else toast(s); }
 
@@ -86,15 +84,17 @@ function levelScreen() {
   body.innerHTML = `<div class="lvls" id="lvls"></div><div id="lvInfo" style="margin-top:12px"></div>`;
   LEVELS.forEach((L, i) => {
     const open = levelOpen(i), d = document.createElement('div'); d.className = 'lv' + (MSEL.lvl === i ? ' sel' : '') + (open ? '' : ' lock');
-    d.innerHTML = `<canvas width="320" height="200"></canvas><b class="serif">${i + 1}. ${L.name}</b><small>${L.waves.length} 波 · ${open ? skullStr(SAVE.best[L.id] || 0) : '🔒 通关上一关解锁'}</small>`;
+    d.innerHTML = `<canvas width="320" height="200"></canvas><b class="serif">${i + 1}. ${L.name}</b><small>${L.waves.length} 波 · ${open ? skullStr(SAVE.best[L.id] || 0) + (SAVE.bestN[L.id] ? ` <span class="nm">噩梦 ☠${SAVE.bestN[L.id]}</span>` : '') : '🔒 通关上一关解锁'}</small>`;
     drawMapPreview(d.firstChild, L.id);
     if (open) d.onclick = () => { audioInit(); sfx('click'); MSEL.lvl = i; levelScreen(); };
     $('lvls').appendChild(d);
   });
   const L = LEVELS[MSEL.lvl];
   $('lvInfo').innerHTML = `<div class="row" style="justify-content:space-between;flex-wrap:wrap;gap:10px"><div style="flex:1;min-width:240px"><b class="serif" style="font-size:20px;color:var(--gold2)">${L.name}</b><div class="mut" style="margin-top:4px;font-size:13px;line-height:1.6">${L.desc}<br>初始金币 ${L.gold}${NET.mode === 'online' ? '（双人 ×' + B.coopGold + '）' : ''} · 敌人 ${countEnemies(L)} 个</div></div>
+   <div class="diffs">${Object.entries(DIFF).map(([k, D]) => `<button class="dbtn ${SAVE.diff === k ? 'on' : ''}" data-d="${k}"><b>${D.name}</b><small>${k === 'easy' ? '敌人更弱 · 最多 3 骷髅' : k === 'nightmare' ? '敌人更强更快 · 额外骷髅' : '标准挑战'}</small></button>`).join('')}</div>
    <button class="btn" id="bStart" style="font-size:18px;padding:12px 36px">${host && !NET.peerInfo ? '单独开始' : '开始战斗'}</button></div>`;
   on('bStart', 'click', () => { if (!levelOpen(MSEL.lvl)) return; startLevel(MSEL.lvl); });
+  for (const b of document.querySelectorAll('.dbtn')) b.onclick = () => { audioInit(); sfx('click'); SAVE.diff = b.dataset.d; saveGame(); levelScreen(); };
 }
 function countEnemies(L) { let n = 0; for (const w of L.waves) for (const g of w) n += g[2]; return n; }
 function drawMapPreview(c, id) {
@@ -146,12 +146,12 @@ function loadout() { return {up: SAVE.heroUp[SAVE.hero] || 0, traps: Object.assi
 function startLevel(li, guestInfo) {
   const coop = NET.mode === 'online' && NET.role === 'host' && !!NET.peerInfo && connected();
   IS_HOST = true; MEI = 0;
-  newWorld(li, coop ? 2 : 1);
+  newWorld(li, coop ? 2 : 1, SAVE.diff || 'normal');
   P = [mkPlayer(0, SAVE.hero, myName(), loadout())];
   if (coop) { const pi = NET.peerInfo; P[1] = mkPlayer(1, pi.hero, pi.name, pi.lo); }
   ME = P[0];
   enterPlay();
-  if (coop) netSend({t: 'start', li, h: {hero: SAVE.hero, name: myName()}});
+  if (coop) netSend({t: 'start', li, diff: G.diff, h: {hero: SAVE.hero, name: myName()}});
 }
 function enterPlay() {
   STATE = 'play'; PAUSED = false; hideMenu(); FX.length = 0; TXT.length = 0; CL.enemies.clear(); CL.projs = []; CL.local = []; CL.drops = []; CL.evMax = 0;
@@ -165,7 +165,7 @@ function enterPlay() {
 function togglePause() {
   if (STATE !== 'play') return;
   if (!MENU.classList.contains('off')) { if (G && (G.phase === 'won' || G.phase === 'lost') && G.resShown) return; resume(); return; }
-  PAUSED = NET.mode !== 'online'; hubArm = false;
+  PAUSED = NET.mode !== 'online';
   const canRestart = IS_HOST;
   showMenu(`<div class="scr box" style="max-width:420px;text-align:center"><h2 class="serif">${PAUSED ? '已暂停' : '菜单'}</h2>
    ${NET.mode === 'online' ? '<div class="mut">联机中游戏不会暂停</div>' : ''}
@@ -174,14 +174,14 @@ function togglePause() {
     ${canRestart ? '<button class="btn sec" id="pRe">重新开始本关</button>' : ''}
     <button class="btn sec" id="pHelp">玩法说明</button>
     <button class="btn sec" id="pMute">${AU.muted ? '开启声音' : '静音'}</button>
-    ${HUB ? '<button class="btn sec" id="pHub">返回游戏厅</button>' : ''}
+    <button class="btn sec" id="pBright">亮度：${BRIGHT_N[SAVE.bright] || '标准'}</button>
     <button class="btn red" id="pQuit">${NET.mode === 'online' && NET.role === 'guest' ? '离开房间' : '退出到关卡选择'}</button></div></div>`, true);
   on('pRes', 'click', resume);
   on('pRe', 'click', () => startLevel(G.li));
   on('pHelp', 'click', () => helpScreen(() => { MENU.classList.add('off'); togglePause(); }, true));
   on('pMute', 'click', () => { setMute(!AU.muted); MENU.classList.add('off'); togglePause(); });
+  on('pBright', 'click', () => { SAVE.bright = SAVE.bright % 3 + 1; saveGame(); $('pBright').textContent = '亮度：' + BRIGHT_N[SAVE.bright]; });
   on('pQuit', 'click', () => quitToMenu());
-  on('pHub', 'click', e => { if (!hubArm) { hubArm = true; e.currentTarget.textContent = '再点一次确认（本关进度不保存）'; return; } location.href = '../'; });
 }
 function resume() { PAUSED = false; hideMenu(); }
 function quitToMenu() {
@@ -191,14 +191,17 @@ function quitToMenu() {
 }
 function showResult() {
   if (G.resShown) return; G.resShown = true;
-  const won = G.phase === 'won', sk = won ? (G.result ? G.result.skulls : skullsFor(true)) : 0, L = LEVELS[G.li];
-  const prev = SAVE.best[L.id] || 0; let gained = 0;
-  if (won && sk > prev) { gained = sk - prev; SAVE.best[L.id] = sk; saveGame(); }
+  const won = G.phase === 'won', Df = DIFF[G.diff] || DIFF.normal, L = LEVELS[G.li];
+  const sk = won ? Math.min(Df.cap, G.result ? G.result.skulls : skullsFor(true)) : 0;
+  const book = G.diff === 'nightmare' ? SAVE.bestN : SAVE.best;
+  const prev = book[L.id] || 0; let gained = 0;
+  if (won && sk > prev) { gained = sk - prev; book[L.id] = sk; saveGame(); }
+  if (won && G.diff === 'nightmare' && (SAVE.best[L.id] || 0) < sk) { gained += sk - (SAVE.best[L.id] || 0); SAVE.best[L.id] = sk; saveGame(); }
   const host = IS_HOST, next = won && G.li + 1 < LEVELS.length;
   const st = G.stats || {};
   showMenu(`<div class="scr box res" style="max-width:520px">
    <div class="big serif" style="color:${won ? 'var(--gold2)' : '#e0574a'}">${won ? '胜 利' : '失 败'}</div>
-   <div class="mut">${L.name} · ${won ? '守住了全部 ' + G.nWaves + ' 波' : '裂隙被攻破于第 ' + (G.wave + 1) + ' 波'}</div>
+   <div class="mut">${L.name} · ${Df.name} · ${won ? '守住了全部 ' + G.nWaves + ' 波' : '裂隙被攻破于第 ' + (G.wave + 1) + ' 波'}</div>
    ${won ? `<div style="margin:10px 0">${skullStr(sk)}</div><div class="mut">${gained ? '新纪录！获得 ☠' + gained + '（可在军械库使用）' : '最佳纪录 ' + prev + ' 骷髅'}</div>` : ''}
    ${host ? `<table class="st"><tr><td>击杀</td><td>${st.kills || 0}</td></tr><tr><td>陷阱击杀</td><td>${st.trapKills || 0}</td></tr><tr><td>坠入深渊/熔岩</td><td>${st.falls || 0}</td></tr><tr><td>裂隙剩余</td><td>${G.rift} / ${G.riftMax}</td></tr><tr><td>建造陷阱</td><td>${st.built || 0}</td></tr></table>` : ''}
    <div class="btns">${host ? `<button class="btn sec" id="rRe">再来一次</button>${next ? '<button class="btn" id="rNext">下一关</button>' : ''}<button class="btn sec" id="rBack">关卡选择</button>` : '<div class="mut">等待房主选择下一关…</div><button class="btn sec" id="rBack">返回大厅</button>'}</div></div>`, true);

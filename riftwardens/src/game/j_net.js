@@ -69,7 +69,7 @@ function hostRecv(m) {
     toast(NET.peerInfo.name + ' 加入了房间'); sfx('ready');
     if (STATE === 'play' && G && G.phase !== 'won' && G.phase !== 'lost') { // join mid-level
       const pi = NET.peerInfo; P[1] = mkPlayer(1, pi.hero, pi.name, pi.lo); G.coop = true;
-      netSend({t: 'start', li: G.li, h: {hero: SAVE.hero, name: myName()}}); NET.tvSent = 0;
+      netSend({t: 'start', li: G.li, diff: G.diff, h: {hero: SAVE.hero, name: myName()}}); NET.tvSent = 0;
     } else refreshLobby();
     return;
   }
@@ -95,11 +95,12 @@ function snapFor() {
       Math.round(1000 * Math.max(0, e.hp) / e.mhp),
       (e.flash > 0 ? 1 : 0) | (e.frz > 0 ? 2 : 0) | (e.charm > 0 ? 4 : 0) | (e.burn > 0 ? 8 : 0) | (e.dead ? 16 : 0) | (e.fall ? 32 : 0) | (e.leaked ? 64 : 0) | (e.hpShow > 0 ? 128 : 0),
       e.anim === 'attack' ? 2 : e.anim === 'idle' ? 1 : 0, Math.round((e.act ? e.act.t : e.at) * 100) % 100000, Math.round((e.z || 0) * 100), Math.round((e.dead || e.fall) * 100)]),
-    pj: G.projs.filter(q => !(q.own === 1 && q.team === 'p' && q.k !== 'fireball')).map(q => [q.id, ['bolt', 'orb', 'fireball', 'arrow', 'tarrow'].indexOf(q.k), r1(q.x), r1(q.y), r1(q.vx), r1(q.vy)]),
+    pj: G.projs.filter(q => !(q.own === 1 && q.pred)).map(q => [q.id, PK.indexOf(q.k), r1(q.x), r1(q.y), r1(q.vx), r1(q.vy), Math.round(q.life * 100), Math.round((q.L || 0) * 100)]),
+    tu: G.turrets.map(t => [t.id, r1(t.x), r1(t.y), t.dir, +t.t.toFixed(1)]), pe: G.pets.map(f => [f.id, r1(f.x), r1(f.y), +(f.dir || 0).toFixed(2)]), zo: G.zones.map(z => [z.id, z.k === 'fog' ? 0 : 1, r1(z.x), r1(z.y), z.r, +z.t.toFixed(1), z.T]),
     dr: G.drops.map(d => [d.id, d.k === 'hp' ? 0 : 1, r1(d.x), r1(d.y)]),
     ta: G.traps.filter(t => t.anim > 0 || (t.hp != null && t.hp < t.mhp) || t.cd > 0).map(t => [t.id, Math.round(t.anim * 100), t.hp != null ? Math.round(t.hp) : -1, Math.round(t.cd * 10)]),
     me: {hp: r1(me.hp), mp: r1(me.mp), d: me.dead ? 1 : 0, rt: +me.rt.toFixed(1), inv: +me.inv.toFixed(2), wp: me.warp, x: r1(me.x), y: r1(me.y), kb: me.kbSeq ? [me.kbSeq, +me.kbA.toFixed(2), me.kbS] : null},
-    o: {x: r1(o.x), y: r1(o.y), a: +o.aim.toFixed(2), an: o.anim === 'walk' ? 1 : 0, c: +o.cast.toFixed(2), hp: r1(o.hp), mhp: o.mhp, d: o.dead ? 1 : 0, rt: +o.rt.toFixed(1), inv: +o.inv.toFixed(2), h: o.hero, n: o.name, mp: r1(o.mp), ht: +o.hurtT.toFixed(2)},
+    o: {x: r1(o.x), y: r1(o.y), a: +o.aim.toFixed(2), an: o.anim === 'walk' ? 1 : 0, c: +o.cast.toFixed(2), hp: r1(o.hp), mhp: o.mhp, d: o.dead ? 1 : 0, rt: +o.rt.toFixed(1), inv: +o.inv.toFixed(2), h: o.hero, n: o.name, mp: r1(o.mp), ht: +o.hurtT.toFixed(2), at: +(o.atk || 0).toFixed(2), sp: +(o.spin || 0).toFixed(2), gd: +(o.guard || 0).toFixed(2)},
     ev: G.ev.filter(e => e.tt > G.time - 0.7)};
 }
 function netHostTick(dt) {
@@ -118,7 +119,7 @@ function guestRecv(m) {
   if (m.t === 'start') {
     clearTimeout(NET.timer); NET.hello = true; NET.peerInfo = m.h;
     IS_HOST = false; MEI = 1;
-    newWorld(m.li, 2);
+    newWorld(m.li, 2, m.diff || 'normal');
     P = [mkPlayer(0, m.h.hero, m.h.name), mkPlayer(1, SAVE.hero, myName(), loadout())];
     ME = P[1]; NET.lastWp = -1;
     enterPlay(); return;
@@ -131,6 +132,7 @@ function guestRecv(m) {
     const old = new Map(G.traps.map(t => [t.id, t]));
     G.traps = m.l.map(([id, ki, tx, ty, rot, lv, hp, mhp]) => { const o = old.get(id) || {anim: 0, cd: 0}; return Object.assign(o, {id, k: TRAP_KEYS[ki], tx, ty, rot, lv, hp: hp >= 0 ? hp : undefined, mhp: mhp || undefined}); });
     G.trapAt.fill(-1); for (const t of G.traps) G.trapAt[tIdx(t.tx, t.ty)] = t.id;
+    refreshFlow();
     return;
   }
   if (m.t === 's') applySnap(m);
@@ -146,7 +148,10 @@ function applySnap(s) {
   if (me.kb && me.kb[0] !== NET.kbSeq) { NET.kbSeq = me.kb[0]; p.kbx = Math.cos(me.kb[1]) * me.kb[2]; p.kby = Math.sin(me.kb[1]) * me.kb[2]; p.kbT = 0.22; }
   // host avatar
   const o = s.o, h = P[0];
-  Object.assign(h, {x: o.x, y: o.y, aim: o.a, anim: o.an ? 'walk' : 'idle', cast: o.c, hp: o.hp, mhp: o.mhp, dead: !!o.d, rt: o.rt, inv: o.inv, hero: o.h, name: o.n, mp: o.mp, hurtT: o.ht});
+  Object.assign(h, {x: o.x, y: o.y, aim: o.a, anim: o.an ? 'walk' : 'idle', cast: o.c, hp: o.hp, mhp: o.mhp, dead: !!o.d, rt: o.rt, inv: o.inv, hero: o.h, name: o.n, mp: o.mp, hurtT: o.ht, atk: o.at, spin: o.sp, guard: o.gd});
+  G.turrets = (s.tu || []).map(([id, x, y, dir, t]) => ({id, x, y, dir, t}));
+  const opets = new Map((G.pets || []).map(f => [f.id, f])); G.pets = (s.pe || []).map(([id, x, y, dir]) => { const f = opets.get(id) || {id, x, y}; f.tx = x; f.ty = y; f.dir = dir; return f; });
+  G.zones = (s.zo || []).map(([id, k, x, y, r, t, T]) => ({id, k: k ? 'smoke' : 'fog', x, y, r, t, T}));
   // enemies
   const seen = new Set();
   for (const a of s.e) {
@@ -160,7 +165,7 @@ function applySnap(s) {
     if (e.anim === 'attack') { e.act = {t: at / 100}; } else { e.act = null; if (Math.abs(e.at - at / 100) > 0.5) e.at = at / 100; }
   }
   for (const e of CL.enemies.values()) if (!seen.has(e.id) && !e.dead && !e.fall) e.dead = 0.3;
-  CL.projs = s.pj.map(([id, k, x, y, vx, vy]) => ({id, k: ['bolt', 'orb', 'fireball', 'arrow', 'tarrow'][k], x, y, vx, vy}));
+  CL.projs = s.pj.map(([id, k, x, y, vx, vy, life, L]) => ({id, k: PK[k], x, y, vx, vy, life: life / 100, L: L / 100}));
   CL.drops = s.dr.map(([id, k, x, y]) => ({id, k: k ? 'mp' : 'hp', x, y}));
   const ta = new Map(s.ta.map(a => [a[0], a]));
   for (const t of G.traps) { const a = ta.get(t.id); if (a) { t.anim = Math.max(t.anim > 0 ? t.anim : 0, a[1] / 100); if (a[2] >= 0) t.hp = a[2]; t.cd = a[3] / 10; } else { t.cd = 0; if (t.mhp) t.hp = t.mhp; } }
@@ -174,7 +179,8 @@ function guestInterp(dt) {
     if (e.dead) e.dead += dt; if (e.fall) e.fall += dt;
   }
   for (const [id, e] of CL.enemies) if ((e.dead || e.fall) > 1.0) CL.enemies.delete(id);
-  for (const q of CL.projs) { q.x += q.vx * dt; q.y += q.vy * dt; }
+  for (const q of CL.projs) { q.x += q.vx * dt; q.y += q.vy * dt; if (q.life != null) q.life -= dt; }
+  for (const f of (G.pets || [])) if (f.tx != null) { f.x += (f.tx - f.x) * k; f.y += (f.ty - f.y) * k; }
   for (const t of G.traps) t.anim = Math.max(0, t.anim - dt);
   const h = P[0]; if (h) { if (h.rx == null || dist2(h.rx, h.ry, h.x, h.y) > 300 * 300) { h.rx = h.x; h.ry = h.y; } h.rx += (h.x - h.rx) * k; h.ry += (h.y - h.ry) * k; h.at = (h.at || 0) + dt; h.hurtT = Math.max(0, (h.hurtT || 0) - dt); }
 }
@@ -210,7 +216,7 @@ function playEv(o) {
     case 'boom': fx({k: 'glow', x: o.x, y: o.y, s: 110, life: 0.45, col: '255,150,50', grow: 0.3, light: 260, lc: '255,140,40'}); fx({k: 'ring', x: o.x, y: o.y + 10, s: 20, r1: 110, life: 0.45, col: '#ffb46a', w: 8}); burst(o.x, o.y, 26, '#ff8a2a', 300, 0.6, 4, 100); for (let i = 0; i < 8; i++) fx({k: 'smoke', x: o.x + rnd(-30, 30), y: o.y + rnd(-20, 20), vy: -30, life: 1.2, s: 14}); CAM.shake = 8; sfx('boom', o.x, o.y); break;
     case 'fbcast': sfx('fireball', o.x, o.y); break;
     case 'nova': fx({k: 'ring', x: o.x, y: o.y, s: 20, r1: HEROES.sorc.skill.r, life: 0.5, col: '#bff4ff', w: 10, flat: 0.62}); fx({k: 'glow', x: o.x, y: o.y, s: 140, life: 0.4, col: '120,220,255', light: 240, lc: '140,220,255'}); for (let i = 0; i < 24; i++) { const a = rnd(TAU), v = rnd(200, 420); fx({k: 'shard', x: o.x, y: o.y - 10, vx: Math.cos(a) * v, vy: Math.sin(a) * v * 0.62, life: 0.5, col: '#dff8ff', s: 5, rot: a, drag: 3}); } sfx('nova', o.x, o.y); break;
-    case 'dash': if (o.p !== MEI) { const p = P[o.p]; if (p && o.h) { for (let k = 0; k < 4; k++) fx({k: 'ghost', u: 'sorc', fi: 0, d: dirOf(p.aim), x: lerp(p.rx || p.x, o.x, k / 4), y: lerp(p.ry || p.y, o.y, k / 4), life: 0.35, tint: 'rgba(120,220,255,.6)'}); if (p.rx != null) { p.rx = o.x; p.ry = o.y; } } sfx(o.h ? 'blink' : 'dash', o.x, o.y, 0.7); } break;
+    case 'dash': if (o.p !== MEI) { const p = P[o.p]; if (p && o.h !== 'sorc') { for (let k = 0; k < 5; k++) fx({k: 'ghost', u: HEROES[p.hero].atlas, fi: 0, d: dirOf(Math.atan2(o.y - o.y0, o.x - o.x0)), x: lerp(o.x0, o.x, k / 5), y: lerp(o.y0, o.y, k / 5), life: 0.3, tint: 'rgba(255,220,160,.5)'}); } if (p && o.h === 'sorc') { for (let k = 0; k < 4; k++) fx({k: 'ghost', u: 'sorc', fi: 0, d: dirOf(p.aim), x: lerp(p.rx || p.x, o.x, k / 4), y: lerp(p.ry || p.y, o.y, k / 4), life: 0.35, tint: 'rgba(120,220,255,.6)'}); if (p.rx != null) { p.rx = o.x; p.ry = o.y; } } sfx(o.h === 'sorc' ? 'blink' : 'dash', o.x, o.y, 0.7); } break;
     case 'pfire': { const p = P[o.p]; if (p) sfx(HEROES[p.hero].primary.kind === 'orb' ? 'orb' : 'bolt', p.x, p.y, 0.45); break; }
     case 'place': fx({k: 'ring', x: o.x, y: o.y, s: 10, r1: 34, life: 0.35, col: '#f3d27a', w: 3}); burst(o.x, o.y, 8, '#9a8a70', 100, 0.4, 2.5, 200); sfx('place', o.x, o.y); break;
     case 'sell': ftxt(o.x, o.y - 20, '+' + o.v, '#f3d27a', true); sfx('sell', o.x, o.y); break;
@@ -233,5 +239,17 @@ function playEv(o) {
     case 'waveEnd': banner('第 ' + o.w + ' 波已击退', '奖励 +' + o.b + ' 金币'); sfx('win', null, null, 0.6); break;
     case 'boss': banner('兽人督军来袭！', '集中火力！'); sfx('horn'); CAM.shake = 10; break;
     case 'end': break;
+    case 'swing': if (o.p !== MEI) { const p = P[o.p]; if (p) { swingFx(p, o.a, false); sfx('swing', p.x, p.y, 0.6); } } break;
+    case 'guard': fx({k: 'ring', x: o.x, y: o.y, s: 10, r1: HEROES.paladin.alt.taunt, life: 0.5, col: '#ffd86a', w: 5}); fx({k: 'glow', x: o.x, y: o.y - 30, s: 60, life: 0.4, col: '255,220,120'}); sfx('guard', o.x, o.y); break;
+    case 'judg': fx({k: 'ring', x: o.x, y: o.y, s: 15, r1: HEROES.paladin.skill.r, life: 0.5, col: '#ffe9a0', w: 9}); fx({k: 'glow', x: o.x, y: o.y, s: 120, life: 0.4, col: '255,230,150', light: 220, lc: '255,230,150'}); burst(o.x, o.y, 16, '#b8a888', 220, 0.5, 4, 400); CAM.shake = Math.max(CAM.shake || 0, 7); sfx('judg', o.x, o.y); break;
+    case 'volley': sfx('volley', o.x, o.y); break;
+    case 'knives': sfx('throw', o.x, o.y); break;
+    case 'falcon': for (let i = 0; i < 6; i++) fx({k: 'p', x: o.x + rnd(-10, 10), y: o.y - 60, vx: rnd(-60, 60), vy: rnd(-40, 20), g: 60, life: 0.8, col: '#a07850', s: 2.5}); sfx('falcon', o.x, o.y); break;
+    case 'turret': burst(o.x, o.y, 8, '#c8a070', 100, 0.4, 2.5, 200); sfx('turret', o.x, o.y); break;
+    case 'tshot': sfx('tshot', o.x, o.y, 0.5); break;
+    case 'poof': fx({k: 'smoke', x: o.x, y: o.y, life: 0.7, s: 14}); break;
+    case 'fog': sfx('fog', o.x, o.y); break;
+    case 'storm': sfx('storm', P[o.p] ? P[o.p].x : null, P[o.p] ? P[o.p].y : null); break;
+    case 'splash': burst(o.x, o.y - 6, 14, '#8cff5a', 170, 0.45, 3, 380); fx({k: 'ring', x: o.x, y: o.y, s: 8, r1: HEROES.alch.primary.r, life: 0.35, col: '#9dff7a', w: 4}); sfx('splash', o.x, o.y); break;
   }
 }

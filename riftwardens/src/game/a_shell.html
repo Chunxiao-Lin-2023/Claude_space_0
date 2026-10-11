@@ -84,10 +84,19 @@ button{font:inherit;color:inherit;cursor:pointer}
 .logo h1{margin:0;font-size:clamp(44px,8vw,78px);letter-spacing:.18em;color:var(--gold2);text-shadow:0 0 30px rgba(255,140,40,.45),0 4px 0 #3a1a08,0 6px 18px #000;font-weight:900}
 .logo p{margin:2px 0 0;color:var(--dim);letter-spacing:.3em;font-size:14px}
 .cards{display:flex;gap:14px;justify-content:center;flex-wrap:wrap}
-.hcard{width:min(300px,46%);min-width:220px;padding:12px;border-radius:12px;border:1.5px solid #4a3f52;background:var(--panel2);cursor:pointer;display:flex;gap:12px;align-items:center;transition:border-color .15s,box-shadow .15s}
+.hcard{width:min(310px,100%);flex:1 1 280px;max-width:320px;padding:12px;border-radius:12px;border:1.5px solid #4a3f52;background:var(--panel2);cursor:pointer;display:flex;gap:12px;align-items:center;transition:border-color .15s,box-shadow .15s}
 .hcard.sel{border-color:var(--gold2);box-shadow:0 0 18px rgba(243,210,122,.35)}
-.hcard canvas{width:96px;height:110px;flex:none}
-.hcard h3{margin:0 0 4px;color:var(--gold2);font-size:20px}
+.hcard canvas{width:80px;height:96px;flex:none}
+.hcard .role{font-size:11px;font-weight:600;color:#a99c86;margin-left:4px;font-family:inherit}
+#wavePrev{display:flex;flex-wrap:wrap;gap:4px;justify-content:center;margin-top:5px;max-width:520px}
+#wavePrev .wc{font-size:11px;padding:2px 7px;border-radius:10px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);white-space:nowrap}
+#wavePrev .wc b{margin-right:4px}
+.diffs{display:flex;gap:6px;flex-wrap:wrap}
+.dbtn{display:flex;flex-direction:column;align-items:flex-start;padding:6px 12px;border-radius:8px;border:1.5px solid #4a3f52;background:#1d1824;min-height:44px}
+.dbtn small{font-size:10px;color:var(--dim)}
+.dbtn.on{border-color:var(--gold2);background:#2c2230}
+.nm{color:#ff8a7a;font-size:11px}
+.hcard h3{margin:0 0 4px;color:var(--gold2);font-size:19px}
 .hcard p{margin:0;font-size:12px;color:var(--dim);line-height:1.55}
 .box{padding:16px;border-radius:12px;border:1px solid var(--line);background:var(--panel)}
 .btns{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:14px}
@@ -131,7 +140,7 @@ table.st{margin:10px auto;border-collapse:collapse;font-size:14px}table.st td{pa
   <div class="row"><span style="font-size:12px;color:#9fe3ff;font-weight:800">裂隙</span><div class="bar" id="riftBar"><i></i><span></span></div></div>
   <div class="row" style="margin-top:6px"><span class="coin"></span><span id="gold">0</span><span id="goldD" class="mut"></span></div>
  </div>
- <div id="tc" class="pnl"><div id="waveTxt"></div><div id="phaseTxt"></div><button id="readyBtn" class="btn">准备开战 (G)</button></div>
+ <div id="tc" class="pnl"><div id="waveTxt"></div><div id="phaseTxt"></div><div id="wavePrev"></div><button id="readyBtn" class="btn">准备开战 (G)</button></div>
  <canvas id="mini"></canvas>
  <div id="ally" class="pnl"></div>
  <div id="bl" class="pnl">
