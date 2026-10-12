@@ -48,5 +48,16 @@ window.GAMES = [
     status: 'dev',
     tags: ['单人', '多人联机', 'iPad'],
     hue: 280
+  },
+  {
+    id: 'pawpals',
+    title: '猫猫咕咕的家',
+    sub: '养猫小屋 · 生活模拟',
+    desc: '三花猫猫猫和狸花猫咕咕的三层小屋：爸爸妈妈和小宝的日常、院子和小镇出游、十几种对战小游戏。双击猫或家人就能自己操控，也能两个人联机住在一起。',
+    url: 'pawpals/',
+    cover: 'covers/pawpals.webp',
+    status: 'dev',
+    tags: ['单人', '双人联机', 'iPad'],
+    hue: 28
   }
 ];
