@@ -339,6 +339,7 @@ button.card:hover{transform:translateY(-2px);border-color:var(--sc)}
 .netcode{font:700 24px/1.2 var(--font-num);letter-spacing:.24em;color:var(--brass-hi);padding:2px 6px 2px 12px;border:1px dashed var(--brass);border-radius:6px;user-select:all;-webkit-user-select:all}
 .netin{-webkit-user-select:text;user-select:text;font:700 16px var(--font-num);letter-spacing:.2em;text-transform:uppercase;width:116px;padding:6px 10px;border-radius:6px;border:1px solid var(--rule);background:rgba(0,0,0,.3);color:var(--fg)}
 .gobar{display:none}
+.helpln{color:#7fe0cf}
 .netin:focus{outline:2px solid var(--brass-hi);outline-offset:1px}
 .netst{font-size:13px;color:var(--muted)}.netst b{color:var(--fg);font-weight:500}
 .mate-pick{display:inline-flex;align-items:center;gap:6px}.mate-pick img{width:30px;height:30px}
@@ -527,8 +528,12 @@ const FINAL_WAVE=16,ELITE_WAVE=8;
 // balance knobs
 // 最终首领：血量倍数、韧性（每秒承伤超过阈值后按比例减伤，最低 35%）、联机倍数
 const BOSS={finalMul:42,tough:900,toughMin:0.35,coop:1.6,adds:6};
-// 逆风保障：生命保底 25+2×波次；原始生命低于 35+4×波次 时升级和商店保证出生命；波末地上金币自动收 70%
-const HELP={floorBase:25,floorWave:2,lowBase:35,lowWave:4,sweep:0.7};
+// 逆风保障：每波结束按「击杀率 / 最低血量 / 生命上限」判断这一波打得吃不吃力（0 顺风、1 逆风、2 苦战），缺什么补什么
+// 常驻：生命保底 25+2×波次；波末地上金币自动收 70%
+const HELP={floorBase:25,floorWave:2,lowBase:30,lowWave:3,sweep:0.7,
+ killLow:0.55,killVeryLow:0.35,hpLow:0.3,     // 击杀率低于 55% / 35%、最低血量低于 30% 各记 1 分；生命上限偏低记 1 分
+ subsidy:[0,0.3,0.6],rerolls:[0,1,2],discount:0.7, // 补贴 = 本波收入的 30% / 60%；免费刷新次数；补给商品 7 折
+ relief:{spawn:0.8,hp:0.9}};                   // 苦战：下一波敌人刷得少 20%、血量 -10%
 const BAL={hpLin:0.26,hpQuad:0.05,dmgLin:0.11,goldScale:0.06,baseInc:12,incPerWave:1.5,spawnBase:1.35,spawnSlope:0.05,spawnMin:0.22,batchDiv:5,priceScale:0.17};
 // difficulty multipliers ramp in: 30% of the extra at wave 1, full by wave 16
 const dRamp=(m,w)=>1+(m-1)*(0.3+0.7*Math.min(1,(w-1)/15));
@@ -1245,7 +1250,7 @@ function hurt(d,kind='hit'){
  if(Math.random()*100<Math.min(dodgeCap(),S.dodge)){P.inv=0.3;hurtSnd(CUR,'dodge',0);addText(P.x,P.y-30,'闪避',C.verdigris,14);fxs.push({type:'after',pid:CUR?CUR.id:0,x:P.x,y:P.y,face:P.face,dface:P.dface,life:0.3,max:0.3});onDodge();return;}
  const A=S.armor;d*=A>=0?15/(15+A):(15-A)/15;
  if(CUR&&CUR.reviving!=null)d*=REV.guard; // reviving a teammate: take less damage
- run.hp-=d;P.inv=0.5;if(isMe())shake=0.25;addText(P.x,P.y-30,'-'+Math.max(1,Math.round(d)),C.danger,15);
+ run.hp-=d;run.minHpR=Math.min(run.minHpR??1,run.hp/Math.max(1,S.hp));P.inv=0.5;if(isMe())shake=0.25;addText(P.x,P.y-30,'-'+Math.max(1,Math.round(d)),C.danger,15);
  hurtSnd(CUR,kind,d/Math.max(1,S.hp));
  if(run.hp<=0){
   if(FX.revive&&!run.revived){run.revived=true;run.items.splice(run.items.indexOf('不灭火种'),1);computeStats();run.hp=Math.ceil(S.hp*0.5);P.inv=2;if(isMe())banner('不灭火种');boomFx(P.x,P.y,230);aoe(P.x,P.y,230,flatDmg(30),{noSteal:1});ebul=[];return;}
@@ -1400,7 +1405,7 @@ function chase(e,ux,uy,sp,dt){
  for(const b of obstacles){const bx=b.x-e.x,by=b.y-e.y,bd=Math.hypot(bx,by),lim=b.r+e.r+28;if(bd<lim&&bx*ux+by*uy>0){const side=(bx*uy-by*ux)>0?1:-1,w=(lim-bd)/lim*1.6;ux+=-by/bd*side*w;uy+=bx/bd*side*w;const l=Math.hypot(ux,uy)||1;ux/=l;uy/=l;}}
  e.x+=ux*sp*dt;e.y+=uy*sp*dt;
 }
-function hurtDirect(d){if(state!=='battle'||run.victory||(CUR&&CUR.down))return;const A=S.armor;d*=A>=0?15/(15+A):(15-A)/15;run.hp-=d;addText(P.x+rand(-6,6),P.y-30,'-'+Math.max(1,Math.round(d)),C.good,12);hurtSnd(CUR,'poison',d/Math.max(1,S.hp));if(run.hp<=0){P.inv=0;hurt(1);}}
+function hurtDirect(d){if(state!=='battle'||run.victory||(CUR&&CUR.down))return;const A=S.armor;d*=A>=0?15/(15+A):(15-A)/15;run.hp-=d;run.minHpR=Math.min(run.minHpR??1,run.hp/Math.max(1,S.hp));addText(P.x+rand(-6,6),P.y-30,'-'+Math.max(1,Math.round(d)),C.good,12);hurtSnd(CUR,'poison',d/Math.max(1,S.hp));if(run.hp<=0){P.inv=0;hurt(1);}}
 const hzDmg=(b,k)=>b+run.wave*k;
 // map hazards: wave-scaled damage, but never more than a set share of the victim's max HP
 const hzHit=(b,k,pct)=>Math.min(hzDmg(b,k),Math.max(3,S.hp*pct));
@@ -1441,9 +1446,9 @@ function hzZones(){const z=[];for(const v of hz.vents)if(v.warn||v.hot)z.push({x
  const bands=hz.carts.map(c=>({y:c.y,h:40}));return {z,bands};}
 
 /* ================= enemies ================= */
-let EID=0;const ETYPES=Object.keys(ENEMY);
+let EID=0,waveSpawned=0,relief=null;const ETYPES=Object.keys(ENEMY);
 function makeEnemy(type,x,y,s){
- const b=ENEMY[type],w=run.wave,D=DIFF[run.diff],hp=b.hp*hpScale(w)*dRamp(D.hp,w);
+ const b=ENEMY[type],w=run.wave,D=DIFF[run.diff],hp=b.hp*hpScale(w)*dRamp(D.hp,w)*(relief?relief.hp:1);
  const e={id:++EID,type,x,y,r:b.r,hp,max:hp,spd:b.spd*(1+w*0.012)*rand(0.9,1.1),dmg:b.dmg*(1+(w-1)*BAL.dmgLin)*dRamp(D.dmg,w),col:b.col,gold:b.gold,xp:b.xp,
   flash:0,slowT:0,freezeT:0,poison:0,poisonT:0,ptick:0,ocd:{},st:0,ai:rand(1.5,3),wa:Math.random()*TAU,life:14,fuse:0,face:Math.atan2(P.y-y,P.x-x),anim:Math.random(),mvA:0,scale:1};
  if(type==='stalker'){e.st='rest';e.ai=rand(0.6,1.4);}
@@ -1469,7 +1474,7 @@ function makeBoss(key,elite){
  return e;
 }
 function freeSpot(x,y,r){for(const b of obstacles)if(Math.hypot(x-b.x,y-b.y)<b.r+r+6)return false;return true;}
-function queueSpawn(type){let x,y,n=0;do{x=rand(40,WORLD.w-40);y=rand(40,WORLD.h-40);}while((minPD(x,y)<230||!freeSpot(x,y,24))&&++n<30);spawns.push({type,x,y,t:0.8});}
+function queueSpawn(type){if(type!=='fairy')waveSpawned++;let x,y,n=0;do{x=rand(40,WORLD.w-40);y=rand(40,WORLD.h-40);}while((minPD(x,y)<230||!freeSpot(x,y,24))&&++n<30);spawns.push({type,x,y,t:0.8});}
 function pickType(w){
  const pool=[['crawler',10]];
  if(w>=3)pool.push(['charger',4+w*0.3]);if(w>=4)pool.push(['spitter',3+w*0.25],['splitter',2.4+w*0.15]);
@@ -1485,7 +1490,7 @@ function spawnLogic(dt){
  const w=run.wave,D=DIFF[run.diff],bossAlive=enemies.some(e=>e.boss&&!e.dead);
  spawnT-=dt;
  if(spawnT<=0){
-  spawnT=Math.max(BAL.spawnMin,BAL.spawnBase-w*BAL.spawnSlope)/dRamp(D.spawn,w)*(bossAlive?2:1);
+  spawnT=Math.max(BAL.spawnMin,BAL.spawnBase-w*BAL.spawnSlope)/dRamp(D.spawn,w)*(bossAlive?2:1)/(relief?relief.spawn:1);
   const n=1+Math.floor(w/BAL.batchDiv)+(Math.random()<0.3?1:0);
   for(let i=0;i<n;i++)if(enemies.length+spawns.length<170)queueSpawn(pickType(w));
  }
@@ -1749,9 +1754,9 @@ function buildTray(){
 }
 function spawnPos(i,n){return n<2?[WORLD.w/2,WORLD.h/2]:[WORLD.w/2+(i?40:-40),WORLD.h/2];}
 function startWave(){
- run.wave++;state='battle';paused=false;abandonArm=hubArm=false;run.victory=false;
+ run.wave++;waveSpawned=0;if(relief&&run.wave>=FINAL_WAVE)relief=null;state='battle';paused=false;abandonArm=hubArm=false;run.victory=false;
  for(const p of PL){
-  use(p);computeStats();run.hp=S.hp;p.down=false;p.ready=false;p.rv=0;p.rvk=0;p.revives=0;p.reviving=null;
+  use(p);computeStats();run.hp=S.hp;run.wk0=run.kills;run.minHpR=1;run.helpNeed=null;p.down=false;p.ready=false;p.rv=0;p.rvk=0;p.revives=0;p.reviving=null;
   [P.x,P.y]=spawnPos(p.id,PL.length);P.inv=1;P.moving=false;
   dodgeBuff=0;regenAcc=0;stealPool=0;stealClock=0;
   for(const w of run.weapons){const same=run.weapons.filter(x=>x.key===w.key);w.dup=same.indexOf(w);w.dupN=same.length;w.t=rand(0,0.15)+wCD(w)*w.dup/w.dupN;
@@ -1785,12 +1790,20 @@ function endWave(){
  run.coins=[];
  for(const p of PL){use(p);
   const sw=swept[PL.indexOf(p)];run.gold+=sw;run.earned+=sw;
+  const kr=(run.kills-(run.wk0||0))/Math.max(1,waveSpawned/PL.length);
+  let sc=0;if(kr<HELP.killLow)sc++;if(kr<HELP.killVeryLow)sc++;if((run.minHpR??1)<HELP.hpLow||p.down)sc++;if(lowHp())sc++;
+  const L=sc===0?0:sc<3?1:2;p.helpL=L;
+  run.helpNeed=L?(lowHp()||((run.minHpR??1)<HELP.hpLow&&kr>=HELP.killLow)?'hp':'dmg'):null;
+  run.helpRerolls=HELP.rerolls[L];
   const harvest=Math.round(Math.max(0,Math.round(S.harvest))+BAL.baseInc+run.wave*BAL.incPerWave);
   const interest=FX.interest?Math.min(30*FX.interest,Math.floor(run.gold*0.1*FX.interest)):0;
-  run.gold+=harvest+interest;run.earned+=harvest+interest;p.summary={harvest,interest,swept:sw};p.ready=false;
+  const sub=Math.round(harvest*HELP.subsidy[p.helpL]);run.gold+=harvest+interest+sub;run.earned+=harvest+interest+sub;p.summary={harvest,interest,swept:sw,help:p.helpL,sub};p.ready=false;
   run.freeUsed=false;run.rerollCost=1+Math.floor(run.wave*0.6);run.lvRerollCost=2+Math.floor(run.wave/2);run.lvChoices=null;run.chestItem=null;
   rollShop();ensurePrepChoices();}
  use(ME());lastSummary=ME().summary;
+ // 苦战（联机时全队平均）：下一波敌人更少更脆
+ relief=PL.reduce((a,p)=>a+p.helpL,0)/PL.length>=1.5&&run.wave+1<FINAL_WAVE?HELP.relief:null;
+ for(const p of PL)p.summary.relief=!!relief;
  enemies=[];spawns=[];projs=[];ebul=[];puddles=[];mines=[];turrets=[];texts=[];delayed=[];fxs=[];joy=null;emines=[];hz.carts=[];hz.strikes=[];
  state='prep';
  renderPrep();show('prep');$('#prep').scrollTop=0;
@@ -1827,18 +1840,28 @@ function makeOffer(){
 }
 function rollShop(){const old=run.shop||[];run.shop=[0,1,2,3].map(i=>old[i]&&old[i].locked&&!old[i].sold?old[i]:makeOffer());helpOffer();}
 // 逆风补给：生命偏低时，商店至少有一件加生命上限的道具
+// 逆风补给：商店保证一件对症的商品（缺生命给加生命的道具；打不动怪给能合成升阶的同名武器或加伤害的道具），7 折
 function helpOffer(){
- if(!lowHp()||run.shop.some(o=>!o.sold&&o.kind==='i'&&((ITEM_BY[o.name].s||{}).hp||0)>0))return;
+ const need=run.helpNeed||(lowHp()?'hp':null);if(!need||run.shop.some(o=>o.help&&!o.sold))return;
+ const fits=o=>!o.sold&&(need==='hp'?o.kind==='i'&&((ITEM_BY[o.name].s||{}).hp||0)>0:o.kind==='w'?run.weapons.some(w=>w.key===o.key&&w.tier===o.tier&&w.tier<4):o.kind==='i'&&(((ITEM_BY[o.name].s||{}).dmg||0)>0||((ITEM_BY[o.name].s||{}).atkspd||0)>0));
+ const have=run.shop.find(fits);if(have){have.help=true;have.price=Math.max(1,Math.round(have.price*HELP.discount));return;}
  const i=[3,2,1,0].find(j=>!run.shop[j].locked&&!run.shop[j].sold);if(i==null)return;
- const it=ITEM_BY[run.wave>=4?'生命泉':'铜护符'];run.shop[i]={kind:'i',name:it.n,tier:it.t,price:price('i',it.t),locked:false,sold:false,help:true};
+ let o;
+ if(need==='hp'){const it=ITEM_BY[run.wave>=4?'生命泉':'铜护符'];o={kind:'i',name:it.n,tier:it.t,price:price('i',it.t)};}
+ else{const w=run.weapons.filter(w=>w.tier<4).sort((a,b)=>b.tier-a.tier)[0];
+  if(w&&canAddWeapon(w.key,w.tier))o={kind:'w',key:w.key,tier:w.tier,price:price('w',w.tier)};
+  else{const it=ITEM_BY[run.wave>=6?'战鼓':pick(['磨刀石','机油'])];o={kind:'i',name:it.n,tier:it.t,price:price('i',it.t)};}}
+ o.price=Math.max(1,Math.round(o.price*HELP.discount));Object.assign(o,{locked:false,sold:false,help:true});run.shop[i]=o;
 }
+const rerollPrice=()=>run.helpRerolls>0||(FX.freeReroll&&!run.freeUsed)?0:run.rerollCost;
 const canAddWeapon=(key,tier)=>run.weapons.length<run.maxSlots||run.weapons.some(w=>w.key===key&&w.tier===tier&&w.tier<4);
 const sellValue=w=>Math.round(price('w',w.tier)*(H.key==='merchant'?0.7:0.4));
 function rollLv(){
  const L=1+S.luck/100,lv=run.level;
  return shuffle(LVPOOL.slice()).slice(0,4).map(([k,vals])=>{const r=Math.random(),p4=Math.max(0,(lv-10)*0.012)*L,p3=Math.max(0,(lv-4)*0.025)*L,p2=Math.min(0.55,0.15+lv*0.03)*L;
   const t=r<p4?4:r<p4+p3?3:r<p4+p3+p2?2:1;return {k,t,v:vals[t-1]};}).map((c,i,a)=>{
-  if(i===3&&lowHp()&&!a.some(x=>x.k==='hp')){const t=Math.max(2,c.t);return {k:'hp',t,v:LVPOOL.find(x=>x[0]==='hp')[1][t-1],help:true};}return c;});
+  const need=run.helpNeed||(lowHp()?'hp':null),ks=need==='hp'?['hp']:['dmg','atkspd'];
+  if(i===3&&need&&!a.some(x=>ks.includes(x.k))){const k=pick(ks),t=Math.max(2,c.t);return {k,t,v:LVPOOL.find(x=>x[0]===k)[1][t-1],help:true};}return c;});
 }
 
 /* ================= DOM rendering ================= */
@@ -1915,8 +1938,8 @@ function renderPrep(){
    <div class="offer t${it.t}"><div class="ic seal">${it.g}</div><div class="om"><div class="on">${it.n}<span class="tier">${TIER_N[it.t]}阶道具</span></div><div class="od">${itemLine(it)}</div></div>
    <div class="oa"><button class="buy" data-act="take">收下</button><button class="lk" data-act="recycle">回收 +${sv}</button></div></div></div></section>`;
  }else{
-  const rc=FX.freeReroll&&!run.freeUsed?0:run.rerollCost;
-  main=`<section class="panel frame"><div class="panel-h"><h3>商店</h3><span class="hint grow">锁定的商品留到下一波 · 武器栏满时买同名同阶武器自动合成</span><button class="btn ghost sm" data-act="reroll" ${run.gold<rc?'disabled':''}>刷新 · ${rc===0?'免费':`<span class="num">${rc}</span>`}</button></div>
+  const rc=rerollPrice();
+  main=`<section class="panel frame"><div class="panel-h"><h3>商店</h3><span class="hint grow">锁定的商品留到下一波 · 武器栏满时买同名同阶武器自动合成</span><button class="btn ghost sm" data-act="reroll" ${run.gold<rc?'disabled':''}>刷新 · ${rc===0?(run.helpRerolls>0?`免费 ×${run.helpRerolls}`:'免费'):`<span class="num">${rc}</span>`}</button></div>
    <div class="offers">${run.shop.map((o,i)=>{
     if(o.sold)return `<div class="offer sold">已购入</div>`;
     const isW=o.kind==='w',it=isW?null:ITEM_BY[o.name],name=isW?WEAPONS[o.key].name:o.name;
@@ -1936,7 +1959,7 @@ function renderPrep(){
  const next=run.wave+1,blocked=pending||hasChest,ground=run.coins.reduce((s,c)=>s+c.v,0);
  $('#prep').innerHTML=`<div class="prep">
   <header class="prep-head">
-   <div class="ttl"><h2>第 ${run.wave} 波完成</h2><div class="sub"><span>${H.name} · ${DIFF[run.diff].name} · ${MAP.name}</span><span>下一波 ${next} / ${FINAL_WAVE}</span>${next===ELITE_WAVE?'<span class="warn">精英首领</span>':''}${next===FINAL_WAVE?'<span class="warn">最终首领，击败即通关</span>':''}<span>本波收入 +${lastSummary.harvest}</span>${lastSummary.interest?`<span>利息 +${lastSummary.interest}</span>`:''}${lastSummary.swept?`<span>地上金币自动收取 +${lastSummary.swept}</span>`:''}${ground?`<span>地上还有 ${ground} 金币待拾取</span>`:''}</div></div>
+   <div class="ttl"><h2>第 ${run.wave} 波完成</h2><div class="sub"><span>${H.name} · ${DIFF[run.diff].name} · ${MAP.name}</span><span>下一波 ${next} / ${FINAL_WAVE}</span>${next===ELITE_WAVE?'<span class="warn">精英首领</span>':''}${next===FINAL_WAVE?'<span class="warn">最终首领，击败即通关</span>':''}<span>本波收入 +${lastSummary.harvest}</span>${lastSummary.interest?`<span>利息 +${lastSummary.interest}</span>`:''}${lastSummary.swept?`<span>地上金币自动收取 +${lastSummary.swept}</span>`:''}${lastSummary.help?`<span class="helpln">${lastSummary.help>1?'苦战':'逆风'}补给：补贴 +${lastSummary.sub} 金 · 免费刷新 ×${HELP.rerolls[lastSummary.help]} · 商店一件 7 折对症补给${lastSummary.relief?' · 下一波敌人更少更脆':''}</span>`:''}${ground?`<span>地上还有 ${ground} 金币待拾取</span>`:''}</div></div>
    <div class="act">${blocked?`<span class="blk">${pending?'先选完升级属性':'先处理宝箱'}</span>`:''}${mateLine()}<div class="bank"><span class="qian"></span><span class="num">${run.gold}</span></div><button class="btn" data-act="next" ${blocked||myReady()?'disabled':''}>${myReady()?'已准备 · 等待队友':NET.mode==='solo'?`开始第 ${next} 波`:`准备好了 · 第 ${next} 波`}</button></div>
   </header>
   <div class="prep-grid"><div style="min-width:0">${main}</div>
@@ -2022,7 +2045,7 @@ function prepAct(act,i){
   case 'lvreroll':if(run.gold>=run.lvRerollCost){run.gold-=run.lvRerollCost;run.lvRerollCost+=2;run.lvChoices=rollLv();}break;
   case 'take':if(!run.chestItem)break;run.items.push(run.chestItem);run.chests.shift();run.chestItem=null;break;
   case 'recycle':{if(!run.chestItem)break;const it=ITEM_BY[run.chestItem];run.gold+=Math.round(price('i',it.t)*0.5);run.chests.shift();run.chestItem=null;break;}
-  case 'reroll':{const rc=FX.freeReroll&&!run.freeUsed?0:run.rerollCost;if(run.gold<rc)break;run.gold-=rc;if(rc===0)run.freeUsed=true;else run.rerollCost+=Math.max(1,Math.floor(run.wave/3));
+  case 'reroll':{const rc=rerollPrice();if(run.gold<rc)break;run.gold-=rc;if(rc===0){if(run.helpRerolls>0)run.helpRerolls--;else run.freeUsed=true;}else run.rerollCost+=Math.max(1,Math.floor(run.wave/3));
    run.shop=run.shop.map(o=>o.locked&&!o.sold?o:makeOffer());helpOffer();break;}
   case 'lock':{const o=run.shop[i];if(o)o.locked=!o.locked;break;}
   case 'buy':{const o=run.shop[i];if(!o||o.sold||run.gold<o.price)break;
