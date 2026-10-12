@@ -16,6 +16,11 @@ const THEMES = {
     bush: [0x3fa36b, 0x35915e, 0x4cb87b], water: 0x37b5b0, waterDeep: 0x248f95, border: 0x6e4470, borderTop: 0x8f5d92, out: 0xb98d6c, outFar: 0xa47b5d,
     sky: 0xf2b88a, fog: 0xe0a77d, deco: 'palm', ice: false,
   },
+  lava: {
+    name: '熔岩火山', g1: 0x6b5a58, g2: 0x625250, speck: 0x4a3c3a, rock: 0x3d3338, rockTop: 0x5c4c52, crate: 0x6b4a33, crateTop: 0x8a6448,
+    bush: [0x8a6d3b, 0x7a5f33, 0x9a7a44], water: 0xff7a1a, waterDeep: 0xc8361a, border: 0x2e262b, borderTop: 0x4a3e44, out: 0x3e3236, outFar: 0x30282c,
+    sky: 0x5a3a3a, fog: 0x4a3434, deco: 'spire', ice: false, lava: true, locked: 250,
+  },
 };
 const M = { N: BAL.N, t: null, sty: null, box: null, boxes: [], spawns: [], theme: 'desert', seed: 1, ver: 0, deco: [] };
 const tIdx = (x, z) => z * M.N + x;
@@ -101,7 +106,9 @@ function genMap(seed, theme) {
   for (const [x, z] of boxSpots) { addBox(x, z); addBox(N - 1 - x, z); addBox(x, N - 1 - z); addBox(N - 1 - x, N - 1 - z); }
   addBox(H - 1, H - 1); addBox(H, H); addBox(H - 1, H); addBox(H, H - 1);
   // decorations (visual only, no collision)
+  M.arena = null; M.goals = null; M.teamSpawns = null;
   for (let i = 0; i < N * N; i++) if (M.t[i] === T_FLOOR && M.box[i] < 0 && rng() < 0.09) M.deco.push({ x: (i % N) + 0.2 + rng() * 0.6, z: ((i / N) | 0) + 0.2 + rng() * 0.6, k: ri(0, 2), r: rng() * TAU, s: 0.7 + rng() * 0.6 });
+  genGimmicks(rng, 'solo');
 }
 
 function los(ax, az, bx, bz, ignoreTarget) {

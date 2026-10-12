@@ -5,12 +5,12 @@ function audioInit() {
   try {
     const C = new (window.AudioContext || window.webkitAudioContext)();
     const comp = C.createDynamicsCompressor(); comp.threshold.value = -16; comp.ratio.value = 6; comp.connect(C.destination);
-    const m = C.createGain(); m.gain.value = AU.muted ? 0 : 0.55; m.connect(comp);
+    const m = C.createGain(); m.gain.value = AU.muted ? 0 : SET.vol; m.connect(comp);
     const nb = C.createBuffer(1, C.sampleRate, C.sampleRate), d = nb.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
     Object.assign(AU, { ctx: C, master: m, noise: nb });
   } catch (e) { }
 }
-function setMute(v) { AU.muted = v; LS.set('mute', v); if (AU.master) AU.master.gain.value = v ? 0 : 0.55; const b = document.getElementById('muteBtn'); if (b) b.textContent = v ? '🔇' : '🔊'; }
+function setMute(v) { AU.muted = v; LS.set('mute', v); if (AU.master) AU.master.gain.value = v ? 0 : SET.vol; const b = document.getElementById('muteBtn'); if (b) b.textContent = v ? '🔇' : '🔊'; }
 function tone(type, f0, f1, dur, vol, delay = 0, lp = 0) {
   const C = AU.ctx; if (!C || AU.muted) return; const t = C.currentTime + delay, j = 1 + (Math.random() - .5) * 0.16;
   const o = C.createOscillator(), g = C.createGain(); o.type = type; o.frequency.setValueAtTime(f0 * j, t); o.frequency.exponentialRampToValueAtTime(Math.max(20, f1 * j), t + dur);
@@ -72,6 +72,19 @@ function sfx(name, x, z, vol = 1) {
     case 'turret': tone('square', 300, 600, 0.15, 0.12 * v, 0, 1500); break;
     case 'tshot': tone('square', 900, 400, 0.05, 0.06 * v, 0, 2500); break;
     case 'respawn': [392, 523, 659].forEach((f, i) => tone('sine', f, f, 0.15, 0.18 * v, i * 0.07)); break;
+    case 'crit': noise(0.1, 0.45 * v, 'lowpass', 3000, 600); tone('square', 880, 220, 0.12, 0.2 * v, 0, 3000); break;
+    case 'streak': [660, 880, 1100, 1320].forEach((f, i) => tone('square', f, f * 1.02, 0.12, 0.12 * v, i * 0.07, 3500)); break;
+    case 'alarm': tone('square', 700, 700, 0.12, 0.1 * v, 0, 2000); tone('square', 520, 520, 0.12, 0.1 * v, 0.15, 2000); break;
+    case 'gem': tone('triangle', 1320, 1760, 0.12, 0.18 * v); tone('sine', 2200, 2640, 0.1, 0.1 * v, 0.05); break;
+    case 'goal': [523, 659, 784, 1046, 784, 1046].forEach((f, i) => tone('square', f, f, 0.14, 0.13, i * 0.09, 3000)); noise(0.8, 0.25, 'bandpass', 1500, 900, 0.6); break;
+    case 'kick': noise(0.08, 0.5 * v, 'lowpass', 1200, 200); tone('sine', 160, 70, 0.1, 0.3 * v); break;
+    case 'whistle': tone('sine', 2400, 2300, 0.18, 0.15); tone('sine', 2400, 2350, 0.3, 0.15, 0.22); break;
+    case 'gadget': tone('sine', 400, 1200, 0.15, 0.2 * v); noise(0.15, 0.15 * v, 'bandpass', 1200, 3000, 2); break;
+    case 'trap': tone('square', 1500, 300, 0.08, 0.2 * v, 0, 4000); noise(0.12, 0.35 * v, 'highpass', 2000, 800); break;
+    case 'pad': tone('sine', 250, 900, 0.22, 0.22 * v); break;
+    case 'port': tone('sine', 900, 200, 0.3, 0.16 * v); tone('sine', 1350, 300, 0.3, 0.08 * v, 0.03); break;
+    case 'pop': tone('sine', 600, 1100, 0.08, 0.15 * v); break;
+    case 'ping': tone('triangle', 1046, 1046, 0.08, 0.18); tone('triangle', 1568, 1568, 0.12, 0.15, 0.08); break;
   }
 }
 
@@ -105,7 +118,11 @@ function initInput() {
 function onKeyPress(k, e) {
   if (STATE.mode === 'play') {
     if (k === ' ' || k === 'j') INP.autoFire = true;
-    if (k === 'k' || k === 'f' || k === 'q') INP.autoSup = true;
+    if (k === 'k' || k === 'f') INP.autoSup = true;
+    if (k === 'q' || k === 'g') INP.pendGad = true;
+    if (k === 't') requestPing(false);
+    if (k === 'v') requestCmd();
+    if (k.length === 1 && '123456'.includes(k)) requestEmote(['thumb', 'laugh', 'angry', 'gg', 'come', 'care'][+k - 1]);
     if (k === 'e' || k === 'Shift') INP.supHeld = true;
     if (k === 'Escape' || k === 'p') togglePause();
     if (k === 'm') setMute(!AU.muted);
@@ -140,6 +157,12 @@ function initTouch() {
     el.addEventListener('pointerup', end); el.addEventListener('pointercancel', end);
   };
   st(zone, 'move'); st(atk, 'atk'); st(sup, 'sup');
+  const tap = (id, fn) => document.getElementById(id).addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); audioInit(); INP.lastTouch = performance.now(); fn(e); });
+  tap('gadBtn', () => { INP.pendGad = true; });
+  tap('pingBtn', () => requestPing(true));
+  tap('cmdBtn', () => requestCmd());
+  tap('emoBtn', () => document.getElementById('emoPanel').classList.toggle('hidden'));
+  document.getElementById('emoPanel').addEventListener('pointerdown', e => { const b = e.target.closest('[data-e]'); if (!b) return; e.preventDefault(); e.stopPropagation(); requestEmote(b.dataset.e); document.getElementById('emoPanel').classList.add('hidden'); });
 }
 function touchAimOf(dx, dy, L, kind) {
   // screen -> world: camera looks toward -z, so screen right = +x, screen down = +z (approximately)
@@ -196,6 +219,7 @@ function readInput(me) {
   if (INP.pendSup) { sup = true; INP.pendSup = false; }
   if (fire) inp.fire = true;
   if (sup) inp.sup = true;
+  if (INP.pendGad) { inp.gad = true; INP.pendGad = false; }
   if (show) show = Object.assign(show, { ang: inp.aim, tx: inp.tx, tz: inp.tz });
   return show;
 }

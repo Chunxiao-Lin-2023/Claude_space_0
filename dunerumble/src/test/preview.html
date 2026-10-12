@@ -10,7 +10,7 @@ const gnd=new THREE.Mesh(new THREE.PlaneGeometry(40,20),new THREE.MeshToonMateri
 const cam=new THREE.PerspectiveCamera(30,W/H,0.1,100);
 const view=+(new URLSearchParams(location.search).get('v')||0);
 cam.position.set(0,view?6:3.2,view?7:9);cam.lookAt(0,0.6,0);
-const Vs=[];HEROES.slice(+(new URLSearchParams(location.search).get("o")||0),+(new URLSearchParams(location.search).get("o")||0)+6).forEach((h,i)=>{const V=makeHero(h.k);V.root.position.x=(i-2.5)*1.45;V.root.rotation.y=view?0.2:0.35;S.add(V.root);Vs.push(V);});
+const Vs=[];const Q=new URLSearchParams(location.search),KS=(Q.get("ks")||"").split(",").filter(Boolean),SK=(Q.get("sk")||"").split(",").map(Number);(KS.length?KS.map(k=>HEROES[HERO_IDX[k]]):HEROES.slice(+(Q.get("o")||0),+(Q.get("o")||0)+6)).forEach((h,i)=>{const V=makeHero(h.k,SK[i]||0);V.root.position.x=(i-2.5)*1.45;V.root.rotation.y=view?0.2:0.35;S.add(V.root);Vs.push(V);});
 const pose=new URLSearchParams(location.search).get('p')||'idle';
 Vs.forEach(V=>animHero(V,{alive:true,moving:pose==='walk',atkAge:pose==='atk'?0.2:9,supAge:9},0.25,0));
 R.render(S,cam);window.done=1;

@@ -10,7 +10,7 @@ const { chromium } = require('playwright');
     const out = {};
     for (let h = 0; h < HEROES.length; h++) {
       SEL.hero = h; SEL.mode = 'solo';
-      startGame({ seed: 11 + h, theme: 'desert', mode: 'solo', diff: 1, roster: buildRoster(false) });
+      startGame({ seed: 11 + h, theme: 'desert', mode: 'solo', diff: 1, roster: rosterFor(SEL.mode, localHumans(), false) });
       // open arena: clear tiles around the center and place me + one dummy
       for (let z = 14; z < 26; z++) for (let x = 14; x < 26; x++) { const i = tIdx(x, z); M.t[i] = T_FLOOR; M.box[i] = -1; }
       const me = STATE.me, foe = G.ents[1];

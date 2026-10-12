@@ -3,7 +3,7 @@ const R3 = { renderer: null, scene: null, cam: null, hemi: null, sun: null, mapG
 const OV = { cv: null, ctx: null, dpr: 1, nums: [] };
 function initRenderer() {
   const cv = document.getElementById('gl');
-  const lowEnd = IS_TOUCH || QS.get('low') === '1';
+  const lowEnd = SET.quality === 'low' || (SET.quality === 'auto' && IS_TOUCH) || QS.get('low') === '1';
   R3.quality = lowEnd ? 0 : 1;
   const r = new THREE.WebGLRenderer({ canvas: cv, antialias: !lowEnd || devicePixelRatio < 2, powerPreference: 'high-performance' });
   r.setPixelRatio(Math.min(devicePixelRatio, lowEnd ? 1.5 : 2));
@@ -200,15 +200,8 @@ function buildMapScene() {
   }
   mergeStatic(scenery);
   // power boxes
-  R3.boxVis = M.boxes.map(b => {
-    const bt = boxTextures();
-    const mat = new THREE.MeshToonMaterial({ map: bt.map, emissiveMap: bt.em, emissive: 0xffffff, emissiveIntensity: 0.9, gradientMap: GRAD });
-    const grp = new THREE.Group(); grp.position.set(b.tx + .5, 0, b.tz + .5);
-    const m = P(grp, GEO.box(0.86, 0.82, 0.86, 0.06).translate(0, 0.41, 0), mat, 0, 0, 0, 0, 0, 0, OUTLINE_THIN); m.receiveShadow = true;
-    P(grp, GEO.box(0.92, 0.1, 0.92, 0.04), toon(0x6f8ea6), 0, 0.84, 0, 0, 0, 0, null);
-    P(grp, GEO.box(0.3, 0.06, 0.3, 0.03), glow(0x4dff7c, 1.2), 0, 0.9, 0, 0, Math.PI / 4, 0, null);
-    g.add(grp); return { grp, mat, alive: true, shake: 0 };
-  });
+  R3.boxVis = M.boxes.map(b => makeBoxVis(b, g));
+  buildModeScene();
   // gas layers
   R3.gas = [];
   for (const [y, a] of [[0.12, 1], [1.05, 0.55]]) {
@@ -243,6 +236,10 @@ function makeProp(kind, rng) {
   } else if (kind === 'pine') {
     P(o, GEO.cyl(0.1, 0.13, 0.5), toon(0x6b4a33), 0, 0.25, 0);
     for (const [y, r, h] of [[0.75, 0.6, 0.8], [1.2, 0.46, 0.7], [1.6, 0.32, 0.6]]) { P(o, GEO.cone(r, h, 8), toon(0x2e7d5b), 0, y, 0); P(o, GEO.cone(r * 0.55, h * 0.4, 8), toon(0xffffff), 0, y + h * 0.32, 0, 0, 0, 0, null); }
+  } else if (kind === 'spire') {
+    P(o, GEO.cone(0.45, 1.8, 6), toon(0x3a3036), 0, 0.9, 0);
+    P(o, GEO.cone(0.12, 0.5, 6), glow(0xff6a1a, 1.4), 0.12, 0.5, 0.25, 0.4, 0, -0.2, null);
+    if (rng() < 0.6) P(o, GEO.cone(0.28, 1.1, 6), toon(0x4a3e44), 0.45, 0.55, -0.1, 0, 0, 0.25);
   } else {
     P(o, GEO.cyl(0.08, 0.12, 1.6, 8), toon(0x9b6b43), 0, 0.8, 0, 0, 0, 0.12);
     for (let k = 0; k < 6; k++) { const a = k * TAU / 6; P(o, GEO.sph(0.16, 1, 0.25, 3.2), toon(0x3fa36b), Math.cos(a) * 0.38 + 0.1, 1.55, Math.sin(a) * 0.38, 0, -a + Math.PI / 2, 0.35); }
@@ -347,11 +344,13 @@ function showAim(b, mode, ang, tx, tz, strength) {
 }
 
 /* ---------- per-frame sync ---------- */
-const TEAM_COL = { me: 0x45e06a, ally: 0x3fa9ff, foe: 0xff4b4b };
+const TEAM_COL_STD = { me: 0x45e06a, ally: 0x3fa9ff, foe: 0xff4b4b }, TEAM_COL_CB = { me: 0xffffff, ally: 0x2f8fff, foe: 0xff9f1c };
+const TEAM_COL = new Proxy({}, { get: (_, k) => (SET.cb ? TEAM_COL_CB : TEAM_COL_STD)[k] });
+const teamCss = rel => '#' + TEAM_COL[rel].toString(16).padStart(6, '0');
 function teamRel(b) { const me = meEnt(); if (me && b.id === me.id) return 'me'; return b.team === myTeam() ? 'ally' : 'foe'; }
 function makeVis(b) {
-  const V = makeHero(b.H.k);
-  const rel = teamRel(b);
+  const V = makeHero(b.H.k, b.skin || 0);
+  const rel = teamRel(b); V.rel = rel;
   const rm = new THREE.Mesh(new THREE.RingGeometry(0.42, 0.52, 32).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: TEAM_COL[rel], transparent: true, opacity: 0.85, depthWrite: false }));
   rm.position.y = 0.035; rm.renderOrder = 6; V.root.add(rm); V.ringM = rm;
   const sr = new THREE.Mesh(new THREE.RingGeometry(0.56, 0.66, 32).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: 0xffd23f, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending }));
@@ -359,6 +358,9 @@ function makeVis(b) {
   V.root.traverse(o => { if (o.isMesh && !o.userData.outline && o !== rm && o !== sr) o.castShadow = true; });
   const sh = new THREE.Mesh(new THREE.SphereGeometry(0.72, 24, 16), new THREE.MeshBasicMaterial({ color: 0x2fb8ff, transparent: true, opacity: 0.3, depthWrite: false }));
   sh.position.y = 0.7; sh.visible = false; sh.renderOrder = 8; V.root.add(sh); V.shieldM = sh;
+  const iv = new THREE.Mesh(new THREE.SphereGeometry(0.78, 24, 16), new THREE.MeshBasicMaterial({ color: 0xffd23f, transparent: true, opacity: 0.25, depthWrite: false }));
+  iv.position.y = 0.7; iv.visible = false; iv.renderOrder = 8; V.root.add(iv); V.invM = iv;
+  if (b.H.k === 'boss') { V.root.scale.setScalar(1); }
   V.wasAlive = true; V.deadAt = 0; V.x = b.x; V.z = b.z; V.face = b.face;
   R3.entG.add(V.root); return V;
 }
@@ -378,10 +380,13 @@ const PROJ_LOOK = {
   snowball: { g: () => GEO.sph(0.17), m: () => toon(0xffffff), trail: 0xd8f1ff },
   lantern: { g: () => GEO.box(0.2, 0.26, 0.2, 0.04), m: () => glow(0xffd36b, 1.8), trail: 0xffc04a },
   quake: { g: () => GEO.dod(0.3), m: () => toon(0x8a6a4a), trail: 0xc8a878 },
+  bossshot: { g: () => GEO.sph(0.24), m: () => glow(0xff4b4b, 2), trail: 0xff7a5a },
+  rocket: { g: () => GEO.cap(0.12, 0.42).rotateX(Math.PI / 2), m: () => toon(0x5a6470, { emissive: 0xff5a1a, emissiveIntensity: 0.5 }), trail: 0xffb347 },
+  meteor: { g: () => GEO.dod(0.4), m: () => toon(0x5a3a2a, { emissive: 0xff5a1a, emissiveIntensity: 0.6 }), trail: 0xff7a1a },
 };
 const PLOOK_CACHE = {};
 function projMesh(k) {
-  const L = PROJ_LOOK[k]; const c = PLOOK_CACHE[k] || (PLOOK_CACHE[k] = { g: L.g(), m: L.m() });
+  const L = PROJ_LOOK[k] || PROJ_LOOK.tshot; const c = PLOOK_CACHE[k] || (PLOOK_CACHE[k] = { g: L.g(), m: L.m() });
   const grp = new THREE.Group(); const m = new THREE.Mesh(c.g, c.m); grp.add(m); grp.userData.k = k;
   if (k === 'megabomb') { for (let i = 0; i < 3; i++) { const t = new THREE.Mesh(GEO.tor(0.34, 0.025, TAU, 6, 24), toon(0xc0397e)); t.rotation.set(i, i * 1.3, 0); grp.add(t); } }
   if (LOB_KINDS.has(k)) {
@@ -409,6 +414,12 @@ function syncScene(dt, now) {
     if (!V.root.visible) continue;
     V.x = b.x; V.z = b.z;
     V.root.position.set(V.x, b.jy || 0, V.z);
+    if (V.rel !== teamRel(b)) { V.rel = teamRel(b); V.ringM.material.color.setHex(TEAM_COL[V.rel]); }
+    V.ringM.material.color.setHex(TEAM_COL[V.rel]);
+    const grow = 1 + Math.min(0.3, (b.cubes || 0) * 0.025); V.root.scale.setScalar(grow);
+    V.invM.visible = b.alive && b.invulnT > 0; if (V.invM.visible) V.invM.material.opacity = 0.18 + 0.1 * Math.sin(now * 10);
+    if (b.alive && b.armorT > 0 && Math.random() < dt * 12) emit({ x: b.x, z: b.z, y: 0.8, c: [0x9aa3ad, 0xd8dce4], s0: 0.08, s1: 0, life: 0.4, sp: 1.5, up: 1, g: 2, jr: 0.35 });
+    if (b.alive && b.speedT > 0 && b.moving && Math.random() < dt * 20) emit({ x: b.x, z: b.z, y: 0.4, c: [0x52f5ff, 0xffffff], glow: 1, s0: 0.08, s1: 0, life: 0.35, g: 0, jr: 0.2 });
     V.shieldM.visible = b.alive && b.shield > 0; if (V.shieldM.visible) { V.shieldM.material.opacity = 0.26 + 0.08 * Math.sin(now * 6); V.shieldM.scale.setScalar(1 + Math.sin(now * 4) * 0.03); }
     if (b.alive && b.slowT > 0 && Math.random() < dt * 10) emit({ x: b.x, z: b.z, y: 1.2, c: [0xffffff, 0xbfe9ff], s0: 0.06, s1: 0, life: 0.6, sp: 0.6, up: -0.2, g: 0.5, jr: 0.35 });
     if (b.alive && b.stunT > 0.15 && Math.random() < dt * 14) { const a = now * 8 + Math.random(); emit({ x: b.x + Math.cos(a) * 0.35, z: b.z + Math.sin(a) * 0.35, y: 1.65, c: 0xffe14d, glow: 1, s0: 0.07, s1: 0, life: 0.25, g: 0 }); }
@@ -481,6 +492,7 @@ function syncScene(dt, now) {
   }
   for (const [id, T] of R3.tvis) if (!tseen.has(id)) { R3.entG.remove(T.root); R3.tvis.delete(id); }
   // boxes
+  while (R3.boxVis.length < M.boxes.length) R3.boxVis.push(makeBoxVis(M.boxes[R3.boxVis.length]));
   M.boxes.forEach((b, i) => {
     const V = R3.boxVis[i]; if (!V) return;
     if (b.hp <= 0 && V.alive) { V.alive = false; V.grp.visible = false; }
@@ -502,6 +514,7 @@ function syncScene(dt, now) {
     R3.bushTouched = want; if (ch) R3.bushInst.instanceMatrix.needsUpdate = true;
   }
   syncZones(dt, now);
+  syncModeScene(dt, now);
   stepFxm(dt);
   // gas & water
   const gr = viewGasR();
@@ -518,9 +531,10 @@ function poof(x, z, col) {
 /* ---------- camera ---------- */
 function updateCamera(dt, focus, lead) {
   const asp = R3.cam.aspect, k = clamp(1.6 / asp, 1, 1.5) * (IS_TOUCH ? 1.05 : 1);
-  const tx = focus ? focus.x + (lead ? lead.x : 0) : M.N / 2, tz = focus ? focus.z + (lead ? lead.z : 0) : M.N / 2;
+  let tx = focus ? focus.x + (lead ? lead.x : 0) : M.N / 2, tz = focus ? focus.z + (lead ? lead.z : 0) : M.N / 2;
+  if (M.arena) { const A = M.arena, cx = (A.x0 + A.x1 + 1) / 2, hw = (A.x1 - A.x0 + 1) / 2 - 5 * clamp(asp / 1.6, 0.6, 1.2); tx = hw > 0 ? clamp(tx, cx - hw, cx + hw) : cx; tz = clamp(tz, A.z0 + 2.5, A.z1 - 3); }
   R3.camT.x += (tx - R3.camT.x) * Math.min(1, dt * 6); R3.camT.z += (tz - R3.camT.z) * Math.min(1, dt * 6);
-  const sh = R3.shake > 0 ? R3.shake : 0; R3.shake = Math.max(0, R3.shake - dt * 1.8);
+  const sh = R3.shake > 0 && SET.shake ? R3.shake : 0; R3.shake = Math.max(0, R3.shake - dt * 1.8);
   const ox = (Math.random() - .5) * sh * 0.5, oz = (Math.random() - .5) * sh * 0.5;
   R3.cam.position.set(R3.camT.x + ox, 15.5 * k, R3.camT.z + 9.6 * k + oz);
   R3.cam.lookAt(R3.camT.x + ox, 0, R3.camT.z + oz + 0.6);
@@ -540,8 +554,11 @@ function drawOverlay(dt, now) {
     if (!b.alive || b.vis === false) continue;
     const V = R3.vis.get(b.id); if (!V || !V.root.visible) continue;
     const s = toScreen(V.x, 1.95 * (V.root.userData.scale || 1), V.z); if (!s.ok) continue;
-    const rel = teamRel(b), col = rel === 'me' ? '#4fe36f' : rel === 'ally' ? '#47aaff' : '#ff4d4d';
-    const w = 70 * sc, h = 13 * sc, x = s.x - w / 2, y = s.y;
+    const rel = teamRel(b), col = SET.cb ? teamCss(rel === 'me' ? 'ally' : rel) : rel === 'me' ? '#4fe36f' : rel === 'ally' ? '#47aaff' : '#ff4d4d';
+    drawEmote(g, b, s, sc, now);
+    if (b.H.k === 'boss') continue;
+    const w = (b.H.k === 'dummy' ? 54 : 70) * sc, h = 13 * sc, x = s.x - w / 2, y = s.y;
+    drawBadges(g, b, x, y - 22 * sc, sc);
     // name
     g.font = `800 ${12 * sc}px "ZCOOL KuaiLe","PingFang SC",system-ui,sans-serif`;
     g.lineWidth = 3.5; g.strokeStyle = 'rgba(20,12,24,.85)'; g.strokeText(b.name, s.x, y - 6 * sc); g.fillStyle = rel === 'foe' ? '#ffd9d9' : '#ffffff'; g.fillText(b.name, s.x, y - 6 * sc);
@@ -572,13 +589,19 @@ function drawOverlay(dt, now) {
     g.fillStyle = 'rgba(20,12,24,.85)'; rrect(g, s.x - w / 2 - 2, s.y - 2, w + 4, h + 4, 4); g.fill();
     g.fillStyle = '#4dff7c'; rrect(g, s.x - w / 2, s.y, w * b.hp / BAL.boxHp, h, 3); g.fill();
   });
+  drawSocialOverlay(g, sc, now);
   // damage numbers
+  if (!SET.nums) OV.nums.length = 0;
   for (let i = OV.nums.length - 1; i >= 0; i--) {
     const n = OV.nums[i]; n.t += dt; if (n.t > 0.9) { OV.nums.splice(i, 1); continue; }
     const s = toScreen(n.x, 1.6 + n.t * 1.2, n.z); if (!s.ok) continue;
     const pop = n.t < 0.12 ? 1 + (0.12 - n.t) * 4 : 1, a = n.t > 0.6 ? 1 - (n.t - 0.6) / 0.3 : 1;
-    g.globalAlpha = a; g.font = `900 ${n.big ? 22 * sc * pop : 16 * sc * pop}px "Lilita One",system-ui,sans-serif`; g.lineWidth = 4; g.strokeStyle = 'rgba(20,12,24,.9)';
-    g.strokeText(n.v, s.x + n.dx, s.y); g.fillStyle = n.c; g.fillText(n.v, s.x + n.dx, s.y); g.globalAlpha = 1;
+    const crit = n.big === 2;
+    g.globalAlpha = a; g.font = `900 ${crit ? 27 * sc * pop : n.big ? 22 * sc * pop : 16 * sc * pop}px "Lilita One",system-ui,sans-serif`; g.lineWidth = crit ? 5 : 4; g.strokeStyle = 'rgba(20,12,24,.9)';
+    const txt = crit ? n.v + '!' : n.v;
+    if (crit) { g.save(); g.translate(s.x + n.dx, s.y); g.rotate(-0.08); g.strokeText(txt, 0, 0); g.fillStyle = '#ffd23f'; g.fillText(txt, 0, 0); g.restore(); }
+    else { g.strokeText(txt, s.x + n.dx, s.y); g.fillStyle = n.c; g.fillText(txt, s.x + n.dx, s.y); }
+    g.globalAlpha = 1;
   }
   // off-screen teammate arrow (duo)
   if (me) for (const b of viewBrawlers()) {
@@ -639,4 +662,14 @@ function boltFx(pts) {
     const m = new THREE.Mesh(new THREE.TubeGeometry(path, path.curves.length * 2, r, 5), new THREE.MeshBasicMaterial({ color: c, transparent: true, opacity: o, blending: THREE.AdditiveBlending, depthWrite: false }));
     m.renderOrder = 9; fxMesh(m, 0.2);
   }
+}
+
+function makeBoxVis(b, parent) {
+  const bt = boxTextures();
+  const mat = new THREE.MeshToonMaterial({ map: bt.map, emissiveMap: bt.em, emissive: b.drop ? 0xffd23f : 0xffffff, emissiveIntensity: 0.9, gradientMap: GRAD });
+  const grp = new THREE.Group(); grp.position.set(b.tx + .5, 0, b.tz + .5);
+  const m = P(grp, GEO.box(0.86, 0.82, 0.86, 0.06).translate(0, 0.41, 0), mat, 0, 0, 0, 0, 0, 0, OUTLINE_THIN); m.receiveShadow = true;
+  P(grp, GEO.box(0.92, 0.1, 0.92, 0.04), toon(b.drop ? 0xd4a640 : 0x6f8ea6), 0, 0.84, 0, 0, 0, 0, null);
+  P(grp, GEO.box(0.3, 0.06, 0.3, 0.03), glow(b.drop ? 0xffd23f : 0x4dff7c, 1.2), 0, 0.9, 0, 0, Math.PI / 4, 0, null);
+  (parent || R3.mapG).add(grp); return { grp, mat, alive: true, shake: 0 };
 }

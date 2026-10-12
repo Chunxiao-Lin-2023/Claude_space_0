@@ -3,7 +3,7 @@ const {chromium}=require('playwright');const OUT=process.env.OUT;
 const p=await b.newPage({viewport:{width:1280,height:720}});const errs=[];p.on('pageerror',e=>errs.push(e.message));
 await p.route(/fonts\.(googleapis|gstatic)/,r=>r.abort());
 await p.goto('http://localhost:8765/test.html');await p.waitForTimeout(1500);
-await p.evaluate(()=>{window.__dbg.god=true;SEL.hero=3;SEL.mode='solo';startGame({seed:31,theme:'dusk',mode:'solo',diff:1,roster:buildRoster(false)});});
+await p.evaluate(()=>{window.__dbg.god=true;SEL.hero=3;SEL.mode='solo';startGame({seed:31,theme:'dusk',mode:'solo',diff:1,roster: rosterFor(SEL.mode, localHumans(), false)});});
 await p.waitForTimeout(700);await p.screenshot({path:OUT+'/w_start.png'});
 // late game with gas: AI drives me, fast-forward, then clear fx so screenshot is representative
 await p.evaluate(()=>{STATE.me.isBot=true;for(let i=0;i<60*95&&!G.over;i++)stepGame(1/60);PT.list.length=0;PT.addList.length=0;OV.nums.length=0;STATE.me.isBot=false;STATE.me.inp.mx=STATE.me.inp.mz=0;});

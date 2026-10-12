@@ -3,9 +3,20 @@ let G = null;
 const H2 = () => BAL.N / 2;
 
 function newGame(cfg) {
-  // cfg: {seed, theme, mode:'solo'|'duo', diff, roster:[{name,hero,human,team}]}
-  genMap(cfg.seed, cfg.theme);
-  G = { t: 0, cfg, ents: [], projs: [], cubes: [], turrets: [], zones: [], ev: [], evSeq: 0, id: 1, destroyed: [], alive: new Set(), placement: {}, over: false, winner: -1, gasR: H2(), gasTick: 0 };
+  // cfg: {seed, theme, mode, diff, roster:[{name,hero,human,team,sp,skin,gid,pers}]}
+  const md = MODES[cfg.mode] || MODES.solo;
+  if (md.showdown) genMap(cfg.seed, cfg.theme); else genArena(cfg.seed, cfg.theme, cfg.mode);
+  G = { t: 0, cfg, ents: [], projs: [], cubes: [], turrets: [], zones: [], warns: [], traps: [], ev: [], evSeq: 0, id: 1, destroyed: [], alive: new Set(), placement: {}, over: false, winner: -1, gasR: H2(), gasTick: 0, hitstop: 0 };
+  initMode();
+  if (!md.showdown) {
+    for (const o of cfg.roster) { const b = mkBrawler(o); if (o.x != null) { b.x = o.x; b.z = o.z; } if (o.patrol) b.patrol = true; G.ents.push(b); G.alive.add(o.team); }
+    placeTeamMode();
+    const boss = G.ents.find(e => e.H.k === 'boss');
+    if (boss) { const n = G.ents.filter(e => e.team === 0).length; boss.baseHp = boss.mhp = boss.hp = boss.H.hp * BAL.hpMul * (0.6 + 0.2 * n); boss.isBot = false; boss.invulnT = 0; G.ms.bossId = boss.id; }
+    for (const d of G.ents.filter(e => e.H.k === 'dummy')) { d.isBot = false; d.invulnT = 0; }
+    for (const b of G.ents) applyStar(b);
+    return G;
+  }
   const teams = {};
   for (const o of cfg.roster) (teams[o.team] = teams[o.team] || []).push(o);
   const teamIds = Object.keys(teams).map(Number);
@@ -27,17 +38,21 @@ function newGame(cfg) {
     });
     G.alive.add(tm);
   });
+  for (const b of G.ents) applyStar(b);
   return G;
 }
 function mkBrawler(o) {
-  const H = HEROES[o.hero];
+  const H = HEROES[o.hero], pers = o.pers || pick(['balanced', 'balanced', 'aggro', 'camper', 'farmer']);
   return {
-    id: G.id++, kind: 'b', hero: o.hero, H, name: o.name, team: o.team, human: o.human || 0, isBot: !o.human,
+    id: G.id++, kind: 'b', hero: o.hero, H, name: o.name, team: o.team, human: o.human || 0, isBot: !o.human, gid: o.gid || 0,
+    rad: H.rad || BAL.R, baseHp: H.hp * BAL.hpMul, gems: 0, bounty: 2, invulnT: 3, armorT: 0, speedT: 0, gadLeft: GADGET_USES, gadCd: 0, gadUsed: 0,
+    sp: o.sp || null, skin: o.skin || 0, pers, cmd: 'free', ballCd: 0, streak: 0, multi: { n: 0, t: -9 }, emote: null,
+    st: { tl: [], boxes: 0, heal: 0, zone: 0, gad: 0, deaths: 0, cubes: 0, kills: 0 },
     x: 0, z: 0, vx: 0, vz: 0, face: 0, aim: 0, mface: 0, moving: false,
     hp: H.hp * BAL.hpMul, mhp: H.hp * BAL.hpMul, cubes: 0, lastHurtBy: 0, slowT: 0, shield: 0, shieldT: 0, stealthT: 0, jy: 0, ammo: BAL.ammoMax, sup: 0, alive: true,
     lastHurt: -9, lastAtk: -9, atkSeq: 0, supSeq: 0, revealT: 0, stunT: 0, fm: null, burst: null, inBush: false,
     kills: 0, dmg: 0, deathT: 0, respawnT: 0, posSeq: 0, flashT: 0, gasAcc: 0, supReadySent: false, born: G.t,
-    inp: { mx: 0, mz: 0, aim: 0, tx: 0, tz: 0, fire: false, sup: false, hold: false }, ai: null, remotePos: null,
+    inp: { mx: 0, mz: 0, aim: 0, tx: 0, tz: 0, fire: false, sup: false, gad: false, hold: false }, ai: null, remotePos: null,
   };
 }
 function ev(k, o) { o.k = k; o.seq = ++G.evSeq; o.tt = G.t; G.ev.push(o); if (G.ev.length > 300) G.ev.splice(0, G.ev.length - 300); onLocalEvent(o); }
@@ -59,7 +74,7 @@ function resolveCircle(e, r) {
     const d = Math.sqrt(dd), push = r - d; e.x += dx / d * push; e.z += dz / d * push;
   }
 }
-function moveCircle(e, dx, dz, r = BAL.R) {
+function moveCircle(e, dx, dz, r = e.rad || BAL.R) {
   const steps = Math.max(1, Math.ceil(Math.max(Math.abs(dx), Math.abs(dz)) / 0.2));
   for (let i = 0; i < steps; i++) { e.x += dx / steps; resolveCircle(e, r); e.z += dz / steps; resolveCircle(e, r); }
   e.x = clamp(e.x, 1 + r, BAL.N - 1 - r); e.z = clamp(e.z, 1 + r, BAL.N - 1 - r);
@@ -76,12 +91,13 @@ function visibleTo(e, team) {
 }
 function gasRAt(t) {
   if (t < BAL.gasStart) return H2();
-  return lerp(H2() - 0.5, BAL.gasMin, clamp((t - BAL.gasStart) / (BAL.gasEnd - BAL.gasStart), 0, 1));
+  const end = BAL.gasEnd - (G && G.gasSurge || 0);
+  return lerp(H2() - 0.5, BAL.gasMin, clamp((t - BAL.gasStart) / (end - BAL.gasStart), 0, 1));
 }
 const inGas = (x, z, R) => Math.abs(x - H2()) > R || Math.abs(z - H2()) > R;
 
 /* ---------- attacks ---------- */
-function dmgMul(b) { return 1 + BAL.cubeDmg * b.cubes; }
+function dmgMul(b) { return (1 + BAL.cubeDmg * b.cubes) * (b.spPow || 1); }
 function spawnProj(b, kind, x, z, ang, a, isSup, extra) {
   const p = Object.assign({
     id: G.id++, k: kind, team: b.team, owner: b.id, x, z, y: 0.72, vx: Math.cos(ang) * a.speed, vz: Math.sin(ang) * a.speed,
@@ -96,6 +112,7 @@ function fire(b, isSup, aim, tx, tz) {
   b.lastAtk = G.t; b.face = aim; b.aim = aim;
   if (b.inBush) b.revealT = BAL.revealT;
   if (b.stealthT > 0 && a.type !== 'stealth') b.stealthT = 0;
+  b.invulnT = 0;
   if (isSup) b.supSeq++; else b.atkSeq++;
   const cs = Math.cos(aim), sn = Math.sin(aim), mx = b.x + cs * 0.45, mz = b.z + sn * 0.45;
   switch (a.type) {
@@ -174,7 +191,10 @@ function hurt(t, dmg, src, o = {}) {
   if (t.kind === 'b' && !t.alive) return;
   if (t.kind === 't' && t.hp <= 0) return;
   if (window.__dbg && window.__dbg.god && t.human === 1) return;
+  if (t.kind === 'b' && t.invulnT > 0) { if (!o.gas) ev('immune', { id: t.id, x: +t.x.toFixed(2), z: +t.z.toFixed(2) }); return; }
+  if (t.kind === 'b') { if (t.armorT > 0) dmg *= 0.4; if (t.sp === 'laststand' && t.hp < t.mhp * 0.35) dmg *= 0.75; }
   dmg = Math.round(dmg);
+  if (t.kind === 'b' && t.H.k === 'dummy' && src && src.human === 1 && G.ms && G.ms.k === 'train') G.ms.hits++;
   if (t.kind === 'b' && t.shield > 0 && !o.gas) {
     const ab = Math.min(t.shield, dmg); t.shield -= ab; dmg -= ab;
     if (dmg <= 0) { ev('shit', { id: t.id, x: +t.x.toFixed(2), z: +t.z.toFixed(2), v: ab }); if (src && src.kind === 'b' && t.kind === 'b' && !o.sup) src.sup = Math.min(1, src.sup + src.H.charge * 0.5 * (o.chargeMul == null ? 1 : o.chargeMul)); return; }
@@ -190,19 +210,35 @@ function hurt(t, dmg, src, o = {}) {
     }
   }
   ev('hit', { id: t.id, x: +t.x.toFixed(2), z: +t.z.toFixed(2), v: dmg, g: o.gas ? 1 : 0, s: src ? src.id : 0 });
-  if (src && src.kind === 'b' && src.alive !== undefined) {
-    src.dmg += dmg;
-    if (t.kind === 'b' && !o.sup && !o.gas) src.sup = Math.min(1, src.sup + src.H.charge * (o.chargeMul == null ? 1 : o.chargeMul));
+  if (src && src.kind === 'b' && src.alive !== undefined && src.team !== t.team) {
+    src.dmg += dmg; const bk = Math.floor(G.t / 5); src.st.tl[bk] = (src.st.tl[bk] || 0) + dmg; if (o.zone) src.st.zone += dmg;
+    if (t.kind === 'b' && !o.sup && !o.gas) src.sup = Math.min(1, src.sup + src.H.charge * (src.spCharge || 1) * (o.chargeMul == null ? 1 : o.chargeMul));
   }
   if (t.hp <= 0) { if (t.kind === 'b') kill(t, src); else { t.hp = 0; } }
 }
 function kill(b, src) {
-  b.alive = false; b.hp = 0; b.deathT = G.t; b.fm = null; b.burst = null; b.shield = 0; b.stealthT = 0; b.slowT = 0; b.jy = 0;
-  const n = Math.max(1, b.cubes);
-  for (let i = 0; i < n; i++) dropCube(b.x, b.z, i, n);
-  b.cubes = 0; b.mhp = b.H.hp * BAL.hpMul;
-  if (src && src.kind === 'b' && src !== b) src.kills++;
-  ev('kill', { v: b.id, by: src ? src.id : 0 });
+  b.alive = false; b.hp = 0; b.deathT = G.t; b.fm = null; b.burst = null; b.shield = 0; b.stealthT = 0; b.slowT = 0; b.jy = 0; b.armorT = 0; b.speedT = 0; b.sweep = null;
+  b.st.deaths++;
+  if (isShowdown()) { const n = Math.max(1, b.cubes); for (let i = 0; i < n; i++) dropCube(b.x, b.z, i, n); }
+  b.cubes = 0; b.mhp = b.baseHp;
+  let mk = 0, ended = b.streak >= 3 ? b.streak : 0;
+  if (src && src.kind === 'b' && src !== b) {
+    src.kills++; src.st.kills++; src.streak++;
+    src.multi = G.t - src.multi.t < 4.5 ? { n: src.multi.n + 1, t: G.t } : { n: 1, t: G.t }; mk = src.multi.n;
+    src.st.maxMulti = Math.max(src.st.maxMulti || 0, mk); src.st.maxStreak = Math.max(src.st.maxStreak || 0, src.streak);
+    if (src.sp === 'vamp' && src.alive) { const v = Math.min(src.mhp - src.hp, src.mhp * 0.35); src.hp += v; src.st.heal += v; ev('heal', { id: src.id, x: +src.x.toFixed(2), z: +src.z.toFixed(2), v: Math.round(v) }); }
+  }
+  b.streak = 0;
+  ev('kill', { v: b.id, by: src ? src.id : 0, mk, st: src && src.kind === 'b' ? src.streak : 0, end: ended });
+  onKillMode(b, src);
+  if (src && src.kind === 'b' && src.isBot && src.alive && src !== b) botEmote(src, pick(['laugh', 'thumb']));
+  if (b.isBot && Math.random() < 0.15) emote(b, 'angry');
+  const md = MODES[G.cfg.mode];
+  if (!md.showdown) {
+    if (b.minion || b.H.k === 'boss') return;
+    if (!G.over) b.respawnT = G.t + (b.H.k === 'dummy' ? 1.5 : md.respawn);
+    return;
+  }
   if (G.cfg.mode === 'duo') {
     const mate = G.ents.find(e => e !== b && e.team === b.team);
     if (mate && mate.alive) { b.respawnT = G.t + BAL.duoRespawn; return; }
@@ -224,7 +260,7 @@ function respawn(b) {
   b.respawnT = 0; if (!mate) return;
   let bx = mate.x, bz = mate.z;
   for (let k = 0; k < 16; k++) { const a = k * TAU / 16, x = mate.x + Math.cos(a) * 1.1, z = mate.z + Math.sin(a) * 1.1; if (!solidTile(Math.floor(x), Math.floor(z))) { bx = x; bz = z; break; } }
-  Object.assign(b, { alive: true, x: bx, z: bz, hp: b.H.hp * BAL.hpMul, mhp: b.H.hp * BAL.hpMul, ammo: BAL.ammoMax, cubes: 0, lastHurt: -9, fm: null, stunT: 0, born: G.t });
+  Object.assign(b, { alive: true, x: bx, z: bz, hp: b.baseHp, mhp: b.baseHp, ammo: BAL.ammoMax, cubes: 0, lastHurt: -9, fm: null, stunT: 0, born: G.t, invulnT: 2 });
   b.posSeq++;
   ev('respawn', { id: b.id, x: bx, z: bz });
 }
@@ -238,7 +274,7 @@ function damageBox(i, dmg, src) {
   const bi = M.box[i]; if (bi < 0) return;
   const bx = M.boxes[bi]; bx.hp -= dmg; bx.flashT = 0.1;
   ev('bhit', { b: bi, v: Math.round(dmg), x: bx.tx + .5, z: bx.tz + .5 });
-  if (bx.hp <= 0) { bx.hp = 0; M.box[i] = -1; M.ver++; dropCube(bx.tx + .5, bx.tz + .5, 0, 1); ev('box', { b: bi, x: bx.tx + .5, z: bx.tz + .5 }); }
+  if (bx.hp <= 0) { bx.hp = 0; M.box[i] = -1; M.ver++; const n = bx.drop || 1; for (let k = 0; k < n; k++) dropCube(bx.tx + .5, bx.tz + .5, k, n); if (src && src.st) src.st.boxes++; ev('box', { b: bi, x: bx.tx + .5, z: bx.tz + .5 }); }
 }
 function destroyTile(i) {
   const t = M.t[i]; if (t !== T_WALL && t !== T_BUSH) return false;
@@ -248,7 +284,7 @@ function destroyTile(i) {
 }
 function explode(p) {
   const r = p.radius, owner = entById(p.owner);
-  for (const e of G.ents) if (e.alive && e.team !== p.team && d2(e.x, e.z, p.x, p.z) < (r + BAL.R) ** 2) hurt(e, p.dmg, owner, { sup: p.sup });
+  for (const e of G.ents) if (e.alive && e.team !== p.team && d2(e.x, e.z, p.x, p.z) < (r + e.rad) ** 2) hurt(e, p.dmg, owner, { sup: p.sup });
   for (const t of G.turrets) if (t.team !== p.team && d2(t.x, t.z, p.x, p.z) < (r + 0.4) ** 2) hurt(t, p.dmg, owner, { sup: p.sup });
   const x0 = Math.floor(p.x - r - 1), x1 = Math.floor(p.x + r + 1), z0 = Math.floor(p.z - r - 1), z1 = Math.floor(p.z + r + 1);
   for (let z = z0; z <= z1; z++) for (let x = x0; x <= x1; x++) {
@@ -307,7 +343,7 @@ function stepProj(p, dt) {
     for (const e of G.ents) {
       if (!e.alive || e.team === p.team) continue;
       if (p.hit && p.hit.has(e.id)) continue;
-      if (d2(e.x, e.z, p.x, p.z) < (p.size + BAL.R) ** 2) {
+      if (d2(e.x, e.z, p.x, p.z) < (p.size + e.rad) ** 2) {
         const owner = entById(p.owner) || G.turrets.find(t => t.id === p.owner) || null;
         const src = owner && owner.kind === 'b' ? owner : (owner ? entById(owner.owner) : null);
         hurt(e, p.dmg, src, { sup: p.sup, kb: p.kb, dx: p.vx, dz: p.vz, chargeMul: p.k === 'tshot' ? 0 : 1, slow: p.slow, stun: p.stun });
@@ -340,9 +376,9 @@ function stepTurret(t, dt) {
   return true;
 }
 function stepBrawler(b, dt) {
-  if (!b.alive) { if (b.respawnT && G.t >= b.respawnT) respawn(b); return; }
+  if (!b.alive) { if (b.respawnT && G.t >= b.respawnT) { if (isShowdown()) respawn(b); else respawnAtBase(b); } return; }
   b.revealT = Math.max(0, b.revealT - dt); b.stunT = Math.max(0, b.stunT - dt); b.flashT = Math.max(0, b.flashT - dt);
-  b.slowT = Math.max(0, b.slowT - dt); b.stealthT = Math.max(0, b.stealthT - dt); if (b.shieldT > 0) { b.shieldT -= dt; if (b.shieldT <= 0) b.shield = 0; }
+  b.slowT = Math.max(0, b.slowT - dt); b.stealthT = Math.max(0, b.stealthT - dt); b.invulnT = Math.max(0, b.invulnT - dt); b.armorT = Math.max(0, b.armorT - dt); b.speedT = Math.max(0, b.speedT - dt); b.gadCd = Math.max(0, b.gadCd - dt); b.ballCd = Math.max(0, b.ballCd - dt); if (b.shieldT > 0) { b.shieldT -= dt; if (b.shieldT <= 0) b.shield = 0; }
   const inp = b.inp;
   if (b.isBot && !G.over) botThink(b, dt);
   const remote = b.human === 2 && NET.role === 'host';
@@ -350,7 +386,8 @@ function stepBrawler(b, dt) {
     const f = b.fm, ox = b.x, oz = b.z; f.t += dt; const k = Math.min(1, f.t / f.T);
     b.x = lerp(f.sx, f.tx, k); b.z = lerp(f.sz, f.tz, k); b.jy = Math.sin(k * Math.PI) * (1.2 + f.T);
     b.vx = (b.x - ox) / dt; b.vz = (b.z - oz) / dt; b.moving = true;
-    if (k >= 1) { b.jy = 0; b.fm = null; b.posSeq++; landLeap(b, f); if (!b.alive) return; }
+    if (k >= 1) { b.jy = 0; b.fm = null; b.posSeq++; if (!f.pad) landLeap(b, f); else ev('padland', { x: b.x, z: b.z }); if (!b.alive) return; }
+  } else if (b.fm && b.fm.windup > 0) { b.fm.windup -= dt; b.moving = false; b.vx = b.vz = 0;
   } else if (b.fm) {
     const f = b.fm, ox = b.x, oz = b.z;
     if (f.k === 'dash') {
@@ -373,23 +410,30 @@ function stepBrawler(b, dt) {
   } else if (b.stunT <= 0) {
     let mx = inp.mx, mz = inp.mz; const L = Math.hypot(mx, mz);
     if (L > 1) { mx /= L; mz /= L; }
-    const sp = b.H.spd * (b.burst && b.burst.k === 'ring' ? 0.4 : 1) * (b.slowT > 0 ? 0.6 : 1) * (b.stealthT > 0 ? 1.25 : 1);
+    const sp = b.H.spd * (b.burst && b.burst.k === 'ring' ? 0.4 : 1) * (b.slowT > 0 ? 0.6 : 1) * (b.stealthT > 0 ? 1.25 : 1) * (b.speedT > 0 ? 1.45 : 1) * (b.spSpd || 1);
     const ox = b.x, oz = b.z;
     moveCircle(b, mx * sp * dt, mz * sp * dt);
     b.vx = (b.x - ox) / dt; b.vz = (b.z - oz) / dt;
     b.moving = L > 0.15; if (b.moving) b.mface = Math.atan2(mz, mx);
   } else { b.vx = b.vz = 0; b.moving = false; }
   b.inBush = inBush(b.x, b.z);
+  stepGimmicks(b, dt);
   // reload & regen
-  b.ammo = Math.min(BAL.ammoMax, b.ammo + dt / b.H.reload);
-  if (G.t - b.lastHurt > BAL.regenDelay && G.t - b.lastAtk > BAL.regenDelay && b.hp < b.mhp) b.hp = Math.min(b.mhp, b.hp + b.mhp * BAL.regenPct * dt);
+  b.ammo = Math.min(BAL.ammoMax, b.ammo + dt / b.H.reload * (b.spReload || 1));
+  if (G.t - b.lastHurt > BAL.regenDelay && G.t - b.lastAtk > BAL.regenDelay && b.hp < b.mhp && b.H.k !== 'boss') { const v = Math.min(b.mhp - b.hp, b.mhp * BAL.regenPct * dt * (b.sp === 'bushheal' && b.inBush ? 2 : 1)); b.hp += v; b.st.heal += v; }
   // gas
-  if (inGas(b.x, b.z, G.gasR)) {
+  if (!G.noGas && inGas(b.x, b.z, G.gasR)) {
     b.gasAcc += dt;
     if (b.gasAcc >= 0.5) { b.gasAcc -= 0.5; hurt(b, (BAL.gasDps + BAL.gasDpsGrow * Math.max(0, G.t - BAL.gasStart)) * 0.5, null, { gas: true }); if (!b.alive) return; }
   } else b.gasAcc = 0;
   stepBurst(b);
-  const canAct = b.stunT <= 0 && !b.fm && !b.burst;
+  const canAct = b.stunT <= 0 && !b.fm && !b.burst && !(G.ms && G.ms.resetT > 0);
+  if (inp.gad) { if (canAct || (b.stunT <= 0 && !b.fm)) useGadget(b); inp.gad = false; }
+  if (G.ms && G.ms.k === 'ball' && G.ms.ball.carrier === b.id) {
+    if (inp.sup && b.sup >= 1 && canAct) { b.sup = 0; b.supReadySent = false; b.supSeq++; kickBall(b, inp.aim, 21); }
+    else if (inp.fire && canAct && G.t - b.lastAtk >= BAL.minGap) kickBall(b, inp.aim, 14);
+    inp.fire = false; inp.sup = false;
+  }
   if (inp.fire) { if (canAct && b.ammo >= 1 && G.t - b.lastAtk >= BAL.minGap) { b.ammo -= 1; fire(b, false, inp.aim, inp.tx, inp.tz); } }
   if (inp.sup) { if (canAct && b.sup >= 1) { b.sup = 0; b.supReadySent = false; fire(b, true, inp.aim, inp.tx, inp.tz); } }
   inp.fire = false; inp.sup = false;
@@ -398,17 +442,18 @@ function stepBrawler(b, dt) {
 function stepGame(dt) {
   if (!G) return;
   G.t += dt;
-  G.gasR = gasRAt(G.t);
+  G.gasR = G.noGas ? H2() + 30 : gasRAt(G.t);
   for (const b of G.ents) stepBrawler(b, dt);
   G.projs = G.projs.filter(p => stepProj(p, dt));
   G.turrets = G.turrets.filter(t => stepTurret(t, dt));
   G.zones = G.zones.filter(z => stepZone(z, dt));
+  stepMode(dt);
   for (const bx of M.boxes) if (bx.flashT > 0) bx.flashT -= dt;
   // cubes pickup
   G.cubes = G.cubes.filter(c => {
     if (G.t - c.born < 0.45) return true;
     for (const b of G.ents) if (b.alive && d2(b.x, b.z, c.x, c.z) < 0.75 * 0.75) {
-      b.cubes++; const add = b.H.hp * BAL.hpMul * BAL.cubeHp; b.mhp += add; b.hp += add;
+      b.cubes++; b.st.cubes++; const add = b.baseHp * BAL.cubeHp; b.mhp += add; b.hp += add;
       ev('cube', { id: b.id, x: c.x, z: c.z }); return false;
     }
     return true;
@@ -426,8 +471,8 @@ function stepZone(z, dt) {
     z.tick += 0.5; const owner = entById(z.owner);
     for (const e of G.ents) {
       if (!e.alive || d2(e.x, e.z, z.x, z.z) > (z.r + BAL.R * 0.5) ** 2) continue;
-      if (z.k === 'heal') { if (e.team === z.team && e.hp < e.mhp) { const v = Math.min(e.mhp - e.hp, z.dps * 0.5); e.hp += v; ev('heal', { id: e.id, x: +e.x.toFixed(2), z: +e.z.toFixed(2), v: Math.round(v) }); } }
-      else if (e.team !== z.team) { hurt(e, z.dps * 0.5, owner, { sup: z.sup, chargeMul: 0.5, slow: z.slow ? 0.8 : 0 }); }
+      if (z.k === 'heal') { if (e.team === z.team && e.hp < e.mhp) { const v = Math.min(e.mhp - e.hp, z.dps * 0.5); e.hp += v; if (owner) owner.st.heal += v; ev('heal', { id: e.id, x: +e.x.toFixed(2), z: +e.z.toFixed(2), v: Math.round(v) }); } }
+      else if (e.team !== z.team) { hurt(e, z.dps * 0.5, owner, { sup: z.sup, chargeMul: 0.5, slow: z.slow ? 0.8 : 0, zone: true }); }
     }
     if (z.k !== 'heal') for (const t of G.turrets) if (t.team !== z.team && d2(t.x, t.z, z.x, z.z) < z.r * z.r) hurt(t, z.dps * 0.5, owner, { sup: true });
     if (z.k !== 'heal') for (const bx of M.boxes) if (bx.hp > 0 && d2(bx.tx + .5, bx.tz + .5, z.x, z.z) < (z.r + 0.5) ** 2) damageBox(tIdx(bx.tx, bx.tz), z.dps * 0.5, owner);
@@ -440,7 +485,7 @@ function inCone(b, x, z, aim, range, spread) {
 }
 function doMelee(b, aim, a, isSup) {
   const dm = a.dmg * dmgMul(b);
-  for (const e of G.ents) if (e.alive && e.team !== b.team && inCone(b, e.x, e.z, aim, a.range + BAL.R, a.spread) && los(b.x, b.z, e.x, e.z)) hurt(e, dm, b, { sup: isSup });
+  for (const e of G.ents) if (e.alive && e.team !== b.team && inCone(b, e.x, e.z, aim, a.range + e.rad, a.spread) && los(b.x, b.z, e.x, e.z)) hurt(e, dm, b, { sup: isSup });
   for (const t of G.turrets) if (t.team !== b.team && t.hp > 0 && inCone(b, t.x, t.z, aim, a.range + 0.4, a.spread)) hurt(t, dm, b, { sup: true });
   for (const bx of M.boxes) if (bx.hp > 0 && inCone(b, bx.tx + .5, bx.tz + .5, aim, a.range + 0.6, a.spread)) damageBox(tIdx(bx.tx, bx.tz), dm, b);
   ev('swing', { id: b.id, x: +b.x.toFixed(2), z: +b.z.toFixed(2), a: +aim.toFixed(2), r: a.range, s: a.spread });

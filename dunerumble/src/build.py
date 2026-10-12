@@ -5,7 +5,7 @@
 import os, sys
 D = os.path.dirname(os.path.abspath(__file__))
 src = lambda f: open(os.path.join(D, f), encoding='utf-8').read()
-ORDER = ['00_core.js', '10_map.js', '20_models.js', '30_sim.js', '40_ai.js', '50_render.js', '60_io.js', '70_net.js', '80_main.js']
+ORDER = ['00_core.js', '10_map.js', '20_models.js', '30_sim.js', '35_modes.js', '40_ai.js', '50_render.js', '55_modes_render.js', '60_io.js', '70_net.js', '80_main.js', '85_meta.js', '99_boot.js']
 game = '\n'.join(src(f) for f in ORDER)
 vendor = src('three.vendor.js')  # npx esbuild vendor_entry.js --bundle --format=iife --global-name=THREE --minify
 tpl = src('template.html')

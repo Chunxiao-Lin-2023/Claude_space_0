@@ -404,6 +404,84 @@ Object.assign(HERO_BUILD, {
   },
 });
 
+
+/* ---------- hidden units: boss, minion, training dummy ---------- */
+Object.assign(HERO_BUILD, {
+  boss() {
+    const r = baseRig({ scale: 2.15, hipY: 0.36, shX: 0.38, shY: 0.38, headY: 0.62, legX: 0.16 }), steel = 0x8d99a6, dark = 0x3a4048, red = 0xd63031;
+    legs(r, dark, steel, { r: 0.11, hip: 0.36 });
+    P(r.torso, GEO.box(0.7, 0.52, 0.5, 0.14), toon(steel), 0, 0.25, 0);
+    P(r.torso, GEO.box(0.5, 0.3, 0.08, 0.05), toon(dark), 0, 0.27, 0.24);
+    P(r.torso, GEO.sph(0.1), glow(0xff3b3b, 2.2), 0, 0.27, 0.28, 0, 0, 0, null);
+    for (const sx of [1, -1]) { P(r.torso, GEO.box(0.26, 0.2, 0.3, 0.06), toon(red), sx * 0.42, 0.5, 0); P(r.torso, GEO.cyl(0.06, 0.07, 0.34, 12), toon(dark), sx * 0.42, 0.62, 0.12, Math.PI / 2); }
+    P(r.torso, GEO.box(0.4, 0.3, 0.2, 0.05), toon(dark), 0, 0.3, -0.3);
+    for (const sx of [1, -1]) P(r.torso, GEO.cyl(0.05, 0.05, 0.2, 8), toon(0x5f6670), sx * 0.12, 0.5, -0.33, 0, 0, 0, null);
+    const h = r.head;
+    P(h, GEO.box(0.42, 0.3, 0.36, 0.12), toon(steel));
+    P(h, GEO.box(0.36, 0.08, 0.06, 0.03), glow(0xff3b3b, 2.6), 0, 0.02, 0.18, 0, 0, 0, null);
+    P(h, GEO.cyl(0.015, 0.015, 0.2, 6), toon(dark), 0.12, 0.24, 0, 0, 0, 0.2, null);
+    P(h, GEO.sph(0.035), glow(0xff3b3b, 2), 0.14, 0.34, 0, 0, 0, 0, null);
+    arms(r, dark, steel, { r: 0.1, hr: 0.13 });
+    const w = weaponGroup(r.armR);
+    for (const [x, y] of [[0.05, 0.05], [-0.05, 0.05], [0.05, -0.05], [-0.05, -0.05]]) P(w, GEO.cyl(0.035, 0.035, 0.5, 8), toon(0x5f6670), x, y, 0.22, Math.PI / 2, 0, 0, null);
+    P(w, GEO.cyl(0.12, 0.12, 0.12, 14), toon(red), 0, 0, 0.0, Math.PI / 2);
+    r.style = 'gun2';
+    return r;
+  },
+  minion() {
+    const r = baseRig({ scale: 0.82 }), steel = 0x9aa3ad, dark = 0x3a4048;
+    legs(r, dark, steel, { r: 0.07 });
+    P(r.torso, GEO.box(0.36, 0.32, 0.3, 0.1), toon(steel), 0, 0.17, 0);
+    const h = r.head;
+    P(h, GEO.sph(0.26, 1, 0.9, 1), toon(steel));
+    P(h, GEO.cyl(0.11, 0.11, 0.06, 16), toon(dark), 0, 0.01, 0.23, Math.PI / 2);
+    P(h, GEO.sph(0.07), glow(0xff3b3b, 2.4), 0, 0.01, 0.26, 0, 0, 0, null);
+    P(h, GEO.cyl(0.012, 0.012, 0.18, 6), toon(dark), 0, 0.3, 0, 0, 0, 0, null);
+    P(h, GEO.sph(0.03), glow(0xffd23f, 2), 0, 0.4, 0, 0, 0, 0, null);
+    arms(r, dark, steel, { r: 0.055, hr: 0.065 });
+    const w = weaponGroup(r.armR);
+    P(w, GEO.cyl(0.05, 0.06, 0.24, 10), toon(dark), 0, 0, 0.08, Math.PI / 2);
+    r.style = 'gun1';
+    return r;
+  },
+  dummy() {
+    const r = baseRig({ scale: 1.0, hipY: 0.36 }), sack = 0xd8b07a, wood = 0x8b5a2b;
+    P(r.legL, GEO.cyl(0.05, 0.06, 0.38, 8), toon(wood), -0.13, -0.17, 0);
+    P(r.legL, GEO.cyl(0.24, 0.26, 0.05, 16), toon(wood), -0.13, -0.34, 0);
+    P(r.torso, GEO.cyl(0.24, 0.27, 0.48, 16), toon(sack), 0, 0.2, 0);
+    for (const [rad, c] of [[0.2, 0xd63031], [0.13, 0xffffff], [0.06, 0xd63031]]) P(r.torso, GEO.cyl(rad, rad, 0.02, 20), toon(c), 0, 0.22, 0.25, Math.PI / 2, 0, 0, null);
+    P(r.torso, GEO.cyl(0.035, 0.035, 0.75, 8), toon(wood), 0, 0.36, 0, 0, 0, Math.PI / 2);
+    const h = r.head;
+    P(h, GEO.sph(0.24, 1, 0.95, 1), toon(sack));
+    for (const sx of [1, -1]) for (const rz of [0.8, -0.8]) P(h, GEO.box(0.08, 0.018, 0.02, 0.006), basic(0x3b2a1a), sx * 0.09, 0.04, 0.22, 0, 0, rz, null);
+    P(h, GEO.box(0.12, 0.016, 0.02, 0.006), basic(0x3b2a1a), 0, -0.07, 0.23, 0, 0, 0, null);
+    r.style = 'gun1'; r.dummy = true;
+    return r;
+  },
+});
+
+/* ---------- skins: recolour a hero template (applied before parts are merged) ---------- */
+const SRGB = THREE.SRGBColorSpace;
+const hueLerp = (a, b, t) => { const d = ((b - a + 1.5) % 1) - 0.5; return (a + d * t + 1) % 1; };
+const SKINS = [
+  { name: '经典', cost: 0 },
+  { name: '暗夜', cost: 150, f: (c) => { const h = {}; c.getHSL(h, SRGB); c.setHSL(hueLerp(h.h, 0.76, 0.45), Math.min(1, h.s * 0.9 + 0.1), h.l * 0.55 + 0.04, SRGB); } },
+  { name: '鎏金', cost: 300, f: (c) => { const h = {}; c.getHSL(h, SRGB); c.setHSL(hueLerp(h.h, 0.12, 0.6), Math.min(1, h.s * 0.6 + 0.45), clamp(h.l * 0.85 + 0.12, 0, 0.82), SRGB); } },
+];
+const isSkinTone = c => { const h = {}; c.getHSL(h, SRGB); return h.h > 0.03 && h.h < 0.11 && h.s > 0.35 && h.s < 0.85 && h.l > 0.68; };
+function recolorTemplate(root, skin) {
+  const S = SKINS[skin]; if (!S || !S.f) return;
+  const done = new Map();
+  root.traverse(o => {
+    if (!o.isMesh || o.userData.outline) return;
+    const m = o.material; if (done.has(m.uuid)) { o.material = done.get(m.uuid); return; }
+    const n = m.clone(); done.set(m.uuid, n); o.material = n;
+    if (n.isMeshBasicMaterial) return;
+    if (!isSkinTone(n.color)) S.f(n.color);
+    if (n.emissive && n.emissive.getHex() !== 0) { if (skin === 1) n.emissive.setHSL(0.83, 1, 0.55); else n.emissive.setHSL(0.13, 1, 0.55); n.color.copy(n.emissive); }
+  });
+}
+
 /* ---------- draw-call reduction: merge plain parts into vertex-coloured meshes ---------- */
 function mergeKey(m) {
   const mat = m.material; if (!m.isMesh || m.userData.outline || m.children.some(c => !c.userData.outline)) return null;
@@ -450,9 +528,9 @@ function mergeStatic(root, shadow = true) {
   for (const [k, geos] of buckets) { const mm = mergedMesh(k, geos, shadow); mm.receiveShadow = true; root.add(mm); }
 }
 const HERO_TPL = {};
-function heroTemplate(k) { if (!HERO_TPL[k]) { const r = HERO_BUILD[k](); mergeRig(r.root); HERO_TPL[k] = r; } return HERO_TPL[k]; }
-function makeHero(k) {
-  const t = heroTemplate(k);
+function heroTemplate(k, skin = 0) { const key = k + '|' + skin; if (!HERO_TPL[key]) { const r = HERO_BUILD[k](); recolorTemplate(r.root, skin); mergeRig(r.root); HERO_TPL[key] = r; } return HERO_TPL[key]; }
+function makeHero(k, skin = 0) {
+  const t = heroTemplate(k, skin);
   const root = t.root.clone(true);
   const mats = [], seen = new Map();
   root.traverse(o => {
