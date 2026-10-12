@@ -877,7 +877,9 @@ async function boot() {
   if (HUB) { const b = document.getElementById("hubback"); b.style.display = "block"; b.onclick = () => { location.href = "../"; }; }
   try {
     step(8, "正在下载 Python 运行环境（第一次大约 10 MB，之后会被浏览器缓存）…");
-    py = await loadPyodide({ indexURL: PYODIDE_URL, stdout: (s) => console.log(s), stderr: (s) => console.warn(s) });
+    const popts = { indexURL: PYODIDE_URL, stdout: (s) => console.log(s), stderr: (s) => console.warn(s) };
+    if ("__STDLIB_URL__".indexOf("__") !== 0) popts.stdLibURL = "__STDLIB_URL__";
+    py = await loadPyodide(popts);
     step(70, "正在搬进小屋…");
     const bin = Uint8Array.from(atob(PY_BUNDLE), (ch) => ch.charCodeAt(0));
     py.unpackArchive(bin.buffer, "zip", { extractDir: "/app" });

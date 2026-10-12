@@ -81,6 +81,11 @@ def page(pyodide_url, peer_url):
         '<meta name="apple-mobile-web-app-status-bar-style" content="default">\n'
         '<meta name="apple-mobile-web-app-title" content="猫猫咕咕">\n<meta name="theme-color" content="#f6ede2">')
     art = p.replace("<!--PEERJS-->", "").replace("<!--DOCTYPE-->", "").replace("<!--IOSMETA-->", "")
+    # the artifact host adds its own document skeleton (charset, viewport): keep only the content
+    for tag in ('<html lang="zh-CN">', "<head>", "</head>", "<body>", "</body>", "</html>",
+                '<meta charset="utf-8">',
+                '<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">'):
+        art = art.replace(tag, "")
     return std, art, len(z)
 
 
@@ -95,6 +100,20 @@ def main():
             dst = os.path.join(out, name)
             if not os.path.exists(dst):
                 shutil.copytree(os.path.join(nm, sub), dst)
+    elif "--artifact" in sys.argv:
+        # claude.ai artifact: only scripts may come from a CDN, so Pyodide's files are published next to the page
+        out = sys.argv[sys.argv.index("--artifact") + 1]
+        os.makedirs(out, exist_ok=True)
+        _, art, zn = page("pyodide/", "")
+        art = art.replace("__STDLIB_URL__", "pyodide/python_stdlib.wasm")   # (.zip is not a type artifacts serve)
+        open(os.path.join(out, "index.html"), "w", encoding="utf-8").write(art)
+        nm = os.environ.get("PAWPALS_NODE_MODULES", "/tmp/claude-0/web/node_modules")
+        dst = os.path.join(out, "pyodide")
+        os.makedirs(dst, exist_ok=True)
+        for f in ("pyodide.js", "pyodide.asm.js", "pyodide.asm.wasm", "pyodide-lock.json"):
+            shutil.copy(os.path.join(nm, "pyodide", f), os.path.join(dst, f))
+        shutil.copy(os.path.join(nm, "pyodide", "python_stdlib.zip"), os.path.join(dst, "python_stdlib.wasm"))
+        std = art
     else:
         std, art, zn = page(CDN, PEER_CDN)
         open(os.path.join(HERE, "..", "index.html"), "w", encoding="utf-8").write(std)
