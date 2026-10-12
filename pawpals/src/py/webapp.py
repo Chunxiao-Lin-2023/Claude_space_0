@@ -447,7 +447,7 @@ _last = [time.monotonic()]
 TICK = 1 / 30.0
 
 
-def start(hub=True):
+def start(hub=True, phone=False):
     global APP, HUB
     HUB = bool(hub)
     import desktopcats.house as HH
@@ -455,6 +455,8 @@ def start(hub=True):
     from desktopcats import house_net as HN
     HN.fill_menu = web_fill_menu
     APP = WebApp()
+    if phone and APP.house.mode == "all":             # a phone screen: one storey at a time is easier to read
+        APP.house.set_mode("one", APP.house.view)
     return True
 
 

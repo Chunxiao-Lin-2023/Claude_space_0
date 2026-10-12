@@ -8,12 +8,12 @@
 <style>
 :root { --bg: #f6ede2; --ink: #5a4034; --card: #fffaf5; --line: #e6d8cd; --accent: #e8955a; --muted: #a8968c; }
 * { box-sizing: border-box; }
-html, body { margin: 0; height: 100%; background: var(--bg); color: var(--ink); overflow: hidden;
+html, body { margin: 0; height: 100%; height: 100dvh; background: var(--bg); color: var(--ink); overflow: hidden;
   font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei UI", "Microsoft YaHei", "Noto Sans SC", "Noto Sans CJK SC", system-ui, sans-serif;
   -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; overscroll-behavior: none; }
 #stage { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
   padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); }
-#view { display: block; touch-action: none; outline: none; border-radius: 6px; box-shadow: 0 6px 30px rgba(90, 64, 52, .18); }
+#view { display: block; touch-action: none; outline: none; -webkit-touch-callout: none; border-radius: 6px; box-shadow: 0 6px 30px rgba(90, 64, 52, .18); }
 #loading { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px;
   background: var(--bg); z-index: 50; transition: opacity .4s; }
 #loading.gone { opacity: 0; pointer-events: none; }
@@ -28,7 +28,7 @@ html, body { margin: 0; height: 100%; background: var(--bg); color: var(--ink); 
   background: var(--card); color: var(--ink); font: inherit; font-size: 14px; cursor: pointer; display: none; }
 #err { color: #b0452f; font-size: 13px; max-width: 80vw; white-space: pre-wrap; display: none; }
 /* menus */
-.menu { position: fixed; z-index: 100; min-width: 168px; max-height: calc(100vh - 16px); overflow-y: auto; padding: 6px;
+.menu { position: fixed; z-index: 100; min-width: 168px; max-height: calc(100dvh - 16px); overflow-y: auto; padding: 6px;
   background: var(--card); border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 8px 28px rgba(90, 64, 52, .22); font-size: 13px; }
 .menu .it { position: relative; padding: 7px 26px 7px 26px; border-radius: 7px; white-space: nowrap; cursor: default; color: #4a3b36; }
 .menu .it.on { background: #f8e3d2; }
@@ -38,9 +38,9 @@ html, body { margin: 0; height: 100%; background: var(--bg); color: var(--ink); 
 .menu .sep { height: 1px; background: #eee2d8; margin: 5px 10px; }
 @media (pointer: coarse) { .menu { font-size: 15px; } .menu .it { padding: 11px 30px 11px 28px; } }
 /* dialogs */
-.dlg-wrap { position: fixed; inset: 0; z-index: 90; background: rgba(74, 59, 54, .28); display: flex; align-items: center; justify-content: center; padding: 16px; }
+.dlg-wrap { position: fixed; inset: 0; z-index: 90; background: rgba(74, 59, 54, .28); display: flex; align-items: safe center; overflow: auto; justify-content: center; padding: 16px; }
 .dlg { background: var(--card); border: 1px solid var(--line); border-radius: 14px; box-shadow: 0 12px 40px rgba(90, 64, 52, .3);
-  max-width: calc(100vw - 32px); max-height: calc(100vh - 32px); display: flex; flex-direction: column; font-size: 14px; color: #4a3b36; }
+  max-width: calc(100vw - 32px); max-height: calc(100dvh - 16px); display: flex; flex-direction: column; font-size: 14px; color: #4a3b36; }
 .dlg-head { display: flex; align-items: center; padding: 12px 14px 8px 18px; font-weight: 700; font-size: 16px; }
 .dlg-head span { flex: 1; }
 .dlg-x { border: 0; background: transparent; font-size: 20px; color: var(--muted); cursor: pointer; width: 34px; height: 34px; border-radius: 8px; }
@@ -75,6 +75,22 @@ html, body { margin: 0; height: 100%; background: var(--bg); color: var(--ink); 
   background: rgba(255, 250, 245, .82); color: #5a4034; font: inherit; font-size: 13px; font-weight: 700; touch-action: none; line-height: 1.1; }
 #acts button.big { background: rgba(232, 149, 90, .9); color: #fff; border-color: rgba(200, 120, 70, .9); }
 #acts button:active, #acts button.down { transform: scale(.94); filter: brightness(.95); }
+/* phones (see IPHONE.md in the game hall): smaller touch controls, a hint to turn the phone sideways */
+@media (pointer: coarse) and (max-height: 500px), (pointer: coarse) and (max-width: 500px) {
+  #joy { width: 108px; height: 108px; left: max(10px, env(safe-area-inset-left)); bottom: max(10px, env(safe-area-inset-bottom)); }
+  #joy i { width: 46px; height: 46px; margin: -23px 0 0 -23px; }
+  #acts { grid-template-columns: repeat(3, 46px); gap: 7px; right: max(10px, env(safe-area-inset-right)); bottom: max(10px, env(safe-area-inset-bottom)); }
+  #acts button { width: 46px; height: 46px; font-size: 11px; }
+  .dlg input, .dlg select, .dlg textarea { font-size: 16px; }
+  .dlg-body { padding: 4px 12px 12px; }
+  .dl-grid { grid-template-columns: 1fr !important; }
+  .dl-grid > * { grid-column: auto !important; grid-row: auto !important; }
+}
+#rotate { position: fixed; inset: 0; z-index: 70; display: none; flex-direction: column; align-items: center; justify-content: center; gap: 14px;
+  background: rgba(246, 237, 226, .97); text-align: center; padding: 24px; }
+#rotate.on { display: flex; }
+#rotate .big { font-size: 46px; }
+#rotate button { font: inherit; font-size: 16px; padding: 10px 18px; border-radius: 20px; border: 1px solid var(--line); background: var(--card); color: var(--ink); }
 #toast { position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%); background: rgba(74, 59, 54, .92); color: #fff;
   padding: 9px 16px; border-radius: 18px; font-size: 14px; z-index: 120; opacity: 0; transition: opacity .3s; pointer-events: none; max-width: 86vw; }
 #toast.show { opacity: 1; }
@@ -92,6 +108,7 @@ html, body { margin: 0; height: 100%; background: var(--bg); color: var(--ink); 
   <div id="err"></div>
 </div>
 <div id="toast"></div>
+<div id="rotate"><div class="big">📱↻</div><div>把手机横过来，小屋看得更清楚</div><button type="button" id="keepPortrait">继续竖屏</button></div>
 <div id="touch"><div id="joy"><i></i></div><div id="acts"></div></div>
 <!--sound_data.js-->
 <!--sound.js-->
@@ -711,6 +728,18 @@ const NET = {
 };
 Object.assign(window.pawpalsHost, NET);
 
+// ============================================================================ phones
+const PHONE = matchMedia("(pointer: coarse) and (max-height: 500px), (pointer: coarse) and (max-width: 500px)");
+let keepPortrait = false;
+try { keepPortrait = sessionStorage.getItem("pawpals.portrait") === "1"; } catch (e) {}
+function checkRotate() {
+  const el = document.getElementById("rotate");
+  el.classList.toggle("on", !!api && PHONE.matches && innerHeight > innerWidth && !keepPortrait);
+}
+document.getElementById("keepPortrait").onclick = () => { keepPortrait = true; try { sessionStorage.setItem("pawpals.portrait", "1"); } catch (e) {} checkRotate(); };
+window.addEventListener("resize", checkRotate);
+window.addEventListener("orientationchange", () => setTimeout(() => { checkRotate(); onResize(); }, 200));
+
 // ============================================================================ input
 const QT = { LeftButton: 1, RightButton: 2, MiddleButton: 4, Shift: 0x02000000, Control: 0x04000000, Alt: 0x08000000, Meta: 0x10000000 };
 function mods(e) { return (e.shiftKey ? QT.Shift : 0) | (e.ctrlKey ? QT.Control : 0) | (e.altKey ? QT.Alt : 0) | (e.metaKey ? QT.Meta : 0); }
@@ -856,11 +885,12 @@ async function boot() {
     await new Promise((r) => setTimeout(r, 30));
     step(85, "猫猫和咕咕正在起床…");
     await new Promise((r) => setTimeout(r, 30));
-    py.runPython("import webapp; webapp.start(" + (HUB ? "True" : "False") + ")");
+    py.runPython("import webapp; webapp.start(" + (HUB ? "True" : "False") + ", " + (PHONE.matches ? "True" : "False") + ")");
     document.getElementById("hubback").style.display = "none";
     api = py.pyimport("webapp");
     window.__py = py;
     onResize();
+    checkRotate();
     step(100, "好啦！");
     document.getElementById("loading").classList.add("gone");
     view.focus();
