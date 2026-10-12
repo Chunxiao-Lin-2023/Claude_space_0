@@ -130,6 +130,67 @@ body.touch .navhint{display:none}
 .krow button.wait{background:linear-gradient(#ffd56e,#e7a93a);color:#3a2408}
 .keys2{display:grid;grid-template-columns:1fr;gap:0}
 #wKeys{width:min(440px,94vw)}
+
+/* ===== iPhone (phone-only media queries; desktop and iPad never match) ===== */
+#portraitTip{position:fixed;left:50%;top:42%;transform:translate(-50%,-50%);z-index:45;width:min(300px,86vw);text-align:center;padding:16px 18px}
+#portraitTip b{display:block;font-size:17px;margin-bottom:6px;color:var(--gold)}#portraitTip p{margin:0 0 12px;font-size:13.5px;line-height:1.6;opacity:.9}
+@media (pointer:coarse) and (max-height:500px), (pointer:coarse) and (max-width:500px){
+ button{touch-action:manipulation}
+ input{font-size:16px}
+ .screen{align-items:safe center;padding:max(8px,var(--st)) max(8px,var(--sr)) max(8px,var(--sb)) max(8px,var(--sl))}
+ .panel{padding:12px 14px;border-radius:14px}
+ .win{width:min(560px,calc(100vw - 16px - var(--sl) - var(--sr)));max-height:calc(100dvh - 16px - var(--st) - var(--sb))}
+ .win h2{font-size:17px;position:sticky;top:-12px;z-index:2;background:rgba(24,20,38,.97);margin:-12px -14px 8px;padding:8px 14px}
+ .win h2 button{min-height:40px}
+ .item{padding:6px;gap:8px}.item .ic{width:38px;height:38px;font-size:17px}.item .tx{font-size:12px}.item .tx b{font-size:13.5px}.item button{min-width:64px;padding:6px 10px}
+ .kv{font-size:12.5px;gap:2px 10px}
+ .krow{font-size:12.5px;padding:3px 6px}.krow button{min-height:40px}
+ #cRow{position:sticky;bottom:-12px;background:rgba(24,20,38,.97);margin:6px -14px -12px;padding:8px 14px 10px;z-index:2}
+ #portraitTip button{min-height:44px}
+ /* HUD */
+ #pinfo{left:max(6px,var(--sl));top:max(6px,var(--st));width:172px;padding:5px 8px;border-radius:12px}
+ .lvrow{font-size:12px;margin-bottom:3px}.lvrow b{font-size:14px}
+ .bar{height:12px;margin-top:3px}.bar span{font-size:10px;line-height:12px}.meso{font-size:12px;margin-top:3px}
+ #topr{right:max(6px,var(--sr));top:max(6px,var(--st));gap:3px}
+ #mini{width:120px;height:58px;border-radius:10px}#mname{font-size:11px}
+ #quest,#mate{left:max(6px,var(--sl));width:172px;font-size:11.5px;padding:4px 8px}
+ body.touch #btns button,#btns button{min-height:40px;padding:2px 8px;font-size:12px;border-radius:9px}
+ #banner h2{font-size:26px;letter-spacing:4px}
+ #combo b{font-size:32px}
+ #toast{max-width:calc(100vw - 24px);white-space:normal;text-align:center;font-size:13px}
+ #pauseOv b{font-size:24px}
+ #wTouch{top:max(6px,var(--st));width:min(560px,calc(100vw - 12px));padding:8px 12px;max-height:calc(100dvh - 12px);overflow:auto}
+ #expbar span{font-size:10px}
+}
+/* landscape phone */
+@media (pointer:coarse) and (max-height:500px){
+ .logo{font-size:30px;letter-spacing:3px}.sub{margin:0 0 8px;font-size:12.5px}
+ .slots{gap:8px;margin-bottom:8px}.slot{min-height:92px;padding:6px;gap:2px;font-size:13px}.slot canvas{width:50px;height:56px}
+ #sTitle .row{gap:6px}#sTitle .note{margin-top:6px}#sTitle .navhint{display:none}
+ .cls{margin:8px 0;gap:8px}.ccard{padding:6px}.ccard canvas{width:56px;height:62px}.ccard h3{font-size:15px}.ccard p{font-size:11.5px;margin:2px 0;line-height:1.4}
+ #sCreate h2{font-size:17px}#diffNote{margin:2px 0 4px!important}
+ #wMenu>div{display:grid!important;grid-template-columns:1fr 1fr;gap:6px!important}#wMenu>div>.note{grid-column:1/-1}
+ body.touch #btns{display:grid;grid-template-columns:repeat(3,auto);gap:4px;top:max(6px,var(--st));right:calc(max(6px,var(--sr)) + 128px)}
+ #quest{top:calc(max(6px,var(--st)) + 74px)}#mate{top:calc(max(6px,var(--st)) + 74px)}
+ #bossbar{top:calc(max(6px,var(--st)) + 92px);width:min(420px,46vw)}
+ #evbar,#hint{top:calc(max(6px,var(--st)) + 92px)}
+ #combo{top:calc(max(6px,var(--st)) + 96px);right:calc(max(6px,var(--sr)) + 128px)}
+ #emoBar{top:calc(max(6px,var(--st)) + 92px);right:calc(max(6px,var(--sr)) + 128px);flex-direction:row}
+ #expbar{height:calc(14px + var(--sb))}#expbar i{height:14px}#expbar span{line-height:14px}
+}
+/* portrait phone */
+@media (pointer:coarse) and (max-width:500px){
+ .logo{font-size:34px}
+ .slots{gap:6px}.slot{min-height:120px;padding:6px}
+ .cls{gap:6px}.ccard{padding:6px}.ccard canvas{width:64px;height:72px}.ccard h3{font-size:15px}.ccard p{font-size:11.5px;line-height:1.4}
+ body.touch #btns{display:flex;flex-direction:row;flex-wrap:wrap;justify-content:flex-end;gap:4px;top:calc(max(6px,var(--st)) + 80px);right:max(6px,var(--sr));left:max(6px,var(--sl))}
+ #quest,#mate{top:calc(max(6px,var(--st)) + 128px)}
+ #bossbar{top:calc(max(6px,var(--st)) + 128px);width:calc(100vw - 24px)}
+ #evbar,#hint{top:calc(max(6px,var(--st)) + 172px)}
+ #emoBar{top:calc(max(6px,var(--st)) + 128px);right:max(6px,var(--sr))}
+ #combo{top:calc(max(6px,var(--st)) + 190px);right:max(10px,var(--sr))}
+ #banner{top:26%}
+}
 </style>
 </head>
 <body>
@@ -158,7 +219,7 @@ body.touch .navhint{display:none}
  <div class="cls" id="clsList"></div>
  <div class="row" id="diffRow"><span>难度</span><button data-diff="easy">休闲</button><button data-diff="normal">普通</button><button data-diff="hard">困难</button></div>
  <p class="note" id="diffNote" style="margin:4px 0 10px"></p>
- <div class="row"><button class="ghost" id="cBack">返回</button><button class="pri" id="cOk">开始冒险</button></div>
+ <div class="row" id="cRow"><button class="ghost" id="cBack">返回</button><button class="pri" id="cOk">开始冒险</button></div>
  <p class="navhint"></p>
 </div></div>
 
@@ -194,6 +255,7 @@ body.touch .navhint{display:none}
  <div id="combo"></div>
 </div>
 
+<div id="portraitTip" class="panel hidden"><b>横屏体验更好</b><p>把手机横过来，能看到更宽的画面，按键也更顺手。</p><button class="pri" id="bPortraitOk">继续竖屏</button></div>
 <div id="tpad" class="hidden"><div id="tzone"><div id="stick"><div id="knob"></div></div></div><div id="tbtns"></div></div>
 
 <!-- windows -->
@@ -1733,10 +1795,13 @@ const QUAL={cap:2,acc:0,n:0};let SKYK='',SKYC=null;
 function qualTick(raw){if(raw>.25||document.hidden)return;QUAL.acc+=raw;QUAL.n++;if(QUAL.n<90)return;const avg=QUAL.acc/QUAL.n;QUAL.acc=0;QUAL.n=0;
  const cur=Math.min(QUAL.cap,devicePixelRatio||1);if(avg>.024&&cur>1){QUAL.cap=Math.max(1,cur-.5);resize();}}
 const SPR=new Map(),PATS={};let BGK='',BGL=null;
+/* phone = iPhone-class touch screen; desktop (pointer:fine) and iPad (short side >= 768) never match */
+const PHONE=matchMedia('(pointer:coarse) and (max-height:500px), (pointer:coarse) and (max-width:500px)');
+const isPhone=()=>PHONE.matches,phonePortrait=()=>PHONE.matches&&innerHeight>innerWidth;
 function resize(){
- const w=innerWidth,h=innerHeight,dpr=Math.min(QUAL.cap,devicePixelRatio||1);
+ const w=innerWidth,h=innerHeight,dpr=Math.min(QUAL.cap,devicePixelRatio||1,2);
  cv.width=Math.round(w*dpr);cv.height=Math.round(h*dpr);
- const s=Math.min(h/540,w/720);VIEW.s=s;VIEW.dpr=dpr;VIEW.w=w/s;VIEW.h=h/s;SKYK='';
+ const s=!isPhone()?Math.min(h/540,w/720):h>w?w/480:Math.min(h/460,w/720);VIEW.s=s;VIEW.dpr=dpr;VIEW.w=w/s;VIEW.h=h/s;SKYK='';
  const nrs=clamp(Math.round(s*dpr*4)/4,1,2);
  if(nrs!==RS){RS=nrs;SPR.clear();for(const k in PATS)delete PATS[k];}
  BGK='';
@@ -1746,6 +1811,7 @@ function snapCam(){if(!ME)return;const M=MAPS[ME.map];camTarget(M);cam.x=cam.tx;
 function camTarget(M,px,py){
  px=px==null?ME.x:px;py=py==null?ME.y:py;
  cam.tx=M.W<=VIEW.w?(M.W-VIEW.w)/2:clamp(px-VIEW.w/2,0,M.W-VIEW.w);
+ if(phonePortrait()){cam.ty=clamp(py-VIEW.h*.44,Math.min(0,M.H-VIEW.h),M.H-VIEW.h*.6);return;}
  cam.ty=M.H<=VIEW.h?(M.H-VIEW.h):clamp(py-VIEW.h*.62,0,M.H-VIEW.h);
 }
 function rr(c,x,y,w,h,r){c.beginPath();c.moveTo(x+r,y);c.arcTo(x+w,y,x+w,y+h,r);c.arcTo(x+w,y+h,x,y+h,r);c.arcTo(x,y+h,x,y,r);c.arcTo(x,y,x+w,y,r);c.closePath();}
@@ -2073,7 +2139,7 @@ function drawTerrain(c,M,t){
  for(const r of M.runs){
   if(r.x1<x0||r.x0>x1||r.ymin>y1)continue;
   if(r.kind==='ground'){
-   c.beginPath();pathPts(c,r.pts);c.lineTo(r.x1,M.H+80);c.lineTo(r.x0,M.H+80);c.closePath();
+   c.beginPath();pathPts(c,r.pts);c.lineTo(r.x1,M.H+900);c.lineTo(r.x0,M.H+900);c.closePath();
    c.fillStyle=tex;c.fill();
    for(const side of [0,1]){const nb=side?r.R:r.L,ex=side?r.x1:r.x0,ey=side?r.pts[r.pts.length-1][1]:r.pts[0][1];
     if(!nb)continue;const ny=runY(nb,ex);if(ny<=ey+STEP)continue;
@@ -3161,13 +3227,14 @@ const TDEF={u:[4.55,3.35,1.1],b:[1.3,1.3,1.65],j:[3.25,.9,1.2],0:[3.05,2.35,1.05
 const TNAME={u:'大招',b:'普通攻击',j:'跳跃',0:'技能 1',1:'技能 2',2:'技能 3',3:'技能 4',4:'技能 5',r:'红药水',p:'蓝药水'};
 let TL=null;
 function tlDefault(){return{aim:true,scale:1,op:.9,stick:1,btn:Object.fromEntries(Object.entries(TDEF).map(([k,v])=>[k,{x:v[0],y:v[1],s:v[2]}]))};}
-function tlLoad(){TL=tlDefault();try{const o=JSON.parse(localStorage.getItem('cloudisle.touch.v1')||'null');if(o){if(typeof o.aim==='boolean')TL.aim=o.aim;for(const k of ['scale','op','stick'])if(typeof o[k]==='number')TL[k]=o[k];for(const k in TL.btn)if(o.btn&&o.btn[k])Object.assign(TL.btn[k],o.btn[k]);}}catch(e){}}
-function tlSave(){try{localStorage.setItem('cloudisle.touch.v1',JSON.stringify(TL));}catch(e){}}
+function tlLoad(){TL=tlDefault();try{const o=JSON.parse(localStorage.getItem(tlKey())||'null');if(o){if(typeof o.aim==='boolean')TL.aim=o.aim;for(const k of ['scale','op','stick'])if(typeof o[k]==='number')TL[k]=o[k];for(const k in TL.btn)if(o.btn&&o.btn[k])Object.assign(TL.btn[k],o.btn[k]);}}catch(e){}}
+function tlSave(){try{localStorage.setItem(tlKey(),JSON.stringify(TL));}catch(e){}}
+function tlKey(){return matchMedia('(pointer:coarse) and (max-height:500px), (pointer:coarse) and (max-width:500px)').matches?'cloudisle.touch.phone.v1':'cloudisle.touch.v1';}
 tlLoad();
-const tUnit=()=>clamp(Math.min(innerWidth,innerHeight)*.095,52,92)*TL.scale;
+const tUnit=()=>(isPhone()?clamp(Math.min(innerWidth,innerHeight)*.11,40,50):clamp(Math.min(innerWidth,innerHeight)*.095,52,92))*TL.scale;
 function layoutTouch(){
  const tb=$('tbtns');if(!tb)return;const W=tb.clientWidth,H=tb.clientHeight,u=tUnit();
- for(const el of tb.children){const k=el.dataset.t,b=TL.btn[k];if(!b)continue;const sz=u*b.s;
+ for(const el of tb.children){const k=el.dataset.t,b=TL.btn[k];if(!b)continue;const sz=Math.max(u*b.s,isPhone()?42:0);
   const x=clamp(W-b.x*u,sz/2,W-sz/2),y=clamp(H-b.y*u,sz/2,H-sz/2);
   el.style.width=el.style.height=sz+'px';el.style.left=x+'px';el.style.top=y+'px';el.style.setProperty('--fs',Math.round(sz*.38)+'px');}
  tb.style.opacity=TL.op;
@@ -3261,7 +3328,7 @@ function hudTick(dt){
  {const Q=QUESTS[p.q],el=$('quest');if(Q){el.classList.remove('hidden');el.innerHTML='<b>任务 '+(p.q+1)+'/'+QUESTS.length+' · '+Q.n+'</b><br><small>'+Q.d+(Q.k==='lv'?'（当前 Lv.'+p.lv+'）':Q.c>1?'（'+Math.min(p.qp||0,Q.c)+' / '+Q.c+'）':'')+'</small>';}else el.classList.add('hidden');}
  // mate
  const mate=P.find(q=>q&&q!==ME);
- $('mate').classList.toggle('hidden',!mate||(IS_HOST&&!connected()));$('quest').style.top=$('mate').classList.contains('hidden')?'':'calc('+(innerHeight<=520?150:176)+'px + var(--st))';
+ $('mate').classList.toggle('hidden',!mate||(IS_HOST&&!connected()));if(isPhone()){const mr=$('mate').getBoundingClientRect();$('quest').style.top=$('mate').classList.contains('hidden')?'':(mr.bottom+4)+'px';}else $('quest').style.top=$('mate').classList.contains('hidden')?'':'calc('+(innerHeight<=520?150:176)+'px + var(--st))';
  if(mate){$('mName').textContent=mate.name;$('mLv').textContent='Lv.'+mate.lv+' '+CLS[mate.cls].name;$('mMap').textContent=mate.map>=0&&MAPS[mate.map]?'· '+MAPS[mate.map].name+(mate.dead?' · 倒下':''):'';
   const mh=IS_HOST?stats(mate).mhp:(mate.mhpV||1);$('mHp').style.width=(100*Math.max(0,mate.hp)/mh)+'%';}
  // boss
@@ -3406,9 +3473,15 @@ if(/\/cloudisle\/(index\.html)?$/.test(location.pathname)){$('bHub').classList.r
 $('bHub').onclick=()=>{location.href='../';};
 $('mHub').onclick=()=>{saveMe();if(NET.role)netLeave();location.href='../';};
 $('bRespawn').onclick=()=>{req({t:'respawn'});};
+let PT_OK=false;
+function ptOk(){if(PT_OK)return true;try{return !!sessionStorage.getItem('cloudisle.portraitOk');}catch(e){return false;}}
+function portraitTipTick(){$('portraitTip').classList.toggle('hidden',!(state==='play'&&phonePortrait()&&!ptOk()));}
+$('bPortraitOk').onclick=()=>{PT_OK=true;try{sessionStorage.setItem('cloudisle.portraitOk','1');}catch(e){}portraitTipTick();};
+addEventListener('resize',()=>{portraitTipTick();if(TOUCH&&state==='play')layoutTouch();});
+try{PHONE.addEventListener('change',()=>{resize();if(TOUCH)layoutTouch();});}catch(e){}
 $('bRespawn2').onclick=()=>{req({t:'respawn',here:1});};
 function toggleFull(){const d=document,e=d.documentElement;try{if(d.fullscreenElement||d.webkitFullscreenElement){(d.exitFullscreen||d.webkitExitFullscreen).call(d);}else{(e.requestFullscreen||e.webkitRequestFullscreen).call(e);}}catch(err){}}
-if(!(document.documentElement.requestFullscreen||document.documentElement.webkitRequestFullscreen))$('mFull').classList.add('hidden');
+if(!(document.documentElement.requestFullscreen||document.documentElement.webkitRequestFullscreen)||(isPhone()&&!(document.fullscreenEnabled||document.webkitFullscreenEnabled)))$('mFull').classList.add('hidden');
 function roomUI(){
  const r=$('room');
  if(NET.role==='host'&&NET.code){r.classList.remove('hidden');r.innerHTML=connected()&&P[1]?'房间 <b>'+NET.code+'</b> · 队友已连接':'房间 <b>'+NET.code+'</b> · 等待队友（点击复制）';}
@@ -3469,11 +3542,11 @@ function startHost(online){
 }
 function startPlay(){
  state='play';$('sTitle').classList.remove('on');$('sCreate').classList.remove('on');$('hud').classList.remove('hidden');
- $('tpad').classList.toggle('hidden',!TOUCH);buildSlots();if(TOUCH)requestAnimationFrame(layoutTouch);FX.length=NUM.length=PART.length=0;closeWins();
+ $('tpad').classList.toggle('hidden',!TOUCH);buildSlots();if(TOUCH)requestAnimationFrame(layoutTouch);FX.length=NUM.length=PART.length=0;closeWins();portraitTipTick();
 }
 function quitToTitle(){
  state='title';ME=null;P=[];G=null;IS_HOST=true;ME_I=0;closeWins();$('wDeath').classList.add('hidden');
- $('hud').classList.add('hidden');$('tpad').classList.add('hidden');$('sTitle').classList.add('on');renderSlots();roomUI();
+ $('hud').classList.add('hidden');$('tpad').classList.add('hidden');$('sTitle').classList.add('on');renderSlots();roomUI();$('portraitTip').classList.add('hidden');
 }
 
 /* ---------------- input ---------------- */
