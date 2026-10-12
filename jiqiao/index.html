@@ -1730,11 +1730,12 @@ function update(dt){
  // pickups fly to (and are collected by) the closest living player whose magnet reaches them
  for(const p of pickups){
   let tp=null,bd=Infinity;
-  for(const q of alive){const d=Math.hypot(q.P.x-p.x,q.P.y-p.y);if(d<60*Math.max(0.2,1+q.S.pickup/100))p.mag=true;if(d<bd){bd=d;tp=q;}}
+  for(const q of alive){if(p.type==='chest'&&((p.tk||0)>>q.id&1))continue;const d=Math.hypot(q.P.x-p.x,q.P.y-p.y);if(d<60*Math.max(0.2,1+q.S.pickup/100))p.mag=true;if(d<bd){bd=d;tp=q;}}
   if(!tp)continue;
   const dx=tp.P.x-p.x,dy=tp.P.y-p.y,d=bd||1;
   if(p.mag){p.x+=dx/d*540*dt;p.y+=dy/d*540*dt;}
-  if(d<tp.P.r+8){p.dead=true;use(tp);
+  if(d<tp.P.r+8){use(tp);
+   if(p.type==='chest'){p.tk=(p.tk||0)|1<<tp.id;p.mag=false;p.dead=PL.every(q=>(p.tk>>q.id)&1);}else p.dead=true;
    if(p.type==='coin'){run.gold+=p.v;run.earned+=p.v;run.coinPick+=p.v;
     while(run.coinPick>=20){run.coinPick-=20;if(FX.mine)for(let k=0;k<FX.mine;k++)if(mines.length<14)mines.push({pl:CUR,x:P.x+rand(-10,10),y:P.y+rand(-10,10),arm:0.5});}}
    else{run.chests.push(p.tier);addText(P.x,P.y-34,'获得宝箱',TC[p.tier],15);ringFx(P.x,P.y,40,TC[p.tier],0.3);}}}
@@ -1795,7 +1796,8 @@ function startWave(){
 }
 function endWave(){
  // chests left on the ground are dealt out to the players in turn
- let k=0;for(const p of pickups)if(p.type==='chest'){PL[k%PL.length].run.chests.push(p.tier);k++;}
+ // 宝箱每人都能捡一次：波次结束时，还没捡过的人各得一个
+ for(const p of pickups)if(p.type==='chest')for(const q of PL)if(!(((p.tk||0)>>q.id)&1))q.run.chests.push(p.tier);
  // 地上剩下的金币：每枚交给离得最近的存活玩家，收 70%
  const swept=PL.map(()=>0),alv=PL.filter(p=>!p.down);
  for(const c of pickups){if(c.type!=='coin')continue;let best=null,bd=Infinity;for(const p of (alv.length?alv:PL)){const d=Math.hypot(p.P.x-c.x,p.P.y-c.y);if(d<bd){bd=d;best=p;}}
@@ -1977,6 +1979,7 @@ function renderPrep(){
   </header>
   <div class="prep-grid"><div style="min-width:0">${main}</div>
    <aside class="side frame">
+    ${coopPrep()?`<section class="sp"><h3>送给队友<small class="ihint">武器、道具在详情里送</small></h3><div class="row"><button class="mini" data-act="giftgold" data-i="10" ${run.gold<1?'disabled':''}>送 10 金</button><button class="mini" data-act="giftgold" data-i="30" ${run.gold<1?'disabled':''}>送 30 金</button><button class="mini" data-act="giftgold" data-i="-1" ${run.gold<2?'disabled':''}>送一半</button></div></section>`:''}
     <section class="sp"><h3>武器栏 <b>${run.weapons.length} / ${run.maxSlots}</b><small class="ihint">点武器或道具看详情</small></h3><div class="wslots">${slots.join('')}</div></section>
     <section class="sp"><h3>属性 · <b>Lv ${run.level}</b></h3><dl class="stats">${stats}</dl></section>
     <section class="sp"><h3>道具 <b>${run.items.length}</b></h3><div class="items">${items||'<span class="dim">还没有道具</span>'}</div></section>
@@ -2037,7 +2040,8 @@ function openInspect(el){
  const k=el.dataset.k,html=k==='w'?(run.weapons[+el.dataset.i]?weaponInfo(run.weapons[+el.dataset.i]):''):itemInfo(el.dataset.n);
  if(!html)return;
  let pop=$('#inspect');if(!pop){pop=document.createElement('div');pop.id='inspect';pop.className='inspect frame';pop.setAttribute('role','dialog');$('#app').appendChild(pop);}
- pop.innerHTML=html+'<button class="x" data-act="inspect-close" aria-label="关闭">×</button>';pop.hidden=false;
+ const gift=coopPrep()&&state==='prep'?(k==='w'?(run.weapons.length>1?`<div class="row"><button class="btn ghost sm" data-act="giftw" data-i="${el.dataset.i}">送给队友</button></div>`:''):`<div class="row"><button class="btn ghost sm" data-act="gifti" data-i="${ITEMS.findIndex(x=>x.n===el.dataset.n)}">送给队友</button></div>`):'';
+ pop.innerHTML=html+gift+'<button class="x" data-act="inspect-close" aria-label="关闭">×</button>';pop.hidden=false;
  inspectEl=el;el.classList.add('on');
  const app=$('#app').getBoundingClientRect(),r=el.getBoundingClientRect(),pw=pop.offsetWidth,ph=pop.offsetHeight;
  let x=r.left-app.left+r.width/2-pw/2;x=clamp(x,16,app.width-pw-16);
@@ -2050,7 +2054,16 @@ addEventListener('resize',closeInspect);
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&inspectEl){closeInspect();e.stopPropagation();}else if((e.key==='Enter'||e.key===' ')&&e.target&&e.target.dataset&&e.target.dataset.act==='inspect'){e.preventDefault();openInspect(e.target);}},true);
 
 // prep-screen actions mutate the current player's run; returns a toast message (or '')
-const PREP_ACTS=new Set(['lv','lvreroll','take','recycle','reroll','lock','buy','merge','sell']);
+const PREP_ACTS=new Set(['lv','lvreroll','take','recycle','reroll','lock','buy','merge','sell','giftgold','giftw','gifti']);
+// 联机互送：金币、武器、道具，由主机结算；收礼的一方会弹出提示
+let giftNote=null;
+const coopPrep=()=>NET.mode!=='solo'&&!!mateInfo();
+const mateOfCur=()=>PL.find(q=>q!==CUR&&q.run);
+function giveWeapon(r,key,tier){
+ if(r.weapons.length<r.maxSlots){r.weapons.push({id:r.nextId++,key,tier,t:0.3});return '';}
+ const m=r.weapons.find(w=>w.key===key&&w.tier===tier&&w.tier<4);if(!m)return '队友武器栏已满，也没有同名同阶的武器可以合成';m.tier++;return '';
+}
+function restat(m){const keep=CUR;use(m);computeStats();use(keep);computeStats();}
 function prepAct(act,i){
  let msg='';
  switch(act){
@@ -2069,6 +2082,14 @@ function prepAct(act,i){
    run.gold-=o.price;o.sold=true;o.locked=false;break;}
   case 'merge':{const w=run.weapons[i];if(!w)break;const j=run.weapons.findIndex((x,k)=>k!==i&&x.key===w.key&&x.tier===w.tier);if(j<0||w.tier>=4)break;
    run.weapons.splice(j,1);w.tier++;msg=`${WEAPONS[w.key].name} 合成为${TIER_N[w.tier]}阶${w.tier===4?'，解锁特殊效果':''}`;break;}
+  case 'giftgold':{const m=mateOfCur();if(!m)break;const n=i<0?Math.floor(run.gold/2):Math.min(i,run.gold);if(n<=0)break;
+   run.gold-=n;m.run.gold+=n;msg=`送给队友 ${n} 金币`;giftNote={to:m.id,text:`队友送来 ${n} 金币`};break;}
+  case 'giftw':{const m=mateOfCur(),w=run.weapons[i];if(!m||!w)break;if(run.weapons.length<=1){msg='至少要留一把武器';break;}
+   const why=giveWeapon(m.run,w.key,w.tier);if(why){msg=why;break;}run.weapons.splice(i,1);restat(m);
+   const nm=`${WEAPONS[w.key].name}·${TIER_N[w.tier]}阶`;msg=`把 ${nm} 送给了队友`;giftNote={to:m.id,text:`队友送来 ${nm}`};break;}
+  case 'gifti':{const m=mateOfCur(),it=ITEMS[i];if(!m||!it)break;const j=run.items.indexOf(it.n);if(j<0)break;
+   if(it.u&&m.run.items.includes(it.n)){msg='队友已经有这件唯一道具';break;}
+   run.items.splice(j,1);m.run.items.push(it.n);restat(m);msg=`把 ${it.n} 送给了队友`;giftNote={to:m.id,text:`队友送来 ${it.n}`};break;}
   case 'sell':{if(run.weapons.length<=1||!run.weapons[i])break;const w=run.weapons[i];run.gold+=sellValue(w);run.weapons.splice(i,1);break;}
  }
  computeStats();ensurePrepChoices();
@@ -2088,7 +2109,7 @@ document.addEventListener('click',e=>{
  if(PREP_ACTS.has(act)){
   if(state!=='prep')return;
   if(NET.role==='guest'){netSend({t:'act',act,i});return;}
-  use(ME());const msg=prepAct(act,i);if(msg)toast(msg);renderPrep();if(NET.role==='host')netPrep();return;
+  use(ME());giftNote=null;const msg=prepAct(act,i);if(msg)toast(msg);renderPrep();if(NET.role==='host'){netPrep(giftNote&&giftNote.to!==ME().id?giftNote.text:'');}giftNote=null;return;
  }
  switch(act){
   case 'hero':selHero=i;selWeapon=HEROES[i].weapon;renderMenu();netPick();break;
@@ -2221,8 +2242,8 @@ function hostRecv(m){
  else if(m.t==='act'&&state==='prep'&&PL[1]){
   const g=PL[1];use(g);let msg='';
   if(m.act==='next'){if(prepDone(g.run))g.ready=true;}
-  else if(PREP_ACTS.has(m.act))msg=prepAct(m.act,+m.i);
-  use(ME());
+  else if(PREP_ACTS.has(m.act)){giftNote=null;msg=prepAct(m.act,+m.i);}
+  use(ME());if(giftNote&&giftNote.to===ME().id){toast(giftNote.text);renderPrep();}giftNote=null;
   if(m.act==='next')tryNextWave();else netPrep(msg);
  }
 }
@@ -2261,7 +2282,7 @@ function netSnapshot(){
  const g=PL[1];
  const msg={t:'s',tg:R2(tGame),wt:waveTimer===Infinity?-1:R2(waveTimer),en,bo,pr,
   eb:ebul.map(b=>[R1(b.x),R1(b.y),R1(b.vx),R1(b.vy),b.r,b.home?1:0]),
-  pu:pickups.map(p=>p.type==='coin'?[0,R1(p.x),R1(p.y),p.v,R2(p.ph)]:[1,R1(p.x),R1(p.y),p.tier,0]),
+  pu:pickups.map(p=>p.type==='coin'?[0,R1(p.x),R1(p.y),p.v,R2(p.ph)]:[1,R1(p.x),R1(p.y),p.tier,p.tk||0]),
   sp:spawns.map(s=>[R1(s.x),R1(s.y),R2(s.t),s.type==='fairy'?1:0]),
   tu:turrets.map(t=>({x:R1(t.x),y:R1(t.y),life:R2(t.life),perm:t.perm?1:0,a:R2(t.a),kick:R2(t.kick),dbl:t.dbl?1:0,col:t.col,tier:t.tier||1})),
   mi:mines.map(m=>[R1(m.x),R1(m.y),m.arm>0?1:0]),
@@ -2339,7 +2360,7 @@ function guestFast(m){
  enemies=ne;
  projs=m.pr.map(p=>p.k===1?Object.assign({kind:'lob'},p):p.k===2?Object.assign({kind:'boom'},p):Object.assign({kind:'proj'},p));
  ebul=m.eb.map(b=>({x:b[0],y:b[1],vx:b[2],vy:b[3],r:b[4],home:b[5]}));
- pickups=m.pu.map(p=>p[0]===0?{type:'coin',x:p[1],y:p[2],v:p[3],ph:p[4]}:{type:'chest',x:p[1],y:p[2],tier:p[3]});
+ pickups=m.pu.map(p=>p[0]===0?{type:'coin',x:p[1],y:p[2],v:p[3],ph:p[4]}:{type:'chest',x:p[1],y:p[2],tier:p[3],tk:p[4]||0});
  spawns=m.sp.map(s=>({x:s[0],y:s[1],t:s[2],type:s[3]?'fairy':'x'}));
  turrets=m.tu;mines=m.mi.map(a=>({x:a[0],y:a[1],arm:a[2]?1:0}));puddles=m.pd.map(u=>Object.assign({max:3.2},u));
  texts=m.tx.map(a=>({x:a[0],y:a[1],txt:a[2],col:a[3],size:a[4],life:a[5],max:a[6],vx:a[7]}));
@@ -2599,7 +2620,9 @@ function draw(dt){
  for(const p of pickups){
   if(p.type==='coin'){const by=Math.sin(tGame*3+p.ph)*1.5,img=p.v>2?COIN:COIN_S,s=p.v>=6?18:p.v>2?14:11;if(p.v>=6)lighter(()=>drawGlow(p.x,p.y+by,14,GLOW.gold,0.45));ctx.drawImage(img,p.x-s/2,p.y-s/2+by,s,s);
    if(Math.sin(tGame*2+p.ph*3)>0.97)lighter(()=>drawGlow(p.x-2,p.y-3+by,6,GLOW.white,0.8));}
-  else{const by=Math.sin(tGame*3+p.x)*2;lighter(()=>{drawGlow(p.x,p.y,34,tierGlow[p.tier],0.4);ctx.globalAlpha=0.18;ctx.fillStyle=TC[p.tier];ctx.fillRect(p.x-3,p.y-60,6,60);});
+  else{const by=Math.sin(tGame*3+p.x)*2,mine=((p.tk||0)>>NET.me)&1;
+   if(mine){ctx.globalAlpha=0.28;ctx.drawImage(CHEST_IMG[p.tier],p.x-24,p.y-26,48,42);ctx.globalAlpha=1;continue;} // 我捡过了，留给队友
+   lighter(()=>{drawGlow(p.x,p.y,34,tierGlow[p.tier],0.4);ctx.globalAlpha=0.18;ctx.fillStyle=TC[p.tier];ctx.fillRect(p.x-3,p.y-60,6,60);});
    ctx.drawImage(CHEST_IMG[p.tier],p.x-24,p.y-26+by,48,42);}
  }
  // spawn sigils
