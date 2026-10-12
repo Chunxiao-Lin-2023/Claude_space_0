@@ -1,0 +1,266 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+__IOSMETA__
+<title>幽宅双影</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Noto+Serif+SC:wght@400;700&family=Cinzel:wght@500;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+<style>
+:root{--ink:#0b0a0d;--panel:rgba(14,12,16,.86);--panel2:rgba(26,22,28,.92);--line:rgba(216,196,160,.18);--txt:#e9dfcc;--sub:#a8998a;--gold:#e2b45c;--gold2:#a8803a;--spirit:#8fd3ff;--blood:#d0453f;--good:#8fe39a;
+ --font:"Noto Serif SC","Songti SC","STSong","SimSun",serif;--title:"Ma Shan Zheng","Noto Serif SC",serif;--latin:"Cinzel","Noto Serif SC",serif;
+ --sa-t:env(safe-area-inset-top,0px);--sa-b:env(safe-area-inset-bottom,0px);--sa-l:env(safe-area-inset-left,0px);--sa-r:env(safe-area-inset-right,0px)}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;overflow:hidden;background:#020203;color:var(--txt);font-family:var(--font);overscroll-behavior:none;touch-action:none;user-select:none;-webkit-user-select:none}
+canvas#gl{position:fixed;inset:0;width:100%;height:100%;display:block}
+#ov{position:fixed;inset:0;z-index:2}
+.hidden{display:none!important}
+button{font-family:var(--font);cursor:pointer;color:var(--txt);background:linear-gradient(#2a2420,#17130f);border:1px solid rgba(226,180,92,.45);border-radius:6px;padding:10px 18px;font-size:16px;letter-spacing:.06em;min-height:44px;box-shadow:inset 0 1px 0 rgba(255,230,180,.08),0 2px 10px rgba(0,0,0,.5);transition:background .15s,border-color .15s,transform .08s}
+button:hover,button.sel{border-color:var(--gold);background:linear-gradient(#3a2e22,#1d1712)}
+button:active{transform:translateY(1px)}
+button.primary{background:linear-gradient(#6a4a1e,#3a280e);border-color:var(--gold);color:#fff3da}
+button.ghost{background:transparent;border-color:var(--line);box-shadow:none}
+button:disabled{opacity:.4;cursor:default}
+input{font-family:var(--font);font-size:16px;color:var(--txt);background:rgba(0,0,0,.45);border:1px solid var(--line);border-radius:6px;padding:10px 12px;min-height:44px;outline:none}
+input:focus{border-color:var(--gold)}
+.scr{position:fixed;inset:0;z-index:10;display:flex;align-items:center;justify-content:center;padding:calc(16px + var(--sa-t)) calc(16px + var(--sa-r)) calc(16px + var(--sa-b)) calc(16px + var(--sa-l))}
+#loading{position:fixed;inset:0;z-index:50;background:#030304;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px}
+#loading .t{font-family:var(--title);font-size:56px;color:#d8ccb0;text-shadow:0 0 30px rgba(143,211,255,.25)}
+#loading .bar{width:220px;height:2px;background:rgba(255,255,255,.1);overflow:hidden}#loading .bar i{display:block;height:100%;width:30%;background:var(--gold);animation:ld 1.2s infinite ease-in-out}
+@keyframes ld{0%{transform:translateX(-100%)}100%{transform:translateX(330%)}}
+/* title */
+#title{flex-direction:column;justify-content:center;background:radial-gradient(ellipse at 50% 40%,rgba(0,0,0,0) 0%,rgba(0,0,0,.55) 70%,rgba(0,0,0,.85) 100%)}
+.logo{text-align:center;margin-bottom:22px;pointer-events:none}
+.logo h1{margin:0;font-family:var(--title);font-weight:400;font-size:clamp(64px,12vw,124px);line-height:1;color:#e6dcc6;letter-spacing:.08em;text-shadow:0 0 18px rgba(143,211,255,.25),0 4px 0 #000;animation:flick 6s infinite}
+.logo .en{font-family:var(--latin);letter-spacing:.6em;font-size:clamp(12px,2vw,16px);color:var(--sub);margin-top:8px;padding-left:.6em}
+.logo .tag{margin-top:14px;color:#b9ab95;font-size:15px;letter-spacing:.2em}
+@keyframes flick{0%,93%,100%{opacity:1}94%{opacity:.4}95%{opacity:1}97%{opacity:.6}98%{opacity:1}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:18px 20px;box-shadow:0 10px 40px rgba(0,0,0,.6);backdrop-filter:blur(4px)}
+.menu{display:flex;flex-direction:column;gap:12px;width:min(420px,92vw)}
+.row{display:flex;gap:10px;align-items:center}
+.row>input{flex:1;min-width:0}
+.lbl{font-size:13px;color:var(--sub);letter-spacing:.1em}
+.status{min-height:22px;font-size:14px;color:var(--gold);text-align:center}
+.hubBack{position:fixed;left:calc(14px + var(--sa-l));top:calc(14px + var(--sa-t));z-index:12;font-size:14px;padding:8px 14px;min-height:40px}
+.smallLinks{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+/* lobby */
+#lobby .wrap{width:min(860px,96vw);display:flex;flex-direction:column;gap:14px}
+.code{font-family:var(--latin);font-size:46px;letter-spacing:.35em;color:var(--gold);text-align:center;padding-left:.35em}
+.roles{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.role{position:relative;border:1px solid var(--line);border-radius:10px;padding:16px;background:linear-gradient(180deg,rgba(40,32,26,.7),rgba(12,10,12,.85));min-height:230px}
+.role h3{margin:0 0 4px;font-size:24px;letter-spacing:.12em}
+.role .who{font-size:14px;color:var(--sub)}
+.role p{font-size:14px;line-height:1.6;color:#cfc3ae;margin:10px 0}
+.role ul{margin:0;padding-left:18px;font-size:13px;color:#b8ab96;line-height:1.7}
+.role .pl{position:absolute;right:14px;top:14px;font-size:13px;padding:3px 10px;border-radius:20px;border:1px solid var(--line);color:var(--sub)}
+.role .pl.me{border-color:var(--gold);color:var(--gold)}
+.role.L{box-shadow:inset 0 0 0 1px rgba(255,207,107,.15)}
+.role.S{box-shadow:inset 0 0 0 1px rgba(143,211,255,.15)}
+.role.L h3{color:#ffcf6b}.role.S h3{color:var(--spirit)}
+/* hud */
+#hud{position:fixed;inset:0;z-index:5;pointer-events:none}
+#hud .tl{position:absolute;left:calc(14px + var(--sa-l));top:calc(12px + var(--sa-t));display:flex;flex-direction:column;gap:6px;width:230px}
+.badge{display:flex;align-items:baseline;gap:8px;font-size:18px;letter-spacing:.1em;text-shadow:0 2px 4px #000}
+.badge small{font-size:12px;color:var(--sub)}
+.meter{position:relative;height:7px;border-radius:4px;background:rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.08);overflow:hidden}
+.meter i{position:absolute;left:0;top:0;bottom:0;border-radius:4px;transition:width .15s}
+.mrow{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--sub)}.mrow .meter{flex:1}
+.mrow b{width:28px;font-weight:400}
+#fearBar i{background:linear-gradient(90deg,#6a4ad0,#d0453f)}#stamBar i{background:#a8b8a8}#battBar i{background:linear-gradient(90deg,#c89a3a,#ffe6a0)}
+#hud .tc{position:absolute;left:50%;transform:translateX(-50%);top:calc(12px + var(--sa-t));text-align:center;max-width:min(560px,60vw)}
+#obj{font-size:15px;letter-spacing:.05em;text-shadow:0 2px 6px #000;color:#eadfca;background:rgba(0,0,0,.35);padding:6px 14px;border-radius:20px;border:1px solid rgba(255,255,255,.06)}
+#obj small{display:block;color:var(--sub);font-size:12px;margin-top:2px}
+#hud .tr{position:absolute;right:calc(14px + var(--sa-r));top:calc(12px + var(--sa-t));display:flex;gap:8px;align-items:flex-start;pointer-events:auto}
+.inv{display:flex;gap:6px}
+.slot{width:40px;height:40px;border-radius:8px;border:1px solid var(--line);background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;font-size:22px}
+.ibtn{width:44px;height:44px;padding:0;font-size:20px;display:flex;align-items:center;justify-content:center}
+#prompt{position:absolute;left:50%;bottom:calc(150px + var(--sa-b));transform:translateX(-50%);display:flex;align-items:center;gap:10px;padding:8px 16px 8px 8px;border-radius:30px;background:rgba(8,7,10,.75);border:1px solid var(--line);font-size:16px;white-space:nowrap}
+#prompt .key{position:relative;width:34px;height:34px;border-radius:50%;border:1px solid var(--gold);display:flex;align-items:center;justify-content:center;font-family:var(--latin);color:var(--gold);font-size:15px}
+#prompt.no .key{border-color:var(--sub);color:var(--sub)}#prompt.no{color:var(--sub)}
+#prompt svg{position:absolute;inset:-4px;transform:rotate(-90deg)}
+#log{position:absolute;left:calc(14px + var(--sa-l));bottom:calc(16px + var(--sa-b));width:min(460px,70vw);display:flex;flex-direction:column;gap:4px;font-size:14px}
+#log div{background:rgba(0,0,0,.5);padding:5px 10px;border-radius:6px;border-left:2px solid var(--gold2);text-shadow:0 1px 2px #000;animation:fadeIn .3s}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1}}
+.tag3d{position:absolute;transform:translate(-50%,-100%);font-size:13px;white-space:nowrap;text-shadow:0 1px 3px #000;pointer-events:none}
+.bubble{position:absolute;transform:translate(-50%,-100%);background:rgba(10,8,12,.85);border:1px solid var(--line);border-radius:12px;padding:6px 12px;font-size:15px;white-space:nowrap;pointer-events:none}
+.bubble .g{font-size:30px;line-height:1;color:var(--spirit);text-shadow:0 0 10px var(--spirit)}
+.ping{position:absolute;transform:translate(-50%,-50%);width:34px;height:34px;pointer-events:none}
+.ping i{position:absolute;inset:0;border-radius:50%;border:2px solid var(--c);animation:pg 1.2s infinite}
+.ping b{position:absolute;left:50%;top:50%;width:8px;height:8px;margin:-4px;border-radius:50%;background:var(--c)}
+@keyframes pg{from{transform:scale(.4);opacity:1}to{transform:scale(1.6);opacity:0}}
+.edgeArrow{position:absolute;width:0;height:0;border-left:9px solid transparent;border-right:9px solid transparent;border-bottom:16px solid var(--c);transform-origin:50% 60%;pointer-events:none;filter:drop-shadow(0 0 4px var(--c))}
+#downBanner{position:absolute;left:50%;top:38%;transform:translate(-50%,-50%);text-align:center;font-size:22px;color:#ffb0a8;text-shadow:0 2px 8px #000}
+#downBanner b{display:block;font-size:54px;font-family:var(--latin);color:#ff6b6b}
+#hidden{position:absolute;left:50%;bottom:calc(90px + var(--sa-b));transform:translateX(-50%);color:#cfc3ae;font-size:14px;letter-spacing:.2em}
+/* modals */
+.modal{position:fixed;inset:0;z-index:20;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.55);padding:16px}
+.modal .card{width:min(640px,96vw);max-height:88vh;overflow:auto}
+.modal h2{margin:0 0 10px;font-size:24px;letter-spacing:.12em;font-weight:700;color:#efe3cc}
+.x{float:right;min-height:36px;padding:4px 12px}
+.dials{display:flex;gap:14px;justify-content:center;margin:18px 0}
+.dial{display:flex;flex-direction:column;align-items:center;gap:8px}
+.dial .gl{width:76px;height:76px;border-radius:50%;border:2px solid var(--gold2);display:flex;align-items:center;justify-content:center;font-size:42px;background:radial-gradient(#2a2420,#0e0c0a);color:#e8d8b0}
+.dial.f .gl{border-color:var(--gold);box-shadow:0 0 14px rgba(226,180,92,.5)}
+.dial button{width:76px;padding:4px}
+.items{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin:14px 0}
+.items button{display:flex;flex-direction:column;align-items:center;gap:4px;width:120px}
+.items button span{font-size:32px}
+.jgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.ev{display:flex;gap:10px;align-items:center;padding:8px 10px;border-radius:8px;border:1px solid var(--line);background:rgba(0,0,0,.3);font-size:14px}
+.ev .ic{font-size:24px;width:30px;text-align:center}
+.ev.on{border-color:rgba(143,211,255,.6);background:rgba(60,100,130,.18)}
+.ev small{display:block;color:var(--sub);font-size:12px}
+.gt{display:grid;grid-template-columns:1fr auto auto;gap:6px 12px;align-items:center;font-size:14px;margin-top:8px}
+.gt .n{font-size:16px}.gt .no{opacity:.3;text-decoration:line-through}.gt .yes{color:var(--spirit);text-shadow:0 0 8px rgba(143,211,255,.5)}
+.sec{margin:16px 0 6px;font-size:13px;color:var(--sub);letter-spacing:.2em}
+.objl{font-size:14px;line-height:1.9}.objl .d{color:var(--sub);text-decoration:line-through}
+.glyphs{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:10px}
+.glyphs button{font-size:36px;height:70px}
+#quickPanel{position:fixed;right:calc(14px + var(--sa-r));bottom:calc(230px + var(--sa-b));z-index:8;display:flex;flex-direction:column;gap:8px}
+#quickPanel button{font-size:15px}
+.set{display:grid;grid-template-columns:auto 1fr;gap:12px 16px;align-items:center;margin:12px 0}
+.seg{display:flex;gap:6px}.seg button{padding:6px 12px;min-height:38px;font-size:14px}
+/* touch controls */
+#touchUI{position:fixed;inset:0;z-index:4;pointer-events:none}
+#touchMove{position:absolute;left:0;bottom:0;width:45%;height:62%;pointer-events:auto}
+#touchAim{position:absolute;right:0;bottom:0;width:30%;height:45%;pointer-events:auto}
+.stB{position:fixed;width:110px;height:110px;margin:-55px 0 0 -55px;border-radius:50%;border:2px solid rgba(255,255,255,.18);background:rgba(0,0,0,.25);display:none;pointer-events:none;z-index:6}
+.stK{position:fixed;width:50px;height:50px;margin:-25px 0 0 -25px;border-radius:50%;background:rgba(226,180,92,.55);display:none;pointer-events:none;z-index:6}
+.tb{position:absolute;pointer-events:auto;width:64px;height:64px;border-radius:50%;padding:0;font-size:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(18,15,14,.7);border:1px solid rgba(226,180,92,.5);line-height:1.1}
+.tb.on{background:rgba(226,180,92,.35)}.tb.lit{border-color:#fff;background:rgba(226,180,92,.3)}
+.tb span{font-size:22px}
+#tAct{right:calc(120px + var(--sa-r));bottom:calc(40px + var(--sa-b));width:80px;height:80px;font-size:15px}
+#tBoost{right:calc(28px + var(--sa-r));bottom:calc(150px + var(--sa-b))}
+#tRun{right:calc(210px + var(--sa-r));bottom:calc(24px + var(--sa-b))}
+#tPing{right:calc(28px + var(--sa-r));bottom:calc(230px + var(--sa-b));width:52px;height:52px}
+#tChat{right:calc(90px + var(--sa-r));bottom:calc(230px + var(--sa-b));width:52px;height:52px}
+#tGlyph{right:calc(150px + var(--sa-r));bottom:calc(230px + var(--sa-b));width:52px;height:52px}
+/* results */
+#result .card{width:min(520px,94vw);text-align:center}
+#result h2{font-family:var(--title);font-weight:400;font-size:64px;margin:0;letter-spacing:.1em}
+#result .why{color:#cfc3ae;margin:8px 0 16px;line-height:1.6}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;text-align:left;font-size:14px;color:#cfc3ae;margin:12px 0}
+.stats b{color:var(--gold);font-weight:400}
+#help .card{line-height:1.75;font-size:14px;color:#d8ccb4}
+#help b{color:var(--gold);font-weight:400}
+.toast{position:fixed;left:50%;top:22%;transform:translateX(-50%);z-index:30;font-size:20px;padding:12px 22px;border-radius:8px;background:rgba(0,0,0,.75);border:1px solid var(--line);animation:fadeIn .3s}
+/* iPhone (see ../IPHONE.md): only phone-sized coarse pointers are affected */
+button{touch-action:manipulation}
+body{-webkit-touch-callout:none}
+.scr{overflow:auto;align-items:safe center}
+#title{justify-content:safe center}
+.modal{align-items:safe center;overflow:auto}
+.modal .card{max-height:calc(100dvh - 16px)}
+@media (pointer:coarse) and (max-width:500px){
+  .logo{margin-bottom:12px}.logo h1{font-size:64px}.logo .tag{margin-top:8px;font-size:13px}
+  #hud .tl{width:140px!important;gap:4px}.badge{font-size:15px}.mrow{font-size:11px;gap:5px}.mrow b{width:24px}
+  #hud .tc{top:calc(140px + var(--sa-t));max-width:94vw;width:max-content}#obj{font-size:12px;padding:4px 10px}
+  #hud .tr{gap:5px;flex-wrap:wrap;justify-content:flex-end;width:200px}.slot{width:30px;height:30px;font-size:16px}.ibtn{width:40px;height:40px;font-size:17px}
+  .inv{order:2;width:100%;flex-wrap:wrap;justify-content:flex-end;gap:4px}
+  #log{width:62vw;font-size:12px;bottom:calc(150px + var(--sa-b))}
+  #prompt{bottom:calc(200px + var(--sa-b));font-size:14px}
+  .tb{width:52px;height:52px;font-size:12px}.tb span{font-size:18px}
+  #tAct{width:68px;height:68px;right:calc(84px + var(--sa-r));bottom:calc(30px + var(--sa-b))}
+  #tBoost{right:calc(14px + var(--sa-r));bottom:calc(112px + var(--sa-b))}#tRun{right:calc(164px + var(--sa-r));bottom:calc(18px + var(--sa-b))}
+  #tPing{right:calc(14px + var(--sa-r));bottom:calc(178px + var(--sa-b));width:44px;height:44px}#tChat{right:calc(64px + var(--sa-r));bottom:calc(178px + var(--sa-b));width:44px;height:44px}#tGlyph{right:calc(114px + var(--sa-r));bottom:calc(178px + var(--sa-b));width:44px;height:44px}
+  #quickPanel{bottom:calc(232px + var(--sa-b))}
+  .stB{width:90px;height:90px;margin:-45px 0 0 -45px}.stK{width:42px;height:42px;margin:-21px 0 0 -21px}
+  #downBanner{font-size:16px;width:90vw}#downBanner b{font-size:40px}
+  .dial .gl{width:58px;height:58px;font-size:32px}.dial button{width:58px}.dials{gap:8px}
+  .jgrid{grid-template-columns:1fr}.code{font-size:34px}
+}
+@media (pointer:coarse) and (max-height:500px){
+  .logo{margin-bottom:8px}.logo h1{font-size:52px}.logo .tag{display:none}.logo .en{margin-top:2px}
+  .menu{gap:8px}.card{padding:12px 14px}
+  #hud .tl{width:150px;gap:3px;left:max(12px,var(--sa-l))}.badge{font-size:15px}.mrow{font-size:11px}
+  #obj{font-size:12px;padding:4px 10px}#hud .tc{max-width:44vw}
+  .slot{width:32px;height:32px;font-size:17px}.ibtn{width:40px;height:40px;font-size:17px}#hud .tr{gap:5px;right:max(12px,var(--sa-r))}
+  #log{width:40vw;font-size:12px;left:max(12px,var(--sa-l))}#log div:nth-last-child(n+3){display:none}
+  #prompt{bottom:calc(84px + var(--sa-b));font-size:14px}
+  .tb{width:50px;height:50px;font-size:11px}.tb span{font-size:17px}
+  #tAct{width:66px;height:66px;right:calc(78px + var(--sa-r));bottom:calc(14px + var(--sa-b))}
+  #tBoost{right:calc(12px + var(--sa-r));bottom:calc(88px + var(--sa-b))}#tRun{right:calc(152px + var(--sa-r));bottom:calc(10px + var(--sa-b))}
+  #tPing{right:calc(12px + var(--sa-r));bottom:calc(148px + var(--sa-b));width:42px;height:42px}#tChat{right:calc(60px + var(--sa-r));bottom:calc(148px + var(--sa-b));width:42px;height:42px}#tGlyph{right:calc(108px + var(--sa-r));bottom:calc(148px + var(--sa-b));width:42px;height:42px}
+  #quickPanel{bottom:calc(196px + var(--sa-b))}#quickPanel button{min-height:38px;padding:6px 12px}
+  .stB{width:84px;height:84px;margin:-42px 0 0 -42px}.stK{width:40px;height:40px;margin:-20px 0 0 -20px}
+  #downBanner{top:30%;font-size:15px}#downBanner b{font-size:36px}
+  .roles{grid-template-columns:1fr 1fr}.role{min-height:0;padding:10px}.role p,.role ul{font-size:12px}.role ul{display:none}.code{font-size:30px}
+  #result h2{font-size:44px}.stats{gap:4px;font-size:13px}
+}
+@media (max-width:700px){.roles{grid-template-columns:1fr}.role{min-height:0}#hud .tl{width:170px}#obj{font-size:13px}.code{font-size:36px}}
+</style>
+<body>
+<canvas id="gl"></canvas>
+<div id="ov"></div>
+<div id="loading"><div class="t">幽宅双影</div><div class="bar"><i></i></div><div style="color:#8a7e70;font-size:13px;letter-spacing:.2em">正在点起一盏灯…</div></div>
+
+<div id="title" class="scr hidden">
+  <button class="hubBack ghost hidden" id="hubBtn">‹ 游戏厅</button>
+  <div class="logo"><h1>幽宅双影</h1><div class="en">HOLLOW MANOR</div><div class="tag">一盏灯，一双看见亡者的眼睛</div></div>
+  <div class="card menu">
+    <div class="lbl">你的名字</div>
+    <input id="nameIn" maxlength="10" placeholder="（可不填）">
+    <button class="primary" id="hostBtn">创建房间</button>
+    <div class="row"><input id="codeIn" maxlength="4" placeholder="房间码" style="text-transform:uppercase;letter-spacing:.3em"><button id="joinBtn">加入</button></div>
+    <div class="status" id="tStatus"></div>
+    <div class="smallLinks"><button class="ghost" id="helpBtn">玩法说明</button><button class="ghost" id="setBtn">设置</button><button class="ghost muteBtn" id="muteT">🔊</button></div>
+  </div>
+</div>
+
+<div id="lobby" class="scr hidden">
+  <div class="wrap card">
+    <div class="row" style="justify-content:space-between"><div class="lbl">房间码 · 发给你的同伴</div><button class="ghost" id="leaveBtn" style="min-height:36px;padding:4px 12px">离开</button></div>
+    <div class="code" id="lCode">····</div>
+    <div class="roles">
+      <div class="role L"><span class="pl" id="plL"></span><h3>持灯者</h3><div class="who">阿岩 · 黄雨衣、旧背包、一支沉甸甸的手电筒</div><p>手电筒照亮真实世界。强光能让怨灵僵直；负责机关、保险丝和推动重物，并在仪式时守护灵视者。</p><ul><li>手电能照出 ❄ 霜痕 和 ◐ 镜中影</li><li>右键 / F：强光，定住怨灵（耗电）</li><li>符文锁、保险丝、暗门书架只有你能动</li></ul></div>
+      <div class="role S"><span class="pl" id="plS"></span><h3>灵视者</h3><div class="who">小雾 · 一盏蓝色的灵灯，看得见另一侧</div><p>看得见怨灵——隔着墙也能看到。能看见 ✋ 灵痕手印、◌ 灵球、写在墙上的符文密码和暗门里漏出的阴风。负责主持驱灵仪式。</p><ul><li>按 G 把看到的符文发给持灯者</li><li>怨灵逼近时，用「危险！」提醒同伴</li><li>只有你能在祭坛主持仪式</li></ul></div>
+    </div>
+    <div class="row" style="justify-content:center;flex-wrap:wrap"><button id="swapBtn">交换角色</button><button id="readyBtn">准备</button><button class="primary" id="startBtn">开始</button></div>
+    <div class="status" id="lStatus"></div>
+  </div>
+</div>
+
+<div id="hud" class="hidden">
+  <div class="tl">
+    <div class="badge" id="hBadge"></div>
+    <div class="mrow"><b>恐惧</b><div class="meter" id="fearBar"><i></i></div></div>
+    <div class="mrow"><b>体力</b><div class="meter" id="stamBar"><i></i></div></div>
+    <div class="mrow" id="battRow"><b>电量</b><div class="meter" id="battBar"><i></i></div></div>
+    <div class="mrow" id="partnerRow" style="margin-top:4px"></div>
+  </div>
+  <div class="tc"><div id="obj"></div></div>
+  <div class="tr"><div class="inv" id="hInv"></div><button class="ibtn" id="jBtn" title="日志 (J)">📖</button><button class="ibtn muteBtn" id="muteH">🔊</button><button class="ibtn" id="pBtn" title="菜单 (Esc)">☰</button></div>
+  <div id="prompt" class="hidden"><div class="key"><span id="pKey">E</span><svg width="42" height="42"><circle cx="21" cy="21" r="18" fill="none" stroke="#e2b45c" stroke-width="3" stroke-dasharray="113" stroke-dashoffset="113" id="pRing"/></svg></div><span id="pText"></span></div>
+  <div id="log"></div>
+  <div id="tags"></div>
+  <div id="downBanner" class="hidden"></div>
+  <div id="hidden" class="hidden">躲在柜子里……屏住呼吸　（E 出来）</div>
+</div>
+<div id="quickPanel" class="hidden"></div>
+<div id="touchUI" class="hidden">
+  <div id="touchMove"></div><div id="touchAim"></div>
+  <button class="tb" id="tAct"><span>✋</span>互动</button>
+  <button class="tb" id="tBoost"><span>✦</span>强光</button>
+  <button class="tb" id="tRun"><span>»</span>奔跑</button>
+  <button class="tb" id="tPing">📍</button>
+  <button class="tb" id="tChat">💬</button>
+  <button class="tb" id="tGlyph">☾</button>
+</div>
+<div class="stB" id="mvBase"></div><div class="stK" id="mvKnob"></div><div class="stB" id="amBase"></div><div class="stK" id="amKnob"></div>
+
+<div id="mRune" class="modal hidden"><div class="card"><button class="x ghost" data-close>✕</button><h2>符文转盘</h2><div style="color:var(--sub);font-size:14px">四个转盘要转到正确的符文。密码写在这座宅子的某面墙上——只有灵视者看得见。<br>键盘：←→ 选择转盘，↑↓ 转动，Esc 关闭。</div><div class="dials" id="dials"></div><div class="status" id="runeMsg"></div></div></div>
+<div id="mAltar" class="modal hidden"><div class="card"><button class="x ghost" data-close>✕</button><h2>祭坛</h2><div style="color:var(--sub);font-size:14px">选一件遗物献上。选错了，它会在祭坛上化为灰烬，怨灵会暴怒。<br>开始后要按住 E 主持仪式，持灯者负责用强光把怨灵挡在外面。</div><div class="items" id="altarItems"></div></div></div>
+<div id="mJournal" class="modal hidden"><div class="card"><button class="x ghost" data-close>✕</button><h2>调查日志</h2><div class="sec">证据（找到两种就能确认）</div><div class="jgrid" id="jEv"></div><div class="sec">怨灵档案</div><div class="gt" id="jGhosts"></div><div class="sec">目标</div><div class="objl" id="jObj"></div><div class="sec">线索</div><div class="objl" id="jHints"></div></div></div>
+<div id="mGlyph" class="modal hidden"><div class="card" style="width:min(380px,92vw)"><button class="x ghost" data-close>✕</button><h2>发送符文</h2><div style="color:var(--sub);font-size:14px">把你看到的符文按顺序发给同伴。</div><div class="glyphs" id="glyphBtns"></div></div></div>
+<div id="mPause" class="modal hidden"><div class="card" style="width:min(460px,94vw)"><h2>暂停菜单</h2><div style="color:var(--sub);font-size:13px">联机中游戏不会暂停。</div>
+  <div class="set"><span>音量</span><input type="range" id="volIn" min="0" max="1" step="0.05"><span>画质</span><div class="seg" id="qSeg"><button data-v="low">流畅</button><button data-v="high">精致</button></div><span>胶片颗粒</span><div class="seg" id="gSeg"><button data-v="1">开</button><button data-v="0">关</button></div><span>震屏</span><div class="seg" id="sSeg"><button data-v="1">开</button><button data-v="0">关</button></div></div>
+  <div class="row" style="flex-wrap:wrap;justify-content:center"><button class="primary" id="resumeBtn">继续</button><button id="lobbyBtn">返回房间</button><button id="hubBtn2" class="hidden">返回游戏厅</button></div></div></div>
+<div id="help" class="modal hidden"><div class="card"><button class="x ghost" data-close>✕</button><h2>玩法说明</h2>
+  <p>两个人被困在一座雨夜里的老宅。大门锁死了，二楼的楼梯被一道灵封挡住——要离开，必须驱散这层楼里的怨灵。</p>
+  <p><b>怎么赢：</b>①收集两种证据，在日志里确认怨灵的种类；②找到它惧怕的遗物；③同时拉下两根拉杆打开祈祷室；④灵视者在祭坛主持仪式，持灯者用强光守住她；⑤一起登上楼梯。</p>
+  <p><b>非对称：</b>持灯者看得见真实世界——手电照出霜痕和镜中影，能转符文锁、装保险丝、推开暗门书架。灵视者看得见另一侧——怨灵的位置（隔墙也能看到）、灵痕手印、灵球、写在墙上的符文密码。你们看到的东西不一样，要互相告诉对方。</p>
+  <p><b>猎杀：</b>灯开始乱闪、低沉的嗡鸣响起时，怨灵就要开始猎杀了。快躲进柜子，或者让持灯者用强光（右键 / F）把它定住——被定住两次它就会退散。被抓住会倒下，45 秒内要被同伴扶起来。</p>
+  <p><b>恐惧：</b>两个人离得远、待在黑暗里、看见怨灵，恐惧都会上升；恐惧越高，怨灵越早开始猎杀。待在一起、待在有灯的房间里会好一些。</p>
+  <p><b>键鼠：</b>WASD 移动 · 鼠标朝向 · Shift 奔跑 · E / 左键 互动（按住）· 右键 / F 强光 · Q 标记 · 1–4 快捷信号 · G 发送符文 · J 日志 · Esc 菜单 · M 静音</p>
+  <p><b>iPad：</b>左半屏拖动移动，右下拖动朝向，按钮互动 / 强光 / 奔跑，📍 标记，💬 信号，☾ 符文。</p></div></div>
+<div id="result" class="scr hidden"><div class="card"><h2 id="rTitle"></h2><div class="why" id="rWhy"></div><div class="stats" id="rStats"></div><div class="row" style="justify-content:center"><button class="primary" id="rAgain">返回房间</button></div><div class="status" id="rStatus"></div></div></div>
+__SCRIPTS__
+</body>
