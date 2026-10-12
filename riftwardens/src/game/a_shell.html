@@ -193,6 +193,10 @@ table.st{margin:10px auto;border-collapse:collapse;font-size:14px}table.st td{pa
  #banner{font-size:28px}#banner small{font-size:13px}
  #toasts{top:calc(118px + var(--sat))}.toast{font-size:12px;padding:4px 10px}
  #ally{top:calc(74px + var(--sat));min-width:0;font-size:11px;padding:4px 8px}
+ /* round 2/3 UI: sticky action bars, 40px targets, perk cards in one row */
+ .help .btns,.res .btns{position:sticky;bottom:calc(-8px - var(--sab));background:var(--panel);margin:8px -10px -10px;padding:8px 10px calc(8px + var(--sab));border-top:1px solid var(--line);z-index:2}
+ .ac .btn,#tut .btn{min-height:40px}
+ #perks{width:min(94vw,520px);flex-wrap:wrap}#perks .pk{flex:1 1 0;min-width:0;padding:6px 8px;font-size:13px}#perks .pk span{font-size:11px}
 }
 /* portrait phone */
 @media (pointer:coarse) and (max-width:500px){
@@ -207,6 +211,7 @@ table.st{margin:10px auto;border-collapse:collapse;font-size:14px}table.st td{pa
  #tAlt,#tPlace{right:max(10px, var(--sar));bottom:calc(132px + var(--sab))}
  #tSkill,#tRot{right:calc(max(10px, var(--sar)) + 58px);bottom:calc(178px + var(--sab))}
  #tDash,#tCancel{right:calc(max(10px, var(--sar)) + 62px);bottom:calc(72px + var(--sab))}
+ #tut{bottom:calc(240px + var(--sab))}
 }
 /* landscape phone */
 @media (pointer:coarse) and (max-height:500px){
@@ -229,6 +234,7 @@ table.st{margin:10px auto;border-collapse:collapse;font-size:14px}table.st td{pa
  #tSkill,#tRot{right:calc(max(10px, var(--sar)) + 58px);bottom:calc(104px + var(--sab))}
  #tDash,#tCancel{right:calc(max(10px, var(--sar)) + 62px);bottom:calc(10px + var(--sab))}
  #toasts{top:calc(70px + var(--sat))}
+ #perks{top:calc(146px + var(--sat));width:min(440px,64vw)}
 }
 </style></head><body>
 <canvas id="cv"></canvas>

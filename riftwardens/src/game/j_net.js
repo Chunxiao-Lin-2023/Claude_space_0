@@ -240,7 +240,7 @@ function playEv(o) {
     case 'waveEnd': banner('第 ' + o.w + ' 波已击退', '奖励 +' + o.b + ' 金币'); sfx('win', null, null, 0.6); break;
     case 'boss': banner('兽人督军来袭！', '集中火力！'); sfx('horn'); CAM.shake = 10; break;
     case 'end': if (!IS_HOST && G) { G.stats = Object.assign(G.stats || {}, o.st || {}); G.endWave = o.w; } break;
-    case 'lvlup': if (o.p === MEI) { banner('升级！Lv ' + o.l, '选择一项强化'); sfx('win', null, null, 0.7); } else toast('队友升到了 Lv ' + o.l); { const p = P[o.p]; if (p) for (let i = 0; i < 14; i++) fx({k: 'p', x: p.x + rnd(-16, 16), y: p.y - rnd(0, 50), vy: -110, life: 0.8, col: '#ffe08a', s: 2.4}); } break;
+    case 'lvlup': if (o.p === MEI) { if (!PHONE.matches) banner('升级！Lv ' + o.l, '选择一项强化'); sfx('win', null, null, 0.7); } else toast('队友升到了 Lv ' + o.l); { const p = P[o.p]; if (p) for (let i = 0; i < 14; i++) fx({k: 'p', x: p.x + rnd(-16, 16), y: p.y - rnd(0, 50), vy: -110, life: 0.8, col: '#ffe08a', s: 2.4}); } break;
     case 'perk': break;
     case 'chain': { const pts = o.pts; for (let i = 1; i < pts.length; i++) { const [x0, y0] = pts[i - 1], [x1, y1] = pts[i]; const n = 6; let px = x0, py = y0; for (let k = 1; k <= n; k++) { const x = x0 + (x1 - x0) * k / n + (k < n ? rnd(-10, 10) : 0), y = y0 + (y1 - y0) * k / n + (k < n ? rnd(-10, 10) : 0); fx({k: 'bolt', x: px, y: py, x2: x, y2: y, life: 0.18}); px = x; py = y; } fx({k: 'glow', x: x1, y: y1, s: 26, life: 0.2, col: '160,200,255'}); } if (o.p !== MEI) sfx('zap', pts[0][0], pts[0][1], 0.6); break; }
     case 'ping': PINGS.push({x: o.x, y: o.y, t: 0, mine: o.p === MEI}); sfx('click', o.x, o.y, 1); break;
