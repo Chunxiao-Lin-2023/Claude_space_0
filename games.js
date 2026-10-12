@@ -70,5 +70,16 @@ window.GAMES = [
     status: 'dev',
     tags: ['双人联机', 'iPad', '恐怖'],
     hue: 205
+  },
+  {
+    id: 'nighttales',
+    title: '十夜怪谈',
+    sub: '像素恐怖探索 · 十个怪谈',
+    desc: '血腥玛丽、裂口女、厕所里的花子、一个人的捉迷藏、电梯游戏、375路末班车、消失的搭车客、猴爪、画皮、哭泣的女人——每个怪谈一章俯视角探索解谜。两人联机共享同一个角色，轮流操作。',
+    url: 'nighttales/',
+    cover: 'covers/nighttales.webp',
+    status: 'dev',
+    tags: ['单人', '双人联机', 'iPad'],
+    hue: 350
   }
 ];

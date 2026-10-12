@@ -1,0 +1,225 @@
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<!--IOSMETA-->
+<title>十夜怪谈</title>
+<style>
+:root{--ink:#e8e0d0;--dim:#9a8f80;--red:#b3262b;--red2:#e0484c;--paper:#e9e0c9;--bg:#07060a;--panel:rgba(14,10,14,.94);--edge:#3a2a30;--gold:#c9a35a;
+ --serif:"Songti SC","STSong","Noto Serif CJK SC","Noto Serif SC","Source Han Serif SC","SimSun",serif;
+ --sans:-apple-system,"PingFang SC","Hiragino Sans GB","Noto Sans CJK SC","Microsoft YaHei",sans-serif;
+ --sl:max(12px,env(safe-area-inset-left));--sr:max(12px,env(safe-area-inset-right));--st:max(10px,env(safe-area-inset-top));--sb:max(10px,env(safe-area-inset-bottom))}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font-family:var(--sans);overflow:hidden;overscroll-behavior:none}
+body{position:fixed;inset:0;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+#cv{position:fixed;left:0;top:0;image-rendering:pixelated;image-rendering:crisp-edges;display:block}
+.hidden{display:none!important}
+button{font:inherit;color:inherit;cursor:pointer;touch-action:manipulation}
+.btn{background:rgba(30,20,26,.92);border:1px solid var(--edge);color:var(--ink);padding:10px 18px;min-height:44px;border-radius:2px;font-family:var(--serif);font-size:17px;letter-spacing:2px;transition:background .15s,border-color .15s,color .15s}
+.btn:hover,.btn:focus-visible,.btn.sel{background:#3a1a1e;border-color:var(--red);color:#fff;outline:none}
+.btn.primary{border-color:var(--red);background:#4a1418}
+.btn.small{font-size:14px;padding:6px 12px;min-height:36px;letter-spacing:1px}
+.btn:disabled{opacity:.4;cursor:default}
+/* ---------- 全屏界面 ---------- */
+.screen{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:safe center;overflow:auto;padding:var(--st) var(--sr) var(--sb) var(--sl);z-index:20;-webkit-overflow-scrolling:touch;touch-action:pan-y}
+#title{background:transparent}
+#title h1{font-family:var(--serif);font-weight:900;font-size:clamp(46px,9vw,96px);letter-spacing:.3em;margin:0 0 6px .3em;color:#d8cfc0;text-shadow:0 0 18px rgba(179,38,43,.55),0 2px 0 #000;animation:breathe 6s ease-in-out infinite}
+@keyframes breathe{0%,100%{opacity:.92}50%{opacity:1;text-shadow:0 0 28px rgba(200,40,45,.75),0 2px 0 #000}48%{opacity:.6}}
+#title .tag{font-family:var(--serif);color:var(--dim);letter-spacing:.35em;margin-bottom:28px;font-size:15px;text-align:center}
+.menu{display:flex;flex-direction:column;gap:10px;min-width:240px}
+.row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+.foot{margin-top:22px;color:#6a6058;font-size:12px;text-align:center;line-height:1.7}
+#select{justify-content:flex-start;background:radial-gradient(ellipse at top,#1a0d12 0%,#07060a 70%)}
+#select h2,.panel h2{font-family:var(--serif);letter-spacing:.3em;margin:16px 0 4px;font-size:26px;color:#d8cfc0}
+#select .sub{color:var(--dim);font-size:13px;margin-bottom:14px;text-align:center}
+#chgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px;width:min(1100px,100%);padding-bottom:18px}
+.card{position:relative;background:#120c10;border:1px solid var(--edge);display:flex;flex-direction:column;cursor:pointer;transition:transform .15s,border-color .15s;min-height:0}
+.card:hover,.card.sel{border-color:var(--red);transform:translateY(-2px)}
+.card canvas{width:100%;aspect-ratio:16/9;image-rendering:pixelated;display:block;background:#000}
+.card .meta{padding:8px 10px 10px}
+.card .no{font-family:var(--serif);color:var(--red2);font-size:12px;letter-spacing:2px}
+.card .tt{font-family:var(--serif);font-size:19px;letter-spacing:2px;margin:2px 0}
+.card .tl{color:var(--dim);font-size:12.5px;line-height:1.5}
+.card .badge{position:absolute;top:6px;right:6px;font-size:11px;padding:2px 6px;background:rgba(0,0,0,.7);border:1px solid #3a3a3a;color:#bbb}
+.card .badge.done{color:#9fe0a8;border-color:#2f5f3a}
+.card .badge.cp{color:#ffd88a;border-color:#6a5420}
+#selbar{position:sticky;bottom:0;display:flex;gap:10px;flex-wrap:wrap;justify-content:center;padding:10px;width:100%;background:linear-gradient(transparent,#07060a 30%)}
+.panel{background:var(--panel);border:1px solid var(--edge);padding:18px 22px;max-width:min(680px,94vw);width:100%;max-height:calc(100dvh - 16px);overflow:auto;box-shadow:0 10px 40px #000;touch-action:pan-y}
+.panel p{line-height:1.8;color:#cfc6b6}
+.codebox{font-family:ui-monospace,Menlo,monospace;font-size:44px;letter-spacing:.35em;text-align:center;color:#ffe2a8;margin:10px 0}
+#joinCode{font-family:ui-monospace,Menlo,monospace;font-size:28px;letter-spacing:.3em;text-transform:uppercase;width:100%;text-align:center;background:#000;border:1px solid var(--edge);color:#fff;padding:8px;border-radius:2px}
+.status{color:var(--dim);font-size:14px;text-align:center;min-height:22px;margin:8px 0}
+.arch h3{font-family:var(--serif);margin:16px 0 4px;color:#e6d8c4;letter-spacing:2px}
+.arch .lock{color:#6a6058}
+.arch .legend{white-space:pre-wrap;line-height:1.8;color:#c8bfae;font-size:14.5px}
+.arch .nlist{color:var(--dim);font-size:13px;margin-top:4px}
+kbd{display:inline-block;border:1px solid #555;border-bottom-width:2px;padding:0 5px;border-radius:3px;font-size:12px;background:#1a1a1a;color:#ddd;margin:0 1px}
+/* ---------- 游戏内 HUD ---------- */
+#hud{position:fixed;inset:0;pointer-events:none;z-index:10}
+#hud>*{pointer-events:auto}
+#htl{position:absolute;left:var(--sl);top:var(--st);max-width:46vw;pointer-events:none;text-shadow:0 1px 2px #000,0 0 6px #000}
+#htl .ct{font-family:var(--serif);font-size:15px;letter-spacing:2px;color:#d8cfc0}
+#htl .goal{font-size:13px;color:#e8c98a;margin-top:3px;line-height:1.4}
+#htr{position:absolute;right:var(--sr);top:var(--st);display:flex;gap:6px}
+.hb{width:44px;height:44px;background:rgba(10,8,12,.72);border:1px solid #3a2e34;color:#ddd;font-size:18px;border-radius:2px;display:flex;align-items:center;justify-content:center;padding:0}
+.hb:hover{border-color:var(--red)}
+#ctrlbar{position:absolute;top:var(--st);left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:8px;background:rgba(10,8,12,.8);border:1px solid #3a2e34;padding:4px 6px 4px 12px;font-size:13px;border-radius:2px;white-space:nowrap}
+#ctrlbar .who{color:#bde3ff}
+#ctrlbar .who.me{color:#ffe2a8}
+#ctrlbar .btn{font-family:var(--sans);letter-spacing:0}
+#reqp{position:absolute;top:calc(var(--st) + 52px);left:50%;transform:translateX(-50%);background:#2a0f12;border:1px solid var(--red);padding:8px 10px 8px 14px;display:flex;gap:8px;align-items:center;font-size:14px;animation:pulse 1.2s infinite;white-space:nowrap}
+@keyframes pulse{50%{box-shadow:0 0 16px rgba(224,72,76,.6)}}
+#timerb{position:absolute;top:calc(var(--st) + 50px);left:var(--sl);font-family:ui-monospace,Menlo,monospace;font-size:22px;color:#ff8a8a;text-shadow:0 0 8px #000;pointer-events:none}
+#toasts{position:absolute;left:50%;transform:translateX(-50%);top:calc(var(--st) + 96px);display:flex;flex-direction:column;align-items:center;gap:6px;pointer-events:none}
+.toast{background:rgba(10,6,8,.86);border:1px solid #4a3036;padding:6px 14px;font-size:14px;color:#f0e2c8;animation:tin .25s ease-out;max-width:80vw;text-align:center}
+@keyframes tin{from{opacity:0;transform:translateY(-6px)}}
+/* 对话框 */
+#dlg{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(var(--sb) + 12px);width:min(860px,calc(100vw - 24px));background:rgba(8,6,10,.93);border:1px solid #4a3036;box-shadow:0 0 0 1px #000,0 8px 30px #000;padding:14px 18px 16px;min-height:110px;font-family:var(--serif);cursor:pointer}
+#dlg .who{position:absolute;top:-15px;left:14px;background:#2a0f12;border:1px solid var(--red);padding:2px 12px;font-size:15px;letter-spacing:2px;color:#ffe2d0}
+#dlg .who:empty{display:none}
+#dlg .txt{font-size:19px;line-height:1.75;white-space:pre-wrap;min-height:2.6em;letter-spacing:.5px}
+#dlg.think .txt{color:#b9c8e0;font-style:italic}
+#dlg.whisper .txt{color:#d88;letter-spacing:3px}
+#dlg.big .txt{font-size:26px;color:#ff6a6a;text-align:center}
+#dlg .chs{display:flex;flex-direction:column;gap:6px;margin-top:10px}
+#dlg .ch{text-align:left;background:rgba(40,24,30,.6);border:1px solid #3a2a30;padding:8px 12px;font-size:17px;font-family:var(--serif);min-height:42px}
+#dlg .ch.sel{background:#4a1418;border-color:var(--red2);color:#fff}
+#dlg .ch.sel::before{content:'▶ ';color:var(--red2)}
+#dlg .more{position:absolute;right:14px;bottom:6px;color:var(--red2);animation:bob 1s infinite;font-size:13px}
+#dlg .watch{position:absolute;right:14px;top:-13px;font-size:12px;color:#9ab;background:#0b0b10;border:1px solid #334;padding:1px 8px;font-family:var(--sans)}
+@keyframes bob{50%{transform:translateY(3px)}}
+/* 标题卡、纸条、结局 */
+.ov{position:fixed;inset:0;z-index:15;display:flex;align-items:safe center;justify-content:center;padding:var(--st) var(--sr) var(--sb) var(--sl);overflow:auto;touch-action:pan-y}
+#card{background:#000;flex-direction:column;cursor:pointer;animation:fin 1s}
+#card .t{font-family:var(--serif);font-size:clamp(34px,6vw,64px);letter-spacing:.3em;color:#e6dccb;text-align:center;text-shadow:0 0 20px rgba(179,38,43,.5)}
+#card .s{font-family:var(--serif);color:#b5aa98;letter-spacing:.3em;margin-top:10px;text-align:center}
+#card .b{max-width:620px;font-family:var(--serif);color:#a89e8e;line-height:2;margin-top:26px;white-space:pre-wrap;text-align:center;font-size:16px}
+#card .k,#note .k{margin-top:30px;color:#665c54;font-size:12px;letter-spacing:2px;animation:bob 1.6s infinite}
+@keyframes fin{from{opacity:0}}
+#note{background:rgba(0,0,0,.72);flex-direction:column;cursor:pointer}
+#note .paper{background:var(--paper);color:#2a2018;max-width:560px;width:100%;padding:26px 28px;font-family:var(--serif);box-shadow:0 10px 40px #000;transform:rotate(-.6deg);background-image:repeating-linear-gradient(transparent 0 29px,rgba(80,60,40,.12) 29px 30px);max-height:calc(100dvh - 90px);overflow:auto;animation:fin .3s}
+#note h3{margin:0 0 12px;letter-spacing:3px;font-size:20px;border-bottom:1px solid rgba(80,60,40,.3);padding-bottom:8px}
+#note .tx{white-space:pre-wrap;line-height:1.9;font-size:16.5px}
+#keypad{background:rgba(0,0,0,.65)}
+#keypad .panel{max-width:400px;text-align:center}
+#keypad .pv{font-family:ui-monospace,Menlo,monospace;font-size:30px;letter-spacing:.4em;color:#ffe2a8;min-height:44px;margin:8px 0}
+#keypad .keys{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:10px 0}
+#keypad .keys .btn{font-size:20px;font-family:var(--sans);letter-spacing:0;padding:8px}
+#endov{background:rgba(0,0,0,.86);flex-direction:column;animation:fin 1.2s}
+#endov .panel{text-align:center}
+#endov h2{font-size:30px;color:#e6dccb}
+#endov.die h2{color:#ff6a6a}
+#endov .tx{white-space:pre-wrap;line-height:1.9;color:#cfc6b6;font-family:var(--serif);text-align:left}
+#endov .lg{white-space:pre-wrap;line-height:1.85;color:#a89e8e;font-family:var(--serif);font-size:14.5px;text-align:left;border-top:1px solid #3a2a30;margin-top:14px;padding-top:12px}
+#endov .lg b{color:#e6d8c4;letter-spacing:2px}
+/* 菜单类 */
+#menu,#inv,#journal,#help{background:rgba(0,0,0,.6);z-index:30}
+.list{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+.it{border:1px solid #3a2a30;padding:8px 12px;background:rgba(30,20,24,.6)}
+.it b{font-family:var(--serif);letter-spacing:1px;color:#f0e2c8}
+.it div{color:var(--dim);font-size:13.5px;margin-top:2px;line-height:1.6;white-space:pre-wrap}
+.it.clk{cursor:pointer}
+.it.clk:hover{border-color:var(--red)}
+.empty{color:#6a6058;text-align:center;padding:20px}
+/* 触屏 */
+#touch{position:fixed;inset:0;z-index:9;pointer-events:none}
+body.touch #touch{pointer-events:auto}
+#joyb{position:absolute;width:110px;height:110px;margin:-55px 0 0 -55px;border-radius:50%;border:2px solid rgba(255,255,255,.18);background:rgba(255,255,255,.04);pointer-events:none}
+#joyk{position:absolute;width:46px;height:46px;margin:-23px 0 0 -23px;border-radius:50%;background:rgba(255,255,255,.22);pointer-events:none}
+.tbtn{position:absolute;border-radius:50%;background:rgba(40,16,20,.55);border:2px solid rgba(224,72,76,.55);color:#fff;font-family:var(--serif);display:flex;align-items:center;justify-content:center;touch-action:none}
+#bA{width:76px;height:76px;right:calc(var(--sr) + 14px);bottom:calc(var(--sb) + 30px);font-size:20px}
+#bA.hot{background:rgba(160,30,36,.75);box-shadow:0 0 14px rgba(224,72,76,.6)}
+#bRun{width:52px;height:52px;right:calc(var(--sr) + 100px);bottom:calc(var(--sb) + 18px);font-size:14px;border-color:rgba(255,255,255,.3)}
+#bRun.on{background:rgba(180,140,60,.6)}
+body:not(.touch) #touch{display:none}
+body.dlgup #bRun,body.dlgup #joyb,body.dlgup #joyk{display:none}
+body.dlgup #bA{bottom:calc(var(--sb) + 180px)}
+/* 手机 */
+@media (pointer:coarse) and (max-width:500px){
+ #title h1{font-size:44px;letter-spacing:.2em}
+ #htl{max-width:52vw}#htl .ct{font-size:13px}#htl .goal{font-size:12px}
+ .hb{width:40px;height:40px;font-size:16px}#htr{gap:4px}
+ #ctrlbar{top:calc(var(--st) + 48px);font-size:12px}
+ #reqp{top:calc(var(--st) + 94px);font-size:13px}
+ #toasts{top:calc(var(--st) + 140px)}
+ #dlg{padding:12px 12px 14px;min-height:96px}#dlg .txt{font-size:16.5px;line-height:1.65}#dlg .ch{font-size:15.5px}
+ #chgrid{grid-template-columns:1fr 1fr;gap:8px}.card .tt{font-size:16px}.card .tl{display:none}
+ #bA{width:66px;height:66px;font-size:17px}#bRun{width:46px;height:46px;right:calc(var(--sr) + 86px)}
+ body.dlgup #bA{bottom:calc(var(--sb) + 210px)}
+}
+@media (pointer:coarse) and (max-height:500px){
+ #title h1{font-size:40px;margin-bottom:0}#title .tag{margin-bottom:10px}.menu{gap:6px}.menu .btn{min-height:40px;padding:6px 14px;font-size:15px}
+ .foot{margin-top:8px}
+ #select h2{font-size:20px;margin-top:4px}#select .sub{margin-bottom:6px}
+ #chgrid{grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}.card .tl{display:none}.card .tt{font-size:15px}
+ #dlg{width:min(640px,calc(100vw - 230px));padding:10px 14px 12px;min-height:80px;bottom:calc(var(--sb) + 4px)}#dlg .txt{font-size:15.5px;line-height:1.6}#dlg .ch{font-size:14.5px;min-height:38px;padding:5px 10px}
+ #ctrlbar{font-size:12px}#reqp{top:calc(var(--st) + 46px)}
+ #toasts{top:calc(var(--st) + 84px)}
+ #bA{width:64px;height:64px;bottom:calc(var(--sb) + 22px)}#bRun{width:44px;height:44px;bottom:calc(var(--sb) + 10px);right:calc(var(--sr) + 84px)}
+ body.dlgup #bA{bottom:calc(var(--sb) + 22px)}
+ #card .b{margin-top:12px;line-height:1.7}
+ .panel{padding:10px 16px}.panel h2{margin:2px 0 6px;font-size:20px}.panel .menu{gap:5px}.panel .menu .btn{min-height:38px;padding:4px 12px;font-size:15px}
+}
+</style>
+<!--PEERJS-->
+</head>
+<body>
+<canvas id="cv"></canvas>
+<div id="touch"><div id="joyb" class="hidden"></div><div id="joyk" class="hidden"></div><button class="tbtn" id="bA">调查</button><button class="tbtn" id="bRun">跑</button></div>
+<div id="hud" class="hidden">
+ <div id="htl"><div class="ct" id="hct"></div><div class="goal" id="hgoal"></div></div>
+ <div id="htr"><button class="hb" id="hInv" title="物品 (I)">囊</button><button class="hb" id="hJour" title="笔记 (J)">笺</button><button class="hb" id="hMute" title="声音 (M)">♪</button><button class="hb" id="hMenu" title="菜单 (Esc)">≡</button></div>
+ <div id="ctrlbar" class="hidden"><span class="who" id="cbWho"></span><button class="btn small" id="cbBtn"></button></div>
+ <div id="reqp" class="hidden"><span id="rqTxt"></span><button class="btn small" id="rqY">同意 <kbd>Y</kbd></button><button class="btn small" id="rqN">拒绝 <kbd>N</kbd></button></div>
+ <div id="timerb" class="hidden"></div>
+ <div id="toasts"></div>
+ <div id="dlg" class="hidden"><div class="who"></div><div class="watch hidden">对方操作中</div><div class="txt"></div><div class="chs"></div><div class="more">▼</div></div>
+</div>
+<div id="card" class="ov hidden"><div class="t"></div><div class="s"></div><div class="b"></div><div class="k">— 点击继续 —</div></div>
+<div id="note" class="ov hidden"><div class="paper"><h3></h3><div class="tx"></div></div><div class="k">— 点击合上 —</div></div>
+<div id="keypad" class="ov hidden"><div class="panel"><div id="kpP"></div><div class="pv" id="kpV"></div><div class="keys" id="kpK"></div><div class="row"><button class="btn small" id="kpDel">退格</button><button class="btn small" id="kpX">取消</button></div></div></div>
+<div id="endov" class="ov hidden"><div class="panel"><h2 id="enT"></h2><div class="tx" id="enX"></div><div class="lg" id="enL"></div><div class="row" style="margin-top:16px" id="enB"></div></div></div>
+
+<div id="title" class="screen">
+ <h1>十夜怪谈</h1>
+ <div class="tag">十个流传已久的怪谈 · 两人同看一盏灯</div>
+ <div class="menu" id="tmenu">
+  <button class="btn primary" id="tStart">独自开始</button>
+  <button class="btn" id="tHost">创建房间（双人）</button>
+  <button class="btn" id="tJoin">加入房间</button>
+  <button class="btn" id="tArch">怪谈档案</button>
+  <button class="btn" id="tHelp">操作说明</button>
+  <button class="btn hidden" id="tHub">‹ 游戏厅</button>
+ </div>
+ <div class="foot" id="tfoot">像素恐怖探索合集 · 建议戴耳机、关灯游玩<br>剧情含惊吓与死亡描写</div>
+</div>
+<div id="select" class="screen hidden">
+ <h2>十夜</h2><div class="sub" id="selSub">选择今晚要听的故事</div>
+ <div id="chgrid"></div>
+ <div id="selbar"><button class="btn small" id="sBack">‹ 返回</button><button class="btn small" id="sArch">怪谈档案</button></div>
+</div>
+<div id="lobby" class="screen hidden"><div class="panel">
+ <h2 id="lbT">创建房间</h2>
+ <div id="lbHost"><p>把下面的房间码告诉朋友，对方在「加入房间」里输入即可。两人看到的是同一个画面，同一时刻只有一人操作，另一人可以请求接手。</p><div class="codebox" id="lbCode">····</div></div>
+ <div id="lbJoin" class="hidden"><p>输入朋友给你的 4 位房间码：</p><input id="joinCode" maxlength="4" autocomplete="off" autocapitalize="characters" spellcheck="false"><div class="row" style="margin-top:10px"><button class="btn primary" id="lbGo">加入</button></div></div>
+ <div class="status" id="lbS"></div>
+ <div class="row"><button class="btn small" id="lbX">取消</button></div>
+</div></div>
+<div id="archive" class="screen hidden"><div class="panel arch"><h2>怪谈档案</h2><p style="color:var(--dim);font-size:13px">通关一章即可解锁该怪谈的来历与流变。笔记在游戏中拾得。</p><div id="archL"></div><div class="row" style="margin-top:14px"><button class="btn small" id="arX">‹ 返回</button></div></div></div>
+<div id="help" class="ov hidden"><div class="panel"><h2>操作说明</h2>
+ <p><b>移动</b>：方向键 / WASD；按住 <kbd>Shift</kbd> 奔跑<br><b>调查 / 对话 / 确认</b>：<kbd>空格</kbd> <kbd>Enter</kbd> <kbd>Z</kbd> <kbd>E</kbd><br><b>选项</b>：上下键选择，确认键选定（也可直接点）<br><b>物品</b> <kbd>I</kbd>　<b>笔记</b> <kbd>J</kbd>　<b>菜单</b> <kbd>Esc</kbd>　<b>静音</b> <kbd>M</kbd></p>
+ <p><b>触屏</b>：左半屏按住拖动是摇杆；右下「调查」键；「跑」键切换奔跑。点击对话框翻页。</p>
+ <p><b>双人</b>：两人共享一个角色与画面。操作者按 <kbd>T</kbd> 或顶部按钮可把操作交给对方；观看者按 <kbd>T</kbd> 请求操作，操作者按 <kbd>Y</kbd> 同意 / <kbd>N</kbd> 拒绝。任何一方点击画面都能放一个标记，提醒对方「看这里」。</p>
+ <p><b>提示</b>：头上冒出 <span style="color:#e0484c">!</span> 的东西可以调查。每章右上角会写当前目标。死亡后可从最近的检查点重来。</p>
+ <div class="row"><button class="btn small" id="hpX">知道了</button></div></div></div>
+<div id="menu" class="ov hidden"><div class="panel" style="max-width:380px"><h2 style="text-align:center">暂停</h2><div class="menu" style="margin:10px auto" id="mList">
+ <button class="btn" id="mRes">继续</button><button class="btn" id="mInv">物品</button><button class="btn" id="mJour">笔记</button><button class="btn" id="mHelp">操作说明</button>
+ <button class="btn" id="mRetry">从检查点重来</button><button class="btn" id="mQuit">返回章节选择</button><button class="btn hidden" id="mHub">返回游戏厅</button></div>
+ <div class="status" id="mNote"></div></div></div>
+<div id="inv" class="ov hidden"><div class="panel" style="max-width:460px"><h2>随身物品</h2><div class="list" id="invL"></div><div class="row" style="margin-top:12px"><button class="btn small" id="invX">合上</button></div></div></div>
+<div id="journal" class="ov hidden"><div class="panel" style="max-width:520px"><h2>笔记</h2><div class="list" id="jrL"></div><div class="row" style="margin-top:12px"><button class="btn small" id="jrX">合上</button></div></div></div>
+<script>
+/*@JS*/
+</script>
+</body>
+</html>
