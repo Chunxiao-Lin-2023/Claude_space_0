@@ -305,9 +305,10 @@
         else if (mode === 'PAUSE') { g.fillStyle = c; g.fillRect(m + 6, m + 6, 2, 10); g.fillRect(m + 10, m + 6, 2, 10); txt(g, m + 16, m + 6, 'PAUSE', 2, c); }
         else txt(g, m + 6, m + 6, 'STOP', 2, c);
         g.fillStyle = c; g.fillRect(w - m - 26, m + 6, 16, 8); g.fillRect(w - m - 10, m + 8, 2, 4); g.fillStyle = 'rgba(0,0,0,.6)'; g.fillRect(w - m - 25, m + 7, 14, 6); g.fillStyle = c; g.fillRect(w - m - 24, m + 8, e.mode === 'REC' ? 10 : 4, 4);
-        txt(g, m + 6, h - m - 16, 'SP', 2, c);
-        txt(g, w - m - 70, h - m - 30, '99-03-14', 2, c);
-        txt(g, w - m - 70, h - m - 16, e.tc || '--:--:--', 2, e.odd ? '#ff8a8a' : c);
+        txt(g, m + 6, m + 22, 'SP', 2, c);
+        const tc = e.tc || '--:--:--';
+        txt(g, w - m - 68, m + 20, '99-03-14', 2, c);
+        txt(g, w - m - 68, m + 34, tc, 2, e.odd ? '#ff8a8a' : c);
       }
     },
     maps: {
@@ -1114,7 +1115,7 @@
   }
 
   async function safeEnd(S) {
-    S.f.phase = 'safe';
+    S.f.phase = 'safe'; S.goal('');
     S.stop('red_h'); S.hide('red_h');
     S.follow('qi', false);
     await S.walk('pl', [11, 5], 5); S.turn(0);

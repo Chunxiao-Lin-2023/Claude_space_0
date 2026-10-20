@@ -81,7 +81,7 @@ street: {
 - 方向：0下 1左 2右 3上。玩家面对实体所在的格子按调查键触发 `on`；非实心实体站在上面也能调查。
 - 挂墙的东西（门、窗、镜子、画、黑板）放在墙面那一行，玩家从下面一格朝上调查。
 - 高家具（衣柜、书架、钟、冰箱）只占一格，画的时候向上伸出。
-- **会被客机看见的状态**只能用这些字段：`open covered cracked blood face on off lit full read eyes red coat flowers thread knife col text water locked flicker num`，
+- **会被客机看见的状态**只能用这些字段：`open covered cracked blood face on off lit full read eyes red coat flowers thread knife col text water locked flicker num ox oy`，
   或者放进 `e.s`（任意键，例如 `S.ent('x').s.lit2 = true`；自定义精灵里 `e.lit2` 就能读到）。其它自定义字段不会同步。
 - 人物：`spr: '@lily'`（people 里的 key）。默认实心；鬼一般 `solid: false`。
 - 内置道具精灵（`src/js/10_sprites.js` 的 SPR）：bed bedL futon table table2 lowtable chair sofa armchair desk schooldesk bookshelf wardrobe closet
@@ -165,3 +165,5 @@ street: {
 - `S.timer` 按真实时间走，不受测试的 `fast` 参数影响；SOL 里等计时器会多花真实时间。
 - 内置 `fireplace` 精灵永远有火，`off` 不生效；要熄火的壁炉自己写精灵。
 - `S.moveTo` 把实体搬到另一张地图后，读档时找不回它。跨地图的 NPC 每张图各放一个，用 `S.show`/`S.hide` 切换。
+- 实体的 `on` 字段既是可同步的绘制状态（如 tv 的 `on:'static'`），又是调查回调；同一实体不要两样都用，绘制状态改用 `lit` 或 `e.s`。
+- `ox`/`oy` 绘制偏移也会同步给客机（可做跳动、抖动）。

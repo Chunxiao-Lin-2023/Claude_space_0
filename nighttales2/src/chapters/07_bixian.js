@@ -310,7 +310,7 @@
             S.f.sawPhoto = true;
           } },
           { id: 'dlamp', x: 3, y: 2, spr: 'invisible', off: true, light: { r: 3.6, col: 'rgba(255,200,120,.18)' } },
-          { x: 5, y: 2, h: 2, spr: 'bed', col: '#7a8aa0', on: S => S.narr('值班老师的单人床。被子叠成了豆腐块，枕头边放着一本翻旧了的《飞鸟集》。') },
+          { x: 4, y: 2, h: 2, spr: 'bed', col: '#7a8aa0', on: S => S.narr('值班老师的单人床。被子叠成了豆腐块，枕头边放着一本翻旧了的《飞鸟集》。') },
           { x: 1, y: 4, spr: 'thermos', on: S => S.narr('周老师的暖壶。摸上去是温的。') },
           { id: 'zhou', x: 3, y: 3, spr: '@zhou', dir: 2, hidden: true, on: S => S.say('周老师', S.f.phase === 'old' ? ['旧楼二楼，档案室。钥匙你拿着。', '……我去 307 看着苏晴。去吧。'] : '……') },
           { x: 6, y: 3, spr: 'invisible', solid: false, async touch(S) { if (S.f.phase === 'chase') return safeScene(S); } },
