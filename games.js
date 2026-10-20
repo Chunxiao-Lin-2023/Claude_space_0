@@ -94,6 +94,17 @@ window.GAMES = [
     hue: 165
   },
   {
+    id: 'nighttales3',
+    title: '十夜怪谈·叁',
+    sub: '像素恐怖探索 · 再十个怪谈',
+    desc: 'くねくね、テケテケ、红色房间、黄皮子讨封、兔子人、微笑的男人、巴雷特大道的白衣女人、恩菲尔德闹鬼案、新娘潭、坤蒂拉娜——《十夜怪谈》第三部，每个怪谈一章俯视角探索解谜。两人联机共享同一个角色，轮流操作，关键时刻各投一票。',
+    url: 'nighttales3/',
+    cover: 'covers/nighttales3.webp',
+    status: 'dev',
+    tags: ['单人', '双人联机', 'iPad'],
+    hue: 280
+  },
+  {
     id: 'lasttower',
     title: '尸夜孤楼',
     sub: '盖楼守夜 · 丧尸生存',
