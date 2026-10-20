@@ -24,7 +24,7 @@
     S.place(e.id, S.f.tkX, S.f.tkY, vis ? e.dir : 0); e.alpha = vis ? 1 : .25;
     if (!vis) { S.sfx('sting'); S.bubble(e.id, '!', 900); }
     S.chase(e.id, { spd: BASE, catch: caught }); e.chase.wait = vis ? .2 : .35;
-    S.f._bt = vis ? 1 : 2.4; S.f._burst = false;
+    S.f._bt = vis ? 1 : S.map === 'yard' ? 1.2 : 2.4; S.f._burst = false;
   }
   /* 双人：两人各投一票（单人时等同 ask）；返回 {v, agree, h, g} */
   async function choose(S, q, opts, who) {
@@ -503,7 +503,7 @@
       S.f._bt -= dt;   // テケテケ：一阵一阵地猛冲
       if (S.f._bt <= 0) {
         S.f._burst = !S.f._burst;
-        if (S.f._burst) { e.chase.spd = BURST; S.f._bt = .8; } else { e.chase.spd = BASE; S.f._bt = 1.6 + Math.random() * .6; }
+        if (S.f._burst) { e.chase.spd = BURST; S.f._bt = .8; } else { e.chase.spd = BASE; S.f._bt = (S.map === 'yard' ? 1.1 : 1.6) + Math.random() * .6; }   // 雪地上没有拐角和门，她冲得更勤
       }
       S.f._bs = (S.f._bs || 0) - dt;
       if (S.f._bs <= 0) { S.f._bs = S.f._burst ? .12 : .34; S.sfx(S.f._burst ? 'step' : 'tick'); }
@@ -909,7 +909,7 @@
           if (S.f.phase === 'chase') {
             ringOn(S); S.plr(null);
             S.goal('往有灯的地方跑——铁路边上的小屋！');
-            arrive(S, 4, 2, 1.8);
+            arrive(S, 4, 2, 1.2);
             if (S.once('ydChase')) await S.narr('冷风夹着雪，一下子灌进领口。积雪没过了脚踝，跑也跑不快。\n——当、当、当、当。\n学校后面的道口，警报响了起来。可是铁轨上，看不见火车。');
             return;
           }

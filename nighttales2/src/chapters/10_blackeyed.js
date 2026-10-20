@@ -510,6 +510,8 @@
     await S.narr('尘土落下来的时候，路边空空的。\n只有信箱上的小红旗，不知道被谁扳了起来。');
     S.ent('mybox').s.flag = true;
     if (S.f.tickets) {   // 隐藏细节：在影院停车场翻过垃圾桶
+      S.focus(null);
+      await S.walk('pl', [5, 12], 3); S.face('pl', 2);
       S.sfx('paper');
       await S.narr('你走过去，拉开信箱。\n里面躺着两张电影票。十点那一场，连撕口都没撕。');
       await S.narr('票的背面，有人用铅笔写了一行歪歪扭扭的字：\n「下次吧，女士。」');
@@ -522,7 +524,7 @@
     await S.narr('巴斯特从门廊底下钻了出来，摇着尾巴，绕着她的腿打转。');
     await S.say('埃德娜（远处）', '诺拉——！钟又走起来了！', { style: 'whisper' });
     S.focus(null);
-    S.show('fcat'); await S.walk('fcat', [6, 7], 2.2);
+    S.show('fcat'); await S.walk('fcat', S.f.tickets ? [4, 12] : [6, 7], 2.2);
     await S.narr('脚边有什么毛茸茸的东西蹭了一下。');
     await S.say('诺拉', '……胡椒？');
     await S.narr('瘦了一圈，浑身是草籽，一只耳朵上沾着泥。\n它仰着头，冲你「喵」了一声，好像在怪你：门怎么堵上了。');
