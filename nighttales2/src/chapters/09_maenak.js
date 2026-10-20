@@ -1286,7 +1286,7 @@
     S.sfx('chant');
     await S.narr('「正如满溢的河流，终将注满大海——\n愿此功德，流到你们身边。」');
     S.take('kendi'); S.ent('bowl').full = true; S.sfx('water');
-    await S.narr('你跪在白线里面，把铜壶里的清水，一点一点地倒进碗里。\n水声很轻，很长，像运河在夜里流。');
+    await S.narr('你跪在白线里面，把铜壶里的清水，一点一点地倒进碗里——滴水回向。\n水声很轻，很长，像运河在夜里流。');
     const N = S.ent('nak_w'); N.spr = '@nak'; N.light = { r: 3, col: 'rgba(255,220,170,.24)' };
     S.fx('flash'); S.sfx('chime'); S.face('nak_w', 3);
     await S.narr('白线外面，娜的样子变了。\n湿透的头发干了，灰白的脸上有了血色。怀里的小丹动了动，伸出一只小手。');

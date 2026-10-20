@@ -14,18 +14,25 @@ SOL = [
     ['expect', 'window.__dbg.W.f.cn === 3 && window.__dbg.W.f.letter'],
     ['shot', 'house_day'],
     ['step', 5, 8],
+    ['use', [8, 3]],                  # 罗望子树（好结局的隐藏细节）
+    ['use', 'naat'],                  # 艾纳香（伏笔）
     ['shot', 'canal_day'],
     ['use', 'puu'],
     ['use', [17, 4]],
     ['use', 'phin_n', [0]], ['use', 'tong_n'],
     ['shot', 'nbr'],
     ['step', 4, 6],
-    ['use', 'tboat'],                 # 第五处违和 -> 天黑
-    ['expect', "window.__dbg.W.f.ph === 'dusk'"],
+    ['use', 'tboat'],                 # 第五处违和，但还没在寺里亲眼看过 -> 先去寺里
+    ['expect', "window.__dbg.W.f.ph === 'days' && window.__dbg.W.f.needWat"],
     ['step', 39, 9],
-    ['use', 'abbot'], ['use', [3, 9]], ['use', 'desk'], ['use', 'mound'],
+    ['use', 'abbot'], ['use', 'hotrai'],
+    ['expect', "window.__dbg.ent('hotrai').read === true"],
+    ['use', 'desk'],                  # 亡者簿 -> 天黑
+    ['expect', "window.__dbg.W.f.ph === 'dusk'"],
+    ['use', 'mound'],
     ['shot', 'wat'],
-    ['step', 11, 17],
+    ['step', 11, 17],                 # 回村：家家熄灯
+    ['shot', 'dusk'],
     ['use', 'ladN'],                  # 回家 -> 舂辣椒，要青柠
     ['expect', "window.__dbg.W.f.ph === 'lime'"],
     ['shot', 'house_lime'],
@@ -43,11 +50,11 @@ SOL = [
     ['wait', 2700],
     ['shot', 'flee'],
     ['step', 39, 9],
-    ['expect', "window.__dbg.W.f.ph === 'thread' && window.__dbg.W.mapId === 'wat'"],
-    ['js', 'window.__dbg.W.f._wsp = 999'],   # 测试：让她晚点进寺，避免无头测试里被追上
-    ['use', 'p_ne'],                  # 错：绕成了自己的右手
-    ['expect', 'window.__dbg.W.f.thr.length === 0'],
+    ['expect', "window.__dbg.W.f.ph === 'thread' && window.__dbg.W.mapId === 'wat' && window.__dbg.W.timer"],
+    ['use', 'p_ne'],                  # 错：绕成了自己的右手（经声乱，她往里挪一步）
+    ['expect', 'window.__dbg.W.f.thr.length === 0 && window.__dbg.W.f.miss === 1'],
     ['use', 'p_nw'], ['use', 'p_ne'], ['use', 'p_se'], ['use', 'p_sw'],
     ['shot', 'thread'],
     ['use', 'buddha', [0, 0, 0]],     # 系上佛手；提起那封信；「让她安心地走」；来世之约
+    ['expect', "window.__dbg.store.get('ends', []).includes('maenak:farewell')"],
 ]
