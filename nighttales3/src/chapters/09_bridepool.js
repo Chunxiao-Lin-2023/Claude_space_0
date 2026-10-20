@@ -396,7 +396,7 @@
           { id: 'pooleye', x: 10, y: 6, spr: 'invisible', solid: true, on: S => poolEye(S) },
           { x: 15, y: 4, spr: 'invisible', solid: true, on: S => S.narr('瀑布右边的石壁，被水汽打得湿漉漉的。\n石缝里卡着一根褪了色的红绳。') },
           { x: 4, y: 4, spr: 'invisible', solid: true, on: S => S.narr('一块斜斜的大石，一半没在潭里。\n石面被水冲得又光又滑，长着一层薄薄的青苔。') },
-          { id: 'glint', x: 5, y: 5, spr: 'glint', hidden: true, solid: false, on: S => glintOn(S) },
+          { id: 'glint', x: 5, y: 5, spr: 'glint', hidden: true, solid: true, on: S => glintOn(S) },
           { id: 'reflector', x: 17, y: 4, spr: 'reflector', async on(S) {
             S.hide('reflector'); S.give('reflector');
             await S.narr('阿希的反光板。银色那一面，照出你自己汗湿的脸。');

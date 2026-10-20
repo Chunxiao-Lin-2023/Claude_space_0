@@ -36,6 +36,37 @@
   }
   const K = { skin: '#e4e0da', hair: '#0a0808', hs: 'long', cover: true, redEye: true, ghost: true, dress: true, top: '#ecebe4' };
   const SI = { skin: '#e2c09c', hair: '#100c0c', hs: 'long', ghost: true, dress: true, top: '#f4f0e6', top2: '#e8dcc0', mouth: '#b06060', blush: '#e8a8a0', eye: '#1a1010' };
+  const KR = [
+          'TTTTTTTTTTTdTTTTTTTTTT',
+          'TddYddYddYddYddYddYddT',
+          'TdddddddddddddBddddddT',
+          'TBdddddddddddddddddddT',
+          'TddYddYddYddYddYddYddT',
+          'TddddddddddddddddddddT',
+          'TddddddddddddddddddddT',
+          'T~~~~~~~~~~~~~~~~~pp~T',
+          'TddddddddddddddddddddT',
+          'TddddddddddddddddddddT',
+          'TddYddYddYddYddYddYdBT',
+          'TddddddddddddddddddddT',
+          'TddddddddddddddddddddT',
+          'TddYddYddYddYddYddYddT',
+          'T~pp~~~~~~~~~~~~~~~~~T',
+          'TddddddddddddddddddddT',
+          'TddYddYddYddYddYddYddT',
+          'TddddddddddddddddddddT',
+          'TBdddddddddddddddddddT',
+          'TddYddYddYddYddYddYddT',
+          'TddddddddddddddddddddT',
+          'T~~~~~~~~~~~~~~~~~pp~T',
+          'TddYddYddYddYddYddYddT',
+          'TddddddddddddddddddddT',
+          'TddddddddddddddddddddT',
+          'TddYddYddYddYddYddYddT',
+          'TdddddddddddddddddddBT',
+          'TddddddBdddddddddddddT',
+          'TddYddYddYddYddYddYddT',
+          'TTTTTTTTTTTdTTTTTTTTTT'];
   const GLOW = { r: 2.2, col: 'rgba(220,230,220,.14)' };
 
   const caughtK = async S => {
@@ -161,28 +192,29 @@
       jerigen(g, e, t, R) { box(R, 4, 4, 9, 10, '#3a6a9a'); R(5, 5, 7, 2, '#5a8aba'); R(9, 2, 3, 3, '#2a4a6a'); R(6, 9, 5, 1, '#2a4a6a'); },
       kemboja(g, e, t, R) {   // 鸡蛋花树（印尼坟场常种的树）；col:'r' 开红花
         const fl = e.col === 'r' ? '#d8506a' : '#f4f0e4', cen = e.col === 'r' ? '#f0a0b0' : '#f0c850';
-        R(7, 2, 2, 13, '#7a7268'); R(4, -4, 2, 8, '#7a7268'); R(10, -6, 2, 9, '#7a7268'); R(5, 2, 3, 2, '#7a7268'); R(9, 1, 2, 2, '#7a7268'); R(7, -2, 2, 5, '#6a625a');
-        for (const [x, y] of [[2, -9], [8, -12], [11, -10], [5, -7]]) { R(x, y, 5, 4, '#1e3a24'); R(x + 1, y - 1, 3, 1, '#2a4a2e'); }
-        for (const [x, y] of [[3, -9], [9, -12], [12, -9], [6, -6], [4, -10]]) { R(x, y, 2, 2, fl); R(x, y, 1, 1, cen); }
+        R(7, 0, 2, 15, '#8a8276'); R(4, -6, 2, 8, '#8a8276'); R(10, -7, 2, 9, '#8a8276'); R(5, 0, 3, 2, '#8a8276'); R(9, -1, 2, 2, '#8a8276'); R(7, -3, 2, 4, '#7a7268');
+        for (const [x, y] of [[-1, -13], [5, -17], [10, -14], [2, -9], [9, -9]]) { R(x, y, 8, 6, '#1f3d26'); R(x + 1, y - 1, 6, 1, '#2c5032'); R(x + 1, y + 1, 3, 2, '#2c5032'); }
+        for (const [x, y] of [[0, -12], [6, -16], [12, -13], [3, -8], [11, -8], [8, -12], [14, -10]]) { R(x, y, 3, 1, fl); R(x + 1, y - 1, 1, 3, fl); R(x + 1, y, 1, 1, cen); }
         R(4, 14, 9, 2, 'rgba(0,0,0,.3)');
       },
       kapuk(g, e, t, R) {   // 大木棉树：板状根，灰白的树干，树冠遮住半边天
-        R(18, -6, 12, 38, '#6e6a62'); R(18, -6, 3, 38, '#8a867c'); R(27, -6, 3, 38, '#55514a');
-        R(10, 22, 10, 8, '#6e6a62'); R(28, 22, 10, 8, '#6e6a62'); R(14, 18, 6, 6, '#6e6a62'); R(28, 18, 6, 6, '#5e5a52');
-        R(6, 28, 36, 4, '#2a241c');
-        R(10, -8, 28, 3, '#5e5a52'); R(4, -14, 10, 3, '#5e5a52'); R(34, -16, 10, 3, '#5e5a52');
-        for (const [x, y, w, h] of [[-6, -40, 26, 18], [14, -48, 28, 22], [32, -38, 22, 18], [-2, -26, 18, 12], [34, -24, 18, 10]]) { R(x, y, w, h, '#14221a'); R(x + 2, y + 1, w - 6, 3, '#1e3024'); }
-        for (let i = 0; i < 7; i++) R(((hash(i, 2, 7) * 50) | 0) - 4, -44 + ((hash(i, 3, 7) * 26) | 0), 2, 2, '#c8c4b8');
+        for (const [x, y, w, h] of [[-10, -46, 30, 22], [10, -54, 30, 26], [30, -46, 28, 22], [-4, -30, 56, 16], [-8, -20, 20, 8], [36, -20, 18, 8]]) { R(x, y, w, h, '#1c2e22'); R(x + 2, y + 2, w - 6, 3, '#28402e'); R(x + 4, y + h - 3, w - 8, 2, '#142218'); }
+        for (let i = 0; i < 10; i++) R(((hash(i, 2, 7) * 60) | 0) - 8, -50 + ((hash(i, 3, 7) * 34) | 0), 2, 2, '#c8c4b8');
+        R(18, -12, 12, 42, '#4e4840'); R(18, -12, 2, 42, '#625a50'); R(27, -12, 3, 42, '#3a3530'); R(22, 0, 1, 6, '#3a3530'); R(24, 10, 1, 8, '#3a3530');
+        R(4, 24, 16, 6, '#4e4840'); R(28, 24, 16, 6, '#443e36'); R(11, 16, 8, 10, '#4e4840'); R(29, 16, 8, 10, '#443e36'); R(4, 24, 16, 1, '#625a50'); R(28, 24, 16, 1, '#5a5248');
+        R(10, -14, 10, 3, '#4e4840'); R(28, -18, 14, 3, '#4e4840'); R(22, -24, 4, 12, '#4e4840');
+        R(4, 29, 40, 3, '#1a160e');
       },
-      kubur(g, e, t, R) {   // 马来老坟：两块墓碑（头一块大、脚一块小）；flat=扁碑（女人），否则圆柱碑（男人）
-        R(2, 9, 12, 20, '#3a3226'); R(3, 10, 10, 18, '#4a4030'); R(3, 10, 10, 1, '#5a5038');
+      kanopi(g, e, t, R) { R(-3, -12, 22, 11, '#14241a'); R(0, -15, 14, 4, '#1a2e20'); R(-1, -11, 8, 2, '#203626'); R(9, -6, 7, 2, '#203626'); R(4, -2, 8, 3, '#14241a'); },
+      kubur(g, e, t, R) {   // 马来老坟：石头围起来的长方形坟，两块墓碑（头一块大、脚一块小）；flat=扁碑（女人），否则圆柱碑（男人）
+        R(1, 8, 14, 22, '#5a584e'); R(2, 9, 12, 20, '#3a3226'); R(3, 10, 10, 18, '#4a4030'); R(1, 29, 14, 1, '#2e2c26');
         for (let i = 0; i < 4; i++) R(3 + ((hash(e.x, e.y, i) * 9) | 0), 12 + ((hash(e.y, e.x, i) * 14) | 0), 1, 2, '#2c4428');
-        const st = e.old ? '#6a6e64' : '#8a8a80', sd = shade(st, -.3);
+        const st = e.old ? '#7a7c72' : '#9a9a90', sd = shade(st, -.3);
         if (e.flat) { R(4, -1, 8, 12, st); R(3, 1, 1, 6, st); R(12, 1, 1, 6, st); R(5, -2, 6, 1, st); R(4, 9, 8, 2, sd); }
         else { R(6, -3, 4, 14, st); R(5, -1, 6, 10, st); R(7, -4, 2, 1, st); R(5, 9, 6, 2, sd); }
         if (e.text) { R(6, 2, 4, 1, '#2a2a24'); R(6, 4, 4, 1, '#2a2a24'); R(7, 6, 2, 1, '#2a2a24'); }
         if (e.old) { R(4, 3, 2, 3, '#3a5a34'); R(9, 6, 2, 2, '#3a5a34'); }
-        if (e.flat) { R(6, 25, 4, 5, st); R(5, 26, 1, 3, st); R(10, 26, 1, 3, st); } else R(7, 24, 2, 6, st);
+        if (e.flat) { R(6, 24, 4, 5, st); R(5, 25, 1, 3, st); R(10, 25, 1, 3, st); } else R(7, 23, 2, 6, st);
         if (e.covered) { R(4, 13, 8, 8, '#ecebe2'); R(4, 13, 8, 1, '#c84a4a'); for (let i = 0; i < 4; i++) R(5 + i * 2, 20, 1, 1, '#c84a4a'); }
         if (e.flowers) for (let i = 0; i < 6; i++) { const x = 3 + ((hash(e.x, i, 9) * 9) | 0), y = 11 + ((hash(i, e.y, 9) * 14) | 0); R(x, y, 2, 2, '#f4f0e4'); R(x, y, 1, 1, '#f0c850'); }
       },
@@ -379,40 +411,10 @@
       },
       /* ---------------- 橡胶园 ---------------- */
       kebun: {
-        amb: 'night', dark: .9, plr: 2.5, floor: 'dirt', fog: .1,
+        amb: 'night', dark: .86, plr: 2.6, floor: 'dirt', fog: .1,
         legend: { Y: 'karet', p: 'papan' },
         tileOpts: { grassC: '#1e2c1c' },
-        rows: [
-          'TTTTTTTTTTTdTTTTTTTTTT',
-          'TddYddYddYddYddYddYddT',
-          'TdddddddddddddBddddddT',
-          'TBdddddddddddddddddddT',
-          'TddYddYddYddYddYddYddT',
-          'TddddddddddddddddddddT',
-          'TddddddddddddddddddddT',
-          'T~~~~~~~~~~~~~~~~~pp~T',
-          'TddddddddddddddddddddT',
-          'TddddddddddddddddddddT',
-          'TddYddYddYddYddYddYdBT',
-          'TddddddddddddddddddddT',
-          'TddddddddddddddddddddT',
-          'TddYddYddYddYddYddYddT',
-          'T~pp~~~~~~~~~~~~~~~~~T',
-          'TddddddddddddddddddddT',
-          'TddYddYddYddYddYddYddT',
-          'TddddddddddddddddddddT',
-          'TBdddddddddddddddddddT',
-          'TddYddYddYddYddYddYddT',
-          'TddddddddddddddddddddT',
-          'T~~~~~~~~~~~~~~~~~pp~T',
-          'TddYddYddYddYddYddYddT',
-          'TddddddddddddddddddddT',
-          'TddddddddddddddddddddT',
-          'TddYddYddYddYddYddYddT',
-          'TdddddddddddddddddddBT',
-          'TddddddBdddddddddddddT',
-          'TddYddYddYddYddYddYddT',
-          'TTTTTTTTTTTdTTTTTTTTTT'],
+        rows: KR,
         ents: [
           { x: 11, y: 29, spr: 'invisible', async touch(S) { await S.narr('不能回去。孩子还在她手里。\n天亮之前，得把孩子带回来。'); await S.walk('pl', 'u', 5); } },
           { x: 11, y: 0, spr: 'invisible', async touch(S) { await S.go('makam', 11, 17, 3); } },
@@ -426,6 +428,7 @@
           { x: 8, y: 11, spr: 'barrel', on: S => S.narr('一只接胶水的铁桶，里面的胶乳已经凝成了白色的一坨，像一块冷掉的豆腐。') },
           { x: 15, y: 5, spr: 'basket', on: S => S.narr('一只倒扣的竹篮，篮子底下压着一双胶鞋。\n鞋子是湿的，鞋尖朝着村子的方向，好像有人脱了鞋，光着脚往林子深处去了。') },
           { x: 19, y: 15, spr: 'invisible', solid: false, on: S => S.narr('一棵橡胶树的树皮上，被人用刀刻了一个小小的记号：一个圈，圈里一点。\n割胶工的记号，意思是「这棵树，别在夜里割」。') },
+          ...KR.flatMap((r, y) => [...r].map((c, x) => c === 'Y' ? { x, y, spr: 'kanopi', solid: false, alpha: .9 } : null).filter(Boolean)),
           { id: 'kk', x: 11, y: 20, spr: '@kunti', hidden: true, solid: false, light: GLOW }
         ],
         async enter(S, first) {
