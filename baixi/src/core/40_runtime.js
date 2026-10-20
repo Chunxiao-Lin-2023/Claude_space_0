@@ -463,12 +463,12 @@ BX.onNet = function (m) {
     case 'req': { // host receives guest action request
       if (!ctx.isHost) return;
       let ok = ctx.isRemote(m.by) && !S.ended;
-      if (ok && S.def.kind === 'turn') ok = ctx.turn.includes(m.by) || !!S.def.anyTimeActs;
+      if (ok && S.def.kind === 'turn' && !S.def.anyTimeActs) { let tm = []; try { tm = inst.toMove ? inst.toMove() : []; } catch (e) {} tm = tm == null || tm === -1 ? [] : Array.isArray(tm) ? tm : [tm]; ok = tm.includes(m.by); }
       if (ok && inst.valid) { try { ok = inst.valid(m.a, m.by) !== false; } catch (e) { ok = false; } }
       if (ok) ctx.act(m.a, m.by); else BX.net.send({t: 'rej', g: S.g});
       break;
     }
-    case 'rej': S.reqPending = false; BX.sfx.play('error'); break;
+    case 'rej': { S.reqPending = false; if (!BX.bot) BX.sfx.play('error'); S.aiTok = {}; const gen = S.gen; setTimeout(() => { if (S && S.gen === gen) check(); }, 150); break; }
     case 'needsync': if (ctx.isHost) BX.net.send({t: 'sync', log: S.log, g: S.g}); break;
     case 'sync': if (!ctx.isHost) { makeInstance(m.log); } break;
     case 'snap': if (!ctx.isHost && inst.restore) try { inst.restore(m.d); } catch (e) { rethrow(e, 'restore'); } break;

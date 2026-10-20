@@ -86,14 +86,16 @@ BX.register({
     const vp = st.b.map(n => BX.range(n).map(mkSeed));
     let hand = [], handAt = -1, fly = [], queue = [], busy = false, flash = {p: -1, t: 0}, lastOps = [];
     function sync() { for (let p = 0; p < 14; p++) { while (vp[p].length > st.b[p]) vp[p].pop(); while (vp[p].length < st.b[p]) vp[p].push(mkSeed()); } hand = []; handAt = -1; fly = []; queue = []; busy = false; }
-    const STEP = () => BX.test ? 4 : 150;
+    const STEP = () => BX.test ? 4 : queue.length > 14 ? 60 : 150;
     function runQueue() {
       if (busy) return;
       if (!queue.length) {   // idle: reconcile visual seeds with the true state once every flight has landed
         if (fly.length) { ctx.after(40, runQueue); return; }
+        hand = []; handAt = -1;
         for (let p = 0; p < 14; p++) { while (vp[p].length > st.b[p]) vp[p].pop(); while (vp[p].length < st.b[p]) vp[p].push(mkSeed()); }
         ctx.poke(); return;
       }
+      if (queue.length > 40) { sync(); ctx.poke(); return; }   // fell far behind (fast replays / bots): jump to the true state
       if ((queue[0].t === 'take' || queue[0].t === 'move') && fly.length) { ctx.after(30, runQueue); return; }
       const op = queue.shift();
       busy = true;
@@ -206,6 +208,7 @@ BX.register({
       },
       onTurn: status,
       frame(dt) {
+        if (!busy && !queue.length && !fly.length && (hand.length || vp.some((a, p) => a.length !== st.b[p]))) runQueue();
         const g = cv.g; cv.clear(); const l = L(), s = l.s;
         const [ax, ay] = T(0, 0, l), [bx, by] = T(8, 3, l);
         const x0 = Math.min(ax, bx), y0 = Math.min(ay, by), bw = Math.abs(bx - ax), bh = Math.abs(by - ay);

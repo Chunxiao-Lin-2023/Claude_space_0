@@ -202,7 +202,8 @@ BX.register({
     const viewSeat = () => ctx.mySeats.length === 1 ? ctx.mySeats[0] : 0;
     function view() {
       const W = cv.w, H = cv.h, port = H > W * 1.1;
-      const ctrlH = touchUI() ? (port ? Math.min(H * .2, 150) : Math.min(H * .26, 110)) : 0;
+      const two = nLoc() === 2 && W < 560;
+      const ctrlH = touchUI() ? (two ? Math.min(H * .26, 190) : port ? Math.min(H * .2, 150) : Math.min(H * .26, 110)) : 0;
       const top = 44, avail = H - ctrlH - top;
       const lw = CW + 1.6, lh = port ? 6.5 : 6.2;
       const sx = Math.min(W / lw, avail / lh), s = port ? Math.min(avail / lh, sx * 3) : sx;
@@ -215,11 +216,12 @@ BX.register({
     function ctrlBtns(v) {
       if (!touchUI()) return [];
       const out = [], H = v.H, W = v.W, h = v.ctrlH, y0 = H - h;
-      const groups = nLoc() === 2 ? [[0, 0, W / 2], [1, W / 2, W / 2]] : [[viewSeat(), 0, W]];
-      for (const [seat, gx, gw] of groups) {
-        const pad = 8, bh = Math.min(h - pad * 2, 84), by = y0 + (h - bh) / 2;
+      const two = nLoc() === 2 && W < 560;
+      const groups = nLoc() === 2 ? (two ? [[0, 0, W, y0 + h / 2, h / 2], [1, 0, W, y0, h / 2]] : [[0, 0, W / 2], [1, W / 2, W / 2]]) : [[viewSeat(), 0, W]];
+      for (const [seat, gx, gw, ry, rh] of groups) {
+        const pad = 8, hh = rh || h, yy = ry != null ? ry : y0, bh = Math.min(hh - pad * 2, 84), by = yy + (hh - bh) / 2;
         const bw = Math.min((gw - pad * 5) / 4, 110);
-        const mirror = nLoc() === 2 && seat === 1;
+        const mirror = nLoc() === 2 && seat === 1 && !two;
         const ks = ['l', 'r', 'j', 'w'];
         const xs = mirror ? [gx + pad, gx + pad * 2 + bw, gx + gw - pad * 2 - bw * 2, gx + gw - pad - bw] : [gx + pad, gx + pad * 2 + bw, gx + gw - pad * 2 - bw * 2, gx + gw - pad - bw];
         // movement on outer side, actions on inner side for right player
@@ -341,7 +343,7 @@ BX.register({
     function drawCtrl(g, v) {
       const bs = ctrlBtns(v); if (!bs.length) return;
       g.fillStyle = 'rgba(30,16,6,.55)'; g.fillRect(0, v.H - v.ctrlH, v.W, v.ctrlH);
-      if (nLoc() === 2) { g.fillStyle = '#e6c57d'; g.fillRect(v.W / 2 - 1, v.H - v.ctrlH, 2, v.ctrlH); }
+      if (nLoc() === 2) { g.fillStyle = '#e6c57d'; if (v.W < 560) g.fillRect(0, v.H - v.ctrlH / 2 - 1, v.W, 2); else g.fillRect(v.W / 2 - 1, v.H - v.ctrlH, 2, v.ctrlH); }
       const lab = {l: '◀', r: '▶', j: '跳', w: '挥'}, col = {l: '#c8a052', r: '#c8a052', j: '#3f7f6b', w: '#c23a2b'};
       for (const b of bs) {
         let L = lab[b.k];

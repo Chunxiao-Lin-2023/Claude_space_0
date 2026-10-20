@@ -259,7 +259,7 @@ BX.register({
         if (v > bv) { bv = v; best = c; }
       }
       if (!best) best = {x: .15, ang: -.004, p: .7, h: -.5};
-      const na = [0, .045, .02, .005][level], nx = [0, .18, .08, .025][level];
+      const na = [0, .06, .03, .006][level], nx = [0, .2, .1, .025][level];
       const g2 = () => (Math.random() + Math.random() + Math.random() - 1.5) / 1.5;
       const pick = Object.assign({}, best, {ang: best.ang + g2() * na, x: BX.clamp(best.x + g2() * nx, -.45, .45)});
       if (!ctx.isRemote(seat)) aim = Object.assign({}, aim, pick);
