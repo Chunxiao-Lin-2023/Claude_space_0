@@ -46,6 +46,17 @@ window.__reach = () => {   // 从玩家当前位置真实走路能到的格子�
   while (q.length) { const [x, y] = q.pop(); for (const [dx, dy] of [[1,0],[-1,0],[0,1],[0,-1]]) { const nx = x + dx, ny = y + dy, k = nx + ',' + ny; if (seen.has(k)) continue; if (!passable(m, nx, ny, W.pl)) continue; seen.add(k); q.push([nx, ny]); } }
   return { map: W.mapId, cells: [...seen] };
 };
+window.__cands = t => {   // 能调查目标的所有站位（和 __dbg.face 的候选一致）
+  const D = window.__dbg, W = D.W, m = W.maps[W.mapId];
+  if (typeof t === 'number') return null;
+  const e = Array.isArray(t) ? m.ents.find(z => !z.hidden && Math.round(z.px / TS) <= t[0] && t[0] < Math.round(z.px / TS) + z.w && Math.round(z.py / TS) <= t[1] && t[1] < Math.round(z.py / TS) + z.h && z.on) : D.ent(t);
+  if (!e) return null;
+  const ex = Math.round(e.px / TS), ey = Math.round(e.py / TS), c = [];
+  for (let x = ex; x < ex + e.w; x++) { c.push(x + ',' + (ey + e.h)); c.push(x + ',' + (ey - 1)); }
+  for (let y = ey; y < ey + e.h; y++) { c.push((ex - 1) + ',' + y); c.push((ex + e.w) + ',' + y); }
+  if (!e.solid) for (let x = ex; x < ex + e.w; x++) for (let y = ey; y < ey + e.h; y++) c.push(x + ',' + y);
+  return c;
+};
 """
 
 def serve():
@@ -68,12 +79,16 @@ def run_chapter(page, cid, steps, shots=None):
     shot_n = 0
     def check_reach(cid, st, pre):
         now = page.evaluate("(() => { const W = window.__dbg.W; return {map: W.mapId, x: W.pl.x, y: W.pl.y}; })()")
-        if now['map'] == pre['map'] and f"{now['x']},{now['y']}" not in set(pre['cells']):
-            WARN.append(f"{cid}: 走不到 {st[:2]} -> ({now['x']},{now['y']}) on {now['map']}（测试是传送过去的，真人可能被堵住）")
+        cells = set(pre['cells'])
+        ok = f"{now['x']},{now['y']}" in cells or (pre.get('cands') and any(c in cells for c in pre['cands']))
+        if now['map'] == pre['map'] and not ok:
+            WARN.append(f"{cid}: 从 {tuple(pre['xy'])} 走不到 {st[:3] if st[0]=='step' else st[:2]} -> ({now['x']},{now['y']}) on {now['map']}（可达 {len(cells)} 格；测试是传送过去的，真人可能被堵住）")
     for st in steps[i0:]:
         kind = st[0]
         if kind in ('use', 'step'):
             pre = page.evaluate("window.__reach()")
+            pre['cands'] = page.evaluate("t => window.__cands(t)", st[1]) if kind == 'use' else None
+            pre['xy'] = page.evaluate("(() => { const W = window.__dbg.W; return [W.pl.x, W.pl.y]; })()")
         if kind == 'use':
             tgt = st[1]; picks = st[2] if len(st) > 2 else []
             ok = page.evaluate("t => window.__dbg.face(t)", tgt)
