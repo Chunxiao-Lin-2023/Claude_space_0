@@ -6,7 +6,7 @@ function frame() {
   try {
     if (W && UI.scene === 'play') {
       if (isHost()) {
-        if (!W.paused) { if (iControl()) updatePlayer(dt); else hostCheckRemoteTile(); hostTick(dt); }
+        if (!W.paused) { if (iControl()) updatePlayer(dt); else { if (W.pl.mv) moveEntity(W.pl, dt); hostCheckRemoteTile(); } hostTick(dt); }   // 客机操作时，剧本里的 S.walk('pl') 由主机推进
         netTick(dt);
       } else {
         guestTick(dt);
