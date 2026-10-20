@@ -790,7 +790,7 @@
     /* 屏住气（站定半秒以上）她就闻不着；一走动，三格之内（回过头的人四格）就会被她循着气追上来 */
     const still = S.f._still > .5, inZ = HALL(p.x, p.y), smell = still ? 0 : base;
     if (x.chase) { if (d > 6 || !inZ || (S.f._still > 1.0 && d > 1)) { S.stop('xs3_k'); S.bubble('xs3_k', '?', 900); S.f._sniff = 1.2; } return; }
-    if (inZ && d <= smell) { S.sfx('sting'); S.bubble('xs3_k', '!', 900); S.chase('xs3_k', { spd: 2.6, zone: HALL, catch: stalkCaught }); return; }
+    if (inZ && d <= smell) { S.sfx('sting'); S.bubble('xs3_k', '!', 900); S.chase('xs3_k', { spd: 2.8, zone: HALL, catch: stalkCaught }); return; }
     S.f._sniff = Math.max(0, (S.f._sniff || 0) - dt);
     if (still && d <= 1 && !S.f._sniff) { S.f._sniff = 2; S.stop('xs3_k'); S.face('xs3_k', 'pl'); S.bubble('xs3_k', '?', 1400); S.sfx('whisper'); return; }   // 贴着你闻了闻……没闻着
     S.f._wt = (S.f._wt ?? 1) - dt;

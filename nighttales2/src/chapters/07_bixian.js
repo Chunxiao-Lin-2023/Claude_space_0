@@ -41,7 +41,7 @@
   function resetChase(S) {
     S.stop('xm_d'); S.place('xm_d', 32, 3, 1); S.ent('xm_d').alpha = 1;
     S.pos(28, 3, 1);
-    S.chase('xm_d', { spd: 3, catch: caught }); S.ent('xm_d').chase.wait = S.f.answered ? .8 : 1.2;
+    S.chase('xm_d', { spd: 3, catch: caught }); S.ent('xm_d').chase.wait = S.f.answered ? 1 : 1.5;
     BL.t = 0; BL.still = 0;
     S.ent('dlamp').off = false; S.ent('exitL').s.flick = true; S.ent('exitR').s.flick = true;
     for (const id of ['tap1', 'tap2', 'tap3']) S.ent(id).s.run = true;
@@ -50,7 +50,7 @@
   }
   function chaseTick(S, dt) {
     if (S.f.phase !== 'chase' || W.busy || W.ended) return;
-    const g = S.ent('xm_d'); if (!g || g.hidden || !g.chase || g.mv) { BL.t += dt; return; }
+    const g = S.ent('xm_d'); if (!g || g.hidden || !g.chase) return;
     BL.t += dt; BL.still = S.moving ? 0 : BL.still + dt;
     const gx = Math.round(g.px / TS), gy = Math.round(g.py / TS), px = S.pl.x, py = S.pl.y;
     if (Math.abs(gx - px) + Math.abs(gy - py) <= 4 || (BL.t < 2 && BL.still < .9)) return;
@@ -74,45 +74,56 @@
     faces: {
       /* 湿漉漉的长发把整张脸盖住，发缝里只露出一只眼睛；越凑越近，发缝越开 */
       xiaoman(R, a) {
-        const H = '#0c0a0e', HL = '#2c2a36', HW = '#4a5266', SK = '#d8d4dc', SK2 = '#aaa4b2', WH = '#f2f0ea', BL2 = '#34466a', CL = '#e4e4ea';
+        const H = '#0a080c', HL = '#22202c', HW = '#465066', SK = '#d6d2da', SK2 = '#9c96a6', WH = '#f4f2ec', RIM = '#8a2a34', BL2 = '#2c3c5e', CL = '#dcdce4';
         // 肩膀：蓝白运动服，白色翻领
-        R(0, 26, 32, 6, BL2); R(0, 26, 32, 1, '#465a84'); R(10, 25, 5, 4, CL); R(17, 25, 5, 4, CL); R(14, 26, 4, 3, SK2); R(3, 28, 1, 4, CL); R(28, 28, 1, 4, CL);
-        // 头发：大轮廓，一直垂过肩膀
-        R(9, 0, 14, 2, H); R(6, 2, 20, 3, H); R(4, 5, 24, 22, H); R(5, 27, 8, 3, H); R(19, 27, 8, 3, H); R(6, 30, 4, 2, H); R(22, 30, 4, 2, H);
-        // 发丝的高光（湿的，发亮）
-        for (const x of [7, 10, 21, 24]) R(x, 4, 1, 24, HL);
-        R(12, 3, 1, 10, HW); R(19, 3, 1, 12, HW); R(8, 18, 1, 9, HW); R(23, 16, 1, 11, HW);
-        // 发缝：从额头裂到下巴，a 越大越开
-        const gp = 1 + Math.round(a * 2);
-        R(15 - gp, 8, gp * 2 + 1, 15, SK); R(16, 8, 1, 15, SK2); R(15 - gp, 22, gp * 2 + 1, 1, SK2);
-        R(15 - gp - 1, 10, 1, 9, H); R(15 + gp + 1, 12, 1, 8, H);   // 两边垂下来的湿发梢
-        // 那只眼睛：大眼白、针尖瞳孔，一直盯着你
-        R(13, 12, 5, 3, '#4a3a44'); R(14, 12, 3, 2, WH); R(15, 12, 1, 2, '#0a0608'); R(14, 14, 3, 1, '#8a6a74');
-        if (a > .5) { R(12, 13, 1, 1, WH); }
-        // 嘴：发缝底下一条黑缝，慢慢张开
-        R(14, 19, 3, 1 + Math.round(a * 2), '#120a10');
+        R(0, 27, 32, 5, BL2); R(0, 27, 32, 1, '#3e5078'); R(9, 26, 5, 4, CL); R(18, 26, 5, 4, CL); R(13, 27, 6, 2, SK2);
+        // 头发：一整片垂下来，盖过肩膀
+        R(10, 0, 12, 1, H); R(7, 1, 18, 2, H); R(5, 3, 22, 3, H); R(4, 6, 24, 22, H); R(5, 28, 8, 2, H); R(19, 28, 8, 2, H); R(6, 30, 3, 2, H); R(23, 30, 3, 2, H);
+        for (const x of [6, 9, 12, 20, 23, 26]) R(x, 3 + (x % 3), 1, 25 - (x % 4), HL);
+        R(8, 6, 1, 16, HW); R(24, 8, 1, 18, HW); R(11, 2, 1, 7, HW);
+        // 发缝：歪歪扭扭的一条，a 越大越开
+        const gw = [1, 1, 2, 2, 3, 3, 3, 3, 2, 2, 2, 3, 3, 2, 2, 1];
+        for (let i = 0; i < gw.length; i++) {
+          const y = 8 + i, w = gw[i] + Math.round(a * 2), cx = 16 + (i < 5 ? 0 : i < 11 ? -1 : 0);
+          R(cx - (w >> 1), y, w, 1, SK); R(cx + w - (w >> 1) - 1, y, 1, 1, SK2);
+        }
+        // 两缕湿头发斜着横过发缝
+        R(14, 10, 1, 1, H); R(15, 11, 1, 1, H); R(16, 17, 1, 1, H); R(17, 18, 1, 1, H); R(15, 19, 1, 1, HL);
+        // 那只眼睛：眼白很大、红眼圈、瞳孔只有一个点，一直盯着你
+        const ew = 3 + Math.round(a * 2), ex = 15 - (ew >> 1);
+        R(ex - 1, 11, ew + 2, 6, SK); R(ex - 1, 11, ew + 2, 1, SK2); R(ex, 12, ew, 1, '#3a2a34');
+        R(ex, 13, ew, 2, WH); R(ex, 15, ew, 1, RIM); R(ex + ew - 1, 14, 1, 1, RIM);
+        R(15, 13, 1, 2, '#050305'); if (a > .4) R(ex + ew - 1, 13, 1, 1, '#c8c4cc');
+        // 发缝底下一道黑，像是张开的嘴
+        R(15, 20, 2, 1 + Math.round(a * 2), '#100810');
         // 发梢在滴水
-        for (const [x, y0] of [[7, 26], [11, 24], [21, 25], [25, 27]]) R(x, y0 + ((a * 9 + x) % 5), 1, 2, '#8aa0c0');
+        for (const [x, y0] of [[6, 26], [12, 25], [20, 26], [25, 27]]) R(x, y0 + ((a * 9 + x) % 5), 1, 2, '#8aa0c0');
       },
-      /* 坏结局：「你想看吗？」——头发分开了，整张脸歪着凑过来 */
+      /* 坏结局：「你想看吗？」——头发分开了，一张歪着的脸凑过来 */
       xmbad(R, a) {
-        const H = '#0c0a0e', HL = '#2c2a36', SK = '#dcd6dc', SK2 = '#a8a0ac', SK3 = '#7a7080', K = '#05030a', BL2 = '#34466a';
-        R(0, 27, 32, 5, BL2); R(11, 26, 4, 4, '#e4e4ea'); R(17, 26, 4, 4, '#e4e4ea');
-        R(8, 0, 16, 2, H); R(5, 2, 22, 4, H); R(3, 6, 26, 24, H); R(4, 3, 1, 26, HL); R(27, 3, 1, 26, HL);
-        // 歪着的脸（往右下斜）
-        const t = Math.round(a * 2);
-        R(10, 5 + t, 12, 3, SK); R(9, 8 + t, 14, 12, SK); R(10, 20 + t, 12, 3, SK); R(12, 23 + t, 8, 2, SK);
-        R(20, 8 + t, 2, 13, SK2); R(18, 22 + t, 3, 2, SK2);
-        // 中分垂下来的头发压着额头，一缕挡住半边
-        R(9, 5 + t, 3, 6, H); R(20, 5 + t, 3, 5, H); R(15, 4 + t, 2, 3, H); R(9, 11 + t, 1, 12, H); R(22, 10 + t, 1, 12, H);
-        // 额角一道暗影（摔下楼梯时磕的，不画血，只画一片发青的影子）
-        R(18, 7 + t, 3, 5, SK3); R(19, 12 + t, 1, 6, SK3);
-        // 眼睛：两个黑洞，里面一个很小的白点
-        R(11, 11 + t, 4, 4, K); R(17, 11 + t, 4, 4, K); R(12, 12 + t, 1, 1, '#e8e8ee'); R(19, 13 + t, 1, 1, '#e8e8ee');
-        R(11, 15 + t, 1, 3, SK3); R(20, 15 + t, 1, 2, SK3);
-        // 嘴：越张越大的黑洞
-        const mh = 2 + Math.round(a * 4);
-        R(14, 19 + t, 5, mh, K); R(13, 20 + t, 1, mh - 1, K); R(19, 20 + t, 1, mh - 1, K);
+        const H = '#0a080c', HL = '#24222e', SK = '#d8d2da', SK2 = '#a49cac', SK3 = '#6e6478', K = '#040208', BL2 = '#2c3c5e';
+        R(0, 28, 32, 4, BL2); R(10, 27, 4, 4, '#dcdce4'); R(18, 27, 4, 4, '#dcdce4');
+        R(9, 0, 14, 2, H); R(6, 2, 20, 3, H); R(4, 5, 24, 25, H); R(3, 10, 26, 19, H);
+        R(5, 6, 1, 22, HL); R(26, 6, 1, 22, HL); R(7, 4, 1, 24, HL);
+        // 歪着的瓜子脸：每一行往右下错一点
+        const tilt = .2 + a * .04;
+        const rows = [[5, 4], [6, 8], [7, 10], [8, 12], [9, 12], [10, 13], [11, 13], [12, 13], [13, 13], [14, 13], [15, 13], [16, 12], [17, 12], [18, 12], [19, 11], [20, 11], [21, 10], [22, 9], [23, 8], [24, 6], [25, 4]];
+        const cx = y => 16 + (y - 15) * tilt;
+        for (const [y, w] of rows) { const x0 = Math.round(cx(y) - w / 2); R(x0, y, w, 1, SK); R(x0 + w - 2, y, 2, 1, SK2); }
+        // 中分的头发压着两边脸颊，一缕斜过额头
+        for (const [y, w] of rows) if (y >= 8 && y <= 23) { const x0 = Math.round(cx(y) - w / 2); R(x0 - 1, y, 2, 1, H); R(x0 + w - 1, y, 2, 1, H); }
+        R(Math.round(cx(6)) - 1, 5, 2, 2, H); R(Math.round(cx(7)) + 1, 7, 3, 1, H); R(Math.round(cx(8)) + 3, 8, 2, 1, H);
+        // 额角一片发青的影子（磕在楼梯上的，不画血）
+        R(Math.round(cx(8)) + 2, 8, 3, 4, SK3);
+        // 眼睛：深陷的黑眼窝，里面一个很小的白点，往下淌着两道灰
+        const ey = 12, l = Math.round(cx(ey)) - 5, r = Math.round(cx(ey)) + 2;
+        R(l - 1, ey - 1, 5, 6, SK3); R(r - 1, ey, 5, 6, SK3);
+        R(l, ey, 3, 4, K); R(r, ey + 1, 3, 4, K);
+        R(l + 1, ey + 1, 1, 1, '#f0f0f4'); R(r + 1, ey + 2, 1, 1, '#f0f0f4');
+        R(l + 1, ey + 4, 1, 4 + Math.round(a * 3), SK3); R(r + 1, ey + 5, 1, 3 + Math.round(a * 3), SK3);
+        // 嘴：一道竖着拉长的黑洞，越张越大
+        const my = 19, mh = 2 + Math.round(a * 5), mx = Math.round(cx(my)) - 2;
+        R(mx, my, 4, mh, K); R(mx + 1, my - 1, 2, 1, K); R(mx - 1, my + 1, 1, Math.max(1, mh - 2), SK3); R(mx + 4, my + 1, 1, Math.max(1, mh - 2), SK3);
       }
     },
     people: {
@@ -125,7 +136,7 @@
         extra(g, d, fr, G, R) { if (d === 0) { R(4, G.tT + 3, 8, 1, '#c8c8cc'); R(6, G.tT, 4, 1, '#dadada'); } else if (d === 1) R(5, G.tT + 3, 6, 1, '#c8c8cc'); } },
       /* 选章卡片：长发盖脸的小满，垂着的手里攥着一支红笔 */
       xmpen: { key: 'bx-xmp', skin: '#d6d2d8', hair: '#0c0a0e', hs: 'long', cover: true, top: '#34466a', top2: '#dadada', bottom: '#34466a', ghost: true,
-        extra(g, d, fr, G, R) { if (d === 0) { R(4, G.tT + 3, 8, 1, '#c8c8cc'); R(6, G.tT, 4, 1, '#dadada'); R(13, G.tT + 3, 1, 7, '#c8242a'); R(13, G.tT + 9, 1, 1, '#e8e8e8'); R(12, G.tT + 4, 1, 2, '#d6d2d8'); } } },
+        extra(g, d, fr, G, R) { if (d === 0) { R(4, G.tT + 3, 8, 1, '#c8c8cc'); R(6, G.tT, 4, 1, '#dadada'); R(13, G.tT + 1, 2, 9, '#c8242a'); R(13, G.tT + 1, 2, 1, '#7a1418'); R(13, G.tT + 10, 1, 1, '#e8e8e8'); R(12, G.tT + 5, 2, 2, '#d6d2d8'); } } },
       xiaomanC: { key: 'bx-xmc', skin: '#e4dcd8', hair: '#120e12', hs: 'long', top: '#34466a', top2: '#dadada', bottom: '#34466a', eye: '#2a2024', ghost: true,
         extra(g, d, fr, G, R) { if (d === 0) { R(4, G.tT + 3, 8, 1, '#c8c8cc'); R(6, G.tT, 4, 1, '#dadada'); R(7, G.hT + 6, 2, 1, '#b88a88'); } } }
     },
@@ -407,7 +418,7 @@
           } },
           { id: 'dtab', x: 3, y: 2, spr: 'dtable', async on(S) {
             await S.narr('桌上立着一个旧相框。照片里，两个穿蓝白运动服的女生站在一栋楼前面，比着剪刀手。\n是旧楼。那时候它还刷着新漆。');
-            await S.narr('相框背面，用圆珠笔写着：「94年5月　和小M」。\n左边那个扎辫子的女生，眉眼……有点像周老师。');
+            await S.narr('相框背面，用圆珠笔写着：「94年5月　和小M」。\n左边那个扎辫子的女生，眉眼……有点像周老师。\n右边那个扎着高高的马尾，脸被反光遮住了。');
             S.f.sawPhoto = true;
           } },
           { id: 'dlamp', x: 3, y: 2, spr: 'invisible', off: true, light: { r: 3.6, col: 'rgba(255,200,120,.18)' } },
@@ -782,7 +793,7 @@
     const g = S.ent('xm_d'); S.place('xm_d', 32, 3, 1); g.alpha = .6;
     await S.scare('face', { spr: '@xiaoman', dur: 1 });
     S.turn(2);
-    await S.narr('蓝白色的运动服，翻领，袖子上一道白杠。\n长头发垂下来，盖住了整张脸。');
+    await S.narr('蓝白色的运动服，翻领，袖子上一道白杠。\n长头发散着，湿漉漉地垂下来，盖住了整张脸。\n发梢上，还缠着一根褪了色的红头绳。');
     await S.say('？？？', ['……岚岚？', '你看见岚岚了吗？她跑得好快……', '我一个人……好黑啊。'], { style: 'whisper' });
     await S.alpha('xm_d', 1, 400);
     S.sfx('sting');
@@ -909,7 +920,7 @@
     }
     S.give('card'); S.f.gotCard = true;
     await S.narr('「林小满　女　1977年5月21日生」\n「1993年9月入学　高中部(3)班」\n右上角，一个红色的章：「注销」。旁边一行钢笔字：「1994.12.10」。');
-    await S.narr('照片上的女生扎着一根高高的马尾，眼睛很亮。\n生日那一栏下面，有人用铅笔添了两个小字：「小满」。\n——是节气。她是小满那天生的。');
+    await S.narr('照片上的女生扎着一根高高的马尾，系着红头绳，眼睛很亮。\n生日那一栏下面，有人用铅笔添了两个小字：「小满」。\n——是节气。她是小满那天生的。');
     await S.think('小……满。');
     await archCheck(S);
   }
@@ -982,6 +993,16 @@
     S.goal(S.has('match') ? '和周老师一起，在小满的课桌上送她走' : '先找蜡烛（讲台抽屉），再和周老师一起送她走');
     S.cp('final');
   }
+  /* 送别时每做错一步，半截蜡烛就矮一截；烧到底就熄了（坏结局）。返回 true = 熄了 */
+  async function burn(S, why) {
+    const c = S.ent('ocandle'); S.f.wick = (S.f.wick ?? 3) - 1; c.s.wick = Math.max(0, S.f.wick);
+    c.light = Object.assign({}, c.def.light, { r: 1.6 + S.f.wick * .6 });
+    S.dark(Math.min(.97, .9 + (3 - S.f.wick) * .02)); S.sfx('drip'); S.tone('sine', 300, 120, .5, .04);
+    if (S.f.wick <= 0) { await candleEnd(S, why); return true; }
+    await S.narr(S.f.wick === 2 ? '烛火「噗」地矮了一截。烛泪顺着桌角淌下来。' : '烛火又矮了一截，只剩短短的一点了。\n周老师的手背，在你的手背上发抖。');
+    S.goal(`和周老师一起送她走（蜡烛还剩 ${S.f.wick} 截）`);
+    return false;
+  }
   async function finale(S) {
     const d = S.ent('mdesk');
     if (!S.has('pen')) {
@@ -989,27 +1010,27 @@
       await S.narr('你把手伸进口袋——指尖碰到了一个细细的、硬硬的东西。\n那支红笔。笔杆上有几道很深的牙印。\n……它什么时候回到你口袋里的？');
       S.give('pen', true);
     }
-    const go = await S.ask('要开始吗？', ['开始送她走', '再等一等']); if (go) return;
+    const go = await choose(S, '要开始吗？', ['开始送她走', '再等一等']); if (go) return;
     S.amb('none');
     S.sfx('match'); await S.wait(400);
-    S.show('ocandle'); S.ent('ocandle').off = false; d.s.paper = true; S.dark(.9);
+    const cdl = S.ent('ocandle'); S.show('ocandle'); cdl.off = false; cdl.s.wick = 3; cdl.light = cdl.def.light; S.f.wick = 3;
+    d.s.paper = true; S.dark(.9);
     await S.narr('火柴「嚓」地一声亮了。你把半截蜡烛立在桌角上。\n周老师把那张旧纸摊平——她坐在了自己当年的位子上。');
-    /* 1. 握笔 */
+    await S.say('周老师', ['蜡烛就这么一截。……烧完之前，得把她送走。', '规矩一步也不能错。错一步，它就矮一截。']);
+    if (S.coop) await S.narr('（一个人握着笔，另一个人可以打开「笺」，翻翻苏晴抄的规矩和小满的日记。）');
+    else await S.think('规矩……苏晴抄的那张纸，还有小满的日记。都记在「笺」里。');
+    S.goal('和周老师一起送她走（蜡烛还剩 3 截）');
+    /* 1. 握笔 + 召请（第一幕已经做过一遍，这里合成一步） */
     for (; ;) {
-      const r = await S.ask('怎么握笔？', ['手背交叉，两个人一起夹住笔', '手心贴着手心，把笔握在中间', '你一个人握笔，周老师按住纸']);
+      const r = await choose(S, '怎么开始？', ['手背交叉夹住笔，一起念：「' + CHANT + '」', '手心贴着手心握住笔，念：「林小满，你在吗？」', '手背交叉夹住笔，念：「碟仙碟仙，请你出来。」']);
       if (r === 0) break;
-      if (r === 1) { await S.narr('笔软绵绵地往一边倒了，像是根本没有人握着它。'); await S.say('周老师', '不对……当年我们不是这么握的。'); }
-      else await S.say('周老师', '一个人不行的。……要两个人。');
+      if (r === 1) { await S.narr('笔软绵绵地往一边倒了，像是根本没有人握着它。\n烛火晃了一下。'); await S.say('周老师', '不对……当年我们不是这么握的。得照着规矩来，她才听得见。'); }
+      else await S.say('周老师', '……那是请碟仙的。要用碟子。');
+      await S.think('规矩第一条：两个人，手背交叉，一起夹住一支笔。念的是「我是你的今生，你是我的前世」。');
+      if (await burn(S, 'start')) return;
     }
     d.s.pen = true;
     await S.narr('你们的手背贴在一起。周老师的手，比你的还要凉。');
-    /* 2. 召请 */
-    for (; ;) {
-      const r = await S.ask('要念什么？', ['「' + CHANT + '」', '「碟仙碟仙，请你出来。」', '「林小满，你在吗？」']);
-      if (r === 0) break;
-      if (r === 1) await S.say('周老师', '……那是请碟仙的。要用碟子。');
-      else { await S.narr('笔一动不动。\n烛火晃了一下，又站直了。'); await S.say('周老师', '……规矩。得照着规矩来，她才听得见。'); }
-    }
     await S.say('你和周老师', CHANT);
     S.sfx('heart'); await S.wait(1000);
     await pen(S, '笔尖动了。\n它沿着那张旧纸上的红圈，又慢慢地，描了一遍。', null, { desk: 'mdesk' });
@@ -1021,23 +1042,21 @@
     await pen(S, '笔动得很慢，很慢——', '不　怪　你', { desk: 'mdesk' });
     S.sfx('cry');
     await pen(S, '笔停了一下。然后，又写了一行字——', '你们　还想问　什么', { desk: 'mdesk' });
-    /* 3. 不该问的问题 */
+    /* 2. 不该问的问题（问了直接是坏结局） */
     let cold = false;
     for (; ;) {
       const O = [];
       if (!cold) O.push(['cold', '「你……现在还冷吗？」']);
       O.push(['how', '「小满，那天晚上……你是怎么……」'], ['when', '「那……我什么时候会死？」'], ['none', '（摇摇头。什么都不问了。）']);
-      const k = O[await S.ask('还要问什么吗？', O.map(o => o[1]))][0];
+      const k = O[await choose(S, '还要问什么吗？', O.map(o => o[1]), '', '你们俩想问的不一样。周老师看了你们一眼，没有说话。')][0];
       if (k === 'cold') { cold = true; await pen(S, '笔尖轻轻地动了动——', '不冷了　有蜡烛', { desk: 'mdesk' }); await S.narr('周老师笑了一下。眼泪掉在了纸上。'); continue; }
       if (k === 'how' || k === 'when') return badEnd(S, k);
       break;
     }
-    /* 4. 送走的话 */
-    let wrong = 0;
+    /* 3. 送走的话 */
     for (; ;) {
-      const r = await S.ask('该送她走了。要说什么？', ['「笔仙笔仙，请你回去吧。」', '「你走吧！别再缠着我们了！」', '「林小满，天快亮了。……你可以回家了。」']);
+      const r = await choose(S, '该送她走了。要说什么？', ['「笔仙笔仙，请你回去吧。」', '「你走吧！别再缠着我们了！」', '「林小满，天快亮了。……你可以回家了。」']);
       if (r === 2) break;
-      wrong++;
       if (r === 0) {
         await pen(S, '笔尖慢慢地滑到了右上角——', '否', { desk: 'mdesk' });
         await S.say('周老师', '……她不知道我们在送谁。');
@@ -1046,25 +1065,32 @@
         await pen(S, '笔尖狠狠地戳进纸里，一下，又一下——', '否', { desk: 'mdesk' });
         await S.say('周老师', '别、别这么凶……她不是来害人的。');
       }
-      if (wrong >= 1) await S.think('日记里写过：「送的时候要叫它的名字，它才知道你在送谁。」');
+      await S.think('日记里写过：「送的时候要叫它的名字，它才知道你在送谁。」');
+      if (await burn(S, 'send')) return;
     }
     await S.say('你', '林小满。天快亮了。……你可以回家了。');
     await S.say('周老师', '小满……回家吧。');
     S.sfx('chime');
     await pen(S, '笔尖停了很久。\n然后，它沿着那个旧圆圈，又画了一个圈。很圆，很圆。\n最后，轻轻地，点了一下。', null, { desk: 'mdesk' });
-    /* 5. 松手 */
+    /* 4. 松手：两个人都得选「一起松手」（双人时意见不一致也算错） */
     for (; ;) {
-      const r = await S.ask('笔停住了。', ['赶紧松手', '等笔完全停下来，两个人一起松手']);
-      if (r === 1) break;
+      const q = '笔停住了。', O = ['赶紧松手', '等笔完全停下来，两个人一起松手'];
+      const v = S.coop ? await S.vote(q, O) : { v: await S.ask(q, O), agree: true };
+      if (v.agree && v.v === 1) break;
+      if (!v.agree) await S.narr('你们一个松开了，一个还攥着。\n交叉的手背一错开，笔「嗒」地歪倒在纸上。');
       await S.say('周老师', '别——！要一起。……这一次，要一起。');
+      await S.think('规矩第四条：等它画了圈，两个人再一起松手。');
+      if (await burn(S, 'let')) return;
+      d.s.pen = true;
     }
     await S.narr('你们看着对方，数了一、二、三。\n一起，慢慢地，松开了手。\n笔安安静静地躺在纸上，再也没有动。');
     d.s.pen = false;
-    /* 6. 纸和笔 */
-    for (; ;) {
-      const r = await S.ask('纸和笔要怎么办？', ['把纸夹回日记本里，留个纪念', '把纸在蜡烛上烧掉，把笔折断']);
-      if (r === 1) break;
+    /* 5. 纸和笔：坚持留下来，就是隐藏结局「枕头底下」 */
+    let r5 = await choose(S, '纸和笔要怎么办？', ['把纸夹回日记本里，留个纪念', '把纸在蜡烛上烧掉，把笔折断']);
+    if (r5 === 0) {
       await S.say('周老师', ['……不行。规矩是要烧掉的。', '她那天晚上，也是这么做的。']);
+      r5 = await choose(S, '周老师看着你。', ['「……嗯。烧掉吧。」', '「留下吧。我们不想忘了她。」']) === 0 ? 1 : 0;
+      if (r5 === 0) return keepEnd(S);
     }
     S.sfx('match');
     d.s.paper = false; d.s.ash = true;
@@ -1081,6 +1107,7 @@
     await S.say('林小满', ['谢谢你们来送我。', '岚岚，元旦晚会的《致橡树》……你一个人念吧。要念得大声一点哦。']);
     S.sfx('cry');
     await S.narr('周老师用手背捂着嘴，使劲地点头。');
+    musicBox(S);
     await S.walk('xm_c', [12, 8], 1.6);
     S.sfx('chime');
     await S.alpha('xm_c', 0, 1400);
@@ -1088,8 +1115,8 @@
     S.face('zhou_c', 'pl');
     await S.say('周老师', '……别回头看。规矩。');
     await S.fade(1, 1400);
-    await S.card('天亮了', '2006年12月9日　星期六', '苏晴的烧，天亮以前就退了。\n她说她做了一个很长的梦，\n梦见一个短头发的姐姐，替她掖了掖被角。\n\n那天下午，旧楼二楼楼梯口的那盏灯，\n被重新装上了。');
-    await S.end({ title: '第七夜　完', text: '那一年的元旦晚会，周老师一个人上台，念了一首《致橡树》。\n念得很大声。\n\n从那以后，高二(3)班再也没有人请过笔仙。\n旧楼楼梯口的雏菊，每年十二月，还是会多一束。' });
+    await S.card('天亮了', '2006年12月9日　星期六', '苏晴的烧，天亮以前就退了。\n她说她做了一个很长的梦，\n梦见一个扎马尾的姐姐，替她掖了掖被角。\n\n那天下午，旧楼二楼楼梯口的那盏灯，\n被重新装上了。');
+    await S.end({ id: 'home', title: '第七夜　完', text: '那一年的元旦晚会，周老师一个人上台，念了一首《致橡树》。\n念得很大声。\n\n从那以后，高二(3)班再也没有人请过笔仙。\n旧楼楼梯口的雏菊，每年十二月，还是会多一束。' + (S.f.answered ? '' : '\n\n（那天夜里，隔着门，你一声也没有答。……这是对的。）') });
   }
   async function badEnd(S, k) {
     if (k === 'how') {
@@ -1109,8 +1136,31 @@
     S.ent('ocandle').off = true; S.dark(.99); S.plr(.6);
     await S.narr('蜡烛灭了。\n黑暗里，有人贴在你耳边，很轻很轻地说——');
     await S.say('？？？', '……你想看吗？', { style: 'whisper' });
-    await S.scare('face', { spr: '@xiaoman', dur: 1.2 });
-    if (k === 'how') return S.end({ bad: true, title: '你问了不该问的问题', text: '第二天早上，值日的同学在旧楼二楼的楼梯口，发现了你们两个人。\n你们并排坐在最上面一级台阶上，手背交叉着，还紧紧地握着那支红笔，怎么也掰不开。\n\n从那以后，你一闭上眼睛，就是一段很长、很黑的楼梯。\n你一直在往下走。一直走不到头。' });
-    return S.end({ bad: true, title: '你问了不该问的问题', text: '天亮的时候，周老师一个人从旧楼里走了出来。\n她说，她什么也不记得了。\n\n高二(3)班的座位表上，第四排靠窗的那个位子，从此一直空着。\n有人说，半夜的时候，那里会坐着两个人：\n一个剪着短头发——另一个，长得很像你。' });
+    await S.scare('face', { spr: '@xiaoman', face: 'xmbad', dur: 1.2 });
+    if (k === 'how') return S.end({ bad: true, id: 'stairs', title: '你问了不该问的问题', text: '第二天早上，值日的同学在旧楼二楼的楼梯口，发现了你们两个人。\n你们并排坐在最上面一级台阶上，手背交叉着，还紧紧地握着那支红笔，怎么也掰不开。\n\n从那以后，你一闭上眼睛，就是一段很长、很黑的楼梯。\n你一直在往下走。一直走不到头。\n\n（规矩第二条：不能问它是怎么死的。）' });
+    return S.end({ bad: true, id: 'today', title: '你问了不该问的问题', text: '天亮的时候，周老师一个人从旧楼里走了出来。\n她说，她什么也不记得了。\n\n高二(3)班的座位表上，第四排靠窗的那个位子，从此一直空着。\n有人说，半夜的时候，那里会坐着两个人：\n一个扎着马尾——另一个，长得很像你。\n\n（规矩第三条：不能问自己什么时候死。）' });
+  }
+  /* 蜡烛烧到底：送到一半，黑了 */
+  async function candleEnd(S, why) {
+    const c = S.ent('ocandle'); c.off = true; S.dark(.99); S.plr(.6); S.amb('none');
+    S.sfx('heart');
+    await S.narr('烛芯「嗞」地一声，淹进了烛泪里。\n教室一下子黑透了。');
+    await S.say('周老师', '……陈默？陈默，你的手呢——', { style: 'whisper' });
+    await S.narr('交叉的手背之间，多了一只手。\n很小，很凉，湿漉漉的。它把笔握得紧紧的。');
+    await S.say('？？？', '……岚岚，好黑啊。你别走。', { style: 'whisper' });
+    await S.scare('face', { spr: '@xiaoman', dur: 1.1 });
+    return S.end({ bad: true, id: 'candle', title: '蜡烛灭了', text: '天亮以后，你们是被值日的同学叫醒的。\n你和周老师趴在那张课桌上，手背交叉着，笔尖立在纸的正中间。\n纸上画满了圈，一个套一个，没有一个是圆的。\n\n那天以后，旧楼高二(3)班的窗户里，每到夜里还是会亮起一点烛光。\n只是现在，窗户里坐着的，是两个人。\n\n（错了太多步，蜡烛没能撑到送走她。规矩都在「笺」里。）' });
+  }
+  /* 隐藏结局：没有烧纸、没有折笔——学姐说的那件事，应验了 */
+  async function keepEnd(S) {
+    const d = S.ent('mdesk');
+    await S.narr('周老师看了你很久。\n然后，她把那张纸叠好，夹回了日记本里。红笔，你揣回了口袋。');
+    await S.say('周老师', '……小满，那你就……别走远了。');
+    await S.narr('窗边的女生歪了歪头。她没有走向那扇门。\n她慢慢地，在自己的位子上，坐了下来。');
+    S.ent('ocandle').off = true; d.s.pen = false; S.dark(.97);
+    S.sfx('giggle');
+    await S.fade(1, 1200);
+    await S.card('第二天', '2006年12月9日　星期六　早上', '你在 307 的床上醒过来。\n苏晴的烧退了，正坐在对面床上啃馒头。\n\n你翻了个身。\n枕头底下，有个硬硬的、细细的东西。');
+    return S.end({ bad: true, id: 'keep', title: '枕头底下', text: '是那支红笔。笔杆上的牙印，又多了一道。\n\n苏晴抄的规矩最底下，那行歪歪扭扭的小字，你后来又看了很多遍：\n「玩完没烧纸，第二天那支笔就自己跑到她枕头底下了！！」\n\n从那以后，每天夜里熄灯以后，你的床边都会有人很轻很轻地问：\n「……明天，还一起玩吗？」\n\n（规矩第五条：用过的纸要烧掉，笔要折断。）' });
   }
 })();

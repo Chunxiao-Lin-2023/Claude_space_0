@@ -30,7 +30,7 @@
 
   /* ---------- 逃跑：红衣小女孩在身后 ---------- */
   const RED = { shack: 'red_s', creek: 'red_c', trail: 'red_t', trailhead: 'red_h' };
-  const SPAWN = { shack: [1, 2], creek: [20, 13], trail: [11, 0], trailhead: [11, 0] };
+  const SPAWN = { shack: [1, 2], creek: [22, 13], trail: [11, 0], trailhead: [11, 0] };
   const VOICES = ['「表哥……等等我嘛……」', '「表哥，你走太快了啦。」', '「表哥，你回头看一下嘛，一下下就好。」', '「鸡腿还很多喔……」', '「表哥，我脚好痛……」', '「你回头嘛。」'];
   async function caughtLook(S) {
     for (const k in RED) S.stop(RED[k]);
@@ -53,9 +53,9 @@
     await S.narr('你硬生生把头扭了回来。\n后面那个声音「啧」了一声，很不高兴。');
     const e = id && S.ent(id); if (e && e.chase) e.chase.wait = .6;
   }
-  function fleeReset(S) {
+  function fleeReset(S, sp = 1.6) {
     const id = RED[S.map]; if (!id) return;
-    S.stop(id); S.hide(id); S.f._sp = 1.6; S.f._st = 0; S.f._vo = 3; S.f._fs = 0;
+    S.stop(id); S.hide(id); S.f._sp = sp; S.f._st = 0; S.f._vo = 3; S.f._fs = 0;
     S.norun(true);
   }
   /* 关键抉择：两人各投一票（单人时等同 ask） */
@@ -209,10 +209,10 @@
     },
     endings: { burn: '烧掉带子', keep: '锁进抽屉', copy: '拷贝给每一家', follow: '去她家吃好料', eat: '好好吃' },
     resume: {
-      flee_s: async S => fleeReset(S),
-      flee_c: async S => fleeReset(S),
-      flee_t: async S => { S.dark(.86); fleeReset(S); },
-      flee_h: async S => fleeReset(S)
+      flee_s: async S => fleeReset(S, 2.4),       // 死后重来：多给一点反应时间
+      flee_c: async S => fleeReset(S, 2.4),
+      flee_t: async S => { S.dark(.86); fleeReset(S, 2.4); },
+      flee_h: async S => fleeReset(S, 2.4)
     },
     tick(S, dt) {
       if (W.busy || S.f.phase !== 'flee') return;

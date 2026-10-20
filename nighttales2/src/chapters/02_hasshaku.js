@@ -960,7 +960,7 @@
     if (f.phase === 'dusk' && !f.duskOn) return duskStart(S);
     if (f.phase === 'dusk') {   // 从寺里又出来：她要是就守在门口，先让她退回路口（不白送一条命；计时照走）
       S.dark(.62); S.plr(3.6); S.sfx('heart');
-      const h = S.ent('hachiM'); if (Math.abs(h.px / TS - S.pl.x) + Math.abs(h.py / TS - S.pl.y) < 7) { S.stop('hachiM'); S.place('hachiM', DUSK_X, DUSK_Y, 3); duskChaseOnly(S); }
+      const h = S.ent('hachiM'); if (Math.abs(h.px / TS - S.pl.x) + Math.abs(h.py / TS - S.pl.y) < 9) { S.stop('hachiM'); S.place('hachiM', DUSK_X, DUSK_Y, 3); duskChaseOnly(S); }
       S.toast('它还在村道上');
     }
   }
