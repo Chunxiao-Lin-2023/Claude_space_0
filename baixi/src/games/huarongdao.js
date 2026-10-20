@@ -79,7 +79,7 @@ function solve(pos0, pcs) {
   }
   return null;
 }
-const MIN = {}; // filled lazily
+const MINS = [81, 70, 72, 60, 72, 47, 54, 70, 79, 60, 56, 82, 73, 72, 35];   // verified with solve()
 
 function drawPiece(g, x, y, w, h, p, o = {}) {
   const r = Math.min(w, h) * .12, m = Math.min(w, h) * .045;
@@ -143,7 +143,7 @@ BX.register({
   create(ctx) {
     const cv = ctx.canvas(), fx = K.fx(), say = K.status(ctx);
     let li = BX.clamp(ctx.load('lay', 0), 0, LAYS.length - 1);
-    let pcs, pos, steps = 0, lastPiece = -1, undoS = [], time = 0, won = false, started = false, hintMv = null, solCache = null, vis = [], drag = null, sel = -1, exitAnim = null, minCache = ctx.load('mins', {});
+    let pcs, pos, steps = 0, lastPiece = -1, undoS = [], time = 0, won = false, started = false, hintMv = null, solCache = null, vis = [], drag = null, sel = -1, exitAnim = null, minCache = Object.assign({}, MINS);
     const recs = () => ctx.load('rec', {});
     const bar = K.bar(ctx, [
       {k: 'undo', ic: '↶', t: '撤销', on: () => undo()},
@@ -157,7 +157,6 @@ BX.register({
       steps = 0; lastPiece = -1; undoS = []; time = 0; won = false; started = false; hintMv = null; solCache = null; sel = -1; drag = null; exitAnim = null;
       vis = pcs.map((p, k) => ({x: p.x, y: p.y - 6 - k * .3, d: k * .04}));
       ctx.sfx('shuffle');
-      if (minCache[i] == null) ctx.after(30, () => { const s = solve(pos.slice(), pcs); if (s) { minCache[i] = s.length; ctx.save('mins', minCache); } });
     }
     load(li);
     const minOf = i => minCache[i];
@@ -197,15 +196,16 @@ BX.register({
       const perfect = mn != null && steps <= mn;
       ctx.end({win: true, title: perfect ? '神机妙算' : '曹操脱困', text: `${LAYS[li][0]} · 用时 ${K.fmt(time)} 步数 ${steps}` + (mn != null ? `（最少 ${mn}）` : '') + (old == null || steps < old ? ' · 新纪录！' : ` · 最佳 ${old}`), delay: 2000});
     }
+    let thinking = false;
     function hint() {
       if (won) return;
       let path;
       const k = keyOf(pos, pcs);
       if (solCache && solCache.k === k && solCache.path.length) path = solCache.path;
       else {
-        say('军师推演中…');
-        path = solve(pos.slice(), pcs); if (!path) { ctx.toast('无解？'); return; }
-        solCache = {k, path};
+        if (thinking) return; thinking = true; say('军师推演中…');
+        ctx.after(40, () => { thinking = false; const pth = solve(pos.slice(), pcs); if (!pth) { ctx.toast('无解？'); return; } solCache = {k, path: pth}; if (keyOf(pos, pcs) === k) hint(); });
+        return;
       }
       if (!path.length) return;
       hintMv = path[0];
@@ -307,7 +307,7 @@ BX.register({
         g.restore();
         if (R[li] != null && !won) K.seal(g, x + 4 * cs + cs * .25, y - cs * .05, Math.max(26, cs * .36), R[li] <= (mn || 0) ? '优' : '过', .15);
         fx.draw(g, dt);
-        if (!won) say(`用时 ${K.fmt(time)} · ` + (BX.TOUCH.matches ? '拖动或滑动木牌' : '拖动木牌，或点选后用方向键'));
+        if (!won && !thinking) say(`用时 ${K.fmt(time)} · ` + (BX.TOUCH.matches ? '拖动或滑动木牌' : '拖动木牌，或点选后用方向键'));
         bar.dis('undo', !undoS.length || won); bar.dis('hint', won);
       },
       key(e) {

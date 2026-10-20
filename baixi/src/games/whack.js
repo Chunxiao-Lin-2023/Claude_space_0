@@ -184,9 +184,6 @@ BX.register({
         // hammers
         for (let i = hamm.length - 1; i >= 0; i--) { const hm = hamm[i]; hm.t += dt; if (hm.t > .22) { hamm.splice(i, 1); continue; } drawHammer(g, hm); }
         fx.draw(g);
-        if (st.ph === 'intro') K.banner(g, String(Math.max(1, Math.ceil(st.t))), cv.w / 2, cv.h / 2, Math.min(cv.w, cv.h) * .22, 1 - (st.t % 1));
-        else if (st.ph === 'play' && st.time < .8) K.banner(g, '开敲！', cv.w / 2, cv.h / 2, Math.min(cv.w, cv.h) * .16, st.time / .8, {color: '#ffe08a'});
-        else if (st.ph === 'over') K.banner(g, '时间到', cv.w / 2, cv.h / 2, Math.min(cv.w, cv.h) * .14, 1, {color: '#ffe08a'});
         fx.drawFlash(g, cv.w, cv.h);
       },
     };
@@ -234,6 +231,12 @@ BX.register({
         g.fillStyle = '#8a5a2a'; g.beginPath(); g.ellipse(c.x, c.y + rh * .15, rw * 1.12, rh * 1.05, 0, 0, Math.PI); g.fill();
         g.strokeStyle = '#a8723d'; g.lineWidth = 2; g.beginPath(); g.ellipse(c.x, c.y + rh * .15, rw * 1.12, rh * 1.05, 0, 0, Math.PI); g.stroke();
         if (!f.mini && ctx.isLocal(s) && (!BX.TOUCH.matches || !pads.touched)) D.text(g, keys[h], c.x + rw * 1.05, c.y + rh * 1.8, {size: 11, color: 'rgba(255,250,230,.65)', weight: 800});
+      }
+      if (!f.mini) {
+        const m = Math.min(f.w, f.h);
+        if (st.ph === 'intro') K.banner(g, String(Math.max(1, Math.ceil(st.t))), f.w / 2, f.h / 2, m * .3, 1 - (st.t % 1));
+        else if (st.ph === 'play' && st.time < .8) K.banner(g, '开敲！', f.w / 2, f.h / 2, m * .2, st.time / .8, {color: '#ffe08a'});
+        else if (st.ph === 'over') K.banner(g, '时间到', f.w / 2, f.h / 2, m * .18, 1, {color: '#ffe08a'});
       }
       g.restore();
     }

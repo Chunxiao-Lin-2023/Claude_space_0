@@ -219,7 +219,7 @@ BX.register({
   create(ctx) {
     const n = ctx.n, rng = ctx.rng;
     const deckC = rng.shuffle(BX.range(16)), deckH = rng.shuffle(BX.range(16));
-    const maxRound = ctx.opts.end === 'classic' ? (BX.test ? 8 : 0) : (BX.test ? 8 : 30);
+    const maxRound = ctx.opts.end === 'classic' ? (BX.test ? 6 : 0) : (BX.test ? 6 : 30);
     /* ===== all game state ===== */
     const st = {
       cash: Array(n).fill(1500), pos: Array(n).fill(0), alive: Array(n).fill(true), jail: Array(n).fill(-1), jc: BX.range(n).map(() => []),
@@ -498,7 +498,7 @@ BX.register({
         }
         case 'end': nextTurn(); fx({k: 'sfx', n: 'click'}); break;
       }
-      if (!ctx.fast) { if (uiMode === 'trade' && (st.ph !== 'roll' && st.ph !== 'post')) uiMode = 'info'; render(); }
+      if (!ctx.fast && uiMode === 'trade' && (st.ph !== 'roll' && st.ph !== 'post')) uiMode = 'info';
     }
 
     /* ===== AI ===== */
@@ -1054,12 +1054,13 @@ BX.register({
       const {bx, by, bs} = geo, dpr = cv.dpr;
       const key = Math.round(bs) + ':' + dpr;
       if (key !== cacheKey) {
-        cacheKey = key; const pad = Math.ceil(bs / 13 * .3);
+        cacheKey = key; const pad = Math.ceil(bs / 13 * .3) + 24;
         boardCache = document.createElement('canvas'); boardCache.width = Math.ceil((bs + pad * 2) * dpr); boardCache.height = boardCache.width;
-        const bg = boardCache.getContext('2d'); bg.setTransform(dpr, 0, 0, dpr, pad * dpr, pad * dpr); drawStatic(bg, bs); boardCache.pad = pad;
+        const bg = boardCache.getContext('2d'); bg.setTransform(dpr, 0, 0, dpr, pad * dpr, pad * dpr);
+        bg.save(); bg.shadowColor = 'rgba(0,0,0,.5)'; bg.shadowBlur = 24 * dpr; bg.shadowOffsetY = 8 * dpr; bg.fillStyle = '#3a1d0c'; const e = bs / 13 * .25; bg.fillRect(-e, -e, bs + 2 * e, bs + 2 * e); bg.restore();
+        drawStatic(bg, bs); boardCache.pad = pad;
       }
-      g.save(); g.shadowColor = 'rgba(0,0,0,.5)'; g.shadowBlur = 24; g.shadowOffsetY = 8;
-      g.drawImage(boardCache, bx - boardCache.pad, by - boardCache.pad, boardCache.width / dpr, boardCache.height / dpr); g.restore();
+      g.drawImage(boardCache, bx - boardCache.pad, by - boardCache.pad, boardCache.width / dpr, boardCache.height / dpr);
       g.save(); g.translate(bx, by); drawDynamic(g, bs, dt); g.restore();
       // floats (screen coords)
       for (const f of floats) {
@@ -1074,6 +1075,7 @@ BX.register({
       st, toMove, valid: legal, apply,
       async aiMove(seat, level) {
         await waitIdle();
+        if (ctx.online && !ctx.isHost) await BX.sleep(120);   // let the host finish its turn bookkeeping first (avoids a 'rej' race)
         let a = null; try { a = aiDecide(seat, level); } catch (e) { a = null; }
         if (!a || !legal(a, seat)) a = fallback(seat);
         return a;

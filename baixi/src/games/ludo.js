@@ -105,7 +105,7 @@ BX.register({
     function layout() {
       const W = cv.w, H = cv.h, land = W > H * 1.15;
       if (land) { const bs = Math.min(H - 12, W - 150); const pw = Math.min(260, W - bs - 18); const tot = bs + pw + 10, x0 = (W - tot) / 2; return {land, B: {x: x0, y: (H - bs) / 2, s: bs}, P: {x: x0 + bs + 10, y: (H - bs) / 2, w: pw, h: bs}}; }
-      const ph = Math.max(118, Math.min(170, H * .2)), bs = Math.min(W - 12, H - ph - 14), y0 = (H - bs - ph - 8) / 2;
+      const bs0 = Math.min(W - 12, H - 132), ph = Math.max(118, Math.min(220, H - bs0 - 24)), bs = Math.min(W - 12, H - ph - 14), y0 = (H - bs - ph - 8) / 2;
       return {land, B: {x: (W - bs) / 2, y: y0, s: bs}, P: {x: (W - bs) / 2, y: y0 + bs + 8, w: bs, h: ph}};
     }
     const toScr = (B, p) => [B.x + p[0] * B.s / 15, B.y + p[1] * B.s / 15];
@@ -353,10 +353,12 @@ BX.register({
       // whose turn
       const tx = vert ? P.x + P.w / 2 : P.x + 16, al = vert ? 'center' : 'left';
       g.fillStyle = col; if (vert) { D.rr(g, P.x + 14, P.y + 14, P.w - 28, 6, 3); g.fill(); } else { D.rr(g, P.x + 8, P.y + 12, 6, P.h - 24, 3); g.fill(); }
-      D.text(g, st.over ? '对局结束' : ctx.name(s), tx + (vert ? 0 : 10), P.y + (vert ? 40 : P.h * .28), {size: 17, color: '#f3e2c0', weight: 800, align: al, maxW: vert ? P.w - 20 : P.w - ds - 60});
+      D.text(g, st.over ? '对局结束' : ctx.name(s), tx + (vert ? 0 : 10), P.y + (vert ? 40 : P.h * .2), {size: 17, color: '#f3e2c0', weight: 800, align: al, maxW: vert ? P.w - 20 : P.w - ds - 60});
       const sub = st.over ? '' : st.phase === 'roll' ? (myTurn() ? '点骰子掷骰' : '等待掷骰…') : (myTurn() ? '点闪光的飞机' : '思考中…');
-      D.text(g, sub, tx + (vert ? 0 : 10), P.y + (vert ? 64 : P.h * .5), {size: 13, color: 'rgba(243,226,192,.8)', weight: 500, align: al, maxW: vert ? P.w - 16 : P.w - ds - 60});
-      if (st.sixes > 0 && !st.over ) D.text(g, '连续 6 点 ×' + st.sixes, tx + (vert ? 0 : 10), P.y + (vert ? 84 : P.h * .7), {size: 12, color: C.gold2, weight: 700, align: al});
+      D.text(g, sub, tx + (vert ? 0 : 10), P.y + (vert ? 64 : P.h * .38), {size: 13, color: 'rgba(243,226,192,.8)', weight: 500, align: al, maxW: vert ? P.w - 16 : P.w - ds - 60});
+      const mw = vert ? P.w - 16 : P.w - ds - 60;
+      if (st.sixes > 0 && !st.over) D.text(g, '连续 6 点 ×' + st.sixes, tx + (vert ? 0 : 10), P.y + (vert ? 86 : P.h * .55), {size: 12, color: C.gold2, weight: 700, align: al, maxW: mw});
+      else if (st.msg && !st.over) D.text(g, st.msg, tx + (vert ? 0 : 10), P.y + (vert ? 86 : P.h * .55), {size: 12, color: '#ffc8a0', weight: 600, align: al, maxW: mw});
       // die
       const rr = roll, rolling = rr.k < 1;
       const face = rolling ? 1 + Math.floor((t * 20) % 6) : (st.die || 6);
@@ -368,9 +370,9 @@ BX.register({
       g.globalAlpha = 1;
       if (ready) D.text(g, '点 我 掷 骰', dx + ds / 2, dy + ds + 16, {size: 12, color: C.gold2, weight: 700});
       // finished counts per seat (mini)
-      if (vert) {
-        const yy = P.y + P.h - 26;
-        for (let q = 0; q < n; q++) { const x = P.x + P.w / 2 + (q - (n - 1) / 2) * Math.min(56, P.w / n); planeShape(g, x - 10, yy, 16, ctx.color(q), 0); D.text(g, done(q) + '/4', x + 10, yy, {size: 12, color: '#f3e2c0', weight: 700}); }
+      {
+        const yy = P.y + P.h - (vert ? 26 : 20), cx0 = vert ? P.x + P.w / 2 : P.x + 16 + (P.w - ds - 60) / 2;
+        for (let q = 0; q < n; q++) { const x = cx0 + (q - (n - 1) / 2) * Math.min(56, (vert ? P.w : P.w - ds - 60) / n); planeShape(g, x - 10, yy, 16, ctx.color(q), 0); D.text(g, done(q) + '/4', x + 10, yy, {size: 12, color: '#f3e2c0', weight: 700}); }
       }
     }
     status();

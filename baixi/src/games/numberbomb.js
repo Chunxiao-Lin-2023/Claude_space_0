@@ -89,7 +89,7 @@ BX.register({
     });
 
     function status() {
-      for (let s = 0; s < n; s++) ctx.info(s, st.over ? (s === st.loser ? '💥' : '胜') : '');
+      for (let s = 0; s < n; s++) ctx.info(s, st.over ? (s === st.loser ? '爆' : '胜') : '');
       if (st.over) return ctx.status(ctx.name(st.loser) + ' 踩中了炸弹 ' + st.bomb + '！');
       const rng = `<b style="color:#e6c57d">${st.lo} ～ ${st.hi}</b>`;
       if (mine()) ctx.status((ctx.hotseat ? ctx.name(st.turn) : '轮到你') + ' 报数 ' + rng + (st.lo === st.hi ? ' · 只剩一个数了…' : ''));
@@ -152,7 +152,7 @@ BX.register({
           D.disc(g, x + 16, y + h / 2, 8, ctx.color(s), {shadow: false});
           D.text(g, ctx.name(s), x + 30, y + h * .36, {size: 13, color: '#f3e2c0', align: 'left', maxW: w - 36});
           const last = [...st.hist].reverse().find(q => q.s === s);
-          D.text(g, last ? '报 ' + last.v + (last.r > 0 ? ' ↑' : last.r < 0 ? ' ↓' : ' 💥') : '—', x + 30, y + h * .72, {size: 12, color: lost ? '#fff' : 'rgba(243,226,192,.65)', align: 'left', maxW: w - 36});
+          D.text(g, last ? '报 ' + last.v + (last.r > 0 ? ' ↑' : last.r < 0 ? ' ↓' : ' 爆') : '—', x + 30, y + h * .72, {size: 12, color: lost ? '#fff' : 'rgba(243,226,192,.65)', align: 'left', maxW: w - 36});
         }
         // ---- bomb + range ----
         const midTop = top + seatsH + 4, midH = bottomAvail - midTop;
@@ -199,7 +199,11 @@ BX.register({
           for (const p of parts) { p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 300 * dt; p.vx *= .99; p.life -= dt; if (p.life <= 0) continue; g.globalAlpha = Math.min(1, p.life); g.fillStyle = p.c; D.circle(g, p.x, p.y, p.r); g.fill(); }
           g.globalAlpha = 1;
           D.text(g, '砰！', bx, by, {size: bombR * (1.2 + k * .6), color: '#ffe6b0', font: 'deco', weight: 400, stroke: '#b23a2b', strokeW: 6, shadow: true});
-        } else if (st.over) D.text(g, '💥', bx, by, {size: bombR * 1.4});
+        } else if (st.over) {   // aftermath: scorched star burst
+          g.fillStyle = '#ff8a3a'; g.beginPath(); for (let k = 0; k < 24; k++) { const a = k * Math.PI / 12, rr = bombR * (k % 2 ? .55 : 1.1); g.lineTo(bx + Math.cos(a) * rr, by + Math.sin(a) * rr); } g.closePath(); g.fill();
+          g.fillStyle = '#ffd76a'; g.beginPath(); for (let k = 0; k < 24; k++) { const a = k * Math.PI / 12 + .13, rr = bombR * (k % 2 ? .35 : .72); g.lineTo(bx + Math.cos(a) * rr, by + Math.sin(a) * rr); } g.closePath(); g.fill();
+          D.text(g, '砰', bx, by, {size: bombR * .7, color: '#b23a2b', font: 'deco', weight: 400});
+        }
         if (shake > 0) g.restore();
         function spawn() { parts = []; for (let i = 0; i < 90; i++) { const a = Math.random() * 6.283, sp = 100 + Math.random() * 520; parts.push({x: bx, y: by, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - 120, r: 2 + Math.random() * 6, life: .8 + Math.random() * 1.4, c: ['#ffd76a', '#ff8a3a', '#ff4020', '#5a4a3a', '#fff3c0'][i % 5]}); } }
         spawnRef = spawn;

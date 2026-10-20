@@ -89,7 +89,13 @@ BX.register({
     const STEP = () => BX.test ? 4 : 150;
     function runQueue() {
       if (busy) return;
-      const op = queue.shift(); if (!op) { ctx.poke(); return; }
+      if (!queue.length) {   // idle: reconcile visual seeds with the true state once every flight has landed
+        if (fly.length) { ctx.after(40, runQueue); return; }
+        for (let p = 0; p < 14; p++) { while (vp[p].length > st.b[p]) vp[p].pop(); while (vp[p].length < st.b[p]) vp[p].push(mkSeed()); }
+        ctx.poke(); return;
+      }
+      if ((queue[0].t === 'take' || queue[0].t === 'move') && fly.length) { ctx.after(30, runQueue); return; }
+      const op = queue.shift();
       busy = true;
       const next = () => { busy = false; runQueue(); };
       if (op.t === 'take') { hand = vp[op.p].splice(0); handAt = op.p; ctx.sfx('click'); ctx.after(STEP() * 1.2, next); }

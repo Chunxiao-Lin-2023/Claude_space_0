@@ -193,7 +193,7 @@ BX.register({
     }
     const inst = {
       st,
-      toMove: () => st.over || pb.on ? null : st.turn,
+      toMove: () => st.over || (pb.on && !ctx.isRemote(st.turn)) ? null : st.turn,   // remote seats may act during our local playback (avoids host rejecting a guest that finished playback first)
       valid: a => a && isFinite(a.vx) && isFinite(a.vy),
       apply(a, by) {
         let vx = +a.vx || 0, vy = +a.vy || 0;

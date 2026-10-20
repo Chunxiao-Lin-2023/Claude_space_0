@@ -151,14 +151,30 @@ BX.register({
     const touchUI = () => BX.TOUCH.matches || pads.touched;
     function view() {
       const W = cv.w, H = cv.h, hasLocal = nLoc() > 0 && touchUI();
-      const ctrlH = hasLocal ? Math.min(Math.max(70, H * .14), 120) : 0;
-      const aw = W, ah = H - ctrlH, port = ah > aw * 1.05;
+      const side = hasLocal && W > H * 1.3 && nLoc() <= 2, sideW = side ? Math.min(W * .19, 170) : 0;
+      const ctrlH = hasLocal && !side ? Math.min(Math.max(70, H * .14), 120) : 0;
+      const aw = W - sideW * 2, ah = H - ctrlH, port = ah > aw * 1.05;
       const lw = port ? WH : WW, lh = port ? WW : WH;
       const f = BX.fit(aw, ah, lw, lh, 4);
-      return {W, H, ctrlH, port, s: f.s, ox: f.x, oy: f.y};
+      return {W, H, ctrlH, sideW, port, s: f.s, ox: f.x + sideW, oy: f.y};
     }
     const T = (v, x, y) => v.port ? [v.ox + (WH - y) * v.s, v.oy + x * v.s] : [v.ox + x * v.s, v.oy + y * v.s];
     function ctrlBtns(v) {
+      if (v.sideW) {
+        const out = [], pad = 8, sw = v.sideW - pad * 2, bh = Math.min((v.H - pad * 4) / 3, 110);
+        if (nLoc() === 1) {
+          const seat = ctx.mySeats[0];
+          out.push({k: 'l', seat, x: pad, y: v.H - pad - bh * 1.6, w: sw, h: bh * 1.6});
+          out.push({k: 'r', seat, x: v.W - v.sideW + pad, y: v.H - pad - bh * 1.6, w: sw, h: bh * 1.6});
+          out.push({k: 'b', seat, x: v.W - v.sideW + pad, y: v.H - pad * 2 - bh * 2.4, w: sw, h: bh * .8});
+        } else ctx.mySeats.forEach((seat, gi) => {
+          const x0 = gi ? v.W - v.sideW + pad : pad, hw = (sw - pad) / 2;
+          out.push({k: 'l', seat, x: x0, y: v.H - pad - bh * 1.4, w: hw, h: bh * 1.4});
+          out.push({k: 'r', seat, x: x0 + hw + pad, y: v.H - pad - bh * 1.4, w: hw, h: bh * 1.4});
+          out.push({k: 'b', seat, x: x0, y: v.H - pad * 2 - bh * 2.2, w: sw, h: bh * .8});
+        });
+        return out;
+      }
       if (!v.ctrlH) return [];
       const seats = ctx.mySeats, k = seats.length, gw = v.W / k, out = [], pad = 6, y0 = v.H - v.ctrlH;
       seats.forEach((seat, gi) => {
@@ -288,13 +304,14 @@ BX.register({
     }
     function drawHUD(g, v) {
       const rk = ranking(), fs = v.W < 500 ? 11 : 13, lh = fs + 7, bw = v.W < 500 ? 118 : 150;
-      g.fillStyle = 'rgba(30,16,6,.72)'; D.rr(g, 8, 8, bw, lh * n + 10, 8); g.fill();
+      const hx = (v.sideW || 0); g.save(); g.translate(hx, 0); g.fillStyle = 'rgba(30,16,6,.72)'; D.rr(g, 8, 8, bw, lh * n + 10, 8); g.fill();
       rk.forEach((i, k) => {
         const c = st.c[i], y = 13 + lh * k + lh / 2;
         g.fillStyle = ctx.color(i); D.circle(g, 20, y, 5); g.fill();
         D.text(g, (k + 1) + '. ' + ctx.name(i), 30, y, {size: fs, color: ctx.isLocal(i) ? '#ffe08a' : '#fbe9d0', align: 'left', maxW: bw - 75});
         D.text(g, c.fin ? '完成' : BX.clamp(c.lap + 1, 1, LAPS) + '/' + LAPS, bw, y, {size: fs, color: '#e6c57d', align: 'right'});
       });
+      g.restore();
       const cy = (v.H - v.ctrlH) / 2, big = Math.min(v.W, v.H - v.ctrlH) * .22;
       if (st.ph === 'cd') { const c = Math.ceil(st.t); if (c <= 3) K.banner(g, String(c), v.W / 2, cy, big, 1 - (st.t % 1)); else K.banner(g, TR.name, v.W / 2, cy, big * .5, 1); drawLights(g, v.W / 2, cy - big * .9, c); }
       else if (st.ph === 'race' && time - (goT || (goT = time)) < .9) K.banner(g, '开！', v.W / 2, cy, big, (time - goT) / .9, {color: '#ffe08a'});
@@ -307,13 +324,13 @@ BX.register({
     }
     function drawCtrl(g, v) {
       const bs = ctrlBtns(v); if (!bs.length) return;
-      g.fillStyle = 'rgba(30,16,6,.6)'; g.fillRect(0, v.H - v.ctrlH, v.W, v.ctrlH);
       const k = ctx.mySeats.length;
-      for (let i = 1; i < k; i++) { g.fillStyle = '#e6c57d'; g.fillRect(v.W / k * i - 1, v.H - v.ctrlH, 2, v.ctrlH); }
+      if (v.ctrlH) { g.fillStyle = 'rgba(30,16,6,.6)'; g.fillRect(0, v.H - v.ctrlH, v.W, v.ctrlH); for (let i = 1; i < k; i++) { g.fillStyle = '#e6c57d'; g.fillRect(v.W / k * i - 1, v.H - v.ctrlH, 2, v.ctrlH); } }
       for (const b of bs) {
         K.btn(g, b, {l: '◀', r: '▶', b: '刹'}[b.k], {color: b.k === 'b' ? '#7a6a5a' : ctx.color(b.seat), fg: '#fff6e0', pressed: pads.held(b.k, b.seat), size: Math.min(b.h * .42, b.k === 'b' ? 18 : 30)});
       }
-      if (k > 1) for (let gi = 0; gi < k; gi++) D.text(g, ctx.name(ctx.mySeats[gi]), v.W / k * (gi + .5), v.H - v.ctrlH + 9, {size: 10, color: '#fbe9d0'});
+      if (k > 1 && v.ctrlH) for (let gi = 0; gi < k; gi++) D.text(g, ctx.name(ctx.mySeats[gi]), v.W / k * (gi + .5), v.H - v.ctrlH + 9, {size: 10, color: '#fbe9d0'});
+      if (k > 1 && v.sideW) for (let gi = 0; gi < k; gi++) { const b = bs.find(b => b.seat === ctx.mySeats[gi] && b.k === 'b'); D.text(g, ctx.name(ctx.mySeats[gi]), b.x + b.w / 2, b.y - 12, {size: 12, color: '#fbe9d0'}); }
     }
     info();
     return inst;

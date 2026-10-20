@@ -429,7 +429,7 @@ BX.register({
       const w = cv.w, h = cv.h, touch = showTouch(), two = nLoc() >= 2;
       const portrait = h > w * 1.08;
       const R = {touch, portrait, ctrls: []};
-      const head = 54;
+      const head = w < 640 ? 80 : 54;
       if (portrait) {
         const cb = touch ? BX.clamp(h * .24, 150, 210) : 34;
         const ah = h - head - cb - 8, ts = Math.min((w - 12) / L.w, ah / L.h);
@@ -542,7 +542,7 @@ BX.register({
       const lvd = LEVELS[st.lv];
       ctx.status(`第 ${st.lv + 1}/${LEVELS.length} 关「${lvd.n}」` + (st.ph === 'clear' ? ' · 过关！' : ''));
     }
-    const chipInfo = () => { for (let s = 0; s < 2; s++) ctx.info(s, CH[chOf(s)].n); };
+    const chipInfo = () => { for (let s = 0; s < 2; s++) ctx.info(s, ctx.name(s) === CH[chOf(s)].n ? '' : CH[chOf(s)].n); };
 
     /* ---------------- rendering ---------------- */
     let bg = null, bgKey = '';
@@ -714,9 +714,9 @@ BX.register({
         g.globalAlpha = 1;
       }
       // header: level name + hint
-      const lvd = LEVELS[st.lv], hx = 12, hmax = cv.w - (R.touch || cv.w < 700 ? 24 : 250);
-      D.text(g, `第${st.lv + 1}关 · ${lvd.n}`, hx, 17, {size: 17, color: '#ffe08a', font: 'deco', weight: 400, align: 'left'});
-      D.text(g, lvd.h, hx, 39, {size: cv.w < 500 ? 11.5 : 13, color: 'rgba(243,226,192,.85)', align: 'left', maxW: hmax - 150 > 120 ? cv.w - 240 : cv.w - 20});
+      const lvd = LEVELS[st.lv], hx = 12, narrow = cv.w < 640;
+      D.text(g, `第${st.lv + 1}关 · ${lvd.n}`, hx, narrow ? 22 : 17, {size: narrow ? 19 : 17, color: '#ffe08a', font: 'deco', weight: 400, align: 'left'});
+      D.text(g, lvd.h, hx, narrow ? 64 : 39, {size: narrow ? 12.5 : 13.5, color: 'rgba(243,226,192,.9)', align: 'left', maxW: narrow ? cv.w - 20 : cv.w - 250});
       // phases
       const mx = R.ox + L.w * ts / 2, my = R.oy + L.h * ts / 2;
       if (st.ph === 'intro') { const k = BX.clamp(1 - st.t / 1.4, 0, 1); g.globalAlpha = Math.min(1, st.t * 3); D.text(g, `第${st.lv + 1}关`, mx, my - ts * .4, {size: ts * 1.1, color: '#fff3e0', font: 'deco', weight: 400, stroke: '#5a2a18', strokeW: 6}); D.text(g, lvd.n, mx, my + ts * .6, {size: ts * .7, color: '#ffe08a', font: 'deco', weight: 400, stroke: '#5a2a18', strokeW: 5}); g.globalAlpha = 1; void k; }

@@ -181,12 +181,13 @@ BX.register({
         D.felt(g, tb.x + 12, tb.y + 12, tb.w - 24, tb.h - 24, {r: 16, color: '#7a2a20'});
         g.strokeStyle = 'rgba(230,197,125,.35)'; g.lineWidth = 2; D.rr(g, tb.x + 20, tb.y + 20, tb.w - 40, tb.h - 40, 12); g.stroke();
         const unit = Math.min(tb.w / (N > 2 ? 7.5 : 6), tb.h / 5.2), reveal = st.phase === 'reveal' || st.phase === 'over' && st.res;
+        const Z = BX.clamp(Math.min(tb.w, tb.h * 1.3) / 440, .8, 1.7);
         /* seats */
         for (let s = 0; s < N; s++) {
           const P = seatPos(s, tb), isMe = P.me && ctx.isLocal(ctx.view);
-          const ds = Math.min(isMe ? unit * .56 : unit * .36, isMe ? 48 : 30), turnNow = st.turn === s && st.phase === 'bid' && !st.over;
+          const ds = Math.min(isMe ? unit * .56 : unit * .36, (isMe ? 48 : 30) * Z), turnNow = st.turn === s && st.phase === 'bid' && !st.over;
           // name plate
-          const nw = Math.min(tb.w * .42, 150), ny = P.me ? P.y + unit * .62 : P.y - unit * .9;
+          const nw = Math.min(tb.w * .42, 150 * Math.min(Z, 1.3)), ny = P.me ? P.y + Math.max(unit * .62, ds * .5 + 22) : P.y - Math.max(unit * .9, ds * 1.7 + 14);
           g.fillStyle = turnNow ? 'rgba(230,197,125,.9)' : 'rgba(20,10,5,.55)'; D.rr(g, P.x - nw / 2, ny - 13, nw, 26, 13); g.fill();
           g.fillStyle = PCOL[s]; D.circle(g, P.x - nw / 2 + 13, ny, 6); g.fill();
           D.text(g, ctx.name(s) + (alive(s) ? '' : '（出局）'), P.x + 6, ny, {size: 13, color: turnNow ? C.ink : '#f3e2c0', weight: 700, maxW: nw - 34});
@@ -213,11 +214,11 @@ BX.register({
           if (last && !reveal) {
             const bx = P.me ? P.x - cupW * .9 - 10 : P.x + cupW / 2 + 8, by = P.me ? dy - ds * .2 : dy - ds * .6;
             const isCur = st.bid && st.bid.by === s;
-            const bw = 74, bh = 34, x = P.me ? bx - bw : bx;
+            const zb = Math.min(Z, 1.4), bw = 74 * zb, bh = 34 * zb, x = P.me ? bx - bw : bx;
             const bxx = Math.max(tb.x + 16, Math.min(tb.x + tb.w - bw - 16, x));
-            g.fillStyle = isCur ? '#fffaf0' : 'rgba(255,250,240,.55)'; D.rr(g, bxx, by, bw, bh, 10); g.fill();
-            D.text(g, last.q + ' 个', bxx + 26, by + bh / 2, {size: 14, color: C.ink, weight: 800});
-            D.die(g, bxx + 46, by + 6, 22, last.f);
+            g.fillStyle = isCur ? '#fffaf0' : 'rgba(255,250,240,.55)'; D.rr(g, bxx, by, bw, bh, 10 * zb); g.fill();
+            D.text(g, last.q + ' 个', bxx + 26 * zb, by + bh / 2, {size: 14 * zb, color: C.ink, weight: 800});
+            D.die(g, bxx + 46 * zb, by + 6 * zb, 22 * zb, last.f);
           }
           if (reveal && st.res && st.res.loser === s) D.text(g, '−1', P.x + dw / 2 + 22, dy + ds / 2, {size: 22, color: '#ffd0a0', weight: 900, stroke: '#5a120c', strokeW: 4});
         }
@@ -225,18 +226,21 @@ BX.register({
         const cx = tb.x + tb.w / 2, cy = tb.y + tb.h * (N === 2 ? .5 : .52);
         if (reveal && st.res) {
           const r = st.res, ok = r.count >= r.q;
-          g.fillStyle = 'rgba(20,10,5,.7)'; D.rr(g, cx - 120, cy - 40, 240, 80, 14); g.fill();
-          D.text(g, '叫 ' + r.q + ' 个 ' + r.f + ' · 实有 ' + r.count + ' 个', cx, cy - 14, {size: 16, color: '#f3e2c0', weight: 700});
-          D.text(g, ok ? '叫数成立 · ' + ctx.name(r.caller) + ' 开错了' : '吹牛被识破 · ' + ctx.name(r.bidder) + ' 输', cx, cy + 14, {size: 15, color: ok ? '#9fe0c4' : '#ffb39a', weight: 800, maxW: 228});
+          const zr = Math.min(Z, 1.35, (tb.w - 40) / 250);
+          g.save(); g.translate(cx, cy); g.scale(zr, zr);
+          g.fillStyle = 'rgba(20,10,5,.7)'; D.rr(g, -120, -40, 240, 80, 14); g.fill();
+          D.text(g, '叫 ' + r.q + ' 个 ' + r.f + ' · 实有 ' + r.count + ' 个', 0, -14, {size: 16, color: '#f3e2c0', weight: 700});
+          D.text(g, ok ? '叫数成立 · ' + ctx.name(r.caller) + ' 开错了' : '吹牛被识破 · ' + ctx.name(r.bidder) + ' 输', 0, 14, {size: 15, color: ok ? '#9fe0c4' : '#ffb39a', weight: 800, maxW: 228});
+          g.restore();
         } else if (st.bid) {
-          const k = bidPop.k, z = .8 + .2 * k;
+          const k = bidPop.k, z = (.8 + .2 * k) * Math.min(Z, 1.35);
           g.save(); g.translate(cx, cy); g.scale(z, z);
           g.fillStyle = 'rgba(255,250,240,.92)'; D.rr(g, -78, -30, 156, 60, 14); g.fill(); g.strokeStyle = C.gold; g.lineWidth = 2; g.stroke();
           D.text(g, st.bid.q, -40, 0, {size: 34, color: C.red, weight: 900, font: 'serif'});
           D.text(g, '个', -10, 2, {size: 16, color: C.ink2, weight: 700});
           D.die(g, 10, -20, 40, st.bid.f);
           g.restore();
-          D.text(g, '全场共 ' + total() + ' 颗骰子', cx, cy + 44, {size: 12, color: 'rgba(243,226,192,.7)', weight: 500});
+          D.text(g, '全场共 ' + total() + ' 颗骰子', cx, cy + 44 * Math.min(Z, 1.35), {size: 12, color: 'rgba(243,226,192,.7)', weight: 500});
         } else if (st.phase === 'bid') {
           D.text(g, '等待开口叫数', cx, cy, {size: 17, color: 'rgba(243,226,192,.75)', font: 'deco', weight: 400});
           D.text(g, '全场共 ' + total() + ' 颗骰子', cx, cy + 26, {size: 12, color: 'rgba(243,226,192,.6)', weight: 500});

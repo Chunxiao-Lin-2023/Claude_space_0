@@ -131,7 +131,7 @@ BX.register({
     const st = {n: ctx.n, frame: 0, turn: 0, ball: 0, pins: rack(), rolls: BX.range(ctx.n).map(() => []), over: false, last: null};
     function rack() { return SPOT.map(([x, y]) => [Math.round((x + (ctx.rng() - .5) * .006) * 1e4) / 1e4, Math.round((y + (ctx.rng() - .5) * .006) * 1e4) / 1e4]); }
     const cv = ctx.canvas(), pb = K.playback(ctx), fx = K.fx(), cache = K.cache();
-    let show = null, Z = st, aim = {x: .18, ang: 0, p: .55, h: -.5}, keyT = 0, cam = {y: -2.6, tgt: -2.6};
+    let show = null, Z = st, aim = {x: .18, ang: 0, p: .55, h: -.5}, keyT = 0, cam = {y: -3.2, tgt: -3.2};
     const ui = ctx.ui(''); const bar = BX.h('div', {class: 'pk-bar'}); ui.append(bar);
     const posSeg = K.seg(bar, '站位', [['L', '◀'], ['R', '▶']], () => null, v => { aim.x = BX.clamp(aim.x + (v === 'L' ? -.06 : .06), -.42, .42); });
     const hookSeg = K.seg(bar, '弧线', [[-1, '↰强'], [-.5, '↰'], [0, '直'], [.5, '↱'], [1, '↱强']], () => aim.h, v => aim.h = v);
@@ -142,11 +142,12 @@ BX.register({
       const cardH = cardHeight(W, port), barH = 60;
       const top = cardH, bot = H - barH;
       const zN = 2.2, hc = 1.25;
-      let F = Math.min(W * .92 / 1.7 * zN, (bot - top - 40) * zN / hc);
+      const F = Math.min(W * 1.5 / 1.7 * zN, (bot - top - 26) * zN / hc);
       const hy = bot - hc * F / zN;
       return {W, H, port, top, bot, F, hy, hc, cardH, cx: W / 2};
     }
-    function cardHeight(W, port) { const n = ctx.n; return n <= 2 ? 8 + n * 44 : 8 + n * 30; }
+    function cardHeight(W, port) { return 8 + ctx.n * rowH(); }
+    function rowH() { return cv.h < 500 ? (ctx.n <= 2 ? 30 : 24) : ctx.n <= 2 ? 44 : 30; }
     let V = layout();
     const P3 = (x, y, z = 0) => { const d = Math.max(.25, y - cam.y); return [V.cx + x * V.F / d, V.hy + (V.hc - z) * V.F / d, V.F / d]; };
     /* ---------- input ---------- */
@@ -175,7 +176,7 @@ BX.register({
     }
     const inst = {
       st,
-      toMove: () => st.over || pb.on ? null : st.turn,
+      toMove: () => st.over || (pb.on && !ctx.isRemote(st.turn)) ? null : st.turn,   // remote seats may act during our local playback (avoids host rejecting a guest that finished playback first)
       valid: a => a && isFinite(a.x) && isFinite(a.dx) && isFinite(a.dy) && isFinite(a.v),
       apply(a, by) {
         const who = st.turn;
@@ -215,7 +216,7 @@ BX.register({
           show = {r, snap, knocked, label, who, done: false, ei: 0, shot};
           const simT = r.steps * DT;
           pb.start(simT + 1.3, () => { show = null; status(); }, [[r.tPins - .05, r.tPins + .7, .3]]);
-          cam.y = -2.6;
+          cam.y = -3.2;
         }
         if (st.over) finish(show ? (r.steps * DT + 2.4) * 1000 : 600);
         status();
@@ -258,7 +259,7 @@ BX.register({
         if (v > bv) { bv = v; best = c; }
       }
       if (!best) best = {x: .15, ang: -.004, p: .7, h: -.5};
-      const na = [0, .006, .0028, .0012][level], nx = [0, .05, .025, .01][level];
+      const na = [0, .045, .02, .005][level], nx = [0, .18, .08, .025][level];
       const g2 = () => (Math.random() + Math.random() + Math.random() - 1.5) / 1.5;
       const pick = Object.assign({}, best, {ang: best.ang + g2() * na, x: BX.clamp(best.x + g2() * nx, -.45, .45)});
       if (!ctx.isRemote(seat)) aim = Object.assign({}, aim, pick);
@@ -316,16 +317,16 @@ BX.register({
         const fr = show.r.frames, k = Math.min(fr.length - 1, Math.floor(pb.t / (DT * 2))), f = fr[k];
         bx = f[0]; by = f[1]; ballOn = by < PIT - .1;
         pins = []; for (let i = 0; i < 10; i++) { const o = 2 + i * 3; if (f[o] < 50) pins.push({x: f[o], y: f[o + 1], down: f[o + 2], i}); }
-        cam.tgt = Math.min(by - 2.6, HEAD - 4.4);
+        cam.tgt = Math.min(by - 3.2, HEAD - 3);
         while (show.ei < show.r.ev.length && show.r.ev[show.ei][0] <= k * 2 + 1) fire(show.r.ev[show.ei++], bx, by);
         if (pb.t >= show.r.steps * DT && !show.done) { show.done = true; atRest(); }
-      } else { bx = aim.x; cam.tgt = -2.6; }
+      } else { bx = aim.x; cam.tgt = -3.2; }
       cam.y += (cam.tgt - cam.y) * Math.min(1, dt * (show ? 9 : 4));
       const [ox, oy] = fx.off(); g.save(); g.translate(ox, oy);
       scene(g);
       // objects sorted far → near
       const objs = [];
-      for (const p of pins) objs.push({y: p.y, d: () => drawPinAt(g, p)});
+      for (const p of pins) if (p) objs.push({y: p.y, d: () => drawPinAt(g, p)});
       if (ballOn) objs.push({y: by, d: () => drawBall(g, bx, by)});
       if (!show && myTurn()) drawGuide(g);
       objs.sort((a, b) => b.y - a.y); for (const o of objs) o.d();
@@ -346,8 +347,8 @@ BX.register({
       const [x2, y2] = P3(p.x + fl[0] * PIN_H * .8, p.y + fl[1] * PIN_H * .8);
       g.save(); g.lineCap = 'round';
       g.strokeStyle = 'rgba(0,0,0,.3)'; g.lineWidth = .1 * s; g.beginPath(); g.moveTo(x, y + 2); g.lineTo(x2, y2 + 2); g.stroke();
-      g.strokeStyle = '#f6efe2'; g.lineWidth = .1 * s; g.beginPath(); g.moveTo(x, y); g.lineTo(x2, y2); g.stroke();
-      g.strokeStyle = C.red; g.lineWidth = .1 * s; g.beginPath(); const mx = x + (x2 - x) * .62, my = y + (y2 - y) * .62; g.moveTo(mx, my); g.lineTo(mx + (x2 - x) * .08, my + (y2 - y) * .08); g.stroke();
+      g.strokeStyle = '#f6efe2'; g.lineWidth = .075 * s; g.beginPath(); g.moveTo(x, y); g.lineTo(x2, y2); g.stroke();
+      g.strokeStyle = C.red; g.lineWidth = .075 * s; g.beginPath(); const mx = x + (x2 - x) * .62, my = y + (y2 - y) * .62; g.moveTo(mx, my); g.lineTo(mx + (x2 - x) * .08, my + (y2 - y) * .08); g.stroke();
       g.restore();
     }
     function drawBall(g, x, y) {
@@ -382,7 +383,7 @@ BX.register({
       fx.text(0, HEAD - .8, L, {size: strike || spare ? 40 : 28, life: 1.6, rise: 30});
     }
     function drawCard(g) {
-      const n = ctx.n, W = V.W, big = n <= 2, rh = big ? 44 : 30, x0 = 6, nameW = Math.min(W * .16, 86), totW = big ? 44 : 38;
+      const n = ctx.n, W = V.W, rh = rowH(), big = rh >= 40, x0 = 6, nameW = Math.min(W * .16, 86), totW = big ? 44 : 38;
       const fw = (W - 12 - nameW - totW) / 10;
       g.save(); g.globalAlpha = .96; D.paper(g, x0, 4, W - 12, rh * n, {r: 6}); g.restore();
       for (let p = 0; p < n; p++) {

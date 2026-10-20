@@ -194,7 +194,7 @@ BX.register({
     }
     const inst = {
       st,
-      toMove: () => st.over || pb.on ? null : st.turn,
+      toMove: () => st.over || (pb.on && !ctx.isRemote(st.turn)) ? null : st.turn,   // remote seats may act during our local playback (avoids host rejecting a guest that finished playback first)
       valid: a => a && isFinite(a.dx) && isFinite(a.dy) && isFinite(a.p),
       apply(a, by) {
         const h = HOLES[st.hole], who = st.turn;

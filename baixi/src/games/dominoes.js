@@ -386,7 +386,7 @@ BX.register({
       st, toMove: () => st.over || st.ph !== 'play' ? null : st.cur,
       valid: legal, apply,
       sysMove: () => st.ph === 'end' && !st.over ? {a: {t: 'next'}, delay: 3200} : null,
-      aiMove(s, lv) { const a = aiMove(s, lv); return legal(a, s) ? a : (st.bone.length ? {t: 'draw'} : {t: 'pass'}); },
+      async aiMove(s, lv) { if (ctx.online && !ctx.isHost) await BX.sleep(120); const a = aiMove(s, lv); return legal(a, s) ? a : (st.bone.length ? {t: 'draw'} : {t: 'pass'}); },
       onTurn: status, onView() { sel = -1; },
       frame,
     };

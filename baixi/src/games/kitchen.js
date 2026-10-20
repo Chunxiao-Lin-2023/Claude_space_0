@@ -707,7 +707,7 @@ BX.register({
       g.fillStyle = '#fffaf0'; D.rr(g, 0, 0, w, h, 6); g.fill(); g.shadowColor = 'transparent';
       g.fillStyle = frac < .25 ? '#c23a2b' : '#8a2a20'; D.rr(g, 0, 0, w, h * .2, 6); g.fill(); g.fillRect(0, h * .1, w, h * .1);
       D.text(g, r.n, w / 2, h * .1, {size: Math.min(h * .15, w * .17), color: '#fff3e0', weight: 800});
-      const ds = Math.min(h * .4, w * .5); drawDish(g, w / 2, h * .2 + ds * .5, ds, o.r);
+      const ds = Math.min(h * .4, w * .5); drawPlate(g, w / 2, h * .2 + ds * .5, ds * 1.15, false); drawDish(g, w / 2, h * .2 + ds * .48, ds, o.r);
       const n = r.ing.length, is = Math.min(h * .27, (w - 8) / (n + 1.3)), rowY = h * .78 - is * .1;
       let ix = w / 2 - (n * is + is * .8) / 2 + is / 2;
       g.fillStyle = 'rgba(200,160,100,.18)'; D.rr(g, 3, rowY - is * .55, w - 6, is * 1.1, 4); g.fill();

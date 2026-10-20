@@ -149,11 +149,11 @@ BX.register({
       // vertical board: 5 cols x 13 rows(+gap) ; horizontal: 13 x 5
       let L;
       if (port) {
-        const ph = 50, availH = H - 2 * ph - 16, s = Math.min((W - 8) / (5 * 1.55), availH / 13);
-        const bw = 5 * 1.55 * s, bh = 13 * s, ox = (W - bw) / 2, oy = Math.max(ph + 8, (H - bh) / 2);
+        const ph = 50, availH = H - 2 * ph - 20, s = Math.min((W - 8) / (5 * 1.55 + .5), availH / 13.5), pad = s * .25;
+        const bw = 5 * 1.55 * s, bh = 13 * s, ox = (W - bw) / 2, oy = Math.max(ph + 8 + pad, (H - bh) / 2);
         L = {m: 'v', s, px: 1.55 * s, py: s, ox, oy, bw, bh};
         const pw = Math.min(W - 12, Math.max(bw, 340)), px0 = (W - pw) / 2;
-        L.top = {x: px0, y: oy - ph - 6, w: pw, h: ph}; L.bot = {x: px0, y: oy + bh + 6, w: pw, h: ph}; L.ctrl = {x: px0, y: oy + bh + 6, w: pw, h: ph, row: true};
+        L.top = {x: px0, y: oy - pad - ph - 4, w: pw, h: ph}; L.bot = {x: px0, y: oy + bh + pad + 4, w: pw, h: ph}; L.ctrl = {x: px0, y: oy + bh + pad + 4, w: pw, h: ph, row: true};
         if (L.bot.y + ph > H) { L.bot.y = H - ph - 2; L.ctrl.y = L.bot.y; }
         return L;
       }
