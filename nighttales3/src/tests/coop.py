@@ -93,7 +93,7 @@ try:
         check(H_.evaluate("window.__dbg.W && true") and H_.evaluate("document.getElementById('cv') && true"), 'ping sent (visual)')
         if shots: H_.screenshot(path=shots + '/coop_host_ping.png')
         # 切地图同步
-        H_.evaluate(f"window.__dbg.SAPI.go{MAPGO}")
+        H_.evaluate(f"window.__dbg.SAPI.go{MAPGO}; 0")   # 不等它的 Promise（剧本外调用不会结束）
         G.wait_for_function(f"window.__dbg.W.mapId==={MAPGO[1:].split(',')[0]}", timeout=5000)
         check(True, 'map change mirrored to guest')
         # solid 同步

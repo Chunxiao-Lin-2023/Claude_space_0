@@ -273,7 +273,7 @@
             if (tv.lit) { tv.lit = false; S.sfx('switch'); return S.narr('你关掉了电视。雪花「噗」地缩成屏幕中间一个白点，过了好一会儿才熄。'); }
             await S.narr(S.f.act === 'morning' ? '早间新闻在播罢工的消息。主持人提了一句「恩菲尔德的灵异事件」，背景里是这栋房子的照片。' : '木壳电视机，天线上缠着锡纸。\n哈珀太太说它有时候半夜自己打开，只放雪花。');
           } },
-          { x: 9, y: 2, spr: 'lamp', light: { r: 3.4, col: 'rgba(255,200,110,.14)' }, on: S => S.narr('落地灯的灯罩上，有一圈烤焦的黄印子。') },
+          { id: 'llamp', x: 9, y: 2, spr: 'lamp', light: { r: 3.4, col: 'rgba(255,200,110,.14)' }, on: S => S.narr(S.ent('llamp').off ? '落地灯不亮了。灯泡还是烫的。' : '落地灯的灯罩上，有一圈烤焦的黄印子。') },
           { x: 4, y: 5, w: 2, spr: 'lowtable', col: '#5a3a1e', on: S => S.narr(S.f.act === 'morning' ? '茶几上摆着一把弯成钩子的汤勺。莫顿博士在旁边压了一张纸条：「证物一」。' : '茶几上散着几本漫画、半杯凉了的茶、一盒积木。') },
           { id: 'spoon', x: 5, y: 5, spr: 'spoonb', z: 1, oy: -5, hidden: true, solid: false },
           { id: 'harper_l', x: 3, y: 8, oy: -4, spr: '@harper', dir: 0, on: S => harperTalk(S) },
@@ -469,7 +469,7 @@
   }
   function light(S) {
     const a = S.f.act;
-    S.ent('fire').off = a === 'dark'; S.ent('rlamp').off = a === 'dark'; S.ent('meter').lit = a !== 'dark';
+    S.ent('fire').off = a === 'dark'; S.ent('llamp').off = a === 'dark'; S.ent('rlamp').off = a === 'dark'; S.ent('meter').lit = a !== 'dark';
     const day = a === 'morning';
     if (a === 'dark') { S.dark(.97, 'living'); S.dark(.96, 'upstairs'); S.plr(1.7); }
     else { S.dark(day ? .2 : null, 'living'); S.dark(day ? .24 : null, 'upstairs'); S.dark(day ? .28 : null, 'garden'); S.plr(null); }
@@ -600,7 +600,7 @@
     if (!S.has('coin')) return S.narr('你摸到了电表。投币口冰凉——可你手里没有硬币。\n（哈珀太太说，钱包在厨房台子上。）');
     S.take('coin'); S.stop('gchair_l');
     await S.narr('你把硬币塞进投币口。「当啷」一声。你拧动旋钮——');
-    S.sfx('switch'); S.f.act = 'morningPre'; S.ent('meter').lit = true; S.ent('fire').off = false; S.ent('rlamp').off = false;
+    S.sfx('switch'); S.f.act = 'morningPre'; S.ent('meter').lit = true; S.ent('fire').off = false; S.ent('llamp').off = false; S.ent('rlamp').off = false;
     S.dark(null, 'living'); S.dark(null, 'upstairs'); S.plr(null); S.amb('room');
     await S.narr('灯亮了。煤气取暖器「噗」地一声蹿起蓝火。');
     const c = S.ent('gchair_l');
