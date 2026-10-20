@@ -180,7 +180,7 @@
       if (!f.inTub) return S.narr('还不到开电视的时候。');
       if (!(f.lR && f.lH && f.lB)) return S.narr('还有灯开着。帖子说，要关掉家里「所有的」灯。');
       if (f.counted) return S.narr('雪花。沙沙沙沙。');
-      tv.s.on = 'static'; tv.s.off = false; S.sfx('tv'); S.amb('tv');
+      tv.s.power = 'static'; tv.s.off = false; S.sfx('tv'); S.amb('tv');
       await S.narr('你按下遥控器。屏幕「嗡」地一声亮了。\n没有台，只有雪花。灰白的光一跳一跳地铺满了房间。');
       await S.ask('雪花的光一跳一跳的。闭上眼睛，数到十。', ['……闭上眼睛']);
       await S.fade(1, 500);
@@ -438,7 +438,7 @@
       await S.scare('face', { spr: '@kumaF' });
       return S.die('规矩说，游戏结束之前不能出门。\n你回过头的时候，那东西已经站在你身后了。', '你开了门');
     }
-    f.momDone = true; f.dollOn = true; S.ent('tv').s.on = true;
+    f.momDone = true; f.dollOn = true; S.ent('tv').s.power = true;
     if (r === 1) {
       f.mouth = false; S.sfx('water');
       await S.narr('话一出口，盐水就顺着下巴流了下去。\n门外的声音停了。');
@@ -481,9 +481,9 @@
     await S.say('阿浩', '我赢了。', { style: 'big' });
     S.sfx('whisper'); await S.wait(500);
     await S.say('阿浩', '我赢了！', { style: 'big' });
-    S.shake(500, 2); tv.s.on = 'static'; S.sfx('tv'); await S.wait(500);
+    S.shake(500, 2); tv.s.power = 'static'; S.sfx('tv'); await S.wait(500);
     await S.say('阿浩', '我赢了！！', { style: 'big' });
-    tv.s.on = false; tv.s.off = true; S.amb('room'); S.sfx('thud');
+    tv.s.power = false; tv.s.off = true; S.amb('room'); S.sfx('thud');
     await S.narr('电视「啪」地一声黑了。\n房间里只剩下冰箱的嗡嗡声，和你自己的喘气声。');
     await S.narr('它歪倒在地板上，刀从怀里滑了出来。\n就是一只湿透了的、缝得乱七八糟的熊。');
     f.won = true; f.phase = 'after'; S.clearTimer(); S.plr(null); S.dark(.86, 'room');
@@ -575,7 +575,7 @@
       const f = S.f;
       if (f.phase === 'prep' && f.readRules && !W.busy) prepGoal(S);
       if (f.phase === 'seek' && !f.won && S.map === 'room') {
-        if (!f.dollOn) { tvT -= dt; if (tvT <= 0) { tvT = .4 + Math.random() * 1.4; S.ent('tv').s.on = Math.random() < .5 ? 'static' : true; if (Math.random() < .3) S.sfx('tv'); } }
+        if (!f.dollOn) { tvT -= dt; if (tvT <= 0) { tvT = .4 + Math.random() * 1.4; S.ent('tv').s.power = Math.random() < .5 ? 'static' : true; if (Math.random() < .3) S.sfx('tv'); } }
         const d = S.ent('dollR');
         if (d && !d.hidden && !W.busy && (d.chase || f._frz)) {
           const p = S.pl, v = DIRS[p.dir], dot = (d.px - p.px) * v[0] + (d.py - p.py) * v[1];
@@ -663,7 +663,7 @@
           { x: 6, y: 1, spr: 'calendar', on: S => S.narr('十一月的日历。21号那格写着：「物理化学　期中」。\n……明天。不对，已经是今天了。') },
           { id: 'clock', x: 8, y: 1, spr: 'wallclock', on: clockUse },
           { id: 'swR', x: 10, y: 1, spr: 'switch', on: lightSwitch('R') },
-          { id: 'tv', x: 3, y: 2, spr: 'tv', s: { on: false, off: true }, light: { r: 3.4, col: 'rgba(150,170,255,.16)' }, on: tvUse },
+          { id: 'tv', x: 3, y: 2, spr: 'tv', s: { power: false, off: true }, light: { r: 3.4, col: 'rgba(150,170,255,.16)' }, on: tvUse },
           { id: 'pc', x: 7, y: 2, spr: 'pcdesk', light: { r: 2, col: 'rgba(140,170,255,.12)', dy: 0 }, on: pcUse },
           { x: 7, y: 3, spr: 'cushion', col: '#3a4a6a', decal: true, solid: false },
           { id: 'shelf', x: 9, y: 2, spr: 'bookshelf', async on(S) {
@@ -695,7 +695,7 @@
             if (f.dollOn) return dollAppear(S);
             if (f.tubSeen && !f.momDone) { S.sfx('tv'); return S.think('（房间里只有电视在换台。……地上的水迹，不是往这边来的。是往玄关去的。）'); }
             if (S.once('seekRoom')) {
-              S.ent('tv').s.on = true;
+              S.ent('tv').s.power = true;
               await S.narr('纸门外，冷得像冰箱里。\n电视一直在换台——新闻、购物节目、雪花、新闻。每一下「啪」，房间的颜色就跟着变一次。');
               await S.narr('遥控器好好地放在暖桌上。');
               await S.think('（……布偶。先去浴室看看。）');

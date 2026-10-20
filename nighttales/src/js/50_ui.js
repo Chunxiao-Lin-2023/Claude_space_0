@@ -23,6 +23,7 @@ const UI = {
   activeRoot() {
     if (this.modal) return $(this.modal);
     if (W && W.endScreen) return $('endov');
+    if (W && W.keypad && this.scene === 'play') return $('keypad');
     if (this.scene !== 'play') return $(this.scene);
     return null;
   },
@@ -131,15 +132,20 @@ const UI = {
         this._dlgId = d.id; this._n = -1;
         D.className = d.style || ''; D.querySelector('.who').textContent = d.who || '';
         const C = D.querySelector('.chs'); C.innerHTML = '';
-        if (d.choices) d.choices.forEach((t, i) => { const b = document.createElement('button'); b.className = 'ch'; b.textContent = t; b.onclick = ev => { ev.stopPropagation(); if (iControl()) sendAct('pick', i); else this.toast('对方在操作'); }; C.appendChild(b); });
+        this._vsel = 0;
+        if (d.choices) d.choices.forEach((t, i) => { const b = document.createElement('button'); b.className = 'ch'; b.textContent = t; b.onclick = ev => { ev.stopPropagation(); if (W.dlg && W.dlg.vote) { this._vsel = i; sendAct('vote', i); } else if (iControl()) sendAct('pick', i); else this.toast('对方在操作'); }; C.appendChild(b); });
       }
       const len = d.text.length, n = d.full ? len : Math.min(len, Math.floor((RT - d.t0) * CPS));
       if (n !== this._n) { D.querySelector('.txt').textContent = d.text.slice(0, n); if (n > this._n && n < len && n % 2 === 0) AU.sfx('blip'); this._n = n; }
       const full = n >= len, C = D.querySelector('.chs');
       C.classList.toggle('hidden', !(d.choices && full));
-      [...C.children].forEach((b, i) => b.classList.toggle('sel', i === d.sel));
+      const me = NET.role === 'guest' ? 'g' : 'h', oth = me === 'h' ? 'g' : 'h';
+      const mine = d.vote ? d.vote[me] : null;
+      [...C.children].forEach((b, i) => { b.classList.toggle('sel', d.vote ? (mine != null ? i === mine : i === this._vsel) : i === d.sel); b.classList.toggle('voted', !!(d.vote && mine === i)); });
       D.querySelector('.more').classList.toggle('hidden', !full || !!d.choices);
-      D.querySelector('.watch').classList.toggle('hidden', !coop || iControl());
+      const Wt = D.querySelector('.watch');
+      if (d.vote) { Wt.classList.toggle('hidden', !full); const o = d.vote[oth]; Wt.textContent = mine == null ? (o == null ? '两人一起决定 · 各选一个' : '对方已经选好了 · 轮到你') : (o == null ? '你选好了 · 等对方……' : (o === mine ? '你们选了同一个' : '你们的选择不一样……')); }
+      else { Wt.textContent = '对方操作中'; Wt.classList.toggle('hidden', !coop || iControl()); }
     } else if (!D.classList.contains('hidden')) { D.classList.add('hidden'); this._dlgId = -1; }
     document.body.classList.toggle('dlgup', !!(d || W.card || W.note || W.keypad || W.endScreen));
     // 标题卡
@@ -152,7 +158,8 @@ const UI = {
     const kp = W.keypad;
     if (kp) {
       if (kp.id !== this._kpId) { this._kpId = kp.id; $('keypad').classList.remove('hidden'); $('kpP').textContent = kp.prompt; const K = $('kpK'); K.innerHTML = ''; kp.keys.forEach(k => { const b = document.createElement('button'); b.className = 'btn'; b.textContent = k; b.onclick = () => iControl() ? sendAct('key', k) : this.toast('对方在操作'); K.appendChild(b); }); $('kpX').classList.toggle('hidden', !kp.cancel); setTimeout(() => this.focusFirst(), 20); }
-      $('kpV').textContent = kp.val.padEnd(kp.len, '·');
+      const parts = kp.parts || kp.val.split(''), sep = kp.sep || (kp.keys.some(k => k.length > 1) ? ' ' : '');
+      $('kpV').textContent = parts.concat(Array(Math.max(0, kp.len - parts.length)).fill('·')).join(sep);
     } else if (this._kpId !== -1) { $('keypad').classList.add('hidden'); this._kpId = -1; }
     const es = W.endScreen;
     if (es) {
@@ -309,10 +316,9 @@ function bindUI() {
   $('bRun').addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); IN.runLatch = !IN.runLatch; $('bRun').classList.toggle('on', IN.runLatch); });
   // 键盘：密码盘
   addEventListener('keydown', e => {
-    if (!W || !W.keypad || !iControl()) return;
+    if (!W || !W.keypad || !iControl() || UI.modal) return;
     const k = e.key.length === 1 ? e.key.toUpperCase() : e.key;
-    if (W.keypad.keys.includes(k)) { sendAct('key', k); e.preventDefault(); }
-    else if (k === 'Backspace') { sendAct('keydel'); e.preventDefault(); }
+    if (k !== ' ' && W.keypad.keys.includes(k)) { sendAct('key', k); e.preventDefault(); }
   });
 }
 function muteBtn() { $('hMute').textContent = AU.muted ? '✕' : '♪'; }
@@ -325,6 +331,7 @@ function canvasTap(x, y) {
 /* 全局按键分发 */
 IN.handlers.push(n => {
   if (n === 'mute') { AU.setMute(!AU.muted); muteBtn(); return true; }
+  if (n === 'del' && !(W && W.keypad && UI.scene === 'play' && !UI.modal)) n = 'b';
   if (UI.modal) {
     if (UI.modal === 'note' && UI._localNote) { if (n === 'a' || n === 'b' || n === 'menu' || n === 'journal') { closeLocalNote(); } return true; }
     if (n === 'menu' || n === 'b' || (n === 'inv' && UI.modal === 'inv') || (n === 'journal' && UI.modal === 'journal')) { UI.closeModal(); return true; }
@@ -339,7 +346,19 @@ IN.handlers.push(n => {
   if (n === 'ctrl') { ctrlButton(); return true; }
   if (n === 'yes' && ctrlAnswer(true)) return true;
   if (n === 'no' && ctrlAnswer(false)) return true;
-  if (W.keypad) { if (n === 'b' && iControl()) sendAct('keycancel'); return true; }
+  if (W.keypad) {
+    if (!iControl()) return true;
+    if (n === 'del') sendAct('keydel');
+    else if (n === 'b') sendAct('keycancel');
+    else if (['up', 'down', 'left', 'right', 'a'].includes(n)) { if (!UI.nav(n) && n === 'a') { const f = $('kpK').querySelector('.btn'); if (f) f.focus(); } }
+    return true;
+  }
+  if (W.dlg && W.dlg.vote) {   // 投票：两人各自选择
+    const d = W.dlg, full = d.full || (RT - d.t0) * CPS >= d.text.length;
+    if (n === 'a') { if (!full) sendAct('adv'); else sendAct('vote', UI._vsel || 0); return true; }
+    if ((n === 'up' || n === 'down') && full) { UI._vsel = ((UI._vsel || 0) + (n === 'up' ? -1 : 1) + d.choices.length) % d.choices.length; AU.sfx('select'); return true; }
+    return true;
+  }
   if (!iControl()) { if (n === 'a' && NET.role !== 'solo') UI.toast('对方在操作 · 按 T 请求操作'); return true; }
   if (n === 'a') { sendAct(W.dlg || W.card || W.note ? 'adv' : 'use'); return true; }
   if (W.dlg && W.dlg.choices && (n === 'up' || n === 'down')) { sendAct('sel', n === 'up' ? -1 : 1); return true; }

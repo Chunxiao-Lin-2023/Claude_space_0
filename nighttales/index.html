@@ -90,6 +90,7 @@ kbd{display:inline-block;border:1px solid #555;border-bottom-width:2px;padding:0
 #dlg .ch{text-align:left;background:rgba(40,24,30,.6);border:1px solid #3a2a30;padding:8px 12px;font-size:17px;font-family:var(--serif);min-height:42px}
 #dlg .ch.sel{background:#4a1418;border-color:var(--red2);color:#fff}
 #dlg .ch.sel::before{content:'▶ ';color:var(--red2)}
+#dlg .ch.voted{box-shadow:inset 3px 0 0 #7ad7ff}
 #dlg .more{position:absolute;right:14px;bottom:6px;color:var(--red2);animation:bob 1s infinite;font-size:13px}
 #dlg .watch{position:absolute;right:14px;top:-13px;font-size:12px;color:#9ab;background:#0b0b10;border:1px solid #334;padding:1px 8px;font-family:var(--sans)}
 @keyframes bob{50%{transform:translateY(3px)}}
@@ -277,18 +278,18 @@ const IN = {
   running() { return this.run || this.runLatch; }
 };
 const KEYDIR = { ArrowDown: 0, KeyS: 0, ArrowLeft: 1, KeyA: 1, ArrowRight: 2, KeyD: 2, ArrowUp: 3, KeyW: 3 };
-const KEYACT = { Space: 'a', Enter: 'a', KeyZ: 'a', KeyE: 'a', NumpadEnter: 'a', Escape: 'menu', KeyI: 'inv', Tab: 'inv', KeyJ: 'journal', KeyT: 'ctrl', KeyY: 'yes', KeyN: 'no', KeyM: 'mute', KeyX: 'b', Backspace: 'b' };
+const KEYACT = { Space: 'a', Enter: 'a', KeyZ: 'a', KeyE: 'a', NumpadEnter: 'a', Escape: 'menu', KeyI: 'inv', Tab: 'inv', KeyJ: 'journal', KeyT: 'ctrl', KeyY: 'yes', KeyN: 'no', KeyM: 'mute', KeyX: 'b', Backspace: 'del' };   // del：密码盘里删一位，其他地方等同 b
 addEventListener('keydown', e => {
   if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
   AU.init();
   if (e.code in KEYDIR) {
     const d = KEYDIR[e.code]; if (!IN.stack.includes(d)) IN.stack.push(d);
-    IN.press(['down', 'left', 'right', 'up'][d]); e.preventDefault(); return;
+    if (!e.repeat) IN.press(['down', 'left', 'right', 'up'][d]); e.preventDefault(); return;   // 按住不放不连发（避免选项来回跳）
   }
   if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') { IN.run = true; return; }
   if (e.repeat) return;
   const a = KEYACT[e.code];
-  if (a) { IN.press(a); if (e.code === 'Tab' || e.code === 'Space') e.preventDefault(); }
+  if (a) { IN.press(a); if (e.code === 'Tab' || e.code === 'Space' || e.code === 'Enter' || e.code === 'NumpadEnter') e.preventDefault(); }
 });
 addEventListener('keyup', e => {
   if (e.code in KEYDIR) { const d = KEYDIR[e.code]; IN.stack = IN.stack.filter(x => x !== d); }
@@ -697,7 +698,7 @@ Object.assign(SPR, {
   clock(g, e, t, R) { box(R, 2, -14, 12, 29, '#4a2e18'); R(4, -12, 8, 8, '#d9d2b5'); R(7, -10, 1, 3, '#111'); R(8, -8, 2, 1, '#111'); R(6, -2, 4, 12, '#2a1a0c'); const s = Math.sin(t * 3.14) * 2; R(8 + s, 0, 1, 7, '#c9a35a'); R(7 + s, 6, 3, 3, '#c9a35a'); },
   wallclock(g, e, t, R) { R(4, 1, 8, 8, '#2a2420'); R(5, 2, 6, 6, '#d8d2c0'); R(7, 3, 1, 3, '#111'); R(8, 5, 2, 1, '#111'); },
   tv(g, e, t, R) {
-    box(R, 0, 0, 16, 13, '#2a2a2a'); const on = e.on;
+    box(R, 0, 0, 16, 13, '#2a2a2a'); const on = e.power;
     if (on === 'static') { for (let y = 2; y < 11; y++) for (let x = 2; x < 12; x++) R(x, y, 1, 1, hash(x, y, (t * 30) | 0) < .5 ? '#ddd' : '#555'); }
     else if (on) { R(2, 2, 10, 9, '#4a6a8a'); R(3, 3, 4, 2, '#8ab'); } else R(2, 2, 10, 9, '#151a1c');
     R(13, 3, 2, 1, '#888'); R(13, 6, 2, 1, '#888'); R(4, 13, 8, 3, '#333');
@@ -818,7 +819,8 @@ const BASE_LEGEND = {
   'T': 'tree', 'P': 'pine', 'h': 'hedge', 'f': 'fence', 'e': 'reeds', 'L': 'rail', 'K': 'rock', 'C': 'counterT', 'B': 'bushes'
 };
 /* 实体上的这些字段会同步给客机并影响绘制 */
-const VKEYS = ['open', 'covered', 'cracked', 'blood', 'face', 'on', 'off', 'lit', 'full', 'read', 'eyes', 'red', 'coat', 'flowers', 'thread', 'knife', 'col', 'text', 'water', 'locked', 'flicker', 'num'];
+/* 注意：'on' 是调查处理函数，不能当状态；电视/收音机/钢琴的开关状态用 power */
+const VKEYS = ['open', 'covered', 'cracked', 'blood', 'face', 'power', 'off', 'lit', 'full', 'read', 'eyes', 'red', 'coat', 'flowers', 'thread', 'knife', 'col', 'text', 'water', 'locked', 'flicker', 'num'];
 const NONSOLID = new Set(['note', 'paper', 'key', 'item', 'sparkle', 'coin', 'footprints', 'stain', 'puddle', 'handprint', 'marigold', 'newspaper', 'photo', 'scissors', 'knife', 'cup', 'salt', 'rice', 'thread', 'paw', 'candy', 'flashlight', 'match', 'towel', 'book', 'dock', 'rope', 'shoes', 'brush', 'invisible', 'skin', 'whisk']);
 
 let W = null;          // 当前章节运行态（主机权威；客机是镜像）
@@ -961,7 +963,7 @@ function updatePlayer(dt) {
   if (W._turnT != null) { W._turnT -= dt; if (W._turnT > 0) return; W._turnT = null; }
   p.dir = d;
   const tx = p.x + DIRS[d][0], ty = p.y + DIRS[d][1];
-  if (passable(m, tx, ty, p)) { p.prev = [p.x, p.y]; const sp = (IN.running() && !W.noRun ? RUN_SPD : WALK_SPD) * (p.speed || 1) * (m.def.speed || 1); startMove(p, d, sp); }
+  if (passable(m, tx, ty, p)) { p.prev = [p.x, p.y]; p.run = IN.running() && !W.noRun; const sp = (p.run ? RUN_SPD : WALK_SPD) * (p.speed || 1) * (m.def.speed || 1); startMove(p, d, sp); }
   else { p.fr = 0; if (isHost()) onBump(tx, ty); }
 }
 let lastPTile = null;
@@ -994,12 +996,18 @@ function hostCheckRemoteTile() {
   const p = W.pl, k = W.mapId + ':' + p.x + ',' + p.y;
   if (k !== lastPTile) { const had = lastPTile; lastPTile = k; if (had && !W.busy) onPlayerArrive(); }
 }
+/* 调查对象：脚下非实心的可调查物优先；同一格有多个时，人物优先，其次画在最上层的 */
+function pickTop(m, es) {
+  if (es.length < 2) return es[0] || null;
+  const isP = e => typeof sprOf(e.spr) === 'object';
+  return es.slice().sort((a, b) => (isP(b) - isP(a)) || ((b.z || 0) - (a.z || 0)) || (!!a.decal - !!b.decal) || ((b.py + b.h * TS) - (a.py + a.h * TS)) || (m.ents.indexOf(b) - m.ents.indexOf(a)))[0];
+}
 function facingEnt() {
   const p = W.pl, m = curMap();
+  const under = entsAt(m, p.x, p.y, e => typeof e.on === 'function' && !e.solid);
+  if (under.length) return pickTop(m, under);
   const tx = p.x + DIRS[p.dir][0], ty = p.y + DIRS[p.dir][1];
-  let es = entsAt(m, tx, ty, e => e.on);
-  if (!es.length) es = entsAt(m, p.x, p.y, e => e.on && !e.solid);
-  return es[0] || null;
+  return pickTop(m, entsAt(m, tx, ty, e => typeof e.on === 'function'));
 }
 function interact() {   // 仅主机
   if (W.busy || W.ended) return;
@@ -1010,9 +1018,9 @@ function interact() {   // 仅主机
 function hostTick(dt) {
   const m = curMap();
   for (const e of m.ents) {
-    if (e.mv) moveEntity(e, dt);
+    if (e.mv && !e.frozen) moveEntity(e, dt);
     else if (e.fr && !e.chase) e.fr = 0;
-    if (e.chase && !e.hidden && !e.mv && !W.paused) chaseStep(e, m, dt);
+    if (e.chase && !e.hidden && !e.mv && !W.paused && !e.frozen) chaseStep(e, m, dt);
   }
   if (!W.busy && !W.ended) for (const e of m.ents) {
     if (e.chase && !e.hidden && !W.pl.hidden && Math.abs(e.px - W.pl.px) + Math.abs(e.py - W.pl.py) < 11) {
@@ -1020,9 +1028,9 @@ function hostTick(dt) {
       runScript(c.catch || (S => S.die(c.msg || '你被抓住了……')), e); break;
     }
   }
-  if (W.timer && !W.busy && !W.ended) {
+  if (W.timer && (!W.busy || W.timer.during) && !W.ended && !W.endScreen) {
     W.timer.left -= dt;
-    if (W.timer.left <= 0) { const t = W.timer; W.timer = null; runScript(t.fn); }
+    if (W.timer.left <= 0) { const t = W.timer; W.timer = null; if (W.busy) interruptWait(); runScript(t.fn); }
   }
   if (!W.busy && !W.ended && W.queue.length) { const i = W.queue.findIndex(q => q.at <= W.t); if (i >= 0) { const q = W.queue.splice(i, 1)[0]; runScript(q.fn); } }
   W.t += dt;
@@ -1160,7 +1168,8 @@ function drawLighting(g, m, ox, oy) {
   for (const e of m.ents) {
     const li = e.light; if (!li || e.hidden || e.s.off || e.off) continue;
     const r = (li.r || 3) * TS * (li.flick ? 1 + Math.sin(RT * 13 + e.px) * .05 + (Math.random() < .02 ? -.3 : 0) : 1);
-    const lxp = e.px + (li.dx ?? e.w * 8) - ox, lyp = e.py + (li.dy ?? 8) - oy;
+    const bx0 = li.pl ? W.pl.px : e.px, by0 = li.pl ? W.pl.py : e.py;
+    const lxp = bx0 + (li.dx ?? (li.pl ? 8 : e.w * 8)) - ox, lyp = by0 + (li.dy ?? (li.pl ? 4 : 8)) - oy;
     hole(lxp, lyp, r, li.a ?? 1); if (li.col) warm.push([lxp, lyp, r, li.col]);
   }
   for (const l of (W.extraLights || [])) hole(l[0] - ox, l[1] - oy, l[2] * TS, l[3] ?? 1);
@@ -1189,6 +1198,7 @@ function blit() {
 }
 
 /* ---------------- 屏幕特效 ---------------- */
+const FACECV = mk(32, 32);
 function addFX(k, o = {}) { FX.push(Object.assign({ k, t0: RT, dur: o.dur || ({ flash: .5, red: 1.2, face: .9, glitch: .6, static: .8, black: 1, blood: 2.5 }[k] || .8) }, o)); }
 function drawFX(g, dt) {
   for (let i = FX.length - 1; i >= 0; i--) {
@@ -1201,6 +1211,16 @@ function drawFX(g, dt) {
     if (f.k === 'blood') { g.fillStyle = '#5a0606'; for (let i = 0; i < 24; i++) { const x = (hash(i, 3, 9) * VW) | 0, len = Math.min(1, a * 1.6) * VH * (.3 + hash(i, 4, 9) * .8); g.fillRect(x, 0, 2 + (hash(i, 5, 9) * 4 | 0), len); } g.fillStyle = `rgba(80,0,0,${Math.sin(a * Math.PI) * .5})`; g.fillRect(0, 0, VW, VH); }
     if (f.k === 'face') {
       g.fillStyle = `rgba(0,0,0,${.85})`; g.fillRect(0, 0, VW, VH);
+      const fk = f.face || (typeof f.spr === 'string' && f.spr[0] === '@' ? f.spr.slice(1) : null), ff = fk && W.ch.faces && W.ch.faces[fk];
+      if (ff) {   /* 章节专用惊吓大头像：faces[name](R, a, t)，在 32×32 网格里画 */
+        const fc = FACECV, fg = fc.getContext('2d'); fg.clearRect(0, 0, 32, 32);
+        ff((x, y, w, h, col) => { if (!col) return; fg.fillStyle = col; fg.fillRect(Math.floor(x), Math.floor(y), Math.ceil(w), Math.ceil(h)); }, a, RT, fg);
+        const s = Math.max(2, Math.floor(Math.min(VW, VH) * .8 / 32 * (1 + a * .25)));
+        const jx = ((Math.random() - .5) * 6) | 0, jy = ((Math.random() - .5) * 4) | 0;
+        g.drawImage(fc, 0, 0, 32, 32, Math.round((VW - 32 * s) / 2) + jx, Math.round((VH - 32 * s) / 2) + jy, 32 * s, 32 * s);
+        for (let i = 0; i < 5; i++) { const y = (Math.random() * VH) | 0; g.fillStyle = 'rgba(0,0,0,.55)'; g.fillRect(0, y, VW, 1 + (Math.random() * 3 | 0)); }
+        continue;
+      }
       const P = sprOf(f.spr || '@me'); const c = personSprite(typeof P === 'object' ? P : PEOPLE.me, 0, 0);
       const s = Math.floor(Math.min(VW, VH) / 10 * (1 + a * .3));
       const jx = ((Math.random() - .5) * 8) | 0, jy = ((Math.random() - .5) * 6) | 0;
@@ -1233,7 +1253,13 @@ function runScriptP(p) { if (!W) return; const myGen = GEN; W.busy++; p.catch(e 
 function chk(g) { if (g !== GEN) throw ABORT; }
 let DLGID = 0;
 function waitInput(kind, data) {
-  return new Promise(res => { DLGWAIT = { res, kind }; Object.assign(W, data); });
+  return new Promise((res, rej) => { DLGWAIT = { res, rej, kind }; Object.assign(W, data); });
+}
+/* 打断正在等待输入的剧本（倒计时到点时用）：关掉对话/密码盘/卡片，原剧本以 ABORT 结束 */
+function interruptWait() {
+  const r = DLGWAIT; DLGWAIT = null;
+  if (W) { W.dlg = null; W.keypad = null; W.card = null; W.note = null; }
+  if (r && r.rej) r.rej(ABORT);
 }
 function emit(t, a) { applyEmit(t, a); if (NET.role === 'host') netSend({ t: 'fx', k: t, a }); }
 function applyEmit(t, a) {
@@ -1243,6 +1269,7 @@ function applyEmit(t, a) {
   else if (t === 'shake') { if (W) W.shake = { until: RT + a[0] / 1000, amt: a[1] }; }
   else if (t === 'toast') UI.toast(a);
   else if (t === 'item') UI.toast(a);
+  else if (t === 'tone') AU.tone(...a);
 }
 function itemName(id) { const it = W.ch.items && W.ch.items[id]; return it ? it.name : id; }
 
@@ -1250,6 +1277,10 @@ const SAPI = {
   get f() { return W.f; },
   get pl() { return W.pl; },
   get map() { return W.mapId; },
+  /* 玩家此刻是否在走 / 在跑（客机操作时用客机上报的状态） */
+  get moving() { const p = W.pl; if (isHost() && !iControl()) return !!(p.rmv && RT - p.rT < .3); return !!p.mv; },
+  get running() { const p = W.pl; if (isHost() && !iControl()) return !!(p.rmv && p.rrun && RT - p.rT < .3); return !!(p.mv && p.run); },
+  get coop() { return NET.role !== 'solo' && NET.up; },
   async say(who, text, o = {}) {
     const g = GEN; const pages = Array.isArray(text) ? text : [text];
     for (const t of pages) {
@@ -1275,7 +1306,8 @@ const SAPI = {
     await waitInput('note', { note: { id: ++DLGID, title, text, t0: RT } }); chk(g); W.note = null;
   },
   async keypad(prompt, keys, len, o = {}) {
-    const g = GEN; const r = await waitInput('keypad', { keypad: { id: ++DLGID, prompt, keys, len, val: '', t0: RT, cancel: o.cancel !== false } }); chk(g); W.keypad = null; return r;
+    /* keys 可以是多字符（'10'、'开'）；len = 要按几下；返回按下的键拼成的字符串（o.sep 为分隔符，默认无） */
+    const g = GEN; const r = await waitInput('keypad', { keypad: { id: ++DLGID, prompt, keys, len, val: '', parts: [], sep: o.sep || '', t0: RT, cancel: o.cancel !== false } }); chk(g); W.keypad = null; return r;
   },
   async wait(ms) { const g = GEN; await new Promise(r => setTimeout(r, ms / FAST)); chk(g); },
   async fade(to, ms = 500) {
@@ -1324,7 +1356,10 @@ const SAPI = {
   turn(dir) { W.pl.dir = dir; W.forceK++; },
   bubble(id, k, ms = 1200) { const e = id === 'pl' ? null : getEnt(id); const b = { k, until: RT + ms / 1000 }; if (e) e.bubble = b; else W.pl.bubble = b; },
   chase(id, o = {}) { const e = getEnt(id); if (!e) return; e.hidden = false; e.chase = Object.assign({ spd: 3 }, o); },
-  stop(id) { const e = getEnt(id); if (e) { e.chase = null; } },
+  stop(id) { const e = getEnt(id); if (!e) return; e.chase = null; e.frozen = false; if (e.mv) { const mv = e.mv; e.mv = null; e.px = mv.fx * TS; e.py = mv.fy * TS; e.x = mv.fx; e.y = mv.fy; } e.fr = 0; },
+  /* 原地定住追逐者（被注视时等）：不再走下一步，也停在当前位置；freeze(id,false) 解除 */
+  freeze(id, b = true) { const e = getEnt(id); if (e) e.frozen = !!b; },
+  isFrozen(id) { const e = getEnt(id); return !!(e && e.frozen); },
   follow(id, on = true) { const e = getEnt(id); if (e) { e.follow = on; e.solid = !on; } },
   async scare(kind = 'face', o = {}) {
     emit('sfx', o.sfx || 'scare'); emit('fx', [kind, o]); emit('shake', [o.shakeMs || 500, o.shake || 3]);
@@ -1338,7 +1373,8 @@ const SAPI = {
   after(ms, fn) { W.queue.push({ at: W.t + ms / 1000 / FAST, fn }); },   // 空闲时延后运行一段剧本
   plr(r) { W.plr = r; },
   tile(x, y, ch, map) { const m = W.maps[map || W.mapId]; m.mods[y * m.w + x] = ch; m.dirty = true; },
-  timer(sec, label, fn) { W.timer = { left: sec, label, fn }; },
+  /* o.during=true：对话/密码盘打开时也照样计时，到点会打断当前对话 */
+  timer(sec, label, fn, o = {}) { W.timer = { left: sec, label, fn, during: !!o.during }; },
   clearTimer() { W.timer = null; },
   focus(x, y) { W.camFocus = x == null ? null : [x, y]; },
   hidePlayer(b = true) { W.pl.hidden = b; },
@@ -1356,7 +1392,7 @@ const SAPI = {
   async end(o = {}) {
     W.ended = true; W.timer = null; emit('sfx', o.bad ? 'bad' : 'good');
     for (const k in W.maps) for (const e of W.maps[k].ents) e.chase = null;
-    if (!o.bad) markDone(W.ch.id); store.del('cp.' + W.ch.id);
+    if (!o.bad) { markDone(W.ch.id); store.del('cp.' + W.ch.id); }   // 坏结局保留检查点
     if (NET.role === 'host' && !o.bad) netSend({ t: 'done', ch: W.ch.id });
     await waitInput('end', { endScreen: { kind: o.bad ? 'badend' : 'end', title: o.title || '完', text: o.text || '', t0: RT } });
   },
@@ -1368,6 +1404,17 @@ const SAPI = {
     chk(g); if (to <= 0) { e.hidden = true; e.alpha = 1; }
   },
   async bells(n, gap = 420, name = 'bell') { for (let i = 0; i < n; i++) { emit('sfx', name); await SAPI.wait(gap); } },
+  /* 双方都能听到的单音：tone(type, f0, f1, dur, vol, delay, lp) */
+  tone(...a) { emit('tone', a); },
+  /* 额外光源（双方同步）：[[世界x, 世界y, 半径格, 强度]...]；null 清除 */
+  lights(arr) { W.extraLights = arr || []; },
+  /* 双人投票：两人各选一次。返回 {v, agree, h, g}；不一致时 v 取操作者的选择。单人时等同 ask */
+  async vote(text, opts, who, o = {}) {
+    const g = GEN;
+    if (!SAPI.coop) { const v = await SAPI.ask(text, opts, who, o); return { v, agree: true, h: v, g: v }; }
+    const r = await waitInput('dlg', { dlg: { id: ++DLGID, who: who || '', text, choices: opts, sel: 0, full: false, t0: RT, style: o.style || '', vote: { h: null, g: null } } });
+    chk(g); W.dlg = null; return r;
+  },
 };
 function markDone(id) { const d = store.get('done', []); if (!d.includes(id)) { d.push(id); store.set('done', d); } }
 
@@ -1376,7 +1423,7 @@ function makeCP(name) {
   const maps = {};
   for (const k in W.maps) {
     const m = W.maps[k];
-    maps[k] = { mods: Object.assign({}, m.mods), ents: m.ents.map(e => { const o = { id: e.id, px: e.px, py: e.py, dir: e.dir, hidden: e.hidden, alpha: e.alpha, spr: e.spr, solid: e.solid, s: e.s, follow: !!e.follow, light: e.light || null }; for (const v of VKEYS) if (e[v] !== undefined) o[v] = e[v]; return o; }) };
+    maps[k] = { mods: Object.assign({}, m.mods), ents: m.ents.map(e => { const o = { id: e.id, px: e.px, py: e.py, dir: e.dir, hidden: e.hidden, alpha: e.alpha, spr: e.spr, solid: e.solid, s: e.s, follow: !!e.follow, light: e.light || null }; for (const v of VKEYS) if (e[v] !== undefined && typeof e[v] !== 'function') o[v] = e[v]; return o; }) };
   }
   const p = W.pl;
   return JSON.parse(JSON.stringify({ name: name || '', map: W.mapId, pl: { x: p.x, y: p.y, dir: p.dir, spr: p.spr, speed: p.speed, hidden: p.hidden }, inv: W.inv, f: W.f, goal: W.goal, mapDark: W.mapDark, plr: W.plr, amb: AU.ambName, maps }));
@@ -1388,7 +1435,8 @@ function applyCP(cp) {
     cp.maps[k].ents.forEach((o, i) => {
       let e = m.ents[i]; if (!e || e.id !== o.id) e = m.ents.find(z => z.id === o.id && o.id); if (!e) return;
       Object.assign(e, { px: o.px, py: o.py, dir: o.dir, hidden: o.hidden, alpha: o.alpha, spr: o.spr, solid: o.solid, s: Object.assign({}, o.s), follow: o.follow, light: o.light, chase: null, mv: null });
-      for (const v of VKEYS) { if (o[v] !== undefined) e[v] = o[v]; else if (e[v] !== undefined && !(v in e.def)) delete e[v]; }
+      for (const v of VKEYS) { if (typeof e[v] === 'function') continue; if (o[v] !== undefined) e[v] = o[v]; else if (e[v] !== undefined && !(v in e.def)) delete e[v]; }
+      e.frozen = false;
     });
   }
   const p = W.pl; Object.assign(p, { x: cp.pl.x, y: cp.pl.y, px: cp.pl.x * TS, py: cp.pl.y * TS, dir: cp.pl.dir, spr: cp.pl.spr, speed: cp.pl.speed || 1, hidden: !!cp.pl.hidden, mv: null, prev: [cp.pl.x, cp.pl.y] });
@@ -1435,7 +1483,7 @@ function retryFromCP() {
 function quitChapter() { GEN++; DLGWAIT = null; W = null; FX.length = 0; AU.ambient('none'); }
 
 /* ---------------- 动作处理（主机执行；客机发给主机） ---------------- */
-function doAct(a, v) {
+function doAct(a, v, from) {
   if (!W) return;
   if (W.endScreen) {
     const es = W.endScreen; if (RT - es.t0 < .8) return;
@@ -1448,21 +1496,35 @@ function doAct(a, v) {
   if (W.note) { if ((a === 'adv' || a === 'use') && RT - W.note.t0 > .3) resolveWait(); return; }
   if (W.keypad) {
     const k = W.keypad;
-    if (a === 'key' && k.val.length < k.len) { k.val += v; emit('sfx', 'select'); if (k.val.length >= k.len) { const val = k.val; setTimeout(() => { if (W && W.keypad === k) resolveWait(val); }, 350); } }
-    else if (a === 'keydel') k.val = k.val.slice(0, -1);
+    if (a === 'key' && k.parts.length < k.len && k.keys.includes(v)) { k.parts.push(v); k.val = k.parts.join(k.sep); emit('sfx', 'select'); if (k.parts.length >= k.len) { const val = k.val; setTimeout(() => { if (W && W.keypad === k) resolveWait(val); }, 350); } }
+    else if (a === 'keydel') { k.parts.pop(); k.val = k.parts.join(k.sep); }
     else if (a === 'keycancel' && k.cancel) resolveWait(null);
+    return;
+  }
+  if (W.dlg && W.dlg.vote) {
+    const d = W.dlg, full = d.full || (RT - d.t0) * CPS >= d.text.length;
+    if (a === 'adv' && !full) { d.full = true; d.tFull = RT; return; }
+    if (a === 'vote' && full && v != null && v >= 0 && v < d.choices.length) {
+      if (RT - Math.max(d.t0 + d.text.length / CPS, d.tFull || 0) < .35) return;
+      const who = from === 'g' ? 'g' : 'h'; if (d.vote[who] != null) return;
+      d.vote[who] = v; emit('sfx', 'select');
+      if (d.vote.h != null && d.vote.g != null) { const vt = d.vote; setTimeout(() => { if (W && W.dlg === d) { const agree = vt.h === vt.g; resolveWait({ v: agree ? vt.h : (W.ctrl === 'g' ? vt.g : vt.h), agree, h: vt.h, g: vt.g }); } }, 700); }
+    }
     return;
   }
   if (W.dlg) {
     const d = W.dlg, full = d.full || (RT - d.t0) * CPS >= d.text.length;
-    if (a === 'adv' || a === 'use') { if (!full) { d.full = true; d.tFull = RT; return; } if (RT - d.t0 < .15) return; if (d.choices) { if (RT - Math.max(d.t0 + d.text.length / CPS, d.tFull || 0) < .35) return; resolveWait(d.sel); } else resolveWait(); }
+    if (a === 'adv' || a === 'use') { if (!full) { d.full = true; d.tFull = RT; return; } if (RT - d.t0 < .15) return; if (d.choices) { if (RT - Math.max(d.t0 + d.text.length / CPS, d.tFull || 0) < .35) return; resolveWait(dlgRes(d, d.sel)); } else resolveWait(); }
     else if (a === 'sel' && d.choices && full) { d.sel = (d.sel + v + d.choices.length) % d.choices.length; emit('sfx', 'select'); }
-    else if (a === 'pick' && d.choices) { if (RT - d.t0 < .2) return; d.full = true; d.sel = v; resolveWait(v); }
+    else if (a === 'pick' && d.choices) { if (RT - d.t0 < .2) return; d.full = true; d.sel = v; resolveWait(dlgRes(d, v)); }
     return;
   }
   if (a === 'use') interact();
 }
 const CPS = 38;
+/* 投票对话在对方断线后退化为普通选择，返回值仍保持 vote 的形状 */
+function dlgRes(d, x) { return d.wasVote ? { v: x, agree: true, h: x, g: x } : x; }
+function voteFallback() { const d = W && W.dlg; if (d && d.vote) { const h = d.vote.h; d.vote = null; d.wasVote = true; if (h != null) resolveWait(dlgRes(d, h)); } }
 function resolveWait(v) { const r = DLGWAIT; DLGWAIT = null; if (r) r.res(v); }
 
 /* ---- js/40_net.js ---- */
@@ -1494,7 +1556,7 @@ function hostRoom(onState) {
       if (W) netSnapshot(true);
     });
     c.on('data', d => { try { onNetHost(JSON.parse(d)); } catch (e) { console.error(e); } });
-    c.on('close', () => { if (c === NET.ctl) { NET.ctl = null; NET.up = false; if (W) { W.ctrl = 'h'; W.req = null; } UI.toast('对方已断开，你可以继续单人游玩'); UI.netChanged(); } });
+    c.on('close', () => { if (c === NET.ctl) { NET.ctl = null; NET.up = false; if (W) { W.ctrl = 'h'; W.req = null; voteFallback(); } UI.toast('对方已断开，你可以继续单人游玩'); UI.netChanged(); } });
   });
 }
 function joinRoom(code, onState) {
@@ -1520,13 +1582,15 @@ function onNetHost(m) {
   if (!W && m.t !== 'ping') return;
   switch (m.t) {
     case 'act':
-      if (['retry', 'leave', 'replay'].includes(m.a)) doAct(m.a, m.v);
+      if (['retry', 'leave', 'replay'].includes(m.a)) doAct(m.a, m.v, 'g');
+      else if (m.a === 'vote') doAct('vote', m.v, 'g');
       else if (m.a === 'mretry') { if (W && W.cp) retryFromCP(); }
-      else if (W && W.ctrl === 'g') doAct(m.a, m.v);
+      else if (W && W.ctrl === 'g') doAct(m.a, m.v, 'g');
       break;
     case 'pos':
       if (W && W.ctrl === 'g' && !W.busy && m.k === W.forceK && m.map === W.mapId) {
         const p = W.pl; p.x = m.x; p.y = m.y; p.px = m.px; p.py = m.py; p.dir = m.d; p.fr = m.fr; if (m.pv) p.prev = m.pv;
+        p.rmv = !!m.mv; p.rrun = !!m.rn; p.rT = RT;
       } break;
     case 'req': if (W.ctrl === 'g') { W.ctrl = 'h'; W.req = null; UI.toast('对方把操作交给了你'); } else { W.req = 'g'; AU.sfx('select'); } break;
     case 'ans': if (W.req === 'h') { if (m.y) { W.ctrl = 'h'; UI.toast('对方同意了，你来操作'); } else UI.toast('对方暂时不想交出操作'); W.req = null; } break;
@@ -1559,13 +1623,13 @@ function netSnapshot() {
   const ents = m.ents.map((e, i) => {
     const fl = {}; let any = false; for (const k of VKEYS) if (e[k] !== undefined && e[k] !== e.def[k]) { fl[k] = e[k]; any = true; }
     const s = Object.keys(e.s).length ? e.s : 0;
-    return [i, Math.round(e.px), Math.round(e.py), e.dir, e.fr, e.hidden ? 1 : 0, Math.round((e.alpha ?? 1) * 100), e.spr === e.def.spr ? 0 : e.spr, any ? fl : 0, s, e.light === e.def.light ? 0 : (e.light || null), e.bubble && e.bubble.until > RT ? [e.bubble.k, Math.round((e.bubble.until - RT) * 1000)] : 0];
+    return [i, Math.round(e.px), Math.round(e.py), e.dir, e.fr, e.hidden ? 1 : 0, Math.round((e.alpha ?? 1) * 100), e.spr === e.def.spr ? 0 : e.spr, any ? fl : 0, s, e.light === e.def.light ? 0 : (e.light || null), e.bubble && e.bubble.until > RT ? [e.bubble.k, Math.round((e.bubble.until - RT) * 1000)] : 0, e.solid ? 1 : 0];
   });
   const v = {
     t: 'v', gen: GEN, ch: W.ch.id, map: W.mapId, k: W.forceK, pl: [p.x, p.y, Math.round(p.px), Math.round(p.py), p.dir, p.fr, p.hidden ? 1 : 0, p.spr, p.speed || 1],
     ctrl: W.ctrl, req: W.req || null, busy: W.busy, fade: Math.round(W.fade * 100) / 100, dark: W.mapDark[W.mapId] ?? null, plr: W.plr, goal: W.goal, inv: W.inv,
     timer: W.timer ? [W.timer.label, Math.round(W.timer.left * 10) / 10] : null, nr: !!W.noRun, dlg: W.dlg, card: W.card, note: W.note, keypad: W.keypad, end: W.endScreen || null,
-    ents, mods: m.mods, cf: W.camFocus || null, ended: W.ended, paused: false
+    ents, mods: m.mods, cf: W.camFocus || null, ended: W.ended, paused: false, xl: W.extraLights && W.extraLights.length ? W.extraLights : 0
   };
   const s = JSON.stringify(v);
   const c = (NET.snap && NET.snap.open && s.length < 15000) ? NET.snap : NET.ctl;
@@ -1587,6 +1651,7 @@ function applyV(v) {
     for (const k of VKEYS) { if (a[8] && k in a[8]) e[k] = a[8][k]; else e[k] = e.def[k]; }
     e.s = a[9] || {}; e.light = a[10] === 0 ? e.def.light : a[10];
     e.bubble = a[11] ? { k: a[11][0], until: RT + a[11][1] / 1000 } : null;
+    if (a[12] != null) e.solid = !!a[12];
   }
   const p = W.pl, P = v.pl;
   const local = v.ctrl === 'g' && !v.busy && NET.myK === v.k && !mapChanged;
@@ -1598,7 +1663,7 @@ function applyV(v) {
   }
   p.hidden = !!P[6]; p.spr = P[7]; p.speed = P[8];
   W.ctrl = v.ctrl; W.req = v.req; W.busy = v.busy; W.fade = v.fade; W.mapDark = { [v.map]: v.dark }; W.plr = v.plr; W.goal = v.goal; W.inv = v.inv;
-  W.timer = v.timer ? { label: v.timer[0], left: v.timer[1] } : null; W.camFocus = v.cf; W.ended = v.ended; W.noRun = v.nr;
+  W.timer = v.timer ? { label: v.timer[0], left: v.timer[1] } : null; W.camFocus = v.cf; W.ended = v.ended; W.noRun = v.nr; W.extraLights = v.xl || [];
   const keepT = (cur, nv) => { if (!nv) return null; if (cur && cur.id === nv.id) { nv.t0 = cur.t0; } else nv.t0 = RT; return nv; };
   W.dlg = keepT(W.dlg, v.dlg); W.card = keepT(W.card, v.card); W.note = keepT(W.note, v.note); W.keypad = keepT(W.keypad, v.keypad);
   if (v.end) { if (!W.endScreen || W.endScreen.kind !== v.end.kind || W.endScreen.title !== v.end.title) { W.endScreen = v.end; W.endScreen.t0 = RT; } } else W.endScreen = null;
@@ -1614,7 +1679,7 @@ function guestTick(dt) {
 function guestSendPos(dt) {
   NET.posT -= dt; if (NET.posT > 0) return; NET.posT = 1 / 30;
   const p = W.pl;
-  netSendFast({ t: 'pos', k: NET.myK, map: W.mapId, x: p.x, y: p.y, px: Math.round(p.px), py: Math.round(p.py), d: p.dir, fr: p.fr, pv: p.prev });
+  netSendFast({ t: 'pos', k: NET.myK, map: W.mapId, x: p.x, y: p.y, px: Math.round(p.px), py: Math.round(p.py), d: p.dir, fr: p.fr, pv: p.prev, mv: p.mv ? 1 : 0, rn: p.mv && p.run ? 1 : 0 });
 }
 /* ---------- 操作权交接 ---------- */
 function ctrlButton() {   // T 键 / 按钮：操作者=交出，观看者=请求
@@ -1666,6 +1731,7 @@ const UI = {
   activeRoot() {
     if (this.modal) return $(this.modal);
     if (W && W.endScreen) return $('endov');
+    if (W && W.keypad && this.scene === 'play') return $('keypad');
     if (this.scene !== 'play') return $(this.scene);
     return null;
   },
@@ -1774,15 +1840,20 @@ const UI = {
         this._dlgId = d.id; this._n = -1;
         D.className = d.style || ''; D.querySelector('.who').textContent = d.who || '';
         const C = D.querySelector('.chs'); C.innerHTML = '';
-        if (d.choices) d.choices.forEach((t, i) => { const b = document.createElement('button'); b.className = 'ch'; b.textContent = t; b.onclick = ev => { ev.stopPropagation(); if (iControl()) sendAct('pick', i); else this.toast('对方在操作'); }; C.appendChild(b); });
+        this._vsel = 0;
+        if (d.choices) d.choices.forEach((t, i) => { const b = document.createElement('button'); b.className = 'ch'; b.textContent = t; b.onclick = ev => { ev.stopPropagation(); if (W.dlg && W.dlg.vote) { this._vsel = i; sendAct('vote', i); } else if (iControl()) sendAct('pick', i); else this.toast('对方在操作'); }; C.appendChild(b); });
       }
       const len = d.text.length, n = d.full ? len : Math.min(len, Math.floor((RT - d.t0) * CPS));
       if (n !== this._n) { D.querySelector('.txt').textContent = d.text.slice(0, n); if (n > this._n && n < len && n % 2 === 0) AU.sfx('blip'); this._n = n; }
       const full = n >= len, C = D.querySelector('.chs');
       C.classList.toggle('hidden', !(d.choices && full));
-      [...C.children].forEach((b, i) => b.classList.toggle('sel', i === d.sel));
+      const me = NET.role === 'guest' ? 'g' : 'h', oth = me === 'h' ? 'g' : 'h';
+      const mine = d.vote ? d.vote[me] : null;
+      [...C.children].forEach((b, i) => { b.classList.toggle('sel', d.vote ? (mine != null ? i === mine : i === this._vsel) : i === d.sel); b.classList.toggle('voted', !!(d.vote && mine === i)); });
       D.querySelector('.more').classList.toggle('hidden', !full || !!d.choices);
-      D.querySelector('.watch').classList.toggle('hidden', !coop || iControl());
+      const Wt = D.querySelector('.watch');
+      if (d.vote) { Wt.classList.toggle('hidden', !full); const o = d.vote[oth]; Wt.textContent = mine == null ? (o == null ? '两人一起决定 · 各选一个' : '对方已经选好了 · 轮到你') : (o == null ? '你选好了 · 等对方……' : (o === mine ? '你们选了同一个' : '你们的选择不一样……')); }
+      else { Wt.textContent = '对方操作中'; Wt.classList.toggle('hidden', !coop || iControl()); }
     } else if (!D.classList.contains('hidden')) { D.classList.add('hidden'); this._dlgId = -1; }
     document.body.classList.toggle('dlgup', !!(d || W.card || W.note || W.keypad || W.endScreen));
     // 标题卡
@@ -1795,7 +1866,8 @@ const UI = {
     const kp = W.keypad;
     if (kp) {
       if (kp.id !== this._kpId) { this._kpId = kp.id; $('keypad').classList.remove('hidden'); $('kpP').textContent = kp.prompt; const K = $('kpK'); K.innerHTML = ''; kp.keys.forEach(k => { const b = document.createElement('button'); b.className = 'btn'; b.textContent = k; b.onclick = () => iControl() ? sendAct('key', k) : this.toast('对方在操作'); K.appendChild(b); }); $('kpX').classList.toggle('hidden', !kp.cancel); setTimeout(() => this.focusFirst(), 20); }
-      $('kpV').textContent = kp.val.padEnd(kp.len, '·');
+      const parts = kp.parts || kp.val.split(''), sep = kp.sep || (kp.keys.some(k => k.length > 1) ? ' ' : '');
+      $('kpV').textContent = parts.concat(Array(Math.max(0, kp.len - parts.length)).fill('·')).join(sep);
     } else if (this._kpId !== -1) { $('keypad').classList.add('hidden'); this._kpId = -1; }
     const es = W.endScreen;
     if (es) {
@@ -1952,10 +2024,9 @@ function bindUI() {
   $('bRun').addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); IN.runLatch = !IN.runLatch; $('bRun').classList.toggle('on', IN.runLatch); });
   // 键盘：密码盘
   addEventListener('keydown', e => {
-    if (!W || !W.keypad || !iControl()) return;
+    if (!W || !W.keypad || !iControl() || UI.modal) return;
     const k = e.key.length === 1 ? e.key.toUpperCase() : e.key;
-    if (W.keypad.keys.includes(k)) { sendAct('key', k); e.preventDefault(); }
-    else if (k === 'Backspace') { sendAct('keydel'); e.preventDefault(); }
+    if (k !== ' ' && W.keypad.keys.includes(k)) { sendAct('key', k); e.preventDefault(); }
   });
 }
 function muteBtn() { $('hMute').textContent = AU.muted ? '✕' : '♪'; }
@@ -1968,6 +2039,7 @@ function canvasTap(x, y) {
 /* 全局按键分发 */
 IN.handlers.push(n => {
   if (n === 'mute') { AU.setMute(!AU.muted); muteBtn(); return true; }
+  if (n === 'del' && !(W && W.keypad && UI.scene === 'play' && !UI.modal)) n = 'b';
   if (UI.modal) {
     if (UI.modal === 'note' && UI._localNote) { if (n === 'a' || n === 'b' || n === 'menu' || n === 'journal') { closeLocalNote(); } return true; }
     if (n === 'menu' || n === 'b' || (n === 'inv' && UI.modal === 'inv') || (n === 'journal' && UI.modal === 'journal')) { UI.closeModal(); return true; }
@@ -1982,7 +2054,19 @@ IN.handlers.push(n => {
   if (n === 'ctrl') { ctrlButton(); return true; }
   if (n === 'yes' && ctrlAnswer(true)) return true;
   if (n === 'no' && ctrlAnswer(false)) return true;
-  if (W.keypad) { if (n === 'b' && iControl()) sendAct('keycancel'); return true; }
+  if (W.keypad) {
+    if (!iControl()) return true;
+    if (n === 'del') sendAct('keydel');
+    else if (n === 'b') sendAct('keycancel');
+    else if (['up', 'down', 'left', 'right', 'a'].includes(n)) { if (!UI.nav(n) && n === 'a') { const f = $('kpK').querySelector('.btn'); if (f) f.focus(); } }
+    return true;
+  }
+  if (W.dlg && W.dlg.vote) {   // 投票：两人各自选择
+    const d = W.dlg, full = d.full || (RT - d.t0) * CPS >= d.text.length;
+    if (n === 'a') { if (!full) sendAct('adv'); else sendAct('vote', UI._vsel || 0); return true; }
+    if ((n === 'up' || n === 'down') && full) { UI._vsel = ((UI._vsel || 0) + (n === 'up' ? -1 : 1) + d.choices.length) % d.choices.length; AU.sfx('select'); return true; }
+    return true;
+  }
   if (!iControl()) { if (n === 'a' && NET.role !== 'solo') UI.toast('对方在操作 · 按 T 请求操作'); return true; }
   if (n === 'a') { sendAct(W.dlg || W.card || W.note ? 'adv' : 'use'); return true; }
   if (W.dlg && W.dlg.choices && (n === 'up' || n === 'down')) { sendAct('sel', n === 'up' ? -1 : 1); return true; }
@@ -2244,7 +2328,7 @@ IN.handlers.push(n => {
             await S.narr('炭火发出轻轻的噼啪声。');
           } },
           { x: 5, y: 1, spr: 'wallclock' },
-          { x: 6, y: 2, spr: 'tv', on: 'static', light: { r: 1.6, col: 'rgba(120,160,255,.12)' }, async on(S) { await S.narr('电视开着，没有声音。屏幕上只有雪花。'); } },
+          { x: 6, y: 2, spr: 'tv', power: 'static', light: { r: 1.6, col: 'rgba(120,160,255,.12)' }, async on(S) { await S.narr('电视开着，没有声音。屏幕上只有雪花。'); } },
           { id: 'shelf', x: 7, y: 2, spr: 'bookshelf', async on(S) {
             if (S.once('clip')) await S.narr('书架上夹着一本旧剪贴簿。有一页贴着一张泛黄的剪报。');
             await S.note('clip');
@@ -3141,7 +3225,7 @@ IN.handlers.push(n => {
           { x: 2, y: 1, spr: 'curtain', on: S => S.narr('窗帘拉得严严实实。') },
           { x: 5, y: 1, spr: 'poster', col: '#e8e4d8', on: S => S.narr('挂历翻在六月。二十二日那一格，妈妈用红笔写着：「由纪　集团下校开始」。') },
           { x: 7, y: 1, spr: 'wallclock', on: S => S.narr('七点十五分。') },
-          { id: 'tv', x: 1, y: 2, spr: 'tv', on: true, light: { r: 2.4, col: 'rgba(140,180,255,.16)' }, async on(S) {
+          { id: 'tv', x: 1, y: 2, spr: 'tv', power: true, light: { r: 2.4, col: 'rgba(140,180,255,.16)' }, async on(S) {
             if (S.f.tv) return S.narr('新闻已经换成了棒球转播。巨人队又输了。');
             S.f.tv = true;
             await S.say('电视', ['……近来，一则关于「裂口女」的传闻，以岐阜县为起点，在全国的小学生之间迅速扩散。', '各地陆续出现孩子们结伴放学、家长到校门口接送的情况，部分地区的警方也加强了巡逻……', '……专家指出，这只是孩子们之间口耳相传的谣言。请家长们不必过度担心……']);
@@ -3402,10 +3486,10 @@ IN.handlers.push(n => {
         const cols = ['rgba(170,190,130,.85)', 'rgba(190,170,120,.85)', 'rgba(150,170,160,.85)'];
         for (let s = 0; s < 3; s++) for (let i = 0; i < 3; i++) { const x = 2 + i * 5, y = -9 + s * 8; R(x, y + 1, 3, 6, cols[(i + s) % 3]); R(x, y, 3, 1, '#888'); R(x + 1, y + 3, 1, 2, ['#c8a8a0', '#6a5a3a', '#e0d8c8'][(i * 2 + s) % 3]); }
       },
-      upright(g, e, t, R) {   // 立式钢琴，on = 自己在弹
+      upright(g, e, t, R) {   // 立式钢琴，power = 自己在弹
         SPR.piano(g, e, t, R);
         R(10, -9, 12, 4, '#e8e2cc'); R(11, -8, 10, 1, '#555'); R(11, -6, 8, 1, '#555');
-        if (e.on) { const k = ((t * 5) | 0) % 9; R(3 + k * 3, 4, 2, 3, '#8a867c'); const b = (t * 1.3) % 1; R(18 + b * 6, -12 - b * 8, 1, 4, 'rgba(230,230,230,' + (1 - b) + ')'); R(18 + b * 6, -9 - b * 8, 2, 1, 'rgba(230,230,230,' + (1 - b) + ')'); }
+        if (e.power) { const k = ((t * 5) | 0) % 9; R(3 + k * 3, 4, 2, 3, '#8a867c'); const b = (t * 1.3) % 1; R(18 + b * 6, -12 - b * 8, 1, 4, 'rgba(230,230,230,' + (1 - b) + ')'); R(18 + b * 6, -9 - b * 8, 2, 1, 'rgba(230,230,230,' + (1 - b) + ')'); }
       },
       composer(g, e, t, R) {   // 音乐家肖像：眼睛跟着玩家转（fix=固定看右下）
         box(R, 2, 0, 12, 13, '#6a5030'); R(3, 1, 10, 11, '#24201c');
@@ -3764,7 +3848,7 @@ IN.handlers.push(n => {
             await S.narr('黑板上用粉笔抄着年末合唱要唱的谱子：\n\n《欢乐颂》\nミ ミ ファ ソ ｜ ソ ファ ミ レ ｜ ド ド レ ミ ｜ ミ ー レ レ ー\n\n旁边画了一个大大的花丸，写着「大家一起唱！」');
             S.f.score = true;
           } },
-          { id: 'piano', x: 1, y: 4, w: 2, spr: 'upright', on: true, async on(S) { await pianoPuzzle(S); } },
+          { id: 'piano', x: 1, y: 4, w: 2, spr: 'upright', power: true, async on(S) { await pianoPuzzle(S); } },
           { x: 1, y: 2, spr: 'bust', on: S => S.narr('贝多芬的石膏像，鼻尖被谁磕掉了一块。\n石膏像的眼睛是白的，没有眼珠——可你总觉得，它刚才眨了一下。') },
           ...[[5, 5], [7, 5], [9, 5], [5, 7], [7, 7], [9, 7]].map(([x, y], i) => ({ x, y, spr: 'chair', dir: 3, col: '#6a4a2a', on: S => S.narr(['合唱用的折叠椅，排得整整齐齐。', '椅子上放着一本歌集，翻开在《故乡》那一页。', '这把椅子……是温的。', '椅背上刻着「花」字。', '椅子腿底下压着一颗草莓糖。美咲来过这里。', '空椅子。全都朝着钢琴的方向。'][i]) })),
           { id: 'drum', x: 12, y: 6, spr: 'drum', async on(S) {
@@ -3970,7 +4054,7 @@ IN.handlers.push(n => {
       if (!S.f.score) await S.think('刚才弹的那段好耳熟……合唱会要唱的歌？黑板上好像抄着谱子。');
       return;
     }
-    S.f.solved = true; S.ent('piano').on = false;
+    S.f.solved = true; S.ent('piano').power = false;
     await S.narr('你按下最后一个键。钢琴自己从头弹了起来——');
     await playTune(S, [3, 3, 4, 5, 5, 4, 3, 2, 1, 1, 2, 3, 3, 2, 2], 230);
     await S.narr('一整段《欢乐颂》，终于弹完了。\n……身后响起了噼里啪啦的掌声。很小很小的，只有一个人的掌声。');
@@ -4313,7 +4397,7 @@ IN.handlers.push(n => {
       if (!f.inTub) return S.narr('还不到开电视的时候。');
       if (!(f.lR && f.lH && f.lB)) return S.narr('还有灯开着。帖子说，要关掉家里「所有的」灯。');
       if (f.counted) return S.narr('雪花。沙沙沙沙。');
-      tv.s.on = 'static'; tv.s.off = false; S.sfx('tv'); S.amb('tv');
+      tv.s.power = 'static'; tv.s.off = false; S.sfx('tv'); S.amb('tv');
       await S.narr('你按下遥控器。屏幕「嗡」地一声亮了。\n没有台，只有雪花。灰白的光一跳一跳地铺满了房间。');
       await S.ask('雪花的光一跳一跳的。闭上眼睛，数到十。', ['……闭上眼睛']);
       await S.fade(1, 500);
@@ -4571,7 +4655,7 @@ IN.handlers.push(n => {
       await S.scare('face', { spr: '@kumaF' });
       return S.die('规矩说，游戏结束之前不能出门。\n你回过头的时候，那东西已经站在你身后了。', '你开了门');
     }
-    f.momDone = true; f.dollOn = true; S.ent('tv').s.on = true;
+    f.momDone = true; f.dollOn = true; S.ent('tv').s.power = true;
     if (r === 1) {
       f.mouth = false; S.sfx('water');
       await S.narr('话一出口，盐水就顺着下巴流了下去。\n门外的声音停了。');
@@ -4614,9 +4698,9 @@ IN.handlers.push(n => {
     await S.say('阿浩', '我赢了。', { style: 'big' });
     S.sfx('whisper'); await S.wait(500);
     await S.say('阿浩', '我赢了！', { style: 'big' });
-    S.shake(500, 2); tv.s.on = 'static'; S.sfx('tv'); await S.wait(500);
+    S.shake(500, 2); tv.s.power = 'static'; S.sfx('tv'); await S.wait(500);
     await S.say('阿浩', '我赢了！！', { style: 'big' });
-    tv.s.on = false; tv.s.off = true; S.amb('room'); S.sfx('thud');
+    tv.s.power = false; tv.s.off = true; S.amb('room'); S.sfx('thud');
     await S.narr('电视「啪」地一声黑了。\n房间里只剩下冰箱的嗡嗡声，和你自己的喘气声。');
     await S.narr('它歪倒在地板上，刀从怀里滑了出来。\n就是一只湿透了的、缝得乱七八糟的熊。');
     f.won = true; f.phase = 'after'; S.clearTimer(); S.plr(null); S.dark(.86, 'room');
@@ -4708,7 +4792,7 @@ IN.handlers.push(n => {
       const f = S.f;
       if (f.phase === 'prep' && f.readRules && !W.busy) prepGoal(S);
       if (f.phase === 'seek' && !f.won && S.map === 'room') {
-        if (!f.dollOn) { tvT -= dt; if (tvT <= 0) { tvT = .4 + Math.random() * 1.4; S.ent('tv').s.on = Math.random() < .5 ? 'static' : true; if (Math.random() < .3) S.sfx('tv'); } }
+        if (!f.dollOn) { tvT -= dt; if (tvT <= 0) { tvT = .4 + Math.random() * 1.4; S.ent('tv').s.power = Math.random() < .5 ? 'static' : true; if (Math.random() < .3) S.sfx('tv'); } }
         const d = S.ent('dollR');
         if (d && !d.hidden && !W.busy && (d.chase || f._frz)) {
           const p = S.pl, v = DIRS[p.dir], dot = (d.px - p.px) * v[0] + (d.py - p.py) * v[1];
@@ -4796,7 +4880,7 @@ IN.handlers.push(n => {
           { x: 6, y: 1, spr: 'calendar', on: S => S.narr('十一月的日历。21号那格写着：「物理化学　期中」。\n……明天。不对，已经是今天了。') },
           { id: 'clock', x: 8, y: 1, spr: 'wallclock', on: clockUse },
           { id: 'swR', x: 10, y: 1, spr: 'switch', on: lightSwitch('R') },
-          { id: 'tv', x: 3, y: 2, spr: 'tv', s: { on: false, off: true }, light: { r: 3.4, col: 'rgba(150,170,255,.16)' }, on: tvUse },
+          { id: 'tv', x: 3, y: 2, spr: 'tv', s: { power: false, off: true }, light: { r: 3.4, col: 'rgba(150,170,255,.16)' }, on: tvUse },
           { id: 'pc', x: 7, y: 2, spr: 'pcdesk', light: { r: 2, col: 'rgba(140,170,255,.12)', dy: 0 }, on: pcUse },
           { x: 7, y: 3, spr: 'cushion', col: '#3a4a6a', decal: true, solid: false },
           { id: 'shelf', x: 9, y: 2, spr: 'bookshelf', async on(S) {
@@ -4828,7 +4912,7 @@ IN.handlers.push(n => {
             if (f.dollOn) return dollAppear(S);
             if (f.tubSeen && !f.momDone) { S.sfx('tv'); return S.think('（房间里只有电视在换台。……地上的水迹，不是往这边来的。是往玄关去的。）'); }
             if (S.once('seekRoom')) {
-              S.ent('tv').s.on = true;
+              S.ent('tv').s.power = true;
               await S.narr('纸门外，冷得像冰箱里。\n电视一直在换台——新闻、购物节目、雪花、新闻。每一下「啪」，房间的颜色就跟着变一次。');
               await S.narr('遥控器好好地放在暖桌上。');
               await S.think('（……布偶。先去浴室看看。）');
@@ -6317,7 +6401,7 @@ IN.handlers.push(n => {
       radio(g, e, t, R) {
         bx2(R, 0, 4, 16, 11, '#5a4030');
         bx2(R, 2, -2, 12, 8, '#6a4a2a'); R(3, -1, 5, 6, '#3a2a1a'); for (let y = 0; y < 5; y += 2) R(3, y - 1, 5, 1, '#5a4030');
-        R(9, 0, 4, 1, e.on ? '#ffe08a' : '#c8b88a'); R(10, 3, 2, 2, '#222'); R(13, -8, 1, 7, '#aaa');
+        R(9, 0, 4, 1, e.power ? '#ffe08a' : '#c8b88a'); R(10, 3, 2, 2, '#222'); R(13, -8, 1, 7, '#aaa');
       },
       pdesk(g, e, t, R) {
         bx2(R, 0, 1, 32, 13, '#5a4a32'); R(1, 2, 30, 2, '#6e5c40');
@@ -6614,10 +6698,10 @@ IN.handlers.push(n => {
           { id: 'door_h', x: 9, y: 1, spr: 'door', on: S => S.narr('筒子楼的木门，门框上贴着去年的春联，红纸都褪成粉的了。') },
           { id: 'desk_h', x: 6, y: 2, spr: 'desk', on: S => S.narr(S.has('coin') ? '抽屉里……搁着那枚铜子儿。\n你把它扔进去以后，就再没敢拉开过。' : '书桌上摊着单位的图纸，一个字也看不进去。') },
           { id: 'radio', x: 7, y: 2, spr: 'radio', async on(S) {
-            S.ent('radio').on = true; S.sfx('tv');
+            S.ent('radio').power = true; S.sfx('tv');
             await S.narr('你拧开收音机。咝咝啦啦一阵杂音，然后是播音员字正腔圆的声音——');
             await S.say('收音机', ['……下面播送本市新闻。', '前天深夜，一辆末班公共汽车在运营途中失去联系，至今未回场。车上的司机和售票员下落不明。', '有关部门正在组织力量全力寻找。请知情群众提供线索……']);
-            S.ent('radio').on = false;
+            S.ent('radio').power = false;
             await S.think('……前天深夜。\n是那趟车。');
             S.f.radio = true; homeGoal(S);
           } },
@@ -10654,7 +10738,7 @@ if (!NET_OK) { $('tHost').classList.add('dim'); $('tJoin').classList.add('dim');
 requestAnimationFrame(frame);
 /* 测试钩子（仅 ?debug=1） */
 if (QS.get('debug') === '1') window.__dbg = {
-  get W() { return W; }, NET, UI, CHAPTERS, startChapter, doAct, sendAct, SAPI, GEN: () => GEN, store, retryFromCP,
+  get W() { return W; }, NET, UI, CHAPTERS, startChapter, doAct, sendAct, SAPI, GEN: () => GEN, store, retryFromCP, facing: () => facingEnt(),
   ent: id => getEnt(id), tp(x, y, dir) { SAPI.pos(x, y, dir); },
   step(x, y) { SAPI.pos(x, y); onPlayerArrive(); },
   face(id) {   // 走到实体旁边并面向它（直接传送）；id 也可以是 [x,y]
@@ -10666,7 +10750,9 @@ if (QS.get('debug') === '1') window.__dbg = {
     for (let x = ex; x < ex + e.w; x++) { cand.push([x, ey + e.h, 3]); cand.push([x, ey - 1, 0]); }
     for (let y = ey; y < ey + e.h; y++) { cand.push([ex - 1, y, 2]); cand.push([ex + e.w, y, 1]); }
     if (!e.solid) cand.unshift([ex, ey, W.pl.dir]);
-    for (const [x, y, d] of cand) if ((x === ex && y === ey && !e.solid) || passable(m, x, y, W.pl)) { SAPI.pos(x, y, d); return true; }
+    let fb = null;   // 优先选一个「调查键真的会选中它」的位置
+    for (const [x, y, d] of cand) if ((x === ex && y === ey && !e.solid) || passable(m, x, y, W.pl)) { SAPI.pos(x, y, d); if (facingEnt() === e) return true; if (!fb) fb = [x, y, d]; }
+    if (fb) { SAPI.pos(fb[0], fb[1], fb[2]); return true; }
     return false;
   }
 };

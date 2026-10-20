@@ -9,7 +9,8 @@ const BASE_LEGEND = {
   'T': 'tree', 'P': 'pine', 'h': 'hedge', 'f': 'fence', 'e': 'reeds', 'L': 'rail', 'K': 'rock', 'C': 'counterT', 'B': 'bushes'
 };
 /* 实体上的这些字段会同步给客机并影响绘制 */
-const VKEYS = ['open', 'covered', 'cracked', 'blood', 'face', 'on', 'off', 'lit', 'full', 'read', 'eyes', 'red', 'coat', 'flowers', 'thread', 'knife', 'col', 'text', 'water', 'locked', 'flicker', 'num'];
+/* 注意：'on' 是调查处理函数，不能当状态；电视/收音机/钢琴的开关状态用 power */
+const VKEYS = ['open', 'covered', 'cracked', 'blood', 'face', 'power', 'off', 'lit', 'full', 'read', 'eyes', 'red', 'coat', 'flowers', 'thread', 'knife', 'col', 'text', 'water', 'locked', 'flicker', 'num'];
 const NONSOLID = new Set(['note', 'paper', 'key', 'item', 'sparkle', 'coin', 'footprints', 'stain', 'puddle', 'handprint', 'marigold', 'newspaper', 'photo', 'scissors', 'knife', 'cup', 'salt', 'rice', 'thread', 'paw', 'candy', 'flashlight', 'match', 'towel', 'book', 'dock', 'rope', 'shoes', 'brush', 'invisible', 'skin', 'whisk']);
 
 let W = null;          // 当前章节运行态（主机权威；客机是镜像）
@@ -152,7 +153,7 @@ function updatePlayer(dt) {
   if (W._turnT != null) { W._turnT -= dt; if (W._turnT > 0) return; W._turnT = null; }
   p.dir = d;
   const tx = p.x + DIRS[d][0], ty = p.y + DIRS[d][1];
-  if (passable(m, tx, ty, p)) { p.prev = [p.x, p.y]; const sp = (IN.running() && !W.noRun ? RUN_SPD : WALK_SPD) * (p.speed || 1) * (m.def.speed || 1); startMove(p, d, sp); }
+  if (passable(m, tx, ty, p)) { p.prev = [p.x, p.y]; p.run = IN.running() && !W.noRun; const sp = (p.run ? RUN_SPD : WALK_SPD) * (p.speed || 1) * (m.def.speed || 1); startMove(p, d, sp); }
   else { p.fr = 0; if (isHost()) onBump(tx, ty); }
 }
 let lastPTile = null;
@@ -185,12 +186,18 @@ function hostCheckRemoteTile() {
   const p = W.pl, k = W.mapId + ':' + p.x + ',' + p.y;
   if (k !== lastPTile) { const had = lastPTile; lastPTile = k; if (had && !W.busy) onPlayerArrive(); }
 }
+/* 调查对象：脚下非实心的可调查物优先；同一格有多个时，人物优先，其次画在最上层的 */
+function pickTop(m, es) {
+  if (es.length < 2) return es[0] || null;
+  const isP = e => typeof sprOf(e.spr) === 'object';
+  return es.slice().sort((a, b) => (isP(b) - isP(a)) || ((b.z || 0) - (a.z || 0)) || (!!a.decal - !!b.decal) || ((b.py + b.h * TS) - (a.py + a.h * TS)) || (m.ents.indexOf(b) - m.ents.indexOf(a)))[0];
+}
 function facingEnt() {
   const p = W.pl, m = curMap();
+  const under = entsAt(m, p.x, p.y, e => typeof e.on === 'function' && !e.solid);
+  if (under.length) return pickTop(m, under);
   const tx = p.x + DIRS[p.dir][0], ty = p.y + DIRS[p.dir][1];
-  let es = entsAt(m, tx, ty, e => e.on);
-  if (!es.length) es = entsAt(m, p.x, p.y, e => e.on && !e.solid);
-  return es[0] || null;
+  return pickTop(m, entsAt(m, tx, ty, e => typeof e.on === 'function'));
 }
 function interact() {   // 仅主机
   if (W.busy || W.ended) return;
@@ -201,9 +208,9 @@ function interact() {   // 仅主机
 function hostTick(dt) {
   const m = curMap();
   for (const e of m.ents) {
-    if (e.mv) moveEntity(e, dt);
+    if (e.mv && !e.frozen) moveEntity(e, dt);
     else if (e.fr && !e.chase) e.fr = 0;
-    if (e.chase && !e.hidden && !e.mv && !W.paused) chaseStep(e, m, dt);
+    if (e.chase && !e.hidden && !e.mv && !W.paused && !e.frozen) chaseStep(e, m, dt);
   }
   if (!W.busy && !W.ended) for (const e of m.ents) {
     if (e.chase && !e.hidden && !W.pl.hidden && Math.abs(e.px - W.pl.px) + Math.abs(e.py - W.pl.py) < 11) {
@@ -211,9 +218,9 @@ function hostTick(dt) {
       runScript(c.catch || (S => S.die(c.msg || '你被抓住了……')), e); break;
     }
   }
-  if (W.timer && !W.busy && !W.ended) {
+  if (W.timer && (!W.busy || W.timer.during) && !W.ended && !W.endScreen) {
     W.timer.left -= dt;
-    if (W.timer.left <= 0) { const t = W.timer; W.timer = null; runScript(t.fn); }
+    if (W.timer.left <= 0) { const t = W.timer; W.timer = null; if (W.busy) interruptWait(); runScript(t.fn); }
   }
   if (!W.busy && !W.ended && W.queue.length) { const i = W.queue.findIndex(q => q.at <= W.t); if (i >= 0) { const q = W.queue.splice(i, 1)[0]; runScript(q.fn); } }
   W.t += dt;
@@ -351,7 +358,8 @@ function drawLighting(g, m, ox, oy) {
   for (const e of m.ents) {
     const li = e.light; if (!li || e.hidden || e.s.off || e.off) continue;
     const r = (li.r || 3) * TS * (li.flick ? 1 + Math.sin(RT * 13 + e.px) * .05 + (Math.random() < .02 ? -.3 : 0) : 1);
-    const lxp = e.px + (li.dx ?? e.w * 8) - ox, lyp = e.py + (li.dy ?? 8) - oy;
+    const bx0 = li.pl ? W.pl.px : e.px, by0 = li.pl ? W.pl.py : e.py;
+    const lxp = bx0 + (li.dx ?? (li.pl ? 8 : e.w * 8)) - ox, lyp = by0 + (li.dy ?? (li.pl ? 4 : 8)) - oy;
     hole(lxp, lyp, r, li.a ?? 1); if (li.col) warm.push([lxp, lyp, r, li.col]);
   }
   for (const l of (W.extraLights || [])) hole(l[0] - ox, l[1] - oy, l[2] * TS, l[3] ?? 1);
@@ -380,6 +388,7 @@ function blit() {
 }
 
 /* ---------------- 屏幕特效 ---------------- */
+const FACECV = mk(32, 32);
 function addFX(k, o = {}) { FX.push(Object.assign({ k, t0: RT, dur: o.dur || ({ flash: .5, red: 1.2, face: .9, glitch: .6, static: .8, black: 1, blood: 2.5 }[k] || .8) }, o)); }
 function drawFX(g, dt) {
   for (let i = FX.length - 1; i >= 0; i--) {
@@ -392,6 +401,16 @@ function drawFX(g, dt) {
     if (f.k === 'blood') { g.fillStyle = '#5a0606'; for (let i = 0; i < 24; i++) { const x = (hash(i, 3, 9) * VW) | 0, len = Math.min(1, a * 1.6) * VH * (.3 + hash(i, 4, 9) * .8); g.fillRect(x, 0, 2 + (hash(i, 5, 9) * 4 | 0), len); } g.fillStyle = `rgba(80,0,0,${Math.sin(a * Math.PI) * .5})`; g.fillRect(0, 0, VW, VH); }
     if (f.k === 'face') {
       g.fillStyle = `rgba(0,0,0,${.85})`; g.fillRect(0, 0, VW, VH);
+      const fk = f.face || (typeof f.spr === 'string' && f.spr[0] === '@' ? f.spr.slice(1) : null), ff = fk && W.ch.faces && W.ch.faces[fk];
+      if (ff) {   /* 章节专用惊吓大头像：faces[name](R, a, t)，在 32×32 网格里画 */
+        const fc = FACECV, fg = fc.getContext('2d'); fg.clearRect(0, 0, 32, 32);
+        ff((x, y, w, h, col) => { if (!col) return; fg.fillStyle = col; fg.fillRect(Math.floor(x), Math.floor(y), Math.ceil(w), Math.ceil(h)); }, a, RT, fg);
+        const s = Math.max(2, Math.floor(Math.min(VW, VH) * .8 / 32 * (1 + a * .25)));
+        const jx = ((Math.random() - .5) * 6) | 0, jy = ((Math.random() - .5) * 4) | 0;
+        g.drawImage(fc, 0, 0, 32, 32, Math.round((VW - 32 * s) / 2) + jx, Math.round((VH - 32 * s) / 2) + jy, 32 * s, 32 * s);
+        for (let i = 0; i < 5; i++) { const y = (Math.random() * VH) | 0; g.fillStyle = 'rgba(0,0,0,.55)'; g.fillRect(0, y, VW, 1 + (Math.random() * 3 | 0)); }
+        continue;
+      }
       const P = sprOf(f.spr || '@me'); const c = personSprite(typeof P === 'object' ? P : PEOPLE.me, 0, 0);
       const s = Math.floor(Math.min(VW, VH) / 10 * (1 + a * .3));
       const jx = ((Math.random() - .5) * 8) | 0, jy = ((Math.random() - .5) * 6) | 0;

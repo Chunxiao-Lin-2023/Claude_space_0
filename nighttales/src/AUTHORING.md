@@ -73,7 +73,7 @@ street: {
   bump: async S => {...},      // 撞上去（实心）
   to: ['hall', 3, 2, 0],       // 出口简写：实心=调查门进入，非实心=踩上就走；lock:'key'|S=>bool, lockMsg
   hidden: true, dir: 0, alpha: 1, decal: true(画在最底层), z: 1(画在最上层), ox, oy(绘制偏移像素),
-  light: { r: 4, col: 'rgba(255,170,80,.2)', flick: true, dx, dy },   // 光源（半径单位：格）
+  light: { r: 4, col: 'rgba(255,170,80,.2)', flick: true, dx, dy, pl: true },   // 光源（半径单位：格）；pl:true = 跟着玩家（车灯、提灯），双方各自按玩家位置画
   follow: false, col: '#...',  // 以及各精灵用的状态字段
 }
 ```
@@ -81,12 +81,14 @@ street: {
 - 方向：0下 1左 2右 3上。玩家面对实体所在的格子按调查键触发 `on`；非实心实体站在上面也能调查。
 - 挂墙的东西（门、窗、镜子、画、黑板）放在墙面那一行，玩家从下面一格朝上调查。
 - 高家具（衣柜、书架、钟、冰箱）只占一格，画的时候向上伸出。
-- **会被客机看见的状态**只能用这些字段：`open covered cracked blood face on off lit full read eyes red coat flowers thread knife col text water locked flicker num`，
+- **会被客机看见的状态**只能用这些字段：`open covered cracked blood face power off lit full read eyes red coat flowers thread knife col text water locked flicker num`，
   或者放进 `e.s`（任意键，例如 `S.ent('x').s.lit2 = true`；自定义精灵里 `e.lit2` 就能读到）。其它自定义字段不会同步。
+  **`on` 是调查处理函数，绝不能当状态用**（以前电视写 `on:true` 会把处理函数覆盖/读档后被删掉）；开关类状态用 `power`。
+  `solid` 的变化也会同步给客机。
 - 人物：`spr: '@lily'`（people 里的 key）。默认实心；鬼一般 `solid: false`。
 - 内置道具精灵（`src/js/10_sprites.js` 的 SPR）：bed bedL futon table table2 lowtable chair sofa armchair desk schooldesk bookshelf wardrobe closet
   mirror(covered/cracked/blood/face:'red'|'pale') vanity sink toilet squat stall(open/num/red) bathtub(full) door(open/locked) sliding window(lit/face) curtain
-  clock wallclock tv(on:'static'|true) fridge stove counter cabinet dresser shelf lamp(off) candle(off) candles plant deadplant box crate barrel sack
+  clock wallclock tv(power:'static'|true) fridge stove counter cabinet dresser shelf lamp(off) candle(off) candles plant deadplant box crate barrel sack
   note paper newspaper book key item sparkle phone payphone piano painting portrait(eyes) poster blackboard(text) locker getabako vending streetlamp(off/flicker)
   sign busstop bench busseat pole car gravestone(coat/flowers) cross well lantern stonelantern torii shrine ofrenda marigold boat dock fireplace chess statue
   anatomy(eyes) doll(thread/knife) knife scissors cup(full) salt rice thread paw candy coin flashlight match towel rope photo shoes footprints stain puddle
@@ -105,6 +107,13 @@ street: {
 ```
 16×24 像素，脚底在格子底边；侧面朝左，朝右自动镜像。
 
+## 4b. 惊吓大头像 faces
+
+```js
+faces: { mary(R, a, t) { /* 32×32 网格，R(x,y,w,h,col)；a = 特效进度 0→1，可做张嘴、眨眼 */ } }
+```
+`S.scare('face', {spr:'@mary'})` 会自动用 `faces.mary`。要认得出、要吓人：大轮廓、强对比、2–3 个记忆点（裂嘴、红眼、长发缝里的眼睛）。
+
 ## 5. 剧本 API（S）
 
 所有剧本都是 `async S => {...}`，**一次只跑一段**（跑的时候玩家不能动）。
@@ -113,10 +122,13 @@ street: {
 |---|---|
 | `await S.say(谁, 文本或[多页], {style})` | 对话框。style: `think` 内心、`whisper` 低语、`big` 大红字 |
 | `await S.narr(文本)` / `S.think(文本)` | 旁白 / 内心 |
-| `await S.ask(问题, [选项…], 谁)` → 序号 | 选项 |
+| `await S.ask(问题, [选项…], 谁)` → 序号 | 选项（只有操作者能选） |
+| `await S.vote(问题, [选项…], 谁)` → `{v, agree, h, g}` | 双人各选一次（单人时等同 ask，agree 恒真）。不一致时 v 取操作者的选择，剧本可用 agree 写「两人意见不合」的分支 |
+| `S.coop` | 是否两人在线 |
+| `S.moving` `S.running` | 玩家此刻是否在走 / 在跑（客机操作时也准确，用来做「别动」「别跑」判定） |
 | `await S.card(标题, 副标题, 正文)` | 全屏标题卡（章节开头、时间跳跃） |
 | `await S.note('id')` | 打开笔记并记入档案 |
-| `await S.keypad(提示, ['1','2',…], 位数)` → 字符串或 null | 密码盘/按钮面板 |
+| `await S.keypad(提示, ['1','2',…,'10','开'], 按几下, {sep, cancel})` → 字符串或 null | 密码盘/按钮面板。键可以是多字符；返回按下的键用 sep（默认空）拼起来。键盘可用方向键+回车、数字键直接输入、Backspace 删一位、X 取消 |
 | `await S.wait(ms)` `await S.fade(1|0, ms)` | 等待 / 渐黑渐亮 |
 | `await S.go(map, x, y, dir)` | 切地图（自动渐变，会运行目标图 enter） |
 | `S.give(id)` `S.take(id)` `S.has(id)` | 物品 |
@@ -127,22 +139,25 @@ street: {
 | `await S.walk(id\|'pl', 'uulr'\|[x,y]\|[[x,y],…], 速度)` | NPC/玩家走路（目标格自动寻路） |
 | `S.face(id\|'pl', 方向\|'pl'\|实体id)` `S.turn(dir)` `S.pos(x,y,dir)` | 朝向 / 玩家瞬移 |
 | `S.bubble(id\|'pl', '!'\|'?'\|'…'\|'♥', ms)` | 头顶气泡 |
-| `S.chase(id, {spd, catch: async S=>{}, always, wander, zone:(x,y)=>bool})` `S.stop(id)` | 追逐（默认被抓 = `S.die`） |
+| `S.chase(id, {spd, catch: async S=>{}, always, wander, zone:(x,y)=>bool})` `S.stop(id)` | 追逐（默认被抓 = `S.die`）。stop 会立刻停在当前格（不会再走完半步） |
+| `S.freeze(id, true/false)` `S.isFrozen(id)` | 原地定住追逐者（被注视、被光照住），解除后继续追 |
 | `S.follow(id, true)` | 跟随玩家 |
-| `await S.scare('face'\|'flash'\|'red'\|'static'\|'glitch'\|'blood', {spr:'@ghost', sfx, dur})` | 惊吓（含音效和震动） |
+| `await S.scare('face'\|'flash'\|'red'\|'static'\|'glitch'\|'blood', {spr:'@ghost', face:'名', sfx, dur})` | 惊吓（含音效和震动）。face 特写优先用章节的 `faces[名]`（名默认取 spr 去掉 @），没有才裁人物精灵的头 |
+| `S.tone(type, f0, f1, 秒, 音量, 延迟, 低通)` | 合成单音，双方都听得到（旋律谜题用这个，不要直接调 AU.tone） |
+| `S.lights([[世界x, 世界y, 半径格, 强度], …])` / `S.lights(null)` | 额外光源（同步给客机） |
 | `S.fx(kind)` `S.shake(ms, 强度)` `S.sfx(名)` `S.amb(名)` | 特效 / 音效 / 环境声 |
 | `S.dark(v)` `S.plr(格)` | 当前地图黑暗度（0~1，null 恢复） / 玩家光圈半径（null 恢复） |
 | `await S.alpha(id, 0~1, ms)` | 实体淡入淡出 |
 | `await S.bells(n, 间隔, 'bell')` | 连续钟声 |
 | `S.tile(x, y, 字符, map)` | 改地图格子 |
-| `S.timer(秒, 标签, async S=>{})` `S.clearTimer()` | 倒计时（显示在左上） |
+| `S.timer(秒, 标签, async S=>{}, {during})` `S.clearTimer()` | 倒计时（显示在左上；标签 null 则不显示）。默认剧本运行时暂停；`during:true` 时对话/密码盘打开也照样走，到点会打断当前对话 |
 | `S.after(ms, async S=>{})` | 空闲时延后运行一段剧本 |
 | `S.focus(x, y)` / `S.focus(null)` | 镜头对准某格 |
 | `S.norun(true)` | 禁止奔跑（潜行段），`S.norun(false)` 恢复 |
 | `S.hidePlayer(true)` `S.wear('@wife'\|'car')` `S.speed(倍)` | 玩家隐藏（躲藏时追逐者会乱逛）/换外观/速度 |
 | `S.cp(名)` | 存检查点（死亡后从这里重来；名字对应 `resume`） |
 | `await S.die(文本, 标题)` | 死亡 → 从检查点重来 |
-| `await S.end({title, text})` / `S.end({bad:true, title, text})` | 好结局（解锁档案）/ 坏结局（可重来） |
+| `await S.end({title, text})` / `S.end({bad:true, title, text})` | 好结局（解锁档案、清除存档）/ 坏结局（保留检查点，可重来） |
 
 音效 `S.sfx`：step blip select item paper open close locked knock switch match scare sting heart whisper bell ding glass scream thud cry tv giggle drip water splash phone tick car brake tear chime good bad laugh chant cut。
 环境声 `S.amb` / 地图 `amb`：drone room wind rain bus car river night tv elevator otherworld school fire market none。

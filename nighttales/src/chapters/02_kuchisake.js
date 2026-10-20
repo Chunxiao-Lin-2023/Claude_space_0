@@ -765,7 +765,7 @@
           { x: 2, y: 1, spr: 'curtain', on: S => S.narr('窗帘拉得严严实实。') },
           { x: 5, y: 1, spr: 'poster', col: '#e8e4d8', on: S => S.narr('挂历翻在六月。二十二日那一格，妈妈用红笔写着：「由纪　集团下校开始」。') },
           { x: 7, y: 1, spr: 'wallclock', on: S => S.narr('七点十五分。') },
-          { id: 'tv', x: 1, y: 2, spr: 'tv', on: true, light: { r: 2.4, col: 'rgba(140,180,255,.16)' }, async on(S) {
+          { id: 'tv', x: 1, y: 2, spr: 'tv', power: true, light: { r: 2.4, col: 'rgba(140,180,255,.16)' }, async on(S) {
             if (S.f.tv) return S.narr('新闻已经换成了棒球转播。巨人队又输了。');
             S.f.tv = true;
             await S.say('电视', ['……近来，一则关于「裂口女」的传闻，以岐阜县为起点，在全国的小学生之间迅速扩散。', '各地陆续出现孩子们结伴放学、家长到校门口接送的情况，部分地区的警方也加强了巡逻……', '……专家指出，这只是孩子们之间口耳相传的谣言。请家长们不必过度担心……']);

@@ -252,7 +252,7 @@
             await S.narr('炭火发出轻轻的噼啪声。');
           } },
           { x: 5, y: 1, spr: 'wallclock' },
-          { x: 6, y: 2, spr: 'tv', on: 'static', light: { r: 1.6, col: 'rgba(120,160,255,.12)' }, async on(S) { await S.narr('电视开着，没有声音。屏幕上只有雪花。'); } },
+          { x: 6, y: 2, spr: 'tv', power: 'static', light: { r: 1.6, col: 'rgba(120,160,255,.12)' }, async on(S) { await S.narr('电视开着，没有声音。屏幕上只有雪花。'); } },
           { id: 'shelf', x: 7, y: 2, spr: 'bookshelf', async on(S) {
             if (S.once('clip')) await S.narr('书架上夹着一本旧剪贴簿。有一页贴着一张泛黄的剪报。');
             await S.note('clip');

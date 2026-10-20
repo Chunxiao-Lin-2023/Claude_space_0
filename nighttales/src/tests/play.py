@@ -9,7 +9,7 @@
   ['use', 实体id 或 [x,y], [选项...]]   传送到实体旁、面向它并调查；自动翻完对话，遇到选项按顺序选（默认 0）
   ['step', x, y, [选项...]]             传送到格子并触发踩踏事件（出口、机关）
   ['wait', 毫秒]  ['js', 代码, [选项]]  ['expect', 返回真值的 JS]  ['shot', 名字]
-密码盘（S.keypad）也从选项列表里取一个字符串。
+密码盘（S.keypad）也从选项列表里取一个字符串（逐字符按键）或一个列表（每项一个键，如 ["10","开"]）。
 """
 import os, sys, json, time, threading, http.server, socketserver, functools
 from playwright.sync_api import sync_playwright
@@ -32,7 +32,7 @@ window.__auto = async (picks, maxMs) => {
     if (W.endScreen) return 'end:' + W.endScreen.kind;
     if (W.dlg && W.dlg.choices) { const d = W.dlg; d.full = true; await sleep(260); if (D.W.dlg === d) { const p = picks.length ? picks[0] : 0; D.doAct('pick', p); await sleep(40); if (D.W.dlg !== d && picks.length) picks.shift(); } idle = 0; continue; }
     if (W.dlg || W.card || W.note) { if (W.dlg) W.dlg.full = true; await sleep(W.card ? 520 : 170); D.doAct('adv'); idle = 0; continue; }
-    if (W.keypad) { const v = picks.length ? String(picks.shift()) : ''; for (const ch of v) D.doAct('key', ch); await sleep(500); continue; }
+    if (W.keypad) { const v = picks.length ? picks.shift() : ''; const ks = Array.isArray(v) ? v : String(v).split(''); for (const ch of ks) D.doAct('key', ch); await sleep(500); continue; }
     if (W.busy) { idle = 0; await sleep(50); continue; }
     if (++idle > 3) return 'idle';
     await sleep(50);

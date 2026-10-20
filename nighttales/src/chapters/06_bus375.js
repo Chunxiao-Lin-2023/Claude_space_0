@@ -452,7 +452,7 @@
       radio(g, e, t, R) {
         bx2(R, 0, 4, 16, 11, '#5a4030');
         bx2(R, 2, -2, 12, 8, '#6a4a2a'); R(3, -1, 5, 6, '#3a2a1a'); for (let y = 0; y < 5; y += 2) R(3, y - 1, 5, 1, '#5a4030');
-        R(9, 0, 4, 1, e.on ? '#ffe08a' : '#c8b88a'); R(10, 3, 2, 2, '#222'); R(13, -8, 1, 7, '#aaa');
+        R(9, 0, 4, 1, e.power ? '#ffe08a' : '#c8b88a'); R(10, 3, 2, 2, '#222'); R(13, -8, 1, 7, '#aaa');
       },
       pdesk(g, e, t, R) {
         bx2(R, 0, 1, 32, 13, '#5a4a32'); R(1, 2, 30, 2, '#6e5c40');
@@ -749,10 +749,10 @@
           { id: 'door_h', x: 9, y: 1, spr: 'door', on: S => S.narr('筒子楼的木门，门框上贴着去年的春联，红纸都褪成粉的了。') },
           { id: 'desk_h', x: 6, y: 2, spr: 'desk', on: S => S.narr(S.has('coin') ? '抽屉里……搁着那枚铜子儿。\n你把它扔进去以后，就再没敢拉开过。' : '书桌上摊着单位的图纸，一个字也看不进去。') },
           { id: 'radio', x: 7, y: 2, spr: 'radio', async on(S) {
-            S.ent('radio').on = true; S.sfx('tv');
+            S.ent('radio').power = true; S.sfx('tv');
             await S.narr('你拧开收音机。咝咝啦啦一阵杂音，然后是播音员字正腔圆的声音——');
             await S.say('收音机', ['……下面播送本市新闻。', '前天深夜，一辆末班公共汽车在运营途中失去联系，至今未回场。车上的司机和售票员下落不明。', '有关部门正在组织力量全力寻找。请知情群众提供线索……']);
-            S.ent('radio').on = false;
+            S.ent('radio').power = false;
             await S.think('……前天深夜。\n是那趟车。');
             S.f.radio = true; homeGoal(S);
           } },
