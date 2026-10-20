@@ -15,9 +15,26 @@
     return api;
   }
 
-  /* ---------- 声音：ぽ、ぽぽ、ぽ ---------- */
-  async function popo(S) { const gaps = [300, 150, 380, 220]; for (let i = 0; i < 4; i++) { S.sfx('drip'); await S.wait(gaps[i]); } }
-  function popoBg(S) { S.sfx('drip'); setTimeout(() => { if (W) S.sfx('drip'); }, 170); setTimeout(() => { if (W) S.sfx('drip'); }, 430); }
+  /* ---------- 声音：ぽ、ぽぽ、ぽ（S.tone 合成：低沉、闷在嘴里的「ぽ」，双方都听得到） ---------- */
+  function po(S, vol, d) { S.tone('sine', 310, 150, .11, vol, d, 900); S.tone('triangle', 165, 105, .13, vol * .55, d, 420); }
+  function popoPat(S, vol, d0 = 0) { [0, .34, .5, .92].forEach(t => po(S, vol, d0 + t)); }
+  async function popo(S, vol = .17) { popoPat(S, vol); await S.wait(1150); }
+  function popoBg(S, near) { const v = near ? .11 : .045; po(S, v, 0); po(S, v, .2); po(S, v, .48); }
+
+  /* ---------- 联机：关键抉择两人各选一次（单人时等同 ask） ----------
+     safe = 「保命」那个选项；两人不一致、且其中一人选了 safe 时：一只手被另一只手按住了 */
+  async function choose(S, q, opts, who, safe, held) {
+    if (S.coop && S.once('voteTip')) S.toast('联机：要命的选择，两个人各选一次');
+    const r = await S.vote(q, opts, who);
+    if (r.agree) return r.v;
+    if (safe != null && (r.h === safe || r.g === safe)) {
+      await S.narr(held || '你的手已经动了——\n又被你自己的另一只手死死按住了。');
+      if (S.once('splitHeard')) { popoPat(S, .07); await S.say('', '……ぽ？\n（像是在数：一个，两个。）', { style: 'whisper' }); await S.think('（它……听出来了？）'); }
+      return safe;
+    }
+    await S.narr('你心里有两个声音在吵。一个说「' + opts[r.h] + '」，一个说「' + opts[r.g] + '」。\n最后，还是手比心快。');
+    return r.v;
+  }
 
   /* 实体沿横向平移（树篱上方的帽子） */
   async function slide(S, id, tx, ms) {
@@ -47,6 +64,26 @@
     }
     R(0, -21 + y, 16, 2, HATC); R(0, -19 + y, 16, 1, '#cbc4b2'); R(4, -26 + y, 8, 5, HATC); R(4, -22 + y, 8, 1, '#d9d1bc'); R(5, -26 + y, 2, 1, '#ffffff');
   }
+
+  /* ---------- 惊吓大头像：帽檐压到眉毛，帽檐阴影里两点白瞳，长得不像人的脸，嘴慢慢张成「ぽ」的圆口 ---------- */
+  const FACES = {
+    hachiF(R, a, t) {
+      const HAT = '#f4f1e7', HS = '#c9c2b0', HR = '#0c0809', SK = '#ece4d8', SK2 = '#c8beb0';
+      R(0, 0, 32, 32, '#050406');
+      R(3, 9, 7, 23, HR); R(22, 9, 7, 23, HR); R(1, 22, 5, 10, HR); R(26, 22, 5, 10, HR);   // 长发垂到画面外
+      for (let i = 0; i < 6; i++) { R(4 + i, 12 + (i % 3) * 3, 1, 14, '#241a1c'); R(23 + i, 11 + (i % 2) * 4, 1, 15, '#241a1c'); }
+      R(10, 9, 12, 19, SK); R(10, 9, 1, 19, SK2); R(21, 9, 1, 19, SK2); R(11, 27, 10, 2, SK2);   // 太长的脸
+      R(10, 9, 12, 4, '#6a645a'); R(10, 13, 12, 1, '#9a9488');   // 帽檐的阴影
+      const tw = Math.sin(t * 23) > .7 ? 1 : 0;
+      R(12, 12, 3, 2, '#000'); R(17, 12, 3, 2, '#000'); R(13 + tw, 12, 1, 1, '#ffffff'); R(18 + tw, 12, 1, 1, '#ffffff');   // 白瞳
+      R(15, 16, 2, 3, SK2); R(15, 19, 2, 1, '#a89e90');
+      const k = Math.min(1, a * 1.6);
+      if (k < .45) { R(11, 22, 10, 1, '#3a0a0c'); R(10, 21, 1, 1, '#3a0a0c'); R(21, 21, 1, 1, '#3a0a0c'); R(12, 23, 8, 1, '#7a1014'); }   // 先是笑
+      else { const h = 3 + Math.round((k - .45) * 7); R(13, 21, 6, h, '#7a1014'); R(14, 22, 4, h - 2, '#0a0204'); R(12, 22, 1, h - 2, '#5a0c10'); R(19, 22, 1, h - 2, '#5a0c10'); }   // 「ぽ」
+      R(0, 6, 32, 3, HAT); R(0, 9, 32, 1, HS); R(1, 5, 30, 1, '#e4dfd0'); R(8, 0, 16, 6, HAT); R(8, 4, 16, 1, '#d8d0bc'); R(10, 1, 3, 1, '#ffffff');   // 白色宽檐帽
+      R(10, 29, 12, 3, '#ebe7dc'); R(14, 29, 4, 1, '#c9c2b2');
+    }
+  };
 
   /* ---------- 道具精灵 ---------- */
   const SPRITES = {
@@ -294,18 +331,15 @@
   async function teraMeet(S) {
     const f = S.f;
     S.face('kbaa', 'pl');
-    await S.narr('本堂的檐廊上坐着一个很老很老的婆婆。\n她好像早就知道你们要来。');
-    await S.say('K婆婆', ['……就是这孩子？', '过来。让我看看你的脸。']);
-    await S.narr('她的手又干又凉，捏着你的下巴，左右看了看。\n然后，叹了一口很长的气。');
-    await S.say('K婆婆', ['被看上了。', '那东西，村里的老人叫它「八尺大人」。个子有八尺高——比屋檐还高。', '穿白衣服，戴一顶白帽子。有人说是年轻女人的样子，有人说是老太婆，有人说穿着丧服……看见的人，说的都不一样。', '只有两样不变：个子高。还有那个笑声。ぽ、ぽぽ。']);
-    await S.say('K婆婆', ['它只找年轻的男孩子。', '被它看上的，过不了几天，就会被带走。']);
+    await S.narr('本堂的檐廊上坐着一个很老很老的婆婆。她好像早就知道你们要来。\n她招手让你过去，用又干又凉的手捏着你的下巴，左右看了看。叹了一口很长的气。');
+    await S.say('K婆婆', ['被看上了。', '那东西，村里的老人叫它「八尺大人」。个子有八尺高，比屋檐还高。白衣服，白帽子。', '有人说是年轻女人，有人说是老太婆，有人说穿着丧服——看见的人，说的都不一样。\n只有个子，和那个笑声不变。ぽ、ぽぽ。', '它只找年轻的男孩子。被它看上的，过不了几天，就会被带走。']);
     await S.say('爷爷', '……五十年前，我最小的弟弟，就是这么没的。', { style: 'whisper' });
     await S.narr('K婆婆从身后的柜子里抽出一本发黄的册子，翻开，推到你面前。');
     await S.note('kakocho');
-    await S.say('K婆婆', ['很久以前，村里请了游方的和尚，在村子的东西南北各立了一尊地藏，把它封在这一片里。它出不去，就只能在这几个村子之间转悠。', '它这几年一直很安静。今天突然出来，还大白天地在村道上走——', '……是有一尊地藏碎了。']);
-    await S.say('K婆婆', ['天黑以前，它不会动手。它喜欢慢慢来。', '你去看看，是哪一尊碎了。四尊都看，仔细看。看清楚了回来告诉我。', '我得知道它是从哪一边漏出来的。']);
+    await S.say('K婆婆', ['很久以前，村里请了游方的和尚，在东西南北各立了一尊地藏，把它封在这一片里。它出不去，只能在这几个村子之间转悠。', '它这几年一直很安静。今天突然大白天地在村道上走——……是有一尊地藏碎了。']);
+    await S.say('K婆婆', ['天黑以前，它不会动手。它喜欢慢慢来。', '你去把四尊地藏都看一遍。仔细看。看清楚是哪一尊碎了，回来告诉我——我得知道它是从哪一边漏出来的。']);
     S.give('mamori');
-    await S.say('K婆婆', '这个带上，攥在手里。白天它不敢靠得太近。');
+    await S.say('K婆婆', '这个攥在手里。白天它不敢靠得太近。');
     await S.say('爷爷', '我在这儿借电话，把亲戚们都叫来。……翔太，快去快回。');
     f.phase = 'jizo'; f.popo = 'far'; S.show('jii_t'); S.face('jii_t', 0);
     jizoGoal(S); S.cp();
@@ -324,21 +358,31 @@
     const f = S.f;
     const r = await S.ask('「碎的是哪一尊？」', ['北边，山道口那尊', '东边，村界那尊', '南边，往镇上去的那尊', '西边，河边那尊', '（我再去看看）'], 'K婆婆');
     if (r === 4) return S.say('K婆婆', '去吧。碎了的东西，有时候看上去是好好的。');
-    if (r === 1) return S.say('K婆婆', ['东边那尊？今天早上我才去给它换过花。', '……再去看看。碎了的东西，有时候看上去是好好的。']);
-    if (r === 2) return S.say('K婆婆', ['南边那尊，昨天傍晚我还去浇过水。', '……再去看看。碎了的东西，有时候看上去是好好的。']);
-    if (r === 3) return S.say('K婆婆', ['西边那尊肩膀上的裂缝？', '……那道缝，我嫁到这个村子那年就有了。不是它。', '再去看看。碎了的东西，有时候看上去是好好的。']);
-    if (!f.broken) await S.say('K婆婆', '……北边？你连碰都没碰它，倒是猜得准。');
-    else await S.say('K婆婆', ['头被人摆回去了？……修路的那帮人。', '撞碎了地藏，连说都不敢说一声。']);
+    /* 不能瞎蒙：没亲眼发现断口就答北边，也不算数；答错越多，提示越直白 */
+    const hint = () => {
+      const n = f.wrongJ = (f.wrongJ || 0) + 1;
+      if (n === 1) return '再去看看。碎了的东西，有时候看上去是好好的。';
+      if (n === 2) return ['再去看看。光站着看没用——蹲下来，凑近了看，伸手摸一摸。', '碎了的地方，茬口是白的。老伤口早就长满青苔了。'];
+      return ['……村里这几天净说北边修路的事。卡车进进出出的。', '你去问问种田的老伯，再去山道口，凑近了看。'];
+    };
+    if (r === 1) return S.say('K婆婆', ['东边那尊？今天早上我才去给它换过花。'].concat(hint()));
+    if (r === 2) return S.say('K婆婆', ['南边那尊，昨天傍晚我还去浇过水。'].concat(hint()));
+    if (r === 3) return S.say('K婆婆', ['西边那尊肩膀上的裂缝？', '……那道缝，我嫁到这个村子那年就有了。不是它。'].concat(hint()));
+    if (!f.broken) return S.say('K婆婆', ['……北边？', '你看见它碎了？碎在哪儿？是头，是手，还是底座？', '……答不上来。猜的，不算。'].concat(hint()));
+    await S.say('K婆婆', ['头被人摆回去了？……修路的那帮人。', '撞碎了地藏，连说都不敢说一声。']);
     await S.say('K婆婆', ['北边。山道口。', '那就是它漏出来的口子。今晚，它会从北边来。', '新的地藏，明天就让人去请。可是开眼供养，少说也要三天。你等不了三天。']);
     await S.say('K婆婆', ['今晚，你一个人待在你爷爷家二楼的里屋里，熬到天亮。', '明天一早，让你们家的亲戚开车，从南边那条路，把你送出村子。', '南边那尊地藏好好的。过了它，它就跟不过去了。']);
     S.give('shio', true); S.give('fuda', true); S.toast('获得：一袋盐、护符');
     await S.narr('K婆婆把一袋粗盐、三张手写的护符，和一张写满了字的草纸塞进你怀里。');
     await S.note('okite');
-    await S.say('K婆婆', ['回去照这上面写的，把屋子布置好。我念完经就过去，亲自看一眼。', '……你爷爷留在这儿打电话。你自己回去。', '跑回去。别停。']);
+    await S.say('K婆婆', ['回去照这上面写的，把屋子布置好。我念完经就过去，亲自看一眼。', '……你爷爷留在这儿打电话。你自己回去。']);
+    await S.say('K婆婆', ['还有。护身符，还给我。', '那是白天用的东西。太阳一落山，它就护不住你了——攥着它，你反倒会以为自己安全。', '今晚，你靠盐、靠护符、靠那尊佛。……还有，靠你自己不出声。']);
+    S.take('mamori'); S.sfx('paper');
+    await S.narr('她把那个小布袋从你手心里抽走，塞进了自己的袖子里。\n手心一下子空了。');
+    await S.say('K婆婆', '跑回去。别停。');
     S.sfx('bell');
-    await S.narr('寺里的钟「当——」地响了一声。\n不知什么时候，太阳已经挂在西边的山头上了。');
-    S.take('mamori');
-    await S.think('（护身符……K婆婆把它收回去了。「只能管到天黑」，她说。）');
+    S.dark(.42); S.amb('wind');
+    await S.narr('寺里的钟「当——」地响了一声。\n不知什么时候，太阳已经挂在西边的山头上了。杉树的影子，一直拖到了你的脚边。');
     f.phase = 'dusk'; f.reported = true;
     S.goal('天黑之前，跑回爷爷家（村子西南边）');
     S.cp('dusk');
@@ -366,43 +410,52 @@
     await S.narr('……再看的时候，那里只有杉树。');
     jizoGoal(S);
   }
-  async function jizoE(S) {
+  /* 四尊都能「凑近看」——只有北边那尊，近看才露馅 */
+  async function jizoLook(S, k, first, close) {
     const f = S.f;
-    if (f.phase === 'jizo' && !f.jE) { f.jE = true; S.sfx('select'); }
-    await S.narr('村子东头的地藏。脚边的竹筒里插着新换的野菊花，还挂着水珠。\n再往东，就是邻村的地界了。');
-    if (f.phase === 'jizo') jizoGoal(S);
+    if (f.phase === 'jizo' && !f['j' + k]) { f['j' + k] = true; S.sfx('select'); }
+    await S.narr(first);
+    if (f.phase !== 'jizo') return;
+    const r = await S.ask('看上去没什么异样。', ['凑近仔细看看', '算了']);
+    if (r === 0) await S.narr(close);
+    jizoGoal(S);
   }
-  async function jizoS(S) {
-    const f = S.f;
-    if (f.phase === 'jizo' && !f.jS) { f.jS = true; S.sfx('select'); }
-    await S.narr('往镇上去的路口，立着一尊地藏。\n脚下的石头是湿的——有人给它浇过水。脚边摆着一双新编的小草鞋。');
-    if (f.phase === 'jizo') jizoGoal(S);
-  }
+  const jizoE = S => jizoLook(S, 'E', '村子东头的地藏。脚边的竹筒里插着新换的野菊花，还挂着水珠。\n再往东，就是邻村的地界了。',
+    '你蹲下来。\n花是今早才换的，竹筒里的水还是凉的。脖子、肩膀、底座……你挨个摸了一遍，都是一整块石头，严丝合缝。');
+  const jizoS = S => jizoLook(S, 'S', '往镇上去的路口，立着一尊地藏。\n脚下的石头是湿的——有人给它浇过水。脚边摆着一双新编的小草鞋。',
+    '你蹲下来。\n石头上的青苔被人擦掉了一圈，摸上去还是湿的。你轻轻推了推它的头——纹丝不动。');
   async function jizoW(S) {
-    const f = S.f;
-    if (f.phase === 'jizo' && !f.jW) { f.jW = true; S.sfx('select'); }
-    await S.narr('河边的地藏，半边身子长满了青苔。\n它的肩膀上，有一道很深的裂缝，从脖子一直裂到胸口。');
-    if (f.phase === 'jizo' && S.once('wCrack')) await S.think('（……是这尊吗？可是裂缝里也长满了青苔。）');
-    if (f.phase === 'jizo') jizoGoal(S);
+    await jizoLook(S, 'W', '河边的地藏，半边身子长满了青苔。\n它的肩膀上，有一道很深的裂缝，从脖子一直裂到胸口。',
+      '你蹲下来。\n裂缝很深，可是缝里塞满了青苔和干泥，两边的石棱都被雨水磨圆了。\n……这道缝，少说也裂了几十年。脖子那儿倒是好好的。');
+    if (S.f.phase === 'jizo' && S.once('wCrack')) await S.think('（新裂开的口子，不会长青苔吧。）');
   }
 
   /* ================= 黄昏：跑回家 ================= */
+  /* 黄昏逃跑：她就站在回家必经的十字路口，顺着路朝你走过来。她只走「路」（村道和两边的草沿），
+     从不进杂货店后面的空地——那是人家的地。直着冲过去要贴边硬闯；聪明的办法是把她引到村道东头，
+     再从杂货店后面的空地抄下去，绕回大路。死了从村道上重来（检查点 run），不用再从寺里走出来。 */
+  const DUSK_X = 17, DUSK_Y = 12, DUSK_SPD = 2.9, DUSK_T = 45;
+  const onRoad = (x, y) => (x >= 16 && x <= 18) || (y >= 11 && y <= 13) || (y >= 4 && y <= 6 && x >= 18 && x <= 29);
+  function duskChase(S, wait) {
+    const f = S.f; f.popo = 'near';
+    S.chase('hachiM', { spd: DUSK_SPD, wait, zone: onRoad, catch: async S => caught(S, '你听见身后「ぽ」的一声，近得就在耳朵边上。\n一只又白又长的手，从你头顶上伸下来，盖住了你的眼睛。', '它追上你了') });
+    S.timer(DUSK_T, '日落', async S => { S.stop('hachiM'); await caught(S, '太阳落山了。\n最后一点光从稻田上收走的时候，有什么东西弯下腰，在你耳边笑了一声。', '天黑了'); });
+    S.goal('天黑之前回到爷爷家（西南边）——它堵在路上，绕过去');
+  }
+  function duskChaseOnly(S) { const t = W.timer; duskChase(S, 1); if (t) W.timer = t; }
   async function duskStart(S) {
     const f = S.f;
+    f.duskOn = true;   // 只开始一次：从寺里进出村道不会重置日落计时
     S.dark(.62); S.plr(3.6); S.amb('wind');
-    S.stop('hachiM'); S.place('hachiM', 34, 12, 1); S.ent('hachiM').alpha = 1;
-    if (S.once('duskSeen')) {
-      S.focus(32, 12); S.sfx('sting');
-      await S.narr('夕阳把整片稻田染成了橘红色。\n村道东头，村界的地藏旁边，站着一个白色的、细长的影子。');
-      await popo(S);
-      await S.narr('它比路边的电线杆还要高。\n帽檐慢慢地抬起来，转向了你这边。');
-      S.focus(null);
-      await S.think('（……它在等我。跑！）');
-    } else { S.sfx('heart'); await S.narr('村道东头，白色的影子又站在那里了。'); }
-    f.popo = 'near';
-    S.chase('hachiM', { spd: 2.75, wait: 1, catch: async S => caught(S, '你听见身后「ぽ」的一声，近得就在耳朵边上。\n一只又白又长的手，从你头顶上伸下来，盖住了你的眼睛。', '它追上你了') });
-    S.timer(60, '日落', async S => { S.stop('hachiM'); await caught(S, '太阳落山了。\n最后一点光从稻田上收走的时候，有什么东西弯下腰，在你耳边笑了一声。', '天黑了'); });
-    S.goal('天黑之前，跑回爷爷家（村子西南边）');
+    S.stop('hachiM'); S.place('hachiM', DUSK_X, DUSK_Y, 3); S.ent('hachiM').alpha = 1;
+    S.focus(20, 9); S.sfx('sting');
+    await S.narr('夕阳把整片稻田染成了橘红色。\n村道当中，那个十字路口上，站着一个白色的、细长的影子。');
+    await popo(S);
+    await S.narr('它比路边的电线杆还要高。\n帽檐慢慢地抬起来，转向了你这边。\n……它站的地方，是你回家必经的路口。');
+    S.focus(null);
+    await S.think(['（它在路上走……杂货店的婆婆说过，它最爱从树篱外面往院子里看。）', '（——它不进人家的院子。杂货店后面那片空地，能不能绕过去？）']);
+    S.cp('run');
+    duskChase(S, 1);
   }
   async function homeGate(S) {
     const f = S.f;
@@ -436,7 +489,7 @@
     if (f.phase === 'setup') {
       if (!w.s.fuda && S.has('fuda')) {
         w.s.fuda = true; f.fWin = true; S.sfx('paper');
-        await S.narr('你在报纸上贴了一张护符，用手掌抹平。');
+        await S.narr('你在报纸上贴了一张护符，用手掌抹平。\n这是屋里唯一的一扇窗户。朝北——正对着院门、树篱，和树篱外面的村道。');
         fudaCheck(S); return setupGoal(S);
       }
       return S.narr('窗户朝北，正对着院门、树篱，和树篱外面的村道。\n玻璃上里里外外糊满了旧报纸，一点光也透不进来。' + (w.s.fuda ? '\n报纸当中贴着一张护符。' : ''));
@@ -488,8 +541,10 @@
     await S.say('奶奶（楼下）', 'K婆婆来了！', { style: 'whisper' });
     await S.narr('K婆婆拄着拐杖，一级一级地爬上楼来。\n她在门口站定，看了看四个角，看了看窗户，又看了看那尊佛像。');
     if (f.butsuDir !== 0) {
-      await S.say('K婆婆', ['佛像。', '我写的是什么？地藏碎在哪一边，它就从哪一边来——佛像的脸，要对着那一边。', '碎的是哪一尊，你自己看见的。这扇窗户朝哪边，你自己看看。']);
-      S.hide('kbaaH'); S.goal('把佛像转到正确的方向');
+      const n = f.wrongB = (f.wrongB || 0) + 1;
+      if (n === 1) await S.say('K婆婆', ['佛像。', '我写的是什么？地藏碎在哪一边，它就从哪一边来——佛像的脸，要对着那一边。', '碎的是哪一尊，你自己看见的。这扇窗户朝哪边，你自己看看。']);
+      else await S.say('K婆婆', ['……还是不对。', '碎的是北边那尊。这间屋子，只有那扇糊报纸的窗户朝北。', '佛像的脸，对着窗户。']);
+      S.hide('kbaaH'); S.goal(n === 1 ? '把佛像转到正确的方向（地藏碎在哪边？窗户朝哪边？）' : '把佛像转过去，脸对着窗户');
       return;
     }
     await S.say('K婆婆', ['……嗯。', '你听好。从现在起，到明天早上七点，你一步都不能出这个门。', '门从里面插上。不管谁叫你，不管是什么声音——你爷爷、你奶奶、我，都一样——不要应，不要开。', '怕了，就攥着那张护符，对着佛像念经。']);
@@ -510,14 +565,18 @@
     if (f.phase === 'setup') return S.narr('被子已经铺好了。K婆婆说，布置好了以后，就待在被子里别出来。');
     if (f.phase !== 'night') return S.narr('被子乱成一团，汗湿了一大片。');
     if (f.hideEv) return hideIn(S);
+    if (f.still) return;
     const n = f.ns || 0;
+    if (n === 2) return S.narr('窗户上的报纸翘着一个角，冷风从那里钻进来。\n不把它按回去，你睡不着。');
+    burrow(S, true);
     if (n === 0) return ev1(S);
     if (n === 1) return ev2(S);
-    if (n === 2) return S.narr('窗户上的报纸翘着一个角，冷风从那里钻进来。\n不把它按回去，你睡不着。');
     if (n === 3) return ev4(S);
     if (n === 4) return ev5(S);
     return ev6(S);
   }
+  /* 钻进被子：人藏起来、被子鼓起一团（玩家光圈也跟着消失，只剩行灯） */
+  function burrow(S, on) { S.hidePlayer(on); const fu = S.ent('futonH'); if (fu) fu.s.lump = on; }
   async function ev1(S) {
     const f = S.f;
     await S.narr('你钻进被子里，把那张护符攥在手心。');
@@ -528,13 +587,14 @@
     await S.narr('叩、叩。\n窗户被敲了两下。\n\n——这里是二楼。');
     await popo(S);
     await S.say('窗外', 'ぽ、ぽぽ、ぽ……', { style: 'whisper' });
-    const r = await S.ask('有什么东西，贴在窗户外面。', ['（屏住呼吸，攥紧护符）', '「……谁？」', '掀开报纸看一眼']);
+    const r = await choose(S, '有什么东西，贴在窗户外面。', ['（屏住呼吸，攥紧护符）', '「……谁？」', '掀开报纸看一眼'], '', 0, '你张开了嘴——\n又被自己的另一只手死死捂住了。');
     if (r === 1) return caught(S, '「谁？」\n话一出口，窗外的声音就停了。\n然后，你听见报纸被一点一点撕开的声音。', '你应了声');
     if (r === 2) return caught(S, '你掀开报纸的一角。\n玻璃外面，是一只眼睛。很大，很近，在笑。', '你看了');
     await S.narr('你咬着被角，一动也不敢动。\n叩、叩。叩。\n敲了很久，很久。然后停了。');
     S.amb('night'); saltDark(S, 1, [0, 1]); f.ns = 1;
-    await S.narr('虫子又叫了起来。\n窗户那边的两个角上……盐，好像变灰了。');
-    S.goal('熬到早上七点（再躺回被子里）'); S.cp('night');
+    burrow(S, false);
+    await S.narr('虫子又叫了起来。\n你从被子里探出头。窗户那边的两个角上……盐，好像变灰了。');
+    S.goal('熬到早上七点（钻回被子里）'); S.cp('night');
   }
   async function ev2(S) {
     const f = S.f;
@@ -543,7 +603,7 @@
     S.sfx('step'); await S.wait(600); S.sfx('step'); await S.wait(600); S.sfx('step');
     await S.narr('楼梯上，有人慢慢地走上来。\n吱——吱——\n脚步声停在了纸门外面。');
     await S.say('门外', ['翔太。是爷爷。', '没事了。K婆婆说，它今晚不会来了。', '你一个人害怕吧？把门开开，爷爷进来陪着你。'], { style: 'whisper' });
-    const r = await S.ask('是爷爷的声音。一模一样。', ['（不出声）', '「……爷爷？」', '去拔门闩']);
+    const r = await choose(S, '是爷爷的声音。一模一样。', ['（不出声）', '「……爷爷？」', '去拔门闩'], '', 0, '你从被子里伸出一只手，摸到了门闩——\n另一只手追上来，把它死死按在了榻榻米上。');
     if (r === 1) return caught(S, '「爷爷？」\n门外安静了。\n然后，那个声音很高兴地说：「……找到了。」', '你应了声');
     if (r === 2) return caught(S, '门闩一拔开，纸门就自己滑开了。\n门外没有爷爷。\n只有一条白色的裙摆，一直垂到地上。你顺着它，慢慢地往上看——', '你开了门');
     await S.narr('你把护符按在胸口，指甲掐进手心。');
@@ -552,6 +612,7 @@
     await S.say('门外', '……是吗。', { style: 'whisper' });
     await S.narr('脚步声下楼去了。\n下楼的时候，楼梯一声都没有响。');
     S.sfx('tear'); S.ent('win').s.peel = true; saltDark(S, 1, [2, 3]); f.ns = 2;
+    burrow(S, false);
     await S.narr('窗户那边，「嘶啦」一声。');
     S.goal('窗上的报纸翘起来了一角——去按回去'); S.cp('night');
   }
@@ -563,11 +624,12 @@
     w.s.shadow = true; S.sfx('sting'); S.shake(300, 2);
     await S.narr('不是月光。是布。白色的、垂下来的布。\n它在往下移——是有什么东西，正在窗外弯下腰来，要从那个缝里往里看。');
     f.hideEv = true; S.goal('快钻进被子里！');
-    S.timer(7, '它在弯腰', async S => { S.f.hideEv = false; await caught(S, '你没来得及躲。\n报纸的破口里，一只眼睛对上了你的眼睛。\n「ぽ。」', '她看见你了'); });
+    /* during：看描述、翻对话时时间也照样走 */
+    S.timer(7, '它在弯腰', async S => { S.f.hideEv = false; await caught(S, '你没来得及躲。\n报纸的破口里，一只眼睛对上了你的眼睛。\n「ぽ。」', '她看见你了'); }, { during: true });
   }
   async function hideIn(S) {
-    const f = S.f, w = S.ent('win'), fu = S.ent('futonH');
-    S.clearTimer(); f.hideEv = false; S.hidePlayer(true); fu.s.lump = true;
+    const f = S.f, w = S.ent('win');
+    S.clearTimer(); f.hideEv = false; burrow(S, true);
     await S.narr('你一头扎进被子，把护符死死按在胸口上。');
     S.sfx('tear'); await S.wait(700);
     await S.narr('嘶——啦——\n报纸被一点一点撕开的声音。');
@@ -577,11 +639,13 @@
     await S.say('窗外', '……ぽ。', { style: 'whisper' });
     S.sfx('knock'); await S.wait(400); S.sfx('knock'); await S.wait(900);
     await S.narr('很久。很久很久。\n然后，窗外那片白，慢慢地滑走了。');
-    S.hidePlayer(false); fu.s.lump = false; w.s.shadow = false; w.s.dark = true; S.ent('clockH').num = 2;
+    burrow(S, false); w.s.shadow = false; w.s.dark = true; S.ent('clockH').num = 2;
     f.ns = 3; saltDark(S, 2, [0, 1]);
     await S.narr('你从被子里探出头。\n窗上那张护符，黑了一大半，像被火燎过。窗户这边两个角的盐，已经全黑了。');
-    S.goal('熬到早上七点（再躺回被子里）'); S.cp('night');
+    S.goal('熬到早上七点（钻回被子里）'); S.cp('night');
   }
+  /* 四点十分：行灯灭了，它绕着屋子转，然后弯腰压在被子上——6 秒内一下也不能动（S.moving，客机操作也准） */
+  const STILL_T = 6;
   async function ev4(S) {
     const f = S.f, an = S.ent('andon');
     await S.fade(1, 600); S.ent('clockH').num = 4; await S.wait(700); await S.fade(0, 600);
@@ -589,18 +653,39 @@
     await S.narr('四点十分。');
     an.s.off = true; S.sfx('switch');
     await S.narr('行灯灭了。');
-    await popo(S); await S.wait(300); await popo(S);
+    await popo(S); await S.wait(300); await popo(S, .12);
     await S.narr('ぽぽぽ。ぽ、ぽぽ。\n左边。右边。头顶上。门外。\n那个声音，绕着这间屋子，一圈、一圈地转。');
     S.shake(1200, 2); S.sfx('knock'); await S.wait(300); S.sfx('knock'); await S.wait(200); S.sfx('knock');
     await S.narr('四面的墙都被拍响了。屋子在晃。');
-    const r = await S.ask('你快喘不过气了。', ['攥着护符，对着佛像念「南无阿弥陀佛」', '捂住耳朵，大喊「走开！」']);
-    if (r === 1) return caught(S, '「走开！走开！！」\n你喊出了声。\n拍墙的声音一下子停了。然后，从四面八方，同时响起了笑声。', '你出了声');
+    await S.wait(500); S.sfx('heart');
+    await S.narr('……然后，一下子全停了。\n被子上面，有什么东西压了下来。很轻，很长。\n像是一个很高很高的人，弯下了腰。');
+    await S.say('', '别动。', { style: 'big' });
+    f.still = true; stillT = 0; S.goal('别动！连手指头都别动');
+    S.timer(STILL_T, '别动', stillDone);
+  }
+  let stillT = 0;
+  function stillTick(S, dt) {
+    const f = S.f; if (!f.still || W.busy) return;
+    if (S.moving) {
+      f.still = false; S.clearTimer();
+      S.after(0, async S => { burrow(S, false); await caught(S, '你只是缩了一下脚。\n被子外面那个东西，「ぽ」地笑了一声。\n被角，被人从外面，慢慢地掀开了。', '你动了'); });
+      return;
+    }
+    stillT -= dt; if (stillT <= 0) { stillT = 1.3 + Math.random(); po(S, .05, 0); S.shake(250, 1); }
+  }
+  async function stillDone(S) {
+    const f = S.f, an = S.ent('andon');
+    f.still = false;
+    await S.narr('那东西在被子上面停了很久。\n你能听见它的呼吸——不，是那个声音，含在嘴里，一下，一下。');
+    const r = await choose(S, '你快喘不过气了。', ['攥着护符，对着佛像念「南无阿弥陀佛」', '捂住耳朵，大喊「走开！」'], '', 0, '你张嘴要喊——\n嘴被自己的手捂住了。手心里的护符硌得脸生疼。');
+    if (r === 1) { burrow(S, false); return caught(S, '「走开！走开！！」\n你喊出了声。\n压在被子上的重量一下子没了。然后，从四面八方，同时响起了笑声。', '你出了声'); }
     S.sfx('chant');
     await S.say('你', ['南无阿弥陀佛……', '南无阿弥陀佛。南无阿弥陀佛……'], { style: 'whisper' });
-    await S.narr('你不记得念了多少遍。\n念到嗓子哑了，念到外面的声音，好像离得远了一点。');
+    await S.narr('你不记得念了多少遍。\n念到嗓子哑了，念到被子上的重量，一点一点地轻了。');
     an.s.off = false; S.amb('night'); saltDark(S, 2, [0, 1, 2, 3]); f.ns = 4;
+    burrow(S, false);
     await S.narr('行灯又亮了。\n四个角的盐，全都黑了。');
-    S.goal('熬到早上七点（再躺回被子里）'); S.cp('night');
+    S.goal('熬到早上七点（钻回被子里）'); S.cp('night');
   }
   async function ev5(S) {
     const f = S.f;
@@ -608,16 +693,16 @@
     await S.narr('迷迷糊糊之中，你听见了鸟叫。');
     S.sfx('knock'); await S.wait(400); S.sfx('knock');
     await S.say('门外', ['翔太，天亮了。', '是我，K婆婆。出来吧。都结束了。']);
-    let r = await S.ask('K婆婆的声音。门外的人在等你开门。', ['先看一眼钟', '「来了！」（去拔门闩）']);
-    if (r === 1) return caught(S, '「来了！」\n你一把拔开门闩。\n门外没有人。地板上放着一顶白色的宽檐帽。\n……你身后，有人「ぽ」地笑了一声。', '你应了声');
+    let r = await choose(S, 'K婆婆的声音。门外的人在等你开门。', ['先看一眼钟', '「来了！」（去拔门闩）'], '', 0, '你掀开被子要起身——\n又被自己按了回去。……先看一眼钟。');
+    if (r === 1) { burrow(S, false); return caught(S, '「来了！」\n你一把拔开门闩。\n门外没有人。地板上放着一顶白色的宽檐帽。\n……你身后，有人「ぽ」地笑了一声。', '你应了声'); }
     await S.narr('你从被子里伸出手，摸到了枕边的座钟。\n五点十分。\n窗户上的报纸，还是黑的。');
     await S.think('（……还没到七点。）');
-    r = await S.ask('「翔太？怎么了？开门呀。」', ['（不出声）', '「……还没到七点吧。」']);
+    r = await choose(S, '「翔太？怎么了？开门呀。」', ['（不出声）', '「……还没到七点吧。」'], '', 0);
     if (r === 1) return caught(S, '「……还没到七点吧。」\n门外安静了。\n「是啊，」那个声音说，「还没到呢。」', '你应了声');
     await S.wait(600);
     await S.say('门外', '……ぽ、ぽぽ。', { style: 'whisper' });
     await S.narr('门外的「K婆婆」，笑着走远了。');
-    f.ns = 5; S.goal('再等一等。等到真的天亮'); S.cp('night');
+    f.ns = 5; burrow(S, false); S.goal('再等一等。等到真的天亮（钻回被子里）'); S.cp('night');
   }
   async function ev6(S) {
     const f = S.f;
@@ -628,6 +713,7 @@
     await S.fade(0, 900);
     S.sfx('knock');
     await S.say('门外', ['七点了。翔太，你还在吧？', '……不用答话。我自己开门。']);
+    burrow(S, false);
     S.sfx('open'); S.ent('fusuma').open = true; S.show('kbaaH'); S.face('kbaaH', 'pl');
     await S.narr('门闩是从外面用细铁丝挑开的。\nK婆婆站在门口，看了你很久。');
     await S.say('K婆婆', ['……好孩子。你熬过来了。']);
@@ -649,40 +735,51 @@
   }
   async function rideCar(S) {
     const f = S.f;
+    const auntHold = '你的眼皮刚动了一下——\n婶婶的手一把捂了上来，死死按住了你的眼睛。';
     S.sfx('open');
     await S.narr('村道上停着一辆白色的面包车。车窗里，亲戚们已经坐好了。\n你被让进第二排的正中间。左边是叔公，右边是婶婶，爷爷和姑婆坐在后排。开车的是堂哥。');
     await S.say('K婆婆（副驾驶）', '低头。闭眼。南无阿弥陀佛……');
-    await S.fade(1, 900); S.dark(1); S.plr(0); S.hidePlayer(true); S.amb('car'); S.f.popo = null;
+    await S.fade(1, 900); S.dark(1); S.plr(0); S.hidePlayer(true); S.amb('car'); S.f.popo = null; f.glimpse = false;
     await S.fade(0, 300);
     await S.narr('你闭上了眼睛。\n车门关上。发动机响了起来。');
     S.sfx('car'); await S.wait(900);
-    await S.narr('车子一颠一颠地开动了。K婆婆的念经声，和发动机的声音混在一起。');
+    await S.narr('车子一颠一颠地开动了。开得很慢，慢得像人走路。K婆婆的念经声，和发动机的声音混在一起。');
     await S.wait(600); await popo(S);
-    await S.narr('ぽ、ぽぽ、ぽ。\n声音就在车窗外面。\n车开得不慢。可它一直在那里。不远不近，跟着车一起走。');
+    await S.narr('ぽ、ぽぽ、ぽ。\n声音就在车窗外面。\n车开得不快。它一直在那里。不远不近，跟着车一起走。');
     await S.say('叔公', '……别抬头。', { style: 'whisper' });
-    let r = await S.ask('它就在你这一侧的窗外。', ['（闭着眼，低着头）', '睁眼看一眼']);
-    if (r) return badCar(S);
+    let r = await choose(S, '它就在你这一侧的窗外。', ['（闭着眼，低着头）', '眯着眼，从睫毛缝里偷偷瞟一眼', '睁眼看一眼'], '', 0, auntHold);
+    if (r === 2) return badCar(S);
+    if (r === 1) {   // 原帖里的那一眼：只看见白色的裙摆
+      await S.narr('你把眼皮掀开一条缝。\n车窗外，是一片白。\n白色的布，垂着，一下一下地摆。跟着车，一样快。');
+      await S.narr('……是裙摆。\n裙摆往上，一直伸出了车窗的上沿。你看不见它的腰，也看不见它的脸。');
+      S.sfx('heart'); popoPat(S, .2);
+      r = await choose(S, '它的脸，就在车顶上面。', ['顺着裙摆往上看', '马上闭紧眼睛'], '', 1, auntHold);
+      if (r === 0) return badCar(S, 'up');
+      f.glimpse = true;
+      await S.narr('你死死闭上眼。\n后排伸过来一只手，粗糙，发抖，一把捂住了你的眼睛。是爷爷。');
+      await S.say('爷爷', '……别看它的脸。', { style: 'whisper' });
+    }
     S.sfx('knock'); await S.wait(500); S.sfx('knock');
     await S.narr('叩、叩。\n有人在敲你旁边的车窗。');
     await S.say('窗外', ['翔太？是妈妈呀。', '妈妈来接你了。你爸也来了。……把窗户摇下来，让妈妈看看你。'], { style: 'whisper' });
-    r = await S.ask('是妈妈的声音。', ['（不动）', '摇下车窗', '睁开眼']);
+    r = await choose(S, '是妈妈的声音。', ['（不动）', '摇下车窗', '睁开眼'], '', 0, auntHold);
     if (r) return badCar(S);
     await S.narr('婶婶的手伸过来，紧紧握住了你的手。她的手心全是汗。');
     S.sfx('brake'); S.shake(500, 2); await S.wait(500);
     await S.narr('车子猛地一刹。');
     await S.say('堂哥', '……前、前面路当中，站着一个人——', { style: 'whisper' });
     await S.say('K婆婆', '别停！开过去！', { style: 'big' });
-    r = await S.ask('车停了。周围一下子安静得可怕。', ['（死死闭着眼）', '睁眼看看前面怎么了']);
+    r = await choose(S, '车停了。周围一下子安静得可怕。', ['（死死闭着眼）', '睁眼看看前面怎么了'], '', 0, auntHold);
     if (r) return badCar(S);
     S.sfx('car'); S.shake(300, 1);
     await S.narr('发动机吼了一声，车子冲了出去。\n有什么东西，从车顶上「哗」地擦了过去。');
-    await S.wait(500); S.sfx('drip'); await S.wait(600); S.sfx('drip'); await S.wait(1100);
+    await S.wait(500); po(S, .1, 0); await S.wait(600); po(S, .06, 0); await S.wait(1100);
     await S.narr('ぽ……ぽ…………\n声音落在了后面。越来越远。');
     await S.say('姑婆', '……过了。过了地藏了。', { style: 'whisper' });
     await S.wait(800);
     await S.say('爷爷', '翔太，到了。没事了，睁眼吧。');
-    r = await S.ask('是爷爷的声音。', ['睁开眼', '（等K婆婆叫我的全名）']);
-    if (r === 0) return badCar(S, true);
+    r = await choose(S, '是爷爷的声音。', ['睁开眼', '（等K婆婆叫我的全名）'], '', 1, '你的眼皮动了一下。\n又停住了。……K婆婆还没有叫你。');
+    if (r === 0) return badCar(S, 'late');
     await S.wait(900);
     await S.say('K婆婆', FULL + '。', { style: 'big' });
     await S.say('K婆婆', '……睁眼吧。');
@@ -690,12 +787,15 @@
     S.dark(null); S.plr(null); S.hidePlayer(false);
     await S.go('deguchi', 6, 6, 3, { ms: 900 });
   }
-  async function badCar(S, late) {
+  async function badCar(S, how) {
     S.amb('none'); S.dark(null); S.plr(null);
-    await S.narr(late ? '你睁开了眼睛。\n车还在开。叔公、婶婶、姑婆……所有人都低着头，紧紧闭着眼。\n爷爷也是。他的嘴，一直紧紧地抿着。\n——刚才那句话，不是他说的。' : '你睁开了眼睛。');
+    if (how === 'late') await S.narr('你睁开了眼睛。\n车还在开。叔公、婶婶、姑婆……所有人都低着头，紧紧闭着眼。\n爷爷也是。他的嘴，一直紧紧地抿着。\n——刚才那句话，不是他说的。');
+    else if (how === 'up') await S.narr('你的眼睛顺着那片白，一点一点往上爬。\n车窗的上沿。车顶。\n然后，一张倒过来的脸，从车顶上垂了下来。');
+    else await S.narr('你睁开了眼睛。');
     await S.scare('face', { spr: '@hachiF', dur: 1.2 });
     S.fx('red');
-    return S.end({ bad: true, title: '你睁开了眼睛', text: '车窗外，一张白色的脸贴着玻璃，跟着车一起跑。\n帽檐底下，她在笑。\n\nぽ、ぽぽ、ぽ。\n\n四天以后，村子南边的地藏脚下，多了一双小小的草鞋。\n寺里那本发黄的过去帐上，添了新的一行。' });
+    if (how === 'late') return S.end({ bad: true, id: 'name', title: '不是他叫的', text: '车开到了村界。地藏好好地立在那里。\n可是你已经睁开眼了。\n\n后视镜里，爷爷一直低着头。他后来说，那一路上，他一个字都没有说过。\n\nぽ、ぽぽ、ぽ。\n\n四天以后，寺里那本发黄的过去帐上，添了新的一行。' });
+    return S.end({ bad: true, id: 'eyes', title: '你睁开了眼睛', text: '车窗外，一张白色的脸贴着玻璃，跟着车一起跑。\n帽檐底下，她在笑。\n\nぽ、ぽぽ、ぽ。\n\n四天以后，村子南边的地藏脚下，多了一双小小的草鞋。\n寺里那本发黄的过去帐上，添了新的一行。' });
   }
   async function deguchiEnter(S, first) {
     if (!first) return;
@@ -734,7 +834,8 @@
     await S.fade(1, 1400);
     await S.card('之后', '', '那年夏天，我再也没有回过那个村子。\n第二年，K婆婆去世了。\n又过了几年，爷爷也走了。葬礼的时候，奶奶在电话里说：\n「你别回来。」\n\n那张护符，我一直带在钱包里。\n已经黑得看不出字了。');
     await S.note('tegami');
-    await S.end({ title: '第二夜　完', text: '十年后，我把这件事写了下来。\n\n写完的那天晚上，我做了一个梦。\n梦里我站在爷爷家的院子里，树篱上面，有一顶白色的帽子，慢慢地移过来。\n\nぽ、ぽぽ、ぽ。' });
+    if (S.f.glimpse) return S.end({ id: 'glimpse', title: '第二夜　完（白色的裙摆）', text: '十年后，我把这件事写了下来。\n\n有一件事，我谁也没告诉过：那天在车上，我从睫毛缝里看了一眼。\n只看见了裙摆。白色的，一下一下地摆，跟车一样快。\n\n我一直在想，要是那时候我再往上看一点点——\n\n写完的那天晚上，我做了一个梦。\n梦里我坐在那辆面包车的正中间。车窗外，那片白色的裙摆，还在跟着车走。\n\nぽ、ぽぽ、ぽ。' });
+    await S.end({ id: 'home', title: '第二夜　完', text: '十年后，我把这件事写了下来。\n\n写完的那天晚上，我做了一个梦。\n梦里我站在爷爷家的院子里，树篱上面，有一顶白色的帽子，慢慢地移过来。\n\nぽ、ぽぽ、ぽ。' });
   }
 
   /* ================= 地图 ================= */
@@ -854,7 +955,12 @@
       S.goal('跟爷爷去寺里（往东，再往北）');
     } else S.follow('jii_m', false);
     if (f.phase === 'jizo') jizoGoal(S);
-    if (f.phase === 'dusk') return duskStart(S);
+    if (f.phase === 'dusk' && !f.duskOn) return duskStart(S);
+    if (f.phase === 'dusk') {   // 从寺里又出来：她要是就守在门口，先让她退回路口（不白送一条命；计时照走）
+      S.dark(.62); S.plr(3.6); S.sfx('heart');
+      const h = S.ent('hachiM'); if (Math.abs(h.px / TS - S.pl.x) + Math.abs(h.py / TS - S.pl.y) < 7) { S.stop('hachiM'); S.place('hachiM', DUSK_X, DUSK_Y, 3); duskChaseOnly(S); }
+      S.toast('它还在村道上');
+    }
   }
   async function teraEnter(S, first) {
     const f = S.f;
@@ -941,12 +1047,13 @@
           { id: 'fusuma', x: 4, y: 8, spr: 'fusuma', on: heyaDoor },
           { id: 'kbaaH', x: 5, y: 7, spr: '@kbaa', hidden: true, dir: 3 }
         ],
+        tick: stillTick,
         async enter(S, first) {
           const f = S.f;
           if (f.phase === 'setup') {
             if (first) {
               S.dark(.6);
-              await S.narr('六叠大的屋子。一股霉味。\n窗户上里里外外糊满了旧报纸。屋子当中摆着一个木箱，箱子上立着一尊小小的佛像。\n四个角上，各放着一个空的小碟子。');
+              await S.narr('六叠大的屋子。一股霉味。\n唯一的一扇窗户朝北，里里外外糊满了旧报纸。屋子当中摆着一个木箱，箱子上立着一尊小小的佛像。\n四个角上，各放着一个空的小碟子。');
               await S.think('（K婆婆写的规矩……再看一遍。）');
               await S.note('okite');
             }
@@ -997,7 +1104,7 @@
           { x: 14, y: 7, spr: 'gravestone', on: N('长满青苔的墓碑。字已经被风雨磨平了。') },
           { x: 16, y: 7, spr: 'gravestone', on: N('墓碑前供着一罐啤酒，还没打开。') },
           { x: 14, y: 9, spr: 'gravestone', on: N('一块很小的墓碑。上面只刻着「童子」两个字。') },
-          { id: 'graveT', x: 15, y: 9, spr: 'gravestone', flowers: true, on: N('「高野家之墓」\n侧面刻着一行行名字。最后一行是：\n昭和二十七年八月　俗名　清　行年十六\n\n墓前的花是新换的。') },
+          { id: 'graveT', x: 15, y: 9, spr: 'gravestone', flowers: true, on: N('「高野家之墓」\n侧面刻着一行行名字。最后一行是：\n昭和二十三年八月　俗名　清　行年十六\n\n墓前的花是新换的。') },
           { x: 16, y: 9, spr: 'gravestone', on: N('墓碑后面插着一排木牌，墨迹被雨水泡得发灰。') },
           ...[2, 3, 4].map(x => ({ x, y: 9, spr: 'jizo', col: '#c83a30', on: N('一排小小的地藏，戴着红围兜和红帽子。\n脚边摆着风车，一动不动。') })),
           { x: 6, y: 9, spr: 'well', on: N('洗手的石盆。竹勺子搁在边上，水面上漂着一片落叶。') },
@@ -1032,7 +1139,7 @@
   const hatX = (g, d, fr, G, R) => { R(0, G.hT + 1, 16, 1, HATC); R(4, G.hT - 3, 8, 3, HATC); R(4, G.hT, 8, 1, '#d9d1bc'); R(5, G.hT - 3, 2, 1, '#ffffff'); };
   defChapter({
     id: 'hasshaku', n: 2, title: '八尺大人', sub: '盛夏的乡下，树篱上方，一顶白色的宽檐帽慢慢走过。ぽ、ぽぽ、ぽ。', origin: '日本网络怪谈', color: '#3d5a3a',
-    icon: '@hachi', amb: 'wind', floor: 'tatami', wall: 'shoji', dark: .1, plr: 3.4,
+    icon: '@hachiI', amb: 'wind', floor: 'tatami', wall: 'shoji', dark: .1, plr: 3.4,
     people: {
       me: { key: 'shota', skin: '#f0c8a0', hair: '#1a1414', hs: 'short', top: '#f2f2ee', top2: '#d0d0c8', bottom: '#2a3448', shoes: '#e8e4dc' },
       jii: { skin: '#d6a47e', hair: '#c8c4c0', hs: 'bald', top: '#e8e4d8', top2: '#c8c0b0', bottom: '#8a8478', shoes: '#4a3a2a' },
@@ -1045,6 +1152,9 @@
       itoko: { skin: '#e0b48e', hair: '#2a2020', hs: 'messy', top: '#4a6a4a', bottom: '#2a2a3a', shoes: '#e8e8e8' },
       obaK: { skin: '#e0b898', hair: '#aaa6a2', hs: 'bun', top: '#4a5a6a', bottom: '#3a3a44', skirt: true, shoes: '#2a2a2a' },
       chichi: { skin: '#e8c09a', hair: '#1e1818', hs: 'short', top: '#e8e8e8', top2: '#2a3a6a', bottom: '#3a3a40', shoes: '#1a1a1a' },
+      /* 选章卡片：白帽子和那张脸，露在一道高高的树篱上面 */
+      hachiI: { key: 'hachi-card', skin: '#e7ded2', hair: '#0f0a0c', hs: 'long', top: '#ebe7dc', top2: '#ebe7dc', bottom: '#ebe7dc', robe: true, noFeet: true, eye: '#1a1214', mouth: '#8a3434', hat: 'straw', hatC: HATC,
+        extra(g, d, fr, G, R) { hatX(g, d, fr, G, R); R(0, 13, 16, 11, '#1f3a20'); R(0, 12, 16, 1, '#264526'); for (let i = 0; i < 14; i++) R((i * 7) % 15, 14 + (i * 5) % 9, 2, 1, i % 3 ? '#2b4d2a' : '#122412'); R(1, 11, 2, 1, '#264526'); R(9, 11, 3, 1, '#264526'); } },
       hachi: { key: 'hachi-icon', skin: '#e7ded2', hair: '#0f0a0c', hs: 'long', top: '#ebe7dc', top2: '#ebe7dc', bottom: '#ebe7dc', robe: true, noFeet: true, eye: '#1a1214', mouth: '#8a3434', hat: 'straw', hatC: HATC, extra: hatX },
       hachiF: { key: 'hachi-face', skin: '#ece4da', hair: '#0f0a0c', hs: 'long', top: '#ebe7dc', top2: '#ebe7dc', bottom: '#ebe7dc', robe: true, noFeet: true, eye: '#000000', hat: 'straw', hatC: HATC,
         extra(g, d, fr, G, R) { hatX(g, d, fr, G, R); if (d === 0) { R(4, G.hT + 6, 8, 1, '#3a0a0c'); R(5, G.hT + 7, 6, 1, '#7a1014'); R(3, G.hT + 5, 1, 1, '#3a0a0c'); R(12, G.hT + 5, 1, 1, '#3a0a0c'); R(6, G.hT + 4, 1, 1, '#ffffff'); R(9, G.hT + 4, 1, 1, '#ffffff'); } } }
@@ -1056,16 +1166,24 @@
       fudaH: { name: '最后一张护符', desc: '攥在手心里的护符。已经被汗浸得软塌塌的了。' }
     },
     notes: {
-      kakocho: { title: '寺的过去帐（摘抄）', text: '（K婆婆翻开一本发黄的册子，把其中几页指给你看。毛笔字，你只看得懂一半。）\n\n○ 享保年间　山中有异物。身长八尺，著白衣，戴笠。其笑声曰「ぽぽ」。好魅少年。\n　乡人难之，请游方僧于四方村界立地藏四尊，封之于境内。\n　北·山道口　东·村界　南·往町之道　西·河畔\n\n○ 文政八年夏　邻村 男子 十七\n　见白衣高女于篱上。三日而亡。\n\n○ 明治三十一年　（虫蛀，看不清）\n\n○ 昭和二十七年八月　高野 清　行年十六\n　篱上见白笠，闻ぽぽ之声。其夜闭居一室。翌朝同族护送出境，于车中开目。四日而亡。\n\n（最后一页的空白处，有人用铅笔写了一行小字：\n地藏有损，则封有隙。）' },
+      kakocho: { title: '寺的过去帐（摘抄）', text: '（K婆婆翻开一本发黄的册子，把其中几页指给你看。毛笔字，你只看得懂一半。）\n\n○ 享保年间　山中有异物。身长八尺，著白衣，戴笠。其笑声曰「ぽぽ」。好魅少年。\n　乡人难之，请游方僧于四方村界立地藏四尊，封之于境内。\n　北·山道口　东·村界　南·往町之道　西·河畔\n\n○ 文政八年夏　邻村 男子 十七\n　见白衣高女于篱上。三日而亡。\n\n○ 明治三十一年　（虫蛀，看不清）\n\n○ 昭和二十三年八月　高野 清　行年十六\n　篱上见白笠，闻ぽぽ之声。其夜闭居一室。翌朝同族护送出境，于车中开目。四日而亡。\n\n（最后一页的空白处，有人用铅笔写了一行小字：\n地藏有损，则封有隙。）' },
       keiji: { title: '村道口的告示板', text: '【村内告示】\n\n一、北山道塌方修复工程\n　工期：八月三日～八月二十日\n　期间有工程车辆出入山道口，请注意安全。\n\n二、盂兰盆法会\n　八月十三日至十六日，于寺内举行。\n\n三、近日有村民反映夜里听到奇怪的声响。\n　请各家关好门窗。\n\n村公所\n\n（告示的角落，有人用红笔歪歪扭扭地补了一句：\n小孩子不要去北边！）' },
       okite: { title: 'K婆婆写的规矩', text: '（K婆婆的字，写在一张草纸上，墨还没干透。）\n\n一、盐。屋子四个角，每个角一碟。\n　盐要是变了颜色，别碰它，也别怕。\n\n二、护符三张。窗上一张，门上一张。\n　最后一张攥在手里，到天亮都别松开。\n\n三、佛像放在木箱上。\n　地藏在哪一边碎了，它就从哪一边来。佛像的脸，要朝着那一边。\n\n四、门从里面插上。\n　早上七点以前，不管谁叫你，不管是什么声音，都不要应，不要开门。\n\n五、怕了，就对着佛像念经。南无阿弥陀佛。\n\n天亮以后的事，天亮了再说。' },
       tegami: { title: '奶奶的信', text: '翔太：\n\n好久没给你写信了。在城里还好吗？工作忙不忙？\n\n你爷爷走了以后，家里就剩我一个人了。亲戚们轮流来看我，你不用惦记。\n葬礼没让你回来，你别怪奶奶。K婆婆走之前一直念叨，说那孩子这辈子都不能再踏进这里一步。\n\n有件事，奶奶想了很久，还是跟你说一声。\n前些日子，邻村修公路，把东边村界的那尊地藏挪了个地方。\n挪走的那天晚上，好几户人家都说，听见了一个声音。\n\n你知道是什么声音。\n\n护符还带着吧？\n别回来。奶奶不想你。\n……奶奶骗你的。可你还是别回来。\n\n　　　　　　　　　　奶奶' }
     },
-    legend: '「八尺大人」（八尺様，Hasshaku-sama）出自日本网络论坛2ch的オカルト板。一般认为它最早发表于2008年8月，贴在「死ぬ程洒落にならない怖い話を集めてみない？」（收集真正吓人到笑不出来的故事）系列帖里：发帖人回忆高中时去乡下爷爷奶奶家过暑假，在院子里看见树篱上方有一顶白帽子移过去——树篱有两米多高，帽子底下是一个穿白连衣裙的女人，同时听到「ぽぽぽ」的奇怪声音。爷爷奶奶听了脸色大变，请来一位老婆婆，让他独自在一间窗户糊满报纸、贴着护符、四角放着盐、木箱上供着佛像的房间里过夜。夜里门外传来爷爷的声音叫他开门，他没有应；第二天早上，盐变成了黑色。之后，同一血脉的亲戚们围坐在一辆面包车里，把他夹在中间护送出村，路上那个声音一直跟着车，他被告诫绝对不能抬头睁眼。\n\n据帖中的说法，「八尺」（约两米四）是它的身高。它被认为只缠上年轻男性或男孩，被它「看上」的人几天之内就会死去；那一带的村子在边界的几个方向立着地藏，把它封在境内，因此只要逃出地藏围起来的范围就安全了，而当事人此后再也不能回到那里。故事的结尾，据说是多年之后，老家传来地藏被毁坏的消息。它的外貌在不同目击者口中并不一样——年轻女人、老妇人、穿丧服或和服——不变的只有异常的身高和「ぽぽぽ」的笑声。\n\n这个故事没有更早的民俗文献可考，一般认为是网络时代的原创怪谈，不过它借用了不少真实的乡间信仰：立在村界、守护村落不让灾厄进入的道祖神和地藏，驱邪的盛盐，以及「被叫名字不要随便应」的禁忌。它很快在日本网络上广泛流传，2010年代以后又以 Hachishakusama 之名传到海外，催生了大量同人画作和游戏改编，「高大的白衣女人」也因此成了一个颇有人气的形象。\n\n（本章中的高野翔太一家、K婆婆、村民，寺里的过去帐、昭和二十七年的往事，北边地藏被工程车撞碎、「叫全名才能睁眼」、门外假扮K婆婆和妈妈的声音，以及奶奶的信，均为游戏虚构。）',
+    legend: '「八尺大人」（八尺様，Hasshaku-sama）出自日本网络论坛2ch的オカルト板。一般认为它最早发表于2008年8月，贴在「死ぬ程洒落にならない怖い話を集めてみない？」（收集真正吓人到笑不出来的故事）系列帖里：发帖人回忆上高中时，骑摩托去乡下的爷爷奶奶家玩，在院子里看见树篱上方有一顶白帽子移过去——树篱有两米多高，帽子底下是一个穿白连衣裙的女人，同时听到「ぽぽぽ」的奇怪声音。爷爷奶奶听了脸色大变，请来一位老婆婆，让他独自在一间窗户糊满报纸、贴着护符、四角放着盐、木箱上供着佛像的房间里过夜。夜里门外传来爷爷的声音叫他开门，他没有应；第二天早上，盐变成了黑色。之后，同一血脉的亲戚们围坐在一辆面包车里，把他夹在中间护送出村，路上那个声音一直跟着车，他被告诫绝对不能抬头睁眼。也有转述提到，他在车上没忍住，偷偷往窗外瞥了一眼，只看见白色的衣服跟着车一起走。\n\n据帖中的说法，「八尺」（约两米四）是它的身高。它被认为只缠上年轻男性或男孩，被它「看上」的人几天之内就会死去；那一带的村子在边界的几个方向立着地藏，把它封在境内，因此只要逃出地藏围起来的范围就安全了，而当事人此后再也不能回到那里。故事的结尾，据说是多年之后，老家传来地藏被毁坏的消息。它的外貌在不同目击者口中并不一样——年轻女人、老妇人、穿丧服或和服——不变的只有异常的身高和「ぽぽぽ」的笑声。另一个常被提起的细节是，它会学人说话——夜里在门外叫他开门的，正是「爷爷」的声音。\n\n这个故事没有更早的民俗文献可考，一般认为是网络时代的原创怪谈，不过它借用了不少真实的乡间信仰：立在村界、守护村落不让灾厄进入的道祖神和地藏，驱邪的盛盐，以及「被叫名字不要随便应」的禁忌。它很快在日本网络上广泛流传，2010年代以后又以 Hachishakusama 之名传到海外，催生了大量同人画作和游戏改编，「高大的白衣女人」也因此成了一个颇有人气的形象。\n\n（本章中的高野翔太一家、K婆婆、村民，寺里的过去帐、昭和二十三年的往事，北边地藏被工程车撞碎、四尊地藏的方位，「叫全名才能睁眼」，门外假扮K婆婆和妈妈的声音，四点十分压在被子上的东西，车上爷爷捂住眼睛的一幕，以及奶奶的信，均为游戏虚构。）',
     start: { map: 'naka', x: 16, y: 5, dir: 0 },
+    faces: FACES,
+    endings: { home: '第二夜　完', glimpse: '白色的裙摆（隐藏）', eyes: '你睁开了眼睛', name: '不是他叫的' },
     resume: {
-      dusk: async S => { S.stop('hachiM'); S.hide('hachiM'); S.f.popo = 'far'; },
-      night: async S => { S.hidePlayer(false); S.f.hideEv = false; S.amb('night'); },
+      dusk: async S => { S.stop('hachiM'); S.hide('hachiM'); S.f.popo = 'far'; S.f.duskOn = false; },
+      run: async S => {   // 黄昏逃跑死了：直接在村道上重来，她回到杂货店门口
+        S.stop('hachiM'); S.place('hachiM', DUSK_X, DUSK_Y, 3); S.ent('hachiM').alpha = 1;
+        S.dark(.62); S.plr(3.6); S.amb('wind');
+        await S.think('（它堵在路口。它只走路——引开它，从杂货店后面的空地绕过去。）');
+        duskChase(S, 1.2);
+      },
+      night: async S => { burrow(S, false); S.f.hideEv = false; S.f.still = false; S.amb('night'); },
       morning: async S => { S.amb('wind'); },
       car: async S => { S.amb('wind'); }
     },
@@ -1075,7 +1193,7 @@
     },
     tick(S, dt) {
       const f = S.f; if (!f.popo || W.busy) return;
-      poT -= dt; if (poT <= 0) { poT = f.popo === 'near' ? 2.5 + Math.random() * 3 : 16 + Math.random() * 12; popoBg(S); }
+      poT -= dt; if (poT <= 0) { poT = f.popo === 'near' ? 2.5 + Math.random() * 3 : 16 + Math.random() * 12; popoBg(S, f.popo === 'near'); }
     },
     sprites: SPRITES,
     tiles: TILES,

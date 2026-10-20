@@ -3,12 +3,14 @@ SOL = [
     [],
     ['shot', 'train'],
     # 车厢：乘客 / 车窗 / 线路图 → 第三条线索后进站，选择下车
-    ['use', 'salary'], ['use', 'win12'], ['use', 'rmap', [0]],
+    ['use', [16, 1]], ['use', 'win4'],
+    ['use', 'salary'], ['use', 'rmap', [0]],
     ['expect', "window.__dbg.W.mapId === 'station'"],
     ['shot', 'station'],
     # 如月站：站名牌（发帖）、时刻表、传言板、售货机拿硬币、公用电话倒着拨
     ['use', 'ekimei'], ['use', 'jikoku'], ['use', 'dengon'], ['use', 'vend'],
     ['use', 'phoneS', [0, '1427']],
+    ['use', 'phoneS', [0, '5555']],
     ['use', 'phoneS', [0, '7241']],
     ['expect', 'window.__dbg.W.f.called'],
     ['shot', 'called'],
@@ -24,6 +26,9 @@ SOL = [
     ['use', 'hut', [0]],
     ['expect', "window.__dbg.W.f.phase === 'rails'"],
     ['shot', 'rails'],
+    # 无头地藏旁的拐杖（老爷爷的暗示）
+    ['use', 'jizo'],
+    ['expect', "window.__dbg.W.f._o_jizoBow"],
     ['step', 0, 4],
     # 隧道：第一遍回头 → 鬼打墙；第二遍不回头、不踩铁轨
     ['expect', "window.__dbg.W.mapId === 'tunnel'"],
@@ -38,6 +43,8 @@ SOL = [
     ['step', 19, 4, [2, 1, 1]],
     ['expect', 'window.__dbg.W.f.carDone'],
     ['use', 'view', [0]],
+    ['use', 'view', [1]],
+    ['expect', 'window.__dbg.W.f.viewWrong === 2'],
     ['use', 'view', [2]],
     ['expect', 'window.__dbg.W.f.lightOK'],
     ['shot', 'yama'],

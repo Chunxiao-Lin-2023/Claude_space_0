@@ -7,16 +7,30 @@
   const PAX = ['paxA', 'paxB', 'paxC', 'paxD', 'paxE', 'paxF', 'paxG'];
   const bx2 = (R, x, y, w, h, fill, edge) => { R(x, y, w, h, edge || shade(fill, -.45)); R(x + 1, y + 1, w - 2, h - 2, fill); };
   const KEYS = ['猿', '月', '終', '夢', '見', '点', '坂', '駅', '次'];
+  const KALIAS = Object.fromEntries(KEYS.map((k, i) => [String(i + 1), k]));   // 键盘数字 1–9 对应九个字
   const TILE_GR = (R, X, Y) => { R(0, 0, 16, 16, '#2a2630'); for (let i = 0; i < 10; i++) R((hash(X, Y, i) * 15) | 0, (hash(Y, X, i + 9) * 15) | 0, 2, 1, i % 2 ? '#3a3540' : '#1e1a22'); };
+  const T3 = 90;   // 第三夜：小人走到你面前的时间（秒）
+  /* 第一夜的站台：看了站名牌/钟，或者随便看了三样东西，车就进站（不会因为没看「对」的东西而干等） */
+  async function look(S) { if (S.f.n === 1 && !S.f.arrived && (S.f.lk = (S.f.lk || 0) + 1) >= 3) return trainArrive(S); }
+  function sn(txt) { return async S => { await S.narr(txt); return look(S); }; }
 
   /* 每一夜的「行刑」顺序：广播报到谁，倒计时多少秒 */
   const STEPS = {
-    1: [{ id: 'paxB', x: 7, y: 4, w: '挖眼', k: 'eye', sec: 45 }, { you: true, sec: 40 }],
-    2: [{ id: 'paxC', x: 7, y: 2, w: '绞肉', k: 'mince', sec: 55 }, { you: true, sec: 40 }],
-    3: [{ you: true, sec: 110 }]
+    1: [{ id: 'paxB', x: 7, y: 4, w: '挖眼', k: 'eye', sec: 45 }, { you: true, w: '绞肉', sec: 40 }],
+    2: [{ id: 'paxC', x: 7, y: 2, w: '绞肉', k: 'mince', sec: 50, ann: ['上一次……有人逃掉了呢。', '逃掉的那一份，就请后面这位先生，先替一下吧。'] }, { you: true, sec: 40 }],
+    3: [{ you: true, sec: T3 }]
   };
   const NEED = { 1: 2, 2: 3 };   // 醒来需要的「这是梦」证据数
   const cur = S => (STEPS[S.f.n] || [])[S.f.ei || 0];
+
+  /* ---------- 声音：站内广播的「叮咚」四音（S.tone 合成，双方都听得到）、绞肉机的嗡鸣 ---------- */
+  function chime(S, down) {   // 上行 = 广播开始；下行 = 广播结束。tone 自带 ±4% 的随机走音，听起来像一台老旧的喇叭
+    const f = [659, 831, 988, 1319]; (down ? f.slice().reverse() : f).forEach((x, i) => S.tone('sine', x, x * .995, .6, .07, i * .17, 2600));
+  }
+  function grind(S, n = 4, vol = .1) {   // 绞肉机：低沉的锯齿波，一阵一阵
+    for (let i = 0; i < n; i++) { S.tone('sawtooth', 52, 64, .42, vol, i * .5, 420); S.tone('square', 104, 92, .42, vol * .35, i * .5 + .05, 700); }
+  }
+  /* 关键抉择都用 S.vote：双人时两人各选一次（单人时等同 ask），意见不合时各处写了不同的分支 */
 
   /* ---------- 行刑场面：只有广播、声音、黑暗和剪影 ---------- */
   const SCENE = {
@@ -33,8 +47,8 @@
       post: '尖叫停了。\n灯亮的时候，倒数第二排的座位上，只剩一条叠得整整齐齐的紫色围巾。'
     },
     mince: {
-      pre: '小人们推来了一台东西。铁做的，一个大漏斗，一根摇柄。\n你认得它。小时候，奶奶家的厨房里也有一台——过年包饺子的时候用。',
-      async dark(S) { for (let i = 0; i < 4; i++) { S.sfx('car'); S.shake(300, 1); await S.wait(520); } S.sfx('scream'); await S.wait(800); for (let i = 0; i < 5; i++) { S.sfx('car'); await S.wait(480); } S.sfx('thud'); },
+      pre: '小人们又推来了那台铁做的机器。大漏斗，摇柄。\n它没有停在你面前——它停在了你身后，那个老人的座位旁边。\n老人还是直直地看着前方。他的嘴唇在动：「下一个，下一个……」',
+      async dark(S) { S.ent('mincer').s.run = true; for (let i = 0; i < 4; i++) { grind(S, 1, .12); S.sfx('car'); S.shake(300, 1); await S.wait(520); } S.sfx('scream'); await S.wait(800); for (let i = 0; i < 5; i++) { grind(S, 1, .1); await S.wait(480); } S.sfx('thud'); S.ent('mincer').s.run = false; },
       mid: '（嗡——嗡——嗡——\n摇柄转起来了。一开始还有人在喊，后来，就只剩下机器的声音。\n它响了很久，很久，很久。）',
       post: '机器停了。你身后那一排，空了。\n空气里有一股生铁的味道。'
     }
@@ -42,7 +56,8 @@
 
   async function execScene(S, st) {
     const D = SCENE[st.k];
-    S.sfx('ding'); await S.wait(300);
+    chime(S); await S.wait(700);
+    if (st.ann) await S.say('车内广播', st.ann, { style: 'whisper' });
     await S.say('车内广播', [`下一个是——「${st.w}」。`, `${st.w}——${st.w}——`]);
     if (S.map !== 'train') {   // 你不在车厢里：只听得见
       S.sfx('scream'); S.shake(500, 2); await S.wait(600);
@@ -51,6 +66,7 @@
       return;
     }
     S.place('kobA', st.x, AISLE, st.y < AISLE ? 3 : 0); S.place('kobB', st.x - 1, AISLE, 2);
+    if (st.k === 'mince') S.place('mincer', st.x + 1, AISLE);
     S.focus(st.x, 3);
     S.sfx('heart'); await S.narr(D.pre);
     S.place('xl', st.x, st.y); S.ent('xl').hidden = false;
@@ -71,19 +87,26 @@
   function startExec(S) {
     const st = cur(S); if (!st) return;
     S.f.ph = 'exec';
-    S.timer(st.sec, st.you ? (S.f.n === 3 ? '它们来了' : '下一个……是你') : '下一个', execStep);
+    S.timer(st.sec, st.you ? (S.f.n === 3 ? '它们来了' : st.w ? `${st.w}……是你` : '下一个……是你') : '下一个', execStep);
   }
   async function execStep(S) {
     const st = cur(S); if (!st) return;
     if (st.you) return yourTurn(S);
     await execScene(S, st);
     S.f.ei = (S.f.ei || 0) + 1; S.f.kx = st.x;
-    if (cur(S) && cur(S).you && S.f.n === 1) {
+    if (cur(S) && cur(S).you && S.f.n === 1) {   // 原帖的顺序：活造り、挖眼，然后「绞肉」——轮到讲述者自己
+      chime(S); await S.wait(700);
+      await S.say('车内广播', ['下一个是——「绞肉」。', '绞肉——绞肉——']);
+      S.f.kx = PS[0] - 1; resetKob(S); S.place('mincer', PS[0], AISLE); S.face('kobA', 'pl');
+      S.sfx('heart'); grind(S, 2, .06);
+      await S.narr('小人们推来了一台东西。铁做的，一个大漏斗，一根摇柄。\n你认得它。小时候，奶奶家的厨房里也有一台——过年包饺子的时候用。');
+      await S.narr('机器停在了你的座位旁边。');
       await S.think('后面……已经没有人了。\n下一个，是我。');
     }
     if (cur(S) && cur(S).you && S.f.n === 2) {
       await S.say('车内广播', '下一个是——', { style: 'whisper' });
-      await S.narr('广播停住了。像是故意的。\n两个小人转过身来，看着你。');
+      S.f.kx = PS[0] - 1; resetKob(S); S.place('mincer', PS[0], AISLE); S.face('kobA', 'pl');
+      await S.narr('广播停住了。像是故意的。\n两个小人把机器推到你的座位旁边，转过身来，看着你。');
     }
     startExec(S);
   }
@@ -93,25 +116,35 @@
     S.ent('kobA').alpha = 1; S.ent('kobB').alpha = 1;
     S.hide('xl');
   }
+  /* 把两个小人放到玩家身边（被「报到」的那一刻，它们一定就在你面前） */
+  function kobsAtYou(S) {
+    const m = curMap(), p = S.pl, a = S.ent('kobA');
+    const c = [[p.x - 1, p.y], [p.x, p.y + 1], [p.x, p.y - 1], [p.x + 1, p.y], [p.x - 1, p.y + 1], [p.x - 1, p.y - 1], [p.x + 1, p.y + 1]].filter(([x, y]) => passable(m, x, y, a));
+    const [x1, y1] = c[0] || [p.x, p.y], [x2, y2] = c[1] || c[0] || [p.x, p.y];
+    S.place('kobA', x1, y1); S.place('kobB', x2, y2); S.face('kobA', 'pl'); S.face('kobB', 'pl'); S.face('pl', 'kobA');
+  }
 
   async function yourTurn(S) {
     S.clearTimer(); S.f.ph = 'caught';
-    S.sfx('ding');
-    await S.say('车内广播', '下一个是——', { style: 'big' });
+    const n = S.f.n;
+    chime(S); await S.wait(600);
+    if (S.map === 'train') kobsAtYou(S);
+    else if (S.map === 'cab') { S.ent('cback').open = true; S.sfx('open'); }
+    await S.say('车内广播', n === 1 ? '下一个是——「绞肉」。' : '下一个是——', { style: 'big' });
     S.dark(.99); S.plr(.3);
     await S.wait(700);
-    await S.narr('两个小人站在你面前，歪着头，抬起脸看你。\n它们的脸……是猴子的脸。');
+    await S.narr(S.map === 'cab' ? '驾驶室的门，自己开了。\n两个小人站在门口，歪着头，抬起脸看你。它们的脸……是猴子的脸。' : '两个小人站在你面前，歪着头，抬起脸看你。\n它们的脸……是猴子的脸。');
     await S.scare('face', { spr: '@kobA', dur: 1.1 });
-    if (S.f.n === 3) return badEnd(S, false);
     S.dark(null); S.plr(null);
-    await S.die('广播里那个尖细的声音，报出了一个你听不清的词。\n你拼命想着「这是梦」——可是太晚了。\n\n你没能醒过来。', '轮到你了');
+    if (n === 3) return S.die('「说好了的，这是最后一次。」\n一只小小的、冰凉的手，搭上了你的膝盖。\n\n这一次，你连「这是梦」都没来得及想。', '轮到你了');
+    await S.die(n === 1 ? '一个小人爬上了你的膝盖。机器的摇柄，「嘎吱」一声转了起来。\n你拼命想着「这是梦」——可是太晚了。\n\n你没能醒过来。' : '广播里那个尖细的声音，报出了一个你听不清的词。\n你拼命想着「这是梦」——可是太晚了。\n\n你没能醒过来。', '轮到你了');
   }
 
   /* ---------- 「这是梦」的证据 ---------- */
   function evGoal(S) {
     const n = S.f.n, c = S.f.evc || 0;
     if (n === 1) return `找出「这是梦」的证据（${c}/2）`;
-    if (n === 2) return S.f.ph === 'station' ? (c >= 2 ? '上车（还差一个证据）' : `找出「这是梦」的证据（${c}/3）——就在站台上`) : '最后一个证据——书上的第四条：数手指（在自己座位上调查）';
+    if (n === 2) return S.f.ph === 'station' ? (c >= 2 ? '上车（还差一个证据）' : `找出「这是梦」的证据（${c}/3）——就在站台上`) : '最后一个证据——《清醒梦入门》上的第四条（坐回自己的座位）';
     return '';
   }
   async function ev(S, key) {
@@ -126,45 +159,70 @@
   }
   async function wakeChoice(S) {
     S.f.canWake = true;
-    await S.think(S.f.n === 1 ? ['钟会乱走。字会自己变。影子不听自己的话……', '这不是真的。这是梦。'] : ['这一次，我知道了。', '这是梦。']);
-    const r = await S.ask('（这是梦。）', ['这是梦——醒过来！', '……再等等']);
-    if (r) { S.goal('醒过来（调查自己的座位）'); return; }
+    const seen = S.f.n === 1 ? [S.f.ev1_clock && '钟会乱走。', S.f.ev1_ad && '字会自己变。', S.f.ev1_win && '车窗里的我，没有脸。'].filter(Boolean).join('') + '……' : '';
+    await S.think(S.f.n === 1 ? [seen, '这不是真的。这是梦。'] : ['这一次，我知道了。', '这是梦。']);
+    const r = await S.vote('（这是梦。）', ['这是梦——醒过来！', '……再等等']);
+    if (!r.agree) {   // 两个人里只要有一个喊「醒过来」，就醒
+      await S.narr('你心里有两个声音。一个说「再等等，再看清楚一点」——\n另一个，喊得比它大声得多。');
+      return wakeUp(S);
+    }
+    if (r.v) { S.goal('醒过来（调查自己的座位）'); return; }
     return wakeUp(S);
   }
   async function wakeUp(S) {
     const n = S.f.n;
     S.clearTimer(); S.f.ph = 'wake'; S.f.canWake = false; S.f.moving = false;
+    if (n === 1) { S.ent('mincer').s.run = true; grind(S, 3, .1); }
     await S.say('', ['这是梦。', '这是梦。这是梦。这是梦——', '醒过来！！'], { style: 'big' });
+    if (n === 1) await S.narr('机器的声音越来越近，越来越响。\n你感觉到脸上吹过一阵风——');
     S.sfx('heart'); S.shake(600, 2);
     if (n === 2) {
       S.dark(.99); S.plr(.3);
       await S.wait(600);
-      S.sfx('ding');
+      chime(S, true); await S.wait(500);
       await S.say('车内广播', ['哎呀——', '又要逃走了吗？', '……下次再来的时候，就是最后一次了哦。'], { style: 'whisper' });
       S.sfx('giggle');
     }
     S.fx('flash');
-    S.hide('kobA'); S.hide('kobB'); S.hide('xl'); S.dark(null); S.plr(null);
+    S.ent('mincer').s.run = false;
+    S.hide('kobA'); S.hide('kobB'); S.hide('xl'); S.hide('mincer'); S.dark(null); S.plr(null);
     S.f.day = n + 1; S.f.ph = 'day';
     await S.go('room', 2, 3, 1, { ms: 800 });
   }
 
-  /* ---------- 坏结局 ---------- */
-  async function badEnd(S, eyes) {
+  /* ---------- 坏结局（只留给主动的选择；时间到了是死亡重来） ---------- */
+  async function badEnd(S, kind) {
     S.clearTimer(); S.f.ph = 'bad';
-    if (eyes) await S.narr('你闭上了眼睛。\n……只要不看，就不会发生。只要不看——');
-    await S.fade(1, 900);
-    S.sfx('ding');
-    await S.say('车内广播', '下一个是——', { style: 'whisper' });
-    await S.wait(900); S.sfx('cut'); await S.wait(260); S.sfx('cut'); await S.wait(600); S.sfx('giggle');
-    await S.wait(900);
-    await S.say('车内广播', ['……终点站，到了。', '感谢您的乘坐。'], { style: 'whisper' });
-    return S.end({ bad: true, title: '没有醒来', text: '第二天早上，美穗打了十一个电话，没有人接。\n\n那个帖子底下，后来多了一条回复，没有名字：\n「下一个是——」\n\n后面的字，再也没有人打完。' });
+    if (kind === 'eyes') {
+      await S.narr('你闭上了眼睛。\n……只要不看，就不会发生。只要不看——');
+      await S.fade(1, 900);
+      chime(S); await S.wait(600);
+      await S.say('车内广播', '下一个是——', { style: 'whisper' });
+      await S.wait(900); S.sfx('cut'); await S.wait(260); S.sfx('cut'); await S.wait(600); S.sfx('giggle');
+      await S.wait(900);
+      chime(S, true);
+      await S.say('车内广播', ['……终点站，到了。', '感谢您的乘坐。'], { style: 'whisper' });
+      return S.end({ bad: true, id: 'eyes', title: '闭上眼睛', text: '第二天早上，美穗打了十一个电话，没有人接。\n\n那个帖子底下，后来多了一条回复，没有名字：\n「下一个是——」\n\n后面的字，再也没有人打完。' });
+    }
+    await S.fade(1, 1200);
+    S.sfx('bell'); await S.wait(500); S.sfx('bell'); await S.wait(500); S.sfx('bell');
+    await S.narr('小火车慢了下来。\n一个没有灯的站台，从黑暗里滑了过来。站名牌上写着两个字：「終点」。');
+    chime(S, true);
+    await S.say('车内广播', ['终点站，到了。', '请全体乘客……下车。'], { style: 'whisper' });
+    return S.end({ bad: true, id: 'terminal', title: '终点站', text: '第二天中午，房东打开了真弓的房门。\n她躺在被褥里，表情很安详。像是坐车坐到了终点，睡着了。\n\n诊断书上写的是：心脏麻痹。\n\n——在这边，是心脏麻痹。\n　在那边……' });
   }
 
+  /* 小人：披着破布兜帽的猴脸小人（原帖里「穿着破布的小人」） */
   const kobFace = c => function (g, d, fr, G, R) {
-    if (d === 0) { R(3, G.hT + 1, 1, 3, c); R(12, G.hT + 1, 1, 3, c); R(5, G.hT + 3, 6, 4, '#d8b898'); R(6, G.hT + 4, 1, 1, '#c01818'); R(9, G.hT + 4, 1, 1, '#c01818'); R(7, G.hT + 6, 2, 1, '#3a0808'); }
-    else if (d === 1) { R(4, G.hT + 3, 3, 4, '#d8b898'); R(5, G.hT + 4, 1, 1, '#c01818'); R(10, G.hT + 1, 2, 3, c); }
+    const rag = '#2a221c';
+    if (d === 0) {
+      R(2, G.hT + 2, 2, 3, c); R(12, G.hT + 2, 2, 3, c); R(2, G.hT + 3, 1, 1, '#d88a7a'); R(13, G.hT + 3, 1, 1, '#d88a7a');   // 从兜帽两边支出来的耳朵
+      R(5, G.hT + 2, 6, 5, '#c87262'); R(6, G.hT + 5, 4, 2, '#e0a890');   // 红脸、浅色的口鼻
+      R(6, G.hT + 3, 1, 1, '#ff2a1a'); R(9, G.hT + 3, 1, 1, '#ff2a1a'); R(5, G.hT + 2, 6, 1, '#7a3a2a');
+      R(6, G.hT + 6, 4, 1, '#3a0808'); R(7, G.hT + 6, 1, 1, '#e8e0d0'); R(9, G.hT + 6, 1, 1, '#e8e0d0');
+    } else if (d === 1) { R(4, G.hT + 2, 3, 5, '#c87262'); R(3, G.hT + 5, 3, 2, '#e0a890'); R(4, G.hT + 3, 1, 1, '#ff2a1a'); R(10, G.hT + 2, 2, 3, c); }
+    for (const x of [3, 6, 9, 12]) R(x, 20 + ((x * 7) % 3 === 0 ? 1 : 0), 1, 2, rag);   // 破破烂烂的下摆
+    if (d !== 3) { R(4, G.tT + 2, 1, 3, rag); R(10, G.tT + 4, 2, 1, rag); }
   };
 
   defChapter({
@@ -179,41 +237,68 @@
       paxE: { skin: '#d8ccc2', hair: '#2a1a14', hs: 'bun', top: '#4a5a6a', bottom: '#4a5a6a', skirt: true, eye: '#3a3438' },
       paxF: { skin: '#d2c4b6', hair: '#b8b4ae', hs: 'bun', top: '#5a4a3a', bottom: '#3a2e26', skirt: true, eye: '#3a3438' },
       paxG: { skin: '#d4cac0', hair: '#4a3020', hs: 'messy', top: '#7a3a3a', bottom: '#2a3048', eye: '#3a3438', key: 'saru-hp', extra(g, d, fr, G, R) { if (d === 0) { R(3, G.hT + 3, 1, 3, '#222'); R(12, G.hT + 3, 1, 3, '#222'); R(3, G.hT - 1, 10, 1, '#222'); } else if (d === 1) R(8, G.hT + 3, 2, 3, '#222'); } },
-      kobA: { key: 'saru-kobA', child: true, skin: '#a8826a', hair: '#4a3020', hs: 'messy', top: '#5a4a3a', top2: '#3a2a20', bottom: '#4a3a2a', robe: true, shoes: '#2a1a10', eye: '#c01818', extra: kobFace('#a8826a') },
-      kobB: { key: 'saru-kobB', child: true, skin: '#9a7a62', hair: '#3a2418', hs: 'messy', top: '#4a4038', top2: '#2a2018', bottom: '#3a3028', robe: true, shoes: '#2a1a10', eye: '#c01818', extra: kobFace('#9a7a62') }
+      kobA: { key: 'saru-kobA', child: true, skin: '#c87262', hair: '#4a3020', hs: 'messy', top: '#4a4036', top2: '#2a2018', bottom: '#4a3a2a', robe: true, shoes: '#2a1a10', eye: '#ff2a1a', hat: 'hood', hatC: '#3e352c', extra: kobFace('#b86a5a') },
+      kobB: { key: 'saru-kobB', child: true, skin: '#b86656', hair: '#3a2418', hs: 'messy', top: '#3e3a34', top2: '#2a2018', bottom: '#3a3028', robe: true, shoes: '#2a1a10', eye: '#ff2a1a', hat: 'hood', hatC: '#34302a', extra: kobFace('#a85e50') }
     },
+    /* 惊吓大头像（32×32）：破布兜帽里的猴脸——红脸、深眼窝里针尖似的红瞳、越咧越大的尖牙嘴；车窗里没有脸的「你」 */
+    faces: {
+      kobA(R, a) {
+        const C = '#3a3028', C2 = '#55463a', C3 = '#1e1814', FUR = '#4a2e1c', SK = '#c66656', SK2 = '#943e34', MZ = '#e4ac92', K = '#120606';
+        R(9, 0, 14, 2, C); R(6, 2, 20, 3, C); R(4, 5, 24, 22, C); R(2, 22, 28, 10, C);   // 破布兜帽
+        for (const [x, h] of [[2, 3], [6, 2], [11, 4], [17, 2], [22, 3], [27, 4]]) R(x, 32 - h, 2, h, C3);   // 下摆的破口
+        R(6, 4, 2, 12, C2); R(24, 6, 2, 10, C2); R(11, 1, 4, 1, C2); R(3, 24, 1, 6, C2); R(28, 23, 1, 6, C2);
+        R(2, 11, 5, 7, SK2); R(3, 12, 3, 5, SK); R(25, 11, 5, 7, SK2); R(26, 12, 3, 5, SK);   // 从兜帽两边支出来的大耳朵
+        R(8, 6, 16, 20, FUR); R(7, 9, 1, 14, FUR); R(24, 9, 1, 14, FUR);
+        R(10, 7, 12, 1, SK); R(9, 8, 14, 16, SK); R(10, 24, 12, 1, SK);
+        R(9, 9, 14, 3, SK2); R(10, 12, 1, 1, SK2); R(21, 12, 1, 1, SK2);   // 皱巴巴的眉骨
+        const open = a < .2 ? 1 : 3;
+        R(10, 12, 5, 4, K); R(17, 12, 5, 4, K);
+        R(12, 14 - (open >> 1), 2, open, '#ff2a1a'); R(18, 14 - (open >> 1), 2, open, '#ff2a1a'); R(12, 13, 1, 1, '#ffd0c0'); R(18, 13, 1, 1, '#ffd0c0');
+        R(11, 17, 10, 7, MZ); R(14, 18, 1, 2, K); R(17, 18, 1, 2, K);   // 口鼻
+        R(9, 16, 2, 1, SK2); R(21, 16, 2, 1, SK2); R(9, 20, 1, 2, SK2); R(22, 20, 1, 2, SK2);
+        const mw = 6 + Math.round(a * 6), mh = 1 + Math.round(a * 3), mx = 16 - (mw >> 1);
+        R(mx, 21, mw, mh, '#2a0606');
+        for (let x = mx; x < mx + mw; x += 2) { R(x, 21, 1, 1 + (x % 4 === 0 ? 1 : 0), '#f0e6d0'); if (mh > 2) R(x + 1, 20 + mh, 1, 1, '#f0e6d0'); }
+      },
+      noface(R, a) {
+        R(0, 0, 32, 32, '#2a1e2a'); R(2, 2, 28, 28, '#06040a');   // 车窗框和外面的黑暗
+        R(3 + Math.round(a * 20), 4, 3, 22, 'rgba(255,200,140,.18)');   // 隧道的灯掠过
+        const H = '#2a1e1c', SK = '#d8b8a4', SK2 = '#b8988a';
+        R(8, 5, 16, 6, H); R(6, 8, 20, 15, H); R(6, 23, 5, 5, H); R(21, 23, 5, 5, H);   // 齐肩短发
+        R(10, 10, 12, 1, SK); R(9, 11, 14, 12, SK); R(10, 23, 12, 2, SK); R(12, 25, 8, 1, SK);
+        R(20, 11, 2, 13, SK2); R(18, 24, 2, 1, SK2);
+        R(9, 9, 14, 3, H); R(9, 12, 2, 4, H);   // 刘海——下面什么都没有
+        if (a > .5) R(15, 18, 2, 1, SK2);   // 光滑的皮肤上，只有一点点起伏
+        R(11, 27, 10, 5, '#b8a0b8'); R(14, 27, 4, 2, '#e8e0e0');
+        R(2, 2, 28, 1, 'rgba(255,255,255,.08)');
+      }
+    },
+    endings: { good: '見月坂', girl: '两个人的站台', eyes: '闭上眼睛', terminal: '终点站' },
     items: {
       pass: { name: '定期券', desc: '电车月票。「見月坂 ⇄ 大学前」。每天早上七点四十二分，你都在見月坂站的二号站台等车。' },
-      diary: { name: '梦日记', desc: '你开始记的梦日记。第一页写着：「车头是猴子。我坐在后面数第三排。」' }
+      diary: { name: '梦日记', desc: '你开始记的梦日记。第一页写着：「车头是猴子。我坐在后面数第三排。」' },
+      ribbon: { name: '红领结', desc: '穿水手服的女孩留下的领结。背面用圆珠笔写着：「它没有站。所以它不停。对着广播，说出你自己的车站。」' }
     },
     notes: {
-      post: { title: '你发的帖子 · 2000年5月', text: '【超常现象板】说说我做的一个梦\n\n我在一个很暗的小车站里。站台上一个人也没有。\n广播响了，是个没精神的男人声音：\n「电车马上就要进站了。乘上去的话，会很恐怖哦。」\n\n来的是游乐园里那种小火车，车头画成猴子的样子。乘客都坐着，一个个面无表情。\n我坐在从后面数第三排。\n\n车开动以后，广播又说：「下一个是活造り。」\n后面传来惨叫。我回头，看见几个小人围着最后一排的男人……我不敢写下去。\n然后是「下一个是挖眼。」\n\n我心里想：这是梦，这一定是梦。拼命地想，然后就醒了。\n\n……醒了以后我才发现，那时候我坐的位置，再往后，已经没有人了。' },
-      book: { title: '《清醒梦入门》第三章', text: '◆ 现实检验（Reality Check）\n\n梦里的世界经不起「看第二遍」。养成习惯，在梦里也会下意识地去做：\n\n一、看钟。移开视线，再看一次。梦里的指针往往会乱跳、倒转，或者数字不对。\n二、读字。读一行字，移开眼睛，再读一次。梦里的字会变。\n三、照镜子。梦里的镜像常常迟钝、模糊，或者干脆没有。\n四、数手指。\n\n◆ 一旦确信「这是梦」\n大多数人会在这一瞬间醒来。练习得当的人，则可以留在梦里，甚至改变梦。\n\n（书页空白处，有你用铅笔写的字：\n钟、字、镜子。别忘了。）' },
-      reply: { title: '帖子的回复（节选）', text: '2：好可怕。你还记得广播的声音吗？\n5：我小时候也做过很像的梦。车头是猴子。我当时是从前面数的第二排，醒过来了。\n9：活造り、挖眼、下一个是什么……别写了别写了\n14：听说这种梦会传染。看了帖子的人，也会梦见那辆车。\n18：楼主，再梦到的话千万别等，马上醒。\n23：（楼主）我又梦到了。接着上次的。这次是绞肉。然后广播说「又要逃走了吗？下次再来就是最后一次了」\n24：……\n31：我奶奶说过：梦里的车，只有到站才肯停。它不停，是因为没人告诉它「下一站」是哪儿。\n32：＞31 什么意思？\n33：＞32 抢在它前面广播啊。报一个真实存在的、你每天都去的车站。那辆车没有自己的站，它只能停在你给它的站。\n34：＞33 编的吧\n35：（楼主）……我试试。' },
+      post: { title: '你发的帖子 · 2000年5月', text: '【超常现象板】说说我做的一个梦\n\n我在一个很暗的小车站里。站台上一个人也没有。\n广播响了，是个没精神的男人声音：\n「电车马上就要进站了。乘上去的话，会很恐怖哦。」\n\n来的是游乐园里那种小火车，车头画成猴子的样子。乘客都坐着，一个个面无表情。\n我坐在从后面数第三排。\n\n车开动以后，广播又说：「下一个是活造り。」\n后面传来惨叫。我回头，看见几个披着破布的小人围着最后一排的男人……我不敢写下去。\n然后是「下一个是挖眼。」小人手里拿着勺子一样的东西。\n\n然后广播说：「下一个是绞肉。」\n我后面，已经没有人了。小人推来一台机器，停在我的座位旁边。\n\n我心里想：这是梦，这一定是梦。拼命地想。\n机器的声音越来越近，脸上感觉到一阵风——然后就醒了。\n\n醒来的时候，枕头湿了一大片。' },
+      book: { title: '《清醒梦入门》第三章', text: '◆ 现实检验（Reality Check）\n\n梦里的世界经不起「看第二遍」。养成习惯，在梦里也会下意识地去做：\n\n一、看钟。移开视线，再看一次。梦里的指针往往会乱跳、倒转，或者数字不对。\n二、读字。读一行字，移开眼睛，再读一次。梦里的字会变。\n三、照镜子。梦里的镜像常常迟钝、模糊，或者干脆没有。\n四、数手指。梦里的手，手指的数目常常不对。\n\n◆ 一旦确信「这是梦」\n大多数人会在这一瞬间醒来。练习得当的人，则可以留在梦里，甚至改变梦。\n\n（书页空白处，有你用铅笔写的字：\n钟、字、镜子。别忘了。）' },
+      reply: { title: '帖子的回复（节选）', text: '2：好可怕。你还记得广播的声音吗？\n5：我小时候也做过很像的梦。车头是猴子。我当时是从前面数的第二排，醒过来了。\n9：活造り、挖眼、绞肉……别写了别写了\n14：听说这种梦会传染。看了帖子的人，也会梦见那辆车。\n18：楼主，再梦到的话千万别等，马上醒。\n23：（楼主）我又梦到了。接着上次的。还是绞肉——这次，坐我后面的老人替我……然后广播说「又要逃走了吗？下次再来就是最后一次了」\n24：……\n27：我看过一个说法：在这个梦里没醒过来的人，这边的死因写的是心脏麻痹。\n　　可是在那边，是绞肉。\n28：别说了！！\n31：我奶奶说过：梦里的车，只有到站才肯停。它不停，是因为没人告诉它「下一站」是哪儿。\n32：＞31 什么意思？\n33：＞32 抢在它前面广播啊。报一个真实存在的、你每天都去的车站。那辆车没有自己的站，它只能停在你给它的站。\n34：＞33 编的吧\n35：（楼主）……我试试。' },
       route: { title: '驾驶室里的路线图', text: '一张褪色的游乐园路线图。小火车的线路画成一个圈，绕着「猿梦乐园」转。\n\n站名一个一个写在圈上：\n\n　猿梦　→　活造り　→　挖眼　→　绞肉\n　→　□□　→　□□　→　……　→　终点\n\n后面的站名被人用红笔一个一个涂掉了。\n只有「终点」两个字没有涂。\n\n角落里印着一行小字：\n「本列车不设停车站。如需下车，请向广播申报站名。」' }
     },
-    legend: '「猿梦」（さるゆめ）是日本网络时代最有名的怪谈之一，据说在2000年前后发表在大型匿名论坛「2ちゃんねる」的超常现象板上。发帖人以第一人称讲述自己做过的一个梦：在一个昏暗的无人小站里，广播用没精神的声音说「电车马上就要进站了，乘上去的话会很恐怖哦」；驶来的是游乐园里那种小火车，乘客们面无表情地坐着。车开动后，广播依次报出「活造り」「挖眼」，身后的乘客被一群小人一个一个「处理」掉，发帖人拼命想着「这是梦」，在轮到自己之前醒了过来。\n\n故事的后半部分让它真正流传开来：据说过了一段时间，发帖人再次梦见同一辆车，而且是「接着上次的」。这一次广播报的是「绞肉」，轮到自己之前又一次醒来，耳边却留下一句「又要逃走了吗？下次再来的时候就是最后一次了」。帖子在这里结束，发帖人后来怎样，没有人知道。有一种说法认为后续是别人补写的；也有人声称自己读完帖子以后梦见了同一辆车，于是「看过的人也会梦到」成了这个故事最常见的附加规则。\n\n「猿梦」这个名字，据说来自车头被画成猴子模样的小火车（也有版本称之为「猿电车」）。它常被拿来和「如月车站」等「异界列车」怪谈相提并论：同样的实况式口吻，同样无法验证的细节。而「意识到是梦就能醒来」的情节，与清醒梦里的现实检验非常相似，许多人把它当作最朴素的破解法。至于处刑的种类与顺序，各种转述并不完全一致。\n\n（本章中主角真弓、朋友美穗、穿水手服的女孩、「见月坂」站、驾驶室与路线图，以及「抢先广播站名让列车停靠」的破解方法，均为游戏虚构。）',
+    legend: '「猿梦」（さるゆめ）是日本网络时代最有名的怪谈之一。据说它最早是1999年前后投稿到个人怪谈网站上的一篇《恐怖的广播》（恐怖のアナウンス），2000年夏天被转贴到大型匿名论坛「2ちゃんねる」超常现象板的怪谈串里，之后才以「猿梦」这个标题流传开来。讲述者以第一人称说自己做过的一个梦：在一个昏暗的无人小站里，广播说「电车马上就要来了，坐上去的话，你会遇到可怕的事哦」；驶来的是游乐园里那种猴子小火车，乘客们面无表情地坐着，他坐在从后面数第三个位子。\n\n车开动后，广播一个一个地报：「下一个是活造り」——最后面的男人被几个披着破布的小人像片活鱼一样剖开；「下一个是挖眼」——他正后方的长发女人被小人用勺子一样的东西挖出眼睛；「下一个是绞肉」——轮到他自己，小人带着机器爬上他的膝盖。他闭上眼睛拼命想「这是梦，快醒过来」，在越来越近的机器声和吹到脸上的风里醒了过来。原帖说，几年以后他又做了同一个梦，「接着上次的」，又一次在绞肉机前醒来，耳边留下一句「又要逃走了吗？下次再来的时候，就是最后一次了哦」——他坚信这句话是在醒着的房间里听见的。\n\n流传中加上去的东西更多：不少转述在结尾补了一句「在这边是心脏麻痹，在那边就是绞肉」；「看过这个故事的人也会梦见那辆车」成了最常见的附加规则，也有人说它会在你主动去查它的时候找上门。处刑的种类、顺序和人数，各个版本并不一致，也有版本把小火车换成了普通电车。「猿梦」常被拿来和「如月车站」等「异界列车」怪谈相提并论；而「意识到是梦就能醒」的情节，和清醒梦里的「现实检验」几乎一模一样，许多人把它当作最朴素的破解法。\n\n（本章是游戏改编：主角真弓、朋友美穗、穿水手服的女孩、「見月坂」站、帖子的回复、驾驶室与路线图，以及「抢先广播站名让列车停靠」的破解方法，均为虚构；原帖两次梦之间隔了好几年，本章压缩成了连续三夜，第二夜由身后的老人「替」了一次绞肉，也是游戏的安排。）',
     start: { map: 'station', x: 10, y: 3, dir: 3 },
     resume: {
       n1: async S => { resetKob(S); S.pos(PS[0], PS[1], 2); startExec(S); },
       n2: async S => { resetKob(S); S.pos(PS[0], PS[1], 2); startExec(S); },
       n3: async S => { night3Seat(S); },
-      n3e: async S => { S.hide('kobE'); S.hide('kobF'); S.f.ph = 'exec'; S.f._ke = 4; }
+      n3e: async S => { edgeReset(S); S.goal('跑！跑向站台尽头的出口'); }
     },
     async intro(S) {
       S.f.n = 1; S.f.ph = 'station1';
       await S.card('第三夜　猿梦', '2000年5月　日本　东京近郊', '真弓是大学二年级的学生。\n她从来不记得自己做过什么梦。\n\n直到那天晚上。');
     },
     tick(S, dt) {
-      if (S.f.n === 3 && S.map === 'edge' && S.f.ph === 'exec' && !W.busy && S.f._ke != null) {
-        S.f._ke -= dt;
-        if (S.f._ke <= 0) {
-          S.f._ke = null;
-          S.place('kobE', 1, 4, 2); S.place('kobF', 1, 5, 2);
-          S.sfx('giggle'); S.bubble('kobE', '!', 1000);
-          S.chase('kobE', { spd: 2.7, catch: caughtN3 }); S.chase('kobF', { spd: 2.6, wait: .8, catch: caughtN3 });
-        }
-      }
+      if (S.f.n === 3 && S.map === 'edge' && S.f.ph === 'exec' && !W.busy) edgeTick(S, dt);
     },
     sprites: {
       ekisign(g, e, t, R) {   // 站名牌（2 格宽，挂墙面）
@@ -268,7 +353,17 @@
       route(g, e, t, R) { R(1, 2, 14, 10, '#e0d8c0'); R(3, 4, 10, 6, '#c8b898'); R(4, 5, 8, 4, '#e0d8c0'); for (let i = 0; i < 5; i++) R(3 + i * 2, 4, 1, 1, i < 4 ? '#c01818' : '#1a1a1a'); },
       pc(g, e, t, R) { bx2(R, 1, -6, 14, 12, '#d8d4c8'); R(3, -4, 10, 8, e.power ? '#2a4a7a' : '#1a1e22'); if (e.power) { R(4, -3, 6, 1, '#cfe0f0'); R(4, -1, 8, 1, '#8ab0d0'); R(4, 1, 5, 1, '#8ab0d0'); } R(6, 6, 4, 2, '#b8b4a8'); bx2(R, 2, 8, 12, 4, '#cfcbc0'); },
       bag(g, e, t, R) { bx2(R, 3, 5, 10, 9, '#6a4a5a'); R(5, 2, 6, 1, '#4a3040'); R(5, 3, 1, 3, '#4a3040'); R(10, 3, 1, 3, '#4a3040'); R(7, 8, 2, 2, '#c9a35a'); },
-      diary(g, e, t, R) { R(4, 7, 8, 6, '#3a4a6a'); R(5, 8, 6, 4, '#4a5a7a'); R(11, 7, 1, 6, '#e8e0c8'); }
+      diary(g, e, t, R) { R(4, 7, 8, 6, '#3a4a6a'); R(5, 8, 6, 4, '#4a5a7a'); R(11, 7, 1, 6, '#e8e0c8'); },
+      mincer(g, e, t, R) {   // 铁做的绞肉机：漏斗、机身、出口、摇柄（s.run 时摇柄转、机身抖）
+        const j = e.run ? (Math.sin(t * 50) > 0 ? 1 : 0) : 0, a = e.run ? t * 9 : .6;
+        R(4, 13, 9, 2, 'rgba(0,0,0,.4)');
+        bx2(R, 3 + j, -3, 9, 3, '#5a5a62'); R(5 + j, 0, 5, 3, '#45454c');   // 漏斗
+        bx2(R, 3 + j, 3, 9, 8, '#4a4a52'); R(4 + j, 4, 7, 2, '#6a6a74');   // 机身
+        R(12 + j, 6, 3, 3, '#3a3a40'); R(13 + j, 7, 2, 1, '#1a0e0e');   // 出口
+        R(5, 11, 5, 3, '#2a2a2e');   // 夹在座位边上的底座
+        const cx = 2 + j, cy = 6; R(cx, cy, 1, 1, '#2a2a2e');
+        R(cx + Math.round(Math.cos(a) * 2) - 1, cy + Math.round(Math.sin(a) * 2), 2, 2, '#8a6a3a');   // 摇柄
+      }
     },
     tiles: {
       gravel: { solid: true, paint(R, X, Y) { R(0, 0, 16, 16, '#2a2630'); for (let i = 0; i < 10; i++) R((hash(X, Y, i) * 15) | 0, (hash(Y, X, i + 9) * 15) | 0, 2, 1, i % 2 ? '#3a3540' : '#1e1a22'); } },
@@ -299,12 +394,12 @@
           { id: 'spk', x: 4, y: 1, spr: 'speaker', on: speakerOn },
           { id: 'sign', x: 8, y: 1, w: 2, spr: 'ekisign', text: '猿梦', on: signOn },
           { id: 'sclock', x: 13, y: 1, spr: 'dclock', num: 4, s: { m: 8.8 }, on: sclockOn },
-          { x: 16, y: 1, spr: 'poster', col: '#b89ab0', on: S => S.narr('褪色的海报：「欢迎光临　猿梦乐园」。\n画上是一辆笑嘻嘻的猴子小火车，载着一车笑嘻嘻的孩子。\n……孩子们的脸，都被人用指甲刮掉了。') },
-          { x: 11, y: 1, spr: 'window', on: S => S.narr('站房的小窗户。里面没有站务员，只有一把转椅，慢慢地、慢慢地自己转着。') },
-          { x: 5, y: 3, w: 2, spr: 'bench', on: S => S.narr('长椅冰凉。椅背上刻着一行歪歪扭扭的字：「别等车」。') },
+          { x: 16, y: 1, spr: 'poster', col: '#b89ab0', on: sn('褪色的海报：「欢迎光临　猿梦乐园」。\n画上是一辆笑嘻嘻的猴子小火车，载着一车笑嘻嘻的孩子。\n……孩子们的脸，都被人用指甲刮掉了。') },
+          { x: 11, y: 1, spr: 'window', on: sn('站房的小窗户。里面没有站务员，只有一把转椅，慢慢地、慢慢地自己转着。') },
+          { x: 5, y: 3, w: 2, spr: 'bench', on: sn('长椅冰凉。椅背上刻着一行歪歪扭扭的字：「别等车」。') },
           { id: 'pmir', x: 17, y: 3, spr: 'pmirror', on: pmirOn },
-          { x: 19, y: 2, spr: 'vending', col: '#6a4a7a', on: S => S.narr('自动贩卖机。所有的按钮都亮着「售罄」。\n玻璃后面摆着一排一模一样的饮料罐，罐子上印着猴子的脸。') },
-          { x: 2, y: 4, spr: 'barrel', on: S => S.narr('铁皮垃圾桶。里面塞满了没剪过的车票。') },
+          { x: 19, y: 2, spr: 'vending', col: '#6a4a7a', on: sn('自动贩卖机。所有的按钮都亮着「售罄」。\n玻璃后面摆着一排一模一样的饮料罐，罐子上印着猴子的脸。') },
+          { x: 2, y: 4, spr: 'barrel', on: sn('铁皮垃圾桶。里面塞满了没剪过的车票。') },
           { id: 'stairs', x: 1, y: 2, spr: 'stairsdown', solid: false, async touch(S) {
             await S.narr('你顺着楼梯往下走。\n雾是灰紫色的。走着走着，脚下的台阶又变成了往上的。');
             await S.walk('pl', [3, 3], 5);
@@ -318,7 +413,7 @@
           if (S.f.n === 1 && first) {
             await S.narr('……你站在一个很暗的小车站里。\n站台上一个人也没有。荧光灯一闪一闪，发出蚊子一样的嗡嗡声。');
             await S.think('我怎么会在这儿？\n……我刚才明明在床上。');
-            S.sfx('ding'); await S.wait(500);
+            chime(S); await S.wait(800);
             S.bubble('spk', '…', 1800);
             await S.say('站内广播', ['电车，马上就要进站了。', '乘上去的话……会很恐怖哦。'], { style: 'whisper' });
             await S.narr('那是一个男人的声音。没精打采的，好像刚睡醒，又好像根本没睡醒。');
@@ -329,7 +424,7 @@
             S.place('mtrain', 6, 6); S.ent('mtrain').s.empty = true;
             await S.narr('又是这里。\n灰紫色的雾，一闪一闪的荧光灯。');
             await S.narr('小火车已经停在站台边上了。车门开着。\n车头那张猴子的脸，冲着你笑。');
-            S.sfx('ding');
+            chime(S); await S.wait(700);
             await S.say('站内广播', ['欢迎回来。', '电车已经进站了。这一次……也请好好享受哦。'], { style: 'whisper' });
             await S.think('别慌。书上说的——钟、字、镜子。\n在上车之前，先确认清楚：这是梦。');
             S.goal(evGoal(S));
@@ -351,7 +446,9 @@
           '##############################'],
         ents: [
           { id: 'rdoor', x: 1, y: 1, spr: 'door', open: true, on: S => S.narr(S.f.n === 3 ? '车尾的门开着。门里面黑得像一口井。\n里面有东西在笑。你不想过去。' : '车尾那扇门开着，里面黑洞洞的。\n小人们就是从那里出来的。') },
-          ...[3, 6, 18, 21, 24].map(x => ({ id: 'tw' + x, x, y: 1, spr: 'twin', on: S => S.narr(['窗外是隧道。隧道壁上的灯一盏一盏地往后掠过去。\n……你数了数。每隔七盏灯，就有一盏是红的。一直都是。', '车窗玻璃很凉。你把额头贴上去——外面的黑暗，好像也在贴着玻璃看你。'][x % 2]) })),
+          ...[3, 6, 18, 21, 24].map(x => ({ id: 'tw' + x, x, y: 1, spr: 'twin', on: S => (S.f.n === 1 && S.f.ph === 'exec' && !S.f.ev1_win)
+            ? S.narr('漆黑的车窗变成了一面镜子。可是从这个角度，只映得出空座位和别人的后脑勺。\n……要看自己的样子，得站到自己座位旁边的那扇窗前。')
+            : S.narr(['窗外是隧道。隧道壁上的灯一盏一盏地往后掠过去。\n……你数了数。每隔七盏灯，就有一盏是红的。一直都是。', '车窗玻璃很凉。你把额头贴上去——外面的黑暗，好像也在贴着玻璃看你。'][x % 2]) })),
           { id: 'wme', x: 11, y: 1, spr: 'twin', s: { me: true }, on: wmeOn },
           { id: 'tad', x: 8, y: 1, spr: 'tad', on: tadOn },
           { id: 'tad2', x: 20, y: 1, spr: 'tad', on: S => S.narr('车厢广告：「猿梦乐园　全年无休　永远营业」。\n画上的猴子竖着大拇指。它的大拇指……有点太长了。') },
@@ -370,6 +467,7 @@
           { id: 'ribbon', x: 16, y: 4, spr: 'thread', hidden: true, on: S => ribbonOn(S) },
           { id: 'kobA', x: 1, y: 3, spr: '@kobA', solid: false, hidden: true, on: S => S.narr('小人歪着头看你。它的个子只到你的腰。\n它在笑。') },
           { id: 'kobB', x: 0, y: 3, spr: '@kobB', solid: false, hidden: true, on: S => S.narr('另一个小人。它手里的东西藏在背后。') },
+          { id: 'mincer', x: 9, y: 3, spr: 'mincer', solid: false, hidden: true, on: S => S.narr('铁做的绞肉机。漏斗里黑乎乎的，摇柄上缠着一圈红色的毛线。\n你不敢再看第二眼。') },
           { id: 'xl', x: 4, y: 4, hidden: true, light: { r: 2.4, col: 'rgba(200,30,30,.35)', flick: true } },
           ...[5, 11, 17, 23].map(x => ({ id: 'cl' + x, x, y: 3, light: { r: 3.6, col: 'rgba(230,200,150,.10)', flick: x === 5 } }))
         ],
@@ -380,11 +478,20 @@
         },
         tick(S, dt) {
           if (!W.busy && S.f.moving && Math.random() < dt * .1) S.shake(200, 1);
-          if (S.f.n === 3 && S.f.ph === 'exec' && W.timer && !W.busy) {   // 第三夜：小人沿过道一格一格逼近
-            const tgt = Math.min(8, 2 + Math.floor((1 - W.timer.left / 110) * 7.5));
-            const a = S.ent('kobA'), b = S.ent('kobB');
-            if (!a.mv && Math.round(a.px / TS) < tgt) { startMove(a, 2, 1.6); S.sfx('step'); if (Math.random() < .5) { S.sfx('giggle'); S.bubble('kobA', '…', 900); } }
+          /* 第一、二夜：只剩 15 秒还没集齐证据时，给一次提示 */
+          const n = S.f.n, st = cur(S);
+          if (NEED[n] && S.f.ph === 'exec' && st && st.you && W.timer && W.timer.left < 15 && !W.busy && (S.f.evc || 0) < NEED[n] && !S.f.canWake && S.once('hint' + n)) {
+            if (n === 1) { S.face('paxD', 'pl'); S.bubble('paxD', '!', 2500); S.toast('穿水手服的女孩冲你比口型：「钟——字——车窗——看两遍！」'); }
+            else S.toast('（书上的第四条……数手指。坐回自己的座位上！）');
+            S.sfx('heart');
+          }
+          if (n === 3 && S.f.ph === 'exec' && W.timer && !W.busy) {   // 第三夜：小人沿过道一格一格逼近；走到你身边就轮到你了
+            const tgt = Math.min(8, 2 + Math.floor((1 - W.timer.left / T3) * 7.5));
+            const a = S.ent('kobA'), b = S.ent('kobB'), p = S.pl;
+            if (!a.mv && Math.round(a.px / TS) < tgt && !(p.y === AISLE && p.x === Math.round(a.px / TS) + 1)) { startMove(a, 2, 1.6); S.sfx('step'); if (Math.random() < .5) { S.sfx('giggle'); S.bubble('kobA', '…', 900); } }
             if (!b.mv && Math.round(b.px / TS) < Math.round(a.px / TS) - 1) startMove(b, 2, 1.6);
+            const ax = Math.round(a.px / TS), ay = Math.round(a.py / TS);
+            if (!a.hidden && Math.abs(ax - p.x) + Math.abs(ay - p.y) <= 1) { S.f.ph = 'caught'; S.clearTimer(); S.after(0, yourTurn); }
           }
         }
       },
@@ -399,7 +506,7 @@
           '#.......#',
           '#########'],
         ents: [
-          { id: 'cback', x: 1, y: 1, spr: 'sidedoor', col: '#7a4a2a', on: S => S.go('train', 27, 2, 0) },
+          { id: 'cback', x: 1, y: 1, spr: 'sidedoor', col: '#7a4a2a', on: S => (S.ent('cback').face ? S.narr('门上的小窗里，贴着一张红红的、皱巴巴的猴脸。\n它冲你咧开了嘴。……不能开门。') : S.go('train', 27, 2, 0)) },
           { id: 'cw1', x: 4, y: 1, spr: 'cabwin', on: cabwinOn },
           { id: 'cw2', x: 5, y: 1, spr: 'cabwin', on: cabwinOn },
           { id: 'cw3', x: 6, y: 1, spr: 'cabwin', on: cabwinOn },
@@ -412,7 +519,14 @@
         ],
         async enter(S, first) {
           if (first) await S.narr('驾驶室很窄。挡风玻璃外面是隧道，隧道，还是隧道。\n控制台上的灯，一闪，一闪。');
-          if (S.f.n === 3) S.ent('mic').lit = true;
+          if (S.f.n === 3) { S.ent('mic').lit = true; if (S.f.ph === 'exec') S.goal('对着控制台上的话筒报站（三个字）'); }
+        },
+        tick(S, dt) {   // 第三夜：躲进驾驶室也没用——时间越少，身后的门敲得越急，门上的小窗里出现猴脸
+          if (S.f.n !== 3 || S.f.ph !== 'exec' || !W.timer || W.busy) return;
+          const left = W.timer.left, d = S.ent('cback');
+          if (left < 30 && !d.face) { d.face = true; S.sfx('giggle'); S.bubble('cback', '!', 1200); }
+          S.f._kn = (S.f._kn ?? 2) - dt;
+          if (left < 45 && S.f._kn <= 0) { S.f._kn = left < 20 ? 1.1 : 2.4; S.sfx('knock'); if (left < 20) S.shake(160, 1); }
         }
       },
       /* ---------------- 真弓的公寓（白天） ---------------- */
@@ -457,6 +571,12 @@
             S.goal('看看帖子有没有人回复（电脑）');
             S.cp();
           }
+        },
+        tick(S, dt) {   // 写完帖子 / 看完回复之后，美穗的电话会自己响起来
+          const ring = (S.f.day === 2 && S.f.posted && !S.f.call2) || (S.f.day === 3 && S.f.replies && !S.f.call3);
+          if (!ring || W.busy) return;
+          S.f._rg = (S.f._rg ?? 1.2) - dt;
+          if (S.f._rg <= 0) { S.f._rg = 3.2; S.sfx('phone'); S.bubble('phone', '!', 1400); }
         }
       },
       /* ---------------- 梦的边缘：見月坂 ---------------- */
@@ -483,6 +603,7 @@
           { id: 'exit', x: 29, y: 3, h: 2, spr: 'stairsup', solid: false, light: { r: 4.4, col: 'rgba(255,250,230,.35)' }, touch: goodEnd },
           { id: 'kobE', x: 1, y: 4, spr: '@kobA', solid: false, hidden: true },
           { id: 'kobF', x: 1, y: 5, spr: '@kobB', solid: false, hidden: true },
+          { id: 'girlE', x: 27, y: 3, spr: '@paxD', solid: false, hidden: true, dir: 2 },
           { id: 'el1', x: 14, y: 3, light: { r: 3.4, col: 'rgba(220,240,230,.10)' } },
           { id: 'el2', x: 22, y: 3, light: { r: 3.4, col: 'rgba(220,240,230,.12)' } }
         ],
@@ -494,8 +615,10 @@
           await S.narr('可是站台的一半还泡在梦里：地面一块一块地塌进灰紫色的雾中。\n站台尽头，楼梯口透进来白白的、早晨的光。');
           S.sfx('giggle');
           await S.narr('身后的车厢里，传来咯咯的笑声。\n小小的脚步声，啪嗒，啪嗒，下了车。');
+          S.sfx('thud'); S.shake(300, 1);
+          await S.think('车尾那边的站台……在往下塌。\n别回头。');
           S.goal('跑！跑向站台尽头的出口');
-          S.f._ke = 4;
+          edgeReset(S);
           S.cp('n3e');
         }
       }
@@ -507,6 +630,7 @@
     S.bubble('spk', '…', 1400);
     if (S.f.n === 2) return S.narr('喇叭里传来很轻的笑声。\n……还有一点点口水的声音，像是有人贴着话筒在舔嘴唇。');
     await S.narr('站台的喇叭。铁网上锈迹斑斑。\n你凑过去听——里面只有沙沙的电流声。');
+    return look(S);
   }
   async function signOn(S) {
     const e = S.ent('sign');
@@ -546,10 +670,13 @@
       return ev(S, 'mir');
     }
     await S.narr('站台角落的凸面镜，给司机看站台用的。\n镜子里的站台被拉得很长很长，长得看不见尽头。');
+    return look(S);
   }
   async function trainArrive(S) {
     S.f.arrived = true;
     await S.wait(500);
+    chime(S); await S.wait(800);
+    await S.say('站内广播', '……电车，进站了。', { style: 'whisper' });
     S.sfx('bell'); await S.wait(400); S.sfx('bell');
     await S.narr('当、当、当——\n远处的黑暗里，响起了游乐园里那种小火车的铃声。');
     S.place('mtrain', -12, 6, 2); S.focus(10, 5);
@@ -564,13 +691,21 @@
   }
   async function boardOn(S) {
     if (S.f.n === 1 && S.f.arrived) {
-      const r = await S.ask('要上车吗？', ['上车', '再等等']); if (r) return;
+      const r = await S.vote('要上车吗？', ['上车', '再等等']);
+      if (!r.agree) {   // 一个想上车，一个想再等等：站台替你们做了决定
+        S.sfx('switch'); S.dark(.9);
+        await S.narr('你们俩还没商量好，站台上的荧光灯「啪」地灭了一盏。\n又一盏。\n黑暗从楼梯那边，一盏灯一盏灯地漫过来。');
+        S.dark(null);
+        await S.think('……没有别的路了。');
+      } else if (r.v) return;
       S.sfx('step');
       return S.go('train', PS[0], PS[1], 2);
     }
     if (S.f.n === 2) {
       if ((S.f.evc || 0) < 2) return S.think('还不行。上车之前，至少要确认两件事——\n钟、字、镜子。');
-      const r = await S.ask('上车吗？', ['上车', '再等等']); if (r) return;
+      const r = await S.vote('上车吗？', ['上车', '再等等']);
+      if (!r.agree) await S.narr('一个人的脚已经迈了出去，另一个人想拉住——\n车门「咔嚓」一声，在身后关上了。');
+      else if (r.v) return;
       return S.go('train', PS[0], PS[1], 2);
     }
   }
@@ -587,7 +722,7 @@
     S.sfx('bell'); await S.wait(300);
     await S.narr('车门自己关上了。小火车「吱呀」一声，开动了。\n窗外是隧道。隧道的墙上，一盏一盏昏黄的灯往后掠去。');
     await S.wait(500);
-    S.sfx('ding');
+    chime(S); await S.wait(700);
     await S.say('车内广播', ['各位乘客，欢迎乘坐。', '下一个是——「活造り」。'], { style: 'whisper' });
     await S.think('活造り？……那不是把活鱼片成生鱼片的意思吗？');
     S.f.kx = 4;
@@ -607,7 +742,7 @@
     S.f.kx = 5; resetKob(S);
     await S.narr('你坐回了那个座位。从后面数，第三排。\n——可是，你身后已经坐着人了。是那个穿旧大衣的老人。');
     await S.narr('最后两排是空的。\n两个小人坐在空座位上，晃着脚，冲你笑。');
-    S.sfx('ding');
+    chime(S); await S.wait(700);
     await S.say('车内广播', '这次……是接着上次的哦。', { style: 'whisper' });
     S.goal(evGoal(S));
     S.cp('n2');
@@ -617,7 +752,7 @@
     if (S.f.n === 1 && S.f.ph === 'exec') {
       if (S.f.ev1_win) return S.narr('玻璃里那个没有脸的你，还在看着你。');
       await S.narr('漆黑的车窗变成了镜子，映出车厢里的样子。\n一排一排面无表情的乘客。还有你——');
-      S.sfx('sting'); S.shake(300, 1);
+      await S.scare('face', { face: 'noface', sfx: 'sting', dur: 1.0, shake: 1 });
       await S.narr('玻璃里的「你」，没有脸。\n头发下面，是一片光滑的、肉色的空白。');
       await S.think('不对。这不对。……人不会没有脸。');
       return ev(S, 'win');
@@ -651,7 +786,7 @@
     if (S.f.n !== 1) return;
     if (S.once('girl1')) {
       await S.say('穿水手服的女孩', ['（她压低了声音，嘴唇几乎没动）……你也是，在做梦的人吧？', '别学他们一直看着前面。他们已经忘了自己在做梦。'], { style: 'whisper' });
-      await S.say('穿水手服的女孩', ['想醒的话，就要让自己相信「这是梦」。', '光是想没有用。要找到证据——', '看钟。看字。看你自己的影子。看两遍。梦经不起看第二遍。'], { style: 'whisper' });
+      await S.say('穿水手服的女孩', ['想醒的话，就要让自己相信「这是梦」。', '光是想没有用。要找到证据——', '看钟。看字。看车窗里的你自己。都要看两遍——梦经不起看第二遍。'], { style: 'whisper' });
       await S.say('穿水手服的女孩', '我已经醒过两次了。……可是这一次，我好像，醒不过来了。', { style: 'whisper' });
       return;
     }
@@ -672,9 +807,14 @@
       return ev(S, 'hand');
     }
     if (S.f.n === 3 && S.f.ph === 'exec') {
-      const r = await S.ask('（你坐在座位上，手抖得厉害。）', ['这是梦——醒过来！', '闭上眼睛……等它过去', '（站起来）']);
+      const vr = await S.vote('（你坐在座位上，手抖得厉害。）', ['这是梦——醒过来！', '闭上眼睛……等它过去', '（站起来）']);
+      let r = vr.v;
+      if (!vr.agree && (vr.h === 1 || vr.g === 1)) {   // 只有一个人想闭眼：另一个人不让
+        await S.narr('你刚要闭上眼睛，脑子里另一个声音喊了起来：\n「别闭眼！闭上眼睛，就再也睁不开了！」');
+        r = 2;
+      } else if (!vr.agree) await S.narr('你们俩想的不一样。……可是，时间不等人。');
       if (r === 0) { S.sfx('heart'); await S.say('', '这是梦。这是梦。这是梦——', { style: 'big' }); await S.narr('什么也没发生。\n广播里传来咯咯的笑声：「没——有——用——哦。」'); S.goal('它们来了——想办法让车停下来'); return; }
-      if (r === 1) return badEnd(S, true);
+      if (r === 1) return badEnd(S, 'eyes');
       return;
     }
     await S.narr('硬邦邦的座位，红色的绒面磨得发亮。\n从后面数，第三排。……为什么总是第三排？');
@@ -686,11 +826,16 @@
       await S.say('', '「它没有站。所以它不停。\n　对着广播，说出你自己的车站。」', { style: 'whisper' });
       S.f.ribbon = true;
     }
+    if (S.f.n === 3 && !S.has('ribbon')) {   // 第三夜：可以把领结带走（隐藏结局）
+      await S.narr('你把领结解下来，叠好，攥在手心里。');
+      await S.think('……要是能带她一起下车就好了。');
+      S.give('ribbon'); S.hide('ribbon');
+    }
   }
   /* ================= 白天的公寓 ================= */
   function dayGoal(S) {
-    if (S.f.day === 2) S.goal(!S.f.posted ? '把那个梦写下来（书桌上的电脑）' : !S.f.book ? '书架上好像有本讲梦的书' : '天黑了……该睡了（被褥）');
-    else S.goal(!S.f.replies ? '看看帖子有没有人回复（电脑）' : !S.has('pass') ? '我每天去的那个车站……（包里的定期券）' : '准备好了。睡吧（被褥）');
+    if (S.f.day === 2) S.goal(!S.f.posted ? '把那个梦写下来（书桌上的电脑）' : !S.f.call2 ? '电话在响（电脑旁边）' : !S.f.book ? '书架上好像有本讲梦的书' : '天黑了……该睡了（被褥）');
+    else S.goal(!S.f.replies ? '看看帖子有没有人回复（电脑）' : !S.f.call3 ? '电话在响（电脑旁边）' : !S.has('pass') ? '我每天去的那个车站……（包里的定期券）' : '准备好了。睡吧（被褥）');
   }
   async function pcOn(S) {
     S.ent('pc').power = true; S.sfx('switch');
@@ -725,20 +870,23 @@
   }
   async function phoneOn(S) {
     S.sfx('phone'); await S.wait(500);
-    if (S.f.day === 2 && S.once('call2')) {
+    if (S.f.day === 2 && !S.f.call2) {
+      S.f.call2 = true;
       await S.say('美穗（电话）', ['喂？真弓？你今天怎么没来上课？统计学小测欸！', '……做噩梦？什么梦能把你吓得旷课啊。']);
       await S.say('真弓', '……一辆小火车。车头是猴子。广播一个一个地报……');
       await S.say('美穗（电话）', ['等等。猴子的电车？', '我好像在网上看过类似的故事欸。说是做那种梦的人，在轮到自己之前醒过来就没事——', '……不过后面还有一句。说是同一个梦，会接着做。'], {});
       await S.say('美穗（电话）', '哎呀，你别想太多啦！晚上早点睡，我明天去找你。');
-      return;
+      return dayGoal(S);
     }
-    if (S.f.day === 3 && S.once('call3')) {
+    if (S.f.day === 3 && !S.f.call3) {
+      S.f.call3 = true;
       await S.say('美穗（电话）', ['……真弓。', '我昨天晚上，看了你发的那个帖子。', '然后，我做了个梦。']);
       await S.narr('电话那头安静了很久。');
       await S.say('美穗（电话）', ['我站在一个很暗的车站里。', '远处有铃声，当、当、当……我在车来之前就吓醒了。', '……真弓，帖子下面有人说，这种梦会传染。是真的吗？']);
       await S.say('真弓', '……今天晚上，我会把它结束掉。');
       await S.say('美穗（电话）', '结束？怎么结束？真弓？真弓——');
-      return;
+      await S.narr('电话断了。听筒里的忙音，听起来像远处的铃声。');
+      return dayGoal(S);
     }
     await S.narr('你拿起听筒，又放下了。\n听筒里的忙音，听起来像远处的铃声。');
   }
@@ -783,7 +931,7 @@
     await S.narr('车厢里一个乘客都没有了。\n只有你。从后面数，第三排。');
     S.f.kx = 2; resetKob(S);
     await S.narr('车尾那扇门开着。\n两个小人站在门口，手牵着手，歪着头看你。');
-    S.sfx('ding');
+    chime(S); await S.wait(700);
     await S.say('车内广播', ['欢迎回来。', '说好了的，这是最后一次。', '下一个是——你。'], { style: 'whisper' });
     S.sfx('giggle');
     await S.think(['……前面。车头那扇门。', '今天，它开着。']);
@@ -792,10 +940,10 @@
     S.cp('n3');
   }
   function night3Seat(S) {
-    resetKob(S); S.f._adv = 14;
-    S.f.ph = 'exec'; S.f.ei = 0;
+    resetKob(S);
+    S.f.ph = 'exec'; S.f.ei = 0; S.f._kn = null;
     S.goal('它们来了——去车头的驾驶室');
-    S.timer(110, '它们来了', yourTurn);
+    S.timer(T3, '它们来了', yourTurn);
   }
   async function cabwinOn(S) {
     if (S.f.stopped) return S.narr('隧道尽头，有一点白色的光。');
@@ -808,26 +956,30 @@
       if (!S.f.ribbon && !S.f.replies) await S.think('……报站。报哪一站？');
       else await S.think('「它没有站。所以它不停。对着广播，说出你自己的车站。」');
     }
-    const v = await S.keypad('报站：下一站是——（三个字）', KEYS, 3);
+    const v = await S.keypad('报站：下一站是——（三个字 · 数字键 1–9 也能按）', KEYS, 3, { alias: KALIAS });
     if (v == null) return;
     if (v === '見月坂') return stopTrain(S);
-    if (v.startsWith('終点') || v === '終点駅') {
+    if (v.startsWith('終点')) {
       await S.narr(`你对着话筒说：「下一站——${v}。」`);
       S.sfx('laugh');
       await S.say('车内广播', ['好——的。', '下一站，终点。', '感谢您一直以来的乘坐。'], { style: 'whisper' });
-      return badEnd(S, false);
+      return badEnd(S, 'terminal');
     }
     S.sfx('bad'); S.shake(300, 1);
     await S.narr(`你对着话筒说：「下一站——${v}。」`);
     await S.say('车内广播', ['没——有——这——站——哦。', '……咯咯咯。'], { style: 'whisper' });
     if (W.timer) W.timer.left = Math.max(5, W.timer.left - 10);
-    await S.think(S.has('pass') ? '不是随便哪个站都行。是真的车站——我每天都去的那个。\n（定期券上写着……）' : '要一个真的车站。我每天都去的那个——');
+    const m = S.f.mw = (S.f.mw || 0) + 1;   // 报错的次数：提示一次比一次具体
+    if (m === 1) await S.think('不是随便哪个站都行。帖子里说的是——\n「报一个真实存在的、你每天都去的车站」。');
+    else if (m === 2) await S.think('我每天都去的车站……\n包里那张定期券上，印着站名。（打开随身物品看看）');
+    else await S.think('見月坂。「見」「月」「坂」。\n每天早上七点四十二分，我都站在那里等车。');
   }
   async function stopTrain(S) {
     S.clearTimer(); S.f.ph = 'stop';
     await S.narr('你按住话筒。你的声音从车厢里每一个喇叭里传了出来——');
+    chime(S);
     await S.say('真弓（广播）', ['各位乘客。', '下一站——見月坂。', '下一站，見月坂。在見月坂站，停车。'], { style: 'big' });
-    S.sfx('scream'); S.shake(900, 3);
+    S.sfx('scream'); S.shake(900, 3); S.ent('cback').face = undefined;
     await S.narr('车厢后面传来尖叫声。不是人的尖叫——是小人们的。\n它们在喊：不对，不对，不对，没有这一站，没有这一站——');
     S.sfx('brake'); S.shake(1200, 2);
     await S.narr('刹车的声音，尖得像指甲刮过黑板。\n小火车猛地一顿。');
@@ -835,7 +987,41 @@
     await S.narr('挡风玻璃外面，隧道的尽头，出现了一点白色的光。\n光里有一块站名牌：白底，绿字。');
     await S.go('edge', 13, 5, 2, { ms: 700 });
   }
+
+  /* ================= 梦的边缘：追逐 + 身后的站台一列一列塌进雾里 ================= */
+  const EDGE_KOB = [[4, 6], [3, 6]];   // 小人从车尾的门下车
+  const WAVE_SPD = 1.6;                // 塌陷速度（列/秒）
+  function edgeReset(S) {
+    S.hide('kobE'); S.hide('kobF'); S.hide('girlE');
+    S.f.ph = 'exec'; S.f._ke = 1.5; S.f._wv = 2.2; S.f._wx = 2;
+  }
+  function edgeTick(S, dt) {
+    if (S.f._ke != null) {
+      S.f._ke -= dt;
+      if (S.f._ke <= 0) {
+        S.f._ke = null;
+        S.place('kobE', EDGE_KOB[0][0], EDGE_KOB[0][1], 2); S.place('kobF', EDGE_KOB[1][0], EDGE_KOB[1][1], 2);
+        S.sfx('giggle'); S.bubble('kobE', '!', 1000);
+        S.chase('kobE', { spd: 3.1, catch: caughtN3 }); S.chase('kobF', { spd: 2.9, wait: .5, catch: caughtN3 });
+      }
+    }
+    S.f._wv -= dt;
+    if (S.f._wv <= 0 && S.f._wx < 28) {
+      S.f._wv = 1 / WAVE_SPD;
+      const x = S.f._wx++;
+      for (let y = 2; y <= 6; y++) S.tile(x, y, 'V');
+      if (x % 3 === 0) { S.sfx('thud'); S.shake(150, 1); }
+      if (S.pl.x <= x) { S.f.ph = 'fall'; S.after(0, fallN3); }
+    }
+  }
+  async function fallN3(S) {
+    S.stop('kobE'); S.stop('kobF');
+    S.sfx('glass'); S.shake(700, 3);
+    await S.scare('glitch', { sfx: 'thud', dur: .7 });
+    await S.die('脚下的站台，忽然变成了软的。\n你往下沉，沉进灰紫色的雾里。\n雾的下面，远远地，传来小火车「当、当、当」的铃声。', '掉回了梦里');
+  }
   async function caughtN3(S) {
+    S.f.ph = 'caught';
     await S.scare('face', { spr: '@kobA' });
     await S.die('一只小小的、冰凉的手，抓住了你的脚踝。\n「下一个是——」\n你没有听见后面的字。', '轮到你了');
   }
@@ -847,13 +1033,29 @@
     await S.alpha('kobE', 0, 400); S.hide('kobF');
     S.fx('flash'); S.sfx('chime');
     await S.narr('你冲上楼梯，冲进白色的光里。\n身后，小人们停在了光的边缘，不甘心地尖叫着。');
-    S.sfx('ding');
+    chime(S, true); await S.wait(700);
     await S.say('车内广播', '……下次……', { style: 'whisper' });
     await S.narr('喇叭「啪」地一声，断了。');
+    const girl = S.has('ribbon');
+    if (girl) {   // 隐藏结局：带着她的领结下车
+      const g = S.ent('girlE'); g.alpha = 0; S.place('girlE', 27, S.pl.y === 3 ? 4 : 3, 2);
+      await S.alpha('girlE', 1, 900);
+      S.face('pl', 'girlE');
+      await S.narr('楼梯口的光里，站着一个穿水手服的女孩。\n她的领口，空荡荡的。');
+      await S.say('穿水手服的女孩', ['……我听见了。', '在车厢最后面的黑暗里，我听见有人对着广播说「見月坂」。', '那不是我的站。……可它是一个真的站。'], { style: 'whisper' });
+      S.take('ribbon');
+      await S.narr('你把攥了一路的红领结递给她。\n她低头看了很久，把它系回了自己的领口。');
+      await S.say('穿水手服的女孩', '我也可以……在这里下车吗？', { style: 'whisper' });
+      await S.narr('你点了点头。\n你们一起，走进了早晨的光里。');
+    }
     await S.fade(1, 1200);
     S.amb('room');
     await S.card('早上　七点四十二分', '2000年5月', '闹钟在响。\n窗外，電车道口「当当当」地响着。\n\n你躺在被窝里，手心里攥着那张定期券，攥得都出了汗。');
+    if (girl) {
+      await S.card('', '', '那天你去上了课。\n在見月坂站的二号站台上，你等来了一辆五节车厢的普通电车。\n车头上，没有脸。\n\n车门打开的时候，你看见对面站台上，站着一个穿水手服的女孩。\n红领结系得端端正正。\n她冲你点了点头，上了另一个方向的车。');
+      return S.end({ id: 'girl', title: '第三夜　完 · 两个人的站台', text: '帖子的最后一条回复，是你自己写的：\n\n「我没有逃。我让它停了。\n　车上还有别人。如果你也梦见了那辆车——\n　记住你每天等车的那个站，替他们也报一次。」\n\n后来，那个帖子底下再也没有人说自己梦见过猴子的小火车。\n……只是有时候，站台上的广播响起来之前，你还是会下意识地，看一眼钟。' });
+    }
     await S.card('', '', '那天你去上了课。\n在見月坂站的二号站台上，你等来了一辆五节车厢的普通电车。\n车头上，没有脸。\n\n美穗说，她后来再也没有梦见过那个车站。');
-    await S.end({ title: '第三夜　完', text: '帖子的最后一条回复，是你自己写的：\n\n「我没有逃。我让它停了。\n　如果你也梦见了那辆车——\n　记住你每天等车的那个站。」\n\n……只是有时候，站台上的广播响起来之前，\n你还是会下意识地，看一眼钟。' });
+    await S.end({ id: 'good', title: '第三夜　完', text: '帖子的最后一条回复，是你自己写的：\n\n「我没有逃。我让它停了。\n　如果你也梦见了那辆车——\n　记住你每天等车的那个站。」\n\n……只是有时候，站台上的广播响起来之前，\n你还是会下意识地，看一眼钟。\n\n（那个穿水手服的女孩，后来怎么样了呢？）' });
   }
 })();
