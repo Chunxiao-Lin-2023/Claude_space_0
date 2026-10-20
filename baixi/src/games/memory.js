@@ -329,7 +329,9 @@ BX.register({
         }
         status();
       },
-      aiMove(seat, level) {
+      async aiMove(seat, level) {
+        // online guest: give the host a moment to finish its own turn bookkeeping (avoids a rejected request race)
+        if (ctx.online && !ctx.isHost) await BX.sleep(BX.test ? 120 : 30);
         const P = st.nflip, mem = new Map();   // card idx -> kind for remembered cards
         const halfLife = [0, 4, 12, 999][level];
         for (let j = 0; j < N; j++) {
