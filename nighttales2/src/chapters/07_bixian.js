@@ -7,7 +7,7 @@
   /* 笔在纸上「写」出一个答案：先旁白描述笔的移动，再用大字显示 */
   async function pen(S, move, ans, o = {}) {
     S.sfx('paper');
-    await S.narr(move);
+    if (move) await S.narr(move);
     if (ans) { await S.wait(o.pause || 300); await S.say('', ans, { style: 'big' }); }
     const d = S.ent(o.desk || 'rdesk'); if (d) d.s.marks = (d.s.marks || 0) + 1;
   }
@@ -134,6 +134,7 @@
       bucket(g, e, t, R) { R(4, 6, 8, 8, '#c84a3a'); R(4, 6, 8, 1, '#e86a5a'); R(4, 13, 8, 1, '#8a2a2a'); R(10, -4, 1, 11, '#8a6a3a'); R(8, 6, 5, 3, '#c8c4b8'); },
       deskpile(g, e, t, R) { box(R, 1, 4, 14, 7, '#6a4a2c'); R(2, 11, 1, 4, '#3a2818'); R(13, 11, 1, 4, '#3a2818'); box(R, 0, -4, 16, 6, '#5d4229'); R(2, -10, 1, 6, '#3a2818'); R(13, -10, 1, 6, '#3a2818'); box(R, 3, -14, 10, 4, '#4f3620'); },
       shoerack(g, e, t, R) { box(R, 0, 4, 16, 10, '#7a7e84'); R(1, 8, 14, 1, '#5a5e64'); R(2, 5, 4, 3, '#e8e8e8'); R(9, 5, 4, 3, '#c84a6a'); R(3, 10, 4, 2, '#4a4a4a'); R(9, 10, 4, 2, '#e8e8e8'); },
+      coalstove(g, e, t, R) { R(7, -16, 2, 18, '#3e3e42'); R(7, -16, 7, 2, '#3e3e42'); box(R, 3, 2, 10, 12, '#38383c'); R(2, 1, 12, 2, '#4a4a50'); R(5, 5, 6, 3, '#151517'); R(6, 6, 4, 1, '#5a2418'); R(4, 14, 2, 1, '#222'); R(10, 14, 2, 1, '#222'); },
       bxcandle(g, e, t, R) {   // 摆在课桌上的蜡烛（画在桌面上）
         R(7, 1, 3, 6, '#e8e2cc'); R(6, 6, 5, 1, '#c8c0a8');
         if (!e.off) { const f = Math.sin(t * 15) > 0 ? 1 : 0; R(8, -2 + f, 1, 3 - f, '#ffcf5a'); R(8, -1, 1, 1, '#fff6c0'); }
@@ -347,7 +348,7 @@
           { x: 32, y: 1, spr: 'window', light: { r: 2.2, col: MOON, dy: 10 }, on: S => S.narr('水房的窗户没有玻璃，钉着一块塑料布。塑料布一鼓一鼓的，像在呼吸。') },
           { x: 30, y: 4, spr: 'puddle', decal: true },
           { x: 32, y: 4, spr: 'broom', on: S => S.narr('拖把和簸箕。拖把头湿漉漉的，在地上拖出一道长长的水痕，一直拖到门口。') },
-          { id: 'xm_d', x: 32, y: 3, spr: '@xiaoman', hidden: true, solid: false }
+          { id: 'xm_d', x: 32, y: 3, spr: '@xiaoman', hidden: true, solid: false, light: { r: 1.5, col: 'rgba(150,180,255,.14)', a: .7 } }
         ],
         async enter(S, first) {
           if (S.f.phase === 'chase') { resetChase(S); return; }
@@ -417,7 +418,7 @@
           { x: 7, y: 2, spr: 'bookshelf', on: S => S.narr('「1993—1994 学年　学生奖惩」\n你没有打开。') },
           { id: 'rshelf', x: 9, y: 2, spr: 'bookshelf', async on(S) {
             if (S.once('rep')) await S.narr('一个档案盒的标签被人摸得发亮，和别的都不一样：\n「1994.12　事故」。\n盒子里只有薄薄的一张纸。');
-            await S.note('report'); S.f.readReport = true; archCheck(S);
+            await S.note('report'); S.f.readReport = true; await archCheck(S);
           } },
           { x: 10, y: 2, spr: 'bookshelf', on: S => S.narr('「校报合订本　1995」。\n头版标题：《珍爱生命，远离迷信——我校开展「破除笔仙碟仙」主题班会》。') },
           { id: 'adesk', x: 4, y: 4, spr: 'desk', col: '#5a4030', async on(S) {
@@ -428,7 +429,7 @@
           { x: 9, y: 5, spr: 'crate', on: S => S.narr('纸箱里装着一沓沓发黄的准考证，最上面一张是 1996 年的。') },
           { x: 10, y: 5, spr: 'box', on: S => S.narr('箱子上写着「待销毁」。里面是一摞旧点名册。') },
           { id: 'zhou_o', x: 2, y: 7, spr: '@zhou', dir: 2, hidden: true, on: S => S.say('周老师', S.f.confess ? '……你先进去吧。我、我在门口站一会儿。' : '……') },
-          { id: 'xm_o', x: 28, y: 7, spr: '@xiaoman', hidden: true, solid: false }
+          { id: 'xm_o', x: 28, y: 7, spr: '@xiaoman', hidden: true, solid: false, light: { r: 1.5, col: 'rgba(150,180,255,.14)', a: .7 } }
         ],
         async enter(S, first) {
           if (!first) return;
@@ -443,7 +444,7 @@
       },
       /* ---------------- 旧楼 · 1994 年的高二(3)班 ---------------- */
       oldcls: {
-        amb: 'night', dark: .94, plr: 4.2, wall: 'plain', floor: 'wood', darkC: '#03040a',
+        amb: 'night', dark: .9, plr: 4.2, wall: 'plain', floor: 'wood', darkC: '#03040a',
         tileOpts: { woodC: '#57402b' },
         wallC: { face: '#76786a', trim: '#2f4434' },
         rows: [
@@ -478,8 +479,9 @@
             }
             await S.narr('讲台上落着一层灰。灰上，有一道新的手指印。');
           } },
-          { x: 1, y: 5, spr: 'stove', on: S => S.narr('教室里的煤炉。九十年代的冬天，每个班都靠它取暖。\n炉膛里还有半块没烧完的蜂窝煤。') },
+          { x: 1, y: 5, spr: 'coalstove', on: S => S.narr('教室里的煤炉。九十年代的冬天，每个班都靠它取暖。\n炉膛里还有半块没烧完的蜂窝煤。') },
           { x: 1, y: 8, spr: 'broom', on: S => S.narr('卫生角。簸箕里扫了一小撮灰，没来得及倒掉。') },
+          { x: 4, y: 6, spr: 'invisible', light: { r: 3, col: 'rgba(130,150,200,.06)', a: .55 } },
           ...[[2, 4], [3, 4], [6, 4], [7, 4], [10, 4], [11, 4], [2, 5], [3, 5], [6, 5], [7, 5], [10, 5], [11, 5], [2, 6], [3, 6], [6, 6], [7, 6], [10, 6], [11, 6], [2, 7], [3, 7], [6, 7], [7, 7]].map(([x, y], i) => ({ x, y, spr: 'odesk', on: S => S.narr([
             '翻盖课桌。盖子里面贴着一张「四大天王」的贴纸。', '桌盖上刻着：「1994.9.1 高二了」。', '抽屉里有一本没写名字的英语课本。', '空的。', '桌面上用小刀刻了一个「忍」字。', '桌洞里塞着一团写满了公式的草稿纸。',
             '桌面上有一圈圈墨水印，是钢笔水洒的。', '桌盖掀不开，锈住了。', '空的。', '抽屉里有一盒用了一半的「英雄」墨水。', '桌面上画了一个小人，小人在跑步，旁边写着「800米」。', '桌盖里面写着：「小满跑得最快！」',
@@ -738,15 +740,14 @@
     await S.fade(1, 250); S.pos(5, 7, 0); await S.fade(0, 250);
     if (S.f.archDone && !S.f.confess) await zhouConfess(S);
   }
-  function archCheck(S) {
+  async function archCheck(S) {
     if (S.f.archDone || !(S.f.gotCard && S.f.readReport)) return;
     S.f.archDone = true;
-    S.after(300, async S => {
-      S.sfx('thud');
-      await S.narr('走廊那一头，「咔哒」一声。\n像是哪扇门上的锁，自己掉了下来。');
-      S.goal('离开档案室，去高二(3)班');
-      S.cp();
-    });
+    await S.wait(400);
+    S.sfx('thud');
+    await S.narr('走廊那一头，「咔哒」一声。\n像是哪扇门上的锁，自己掉了下来。');
+    S.goal('离开档案室，去高二(3)班');
+    S.cp();
   }
   async function cabinet(S) {
     const c = S.ent('cab');
@@ -767,7 +768,7 @@
         return;
       }
       S.f.cabOpen = true; c.open = true;
-      await S.narr('你拉开「1996届」那一屉。一沓沓学籍卡，按班级用橡皮筋捆着。\n「高(3)班」那一捆里，名字里带「小」字的女生，有三张。');
+      await S.narr('你拉开「1996届」那一屉。一沓沓学籍卡，按班级用橡皮筋捆着。\n「(3)班」那一捆里，名字里带「小」字的女生，有三张。');
       await S.think('笔仙写的那个字——「小」。');
     }
     const r = await S.ask('抽出哪一张？', ['王小娟　（背面盖着蓝色的毕业章）', '林小满　（右上角盖着一个红章）', '李小雯　（背面盖着蓝色的毕业章）']);
@@ -779,7 +780,7 @@
     await S.narr('「林小满　女　1977年5月21日生」\n「1993年9月入学　高中部(3)班」\n右上角，一个红色的章：「注销」。旁边一行钢笔字：「1994.12.10」。');
     await S.narr('照片上的女生剪着短短的头发，眼睛很亮。\n生日那一栏下面，有人用铅笔添了两个小字：「小满」。\n——是节气。她是小满那天生的。');
     await S.think('小……满。');
-    archCheck(S);
+    await archCheck(S);
   }
   async function zhouConfess(S) {
     S.f.confess = true;
@@ -942,7 +943,6 @@
     S.f.done = true;
     /* 告别 */
     await S.alpha('xm_c', 1, 800);
-    S.place('xm_c', 12, 6, 1); S.ent('xm_c').spr = '@xiaomanC';
     await S.say('林小满', '……岚岚。', { style: 'whisper' });
     S.face('zhou_c', 2);
     await S.say('周老师', '……小满。');

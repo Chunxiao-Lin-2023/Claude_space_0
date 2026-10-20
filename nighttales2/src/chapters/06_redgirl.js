@@ -47,8 +47,9 @@
     S.stop(id); S.hide(id); S.f._sp = 1.6; S.f._st = 0; S.f._vo = 3;
   }
   function carryQi(S, from, to) {
+    const spr = S.ent(from).spr;
     S.follow(from, false); S.hide(from);
-    const e = S.ent(to); e.spr = '@qi2'; S.show(to); S.follow(to, true);
+    const e = S.ent(to); e.spr = spr; S.show(to); S.follow(to, true);
   }
 
   /* ---------- 人物 ---------- */
@@ -126,13 +127,13 @@
   /* 鬼打墙时，红衣小女孩会在这些格子上一闪而过 */
   const GLIMPSE = [[9, 6], [13, 7], [14, 6], [10, 4], [12, 4], [8, 7], [5, 12], [6, 14], [12, 10], [9, 12]];
 
+  const TL = { J: 'bamboo', '^': 'steps', Q: 'steppingstone', X: 'base', U: 'mudpath' };   // 自定义瓦片字符（每张图的 legend）
   const RED_P = { skin: '#e6dcd2', hair: '#0c0808', hs: 'bob', child: true, dress: true, top: '#c81212', top2: '#7a0606', bottom: '#c81212', shoes: '#a80c0c', eye: '#050303' };
 
   defChapter({
     id: 'redgirl', n: 6, title: '红衣小女孩', sub: '一卷家庭登山录像带。队伍最后面，跟着一个谁也不认识的红衣小女孩。', origin: '台湾都市传说', color: '#1d3a24',
     icon: '@red', amb: 'wind', floor: 'dirt', wall: 'wood', dark: .5, plr: 3.4,
     tileOpts: { grassC: '#284a2a', treeC: '#173520' },
-    legend: { J: 'bamboo', '^': 'steps', Q: 'steppingstone', X: 'base', U: 'mudpath' },
     people: {
       me: { key: 'rg-me', skin: '#e8c09a', hair: '#161212', hs: 'short', top: '#2f5a7a', top2: '#e8e8e8', bottom: '#3a3f52', shoes: '#e0e0e0', extra: camExtra },
       erjiu: { skin: '#d4a07a', hair: '#161212', hs: 'short', hat: 'cap', hatC: '#e8e2d0', top: '#e8e4dc', top2: '#b83030', bottom: '#8a7a5a', shoes: '#3a3a3a' },
@@ -283,6 +284,7 @@
         g.fillStyle = 'rgba(196,204,200,.62)'; g.fillRect(0, 0, VW, VH);
         for (let i = 0; i < 9; i++) { const y = ((t * 7 + i * 29) % (VH + 40)) - 20; g.fillStyle = i % 2 ? 'rgba(230,236,232,.35)' : 'rgba(160,170,168,.25)'; g.fillRect(0, y, VW, 10 + (i % 3) * 6); }
       },
+      snow(g, e, t, R) { for (let y = 0; y < VH; y += 3) for (let x = 0; x < VW; x += 3) { const v = Math.random(); g.fillStyle = v < .45 ? '#d0d0cc' : v < .8 ? '#585856' : '#161616'; g.fillRect(x, y, 3, 3); } },
       /* V8 观景窗 OSD：整屏叠加 */
       osd(g, e, t, R) {
         const w = VW, h = VH, m = 12;
@@ -311,7 +313,7 @@
     maps: {
       /* ---------------- 登山口 · 土地公庙 ---------------- */
       trailhead: {
-        amb: 'wind', dark: .3, plr: 3.6, fog: .18,
+        amb: 'wind', dark: .3, plr: 3.6, fog: .18, legend: TL,
         rows: [
           'TTTTTTTTTJJ^JJTTTTTTTTTT',
           'TTTTTTTTJJJ^JJJTTTTTTTTT',
@@ -363,7 +365,7 @@
       },
       /* ---------------- 山间步道：竹林、凉亭、石碑岔路 ---------------- */
       trail: {
-        amb: 'wind', dark: .55, plr: 3.2, fog: .3,
+        amb: 'wind', dark: .55, plr: 3.2, fog: .3, legend: TL,
         rows: TRAIL_ROWS,
         ents: [
           { x: 11, y: 31, spr: 'invisible', touch: S => trailDown(S) },
@@ -394,7 +396,7 @@
         ],
         async enter(S, first) {
           if (S.f.phase === 'flee') {
-            S.dark(.9); S.plr(3); fleeReset(S); S.cp('flee_t');
+            S.dark(.9); S.hide('awei_t'); S.hide('jiumu_t'); S.hide('erjiu_t'); S.hide('red_g'); fleeReset(S); S.cp('flee_t');
             if (S.once('fleeT')) await S.narr('锣声！\n山下传来锣声，一下，一下，敲得又急又响。还有很多人在喊——喊的是小琪的名字。\n\n跟着锣声走。不要回头。');
             return;
           }
@@ -418,7 +420,7 @@
       },
       /* ---------------- 溪谷 ---------------- */
       creek: {
-        amb: 'river', dark: .74, plr: 3.2, fog: .22,
+        amb: 'river', dark: .74, plr: 3.2, fog: .22, legend: TL,
         rows: [
           'TTTTTTTTTTTdTTTTTTTTTTTT',
           'TTTTTTTTTTTdTTTTTTTTTTTT',
@@ -452,7 +454,7 @@
           { x: 21, y: 13, spr: 'invisible', solid: false, on: S => S.narr('工寮门口的泥地上，有两排小小的脚印。\n一排是雨鞋的。另一排……是光着脚的。') },
           { x: 4, y: 16, spr: 'invisible', touch: S => forestIn(S) },
           { id: 'red_c', x: 4, y: 14, spr: '@red', dir: 0, hidden: true, on: S => redCreek(S) },
-          { id: 'qi_c', x: 19, y: 13, spr: '@qi2', hidden: true }
+          { id: 'qi_c', x: 19, y: 13, spr: '@qi2', hidden: true, on: S => qiFollow(S) }
         ],
         async enter(S, first) {
           if (S.f.phase === 'flee') {
@@ -498,10 +500,11 @@
       },
       /* ---------------- V8 观景窗（录像带画面） ---------------- */
       v8: {
-        amb: 'tv', dark: 0, plr: 0,
+        amb: 'tv', dark: 0, legend: TL,
         rows: V8_ROWS,
         ents: [
           { id: 'osd', x: 1, y: 1, spr: 'osd', solid: false, z: 5, s: { mode: 'STOP', tc: '--:--:--' } },
+          { id: 'snow', x: 1, y: 1, spr: 'snow', solid: false, z: 4, hidden: true },
           /* A：登山口团体照 */
           { x: 8, y: 4, w: 3, spr: 'tdg', solid: false },
           { x: 4, y: 3, spr: 'board', solid: false, read: true },
@@ -526,5 +529,633 @@
       }
     }
   });
-/*@FUNCS@*/
+  /* ================= 登山口 ================= */
+  async function opening(S) {
+    await S.narr('下午两点四十分。山脚下的停车场，只停了二舅那台白色喜美。\n天阴阴的。山顶已经被雾吃掉了一半。');
+    S.face('erjiu', 'pl'); S.bubble('erjiu', '!', 900);
+    await S.say('二舅', ['好！人都到齐了齁？', '来来来，点名！秀凤，名单！']);
+    S.face('jiumu', 'pl');
+    await S.say('二舅妈', ['（翻开登山社的报名表）陈志明——', '……你就站在我旁边，还要点你喔？好啦，有。林秀凤——我自己。陈家伟——']);
+    S.face('awei', 'jiumu');
+    await S.say('阿伟', '（拔下一边耳机）……有啦。');
+    await S.say('二舅妈', '陈欣琪——');
+    S.bubble('qi', '♥', 900);
+    await S.say('小琪', '有！有！有！我还有带雨衣！');
+    await S.say('二舅妈', '李凯翔——');
+    const r = await S.ask('二舅妈从名单上抬起头看你。', ['有。', '（举起 V8）报告，已经在录了。']);
+    if (r === 1) { S.face('erjiu', 'pl'); await S.say('二舅', '哈哈，好！就是要这样！我们阿凯是专业的！'); }
+    S.give('v8');
+    await S.say('二舅', ['阿凯，V8 你负责喔。带子是新的，P6-120，两个钟头，够你从山脚录到山顶。', '录好一点，回去要拷贝给你三姑、你小阿姨她们看。', '欸，那个按钮不要乱按喔，那个是——算了，你们年轻人比我会用。']);
+    S.face('ama', 'pl');
+    await S.say('阿嬷', ['恁去就好，阿嬷脚没力，在土地公这里坐，等恁落来。', '阿凯，出发以前，先来跟土地公拜一下。']);
+    S.f.phase = 'start';
+    S.goal('去土地公庙找阿嬷拜拜，然后帮大家录团体照');
+  }
+
+  async function amaOn(S) {
+    S.face('ama', 'pl');
+    if (S.f.phase === 'flee' || S.f.phase === 'safe') return;
+    if (!S.has('amulet')) {
+      await S.say('阿嬷', '来，香给你。跟土地公讲：今天全家要上山，请伊保庇，平平安安上去，平平安安落来。');
+      S.sfx('match'); await S.wait(300);
+      await S.narr('你学阿嬷的样子，双手拿着香，对着庙里那尊小小的、白胡子的土地公，拜了三拜。\n香灰掉在手背上，烫了一下。');
+      S.give('amulet');
+      await S.say('阿嬷', ['这个平安符，阿嬷刚刚跟土地公求的。你挂着，不要拿下来。', '山里啊，有一些……有一些不是人的囡仔。阿嬷小时候，大人都叫伊「魔神仔」。', '伊会学人讲话，会叫你的名字，会请你吃好料。你若跟伊走，就转不来了。']);
+      await S.say('阿嬷', ['阿嬷给你讲三项，你给阿嬷记牢：', '第一，山里有人叫你，不要随便应。先看清楚是谁。', '第二，看到不认识的囡仔，不要跟伊走。伊给你什么，都不要吃。', '第三——落山的时候，后面不管是谁叫你，都不要回头。']);
+      const r = await S.ask('阿嬷认真地看着你。', ['好，我记住了。', '阿嬷，现在都一九九九年了啦。']);
+      if (r === 1) await S.say('阿嬷', '一九九九年，山还是同一座山啊。');
+      S.goal('去找二舅，帮大家录团体照');
+      return;
+    }
+    const L = [['去啦去啦，天黑以前要落来喔。'], ['记牢：有人叫，不要随便应；不认识的囡仔，不要跟伊走；落山，不要回头。'], ['恁二舅喔，每次都讲走一点点就好，每次都走到天黑。']];
+    await S.say('阿嬷', L[(S.f._am = ((S.f._am ?? -1) + 1)) % L.length]);
+  }
+
+  async function tdgOn(S) {
+    if (S.f.phase === 'flee' || S.f.phase === 'safe') return;
+    await S.narr('小小的土地公庙，比人高不了多少。红瓦、燕尾，屋脊上顶着一颗金色的珠子。\n庙里坐着一尊白胡子的土地公，笑眯眯的，手里捧着元宝。两根小红烛一闪一闪。');
+    if (S.has('amulet')) await S.think('土地公，今天拜托你了。');
+    else await S.think('阿嬷叫我先来拜一下……香在阿嬷那里。');
+  }
+
+  async function erjiuOn(S) {
+    S.face('erjiu', 'pl');
+    if (!S.has('amulet')) return S.say('二舅', ['先去给土地公拜一下啦，阿嬷在等你。', '拜完来这里，我们在庙前面拍一张，留念一下！']);
+    if (!S.f.photo) return groupPhoto(S);
+  }
+
+  async function jiumuOn(S) {
+    S.face('jiumu', 'pl');
+    if (S.once('roster')) await S.say('二舅妈', ['阿凯，这张名单你帮我收着，我口袋放不下了。', '登山社规定的啦，每个人都要写全名。走散了才好找人——呸呸呸，乌鸦嘴。']);
+    await S.note('roster'); S.f.roster = true;
+  }
+
+  async function aweiOn(S) {
+    S.face('awei', 'pl');
+    const L = [
+      ['（拿下一边耳机）干嘛？', '爬山有什么好录的……你要是录我，我就去跳崖喔，我讲真的。'],
+      ['欸，你有看那个吗？电视上播的那个。一家人去爬山，带子里多一个红衣服的小女生。', '我们班都在传，说看过那卷带子的人都会衰小。', '……我看过了。我上礼拜数学考二十八分。你自己判断。'],
+      ['小琪一直问红衣小女孩的事，我妈叫我不准再讲了。', '可是我讲真的啦，那个一定是别人家的小孩，刚好走在后面，电视台在那边乱炒。']
+    ];
+    await S.say('阿伟', L[(S.f._aw = ((S.f._aw ?? -1) + 1)) % L.length]);
+  }
+
+  const QF = ['表哥……后面有人在叫你。', '表哥，你不要回头喔。阿嬷说不能回头。', '……那个妹妹在哭。她说她脚好痛。', '表哥，你的手好冰。'];
+  async function qiFollow(S) {
+    await S.say('小琪', QF[(S.f._qf = ((S.f._qf ?? -1) + 1)) % QF.length], { style: 'whisper' });
+  }
+  async function qiOn(S) {
+    if (S.f.phase === 'flee' || S.f.phase === 'safe') return qiFollow(S);
+    S.face('qi', 'pl');
+    const L = [
+      ['表哥！你要把我录漂亮一点喔！'],
+      ['妈妈说山上会下雨，所以我穿雨衣。', '可是现在又没下雨……好热喔。'],
+      ['表哥，魔神仔是什么？', '阿伟哥哥说，魔神仔会把小孩子牵走，叫小孩子吃虫虫。', '……我才不怕咧。虫虫又不好吃。']
+    ];
+    const i = (S.f._qq = ((S.f._qq ?? -1) + 1)) % L.length;
+    await S.say('小琪', L[i]);
+    if (i === 0) await S.narr('她在镜头前面转了一圈，黄色的雨衣鼓起来，像一朵花。');
+  }
+
+  async function apoOn(S) {
+    S.face('apo', 'pl');
+    if (S.once('apo1')) {
+      await S.say('卖笋的阿婆', ['少年仔，买绿竹笋无？今仔日透早才挖的，甜甲若梨仔。', '……要上山喔？这个时间？']);
+      await S.narr('阿婆抬头看了看山顶的雾，嘴里「啧」了一声。');
+      await S.say('卖笋的阿婆', ['你们城市人不知道啦。这座山，我们庄里的老人都叫伊「牵人山」。', '魔神仔会牵人。老人、囡仔，最好牵。伊变作你认识的人，或者变作一个小囡仔，牵着你的手，一直走，一直走……', '走去哪里？溪沟里、竹林里、刺仔丛里。前几年那个王伯仔，三日后才找到，嘴巴塞甲满满的草，还跟人讲伊鸡腿吃甲很饱。']);
+      await S.say('卖笋的阿婆', ['若是有人被牵去，就要敲锣、敲面桶，大家一路喊伊的名字——要喊全名喔，连名带姓。', '魔神仔怕吵。也怕土地公。']);
+      return;
+    }
+    const L = ['一斤五十。不二价。', '天黑以前要落来喔。天一暗，雾就起来了。', '庙那边那张寻人启事，是我贴的。……王伯仔是我小叔啦。'];
+    await S.say('卖笋的阿婆', L[(S.f._ap = ((S.f._ap ?? -1) + 1)) % L.length]);
+  }
+
+  async function stepsUp(S) {
+    const ph = S.f.phase;
+    if (ph === 'flee' || ph === 'safe') return;
+    if (!S.has('amulet')) { await S.say('阿嬷', '阿凯——先来跟土地公拜一下，再上去！'); return S.walk('pl', 'd', 5); }
+    if (!S.f.photo) { await S.say('二舅', '欸欸欸，还没拍团体照啦！回来回来！'); return S.walk('pl', 'd', 5); }
+    await S.go('trail', 11, 30, 3);
+  }
+
+  /* ---------------- V8：录像 / 倒带 ---------------- */
+  async function viewer(S, fn) {
+    const ret = [S.map, S.pl.x, S.pl.y, S.pl.dir];
+    S.hidePlayer(true);
+    await S.go('v8', 10, 6, 0);
+    await fn();
+    await S.go(ret[0], ret[1], ret[2], ret[3]);
+    S.hidePlayer(false);
+  }
+
+  async function groupPhoto(S) {
+    await S.say('二舅', ['好，都来都来！在土地公庙前面拍一张！', '阿伟，耳机拿下来！小琪，站前面！妈——你也进来啦！']);
+    await viewer(S, async () => {
+      const o = S.ent('osd'); S.place('osd', 1, 1); o.s = { mode: 'REC', tc: '15:02:31' };
+      S.hide('vA_red'); S.hide('snow');
+      await S.narr('小小的观景窗里，土地公庙前面站了一排人。\n二舅比 YA，二舅妈帮小琪把雨衣帽子拉好，阿伟只肯露半张脸，阿嬷站在后面，笑得眼睛都不见了。');
+      await S.say('二舅', '来！一、二、三——');
+      S.sfx('tick');
+      await S.say('大家', '茄子——！');
+      await S.narr('你数了一下观景窗里的人：二舅、二舅妈、阿伟、小琪、阿嬷。\n五个。加上拿 V8 的你，刚好六个。');
+    });
+    S.f.photo = true;
+    for (const id of ['erjiu', 'jiumu', 'awei', 'qi']) S.hide(id);
+    await S.narr('二舅一挥手，大家沿着石阶，一个跟一个地往上爬了。\n小琪的黄雨衣夹在一片绿竹子中间，很显眼。');
+    S.goal('沿着石阶上山（V8 继续录）');
+  }
+
+  const CPOS = { 0: [[61, 5, 1], [60, 5, 0]], 1: [[66, 3, 3], [66, 2, 0]], 2: [[71, 5, 2], [72, 5, 0]] };
+  async function playback(S) {
+    if (!S.has('v8')) return;
+    await viewer(S, async () => {
+      const o = S.ent('osd');
+      for (; ;) {
+        S.pos(10, 6); S.place('osd', 1, 1); o.s = { mode: 'STOP', tc: '--:--:--' };
+        S.hide('vA_red'); S.hide('vB_red'); S.hide('snow');
+        const opts = CLIPS.map(c => c.label + (S.f['seen' + c.k] ? '' : '　●')).concat(['（停止播放）']);
+        const r = await S.ask('观景窗里的画面停住了。要倒到哪一段？', opts);
+        if (r >= CLIPS.length) break;
+        await showClip(S, CLIPS[r]);
+      }
+    });
+    await afterPlayback(S);
+  }
+
+  async function showClip(S, c) {
+    const o = S.ent('osd');
+    S.fx('static', { dur: .5 }); S.sfx('tv');
+    if (c.p >= 0) { const X0 = PANEL[c.p]; S.pos(X0 + 10, 6); S.place('osd', X0 + 1, 1); }
+    o.s = { mode: 'PLAY', tc: c.tc, odd: c.k >= 'D' };
+    S.f['seen' + c.k] = true;
+    await S.wait(400);
+    if (c.k === 'A') {
+      S.show('vA_red');
+      await S.narr('画面晃了一下，稳住了。土地公庙前面，大家挤成一排。\n二舅比 YA，二舅妈在帮小琪拉雨衣帽子，阿伟只露半张脸，阿嬷在后面笑。');
+      await S.narr('……你数了一遍。\n一、二、三、四、五。');
+      S.sfx('sting'); S.bubble('vA_red', '…', 1600);
+      await S.narr('——六。');
+      await S.narr('阿伟旁边，站着一个穿红衣服的小女孩。比小琪还矮一点，短短的西瓜皮头。\n她没有看镜头，也没有笑。就那样直直地站着，好像本来就是这家人的一份子。');
+      await S.think('拍的时候，观景窗里明明只有五个人。我数过的。');
+      const r = await S.ask('要看清楚一点吗？', ['按暂停，放大她的脸', '（不要看）']);
+      if (r === 0) {
+        o.s = { mode: 'PAUSE', tc: c.tc };
+        await S.narr('你按下暂停，一格一格往前推。画质糊成一片，可是那张脸——');
+        await S.scare('face', { spr: '@redface', sfx: 'scare' });
+        await S.narr('那不是小孩子的脸。\n皮肤皱巴巴的，像在水里泡了很久；两只眼睛是两个黑黑的洞；嘴角往两边扯开，像在笑，又不像在笑。\n像一个很老很老的人，硬把自己塞进了一个小孩子的身体里。');
+        S.f.zoomed = true;
+      }
+    } else if (c.k === 'B') {
+      S.show('vB_red');
+      await S.narr('竹林里的石阶。你走在队伍最后面，镜头往上拍：小琪的黄雨衣、二舅妈的草帽、二舅的白帽子、阿伟的运动服，一个接一个往上爬。');
+      S.sfx('heart');
+      await S.narr('然后你看见了。\n阿伟后面、你前面，隔着三四个台阶——红色的衣服。');
+      await S.narr('她就走在你和阿伟中间。\n可是她的脸，是朝着镜头的。她倒退着，一阶、一阶，往上走。\n一直、一直看着你。');
+      await S.think('……我一路都走在最后面。我前面，明明只有阿伟。');
+    } else if (c.k === 'C') {
+      S.place('snow', 1, 1);
+      await S.narr('凉亭。二舅在讲电视上的事，小琪趴在栏杆上朝镜头挥手——\n画面突然一阵雪花。');
+      await S.narr('雪花里有声音。很小，很近，好像有人把嘴贴在麦克风上：');
+      S.sfx('whisper');
+      await S.say('？？？', '……来玩嘛。', { style: 'whisper' });
+      S.hide('snow'); S.fx('static', { dur: .4 });
+      await S.narr('雪花停了。画面里，栏杆边上已经没有人了。\n二舅妈的声音在很远的地方喊：小琪？……小琪！');
+    } else {
+      const [q, rr] = CPOS[c.br];
+      S.place('vC_qi', q[0], q[1], q[2]); S.place('vC_red', rr[0], rr[1], rr[2]);
+      S.ent('vC_stele').num = SEQ.indexOf(c.br);
+      if (c.k === 'D') {
+        await S.narr('天色暗了很多。是凉亭再上去的那个石碑岔路——镜头对着左边那条长满杂草的旧路。');
+        await S.narr('小琪走在前面，没穿雨衣，手里抓着一把叶子。红衣小女孩牵着她的另一只手。\n走进左边那条路之前，红衣小女孩停下来，回过头，看了镜头一眼。');
+        await S.think('时间码 17:26。\n……现在才五点出头。这一段，我根本没有录过。');
+      } else if (c.k === 'E') {
+        await S.narr('石碑岔路。小琪被牵着，走进了右边那条废弃的产业道路。\n她边走边把叶子往嘴里塞，嚼得很认真，好像在吃什么很好吃的东西。');
+        S.sfx('giggle');
+        await S.narr('红衣小女孩回过头来，对着镜头，竖起一根手指，放在嘴巴前面。\n嘘。');
+      } else {
+        await S.narr('石碑岔路。这一次，她们走的是中间那条往上的路。');
+        await S.narr('画面跟着她们往前走，晃得很厉害——拍的人一直跟在后面。\n拍的人在喘，喘得很重。');
+        await S.think('……那是我的喘气声。');
+        S.sfx('water');
+        await S.narr('最后一格画面里，路的尽头不是山顶。\n是水声。很大、很大的水声。');
+      }
+      S.hide('vC_qi'); S.hide('vC_red');
+    }
+  }
+
+  async function afterPlayback(S) {
+    if (S.f.phase !== 'search' || S.map !== 'trail') return;
+    const fut = S.f.seenD || S.f.seenE || S.f.seenF;
+    if (fut && !S.f.aweiUp) {
+      S.f.aweiUp = true;
+      S.face('awei_t', 'pl');
+      await S.say('阿伟', ['你……你也看到了吧？那几段……', '17:09、17:26、17:41……现在才五点出头欸！带子怎么可能录到还没发生的事？', '而且顺序还是乱的，17:26 那段排在 17:09 前面……']);
+      await S.say('阿伟', ['……不管了。带子里，她们在上面的石碑那边对不对？', '我先上去！你快点跟上来！']);
+      await S.walk('awei_t', [10, 7], 6); S.face('awei_t', 2);
+      S.goal('去凉亭上面的石碑岔路找小琪');
+    } else if (!fut) S.goal('V8 里还有几段没看过的画面……');
+  }
+
+  async function benchOn(S) {
+    if (S.f.phase === 'search') { await S.narr('你在长椅上坐下来，打开 V8 的观景窗，按下倒带。\n马达「嘰——」地转起来。'); return playback(S); }
+    await S.narr('水泥长椅，坐上去冰冰的。椅脚边丢着几个烟蒂。');
+  }
+
+  /* ================= 步道 ================= */
+  async function climbStart(S) {
+    S.f.phase = 'up';
+    const G = [['qi_t', 14, 20], ['jiumu_t', 14, 22], ['erjiu_t', 12, 22], ['awei_t', 9, 22]];
+    for (const [id, x, y] of G) S.place(id, x, y, 3);
+    await S.narr('石阶一进竹林，天就暗了一半。\n竹子长得又高又密，在头顶上合起来。风一吹，咿咿呀呀地响，像好多扇没关好的门。');
+    await S.think('V8 继续录。走最后面的人要跟紧——名单上是这样写的。');
+    const T = { qi_t: [7, 13], jiumu_t: [13, 13], erjiu_t: [10, 13], awei_t: [12, 12] };
+    G.forEach(([id], i) => bg((async () => { await S.wait(i * 280); await S.walk(id, T[id], 3); S.face(id, id === 'qi_t' ? 3 : 0); })()));
+    S.f.recB = true;
+    S.goal('跟着大家，爬到上面的凉亭');
+  }
+
+  const GNAME = { erjiu_t: '二舅', jiumu_t: '二舅妈', awei_t: '阿伟', qi_t: '小琪' };
+  async function groupTalk(S, id) {
+    const ph = S.f.phase;
+    if (ph === 'flee') return qiFollow(S);
+    S.face(id, 'pl');
+    if (ph === 'search') {
+      if (id === 'awei_t' && S.f.aweiUp) return aweiJunction(S);
+      if (id === 'jiumu_t') return S.say('二舅妈', S.f.aweiUp ? ['你们去……你们去。我在这里等她。', '她回来，要有人在。'] : ['带子……带子有没有录到？你坐下来，倒回去看看……']);
+      if (id === 'awei_t') return S.say('阿伟', ['……我刚刚只是开玩笑的。', '我只是开玩笑的啦……']);
+    }
+    const L = { erjiu_t: ['跟紧喔！走最后面的人最重要！', '这片竹林喔，日本时代就有了。'], jiumu_t: ['阿凯，你走最后面，帮我看着小琪喔。'], awei_t: ['……好累。我到底为什么要来。'], qi_t: ['表哥！我走好快！', '表哥，竹子里面好像有人在笑耶。'] };
+    await S.say(GNAME[id], L[id]);
+  }
+
+  async function restScene(S) {
+    S.f.phase = 'rest';
+    for (const [id, x, y, d] of [['erjiu_t', 10, 13, 0], ['jiumu_t', 13, 13, 0], ['awei_t', 12, 12, 1], ['qi_t', 7, 13, 3]]) S.place(id, x, y, d);
+    await S.walk('pl', [11, 14], 4); S.turn(3);
+    await S.narr('凉亭到了。\n「望云亭」三个字漆得红红的。栏杆外面，是一整片往下滚的雾，白得像一锅煮开的米汤。');
+    await S.say('二舅', ['休息一下！喝水喝水！', '再上去一点就是石碑岔路，走中间那条，二十分钟就到山顶了。']);
+    await S.say('二舅妈', '小琪！不要趴在栏杆上！');
+    await S.say('小琪', ['表哥你看！都是云！', '我们在云上面耶！']);
+    S.face('awei_t', 2); S.bubble('awei_t', '!', 900);
+    await S.say('阿伟', ['欸，这里有人丢八卦周刊。', '「全台疯传！家庭出游录像，惊见红衣小女孩」——哈，又是这个。']);
+    S.face('erjiu_t', 2);
+    await S.say('二舅', ['啊这个我有看！电视有播，好几台都在播。', '一家人去爬山，回家放录像带，队伍后面多一个穿红衣服的小妹妹，全家没有人认识。', '把她的脸放大来看——跟老人一样，皱巴巴的，在那边笑。', '后来就有人在传啊，看过的人会衰，拍到的那一家也怎样怎样……', '啊都乱讲的啦！电视台就是要收视率。']);
+    await S.say('二舅妈', '你在小孩子面前讲这个干嘛啦！');
+    S.face('awei_t', 1);
+    await S.say('阿伟', '小琪，你后面那个是谁？');
+    S.face('qi_t', 0); S.bubble('qi_t', '?', 900);
+    await S.say('小琪', '哪里？哪里？');
+    await S.say('二舅妈', '陈家伟！你再吓她试试看！');
+    S.face('erjiu_t', 'pl');
+    const r = await S.ask('二舅转过来看你：「阿凯，有没有在录？」', ['有，一直在录。', '（把镜头转向小琪）']);
+    if (r === 0) await S.say('二舅', '好！等一下山顶要录全景喔！');
+    await S.say('小琪', ['表哥！录我！录我！', '我要跟云一起拍！']);
+    S.face('qi_t', 3);
+    await S.narr('她转回去，趴在栏杆上，对着雾挥手。');
+    /* ---- 起雾 ---- */
+    S.amb('none');
+    await S.narr('就在这时候，雾上来了。');
+    const fg = S.ent('fog_t'); S.place('fog_t', S.pl.x, S.pl.y); fg.alpha = 0;
+    await S.alpha('fog_t', 1, 1200);
+    S.dark(.68);
+    await S.narr('像有人从山谷底下，把一整桶牛奶泼了上来。\n一眨眼，连两步外的二舅都只剩一个灰灰的影子。V8 的观景窗里，白茫茫一片。');
+    S.sfx('giggle');
+    await S.say('小琪（雾里）', ['表哥……你看，那边有一个妹妹。', '她穿红衣服耶。她说她家有好多好吃的……要请我吃鸡腿。'], { style: 'whisper' });
+    await S.say('你', '小琪？不要乱跑——小琪！');
+    S.hide('qi_t'); S.sfx('giggle');
+    await S.wait(700);
+    await S.alpha('fog_t', 0, 1600);
+    S.amb('wind');
+    await S.narr('雾散得跟来的时候一样快。\n栏杆边上，空荡荡的。');
+    S.face('jiumu_t', 3); S.bubble('jiumu_t', '!', 1200);
+    await S.say('二舅妈', '小琪？……小琪！');
+    await S.say('二舅妈', '陈欣琪——！！', { style: 'big' });
+    await S.narr('没有人回答。\n只有风，从竹林里一阵一阵地吹过来，竹叶沙沙沙地响，像好多小孩子凑在一起，小声地笑。');
+    S.face('erjiu_t', 'pl');
+    await S.say('二舅', ['……不要慌。不要慌。', '她一定是跑去哪里尿尿了。小琪！小琪！']);
+    await S.narr('二舅喊了好几分钟，喊到嗓子都哑了。');
+    await S.say('二舅', ['我下去！山下有人，我去叫庙公、叫阿嬷，叫大家带手电筒上来！', '秀凤你在这里不要动，她回来要有人在。阿凯、阿伟，你们在附近找——不要走远！听到没有！']);
+    await S.walk('erjiu_t', [14, 19], 6); S.hide('erjiu_t');
+    S.face('jiumu_t', 'pl');
+    await S.say('二舅妈', ['该不会……该不会是……', '我小时候，隔壁庄有一个阿伯被牵走过，三天才找到……']);
+    await S.say('阿伟', '妈！你不要乱讲啦！');
+    await S.say('二舅妈', ['阿凯……你刚刚一直在录，对不对？', '带子……带子有没有录到她往哪里跑？你倒回去看看……拜托你……']);
+    S.f.phase = 'search';
+    S.goal('坐到凉亭的长椅上，用 V8 倒带看看');
+    S.cp('search');
+  }
+
+  /* ---------------- 石碑岔路：鬼打墙 ---------------- */
+  async function junctionFirst(S) {
+    if (!S.f.aweiUp) { S.f.aweiUp = true; S.place('awei_t', 10, 7, 2); await S.narr('阿伟从后面追了上来，喘得说不出话。'); }
+    await S.narr('石碑岔路。\n一块长满青苔的老石碑立在路边，路在这里分成三条：左边一条、中间一条、右边一条。\n三条路，都通进雾里。');
+    S.face('awei_t', 'pl');
+    await S.say('阿伟', ['就是这里……跟带子里一模一样。', '三条路……她们到底走哪一条？']);
+    S.goal('找出小琪被带走的路（石碑岔路）');
+    S.cp('loop');
+  }
+
+  async function steleOn(S) {
+    const n = S.ent('stele').num || 0;
+    await S.narr('一块很老的石碑，比小琪还高。正面刻着「往山顶」，旁边那一行被人凿掉了，只剩几个坑。\n' + (n ? '石碑上绑着' + ['', '一', '两'][n] + '条红布条，湿湿的，像刚从水里捞出来。' : '石碑脚下，有人排了一圈小石头，排得整整齐齐的。'));
+    if (S.f.phase === 'search') { const r = await S.ask('要用 V8 倒带看看吗？', ['倒带看看', '算了']); if (r === 0) return playback(S); }
+  }
+
+  async function aweiJunction(S) {
+    const r = await S.ask('阿伟抱着手臂，一直在发抖。', ['跟他一起看带子', '「你在这里等，不要乱跑。」']);
+    if (r === 0) return playback(S);
+    await S.say('阿伟', S.f.lp ? ['……石碑上的红布条变多了。你走对了吧？', '继续，照带子上她们走的路走。'] : ['我不会乱跑啦……', '……你快一点。天快黑了。']);
+  }
+
+  async function branchEnd(S, b) {
+    const ph = S.f.phase;
+    if (ph === 'flee') { await S.narr('不是这边。锣声在山下。'); return S.walk('pl', 'd', 5); }
+    if (ph !== 'search') return S.walk('pl', 'd', 5);
+    S.f.tries = (S.f.tries || 0) + 1;
+    const old = S.f.lp || 0, ok = b === SEQ[old];
+    const lp = S.f.lp = ok ? old + 1 : (b === SEQ[0] ? 1 : 0);
+    if (lp >= 3) return toCreek(S);
+    S.sfx('whisper');
+    await S.narr('你沿着' + BRN[b] + '那条路往前走。\n雾越来越浓，竹子越来越密。走了好久好久，久到你开始怀疑，自己是不是一直在原地踏步——');
+    await S.fade(1, 600);
+    S.pos(11, 8, 3); S.ent('stele').num = lp;
+    if (S.f.aweiUp) S.place('awei_t', 10, 7, 2);
+    await S.fade(0, 600);
+    let m = '……又回到了石碑前面。\n';
+    if (lp > old) m += '可是石碑上，多绑了一条红布条。刚刚还没有的。\n雾好像，薄了一点点。';
+    else if (lp === 0 && old > 0) m += '石碑上的红布条，一条也不见了。';
+    else if (lp === 1) m += '石碑上，还是只绑着一条红布条，湿湿的，往下滴水。';
+    else m += '一样的青苔，一样的三条路。';
+    if (lp > old) S.sfx('chime'); else S.sfx('heart');
+    await S.narr(m);
+    await aweiHint(S, b);
+  }
+
+  async function aweiHint(S, b) {
+    if (!S.f.aweiUp) return;
+    S.face('awei_t', 'pl');
+    if (S.once('hint0')) {
+      await S.say('阿伟', ['……你怎么又从下面走上来？你不是往' + BRN[b] + '走了吗？', '我一直站在这里，看着你走进去……然后你就从我后面走出来了。']);
+      await S.say('阿伟', ['这是……鬼打墙吧？', '我阿公讲过，魔神仔会让人在同一个地方一直绕、一直绕，绕到天黑。', '要……要照它走过的路走，才走得出去。']);
+      return;
+    }
+    if (S.f.tries >= 3 && S.f.lp === 0 && S.once('hint1')) {
+      await S.say('阿伟', ['欸，带子……带子上那三段，时间是乱的对不对？', '会不会……要照时间的顺序走？先走最早的那一段，再走下一段？']);
+      return;
+    }
+    if (S.f.tries >= 6 && S.f.lp === 0 && S.once('hint2')) {
+      await S.say('阿伟', ['照时间排：17:09、17:26、17:41。', '你再倒带看一次，看那三段里，她们各走的是哪一条路。我帮你记。', '……还有，你看石碑上的红布条。走对了，它就会多一条。']);
+    }
+  }
+
+  async function toCreek(S) {
+    S.sfx('chime');
+    await S.narr('你沿着中间那条路往前走。\n这一次，路没有把你送回石碑前面。');
+    S.sfx('water');
+    await S.narr('路开始往下走——明明是往山顶的路，却越走越低。竹子变成了芒草，芒草变成了大石头。\n……然后你听到了水声。很大、很大的水声。跟录像里的一模一样。');
+    await S.go('creek', 11, 1, 0);
+  }
+
+  async function trailDown(S) {
+    const ph = S.f.phase;
+    if (ph === 'flee') { carryQi(S, 'qi_t', 'qi'); return S.go('trailhead', 11, 1, 0); }
+    if (ph === 'up') { await S.say('二舅（上面）', '阿凯——跟上来啊！走最后面的人要跟紧！'); return S.walk('pl', 'u', 5); }
+    if (ph === 'search') { await S.narr('二舅已经下山叫人了。\n你得在上面找。小琪一定还在这座山上。'); return S.walk('pl', 'u', 5); }
+    await S.walk('pl', 'u', 5);
+  }
+  /* ================= 溪谷 ================= */
+  async function creekFirst(S) {
+    S.f.phase = 'creek';
+    await S.narr('雾在这里散开了。\n山谷底下是一条溪，溪水在石头中间翻着白沫。天已经快黑了，对岸的竹林黑压压的一片。');
+    await S.say('你', '阿伟？');
+    await S.narr('没有人回答。\n身后只有雾，和你刚刚走下来的那条小路。阿伟没有跟上来。\n……也许，从一开始，就只有你一个人走进来了。');
+    S.goal('沿着溪边找小琪');
+    S.cp('creek');
+  }
+
+  async function raincoatOn(S) {
+    if (S.has('raincoat')) return;
+    S.hide('raincoat'); S.give('raincoat');
+    await S.narr('溪边的大石头上，挂着一件黄色的小雨衣。\n是小琪的。湿透了，冰冰的。两个口袋里塞满了嚼烂的草叶。');
+    await S.think('……她把雨衣脱了。为什么？');
+    S.sfx('giggle');
+    const e = S.ent('red_c'); S.show('red_c'); e.alpha = 0; S.focus(4, 12);
+    await S.alpha('red_c', 1, 1200);
+    await S.narr('对岸。\n林子边上，站着一个穿红衣服的小女孩。\n她没有动，也没有出声。就站在那里，看着你。');
+    S.focus(null);
+    await S.narr('她右手边，对岸的下游，竹林里露出一角生锈的铁皮屋顶。');
+    S.goal('踩着溪里的石头过溪，去对岸的工寮看看');
+    S.cp('creek2');
+  }
+
+  async function stoneGodCreek(S) {
+    await S.narr('溪边也有一个石头公。红布褪成了粉红色，前面的香炉，是一个生锈的铁罐头。');
+    if (S.once('prayC')) {
+      await S.narr('你身上没有香。你只是双手合十，低头拜了三拜。\n土地公，拜托你，帮我找到小琪。');
+      S.sfx('chime');
+      await S.narr('一阵风从你背后吹过来，吹过溪面，一直吹到对岸——吹向那个铁皮屋顶。\n芒草全部倒向那一边，像很多只手，指着同一个方向。');
+    }
+  }
+
+  async function redCreek(S) {
+    if (S.f.phase === 'flee') return;
+    S.face('red_c', 'pl');
+    const r = await S.ask('红衣小女孩朝你招了招手。\n她身后的林子里，有一条你刚才没看见的小路，黑漆漆的。', ['跟她走', '「小琪在哪里？」', '不要过去']);
+    if (r === 0) return followBad(S);
+    if (r === 1) {
+      await S.narr('她不说话。\n她歪着头，伸出一只手，指了指身后那条黑漆漆的小路。然后，又朝你招了招手。');
+      await S.think('……阿嬷说：看到不认识的囡仔，不要跟伊走。');
+    }
+    await S.narr('你往后退了一步。');
+    S.sfx('giggle');
+    await S.alpha('red_c', 0, 700);
+    await S.narr('一眨眼，她就不见了。\n林子边上只剩那条小路。小路上铺满了落叶，落叶上有一排小小的、光着的脚印，往林子里面去。');
+    S.f.redGone = true;
+  }
+
+  async function forestIn(S) {
+    if (S.f.phase === 'flee') return;
+    const r = await S.ask('林子里黑漆漆的。很远的地方，好像有个小孩子在笑。\n「表哥——来嘛——」', ['往里面走', '退回去']);
+    if (r === 0) return followBad(S);
+    await S.walk('pl', [4, 14], 5);
+  }
+
+  async function followBad(S) {
+    S.place('red_c', 4, 15, 3); S.ent('red_c').alpha = 1;
+    await S.narr('你朝她走过去。\n溪水好像一下子变浅了。你踩着石头过了溪，鞋子一点都没湿。');
+    await S.say('红衣小女孩', '……走吧。我家有好多好吃的。', { style: 'whisper' });
+    await S.narr('她牵起你的手。她的手好小，好冰。\n她带着你往林子里面走。小路一直往下、一直往下，竹子在你身后，一根一根地合起来。');
+    S.amb('none'); await S.fade(1, 1500);
+    await S.end({ bad: true, title: '去她家吃好料', text: '三天以后，搜救队在后山的溪沟里找到了你。\n你坐在一块大石头上，嘴巴里塞满了草叶，还有一只活的蚱蜢。\n你一直笑，跟每个人说：有一个穿红衣服的小妹妹，请你吃了好多好多鸡腿。\n\n小琪没有找到。\n\n你的 V8 掉在你脚边，电池早就没电了。\n后来有人把带子倒回去看。最后一段，是从一个很矮、很矮的角度，往上拍你的脸。\n你在笑。' });
+  }
+
+  async function creekUp(S) {
+    if (S.f.phase === 'flee') { carryQi(S, 'qi_c', 'qi_t'); return S.go('trail', 11, 1, 0); }
+    await S.narr('上面那条路，已经被雾吃掉了。\n你往上走了几步，脚底踩到的，又是溪边的沙子。');
+    await S.walk('pl', 'd', 5);
+  }
+
+  /* ================= 工寮 ================= */
+  async function shackFirst(S) {
+    S.f.phase = 'shack';
+    await S.narr('工寮里一股霉味，混着烂竹笋的酸味。\n铁皮屋顶破了几个洞，最后一点天光从洞里漏下来，照着满地的落叶。');
+    S.sfx('whisper');
+    await S.narr('角落里，有人在小声地哼歌。\n「妹妹背着洋娃娃，走到花园来看花……」');
+    await S.think('小琪！');
+    S.goal('到角落去看看小琪');
+    S.cp('shack');
+  }
+
+  async function qiShack(S) {
+    if (S.f.phase === 'flee') return qiFollow(S);
+    if (!S.f.qiMet) {
+      S.f.qiMet = true;
+      await S.narr('小琪背对着你，蹲在角落里，一边哼歌，一边从地上捡东西往嘴里塞。');
+      await S.say('你', '……小琪？');
+      await S.narr('歌声停了。');
+      S.face('qi_s', 0);
+      await S.scare('face', { spr: '@qi2leaf', sfx: 'sting' });
+      await S.narr('她转过来。\n嘴巴里塞满了草叶，绿色的汁从嘴角流下来。眼睛睁得大大的，可是好像看不见你。\n她嘴里还有东西在动。是一只蚱蜢。');
+      await S.say('小琪', ['表哥，你来了。', '你要不要吃？那个妹妹给我的鸡腿。好好吃喔。'], { style: 'whisper' });
+      const r = await S.ask('小琪把满手的草叶递过来。\n可是在你眼里，那确确实实是一只油亮亮、热腾腾的鸡腿。', ['（接过来）', '（一巴掌拍掉她手里的东西）']);
+      if (r === 0) return eatBad(S);
+      S.sfx('thud');
+      await S.narr('草叶撒了一地。小琪眨了眨眼，又低下头，从地上一片一片捡起来，继续往嘴里塞。');
+      await S.say('小琪', ['妹妹说，等一下要带我去她家。', '她家在很里面很里面。那里都没有大人，可以一直玩、一直玩。'], { style: 'whisper' });
+      await S.think('阿嬷说过……卖笋的阿婆也说过……\n要怎么样，才能把她叫回来？');
+      S.goal('想办法叫醒小琪（工寮里找找线索）');
+      return;
+    }
+    for (; ;) {
+      const r = await S.ask('小琪蹲在角落里嚼着草叶，一点反应也没有。', ['敲铁锅', '把平安符塞进她手里', '大声喊她的名字', '（先等等）']);
+      if (r === 3) return;
+      if (r === 0) {
+        if (!S.has('pot')) { await S.narr('手边没有能敲的东西。\n……灶上好像搁着一口锅。'); continue; }
+        for (let i = 0; i < 3; i++) { S.sfx('thud'); S.shake(220, 2); await S.wait(320); }
+        S.f.gong = true;
+        await S.narr('「哐！哐！哐！」\n铁锅的声音在铁皮屋里撞来撞去，震得耳朵嗡嗡响。\n角落的黑暗里，有什么东西「嘶」地缩了一下。小琪嚼东西的嘴，停住了。');
+        continue;
+      }
+      if (r === 1) {
+        if (S.f.fu) { await S.narr('平安符已经握在她手里了。'); continue; }
+        if (!S.f.gong) { await S.narr('你把平安符塞进她手里。她的手一松，符就掉在地上。\n四周太安静了，安静得只听得见她嚼叶子的声音，还有角落里另一个很轻的呼吸声。\n……得先把「那个东西」吓开才行。'); continue; }
+        S.f.fu = true; S.take('amulet');
+        await S.narr('这一次，小琪的手指慢慢收紧，握住了那个小小的红布袋。\n香灰的味道，淡淡地散开。');
+        continue;
+      }
+      if (!S.f.gong || !S.f.fu) {
+        await S.narr('你喊了她一声。她连头都没抬。\n……顺序不对吗？卖笋的阿婆说过，魔神仔怕吵，也怕土地公。');
+        continue;
+      }
+      const NAMES = ['「小琪——！」', '「琪琪——！」', '「陈欣琪——！」', '「陈家琪——！」'];
+      const n = await S.ask('要喊什么？', NAMES, '你');
+      if (n !== 2) {
+        S.sfx('giggle');
+        await S.narr('你喊了：' + NAMES[n] + '\n角落里，有人跟着你喊了一声：' + NAMES[n] + '\n是一个小女孩的声音。不是小琪。\n小琪没有反应。');
+        await S.think('「喊小名没有用。小名，魔神仔也会叫。」\n……要连名带姓。');
+        continue;
+      }
+      return wake(S);
+    }
+  }
+
+  async function eatBad(S) {
+    await S.narr('你接了过来。\n鸡腿热热的，油亮亮的，香得要命。你一整个下午都没吃东西了。');
+    await S.narr('你咬了一口。');
+    S.amb('none'); S.sfx('giggle');
+    await S.narr('……好好吃。\n小琪在笑。角落里，还有另一个小女孩，也在笑。');
+    await S.fade(1, 1500);
+    await S.end({ bad: true, title: '好好吃', text: '搜救队找了四天。\n\n第四天傍晚，有人在后山一间废弃的工寮里，找到了两个人——一个大学生，一个小女孩。\n他们并排坐在角落里，嘴巴里塞满了草叶，一边嚼，一边笑。\n\n大人问他们这几天在做什么。\n他们说，在一个小妹妹家里吃好料。\n那个小妹妹的家，在很里面、很里面。' });
+  }
+
+  async function zaoOn(S) {
+    if (S.ent('zao').open) return S.narr('灶里只剩冷掉的灰。灰上有几个小小的手指印。');
+    S.ent('zao').open = true; S.give('pot');
+    await S.narr('砖砌的灶上搁着一口生锈的铁锅，锅耳上挂着一支大汤匙。\n你把锅拿起来，很重。随手敲了一下——「哐」。\n角落里的哼歌声，断了一拍。');
+    if (S.f.readLog) await S.think('……「魔神仔怕吵，怕锣鼓。」');
+  }
+
+  async function wake(S) {
+    await S.say('你', '陈欣琪——！！', { style: 'big' });
+    await S.narr('你的声音在铁皮屋里撞了好几下。');
+    await S.say('你', ['陈欣琪！你给我回来！', '陈欣琪——转来哦——！']);
+    S.sfx('scream'); S.shake(700, 3);
+    await S.narr('角落里的黑暗尖叫了一声。不是小琪的声音——是一个又尖又细、像指甲刮铁皮的声音。');
+    S.ent('qi_s').spr = '@qi2';
+    await S.narr('小琪忽然弯下腰，「呕」地一声，吐出一大口东西——草叶、泥巴、嚼碎的竹叶，还有一只还在挣扎的蚱蜢。');
+    S.sfx('cry');
+    await S.say('小琪', ['……表哥？', '表哥……这里是哪里？我好冷……我的雨衣呢……', '那个妹妹说……她说要带我去吃鸡腿……她说她家……']);
+    await S.say('你', '没事了。表哥在这里。我们回家。');
+    if (S.has('raincoat')) { S.take('raincoat'); S.ent('qi_s').spr = '@qi'; await S.narr('你把湿掉的黄雨衣披在她身上。她抓着你的衣角，抓得好紧。'); }
+    else await S.narr('她抓着你的衣角，抓得好紧。');
+    S.sfx('giggle');
+    await S.narr('就在小琪刚刚蹲的那个角落里——\n有人，笑了一声。');
+    S.turn(0);
+    await S.narr('你没有转过去看。\n你想起记事本上最后那一句话，想起阿嬷说的第三件事。\n\n落山的时候，后面不管是谁叫你，都不要回头。');
+    S.face('qi_s', 0); S.follow('qi_s', true);
+    S.f.phase = 'flee'; S.f._sp = 1.4; S.f._st = 0; S.f._vo = 3; S.f._gg = .6;
+    S.goal('牵着小琪下山：一直往前走，不要回头！');
+    S.cp('flee_s');
+  }
+
+  async function shackOut(S) {
+    if (S.f.phase === 'flee') { carryQi(S, 'qi_s', 'qi_c'); return S.go('creek', 19, 13, 1); }
+    await S.go('creek', 19, 13, 0);
+  }
+
+  /* ================= 下山 · 结局 ================= */
+  async function nightEnter(S) {
+    S.dark(.8); S.ent('lamp_h').off = false;
+    for (const [id, x, y, d] of [['erjiu', 10, 5, 3], ['jiumu', 12, 6, 3], ['awei', 13, 5, 3], ['miaogong', 9, 6, 3], ['man1', 14, 4, 3], ['man2', 8, 8, 3], ['ama', 3, 6, 2]]) S.place(id, x, y, d);
+    S.ent('erjiu').light = { r: 3, col: 'rgba(255,240,200,.14)' };
+    S.hide('apo');
+    fleeReset(S); S.cp('flee_h');
+    if (S.once('fleeH')) await S.narr('石阶底下有光！\n手电筒的光、土地公庙的烛光——还有锣声，就在下面！');
+  }
+
+  async function safeEnd(S) {
+    S.f.phase = 'safe';
+    S.stop('red_h'); S.hide('red_h');
+    S.follow('qi', false);
+    await S.walk('pl', [11, 5], 5); S.turn(0);
+    S.place('qi', 11, 4, 0);
+    for (let i = 0; i < 3; i++) { S.sfx('thud'); S.shake(260, 2); await S.wait(260); }
+    await S.narr('「哐！哐！哐！」\n庙公把锣敲得震天响。手电筒的光一下子全照了过来。');
+    S.face('miaogong', 'pl');
+    await S.say('庙公', '落来啊！人落来了！');
+    S.face('jiumu', 'qi'); S.bubble('jiumu', '!', 900);
+    await S.say('二舅妈', '小琪——！！');
+    S.place('jiumu', 12, 4, 1);
+    await S.narr('二舅妈冲过来，一把把小琪抱进怀里，哭得整个人都在抖。');
+    S.face('ama', 2);
+    await S.say('阿嬷', ['欣琪啊——转来哦——', '陈欣琪——转来哦——']);
+    await S.say('大家', '陈欣琪——转来哦——！', { style: 'big' });
+    S.place('red_h', 11, 1, 0); const R = S.ent('red_h'); R.alpha = 0;
+    S.focus(11, 2);
+    bg(S.alpha('red_h', .9, 900));
+    await S.narr('二舅妈忽然尖叫了一声，指着你身后的石阶。\n你没有回头。可是所有的手电筒，都照了过去——');
+    await S.narr('石阶的最上面，雾里，站着一个小小的、红色的影子。\n她就站在那里，看着底下的一群人，看着土地公庙里那两点烛光。');
+    S.sfx('thud'); S.shake(300, 2);
+    await S.say('庙公', '走！不要再来了！这个囡仔有人顾！', { style: 'big' });
+    S.sfx('thud'); await S.wait(300); S.sfx('thud');
+    await S.narr('锣声一下一下地响。她往后退了一步，又退了一步。\n然后，她转过身，走回了雾里。');
+    S.face('red_h', 3);
+    await S.alpha('red_h', 0, 1400);
+    S.focus(null);
+    S.sfx('cry');
+    await S.narr('小琪「哇」地一声哭了出来，又吐了一地的草叶。');
+    S.face('awei', 'pl');
+    await S.say('阿伟', ['阿凯！你跑去哪里了啦！', '我在石碑那边一转头，你就不见了！我喊了半个钟头，喊到没声音……我还以为……']);
+    S.face('erjiu', 'pl');
+    await S.say('二舅', ['……没事了，没事了。人回来就好。', '阿凯，谢谢你。']);
+    await S.say('小琪', ['表哥……', '那个妹妹说……她说，下次还要找我玩。'], { style: 'whisper' });
+    await S.narr('没有人接话。');
+    S.face('ama', 'pl');
+    await S.say('阿嬷', ['土地公有保庇。', '……阿凯，你那台 V8，等一下拿来给阿嬷。']);
+    await S.fade(1, 1200);
+    await S.card('那天晚上', '', '庙公替小琪收了惊。\n阿嬷在土地公面前跪了很久、很久。\n\n回家的车上，小琪睡着了，手里还紧紧握着那个平安符。\n二舅说，带子回去要拷贝给每一家。\n\n你说，带子你先保管。');
+    const r = await S.ask('那卷 P6-120 的带子，后来——', ['交给阿嬷，在金炉里烧掉', '自己收起来，再也不看']);
+    if (r === 0) return S.end({ title: '第六夜　完', text: '第二个礼拜天，阿嬷把带子丢进了土地公庙的金炉。\n塑胶烧起来有一股很呛的味道，黑烟一直往山上飘。\n\n后来，电视上又播了一次别人家的那段录像。你转台转得很快。\n\n你一直没有跟任何人说：\n带子丢进火里以前，你偷偷看了最后一次。\n最后一格，是登山口的团体照。\n二舅、二舅妈、阿伟、小琪、阿嬷。\n还有站在小琪旁边，牵着她的手的——' });
+    return S.end({ title: '第六夜　完', text: '那卷带子，一直锁在你书桌最下面的抽屉里。\n你再也没有把它放进 V8。\n\n只是有几个晚上，你半夜醒过来，\n会听见抽屉里，传出很轻、很轻的声音。\n\n嘰——\n\n像有人在里面，把带子倒回去。' });
+  }
 })();

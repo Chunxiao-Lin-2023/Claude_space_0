@@ -495,7 +495,7 @@
     await S.say('K婆婆', ['……嗯。', '你听好。从现在起，到明天早上七点，你一步都不能出这个门。', '门从里面插上。不管谁叫你，不管是什么声音——你爷爷、你奶奶、我，都一样——不要应，不要开。', '怕了，就攥着那张护符，对着佛像念经。']);
     await S.say('K婆婆', '……熬过今晚。熬过去就好了。');
     await S.narr('K婆婆退了出去。纸门合上了。\n你照她说的，从里面插上了门闩。\n楼梯吱吱呀呀地响了一阵，然后就安静了。');
-    S.hide('kbaaH'); f.phase = 'night'; f.ns = 0; S.dark(null); S.amb('night');
+    S.hide('kbaaH'); f.phase = 'night'; f.ns = 0; S.dark(null); S.amb('night'); S.ent('clockH').num = 8;
     await S.fade(1, 600);
     await S.card('晚上八点', '', '行灯的光晕在榻榻米上一圈一圈地晃。\n虫子在窗外叫。\n\n离早上七点，还有十一个小时。');
     await S.fade(0, 600);
@@ -1047,7 +1047,7 @@
       chichi: { skin: '#e8c09a', hair: '#1e1818', hs: 'short', top: '#e8e8e8', top2: '#2a3a6a', bottom: '#3a3a40', shoes: '#1a1a1a' },
       hachi: { key: 'hachi-icon', skin: '#e7ded2', hair: '#0f0a0c', hs: 'long', top: '#ebe7dc', top2: '#ebe7dc', bottom: '#ebe7dc', robe: true, noFeet: true, eye: '#1a1214', mouth: '#8a3434', hat: 'straw', hatC: HATC, extra: hatX },
       hachiF: { key: 'hachi-face', skin: '#ece4da', hair: '#0f0a0c', hs: 'long', top: '#ebe7dc', top2: '#ebe7dc', bottom: '#ebe7dc', robe: true, noFeet: true, eye: '#000000', hat: 'straw', hatC: HATC,
-        extra(g, d, fr, G, R) { hatX(g, d, fr, G, R); if (d === 0) { R(4, G.hT + 6, 8, 1, '#3a0a0c'); R(5, G.hT + 7, 6, 1, '#5a0c10'); R(6, G.hT + 3, 1, 3, '#000'); R(9, G.hT + 3, 1, 3, '#000'); } } }
+        extra(g, d, fr, G, R) { hatX(g, d, fr, G, R); if (d === 0) { R(4, G.hT + 6, 8, 1, '#3a0a0c'); R(5, G.hT + 7, 6, 1, '#7a1014'); R(3, G.hT + 5, 1, 1, '#3a0a0c'); R(12, G.hT + 5, 1, 1, '#3a0a0c'); R(6, G.hT + 4, 1, 1, '#ffffff'); R(9, G.hT + 4, 1, 1, '#ffffff'); } } }
     },
     items: {
       mamori: { name: '护身符', desc: 'K婆婆塞给你的小布袋，里面是一张折好的符。\n「天黑以前，它不敢靠得太近。」' },
