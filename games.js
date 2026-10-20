@@ -83,6 +83,17 @@ window.GAMES = [
     hue: 350
   },
   {
+    id: 'nighttales2',
+    title: '十夜怪谈·贰',
+    sub: '像素恐怖探索 · 又十个怪谈',
+    desc: '如月车站、八尺大人、猿梦、湘西赶尸、朝内81号、红衣小女孩、笔仙、贝尔女巫、鬼妻娜娜、黑眼孩子——《十夜怪谈》第二部，每个怪谈一章俯视角探索解谜。两人联机共享同一个角色，轮流操作。',
+    url: 'nighttales2/',
+    cover: 'covers/nighttales2.webp',
+    status: 'dev',
+    tags: ['单人', '双人联机', 'iPad'],
+    hue: 165
+  },
+  {
     id: 'lasttower',
     title: '尸夜孤楼',
     sub: '盖楼守夜 · 丧尸生存',

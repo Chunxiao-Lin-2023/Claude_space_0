@@ -292,7 +292,213 @@
           if (first) await S.narr('祈祷室里铺着绿地毯，汽灯嘶嘶地响。你在门口脱了鞋。\n空气里有一股干净的、樟脑和白布的味道。');
         }
       },
-      /*@KAMPUNG@*/
+      /* ---------------- 甘榜（河边的村子） ---------------- */
+      kampung: {
+        amb: 'night', dark: .8, plr: 3, wall: 'wood', floor: 'dirt',
+        legend: { p: 'papan' },
+        tileOpts: { grassC: '#22321f', treeC: '#132018' },
+        rows: [
+          'TTTTTTTTTTTTTTTdddTTTTTTTTTTTTTT',
+          'TTTTTTTT"""""""ddd""""""TTTTTTTT',
+          'TT#######""""""ddd"""""#######TT',
+          'TT#######"""""""d""""""#######TT',
+          'TT#######"""""""d""""""#######TT',
+          'T"dddddddddddddddddddddddddddd"T',
+          'T"""""""""""""""d""""""""""""""T',
+          'T"""""""""""""""d""""""""""""""T',
+          'T"""""""""""""""d""""""""""""""T',
+          'T""#######""""""d""""""""""""""T',
+          'T""#######""""""d""""""""""""""T',
+          'T""#######""""""d""""""""""""""T',
+          'T"dddddddddddddddddddddddddddd"T',
+          'T"""""""""""""""dd"""""""""""""T',
+          'Teeeee""""""""""dd""""""""eeeeeT',
+          'eeeeeeeeooooooooppooooooooeeeeee',
+          '~~~~~~~~~~~~~~~~pp~~~~~~~~~~~~~~',
+          '~~~~~~~~~~~~~~~~pp~~~~~~~~~~~~~~',
+          '~~~~~~~~~~~~~~~~pp~~~~~~~~~~~~~~',
+          '~~~~~~~~~~~~~~~~pp~~~~~~~~~~~~~~',
+          '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~',
+          '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'],
+        ents: [
+          ...[15, 16, 17].map(x => ({ x, y: 0, spr: 'invisible', touch: S => toKebun(S) })),
+          { x: 14, y: 1, spr: 'sign', col: '#3a5a3a', on: S => S.narr('一块歪歪的木牌：KEBUN KARET（橡胶园）↑\n穿过橡胶园，就是村里的老坟场。') },
+          /* 外婆家 */
+          { x: 5, y: 4, spr: 'door', col: '#5a3a22', async on(S) { S.sfx('open'); await S.go('rumah', 7, 9, 3); } },
+          { id: 'hw1', x: 3, y: 4, spr: 'window', lit: true, light: { r: 1.6, col: 'rgba(255,170,80,.14)' }, on: S => S.narr('外婆家的窗户。窗缝里透出一点煤油灯的光。') },
+          { id: 'hw2', x: 7, y: 4, spr: 'window', on: S => S.narr(S.f.phase === 'taken' || S.f.phase === 'night' ? '里屋那扇窗开着。窗台底下就是黑黢黢的河水。' : '里屋的窗户黑着。表姐和孩子在里面睡觉。') },
+          /* 祈祷室 */
+          { x: 26, y: 4, spr: 'door', col: '#2e5a44', async on(S) { S.sfx('open'); await S.go('surau', 6, 7, 3); } },
+          { x: 24, y: 4, spr: 'window', lit: true, light: { r: 2.4, col: 'rgba(255,230,170,.16)' }, on: S => S.narr('祈祷室的窗户亮得发白——里面点着汽灯。') },
+          { x: 28, y: 4, spr: 'window', lit: true, light: { r: 2.4, col: 'rgba(255,230,170,.16)' }, on: S => S.narr('窗台上摆着一排拖鞋，整整齐齐。') },
+          { x: 22, y: 4, spr: 'sign', col: '#2e5a44', on: S => S.narr('绿底白字的牌子：SURAU AL-IKHLAS（祈祷室）。\n牌子下面挂着一盏马灯，被风吹得吱呀吱呀地转。') },
+          /* 杂货铺 */
+          { x: 6, y: 11, spr: 'door', col: '#6a5a3a', on: S => S.narr(S.f.phase === 'taken' || S.f.phase === 'night' ? '杂货铺的木板门关得死死的。门缝里贴着一张褪色的红纸，写着「出入平安」。' : '杂货铺的门半开着，里面堆满了米袋、饼干罐和成捆的香。') },
+          { x: 4, y: 11, spr: 'window', lit: true, light: { r: 2, col: 'rgba(255,190,110,.16)' }, on: S => S.narr('杂货铺里点着一根红蜡烛，照着柜台上的神龛——是土地公。') },
+          { id: 'clip', x: 8, y: 11, spr: 'poster', col: '#d8ccaa', async on(S) { if (S.once('clip')) await S.narr('杂货铺门边的木板上钉着一张发黄的剪报。'); await S.note('kota'); } },
+          { id: 'stall', x: 3, y: 12, w: 2, spr: 'stall2', col: '#a83a2a', light: { r: 2.2, col: 'rgba(255,180,90,.16)', flick: true }, on: S => S.narr(S.f.phase === 'taken' || S.f.phase === 'night' ? '柜台上盖着一块油布。玻璃罐里的虾片，在黑暗里白得像一排牙。' : '杂货铺门口的摊子：成串的咖啡粉小包、虾片罐子、一盒一盒的丁香烟（kretek）。') },
+          { id: 'ahpek', x: 5, y: 12, spr: '@ahpek', dir: 0, on: S => ahpekTalk(S) },
+          /* 村中 */
+          { id: 'kapukK', x: 19, y: 6, w: 3, h: 2, spr: 'kapuk', on: S => S.narr(S.f.tutDone ? '大木棉树。最低的那根树杈上空空的。\n……你不敢再往上看。' : '村口的大木棉树（pohon kapuk）。树干灰白，底下的板根像一面面竖起来的墙。\n雨季结的棉絮被雨打湿了，挂在枝头，像一团团没拧干的白布。') },
+          { id: 'kt', x: 20, y: 6, spr: '@kunti', hidden: true, solid: false, oy: -26, z: 1, light: GLOW },
+          { id: 'kt2', x: 16, y: 6, spr: '@kunti', hidden: true, solid: false, light: GLOW },
+          { x: 12, y: 7, spr: 'kemboja', on: S => S.narr('路边一棵鸡蛋花树（kemboja），白花开得正盛。\n在城里，这是种在酒店门口的花；在甘榜，它种在坟头上。') },
+          { x: 25, y: 9, spr: 'kemboja', on: S => S.narr('又一棵鸡蛋花树。落了一地的花，没人去扫。') },
+          { x: 10, y: 6, spr: 'streetlamp', off: true, on: S => S.narr('村里唯一的一根路灯杆。停电了，灯泡是黑的，上面爬满了壁虎。') },
+          { x: 23, y: 13, spr: 'streetlamp', off: true, on: S => S.narr('路灯黑着。灯罩里积着雨水。') },
+          { x: 1, y: 7, spr: 'barrel', on: S => S.narr('接雨水的大铁桶，满了。水面上漂着一朵鸡蛋花。') },
+          { id: 'dog', x: 28, y: 8, spr: 'anjing', on: S => S.narr(S.f.phase === 'taken' || S.f.phase === 'night' ? '邻居家的狗冲着村北的黑暗，喉咙里发出呜呜的声音，就是不肯叫出来。' : '邻居家的黄狗趴在地上，耳朵贴着脑袋。你蹲下去摸它，它没有摇尾巴，一直盯着村北。') },
+          { x: 20, y: 14, w: 2, spr: 'meriam', on: S => S.narr('一门「电石竹炮」（meriam karbit）——一截掏空了的大树干，用藤条箍着，炮口对着河。\n开斋节的晚上，往里面放电石、加水、点火，「轰」的一声，整条河都在抖。') },
+          ...[[9, 5], [11, 5], [13, 5], [15, 4], [16, 2], [16, 1]].map(([x, y], i) => ({ id: 'tr' + i, x, y, spr: 'bunga', decal: true, hidden: true })),
+          /* 码头 */
+          { id: 'darto', x: 17, y: 19, spr: '@darto', dir: 1, on: S => dartoTalk(S) },
+          { x: 18, y: 18, w: 2, spr: 'sampan', on: S => S.narr('达多伯的小船（sampan），船舱里堆着湿漉漉的渔网，还有一盏没点的渔灯。') },
+          { x: 16, y: 15, spr: 'invisible', solid: false, on: S => S.narr('码头的木板被水泡得发软，踩上去咯吱咯吱地响。\n木桩底下，河水黑得发亮。') }
+        ],
+        async enter(S, first) {
+          const ph = S.f.phase;
+          if (ph === 'taken' || ph === 'night') {
+            for (let i = 0; i < 6; i++) S.show('tr' + i);
+            S.hide('ahpek'); S.ent('stall').light = null;
+            if (S.once('kNight')) {
+              await S.narr('雨停了。整个甘榜没有一扇窗户是亮的，只有祈祷室那边，透出一片汽灯的白光。\n河上起了雾。');
+              await S.narr('地上有花。\n白色的鸡蛋花，一朵，一朵，从外婆家的屋檐底下，一直往村北掉过去。');
+              S.goal(S.f.ust2 ? '跟着花往北，穿过橡胶园，去老坟场的大木棉树' : '去村东头的祈祷室，找哈桑老师');
+            }
+            return;
+          }
+          if (first) {
+            await S.narr('外面比屋里还黑。一排高脚屋踩着木桩站在河边，窗户里只有零零星星几点煤油灯的光。\n空气又湿又重，像一块拧不干的毛巾。河水在木桩底下哗哗地响。');
+            await S.think('阿伯的杂货铺在村路西头……路过那棵大木棉树的时候，别停。');
+          }
+        },
+        step(S, x, y) {
+          if (S.f.phase === 'back' && y <= 8) return tutorial(S);
+        },
+        tick(S, dt) { tutTick(S, dt); }
+      },
+      /* ---------------- 橡胶园 ---------------- */
+      kebun: {
+        amb: 'night', dark: .9, plr: 2.5, floor: 'dirt', fog: .1,
+        legend: { Y: 'karet', p: 'papan' },
+        tileOpts: { grassC: '#1e2c1c' },
+        rows: [
+          'TTTTTTTTTTTdTTTTTTTTTT',
+          'TddYddYddYddYddYddYddT',
+          'TdddddddddddddBddddddT',
+          'TBdddddddddddddddddddT',
+          'TddYddYddYddYddYddYddT',
+          'TddddddddddddddddddddT',
+          'TddddddddddddddddddddT',
+          'T~~~~~~~~~~~~~~~~~pp~T',
+          'TddddddddddddddddddddT',
+          'TddddddddddddddddddddT',
+          'TddYddYddYddYddYddYdBT',
+          'TddddddddddddddddddddT',
+          'TddddddddddddddddddddT',
+          'TddYddYddYddYddYddYddT',
+          'T~pp~~~~~~~~~~~~~~~~~T',
+          'TddddddddddddddddddddT',
+          'TddYddYddYddYddYddYddT',
+          'TddddddddddddddddddddT',
+          'TBdddddddddddddddddddT',
+          'TddYddYddYddYddYddYddT',
+          'TddddddddddddddddddddT',
+          'T~~~~~~~~~~~~~~~~~pp~T',
+          'TddYddYddYddYddYddYddT',
+          'TddddddddddddddddddddT',
+          'TddddddddddddddddddddT',
+          'TddYddYddYddYddYddYddT',
+          'TdddddddddddddddddddBT',
+          'TddddddBdddddddddddddT',
+          'TddYddYddYddYddYddYddT',
+          'TTTTTTTTTTTdTTTTTTTTTT'],
+        ents: [
+          { x: 11, y: 29, spr: 'invisible', async touch(S) { await S.narr('不能回去。孩子还在她手里。\n天亮之前，得把孩子带回来。'); await S.walk('pl', 'u', 5); } },
+          { x: 11, y: 0, spr: 'invisible', async touch(S) { await S.go('makam', 12, 18, 3); } },
+          { id: 'pondok', x: 3, y: 24, w: 2, spr: 'pondok', async on(S) { if (S.once('pondok')) await S.narr('割胶工的小棚子。棚里挂着几把割胶刀，一盏熄了的头灯。\n门口钉着一块木板，上面用木炭写满了字。'); await S.note('papan'); } },
+          { x: 16, y: 26, spr: 'bunga', decal: true, on: S => S.narr('地上又是几朵鸡蛋花，花心朝上，像一只只睁着的眼睛。') },
+          { x: 19, y: 22, spr: 'bunga', decal: true },
+          { x: 3, y: 15, spr: 'bunga', decal: true },
+          { x: 19, y: 8, spr: 'bunga', decal: true },
+          { x: 9, y: 2, spr: 'bunga', decal: true },
+          { x: 13, y: 18, spr: 'kain', z: 1, on: S => S.narr('一缕白布挂在橡胶树的割口上，被树胶粘住了。\n布边绣着一圈红线。') },
+          { x: 8, y: 11, spr: 'barrel', on: S => S.narr('一只接胶水的铁桶，里面的胶乳已经凝成了白色的一坨，像一块冷掉的豆腐。') },
+          { x: 15, y: 5, spr: 'basket', on: S => S.narr('一只倒扣的竹篮，篮子底下压着一双胶鞋。\n鞋子是湿的，鞋尖朝着村子的方向，好像有人脱了鞋，光着脚往林子深处去了。') },
+          { x: 19, y: 15, spr: 'invisible', solid: false, on: S => S.narr('一棵橡胶树的树皮上，被人用刀刻了一个小小的记号：一个圈，圈里一点。\n割胶工的记号，意思是「这棵树，别在夜里割」。') },
+          { id: 'kk', x: 11, y: 20, spr: '@kunti', hidden: true, solid: false, light: GLOW }
+        ],
+        async enter(S, first) {
+          if (S.f.phase === 'night') {
+            S.f.phase = 'kebun'; S.norun(false);
+            await S.narr('橡胶树一排一排，整整齐齐，像一队站着睡着的人。\n每棵树干上都斜斜地割着一道道口子，底下挂着接胶的椰壳碗。风一吹，碗和碗碰在一起，咯咯地响。');
+            await S.narr('地上的鸡蛋花，一朵，一朵，一直往北。');
+            await S.think('外婆说过：笑声听着近，她还远；听着远——她就在旁边。\n听见很轻的笑声，就站住，别动。');
+            S.goal('穿过橡胶园往北（笑声很轻＝她就在旁边：站住别动）');
+            resetK(S); S.f.kt = 1.2; S.f.kn = 0;
+            S.cp('kebun');
+          }
+        },
+        tick(S, dt) { kTick(S, dt); }
+      },
+      /* ---------------- 老坟场 ---------------- */
+      makam: {
+        amb: 'night', dark: .88, plr: 2.6, floor: 'dirt', fog: .18,
+        tileOpts: { grassC: '#1e2a1c', treeC: '#101a14' },
+        rows: [
+          'TTTTTTTTTTTTTTTTTTTTTTTT',
+          'TTTTTTTTTTTTTTTTTTTTTTTT',
+          'TT""""""""""""""""""""TT',
+          'TT""""""""""""""""""""TT',
+          'TT""""""""""""""""""""TT',
+          'TT""""""""""""""""""""TT',
+          'TT""""""""""""""""""""TT',
+          'TT""""""""""""""""""""TT',
+          'TT""""""""""d"""""""""TT',
+          'TT""""""""""d"""""""""TT',
+          'TT""""""""""d"""""""""TT',
+          'TT""""""""""d"""""""""TT',
+          'TT""""""""""d"""""""""TT',
+          'TT""""""""""d"""""""""TT',
+          'TT""""""""""d"""""""""TT',
+          'TT"""""""""ddddddddddoo~',
+          'TT"""""""""d""""""eeoo~~',
+          'TT"""""""""d""""eeeo~~~~',
+          'TTTTTTTTTTTdTTTTTTT~~~~~',
+          'TTTTTTTTTTTdTTTTTTTTTTTT'],
+        ents: [
+          { x: 11, y: 19, spr: 'invisible', async touch(S) { await S.narr(S.f.phase === 'final' ? '……' : '孩子还在这里。不能走。'); await S.walk('pl', 'u', 5); } },
+          { id: 'kapuk', x: 11, y: 6, w: 3, h: 2, spr: 'kapuk', on: S => S.narr(S.f.phase === 'makam' ? '老坟场正中间的大木棉树，比村口那棵还要老、还要高。\n树杈上空了。地上的鸡蛋花，到这里就没有了。' : '大木棉树。树根把好几座老坟都拱歪了。') },
+          /* 坟：头在北（上），脚在南（下） */
+          { id: 'g1', x: 3, y: 5, h: 2, spr: 'kubur', old: true, on: S => grave(S, 'g1') },
+          { x: 3, y: 4, spr: 'kemboja', on: S => S.narr('一棵白鸡蛋花树，长在这座坟的北头。') },
+          { id: 'g2', x: 8, y: 5, h: 2, spr: 'kubur', flat: true, text: true, on: S => grave(S, 'g2') },
+          { x: 8, y: 4, spr: 'kemboja', on: S => S.narr('白鸡蛋花，开在这座坟的北头。') },
+          { id: 'g6', x: 6, y: 6, h: 2, spr: 'kubur', flat: true, old: true, on: S => grave(S, 'g6') },
+          { x: 6, y: 5, spr: 'kemboja', on: S => S.narr('一棵很老的白鸡蛋花树，长在这座坟的北头。树干拧得像一股绳子，花落了一地。') },
+          { id: 'g4', x: 4, y: 10, h: 2, spr: 'kubur', flat: true, old: true, on: S => grave(S, 'g4') },
+          { x: 4, y: 9, spr: 'kemboja', col: 'r', on: S => S.narr('一棵开红花的鸡蛋花树，长在这座坟的北头。\n红得像在暗处渗出来的血。') },
+          { id: 'g3', x: 8, y: 10, h: 2, spr: 'kubur', flat: true, old: true, on: S => grave(S, 'g3') },
+          { x: 8, y: 12, spr: 'kemboja', on: S => S.narr('白鸡蛋花树。它长在这座坟的南头——脚那一边。') },
+          { id: 'g5', x: 17, y: 6, h: 2, spr: 'kubur', flat: true, old: true, on: S => grave(S, 'g5') },
+          { x: 17, y: 5, spr: 'kemboja', on: S => S.narr('白鸡蛋花树，长在这座坟的北头。') },
+          { id: 'g7', x: 20, y: 5, h: 2, spr: 'kubur', text: true, on: S => grave(S, 'g7') },
+          { id: 'g8', x: 15, y: 11, h: 2, spr: 'kubur', flat: true, text: true, on: S => grave(S, 'g8') },
+          { id: 'g9', x: 19, y: 10, h: 2, spr: 'kubur', old: true, on: S => grave(S, 'g9') },
+          { x: 20, y: 9, spr: 'kemboja', on: S => S.narr('坟场东边的一棵鸡蛋花树，歪歪地斜向河那边。') },
+          { x: 16, y: 16, spr: 'invisible', solid: false, on: S => S.narr('一条小路，穿过芦苇往河边去了。\n河上的雾很浓，看不清对岸。') },
+          { id: 'kb', x: 12, y: 6, spr: '@kunti_b', hidden: true, solid: false, oy: -30, z: 1, light: { r: 3, col: 'rgba(220,230,220,.18)' } },
+          { id: 'kfar', x: 22, y: 15, spr: '@kunti_b', hidden: true, solid: false, light: { r: 2, col: 'rgba(220,230,220,.12)' } },
+          { id: 'kme', x: 6, y: 9, spr: '@kunti_b', hidden: true, solid: false, light: { r: 3.2, col: 'rgba(220,230,220,.2)' } },
+          { id: 'nenekM', x: 12, y: 18, spr: '@nenek_l', hidden: true, solid: false, dir: 3, light: { r: 4, col: 'rgba(255,170,80,.24)', flick: true } },
+          { id: 'ustazM', x: 11, y: 18, spr: '@ustaz', hidden: true, solid: false, dir: 3 }
+        ],
+        async enter(S, first) { if (S.f.phase === 'kebun') return enterMakam(S); },
+        step(S, x, y) {
+          if (S.f.phase === 'wait' && x >= 20 && y >= 15) return badFar(S);
+        },
+        tick(S, dt) { waitTick(S, dt); }
+      }
     }
   });
   /*@STORY@*/
