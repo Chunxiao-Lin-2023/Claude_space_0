@@ -494,7 +494,7 @@
     f.diary = true; f.knowName = true; f.phase = 'find';
     await S.think('粉盒。她找了四十三年的「镜子」，是这个。\n……掉在了大榕树的根里。');
     await S.think('可是根那么多。\n她只在镜子里出现……车上的后视镜，正对着 Lola。');
-    S.goal('回大榕树下，从车上的后视镜里找她');
+    S.goal('回大榕树下找粉盒——红布条，或者车上的后视镜');
     S.cp('find');
   }
   async function wardrobeOn(S) {
@@ -750,30 +750,30 @@
       luz(R, a, t) {
         const H = '#0a0709', H2 = '#1e171a', H3 = '#2c2428', SK = '#eceef1', SK2 = '#c4c8ce', DR = '#dcdee2';
         R(0, 0, 32, 32, '#020203');
-        R(2, 25, 28, 7, DR); R(4, 24, 24, 2, '#f4f5f7'); R(14, 24, 4, 3, '#b8bcc2');
+        R(2, 25, 28, 7, DR); R(4, 24, 24, 2, '#f4f5f7'); R(14, 24, 4, 3, '#b8bcc2'); R(2, 29, 28, 3, '#5a5e66');
         R(10, 1, 12, 2, H); R(8, 3, 16, 3, H); R(6, 6, 20, 6, H); R(5, 12, 22, 14, H); R(4, 18, 24, 10, H); R(3, 24, 4, 6, H); R(25, 24, 4, 6, H);
         const g = Math.min(5, Math.round(a * 7)), sw = Math.round(Math.sin(t * 3) * .6);
         if (g > 0) {
-          R(16 - g, 8, g * 2, 15, SK2); R(17 - g, 7, g * 2 - 2, 17, SK);
+          R(16 - g, 8, g * 2, 15, SK2); R(17 - g, 7, g * 2 - 2, 17, SK); if (g > 3) { R(16 - g, 8, 1, 1, H); R(15 + g, 8, 1, 1, H); R(16 - g, 22, 1, 1, H); R(15 + g, 22, 1, 1, H); }
           if (g > 2) { R(13, 13, 2, 1, '#d8dbe0'); R(17, 13, 2, 1, '#d8dbe0'); R(15, 19, 2, 1, '#d4d7dc'); }   // 该有五官的地方，只有几道浅浅的雾痕
           for (let i = 0; i < 3; i++) R(16 - g + i * 2 + 1, 9 + i * 4, 1, 5, 'rgba(10,7,9,.75)');           // 贴在脸上的几缕湿发
         }
         for (let i = 0; i < 11; i++) { const x = 5 + i * 2 + (i % 3 === 0 ? 1 : 0); if (g && x > 15 - g && x < 16 + g) continue; R(x + (i % 2 ? sw : 0), 5 + (i % 4) * 2, 1, 21 - (i % 3) * 3, i % 2 ? H2 : H3); }
         R(8, 26, 1, 3, '#7a8a9a'); R(23, 27, 1, 3, '#7a8a9a');   // 发梢滴水
-        const hy = 31 - Math.round(a * 5);
-        R(7, hy, 2, 6, SK2); R(9, hy - 1, 1, 7, SK2); R(6, hy + 1, 1, 5, SK2); R(23, hy, 2, 6, SK2); R(22, hy - 1, 1, 7, SK2); R(25, hy + 1, 1, 5, SK2);
+        const hy = 32 - Math.round(a * 6);   // 两只手从底下摸上来
+        for (const hx of [5, 22]) { R(hx - 1, hy - 1, 7, 9, '#22262c'); R(hx, hy + 1, 1, 3, SK); R(hx + 2, hy, 1, 4, SK); R(hx + 4, hy + 1, 1, 3, SK); R(hx, hy + 4, 5, 4, SK); R(hx, hy + 1, 1, 1, '#9aa0a8'); R(hx + 2, hy, 1, 1, '#9aa0a8'); R(hx + 4, hy + 1, 1, 1, '#9aa0a8'); }
       },
       /* 后视镜里：一片雾白的脸，眼睛慢慢浮出来——最后变成你自己（白毛巾、眼袋、短头发） */
       glass(R, a, t) {
         R(0, 0, 32, 32, '#000');
         R(0, 6, 32, 20, '#141416'); R(1, 7, 30, 18, '#2a2a2e'); R(2, 8, 28, 16, '#18202c');
-        const me = a > .62, H = '#0e0a0c', SK = me ? '#c9a07e' : '#e8eaee';
+        const me = a > .62, H = '#0e0a0c', SK = me ? '#b49a88' : '#e8eaee';
         if (!me) { R(8, 8, 16, 16, H); R(7, 12, 3, 12, H); R(22, 12, 3, 12, H); }
         else { R(11, 8, 10, 4, '#1a1414'); R(10, 9, 1, 4, '#1a1414'); R(21, 9, 1, 4, '#1a1414'); R(4, 21, 7, 3, '#ecead8'); R(5, 20, 4, 1, '#ecead8'); R(11, 22, 10, 2, '#4a6a5a'); }
         R(11, 10, 10, 13, SK); R(12, 9, 8, 1, SK);
-        for (let i = 0; i < 4; i++) R(11, 11 + i * 3, 10, 1, me ? 'rgba(160,120,90,.35)' : 'rgba(200,205,215,.6)');   // 雾
-        if (a > .2) { const e = a > .45 ? 2 : 1; R(13, 14, 2, e, '#0a0a0c'); R(17, 14, 2, e, '#0a0a0c'); if (a > .45) { R(13, 14, 1, 1, '#fff'); R(17, 14, 1, 1, '#fff'); } }
-        if (me) { R(13, 16, 2, 1, '#6a5a6a'); R(17, 16, 2, 1, '#6a5a6a'); R(14, 20, 4, 1, '#7a4a3a'); }
+        for (let i = 0; i < 4; i++) R(11, 11 + i * 3, 10, 1, me ? 'rgba(225,230,240,.4)' : 'rgba(200,205,215,.6)');   // 雾
+        if (a > .2) { const e = a > .45 ? 2 : 1; R(13, 14, 2, e, '#0a0a0c'); R(17, 14, 2, e, '#0a0a0c'); if (a > .45 && !me) { R(13, 14, 1, 1, '#fff'); R(17, 14, 1, 1, '#fff'); } }
+        if (me) { R(13, 16, 2, 2, '#3e2e3e'); R(17, 16, 2, 2, '#3e2e3e'); R(14, 19, 4, 3, '#1a0808'); R(15, 20, 2, 1, '#000'); }
         R(2, 8, 1, 16, 'rgba(255,255,255,.18)'); R(3, 8, 6, 1, 'rgba(255,255,255,.12)');
         if (Math.sin(t * 40) > .7) R(2, 8 + ((t * 60) | 0) % 16, 28, 1, 'rgba(255,255,255,.08)');
       }
@@ -1074,7 +1074,7 @@
           { x: 10, y: 5, spr: 'invisible', light: { r: 5.5, a: .5, col: 'rgba(150,170,130,.05)' } },
           ...ROOTS.map(rd => ({ id: rd.id, x: rd.x, y: rd.y, spr: 'broot', kind: rd.kind, col: rd.col, solid: true, on: S => rootOn(S, rd) })),
           { id: 'grotto', x: 16, y: 4, spr: 'grotto', light: { r: 2, col: 'rgba(255,170,80,.18)', flick: true }, on: grottoOn },
-          { x: 6, y: 9, spr: 'candles', light: { r: 1.8, col: 'rgba(255,170,80,.16)', flick: true }, on: S => S.narr('有人在树根前摆了三根蜡烛，旁边放着一个小纸盘，里面是一块 kakanin（糯米糕）。\n明天就是 Undas。给死人的，也给树里的。') },
+          { x: 6, y: 9, spr: 'candles', light: { r: 1.8, col: 'rgba(255,170,80,.16)', flick: true }, on: S => S.narr('有人在树根前摆了三根蜡烛，旁边放着一个小纸盘，里面是一块 kakanin（糯米糕）。\n天一亮就是 Undas。给过世的人的，也给树里的。') },
           { x: 15, y: 8, spr: 'candles', light: { r: 1.6, col: 'rgba(255,170,80,.14)', flick: true }, on: S => S.narr('蜡烛底下压着一张叠成小方块的纸条。你没有打开——那不是写给你的。') },
           { x: 4, y: 8, spr: 'punso', solid: true, on: S => S.narr('树旁边有一个半人高的小土包，上面长着几簇草。\n老人说，nuno sa punso——土丘里的小老头——就住在这种土包里。踢了它，脚会肿上一个月。\n你绕开了它。') },
           { id: 'gtaxi', x: 9, y: 15, w: 2, spr: 'taxi', dir: 2, on: gtaxiOn },
@@ -1088,7 +1088,10 @@
           if (f.phase === 'final') {
             S.show('luzg'); S.ent('luzg').alpha = 1;
             if (S.once('finalIn')) {
+              S.focus(10, 9);
               await S.narr('你下了车。\n夜里的虫子一下子全都不叫了。');
+              await S.narr('红布条那条气根前面，她背对着大道站着。蜡烛的光照不到她的脚。');
+              S.focus(null);
               S.goal('把粉盒还给她');
               S.cp('final');
             }

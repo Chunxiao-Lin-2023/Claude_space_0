@@ -36,6 +36,8 @@ SOL = [
     ['step', 11, 0],
     ['expect', "window.__dbg.W.mapId === 'makam' && window.__dbg.W.f.phase === 'makam'"],
     ['shot', 'makam'],
+    ['use', 'kapuk'], ['use', 'kapuk'], ['use', 'kapuk'],
+    ['expect', "window.__dbg.W.f.kapH === 2"],
     ['use', 'g3', [0]],
     ['expect', "window.__dbg.W.f.wrong === 1 && window.__dbg.W.inv.includes('bedung')"],
     ['use', 'g6', [0]],

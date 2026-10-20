@@ -756,7 +756,7 @@
       let v = f[k] || 0;
       if (d <= 3 && !moved) v += dt; else v = Math.max(0, v - dt * (moved ? 3 : 1.5));
       f[k] = v;
-      if (v > 1.1 && !e.s.turn) { e.s.turn = 1; S.face(id, 'pl'); S.sfx('whisper'); S.bubble(id, '…', 900); }
+      if (v > 1.1 && !e.s.turn) { e.s.turn = 1; S.face(id, 'pl'); S.sfx('whisper'); S.bubble(id, '…', 900); S.toast('……它的头，慢慢转过来了。别停！'); }
       else if (v < .3 && e.s.turn) { e.s.turn = 0; e.dir = 3; }
       if (v > 2.6) { f[k] = 0; runScript(S2 => standerCaught(S2, id)); return; }
     }

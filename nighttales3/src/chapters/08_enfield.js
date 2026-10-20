@@ -30,9 +30,9 @@
     const c = S.ent('gchair_l'); if (!c) return;
     S.stop('gchair_l'); S.place('gchair_l', x, y, 0); c.alpha = 1;
   }
-  function chairGo(S, wait = 1.6, x, y) {
+  function chairGo(S, wait = 3, x, y, spd = 2.6) {   // 拿硬币之前慢一点（2.6），给第一次摸黑的人找路的时间
     chairReset(S, x, y);
-    S.chase('gchair_l', { spd: 2.75, catch: caughtChair });
+    S.chase('gchair_l', { spd, catch: caughtChair });
     S.ent('gchair_l').chase.wait = wait;
   }
   /* 回放：一组一页，敲击声和文字同时出来 */
@@ -131,7 +131,7 @@
     resume: {
       dark: async S => {
         if (S.f.act !== 'dark') return;
-        if (S.map === 'living') { S.dark(.97); S.plr(1.7); chairGo(S, 2.2); }
+        if (S.map === 'living') { S.dark(.97); S.plr(1.7); chairGo(S); }
         if (DIED) {   // 被椅子抓过：重来时想一句路线
           S.sfx('heart');
           await S.think(DIED === 1 ? '……再来一次。\n钱包在厨房台子上，电表在门厅楼梯口的墙上。从厨房穿过去，别进客厅。'
@@ -554,9 +554,9 @@
     if (a === 'evening' && S.once('famIntro')) return familyIntro(S);
     if (a === 'placed' && S.once('kitchenWait')) { await S.narr('厨房里，哈珀太太和肯特先生已经在餐桌边坐好了。茶壶冒着热气。'); S.goal('到厨房餐桌边坐下，一起等'); return; }
     if (a === 'dark') {
-      if (S.has('coin')) { chairGo(S, 1.2, 9, 5); return; }   // 拿着硬币上了趟楼又下来：它就在客厅门口等着
+      if (S.has('coin')) { chairGo(S, 1.2, 9, 5, 2.75); return; }   // 拿着硬币上了趟楼又下来：它就在客厅门口等着
       S.ent('telly').lit = false;
-      if (DIED) { chairGo(S, 2.2); S.sfx('sting'); return S.think('那把椅子又在墙角了。\n……别看它。'); }
+      if (DIED) { chairGo(S); S.sfx('sting'); return S.think('那把椅子又在墙角了。\n……别看它。'); }
       if (S.once('chairSeen')) {
         chairReset(S); S.focus(1, 2); S.sfx('heart');
         await S.narr('黑暗里，你的手电只照得见脚下一小圈。\n客厅的墙角——那个一直空着的墙角——');
@@ -565,7 +565,7 @@
         S.focus(null);
         await S.think('别看它。拿硬币。投进电表。');
       }
-      chairGo(S, 1.6);
+      chairGo(S);
     }
   }
   async function familyIntro(S) {
