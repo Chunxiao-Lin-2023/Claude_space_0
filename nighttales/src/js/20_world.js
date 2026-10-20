@@ -123,7 +123,10 @@ function bfsStep(m, sx, sy, tx, ty, who, maxN = 2500) {
   while (q.length && n++ < maxN) {
     const c = q.shift(), cx0 = c % W2, cy0 = (c / W2) | 0;
     if (cx0 === tx && cy0 === ty) { found = c; break; }
-    for (let d = 0; d < 4; d++) {
+    /* 平局时优先缩小差得多的那个轴（斜对面追来时会走「斜线」，不会一直沿一条轴平移） */
+    const ddx = tx - cx0, ddy = ty - cy0, ax = Math.abs(ddx) >= Math.abs(ddy);
+    const ord = ax ? [ddx < 0 ? 1 : 2, ddy < 0 ? 3 : 0, ddy < 0 ? 0 : 3, ddx < 0 ? 2 : 1] : [ddy < 0 ? 3 : 0, ddx < 0 ? 1 : 2, ddx < 0 ? 2 : 1, ddy < 0 ? 0 : 3];
+    for (const d of ord) {
       const nx = cx0 + DIRS[d][0], ny = cy0 + DIRS[d][1], k = ny * W2 + nx;
       if (nx < 0 || ny < 0 || nx >= m.w || ny >= m.h || prev[k] !== -2) continue;
       if (!(nx === tx && ny === ty) && !passable(m, nx, ny, who)) continue;
@@ -268,7 +271,7 @@ function drawEntity(g, e, ox, oy, t) {
     else g.drawImage(personSprite(spr, e.dir, e.fr), x, y - 8);
   } else {
     const fn = (W.ch.sprites && W.ch.sprites[spr]) || SPR[spr];
-    if (fn) { const R = (a, b, w, h, col) => { if (!col) return; g.fillStyle = col; g.fillRect(x + Math.floor(a), y + Math.floor(b), Math.ceil(w), Math.ceil(h)); }; const pe = Object.assign({}, e, e.s); fn(g, pe, t, R); }
+    if (fn) { const R = (a, b, w, h, col) => { if (!col) return; g.fillStyle = col; g.fillRect(x + Math.floor(a), y + Math.floor(b), Math.ceil(w), Math.ceil(h)); }; const pe = Object.assign({}, e, e.s); pe.sx = x; pe.sy = y; fn(g, pe, t, R); }   // sx/sy：屏幕绘制坐标（自定义精灵直接 drawImage 用）
   }
   g.globalAlpha = 1;
   if (e.bubble && e.bubble.until > RT) drawBubble(g, x + 8, y - (typeof spr === 'object' ? 12 : 6), e.bubble.k);

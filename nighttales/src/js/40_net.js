@@ -76,6 +76,7 @@ function onNetGuest(m) {
     case 'fx': applyEmit(m.k, m.a); break;
     case 'note': { const got = store.get('notes', []); if (!got.includes(m.k)) { got.push(m.k); store.set('notes', got); } break; }
     case 'done': markDone(m.ch); break;
+    case 'endrec': { const got = store.get('ends', []); if (!got.includes(m.k)) { got.push(m.k); store.set('ends', got); } break; }
     case 'pingb': PINGS.push({ x: m.x, y: m.y, t: RT, c: '#7ad7ff' }); break;
     case 'pingh': PINGS.push({ x: m.x, y: m.y, t: RT, c: '#ffcf5a' }); AU.sfx('select'); break;
   }

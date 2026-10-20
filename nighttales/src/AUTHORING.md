@@ -93,6 +93,7 @@ street: {
   sign busstop bench busseat pole car gravestone(coat/flowers) cross well lantern stonelantern torii shrine ofrenda marigold boat dock fireplace chess statue
   anatomy(eyes) doll(thread/knife) knife scissors cup(full) salt rice thread paw candy coin flashlight match towel rope photo shoes footprints stain puddle
   handprint elevdoor(open 0..1, lit) elevpanel cushion altar incense scroll brush skin whisk basket stall2(摊位) cart stairsdown stairsup rail switch(off) linen(open) invisible
+- 自定义精灵 `sprites: { name(g, e, t, R) {...} }`：R 以实体左上角为原点；`e.sx, e.sy` 是屏幕绘制坐标（要 drawImage 时用）。
 - 不在实心默认列表里的小物件（note key item coin paper 等）默认非实心。
 
 ## 4. 人物外观 people
@@ -128,7 +129,7 @@ faces: { mary(R, a, t) { /* 32×32 网格，R(x,y,w,h,col)；a = 特效进度 0�
 | `S.moving` `S.running` | 玩家此刻是否在走 / 在跑（客机操作时也准确，用来做「别动」「别跑」判定） |
 | `await S.card(标题, 副标题, 正文)` | 全屏标题卡（章节开头、时间跳跃） |
 | `await S.note('id')` | 打开笔记并记入档案 |
-| `await S.keypad(提示, ['1','2',…,'10','开'], 按几下, {sep, cancel})` → 字符串或 null | 密码盘/按钮面板。键可以是多字符；返回按下的键用 sep（默认空）拼起来。键盘可用方向键+回车、数字键直接输入、Backspace 删一位、X 取消 |
+| `await S.keypad(提示, ['1','2',…,'10','开'], 按几下, {sep, cancel})` → 字符串或 null | 密码盘/按钮面板。键可以是多字符；返回按下的键用 sep（默认空）拼起来；`alias:{'0':'10', O:'开', C:'关'}` 给多字符键配键盘快捷键。键盘可用方向键+回车、数字键直接输入、Backspace 删一位、X 取消 |
 | `await S.wait(ms)` `await S.fade(1|0, ms)` | 等待 / 渐黑渐亮 |
 | `await S.go(map, x, y, dir)` | 切地图（自动渐变，会运行目标图 enter） |
 | `S.give(id)` `S.take(id)` `S.has(id)` | 物品 |
@@ -157,7 +158,7 @@ faces: { mary(R, a, t) { /* 32×32 网格，R(x,y,w,h,col)；a = 特效进度 0�
 | `S.hidePlayer(true)` `S.wear('@wife'\|'car')` `S.speed(倍)` | 玩家隐藏（躲藏时追逐者会乱逛）/换外观/速度 |
 | `S.cp(名)` | 存检查点（死亡后从这里重来；名字对应 `resume`） |
 | `await S.die(文本, 标题)` | 死亡 → 从检查点重来 |
-| `await S.end({title, text})` / `S.end({bad:true, title, text})` | 好结局（解锁档案、清除存档）/ 坏结局（保留检查点，可重来） |
+| `await S.end({title, text})` / `S.end({bad:true, title, text})` | 好结局（解锁档案、清除存档）/ 坏结局（保留检查点，可重来）。加 `id:'名'` 记入结局收集；章节对象写 `endings: {名: '结局标题', …}`，档案里显示「结局 n/N」 |
 
 音效 `S.sfx`：step blip select item paper open close locked knock switch match scare sting heart whisper bell ding glass scream thud cry tv giggle drip water splash phone tick car brake tear chime good bad laugh chant cut。
 环境声 `S.amb` / 地图 `amb`：drone room wind rain bus car river night tv elevator otherworld school fire market none。

@@ -97,14 +97,16 @@ const UI = {
     $('mNote').textContent = ''; setTimeout(() => $('pkC').focus(), 30);
   },
   buildArchive() {
-    const L = $('archL'); L.innerHTML = ''; const done = store.get('done', []), got = store.get('notes', []);
+    const L = $('archL'); L.innerHTML = ''; const done = store.get('done', []), got = store.get('notes', []), ends = store.get('ends', []);
     CHAPTERS.forEach((ch, i) => {
       const d = document.createElement('div');
       const ok = done.includes(ch.id);
       const ns = Object.entries(ch.notes || {}); const have = ns.filter(([k]) => got.includes(ch.id + ':' + k));
+      const es = Object.entries(ch.endings || {}), eh = es.filter(([k]) => ends.includes(ch.id + ':' + k));
       d.innerHTML = `<h3>第${'一二三四五六七八九十'[i]}夜　${esc(ch.title)}　<span style="font-size:12px;color:var(--dim)">${esc(ch.origin || '')}</span></h3>` +
         (ok ? `<div class="legend">${esc(ch.legend || '')}</div>` : `<div class="lock">通关后解锁</div>`) +
-        (ns.length ? `<div class="nlist">笔记 ${have.length}/${ns.length}${have.length ? '：' + have.map(([k, n]) => esc(n.title)).join('、') : ''}</div>` : '');
+        (ns.length ? `<div class="nlist">笔记 ${have.length}/${ns.length}${have.length ? '：' + have.map(([k, n]) => esc(n.title)).join('、') : ''}</div>` : '') +
+        (es.length ? `<div class="nlist">结局 ${eh.length}/${es.length}${eh.length ? '：' + eh.map(([k, n]) => esc(n)).join('、') : ''}</div>` : '');
       L.appendChild(d);
     });
   },
@@ -318,7 +320,9 @@ function bindUI() {
   addEventListener('keydown', e => {
     if (!W || !W.keypad || !iControl() || UI.modal) return;
     const k = e.key.length === 1 ? e.key.toUpperCase() : e.key;
-    if (k !== ' ' && W.keypad.keys.includes(k)) { sendAct('key', k); e.preventDefault(); }
+    const al = W.keypad.alias && W.keypad.alias[k];   // 键盘别名，如 {'0':'10', O:'开', C:'关'}
+    if (al && W.keypad.keys.includes(al)) { sendAct('key', al); e.preventDefault(); }
+    else if (k !== ' ' && W.keypad.keys.includes(k)) { sendAct('key', k); e.preventDefault(); }
   });
 }
 function muteBtn() { $('hMute').textContent = AU.muted ? '✕' : '♪'; }

@@ -74,7 +74,7 @@ const SAPI = {
   },
   async keypad(prompt, keys, len, o = {}) {
     /* keys 可以是多字符（'10'、'开'）；len = 要按几下；返回按下的键拼成的字符串（o.sep 为分隔符，默认无） */
-    const g = GEN; const r = await waitInput('keypad', { keypad: { id: ++DLGID, prompt, keys, len, val: '', parts: [], sep: o.sep || '', t0: RT, cancel: o.cancel !== false } }); chk(g); W.keypad = null; return r;
+    const g = GEN; const r = await waitInput('keypad', { keypad: { id: ++DLGID, prompt, keys, len, val: '', parts: [], sep: o.sep || '', alias: o.alias || null, t0: RT, cancel: o.cancel !== false } }); chk(g); W.keypad = null; return r;
   },
   async wait(ms) { const g = GEN; await new Promise(r => setTimeout(r, ms / FAST)); chk(g); },
   async fade(to, ms = 500) {
@@ -160,6 +160,7 @@ const SAPI = {
     W.ended = true; W.timer = null; emit('sfx', o.bad ? 'bad' : 'good');
     for (const k in W.maps) for (const e of W.maps[k].ents) e.chase = null;
     if (!o.bad) { markDone(W.ch.id); store.del('cp.' + W.ch.id); }   // 坏结局保留检查点
+    if (o.id) { const k = W.ch.id + ':' + o.id, got = store.get('ends', []); if (!got.includes(k)) { got.push(k); store.set('ends', got); } if (NET.role === 'host') netSend({ t: 'endrec', k }); }   // 结局收集（ch.endings 列出全部）
     if (NET.role === 'host' && !o.bad) netSend({ t: 'done', ch: W.ch.id });
     await waitInput('end', { endScreen: { kind: o.bad ? 'badend' : 'end', title: o.title || '完', text: o.text || '', t0: RT } });
   },
