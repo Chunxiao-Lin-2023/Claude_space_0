@@ -178,9 +178,9 @@ BX.register({
       if (!v.ctrlH) return [];
       const seats = ctx.mySeats, k = seats.length, gw = v.W / k, out = [], pad = 6, y0 = v.H - v.ctrlH;
       seats.forEach((seat, gi) => {
-        const gx = gi * gw, bh = v.ctrlH - pad * 2, bw = Math.min((gw - pad * 4) * .4, 120), bbw = Math.min((gw - pad * 4) * .2, 70);
+        const gx = gi * gw, bh = v.ctrlH - pad * 2, bbw = BX.clamp((gw - pad * 4) * .2, 44, 70), bw = Math.min((gw - pad * 4 - bbw) / 2, 120);
         out.push({k: 'l', seat, x: gx + pad, y: y0 + pad, w: bw, h: bh});
-        out.push({k: 'b', seat, x: gx + pad * 2 + bw, y: y0 + pad + bh * .25, w: bbw, h: bh * .75});
+        out.push({k: 'b', seat, x: gx + (gw - bbw) / 2, y: y0 + pad + bh * .25, w: bbw, h: bh * .75});
         out.push({k: 'r', seat, x: gx + gw - pad - bw, y: y0 + pad, w: bw, h: bh});
       });
       return out;
