@@ -73,6 +73,8 @@ function startGame(cfg) {
 }
 function enterPlay() {
   STATE.gid++;
+  try { if (document.activeElement && document.activeElement !== document.body) document.activeElement.blur(); } catch (e) { }
+  INP.keys = {};
   buildMapScene();
   Object.assign(STATE, { mode: 'play', resultShown: false, watching: false, killer: 0, acc: 0, deathAt: 0, endAt: 0, startT: performance.now(), hitstop: 0, slowUntil: 0, killcam: null, cmd: 'free', recorded: false,
     run: { maxMulti: 0, maxStreak: 0, goals: 0, maxGems: 0, maxBounty: 0, gad: 0, cubes: 0 } });

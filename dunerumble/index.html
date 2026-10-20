@@ -7176,15 +7176,26 @@ function sfx(name, x, z, vol = 1) {
 const INP = { keys: {}, mx: innerWidth / 2, my: innerHeight / 2, mdown: false, rdown: false, mouseT: -9, pendFire: false, pendSup: false, autoFire: false, autoSup: false, aimHeld: false, supHeld: false, gx: 20, gz: 20, touch: { move: null, atk: null, sup: null }, lastTouch: 0 };
 const ray = new THREE.Raycaster(), ndc = new THREE.Vector2(), gplane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0), hitP = new THREE.Vector3();
 function groundAt(sx, sy) { ndc.set(sx / innerWidth * 2 - 1, -(sy / innerHeight) * 2 + 1); ray.setFromCamera(ndc, R3.cam); return ray.ray.intersectPlane(gplane, hitP) ? { x: hitP.x, z: hitP.z } : null; }
+/* key name from the physical key (e.code), so WASD works with a Chinese/Japanese IME switched on (e.key is "Process")
+   and on AZERTY/Dvorak layouts; falls back to e.key for anything else */
+function keyOf(e) {
+  const c = e.code || '';
+  if (/^Key[A-Z]$/.test(c)) return c[3].toLowerCase();
+  if (/^(Digit|Numpad)[0-9]$/.test(c)) return c[c.length - 1];
+  if (c === 'Space') return ' ';
+  if (c === 'ShiftLeft' || c === 'ShiftRight') return 'Shift';
+  if (c.startsWith('Arrow') || c === 'Escape' || c === 'Enter' || c === 'NumpadEnter' || c === 'Tab') return c === 'NumpadEnter' ? 'Enter' : c;
+  return e.key && e.key.length === 1 ? e.key.toLowerCase() : e.key;
+}
 function initInput() {
   addEventListener('keydown', e => {
-    if (e.target.tagName === 'INPUT') return;
-    const k = e.key.length === 1 ? e.key.toLowerCase() : e.key;
+    if (e.target.tagName === 'INPUT') { if (STATE.mode !== 'play') return; e.target.blur(); } // a text field left focused (Safari keeps focus on click) must not swallow game keys
+    const k = keyOf(e);
     if (!INP.keys[k]) onKeyPress(k, e);
     INP.keys[k] = true;
-    if ([' ', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Tab'].includes(e.key) && STATE.mode === 'play') e.preventDefault();
+    if ([' ', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Tab'].includes(k) && STATE.mode === 'play') e.preventDefault();
   });
-  addEventListener('keyup', e => { const k = e.key.length === 1 ? e.key.toLowerCase() : e.key; INP.keys[k] = false; if ((k === 'e' || k === 'Shift') && INP.supHeld) { INP.supHeld = false; INP.pendSup = true; } });
+  addEventListener('keyup', e => { const k = keyOf(e); INP.keys[k] = false; if ((k === 'e' || k === 'Shift') && INP.supHeld) { INP.supHeld = false; INP.pendSup = true; } });
   addEventListener('blur', () => { INP.keys = {}; INP.mdown = false; INP.rdown = false; INP.supHeld = false; });
   const gl = document.getElementById('ov');
   gl.addEventListener('pointermove', e => { if (e.pointerType === 'mouse') { INP.mx = e.clientX; INP.my = e.clientY; INP.mouseT = performance.now(); } });
@@ -7663,6 +7674,8 @@ function startGame(cfg) {
 }
 function enterPlay() {
   STATE.gid++;
+  try { if (document.activeElement && document.activeElement !== document.body) document.activeElement.blur(); } catch (e) { }
+  INP.keys = {};
   buildMapScene();
   Object.assign(STATE, { mode: 'play', resultShown: false, watching: false, killer: 0, acc: 0, deathAt: 0, endAt: 0, startT: performance.now(), hitstop: 0, slowUntil: 0, killcam: null, cmd: 'free', recorded: false,
     run: { maxMulti: 0, maxStreak: 0, goals: 0, maxGems: 0, maxBounty: 0, gad: 0, cubes: 0 } });
