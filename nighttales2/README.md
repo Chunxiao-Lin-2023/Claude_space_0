@@ -17,7 +17,7 @@
 
 ## 源码
 
-- `src/shell.html` 页面骨架与样式；`src/js/` 引擎（从第一部复制，独立维护）；`src/chapters/` 每章一个文件；`src/PLAN.md` 十章策划。
+- `src/shell.html` 页面骨架与样式；`src/js/` 引擎（从第一部复制并同步其修复，独立维护）；`src/chapters/` 每章一个文件；`src/PLAN.md` 十章策划。
 - 构建：`python3 nighttales2/src/build.py`（生成 `index.html`；`--artifact out.html` 生成单人预览版；`--only id` 只打包某章）。
 - 写新章节看 `src/AUTHORING.md`（末尾「已知坑」）。
 - 测试：`src/tests/play.py`（每章自动通关，并检查每一步真人能否走到，步骤在 `tests/sol/`）、`src/tests/coop.py`（本地 PeerJS 服务器 + 双客户端联机）。

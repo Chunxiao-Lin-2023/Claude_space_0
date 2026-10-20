@@ -22,7 +22,7 @@ time.sleep(1.5)
 url = f'http://127.0.0.1:{port}/{PAGE}?debug=1&fast=4&peerhost=127.0.0.1&peerport={PPORT}'
 errs = []
 ok = True
-CH, NPC, MAPGO = 'kunekune', None, None   # TODO: 填入可对话实体和切图目标
+CH, NPC, MAPGO = 'kunekune', 'baba_h', "('yard', 7, 2, 0)"   # 联机测试用的章节、可对话的实体、切图目标
 def check(cond, msg):
     global ok
     print(('PASS ' if cond else 'FAIL ') + msg); ok = ok and bool(cond)
