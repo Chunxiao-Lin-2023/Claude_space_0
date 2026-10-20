@@ -16,35 +16,102 @@
   function ushade(R, X, Y) { TILE.dirt.paint(R, X, Y); R(0, 0, 16, 16, 'rgba(0,0,0,.25)'); for (const y of [2, 7, 12]) R(0, y, 16, 1, 'rgba(230,170,90,.10)'); if (hash(X, Y, 3) < .2) R(4, 9, 2, 1, '#3a2c1e'); }
   const NAKP = { skin: '#c99a72', hair: '#120c0e', hs: 'long', top: '#9a3a4a', top2: '#d8b060', bottom: '#3a2a4a', skirt: true, shoes: '#b88a62', blush: '#c07a6a', mouth: '#9a2a2a' };
   const NAKG = { skin: '#b4bca8', hair: '#0c0a0c', hs: 'long', cover: true, ghost: true, dress: true, top: '#4a2430', bottom: '#4a2430' };
+  /* 死了几次（不随检查点回滚，用来在重来时给更直白的提示） */
+  const FAILS = { c: 0, w: 0 };
+  /* 屋底下「她在听」：只在主机 tick 里用的瞬时量，不进存档 */
+  const UND = { mv: 0, pd: 0, warned: false };
+  const THREAD_T = 45, THREAD_PEN = 10;
   const caughtC = async S => {
+    FAILS.c++;
     await S.scare('face', { spr: '@nakg', sfx: 'scream' });
     await S.die('冰凉的手臂从背后绕了上来，一圈，又一圈，像运河里的水草。\n「麦，你要去哪儿？……天黑了，我们回家。」', '她把你带回了家');
   };
   const caughtW = async S => {
+    FAILS.w++;
     await S.scare('face', { spr: '@nakg', sfx: 'scream' });
     await S.die('白线还没有绕完，她就到了。\n她把脸贴在你的背上，轻轻地说：「麦，你为什么要跑？」', '圣线没能绕成');
   };
-  function resetNakC(S) { const e = S.ent('nak_c'); if (!e) return; S.stop('nak_c'); e.hidden = true; e.alpha = 1; S.f._csp = 2.2; }
-  function resetThread(S) {
-    S.f.thr = []; for (const k of ['nw', 'ne', 'se', 'sw']) { const p = S.ent('p_' + k); if (p) p.s.tied = false; }
-    const r = S.ent('ring'); if (r) { r.s.n = 0; r.s.done = false; }
-    const e = S.ent('nak_w'); if (e) { S.stop('nak_w'); e.hidden = true; e.alpha = 1; }
-    S.f._wsp = 5;
+  /* 合成音：木杵舂进石臼的闷响；她哼的摇篮曲（五声音阶，越往后越慢、越低） */
+  function pestle(S, v = 1) { S.tone('sine', 95, 48, .2, .32 * v, 0, 260); S.tone('triangle', 180, 120, .05, .05 * v, 0, 700); }
+  function lullaby(S, slow = 1, vol = .07) {
+    const N = [392, 440, 392, 330, 294, 330, 392, 330, 294, 262, 294, 330];
+    N.forEach((f, i) => { const k = 1 - (slow - 1) * i / N.length * .5; S.tone('triangle', f * k, f * k * .985, .5 * slow, vol, i * .46 * slow, 1400); });
   }
-  function goalDays(S) { S.goal(`村里的一切都不对劲——四处看看（违和 ${Math.min(S.f.cn || 0, NEED)}/${NEED}）`); }
-  /* 收集「违和」：日常里的一处处不对劲。凑够五处才肯「看见」 */
+  function resetNakC(S) { const e = S.ent('nak_c'); if (!e) return; S.stop('nak_c'); S.freeze('nak_c', false); e.hidden = true; e.alpha = 1; S.f._csp = 2.2; S.f._amb = false; }
+  function resetThread(S) {
+    S.f.thr = []; S.f.miss = 0; for (const k of ['nw', 'ne', 'se', 'sw']) { const p = S.ent('p_' + k); if (p) p.s.tied = false; }
+    const r = S.ent('ring'); if (r) { r.s.n = 0; r.s.done = false; }
+    const e = S.ent('nak_w'); if (e) { S.stop('nak_w'); S.place('nak_w', 12, 17, 3); e.hidden = false; e.alpha = .85; }
+    S.clearTimer();
+    S.timer(THREAD_T, '诵经', S => wEnter(S));
+  }
+  /* 诵经声停了：她跨过界石进来 */
+  async function wEnter(S) {
+    if (S.f.ph !== 'thread') return;
+    const e = S.ent('nak_w'); e.alpha = 1; e.hidden = false;
+    S.sfx('cry'); S.bubble('nak_w', '…', 1500);
+    S.chase('nak_w', { spd: 2.6, catch: caughtW });
+    await S.say('住持', '经念不住她了——她进来了！快绕完！', { style: 'big' });
+  }
+  function goalDays(S) {
+    if (S.f.needWat) return S.goal('去玛哈布寺问住持（沿运河往东）');
+    S.goal(`村里的一切都不对劲——四处看看（违和 ${Math.min(S.f.cn || 0, NEED)}/${NEED}）`);
+  }
+  /* 收集「违和」：日常里的一处处不对劲。凑够五处、并且在寺里亲眼看过真相（亡者簿或坟）才肯「看见」 */
   async function clue(S, k) {
     if (S.f.ph !== 'days' || S.f['c_' + k]) return false;
     S.f['c_' + k] = true; S.f.cn = (S.f.cn || 0) + 1;
     S.sfx('sting');
     if (S.f.cn < NEED) { S.toast('违和感 ' + S.f.cn + '/' + NEED); goalDays(S); return true; }
+    if (!S.f.c_record && !S.f.c_grave) {
+      S.f.needWat = true;
+      await S.think(['……够多了。可我还是不信。', '那是娜。没有亲眼看见，我不信。', '宾婶说，去寺里问住持。出家人不打诳语。']);
+      goalDays(S);
+      return true;
+    }
+    S.f.needWat = false;
     await dusk(S);
     return true;
   }
+  /* 惊吓大头像（32×32） */
+  function wetHair(R, t) {
+    const hair = '#0c0a0e', hl = '#2c3438';
+    R(5, 0, 22, 32, hair); R(2, 8, 3, 24, hair); R(27, 8, 3, 24, hair); R(0, 18, 2, 14, hair); R(30, 18, 2, 14, hair);
+    for (const x of [3, 6, 8, 23, 25, 28]) R(x, 6 + (x % 4) * 2, 1, 26 - (x % 4) * 2, hl);
+    for (let i = 0; i < 4; i++) { const x = [4, 9, 22, 27][i], y = ((t * 18 + i * 9) % 14) | 0; R(x, 18 + y, 1, 2, '#6a8a8a'); }   // 往下滴的水
+  }
+  const FACES = {
+    /* 鬼相的娜：湿透的头发从中间分开，灰绿的脸，没有眼白的黑眼睛；嘴唇还是嚼过槟榔的红，嘴慢慢张开 */
+    nakg(R, a, t) {
+      wetHair(R, t);
+      const sk = '#a8b4a0', sk2 = '#7e8c7a';
+      R(11, 5, 10, 2, sk); R(10, 7, 12, 15, sk); R(11, 22, 10, 3, sk); R(13, 25, 6, 2, sk); R(19, 7, 3, 16, sk2);
+      R(9, 3, 7, 10, '#0c0a0e'); R(17, 3, 6, 8, '#0c0a0e'); R(15, 3, 2, 3, sk);      // 贴在脸上的湿发，盖住半边
+      R(12, 13, 1, 9, '#0c0a0e'); R(20, 11, 1, 10, '#0c0a0e');
+      R(13, 12, 4, 3, '#060406'); R(18, 11, 3, 3, '#060406');                       // 黑洞洞的眼睛
+      R(14, 13, 1, 1, '#d8e0d0'); R(19, 12, 1, 1, '#d8e0d0');
+      R(13, 15, 4, 1, '#6a7468'); R(18, 14, 3, 1, '#6a7468');
+      const o = Math.round(Math.min(1, a * 1.5) * 4);
+      R(13, 20, 6, 1, '#9a1a1a'); R(13, 21 + o, 6, 1, '#7a1212'); R(14, 21, 4, o, '#1a0606'); R(12, 20, 1, 1 + o, '#9a1a1a'); R(19, 20, 1, 1 + o, '#9a1a1a');
+      if (a > .5) { R(14, 16, 1, 4, '#5a6a64'); R(18, 15, 1, 5, '#5a6a64'); }      // 脸上淌下来的水痕
+    },
+    /* 镜子边上探进来的半张脸：只有一只眼睛，一点一点挪进来 */
+    nakm(R, a, t) {
+      R(0, 0, 32, 32, '#2a3230'); R(1, 1, 30, 30, '#5a6a68'); R(2, 2, 6, 10, 'rgba(255,255,255,.12)');
+      const x0 = Math.round(32 - Math.min(1, a * 1.8) * 16);
+      R(x0, 0, 20, 32, '#0c0a0e');
+      R(x0 + 3, 6, 14, 20, '#a8b4a0'); R(x0 + 3, 4, 14, 5, '#0c0a0e'); R(x0 + 3, 9, 3, 12, '#0c0a0e');
+      R(x0 + 8, 13, 5, 3, '#f0f0e4'); R(x0 + 9, 13, 2, 3, '#060406'); R(x0 + 8, 12, 5, 1, '#5a6458');
+      R(x0 + 8, 22, 6, 1, '#9a1a1a');
+      R(x0 + 6, 17, 1, 6, '#6a7a74');
+    }
+  };
 
   defChapter({
     id: 'maenak', n: 9, title: '鬼妻娜娜', sub: '运河边的高脚屋里，妻子抱着孩子，等丈夫从战场回来。', origin: '泰国民间传说', color: '#24382c',
     icon: '@nak', amb: 'river', floor: 'dirt', wall: 'wood', dark: .6, plr: 3.2,
+    faces: FACES,
+    endings: { farewell: '下辈子，还做你的妻子', stay: '一家人，再也不分开', jar: '罐子沉进了运河', cross: '跨出白线' },
     people: {
       me: { skin: '#b07a52', hair: '#1a1414', hs: 'short', top: '#6a5a3a', top2: '#4a3e28', bottom: '#7a3a2a', shoes: '#8a5a3a' },
       nak: Object.assign({ key: 'mn-nak', extra(g, d, fr, G, R) { babyArms(R, d, G, '#e8e2d0', '#d8a888'); } }, NAKP),
@@ -69,22 +136,29 @@
     items: {
       lime: { name: '青柠', desc: '又小又青的青柠，皮薄汁多。舂辣椒酱少不了它。' },
       sai: { name: '圣线', desc: '一团白棉线（赛辛），在佛前念过经。老人们说，鬼魂跨不过它。' },
-      kendi: { name: '小铜壶', desc: '住持递给你的小铜壶，盛着清水。为亡者做功德时，一边听经，一边把水慢慢倒尽，功德便随着水流到对方身边。' }
+      kendi: { name: '小铜壶', desc: '住持递给你的小铜壶，盛着清水。泰国人做完功德要「滴水回向」（kruat nam）：一边听经，一边把水慢慢倒尽，功德便随着水流到亡者身边。' }
     },
     notes: {
-      letter: { title: '托人代写的信', text: '（一张折了很多次的纸，字写得规规矩矩，是寺里小沙弥的笔迹）\n\n麦：\n这封信是我求寺里的小师父替我写的。我说一句，他写一句。\n\n孩子在肚子里踢我了，踢得可有劲儿，接生婆说多半是个男孩，像你。就是这个月了。\n\n你走的时候说，等稻子收完就回来。今年的稻子收完了，第二季的秧又插上了。\n我每天傍晚都去码头看一眼。船来了一条又一条，都不是你。\n\n不要紧。我会等的。\n等你回来，我和孩子在码头等你——不，在家里等你。码头风大。\n\n你的娜\n\n（信没有寄出去。纸的边角，有一圈干了的水渍。）' },
+      letter: { title: '托人代写的信', text: '（折了很多次的纸，是寺里小沙弥规规矩矩的笔迹）\n\n麦：\n我说一句，小师父写一句。\n\n孩子在肚子里踢我了，可有劲儿，接生婆说多半是个男孩，像你。就是这个月了。\n\n你说稻子收完就回来。稻子收完了，第二季的秧又插上了。我每天傍晚去码头看一眼，船来了一条又一条，都不是你。\n\n不要紧，我会等的。我和孩子在家里等你——不在码头了，码头风大。\n\n你的娜\n\n（信没有寄出去。纸角有一圈干了的水渍。）' },
       thim: { title: '船底的刻痕', text: '阿添的船翻扣在岸上。船底的木板上，有人用刀尖刻了几个歪歪扭扭的字，刻得很深：\n\n「麦　你的妻子已经」\n\n后面的字没有刻完。\n刀痕在最后一笔上猛地一滑，划出去老长，一直划到船沿。\n\n船板上留着几个湿漉漉的手印。手指细长，长得……不像人的手。' },
       record: { title: '玛哈布寺亡者簿（一页）', text: '雨安居前七日，夜大雨。\n\n帕卡农运河东岸，娜，年十九。\n难产。母子俱亡。\n\n依旧俗，「死时腹中带子」者不火化，即日土葬于寺后乱葬岗，以竹为记，诵经三夜。\n其夫随军未归，无人主丧。邻人宾氏代为守灵。\n\n（下面另起一行，是住持的笔迹）\n愿她放下。\n愿她等的人，早日回来。' },
-      palm: { title: '藏经阁里的贝叶', text: '（几片用细绳串起来的贝叶，字是用铁笔刻上去、再抹了烟灰的）\n\n……女子怀胎而死，母子同去，谓之「腹中带子之鬼」。其爱念与怨念俱重，于诸鬼中最难度化。\n\n退之之法有三：\n\n其一，请僧持诵，以圣线围护。圣线须自佛陀右手而起，右绕而行，如日行天，绕尽四隅，复归佛前，系于佛手，方成结界。逆绕者，线不成界。\n\n其二，驱鬼师以法术摄其魂入陶罐，封以符布，沉于深水。然罐终有破时。又有取其额骨为护符者，此非出家人所当为。\n\n其三——\n（这一条的字迹很新，像是后来有人添上去的）\n以慈心度之。为其做功德，倒水回向。她所执者若肯放下，自去投生。' }
+      palm: { title: '藏经阁里的贝叶', text: '（几片用细绳串起的贝叶，铁笔刻字，抹了烟灰）\n\n……女子怀胎而死，母子同去，谓之「腹中带子」。爱念与怨念俱重，诸鬼中最难度化。退之之法有三：\n\n其一，圣线。僧人持诵，以白线围护。线自佛陀右手一侧之柱起，右绕而行，如日行天（自上俯视，顺转），绕尽四柱，复归佛前，系于佛手。起处错、逆绕者，线断。\n\n其二，驱鬼师摄其魂入陶罐，封以符布，沉于深水。然罐终有破时。\n\n其三——（这一条字迹很新）\n以慈心度之。为其做功德，滴水回向。她若肯放下，自去投生。' }
     },
-    legend: '「帕卡农的娜娘」（Mae Nak Phra Khanong）是泰国家喻户晓的鬼故事。据说它发生在十九世纪中叶、拉玛四世在位的时候，地点是曼谷城外帕卡农运河边的一个村子。年轻的妻子娜怀着身孕，丈夫麦被征去打仗；娜在分娩时连同腹中的孩子一起死去。麦回来以后，妻子抱着孩子在家里等他，一切如常。邻居们想提醒他，有的不敢开口，有的开了口就遭了殃。直到有一天，娜在屋里舂辣椒酱，一个青柠从地板缝里掉到了高脚屋底下——她把手臂伸得老长，一直伸到地上把它捡了回去。麦这才明白，借口下楼解手，一路逃进了玛哈布寺；有的版本说他躲在寺里的圣线后面，也有的说他钻进了一丛鬼魂害怕的艾纳香。\n\n故事的结尾众说纷纭。流传最广的说法是：一位驱鬼师把娜的魂魄收进陶罐，沉进了运河；后来罐子被渔夫捞起、打破，她又回来了，最后由一位德高望重的高僧（通常说是拉玛四世时代的颂德·多）出面，劝她放下执念，转世离去。还有说法称高僧取下了她的一块额骨做成腰扣，几经辗转，不知所终；也有版本说娜答应来世再做麦的妻子。泰国人相信，「死时腹中带子」的女人化成的鬼最为凶猛，因此旧俗对这样的亡者另有一套安葬的规矩。\n\n这个传说被反复改编成戏剧、广播剧和几十部电影，1999年的《鬼妻》和2013年的喜剧《鬼妻》（Pee Mak）都轰动一时。如今曼谷帕卡农的玛哈布寺里供奉着娜娘的神龛，人们给她送去鲜艳的衣裙、化妆品和婴儿玩具，求子、求平安、求彩票号码；据说快要被征召入伍的年轻人，也会去求她保佑自己不被抽中——因为她最懂得等一个人回家有多难。也有一种说法认为，娜的原型是当地一位真实存在过的女子。\n\n（本章中的邻居宾婶、渔夫阿添、摆渡的普婆婆、孩子的名字「小丹」、娜托人代写的信、圣线「自佛陀右手起右绕四柱」的具体绕法，以及倒水回向、在寺中告别的结局，均为游戏虚构或简化。）',
+    legend: '「帕卡农的娜娘」（Mae Nak Phra Khanong）是泰国家喻户晓的鬼故事。据说它发生在十九世纪中叶、拉玛四世在位的时候，地点是曼谷城外帕卡农运河边的一个村子。年轻的妻子娜怀着身孕，丈夫麦被征去打仗；娜在分娩时连同腹中的孩子一起死去。麦回来以后，妻子抱着孩子在家里等他，一切如常。邻居们想提醒他，有的不敢开口，有的开了口就遭了殃。直到有一天，娜在屋里舂辣椒酱，一个青柠从地板缝里掉到了高脚屋底下——她把手臂伸得老长，一直伸到地上把它捡了回去。麦这才明白，借口下楼解手，一路逃进了玛哈布寺。逃的这一段各家说法不同：有的说他躲在寺里僧人用圣线围起来的地方，有的说他钻进了一丛鬼魂害怕的艾纳香（泰语叫 naat），娜找不到他，只好在外面哭。\n\n泰国旧俗把「死的时候孩子还在肚子里」的女人叫作「tai thong klom」（ตายทั้งกลม，大意是母子囫囵着一起走），认为她们化成的鬼最凶，也最难送走，所以这样的亡者往往不火化，而是尽快土葬，并请僧人诵经。娜的故事也因此被讲得格外可怕。\n\n故事的结尾众说纷纭。流传最广的说法是：一位驱鬼师把娜的魂魄收进陶罐，沉进了运河；后来罐子被渔夫捞起、无意中打破，她又回来了，最后由一位德高望重的高僧——通常说是拉玛四世时代的颂德·多——出面，劝她放下执念，转世离去。还有说法称高僧取下了她的一块额骨做成腰扣，几经辗转，不知所终；也有版本说娜答应来世再做麦的妻子。\n\n这个传说被反复改编成戏剧、广播剧和几十部电影，1999年的《鬼妻》（Nang Nak）和2013年的喜剧《鬼妻》（Pee Mak）都轰动一时。如今曼谷帕卡农的玛哈布寺里供奉着娜娘的神龛，人们给她送去鲜艳的衣裙、化妆品和婴儿玩具，求子、求平安、求彩票号码；据说快要被征召入伍的年轻人，也会去求她保佑自己不被抽中——因为她最懂得等一个人回家有多难。也有一种说法认为，娜的原型是当地一位真实存在过的女子，但已无从查证。\n\n（本章中的邻居宾婶、渔夫阿添、摆渡的普婆婆、孩子的名字「小丹」、娜托人代写的信、罗望子树下的那坛酒、圣线「自佛陀右手一侧起、右绕四柱」的具体绕法、诵经能拦住她多久，以及倒水回向、在寺中告别、「跨出白线」等结局，均为游戏虚构或简化。）',
     start: { map: 'canal', x: 20, y: 14, dir: 2 },
     async intro(S) {
       await S.card('第九夜　鬼妻娜娜', '十九世纪中叶　暹罗　曼谷城外　帕卡农运河', '雨季之前，官府来村里征人。\n麦走的那天早上，娜挺着肚子，送他到码头。\n\n「等稻子收完，我就回来。」\n「我和孩子等你。」\n\n稻子收了两季。\n麦终于回来了。');
     },
     resume: {
-      flee: async S => { resetNakC(S); },
-      thread: async S => { resetThread(S); },
+      flee: async S => {
+        resetNakC(S);
+        if (FAILS.c === 1) await S.think('……路边有一丛艾纳香。宾婶说过，鬼闻不得那股味儿。\n真被她堵住了，就钻进去。');
+        else if (FAILS.c > 1) await S.think('别跟她硬碰。她慢，我快——绕开她跑。实在不行，就钻进路边那丛艾纳香里。');
+      },
+      thread: async S => {
+        resetThread(S);
+        if (FAILS.w) { S.f.miss = Math.min(2, FAILS.w); await S.say('住持', threadHint(S, 'start')); }
+      },
       final: async S => { await finalChoice(S); }
     },
     tick(S, dt) {
@@ -222,6 +296,13 @@
         R(9, 10, 2, 2, 'rgba(160,180,170,.5)'); R(13, 11, 2, 2, 'rgba(160,180,170,.5)');
       },
       net(g, e, t, R) { for (let i = 0; i < 6; i++) { R(2 + i * 2, 1, 1, 12, 'rgba(190,180,150,.7)'); R(2, 2 + i * 2, 12, 1, 'rgba(190,180,150,.6)'); } R(1, 0, 14, 1, '#6a4a2c'); R(5, 12, 2, 2, '#8a8a8a'); R(10, 12, 2, 2, '#8a8a8a'); },
+      naat(g, e, t, R) {   // 艾纳香：灰绿的大叶子，顶上一簇簇小黄花
+        const sw = Math.round(Math.sin(t * 1.3 + e.x) * .6) + (e.shake ? (Math.sin(t * 30) > 0 ? 1 : -1) : 0);
+        R(1, 13, 14, 3, 'rgba(0,0,0,.35)'); R(7, 6, 2, 9, '#4a5a3a');
+        R(1 + sw, 3, 14, 11, '#4e6a4a'); R(-1 + sw, 6, 6, 6, '#5a7a54'); R(11 + sw, 5, 6, 7, '#5a7a54'); R(3 + sw, -1, 10, 6, '#56744e');
+        for (const [x, y] of [[1, 7], [4, 3], [10, 2], [13, 7], [6, 9], [9, 6]]) { R(x + sw, y, 3, 1, '#8aa47e'); R(x + 1 + sw, y + 1, 1, 2, '#3a5236'); }
+        for (const [x, y] of [[4, -2], [8, -3], [11, -1], [2, 1]]) { R(x + sw, y, 2, 2, '#d8c040'); R(x + sw, y, 1, 1, '#f0e070'); }
+      },
       straw(g, e, t, R) { R(2, 7, 12, 3, '#b89a5a'); R(5, 4, 6, 4, '#c8aa68'); R(2, 10, 12, 1, '#8a7040'); },
       loom(g, e, t, R) { R(1, -6, 2, 20, '#5a3c22'); R(29, -6, 2, 20, '#5a3c22'); R(1, -6, 30, 2, '#5a3c22'); R(3, 2, 26, 8, '#3a2a40'); for (let x = 4; x < 28; x += 2) R(x, -4, 1, 8, 'rgba(220,210,190,.5)'); R(3, 4, 26, 1, '#7a3a4a'); R(3, 7, 26, 1, '#c8a050'); },
       pounder(g, e, t, R) { R(0, 8, 28, 3, '#5a3c22'); R(14, 6, 3, 8, '#3a2618'); R(1, 2, 3, 8, '#6a4a2c'); R(0, 10, 6, 5, '#7a6a5a'); R(1, 11, 4, 2, '#2a201a'); },
@@ -311,13 +392,17 @@
         ents: [
           { id: 'hNak', x: 2, y: 2, w: 4, h: 2, spr: 'stilt', col: '#6a5a3a', on: S => underDoor(S) },
           { id: 'ladN', x: 6, y: 3, spr: 'ladder', on: S => ladderNak(S) },
-          { x: 8, y: 3, spr: 'tamarind', on: S => S.narr(S.f.ph === 'flee' ? '罗望子树的影子在地上爬。\n别看它。跑！' : '屋旁的老罗望子树。娜说，结婚那年他们在树下埋了一坛酒，等孩子满月再挖出来喝。\n……树下的土，好像被人翻过。') },
+          { x: 8, y: 3, spr: 'tamarind', async on(S) {
+            if (S.f.ph === 'flee') return S.narr('罗望子树的影子在地上爬。\n别看它。跑！');
+            await S.narr('屋旁的老罗望子树。成亲那年，你和娜在树下埋了一坛酒，说好等孩子满月再挖出来喝。\n……树下的土，好像被人翻过，又仔细地拍平了。');
+            S.f.wine = true;
+          } },
           { id: 'spiritN', x: 8, y: 6, spr: 'spirit', light: { r: 1.6, col: 'rgba(255,190,110,.18)', flick: true }, async on(S) {
             if (S.f.ph === 'days') return S.narr('你家的土地神龛。供盘里的米饭和香蕉都已经发黑了，茉莉花环干成了一圈褐色。\n……这么多天，没有人来上过供。');
             await S.narr('你家的土地神龛（屋主神的小庙）。泰国人家家都有一座，请守护这块地的神灵住进去，免得它在屋里游荡。\n你合起双手，拜了一拜：谢谢你，替我守着娜。');
           } },
           { id: 'nak_o', x: 6, y: 5, spr: '@nak', dir: 0, on: S => reunion(S) },
-          { id: 'hPhin', x: 13, y: 3, w: 4, h: 2, spr: 'stilt', col: '#5a5040', wc: '#6a4c30', on: S => S.narr(S.f.ph === 'days' ? '宾婶家。窗户关着，门缝底下塞着一把艾草。' : '邻居宾婶家的高脚屋。宾婶的男人阿添，是和你从小一起在运河里摸鱼长大的。') },
+          { id: 'hPhin', x: 13, y: 3, w: 4, h: 2, spr: 'stilt', col: '#5a5040', wc: '#6a4c30', on: S => S.narr(S.f.ph === 'days' ? '宾婶家。窗户关着，门缝底下塞着一把艾纳香的叶子，一股冲鼻的樟脑味。' : '邻居宾婶家的高脚屋。宾婶的男人阿添，是和你从小一起在运河里摸鱼长大的。') },
           { id: 'ladP', x: 17, y: 4, spr: 'ladder', async on(S) {
             const ph = S.f.ph;
             if (ph === 'days') { S.sfx('open'); return S.go('nbr', 4, 5, 3); }
@@ -341,6 +426,7 @@
           { id: 'puu', x: 21, y: 14, oy: -3, spr: '@puu', dir: 1, on: S => puuTalk(S) },
           { x: 19, y: 11, spr: 'lantern', light: { r: 3, col: 'rgba(255,170,80,.2)', flick: true }, on: S => S.narr('码头边的油灯，风一吹就直往一边倒。') },
           { x: 22, y: 11, spr: 'sign', col: '#5a4024', on: S => S.narr('木牌上写着：帕卡农渡口。往东：玛哈布寺。') },
+          { id: 'naat', x: 26, y: 8, spr: 'naat', on: S => naatOn(S) },
           { id: 'v1', x: 25, y: 10, spr: '@vman', dir: 1, hidden: true, async on(S) { S.face('v1', 'pl'); S.bubble('v1', '!', 800); await S.say('村里的男人', ['……麦？你、你别过来。', '我什么也不知道！我家里还有事！']); S.face('v1', 2); } },
           { id: 'v2', x: 31, y: 7, spr: '@vwom', dir: 0, hidden: true, async on(S) { S.face('v2', 'pl'); await S.say('卖花的大姐', ['麦，你瘦了。……你在家，吃得好吗？', '（她的目光越过你的肩膀，看了一眼你家的方向，飞快地合起双手拜了拜）', '我、我得走了。']); } },
           { x: 35, y: 8, spr: 'naga', light: { r: 2.4, col: 'rgba(255,190,110,.16)' }, on: S => S.narr('寺门口的那伽（蛇神）石像，张着嘴，守着去寺里的路。') },
@@ -353,6 +439,7 @@
           const ph = S.f.ph || 'arrive';
           if (first && ph === 'arrive') return arrive(S);
           if (ph === 'days' && S.once('daysOut')) return daysOut(S);
+          if (ph === 'dusk' && S.once('duskOut')) return duskVillage(S);
           if (ph === 'flee' && S.once('fleeOut')) return fleeOut(S);
         },
         step(S, x, y) {
@@ -368,9 +455,23 @@
           }
         },
         tick(S, dt) {
-          if (S.f.ph !== 'flee' || W.busy || !(S.f._csp > 0)) return;
+          if (S.f.ph !== 'flee' || W.busy) return;
+          /* 她从运河里冒出来，堵在前面的路上（只一次；躲过艾纳香后不再来） */
+          const n = S.ent('nak_c'), px = W.pl.x;
+          if (!S.f._amb && !S.f.naat && n && !n.hidden && px >= 23 && px <= 30) {
+            S.f._amb = true; S.stop('nak_c');
+            S.place('nak_c', Math.min(34, px + 8), 11, 1); S.sfx('splash'); S.sfx('scream'); S.shake(400, 2); S.bubble('nak_c', '!', 1200);
+            S.after(0, async S => {
+              S.freeze('nak_c', true);
+              await S.narr('前面的水里「哗啦」一声——\n她从运河里站了起来，浑身滴着水，挡在去寺里的路上。');
+              await S.think('绕过去！……或者，路边那丛艾纳香。');
+              S.freeze('nak_c', false); S.chase('nak_c', { spd: 2.8, catch: caughtC });
+            });
+            return;
+          }
+          if (!(S.f._csp > 0)) return;
           S.f._csp -= dt;
-          if (S.f._csp <= 0) { S.place('nak_c', 4, 4, 2); S.ent('nak_c').alpha = 1; S.sfx('whisper'); S.bubble('nak_c', '…', 1500); S.chase('nak_c', { spd: 2.8, catch: caughtC }); }
+          if (S.f._csp <= 0) { const [x, y] = S.f._cpos || [4, 4]; S.place('nak_c', x, y, 2); S.ent('nak_c').alpha = 1; S.sfx('whisper'); S.bubble('nak_c', '…', 1500); S.chase('nak_c', { spd: 2.8, catch: caughtC }); }
         }
       },
       /* ---------------- 高脚屋里 ---------------- */
@@ -459,6 +560,16 @@
         async enter(S, first) {
           if (S.f.ph === 'lime' && S.once('underLime')) { await S.narr('屋底下黑乎乎的。头顶的地板缝里漏下一线一线的油灯光，落在地上，像一道道栅栏。\n「咚、咚、咚」——娜在上面舂辣椒。'); S.ent('gl1').off = false; return; }
           if (first) await S.narr('高脚屋底下又矮又暗，柱子一根一根立着。\n雨季的时候，运河的水会一直漫到这里。');
+        },
+        /* 摘青柠的时候：你站着，头顶就「咚、咚」地舂；你一走动，舂杵声就停——她在听 */
+        tick(S, dt) {
+          if (S.f.ph !== 'lime' || W.busy) return;
+          if (S.moving) {
+            if (UND.mv <= 0 && !UND.warned) { UND.warned = true; S.toast('头顶的舂杵声停了。……她在听。'); }
+            UND.mv = 1.1; return;
+          }
+          if (UND.mv > 0) { UND.mv -= dt; return; }
+          UND.pd -= dt; if (UND.pd <= 0) { UND.pd = .78; pestle(S); }
         }
       },
       /* ---------------- 宾婶家 ---------------- */
@@ -483,7 +594,7 @@
           { id: 'phin_n', x: 5, y: 3, spr: '@phin', dir: 0, on: S => phinTalk(S) },
           { id: 'tong_n', x: 6, y: 3, spr: '@tong', dir: 0, on: S => tongTalk(S) }
         ],
-        async enter(S, first) { if (first) await S.narr('屋里一股艾草烧过的苦味。\n宾婶一看见是你，脸一下子白了。'); }
+        async enter(S, first) { if (first) await S.narr('屋里一股艾纳香烧过的樟脑味，呛得人直流眼泪。\n宾婶一看见是你，脸一下子白了。'); }
       },
       /* ---------------- 玛哈布寺 ---------------- */
       wat: {
@@ -503,9 +614,9 @@
           { x: 3, y: 4, w: 2, spr: 'bodhi', on: S => S.narr('寺里的菩提树。树干上缠着黄、红、蓝三色的布，树根边上供着几个泥娃娃和一双小小的婴儿鞋。\n是谁供的？') },
           { x: 22, y: 6, spr: 'belltower', on: S => S.narr('钟楼。天亮和天黑的时候，小沙弥会来敲钟。') },
           { x: 19, y: 4, w: 2, spr: 'chedi', on: S => S.narr('白色的佛塔。塔基四周的小龛里，放着村里人的骨灰。\n火化过的人，都在这里。') },
-          { x: 3, y: 9, w: 2, spr: 'hotrai', async on(S) {
+          { id: 'hotrai', x: 3, y: 9, w: 2, spr: 'hotrai', async on(S) {
             if (S.once('palm')) await S.narr('藏经阁建在水塘中间，免得白蚁蛀了经书。\n你踩着塘边的石头够过去，从窗口抽出一串贝叶。最上面那几片，好像常常被人翻看。');
-            await S.note('palm'); S.f.palm = true;
+            await S.note('palm'); S.f.palm = true; S.ent('hotrai').read = true;
           } },
           { id: 'mound', x: 20, y: 9, spr: 'mound', async on(S) {
             await S.narr('乱葬岗的角落里，有一座新坟。没有石碑，只插着一根竹竿。\n坟前放着一个小小的泥娃娃，和一串茉莉花——还是新鲜的。');
@@ -516,7 +627,7 @@
           { x: 19, y: 13, w: 3, spr: 'kuti', on: S => S.narr('住持的僧舍。门口摆着一双磨平了的木屐。') },
           { id: 'desk', x: 16, y: 14, spr: 'lowdesk', async on(S) {
             await S.narr('僧舍门口的矮桌上，摊着寺里的亡者簿。\n风把它翻到了其中一页。');
-            await S.note('record'); S.f.record = true;
+            await S.note('record'); S.f.record = true; S.ent('desk').read = true;
             if (await clue(S, 'record')) return;
           } },
           { id: 'abbot', x: 18, y: 14, spr: '@abbot', dir: 0, on: S => abbotTalk(S) },
@@ -548,9 +659,10 @@
           if (first) await S.narr('玛哈布寺。白墙红顶，院子里铺着细沙，扫得一个脚印也没有。\n一进寺门，运河的水声就远了。');
         },
         tick(S, dt) {
-          if (S.f.ph !== 'thread' || W.busy || !(S.f._wsp > 0)) return;
-          S.f._wsp -= dt;
-          if (S.f._wsp <= 0) { S.place('nak_w', 11, 16, 3); S.ent('nak_w').alpha = 1; S.sfx('cry'); S.bubble('nak_w', '…', 1500); S.chase('nak_w', { spd: 2.6, catch: caughtW }); }
+          /* 诵经快念完的时候，她在寺门口越来越不安分 */
+          if (S.f.ph !== 'thread' || W.busy || !W.timer) return;
+          const n = S.ent('nak_w'); if (!n || n.hidden) return;
+          n.alpha = W.timer.left < 12 ? .75 + Math.abs(Math.sin(W.t * 6)) * .25 : .85;
         }
       }
     }
@@ -641,7 +753,41 @@
   }
   async function leaveUnder(S) {
     if (S.f.ph === 'limeS') return;
+    if (S.f.ph === 'seen') {
+      S.sfx('thud');
+      await S.say('娜（头顶上）', '麦？……梯子在这边呀。', { style: 'whisper' });
+      await S.think('她听得见。……先上去。装作什么也没看见。');
+      return S.walk('pl', 'u', 5);
+    }
     await S.go('canal', 3, 4, 0);
+  }
+
+  /* 艾纳香：白天是伏笔，逃跑时可以钻进去躲一次 */
+  async function naatOn(S) {
+    const ph = S.f.ph || 'arrive';
+    if (ph !== 'flee') return S.narr('路边一丛艾纳香，叶子毛茸茸的，揉碎了有一股冲鼻的樟脑味。\n小时候宾婶说过：鬼闻不得这个味儿。');
+    if (S.f.naat) return S.narr('她就在附近。这一回，不能再躲了——跑！');
+    S.f.naat = true;
+    const n = S.ent('nak_c');
+    S.stop('nak_c'); S.hidePlayer(true); S.ent('naat').s.shake = true; S.sfx('step');
+    await S.narr('你一头扎进艾纳香丛里，蜷成一团。\n樟脑味冲得你眼泪直流。你捂住嘴，一声也不敢出。');
+    S.ent('naat').s.shake = false;
+    if (n && !n.hidden) {
+      const nx = Math.round(n.px / TS), ny = Math.round(n.py / TS);
+      S.focus(nx, ny);
+      S.sfx('drip'); await S.wait(500);
+      await S.say('娜', '麦……？', { style: 'whisper' });
+      S.bubble('nak_c', '…', 1600); await S.wait(700);
+      await S.narr('她停在离你几步远的地方，鼻子一抽一抽的。\n然后，她捂住脸，往后退了一步，又一步。');
+      S.sfx('cry');
+      await S.say('娜', '麦，你别躲我……我什么也不做。我就是想跟你回家……', { style: 'whisper' });
+      await S.alpha('nak_c', 0, 1200);
+      S.focus(null);
+    }
+    S.hidePlayer(false);
+    await S.narr('哭声往村子那头去了。\n……走了。趁现在！');
+    /* 她回到你身后远处，过一会儿再追上来 */
+    S.f._cpos = [Math.max(2, W.pl.x - 12), 9]; S.f._csp = 3.5;
   }
 
   async function homeScene(S) {
@@ -664,7 +810,7 @@
     S.place('nak_h', 8, 4, 3); S.pos(9, 7, 3);
     await S.fade(0, 900);
     await S.narr('半夜，你被一阵很轻的歌声弄醒了。');
-    S.sfx('whisper');
+    lullaby(S, 1.15, .06);
     await S.say('娜（低声）', '睡吧，睡吧，我的心肝……\n妈妈在这儿，守着你，守到天亮……', { style: 'whisper' });
     S.sfx('drip');
     await S.narr('她背对着你，站在摇篮边上，一下一下地晃着摇篮。\n滴答。滴答。\n有水从她的头发梢上滴下来，在地板上积了一小摊。');
@@ -743,7 +889,7 @@
     await S.think('……空的？\n可娜明明就坐在那个角落里。我刚才还听见她在哼歌。');
     await S.narr('你盯着镜子，一眨也不敢眨。\n镜子的最边上，慢慢地，探进来半张脸。灰白的，湿漉漉的，头发贴在脸上——');
     S.ent('mirror').face = true;
-    await S.scare('face', { spr: '@nakg', dur: .7 });
+    await S.scare('face', { face: 'nakm', dur: 1.1 });
     S.ent('mirror').face = null;
     S.turn(2);
     await S.narr('你猛地回过头。\n娜坐在角落里，好好的，冲你笑了一下。');
@@ -777,8 +923,9 @@
     if (ph !== 'days') return S.say('普婆婆', '天黑了。快回家……\n不。我也不知道该跟你说哪一句了。');
     if (S.once('puu1')) {
       await S.say('普婆婆', ['阿添的事……你都看见了。', '我这把年纪，什么都见过了，可我什么都不说。说了的人，就是阿添那个样子。']);
-      await S.say('普婆婆', ['我只给你讲个老故事。', '老人们说，女人怀着孩子死了，娘儿俩一起走的，叫「腹中带子」。那是所有的鬼里，最凶的。', '不是因为她恨。是因为她爱。爱得越深，越走不了。']);
+      await S.say('普婆婆', ['我只给你讲个老故事。', '老人们说，女人怀着孩子死了，孩子没生下来，娘儿俩囫囵着一起走的——叫「tai thong klom」，腹中带子。', '这样的人不能烧，得当天就埋了，请师父念三夜的经。', '那是所有的鬼里，最凶的。不是因为她恨。是因为她爱。爱得越深，越走不了。']);
     }
+    if (S.f.needWat) return S.say('普婆婆', ['你心里明白，就是不肯信。', '那就去寺里吧。住持的亡者簿，寺后的乱葬岗……自己去看。']);
     const miss = Object.keys(HINT).filter(k => !S.f['c_' + k]);
     await S.say('普婆婆', ['你要是想知道，就自己去看。', '看看' + miss.slice(0, 3).map(k => HINT[k]).join('、') + '……']);
   }
@@ -819,14 +966,14 @@
   }
   async function abbotNight(S) {
     S.face('abbot_s', 'pl');
-    if (S.f.ph === 'thread') return S.say('住持', ['快！从佛陀的右手那根柱子起，右绕！', '佛陀面朝着你——他的右手，可不在你的右边。']);
+    if (S.f.ph === 'thread') { await S.say('住持', '快！照贝叶上写的绕！'); if (S.f.miss) await S.say('住持', threadHint(S, (S.f.thr || []).length ? 'dir' : 'start')); return; }
     await S.say('住持', '……');
   }
 
   async function toWat(S) {
     const ph = S.f.ph || 'arrive';
     if (ph === 'arrive' || ph === 'home') { await S.narr('东边是玛哈布寺。\n……先回家吧，娜在等你。'); return S.walk('pl', 'l', 5); }
-    if (ph === 'lime' || ph === 'seen') { await S.narr('娜还在家里等着青柠。'); return S.walk('pl', 'l', 5); }
+    if (ph === 'lime') { await S.narr('娜还在家里等着青柠。'); return S.walk('pl', 'l', 5); }
     if (ph === 'flee') { S.stop('nak_c'); S.hide('nak_c'); }
     await S.go('wat', 11, 16, 3);
   }
@@ -839,17 +986,28 @@
   /* —— 凑齐五处违和：天黑了 —— */
   async function dusk(S) {
     S.f.ph = 'dusk';
-    await S.think(['……五处了。', '孩子不哭。镜子里没有她。邻居看见我就关门。阿添死了。', '可那是娜。是我的娜。', '我要回家。我要亲眼看清楚。']);
+    await S.think(['孩子不哭。镜子里没有她。邻居看见我就关门。阿添死了。', '亡者簿上写着她的名字。寺后面，有她的坟。', '……可那是娜。是我的娜。', '我要回家。我要亲眼看清楚。']);
     S.dark(.84, 'canal'); S.dark(.62, 'house'); S.dark(.72, 'wat');
     const h = S.ent('hNak'); h.lit = true; h.light = HOUSE_LIGHT;
     for (const id of ['v1', 'v2']) S.hide(id);
     bg(S.bells(3, 700));
     await S.narr('不知不觉，太阳已经掉进运河里了。\n寺里的钟，一声，一声。');
-    S.goal('天黑了。回家去');
+    S.goal('天黑了。回家去（沿运河往西）');
     if (S.map === 'house') await limeStart(S);
+    else if (S.map === 'canal' && S.once('duskOut')) await duskVillage(S);
+  }
+
+  /* 黄昏的村子：家家熄灯、抽梯子，只有你家亮着 */
+  async function duskVillage(S) {
+    S.ent('h4').lit = false;
+    S.focus(5, 4);
+    await S.narr('村子里的灯，一盏一盏地灭了。\n各家各户的梯子都抽了上去，门闩落下的声音，从运河这头响到那头。');
+    await S.narr('只有你家的窗户还亮着。\n窗户里，一个人影抱着孩子，慢慢地晃。');
+    S.focus(null);
   }
 
   async function limeStart(S) {
+    UND.warned = false; UND.mv = 0;
     S.f.ph = 'lime';
     S.hide('nak_h'); S.place('nak_k', 3, 4, 1);
     S.ent('mortar').s.pound = true; const c = S.ent('cradle'); c.s.baby = true;
@@ -923,11 +1081,27 @@
     await S.say('娜', '吃吧。你最爱吃的。');
     let asked = 0;
     for (; ;) {
-      const r = await S.ask('娜往你碗里夹了一块鱼。', ['（低下头吃饭。什么也没看见。）', asked ? '「娜……」' : '「娜，你是不是……已经……」', '「我……我下去解个手。」'], '麦');
-      if (r === 0) return badStay(S);
-      if (r === 2) return fleeStart(S);
-      if (!asked) { asked = 1; S.bubble('nak_h', '…', 1200); await S.say('娜', ['嘘。', '……孩子刚睡着。'], { style: 'whisper' }); await S.narr('她没有抬头。灯芯「噼」地爆了一下。'); }
-      else await S.say('娜', '吃饭吧，麦。饭要凉了。');
+      const opts = ['（低下头吃饭。什么也没看见。）', '「我……我下去解个手。」'];
+      if (asked < 2) opts.splice(1, 0, asked ? '「娜……你看着我。」' : '「娜，你是不是……已经……」');
+      const r = await S.vote('娜往你碗里夹了一块鱼。', opts, '麦');
+      if (!r.agree) {
+        await S.narr('你张了张嘴，又闭上了。\n心里有两个声音在吵——一个要你「' + opts[r.h].replace(/[（）「」]/g, '') + '」，一个要你「' + opts[r.g].replace(/[（）「」]/g, '') + '」。');
+        await S.say('娜', '……怎么不吃了？', { style: 'whisper' });
+      }
+      const pick = opts[r.v];
+      if (r.v === 0) return badStay(S);
+      if (pick.includes('解个手')) return fleeStart(S);
+      if (!asked) { asked = 1; S.bubble('nak_h', '…', 1200); await S.say('娜', ['嘘。', '……孩子刚睡着。'], { style: 'whisper' }); await S.narr('她没有抬头。灯芯「噼」地爆了一下。'); continue; }
+      /* 第二次追问：她抬起了头 */
+      asked = 2;
+      S.ent('lamp').off = true; S.dark(.92); S.sfx('glass');
+      await S.wait(500);
+      n.spr = '@nakg'; S.face('nak_h', 0);
+      await S.scare('face', { spr: '@nakg', sfx: 'sting', dur: .8 });
+      await S.say('娜', '麦。', { style: 'big' });
+      await S.say('娜', '吃饭。', { style: 'big' });
+      n.spr = '@nak2'; S.ent('lamp').off = false; S.dark(.62);
+      await S.narr('油灯又亮了。娜低着头，好好地坐在你对面，往你碗里夹鱼。\n你的筷子在抖。你不敢再问了。');
     }
   }
 
@@ -937,7 +1111,8 @@
     await S.say('麦', '……好吃。');
     await S.say('娜', ['那就好。', '以后我天天给你做。', '我们一家人，再也不分开了。']);
     await S.fade(1, 1500);
-    return S.end({ bad: true, title: '一家人，再也不分开', text: '日子一天一天地过去。麦再也没有出过门。\n\n村里人说，运河边那栋高脚屋，每天傍晚都亮着灯，能听见女人哼摇篮曲的声音。\n后来，有人壮着胆子爬上去看过一眼。\n屋里收拾得干干净净，饭菜摆在席子上。\n一家三口，整整齐齐地坐着。' });
+    lullaby(S, 1.4, .05);
+    return S.end({ bad: true, id: 'stay', title: '一家人，再也不分开', text: '日子一天一天地过去。麦再也没有出过门。\n\n村里人说，运河边那栋高脚屋，每天傍晚都亮着灯，能听见女人哼摇篮曲的声音。\n后来，有人壮着胆子爬上去看过一眼。\n屋里收拾得干干净净，饭菜摆在席子上。\n一家三口，整整齐齐地坐着。' });
   }
 
   async function fleeStart(S) {
@@ -964,15 +1139,33 @@
     S.f.ph = 'thread0';
     S.hide('abbot'); S.hide('novice'); S.show('abbot_s'); S.show('novice_s');
     S.face('novice_s', 0);
+    S.pos(11, 14, 3);
     await S.narr('你撞进寺门，扑倒在沙地上。\n佛亭四角的灯笼全亮着。住持就站在佛像前，好像早就在等你。');
     S.face('abbot_s', 'pl');
     await S.say('住持', ['麦，到这边来！到佛前来！', '她跟来了。界石能拦她一阵，拦不了多久。']);
+    const n = S.ent('nak_w'); S.place('nak_w', 12, 17, 3); n.alpha = .85; n.hidden = false; S.sfx('cry');
+    S.focus(12, 15);
+    await S.narr('寺门外，她停住了。\n她抱着孩子站在界石外面，一步也迈不进来，只是看着你。');
+    S.focus(null);
     S.give('sai');
-    await S.say('住持', ['拿着，这是圣线。', '从佛陀右手那边的柱子起，右绕——像太阳走的方向——绕过这四根柱子，最后回到佛前，系在佛的手上。', '记住，是佛陀的右手。我替你诵经。快！']);
+    await S.say('住持', ['拿着，这是圣线。我念经，经声能压住她一阵。', '怎么绕，贝叶上写着——前人留下的规矩，一步也不能错。']);
+    if (!S.f.palm) {
+      S.face('novice_s', 'pl');
+      await S.say('小沙弥', '施主，贝叶！我从藏经阁拿来了！');
+      await S.note('palm'); S.f.palm = true; S.ent('hotrai').read = true;
+    } else await S.think('藏经阁的贝叶……「自佛陀右手一侧之柱起，右绕而行」。');
     S.f.ph = 'thread'; S.f._ch = 1;
-    S.goal('用圣线绕柱：从佛陀右手那根起，右绕四柱，再回到佛前');
+    S.goal('照贝叶上的规矩，用圣线绕佛亭四柱，再回佛前系在佛手上');
     resetThread(S);
     S.cp('thread');
+  }
+
+  /* 绕错的次数越多，住持说得越直白 */
+  function threadHint(S, why) {
+    const m = S.f.miss || 0;
+    if (m >= 2) return ['从西北角那根起！', '西北，东北，东南，西南——再回佛前！'];
+    if (why === 'dir') return m ? '右绕——像太阳走的方向。从天上往下看，是顺着转的！' : '反了！右绕，像太阳走的方向！';
+    return m ? '是佛陀的右手！他面朝着你——他的右手，在你的左边！' : '是佛陀的右手那一边！你看他朝着哪儿坐！';
   }
 
   const ORD = ['nw', 'ne', 'se', 'sw'];
@@ -991,10 +1184,13 @@
     S.f.thr = []; for (const q of ORD) S.ent('p_' + q).s.tied = false; S.ent('ring').s.n = 0;
     S.sfx('cut'); S.shake(250, 1);
     await S.narr('白线「嘣」地一声断了，散了一地。');
-    if (first && k === 'ne') await S.say('住持（佛前）', '是佛陀的右手！他面朝着你——他的右手，在你的左边！');
-    else if (first) await S.say('住持（佛前）', '从佛陀右手边的那根柱子起！');
-    else await S.say('住持（佛前）', '反了！右绕——像太阳走的方向，从天上往下看，是顺着转的！');
-    S.goal('重新绕：从佛陀右手那根起，右绕四柱');
+    /* 绕错有代价：经声一乱，她就往里挪一步 */
+    const n = S.ent('nak_w');
+    if (W.timer) W.timer.left = Math.max(.5, W.timer.left - THREAD_PEN);
+    if (n && !n.chase) { const ny = Math.max(13, Math.round(n.py / TS) - 1); S.place('nak_w', 12, ny, 3); S.sfx('cry'); S.bubble('nak_w', '…', 1000); await S.narr('住持的经声一乱。寺门那边，她往里挪了一步。'); }
+    await S.say('住持（佛前）', threadHint(S, first ? 'start' : 'dir'));
+    S.f.miss = (S.f.miss || 0) + 1;
+    S.goal('重新绕：从佛陀右手那一侧的柱子起，右绕四柱');
   }
 
   async function buddhaOn(S) {
@@ -1006,7 +1202,7 @@
 
   async function threadDone(S) {
     S.f.ph = 'final0';
-    S.stop('nak_w'); S.take('sai');
+    S.stop('nak_w'); S.clearTimer(); S.take('sai');
     const r = S.ent('ring'); r.s.done = true; S.sfx('chime');
     S.ent('buddha').lit = true;
     await S.narr('你把线头系在佛像垂下的右手上。\n白线在灯下亮了起来，淡淡的，像一圈月光。');
@@ -1046,9 +1242,33 @@
 
   async function finalChoice(S) {
     S.focus(11, 13);
-    const r = await S.ask('驱鬼师举起陶罐，等你开口。娜在白线外面看着你。', ['「不。让她安心地走。」', '（别过脸去）「……收了她吧。」'], '麦');
-    if (r === 1) return badJar(S);
+    const q = '驱鬼师举起陶罐，等你开口。娜在白线外面看着你。';
+    const opts = ['「不。让她安心地走。」', '（别过脸去）「……收了她吧。」', '（跨出白线，去抱她）'];
+    let r = await S.vote(q, opts, '麦');
+    if (!r.agree) {
+      await S.narr('你的嘴说了一句，你的脚却往另一边挪。\n你自己也不知道，自己到底想要什么。');
+      S.face('abbot_s', 'pl');
+      await S.say('住持', ['麦，你心里还没有定。', '定下来再说。她等得起——她已经等了很久了。']);
+      r = await S.vote(q, opts, '麦');
+    }
+    if (r.v === 1) return badJar(S);
+    if (r.v === 2) return badCross(S);
     return goodEnd(S);
+  }
+
+  async function badCross(S) {
+    await S.narr('你抬起脚，跨过了白线。');
+    S.face('abbot_s', 'pl');
+    await S.say('住持', '麦！回来！', { style: 'big' });
+    S.pos(11, 12, 0); S.face('nak_w', 3);
+    await S.narr('白线外面很冷。冷得像雨季的运河。\n娜愣了一下，然后笑了。她把孩子递给你。');
+    await S.say('娜', ['你抱抱他。', '他一直在等爸爸抱。']);
+    await S.narr('孩子很轻，轻得像一捧水。\n襁褓是湿的。');
+    S.amb('none'); lullaby(S, 1.3, .06);
+    await S.say('娜', '我们回家。', { style: 'whisper' });
+    S.sfx('scream'); await S.scare('face', { spr: '@nakg', sfx: 'heart', dur: .8 });
+    await S.fade(1, 1500);
+    return S.end({ bad: true, id: 'cross', title: '跨出白线', text: '第二天一早，小沙弥在码头边找到了麦。\n他坐在水边，怀里抱着一团湿透的旧襁褓，脸上带着笑，已经没有气了。\n\n后来，运河边那栋高脚屋又亮起了灯。\n村里人说，傍晚路过的时候，能看见一个男人坐在梯子口，等着谁回家。' });
   }
 
   async function goodEnd(S) {
@@ -1083,8 +1303,9 @@
     S.dark(.3); S.amb('river');
     await S.bells(3, 800);
     await S.fade(1, 1400);
-    await S.card('', '那年雨季', '那年雨安居，麦在玛哈布寺剃度出家，\n为娜和小丹念了三个月的经。\n\n出寺那天，他去了一趟码头。\n运河上有风。他站了很久。');
-    await S.end({ title: '第九夜　完', text: '如今，曼谷帕卡农的玛哈布寺里供着「娜娘」的神龛。\n人们给她送去鲜艳的衣裙、胭脂和婴儿的玩具。\n\n据说，快要被征去当兵的年轻人，也会去那里求她——\n她最懂得，等一个人回家有多难。' });
+    const wine = S.f.wine ? '\n\n出寺以后，他在罗望子树下挖出了那坛酒。\n坛子边上，多埋了一只小小的银脚镯——是娜留给小丹满月戴的。\n他把酒倒在寺后那根竹竿前面，一半给娜，一半给小丹。' : '\n\n出寺那天，他去了一趟码头。\n运河上有风。他站了很久。';
+    await S.card('', '那年雨季', '那年雨安居，麦在玛哈布寺剃度出家，\n为娜和小丹念了三个月的经。' + wine);
+    await S.end({ id: 'farewell', title: '第九夜　完', text: '如今，曼谷帕卡农的玛哈布寺里供着「娜娘」的神龛。\n人们给她送去鲜艳的衣裙、胭脂和婴儿的玩具。\n\n据说，快要被征去当兵的年轻人，也会去那里求她——\n她最懂得，等一个人回家有多难。' });
   }
 
   async function badJar(S) {
@@ -1099,6 +1320,7 @@
     S.ent('cjar').locked = true; S.hide('nak_w');
     await S.narr('陶罐的盖子「啪」地扣上了。驱鬼师用写满符咒的白布把罐口扎紧。\n罐子里传出一声很轻、很轻的——\n「麦。」');
     await S.fade(1, 1500);
-    return S.end({ bad: true, title: '罐子沉进了运河', text: '那天夜里，人们把陶罐沉进了帕卡农运河最深的地方。\n麦一直没有回头看。\n\n很多年以后，一个渔夫的网捞起过一只破了口的陶罐。\n那天晚上，运河边又有人听见了摇篮曲。\n\n——睡吧，睡吧，我的心肝。妈妈在这儿，守着你，守到天亮。' });
+    lullaby(S, 1.6, .04);
+    return S.end({ bad: true, id: 'jar', title: '罐子沉进了运河', text: '那天夜里，人们把陶罐沉进了帕卡农运河最深的地方。\n麦一直没有回头看。\n\n很多年以后，一个渔夫的网捞起过一只破了口的陶罐。\n那天晚上，运河边又有人听见了摇篮曲。\n\n——睡吧，睡吧，我的心肝。妈妈在这儿，守着你，守到天亮。' });
   }
 })();
