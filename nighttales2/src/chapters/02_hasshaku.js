@@ -71,7 +71,7 @@
       const HAT = '#f4f1e7', HS = '#c9c2b0', HR = '#0c0809', SK = '#ece4d8', SK2 = '#c8beb0';
       R(0, 0, 32, 32, '#050406');
       R(3, 9, 7, 23, HR); R(22, 9, 7, 23, HR); R(1, 22, 5, 10, HR); R(26, 22, 5, 10, HR);   // 长发垂到画面外
-      for (let i = 0; i < 6; i++) { R(4 + i, 12 + (i % 3) * 3, 1, 14, '#241a1c'); R(23 + i, 11 + (i % 2) * 4, 1, 15, '#241a1c'); }
+      for (let i = 0; i < 4; i++) { R(4 + i * 2, 12 + (i % 3) * 4, 1, 12 + (i % 2) * 5, '#1e1517'); R(23 + i * 2, 11 + (i % 2) * 5, 1, 13 + (i % 3) * 3, '#1e1517'); }
       R(10, 9, 12, 19, SK); R(10, 9, 1, 19, SK2); R(21, 9, 1, 19, SK2); R(11, 27, 10, 2, SK2);   // 太长的脸
       R(10, 9, 12, 4, '#6a645a'); R(10, 13, 12, 1, '#9a9488');   // 帽檐的阴影
       const tw = Math.sin(t * 23) > .7 ? 1 : 0;
@@ -279,10 +279,10 @@
     S.focus(12, 4); await slide(S, 'hachiY', 12, 1500);
     S.face('hachiY', 0); S.sfx('heart');
     await S.narr('帽子在院门那儿停住了。\n帽檐底下，是一张女人的脸。白得像纸。长头发。\n……她在树篱的那一边，低头看着你。');
-    await S.wait(700); S.sfx('sting'); S.shake(300, 1);
+    await S.wait(700); S.sfx('sting'); S.shake(300, 1); S.ent('hachiY').red = true;
     await S.narr('她笑了一下。');
     await popo(S);
-    S.face('hachiY', 2); await slide(S, 'hachiY', 25, 2600);
+    S.ent('hachiY').red = false; S.face('hachiY', 2); await slide(S, 'hachiY', 25, 2600);
     S.hide('hachiY'); S.focus(null); S.amb('wind');
     S.sfx('thud');
     await S.narr('床单掉在了地上。\n过了好一会儿，知了才重新叫起来。');
@@ -658,6 +658,7 @@
     S.shake(1200, 2); S.sfx('knock'); await S.wait(300); S.sfx('knock'); await S.wait(200); S.sfx('knock');
     await S.narr('四面的墙都被拍响了。屋子在晃。');
     await S.wait(500); S.sfx('heart');
+    S.dark(.94); S.ent('hachiH').alpha = 0; S.show('hachiH'); await S.alpha('hachiH', .45, 900);
     await S.narr('……然后，一下子全停了。\n被子上面，有什么东西压了下来。很轻，很长。\n像是一个很高很高的人，弯下了腰。');
     await S.say('', '别动。', { style: 'big' });
     f.still = true; stillT = 0; S.goal('别动！连手指头都别动');
@@ -676,6 +677,7 @@
   async function stillDone(S) {
     const f = S.f, an = S.ent('andon');
     f.still = false;
+    await S.alpha('hachiH', 0, 1400); S.dark(null);
     await S.narr('那东西在被子上面停了很久。\n你能听见它的呼吸——不，是那个声音，含在嘴里，一下，一下。');
     const r = await choose(S, '你快喘不过气了。', ['攥着护符，对着佛像念「南无阿弥陀佛」', '捂住耳朵，大喊「走开！」'], '', 0, '你张嘴要喊——\n嘴被自己的手捂住了。手心里的护符硌得脸生疼。');
     if (r === 1) { burrow(S, false); return caught(S, '「走开！走开！！」\n你喊出了声。\n压在被子上的重量一下子没了。然后，从四面八方，同时响起了笑声。', '你出了声'); }
@@ -1045,7 +1047,8 @@
           { id: 'andon', x: 7, y: 6, spr: 'andon', light: { r: 3.6, col: 'rgba(255,190,110,.2)', flick: true }, on: N('纸糊的行灯。灯芯滋滋地响。\n光只照得到半间屋子。') },
           { x: 8, y: 5, spr: 'omaru', on: N('一个搪瓷尿壶。K婆婆说：「七点以前，不许出这个门。」\n……你决定今晚少喝水。') },
           { id: 'fusuma', x: 4, y: 8, spr: 'fusuma', on: heyaDoor },
-          { id: 'kbaaH', x: 5, y: 7, spr: '@kbaa', hidden: true, dir: 3 }
+          { id: 'kbaaH', x: 5, y: 7, spr: '@kbaa', hidden: true, dir: 3 },
+          { id: 'hachiH', x: 3, y: 5, spr: 'hachi', hidden: true, solid: false, dir: 1 }   // 四点十分，弯腰压在被子上的那个东西
         ],
         tick: stillTick,
         async enter(S, first) {

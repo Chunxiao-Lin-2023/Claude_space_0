@@ -756,7 +756,7 @@
     S.hidePlayer(true);
     await S.card('三更', '', '雨下大了。\n石满仓迷迷糊糊地，听见风从敞着的大门里灌进来，\n呜——呜——\n像有人站在门口，吹一支没有孔的笛子。');
     S.f.ph = 'stalk';
-    const x = S.ent('xs3_k'); x.spr = '@xs3n'; S.place('xs3_k', 10, 11, 0);
+    const x = S.ent('xs3_k'); x.spr = '@xs3n'; S.place('xs3_k', 13, 9, 0);
     S.show('fu_d'); S.hide('yan');
     S.ent('huotang').light = { r: 2.4, col: 'rgba(255,110,50,.16)', flick: true };
     light(S); S.plr(2.4); S.amb('wind'); S.norun(true);
@@ -766,7 +766,7 @@
     await S.narr('咚。\n……咚。\n……咚。');
     await S.narr('不是雨声。是有什么东西，在堂屋里，一下一下地跳。');
     await S.think(['……喜神？', '喜神不是要听着铃才会动吗？']);
-    S.focus(10, 10); await S.wait(700);
+    S.focus(13, 9); await S.wait(700);
     await S.narr('火塘的余光里，门板后头只剩下两个斗笠。\n第三个站在堂屋当中，脑袋一歪一歪的，像在闻什么。\n地上，躺着一张黄纸。');
     if (S.f.looked) { S.face('xs3_k', 2); S.sfx('sting'); await S.narr('她的脑袋停住了，慢慢地，朝东头你这间屋子歪了过来。'); await S.think('木牌底下那行歪字……「回头它就记得你了」。'); S.face('xs3_k', 0); }
     S.focus(null);
