@@ -670,3 +670,317 @@
       }
     }
   };
+
+  /* ================= 五、埃德娜家 ================= */
+  async function ednaTalk(S) {
+    const f = S.f;
+    S.face('edna', 'pl');
+    if (f.chase) return S.say('埃德娜', '走！别管我！', { style: 'whisper' });
+    if (f.ednaTalk) {
+      if (!f.bp) return S.say('埃德娜', '图纸在梳妆台的抽屉里。拿上它，回家去。');
+      return S.say('埃德娜', '回家去吧，孩子。');
+    }
+    await S.narr('埃德娜缩在扶手椅里，身上裹着那条她自己缝的百衲被。\n屋里的暖气开得呼呼响，她的嘴唇却是青的。');
+    await S.say('埃德娜', ['……你回来了。我听见你的车了。', '你见到他们了，是不是？两个孩子，连帽衫。']);
+    await S.say('诺拉', '在影院停车场。后来在加油站，又……埃德娜，你的脸色——');
+    await S.say('埃德娜', ['三天前的晚上，他们来敲我的门。', '大的那个说，他们妈妈的车坏在路上了，想借我的电话用用。说话那么客气，「女士」长、「女士」短的。', '外面那么冷。我就说了——「进来吧，孩子们，外面冷。」']);
+    S.sfx('heart');
+    await S.say('埃德娜', ['他们进来了。坐在我的沙发上，坐得笔直。', '我去厨房给他们冲可可。端回来的时候，他们还是那样坐着，看着我。一眨不眨。', '然后我看见了他们的眼睛。']);
+    await S.say('埃德娜', ['再往后……我就不记得了。醒过来是在地板上，天已经亮了。可可还在桌上，一口都没动。', '从那天起，我就冷。怎么都暖和不过来。头疼得像要裂开，早上枕套上有……有些印子。', '巴斯特不肯进屋了。屋里的钟全停了，都停在我说那句话的时候。九点十三分。']);
+    const r = await S.ask('她攥着被角的手，指节发白。', ['他们到底是什么？', '我现在就送你去医院。'], '诺拉');
+    if (r === 0) await S.say('埃德娜', ['我不知道。我活了七十八年，也说不上来。', '我只知道规矩。']);
+    else await S.say('埃德娜', ['去县医院，要走二十多里没有路灯的路。', '你能保证，他们不在哪个路口等着搭车吗？……天亮了再说。']);
+    await S.say('埃德娜', ['你听好了，孩子。', '第一，它们进不了你的屋，除非你答应。', '可「答应」不光是那一个字。「进来吧」「好」「可以」「门没锁」「你们自己开」——都算。点头也算。开门，也算。']);
+    await S.say('埃德娜', ['第二，开着的门、开着的窗，在它们看来，就是一句「请进」。我妈妈那辈人都这么说。', '第三，别盯着它们的眼睛看。它们想让你看。', '第四，它们熬不过太阳。天一亮，它们就得走。']);
+    await S.say('埃德娜', ['你那栋房子，跟我这栋是同一个木匠在一九三一年盖的，图纸一模一样。', '原来的图纸，我收在梳妆台的抽屉里。拿去，照着它，一个口子一个口子地查。', '……然后不管谁敲门，不管它说什么，别答应。']);
+    f.ednaTalk = true;
+    S.goal('拿梳妆台抽屉里的图纸');
+  }
+  async function ednaDresser(S) {
+    const f = S.f;
+    if (!f.ednaTalk) return S.narr('埃德娜的梳妆台。镜子上蒙着一块黑布。\n台面上摆着一张黑白照片：年轻时的她，和一个穿军装的男人。');
+    if (f.bp) return S.note('blueprint');
+    f.bp = true; S.sfx('open');
+    await S.narr('你拉开抽屉。在一沓旧信和一盒纽扣底下，压着一卷发黄的蓝图。');
+    await S.note('blueprint');
+    return lightsOut(S);
+  }
+  async function lightsOut(S) {
+    const f = S.f;
+    S.amb('none'); S.sfx('switch');
+    const tv = S.ent('etv2'); tv.lit = false; tv.off = true; S.hide('elamp');
+    S.dark(.95); S.plr(1.8);
+    await S.narr('屋里的灯，一盏接一盏地暗了下去。\n客厅里电视的蓝光「啪」地一下灭了。');
+    await S.say('埃德娜', '……它们回来了。', { style: 'whisper' });
+    await S.say('埃德娜', ['它们用不着敲门了。这是我请它们进来过的屋子。', '诺拉，从厨房的后门走。别回头，别停下。', '别管我。它们要的……已经不是我了。']);
+    S.show('ek1'); S.show('ek2');
+    S.sfx('giggle');
+    await S.narr('客厅那边，沙发的弹簧「吱呀」响了一声。\n像是有人在那儿坐了很久很久，终于站了起来。');
+    f.chase = true;
+    S.goal('从厨房后门逃出去！（别被它们碰到）');
+    S.cp('edna');
+    startEdnaChase(S);
+  }
+  function startEdnaChase(S) {
+    S.chase('ek1', { spd: 2.9, catch: ednaCatch, wait: 1.2 });
+    S.chase('ek2', { spd: 2.7, catch: ednaCatch, wait: 1.8 });
+  }
+  async function ednaCatch(S) {
+    S.stop('ek1'); S.stop('ek2');
+    await S.scare('face', { spr: '@kid1b', dur: 1 });
+    await S.die('一只小手拉住了你的手腕。冰凉，轻飘飘的，没有一点分量。\n「您用不着答应了，女士。」大的那个轻声说，「这是奶奶请我们进来的屋子。在这里，我们什么都不用问。」', '在被请进过的屋子里');
+  }
+  async function ednaEscape(S, back) {
+    const f = S.f;
+    S.stop('ek1'); S.stop('ek2');
+    if (back) { S.sfx('locked'); await S.narr('后门的插销锈住了——\n你用肩膀狠狠一撞。门「砰」地弹开了。'); }
+    S.sfx('open');
+    f.chase = false; f.phase = 'seal';
+    S.plr(null);
+    await S.go('farm', 5, 6, 3);
+  }
+
+  const MAP_EDNA = {
+    amb: 'tv', dark: .84, plr: 2.6, wall: 'paper', floor: 'wood',
+    tileOpts: { carpetC: '#4a3a2e', woodC: '#5a4030' }, wallC: { face: '#5a5048' },
+    rows: [
+      '########################',
+      '########################',
+      '#cccccccc#nnnnnn#wwwwww#',
+      '#cccccccc#nnnnnn#wwwwww#',
+      '#cccccccc.nnnnnn.wwwwww#',
+      '#cccccccc#nnnnnn#wwwwww#',
+      '#cccccccc#nnnnnn#wwwwww#',
+      '###.####################'],
+    ents: [
+      // 客厅
+      { id: 'etv2', x: 2, y: 2, spr: 'tv2', lit: true, light: { r: 3, col: 'rgba(110,150,255,.2)', flick: true }, on: S => S.narr(S.ent('etv2').lit ? '电视开着，没有台。满屏的雪花，没有声音。\n埃德娜从来不在九点以后看电视。' : '电视黑了。屏幕上映着你的脸，和你身后——\n……什么都没有。') },
+      { x: 4, y: 2, w: 2, spr: 'sofa', col: '#6a5a4a', on: S => S.narr('碎花布的旧沙发。坐垫上有两个浅浅的坑，并排着，一大一小。\n三天了，那两个坑一点都没有弹回去。') },
+      { x: 6, y: 1, spr: 'wallclock', on: S => S.narr('挂钟停了。九点十三分。\n秒针卡在十二点的位置上，一下一下地抖，就是走不过去。') },
+      { x: 3, y: 1, spr: 'portrait', on: S => S.narr('墙上挂着埃德娜丈夫的遗像。穿着军装，笑得很腼腆。\n相框玻璃上有一道裂纹，是新的。') },
+      { x: 8, y: 1, spr: 'window', on: S => S.narr('窗外能看见你家的房子。门廊的灯亮着，小小的一团黄。\n从这边看过去，它离得好远。') },
+      { x: 7, y: 6, spr: 'lamp', off: true, on: S => S.narr('落地灯的灯泡碎了。碎玻璃扫成一小堆，堆在灯座边上。') },
+      { x: 1, y: 6, spr: 'plant', on: S => S.narr('一盆绿萝。三天没浇水，叶子全耷拉下来了。') },
+      { x: 3, y: 7, spr: 'invisible', async touch(S) { if (S.f.chase) return ednaEscape(S, false); S.sfx('open'); return S.go('farm', 24, 6, 0); } },
+      // 厨房
+      { x: 10, y: 2, spr: 'stove', on: S => S.narr('炉子上坐着一口小奶锅。锅底结着一层干掉的可可。') },
+      { x: 11, y: 1, spr: 'window', on: S => S.narr('厨房的窗台上摆着一排腌菜罐子。窗玻璃上，有两个小小的手印。\n在里面。') },
+      { id: 'ebdoor', x: 13, y: 1, spr: 'door', col: '#4a3020', async on(S) { if (S.f.chase) return ednaEscape(S, true); await S.narr('后门闩着。门闩上挂着一串晒干的辣椒。\n这扇门通到房子后面的晾衣场。'); } },
+      { x: 15, y: 2, spr: 'fridge', on: S => S.narr('冰箱门上贴着一张便条：「给诺拉的派——周日」。\n下面画着一个歪歪扭扭的笑脸。') },
+      { id: 'ctable', x: 11, y: 4, w: 2, spr: 'cocoatable', col: '#7a5a3a', async on(S) {
+        if (S.once('cocoa')) await S.narr('餐桌上摆着两杯可可。一个白杯子，一个红杯子。\n可可早就凉透了，表面结了一层皱巴巴的皮——一口都没有动过。\n杯子旁边，压着一本夹满了剪报的食谱。');
+        await S.note('diary');
+      } },
+      { x: 14, y: 6, spr: 'dogbowl', on: S => S.narr('巴斯特的饭碗，满满的。狗粮上落了一层灰。') },
+      { id: 'elamp', x: 12, y: 3, spr: 'invisible', light: { r: 3, col: 'rgba(255,220,160,.07)' } },
+      // 卧室
+      { id: 'edresser', x: 17, y: 2, spr: 'dresser', col: '#6a4a3a', on: ednaDresser },
+      { x: 18, y: 1, spr: 'wallclock', on: S => S.narr('卧室的钟也停了。九点十三分。') },
+      { id: 'edna', x: 19, y: 2, oy: -3, spr: '@ednaS', dir: 0, on: ednaTalk },
+      { x: 19, y: 2, spr: 'armchair', col: '#7a6a8a' },
+      { x: 20, y: 1, spr: 'window', on: S => S.narr('窗户关得死死的，窗缝里塞着报纸。\n可屋里还是冷。冷气好像不是从外面进来的。') },
+      { x: 21, y: 2, h: 2, spr: 'bed', col: '#8a6a7a', on: S => S.narr('床上的被子叠得方方正正。三天了，埃德娜不敢一个人躺下睡。') },
+      { x: 22, y: 6, spr: 'lamp', light: { r: 3, col: 'rgba(255,200,140,.12)' }, on: S => S.narr('床头的小台灯，灯罩上绣着一圈矢车菊。') },
+      // 它们
+      { id: 'ek1', x: 2, y: 5, spr: '@kid1b', dir: 2, hidden: true, solid: false },
+      { id: 'ek2', x: 5, y: 3, spr: '@kid2b', dir: 0, hidden: true, solid: false }
+    ],
+    async enter(S, first) {
+      if (!first) return;
+      await S.narr('屋里一股冷掉的可可味儿。暖气开着，可你呼出来的气是白的。');
+      await S.say('埃德娜（卧室里）', '……诺拉？是你吗？别开灯。到这边来。', { style: 'whisper' });
+      S.goal('去卧室找埃德娜');
+      S.cp('ednain');
+    }
+  };
+
+  /* ================= 守夜：一轮一轮的敲门 ================= */
+  const TIMES = ['一点十二分', '两点三十四分', '三点四十一分', '四点四十七分', '五点五十五分'];
+  const ROUNDS = ['front', 'phone', 'bwin', 'back', 'front'];
+  async function siegeStart(S) {
+    const f = S.f;
+    f.phase = 'siege'; f.round = 0; f.time = '十二点五十八分'; f.pending = null;
+    S.sfx('chime');
+    await S.narr('最后一个口子也封上了。\n你站在客厅中间，听着这栋老房子的声音：座钟、风、你自己的心跳。');
+    await S.think('埃德娜说，它们熬不过太阳。\n……只要撑到天亮。');
+    S.goal('撑到天亮');
+    S.cp('siege');
+    S.after(2500, nextRound);
+  }
+  async function nextRound(S) {
+    const f = S.f; if (f.phase !== 'siege' || f.pending) return;
+    const k = ROUNDS[f.round]; f.time = TIMES[f.round]; f.pending = k;
+    if (k === 'phone') { S.sfx('phone'); await S.narr('丁零零——\n客厅里的电话响了。'); S.goal('电话响了'); }
+    else if (k === 'bwin') { S.ent('bwin').face = true; S.sfx('knock'); await S.narr('嗒、嗒、嗒。\n卧室那边，有什么东西在轻轻地敲窗玻璃。'); S.goal('卧室的窗户上有声音'); }
+    else if (k === 'back') { S.sfx('thud'); await S.narr('咚。\n厨房那边，有什么东西撞了一下后门。撞的位置很低——猫洞那么高。'); S.goal('厨房后门有声音'); }
+    else {
+      S.sfx('knock'); await S.wait(320); S.sfx('knock'); await S.wait(320); S.sfx('knock');
+      await S.narr(f.round === 0 ? '咚、咚、咚。\n有人在敲前门。敲得很轻，很有礼貌。' : '咚、咚、咚。\n又有人敲前门了。这一回敲得很慢，很轻，像是怕吵醒谁。');
+      S.goal('前门有人敲门');
+    }
+    S.cp('siege');
+  }
+  async function roundDone(S, after) {
+    const f = S.f; f.pending = null; f.round++;
+    S.ent('bwin').face = false;
+    if (after) await after(S);
+    if (f.round >= ROUNDS.length) return dawn(S);
+    S.goal('撑到天亮');
+    S.after(4000, nextRound);
+  }
+  async function roundFront(S) {
+    const f = S.f;
+    if (f.round >= 4) return roundLast(S);
+    await S.narr('你贴着门板站着，没有出声。\n门缝里钻进来的风，带着一股很淡很淡的、旧硬币一样的味道。');
+    await S.say('大男孩（门外）', ['晚上好，女士。又是我们。', '我们妈妈的车坏在路上了。能借用一下您的电话吗？打完我们就走。']);
+    let r = await S.ask('「女士？」', ['电话在客厅，你们进来打吧。', '号码给我，我替你们打。', '（不出声）'], '诺拉');
+    if (r === 0) return badEnd(S, 'house');
+    if (r === 1) await S.say('大男孩（门外）', ['……不用了。我们要自己打。', '您开开门就好。开一条缝就好。']);
+    else { await S.wait(900); await S.say('大男孩（门外）', ['我知道您在门后面，女士。', '我听得见您的心跳。']); }
+    r = await S.ask('「外面真的很冷。」', ['（拉开防盗链，把门开一条缝）', '我不会开门的。', '回你们妈妈那儿去。'], '诺拉');
+    if (r === 0) { await S.narr('你的手自己伸向了防盗链——'); return badEnd(S, 'house'); }
+    await S.wait(700);
+    await S.say('大男孩（门外）', '……那我们去问问别的门。', { style: 'whisper' });
+    await S.narr('脚步声离开了门廊。很轻，很慢，绕着房子往侧面去了。');
+    return roundDone(S, async S => {
+      await S.wait(600);
+      S.ent('lwin').face = true; S.sfx('whisper');
+      await S.narr('客厅的窗户外面，一张小小的白脸一晃而过。');
+      S.ent('lwin').face = false;
+      await S.narr('……然后又是一片黑。');
+    });
+  }
+  async function roundPhone(S) {
+    S.sfx('blip');
+    await S.narr('你拿起听筒。');
+    await S.say('埃德娜（电话里）', ['诺拉？诺拉，是我，埃德娜。', '我好多了，真的。烧退了，也不冷了。']);
+    await S.say('埃德娜（电话里）', '就是一个人待着太害怕了。我们能过去你那儿坐坐吗？');
+    await S.think('……「我们」？');
+    let r = await S.ask('「诺拉？」', ['当然，过来吧，门我给你留着。', '埃德娜，你那边还有谁？', '你在家待着，天一亮我就过去。'], '诺拉');
+    if (r === 0) return badEnd(S, 'house');
+    if (r === 1) { await S.wait(700); S.sfx('giggle'); await S.say('孩子的声音（电话里）', ['……奶奶睡着了，女士。', '您不想让我们过去吗？'], { style: 'whisper' }); }
+    else { await S.say('埃德娜（电话里）', '可是天还要好久好久才亮呢……'); await S.narr('她的声音变了。越来越细，越来越高，最后成了一个孩子的声音。'); await S.say('孩子的声音（电话里）', '好久好久哦，女士。', { style: 'whisper' }); }
+    r = await S.ask('「就说一个字嘛。说『好』。」', ['（挂断电话）', '好……好吧……'], '诺拉');
+    if (r === 1) return badEnd(S, 'house');
+    S.sfx('close');
+    await S.narr('你把听筒摔回了座机上，手抖得厉害。\n挂断之前，你听见电话那头，有两个人在同时呼吸。');
+    return roundDone(S, async S => {
+      await S.wait(700);
+      S.ent('htv').lit = true; S.sfx('tv');
+      await S.narr('客厅里「嗞」的一声——电视自己打开了。满屏的雪花。');
+      await S.narr('你冲过去拔掉了插头。\n雪花又闪了好几秒，才慢慢暗下去。');
+      S.ent('htv').lit = false;
+    });
+  }
+  async function roundWindow(S) {
+    await S.narr('卧室的窗玻璃外面，贴着一张小小的、苍白的脸。\n木条的缝隙之间，帽兜底下，是两只全黑的眼睛。');
+    await S.say('小男孩（窗外）', ['姐姐。', '我好冷。手指头都没知觉了。']);
+    await S.say('小男孩（窗外）', '你看看我呀。你好好看看我，就知道我没骗你。');
+    const r = await S.ask('他把脸贴在玻璃上，等着。', ['（盯着他的眼睛看）', '（移开视线）', '你们为什么非要我说那句话？'], '诺拉');
+    if (r === 0) {
+      await S.scare('face', { spr: '@kid2b', dur: 1 });
+      await S.narr('你看着那两只眼睛。\n黑色在往外漫，漫过玻璃，漫过窗框，漫进你的脑子里。你听见自己的嘴唇在动，像是要说一个字——');
+      const r2 = await S.ask('「说呀。」', ['……可、可以……', '（狠狠咬住舌头，扭过头去）'], '诺拉');
+      if (r2 === 0) return badEnd(S, 'house');
+      await S.narr('舌尖一阵锐痛。疼让你清醒了过来。\n埃德娜说过：别盯着它们的眼睛看。它们想让你看。');
+    } else if (r === 2) {
+      await S.say('小男孩（窗外）', ['因为这是规矩呀。', '门是你们的。没有人请，我们就只能待在外面。']);
+      await S.say('小男孩（窗外）', '……一直待在外面。', { style: 'whisper' });
+      await S.narr('他说这话的时候，声音一点都不像个孩子。\n倒像是一个很老很老的东西，在学着孩子的样子说话。');
+    } else await S.narr('你把目光钉在地板上，一下都没有抬起来。\n玻璃上传来指甲刮擦的声音，很慢，从左刮到右。');
+    await S.say('小男孩（窗外）', '……那我们去后门。后门有猫的门。', { style: 'whisper' });
+    S.ent('bwin').face = false;
+    return roundDone(S, async S => { await S.wait(500); await S.narr('窗外的脸不见了。\n你听见有什么东西踩着枯草，慢慢绕向了屋子后面。'); });
+  }
+  async function roundBack(S) {
+    S.sfx('thud');
+    await S.narr('猫洞的小门一下一下地往里顶，顶在面粉袋上。\n顶不开。');
+    await S.say('大男孩（门外）', ['您把猫的门堵上了。', '胡椒不会回来了，女士。']);
+    await S.think('……他怎么会知道胡椒的名字。');
+    await S.say('大男孩（门外）', ['您想对我们说「不」，是不是？', '那您打开门，当着我们的面说。当面说了，我们就走。']);
+    let asked = false;
+    for (;;) {
+      const opts = ['（打开门）不！', '（隔着门）不。'];
+      if (!asked) opts.push('……胡椒怎么了？');
+      const r = await S.ask('门外安安静静的。他们在等。', opts, '诺拉');
+      if (r === 0) { await S.narr('你的手按上了门闩——'); return badEnd(S, 'house'); }
+      if (r === 2) { asked = true; await S.say('大男孩（门外）', ['它出去找您了。在路上。', '……它也很冷。']); continue; }
+      break;
+    }
+    await S.say('诺拉', '不。', { style: 'big' });
+    await S.narr('门外安静了很久很久。\n然后，脚步声慢慢地，绕回了房子前面。');
+    return roundDone(S, async S => { await S.wait(600); await S.bells(5, 420); await S.narr('座钟敲了五下。\n外面安静得出奇，连风都停了。'); });
+  }
+  async function roundLast(S) {
+    await S.say('埃德娜（门外）', ['诺拉，是我。', '天亮了，孩子。它们走了。']);
+    await S.say('埃德娜（门外）', '开开门吧，让我进去暖和暖和。我冻了一整夜了。');
+    let r = await S.ask('门外，是埃德娜沙哑的、熟悉的声音。', ['（打开门）', '……你先等等。（回头看一眼座钟）', '埃德娜，你绕到窗户那边，让我看看你。'], '诺拉');
+    if (r === 0) { await S.narr('你取下了防盗链——'); return badEnd(S, 'house'); }
+    if (r === 1) {
+      await S.narr('座钟的指针，指着五点五十五分。\n窗帘缝里还是黑的。离日出，还有二十多分钟。');
+      await S.say('埃德娜（门外）', '诺拉？……诺拉，开门呀。');
+      r = await S.ask('「天亮了呀。」', ['天还没亮。你不是埃德娜。', '（打开门）'], '诺拉');
+      if (r === 1) { await S.narr('你取下了防盗链——'); return badEnd(S, 'house'); }
+    } else {
+      await S.wait(900);
+      await S.narr('门外没有回答。\n也没有脚步声往窗户那边去。');
+    }
+    S.sfx('giggle');
+    await S.narr('门外传来一声很轻很轻的笑。\n是个孩子的声音。');
+    await S.say('大男孩（门外）', '您真是个好主人，女士。从来不让客人进门。', { style: 'whisper' });
+    return roundDone(S);
+  }
+  async function dawn(S) {
+    const f = S.f;
+    f.phase = 'dawn'; f.time = '六点二十一分';
+    await S.wait(1500);
+    S.amb('wind');
+    for (const id of ['bwin', 'lwin', 'kwin']) S.ent(id).lit = true;
+    S.dark(.45);
+    await S.narr('不知道过了多久。\n窗帘的缝里，一点一点地透进来灰白色的光。');
+    S.sfx('chime');
+    await S.narr('远处，谁家的公鸡叫了第一声。');
+    await S.think('……天亮了。\n真的天亮了。');
+    S.goal('出门看看');
+    S.cp('dawn');
+  }
+
+  /* ================= 章节 ================= */
+  let sndT = 0;
+  defChapter({
+    id: 'blackeyed', n: 10, title: '黑眼孩子', sub: '深夜，有人很有礼貌地敲你的车窗：「女士，能让我们进去吗？」', origin: '美国网络都市传说', color: '#2c2412',
+    icon: '@kid1b', amb: 'night', floor: 'wood', wall: 'paper', dark: .8, plr: 2.8,
+    people: {
+      me: { skin: '#ecc8a8', hair: '#6a4428', hs: 'bob', top: '#5f8f8c', top2: '#e8e4d8', bottom: '#5f8f8c', shoes: '#e8e4dc' },
+      kid1: KID1, kid2: KID2,
+      kid1b: Object.assign({}, KID1, { key: 'be-kid1b', extra: blackEyes }),
+      kid2b: Object.assign({}, KID2, { key: 'be-kid2b', extra: blackEyes }),
+      clerk: { skin: '#d8a882', hair: '#4a3020', hs: 'short', hat: 'cap', hatC: '#a03a2a', top: '#3a4a3a', top2: '#c8c0a8', bottom: '#3a3a44', shoes: '#2a2018' },
+      ednaS: { skin: '#dcd0cc', hair: '#e4e4e4', hs: 'bun', top: '#c8c0d0', top2: '#e8e4ec', bottom: '#b8b0c4', dress: true, shoes: '#9a9090' }
+    },
+    items: {
+      hammer: { name: '锤子和钉子', desc: '爸爸留下的羊角锤，和半盒生了锈的钉子。' },
+      flour: { name: '面粉袋', desc: '二十五磅的面粉，沉得要命。本来是留着感恩节烤派的。' }
+    },
+    notes: NOTES,
+    legend: '「黑眼孩子」（Black-Eyed Kids，常简称 BEK）是网络时代土生土长的美国都市传说。据说最早的版本出现在1998年：得克萨斯州阿比林的一位记者在一个讨论灵异话题的邮件列表上，写下了自己的亲身经历——深夜，他坐在电影院停车场的车里写支票，两个十来岁的男孩来敲车窗，说想看电影却把钱落在家里，请他载一程。孩子们措辞礼貌得过分，一再催促：「你不说可以，我们就上不了车。」他在恐惧中看清了他们的眼睛：没有眼白，整个眼眶都是黑的。他发动汽车逃走了。多年以后，他还在报纸专栏里重新讲过这段经历。\n\n这篇帖子在网上被不断转载，此后陆续有大量网友讲述类似的「亲历」：孩子总是成对出现，十岁到十六岁上下，穿着普通甚至过时的衣服，脸色苍白；他们敲的不只是车窗，更多是深夜住宅的门，有时也出现在汽车旅馆和公寓门口；借口总是合情合理——借电话、找妈妈、迷了路、想进屋暖和一下；他们从不强闯，只是越来越急切地要求你「邀请」；目睹者几乎都提到一种毫无来由的强烈恐惧。也有传言说，让他们进过门的人后来生了病，或接连遭遇不幸——这些说法都无从查证。\n\n「必须被邀请才能进门」是一个很古老的母题：欧洲民间传说里的吸血鬼和许多精怪都受这条规矩约束，门槛在很多文化中被视为人与「外面那些东西」的边界。有人认为黑眼孩子是外星人或恶灵，有人说是吸血鬼的现代变体，也有人指出它从头到尾没有一张照片、一个可核实的证人，是一场典型的「网络篝火故事」；心理学上的解释则认为，它恰好戳中了人对「几乎像人、却又哪里不对」之物的本能不安。二十一世纪以后，英国等地也传出了类似的目击说法，它还成了许多小说、电影和电视节目的题材。\n\n（本章的柳溪镇、枫林路、星光影院、诺拉、埃德娜、德韦恩以及全部情节均为游戏虚构；「开着的门就是请进」「天亮后它们必须离开」是本章为游戏设计的规矩，并非传说的固定内容。）',
+    start: { map: 'lot', x: 12, y: 8, dir: 1 },
+    resume: {
+      edna: async S => { startEdnaChase(S); },
+      siege: async S => { const f = S.f; if (f.phase === 'siege' && !f.pending) S.after(2000, nextRound); }
+    },
+    async intro(S) {
+      sndT = 0;
+      await S.card('第十夜　黑眼孩子', '1998年11月17日　美国得克萨斯州　柳溪镇', '你叫诺拉·班克斯，县诊所的夜班护士。\n一个人住在镇子外面，枫林路的尽头。\n\n今晚下班晚了。电费单明天就要过期——\n星光影院门口有个夜间缴费箱，正好顺路。');
+    },
+    tick(S, dt) {
+      const p = S.f.pending;
+      if (!p || W.busy || S.map !== 'home') { sndT = 0; return; }
+      sndT += dt;
+      if (sndT > 3.6) { sndT = 0; S.sfx(p === 'phone' ? 'phone' : p === 'back' ? 'thud' : 'knock'); }
+    },
+    sprites: SPRITES,
+    tiles: TILES,
+    maps: { lot: MAP_LOT, gas: MAP_GAS, farm: MAP_FARM, home: MAP_HOME, edna: MAP_EDNA }
+  });
+})();

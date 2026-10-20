@@ -6,7 +6,7 @@
   const DOORS = { hall2: ['fd1', 'fd2'], hall1: ['fd3', 'sd1', 'sd2'] };
   const BASE = 3.2, BURST = 8.5;          // 平时 3.2 格/秒；「テケテケ」猛冲时 8.5 格/秒（走 4.2，跑 6.8）
   const DOOR_T = 3.2;                      // 她扒开一扇关着的门要几秒
-  const NAVY = '#1e2436', SKIN = '#e2ded8', HAIR = '#0c0a0e';
+  const NAVY = '#2c3654', NAVYD = '#1c2238', WHITE = '#dfe3ec', SKIN = '#e2ded8', HAIR = '#0c0a0e';
 
   /* ---------- 小工具 ---------- */
   function hideTk() { for (const k in TK) { const e = getEnt(TK[k], k); if (e) { e.chase = null; e.mv = null; e.hidden = true; } } }
@@ -168,20 +168,192 @@
     await S.end({ title: '第二夜　完', text: '从那以后，道口旁边的看守小屋，再也没有亮过灯。\n\n白桦二中的孩子们，还是会讲テケテケ的故事。\n只是讲到最后，总会有人小声地补上一句：\n\n「……她叫千代。」' });
   }
 
+  /* ---------- 校舍：调查与剧情 ---------- */
+  async function fdLook(S, id) {
+    if (S.once('fdl')) return S.narr('防火门。平时用磁铁吸在墙上，一直敞开着。\n真要关的话，用力一推就能合上。');
+    return door(S, id, 'fd');
+  }
+  async function takagi(S) {
+    if (S.f.phase === 'chase0' || S.f.phase === 'chase') return;
+    S.face('takagi', 'pl');
+    if (!S.f.talked) {
+      S.f.talked = true; S.f.toStaff = true;
+      await S.narr('职员室里只剩高木老师一个人，戴着老花镜在改作业。\n暖炉上的水壶咕嘟咕嘟地响。');
+      await S.say('高木老师', '哦，水野啊。这么晚了，还没回去？');
+      await S.say('你', '老师，我想借资料室的钥匙。新闻部要查以前的校报。');
+      await S.say('高木老师', '资料室？查什么？');
+      await S.say('你', '……学校旁边那个道口的事故。大家都说，三十年前——');
+      S.bubble('takagi', '…', 1600);
+      await S.wait(600);
+      await S.say('高木老师', ['……テケテケ，是吧。', '现在的孩子，管她叫这个名字啊。']);
+      await S.say('高木老师', ['不是「三十年前」。是三十一年前。一九六二年，一月。第三学期刚开学没几天。', '前一年春天，我刚到这所学校，当老师的第一年。她是二年级的学生……我没教过她，只在走廊里碰见过几次。', '我只记得那年冬天特别冷。冷得道口的道岔都冻住了。']);
+      await S.narr('老师摘下老花镜，用衣角擦了很久。');
+      await S.say('高木老师', ['钥匙拿去吧。看完了锁好门。', '还有，六点以后玄关就锁了。走的时候去钥匙箱拿备用钥匙，出去以后从门缝塞回来就行。']);
+      S.give('akey'); S.ent('keybox').s.noA = true; S.f.toldKey = true;
+      await S.say('高木老师', ['……水野。', '那个孩子，是有名字的。你写的时候，别只写那个外号。']);
+      S.goal('去二楼资料室，找一九六二年一月的校报');
+      S.cp('key');
+      return;
+    }
+    const l = ['一九六二年。……那年我二十三岁。', '资料柜是按昭和年份排的。……你们这一代，算得过来吧？', '雪下大了。看完了早点回去，别走铁轨。'];
+    await S.say('高木老师', l[(S.f._tg = ((S.f._tg ?? -1) + 1) % 3)]);
+  }
+  async function keybox(S) {
+    const k = S.ent('keybox');
+    if (S.has('gkey')) return S.narr('钥匙箱。「玄关（备用）」那一格空了。');
+    if (!S.f.toldKey) return S.narr('钥匙箱。一排排小钩子上挂着各个教室的钥匙。\n「资料室」那一格是空的——钥匙在高木老师手里。');
+    S.give('gkey'); k.s.noG = true;
+    await S.narr(S.f.phase === 'chase' ? '你的手抖得厉害，好几次都没够着钩子——\n抓住了！「玄关（备用）」。' : '你从钩子上取下了「玄关（备用）」的钥匙。\n高木老师说，六点以后玄关就锁了。');
+    if (S.f.phase === 'chase') S.goal('从玄关逃出去！');
+  }
+  async function genkan(S) {
+    if (S.f.phase !== 'chase') { S.pos(13, 9, 3); return S.think(S.has('akey') ? '还没查完资料呢。稿子星期一就要交了。' : '稿子还没写完。先去职员室借钥匙吧。'); }
+    if (!S.has('gkey')) {
+      S.pos(13, 9, 3); S.sfx('locked');
+      await S.narr('玻璃门锁着！\n门上挂着牌子：「18:00以后玄关上锁」。');
+      await S.think('钥匙……职员室的钥匙箱！');
+      S.goal('玄关锁了——去职员室的钥匙箱拿备用钥匙！');
+      return;
+    }
+    S.sfx('open'); hideTk(); S.take('gkey');
+    await S.narr('钥匙插进锁孔，拧了两次才拧动。\n你撞开玻璃门，冲进了雪里。');
+    await S.go('yard', 4, 2, 0);
+  }
+  function drawerTxt(n) {
+    if (isNaN(n) || n < 22 || n > 64) return '没有这一格。\n最上面的抽屉是「昭和22年」——建校那一年；最下面一格是「昭和64年」。';
+    if (n === 64) return '「昭和64年」的抽屉里只有薄薄的一份。\n那一年，只有七天。';
+    if (n >= 58) return `「昭和${n}年」……都是不久以前的校报，新闻部的纸箱里也有。\n不是这一年。`;
+    if (n === 36) return '「昭和36年」：秋天的町文化祭特辑。\n获奖名单里有一幅画，叫《雪中的道口》。作者的名字，被一颗订书钉挡住了。\n……不是这一年，但是很近了。';
+    if (n === 38) return '「昭和38年」：第一页是一尊新立的小地藏的照片，就在道口旁边。\n照片底下写着：「愿她安息」。\n……晚了一年。';
+    if (n === 39) return '「昭和39年」：东京奥运会特辑。全校挤在体育馆里看了黑白电视转播。\n不是这一年。';
+    return `「昭和${n}年」的抽屉里塞满了泛黄的校报：运动会、修学旅行、毕业典礼……\n不是这一年。`;
+  }
+  async function cabinet(S) {
+    const c = S.ent('cab');
+    if (S.f.found) return S.narr('「昭和37年」的抽屉开着。里面的校报，你已经看过了。');
+    if (S.once('cabA')) await S.narr('铁皮档案柜。一格一格的抽屉，标签上写着年份。\n柜门上贴着一张发黄的纸条：\n「整理规则：校报按昭和纪年归档。※昭和元年＝1926年」');
+    const v = await S.keypad('拉开哪一年的抽屉？（昭和　年）', ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'], 2);
+    if (v == null) return S.narr('你把手从抽屉把手上拿开了。');
+    const n = parseInt(v, 10);
+    S.sfx('open');
+    if (n !== 37) {
+      S.f._wrong = (S.f._wrong || 0) + 1;
+      await S.narr(drawerTxt(n));
+      if (S.f._wrong >= 2) await S.think('……高木老师说，是一九六二年一月。\n纸条上写着：昭和元年＝一九二六年。那么一九六二年就是……');
+      return;
+    }
+    c.open = true; S.f.found = true;
+    await S.narr('「昭和37年」。\n抽屉拉开的时候，一股陈年的纸味扑了出来。\n二月一日那一期的校报上，有一块用黑框框起来的地方。');
+    await S.note('paper57');
+    S.f.name = true;
+    await S.narr('你把那页校报看了很久。\n「雪村千代」。\n……原来，她有名字。');
+    await blackout(S);
+  }
+  async function blackout(S) {
+    S.f.phase = 'chase0';
+    S.hide('takagi');
+    await S.wait(400);
+    S.sfx('switch'); S.amb('none');
+    for (const mp of ['archive', 'hall2', 'hall1', 'club']) S.dark(.93, mp);
+    S.ent('bulb').off = true; S.plr(2.8);
+    await S.narr('灯泡「啪」地一声灭了。');
+    S.sfx('heart'); await S.wait(600);
+    S.sfx('tick'); await S.wait(380); S.sfx('tick'); await S.wait(380); S.sfx('tick');
+    await S.narr('门外的走廊上，传来一种声音。\n像是有人用手掌，一下，一下地拍打地板。');
+    await S.narr('テケ、テケ、テケ、テケ——\n从左边的楼梯口，越来越近。\n……在门口，停住了。');
+    S.sfx('knock'); await S.wait(500); S.sfx('knock');
+    await S.wait(900);
+    await S.narr('……又慢慢地，远了。');
+    await S.think('今天……是第三天。');
+    S.goal('离开资料室，逃出学校！');
+    S.cp('found');
+  }
+  async function reveal(S) {
+    S.f.phase = 'chase'; S.amb('none');
+    const e = S.ent('tk2'); S.place('tk2', 1, 3, 2); e.alpha = 0;
+    S.sfx('heart');
+    await S.narr('走廊里一片漆黑。只有两头「非常口」的绿灯还亮着。');
+    S.focus(4, 3);
+    await S.alpha('tk2', 1, 900);
+    await S.narr('左边楼梯口的绿光底下，地板上趴着一个人影。');
+    await S.narr('深蓝色的旧式水手服。长长的黑头发，一直拖到地上。\n她用两只手肘，撑起了上半身——\n……腰下面，什么也没有。');
+    S.sfx('tick'); await S.wait(300); S.sfx('tick');
+    await S.say('她', 'テケ。', { style: 'whisper' });
+    S.focus(null);
+    await S.say('她', 'テケ、テケ、テケ、テケ——', { style: 'big' });
+    S.amb('drone');
+    S.goal('逃！往右边的楼梯跑，下楼，从玄关出去！');
+    S.toast('按住 Shift 奔跑——她猛冲起来比你走路快');
+    S.toast('防火门可以关上挡她一下；她上下楼梯很慢');
+    arrive(S, 1, 3, .05);
+  }
+  /* ---------- 看守小屋 ---------- */
+  async function hutDoor(S) {
+    if (S.f.phase === 'chase') {
+      hideTk(); S.f.phase = 'hut';
+      S.sfx('knock'); await S.wait(200); S.sfx('knock');
+      await S.narr('你扑到小屋门上，拼命地拍——\n门开了。一只粗糙的大手，一把把你拽了进去。');
+      S.sfx('close');
+      await S.go('hut', 4, 5, 3);
+      return;
+    }
+    if (S.f.phase === 'final' && !S.f.fin) { S.sfx('open'); return S.go('hut', 4, 5, 3); }
+    await S.narr('看守小屋。窗户里透出暖炉的光。');
+  }
+  async function hutScene(S) {
+    await S.narr('小屋里很暖和。石油暖炉烧得通红。\n一个穿旧铁路制服的老人，用后背死死地顶着门。');
+    S.sfx('thud'); S.shake(300, 2);
+    await S.wait(500);
+    S.sfx('tick'); await S.wait(400); S.sfx('tick'); await S.wait(400); S.sfx('tick');
+    await S.narr('门外，テケ、テケ的声音绕着小屋转了一圈……\n慢慢地，往道口那边去了。');
+    S.face('gen', 'pl');
+    await S.say('老人', ['……走了。', '她不进这间屋子。三十一年了，一次也没进来过。']);
+    await S.say('老人', '你是二中的学生吧。……你也听过那个故事了？');
+    await S.say('你', '……三天前。');
+    await S.say('老人', ['我叫源造。以前是这个道口的看守——那时候，道口还是人工放栏杆的。', '十几年前改成了自动的，这间小屋就没用了。可我每天晚上，还是会来这儿坐一坐。坐到末班车开过去。']);
+    await S.say('源造', '你听见外面的警报了吧。没有火车，它也会响。每天晚上，这个时候。');
+    await S.ask('「……您认识她？」', ['那天，到底发生了什么？', '她……到底是谁？'], '你');
+    await S.say('源造', ['一九六二年一月十九日。傍晚五点五十分左右。雪下得比今天还大。', '那天三号道岔冻住了，我出去敲冰。……回到屋里的时候，货车的汽笛已经响了。我去拉栏杆——']);
+    await S.say('源造', ['有个女学生，抄近路，沿着铁轨走回家。穿着一双红色的雪靴。', '她的一只脚，卡进了道岔的缝里。冻住的道岔，把靴子夹得死死的。', '我看见她的时候……已经来不及了。']);
+    await S.narr('老人看着暖炉，很久没有说话。');
+    await S.say('源造', ['……那天太冷了。她没有马上走。', '她一直在说：「脚……我的脚……拔不出来……」', '后来，孩子们传来传去，就变成了「我的脚在哪里」。']);
+    S.sfx('open');
+    await S.narr('老人起身，打开墙角的木箱，从一块叠得整整齐齐的白布里，捧出一样东西。');
+    S.give('boot');
+    await S.say('源造', ['那只雪靴，后来是我从道岔里取出来的。', '我一直没能把它还给她家里人。她家第二年春天就搬走了，不知道搬去了哪里。']);
+    await S.say('源造', ['她要是问你「脚在哪里」，你就把这个给她。', '电视上、书上那些答案——什么名神高速公路——能让她愣一下。可那不是她要找的。']);
+    await S.say('源造', ['还有……别叫她那个外号。テケテケ……那是孩子们给她起的。', '我连她叫什么都不知道。报纸上只写了「十四岁的女中学生」。三十一年了。']);
+    if (S.f.name) {
+      await S.say('你', '……雪村千代。二年三组，美术部的。\n学校的旧校报上，有她的名字。');
+      S.bubble('gen', '…', 2000);
+      await S.narr('老人的嘴唇动了动，没有发出声音。\n他把那个名字，在嘴里念了好几遍。');
+      await S.say('源造', '……千代。千代啊。');
+    }
+    S.f.toldAll = true;
+    S.goal('末班车之前，去道口找她');
+    S.cp('hut');
+  }
+  async function genTalk(S) {
+    S.face('gen', 'pl');
+    const l = ['她要是问你「脚在哪里」，就把雪靴给她。', '别叫她那个外号。……叫她的名字。', '末班车七点四十五分。她每天晚上，都在道口等着。'];
+    await S.say('源造', l[(S.f._gn = ((S.f._gn ?? -1) + 1) % 3)]);
+  }
+
   /* 她：只有上半身。先画一个完整的人，再把胸口以上整体挪到地面，补上撑地的小臂 */
   function crawl(face) {
     return function (g, d, fr, G, R) {
-      if (d === 0) { R(4, G.tT + 2, 8, 1, '#c8ccd8'); R(7, G.tT + 1, 2, 3, '#d8d8e0'); }
-      else if (d === 3) { R(4, G.tT, 8, 3, '#2a3048'); R(4, G.tT + 2, 8, 1, '#c8ccd8'); }
+      if (d === 0) { R(4, G.tT + 2, 8, 1, WHITE); R(4, G.tT, 1, 3, WHITE); R(11, G.tT, 1, 3, WHITE); R(7, G.tT + 1, 2, 3, WHITE); }
+      else if (d === 3) { R(4, G.tT, 8, 3, NAVYD); R(4, G.tT + 2, 8, 1, WHITE); R(4, G.tT, 1, 2, WHITE); R(11, G.tT, 1, 2, WHITE); }
+      else { R(8, G.tT, 4, 3, NAVYD); R(8, G.tT + 2, 4, 1, WHITE); R(5, G.tT + 1, 2, 3, WHITE); }
       g.save(); g.setTransform(1, 0, 0, 1, 0, 0);
       const im = g.getImageData(0, 0, 16, 14);
       g.clearRect(0, 0, 16, 24); g.putImageData(im, 0, 8);
       g.restore();
       const a1 = fr === 1 ? -1 : 0, a2 = fr === 3 ? -1 : 0;
-      if (d === 0) { R(2, 19 + a1, 2, 3, NAVY); R(2, 22 + a1, 2, 1, SKIN); R(12, 19 + a2, 2, 3, NAVY); R(12, 22 + a2, 2, 1, SKIN); if (!face) { R(3, 16, 1, 5, HAIR); R(12, 16, 1, 4, HAIR); } }
-      else if (d === 3) { R(2, 15 + a1, 2, 5, NAVY); R(2, 14 + a1, 2, 1, SKIN); R(12, 15 + a2, 2, 5, NAVY); R(12, 14 + a2, 2, 1, SKIN); R(5, 20, 6, 2, HAIR); }
-      else { const a = fr === 1 ? -1 : fr === 3 ? 1 : 0; R(1 + a, 20, 5, 2, NAVY); R(0 + a, 20, 1, 2, SKIN); R(11, 18, 4, 2, HAIR); R(13, 20, 3, 1, HAIR); }
-      R(4, 21, 8, 1, '#0b0d14');
+      if (d === 0) { R(1, 18 + a1, 3, 3, NAVY); R(1, 20 + a1, 3, 1, WHITE); R(1, 21 + a1, 3, 2, SKIN); R(12, 18 + a2, 3, 3, NAVY); R(12, 20 + a2, 3, 1, WHITE); R(12, 21 + a2, 3, 2, SKIN); if (!face) { R(4, 16, 1, 5, HAIR); R(11, 16, 1, 4, HAIR); } }
+      else if (d === 3) { R(1, 15 + a1, 3, 5, NAVY); R(1, 14 + a1, 3, 1, WHITE); R(1, 13 + a1, 3, 1, SKIN); R(12, 15 + a2, 3, 5, NAVY); R(12, 14 + a2, 3, 1, WHITE); R(12, 13 + a2, 3, 1, SKIN); R(5, 20, 6, 2, HAIR); }
+      else { const a = fr === 1 ? -1 : fr === 3 ? 1 : 0; R(2 + a, 19, 6, 2, NAVY); R(6 + a, 19, 1, 2, WHITE); R(0 + a, 19, 2, 2, SKIN); R(0 + a, 21, 1, 1, SKIN); R(11, 17, 4, 2, HAIR); R(13, 19, 3, 2, HAIR); R(12, 18, 1, 1, '#3a3442'); }
+      R(4, 21, 8, 1, '#07080e');
     };
   }
   const TEKE = { skin: SKIN, hair: HAIR, hs: 'long', top: NAVY, top2: '#e8e8e8', bottom: NAVY, shoes: '#111' };
@@ -212,7 +384,7 @@
       teke: Object.assign({ key: 'teke', cover: true, extra: crawl(false) }, TEKE),
       tekeFace: Object.assign({ key: 'teke-face', eye: '#1a1214', extra: crawl(true) }, TEKE),
       tekeF: Object.assign({ key: 'teke-f', cover: true, ghost: true,
-        extra(g, d, fr, G, R) { if (d === 0) { R(4, G.tT + 2, 8, 1, '#c8ccd8'); R(7, G.tT + 1, 2, 3, '#d8d8e0'); } } }, TEKE)
+        extra(g, d, fr, G, R) { if (d === 0) { R(4, G.tT + 2, 8, 1, WHITE); R(7, G.tT + 1, 2, 3, WHITE); } } }, TEKE)
     },
     items: {
       akey: { name: '资料室钥匙', desc: '高木老师给的。钥匙牌是一块磨得发亮的小木片，上面用毛笔写着「资料室」。' },
@@ -252,7 +424,7 @@
       S.f._bt -= dt;   // テケテケ：一阵一阵地猛冲
       if (S.f._bt <= 0) {
         S.f._burst = !S.f._burst;
-        if (S.f._burst) { e.chase.spd = BURST; S.f._bt = .8; } else { e.chase.spd = BASE; S.f._bt = 2.1 + Math.random() * .7; }
+        if (S.f._burst) { e.chase.spd = BURST; S.f._bt = .8; } else { e.chase.spd = BASE; S.f._bt = 1.6 + Math.random() * .6; }
       }
       S.f._bs = (S.f._bs || 0) - dt;
       if (S.f._bs <= 0) { S.f._bs = S.f._burst ? .12 : .34; S.sfx(S.f._burst ? 'step' : 'tick'); }
@@ -273,7 +445,6 @@
       }
     },
     sprites: {
-      teke(g, e, t, R) { },
       swin(g, e, t, R) {   // 雪夜的窗（墙面）。s.red：远处道口的红灯
         box(R, 1, 0, 14, 13, '#5a5a56'); R(2, 1, 12, 10, '#0c1422'); R(2, 8, 12, 3, '#1a2434'); R(7, 1, 1, 10, '#5a5a56'); R(2, 5, 12, 1, '#5a5a56');
         for (let i = 0; i < 6; i++) { const x = 2 + ((hash(i, 1, e.x | 0) * 12 + t * 3 * (1 + i % 3)) % 12), y = 1 + ((hash(i, 2, e.x | 0) * 10 + t * (6 + i)) % 10); R(x, y, 1, 1, '#d8e0ec'); }
@@ -340,10 +511,8 @@
         const ph = Math.floor(t * 2.6) % 2, on = e.ring;
         R(1, -21, 4, 4, on && ph ? '#ff3a22' : '#4a1010'); R(11, -21, 4, 4, on && !ph ? '#ff3a22' : '#4a1010');
         if (on && ph) R(2, -20, 2, 1, '#ffb0a0'); if (on && !ph) R(12, -20, 2, 1, '#ffb0a0');
-        const dx = e.flip ? -1 : 1;
-        if (e.down) { for (let i = 0; i < 9; i++) R(e.flip ? 4 - (i + 1) * 4 : 9 + i * 4, -2, 4, 2, i % 2 ? '#e8c020' : '#1a1a1a'); }
-        else for (let i = 0; i < 8; i++) R(e.flip ? 5 : 9, -34 + i * 4, 2, 4, i % 2 ? '#e8c020' : '#1a1a1a');
-        void dx;
+        if (e.down) { for (let i = 0; i < 9; i++) R(e.flip ? 10 : 4, e.flip ? 10 + i * 4 : 6 - (i + 1) * 4, 2, 4, i % 2 ? '#e8c020' : '#1a1a1a'); }   // 横跨马路（北侧的往下，南侧的往上）
+        else for (let i = 0; i < 7; i++) R(e.flip ? 10 : 4, -16 + i * 4, 2, 4, i % 2 ? '#e8c020' : '#1a1a1a');
         R(4, 13, 8, 2, '#3a3a3a'); R(3, 12, 10, 1, '#e8eef4');
       },
       snowfall(g, e, t, R) {   // 屏幕空间的落雪（实体每帧挪到玩家身上）
@@ -359,7 +528,7 @@
     },
     tiles: {
       snow: { solid: false, paint(R, X, Y) { R(0, 0, 16, 16, '#bcc6d4'); for (let i = 0; i < 8; i++) { const h = hash(X * 5 + i, Y * 9 + i, 61); R((h * 15) | 0, (hash(X, Y, i + 70) * 15) | 0, 2, 1, i % 3 ? '#d4dce8' : '#a2acbc'); } } },
-      spine: { solid: true, paint(R, X, Y) { TILE.snow ? 0 : 0; R(0, 0, 16, 16, '#bcc6d4'); const c = '#18281e'; for (let i = 0; i < 7; i++) { R(7 - i, 1 + i * 2, 2 + i * 2, 2, i % 2 ? c : '#22362a'); if (i % 2 === 0) R(7 - i, 1 + i * 2, 2 + i, 1, '#dfe6ee'); } R(7, 14, 2, 2, '#2a1c12'); } },
+      spine: { solid: true, paint(R, X, Y) { R(0, 0, 16, 16, '#bcc6d4'); const c = '#18281e'; for (let i = 0; i < 7; i++) { R(7 - i, 1 + i * 2, 2 + i * 2, 2, i % 2 ? c : '#22362a'); if (i % 2 === 0) R(7 - i, 1 + i * 2, 2 + i, 1, '#dfe6ee'); } R(7, 14, 2, 2, '#2a1c12'); } },
       track: { solid: false, paint(R, X, Y) {
         R(0, 0, 16, 16, '#4a4a4c'); for (let i = 0; i < 12; i++) R((hash(X, Y, i + 80) * 15) | 0, (hash(Y, X, i + 90) * 15) | 0, 1, 1, i % 2 ? '#5a5a5e' : '#3a3a3c');
         R(0, 2, 16, 3, '#3a2c22'); R(0, 10, 16, 3, '#3a2c22'); R(0, 2, 16, 1, '#dfe6ee'); R(0, 10, 16, 1, '#dfe6ee');
@@ -387,7 +556,7 @@
           '#..........#',
           '#####.######'],
         ents: [
-          { id: 'win1', x: 1, y: 1, spr: 'swin', light: { r: 2.6, col: 'rgba(120,150,210,.1)', dy: 18 }, on: S => S.narr('窗外下着雪。操场白茫茫的一片，路灯把雪照成了橘黄色。\n远处，铁路道口的红灯一闪，一闪。\n……可是这会儿，并没有火车要来。') },
+          { id: 'win1', x: 2, y: 1, spr: 'swin', light: { r: 2.6, col: 'rgba(120,150,210,.1)', dy: 18 }, on: S => S.narr('窗外下着雪。操场白茫茫的一片，路灯把雪照成了橘黄色。\n远处，铁路道口的红灯一闪，一闪。\n……可是这会儿，并没有火车要来。') },
           { x: 3, y: 1, spr: 'poster', col: '#e8e4d0', on: S => S.narr('墙上贴着上一期的校报。\n头版：「冬季运动会——二年三组夺得雪橇接力第一名！」照片上的你，冻得满脸通红。') },
           { id: 'board', x: 5, y: 1, spr: 'blackboard', text: true, on: S => S.narr('黑板上写着：「校报《白桦》第三学期号　截稿：1月25日（一）」\n下面是部长的字：「水野——テケテケ，两页。写得吓人一点。」') },
           { id: 'win2', x: 8, y: 1, spr: 'swin', s: { red: true }, light: { r: 2.6, col: 'rgba(120,150,210,.1)', dy: 18 }, async on(S) {
@@ -401,7 +570,7 @@
           } },
           { x: 10, y: 1, spr: 'wallclock', on: S => S.narr('五点四十分。外面早就黑透了。\n北海道的一月，四点多天就黑了。') },
           { id: 'shelf1', x: 1, y: 2, spr: 'bookshelf', async on(S) { if (S.once('bookP')) await S.narr('书架上插着一本从图书室借来的书，还没还。\n书签夹在「没有脚的女人」那一章。'); await S.note('book'); } },
-          { x: 3, y: 2, spr: 'gariban', on: S => S.narr('部里的油印机。滚筒上沾着干掉的油墨，一股煤油味。\n校报就是用它一张一张印出来的。') },
+          { x: 4, y: 2, spr: 'gariban', on: S => S.narr('部里的油印机。滚筒上沾着干掉的油墨，一股煤油味。\n校报就是用它一张一张印出来的。') },
           { id: 'buchou', x: 5, y: 3, spr: '@kiryu', dir: 0, async on(S) {
             S.face('buchou', 'pl');
             const l = ['「真实事件」那一段，写得越像真的越好。', '……喂，你脸色不太好啊。不会真信了吧？', '我先走了。你也别弄太晚。'];
@@ -479,7 +648,7 @@
           { x: 6, y: 4, spr: 'sink', on: S => S.narr('走廊的洗手台。水龙头没拧紧，滴答，滴答。\n水是冰的。') },
           { x: 16, y: 4, spr: 'cabinet', col: '#a02424', on: S => S.narr('消火栓的红箱子。玻璃上贴着：「火灾时请用力按下」。') },
           { x: 27, y: 4, spr: 'plant', on: S => S.narr('一盆橡皮树，叶子上落满了粉笔灰。') },
-          { x: 13, y: 4, spr: 'bench', on: S => S.narr('走廊里的长椅。白天总有人坐在这儿吃面包。\n椅面冰凉。') },
+          { x: 13, y: 4, w: 2, spr: 'bench', on: S => S.narr('走廊里的长椅。白天总有人坐在这儿吃面包。\n椅面冰凉。') },
           { id: 'fd1', x: 9, y: 3, spr: 'fdoor', open: true, solid: false, on: S => S.f.phase === 'chase' ? door(S, 'fd1', 'fd') : fdLook(S, 'fd1') },
           { id: 'fd2', x: 20, y: 3, spr: 'fdoor', open: true, solid: false, on: S => S.f.phase === 'chase' ? door(S, 'fd2', 'fd') : fdLook(S, 'fd2') },
           ...[[1, 3], [3, 3], [5, 3], [7, 3], [10, 3], [11, 2]].map(([x, y], i) => ({ id: 'dg' + i, x, y, spr: 'drag', decal: true, hidden: true })),
@@ -517,13 +686,13 @@
           '#........#',
           '####.#####'],
         ents: [
-          { id: 'cal', x: 1, y: 1, spr: 'poster', col: '#e8e0d0', on: S => S.narr('墙上的挂历：「平成5年（1993年）1月」。\n今年的挂历。大概是哪个老师挂上去以后，就再也没人进来翻过。') },
+          { id: 'cal', x: 5, y: 1, spr: 'poster', col: '#e8e0d0', on: S => S.narr('墙上的挂历：「平成5年（1993年）1月」。\n今年的挂历。大概是哪个老师挂上去以后，就再也没人进来翻过。') },
           { x: 6, y: 1, spr: 'window', light: { r: 2.4, col: 'rgba(120,140,200,.12)', dy: 18 }, on: S => S.narr('资料室的窗户正对着铁路。\n雪幕后面，道口的红灯一闪，一闪。') },
-          { x: 8, y: 1, spr: 'portrait', on: S => S.narr('历代校长的照片排成一排。\n第三任校长的照片下面写着：「昭和35年～昭和41年」。') },
+          { x: 7, y: 1, spr: 'portrait', on: S => S.narr('历代校长的照片排成一排。\n第三任校长的照片下面写着：「昭和35年～昭和41年」。') },
           { id: 'cab', x: 2, y: 2, w: 3, spr: 'cabinet2', on: S => cabinet(S) },
           { x: 1, y: 2, spr: 'bookshelf', on: S => S.narr('书架上是一排排毕业纪念册。\n书脊上的年份，从「昭和22年度」一直排到去年。') },
-          { x: 6, y: 2, spr: 'shelf', on: S => S.narr('架子上堆着奖杯、锦旗，还有一个缺了一只耳朵的熊玩偶。\n锦旗上写着：「昭和36年度　町文化祭　美术部　优秀奖」。') },
-          { x: 7, y: 2, spr: 'crate', on: S => S.narr('一箱旧的运动会用品：接力棒、红白帽子、一面卷起来的校旗。') },
+          { x: 8, y: 2, spr: 'shelf', on: S => S.narr('架子上堆着奖杯、锦旗，还有一个缺了一只耳朵的熊玩偶。\n锦旗上写着：「昭和36年度　町文化祭　美术部　优秀奖」。') },
+          { x: 8, y: 5, spr: 'crate', on: S => S.narr('一箱旧的运动会用品：接力棒、红白帽子、一面卷起来的校旗。') },
           { x: 7, y: 4, spr: 'desk', on: S => S.narr('落满灰尘的书桌。桌面上用小刀刻着一行字：「昭和五十年　到此一游」。') },
           { x: 2, y: 5, spr: 'box', on: S => S.narr('纸箱上写着「废弃」。里面是几卷发黑的胶片。') },
           { id: 'bulb', x: 5, y: 4, spr: 'invisible', light: { r: 3.4, col: 'rgba(255,220,150,.14)' } },
@@ -539,7 +708,163 @@
           S.goal('在档案柜里找到一九六二年一月的校报');
         }
       },
-      /*@@MAPS2@@*/
+      /* ---------------- 一楼：走廊、职员室、玄关 ---------------- */
+      hall1: {
+        amb: 'school', dark: .56, plr: 3.2, wall: 'school', floor: 'linoleum',
+        rows: [
+          '##############################',
+          '##############################',
+          '#...................#........#',
+          '..............................',
+          '#...................#........#',
+          '##.####.##....################',
+          '#wwwwwww##xxxxxxxxx###########',
+          '#wwwwwww##xxxxxxxxx###########',
+          '#wwwwwww##xxxxxxxxx###########',
+          '#wwwwwww##xxxxxxxxx###########',
+          '#############xx###############'],
+        tileOpts: { woodC: '#7a5c3c' },
+        ents: [
+          { x: 0, y: 3, spr: 'stairsup', solid: false, touch: S => stairs(S, 'hall2', 1, 3, 2, 0, 3, true) },
+          { x: 29, y: 3, spr: 'stairsup', solid: false, touch: S => stairs(S, 'hall2', 28, 3, 1, 29, 3, true) },
+          { x: 1, y: 1, spr: 'exitsign', light: { r: 2.2, col: 'rgba(80,230,140,.16)', dy: 6 }, on: S => S.narr('「非常口」。绿色的小人一直在跑，跑了好多年。') },
+          { x: 28, y: 1, spr: 'exitsign', light: { r: 2.2, col: 'rgba(80,230,140,.16)', dy: 6 }, on: S => S.narr('「非常口」。下面就是上二楼的楼梯。') },
+          { x: 3, y: 1, spr: 'window', light: { r: 2, col: 'rgba(110,130,190,.1)', dy: 18 }, on: S => S.narr('窗外的雪堆到了窗台那么高。') },
+          { x: 8, y: 1, spr: 'window', light: { r: 2, col: 'rgba(110,130,190,.1)', dy: 18 }, on: S => S.narr('窗户外面是自行车棚。棚顶的雪压得弯弯的，随时会塌下来。') },
+          { x: 11, y: 1, spr: 'poster', col: '#e8d0a0', on: S => S.narr('交通安全的海报：「道口一旦响铃，绝对不许穿越！」\n画上的小学生举着手，笑得很灿烂。') },
+          { x: 14, y: 1, spr: 'window', light: { r: 2, col: 'rgba(110,130,190,.1)', dy: 18 }, on: S => S.narr('玄关前的路灯底下，雪片斜斜地飞。') },
+          { x: 17, y: 1, spr: 'portrait', on: S => S.narr('首任校长的肖像。\n……他的眼睛，好像一直在往窗外看。') },
+          { x: 24, y: 1, spr: 'window', light: { r: 2, col: 'rgba(110,130,190,.1)', dy: 18 }, on: S => S.narr('窗户关不严，缝里塞着报纸。冷风还是一丝一丝地钻进来。') },
+          { x: 27, y: 1, spr: 'poster', col: '#d8e0e8', on: S => S.narr('「下校时间　17:00\n　18:00以后玄关上锁，请走职员室的钥匙箱借备用钥匙。」') },
+          { x: 23, y: 4, spr: 'cabinet', col: '#a02424', on: S => S.narr('消火栓。红色的灯泡亮着，在地板上照出一小块红。') },
+          { x: 16, y: 2, spr: 'shelf', on: S => S.narr('奖杯柜。最上面一层是一张褪色的奖状：「昭和36年度　町文化祭　绘画部门　优秀奖」。\n获奖者的名字，被一只奖杯挡住了。') },
+          { id: 'fd3', x: 20, y: 3, spr: 'fdoor', open: true, solid: false, on: S => S.f.phase === 'chase' ? door(S, 'fd3', 'fd') : fdLook(S, 'fd3') },
+          /* 职员室 */
+          { id: 'sd1', x: 2, y: 5, spr: 'sdoor', open: true, solid: false, on: S => S.f.phase === 'chase' ? door(S, 'sd1', 'sd') : S.narr('职员室的拉门开着。里面的暖炉烘出一股热气。') },
+          { id: 'sd2', x: 7, y: 5, spr: 'sdoor', open: true, solid: false, on: S => S.f.phase === 'chase' ? door(S, 'sd2', 'sd') : S.narr('职员室的另一扇门。两扇门都开着，暖气全跑了。') },
+          { x: 3, y: 5, spr: 'wallclock', on: S => S.narr(S.f.phase === 'chase' ? '七点二十分。\n……什么时候过了这么久？' : '五点五十分。') },
+          { id: 'keybox', x: 4, y: 5, spr: 'keybox', on: S => keybox(S) },
+          { x: 5, y: 5, spr: 'poster', col: '#e8e4d8', on: S => S.narr('一月的行事表：「22日（五）大雪注意报，提前放学」「25日（一）冬季学力测验」。') },
+          { x: 1, y: 6, spr: 'bookshelf', on: S => S.narr('教务资料。一本《学生指导要领》的书脊上，贴着「铁路安全」的标签。') },
+          { x: 2, y: 7, spr: 'desk', on: S => S.narr('教务主任的桌子。收拾得干干净净，只有一只茶杯。') },
+          { x: 2, y: 7, spr: 'phone', oy: -6, z: 1 },
+          { x: 3, y: 7, spr: 'desk', on: S => S.narr('堆满了作业本的桌子。最上面那本的封面写着：「二年三组　水野葵」。') },
+          { id: 'tdesk', x: 6, y: 7, spr: 'desk', on: S => S.f.phase === 'chase' ? S.narr('高木老师的桌上，茶杯里的茶还冒着热气。\n茶杯下面压着一张字条：\n「水野：我先回去了。玄关已经锁了，备用钥匙在钥匙箱里。路上小心，别走铁轨。——高木」') : S.narr('高木老师的桌子。老花镜、红笔、一摞改了一半的作业。\n桌角压着一张很旧的黑白照片，边角都卷起来了。') },
+          { x: 5, y: 7, spr: 'desk', on: S => S.narr('空着的桌子。椅背上搭着一条织了一半的围巾。') },
+          { id: 'takagi', x: 6, y: 8, spr: '@takagi', dir: 3, on: S => takagi(S) },
+          { x: 1, y: 9, spr: 'kstove', light: { r: 4.2, col: 'rgba(255,150,70,.22)', flick: true }, on: S => S.narr('职员室的暖炉。比新闻部那台大一号，烧得通红。') },
+          { x: 7, y: 9, spr: 'cabinet', on: S => S.narr('文件柜。抽屉上贴着「学籍簿」「家庭访问记录」。都锁着。') },
+          /* 玄关 */
+          ...[15, 16, 17, 18].map(x => ({ x, y: 6, spr: 'getabako', on: S => S.narr(['鞋柜。一格一格的，室外鞋都被穿走了。', '有一格里塞着一双湿透的运动鞋，冻得硬邦邦的。', '这一格的名牌被撕掉了。'][x % 3]) })),
+          ...[15, 16, 17].map(x => ({ x, y: 8, spr: 'getabako', on: S => S.narr(x === 16 ? '你的鞋柜。你的长靴好好地放在里面——你早上就换好鞋了。' : '一年级的鞋柜。有人在格子里放了一颗糖。') })),
+          { x: 10, y: 9, spr: 'box', on: S => S.narr('失物招领箱。手套、围巾、一只没人认领的室内鞋……\n最底下有一只小小的、旧旧的红色毛线手套。') },
+          { x: 18, y: 9, spr: 'plant', on: S => S.narr('玄关的盆栽。叶子冻蔫了。') },
+          { id: 'gdoor', x: 13, y: 10, w: 2, spr: 'gdoor', solid: false, async touch(S) { await genkan(S); }, async on(S) { await genkan(S); } },
+          { id: 'tk1', x: 29, y: 3, spr: '@teke', hidden: true, solid: false, light: { r: 1.4, col: 'rgba(150,170,220,.16)' } }
+        ],
+        async enter(S, first) {
+          if (S.f.phase === 'chase') { S.amb('drone'); await arrive(S, ...S.f.tkNext); if (S.once('h1chase')) { await S.narr('楼梯上，传来一级、一级，手掌拍在台阶上的声音。\nテケ……テケ……'); S.goal(S.has('gkey') ? '从玄关逃出去！' : '去玄关——快逃出学校！'); } return; }
+          if (first) {
+            await S.narr('一楼更冷。玄关的玻璃门外，雪片斜斜地飞。\n职员室的门开着，里面透出暖炉的红光。');
+          }
+        }
+      },
+      /* ---------------- 校门外 · 雪中的铁路道口 ---------------- */
+      yard: {
+        amb: 'wind', dark: .8, darkC: '#04070f', plr: 3.2, wall: 'concrete', floor: 'snow',
+        legend: { '*': 'snow', 'Y': 'spine', 'H': 'track', 'X': 'xing', 'R': 'sroad', 'F': 'sfence' },
+        rows: [
+          '############YYYYYYYYYYYYYYYYYHHYYYYYYYYY',
+          '############*Y**Y***Y**Y**Y**HH**Y***Y**',
+          '*****************************HH*********',
+          '*****************************HH*********',
+          'FFFF**FFFFFF*****************HH*********',
+          '*****************************HH*********',
+          'RRRRRRRRRRRRRRRRRRRRRRRRRRRRRXXRRRRRRRRR',
+          'RRRRRRRRRRRRRRRRRRRRRRRRRRRRRXXRRRRRRRRR',
+          '*****************************HH*********',
+          '*****************************HH*********',
+          'YY*YY**Y*YYY**Y*YY*Y**YY*YY**HH*Y*YY*YYY',
+          'YYYYYYYYYYYYYYYYYYYYYYYYYYYYYHHYYYYYYYYY'],
+        ents: [
+          { id: 'snowfx', x: 4, y: 2, spr: 'snowfall', z: 1, solid: false },
+          { x: 3, y: 1, w: 2, spr: 'gdoor', async on(S) { S.sfx('locked'); await S.narr(S.f.phase === 'chase' ? '玻璃门在身后自己合上了。\n门里黑漆漆的走廊上，有什么东西在动。' : '玄关的玻璃门。门里的走廊，黑漆漆的。\n……不回去了。'); } },
+          { x: 1, y: 1, spr: 'window', on: S => S.narr('一楼的窗户全黑了。') },
+          { x: 8, y: 1, spr: 'window', lit: true, light: { r: 2, col: 'rgba(255,180,90,.16)', dy: 14 }, on: S => S.narr('职员室的窗户还亮着暖炉的光。\n窗户里没有人。') },
+          { x: 10, y: 1, spr: 'window', on: S => S.narr('黑漆漆的窗户。玻璃上……有一个从里面按上去的手掌印。') },
+          { id: 'lampA', x: 9, y: 5, spr: 'streetlamp', light: { r: 3.6, col: 'rgba(255,215,150,.2)', dy: 10 }, on: S => S.narr('路灯。灯罩上积着一层雪，光是橘黄色的。') },
+          { id: 'lampB', x: 19, y: 5, spr: 'streetlamp', light: { r: 3.6, col: 'rgba(255,215,150,.2)', dy: 10 }, on: S => S.narr('路灯下的雪地被照得发亮。\n雪地上那两排圆圆的坑，从这里一直延伸到道口。') },
+          { x: 14, y: 5, spr: 'busstop', on: S => S.narr('公交站牌：「白桦二中前」。\n最后一班车是七点零五分。已经开走了。') },
+          { id: 'hut', x: 24, y: 4, w: 2, spr: 'hut', lit: true, light: { r: 3.2, col: 'rgba(255,190,110,.22)', dx: 9, dy: 0 }, on: S => hutDoor(S) },
+          { id: 'sig1', x: 28, y: 5, spr: 'fumikiri', flip: true, on: S => S.narr(S.f.ringing ? '当、当、当、当——\n警报一直在响。可是铁轨上，没有火车。' : '道口的信号机。红灯熄了，栏杆抬着。') },
+          { id: 'sig2', x: 31, y: 8, spr: 'fumikiri', on: S => S.narr('道口另一边的信号机。黄黑相间的栏杆上挂着冰溜子。') },
+          { x: 32, y: 5, spr: 'jizo', on: S => S.narr('道口旁边的一尊小地藏。红色的围兜被雪压得湿透了。\n脚边摆着一小束干枯的花，还有一颗用纸包着的糖。\n……一直有人来供奉。') },
+          { x: 34, y: 8, spr: 'sign', col: '#e8e4d8', on: S => S.narr('「止まれ　踏切注意」\n牌子被雪糊住了一半。') },
+          ...[[5, 3], [6, 5], [10, 7], [13, 6], [16, 7], [20, 6], [23, 7], [26, 6]].map(([x, y]) => ({ x, y, spr: 'elbows', decal: true, on: S => S.narr('雪地上的痕迹。不是脚印。\n两排圆圆的坑，一左一右——像有人用两只手肘撑着，一下，一下地往前爬。') })),
+          ...[0, 1, 2, 3, 4, 5].map(i => ({ id: 'fp' + i, x: 30, y: 5 - i, spr: 'footprints', decal: true, hidden: true, col: 'rgba(90,104,130,.6)' })),
+          { id: 'bootf', x: 29, y: 6, spr: 'redboot', hidden: true, decal: true },
+          { id: 'tky', x: 4, y: 2, spr: '@teke', hidden: true, solid: false, light: { r: 1.4, col: 'rgba(150,170,220,.18)' } },
+          { id: 'tkf', x: 29, y: 6, spr: '@teke', hidden: true, solid: false, dir: 1, light: { r: 1.6, col: 'rgba(150,170,220,.18)' }, on: S => finale(S) },
+          { id: 'gen_y', x: 23, y: 5, spr: '@gen', hidden: true, dir: 2, light: { r: 2.4, col: 'rgba(255,200,120,.18)' }, on: S => S.say('源造', '去吧。……我在这儿看着。') },
+          ...[6, 7].map(y => ({ x: 0, y, spr: 'invisible', async touch(S) { S.pos(1, y, 2); await S.think(S.f.phase === 'chase' ? '那边是回学校的路——不行！\n……那边有灯！铁路边上的小屋！' : '回家的路在道口那边。'); } })),
+          ...[6, 7].map(y => ({ x: 39, y, spr: 'invisible', async touch(S) { S.pos(38, y, 1); await S.think(S.f.phase === 'final' ? '……不。她还在道口那里等着。' : '家在这条路的尽头。可是她跑得比你快——'); } }))
+        ],
+        tick(S, dt) {
+          const s = S.ent('snowfx'); if (s) { s.px = W.pl.px; s.py = W.pl.py; }
+          if (S.f.ringing) { S.f._bell = (S.f._bell || 0) - dt; if (S.f._bell <= 0) { S.f._bell = .7; S.sfx('ding'); } }
+        },
+        step(S, x, y) { if (S.f.phase === 'final' && !S.f.fin && x >= 27) return finale(S); },
+        async enter(S, first) {
+          if (S.f.phase === 'chase') {
+            ringOn(S); S.plr(null);
+            await arrive(S, 4, 2, 2.4);
+            if (S.once('ydChase')) {
+              await S.narr('冷风夹着雪，一下子灌进领口。\n——当、当、当、当。\n学校后面的道口，警报响了起来。可是铁轨上，看不见火车。');
+              S.goal('往有灯的地方跑——铁路边上的小屋！');
+            }
+            return;
+          }
+          if (S.f.phase === 'hut' || S.f.phase === 'final') {
+            const firstFinal = S.f.phase === 'hut';
+            S.f.phase = 'final'; finalSetup(S);
+            if (firstFinal) {
+              S.cp('final');
+              await S.narr('你推开小屋的门。\n雪小了一些。道口的警报还在响，当、当、当、当。');
+              await S.say('源造', '……她在那儿。');
+              await S.narr('红灯一左一右地闪。\n灯光底下，铁轨中间，趴着一个小小的影子。');
+              S.goal('去道口，回答她的问题');
+            }
+          }
+        }
+      },
+      /* ---------------- 道口看守小屋 ---------------- */
+      hut: {
+        amb: 'fire', dark: .46, darkC: '#0a0604', plr: 3.4, wall: 'wood', floor: 'wood',
+        rows: [
+          '#########',
+          '#########',
+          '#wwwwwww#',
+          '#wwwwwww#',
+          '#wwwwwww#',
+          '#wwwwwww#',
+          '####w####'],
+        ents: [
+          { x: 2, y: 1, spr: 'swin', s: { red: true }, light: { r: 2.4, col: 'rgba(255,60,40,.12)', dy: 18 }, on: S => S.narr('窗外就是道口。红灯一闪一闪，警报当当地响。\n铁轨中间……好像有什么东西在动。') },
+          { x: 4, y: 1, spr: 'poster', col: '#e8e0d0', on: S => S.narr('一本昭和三十七年的挂历，停在一月。\n十九日那一格，被红笔圈了起来。') },
+          { x: 6, y: 1, spr: 'wallclock', on: S => S.narr('七点三十八分。\n「末班车是七点四十五分。」老人说，「每天都是。」') },
+          { id: 'logd', x: 1, y: 2, spr: 'desk', async on(S) { if (S.once('logP')) await S.narr('桌上摊着一本发黄的工作日志。\n纸页都翻毛了，好像被人翻过几千遍。'); await S.note('log'); } },
+          { x: 7, y: 2, spr: 'shelf', on: S => S.narr('架子上摆着一面卷起来的红旗、一盏老式的信号灯，和一顶褪了色的铁路制服帽。') },
+          { id: 'boxb', x: 7, y: 4, spr: 'crate', on: S => S.narr(S.has('boot') || S.f.fin ? '空了的木箱。箱底垫着一块叠得整整齐齐的白布。' : '一只上了年头的木箱。') },
+          { x: 3, y: 3, spr: 'kstove', light: { r: 4.4, col: 'rgba(255,140,60,.26)', flick: true }, on: S => S.narr('烧得通红的石油暖炉。\n你的手脚慢慢地，有了一点知觉。') },
+          { x: 1, y: 5, spr: 'barrel', on: S => S.narr('灯油桶。桶身上用油漆写着：「国铁　白桦道口」。') },
+          { id: 'gen', x: 5, y: 3, spr: '@gen', dir: 0, on: S => genTalk(S) },
+          { x: 4, y: 6, spr: 'invisible', async touch(S) {
+            if (!S.f.toldAll) { S.pos(4, 5, 3); return S.say('源造', '……等一下。听我把话说完。'); }
+            await S.go('yard', 25, 5, 0);
+          } }
+        ],
+        async enter(S, first) { if (first) await hutScene(S); }
+      }
     }
   });
 })();
