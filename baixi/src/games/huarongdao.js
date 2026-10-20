@@ -267,7 +267,8 @@ BX.register({
         if (dt < 350 && Math.hypot(dx, dy) > L.cs * .15) { const ok = Math.abs(dx) > Math.abs(dy) ? stepPiece(d.i, Math.sign(dx), 0) : stepPiece(d.i, 0, Math.sign(dy)); if (!ok) ctx.sfx('error'); }
       } else if (!d.moved) {
         const mv = reach(pos, pcs, d.i).filter(([x, y]) => Math.abs(x - pos[d.i * 2]) + Math.abs(y - pos[d.i * 2 + 1]) === 1);
-        if (mv.length === 1) stepPiece(d.i, mv[0][0] - pos[d.i * 2], mv[0][1] - pos[d.i * 2 + 1]);
+        if (hintMv && hintMv[0] === d.i) applyMove(d.i, hintMv[1], hintMv[2]);
+        else if (mv.length === 1) stepPiece(d.i, mv[0][0] - pos[d.i * 2], mv[0][1] - pos[d.i * 2 + 1]);
         else if (mv.length > 1) { // tap: prefer the hint move, else toward tap side
           if (hintMv && hintMv[0] === d.i) applyMove(d.i, hintMv[1], hintMv[2]);
           else ctx.toast('有多个方向，请拖动');

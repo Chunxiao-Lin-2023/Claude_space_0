@@ -432,7 +432,7 @@ BX.register({
       const head = w < 640 ? 80 : 54;
       if (portrait) {
         const cb = touch ? BX.clamp(h * .24, 150, 210) : 34;
-        const ah = h - head - cb - 8, ts = Math.min((w - 12) / L.w, ah / L.h);
+        const ah = h - head - cb - 8, ts = Math.min((w - 24) / L.w, ah / L.h);
         R.ts = ts; R.ox = (w - ts * L.w) / 2; R.oy = head + (ah - ts * L.h) / 2;
         R.head = {y: 0, h: head};
         if (touch) {

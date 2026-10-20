@@ -470,7 +470,8 @@ BX.register({
     }
     const inst = {
       st,
-      toMove: () => st.over || play ? null : st.turn,
+      // host keeps a remote seat's turn open during its own playback (the guest gates on its own animation; avoids rejected requests)
+      toMove: () => st.over ? null : play && !(ctx.online && ctx.isHost && ctx.isRemote(st.turn)) ? null : st.turn,
       valid(a) {
         if (!a || ![a.dx, a.dy, a.p].every(Number.isFinite) || Math.abs(a.dx) + Math.abs(a.dy) < 1e-6) return false;
         if (st.bih && !(Number.isFinite(a.cx) && Number.isFinite(a.cy) && legalSpot(st.b, a.cx, a.cy, st.bih === 'k'))) return false;
