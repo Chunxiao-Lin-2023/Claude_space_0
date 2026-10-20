@@ -300,7 +300,7 @@
     chatlog: { solid: false, paint(R, X, Y) { R(0, 0, 16, 16, '#f2f0e8'); for (let y = 1; y < 16; y += 2) R(0, y, 16, 1, '#eceae2'); if (X === 1) R(0, 0, 1, 16, '#808080'); } },
     chatlist: { solid: false, paint(R, X, Y) { R(0, 0, 16, 16, '#e6e3da'); for (let y = 1; y < 16; y += 2) R(0, y, 16, 1, '#dedbd2'); } },
     chatin: { solid: false, paint(R) { R(0, 0, 16, 16, '#c0c0c0'); R(0, 0, 16, 1, '#ffffff'); } },
-    addrbar: { solid: true, paint(R) { R(0, 0, 16, 16, '#c0c0c0'); R(0, 3, 16, 11, '#ffffff'); R(0, 3, 16, 1, '#808080'); R(0, 13, 16, 1, '#dfdfdf'); } },
+    addrbar: { solid: false, paint(R) { R(0, 0, 16, 16, '#c0c0c0'); R(0, 3, 16, 11, '#ffffff'); R(0, 3, 16, 1, '#808080'); R(0, 13, 16, 1, '#dfdfdf'); } },
     pagebg: { solid: false, paint(R, X, Y) { R(0, 0, 16, 16, '#060203'); for (let y = 1; y < 16; y += 2) R(0, y, 16, 1, '#080304'); if (hash(X, Y, 51) < .12) R((hash(X, Y, 52) * 15) | 0, (hash(X, Y, 53) * 15) | 0, 1, 1, '#2a0606'); } },
     parapet: { solid: true, paint(R, X, Y) { R(0, 0, 16, 16, '#76766f'); R(0, 0, 16, 3, '#96968e'); R(0, 3, 16, 1, '#55554f'); R(0, 12, 16, 4, '#4a4a45'); if (hash(X, Y, 61) < .4) R((hash(X, Y, 62) * 12) | 0, 5, 3, 6, '#6a6a63'); } },
     nightview: { solid: true, paint(R, X, Y) {
