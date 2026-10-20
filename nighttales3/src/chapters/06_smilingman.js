@@ -62,14 +62,19 @@
       const jerk = (mode === 'dance' || mode === 'tiptoe') && hash((t * 7) | 0, tx0, 3) < (walking ? .22 : .14);          // 抽搐似的一顿
       const sway = mode === 'dance' ? Math.round(Math.sin(p) * 2.4) + (jerk ? 1 : 0) : mode === 'stand' ? Math.round(Math.sin(p) * .6) : mode === 'tiptoe' ? Math.round(Math.sin(p) * 1) : 0;
       const cx = 8 + sway, suit = '#353844', suitL = '#4a4e5c', skin = '#e2d9cc', shirt = '#dcdad2';
-      const low = mode === 'crouch' ? 6 : mode === 'tiptoe' ? 2 : 0;   // 身子往下沉多少
+      const low = mode === 'tiptoe' ? 2 : 0;   // 身子往下沉多少
       R(1, 14, 14, 2, 'rgba(0,0,0,.4)');
-      const legs = (side, q) => {   // 两段腿，膝盖抬得很高
-        let lift = mode === 'dance' ? Math.max(0, Math.sin(q)) * (spin ? 3 : 7) : mode === 'tiptoe' ? Math.max(0, Math.sin(q)) * 6 : 0;
-        const hx = cx + side, hy = 3 + low;
-        if (mode === 'crouch') {   // 蹲着：膝盖向两边支开，比头还高
-          const kx = hx + side * 4, ky = hy - 4; LINE(R, hx, hy, kx, ky, suit); LINE(R, hx, hy + 1, kx, ky + 1, suit); LINE(R, kx, ky, hx + side * 2, 15, suit); R(hx + side * 2 - 1, 15, 3, 1, '#0c0c0e'); return;
+      if (mode === 'crouch') {   // 蹲着：膝盖向两边支开、比屁股还高，两只手垂在膝盖中间，像一只青蛙
+        for (const sd of [-1, 1]) {
+          const hx = cx + sd * 2, kx = cx + sd * 6, fx = cx + sd * 5;
+          LINE(R, hx, 8, kx, 4, suit); LINE(R, hx, 9, kx, 5, suit); LINE(R, kx, 4, fx, 15, suit); LINE(R, kx + sd, 5, fx + sd, 15, suitL); R(fx - 1, 15, 3, 1, '#0c0c0e');
         }
+        R(cx - 3, 1, 7, 8, suit); R(cx + 3, 2, 1, 6, suitL); R(cx, 1, 1, 5, shirt); R(cx, 2, 1, 3, '#5a1a22');
+        LINE(R, cx - 3, 2, cx - 1, 12, suit); LINE(R, cx + 3, 2, cx + 1, 12, suit); R(cx - 1, 12, 1, 2, skin); R(cx + 1, 12, 1, 2, skin);
+      } else {
+      const legs = (side, q) => {   // 两段腿，膝盖抬得很高
+        const lift = mode === 'dance' ? Math.max(0, Math.sin(q)) * (spin ? 3 : 7) : mode === 'tiptoe' ? Math.max(0, Math.sin(q)) * 6 : 0;
+        const hx = cx + side, hy = 3 + low;
         const kx = hx + (lift > 2 ? side * 2 : 0), ky = 9 - Math.round(lift) + (mode === 'tiptoe' ? 1 : 0);
         const fx = hx + (lift > 2 ? side : 0), fy = 15 - Math.round(lift * .6) - (mode === 'tiptoe' ? 1 : 0);
         LINE(R, hx, hy, kx, ky, suit); LINE(R, hx, hy + 1, kx, ky + 1, suit); LINE(R, kx, ky, fx, fy, suit);
@@ -82,12 +87,12 @@
       let a1 = Math.PI * .72 + Math.sin(p) * (mode === 'dance' ? .95 : .08), a2 = Math.PI * .28 - Math.sin(p + 1.3) * (mode === 'dance' ? .95 : .08);
       if (spin) { a1 = Math.PI * 1.1; a2 = -Math.PI * .1; }
       if (mode === 'lean') { a1 = Math.PI * .62; a2 = Math.PI * .38; }
-      if (mode === 'crouch') { a1 = Math.PI * .55; a2 = Math.PI * .45; }   // 两只手垂在膝盖中间
       if (mode === 'tiptoe') { a1 = -Math.PI * .15 + Math.sin(p) * .25; a2 = Math.PI * 1.15 - Math.sin(p) * .25; }   // 两只手缩在胸前，手指耷拉着
       const al = mode === 'tiptoe' ? 6 : 10;
       for (const [x0, a] of [[cx - 3, a1], [cx + 3, a2]]) for (let i = 0; i < al; i++) R(Math.round(x0 + Math.cos(a) * i), Math.round(ty + 1 + Math.sin(a) * i), 1, 1, i > al - 3 ? skin : suit);
+      }
       const tilt = mode === 'lean' || mode === 'crouch' ? 0 : Math.round(Math.sin(p * .5) * 1.6) - (jerk ? 1 : 0);
-      const hx = cx - 3 + tilt, hy = (mode === 'lean' ? -14 : -19) + low;
+      const hx = cx - 3 + tilt, hy = mode === 'crouch' ? -9 : (mode === 'lean' ? -14 : -19) + low;
       R(cx, hy + 9, 2, 2, skin);
       R(hx, hy, 7, 9, skin); R(hx + 6, hy + 1, 1, 7, shade(skin, -.12));
       R(hx, hy - 1, 7, 2, '#121214'); R(hx - 1, hy, 1, 3, '#121214');
@@ -219,6 +224,7 @@
       for (const ex of [10, 17]) {
         R(ex, 8, 5, 5, '#f4f1e8'); R(ex + 1, 7, 3, 1, '#f4f1e8'); R(ex + 1, 13, 3, 1, '#f4f1e8');
         if (down) R(ex + (ex === 10 ? 2 : 1) + jit, 10, 2, 2, dk); else R(ex + 2, 7, 1, 2, dk);
+        R(ex, 14, 5, 1, '#b4a48c'); R(ex + 1, 8, 1, 1, '#d89a9a'); R(ex + 4, 12, 1, 1, '#d89a9a');   // 眼袋、眼白上的红血丝
       }
       R(15, 12, 2, 4, sk2); R(14, 15, 1, 1, sk2); R(17, 15, 1, 1, sk2);
       const w = 9 + Math.round(a * 5), cy = 20, open = a > .55 ? 1 + Math.round((a - .55) * 4) : 0;

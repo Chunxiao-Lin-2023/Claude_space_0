@@ -26,7 +26,9 @@ SOL = [
     ['expect', "window.__dbg.W.inv.includes('ear')"],
     ['use', 'rope_w'],
     ['step', 20, 7, [1]],
-    ['expect', 'window.__dbg.W.f.e3'],
+    ['expect', 'window.__dbg.W.f.hush && !window.__dbg.W.f.e3'],   # 屏息：4.5 秒内不动
+    ['wait', 5200],
+    ['expect', 'window.__dbg.W.f.e3 && !window.__dbg.W.f.hush'],
     ['shot', 'farm'],
     ['use', 'house'],
     ['expect', "window.__dbg.W.mapId === 'house'"],
@@ -36,6 +38,8 @@ SOL = [
     ['shot', 'house'],
     ['use', 'trap', ['咚咚停咚咚停']],
     ['expect', '!window.__dbg.W.f.deeFound'],
+    ['use', 'trap', ['咚咚咚停咚咚']],   # 敲反了：针对性提示
+    ['expect', '!window.__dbg.W.f.deeFound && window.__dbg.W.f.knockFail === 2'],
     ['use', 'trap', ['咚咚停咚咚咚']],
     ['expect', "window.__dbg.W.mapId === 'cellar'"],
     ['shot', 'cellar'],
@@ -45,4 +49,5 @@ SOL = [
     ['step', 3, 9],
     ['shot', 'final'],
     ['step', 3, 17],
+    ['expect', "window.__dbg.store.get('ends', []).includes('bunnyman:home')"],
 ]

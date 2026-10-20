@@ -156,7 +156,7 @@
       g.fillStyle = '#050405'; g.fillRect(w * .34, h * .2 + 18, w * .32, h * .62 - 18);
       g.fillStyle = 'rgba(232,120,30,.9)'; g.fillRect(w * .12, h * .82 - 14, 12, 10); g.fillStyle = '#ffd060'; g.fillRect(w * .12 + 3, h * .82 - 11, 2, 2); g.fillRect(w * .12 + 7, h * .82 - 11, 2, 2); g.fillRect(w * .12 + 3, h * .82 - 7, 6, 1);
       // 洞口里的兔子人：缩小一点，让两只耳朵整个露出来；斧刃上加一道冷光
-      const sc = 1.85, ox = w / 2 - 8 * sc, oy = h * .8 - 16 * sc;
+      const sc = 1.6, ox = w / 2 - 8 * sc, oy = h * .8 - 16 * sc;
       const R = (x, y, ww, hh, c) => { g.fillStyle = c; g.fillRect(ox + x * sc, oy + y * sc, ww * sc, hh * sc); };
       bunnySpr({ dir: 0, fr: 0 }, 0, R, PAL_REAL);
       R(12, 11, 4, 1, '#b8c0cc'); R(15, 12, 1, 2, '#8a9098');
