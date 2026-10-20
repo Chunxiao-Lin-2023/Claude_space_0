@@ -89,7 +89,7 @@ BX.register({
     const st = {pl: BX.range(n).map(() => [-1, -1, -1, -1]), turn: 0, phase: 'roll', die: 0, sixes: 0, lastMoved: -1, pending: null, last: null, msg: '', over: false, rank: null};
     const cv = ctx.canvas();
     const vis = {};           // visual tweens: key s*4+i -> {pts:[[x,y]], k}
-    let roll = {k: 1, faces: [1, 1]}, t = 0, btnDie = null, flash = null;
+    let busyUntil = 0, roll = {k: 1, faces: [1, 1]}, t = 0, btnDie = null, flash = null;
     const myTurn = () => !st.over && ctx.canAct(st.turn);
     const canTake = r => r === 6 || (t5 && r === 5);
     const nextSeat = s => { for (let k = 1; k <= 4; k++) { const q = seatAt((posOf[s] + k) % 4); if (q >= 0) return q; } return s; };
@@ -136,8 +136,8 @@ BX.register({
       if (st.over) return ctx.status('<b>' + ctx.name(st.rank[0]) + '</b> 四机全部到达');
       const who = myTurn() ? (ctx.hotseat ? ctx.name(st.turn) + '：' : '轮到你：') : ctx.name(st.turn) + ' ';
       const dot = '<span style="color:' + ctx.color(st.turn) + '">✈</span> ';
-      const ph = st.phase === 'roll' ? (myTurn() ? '点骰子掷骰' : '掷骰中…') : st.phase === 'move' ? (myTurn() ? '掷出 ' + st.die + '，点选要走的飞机' : '掷出 ' + st.die + '，思考中…') : (st.msg || '');
-      ctx.status(dot + who + ph);
+      const ph = st.phase === 'roll' ? (myTurn() ? '点骰子掷骰' : '掷骰中…') : (myTurn() ? '掷出 ' + st.die + '，点选要走的飞机' : '掷出 ' + st.die + '，思考中…');
+      ctx.status((st.msg ? st.msg + ' · ' : '') + dot + who + ph);
     };
     /* ---------- AI ---------- */
     function threat(s, pos, dd, deep) {
@@ -175,29 +175,57 @@ BX.register({
       return v;
     }
     /* ---------- apply ---------- */
-    function animMove(s, i, path, d0) {
+    function animMove(s, i, path, d0, wait) {
       const pos = posOf[s], pts = [xy(pos, d0, i)].concat(path.map(d => xy(pos, d, i)));
-      const v = vis[s * 4 + i] = {pts, k: 0}; ctx.anim(Math.min(1400, 120 * path.length + 80), k => v.k = k, () => { if (vis[s * 4 + i] === v) delete vis[s * 4 + i]; }, x => x);
+      const dur = Math.min(1400, 120 * path.length + 80), tot = dur + (wait || 0);
+      const v = vis[s * 4 + i] = {pts, k: 0, delayK: (wait || 0) / tot}; ctx.anim(tot, k => v.k = k, () => { if (vis[s * 4 + i] === v) delete vis[s * 4 + i]; }, x => x);
     }
-    function animHome(q, j, from) {
-      const v = vis[q * 4 + j] = {pts: [from, xy(posOf[q], -1, j)], k: 0, delayK: .35};
-      ctx.anim(900, k => v.k = k, () => { if (vis[q * 4 + j] === v) delete vis[q * 4 + j]; }, BX.ease.inOut);
+    function animHome(q, j, from, wait) {
+      const tot = 900 + (wait || 0);
+      const v = vis[q * 4 + j] = {pts: [from, from, xy(posOf[q], -1, j)], k: 0, delayK: ((wait || 0) + 300) / tot};
+      ctx.anim(tot, k => v.k = k, () => { if (vis[q * 4 + j] === v) delete vis[q * 4 + j]; }, BX.ease.inOut);
     }
     function endTurn(again) {
       st.pending = null;
       if (again) { st.phase = 'roll'; return; }
       st.sixes = 0; st.lastMoved = -1; st.turn = nextSeat(st.turn); st.phase = 'roll';
     }
+    function doMove(s, i, wait) {
+      const d0 = st.pl[s][i], R = resolve(st.pl, posOf, n, s, i, st.die, t5);
+      st.pl[s][i] = R.d; st.lastMoved = i; st.last = {s, i}; st.phase = 'roll';
+      animMove(s, i, R.path, d0, wait);
+      if (!ctx.fast) busyUntil = performance.now() + wait + Math.min(1400, 120 * R.path.length + 80) + (R.caps.length ? 600 : 0);
+      const tEnd = wait + Math.min(900, 110 * R.path.length);
+      ctx.after(wait, () => ctx.sfx(d0 < 0 ? 'whoosh' : 'move'));
+      if (R.ev.includes('fly')) ctx.after(wait + 300, () => ctx.sfx('whoosh'));
+      let fl = null;
+      if (R.caps.length) {
+        for (const [q, j] of R.caps) { const from = xy(posOf[q], st.pl[q][j], j); st.pl[q][j] = -1; animHome(q, j, from, wait); }
+        ctx.after(tEnd, () => ctx.sfx('crash')); fl = {txt: '撞子！', t: 1.2, c: ctx.color(s)};
+      } else if (R.ev.includes('fly')) fl = {txt: '飞棋！', t: 1, c: ctx.color(s)};
+      else if (R.ev.includes('jump')) fl = {txt: '跳子', t: .8, c: ctx.color(s)};
+      if (R.ev.includes('bounce') && !fl) fl = {txt: '超出折返', t: .8, c: ctx.color(s)};
+      if (R.d === HOME) { ctx.after(tEnd, () => ctx.sfx('score')); fl = {txt: '到达终点', t: 1, c: ctx.color(s)}; }
+      if (fl) ctx.after(wait + 150, () => { flash = fl; });
+      if (done(s) === 4) {
+        st.over = true; st.phase = 'over';
+        const prog = q => st.pl[q].reduce((a2, d) => a2 + (d < 0 ? -2 : d), 0);
+        st.rank = [s].concat(BX.range(n).filter(q => q !== s).sort((x, y) => (done(y) - done(x)) || (prog(y) - prog(x))));
+        status();
+        ctx.end({winner: s, delay: 1500 + wait, text: st.rank.map((q, k) => '第' + '一二三四'[k] + '名 ' + ctx.name(q) + '（' + done(q) + '/4）').join('　')});
+        return;
+      }
+      endTurn(st.die === 6); status();
+    }
     const inst = {
       st,
-      toMove: () => st.over || st.phase === 'wait' ? null : st.turn,
+      toMove: () => st.over ? null : st.turn,
       valid(a, by) {
         if (by !== st.turn || st.over) return false;
         if (a.t === 'roll') return st.phase === 'roll';
         if (a.t === 'move') return st.phase === 'move' && options(st.turn, st.die).includes(a.p);
         return false;
       },
-      sysMove: () => !st.over && st.phase === 'wait' && st.pending ? {a: st.pending, delay: st.pending.t === 'pass' ? 1000 : 600} : null,
       apply(a, by) {
         const s = st.turn;
         if (a.t === 'roll') {
@@ -207,41 +235,20 @@ BX.register({
           if (st.sixes === 3) {
             const lm = st.lastMoved;
             if (lm >= 0 && st.pl[s][lm] !== HOME && st.pl[s][lm] >= 0) { const from = xy(posOf[s], st.pl[s][lm], lm); st.pl[s][lm] = -1; animHome(s, lm, from); }
-            st.msg = '连掷三个 6，飞机被罚回机场！'; ctx.toast('连掷三个 6，罚回机场'); ctx.sfx('buzz');
-            st.phase = 'wait'; st.pending = {t: 'pass', again: false}; status(); return;
+            st.msg = ctx.name(s) + ' 连掷三个 6，罚回机场'; ctx.after(500, () => { ctx.sfx('buzz'); flash = {txt: '罚回机场', t: 1.2, c: ctx.color(s)}; });
+            endTurn(false); status(); return;
           }
           const op = options(s, r);
-          if (!op.length) { st.phase = 'wait'; st.pending = {t: 'pass', again: r === 6}; st.msg = r === 6 ? '掷出 6 点但无棋可走，再掷一次' : '掷出 ' + r + ' 点，无棋可走'; }
-          else if (op.length === 1) { st.phase = 'wait'; st.pending = {t: 'move', p: op[0]}; st.msg = '掷出 ' + r + ' 点'; }
+          if (!op.length) { st.msg = ctx.name(s) + ' 掷出 ' + r + ' 点，无棋可走' + (r === 6 ? '，再掷一次' : ''); ctx.after(450, () => { flash = {txt: '无棋可走', t: .9, c: ctx.color(s)}; }); endTurn(r === 6); }
+          else if (op.length === 1) { st.msg = ''; doMove(s, op[0], 480); return; }   // only one choice: move automatically
           else st.phase = 'move';
           status(); return;
         }
-        if (a.t === 'pass') { endTurn(a.again); status(); return; }
-        if (a.t === 'move') {
-          const i = a.p, d0 = st.pl[s][i], R = resolve(st.pl, posOf, n, s, i, st.die, t5);
-          st.pl[s][i] = R.d; st.lastMoved = i; st.last = {s, i};
-          animMove(s, i, R.path, d0);
-          ctx.sfx(d0 < 0 ? 'whoosh' : 'move');
-          if (R.ev.includes('fly')) ctx.after(300, () => ctx.sfx('whoosh'));
-          if (R.caps.length) {
-            for (const [q, j] of R.caps) { const from = xy(posOf[q], st.pl[q][j], j); st.pl[q][j] = -1; animHome(q, j, from); }
-            ctx.after(Math.min(900, 110 * R.path.length), () => ctx.sfx('crash'));
-            flash = {txt: '撞子！', t: 1.2, c: ctx.color(s)};
-          } else if (R.ev.includes('fly')) flash = {txt: '飞棋！', t: 1, c: ctx.color(s)};
-          else if (R.ev.includes('jump')) flash = {txt: '跳子', t: .8, c: ctx.color(s)};
-          if (R.d === HOME) { ctx.after(Math.min(900, 110 * R.path.length), () => ctx.sfx('score')); flash = {txt: '到达终点', t: 1, c: ctx.color(s)}; }
-          if (done(s) === 4) {
-            st.over = true; st.phase = 'over';
-            const prog = q => st.pl[q].reduce((a2, d) => a2 + (d < 0 ? -2 : d), 0);
-            st.rank = [s].concat(BX.range(n).filter(q => q !== s).sort((x, y) => (done(y) - done(x)) || (prog(y) - prog(x))));
-            status();
-            ctx.end({winner: s, delay: 1500, text: st.rank.map((q, k) => '第' + '一二三四'[k] + '名 ' + ctx.name(q) + '（' + done(q) + '/4）').join('　')});
-            return;
-          }
-          endTurn(st.die === 6); status();
-        }
+        if (a.t === 'move') { st.msg = ''; doMove(s, a.p, 0); }
       },
-      aiMove(s, lvl) {
+      async aiMove(s, lvl) {
+        const left = Math.min(900, busyUntil - performance.now());
+        if (left > 30 && !BX.test) await new Promise(r => setTimeout(r, left));
         if (st.phase === 'roll') return {t: 'roll'};
         const op = options(s, st.die);
         if (lvl === 1) {
@@ -347,9 +354,9 @@ BX.register({
       const tx = vert ? P.x + P.w / 2 : P.x + 16, al = vert ? 'center' : 'left';
       g.fillStyle = col; if (vert) { D.rr(g, P.x + 14, P.y + 14, P.w - 28, 6, 3); g.fill(); } else { D.rr(g, P.x + 8, P.y + 12, 6, P.h - 24, 3); g.fill(); }
       D.text(g, st.over ? '对局结束' : ctx.name(s), tx + (vert ? 0 : 10), P.y + (vert ? 40 : P.h * .28), {size: 17, color: '#f3e2c0', weight: 800, align: al, maxW: vert ? P.w - 20 : P.w - ds - 60});
-      const sub = st.over ? '' : st.phase === 'roll' ? (myTurn() ? '点骰子掷骰' : '等待掷骰…') : st.phase === 'move' ? (myTurn() ? '点闪光的飞机' : '思考中…') : (st.msg || '');
+      const sub = st.over ? '' : st.phase === 'roll' ? (myTurn() ? '点骰子掷骰' : '等待掷骰…') : (myTurn() ? '点闪光的飞机' : '思考中…');
       D.text(g, sub, tx + (vert ? 0 : 10), P.y + (vert ? 64 : P.h * .5), {size: 13, color: 'rgba(243,226,192,.8)', weight: 500, align: al, maxW: vert ? P.w - 16 : P.w - ds - 60});
-      if (st.sixes > 0 && !st.over && st.phase !== 'wait') D.text(g, '连续 6 点 ×' + st.sixes, tx + (vert ? 0 : 10), P.y + (vert ? 84 : P.h * .7), {size: 12, color: C.gold2, weight: 700, align: al});
+      if (st.sixes > 0 && !st.over ) D.text(g, '连续 6 点 ×' + st.sixes, tx + (vert ? 0 : 10), P.y + (vert ? 84 : P.h * .7), {size: 12, color: C.gold2, weight: 700, align: al});
       // die
       const rr = roll, rolling = rr.k < 1;
       const face = rolling ? 1 + Math.floor((t * 20) % 6) : (st.die || 6);

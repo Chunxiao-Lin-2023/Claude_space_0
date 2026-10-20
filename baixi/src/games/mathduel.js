@@ -64,7 +64,7 @@ BX.register({
 
     function newQ() {
       st.q++; st.Q = genQ(lv, Math.random); st.lock = [0, 0]; st.ans = [-1, -1]; st.win = -1;
-      st.ph = 'q'; st.t = 12; K.ev(st, 'new');
+      st.ph = 'q'; st.t = 12 * (BX.test ? .4 : 1); K.ev(st, 'new');
     }
     function answer(s, qn, ch) {
       if (st.ph !== 'q' || qn !== st.q || st.lock[s] || st.ans[s] >= 0) return;
@@ -124,7 +124,7 @@ BX.register({
         const base = [0, [3.2, 6.5], [2, 4], [1.1, 2.4]][level], mul = [0, .8, 1, 1.45][lv];
         const err = [0, .25, .12, .04][level];
         let ch = st.Q.a; if (Math.random() < err) { ch = (ch + 1 + Math.floor(Math.random() * 3)) % 4; }
-        pl = aiPlan[seat] = {q: st.q, at: performance.now() + (base[0] + Math.random() * (base[1] - base[0])) * mul * 1000 * (BX.test ? .22 : 1), ch, tq: K.tq()};
+        pl = aiPlan[seat] = {q: st.q, at: performance.now() + (base[0] + Math.random() * (base[1] - base[0])) * mul * 1000 * (BX.test ? .22 : 1), ch, tq: (aiPlan[seat] && aiPlan[seat].tq) || K.tq()};
       }
       if (performance.now() >= pl.at && !pl.sent) { pl.sent = true; pl.tq.push(st.q, pl.ch); }
       return {q: pl.tq.list()};
@@ -216,7 +216,7 @@ BX.register({
         D.text(g, (st.ot ? '加赛' : '第 ' + st.q + ' 题'), 14, 18, {size: Math.min(13, q.h * .12), color: C.ink2, align: 'left'});
         const showAns = st.ph !== 'q';
         D.text(g, st.Q.text + ' = ' + (showAns ? st.Q.v : '?'), q.w / 2, q.h * .5, {size: qs, color: C.ink, font: 'serif', weight: 900, maxW: q.w - 24});
-        if (st.ph === 'q') { const k = BX.clamp(st.t / 12, 0, 1); g.fillStyle = 'rgba(60,40,20,.15)'; D.rr(g, 14, q.h - 16, q.w - 28, 7, 3); g.fill(); g.fillStyle = k < .3 ? C.red : C.jade; D.rr(g, 14, q.h - 16, (q.w - 28) * k, 7, 3); g.fill(); }
+        if (st.ph === 'q') { const k = BX.clamp(st.t / (12 * (BX.test ? .4 : 1)), 0, 1); g.fillStyle = 'rgba(60,40,20,.15)'; D.rr(g, 14, q.h - 16, q.w - 28, 7, 3); g.fill(); g.fillStyle = k < .3 ? C.red : C.jade; D.rr(g, 14, q.h - 16, (q.w - 28) * k, 7, 3); g.fill(); }
         else if (st.win >= 0) D.text(g, ctx.name(st.win) + ' 抢答成功', q.w / 2, q.h * .84, {size: Math.min(15, q.h * .13), color: ctx.color(st.win), weight: 800});
         else D.text(g, '无人答对', q.w / 2, q.h * .84, {size: Math.min(15, q.h * .13), color: C.ink2});
       }

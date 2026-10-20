@@ -245,10 +245,14 @@ BX.register({
         L = {bx: x0, by: y0, bs, keys: BX.range(9).map(k => ({x: x0 + bs + 16 + (k % 3) * ks, y: y0 + (bs - ks * 3.3) / 2 + ((k / 3) | 0) * ks * 1.1, w: ks - 6, h: ks * 1.1 - 6}))};
         L.info = {x: x0 + bs + 16, y: y0 + (bs - ks * 3.3) / 2 - 30, w: ks * 3 - 6};
       } else {
-        const ks0 = Math.min(W / 9, 64);
-        bs = Math.min(W, H - ks0 * 1.3 - 44); const ks = Math.min(W / 9, bs / 8);
-        const tot = 34 + bs + 14 + ks * 1.25, y0 = A.y + pad + Math.max(0, (H - tot) / 2), x0 = A.x + pad + (W - bs) / 2;
-        L = {bx: x0, by: y0 + 34, bs, keys: BX.range(9).map(k => ({x: A.x + pad + (W - ks * 9) / 2 + k * ks, y: y0 + 34 + bs + 14, w: ks - 5, h: ks * 1.25}))};
+        const two = H > W * 1.45, ks0 = two ? Math.min(W / 5, 74) : Math.min(W / 9, 64), kh = two ? Math.min(ks0 * .8, 60) : ks0 * 1.25, kRows = two ? 2 : 1;
+        bs = Math.min(W, H - kRows * kh - 60); const ks = two ? ks0 : Math.min(W / 9, bs / 8);
+        const tot = 34 + bs + 14 + kRows * kh, y0 = A.y + pad + Math.max(0, (H - tot) / 2), x0 = A.x + pad + (W - bs) / 2;
+        L = {bx: x0, by: y0 + 34, bs, keys: BX.range(9).map(k => {
+          if (!two) return {x: A.x + pad + (W - ks * 9) / 2 + k * ks, y: y0 + 34 + bs + 14, w: ks - 5, h: kh};
+          const row = k < 5 ? 0 : 1, n = row ? 4 : 5, c = row ? k - 5 : k;
+          return {x: A.x + pad + (W - ks * n) / 2 + c * ks, y: y0 + 34 + bs + 14 + row * kh, w: ks - 6, h: kh - 6};
+        })};
         L.info = {x: x0, y: y0 + 14, w: bs};
       }
       L.cs = L.bs / 9;

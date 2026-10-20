@@ -328,8 +328,9 @@ BX.register({
       }
       return {t: 'setup', L};
     }
-    function aiMove(seat, level) {
+    async function aiMove(seat, level) {
       if (st.ph === 'setup') return aiSetup();
+      for (let k = 0; (mv || fade) && k < 40 && !ctx.fast; k++) await BX.sleep(40);
       if (BX.test && level >= 3) level = 2;
       const me = seat, b = st.b, moves = allMoves(b, me);
       if (!moves.length) return {t: 'resign'};

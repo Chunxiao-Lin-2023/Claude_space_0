@@ -149,6 +149,7 @@ const CSS = `
 .mo-chip s{text-decoration:none;font-size:11px;background:#c8a052;color:#3a2410;border-radius:4px;padding:0 3px}
 .mo-main{flex:1;min-height:0;overflow:auto;-webkit-overflow-scrolling:touch;padding:2px}
 .mo-act{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;flex:none}
+.mo-panel .bx-btn.ghost{background:#e3d3b0;color:#2b2118;box-shadow:0 3px 0 #b49c70}
 .mo-act .bx-btn{flex:1 1 0;padding:8px 8px;min-width:70px;font-size:15px;white-space:nowrap}
 .mo-wait{flex:1;text-align:center;color:#8c7a63;font-size:14px;padding:12px 4px}
 .mo-deed{background:#fffaf0;border-radius:10px;overflow:hidden;box-shadow:0 2px 8px rgba(60,30,10,.25);margin:2px auto 6px;max-width:290px;border:1px solid rgba(60,40,20,.25)}

@@ -22,7 +22,7 @@ const HOLES = [
   {name: '山坳', par: 3, tee: [10, 30], cup: [90, 30],
     walls: [[[4, 8], [96, 8], [96, 52], [4, 52], [4, 8]]], slope: [{p: [[28, 8], [50, 8], [50, 52], [28, 52]], g: [0, 22]}, {p: [[50, 8], [72, 8], [72, 52], [50, 52]], g: [0, -22]}], sand: [[[80, 8], [96, 8], [96, 20], [80, 20]], [[80, 40], [96, 40], [96, 52], [80, 52]]], water: [[[36, 44], [64, 44], [64, 52], [36, 52]]]},
   {name: '龙门', par: 4, tee: [10, 48], cup: [88, 12],
-    walls: [[[4, 40], [40, 40], [40, 20], [60, 20], [60, 4], [96, 4], [96, 22], [72, 22], [72, 56], [4, 56], [4, 40]], [[52, 30], [52, 56]]], water: [[[40, 22], [52, 22], [52, 40], [40, 40]]], bump: [[62, 46, 2.6], [80, 8, 1.8]], slope: [{p: [[60, 22], [72, 22], [72, 56], [60, 56]], g: [0, -18]}]},
+    walls: [[[4, 40], [40, 40], [40, 20], [60, 20], [60, 4], [96, 4], [96, 22], [72, 22], [72, 56], [4, 56], [4, 40]], [[52, 56], [52, 47]]], water: [[[40, 22], [52, 22], [52, 40], [40, 40]]], bump: [[62, 46, 2.6], [80, 8, 1.8]], slope: [{p: [[60, 22], [72, 22], [72, 56], [60, 56]], g: [0, -18]}]},
 ];
 /* ---------- deterministic helpers ---------- */
 function inPoly(x, y, p) { let c = false; for (let i = 0, j = p.length - 1; i < p.length; j = i++) { const [xi, yi] = p[i], [xj, yj] = p[j]; if ((yi > y) !== (yj > y) && x < (xj - xi) * (y - yi) / (yj - yi) + xi) c = !c; } return c; }
@@ -148,22 +148,32 @@ BX.register({
     const NH = BX.test ? 2 : (ctx.opts.holes || 9);
     const st = {n: ctx.n, NH, hole: 0, turn: 0, strokes: 0, ball: HOLES[0].tee.slice(), card: BX.range(ctx.n).map(() => []), over: false, last: null};
     const cv = ctx.canvas(), pb = K.playback(ctx), fx = K.fx(), cache = K.cache();
-    let show = null, Z = st, aim = {dx: 1, dy: 0, p: .35}, keyT = 0, intro = 0;
+    let show = null, aim = {dx: 1, dy: 0, p: .35}, keyT = 0, intro = 0;
     /* ---------- view ---------- */
+    function bbox(hi) {
+      const h = HOLES[hi]; let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9;
+      const add = (x, y) => { x0 = Math.min(x0, x); y0 = Math.min(y0, y); x1 = Math.max(x1, x); y1 = Math.max(y1, y); };
+      for (const w of h.walls) for (const [x, y] of w) add(x, y);
+      for (const q of (h.water || [])) for (const [x, y] of q) add(x, y);
+      return [x0 - 3, y0 - (hi === Z.hole ? 7 : 3), x1 + 3, y1 + 3];
+    }
     function layout() {
       const W = cv.w, H = cv.h, port = H > W * 1.05;
       const cardH = port ? 26 + 22 * ctx.n : 0, cardW = port ? 0 : Math.min(250, W * .26);
       const aw = W - cardW, ah = H - cardH;
-      const lw = port ? 60 : 100, lh = port ? 100 : 60;
-      const f = BX.fit(aw, ah, lw + 4, lh + 4, 8);
-      return {W, H, port, s: f.s, ox: f.x + 2 * f.s, oy: (port ? cardH : 0) + f.y + 2 * f.s, cardH, cardW};
+      const [x0, y0, x1, y1] = bbox(Math.min(Z.hole, HOLES.length - 1));
+      const lw = port ? y1 - y0 : x1 - x0, lh = port ? x1 - x0 : y1 - y0;
+      const f = BX.fit(aw, ah - (port ? 44 : 0), lw, lh, 10);
+      return {W, H, port, s: f.s, ox: f.x, oy: (port ? cardH : 0) + f.y, cardH, cardW, x0, y0, x1, y1};
     }
+    let Z = st;
     let V = layout();
-    const T = (x, y) => V.port ? [V.ox + (60 - y) * V.s, V.oy + x * V.s] : [V.ox + x * V.s, V.oy + y * V.s];
+    /* world → screen. portrait is rotated so that world +x points up (tee at the bottom) */
+    const T = (x, y) => V.port ? [V.ox + (y - V.y0) * V.s, V.oy + (V.x1 - x) * V.s] : [V.ox + (x - V.x0) * V.s, V.oy + (y - V.y0) * V.s];
     const myTurn = () => !st.over && !pb.on && ctx.canAct(st.turn);
     const sling = K.sling(ctx, cv, {
       enabled: myTurn, max: () => Math.min(cv.w, cv.h) * .36, min: .03,
-      change: s => { let dx, dy; if (V.port) { dx = s.dy; dy = -s.dx; } else { dx = s.dx; dy = s.dy; } aim = {dx, dy, p: s.p}; },
+      change: s => { let dx, dy; if (V.port) { dx = -s.dy; dy = s.dx; } else { dx = s.dx; dy = s.dy; } aim = {dx, dy, p: s.p}; },
       release: () => putt(),
     });
     function putt() { if (!myTurn()) return; ctx.sfx('hit'); ctx.act({dx: +aim.dx.toFixed(6), dy: +aim.dy.toFixed(6), p: +aim.p.toFixed(4)}, st.turn); }
@@ -221,7 +231,7 @@ BX.register({
       resize() { V = layout(); },
       frame(dt) {
         pb.tick(dt); fx.update(dt); intro = Math.max(0, intro - dt * .6);
-        V = layout(); Z = show ? Object.assign({}, st, show.snap, {over: false}) : st;
+        Z = show ? Object.assign({}, st, show.snap, {over: false}) : st; V = layout();
         draw(dt);
       },
     };
@@ -234,7 +244,7 @@ BX.register({
     }
     /* ---------- AI: sample directions × powers, score by result ---------- */
     function ai(seat, level) {
-      const h = HOLES[st.hole], [bx, by] = st.ball, t0 = performance.now(), budget = BX.test ? 30 : 450;
+      const h = HOLES[st.hole], [bx, by] = st.ball, t0 = performance.now(), budget = BX.test ? 30 : 380;
       let best = null, bv = -1e9;
       const direct = Math.atan2(h.cup[1] - by, h.cup[0] - bx);
       const score = r => {
@@ -339,7 +349,7 @@ BX.register({
     function draw(dt) {
       const g = cv.g; cv.clear();
       const hi = Math.min(Z.hole, HOLES.length - 1);
-      const bg = cache('c' + hi + (V.port ? 'p' : 'l') + V.cardW, V.W, V.H, cv.dpr, c2 => course(c2, hi));
+      const bg = cache('c' + hi + (V.port ? 'p' : 'l') + V.cardW + ':' + Math.round(V.s * 100) + ':' + Math.round(V.ox) + ':' + Math.round(V.oy), V.W, V.H, cv.dpr, c2 => course(c2, hi));
       const [ox, oy] = fx.off(); g.save(); g.translate(ox, oy);
       g.drawImage(bg, 0, 0, V.W, V.H);
       const h = HOLES[hi], S = V.s;
@@ -379,7 +389,7 @@ BX.register({
       }
     }
     function drawAim(g, x, y) {
-      const S = V.s, sdx = V.port ? -aim.dy : aim.dx, sdy = V.port ? aim.dx : aim.dy;
+      const S = V.s, sdx = V.port ? aim.dy : aim.dx, sdy = V.port ? -aim.dx : aim.dy;
       const L = (10 + aim.p * 40) * S;
       const pts = []; for (let i = 0; i <= 12; i++) pts.push([x + sdx * L * i / 12, y + sdy * L * i / 12]);
       K.guide(g, pts, {color: '#fffaf0', w: 3, alpha: .95, fade: .7, dash: [5, 7]});

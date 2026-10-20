@@ -56,10 +56,13 @@ function allMoves(b, s) {
   for (let f = 0; f < NC; f++) if (b[f] === s + 1) for (const [t, path] of legalFrom(b, s, f)) out.push({f, t, path});
   return out;
 }
-function won(b, s) {
+/* win: every goal hole filled; opponent stragglers that never left (their own start triangle = our goal) count for us,
+   but only once both sides have made ANTI_PLY/2 moves (anti-blocking rule) */
+const ANTI_PLY = 60;
+function won(b, s, ply) {
   let mine = 0, opp = 0;
   for (const i of GOAL[s]) { if (b[i] === s + 1) mine++; else if (b[i]) opp++; else return false; }
-  return mine >= 1;   // every goal hole is occupied and at least one is ours (anti-blocking rule)
+  return mine === 10 || (mine >= 1 && ply >= ANTI_PLY);
 }
 
 BX.register({
@@ -71,11 +74,11 @@ BX.register({
 <ul><li><b>移一格</b>：走到相邻的空孔（六个方向）。</li>
 <li><b>跳跃</b>：沿直线越过紧邻的<b>一颗</b>棋子（自己或对方的都可以），落在其正后方的空孔上；落下后若还能继续跳，可以<b>连续跳跃</b>，路线可以拐弯，在任意一次跳跃后停下。被跳过的棋子不会被吃掉。</li></ul>
 <p>同一回合不能既移一格又跳跃。弹珠进入对面三角营后，只能在营内移动，不能再离开。</p>
-<p><b>胜负</b>：先把 10 颗弹珠全部移入正对面三角营的一方获胜。<b>防堵规则</b>：如果对方有弹珠一直停留在你的目标营里，只要营内其余的孔都已被你的弹珠占满，也算你获胜。</p>
+<p><b>胜负</b>：先把 10 颗弹珠全部移入正对面三角营的一方获胜。<b>防堵规则</b>：如果对方有弹珠一直赖在它的出发营（也就是你的目标营）里不走，只要营内其余的孔都已被你的弹珠占满，也算你获胜（双方各走满 30 步后生效）。</p>
 <p><b>操作</b>：点自己的弹珠选中（亮出所有可达位置），再点目标孔即可；跳跃路线会以虚线显示。</p>`,
   icon(g, w, h) {
     D.iconBase(g, w, h, '#7a4a28', '#3a2010');
-    const cx = w / 2, cy = h / 2, s = h * .062;
+    const cx = w / 2, cy = h / 2, s = h * .056;
     g.save(); g.translate(cx, cy);
     g.fillStyle = '#e8d3a6'; g.beginPath();
     for (let k = 0; k < 2; k++) { const a0 = k ? Math.PI / 2 : -Math.PI / 2; g.moveTo(Math.cos(a0) * 8.5 * s * 1.04, Math.sin(a0) * 8.5 * s); for (let j = 1; j <= 3; j++) { const a = a0 + j * 2 * Math.PI / 3; g.lineTo(Math.cos(a) * 8.5 * s * 1.04, Math.sin(a) * 8.5 * s); } g.closePath(); }
@@ -96,7 +99,7 @@ BX.register({
 
     function layout() {
       const W = cv.w, H = cv.h, port = H > W * 1.05;
-      const bw = 17.2, bh = 16 * .8660254 + 1.6;
+      const bw = 17.4, bh = 17.4;   // round plate (radius 8.6) around the star
       if (port) {
         const ph = 50, f = BX.fit(W, H - 2 * ph - 12, bw, bh, 4);
         const oy = f.y + ph + 6, pw = Math.min(W - 12, 420), px = (W - pw) / 2;
@@ -143,22 +146,23 @@ BX.register({
       // stragglers left behind in the home triangle are costly; reward goal triangle depth
       for (const i of HOME[s]) if (bd[i] === s + 1) v -= 1.5;
       for (const i of HOME[o]) if (bd[i] === o + 1) v += 1.5;
-      if (won(bd, s)) v += 1000; if (won(bd, o)) v -= 1000;
+      if (won(bd, s, st.moves + 2)) v += 1000; if (won(bd, o, st.moves + 2)) v -= 1000;
       return v;
     }
     function gain(s, m) { return rowD(s, m.f) - rowD(s, m.t) + (Math.abs(SX[m.f]) - Math.abs(SX[m.t])) * .35; }
-    function aiMove(seat, level) {
+    async function aiMove(seat, level) {
+      for (let k = 0; anim && k < 60 && !ctx.fast; k++) await BX.sleep(40);   // let the previous move's animation finish
       const bd = st.b.slice(), ms = allMoves(bd, seat);
       if (!ms.length) return null;
-      for (const m of ms) { bd[m.f] = 0; bd[m.t] = seat + 1; const w = won(bd, seat); bd[m.t] = 0; bd[m.f] = seat + 1; if (w) return {f: m.f, t: m.t}; }
+      for (const m of ms) { bd[m.f] = 0; bd[m.t] = seat + 1; const w = won(bd, seat, st.moves + 1); bd[m.t] = 0; bd[m.f] = seat + 1; if (w) return {f: m.f, t: m.t}; }
       const late = GOAL[seat].filter(i => bd[i] === seat + 1).length >= 6;
       if (level === 1) {
-        const sc = ms.map(m => [m, gain(seat, m) + (m.path.length > 2 ? .5 : 0) + Math.random() * 2.2]);
+        const sc = ms.map(m => [m, gain(seat, m) + Math.random() * 3.2]);
         const m = BX.ai.byLevel(sc, 2); return {f: m.f, t: m.t};
       }
       // order moves by immediate gain, keep the best K for a 2-ply (me, opponent) search
       ms.sort((a, c) => gain(seat, c) - gain(seat, a));
-      const K = level >= 3 ? (BX.test ? 10 : 22) : 8, KO = level >= 3 ? (BX.test ? 8 : 18) : 0;
+      const K = level >= 3 ? (BX.test ? 10 : 22) : 12, KO = level >= 3 ? (BX.test ? 8 : 18) : 0;
       const cand = ms.filter(m => gain(seat, m) >= -.5 || late).slice(0, K);
       if (!cand.length) cand.push(ms[0]);
       const o = 1 - seat; let best = null, bv = -Infinity;
@@ -166,7 +170,7 @@ BX.register({
       for (const m of cand) {
         bd[m.f] = 0; bd[m.t] = seat + 1;
         let v;
-        if (won(bd, seat)) v = 1e4;
+        if (won(bd, seat, st.moves + 1)) v = 1e4;
         else if (level >= 3 && performance.now() - t0 < (BX.test ? 40 : 600)) {
           // opponent's best reply (by their gain + our follow-up potential)
           const om = allMoves(bd, o).sort((a, c) => gain(o, c) - gain(o, a)).slice(0, KO);
@@ -180,7 +184,7 @@ BX.register({
             if (val < v) v = val;
           }
           if (v === Infinity) v = evalFor(bd, seat);
-        } else v = evalFor(bd, seat) + (level === 2 ? Math.random() * .6 : 0);
+        } else { let fu = 0; for (const q of allMoves(bd, seat)) { const gq = gain(seat, q); if (gq > fu) fu = gq; } v = evalFor(bd, seat) + fu * .4 + Math.random() * .5; }
         v += (m.path.length > 2 ? .15 * (m.path.length - 2) : 0);
         bd[m.t] = 0; bd[m.f] = seat + 1;
         if (v > bv) { bv = v; best = m; }
@@ -205,7 +209,7 @@ BX.register({
             if (h !== an.hop) { an.hop = h; if (n > 1 || !NB[path[0]].includes(path[1])) ctx.sfx('hit'); }
           }, () => { if (anim === an) anim = null; ctx.sfx('place'); ctx.poke(); }, k => k);
         } else ctx.sfx('move');
-        if (won(st.b, s)) { st.over = true; st.win = s; status(); ctx.end({winner: s, text: ctx.name(s) + ' 共走 ' + Math.ceil(st.moves / 2) + ' 步，全部入营'}); return; }
+        if (won(st.b, s, st.moves)) { st.over = true; st.win = s; status(); ctx.end({winner: s, text: ctx.name(s) + ' 共走 ' + Math.ceil(st.moves / 2) + ' 步，全部入营'}); return; }
         if (st.moves >= 600) { st.over = true; status(); ctx.end({winner: -1, text: '步数过多，和棋'}); return; }
         st.turn = 1 - s;
         if (!allMoves(st.b, st.turn).length) st.turn = s;   // no legal move (practically impossible): skip
@@ -221,10 +225,10 @@ BX.register({
         const k = flip() ? -1 : 1;
         g.save();
         g.shadowColor = 'rgba(0,0,0,.5)'; g.shadowBlur = 20; g.shadowOffsetY = 6;
-        const rad = s * 9.6; g.fillStyle = '#8a5a30'; D.circle(g, L.cx, L.cy, rad); g.fill(); g.restore();
+        const rad = s * 8.65; g.fillStyle = '#8a5a30'; D.circle(g, L.cx, L.cy, rad); g.fill(); g.restore();
         g.save(); D.circle(g, L.cx, L.cy, rad); g.clip(); D.wood(g, L.cx - rad, L.cy - rad, rad * 2, rad * 2, {seed: 33, base: '#c58e52', dark: '#8a5a2a'}); g.restore();
         g.strokeStyle = 'rgba(60,35,12,.6)'; g.lineWidth = 3; D.circle(g, L.cx, L.cy, rad - 2); g.stroke();
-        const star = () => { g.beginPath(); for (let t = 0; t < 2; t++) { const a0 = t ? Math.PI / 2 : -Math.PI / 2; for (let j = 0; j <= 3; j++) { const a = a0 + j * 2 * Math.PI / 3, x = L.cx + Math.cos(a) * s * 9.25, y = L.cy + Math.sin(a) * s * 9.25; j ? g.lineTo(x, y) : g.moveTo(x, y); } g.closePath(); } };
+        const star = () => { g.beginPath(); for (let t = 0; t < 2; t++) { const a0 = t ? Math.PI / 2 : -Math.PI / 2; for (let j = 0; j <= 3; j++) { const a = a0 + j * 2 * Math.PI / 3, x = L.cx + Math.cos(a) * s * 8.1, y = L.cy + Math.sin(a) * s * 8.1; j ? g.lineTo(x, y) : g.moveTo(x, y); } g.closePath(); } };
         star(); g.fillStyle = '#f0deb4'; g.fill(); g.strokeStyle = 'rgba(90,55,20,.55)'; g.lineWidth = 2; g.stroke();
         // coloured home triangles
         for (const [seat, list] of [[0, HOME[0]], [1, HOME[1]]]) {
