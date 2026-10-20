@@ -191,7 +191,7 @@
       F(0, 4, 5, 5, '#0c0a0e'); F(1, -3, 1, 7, '#0c0a0e'); F(3, -2, 1, 6, '#0c0a0e'); F(1, -2, 1, 3, '#3a1a1a');
       F(1, 5, 1, 1, '#ff3030'); F(0, 7, 2, 1, '#e8e2d6');
     },
-    wispdot(g, e, t, R) { const y = Math.sin(t * 4 + e.px) * 1.5, a = .55 + Math.sin(t * 9 + e.py) * .25; R(6, 6 + y, 4, 4, `rgba(90,140,255,${a * .5})`); R(7, 7 + y, 2, 2, `rgba(200,220,255,${a})`); },
+    wispdot(g, e, t, R) { const y = Math.sin(t * 4 + e.px) * 1.5, a = .6 + Math.sin(t * 9 + e.py) * .25; R(4, 4 + y, 8, 8, `rgba(70,120,255,${a * .35})`); R(5, 5 + y, 6, 6, `rgba(110,160,255,${a * .6})`); R(6, 6 + y, 4, 4, `rgba(190,215,255,${a})`); R(7, 7 + y, 2, 2, '#f4f8ff'); },
     wisp(g, e, t, R) {
       const y = Math.sin(t * 3) * 2, a = .6 + Math.sin(t * 11) * .2;
       R(5, 2 + y, 6, 6, `rgba(90,140,255,${a * .5})`); R(6, 3 + y, 4, 4, `rgba(150,190,255,${a})`); R(7, 4 + y, 2, 2, '#e8f0ff'); R(7, y, 2, 2, `rgba(120,170,255,${a * .6})`);
@@ -1303,7 +1303,7 @@
       cave: async S => {
         S.amb('drone'); S.plr(1.7); trail(S); S.hide('wisp');
         S.stop('dog'); S.place('dog', 19, 5, 1); S.ent('dog').alpha = 1;
-        S.place('anne_c', S.pl.x, S.pl.y); S.follow('anne_c', true);
+        S.follow('anne_c', true);   // 安妮留在检查点时的位置（就在你身边）
         S.goal('带安妮逃出山洞！顺着蓝色的光点跑（洞口在南边）');
         await S.narr('洞的另一头，又传来那声低低的吠叫。\n蓝色的光点还亮着，一路通向洞口。');
         startDog(S, 1.0);
