@@ -75,6 +75,24 @@ function buildTextures() {
     for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) { g.fillStyle = (i + j) % 2 ? '#202224' : hsl(45, 15, 72 + tr(-5, 3)); g.fillRect(i * s, j * s, s, s); g.strokeStyle = 'rgba(0,0,0,.35)'; g.strokeRect(i * s, j * s, s, s); }
     grime(g, 1024, 1024, 1.8); noiseLayer(g, 1024, 1024, 0.06); TEX.tile2 = mkTex(c);
   }
+  { // bathroom: small white hexagon mosaic with a dark border band
+    const c = cnv(1024, 1024), g = c.getContext('2d'); g.fillStyle = '#5a5650'; g.fillRect(0, 0, 1024, 1024);
+    const r = 22, hx = r * Math.sqrt(3);
+    for (let row = -1; row < 1024 / (r * 1.5) + 1; row++) for (let col = -1; col < 1024 / hx + 1; col++) { const cx = col * hx + (row % 2 ? hx / 2 : 0), cy = row * r * 1.5; g.fillStyle = (row * 7 + col * 3) % 23 === 0 ? '#2a3a3a' : hsl(40, 10, 62 + tr(-6, 4)); g.beginPath(); for (let k = 0; k < 6; k++) { const a = k / 6 * TAU + PI / 6; g.lineTo(cx + Math.cos(a) * (r - 2), cy + Math.sin(a) * (r - 2)); } g.fill(); }
+    grime(g, 1024, 1024, 2.2); noiseLayer(g, 1024, 1024, 0.05); TEX.tile3 = mkTex(c);
+  }
+  { // attic: wide, rough, unfinished planks with nail heads and dust
+    const c = cnv(1024, 1024), g = c.getContext('2d'), pw = 1024 / 6;
+    for (let i = 0; i < 6; i++) { grainRect(g, i * pw, 0, pw, 1024, hsl(26 + tr(-4, 4), 26, 15 + tr(-3, 3)), true); g.fillStyle = 'rgba(0,0,0,.7)'; g.fillRect(i * pw, 0, 4, 1024); for (let y = 30; y < 1024; y += 256) for (const dx of [18, pw - 18]) { g.fillStyle = 'rgba(20,16,12,.8)'; g.beginPath(); g.arc(i * pw + dx, y, 4, 0, TAU); g.fill(); } }
+    for (let k = 0; k < 60; k++) { const x = texRng() * 1024, y = texRng() * 1024, rr2 = tr(30, 120), gr = g.createRadialGradient(x, y, 0, x, y, rr2); gr.addColorStop(0, 'rgba(150,140,120,.07)'); gr.addColorStop(1, 'rgba(150,140,120,0)'); g.fillStyle = gr; g.fillRect(x - rr2, y - rr2, rr2 * 2, rr2 * 2); }
+    grime(g, 1024, 1024, 2); noiseLayer(g, 1024, 1024, 0.08, 12000); TEX.attic = mkTex(c);
+  }
+  { // roof shingles
+    const c = cnv(512, 512), g = c.getContext('2d'); g.fillStyle = '#121214'; g.fillRect(0, 0, 512, 512);
+    for (let row = 0; row < 16; row++) for (let col = -1; col < 9; col++) { const x = col * 64 + (row % 2 ? 32 : 0), y = row * 32; g.fillStyle = hsl(220, tr(4, 10), tr(14, 22)); g.beginPath(); g.moveTo(x + 2, y); g.lineTo(x + 62, y); g.lineTo(x + 62, y + 26); g.quadraticCurveTo(x + 32, y + 34, x + 2, y + 26); g.fill(); g.fillStyle = 'rgba(0,0,0,.5)'; g.fillRect(x + 2, y + 26, 60, 4); }
+    for (let k = 0; k < 40; k++) { g.fillStyle = `rgba(40,70,40,${tr(0.1, 0.3)})`; g.beginPath(); g.ellipse(texRng() * 512, texRng() * 512, tr(6, 30), tr(4, 12), 0, 0, TAU); g.fill(); }
+    noiseLayer(g, 512, 512, 0.08); TEX.shingle = mkTex(c, 1, 1);
+  }
   { // concrete
     const c = cnv(512, 512), g = c.getContext('2d'); g.fillStyle = '#4a4744'; g.fillRect(0, 0, 512, 512); noiseLayer(g, 512, 512, 0.12, 20000, 3); grime(g, 512, 512, 2.5);
     g.strokeStyle = 'rgba(0,0,0,.4)'; g.lineWidth = 1.2; for (let k = 0; k < 5; k++) { g.beginPath(); let x = texRng() * 512, y = texRng() * 512; g.moveTo(x, y); for (let t = 0; t < 12; t++) { x += tr(-20, 20); y += tr(-20, 20); g.lineTo(x, y); } g.stroke(); }
@@ -137,6 +155,8 @@ function buildTextures() {
     noiseLayer(g, w, h, 0.1, 12000, 3); grime(g, w, h, 2);
   }, { wains: false });
   wall('w_conserv', (g, w, h) => { g.fillStyle = '#4c524b'; g.fillRect(0, 0, w, h); noiseLayer(g, w, h, 0.08, 6000, 3); for (let k = 0; k < 7; k++) { g.strokeStyle = `rgba(30,60,25,${tr(0.25, 0.5)})`; g.lineWidth = tr(2, 5); g.beginPath(); let x = texRng() * w, y = h; g.moveTo(x, y); for (let t = 0; t < 18; t++) { x += tr(-18, 18); y -= tr(14, 30); g.lineTo(x, y); } g.stroke(); } }, { wc: [90, 8, 26] });
+  wall('w_studio', (g, w, h) => { g.fillStyle = '#7a6a52'; g.fillRect(0, 0, w, h); noiseLayer(g, w, h, 0.1, 8000, 4); grime(g, w, h, 2.2); for (let k = 0; k < 30; k++) { g.fillStyle = hsl(tr(0, 360), tr(30, 60), tr(25, 50), 0.45); g.beginPath(); g.arc(texRng() * w, h * 0.55 + texRng() * h * 0.4, tr(2, 9), 0, TAU); g.fill(); } }, { wains: false });
+  wall('w_attic', (g, w, h) => { for (let x = 0; x < w; x += 64) { grainRect(g, x, 0, 64, h, hsl(24 + tr(-3, 3), 22, 14 + tr(-3, 3)), true); g.fillStyle = 'rgba(0,0,0,.6)'; g.fillRect(x, 0, 3, h); } for (let k = 0; k < 18; k++) { g.strokeStyle = 'rgba(220,220,210,.12)'; g.lineWidth = 0.6; g.beginPath(); const x = texRng() * w, y = texRng() * h * 0.4; g.moveTo(x, y); for (let s = 0; s < 6; s++) g.lineTo(x + tr(-40, 40), y + tr(-30, 30)); g.stroke(); } grime(g, w, h, 2.5); }, { wains: false });
   wall('w_ext', (g, w, h) => { // dark brick
     g.fillStyle = '#1a1210'; g.fillRect(0, 0, w, h);
     for (let y = 0, r = 0; y < h; y += 32, r++) for (let x = r % 2 ? -32 : 0; x < w; x += 64) { g.fillStyle = hsl(12 + tr(-4, 4), 30, tr(14, 22)); g.fillRect(x + 2, y + 2, 60, 28); }
@@ -274,9 +294,9 @@ const M = {
 };
 function buildMaterials() {
   const floor = k => stdMat({ map: TEX[k], roughness: k === 'marble' ? 0.28 : k === 'tile2' ? 0.35 : 0.72, bumpMap: TEX[k], bumpScale: 1.2, metalness: 0 }, 'floor' + k, false);
-  MAT.floor = { wood: floor('wood'), wood2: floor('wood2'), marble: floor('marble'), stone: floor('stone'), tile: floor('tile'), tile2: floor('tile2'), concrete: floor('concrete') };
+  MAT.floor = { wood: floor('wood'), wood2: floor('wood2'), marble: floor('marble'), stone: floor('stone'), tile: floor('tile'), tile2: floor('tile2'), tile3: floor('tile3'), concrete: floor('concrete'), attic: floor('attic') };
   MAT.wall = {};
-  for (const k of ['damask', 'damask2', 'red', 'green', 'nursery', 'panel', 'plaster', 'tilewall', 'stone', 'conserv', 'ext']) MAT.wall[k] = stdMat({ map: TEX['w_' + k], roughness: 0.86, bumpMap: TEX['w_' + k], bumpScale: 0.9 }, 'wall' + k);
+  for (const k of ['damask', 'damask2', 'red', 'green', 'nursery', 'panel', 'plaster', 'tilewall', 'stone', 'conserv', 'ext', 'studio', 'attic']) MAT.wall[k] = stdMat({ map: TEX['w_' + k], roughness: 0.86, bumpMap: TEX['w_' + k], bumpScale: 0.9 }, 'wall' + k);
   MAT.wallTop = stdMat({ color: 0x0b0908, roughness: 1 }, 'walltop');
   MAT.trim = M.wood(0x2e1a0e, 0.55);
   MAT.rug = {};

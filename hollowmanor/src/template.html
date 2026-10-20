@@ -141,6 +141,10 @@ input:focus{border-color:var(--gold)}
 .stats b{color:var(--gold);font-weight:400}
 #help .card{line-height:1.75;font-size:14px;color:#d8ccb4}
 #help b{color:var(--gold);font-weight:400}
+#floorCard{position:fixed;inset:0;z-index:15;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none;gap:14px}
+#floorCard .ft{font-family:var(--title);font-size:clamp(44px,8vw,84px);color:#e6dcc6;letter-spacing:.12em;text-shadow:0 0 20px rgba(143,211,255,.3)}
+#floorCard .fs{color:#a8998a;letter-spacing:.3em;font-size:15px}
+.seg button:disabled{opacity:.35}
 .toast{position:fixed;left:50%;top:22%;transform:translateX(-50%);z-index:30;font-size:20px;padding:12px 22px;border-radius:8px;background:rgba(0,0,0,.75);border:1px solid var(--line);animation:fadeIn .3s}
 /* iPhone (see ../IPHONE.md): only phone-sized coarse pointers are affected */
 button{touch-action:manipulation}
@@ -213,6 +217,7 @@ body{-webkit-touch-callout:none}
       <div class="role L"><span class="pl" id="plL"></span><h3>持灯者</h3><div class="who">阿岩 · 黄雨衣、旧背包、一支沉甸甸的手电筒</div><p>手电筒照亮真实世界。强光能让怨灵僵直；负责机关、保险丝和推动重物，并在仪式时守护灵视者。</p><ul><li>手电能照出 ❄ 霜痕 和 ◐ 镜中影</li><li>右键 / F：强光，定住怨灵（耗电）</li><li>符文锁、保险丝、暗门书架只有你能动</li></ul></div>
       <div class="role S"><span class="pl" id="plS"></span><h3>灵视者</h3><div class="who">小雾 · 一盏蓝色的灵灯，看得见另一侧</div><p>看得见怨灵——隔着墙也能看到。能看见 ✋ 灵痕手印、◌ 灵球、写在墙上的符文密码和暗门里漏出的阴风。负责主持驱灵仪式。</p><ul><li>按 G 把看到的符文发给持灯者</li><li>怨灵逼近时，用「危险！」提醒同伴</li><li>只有你能在祭坛主持仪式</li></ul></div>
     </div>
+    <div class="row hidden" id="floorRow" style="justify-content:center"><span class="lbl">从</span><div class="seg" id="floorSeg"><button data-v="0">一楼</button><button data-v="1">二楼</button><button data-v="2">阁楼</button></div><span class="lbl">开始</span></div>
     <div class="row" style="justify-content:center;flex-wrap:wrap"><button id="swapBtn">交换角色</button><button id="readyBtn">准备</button><button class="primary" id="startBtn">开始</button></div>
     <div class="status" id="lStatus"></div>
   </div>
@@ -248,19 +253,20 @@ body{-webkit-touch-callout:none}
 
 <div id="mRune" class="modal hidden"><div class="card"><button class="x ghost" data-close>✕</button><h2>符文转盘</h2><div style="color:var(--sub);font-size:14px">四个转盘要转到正确的符文。密码写在这座宅子的某面墙上——只有灵视者看得见。<br>键盘：←→ 选择转盘，↑↓ 转动，Esc 关闭。</div><div class="dials" id="dials"></div><div class="status" id="runeMsg"></div></div></div>
 <div id="mAltar" class="modal hidden"><div class="card"><button class="x ghost" data-close>✕</button><h2>祭坛</h2><div style="color:var(--sub);font-size:14px">选一件遗物献上。选错了，它会在祭坛上化为灰烬，怨灵会暴怒。<br>开始后要按住 E 主持仪式，持灯者负责用强光把怨灵挡在外面。</div><div class="items" id="altarItems"></div></div></div>
-<div id="mJournal" class="modal hidden"><div class="card"><button class="x ghost" data-close>✕</button><h2>调查日志</h2><div class="sec">证据（找到两种就能确认）</div><div class="jgrid" id="jEv"></div><div class="sec">怨灵档案</div><div class="gt" id="jGhosts"></div><div class="sec">目标</div><div class="objl" id="jObj"></div><div class="sec">线索</div><div class="objl" id="jHints"></div></div></div>
+<div id="mJournal" class="modal hidden"><div class="card"><button class="x ghost" data-close>✕</button><h2>调查日志 <small id="jFloor" style="font-size:14px;color:var(--sub);font-weight:400"></small></h2><div class="sec" id="jEvSec">证据（找到两种就能确认）</div><div class="jgrid" id="jEv"></div><div class="sec">怨灵档案</div><div class="gt" id="jGhosts"></div><div class="sec">目标</div><div class="objl" id="jObj"></div><div class="sec">线索</div><div class="objl" id="jHints"></div></div></div>
 <div id="mGlyph" class="modal hidden"><div class="card" style="width:min(380px,92vw)"><button class="x ghost" data-close>✕</button><h2>发送符文</h2><div style="color:var(--sub);font-size:14px">把你看到的符文按顺序发给同伴。</div><div class="glyphs" id="glyphBtns"></div></div></div>
 <div id="mPause" class="modal hidden"><div class="card" style="width:min(460px,94vw)"><h2>暂停菜单</h2><div style="color:var(--sub);font-size:13px">联机中游戏不会暂停。</div>
   <div class="set"><span>音量</span><input type="range" id="volIn" min="0" max="1" step="0.05"><span>画质</span><div class="seg" id="qSeg"><button data-v="low">流畅</button><button data-v="high">精致</button></div><span>胶片颗粒</span><div class="seg" id="gSeg"><button data-v="1">开</button><button data-v="0">关</button></div><span>震屏</span><div class="seg" id="sSeg"><button data-v="1">开</button><button data-v="0">关</button></div></div>
   <div class="row" style="flex-wrap:wrap;justify-content:center"><button class="primary" id="resumeBtn">继续</button><button id="lobbyBtn">返回房间</button><button id="hubBtn2" class="hidden">返回游戏厅</button></div></div></div>
 <div id="help" class="modal hidden"><div class="card"><button class="x ghost" data-close>✕</button><h2>玩法说明</h2>
   <p>两个人被困在一座雨夜里的老宅。大门锁死了，二楼的楼梯被一道灵封挡住——要离开，必须驱散这层楼里的怨灵。</p>
-  <p><b>怎么赢：</b>①收集两种证据，在日志里确认怨灵的种类；②找到它惧怕的遗物；③同时拉下两根拉杆打开祈祷室；④灵视者在祭坛主持仪式，持灯者用强光守住她；⑤一起登上楼梯。</p>
+  <p><b>三层楼：</b>一楼和二楼各困着一只怨灵：收集两种证据，在日志里认出它（认出后它会现出真身），找到它惧怕的遗物，在祭坛（二楼是主卧的梳妆台）主持仪式驱散它，楼梯上的灵封才会碎。每层的机关都不一样——符文锁、双拉杆、放水阀、铜铃、只有灵视者能穿过的灵隙。阁楼里是这座宅子的女主人：毁掉她的三件镇物（灵视者解开灵缚，持灯者砸碎），再在法阵里念出她的名字，从天窗逃出去。阁楼没有电，持灯者可以点亮油灯，灯光会拖慢她。</p>
   <p><b>非对称：</b>持灯者看得见真实世界——手电照出霜痕和镜中影，能转符文锁、装保险丝、推开暗门书架。灵视者看得见另一侧——怨灵的位置（隔墙也能看到）、灵痕手印、灵球、写在墙上的符文密码。你们看到的东西不一样，要互相告诉对方。</p>
   <p><b>猎杀：</b>灯开始乱闪、低沉的嗡鸣响起时，怨灵就要开始猎杀了。快躲进柜子，或者让持灯者用强光（右键 / F）把它定住——被定住两次它就会退散。被抓住会倒下，45 秒内要被同伴扶起来。</p>
   <p><b>恐惧：</b>两个人离得远、待在黑暗里、看见怨灵，恐惧都会上升；恐惧越高，怨灵越早开始猎杀。待在一起、待在有灯的房间里会好一些。</p>
   <p><b>键鼠：</b>WASD 移动 · 鼠标朝向 · Shift 奔跑 · E / 左键 互动（按住）· 右键 / F 强光 · Q 标记 · 1–4 快捷信号 · G 发送符文 · J 日志 · Esc 菜单 · M 静音</p>
   <p><b>iPad：</b>左半屏拖动移动，右下拖动朝向，按钮互动 / 强光 / 奔跑，📍 标记，💬 信号，☾ 符文。</p></div></div>
-<div id="result" class="scr hidden"><div class="card"><h2 id="rTitle"></h2><div class="why" id="rWhy"></div><div class="stats" id="rStats"></div><div class="row" style="justify-content:center"><button class="primary" id="rAgain">返回房间</button></div><div class="status" id="rStatus"></div></div></div>
+<div id="floorCard" class="hidden"><div class="ft"></div><div class="fs"></div></div>
+<div id="result" class="scr hidden"><div class="card"><h2 id="rTitle"></h2><div class="why" id="rWhy"></div><div class="stats" id="rStats"></div><div class="row" style="justify-content:center;flex-wrap:wrap"><button class="primary hidden" id="rRetry">重试</button><button id="rAgain">返回房间</button></div><div class="status" id="rStatus"></div></div></div>
 __SCRIPTS__
 </body>

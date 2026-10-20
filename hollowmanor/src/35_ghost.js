@@ -14,7 +14,7 @@ function playerVisibleToGhost(p) {
   return los(G.x, G.z, p.x, p.z, W);
 }
 function stepGhost(dt) {
-  const G = W.g, gt = GHOSTS[W.setup.gtype];
+  const G = W.g, gt = GT(W.setup.gtype);
   G.stT -= dt;
   // manifestation level (what the holder can see without the beam)
   if (G.st === 'hunt' || G.st === 'ritual') G.man = 0.75 + (Math.random() < 0.08 ? -0.6 : 0);
@@ -24,7 +24,7 @@ function stepGhost(dt) {
   if (G.st === 'banish') { G.fade = clamp(G.stT / 3.5, 0, 1); G.man = 1; if (G.stT <= 0) { G.st = 'gone'; G.fade = 0; } return; }
   if (G.st === 'gone') return;
   // clock chime (atmosphere; the keeper hunts right after it)
-  W.chime -= dt; if (W.chime <= 0) { W.chime = rr(70, 110); snd('chime', 21.7, 12.6, 1.2); if (gt.quirk === 'clock' && G.st === 'roam' && W.t > 60) W.huntCD = Math.min(W.huntCD, 4); }
+  W.chime -= dt; if (W.chime <= 0 && MAP.clock) { W.chime = rr(70, 110); snd('chime', MAP.clock.x, MAP.clock.z, 1.2); if (gt.quirk === 'clock' && G.st === 'roam' && W.t > 60) W.huntCD = Math.min(W.huntCD, 4); }
   const avgFear = (W.p[0].fear + W.p[1].fear) / 2;
   if (G.st === 'roam') {
     W.huntCD -= dt * (0.7 + avgFear / 70 + G.rage * 0.4);
@@ -36,7 +36,7 @@ function stepGhost(dt) {
         const r = RNG() < 0.55 ? W.setup.haunt : RNG() < 0.5 ? roomAt(...nearestPlayerPos()) : Math.floor(RNG() * MAP.rooms.length);
         const [x, z] = randomFloorIn(r >= 0 ? r : W.setup.haunt, 0.8); ghostGo(x, z); G.dwell = rr(3, 9);
       }
-    } else ghostFollow(dt, BAL.gRoam);
+    } else ghostFollow(dt, B('gRoam'));
     // ambient events
     W.eventCD -= dt * (0.8 + avgFear / 120);
     if (W.eventCD <= 0) { W.eventCD = rr(...BAL.eventCD); ghostEvent(); }
@@ -48,10 +48,12 @@ function stepGhost(dt) {
     if (G.stT <= 0) ghostStartHunt(false);
     return;
   }
-  if (G.st === 'stun') { G.spd = 0; if (G.stT <= 0) { if (G.stuns >= BAL.stunsToBreak && !W.rit) ghostEndHunt(false); else { G.st = W.rit ? 'ritual' : 'hunt'; } } return; }
+  if (G.st === 'stun') { G.spd = 0; if (G.stT <= 0) { if (G.stuns >= B('stunsToBreak') && !W.rit) ghostEndHunt(false); else { G.st = W.rit ? 'ritual' : 'hunt'; } } return; }
   if (G.st === 'hunt' || G.st === 'ritual') {
     G.huntT -= dt; W.flick = 0.55; W.flickT = 0.4;
     if (G.st === 'hunt' && G.huntT <= 0) { ghostEndHunt(false); return; }
+    // lit oil lamps gutter out when it passes
+    if (MAP.lamps.length) MAP.lamps.forEach((l, i) => { if (W.lamps[i] && d2(l.x, l.z, G.x, G.z) < 2.4 * 2.4 && RNG() < dt * 0.5) { W.lamps[i] = 0; snd('snuff', l.x, l.z, 1); } });
     // choose / keep target
     const ps = W.p.filter(p => !p.down);
     if (!ps.length) return;
@@ -66,7 +68,7 @@ function stepGhost(dt) {
     if (sees) { G.lastX = tgt.x; G.lastZ = tgt.z; G.lost = 0; } else G.lost += dt;
     // speed: slowed by the flashlight beam
     const lit = beamFactor(W, G.x, 1.2, G.z) > 0.15;
-    let sp = (lit ? BAL.gHuntSlow : BAL.gHunt) * (1 + G.rage * 0.12) * (G.st === 'ritual' ? 0.75 : 1);
+    let sp = (lit ? BAL.gHuntSlow : B('gHunt')) * (1 + G.rage * 0.12) * (G.st === 'ritual' ? 0.75 : 1) * (nearLitLamp(W, G.x, G.z) ? BAL.lampSlow : 1);
     G.repath = (G.repath || 0) - dt;
     if (tgt.hide >= 0) {
       // hidden target: only found if the ghost saw them get in
@@ -89,37 +91,36 @@ function stepGhost(dt) {
 }
 function nearestPlayerPos() { const G = W.g; const p = W.p.reduce((a, b) => dist(G.x, G.z, a.x, a.z) < dist(G.x, G.z, b.x, b.z) ? a : b); return [p.x, p.z]; }
 function ghostWarn() {
-  const G = W.g, gt = GHOSTS[W.setup.gtype];
+  const G = W.g, gt = GT(W.setup.gtype);
   G.st = 'warn'; G.stT = BAL.warnT; G.path = null;
   // a hunt far from everyone teleports closer so it is never toothless
   const [px, pz] = nearestPlayerPos();
   if (dist(G.x, G.z, px, pz) > 14) { const r = roomAt(px, pz), cand = MAP.rooms.filter(q => q.idx !== r && dist(q.cx, q.cz, px, pz) < 13 && q.id !== 'util'); const room = cand.length ? pick(cand).idx : W.setup.haunt; [G.x, G.z] = randomFloorIn(room, 0.8); }
-  snd('huntWarn', G.x, G.z, 1.5); if (gt.quirk === 'wail') snd('wail', G.x, G.z, 1.3); if (gt.quirk === 'giggle') snd('giggle', G.x, G.z, 1.2);
+  snd('huntWarn', G.x, G.z, 1.5); if (gt.quirk === 'boss') snd('bossLaugh', G.x, G.z, 1.3); if (gt.quirk === 'wail') snd('wail', G.x, G.z, 1.3); if (gt.quirk === 'giggle') snd('giggle', G.x, G.z, 1.2);
   emit({ k: 'fx', fx: 'warn' });
 }
 function ghostStartHunt(enraged, len) {
-  const G = W.g; G.st = 'hunt'; G.huntT = len || rr(...BAL.huntLen); G.stuns = 0; G.tgt = -1; G.lost = 0; G.path = null; G.repath = 0;
+  const G = W.g; G.st = 'hunt'; G.huntT = len || rr(...B('huntLen')); G.stuns = 0; G.tgt = -1; G.lost = 0; G.path = null; G.repath = 0;
   W.stats.hunts++; snd('huntStart', G.x, G.z, 1.5); emit({ k: 'fx', fx: 'hunt' }); fearSpike(G.x, G.z, 14, 12);
 }
 function ghostEndHunt(fromRitual) {
   const G = W.g; if (G.st === 'banish' || G.st === 'gone') return;
-  G.st = 'roam'; G.path = null; G.dwell = rr(2, 5); W.huntCD = rr(...BAL.huntCD) * (G.rage ? 0.7 : 1); G.rage = Math.max(0, G.rage - 0.5);
+  G.st = 'roam'; G.path = null; G.dwell = rr(2, 5); W.huntCD = rr(...B('huntCD')) * (G.rage ? 0.75 : 1); if (W.setup.gtype !== 'boss') G.rage = Math.max(0, G.rage - 0.5);
   // vanish and reappear in the haunt room
   [G.x, G.z] = randomFloorIn(W.setup.haunt, 0.8); W.flick = 0;
   snd('huntEnd', G.x, G.z, 1); emit({ k: 'fx', fx: 'huntEnd' });
   if (!fromRitual) say('四周突然安静了下来……', -1, '#8fd3ff');
 }
 function ghostRitual() {
-  const G = W.g, al = MAP.inter.find(x => x.k === 'altar');
-  // the ghost comes in through the chapel doors
+  const G = W.g, al = MAP.inter.find(x => x.k === 'altar' || x.k === 'circle'), [ex, ez] = MAP.F.ritualEntry;
+  // the ghost comes in through the door of the ritual room
   G.st = 'ritual'; G.tgt = W.rit.by; G.stuns = 0; G.path = null; G.repath = 0;
-  if (dist(G.x, G.z, al.x, al.z) < 5) { G.x = 29; G.z = 9.5; }
-  if (roomAt(G.x, G.z) !== roomAt(al.x, al.z)) { G.x = 29 + rr(-1.5, 1.5); G.z = 9.6; }
+  if (dist(G.x, G.z, al.x, al.z) < 5 || roomAt(G.x, G.z) !== roomAt(al.x, al.z)) { G.x = ex + rr(-1.2, 1.2); G.z = ez; }
   snd('huntStart', G.x, G.z, 1.5); emit({ k: 'fx', fx: 'hunt' });
 }
 function ghostStunned(by) {
   const G = W.g;
-  if (G.st === 'hunt' || G.st === 'ritual' || G.st === 'stun') { G.st = 'stun'; G.stT = BAL.stunT; G.stuns++; W.stats.stuns++; snd('ghostHit', G.x, G.z, 1.3); say(G.stuns >= BAL.stunsToBreak && !W.rit ? '强光击退了怨灵！' : '怨灵被强光定住了！', -1, '#ffe08a'); return; }
+  if (G.st === 'hunt' || G.st === 'ritual' || G.st === 'stun') { G.st = 'stun'; G.stT = BAL.stunT; G.stuns++; W.stats.stuns++; snd('ghostHit', G.x, G.z, 1.3); const nm = W.setup.gtype === 'boss' ? '她' : '怨灵'; say(G.stuns >= B('stunsToBreak') && !W.rit ? '强光击退了' + nm + '！' : nm + '被强光定住了！', -1, '#ffe08a'); return; }
   // outside hunts: a flash makes it shriek and flee, delaying the next hunt
   if (G.st === 'roam' || G.st === 'warn') { snd('ghostHit', G.x, G.z, 1); G.man = 1; W.huntCD += 8; [G.x, G.z] = randomFloorIn(W.setup.haunt, 0.8); G.path = null; if (G.st === 'warn') { G.st = 'roam'; W.flick = 0; } }
 }
@@ -128,13 +129,13 @@ function ghostCatch(p) {
   p.down = true; p.downT = BAL.downT; p.act = null; p.fear = 100; W.stats.downs++;
   snd('caught', p.x, p.z, 1.5); emit({ k: 'fx', fx: 'caught', who: p.id });
   say(ROLES[p.role].name + '被怨灵抓住，倒下了！快去扶起来（' + BAL.downT + ' 秒）', -1, '#ff6b6b');
-  if (W.rit && W.rit.by === p.id) { W.rit = null; say('仪式被打断了……遗物还在，可以再试一次', -1, '#ffb36b'); }
+  if (W.rit && W.rit.by === p.id) { if (W.rit.item === 'final') W.finP = W.rit.p; W.rit = null; say('仪式被打断了……' + (W.finP > 0 && W.finP < 1 ? '法阵还亮着，可以接着念。' : '遗物还在，可以再试一次'), -1, '#ffb36b'); }
   const o = W.p[1 - p.id];
   if (!o.down) { const G = W.g; G.tgt = -1; G.huntT = Math.min(G.huntT, 4); if (G.st === 'ritual') ghostEndHunt(true); }
 }
 /* ambient haunting */
 function ghostEvent() {
-  const G = W.g, gt = GHOSTS[W.setup.gtype], roll = RNG();
+  const G = W.g, gt = GT(W.setup.gtype), roll = RNG();
   const near = W.p.filter(p => dist(p.x, p.z, G.x, G.z) < 10);
   if (roll < 0.22) { // slam a door near the ghost
     let best = null, bd = 9; MAP.doors.forEach((d, i) => { const st = W.doors[i]; if (d.kind !== 'door' || st.locked || st.tgt < 1) return; const dd = dist(d.cx, d.cz, G.x, G.z); if (dd < bd && !W.p.some(p => dist(p.x, p.z, d.cx, d.cz) < 1.2)) { bd = dd; best = i; } });
@@ -144,8 +145,9 @@ function ghostEvent() {
   if (roll < 0.52 && near.length) { // brief apparition near a player
     const p = pick(near); G.man = 0.9; snd('stinger', G.x, G.z, 1); fearSpike(G.x, G.z, BAL.fearEvent * 1.3, 9); return;
   }
-  if (roll < 0.64 && MAP.rooms[roomAt(G.x, G.z)] && MAP.rooms[roomAt(G.x, G.z)].id === 'music') { snd('piano', 11.4, 3.4, 1.2); fearSpike(G.x, G.z, BAL.fearEvent, 12); return; }
-  if (roll < 0.76) { const q = gt.quirk === 'giggle' ? 'giggle' : gt.quirk === 'wail' ? 'wail' : 'whisper'; snd(q, G.x, G.z, 1); fearSpike(G.x, G.z, BAL.fearEvent * 0.6); return; }
+  if (roll < 0.64 && MAP.rooms[roomAt(G.x, G.z)] && MAP.rooms[roomAt(G.x, G.z)].id === 'music') { snd('piano', G.x, G.z, 1.2); fearSpike(G.x, G.z, BAL.fearEvent, 12); return; }
+  if (roll < 0.7 && MAP.lamps.length) { const i = MAP.lamps.findIndex((l, k) => W.lamps[k] && d2(l.x, l.z, G.x, G.z) < 36); if (i >= 0) { W.lamps[i] = 0; const l = MAP.lamps[i]; snd('snuff', l.x, l.z, 1); fearSpike(l.x, l.z, BAL.fearEvent * 0.7); return; } }
+  if (roll < 0.76) { const q = gt.quirk === 'giggle' ? 'giggle' : gt.quirk === 'wail' ? 'wail' : gt.quirk === 'boss' ? 'bossHum' : 'whisper'; snd(q, G.x, G.z, 1); fearSpike(G.x, G.z, BAL.fearEvent * 0.6); return; }
   if (roll < 0.88 && near.length) { const p = pick(near); const a = RNG() * TAU; snd(gt.quirk === 'silent' ? 'creak' : 'steps', p.x + Math.cos(a) * 3, p.z + Math.sin(a) * 3, 1); fearSpike(p.x, p.z, BAL.fearEvent * 0.5); return; }
   snd('knock', G.x, G.z, 1.1); fearSpike(G.x, G.z, BAL.fearEvent * 0.5);
 }

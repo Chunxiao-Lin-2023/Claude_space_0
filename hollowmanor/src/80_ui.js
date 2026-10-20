@@ -1,5 +1,5 @@
 /* ================= DOM UI: screens, HUD, modals, overlays ================= */
-const UI = { modal: null, lastSeq: 0, log: [], pings: [], bubbles: [], best: null, dialSel: 0, hudT: 0, tagEls: {} };
+const UI = { card: null, ascending: false, modal: null, lastSeq: 0, log: [], pings: [], bubbles: [], best: null, dialSel: 0, hudT: 0, tagEls: {} };
 const $ = id => document.getElementById(id);
 function showScreen(s) {
   STATE.mode = s;
@@ -27,6 +27,7 @@ function lobbyUI(status) {
     el.textContent = (i === myIdx ? '你' : names[i] || '同伴') + (NET.ready[i] || i === 0 ? '' : ' · 未准备');
     el.className = 'pl' + (i === myIdx ? ' me' : '');
   }
+  { const max = LS.get('prog', { max: 0 }).max || 0; $('floorSeg').querySelectorAll('button').forEach(b => { const v = +b.dataset.v; b.disabled = NETROLE !== 'host' ? v !== (NET.floor || 0) : v > max; b.classList.toggle('sel', v === (NET.floor || 0)); }); $('floorRow').classList.toggle('hidden', NETROLE === 'host' ? max === 0 : !(NET.floor > 0)); }
   $('startBtn').classList.toggle('hidden', NETROLE !== 'host'); $('readyBtn').classList.toggle('hidden', NETROLE !== 'guest');
   $('readyBtn').textContent = NET.ready[1] ? '取消准备' : '准备';
   const canStart = NETROLE === 'host' && NET.gctl && NET.gctl.open && NET.ready[1];
@@ -58,6 +59,8 @@ function initMenus() {
   $('volIn').value = SET.vol; $('volIn').oninput = () => { SET.vol = +$('volIn').value; saveSet(); if (AU.master && !AU.muted) AU.master.gain.value = SET.vol; };
   const seg = (id, key, conv) => { const el = $(id); const upd = () => el.querySelectorAll('button').forEach(b => b.classList.toggle('sel', String(conv ? (SET[key] ? '1' : '0') : SET[key]) === b.dataset.v)); el.onclick = e => { const b = e.target.closest('button'); if (!b) return; SET[key] = conv ? b.dataset.v === '1' : b.dataset.v; saveSet(); upd(); if (key === 'quality') toast('画质设置会在下次进入时生效'); }; upd(); };
   seg('qSeg', 'quality'); seg('gSeg', 'grain', 1); seg('sSeg', 'shake', 1);
+  $('rRetry').onclick = () => hostRetry();
+  $('floorSeg').onclick = e => { const b = e.target.closest('button'); if (!b || b.disabled || NETROLE !== 'host') return; NET.floor = +b.dataset.v; sendLobby(); lobbyUI(); };
   $('rAgain').onclick = () => { if (NETROLE === 'host') { netSendCtl({ t: 'toLobby' }); backToLobby(); } else $('rStatus').textContent = '等待房主…'; };
   document.querySelectorAll('[data-close]').forEach(b => b.onclick = () => closeModal());
   document.querySelectorAll('.modal').forEach(m => m.addEventListener('pointerdown', e => { if (e.target === m) closeModal(); }));
@@ -93,28 +96,20 @@ function renderDials() { $('dials').innerHTML = W.dials.map((v, i) => `<div clas
 function renderAltar() { const its = W.inv.filter(k => RITUAL_ITEMS.includes(k)); $('altarItems').innerHTML = its.map((k, i) => `<button data-it="${k}"><span>${ITEMS[k].icon}</span>${i + 1} · ${ITEMS[k].name}</button>`).join('') || '<div style="color:var(--sub)">没有可以献上的遗物</div>'; }
 function candidates() { const f = Object.keys(W.evFound); return Object.keys(GHOSTS).filter(k => f.every(e => GHOSTS[k].ev.includes(e))); }
 function renderJournal() {
+  const boss = W.setup.gtype === 'boss';
+  $('jEvSec').classList.toggle('hidden', boss); $('jEv').classList.toggle('hidden', boss);
+  $('jFloor').textContent = MAP.F.title;
+  if (boss) { $('jGhosts').innerHTML = `<div class="n yes" style="grid-column:1/-1">${BOSS.name}<div style="font-size:13px;color:var(--sub);margin-top:4px">${BOSS.desc}</div></div>` + (W.setup.anchors || []).map((a, i) => `<div class="n ${W.anchors[i] === 2 ? 'no' : ''}" style="grid-column:1/-1;font-size:14px">${W.anchors[i] === 2 ? '✔' : W.anchors[i] === 1 ? '◐' : '○'} 镇物：${ANCHORS[a.k].name}<span style="color:var(--sub);font-size:12px">　${ANCHORS[a.k].desc}${W.anchors[i] === 1 ? '（灵缚已解，等持灯者砸碎）' : ''}</span></div>`).join(''); $('jObj').innerHTML = objectives().map(o => `<div class="${o.done ? 'd' : ''}">${o.done ? '✔' : '○'} ${o.t}</div>`).join(''); $('jHints').innerHTML = hints().map(h => `<div>· ${h}</div>`).join(''); return; }
   $('jEv').innerHTML = Object.entries(EVID).map(([k, e]) => `<div class="ev ${W.evFound[k] ? 'on' : ''}"><div class="ic">${e.icon}</div><div>${e.name}${W.evFound[k] ? '　✔' : ''}<small>${e.desc}（${ROLES[e.who].name}）</small></div></div>`).join('');
   const cand = candidates(), sure = Object.keys(W.evFound).length >= 2 && cand.length === 1;
   $('jGhosts').innerHTML = Object.entries(GHOSTS).map(([k, g]) => { const c = cand.includes(k) ? (sure ? 'yes' : '') : 'no'; return `<div class="n ${c}">${g.name}${sure && c === 'yes' ? '　← 就是它' : ''}<div style="font-size:12px;color:var(--sub)">${g.desc}</div></div><div class="${c}">${g.ev.map(e => EVID[e].icon).join(' ')}</div><div class="${c}" title="惧怕">${ITEMS[g.item].icon} ${ITEMS[g.item].name}</div>`; }).join('');
   $('jObj').innerHTML = objectives().map(o => `<div class="${o.done ? 'd' : ''}">${o.done ? '✔' : '○'} ${o.t}</div>`).join('');
   $('jHints').innerHTML = hints().map(h => `<div>· ${h}</div>`).join('');
 }
-function objectives() {
-  const n = Object.keys(W.evFound).length, hasRit = W.inv.some(k => RITUAL_ITEMS.includes(k));
-  return [
-    { t: '收集证据，确认怨灵种类（' + Math.min(n, 2) + '/2）', done: n >= 2 },
-    { t: '找到它惧怕的遗物', done: hasRit && n >= 2 && W.inv.includes(GHOSTS[candidates()[0]] ? GHOSTS[candidates()[0]].item : '') },
-    { t: '同时拉下客厅和餐厅的两根拉杆，打开祈祷室', done: !!W.f.chapel },
-    { t: '在祭坛举行驱灵仪式（灵视者主持，持灯者守护）', done: !W.f.seal },
-    { t: '一起登上门厅的楼梯', done: W.phase === 'won' },
-  ];
-}
+function objectives() { return MAP.F.objectives(W); }
 function hints() {
-  const h = [];
-  if (!W.f.study) h.push('书房的门上有符文锁。密码写在某面墙上，只有灵视者能看见；只有持灯者能转动转盘。');
-  if (!W.f.power) h.push(W.f.shelf ? '杂物间里有保险丝盒，缺一根保险丝。恢复电力能打开温室，房间亮起来也不那么可怕。' : '温室的卷帘门需要电。客厅里有个书架后面在漏风——灵视者看得见。');
-  if (!W.f.chapel) h.push('祈祷室的铁门由两根拉杆控制：一根在客厅，一根在餐厅，要同时拉下。');
-  if (W.f.burned.length) h.push('已经烧掉：' + W.f.burned.map(k => ITEMS[k].icon + ITEMS[k].name).join('、') + '。');
+  const h = MAP.F.hints(W).slice();
+  if (W.f.burned && W.f.burned.length) h.push('已经烧掉：' + W.f.burned.map(k => ITEMS[k].icon + ITEMS[k].name).join('、') + '。');
   h.push('灯开始乱闪就是猎杀的前兆：躲进柜子，或者用强光定住它。');
   return h;
 }
@@ -126,7 +121,7 @@ function updateHUD(me, dt) {
   if (slow) {
     $('hBadge').innerHTML = `<span style="color:${ROLES[me.role].color}">${ROLES[me.role].name}</span><small>${me.name}</small>`;
     $('battRow').classList.toggle('hidden', me.role !== 'L');
-    const ob = curObjective(); const hd = W.f.seal === 0 && W.phase === 'play' ? '<small>灵封碎了——回到门厅的楼梯</small>' : '';
+    const ob = curObjective(); const hd = W.f.seal === 0 && W.phase === 'play' ? '<small>' + MAP.F.exitHint + '</small>' : '<small>' + MAP.F.title + '</small>';
     $('obj').innerHTML = ob + hd;
     $('hInv').innerHTML = W.inv.map(k => `<div class="slot" title="${ITEMS[k].name}">${ITEMS[k].icon}</div>`).join('') + Object.keys(W.evFound).map(k => `<div class="slot" style="border-color:rgba(143,211,255,.5);font-size:18px" title="${EVID[k].name}">${EVID[k].icon}</div>`).join('');
     $('partnerRow').innerHTML = `<span style="color:${ROLES[o.role].color}">${ROLES[o.role].name}</span>　${o.down ? '<b style="color:#ff6b6b;width:auto">倒地 ' + Math.max(0, o.downT) + 's</b>' : o.hide >= 0 ? '躲在柜子里' : '恐惧 ' + Math.round(o.fear)}${W.dc ? '　<b style="color:#ff6b6b;width:auto">断线</b>' : ''}`;
@@ -146,6 +141,14 @@ function updateHUD(me, dt) {
   $('hidden').classList.toggle('hidden', me.hide < 0);
   $('tBoost').classList.toggle('hidden', me.role !== 'L'); $('tGlyph').classList.toggle('hidden', me.role !== 'S');
   updateOverlays(me, dt);
+  updateFloorCard();
+}
+/* black title card while climbing the stairs and while the next floor fades in */
+function updateFloorCard() {
+  const el = $('floorCard'), now = performance.now();
+  if (W && W.phase === 'ascend') { el.classList.remove('hidden'); el.style.opacity = 1; el.querySelector('.ft').textContent = ''; el.querySelector('.fs').textContent = '……'; return; }
+  if (UI.card) { const a = (now - UI.card.t0) / 1000; if (a > 4.2) { UI.card = null; el.classList.add('hidden'); return; } el.classList.remove('hidden'); el.querySelector('.ft').textContent = UI.card.title; el.querySelector('.fs').textContent = UI.card.sub; el.style.opacity = a < 2.2 ? 1 : clamp(1 - (a - 2.2) / 2, 0, 1); el.style.background = a < 1.4 ? '#000' : 'rgba(0,0,0,' + clamp(1 - (a - 1.4) / 1.2, 0, 1) + ')'; return; }
+  el.classList.add('hidden');
 }
 /* name tags, pings, bubbles, partner arrow */
 function overlayEl(key, cls, html) { let e = UI.tagEls[key]; if (!e) { e = document.createElement('div'); e.className = cls; $('tags').appendChild(e); UI.tagEls[key] = e; } if (html != null && e._h !== html) { e.innerHTML = html; e._h = html; } return e; }
@@ -175,17 +178,21 @@ function processEvents() {
     if (e.s <= UI.lastSeq) continue; UI.lastSeq = e.s;
     if (e.to != null && e.to >= 0 && e.to !== ME) continue;
     switch (e.k) {
-      case 'snd': sfx(e.n, e.x, e.z, e.v); break;
+      case 'snd': sfx(e.n, e.x, e.z, e.v); if (/^bell\d$/.test(e.n) && R3.bells[+e.n[4]]) R3.bells[+e.n[4]].sw = 1; break;
       case 'msg': addLog(e.txt, e.c); break;
       case 'ui': if (e.ui === 'close') { if (UI.modal === 'mRune') closeModal(); } else openModal(e.ui === 'rune' ? 'mRune' : 'mAltar'); break;
       case 'ping': UI.pings.push({ id: ++bubId, x: e.x, z: e.z, t: performance.now(), c: e.by === ME ? '#e2b45c' : ROLES[W.p[e.by].role].color }); sfx('ping', e.x, e.z, 0.8); break;
       case 'quick': { const q = QUICK.find(x => x.k === e.q); UI.bubbles.push({ id: ++bubId, by: e.by, t: performance.now(), html: `<span style="color:${q.c}">${q.t}</span>` }); sfx('quick'); if (e.by !== ME) addLog(W.p[e.by].name + '：' + q.t, q.c); break; }
       case 'glyph': UI.bubbles.push({ id: ++bubId, by: e.by, t: performance.now(), html: `<span class="g">${GLYPHS[e.g]}</span>` }); sfx('quick'); if (e.by !== ME) addLog(W.p[e.by].name + ' 发来符文：' + GLYPHS[e.g], '#8fd3ff'); break;
       case 'evidence': break;
+      case 'floor': if (NETROLE === 'guest') guestFloor(e); break;
       case 'fx':
         if (e.fx === 'hunt') { R3.shake = Math.max(R3.shake, 0.6); }
         if (e.fx === 'power') toast('电力恢复了', '#ffd36b');
-        if (e.fx === 'banish') { R3.flash = 1; R3.flash2 = 0.9; toast('怨灵消散了', '#c8a8ff'); }
+        if (e.fx === 'banish') { R3.flash = 1; R3.flash2 = 0.9; toast(e.boss ? '宅主安息了' : '怨灵消散了', '#c8a8ff'); }
+        if (e.fx === 'reveal' && W.setup.gtype !== 'boss') toast('它现出了真身——' + GT(W.setup.gtype).name, '#9fe8ff');
+        if (e.fx === 'anchor') { R3.shake = 1.2; R3.flash = 0.6; R3.flash2 = 0.3; }
+        if (e.fx === 'ascend') { UI.ascending = true; closeModal(); }
         if (e.fx === 'wrong') { R3.shake = 1.2; }
         if (e.fx === 'caught' && e.who === ME) R3.shake = 1.5;
         break;
@@ -197,11 +204,15 @@ function showResult(phase, why) {
   closeModal();
   setTimeout(() => {
     if (STATE.mode !== 'play') return;
-    showScreen('result'); sfx(phase === 'won' ? 'win' : 'lose');
-    $('rTitle').textContent = phase === 'won' ? '上楼' : '永夜'; $('rTitle').style.color = phase === 'won' ? '#e8d7a8' : '#d0453f';
+    const won = phase === 'won';
+    showScreen('result'); sfx(won ? 'win' : 'lose');
+    $('rTitle').textContent = won ? '黎明' : '永夜'; $('rTitle').style.color = won ? '#f0dca8' : '#d0453f';
     $('rWhy').textContent = why || '';
-    const m = Math.floor(W.t / 60), s2 = Math.floor(W.t % 60);
-    $('rStats').innerHTML = `<div>用时　<b>${m} 分 ${s2} 秒</b></div><div>怨灵　<b>${GHOSTS[W.setup.gtype].name}</b></div><div>经历猎杀　<b>${W.stats ? W.stats.hunts : '-'}</b></div><div>强光定住　<b>${W.stats ? W.stats.stuns : '-'}</b></div><div>倒地次数　<b>${W.stats ? W.stats.downs : '-'}</b></div><div>证据　<b>${Object.keys(W.evFound).map(k => EVID[k].icon).join(' ') || '无'}</b></div>`;
-    $('rAgain').textContent = NETROLE === 'host' ? '返回房间' : '等待房主'; $('rAgain').disabled = NETROLE !== 'host'; $('rStatus').textContent = phase === 'won' ? '二楼……敬请期待。' : '';
-  }, phase === 'won' ? 1800 : 2600);
+    const tt = (W.stats.t || 0) + W.t, m = Math.floor(tt / 60), s2 = Math.floor(tt % 60);
+    $('rStats').innerHTML = `<div>${won ? '总用时' : '用时'}　<b>${m} 分 ${s2} 秒</b></div><div>倒在　<b>${won ? '—' : MAP.F.name}</b></div><div>经历猎杀　<b>${W.stats.hunts}</b></div><div>强光定住　<b>${W.stats.stuns}</b></div><div>倒地次数　<b>${W.stats.downs}</b></div><div>${won ? '驱散的怨灵' : '这一层的怨灵'}　<b>${won ? (W.used || []).map(k => GT(k).name).concat(['温夫人']).join('、') : GT(W.setup.gtype).name}</b></div>`;
+    const host = NETROLE !== 'guest';
+    $('rRetry').classList.toggle('hidden', won || !host); $('rRetry').textContent = '重试' + MAP.F.name;
+    $('rAgain').textContent = host ? '返回房间' : '等待房主'; $('rAgain').disabled = !host;
+    $('rStatus').textContent = won ? '雨停了。你们一起看着天亮。' : host ? '' : '房主可以选择重试这一层';
+  }, phase === 'won' ? 2400 : 2600);
 }

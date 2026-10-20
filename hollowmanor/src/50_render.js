@@ -1,7 +1,7 @@
 /* ================= rendering: world assembly, lights, camera, post ================= */
 const R3 = {
   renderer: null, scene: null, cam: null, rt: null, postScene: null, postCam: null, postMat: null,
-  world: null, doors: [], hides: [], levers: [], dials: [], fuseSlot: null, fuseLamp: null, flames: [], bulbs: [], fixtures: [], pool: [],
+  world: null, doors: [], hides: [], levers: [], dials: [], bells: [], lampFx: [], manq: [], anchors: [], cracks: [], tub: null, circle: null, hatch: null, fuseSlot: null, fuseLamp: null, flames: [], bulbs: [], fixtures: [], pool: [],
   chars: [], ghost: null, items: [], ev: [], frost: [], mirrors: [], spirit: [], camT: new THREE.Vector3(17, 0, 20), camPos: new THREE.Vector3(),
   shake: 0, flash: 0, quality: 1, glass: [], shafts: [], pend: null, hands: null, mobile: null, seal: null, gate: null, rain: null,
 };
@@ -81,7 +81,7 @@ function buildWorld(setup) {
   if (R3.world) { R3.scene.remove(R3.world); }
   const W = R3.world = new THREE.Group(); R3.scene.add(W);
   const stat = grp(W); // static, merged later
-  Object.assign(R3, { doors: [], hides: [], levers: [], dials: [], flames: [], bulbs: [], fixtures: [], items: [], ev: [], frost: [], mirrors: [], spirit: [], glass: [], shafts: [] });
+  Object.assign(R3, { rockers: [], doors: [], hides: [], levers: [], dials: [], bells: [], lampFx: [], manq: [], anchors: [], cracks: [], tub: null, circle: null, hatch: null, gate: null, pend: null, mobile: null, fuseSlot: null, fuseLamp: null, flames: [], bulbs: [], fixtures: [], items: [], ev: [], frost: [], mirrors: [], spirit: [], glass: [], shafts: [] });
   const CS = MAP.CS, WH = MAP.WALL_H, T = MAP.WT / 2;
   // floors + shadow-only ceilings
   for (const r of MAP.rooms) {
@@ -113,12 +113,18 @@ function buildWorld(setup) {
   // furniture
   for (const f of MAP.furn) {
     const fb = FB[f.k]; if (!fb) continue;
-    const m = fb(f.o); m.position.set(f.x, 0, f.z); m.rotation.y = f.r; stat.add(m);
+    const m = fb(f.o); m.position.set(f.x, f.o.y || 0, f.z); m.rotation.y = f.r; stat.add(m);
+    if (f.k === 'rockingChair') m.traverse(o => { if (o.userData.rocker) R3.rockers.push(o); });
     if (f.o.hide) { const h = MAP.hides.find(h => h.f === f.id); R3.hides[h.id] = m.userData.doors; }
     if (f.k === 'grandClock') { m.traverse(o => { if (o.userData.pendulum) R3.pend = o; if (o.userData.clockHands) R3.hands = o; }); }
     if (f.k === 'crib') m.traverse(o => { if (o.userData.spin) R3.mobile = o; });
-    if (f.k === 'stairs') buildGate(W, f);
+    if (f.k === 'mannequin') m.traverse(o => { if (o.userData.mHead) R3.manq.push({ f, head: o, a: 0 }); });
+    if (f.k === 'tub') m.traverse(o => { if (o.userData.water) R3.tub = { f, water: o }; });
+    if (f.o.bell != null) m.traverse(o => { if (o.userData.bellBody) R3.bells[f.o.bell] = { f, body: o, sw: 0 }; });
+    if (f.k === 'ritualCircle') R3.circle = { f, m };
+    if (f.k === 'roofHatch') m.traverse(o => { if (o.userData.hatchLid) R3.hatch = { f, lid: o }; });
   }
+  if (MAP.F.gateAt) buildGate(W, MAP.F.gateAt);
   // wall-mounted
   for (const w of MAP.wallDecor) {
     const fb = WB[w.k]; if (!fb) continue; const m = fb(w); m.position.set(w.x, w.y, w.z); m.rotation.y = w.r; stat.add(m);
@@ -126,12 +132,14 @@ function buildWorld(setup) {
     if (w.k === 'runePanel') R3.dials = m.userData.dials;
     if (w.k === 'fuseBox') m.traverse(o => { if (o.userData.fuseSlot) R3.fuseSlot = o; if (o.userData.fuseLamp) R3.fuseLamp = o; });
   }
-  PAINTDEF.forEach(([x, z, r, s], i) => { const p = WB.painting(i, s || 1); p.position.set(x, 1.75, z); p.rotation.y = r; stat.add(p); });
+  MAP.paint.forEach(([x, z, r, s, kind], i) => { const p = WB.painting(i, s || 1, kind); p.position.set(x, Math.min(1.75, MAP.WALL_H - 0.75), z); p.rotation.y = r; stat.add(p); });
   // mirrors (surface + reflection figure)
   for (const mr of MAP.mirrors) {
     const g = grp(W, mr.x, mr.y, mr.z, mr.r); let off = 0.03;
     if (mr.kind === 'chevalMirror') { g.position.y = 1.15; off = 0.02; g.rotation.x = 0; }
-    const surf = addM(g, GEO.plane(mr.mw, mr.mh), new THREE.MeshStandardMaterial({ color: 0x1a2028, roughness: 0.05, metalness: 0.9, envMapIntensity: 0 }), 0, 0, off); surf.castShadow = false;
+    if (mr.kind === 'vanity') off = 0.025;
+    const surfGeo = mr.kind === 'vanity' ? new THREE.CircleGeometry(0.5, 32).scale(mr.mw, mr.mh, 1) : GEO.plane(mr.mw, mr.mh);
+    const surf = addM(g, surfGeo, new THREE.MeshStandardMaterial({ color: 0x1a2028, roughness: 0.05, metalness: 0.9, envMapIntensity: 0 }), 0, 0, off); surf.castShadow = false;
     const fig = addM(g, GEO.plane(mr.mw * 0.55, mr.mh * 0.85), new THREE.MeshBasicMaterial({ map: TEX.mirrorGhost, transparent: true, opacity: 0, depthWrite: false }), rr(-0.08, 0.08), -0.02, off + 0.004); fig.castShadow = false;
     const sheen = addM(g, GEO.plane(mr.mw, mr.mh), new THREE.MeshBasicMaterial({ color: 0xbfd8ff, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false }), 0, 0, off + 0.006); sheen.castShadow = false;
     R3.mirrors.push({ mr, fig, sheen, lit: 0 });
@@ -139,11 +147,13 @@ function buildWorld(setup) {
   // light fixtures
   for (const l of MAP.lights) {
     let m = null;
-    if (LB[l.k]) { m = LB[l.k](); m.position.set(l.x, l.y, l.z); if (l.k === 'sconce') { const n = l.z < 9 ? 0 : PI; m.rotation.y = n; } stat.add(m); }
-    R3.fixtures.push({ l, m, k: l.k === 'candles' || l.k === 'candleS' ? 'candle' : l.k === 'fire' ? 'fire' : 'elec', phase: rr(0, 9) });
+    if (LB[l.k]) { m = LB[l.k](l); m.position.set(l.x, l.y, l.z); m.rotation.y = l.r != null ? l.r : (l.k === 'sconce' ? (l.z < 9 ? 0 : PI) : 0); stat.add(m); }
+    const kind = l.k === 'candles' || l.k === 'candleS' ? 'candle' : l.k === 'fire' ? 'fire' : l.k === 'oilLamp' ? 'oil' : 'elec';
+    if (kind === 'oil') m.traverse(o => { if (o.userData.oilGlow) R3.lampFx[MAP.lamps.indexOf(l)] = o; });
+    R3.fixtures.push({ l, m, k: kind, phase: rr(0, 9), li: MAP.lamps.indexOf(l) });
   }
   // outside: lawn, path, fence, trees, tombstones, porch
-  buildOutside(stat, W);
+  if (MAP.F.outside === 'ground') buildOutside(stat, W); else buildRoofOutside(stat, W);
   // merge everything static
   mergeStatic(stat);
   RNG = saved;
@@ -197,9 +207,8 @@ function buildDoors(stat, W) {
     const sg = grp(stat, g.position.x, 0, g.position.z, g.rotation.y);
     const w = d.w, top = d.kind === 'arch' ? 2.65 : 2.3;
     // casing on both faces
-    for (const sz of [-1, 1]) { bx(sg, trim, 0.1, top + 0.02, 0.04, -w / 2 - 0.03, top / 2, sz * 0.11); bx(sg, trim, 0.1, top + 0.02, 0.04, w / 2 + 0.03, top / 2, sz * 0.11); bx(sg, trim, w + 0.3, 0.12, 0.05, 0, top + 0.06, sz * 0.11); }
-    bx(sg, M.wood(0x1e1008, 0.6), w, 0.03, 0.22, 0, 0.015, 0); // threshold
-    for (const e of [-w / 2, w / 2]) bx(sg, trim, 0.04, top, MAP.WT, e, top / 2, 0); // jambs
+    if (d.kind !== 'crack') for (const sz of [-1, 1]) { bx(sg, trim, 0.1, top + 0.02, 0.04, -w / 2 - 0.03, top / 2, sz * 0.11); bx(sg, trim, 0.1, top + 0.02, 0.04, w / 2 + 0.03, top / 2, sz * 0.11); bx(sg, trim, w + 0.3, 0.12, 0.05, 0, top + 0.06, sz * 0.11); }
+    if (d.kind !== 'crack') { bx(sg, M.wood(0x1e1008, 0.6), w, 0.03, 0.22, 0, 0.015, 0); for (const e of [-w / 2, w / 2]) bx(sg, trim, 0.04, top, MAP.WT, e, top / 2, 0); } // threshold + jambs
     const ent = { d, g, leaves: [], kind: d.kind };
     if (d.kind === 'arch') { for (const sx of [-1, 1]) { bx(sg, M.paint(0x2a1e16, 0.6), 0.22, 2.65, 0.3, sx * (w / 2 + 0.11), 1.325, 0); addM(sg, GEO.box(0.3, 0.12, 0.36), trim, sx * (w / 2 + 0.11), 2.6, 0); } }
     if (d.kind === 'door' || d.kind === 'rune' || d.kind === 'double' || d.kind === 'front') {
@@ -221,12 +230,44 @@ function buildDoors(stat, W) {
     }
     if (d.kind === 'shutter') { const s = grp(g, 0, 0, 0); const sm = M.metal(0x4a4c4e, 0.55, 0.7); for (let k = 0; k < 15; k++) bx(s, sm, w, 0.15, 0.04, 0, 0.08 + k * 0.152, 0, 0, 0.01); bx(s, M.metal(0x2a2a2a), w, 0.08, 0.06, 0, 0.05, 0); bx(sg, M.metal(0x3a3a3a, 0.5), w + 0.2, 0.35, 0.3, 0, 2.48, 0.0); const lamp = addM(sg, GEO.sph(0.03, 8, 6), stdMat({ color: 0x400808, emissive: 0xff2010, emissiveIntensity: 1.0 }, 'shutLamp', false), w / 2 + 0.2, 1.6, 0.14); ent.lamp = lamp; ent.slide = s; }
     if (d.kind === 'shelf') { const bs = FB.bookshelf({}, 1); const s = grp(g, 0, 0, -0.33); s.add(bs); ent.slide = s; }
+    if (d.kind === 'crack') {
+      // a full-height wall plug; the seer sees it go translucent and a glowing fissure through it
+      const ra = d.dir === 'h' ? roomAt(d.cx, d.cz - 0.25) : roomAt(d.cx - 0.25, d.cz), rb = d.dir === 'h' ? roomAt(d.cx, d.cz + 0.25) : roomAt(d.cx + 0.25, d.cz);
+      const mk = ri2 => { const m0 = ri2 < 0 ? MAT.wall.ext : MAT.wall[MAP.rooms[ri2].wall]; const m = m0.clone(); m.transparent = true; m.onBeforeCompile = m0.onBeforeCompile; m.customProgramCacheKey = m0.customProgramCacheKey; return m; };
+      const ma = mk(ra), mb = mk(rb), top = 2.3;
+      const pa = addM(g, new THREE.PlaneGeometry(w, top), ma, 0, top / 2, -MAP.WT / 2, 0, PI), pb = addM(g, new THREE.PlaneGeometry(w, top), mb, 0, top / 2, MAP.WT / 2);
+      for (const pp of [pa, pb]) { const uv = pp.geometry.attributes.uv; for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * w / 2, uv.getY(i) * top / 3); }
+      const fis = new THREE.MeshBasicMaterial({ map: crackTex(), color: 0x9fe8ff, transparent: true, opacity: 0.9, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide });
+      const fa = addM(g, new THREE.PlaneGeometry(w * 0.9, top * 0.8), fis, 0, top * 0.45, -MAP.WT / 2 - 0.01, 0, PI), fb2 = addM(g, new THREE.PlaneGeometry(w * 0.9, top * 0.8), fis, 0, top * 0.45, MAP.WT / 2 + 0.01); fa.castShadow = fb2.castShadow = false;
+      R3.cracks.push({ mats: [ma, mb], fis, planes: [pa, pb], glow: [fa, fb2] });
+    }
+    if (d.kind === 'seal') {
+      // heavy attic door wrapped in chains and paper talismans
+      const hinge = grp(g, -w / 2, 0, 0), leaf = grp(hinge, w / 2, 0, 0), wd = stdMat({ color: 0x3a2a1c, roughness: 0.9, map: TEX.grain }, 'sealWood');
+      for (let k = 0; k < 5; k++) bx(leaf, wd, w / 5 - 0.01, 2.26, 0.08, -w / 2 + (k + 0.5) * w / 5, 1.13, 0, 0, 0.006);
+      for (const y of [0.4, 1.2, 2.0]) bx(leaf, M.metal(0x1a1816, 0.5, 0.7), w - 0.04, 0.09, 0.03, 0, y, 0.05, 0, 0.004);
+      const chainsG = grp(g, 0, 0, 0); chainsG.userData.dyn = true;
+      const cm2 = M.metal(0x2a2622, 0.45, 0.85);
+      for (const sz of [-1, 1]) for (const a of [0.55, -0.55]) for (let k = 0; k < 16; k++) { const t = k / 15, x = -w / 2 - 0.1 + t * (w + 0.2), y = 1.15 + (t - 0.5) * Math.tan(a) * (w + 0.2); addM(chainsG, GEO.tor(0.045, 0.012, TAU, 4, 10), cm2, x, y, sz * 0.1, 0, (k % 2) * HP, a); }
+      const tal = stdMat({ color: 0xd8c27a, roughness: 0.9, map: talismanTex(), side: THREE.DoubleSide }, 'talisman', false);
+      for (const sz of [-1, 1]) for (let k = 0; k < 3; k++) addM(chainsG, GEO.plane(0.16, 0.42), tal, -0.45 + k * 0.45, 1.5 + (k % 2) * 0.25, sz * 0.13, 0, sz < 0 ? PI : 0, (k - 1) * 0.12);
+      addM(chainsG, GEO.box(0.18, 0.22, 0.1, 0.02), M.metal(0x3a3228, 0.4, 0.8), 0, 1.15, 0.12);
+      ent.leaves.push({ hinge, side: -1 }); ent.chains = chainsG;
+    }
+    if (d.kind === 'attic') {
+      const n = 1, lw = w, side = -1, hinge = grp(g, side * w / 2, 0, 0), leaf = grp(hinge, -side * lw / 2, 0, 0), wd = stdMat({ color: 0x4a3626, roughness: 0.9, map: TEX.grain }, 'atticDoor');
+      for (let k = 0; k < 4; k++) bx(leaf, wd, lw / 4 - 0.008, 2.24, 0.045, -lw / 2 + (k + 0.5) * lw / 4, 1.12, 0, 0, 0.004);
+      for (const y of [0.35, 1.9]) bx(leaf, wd, lw - 0.06, 0.12, 0.03, 0, y, 0.035, 0, 0.004);
+      const zb = bx(leaf, wd, 0.1, 1.7, 0.03, 0, 1.12, 0.035, 0, 0.004); zb.rotation.z = 0.62;
+      addM(leaf, GEO.tor(0.04, 0.008, TAU, 6, 12), M.metal(0x2a2622, 0.5, 0.7), lw / 2 - 0.12, 1.0, 0.06);
+      ent.leaves.push({ hinge, side });
+    }
     for (const l of ent.leaves) mergeRig(l.hinge); if (ent.slide) mergeRig(ent.slide);
     R3.doors[d.idx] = ent;
   }
 }
-function buildGate(W, f) {
-  const g = grp(W, f.x, 0, f.z + 4.15), ir = M.metal(0x121110, 0.45, 0.8), gold = M.metal(0x8a6a30, 0.35);
+function buildGate(W, at) {
+  const g = grp(W, at.x, 0, at.z), ir = M.metal(0x121110, 0.45, 0.8), gold = M.metal(0x8a6a30, 0.35);
   const leaves = [];
   for (const sx of [-1, 1]) { const h = grp(g, sx * 1.15, 0, 0), l = grp(h, -sx * 0.575, 0, 0); for (let k = 0; k < 6; k++) { addM(l, GEO.cyl(0.015, 0.015, 1.7, 6), ir, -0.5 + k * 0.2, 0.85, 0); addM(l, GEO.cone(0.03, 0.08, 6), gold, -0.5 + k * 0.2, 1.75, 0); } for (const y of [0.2, 0.9, 1.55]) addM(l, GEO.box(1.12, 0.04, 0.03), ir, 0, y, 0); addM(l, GEO.tor(0.18, 0.015, TAU, 6, 24), ir, 0, 1.22, 0); leaves.push({ h, sx }); }
   // spectral seal across the gate
@@ -260,6 +301,30 @@ function buildOutside(W, Wdyn) {
     fragmentShader: 'varying float vA; void main(){ if (vA <= 0.0) discard; gl_FragColor = vec4(0.6,0.7,0.85,vA); }' });
   R3.rain = new THREE.LineSegments(rg, rm); R3.rain.frustumCulled = false; Wdyn.add(R3.rain);
 }
+/* upper floors: the roofs of the floor below slope away under the windows; the yard is far below in the dark */
+function buildRoofOutside(W, Wdyn) {
+  const sh = stdMat({ map: TEX.shingle, roughness: 0.85, bumpMap: TEX.shingle, bumpScale: 1.5 }, 'shingle', false);
+  const run = 5, drop = 2.2, Wd = MAP.W, Hd = MAP.H, slope = Math.hypot(run, drop), ang = Math.atan2(drop, run);
+  const strip = (len, x, z, ry) => { const g = new THREE.PlaneGeometry(len, slope); const uv = g.attributes.uv; for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * len / 2, uv.getY(i) * slope / 2); const m = addM(W, g, sh, x, -drop / 2 - 0.05, z, 0, ry); m.rotateX(-HP + ang); m.castShadow = false; return m; };
+  strip(Wd + 2 * run, Wd / 2, -run / 2, PI); strip(Wd + 2 * run, Wd / 2, Hd + run / 2, 0); strip(Hd, -run / 2, Hd / 2, -HP); strip(Hd, Wd + run / 2, Hd / 2, HP);
+  // gutters
+  const gm = M.metal(0x2a2a28, 0.5, 0.7);
+  addM(W, GEO.cyl(0.06, 0.06, Wd + 2 * run, 8), gm, Wd / 2, -drop - 0.05, -run, 0, 0, HP); addM(W, GEO.cyl(0.06, 0.06, Wd + 2 * run, 8), gm, Wd / 2, -drop - 0.05, Hd + run, 0, 0, HP);
+  // chimneys poking through
+  const br = stdMat({ map: TEX.w_ext, roughness: 0.9 }, 'chimney', false);
+  for (const [x, z] of MAP.F.chimneys || [[6, -1.6], [28, Hd + 1.8]]) { bx(W, br, 1.2, 3.4, 1.0, x, -0.6, z, 0, 0.02); bx(W, M.paint(0x1a1614, 0.9), 1.35, 0.12, 1.15, x, 1.1, z); }
+  const gr = new THREE.Mesh(new THREE.PlaneGeometry(140, 120), MAT.grass); gr.rotation.x = -HP; gr.position.set(17, -3.0 * (MAP.fi + 1) - 0.5, 13); W.add(gr);
+  const N = SET.quality === 'low' ? 900 : 2200, pos = new Float32Array(N * 6), seed = new Float32Array(N * 2);
+  for (let i = 0; i < N; i++) { const x = rr(-14, 48), y = rr(-2, 4), z = rr(-12, 40); pos.set([x, y, z, x - 0.04, y + 0.45, z + 0.02], i * 6); seed[i * 2] = seed[i * 2 + 1] = rr(0, 1); }
+  const rg = new THREE.BufferGeometry(); rg.setAttribute('position', new THREE.BufferAttribute(pos, 3)); rg.setAttribute('seed', new THREE.BufferAttribute(seed, 1));
+  const rm = new THREE.ShaderMaterial({ uniforms: { uT: { value: 0 } }, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+    vertexShader: 'uniform float uT; attribute float seed; varying float vA; void main(){ vec3 p = position; float y = mod(p.y + 2.0 - uT*11.0 - seed*6.0, 6.0) - 2.0; p.y = y; bool inside = p.x > -0.5 && p.x < 34.5 && p.z > -0.5 && p.z < 26.5; vA = inside ? 0.0 : 0.2; vec4 w = modelMatrix*vec4(p,1.0); gl_Position = projectionMatrix*viewMatrix*w; }',
+    fragmentShader: 'varying float vA; void main(){ if (vA <= 0.0) discard; gl_FragColor = vec4(0.6,0.7,0.85,vA); }' });
+  R3.rain = new THREE.LineSegments(rg, rm); R3.rain.frustumCulled = false; Wdyn.add(R3.rain);
+}
+function crackTex() { if (TEX.crack) return TEX.crack; const c = cnv(128, 256), g = c.getContext('2d'); g.clearRect(0, 0, 128, 256); g.strokeStyle = '#fff'; g.shadowColor = '#fff'; g.shadowBlur = 14; const br = (x, y, a, L, w) => { if (L < 8 || w < 0.4) return; let cx = x, cy = y; g.lineWidth = w; g.beginPath(); g.moveTo(cx, cy); for (let i = 0; i < 6; i++) { a += tr(-0.5, 0.5); cx += Math.cos(a) * L / 6; cy += Math.sin(a) * L / 6; g.lineTo(cx, cy); } g.stroke(); br(cx, cy, a + tr(-0.8, 0.8), L * 0.7, w * 0.7); if (texRng() < 0.6) br(cx, cy, a + tr(-1.2, 1.2), L * 0.5, w * 0.5); }; br(64, 0, HP, 140, 5); br(64, 256, -HP, 120, 4); TEX.crack = mkTex(c); TEX.crack.wrapS = TEX.crack.wrapT = THREE.ClampToEdgeWrapping; return TEX.crack; }
+function talismanTex() { if (TEX.talisman) return TEX.talisman; const c = cnv(64, 160), g = c.getContext('2d'); g.fillStyle = '#e0c870'; g.fillRect(0, 0, 64, 160); g.strokeStyle = '#8a1010'; g.lineWidth = 3; g.strokeRect(4, 4, 56, 152); g.fillStyle = '#8a1010'; g.font = 'bold 26px serif'; g.textAlign = 'center'; ['敕', '令', '封', '镇'].forEach((ch, i) => g.fillText(ch, 32, 34 + i * 34)); for (let k = 0; k < 300; k++) { g.fillStyle = `rgba(60,30,10,${tr(0, 0.15)})`; g.fillRect(tr(0, 64), tr(0, 160), 2, 2); } TEX.talisman = mkTex(c); return TEX.talisman; }
+function numTex(n) { TEX.num = TEX.num || []; if (TEX.num[n]) return TEX.num[n]; const c = cnv(128, 128), g = c.getContext('2d'); g.clearRect(0, 0, 128, 128); g.fillStyle = '#fff'; g.shadowColor = '#fff'; g.shadowBlur = 16; g.font = 'bold 92px serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(['', '一', '二', '三', '四', '五'][n] || n, 64, 68); const t = mkTex(c); t.wrapS = t.wrapT = THREE.ClampToEdgeWrapping; TEX.num[n] = t; return t; }
 function mergeStatic(stat) {
   stat.updateMatrixWorld(true);
   const groups = new Map();
@@ -287,7 +352,7 @@ function mergeStatic(stat) {
   });
   // re-parent dynamic subtrees into the world (keep their world transform)
   const dynRoots = new Set(); for (const o of keep) { let p = o; while (p.parent && p.parent !== stat && !p.userData.dyn) p = p.parent; dynRoots.add(p.userData.dyn ? p : o); }
-  for (const r of dynRoots) { r.updateMatrixWorld(true); const m = r.matrixWorld.clone(); R3.world.add(r); m.decompose(r.position, r.quaternion, r.scale); }
+  for (const r of dynRoots) { r.updateMatrixWorld(true); const m = r.matrixWorld.clone(); R3.world.add(r); m.decompose(r.position, r.quaternion, r.scale); r.rotation.setFromQuaternion(r.quaternion, 'YXZ'); }
   // keep animated item references valid (pendulum etc. are dyn roots; they moved, still same objects)
   stat.removeFromParent();
   for (const { mat, cast, list } of groups.values()) {
@@ -297,28 +362,35 @@ function mergeStatic(stat) {
   R3.flames = []; R3.world.traverse(o => { if (o.userData.flame) R3.flames.push(o); });
   R3.bulbs = [];
 }
-/* ---------- per-game setup visuals: evidence, rune code, items ---------- */
+/* ---------- per-game setup visuals: evidence, rune code, items, anchors, bell order ---------- */
+const spiritMat = (map, color = 0x9ff0ff, op = 0.95) => new THREE.MeshBasicMaterial({ map, color, transparent: true, opacity: op, blending: THREE.AdditiveBlending, depthWrite: false });
 function buildSetup(st) {
   const W = R3.world;
-  for (const o of [...R3.ev, ...R3.frost.map(f => f.m), ...R3.spirit, ...R3.items.map(i => i.m)]) o.removeFromParent && o.removeFromParent();
-  R3.ev = []; R3.frost = []; R3.spirit = []; R3.items = [];
-  for (const e of st.ev) {
-    if (e.k === 'prints') { const m = new THREE.Mesh(GEO.plane(0.55, 0.55), new THREE.MeshBasicMaterial({ map: TEX.hand, color: 0x7fe6ff, transparent: true, opacity: 0.9, blending: THREE.AdditiveBlending, depthWrite: false })); m.position.set(e.x + Math.sin(e.r) * 0.012, e.y, e.z + Math.cos(e.r) * 0.012); m.rotation.y = e.r; m.rotation.z = rr(-0.4, 0.4); W.add(m); m.userData.spirit = true; R3.spirit.push(m); }
+  for (const o of [...R3.ev, ...R3.frost.map(f => f.m), ...R3.spirit, ...R3.items.map(i => i.m), ...R3.anchors.map(a => a.g)]) o.removeFromParent && o.removeFromParent();
+  R3.ev = []; R3.frost = []; R3.spirit = []; R3.items = []; R3.anchors = [];
+  for (const e of st.ev || []) {
+    if (e.k === 'prints') { const m = new THREE.Mesh(GEO.plane(0.55, 0.55), spiritMat(TEX.hand, 0x7fe6ff, 0.9)); m.position.set(e.x + Math.sin(e.r) * 0.012, e.y, e.z + Math.cos(e.r) * 0.012); m.rotation.y = e.r; m.rotation.z = rr(-0.4, 0.4); W.add(m); m.userData.spirit = true; R3.spirit.push(m); }
     if (e.k === 'orbs') { const g = grp(W, e.x, e.y, e.z); for (let k = 0; k < 3; k++) { const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: TEX.glow, color: 0x9fe8ff, transparent: true, opacity: 0.8, blending: THREE.AdditiveBlending, depthWrite: false })); s.scale.setScalar(rr(0.12, 0.22)); s.userData.ph = rr(0, 9); g.add(s); } g.userData.orbs = true; g.userData.spirit = true; R3.spirit.push(g); }
     if (e.k === 'frost') { const m = new THREE.Mesh(GEO.plane(1.1, 1.1), new THREE.MeshBasicMaterial({ map: TEX.frost, color: 0xdff4ff, transparent: true, opacity: 0, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -4 })); m.rotation.x = -HP; m.rotation.z = rr(0, TAU); m.position.set(e.x, (e.y || 0) + 0.015, e.z); W.add(m); R3.frost.push({ e, m, a: 0 }); }
   }
   // rune code written on a wall (spirit only)
-  if (st.codeSpot) { const c = st.codeSpot, g = grp(W, c.x + Math.sin(c.r) * 0.015, c.y + 0.25, c.z + Math.cos(c.r) * 0.015, c.r); st.code.forEach((gi, i) => { const m = addM(g, GEO.plane(0.3, 0.3), new THREE.MeshBasicMaterial({ map: TEX.glyph[gi], color: 0x9ff0ff, transparent: true, opacity: 0.95, blending: THREE.AdditiveBlending, depthWrite: false }), -0.5 + i * 0.33, 0, 0); m.castShadow = false; }); const u = addM(g, GEO.plane(1.3, 0.04), new THREE.MeshBasicMaterial({ color: 0x9ff0ff, transparent: true, opacity: 0.6, blending: THREE.AdditiveBlending, depthWrite: false }), 0, -0.22, 0); u.castShadow = false; g.userData.spirit = true; R3.spirit.push(g); }
-  // draft seeping out of the hidden shelf (spirit only)
-  { const d = MAP.doors.find(x => x.kind === 'shelf'), g = grp(W, d.cx, 0, d.cz - 0.6); for (let k = 0; k < 6; k++) { const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: TEX.glow, color: 0x9fd0ff, transparent: true, opacity: 0.5, blending: THREE.AdditiveBlending, depthWrite: false })); s.scale.set(0.5, 1.2, 1); s.userData.ph = k / 6; g.add(s); } g.userData.draft = true; g.userData.spirit = true; R3.spirit.push(g); }
-  for (const it of st.items) { const m = makeItem(it.k); m.position.set(it.x, it.y, it.z); m.rotation.y = rr(0, TAU); W.add(m); R3.items.push({ it, m }); }
+  if (st.codeSpot) { const c = st.codeSpot, g = grp(W, c.x + Math.sin(c.r) * 0.015, c.y + 0.25, c.z + Math.cos(c.r) * 0.015, c.r); st.code.forEach((gi, i) => { const m = addM(g, GEO.plane(0.3, 0.3), spiritMat(TEX.glyph[gi]), -0.5 + i * 0.33, 0, 0); m.castShadow = false; }); const u = addM(g, GEO.plane(1.3, 0.04), spiritMat(null, 0x9ff0ff, 0.6), 0, -0.22, 0); u.castShadow = false; g.userData.spirit = true; R3.spirit.push(g); }
+  // draft seeping out of a hidden shelf door (spirit only)
+  const shelf = MAP.doors.find(x => x.kind === 'shelf');
+  if (shelf) { const g = grp(W, shelf.cx, 0, shelf.cz - 0.6); for (let k = 0; k < 6; k++) { const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: TEX.glow, color: 0x9fd0ff, transparent: true, opacity: 0.5, blending: THREE.AdditiveBlending, depthWrite: false })); s.scale.set(0.5, 1.2, 1); s.userData.ph = k / 6; g.add(s); } g.userData.draft = shelf.idx; g.userData.spirit = true; R3.spirit.push(g); }
+  // bell order: floating numerals only the seer can read
+  if (st.bells) st.bells.forEach((bi, order) => { const b = MAP.furn.find(f => f.o.bell === bi); if (!b) return; const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: numTex(order + 1), color: 0x9ff0ff, transparent: true, opacity: 0.95, blending: THREE.AdditiveBlending, depthWrite: false })); s.scale.setScalar(0.42); s.position.set(b.x, 1.75, b.z); s.userData.bellNum = order; s.userData.spirit = true; W.add(s); R3.spirit.push(s); });
+  // something glints at the bottom of the murky tub (seer only, until drained)
+  for (const it of st.items || []) if (it.need === 'drained') { const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: TEX.glow, color: 0xffe9a0, transparent: true, opacity: 0.9, blending: THREE.AdditiveBlending, depthWrite: false })); s.scale.setScalar(0.5); s.position.set(it.x, it.y + 0.25, it.z); s.userData.tubGlow = 1; s.userData.spirit = true; W.add(s); R3.spirit.push(s); }
+  for (const it of st.items || []) { const m = makeItem(it.k); m.position.set(it.x, it.y, it.z); m.rotation.y = rr(0, TAU); W.add(m); R3.items.push({ it, m }); }
+  for (const a of st.anchors || []) { const g = makeAnchor(a.k); g.position.set(a.x, 0, a.z); g.rotation.y = rr(0, TAU); W.add(g); R3.anchors.push(Object.assign({ a }, g.userData, { g })); }
 }
 
 /* ---------- character instances ---------- */
 function ensureChars() {
   if (R3.chars.length) return;
   for (const role of ['L', 'S']) { const r = role === 'L' ? makeHolder() : makeSeer(); R3.scene.add(r.root); r.ph = 0; r.vis = { x: 0, z: 0, a: 0 }; R3.chars.push(r); }
-  R3.ghost = makeGhost(); R3.scene.add(R3.ghost);
+  R3.ghost = makeGhost(); R3.ghost.userData.kind = 'veil'; R3.scene.add(R3.ghost); R3.ghostForms = { veil: R3.ghost }; R3.ghostKind = 'veil';
 }
 const charOf = role => R3.chars[role === 'L' ? 0 : 1];
 function poseChar(R, p, dt, t) {
@@ -332,6 +404,7 @@ function poseChar(R, p, dt, t) {
   R.ph += dt * (spd > 0.05 ? 3.2 + spd * 1.9 : 0) * (p.down ? 0.4 : 1);
   const s = Math.sin(R.ph), c = Math.cos(R.ph), amp = clamp(spd / 2.5, 0, 1.25);
   const o = R.o;
+  heroIdle(R, t, p);
   if (p.down) {
     // crawling / collapsed
     R.body.position.y = -o.hipY + 0.16; R.body.rotation.x = 1.35;

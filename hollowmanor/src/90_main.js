@@ -3,20 +3,29 @@ const STATE = { mode: 'title' };
 let ME = 0;
 const STEP = 1 / 60;
 let acc = 0, lastT = performance.now();
-function startGame(seed, roles, names, me) {
+function startGame(seed, roles, names, me, floor = 0) {
   ME = me; UI.lastSeq = 0; UI.pings = []; UI.bubbles = []; $('log').innerHTML = '';
-  newGame(seed, roles, names);
-  buildSetup(W.setup);
-  R3.camT.set(W.p[ME].x, 0, W.p[ME].z);
-  INP.ePress = 0; INP.boost = 0; INP.eHeld = false; INP.aimAng = -HP;
-  W.p.forEach(p => { p.inp.press = 0; p.inp.boost = 0; p.lastPress = 0; p.lastBoost = 0; });
+  enterFloor(floor, seed, roles, names, null);
   showScreen('play');
   const r = ROLES[W.p[ME].role];
   addLog('你是' + r.name + '。' + (r.k === 'L' ? '你的手电照得出霜痕和镜中影；机关交给你。' : '你看得见怨灵和灵痕；仪式由你主持。'), r.color);
-  setTimeout(() => addLog('大门锁死了，楼梯被灵封挡住。先四处找找证据。按 J 打开日志。', '#cfc3ae'), 2500);
+  if (floor === 0) setTimeout(() => addLog('大门锁死了，楼梯被灵封挡住。先四处找找证据。按 J 打开日志。', '#cfc3ae'), 2500);
+}
+/* build a floor (sim + map + 3D) — the host calls this directly, the guest when the 'floor' event arrives */
+function enterFloor(fi, seed, roles, names, carry) {
+  newFloor(fi, seed, roles, names, carry);
+  buildWorld(W.setup);
+  R3.camT.set(W.p[ME].x, 0, W.p[ME].z); MENU_W = null;
+  INP.ePress = 0; INP.boost = 0; INP.eHeld = false; INP.aimAng = W.p[0].aim;
+  W.p.forEach(p => { p.inp.press = 0; p.inp.boost = 0; p.lastPress = 0; p.lastBoost = 0; });
+  NET.lastT = 0; NET.inN = 0;
+  const F = FLOORS[fi]; UI.card = { t0: performance.now(), title: F.title, sub: F.sub }; UI.ascending = false;
+  try { const pr = LS.get('prog', { max: 0 }); if (fi > pr.max) LS.set('prog', { max: fi }); } catch (e) { }
+  if (fi > 0) setTimeout(() => { if (W && W.floor === fi) addLog(fi === 1 ? '你们回头看了一眼——楼梯口的灵封又亮了起来。只能往上走。' : '阁楼里很冷。你们能感觉到，她就在这里。', '#cfc3ae'); }, 2600);
   sfx('evidence');
 }
-function backToLobby() { W = null; STATE.mode = 'lobby'; NET.ready = [false, false]; showScreen('lobby'); lobbyUI(); if (R3.world) buildSetup({ ev: [], items: [], code: [] }); }
+function guestFloor(e) { if (!W || W.floor === e.f) return; enterFloor(e.f, e.seed, W.p.map(p => p.role), W.p.map(p => p.name), carryOf(W)); }
+function backToLobby() { W = null; STATE.mode = 'lobby'; NET.ready = [false, false]; showScreen('lobby'); lobbyUI(); if (R3.world) { buildMap(0); buildWorld(null); MENU_W = null; } }
 /* fake partner for local tests (?solo=1, test build only) */
 function soloBot(dt) {
   const b = W.p[1], a = W.p[0], d = dist(a.x, a.z, b.x, b.z);
@@ -30,7 +39,7 @@ function frame() {
   if (window.__dbg && window.__dbg.speed) dt *= window.__dbg.speed;
   if (STATE.mode === 'play' && W) {
     const me = W.p[ME];
-    readInput(me);
+    if (W.phase === 'play') readInput(me); else { me.inp.mx = me.inp.mz = 0; me.inp.hold = false; }
     if (NETROLE === 'guest') { movePlayer(me, dt, W); guestNetTick(dt); }
     else {
       if (NETROLE === 'solo' && !(window.__dbg && window.__dbg.noBot)) soloBot(dt);

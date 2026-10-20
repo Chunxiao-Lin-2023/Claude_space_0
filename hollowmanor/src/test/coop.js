@@ -37,6 +37,17 @@ const { chromium } = require('playwright'); const OUT = process.env.OUT || '/tmp
   console.log('guest got quick/ping', await G.evaluate(() => W.E.filter(e => e.k === 'quick' || e.k === 'ping').map(e => e.k).join(',')));
   // guest flashlight / seer roles: whoever is holder boosts
   console.log('guest sees ghost st', await G.evaluate(() => W.g.st + ' ' + W.g.x.toFixed(1)), 'host', await H.evaluate(() => W.g.st + ' ' + W.g.x.toFixed(1)));
+  // floor change across the link: host climbs to floor 2, guest follows and keeps syncing
+  await H.evaluate(() => { W.ascTo = 1; hostAscend(); });
+  await G.waitForFunction(() => MAP.fi === 1 && W.floor === 1, null, { timeout: 60000, polling: 300 });
+  console.log('right after floor change host/guest', await H.evaluate(() => W.p.map(p => p.x.toFixed(1) + ',' + p.z.toFixed(1)).join(' ')), await G.evaluate(() => W.p.map(p => p.x.toFixed(1) + ',' + p.z.toFixed(1)).join(' ') + ' ph=' + W.phase));
+  await G.waitForTimeout(4500); // floor card fades
+  const f0 = await H.evaluate(() => W.p[1].x.toFixed(2) + ',' + W.p[1].z.toFixed(2));
+  await G.keyboard.down('d'); await G.waitForTimeout(1200); await G.keyboard.up('d'); await G.waitForTimeout(600);
+  console.log('guest moved on floor 2 (host view)', f0, '->', await H.evaluate(() => W.p[1].x.toFixed(2) + ',' + W.p[1].z.toFixed(2)));
+  await G.waitForTimeout(800);
+  console.log('floor 2 host', await H.evaluate(() => MAP.fi + ' ' + JSON.stringify(W.used) + W.setup.gtype + ' g=' + W.g.x.toFixed(1)), 'guest', await G.evaluate(() => MAP.fi + ' ' + W.setup.gtype + ' g=' + W.g.x.toFixed(1)));
+  console.log('guest pos host/guest', await H.evaluate(() => { const p = W.p[1]; return p.x.toFixed(1) + ',' + p.z.toFixed(1); }), await G.evaluate(() => { const p = W.p[ME]; return p.x.toFixed(1) + ',' + p.z.toFixed(1); }));
   // render a frame on the guest for a screenshot
   await G.evaluate(() => { window.__dbg.skipDraw = false; }); await G.waitForTimeout(2500);
   await G.screenshot({ path: OUT + '/co_guest.png', timeout: 90000 }).catch(e => console.log('shot fail', e.message));

@@ -43,10 +43,12 @@ const BAL = {
   downT: 45, reviveT: 3,
   // interactions
   reach: 1.55,
-  shelfT: 2.2, fuseT: 4, ritualT: 7, leverT: 0.6, leverHold: 3.2, pickT: 0.45, dialT: 0.25,
+  shelfT: 2.2, fuseT: 4, ritualT: 7, valveT: 3.5, boltT: 1.2, unbindT: 2.6, smashT: 3.0, finalT: 15, finalGuard: 5.5, lampR: 3.4, lampSlow: 0.55, leverT: 0.6, leverHold: 3.2, pickT: 0.45, dialT: 0.25,
   // ritual
   ritualHuntT: 9,
 };
+/* per-floor overrides live in FLOORS[i].bal; B(k) reads the current floor's value */
+const B = k => (typeof MAP !== 'undefined' && MAP.F && MAP.F.bal && MAP.F.bal[k] != null) ? MAP.F.bal[k] : BAL[k];
 
 /* ================= roles ================= */
 const ROLES = {
@@ -73,8 +75,17 @@ const ITEMS = {
   watch: { name: '怀表', icon: '⏱', desc: '停在三点十七分的怀表。' },
   salt: { name: '圣盐', icon: '🧂', desc: '一小罐祝圣过的盐。' },
   fuse: { name: '保险丝', icon: '🔌', desc: '老式陶瓷保险丝，还能用。' },
+  brass: { name: '黄铜钥匙', icon: '🗝', desc: '沉在浴缸底的钥匙，钥匙柄上刻着一朵玫瑰。' },
 };
 const RITUAL_ITEMS = ['ring', 'doll', 'watch', 'salt'];
+/* the final floor's ghost: the lady of the house */
+const BOSS = { name: '宅主 · 温夫人', ev: [], item: null, hue: 0xc8b0ff, desc: '这座宅子的女主人。所有怨灵都被她困在这里。她不怕任何遗物——只能毁掉她的镇物，再在法阵里念出她的名字。', quirk: 'boss' };
+const GT = k => k === 'boss' ? BOSS : GHOSTS[k];
+const ANCHORS = {
+  hair: { name: '红绳缠发', desc: '一缕用红绳缠了七圈的长发' },
+  nail: { name: '棺钉人偶', desc: '钉着一根棺材钉的草人' },
+  shard: { name: '镜片牌位', desc: '嵌着碎镜片的小牌位' },
+};
 const GLYPHS = ['☾', '✶', '♆', '☥', '⚚', '◬'];
 
 /* quick chat */

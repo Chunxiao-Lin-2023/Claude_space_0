@@ -40,12 +40,15 @@ function renderFrame(W, meIdx, dt) {
   R3.lantern.position.copy(lp); R3.lantern.intensity = s && s.hide < 0 ? (s.down ? 0.6 : 2.4) * (0.9 + Math.sin(t * 9) * 0.08) : 0;
   RS.amulet.material.emissiveIntensity = 0.8 + Math.sin(t * 2) * 0.4 + (W.g && dist(W.g.x, W.g.z, s.x, s.z) < 6 ? 1.5 : 0);
   // ---- ghost
-  const G = W.g, gh = R3.ghost;
+  const G = W.g;
+  if (G) setGhostForm(W.setup ? (W.setup.gtype === 'boss' || Object.keys(W.evFound || {}).length >= 2 ? W.setup.gtype : 'veil') : 'veil');
+  const gh = R3.ghost;
   if (G) {
     const hunting = G.st === 'hunt' || G.st === 'ritual';
     VIS.hunt = lerp(VIS.hunt, hunting ? 1 : 0, Math.min(1, dt * 3));
     gh.position.set(G.x, 0.08 + Math.sin(t * 1.3) * 0.05, G.z); gh.rotation.y = HP - G.a;
-    const U = gh.userData; for (const a of U.arms) { a.sh.rotation.x = lerp(a.sh.rotation.x, hunting ? -1.25 + Math.sin(t * 6 + a.sx) * 0.08 : 0.15, dt * 4); a.sh.rotation.z = a.sx * (hunting ? 0.15 : 0.05); a.el.rotation.x = hunting ? -0.2 : 0.1; }
+    const U = gh.userData; animGhostForm(gh, G, t, dt, hunting);
+    for (const a of U.arms) { a.sh.rotation.x = lerp(a.sh.rotation.x, hunting ? -1.25 + Math.sin(t * 6 + a.sx) * 0.08 : 0.15, dt * 4); a.sh.rotation.z = a.sx * (hunting ? 0.15 : 0.05); a.el.rotation.x = hunting ? -0.2 : 0.1; }
     U.wisps.forEach((w, i) => { w.rotation.x = PI + 0.3 + Math.sin(t * 2 + i) * 0.15 + (G.spd || 0) * 0.15; });
     U.head.rotation.z = Math.sin(t * 0.7) * 0.15 + (hunting ? Math.sin(t * 17) * 0.05 : 0);
     let a = 0, xray = false;
@@ -55,7 +58,7 @@ function renderFrame(W, meIdx, dt) {
     a *= G.fade == null ? 1 : G.fade;
     GHOST_U.uAlpha.value = lerp(GHOST_U.uAlpha.value, a, Math.min(1, dt * 8)); GHOST_U.uTime.value = t; GHOST_U.uHunt.value = VIS.hunt; GHOST_U.uSpirit.value = seer ? 1 : 0;
     GHOST_U.uColor.value.setHex(hunting ? 0xc8e6ff : 0x9fd8ff);
-    gh.visible = GHOST_U.uAlpha.value > 0.01;
+    gh.visible = GHOST_U.uAlpha.value > 0.01; for (const m of gh.userData.glows || []) { m.transparent = true; m.opacity = GHOST_U.uAlpha.value; }
     gh.traverse(o => { if (o.material && o.material.isShaderMaterial) o.material.depthTest = !xray; });
     R3.ghostLight.position.set(G.x, 1.5, G.z); R3.ghostLight.intensity = (G.man || 0) * 2.2 + VIS.hunt * 0.6; R3.ghostLight.color.setHex(hunting ? 0xa0c8ff : 0x9fd8ff);
     if (a > 0.3 && !seer) VIS.seenGhost = t;
@@ -66,7 +69,15 @@ function renderFrame(W, meIdx, dt) {
     for (const l of e.leaves) l.hinge.rotation.y = l.side * o * 1.75;
     if (e.kind === 'shutter') { e.slide.position.y = o * 2.2; if (e.lamp) { const m = e.lamp.material; m.emissive.setHex(W.f.power ? 0x20ff40 : 0xff2010); } }
     if (e.kind === 'shelf') e.slide.position.x = -o * 1.5;
+    if (e.chains) { e.chains.visible = st.locked; }
   }
+  for (const c of R3.cracks) { for (const m of c.mats) { m.opacity = seer ? 0.22 : 1; m.depthWrite = !seer; } for (const g of c.glow) g.visible = seer; c.fis.opacity = 0.65 + Math.sin(t * 3) * 0.25; }
+  if (R3.tub) R3.tub.water.position.y = lerp(R3.tub.water.position.y, W.f.drained ? 0.12 : 0.5, Math.min(1, dt * 0.6));
+  for (const b of R3.bells) if (b) { b.sw *= Math.pow(0.04, dt); b.body.rotation.z = Math.sin(t * 18) * 0.35 * b.sw; }
+  for (const m of R3.manq) { const lit = beamFactor(W, m.f.x, 1.5, m.f.z) > 0.05; if (m.a === 0 && !m.init) { m.a = m.f.r; m.init = 1; } const want = Math.atan2(me.x - m.f.x, me.z - m.f.z); if (!lit && dist(me.x, me.z, m.f.x, m.f.z) < 9) m.a += angDiff(m.a, want) * Math.min(1, dt * 0.9); m.head.rotation.y = m.a; }
+  for (const a of R3.anchors) { const st = W.anchors ? W.anchors[a.a.i] : 0, inBeam = beamFactor(W, a.a.x, 0.4, a.a.z); a.g.visible = st < 2; a.obj.visible = st === 1 || seer || inBeam > 0.15; a.bind.visible = st === 0 && (seer || inBeam > 0.25); a.redGlow.visible = st === 1; a.bind.rotation.y = t * 0.4; a.redGlow.material.opacity = 0.6 + Math.sin(t * 6) * 0.3; }
+  if (R3.circle) { const on = W.f.sanctum && W.f.seal, pr = W.rit && W.rit.item === 'final' ? W.rit.p : (W.finP || 0); R3.circle.m.userData.glowMat.opacity = on ? 0.35 + pr * 0.6 + Math.sin(t * 4) * 0.08 : W.f.seal ? 0.08 : 0; R3.circle.m.userData.ring.rotation.y = t * (0.2 + pr * 1.5); }
+  if (R3.hatch) R3.hatch.lid.rotation.x = lerp(R3.hatch.lid.rotation.x, W.f.seal ? 0 : -1.9, Math.min(1, dt * 1.2));
   const dk = W.doors.map(d => d.open > 0.5 ? 1 : 0).join('');
   if (dk !== VIS.prevDoors) { VIS.prevDoors = dk; R3.moon.shadow.needsUpdate = true; }
   // wardrobes
@@ -76,9 +87,10 @@ function renderFrame(W, meIdx, dt) {
   if (R3.fuseSlot) R3.fuseSlot.visible = !!W.f.power; if (R3.fuseLamp) R3.fuseLamp.material.emissive.setHex(W.f.power ? 0x20ff40 : 0xff2010);
   if (R3.gate) { const gt = R3.gate, sealA = W.f.seal ? 1 : 0; gt.sm.opacity = lerp(gt.sm.opacity, sealA * (0.7 + Math.sin(t * 2) * 0.15), dt * 2); gt.chainM.opacity = gt.sm.opacity * 0.85; gt.seal.rotation.z = t * 0.2; gt.open = lerp(gt.open, W.f.seal ? 0 : 1, dt * 0.8); for (const l of gt.leaves) l.h.rotation.y = -l.sx * gt.open * 1.4; }
   if (R3.pend) R3.pend.rotation.z = Math.sin(t * PI) * 0.22;
-  if (R3.mobile) R3.mobile.rotation.y += dt * (0.3 + (G && dist(G.x, G.z, 6.15, 20.5) < 4 ? 2.5 : 0));
+  for (const r of R3.rockers || []) r.rotation.x = Math.sin(t * 1.7) * (0.06 + (G && dist(G.x, G.z, r.position.x, r.position.z) < 5 ? 0.12 : 0));
+  if (R3.mobile && MAP.crib) R3.mobile.rotation.y += dt * (0.3 + (G && dist(G.x, G.z, MAP.crib.x, MAP.crib.z) < 4 ? 2.5 : 0));
   // ---- lights: flicker, pool assignment
-  const elecOn = W.f.power ? 1 : 0;
+  const elecOn = W.f && W.f.power ? 1 : 0;
   const bm = MATC.get('bulbMat'); let eflick = 1; if (W.flick > 0 && Math.random() < W.flick * 0.5) eflick = 0.1 + Math.random() * 0.4;
   if (bm) bm.emissiveIntensity = elecOn * 2.4 * eflick;
   const emb = MATC.get('ember'); if (emb) emb.emissiveIntensity = 1.3 + Math.sin(t * 5.3) * 0.3 + Math.sin(t * 11.7) * 0.2;
@@ -86,7 +98,8 @@ function renderFrame(W, meIdx, dt) {
   const cx = R3.camT.x, cz = R3.camT.z;
   const act = [];
   for (const fx of R3.fixtures) { const l = fx.l; let I = 0, col = 0xffb870, dist2 = 7; if (fx.k === 'elec') { if (!elecOn) continue; I = (l.k.startsWith('chandelier') ? 5.5 : l.k === 'sconce' ? 2.2 : 3.2) * eflick * (0.96 + Math.sin(t * 50 + fx.phase) * 0.02); col = 0xffc890; dist2 = l.k === 'sconce' ? 4.5 : 8; } else if (fx.k === 'candle') { I = (l.k === 'candles' ? 2.4 : 1.1) * (0.85 + Math.sin(t * 13 + fx.phase) * 0.1 + Math.sin(t * 7.1 + fx.phase) * 0.06); col = 0xffa060; dist2 = l.k === 'candles' ? 6 : 4; } else { I = 3.2 * (0.8 + Math.sin(t * 6 + fx.phase) * 0.15 + Math.sin(t * 13) * 0.07); col = 0xff6a20; dist2 = 6; }
-    act.push({ x: l.x, y: l.y - (l.k.startsWith('chandelier') ? 0.35 : 0.05), z: l.z, I, col, dist2, d: d2(l.x, l.z, cx, cz) }); }
+    if (fx.k === 'oil') { const on = W.lamps && W.lamps[fx.li]; const fxm = R3.lampFx[fx.li]; if (fxm) fxm.material.emissiveIntensity = on ? 2.2 + Math.sin(t * 11 + fx.phase) * 0.3 : 0; if (!on) continue; I = 2.8 * (0.85 + Math.sin(t * 9 + fx.phase) * 0.1 + Math.sin(t * 5.3) * 0.05); col = 0xffa050; dist2 = 6.5; }
+    act.push({ x: l.x, y: l.y - (l.k.startsWith('chandelier') ? 0.35 : l.k === 'oilLamp' ? 0.25 : 0.05), z: l.z, I, col, dist2, d: d2(l.x, l.z, cx, cz) }); }
   act.sort((a, b) => a.d - b.d);
   R3.pool.forEach((p, i) => { const a = act[i]; if (!a || a.d > 22 * 22) { p.intensity = 0; return; } p.position.set(a.x, a.y, a.z); p.intensity = a.I; p.color.setHex(a.col); p.distance = a.dist2; });
   // ---- lightning
@@ -95,17 +108,19 @@ function renderFrame(W, meIdx, dt) {
   const fk = R3.flash > 0 ? (R3.flash > 0.8 || (R3.flash > 0.3 && R3.flash < R3.flash2) ? R3.flash : R3.flash * 0.2) : 0;
   R3.moon.intensity = 1.6 + fk * 9; for (const g of R3.glass) g.m.emissiveIntensity = g.base * (1 + fk * 5);
   for (const sh of R3.shafts) sh.material.opacity = 0.07 + fk * 0.3;
-  R3.hemi.intensity = (seer ? 5.0 : 3.6) + fk * 2.5; R3.hemi.color.setHex(seer ? 0x7a9ad0 : 0x6a7898); if (window.__dbgLight) { R3.hemi.intensity = window.__dbgLight; R3.hemi.color.setHex(0xffffff); }
+  R3.hemi.intensity = ((seer ? 5.0 : 3.6) + fk * 2.5) * (MAP.F && MAP.F.ambient || 1); R3.hemi.color.setHex(seer ? 0x7a9ad0 : 0x6a7898); if (window.__dbgLight) { R3.hemi.intensity = window.__dbgLight; R3.hemi.color.setHex(0xffffff); }
   // ---- evidence & spirit layer
   for (const o of R3.spirit) {
     o.visible = seer;
     if (o.userData.orbs) o.children.forEach(sp => { sp.position.set(Math.sin(t * 0.5 + sp.userData.ph) * 0.5, Math.sin(t * 0.8 + sp.userData.ph * 2) * 0.3, Math.cos(t * 0.4 + sp.userData.ph) * 0.5); sp.material.opacity = 0.5 + Math.sin(t * 3 + sp.userData.ph) * 0.3; });
-    if (o.userData.draft) { o.visible = seer && W.doors[MAP.doors.find(d => d.kind === 'shelf').idx].open < 0.5; o.children.forEach(sp => { const k = (t * 0.35 + sp.userData.ph) % 1; sp.position.set(Math.sin(k * 9 + sp.userData.ph * 20) * 0.5, 0.2 + k * 2.2, 0); sp.material.opacity = Math.sin(k * PI) * 0.35; }); }
+    if (o.userData.bellNum != null) { o.visible = seer && W.f && !W.f.bells; o.material.opacity = o.userData.bellNum < (W.bellN || 0) ? 0.22 : 0.95; o.position.y = 1.75 + Math.sin(t * 2 + o.userData.bellNum) * 0.05; }
+    if (o.userData.tubGlow) { o.visible = seer && W.f && !W.f.drained; o.material.opacity = 0.5 + Math.sin(t * 3) * 0.3; }
+    if (o.userData.draft != null) { o.visible = seer && W.doors[o.userData.draft].open < 0.5; o.children.forEach(sp => { const k = (t * 0.35 + sp.userData.ph) % 1; sp.position.set(Math.sin(k * 9 + sp.userData.ph * 20) * 0.5, 0.2 + k * 2.2, 0); sp.material.opacity = Math.sin(k * PI) * 0.35; }); }
   }
   for (const f of R3.frost) { const b = beamFactor(W, f.e.x, 0.1, f.e.z); f.a = lerp(f.a, b, Math.min(1, dt * 6)); f.m.material.opacity = f.a * 0.9; f.m.visible = f.a > 0.01; }
-  const hasMirror = W.setup && GHOSTS[W.setup.gtype].ev.includes('mirror');
+  const hasMirror = W.setup && GT(W.setup.gtype).ev.includes('mirror');
   for (const m of R3.mirrors) { const b = beamFactor(W, m.mr.x, 1.2, m.mr.z, m.mr.r); m.lit = lerp(m.lit, b, Math.min(1, dt * 6)); m.sheen.material.opacity = m.lit * 0.18; m.fig.material.opacity = hasMirror ? m.lit * (0.75 + Math.sin(t * 9) * 0.1) : 0; }
-  for (const it of R3.items) { const st = W.items && W.items[it.it.i]; if (!st) { it.m.visible = false; continue; } it.m.visible = !st.taken; if (!st.taken) { it.m.rotation.y += dt * 0.6; const g = it.m.userData.glint; const dd = dist(me.x, me.z, st.x, st.z); g.material.opacity = clamp(1.2 - dd / 7, 0, 1) * (0.35 + Math.max(0, Math.sin(t * 2.4 + it.it.i)) * 0.65) + beamFactor(W, st.x, st.y, st.z) * 0.6; } }
+  for (const it of R3.items) { const st = W.items && W.items[it.it.i]; if (!st) { it.m.visible = false; continue; } it.m.visible = !st.taken && (!st.need || W.f[st.need]); if (it.m.visible) { it.m.rotation.y += dt * 0.6; const g = it.m.userData.glint; const dd = dist(me.x, me.z, st.x, st.z); g.material.opacity = clamp(1.2 - dd / 7, 0, 1) * (0.35 + Math.max(0, Math.sin(t * 2.4 + it.it.i)) * 0.65) + beamFactor(W, st.x, st.y, st.z) * 0.6; } }
   // ---- camera
   const hidden = me.hide >= 0;
   const look = me.role === 'L' ? 1.6 : 1.0;
@@ -114,6 +129,8 @@ function renderFrame(W, meIdx, dt) {
   const asp = innerWidth / innerHeight, far = W.menu ? 1.75 : (asp < 1 ? 1.45 : asp < 1.3 ? 1.15 : 1) * (hidden ? 0.55 : 1) * (window.__dbg && window.__dbg.zoom || 1);
   let shx = 0, shz = 0; if (R3.shake > 0 && SET.shake) { shx = (Math.random() - 0.5) * R3.shake * 0.4; shz = (Math.random() - 0.5) * R3.shake * 0.4; R3.shake = Math.max(0, R3.shake - dt * 2.5); }
   R3.cam.position.set(R3.camT.x + shx, 10.4 * far, R3.camT.z + 7.0 * far + shz); R3.cam.lookAt(R3.camT.x + shx, 0.4, R3.camT.z + shz);
+  if (W.cam) { const c = W.cam; R3.cam.position.set(c[0], c[1], c[2]); R3.cam.lookAt(c[3], c[4], c[5]); }
+  else if (window.__dbg && window.__dbg.cam) { const c = window.__dbg.cam; R3.cam.position.set(c[0], c[1], c[2]); R3.cam.lookAt(c[3], c[4], c[5]); }
   CUT.uCam.value.copy(R3.cam.position); CUT.uP0.value.set(me.x, 0.9, me.z); CUT.uP1.value.set(partner.x, 0.9, partner.z);
   if (G && (G.st === 'hunt' || G.man > 0.3) && dist(G.x, G.z, me.x, me.z) < dist(partner.x, partner.z, me.x, me.z)) CUT.uP1.value.set(G.x, 0.9, G.z);
   CUT.uR.value = 2.0 * far;

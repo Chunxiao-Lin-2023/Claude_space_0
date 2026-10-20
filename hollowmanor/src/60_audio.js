@@ -90,6 +90,20 @@ function sfx(name, x, z, vol = 1) {
     case 'knock': for (let k = 0; k < 3; k++) { N(0.07, 0.6 * v, 'lowpass', 900, 200, 1, k * 0.32); T('sine', 140, 80, 0.08, 0.3 * v, k * 0.32); } break;
     case 'rattle': for (let k = 0; k < 5; k++) N(0.04, 0.2 * v, 'bandpass', 2500, 1800, 5, k * 0.07); break;
     case 'heart': T('sine', 62, 40, 0.14, 0.45 * v, 0, { nj: 1 }); T('sine', 58, 38, 0.12, 0.3 * v, 0.17, { nj: 1 }); break;
+    case 'stairsUp': for (let k = 0; k < 8; k++) N(0.09, 0.25 * v, 'lowpass', 500, 160, 1, k * 0.16); T('sawtooth', 160, 120, 0.8, 0.04 * v, 0.3, { lp: 900, vib: 10 }); break;
+    case 'water': N(0.5, 0.18 * v, 'bandpass', 500, 300, 3); N(0.3, 0.1 * v, 'highpass', 2000, 3000, 1, 0.2); break;
+    case 'drain': N(2.6, 0.5 * v, 'bandpass', 300, 120, 4, 0, { att: 0.3 }); for (let k = 0; k < 6; k++) T('sine', 160 + k * 30, 90, 0.25, 0.08 * v, 0.4 + k * 0.3); break;
+    case 'bell0': case 'bell1': case 'bell2': case 'bell3': case 'bell4': { const f = [784, 880, 988, 1175, 1319][+name[4]]; T('sine', f, f, 1.6, 0.16 * v, 0, { nj: 1, att: 0.003 }); T('sine', f * 2.76, f * 2.76, 0.7, 0.05 * v, 0, { nj: 1 }); T('sine', f * 5.4, f * 5.4, 0.3, 0.02 * v, 0, { nj: 1 }); break; }
+    case 'bellWrong': [784, 831, 740].forEach((f, i) => T('sine', f, f * 0.94, 1.0, 0.12 * v, i * 0.05, { vib: 9 })); N(0.6, 0.2 * v, 'bandpass', 900, 300, 3, 0.2); break;
+    case 'chimeDone': [784, 988, 1175, 1319, 1568].forEach((f, i) => T('sine', f, f, 2.0, 0.08 * v, i * 0.09, { nj: 1 })); break;
+    case 'ignite': N(0.15, 0.3 * v, 'highpass', 3000, 1500); N(0.6, 0.15 * v, 'bandpass', 600, 900, 2, 0.1, { att: 0.1 }); break;
+    case 'snuff': N(0.45, 0.35 * v, 'lowpass', 1800, 300, 1, 0, { att: 0.05 }); T('sine', 300, 120, 0.3, 0.05 * v); break;
+    case 'smash': N(0.12, 0.35 * v, 'lowpass', 1400, 300); break;
+    case 'unbind': [415, 554, 659].forEach((f, i) => T('sine', f, f * 1.5, 1.4, 0.07 * v, i * 0.12, { att: 0.2, vib: 6 })); N(1.2, 0.12 * v, 'highpass', 3000, 7000, 1, 0, { att: 0.3 }); break;
+    case 'shatter': N(0.5, 0.8 * v, 'highpass', 6000, 1500); for (let k = 0; k < 8; k++) T('triangle', rrLocal(2000, 5000), rrLocal(800, 2000), 0.25, 0.05 * v, k * 0.03); T('sawtooth', 1600, 200, 1.2, 0.12 * v, 0.1, { lp: 5000, vib: 20 }); R3.shake = Math.max(R3.shake, 0.8); break;
+    case 'bossLaugh': for (let k = 0; k < 5; k++) T('sawtooth', 420 - k * 25, 300 - k * 20, 0.22, 0.06 * v, k * 0.2, { lp: 1800, vib: 25 }); break;
+    case 'bossHum': T('sine', 330, 311, 2.4, 0.07 * v, 0, { att: 0.6, vib: 4 }); T('sine', 392, 370, 2.0, 0.04 * v, 0.6, { att: 0.5, vib: 4 }); break;
+    case 'banishBoss': [196, 262, 330, 392, 523, 659, 784, 1046].forEach((f, i) => T('sine', f, f * 1.25, 3.5, 0.07 * v, i * 0.15, { att: 0.4 })); N(4, 0.25 * v, 'highpass', 1500, 9000, 1, 0, { att: 0.8 }); break;
     case 'ping': T('triangle', 1046, 1046, 0.1, 0.12 * v); T('triangle', 1568, 1568, 0.16, 0.1 * v, 0.09); break;
     case 'quick': T('sine', 784, 988, 0.1, 0.1 * v); break;
     case 'win': [262, 330, 392, 523, 659].forEach((f, i) => T('sine', f, f, 1.6, 0.1, i * 0.18, { att: 0.08 })); break;

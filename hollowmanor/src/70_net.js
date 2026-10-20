@@ -66,12 +66,18 @@ function guestGone() {
   if (STATE.mode === 'play') { say('同伴断开了连接。等待重连……（按 Esc 返回大厅）', -1, '#ff6b6b'); W.dc = 1; }
   lobbyUI();
 }
-function sendLobby() { netSendCtl({ t: 'lobby', roles: NET.roles, ready: NET.ready, host: SET.name || '房主', code: NET.code }); }
+function sendLobby() { netSendCtl({ t: 'lobby', roles: NET.roles, ready: NET.ready, host: SET.name || '房主', code: NET.code, floor: NET.floor || 0 }); }
 function hostStart() {
   if (!NET.gctl || !NET.gctl.open) return;
-  const seed = (Math.random() * 1e9) | 0, names = [SET.name || ROLES[NET.roles[0]].who, NET.guestName || ROLES[NET.roles[1]].who];
-  netSendCtl({ t: 'start', seed, roles: NET.roles, names });
-  startGame(seed, NET.roles, names, 0);
+  const seed = (Math.random() * 1e9) | 0, names = [SET.name || ROLES[NET.roles[0]].who, NET.guestName || ROLES[NET.roles[1]].who], floor = NET.floor || 0;
+  netSendCtl({ t: 'start', seed, roles: NET.roles, names, floor });
+  startGame(seed, NET.roles, names, 0, floor);
+}
+/* host: retry the current floor after a loss (both clients restart it with a new seed) */
+function hostRetry() {
+  if (!W) return; const floor = W.floor, seed = (Math.random() * 1e9) | 0, roles = W.p.map(p => p.role), names = W.p.map(p => p.name);
+  if (NETROLE === 'host') netSendCtl({ t: 'start', seed, roles, names, floor });
+  startGame(seed, roles, names, 0, floor);
 }
 /* snapshot: compact arrays */
 const GST = ['roam', 'warn', 'hunt', 'stun', 'ritual', 'banish', 'gone'];
@@ -79,7 +85,7 @@ const r2 = v => Math.round(v * 100) / 100;
 function makeSnap() {
   const P = p => [r2(p.x), r2(p.z), r2(p.a), r2(p.aim), r2(p.spd), p.run ? 1 : 0, Math.round(p.fear), Math.round(p.batt * 100), p.boostT > 0 ? 1 : 0, p.down ? 1 : 0, Math.round(p.downT), p.hide, p.act ? p.act.id : -1, p.act ? Math.round(p.act.p * 100) : 0, r2(p.stam)];
   const G = W.g;
-  return { t: 's', T: r2(W.t), ph: W.phase, p: W.p.map(P), g: [r2(G.x), r2(G.z), r2(G.a), GST.indexOf(G.st), r2(G.man), r2(G.fade), r2(G.spd)],
+  return { t: 's', fi: W.floor, bn: W.bellN, lp: W.lamps, an: W.anchors, fp: r2(W.finP), T: r2(W.t), ph: W.phase, p: W.p.map(P), g: [r2(G.x), r2(G.z), r2(G.a), GST.indexOf(G.st), r2(G.man), r2(G.fade), r2(G.spd)],
     d: W.doors.map(d => [Math.round(d.open * 100), d.tgt, d.locked ? 1 : 0]), lv: W.lv.map(r2), dl: W.dials, f: W.f, it: W.items.map(i => i.taken), inv: W.inv, ef: W.evFound,
     fl: r2(W.flick), hA: W.hideA.map(r2), occ: W.occ, st: W.stats, rit: W.rit ? [W.rit.item, W.rit.by, r2(W.rit.p)] : null, sq: W.seq };
 }
@@ -110,14 +116,15 @@ function guestRecv(m) {
   switch (m.t) {
     case 'busy': lobbyUI('房间已满或已经开始'); netLeave(); return;
     case 'bye': hostGone(); return;
-    case 'lobby': NET.roles = m.roles; NET.ready = m.ready; NET.hostName = m.host; lobbyUI(); return;
-    case 'start': startGame(m.seed, m.roles, m.names, 1); return;
+    case 'lobby': NET.roles = m.roles; NET.ready = m.ready; NET.hostName = m.host; NET.floor = m.floor || 0; lobbyUI(); return;
+    case 'start': startGame(m.seed, m.roles, m.names, 1, m.floor || 0); return;
     case 'toLobby': backToLobby(); return;
     case 'ev': if (W && m.e.s > (W.seq || 0)) { W.E.push(m.e); if (W.E.length > 80) W.E.shift(); W.seq = m.e.s; } return;
     case 's': if (W) applySnap(m); return;
   }
 }
 function applySnap(s) {
+  if (s.fi !== W.floor) return;
   if (s.T < (NET.lastT || 0) - 5) return; NET.lastT = s.T; NET.lastSnap = performance.now();
   W.t = s.T; W.now = s.T; W.phase = s.ph;
   s.p.forEach((a, i) => {
@@ -131,7 +138,7 @@ function applySnap(s) {
   const G = W.g, [gx, gz, ga, gst, man, fade, gspd] = s.g;
   G.tx = gx; G.tz = gz; G.a = ga; G.st = GST[gst]; G.man = man; G.fade = fade; G.spd = gspd; if (G.x == null || dist(G.x, G.z, gx, gz) > 5) { G.x = gx; G.z = gz; }
   s.d.forEach((d, i) => { W.doors[i].open = d[0] / 100; W.doors[i].tgt = d[1]; W.doors[i].locked = !!d[2]; });
-  W.lv = s.lv; W.dials = s.dl; W.f = s.f; s.it.forEach((v, i) => W.items[i].taken = v); W.inv = s.inv; W.evFound = s.ef; W.flick = s.fl; W.hideA = s.hA; W.occ = s.occ; W.stats = s.st;
+  W.lv = s.lv; W.dials = s.dl; W.f = s.f; s.it.forEach((v, i) => W.items[i].taken = v); W.inv = s.inv; W.evFound = s.ef; W.flick = s.fl; W.hideA = s.hA; W.bellN = s.bn; W.lamps = s.lp; W.anchors = s.an; W.finP = s.fp; W.occ = s.occ; W.stats = s.st;
   W.rit = s.rit ? { item: s.rit[0], by: s.rit[1], p: s.rit[2] } : null;
 }
 function guestNetTick(dt) {
