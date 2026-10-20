@@ -180,7 +180,7 @@ function readInput(dt) {
   const usingMouse = !INP.touch || (performance.now() - INP.mouseT < 1500 && performance.now() - INP.lastTouch > 1500);
   if (usingMouse) {
     if (INP.touch && performance.now() - INP.mouseT < 300) setTouch(false);
-    const pt = aimPick(INP.mx, INP.my);
+    const pt = DBG && DBG.aimAt ? DBG.aimAt() : aimPick(INP.mx, INP.my);
     me.aimPt = pt; me.aim = Math.atan2(pt.y - me.y, pt.x - me.x);
     CAM.lookX = lerp(CAM.lookX || 0, clamp((pt.x - me.x) * 0.18, -3, 3), Math.min(1, dt * 3)); CAM.lookY = lerp(CAM.lookY || 0, clamp((pt.y - me.y) * 0.18, -3, 3), Math.min(1, dt * 3));
     I.fire = !blocked && INP.mL && !me.build ? 1 : 0;

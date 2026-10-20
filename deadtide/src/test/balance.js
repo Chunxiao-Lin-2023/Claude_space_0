@@ -13,8 +13,15 @@ const { chromium } = require('playwright');
       const zs = W.zs.filter(z => z.hp > 0); if (!zs.length) { INP.mL = false; return; }
       zs.sort((a, c) => Math.hypot(a.x - W.radio.x, a.y - W.radio.y) - Math.hypot(c.x - W.radio.x, c.y - W.radio.y));
       const z = zs[0];
-      if (!me.down) { me.x = clamp(z.x, 30.5, 34.4); me.y = clamp(z.y, 26.5, 30.5); if (Math.floor(me.x) === 34 && Math.floor(me.y) === 27) me.y = 28.5; me.L = 1; me.z = surfZ(me.x, me.y, 1); me.vx = me.vy = 0; }
-      const [sx, sy] = w2s(z.x, z.y, z.z + z.h * 0.7); INP.mx = sx; INP.my = sy; INP.mouseT = performance.now(); INP.mL = true;
+      if (!me.down) {
+        // stand on the upper floor or on a wall top, as close to the target as possible (battlements)
+        let best = null, bd = 1e9;
+        for (let y = 25; y <= 31; y++) for (let x = 29; x <= 35; x++) { if (!standable(x, y, 1, 'p')) continue; const d = Math.hypot(x + 0.5 - z.x, y + 0.5 - z.y); if (d < bd) { bd = d; best = [x, y]; } }
+        if (best) { me.x = best[0] + 0.5; me.y = best[1] + 0.5; me.L = 1; me.z = surfZ(me.x, me.y, 1); me.vx = me.vy = 0; }
+        const far = Math.hypot(z.x - me.x, z.y - me.y) > 7.5;
+        if (far && me.wpn === 1) doAct(me, 'wpn', 0); else if (!far && me.wpn === 0 && (me.mag[1] || me.ammo[1])) doAct(me, 'wpn', 1);
+      }
+      window.__dbg.aimAt = () => ({ x: z.x, y: z.y, z: z.z + z.h * 0.7 }); INP.mouseT = performance.now(); INP.mL = true;
       if (me.mag[me.wpn] === 0 && me.ammo[me.wpn] === 0 && me.wpn) doAct(me, 'wpn', 0);
       if (me.hp < 50 && me.meds) doAct(me, 'med');
     }, 50);
