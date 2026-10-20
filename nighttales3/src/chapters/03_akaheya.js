@@ -30,7 +30,7 @@
     const F = (bold ? 'bold ' : '') + px + 'px "Noto Sans CJK SC","Noto Sans CJK JP","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif';
     const m = mk(4, 4).getContext('2d'); m.font = F;
     const w = Math.max(1, Math.ceil(m.measureText(str).width) + 2);
-    c = mk(w, px + 4); const q = c.getContext('2d'); q.font = F; q.textBaseline = 'top'; q.fillStyle = '#000'; q.fillText(str, 1, 1);
+    c = mk(w, px + 4); const q = c.getContext('2d', { willReadFrequently: true }); q.font = F; q.textBaseline = 'top'; q.fillStyle = '#000'; q.fillText(str, 1, 1);
     const im = q.getImageData(0, 0, c.width, c.height), d = im.data, [r, g2, b] = hexRgb(col);
     for (let i = 0; i < d.length; i += 4) { const a = d[i + 3]; d[i] = r; d[i + 1] = g2; d[i + 2] = b; d[i + 3] = a > 100 ? 255 : 0; }
     q.putImageData(im, 0, 0);
@@ -109,9 +109,9 @@
       else if (k === 'akai') { const f = Math.sin(t * 5) > .6; R(3, 0, 10, 10, f ? '#d01818' : '#900808'); R(4, 1, 8, 8, f ? '#e83030' : '#a80c0c'); }
       else if (k === 'lnk') { box(R, 3, 0, 10, 9, '#d0d0d0'); R(4, 1, 8, 2, '#000080'); R(5, 4, 6, 3, '#f0e0a0'); box(R, 3, 6, 4, 4, '#fff'); R(4, 7, 2, 1, '#000'); R(5, 8, 1, 1, '#000'); }
       else if (k === 'exe') { box(R, 3, 0, 10, 9, '#d0d0d0'); R(4, 1, 8, 2, '#800000'); R(5, 4, 6, 3, '#e04040'); }
-      else if (k === 'blank') { R(4, 0, 8, 10, '#ffffff'); R(4, 0, 8, 1, '#ccc'); R(11, 0, 1, 10, '#ccc'); if (Math.sin(t * 2.3) > .85) R(4, 0, 8, 10, '#ffe8e8'); }
+      else if (k === 'blank') { for (let i = 0; i < 10; i += 2) { R(4, i, 1, 1, '#9a9a9a'); R(11, i + 1, 1, 1, '#9a9a9a'); } for (let i = 0; i < 8; i += 2) { R(4 + i, 0, 1, 1, '#9a9a9a'); R(5 + i, 9, 1, 1, '#9a9a9a'); } R(5, 1, 6, 8, Math.sin(t * 2.3) > .85 ? '#ffd8d8' : '#f4f4f4'); }
       if (e.lab) { const w = e.lab.length * 4 - 1, x = 8 - (w >> 1); R(x - 1, 11, w + 2, 7, e.sel ? '#000080' : 'rgba(0,40,40,.55)'); TXT(R, x, 12, e.lab, '#fff'); }
-      else if (k === 'blank') { R(3, 12, 10, 1, '#fff'); R(3, 16, 10, 1, '#fff'); R(3, 12, 1, 5, '#fff'); R(12, 12, 1, 5, '#fff'); }
+      else if (k === 'blank') { for (let i = 0; i < 10; i += 2) { R(3 + i, 12, 1, 1, '#808080'); R(4 + i, 16, 1, 1, '#808080'); } R(3, 13, 1, 1, '#808080'); R(12, 15, 1, 1, '#808080'); }
     },
     /* 弹窗。e.num = 第几句；e.s.small = 现实里的小窗；e.s.str 覆盖文字 */
     popup(g, e, t, R) {
@@ -188,7 +188,7 @@
       const x = Wd - ((t * 18) % (Wd + L));
       TX(g, R, x, 2, s, 10, '#a01010', { l: 0, r: Wd });
     },
-    counter(g, e, t, R) {
+    hitcounter(g, e, t, R) {
       TX(g, R, 0, 2, 'あなたは', 10, '#c8c8c8');
       R(42, 2, 46, 12, '#000'); bevel(R, 41, 1, 48, 14, '#202020', true);
       const d = String(e.n || 4444).padStart(7, '0'); for (let i = 0; i < 7; i++) { R(44 + i * 6, 4, 5, 9, '#0a1a0a'); TXT(R, 45 + i * 6, 6, d[i], '#50ff50'); }
@@ -1133,6 +1133,7 @@
         async enter(S, first) {
           const f = S.f;
           if (first) {
+            f.phase = 'night'; f.stage = 0;
             await S.narr('凌晨两点零七分。\n妈妈今晚值夜班，整个家里只有你一个人。');
             await S.think('（又睡不着。一闭上眼睛，就是告别式上千夏的照片。）');
             await S.think('（上网吧。テレホーダイ的时间，聊天室里应该还有人。）');
@@ -1369,7 +1370,7 @@
           { x: 1, y: 2, w: 18, spr: 'ttl', decal: true, solid: false, s: { str: 'アドレス  http://www2.kumo.ne.jp/~room/7402/', c2: '#000000' } },
           { id: 'banner', x: 4, y: 3, w: 12, spr: 'banner', light: { r: 4, col: 'rgba(255,30,30,.22)', dx: 96, dy: 6 }, on: S => S.narr('「赤い部屋」四个红字，像是用画图软件一笔一笔描出来的，边缘全是锯齿。\n……红色的部分，好像在很慢很慢地往下淌。') },
           { id: 'marq', x: 1, y: 4, w: 18, spr: 'marq', decal: true, solid: false, on: S => S.narr('一行红字从右往左慢慢滚过去：\n「ようこそ　赤い部屋へ」（欢迎光临红色的房间）') },
-          { id: 'counter', x: 6, y: 5, w: 8, spr: 'counter', s: { n: 4444 }, on: S => S.narr(S.ent('counter').s.n > 4444 ? '访客计数器：0004445。\n刚才是 4444。……多出来的那一个，是你。' : '访客计数器：「あなたは 0004444 人目のお客様です」\n你刷新了一下。数字没有变。') },
+          { id: 'counter', x: 6, y: 5, w: 8, spr: 'hitcounter', s: { n: 4444 }, on: S => S.narr(S.ent('counter').s.n > 4444 ? '访客计数器：0004445。\n刚才是 4444。……多出来的那一个，是你。' : '访客计数器：「あなたは 0004444 人目のお客様です」\n你刷新了一下。数字没有变。') },
           { id: 'enter', x: 4, y: 7, w: 4, spr: 'link', s: { lab: 'ENTER' }, on: flashUse },
           { id: 'bbs', x: 12, y: 7, w: 4, spr: 'link', s: { lab: '掲示板' }, on: bbsUse },
           { x: 3, y: 8, w: 14, spr: 'lhead', decal: true, solid: false },

@@ -20,6 +20,7 @@ time.sleep(1.5)
 url = f'http://127.0.0.1:{port}/nighttales2/index.html?debug=1&fast=4&peerhost=127.0.0.1&peerport=9311'
 errs = []
 ok = True
+CH, NPC, MAPGO = 'kisaragi', 'salary', "('station', 12, 6, 0)"   # 联机测试用的章节、可对话的实体、切图目标
 def check(cond, msg):
     global ok
     print(('PASS ' if cond else 'FAIL ') + msg); ok = ok and bool(cond)
@@ -39,19 +40,19 @@ try:
         H_.wait_for_function("window.__dbg.UI.scene==='select'", timeout=15000)
         G.wait_for_function("window.__dbg.UI.scene==='select'", timeout=15000)
         check(True, 'both in chapter select')
-        H_.evaluate("window.__dbg.startChapter('mary', false)")
-        G.wait_for_function("window.__dbg.W && window.__dbg.W.ch.id==='mary' && window.__dbg.W.card", timeout=8000)
+        H_.evaluate(f"window.__dbg.startChapter('{CH}', false)")
+        G.wait_for_function(f"window.__dbg.W && window.__dbg.W.ch.id==='{CH}' && (window.__dbg.W.card || window.__dbg.W.dlg)", timeout=8000)
         check(True, 'guest mirrors chapter + intro card')
         # 观看者翻页无效
         G.evaluate("window.__dbg.UI.scene"); G.keyboard.press('Space'); G.wait_for_timeout(400)
-        check(H_.evaluate("!!window.__dbg.W.card"), 'guest cannot advance while host controls')
+        check(H_.evaluate("!!(window.__dbg.W.card || window.__dbg.W.dlg)"), 'guest cannot advance while host controls')
         # 主机推完开场
         for i in range(40):
             if H_.evaluate("(()=>{const W=window.__dbg.W;return !W.card&&!W.dlg&&!W.busy})()"): break
             if H_.evaluate("!!(window.__dbg.W.dlg&&window.__dbg.W.dlg.choices)"): H_.wait_for_timeout(450); H_.evaluate("window.__dbg.doAct('pick',0)")
             else: H_.evaluate("window.__dbg.W.dlg&&(window.__dbg.W.dlg.full=true)"); H_.wait_for_timeout(300); H_.keyboard.press('Space')
             H_.wait_for_timeout(150)
-        check(H_.evaluate("!window.__dbg.W.busy && window.__dbg.W.f.dared"), 'host finished intro')
+        check(H_.evaluate("!window.__dbg.W.busy && !window.__dbg.W.card && !window.__dbg.W.dlg"), 'host finished intro')
         # 交出操作
         H_.keyboard.press('KeyT'); G.wait_for_function("window.__dbg.W.ctrl==='g'", timeout=3000)
         check(True, 'host handed control to guest')
@@ -62,7 +63,7 @@ try:
         hx = H_.evaluate("window.__dbg.W.pl.px"); gx = G.evaluate("window.__dbg.W.pl.px")
         check(abs(hx - gx) < 4, f'positions agree host={hx} guest={gx}')
         # 客机调查凯西 -> 主机出现对话
-        G.evaluate("window.__dbg.face('kathy')")
+        G.evaluate(f"window.__dbg.face('{NPC}')")
         G.wait_for_timeout(300); G.keyboard.press('Space')
         H_.wait_for_function("!!window.__dbg.W.dlg", timeout=4000)
         G.wait_for_function("!!window.__dbg.W.dlg", timeout=4000)
@@ -87,8 +88,8 @@ try:
         check(H_.evaluate("window.__dbg.W && true") and H_.evaluate("document.getElementById('cv') && true"), 'ping sent (visual)')
         if shots: H_.screenshot(path=shots + '/coop_host_ping.png')
         # 切地图同步
-        H_.evaluate("window.__dbg.face([10,1])"); H_.keyboard.press('Space')
-        G.wait_for_function("window.__dbg.W.mapId==='hall'", timeout=5000)
+        H_.evaluate(f"window.__dbg.SAPI.go{MAPGO}")
+        G.wait_for_function(f"window.__dbg.W.mapId==={MAPGO[1:].split(',')[0]}", timeout=5000)
         check(True, 'map change mirrored to guest')
         # 回章节选择
         H_.keyboard.press('Escape'); H_.wait_for_timeout(200); H_.click('#mQuit')

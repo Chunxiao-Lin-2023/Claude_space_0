@@ -70,8 +70,8 @@
       const gz = e.g || 0;
       if (e.blind) {
         const px = W.pl.px - Math.round(CAM.x) + 8, py = W.pl.py - Math.round(CAM.y) + 3;
-        const gr = g.createRadialGradient(px, py, 3, px, py, 30);
-        gr.addColorStop(0, 'rgba(26,8,6,0)'); gr.addColorStop(.45, 'rgba(26,8,6,.84)'); gr.addColorStop(1, 'rgba(22,6,5,.975)');
+        const gr = g.createRadialGradient(px, py, 4, px, py, 36);
+        gr.addColorStop(0, 'rgba(26,8,6,0)'); gr.addColorStop(.5, 'rgba(26,8,6,.66)'); gr.addColorStop(1, 'rgba(22,6,5,.975)');
         g.fillStyle = gr; g.fillRect(0, 0, VW, VH);
         g.fillStyle = 'rgba(150,40,20,.08)'; g.fillRect(0, 0, VW, VH);
         g.fillStyle = 'rgba(90,40,30,.10)';

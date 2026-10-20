@@ -539,7 +539,8 @@
       await S.narr('你取下防盗链，拧开门锁。手还是抖的。\n门外的冷空气里，有一股青草和露水的味道。');
       return S.go('farm', 5, 6, 0);
     }
-    return S.narr('门锁着，防盗链也挂上了。\n不到天亮，你不会开这扇门。');
+    await S.narr('门锁着，防盗链也挂上了。\n不到天亮，你不会开这扇门。');
+    if (f.phase === 'seal' && openLeft(S).length) await S.think('图纸上的八处，前门和客厅的窗是好的。\n还有……' + openLeft(S).map(k => OPENINGS[k]).join('、') + '。');
   }
   function clockText(S) {
     const f = S.f;
