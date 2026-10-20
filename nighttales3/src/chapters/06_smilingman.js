@@ -311,7 +311,7 @@
     resume: {
       walk: async S => { resetStanders(S); S.amb('wind'); },
       cross: async S => { const w = S.ent('woman'); S.stop('woman'); S.follow('woman', false); w.hidden = true; w.spr = '@woman'; S.amb('wind'); },
-      store1: async S => { S.f.ws = 0; S.f._ws2 = 0; S.f._fwT = 6; S.f._wsWarn = 0; setFace(S, 1); S.amb('room'); },
+      store1: async S => { S.f.ws = 0; S.f._ws2 = 0; S.f._fwT = 3.5; S.f._wsWarn = 0; setFace(S, 1); S.amb('room'); },
       lane: async S => { S.amb('wind'); },
       final: async S => { resetMan(S); S.f.caught = 0; S.f.wrong = 0; },
       sprint: async S => { sprintStart(S, true); },
@@ -994,8 +994,15 @@
   }
   function storeTick(S, dt) {
     const f = S.f; f._fwT = (f._fwT ?? 6) - dt;   // 只在玩家能动的时候计时；换窗时玻璃轻轻「嗒」一声
-    if (f._fwT <= 0) { f._fwT = 5 + Math.random() * 3; let n = (Math.random() * 5) | 0; if (n === f.fw) n = (n + 1 + ((Math.random() * 4) | 0)) % 5; setFace(S, n); glassTap(S, .6); }
-    const p = W.pl, wx = SWX[f.fw ?? 0];
+    const p = W.pl;
+    if (f._fwT <= 0) {   // 它喜欢挪到离你最近的那扇窗外面（六成），其余时候随便换一扇
+      f._fwT = 5 + Math.random() * 3;
+      const near = SWX.reduce((b, x, i) => Math.abs(x - p.x) < Math.abs(SWX[b] - p.x) ? i : b, 0);
+      let n = Math.random() < .6 ? near : (Math.random() * 5) | 0;
+      if (n === f.fw) n = (n + 1 + ((Math.random() * 4) | 0)) % 5;
+      setFace(S, n); glassTap(S, .6);
+    }
+    const wx = SWX[f.fw ?? 0];
     if (p.dir === 3 && p.y <= 3 && Math.abs(p.x - wx) <= 2) {
       f._ws2 = (f._ws2 || 0) + dt;
       if (f._ws2 > .55 && !f._wsWarn) { f._wsWarn = 1; glassTap(S, 1.4); S.sfx('heart'); S.toast('头顶的玻璃「嗒」地响了一下……别抬头！'); }
@@ -1055,7 +1062,7 @@
       rhythm(S, .5); await S.wait(1200);
       await S.narr('很高。很瘦。穿着旧西装。他在跳舞——转一圈，再往前大大地迈一步，脸仰着看天。\n镜子太小，看不清他的脸。可你看得清他在笑。');
       await S.say('小柯', ['他每隔一阵子就来一次。他不进来，从来不进来。……可他看见你进来了。', '别走正门。后门出去是后巷，巷子那头有地下通道，能通到长街中段。后门钥匙在员工柜里，右边墙角。'], { style: 'whisper' });
-      f.phase = 'store1'; f.ws = 0; f._fwT = 6; f._ws2 = 0; f._wsWarn = 0; setFace(S, 1);
+      f.phase = 'store1'; f.ws = 0; f._fwT = 3.5; f._ws2 = 0; f._wsWarn = 0; setFace(S, 1);
       S.sfx('knock'); glassTap(S, 1.5); S.shake(300, 2);
       await S.narr('「咚。」\n左边的窗户上，有什么东西轻轻碰了一下玻璃。');
       await S.say('小柯', '……来了。别抬头看窗户。想知道它贴在哪扇窗外面，就看这面镜子。', { style: 'whisper' });

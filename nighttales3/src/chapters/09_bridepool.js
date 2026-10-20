@@ -86,30 +86,41 @@
   /* 光绪年间：队伍从下面抬上来，沿石滩往左边山径走 */
   const PPATH = FPATH.slice().reverse();
 
-  function placeLine(S, ids, path, p) {
+  /* fade = [s0, s1]：在路径 s0 处从雾里淡入，到 s1 处淡出（山径上的队伍用） */
+  function placeLine(S, ids, path, p, fade) {
     ids.forEach((id, i) => {
       const e = S.ent(id); if (!e) return;
       const s = p - i;
-      if (s < 0 || s > path.length - 1) { e.hidden = true; return; }
+      if (s < 0 || s > path.length - 1 || (fade && (s < fade[0] || s > fade[1]))) { e.hidden = true; return; }
       const a = Math.floor(s), b = Math.min(path.length - 1, a + 1), k = s - a, A = path[a], B = path[b];
-      e.hidden = false; e.alpha = e.alpha ?? 1;
+      e.hidden = false; e.alpha = fade ? Math.max(0, Math.min(1, (s - fade[0]) / 2, (fade[1] - s) / 2)) : (e.alpha ?? 1);
       e.px = (A[0] + (B[0] - A[0]) * k) * TS; e.py = (A[1] + (B[1] - A[1]) * k) * TS;
       e.x = Math.round(e.px / TS); e.y = Math.round(e.py / TS);
       if (B[0] !== A[0] || B[1] !== A[1]) e.dir = B[0] > A[0] ? 2 : B[0] < A[0] ? 1 : B[1] > A[1] ? 0 : 3;
       e.fr = [1, 0, 3, 0][Math.floor(s * 4) % 4];
     });
   }
+  /* 剧本里的行进：MARCH 让地图 tick 每帧补上走路帧（引擎每帧会把没在 mv 的实体 fr 清零） */
+  let MARCH = null;
   async function march(S, ids, path, from, to, spd = 2.6) {
-    let p = from;
-    while (p < to) { p = Math.min(to, p + spd * .05); placeLine(S, ids, path, p); await S.wait(50); }
+    let p = from; MARCH = { ids, path, p };
+    try { while (p < to) { p = Math.min(to, p + spd * .05); MARCH.p = p; placeLine(S, ids, path, p); await S.wait(50); } }
+    finally { MARCH = null; }
     ids.forEach(id => { const e = S.ent(id); if (e) e.fr = 0; });
     return p;
   }
-  /* 唢呐：一小段五声音阶的吹打（双方都听得见） */
-  function suona(S, sad) {
+  function marchFrames(S) { if (MARCH) placeLine(S, MARCH.ids, MARCH.path, MARCH.p); }
+  /* 唢呐：一小段五声音阶的吹打（双方都听得见）；v = 音量倍数（队伍越近越响） */
+  function suona(S, sad, v = 1) {
     const N = sad ? [523, 466, 392, 349, 392, 311] : [784, 880, 784, 659, 587, 659, 784, 880];
-    N.forEach((f, i) => S.tone('sawtooth', f, f * (i % 2 ? 1.015 : .985), sad ? .34 : .2, .035, i * (sad ? .3 : .17), 2600));
-    S.tone('square', N[0] / 2, N[0] / 2, sad ? 1.8 : 1.3, .012, 0, 700);
+    N.forEach((f, i) => S.tone('sawtooth', f, f * (i % 2 ? 1.015 : .985), sad ? .34 : .2, .035 * v, i * (sad ? .3 : .17), 2600));
+    S.tone('square', N[0] / 2, N[0] / 2, sad ? 1.8 : 1.3, .012 * v, 0, 700);
+  }
+  /* 包了红布的锣：闷、低、尾音往下掉 */
+  function gong(S, v = 1) {
+    S.tone('triangle', 210, 186, 1.3, .07 * v, 0, 1200);
+    S.tone('square', 105, 96, .9, .02 * v, 0, 500);
+    S.tone('sine', 422, 380, .5, .02 * v, .01, 1600);
   }
 
   /* ---------------- 人物 ---------------- */
@@ -166,7 +177,7 @@
   }
 
   const caughtProc = async S => {
-    S.f.procOn = false;
+    S.f.procOn = false; S.lights(null);
     await S.scare('face', { face: 'porterface', sfx: 'scream' });
     await S.die('一根冰冷的轿杠横着撞上了你的胸口。\n你脚下一空，被人一左一右架了起来——红衣的轿夫们没有看你，脚步一下也没有停。\n唢呐吹得好欢喜。', '你挡了迎亲的路');
   };
@@ -174,7 +185,7 @@
   defChapter({
     id: 'bridepool', n: 9, title: '新娘潭', sub: '黄昏的山涧，夜里有人吹唢呐。听见了，不要回头，不要应声。', origin: '香港新界都市传说', color: '#164338',
     icon: '@bride', amb: 'river', floor: 'granite', wall: 'stone', dark: .8, plr: 3,
-    endings: { good: '送嫁', sedan: '被请上花轿', answer: '应了一声' },
+    endings: { good: '送嫁', sedan: '被请上花轿', answer: '应了一声', snatch: '抢轿' },
     people: {
       me: { skin: '#f0c8a0', hair: '#1e1614', hs: 'bob', top: '#2f7a86', top2: '#d8e4e0', bottom: '#3a3a44', shoes: '#c84a3a' },
       min: { key: 'bp-min', skin: '#f4d2b4', hair: '#140e0e', hs: 'bun', top: '#b81e26', top2: '#e0b040', bottom: '#b81e26', robe: true, shoes: '#b81e26', blush: '#f0a0a0', mouth: '#c0404a', extra: minX },
@@ -208,6 +219,31 @@
         R(11, 14, 3, 3, '#000'); R(18, 14, 3, 3, '#000');
         const m = Math.round(a * 3); R(11, 21, 10, 1, '#3a1010'); R(12, 22, 8, 1 + m, '#1a0a0a');
         R(4, 25, 24, 7, '#7a1418'); R(4, 25, 24, 1, GOLD);
+      },
+      /* 轿帘掀开一条缝：缝里一只眼睛 */
+      slitface(R, a, t) {
+        R(0, 0, 32, 32, '#7a0a10'); R(0, 0, 32, 3, '#4a0408'); R(0, 3, 32, 1, GOLD);
+        const X = 3, Y = 6; R(X, Y, 4, 1, GOLD2); R(X, Y + 2, 4, 1, GOLD2); R(X + 1, Y + 1, 2, 1, GOLD2); R(X, Y + 4, 4, 1, GOLD2);
+        R(25, 6, 4, 1, GOLD2); R(25, 8, 4, 1, GOLD2); R(26, 7, 2, 1, GOLD2); R(25, 10, 4, 1, GOLD2);
+        const w = 2 + Math.round(a * 6); R(16 - w, 0, w * 2, 32, '#060203');
+        if (w > 3) {
+          R(16 - w + 1, 9, w * 2 - 2, 10, '#d6d8cf');
+          R(13, 12, 6, 4, '#f0ece0'); R(14, 12, 4, 4, '#000'); R(15, 13, 1, 1, '#8a0a0a');
+          R(16 - w + 1, 9, w * 2 - 2, 2, '#141010'); R(16 - w + 1, 19, w * 2 - 2, 1, '#9a9c94');
+          for (let i = 0; i < 3; i++) R(14 + i * 2, 20 + ((t * 18 + i * 5) % 8), 1, 2, WET);
+        }
+        R(0, 28, 32, 4, '#5a0810'); R(0, 28, 32, 1, GOLD);
+      },
+      /* 水底伸上来的手 */
+      handface(R, a, t) {
+        R(0, 0, 32, 32, '#06201c'); for (let i = 0; i < 6; i++) R(0, 4 + i * 5 + Math.round(Math.sin(t * 3 + i)), 32, 1, '#0e3a33');
+        const y = 30 - Math.round(a * 14);
+        R(10, y, 12, 16, '#9a0e16'); R(10, y, 12, 2, GOLD); R(9, y + 2, 1, 14, '#6a0a10');
+        R(11, y - 9, 10, 10, '#c8ccc0'); R(12, y - 8, 8, 8, '#d6d8cf');
+        for (let i = 0; i < 4; i++) R(11 + i * 3 - (i === 0 ? 1 : 0), y - 16 + (i === 0 || i === 3 ? 3 : 0), 2, 8 - (i === 0 ? 1 : 0), '#d6d8cf');
+        R(8, y - 6, 4, 2, '#c8ccc0'); R(7, y - 7, 2, 2, '#d6d8cf');
+        for (let i = 0; i < 4; i++) R(11 + i * 3 - (i === 0 ? 1 : 0), y - 16 + (i === 0 || i === 3 ? 3 : 0), 2, 1, '#5a6a64');
+        R(0, 26, 32, 6, 'rgba(10,46,42,.85)'); for (let i = 0; i < 5; i++) R(3 + i * 6, 26 + ((t * 10 + i * 3) % 3), 4, 1, 'rgba(200,230,225,.5)');
       }
     },
     items: {
@@ -220,15 +256,15 @@
       shoe: { name: '红绣花鞋', desc: '一只很小的红绣花鞋，鞋面绣着并蒂莲。在水底泡了一百多年，丝线的颜色还是那么红。' }
     },
     notes: {
-      post: { title: '小敏手机上的讨论区帖子', text: '【求助】下个月摆酒，想去新娘潭影裙褂相，会唔会好唔吉利？\n\n#1 楼主：个名好浪漫呀，仲有瀑布，男朋友话无所谓，问下大家意见。\n\n#2：清朝有顶花轿经过，轿夫跣脚，新娘连人带轿跌落个潭度浸死咗，所以先叫新娘潭。你话吉唔吉利？\n\n#3：唔止。上面仲有个照镜潭，话新娘上轿前喺嗰度照过镜。有人见过潭边企住个女人，水入面冇佢个倒影。\n\n#4：我阿爸讲，以前有人喺个潭度见到一对脚，着住红鞋。\n\n#5：夜晚入面吹吹打打，好似有人娶老婆，但系一个人都见唔到。听到就唔好回头，唔好应。\n\n#6：我朋友揸电单车经过新娘潭路，倒后镜见到车尾坐多咗一个人。\n\n#7：另一个版本话系一对新婚夫妇喺度阴阳相隔，唔系单单新娘。\n\n#8：四大鬼域之首呀大佬。成日有人出事，玄学佬话佢搵替身。\n\n#9：讲真，出事系因为啲石湿滑、落雨水急、条路弯多。日头去，唔好落水，天黑前走，乜都冇事。\n\n#10 楼主：多谢晒。我哋会日头去㗎啦！' },
-      stele: { title: '新娘桥旁的石碑', text: '（石碑上的字被风雨蚀得只剩一半，你借着夕阳一个字一个字地辨认）\n\n光绪□□年七月，乌蛟腾谢氏女于归鹿颈陈门。\n是日大雨，山溪暴涨。\n花轿行至潭上，石滑，轿夫失足，\n新人坠潭，殁焉。\n\n乡人哀之，名其潭曰新娘。\n复于溪上架石为桥，以利往来，\n毋使后之嫁娶者，再蹈斯险。\n\n（碑脚有人摆了一对小红蜡烛，烧剩半截。）' },
-      diary: { title: '泡过水的簿仔', text: '（土地公神台底下压着一本旧簿仔，字迹歪歪斜斜）\n\n我系谢家嫁女那天，抬前杠的。\n那块石，我行过一百次。那日落雨，我跣咗。\n秀姑娘跌落水之前，掀开轿帘望咗我一眼。\n佢冇叫。\n\n之后每年七月，夜晚山入面都有吹打声。佢哋仲系由照镜潭抬落嚟，抬去新娘潭，抬去鹿颈。\n抬唔到。\n\n听老人家讲：\n听见唢呐，莫回头，莫应声。\n见到轿行过，让路，面朝山壁企定，莫望轿。\n挡佢条路嘅人，会被一齐抬走。\n应咗声嘅人，佢哋会当你系新娘，请你上轿。\n\n秀姑娘上轿前喺照镜潭照过镜，个铜镜跌咗落潭。\n佢有一只绣花鞋，沉喺新娘潭底。\n一只脚光住，佢点行得到夫家？\n\n我老咯，落唔到水。\n边个后生仔见到呢本嘢，替我还返俾佢。\n\n（最后一页，另一个人的笔迹：「阿爷，今年我又嚟上香。」）' },
+      post: { title: '小敏手机上的讨论区帖子', text: '【求助】下个月摆酒，想去新娘潭影裙褂相，会唔会唔吉利？\n\n#1 楼主：个名好浪漫，仲有瀑布。男朋友话无所谓。\n\n#2：清朝有顶花轿经过，轿夫跣脚，新娘连人带轿跌落潭浸死，所以叫新娘潭。你话吉唔吉利？\n\n#3：上面仲有个照镜潭。有人见过潭边企住个女人，水入面冇佢个倒影。\n\n#4：我阿爸话以前有人喺潭度见到一对脚，着住红鞋。亦有版本话出事嘅系一对新婚夫妇。\n\n#5：夜晚山入面吹吹打打，好似娶老婆，但一个人都见唔到。听到就唔好回头，唔好应。\n\n#6：四大鬼域之首。有人揸电单车经新娘潭路，倒后镜见到车尾多咗个人。玄学佬话佢搵替身。\n\n#7：讲真，出事系因为石滑、落雨水急、路弯多。日头去，唔好落水，天黑前走。\n\n#8 楼主：多谢！我哋日头去㗎！（不过而家七月喎……应该冇所谓啩？）' },
+      stele: { title: '新娘桥旁的石碑', text: '（石碑上的字被风雨蚀得只剩一半，你借着夕阳一个字一个字地辨认）\n\n光绪□□年七月，乌蛟腾谢氏女于归鹿颈陈门。\n是日大雨，山溪暴涨。\n花轿行至潭上，石滑，轿夫失足，\n新人坠潭，殁焉。\n\n乡人哀之，名其潭曰新娘。\n复于溪上架石为桥，以利往来，\n毋使后之嫁娶者，再蹈斯险。\n\n　　　　光绪三十二年　丙午　乡人公立\n\n（碑脚有人摆了一对小红蜡烛，烧剩半截。）' },
+      diary: { title: '泡过水的簿仔', text: '（土地公神台底下压着一本旧簿仔，字迹歪歪斜斜）\n\n谢家嫁女那天，我抬前杠。\n那块斜石我行过一百次。那日落雨，我跣咗。\n秀姑娘跌落水之前，掀开轿帘望咗我一眼。佢冇叫。\n\n之后每年七月，夜晚山入面都有吹打声。佢哋由照镜潭抬落嚟，抬去新娘潭，抬去鹿颈——抬唔到。\n\n老人家讲：\n听见唢呐，莫回头，莫应声。\n见轿行过，让路，面朝山壁企定，莫望轿。\n挡路嘅，会被一齐抬走；应声嘅，会被当系新娘，请上轿。\n\n秀姑娘上轿前喺照镜潭照过镜，个铜镜跌咗落潭。\n佢一只绣花鞋沉喺新娘潭底。一只脚光住，点行得到夫家？\n我老咯，落唔到水。后生仔，替我还返俾佢。\n\n（最后一页，另一个人的笔迹：「阿爷，今年我又嚟上香。」）' },
       gengtie: { title: '庚帖', text: '（镜匣里垫着一张对折的红纸，墨迹化开了一点）\n\n坤造　谢氏　秀\n生于同治□年□月□日□时\n年方十七\n许配鹿颈陈门为室\n天作之合　百年偕老\n\n（红纸背面，有人用很小很小的字写着）\n\n阿妈话，上咗轿就唔好回头。\n回头，就嫁唔出。\n\n轿行到潭边，我好惊，我回咗头。' }
     },
-    legend: '新娘潭位于香港新界东北的船湾郊野公园，是一条有好几级瀑布和深潭的山溪，也是著名的烧烤和行山地点。关于它的名字，流传最广的说法是：清朝时（也有人说是民国初年），一顶花轿从乌蛟腾一带抬往鹿颈，路过潭边时正逢雨后，山石湿滑，一名轿夫失足，花轿翻侧，新娘跌进瀑布下的深潭溺死，水潭从此被叫作「新娘潭」。据说村民后来在溪上修了一道石桥，好让日后嫁娶的人平安经过。另一个版本则说，在这里阴阳相隔的是一对新婚夫妇。\n\n附近还有一个「照镜潭」，潭水平静如镜。一种说法是新娘出嫁前在这里梳妆照镜；另一种说法更阴森：有人看见潭边站着一个女人，水里却没有她的倒影，这个潭才因此得名。\n\n几十年来，关于这里的传闻越来越多：夜里听见吹吹打打的迎亲乐声，四周却不见人；有人在水里看见一双穿红鞋的脚；骑电单车经过新娘潭路，发现车尾多了一个人……它常被列为香港的「四大鬼域」之一，也有人说这里的意外是冤魂在「找替身」。这些都属于都市传说。真实的情况是：山溪雨后水势湍急、石面湿滑，郊野公园里的失足和遇溺事故确实时有发生——日间前往、不要擅自下水、天黑前离开，比任何禁忌都管用。\n\n「夜里听见唢呐不要回头、不要应声」，是华南民间关于夜行的常见忌讳之一：有人在背后叫你的名字，不要应。旧时婚俗里也有「新娘上轿不回头」的讲究。本章把这两条揉进了新娘潭的故事。\n\n（本章中的新娘谢秀、她的庚帖、轿夫的手记、铜镜与绣花鞋、每年七月抬轿的说法，以及所有人物和结局，均为游戏虚构。）',
+    legend: '新娘潭位于香港新界东北的船湾郊野公园，是一条有好几级瀑布和深潭的山溪，也是烧烤和行山的热门地点。流传最广的说法是：清朝时（也有人说是民国初年），一顶花轿从乌蛟腾抬往鹿颈，四名轿夫路过潭边时正逢雨后，山石湿滑，一人失足，花轿翻侧，新娘跌进瀑布下的深潭溺死，水潭从此被叫作「新娘潭」。据说村民后来在溪上修了一道石桥，就是今天的新娘桥，有说法称桥建于1906年（光绪三十二年）。另一个版本则说，在这里阴阳相隔的是一对新婚夫妇。\n\n附近还有一个「照镜潭」，潭水平静如镜。一种说法是新娘出嫁前在这里梳妆照镜；另一种说法更阴森：有人看见潭边站着一个女人，水里却没有她的倒影。\n\n几十年来，传闻越积越多：夜里听见吹箫打鼓的迎亲声，四周却不见人；有人在水里看见一双穿红鞋的脚；骑电单车经过新娘潭路，车尾多了一个人……它常被列为香港的「四大鬼域」之一，也有人说这里的意外是冤魂在「找替身」。这些都属于都市传说。真实的情况是：山溪雨后水势湍急、石面湿滑，郊野公园里的失足和遇溺事故确实时有发生——日间前往、不要擅自下水、天黑前离开，比任何禁忌都管用。\n\n「夜里有人在背后叫你，不要应，不要回头」是华南民间常见的夜行忌讳；旧时婚俗讲究「新娘上轿不回头」；农历七月俗称鬼月，传统上不办婚嫁。本章把这几条揉进了新娘潭的故事。\n\n（本章中的新娘谢秀、她的庚帖、轿夫的手记、石碑碑文、铜镜与绣花鞋、每年七月抬轿的说法，以及所有人物和结局，均为游戏虚构。）',
     start: { map: 'carpark', x: 10, y: 8, dir: 3 },
     async intro(S) {
-      await S.card('第九夜　新娘潭', '2011年9月　香港新界　船湾郊野公园', '小敏下个月结婚。\n婚纱照要影两套：一套白纱，在海边；\n一套大红裙褂——\n\n「去新娘潭啦。个名咁啱，几有意思呀。」\n\n我是她的姊妹。成个袋，都是我孭。');
+      await S.card('第九夜　新娘潭', '2011年8月（农历七月）　香港新界　船湾郊野公园', '小敏下个月结婚。\n婚纱照要影两套：一套白纱，在海边；\n一套大红裙褂——\n\n「去新娘潭啦。个名咁啱，几有意思呀。」\n\n我是她的姊妹。成个袋，都是我孭。');
     },
     resume: {
       trail: async S => { procReset(S); },
@@ -331,10 +367,12 @@
             await S.narr('士多落了闸。铁闸上用粉笔写着：「七月　早收」。');
           } },
           { id: 'bak', x: 6, y: 3, spr: '@bak', dir: 0, on: S => bak(S) },
-          { id: 'net', x: 3, y: 3, spr: 'lnet', hidden: true, solid: false, async on(S) {
-            S.hide('net'); S.give('net');
-            await S.narr('阿伯的捞叶网，靠在士多的帐篷柱旁边。\n竹柄比你还高，网兜上还挂着几片湿叶子。');
-            if (S.f.ph === 'net') S.goal('带捞叶网回新娘潭，把潭底的绣花鞋捞上来');
+          { id: 'net', x: 21, y: 3, spr: 'lnet', solid: false, async on(S) {
+            const ph = S.f.ph;
+            if (ph === 'day' || ph === 'day2' || ph === 'shoot') return S.narr('一支长柄捞叶网，插在溪边的石缝里。\n阿伯刚刚用它捞完溪里的落叶，网兜还在滴水。');
+            S.hide('net'); S.give('net'); S.f.gotNet = true;
+            await S.narr('阿伯的捞叶网，还插在溪边的石缝里。\n竹柄比你还高，网兜上挂着几片湿叶子。');
+            if (S.f.ph === 'net') S.goal('带捞叶网回新娘潭，捞起斜石底下的绣花鞋');
           } },
           { x: 2, y: 4, spr: 'barrel', on: S => S.narr('垃圾桶上贴着告示：「请将垃圾带走」。\n旁边堆满了垃圾，还有一束被人扔掉的塑料红花。') },
           { id: 'bbq1', x: 8, y: 4, spr: 'bbq', lit: true, light: { r: 1.4, col: 'rgba(255,120,60,.14)' }, on: S => S.narr(S.f.ph === 'day' || S.f.ph === 'day2' ? '炭还是暖的。铁网上粘着一片烧焦的鸡翼。' : '炉里的炭早就熄了。铁网冰冷冰冷。') },
@@ -347,9 +385,9 @@
           { x: 6, y: 7, spr: 'phone', solid: false, z: 1, oy: -6 },
           { x: 15, y: 5, spr: 'board', on: S => S.narr('绿色的导赏牌：\n「船湾郊野公园　新娘潭自然教育径」\n「相传昔日有一花轿途经此处，轿夫失足，新娘堕潭身亡，故名新娘潭。」\n\n底下一行红字：溪涧湿滑，切勿涉水。') },
           { x: 17, y: 7, spr: 'stele', async on(S) { if (S.once('stele')) await S.narr('新娘桥西头立着一块小石碑，碑脚有人上过香。'); await S.note('stele'); } },
-          { x: 20, y: 7, spr: 'sign', col: '#5a3a22', on: S => S.narr('木牌：新娘潭 ↑　照镜潭 ↑ 2.5公里\n有人在「照镜」两个字上画了一个红圈。') },
+          { x: 20, y: 7, spr: 'sign', col: '#5a3a22', on: S => S.narr('木牌：新娘潭 ↑　照镜潭 ↑\n有人在「照镜」两个字上画了一个红圈。') },
           { x: 19, y: 8, spr: 'invisible', solid: true, on: S => S.narr(S.f.ph === 'day' || S.f.ph === 'day2' ? '溪水清得见底，石头缝里有几条小鱼。\n水是从新娘潭流下来的。' : '黑漆漆的溪水，流得比白天急。\n水声里好像夹着人说话的声音。') },
-          { x: 5, y: 9, spr: 'busstop', on: S => S.narr(S.f.ph === 'day' || S.f.ph === 'day2' ? '巴士站牌：275R 假日专线　新娘潭 ⇄ 大埔墟站。\n尾班车 18:30。' : '尾班车早就走了。站牌在风里轻轻地晃。') },
+          { x: 5, y: 9, spr: 'busstop', on: S => S.narr(S.f.ph === 'day' || S.f.ph === 'day2' ? '巴士站牌：275R 假日专线　新娘潭 ⇄ 大埔墟站。\n有人在站牌上用原子笔写：「尾班车好早，唔好等天黑。」' : '尾班车早就走了。站牌在风里轻轻地晃。') },
           { x: 8, y: 9, spr: 'payphone', async on(S) {
             if (S.f.ph === 'day' || S.f.ph === 'day2') return S.narr('公众电话。你口袋里只有八达通。');
             S.sfx('tv');
@@ -368,7 +406,6 @@
           if (first) return opening(S);
           if (S.f.ph !== 'day' && S.f.ph !== 'day2') {
             S.hide('bak'); S.ent('kiosk').off = true; S.ent('bbq1').lit = false; S.ent('bbq1').light = null;
-            if (!S.has('net') && !S.f.gotNet) S.show('net');
             if (S.once('carNight')) await S.narr('烧烤场一个人也没有。士多落了闸，275R 早就走了。\n只有一盏路灯，在停车场边上一闪一闪。');
           }
         }
@@ -431,6 +468,7 @@
           }
         },
         tick(S, dt) {
+          marchFrames(S);
           const f = S.f; if (W.busy || !['night', 'seek', 'carry', 'net'].includes(f.ph)) return;
           f._ps = (f._ps ?? 9) - dt; if (f._ps <= 0) { f._ps = 24 + Math.random() * 10; suona(S, true); S.bubble('hei', '…', 1500); }
         }
@@ -462,7 +500,8 @@
           await S.card('光绪年间　七月', '乌蛟腾　→　鹿颈', '雨落了一整日。\n山溪涨到了石边，\n大红的花轿淋成了深红色。\n\n你是送嫁的喜娘阿好。\n你跟在轿尾，一步，一步。');
           S.goal('跟住花轿');
         },
-        step(S, x, y) { if (y <= 10 && !S.f.accident) return accident(S); }
+        step(S, x, y) { if (y <= 10 && !S.f.accident) return accident(S); },
+        tick(S) { marchFrames(S); }
       },
       /* ---------------- 山径（新娘潭 ⇄ 照镜潭） ---------------- */
       trail: {
@@ -471,8 +510,8 @@
         tileOpts: { grassC: '#1e3420', treeC: '#122818' },
         rows: TRAIL_ROWS,
         ents: [
-          { x: 5, y: 0, spr: 'invisible', async touch(S) { procReset(S); await S.go('pool', 1, 4, 2); } },
-          { x: 12, y: 31, spr: 'invisible', async touch(S) { procReset(S); await S.go('mirror', 12, 1, 0); } },
+          { x: 5, y: 0, spr: 'invisible', async touch(S) { const fled = S.f.procOn; procReset(S); trailGoal(S); await S.go('pool', 1, 4, 2); if (fled) await S.think('唢呐声停了。\n……它们没有走。它们还在山径里等。'); } },
+          { x: 12, y: 31, spr: 'invisible', async touch(S) { procReset(S); trailGoal(S); await S.go('mirror', 12, 1, 0); } },
           { x: 6, y: 2, spr: 'marker', on: S => S.narr('标距柱：C1207。\n柱子底下压着一叠黄纸，被露水打湿了。') },
           { x: 4, y: 22, spr: 'marker', on: S => S.narr('标距柱：C1211。\n有人用红笔在柱子上写了个「囍」，又用力划掉了。') },
           { x: 13, y: 9, spr: 'lantern', off: true, on: S => S.narr('树枝上挂着一个褪了色的红灯笼，纸都烂了，竹骨露在外面。\n……这里怎么会有灯笼？') },
@@ -499,7 +538,7 @@
             f.ph = 'seek';
             await S.narr('山径很窄，只够一个人走。两边的树枝在头灯的光圈外面交叉在一起，像一条长长的隧道。\n路边的山壁上，隔一段就凹进去一块——是给挑担的人让路用的。');
             await S.think('小敏……你到底去了哪里？');
-            S.goal('沿山径往下走，去照镜潭找小敏');
+            S.goal('沿山径往里走，去照镜潭找小敏');
           }
           if ((f.ph === 'seek' && !f.pass_seek) || (f.ph === 'carry' && !f.pass_carry)) S.cp('trail');
         },
@@ -554,7 +593,7 @@
             await S.narr('照镜潭。\n这里没有瀑布，潭水平得一丝波纹也没有，像一块打磨过的铜镜，把月亮整个装了进去。');
             await S.narr('潭面上露出几块踏脚石，斜斜地排向对岸。\n对岸那块大石上，好像放着一个木匣。');
             await S.think('小敏不在这里。可是……她的鞋在山径上。她一定来过。');
-            S.goal('踩着石头过到对岸（小心，有的石头不是石头）');
+            S.goal('过到对岸的大石（有的石头不是石头）');
             S.cp('mirror');
           }
         },
@@ -565,7 +604,7 @@
         },
         tick(S, dt) {
           const f = S.f, p = W.pl, on = p.x === 7 && p.y === 3;
-          if (on && f.looking) f.reflT = 4; else { if (!on) f.looking = false; f.reflT = Math.max(0, (f.reflT || 0) - dt); }
+          if (on && f.looking) f.reflT = f.reflHold || 4; else { if (!on) f.looking = false; f.reflT = Math.max(0, (f.reflT || 0) - dt); }
           const ra = f.reflPerm ? 1 : Math.min(1, Math.ceil((f.reflT || 0) * 4) / 4);
           if (ra !== f._ra) {
             f._ra = ra;
@@ -604,7 +643,7 @@
     if (f.ph === 'day') {
       await S.say('阿伯', ['两樽水？二十蚊。', '……头先嗰个着到成身红嘅，系你朋友？']);
       S.give('water'); f.ph = 'day2';
-      await S.say('阿伯', ['后生女，着裙褂上新娘潭影相……', '唉，你哋后生人唔信呢啲。总之，天黑之前一定要落山。']);
+      await S.say('阿伯', ['而家七月呀，鬼门开，人哋连嫁娶都避开。', '佢着裙褂上新娘潭影相……唉，总之天黑之前一定要落山。']);
       const r = await S.ask('阿伯摇着葵扇，望着溪水上游的方向。', ['「阿伯，新娘潭有咩故仔呀？」', '「知道喇，多谢阿伯。」'], '阿晴');
       if (r === 0) await bakStory(S);
       else { await S.say('阿伯', ['记住：夜晚喺山入面听到唢呐声，唔好回头，唔好应。', '见到有队伍行过嚟，就让路，面朝山壁企定。']); f.heardRule = true; }
@@ -612,18 +651,17 @@
       return;
     }
     if (!f.heardStory) return bakStory(S);
-    const L = ['七月嘅水好凉，千祈唔好落水。', '我阿爷以前成日讲：嗰块石，佢行过一百次。', '去啦，天黑前记得落山。'];
+    const L = ['七月嘅水好凉，千祈唔好落水。', '有人话出事嘅唔止新娘，连新郎都一齐冇咗。\n我阿爷话唔系——新郎喺鹿颈，等咗一世。', '我阿爷以前成日讲：嗰块石，佢行过一百次。', '去啦，天黑前记得落山。'];
     await S.say('阿伯', L[(f._bk = ((f._bk ?? -1) + 1) % L.length)]);
   }
   async function bakStory(S) {
     await S.say('阿伯', [
       '光绪年间嘅事喇。乌蛟腾谢家个女，叫阿秀，十七岁，嫁去鹿颈陈家。',
-      '嗰日落大雨，山水好急。四个轿夫抬住花轿，行到潭边嗰块斜石——',
-      '前杠嗰个跣咗脚。成顶轿侧咗落水，阿秀就咁冇咗。',
-      '所以叫新娘潭。后来村民喺溪上起咗条石桥，就系出面嗰条，叫新娘桥。']);
-    await S.say('阿伯', ['上面仲有个照镜潭。有人话阿秀上轿前喺嗰度照过镜。', '亦有人话，见过潭边企住个女人——水入面，冇佢个影。']);
-    await S.say('阿伯', ['我阿爷，就系抬前杠嗰个。', '……佢之后一世都冇再抬过轿。每年七月，佢都上山，去土地庙上香。而家轮到我。']);
-    await S.say('阿伯', ['记住阿伯讲：夜晚喺山入面听到唢呐声，唔好回头，唔好应。', '见到有队伍行过嚟，就让路，面朝山壁企定，等佢哋行过。', '千祈唔好挡路，唔好望顶轿。']);
+      '嗰日落大雨。四个轿夫行到潭边嗰块斜石，前杠嗰个跣咗脚——成顶轿侧咗落水。',
+      '所以叫新娘潭。村民后来喺溪上起咗条石桥，就系出面嗰条新娘桥。',
+      '上面仲有个照镜潭。有人话阿秀上轿前喺嗰度照过镜；亦有人见过潭边企住个女人——水入面，冇佢个影。',
+      '……抬前杠嗰个，系我阿爷。佢之后一世冇再抬过轿，每年七月都上山，去土地庙上香。而家轮到我。']);
+    await S.say('阿伯', ['记住：夜晚喺山入面听到唢呐声，唔好回头，唔好应。', '见到有队伍行过嚟，就让路，面朝山壁企定。千祈唔好挡路，唔好望顶轿。']);
     S.f.heardStory = true; S.f.heardRule = true;
   }
 
@@ -635,7 +673,7 @@
     await S.say('小敏', '晴晴！快啲嚟，个光好靓呀！');
     S.face('hei', 'pl');
     await S.say('阿希', '阿晴，帮我拎块反光板嚟——喺右上面嗰块石度，我头先放低咗。');
-    S.goal('去右上方的石头上拿反光板，交给阿希');
+    S.goal('去右上方大石拿反光板，交给阿希');
   }
   async function hei(S) {
     const f = S.f, ph = f.ph; S.face('hei', 'pl');
@@ -646,7 +684,7 @@
       return S.say('阿希', L[(f._hl = ((f._hl ?? -1) + 1) % L.length)]);
     }
     if (ph === 'carry') return S.say('阿希', ['铜镜？……阿伯唔系讲，阿秀上轿前喺照镜潭照过镜咩？', '你……你试下用佢照下个潭？']);
-    if (ph === 'net') return S.say('阿希', ['潭底有只鞋？', '阿伯个士多度有个捞叶网，我日头见佢用嚟捞溪度啲落叶。去停车场搵下。']);
+    if (ph === 'net') return S.say('阿希', S.has('net') ? '捞叶网？好……斜石度，慢慢嚟。' : ['潭底有只鞋？', '阿伯有支捞叶网，日头佢捞完落叶就插喺停车场桥边嗰度。']);
     return S.say('阿希', '……');
   }
   async function shoot(S) {
@@ -659,8 +697,11 @@
     await S.say('阿希', '等阵……');
     S.bubble('hei', '?', 1400);
     await S.narr('阿希盯着相机后面的小屏幕，按了一下，又按了一下。\n他的脸色变了。');
-    const r = await S.ask('阿希把相机递给你。', ['（看）', '（不看）'], '阿晴');
-    if (r === 0) {
+    const r = await S.vote('阿希把相机递给你。', ['（看）', '（不看）'], '阿晴');
+    if (!r.agree) {
+      await S.narr('你伸手去接，手伸到一半又缩了回来——\n只来得及瞥见屏幕上一角红色。\n阿希呆了一会儿，默默地把那张相删了。');
+      S.fx('red'); S.sfx('sting');
+    } else if (r.v === 0) {
       await S.narr('屏幕上，小敏站在潭边，笑得好甜。\n她身后的潭水上……站着另一个人。\n大红嫁衣，红盖头，双脚没在水里。');
       await S.scare('face', { face: 'brideface' });
     } else await S.narr('你没有接。\n阿希呆了一会儿，默默地把那张相删了。');
@@ -676,7 +717,7 @@
     S.bubble('min', '…', 1600);
     await S.say('小敏', ['你哋听唔听到……', '有人叫我。'], { style: 'whisper' });
     await S.say('阿晴', '小敏？');
-    await S.fade(1, 200); suona(S); S.sfx('knock');
+    await S.fade(1, 200); suona(S); gong(S);
     await S.say('', '新娘子——上轿喇——', { style: 'big' });
     S.sfx('splash'); S.shake(700, 3); await S.wait(900);
     S.hide('min'); S.show('flower'); S.place('hei', 13, 8, 2);
@@ -689,7 +730,7 @@
     await S.say('阿希', ['阿晴……我跌亲只脚……', '我见到佢……佢自己行咗入左边嗰条山径。好似有人拖住佢只手咁。', '我叫佢，佢冇回头。']);
     S.give('lamp');
     await S.say('阿希', ['呢度冇信号，999都打唔通。', '你拎住我个头灯。我行唔到……我喺度等。你千祈小心。']);
-    S.goal('沿潭边左边的山径去追小敏');
+    S.goal('从潭边左边的山径去追小敏');
     S.cp('night');
   }
 
@@ -709,7 +750,7 @@
   }
   async function accident(S) {
     const f = S.f; f.accident = true;
-    S.sfx('knock'); suona(S);
+    gong(S); suona(S);
     await S.say('媒人婆', '石头好滑！大家睇住脚，慢慢行！');
     const w = bg(S.walk('pl', [9, 8], 2.4));
     await march(S, PASTP, PPATH, 9, 14, 2.2); await w;
@@ -738,8 +779,8 @@
     await S.narr('……你跪在新娘潭边，手里的铜镜冰冷。\n雨声没有了，只剩下瀑布的声音。');
     await S.narr('瀑布左边那块斜石底下，有一点红光，一闪一闪。');
     S.face('hei', 'pl');
-    await S.say('阿希', ['阿晴？你、你头先成个人定住咗……', '……你话潭底有只鞋？我哋点捞呀？', '等等——阿伯个士多度有个捞叶网！我日头见佢用嚟捞溪度啲落叶。']);
-    S.goal(S.has('net') ? '用捞叶网把斜石底下的绣花鞋捞上来' : '去停车场的士多拿捞叶网，把潭底的绣花鞋捞上来');
+    await S.say('阿希', ['阿晴？你、你头先成个人定住咗……', '……你话潭底有只鞋？我哋点捞呀？', '等等——阿伯有支捞叶网！我日头见佢插喺停车场桥边嗰度。']);
+    S.goal(S.has('net') ? '用捞叶网捞起斜石底下的绣花鞋' : '去停车场桥边拿捞叶网');
     S.cp('net');
   }
   async function glintOn(S) {
@@ -752,8 +793,9 @@
     await S.narr('网口碰到了潭底。你往石缝里一兜——');
     S.shake(500, 2); S.sfx('splash');
     await S.narr('有东西从下面拉住了网。\n一下，两下，很轻，像是有人在水底下拉你的手。');
-    const r = await S.ask('竹柄在你手里发抖。', ['（不放手，慢慢往上拉）', '（松手）'], '阿晴');
-    if (r === 1) return S.narr('你一松手，网就自己往下沉了一点——又停住了。\n它在等你。');
+    const r = await S.vote('竹柄在你手里发抖。', ['（不放手，慢慢往上拉）', '（松手）'], '阿晴');
+    if (!r.agree) await S.narr('一只手想松，一只手死死攥住——竹柄在你掌心里转了半圈，\n最后，还是攥住了。');
+    else if (r.v === 1) return S.narr('你一松手，网就自己往下沉了一点——又停住了。\n它在等你。');
     await S.narr('你咬着牙，一点一点往上收。\n拉住网的力气……忽然松开了。');
     S.hide('glint'); S.give('shoe');
     await S.narr('网兜里躺着一只小小的红绣花鞋。\n鞋面上绣着并蒂莲，丝线红得像刚刚绣好。');
@@ -767,14 +809,20 @@
     FINAL.forEach(id => { const e = S.ent(id); e.hidden = true; e.alpha = 1; e.s = {}; });
     ['bride_p', 'bride2_p', 'min_p', 'offer'].forEach(id => S.hide(id));
     S.amb('none'); await S.wait(500);
-    suona(S); S.sfx('knock');
-    await S.narr('唢呐。\n就在左边的山径口，吹得又近、又响、又欢喜。');
-    S.face('hei', 0);
-    await S.say('阿希', '阿、阿晴……佢哋嚟咗……');
-    await S.walk('pl', [7, 9], 5); S.turn(3);
-    S.focus(7, 7);
-    await march(S, FINAL, FPATH, 0, 7, 2.4); suona(S); S.sfx('knock');
-    await march(S, FINAL, FPATH, 7, 14, 2.4);
+    suona(S); gong(S);
+    if (!f.finSeen) {
+      await S.narr('唢呐。\n就在左边的山径口，吹得又近、又响、又欢喜。');
+      S.face('hei', 0);
+      await S.say('阿希', '阿、阿晴……佢哋嚟咗……');
+      await S.walk('pl', [7, 9], 5); S.turn(3);
+      S.focus(7, 7);
+      await march(S, FINAL, FPATH, 0, 7, 2.4); suona(S); gong(S);
+      await march(S, FINAL, FPATH, 7, 14, 2.4);
+      f.finSeen = true; S.cp('final');   // 坏结局重来时直接从队伍停在轿前开始
+    } else {
+      S.pos(7, 9, 3); S.face('hei', 0); S.focus(7, 7);
+      placeLine(S, FINAL, FPATH, 14); FINAL.forEach(id => { S.ent(id).fr = 0; });
+    }
     S.ent('fp3').s.still = 1; S.ent('fp3').dir = 2;
     S.goal('把铜镜和绣花鞋还给她');
     await S.narr('迎亲的队伍在你面前停了下来。\n红衣的轿夫低着头，灯笼里的火是青白色的。没有一个人看你。');
@@ -785,12 +833,19 @@
     S.place('bride_p', 6, 7, 0); S.ent('bride_p').alpha = 0; S.sfx('drip');
     await S.alpha('bride_p', .9, 1200);
     await S.narr('轿旁的潭水里，慢慢站起来一个人。\n红嫁衣，红盖头，盖头的流苏一直在滴水。\n她只穿着一只鞋。');
+    let grabs = 0;
     for (; ;) {
-      const r = await S.ask('她在等。整条队伍，都在等。', ['把铜镜和绣花鞋放在轿前', '「放咗小敏！要抬，就抬我上轿！」', '冲过去，一手拉开轿帘'], '阿晴');
-      if (r === 1) return badSedan(S);
-      if (r === 2) {
+      const r = await S.vote('她在等。整条队伍，都在等。', ['把铜镜和绣花鞋放在轿前', '「放咗小敏！要抬，就抬我上轿！」', '冲过去，一手拉开轿帘'], '阿晴');
+      let v = r.v;
+      if (!r.agree && (r.h === 0 || r.g === 0)) {   // 有一个人想还东西：先还
+        await S.narr('你往前冲了半步，另一只手却已经把铜镜和绣花鞋掏了出来。\n……先还给她。');
+        v = 0;
+      }
+      if (v === 1) return badSedan(S);
+      if (v === 2) {
+        if (++grabs >= 2) return badSnatch(S);
         await S.scare('face', { face: 'porterface' });
-        await S.narr('两只冰冷的手同时按住了你的肩膀。\n轿夫们还是低着头，像两块石头一样，把你推回了原地。');
+        await S.narr('两只冰冷的手同时按住了你的肩膀。\n轿夫们还是低着头，像两块石头一样，把你推回了原地。\n……再来一次，它们就不会只是推了。');
         continue;
       }
       break;
@@ -801,7 +856,7 @@
     S.hide('offer'); S.sfx('chime');
     await S.narr('一阵很轻的风。石头上的东西不见了。\n新娘弯下腰——那只绣花鞋，已经穿在她光着的那只脚上。');
     await S.narr('她举起铜镜，照了照。\n……这一次，镜子里有她。');
-    S.ent('bride2_p').alpha = 0; S.place('bride2_p', 6, 7, 0); S.ent('bride2_p').alpha = 0;
+    S.place('bride2_p', 6, 7, 0); S.ent('bride2_p').alpha = 0;
     bg(S.alpha('bride_p', 0, 1000)); await S.alpha('bride2_p', 1, 1000);
     await S.narr('她掀起了红盖头。\n盖头底下，是一张很年轻、很年轻的脸。十七岁。');
     await S.say('阿秀', ['……多谢你。', '我行咗成百年，都行唔出呢个潭。']);
@@ -849,33 +904,64 @@
     await S.end({ bad: true, id: 'sedan', title: '被请上花轿', text: '小敏在潭边醒过来的时候，天已经亮了。她浑身湿透，手里攥着一只红绣花鞋。\n\n阿晴不见了。\n\n后来，每年七月的夜里，新娘潭的吹打声照旧响起。\n有人说，轿子里多了一个穿行山衫的新娘，一直在问：\n「鹿颈……仲有几远？」' });
   }
 
+  async function badSnatch(S) {
+    await S.narr('你甩开那两只手，一把扯开轿帘，抓住小敏的手腕往外拖。\n她的手腕冰得像潭底的石头。');
+    S.ent('fp3').s.open = 1; S.ent('fp3').s.min = 0;
+    S.place('min_p', 6, 9, 3); S.ent('min_p').alpha = 1;
+    S.amb('none'); S.sfx('splash'); S.shake(600, 3);
+    await S.narr('唢呐声断了。灯笼一盏一盏熄掉。\n整条队伍，连同那顶花轿，像倒影被石子打碎一样，散进了潭水里。');
+    FINAL.forEach(id => S.hide(id));
+    await S.scare('face', { face: 'brideface' });
+    await S.narr('最后散开的，是潭里那个只穿一只鞋的人。\n她没有叫。她只是回过头，看了你一眼。');
+    await S.alpha('bride_p', 0, 900);
+    await S.fade(1, 1500);
+    await S.end({ bad: true, id: 'snatch', title: '抢轿', text: '小敏活了下来。下个月，她如期出嫁。\n\n铜镜和绣花鞋，后来在你的背包里找到，湿漉漉的，怎么晾也晾不干。\n\n婚宴那晚，酒楼外面有人吹唢呐。\n别人都说没听见。\n小敏坐在台上，一直回头。' });
+  }
+
   /* ================= 山径：迎亲队伍 ================= */
+  /* 队伍不再从山径另一头走完全程：在玩家前方约 13 格的雾里出现，过了玩家几格就淡进雾里（每趟约 9 秒） */
+  const NOOKS = [];
+  TRAIL_ROWS.forEach((r, y) => [...r].forEach((c, x) => { if (c === 'a' && [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => PSET.has((x + dx) + ',' + (y + dy)))) NOOKS.push([x, y]); }));
+  function nearIdx(x, y) { let b = 0, bd = 1e9; TPATH.forEach((c, i) => { const d = Math.abs(c[0] - x) + Math.abs(c[1] - y); if (d < bd) { bd = d; b = i; } }); return b; }
+  const procQ = S => { const i = nearIdx(W.pl.x, W.pl.y); return S.f.procDir === 'down' ? i : TPATH.length - 1 - i; };
   function procReset(S) {
-    const f = S.f; f.procOn = false; f.procP = 0; f.procCalled = false; f._pend = false;
+    const f = S.f; f.procOn = false; f.procP = 0; f.procCalled = false; f._pend = false; S.lights(null);
     PROC.forEach(id => { const e = S.ent(id); if (e) { e.hidden = true; e.alpha = 1; } });
+  }
+  function trailGoal(S) {
+    const f = S.f;
+    if (f.ph === 'seek') S.goal('沿山径往里走，去照镜潭找小敏');
+    else if (f.ph === 'carry') S.goal('带铜镜原路回新娘潭');
   }
   const procPath = S => S.f.procDir === 'down' ? TPATH : TUP;
   async function procIntro(S, dir) {
     procReset(S);
     S.amb('none'); await S.wait(300);
-    suona(S); S.sfx('knock');
-    if (dir === 'up') await S.narr('……前面，山径下面，传来了唢呐声。\n吹的是喜庆的调子，一句一句，越吹越近。\n两点红红的灯笼光，在树影里一晃一晃。');
-    else await S.narr('……前面，新娘潭那边，唢呐又响了。\n它们抬着轿，从山上下来了——朝着你手里的铜镜。');
+    S.f.procDir = dir;
+    const q = procQ(S), p = W.pl;
+    suona(S, false, .45); gong(S, .45);
+    if (dir === 'up') await S.narr('……山径前头，照镜潭那边，传来了唢呐声。\n吹的是喜庆的调子，一句一句，越吹越近。\n两点红红的灯笼光，在树影里一晃一晃。');
+    else await S.narr('……山径前头，新娘潭那边，唢呐又响了。\n它们掉过头来了——朝着你手里的铜镜。');
+    let nk = NOOKS[0], nd = 1e9; NOOKS.forEach(c => { const d = Math.abs(c[0] - p.x) + Math.abs(c[1] - p.y); if (d < nd) { nd = d; nk = c; } });
+    S.lights([[nk[0] * TS + 8, nk[1] * TS + 8, 1.3, .9]]); S.bubble('pl', '!', 1200);
     await S.think(S.f.readDiary ? '让路，面朝山壁，莫望轿。莫应声。' : '阿伯讲过：见到队伍行过嚟，就让路，面朝山壁企定。唔好望顶轿，唔好应。');
-    S.goal('躲进路边的山壁凹位，面朝山壁——等迎亲队伍过去');
-    S.f.procDir = dir; S.f.procOn = true; S.f._sn = 2; S.amb('night');
-    placeLine(S, PROC, procPath(S), 0);
+    S.goal('躲进山壁凹位，面朝山壁，等队伍过去');
+    Object.assign(S.f, { procOn: true, _sn: 2, lookWarn: false, procP: Math.max(0, q - 13), procS0: Math.max(0, q - 13), procEnd: Math.min(TPATH.length - 1, q + 6) });
+    S.amb('night');
+    placeLine(S, PROC, procPath(S), S.f.procP, [S.f.procS0, S.f.procEnd + 1]);
   }
   function procTick(S, dt) {
     const f = S.f; if (!f.procOn || W.busy || f._pend || W.endScreen) return;
     const path = procPath(S);
-    f.procP += dt * PSPD; placeLine(S, PROC, path, f.procP);
-    f._sn = (f._sn || 0) - dt; if (f._sn <= 0) { f._sn = 2.4; suona(S); S.sfx('knock'); }
-    if (f.procP - (PROC.length - 1) > path.length - 1) { procReset(S); f['pass_' + f.ph] = true; S.after(0, passed); return; }
+    f.procEnd = Math.max(f.procEnd, Math.min(path.length - 1, procQ(S) + 4));   // 往前逃也会被跟上，直到山径尽头
+    f.procP += dt * PSPD; placeLine(S, PROC, path, f.procP, [f.procS0, f.procEnd + 1]);
+    if (f.procP - (PROC.length - 1) > f.procEnd + 1) { procReset(S); f['pass_' + f.ph] = true; S.after(0, passed); return; }
     const p = W.pl, inPath = PSET.has(p.x + ',' + p.y);
     const fx = p.x + DIRS[p.dir][0], fy = p.y + DIRS[p.dir][1], lookPath = PSET.has(fx + ',' + fy);
-    let near = 99, sedanD = 99;
-    PROC.forEach((id, i) => { const e = S.ent(id); if (!e || e.hidden) return; const d = Math.abs(e.px - p.px) + Math.abs(e.py - p.py); if (d < near) near = d; if (i === 3) sedanD = d; });
+    let near = 99 * TS, sedanD = 99 * TS;
+    PROC.forEach((id, i) => { const e = S.ent(id); if (!e || e.hidden || e.alpha < .3) return; const d = Math.abs(e.px - p.px) + Math.abs(e.py - p.py); if (d < near) near = d; if (i === 3) sedanD = d; });
+    f._sn = (f._sn || 0) - dt;
+    if (f._sn <= 0) { f._sn = 2.4; const v = Math.max(.3, Math.min(1.3, 1.35 - near / TS / 10)); suona(S, false, v); gong(S, v); }
     if (near < 11) { f._pend = true; S.after(0, caughtProc); return; }
     if (!inPath && lookPath && near < 36) { f._pend = true; S.after(0, lookedAt); return; }
     if (!f.procCalled && sedanD < 22) { f.procCalled = true; f._pend = true; S.after(0, theCall); }
@@ -883,15 +969,15 @@
   async function lookedAt(S) {
     const f = S.f;
     if (f.lookWarn) {
-      f.procOn = false;
-      await S.scare('face', { face: 'brideface' });
+      f.procOn = false; S.lights(null);
+      await S.scare('face', { face: 'slitface', sfx: 'scream' });
       return S.die('轿帘掀开了一条缝。\n缝里有一只眼睛，正好对住你的眼睛。\n「……揾到你喇。」', '你望了花轿');
     }
     f.lookWarn = true;
     S.sfx('sting'); S.shake(300, 2);
     const p = W.pl;
     for (let d = 0; d < 4; d++) { const x = p.x + DIRS[d][0], y = p.y + DIRS[d][1]; if (!PSET.has(x + ',' + y)) { S.turn(d); break; } }
-    await S.think('——别看！\n面朝山壁。莫望轿。');
+    await S.think('——别看！\n面朝山壁。莫望轿。（再望一次，就冇下次。）');
     f._pend = false;
   }
   async function theCall(S) {
@@ -900,16 +986,17 @@
     await S.say('轿里的声音', '……阿晴？阿晴，系咪你呀？', { style: 'whisper' });
     await S.say('轿里的声音', ['我好凍呀……佢哋唔俾我落轿……', '你应我一声啦。应我一声，我就知道你喺度。'], { style: 'whisper' });
     const r = await S.vote('是小敏的声音。', ['（咬实牙关，一声不出）', '「小敏！我喺度！」'], '');
-    if (r.v === 1 || r.h === 1 || r.g === 1) return answered(S);
+    if (!r.agree) { await S.narr('你死死咬住牙关——可是喉咙里，另一个你已经替你应了出来。'); return answered(S); }
+    if (r.v === 1) return answered(S);
     S.amb('night');
     await S.think('……不是小敏。\n小敏从来不叫我「阿晴」。她只会叫我「晴晴」。');
     f._pend = false;
   }
   async function answered(S) {
-    S.f.procOn = false;
+    S.f.procOn = false; S.lights(null);
     await S.say('阿晴', '小敏！我喺度！');
     await S.wait(600);
-    suona(S); S.sfx('chime');
+    suona(S); gong(S); S.sfx('chime');
     await S.narr('唢呐声停了一停，然后吹得更响、更欢喜。\n轿帘掀开了。里面没有人，只有一张铺着红布的空座位。');
     await S.say('轿夫们', '新娘子——上轿喇——', { style: 'big' });
     await S.narr('有人从后面替你盖上了一块红布。\n眼前一片红。你听见自己的脚步声，一步、一步，踏上了轿子。');
@@ -917,9 +1004,10 @@
     await S.end({ bad: true, id: 'answer', title: '应了一声', text: '第二天，搜救队在新娘潭边找到了阿希和小敏。小敏说她一直坐在潭边的石头上，好像睡着了，什么也不记得。\n\n阿晴的头灯漂在照镜潭的水面上，还亮着。\n\n后来，行山的人说，七月的夜里，新娘潭的唢呐声里，多了一个声音在应：\n「我喺度——我喺度——」' });
   }
   async function passed(S) {
-    S.amb('night');
-    if (S.f.ph === 'seek') { await S.narr('唢呐声往新娘潭那边去了，越来越远，最后被水声吞掉。\n山径上只剩下你自己的呼吸。'); S.goal('沿山径往下走，去照镜潭找小敏'); }
-    else { await S.narr('吹打声沉进了照镜潭那边的黑暗里。\n……它们还会再上来的。'); S.goal('带着铜镜回新娘潭'); }
+    S.amb('night'); S.lights(null);
+    if (S.f.ph === 'seek') await S.narr('唢呐声往新娘潭那边去了，越来越远，最后被水声吞掉。\n山径上只剩下你自己的呼吸。');
+    else await S.narr('吹打声沉进了照镜潭那边的黑暗里。\n……它们还会再来的。');
+    trailGoal(S);
   }
 
   /* ================= 照镜潭 ================= */
@@ -927,7 +1015,7 @@
     const f = S.f, p = W.pl;
     if (p.x !== 7 || p.y !== 3) return S.narr('岸边一块平平的白石，石面被磨得发亮，像有很多人在上面跪过。\n站上去，伏低身子，就能看见潭水。');
     if (f.reflPerm) return S.narr('有了铜镜，你不用再伏低身子，也看得见水里的路。');
-    S.turn(0); f.looking = true; f.reflT = 4;
+    S.turn(0); f.looking = true; f.reflT = f.reflHold || 4;
     if (S.once('look1')) {
       await S.narr('你跪在白石上，伏低身子，看向潭水。\n水面平得像一块铜镜，连你呼出的白气都照得见。');
       await S.narr('岸上那几块斜斜排开的石头，在水里——有的有倒影，有的没有。\n还有几处，岸上明明只有水，水里却照出了一块块石头。');
@@ -937,13 +1025,14 @@
       await S.narr('你猛地抬起头。\n对岸的大石上，什么也没有。');
       await S.think('岸上看见的不一定是真的。\n只踩水里照得出来的石头。');
     } else await S.narr('你又伏低身子看向水面。倒影里的石头，一块接一块，连成一条弯弯曲曲的路。');
-    if (!f.gotMirror) S.goal('记住倒影里的石头，照着倒影过到对岸（离开白石后，倒影只留一会儿）');
+    if (!f.gotMirror) S.goal('照着倒影里的石头过对岸（倒影只留一会儿）');
+    if (S.coop && S.once('coopRefl')) S.toast('两个人：一个记左右、一个数步数，边走边报');
   }
   async function fall(S) {
     const f = S.f; f.falls = (f.falls || 0) + 1;
     S.sfx('splash'); S.shake(400, 2);
     if (f.falls === 1) {
-      await S.scare('face', { face: 'brideface', sfx: 'splash' });
+      await S.scare('face', { face: 'handface', sfx: 'splash' });
       await S.narr('脚下的「石头」一踩就沉了——那根本不是石头。\n冰冷的潭水漫到腰。水底下，有一只手，轻轻地握住了你的脚踝。');
     } else await S.narr(['你一脚踩空，整个人滑进水里。\n水底下的手，比上次多了。', '水没过了胸口。你听见水底下有人在笑，笑声一串一串地冒上来。'][f.falls % 2]);
     await S.fade(1, 300);
@@ -951,7 +1040,11 @@
     await S.fade(0, 400);
     await S.narr('你连滚带爬地爬回岸上，浑身湿透。');
     if (f.falls === 2 && !f.reflPerm) await S.think('岸上看见的石头……靠不住。\n阿伯说过，照镜潭照出来的东西，跟岸上不一样。\n要不要伏低身子，看看水里？');
-    if (!f.reflPerm) S.goal('站上岸边的白石往水里看，照着倒影里的石头过到对岸');
+    if (f.falls >= 3 && !f.reflPerm && !f.reflHold) {
+      f.reflHold = 9;
+      await S.think('冷静。刚才倒影里那条路……\n头一块，在白石左边第三格的正下面。\n之后是往下两块、往右两块，往下两块、往右两块——像落楼梯。\n（再伏到白石上看一次，倒影会在眼里留久一点。）');
+    }
+    if (!f.reflPerm) S.goal('站上白石，看水里的倒影');
   }
   async function jingxia(S) {
     const f = S.f;
@@ -971,11 +1064,11 @@
     await S.say('新娘', '……我只鞋……', { style: 'whisper' });
     await S.say('新娘', '……我要……嫁过去……', { style: 'whisper' });
     S.face('bride_m', 3);
-    await S.narr('她抬起湿透的袖子，指着山上——新娘潭的方向。\n然后，像一滴墨落进水里，她散开了。');
+    await S.narr('她抬起湿透的袖子，指着山径——新娘潭的方向。\n然后，像一滴墨落进水里，她散开了。');
     await S.alpha('bride_m', 0, 1200);
     f.reflPerm = true; f.ph = 'carry'; f._ra = -1;
     await S.narr('你低头看手里的铜镜。\n镜子里照出的潭面上，那条石头路清清楚楚。');
-    S.goal('带着铜镜，原路回新娘潭（铜镜照得出水里的路）');
+    S.goal('带铜镜原路回新娘潭');
     S.cp('carry');
   }
 })();

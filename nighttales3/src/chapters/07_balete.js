@@ -180,7 +180,11 @@
   async function mirrorUse(S) {
     const f = S.f, m = S.ent('rvm');
     if (f.phase === 'ride') {
-      if (m.s.up) { flipDown(S); S.toast('你把后视镜扳了下去'); return; }
+      if (m.s.up) {
+        flipDown(S); S.toast('你把后视镜扳了下去');
+        if (f.ev < RIDE.length && S.pl.x <= RIDE_X[f.ev]) await rideStep(S, S.pl.x);   // 镜子一扳下去，憋着的那段话就接上了
+        return;
+      }
       return S.think('镜子扳下去了。不看，就对不上。');
     }
     if (f.phase === 'drive1') {
@@ -510,10 +514,11 @@
   /* ================= 接她，送她回 Lola ================= */
   /* 后视镜弹起：限时扳下去。守了规矩（挂了 sampaguita）多两秒 */
   const popT = S => (S.f.sampa ? 7 : 5);
-  function flipDown(S, silent) { setM(S, { up: false, her: 1, eyes: false, lift: 0 }); S.clearTimer(); S.f.flipX = S.pl.x; if (!silent) S.sfx('switch'); }
+  function flipDown(S, silent) { setM(S, { up: false, her: 1, eyes: false, lift: 0 }); S.clearTimer(); S.f.flipX = S.pl.x; if (S.f.phase === 'ride') S.speed(.55); if (!silent) S.sfx('switch'); }
   function popMirror(S) {
     if (S.f.phase !== 'ride') return;
     setM(S, { up: true, her: 2, eyes: false, lift: 0 }); S.sfx('switch'); S.bubble('pl', '!', 900);
+    S.speed(.35);   // 她一抬头，车就更沉了
     S.tone('sine', 1850, 1900, .9, .018, 0, 4000);
     S.timer(popT(S), '她在抬头', stareTimeout);
   }
@@ -616,6 +621,8 @@
   async function rideStep(S, x) {
     const f = S.f;
     if (f.ev < RIDE.length && x <= RIDE_X[f.ev]) {
+      const mm = S.ent('rvm');
+      if (mm && mm.s.up && x > 4) return;   // 镜子还翻着、她还在抬头：开得再快也躲不过去，先把镜子扳下去（路到头了就不再拦）
       const i = f.ev++;
       flipDown(S, true);
       await RIDE[i](S);

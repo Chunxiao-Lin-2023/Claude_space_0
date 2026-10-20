@@ -1,6 +1,8 @@
 # 第九夜 新娘潭 · 自动通关步骤（格式见 tests/play.py 顶部）
 # 等待迎亲队伍：在山壁凹位里面朝山壁站好，等它经过（期间的「应声」选项选 0 = 不出声）
 WAIT_CALL = "new Promise(r => { const t0 = Date.now(), i = setInterval(() => { const W = window.__dbg.W; if (!W || W.dlg || W.endScreen || !W.f.procOn || Date.now() - t0 > 60000) { clearInterval(i); r(); } }, 100); })"
+# 站在原地（山径上）等队伍撞上来
+WAIT_DIE = "new Promise(r => { const t0 = Date.now(), i = setInterval(() => { const W = window.__dbg.W; if (!W || W.endScreen || Date.now() - t0 > 30000) { clearInterval(i); r(); } }, 100); })"
 SOL = [
     [0],
     ['shot', 'carpark'],
@@ -20,6 +22,12 @@ SOL = [
     ['step', 0, 4],
     ['expect', "window.__dbg.W.mapId === 'trail' && window.__dbg.W.f.ph === 'seek'"],
     ['use', 'mshoe'],
+    ['step', 9, 5],
+    ['expect', "window.__dbg.W.f.procOn && window.__dbg.W.extraLights.length === 1"],
+    # 站在山径上不让路：被轿杠撞上 → 从山径入口的检查点重来
+    ['js', WAIT_DIE],
+    ['retry'],
+    ['expect', "window.__dbg.W.mapId === 'trail' && !window.__dbg.W.f.procOn && window.__dbg.W.cp.name === 'trail'"],
     ['step', 9, 5],
     ['expect', "window.__dbg.W.f.procOn"],
     ['js', "window.__dbg.tp(10, 4, 2)"],
@@ -66,4 +74,5 @@ SOL = [
     ['use', 'net'],
     ['step', 22, 0],
     ['use', 'glint', [0, 0, 0]],
+    ['expect', "window.__dbg.store.get('ends', []).includes('bridepool:good')"],
 ]

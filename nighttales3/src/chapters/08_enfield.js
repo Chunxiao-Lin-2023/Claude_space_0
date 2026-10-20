@@ -2,36 +2,92 @@
 (() => {
   /* 主题：真与假。录音机回放时会多出东西；相机定格的照片可以「走进去」看。
      孩子们装过，也有孩子们装不出来的。玩家要自己分清。
-     双人分工：卧室里一人架相机、一人看着露西；停电时一人摸硬币、一人去电表；棚屋前一人问话、一人按录音键。 */
+     双人：一人在「笺」里翻转写稿、一人拨密码锁；照片里分头看线索；给莫顿博士的结论、对约瑟夫说的最后一句，两人投票。 */
   const MUST = { face: '#a88e3e', trim: '#5a4a1e', top: '#1e1a12' };   // 芥末黄壁纸
-  const knock = async (S, n, gap = 240) => { for (let i = 0; i < n; i++) { S.sfx('knock'); S.shake(90, 1); await S.wait(gap); } };
+  let DIED = 0;   // 本局被椅子抓到几次（只影响重来时的提示文字）
+  /* 两种敲击用合成音区分：peg = 晾衣夹敲床头板（清脆、短、高）；wall = 墙里的（低沉、发闷，像指节叩在很厚的东西上）
+     muffled：隔着天花板听（楼下厨房），整体再压低一点。knockSeq 一次排好所有音（带延迟），不阻塞对话 */
+  function knockSeq(S, n, gap, kind, t0 = 0, muffled = false) {
+    const lp = muffled ? .55 : 1;
+    for (let i = 0; i < n; i++) {
+      const t = t0 + i * gap / 1000;
+      if (kind === 'peg') { S.tone('square', 1500, 900, .035, .07 * lp, t, 2600 * lp); S.tone('triangle', 820, 600, .06, .16 * lp, t, 0); }
+      else { S.tone('sine', 120, 52, .24, .5 * lp, t, 0); S.tone('triangle', 82, 40, .32, .3 * lp, t + .01, 300 * lp); }
+    }
+  }
+  const knock = async (S, n, gap, kind, muffled) => { knockSeq(S, n, gap, kind, 0, muffled); for (let i = 0; i < n; i++) { S.shake(90, kind === 'peg' ? .5 : 1.2); await S.wait(gap); } };
   const OLD = '露西（一个老人的声音）';
-  const old = (S, t) => S.say(OLD, t, { style: 'whisper' });
+  /* 老人的嗓音：底下垫一层很低的「呼噜」声 */
+  const growl = S => { S.tone('sawtooth', 74, 58, 1.6, .05, 0, 320); S.tone('sine', 56, 47, 1.6, .1, 0, 0); };
+  const old = (S, t) => { growl(S); return S.say(OLD, t, { style: 'whisper' }); };
   const caughtChair = async S => {
+    DIED++;
     await S.scare('face', { spr: '@oldman' });
     await S.die('那把椅子撞上了你的膝盖，你整个人跌坐进去。\n坐垫是温的。有一双干枯的手，从后面轻轻按住了你的肩膀。\n「……这是我的椅子。」', '你坐进了他的椅子');
   };
-  function chairReset(S) {
+  const TVL = { r: 4.6, col: 'rgba(190,200,255,.17)', flick: true };   // 电视自己亮起来时的雪花光
+  function chairReset(S, x = 1, y = 2) {
     const c = S.ent('gchair_l'); if (!c) return;
-    S.stop('gchair_l'); S.place('gchair_l', 1, 2, 0); c.alpha = 1;
+    S.stop('gchair_l'); S.place('gchair_l', x, y, 0); c.alpha = 1;
   }
-  function chairGo(S, wait = 1.6) {
-    chairReset(S);
+  function chairGo(S, wait = 1.6, x, y) {
+    chairReset(S, x, y);
     S.chase('gchair_l', { spd: 2.75, catch: caughtChair });
     S.ent('gchair_l').chase.wait = wait;
   }
-  /* 回放：一组一组地念出来 */
+  /* 回放：一组一页，敲击声和文字同时出来 */
   const TAPE = [
-    ['014', '床垫「吱呀」一声。汤米憋着笑：「嘻……嘘——」', 2, '咚、咚。', '紧接着，又是一串压不住的偷笑。'],
-    ['031', '苏压低声音：「汤米，别闹了！」\n汤米：「不是我！我手在被子里！」\n露西：「……听。它在墙里面。」', 3, '咚、咚、咚。', '三个孩子说话的时候，敲击声一直没停。'],
-    ['047', '光脚踩在地板上的「啪嗒」声，衣柜门「吱——」地开了。', 4, '咚咚咚咚。', '然后是一阵慌慌张张跑回床上的脚步，和汤米捂着嘴的笑声。'],
-    ['066', '很长的一段寂静。三个孩子均匀的呼吸声——都睡着了。', 7, '咚。咚。咚。咚。咚。咚。咚。', '敲得很慢，很有耐心。像一个老人，用指节一下一下地叩门。'],
-    ['088', '还是呼吸声。然后，非常近，几乎贴着麦克风——\n一个很低、很哑的男人的声音：「……箱……子……」', 1, '咚。', '磁带走到了头，「咔哒」一声停了。']
+    ['014', '床垫「吱呀」一声。汤米憋着笑：「嘻……嘘——」', 2, 'peg', '嗒、嗒。——很脆，像木头敲在木头上。\n紧接着，又是一串压不住的偷笑。'],
+    ['031', '苏：「汤米，别闹了！」汤米：「不是我！我手在被子里！」\n露西：「……听。它在墙里面。」', 3, 'wall', '咚、咚、咚。——闷闷的，像从墙里面传出来。\n三个孩子说话的时候，它一直没停。'],
+    ['047', '光脚「啪嗒」下床，衣柜门「吱——」地开了。', 4, 'peg', '嗒嗒嗒嗒。又是那种脆响。\n然后是慌慌张张跑回床上的脚步，和汤米捂着嘴的笑。'],
+    ['066', '很长的寂静。三个孩子均匀的呼吸声——都睡着了。', 7, 'wall', '咚。咚。咚。咚。咚。咚。咚。\n很慢，很有耐心。像一个老人，用指节一下一下地叩门。'],
+    ['088', '还是呼吸声。然后，几乎贴着麦克风——\n一个很低、很哑的男人的声音：「……箱……子……」', 1, 'wall', '咚。\n磁带走到了头，「咔哒」一声停了。']
   ];
+  /* 惊吓大头像（32×32） */
+  const FACES = {
+    oldman(R, a) {   // 秃顶、白眉、乳白色的瞎眼、塌下去的脸颊、越张越大的没牙的嘴
+      const SK = '#d4cec2', SK2 = '#aea698', SK3 = '#7e7668', K = '#2e2a24', WH = '#eceae0', HR = '#f2f0ea', M = '#140e0a', CD = '#6a6a5e';
+      R(1, 26, 30, 6, CD); R(4, 24, 24, 3, CD); R(12, 24, 8, 8, '#c8c4b6'); R(15, 26, 2, 6, CD); R(9, 27, 2, 5, '#5a5a50'); R(21, 27, 2, 5, '#5a5a50');
+      R(11, 1, 10, 1, SK); R(9, 2, 14, 2, SK); R(8, 4, 16, 4, SK); R(7, 8, 18, 11, SK); R(8, 19, 16, 3, SK); R(9, 22, 14, 2, SK); R(11, 24, 10, 1, SK);
+      R(12, 3, 5, 2, '#ece6da'); R(11, 5, 2, 1, '#ece6da');
+      R(21, 5, 3, 16, SK2); R(20, 21, 3, 3, SK2); R(5, 11, 2, 6, SK2); R(25, 11, 2, 6, SK2); R(6, 13, 1, 2, SK3); R(25, 13, 1, 2, SK3);
+      R(6, 11, 2, 6, HR); R(24, 11, 2, 6, HR); R(5, 12, 1, 4, HR); R(26, 12, 1, 4, HR);   // 只剩耳朵上方两撮白毛
+      R(10, 6, 12, 1, SK3); R(11, 8, 10, 1, SK2);
+      R(10, 11, 4, 1, HR); R(18, 11, 4, 1, HR); R(9, 12, 1, 1, HR); R(22, 12, 1, 1, HR);
+      for (const x of [9, 17]) { R(x, 12, 6, 1, SK3); R(x, 13, 1, 4, SK3); R(x + 5, 13, 1, 3, SK2); R(x + 1, 17, 4, 1, SK3); }   // 塌下去的眼窝
+      const op = a < .15 ? 1 : 3;   // 先眯着，再猛地睁开：整颗眼珠都是乳白的（白内障，瞎了）
+      for (const x of [10, 18]) {
+        R(x, 15 - (op >> 1) - (op > 1 ? 1 : 0), 4, op, WH); R(x, 16, 4, 1, K);
+        if (op > 1) { R(x + 1, 14, 2, 1, '#b4c2cc'); R(x, 13, 1, 1, SK3); R(x + 3, 13, 1, 1, SK3); R(x + 3, 15, 1, 1, '#d8b8b0'); }
+      }
+      R(14, 15, 4, 1, SK3);   // 鼻梁上一道眼镜压出来的印子
+      R(15, 15, 2, 5, SK2); R(14, 19, 4, 1, SK3); R(14, 20, 1, 1, K); R(17, 20, 1, 1, K);
+      R(9, 17, 3, 5, SK2); R(20, 17, 3, 5, SK3); R(10, 18, 1, 3, SK3);
+      const mh = 1 + Math.round(a * 5);
+      R(12, 21, 8, mh, M); R(11, 22, 1, Math.max(0, mh - 1), M); R(20, 22, 1, Math.max(0, mh - 1), M); R(12, 21, 8, 1, '#7a4e4a'); R(13, 21 + mh, 6, 1, SK3);
+      for (const [x, y] of [[10, 23], [13, 24], [18, 24], [21, 23], [16, 25]]) R(x, y, 1, 1, '#9a9488');
+    },
+    lucyv(R, a) {   // 露西：齐耳短发、苍白的脸，眼珠翻上去只剩眼白，嘴张成一个「O」——那个嗓音就是从这里出来的
+      const H = '#2a1a12', HL = '#4a3226', SK = '#e0d2c8', SK2 = '#c8ae98', K = '#5a4a48', WH = '#f4f2ec', M = '#1a0e0c';
+      R(1, 26, 30, 6, '#c8d8e8'); R(11, 25, 10, 3, '#e8eef4'); R(14, 26, 4, 2, '#c8d8e8');
+      R(8, 2, 16, 3, H); R(6, 4, 20, 4, H); R(5, 8, 22, 15, H); R(6, 23, 4, 2, H); R(22, 23, 4, 2, H); R(10, 3, 4, 1, HL); R(7, 9, 1, 12, HL); R(24, 9, 1, 12, HL);
+      R(9, 9, 14, 13, SK); R(10, 22, 12, 2, SK); R(12, 24, 8, 1, SK); R(20, 10, 2, 13, SK2);
+      R(8, 7, 16, 4, H); R(10, 11, 2, 1, H); R(15, 11, 2, 1, H); R(20, 11, 2, 1, H);
+      for (const x of [10, 17]) {   // 眼珠翻上去，只剩带血丝的眼白；眼睛底下发青
+        R(x, 13, 5, 1, SK2); R(x, 14, 5, 3, WH); R(x, 14, 1, 1, SK2); R(x + 4, 14, 1, 1, SK2); R(x, 17, 5, 1, K); R(x + 1, 18, 3, 1, '#b8a8b0');
+        R(x + 1, 16, 1, 1, '#d88a8a'); R(x + 3, 15, 1, 1, '#d88a8a');
+        if (a < .2) R(x + 1, 14, 3, 1, '#4a3428');   // 眼珠只剩上沿一道边，然后整个翻上去了
+      }
+      R(12, 8, 1, 7, H); R(20, 9, 1, 5, H);   // 几缕头发垂到脸上
+      R(15, 17, 2, 2, SK2);
+      const mo = 1 + Math.round(a * 3);
+      R(14, 20, 4, mo + 1, M); R(13, 21, 1, mo - 1, M); R(18, 21, 1, mo - 1, M); R(14, 20, 4, 1, '#8a4a48');
+    }
+  };
 
   defChapter({
     id: 'enfield', n: 8, title: '恩菲尔德闹鬼案', sub: '伦敦北郊的一栋公屋。墙里在敲，椅子在走，十一岁的女孩用一个老人的嗓音说话。', origin: '英国伦敦 · 1977年', color: '#6e5a1e',
-    icon: '@lucy', amb: 'room', floor: 'carpet', wall: 'paper', dark: .6, plr: 3.2,
+    icon: '@lucyv', amb: 'room', floor: 'carpet', wall: 'paper', dark: .6, plr: 3.2,
     people: {
       me: { key: 'en-me', skin: '#f0c8a0', hair: '#6a4a2a', hs: 'messy', top: '#7a5a36', top2: '#d8c8a0', bottom: '#3a3a52', coat: true, shoes: '#2a1a10',
         extra(g, d, fr, G, R) { if (d === 0) { R(5, G.tT + 1, 1, 5, '#1a1a1a'); R(8, G.tT + 4, 4, 3, '#1a1a1a'); R(9, G.tT + 5, 2, 1, '#8ab'); } else if (d === 1) R(4, G.tT + 4, 3, 3, '#1a1a1a'); } },
@@ -53,6 +109,7 @@
       oldmang: { key: 'en-old2', skin: '#e0dcd4', hair: '#e8e8e4', hs: 'bald', top: '#7a7a6e', top2: '#c8c4b8', bottom: '#4a4a48', ghost: true,
         extra(g, d, fr, G, R) { if (d === 0) { R(4, G.hT + 1, 1, 3, '#e8e8e4'); R(11, G.hT + 1, 1, 3, '#e8e8e4'); R(5, G.hT + 4, 2, 2, '#3a3a3a'); R(9, G.hT + 4, 2, 2, '#3a3a3a'); R(7, G.hT + 4, 2, 1, '#3a3a3a'); R(6, G.hT + 7, 4, 1, '#a8a49c'); } } }
     },
+    faces: FACES,
     items: {
       rec: { name: '盘式录音机', desc: '研究会的老式便携录音机，皮套上烫着编号。按下录音键时，红灯会一闪一闪。' },
       cam: { name: '相机', desc: '带电动卷片马达的单反相机，一按快门能连拍好几张。胶卷是高感光的，适合暗处。' },
@@ -62,33 +119,46 @@
       coin: { name: '五十便士', desc: '从哈珀太太钱包里拿的五十便士硬币。七边形的，摸起来棱角分明。' }
     },
     notes: {
-      case: { title: '研究会案件摘要 · 第77-31号', text: '地点：伦敦恩菲尔德，某公屋（两层，三室）\n住户：哈珀太太（离异），女儿苏（13）、露西（11），儿子汤米（8）\n\n报告现象：\n· 夜里卧室墙内有敲击声，常成串出现。\n· 抽屉柜自行滑动；积木、弹珠在房间里飞，落地时据说「是热的」。\n· 首晚到场的女警在证词中写道：她看见一把餐椅在地板上自己滑了将近一米。\n· 次女露西多次被「从床上抛下来」。\n\n媒体：一家小报已派记者和摄影师蹲守。\n\n建议：派一名年轻研究员协助肯特先生，带录音与摄影设备，记录一切——\n包括可能是人为的部分。\n\n（页边有一行红笔字：别忘了，孩子是会撒谎的。大人也是。）' },
-      tape: { title: '录音带转写 · 第一盘 A面', text: '（地点：孩子们的卧室，录音机放在五斗柜上。大人们都在楼下厨房。）\n\n014　床垫吱呀。汤米憋笑「嘻……嘘——」\n　　　咚、咚。（2下）又是一串偷笑。\n\n031　苏：「汤米，别闹了！」\n　　　汤米：「不是我！我手在被子里！」\n　　　露西：「……听。它在墙里面。」\n　　　咚、咚、咚。（3下）三个人说话时一直在敲。\n\n047　光脚下床。衣柜门吱呀。\n　　　咚咚咚咚。（4下）跑回床上的脚步，汤米捂嘴笑。\n\n066　长时间寂静。三个孩子均匀的呼吸声。\n　　　咚……（7下，很慢）\n\n088　呼吸声。贴着麦克风，一个很低很哑的男声：\n　　　「……箱……子……」\n　　　咚。（1下）\n\n（你在底下画了一道线：哪些是孩子们弄的，哪些不是？）' },
+      case: { title: '研究会案件摘要 · 第77-31号', text: '地点：伦敦恩菲尔德，某公屋（两层）\n住户：哈珀太太（离异），苏（13）、露西（11）、汤米（8）\n\n报告现象：\n· 夜里卧室墙内有敲击声，常成串出现。\n· 抽屉柜自己滑动；积木、弹珠乱飞，落地「是热的」。\n· 首晚到场的女警作证：一把餐椅自己滑了将近一米。\n· 露西多次被「从床上抛下来」。\n· 小报的记者和摄影师在门口蹲守。\n\n任务：协助肯特先生，录音、拍照，记录一切——包括人为的部分。\n\n（页边一行红笔字：孩子是会撒谎的。大人也是。）' },
+      tape: { title: '录音带转写 · 第一盘 A面', text: '（孩子们的卧室，录音机在五斗柜上。大人们都在楼下厨房。）\n\n014　汤米憋笑「嘻……嘘——」　嗒、嗒（2下，脆）\n031　三个孩子都在说话　咚、咚、咚（3下，闷）\n047　光脚下床，衣柜门响　嗒嗒嗒嗒（4下，脆）\n066　三个人都睡着了　咚……（7下，闷，很慢）\n088　贴着麦克风的老人声「……箱……子……」　咚（1下，闷）\n\n脆的像木头敲木头；闷的像从墙里面。\n（你在底下画了一道线：哪些是孩子们弄的，哪些不是？）' },
       letter: { title: '铁皮箱里的信（没有寄出）', text: '给我的珍妮：\n\n眼睛越来越不行了。今天连你照片上的脸都看不清。\n医生说是血管的毛病，叫我别一个人住。我说我哪儿也不去，这是我们俩的房子。\n\n我还是每天坐在楼下角落那把椅子上，就是你织了椅套的那把。\n收音机三点一刻报新闻，我就听，听完就打个盹。\n\n楼上那间小卧室还是你走的时候那样。我不让人动。\n\n要是哪天我也走了，别让他们把椅子扔了。\n我会回来坐的。\n\n——约瑟夫\n\n（信纸背面，是另一个人的字：「1963年冬，房管处清理遗物。老人在楼下椅子上被发现时，已经过了三天。」）' },
       diary: { title: '露西的作文本（夹在枕头底下）', text: '我们装过。我承认。\n\n第一次真的出事的时候，抽屉柜自己走到门口把门堵住了，妈妈去叫邻居，邻居来了什么都没看见，说我们是坏孩子。\n后来警察来了，记者来了，大人们坐在楼下等一整晚，什么都不发生，他们就说要走了。\n所以汤米就敲墙，我就把勺子掰弯。他们一看见就不走了。\n\n可是有的不是我们。\n\n我被扔起来的时候是真的。我说话的时候也是真的——那个声音从我喉咙里出来，我自己都害怕。\n他说他叫约瑟夫。他说他很冷，他找不到他的眼镜。\n\n现在没有人信我们了。连真的那部分也不信了。' },
       memo: { title: '莫顿博士的备忘录', text: '关于恩菲尔德一案的初步意见：\n\n一、孩子们在隔壁房间被摄像机拍到：一个在弯勺子，一个用扫帚柄敲天花板。证据确凿。\n二、所谓「悬浮」照片是遥控快门连拍。看第二张：膝盖弯曲，脚尖绷直——这是一个跳起来的孩子，不是浮起来的孩子。\n三、所谓「老人的声音」：一个十一岁的女孩完全可以练出这种假声。肯特先生说他做过「含水试验」，可那时我不在场。\n四、媒体在门口蹲守，孩子们知道大人想看什么。\n\n结论（草稿）：一场由儿童主导、被大人和报纸放大的恶作剧。\n\n（最底下一行，字迹淡一些：……可我还没有解释那把椅子。）' }
     },
-    legend: '恩菲尔德闹鬼案（Enfield Poltergeist）发生在1977年8月到1979年间，地点是伦敦北郊恩菲尔德的一栋公屋，住着一位离异的母亲和她的四个孩子。一开始是床在摇、墙里有拖着脚走路和敲击的声音；据说第一晚赶来的女警在证词里写道，她亲眼看见一把椅子在地板上自己滑了一段距离。之后是积木和弹珠在屋里飞、抽屉柜自己挪动、二女儿被「从床上抛起来」。一家小报派来了记者和摄影师，摄影师用遥控连拍拍下的「悬浮」照片，后来成了这个案子最出名的图像。\n\n英国心灵研究会的两位调查员前后在这户人家待了一年多，录下了几百个小时的磁带。最让人发毛的是那个声音：一个十一岁的女孩喉咙里，发出一个粗哑的老人的嗓音，自称是这屋子从前的住户，说自己在楼下角落的椅子上失明、死去。据说后来确实查到，曾有一位老人在这屋子里去世。相信者认为一个孩子不可能连续几个小时用那种嗓音说话，也有调查员说做过让她含着水说话的试验。\n\n怀疑者的理由同样有力：研究会内部就有人认为这是孩子的恶作剧——女孩们被隔壁房间的摄像机拍到弯勺子、敲墙；那张「悬浮」照片看起来就是从床垫上跳起来的姿势；那个声音可以是练出来的假声。孩子们当时就承认过有时候会「装一装」，看大人能不能发现；据说其中一个女孩成年后接受采访时说，大概只有百分之二是假的。连主要调查员自己也承认孩子们作过假，但坚持另一部分无法解释。1979年以后，现象渐渐平息。\n\n这个案子此后被一再改编，其中最有名的是2016年的电影《招魂2》，情节多为虚构。真与假在这里缠成了一团，至今没有定论——也许它本来就同时是两样。\n\n（本章中的哈珀一家、肯特先生、莫顿博士、研究员主角、老约瑟夫和他的信、铁皮箱与密码、停在三点一刻的怀表、棚屋里的椅子，以及让老人安心离开的结局，都是游戏虚构。真实当事人均未使用真名。）',
-    endings: { good: '我在场', bad: '一场恶作剧' },
+    legend: '恩菲尔德闹鬼案（Enfield Poltergeist）发生在1977年8月到1979年间，地点是伦敦北郊恩菲尔德的一栋公屋，住着一位离异的母亲和她的四个孩子。一开始是床在摇、墙里有拖着脚走路和敲击的声音；据说第一晚赶来的女警在证词里写道，她亲眼看见一把椅子在地板上自己滑了一段距离。之后是积木和弹珠在屋里飞、抽屉柜自己挪动、二女儿被「从床上抛起来」；据说还有路过的人说，隔着楼上的窗户看见书本和那个女孩悬在半空。一家小报派来了记者和摄影师，摄影师用遥控连拍拍下的「悬浮」照片，后来成了这个案子最出名的图像。\n\n英国心灵研究会的两位调查员前后在这户人家待了一年多，录下了一百多个小时的磁带。最让人发毛的是那个声音：一个十一岁的女孩喉咙里，发出一个粗哑的老人的嗓音，自称是这屋子从前的住户，说自己临死前眼睛瞎了，在楼下角落的椅子上睡着，就这么死了。据说后来确实查到，曾有一位老人在这屋子里去世。相信者认为，一个孩子不可能连续几个小时用那种嗓音说话；调查员说做过让她含满一口水再开口的试验，声音照样出来。\n\n怀疑者的理由同样有力：研究会内部就有人认为这是孩子的恶作剧——女孩们被隔壁房间的摄像机拍到弯勺子、敲东西；那张「悬浮」照片看起来就是从床垫上蹦起来的姿势；有人分析那个嗓音来自喉咙深处的「假声带」，相信者说孩子撑不了那么久，怀疑者说练一练就行，含着水也不妨碍；据说一位来访的魔术师也认为自己看穿了孩子们的小把戏。孩子们当时就承认过有时候会「装一装」，看大人能不能发现；据说其中一个女孩成年后接受采访时说，大概只有百分之二是假的。连主要调查员自己也承认孩子们作过假，但坚持另一部分无法解释。1979年以后，现象渐渐平息。\n\n这个案子此后被一再改编：英国拍过一部三集的电视剧，2016年的电影《招魂2》最有名，但情节多为虚构——据当年的调查员说，电影里那对著名的灵学夫妇只来过很短一段时间，没有参与主要的调查。真与假在这里缠成了一团，至今没有定论——也许它本来就同时是两样。\n\n（本章中的哈珀一家、肯特先生、莫顿博士、研究员主角、老约瑟夫和他的信、铁皮箱与密码、停在三点一刻的怀表、棚屋里的椅子、照片里的细节、你亲手做的含水试验，以及三种结局，都是游戏虚构；真实案件里是四个孩子，本章写成了三个。真实当事人均未使用真名。）',
+    endings: { good: '我在场', bad: '一场恶作剧', drive: '赶走' },
     start: { map: 'street', x: 9, y: 7, dir: 3 },
     resume: {
       dark: async S => {
         if (S.f.act !== 'dark') return;
         if (S.map === 'living') { S.dark(.97); S.plr(1.7); chairGo(S, 2.2); }
+        if (DIED) {   // 被椅子抓过：重来时想一句路线
+          S.sfx('heart');
+          await S.think(DIED === 1 ? '……再来一次。\n钱包在厨房台子上，电表在门厅楼梯口的墙上。从厨房穿过去，别进客厅。'
+            : '它是从客厅那边过来的。\n拿到硬币就往右绕：厨房 → 门厅 → 电表。跑起来，别回头看。');
+        }
       }
     },
     async intro(S) {
+      DIED = 0;
       await S.card('第八夜　恩菲尔德闹鬼案', '1977年12月　英国伦敦北郊　恩菲尔德', '一排一模一样的红砖公屋，一个离了婚的母亲，三个孩子。\n报纸说，那里闹鬼。\n\n研究会派你去守一夜。\n带上录音机，带上相机——\n还有一双不会被骗的眼睛。');
     },
     tick(S, dt) {
       if (W.busy) return;
       const a = S.f.act;
       if (a === 'dark' && S.map === 'upstairs') { S.f._sc = (S.f._sc ?? 3) - dt; if (S.f._sc <= 0) { S.f._sc = 6 + Math.random() * 3; S.sfx(Math.random() < .5 ? 'knock' : 'thud'); } }
+      if (a === 'chest' && S.map === 'upstairs') { S.f._bj = (S.f._bj ?? 1) - dt; if (S.f._bj <= 0) { S.f._bj = .9 + Math.random() * .8; S.sfx('thud'); S.shake(160, 1.5); } }   // 露西的床一下一下地蹦
+      if (a === 'dark' && S.map === 'living') {   // 椅子越近，心跳越快
+        const c = S.ent('gchair_l');
+        if (c && !c.hidden && c.chase) { const d = (Math.abs(c.px - W.pl.px) + Math.abs(c.py - W.pl.py)) / 16; S.f._hb = (S.f._hb ?? 0) - dt; if (d < 6 && S.f._hb <= 0) { S.f._hb = .3 + d * .13; S.sfx('heart'); } }
+      }
       if (a === 'knocks' && S.map === 'upstairs') { S.f._kk = (S.f._kk ?? 2) - dt; if (S.f._kk <= 0) { S.f._kk = 5 + Math.random() * 4; S.sfx('knock'); } }
       if ((a === 'heard' || a === 'chest') && S.map === 'living') { S.f._tv = (S.f._tv ?? 9) - dt; if (S.f._tv <= 0) { S.f._tv = 14 + Math.random() * 6; const tv = S.ent('telly'); tv.lit = !tv.lit; S.sfx(tv.lit ? 'tv' : 'switch'); } }
     },
     sprites: {
-      kbed(g, e, t, R) {   // 孩子的床：枕头上露出一个脑袋（s.empty 空床，s.peek 被子拉到眼睛）
+      kbed(g, e, t, R0) {   // 孩子的床：枕头上露出一个脑袋（s.empty 空床，s.peek 被子拉到眼睛，s.jump 整张床在蹦）
+        const j = e.jump ? -Math.round(Math.abs(Math.sin(t * 7)) * 4) : 0, R = (x, y, w, h, f) => R0(x, y + j, w, h, f);
+        if (j) R0(1, 29, 14, 2, 'rgba(0,0,0,.35)');   // 床脚离地时的影子
         const c = e.col || '#7a5a8a', bx = (x, y, w, h, f) => { R(x, y, w, h, shade(f, -.45)); R(x + 1, y + 1, w - 2, h - 2, f); };
         bx(1, -2, 14, 32, '#5a3c26'); R(2, -1, 12, 4, '#6a4a30'); R(3, 3, 10, 6, '#e6e2d6');
         if (!e.empty) { R(5, 1, 6, 6, '#f0c8a6'); R(5, 0, 6, 3, e.hair || '#4a3020'); R(4, 1, 1, 4, e.hair || '#4a3020'); R(11, 1, 1, 4, e.hair || '#4a3020'); if (!e.peek) { R(6, 4, 1, 1, '#3a2a2a'); R(9, 4, 1, 1, '#3a2a2a'); } }
@@ -96,12 +166,14 @@
         if (e.peek) { R(6, 3, 1, 1, '#111'); R(9, 3, 1, 1, '#111'); }
         if (e.messy) { R(3, 12, 6, 3, shade(c, -.2)); R(9, 18, 4, 4, '#e6e2d6'); }
       },
-      gchair(g, e, t, R) {   // 老人的高背扶手椅，椅套是手织的
+      gchair(g, e, t, R0) {   // 老人的高背扶手椅，椅套是手织的；在「走」的时候一摇一摆，两条腿轮流抬起来
+        const f = e.fr || 0, sw = f === 1 ? -1 : f === 3 ? 1 : 0;   // 客机没有 mv，用同步过来的步行帧 fr 判断
+        const R = (x, y, w, h, col) => R0(x + sw, y - (sw ? 1 : 0), w, h, col);
         const c = e.col || '#5a6a42', bx = (x, y, w, h, f) => { R(x, y, w, h, shade(f, -.45)); R(x + 1, y + 1, w - 2, h - 2, f); };
         bx(2, -7, 12, 15, shade(c, -.1)); bx(0, -3, 4, 13, shade(c, -.2)); bx(12, -3, 4, 13, shade(c, -.2));
         R(5, -5, 6, 2, '#c8b890'); R(6, -2, 4, 1, '#c8b890');
         bx(2, 5, 12, 6, c); R(5, 6, 5, 3, shade(c, -.25));
-        const lg = e.mud ? '#4a3420' : '#2a1a10'; R(2, 11, 2, 4, lg); R(12, 11, 2, 4, lg); if (e.mud) { R(1, 14, 4, 1, '#3a2a18'); R(11, 14, 4, 1, '#3a2a18'); }
+        const lg = e.mud ? '#4a3420' : '#2a1a10'; R(2, 11, 2, sw < 0 ? 3 : 4, lg); R(12, 11, 2, sw > 0 ? 3 : 4, lg); if (e.mud) { R(1, 14, 4, 1, '#3a2a18'); R(11, 14, 4, 1, '#3a2a18'); }
         if (e.glasses) { R(5, 6, 2, 1, '#3a3a3a'); R(8, 6, 2, 1, '#3a3a3a'); R(7, 6, 1, 1, '#3a3a3a'); }
         if (e.watch) { R(10, 8, 2, 2, '#c9a35a'); R(10, 7, 1, 1, '#c9a35a'); }
       },
@@ -214,12 +286,11 @@
           { id: 'kent_s', x: 10, y: 5, spr: '@kent', dir: 0, async on(S) {
             S.face('kent_s', 'pl');
             if (S.f.act !== 'arrive') return S.say('肯特先生', ['进去吧，别让哈珀太太等。', '记住：先怀疑，再记录，最后才下结论。']);
-            await S.say('肯特先生', ['你就是研究会派来的年轻人？好，好。我姓肯特。', '我在这户人家守了三个月了。你看我这双眼睛——熬的。']);
-            await S.say('肯特先生', ['我先把话说在前头。这屋子里发生的事，有一部分是孩子们弄的。我亲眼见过汤米拿扫帚柄捅天花板。', '可是另一部分……', '……我活了六十多年，没见过那样的东西。']);
+            await S.say('肯特先生', ['研究会派来的年轻人？我姓肯特，在这户人家守了三个月了。', '先把话说在前头：这屋里的事，有一部分是孩子们弄的。我亲眼见过汤米拿扫帚柄捅天花板。', '可是另一部分……我活了六十多年，没见过那样的东西。']);
             const r = await S.ask('「你信吗？」', ['「我只信录下来、拍下来的东西。」', '「我……还没想好。」'], '肯特先生');
             await S.say('肯特先生', r === 0 ? '很好。那就让机器替你看。' : '老实话。比那些一进门就说「我感觉到了」的强多了。');
             S.give('rec', true); S.give('cam', true); S.sfx('item'); S.toast('获得：录音机、相机');
-            await S.say('肯特先生', ['录音机和相机，你拿着。卧室里的敲墙声，相机拍不到，可磁带听得见。', '这是研究会的案子摘要，路上看过了吧？再看一遍也好。']);
+            await S.say('肯特先生', '录音机和相机你拿着。敲墙声相机拍不到，磁带听得见。案子摘要再看一遍。');
             await S.note('case');
             await S.say('肯特先生', '走吧。门牌84号。');
             S.f.act = 'evening'; S.goal('进屋（蓝色的前门）');
@@ -231,7 +302,7 @@
           } },
           { id: 'neighbor', x: 6, y: 5, spr: '@neighbor', dir: 2, async on(S) {
             S.face('neighbor', 'pl');
-            const L = ['又一个来看热闹的？那家的孩子啊，从来就没安分过。', '……不过那天晚上，我是听见了。墙里面，咚、咚，像有人在敲棺材板。', '以前住那屋的是个老头，眼睛不好，一个人住。死的时候……算了，大晚上的。'];
+            const L = ['又一个来看热闹的？那家的孩子啊，从来就没安分过。', '……不过那天晚上，我是听见了。墙里面，咚、咚，像有人在敲棺材板。', '以前住那屋的是个老头，眼睛不好，一个人住。死的时候……算了，大晚上的。', '我家那口子说，有天下午打这儿过，隔着楼上那扇窗户，看见书在屋里飞。那小姑娘就在窗户后面——脚底下是空的。\n他现在宁可绕远路，也不走这边的人行道。'];
             await S.say('邻居太太', L[(S.f._nb = ((S.f._nb ?? -1) + 1) % L.length)]);
             if (S.f._nb === 2) S.f.heardOld = true;
           } }
@@ -287,7 +358,7 @@
           { id: 'morton_l', x: 5, y: 7, spr: '@morton', dir: 3, hidden: true, on: S => mortonTalk(S) },
           /* 厨房 */
           { id: 'kcount', x: 11, y: 2, spr: 'counter', col: '#c8b880', async on(S) {
-            if (S.f.act === 'dark' && !S.has('coin')) { S.give('coin'); S.sfx('item'); S.goal('把五十便士投进门厅的电表'); return S.narr('你摸到了哈珀太太的手提包，翻出钱包——\n里面只剩两枚五十便士。你攥住一枚，指甲都嵌进了棱角里。'); }
+            if (S.f.act === 'dark' && !S.has('coin')) return grabCoin(S);
             await S.narr('台面上放着哈珀太太的手提包，还有一摞没拆的账单。最上面那张是红色的：电费催缴。');
           } },
           { x: 12, y: 2, spr: 'sink', on: S => S.narr('水龙头没拧紧，一滴，一滴。水槽里泡着一摞茶杯——来的人太多了，杯子不够用。') },
@@ -373,7 +444,7 @@
           { x: 7, y: 7, spr: 'painting', col: '#4a5a6a', on: S => S.narr('一幅印刷的海景画，挂歪了。你扶正它，转身再看——又歪了。') },
           { x: 14, y: 7, spr: 'painting', col: '#6a5a3a', on: S => S.narr('一张褪色的结婚照。新郎那一半，被一张明信片挡住了。') },
           { x: 9, y: 9, spr: 'basket', on: S => S.narr('洗衣篮。最上面是一条尿湿了又洗过的床单——汤米这个月第三次了。') },
-          { x: 18, y: 9, spr: 'plant', on: S => S.narr('楼梯口的盆栽，叶子全部朝着同一个方向歪——朝着孩子们的房门。') }
+          { x: 18, y: 9, spr: 'plant', on: S => S.narr('走廊尽头的盆栽，叶子全部朝着同一个方向歪——朝着孩子们的房门。') }
         ],
         async enter(S, first) { await upstairsEnter(S, first); }
       },
@@ -458,18 +529,19 @@
     const inBed = is('bed', 'placed', 'knocks', 'fetched', 'heard', 'develop', 'photo', 'dark');
     const bl = S.ent('bed_l'), bt = S.ent('bed_t'), bs = S.ent('bed_s');
     bl.s.empty = !(inBed || a === 'chest'); bt.s.empty = !inBed; bs.s.empty = !inBed;
-    bt.s.peek = a === 'knocks'; bl.s.messy = is('knocks', 'chest');
+    bt.s.peek = a === 'knocks'; bl.s.messy = is('knocks', 'chest'); bl.s.jump = a === 'chest';
     v('tommy_u', a === 'chest'); v('sue_u', a === 'chest');
     v('harper_u', is('develop', 'photo')); v('kent_u', is('develop', 'photo'));
     v('camtri', is('chest', 'develop', 'photo', 'dark'));
     for (const b of ['b1', 'b2', 'b3']) v(b, is('knocks', 'fetched', 'heard', 'chest', 'develop', 'photo', 'dark'));
     v('rec_u', is('placed', 'knocks')); S.ent('rec_u').lit = true;
     if (a === 'morning' && S.ent('tommy_l').x !== 2) { S.place('tommy_l', 2, 5, 2); S.place('sue_l', 8, 5, 1); }
-    if (a === 'morning') { S.place('lucy_u', 2, 5, 0); S.ent('lucy_u').oy = 0; S.ent('lucy_u').spr = '@lucy'; } else S.hide('lucy_u');
+    if (a === 'morning') { S.place('lucy_u', 2, 5, 3); S.ent('lucy_u').oy = 0; S.ent('lucy_u').spr = '@lucy'; } else S.hide('lucy_u');
   }
   function light(S) {
     const a = S.f.act;
     S.ent('fire').off = a === 'dark'; S.ent('llamp').off = a === 'dark'; S.ent('rlamp').off = a === 'dark'; S.ent('meter').lit = a !== 'dark';
+    const tv = S.ent('telly'); if (a !== 'dark' || !S.has('coin')) tv.light = null;
     const day = a === 'morning';
     if (a === 'dark') { S.dark(.97, 'living'); S.dark(.96, 'upstairs'); S.plr(1.7); }
     else { S.dark(day ? .2 : null, 'living'); S.dark(day ? .24 : null, 'upstairs'); S.dark(day ? .28 : null, 'garden'); S.plr(null); }
@@ -482,7 +554,9 @@
     if (a === 'evening' && S.once('famIntro')) return familyIntro(S);
     if (a === 'placed' && S.once('kitchenWait')) { await S.narr('厨房里，哈珀太太和肯特先生已经在餐桌边坐好了。茶壶冒着热气。'); S.goal('到厨房餐桌边坐下，一起等'); return; }
     if (a === 'dark') {
+      if (S.has('coin')) { chairGo(S, 1.2, 9, 5); return; }   // 拿着硬币上了趟楼又下来：它就在客厅门口等着
       S.ent('telly').lit = false;
+      if (DIED) { chairGo(S, 2.2); S.sfx('sting'); return S.think('那把椅子又在墙角了。\n……别看它。'); }
       if (S.once('chairSeen')) {
         chairReset(S); S.focus(1, 2); S.sfx('heart');
         await S.narr('黑暗里，你的手电只照得见脚下一小圈。\n客厅的墙角——那个一直空着的墙角——');
@@ -505,7 +579,9 @@
     await S.say('露西', '……你会待一整夜吗？上一个人十点就走了。');
     await S.say('肯特先生', ['九点了，孩子们该上床了。', '年轻人，你上楼去，把录音机放在他们卧室的五斗柜上，开着录。', '然后我们大人都在楼下厨房坐着——谁也不上楼。让机器替我们听。']);
     await S.say('哈珀太太', '都听见了？上楼，刷牙，睡觉。汤米，别让我说第二遍。');
-    for (const id of ['tommy_l', 'sue_l', 'lucy_l']) { await S.walk(id, [15, 8], 7); S.hide(id); }
+    await Promise.all(['sue_l', 'lucy_l', 'tommy_l'].map(async (id, i) => {   // 三个孩子一起跑上楼（走路时互不阻挡）
+      const e = S.ent(id); e.solid = false; await S.wait(i * 220); await S.walk(id, [15, 8], 7); S.hide(id); e.solid = true;
+    }));
     S.sfx('close');
     S.f.act = 'bed'; stage(S);
     S.goal('上楼（门厅右边的楼梯），把录音机放在孩子们卧室的五斗柜上');
@@ -527,12 +603,13 @@
     await S.say('肯特先生', ['规矩是这样：我们不上楼。录音机替我们听。', '要是孩子们想闹，就让他们闹。磁带不会替任何人撒谎——它只是什么都录。']);
     await S.say('哈珀太太', '……他们会闹的。尤其是汤米。');
     S.amb('none'); await S.wait(1400);
-    await knock(S, 2); await S.wait(700);
-    await S.narr('天花板上。咚、咚。');
+    await knock(S, 2, 240, 'peg', true); await S.wait(700);
+    await S.narr('天花板上。嗒、嗒。');
     await S.say('哈珀太太', '……开始了。', { style: 'whisper' });
-    await S.wait(1100); await knock(S, 3); await S.wait(900);
+    await S.wait(1100); await knock(S, 3, 380, 'wall', true); await S.wait(900);
+    await S.narr('这三下不一样。更沉，更闷。像是从墙里面，而不是从床上。');
     await S.say('肯特先生', '别动。坐着。');
-    await S.wait(1200); await knock(S, 4);
+    await S.wait(1200); await knock(S, 4, 200, 'peg', true);
     await S.narr('灯泡晃了一下。茶杯里的茶面上，一圈一圈地起了波纹。');
     await S.wait(1500);
     S.sfx('thud'); S.shake(700, 3); await S.wait(300); S.sfx('giggle');
@@ -547,16 +624,17 @@
     S.take('rec'); S.show('rec_k'); const r = S.ent('rec_k'); r.lit = true;
     await S.narr('你把录音机放在餐桌正中间，倒带，按下播放。\n哈珀太太和肯特先生都把椅子往前挪了挪。');
     S.amb('none'); S.sfx('tv'); await S.wait(600);
-    for (const [cnt, pre, n, k, post] of TAPE) {
-      if (cnt === '088') { S.sfx('whisper'); S.fx('static', { dur: .5 }); }
-      await S.narr(`【计数器 ${cnt}】\n${pre}`);
-      await knock(S, n, n > 4 ? 420 : 250);
-      await S.narr(`${k}\n${post}`);
+    for (const [cnt, pre, n, kind, post] of TAPE) {
+      if (cnt === '088') { S.sfx('whisper'); S.fx('static', { dur: .5 }); growl(S); }
+      const gap = n > 4 ? 520 : kind === 'peg' ? 210 : 330, t0 = Date.now();
+      knockSeq(S, n, gap, kind, .5);
+      await S.narr(`【计数器 ${cnt}】${pre}\n\n${post}`);
+      const left = 500 + n * gap - (Date.now() - t0); if (left > 0) await S.wait(left);   // 敲完了再翻下一组，两组声音不叠在一起
       if (cnt === '066') { S.sfx('heart'); await S.say('哈珀太太', '……这一段，我们在楼下根本没听见。', { style: 'whisper' }); }
       if (cnt === '088') { S.shake(400, 2); await S.say('哈珀太太', '那、那是谁的声音？', { style: 'whisper' }); }
     }
     r.lit = false; S.hide('rec_k'); S.give('rec', true); S.amb('room');
-    await S.say('肯特先生', ['014 和 047——你听出来了吧。那是汤米。他那个憋着的笑，我闭着眼都认得。', '这就是我们这行的难处：一盘磁带里，真的和假的录在一起，分不开。']);
+    await S.say('肯特先生', ['014 和 047——你听出来了吧。那是汤米。他那个憋着的笑，我闭着眼都认得。还有那种脆响，是硬东西敲木头，不是墙。', '这就是我们这行的难处：一盘磁带里，真的和假的录在一起，分不开。']);
     await S.think('可是 031 那一段，三个孩子都在说话，敲击一直没停。\n066 的时候，他们都睡着了——而我们在楼下，根本没听见那七下。');
     await S.say('肯特先生', '还有最后那一句……「箱子」。');
     await S.say('哈珀太太', ['箱子……', '楼梯底下的柜子里，是有一个铁皮箱。我们搬来的时候就在了，房管处说是前一个住户的，一直没人来领。', '上面挂着一把三位数的密码锁。我们谁也打不开。']);
@@ -572,13 +650,14 @@
     if (a !== 'heard') return S.narr('楼梯底下的储物柜。门缝里飘出一股樟脑丸和旧报纸的味道。\n门把手冰凉，比屋里任何东西都凉。');
     d.open = true; S.sfx('open');
     if (S.once('chestSeen')) await S.narr('柜子里塞满了吸尘器、旧雨靴、一袋圣诞装饰……\n最里面，是一只绿漆剥落的铁皮箱。挂锁上有三个数字转轮。');
-    const v = await S.keypad('铁皮箱的密码锁 · 三位数', ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'], 3);
+    const v = await S.keypad('铁皮箱的密码锁 · 三位数\n（磁带转写稿可以在「笺」里翻看）', ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'], 3);
     if (v == null) return;
     if (v !== '371') {
       S.sfx('locked'); S.f.codeFail = (S.f.codeFail || 0) + 1;
-      if (/[24]/.test(v)) await S.narr('锁纹丝不动。\n你想起磁带里汤米憋着的笑声……那几下敲击，也许不该算进去。');
+      if (/[24]/.test(v)) await S.narr('锁纹丝不动。\n你想起磁带里汤米憋着的笑声，和那种「嗒嗒」的脆响……那几下，也许不该算进去。');
       else await S.narr('锁纹丝不动。转轮咔咔地响，像在嘲笑你。');
-      if (S.f.codeFail >= 2) { await S.say('肯特先生（厨房）', '把转写稿再看一遍！划掉孩子们弄出来的，剩下的按顺序数——一组，一个数字。'); }
+      if (S.f.codeFail >= 3) await S.say('肯特先生（厨房）', ['014 和 047 是汤米——脆的那种，晾衣夹敲床头板。', '剩下的是 031、066、088。按顺序，每一组敲了几下？']);
+      else if (S.f.codeFail === 2) await S.say('肯特先生（厨房）', '把转写稿再看一遍！划掉孩子们弄出来的，剩下的按顺序数——一组，一个数字。');
       return;
     }
     S.f.chestOpen = true; S.sfx('open'); await S.wait(300);
@@ -586,6 +665,7 @@
     await S.narr('箱子里的东西不多：\n一副缠着胶布的老花眼镜。一块停了的黄铜怀表。一把系着硬纸片的小钥匙。\n还有一封没有寄出去的信。');
     S.give('glasses', true); S.give('watch', true); S.give('shedkey', true); S.sfx('item'); S.toast('获得：老花眼镜、怀表、棚屋钥匙');
     await S.note('letter');
+    if (S.f.heardOld) await S.think('邻居太太说过：以前住这屋的是个老头，眼睛不好，一个人住。');
     await S.think('约瑟夫。三点一刻。楼下角落的那把椅子。\n……这只箱子锁了十四年。孩子们不可能打开过。');
     S.f.act = 'chest'; stage(S);
     S.amb('drone'); S.sfx('scream'); S.shake(800, 3);
@@ -594,11 +674,25 @@
     S.goal('露西出事了——带着相机上楼！');
     S.cp('chest');
   }
+  async function grabCoin(S) {
+    S.give('coin'); S.sfx('item');
+    await S.narr('你摸到了哈珀太太的手提包，翻出钱包——\n里面只剩两枚五十便士。你攥住一枚，指甲都嵌进了棱角里。');
+    const c = S.ent('gchair_l'), cx = Math.round(c.px / 16), cy = Math.round(c.py / 16);
+    const far = Math.abs(cx - W.pl.x) + Math.abs(cy - W.pl.y) > 5;   // 已经追到跟前的，就不挪了
+    const tv = S.ent('telly'); tv.lit = true; tv.light = TVL; S.sfx('tv');
+    if (far) { S.stop('gchair_l'); S.place('gchair_l', 9, 5, 2); }
+    await S.narr('身后「噗」的一声——客厅的电视自己亮了。\n雪花的白光，从门口斜斜地照进厨房。');
+    S.focus(far ? 9 : cx, far ? 5 : cy); S.sfx('sting');
+    await S.narr(far ? '那把椅子已经不在墙角了。\n它就停在客厅通厨房的门口，面朝着你。' : '那把椅子就在你身后。\n椅子腿上的湿泥，在雪花光里亮晶晶的。');
+    S.focus(null);
+    S.chase('gchair_l', { spd: 2.75, catch: caughtChair }); S.ent('gchair_l').chase.wait = 1.0;
+    S.goal('快！绕开椅子去门厅，把硬币投进电表（厨房下边的门出去）');
+  }
   async function meterOn(S) {
     const a = S.f.act;
     if (a !== 'dark') return S.narr('投币电表。计数窗里的数字一格一格地走，走得比你想象的快。\n旁边贴着一张字条：「五十便士 ≈ 一个晚上。别忘了！！」');
     if (!S.has('coin')) return S.narr('你摸到了电表。投币口冰凉——可你手里没有硬币。\n（哈珀太太说，钱包在厨房台子上。）');
-    S.take('coin'); S.stop('gchair_l');
+    S.take('coin'); S.stop('gchair_l'); S.ent('telly').lit = false; S.ent('telly').light = null;
     await S.narr('你把硬币塞进投币口。「当啷」一声。你拧动旋钮——');
     S.sfx('switch'); S.f.act = 'morningPre'; S.ent('meter').lit = true; S.ent('fire').off = false; S.ent('llamp').off = false; S.ent('rlamp').off = false;
     S.dark(null, 'living'); S.dark(null, 'upstairs'); S.plr(null); S.amb('room');
@@ -708,7 +802,7 @@
     S.f.act = 'lev';
     const L = S.ent('lucy_u'), B = S.ent('bed_l'), C = S.ent('camtri');
     await S.narr('你按下了快门线。');
-    B.s.empty = true; L.spr = '@lucy'; S.place('lucy_u', 1, 3, 0); L.oy = -2;
+    B.s.empty = true; B.s.jump = false; L.spr = '@lucy'; S.place('lucy_u', 1, 3, 0); L.oy = -2;
     for (let i = 0; i < 4; i++) {
       C.s.flash = true; S.fx('flash'); S.sfx('cut'); S.shake(200, 1);
       await S.wait(140); C.s.flash = false; L.oy -= 4; await S.wait(420);
@@ -718,16 +812,25 @@
     await S.narr('然后，「砰」的一声，她被摔在了地板上——就落在你脚边。');
     S.sfx('heart'); await S.wait(900);
     L.spr = '@lucyv'; S.amb('otherworld');
-    await S.narr('露西慢慢坐了起来。眼睛睁着，可是只看得见眼白。');
+    await S.narr('露西慢慢坐了起来。');
+    await S.scare('face', { spr: '@lucyv', dur: .9, sfx: 'sting' });
+    await S.narr('眼睛睁着，可是只看得见眼白。');
     await old(S, '……这是……我的房子。');
     await S.say('苏', '露西？露西你别吓我……');
     await old(S, ['我在楼下……那把椅子上……眼睛看不见了……', '然后我就死了。我睡着了，然后我就死了。']);
     await old(S, '我叫约瑟夫。……谁拿了我的眼镜？');
-    const r = await S.ask('那个嗓音在等你回答。', ['（把铁皮箱里的老花眼镜拿给她看）', '「露西，是你在装吗？」']);
+    const r = await S.ask('那个嗓音在等你回答。', ['（把铁皮箱里的老花眼镜拿给她看）', '（端起床头那杯水）「含一口。别咽，也别吐。」', '「露西，是你在装吗？」']);
     if (r === 0) {
       S.f.showedGlasses = true;
       await S.narr('你把那副缠着胶布的眼镜，放到她面前。');
       await old(S, ['……就是它。就是它……', '三点一刻了吧？收音机……该报新闻了……']);
+    } else if (r === 1) {   // 含水试验：真实案件里调查员做过的测试；这里两边的证据都摆出来
+      S.f.water = true;
+      await S.narr('床头柜上有半杯凉水。你把杯子递到她嘴边。\n她乖乖地含了一大口，两腮鼓了起来。你用手掌托住她的下巴。');
+      await old(S, '……你们……总是……不信……');
+      await S.narr('那个声音还在说。嘴唇几乎没动，一滴水也没漏出来。\n——可你的手掌底下，感觉得到她的喉咙在一下一下地动。');
+      await old(S, '三点一刻了吧？……我要听收音机……');
+      await S.narr('她把水原样吐回了杯子里。一滴没少。');
     } else {
       await old(S, '……装？……小家伙们装的时候，我在旁边看着呢。他们敲得不对。');
       await old(S, '三点一刻了吧？……我要听收音机……');
@@ -813,6 +916,9 @@
     await S.say('肯特先生', '那镜子里的人呢？还有那把椅子？');
     await S.say('莫顿博士', ['镜子里那团东西，我看像是椅背上搭着的衣服。至于椅子——昨晚停了电，谁也没看清。', '研究会要一份报告。肯特先生的意见我知道了。我想听你的——你是唯一一个全程拿着录音机和相机的人。']);
     await S.note('memo');
+    if (S.f.water) {
+      await S.say('莫顿博士', ['肯特先生说，你昨晚自己做了含水试验。', '你的手托着她的下巴——感觉到喉咙在动了吧？假声本来就是从喉咙里出来的，含着水也一样。', '……不过我承认，含着一口水还能连着说那么多句，我自己在家试过。做不到。']);
+    }
     await S.say('莫顿博士', '先去问问孩子们。汤米在这儿，露西躲在楼上。问完了，回来告诉我你的结论。');
     S.goal('听听孩子们怎么说（客厅的汤米、楼上的露西），再回答莫顿博士');
     S.cp();
@@ -822,7 +928,12 @@
     S.face('morton_l', 'pl');
     if (!(S.f.tomConf && S.f.diary)) return S.say('莫顿博士', S.f.tomConf ? '露西呢？你还没听她怎么说。她在楼上。' : '先去问问孩子们。尤其是汤米——他看我的眼神，像只偷了香肠的狗。');
     await S.say('莫顿博士', '好。你的结论是什么？报告只有一页纸，我要一句话。');
-    const r = await S.ask('你的结论：', ['「全是假的。孩子们一直在骗人。」', '「全是真的。孩子们从来没装过。」', '「有真有假。我们一条一条说。」'], '莫顿博士');
+    const V = await S.vote('你的结论：', ['「全是假的。孩子们一直在骗人。」', '「全是真的。孩子们从来没装过。」', '「有真有假。我们一条一条说。」'], '莫顿博士');
+    let r = V.v;
+    if (!V.agree) {   // 两人意见不合
+      if (V.h === 2 || V.g === 2) { await S.narr('你们俩对看了一眼——两个人，两个结论。'); await S.say('莫顿博士', '研究会派来的两个人，自己都没统一。……那就别给我一句话了。一条一条说。'); r = 2; }
+      else { await S.narr('一个说全是真的，一个说全是假的。'); return S.say('莫顿博士', ['一个全信，一个全不信。', '两个人加起来，正好等于什么都没看。商量好了再来。']); }
+    }
     if (r === 0) return badEnd(S);
     if (r === 1) {
       await S.say('莫顿博士', '全是真的？');
@@ -838,8 +949,13 @@
       ['三、第二张照片里，露西「浮」在半空。', ['她自己跳起来的', '她真的浮起来了'], 0, '膝盖、脚尖、床垫上两个脚印——都是你在照片里亲手记下来的。'],
       ['四、镜子里的老人，和露西用那个嗓音说出的「三点一刻」。', ['露西编的', '无法解释'], 1, '铁皮箱锁了十四年，怀表停在三点一刻——在你开箱以前，这件事谁都不知道。她要怎么编？']
     ];
+    const LB = ['人为的', '无法解释', '说不清'], mine = k => S.f['pj_' + k] == null ? '（没写）' : LB[S.f['pj_' + k]];
+    const PRE = [null, null,   // 第三、四问前，她翻开你在照片里记的笔记
+      () => S.say('莫顿博士', `（她翻着你的笔记本）照片里，「膝盖」那条你写的是「${mine('legs')}」，「床垫」写的是「${mine('bed')}」。`),
+      () => S.say('莫顿博士', [`「镜子」那条，你写的是「${mine('mirror')}」。「窗帘」写的是「${mine('curtain')}」。`, '……窗帘那条，我也解释不了。窗户封着胶带，风从哪儿来？我会写进报告里。'])];
     let wrong = 0;
-    for (const [q, opts, right, msg] of Q) {
+    for (const [qi, [q, opts, right, msg]] of Q.entries()) {
+      if (PRE[qi]) await PRE[qi]();
       const a = await S.ask(q, opts, '莫顿博士');
       if (a !== right) { wrong++; await S.say('莫顿博士', msg); }
       else await S.say('莫顿博士', ['……嗯。', '……记下了。', '……好。', '……'][Q.findIndex(z => z[0] === q)]);
@@ -858,6 +974,19 @@
     S.follow('lucy_l', true);
     S.goal('带露西去后院的棚屋（厨房后门）');
     S.cp('night');
+  }
+  async function driveEnd(S, C) {   // 第三结局：赶走（坏结局，保留棚屋前的检查点）
+    await S.say('你', '滚出这栋房子，别再缠着这家人！');
+    S.sfx('thud'); S.shake(900, 4); S.fx('red'); C.s.glasses = true;
+    await S.narr('椅子猛地往后一滑，在草地上犁出两道沟。\n栅栏那边，所有人家的狗同时叫了起来。');
+    await S.say('露西', ['不是这样的！', '他不是坏人……他只是在等。你们大人只会赶人走——赶他走，赶我们走。'], { style: 'whisper' });
+    S.ent('lucy_g').spr = '@lucyv'; growl(S);
+    await S.scare('face', { spr: '@oldman', dur: .8 });
+    await S.say(OLD, '……好。我走。', { style: 'whisper' });
+    S.ent('lucy_g').spr = '@lucy';
+    S.hide('gchair_g'); S.amb('wind');
+    await S.narr('扶手上的眼镜和怀表还在草地上。椅子不见了。');
+    await S.end({ bad: true, id: 'drive', title: '赶走', text: '那天夜里，84号的墙里第一次什么声音都没有。\n哈珀太太哭了，肯特先生在本子上写：「现象停止」。\n\n隔壁的邻居太太第二天一早来敲门，脸色发白。\n她家的墙里，响了一整夜。\n咚。……咚。很慢，很有耐心。\n\n他还是没找到路。\n只是换了一面墙。' });
   }
   async function badEnd(S) {
     await S.say('你', '全是假的。……孩子们一直在骗人。');
@@ -925,7 +1054,7 @@
       placed: ['坐下，喝茶。等。我们这行，一大半时间都在等。'],
       knocks: ['上去把录音机拿回来。别在孩子们面前听。'],
       fetched: ['放吧。从头放。'],
-      heard: S.f.codeFail ? ['把孩子们弄出来的那几组划掉。剩下的按顺序数——一组，一个数字。'] : ['它要是想告诉我们什么，就会用它自己的敲法。孩子们的那几下，不算数。'],
+      heard: S.f.codeFail >= 3 ? ['031、066、088——没人敲的那三组。按顺序，每组几下？'] : S.f.codeFail ? ['把孩子们弄出来的那几组划掉。剩下的按顺序数——一组，一个数字。'] : ['它要是想告诉我们什么，就会用它自己的敲法。孩子们的那几下，不算数。', '你听出来没有？晾衣夹敲木头是脆的。墙里那个，是闷的。'],
       develop: ['快去冲照片。这种事，一个钟头以后连我自己都会记错。'],
       photo: ['快去冲照片。这种事，一个钟头以后连我自己都会记错。'],
       morning: ['莫顿是个好研究员。她不信，可她诚实。', '我们这行最大的敌人不是怀疑——是只想要一个答案。'],
@@ -993,15 +1122,16 @@
       S.sfx('whisper');
       await S.say('磁带里的声音', QS2[i][1], { style: 'whisper' });
     }
-    const r = await S.ask('最后，你想对他说：', ['「约瑟夫，现在你看得清路了。珍妮在等你。」', '「这里是她们的家了。谢谢你，让她们借住。」', '「滚出这栋房子，别再缠着这家人！」']);
-    if (r === 2) {
-      await S.say('你', '滚出这栋房子，别再缠着这家人！');
-      S.sfx('thud'); S.shake(900, 4); S.fx('red'); C.s.glasses = true;
-      await S.narr('椅子猛地往后一滑，在草地上犁出两道沟。\n栅栏那边，所有人家的狗同时叫了起来。');
-      await S.say('露西', ['不是这样的！', '他不是坏人……他只是在等。你们大人只会赶人走——赶他走，赶我们走。'], { style: 'whisper' });
-      return;
+    const V = await S.vote('最后，你想对他说：', ['「约瑟夫，现在你看得清路了。珍妮在等你。」', '「这里是她们的家了。谢谢你，让她们借住。」', '「滚出这栋房子，别再缠着这家人！」']);
+    let r = V.v;
+    if (!V.agree) {
+      if (V.h === 2 || V.g === 2) { r = V.h === 2 ? V.g : V.h; await S.narr('一个人刚喊出半个「滚」字，另一个人一把按住了他的胳膊。\n露西回过头，看了你们一眼。'); }
+      else await S.narr('你们俩想说的话不一样。……最后，是一前一后，都说出了口。');
     }
-    await S.say('你', r === 0 ? '约瑟夫，现在你看得清路了。珍妮在等你。' : '这里是她们的家了。谢谢你，让她们借住。');
+    if (r === 2) return driveEnd(S, C);
+    const both = !V.agree && V.h !== 2 && V.g !== 2;
+    if (both) await S.say('你', ['约瑟夫，现在你看得清路了。珍妮在等你。', '这里是她们的家了。谢谢你，让她们借住。']);
+    else await S.say('你', r === 0 ? '约瑟夫，现在你看得清路了。珍妮在等你。' : '这里是她们的家了。谢谢你，让她们借住。');
     S.amb('none'); await S.wait(800);
     const O = S.ent('oldman_g'); O.spr = '@oldmang'; C.s.glasses = false;
     await S.alpha('oldman_g', .85, 1400);
@@ -1017,7 +1147,8 @@
     await S.narr('草地上，那块怀表「嗒」地响了一声。\n秒针走了一格，两格，三格……\n然后，停在了三点十六分。');
     S.amb('night');
     await S.fade(1, 1400);
-    await S.card('后来', '', '敲墙声在第二年春天，渐渐停了。\n莫顿博士的报告只有一句话，研究会里为这句话吵了很多年。\n\n那把椅子，哈珀太太让人搬回了客厅的墙角。\n谁也不坐。\n露西有时候在旁边念报纸，念到三点一刻，就停下来。');
+    await S.card('后来', '', '敲墙声在第二年春天，渐渐停了。\n莫顿博士的报告只有一句话，研究会里为这句话吵了很多年。\n\n那把椅子，哈珀太太让人搬回了客厅的墙角。\n谁也不坐。\n'
+      + (r === 1 && !both ? '哈珀太太说，这是借来的房子、借来的角落。\n逢年过节，她会在扶手上放一杯茶，浓得像泥水。' : '露西有时候在旁边念报纸，念到三点一刻，就停下来。'));
     await S.end({ id: 'good', title: '第八夜　完', text: '你的磁带后来被存进了研究会的档案室。\n第一盘A面，计数器 088 的地方，那个嗓音还在。\n\n有人说，那是一个十一岁女孩练出来的假声。\n有人说不是。\n\n你在档案卡上，只写了三个字：\n「我在场。」' });
   }
 })();

@@ -25,12 +25,14 @@ SOL = [
     ['use', 'ktable'],                          # 回放：五组敲击 + 「箱子」
     ['expect', "window.__dbg.W.f.act === 'heard'"],
     ['use', 'cup_d', ['234']],                  # 把汤米敲的也算进去 → 打不开
+    ['use', 'cup_d', ['999']],                  # 第二次错：肯特提示「划掉孩子们的」
+    ['use', 'cup_d', ['111']],                  # 第三次错：肯特点出 031、066、088
     ['use', 'cup_d', ['371']],                  # 只算没人敲的那三组：3、7、1
     ['expect', "window.__dbg.W.f.act === 'chest'"],
     ['step', 16, 7],
     ['shot', 'bedjump'],
     ['use', 'camtri'],
-    ['use', 'bed_l', [0]],                      # 连拍；露西用老人的嗓音说话
+    ['use', 'bed_l', [1]],                      # 连拍；露西用老人的嗓音说话 → 含水试验
     ['expect', "window.__dbg.W.f.act === 'develop'"],
     ['shot', 'after_lev'],
     ['use', 'trays', [0]],                      # 冲洗 → 走进第二张照片
@@ -42,7 +44,9 @@ SOL = [
     ['shot', 'dark_up'],
     ['step', 1, 8],
     ['shot', 'dark_living'],
-    ['use', 'kcount'],                          # 五十便士
+    ['use', 'kcount'],                          # 五十便士 → 电视自己亮了，椅子挪到了厨房门口
+    ['expect', "window.__dbg.ent('gchair_l').px === 9 * 16 && window.__dbg.ent('telly').lit"],
+    ['shot', 'dark_coin'],
     ['use', 'meter'],                           # 来电 → 第二天上午
     ['expect', "window.__dbg.W.f.act === 'morning'"],
     ['shot', 'morning'],
@@ -60,5 +64,5 @@ SOL = [
     ['expect', "window.__dbg.W.f.act === 'night'"],
     ['use', 'bdoor'],
     ['shot', 'garden_night'],
-    ['use', 'gchair_g', [0, 0, 0, 0]],
+    ['use', 'gchair_g', [0, 0, 0, 0]],           # 三个问题 + 「珍妮在等你」→ 好结局
 ]
