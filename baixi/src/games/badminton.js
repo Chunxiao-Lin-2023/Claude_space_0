@@ -206,7 +206,7 @@ BX.register({
       const ctrlH = touchUI() ? (two ? Math.min(H * .26, 190) : port ? Math.min(H * .2, 150) : Math.min(H * .26, 110)) : 0;
       const top = 44, avail = H - ctrlH - top;
       const lw = CW + 1.6, lh = port ? 6.5 : 6.2;
-      const sx = Math.min(W / lw, avail / lh), s = port ? Math.min(avail / lh, sx * 3) : sx;
+      const sx = Math.min(W / lw, avail / lh), s = port ? Math.min(avail / lh, sx * 2.6) : sx;
       const gx = (W - CW * sx) / 2, gy = top + avail - Math.max(14, avail * .06);
       return {W, H, port, s, sx, gx, gy, ctrlH, flip: viewSeat() === 1 && nLoc() === 1};
     }
