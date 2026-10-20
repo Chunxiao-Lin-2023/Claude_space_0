@@ -415,7 +415,7 @@
           'TTTTTTTTTTTdTTTTTTTTTT'],
         ents: [
           { x: 11, y: 29, spr: 'invisible', async touch(S) { await S.narr('不能回去。孩子还在她手里。\n天亮之前，得把孩子带回来。'); await S.walk('pl', 'u', 5); } },
-          { x: 11, y: 0, spr: 'invisible', async touch(S) { await S.go('makam', 12, 18, 3); } },
+          { x: 11, y: 0, spr: 'invisible', async touch(S) { await S.go('makam', 11, 17, 3); } },
           { id: 'pondok', x: 3, y: 24, w: 2, spr: 'pondok', async on(S) { if (S.once('pondok')) await S.narr('割胶工的小棚子。棚里挂着几把割胶刀，一盏熄了的头灯。\n门口钉着一块木板，上面用木炭写满了字。'); await S.note('papan'); } },
           { x: 16, y: 26, spr: 'bunga', decal: true, on: S => S.narr('地上又是几朵鸡蛋花，花心朝上，像一只只睁着的眼睛。') },
           { x: 19, y: 22, spr: 'bunga', decal: true },
@@ -501,5 +501,519 @@
       }
     }
   });
-  /*@STORY@*/
+  /* ================= 小工具 ================= */
+  const pick = a => a[(Math.random() * a.length) | 0];
+  function howl(S) {
+    S.tone('sine', 480, 720, .9, .045, 0, 1400); S.tone('sine', 720, 520, 1.3, .04, .9, 1400);
+    if (S.map === 'kampung') S.bubble('dog', '…', 1400);
+  }
+  function behind(S) {
+    const p = S.pl, m = curMap(), d = DIRS[p.dir];
+    const c = [[p.x - d[0], p.y - d[1]], [p.x, p.y + 1], [p.x - 1, p.y], [p.x + 1, p.y], [p.x, p.y - 1]];
+    for (const [x, y] of c) if (passable(m, x, y, null)) return [x, y];
+    return [p.x, p.y + 1];
+  }
+  function dirTo(p, x, y) { const dx = x - p.x, dy = y - p.y; return Math.abs(dx) > Math.abs(dy) ? (dx < 0 ? 1 : 2) : (dy < 0 ? 3 : 0); }
+  function spot(S, dmin, dmax) {   // 离玩家 dmin..dmax 格、能站人的地方（偏向玩家前方——北边）
+    const m = curMap(), p = S.pl, c = [];
+    for (let y = 1; y < m.h - 1; y++) for (let x = 1; x < m.w - 1; x++) {
+      const d = Math.abs(x - p.x) + Math.abs(y - p.y);
+      if (d < dmin || d > dmax || !passable(m, x, y, null)) continue;
+      const w = y < p.y ? 3 : 1; for (let i = 0; i < w; i++) c.push([x, y]);
+    }
+    return c.length ? pick(c) : [p.x, Math.max(1, p.y - dmin)];
+  }
+
+  /* ================= 开场：外婆家 ================= */
+  async function opening(S) {
+    S.f.phase = 'arrive';
+    await S.narr('天黑以后，整个甘榜又停电了（mati lampu）。\n屋里只点着一盏煤油灯（pelita），火苗只有黄豆那么大。雨点打在亚答叶屋顶上，噼噼啪啪。');
+    S.face('nenek', 'pl');
+    await S.say('外婆', ['阿宁，过来，让外婆看看。', '……瘦了。雅加达的饭不养人。']);
+    await S.say('阿宁', '外婆，我坐了一天一夜的船，你先让我歇会儿。');
+    await S.say('外婆', ['歇什么。灯油快烧干了。', '去村路西头阿伯的杂货铺，打一瓶煤油回来。就说是我要的，他会记账。']);
+    await S.say('阿宁', '……雅加达早就没人用煤油灯了。');
+    await S.say('外婆', '雅加达不停电？');
+    await S.narr('你没话说了。');
+    await S.say('外婆', ['你表姐刚生完孩子二十天，还在坐月子（pantang）。别让她出门，晚上也别在外面大声喊她的名字。', '还有——']);
+    S.bubble('nenek', '…', 1200);
+    await S.say('外婆', ['路过村口那棵大木棉树（pohon kapuk），别在树底下停。', '要是闻到鸡蛋花的香味，就当没闻到。别抬头，别回头，接着走。']);
+    const r = await S.ask('外婆的眼睛在灯光里亮得有点吓人。', ['……为什么？', '（笑）外婆，你又讲鬼故事吓我。'], '阿宁');
+    if (r === 1) await S.say('外婆', '你六岁的时候听这个故事，吓得三天不敢一个人上茅房。现在长大了，倒会笑了。');
+    await S.say('外婆', ['她叫坤蒂拉娜（Kuntilanak）。马来西亚那边叫她庞蒂雅娜（Pontianak）——咱们坤甸城的名字，据说就是从她来的。', '她生前是个女人，生孩子的时候死了。穿白衣服，头发很长，夜里坐在大树上。', '她专找刚生下来的孩子，和怀着孩子的女人。']);
+    await S.say('外婆', '你要是听见她笑，记住一句话——');
+    S.amb('none');
+    await S.say('外婆', '笑声听着近，她还远；\n笑声听着远——她就在你旁边。', { style: 'big' });
+    S.amb('rain');
+    await S.say('外婆', '去吧。快去快回。');
+    S.f.phase = 'errand';
+    S.goal('去村路西头阿伯的杂货铺，买一瓶煤油');
+  }
+
+  async function nenekTalk(S) {
+    S.face('nenek', 'pl');
+    const ph = S.f.phase;
+    if (ph === 'errand') return S.say('外婆', cyc(S, '_n1', ['阿伯的铺子在村路西头，门口挂着红灯笼的那家。', '快去快回。别在大木棉树底下停。', '……你还站在这儿干什么？灯要灭了。']));
+    if (ph === 'back' || ph === 'home2') return S.say('外婆', '煤油呢？拿来，外婆给你灌上。');
+    if (ph === 'taken') {
+      if (!S.f.nenekT) return nenekReveal(S);
+      if (!S.f.tin) return S.say('外婆', '柜子里的铁盒。快。');
+      return S.say('外婆', ['去祈祷室找哈桑老师。他会告诉你老坟场里谁埋在哪儿。', '……阿宁。替我跟她说一声。我活下来了。']);
+    }
+    if (ph === 'night') return S.say('外婆', '哈桑老师来接我了。你先走——走橡胶园的小路，快。');
+  }
+  async function nenekReveal(S) {
+    S.f.nenekT = true;
+    await S.narr('外婆坐在灯前，一动不动。灯火把她的影子投在墙上，很大，很黑。');
+    await S.say('外婆', ['……她来了。', '我早该知道。今年雨季，鸡蛋花开得特别早。']);
+    await S.say('阿宁', '外婆！报警——叫人——叫……');
+    await S.say('外婆', ['半夜三点多，叫谁？警察在城里，坐船要两个钟头。', '听我说，阿宁。她不会伤孩子。她只是……想抱一抱。', '可是天亮以前不把孩子抱回来，老人们说，孩子的魂就跟着她走了。']);
+    await S.narr('外婆抬起头看着你。她的眼睛很湿，可是没有哭。');
+    await S.say('外婆', ['我一直不敢说。', 'Mak Long 临死前告诉我：我亲娘叫西蒂。她就是生我的那天晚上死的。死在这间屋子里，死在里屋那扇窗户底下。', '……那个坐在树上笑的，是我娘。']);
+    await S.say('外婆', ['衣柜最底下有个铁盒子。钥匙在这儿。', '把盒子里的东西都带上。那封信，你自己看。']);
+    S.goal('打开外婆的衣柜，拿出铁盒');
+  }
+  async function almariOn(S) {
+    if (S.f.phase !== 'taken' && S.f.phase !== 'night') return S.narr('外婆的老柚木衣柜，雕着藤蔓花纹。锁着。\n钥匙用红绳拴着，挂在外婆脖子上。');
+    if (!S.f.nenekT) return S.narr('衣柜锁着。钥匙在外婆脖子上。');
+    if (S.f.tin) return S.narr('衣柜里只剩外婆的几件旧纱笼，叠得整整齐齐，一股樟脑味。');
+    S.ent('almari').open = true; S.sfx('open');
+    await S.narr('衣柜最底下压着一个饼干铁盒。盒盖上印着一个穿纱笼的姑娘，漆都快掉光了。');
+    S.give('bedung');
+    await S.narr('盒子里有一块叠得方方正正的白布——是婴儿的襁褓。\n布边上，用褪了色的红线绣着一圈小小的鸡蛋花。');
+    S.give('paku');
+    await S.narr('布底下压着一根生锈的长铁钉，钉帽是方的。\n还有一封信。信纸折了很多折，上面是弯弯曲曲的爪夷文。');
+    await S.note('surat');
+    await S.think('……「我只怕，她一直在找一个哭声。」');
+    S.face('nenek', 'pl');
+    await S.say('外婆', ['那根钉子，是 Mak Long 留下的。', '老人们说，钉进她的后脖子，她就会变回一个漂亮女人，不会再吓人了。Mak Long 说，要是哪天我想让我娘不再是「那个东西」……', '……可是我一辈子都没敢用。', '你看着办吧。']);
+    S.f.tin = true;
+    S.goal('去村东头的祈祷室，找哈桑老师');
+    S.cp('tin');
+  }
+  async function buaianOn(S) {
+    if (S.f.phase === 'taken' || S.f.phase === 'night') return S.narr('摇篮空了。里面的小枕头还是温的。\n一朵鸡蛋花躺在孩子刚才躺的地方，花心朝上。');
+    await S.narr('藤编的吊摇篮（buaian），用一根大弹簧吊在房梁上，一碰就上下轻轻地颠。\n孩子睡在里面，小拳头攥着，眉头皱着，像在做一个很认真的梦。');
+    await S.narr('摇篮边上系着一小串蒜头，还别着一根缝衣针。');
+  }
+  async function ratnaTalk(S) {
+    S.face('ratna', 'pl');
+    const ph = S.f.phase;
+    if (ph === 'taken' || ph === 'night') {
+      if (S.once('ratnaT')) {
+        await S.narr('表姐跪在空摇篮边上，两只手死死抓着摇篮的边。');
+        await S.say('拉特娜表姐', ['我就闭了一下眼睛……就一下……', '窗户是关着的，我拿筷子别着的……', '剪刀还在枕头底下。她不怕剪刀。她就是……就是把孩子抱走了。']);
+        await S.say('拉特娜表姐', ['阿宁，我听见她在窗外笑。笑声很远，很远，像在河对岸……', '可是那个味道，就在我脸上。'], { style: 'whisper' });
+        if (!S.f.nenekT) S.goal('外婆在外屋——去问外婆');
+        return;
+      }
+      return S.say('拉特娜表姐', ph === 'night' ? '……把她带回来。求你了，阿宁。' : '外婆……外婆知道。她一定知道。');
+    }
+    if (ph === 'home2' || ph === 'back' || ph === 'tut') return S.say('拉特娜表姐', '嘘——你听，外头又起风了。');
+    if (S.once('ratna1')) {
+      await S.say('拉特娜表姐', ['嘘——刚睡着。', '阿宁，你看她，像不像我？……像她爸？她爸跟船出海了，还没见过她呢。']);
+      await S.say('拉特娜表姐', ['外婆非要把剪刀塞在我枕头底下，刀尖还得朝外。摇篮上挂蒜头、别缝衣针……', '我在城里医院生的孩子，护士要是看见这些，得笑死。', '……可是晚上听见外头有动静，我还是会伸手摸一摸那把剪刀。']);
+      return;
+    }
+    await S.say('拉特娜表姐', cyc(S, '_r1', ['孩子还没取名字。本来第七天要剃胎发、取名字（aqiqah），她爸不在，就拖着。', '外婆一晚上都没睡，一直坐在灯底下。', '快去吧，灯要灭了。']));
+  }
+  async function exitHouse(S) {
+    if (S.f.phase === 'taken' && !S.f.tin) { await S.narr(S.f.nenekT ? '外婆让你先把衣柜里的铁盒拿上。' : '孩子不见了——先去里屋看看，问问外婆！'); return S.walk('pl', 'u', 5); }
+    await S.go('kampung', 5, 5, 0);
+  }
+
+  /* ================= 夜里：外婆的故事，孩子不见了 ================= */
+  async function homeNight(S) {
+    S.f.phase = 'home';
+    S.take('minyak'); S.f.lamp = true;
+    const L = S.ent('pelita'); L.s.big = 1; L.light = { r: 4.2, col: 'rgba(255,170,80,.24)', flick: true };
+    S.dark(.6);
+    await S.narr('外婆接过瓶子，把煤油慢慢灌进灯里。火苗「噗」地蹿高了，屋里一下子亮堂起来。');
+    S.face('nenek', 'pl');
+    await S.say('外婆', '……你闻到了，是不是。');
+    await S.say('阿宁', ['外婆，我……路上听见有人在笑。先是很近，然后很远。还有一股鸡蛋花的味道。', '肯定是哪家的小孩在恶作剧。']);
+    await S.narr('外婆没有说话。她把灯芯捻低了一点，又捻高了一点。');
+    await S.say('外婆', ['我没见过我亲娘。', '养大我的是隔壁的 Mak Long。她说，我是在这间屋子里出生的。那天晚上也下着大雨，那时候村里还没有电。', '我亲娘生完我……没来得及抱我一下。']);
+    await S.say('阿宁', '……外婆？');
+    await S.say('外婆', ['每年雨季，村里有孩子生下来，就有人半夜闻到鸡蛋花香。', '今年，是你表姐的孩子。']);
+    S.sfx('cry');
+    await S.narr('里屋传来孩子的哭声。细细的，一声接一声。\n外婆站起来，走到里屋门口，轻轻地哼起了一支歌。');
+    await S.say('外婆', 'Tidurlah, tidurlah, anakku sayang,\nbulan di atas, sungai pun tenang……\n（睡吧，睡吧，我的心肝宝贝，\n月亮在天上，河水也睡了……）', { style: 'whisper' });
+    await S.narr('哭声慢慢地停了。');
+    await S.say('阿宁', '这是什么歌？');
+    await S.say('外婆', ['不知道。Mak Long 唱给我听的。好像……我生下来就会。', '睡吧，阿宁。门窗都关好。']);
+    await S.fade(1, 900);
+    S.pos(6, 7, 3);
+    S.dark(.84); L.s.big = 0; L.light = { r: 2, col: 'rgba(255,170,80,.2)', flick: true };
+    await S.card('', '凌晨三点四十分', '……\n\n你是被一阵香味熏醒的。\n甜的，腻的，满屋子都是。');
+    await S.fade(0, 700);
+    S.amb('none');
+    await S.narr('鸡蛋花的香味。浓得像有人把一整棵树塞进了屋里。\n……然后，香味变了。变成了一股烂花瓣泡在死水里的臭味。');
+    laugh(S, 'far'); S.toast(SOFT[0]);
+    await S.wait(1500);
+    S.sfx('scream'); S.shake(500, 2);
+    S.ent('buaian').s.empty = 1; S.show('kb1'); S.show('kb2');
+    await S.say('表姐（里屋）', '孩子——！孩子呢？！我的孩子呢？！', { style: 'big' });
+    S.amb('night');
+    S.f.phase = 'taken';
+    S.goal('孩子不见了——去里屋看看');
+    S.cp('taken');
+  }
+
+  /* ================= 村里的人 ================= */
+  async function ahpekTalk(S) {
+    S.face('ahpek', 'pl');
+    if (S.f.phase === 'errand') {
+      await S.say('阿伯', ['哟，阿宁？雅加达的大学生回来啦！你外婆天天念你，念得我耳朵起茧。', '煤油？有有有。外婆要的，记账。']);
+      S.give('minyak');
+      await S.narr('阿伯从柜台底下摸出一个旧芬达瓶子，灌满煤油，瓶口塞了一团报纸。');
+      await S.say('阿伯', ['……停电的晚上，一个女孩子家出来打油。你外婆没跟你讲？', '我阿公从汕头过番，在这条河上撑了一辈子舢舨。他说，刚来南洋的时候什么都不信，后来什么都信了。']);
+      await S.say('阿伯', ['你知道坤甸为什么叫坤甸吗？', '两百多年前，苏丹的船队开到河口，夜里林子里全是女人的笑声。苏丹就叫人开炮，轰了几天几夜，才把她们轰走。', '我把报纸上那篇文章钉在门边了，你自己看。']);
+      await S.say('阿伯', ['路上要是听见笑，记住：笑得远，站住别动；笑得近，赶快走。', '是反过来的，记住啦。']);
+      S.f.phase = 'back';
+      S.goal('把煤油带回外婆家');
+      return;
+    }
+    await S.say('阿伯', cyc(S, '_a1', ['开斋节那天你要在就好了。河两岸的电石竹炮一起放，轰——轰——整条河都在抖，比过年放鞭炮还热闹。', '老人说放炮一半是庆祝，一半是吓她。\n……我看她也没被吓走。', '快回去吧。路上别回头。']));
+  }
+  async function dartoTalk(S) {
+    S.face('darto', 'pl');
+    const ph = S.f.phase;
+    if (ph === 'taken' || ph === 'night') {
+      if (S.once('darto2')) {
+        await S.say('达多伯', ['孩子被抱走了？Ya Allah（我的天）……', '我看见了。三点多，我在河上等雾散，一团白的从你外婆家里屋的窗口飘出来，飘得很慢。怀里抱着个东西。', '往村北去了——橡胶园那边，再过去就是老坟场。']);
+        await S.say('达多伯', '去找哈桑老师。老坟场里谁埋在哪儿，只有他那本旧账上有。');
+        return;
+      }
+      return S.say('达多伯', '我在这儿守着河。她要是往水里去，我就喊。');
+    }
+    if (S.once('darto1')) {
+      await S.say('达多伯', ['Mbak Ning（宁姑娘）？这么晚还出来。', '我？等雾散了出船。夜里的虾好卖。']);
+      await S.say('达多伯', ['我们爪哇老家也有她，叫 Kuntilanak。你们马来人叫 Pontianak，说的是一样的东西。', '爪哇还有一种，叫 Sundel Bolong，背上有个大窟窿，拿长头发遮着。那个更凶。', '我奶奶说，她夜里会变成一只鸟，叫起来「kik——kik——kik」。叫得越远，人越该害怕。']);
+      await S.say('达多伯', ['马来西亚那边的人还说，往她后脖子上钉一根钉子，她就变成一个漂亮女人，能嫁人，能生孩子。钉子一拔，又变回去。', '……你说，被钉住的那个，还是她自己吗？']);
+      return;
+    }
+    await S.say('达多伯', cyc(S, '_d1', ['河上的雾越来越浓了。今晚不出船了。', '她喜欢待在大树上——木棉、榕树、鸡蛋花树。晚上从树底下走，别抬头。', '……kik、kik、kik。你听见了吗？没有？那就好。']));
+  }
+  async function ustazTalk(S) {
+    S.face('ustaz', 'pl');
+    const ph = S.f.phase;
+    if (ph === 'taken' || ph === 'night') {
+      if (!S.f.tin) return S.say('哈桑老师', '阿宁？你外婆家出什么事了？……先回去问清楚你外婆，把该带的东西带上。我在这里等你。');
+      if (S.f.ust2) return S.say('哈桑老师', ['头朝北，脚朝南。男人的碑圆，女人的碑扁。', '我这就去接你外婆。去吧，孩子。']);
+      S.f.ust2 = true;
+      await S.say('阿宁', '哈桑老师！表姐的孩子被……被抱走了。外婆说，是西蒂。');
+      await S.say('哈桑老师', ['Astaghfirullah（求真主宽恕）……', '西蒂。这个名字，我在我爷爷的本子上见过。']);
+      await S.narr('哈桑老师从架子上抽出一本用布包着的厚登记簿，小心地一页页翻开。');
+      await S.note('daftar');
+      await S.say('哈桑老师', ['我爷爷那时候是这里的伊玛目。坟场里没刻字的坟，只有这本子记得。', '记住：我们这里埋人，头朝北，脚朝南，身子侧着，脸朝西边的天房。所以坟北头那块碑，就是头。', '还有一条老规矩：男人的碑是圆柱的，女人的碑是扁的。']);
+      await S.say('哈桑老师', ['你外婆那双腿走不了橡胶园的小路。我去接她，走河边的大路绕过去——大路远，我们会晚一点到。', '离晨礼不到一个钟头了。']);
+      const r = await S.ask('哈桑老师拿起了汽灯旁边的手电筒。', ['老师，她……真的是鬼吗？', '（点点头）我这就去。'], '阿宁');
+      if (r === 0) await S.say('哈桑老师', ['我不知道她是什么，阿宁。', '我只知道，一个十七岁的姑娘，生孩子死了，到死都没听见孩子哭一声。', '如果她还在这里，那不是因为她恶。是因为没有人告诉过她，后来怎么样了。']);
+      await S.say('哈桑老师', 'Bismillah（以真主之名）。去吧，孩子。');
+      S.f.phase = 'night';
+      S.goal('跟着花往北，穿过橡胶园，去老坟场的大木棉树');
+      S.cp('night');
+      return;
+    }
+    if (S.once('ust1')) {
+      await S.say('哈桑老师', 'Assalamualaikum（愿你平安）。阿宁？阿米娜大娘的外孙女？');
+      await S.say('阿宁', 'Waalaikumsalam（也愿你平安），老师。');
+      await S.say('哈桑老师', ['宵礼做完了，我在等汽灯里的油烧完再回去。全村停电，总得有个地方亮着。', '……坤蒂拉娜？你外婆跟你讲了？']);
+      await S.say('哈桑老师', ['在我们的信仰里，因为生孩子而去世的女人，是殉道者（syahid）。真主会给她最好的地方。她不是什么魔鬼。', '坤蒂拉娜，是老人们的故事。', '可是……人心里有放不下的东西，就会变成故事。故事讲得久了，就跟真的一样。']);
+      await S.say('哈桑老师', '你外婆小时候的事——你问过她吗？');
+      return;
+    }
+    await S.say('哈桑老师', cyc(S, '_u1', ['早点回去。路上要是怕，就念一句 Bismillah。', '停电的晚上，来这里坐坐也好。汽灯亮，人心也亮。', '黑板上写着明早的礼拜时间。晨礼是四点三十一分——天亮之前最黑的那一会儿。']));
+  }
+  async function toKebun(S) {
+    const ph = S.f.phase;
+    if (ph === 'night') return S.go('kebun', 11, 28, 3);
+    if (ph === 'taken') { await S.narr(S.f.tin ? '先去祈祷室找哈桑老师——老坟场里谁埋在哪儿，只有他知道。' : '外婆还在屋里等你。先回去！'); return S.walk('pl', 'd', 5); }
+    await S.narr('往北是橡胶园，再过去是村里的老坟场。\n大半夜的，去那儿干什么。');
+    return S.walk('pl', 'd', 5);
+  }
+
+  /* ================= 村路上：第一次听见她 ================= */
+  async function tutorial(S) {
+    S.f.phase = 'tut0';
+    S.amb('none');
+    await S.narr('走到一半，河上的风忽然停了。\n青蛙、虫子，一下子全都不叫了。');
+    laugh(S, 'near'); S.toast(LOUD[0]); S.shake(300, 1);
+    await S.wait(900);
+    S.bubble('pl', '!', 900);
+    await S.narr('你猛地回过头。\n身后什么也没有。只有空荡荡的土路，和大木棉树黑压压的影子。');
+    await S.think('……外婆说：笑声听着近，她还远。');
+    await S.wait(600);
+    laugh(S, 'far'); S.toast(SOFT[0]);
+    await S.wait(1100);
+    S.toast(SMELL[0]);
+    await S.narr('又一声。这一次很轻、很远，像是从河对岸飘过来的。\n然后，一股香味钻进了鼻子。甜得发腻——是鸡蛋花。');
+    await S.think('笑声听着远……\n——她就在旁边。');
+    S.goal('别动。等那股香味过去');
+    S.f.phase = 'tut'; S.f.tutT = 0; S.norun(true);
+  }
+  function tutTick(S, dt) {
+    if (S.f.phase !== 'tut' || W.busy) return;
+    if (S.moving) { S.f.phase = 'tutx'; S.after(0, tutFail); return; }
+    S.f.tutT += dt;
+    if (S.f.tutT >= 3.2) { S.f.phase = 'tutx'; S.after(0, tutPass); }
+  }
+  async function tutFail(S) {
+    const [bx, by] = behind(S);
+    S.place('kt2', bx, by); S.face('kt2', 'pl'); S.ent('kt2').alpha = 1;
+    S.toast('香味一下子变成了腐臭——');
+    await S.scare('face', { spr: '@kunti', face: 'kunti' });
+    await S.narr('一只冰凉的手，搭在了你的后脖子上。指甲又长又弯。\n——下一秒，它又不见了。');
+    S.hide('kt2');
+    await S.think('……我动了。听着远的时候，她就在旁边。\n这次，别动。');
+    laugh(S, 'far'); S.toast(SOFT[1]);
+    S.f.phase = 'tut'; S.f.tutT = 0;
+  }
+  async function tutPass(S) {
+    S.toast('香味……慢慢淡了。');
+    const k = S.ent('kt'); k.alpha = 0; S.show('kt');
+    S.focus(20, 6);
+    await S.alpha('kt', .8, 900);
+    await S.narr('你用眼角的余光瞥见——\n大木棉树最低的那根树杈上，坐着一个白色的影子。长头发一直垂下来，垂到了树根。');
+    laugh(S, 'near'); S.toast(LOUD[1]);
+    await S.alpha('kt', 0, 1200);
+    S.focus(null);
+    await S.think('……这一声又响又近。\n那就是说，她已经走远了。');
+    S.amb('night'); S.norun(false);
+    S.f.phase = 'home2'; S.f.tutDone = true;
+    S.goal('回外婆家');
+    S.cp('home2');
+  }
+
+  /* ================= 橡胶园：反着听 ================= */
+  const PAT = [0, 1, 0, 0, 1, 0, 1, 0, 1, 1, 0, 0, 1];
+  function resetK(S) {
+    S.stop('kk'); const k = S.ent('kk');
+    if (k) { k.hidden = false; k.alpha = 0; k.light = null; S.place('kk', 11, 15); k.alpha = 0; }
+    S.f.kph = 'gap'; S.f.kt = 1.5; S.f.kmv = 0;
+  }
+  function kTick(S, dt) {
+    const f = S.f; if (f.phase !== 'kebun' || W.busy) return;
+    const k = S.ent('kk'); if (!k) return;
+    f.kt -= dt;
+    if (f.kph === 'near') {
+      if (f.kt < 2.95 && S.moving) f.kmv += dt;
+      if (f.kmv > .25) {
+        f.kph = 'hunt'; f.kt = 3.4; k.alpha = 1; k.light = GLOW;
+        S.sfx('laugh'); S.toast('香味一下子变成了腐臭——她看见你了！'); S.bubble('kk', '!', 800);
+        S.chase('kk', { spd: 3, catch: caughtK });
+        return;
+      }
+      if (f.kt <= 0) { k.alpha = 0; k.light = null; f.kph = 'gap'; f.kt = .8; S.toast('香味……散了。'); }
+      return;
+    }
+    if (f.kph === 'hunt') { if (f.kt <= 0) { S.stop('kk'); k.alpha = 0; k.light = null; f.kph = 'gap'; f.kt = 1.4; S.toast('腐臭慢慢淡了。她又不见了。'); } return; }
+    if (f.kt > 0) return;
+    f.kn = (f.kn || 0) + 1;
+    const near = f.kn > 1 && PAT[f.kn % PAT.length];
+    if (near) {
+      const [x, y] = spot(S, 2, 3); S.place('kk', x, y); S.face('kk', 'pl');
+      k.alpha = .16; k.light = { r: 1.1, col: 'rgba(220,230,220,.06)' };
+      f.kph = 'near'; f.kt = 3.4; f.kmv = 0;
+      laugh(S, 'far'); S.toast(pick(SOFT)); S.toast(pick(SMELL));
+    } else {
+      const [x, y] = spot(S, 9, 14); S.place('kk', x, y);
+      k.alpha = 0; k.light = null;
+      f.kph = 'far'; f.kt = 3 + Math.random() * 1.2;
+      laugh(S, 'near'); S.toast(pick(LOUD));
+    }
+  }
+
+  /* ================= 老坟场 ================= */
+  async function enterMakam(S) {
+    S.f.phase = 'makam'; S.stop('kk');
+    await S.narr('橡胶园到头了。\n眼前是一片荒了很多年的坟场。草长到膝盖，一块块墓碑歪在草里，像一群低着头的人。');
+    S.sfx('cry');
+    await S.narr('孩子的哭声！\n从坟场正中间那棵大木棉树上传下来。');
+    const k = S.ent('kb'); k.alpha = 0; S.show('kb'); S.focus(12, 5);
+    await S.alpha('kb', 1, 1200);
+    await S.narr('最低的那根树杈上，坐着一个穿白衣服的女人。\n长头发从树杈上垂下来，像一道黑色的瀑布。她怀里抱着一个白布包着的小东西，一下一下地摇。');
+    await S.say('？？？', 'Anakku…… anakku……\n（我的孩子……我的孩子……）', { style: 'whisper' });
+    laugh(S, 'near'); S.toast(LOUD[2]);
+    await S.wait(500);
+    await S.scare('face', { spr: '@kunti', face: 'kunti', dur: .7 });
+    S.hide('kb'); S.focus(null);
+    await S.narr('再看时，树杈上已经空了。\n哭声也停了。');
+    await S.think('信上说：她葬在大木棉树底下。她在找一个哭声——她自己孩子的哭声。\n……把外婆的襁褓放到她的坟上。让她知道，她的孩子在这里。');
+    S.goal('找到西蒂的坟，把襁褓放上去');
+    S.cp('makam');
+  }
+  const GR = {
+    g1: '一座老坟。头上那块碑是圆柱形的，顶上圆圆的，像一截粗木桩。没有刻字。\n北头长着一棵白鸡蛋花树。',
+    g2: '一块扁扁的石碑。碑面上刻着几行阿拉伯字母，底下一行罗马字还认得出：「……binti Yusof　1961」。\n北头长着一棵白鸡蛋花树。',
+    g6: '一块扁扁的河石，青苔把它包得严严实实。没有字。\n北头那棵老鸡蛋花树开得正白，落花把整座坟都盖住了。',
+    g4: '扁扁的石碑，没有字。\n北头长着一棵鸡蛋花树——开的是红花。',
+    g3: '扁扁的石碑，没有字。\n碑在北头，可是那棵白鸡蛋花树长在南头，脚那一边。',
+    g5: '扁扁的石碑，没有字。北头长着一棵白鸡蛋花树。\n这座坟在大木棉树的东边。',
+    g7: '圆柱形的墓碑，刻着字：「……bin Ahmad　1978」。\n坟头插着一把新鲜的班兰叶，还有人来看他。',
+    g8: '一座很小很小的坟。扁扁的碑上刻着一个名字、一个年份，下面还刻着一朵小花。\n是个孩子的坟。',
+    g9: '圆柱形的墓碑，歪向一边。没有字，也没有树。'
+  };
+  const WRONG = {
+    g1: '圆柱形的碑……哈桑老师说，男人的碑才是圆的。', g2: '这座刻了名字。信上说，那年穷，没钱刻字。',
+    g4: '红花……Mak Long 种的是白鸡蛋花。', g3: '树长在脚那一头。信上说，树种在她「头那边」——头朝北。',
+    g5: '东边……登记簿上写的是大木棉树的「西边」。', g7: '有名字，碑是圆的。不是她。', g8: '是个孩子……不是她。', g9: '圆柱形的碑。是个男人。'
+  };
+  async function grave(S, id) {
+    const e = S.ent(id);
+    if (S.f.phase === 'wait' || S.f.phase === 'final') return S.narr(id === 'g6' ? '襁褓静静地铺在坟上。鸡蛋花一朵一朵落在上面。' : GR[id]);
+    await S.narr(GR[id]);
+    if (S.f.phase !== 'makam' || !S.has('bedung')) return;
+    const r = await S.ask('把襁褓放在这座坟上吗？', ['放下襁褓', '再看看别的坟']);
+    if (r) return;
+    if (id !== 'g6') {
+      S.f.wrong = (S.f.wrong || 0) + 1;
+      e.covered = true; S.sfx('tear'); await S.wait(500);
+      S.amb('none'); laugh(S, 'near'); S.toast(LOUD[S.f.wrong % 3]); S.fx('red'); S.shake(400, 2);
+      await S.wait(400);
+      e.covered = false;
+      await S.narr('一阵风贴着地面卷过来，把襁褓从坟上掀起来，「啪」地拍回你怀里。\n林子里，那个笑声又尖又响。');
+      S.amb('night');
+      await S.think(WRONG[id] + (S.f.wrong >= 3 ? '\n……扁的碑、没有字、白鸡蛋花种在北头、在大木棉树的西边。' : ''));
+      return;
+    }
+    S.take('bedung'); e.covered = true; e.flowers = true;
+    await S.narr('你跪下来，把襁褓轻轻铺在坟上。\n红线绣的那一圈小鸡蛋花，和树上落下来的真花混在一起，分不出来了。');
+    await S.say('阿宁', ['西蒂……', '这是你女儿的襁褓。她活下来了。她叫阿米娜。', '……你听见了吗？']);
+    S.amb('none'); await S.wait(800);
+    await S.narr('没有回答。\n坟场里静得能听见鸡蛋花落在草上的声音。');
+    const kf = S.ent('kfar'); S.place('kfar', 22, 15, 1); kf.alpha = .55;
+    laugh(S, 'far'); S.toast('……嘻……嘻嘻……（很远很远，从河那边）');
+    S.focus(20, 14); await S.wait(900);
+    await S.narr('很远的地方，河边的雾里，站着一个白色的影子，怀里抱着什么东西。\n笑声从那边飘过来，轻得像一根头发。');
+    S.focus(null);
+    await S.think('她在那边……抱着孩子，往河里去了？');
+    S.f.phase = 'wait'; S.f.still = 0; S.f.wt = 2;
+    S.goal('……笑声很远，从河边传来');
+    S.cp('makam');
+  }
+  function waitTick(S, dt) {
+    const f = S.f; if (f.phase !== 'wait' || W.busy) return;
+    if (S.moving) f.still = 0; else f.still = (f.still || 0) + dt;
+    f.wt -= dt;
+    if (f.wt <= 0) {
+      f.wt = 3.4; f.wn = (f.wn || 0) + 1;
+      laugh(S, 'far'); S.toast(cyc(S, '_w', ['……嘻嘻……（很远，在河那边）', '……嘻……（越来越远了）', '……（远得几乎听不见）']));
+      if (f.wn % 2 === 0) S.toast('……可是，鸡蛋花的香味好近。');
+    }
+    if (f.still >= 5) { f.phase = 'final'; S.after(0, finale); }
+  }
+  async function badFar(S) {
+    S.f.phase = 'far';
+    await S.narr('你朝河边走过去。\n笑声还是很远、很远——你走得越近，它好像就越远。');
+    laugh(S, 'far'); S.toast(SOFT[0]);
+    await S.walk('pl', [21, 15], 3);
+    S.hide('kfar');
+    await S.narr('雾里的白影子不见了。\n脚下的泥变成了水。水漫过了脚踝，凉丝丝的。');
+    S.amb('none'); S.toast('鸡蛋花的香味，就贴在你的耳朵边上。');
+    await S.wait(900);
+    await S.think('……笑声听着远的时候——');
+    const [bx, by] = behind(S); S.place('kme', bx, by); S.face('kme', 'pl'); S.ent('kme').alpha = 1;
+    await S.scare('face', { spr: '@kunti_b', face: 'kunti', sfx: 'scream' });
+    await S.narr('——她一直就在你身后。');
+    await S.fade(1, 1500);
+    await S.end({ bad: true, id: 'far', title: '很远很远的笑声', text: '天亮以后，哈桑老师在大木棉树底下找到了表姐的孩子。孩子裹着一块绣着鸡蛋花的旧襁褓，睡得很香。\n\n阿宁没有回来。\n\n后来，河边割胶的工人说，雨季的夜里，雾里有时会传来两个人的笑声。\n两个都很轻，都很远。\n\n没有人敢往那边走。' });
+  }
+  function nearFree(S, x, y) {
+    const m = curMap();
+    for (const [dx, dy] of [[0, 2], [1, 2], [-1, 2], [2, 1], [-2, 1], [0, 3], [2, 0], [-2, 0], [1, 3]]) {
+      const nx = x + dx, ny = y + dy; if (passable(m, nx, ny, null) && !(nx === S.pl.x && ny === S.pl.y)) return [nx, ny];
+    }
+    return [12, 14];
+  }
+  function azan(S) {
+    [[392, 392, 2.4, 0], [440, 415, 2, 2.3], [392, 370, 2.8, 4.2], [349, 392, 2.2, 7]].forEach(([a, b, d, t]) => { S.tone('sine', a, b, d, .045, t, 1100); S.tone('sine', a * 2, b * 2, d, .012, t, 1600); });
+  }
+  async function finale(S) {
+    S.f.phase = 'final';
+    S.hide('kfar'); S.amb('none');
+    S.toast('鸡蛋花的香味，就贴在你的后脖子上。');
+    await S.wait(500);
+    await S.narr('笑声停了。\n河边那个白影子，不知道什么时候不见了。\n……香味就在你身后。近得能感觉到一口凉气，吹在你的后脖子上。');
+    const [bx, by] = behind(S);
+    S.place('kme', bx, by); const K2 = S.ent('kme'); K2.alpha = 0; S.face('kme', 'pl');
+    await S.alpha('kme', 1, 1000);
+    S.turn(dirTo(S.pl, bx, by));
+    await S.scare('face', { spr: '@kunti_b', face: 'kunti', dur: .8 });
+    await S.narr('她就站在你身后。一直都在。\n长头发底下，一只眼睛从发缝里看着你。她怀里抱着表姐的孩子——孩子睡得很沉，小嘴还在一动一动。');
+    await S.say('坤蒂拉娜', 'Anakku…… kenapa dia tak menangis?\n（我的孩子……她为什么不哭？）', { style: 'whisper' });
+    await S.think('「她一直问：她怎么不哭？她怎么不哭？」');
+    const v = await S.vote('她低下头，看着怀里的孩子。长发分开，后颈露了出来——白得发青。', ['「西蒂。你的女儿，活下来了。」', '（握紧口袋里的铁钉）把钉子钉进她的后颈'], '阿宁');
+    if (v.v === 1) return nailEnd(S, v);
+    if (!v.agree) await S.think('（两只手。一只伸进了口袋，一只按住了它。）');
+    await S.say('阿宁', ['西蒂。', '这不是你的孩子。你的孩子……她活下来了。', '她生下来的时候不哭。Mak Long 抱着她走到门口，走进雨里，她才哭出来。你没有听见——可是她哭了。哭得很响。']);
+    await S.say('坤蒂拉娜', 'Bohong……\n（骗人……）', { style: 'whisper' });
+    S.shake(500, 2); S.toast('香味一下子又变成了腐臭。'); S.sfx('sting');
+    await S.narr('她的头发猛地扬了起来。指甲又长又弯，停在你脸前一寸的地方。');
+    await S.say('阿宁', ['她叫阿米娜。她今年六十五岁了。她每天晚上都在唱你的歌。', '……你看。她来了。']);
+    const [nx, ny] = nearFree(S, S.pl.x, S.pl.y);
+    S.place('nenekM', 11, 18, 3); S.place('ustazM', 11, 19, 3);
+    S.focus(11, 15);
+    await S.narr('坟场南边的小路上，亮起了一点煤油灯的光。\n外婆拄着拐杖，一步一步地走过来。哈桑老师跟在她身后，一只手扶着她的胳膊。');
+    S.focus(null);
+    const w2 = bg(S.walk('ustazM', [12, 13], 2.4));
+    await S.walk('nenekM', [nx, ny], 2.2); await w2;
+    S.face('nenekM', 'kme');
+    await S.say('外婆', 'Mak……', { style: 'whisper' });
+    await S.narr('外婆这辈子，从来没有叫过谁「妈」。\n这一声叫出来，很轻，很生，像一个刚学说话的孩子。');
+    await S.say('外婆', ['Mak，是我。阿米娜。', '……我老了。比你老多了。']);
+    S.face('kme', 'nenekM');
+    await S.narr('白衣的女人，慢慢地转过头去。');
+    await S.say('外婆', 'Tidurlah, tidurlah, anakku sayang,\nbulan di atas, sungai pun tenang.\nEmak di sini, jangan menangis,\nesok pagi, matahari manis……\n（睡吧，睡吧，我的心肝宝贝，月亮在天上，河水也睡了。\n妈妈在这里，你别哭，明天早上，太阳甜甜的……）', { style: 'whisper' });
+    S.sfx('chime');
+    S.toast('腐臭散了。只剩下鸡蛋花的香味——淡淡的，干净的。');
+    await S.alpha('kme', .15, 700);
+    K2.spr = '@siti_b';
+    await S.alpha('kme', 1, 1000);
+    await S.scare('flash', { sfx: 'chime', shake: .01, dur: .6 });
+    await S.narr('长头发底下，露出了一张年轻的脸。\n十七岁。眉毛细细的，嘴唇抿着，鬓边别着一朵白鸡蛋花。\n不用钉子。她自己变回来了。');
+    await S.say('西蒂', '……Aminah?', { style: 'whisper' });
+    await S.say('外婆', 'Ya, Mak. Saya di sini.\n（是我，妈。我在这儿。）');
+    await S.narr('西蒂低下头，看了看怀里的孩子，又看了看你。\n然后，她把孩子轻轻地放进了你的怀里。');
+    K2.spr = '@siti_n'; S.give('bayi');
+    S.sfx('cry');
+    await S.narr('孩子「哇」的一声哭了出来。又响，又亮。');
+    await S.say('西蒂', '……dia menangis.\n（她哭了。）', { style: 'whisper' });
+    await S.narr('西蒂笑了。不是那种尖细的、忽远忽近的笑。\n是一个年轻的妈妈，听见孩子哭的时候，那种又心疼、又放下心来的笑。');
+    await S.narr('她走到外婆面前，伸出手，摸了摸外婆满是皱纹的脸。\n外婆闭上眼睛，像一个小女孩那样，把脸贴在那只手上。');
+    S.amb('wind');
+    await S.wait(400);
+    S.sfx('knock'); await S.wait(500); S.sfx('knock'); await S.wait(500); S.sfx('knock');
+    azan(S);
+    await S.narr('远处，村子的方向，传来了咚、咚、咚的鼓声。\n然后，一个拖得很长的声音，在河上的雾里慢慢升起来——\n是晨礼的宣礼（azan Subuh）。天快亮了。');
+    S.face('ustazM', 'pl');
+    await S.say('哈桑老师', ['……是我的学生在敲鼓。我让他四点半准时敲。', '我们得回去礼拜了。她……也该走了。']);
+    await S.narr('东边的天，透出了一点点灰白。\n西蒂抬起头，望着那片光，好像很多很多年都没有见过早晨了。');
+    bg(S.alpha('kme', 0, 3200));
+    await S.say('西蒂', 'Terima kasih.\n（谢谢。）', { style: 'whisper' });
+    await S.wait(2600);
+    await S.narr('她淡了下去，像晨雾被太阳照透了。\n坟上只剩下那块绣着鸡蛋花的襁褓，和一地落花。\n香味还在。淡淡的，干净的，像刚洗过晒干的白布。');
+    await S.say('哈桑老师', ['……愿真主怜悯她。', '她是殉道者。她早就该去她该去的地方了——只是一直在等一句话。']);
+    S.face('nenekM', 'pl');
+    await S.say('外婆', ['下个月，请人给她刻一块碑吧。', '刻上她的名字：西蒂。……再刻上一行：她的女儿，活到了老。']);
+    await S.fade(1, 1500);
+    await S.card('1997年11月　清晨', '', '那天早上，表姐抱着孩子，哭了很久。\n孩子满四十四天的那天，哈桑老师给她取了名字：\n西蒂。\n\n老坟场大木棉树的西边，多了一块刻了字的扁石碑。\n碑的北头，那棵老鸡蛋花树，一年四季都开着白花。');
+    await S.end({ id: 'subuh', title: '第十夜　完', text: '后来，甘榜通了电，路灯整夜亮着。\n雨季的晚上，再也没有人闻到过鸡蛋花变臭的味道。\n外婆说，她现在睡觉前唱那支歌，总觉得有人在跟她一起哼。\n\n……三季，三十个夜晚，讲到这里就讲完了。\n那些在黑暗里笑着、哭着、找着什么的东西，\n大多数，只是想有人记得它们原来的名字。\n\n吹熄最后一盏灯吧。天亮了。' });
+  }
+  async function nailEnd(S, v) {
+    if (!v.agree) await S.think('（两只手。一只想按住它，另一只已经把钉子攥紧了。）');
+    S.take('paku');
+    await S.narr('你攥紧了那根生锈的铁钉。\n她还低着头，看着怀里的孩子。后颈白得发青。');
+    S.sfx('cut'); S.shake(400, 3); S.fx('flash');
+    await S.narr('铁钉扎进去的时候，没有声音。\n她浑身一震，像一盏灯被人一口吹灭了。');
+    S.ent('kme').spr = '@siti_b';
+    await S.narr('长头发底下，露出了一张年轻的、好看的脸。\n腐臭散了。鸡蛋花的香味淡淡的，好闻极了。\n——就像传说里讲的一样。');
+    S.give('bayi'); S.ent('kme').spr = '@siti_n';
+    await S.narr('她把孩子递给你，动作很轻，很温柔。\n然后她看着你，笑了一下。眼睛里什么都没有。');
+    await S.say('阿宁', '……西蒂？');
+    await S.narr('她没有反应。\n她已经不记得这个名字了。');
+    await S.fade(1, 1500);
+    await S.end({ bad: true, id: 'paku', title: '后颈上的铁钉', text: '孩子平安地回了家。\n\n那以后，甘榜里多了一个不说话的漂亮女人。她住在河边的空屋里，帮人洗衣服，见了孩子就笑。\n没有人敢问她从哪里来。\n\n外婆每天都去看她，叫她「Mak」。\n她每次都礼貌地点点头——像在听一个陌生人的名字。\n\n她的长头发，永远盖着后脖子。' });
+  }
 })();
