@@ -56,7 +56,7 @@ Instance methods:
 | `toMove()` | seat (or array of seats for simultaneous choices) that must act now; `null` when over or waiting for an animation/system step |
 | `aiMove(seat, level)` | return the action for an AI seat (may be `async`); level 1 初级 / 2 中级 / 3 高级. ≤ 800 ms per call. Must always return a legal action (tests run AI-vs-AI to the end). Don't peek at hidden info at level 1–2; level 3 may estimate. |
 | `sysMove()` | optional: `{a, delay}` → host performs action `a` as seat -1 after `delay` ms (e.g. flip cards back, deal next hand, resolve a battle after a pause). Re-evaluated after every action, replay-safe. |
-| `valid(a, by)` | optional host-side check of a guest's action |
+| `valid(a, by)` | optional host-side check of a guest's action (with `anyTimeActs: true` in the def the host skips its own whose-turn check and relies on `valid`) |
 | `onTurn(seats)` | optional: called after every action once `ctx.turn` is updated — update `ctx.status()` here |
 | `onView(seat)` | optional: hot-seat perspective changed (`ctx.view`) |
 | `frame(dt)` | draw (called every animation frame) |
@@ -93,7 +93,7 @@ for records and `ctx.save/load` for progress. Offer difficulty/variant via `opti
 `ctx.canvas({parent, maxDpr})` → `{cv, g, w, h, dpr, pos(e), clear(color)}` — auto-resizes; call `c.clear()` at the start of each frame and use `c.w/c.h` (CSS px) ·
 `ctx.ui(cls)` → DOM overlay div above the canvas for buttons/panels (classes `bx-btn` (`red`,`jade`,`ghost`), `bx-bar` bottom bar, `bx-panel`) ·
 `ctx.on(target, type, fn)` (auto-removed) · `ctx.keys` (Set of `e.code`) · `ctx.anim(ms, fn(k), done, ease)` (visual tween; instant during replay) ·
-`ctx.after(ms, fn)` (visual-only timer) · `ctx.sfx(name)` · `ctx.toast(msg)` · `ctx.fast` (true while replaying — skip effects) ·
+`ctx.after(ms, fn)` / `ctx.cancel(t)` (visual-only timer) · `ctx.sfx(name)` · `ctx.toast(msg)` · `ctx.fast` (true while replaying — skip effects) ·
 `ctx.poke()` (re-check toMove/AI after an animation finished) · `ctx.send(m)` + `inst.onMsg(m,by)` (ephemeral online messages, e.g. drawing strokes; not part of state) ·
 `ctx.save(k,v)/load(k,d)` · `ctx.best(k,v,dir)` · `BX.modal / BX.choose / BX.confirm / BX.toast` (promise-based dialogs — don't use them to gate state for bots; bots act only through `aiMove`).
 
