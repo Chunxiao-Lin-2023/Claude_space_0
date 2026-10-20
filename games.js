@@ -81,5 +81,16 @@ window.GAMES = [
     status: 'dev',
     tags: ['单人', '双人联机', 'iPad'],
     hue: 350
+  },
+  {
+    id: 'lasttower',
+    title: '尸夜孤楼',
+    sub: '盖楼守夜 · 丧尸生存',
+    desc: '白天出门搜物资，在空地上一层层盖楼、造枪；夜里尸潮从两边涌来，守住电台撑过十五夜。墙会被砸穿、承重断了楼会塌，攀爬者翻墙、重锤拆楼、血月巨尸压阵。单人或双人联机。',
+    url: 'lasttower/',
+    cover: 'covers/lasttower.webp',
+    status: 'dev',
+    tags: ['单人', '双人联机', 'iPad'],
+    hue: 8
   }
 ];
