@@ -1,4 +1,5 @@
 # 第二夜 テケテケ · 自动通关步骤（格式见 tests/play.py 顶部）
+# 最后两问：3 = 把雪靴递给她（读过怪谈书时选项有 5 个，第 5 个是「讲给别人听」）；2 = 雪村千代
 SOL = [
     [0],
     ['shot', 'club'],
@@ -17,7 +18,9 @@ SOL = [
     ['shot', 'hall2_eerie'],
     ['use', 'adoor'],
     ['shot', 'archive'],
+    ['use', 'cal'],
     ['use', 'cab', ['32']],
+    ['expect', "window.__dbg.W.f._wrong === 1 && !window.__dbg.W.f.found"],
     ['use', 'cab', ['37']],
     ['expect', "window.__dbg.W.f.found && window.__dbg.W.f.phase === 'chase0'"],
     ['step', 4, 7],
@@ -27,9 +30,11 @@ SOL = [
     ['js', "window.__dbg.tp(21, 3, 1); window.__dbg.doAct('use')"],
     ['expect', "!window.__dbg.ent('fd2').open"],
     ['step', 29, 3],
-    ['expect', "window.__dbg.W.mapId === 'hall1'"],
+    ['expect', "window.__dbg.W.mapId === 'hall1' && window.__dbg.W.goal === '去玄关——快逃出学校！'"],
     ['wait', 600],
     ['shot', 'chase1'],
+    ['use', [16, 2]],
+    ['expect', "window.__dbg.W.f.art"],
     ['step', 13, 10],
     ['expect', "window.__dbg.W.mapId === 'hall1'"],
     ['use', 'keybox'],
@@ -46,4 +51,5 @@ SOL = [
     ['expect', "window.__dbg.W.mapId === 'yard' && window.__dbg.W.f.phase === 'final'"],
     ['shot', 'final'],
     ['step', 27, 6, [3, 2]],
+    ['expect', "window.__dbg.store.get('ends', []).includes('teketeke:chiyo')"],
 ]

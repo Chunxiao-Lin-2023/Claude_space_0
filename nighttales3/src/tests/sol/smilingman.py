@@ -14,7 +14,7 @@ SOL = [
     ['use', 'missing'],
     ['step', 43, 4],
     ['expect', "window.__dbg.W.mapId === 'cross'"],
-    # 十字路口：问时间的女人（别回答）
+    # 十字路口：问时间的女人（别回答；单人时投票等同选择）
     ['step', 6, 8],
     ['expect', 'window.__dbg.W.f.wStart'],
     ['shot', 'woman'],
@@ -24,18 +24,19 @@ SOL = [
     ['expect', 'window.__dbg.W.f.wDone && !window.__dbg.W.f.wKnow'],
     ['use', 'sdoor'],
     ['expect', "window.__dbg.W.mapId === 'store'"],
-    # 便利店：窗上的脸（别对视，看凸面镜）
+    # 便利店：窗上的脸（别对视，看凸面镜）。脸第一次换窗要等玩家能动的 6 秒以后，测试不需要再固定它
     ['use', 'counter'],
     ['shot', 'store'],
     ['use', 'convex'],
-    ['expect', "window.__dbg.W.f.phase === 'store1'"],
-    ['js', "window.__dbg.W.f._fwT = 999; window.__dbg.W.f.fw = 0"],  # 让窗上的脸停在最左边，免得测试站位恰好「对视」
+    ['expect', "window.__dbg.W.f.phase === 'store1' && window.__dbg.W.f.fw === 1"],
     ['shot', 'store_face'],
+    ['use', 'counter'],
     ['use', 'convex'],
     ['use', 'locker'],
     ['use', 'bdoor'],
     ['expect', "window.__dbg.W.mapId === 'lane'"],
-    # 后巷：倒写的密码
+    # 后巷：上下颠倒的密码（先输一次直着读的错号码，看提示）
+    ['use', 'gate', ['8196']],
     ['use', 'wnote'],
     ['use', 'graf'],
     ['use', 'pud'],
@@ -44,17 +45,22 @@ SOL = [
     ['expect', "window.__dbg.ent('gate').hidden"],
     ['step', 23, 3, [0]],
     ['step', 26, 4],
-    ['step', 15, 9],
+    ['expect', "window.__dbg.W.mapId === 'tunnel'"],
+    ['step', 15, 3],
     ['shot', 'tunnel'],
-    ['step', 1, 9],
+    ['step', 1, 3],
     # 长街：微笑的男人
     ['expect', "window.__dbg.W.mapId === 'street' && window.__dbg.W.f.phase === 'final'"],
     ['wait', 600],
     ['shot', 'final'],
+    ['step', 11, 4, [0]],
+    ['expect', "window.__dbg.W.f._sprint && window.__dbg.W.cp.name === 'sprint'"],
+    ['shot', 'sprint'],
     ['use', 'hdoor', [0]],
     ['expect', "window.__dbg.W.mapId === 'home'"],
     ['use', 'door'],
     ['use', 'door', [0, 0]],
     ['shot', 'locked'],
     ['use', 'bed'],
+    ['expect', "window.__dbg.store.get('ends', []).includes('smilingman:home')"],
 ]

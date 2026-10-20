@@ -28,7 +28,8 @@
       }
     }
     ents.forEach((e, i) => {
-      const s = spots[i] || [p.x, p.y];
+      // 空格不够时挤在已找到的空位上，不站到玩家脚下（调查键优先选脚下的非实心物，会抢走调查）
+      const s = spots[i] || spots[i % Math.max(1, spots.length)] || [p.x, p.y];
       e.hidden = false; e.solid = false; e.mv = null; e.px = s[0] * TS; e.py = s[1] * TS; e.x = s[0]; e.y = s[1]; e.dir = p.dir; e.chase = null;
       TR.trail[i] = s;
     });
@@ -60,6 +61,44 @@
   function leave(S, k) { S.f.party = (S.f.party || []).filter(x => x !== k); }
   const inParty = (S, k) => (S.f.party || []).includes(k);
   const plrOn = S => S.plr(S.has('flashlight') ? null : 1.4);
+
+  /* ---------- 双人：关键抉择两人各投一票（单人时等同 ask） ----------
+     safe 给了序号时，两人意见不一致就走这个更稳妥的分支，并用 split 那句旁白交代 */
+  async function choose(S, q, opts, who, safe, split) {
+    if (S.coop) S.toast('两个人各选一个');
+    const r = await S.vote(q, opts, who);
+    if (r.agree) return r.v;
+    if (safe != null) { await S.narr(split || '你们俩的意见不一样……最后，谁也没有往前迈那一步。'); return safe; }
+    await S.narr('你们俩的意见不一样。\n……最后，还是攥着手电的那个人拿了主意。');
+    return r.v;
+  }
+
+  /* ---------- S.tone 合成的关键音效（双方都听得到） ---------- */
+  // 镇上教堂的大钟：低沉的嗡声 + 不协和的泛音 + 长长的尾音
+  function toll(S, d = 0, f = 174) {
+    S.tone('sine', f / 2, f / 2, 5.5, .06, d);
+    S.tone('sine', f, f, 4.4, .085, d);
+    S.tone('sine', f * 1.19, f * 1.19, 2.8, .04, d);
+    S.tone('sine', f * 1.5, f * 1.5, 1.9, .026, d);
+    S.tone('sine', f * 2, f * 2, 2.6, .036, d);
+    S.tone('sine', f * 2.63, f * 2.63, 1.2, .018, d);
+    S.tone('triangle', f * 7, f * 4, .08, .03, d, 2600);
+  }
+  async function tolls(S, n, gap = 800) { for (let i = 0; i < n; i++) { toll(S); await S.wait(gap); } }
+  // 整点之前的报时曲（威斯敏斯特钟声的前两句）：倒计时快到头时的提醒
+  function chime(S) {
+    [330, 262, 294, 196, 196, 294, 330, 262].forEach((f, i) => {
+      const d = i * .5 + (i >= 4 ? .45 : 0);
+      S.tone('sine', f, f, 1.5, .05, d); S.tone('sine', f * 2, f * 2, .9, .022, d); S.tone('sine', f * 3.01, f * 3.01, .45, .01, d);
+    });
+  }
+  // 火车过桥：三音汽笛（带一点多普勒下滑）+ 低频轰鸣
+  function horn(S, d = 0, dur = 1.4) { for (const f of [277, 330, 415]) S.tone('sawtooth', f, f * .95, dur, .026, d, 1100); }
+  // 斧刃拖过水泥地
+  function scrape(S, d = 0) { S.tone('sawtooth', 1900, 1250, .7, .016, d, 3200); S.tone('square', 3100, 2500, .5, .006, d + .05, 5200); S.tone('triangle', 150, 90, .3, .05, d, 600); }
+
+  /* ---------- 心跳：追逐者越近跳得越快（只在主机 tick 里发声） ---------- */
+  let HB = 0, HUSH = 0;
 
   /* ---------- 兔子人精灵（真/假） ---------- */
   const PAL_REAL = { suit: '#c9c4b4', shade: '#9a9686', dark: '#6e6a5e', belly: '#b8b2a0', inner: '#8a7e74', eye: '#050405', hand: '#8a8478', shoe: '#3a3630', blade: '#2c2c30', handle: '#3a2a1c', stain: '#6a5e48' };
@@ -100,8 +139,8 @@
 
   /* ---------- 共用台词 ---------- */
   const caughtReal = async S => {
-    S.sfx('cut'); await S.scare('static', { dur: .5 });
-    await S.scare('flash', { sfx: 'scare', dur: .8 });
+    S.sfx('cut'); scrape(S); await S.scare('static', { dur: .4 });
+    await S.scare('face', { face: 'bunny', sfx: 'scare', dur: 1 });
     await S.die('你没有听见脚步声。\n你只听见身后很近很近的地方，有什么东西被慢慢举了起来——然后，手电筒掉在了泥里。', '兔子人追上了你');
   };
 
@@ -115,10 +154,49 @@
       g.fillStyle = '#4c4a46'; g.fillRect(w * .28, h * .2 + 10, w * .44, h * .62 - 10);
       g.fillStyle = '#050405'; g.fillRect(w * .34, h * .2 + 18, w * .32, h * .62 - 18);
       g.fillStyle = 'rgba(232,120,30,.9)'; g.fillRect(w * .12, h * .82 - 14, 12, 10); g.fillStyle = '#ffd060'; g.fillRect(w * .12 + 3, h * .82 - 11, 2, 2); g.fillRect(w * .12 + 7, h * .82 - 11, 2, 2); g.fillRect(w * .12 + 3, h * .82 - 7, 6, 1);
-      const sc = 2.2, ox = w / 2 - 8 * sc, oy = h * .82 - 16 * sc;
+      // 洞口里的兔子人：缩小一点，让两只耳朵整个露出来；斧刃上加一道冷光
+      const sc = 1.85, ox = w / 2 - 8 * sc, oy = h * .8 - 16 * sc;
       const R = (x, y, ww, hh, c) => { g.fillStyle = c; g.fillRect(ox + x * sc, oy + y * sc, ww * sc, hh * sc); };
       bunnySpr({ dir: 0, fr: 0 }, 0, R, PAL_REAL);
+      R(12, 11, 4, 1, '#b8c0cc'); R(15, 12, 1, 2, '#8a9098');
+      g.fillStyle = 'rgba(200,210,230,.10)'; g.fillRect(w * .34, h * .2 + 18, w * .32, 6);
     },
+    /* 惊吓大头像（32×32）：旧得发灰的兔子头套，两只直挺挺的长耳朵，两个黑洞一样的眼眶，
+       缝死的嘴越撕越开，一把不反光的斧头从画面底下慢慢举起来 */
+    faces: {
+      bunny(R, a, t) {
+        const SU = '#c9c4b4', SH = '#9a9686', DK = '#5e5a50', IN = '#8a7e74', ST = '#6a5e48', BK = '#050405', LT = '#dcd8ca';
+        R(0, 0, 32, 32, '#030303');
+        // 耳朵：左耳笔直，右耳尖上折了一下
+        R(8, 0, 4, 12, SU); R(9, 1, 2, 10, IN); R(11, 0, 1, 12, SH);
+        R(20, 3, 4, 9, SU); R(21, 4, 2, 7, IN); R(23, 3, 1, 9, SH); R(21, 0, 5, 3, SH); R(24, 1, 2, 1, DK);
+        R(8, 11, 4, 1, DK); R(20, 11, 4, 1, DK);
+        // 头套：大而方的轮廓，右侧压暗
+        R(6, 10, 20, 4, SU); R(4, 14, 24, 12, SU); R(5, 26, 22, 3, SU); R(7, 29, 18, 3, SU);
+        R(23, 12, 3, 15, SH); R(25, 14, 3, 12, SH); R(21, 27, 5, 3, SH); R(4, 14, 1, 12, LT);
+        // 毛结成一绺一绺的
+        for (let i = 0; i < 34; i++) { const x = 5 + ((hash(i, 1, 55) * 22) | 0), y = 11 + ((hash(i, 2, 55) * 19) | 0); R(x, y, 1, 1, i % 3 ? SH : LT); }
+        // 头顶的缝线
+        for (let y = 11; y < 22; y += 2) R(16, y, 1, 1, DK);
+        // 污渍
+        R(6, 20, 3, 4, ST); R(7, 24, 2, 3, ST); R(22, 23, 3, 3, ST); R(24, 15, 1, 5, ST); R(24, 20, 1, 2, DK); R(10, 27, 4, 2, ST);
+        // 眼眶：两个黑洞（a 过半以后，左边那个洞的最深处，有一点湿亮的东西）
+        R(9, 15, 5, 5, BK); R(10, 14, 3, 1, BK); R(10, 20, 3, 1, BK); R(8, 16, 1, 3, DK); R(14, 16, 1, 3, DK);
+        R(18, 15, 5, 5, BK); R(19, 14, 3, 1, BK); R(19, 20, 3, 1, BK); R(17, 16, 1, 3, DK); R(23, 16, 1, 3, DK);
+        if (a > .5) R(11, 17, 1, 1, Math.sin(t * 20) > -.5 ? '#c8c4b0' : '#3a3a34');
+        // 鼻子
+        R(15, 21, 3, 1, DK); R(16, 22, 1, 1, DK);
+        // 嘴：一道缝死的线，越撕越开，缝线被扯得笔直
+        const mh = Math.round(a * 4);
+        R(12, 24, 9, 1, DK);
+        if (mh > 0) { R(13, 24, 7, mh, BK); for (const x of [14, 16, 18]) R(x, 24, 1, mh, '#b8b2a0'); }
+        for (const x of [13, 15, 17, 19]) R(x, 23, 1, 1, DK);
+        // 斧头：从画面底下慢慢举起来
+        const by = 32 - Math.round(a * 10);
+        R(23, by, 8, 5, '#2c2c30'); R(23, by + 4, 8, 1, '#45454a'); R(27, by + 5, 2, 12, '#3a2a1c');
+      }
+    },
+    endings: { home: '第五夜　完', bells: '钟声响完的时候', car: '在车里等的人' },
     people: {
       me: { key: 'bm-me', skin: '#eec6a2', hair: '#4a2e1c', hs: 'short', top: '#8a2c26', top2: '#2a2a2a', bottom: '#3a4a6a', shoes: '#d8d4c8',
         extra(g, d, fr, G, R) { if (d !== 3) { R(4, G.tT + 3, 8, 1, '#5a1a16'); R(4, G.tT + 6, 8, 1, '#5a1a16'); R(7, G.tT, 1, G.tB - G.tT, '#5a1a16'); } } },
@@ -126,13 +204,19 @@
         extra(g, d, fr, G, R) { R(1, G.hT + 1, 14, 1, '#140e18'); R(4, G.hT - 2, 8, 3, '#140e18'); R(6, 0, 5, 1, '#140e18'); R(4, G.hT, 8, 1, '#7a3aa0'); } },
       brent: { key: 'bm-brent', skin: '#e8bc96', hair: '#6a4022', hs: 'short', hat: 'cap', hatC: '#1a2a5a', top: '#8e1c22', top2: '#e8e0d0', bottom: '#33384a', shoes: '#e8e8e8',
         extra(g, d, fr, G, R) { if (d !== 3) { R(3, G.tT + 1, 1, G.tB - G.tT - 1, '#e8e0d0'); R(12, G.tT + 1, 1, G.tB - G.tT - 1, '#e8e0d0'); } } },
-      brentS: { key: 'bm-brentS', skin: '#e8bc96', hair: '#6a4022', hs: 'messy', top: '#eaa6ba', top2: '#f6d6e0', bottom: '#eaa6ba', shoes: '#c41e2a' },
+      // 换上粉兔子装的布伦特：粉色兜帽，怀里抱着那只只剩一只耳朵的兔头套
+      brentS: { key: 'bm-brentS', skin: '#e8bc96', hair: '#6a4022', hs: 'messy', hat: 'hood', hatC: '#eaa6ba', top: '#eaa6ba', top2: '#f6d6e0', bottom: '#eaa6ba', shoes: '#c41e2a',
+        extra(g, d, fr, G, R) {
+          if (d === 3) return;
+          const x = d === 0 ? 4 : 6;
+          R(x, G.tT + 2, 8, 6, '#f2b6c8'); R(x + 6, G.tT + 2, 2, 6, '#c47e94'); R(x + 2, G.tT + 6, 4, 2, '#f6d6e0');
+          R(x + 1, G.tT - 3, 2, 5, '#f2b6c8'); R(x + 1, G.tT - 2, 1, 3, '#ff7aa0');
+          if (d === 0) { R(x + 2, G.tT + 4, 1, 1, '#2a1a20'); R(x + 5, G.tT + 4, 1, 1, '#2a1a20'); R(x + 3, G.tT + 5, 2, 1, '#ffffff'); }
+        } },
       dee: { key: 'bm-dee', child: true, skin: '#f2d2b4', hair: '#1e1a1a', hs: 'messy', top: '#16121a', top2: '#a01818', bottom: '#16121a', shoes: '#2a2a2a', mouth: '#ffffff',
         extra(g, d, fr, G, R) { if (d !== 3) { R(2, G.tT - 1, 2, 3, '#a01818'); R(12, G.tT - 1, 2, 3, '#a01818'); } else R(3, G.tT, 10, G.tB - G.tT + 2, '#7a1010'); } },
       deeG: { key: 'bm-deeG', child: true, skin: '#f2d2b4', hair: '#1e1a1a', hs: 'messy', top: '#16121a', top2: '#a01818', bottom: '#16121a', shoes: '#2a2a2a', mouth: '#ffffff',
-        extra(g, d, fr, G, R) { if (d !== 3) { R(2, G.tT - 1, 2, 3, '#a01818'); R(12, G.tT - 1, 2, 3, '#a01818'); R(d === 1 ? 4 : 11, G.tT + 2, 1, 6, '#7aff8a'); } else R(3, G.tT, 10, G.tB - G.tT + 2, '#7a1010'); } },
-      bunnyP: { key: 'bm-bunnyP', skin: '#c9c4b4', hair: '#c9c4b4', hs: 'bald', eye: '#000', top: '#c9c4b4', bottom: '#9a9686', shoes: '#3a3630',
-        extra(g, d, fr, G, R) { if (d === 0) { R(5, 0, 2, 3, '#c9c4b4'); R(9, 0, 2, 3, '#9a9686'); R(5, G.hT + 3, 2, 3, '#050405'); R(9, G.hT + 3, 2, 3, '#050405'); R(7, G.hT + 6, 2, 2, '#050405'); } } }
+        extra(g, d, fr, G, R) { if (d !== 3) { R(2, G.tT - 1, 2, 3, '#a01818'); R(12, G.tT - 1, 2, 3, '#a01818'); R(d === 1 ? 4 : 11, G.tT + 2, 1, 6, '#7aff8a'); } else R(3, G.tT, 10, G.tB - G.tT + 2, '#7a1010'); } }
     },
     items: {
       flashlight: { name: '手电筒', desc: '凯莉车后备箱里的大手电，装四节一号电池。开关有点接触不良，得拍两下才亮。' },
@@ -140,16 +224,17 @@
       ear: { name: '粉色兔耳朵', desc: '一只毛绒兔耳朵，夹在塑料发箍上。超市万圣节货架上九块九那种。耳根里面用记号笔写着「B.H.」。' }
     },
     notes: {
-      rules: { title: '传单 ·「兔子人桥」万圣节试胆', text: '（布伦特用他爸的打字机打的，复印了一沓，在学校走廊里发过。）\n\n★ 兔子人桥 · 万圣节午夜试胆 ★\n\n【传说】1904年，克利夫顿的疯人院关门了。病人们被押上一辆车，要转去新盖的监狱。车在科尔切斯特路上翻了，跑了两个。\n后来，人们在这一带的树林里找到了几百只兔子——剥了皮，挂在树枝上，啃了一半。\n一个逃犯被发现吊死在铁路桥洞底下。另一个，再也没找到。\n他穿着兔子装，拿着斧头。每年万圣节午夜，他都会回到桥洞。\n\n【规矩】\n1. 十二点之前进洞。\n2. 所有人站在洞的正中间。\n3. 等镇上教堂的钟敲完十二下。\n4. 谁先跑，谁请一个月的午饭。\n\n【警告】钟敲完的时候，还站在洞里的人——\n\n（最后这行被人用红笔划掉了。旁边一行圆圆的字：别吓唬小孩，布伦特。——凯莉）' },
+      rules: { title: '传单 ·「兔子人桥」万圣节试胆', text: '（布伦特用他爸的打字机打的，在学校走廊里发过一沓。）\n\n★ 兔子人桥 · 万圣节午夜试胆 ★\n\n疯人院、翻掉的押送车、林子里剥了皮的兔子、吊在桥洞底下的逃犯——你肯定听说过。\n另一个逃犯，再也没找到。他穿着兔子装，拿着斧头。\n\n【规矩】\n1. 十二点之前进洞。\n2. 所有人站在洞的正中间。\n3. 等镇上教堂的钟敲完十二下。\n4. 谁先跑，谁请一个月的午饭。\n\n【警告】钟敲完的时候，还站在洞里的人——\n\n（最后这行被红笔划掉了。旁边一行圆圆的字：别吓唬小孩，布伦特。——凯莉）' },
       club: { title: '小迪的会员卡', text: '（一张用麦片盒剪下来的硬纸卡，边上贴着夜光骷髅贴纸。）\n\n★ 枫叶街怪物猎人俱乐部 ★\n会员：诺亚（荣誉会员！！）\n\n俱乐部规矩：\n一、不许告诉大人。\n二、看见怪物先跑，跑完再报告。\n三、进基地要敲暗号。敲错了，不开门！\n\n暗号：　● ●　　● ● ●\n（敲两下，停一下，再敲三下）\n\n（背面用铅笔写着：怪物不知道暗号。所以，敲得不对的，就是怪物。）' },
-      archive: { title: '凯莉妈妈的便条', text: '（凯莉的妈妈在县图书馆工作。一页手写的便条，用曲别针别着几张复印件。）\n\n凯莉：\n你问的那个「兔子人」，我下班以后在馆里翻了翻。写给你看，省得布伦特又拿它吓唬小迪。\n\n· 1904年前后，克利夫顿一带没有任何精神病院。州里的医院名录我一家一家对过了。\n· 传说里那辆「翻了的押送车」，当年的报纸、县里的事故记录，都没有。\n· 传说里那两个逃犯的名字，法院的档案里查无此人。\n· 说他们要被转去的那座监狱，是好几年以后才建起来的。\n\n我能找到的最早的「兔子人」，是1970年秋天的两份报告。报纸登过，就在咱们县，可地方并不在那座桥洞。没有人受伤，那个人也一直没抓到。\n\n所以，那座桥底下没有吊死过谁。至少，纸上没有。\n\n——妈妈\nP.S. 十二点之前回家。把小迪也带回来。' },
-      clip: { title: '剪贴簿里的旧剪报（1970年）', text: '（两张发黄的剪报，报头被剪掉了。旁边有人用铅笔标着日期。）\n\n1970年10月\n……本月18日深夜，一对年轻男女把车停在县内一条乡间道路边。一名穿白色衣服、头戴兔耳头套的男子从黑暗里走出来，大声斥责二人擅闯私人土地，随后把一把短柄斧头掷进了车窗。二人立即驾车离开，均未受伤。警方事后在车内找到了那把斧头。\n\n1970年10月底\n……29日晚，一名在附近工地看守新建住宅的保安报告，他看见一个穿兔子装的男子站在一栋未完工房屋的门廊下，用斧头一下一下地砍门廊的柱子，嘴里嚷着这里的人都是擅闯者。保安走近时，对方跑进了树林。\n\n警方表示，已对两起事件展开调查。\n\n（剪报边上，铅笔写着一行歪歪扭扭的小字：\n他们把树都砍了。盖那么多房子。）' }
+      archive: { title: '凯莉妈妈的便条', text: '（凯莉的妈妈在县图书馆上班。一页手写的便条，别着几张复印件。）\n\n凯莉：\n你问的「兔子人」，我下班后在馆里查了查。写给你，省得布伦特又拿它吓唬小迪。\n\n· 1904年前后，克利夫顿一带没有什么精神病院。州里的医院名录我一家一家对过了。\n· 「翻了的押送车」，当年的报纸和事故记录里都没有。\n· 那两个逃犯的名字，法院档案里查无此人。\n· 他们「要被转去」的那座监狱，是好几年以后才盖的。\n\n我能找到的最早的「兔子人」，是1970年秋天报纸上的两则报道。就在咱们县，可地方不在那座桥洞。没人受伤，那个人也一直没抓到。\n\n所以，那座桥底下没吊死过谁。至少，纸上没有。\n\n——妈妈\nP.S. 十二点之前回家。把小迪也带回来。' },
+      clip: { title: '剪贴簿里的旧剪报（1970年）', text: '（两张发黄的剪报，报头被剪掉了，旁边有人用铅笔标了日期。）\n\n1970年10月19日\n……昨夜，一对年轻男女把车停在县内一条乡间路边。一名身穿白衣、头戴兔耳头套的男子从暗处走出，斥责二人擅闯私人土地，随后将一把短柄斧头掷入车窗。二人驾车离开，均未受伤。斧头留在了车里。\n\n1970年10月30日\n……昨晚，一名新建住宅区的保安看见一名穿兔子装的男子站在一栋未完工房屋的门廊下，用斧头砍门廊的柱子，嘴里嚷着「你们都是擅闯者」。保安走近时，对方逃进了树林。警方称正在调查。\n\n（剪报边上，铅笔写着一行歪歪扭扭的小字：\n他们把树都砍了。盖那么多房子。）' }
     },
-    legend: '「兔子人」（Bunny Man）是美国弗吉尼亚州费尔法克斯县流传最广的都市传说。真正有据可查的部分其实很少：1970年10月，当地报纸报道了两起事件。一起是一对年轻人深夜把车停在路边，一个穿白色衣服、戴兔耳头套的男人从黑暗里走出来，嚷着他们擅闯私人土地，把一把短柄斧头扔进了车窗；另一起在十来天后，一名工地保安看见一个穿兔子装的人在一栋没完工的房子门廊下用斧头砍柱子，嘴里同样嚷着「擅闯」。两起事件都没有人受伤，警方调查之后始终没有找到这个人。据说接下来几周又冒出了不少目击报告，但没有一份得到证实。\n\n后来的版本越讲越大：据说二十世纪初，克利夫顿附近的一所精神病院关闭，押送病人的车在科尔切斯特路上翻了，两名逃犯躲进树林，附近开始出现被剥了皮、挂在树上的兔子；其中一人被发现吊死在铁路桥洞下，另一个就成了「兔子人」。还有的版本说，每年万圣节午夜，他会回到桥洞，向逗留在里面的年轻人下手。那座二十世纪初修建的单车道铁路桥洞因此被叫作「兔子人桥」，随着口耳相传和后来的网络越来越出名，成了当地高中生万圣节夜里试胆的去处；据说每年万圣节，县里的警察都会在桥洞附近巡逻。\n\n查无实据的部分：当地有档案工作者专门查过县里的法院记录和历史档案，没有找到那所「精神病院」、那次翻车、那两名逃犯，也没有桥下吊死人的记录；传说中病人们要被转去的那座监狱，也是几年之后才建成的。1970年那两起事件发生在离桥洞好几英里外的地方，和这座桥本身并没有关系。至于那个穿兔子装的人是谁、为什么要穿兔子装，至今没有答案——有一种说法是，他是对当时树林被大片推平、盖起新住宅区心怀不满的本地人，但这同样只是猜测。\n\n（本章中的诺亚、凯莉、布伦特、小迪，树林里的老农舍、剪贴簿和那封旧信，以及午夜桥洞里出现的那个「兔子人」，均为游戏虚构。）',
+    legend: '「兔子人」（Bunny Man）是美国弗吉尼亚州费尔法克斯县最出名的都市传说。真正登过报纸的，只有1970年10月的两件事：一对年轻人深夜把车停在路边，一个穿白衣服、戴长兔耳头套的男人从黑暗里走出来，嚷着他们擅闯私人土地，把一把短柄斧头砸进了车窗；十来天后，一名工地保安看见一个穿兔子装的人站在一栋没完工的新房子门廊下，用斧头一下一下地砍柱子，嘴里同样嚷着「擅闯」。两次都没有人受伤，警方调查了一阵，始终没有找到这个人。据说之后几个星期里又冒出了不少目击报告，但没有一份得到证实。\n\n后来的故事越讲越大，也越讲越老：据说二十世纪初，克利夫顿附近的一所精神病院关门，押送病人的车在科尔切斯特路上翻了，两个病人逃进树林；附近开始出现剥了皮、挂在树上的兔子；其中一个被发现吊死在铁路桥洞下，另一个就成了「兔子人」。有的版本说，他每年万圣节午夜回到桥洞，专找还待在洞里的人，第二天人就挂在桥上；有的版本给两个逃犯安上了名字和年份——每个讲故事的人给的都不太一样。那座二十世纪初修的单车道铁路桥洞因此被叫作「兔子人桥」，经过口耳相传和后来的互联网，成了当地高中生万圣节夜里试胆的去处；据说每到万圣节，县里都会派警察守在桥洞附近。\n\n查无实据的部分：县里的档案工作者专门翻过法院记录和地方史料，没有找到那所「精神病院」、那次翻车和那两个逃犯，也没有桥下吊死人的记录；传说里病人要被转去的那座监狱，是好几年之后才建成的。1970年的两起事件发生在离桥洞好几英里外的新住宅区一带，和这座桥本身并没有关系。那个人是谁、为什么要穿兔子装，至今没有答案；有一种说法是，他是对当时树林被大片推平、盖起新房子心怀不满的本地人——但这同样只是猜测。\n\n（本章的诺亚、凯莉、布伦特、小迪，树林里的老农舍、挂历、写字台上的旧信和剪贴簿，以及午夜桥洞里的那个「兔子人」，均为游戏虚构。游戏借那位不肯卖地的老农，把「对开发不满的本地人」这个猜测写成了故事，并不是史实；剪报的文字是按当年报道的大意改写的。）',
     start: { map: 'road', x: 8, y: 13, dir: 1 },
     resume: {
       woods: async S => { plrOn(S); },
-      e3: async S => { const b = getEnt('bm_woods', 'woods'); if (b) { b.hidden = true; b.alpha = 1; b.chase = null; } plrOn(S); },
+      // 门口那一幕死了：不用离开再踩回触发格，直接重演（旁白压缩）
+      e3: async S => { const b = getEnt('bm_woods', 'woods'); if (b) { b.hidden = true; b.alpha = 1; b.chase = null; } S.f.hush = false; plrOn(S); await realEncounter(S, true); },
       chase: async S => { startChase(S); },
       final: async S => { startFinal(S); }
     },
@@ -157,7 +242,26 @@
       TR = { w: null, map: null, last: null, trail: [] };
       await S.card('第五夜　兔子人', '1995年10月31日　晚上11:05　美国弗吉尼亚州　费尔法克斯县', '学校里每个人都听说过那座桥洞。\n科尔切斯特路走到头，一条铁路从土堤上过，\n底下是一个只容得下一辆车的水泥洞。\n\n据说万圣节午夜，站在洞里的人，\n会看见一个穿白色兔子装、拿着斧头的男人。\n\n今年，布伦特说，轮到我们了。');
     },
-    tick(S, dt) { partyTick(S); },
+    tick(S, dt) {
+      partyTick(S);
+      const f = S.f;
+      // 门口屏息：躲进灌木丛以后，玩家一迈步就会被听见（S.moving 在客机操作时也准确）
+      if (f.hush && !W.busy) {
+        HUSH += dt;
+        if (HUSH > .15 && S.moving) { f.hush = false; S.clearTimer(); S.after(0, hushCaught); }
+        else if (Math.floor(HUSH / 1.1) !== Math.floor((HUSH - dt) / 1.1)) S.sfx('heart');
+      }
+      // 追逐段 / 午夜桥洞：兔子人越近，心跳越快
+      if ((f.phase === 'chase' || f.phase === 'final') && !W.busy && !W.ended) {
+        const b = getEnt(f.phase === 'chase' ? 'bm_woods' : 'bm_tunnel', S.map);
+        if (b && b.chase && !b.hidden) {
+          const d = (Math.abs(b.px - W.pl.px) + Math.abs(b.py - W.pl.py)) / TS;
+          HB -= dt; if (d < 7 && HB <= 0) { S.sfx('heart'); HB = .32 + d * .17; }
+        }
+        // 倒计时快到头：镇上的钟楼先奏一段整点报时曲
+        if (f.phase === 'final' && W.timer && W.timer.label && W.timer.left < 8 && !f.chimed) { f.chimed = true; chime(S); S.toast('远处，钟楼开始奏整点报时曲了'); }
+      }
+    },
     sprites: {
       bunny(g, e, t, R) { bunnySpr(e, t, R, PAL_REAL); },
       fakebun(g, e, t, R) { bunnySpr(e, t, R, PAL_FAKE); },
@@ -267,16 +371,17 @@
           { id: 'bag', x: 9, y: 11, spr: 'duffel', on: bagOn },
           { id: 'flyer', x: 8, y: 15, spr: 'paper', on: async S => { if (S.once('flyer')) await S.narr('地上有一张被踩脏的传单。是布伦特在学校里发的那种。'); await S.note('rules'); } },
           { x: 2, y: 14, spr: 'invisible', solid: true, on: S => S.narr('路边的树林黑得像一堵墙。风一吹，满地的落叶沙沙地滚过去，像是有很多只小动物在跑。') },
-          { id: 'kelly_road', x: 6, y: 12, spr: '@kelly', dir: 2, solid: false, on: kellyTalk },
-          { id: 'brent_road', x: 10, y: 10, spr: '@brent', dir: 0, solid: false, on: brentTalk },
-          { id: 'dee_road', x: 7, y: 14, spr: '@dee', dir: 3, solid: false, on: deeTalk },
+          // 站着等你的同伴是实心的（凯莉就站在后备箱旁边，非实心时玩家会踩到她身上，调查键先选中她，打不开后备箱）
+          { id: 'kelly_road', x: 6, y: 12, spr: '@kelly', dir: 2, on: kellyTalk },
+          { id: 'brent_road', x: 10, y: 10, spr: '@brent', dir: 0, on: brentTalk },
+          { id: 'dee_road', x: 7, y: 14, spr: '@dee', dir: 3, on: deeTalk },
           { id: 'bm_road', x: 11, y: 2, spr: 'bunny', solid: false, hidden: true, light: { r: 1.2, col: 'rgba(220,220,200,.08)' } }
         ],
         async enter(S, first) {
           if (!first) return;
           S.face('brent_road', 'pl');
           await S.narr('车灯熄了。四下里一下子安静得吓人，只剩风刮过树梢的声音。\n路的尽头，土堤上横着一条铁路。铁路底下，是一个黑漆漆的水泥洞口。');
-          await S.say('布伦特', ['到了，各位。兔子人桥。', '1904年，克利夫顿那边有个疯人院关门，一车疯子要转去新盖的监狱。车就在这条路上翻了。跑了俩。', '警察在这片林子里搜了好几个月，只找到一堆兔子——剥了皮，挂在树上，啃了一半。', '后来，他们在那个桥洞底下找到了其中一个。吊在那儿。', '另一个呢……再也没找到。']);
+          await S.say('布伦特', ['到了，各位。兔子人桥。', '1904年，克利夫顿那边有个疯人院关门，一车疯子要转去新盖的监狱。车就在这条路上翻了，跑了俩。', '警察在这片林子里搜了好几个月，只找到一堆兔子——剥了皮，挂在树上，啃了一半。', '后来，有人在那个桥洞底下找到了其中一个。吊在那儿。另一个……再也没找到。']);
           S.bubble('dee_road', '!', 1000);
           await S.say('布伦特', '从那以后，每年万圣节午夜，都有人在那个洞里看见他。穿着兔子装，拿着斧头。');
           S.face('kelly_road', 'brent_road');
@@ -288,15 +393,15 @@
           const r = await S.ask('小迪抓着你的袖子，吸血鬼斗篷拖到了地上。', ['（揉揉他的脑袋）都是编出来的。', '那得看他今晚心情好不好。'], '诺亚');
           if (r === 0) await S.say('小迪', '……我就知道。我一点都不怕。');
           else { S.bubble('dee_road', '!', 900); await S.say('凯莉', '诺亚！'); await S.say('小迪', '我、我不怕！我是吸血鬼！吸血鬼不怕兔子！'); }
-          await S.say('布伦特', ['规矩很简单：十二点之前，咱们四个一起进洞，站在正中间，等镇上教堂敲完十二下。', '谁先跑，谁请一个月的午饭。']);
-          await S.say('凯莉', '不行。我答应我妈十二点前到家。最多在洞里待五分钟，然后就走。');
-          await S.say('布伦特', ['行行行，五分钟就五分钟。', '诺亚，拿着这个。我哥的对讲机，走散了就按住说话。手电在凯莉车的后备箱里。']);
+          await S.say('布伦特', '规矩很简单：十二点之前，四个人一起进洞，站在正中间，等教堂敲完十二下。谁先跑，谁请一个月的午饭。');
+          await S.say('凯莉', '不行。我答应我妈十二点前到家。最多在洞里待五分钟。');
+          await S.say('布伦特', '行行行，五分钟。诺亚，拿着——我哥的对讲机，走散了就按住说话。手电在凯莉车的后备箱里。');
           S.give('walkie');
           S.f.talked = true;
           S.goal('从凯莉车上拿手电筒');
         },
         step(S, x, y) {
-          if (y >= 18) return (async () => { await S.narr('往回走？……说好了的。\n回头看了一眼，路那头连一盏灯都没有。'); await S.walk('pl', 'u', 5); })();
+          if (y >= 18) return roadBack(S);
         }
       },
       /* ---------------- 铁路桥洞 ---------------- */
@@ -401,7 +506,7 @@
           { x: 19, y: 22, spr: 'campfire', on: S => S.narr('一圈熏黑的石头，中间是冷透的灰。旁边扔着几个压扁的啤酒罐，一只破了的南瓜面具。\n每年都有人在这儿生火、喝酒、讲兔子人的故事。今年，你们就是那些人。') },
           { x: 12, y: 21, spr: 'invisible', solid: true, on: S => S.narr('树皮上刻着一个兔子头，两只长耳朵。刻痕已经长成了疤，鼓起来一圈，像是这棵树自己记住了它。') },
           { x: 13, y: 22, spr: 'invisible', solid: true, on: S => S.narr('一块长满青苔的大石头。石头上用粉笔写着：「他从北边来」。\n粉笔字被露水洇开了，像是刚写上去不久。') },
-          { id: 'kelly_woods', x: 5, y: 17, spr: '@kelly', dir: 2, solid: false, on: kellyTalk },
+          { id: 'kelly_woods', x: 5, y: 17, spr: '@kelly', dir: 2, on: kellyTalk },   // 找到之前是实心的，join 时才改成非实心跟上来
           { id: 'shoe', x: 6, y: 12, spr: 'shoes', col: '#d8d8d0', on: async S => {
             await S.narr('泥地里扔着一只儿童运动鞋。鞋带上挂着一个塑料小蝙蝠——是小迪的。\n鞋尖朝着北边。');
             if (S.f.kelly && S.once('shoeK')) await S.say('凯莉', '……他连鞋跑掉了都没停下来。小迪，你到底看见什么了。');
@@ -410,7 +515,7 @@
           { id: 'rope_w', x: 10, y: 5, spr: 'hrope', solid: false, z: 1, on: S => S.narr('空地边上那棵老橡树最低的一根枝杈上，挂着半截烂掉的绳子。\n布伦特讲的故事里，那个逃犯是吊死在桥洞底下的。不是这儿。\n……可这儿为什么也有一根？') },
           { x: 13, y: 5, spr: 'plush', on: S => S.narr('一只白色的毛绒兔子被一根钉子钉在树干上，钉子穿过它的两只耳朵中间。\n毛绒已经被雨淋得发灰、结块了。它的纽扣眼睛掉了一只。') },
           { id: 'fake_woods', x: 15, y: 6, spr: 'fakebun', dir: 1, solid: false, hidden: true, light: { r: 2.2, col: 'rgba(255,236,170,.2)', dy: -4 } },
-          { id: 'ear_woods', x: 15, y: 8, spr: 'pear', hidden: true, on: async S => {
+          { id: 'ear_woods', x: 15, y: 8, spr: 'pear', solid: false, hidden: true, on: async S => {
             S.hide('ear_woods'); S.give('ear');
             await S.narr('一只粉红色的毛绒兔耳朵，夹在塑料发箍上。超市万圣节货架上九块九那种。\n耳根里面，有人用记号笔写着两个字母：「B.H.」');
             if (S.f.party && S.f.party.includes('kelly')) await S.say('凯莉', 'B.H.——布伦特·霍尔。我就知道！');
@@ -436,7 +541,9 @@
             await S.narr('……亮了。');
             S.sfx('tv');
             await S.narr('口袋里的对讲机沙沙地响。你按住通话键：「布伦特？凯莉？小迪？」\n没有人回答。');
-            S.goal('找到走散的朋友（凯莉、小迪、布伦特）');
+            S.sfx('cry');
+            await S.narr('……西边，河的那个方向，好像有人在小声喊什么。');
+            S.goal('找到走散的朋友——西边河那边好像有人');
             S.cp('woods');
           }
         },
@@ -448,7 +555,7 @@
             await S.walk('pl', 'd', 5);
           })();
           if (f.kelly && !f.e2 && y <= 10 && x >= 4 && x <= 15) return fakeEncounter(S);
-          if (f.e2 && !f.e3 && x >= 19 && x <= 22 && (y === 7 || y === 8)) return realEncounter(S);
+          if (f.e2 && !f.e3 && !f.hush && x >= 19 && x <= 22 && (y === 7 || y === 8)) return realEncounter(S);
           if (y >= 15 && y <= 16 && S.once('ford')) return S.narr('河水冰得刺骨，一下子灌进了鞋里。\n你踩着水底滑溜溜的石头，一步一步往对岸挪。');
         }
       },
@@ -567,7 +674,7 @@
     const f = S.f, e = S.ent('kelly_' + S.map); if (e) S.face(e.id, 'pl');
     if (S.map === 'woods' && !f.kelly) return kellyFound(S);
     const L = {
-      road: ['我妈说，每年万圣节，县里的警察都会来这儿抓试胆的小孩。……所以咱们动作快点。', '布伦特那个包，从上车就一直不让人碰。他肯定憋着什么坏。', '小迪非要跟来。我妈说，他要是做噩梦，就让我陪他睡一个月。'],
+      road: ['我妈说，每年万圣节，县里的警察都会来这儿抓试胆的小孩。……所以咱们动作快点。', '布伦特每回讲的都不一样。上礼拜是1904年，上上礼拜是1903年；逃犯有时候两个，有时候三个。', '布伦特那个包，从上车就一直不让人碰。他肯定憋着什么坏。', '小迪非要跟来。我妈说，他要是做噩梦，就让我陪他睡一个月。'],
       tunnel: ['……别回头。我是说，回头也没什么。就是别回头。', '这里面怎么比外面冷这么多。'],
       woods: ['我的脚……没事，能走。别管我，先找小迪。', '你听见了吗？……砍木头的声音。从北边。', '我妈的便条上写着，纸上没有。纸上没有，不代表——算了。'],
       house: ['这房子……像是有人一直住到某一天，然后突然不住了。', '十一点四十了。'],
@@ -579,7 +686,7 @@
     const f = S.f, e = S.ent('brent_' + S.map); if (e) S.face(e.id, 'pl');
     const L = f.brentFound
       ? ['对不起，好吗？我就是想吓吓你们。我没想到……会有真的。', '我那身衣服是在超市买的，九块九。它那身……它那身不是衣服。', '要是能出去，我再也不来了。我发誓。']
-      : S.map === 'road' ? ['传单上都写着呢，自己看。', '你怕了？没事，我在前面给你们开路。', '十二点整，教堂会敲钟。在这儿听得特别清楚。'] : ['走啊，到中间去！'];
+      : S.map === 'road' ? ['传单上都写着呢，自己看。', '我表哥说的版本更狠：他专找万圣节午夜还待在洞里的人。第二天，人就挂在桥上。', '你怕了？没事，我在前面给你们开路。', '十二点整，教堂会敲钟。在这儿听得特别清楚。'] : ['走啊，到中间去！'];
     await S.say('布伦特', L[(f._bl = ((f._bl ?? -1) + 1) % L.length)]);
   }
   async function deeTalk(S) {
@@ -608,6 +715,26 @@
     f.phase = 'tunnel1'; f.party = ['kelly', 'brent', 'dee'];
     await S.go('tunnel', 3, 16, 3);
   }
+  /* 第三结局：没进洞，回车上等 */
+  async function roadBack(S) {
+    const f = S.f;
+    if (!f.talked || f.phase) return S.walk('pl', 'u', 5);
+    await S.narr('往回走？……路那头连一盏灯都没有。\n凯莉的车就停在身后。车里暖和，后座上还有半盒万圣节糖果。');
+    const v = await choose(S, '真的要进那个洞吗？', ['……说好了的。回去', '我不去了。回车上等他们'], '诺亚', 0,
+      '一个说「回车上等」，一个说「说好了的」。\n你们在路中间僵了半天——最后，还是转身往回走了。');
+    if (v === 0) return S.walk('pl', 'u', 5);
+    f.phase = 'car';
+    S.face('brent_road', 'pl');
+    await S.say('布伦特', '诺亚？……行吧。胆小鬼请一个月午饭。');
+    await S.say('凯莉', '车钥匙给你。锁好车门，谁敲都别开。我们五分钟就回来。');
+    S.bubble('dee_road', '…', 1200);
+    await S.say('小迪', '诺亚……你不来，谁保护我啊。');
+    await S.fade(1, 900);
+    S.sfx('close');
+    await S.card('11:41', '凯莉的车里', '你锁上车门，缩在后座上，把小迪的毛衣盖在腿上。\n对讲机一直开着，沙沙地响。\n\n三道手电光，一点一点地被桥洞吞了进去。');
+    S.sfx('tv'); await S.wait(600); toll(S); await S.wait(900); S.sfx('knock'); await S.wait(1000); S.sfx('knock'); await S.wait(1000); S.sfx('knock');
+    return S.end({ bad: true, id: 'car', title: '在车里等的人', text: '十二点整，镇上的教堂敲响了第一下。\n就在那时候，有人敲了敲车窗。\n咚。……咚。……咚。\n很慢。很有耐心。\n你以为是布伦特回来吓你，把脸埋在毛衣里，没有抬头。\n\n十二点十分，三个人嘻嘻哈哈地从桥洞里跑了出来。布伦特套着一身粉红色的兔子装，笑你是胆小鬼。\n「我们一直在洞里啊，」他说，「谁也没往车这边来过。」\n\n小迪一直没说话。\n凯莉发动车子的时候，你看见车窗外面多了一道划痕。很长，从车门一直拖到后备箱——\n像是什么不反光的金属，被慢慢地拖了过去。' });
+  }
 
   /* ================= 桥洞 ================= */
   async function tunnelSouth(S) {
@@ -620,7 +747,7 @@
   }
   async function tunnelEvent(S) {
     const f = S.f; f.t1ev = true;
-    S.amb('bus'); S.shake(2400, 2);
+    S.amb('bus'); S.shake(2400, 2); horn(S, 0, 1.1); horn(S, 1.4, 2.2); S.tone('triangle', 55, 46, 3.4, .12, 0, 220);
     await S.narr('头顶上传来一阵越来越响的轰隆声——\n是火车。整座桥洞都在发抖，洞顶的灰簌簌地往下掉，掉进你的领口里。');
     S.amb('drone');
     await S.say('布伦特', '……好了。几点了？');
@@ -646,7 +773,7 @@
     await S.narr('南口。你们刚刚走进来的地方，站着一个人。\n很高。白色的。头顶上，竖着两只长长的耳朵。');
     S.sfx('heart');
     await S.narr('它的一只手垂在身侧，手里拖着什么东西，尖端抵在地上。');
-    S.sfx('cut');
+    S.sfx('cut'); scrape(S); scrape(S, .9);
     await S.narr('「嚓——」\n金属刮过水泥地的声音，在洞里来回地撞。');
     await S.walk('bm_tunnel', 'u', 1.2);
     S.plr(.5); await S.wait(200); S.plr(2.6); await S.wait(150); S.plr(.4);
@@ -687,7 +814,7 @@
     S.sfx('giggle');
     await S.narr('……然后，兔子头底下，漏出了一声没憋住的笑。');
     await S.say('凯莉', '（小声）……那身衣服，你不觉得眼熟吗？', { style: 'whisper' });
-    const r = await S.ask('粉红色的兔子在空地那头站着，一手打着手电，一手拎着斧头。', ['走过去看看', '关掉手电，躲到树后面']);
+    const r = await choose(S, '粉红色的兔子在空地那头站着，一手打着手电，一手拎着斧头。', ['走过去看看', '关掉手电，躲到树后面']);
     if (r === 0) {
       await S.walk('pl', [[S.pl.x, 8], [10, 8]], 4);
       S.sfx('giggle');
@@ -705,35 +832,57 @@
     await S.say('凯莉', '布伦特！你给我回来！小迪都被你吓丢了！');
     S.goal('那只粉兔子往东跑了——跟上去');
   }
-  async function realEncounter(S) {
+  async function realEncounter(S, retry) {
     const f = S.f;
     S.cp('e3');
     const b = S.ent('bm_woods'); b.alpha = 0; S.place('bm_woods', 24, 7, 1);
     S.focus(22, 7); S.amb('none');
-    await S.alpha('bm_woods', .95, 1500);
-    await S.narr('前面就是农场的栅栏门。\n门口，站着一只兔子。');
-    await S.say('凯莉', '（小声）……又是他。布伦特，你有完没完——', { style: 'whisper' });
-    await S.narr('它站在门口，一动不动。');
-    await S.narr('它是白色的。旧得发灰，胸口和膝盖上有大片大片说不清颜色的污渍。\n两只耳朵直直地竖着，风吹过来，一根毛都没有晃。');
-    await S.narr('你的手电光打在它脸上。它没有眯眼。\n那张脸上，只有两个黑洞。');
-    S.sfx('tv');
-    await S.narr('口袋里的对讲机响了。沙沙声里，是那个呼吸声。很慢，很重。\n……和它的肩膀起伏的节奏，一模一样。');
-    await S.narr('它手里也拎着一把斧头。斧头没有反光。\n风停了。满地的落叶里，它站着的那一片，一片叶子也没有响。');
-    const r = await S.ask('凯莉攥紧了你的胳膊。', ['是布伦特。走过去，揪下它的耳朵', '关掉手电，拉着凯莉蹲下，别出声']);
+    await S.alpha('bm_woods', .95, retry ? 900 : 1500);
+    if (retry) {
+      await S.narr('农场的栅栏门口，那只兔子还站在那儿。一动不动。\n旧得发灰的白色。两只耳朵直直地竖着，风吹过来，一根毛都没有晃。');
+    } else {
+      await S.narr('前面就是农场的栅栏门。\n门口，站着一只兔子。');
+      await S.say('凯莉', '（小声）……又是他。布伦特，你有完没完——', { style: 'whisper' });
+      await S.narr('它是白色的。旧得发灰，胸口和膝盖上有大片大片说不清颜色的污渍。\n两只耳朵直直地竖着，风吹过来，一根毛都没有晃。');
+      await S.narr('你的手电光打在它脸上。它没有眯眼。\n那张脸上，只有两个黑洞。');
+      S.sfx('tv');
+      await S.narr('口袋里的对讲机响了。沙沙声里，是那个呼吸声。很慢，很重。\n……和它的肩膀起伏的节奏，一模一样。');
+      await S.narr('它手里也拎着一把斧头。斧头没有反光。\n风停了。满地的落叶里，它站着的那一片，一片叶子也没有响。');
+    }
+    const r = await choose(S, '凯莉攥紧了你的胳膊。', ['是布伦特。走过去，揪下它的耳朵', '关掉手电，拉着凯莉蹲下，别出声'], null, 1,
+      '你的脚刚往前挪了半步，就被另一只手死死拽了回来。\n一个想过去，一个不让——你们谁也没有再动。');
     if (r === 0) {
       await S.walk('pl', 'r', 3);
       await S.narr('你走过去，伸手去抓那只耳朵。\n它没有躲。');
       await S.narr('你的手指碰到了那只耳朵。\n……是冰的。硬的。不是毛绒。像是缝在一张皮上。');
-      S.amb('drone');
-      await S.scare('face', { spr: '@bunnyP', dur: 1.1 });
+      S.amb('drone'); scrape(S);
+      await S.scare('face', { face: 'bunny', sfx: 'scream', dur: 1.1 });
       return S.die('它慢慢地低下头，看着你。\n你听见斧头从它手里滑下来，斧刃擦过地面的声音——\n很近。非常近。', '那不是布伦特');
     }
     S.sfx('switch'); S.plr(.7);
-    await S.narr('你关掉手电，拉着凯莉蹲进路边的灌木丛里。凯莉用手捂住了自己的嘴。\n对讲机——你一把按住了对讲机，把它塞进怀里。');
-    S.sfx('heart'); await S.wait(800); S.sfx('heart');
+    await S.narr('你关掉手电，拉着凯莉蹲进路边的灌木丛里。凯莉用手捂住了自己的嘴。\n对讲机——你一把按住了它，塞进怀里。');
+    S.sfx('heart');
     await S.narr('它歪了一下头。\n像是在听。');
-    await S.wait(900); S.sfx('heart');
-    await S.narr('然后，它转过身，一步一步地走进了农场的院子。\n没有脚步声。');
+    // 屏息：把控制交还给玩家，这几秒里一步也不能走（tick 里用 S.moving 判定）
+    S.goal('别动。一步也别动——等它走开');
+    if (S.coop) S.toast('操作的人，手离开方向键');
+    f.hush = true; HUSH = 0;
+    S.timer(4.5, null, hushDone);
+  }
+  async function hushCaught(S) {
+    S.f.hush = false;
+    S.sfx('step'); S.shake(200, 1);
+    await S.narr('你的脚底下，「咔嚓」一声——\n一根枯树枝断了。');
+    S.face('bm_woods', 'pl'); S.sfx('heart');
+    await S.narr('那张没有眼睛的脸，慢慢地转了过来。');
+    S.amb('drone'); scrape(S);
+    await S.scare('face', { face: 'bunny', sfx: 'scream', dur: 1.1 });
+    return S.die('它没有跑。它只是一步一步地走过来，像是早就知道你在哪儿。\n凯莉捂着嘴的那只手，一直在抖。', '你动了');
+  }
+  async function hushDone(S) {
+    const f = S.f; f.hush = false;
+    S.sfx('heart');
+    await S.narr('它站了很久。\n然后，它转过身，一步一步地走进了农场的院子。\n没有脚步声。');
     await S.alpha('bm_woods', 0, 1600);
     S.hide('bm_woods'); S.focus(null);
     await S.wait(600);
