@@ -77,8 +77,8 @@ async function lobbyCheck() {
 }
 
 async function onlineGame(id) {
-  const ps = spawn('node', [SRC + '/test/peersrv.cjs', '9123'], {stdio: 'ignore'}); await new Promise(r => setTimeout(r, 1200));
-  const mk = async vp => { const pg = await page(vp, '?test&bot&peerhost=127.0.0.1&peerport=9123'); return pg; };
+  const PP = String(9200 + Math.floor(Math.random() * 700)); const ps = spawn('node', [SRC + '/test/peersrv.cjs', PP], {stdio: 'ignore'}); await new Promise(r => setTimeout(r, 1200));
+  const mk = async vp => { const pg = await page(vp, '?test&bot&peerhost=127.0.0.1&peerport=' + PP + ''); return pg; };
   const H = await mk('desk'), G = await mk('phoneL');
   let msg = '', ok = true;
   try {
