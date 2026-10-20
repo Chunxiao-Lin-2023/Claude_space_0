@@ -1,0 +1,46 @@
+# 第一夜 如月车站 · 自动通关步骤（格式见 tests/play.py 顶部）
+SOL = [
+    [],
+    ['shot', 'train'],
+    # 车厢：乘客 / 车窗 / 线路图 → 第三条线索后进站，选择下车
+    ['use', 'salary'], ['use', 'win12'], ['use', 'rmap', [0]],
+    ['expect', "window.__dbg.W.mapId === 'station'"],
+    ['shot', 'station'],
+    # 如月站：站名牌（发帖）、时刻表、传言板、售货机拿硬币、公用电话倒着拨
+    ['use', 'ekimei'], ['use', 'jikoku'], ['use', 'dengon'], ['use', 'vend'],
+    ['use', 'phoneS', [0, '1427']],
+    ['use', 'phoneS', [0, '7241']],
+    ['expect', 'window.__dbg.W.f.called'],
+    ['shot', 'called'],
+    ['step', 0, 6, [0]],
+    # 铁轨
+    ['expect', "window.__dbg.W.mapId === 'tracks'"],
+    ['shot', 'tracks'],
+    ['step', 38, 4],
+    ['expect', "window.__dbg.W.f.phase === 'walk2'"],
+    ['step', 29, 4],
+    ['expect', "window.__dbg.W.f.phase === 'proc'"],
+    ['shot', 'proc'],
+    ['use', 'hut', [0]],
+    ['expect', "window.__dbg.W.f.phase === 'rails'"],
+    ['shot', 'rails'],
+    ['step', 0, 4],
+    # 隧道：第一遍回头 → 鬼打墙；第二遍不回头、不踩铁轨
+    ['expect', "window.__dbg.W.mapId === 'tunnel'"],
+    ['step', 17, 2, [0]],
+    ['step', 0, 2],
+    ['expect', 'window.__dbg.W.f.loops === 1'],
+    ['shot', 'tunnel'],
+    ['step', 17, 2, [1]],
+    ['step', 0, 2],
+    # 山路：拒绝上车 → 展望所 → 下山
+    ['expect', "window.__dbg.W.mapId === 'yama'"],
+    ['step', 19, 4, [2, 1, 1]],
+    ['expect', 'window.__dbg.W.f.carDone'],
+    ['use', 'view', [0]],
+    ['use', 'view', [2]],
+    ['expect', 'window.__dbg.W.f.lightOK'],
+    ['shot', 'yama'],
+    ['step', 3, 6],
+    ['step', 3, 10],
+]

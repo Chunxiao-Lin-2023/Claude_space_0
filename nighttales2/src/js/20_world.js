@@ -26,7 +26,7 @@ function newWorld(ch) {
 }
 function buildMap(ch, id) {
   const d = ch.maps[id], rows = d.rows, h = rows.length, wd = Math.max(...rows.map(r => r.length));
-  const leg = Object.assign({}, BASE_LEGEND, ch.legend || {}, d.legend || {});
+  const leg = Object.assign({}, BASE_LEGEND, (ch.legend && typeof ch.legend === 'object') ? ch.legend : {}, d.legend || {});   // ch.legend 是档案正文字符串时不能合并
   const m = { id, def: d, w: wd, h, leg, rows: rows.map(r => r.padEnd(wd, ' ')), mods: {}, ents: [], cache: null, dirty: true };
   for (const ed of (d.ents || [])) m.ents.push(makeEnt(ed, ch));
   return m;

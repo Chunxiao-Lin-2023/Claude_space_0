@@ -4,10 +4,21 @@
   const L = (w, fill, marks) => { const a = Array(w).fill(fill); for (const [x, s] of (marks || [])) for (let i = 0; i < s.length; i++) a[x + i] = s[i]; return a.join(''); };
   const FONT = '"Noto Sans CJK JP","Hiragino Sans","Yu Gothic","Noto Sans CJK SC","Microsoft YaHei",sans-serif';
   /* 在精灵里写字：借 R 拿到当前绘制偏移（R 内部调用 g.fillRect(x,y,…)） */
-  function txt(g, R, s, a, b, px, col, flip) {
+  const TXC = new Map();
+  function txtBmp(s, px, col) {   // 二值化的像素字（避免小字号抗锯齿糊成一团）
+    const k = s + '|' + px + '|' + col; let c = TXC.get(k); if (c) return c;
+    const m = mk(8, 8).getContext('2d'); m.font = `bold ${px}px ${FONT}`;
+    const w = Math.ceil(m.measureText(s).width) + 2, h = px + 4;
+    c = mk(w, h); const x = c.getContext('2d');
+    x.font = `bold ${px}px ${FONT}`; x.fillStyle = col; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(s, w / 2, h / 2 + 1);
+    const im = x.getImageData(0, 0, w, h), d = im.data;
+    for (let i = 3; i < d.length; i += 4) d[i] = d[i] >= 96 ? 255 : 0;
+    x.putImageData(im, 0, 0);
+    TXC.set(k, c); return c;
+  }
+  function txt(g, R, s, a, b, px, col) {
     let X = 0, Y = 0; g.fillRect = (x, y) => { X = x; Y = y; }; R(a, b, 1, 1, '#000'); delete g.fillRect;
-    g.save(); g.font = `bold ${px}px ${FONT}`; g.fillStyle = col; g.textAlign = 'center'; g.textBaseline = 'middle';
-    g.translate(X, Y); if (flip) g.scale(-1, 1); g.fillText(s, 0, 0); g.restore();
+    const c = txtBmp(s, px, col); g.drawImage(c, Math.round(X - c.width / 2), Math.round(Y - c.height / 2));
   }
   const BAT0 = 38;
   function bat(S, n) { S.f.bat = Math.max(2, (S.f.bat ?? BAT0) - n); S.toast('手机电量 ' + S.f.bat + '%'); }
@@ -119,11 +130,11 @@
     ad(g, e, t, R) { R(1, 0, 14, 11, '#d8cfb8'); R(2, 1, 12, 6, '#5a7a9a'); R(3, 4, 10, 3, '#3a5a3a'); R(5, 2, 3, 2, '#e8d8a0'); R(2, 8, 9, 1, '#5a4a3a'); },
     ekimei(g, e, t, R) {
       R(5, -2, 2, 16, '#2a2c2a'); R(41, -2, 2, 16, '#2a2c2a');
-      R(0, -20, 48, 20, '#1e201e'); R(1, -19, 46, 18, e.red ? '#d8c8c0' : '#e8e8de');
-      txt(g, R, e.text || 'きさらぎ', 24, -12, 9, e.red ? '#5a0a0a' : '#141414');
-      R(1, -6, 46, 1, '#2a7a4a');
-      txt(g, R, '←' + (e.s.prev || 'かたす'), 11, -3, 6, '#2a2a2a');
-      txt(g, R, (e.s.next || 'やみ') + '→', 38, -3, 6, '#2a2a2a');
+      R(-2, -26, 52, 26, '#1e201e'); R(-1, -25, 50, 24, e.red ? '#d8c8c0' : '#e8e8de');
+      txt(g, R, e.text || 'きさらぎ', 24, -17, 12, e.red ? '#5a0a0a' : '#141414');
+      R(-1, -10, 50, 1, '#2a7a4a');
+      txt(g, R, e.s.prev || 'かたす', 13, -5, 8, '#2a2a2a');
+      txt(g, R, e.s.next || 'やみ', 38, -5, 8, '#2a2a2a');
     },
     jikoku(g, e, t, R) { R(7, 2, 2, 12, '#2a2c2a'); R(1, -12, 14, 15, '#2a2c2a'); R(2, -11, 12, 13, '#d6d4c8'); R(2, -11, 12, 2, '#2a7a4a'); R(9, 0, 4, 1, '#8a8a80'); },
     hclock(g, e, t, R) { R(7, -12, 2, 26, '#2a2c2a'); R(3, -21, 10, 10, '#141414'); R(4, -20, 8, 8, '#e4e2d6'); R(7, -17, 2, 2, '#141414'); },
@@ -157,9 +168,9 @@
       R(3, -5, 2, 1, '#3a3a30');
     },
     kusa(g, e, t, R) { for (let i = 0; i < 9; i++) { const x = (i * 5 + 1) % 16; R(x, -6 + (i % 3) * 2, 1, 20 - (i % 3) * 2, i % 2 ? '#3a4a2a' : '#4a5a32'); R(x, -7 + (i % 3) * 2, 1, 2, '#7a6a3a'); } },
-    tplate(g, e, t, R) { R(-6, 2, 28, 10, '#1a1a18'); R(-5, 3, 26, 8, '#cfc8b4'); txt(g, R, e.text || '伊佐貫', 8, 7, 7, '#1a1a18'); },
+    tplate(g, e, t, R) { R(-6, 2, 28, 10, '#1a1a18'); R(-5, 3, 26, 8, '#cfc8b4'); txt(g, R, e.text || '伊佐貫', 8, 7, 8, '#1a1a18'); },
     tlamp(g, e, t, R) { R(5, 3, 6, 5, '#1e1e1c'); R(6, 4, 4, 3, e.off ? '#2a1e14' : '#ffb460'); },
-    kmpost(g, e, t, R) { R(4, 2, 8, 10, '#d8d6cc'); R(4, 2, 8, 1, '#8a8a80'); txt(g, R, String(e.num ?? 0), 8, 7, 6, '#1a1a18'); },
+    kmpost(g, e, t, R) { R(4, 2, 8, 10, '#d8d6cc'); R(4, 2, 8, 1, '#8a8a80'); txt(g, R, String(e.num ?? 0), 8, 7, 7, '#1a1a18'); },
     portal(g, e, t, R) { R(-2, -2, 20, 16, '#3a3834'); R(1, 1, 14, 13, '#020202'); R(2, 0, 12, 1, '#020202'); R(4, -1, 8, 1, '#020202'); },
     kanban(g, e, t, R) { R(3, 4, 2, 11, '#4a3a2a'); R(11, 4, 2, 11, '#4a3a2a'); R(0, -6, 16, 11, '#4a3a2a'); R(1, -5, 14, 9, '#b8a888'); R(3, -3, 10, 1, '#3a2a1a'); R(3, 0, 7, 1, '#3a2a1a'); }
   };
@@ -354,7 +365,7 @@
   const PRC = [['pr0', '@lant'], ['pr1', '@drummer'], ['pr2', '@suzu'], ['pr3', '@drummer'], ['pr4', '@lant'], ['pr5', '@oni']];
   const ONI_CHASE = () => ({ spd: 2.8, zone: (x, y) => y === 6, catch: railCaught });
   function procReset(S) {
-    PRC.forEach(([id], i) => { S.stop(id); S.place(id, 2 - i * 2, 6, 2); const e = S.ent(id); e.alpha = 1; e.hidden = i > 1; });
+    PRC.forEach(([id], i) => { S.stop(id); S.place(id, 2 - i * 2, 6, 2); const e = S.ent(id); e.alpha = 1; e.hidden = false; });
   }
   async function oldMan(S) {
     S.f.phase = 'walk2';
@@ -394,7 +405,7 @@
   }
   async function hideIn(S, id) {
     if (S.f.phase !== 'proc' || S.f.hid) {
-      if (id === 'hut') return S.narr(S.f.phase === 'proc' ? '……' : '铁皮顶的保线小屋，门上挂着生锈的挂锁——锁是开着的。\n门板上用油漆写着：「保線詰所」。');
+      if (id === 'hut') return S.narr(S.f.phase === 'proc' ? '……' : '铁皮顶的保线小屋，门上挂着生锈的挂锁——锁是开着的。\n门板上用油漆写着：「保線詰所」。\n门楣上一只小灯泡，昏昏地亮着。');
       return S.narr('一人多高的枯草，风一吹，沙沙作响。\n草丛深处黑得什么都看不见。');
     }
     S.f.hid = true; S.clearTimer();
@@ -625,7 +636,7 @@
     row(TRK_W, x => x < 4 ? '#' : (x % 4 === 1 ? 'P' : 'T'))
   ];
   const YM_W = 30;
-  const forest = (x, y) => (hash(x, y, 404) < .55 ? 'P' : ' ');
+  const forest = (x, y) => { const h = hash(x, y, 404); return h < .45 ? 'P' : h < .8 ? 'T' : '"'; };
   const YAMA_ROWS = [
     row(YM_W, () => 'N'),
     row(YM_W, () => 'N'),
@@ -781,7 +792,7 @@
       },
       /* ---------------- 铁轨 ---------------- */
       tracks: {
-        amb: 'night', dark: .9, plr: 2.5, wall: 'stone', floor: 'dirt',
+        amb: 'night', dark: .86, plr: 2.7, wall: 'stone', floor: 'dirt',
         legend: { N: 'nsky', Y: 'rails', G: 'ballast', H: 'black' },
         tileOpts: { grassC: '#18281e', treeC: '#0b1810' },
         rows: TRACKS_ROWS,
@@ -791,7 +802,7 @@
           ...[4, 5, 6, 7].map(y => ({ x: 49, y, spr: 'invisible', solid: false, async touch(S) { await S.think('……不能回去。\n那个车站，从外面是走不出去的。'); S.pos(47, S.pl.y, 1); } })),
           { x: 44, y: 3, spr: 'kmpost', num: 3, on: S => S.narr('铁轨边歪着一根里程标。\n上面的数字是「3」，可是从哪儿算起的三公里，没写。') },
           { x: 12, y: 3, spr: 'statue', on: S => S.narr('路边一尊小小的地藏，脑袋不见了。\n脚边供着一个冻得硬邦邦的饭团。\n……是谁供的？这附近根本没有人家。') },
-          { id: 'hut', x: 22, y: 3, spr: 'hut', on: S => hideIn(S, 'hut') },
+          { id: 'hut', x: 22, y: 3, spr: 'hut', light: { r: 2.2, dy: -6, col: 'rgba(255,200,120,.10)' }, on: S => hideIn(S, 'hut') },
           { id: 'kusa', x: 30, y: 3, spr: 'kusa', solid: true, on: S => hideIn(S, 'kusa') },
           { id: 'oldman', x: 40, y: 4, spr: '@oldman', hidden: true },
           ...PRC.map(([id, spr], i) => ({ id, x: 2 - i * 2, y: 6, spr, dir: 2, hidden: true, solid: false, light: spr === '@lant' ? { r: 2.8, col: 'rgba(255,90,50,.22)', flick: true } : spr === '@suzu' ? { r: 1.6, col: 'rgba(255,200,120,.12)' } : null })),
@@ -815,6 +826,7 @@
           if (W.busy) return;
           TRV -= dt;
           if (TRV <= 0 && ['walk', 'walk2', 'rails'].includes(S.f.phase)) { TRV = 2.6 + Math.random() * 2.2; S.sfx(Math.random() < .3 ? 'bell' : 'thud'); }
+          if (S.f.phase === 'proc' && !S.f.hid) PRC.forEach(([id], i) => { const e = S.ent(id); if (e && !e.mv && Math.round(e.px / TS) < 15 - i * 2) startMove(e, 2, .75); });
           const g = S.ent('oniS'), p = S.pl;
           if (g && g.chase && !g.hidden && !g.mv && (p.y < 5 || p.y > 7)) {
             const gx = Math.round(g.px / TS);
@@ -825,7 +837,7 @@
       },
       /* ---------------- 伊佐貫隧道 ---------------- */
       tunnel: {
-        amb: 'drone', dark: .96, plr: 2.2, wall: 'stone', floor: 'stone', darkC: '#010202',
+        amb: 'drone', dark: .93, plr: 2.4, wall: 'stone', floor: 'stone', darkC: '#010202',
         legend: { Y: 'rails', G: 'ballast' },
         rows: [
           row(34, () => '#'), row(34, () => '#'),

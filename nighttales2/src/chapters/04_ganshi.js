@@ -68,6 +68,7 @@
     legend: '「湘西赶尸」是流传在湖南西部沅水流域（沅陵、辰溪、泸溪、溆浦一带）的民间传说。据说客死他乡的人，可以由「赶尸匠」作法，让尸体自己一跳一跳地走回家乡入土。赶尸匠把尸体叫作「喜神」，夜行昼宿：天黑才上路，前头有人敲「阴锣」、摇铃，通知沿途的人回避、拴狗；鸡叫之前必须赶到专门接待他们的客店歇脚。传说这种客店的大门终年不关，喜神白天就靠墙站在门板后头。尸体额头贴着朱砂画的「辰州符」，头戴斗笠或罩着黑布。\n\n关于什么人能赶，流传最广的是「三赶三不赶」：据说砍头的、受绞刑的、站笼站死的可以赶——死于非命，魂魄被法术拘在身上；病死的、投河上吊的、雷打火烧的不赶。起源也有几种说法：一种上溯到蚩尤，说他率兵作战，为把阵亡的将士带回故乡，命军师作法驱尸；更多的说法把它和「辰州符」「祝由」这类湘西巫术连在一起。辰州（今沅陵）一带出产朱砂，所以朱砂又叫「辰砂」。据说沈从文写湘西的散文里，也提到过辰州符与赶尸这类传闻。\n\n历来也有很多人怀疑。常见的解释是：尸体并非自己走，而是赶尸人把尸体背在背上，宽大的寿衣和斗笠遮住了背尸的人；或者两人用竹竿把尸体架起来抬着走，竹竿一颤一颤，远看就像在跳；也有人说实际运回去的只是遗骨，「赶尸」的种种禁忌，不过是吓退外人的障眼法。湘西山高路险、棺木难运、雇人抬棺价钱高昂，夜里走又能避开人群——这些现实的缘由，被认为是这门行当（如果它真的存在过）的土壤。到了1980年代，香港电影把它改造成穿清朝官服、伸直双臂蹦跳的「僵尸」，那已经是另一个故事了。\n\n（本章中的晏家老店、滕师傅与秀姑父女、石满仓、赶尸口诀里铃与锣的节奏、「无根水」调朱砂的补符法、祠堂讨朱砂、义庄里喊名字的声音，均为游戏虚构；寨口一人喊魂、一人应「回来了」的情节，据湘西等地的「叫魂」习俗改编。）',
     start: { map: 'shanlu', x: 1, y: 3, dir: 2 },
     resume: {
+      gong: async S => { S.amb('none'); S.f._gt = 0; },
       stalk: async S => { resetXs(S); },
       fu: async S => { S.norun(false); S.timer(300, '一炷香', incenseOut); },
       zk: async S => { S.norun(false); }
@@ -81,6 +82,7 @@
       for (const e of m.ents) if (e.s && e.s.hop) e.oy = e.mv ? -Math.round(Math.abs(Math.sin(RT * 11)) * 3) : 0;
       if (S.map === 'shanlu') gongTick(S, dt);
       if (S.map === 'kedian') stalkTick(S, dt);
+      if (S.map === 'zhaikou') zkTick(S, dt);
     },
     sprites: {
       youdeng(g, e, t, R) {   // 桐油灯：灯台 + 油碟
@@ -404,7 +406,7 @@
           { x: 26, y: 7, w: 2, spr: 'diaojiao', on: S => S.narr('黑着灯的吊脚楼。屋檐下挂着一串干辣椒，和一双没穿过的绣花鞋。') },
           { x: 8, y: 3, spr: 'stonelantern', off: true, on: S => S.narr('路边的土地庙。有人在庙前摆了一碗清水、三个糍粑。') },
           { x: 10, y: 6, spr: 'sign', col: '#4a3a2a', on: S => S.narr('指路碑：「左走麻阳，右走凤凰」。\n碑底下压着一块红布，红布上写着：「弓开弦断，箭射妖魔；童子莫哭，夜里莫怕」。') },
-          { id: 'dog', x: 21, y: 7, spr: 'dog', dir: 1, on: S => S.narr(S.f.ph === 'end' ? '' : '一条拴在桩子上的黄狗，趴着，耳朵贴着脑袋。\n它不叫，只是一直盯着你身后。') },
+          { id: 'dog', x: 21, y: 7, spr: 'dog', dir: 1, on: S => S.narr('一条拴在桩子上的黄狗，趴着，耳朵贴着脑袋。\n它不叫，只是一直盯着你身后。') },
           { id: 'mom', x: 26, y: 4, spr: '@mom', dir: 1, hidden: true, light: { r: 3, col: 'rgba(255,180,90,.2)', flick: true }, on: S => S.say('妇人', '……') },
           { id: 'teng_z', x: 1, y: 4, spr: '@teng', dir: 2, on: S => S.say('滕师傅', cycle(S, '_tz', ['你在前头敲锣。我……跟得上。', '过了桥，就是麻阳寨子了。'])) },
           { id: 'xs3_z', x: 2, y: 5, spr: '@xs3', dir: 2, s: { hop: 1 }, on: S => raiseOn(S) }
@@ -639,3 +641,342 @@
     }
     return S.narr('包袱摊开着。除了几件换洗衣裳和一双新草鞋，什么也不剩了。\n新草鞋很小，是女人的尺码。');
   }
+
+  /* ================= 第三幕：三更，符落 ================= */
+  async function nightFalls(S) {
+    await S.fade(1, 900);
+    S.hidePlayer(true);
+    await S.card('三更', '', '雨下大了。\n石满仓迷迷糊糊地，听见风从敞着的大门里灌进来，\n呜——呜——\n像有人站在门口，吹一支没有孔的笛子。');
+    S.f.ph = 'stalk';
+    const x = S.ent('xs3_k'); x.spr = '@xs3n'; S.place('xs3_k', 10, 11, 0);
+    S.show('fu_d'); S.hide('yan');
+    S.ent('huotang').light = { r: 2.4, col: 'rgba(255,110,50,.16)', flick: true };
+    light(S); S.plr(2.4); S.amb('wind'); S.norun(true);
+    S.pos(17, 4, 0); S.hidePlayer(false);
+    await S.fade(0, 900);
+    S.sfx('thud'); await S.wait(900); S.sfx('thud'); await S.wait(900); S.sfx('thud');
+    await S.narr('咚。\n……咚。\n……咚。');
+    await S.narr('不是雨声。是有什么东西，在堂屋里，一下一下地跳。');
+    await S.think(['……喜神？', '喜神不是要听着铃才会动吗？']);
+    S.focus(10, 10); await S.wait(700);
+    await S.narr('火塘的余光里，门板后头只剩下两个斗笠。\n第三个站在堂屋当中，脑袋一歪一歪的，像在闻什么。\n地上，躺着一张黄纸。');
+    S.focus(null);
+    await S.think(['符……掉了。', '铃和锣！铃和锣在滕师傅房里！']);
+    await S.narr('（提示：她看不见，循着活人的气息走。不能跑；离她远些，站着不动、屏住气，她就闻不着。）');
+    S.goal('屏住气，去西头滕师傅房里拿铃和锣');
+    S.cp('stalk');
+  }
+  function resetXs(S) { S.stop('xs3_k'); snap(S.ent('xs3_k')); S.f.ringing = false; S.f._rq = false; S.f._cool = 0; S.f._still = 0; S.norun(true); S.plr(2.4); light(S); }
+  function stalkTick(S, dt) {
+    if (S.f.ph !== 'stalk' || W.busy || S.f.ringing) return;
+    const x = S.ent('xs3_k'); if (!x || x.hidden) return;
+    const p = S.pl, ex = Math.round(x.px / TS), ey = Math.round(x.py / TS), d = Math.abs(ex - p.x) + Math.abs(ey - p.y);
+    S.f._still = p.mv ? 0 : (S.f._still || 0) + dt;
+    if (S.f._cool > 0) { S.f._cool -= dt; return; }
+    if (S.has('lingluo') && d <= 2 && !S.f._rq) { S.f._rq = true; S.stop('xs3_k'); S.after(0, ringScene); return; }
+    const inZ = HALL(p.x, p.y), smell = S.f._still > 1.2 ? 1 : 3;
+    if (x.chase) { if (d > 6 || !inZ || (S.f._still > 1.6 && d > 1)) { S.stop('xs3_k'); S.bubble('xs3_k', '?', 900); } return; }
+    if (inZ && d <= smell) { S.sfx('sting'); S.bubble('xs3_k', '!', 900); S.chase('xs3_k', { spd: 2.6, zone: HALL, catch: stalkCaught }); return; }
+    S.f._wt = (S.f._wt ?? 1) - dt;
+    if (S.f._wt <= 0 && !x.mv) {
+      S.f._wt = .8 + Math.random() * .9;
+      let dir = (Math.random() * 4) | 0;
+      if (Math.random() < .35) dir = Math.abs(p.x - ex) > Math.abs(p.y - ey) ? (p.x < ex ? 1 : 2) : (p.y < ey ? 3 : 0);
+      const nx = ex + DIRS[dir][0], ny = ey + DIRS[dir][1];
+      if (HALL(nx, ny) && passable(curMap(), nx, ny, x)) { startMove(x, dir, 1.4); S.sfx('thud'); }
+    }
+  }
+  async function stalkCaught(S) {
+    await S.scare('face', { spr: '@xs3up', dur: 1.1 });
+    await S.die('她找到你了。\n两只冰凉的手搭上你的肩膀，一股河底淤泥的腥气，灌进你的鼻子里。\n你想喊，却像被水堵住了嘴。', '她循着你的气息来了');
+  }
+  async function ringScene(S) {
+    if (S.f.ph !== 'stalk' || S.f.ringing) return;
+    S.f.ringing = true; S.stop('xs3_k');
+    const x = S.ent('xs3_k'); snap(x);
+    S.face('xs3_k', 'pl'); S.face('pl', 'xs3_k');
+    S.sfx('heart');
+    await S.narr('她就在你跟前。斗笠底下垂着湿漉漉的长头发，一股河水的腥气。\n你攥紧了铃，手心里全是汗。');
+    const v = await S.keypad('摇铃、敲锣——叫她住脚，面壁立定', ['铃', '锣'], 4, { cancel: false });
+    await sound(S, v);
+    if (v === '铃锣铃铃') return stopXs(S);
+    if (!S.f.ringMiss) {
+      S.f.ringMiss = true;
+      S.shake(300, 2);
+      await S.narr('她猛地一顿——歪着头，像是在听。\n然后，朝你这边，又跳了一步。');
+      await S.think('不对……节奏不对！口诀……小本子上的口诀！');
+      S.f.ringing = false; S.f._rq = false; S.f._cool = 2.5;
+      return;
+    }
+    return stalkCaught(S);
+  }
+  async function stopXs(S) {
+    await S.narr('铃——锣——铃——铃——');
+    await S.narr('她停住了。\n过了好一会儿，才慢慢地、慢慢地转过身去，一跳，一跳，跳到北墙根底下。');
+    await S.walk('xs3_k', [5, 6], 1.6); S.face('xs3_k', 3);
+    S.sfx('chime'); S.norun(false); S.plr(null);
+    S.f.ph = 'fu'; S.f.ringing = false; light(S);
+    await S.narr('她面朝着墙，立定了，一动不动。');
+    await S.think(['口诀上说……符落了，铃锣只镇得一炷香。', '得赶在香烧完之前，把符补上。']);
+    fuGoal(S);
+    S.timer(300, '一炷香', incenseOut);
+    S.cp('fu');
+  }
+  async function incenseOut(S) {
+    if (S.f.ph !== 'fu') return;
+    await S.narr('不知哪里，那炷香的最后一点红光，灭了。');
+    S.sfx('thud'); await S.wait(500);
+    await S.scare('face', { spr: '@xs3up', dur: 1 });
+    await S.die('身后，「咚」的一声。\n冰凉的、湿漉漉的手指，搭上了你的后颈。\n——她又醒了。', '香烧完了');
+  }
+  async function fuRead(S) {
+    if (S.f.ph === 'stalk' && !S.has('lingluo')) return S.narr('那张掉下来的符，就在她脚边……现在不敢去捡。');
+    await S.narr('你捡起那张掉落的符。朱砂画的符文被雨气洇开了，红一道一道往下淌。\n符头上，写着三个小字：\n\n「吴　氏　女」');
+    await S.think('吴氏……账簿上写的也是吴氏。\n可口诀说——名不真，符不灵。');
+    S.f.fuRead = true; S.hide('fu_d');
+  }
+  async function xs3On(S) {
+    const ph = S.f.ph;
+    if (ph === 'inn') return xsLook(S, 3);
+    if (ph === 'stalk') { if (S.has('lingluo') && !S.f.ringing && !(S.f._cool > 0)) { S.f._rq = true; return ringScene(S); } return S.narr('（不……不能碰她。）'); }
+    if (ph === 'fu') return redraw(S);
+    return S.narr('她面朝着墙。额头上的新符黄澄澄的，一笔一画都清清楚楚。');
+  }
+
+  /* ================= 补符 ================= */
+  function fuGoal(S) {
+    const need = [];
+    if (!S.has('zhusha')) need.push('朱砂（镇上祠堂）');
+    if (!S.has('yudie')) need.push('无根水');
+    S.goal(need.length ? '一炷香内补好符：还缺' + need.join('、') : '回堂屋给她补符（符头要写真名姓）');
+  }
+  async function yangangOn(S) {
+    if (S.f.ph !== 'fu') return S.narr('屋檐底下一口大瓦缸，接的是从瓦缝里滴下来的雨水。\n老板娘说，这水不沾地，拿来泡茶，是甜的。');
+    if (S.has('yudie')) return S.narr('碟子里已经盛着水了。');
+    if (!S.has('zhudie')) return S.narr('得拿个东西来盛。');
+    S.take('zhudie'); S.give('yudie'); S.f.water = 'rain'; S.sfx('water');
+    await S.narr('你把朱砂碟伸到屋檐底下，接了半碟正往下滴的雨水。\n还没落地的水——无根水。');
+    fuGoal(S); S.cp('fu');
+  }
+  async function wellOn(S) {
+    if (S.f.ph !== 'fu') return S.narr('后院的老井。井口盖着半块石板，井绳湿漉漉的。\n往下看，黑洞洞的，只听见底下咕咚、咕咚，像有人在喝水。');
+    if (!S.has('zhudie')) return S.narr('井水冰凉。水面上漂着一片什么东西，白白的，像一块布。');
+    const r = await S.ask('井里的水，打上来就能用。舀一碟？', ['舀一碟井水', '（等等……）']);
+    if (r === 1) { await S.think('口诀说……井水自地底出，有根，拴魂。切莫用井水。'); return; }
+    S.take('zhudie'); S.give('yudie'); S.f.water = 'well'; S.sfx('water');
+    await S.narr('你放下吊桶，打上来半桶井水，舀了一碟。\n水面上映着你的脸，白得吓人。');
+    fuGoal(S);
+  }
+  async function yaoOn(S) {
+    S.face('yao_h', 'pl');
+    const ph = S.f.ph;
+    if (ph === 'inn') {
+      if (S.once('yaoInn')) {
+        await S.say('幺儿', ['大哥！你也睡不着？', '我跟师傅学了两年了。师傅说我胆子大，是吃这碗饭的料。']);
+        await S.say('幺儿', ['赶喜神，夜里走，白天歇。鸡一叫就得找店住下，喜神白天见不得光。', '路上碰见人，我就敲锣，叫人家让路、拴狗。师傅摇铃，喜神听着铃声走。', '额头上那张是辰州符，朱砂画的。朱砂就是辰砂——我们辰州出的。']);
+        await S.say('幺儿', ['你晓得「三赶三不赶」吧？', '砍头的、绞死的、站笼站死的，赶。', '病死的、投河吊颈的、雷打火烧的，不赶。']);
+        await S.say('石满仓', '为啥？');
+        await S.say('幺儿', ['师傅说，死于非命的，魂还拘在身上，舍不得走，铃一摇就跟着。', '病死的，魂早散了。投河的，魂跟着水走了，追都追不回来。']);
+        await S.say('幺儿', '……可这一趟那个「吴氏」，账簿上没写是怎么死的。我问师傅，师傅就骂我。');
+        return;
+      }
+      return S.say('幺儿', cycle(S, '_yi', ['大哥你去睡吧，我还要给鸡添食。', '你说……喜神会不会做梦？', '师傅烧得厉害。明天要是走不动，可怎么办。']));
+    }
+    if (ph === 'stalk') return S.say('幺儿', '（缩在草堆里，捂着嘴）大哥……她、她醒了……我不敢……', { style: 'whisper' });
+    if (ph === 'fu' && !S.f.gotLock) {
+      S.f.gotLock = true;
+      S.bubble('yao_h', '!', 900);
+      await S.say('幺儿', ['大哥……你把她镇住了？', '我……我看见她醒了，我就跑了。我对不起师傅。']);
+      await S.say('石满仓', '幺儿，符上写的是「吴氏」，可写「吴氏」，符贴不住。她到底叫什么？');
+      await S.say('幺儿', ['……我不晓得。师傅不让问。', '可是……她起身的时候，领口里掉出来这个。我捡了，还没敢给师傅。']);
+      S.give('yinsuo');
+      await S.narr('一把小小的银锁，红绳都褪成了粉色。\n正面錾着「长命百岁」。翻过来，背面刻着四个小字：\n\n「滕门秀姑」');
+      await S.say('幺儿', ['滕……师傅也姓滕。', '师傅夜里说胡话，一直在喊「秀姑」。']);
+      fuGoal(S); S.cp('fu');
+      return;
+    }
+    return S.say('幺儿', cycle(S, '_yf', ['大哥，快去吧……香要烧完了。', '我、我在这儿给你守着后门。']));
+  }
+  async function voiceScene(S) {
+    S.amb('none');
+    await S.narr('义庄里停着四口棺材。长明灯的火苗，忽然往一边倒了倒。');
+    await S.wait(600); S.sfx('whisper');
+    await S.say('？？？', '……满仓。', { style: 'whisper' });
+    await S.narr('声音是从最里头那口棺材里传出来的。\n很轻，很软，像隔着一层水。');
+    S.sfx('whisper');
+    await S.say('？？？', '满仓哥……是我呀。你应我一声嘛。', { style: 'whisper' });
+    const r = await S.ask('它在喊你的名字。', ['「哎——」（应一声）', '「……谁？」', '（咬住嘴唇，不出声）']);
+    if (r < 2) return answered(S, r);
+    S.sfx('heart'); await S.wait(800);
+    await S.narr('你咬着嘴唇，一声也不出。\n过了好一会儿，棺材里轻轻地、失望地，叹了一口气。');
+    S.amb('drone');
+    await S.think('「有人喊你的名字，莫应。」——滕师傅的话。');
+  }
+  async function answered(S, r) {
+    S.clearTimer();
+    await S.say('石满仓', r === 0 ? '哎——' : '……谁？');
+    await S.wait(500);
+    S.ent('g4').open = true; S.sfx('open');
+    await S.narr('最里头那口棺材的盖子，「吱——」地，挪开了一条缝。');
+    await S.say('？？？', '……应了就好。', { style: 'whisper' });
+    await S.scare('face', { spr: '@xs3up', dur: 1.1 });
+    await S.end({ bad: true, title: '应了一声', text: '天亮以后，田老伯在义庄门口捡到一只朱砂碟。\n\n晏家老店里，那位喜神面朝墙站着，额头上什么也没有。\n她的身边，靠墙多立了一个人，包着头帕，脸朝着墙。\n\n后来，沅水边跑山的人都说：\n夜里有人喊你，千万莫应。\n应了一声，就要陪它走一程。' });
+  }
+  async function guanOn(S, i) {
+    const T = [
+      '一口薄皮棺材，盖子上用粉笔写着：「无名氏　六月十二　沅水边捞起」。',
+      '棺材头上贴着一张纸：「寄存　候家属来领」。\n纸已经黄透了，没有人来领。',
+      '这口棺材是空的，盖子斜搁着，里头铺着一层石灰。\n石灰上，有一个人躺过的印子。',
+      S.ent('g4').open ? '盖子挪开了一条缝。缝里黑漆漆的。' : '最里头这口，盖子钉得死死的。\n你把耳朵凑过去——里面，好像有水声。'];
+    await S.narr(T[i]);
+  }
+  async function tianOn(S) {
+    S.face('tian', 'pl');
+    if (S.f.tianOk) return S.say('田老伯', cycle(S, '_ti', ['钥匙用完了搁在香案上。快去，香不等人。', '回去的路上，莫回头。', '滕老倌……唉。']));
+    if (S.once('tianWake')) { S.bubble('tian', '?', 1000); await S.narr('老人坐在椅子上打盹，烟杆还叼在嘴里。你推了推，他一下子睁开了眼。'); }
+    await S.say('田老伯', ['……哪个？大半夜的，跑到义庄来？', '晏家店里的？赶尸的那个滕老倌，是住你们那里？']);
+    await S.say('石满仓', '老伯！喜神的符掉了，师傅烧得说胡话——我要一点朱砂补符！');
+    S.bubble('tian', '!', 900);
+    await S.say('田老伯', ['符掉了？！', '……莫慌。铃锣镇得住一炷香，你还来得及。']);
+    await S.say('田老伯', ['我年轻时也给赶尸的打过下手。说出来你莫笑——我抬过竹竿。', '有的喜神是自己走的，有的……是人抬的。哪个是哪个，赶尸的不说，我也不问。', '可有一样是真的：画符的时候，符头要写喜神的真名姓。名字写错了，符就贴不住。']);
+    await S.say('田老伯', ['朱砂在隔壁祠堂的香案上，红漆匣子里。钥匙你拿去。', '用无根水调——檐下接的雨水。莫用井水。']);
+    S.f.tianOk = true;
+    S.goal('去隔壁祠堂的香案上取朱砂');
+  }
+  async function xianganOn(S) {
+    if (S.f.ph !== 'fu') return S.narr('香案上供着祖宗牌位，香炉里的灰积得满满的。');
+    if (S.has('zhusha')) return S.narr('红漆匣子盖得好好的。你又冲牌位作了个揖。');
+    if (!S.f.tianOk) return S.narr('香案上摆着一只红漆小匣子，挂着一把小铜锁。\n匣子缝里，透出一点暗红色的粉末。\n——没有守祠人的话，不好动祖宗的东西。隔壁义庄里，好像有人。');
+    S.give('zhusha');
+    await S.narr('钥匙「咔」地拧开了匣子。里头满满一匣辰砂，红得发紫。\n你冲着牌位作了三个揖，包了一小包。');
+    fuGoal(S); S.cp('fu');
+  }
+  async function redraw(S) {
+    if (!S.has('zhusha') || !S.has('yudie')) {
+      const miss = [];
+      if (!S.has('zhusha')) miss.push('朱砂碟是空的——朱砂得去镇上讨。老板娘说过，祠堂守义庄的田老伯那儿有。');
+      if (!S.has('yudie')) miss.push('朱砂要用水调开。口诀说，要「无根水」……');
+      await S.narr('她面朝着墙，后脑勺上的头发还在往下滴水。');
+      return S.narr(miss.join('\n'));
+    }
+    await S.narr('你把朱砂抖进碟子，用符笔慢慢调开。红得发紫，像一碟血。');
+    if (S.f.water === 'well') {
+      S.take('yudie'); S.give('zhudie', true); S.f.water = null; S.sfx('drip');
+      await S.narr('笔尖一落下去，朱砂就沉了底，怎么也化不开——像碟子底下有什么东西拽着它。');
+      await S.think('井水……口诀说，井水自地底出，有根，拴魂。\n得用檐下接的雨水。');
+      fuGoal(S); return;
+    }
+    const r = await S.ask('符头上，要写喜神的名姓。写什么？', ['吴氏', '秀姑', '滕秀姑']);
+    S.sfx('paper');
+    if (r !== 2) {
+      await S.narr(`你一笔一笔写下「${['吴氏', '秀姑'][r]}」，把符贴上她的额头。`);
+      await S.wait(500); S.sfx('whisper');
+      await S.narr('符在她额头上停了一停，像被一口气吹着，轻飘飘地，又落了下来。');
+      await S.think(r === 0 ? '名不真，符不灵……她不是吴氏？' : '光有名字不行……口诀说的是「名姓」。她姓什么？');
+      if (!S.has('yinsuo')) await S.think('幺儿一直跟着师傅……他也许知道。他在后院柴房里。');
+      return;
+    }
+    await fuDone(S);
+  }
+
+  /* ================= 天亮：滕师傅的秘密 ================= */
+  async function fuDone(S) {
+    S.clearTimer();
+    await S.narr('你屏住气，一笔一笔，在符头上写下三个字：\n\n「滕　秀　姑」');
+    S.ent('xs3_k').spr = '@xs3'; S.sfx('chime'); S.fx('flash');
+    await S.narr('符一贴上，就牢牢地吸在了她的额头上。\n她的肩膀，像是松了一口气似的，慢慢地塌了下去。');
+    S.f.ph = 'dawn'; S.norun(false); S.plr(null); light(S);
+    S.ent('huotang').light = { r: 4.6, col: 'rgba(255,140,60,.24)', flick: true };
+    await S.wait(600);
+    S.place('teng_k', 11, 6, 0); S.show('teng_k');
+    S.sfx('step');
+    await S.narr('身后有人咳了一声。');
+    S.face('pl', 'teng_k');
+    await S.say('滕师傅', '……你写的是「滕秀姑」。');
+    if (S.has('yinsuo')) { S.take('yinsuo'); await S.narr('你把那把银锁递过去。他接在手里，攥着，攥了很久。'); }
+    await S.say('滕师傅', ['她不姓吴。吴，是她娘的姓。', '她是我闺女。']);
+    await S.narr('火塘里的柴塌下去一块，火星子飞起来，又灭了。');
+    await S.say('滕师傅', ['十四岁那年，她娘做主，把她许给了辰州一家开染坊的。我常年在外头跑，一年见不着她一回。', '今年六月，沅水发大水。她从染坊后头的码头上……跳下去了。', '十七岁。']);
+    await S.say('滕师傅', ['投河的，不赶。三赶三不赶，祖师爷传下来的规矩。魂随水去了，铃摇不醒，符镇不住。', '这话，我教幺儿教了一百遍。', '……可我去收她的时候，就摇了一下铃。']);
+    await S.say('滕师傅', '她站起来了。');
+    await S.narr('他的声音哑得不成样子。');
+    await S.say('滕师傅', ['不是我赶她。是她自己要回家。', '账簿上，我写了「吴氏」。我不敢写「滕」。写上了……就是真的了。就是我滕某人的闺女，真的没了。', '名不真，符不灵。风一吹，就掉了。……吓着你了，后生。']);
+    const r = await S.ask('「吓着你了，后生。」', ['「师傅，送她回去吧。我跟你走一趟。」', '「……她一路，都是自己跟着走的？」']);
+    if (r === 1) await S.say('滕师傅', ['一步一步，四百多里。', '我摇铃，她就跟着。我停下，她就站着等我。……跟她小时候一个样。']);
+    await S.say('滕师傅', ['她娘在麻阳。我捎了信去，说秀姑……要回来了。', '我这身子，怕是走不到了。后生，明天夜里，你替我敲锣，把她送到寨门口。']);
+    await S.say('石满仓', '我跟你去。麻阳，我本来就要去的。');
+    S.sfx('bell'); await S.wait(300);
+    await S.narr('后院里，那只大公鸡扯着嗓子，叫了头一遍。');
+    await S.fade(1, 1200);
+    await S.card('第二天夜里', '', '天亮了，又黑了。雨停了。\n\n石满仓把货担寄在晏家老店，\n提着铜锣，\n往麻阳去。');
+    await S.go('zhaikou', 3, 4, 2);
+  }
+
+  /* ================= 终幕：寨口 ================= */
+  async function raiseOn(S) {
+    if (S.f.ph !== 'home') return S.narr('她跟在你身后，一跳，一跳。斗笠上的露水，一滴一滴落下来。');
+    S.face('pl', 'xs3_z');
+    if (!S.f.risen) {
+      const v = await S.keypad('叫喜神起身（铃／锣）', ['铃', '锣'], 2);
+      if (v == null) return;
+      await sound(S, v);
+      if (v !== '锣铃') { await S.narr('她一动不动。\n……口诀上，「起身」是怎么敲的？'); return; }
+      S.f.risen = true; S.face('xs3_z', 'pl'); S.bubble('xs3_z', '…', 1000);
+      await S.narr('锣一声，铃一声。\n她的斗笠轻轻抬了一抬——站直了。');
+    }
+    const v2 = await S.keypad('叫喜神跟上（铃／锣）', ['铃', '锣'], 3);
+    if (v2 == null) return;
+    await sound(S, v2);
+    if (v2 !== '铃铃锣') { await S.narr('她原地跳了一下，又站住了。\n……不对。「随行」，是铃在前，还是锣在前？'); return; }
+    S.f.ph = 'walk';
+    S.follow('xs3_z', true);
+    await S.narr('铃、铃、锣——\n她跟上来了。一跳，一跳，脚尖不沾泥。');
+    await S.say('滕师傅', '……走吧。我在后头慢慢跟着。');
+    S.hide('teng_z');
+    S.goal('敲着锣，领秀姑过风雨桥，送到寨门口');
+    S.cp('zk');
+  }
+  function zkTick(S, dt) {
+    if (S.f.ph !== 'walk' || W.busy) return;
+    S.f._zt = (S.f._zt || 0) - dt;
+    if (S.f._zt <= 0 && S.pl.mv) { S.f._zc = ((S.f._zc || 0) + 1) % 3; S.sfx(S.f._zc ? 'bell' : 'thud'); S.f._zt = .7; }
+  }
+  async function finale(S) {
+    S.f.ph = 'end';
+    S.follow('xs3_z', false);
+    S.place('mom', 26, 4, 1); S.ent('mom').alpha = 0;
+    S.focus(24, 4);
+    await S.alpha('mom', 1, 900);
+    await S.narr('寨门底下，站着一个人，手里提着一盏灯笼。');
+    await S.narr('是个上了年纪的妇人，包着青头帕，腰上系着围裙。\n她不知在这里站了多久了，裤脚全叫露水打湿了。');
+    S.place('teng_z', 18, 4, 2);
+    await S.walk('teng_z', [20, 4], 1.6);
+    await S.say('妇人', '……是秀姑么？');
+    await S.say('滕师傅', '……是。我把她领回来了。');
+    await S.walk('xs3_z', [25, 5], 1.4); S.face('xs3_z', 3); S.face('mom', 0);
+    await S.narr('妇人提着灯笼，走到喜神跟前。\n她没有哭。她抬起手，把那顶湿透的斗笠，轻轻地扶正了。');
+    await S.say('妇人', ['秀姑，娘在这里。', '到屋了。']);
+    S.face('teng_z', 'pl');
+    await S.say('滕师傅', ['寨子里的老规矩……', '离家的人回来，要有人在寨门口喊她，要有人替她应。应了，魂才认得路，才肯进屋。', '……后生。我喉咙发不出声了。你替她应一声。']);
+    for (;;) {
+      S.sfx('whisper');
+      await S.say('妇人', '秀姑——回来了没有——', { style: 'big' });
+      const r = await S.ask('「秀姑——回来了没有——」', ['「回来了——」', '（不出声）']);
+      if (r === 0) break;
+      await S.narr('风从寨门底下穿过去。没有人应。');
+      await S.say('滕师傅', '喊的是她，不是你。替她应，不碍事。');
+    }
+    await S.say('石满仓', '回来了——', { style: 'big' });
+    await S.say('妇人', '秀姑——到屋了没有——', { style: 'big' });
+    await S.say('石满仓', '到屋了——', { style: 'big' });
+    S.sfx('chime');
+    S.ent('xs3_z').spr = '@xs3n';
+    await S.narr('喜神额头上的黄符，轻轻地，自己飘落了下来。');
+    await S.narr('她的身子慢慢软了下去，靠在了娘的肩膀上。\n像一个走了很远很远的路、终于可以睡一觉的孩子。');
+    await S.alpha('xs3_z', .25, 1600);
+    await S.say('滕师傅', '……秀姑。爹送你到屋了。', { style: 'whisper' });
+    await S.fade(1, 1400);
+    await S.card('后来', '', '秀姑埋在了麻阳寨子的后山上，朝着沅水的那一面。\n\n滕师傅没有再回辰州。\n他把铜铃和铜锣交给了幺儿，\n在寨子里住了下来。一个秋天，又一个秋天。');
+    await S.end({ title: '第四夜　完', text: '第二年秋天，石满仓又挑着货担，走那条沅水边的山路。\n\n夜半，身后响起了锣声。他照老规矩躲进石窝里，面朝山壁。\n锣声后头，跟着一串铃——\n摇得有些乱，有些急，是个半大孩子的手。\n\n他没有回头。\n只在心里，替那些回家的人，轻轻地应了一声：\n「回来了。」' });
+  }
+})();
