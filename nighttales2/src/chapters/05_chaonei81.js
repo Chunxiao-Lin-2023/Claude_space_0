@@ -13,8 +13,8 @@
   async function busEvent(S) {
     S.f.busSeen = true;
     await S.narr('你正要往豁口里钻，身后的大街上，传来一阵发动机的声音。');
-    S.focus(19, 3);
-    const bus = S.ent('bus'); S.place('bus', -4, 4, 2); bus.open = false; bus.s.face = false;
+    S.focus(16, 4);
+    const bus = S.ent('bus'); S.place('bus', -4, 5, 2); bus.open = false; bus.s.face = false;
     S.sfx('car');
     await S.walk('bus', 'r'.repeat(22), 7);
     S.sfx('brake'); S.shake(250, 1);
@@ -35,11 +35,11 @@
     S.face('liu', 'pl');
     await S.say('大刘', ['……你、你看见了吧？', '帖子里说的就是这个。夜班车每回到这站都停，开门，没人下。', '司机？我哪看得清司机。']);
     await S.think('车开走的时候，最后一扇车窗里，好像有一张白白的脸贴着玻璃。\n……大概是看错了。');
-    S.goal('从西边围墙的豁口钻进院子');
+    S.goal('进楼里看看');
   }
   async function gapOn(S) {
     if (!S.f.talked) return S.narr('围墙塌了一个豁口，黑洞洞的。');
-    if (!S.f.busSeen) return busEvent(S);
+    if (!S.f.busSeen) { await busEvent(S); await S.narr('你深吸一口气，猫着腰钻进了豁口。'); return S.go('hall', 10, 9, 3); }
     if (S.f.gotReply && !S.f.done) await S.narr('天边已经有点发灰了。\n你攥紧那封信，又一次钻进了豁口。');
     else if (S.once('gapIn')) await S.narr('你猫着腰，从豁口钻了进去。\n砖茬子刮住了外套，「嗤啦」一声。');
     await S.go('hall', 10, 9, 3);
@@ -118,38 +118,30 @@
     S.hidePlayer(true);
     const g = S.ent('wan_c');
     if (g.hidden) { S.place('wan_c', 1, 8, 2); g.alpha = 1; }
-    S.dark(.93); S.plr(.6);
+    S.dark(.9); S.plr(.6);
     await S.narr('你钻进衣柜，轻轻把柜门带上。\n樟脑味呛得眼睛发酸。你屏住气，从门缝里往外看——');
     S.sfx('step');
-    if (id === 'wardB') {
-      S.focus(9, 7);
-      await S.walk('wan_c', [11, 8], 1.6);
-      S.face('wan_c', 3); S.sfx('heart');
-      await S.narr('她在这间屋的门口停住了。\n门缝太窄，你只看得见一角蓝布衣襟，和一只黑色的鞋尖。');
-      await S.wait(1200); S.sfx('heart');
-      await S.say('？？？', '……有我的信吗？', { style: 'whisper' });
-      await S.wait(800);
-      await S.walk('wan_c', [3, 8], 1.6);
-      S.focus(4, 4);
-      await S.walk('wan_c', [4, 2], 1.6);
-    } else {
-      S.focus(3, 5);
-      await S.walk('wan_c', [3, 7], 1.6);
-      await S.walk('wan_c', [2, 3], 1.6);
-      S.face('wan_c', 1); S.sfx('heart');
-      await S.narr('她走进屋来，在衣柜跟前站住了。\n隔着一层木板，你听见她的呼吸——不，你什么也没听见。她不呼吸。');
-      await S.wait(1300); S.sfx('heart');
-      await S.say('？？？', '……有我的信吗？', { style: 'whisper' });
-      await S.wait(900);
-      await S.walk('wan_c', [4, 2], 1.6);
-    }
+    const dx = id === 'wardA' ? 3 : 8;   // 这间屋的门 / 窗所在的列
+    S.focus(dx, 6);
+    await S.walk('wan_c', [dx, 7], 1.6);
+    S.face('wan_c', 3); S.sfx('heart');
+    await S.narr('脚步声在这间屋的门口停住了。\n门缝太窄，你只看得见一角蓝布衣襟，和一只黑色的布鞋尖。');
+    await S.wait(1000);
+    S.focus(dx, 4);
+    await S.walk('wan_c', [dx, 4], 1.6);
+    S.face('wan_c', id === 'wardA' ? 1 : 1); S.sfx('heart');
+    await S.narr('她走进屋来，离衣柜只有两步远。\n隔着一层木板，你听见她的呼吸——不，你什么也没听见。她不呼吸。');
+    await S.wait(1200); S.sfx('heart');
+    await S.say('？？？', '……有我的信吗？', { style: 'whisper' });
+    await S.wait(900);
+    await S.walk('wan_c', [dx, 2], 1.6);
     S.face('wan_c', 3);
     await S.narr('她走到窗户跟前，站住了。\n脸贴着玻璃，一动也不动，朝着院门的方向望。');
     await S.wait(1500);
     await S.narr('望了很久，很久。');
     S.sfx('whisper');
     await S.alpha('wan_c', 0, 1400);
-    S.ent('winA').s.fog = true;
+    S.ent(id === 'wardA' ? 'winA' : 'winB').s.fog = true;
     await S.wait(600);
     S.dark(null); S.plr(null); S.focus(null);
     S.hidePlayer(false); S.sfx('open');
@@ -161,12 +153,34 @@
   }
   const wardOn = id => async S => {
     if (S.f.steps && !S.f.stepsDone) return hideIn(S, id);
-    if (id === 'wardA') return S.narr('一只老式的大衣柜，柜门上镶的镜子早就没了。\n里面挂着一件阴丹士林蓝的旗袍。料子洗得发白，领口的盘扣一颗不少。');
+    if (id === 'wardB') return S.narr('一只老式的大衣柜，柜门上镶的镜子早就没了。\n里面挂着一件阴丹士林蓝的旗袍。料子洗得发白，领口的盘扣一颗不少。');
     return S.narr('一只掉了漆的大衣柜，柜门关不严。\n里面塞着几件旧棉袄，一股樟脑丸的味儿。');
   };
 
   /* ================= 阁楼：拼起来的故事 ================= */
-  function startAttic(S) { S.timer(S.f.atticLeft || ATTIC_T, '阁楼', atticBad); }
+  /* 阁楼里待久了会「魔怔」：隐藏的倒计时，只靠旁白提醒；离开阁楼时暂停，再上来至少还有 45 秒 */
+  function startAttic(S) { if (S.f.solved) return; S.timer(Math.max(45, S.f.atticLeft || ATTIC_T), null, atticBad); }
+  function pauseAttic(S) { if (W.timer && !S.f.solved) S.f.atticLeft = W.timer.left; S.clearTimer(); }
+  function atticTick(S) {
+    if (S.f.solved || !W.timer || W.busy) return;
+    if (W.timer.left < 75 && S.once('aw1')) S.after(0, async S => {
+      S.sfx('whisper');
+      await S.think('……你打了个长长的哈欠。\n奇怪，刚才还紧张得手心冒汗，现在却觉得这上头挺安静的，安静得想坐下来歇一会儿。');
+      await sms(S, '你还在阁楼上？？我听人说那上头待久了人会发懵，赶紧找完赶紧下来！');
+    });
+    if (W.timer.left < 32 && S.once('aw2')) S.after(0, async S => {
+      const w = S.ent('wan_a'); w.alpha = 0; S.show('wan_a'); await S.alpha('wan_a', .22, 900);
+      S.sfx('heart');
+      await S.narr('圆窗那边的月光里，好像多了一道很淡很淡的影子。\n你揉了揉眼睛。眼皮沉得像灌了铅。');
+      S.goal('别在阁楼上待太久——快把故事对上，或者先下去透口气');
+    });
+  }
+  async function atticDown(S) {
+    pauseAttic(S);
+    S.hide('wan_a');
+    if (!S.f.solved && S.once('atticOut')) await S.narr('一下到走廊，脑子立刻清醒了不少。\n……刚才在上头，你差点就坐下了。');
+    await S.go('floor2', 13, 7, 1);
+  }
   async function atticBad(S) {
     if (S.map !== 'attic' || S.f.solved) return;
     S.amb('none');
@@ -252,31 +266,31 @@
     S.sfx('chime');
     S.dark(.55); S.ent('tree').s.bud = true;
     await S.narr('天边透出了一点灰白。\n槐树光秃秃的枝杈上，不知什么时候，冒出了几粒针尖大的绿芽。');
-    await S.walk('wan_y', [8, 8], 1.4);
+    await S.walk('wan_y', [14, 7], 1.4);
     await S.alpha('wan_y', 0, 1600);
     S.f.done = true;
     await S.fade(1, 1200);
     await S.card('天亮了', '', '你从豁口钻出来的时候，\n大刘靠在路灯杆底下，睡着了。');
     S.dark(.15, 'hutong');
-    S.hide('ye'); S.place('liu', 7, 3, 0);
-    await S.go('hutong', 20, 2, 0, { fade: false });
+    S.place('liu', 11, 3, 2); S.ent('liu').s.sleep = true; S.place('ye', 25, 3, 1);
+    await S.go('hutong', 14, 3, 2, { fade: false });
     S.amb('wind');
     await S.fade(0, 1000);
     await dawnBus(S);
   }
   async function dawnBus(S) {
-    S.focus(19, 3);
+    S.focus(16, 4);
     await S.narr('朝内大街上，头班车开过来了。');
-    const bus = S.ent('bus'); S.place('bus', -4, 4, 2); bus.open = false; bus.s.face = false;
+    const bus = S.ent('bus'); S.place('bus', -4, 5, 2); bus.open = false; bus.s.face = false;
     S.sfx('car');
     await S.walk('bus', 'r'.repeat(22), 7);
     S.sfx('brake');
     await S.wait(400);
     bus.open = true; S.sfx('open');
     await S.narr('它在81号门口停下，开了门。\n还是没有人下车。');
-    const w = S.ent('wan_h'); S.place('wan_h', 13, 2, 0); w.alpha = 0;
+    const w = S.ent('wan_h'); S.place('wan_h', 14, 2, 2); w.alpha = 0;
     await S.alpha('wan_h', .55, 900);
-    await S.walk('wan_h', [[13, 3], [20, 3]], 2.2);
+    await S.walk('wan_h', [[18, 2], [18, 4]], 2.2);
     S.face('wan_h', 0);
     await S.alpha('wan_h', 0, 700);
     await S.wait(500);
@@ -286,6 +300,7 @@
     await S.walk('bus', 'r'.repeat(14), 7);
     S.hide('bus'); S.focus(null);
     await S.wait(600);
+    S.ent('liu').s.sleep = false; S.face('liu', 'pl');
     await S.say('大刘', ['……嗯？天亮了？你出来啦？', '拍着啥了没？给我看看！']);
     await S.think('你看了一眼相机。里面一张照片也没有。\n……也好。');
     await S.fade(1, 1400);
