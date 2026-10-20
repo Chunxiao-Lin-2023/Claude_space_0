@@ -42,7 +42,9 @@ const UI = {
     els[i].focus(); els[i].scrollIntoView({ block: 'nearest' }); return true;
   },
   toast(t) {
-    const el = document.createElement('div'); el.className = 'toast'; el.textContent = t; $('toasts').appendChild(el);
+    const el = document.createElement('div'); el.className = 'toast'; el.textContent = t;
+    if (String(t).startsWith('目标：')) { el.dataset.k = 'goal'; $('toasts').querySelectorAll('[data-k="goal"]').forEach(x => x.remove()); }   // 新目标替换旧目标，不叠成几行
+    $('toasts').appendChild(el);
     while ($('toasts').children.length > 3) $('toasts').firstChild.remove();
     setTimeout(() => el.remove(), 2600);
   },
@@ -76,7 +78,7 @@ const UI = {
       c.appendChild(cv2);
       const meta = document.createElement('div'); meta.className = 'meta';
       const nAll = Object.keys(ch.notes || {}), nGot = nAll.filter(k => gotN.includes(ch.id + ':' + k)).length;
-      meta.innerHTML = `<div class="no">第${'一二三四五六七八九十'[i] || i + 1}夜 · ${esc(ch.origin || '')}</div><div class="tt">${esc(ch.title)}</div><div class="tl">${esc(ch.sub || '')}${nAll.length && (nGot || done.includes(ch.id)) ? ` · 笔记 ${nGot}/${nAll.length}` : ''}</div>`;
+      meta.innerHTML = `<div class="no">第${'一二三四五六七八九十'[(ch.n || i + 1) - 1] || ch.n || i + 1}夜 · ${esc(ch.origin || '')}</div><div class="tt">${esc(ch.title)}</div><div class="tl">${esc(ch.sub || '')}${nAll.length && (nGot || done.includes(ch.id)) ? ` · 笔记 ${nGot}/${nAll.length}` : ''}</div>`;
       c.appendChild(meta);
       if (done.includes(ch.id)) { const b = document.createElement('div'); b.className = 'badge done'; b.textContent = '已通关'; c.appendChild(b); }
       else if (hasCp) { const b = document.createElement('div'); b.className = 'badge cp'; b.textContent = '有存档'; c.appendChild(b); }
@@ -104,7 +106,7 @@ const UI = {
       const ok = done.includes(ch.id);
       const ns = Object.entries(ch.notes || {}); const have = ns.filter(([k]) => got.includes(ch.id + ':' + k));
       const es = Object.entries(ch.endings || {}), eh = es.filter(([k]) => ends.includes(ch.id + ':' + k));
-      d.innerHTML = `<h3>第${'一二三四五六七八九十'[i]}夜　${esc(ch.title)}　<span style="font-size:12px;color:var(--dim)">${esc(ch.origin || '')}</span></h3>` +
+      d.innerHTML = `<h3>第${'一二三四五六七八九十'[(ch.n || i + 1) - 1] || ch.n || i + 1}夜　${esc(ch.title)}　<span style="font-size:12px;color:var(--dim)">${esc(ch.origin || '')}</span></h3>` +
         (ok ? `<div class="legend">${esc(ch.legend || '')}</div>` : `<div class="lock">通关后解锁</div>`) +
         (ns.length ? `<div class="nlist">笔记 ${have.length}/${ns.length}${have.length ? '：' + have.map(([k, n]) => esc(n.title)).join('、') : ''}</div>` : '') +
         (es.length ? `<div class="nlist">结局 ${eh.length}/${es.length}${eh.length ? '：' + eh.map(([k, n]) => esc(n)).join('、') : ''}</div>` : '');
@@ -156,7 +158,7 @@ const UI = {
     if (cd) { if (cd.id !== this._cardId) { this._cardId = cd.id; const C = $('card'); C.classList.remove('hidden'); C.querySelector('.t').textContent = cd.title; C.querySelector('.s').textContent = cd.sub; C.querySelector('.b').textContent = cd.body; C.style.animation = 'none'; void C.offsetWidth; C.style.animation = ''; } }
     else if (this._cardId !== -1) { $('card').classList.add('hidden'); this._cardId = -1; }
     const nt = W.note;
-    if (nt) { if (nt.id !== this._noteId) { this._noteId = nt.id; const N = $('note'); N.classList.remove('hidden'); N.querySelector('h3').textContent = nt.title; N.querySelector('.tx').textContent = nt.text; N.querySelector('.paper').scrollTop = 0; } }
+    if (nt) { if (nt.id !== this._noteId) { this._noteId = nt.id; const N = $('note'); N.classList.remove('hidden'); N.querySelector('h3').textContent = nt.title; N.querySelector('.tx').textContent = nt.text; N.querySelector('.paper').scrollTop = 0; noteMore(N); } }
     else if (this._noteId !== -1 && !this._localNote) { $('note').classList.add('hidden'); this._noteId = -1; }
     const kp = W.keypad;
     if (kp) {
@@ -185,9 +187,11 @@ const UI = {
   }
 };
 function showLocalNote(n) {
-  UI._localNote = true; const N = $('note'); N.classList.remove('hidden'); N.querySelector('h3').textContent = n.title; N.querySelector('.tx').textContent = n.text;
+  UI._localNote = true; const N = $('note'); N.classList.remove('hidden'); N.querySelector('h3').textContent = n.title; N.querySelector('.tx').textContent = n.text; N.querySelector('.paper').scrollTop = 0; noteMore(N);
   UI.modal = 'note'; if (W && NET.role === 'solo') W.paused = true;
 }
+/* 笔记太长时提示可以滑动（纸面本身可滚动） */
+function noteMore(N) { const P = N.querySelector('.paper'), K = N.querySelector('.k'); requestAnimationFrame(() => { K.textContent = P.scrollHeight > P.clientHeight + 4 ? '— 下面还有 · 滑动查看 · 点击合上 —' : '— 点击合上 —'; }); }
 function closeLocalNote() { UI._localNote = false; $('note').classList.add('hidden'); UI.modal = null; UI._noteId = -1; if (W) W.paused = false; }
 
 /* ---------- 章节缩略图 ---------- */

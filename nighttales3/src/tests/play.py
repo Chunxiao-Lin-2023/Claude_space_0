@@ -9,6 +9,7 @@
   ['use', 实体id 或 [x,y], [选项...]]   传送到实体旁、面向它并调查；自动翻完对话，遇到选项按顺序选（默认 0）
   ['step', x, y, [选项...]]             传送到格子并触发踩踏事件（出口、机关）
   ['wait', 毫秒]  ['js', 代码, [选项]]  ['expect', 返回真值的 JS]  ['shot', 名字]
+  ['retry']                             上一步死亡后从检查点重来（只有紧跟 retry 的那一步允许死亡）
 密码盘（S.keypad）也从选项列表里取一个字符串（逐字符按键）或一个列表（每项一个键，如 ["10","开"]）。
 """
 import os, sys, json, time, threading, http.server, socketserver, functools
@@ -83,7 +84,8 @@ def run_chapter(page, cid, steps, shots=None):
         ok = f"{now['x']},{now['y']}" in cells or (pre.get('cands') and any(c in cells for c in pre['cands']))
         if now['map'] == pre['map'] and not ok:
             WARN.append(f"{cid}: 从 {tuple(pre['xy'])} 走不到 {st[:3] if st[0]=='step' else st[:2]} -> ({now['x']},{now['y']}) on {now['map']}（可达 {len(cells)} 格；测试是传送过去的，真人可能被堵住）")
-    for st in steps[i0:]:
+    rest = steps[i0:]
+    for si, st in enumerate(rest):
         kind = st[0]
         if kind in ('use', 'step'):
             pre = page.evaluate("window.__reach()")
@@ -109,13 +111,15 @@ def run_chapter(page, cid, steps, shots=None):
             if shots:
                 shot_n += 1; page.screenshot(path=os.path.join(shots, f'{cid}_{shot_n:02d}_{st[1]}.png'))
             continue
+        elif kind == 'retry':   # 死亡后从检查点重来（上一步允许以死亡结束）
+            page.wait_for_timeout(1200); page.evaluate("window.__dbg.retryFromCP()"); page.wait_for_timeout(400); r = auto()
         elif kind == 'expect':
             v = page.evaluate(st[1])
             if not v: raise AssertionError(f'{cid}: expect failed: {st[1]}')
             continue
         state = page.evaluate("(() => { const W = window.__dbg.W; return W ? {map: W.mapId, x: W.pl.x, y: W.pl.y, goal: W.goal, end: W.endScreen && W.endScreen.kind, inv: W.inv} : null })()")
         log.append((st, r, state))
-        if state and state['end'] == 'die':
+        if state and state['end'] == 'die' and not (si + 1 < len(rest) and rest[si + 1][0] == 'retry'):
             raise AssertionError(f'{cid}: died at step {st} -> {state}')
     end = page.evaluate("window.__dbg.W && window.__dbg.W.endScreen && window.__dbg.W.endScreen.kind")
     if shots:

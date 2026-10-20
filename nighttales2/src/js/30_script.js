@@ -143,6 +143,11 @@ const SAPI = {
   /* o.during=true：对话/密码盘打开时也照样计时，到点会打断当前对话 */
   timer(sec, label, fn, o = {}) { W.timer = { left: sec, label, fn, during: !!o.during }; },
   clearTimer() { W.timer = null; },
+  /* 倒计时剩余秒数（没有计时为 null）；timerAdd 加减秒数（负数=扣时间，最少留 0.1 秒） */
+  get timerLeft() { return W.timer ? W.timer.left : null; },
+  timerAdd(sec) { if (W.timer) W.timer.left = Math.max(.1, W.timer.left + sec); },
+  /* 在 tick 等非剧本位置立刻开始一段剧本（等同引擎内部 runScript） */
+  run(fn) { runScript(fn); },
   focus(x, y) { W.camFocus = x == null ? null : [x, y]; },
   hidePlayer(b = true) { W.pl.hidden = b; },
   wear(spr) { W.pl.spr = spr; },
