@@ -220,7 +220,7 @@ BX.register({
     function layout() {
       const W = cv.w, br = bar.getBoundingClientRect(), barH = br.height ? br.height + 18 : 70;
       const Ha = Math.max(200, cv.h - barH), compact = Ha < 440;
-      const chD = Math.min((Ha - 70) / 2.9, W / 5 * 1.4, 150), cwD = chD / 1.4;
+      const chD = Math.min((Ha - 70) / 2.9, W / (W < 520 ? 6.5 : 5) * 1.4, 150), cwD = chD / 1.4;
       return {W, Ha, compact, chD, cwD};
     }
     function frame(dt) {
