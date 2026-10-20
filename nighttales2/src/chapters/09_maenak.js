@@ -465,13 +465,13 @@
               S.freeze('nak_c', true);
               await S.narr('前面的水里「哗啦」一声——\n她从运河里站了起来，浑身滴着水，挡在去寺里的路上。');
               await S.think('绕过去！……或者，路边那丛艾纳香。');
-              S.freeze('nak_c', false); S.chase('nak_c', { spd: 2.8, catch: caughtC });
+              S.freeze('nak_c', false); S.chase('nak_c', { spd: 2.6, catch: caughtC });   // 刚从水里爬出来，拖着步子，比身后追时略慢
             });
             return;
           }
           if (!(S.f._csp > 0)) return;
           S.f._csp -= dt;
-          if (S.f._csp <= 0) { const [x, y] = S.f._cpos || [4, 4]; S.place('nak_c', x, y, 2); S.ent('nak_c').alpha = 1; S.sfx('whisper'); S.bubble('nak_c', '…', 1500); S.chase('nak_c', { spd: 2.8, catch: caughtC }); }
+          if (S.f._csp <= 0) { const [x, y] = S.f._cpos || [4, 4]; S.place('nak_c', x, y, 2); S.ent('nak_c').alpha = 1; S.sfx('whisper'); S.bubble('nak_c', '…', 1500); S.chase('nak_c', { spd: 2.8, wait: 1, catch: caughtC }); }
         }
       },
       /* ---------------- 高脚屋里 ---------------- */

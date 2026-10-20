@@ -21,9 +21,12 @@ SOL = [
     ['use', 'hosho'],
     ['expect', "window.__dbg.W.inv.includes('towel')"],
     ['use', 'kuraD', ['1234']],
+    ['use', 'kuraD', ['0814']],            # 差一点的号码：针对性提示
+    ['expect', 'window.__dbg.W.f.lockMiss === 2'],
     ['use', 'kuraD', ['0813']],
     ['expect', "window.__dbg.W.mapId === 'kura'"],
     ['use', 'tana'], ['use', 'chest'],
+    ['expect', "window.__dbg.W.cp && window.__dbg.W.cp.name === 'bell'"],
     ['shot', 'kura'],
     ['step', 5, 7],
     ['use', 'genkan'],
@@ -49,7 +52,10 @@ SOL = [
     ['shot', 'blind'],
     ['step', 3, 10],                       # 走错一次：死路
     ['expect', 'window.__dbg.W.pl.x === 5 && window.__dbg.W.pl.y === 12'],
-    ['step', 11, 12], ['step', 13, 7], ['step', 17, 10],
+    ['step', 11, 12],
+    ['step', 13, 14],                      # 再走错一次：风铃往下
+    ['expect', 'window.__dbg.W.pl.x === 11 && window.__dbg.W.pl.y === 13 && window.__dbg.W.f.dead === 2'],
+    ['step', 13, 7], ['step', 17, 10],
     ['use', 'shota_i', [0]],
     ['expect', 'window.__dbg.W.f.got'],
     ['step', 6, 16],
@@ -58,4 +64,5 @@ SOL = [
     ['step', 16, 6, [1]],                  # 望远镜：不看
     ['shot', 'home'],
     ['use', 'genkan', [0]],
+    ['expect', "(window.__dbg.store.get('ends', []) || []).includes('kunekune:home')"],
 ]

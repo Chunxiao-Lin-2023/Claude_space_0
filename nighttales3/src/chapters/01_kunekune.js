@@ -46,16 +46,30 @@
   function gazeTick(S, dt) {
     const m = curMap(); if (!m) return;
     const f = S.f, h = m.ents.find(e => e.hz);
-    if (h) { h.px = W.pl.px; h.py = W.pl.py; h.s.blind = !!f.blind; h.s.in = !m.def.field; h.s.cv = f.quiet ? 0 : (m.def.cicV ?? 1); }
+    if (h) { h.px = W.pl.px; h.py = W.pl.py; h.s.blind = !!f.blind; h.s.in = !m.def.field; h.s.cv = f.quiet ? 0 : (m.def.cicV ?? 1); h.s.dusk = f.dusk ? 1 : 0; }
     if (m.id === 'house') { const u = m.ents.find(e => e.id === 'shinji'); if (u) u.ox = f.shStill ? 0 : Math.round(Math.sin(W.t * 1.9) * 1.4); }
     if (!W.busy && !f.lock) {
       const r = m.def.field ? lookRate(m, f) : 0;
       f.gz = clamp((f.gz || 0) + (r > 0 ? r * dt : -.32 * dt), 0, 1.05);
+      /* 正午还没听外婆讲规矩：看不死，翔太会喊你过去 */
+      if (f.phase === 'noon' && !f.sawIt && f.gz > .5) { f.gz = .5; if (!f._noonCall) { f._noonCall = 1; runScript(noonCall); } }
       if (f.gz > .3) { f._hb = (f._hb || 0) - dt; if (f._hb <= 0) { f._hb = 1.1 - f.gz * .6; S.sfx('heart'); } }
+      /* 耳鸣：越看得清楚，越尖、越响 */
+      if (f.gz > .4) { f._er = (f._er || 0) - dt; if (f._er <= 0) { f._er = .55; const hz = 2600 + f.gz * 3400; S.tone('sine', hz, hz * 1.04, .7, .006 + f.gz * .016); } }
       if (f.gz > .3 && !f._w1) { f._w1 = 1; S.toast(['……别盯着它看。', '眼睛自己在往那边转。低头！', '看着脚下。看着脚下。'][(f._wn = ((f._wn || 0) + 1)) % 3]); }
       if (f.gz > .62 && !f._w2) { f._w2 = 1; S.fx('static', { dur: .5 }); S.sfx('whisper'); S.toast('它在扭……它是……它是——'); }
       if (f.gz < .15) { f._w1 = 0; f._w2 = 0; }
       if (f.gz >= 1) { f.gz = 1; runScript(seen); }
+      /* 蒙着眼睛往回走的时候不能停：站着不动，身后的水声就一下一下近过来（S.moving 对客机操作也准） */
+      if (f.blind && (f.got || f.phase === 'home')) {
+        if (S.moving) f._still = 0;
+        else {
+          f._still = (f._still || 0) + dt;
+          if (f._still > 4 && !f._st1) { f._st1 = 1; S.sfx('splash'); S.toast('……哗啦。身后的水田里，有什么东西近了一步。'); }
+          if (f._still > 8 && !f._st2) { f._st2 = 1; S.sfx('whisper'); S.shake(300, 1); S.toast('「……看一看嘛。」它就贴在你背后。——走！别停下来！'); }
+        }
+        if (f._still === 0) { f._st1 = 0; f._st2 = 0; }
+      }
     }
     const g = Math.round((f.gz || 0) * 40) / 40;
     if (h) h.s.g = g;
@@ -63,6 +77,43 @@
   }
   function goBlind(S) { S.f.blind = true; S.wear('@meB'); S.norun(true); S.speed(.75); }
   function unblind(S) { S.f.blind = false; S.wear('@me'); S.norun(false); S.speed(1); }
+
+  /* ---------- 声音（S.tone 合成，双方都听得到） ---------- */
+  function bellTone(S, v = 1, delay = 0) {   // 田神的铃：小铜铃，高而细，尾音发颤
+    S.tone('sine', 2637, 2610, 1.3, .06 * v, delay); S.tone('sine', 3951, 3900, .8, .025 * v, delay + .01);
+    S.tone('triangle', 1318, 1318, 1, .02 * v, delay); S.tone('sine', 2650, 2600, .5, .02 * v, delay + .09);
+  }
+  async function bellRing(S, n, gap) { for (let i = 0; i < n; i++) { bellTone(S); await S.wait(gap); } }
+  function koshien(S) {   // 甲子园开赛的警笛：拉长的一声，升上去，再慢慢落下来
+    S.tone('sawtooth', 300, 820, 1.6, .035, 0, 1300); S.tone('sawtooth', 820, 800, 2.4, .035, 1.55, 1300); S.tone('sawtooth', 800, 260, 1.8, .03, 3.9, 1300);
+  }
+  const stepTick = (S, n) => { S.tone('triangle', 440, 400, .06, .035, 0, 1800); if (n % 3 === 0) bellTone(S, .35, .05); };   // 蒙眼时每一步：脚下「嗒」一声，每三步胸前的铃轻轻一响
+
+  /* ---------- 两人一起决定 ----------
+     safe：「诱惑」类选项里不去看的那一项。两人意见不一致时，不让操作者一个人把两个人都搭进去——
+     手举到一半被按住，算没看，但眼睛已经往那边转过去了一点。 */
+  async function choose(S, q, opts, who, safe, msg) {
+    if (!S.coop) return S.ask(q, opts, who);
+    const r = await S.vote(q, opts, who);
+    if (r.agree) return r.v;
+    if (safe != null) {
+      S.sfx('heart');
+      await S.narr(msg || '你的手抬到一半，又被另一股力气死死按了下去。\n心里有两个声音在吵——一个说「看一眼」，一个说「别看」。');
+      if (!msg) S.f.gz = Math.max(S.f.gz || 0, .35);
+      return safe;
+    }
+    await S.narr('你们俩的意见不一样。\n……最后，还是由现在拿主意的那个人做了决定。');
+    return r.v;
+  }
+  /* 读档/死后重来：注视清零，脸转开（不让人一睁眼就正对着它） */
+  function faceAway(S) {
+    const m = curMap(), p = W.pl; if (!m || !m.def.field) return;
+    let k = null, kd = VIEW + 1;
+    for (const e of m.ents) if (e.kk && !e.hidden) { const d = Math.hypot(e.px - p.px, e.py - p.py) / TS; if (d < kd) { kd = d; k = e; } }
+    if (!k) return;
+    const dx = k.px - p.px, dy = k.py - p.py;
+    S.turn(Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 1 : 2) : (dy > 0 ? 3 : 0));
+  }
 
   /* ---------- 精灵 ---------- */
   const SPRITES = {
@@ -78,12 +129,16 @@
         for (let y = 0; y < VH; y += 3) g.fillRect(0, y, VW, 1);
         for (let x = 0; x < VW; x += 4) g.fillRect(x, 0, 1, VH);
       } else {
-        const amp = (e.in ? 0 : .9) + gz * gz * 8;
+        const amp = (e.in || e.dusk ? 0 : .9) + gz * gz * 8;
         if (amp > .4) for (let y = 0; y < VH; y += 2) {
           const o = Math.round(Math.sin(y * .12 + t * 5.2) * amp * (.55 + .45 * Math.sin(y * .027 - t * 1.6)));
           if (o) g.drawImage(g.canvas, 0, y, VW, 2, o, y, VW, 2);
         }
-        if (!e.in) { g.fillStyle = 'rgba(255,238,190,.06)'; g.fillRect(0, 0, VW, VH); }
+        if (e.dusk) {   // 结尾：太阳斜了，院子里铺着一层橘红色的光
+          const gr = g.createLinearGradient(0, 0, 0, VH);
+          gr.addColorStop(0, 'rgba(255,120,40,.30)'); gr.addColorStop(1, 'rgba(200,70,30,.16)');
+          g.fillStyle = gr; g.fillRect(0, 0, VW, VH);
+        } else if (!e.in) { g.fillStyle = 'rgba(255,238,190,.06)'; g.fillRect(0, 0, VW, VH); }
         if (gz > .22) {
           const n = ((gz - .22) * 1400) | 0;
           for (let i = 0; i < n; i++) { g.fillStyle = Math.random() < .55 ? 'rgba(240,240,232,.85)' : 'rgba(30,30,30,.7)'; g.fillRect((Math.random() * VW) | 0, (Math.random() * VH) | 0, Math.random() < .3 ? 2 : 1, 1); }
@@ -179,7 +234,11 @@
       R(4, 7, 2, 2, '#c8c0b0'); R(9, 7, 2, 2, '#c8c0b0'); R(10, 10, 1, 1, '#2a2420');
       for (let i = 0; i < 8; i++) R(14 + Math.round(Math.sin(t * 3 + i * .8) * (1 + i * .25)), 9 - i * 2, 1, 2, `rgba(230,230,230,${.5 - i * .05})`);
     },
-    radio(g, e, t, R) { box(R, 2, 5, 12, 9, '#8a2a20'); R(3, 6, 6, 7, '#c8b898'); for (let y = 7; y < 13; y += 2) R(3, y, 6, 1, '#9a8a70'); R(10, 7, 3, 2, Math.sin(t * 3) > 0 ? '#ffd860' : '#e8b840'); R(10, 10, 3, 1, '#c9a35a'); R(12, -3, 1, 9, '#aaa'); },
+    radio(g, e, t, R) {
+      box(R, 2, 5, 12, 9, '#8a2a20'); R(3, 6, 6, 7, '#c8b898'); for (let y = 7; y < 13; y += 2) R(3, y, 6, 1, '#9a8a70');
+      R(10, 7, 3, 2, e.st ? (Math.random() < .5 ? '#f4f4ee' : '#3a3a3a') : Math.sin(t * 3) > 0 ? '#ffd860' : '#e8b840'); R(10, 10, 3, 1, '#c9a35a'); R(12, -3, 1, 9, '#aaa');
+      if (e.st) for (let i = 0; i < 6; i++) R(3 + ((Math.random() * 6) | 0), 6 + ((Math.random() * 7) | 0), 1, 1, '#f4f4ee');   // 只剩杂音
+    },
     koyomi(g, e, t, R) { R(4, 1, 8, 11, '#ece8dc'); R(4, 1, 8, 3, '#3a6a3a'); for (let y = 5; y < 11; y += 2) for (let x = 5; x < 11; x += 2) R(x, y, 1, 1, '#8a8478'); R(6, 7, 1, 1, '#c02020'); R(9, 7, 1, 1, '#c02020'); },
     nebaba(g, e, t, R) {   // 侧躺着打盹的外婆（2 格）
       R(-1, 5, 34, 10, '#c8b880'); for (let x = 1; x < 32; x += 3) R(x, 5, 1, 10, '#b8a870');
@@ -266,6 +325,44 @@
         R(5, G.hT + 3, 6, 1, s); R(7, G.hT + 4, 1, 2, s); R(9, G.tT + 2, 1, 4, s); R(6, G.tT + 4, 1, 3, s);
       } }
   };
+  /* ---------- 惊吓大头像（32×32） ---------- */
+  const FACES = {
+    /* 看清的那一刻：一条被拧着的白布似的长脸，整张脸一行一行地错开着扭；
+       两只高低不齐的黑洞眼，一道波浪形的嘴，越张越开；两条细胳膊在脸边上乱舞 */
+    kunef(R, a, t) {
+      const W1 = '#f6f6f0', W2 = '#d2d2c8', W3 = '#9a9a90', K = '#050505';
+      const tw = .8 + a * 3.2;
+      const off = y => Math.round(Math.sin(y * .33 + t * 7) * tw + Math.sin(y * .12 - t * 2.6) * tw * .7);
+      for (let i = 0; i < 9; i++) {   // 两条细长的胳膊，关节反着弯
+        const y = 30 - i * 2, s = Math.sin(t * 6 + i * .8) * 2;
+        R(4 - i * .2 + s, y, 2, 2, W1); R(26 + i * .2 - s, y - 1, 2, 2, W1);
+      }
+      for (let y = 1; y < 32; y++) {
+        const k = (y - 16) / 15, w = Math.max(1, Math.round(Math.sqrt(Math.max(0, 1 - k * k)) * (y < 16 ? 8.5 : 10)));
+        const x = 16 - w + off(y);
+        R(x, y, w * 2, 1, W1); R(x + w * 2 - 3, y, 3, 1, W2); R(x, y, 1, 1, W3);
+        if (w > 3) R(x + ((y * 2 + Math.floor(t * 9)) % (w * 2 - 2)) + 1, y, 1, 1, W2);   // 拧出来的斜褶
+      }
+      const eh = 3 + Math.round(a * 5);
+      for (let i = 0; i < eh; i++) { R(10 + off(10 + i), 10 + i, 3, 1, K); R(19 + off(13 + i), 13 + i, 2, 1, K); }
+      const mh = 1 + Math.round(a * 3);
+      for (let x = 9; x < 24; x++) { const y = 23 + Math.round(Math.sin(x * .8 + t * 10) * 1.5); R(x + off(y), y, 1, mh, K); }
+    },
+    /* 田埂上的「外婆」：先是一张笑眯眯的老人脸；接着脸色发白、眯着的眼变成两个黑洞、嘴一直咧到耳根，整张脸跟着扭起来 */
+    nise(R, a, t) {
+      const turn = a > .45, SK = turn ? '#f2f0e8' : '#e2bc98', SK2 = turn ? '#c8c8c0' : '#b88e6c', H = '#c8c4c0', H2 = '#8a8682', K = '#0a0606';
+      const tw = turn ? (a - .45) * 7 : 0, off = y => Math.round(Math.sin(y * .42 + t * 8) * tw);
+      R(12, 0, 8, 4, H); R(13, 0, 6, 1, H2); R(8, 3, 16, 6, H); R(6, 6, 3, 10, H); R(23, 6, 3, 10, H); R(10, 4, 1, 4, H2); R(21, 4, 1, 4, H2);
+      for (let y = 7; y < 29; y++) { const k = (y - 17) / 12, w = Math.round(Math.sqrt(Math.max(0, 1 - k * k)) * 8.5); R(16 - w + off(y), y, w * 2, 1, SK); R(16 + w - 2 + off(y), y, 2, 1, SK2); }
+      R(12 + off(9), 9, 8, 1, SK2); R(11 + off(11), 11, 10, 1, SK2); R(9 + off(20), 20, 2, 1, SK2); R(21 + off(20), 20, 2, 1, SK2);
+      if (!turn) {   // 笑眯眯的弯眼
+        R(10, 15, 4, 1, K); R(9, 16, 1, 1, K); R(14, 16, 1, 1, K); R(18, 15, 4, 1, K); R(17, 16, 1, 1, K); R(22, 16, 1, 1, K);
+      } else for (let i = 0; i < 6; i++) { R(10 + off(13 + i), 13 + i, 4, 1, K); R(18 + off(13 + i), 13 + i, 4, 1, K); }
+      const mw = 6 + Math.round(a * 14), mh = 1 + Math.round(a * 3), my = 23;
+      R(16 - (mw >> 1) + off(my), my, mw, mh, '#2a0808'); if (a > .3) R(17 - (mw >> 1) + off(my), my, mw - 2, 1, '#e8e2cc');
+    }
+  };
+
   /* ---------- 目标 ---------- */
   function goalNow(S) {
     const f = S.f;
@@ -285,11 +382,11 @@
   const upd = S => S.goal(goalNow(S));
 
   /* ---------- 看清了 = 死 ---------- */
-  async function seen(S) {
+  async function seen(S, noFace) {
     S.f.lock = true;
     S.amb('none'); S.sfx('tv'); S.fx('static', { dur: 1.4 });
     await S.wait(700);
-    await S.scare('face', { spr: '@kunef', dur: 1.2 });
+    if (noFace !== true) await S.scare('face', { face: 'kunef', dur: 1.2 });
     await S.die('你看清楚了。\n\n它是什么，它为什么一直在扭——那一瞬间，你全都明白了。\n明白了以后，就一点也不害怕了。\n\n「……不知道，比较好。」', '你看清了它');
   }
   async function confirmBino(S) {
@@ -297,7 +394,7 @@
     S.sfx('whisper');
     await S.say('', '「……不知道……比较好……」', { style: 'whisper' });
     await S.narr('不知道从哪里，传来了舅舅的声音。');
-    return (await S.ask('还要看吗？', ['看。', '放下望远镜'])) === 0;
+    return (await choose(S, '还要看吗？', ['看。', '放下望远镜'], '', 1)) === 0;
   }
   async function badEnd(S) {
     const f = S.f; f.lock = true;
@@ -313,24 +410,24 @@
     S.sfx('tv');
     for (let i = 0; i < 5; i++) { f.gz = .75 + i * .05; await S.wait(160); }
     await S.narr('它不是布。\n它也不是人。\n它扭，是因为——');
-    await S.scare('face', { spr: '@kunef', dur: 1.4 });
+    await S.scare('face', { face: 'kunef', dur: 1.4 });
     S.fx('static', { dur: 2 }); S.fx('flash', { dur: 1.6 });
     await S.narr('啊。\n\n……原来是这样。');
     await S.fade(1, 1500); S.focus(null); f.gz = 0;
-    await S.end({ bad: true, title: '看清楚了', text: '那天傍晚，美夏一个人从田那边走回来，站在门口，笑着对外婆说了一句：\n「不知道比较好。」\n\n爸妈连夜从城里赶来，在外婆家的饭桌前坐了一整夜。\n天亮的时候，爸爸红着眼睛说：\n「……这孩子，不能带回去了。」\n\n从那以后，外婆家最里面那间没有窗户的屋子里，住着两个人。\n他们并排对着墙坐着，一起，轻轻地扭。' });
+    await S.end({ bad: true, id: 'seen', title: '看清楚了', text: '那天傍晚，美夏一个人从田那边走回来，站在门口，笑着对外婆说了一句：\n「不知道比较好。」\n\n爸妈连夜从城里赶来，在外婆家的饭桌前坐了一整夜。\n天亮的时候，爸爸红着眼睛说：\n「……这孩子，不能带回去了。」\n\n从那以后，外婆家最里面那间没有窗户的屋子里，住着两个人。\n他们并排对着墙坐着，一起，轻轻地扭。' });
   }
 
   /* ---------- 正午：晾衣竿边 ---------- */
   async function noonScene(S) {
     const f = S.f; f.sawIt = true; f.lock = true;
     S.face('shota_y', 'pl'); S.face('pl', 'shota_y');
-    await S.say('翔太', ['姐姐你看，你看！田里有个白白的人在跳舞！', '那边那边！扭来扭去的，好好笑！']);
+    await S.say('翔太', '姐姐你看！田里有个白白的人在跳舞！扭来扭去的，好好笑！');
     S.face('shota_y', 2);
     S.focus(28, 13);
     await S.wait(500);
-    await S.narr('顺着翔太的手指看过去——\n田的那一头，绿油油的稻子中间，站着一个白色的东西。');
+    await S.narr('顺着翔太的手指看过去——\n绿油油的稻子中间，站着一个白色的东西。');
     for (let i = 1; i <= 5; i++) { f.gz = .07 * i; await S.wait(180); }
-    await S.narr('它在扭。\n像一条被风吹着的白布——可今天一丝风也没有。\n而且那扭法，也不像布。太……太用力了。');
+    await S.narr('它在扭。像一条被风吹着的白布——可今天一丝风也没有。\n而且那扭法，太……太用力了。');
     for (let i = 6; i <= 10; i++) { f.gz = .065 * i; await S.wait(160); }
     S.sfx('tv');
     await S.think('那是什么？人？稻草人？……再仔细看看——');
@@ -345,19 +442,25 @@
     await S.say('翔太', '外婆你干嘛呀！我还没看清楚呢——');
     await S.say('外婆', '看清楚就坏了！', { style: 'big' });
     S.face('baba_y', 'pl');
-    await S.say('外婆', ['……美夏，你也是。眼睛往下看，看自己的脚。', '那东西，咱们这儿的老人叫它「田里的白东西」。大晴天，正午前后，水田边上——它最喜欢这种日子。']);
+    await S.say('外婆', ['……美夏，你也是。眼睛往下看，看自己的脚。', '那东西，老人们叫它「田里的白东西」。大晴天的晌午，水田边上——它最喜欢这种日子。']);
     await S.say('翔太', '它扭来扭去的！就叫它「くねくね」好了！');
-    await S.say('外婆', ['叫什么都行。你们俩给我记住：远远地瞟一眼，不碍事。', '可千万别盯着看。别想去弄明白它是个什么东西。', '弄明白了的人，就……']);
+    await S.say('外婆', ['叫什么都行。远远地瞟一眼，不碍事。可千万别盯着看，别想弄明白它是个什么东西。', '弄明白了的人，就……']);
     S.bubble('baba_y', '…', 1800);
-    await S.narr('外婆没有说下去。\n她回过头，看了一眼屋子最里面，那扇一直关着的拉门。');
+    await S.narr('外婆没有说下去。她回头看了一眼屋子最里面，那扇一直关着的拉门。');
     await S.say('外婆', '……就回不来了。走，进屋吃素面。');
     await S.fade(1, 900);
     S.hide('baba_y'); S.hide('shota_y'); S.ent('shota_y').spr = '@shotaH';
     S.hide('baba_h'); S.show('nebaba');
     f.gz = 0; f.lock = false; f.phase = 'search';
-    await S.card('午后一点', '', '素面又凉又滑。外婆一边吃，一边念叨城里的孩子不经晒。\n\n吃完饭，她躺在缘侧的凉席上打起了盹。\n收音机里，甲子园还在转播。\n你听着听着，也迷迷糊糊地睡着了。\n\n醒来的时候，太阳还是那么白。\n屋子里安静得出奇。');
+    await S.card('午后一点', '', '吃完素面，外婆躺在缘侧的凉席上打起了盹。\n收音机里，甲子园还在转播。你听着听着，也睡着了。\n\n醒来的时候，太阳还是那么白。\n屋子里安静得出奇。');
     await S.go('house', 10, 5, 0);
     S.cp('search');
+  }
+  async function noonCall(S) {   // 正午还没碰头就自己去盯着田看：翔太把你叫回来
+    S.bubble('shota_y', '!', 1200);
+    await S.say('翔太', '姐姐——！你也看见了？快过来这边看呀！');
+    await S.think('……眼睛好酸。热气晃得厉害。\n先去晾衣竿那边，把翔太叫回来。');
+    S.goal('去晾衣竿那边找翔太');
   }
 
   /* ---------- 屋里 ---------- */
@@ -382,7 +485,7 @@
   }
   async function shinjiMap(S) {
     const f = S.f; f.uta = true;
-    S.sfx('bell');
+    bellTone(S);
     await S.narr('挂在你胸前的铃铛，「叮铃」响了一声。');
     f.shStill = true;
     await S.narr('舅舅的肩膀停住了。\n很慢很慢地，他转过身来。');
@@ -395,7 +498,9 @@
     await S.say('伸二舅舅', '翔太……在等。快去。');
     await S.narr('说完，他又转回去，面朝着墙。\n肩膀又开始晃。左一下，右一下。');
     f.shStill = false; S.face('shinji', 3);
+    if (S.coop) S.toast('双人时：蒙上眼睛以后，一个人打开「笺」看舅舅的画念路，一个人走');
     upd(S);
+    S.cp('uta');
   }
   async function butsu(S) {
     if (S.once('butsu1')) await S.narr('黑漆的佛龛。外公的遗像摆在里面，戴着一顶草帽，眯着眼睛笑。\n线香刚燃完，烟还没散，一缕一缕地往上扭。');
@@ -403,7 +508,16 @@
     if (S.once('butsuDrawer')) await S.narr('佛龛底下的小抽屉没有上锁。\n里面是一本旧日记本，有一页折了角。');
     S.f.readBaba = true;
     await S.note('baba');
-    if (S.once('afterBaba')) await S.think('蒙上眼睛，摇着田神的铃，牵着手走回来……\n铃在藏里。藏的锁号，是「伸二回不来的那一天」。');
+    if (S.once('afterBaba')) {
+      await S.think('蒙上眼睛，摇着田神的铃，牵着手走回来……\n铃在藏里。藏的锁号，是「伸二回不来的那一天」。');
+      /* 屋里的一下：收音机断了，杂音里有翔太的笑声 */
+      const rd = S.ent('radio'); rd.s.st = 1; S.sfx('tv'); S.shake(250, 1);
+      await S.narr('身后的收音机「滋啦」一声，甲子园的解说断了。');
+      S.sfx('giggle');
+      await S.narr('沙沙的杂音里，有一个小孩在笑。\n离得很远，笑得很开心——\n是翔太的声音。');
+      await S.wait(600); rd.s.st = 0; S.sfx('blip');
+      await S.narr('……解说员的声音又回来了。好像什么都没发生过。');
+    }
     upd(S);
   }
   async function bag(S) {
@@ -447,9 +561,17 @@
     if (v == null) return;
     if (v !== '0813') {
       S.sfx('locked'); await S.narr('「咔」——锁纹丝不动。');
-      if (!f.readBaba) await S.think('……号码会是什么？外婆一定知道。');
-      else if (!f.readEhon) await S.think('外婆写的是「伸二回不来的那一天」。……那是哪一天？\n那年夏天的事，也许还有别人记下来过。');
-      else await S.think('「伸二回不来的那一天」……妈妈的绘日记里，那一页一个字也没有。');
+      const n = (f.lockMiss = (f.lockMiss || 0) + 1);
+      /* 几个「差一点」的号码：说清楚错在哪 */
+      const near = { '0814': '0814——是今天。……不对，要的是舅舅「回不来」的那一天。',
+        '0820': '0820 是外婆写日记的日子。日记里说，那时候伸二已经那样「一个礼拜了」。……要往前推。',
+        '1973': '昭和四十八年……是 1973 年没错。可锁只有四位，要的是「那一天」，不是哪一年。',
+        '0812': '8 月 12 日，绘日记里哥哥说「明天用爸爸的望远镜看」。……是「明天」。' };
+      if (near[v]) await S.think(near[v]);
+      else if (!f.readBaba) await S.think('……号码会是什么？外婆一定知道。');
+      else if (!f.readEhon) await S.think(n >= 3 ? '外婆的日记写在 8 月 20 日，那时候伸二已经回不来「一个礼拜」了。\n……那年夏天的事，妈妈小时候会不会也记下来过？壁橱里有她的旧本子。' : '外婆写的是「伸二回不来的那一天」。……那是哪一天？\n那年夏天的事，也许还有别人记下来过。');
+      else if (n >= 3) await S.think('妈妈的绘日记：12 号，哥哥说「明天」要用望远镜看；\n13 号那一页，一个字也没有，只有一圈一圈的白蜡笔。\n……八月十三日。0、8、1、3。');
+      else await S.think('「伸二回不来的那一天」……妈妈的绘日记里，有一页一个字也没有。');
       return;
     }
     f.kuraOpen = true; S.ent('kuraD').open = true; S.sfx('open');
@@ -465,9 +587,10 @@
     await S.narr('你想把铃铛解下来——可红绳打的结又紧又怪，一圈缠着一圈，像是故意不让人把它们分开。');
     S.give('bino'); S.give('bell');
     await S.think('……只能两样一起带着了。');
-    S.sfx('bell');
+    bellTone(S);
     await S.narr('铃铛轻轻地响了一声。\n望远镜沉甸甸地挂在你脖子上，镜片冰凉。');
     upd(S);
+    S.cp('bell');
   }
 
   /* ---------- 院子 ---------- */
@@ -482,7 +605,7 @@
     }
     if (S.has('bino')) {
       await S.narr('这里是外婆家视野最好的地方。整片水田，一眼就能望到头。\n脖子上的望远镜，好像比刚才沉了一点。');
-      const r = await S.ask('要用望远镜看看，翔太在不在田里吗？', ['举起望远镜', '不。（外婆说过，不能看。）']);
+      const r = await choose(S, '要用望远镜看看，翔太在不在田里吗？', ['举起望远镜', '不。（外婆说过，不能看。）'], '', 1);
       if (r === 0 && await confirmBino(S)) return badEnd(S);
       return S.narr('你把望远镜塞回了衣服里。镜片贴着肚皮，冰凉冰凉的。');
     }
@@ -509,15 +632,16 @@
     await S.say('外婆的声音', '美夏——翔太——', { style: 'whisper' });
     await S.say('外婆的声音', ['到家啦。没事啦。', '把布摘下来吧。睁开眼睛，看看外婆。']);
     await S.narr('声音是从右手边传来的。\n从田里。');
-    const r = await S.ask('', ['（摘下手巾，睁开眼睛）', '（外婆在屋里睡觉。……不睁。）']);
+    const r = await choose(S, '', ['（摘下手巾，睁开眼睛）', '（外婆在屋里睡觉。……不睁。）'], '', 1);
     if (r === 0) {
       unblind(S); f.lock = true;
       S.focus(28, 13);
       await S.narr('你扯下手巾——');
+      await S.scare('face', { face: 'nise', dur: 1.5, sfx: 'laugh' });
       for (let i = 1; i <= 6; i++) { f.gz = i * .15; await S.wait(120); }
-      await S.narr('田埂边上，什么外婆也没有。\n只有一个白色的东西，离你只有几步远，扭得那么高兴。');
+      await S.narr('那张笑眯眯的脸，一下子就扭开了。\n田埂边上，什么外婆也没有。只有一个白色的东西，离你只有几步远，扭得那么高兴。');
       S.focus(null);
-      return seen(S);
+      return seen(S, true);
     }
     await S.narr('你攥紧翔太的手，继续往前走。\n身后的「外婆」不出声了。\n只有稻子沙沙地响，一下，一下，像是有什么东西在里面扭。');
   }
@@ -528,7 +652,7 @@
     await S.narr('脖子上的望远镜，一下一下地撞着你的胸口。');
     await S.say('', ['「只要看一眼。」', '「只要一眼，你就全都明白了。」', '「它是什么。舅舅为什么那样。外公为什么把望远镜锁起来——全都明白。」'], { style: 'whisper' });
     await S.say('翔太', '……姐姐？你的手好凉。', { style: 'whisper' });
-    const r = await S.ask('', ['举起望远镜', '不看。（握紧翔太的手，往前走）']);
+    const r = await choose(S, '', ['举起望远镜', '不看。（握紧翔太的手，往前走）'], '', 1);
     if (r === 0) return badEnd(S);
     S.sfx('tear');
     await S.narr('你把望远镜的背带从脖子上扯下来，使劲扔进了身后的草丛里。\n拴在上面的铃铛跟着飞了出去，「叮铃」一声，就再也不响了。');
@@ -542,16 +666,16 @@
     S.place('baba_y', 7, 1, 0);
     await S.say('外婆', '……美夏？翔太？');
     await S.say('外婆', ['好孩子……好孩子。', '到家了。是真的到家了。把布摘下来吧。']);
-    const r = await S.ask('', ['摘下手巾', '（……真的是外婆吗？）']);
+    const r = await choose(S, '', ['摘下手巾', '（……真的是外婆吗？）']);
     if (r === 1) {
       await S.say('外婆', '……来，摸摸外婆的手。');
       await S.narr('一只干瘪、粗糙、暖乎乎的手，握住了你的手。\n手心里全是汗——是从梦里惊醒、光着脚跑出来的那种汗。');
     }
-    unblind(S); S.dark(.32); S.fx('flash', { dur: .8 });
+    unblind(S); S.dark(.18); f.dusk = true; f.quiet = true; S.hide('kk_y'); S.fx('flash', { dur: .8 });
     S.follow('shota_y', false); S.ent('shota_y').spr = '@shotaE';
-    await S.narr('你解开了手巾。\n太阳已经斜了，院子里铺着一层橘红色的光。');
-    S.face('pl', 3);
-    await S.narr('田那边，什么都没有。只有稻子，绿油油的，一动不动。');
+    await S.narr('你解开了手巾。\n太阳已经斜了，院子里铺着一层橘红色的光。蝉不叫了。');
+    S.face('pl', 0);
+    await S.narr('你回过头。\n田那边，什么都没有。只有稻子，绿油油的，一动不动。');
     S.ent('shota_y').spr = '@shota';
     await S.say('翔太', ['外婆……', '我刚才，差一点就看懂了。']);
     await S.say('外婆', '不懂才好。一辈子都别懂。');
@@ -561,7 +685,7 @@
     await S.narr('那是你第一次，听见舅舅说「不知道比较好」以外的话。');
     await S.fade(1, 1400);
     await S.card('那天晚上', '', '爸妈从城里赶了回来。\n外婆什么也没解释，只是在门口点了一小堆迎火——\n明明盂兰盆的头一天，早就过去了。\n\n翔太发了一夜的烧。\n第二天早上醒过来，喊饿，要吃西瓜。\n田里的事，他一点也不记得了。\n\n第三天，下了一场大雨。\n田里干干净净的。');
-    await S.end({ title: '第一夜　完', text: '那副望远镜，后来再也没有找到。\n\n很多年以后，网上有人讲起一个故事：夏天的乡下，田的那一头，有一个白色的东西在扭。\n翔太把手机递给你看。\n\n「姐姐，你说那到底是什么？」\n「不知道。」\n\n——不知道，比较好。' });
+    await S.end({ id: 'home', title: '第一夜　完', text: '那副望远镜，后来再也没有找到。\n\n很多年以后，网上有人讲起一个故事：夏天的乡下，田的那一头，有一个白色的东西在扭。\n翔太把手机递给你看。\n\n「姐姐，你说那到底是什么？」\n「不知道。」\n\n——不知道，比较好。' });
   }
 
   /* ---------- 水田 ---------- */
@@ -576,10 +700,12 @@
       await S.say('茂爷', ['过了水神池的鸟居，就是它的地盘了。它就站在池子当中，在水上扭。', '想把人从那儿带回来——就得闭着眼睛进去。睁着眼睛，你自己也得搭进去。']);
       await S.say('茂爷', '走田埂的时候，挨着芦苇走。芦苇挡着，你就看不见它。……它也就看不见你。');
       f.toIke = true; upd(S);
+      S.cp('field');
       return;
     }
-    const L = [['有人说那是田神，管雨水的。有人说是水神，是蛇。', '我年轻的时候，听海边来的鱼贩子讲，海上也有。浪头上一个，扭啊扭的——说是黑的。'], ['它只在大晴天出来。阴天、下雨，田里干干净净的。', '所以这一带的老人，都盼着盂兰盆下雨。'], ['看懂它的人会怎么样？……你舅舅那样。', '有人说那是疯了。我看不是。我看他们是……一点一点，变成那边的东西了。']];
-    await S.say('茂爷', L[(f._jy = ((f._jy ?? -1) + 1) % 3)]);
+    const L = [['有人说那是田神，管雨水的。有人说是水神，是蛇。', '我年轻的时候，听海边来的鱼贩子讲，海上也有。浪头上一个，扭啊扭的——说是黑的。'], ['看懂它的人会怎么样？……你舅舅那样。', '有人说那是疯了。我看不是。我看他们是……一点一点，变成那边的东西了。'],
+      ['老辈人还有一句话，我小时候听了一直睡不着：', '「看懂了的孩子，别往城里带。留在家里养着——过几年，放回田里去。」', '……你外公那年，没舍得。'], ['它只在大晴天出来。阴天、下雨，田里干干净净的。', '所以这一带的老人，都盼着盂兰盆下雨。']];
+    await S.say('茂爷', L[(f._jy = ((f._jy ?? -1) + 1) % 4)]);
   }
   async function yagura(S) {
     await S.narr('村里的火警瞭望塔。铁梯子晒得烫手，塔顶挂着一口锈了的警钟。');
@@ -591,21 +717,26 @@
     S.f.toIke = true;
     if (S.has('bino')) {
       await S.narr('黄点旁边的水面上，还有一个白色的东西，在扭。\n挂在脖子上的望远镜，好像比刚才更沉了。');
-      const r = await S.ask('……', ['举起望远镜，看清楚', '不看。下去。']);
+      const r = await choose(S, '……', ['举起望远镜，看清楚', '不看。下去。'], '', 1);
       if (r === 0 && await confirmBino(S)) return badEnd(S);
     }
     await S.narr('你闭上眼睛，摸着梯子爬了下来。');
     upd(S);
+    S.cp('field');
   }
   async function pickTrace(S, id, item, text, after) {
     S.hide(id); if (item) S.give(item);
     await S.narr(text);
     if (after) await S.think(after);
     S.f.toIke = true; upd(S);
+    S.cp('field');   // 田里死了，不用再把东西捡一遍（重来时脸会先转开）
   }
 
   /* ---------- 水神池 ---------- */
-  const DEAD = { '3,10': [5, 12, 2], '13,14': [11, 13, 3], '11,4': [11, 6, 0] };
+  const DEAD = {   // 死路 → [退回的格子, 朝向, 违反的是画上的哪一句]
+    '3,10': [5, 12, 2, '「灯笼往右走」——你往左边去了。'],
+    '13,14': [11, 13, 3, '「风铃往上数五步」——你往下去了。'],
+    '11,4': [11, 6, 0, '「往上数五步」——你多走了。第五步就该往右，踩上木桥。'] };
   const NEAR = ['3,11', '12,14', '11,5'];
   async function toriiOn(S) {
     const f = S.f;
@@ -626,7 +757,7 @@
     if (r) return;
     goBlind(S); f.usedTowel = true;
     await S.narr('你把外婆的手巾叠成长条，蒙在眼睛上，在脑后打了个死结。\n世界一下子变成了暗红色——那是正午的太阳，透过布照进来的颜色。');
-    S.sfx('bell');
+    bellTone(S);
     await S.narr('你摇了一下铃铛。叮铃。\n舅舅画的路，你在心里又过了一遍。');
     S.toast('看不见了——按舅舅画的路走（笔记里可以重看）');
     upd(S);
@@ -642,6 +773,7 @@
     await S.narr('你咬紧牙，一步一步，摸着往回退。');
     S.pos(back[0], back[1], back[2]);
     if (S.f.got) S.place('shota_i', back[0], back[1]);
+    await S.think('舅舅的画上写的是' + back[3] + (n >= 2 ? '\n（记不清的话，打开「笺」再看一遍舅舅的画。）' : ''));
   }
   async function pushBack(S) {
     S.f.gz = Math.max(S.f.gz || 0, .45); S.sfx('heart');
@@ -655,13 +787,15 @@
     if (!f.blind) return S.narr('翔太背对着你，一动不动地望着池子。');
     await S.narr('你伸出手，摸到了一个小小的、汗湿的肩膀。');
     await S.say('翔太', ['……姐姐？', '姐姐，你看。它在跳舞。离得好近好近……', '我马上……马上就要看懂了。'], { style: 'whisper' });
-    const r = await S.ask('', ['（摇响铃铛）', '翔太，你看见什么了？']);
+    const r = await choose(S, '', ['（摇响铃铛）', '翔太，你看见什么了？']);
     if (r === 1) {
       await S.say('翔太', ['它的脸……它没有脸。它的脸是……', '是……'], { style: 'whisper' });
       S.sfx('whisper'); S.shake(300, 1);
+      const r2 = await choose(S, '（铃铛就攥在你手里。）', ['（摇铃，打断他）', '（……让他说完）'], '', 0, '你心里有两个声音：一个想听他说完，一个拼命喊「摇铃」。\n——攥着铃铛的手先抖了起来。');
+      if (r2 === 1) return stayEnd(S);
       await S.narr('你的手比脑子先动了。');
     }
-    await S.bells(3, 520);
+    await bellRing(S, 3, 520);
     await S.narr('叮铃——叮铃——\n铃声在水面上一圈一圈地荡开。翔太的肩膀猛地一抖。');
     S.ent('shota_i').spr = '@shotaE';
     await S.say('翔太', '……姐姐？我、我怎么了……眼睛好烫……');
@@ -672,6 +806,23 @@
     f.got = true; S.follow('shota_i', true);
     upd(S);
     S.cp('back');
+  }
+  /* 第三结局：让翔太把话说完——就是原帖里那个哥哥的结局 */
+  async function stayEnd(S) {
+    const f = S.f; f.lock = true;
+    S.amb('none'); f.quiet = true;
+    await S.say('翔太', '……是……', { style: 'whisper' });
+    await S.wait(900);
+    S.sfx('tv'); S.fx('static', { dur: 1.2 });
+    await S.narr('翔太的肩膀，不抖了。');
+    await S.say('翔太', ['啊。', '……原来是这样啊。'], { style: 'whisper' });
+    await S.narr('他转过身来。你看不见他的脸，可你听得出来——他在笑。');
+    S.ent('shota_i').spr = '@shota';
+    await S.say('翔太', '姐姐。……不知道，比较好。', { style: 'whisper' });
+    bellTone(S, .6);
+    await S.narr('你手里的铃铛，「叮铃」一声，响得太晚了。');
+    await S.fade(1, 1500);
+    await S.end({ bad: true, id: 'stay', title: '留在乡下', text: '翔太是自己走回家的。一路上没有摔一跤，也没有说一句话。\n\n爸妈连夜赶来，在饭桌前坐了一整夜。天亮的时候，外婆把翔太的小背包收进了壁橱：\n「这孩子，别往城里带了。留在这儿，外婆养着。」\n\n你一个人坐上了回城的车。\n后来每年夏天再去，舅舅屋里都多一个坐垫。两个人并排对着墙，一起，轻轻地晃。\n\n有一年，你听见外婆在佛龛前小声说：\n「……再过几年，等稻子长高了，就放回田里去吧。」' });
   }
   async function leaveIke(S) {
     const f = S.f; f.lock = true;
@@ -751,7 +902,7 @@
     return rows;
   }
   const HZ = id => ({ id, hz: true, x: 0, y: 0, spr: 'haze', solid: false, z: 1 });
-  const R0 = async S => { S.f.gz = 0; S.f.lock = false; S.norun(!!S.f.blind); S.speed(S.f.blind ? .75 : 1); };
+  const R0 = async S => { S.f.gz = 0; S.f.lock = false; S.f._still = 0; S.norun(!!S.f.blind); S.speed(S.f.blind ? .75 : 1); faceAway(S); };
 
   defChapter({
     id: 'kunekune', n: 1, title: 'くねくね', sub: '盛夏正午，田的那一头有个白色的东西在扭。远远看着不要紧——千万别想看清楚它是什么。', origin: '日本网络怪谈（2ch）', color: '#5e7a2e',
@@ -767,15 +918,17 @@
       sandal: { name: '黄色凉鞋', desc: '翔太的一只凉鞋，湿透了。' }
     },
     notes: {
-      nikki: { title: '翔太的暑假日记（今天的）', text: '8月14日　晴\n\n外婆家的田里，有一个白白的人在跳舞。\n扭来扭去，扭来扭去，好好笑。\n外婆说不可以看。为什么？\n\n妈妈说，舅舅小时候有一个望远镜。\n可是锁在藏里，打不开。\n\n那我就走近一点看。\n我要看清楚它到底是什么！\n\n（下面用铅笔画了一个白色的小人，手脚弯成奇怪的角度。小人旁边，翔太又画了一个小小的自己，戴着草帽，在挥手。）' },
-      baba: { title: '外婆的日记（折了角的一页）', text: '昭和四十八年　八月二十日\n\n伸二从田里回来，已经一个礼拜了。\n\n那天中午，他和纪子在晾衣台上，说田那头有个白东西在扭。他爸爸的望远镜就挂在柱子上。纪子说，哥哥举着望远镜看了好久好久，脸一下子就白了。然后他放下望远镜，说：\n「不知道比较好。」\n从那天起，他就只会说这一句。\n\n他爸爸说：这孩子回不来了。别带他回城里了，就留在这儿吧。\n他把望远镜锁进了藏里，锁的号码，设成了伸二回不来的那一天。说要一辈子记着。\n\n老人们说，要是有人被那东西勾住了，趁他还没看懂，还有办法：\n用布蒙住眼睛，摇着田神的铃走过去，牵住他的手，一路走回家。\n路上不管听见什么，都不能睁眼。\n\n——我那时候，为什么不知道。' },
+      nikki: { title: '翔太的暑假日记（今天的）', text: '8月14日　晴\n\n外婆家的田里，有一个白白的人在跳舞。\n扭来扭去，扭来扭去，好好笑。\n外婆说不可以看。为什么？\n\n妈妈说，外公以前有一个望远镜。\n可是锁在藏里，打不开。\n\n那我就走近一点看。\n我要看清楚它到底是什么！\n\n（下面用铅笔画了一个白色的小人，手脚弯成奇怪的角度。旁边是戴草帽的翔太自己，在挥手。）' },
+      baba: { title: '外婆的日记（折了角的一页）', text: '昭和四十八年　八月二十日\n\n伸二变成那样，已经一个礼拜了。\n\n那天中午，他和纪子在晾衣台上，说田那头有个白东西在扭。纪子说，哥哥举着他爸爸的望远镜看了好久，脸一下子就白了，放下望远镜，说：「不知道比较好。」\n从那天起，他就只会说这一句。\n\n他爸爸说，这孩子回不来了，别带回城里，就留在这儿。他把望远镜锁进藏里，锁的号码，设成了伸二回不来的那一天。说要一辈子记着。\n\n老人们说，要是有人被那东西勾住了，趁他还没看懂，还有办法：\n用布蒙住眼睛，摇着田神的铃走过去，牵住他的手，一路走回家。路上不管听见什么，都不能睁眼。\n\n——我那时候，为什么不知道。' },
       ehon: { title: '妈妈小时候的绘日记', text: '（一本褪了色的暑假绘日记。封面：二年级　纪子。）\n\n8月11日　晴\n外婆家的西瓜好甜。哥哥吃了五块。\n\n8月12日　晴\n哥哥说田里有白色的人在跳舞。外婆说不许看。\n哥哥说，明天用爸爸的望远镜看。\n\n8月13日　晴\n（这一页没有字。整页都用白蜡笔涂满了，一圈一圈，扭来扭去。蜡笔用力得把纸都划破了。）\n\n8月14日　晴\n哥哥不跟我玩了。\n妈妈一直在哭。' },
-      minzoku: { title: '受潮的笔记本 · 水无濑村民间传承调查', text: '（封面上写着「昭和五十一年夏」。调查者的名字被水洇掉了。）\n\n· 田里的白东西\n当地老人叫它「田里的白东西」。城里来的学生叫它「くねくね」，取扭来扭去之意。\n多见于晴天、炎热的正午前后，水田、溪边。阴雨天从不出现。\n远远看去，像一个白色的人形，不停地扭，像被风吹的布。可目击的那天多半没有风。\n\n· 禁忌\n远看无事。若想看清它「是什么」，看懂的人就会言语失常——或痴呆，或发狂。\n问他们「看懂了什么」，没有一个人答得上来。\n\n· 来历诸说\n田神的使者；水神；蛇。\n一说：看懂了它的人，自己也会慢慢变成它。\n邻县的渔民说海上也有，在浪头上扭，是黑色的。也有人说在城里的楼顶上见过。\n\n· 破除\n不明。只记下一句老话：「看不清就看不清，闭着眼睛走回家。」\n\n（最后一行是铅笔字，很潦草）\n同行的Ｋ说今天在田里看见了，要回旅馆拿相机，拉近了拍——' },
+      minzoku: { title: '受潮的笔记本 · 水无濑村民间传承调查', text: '（封面：「昭和五十一年夏」。调查者的名字被水洇掉了。）\n\n· 田里的白东西\n老人叫它「田里的白东西」，城里来的学生叫它「くねくね」。晴天、炎热的正午前后，见于水田、溪边；阴雨天从不出现。远看是白色人形，不停地扭，像风吹的布——可那天多半没有风。\n\n· 禁忌\n远看无事。想看清它「是什么」的人，会言语失常。问他们看懂了什么，没有一个答得上来。\n\n· 诸说\n田神的使者；水神；蛇。看懂的人，自己也会慢慢变成它。邻县渔民说海上也有，是黑的；也有人说在城里的楼顶上见过。\n\n· 破除\n不明。只有一句老话：「看不清就看不清，闭着眼睛走回家。」\n\n（最后一行是铅笔字，很潦草）\n同行的Ｋ说今天在田里看见了，要回旅馆拿相机，拉近了拍——' },
       uta: { title: '舅舅的蜡笔画 · 去水神池的路', text: '（旧挂历的背面，用白蜡笔画的。线条歪歪扭扭，却一笔也没有断。）\n\n鸟居　↑　石灯笼\n石灯笼　→　风铃\n风铃　↑（五步）\n→　木桥　→　走到头\n↓　地藏\n\n旁边是外公教过的顺口溜：\n「闭眼过鸟居，往上摸灯笼；\n　灯笼往右走，风铃叮铃铃；\n　风铃往上数五步，往右踩木桥；\n　过桥走到头，往下找地藏；\n　地藏跟前人，牵手不回头。」\n\n（右下角，用很小很小的字写着：不知道比较好）' }
     },
-    legend: '「くねくね」是2003年前后在日本匿名论坛2ch的灵异版上流传开的网络怪谈。名字是个拟态词，意思就是「扭来扭去」。流传最广的那一篇大致是这样：一个孩子和哥哥夏天回乡下外婆家，看见远处的水田里有一个白色的人形东西，一刻不停地扭动。哥哥拿来望远镜去看，看清之后脸色大变，只说了一句「わからないほうがいい」（不知道比较好），从此就痴痴呆呆，像变了一个人。外婆哭着说那东西是不能看的；家里人最后决定，哥哥已经不能带回城里了，就让他留在乡下——据说有的版本里，还有「过几年就把他放回田里」这样叫人发冷的话。\n\n在一遍遍的转贴和「我也见过」的回帖里，它的规矩渐渐固定下来：多在晴朗炎热的白天出现，常在水田、河边，也有人说在海边、在楼顶；远远看着不要紧，一旦「理解」了它是什么，人就会精神失常。它多半是白色的，也有黑色的版本。它不追人，也不伤人，什么也不做——可怕的只是「看懂」这件事本身。\n\n关于它到底是什么，说法很多。有人把它和日本农村的田神、水神信仰联系起来（田神春天从山里下来守护稻田，秋收后再回到山里），也有人说是蛇神；有人觉得它不过是田边晒着的白布、稻草人，或者热浪里的海市蜃楼，被吓坏了的人越讲越玄；还有一种「同化」的说法：看懂了它的人，自己也会慢慢变成那样扭动的东西。\n\n后来，くねくね成了日本网络怪谈里最有代表性的形象之一，被写进漫画、小说和游戏，「不知道比较好」这句话也跟着它一起流传开来。\n\n（本章中的水无濑村、美夏一家、伸二舅舅的遭遇，以及「蒙眼摇铃、牵手回家」的破解法，均为游戏虚构。）',
+    legend: '「くねくね」是日本的网络怪谈，名字是个拟态词，意思就是「扭来扭去」。据说最早的雏形在2000年前后就出现在网上：有人转述朋友小时候的经历——在乡下从窗口望见田里有个白色的东西，关节古怪地扭动；一起看的哥哥看着看着，好像「明白」了什么，从此就疯了。2003年前后，日本匿名论坛2ch灵异版（オカルト板）上流传开的一篇把故事定了型：一个孩子和哥哥回乡下外婆家，看见远处水田里有一个白色的人形东西，一刻不停地扭；哥哥拿来望远镜去看，看清之后脸色大变，只说了一句「わからないほうがいい」（不知道比较好），从此痴痴呆呆，像变了一个人。外婆哭着说那东西是不能看的；家里人最后决定，哥哥不能带回城里了，就留在乡下养着——「过几年，放回田里去」。\n\n在一遍遍的转贴和「我也见过」的回帖里，它的规矩渐渐固定下来：多在晴朗炎热的白天出现，常在水田、河边，也有人说在海边、在楼顶；远远看着不要紧，一旦「理解」了它是什么，人就会精神失常。它多半是白色的，也有黑色的版本。它不追人，也不伤人，什么也不做——可怕的只是「看懂」这件事本身。\n\n关于它到底是什么，说法很多。有人把它和日本农村的田神、水神信仰联系起来（田神春天从山里下来守护稻田，秋收后再回到山里；田里的稻草人，本来也被看作田神暂住的地方），也有人说是蛇神；有人觉得它不过是田边晒着的白布、稻草人，或者正午热浪里的海市蜃楼，被吓坏了的人越讲越玄；还有一种「同化」的说法：看懂了它的人，自己也会慢慢变成那样扭动的东西。\n\n后来，くねくね和「八尺大人」等一起，成了2ch「洒落怖」（开不得玩笑的恐怖故事）里最有代表性的形象之一，被写进漫画、小说和游戏，「不知道比较好」这句话也跟着它一起流传开来。\n\n（本章中的水无濑村、美夏一家和伸二舅舅的遭遇、外公的望远镜和土藏、茂爷、舅舅的蜡笔画，以及「蒙眼摇铃、牵手回家」的破解法，均为游戏虚构；那本民俗调查笔记也是虚构的，里面的说法综合自网上流传的各种版本。）',
     start: { map: 'house', x: 10, y: 5, dir: 0 },
-    resume: { search: R0, field: R0, ike: R0, blind: R0, back: R0, home: R0 },
+    resume: { search: R0, bell: R0, uta: R0, field: R0, ike: R0, blind: R0, back: R0, home: R0 },
+    endings: { home: '第一夜　完', seen: '看清楚了', stay: '留在乡下' },
+    faces: FACES,
     async intro(S) {
       S.f.phase = 'noon';
       await S.card('第一夜　くねくね', '2003年8月14日　日本东北·水无濑村', '盂兰盆节，爸妈把你和弟弟翔太送到乡下外婆家，\n自己回城里加班去了。\n\n蝉叫得人头昏。\n田里的稻子绿得发亮，热气从地面上一层一层地往上冒。\n远处的东西，看起来都在轻轻地晃。');
@@ -832,10 +985,9 @@
         async enter(S, first) {
           const f = S.f;
           if (f.phase === 'noon' && first) {
-            await S.narr('……好热。\n你在榻榻米上醒过来，后背上全是汗。电风扇摇着头，吹过来的风也是热的。');
-            await S.narr('收音机里在转播甲子园。解说员的声音，被外面的蝉声盖住了一半。');
-            await S.say('外婆（厨房）', ['美夏，醒啦？', '去把翔太叫回来，素面马上就好。他在院子里晾衣竿那边玩呢。']);
-            await S.say('外婆（厨房）', '大中午的，太阳毒——别让他往田那边看。');
+            koshien(S);
+            await S.narr('……好热。你在榻榻米上醒过来，后背上全是汗。\n收音机里，甲子园的比赛开始了。警笛声拉得老长，被外面的蝉声盖住了一半。');
+            await S.say('外婆（厨房）', ['美夏，醒啦？去把翔太叫回来，素面马上就好。他在院子里晾衣竿那边玩呢。', '大中午的，太阳毒——别让他往田那边看。']);
             upd(S);
           }
           if (f.phase === 'search' && S.once('missing')) {
@@ -910,6 +1062,7 @@
           const f = S.f;
           if (f.phase === 'noon' && !f.sawIt && Math.abs(x - 5) + Math.abs(y - 5) <= 2) return noonScene(S);
           if (f.phase === 'home' && !f.lock) {
+            if (f.blind) stepTick(S, (f._sn = (f._sn || 0) + 1));
             if (!f.t1 && y <= 12) return tempt1(S);
             if (f.t1 && !f.t2 && y <= 6) return tempt2(S);
           }
@@ -1026,6 +1179,7 @@
         step(S, x, y) {
           const f = S.f, k = x + ',' + y;
           if (!f.blind) { if (x === 6 && y <= 14) return pushBack(S); return; }
+          stepTick(S, (f._sn = (f._sn || 0) + 1));   // 看不见，只能数着脚步
           if (DEAD[k]) return deadEnd(S, DEAD[k]);
           if (NEAR.includes(k)) { S.sfx('whisper'); if (S.once('near' + k)) S.toast('……前面，有什么东西在轻轻地晃。'); return; }
           if (x === 6 && y === 12 && S.once('cueLantern')) return cue(S, '你伸出手——指尖碰到了冰凉、粗糙的石头。\n是石灯笼。', 'thud');

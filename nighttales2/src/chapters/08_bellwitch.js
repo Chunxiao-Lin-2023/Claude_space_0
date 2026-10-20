@@ -66,7 +66,8 @@
     stone: { key: 'bw-stone', skin: '#e0b898', hair: '#9a9a98', hs: 'short', top: '#1e1c22', top2: '#e8e8e8', bottom: '#1e1c22', coat: true, shoes: '#0e0c0c',
       extra(g, d, fr, G, R) { R(2, G.hT - 1, 12, 1, '#141216'); R(4, G.hT - 3, 8, 3, '#141216'); if (d === 0) R(7, G.tT, 2, 2, '#e8e8e8'); } },
     tom: { skin: '#eec8a4', hair: '#5a3a1e', hs: 'short', top: '#7a5a3a', top2: '#c8b890', bottom: '#4a4038', shoes: '#2a1a10', hat: 'cap', hatC: '#3a2a1a' },
-    kate: { skin: '#c8c4cc', hair: '#141018', hs: 'long', cover: true, redEye: true, top: '#1a1620', ghost: true, hat: 'hood', hatC: '#0e0c12' },
+    kate: { key: 'bw-kate', skin: '#d6d2da', hair: '#141018', hs: 'long', redEye: true, top: '#3a3046', top2: '#241e2c', ghost: true, hat: 'hood', hatC: '#52466a',   // 选章卡片图标：浅色兜帽、灰白脸、红眼、垂在脸上的黑发
+      extra(g, d, fr, G, R) { if (d === 0) { R(5, G.hT + 2, 1, 6, '#141018'); R(10, G.hT + 2, 1, 7, '#141018'); R(7, G.hT + 7, 2, 2, '#2a0810'); } } },
     blackdog: { key: 'bw-dogface', skin: '#0e0c10', hair: '#0e0c10', hs: 'bald', top: '#0e0c10', bottom: '#0e0c10', eye: '#ff3030', redEye: true,
       extra(g, d, fr, G, R) { R(4, G.hT - 6, 2, 7, '#0e0c10'); R(10, G.hT - 6, 2, 7, '#0e0c10'); R(5, G.hT - 5, 1, 4, '#3a1a1a'); R(10, G.hT - 5, 1, 4, '#3a1a1a'); if (d === 0) { R(6, G.hT + 6, 4, 1, '#e8e2d6'); R(7, G.hT + 6, 1, 1, '#0e0c10'); } } }
   };
@@ -89,7 +90,8 @@
       for (const x of [8, 11, 21, 24]) R(x, 27 + (x % 3), 1, 5, SK2);   // 从黑暗里伸出来的细长手指
     },
     blackdog(R, a, t) {   // 黑狗：比黑暗还黑的大脑袋，兔子一样竖着的长耳朵，红眼，一嘴白牙
-      const B = '#070609', B2 = '#17131b', E = '#ff2020';
+      const B = '#070609', B2 = '#17131b', E = '#ff2020', RIM = '#4a3a52';
+      R(5, 0, 6, 13, RIM); R(21, 0, 6, 13, RIM); R(5, 8, 22, 4, RIM); R(3, 11, 26, 14, RIM); R(1, 14, 30, 10, RIM);   // 背后透过来的一点光，勾出轮廓
       R(6, 0, 4, 13, B); R(22, 0, 4, 13, B); R(7, 2, 2, 9, '#40141a'); R(23, 2, 2, 9, '#40141a');
       R(6, 9, 20, 3, B); R(4, 12, 24, 12, B); R(2, 15, 28, 8, B);
       for (let i = 0; i < 9; i++) R(2 + i * 3, 22 + (i % 2) * 2, 2, 3, B);
@@ -183,7 +185,7 @@
     },
     beast(g, e, t, R) {   // 狗身兔头的黑东西，朝向随 dir
       const fl = e.dir === 2, F = (x, y, w, h, c) => R(fl ? 16 - x - w : x, y, w, h, c);
-      const k = e.mv ? Math.sin(t * 18) : 0;
+      const k = e.fr ? (e.fr === 1 ? 1 : -1) : 0;   // 用同步的走路帧 fr（客机上没有 mv）
       F(0, 13, 16, 2, 'rgba(0,0,0,.35)');
       F(4, 6, 10, 5, '#0c0a0e'); F(5, 5, 8, 1, '#141218');
       F(4 + (k > 0 ? 1 : 0), 11, 2, 3, '#0c0a0e'); F(11 - (k > 0 ? 1 : 0), 11, 2, 3, '#0c0a0e');
