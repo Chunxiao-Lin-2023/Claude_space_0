@@ -62,7 +62,7 @@ function puzzle(i) {
 function pathPoly(g, pts, ox, oy, u) { g.beginPath(); pts.forEach(([a, b], j) => j ? g.lineTo(ox + a * u, oy + b * u) : g.moveTo(ox + a * u, oy + b * u)); g.closePath(); }
 function drawSil(g, P, ox, oy, u, col) { g.fillStyle = col; g.strokeStyle = col; g.lineWidth = Math.max(1, u * .02); g.lineJoin = 'round'; for (const s of P.slots) { pathPoly(g, s.v, ox, oy, u); g.fill(); g.stroke(); } }
 function drawPieceShape(g, pts, col, u, o = {}) {
-  const c = cen(pts), ins = pts.map(([a, b]) => { const dx = a - c[0], dy = b - c[1], d = Math.hypot(dx, dy) || 1, k = Math.max(0, d - .7) / d; return [a - dx * (1 - k) * .0 + 0, b]; });
+  const c = cen(pts);
   g.save();
   if (o.lift) { g.shadowColor = 'rgba(0,0,0,.45)'; g.shadowBlur = u * .3; g.shadowOffsetY = u * .14; }
   else { g.shadowColor = 'rgba(0,0,0,.35)'; g.shadowBlur = u * .08; g.shadowOffsetY = u * .03; }
@@ -102,7 +102,7 @@ BX.register({
     const bar = K.bar(ctx, [
       {k: 'undo', ic: '↶', t: '撤销', on: () => undo()},
       {k: 'rot', ic: '⟳', t: '旋转', on: () => { if (sel >= 0) act(() => rotate(sel)); else ctx.toast('先点选一块板'); }},
-      {k: 'flip', ic: '⇋', t: '翻转', on: () => { const i = sel >= 0 && sel === 6 ? 6 : 6; act(() => flip(i)); }},
+      {k: 'flip', ic: '⇋', t: '翻转', on: () => { sel = 6; bring(6); act(() => flip(6)); }},
       {k: 'hint', ic: '☞', t: '提示', on: () => hint()},
       {k: 'pick', ic: '▦', t: '图谱', on: () => pick()},
     ]);
@@ -199,7 +199,7 @@ BX.register({
     function layout() {
       const A = bar.area(cv.w, cv.h), land = A.w > A.h * 1.05, pad = 10;
       const bw = land ? A.w * .56 : A.w, bh = land ? A.h : A.h * .56;
-      const tx0 = land ? A.x + bw : A.x, ty0 = land ? A.y : A.y + bh, tw = land ? A.w - bw : A.w, th = land ? A.h - bh : A.h - bh;
+      const tx0 = land ? A.x + bw : A.x, ty0 = land ? A.y : A.y + bh, tw = land ? A.w - bw : A.w, th = land ? A.h : A.h - bh;
       // tray layout in units (shelf packing) for given width in units
       const items = [[0, 2, 2], [1, 2, 2], [2, 2, 1.1], [6, 2, 1.1], [5, 1.1, 1.1], [3, 1.1, 1.1], [4, 1.1, 1.1]];
       const pack = Wu => { let x = 0, y = 0, rh = 0; const pos = {}; for (const [p, w, hh] of items) { if (x + w > Wu && x > 0) { x = 0; y += rh + .35; rh = 0; } pos[p] = [x + w / 2, y + hh / 2]; x += w + .35; rh = Math.max(rh, hh); } return {pos, H: y + rh, W: Wu}; };
@@ -295,8 +295,6 @@ BX.register({
           if (v.cx == null) { v.cx = (A.x + A.w / 2 - ox) / u; v.cy = (A.y + A.h / 2 - oy) / u; }
           if (!(drag && drag.i === i && drag.moved)) { v.cx += (pc.cx - v.cx) * kk; v.cy += (pc.cy - v.cy) * kk; }
           v.ang += (angOf(pc) - v.ang) * Math.min(1, kk * 1.3); v.fx += ((pc.f ? -1 : 1) - v.fx) * Math.min(1, kk * 1.2);
-          const pts = polyAt(pc.p, v.ang, Math.abs(v.fx) < .05 ? .05 * Math.sign(v.fx || 1) : v.fx, ox + v.cx * u, oy + v.cy * u).map(([a, b]) => [a, b]);
-          // polyAt works in units; scale around: recompute in pixels
           const pp = polyAt(pc.p, v.ang, Math.abs(v.fx) < .05 ? .05 : v.fx, 0, 0).map(([a, b]) => [ox + (v.cx + a) * u, oy + (v.cy + b) * u]);
           const lift = drag && drag.i === i && drag.moved;
           drawPieceShape(g, pp, PCOL[pc.p], u, {lift, sel: sel === i && !won && !lift, glow: hintSt && hintSt.i === i ? .5 + .5 * Math.sin(hintSt.t * 7) : won ? Math.max(0, 1 - winT) : 0});
