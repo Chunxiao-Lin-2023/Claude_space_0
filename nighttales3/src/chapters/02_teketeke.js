@@ -217,7 +217,7 @@
     }
     S.sfx('open'); hideTk(); S.take('gkey');
     await S.narr('钥匙插进锁孔，拧了两次才拧动。\n你撞开玻璃门，冲进了雪里。');
-    await S.go('yard', 4, 2, 0);
+    await S.go('yard', 4, 3, 0);
   }
   function drawerTxt(n) {
     if (isNaN(n) || n < 22 || n > 64) return '没有这一格。\n最上面的抽屉是「昭和22年」——建校那一年；最下面一格是「昭和64年」。';

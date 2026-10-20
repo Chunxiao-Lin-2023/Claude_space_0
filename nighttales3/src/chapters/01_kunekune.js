@@ -102,9 +102,9 @@
       const gz = e.g || 0, seed = (e.x || 0) * 1.7 + (e.y || 0);
       const tt = t * 2.4 + seed + Math.sin(t * .9 + seed) * 1.2;
       const st = Math.sin(t * .37 + seed) > .82 ? Math.floor(tt * 3) / 3 : tt;   // 偶尔一顿一顿的
-      const body = gz > .5 ? '#fbfbf6' : '#ecebe4', sh = gz > .5 ? '#a8a8a0' : '#d0cfc6';
+      const body = gz > .5 ? '#ffffff' : '#fbfbf5', sh = gz > .5 ? '#a8a8a0' : '#dcdcd2';
       const offAt = i => Math.sin(st * 1.3 + i * .42) * (1.2 + i * .1) + Math.sin(st * 2.9 - i * .23) * .9;
-      R(2, 13, 12, 2, 'rgba(255,255,255,.14)');
+      R(2, 13, 12, 2, 'rgba(255,255,255,.14)'); R(3, -14, 10, 24, 'rgba(255,255,240,.07)');
       for (let i = 0; i < 26; i++) {
         const y = 13 - i, w = i > 20 ? 4 : 3, x = 6 + offAt(i);
         R(x, y, w, 1, i < 4 ? 'rgba(236,235,228,.55)' : body); if (i >= 4) R(x + w - 1, y, 1, 1, sh);
@@ -353,7 +353,7 @@
     await S.say('外婆', '……就回不来了。走，进屋吃素面。');
     await S.fade(1, 900);
     S.hide('baba_y'); S.hide('shota_y'); S.ent('shota_y').spr = '@shotaH';
-    S.hide('baba_h'); S.show('nebaba'); S.hide('shoesS');
+    S.hide('baba_h'); S.show('nebaba');
     f.gz = 0; f.lock = false; f.phase = 'search';
     await S.card('午后一点', '', '素面又凉又滑。外婆一边吃，一边念叨城里的孩子不经晒。\n\n吃完饭，她躺在缘侧的凉席上打起了盹。\n收音机里，甲子园还在转播。\n你听着听着，也迷迷糊糊地睡着了。\n\n醒来的时候，太阳还是那么白。\n屋子里安静得出奇。');
     await S.go('house', 10, 5, 0);
@@ -685,5 +685,356 @@
     f.phase = 'home'; f.lock = false;
     await S.go('yard', 15, 15, 3);
   }
-  /*@@PART3@@*/
+  async function kakashi1(S) {
+    if (S.once('kk1')) { S.sfx('sting'); S.shake(250, 1); await S.narr('白色的——！'); await S.wait(300); }
+    await S.narr('……是个稻草人。\n穿着一件旧白衬衫，脸是用墨画的，一副傻乎乎的笑脸。');
+    if (S.once('kk1b')) await S.think('吓死人了……腿都软了。');
+  }
+  async function ikeExit(S) {
+    if (S.f.blind && !S.f.got) { await S.narr('……翔太还在里面。'); return S.pos(6, 16, 3); }
+    await S.go('tanbo', 38, 21, 1);
+  }
+
+  /* ---------- 地图行 ---------- */
+  const q = (c, n) => c.repeat(n);
+  function yardRows() {
+    const top = 'TTT' + q('#', 9) + 'TTTTT' + '####' + q('T', 13), pad = 'TT' + q('"', 30) + 'TT';
+    const fld = q('i', 15) + 'a' + q('i', 8) + 'a' + q('i', 9);
+    return [top, top, 'TT"' + q('w', 9) + q('"', 5) + 'xxxx' + q('"', 11) + 'TT', pad, pad, pad,
+      q('h', 15) + '"""' + q('h', 16), q('v', 34), q('v', 34), 'eee' + q('~', 12) + 'a' + q('~', 15) + 'eee',
+      fld, fld, q('a', 34), fld, fld, fld, q('i', 15) + 'a' + q('i', 18)];
+  }
+  function tanboRows() {
+    const VX = [3, 12, 21, 30, 38], HY = [3, 9, 15, 21], rows = [];
+    for (let y = 0; y < 24; y++) {
+      let s = '';
+      for (let x = 0; x < 40; x++) {
+        let c = 'i';
+        if (HY.includes(y) && x >= 3 && x <= 38) c = 'a';
+        if (VX.includes(x) && y >= 1 && y <= 22) c = 'a';
+        if (x === 25 || x === 26) c = HY.includes(y) ? 'l' : '~';                       // 水渠，田埂处架木板
+        if ((y === 14 && x >= 13 && x <= 20) || (y === 20 && x >= 31 && x <= 37)) c = 'e';   // 芦苇：挡视线
+        if ((x === 24 || x === 27) && y >= 4 && y <= 7) c = 'e';
+        if (x >= 32 && x <= 36 && y >= 5 && y <= 7) c = 'T';                             // 镇守的小树林
+        if (x === 2 && y === 12) c = 'd';
+        if (x <= 1 || x === 39 || y === 0 || y === 23) c = 'T';
+        if ((x === 3 && y === 0) || (x === 39 && y === 21)) c = 'a';
+        s += c;
+      }
+      rows.push(s);
+    }
+    return rows;
+  }
+  function ikeRows() {
+    const P = new Set(), add = (x0, y0, x1, y1) => { for (let x = x0; x <= x1; x++) for (let y = y0; y <= y1; y++) P.add(x + ',' + y); };
+    add(6, 12, 6, 17); add(4, 16, 9, 16);       // 鸟居前后的石板路
+    add(3, 12, 5, 12); add(3, 10, 3, 11);       // 死路 A（灯笼往左）
+    add(7, 12, 11, 12);                         // 灯笼 → 风铃
+    add(11, 13, 11, 14); add(12, 14, 13, 14);   // 死路 B（风铃往下）
+    add(11, 7, 11, 11);                         // 风铃 ↑ 五步
+    add(11, 4, 11, 6);                          // 死路 C（再往上）
+    add(16, 7, 17, 7); add(17, 8, 17, 11);      // 过桥到头 → 往下 → 地藏
+    const rows = [];
+    for (let y = 0; y < 18; y++) {
+      let s = '';
+      for (let x = 0; x < 26; x++) {
+        const water = x >= 18 || (y <= 6 && x >= 8) || (x >= 12 && x <= 16 && y >= 6 && y <= 8);
+        let c = water ? '~' : 'B';
+        if (x >= 12 && x <= 15 && y === 7) c = 'l';
+        if (P.has(x + ',' + y)) c = 'k';
+        if ((x <= 1 || y <= 1) && !water) c = 'T';
+        if (y === 17 && x !== 6) c = 'T';
+        s += c;
+      }
+      rows.push(s);
+    }
+    return rows;
+  }
+  const HZ = id => ({ id, hz: true, x: 0, y: 0, spr: 'haze', solid: false, z: 1 });
+  const R0 = async S => { S.f.gz = 0; S.f.lock = false; S.norun(!!S.f.blind); S.speed(S.f.blind ? .75 : 1); };
+
+  defChapter({
+    id: 'kunekune', n: 1, title: 'くねくね', sub: '盛夏正午，田的那一头有个白色的东西在扭。远远看着不要紧——千万别想看清楚它是什么。', origin: '日本网络怪谈（2ch）', color: '#5e7a2e',
+    icon: '@kuneI', amb: 'wind', floor: 'wood', wall: 'shoji', dark: 0, plr: 4,
+    tileOpts: { grassC: '#4f7a34', treeC: '#2a4a24' },
+    people: PEOPLE, sprites: SPRITES, tiles: TILES,
+    items: {
+      towel: { name: '白手巾', desc: '外婆晾在晾衣竿上的白手巾，晒得又干又暖。叠成长条，正好能蒙住眼睛。' },
+      bell: { name: '田神的铃', desc: '一只小小的铜铃铛，用红绳拴在望远镜的背带上，怎么也解不开。' },
+      bino: { name: '外公的望远镜', desc: '黑色的老式双筒望远镜，镜片冰凉。用它看，什么都能看得清清楚楚。' },
+      hat: { name: '翔太的草帽', desc: '帽檐有点开线了。里面还是温的。' },
+      net: { name: '捕虫网', desc: '翔太的捕虫网。网兜上挂着几根白色的、像丝一样的东西。' },
+      sandal: { name: '黄色凉鞋', desc: '翔太的一只凉鞋，湿透了。' }
+    },
+    notes: {
+      nikki: { title: '翔太的暑假日记（今天的）', text: '8月14日　晴\n\n外婆家的田里，有一个白白的人在跳舞。\n扭来扭去，扭来扭去，好好笑。\n外婆说不可以看。为什么？\n\n妈妈说，舅舅小时候有一个望远镜。\n可是锁在藏里，打不开。\n\n那我就走近一点看。\n我要看清楚它到底是什么！\n\n（下面用铅笔画了一个白色的小人，手脚弯成奇怪的角度。小人旁边，翔太又画了一个小小的自己，戴着草帽，在挥手。）' },
+      baba: { title: '外婆的日记（折了角的一页）', text: '昭和四十八年　八月二十日\n\n伸二从田里回来，已经一个礼拜了。\n\n那天中午，他和纪子在晾衣台上，说田那头有个白东西在扭。他爸爸的望远镜就挂在柱子上。纪子说，哥哥举着望远镜看了好久好久，脸一下子就白了。然后他放下望远镜，说：\n「不知道比较好。」\n从那天起，他就只会说这一句。\n\n他爸爸说：这孩子回不来了。别带他回城里了，就留在这儿吧。\n他把望远镜锁进了藏里，锁的号码，设成了伸二回不来的那一天。说要一辈子记着。\n\n老人们说，要是有人被那东西勾住了，趁他还没看懂，还有办法：\n用布蒙住眼睛，摇着田神的铃走过去，牵住他的手，一路走回家。\n路上不管听见什么，都不能睁眼。\n\n——我那时候，为什么不知道。' },
+      ehon: { title: '妈妈小时候的绘日记', text: '（一本褪了色的暑假绘日记。封面：二年级　纪子。）\n\n8月11日　晴\n外婆家的西瓜好甜。哥哥吃了五块。\n\n8月12日　晴\n哥哥说田里有白色的人在跳舞。外婆说不许看。\n哥哥说，明天用爸爸的望远镜看。\n\n8月13日　晴\n（这一页没有字。整页都用白蜡笔涂满了，一圈一圈，扭来扭去。蜡笔用力得把纸都划破了。）\n\n8月14日　晴\n哥哥不跟我玩了。\n妈妈一直在哭。' },
+      minzoku: { title: '受潮的笔记本 · 水无濑村民间传承调查', text: '（封面上写着「昭和五十一年夏」。调查者的名字被水洇掉了。）\n\n· 田里的白东西\n当地老人叫它「田里的白东西」。城里来的学生叫它「くねくね」，取扭来扭去之意。\n多见于晴天、炎热的正午前后，水田、溪边。阴雨天从不出现。\n远远看去，像一个白色的人形，不停地扭，像被风吹的布。可目击的那天多半没有风。\n\n· 禁忌\n远看无事。若想看清它「是什么」，看懂的人就会言语失常——或痴呆，或发狂。\n问他们「看懂了什么」，没有一个人答得上来。\n\n· 来历诸说\n田神的使者；水神；蛇。\n一说：看懂了它的人，自己也会慢慢变成它。\n邻县的渔民说海上也有，在浪头上扭，是黑色的。也有人说在城里的楼顶上见过。\n\n· 破除\n不明。只记下一句老话：「看不清就看不清，闭着眼睛走回家。」\n\n（最后一行是铅笔字，很潦草）\n同行的Ｋ说今天在田里看见了，要回旅馆拿相机，拉近了拍——' },
+      uta: { title: '舅舅的蜡笔画 · 去水神池的路', text: '（旧挂历的背面，用白蜡笔画的。线条歪歪扭扭，却一笔也没有断。）\n\n鸟居　↑　石灯笼\n石灯笼　→　风铃\n风铃　↑（五步）\n→　木桥　→　走到头\n↓　地藏\n\n旁边是外公教过的顺口溜：\n「闭眼过鸟居，往上摸灯笼；\n　灯笼往右走，风铃叮铃铃；\n　风铃往上数五步，往右踩木桥；\n　过桥走到头，往下找地藏；\n　地藏跟前人，牵手不回头。」\n\n（右下角，用很小很小的字写着：不知道比较好）' }
+    },
+    legend: '「くねくね」是2003年前后在日本匿名论坛2ch的灵异版上流传开的网络怪谈。名字是个拟态词，意思就是「扭来扭去」。流传最广的那一篇大致是这样：一个孩子和哥哥夏天回乡下外婆家，看见远处的水田里有一个白色的人形东西，一刻不停地扭动。哥哥拿来望远镜去看，看清之后脸色大变，只说了一句「わからないほうがいい」（不知道比较好），从此就痴痴呆呆，像变了一个人。外婆哭着说那东西是不能看的；家里人最后决定，哥哥已经不能带回城里了，就让他留在乡下——据说有的版本里，还有「过几年就把他放回田里」这样叫人发冷的话。\n\n在一遍遍的转贴和「我也见过」的回帖里，它的规矩渐渐固定下来：多在晴朗炎热的白天出现，常在水田、河边，也有人说在海边、在楼顶；远远看着不要紧，一旦「理解」了它是什么，人就会精神失常。它多半是白色的，也有黑色的版本。它不追人，也不伤人，什么也不做——可怕的只是「看懂」这件事本身。\n\n关于它到底是什么，说法很多。有人把它和日本农村的田神、水神信仰联系起来（田神春天从山里下来守护稻田，秋收后再回到山里），也有人说是蛇神；有人觉得它不过是田边晒着的白布、稻草人，或者热浪里的海市蜃楼，被吓坏了的人越讲越玄；还有一种「同化」的说法：看懂了它的人，自己也会慢慢变成那样扭动的东西。\n\n后来，くねくね成了日本网络怪谈里最有代表性的形象之一，被写进漫画、小说和游戏，「不知道比较好」这句话也跟着它一起流传开来。\n\n（本章中的水无濑村、美夏一家、伸二舅舅的遭遇，以及「蒙眼摇铃、牵手回家」的破解法，均为游戏虚构。）',
+    start: { map: 'house', x: 10, y: 5, dir: 0 },
+    resume: { search: R0, field: R0, ike: R0, blind: R0, back: R0, home: R0 },
+    async intro(S) {
+      S.f.phase = 'noon';
+      await S.card('第一夜　くねくね', '2003年8月14日　日本东北·水无濑村', '盂兰盆节，爸妈把你和弟弟翔太送到乡下外婆家，\n自己回城里加班去了。\n\n蝉叫得人头昏。\n田里的稻子绿得发亮，热气从地面上一层一层地往上冒。\n远处的东西，看起来都在轻轻地晃。');
+    },
+    tick(S, dt) { gazeTick(S, dt); },
+    maps: {
+      /* ---------------- 外婆家 ---------------- */
+      house: {
+        amb: 'room', dark: .22, darkC: '#1a1208', plr: 5, wall: 'shoji', floor: 'wood', cicV: .7,
+        rows: [
+          '######################',
+          '######################',
+          '#ttttt#ttttttttt#dddd#',
+          '#ttttt#ttttttttt#dddd#',
+          '#ttttt.ttttttttt.dddd#',
+          '#ttttt#ttttttttt#dddd#',
+          '#ttttt#ttttttttt#dddd#',
+          '#######wwwwwwwwwwdddd#',
+          '#wwwwwwwwwwwwwwww#####',
+          '#########.############'],
+        ents: [
+          HZ('hz_house'),
+          { x: 2, y: 1, spr: 'invisible', solid: true, on: look('墙上什么也没挂。\n这间屋子没有窗户——外婆说，是后来特意封上的。') },
+          { x: 1, y: 2, spr: 'dresser', col: '#5a4030', on: look('旧衣柜。最下层的抽屉里，整整齐齐叠着几件小学生的白衬衫。\n尺码一年比一年大——到了某一年，就再也没变过。') },
+          { id: 'oshiire', x: 4, y: 2, spr: 'closet', on: oshiire },
+          { x: 2, y: 6, spr: 'tsuru', solid: false, on: look('榻榻米上排着一列白色的纸鹤。\n每一只的脖子，都被折成了扭曲的角度。像是在……跳舞。') },
+          { id: 'shinji', x: 3, y: 4, spr: '@shinji', dir: 3, on: shinjiTalk },
+          { id: 'butsu', x: 8, y: 2, spr: 'butsu', on: butsu },
+          { x: 10, y: 1, spr: 'koyomi', on: look('农协送的挂历，翻在八月。\n十三号那一格用红笔写着「迎火」——盂兰盆的头一天，要在门口点一小堆火，把祖先接回家。十六号写着「送火」。') },
+          { x: 13, y: 1, spr: 'mado', on: look('北边的窗外是后山。竹林一动不动，连一片叶子都不晃。') },
+          { id: 'radio', x: 15, y: 2, spr: 'radio', on: look('「……第八十五届全国高中棒球锦标赛，第七天第二场比赛……」\n解说员的声音被暑气泡得软绵绵的。') },
+          { x: 10, y: 4, w: 2, spr: 'lowtable', col: '#5a3a22', on: S => S.narr(S.f.phase === 'noon' ? '矮桌上摆着三副碗筷。外婆说，舅舅那份她会端进屋里去。' : '碗里的素面吃完了。翔太的碗边上，还粘着一片紫苏叶。') },
+          { x: 9, y: 5, spr: 'cushion', col: '#6a4a8a', on: look('紫色的坐垫，被太阳晒得发烫。') },
+          { x: 14, y: 4, spr: 'senpuki', on: look('电风扇「嗡嗡」地摇着头。转到你这边的时候，吹来的也是热风。') },
+          { id: 'katori', x: 13, y: 6, spr: 'katori', on: look('陶土烧的蚊遣猪，嘴里吐着蚊香的烟。\n烟往上走，走着走着，就扭了起来——\n你赶紧把眼睛移开了。') },
+          { id: 'bag', x: 8, y: 6, spr: 'bag', on: bag },
+          { x: 17, y: 2, spr: 'stove', on: look('灶上的锅还冒着热气，煮素面的水咕嘟咕嘟地翻滚。') },
+          { x: 18, y: 2, spr: 'sink', on: look('水龙头里出来的是井水，冰得手指发麻。') },
+          { x: 19, y: 2, spr: 'counter', on: look('案板上切了一半的紫苏叶和茗荷，散着一股清凉的香味。') },
+          { x: 20, y: 2, spr: 'fridge', on: look('冰箱门上贴着一张褪色的老照片：两个小孩站在稻田边上。\n大一点的男孩举着一副黑色的望远镜，冲着镜头笑。小一点的女孩扎着两根小辫。') },
+          { x: 19, y: 1, spr: 'mado', on: look('厨房的窗外，是晒得发白的院子，和远处一片绿油油的田。') },
+          { x: 18, y: 5, w: 2, spr: 'table2', col: '#8a6a44', on: S => S.narr(S.f.phase === 'noon' ? '大碗里的素面泡在冰水里，上面浮着几块冰。' : '大碗里只剩下冰水，冰块都化了。') },
+          { id: 'baba_h', x: 18, y: 3, spr: '@baba', dir: 3, async on(S) {
+            S.face('baba_h', 'pl');
+            const L = ['素面马上就好。快去把翔太叫回来。', '翔太在院子里晾衣竿那边。……大中午的，别让他往田那边看。', '舅舅那份，外婆一会儿端进去。你别去吵他。'];
+            await S.say('外婆', L[(S.f._bk = ((S.f._bk ?? -1) + 1) % 3)]);
+            S.face('baba_h', 3);
+          } },
+          { id: 'nebaba', x: 11, y: 8, w: 2, spr: 'nebaba', hidden: true, on: babaSleep },
+          { id: 'shoesS', x: 8, y: 8, spr: 'shoes', col: '#e8c030', on: S => S.narr(S.f.phase === 'noon' ? '踏板石上摆着三双鞋：外婆的木屐，你的运动鞋，翔太的黄色小凉鞋。' : '踏板石上只剩两双鞋了：外婆的木屐，你的运动鞋。\n翔太的黄色小凉鞋不见了。') },
+          { x: 4, y: 8, spr: 'furin', solid: false, on: look('屋檐下挂着一只玻璃风铃。没有风，它一声也不响。') },
+          { x: 9, y: 9, spr: 'invisible', touch: S => S.go('yard', 7, 2, 0) }
+        ],
+        async enter(S, first) {
+          const f = S.f;
+          if (f.phase === 'noon' && first) {
+            await S.narr('……好热。\n你在榻榻米上醒过来，后背上全是汗。电风扇摇着头，吹过来的风也是热的。');
+            await S.narr('收音机里在转播甲子园。解说员的声音，被外面的蝉声盖住了一半。');
+            await S.say('外婆（厨房）', ['美夏，醒啦？', '去把翔太叫回来，素面马上就好。他在院子里晾衣竿那边玩呢。']);
+            await S.say('外婆（厨房）', '大中午的，太阳毒——别让他往田那边看。');
+            upd(S);
+          }
+          if (f.phase === 'search' && S.once('missing')) {
+            S.ent('shoesS').col = '#5a4030';
+            await S.narr('翔太不在屋里。');
+            await S.narr('缘侧的踏板石上，他那双黄色的小凉鞋不见了。挂在柱子上的捕虫网，也不见了。');
+            await S.think('……他该不会，又去看那个东西了吧？');
+            upd(S);
+          }
+        }
+      },
+      /* ---------------- 院子和村道 ---------------- */
+      yard: {
+        amb: 'wind', dark: 0, plr: 4, wall: 'wood', floor: 'wood', field: true,
+        legend: { i: 'ine', a: 'aze', v: 'jari', '~': 'mizu', e: 'ashi' },
+        rows: yardRows(),
+        ents: [
+          HZ('hz_yard'),
+          { id: 'kuraF', x: 17, y: 0, w: 4, h: 2, spr: 'kuraF', decal: true },
+          { id: 'genkan', x: 7, y: 1, spr: 'sliding', on: genkan },
+          { x: 4, y: 1, spr: 'mado', on: look('窗户开着，竹帘卷起了一半。屋里的电风扇在慢慢地摇头。', '（手指碰到了竹帘。是外婆家的窗户。）') },
+          { x: 10, y: 1, spr: 'mado', on: look('厨房的窗户。灶上的热气从窗口飘出来。', '（窗台被晒得发烫。）') },
+          { id: 'kuraD', x: 18, y: 1, spr: 'kuraD', on: kuraDoor },
+          { x: 3, y: 2, spr: 'furin', solid: false, on: look('屋檐下的玻璃风铃，一声也不响。', '（头顶上，风铃一声也不响。）') },
+          { id: 'hosho', x: 4, y: 4, w: 3, spr: 'hosho', s: { towel: true }, on: hosho },
+          { id: 'shota_y', x: 5, y: 5, spr: '@shotaH', dir: 0, async on(S) {
+            if (S.f.phase === 'noon') return noonScene(S);
+            await S.say('翔太', '……姐姐，我闭着眼睛呢。手好疼，你别攥那么紧。', { style: 'whisper' });
+          } },
+          { id: 'baba_y', x: 7, y: 2, spr: '@baba', hidden: true, on: S => S.say('外婆', '……好孩子。') },
+          { id: 'shinji_y', x: 2, y: 2, spr: '@shinji', dir: 2, hidden: true, on: S => S.say('伸二舅舅', '……回来了啊。') },
+          { x: 13, y: 4, spr: 'well', on: look('老水井，井口盖着半块木板。\n井绳上吊着一只木桶，桶里泡着一个大西瓜，凉气一丝一丝地往上冒。', '（井沿的石头，凉凉的。）') },
+          { x: 14, y: 5, spr: 'jizo', on: look('院墙边的小地藏，红围兜晒得发白。\n脚边供着一块西瓜，已经招来了一串蚂蚁。', '（一尊小小的石像。是院子里的地藏。快到了。）') },
+          { x: 27, y: 3, w: 2, spr: 'kei', on: look('外婆家的白色轻卡车，车斗里堆着几捆稻草。\n挡风玻璃上积了一层灰，雨刷底下夹着一张褪色的农协传单。', '（铁皮晒得烫手。是外婆家的轻卡车。）') },
+          { x: 19, y: 6, spr: 'vending', col: '#d8d8dc', on: look('路边的自动贩卖机，嗡嗡地响着。\n「冰的」那一排，一半都亮着红色的「售完」。', '（嗡嗡的声音。是路边的贩卖机。）') },
+          { x: 30, y: 6, spr: 'busstop', on: look('「水无濑」公交站。一天三班。下一班是下午四点十二分。\n站牌的铁杆子被晒得发烫。', '（铁杆子，烫的。）') },
+          { x: 0, y: 7, spr: 'invisible', solid: true, on: look('村道往西通向镇上。爸妈的车，就是沿着这条路开走的。') },
+          { x: 0, y: 8, spr: 'invisible', solid: true, on: look('村道往西通向镇上。爸妈的车，就是沿着这条路开走的。') },
+          { x: 33, y: 7, spr: 'invisible', solid: true, on: look('村道往东拐进了山里。路面上的热气晃得厉害，看久了眼睛发酸。') },
+          { x: 33, y: 8, spr: 'invisible', solid: true, on: look('村道往东拐进了山里。路面上的热气晃得厉害，看久了眼睛发酸。') },
+          { x: 24, y: 16, spr: 'kakashi', col: '#7a7a6a', on: look('一个稻草人，戴着破草帽。它的衣服是灰的。\n……灰的。不是白的。你松了一口气。') },
+          { id: 'kk_y', x: 30, y: 14, spr: 'kune', kk: true, solid: false },
+          { x: 15, y: 16, spr: 'invisible', touch: toTanbo }
+        ],
+        async enter(S, first) {
+          const f = S.f;
+          if (f.phase === 'noon') {
+            if (first) {
+              await S.narr('一出门，热气就扑到了脸上。\n蝉声像是从四面八方的地底下冒出来的，吵得耳朵嗡嗡响。');
+              S.bubble('shota_y', '!', 1200);
+              await S.say('翔太', '姐姐——！快过来看！');
+            }
+            S.goal('去晾衣竿那边找翔太');
+            return;
+          }
+          if (f.phase === 'search') {
+            if (S.once('yardSearch')) {
+              await S.narr('院子里一个人也没有。\n晾衣竿上那条白床单，一下一下地鼓起来，又慢慢地瘪下去。');
+              await S.think('……今天明明一丝风都没有。');
+            }
+            return upd(S);
+          }
+          if (f.phase === 'home' && S.once('yardHome')) {
+            await S.narr('脚下的田埂变宽了。前面传来水渠哗哗的声音。\n……快到家了。');
+            await S.say('翔太', '姐姐，我能睁眼了吗？', { style: 'whisper' });
+            await S.say('美夏', '还不行。进了家门才行。');
+            upd(S);
+            S.cp('home');
+          }
+        },
+        step(S, x, y) {
+          const f = S.f;
+          if (f.phase === 'noon' && !f.sawIt && Math.abs(x - 5) + Math.abs(y - 5) <= 2) return noonScene(S);
+          if (f.phase === 'home' && !f.lock) {
+            if (!f.t1 && y <= 12) return tempt1(S);
+            if (f.t1 && !f.t2 && y <= 6) return tempt2(S);
+          }
+        }
+      },
+      /* ---------------- 土藏 ---------------- */
+      kura: {
+        amb: 'drone', dark: .8, darkC: '#060504', plr: 2.4, wall: 'plain', floor: 'darkwood',
+        rows: [
+          '############',
+          '############',
+          '#WWWWWWWWWW#',
+          '#WWWWWWWWWW#',
+          '#WWWWWWWWWW#',
+          '#WWWWWWWWWW#',
+          '#WWWWWWWWWW#',
+          '#####W######'],
+        ents: [
+          { x: 6, y: 1, spr: 'slit', light: { r: 3.4, col: 'rgba(255,240,200,.14)', dy: 40 }, on: look('高处一扇小小的气窗。从这里只能看见一小块白晃晃的天。') },
+          { x: 1, y: 2, spr: 'shelf', on: look('架子上摆着装稻种的纸袋，上面是外公的字：「越光」「笹锦」「去年的，勿用」。') },
+          { x: 3, y: 2, spr: 'dresser', col: '#4a3424', on: look('旧衣柜。抽屉里塞满了发黄的报纸。\n最上面一张是昭和四十八年夏天的地方报，角落里有一小块：「水无濑村　十二岁男童疑似中暑　言语异常」。') },
+          { id: 'chest', x: 5, y: 2, w: 2, spr: 'chest', async on(S) {
+            if (S.once('chest')) await S.narr('长条形的旧木箱，盖子上落着厚厚的灰。\n箱子里是几卷旧挂轴，还有一本受了潮的笔记本。');
+            await S.note('minzoku');
+          } },
+          { id: 'tana', x: 9, y: 2, spr: 'tana', on: boxOpen },
+          { x: 10, y: 2, spr: 'kuwa', on: look('锄头和镰刀靠在墙上，刃口生了锈。\n墙角盘着一捆草绳，跟田里稻草人身上捆的是一样的。') },
+          { id: 'tsutsumi', x: 10, y: 4, spr: 'tsutsumi', on: look('一个用旧白布裹起来的稻草人。白布裹得严严实实，连脸都蒙住了，外面捆了好几道草绳。\n布上用墨写着三个字：「看不得」。') },
+          { x: 1, y: 5, spr: 'sack', on: look('几袋陈米。袋子上写的日期，是十年前的。') },
+          { x: 8, y: 6, spr: 'barrel', on: look('腌菜桶，盖子上压着一块大石头。凑近了，有一股咸咸的酸味。') },
+          { x: 9, y: 6, spr: 'crate', on: look('木箱里装着旧农具的零件，还有一盏没有灯泡的提灯。') },
+          { x: 5, y: 7, spr: 'invisible', touch: S => S.go('yard', 18, 2, 0) }
+        ],
+        async enter(S, first) {
+          if (!first) return;
+          await S.narr('土藏里比外面凉快得多。一股霉味，混着陈米的味道。\n外面的蝉声一下子远了，像是隔着一层水。');
+          await S.narr('高处的气窗里斜斜地照进来一道光，光里浮着灰。');
+          upd(S);
+        },
+        async step(S, x, y) {
+          if (Math.abs(x - 10) + Math.abs(y - 4) <= 1 && S.once('tsutsumiMove')) {
+            const e = S.ent('tsutsumi');
+            S.sfx('thud'); e.ox = 1; await S.wait(120); e.ox = -1; await S.wait(120); e.ox = 1; await S.wait(120); e.ox = 0;
+            await S.narr('墙角那个裹着白布的东西，动了一下。');
+            await S.think('……是风。\n……藏里哪来的风？');
+          }
+        }
+      },
+      /* ---------------- 水田 ---------------- */
+      tanbo: {
+        amb: 'wind', dark: 0, plr: 4, wall: 'plain', floor: 'dirt', field: true,
+        legend: { i: 'ine', a: 'aze', '~': 'mizu', e: 'ashi', l: 'lightwood' },
+        rows: tanboRows(),
+        ents: [
+          HZ('hz_tanbo'),
+          { x: 3, y: 0, spr: 'invisible', touch: S => S.go('yard', 15, 15, 3) },
+          { x: 39, y: 21, spr: 'invisible', touch: S => S.go('ike', 6, 16, 3) },
+          { x: 4, y: 2, spr: 'sign', col: '#7a6040', on: look('木牌：「← 水无濑　　　水神池 →」\n箭头底下，有人用小刀刻了一行歪歪扭扭的字：「晌午别抬头」。') },
+          { id: 'kakashi1', x: 8, y: 4, spr: 'kakashi', col: '#f2f0e8', on: kakashi1 },
+          { id: 'jizoT', x: 13, y: 8, spr: 'jizo', on: look('田埂路口的地藏，红围兜晒褪了色。脚边供着一个干瘪的橘子。\n地藏的眼睛，是闭着的。') },
+          { id: 'hat', x: 12, y: 9, spr: 'mugi', solid: false, on: S => pickTrace(S, 'hat', 'hat', '翔太的草帽。帽檐朝下扣在田埂上，像是跑的时候被风吹掉的——\n可今天没有风。\n帽子里面，还是温的。', '他往东边跑了。') },
+          { id: 'jii', x: 8, y: 16, spr: '@jii', dir: 0, on: jiiTalk },
+          { id: 'yagura', x: 2, y: 12, spr: 'yagura', on: yagura },
+          { id: 'net', x: 21, y: 14, spr: 'ami', solid: false, on: S => pickTrace(S, 'net', 'net', '翔太的捕虫网。网杆斜插在芦苇边上，网兜朝着东边。\n网兜上挂着几根白色的、像丝一样的东西。', '……像是在给我指路。') },
+          { id: 'sandal', x: 33, y: 21, spr: 'zori', solid: false, on: S => pickTrace(S, 'sandal', 'sandal', '一只黄色的小凉鞋，泡在水口边上。另一只不知道去哪儿了。\n水口的水哗哗地往东流——流向水神池的方向。', '翔太……光着一只脚，也要去看它吗？') },
+          { x: 33, y: 22, spr: 'mizuguchi', on: look('水口。田里的水从这里哗哗地流出去，一路往东。') },
+          { id: 'kakashi2', x: 35, y: 10, spr: 'kakashi', col: '#6a6a7a', blind: true, on: look('又一个稻草人。\n它的眼睛被人用一条白布蒙上了。\n……谁会给稻草人蒙眼睛？') },
+          { id: 'kk_t1', x: 17, y: 12, spr: 'kune', kk: true, solid: false },
+          { id: 'kk_t2', x: 34, y: 18, spr: 'kune', kk: true, solid: false }
+        ],
+        async enter(S, first) {
+          if (!first) return;
+          await S.narr('田埂窄得只能走一个人。两边的稻子快齐腰高了，绿得晃眼。\n水面上蒸起来的热气，让远处的一切都在轻轻地抖。');
+          await S.think('别朝着它走。别盯着它看。……芦苇和树后面，应该就看不见它了。');
+          S.toast('别长时间面朝白色的东西——芦苇、树丛能挡住视线');
+          upd(S);
+          S.cp('field');
+        },
+        step(S, x, y) {
+          if (y === 3 && x >= 4 && x <= 7 && S.once('kk1see')) return (async () => {
+            S.sfx('sting'); S.bubble('pl', '!', 1000);
+            await S.narr('前面的田里，有一个白色的东西！');
+            await S.think('……不对。它没在动。');
+          })();
+        }
+      },
+      /* ---------------- 水神池 ---------------- */
+      ike: {
+        amb: 'river', dark: .28, darkC: '#06100a', plr: 4, wall: 'stone', floor: 'stone', field: true, cicV: .4,
+        legend: { '~': 'pond' },
+        rows: ikeRows(),
+        ents: [
+          HZ('hz_ike'),
+          { x: 6, y: 17, spr: 'invisible', touch: ikeExit },
+          { id: 'torii', x: 6, y: 15, ox: -8, spr: 'torii', solid: false, on: toriiOn },
+          { x: 4, y: 15, spr: 'sekihi', on: look('一块长着青苔的石碑，刻着：「水神　昭和十年　水难供养」。\n旁边还有一行更小的字，被苔藓盖住了一半：「……者，闭目而归」。', '（冰凉的石碑。摸得到刻字。）') },
+          { x: 9, y: 15, spr: 'hokora', on: look('小小的水神祠。供台上放着一只倒扣的酒杯，还有一只铜铃铛——跟你胸前的那只一模一样，只是长满了绿锈。', '（木头的小祠堂。）') },
+          { id: 'lantern', x: 6, y: 11, spr: 'stonelantern', off: true, on: look('长满青苔的石灯笼。火袋里积着雨水，泡着一只死蜻蜓。', '冰凉、粗糙的石头。是石灯笼。\n舅舅的画上——灯笼，往右。') },
+          { id: 'chimetree', x: 12, y: 12, spr: 'kareki', on: look('一棵枯死的杉树，枝上挂着一只玻璃风铃。', '叮铃——\n风铃就挂在你头顶上。舅舅的画上——风铃，往上，五步。') },
+          { id: 'jizoI', x: 16, y: 11, spr: 'jizo', on: look('池边的小地藏，脸被水汽泡得模糊了。', '（一尊小小的、湿漉漉的石像。……地藏。）') },
+          { id: 'shota_i', x: 17, y: 11, spr: '@shota', dir: 2, on: findShota },
+          { id: 'kk_i', x: 21, y: 9, spr: 'kune', kk: true, solid: false }
+        ],
+        async enter(S, first) {
+          if (!first) return;
+          await S.narr('田埂的尽头是一片杉树林。林子里比外面阴凉，蝉声也远了。\n一座褪了色的红鸟居，立在石板路的入口。');
+          S.focus(16, 10);
+          await S.narr('透过树缝，能看见池子的水光。\n水边站着一个穿黄背心的小小身影。\n……水面上，还有一个白色的、细长的东西。');
+          S.focus(null);
+          await S.think('翔太！……不能喊。不能往那边看。');
+          upd(S);
+          S.cp('ike');
+        },
+        step(S, x, y) {
+          const f = S.f, k = x + ',' + y;
+          if (!f.blind) { if (x === 6 && y <= 14) return pushBack(S); return; }
+          if (DEAD[k]) return deadEnd(S, DEAD[k]);
+          if (NEAR.includes(k)) { S.sfx('whisper'); if (S.once('near' + k)) S.toast('……前面，有什么东西在轻轻地晃。'); return; }
+          if (x === 6 && y === 12 && S.once('cueLantern')) return cue(S, '你伸出手——指尖碰到了冰凉、粗糙的石头。\n是石灯笼。', 'thud');
+          if (x === 11 && y === 12) { S.sfx('bell'); if (S.once('cueChime')) return cue(S, '叮铃——\n头顶上，有一只风铃在响。\n……可是，一丝风也没有。'); return; }
+          if (y === 7 && x >= 12 && x <= 15 && S.once('cueBridge')) return cue(S, '脚底下「嘎吱」一声，变成了木板。\n板缝里，能听见水在流。');
+          if (x === 17 && y === 10 && !f.got && S.once('cueShota')) return cue(S, '前面……有人在喘气。\n很轻、很急，像一个跑累了的小孩。');
+          if (f.got && x === 6 && y === 16) return leaveIke(S);
+        }
+      }
+    }
+  });
 })();

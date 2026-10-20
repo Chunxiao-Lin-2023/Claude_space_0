@@ -1,0 +1,61 @@
+# 第一夜 くねくね · 自动通关步骤（格式见 tests/play.py 顶部）
+SOL = [
+    [],
+    ['shot', 'house'],
+    ['use', 'shinji'],
+    ['use', 'baba_h'],
+    ['use', 'radio'], ['use', 'katori'],
+    # 院子：翔太指给你看田里的白东西
+    ['step', 9, 9],
+    ['expect', "window.__dbg.W.mapId === 'yard'"],
+    ['shot', 'yard'],
+    ['use', 'shota_y'],
+    ['expect', "window.__dbg.W.f.phase === 'search' && window.__dbg.W.mapId === 'house'"],
+    # 午后：翔太不见了
+    ['use', 'bag'],
+    ['use', 'nebaba'],
+    ['use', 'butsu'],
+    ['use', 'oshiire'],
+    ['expect', 'window.__dbg.W.f.readBaba && window.__dbg.W.f.readEhon'],
+    ['step', 9, 9],
+    ['use', 'hosho'],
+    ['expect', "window.__dbg.W.inv.includes('towel')"],
+    ['use', 'kuraD', ['1234']],
+    ['use', 'kuraD', ['0813']],
+    ['expect', "window.__dbg.W.mapId === 'kura'"],
+    ['use', 'tana'], ['use', 'chest'],
+    ['shot', 'kura'],
+    ['step', 5, 7],
+    ['use', 'genkan'],
+    ['use', 'shinji'],
+    ['expect', 'window.__dbg.W.f.uta'],
+    ['step', 9, 9],
+    ['use', 'hosho', [1]],                 # 望远镜的诱惑：不看
+    # 水田
+    ['step', 15, 16],
+    ['expect', "window.__dbg.W.mapId === 'tanbo'"],
+    ['shot', 'tanbo'],
+    ['use', 'kakashi1'], ['use', 'hat'], ['use', 'jii'], ['use', 'yagura', [0, 1]],
+    ['js', 'window.__dbg.W.f.gz = 0'],
+    ['use', 'net'], ['use', 'sandal'],
+    ['js', 'window.__dbg.W.f.gz = 0'],
+    ['step', 39, 21],
+    ['expect', "window.__dbg.W.mapId === 'ike'"],
+    ['shot', 'ike'],
+    # 水神池：蒙眼按舅舅的画走
+    ['use', 'torii', [0]],
+    ['expect', 'window.__dbg.W.f.blind'],
+    ['step', 6, 12],
+    ['shot', 'blind'],
+    ['step', 3, 10],                       # 走错一次：死路
+    ['expect', 'window.__dbg.W.pl.x === 5 && window.__dbg.W.pl.y === 12'],
+    ['step', 11, 12], ['step', 13, 7], ['step', 17, 10],
+    ['use', 'shota_i', [0]],
+    ['expect', 'window.__dbg.W.f.got'],
+    ['step', 6, 16],
+    ['expect', "window.__dbg.W.mapId === 'yard' && window.__dbg.W.f.phase === 'home'"],
+    ['step', 15, 12, [1]],                 # 假外婆：不睁眼
+    ['step', 16, 6, [1]],                  # 望远镜：不看
+    ['shot', 'home'],
+    ['use', 'genkan', [0]],
+]
