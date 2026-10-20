@@ -340,7 +340,7 @@ BX.register({
     function geo() {
       const W = cv.w, br = bar.getBoundingClientRect(), barH = Math.max(br.height, 50) + 14;
       const Ha = Math.max(220, cv.h - barH), wide = W / Ha > 1.5;
-      const cw = BX.clamp(Math.min(W / 7.2, Ha * (wide ? .15 : .1)), 26, 78);
+      const cw = BX.clamp(Math.min(W / (W / Ha < 1 && 1 ? 8 : 7.2), Ha * (wide ? .15 : .1)), 26, 78);
       return {W, Ha, wide, cw, ch: cw * 1.4, cx: W / 2, cy: Ha / 2 + (wide ? 0 : 0)};
     }
     function seatPos(s, G) {
@@ -353,7 +353,8 @@ BX.register({
       const blockH = G.ch * scale * .7 + 36;
       const rx = G.W / 2 - plW / 2 - 6, ry = G.Ha / 2 - blockH / 2 - 6;
       let x = G.cx + rx * Math.cos(ang), y = G.cy + ry * Math.sin(ang);
-      if (n > 2 && !mine && Math.abs(Math.cos(ang)) > .3) y = G.cy + ry * .78 * Math.sin(ang) - (Math.sin(ang) > 0.2 ? 0 : 0);
+      if (n > 2 && !mine && Math.abs(Math.cos(ang)) > .3) y = G.cy + ry * .78 * Math.sin(ang);
+      if (!G.wide && n > 2 && !mine && Math.abs(Math.sin(ang)) < .45) y = G.cy + (Math.sin(ang) > .05 ? 1 : -1) * ry * .5;   // portrait: keep side seats clear of the board
       return {x, y: y + blockH / 2 - 18, plW, mine, scale, ang, blockH};
     }
     function frame(dt) {

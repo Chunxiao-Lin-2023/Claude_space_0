@@ -324,12 +324,13 @@ BX.register({
         hs.forEach((hd, hi) => {
           for (const t of T) if (hd.c.includes(t.c)) drawCard(t);
           const hl = HL.get(hd) || {x: cx, w: cw}, act = turn && hi === st.hi, tt = total(hd.c), bx = hl.x - hl.w / 2, by = sp.yP - 4;
-          if (act) { g.strokeStyle = '#ffd76a'; g.lineWidth = 3; g.shadowColor = '#ffd76a'; g.shadowBlur = 10; D.rr(g, bx - 4, by, hl.w + 8, ch + (hd.c.length - 1) * ch * .1 + 8, 8); g.stroke(); g.shadowBlur = 0; }
-          if (hd.c.length && vis.get(hd.c[hd.c.length - 1]) && vis.get(hd.c[hd.c.length - 1]).wait <= 0) {
+          const lv = hd.c.length ? vis.get(hd.c[hd.c.length - 1]) : null, ready = !!lv && lv.wait <= 0;
+          if (act && ready) { g.strokeStyle = '#ffd76a'; g.lineWidth = 3; g.shadowColor = '#ffd76a'; g.shadowBlur = 10; D.rr(g, bx - 4, by, hl.w + 8, ch + (hd.c.length - 1) * ch * .1 + 8, 8); g.stroke(); g.shadowBlur = 0; }
+          if (ready) {
             badge(g, bx - 2, by - 2, (tt.soft && tt.t < 21 ? '软' : '') + tt.t, tt.t > 21 ? '#a33022' : tt.t === 21 ? '#8a6a1c' : '#2a190d', Math.max(11, cw * .22), 'center');
           }
           const lbl = hd.res ? {bj: '黑杰克', win: '赢', push: '平', lose: '输', bust: '爆牌'}[hd.res] : hd.bust ? '爆牌' : hd.bj ? '黑杰克' : '';
-          if (lbl) {
+          if (lbl && ready) {
             const good = hd.res === 'bj' || hd.res === 'win' || (!hd.res && hd.bj), y = sp.yP + ch * .45;
             const net = hd.net != null ? (hd.net > 0 ? ' +' + hd.net : hd.net < 0 ? ' ' + hd.net : '') : '';
             const fs = Math.max(13, cw * .26);
@@ -344,7 +345,7 @@ BX.register({
       const msg = st.ph === 'res' || st.ph === 'over' || (st.msg && st.ph !== 'play') ? st.msg : '';
       if (msg) {
         const fs = Math.max(13, Math.min(18, W / 32)); g.font = '700 ' + fs + 'px ' + BX.F.sans;
-        const mw = g.measureText(msg).width + 28, my = yT + Math.max(40, Math.min(56, W / 16));
+        const mw = g.measureText(msg).width + 28, my = Math.max(yT, Math.min(yT + Math.max(40, Math.min(56, W / 16)), Math.min(...spots.map(q => q.yP)) - fs - 14));
         g.fillStyle = 'rgba(20,12,6,.7)'; D.rr(g, W / 2 - mw / 2, my - fs, mw, fs * 2, fs); g.fill();
         D.text(g, msg, W / 2, my, {size: fs, color: '#f3e2c0'});
       }
