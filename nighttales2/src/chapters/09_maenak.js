@@ -20,7 +20,7 @@
   const FAILS = { c: 0, w: 0 };
   /* 屋底下「她在听」：只在主机 tick 里用的瞬时量，不进存档 */
   const UND = { mv: 0, pd: 0, warned: false };
-  const THREAD_T = 45, THREAD_PEN = 10;
+  const THREAD_T = 40, THREAD_PEN = 8;
   const caughtC = async S => {
     FAILS.c++;
     await S.scare('face', { spr: '@nakg', sfx: 'scream' });

@@ -108,7 +108,7 @@
   /* 读档/死后重来：注视清零，脸转开（不让人一睁眼就正对着它） */
   function faceAway(S) {
     const m = curMap(), p = W.pl; if (!m || !m.def.field) return;
-    let k = null, kd = VIEW + 1;
+    let k = null, kd = VIEW;
     for (const e of m.ents) if (e.kk && !e.hidden) { const d = Math.hypot(e.px - p.px, e.py - p.py) / TS; if (d < kd) { kd = d; k = e; } }
     if (!k) return;
     const dx = k.px - p.px, dy = k.py - p.py;
@@ -338,15 +338,15 @@
         R(4 - i * .2 + s, y, 2, 2, W1); R(26 + i * .2 - s, y - 1, 2, 2, W1);
       }
       for (let y = 1; y < 32; y++) {
-        const k = (y - 16) / 15, w = Math.max(1, Math.round(Math.sqrt(Math.max(0, 1 - k * k)) * (y < 16 ? 8.5 : 10)));
+        const k = (y - 16.5) / 15.5, w = Math.max(1, Math.round(Math.sqrt(Math.max(0, 1 - k * k)) * (y < 16 ? 6.5 : 7.5)));
         const x = 16 - w + off(y);
-        R(x, y, w * 2, 1, W1); R(x + w * 2 - 3, y, 3, 1, W2); R(x, y, 1, 1, W3);
-        if (w > 3) R(x + ((y * 2 + Math.floor(t * 9)) % (w * 2 - 2)) + 1, y, 1, 1, W2);   // 拧出来的斜褶
+        R(x, y, w * 2, 1, W1); R(x + w * 2 - 2, y, 2, 1, W2); R(x, y, 1, 1, W3);
+        if (w > 3) R(16 + Math.round(Math.sin(y * .22 + t * 3) * w * .55) + off(y), y, 1, 1, W2);   // 一道拧出来的褶，从头顶一直扭到下巴
       }
       const eh = 3 + Math.round(a * 5);
-      for (let i = 0; i < eh; i++) { R(10 + off(10 + i), 10 + i, 3, 1, K); R(19 + off(13 + i), 13 + i, 2, 1, K); }
+      for (let i = 0; i < eh; i++) { R(11 + off(10 + i), 10 + i, 3, 1, K); R(19 + off(13 + i), 13 + i, 2, 1, K); }
       const mh = 1 + Math.round(a * 3);
-      for (let x = 9; x < 24; x++) { const y = 23 + Math.round(Math.sin(x * .8 + t * 10) * 1.5); R(x + off(y), y, 1, mh, K); }
+      for (let x = 11; x < 22; x++) { const y = 23 + Math.round(Math.sin(x * .8 + t * 10) * 1.5); R(x + off(y), y, 1, mh, K); }
     },
     /* 田埂上的「外婆」：先是一张笑眯眯的老人脸；接着脸色发白、眯着的眼变成两个黑洞、嘴一直咧到耳根，整张脸跟着扭起来 */
     nise(R, a, t) {
