@@ -48,6 +48,8 @@ const SAPI = {
   get moving() { const p = W.pl; if (isHost() && !iControl()) return !!(p.rmv && RT - p.rT < .3); return !!p.mv; },
   get running() { const p = W.pl; if (isHost() && !iControl()) return !!(p.rmv && p.rrun && RT - p.rT < .3); return !!(p.mv && p.run); },
   get coop() { return NET.role !== 'solo' && NET.up; },
+  /* 是否有剧本正在运行（tick 里判断用） */
+  get busy() { return !!(W && W.busy); },
   async say(who, text, o = {}) {
     const g = GEN; const pages = Array.isArray(text) ? text : [text];
     for (const t of pages) {
@@ -186,7 +188,9 @@ const SAPI = {
     const g = GEN;
     if (!SAPI.coop) { const v = await SAPI.ask(text, opts, who, o); return { v, agree: true, h: v, g: v }; }
     const r = await waitInput('dlg', { dlg: { id: ++DLGID, who: who || '', text, choices: opts, sel: 0, full: false, t0: RT, style: o.style || '', vote: { h: null, g: null } } });
-    chk(g); W.dlg = null; return r;
+    chk(g); W.dlg = null;
+    if (r && !r.agree && o.onSplit != null) r.v = o.onSplit;   // 意见不一致时固定走某一项（例如安全项）
+    return r;
   },
 };
 function markDone(id) { const d = store.get('done', []); if (!d.includes(id)) { d.push(id); store.set('done', d); } }
