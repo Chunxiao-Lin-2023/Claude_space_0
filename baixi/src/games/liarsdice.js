@@ -185,7 +185,9 @@ BX.register({
         /* seats */
         for (let s = 0; s < N; s++) {
           const P = seatPos(s, tb), isMe = P.me && ctx.isLocal(ctx.view);
-          const ds = Math.min(isMe ? unit * .56 : unit * .36, (isMe ? 48 : 30) * Z), turnNow = st.turn === s && st.phase === 'bid' && !st.over;
+          const side = N === 4 && !P.me && Math.abs(P.x - (tb.x + tb.w / 2)) > tb.w * .2;
+          const maxRow = P.me || N === 2 ? tb.w * .8 : side ? tb.w * .31 : tb.w * .45;
+          const ds = Math.min(isMe ? unit * .56 : unit * .36, (isMe ? 48 : 30) * Z, maxRow / (Math.max(1, st.dice[s].length) * 1.18 * 1.5 + .9)), turnNow = st.turn === s && st.phase === 'bid' && !st.over;
           // name plate
           const nw = Math.min(tb.w * .42, 150 * Math.min(Z, 1.3)), ny = P.me ? P.y + Math.max(unit * .62, ds * .5 + 22) : P.y - Math.max(unit * .9, ds * 1.7 + 14);
           g.fillStyle = turnNow ? 'rgba(230,197,125,.9)' : 'rgba(20,10,5,.55)'; D.rr(g, P.x - nw / 2, ny - 13, nw, 26, 13); g.fill();
@@ -205,10 +207,12 @@ BX.register({
           }
           // cup
           const cupW = Math.max(dw + ds * .5, ds * 2.4), cupH = ds * 1.7;
-          let lift = 0, off = 0;
-          if (reveal) { lift = cupK * cupH * 1.1; off = cupK * cupW * .55; }
-          else if (isMe) { lift = cupH * 1.1; off = cupW * .62; }
-          if (!(isMe && !reveal && false)) drawCup(g, P.x + off * (P.me ? 1 : 1), dy + ds - lift + (P.me ? 0 : 0), cupW * (isMe && !reveal ? .55 : 1), cupH * (isMe && !reveal ? .55 : 1), s, shake.k < 1 && !reveal ? Math.sin(t * 35) * .08 * (1 - shake.k) : 0, isMe && !reveal ? 0 : 0.0, !show ? n : 0);
+          // cup: closed over the dice, or opened (small, set aside next to the dice)
+          const open = isMe ? 1 : reveal ? cupK : 0, sc = 1 - .45 * open;
+          let off = open * (dw / 2 + cupW * .55 * .5 + ds * .3);
+          if (P.x + off + cupW * sc / 2 > tb.x + tb.w - 14) off = -off;
+          const lift = Math.sin(open * Math.PI) * cupH * .5;
+          drawCup(g, P.x + off, dy + ds - lift, cupW * sc, cupH * sc, s, shake.k < 1 && !reveal ? Math.sin(t * 35) * .08 * (1 - shake.k) : 0, 0, !show ? n : 0);
           // speech bubble with the player's last bid this round
           const last = [...st.hist].reverse().find(h => h.by === s);
           if (last && !reveal) {
@@ -220,7 +224,7 @@ BX.register({
             D.text(g, last.q + ' 个', bxx + 26 * zb, by + bh / 2, {size: 14 * zb, color: C.ink, weight: 800});
             D.die(g, bxx + 46 * zb, by + 6 * zb, 22 * zb, last.f);
           }
-          if (reveal && st.res && st.res.loser === s) D.text(g, '−1', P.x + dw / 2 + 22, dy + ds / 2, {size: 22, color: '#ffd0a0', weight: 900, stroke: '#5a120c', strokeW: 4});
+          if (reveal && st.res && st.res.loser === s) D.text(g, '−1', P.x, P.me ? dy - 16 : dy + ds + 18, {size: 22, color: '#ffd0a0', weight: 900, stroke: '#5a120c', strokeW: 4});
         }
         /* centre: current bid */
         const cx = tb.x + tb.w / 2, cy = tb.y + tb.h * (N === 2 ? .5 : .52);
@@ -276,7 +280,8 @@ BX.register({
       const T = total(), prev = st.bid, can = myTurn();
       if (can && selFor !== st.hist.length * 10 + st.round * 1000 + st.turn) resetSel();
       const pad = 10, iw = P.w - pad * 2;
-      let y = P.y + pad;
+      const fw0 = Math.min((iw - 30) / 6, 54), need = 34 + fw0 + 10 + 2 * 50 + 22;
+      let y = P.y + Math.max(pad, (P.h - need) / 2);
       // title row
       const tl = st.over ? '对局结束' : st.phase === 'reveal' ? '揭盅清点中…' : can ? (prev ? '加叫或开' : '你先叫数') : '等待 ' + ctx.name(st.turn) + ' 叫数…';
       D.text(g, tl, P.x + P.w / 2, y + 10, {size: 14, color: '#f3e2c0', weight: 700}); y += 24;

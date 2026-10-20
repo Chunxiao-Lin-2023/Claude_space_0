@@ -476,15 +476,16 @@ BX.register({
       // sizes
       const hn = st.hands[s].length, mt = st.melds[s].reduce((a, m) => a + m.ids.length, 0);
       const slots = wide ? hn + 1 + mt * .78 + (st.melds[s].length ? .5 : 0) : 14.6;
-      let tw = Math.min((W - 24) / slots, Ha * (wide ? .14 : .085), 64);
+      const two = !wide && (W - 24) / 14.6 < 40;
+      let tw = two ? Math.min((W - 24) / 7.6, Ha * .075, 56) : Math.min((W - 24) / slots, Ha * (wide ? .14 : .085), 64);
       const th = tw * 1.36;
       const ow = tw * (wide ? .72 : .78), oh = ow * 1.36;
       const rCols = wide ? 12 : 9, rw = Math.min(tw * (wide ? .78 : 1.02), (W * (wide ? .72 : .9)) / rCols), rh = rw * 1.36;
       const T = [];
       // my hand row
-      const myY = Ha - th - 4;
+      const myY = Ha - th - 4, topY = two ? myY - th - 6 : myY;
       const meldW = st.melds[s].reduce((a, m) => a + m.ids.length * tw * .78 + tw * .2, 0);
-      let x = wide ? (W - (hn + 1) * tw - meldW) / 2 : (W - (hn + (st.drawn != null && st.turn === s ? .4 : 0)) * tw) / 2;
+      let x = wide ? (W - (hn + 1) * tw - meldW) / 2 : two ? (W - 7.4 * tw) / 2 : (W - (hn + (st.drawn != null && st.turn === s ? .4 : 0)) * tw) / 2;
       x = Math.max(12, x);
       hitBoxes = [];
       const hand = st.hands[s].slice(), drawnHere = st.drawn != null && st.turn === s && hand.includes(st.drawn) && st.ph === 'discard';
@@ -493,14 +494,15 @@ BX.register({
       const canDis = ctx.canAct(s) && st.ph === 'discard';
       if (!canDis) sel = -1;
       sorted.forEach((id, i) => {
-        const gx = x + i * tw + (drawnHere && i === sorted.length - 1 ? tw * .4 : 0);
+        const isD = drawnHere && i === sorted.length - 1, row = two && i < 7 && !(isD && i < 7) ? 0 : 1, col = two ? (row ? i - 7 : i) : i;
+        const gx = isD && two ? x + 6.4 * tw : x + col * tw + (isD ? tw * .4 : 0), gy = two && !row ? topY : myY;
         const lift = canDis && (id === sel || id === hover) ? th * .22 : 0;
-        T.push({id, x: gx, y: myY - lift, w: tw, h: th, face: true, sel: id === sel});
-        if (canDis) hitBoxes.push({id, x: gx, y: myY, w: tw, h: th, lift: th * .25});
+        T.push({id, x: gx, y: gy - lift, w: tw, h: th, face: true, sel: id === sel});
+        if (canDis) hitBoxes.push({id, x: gx, y: gy, w: tw, h: th, lift: th * .2});
       });
       const handEnd = x + sorted.length * tw + (drawnHere ? tw * .4 : 0);
       // my melds
-      let mx = wide ? handEnd + tw * .5 : (W - meldW) / 2, my = wide ? myY + th - th * .78 : myY - th * .78 - 10;
+      let mx = wide ? handEnd + tw * .5 : (W - meldW) / 2, my = wide ? myY + th - th * .78 : topY - th * .78 - 10;
       if (!wide && st.melds[s].length) { /* row above hand */ }
       const drawMelds = (p, sx, sy, mwid, faceAll) => {
         let cx = sx;
@@ -516,7 +518,7 @@ BX.register({
       drawMelds(s, mx, my, tw * .78);
       // flowers (mine)
       const flW = Math.max(12, tw * .5);
-      st.fl[s].forEach((id, i) => T.push({id, x: W - 14 - (st.fl[s].length - i) * flW, y: wide ? 14 + oh + 8 : myY - th * .78 - 10 - (st.melds[s].length ? flW * 1.5 : 0) - flW * 1.36 - 4, w: flW, h: flW * 1.36, face: true}));
+      st.fl[s].forEach((id, i) => T.push({id, x: W - 14 - (st.fl[s].length - i) * flW, y: wide ? 14 + oh + 8 : topY - th * .78 - 10 - (st.melds[s].length ? flW * 1.5 : 0) - flW * 1.36 - 4, w: flW, h: flW * 1.36, face: true}));
       // opponent
       const oy = 16, on = st.hands[o].length, showOpp = st.over;
       const omW = st.melds[o].reduce((a, m) => a + m.ids.length * ow + ow * .26, 0);
@@ -528,7 +530,7 @@ BX.register({
       const topR = oy + oh + (st.fl[o].length ? flW * 1.36 + 10 : 10), botR = (wide ? myY : my) - 10 - (!wide && st.fl[s].length ? flW * 1.5 : 0);
       const midY = (topR + botR) / 2, rx0 = (W - rCols * rw) / 2;
       const rRows = p => Math.max(1, Math.ceil(st.river[p].length / rCols));
-      st.river[o].forEach((id, i) => { const r = Math.floor(i / rCols), c = i % rCols; T.push({id, x: rx0 + (rCols - 1 - c) * rw, y: midY - 22 - (r + 1) * rh, w: rw, h: rh, face: true, last: st.last && st.last.id === id}); });
+      st.river[o].forEach((id, i) => { const r = Math.floor(i / rCols), c = i % rCols; T.push({id, x: rx0 + c * rw, y: midY - 22 - (r + 1) * rh, w: rw, h: rh, face: true, last: st.last && st.last.id === id}); });
       st.river[s].forEach((id, i) => { const r = Math.floor(i / rCols), c = i % rCols; T.push({id, x: rx0 + c * rw, y: midY + 22 + r * rh, w: rw, h: rh, face: true, last: st.last && st.last.id === id}); });
       void rRows;
       // center info
@@ -539,7 +541,7 @@ BX.register({
       // seat wind badges
       const badge = (txt, bx, by2, col) => { D.disc(g, bx, by2, 13, col, {shadow: true}); D.text(g, txt, bx, by2 + 1, {size: 14, color: '#fff3e3', font: 'serif', weight: 900}); };
       badge(wind(o) === EAST ? '东' : '西', W - 26, oy + oh / 2, ctx.color(o));
-      badge(wind(s) === EAST ? '东' : '西', 24, wide ? myY + th / 2 : myY - 26, ctx.color(s));
+      badge(wind(s) === EAST ? '东' : '西', wide ? 24 : W / 2 - 110, wide ? myY + th / 2 : midY, ctx.color(s));
       // tween + draw
       const src = {x: W / 2 - tw / 2, y: midY - th / 2};
       wait = Math.max(0, wait - dt);
@@ -555,7 +557,7 @@ BX.register({
       // waits hint for selected tile
       if (sel >= 0 && canDis) {
         const c = counts(st.hands[s]); c[tyOf(sel)]--; const ws = waits(c, st.melds[s].length);
-        if (ws.length) { const txt = '打出后听：' + ws.map(tName).join(' '); D.text(g, txt, W / 2, myY - th * .3 - 12, {size: 13, color: '#ffe3a0', weight: 700, stroke: 'rgba(0,0,0,.6)', strokeW: 3}); }
+        if (ws.length) { const txt = '打出后听：' + ws.map(tName).join(' '); D.text(g, txt, W / 2, topY - th * .3 - 12, {size: 13, color: '#ffe3a0', weight: 700, stroke: 'rgba(0,0,0,.6)', strokeW: 3}); }
       }
       // win banner
       if (st.win) {
