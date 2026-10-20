@@ -835,7 +835,7 @@
   /* 事件表：L＝笑声又响又近（她其实在远处的树间，快走）；S＝笑声又轻又闷（她就在身边，站住别动）。
      进园先来一次 L，第二次一定是 S（进园约 6 秒），走完全程（禁跑，约 30 秒）至少遇到 3 次 S。 */
   const SEQ = 'LSLSLLSSLSLS';
-  const KNEAR = 4.2, KGRACE = 1.0;   // 轻笑持续 4.2 秒；轻笑响起后头 1 秒内还在走不算（真人要反应）
+  const KNEAR = 4.4, KGRACE = 1.3;   // 轻笑持续 4.4 秒；轻笑响起后头 1.3 秒内还在走不算（真人要听清、反应、松手）
   function resetK(S) {
     S.stop('kk'); const k = S.ent('kk');
     if (k) { k.hidden = false; k.alpha = 0; k.light = null; S.place('kk', 11, 15); k.alpha = 0; }
@@ -848,7 +848,7 @@
     f.kt -= dt;
     if (f.kph === 'near') {
       if (f.kt < KNEAR - KGRACE && S.moving) f.kmv += dt;
-      if (f.kmv > .3) {   // 她看见你了：木板第五条——香味变臭，跑
+      if (f.kmv > .35) {   // 她看见你了：木板第五条——香味变臭，跑
         f.kph = 'hunt'; f.kt = 3.6; k.alpha = 1; k.light = GLOW; cue(S, 0);
         S.sfx('sting'); laugh(S, 'far'); S.toast('香味一下子变成了腐臭——她看见你了！跑！'); S.bubble('kk', '!', 800);
         S.norun(false);
