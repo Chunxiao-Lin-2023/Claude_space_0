@@ -191,6 +191,7 @@
       F(0, 4, 5, 5, '#0c0a0e'); F(1, -3, 1, 7, '#0c0a0e'); F(3, -2, 1, 6, '#0c0a0e'); F(1, -2, 1, 3, '#3a1a1a');
       F(1, 5, 1, 1, '#ff3030'); F(0, 7, 2, 1, '#e8e2d6');
     },
+    wispdot(g, e, t, R) { const y = Math.sin(t * 4 + e.px) * 1.5, a = .55 + Math.sin(t * 9 + e.py) * .25; R(6, 6 + y, 4, 4, `rgba(90,140,255,${a * .5})`); R(7, 7 + y, 2, 2, `rgba(200,220,255,${a})`); },
     wisp(g, e, t, R) {
       const y = Math.sin(t * 3) * 2, a = .6 + Math.sin(t * 11) * .2;
       R(5, 2 + y, 6, 6, `rgba(90,140,255,${a * .5})`); R(6, 3 + y, 4, 4, `rgba(150,190,255,${a})`); R(7, 4 + y, 2, 2, '#e8f0ff'); R(7, y, 2, 2, `rgba(120,170,255,${a * .6})`);
@@ -694,12 +695,12 @@
     S.amb('drone');
     S.goal('带安妮逃出山洞！顺着蓝色的光点跑（洞口在南边）');
     S.cp('cave');
-    startDog(S, .8);
+    startDog(S, .6);
   }
-  function trail(S) { S.lights(TRAIL.map(([x, y]) => [x * 16 + 8, y * 16 + 8, 1.1, .55])); }
+  function trail(S, on = true) { TRAIL.forEach((p, i) => S.show('tr' + i, on)); }
   function startDog(S, wait) {
     dogT = 0;
-    S.chase('dog', { spd: 2.8, zone: (x, y) => y <= 15, wait: wait || 0, catch: dogCatch });
+    S.chase('dog', { spd: 3.0, zone: (x, y) => y <= 15, wait: wait || 0, catch: dogCatch });
   }
   async function dogCatch(S) {
     S.stop('dog');
@@ -707,7 +708,7 @@
     await S.die('一团比黑暗还黑的东西扑在了你背上。\n你最后听见的，是安妮的尖叫，和一个很近很近的声音：\n「……我说过的，我管不住它。」', '你被黑狗扑倒了');
   }
   async function caveEscape(S) {
-    S.stop('dog'); S.follow('anne_c', false); S.lights(null);
+    S.stop('dog'); S.follow('anne_c', false); trail(S, false);
     S.amb('river');
     await S.narr('你们跌跌撞撞地冲出洞口，摔在河滩冻硬的泥地上。');
     await S.alpha('dog', 0, 600);
@@ -1200,6 +1201,7 @@
       } },
       { id: 'anne_c', x: 2, y: 2, spr: '@anneS', dir: 0, on: S => anneCave(S) },
       { id: 'wisp', x: 8, y: 8, spr: 'wisp', hidden: true, solid: false, z: 1, light: WISP },
+      ...TRAIL.map(([x, y], i) => ({ id: 'tr' + i, x, y, spr: 'wispdot', hidden: true, solid: false, light: { r: 1.4, a: .7, col: 'rgba(90,140,255,.2)' } })),
       { id: 'dog', x: 19, y: 5, spr: 'beast', hidden: true, solid: false, light: { r: .8, col: 'rgba(255,40,40,.14)' } },
       { x: 4, y: 17, spr: 'invisible', solid: false, light: { r: 4.5, a: .55, col: 'rgba(110,130,190,.07)' } },
       { x: 18, y: 17, spr: 'invisible', solid: false, light: { r: 4.5, a: .55, col: 'rgba(110,130,190,.07)' } },
@@ -1304,7 +1306,7 @@
         S.place('anne_c', S.pl.x, S.pl.y); S.follow('anne_c', true);
         S.goal('带安妮逃出山洞！顺着蓝色的光点跑（洞口在南边）');
         await S.narr('洞的另一头，又传来那声低低的吠叫。\n蓝色的光点还亮着，一路通向洞口。');
-        startDog(S, 1.3);
+        startDog(S, 1.0);
       }
     },
     async intro(S) {

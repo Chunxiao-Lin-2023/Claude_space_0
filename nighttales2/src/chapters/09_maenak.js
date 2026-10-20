@@ -460,7 +460,7 @@
           const n = S.ent('nak_c'), px = W.pl.x;
           if (!S.f._amb && !S.f.naat && n && !n.hidden && px >= 23 && px <= 30) {
             S.f._amb = true; S.stop('nak_c');
-            S.place('nak_c', Math.min(34, px + 8), 11, 1); S.sfx('splash'); S.sfx('scream'); S.shake(400, 2); S.bubble('nak_c', '!', 1200);
+            S.place('nak_c', Math.min(34, px + 7), W.pl.y >= 9 && W.pl.y <= 10 ? W.pl.y : 10, 1); S.sfx('splash'); S.sfx('scream'); S.shake(400, 2); S.bubble('nak_c', '!', 1200);
             S.after(0, async S => {
               S.freeze('nak_c', true);
               await S.narr('前面的水里「哗啦」一声——\n她从运河里站了起来，浑身滴着水，挡在去寺里的路上。');
