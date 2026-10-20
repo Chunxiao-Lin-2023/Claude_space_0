@@ -1081,11 +1081,11 @@
     await S.say('娜', '吃吧。你最爱吃的。');
     let asked = 0;
     for (; ;) {
-      const opts = ['（低下头吃饭。什么也没看见。）', '「我……我下去解个手。」'];
-      if (asked < 2) opts.splice(1, 0, asked ? '「娜……你看着我。」' : '「娜，你是不是……已经……」');
+      const opts = ['（低下头吃饭。什么也没看见。）', '「我……我下去解个手。」'], tag = ['低头吃饭、什么也别问', '找借口下楼逃走'];
+      if (asked < 2) { opts.splice(1, 0, asked ? '「娜……你看着我。」' : '「娜，你是不是……已经……」'); tag.splice(1, 0, '把话问出口'); }
       const r = await S.vote('娜往你碗里夹了一块鱼。', opts, '麦');
       if (!r.agree) {
-        await S.narr('你张了张嘴，又闭上了。\n心里有两个声音在吵——一个要你「' + opts[r.h].replace(/[（）「」]/g, '') + '」，一个要你「' + opts[r.g].replace(/[（）「」]/g, '') + '」。');
+        await S.narr('你张了张嘴，又闭上了。\n心里有两个声音在吵——一个要你' + tag[r.h] + '，一个要你' + tag[r.g] + '。');
         await S.say('娜', '……怎么不吃了？', { style: 'whisper' });
       }
       const pick = opts[r.v];

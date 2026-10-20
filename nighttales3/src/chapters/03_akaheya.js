@@ -392,6 +392,7 @@
       while (n > 1 && measureW(pre + rest.slice(0, n), 10) > lim) n--;
       while (n > 2 && n < rest.length && NOHEAD.includes(rest[n])) n--;
       if (n < rest.length && /[\w.]/.test(rest[n])) { let k = n; while (k > 2 && /[\w.]/.test(rest[k - 1])) k--; if (k > 2 && k < n) n = k; }   // 英文单词不拆开
+      if (n > 2 && n < rest.length && '「（'.includes(rest[n - 1])) n--;   // 行尾不留前括号
       chatLine(pre + rest.slice(0, n), c); rest = rest.slice(n); pre = '　　';
     }
   }

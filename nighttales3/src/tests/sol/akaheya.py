@@ -50,6 +50,7 @@ SOL = [
     # 启动文件夹
     ['use', 'i_pc', [0]],
     ['shot', 'explorer'],
+    ['expect', "window.__dbg.ent('expwin').s.cnt === 4"],
     ['use', 'f3', [1]],
     ['use', 'f4', [0]],
     ['expect', "window.__dbg.W.f.phase === 'run'"],
@@ -67,5 +68,6 @@ SOL = [
     ['use', [4, 1]],
     ['use', 'pc'],
     ['shot', 'final_desk'],
+    # 结局抉择（单人时 S.vote 等同 ask）：0 闭眼删除 → 好结局；1「不喜欢」/2 看完 是两个坏结局（scratchpad 里的变体验证）
     ['use', 'f4', [0, 0]],
 ]
