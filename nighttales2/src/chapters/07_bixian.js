@@ -502,5 +502,484 @@
     }
   });
 
-  /* @@FUNCS@@ */
+  /* ================= 第一幕：教室里的笔仙 ================= */
+  function stepGoal(S) {
+    if (S.f.cut) return;
+    const need = [];
+    if (!S.f.gotPaper) need.push('白纸（你的课桌）');
+    if (!S.f.gotPen) need.push('红笔（讲台抽屉？）');
+    if (need.length) return S.goal('准备：' + need.join('、'));
+    if (!S.f.readRules) return S.goal('先看一遍苏晴抄的规矩（她桌边的纸）');
+    S.goal('和苏晴一起请笔仙（她的课桌）');
+  }
+  async function readRules(S) {
+    await S.note('rules');
+    if (!S.f.readRules) { S.f.readRules = true; stepGoal(S); }
+  }
+  const CHANT = '笔仙笔仙，我是你的今生，你是我的前世。若要与我续缘，请在纸上画圈。';
+  async function ritual1(S) {
+    const d = S.ent('rdesk');
+    if (S.f.cut) return S.narr('白纸上拖着一道长长的红线，从「是」一直拖到了纸外面。\n笔不见了。');
+    if (!S.f.dared) return S.narr('苏晴的课桌。');
+    if (!(S.f.gotPaper && S.f.gotPen)) { await S.say('苏晴', '还差东西呢——白纸，红笔。'); return stepGoal(S); }
+    if (!S.f.readRules) { await S.say('苏晴', '你先把规矩看一遍嘛，就在我桌边上。万一做错了……'); return; }
+    if (!S.f.setup) {
+      S.f.setup = true; S.take('paper'); d.s.paper = true;
+      S.face('su', 1);
+      await S.narr('苏晴接过白纸，用铅笔在左上角写了个「是」，右上角写了个「否」，\n底下一排，工工整整地写上 0 到 9。');
+    }
+    const r = await S.ask('「好了。……开始吗？」', ['开始', '再等等'], '苏晴'); if (r) return;
+    S.take('pen'); d.s.pen = true;
+    await S.say('苏晴', ['手背对着手背，交叉过来……用小指和无名指夹住笔。对，就这样。', '笔尖要立在纸中间。千万千万不能松手啊。']);
+    S.amb('none');
+    await S.narr('你们的手背贴在一起。苏晴的手冰凉冰凉的。\n日光灯嗡嗡地响。');
+    await S.say('你和苏晴', CHANT);
+    S.sfx('tick'); await S.wait(1200);
+    await S.narr('什么也没有发生。');
+    await S.say('你和苏晴', '……' + CHANT);
+    S.sfx('heart'); await S.wait(900);
+    await S.narr('笔尖动了一下。\n很轻，像有人在笔的另一头，轻轻地拽了一下。');
+    await pen(S, '然后，它在纸上，慢慢地，画了一个圈。');
+    S.bubble('su', '!', 1000);
+    await S.say('苏晴', ['……来、来了！', '不是我推的！我发誓不是我推的！……你问，你快问。我的手在抖。'], { style: 'whisper' });
+    S.amb('school');
+    const asked = {};
+    for (; ;) {
+      const n = ['sex', 'year', 'cls'].filter(k => asked[k]).length;
+      const O = [];
+      if (!asked.sex) O.push(['sex', '「笔仙笔仙，你是男生，还是女生？」']);
+      if (!asked.year) O.push(['year', '「你是哪一年的人？」']);
+      if (!asked.cls) O.push(['cls', '「你以前……也在这个学校上学吗？」']);
+      if (n >= 2) O.push(['name', '「你叫什么名字？」']);
+      O.push(['how', '「你……是怎么死的？」'], ['mine', '「我什么时候会死？」'], ['send', '「笔仙笔仙，请你回去吧。」']);
+      const k = O[await S.ask('要问什么？', O.map(o => o[1]))][0];
+      if (k === 'sex') {
+        asked.sex = 1;
+        await pen(S, '笔尖慢慢滑到纸边的空白处，一笔，一笔地写——', '女');
+        await S.say('苏晴', '……女的。', { style: 'whisper' });
+      } else if (k === 'year') {
+        asked.year = 1;
+        await pen(S, '笔尖拖到底下那一排数字上，在几个数字之间来回地点。', '1　9　9　4');
+        await S.say('苏晴', '一九九四……那不是十二年前吗？', { style: 'whisper' });
+      } else if (k === 'cls') {
+        asked.cls = 1;
+        await pen(S, '笔尖往左上角滑过去，停在了——', '是');
+        await S.say('苏晴', '哪、哪个班的？', { style: 'whisper' });
+        await pen(S, '笔尖落在数字「3」上，戳了一下，又一下。', '3');
+        await S.say('苏晴', '三班……跟我们一样？高二三班？', { style: 'whisper' });
+        await pen(S, '笔尖又在「是」上，重重地画了一个圈。');
+      } else if (k === 'how') {
+        S.shake(300, 1);
+        await S.say('苏晴', '你疯啦！规矩第二条——不能问它是怎么死的！');
+        await S.narr('笔尖在纸上猛地一顿，划出一道深深的印子。\n你赶紧把那句话咽了回去。');
+      } else if (k === 'mine') {
+        await S.say('苏晴', '也不能问自己什么时候死！你想吓死我啊！');
+        S.sfx('heart');
+        await S.narr('笔尖已经往数字那边滑了一点点——又停住了。像是在等你们改口。');
+      } else if (k === 'send') {
+        await pen(S, '笔尖慢慢地，滑到了右上角——', '否');
+        await S.say('苏晴', ['它、它不肯走……', '学姐说，它不肯走的时候，就再问它几个问题……问问它是谁。'], { style: 'whisper' });
+      } else if (k === 'name') break;
+    }
+    await pen(S, '笔停了很久很久。\n然后，它开始写一个字。写得很慢，像一个刚学写字的小孩——', '小');
+    await S.narr('第二个字，才写了一横——');
+    return blackout(S);
+  }
+  async function blackout(S) {
+    const d = S.ent('rdesk');
+    S.sfx('switch');
+    for (const id of ['fl1', 'fl2', 'fl3', 'fl4']) S.ent(id).off = true;
+    S.dark(.97); S.plr(1.4); S.amb('none');
+    await S.narr('啪。\n\n十点整。教学楼拉闸了。');
+    S.sfx('heart'); await S.wait(500);
+    S.shake(700, 2);
+    await S.narr('黑暗里，笔突然动了——不是慢慢地，是猛地一拽，\n拖着你们两个人的手，往窗户那边划过去！');
+    await pen(S, '笔尖死死地压在纸上，一笔划破了纸——', '别　走');
+    S.sfx('whisper');
+    await pen(S, '', '冷');
+    S.sfx('scream');
+    await S.say('苏晴', '啊——！！', { style: 'big' });
+    await S.narr('苏晴松手了。\n她的椅子「哐」地翻倒在地上。');
+    await S.narr('笔在你一个人的手里，还在动。\n它在纸的最边上，又写了两个字——');
+    await S.say('', '本　子', { style: 'big' });
+    S.sfx('thud'); d.s.pen = false;
+    await S.narr('笔从你的指缝里挣了出去，在桌面上滚了几圈，「嗒」地掉进了黑暗里。');
+    S.f.cut = true;
+    S.ent('su').dir = 0;
+    await S.say('苏晴', ['我……我松手了……', '规矩上说……中途松手，它就回不去了……它会……留下来……'], { style: 'whisper' });
+    S.sfx('knock');
+    await S.say('楼下的保安', '谁还在教室里？！熄灯了！都回宿舍去！');
+    await S.narr('手电光从楼下扫上来，在天花板上晃了一下。\n你拽起苏晴，摸黑跑出了教室。');
+    S.plr(null);
+    await S.go('room', 3, 3, 1, { ms: 900 });
+  }
+
+  /* ================= 第二幕：宿舍 ================= */
+  async function talkSu(S) {
+    if (S.f.phase === 'old') return S.narr('苏晴睡着了。呼吸平稳了一点。\n她的被子不知道被谁掖得严严实实的。');
+    if (S.f.suTalk) return S.say('苏晴', S.has('thermos') ? '……水……' : '……暖壶……桌子边上……', { style: 'whisper' });
+    await S.narr('苏晴缩在被子里，牙齿咯咯地打战。\n你伸手摸了摸她的额头——烫得吓人。');
+    await S.say('苏晴', '……默默……好冷啊……');
+    await S.wait(400); S.sfx('whisper');
+    await S.say('苏晴？', ['……岚岚，你跑什么呀……', '……我的本子……还在教室里……'], { style: 'whisper' });
+    await S.think('那不是苏晴的声音。\n……岚岚？我们班没有叫岚岚的人。');
+    await S.say('苏晴', '……水……我想喝口热水……');
+    S.f.suTalk = true;
+    S.goal('拿上暖壶（桌子旁边）');
+  }
+  async function knock(S) {
+    S.f.knocked = true; S.amb('none');
+    await S.narr('你的手刚碰到门把手——');
+    for (let i = 0; i < 3; i++) { S.sfx('knock'); await S.wait(600); }
+    await S.wait(500);
+    await S.say('门外', ['……岚岚？', '岚岚，是你吗？开开门呀。外面好冷。'], { style: 'whisper' });
+    const r = await S.ask('门外有人。', ['屏住呼吸，不出声', '「……谁？」']);
+    if (r === 1) {
+      await S.say('你', '……谁？');
+      S.sfx('drip'); await S.wait(1200);
+      await S.say('门外', '……你不是岚岚。', { style: 'whisper' });
+    } else {
+      S.sfx('heart'); await S.wait(900); S.sfx('heart');
+      await S.narr('门外的人等了很久。门缝底下，有一道影子，一动不动。');
+    }
+    await S.narr('然后，是拖鞋踩在水泥地上的声音。啪嗒，啪嗒，\n往走廊那一头去了——往水房那边。');
+    S.amb('room');
+    await S.think('……是查夜的同学吧。一定是。');
+    S.goal('去走廊尽头的水房打开水');
+  }
+  async function waterScene(S) {
+    if (S.f.phase !== 'water') return S.narr('开水器的红灯亮着，壶里的水咕嘟咕嘟地响。');
+    if (!S.has('thermos')) return S.narr('开水器。……暖壶落在寝室了。');
+    const b = S.ent('boiler');
+    await S.narr('你拧开开水器的龙头。');
+    b.s.run = true; S.sfx('water'); await S.wait(1000); b.s.run = false;
+    await S.narr('开水哗哗地灌进暖壶，白汽扑了你一脸。\n暖壶满了。你把软木塞按紧——');
+    S.amb('none'); await S.wait(500);
+    for (const id of ['tap3', 'tap2', 'tap1']) { S.ent(id).s.run = true; S.sfx('water'); await S.wait(450); }
+    await S.narr('身后，三个水龙头，一个接一个，自己拧开了。');
+    S.sfx('heart');
+    await S.narr('你慢慢抬起头。\n水垢斑斑的镜子里，你的身后，站着一个人。');
+    const g = S.ent('xm_d'); S.place('xm_d', 32, 3, 1); g.alpha = .6;
+    await S.scare('face', { spr: '@xiaoman', dur: 1 });
+    S.turn(2);
+    await S.narr('蓝白色的运动服，翻领，袖子上一道白杠。\n长头发垂下来，盖住了整张脸。');
+    await S.say('？？？', ['……岚岚？', '你看见岚岚了吗？她跑得好快……', '我一个人……好黑啊。'], { style: 'whisper' });
+    await S.alpha('xm_d', 1, 400);
+    S.sfx('sting');
+    await S.narr('她朝你走过来了。\n走廊那一头——值班室的台灯，「啪」地亮了。');
+    S.f.phase = 'chase';
+    resetChase(S);
+    S.cp('chase');
+  }
+  async function safeScene(S) {
+    S.stop('xm_d'); S.f.phase = 'safe';
+    S.show('zhou'); S.place('zhou', 3, 3, 2); S.ent('dlamp').off = false; S.ent('exitL').s.flick = false;
+    S.place('xm_d', 8, 3, 1);
+    S.pos(5, 3, 1); S.dark(.86);
+    for (const id of ['tap1', 'tap2', 'tap3']) S.ent(id).s.run = false;
+    await S.narr('你一头撞进值班室，暖壶差点脱手。');
+    S.bubble('zhou', '!', 900);
+    await S.say('周老师', '谁？！……陈默？半夜三更的，你跑什么？');
+    S.turn(2); S.sfx('heart');
+    await S.narr('你回过头。\n值班室门口，那个穿蓝白运动服的女生，就站在那里。低着头。');
+    await S.narr('她没有看你。\n她在看周老师。');
+    await S.say('？？？', '……岚岚。', { style: 'whisper' });
+    S.face('zhou', 2);
+    await S.narr('周老师打了个哆嗦，起身把门掩上了。\n「这门口怎么这么冷……」');
+    await S.alpha('xm_d', 0, 900);
+    S.amb('room'); S.face('zhou', 'pl'); S.turn(1);
+    await S.say('周老师', '坐下。慢慢说。出什么事了？');
+    const r = await S.ask('要告诉她吗？', ['把请笔仙的事全都说出来', '「……我看见鬼了。」']);
+    if (r === 1) { await S.say('周老师', '……鬼？'); await S.narr('她盯着你看了一会儿。她没有笑。'); await S.say('周老师', '从头说。'); }
+    await S.narr('你把晚自习以后的事，一五一十都说了：苏晴、红笔、那张纸、停电、松手……\n还有水房里那个女生。翻领的蓝白运动服，袖子上一道白杠。一直在喊「岚岚」。');
+    S.sfx('glass');
+    await S.narr('周老师手里的搪瓷杯，「当」地一声掉在了桌上。');
+    await S.say('周老师', '……在哪间教室？');
+    await S.say('你', '新楼。高二(3)班。');
+    await S.say('周老师', ['三班……', '她松手了，是不是？……笔最后写了什么？']);
+    await S.say('你', '……「本子」。');
+    await S.narr('周老师很久没有说话。\n台灯的光照着她的侧脸，她好像一下子老了好几岁。');
+    await S.say('周老师', ['……我在这所学校上过学，陈默。', '有些事……我说不出口。']);
+    await S.narr('她站起来，从墙上的钥匙板上，摘下了那把锈得发黑的钥匙。');
+    S.ent('kbox').s.taken = true; S.give('okey'); S.give('flash');
+    await S.say('周老师', ['旧楼二楼，有一间档案室。你想知道她是谁，就去那里找。', '手电筒拿着。……我去 307 看着苏晴。', '天亮之前，得把她送走。规矩你们是知道的。']);
+    const r2 = await S.ask('', ['「您不一起去吗？」', '「……好。」']);
+    if (r2 === 0) { await S.say('周老师', '……我不敢。'); await S.narr('她说得很轻，轻得像不是说给你听的。'); }
+    await S.alpha('zhou', 0, 600);
+    S.f.phase = 'old';
+    S.goal('去旧楼二楼的档案室（走廊左边的楼梯口）');
+    S.cp();
+  }
+
+  /* ================= 第三幕：旧楼 ================= */
+  async function seeXm(S) {
+    S.place('xm_o', 28, 7, 1); S.ent('xm_o').alpha = .85; S.sfx('whisper');
+    await S.narr('手电光的尽头，走廊的最那一头——站着一个人。');
+    await S.wait(500);
+    S.sfx('heart'); await S.alpha('xm_o', 0, 700);
+    await S.narr('你眨了一下眼。\n那里只有一把椅子，椅面朝着高二(3)班的门。');
+  }
+  async function archDoor(S) {
+    const inside = S.pl.y < 6;
+    if (!inside) {
+      if (S.ent('adoor').locked) {
+        S.sfx('locked');
+        await S.narr('档案室的门锁着。你在那串钥匙里试了一把又一把——');
+        S.sfx('open'); S.ent('adoor').locked = false;
+        await S.narr('「咔哒」。');
+      }
+      await S.fade(1, 250); S.pos(5, 5, 3); await S.fade(0, 250);
+      if (S.once('archIn')) {
+        await S.narr('档案室里一股霉味。月光从糊着报纸的窗户里渗进来，灰蒙蒙的。\n一排排铁柜子，一排排牛皮纸盒。');
+        S.goal('找她的学籍卡（学籍卡柜），还有当年的记录');
+      }
+      return;
+    }
+    await S.fade(1, 250); S.pos(5, 7, 0); await S.fade(0, 250);
+    if (S.f.archDone && !S.f.confess) await zhouConfess(S);
+  }
+  function archCheck(S) {
+    if (S.f.archDone || !(S.f.gotCard && S.f.readReport)) return;
+    S.f.archDone = true;
+    S.after(300, async S => {
+      S.sfx('thud');
+      await S.narr('走廊那一头，「咔哒」一声。\n像是哪扇门上的锁，自己掉了下来。');
+      S.goal('离开档案室，去高二(3)班');
+      S.cp();
+    });
+  }
+  async function cabinet(S) {
+    const c = S.ent('cab');
+    if (S.f.gotCard) return S.narr('「1996届」那一屉还拉开着。林小满的那一格，空了。');
+    if (!S.f.cabOpen) {
+      await S.narr('学籍卡柜。几十个小抽屉，每个上面都贴着一张发黄的标签：「19__届」。');
+      const v = await S.keypad('要拉开哪一届的抽屉？（四位年份）', ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'], 4);
+      if (v == null) return;
+      S.sfx('open');
+      const msg = {
+        '1994': '「1994届」。这一届的学生，九四年夏天就毕业了。\n卡片上的照片，都穿着毕业时的白衬衫。……十二月的时候，她们已经不在学校了。',
+        '1995': '「1995届」。这一届在九四年秋天读高三。\n卡片上写的都是「高三」。……不对。',
+        '1997': '「1997届」。这一届九四年秋天才刚上高一，卡片上的照片都还是一张张娃娃脸。……不对。'
+      }[v];
+      if (v !== '1996') {
+        await S.narr(msg || `「${v}届」。\n这一屉里的卡片，年份全都对不上。`);
+        if (!msg) await S.think('笔仙说的是「1994」……那一年，「她」也在高二三班。\n柜子上的标签按的是毕业的年份。');
+        return;
+      }
+      S.f.cabOpen = true; c.open = true;
+      await S.narr('你拉开「1996届」那一屉。一沓沓学籍卡，按班级用橡皮筋捆着。\n「高(3)班」那一捆里，名字里带「小」字的女生，有三张。');
+      await S.think('笔仙写的那个字——「小」。');
+    }
+    const r = await S.ask('抽出哪一张？', ['王小娟　（背面盖着蓝色的毕业章）', '林小满　（右上角盖着一个红章）', '李小雯　（背面盖着蓝色的毕业章）']);
+    if (r !== 1) {
+      await S.narr('照片上的女生梳着那个年代的厚刘海，笑得很开心。\n卡片背面，盖着「1996年7月　毕业」。……她后来去了很远的地方吧。\n不是她。');
+      return;
+    }
+    S.give('card'); S.f.gotCard = true;
+    await S.narr('「林小满　女　1977年5月21日生」\n「1993年9月入学　高中部(3)班」\n右上角，一个红色的章：「注销」。旁边一行钢笔字：「1994.12.10」。');
+    await S.narr('照片上的女生剪着短短的头发，眼睛很亮。\n生日那一栏下面，有人用铅笔添了两个小字：「小满」。\n——是节气。她是小满那天生的。');
+    await S.think('小……满。');
+    archCheck(S);
+  }
+  async function zhouConfess(S) {
+    S.f.confess = true;
+    S.place('zhou_o', 2, 7, 2); S.ent('zhou_o').alpha = 1;
+    await S.narr('楼梯口有人。\n手电光扫过去——是周老师。她手里攥着一束新的小雏菊。');
+    await S.say('周老师', '……我还是来了。');
+    S.ent('daisy').s.fresh = true;
+    await S.narr('她弯下腰，把那束雏菊，放在了旧花上面。');
+    await S.say('周老师', ['你都看见了吧。那张纸。', '「同寝室学生周岚，代其应答」……那个人，就是我。']);
+    await S.say('周老师', ['那天晚上，我们俩在教室里请笔仙。停电了，我吓坏了，松开手就跑。', '跑回宿舍，蒙上被子。……小满一直没回来。', '查寝的老师喊「林小满」，我想，她大概在水房洗衣服吧。我就替她答了一声：「到」。']);
+    await S.say('周老师', ['第二天早上，是值日的同学在这儿发现她的。就在这个楼梯上。', '十二年了。我每年都来。……可我从来不敢走进那间教室。']);
+    const r = await S.ask('', ['「她在找你。她一直在喊『岚岚』。」', '「那不是你的错。灯坏了，那是意外。」']);
+    if (r === 0) await S.say('周老师', '……我知道。我一直都知道。');
+    else { await S.say('周老师', '……是我先松的手。'); await S.narr('她的声音在发抖。'); }
+    await S.say('周老师', ['她的本子，那天以后一直没找到。', '那间教室的锁……刚才自己掉了，我听见了。', '你先进去吧。我、我在门口站一会儿。']);
+    S.goal('去高二(3)班（走廊中间那扇门）');
+    S.cp();
+  }
+  async function oldClsDoor(S) {
+    if (!S.f.archDone) { S.sfx('locked'); return S.narr('门上挂着一把旧铁锁。锁眼里塞满了铁锈。\n门缝里，飘出来一股很淡的蜡烛味。'); }
+    if (!S.f.confess) return S.narr('……楼梯口那边，好像有人。');
+    S.sfx('open');
+    await S.go('oldcls', 12, 8, 3);
+  }
+
+  /* ================= 第四幕：送她回家 ================= */
+  async function mdesk(S) {
+    const d = S.ent('mdesk');
+    if (S.f.done) return S.narr('桌上只剩一小撮纸灰。');
+    if (!S.f.diary) {
+      await S.narr(S.f.chart ? '第四排，最靠窗。林小满的位子。\n桌面干干净净的，一点灰也没有，像是每天都有人擦。' : '靠窗的一张课桌。桌面干干净净的，一点灰也没有。');
+      S.sfx('open'); d.s.open = true;
+      await S.narr('你掀开桌盖——\n里面躺着一本塑料封皮的日记本。封面上印着一只小鹿。');
+      S.give('diary'); S.f.diary = true;
+      await S.note('diary');
+      d.s.open = false;
+      await S.narr('日记本的最后一页，夹着一张折成四折的纸。你把它展开——\n是一张请笔仙用的纸。「是」「否」，0 到 9。\n纸的正中间，用红笔画着一个圆圈。很圆，很圆。');
+      await S.think('那天晚上……她已经一个人把「笔仙」送走了。\n可是，没有人来送她。');
+      return zhouEnter(S);
+    }
+    if (!S.has('match')) {
+      await S.narr('太黑了，连纸上的字都看不清。');
+      await S.say('周老师', '她那天晚上……是点着蜡烛的。讲台抽屉里，说不定还有。');
+      S.goal('找蜡烛（讲台抽屉）');
+      return;
+    }
+    return finale(S);
+  }
+  async function zhouEnter(S) {
+    S.sfx('open');
+    S.place('zhou_c', 12, 8, 3); S.ent('zhou_c').alpha = 0;
+    await S.alpha('zhou_c', 1, 500);
+    await S.narr('身后，门轴又「吱」地响了一声。\n周老师站在门口。她看着你手里的本子，一步，一步，走了过来。');
+    await S.walk('zhou_c', [9, 8], 2.5); S.face('zhou_c', 'pl');
+    await S.say('周老师', '……是她的。');
+    await S.narr('她接过日记本，翻到最后一页。手电光在纸上抖得厉害。');
+    await S.say('', '「岚岚，别怕。不怪你。」', { style: 'big' });
+    S.sfx('cry');
+    await S.narr('周老师把脸埋进那本日记里。很久很久，都没有出声。');
+    await S.wait(500);
+    S.sfx('cut'); S.focus(5, 2);
+    await S.narr('「吱——」\n黑板那边，响起了粉笔划过的声音。');
+    S.f.chalk = true; S.sfx('heart');
+    await S.narr('黑板正中间，慢慢地，多了两个字：\n「岚岚」');
+    S.focus(null);
+    await S.say('周老师', ['……她还在等。', '陈默，帮我一个忙。', '请笔仙要两个人，送也要两个人。当年我松了手。……这一次，我不松了。']);
+    S.f.zhouIn = true;
+    S.goal(S.has('match') ? '和周老师一起，在小满的课桌上送她走' : '先找蜡烛（讲台抽屉），再和周老师一起送她走');
+    S.cp('final');
+  }
+  async function finale(S) {
+    const d = S.ent('mdesk');
+    if (!S.has('pen')) {
+      S.sfx('sting');
+      await S.narr('你把手伸进口袋——指尖碰到了一个细细的、硬硬的东西。\n那支红笔。笔杆上有几道很深的牙印。\n……它什么时候回到你口袋里的？');
+      S.give('pen', true);
+    }
+    const go = await S.ask('要开始吗？', ['开始送她走', '再等一等']); if (go) return;
+    S.amb('none');
+    S.sfx('match'); await S.wait(400);
+    S.show('ocandle'); S.ent('ocandle').off = false; d.s.paper = true; S.dark(.9);
+    await S.narr('火柴「嚓」地一声亮了。你把半截蜡烛立在桌角上。\n周老师把那张旧纸摊平——她坐在了自己当年的位子上。');
+    /* 1. 握笔 */
+    for (; ;) {
+      const r = await S.ask('怎么握笔？', ['手背交叉，两个人一起夹住笔', '手心贴着手心，把笔握在中间', '你一个人握笔，周老师按住纸']);
+      if (r === 0) break;
+      if (r === 1) { await S.narr('笔软绵绵地往一边倒了，像是根本没有人握着它。'); await S.say('周老师', '不对……当年我们不是这么握的。'); }
+      else await S.say('周老师', '一个人不行的。……要两个人。');
+    }
+    d.s.pen = true;
+    await S.narr('你们的手背贴在一起。周老师的手，比你的还要凉。');
+    /* 2. 召请 */
+    for (; ;) {
+      const r = await S.ask('要念什么？', ['「' + CHANT + '」', '「碟仙碟仙，请你出来。」', '「林小满，你在吗？」']);
+      if (r === 0) break;
+      if (r === 1) await S.say('周老师', '……那是请碟仙的。要用碟子。');
+      else { await S.narr('笔一动不动。\n烛火晃了一下，又站直了。'); await S.say('周老师', '……规矩。得照着规矩来，她才听得见。'); }
+    }
+    await S.say('你和周老师', CHANT);
+    S.sfx('heart'); await S.wait(1000);
+    await pen(S, '笔尖动了。\n它沿着那张旧纸上的红圈，又慢慢地，描了一遍。', null, { desk: 'mdesk' });
+    S.place('xm_c', 12, 6, 1); S.ent('xm_c').alpha = 0; await S.alpha('xm_c', .75, 900);
+    await S.narr('窗边的阴影里，站着一个穿蓝白运动服的女生。\n这一次，她的头发没有盖住脸。');
+    await pen(S, '笔尖往上滑，一笔一笔地写——', '岚　岚', { desk: 'mdesk' });
+    await S.say('周老师', ['……小满。是我。', '对不起。那天晚上，是我先松的手。是我跑了。', '查寝的时候，是我替你答的「到」。……要是我没有答，老师就会去找你的。']);
+    await S.narr('她的手在发抖。你们交叉的手背贴在一起，你能感觉到。\n可是这一次，她没有松手。');
+    await pen(S, '笔动得很慢，很慢——', '不　怪　你', { desk: 'mdesk' });
+    S.sfx('cry');
+    await pen(S, '笔停了一下。然后，又写了一行字——', '你们　还想问　什么', { desk: 'mdesk' });
+    /* 3. 不该问的问题 */
+    let cold = false;
+    for (; ;) {
+      const O = [];
+      if (!cold) O.push(['cold', '「你……现在还冷吗？」']);
+      O.push(['how', '「小满，那天晚上……你是怎么……」'], ['when', '「那……我什么时候会死？」'], ['none', '（摇摇头。什么都不问了。）']);
+      const k = O[await S.ask('还要问什么吗？', O.map(o => o[1]))][0];
+      if (k === 'cold') { cold = true; await pen(S, '笔尖轻轻地动了动——', '不冷了　有蜡烛', { desk: 'mdesk' }); await S.narr('周老师笑了一下。眼泪掉在了纸上。'); continue; }
+      if (k === 'how' || k === 'when') return badEnd(S, k);
+      break;
+    }
+    /* 4. 送走的话 */
+    let wrong = 0;
+    for (; ;) {
+      const r = await S.ask('该送她走了。要说什么？', ['「笔仙笔仙，请你回去吧。」', '「你走吧！别再缠着我们了！」', '「林小满，天快亮了。……你可以回家了。」']);
+      if (r === 2) break;
+      wrong++;
+      if (r === 0) {
+        await pen(S, '笔尖慢慢地滑到了右上角——', '否', { desk: 'mdesk' });
+        await S.say('周老师', '……她不知道我们在送谁。');
+      } else {
+        S.shake(400, 2);
+        await pen(S, '笔尖狠狠地戳进纸里，一下，又一下——', '否', { desk: 'mdesk' });
+        await S.say('周老师', '别、别这么凶……她不是来害人的。');
+      }
+      if (wrong >= 1) await S.think('日记里写过：「送的时候要叫它的名字，它才知道你在送谁。」');
+    }
+    await S.say('你', '林小满。天快亮了。……你可以回家了。');
+    await S.say('周老师', '小满……回家吧。');
+    S.sfx('chime');
+    await pen(S, '笔尖停了很久。\n然后，它沿着那个旧圆圈，又画了一个圈。很圆，很圆。\n最后，轻轻地，点了一下。', null, { desk: 'mdesk' });
+    /* 5. 松手 */
+    for (; ;) {
+      const r = await S.ask('笔停住了。', ['赶紧松手', '等笔完全停下来，两个人一起松手']);
+      if (r === 1) break;
+      await S.say('周老师', '别——！要一起。……这一次，要一起。');
+    }
+    await S.narr('你们看着对方，数了一、二、三。\n一起，慢慢地，松开了手。\n笔安安静静地躺在纸上，再也没有动。');
+    d.s.pen = false;
+    /* 6. 纸和笔 */
+    for (; ;) {
+      const r = await S.ask('纸和笔要怎么办？', ['把纸夹回日记本里，留个纪念', '把纸在蜡烛上烧掉，把笔折断']);
+      if (r === 1) break;
+      await S.say('周老师', ['……不行。规矩是要烧掉的。', '她那天晚上，也是这么做的。']);
+    }
+    S.sfx('match');
+    d.s.paper = false; d.s.ash = true;
+    await S.narr('纸角碰到烛火，卷起来，变黑，变成了一小撮灰。');
+    S.sfx('cut'); S.take('pen');
+    await S.narr('你把那支红笔用力一掰——「咔」。');
+    S.f.done = true;
+    /* 告别 */
+    await S.alpha('xm_c', 1, 800);
+    S.place('xm_c', 12, 6, 1); S.ent('xm_c').spr = '@xiaomanC';
+    await S.say('林小满', '……岚岚。', { style: 'whisper' });
+    S.face('zhou_c', 2);
+    await S.say('周老师', '……小满。');
+    await S.say('林小满', ['我在楼梯上等了好久。等天亮。', '后来天亮了，我就忘了，该怎么回去了。']);
+    await S.say('林小满', ['谢谢你们来送我。', '岚岚，元旦晚会的《致橡树》……你一个人念吧。要念得大声一点哦。']);
+    S.sfx('cry');
+    await S.narr('周老师用手背捂着嘴，使劲地点头。');
+    await S.walk('xm_c', [12, 8], 1.6);
+    S.sfx('chime');
+    await S.alpha('xm_c', 0, 1400);
+    await S.narr('她走到门口，没有回头。\n门外的走廊里，楼梯口的方向，好像亮起了一盏灯。');
+    S.face('zhou_c', 'pl');
+    await S.say('周老师', '……别回头看。规矩。');
+    await S.fade(1, 1400);
+    await S.card('天亮了', '2006年12月9日　星期六', '苏晴的烧，天亮以前就退了。\n她说她做了一个很长的梦，\n梦见一个短头发的姐姐，替她掖了掖被角。\n\n那天下午，旧楼二楼楼梯口的那盏灯，\n被重新装上了。');
+    await S.end({ title: '第七夜　完', text: '那一年的元旦晚会，周老师一个人上台，念了一首《致橡树》。\n念得很大声。\n\n从那以后，高二(3)班再也没有人请过笔仙。\n旧楼楼梯口的雏菊，每年十二月，还是会多一束。' });
+  }
+  async function badEnd(S, k) {
+    if (k === 'how') {
+      await S.say('你', '小满，那天晚上……你是怎么……');
+      await S.say('周老师', '陈默！不能问——', { style: 'big' });
+      S.amb('none');
+      await S.narr('笔已经动了。\n它动得飞快，快得你们两个人的手都跟不上——');
+      await pen(S, '一个字叠着一个字，写满了整张纸：', '楼　梯　好　黑', { desk: 'mdesk' });
+    } else {
+      await S.say('你', '那……我什么时候会死？');
+      await S.say('周老师', '你——！', { style: 'big' });
+      S.amb('none');
+      await pen(S, '笔尖滑到那一排数字上，一个一个地点——', '2　0　0　6　1　2　0　9', { desk: 'mdesk' });
+      S.sfx('heart');
+      await S.narr('二〇〇六年，十二月九日。\n……就是今天。');
+    }
+    S.ent('ocandle').off = true; S.dark(.99); S.plr(.6);
+    await S.narr('蜡烛灭了。\n黑暗里，有人贴在你耳边，很轻很轻地说——');
+    await S.say('？？？', '……你想看吗？', { style: 'whisper' });
+    await S.scare('face', { spr: '@xiaoman', dur: 1.2 });
+    if (k === 'how') return S.end({ bad: true, title: '你问了不该问的问题', text: '第二天早上，值日的同学在旧楼二楼的楼梯口，发现了你们两个人。\n你们并排坐在最上面一级台阶上，手背交叉着，还紧紧地握着那支红笔，怎么也掰不开。\n\n从那以后，你一闭上眼睛，就是一段很长、很黑的楼梯。\n你一直在往下走。一直走不到头。' });
+    return S.end({ bad: true, title: '你问了不该问的问题', text: '天亮的时候，周老师一个人从旧楼里走了出来。\n她说，她什么也不记得了。\n\n高二(3)班的座位表上，第四排靠窗的那个位子，从此一直空着。\n有人说，半夜的时候，那里会坐着两个人：\n一个剪着短头发——另一个，长得很像你。' });
+  }
 })();
