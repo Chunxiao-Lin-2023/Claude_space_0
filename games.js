@@ -92,5 +92,16 @@ window.GAMES = [
     status: 'dev',
     tags: ['单人', '双人联机', 'iPad'],
     hue: 8
+  },
+  {
+    id: 'deadtide',
+    title: '尸潮堡垒',
+    sub: '2.5D 盖楼守夜 · 丧尸生存',
+    desc: '低多边形 3D 斜俯视：河流、桥、山坡、树林和废弃小镇。白天砍树采石、搜车搜箱，在电台周围一层层盖堡垒；夜里尸潮过桥翻山涌来，砸墙、走楼梯、翻墙。可缩放、转镜头、逐层查看楼内。单人或双人联机。',
+    url: 'deadtide/',
+    cover: 'covers/deadtide.webp',
+    status: 'dev',
+    tags: ['单人', '双人联机', 'iPad', '3D'],
+    hue: 24
   }
 ];

@@ -1,0 +1,294 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+__IOSMETA__
+<title>尸潮堡垒</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=ZCOOL+QingKe+HuangYou&family=Noto+Sans+SC:wght@400;700&family=Oswald:wght@500;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+<style>
+:root{--bg:#0b0c0f;--panel:rgba(16,15,14,.9);--line:rgba(255,190,110,.2);--txt:#eee4d4;--sub:#a99c8a;--amber:#ffb347;--amber2:#c9822a;--red:#e2483d;--green:#8fe39a;--blue:#7fc8ff;
+ --font:"Noto Sans SC","PingFang SC","Microsoft YaHei",system-ui,sans-serif;--title:"ZCOOL QingKe HuangYou","Noto Sans SC",sans-serif;--num:"Oswald","Noto Sans SC",sans-serif;
+ color-scheme:dark;--sa-t:env(safe-area-inset-top,0px);--sa-b:env(safe-area-inset-bottom,0px);--sa-l:env(safe-area-inset-left,0px);--sa-r:env(safe-area-inset-right,0px)}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--txt);font-family:var(--font);overscroll-behavior:none;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+canvas#cv{position:fixed;inset:0;width:100%;height:100%;display:block;cursor:crosshair;touch-action:none}
+#ov{position:fixed;inset:0;z-index:4;pointer-events:none;overflow:hidden}
+#ov .fl{position:absolute;transform:translate(-50%,-100%);font-weight:700;font-size:14px;text-shadow:0 1px 3px #000;white-space:nowrap}
+#ov .tag{position:absolute;transform:translate(-50%,-100%);text-align:center;font-size:11px;font-weight:600;color:#fff;text-shadow:0 1px 2px #000}
+#ov .tag i{display:block;height:4px;margin:2px auto 0;width:34px;background:#888;border-radius:2px}
+#ov .tag span{display:block}
+#ov .arr{position:absolute;font-size:22px;text-shadow:0 0 4px #000}
+.hidden{display:none!important}
+button{font-family:var(--font);cursor:pointer;color:var(--txt);background:linear-gradient(#2c2620,#1a1612);border:1px solid rgba(255,179,71,.4);border-radius:6px;padding:9px 16px;font-size:15px;min-height:44px;box-shadow:inset 0 1px 0 rgba(255,230,180,.07),0 2px 10px rgba(0,0,0,.45);touch-action:manipulation;transition:background .15s,border-color .15s}
+button:hover,button.sel{border-color:var(--amber);background:linear-gradient(#3b3026,#201a14)}
+button:active{transform:translateY(1px)}
+button.primary{background:linear-gradient(#8a4a1a,#5a2c0c);border-color:var(--amber);color:#fff2dc;font-weight:700}
+button.ghost{background:rgba(0,0,0,.25);border-color:var(--line);box-shadow:none}
+button.danger{border-color:rgba(226,72,61,.6)}
+button:disabled{opacity:.4;cursor:default}
+input{font-family:var(--font);font-size:16px;color:var(--txt);background:rgba(0,0,0,.45);border:1px solid var(--line);border-radius:6px;padding:9px 12px;min-height:44px;outline:none;width:100%}
+input:focus{border-color:var(--amber)}
+.scr{position:fixed;inset:0;z-index:10;display:flex;align-items:safe center;justify-content:center;overflow:auto;padding:calc(14px + var(--sa-t)) calc(14px + var(--sa-r)) calc(14px + var(--sa-b)) calc(14px + var(--sa-l))}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:18px 20px;box-shadow:0 12px 40px rgba(0,0,0,.6)}
+.row{display:flex;gap:10px;align-items:center}
+.lbl{font-size:13px;color:var(--sub);letter-spacing:.08em}
+.status{min-height:20px;font-size:14px;color:var(--amber);text-align:center}
+#loading{position:fixed;inset:0;z-index:60;background:#060606;display:flex;align-items:center;justify-content:center;font-family:var(--title);font-size:44px;color:#c9b79a}
+/* title */
+#title{flex-direction:column;background:radial-gradient(ellipse at 50% 35%,rgba(0,0,0,0),rgba(0,0,0,.55) 65%,rgba(0,0,0,.85))}
+.wrapT{display:flex;flex-direction:column;align-items:center;gap:16px;margin:auto}
+.logo{text-align:center;pointer-events:none}
+.logo h1{margin:0;font-family:var(--title);font-weight:400;font-size:clamp(58px,11vw,120px);line-height:1;color:#efe3cc;letter-spacing:.06em;text-shadow:0 0 22px rgba(226,72,61,.35),0 5px 0 #000}
+.logo h1 b{color:var(--red);font-weight:400}
+.logo .en{font-family:var(--num);letter-spacing:.55em;font-size:clamp(12px,1.8vw,15px);color:var(--sub);margin-top:6px;padding-left:.55em}
+.logo .tag{margin-top:10px;color:#cdbfa8;font-size:15px;letter-spacing:.15em}
+.menu{display:flex;flex-direction:column;gap:10px;width:min(400px,92vw)}
+.seg{display:flex;gap:6px}.seg button{flex:1;min-height:40px;padding:6px;font-size:14px}
+.hubBack{position:fixed;left:calc(12px + var(--sa-l));top:calc(12px + var(--sa-t));z-index:12;font-size:14px;padding:8px 14px;min-height:40px}
+.best{font-size:13px;color:var(--sub);text-align:center}
+/* lobby */
+#lobby .card{width:min(520px,94vw);display:flex;flex-direction:column;gap:12px}
+.code{font-family:var(--num);font-size:48px;letter-spacing:.3em;color:var(--amber);text-align:center;padding-left:.3em}
+.plist{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.pl{border:1px solid var(--line);border-radius:8px;padding:12px;background:rgba(0,0,0,.25);text-align:center}
+.pl .n{font-size:18px;font-weight:700}.pl .s{font-size:13px;color:var(--sub);margin-top:4px}
+.pl.p0 .n{color:#f0955a}.pl.p1 .n{color:#5fd0c4}
+/* HUD */
+#hud{position:fixed;inset:0;z-index:5;pointer-events:none}
+#hud button{pointer-events:auto}
+.hcard{background:rgba(10,10,12,.62);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:7px 10px;backdrop-filter:blur(3px)}
+#hTL{position:absolute;left:calc(10px + var(--sa-l));top:calc(10px + var(--sa-t));display:flex;flex-direction:column;gap:6px;width:240px}
+.pbar{display:flex;flex-direction:column;gap:3px}
+.pbar .nm{display:flex;justify-content:space-between;font-size:13px}.pbar .nm i{font-style:normal;color:var(--sub);font-family:var(--num)}
+.bar{height:8px;background:rgba(255,255,255,.08);border-radius:4px;overflow:hidden}.bar>i{display:block;height:100%;background:linear-gradient(90deg,#d94a3a,#f0955a);transition:width .15s}
+.pbar.p1 .bar>i{background:linear-gradient(90deg,#1f8a80,#5fd0c4)}
+.pbar.small .bar{height:5px}.pbar.small{opacity:.9}
+.wpn{display:flex;align-items:baseline;gap:8px;font-family:var(--num)}.wpn b{font-family:var(--font);font-size:15px}.wpn .am{font-size:22px;color:#fff}.wpn .rs{font-size:14px;color:var(--sub)}
+.items{display:flex;gap:10px;font-size:13px;color:#d9ccb6}.items span{font-family:var(--num)}
+.rl{height:3px;background:rgba(255,255,255,.1);margin-top:3px}.rl>i{display:block;height:100%;background:var(--amber);width:0}
+#hTC{position:absolute;left:50%;transform:translateX(-50%);top:calc(10px + var(--sa-t));display:flex;flex-direction:column;align-items:center;gap:6px;min-width:260px}
+#phase{font-size:16px;font-weight:700;letter-spacing:.06em;text-align:center}#phase .sub{font-weight:400;font-size:13px;color:var(--sub);margin-left:6px}
+#phase.night{color:#ffd27a}#phase.blood{color:#ff6a5a}
+.rbar{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--sub);width:100%}.rbar .bar{flex:1;height:7px}.rbar .bar>i{background:linear-gradient(90deg,#4caf50,#8fe39a)}
+.rbar.low .bar>i{background:linear-gradient(90deg,#b0281f,#ff5a4a)}
+#readyBtn{min-height:34px;padding:4px 14px;font-size:13px}
+#readyBtn.on{border-color:var(--green);color:var(--green)}
+#hTR{position:absolute;right:calc(10px + var(--sa-r));top:calc(10px + var(--sa-t));display:flex;flex-direction:column;align-items:flex-end;gap:6px}
+.res{display:flex;gap:6px}.res div{display:flex;flex-direction:column;align-items:center;min-width:46px;padding:4px 6px}.res b{font-family:var(--num);font-size:17px}.res small{font-size:11px;color:var(--sub)}
+.res div.flash{animation:fl .5s}@keyframes fl{0%{background:rgba(255,215,106,.35)}100%{background:transparent}}
+.tbtn{display:flex;gap:6px}.tbtn button{min-height:40px;min-width:44px;padding:4px 10px;font-size:15px}
+#mini{width:128px;height:128px;padding:0;display:block;image-rendering:pixelated;border-radius:50%}
+#viewBox{display:flex;flex-direction:column;gap:5px;width:168px;pointer-events:auto}
+#viewBox .vrow{display:flex;gap:4px;align-items:center;justify-content:space-between}
+#viewBox button{min-height:36px;min-width:36px;padding:2px 6px;font-size:16px;flex:1}
+#vLbl{flex:1.6;text-align:center;font-size:13px;white-space:nowrap;color:var(--amber)}
+#viewBox .vauto{font-size:12px;min-height:30px}
+#viewBox .vauto.on{border-color:var(--green);color:var(--green)}
+#prompt{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(132px + var(--sa-b));text-align:center;font-size:15px;text-shadow:0 1px 3px #000;white-space:nowrap}
+#prompt .pr{width:170px;height:5px;margin:5px auto 0;background:rgba(255,255,255,.15);border-radius:3px;overflow:hidden}#prompt .pr>i{display:block;height:100%;background:var(--amber);width:0}
+#log{position:absolute;left:calc(10px + var(--sa-l));bottom:calc(12px + var(--sa-b));display:flex;flex-direction:column;gap:3px;font-size:14px;max-width:min(460px,60vw)}
+#log div{background:rgba(0,0,0,.5);padding:3px 8px;border-radius:4px;text-shadow:0 1px 2px #000;animation:lg 6s forwards}
+@keyframes lg{0%,85%{opacity:1}100%{opacity:0}}
+#banner{position:absolute;left:0;right:0;top:28%;text-align:center;pointer-events:none;opacity:0;transition:opacity .6s}
+#banner.show{opacity:1}
+#banner h2{margin:0;font-family:var(--title);font-weight:400;font-size:clamp(46px,8vw,86px);letter-spacing:.08em;text-shadow:0 0 30px rgba(0,0,0,.9),0 4px 0 #000}
+#banner p{margin:6px 0 0;font-size:17px;color:#e8dcc6;text-shadow:0 2px 6px #000}
+#toast{position:absolute;left:50%;transform:translateX(-50%);top:calc(96px + var(--sa-t));background:rgba(10,10,10,.8);border:1px solid var(--line);border-radius:6px;padding:6px 14px;font-size:14px;opacity:0;transition:opacity .25s;white-space:nowrap}
+#toast.show{opacity:1}
+/* weapon & build bars */
+#wbar{position:absolute;right:calc(10px + var(--sa-r));bottom:calc(10px + var(--sa-b));display:flex;gap:6px}
+#wbar button{min-width:76px;min-height:46px;padding:4px 8px;display:flex;flex-direction:column;align-items:center;font-size:13px;line-height:1.15}
+#wbar button small{font-family:var(--num);color:var(--sub);font-size:12px}
+#wbar button.sel{border-color:var(--amber);color:var(--amber)}
+#bbar{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(10px + var(--sa-b));display:flex;gap:5px;align-items:stretch;max-width:calc(100vw - 20px);overflow-x:auto;padding:6px;background:rgba(10,10,12,.7);border:1px solid var(--line);border-radius:10px}
+#bbar button{min-width:62px;min-height:62px;padding:3px 4px;display:flex;flex-direction:column;align-items:center;gap:1px;font-size:12px;line-height:1.1;position:relative}
+#bbar button canvas{width:26px;height:26px;image-rendering:auto}
+#bbar button small{color:var(--sub);font-size:10.5px;white-space:nowrap}
+#bbar button .k{position:absolute;left:4px;top:2px;font-size:10px;color:var(--sub);font-family:var(--num)}
+#bbar button.sel{border-color:var(--amber);background:linear-gradient(#4a3a26,#241a10)}
+#bbar button.na small{color:#c25b4f}
+#bbar #bDemo.sel{border-color:var(--red);background:linear-gradient(#4a2420,#241010)}
+#binfo{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(92px + var(--sa-b));font-size:13px;color:#d8cbb4;text-shadow:0 1px 3px #000;text-align:center;white-space:nowrap}
+/* touch */
+.stick{position:fixed;z-index:6;width:0;height:0;pointer-events:none}
+.stick::before{content:"";position:absolute;width:120px;height:120px;left:-60px;top:-60px;border-radius:50%;border:2px solid rgba(255,255,255,.22);background:rgba(0,0,0,.18)}
+.stick i{position:absolute;width:52px;height:52px;left:-26px;top:-26px;border-radius:50%;background:rgba(255,200,140,.35);border:2px solid rgba(255,220,180,.6)}
+#stickR i{background:rgba(255,110,90,.35)}
+#tpad{position:fixed;z-index:6;right:calc(12px + var(--sa-r));bottom:calc(68px + var(--sa-b));display:none;grid-template-columns:repeat(3,58px);gap:8px;pointer-events:none}
+#tpad button{pointer-events:auto;width:58px;height:58px;min-height:0;padding:0;border-radius:50%;font-size:13px;background:rgba(20,18,16,.62);backdrop-filter:blur(2px)}
+#tpad button.on{background:rgba(255,179,71,.35)}
+body.touch #tpad{display:grid}
+body.touch #wbar{bottom:auto;top:calc(126px + var(--sa-t))}
+body.touch.building #tpad button:not(#tBuild),body.touch.building #tpad span{visibility:hidden}
+body.touch.building #tpad{bottom:calc(150px + var(--sa-b))}
+body.touch #wbar button{min-width:58px;min-height:40px;font-size:12px}
+body.touch #log{bottom:calc(150px + var(--sa-b))}
+body.touch canvas#cv{cursor:default}
+body.touch .kbd{display:none}
+body:not(.touch) .tch{display:none}
+/* panels */
+.modal{position:fixed;inset:0;z-index:20;display:flex;align-items:safe center;justify-content:center;background:rgba(0,0,0,.55);overflow:auto;padding:calc(12px + var(--sa-t)) calc(12px + var(--sa-r)) calc(12px + var(--sa-b)) calc(12px + var(--sa-l))}
+.modal .card{width:min(560px,96vw);max-height:calc(100dvh - 16px);overflow:auto;display:flex;flex-direction:column;gap:10px;margin:auto}
+.modal h3{margin:0;font-family:var(--title);font-weight:400;font-size:30px;letter-spacing:.06em;color:var(--amber)}
+.clist{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.ci{display:flex;flex-direction:column;align-items:flex-start;text-align:left;gap:2px;min-height:64px}
+.ci b{font-size:15px}.ci small{font-size:12px;color:var(--sub)}.ci .c{font-size:12px;color:#e6c55a}
+.ci.no .c{color:#c25b4f}
+.help{font-size:14px;line-height:1.75;color:#e0d4c0}
+.help h4{margin:10px 0 2px;color:var(--amber);font-size:15px}
+.help kbd{font-family:var(--num);background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);border-radius:4px;padding:0 6px;font-size:13px}
+.btns{display:flex;gap:8px;flex-wrap:wrap}.btns button{flex:1}
+#over .card{width:min(520px,94vw);text-align:center;gap:12px;display:flex;flex-direction:column}
+#over h2{margin:0;font-family:var(--title);font-weight:400;font-size:64px;letter-spacing:.08em}
+#over.win h2{color:#ffe08a}#over.lose h2{color:var(--red)}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:14px}.stats div{background:rgba(255,255,255,.05);border-radius:6px;padding:6px}.stats b{display:block;font-family:var(--num);font-size:22px;color:#fff}
+/* phones */
+@media (pointer:coarse) and (max-height:500px){
+  #mini{width:64px;height:64px}
+  #viewBox{position:fixed;left:50%;transform:translateX(-50%);top:calc(100px + var(--sa-t));flex-direction:row;width:auto;padding:3px 5px;gap:3px}
+  #viewBox .vrow{gap:3px}#viewBox button{min-height:36px;min-width:36px;font-size:14px;padding:2px 4px}
+  #viewBox .vauto{font-size:11px;min-height:36px;flex:none}#vLbl{font-size:11px;min-width:58px}
+  #hTL{width:190px;gap:4px}.hcard{padding:5px 8px}.wpn .am{font-size:18px}
+  #hTC{min-width:200px;gap:3px}#phase{font-size:14px}
+  .res div{min-width:38px;padding:2px 4px}.res b{font-size:14px}
+  #tpad{grid-template-columns:repeat(3,46px);gap:6px;bottom:calc(8px + var(--sa-b))}#tpad button{width:46px;height:46px;font-size:11px}
+  body.touch #wbar{top:auto;bottom:calc(8px + var(--sa-b));right:calc(170px + var(--sa-r))}
+  body.touch #wbar button{min-width:44px;min-height:40px;padding:2px 4px}
+  body.touch #wbar button small{display:none}
+  #bbar{bottom:calc(6px + var(--sa-b));max-width:calc(100vw - 150px - var(--sa-r) - var(--sa-l));left:calc(8px + var(--sa-l));transform:none;padding:4px}
+  #bbar button{min-width:48px;min-height:50px;font-size:11px;flex:none}#bbar button small{font-size:9.5px}#bbar button canvas{width:20px;height:20px}
+  body.touch.building #tpad{bottom:calc(8px + var(--sa-b))}
+  body.building #log{bottom:calc(112px + var(--sa-b))!important}
+  #binfo{left:calc(8px + var(--sa-l));transform:none}
+  #binfo{bottom:calc(70px + var(--sa-b))}
+  #prompt{bottom:calc(64px + var(--sa-b))}
+  #log{font-size:12px;bottom:calc(60px + var(--sa-b))!important}
+  .stick::before{width:96px;height:96px;left:-48px;top:-48px}.stick i{width:42px;height:42px;left:-21px;top:-21px}
+  .logo h1{font-size:54px}.logo .tag{display:none}.wrapT{gap:10px}
+}
+@media (pointer:coarse) and (max-width:500px){
+  #mini{width:84px;height:84px}
+  #viewBox{width:150px}#viewBox button{min-height:36px;min-width:32px;font-size:14px}
+  #hTL{width:150px}.items{gap:6px;font-size:12px}
+  #hTC{top:calc(118px + var(--sa-t));min-width:0;left:calc(10px + var(--sa-l));transform:none;width:calc(100vw - 190px - var(--sa-l) - var(--sa-r))}
+  #hTR{gap:4px}.res div{min-width:34px;padding:2px}.res b{font-size:13px}.res small{font-size:10px}
+  body.touch #wbar{top:auto;bottom:calc(240px + var(--sa-b));right:calc(8px + var(--sa-r));flex-direction:column}
+  body.touch #wbar button{min-width:52px;min-height:40px}
+  #tpad{grid-template-columns:repeat(3,50px);gap:6px}#tpad button{width:50px;height:50px;font-size:11px}
+  #bbar{bottom:calc(8px + var(--sa-b));justify-content:flex-start;width:calc(100vw - 16px)}
+  #bbar button{min-width:56px;min-height:56px;flex:none}
+  #binfo{bottom:calc(84px + var(--sa-b));white-space:normal;width:90vw}
+  body.touch.building #tpad{bottom:calc(150px + var(--sa-b))}
+  .clist{grid-template-columns:1fr}
+  #prompt{white-space:normal;width:90vw}
+}
+</style>
+<body>
+<div id="loading">尸潮堡垒</div>
+<canvas id="cv"></canvas>
+<div id="ov"></div>
+<div id="stickL" class="stick hidden"><i></i></div>
+<div id="stickR" class="stick hidden"><i></i></div>
+
+<div id="hud" class="hidden">
+  <div id="hTL">
+    <div class="hcard" id="pcards"></div>
+    <div class="hcard">
+      <div class="wpn"><b id="wName">手枪</b><span class="am" id="wMag">12</span><span class="rs" id="wRes">/ ∞</span></div>
+      <div class="rl"><i id="wRl"></i></div>
+      <div class="items"><div>手雷 <span id="iNade">1</span></div><div>医疗包 <span id="iMed">1</span></div><div>击杀 <span id="iKill">0</span></div></div>
+    </div>
+  </div>
+  <div id="hTC" class="hcard">
+    <div id="phase">白天</div>
+    <div class="rbar" id="rbar"><span>电台</span><div class="bar"><i id="rHp"></i></div><span id="rTxt"></span></div>
+    <button id="readyBtn" class="ghost">准备入夜 <span class="kbd">(N)</span></button>
+  </div>
+  <div id="hTR">
+    <div class="res hcard" id="resBox"></div>
+    <div class="tbtn"><button id="muteBtn" class="ghost" title="静音 (M)">🔊</button><button id="pauseBtn" class="ghost" title="菜单 (Esc)">❚❚</button></div>
+    <canvas id="mini" width="128" height="128" class="hcard"></canvas>
+    <div id="viewBox" class="hcard">
+      <div class="vrow"><button id="vZin" title="放大 (滚轮 / +)">＋</button><button id="vZout" title="缩小 (滚轮 / −)">－</button><button id="vRl" title="向左转 (Q)">⟲</button><button id="vRr" title="向右转 (E)">⟳</button></div>
+      <div class="vrow"><button id="vDn" title="看下一层 (PageDown)">▼</button><span id="vLbl">1F 自动</span><button id="vUp" title="看上一层 (PageUp)">▲</button></div>
+      <button id="vAuto" class="vauto" title="跟随自己所在楼层 (Home)">跟随我所在的层</button>
+    </div>
+  </div>
+  <div id="prompt" class="hidden"><div id="pTxt"></div><div class="pr"><i id="pPr"></i></div></div>
+  <div id="log"></div>
+  <div id="banner"><h2 id="bnT"></h2><p id="bnS"></p></div>
+  <div id="toast"></div>
+  <div id="wbar"></div>
+  <div id="binfo" class="hidden"></div>
+  <div id="bbar" class="hidden"></div>
+</div>
+<div id="tpad">
+  <button id="tBuild">建造</button><button id="tNade">手雷</button><button id="tMed">医疗</button>
+  <button id="tUse">交互</button><button id="tShove">推开</button><button id="tReload">换弹</button>
+  <span></span><span></span><button id="tSwap">换枪</button>
+</div>
+
+<div id="title" class="scr">
+  <button id="hubBtn" class="hubBack ghost hidden">‹ 游戏厅</button>
+  <div class="wrapT">
+    <div class="logo"><h1>尸潮<b>堡</b>垒</h1><div class="en">DEAD TIDE</div><div class="tag">砍树采石盖堡垒 · 夜里守住电台 · 撑过十五夜</div></div>
+    <div class="card menu">
+      <div class="row"><input id="nameIn" maxlength="10" placeholder="你的名字"></div>
+      <div class="lbl">难度</div>
+      <div class="seg" id="diffSeg"><button data-d="easy">简单</button><button data-d="normal">普通</button><button data-d="hard">困难</button></div>
+      <button id="soloBtn" class="primary">单人守夜</button>
+      <div id="coopBox" style="display:flex;flex-direction:column;gap:10px">
+        <button id="hostBtn">创建双人房间</button>
+        <div class="row"><input id="codeIn" maxlength="4" placeholder="房间码" style="text-transform:uppercase;font-family:var(--num);letter-spacing:.2em"><button id="joinBtn" style="flex:none">加入</button></div>
+      </div>
+      <div id="artNote" class="lbl hidden" style="text-align:center;line-height:1.6">这里是单人版。双人联机请打开游戏厅里的网页版。</div>
+      <button id="helpBtn" class="ghost">玩法和操作</button>
+      <div class="status" id="tStatus"></div>
+      <div class="best" id="bestTxt"></div>
+    </div>
+  </div>
+</div>
+
+<div id="lobby" class="scr hidden">
+  <div class="card">
+    <div class="lbl" style="text-align:center">房间码（告诉队友）</div>
+    <div class="code" id="lCode">····</div>
+    <div class="plist"><div class="pl p0"><div class="n" id="lP0">房主</div><div class="s">房主 · 橙色</div></div><div class="pl p1"><div class="n" id="lP1">等待加入…</div><div class="s" id="lP1s">队友 · 青色</div></div></div>
+    <div class="lbl">难度 <span id="lDiffNote"></span></div>
+    <div class="seg" id="lDiffSeg"><button data-d="easy">简单</button><button data-d="normal">普通</button><button data-d="hard">困难</button></div>
+    <div class="status" id="lStatus"></div>
+    <div class="btns"><button id="lReady" class="hidden">准备</button><button id="lStart" class="primary hidden" disabled>开始守夜</button><button id="lLeave" class="ghost">离开</button></div>
+  </div>
+</div>
+
+<div id="craft" class="modal hidden">
+  <div class="card"><h3>工作台</h3><div class="lbl">材料全队共用 · 制作的武器和道具归你</div><div class="clist" id="clist"></div><button id="craftClose" class="ghost">关闭 <span class="kbd">(E)</span></button></div>
+</div>
+<div id="pause" class="modal hidden">
+  <div class="card"><h3 id="pauseT">暂停</h3>
+    <button id="resumeBtn" class="primary">继续</button>
+    <button id="pHelp" class="ghost">玩法和操作</button>
+    <button id="pTitle" class="danger">返回标题</button>
+    <button id="pHub" class="danger hidden">返回游戏厅</button>
+  </div>
+</div>
+<div id="help" class="modal hidden">
+  <div class="card"><h3>玩法和操作</h3>
+    <div class="help">
+      <h4>目标</h4>堡垒里的电台在不停呼救。<b>守住电台，撑过 15 夜</b>，救援直升机就会来。电台被毁、或者所有人同时倒下就失败。
+      <h4>白天</h4>出门砍树（木材）、采石（砖石），搜汽车、补给箱和废墟瓦砾（钢材、零件、弹药），离家越远收获越多；回来盖楼、在电台旁的工作台造枪。河上只有两座桥，丧尸也只能从桥上过河。每 5 夜一次血月。
+      <h4>建造</h4>只能在电台周围的黄框里建造，放在<b>当前视图层</b>：想往上盖就把楼层视图切到上一层。方块要有<b>支撑</b>：从地面往上传，往旁边每格减 1，支撑断了会连锁坍塌。门让人通过但挡丧尸，射击栅栏能从里面开枪。丧尸会砸墙砸门、走楼梯；攀爬者会翻墙。
+      <h4>视角</h4>滚轮或 ＋/－ 缩放，Q / E 或 ⟲⟳ 转镜头。楼层视图默认跟随你所在的层，上面的楼层会自动隐藏；▲▼ 手动看别的层，「跟随我所在的层」恢复。
+      <h4 class="kbd">键鼠</h4><div class="kbd"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> 移动（相对屏幕）　鼠标瞄准，左键射击<br><kbd>R</kbd> 换弹　<kbd>1</kbd>–<kbd>4</kbd> 换枪　<kbd>V</kbd> 推开丧尸　<kbd>G</kbd> 手雷　<kbd>H</kbd> 医疗包（倒地时自救）<br><kbd>F</kbd> 按住：砍树 / 采石 / 搜索 / 扶起队友；在工作台按 <kbd>F</kbd> 打开制作<br><kbd>B</kbd> 建造模式：数字键选方块，左键放置或修理，右键拆除，<kbd>R</kbd> 转楼梯朝向<br><kbd>Q</kbd><kbd>E</kbd> 转镜头　滚轮缩放　<kbd>PageUp</kbd><kbd>PageDown</kbd> 切换楼层视图　<kbd>Home</kbd> 跟随自己<br><kbd>N</kbd> 准备入夜　<kbd>M</kbd> 静音　<kbd>Esc</kbd> 菜单</div>
+      <h4 class="tch">触屏</h4><div class="tch">左半屏拖动移动。右半屏拖动瞄准并开火（自动瞄准高低差）。右下按键：交互（按住）、推开、换弹、换枪、手雷、医疗、建造。右上可以缩放、转镜头、切换楼层视图。建造模式下点屏幕放方块，「换弹」键变成转楼梯朝向，选「拆除」后点方块拆掉。</div>
+    </div>
+    <button id="helpClose" class="primary">好</button>
+  </div>
+</div>
+<div id="over" class="modal hidden">
+  <div class="card"><h2 id="oT">失败</h2><div id="oWhy" style="font-size:16px"></div><div class="stats" id="oStats"></div>
+    <div class="btns"><button id="oAgain" class="primary">再来一局</button><button id="oLobby" class="hidden">回到房间</button><button id="oEndless" class="hidden">继续无尽守夜</button></div>
+    <div class="btns"><button id="oTitle" class="ghost">返回标题</button><button id="oHub" class="ghost hidden">返回游戏厅</button></div>
+  </div>
+</div>
+__SCRIPTS__
+</body>
