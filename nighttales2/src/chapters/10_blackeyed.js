@@ -839,12 +839,13 @@
     S.hide('elamp'); S.dark(.95); S.plr(1.8);
     await S.narr('屋里的灯，一盏接一盏地暗了下去。');
     // 电视灭掉之前的最后一闪：沙发上坐着一个
-    S.show('ek2'); S.place('ek2', 4, 2, 0);
+    S.show('ek2'); S.place('ek2', 4, 2, 0); S.focus(6, 3);
     S.fx('static'); S.sfx('tv'); S.lights([[4.5 * 16, 2.5 * 16, 3, .5]]);
     await S.narr('客厅里，电视「嗞」地闪了最后一下——\n就那一下，你看见了：碎花沙发上，坐着一个小小的人影。坐得笔直，脸朝着你这边。');
     const tv = S.ent('etv2'); tv.lit = false; tv.off = true; S.lights(null);
     S.sfx('sting');
     await S.narr('电视灭了。\n沙发上只坐着一个。\n……另一个呢？');
+    S.focus(null);
     await S.say('埃德娜', '……它们回来了。', { style: 'whisper' });
     await S.say('埃德娜', ['它们用不着敲门了。这是我请它们进来过的屋子。', '诺拉，从厨房的后门走。快！别回头。', '别管我。它们要的……已经不是我了。']);
     S.sfx('giggle');
