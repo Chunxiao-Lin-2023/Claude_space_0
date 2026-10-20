@@ -212,6 +212,17 @@ BX.register({
     const cv = ctx.canvas();
     let sel = -1, legal = [], anim = null, call = null, pulse = 0;
     const boardImg = L.cache();
+    const spr = new Map();
+    function sprite(p, R) {
+      const dpr = Math.min(2, window.devicePixelRatio || 1), k = p + '|' + R.toFixed(2) + '|' + dpr;
+      let c = spr.get(k);
+      if (!c) {
+        if (spr.size > 64) spr.clear();
+        c = document.createElement('canvas'); c.width = c.height = Math.ceil(R * 2.5 * dpr);
+        const g2 = c.getContext('2d'); g2.scale(dpr, dpr); D.piece(g2, R * 1.25, R * 1.25, R, chOf(p), colOf(p)); spr.set(k, c);
+      }
+      return c;
+    }
     const flip = () => ctx.mySeats.length === 1 && ctx.mySeats[0] === 1;
     function geo() {
       const W = cv.w, H = cv.h, land = W > H * 1.08;
@@ -353,7 +364,7 @@ BX.register({
           if (anim && i === anim.t) continue;
           const [x, y] = scr(i, G);
           if (i === sel) { D.piece(g, x, y - s * .06, R0 * 1.07, chOf(p), colOf(p), {sel: '#ffd76a'}); continue; }
-          D.piece(g, x, y, R0, chOf(p), colOf(p));
+          g.drawImage(sprite(p, R0), x - R0 * 1.25, y - R0 * 1.25, R0 * 2.5, R0 * 2.5);
         }
         if (anim) {
           const [fx, fy] = scr(anim.f, G), [tx, ty] = scr(anim.t, G), k = anim.k;

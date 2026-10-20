@@ -208,9 +208,11 @@ BX.register({
           // cup
           const cupW = Math.max(dw + ds * .5, ds * 2.4), cupH = ds * 1.7;
           // cup: closed over the dice, or opened (small, set aside next to the dice)
-          const open = isMe ? 1 : reveal ? cupK : 0, sc = 1 - .45 * open;
-          let off = open * (dw / 2 + cupW * .55 * .5 + ds * .3);
-          if (P.x + off + cupW * sc / 2 > tb.x + tb.w - 14) off = -off;
+          const open = isMe ? 1 : reveal ? cupK : 0, ow = ds * 2.1, sc = BX.lerp(1, ow / cupW, open);
+          let off = open * (dw / 2 + ow / 2 + ds * .35);
+          if (!P.me && P.x < tb.x + tb.w / 2 - 5) off = -off;
+          if (P.x + off + ow / 2 > tb.x + tb.w - 14) off = -Math.abs(off);
+          if (P.x + off - ow / 2 < tb.x + 14) off = Math.abs(off);
           const lift = Math.sin(open * Math.PI) * cupH * .5;
           drawCup(g, P.x + off, dy + ds - lift, cupW * sc, cupH * sc, s, shake.k < 1 && !reveal ? Math.sin(t * 35) * .08 * (1 - shake.k) : 0, 0, !show ? n : 0);
           // speech bubble with the player's last bid this round
