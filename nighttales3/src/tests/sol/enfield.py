@@ -47,6 +47,12 @@ SOL = [
     ['use', 'kcount'],                          # 五十便士 → 电视自己亮了，椅子挪到了厨房门口
     ['expect', "window.__dbg.ent('gchair_l').px === 9 * 16 && window.__dbg.ent('telly').lit"],
     ['shot', 'dark_coin'],
+    ['wait', 6000],                             # 拿了硬币站着不动 → 椅子追上来（死亡）
+    ['retry'],                                  # 从「停电」检查点重来：回到楼上，没有硬币，椅子回墙角
+    ['expect', "window.__dbg.W.f.act === 'dark' && window.__dbg.W.mapId === 'upstairs' && !window.__dbg.W.inv.includes('coin')"],
+    ['step', 1, 8],
+    ['expect', "window.__dbg.ent('gchair_l').px === 16 && !window.__dbg.ent('telly').lit"],
+    ['use', 'kcount'],
     ['use', 'meter'],                           # 来电 → 第二天上午
     ['expect', "window.__dbg.W.f.act === 'morning'"],
     ['shot', 'morning'],
