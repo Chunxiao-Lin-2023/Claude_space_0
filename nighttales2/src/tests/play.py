@@ -20,6 +20,7 @@ SOL = {}
 for _f in sorted(_glob.glob(os.path.join(HERE, 'sol', '*.py'))):
     _sp = importlib.util.spec_from_file_location('sol_' + os.path.basename(_f)[:-3], _f); _m = importlib.util.module_from_spec(_sp); _sp.loader.exec_module(_m)
     SOL[os.path.basename(_f)[:-3]] = _m.SOL
+WARN = []
 PEERJS = '/home/claude/testdeps/node_modules/peerjs/dist/peerjs.min.js'
 
 AUTO_JS = r"""
@@ -38,6 +39,12 @@ window.__auto = async (picks, maxMs) => {
     await sleep(50);
   }
   return 'timeout';
+};
+window.__reach = () => {   // 从玩家当前位置真实走路能到的格子（当前地图）
+  const D = window.__dbg, W = D.W, m = W.maps[W.mapId], seen = new Set(), q = [[W.pl.x, W.pl.y]];
+  seen.add(W.pl.x + ',' + W.pl.y);
+  while (q.length) { const [x, y] = q.pop(); for (const [dx, dy] of [[1,0],[-1,0],[0,1],[0,-1]]) { const nx = x + dx, ny = y + dy, k = nx + ',' + ny; if (seen.has(k)) continue; if (!passable(m, nx, ny, W.pl)) continue; seen.add(k); q.push([nx, ny]); } }
+  return { map: W.mapId, cells: [...seen] };
 };
 """
 
@@ -59,15 +66,24 @@ def run_chapter(page, cid, steps, shots=None):
     r = auto(steps[0] if steps and isinstance(steps[0], list) and all(isinstance(x, int) for x in steps[0]) else [])
     i0 = 1 if steps and isinstance(steps[0], list) and all(isinstance(x, int) for x in steps[0]) else 0
     shot_n = 0
+    def check_reach(cid, st, pre):
+        now = page.evaluate("(() => { const W = window.__dbg.W; return {map: W.mapId, x: W.pl.x, y: W.pl.y}; })()")
+        if now['map'] == pre['map'] and f"{now['x']},{now['y']}" not in set(pre['cells']):
+            WARN.append(f"{cid}: 走不到 {st[:2]} -> ({now['x']},{now['y']}) on {now['map']}（测试是传送过去的，真人可能被堵住）")
     for st in steps[i0:]:
         kind = st[0]
+        if kind in ('use', 'step'):
+            pre = page.evaluate("window.__reach()")
         if kind == 'use':
             tgt = st[1]; picks = st[2] if len(st) > 2 else []
             ok = page.evaluate("t => window.__dbg.face(t)", tgt)
+            check_reach(cid, st, pre)
             if not ok: raise AssertionError(f'{cid}: cannot reach {tgt} on map {page.evaluate("window.__dbg.W.mapId")}')
             page.evaluate("window.__dbg.doAct('use')")
             r = auto(picks)
         elif kind == 'step':
+            page.evaluate("([x,y]) => window.__dbg.tp(x,y)", [st[1], st[2]])
+            check_reach(cid, st, pre)
             page.evaluate("([x,y]) => window.__dbg.step(x,y)", [st[1], st[2]])
             r = auto(st[3] if len(st) > 3 else [])
         elif kind == 'wait':
@@ -125,6 +141,7 @@ def main():
         b.close()
     httpd.shutdown()
     for k, v in results.items(): print(f'{k:12s} {v}')
+    if WARN: print('REACH WARNINGS:'); [print('  ', w) for w in WARN]
     if errors: print('ERRORS:'); [print('  ', e[:300]) for e in errors[:20]]
     sys.exit(0 if all(v == 'OK' for v in results.values()) and not errors else 1)
 
