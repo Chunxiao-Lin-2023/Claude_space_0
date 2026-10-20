@@ -2,23 +2,51 @@
 (() => {
   /* 第四幕以后的深夜阶段 */
   const ACT4 = ['night', 'fetch', 'wait', 'matches', 'candle', 'flee', 'door', 'wish3', 'after', 'lost'];
-  const DOORT = 50;                                   // 摸黑找猴爪的秒数
-  const PAWS = [[2, 4], [6, 5], [8, 5], [8, 3]];      // 猴爪被踢到的位置
-  const GROPE = [
-    [2, 5, '你摸到一只拖鞋。是她的，里面还留着一点体温。'],
-    [5, 5, '冰凉的瓷烛台。蜡油已经凝住了。'],
-    [6, 3, '一团软软的东西——是她的披肩。'],
-    [1, 4, '床底下……只有灰。']
+  const DOORT = 30;                                   // 摸黑找猴爪的秒数（抓住她不放会多 10 秒）
+  /* 猴爪被踢到的位置：[x, y, 地标, 声音从门口听起来的方向] */
+  const PAWS = [
+    [2, 4, '床那边', '往左边滑了一小段'],
+    [6, 5, '那把椅子那边', '往右边滑了一小段'],
+    [8, 5, '衣柜底下那个墙角', '往右边一直滑，撞在了墙根上'],
+    [8, 3, '衣柜那边', '往右边、往里一直滑了过去'],
+    [2, 2, '床头和五斗柜之间', '往左边、往里一直滑了过去'],
+    [1, 5, '床脚的墙角', '往左边一直滑，撞在了墙根上']
   ];
+  const NEAR = [0, 1, 4], FAR = [2, 3, 5];            // 离门口近 / 远的落点
+  const GROPE = [   // 假物件：第一次摸到给一句描述 + 指向猴爪的线索
+    [2, 5, '你摸到一只拖鞋。是她的，里面还留着一点体温。', p => `拖鞋旁边，地板上有一道新蹭出来的划痕，指着${p}。`],
+    [5, 5, '冰凉的瓷烛台，倒在地上。蜡油已经凝住了。', p => `烛台是被什么东西撞倒的。滚开的方向——${p}。`],
+    [6, 3, '一团软软的东西——是她的披肩。', p => `披肩的流苏被什么拖歪了，一溜儿朝着${p}。`],
+    [1, 4, '床底下……只有灰。', p => `灰上有一道刚擦出来的印子，往${p}去了。`]
+  ];
+  const CHAIR_ST = 2;                                 // _st 到这一级以后，她已经拖了椅子
   const FIRE = { r: 5, col: 'rgba(255,140,60,.26)', flick: true };
   const is4 = S => ACT4.includes(S.f.act);
+  const lostIn = S => S.f.act === 'fetch' && S.has('paw');   // 拿到猴爪以后摸黑找门
+  const SQ = [];
+  const PT = { w: 0, c: 0 };                          // 地图 tick 的节拍计时                                      // 延后播放的音效队列（tick 里推进，主机）
+  const sfxSeq = (names, gap) => names.forEach((n, i) => SQ.push([i * gap, n]));
+  /* 联机时提示轮流操作 */
+  function handoff(S) { if (S.coop) S.toast('换个人来吧——按 T（或点交换按钮）把操作交给同伴'); }
+  /* 第一次摸到给一段叙述，之后只弹提示（限时段里不挡路） */
+  async function feel(S, key, text) { if (S.once('fl_' + key)) return S.narr(text); S.toast(text.split('\n').pop()); }   // 再摸到只提示最后一句（位置/线索）
+  /* 黑暗里撞到客厅的家具 */
+  function bumpP(text, extra) {
+    return async S => {
+      if (!lostIn(S) || S.map !== 'parlor') return;
+      if (extra) await extra(S);
+      await feel(S, 'pb_' + text.slice(0, 6), text);
+    };
+  }
+  /* 位置：两格之间的曼哈顿距离 */
+  const dist = (S, x, y) => Math.abs(S.pl.x - x) + Math.abs(S.pl.y - y);
 
   /* 每次进图：按剧情阶段设定光照与环境声 */
   function mood(S) {
     const a = S.f.act, m = S.map, n4 = is4(S);
     let dark = null, plr = null;
-    if (m === 'parlor') { if (n4) { dark = .95; plr = 1.5; } else if (S.f.day) dark = .32; }
-    if (m === 'hall') { if (S.f.day) S.ent('hcandle').off = true; if (n4) { dark = a === 'after' ? .88 : .95; plr = a === 'flee' ? 1.1 : 1.5; } else if (S.f.day) dark = .28; S.ent('kwin').lit = !!S.f.day; }
+    if (m === 'parlor') { if (lostIn(S)) { dark = .995; plr = .5; } else if (n4) { dark = .95; plr = 1.5; } else if (S.f.day) dark = .32; }
+    if (m === 'hall') { if (S.f.day) S.ent('hcandle').off = true; if (lostIn(S)) { dark = .99; plr = .7; } else if (n4) { dark = a === 'after' ? .88 : .95; plr = a === 'flee' ? 1.1 : 1.5; } else if (S.f.day) dark = .28; S.ent('kwin').lit = !!S.f.day; }
     if (m === 'bedroom') { if (a === 'door' || a === 'wish3') { dark = .97; plr = 1.25; } else if (n4) { dark = .9; plr = 1.6; } }
     if (m === 'garden') { if (S.f.day) dark = .42; }
     S.dark(dark); S.plr(plr);
@@ -35,7 +63,13 @@
     await S.say('你', '你要是不要了，莫里斯，就给我吧。');
     await S.say('莫里斯', ['我不给。我已经把它扔进火里了。', '你要是非留着不可，往后出了什么事，别怪到我头上。', '听我的——像个明白人那样，把它扔回火里去。']);
     const r = await S.ask('炉火噼啪作响。', ['（摇摇头，把猴爪攥得更紧）', '（犹豫着，看了看炉火）']);
-    if (r === 1) { await S.say('赫伯特', '别呀，爸爸！好不容易才救出来的。'); await S.narr('你的手在炉口停了一停，又缩了回来。'); }
+    if (r === 1) {
+      await S.say('赫伯特', '别呀，爸爸！好不容易才救出来的。');
+      S.face('morris', 'pl');
+      const r2 = await S.ask('军士长一声不响地看着你。猴爪还烫手。', ['（缩回手）', '（把它扔回火里）']);
+      if (r2 === 1) return wiseEnd(S);
+      await S.narr('你的手在炉口停了一停，又缩了回来。');
+    }
     await S.say('你', '……那，怎么许愿？');
     await S.say('莫里斯', ['用右手把它举起来，大声说出你的愿望。', '……不过我警告过你了。后果自负。']);
     await S.say('怀特太太', '听着跟《一千零一夜》似的。（她起身去摆晚饭的刀叉）你干脆替我许四双手得了。');
@@ -63,10 +97,27 @@
     S.cp();
   }
 
+  /* 隐藏结局：听了莫里斯的话 */
+  async function wiseEnd(S) {
+    S.take('paw'); S.show('fpaw'); S.sfx('thud');
+    await S.narr('你一抬手，把它扔回了炉火里。\n赫伯特「哎」了一声，没来得及拦。');
+    await S.say('莫里斯', '……好。好。（他长长地出了一口气，好像一下子老了好几岁）');
+    await S.narr('爪子上的毛「嗤」地卷了起来，冒出一股焦臭。\n这一回，谁也没有去拿火钳。');
+    S.hide('fpaw'); S.sfx('whisper');
+    await S.say('赫伯特', '两百英镑，就这么烧了。（他笑着摇头）爸爸，你可真是个明白人。');
+    await S.fade(1, 900);
+    await S.card('那年冬天', '', '那年冬天，什么也没有发生。\n\n路还是那么泥泞，棋还是那么难赢。\n赫伯特照旧每天早上吹着口哨去厂里上工。\n\n两年后，房子的钱还清了——\n是赫伯特一个先令一个先令，攒着帮你还上的。');
+    await S.end({ id: 'wise', title: '像个明白人那样', text: '（隐藏结局）\n\n「听我的——像个明白人那样，把它扔回火里去。」\n你听了。\n\n有些门，不打开，就永远不用知道门外是什么。\n\n……可你是不是也想知道，\n要是那天晚上你把它留下了，会怎么样？' });
+  }
+
   /* ---------------- 第二幕：第一个愿望 ---------------- */
   async function firstWish(S) {
     S.face('herb', 'pl');
     let opts = ['「当皇帝？」', '「说真的……我想要的好像都有了。」', '「还是算了。」（把猴爪收起来）'];
+    const sum = async () => {   // 两百英镑这个数字的来历
+      if (S.f._o_mortHint) await S.think('……抽屉里那张还款单。还差两百镑。再熬两年。');
+      else await S.say('赫伯特', '抽屉里那张还款单我看见了，爸爸。房子还欠两百镑，对吧？');
+    };
     for (;;) {
       const pick = opts[await S.ask('你把猴爪拿在手里翻来覆去地看。许点什么呢？', opts)];
       if (pick.startsWith('「当')) {
@@ -75,17 +126,24 @@
         opts = opts.filter(o => o !== pick); continue;
       }
       if (pick.includes('都有了')) {
+        await sum();
         await S.say('赫伯特', ['要是能把房子的钱还清，你就心满意足了，对吧？', '那就许两百英镑吧——刚好够。']);
       } else {
         await S.narr('你刚要把它揣回兜里，赫伯特一把抓住了你的手腕。');
-        await S.say('赫伯特', ['别扫兴嘛，爸爸！', '就许两百英镑——刚好够把房子的钱还清。（他笑着把你的右手举了起来）']);
+        await S.say('赫伯特', '别扫兴嘛，爸爸！');
+        await sum();
+        await S.say('赫伯特', '就许两百英镑——刚好够把房子的钱还清。（他笑着把你的右手举了起来）');
       }
       break;
     }
     await S.narr('你为自己居然有点当真而难为情，讪讪地把猴爪举了起来。');
     await S.walk('herb', [10, 3], 4); S.face('herb', 3);
     await S.narr('赫伯特板起一张庄严的脸，在钢琴前坐下，还偷偷冲母亲眨了眨眼——');
-    S.sfx('chime'); await S.wait(500); S.sfx('chime'); await S.wait(500); S.sfx('bell');
+    /* 低沉的小调和弦，像教堂里的管风琴开场 */
+    [98, 147, 196, 233].forEach((f, i) => S.tone('triangle', f, f, 1.6, .07, i * .02, 900));
+    S.shake(150, 1); await S.wait(700);
+    [87, 131, 175, 208].forEach((f, i) => S.tone('triangle', f, f, 1.8, .08, i * .02, 900));
+    S.shake(150, 1); await S.wait(600);
     await S.narr('他重重地按下几个和弦。');
     await S.ask('右手举起猴爪，大声说出来。', ['「我希望得到两百英镑。」']);
     await S.say('你', '我希望得到两百英镑。', { style: 'big' });
@@ -135,6 +193,7 @@
     await S.card('第二天早上', '', '冬日的阳光斜斜地照在早餐桌上。\n昨夜的那点害怕，在白天看来，简直有点可笑。');
     S.f.day = true; S.f.act = 'morning';
     await S.go('hall', 10, 5, 3, { ms: 700 });
+    handoff(S);
   }
 
   /* ---------------- 第三幕：送别 / 来客 ---------------- */
@@ -157,6 +216,7 @@
     S.f.act = 'stranger';
     S.show('wife_w'); S.ent('wife_w').spr = '@wifeA';
     await S.go('parlor', 6, 4, 3);
+    handoff(S);
   }
 
   async function news(S) {
@@ -198,7 +258,8 @@
     S.hide('stranger'); S.hide('wife');
     await S.card('葬礼', '两英里外，新修的大墓地', '一切都发生得太快了，快得叫人回不过神来。\n下葬那天，下着冷雨。');
     S.f.act = 'funeral'; S.f.day = true;
-    await S.go('cem', 5, 6, 3, { ms: 800 });
+    await S.go('cem', 9, 9, 3, { ms: 800 });
+    handoff(S);
   }
 
   /* 第四幕之前的布景 */
@@ -208,6 +269,7 @@
     S.show('mpaw');
     S.place('wife_b', 6, 2, 3); S.ent('wife_b').spr = '@wifeB';
     S.ent('bcandle').off = true; S.ent('bwin').open = false;
+    S.ent('hooks').s.parcel = true;   // 毛与梅金斯寄回来的包裹
   }
 
   /* ---------------- 第四幕：第二个愿望 ---------------- */
@@ -240,7 +302,7 @@
     await S.say('怀特太太', '去拿来许愿！');
     await S.narr('你转过身看着她。你的声音在发抖。');
     await S.say('你', ['他已经死了十天了。而且他——我本来不想告诉你的——', '我只能靠他身上的衣服，才认出那是他。', '那时候你都不敢去看他。现在呢？']);
-    await S.think('你记得那件外套。\n外套最上面那颗纽扣，是她去年冬天一针一线缝上去的。');
+    await S.think('你没告诉她的是那颗铜扣子。\n最上面那颗——他出门前一天夜里，她刚一针一线给他钉上的。\n那张长桌上，你认出来的，就是它。');
     await S.say('怀特太太', ['把他带回来！', '你以为我会怕我自己一手带大的孩子吗？']);
     S.ent('bcandle').off = false; S.sfx('match');
     await S.narr('她划了一根火柴，点亮了五斗柜上的蜡烛头。\n烛火只有指甲盖那么大。');
@@ -254,8 +316,15 @@
     S.place('wife_b', 4, 3, 0);
     await S.narr('连妻子的脸，在烛光里也好像变了样。\n白得发青，带着一种迫不及待的神情，透着说不出的古怪。你忽然有点怕她。');
     await S.say('怀特太太', '许愿！', { style: 'big' });
-    let r = await S.ask('猴爪在你手里冰凉冰凉的。', ['「这太傻了，这是作孽……」', '（举起右手）']);
-    if (r === 0) { await S.say('怀特太太', '许！', { style: 'big' }); await S.ask('……', ['（举起右手）']); }
+    const vr = await S.vote('猴爪在你手里冰凉冰凉的。', ['「这太傻了，这是作孽……」', '（举起右手）']);
+    if (!vr.agree) await S.think('你的一只手想把它扔出去，另一只手已经把它攥紧了。');
+    if (vr.v === 0) {
+      await S.say('怀特太太', '许！', { style: 'big' });
+      await S.say('你', '孩子他妈，你听我说——莫里斯说过，第一个人的第三个愿望是……');
+      await S.say('怀特太太', ['我不管第一个人！我不管莫里斯！', '那是我的孩子！你许不许？你不许，我自己来！'], { style: 'big' });
+      await S.narr('她扑过来要抢。你往后一躲——\n你知道，就算你不许，她也会许。她说出口的，只会更糟。');
+      await S.ask('……', ['（举起右手）']);
+    }
     await S.say('你', '我希望我的儿子活过来。', { style: 'big' });
     S.take('paw'); S.sfx('thud'); S.place('paw2', 3, 5);
     await S.narr('猴爪掉在了地上。\n你惊恐地盯着它，浑身发抖，跌坐进椅子里。');
@@ -267,6 +336,9 @@
     await S.wait(900);
     S.ent('bcandle').off = true; S.sfx('whisper'); mood(S); S.dark(.93);
     await S.narr('最后，它猛地跳了一下——灭了。');
+    await S.wait(700);
+    await S.bells(1, 400);
+    await S.narr('楼下的座钟，敲了一下。\n一点钟。');
     await S.narr('什么也没有发生。\n你心里涌起一阵说不出的轻松：那东西不灵了。');
     S.f.act = 'wait';
     S.goal('回床上躺下');
@@ -277,7 +349,14 @@
     S.hide('wife_b');
     await S.narr('你摸回床上。过了一两分钟，妻子也一声不响、木然地躺到了你身边。');
     await S.narr('你们谁也不说话，只是静静地躺着，听着楼下座钟的滴答声。');
-    S.sfx('tick'); await S.wait(700); S.sfx('tick'); await S.wait(700); S.sfx('tick');
+    await S.fade(1, 600);
+    for (let i = 0; i < 4; i++) { S.sfx('tick'); await S.wait(900); }
+    S.sfx('bell'); await S.fade(0, 400);
+    await S.narr('座钟敲了一刻。');
+    await S.fade(1, 600);
+    for (let i = 0; i < 4; i++) { S.sfx('tick'); await S.wait(900); }
+    S.sfx('bell'); await S.wait(380); S.sfx('bell'); await S.fade(0, 400);
+    await S.narr('又敲了两刻。\n她的呼吸声一直没有变——你知道她也没睡。');
     await S.narr('楼梯「嘎吱」响了一下。\n一只耗子吱吱叫着，从墙里窜了过去。');
     await S.narr('黑暗压得人透不过气。\n你躺了好一阵，终于鼓足了勇气——');
     S.f.act = 'matches';
@@ -286,9 +365,16 @@
 
   async function knockAtFoot(S) {
     S.plr(1.7); S.sfx('match');
-    await S.narr('你划着一根火柴，摸下楼梯。\n刚走到楼梯脚下，火柴灭了。你停下来，想再划一根——');
-    S.plr(.9); S.amb('none');
-    await S.wait(700);
+    await S.narr('你划着一根火柴，摸下楼梯。');
+    S.focus(1, 2);
+    await S.narr('火柴的光照亮了楼梯旁那座钟的钟面。\n两点差一刻。');
+    await S.think('快一个钟头了。');
+    S.focus(null);
+    await S.narr('刚走到楼梯脚下，火柴灭了。你停下来，想再划一根——');
+    S.plr(.9); S.amb('none'); S.f.clockStop = true;
+    await S.wait(1200);
+    await S.narr('……钟不走了。\n你这才发觉，一直在耳朵边上的那个滴答声，没有了。');
+    await S.wait(900);
     S.sfx('knock');
     await S.narr('就在这时，前门上响起了一下敲门声。\n那么轻，那么鬼祟，几乎听不见。');
     S.take('matches'); S.show('spill'); S.sfx('drip');
@@ -297,12 +383,42 @@
     S.sfx('knock'); S.focus(6, 2);
     await S.narr('你一动不动，连气都不敢喘——\n直到敲门声又响了一下。');
     S.focus(null);
-    S.f.act = 'flee'; S.f._fk = 2;
+    S.f.act = 'flee';
+    S.cp('flee');
+    startFlee(S);
+  }
+  /* 第一下敲门以后：逃回楼上（10 秒不动，腿会自己跑） */
+  function startFlee(S) {
+    S.f._fk = 2; S.f._ft = 0;
     S.goal('逃回卧室！');
     S.amb('drone');
+    S.timer(10, null, async S2 => {
+      if (S2.f.act !== 'flee' || S2.map !== 'hall') return;
+      S2.sfx('knock'); S2.shake(300, 2);
+      await S2.narr('又是一下。\n你的腿自己动了——你转身就往楼上跑，一步跨两级。');
+      await S2.go('bedroom', 4, 5, 3);
+    });
+  }
+  /* 第三个坏结局：自己拔开了门闩 */
+  async function openEnd(S) {
+    S.clearTimer(); S.f.act = 'lost';
+    S.sfx('switch'); await S.wait(300); S.sfx('switch'); await S.wait(300); S.sfx('locked');
+    await S.narr('你拔开了底下那道门闩，又踮起脚，拔开了上面那道。\n链子哗啦一声垂了下来。');
+    S.amb('none'); await S.wait(900);
+    S.ent('fdoor').open = true; S.sfx('open'); S.amb('wind');
+    S.ent('fdoor').light = { r: 2.2, col: 'rgba(120,140,190,.10)' };
+    await S.narr('门开了。\n一股带着湿土气味的冷风，迎面扑了进来。');
+    await S.wait(1200);
+    await S.narr('台阶底下，站着一个影子。\n比你记得的矮了一截。歪着。一动不动。');
+    S.sfx('heart'); await S.wait(800); S.sfx('heart');
+    await S.narr('它好像在等你先开口。');
+    await S.say('你', '……赫伯特？', { style: 'whisper' });
+    S.sfx('whisper'); S.fx('black', { dur: 1.4 });
+    await S.end({ id: 'open', bad: true, title: '你开了门', text: '你始终没有看清它的脸。\n这是你这辈子最庆幸的一件事。\n\n可是从那天起，每到夜里两点差一刻，\n你都会醒过来，\n听一听门上有没有动静。' });
   }
 
   async function wifeRuns(S) {
+    S.clearTimer();
     S.sfx('close');
     await S.walk('pl', [5, 3], 5);
     S.sfx('knock'); S.sfx('knock'); S.shake(300, 2);
@@ -315,46 +431,92 @@
     await S.narr('一阵响亮的敲门声，在整座房子里回荡。');
     await S.say('怀特太太', '是赫伯特！是赫伯特！', { style: 'big' });
     await S.walk('wife_b', [4, 4], 5);
-    await S.ask('她朝门口跑去。', ['（一把抓住她的胳膊）']);
-    S.face('wife_b', 'pl');
-    await S.say('你', '你要干什么？', { style: 'whisper' });
-    await S.say('怀特太太', ['是我的孩子！是赫伯特！', '我都忘了，墓地有两英里远……你抓着我干什么？放开我！我得去开门！']);
-    await S.say('你', '看在上帝的份上，别让它进来！');
-    await S.say('怀特太太', ['你怕你自己的儿子！', '放开我！——我来了，赫伯特，我来了！']);
-    S.sfx('knock'); S.sfx('knock');
-    await S.narr('她猛地一挣，挣脱了你的手，冲出了房间。');
-    S.f.pawSpot = Math.floor(Math.random() * PAWS.length);
-    const [px, py] = PAWS[S.f.pawSpot];
+    const vr = await S.vote('她朝门口跑去。', ['（死死抓住她的胳膊）', '（……放开她）']);
+    if (!vr.agree) await S.think('你的手抓住了她——又松开了一半。');
+    let pool;
+    if (vr.v === 0) {
+      S.face('wife_b', 'pl');
+      await S.say('你', '你要干什么？', { style: 'whisper' });
+      await S.say('怀特太太', ['是我的孩子！是赫伯特！', '我都忘了，墓地有两英里远……你抓着我干什么？放开我！我得去开门！']);
+      await S.say('你', '看在上帝的份上，别让它进来！');
+      await S.say('怀特太太', ['你怕你自己的儿子！', '放开我！——我来了，赫伯特，我来了！']);
+      S.sfx('knock'); S.sfx('knock'); S.shake(400, 2);
+      await S.narr('你们俩在门口扭作一团。她猛地一挣，挣脱了你的手——\n她的脚狠狠地踢到了地上的什么东西。');
+      S.f.doorT = DOORT + 10; pool = FAR;
+    } else {
+      await S.narr('你的手抬起来，又放下了。\n她跌跌撞撞地从你身边冲了过去，脚尖在地上的什么东西上一绊。');
+      S.f.doorT = DOORT; pool = NEAR;
+    }
+    S.f.pawSpot = pool[S.rand(pool.length)];
+    const P = PAWS[S.f.pawSpot];
     await S.walk('wife_b', [4, 5], 6); S.hide('wife_b');
-    S.place('paw2', px, py); S.sfx('drip');
-    await S.narr('黑暗里，她的脚踢到了什么东西——\n它在地板上「嗒」地一声滑了出去，不知滑到了哪儿。');
+    S.place('paw2', P[0], P[1]); S.sfx('drip');
+    await S.narr(`黑暗里，「嗒」的一声——\n那东西在地板上${P[3]}。`);
     for (let i = 0; i < GROPE.length; i++) S.show('g' + i);
     S.f.act = 'door'; mood(S);
-    await S.narr('楼下传来门链被拉开的哗啦声。\n然后是底下那道门闩，被一点一点、生硬地，从插槽里拔出来——');
+    S.sfx('locked'); S.sfx('tick');
+    await S.narr('楼下传来门链被拉开的哗啦声。');
+    sfxSeq(['switch', 'switch', 'switch'], .2);
+    await S.narr('然后是底下那道门闩，被一点一点、生硬地，从插槽里拔出来——');
+    S.shake(300, 1);
+    await S.say('怀特太太（楼下）', '门闩！最上面那道……我够不着！下来帮帮我！', { style: 'big' });
     await S.think('猴爪。猴爪掉在地上了。');
     S.goal('在黑暗里摸到猴爪——赶在她打开门之前！');
     S.cp('door');
+    await kneel(S);
     startDoor(S);
   }
-  function startDoor(S) { S.f._st = 0; S.f._kn = 0; S.timer(DOORT, '门闩', lostEnd); }
+  /* 计时开始前的缓冲点（联机时也方便交接操作） */
+  async function kneel(S) {
+    await S.ask('你跪了下来，两只手按在冰凉的地板上。', ['（摸！）']);
+    S.toast('跪着摸索：走得很慢，也跑不起来');
+  }
+  const DS = {};   // 限时段的瞬时状态（闪光/闪黑），不进存档
+  function startDoor(S) {
+    S.f._st = 0; S.f._kn = .4; Object.assign(DS, { gl: 0, fd: 0, fl: 0 });
+    S.norun(true); S.speed(.5);
+    S.timer(S.f.doorT || DOORT, '门闩', lostEnd, { during: true });
+  }
+  function endDoor(S) {
+    S.norun(false); S.speed(1); S.lights(null);
+    const p = S.ent('paw2'); if (p) p.s.glint = false;
+  }
 
   /* ---------------- 第五幕：第三个愿望 ---------------- */
   async function foundPaw(S) {
-    S.clearTimer(); S.f.act = 'wish3'; S.hide('paw2');
+    S.clearTimer(); endDoor(S); S.f.act = 'wish3'; S.hide('paw2');
+    const chair = (S.f._st || 0) >= CHAIR_ST;
     await S.narr('你的手指碰到了一样东西：干瘪，粗糙，长着稀稀拉拉的毛。');
     S.sfx('knock'); S.shake(300, 2);
-    await S.narr('楼下，椅子在地板上「吱——」地拖了过去。\n她踩上椅子，够着了最上面那道门闩。');
-    const r = await S.ask('你把它举了起来。', ['「我希望他回去——回到他该待的地方，安息吧。」', '「我希望他……像从前那样，完完整整地回来！」']);
-    if (r === 1) return badWish(S);
+    if (chair) { S.sfx('thud'); await S.narr('楼下，椅子腿在地板上刮了一下——她已经站上去了。\n门闩在她手底下吱吱作响。'); }
+    else await S.narr('楼下，她还在门闩上使劲地拽。够不着。\n她喘着气，一声一声地喊你。');
+    const vr = await S.vote('你把它举了起来。第三个，也是最后一个愿望——', [
+      '「让他回去——回到他该待的地方，安息吧。」',
+      '「让门外的东西消失。」',
+      '「让她别打开那扇门。」',
+      '「让他……像从前那样，完完整整地回来！」']);
+    if (!vr.agree) await S.think('两句话同时涌到了你嘴边。说出口的，只有一句。');
+    S.f.w3 = vr.v;
+    if (vr.v === 3) return badWish(S, chair);
+    if (vr.v === 2) return stayWish(S);
     await S.narr('你用尽最后一口气，疯了似的，低声说出了第三个，也是最后一个愿望。');
     S.amb('none'); await S.wait(900);
     await S.narr('敲门声戛然而止。\n可它的回声还在房子里荡着，就好像从来没有停过。');
+    if (!chair) { S.sfx('thud'); SQ.push([.25, 'close']); await S.narr('楼下，椅子腿「吱——」地刮过地板。她终于拖来了一把椅子。'); }
+    S.sfx('switch'); await S.wait(300);
+    await S.narr('最上面那道门闩，「咔」地一声，拔开了。');
     S.sfx('open'); await S.wait(500);
-    await S.narr('你听见椅子被拖开，门被拉开了。');
+    await S.narr('门被拉开了。');
     S.amb('wind');
     await S.narr('一股冷风，顺着楼梯灌了上来。');
-    S.sfx('cry');
-    await S.narr('然后是妻子的哭声——\n长长的、响亮的、绝望透顶的哭声。');
+    if (vr.v === 1) {
+      await S.wait(1200);
+      await S.narr('没有哭声。\n过了很久，你才听见她在楼下，用一种很轻、很平静的声音说：');
+      await S.say('怀特太太（楼下）', '……他准是走错路了。我在这儿等他。', { style: 'whisper' });
+    } else {
+      S.sfx('cry');
+      await S.narr('然后是妻子的哭声——\n长长的、响亮的、绝望透顶的哭声。');
+    }
     S.f.act = 'after'; mood(S);
     for (let i = 0; i < GROPE.length; i++) S.hide('g' + i);
     S.ent('fdoor').open = true; S.ent('fdoor').light = { r: 2.2, col: 'rgba(120,140,190,.10)' };
@@ -364,24 +526,42 @@
     S.cp();
   }
 
-  async function badWish(S) {
+  async function badWish(S, chair) {
     await S.say('你', '我希望他……像从前那样，完完整整地回来！', { style: 'whisper' });
     S.sfx('sting');
     await S.narr('猴爪在你掌心里扭了一下。\n像一条蛇。');
     S.amb('none'); await S.wait(900);
     await S.narr('敲门声停了。');
     await S.wait(1200);
-    S.sfx('open');
-    await S.narr('楼下，最后一道门闩被拔开了。门开了。');
+    if (!chair) { S.sfx('thud'); await S.narr('楼下，椅子被拖到了门边。'); }
+    S.sfx('switch'); await S.wait(300); S.sfx('open');
+    await S.narr('最后一道门闩被拔开了。门开了。');
     await S.say('怀特太太（楼下）', '赫伯特！噢，赫伯特——', { style: 'whisper' });
     await S.narr('她的声音里，是一种你从来没有听过的狂喜。\n然后，那声音一点一点地——变了。');
     S.sfx('whisper'); S.fx('red');
-    await S.end({ bad: true, title: '完完整整', text: '苦行僧说过：谁要是插手命运，谁就会后悔。\n\n你许下的每一个愿望，都实现了。\n一字不差。' });
+    await S.end({ id: 'whole', bad: true, title: '完完整整', text: '苦行僧说过：谁要是插手命运，谁就会后悔。\n\n你许下的每一个愿望，都实现了。\n一字不差。' });
+  }
+
+  async function stayWish(S) {
+    await S.say('你', '我希望……她别打开那扇门。', { style: 'whisper' });
+    S.sfx('sting');
+    await S.narr('猴爪在你掌心里扭了一下。');
+    await S.wait(700);
+    S.sfx('thud'); S.shake(400, 2);
+    await S.narr('楼下「咕咚」一声闷响。\n是椅子倒了——还是人倒了。');
+    await S.narr('你连滚带爬地下了楼。\n她蜷在门口的地板上，昏了过去。手指还勾着那道门闩。');
+    S.sfx('knock'); await S.wait(500); S.sfx('knock');
+    await S.narr('门上的敲门声，没有停。');
+    await S.narr('你抱着她，坐在门厅冰冷的地板上。\n敲门声一下，又一下。不急，也不停。');
+    S.sfx('knock'); S.fx('black', { dur: 1.4 });
+    await S.end({ id: 'dawn', bad: true, title: '敲到天亮', text: '那扇门，她到底没有打开。\n\n敲门声一直响到窗户发白，\n第一声鸡叫的时候，才停了。\n\n猴爪再也不会动了。\n可是第二天夜里，两点差一刻，\n门上又响起了一下敲门声。' });
   }
 
   async function lostEnd(S) {
+    endDoor(S);
     S.f.act = 'lost';
     S.amb('none'); S.sfx('knock'); await S.wait(400);
+    S.sfx('switch');
     await S.narr('楼下，最上面那道门闩「咔」地一声，拔开了。');
     S.sfx('open'); await S.wait(600); S.amb('wind');
     await S.narr('门开了。\n风灌进门厅，一直灌上楼梯。敲门声，停了。');
@@ -391,7 +571,7 @@
     await S.wait(900);
     S.sfx('scream'); S.shake(800, 3); S.fx('red');
     await S.narr('然后，她叫了起来。');
-    await S.end({ bad: true, title: '门开了', text: '你始终没有摸到那只猴爪。\n\n那天夜里楼下发生的事，你从来没有对任何人说起过。\n你只记得，她的叫声停下来以后，\n房子里静得能听见雨水从屋檐上滴落的声音。' });
+    await S.end({ id: 'lost', bad: true, title: '门开了', text: '你始终没有摸到那只猴爪。\n\n那天夜里楼下发生的事，你从来没有对任何人说起过。\n你只记得，她的叫声停下来以后，\n房子里静得能听见雨水从屋檐上滴落的声音。' });
   }
 
   async function finale(S) {
@@ -402,7 +582,9 @@
     await S.wait(900);
     await S.narr('什么也没有。\n只有风，和被雨水泡烂了的路。');
     await S.fade(1, 1400);
-    await S.end({ title: '第八夜　完', text: '身后，她还在哭。\n\n你低下头，才发现自己手里还攥着那只猴爪。\n三个愿望，都许完了。\n它再也不会动了。' });
+    const tail = '\n\n你低下头，才发现自己手里还攥着那只猴爪。\n\n第一个人。莫里斯。你。\n三个人，九个愿望。\n它再也不会动了。';
+    if (S.f.w3 === 1) return S.end({ id: 'gone', title: '门外什么也没有', text: '身后，她没有哭。\n她坐在门槛上，望着那条路，说他准是走错路了。\n\n那年冬天，她每天夜里都把门闩拔开，\n在门口留一盏灯。' + tail });
+    await S.end({ id: 'rest', title: '第八夜　完', text: '身后，她还在哭。' + tail });
   }
 
   /* ---------------- 章节定义 ---------------- */
@@ -416,7 +598,11 @@
       wifeA: { skin: '#ecc8b0', hair: '#dcd8d0', hs: 'bun', top: '#5a3a4a', top2: '#e8e2d6', bottom: '#5a3a4a', dress: true, shoes: '#2a1a1a', apron: '#e8e2d6' },
       wifeB: { skin: '#e4c4ae', hair: '#dcd8d0', hs: 'bun', top: '#1e1a20', top2: '#3a3438', bottom: '#1e1a20', dress: true, shoes: '#111' },
       herb: { skin: '#f0c8a0', hair: '#6a4426', hs: 'short', top: '#7a6a4e', top2: '#e8e4d8', bottom: '#4a4038', shoes: '#2a1a10' },
-      herbC: { skin: '#f0c8a0', hair: '#6a4426', hs: 'short', top: '#7a6a4e', top2: '#e8e4d8', bottom: '#4a4038', shoes: '#2a1a10', hat: 'cap', hatC: '#4a4036' },
+      herbC: { key: 'mp-herbC', skin: '#f0c8a0', hair: '#6a4426', hs: 'short', top: '#5a4a36', top2: '#e8e4d8', bottom: '#4a4038', shoes: '#2a1a10', hat: 'cap', hatC: '#4a4036',
+        /* 外套上那颗铜扣子（她前一晚刚钉上的） */
+        extra(g, d, fr, G, R) { if (d === 0) { R(7, G.tT + 1, 2, 2, '#e8c050'); R(7, G.tT + 1, 1, 1, '#fff0a0'); R(7, G.tT + 4, 2, 1, '#3a2e20'); } else if (d === 1) { R(5, G.tT + 1, 1, 2, '#e8c050'); } } },
+      digger: { key: 'mp-digger', skin: '#d0a07a', hair: '#5a5a52', hs: 'short', top: '#4a4436', top2: '#6a6050', bottom: '#3a3428', shoes: '#2a2016', hat: 'cap', hatC: '#34342c',
+        extra(g, d, fr, G, R) { R(4, G.tB + 3, 3, 2, '#5a4430'); R(9, G.tB + 5, 3, 2, '#5a4430'); if (d === 0) R(5, G.hT + 7, 6, 1, '#7a7a70'); } },
       morris: { key: 'mp-morris', skin: '#d8906a', hair: '#4a2e1a', hs: 'short', top: '#a82a22', top2: '#d8b860', bottom: '#1e2438', shoes: '#111',
         extra(g, d, fr, G, R) { if (d === 0) { R(5, G.hT + 6, 6, 1, '#4a2e1a'); R(7, G.tT + 2, 1, 1, '#e8c860'); R(7, G.tT + 4, 1, 1, '#e8c860'); R(4, G.tB - 1, 8, 1, '#e8e2d0'); } else if (d === 1) R(3, G.hT + 6, 4, 1, '#4a2e1a'); } },
       stranger: { key: 'mp-stranger', skin: '#e8d0b8', hair: '#2a2420', hs: 'short', top: '#1c1c22', top2: '#e8e8e8', bottom: '#1c1c22', coat: true, shoes: '#0a0a0a',
@@ -424,6 +610,33 @@
       monkey: { key: 'mp-monkey', skin: '#6a4a30', hair: '#2e2014', hs: 'messy', top: '#2e2014', bottom: '#2e2014', eye: '#2e2014',
         extra(g, d, fr, G, R) { if (d === 0) { R(5, G.hT + 4, 6, 3, '#a07a52'); R(5, G.hT + 3, 2, 1, '#ffcc33'); R(9, G.hT + 3, 2, 1, '#ffcc33'); R(6, G.hT + 6, 4, 1, '#1a0606'); R(1, G.hT + 2, 3, 3, '#a07a52'); R(12, G.hT + 2, 3, 3, '#a07a52'); R(5, G.hT + 2, 6, 1, '#1a1008'); } } }
     },
+    /* 惊吓大头像：炉火余烬里浮出来的猴脸 */
+    faces: {
+      monkey(R, a, t) {
+        /* 底下是炭火；脸从余烬里浮上来，只被火从下面照亮 */
+        for (let i = 0; i < 16; i++) { const h = (3 + (Math.sin(t * 9 + i * 1.3) + 1) * 2.5) | 0; R(i * 2, 32 - h, 2, h, i % 2 ? '#8a240a' : '#d0561a'); }
+        const fur = '#2e1c10', fur2 = '#1a0e06', skin = '#8e5c38', lit = '#b8784a', sh = '#5a3620', dk = '#0e0402';
+        R(7, 3, 18, 2, fur2); R(5, 5, 22, 3, fur); R(4, 8, 24, 16, fur); R(5, 24, 22, 3, fur); R(8, 27, 16, 2, fur2);
+        R(8, 1, 2, 3, fur2); R(14, 0, 3, 4, fur2); R(21, 1, 2, 3, fur2); R(3, 6, 2, 3, fur2); R(27, 6, 2, 3, fur2);
+        R(0, 12, 5, 7, fur); R(1, 13, 3, 5, sh); R(27, 12, 5, 7, fur); R(28, 13, 3, 5, sh);
+        R(9, 9, 14, 4, sh); R(7, 13, 18, 7, skin); R(9, 20, 14, 5, lit); R(11, 25, 10, 2, skin);   // 额头暗，下巴被火照亮
+        R(11, 9, 10, 1, fur); R(12, 10, 8, 1, '#4a2c18');                                         // 额头皱纹
+        R(8, 10, 2, 2, dk); R(10, 11, 2, 2, dk); R(12, 12, 3, 2, dk); R(22, 10, 2, 2, dk); R(20, 11, 2, 2, dk); R(17, 12, 3, 2, dk);   // 倒八字眉
+        R(9, 13, 6, 3, dk); R(17, 13, 6, 3, dk);                                                   // 深眼窝
+        const gl = a > .45 ? '#fff27a' : '#ffb020';
+        R(10, 14, 4, 1, gl); R(18, 14, 4, 1, gl); R(12, 14, 1, 1, '#7a0000'); R(19, 14, 1, 1, '#7a0000');   // 细长发光的眼
+        R(10, 15, 4, 1, '#7a4410'); R(18, 15, 4, 1, '#7a4410');
+        R(15, 13, 2, 4, sh); R(13, 17, 6, 3, lit); R(14, 18, 1, 1, dk); R(17, 18, 1, 1, dk);        // 鼻梁、鼻孔
+        R(9, 18, 3, 1, sh); R(20, 18, 3, 1, sh);                                                   // 法令纹
+        const o = Math.min(3, (a * 6) | 0);
+        R(9, 21, 14, 3 + o, dk);                                                                    // 龇开的嘴
+        R(11, 21, 10, 1, '#d8c89a');
+        R(10, 21, 2, 3 + o, '#f4ead0'); R(20, 21, 2, 3 + o, '#f4ead0'); R(10, 23 + o, 1, 1, dk); R(21, 23 + o, 1, 1, dk);   // 獠牙
+        R(13, 23 + o, 1, 1, '#c8b888'); R(15, 23 + o, 2, 1, '#c8b888'); R(18, 23 + o, 1, 1, '#c8b888');                 // 下排碎牙
+        R(5, 19, 3, 5, 'rgba(255,110,30,.22)'); R(24, 19, 3, 5, 'rgba(255,110,30,.22)');
+      }
+    },
+    endings: { rest: '安息', gone: '门外什么也没有', wise: '像个明白人那样（隐藏）', whole: '完完整整', dawn: '敲到天亮', lost: '门开了', open: '你开了门' },
     items: {
       paw: { name: '猴爪', desc: '一只干瘪的小爪子，缩成一团，毛快掉光了。拿在手里，比看上去要沉。' },
       whisky: { name: '威士忌', desc: '餐具柜里那瓶留着待客的威士忌。' },
@@ -435,30 +648,59 @@
       letter: { title: '毛与梅金斯公司来函', text: '致 怀特先生、怀特太太：\n\n本公司谨就令郎赫伯特·怀特先生在本厂发生的不幸事故，表示深切的遗憾。\n\n本公司特此声明：对该事故不承担任何责任，亦不承认负有任何义务。\n\n然鉴于令郎在职期间勤勉尽责，董事会决定，向二位致送抚恤金：\n\n贰佰英镑整。\n\n（信纸的折痕里有一圈干了的水渍，像是有人在这张纸上哭过，又用袖子擦掉了。）' },
       sketch: { title: '赫伯特画的漫画', text: '（一张从账本上撕下来的纸，铅笔画。）\n\n左边：一个灰胡子老头，骑着棋盘上的国王，举着拐杖往敌阵里冲。底下写着：「爸爸的战术」。\n\n右边：一只红彤彤的大龙虾，穿着军装，端着酒杯。底下写着：「军士长，第三杯」。\n\n最下面一角，铅笔涂得又黑又重：一张猴子的脸，五官挤在一团火焰里。\n旁边一行小字——\n「炉子里看见的。睡不着。」' }
     },
-    legend: '《猴爪》（The Monkey\'s Paw）是英国作家W·W·雅各布斯（1863–1943）的短篇小说，1902年9月首刊于美国的《哈珀月刊》，同年收入他的短篇集《驳船上的女人》。雅各布斯平生以写码头、水手和驳船船夫的幽默故事闻名，偏偏是这篇阴冷的小说，成了他流传最广的作品。\n\n故事很短：一个印度苦行僧在猴爪上施了咒，要让世人明白命运不容插手——三个人可以凭它各许三个愿望，每一个愿望都会实现，却以最残酷的方式。怀特一家许下的两百英镑，变成了儿子的抚恤金；第二个愿望让死者归来；第三个愿望把它送了回去。原著从头到尾没有让门外的东西露面，读者只听见敲门声——这种「不写」，后来常被当作恐怖小说留白的范本。\n\n小说发表的第二年（1903年）就被改编成独幕剧，在伦敦干草市场剧院上演；此后有多次电影改编（据说最早的一部是1915年的英国默片，如今已经失传），还有数不清的广播剧、电视剧和戏仿。斯蒂芬·金在《宠物坟场》里引用过它，《辛普森一家》的万圣节特辑也拿它开过玩笑。「小心你许下的愿望」——三个愿望、字面兑现、代价惨重——从此成了恐怖与奇幻故事里一个固定的母题。\n\n（本章中：棋局的选项、莫里斯的明信片、房贷单、公司来信的原文、赫伯特的漫画、为赫伯特送行和莫里斯临别欲言又止的一幕、墓地的场景、猴爪在黑暗中被踢走后的限时摸索、两个坏结局，以及结尾手中的猴爪，都是游戏为了互动而增加的；主要情节、人物与对话内容依照原著，文字为重新创作。）',
+    legend: '《猴爪》（The Monkey\'s Paw）是英国作家W·W·雅各布斯（1863–1943）的短篇小说，1902年9月首刊于美国的《哈珀月刊》，同年收入他的短篇集《驳船上的女人》。雅各布斯平生以写码头、水手和驳船船夫的幽默故事闻名，偏偏是这篇阴冷的小说，成了他流传最广的作品。\n\n故事很短：一个印度苦行僧在猴爪上施了咒，要让世人明白命运不容插手——三个人可以凭它各许三个愿望，每一个愿望都会实现，却以最残酷的方式。怀特一家许下的两百英镑，变成了儿子的抚恤金；第二个愿望让死者归来；第三个愿望把它送了回去。有读者注意到，怀特先生正好是猴爪的第三个持有者——第一个人、莫里斯、怀特，咒语到他这里就用完了（这是一种解读，原著没有明说）。原著从头到尾没有让门外的东西露面，读者只听见敲门声——这种「不写」，后来常被当作恐怖小说留白的范本。\n\n小说发表的第二年（1903年）就被改编成独幕剧，在伦敦干草市场剧院上演；此后有多次电影改编（据说最早的一部是1915年的英国默片，如今已经失传），还有数不清的广播剧、电视剧和戏仿。斯蒂芬·金在《宠物坟场》里引用过它，《辛普森一家》的万圣节特辑也拿它开过玩笑。「小心你许下的愿望」——三个愿望、字面兑现、代价惨重——从此成了恐怖与奇幻故事里一个固定的母题。\n\n（本章中：棋局的选项、莫里斯的明信片、房贷单、公司来信的原文、赫伯特的漫画、外套上的铜扣子和公司寄回的包裹、为赫伯特送行和莫里斯临别欲言又止的一幕、墓地的挖墓人和路牌、黑暗里摸索找门、猴爪在黑暗中被踢走后的限时摸索、第三个愿望的几种措辞和对应的结局、「把它扔回火里」的隐藏结局，以及结尾手中的猴爪，都是游戏为了互动而增加的；主要情节、人物与对话内容依照原著，文字为重新创作。）',
     start: { map: 'parlor', x: 4, y: 6, dir: 2 },
     resume: {
       door: async S => {
         S.hide('wife_b');
-        S.place('paw2', ...PAWS[S.f.pawSpot || 0]);
+        /* 重来时猴爪换一个地方，不能靠记位置 */
+        S.f.pawSpot = ((S.f.pawSpot || 0) + 1 + S.rand(PAWS.length - 1)) % PAWS.length;
+        const P = PAWS[S.f.pawSpot];
+        S.place('paw2', P[0], P[1]);
         for (let i = 0; i < GROPE.length; i++) S.show('g' + i);
         mood(S);
         S.sfx('knock');
-        await S.narr('敲门声。一下，又一下。\n楼下，门闩在插槽里吱吱作响。');
+        await S.narr(`敲门声。一下，又一下。\n刚才那一声「嗒」——它${P[3]}。`);
+        await kneel(S);
         startDoor(S);
+      },
+      flee: async S => {
+        mood(S);
+        S.sfx('knock');
+        await S.narr('前门上，又是一下敲门声。');
+        startFlee(S);
       }
     },
     async intro(S) {
-      await S.card('第八夜　猴爪', '二十世纪初　英格兰　金链花别墅', '外面又冷又湿。\n离城很远的这条路上，只租出去了两栋房子。\n今晚，有一位从印度回来的老朋友要来做客。');
+      await S.card('第八夜　猴爪', '1902 年前后　英格兰　金链花别墅', '今晚，一位从印度回来的老朋友要来做客。');
     },
     tick(S, dt) {
-      if (S.f.act !== 'door' || !W.timer || W.busy) return;
-      const k = 1 - W.timer.left / DOORT;
+      for (let i = SQ.length - 1; i >= 0; i--) { SQ[i][0] -= dt; if (SQ[i][0] <= 0) { S.sfx(SQ[i][1]); SQ.splice(i, 1); } }
+      if (S.f.act !== 'door' || !W.timer) return;
+      const T = S.f.doorT || DOORT, k = Math.min(1, 1 - W.timer.left / T), p = S.ent('paw2');
+      S.plr(1.25 - .45 * k);                                  // 光圈越缩越小
+      /* 猴爪被震亮的一下、随后的闪黑 */
+      if (DS.gl > 0 && (DS.gl -= dt) <= 0) { p.s.glint = false; S.lights(null); }
+      if (DS.fd > 0 && (DS.fd -= dt) <= 0) { S.dark(.995); DS.fl = .15; }
+      if (DS.fl > 0 && (DS.fl -= dt) <= 0) S.dark(.97);
       S.f._kn = (S.f._kn || 0) - dt;
-      if (S.f._kn <= 0) { S.sfx('knock'); if (k > .45) S.shake(220, 1 + k * 2); S.f._kn = 2.6 - k * 2; }
-      const stages = [[.12, '「门闩！」她在楼下喊，「下来帮帮我！上面那道我够不着！」'], [.32, '敲门声一下比一下急，整扇门都在门框里发抖。'], [.52, '楼下传来拖椅子的声音——她要踩着椅子去够最上面那道门闩。'], [.72, '「我来了，赫伯特！我来了！」'], [.88, '门闩在插槽里吱吱作响，一点一点地松动了……']];
+      if (S.f._kn <= 0) {
+        S.sfx('knock');
+        if (k > .72) SQ.push([.15, 'knock'], [.3, 'knock']);   // 敲门连成一片：一次三下
+        if (k > .45) S.shake(220, 1 + k * 2);
+        if (k >= .15 && !p.hidden) { p.s.glint = true; S.lights([[p.px + 8, p.py + 10, .45, .7]]); DS.gl = .12; }
+        if (k > .7) DS.fd = .14;
+        S.f._kn = Math.max(.6, 2.6 - k * 2.4);
+      }
+      /* 楼下的进度：只靠声音（文字只是补充） */
+      const ST = [
+        [.15, () => { sfxSeq(['knock', 'knock', 'knock'], .12); S.shake(400, 2); }, '敲门声一下比一下急，整扇门都在门框里发抖。'],
+        [.40, () => { S.sfx('thud'); SQ.push([.25, 'close']); }, '楼下，椅子腿「吱——」地刮过地板。'],
+        [.62, () => { S.sfx('step'); SQ.push([.3, 'step'], [.5, 'switch']); }, '椅子吱呀一声——她踩上去了。'],
+        [.85, () => sfxSeq(['switch', 'switch', 'switch'], .2), '最上面那道门闩，在插槽里一点一点地松动了……']
+      ];
       const i = S.f._st || 0;
-      if (i < stages.length && k >= stages[i][0]) { S.f._st = i + 1; S.toast(stages[i][1]); }
+      if (i < ST.length && k >= ST[i][0]) { S.f._st = i + 1; ST[i][1](); S.toast(ST[i][2]); }
     },
     sprites: {
       hearth(g, e, t, R) {
@@ -476,12 +718,16 @@
         R(2, -2, 1, 4, '#8a8a8a'); R(1, -1, 3, 1, '#b0b0b0'); R(2, 9, 1, 4, '#8a8a8a'); R(1, 10, 3, 1, '#b0b0b0');
         R(11, 1, 1, 1, '#bbb'); R(12, 2, 1, 1, '#bbb'); R(11, 3, 1, 1, '#bbb');
       },
-      hooks(g, e, t, R) { R(1, 2, 14, 2, '#3a2618'); R(3, 4, 1, 2, '#c9a35a'); R(8, 4, 1, 2, '#c9a35a'); R(12, 4, 1, 2, '#c9a35a'); R(2, 5, 4, 8, '#3a3632'); if (e.coat) { R(11, 5, 3, 9, '#8a3a2a'); R(11, 7, 3, 1, '#c8b890'); R(11, 10, 3, 1, '#c8b890'); } },
+      hooks(g, e, t, R) { R(1, 2, 14, 2, '#3a2618'); R(3, 4, 1, 2, '#c9a35a'); R(8, 4, 1, 2, '#c9a35a'); R(12, 4, 1, 2, '#c9a35a'); R(2, 5, 4, 8, '#3a3632'); if (e.coat) { R(11, 5, 3, 9, '#8a3a2a'); R(11, 7, 3, 1, '#c8b890'); R(11, 10, 3, 1, '#c8b890'); }
+        if (e.parcel) { R(4, 12, 9, 6, '#9a7a50'); R(4, 12, 9, 1, '#b8966a'); R(8, 12, 1, 6, '#d8c8a0'); R(4, 14, 9, 1, '#d8c8a0'); R(5, 16, 2, 1, '#2a2a2a'); } },
       gate(g, e, t, R) { R(0, 3, 2, 12, '#7a5a3c'); R(14, 3, 2, 12, '#7a5a3c'); if (e.open) { R(2, 4, 2, 10, '#6a5038'); R(3, 6, 1, 7, '#5a4430'); } else { R(2, 6, 12, 2, '#6a5038'); R(2, 11, 12, 2, '#6a5038'); R(4, 6, 1, 7, '#5a4430'); R(8, 6, 1, 7, '#5a4430'); R(11, 6, 1, 7, '#5a4430'); } },
       laburnum(g, e, t, R) { R(6, 2, 4, 13, '#3a2a1a'); R(5, 13, 6, 2, '#2a1e12'); R(1, -14, 14, 4, '#2a1e14'); R(3, -18, 10, 5, '#2a1e14'); R(0, -10, 2, 10, '#2a1e14'); R(14, -10, 2, 9, '#2a1e14'); for (let i = 0; i < 6; i++) R(2 + i * 2.4, -10, 1, 4 + (i % 3) * 3, '#3a2c1c'); R(4, -6, 1, 2, '#6a5a2a'); R(11, -4, 1, 2, '#6a5a2a'); },
       bwindow(g, e, t, R) { box(R, 2, 1, 12, 10, '#4a3a2a'); if (e.open) { R(3, 2, 10, 8, '#0c1422'); R(10, 3, 2, 1, '#9aa4b8'); R(3, 2, 10, 1, '#b8a888'); } else { R(3, 2, 10, 8, '#a89878'); for (let y = 3; y < 10; y += 2) R(3, y, 10, 1, '#988868'); R(7, 9, 2, 1, '#5a4a3a'); } },
       mound(g, e, t, R) { R(1, 3, 14, 11, '#3a2c1e'); R(2, 4, 12, 3, '#4a3a28'); R(4, 9, 3, 1, '#2a1e14'); R(10, 7, 2, 1, '#2a1e14'); },
-      paw2(g, e, t, R) { R(5, 7, 6, 4, '#7a5e40'); R(4, 10, 2, 4, '#7a5e40'); R(7, 11, 1, 4, '#7a5e40'); R(10, 10, 2, 4, '#7a5e40'); R(10, 5, 2, 3, '#5a4028'); R(6, 8, 3, 1, '#9a7a56'); }
+      paw2(g, e, t, R) { R(5, 7, 6, 4, '#7a5e40'); R(4, 10, 2, 4, '#7a5e40'); R(7, 11, 1, 4, '#7a5e40'); R(10, 10, 2, 4, '#7a5e40'); R(10, 5, 2, 3, '#5a4028'); R(6, 8, 3, 1, '#9a7a56');
+        if (e.glint) { R(4, 13, 2, 1, '#fff0c0'); R(7, 14, 1, 1, '#fff0c0'); R(10, 13, 2, 1, '#fff0c0'); R(6, 7, 2, 1, '#ffe8a0'); } },   // 敲门时被震亮的一下（爪尖反光）
+      spade(g, e, t, R) { R(1, 9, 14, 6, '#4a3622'); R(2, 8, 12, 2, '#5a4430'); R(7, -8, 2, 15, '#7a5a3a'); R(5, -9, 6, 2, '#6a4a2e'); R(6, 6, 4, 4, '#8a8a88'); R(6, 9, 4, 1, '#5a5a58'); },
+      milepost(g, e, t, R) { R(7, -6, 2, 21, '#5a4430'); R(1, -8, 14, 5, '#7a6040'); R(14, -7, 2, 3, '#7a6040'); R(2, -7, 9, 1, '#e8e0c8'); R(2, -5, 6, 1, '#e8e0c8'); R(12, -6, 1, 1, '#e8e0c8'); R(6, 13, 4, 2, '#3a2c1c'); },
     },
     maps: {
       /* ---------------- 客厅 ---------------- */
@@ -504,8 +750,9 @@
             if (a === 'morris') return S.narr('军士长还在炉火边等着呢。');
             if (a === 'fire') return S.narr('猴爪还在火里！');
             if (a === 'wish1') { S.face('herb', 'pl'); return S.say('赫伯特', '别急着走嘛，爸爸！还没许愿呢。'); }
+            if (lostIn(S)) await S.narr('你的指尖碰到了门框。\n冷风就是从这道门缝底下钻进来的。');
             S.sfx('open'); await S.go('hall', 2, 5, 3);
-          } },
+          }, bump: async S => { if (lostIn(S)) { await S.narr('你的指尖碰到了门框。\n冷风就是从这道门缝底下钻进来的。'); S.sfx('open'); await S.go('hall', 2, 5, 3); } } },
           { x: 3, y: 1, spr: 'painting', col: '#2a3a4a', on: S => S.narr(S.f.dead ? '那幅帆船画。赫伯特小时候总问，画里的船要开到哪儿去。' : '一幅褪了色的帆船画，挂得有点歪。你一直说要把它扶正。') },
           { id: 'fire', x: 5, y: 2, w: 2, spr: 'hearth', light: FIRE, async on(S) {
             const a = S.f.act;
@@ -514,22 +761,23 @@
               S.hide('mpaw'); S.give('paw', true); S.sfx('item');
               await S.narr('你的手摸到了壁炉架。\n那东西还在原处。');
               await S.narr('一阵恐惧猛地攫住了你：\n这个还没说出口的愿望，会不会在你逃出这间屋子之前，就把你那残缺不全的儿子带到你面前？');
-              S.dark(.985); S.plr(1.1); S.sfx('heart');
+              mood(S); S.sfx('heart'); S.shake(300, 1);
               await S.narr('你屏住呼吸，转过身——\n你发现自己找不着门在哪儿了。');
-              S.goal('摸回卧室去');
+              await S.think('别慌。手往前伸。家具会告诉你自己在哪儿。\n门缝底下……应该有风。');
+              S.goal('在黑暗里摸到客厅的门（听风声）');
               return;
             }
             if (is4(S)) return S.narr('炉膛里只剩一堆冷灰。');
             if (a === 'bed1') return S.narr('炉火小了下去。赫伯特往里添了一块炭。');
             if (!S.ent('mpaw').hidden) return S.narr('壁炉架上，那只猴爪蜷在座钟旁边。');
             await S.narr('炉火烧得很旺。外面越冷，这间小屋就越像一个暖烘烘的壳。');
-          } },
+          }, bump: bumpP('壁炉。一股冷灰的味道——你又绕回原地了。') },
           { id: 'mpaw', x: 6, y: 2, spr: 'paw', hidden: true, z: 1, oy: -24, ox: -4 },
           { id: 'fpaw', x: 5, y: 2, spr: 'paw', hidden: true, z: 1, ox: 8, oy: -1 },
           { id: 'irons', x: 7, y: 2, spr: 'irons', async on(S) {
             if (S.f.act === 'fire') return pawRescued(S, 'tongs');
             await S.narr(is4(S) ? '你摸到了火钳冰凉的铁柄。' : '一套铜把手的火钳、火铲和拨火棍。');
-          } },
+          }, bump: bumpP('火钳架「哐啷」一声歪了。你一把按住它，手心全是汗。\n这是壁炉右边。', async S => S.sfx('close')) },
           { id: 'pwin', x: 9, y: 1, spr: 'window', async on(S) {
             const a = S.f.act;
             if (a === 'stranger') {
@@ -548,8 +796,14 @@
           { id: 'piano', x: 10, y: 2, w: 2, spr: 'piano', async on(S) {
             if (is4(S)) { if (S.once('sketchHint')) await S.narr('琴盖上落了一层薄灰。谱架上还夹着一张纸。'); return S.note('sketch'); }
             await S.narr('一架旧立式钢琴。赫伯特只会弹几个和弦，却总爱弹得震天响。');
+          }, bump: async S => {
+            if (!lostIn(S)) return;
+            [65, 69, 98].forEach((f, i) => S.tone('triangle', f, f, 1.8, .12, i * .015, 700)); S.sfx('thud'); S.shake(300, 2);
+            await S.narr('琴键在黑暗里「咚」地响了一声。\n你的心跳停了一拍。');
+            if (S.once('pianoWife')) await S.say('怀特太太（楼上）', '……老头子？是你吗？', { style: 'whisper' });
+            await S.think('钢琴。在屋子最右边。离门最远。');
           } },
-          { x: 3, y: 3, spr: 'armchair', col: '#5a4a3a' },
+          { id: 'chairW', x: 3, y: 3, spr: 'armchair', col: '#5a4a3a', bump: bumpP('扶手椅的椅背，还搭着一团毛线。\n是她坐的那把——炉子左边。') },
           { id: 'wife', x: 3, y: 3, oy: -3, spr: '@wife', dir: 0, async on(S) {
             S.face('wife', 'pl');
             const a = S.f.act;
@@ -564,7 +818,7 @@
             if (!S.f.saw) return S.say('怀特太太', '老头子，你来看。外面有个人，在咱们家门口转来转去的。');
             await S.say('怀特太太', '去开门呀。');
           } },
-          { x: 8, y: 3, spr: 'armchair', col: '#4a3a4a' },
+          { id: 'chairM', x: 8, y: 3, spr: 'armchair', col: '#4a3a4a', bump: bumpP('另一把扶手椅。那天晚上，莫里斯就坐在这儿。\n炉子右边。') },
           { id: 'morris', x: 8, y: 3, oy: -3, spr: '@morris', dir: 1, hidden: true, async on(S) {
             S.face('morris', 'pl');
             if (S.f.act === 'fire') return S.say('莫里斯', '让它烧了吧。');
@@ -573,7 +827,8 @@
             return morrisTale(S);
           } },
           { id: 'stranger', x: 8, y: 3, oy: -3, spr: '@stranger', dir: 1, hidden: true, on: S => S.narr('他不敢看你的眼睛。') },
-          { id: 'chess', x: 5, y: 6, spr: 'chesstable', on: S => S.narr(is4(S) ? '棋子还摆在那天晚上的位置。你的国王，被将死在棋盘中央。' : '那盘棋还摆着。你的国王四面楚歌。') },
+          { id: 'chess', x: 5, y: 6, spr: 'chesstable', on: S => S.narr(is4(S) ? '棋子还摆在那天晚上的位置。你的国王，被将死在棋盘中央。' : '那盘棋还摆着。你的国王四面楚歌。'),
+            bump: bumpP('棋桌。棋子哗啦一声倒了一片，有一颗滚到了地上。\n你在屋子靠下的那一边。', async S => sfxSeq(['drip', 'drip', 'drip', 'drip'], .07)) },
           { id: 'tpaw', x: 5, y: 6, spr: 'paw', hidden: true, z: 1, oy: -8 },
           { id: 'herb', x: 6, y: 6, spr: '@herb', dir: 1, async on(S) {
             S.face('herb', 'pl');
@@ -587,7 +842,7 @@
           { id: 'cab', x: 11, y: 4, spr: 'cabinet', col: '#5a3a26', async on(S) {
             if (S.f.act === 'morris' && !S.has('whisky')) { S.give('whisky'); return S.narr('你从餐具柜里取出那瓶待客的威士忌，还有一只擦得锃亮的玻璃杯。'); }
             await S.narr(is4(S) ? '餐具柜里，那瓶威士忌还剩小半瓶。没有人再碰过它。' : '餐具柜。最好的那套茶具，一年只拿出来两次。');
-          } },
+          }, bump: bumpP('餐具柜。里面的玻璃杯叮叮当当乱响。\n你走到屋子最右边来了。', async S => S.sfx('glass')) },
           { id: 'desk', x: 11, y: 6, spr: 'desk', async on(S) {
             if (S.f.dead) {
               if (S.once('letterHint')) { await S.narr('写字台上压着一封信。信封上印着「毛与梅金斯」。'); return S.note('letter'); }
@@ -595,8 +850,9 @@
             }
             if (S.once('mortHint')) await S.narr('写字台的抽屉里夹着一张还款单。');
             await S.note('mortgage');
-          } },
-          { id: 'plamp', x: 1, y: 6, spr: 'lamp', light: { r: 3.4, col: 'rgba(255,190,110,.14)' }, on: S => S.narr('油灯。灯罩被熏黄了一圈。') }
+          }, bump: bumpP('写字台的角，狠狠撞在你胯骨上。\n你咬住牙，没出声。右下角。', async S => S.sfx('thud')) },
+          { id: 'plamp', x: 1, y: 6, spr: 'lamp', light: { r: 3.4, col: 'rgba(255,190,110,.14)' }, on: S => S.narr('油灯。灯罩被熏黄了一圈。'),
+            bump: bumpP('油灯晃了一下——你一把扶住了灯罩。\n左下角。门不在这儿，可风好像近了一点。', async S => S.sfx('switch')) }
         ],
         async enter(S, first) {
           const a = S.f.act;
@@ -618,6 +874,22 @@
             S.goal('看看窗外');
           }
           if (a === 'fetch' && !S.has('paw') && S.once('fetchIn')) await S.narr('客厅里冷得像个地窖。\n你顺着墙，一点一点往壁炉那边摸。');
+        },
+        /* 摸黑找门：踩到的地方给触觉提示 */
+        step(S, x, y) {
+          if (!lostIn(S)) return;
+          if (x >= 3 && x <= 7 && (y === 4 || y === 5) && S.once('rugFeel')) S.toast('脚底下软了——是地毯的流苏。你在屋子正中间。');
+          const d = Math.abs(x - 1) + Math.abs(y - 2);
+          if (d <= 1 && S.once('draft2')) S.toast('冷风贴着你的脚踝钻过去——门就在跟前了。');
+          else if (d <= 4 && S.once('draft1')) S.toast('一丝冷风，贴着地板吹过来。');
+        },
+        /* 门缝的风声和门厅座钟的滴答，越靠近门越响 */
+        tick(S, dt) {
+          if (!lostIn(S)) return;
+          const c = Math.max(0, 1 - dist(S, 1, 2) / 10);
+          PT.w -= dt; PT.c -= dt;
+          if (PT.w <= 0) { PT.w = 1.6; S.tone('sine', 820, 740, 1.3, .004 + .05 * c * c, 0); S.tone('sine', 1240, 1130, 1.1, .002 + .03 * c * c, .1); }
+          if (PT.c <= 0) { PT.c = 1; S.tone('square', 2200, 2200, .02, .002 + .025 * c * c, 0, 4000); }
         }
       },
       /* ---------------- 门厅与厨房 ---------------- */
@@ -646,15 +918,37 @@
             if (S.f.act === 'flee') { S.pos(2, 5, 3); return S.narr('不——回楼上去！回卧室去！'); }
             await S.go('parlor', 1, 2, 0);
           } },
-          { id: 'hooks', x: 2, y: 1, spr: 'hooks', coat: true, on: S => S.narr(is4(S) ? '他那条红格子围巾还挂在钩子上。\n没有人去动它。' : '门厅的衣帽钩。你的旧大衣，还有赫伯特那条红格子围巾。') },
-          { id: 'hclock', x: 4, y: 2, spr: 'clock', on: S => S.narr(is4(S) ? '钟摆在黑暗里一下一下地走。\n你忽然想：从墓地走到这儿，要走多久？' : '门厅里的老座钟。走得比镇上的钟慢五分钟，谁也懒得去拨。') },
+          { id: 'hooks', x: 2, y: 1, spr: 'hooks', coat: true, async on(S) {
+            if (!is4(S)) return S.narr('门厅的衣帽钩。你的旧大衣，还有赫伯特那条红格子围巾。');
+            if (S.once('parcel')) {
+              await S.narr('衣帽钩底下，搁着一个牛皮纸包，麻绳捆得整整齐齐。\n是「毛与梅金斯」派人送回来的。你一直没有拆。');
+              await S.narr('你的手指碰到纸包，隔着牛皮纸，摸到了一样硬硬的、圆圆的小东西。');
+              S.fx('flash'); S.sfx('heart');
+              await S.narr('——一张盖着白布的长桌。\n白布底下露出来一只袖口。\n袖口上方，那颗铜扣子。');
+              await S.narr('那天，你就是靠它认出了他。');
+              return;
+            }
+            await S.narr('那个牛皮纸包还搁在钩子底下。\n他那条红格子围巾挂在上头。没有人去动它们。');
+          } },
+          { id: 'hclock', x: 1, y: 2, spr: 'clock', on: S => S.narr(is4(S) ? '楼梯旁的座钟，钟摆在黑暗里一下一下地走。\n你忽然想：从墓地走到这儿，要走多久？' : '楼梯旁的老座钟。走得比镇上的钟慢五分钟，谁也懒得去拨。') },
           { id: 'fdoor', x: 6, y: 1, spr: 'frontdoor', async on(S) {
             const a = S.f.act;
             if (a === 'door1') return morrisArrives(S);
-            if (a === 'stranger') { S.sfx('open'); return S.go('garden', 6, 2, 0); }
+            if (a === 'stranger') {
+              if (!S.f.saw) return S.say('怀特太太（客厅里）', '老头子！你先过来看看——外面那个人。', { style: 'whisper' });
+              S.sfx('open'); return S.go('garden', 6, 2, 0);
+            }
             if (a === 'after') return S.go('garden', 6, 2, 0);
             if (a === 'seeoff') return S.narr('和赫伯特道个别吧。');
-            if (a === 'flee') { S.sfx('knock'); S.shake(300, 2); return S.narr('门板在你手掌底下震了一下。\n你的手僵在门闩上，怎么也不敢去拔。'); }
+            if (a === 'flee') {
+              S.sfx('knock'); S.shake(300, 2);
+              await S.narr('门板在你手掌底下震了一下。');
+              const r = await S.ask('你的手搭在门闩上。', ['（缩回手，逃上楼）', '（拔开门闩）']);
+              if (r === 1) return openEnd(S);
+              S.clearTimer();
+              await S.narr('你像被烫了一样缩回手，转身就往楼上跑。');
+              return S.go('bedroom', 4, 5, 3);
+            }
             if (is4(S)) return S.narr('门上了两道闩，还挂着链子。\n上面那道门闩，她踮着脚也够不着。');
             if (S.f.day) return S.narr('前门。门外那条小路，一下雨就成了泥塘。');
             await S.narr('门已经闩上了。外面风声呜呜的，雨点一阵一阵地打在门板上。');
@@ -675,7 +969,7 @@
           { id: 'ktable', x: 9, y: 4, w: 2, spr: 'table2', col: '#7a5a3a', on: S => S.narr(S.f.act === 'morning' || S.f.act === 'seeoff' ? '早餐桌。煎蛋、面包、一壶浓茶。' : '厨房的餐桌。桌角有一道赫伯特小时候用小刀刻的印子。') },
           { id: 'wife_h', x: 11, y: 4, spr: '@wifeA', dir: 1, hidden: true, async on(S) {
             S.face('wife_h', 'pl');
-            if (S.f.act === 'after') return S.narr('她跪在门口，手还抓着门闩。\n她没有看你。');
+            if (S.f.act === 'after') return S.narr(S.f.w3 === 1 ? '她坐在门槛上，望着外面那条路。\n她没有哭，也没有看你。' : '她跪在门口，手还抓着门闩。\n她没有看你。');
             if (S.f.act === 'seeoff') return S.say('怀特太太', '去送送他吧。');
             await S.say('怀特太太', ['我看当兵的都一个样。咱俩居然会听那种胡话！', '这年头哪还有许愿成真的事？就算真有，两百英镑又能害着你什么，老头子？']);
           } },
@@ -686,6 +980,9 @@
             await S.say('你', '莫里斯说过，事情会发生得自然而然。你要是愿意，大可以当它是巧合。');
             await S.say('赫伯特', ['好吧。那在我回来之前，可别把钱动了。', '我怕它把你变成个又小气又贪财的老头，到时候我们只好跟你断绝关系。']);
             await S.narr('怀特太太笑出了声。赫伯特抓起帽子，往门口走去。');
+            S.face('wife_h', 'herb_h');
+            await S.say('怀特太太', '扣好外套！最上面那颗铜扣子，我昨晚才给你钉上的，别又在机器上刮掉了。');
+            await S.say('赫伯特', '知道啦，妈妈。（他把那颗亮晶晶的扣子扣上，冲你挤了挤眼）');
             await S.walk('herb_h', [6, 2], 3.5); S.face('herb_h', 0);
             await S.say('怀特太太', '去送送他吧，老头子。');
             S.f.act = 'seeoff';
@@ -704,12 +1001,25 @@
             S.cp();
           }
           if (a === 'candle') return knockAtFoot(S);
-          if (a === 'after' && S.once('afterIn')) { S.sfx('cry'); await S.narr('前门大开着。冷风裹着雨丝扑进门厅。\n她跪在门口，哭得说不出话来。'); S.goal('到门外去看看'); }
+          if (lostIn(S) && S.once('hallLost')) await S.narr('门厅里一点光也没有。\n只有楼梯旁那座钟，在黑暗里滴答、滴答——楼梯就在它旁边。');
+          if (a === 'after' && S.once('afterIn')) {
+            if (S.f.w3 === 1) await S.narr('前门大开着。冷风裹着雨丝扑进门厅。\n她坐在门槛上，望着外面，一声也不出。');
+            else { S.sfx('cry'); await S.narr('前门大开着。冷风裹着雨丝扑进门厅。\n她跪在门口，哭得说不出话来。'); }
+            S.goal('到门外去看看');
+          }
         },
         tick(S, dt) {
-          if (S.f.act !== 'flee' || W.busy) return;
+          const a = S.f.act;
+          /* 深夜的座钟：越靠近楼梯越响；敲门前一刻停住 */
+          if ((a === 'fetch' || a === 'candle') && !S.f.clockStop) {
+            PT.c -= dt;
+            if (PT.c <= 0) { PT.c = 1; const c = Math.max(0, 1 - dist(S, 1, 2) / 12); S.tone('square', PT.tk ? 2200 : 1900, PT.tk ? 2200 : 1900, .02, .004 + .03 * c * c, 0, 4000); PT.tk = !PT.tk; }
+          }
+          if (a !== 'flee' || W.busy) return;
+          /* 敲门声越来越密：2.4 秒 → 1.2 秒 */
+          S.f._ft = (S.f._ft || 0) + dt;
           S.f._fk = (S.f._fk ?? 2) - dt;
-          if (S.f._fk <= 0) { S.sfx('knock'); S.f._fk = 2.4; }
+          if (S.f._fk <= 0) { S.sfx('knock'); S.f._fk = Math.max(1.2, 2.4 - S.f._ft * .15); if (S.f._ft > 5) S.shake(150, 1); }
         }
       },
       /* ---------------- 卧室 ---------------- */
@@ -730,27 +1040,29 @@
             S.pos(4, 5, 3);
             if (a === 'door') return S.toast('下去也拦不住她。猴爪——猴爪掉在这屋里了！');
             if (a === 'matches') return S.narr('黑灯瞎火的，得先把五斗柜上的火柴拿上。');
-            await S.narr('你坐着，一动不动。');
+            await S.narr('你不敢下去。\n至少，现在还不敢。');
           } },
           { id: 'bed', x: 1, y: 2, h: 2, spr: 'bed', col: '#7a6a5a', async on(S) {
             const a = S.f.act;
             if (a === 'wait') return lieDown(S);
-            if (a === 'door') return S.toast('被子还是乱的，冰凉冰凉。');
+            if (a === 'door') return feel(S, 'bed', '床沿。被子还是乱的，冰凉冰凉。');
             await S.narr(a === 'night' || a === 'fetch' ? '被窝里还留着一点暖气。' : '床。你一点也不困。');
-          } },
+          }, bump: S => S.f.act === 'door' && feel(S, 'bed', '床沿。被子还是乱的，冰凉冰凉。') },
           { id: 'bdresser', x: 3, y: 2, spr: 'dresser', col: '#5a3c26', async on(S) {
             const a = S.f.act;
             if (a === 'matches') { S.give('matches'); S.f.act = 'candle'; S.goal('下楼去厨房拿根蜡烛'); return S.narr('你在五斗柜上摸到了那盒火柴。'); }
-            if (a === 'door') return S.toast('五斗柜。烛台倒了，蜡烛头早灭了。');
+            if (a === 'door') return feel(S, 'dres', '五斗柜的抽屉把手。烛台不在上面了。');
             await S.narr('五斗柜上放着她的祈祷书，书页被翻得卷了边。\n里面夹着一绺用丝线扎起来的、浅黄色的头发。');
-          } },
+          }, bump: S => S.f.act === 'door' && feel(S, 'dres', '五斗柜的抽屉把手。烛台不在上面了。') },
           { id: 'bcandle', x: 3, y: 2, spr: 'candle', z: 1, oy: -10, off: true, light: { r: 2.8, col: 'rgba(255,170,80,.2)', flick: true } },
           { id: 'bwin', x: 6, y: 1, spr: 'bwindow', async on(S) {
-            if (S.f.act === 'door') return S.toast('窗外黑沉沉的。路灯的光够不到这里。');
+            if (S.f.act === 'door') return feel(S, 'win', '窗外黑沉沉的。路灯的光够不到这里。');
             await S.narr(S.ent('bwin').open ? '百叶窗拉起来了。窗外黑沉沉的，远处路口有一盏路灯。\n路上什么也没有。' : '百叶窗拉着。');
           } },
-          { id: 'wardrobe', x: 8, y: 2, spr: 'wardrobe', on: S => S.f.act === 'door' ? S.toast('衣柜。不在这儿。') : S.narr('衣柜。最底下一格，放着赫伯特小时候的衣服。她一件也没舍得扔。') },
-          { id: 'bchair', x: 7, y: 4, spr: 'chair', on: S => S.f.act === 'door' ? S.toast('椅子腿。不是。') : S.narr('一把硬木椅子。') },
+          { id: 'wardrobe', x: 8, y: 2, spr: 'wardrobe', on: S => S.f.act === 'door' ? feel(S, 'ward', '衣柜的门。冰凉的铜把手。') : S.narr('衣柜。最底下一格，放着赫伯特小时候的衣服。她一件也没舍得扔。'),
+            bump: S => S.f.act === 'door' && feel(S, 'ward', '衣柜的门。冰凉的铜把手。') },
+          { id: 'bchair', x: 7, y: 4, spr: 'chair', on: S => S.f.act === 'door' ? feel(S, 'chair', '椅子腿。不是。') : S.narr('一把硬木椅子。'),
+            bump: S => S.f.act === 'door' && feel(S, 'chair', '椅子腿。不是。') },
           { id: 'wife_b', x: 6, y: 2, spr: '@wifeB', dir: 3, hidden: true, async on(S) {
             if (S.f.act === 'fetch') { S.face('wife_b', 'pl'); return S.say('怀特太太', '快去！快去呀！'); }
             if (S.f.act === 'wait') return S.narr('她站在窗前，一动不动，望着外面那条路。');
@@ -761,7 +1073,11 @@
               if (S.f.act === 'door') return foundPaw(S);
               await S.narr('猴爪躺在地板上。你不敢去碰它。');
             } },
-          ...GROPE.map(([x, y, t], i) => ({ id: 'g' + i, x, y, spr: 'invisible', solid: false, hidden: true, on: S => S.toast(t), touch: S => { if (S.f.act === 'door') S.toast(t); } }))
+          /* 假物件：描述 + 一条指向猴爪落点的线索（第一次摸到用叙述，计时不停） */
+          ...GROPE.map(([x, y, t, h], i) => {
+            const say = S => feel(S, 'g' + i, t + '\n' + h(PAWS[S.f.pawSpot || 0][2]));
+            return { id: 'g' + i, x, y, spr: 'invisible', solid: false, hidden: true, on: say, touch: S => { if (S.f.act === 'door') return say(S); } };
+          })
         ],
         async enter(S, first) {
           const a = S.f.act;
@@ -769,6 +1085,11 @@
           if (a === 'night' && first) return nightWake(S);
           if (a === 'fetch' && S.has('paw')) return secondWish(S);
           if (a === 'flee') return wifeRuns(S);
+        },
+        tick(S, dt) {   // 楼下的座钟，隔着楼板，很轻
+          if (!['night', 'fetch', 'wait', 'matches'].includes(S.f.act) || S.f.clockStop) return;
+          PT.c -= dt;
+          if (PT.c <= 0) { PT.c = 2; S.tone('square', 2000, 2000, .02, .006, 0, 2500); }
         }
       },
       /* ---------------- 院子与大路 ---------------- */
@@ -823,25 +1144,31 @@
       /* ---------------- 墓地 ---------------- */
       cem: {
         amb: 'rain', dark: .45, rain: true, fog: .16, plr: 3,
-        tileOpts: { grassC: '#2a3626' },
+        tileOpts: { grassC: '#2a3626', treeC: '#16241a' },
         rows: [
-          'PPPPPPPPPPPP',
-          'P""""""""""P',
-          'P""""""""""P',
-          'P""""""""""P',
-          'P""""""""""P',
-          'P""""""""""P',
-          'P""""""""""P',
-          'PPPPP"PPPPPP'],
+          'PPPPPPPPPPPPPPPPPPPP',
+          'P""""""""""""""""""P',
+          'P""""""""""""""""""P',
+          'P""""""""""""""""""P',
+          'P""""""""""""""""""P',
+          'P""""""""""""""""""P',
+          'P""""""""d"""""""""P',
+          'P""""""""d"""""""""P',
+          'P""""""""d"""""""""P',
+          'P""""""""d"""""""""P',
+          'P""""""""u"""""""""P',
+          'PPPPPPPPPuPPPPPPPPPP'],
         ents: [
-          { x: 2, y: 2, spr: 'gravestone', on: S => S.narr('一块老墓碑，名字被青苔吃掉了一半。') },
-          { x: 4, y: 2, spr: 'gravestone', on: S => S.narr('「爱妻 玛莎」。底下的年份，你算了算——她死的时候，比你现在还年轻。') },
-          { x: 9, y: 2, spr: 'gravestone', on: S => S.narr('这块碑是新的。墓地也是新的。一切都是新的，新得叫人心里发空。') },
-          { x: 2, y: 5, spr: 'cross', on: S => S.narr('一个石头十字架，被雨水冲得发黑。') },
-          { x: 9, y: 5, spr: 'statue', on: S => S.narr('一尊石头天使，低着头，翅膀上积着雨水。') },
-          { id: 'hgrave', x: 6, y: 2, spr: 'gravestone', flowers: true, on: S => S.narr('新立的墓碑，字刻得很深：\n\n　　赫伯特·怀特\n\n石屑还没扫干净。碑前的花，被雨打得抬不起头。') },
-          { x: 6, y: 3, spr: 'mound', decal: true },
-          { id: 'wife_c', x: 7, y: 3, spr: '@wifeB', dir: 1, async on(S) {
+          { x: 3, y: 2, spr: 'gravestone', on: S => S.narr('一块老墓碑，名字被青苔吃掉了一半。') },
+          { x: 5, y: 2, spr: 'gravestone', on: S => S.narr('「爱妻 玛莎」。底下的年份，你算了算——她死的时候，比你现在还年轻。') },
+          { x: 13, y: 2, spr: 'gravestone', on: S => S.narr('这块碑是新的。墓地也是新的。一切都是新的，新得叫人心里发空。') },
+          { x: 3, y: 6, spr: 'cross', on: S => S.narr('一个石头十字架，被雨水冲得发黑。') },
+          { x: 2, y: 9, spr: 'gravestone', on: S => S.narr('一块小小的墓碑，只刻着一个名字和两个年份。\n两个年份之间，只隔了三年。') },
+          { x: 16, y: 8, spr: 'statue', on: S => S.narr('一尊石头天使，低着头，翅膀上积着雨水。') },
+          { x: 13, y: 9, spr: 'gravestone', on: S => S.narr('一块还没刻字的碑。石匠还没来得及。') },
+          { id: 'hgrave', x: 9, y: 3, spr: 'gravestone', flowers: true, on: S => S.narr('新立的墓碑，字刻得很深：\n\n　　赫伯特·怀特\n\n石屑还没扫干净。碑前的花，被雨打得抬不起头。') },
+          { x: 9, y: 4, spr: 'mound', decal: true },
+          { id: 'wife_c', x: 10, y: 4, spr: '@wifeB', dir: 1, async on(S) {
             S.face('wife_c', 'pl');
             if (S.f.cemTalk) return S.narr('她挽着你的胳膊，一句话也不说。');
             await S.say('你', '……走吧。雨下大了。');
@@ -850,13 +1177,24 @@
             S.f.cemTalk = true; S.follow('wife_c', true);
             S.goal('回家');
           } },
-          { id: 'cgate', x: 5, y: 7, spr: 'invisible', async touch(S) {
-            if (!S.f.cemTalk) { S.pos(5, 6, 3); return S.narr('她还站在墓前。你不能把她一个人留在这儿。'); }
+          { id: 'digger', x: 14, y: 5, spr: '@digger', dir: 1, async on(S) {
+            S.face('digger', 'pl');
+            await S.narr('挖墓的人扶着铁锹，冲你点了点头，把帽子摘了下来。');
+            await S.say('挖墓人', ['节哀，先生。', '这块地是去年才开的，人还没埋满。离镇上远，往后来看他，路不好走。']);
+            if (S.once('digger2')) await S.say('挖墓人', '……您慢走。天黑以前，这儿就没人了。');
+          } },
+          { x: 15, y: 5, spr: 'spade', on: S => S.narr('一堆新挖出来的湿土，上面插着一把铁锹。\n锹刃上的泥，被雨冲得一道一道的。') },
+          { x: 16, y: 5, spr: 'crate', on: S => S.narr('挖墓人的工具箱。绳子、撬棍、一盏没点的马灯。') },
+          { id: 'milepost', x: 10, y: 10, spr: 'milepost', on: S => S.narr('路边插着一块木头路牌：\n\n　　金链花别墅　2 英里 →\n\n两英里。走回去，得走上一个多钟头。') },
+          { id: 'cgate', x: 9, y: 12, spr: 'invisible', async touch(S) {
+            if (!S.f.cemTalk) { S.pos(9, 11, 3); return S.narr('她还站在墓前。你不能把她一个人留在这儿。'); }
+            if (S.once('milepostPass')) await S.narr('你们走过那块路牌。\n金链花别墅，2 英里。她回头看了一眼。');
             await S.fade(1, 900);
             S.hide('wife_c');
             await S.card('大约一个星期以后', '', '老两口回到了那座浸在阴影和沉默里的房子。\n起初他们还在等，等着再发生点什么——\n一件能让这份重担轻一点的事。\n\n可是什么也没有发生。\n日子长得叫人熬不过去。\n他们很少说话，因为已经没有什么可说的了。');
             S.f.day = false; S.f.act = 'night';
             setNight(S);
+            handoff(S);
             await S.go('bedroom', 2, 3, 1, { ms: 900 });
           } }
         ],
@@ -914,7 +1252,7 @@
 
   async function morrisTale(S) {
     S.take('whisky'); S.sfx('drip');
-    await S.narr('你给他斟上酒，又把一小壶铜水壶搁到了炉边。');
+    await S.narr('你给他斟上酒，又把一把小铜壶坐到了炉火上。');
     await S.narr('第三杯下肚，他的眼睛更亮了。\n他开始讲那些遥远的事：荒野里的奇景，惊心动魄的战功，战争、瘟疫，还有各种各样奇怪的人。');
     await S.say('你', '（对妻子）二十一年了。他走的时候，还是仓库里一个瘦巴巴的毛头小子。瞧瞧他现在。');
     await S.say('怀特太太', '看着倒是一点也没吃亏。');
@@ -931,24 +1269,48 @@
     await S.narr('他在口袋里摸索了一阵，掏出一样东西：\n一只干瘪的小爪子，像是风干的，缩成一团，毛都快掉光了。');
     await S.narr('怀特太太嫌恶地往后一缩。赫伯特却接了过去，翻来覆去地看。');
     await S.say('你', '这东西有什么特别的？');
-    await S.say('莫里斯', ['一个老苦行僧在它上面下了咒。那是个很圣洁的人。', '他想让世人明白：命运支配着人的一生，谁要是插手，谁就会遭殃。', '他施的咒是这样的：三个不同的人，每人可以凭它许三个愿望。']);
-    await S.narr('他的语气太郑重了。屋里刚有人笑出声来，就觉得那笑声有点刺耳。');
-    await S.say('赫伯特', '那您自己怎么不许三个呢，长官？');
-    await S.narr('军士长看了他一眼——中年人看见毛躁的年轻人时，往往就是这种眼神。');
-    await S.say('莫里斯', '我许过了。', { style: 'whisper' });
-    await S.narr('他那张斑斑驳驳的红脸，一下子白了。');
-    await S.say('怀特太太', '那……三个愿望，真的都实现了？');
-    await S.say('莫里斯', '实现了。');
-    S.sfx('glass');
-    await S.narr('杯子在他的牙齿上，轻轻磕了一下。');
-    await S.say('怀特太太', '还有别人许过吗？');
-    await S.say('莫里斯', ['第一个人许满了三个。前两个是什么，我不知道。', '第三个……是求死。', '这东西，就是这么到我手里的。']);
-    await S.narr('他的声音沉得吓人。一屋子人都不说话了。');
-    await S.say('你', '既然你的三个愿望都许过了，它对你也没什么用了。那你还留着它干什么？');
-    await S.say('莫里斯', ['一时糊涂吧。', '我也想过把它卖掉。可我又不想再让它去害人——它已经害得够多了。', '再说，也没人肯买。有人当它是个童话；就算有那么一两个信的，也要先试试灵不灵，再谈价钱。']);
+    await S.say('莫里斯', '它能让三个不同的人，每人许三个愿望。');
+    /* 让玩家自己追问：问过的从列表里删掉；问过「你自己许过吗」才会想到问他为什么还留着 */
+    const Q = {
+      who: ['「这是谁下的咒？」', async () => {
+        await S.say('莫里斯', ['一个老苦行僧在它上面下了咒。那是个很圣洁的人。', '他想让世人明白：命运支配着人的一生，谁要是插手，谁就会遭殃。']);
+        await S.narr('他的语气太郑重了。屋里刚有人笑出声来，就觉得那笑声有点刺耳。');
+      }],
+      self: ['「您自己许过吗？」', async () => {
+        await S.say('赫伯特', '对呀，那您自己怎么不许三个呢，长官？');
+        await S.narr('军士长看了他一眼——中年人看见毛躁的年轻人时，往往就是这种眼神。');
+        await S.say('莫里斯', '我许过了。', { style: 'whisper' });
+        await S.narr('他那张斑斑驳驳的红脸，一下子白了。');
+        await S.say('怀特太太', '那……三个愿望，真的都实现了？');
+        await S.say('莫里斯', '实现了。');
+        S.sfx('glass');
+        await S.narr('杯子在他的牙齿上，轻轻磕了一下。');
+      }],
+      other: ['「还有别人许过吗？」', async () => {
+        await S.say('怀特太太', '还有别人许过吗？');
+        await S.say('莫里斯', ['第一个人许满了三个。前两个是什么，我不知道。', '第三个……是求死。', '这东西，就是这么到我手里的。']);
+        await S.narr('他的声音沉得吓人。一屋子人都不说话了。');
+      }],
+      keep: ['「那你还留着它干什么？」', async () => {
+        await S.say('你', '既然你的三个愿望都许过了，它对你也没什么用了。那你还留着它干什么？');
+        await S.say('莫里斯', ['一时糊涂吧。', '我也想过把它卖掉。可我又不想再让它去害人——它已经害得够多了。', '再说，也没人肯买。有人当它是个童话；就算有那么一两个信的，也要先试试灵不灵，再谈价钱。']);
+      }]
+    };
+    let left = ['who', 'self', 'other'];
+    while (left.length) {
+      const vr = await S.vote('你们还想问他点什么？', left.map(k => Q[k][0]));
+      const picks = vr.agree ? [left[vr.v]] : [left[vr.h], left[vr.g]];   // 两人想问的不一样：两个都问
+      for (const k of picks) {
+        if (!left.includes(k)) continue;
+        left = left.filter(x => x !== k);
+        await Q[k][1]();
+        if (k === 'self') left.push('keep');
+      }
+    }
     await S.say('你', '要是你还能再许三个，你还会许吗？');
     await S.say('莫里斯', '……我不知道。我不知道。');
-    await S.narr('他捏着那只爪子，在指间晃了晃——');
+    if (S.coop) await S.ask('他捏着那只爪子，在指间晃了晃——', ['（盯着他的手）']);   // 联机时的交接缓冲
+    else await S.narr('他捏着那只爪子，在指间晃了晃——');
     S.show('fpaw'); S.sfx('sting'); S.shake(300, 2); S.bubble('herb', '!', 1200); S.bubble('wife', '!', 1200);
     await S.narr('突然，把它扔进了炉火里！');
     S.f.act = 'fire';

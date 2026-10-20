@@ -334,8 +334,9 @@ function drawPlayer(g, ox, oy) {
   const p = W.pl; if (p.hidden) return;
   const spr = sprOf(p.spr);
   const fake = { spr: p.spr, px: p.px, py: p.py, dir: p.dir, fr: p.fr, alpha: 1, w: 1, h: 1, s: {} };
-  if (typeof spr === 'string') { fake.dir = p.dir; drawEntity(g, fake, ox, oy, RT); return; }
-  g.drawImage(personSprite(spr, p.dir, p.fr), Math.round(p.px - ox), Math.round(p.py - oy - 8));
+  if (typeof spr === 'string') { fake.dir = p.dir; drawEntity(g, fake, ox, oy, RT); }
+  else g.drawImage(personSprite(spr, p.dir, p.fr), Math.round(p.px - ox), Math.round(p.py - oy - 8));
+  if (p.bubble && p.bubble.until > RT) drawBubble(g, Math.round(p.px - ox + 8), Math.round(p.py - oy - (typeof spr === 'object' ? 12 : 6)), p.bubble.k);
 }
 const RAIN = [];
 function drawRain(g, dt) {
