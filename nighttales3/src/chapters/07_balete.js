@@ -683,11 +683,11 @@
       },
       btree(g, e, t, R) {   // 路边的 balete：占一格，向上伸出树冠和气根
         const k = e.big ? 1 : 0, D = '#09110c', C = '#132219', C2 = '#1b2f20';
-        const cw = 52 + k * 24, cx = 8 - cw / 2, cy = -50 - k * 10;
+        const sth = e.south ? 1 : 0, cw = 52 + k * 24 - sth * 12, cx = 8 - cw / 2, cy = -50 - k * 10 + sth * 18;
         R(cx, cy, cw, 30 + k * 6, D); R(cx + 6, cy - 6, cw - 12, 8, D);
         for (let i = 0; i < 12 + k * 6; i++) R(cx + 2 + ((hash(i, e.x, 1) * (cw - 6)) | 0), cy - 2 + ((hash(i, e.x, 2) * 26) | 0), 4, 3, i % 2 ? C : C2);
-        for (let i = 0; i < 8; i++) R(1 + i * 2, -24, 2, 38, i % 2 ? '#3a3226' : '#2a2419');
-        for (let i = 0; i < 10 + k * 4; i++) { const x = cx + 3 + i * 5 + ((hash(i, e.x, 3) * 3) | 0), len = 12 + ((hash(i, e.x, 4) * 26) | 0); R(x, -24, 1, len, '#2a2419'); }
+        const ty = e.south ? -12 : -24; for (let i = 0; i < 8; i++) R(1 + i * 2, ty, 2, 14 - ty, i % 2 ? '#3a3226' : '#2a2419');
+        for (let i = 0; i < 10 + k * 4; i++) { const x = cx + 3 + i * 5 + ((hash(i, e.x, 3) * 3) | 0), len = (e.south ? 6 : 12) + ((hash(i, e.x, 4) * (e.south ? 14 : 26)) | 0); R(x, ty, 1, len, '#2a2419'); }
         R(-3, 13, 22, 3, 'rgba(0,0,0,.45)');
       },
       bigbalete(g, e, t, R) {   // Lola：6×3
@@ -851,7 +851,7 @@
         rows: driveRows(),
         ents: [
           ...[1, 14, 24, 48, 58, 61].map(x => ({ x, y: 3, spr: 'btree' })),
-          ...[2, 9, 15, 18, 31, 35, 40, 54, 60].map(x => ({ x, y: 11, spr: 'btree' })),
+          ...[2, 9, 15, 18, 31, 35, 40, 54, 60].map(x => ({ x, y: 11, spr: 'btree', south: true, z: -1 })),
           { x: 32, y: 3, spr: 'btree', big: true }, { x: 34, y: 3, spr: 'btree', big: true }, { x: 33, y: 3, spr: 'btree', big: true },
           { x: 36, y: 3, spr: 'grotto', light: { r: 1.8, col: 'rgba(255,170,80,.18)', flick: true } },
           { x: 32, y: 4, spr: 'candles', light: { r: 2, col: 'rgba(255,170,80,.16)', flick: true }, on: S => S.narr('树根底下点着一圈白蜡烛。有人一直在这里点蜡烛——四十多年了，没断过。') },
@@ -864,7 +864,7 @@
           { id: 'wl1', x: 18, y: 10, spr: '@luz', dir: 0, solid: false, hidden: true, light: { r: 1.4, col: 'rgba(220,230,255,.16)' } },
           { id: 'wl2', x: 57, y: 10, spr: '@luz', dir: 3, solid: false, hidden: true, light: { r: 1.4, col: 'rgba(220,230,255,.16)' } },
           { id: 'hl', x: 2, y: 8, spr: 'invisible', light: { r: 3.4, col: 'rgba(255,236,170,.14)' } },
-          { id: 'rvm', x: 2, y: 8, spr: 'rvm', z: 1, s: { up: true, her: 0 }, light: { r: 1.7, dx: 8, dy: -24, col: 'rgba(190,200,220,.08)' }, on: mirrorUse }
+          { id: 'rvm', x: 2, y: 8, spr: 'rvm', z: 1, solid: false, s: { up: true, her: 0 }, light: { r: 1.7, dx: 8, dy: -24, col: 'rgba(190,200,220,.08)' }, on: mirrorUse }
         ],
         async enter(S, first) {
           const f = S.f;
@@ -922,6 +922,7 @@
           { id: 'ghouse', x: 19, y: 2, w: 2, spr: 'guardhouse', light: { r: 2.2, col: 'rgba(255,220,140,.16)', dx: 11, dy: 4 }, on: S => S.narr('保安岗亭。小窗里亮着一盏灯，桌上摊着值班登记本、一个保温壶，还有一台开着的收音机。\n墙上钉着一张圣婴像的小日历。') },
           { id: 'tonyo', x: 18, y: 5, spr: '@tonyo', dir: 1, on: tonyoTalk },
           { id: 'bigb', x: 8, y: 4, w: 6, h: 3, spr: 'bigbalete', on: bigOn },
+          { x: 10, y: 5, spr: 'invisible', light: { r: 5.5, a: .5, col: 'rgba(150,170,130,.05)' } },
           ...ROOTS.map(rd => ({ id: rd.id, x: rd.x, y: rd.y, spr: 'broot', kind: rd.kind, col: rd.col, solid: true, on: S => rootOn(S, rd) })),
           { id: 'grotto', x: 16, y: 4, spr: 'grotto', light: { r: 2, col: 'rgba(255,170,80,.18)', flick: true }, on: grottoOn },
           { x: 6, y: 9, spr: 'candles', light: { r: 1.8, col: 'rgba(255,170,80,.16)', flick: true }, on: S => S.narr('有人在树根前摆了三根蜡烛，旁边放着一个小纸盘，里面是一块 kakanin（糯米糕）。\n明天就是 Undas。给死人的，也给树里的。') },

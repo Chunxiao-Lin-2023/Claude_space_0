@@ -545,4 +545,383 @@
       }
     }
   });
-/*@@MORE@@*/
+
+  /* ================= 公路 ================= */
+  async function carOn(S) {
+    if (!S.f.talked) return S.narr('凯莉的旧沃尔沃。');
+    if (!S.has('flashlight')) {
+      S.sfx('open'); S.give('flashlight'); plrOn(S);
+      await S.narr('你掀开后备箱。里面塞着一条毯子、一箱机油、一盒没吃完的万圣节糖果，还有一只大手电筒。\n你拍了两下，它才亮起来。光柱打在土堤上，照亮了半截铁轨。');
+      S.goal(S.f.club ? '和大家一起进桥洞' : '小迪好像有话要跟你说');
+      return;
+    }
+    const L = ['凯莉的旧沃尔沃。车顶上那个南瓜灯是小迪刻的，一只眼睛大一只眼睛小。', '后视镜上挂着一个松香味的小树。仪表盘上的钟显示 11:09——比实际快了三分钟，凯莉说这样她就永远不会迟到。', '后座上扔着一件小迪的毛衣，还有一本翻烂了的《鸡皮疙瘩》。'];
+    await S.narr(L[(S.f._car = ((S.f._car ?? -1) + 1) % L.length)]);
+  }
+  async function bagOn(S) {
+    S.f.sawBag = true;
+    await S.narr('布伦特的运动包，拉链没拉严。\n缝里露出一撮粉红色的毛——像是什么毛绒玩具。或者……一件衣服。');
+    if (S.once('bagB')) { S.bubble('brent_road', '!', 900); await S.say('布伦特', '嘿！别乱翻！那是……是我的换洗衣服。'); await S.say('凯莉', '（小声）粉红色的换洗衣服？'); }
+  }
+  async function kellyTalk(S) {
+    const f = S.f, e = S.ent('kelly_' + S.map); if (e) S.face(e.id, 'pl');
+    if (S.map === 'woods' && !f.kelly) return kellyFound(S);
+    const L = {
+      road: ['我妈说，每年万圣节，县里的警察都会来这儿抓试胆的小孩。……所以咱们动作快点。', '布伦特那个包，从上车就一直不让人碰。他肯定憋着什么坏。', '小迪非要跟来。我妈说，他要是做噩梦，就让我陪他睡一个月。'],
+      tunnel: ['……别回头。我是说，回头也没什么。就是别回头。', '这里面怎么比外面冷这么多。'],
+      woods: ['我的脚……没事，能走。别管我，先找小迪。', '你听见了吗？……砍木头的声音。从北边。', '我妈的便条上写着，纸上没有。纸上没有，不代表——算了。'],
+      house: ['这房子……像是有人一直住到某一天，然后突然不住了。', '十一点四十了。'],
+      cellar: ['出去以后一直往南跑。别停。']
+    }[S.map] || ['……'];
+    await S.say('凯莉', L[(f._kl = ((f._kl ?? -1) + 1) % L.length)]);
+  }
+  async function brentTalk(S) {
+    const f = S.f, e = S.ent('brent_' + S.map); if (e) S.face(e.id, 'pl');
+    const L = f.brentFound
+      ? ['对不起，好吗？我就是想吓吓你们。我没想到……会有真的。', '我那身衣服是在超市买的，九块九。它那身……它那身不是衣服。', '要是能出去，我再也不来了。我发誓。']
+      : S.map === 'road' ? ['传单上都写着呢，自己看。', '你怕了？没事，我在前面给你们开路。', '十二点整，教堂会敲钟。在这儿听得特别清楚。'] : ['走啊，到中间去！'];
+    await S.say('布伦特', L[(f._bl = ((f._bl ?? -1) + 1) % L.length)]);
+  }
+  async function deeTalk(S) {
+    const f = S.f, e = S.ent('dee_' + S.map); if (e) S.face(e.id, 'pl');
+    if (S.map === 'road' && !f.club) {
+      await S.say('小迪', ['诺亚诺亚！你看——这是我们俱乐部的会员卡！', '我给你也做了一张。你是荣誉会员！上面有暗号，不许告诉布伦特。']);
+      S.sfx('item'); await S.note('club');
+      f.club = true;
+      await S.say('小迪', '要是兔子人来了，我就躲起来。谁敲门敲得不对，我就不开！');
+      S.goal(S.has('flashlight') ? '和大家一起进桥洞' : '从凯莉车上拿手电筒');
+      return;
+    }
+    const L = f.dee
+      ? ['我没哭。是荧光棒太亮了，刺眼睛。', '我的鞋跑丢了一只……妈妈会骂我的。', '诺亚，你敲暗号的时候，我就知道是你。']
+      : ['我是吸血鬼。吸血鬼不怕兔子。', '如果兔子人来了，我就用牙咬他！', '凯莉说十二点前要回家，不然妈妈会把我们的万圣节糖果都没收。'];
+    await S.say('小迪', L[(f._dl = ((f._dl ?? -1) + 1) % L.length)]);
+  }
+  async function enterTunnel(S) {
+    const f = S.f;
+    if (f.phase) return;
+    if (!f.talked) return;
+    if (!S.has('flashlight')) { S.sfx('locked'); await S.narr('洞口里黑得什么也看不见。\n得先拿上手电筒——在凯莉车的后备箱里。'); return S.walk('pl', 'd', 5); }
+    if (!f.club) { await S.say('小迪', '诺亚！等等！我还有东西要给你！'); return S.walk('pl', 'd', 5); }
+    S.face('brent_road', 'pl');
+    await S.say('布伦特', '都到齐了？……走吧。');
+    f.phase = 'tunnel1'; f.party = ['kelly', 'brent', 'dee'];
+    await S.go('tunnel', 3, 16, 3);
+  }
+
+  /* ================= 桥洞 ================= */
+  async function tunnelSouth(S) {
+    const f = S.f;
+    if (f.phase === 'final') return goodEnd(S);
+    if (f.phase === 'tunnel1') { await S.say('布伦特', '怎么，这就怂了？一个月的午饭哦。'); return S.walk('pl', 'u', 5); }
+  }
+  async function tunnelNorth(S) {
+    if (S.f.phase === 'tunnel1') { await S.say('凯莉', '就在中间等着吧，别乱跑。'); return S.walk('pl', 'd', 5); }
+  }
+  async function tunnelEvent(S) {
+    const f = S.f; f.t1ev = true;
+    S.amb('bus'); S.shake(2400, 2);
+    await S.narr('头顶上传来一阵越来越响的轰隆声——\n是火车。整座桥洞都在发抖，洞顶的灰簌簌地往下掉，掉进你的领口里。');
+    S.amb('drone');
+    await S.say('布伦特', '……好了。几点了？');
+    await S.say('凯莉', '十一点十二。');
+    await S.say('布伦特', '还早呢。我去北口看看，别让别人抢了咱们的位子。');
+    leave(S, 'brent');
+    await S.walk('brent_tunnel', [3, 1], 5);
+    await S.alpha('brent_tunnel', 0, 500);
+    await S.say('凯莉', '布伦特！……他又在搞什么鬼。');
+    await S.wait(700);
+    S.sfx('tv');
+    await S.narr('口袋里的对讲机「沙——」地响了一声。\n你按住通话键：「布伦特？」');
+    S.sfx('whisper');
+    await S.narr('没有回答。\n只有呼吸声。很慢，很重，像是隔着一层厚厚的绒布。');
+    await S.say('凯莉', '布伦特，你无不无聊。');
+    await S.wait(500);
+    S.bubble('dee_tunnel', '!', 1400);
+    await S.say('小迪', '诺……诺亚。后面。', { style: 'whisper' });
+    S.turn(0);
+    const b = S.ent('bm_tunnel'); b.alpha = 0; S.place('bm_tunnel', 3, 17, 3);
+    S.focus(3, 15);
+    S.sfx('heart'); await S.alpha('bm_tunnel', .92, 1600);
+    await S.narr('南口。你们刚刚走进来的地方，站着一个人。\n很高。白色的。头顶上，竖着两只长长的耳朵。');
+    S.sfx('heart');
+    await S.narr('它的一只手垂在身侧，手里拖着什么东西，尖端抵在地上。');
+    S.sfx('cut');
+    await S.narr('「嚓——」\n金属刮过水泥地的声音，在洞里来回地撞。');
+    await S.walk('bm_tunnel', 'u', 1.2);
+    S.plr(.5); await S.wait(200); S.plr(2.6); await S.wait(150); S.plr(.4);
+    S.focus(null);
+    await S.scare('flash', { sfx: 'scream', dur: .7 });
+    await S.narr('小迪尖叫着往北口跑。凯莉喊着他的名字追了上去——\n手电筒灭了。');
+    S.plr(.3);
+    await S.narr('黑暗里，你也跑了起来。');
+    f.party = []; S.hide('bm_tunnel'); S.hide('kelly_tunnel'); S.hide('dee_tunnel');
+    f.phase = 'woods';
+    await S.go('woods', 17, 24, 3, { ms: 700 });
+  }
+
+  /* ================= 树林 ================= */
+  async function kellyFound(S) {
+    const f = S.f;
+    S.bubble('kelly_woods', '!', 1000);
+    await S.say('凯莉', ['诺亚！……你看见小迪了吗？', '我追着他跑，他跑得比兔子还快——脚踩进石头缝里，扭了。']);
+    await S.narr('凯莉坐在河边的石头上，一只手按着脚踝。她的女巫帽子不知道掉哪儿去了。');
+    await S.say('凯莉', ['我看见他过河了，往北边去了。', '……桥洞里那个，是布伦特吧？肯定是他。他包里那团粉红色的毛，' + (f.sawBag ? '你也看见了。' : '我上车的时候就看见了。') + '他想扮兔子人吓我们。']);
+    const r = await S.ask('她看着你，像是在等你点头。', ['……那个人，比布伦特高。', '肯定是他。等找到他，揍他一顿。'], '诺亚');
+    if (r === 0) { await S.say('凯莉', '……'); await S.say('凯莉', '别这么说。求你了。'); }
+    else await S.say('凯莉', '算我一份。');
+    await S.say('凯莉', '对了，这个给你——我妈复印的东西。本来想拿出来堵布伦特的嘴的。');
+    await S.note('archive');
+    await S.say('凯莉', '扶我一把。我能走。……十一点二十。我们得在十二点之前把小迪找回来。');
+    f.kelly = true; join(S, 'kelly');
+    S.goal('小迪往北跑了——过河去找他');
+  }
+  async function fakeEncounter(S) {
+    const f = S.f; f.e2 = true;
+    S.show('fake_woods'); S.place('fake_woods', 15, 6, 1); S.focus(13, 7);
+    S.sfx('whisper');
+    await S.narr('空地的另一头，树影里，亮起了一团光。\n光是从下往上打的，照着一张脸——一张兔子的脸。');
+    await S.narr('粉红色的毛绒连体衣。一只耳朵竖着，另一只软塌塌地耷拉在脑袋一边。\n它手里拎着一把斧头，被光一照，亮得像锡纸。');
+    S.sfx('step');
+    await S.narr('它往前走了一步。脚底下「咔嚓」一声，踩断了一根树枝。');
+    S.sfx('giggle');
+    await S.narr('……然后，兔子头底下，漏出了一声没憋住的笑。');
+    await S.say('凯莉', '（小声）……那身衣服，你不觉得眼熟吗？', { style: 'whisper' });
+    const r = await S.ask('粉红色的兔子在空地那头站着，一手打着手电，一手拎着斧头。', ['走过去看看', '关掉手电，躲到树后面']);
+    if (r === 0) {
+      await S.walk('pl', [[S.pl.x, 8], [10, 8]], 4);
+      S.sfx('giggle');
+      await S.narr('你刚走出两步，兔子就怪叫了一声，扭头就跑。\n「哇哦哦哦——兔子人来啦——」\n……那个破锣嗓子，你在学校走廊里听了三年。');
+    } else {
+      S.plr(1);
+      await S.narr('你关掉手电，拉着凯莉缩到一棵橡树后面。\n粉兔子左看看，右看看，挠了挠头，嘟囔了一句：「人呢？」\n……那个破锣嗓子，你在学校走廊里听了三年。');
+      plrOn(S);
+    }
+    S.show('ear_woods');
+    await S.walk('fake_woods', [[16, 7], [22, 7]], 4.5);
+    await S.alpha('fake_woods', 0, 400);
+    S.focus(null);
+    await S.narr('它一路蹦蹦跳跳地往东边跑了，跑过的地方，掉下来一样粉红色的东西。');
+    await S.say('凯莉', '布伦特！你给我回来！小迪都被你吓丢了！');
+    S.goal('那只粉兔子往东跑了——跟上去');
+  }
+  async function realEncounter(S) {
+    const f = S.f;
+    S.cp('e3');
+    const b = S.ent('bm_woods'); b.alpha = 0; S.place('bm_woods', 24, 7, 1);
+    S.focus(22, 7); S.amb('none');
+    await S.alpha('bm_woods', .95, 1500);
+    await S.narr('前面就是农场的栅栏门。\n门口，站着一只兔子。');
+    await S.say('凯莉', '（小声）……又是他。布伦特，你有完没完——', { style: 'whisper' });
+    await S.narr('它站在门口，一动不动。');
+    await S.narr('它是白色的。旧得发灰，胸口和膝盖上有大片大片说不清颜色的污渍。\n两只耳朵直直地竖着，风吹过来，一根毛都没有晃。');
+    await S.narr('你的手电光打在它脸上。它没有眯眼。\n那张脸上，只有两个黑洞。');
+    S.sfx('tv');
+    await S.narr('口袋里的对讲机响了。沙沙声里，是那个呼吸声。很慢，很重。\n……和它的肩膀起伏的节奏，一模一样。');
+    await S.narr('它手里也拎着一把斧头。斧头没有反光。\n风停了。满地的落叶里，它站着的那一片，一片叶子也没有响。');
+    const r = await S.ask('凯莉攥紧了你的胳膊。', ['是布伦特。走过去，揪下它的耳朵', '关掉手电，拉着凯莉蹲下，别出声']);
+    if (r === 0) {
+      await S.walk('pl', 'r', 3);
+      await S.narr('你走过去，伸手去抓那只耳朵。\n它没有躲。');
+      await S.narr('你的手指碰到了那只耳朵。\n……是冰的。硬的。不是毛绒。像是缝在一张皮上。');
+      S.amb('drone');
+      await S.scare('face', { spr: '@bunnyP', dur: 1.1 });
+      return S.die('它慢慢地低下头，看着你。\n你听见斧头从它手里滑下来，斧刃擦过地面的声音——\n很近。非常近。', '那不是布伦特');
+    }
+    S.sfx('switch'); S.plr(.7);
+    await S.narr('你关掉手电，拉着凯莉蹲进路边的灌木丛里。凯莉用手捂住了自己的嘴。\n对讲机——你一把按住了对讲机，把它塞进怀里。');
+    S.sfx('heart'); await S.wait(800); S.sfx('heart');
+    await S.narr('它歪了一下头。\n像是在听。');
+    await S.wait(900); S.sfx('heart');
+    await S.narr('然后，它转过身，一步一步地走进了农场的院子。\n没有脚步声。');
+    await S.alpha('bm_woods', 0, 1600);
+    S.hide('bm_woods'); S.focus(null);
+    await S.wait(600);
+    S.amb('wind'); plrOn(S);
+    await S.narr('等你再打开手电的时候，栅栏门口什么也没有了。\n门柱上，多了一道新鲜的斧痕。木头茬子还是白的。');
+    await S.say('凯莉', '那……那不是布伦特。对吧？对吧？');
+    S.sfx('tv');
+    await S.say('对讲机', ['……诺亚？诺亚你在吗？', '我在农舍里……我躲起来了。外面有个东西……', '那不是我。那不是我！'], { style: 'whisper' });
+    f.e3 = true;
+    S.goal('布伦特在农舍里——去找他');
+    S.cp('farm');
+  }
+  async function woodsMouth(S) {
+    const f = S.f;
+    if (f.phase === 'chase') {
+      S.stop('bm_woods'); S.hide('bm_woods');
+      f.phase = 'final';
+      return S.go('tunnel', 3, 1, 0);
+    }
+    if (f.phase === 'woods') {
+      await S.narr('你回头看了一眼桥洞。黑漆漆的洞口里，什么也看不见。\n……你不敢回去。至少现在不敢。先把大家找齐。');
+      return S.walk('pl', 'u', 5);
+    }
+  }
+
+  /* ================= 农舍 ================= */
+  async function houseOn(S) {
+    const f = S.f;
+    if (f.phase === 'chase') return S.narr('前门在你们身后一下一下地响着。别回头。');
+    if (!f.e3) return S.narr('一栋两层的老农舍，窗户全黑着。');
+    await S.narr('一栋两层的老农舍。门廊的柱子上，全是一道一道的斧痕，有新有旧，像是很多年里一直有人在这儿砍。\n前门虚掩着一条缝。');
+    S.sfx('open');
+    await S.go('house', 6, 8, 3);
+  }
+  async function wardOn(S) {
+    const f = S.f, w = S.ent('ward');
+    if (f.brentFound) return S.narr('衣柜门敞着，里面挂着几件男人的旧外套，都是一个尺码。地上散着布伦特的帽子和运动包。');
+    w.open = true; S.sfx('open'); S.shake(300, 2);
+    S.place('brent_house', 1, 3, 0);
+    await S.say('???', '啊啊啊啊啊——别砍我！别砍我！！', { style: 'big' });
+    await S.narr('一个粉红色的东西从衣柜里滚了出来，抱着脑袋缩成一团。');
+    await S.say('布伦特', '……诺亚？凯莉？');
+    await S.narr('是布伦特。他身上套着一件粉红色的兔子连体衣，兔头套抱在怀里，' + (S.has('ear') ? '头套上只剩一只耳朵。' : '一只耳朵不见了。') + '\n他抖得像一片叶子。');
+    await S.say('凯莉', '布伦特·霍尔。你这个——');
+    await S.say('布伦特', ['好吧好吧！是我！我承认！', '我本来想吓你们的。这身衣服我早就藏在包里了。我想着，进了洞以后我溜去北口，换上衣服，再从林子里跳出来。']);
+    await S.say('布伦特', ['可是桥洞里那个……不是我。', '那时候我刚出北口，还在灌木丛里换衣服，一条腿都没套进去。然后我就听见小迪在尖叫。']);
+    await S.say('布伦特', ['我想着，反正都乱了，干脆吓到底。我就穿着这身在林子里乱跑，打着手电照自己的脸。', '……然后我跑到农场门口，看见了它。', '它就站在那儿。跟我一样的耳朵，一样拿着斧头。可是它不是衣服。诺亚，它不是衣服。']);
+    const r = await S.ask('布伦特死死地抓着你的袖子。', ['我们也看见了。', '……你确定不是你那些朋友？'], '诺亚');
+    if (r === 1) await S.say('布伦特', '我就你们几个朋友！');
+    await S.say('布伦特', '我躲进来以后，就一直听见……地板底下有人在哭。我不敢去看。');
+    await S.say('凯莉', '……小迪！');
+    f.brentFound = true; join(S, 'brent');
+    S.goal('地板底下有人在哭——找到活板门');
+  }
+  async function trapOn(S) {
+    const f = S.f, t = S.ent('trap');
+    if (f.deeFound) return;
+    if (!f.brentFound) {
+      await S.narr('地板上有一块方形的活板门。铁环冰凉冰凉的。\n你拽了一下——从下面闩上了。');
+      S.sfx('knock'); S.ent('ward').ox = 1; await S.wait(150); S.ent('ward').ox = 0;
+      return S.narr('……屋角那个衣柜，又「咚」地响了一声。');
+    }
+    if (S.once('trapIntro')) {
+      await S.narr('你蹲下来，把耳朵贴在活板门上。\n底下，有人在很小声很小声地抽鼻子。');
+      await S.say('凯莉', '小迪？小迪，是你吗？是姐姐！');
+      await S.say('小迪（门下）', ['走开！', '你骗人！刚才它也学你的声音叫我了！学得一模一样！'], { style: 'whisper' });
+      await S.say('凯莉', '……什么？');
+      await S.say('小迪（门下）', '你要真是你们，就敲暗号！俱乐部的暗号！敲错了我就不开！', { style: 'whisper' });
+    }
+    const v = await S.keypad('对着活板门敲出暗号（咚 = 敲一下，停 = 停一拍）', ['咚', '停'], 6);
+    if (v == null) return;
+    for (const ch of v) { if (ch === '咚') S.sfx('knock'); await S.wait(ch === '咚' ? 240 : 560); }
+    if (v !== '咚咚停咚咚咚') {
+      f.knockFail = (f.knockFail || 0) + 1;
+      await S.say('小迪（门下）', ['不对！不对！走开！', '你是怪物！怪物不知道暗号！'][f.knockFail % 2], { style: 'whisper' });
+      if (f.knockFail >= 2) await S.say('凯莉', '诺亚，他给你的那张会员卡呢？上面画着暗号。（打开笔记看看）');
+      return;
+    }
+    await S.wait(500);
+    await S.say('小迪（门下）', '……诺亚？', { style: 'whisper' });
+    S.sfx('open'); t.open = true; t.s.glow = true;
+    await S.narr('门闩「咔哒」一声拉开了。活板门被从底下顶开一条缝——\n一根绿色的荧光棒先探了出来，然后是小迪的脸。满脸鼻涕眼泪，吸血鬼的塑料尖牙还咬在嘴里。');
+    await S.say('小迪', '我就知道……我就知道你们会敲对的。');
+    await S.say('凯莉', '小迪！……你这个小笨蛋。');
+    f.deeFound = true;
+    await S.wait(900);
+    S.sfx('knock'); await S.wait(1000); S.sfx('knock'); await S.wait(1000); S.sfx('knock');
+    await S.narr('屋子前门那边，传来三下敲门声。\n很慢。很有耐心。');
+    await S.say('小迪', '（小声）……就是这样。刚才它就是这么敲的。慢慢的，三下。', { style: 'whisper' });
+    await S.say('小迪', '它不知道暗号。', { style: 'whisper' });
+    await S.wait(900);
+    S.sfx('thud'); S.sfx('cut'); S.shake(600, 4);
+    await S.narr('咚——！\n前门在门框里猛地一跳。');
+    S.sfx('thud'); S.sfx('cut'); S.shake(600, 4);
+    await S.narr('是斧头。');
+    await S.say('布伦特', '下去！都下去！');
+    await S.fade(1, 500);
+    await S.go('cellar', 2, 3, 0);
+  }
+  async function bulkOn(S) {
+    if (!S.f.dee) return;
+    S.sfx('open'); S.ent('blkI').open = true;
+    await S.narr('你用肩膀顶住斜门，使劲一推——门闩崩开了。\n冷风一下子灌了进来。');
+    S.ent('blkO').open = true;
+    await S.go('woods', 31, 4, 0);
+    S.sfx('thud'); S.shake(400, 3);
+    await S.narr('你们一个接一个地爬出地窖。\n房子正面，传来一下、一下劈木头的声音。然后，停了。');
+    S.focus(28, 4);
+    await S.wait(500);
+    await S.narr('门廊底下，一个白色的东西慢慢地转过身来。');
+    S.focus(null);
+    S.cp('chase');
+    startChase(S);
+  }
+  function startChase(S) {
+    const f = S.f; f.phase = 'chase';
+    if (!f.party || !f.party.includes('dee')) f.party = ['kelly', 'brent', 'dee'];
+    plrOn(S); S.amb('drone');
+    S.ent('blkO').open = true;
+    const b = S.ent('bm_woods'); b.alpha = 1; S.place('bm_woods', 28, 4, 2);
+    S.chase('bm_woods', { spd: 2.9, wait: 2.2, catch: caughtReal });
+    S.goal('跑！过河，穿过树林，回到桥洞！');
+  }
+
+  /* ================= 午夜 ================= */
+  function startFinal(S) {
+    const f = S.f; f.phase = 'final';
+    if (!f.party || f.party.length < 3) f.party = ['kelly', 'brent', 'dee'];
+    S.ent('brent_tunnel').spr = '@brentS'; S.ent('brent_tunnel').alpha = 1; S.ent('dee_tunnel').spr = '@deeG';
+    S.ent('dee_tunnel').light = { r: 1.5, col: 'rgba(120,255,140,.16)' };
+    plrOn(S); S.dark(.95);
+    const b = S.ent('bm_tunnel'); b.alpha = .95; S.place('bm_tunnel', 3, 0, 0);
+    S.chase('bm_tunnel', { spd: 2.3, wait: 3.4, catch: caughtReal });
+    S.timer(24, '午夜', midnight);
+    S.goal('钟声响起之前，穿过桥洞！');
+  }
+  async function midnight(S) {
+    S.stop('bm_tunnel');
+    S.amb('none');
+    await S.narr('远处，镇上的教堂敲响了第一下。');
+    await S.bells(4, 900);
+    await S.narr('你还站在桥洞里。泥水没过了脚踝。');
+    await S.bells(4, 900);
+    S.plr(.8); S.ent('bm_tunnel').alpha = 1;
+    await S.narr('手电筒的光一跳一跳地暗了下去。\n你身后，有什么东西，站住了。');
+    await S.bells(3, 900);
+    await S.narr('你没有回头。');
+    S.sfx('bell'); S.plr(0); S.dark(1);
+    await S.wait(1400);
+    return S.end({ bad: true, title: '钟声响完的时候', text: '第十二下钟声，在你们头顶上停了下来。\n\n第二天一早，巡逻的警察在桥洞南口发现了一辆没熄火的旧沃尔沃，车顶上的南瓜灯还亮着。\n洞里的泥水上，漂着一只手电筒和一只粉红色的兔耳朵。一只对讲机泡在水里，还开着，沙沙地响。\n\n后来，桥洞的墙上多了一行新的涂鸦，喷得很大、很工整：\n「午夜之前离开」' });
+  }
+  async function goodEnd(S) {
+    const f = S.f;
+    S.clearTimer(); S.stop('bm_tunnel'); S.hide('bm_tunnel');
+    f.phase = 'done';
+    S.ent('brent_road').spr = '@brentS'; S.ent('dee_road').spr = '@deeG';
+    await S.go('road', 11, 3, 0);
+    S.amb('wind');
+    await S.narr('你们一口气冲出了桥洞南口。\n凯莉的车还停在那里，车顶上的南瓜灯一闪一闪。');
+    await S.say('凯莉', '上车！快——');
+    S.sfx('bell');
+    await S.narr('远处，镇上的教堂敲响了第一下。');
+    await S.bells(5, 650);
+    await S.narr('你回过头。');
+    S.focus(11, 2);
+    const b = S.ent('bm_road'); b.alpha = 0; S.place('bm_road', 11, 1, 0);
+    await S.alpha('bm_road', .85, 1600);
+    await S.narr('桥洞里，洞口往里两三步的地方，站着一个白色的人影。两只长耳朵一动不动。\n它没有追出来。');
+    await S.bells(6, 650);
+    await S.narr('它只是站在那里，斧头垂在身边，像是在数着什么。\n数到第十二下，钟声停了。');
+    await S.alpha('bm_road', 0, 1800);
+    S.focus(null);
+    await S.narr('洞口里，什么也没有了。');
+    await S.say('布伦特', '……我再也不来了。我发誓。');
+    await S.say('小迪', '我要告诉俱乐部……不。我谁也不告诉。');
+    S.ent('pump').off = true; S.ent('pump').light = null;
+    if (S.has('ear')) {
+      S.take('ear'); S.show('ear_road');
+      await S.narr('车顶上的南瓜灯，不知道什么时候灭了。\n南瓜灯旁边，放着一样东西——一只粉红色的毛绒兔耳朵。');
+      await S.narr('你摸了摸口袋。\n……空的。');
+      await S.say('凯莉', '别碰它。上车。');
+    } else {
+      await S.narr('车顶上的南瓜灯，不知道什么时候灭了。\n车门把手上，挂着一撮白色的、发灰的毛。');
+      await S.say('凯莉', '别碰它。上车。');
+    }
+    S.sfx('car');
+    await S.fade(1, 1400);
+    await S.card('第二天', '1995年11月1日', '凯莉的妈妈什么也没问。\n她只是在早饭桌上放了一张复印件——1970年10月，县里的两份报告。\n\n「纸上找不到的东西，」她说，\n「不代表它发生过。也不代表它没有。」\n\n那天下午，四个人一起去了县图书馆。\n谁也没有提起那只兔耳朵。');
+    await S.end({ title: '第五夜　完', text: '后来每年万圣节，县里的警车都会停在科尔切斯特路的桥洞口，\n把车灯开得很亮，把想进洞的高中生一个一个劝回去。\n\n警察说，那是为了大家的安全。\n\n小迪长大以后，也当了警察。\n每年十月三十一号的晚上，他都主动申请去那个桥洞值班。\n十二点整，他会把车窗摇下来，对着洞口，\n敲两下，停一下，再敲三下。' });
+  }
+})();
