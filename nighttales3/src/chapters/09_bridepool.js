@@ -757,7 +757,7 @@
     await S.narr('你咬着牙，一点一点往上收。\n拉住网的力气……忽然松开了。');
     S.hide('glint'); S.give('shoe');
     await S.narr('网兜里躺着一只小小的红绣花鞋。\n鞋面上绣着并蒂莲，丝线红得像刚刚绣好。');
-    S.f.ph = 'final'; S.cp('final');
+    S.f.ph = 'final'; S.goal('把铜镜和绣花鞋还给她'); S.cp('final');
     await finale(S);
   }
 
@@ -776,6 +776,7 @@
     await march(S, FINAL, FPATH, 0, 7, 2.4); suona(S); S.sfx('knock');
     await march(S, FINAL, FPATH, 7, 14, 2.4);
     S.ent('fp3').s.still = 1; S.ent('fp3').dir = 2;
+    S.goal('把铜镜和绣花鞋还给她');
     await S.narr('迎亲的队伍在你面前停了下来。\n红衣的轿夫低着头，灯笼里的火是青白色的。没有一个人看你。');
     S.ent('fp3').s.open = 1; S.ent('fp3').s.min = 1;
     await S.narr('轿帘自己掀开了一角。\n小敏坐在里面，双眼紧闭，裙褂湿透了。');
@@ -824,7 +825,7 @@
     await march(S, FINAL, FPATH, 14, 20 + FINAL.length, 2.2);
     S.focus(null);
     await S.narr('红灯笼的光，一点一点，过了新娘桥，往鹿颈的方向去了。\n唢呐声越来越远，越来越轻，最后变成了虫叫。');
-    S.f.ph = 'good'; light(S); S.amb('night');
+    S.f.ph = 'good'; light(S); S.amb('night'); S.goal('');
     S.face('hei', 'pl');
     await S.say('阿希', '……佢哋……行咗？');
     await S.say('小敏', ['晴晴……我发咗个梦。', '梦见有个姐姐坐喺我隔离，问我嫁嘅人系点样。我同佢讲咗好耐好耐。', '佢话，佢好羡慕我。']);

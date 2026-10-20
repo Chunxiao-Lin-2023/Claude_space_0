@@ -442,6 +442,11 @@
             S.cp('kebun');
           }
         },
+        step(S, x, y) {   // 每过一道水沟的木板桥，存一次
+          if (S.f.phase === 'kebun' && (y === 21 || y === 14 || y === 7) && !S.f['kbr' + y] && S.f.kph !== 'hunt') {
+            S.f['kbr' + y] = true; S.toast('过了一道水沟。（已存档）'); S.cp('kebun');
+          }
+        },
         tick(S, dt) { kTick(S, dt); }
       },
       /* ---------------- 老坟场 ---------------- */
