@@ -60,7 +60,7 @@ function puzzle(i) {
   return PCACHE[i] = {name, cat, slots, W, H};
 }
 function pathPoly(g, pts, ox, oy, u) { g.beginPath(); pts.forEach(([a, b], j) => j ? g.lineTo(ox + a * u, oy + b * u) : g.moveTo(ox + a * u, oy + b * u)); g.closePath(); }
-function drawSil(g, P, ox, oy, u, col) { g.fillStyle = col; g.strokeStyle = col; g.lineWidth = Math.max(1, u * .02); g.lineJoin = 'round'; for (const s of P.slots) { pathPoly(g, s.v, ox, oy, u); g.fill(); g.stroke(); } }
+function drawSil(g, P, ox, oy, u, col) { g.fillStyle = col; g.strokeStyle = col; g.lineWidth = Math.max(1, u * .02); g.lineJoin = 'round'; g.beginPath(); for (const s of P.slots) s.v.forEach(([a, b], j) => j ? g.lineTo(ox + a * u, oy + b * u) : g.moveTo(ox + a * u, oy + b * u)); g.fill('nonzero'); g.stroke(); }
 function drawPieceShape(g, pts, col, u, o = {}) {
   const c = cen(pts);
   g.save();

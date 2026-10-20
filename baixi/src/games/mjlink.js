@@ -171,7 +171,7 @@ BX.register({
       if (!p) return false;
       const k = grid[a]; grid[a] = grid[b] = -1; moves++; started = true;
       const now = time; combo = now - lastMatch < 3 ? combo + 1 : 1; lastMatch = now;
-      const gain = 10 * combo; score += gain;
+      const gain = 10 * Math.min(combo, 10); score += gain;
       if (TIMED) left = Math.min(LIMIT, left + 2);
       pathFx = {pts: p, t: 0};
       dying.push({i: a, k, t: 0}, {i: b, k, t: 0});
