@@ -141,12 +141,12 @@
     expwin(g, e, t, R) {
       const Wd = 160, H = 96;
       R(3, 3, Wd, H, 'rgba(0,0,0,.35)'); bevel(R, 0, 0, Wd, H, '#c0c0c0');
-      R(2, 2, Wd - 4, 8, '#000080'); R(80, 2, Wd - 82, 8, '#1084d0');
-      R(4, 3, 5, 5, '#f0d060'); TX(g, R, 11, 0, 'スタートアップ', 9, '#ffffff');
-      TXT(R, 4, 12, 'FILE  EDIT  VIEW  HELP', '#000');
-      bevel(R, 3, 18, Wd - 6, H - 29, '#ffffff', true);
-      bevel(R, 2, H - 10, Wd - 4, 8, '#c0c0c0', true);
-      TX(g, R, 4, H - 11, '4 個のオブジェクト', 9, '#000000');
+      R(2, 2, Wd - 4, 10, '#000080'); R(80, 2, Wd - 82, 10, '#1084d0');
+      R(4, 4, 6, 5, '#f0d060'); TX(g, R, 12, 1, 'スタートアップ', 9, '#ffffff');
+      TXT(R, 4, 15, 'FILE  EDIT  VIEW  HELP', '#000');
+      bevel(R, 3, 21, Wd - 6, H - 35, '#ffffff', true);
+      bevel(R, 2, H - 13, Wd - 4, 11, '#c0c0c0', true);
+      TX(g, R, 5, H - 14, '4 個のオブジェクト', 9, '#000000');
     },
     xbtn(g, e, t, R) { bevel(R, 3, 3, 11, 9, '#c0c0c0'); for (let i = 0; i < 5; i++) { R(6 + i, 5 + i, 1, 1, '#000'); R(10 - i, 5 + i, 1, 1, '#000'); } },
     /* 聊天记录的一行（贴地，宽 13） */
@@ -236,7 +236,7 @@
     steeldoor(g, e, t, R) {
       const c = e.col || '#68707a';
       box(R, 2, -2, 12, 16, c); R(3, -1, 10, 1, shade(c, .2));
-      R(3, -1, 10, 6, '#d8d4c8'); TXT(R, 3, 0, e.num2 || '', '#333');
+      R(2, -2, 12, 7, '#d8d4c8'); R(2, 4, 12, 1, shade(c, -.3)); TXT(R, 3, -1, e.num2 || '', '#333');
       R(11, 7, 2, 2, '#d0d0d0');
       if (e.kichu) { R(4, 6, 8, 6, '#f4f2ec'); R(4, 6, 8, 1, '#111'); R(4, 11, 8, 1, '#111'); R(4, 6, 1, 6, '#111'); R(11, 6, 1, 6, '#111'); R(6, 7, 1, 4, '#222'); R(9, 7, 1, 4, '#222'); R(7, 8, 2, 1, '#222'); }
       else R(5, 10, 6, 1, '#2a2a2e');
@@ -850,7 +850,7 @@
     S.sfx('cut');
     await S.narr('你闭着眼睛，摸到键盘左下角的 Shift，又摸到右上角的 Delete。\n按下去。');
     await S.narr('「このファイルを完全に削除しますか？」\n——はい。');
-    S.hide('f4'); S.sfx('glass'); S.fx('flash');
+    S.hide('f4'); S.hide('i_akai'); S.sfx('glass'); S.fx('flash');
     await S.alpha('popF', 0, 900);
     await S.narr('再睁开眼睛的时候，屏幕上只剩下一片蓝绿色的桌面。\n那个窗口，没有再弹出来。');
     f.phase = 'end';
@@ -1206,9 +1206,9 @@
           '####################',
           '#xxxxxxxxxxxxxxxxxx#',
           '#xxxxxxxxxxxxxxxxxx#',
-          'YYYYYYYYYYYYYYYYxxx#',
-          'ZZZZZZZZZZZZZZZZxxx#',
-          'ZZZZZZZZZZZZZZZZ####'],
+          '#YYYYYYYYYYYYYYYxxx#',
+          '#ZZZZZZZZZZZZZZZxxx#',
+          '#ZZZZZZZZZZZZZZZ####'],
         ents: [
           { x: 3, y: 1, spr: 'steeldoor', s: { num2: '401' }, to: ['home', 1, 2, 0] },
           { id: 'fl1', x: 6, y: 1, spr: 'flamp', light: { r: 3.2, col: 'rgba(220,235,255,.12)', flick: true }, on: S => S.narr('日光灯管嗡嗡地响，一明一暗。\n几只小飞虫在灯罩里打转。') },
@@ -1323,10 +1323,10 @@
             ['ムラサキ', '那就不叫怪谈了（笑）'], ['kaz', '……最近大家都不怎么说话啊'], ['ムラサキ', '考试周嘛'], ['kaz', '嗯']
           ].map(([w, m], i) => ({ id: 'cl' + i, x: 1, y: 2 + i, w: 13, spr: 'cline', decal: true, solid: false, text: w === 'sys' ? m : w + '＞' + m, s: { c: CC[w] }, on: (S, e) => S.narr(e.text || '（空行）') })),
           { x: 15, y: 2, w: 4, spr: 'ttl', decal: true, solid: false, s: { str: '参加者', c2: '#404040' } },
-          { id: 'av_m', x: 16, y: 3, spr: 'avatar', col: '#9a6ac0', s: { name: 'ムラサキ' }, on: muraTalk },
-          { id: 'av_k', x: 16, y: 5, spr: 'avatar', col: '#5aa05a', s: { name: 'kaz' }, on: kazTalk },
-          { id: 'av_c', x: 16, y: 7, spr: 'avatar', col: '#e07090', s: { name: 'ちなつ' }, hidden: true, on: S => S.narr('「ちなつ」。头像是一只粉色的兔子——千夏自己画的。') },
-          { id: 'av_r', x: 16, y: 9, spr: 'avatar', col: '#c0c0c0', s: { name: '　', blank: true }, hidden: true, on: avrUse },
+          { id: 'av_m', x: 15, y: 3, spr: 'avatar', col: '#9a6ac0', s: { name: 'ムラサキ' }, on: muraTalk },
+          { id: 'av_k', x: 15, y: 4, spr: 'avatar', col: '#5aa05a', s: { name: 'kaz' }, on: kazTalk },
+          { id: 'av_c', x: 15, y: 5, spr: 'avatar', col: '#e07090', s: { name: 'ちなつ' }, hidden: true, on: S => S.narr('「ちなつ」。头像是一只粉色的兔子——千夏自己画的。') },
+          { id: 'av_r', x: 15, y: 6, spr: 'avatar', col: '#c0c0c0', s: { name: '　', blank: true }, hidden: true, on: avrUse },
           { id: 'inputbox', x: 2, y: 10, w: 9, spr: 'inputbox', decal: true, solid: false, on: inputUse },
           { id: 'logbtn', x: 12, y: 10, spr: 'btn', s: { lab: 'LOG' }, on: logUse },
           { id: 'popC', x: 3, y: 4, w: 8, h: 2, spr: 'popup', z: 1, solid: false, hidden: true, num: 1 }
