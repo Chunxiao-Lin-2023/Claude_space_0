@@ -20,7 +20,13 @@ function runScriptP(p) { if (!W) return; const myGen = GEN; W.busy++; p.catch(e 
 function chk(g) { if (g !== GEN) throw ABORT; }
 let DLGID = 0;
 function waitInput(kind, data) {
-  return new Promise(res => { DLGWAIT = { res, kind }; Object.assign(W, data); });
+  return new Promise((res, rej) => { DLGWAIT = { res, rej, kind }; Object.assign(W, data); });
+}
+/* 打断正在等待输入的剧本（倒计时到点时用）：关掉对话/密码盘/卡片，原剧本以 ABORT 结束 */
+function interruptWait() {
+  const r = DLGWAIT; DLGWAIT = null;
+  if (W) { W.dlg = null; W.keypad = null; W.card = null; W.note = null; }
+  if (r && r.rej) r.rej(ABORT);
 }
 function emit(t, a) { applyEmit(t, a); if (NET.role === 'host') netSend({ t: 'fx', k: t, a }); }
 function applyEmit(t, a) {
@@ -30,6 +36,7 @@ function applyEmit(t, a) {
   else if (t === 'shake') { if (W) W.shake = { until: RT + a[0] / 1000, amt: a[1] }; }
   else if (t === 'toast') UI.toast(a);
   else if (t === 'item') UI.toast(a);
+  else if (t === 'tone') AU.tone(...a);
 }
 function itemName(id) { const it = W.ch.items && W.ch.items[id]; return it ? it.name : id; }
 
@@ -37,6 +44,10 @@ const SAPI = {
   get f() { return W.f; },
   get pl() { return W.pl; },
   get map() { return W.mapId; },
+  /* 玩家此刻是否在走 / 在跑（客机操作时用客机上报的状态） */
+  get moving() { const p = W.pl; if (isHost() && !iControl()) return !!(p.rmv && RT - p.rT < .3); return !!p.mv; },
+  get running() { const p = W.pl; if (isHost() && !iControl()) return !!(p.rmv && p.rrun && RT - p.rT < .3); return !!(p.mv && p.run); },
+  get coop() { return NET.role !== 'solo' && NET.up; },
   async say(who, text, o = {}) {
     const g = GEN; const pages = Array.isArray(text) ? text : [text];
     for (const t of pages) {
@@ -62,7 +73,8 @@ const SAPI = {
     await waitInput('note', { note: { id: ++DLGID, title, text, t0: RT } }); chk(g); W.note = null;
   },
   async keypad(prompt, keys, len, o = {}) {
-    const g = GEN; const r = await waitInput('keypad', { keypad: { id: ++DLGID, prompt, keys, len, val: '', t0: RT, cancel: o.cancel !== false } }); chk(g); W.keypad = null; return r;
+    /* keys 可以是多字符（'10'、'开'）；len = 要按几下；返回按下的键拼成的字符串（o.sep 为分隔符，默认无） */
+    const g = GEN; const r = await waitInput('keypad', { keypad: { id: ++DLGID, prompt, keys, len, val: '', parts: [], sep: o.sep || '', alias: o.alias || null, t0: RT, cancel: o.cancel !== false } }); chk(g); W.keypad = null; return r;
   },
   async wait(ms) { const g = GEN; await new Promise(r => setTimeout(r, ms / FAST)); chk(g); },
   async fade(to, ms = 500) {
@@ -111,7 +123,10 @@ const SAPI = {
   turn(dir) { W.pl.dir = dir; W.forceK++; },
   bubble(id, k, ms = 1200) { const e = id === 'pl' ? null : getEnt(id); const b = { k, until: RT + ms / 1000 }; if (e) e.bubble = b; else W.pl.bubble = b; },
   chase(id, o = {}) { const e = getEnt(id); if (!e) return; e.hidden = false; e.chase = Object.assign({ spd: 3 }, o); },
-  stop(id) { const e = getEnt(id); if (e) { e.chase = null; } },
+  stop(id) { const e = getEnt(id); if (!e) return; e.chase = null; e.frozen = false; if (e.mv) { const mv = e.mv; e.mv = null; e.px = mv.fx * TS; e.py = mv.fy * TS; e.x = mv.fx; e.y = mv.fy; } e.fr = 0; },
+  /* 原地定住追逐者（被注视时等）：不再走下一步，也停在当前位置；freeze(id,false) 解除 */
+  freeze(id, b = true) { const e = getEnt(id); if (e) e.frozen = !!b; },
+  isFrozen(id) { const e = getEnt(id); return !!(e && e.frozen); },
   follow(id, on = true) { const e = getEnt(id); if (e) { e.follow = on; e.solid = !on; } },
   async scare(kind = 'face', o = {}) {
     emit('sfx', o.sfx || 'scare'); emit('fx', [kind, o]); emit('shake', [o.shakeMs || 500, o.shake || 3]);
@@ -125,7 +140,8 @@ const SAPI = {
   after(ms, fn) { W.queue.push({ at: W.t + ms / 1000 / FAST, fn }); },   // 空闲时延后运行一段剧本
   plr(r) { W.plr = r; },
   tile(x, y, ch, map) { const m = W.maps[map || W.mapId]; m.mods[y * m.w + x] = ch; m.dirty = true; },
-  timer(sec, label, fn) { W.timer = { left: sec, label, fn }; },
+  /* o.during=true：对话/密码盘打开时也照样计时，到点会打断当前对话 */
+  timer(sec, label, fn, o = {}) { W.timer = { left: sec, label, fn, during: !!o.during }; },
   clearTimer() { W.timer = null; },
   focus(x, y) { W.camFocus = x == null ? null : [x, y]; },
   hidePlayer(b = true) { W.pl.hidden = b; },
@@ -143,7 +159,8 @@ const SAPI = {
   async end(o = {}) {
     W.ended = true; W.timer = null; emit('sfx', o.bad ? 'bad' : 'good');
     for (const k in W.maps) for (const e of W.maps[k].ents) e.chase = null;
-    if (!o.bad) markDone(W.ch.id); store.del('cp.' + W.ch.id);
+    if (!o.bad) { markDone(W.ch.id); store.del('cp.' + W.ch.id); }   // 坏结局保留检查点
+    if (o.id) { const k = W.ch.id + ':' + o.id, got = store.get('ends', []); if (!got.includes(k)) { got.push(k); store.set('ends', got); } if (NET.role === 'host') netSend({ t: 'endrec', k }); }   // 结局收集（ch.endings 列出全部）
     if (NET.role === 'host' && !o.bad) netSend({ t: 'done', ch: W.ch.id });
     await waitInput('end', { endScreen: { kind: o.bad ? 'badend' : 'end', title: o.title || '完', text: o.text || '', t0: RT } });
   },
@@ -155,6 +172,17 @@ const SAPI = {
     chk(g); if (to <= 0) { e.hidden = true; e.alpha = 1; }
   },
   async bells(n, gap = 420, name = 'bell') { for (let i = 0; i < n; i++) { emit('sfx', name); await SAPI.wait(gap); } },
+  /* 双方都能听到的单音：tone(type, f0, f1, dur, vol, delay, lp) */
+  tone(...a) { emit('tone', a); },
+  /* 额外光源（双方同步）：[[世界x, 世界y, 半径格, 强度]...]；null 清除 */
+  lights(arr) { W.extraLights = arr || []; },
+  /* 双人投票：两人各选一次。返回 {v, agree, h, g}；不一致时 v 取操作者的选择。单人时等同 ask */
+  async vote(text, opts, who, o = {}) {
+    const g = GEN;
+    if (!SAPI.coop) { const v = await SAPI.ask(text, opts, who, o); return { v, agree: true, h: v, g: v }; }
+    const r = await waitInput('dlg', { dlg: { id: ++DLGID, who: who || '', text, choices: opts, sel: 0, full: false, t0: RT, style: o.style || '', vote: { h: null, g: null } } });
+    chk(g); W.dlg = null; return r;
+  },
 };
 function markDone(id) { const d = store.get('done', []); if (!d.includes(id)) { d.push(id); store.set('done', d); } }
 
@@ -163,7 +191,7 @@ function makeCP(name) {
   const maps = {};
   for (const k in W.maps) {
     const m = W.maps[k];
-    maps[k] = { mods: Object.assign({}, m.mods), ents: m.ents.map(e => { const o = { id: e.id, px: e.px, py: e.py, dir: e.dir, hidden: e.hidden, alpha: e.alpha, spr: e.spr, solid: e.solid, s: e.s, follow: !!e.follow, light: e.light || null }; for (const v of VKEYS) if (e[v] !== undefined) o[v] = e[v]; return o; }) };
+    maps[k] = { mods: Object.assign({}, m.mods), ents: m.ents.map(e => { const o = { id: e.id, px: e.px, py: e.py, dir: e.dir, hidden: e.hidden, alpha: e.alpha, spr: e.spr, solid: e.solid, s: e.s, follow: !!e.follow, light: e.light || null }; for (const v of VKEYS) if (e[v] !== undefined && typeof e[v] !== 'function') o[v] = e[v]; return o; }) };
   }
   const p = W.pl;
   return JSON.parse(JSON.stringify({ name: name || '', map: W.mapId, pl: { x: p.x, y: p.y, dir: p.dir, spr: p.spr, speed: p.speed, hidden: p.hidden }, inv: W.inv, f: W.f, goal: W.goal, mapDark: W.mapDark, plr: W.plr, amb: AU.ambName, maps }));
@@ -175,7 +203,8 @@ function applyCP(cp) {
     cp.maps[k].ents.forEach((o, i) => {
       let e = m.ents[i]; if (!e || e.id !== o.id) e = m.ents.find(z => z.id === o.id && o.id); if (!e) return;
       Object.assign(e, { px: o.px, py: o.py, dir: o.dir, hidden: o.hidden, alpha: o.alpha, spr: o.spr, solid: o.solid, s: Object.assign({}, o.s), follow: o.follow, light: o.light, chase: null, mv: null });
-      for (const v of VKEYS) { if (o[v] !== undefined) e[v] = o[v]; else if (e[v] !== undefined && !(v in e.def)) delete e[v]; }
+      for (const v of VKEYS) { if (typeof e[v] === 'function') continue; if (o[v] !== undefined) e[v] = o[v]; else if (e[v] !== undefined && !(v in e.def)) delete e[v]; }
+      e.frozen = false;
     });
   }
   const p = W.pl; Object.assign(p, { x: cp.pl.x, y: cp.pl.y, px: cp.pl.x * TS, py: cp.pl.y * TS, dir: cp.pl.dir, spr: cp.pl.spr, speed: cp.pl.speed || 1, hidden: !!cp.pl.hidden, mv: null, prev: [cp.pl.x, cp.pl.y] });
@@ -222,7 +251,7 @@ function retryFromCP() {
 function quitChapter() { GEN++; DLGWAIT = null; W = null; FX.length = 0; AU.ambient('none'); }
 
 /* ---------------- 动作处理（主机执行；客机发给主机） ---------------- */
-function doAct(a, v) {
+function doAct(a, v, from) {
   if (!W) return;
   if (W.endScreen) {
     const es = W.endScreen; if (RT - es.t0 < .8) return;
@@ -235,19 +264,33 @@ function doAct(a, v) {
   if (W.note) { if ((a === 'adv' || a === 'use') && RT - W.note.t0 > .3) resolveWait(); return; }
   if (W.keypad) {
     const k = W.keypad;
-    if (a === 'key' && k.val.length < k.len) { k.val += v; emit('sfx', 'select'); if (k.val.length >= k.len) { const val = k.val; setTimeout(() => { if (W && W.keypad === k) resolveWait(val); }, 350); } }
-    else if (a === 'keydel') k.val = k.val.slice(0, -1);
+    if (a === 'key' && k.parts.length < k.len && k.keys.includes(v)) { k.parts.push(v); k.val = k.parts.join(k.sep); emit('sfx', 'select'); if (k.parts.length >= k.len) { const val = k.val; setTimeout(() => { if (W && W.keypad === k) resolveWait(val); }, 350); } }
+    else if (a === 'keydel') { k.parts.pop(); k.val = k.parts.join(k.sep); }
     else if (a === 'keycancel' && k.cancel) resolveWait(null);
+    return;
+  }
+  if (W.dlg && W.dlg.vote) {
+    const d = W.dlg, full = d.full || (RT - d.t0) * CPS >= d.text.length;
+    if (a === 'adv' && !full) { d.full = true; d.tFull = RT; return; }
+    if (a === 'vote' && full && v != null && v >= 0 && v < d.choices.length) {
+      if (RT - Math.max(d.t0 + d.text.length / CPS, d.tFull || 0) < .35) return;
+      const who = from === 'g' ? 'g' : 'h'; if (d.vote[who] != null) return;
+      d.vote[who] = v; emit('sfx', 'select');
+      if (d.vote.h != null && d.vote.g != null) { const vt = d.vote; setTimeout(() => { if (W && W.dlg === d) { const agree = vt.h === vt.g; resolveWait({ v: agree ? vt.h : (W.ctrl === 'g' ? vt.g : vt.h), agree, h: vt.h, g: vt.g }); } }, 700); }
+    }
     return;
   }
   if (W.dlg) {
     const d = W.dlg, full = d.full || (RT - d.t0) * CPS >= d.text.length;
-    if (a === 'adv' || a === 'use') { if (!full) { d.full = true; d.tFull = RT; return; } if (RT - d.t0 < .15) return; if (d.choices) { if (RT - Math.max(d.t0 + d.text.length / CPS, d.tFull || 0) < .35) return; resolveWait(d.sel); } else resolveWait(); }
+    if (a === 'adv' || a === 'use') { if (!full) { d.full = true; d.tFull = RT; return; } if (RT - d.t0 < .15) return; if (d.choices) { if (RT - Math.max(d.t0 + d.text.length / CPS, d.tFull || 0) < .35) return; resolveWait(dlgRes(d, d.sel)); } else resolveWait(); }
     else if (a === 'sel' && d.choices && full) { d.sel = (d.sel + v + d.choices.length) % d.choices.length; emit('sfx', 'select'); }
-    else if (a === 'pick' && d.choices) { if (RT - d.t0 < .2) return; d.full = true; d.sel = v; resolveWait(v); }
+    else if (a === 'pick' && d.choices) { if (RT - d.t0 < .2) return; d.full = true; d.sel = v; resolveWait(dlgRes(d, v)); }
     return;
   }
   if (a === 'use') interact();
 }
 const CPS = 38;
+/* 投票对话在对方断线后退化为普通选择，返回值仍保持 vote 的形状 */
+function dlgRes(d, x) { return d.wasVote ? { v: x, agree: true, h: x, g: x } : x; }
+function voteFallback() { const d = W && W.dlg; if (d && d.vote) { const h = d.vote.h; d.vote = null; d.wasVote = true; if (h != null) resolveWait(dlgRes(d, h)); } }
 function resolveWait(v) { const r = DLGWAIT; DLGWAIT = null; if (r) r.res(v); }

@@ -909,7 +909,7 @@
           { id: 'doorN', x: 10, y: 1, spr: 'sliding', on: async S => { S.sfx('open'); await S.go('niwa', 12, 11, 3); } },
           { x: 1, y: 2, spr: 'butsudan', on: butsudanUse },
           { x: 3, y: 1, spr: 'scroll', on: N('挂轴上写着四个字。你只认得出一个「佛」字。') },
-          { x: 4, y: 2, spr: 'tv', on: N('电视里在转播甲子园。解说员的声音跟知了叫混在一起。\n满垒。观众席上一片白花花的帽子。') },
+          { x: 4, y: 2, spr: 'tv', power: true, on: N('电视里在转播甲子园。解说员的声音跟知了叫混在一起。\n满垒。观众席上一片白花花的帽子。') },
           { x: 6, y: 2, spr: 'fan', on: N('电风扇一边摇头一边嗡嗡响。\n你对着它「啊——」了一声，声音被吹得一颤一颤的。') },
           { x: 3, y: 4, w: 2, spr: 'lowtable', on: N('矮桌上摆着麦茶和一盘腌黄瓜。') },
           { x: 9, y: 2, spr: 'fridge', on: N('冰箱上贴着一张村营巴士的时刻表。一天三班。') },

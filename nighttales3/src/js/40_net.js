@@ -26,7 +26,7 @@ function hostRoom(onState) {
       if (W) netSnapshot(true);
     });
     c.on('data', d => { try { onNetHost(JSON.parse(d)); } catch (e) { console.error(e); } });
-    c.on('close', () => { if (c === NET.ctl) { NET.ctl = null; NET.up = false; if (W) { W.ctrl = 'h'; W.req = null; } UI.toast('对方已断开，你可以继续单人游玩'); UI.netChanged(); } });
+    c.on('close', () => { if (c === NET.ctl) { NET.ctl = null; NET.up = false; if (W) { W.ctrl = 'h'; W.req = null; voteFallback(); } UI.toast('对方已断开，你可以继续单人游玩'); UI.netChanged(); } });
   });
 }
 function joinRoom(code, onState) {
@@ -52,13 +52,15 @@ function onNetHost(m) {
   if (!W && m.t !== 'ping') return;
   switch (m.t) {
     case 'act':
-      if (['retry', 'leave', 'replay'].includes(m.a)) doAct(m.a, m.v);
+      if (['retry', 'leave', 'replay'].includes(m.a)) doAct(m.a, m.v, 'g');
+      else if (m.a === 'vote') doAct('vote', m.v, 'g');
       else if (m.a === 'mretry') { if (W && W.cp) retryFromCP(); }
-      else if (W && W.ctrl === 'g') doAct(m.a, m.v);
+      else if (W && W.ctrl === 'g') doAct(m.a, m.v, 'g');
       break;
     case 'pos':
       if (W && W.ctrl === 'g' && !W.busy && m.k === W.forceK && m.map === W.mapId) {
         const p = W.pl; p.x = m.x; p.y = m.y; p.px = m.px; p.py = m.py; p.dir = m.d; p.fr = m.fr; if (m.pv) p.prev = m.pv;
+        p.rmv = !!m.mv; p.rrun = !!m.rn; p.rT = RT;
       } break;
     case 'req': if (W.ctrl === 'g') { W.ctrl = 'h'; W.req = null; UI.toast('对方把操作交给了你'); } else { W.req = 'g'; AU.sfx('select'); } break;
     case 'ans': if (W.req === 'h') { if (m.y) { W.ctrl = 'h'; UI.toast('对方同意了，你来操作'); } else UI.toast('对方暂时不想交出操作'); W.req = null; } break;
@@ -74,6 +76,7 @@ function onNetGuest(m) {
     case 'fx': applyEmit(m.k, m.a); break;
     case 'note': { const got = store.get('notes', []); if (!got.includes(m.k)) { got.push(m.k); store.set('notes', got); } break; }
     case 'done': markDone(m.ch); break;
+    case 'endrec': { const got = store.get('ends', []); if (!got.includes(m.k)) { got.push(m.k); store.set('ends', got); } break; }
     case 'pingb': PINGS.push({ x: m.x, y: m.y, t: RT, c: '#7ad7ff' }); break;
     case 'pingh': PINGS.push({ x: m.x, y: m.y, t: RT, c: '#ffcf5a' }); AU.sfx('select'); break;
   }
@@ -91,13 +94,13 @@ function netSnapshot() {
   const ents = m.ents.map((e, i) => {
     const fl = {}; let any = false; for (const k of VKEYS) if (e[k] !== undefined && e[k] !== e.def[k]) { fl[k] = e[k]; any = true; }
     const s = Object.keys(e.s).length ? e.s : 0;
-    return [i, Math.round(e.px), Math.round(e.py), e.dir, e.fr, e.hidden ? 1 : 0, Math.round((e.alpha ?? 1) * 100), e.spr === e.def.spr ? 0 : e.spr, any ? fl : 0, s, e.light === e.def.light ? 0 : (e.light || null), e.bubble && e.bubble.until > RT ? [e.bubble.k, Math.round((e.bubble.until - RT) * 1000)] : 0];
+    return [i, Math.round(e.px), Math.round(e.py), e.dir, e.fr, e.hidden ? 1 : 0, Math.round((e.alpha ?? 1) * 100), e.spr === e.def.spr ? 0 : e.spr, any ? fl : 0, s, e.light === e.def.light ? 0 : (e.light || null), e.bubble && e.bubble.until > RT ? [e.bubble.k, Math.round((e.bubble.until - RT) * 1000)] : 0, e.solid ? 1 : 0];
   });
   const v = {
     t: 'v', gen: GEN, ch: W.ch.id, map: W.mapId, k: W.forceK, pl: [p.x, p.y, Math.round(p.px), Math.round(p.py), p.dir, p.fr, p.hidden ? 1 : 0, p.spr, p.speed || 1],
     ctrl: W.ctrl, req: W.req || null, busy: W.busy, fade: Math.round(W.fade * 100) / 100, dark: W.mapDark[W.mapId] ?? null, plr: W.plr, goal: W.goal, inv: W.inv,
     timer: W.timer ? [W.timer.label, Math.round(W.timer.left * 10) / 10] : null, nr: !!W.noRun, dlg: W.dlg, card: W.card, note: W.note, keypad: W.keypad, end: W.endScreen || null,
-    ents, mods: m.mods, cf: W.camFocus || null, ended: W.ended, paused: false
+    ents, mods: m.mods, cf: W.camFocus || null, ended: W.ended, paused: false, xl: W.extraLights && W.extraLights.length ? W.extraLights : 0
   };
   const s = JSON.stringify(v);
   const c = (NET.snap && NET.snap.open && s.length < 15000) ? NET.snap : NET.ctl;
@@ -119,6 +122,7 @@ function applyV(v) {
     for (const k of VKEYS) { if (a[8] && k in a[8]) e[k] = a[8][k]; else e[k] = e.def[k]; }
     e.s = a[9] || {}; e.light = a[10] === 0 ? e.def.light : a[10];
     e.bubble = a[11] ? { k: a[11][0], until: RT + a[11][1] / 1000 } : null;
+    if (a[12] != null) e.solid = !!a[12];
   }
   const p = W.pl, P = v.pl;
   const local = v.ctrl === 'g' && !v.busy && NET.myK === v.k && !mapChanged;
@@ -130,7 +134,7 @@ function applyV(v) {
   }
   p.hidden = !!P[6]; p.spr = P[7]; p.speed = P[8];
   W.ctrl = v.ctrl; W.req = v.req; W.busy = v.busy; W.fade = v.fade; W.mapDark = { [v.map]: v.dark }; W.plr = v.plr; W.goal = v.goal; W.inv = v.inv;
-  W.timer = v.timer ? { label: v.timer[0], left: v.timer[1] } : null; W.camFocus = v.cf; W.ended = v.ended; W.noRun = v.nr;
+  W.timer = v.timer ? { label: v.timer[0], left: v.timer[1] } : null; W.camFocus = v.cf; W.ended = v.ended; W.noRun = v.nr; W.extraLights = v.xl || [];
   const keepT = (cur, nv) => { if (!nv) return null; if (cur && cur.id === nv.id) { nv.t0 = cur.t0; } else nv.t0 = RT; return nv; };
   W.dlg = keepT(W.dlg, v.dlg); W.card = keepT(W.card, v.card); W.note = keepT(W.note, v.note); W.keypad = keepT(W.keypad, v.keypad);
   if (v.end) { if (!W.endScreen || W.endScreen.kind !== v.end.kind || W.endScreen.title !== v.end.title) { W.endScreen = v.end; W.endScreen.t0 = RT; } } else W.endScreen = null;
@@ -146,7 +150,7 @@ function guestTick(dt) {
 function guestSendPos(dt) {
   NET.posT -= dt; if (NET.posT > 0) return; NET.posT = 1 / 30;
   const p = W.pl;
-  netSendFast({ t: 'pos', k: NET.myK, map: W.mapId, x: p.x, y: p.y, px: Math.round(p.px), py: Math.round(p.py), d: p.dir, fr: p.fr, pv: p.prev });
+  netSendFast({ t: 'pos', k: NET.myK, map: W.mapId, x: p.x, y: p.y, px: Math.round(p.px), py: Math.round(p.py), d: p.dir, fr: p.fr, pv: p.prev, mv: p.mv ? 1 : 0, rn: p.mv && p.run ? 1 : 0 });
 }
 /* ---------- 操作权交接 ---------- */
 function ctrlButton() {   // T 键 / 按钮：操作者=交出，观看者=请求

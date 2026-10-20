@@ -49,18 +49,18 @@ const IN = {
   running() { return this.run || this.runLatch; }
 };
 const KEYDIR = { ArrowDown: 0, KeyS: 0, ArrowLeft: 1, KeyA: 1, ArrowRight: 2, KeyD: 2, ArrowUp: 3, KeyW: 3 };
-const KEYACT = { Space: 'a', Enter: 'a', KeyZ: 'a', KeyE: 'a', NumpadEnter: 'a', Escape: 'menu', KeyI: 'inv', Tab: 'inv', KeyJ: 'journal', KeyT: 'ctrl', KeyY: 'yes', KeyN: 'no', KeyM: 'mute', KeyX: 'b', Backspace: 'b' };
+const KEYACT = { Space: 'a', Enter: 'a', KeyZ: 'a', KeyE: 'a', NumpadEnter: 'a', Escape: 'menu', KeyI: 'inv', Tab: 'inv', KeyJ: 'journal', KeyT: 'ctrl', KeyY: 'yes', KeyN: 'no', KeyM: 'mute', KeyX: 'b', Backspace: 'del' };   // del：密码盘里删一位，其他地方等同 b
 addEventListener('keydown', e => {
   if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
   AU.init();
   if (e.code in KEYDIR) {
     const d = KEYDIR[e.code]; if (!IN.stack.includes(d)) IN.stack.push(d);
-    IN.press(['down', 'left', 'right', 'up'][d]); e.preventDefault(); return;
+    if (!e.repeat) IN.press(['down', 'left', 'right', 'up'][d]); e.preventDefault(); return;   // 按住不放不连发（避免选项来回跳）
   }
   if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') { IN.run = true; return; }
   if (e.repeat) return;
   const a = KEYACT[e.code];
-  if (a) { IN.press(a); if (e.code === 'Tab' || e.code === 'Space') e.preventDefault(); }
+  if (a) { IN.press(a); if (e.code === 'Tab' || e.code === 'Space' || e.code === 'Enter' || e.code === 'NumpadEnter') e.preventDefault(); }
 });
 addEventListener('keyup', e => {
   if (e.code in KEYDIR) { const d = KEYDIR[e.code]; IN.stack = IN.stack.filter(x => x !== d); }

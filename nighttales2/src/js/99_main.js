@@ -26,7 +26,7 @@ if (!NET_OK) { $('tHost').classList.add('dim'); $('tJoin').classList.add('dim');
 requestAnimationFrame(frame);
 /* 测试钩子（仅 ?debug=1） */
 if (QS.get('debug') === '1') window.__dbg = {
-  get W() { return W; }, NET, UI, CHAPTERS, startChapter, doAct, sendAct, SAPI, GEN: () => GEN, store, retryFromCP,
+  get W() { return W; }, NET, UI, CHAPTERS, startChapter, doAct, sendAct, SAPI, GEN: () => GEN, store, retryFromCP, facing: () => facingEnt(),
   ent: id => getEnt(id), tp(x, y, dir) { SAPI.pos(x, y, dir); },
   step(x, y) { SAPI.pos(x, y); onPlayerArrive(); },
   face(id) {   // 走到实体旁边并面向它（直接传送）；id 也可以是 [x,y]
@@ -38,7 +38,9 @@ if (QS.get('debug') === '1') window.__dbg = {
     for (let x = ex; x < ex + e.w; x++) { cand.push([x, ey + e.h, 3]); cand.push([x, ey - 1, 0]); }
     for (let y = ey; y < ey + e.h; y++) { cand.push([ex - 1, y, 2]); cand.push([ex + e.w, y, 1]); }
     if (!e.solid) cand.unshift([ex, ey, W.pl.dir]);
-    for (const [x, y, d] of cand) if ((x === ex && y === ey && !e.solid) || passable(m, x, y, W.pl)) { SAPI.pos(x, y, d); return true; }
+    let fb = null;   // 优先选一个「调查键真的会选中它」的位置
+    for (const [x, y, d] of cand) if ((x === ex && y === ey && !e.solid) || passable(m, x, y, W.pl)) { SAPI.pos(x, y, d); if (facingEnt() === e) return true; if (!fb) fb = [x, y, d]; }
+    if (fb) { SAPI.pos(fb[0], fb[1], fb[2]); return true; }
     return false;
   }
 };

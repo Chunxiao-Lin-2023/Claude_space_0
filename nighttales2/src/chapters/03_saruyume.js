@@ -266,7 +266,7 @@
       mic(g, e, t, R) { bx2(R, 0, 2, 16, 12, '#3a3a40'); R(2, 4, 12, 3, '#1a1a20'); for (let i = 0; i < 4; i++) R(3 + i * 3, 9, 2, 2, ['#c03030', '#30a040', '#d0b030', '#3060c0'][i]); R(7, -6, 2, 9, '#5a5a60'); R(5, -9, 6, 4, '#2a2a2e'); R(6, -8, 4, 2, '#5a5a62'); if (e.lit) R(13, 4, 2, 2, Math.sin(t * 8) > 0 ? '#ff3a3a' : '#5a1010'); },
       cabwin(g, e, t, R) { R(0, 1, 16, 12, '#2a2a30'); R(1, 2, 14, 10, '#4a4858'); for (let i = 0; i < 4; i++) R(((t * 20 + i * 5) % 14) + 1, 3 + i * 2, 4, 1, 'rgba(220,215,235,.35)'); R(7, 8, 2, 4, '#2a2830'); },
       route(g, e, t, R) { R(1, 2, 14, 10, '#e0d8c0'); R(3, 4, 10, 6, '#c8b898'); R(4, 5, 8, 4, '#e0d8c0'); for (let i = 0; i < 5; i++) R(3 + i * 2, 4, 1, 1, i < 4 ? '#c01818' : '#1a1a1a'); },
-      pc(g, e, t, R) { bx2(R, 1, -6, 14, 12, '#d8d4c8'); R(3, -4, 10, 8, e.on ? '#2a4a7a' : '#1a1e22'); if (e.on) { R(4, -3, 6, 1, '#cfe0f0'); R(4, -1, 8, 1, '#8ab0d0'); R(4, 1, 5, 1, '#8ab0d0'); } R(6, 6, 4, 2, '#b8b4a8'); bx2(R, 2, 8, 12, 4, '#cfcbc0'); },
+      pc(g, e, t, R) { bx2(R, 1, -6, 14, 12, '#d8d4c8'); R(3, -4, 10, 8, e.power ? '#2a4a7a' : '#1a1e22'); if (e.power) { R(4, -3, 6, 1, '#cfe0f0'); R(4, -1, 8, 1, '#8ab0d0'); R(4, 1, 5, 1, '#8ab0d0'); } R(6, 6, 4, 2, '#b8b4a8'); bx2(R, 2, 8, 12, 4, '#cfcbc0'); },
       bag(g, e, t, R) { bx2(R, 3, 5, 10, 9, '#6a4a5a'); R(5, 2, 6, 1, '#4a3040'); R(5, 3, 1, 3, '#4a3040'); R(10, 3, 1, 3, '#4a3040'); R(7, 8, 2, 2, '#c9a35a'); },
       diary(g, e, t, R) { R(4, 7, 8, 6, '#3a4a6a'); R(5, 8, 6, 4, '#4a5a7a'); R(11, 7, 1, 6, '#e8e0c8'); }
     },
@@ -693,7 +693,7 @@
     else S.goal(!S.f.replies ? '看看帖子有没有人回复（电脑）' : !S.has('pass') ? '我每天去的那个车站……（包里的定期券）' : '准备好了。睡吧（被褥）');
   }
   async function pcOn(S) {
-    S.ent('pc').on = true; S.sfx('switch');
+    S.ent('pc').power = true; S.sfx('switch');
     if (S.f.day === 2 && !S.f.posted) {
       await S.narr('拨号上网的声音「哔——嘎——」地响了半天。\n你打开那个常去的匿名论坛，点进「超常现象」板。');
       await S.think('写下来吧。写下来，说不定就不怕了。');
@@ -701,18 +701,18 @@
       await S.note('post');
       S.f.posted = true;
       await S.narr('你按下了「发送」。\n页面刷新的那一瞬间，屏幕暗了一下——好像有一张脸，在黑色的屏幕上一闪而过。');
-      S.ent('pc').on = false; return dayGoal(S);
+      S.ent('pc').power = false; return dayGoal(S);
     }
     if (S.f.day === 3 && !S.f.replies) {
       await S.narr('你打开昨天的帖子。\n回复已经有三十多条了。');
       await S.note('reply');
       S.f.replies = true;
       await S.think(['「它没有自己的站，它只能停在你给它的站。」', '……报一个真实存在的、我每天都去的车站。', '我每天都去的车站——']);
-      S.ent('pc').on = false; return dayGoal(S);
+      S.ent('pc').power = false; return dayGoal(S);
     }
     if (S.f.replies) await S.note('reply');
     else if (S.f.posted) await S.note('post');
-    S.ent('pc').on = false;
+    S.ent('pc').power = false;
   }
   async function shelfOn(S) {
     if (S.f.day === 2 || S.f.day === 3) {
