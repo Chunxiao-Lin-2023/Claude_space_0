@@ -139,6 +139,7 @@
 
   /* ---------- 共用台词 ---------- */
   const caughtReal = async S => {
+    S.clearTimer();   // 午夜倒计时在对话里也走，被抓时先停掉，免得两段剧本抢着跑
     S.sfx('cut'); scrape(S); await S.scare('static', { dur: .4 });
     await S.scare('face', { face: 'bunny', sfx: 'scare', dur: 1 });
     await S.die('你没有听见脚步声。\n你只听见身后很近很近的地方，有什么东西被慢慢举了起来——然后，手电筒掉在了泥里。', '兔子人追上了你');
@@ -951,14 +952,22 @@
       await S.say('小迪（门下）', ['走开！', '你骗人！刚才它也学你的声音叫我了！学得一模一样！'], { style: 'whisper' });
       await S.say('凯莉', '……什么？');
       await S.say('小迪（门下）', '你要真是你们，就敲暗号！俱乐部的暗号！敲错了我就不开！', { style: 'whisper' });
+      S.goal('敲出俱乐部的暗号（小迪的会员卡在「笺」里）');
+      if (S.coop) S.toast('一个人在「笺」里翻出会员卡念暗号，一个人对着活板门敲');
     }
-    const v = await S.keypad('对着活板门敲出暗号（咚 = 敲一下，停 = 停一拍）', ['咚', '停'], 6);
+    const v = await S.keypad('敲暗号：咚 = 敲一下，停 = 停一拍（键盘 1 / 2）', ['咚', '停'], 6, { alias: { '1': '咚', '2': '停' } });
     if (v == null) return;
     for (const ch of v) { if (ch === '咚') S.sfx('knock'); await S.wait(ch === '咚' ? 240 : 560); }
     if (v !== '咚咚停咚咚咚') {
       f.knockFail = (f.knockFail || 0) + 1;
-      await S.say('小迪（门下）', ['不对！不对！走开！', '你是怪物！怪物不知道暗号！'][f.knockFail % 2], { style: 'whisper' });
-      if (f.knockFail >= 2) await S.say('凯莉', '诺亚，他给你的那张会员卡呢？上面画着暗号。（打开笔记看看）');
+      const g = v.split('停').filter(x => x).map(x => x.length).join('');
+      const why = !v.includes('停') ? '你一口气敲个不停，跟啄木鸟似的！'
+        : g === '32' ? '先敲几下？你敲反了！'
+        : (v.match(/停/g) || []).length > 1 ? '你停了好几次！暗号只停一次！'
+        : '不对！';
+      await S.say('小迪（门下）', [why + '走开！', why + '你是怪物！怪物不知道暗号！'][f.knockFail % 2], { style: 'whisper' });
+      if (f.knockFail === 2) await S.say('凯莉', '诺亚，他给你的那张会员卡呢？上面画着暗号。（打开「笺」看看）');
+      else if (f.knockFail >= 3) await S.say('凯莉', '我记得卡上画的是两个点、空一格、三个点……「敲两下，停一下，再敲三下」。');
       return;
     }
     await S.wait(500);
@@ -992,7 +1001,9 @@
     await S.narr('你们一个接一个地爬出地窖。\n房子正面，传来一下、一下劈木头的声音。然后，停了。');
     S.focus(28, 4);
     await S.wait(500);
-    await S.narr('门廊底下，一个白色的东西慢慢地转过身来。');
+    await S.narr('门廊底下，一个白色的东西慢慢地转过身来。\n它就站在你们和院子门之间。');
+    S.focus(24, 7); await S.wait(500);
+    await S.say('凯莉', '别往它那边跑！绕过去——先往下，再从院子门出去，往西！');
     S.focus(null);
     S.cp('chase');
     startChase(S);
@@ -1003,7 +1014,7 @@
     plrOn(S); S.amb('drone');
     S.ent('blkO').open = true;
     const b = S.ent('bm_woods'); b.alpha = 1; S.place('bm_woods', 28, 4, 2);
-    S.chase('bm_woods', { spd: 2.9, wait: 2.2, catch: caughtReal });
+    S.chase('bm_woods', { spd: 2.9, wait: 2.6, catch: caughtReal });
     S.goal('跑！过河，穿过树林，回到桥洞！');
   }
 
@@ -1015,24 +1026,27 @@
     S.ent('dee_tunnel').light = { r: 1.5, col: 'rgba(120,255,140,.16)' };
     plrOn(S); S.dark(.95);
     const b = S.ent('bm_tunnel'); b.alpha = .95; S.place('bm_tunnel', 3, 0, 0);
-    S.chase('bm_tunnel', { spd: 2.3, wait: 3.4, catch: caughtReal });
-    S.timer(24, '午夜', midnight);
+    // 实测：洞里泥水让人走得慢（走 2.5 格/秒、跑 4.1 格/秒），走完 16 格约 6.5 秒，跑约 4 秒；
+    // 原来 24 秒且对话时暂停，等于没有压力。改为 18 秒、看绳子/读涂鸦时也照走
+    S.chase('bm_tunnel', { spd: 2.6, wait: 2.6, catch: caughtReal });
+    S.timer(18, '午夜', midnight, { during: true });
     S.goal('钟声响起之前，穿过桥洞！');
   }
   async function midnight(S) {
     S.stop('bm_tunnel');
     S.amb('none');
+    toll(S);
     await S.narr('远处，镇上的教堂敲响了第一下。');
-    await S.bells(4, 900);
+    await tolls(S, 4, 900);
     await S.narr('你还站在桥洞里。泥水没过了脚踝。');
-    await S.bells(4, 900);
+    await tolls(S, 4, 900);
     S.plr(.8); S.ent('bm_tunnel').alpha = 1;
     await S.narr('手电筒的光一跳一跳地暗了下去。\n你身后，有什么东西，站住了。');
-    await S.bells(3, 900);
+    await tolls(S, 2, 900);
     await S.narr('你没有回头。');
-    S.sfx('bell'); S.plr(0); S.dark(1);
+    toll(S); S.plr(0); S.dark(1);
     await S.wait(1400);
-    return S.end({ bad: true, title: '钟声响完的时候', text: '第十二下钟声，在你们头顶上停了下来。\n\n第二天一早，巡逻的警察在桥洞南口发现了一辆没熄火的旧沃尔沃，车顶上的南瓜灯还亮着。\n洞里的泥水上，漂着一只手电筒和一只粉红色的兔耳朵。一只对讲机泡在水里，还开着，沙沙地响。\n\n后来，桥洞的墙上多了一行新的涂鸦，喷得很大、很工整：\n「午夜之前离开」' });
+    return S.end({ bad: true, id: 'bells', title: '钟声响完的时候', text: '第十二下钟声，在你们头顶上停了下来。\n\n第二天一早，巡逻的警察在桥洞南口发现了一辆没熄火的旧沃尔沃，车顶上的南瓜灯还亮着。\n洞里的泥水上，漂着一只手电筒和一只粉红色的兔耳朵。一只对讲机泡在水里，还开着，沙沙地响。\n\n后来，桥洞的墙上多了一行新的涂鸦，喷得很大、很工整：\n「午夜之前离开」' });
   }
   async function goodEnd(S) {
     const f = S.f;
@@ -1043,15 +1057,15 @@
     S.amb('wind');
     await S.narr('你们一口气冲出了桥洞南口。\n凯莉的车还停在那里，车顶上的南瓜灯一闪一闪。');
     await S.say('凯莉', '上车！快——');
-    S.sfx('bell');
+    toll(S);
     await S.narr('远处，镇上的教堂敲响了第一下。');
-    await S.bells(5, 650);
+    await tolls(S, 5, 800);
     await S.narr('你回过头。');
     S.focus(11, 2);
     const b = S.ent('bm_road'); b.alpha = 0; S.place('bm_road', 11, 1, 0);
     await S.alpha('bm_road', .85, 1600);
     await S.narr('桥洞里，洞口往里两三步的地方，站着一个白色的人影。两只长耳朵一动不动。\n它没有追出来。');
-    await S.bells(6, 650);
+    await tolls(S, 6, 800);
     await S.narr('它只是站在那里，斧头垂在身边，像是在数着什么。\n数到第十二下，钟声停了。');
     await S.alpha('bm_road', 0, 1800);
     S.focus(null);
@@ -1071,6 +1085,6 @@
     S.sfx('car');
     await S.fade(1, 1400);
     await S.card('第二天', '1995年11月1日', '凯莉的妈妈什么也没问。\n她只是在早饭桌上放了一张复印件——1970年10月，县里的两份报告。\n\n「纸上找不到的东西，」她说，\n「不代表它发生过。也不代表它没有。」\n\n那天下午，四个人一起去了县图书馆。\n谁也没有提起那只兔耳朵。');
-    await S.end({ title: '第五夜　完', text: '后来每年万圣节，县里的警车都会停在科尔切斯特路的桥洞口，\n把车灯开得很亮，把想进洞的高中生一个一个劝回去。\n\n警察说，那是为了大家的安全。\n\n小迪长大以后，也当了警察。\n每年十月三十一号的晚上，他都主动申请去那个桥洞值班。\n十二点整，他会把车窗摇下来，对着洞口，\n敲两下，停一下，再敲三下。' });
+    await S.end({ id: 'home', title: '第五夜　完', text: '后来每年万圣节，县里的警车都会停在科尔切斯特路的桥洞口，\n把车灯开得很亮，把想进洞的高中生一个一个劝回去。\n\n警察说，那是为了大家的安全。\n\n小迪长大以后，也当了警察。\n每年十月三十一号的晚上，他都主动申请去那个桥洞值班。\n十二点整，他会把车窗摇下来，对着洞口，\n敲两下，停一下，再敲三下。' });
   }
 })();
