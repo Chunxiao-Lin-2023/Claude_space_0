@@ -3,7 +3,7 @@
   /* ---------- 黄皮子（人立、作揖、戴草帽）：people 与地图精灵共用 ---------- */
   const FUR = '#c27c2c', FUR2 = '#8a5218', BELLY = '#efd6a6', MUZ = '#f6e8cc', EYE = '#ffd23a';
   function weasel(R, d, o) {
-    const b = o.bow ? 1 : 0, h = 5 + b;
+    const b = o.bow ? 2 : 0, h = 5 + b;
     const hatC = o.hat === 'old' ? '#b0924c' : '#dccb8e';
     if (d === 0 || d === 3) {
       R(11, 14, 3, 6, FUR2); R(12, 10, 3, 5, FUR); R(13, 8, 2, 3, '#3e220c');          // 尾巴往右上卷
@@ -345,7 +345,7 @@
           { x: 30, y: 9, spr: 'sack', col: '#8a7a5a', on: S => S.narr('一袋冻土豆，不知谁家落在道边的。袋口被咬开了一个洞。') },
           ...[[9, 6], [12, 7], [18, 5], [20, 4], [23, 6], [27, 7], [30, 6], [13, 9], [25, 13]].map(([x, y], i) => ({ id: 'mh' + i, x, y, spr: 'meihua', decal: true, solid: false })),
           { x: 12, y: 7, spr: 'invisible', solid: false, on: S => S.narr('雪地上一串梅花样的小爪印，一个挨一个，从仓房一直通到屯子东头。\n奇怪的是——走到一半，爪印变成了两行。像是那东西，站起来走了。') },
-          ...[[2, 15], [30, 15], [31, 4], [23, 13], [32, 10], [10, 15], [27, 4]].map(([x, y], i) => ({ id: 'ey' + i, x, y, spr: 'eyes', hidden: true, solid: false, light: { r: .5, col: 'rgba(255,210,60,.3)' } })),
+          ...[[2, 15], [30, 15], [31, 4], [23, 13], [32, 10], [10, 15], [27, 4]].map(([x, y], i) => ({ id: 'ey' + i, x, y, spr: 'eyes', hidden: true, solid: false, light: { r: .4, a: .75, col: 'rgba(255,200,40,.5)' } })),
           ...WZ.map(id => ({ id, x: 2, y: 9, spr: 'wz', hidden: true, solid: false }))
         ],
         async enter(S, first) {
@@ -452,7 +452,7 @@
           { x: 1, y: 6, spr: 'baomi', on: S => S.narr('苞米棒子码成的垛，一冬天的烧柴和口粮都在这儿。') },
           { x: 10, y: 5, spr: 'lantern', light: { r: 2.6, col: 'rgba(255,170,80,.18)', flick: true }, on: S => S.narr('一盏马灯挂在柱子上，玻璃罩子熏黑了半边。') },
           { x: 9, y: 6, spr: 'crate', on: S => S.narr('装冻梨冻柿子的木头箱子。柿子少了好几个，箱缝里卡着半个，被啃得只剩一层皮。') },
-          { id: 'ceye', x: 10, y: 3, spr: 'eyes', hidden: true, solid: false, light: { r: .6, col: 'rgba(255,210,60,.3)' } },
+          { id: 'ceye', x: 10, y: 3, spr: 'eyes', hidden: true, solid: false, light: { r: .4, a: .75, col: 'rgba(255,200,40,.5)' } },
           { id: 'cwz', x: 10, y: 4, spr: 'wz', hidden: true, solid: false }
         ],
         async enter(S, first) {
@@ -525,7 +525,7 @@
           { x: 5, y: 11, spr: 'fen' }, { x: 14, y: 11, spr: 'fen' }, { x: 19, y: 5, spr: 'fen' },
           { x: 8, y: 3, spr: 'bei', on: S => S.narr('一块石碑，字让风雪磨平了，只看得清一个「林」字。\n碑前摆着两个冻得梆硬的鸡蛋——有人比你先来过。') },
           { x: 13, y: 5, spr: 'gonghuo', decal: true, on: S => S.narr('树底下供着几个鸡蛋，一炷香烧得只剩个香根。\n不知是谁家的人，年年来这儿上供。') },
-          ...[[8, 5], [14, 6], [7, 8], [15, 9], [10, 10], [12, 10], [9, 2], [13, 2], [3, 6], [18, 7]].map(([x, y], i) => ({ id: 'fe' + i, x, y, spr: 'eyes', hidden: true, solid: false, light: { r: .5, col: 'rgba(255,210,60,.3)' } })),
+          ...[[8, 5], [14, 6], [7, 8], [15, 9], [10, 10], [12, 10], [9, 2], [13, 2], [3, 6], [18, 7]].map(([x, y], i) => ({ id: 'fe' + i, x, y, spr: 'eyes', hidden: true, solid: false, light: { r: .4, a: .75, col: 'rgba(255,200,40,.5)' } })),
           { id: 'hz', x: 11, y: 6, spr: '@huangN', dir: 0, hidden: true, solid: false, light: { r: 1.6, col: 'rgba(255,200,120,.16)' }, on: S => S.narr('它站在那儿，等着。') },
           { id: 'hatE', x: 12, y: 7, spr: 'hatitem', hidden: true, solid: false }
         ],
