@@ -83,7 +83,7 @@ function recordMatch(m) {
 function adaptDifficulty() {
   if (!SET.autoDiff) return null;
   if (PROG.streak.l >= 3 && SEL.diff > 0) { SEL.diff--; PROG.streak.l = 0; saveProg(); saveSel(); return '连输 3 局，AI 难度降为「' + DIFF[SEL.diff].name + '」'; }
-  if (PROG.streak.w >= 3 && SEL.diff < 2) { SEL.diff++; PROG.streak.w = 0; saveProg(); saveSel(); return '连胜 3 局，AI 难度升为「' + DIFF[SEL.diff].name + '」'; }
+  if (PROG.streak.w >= 3 && SEL.diff < 1) { /* never auto-promote into 困难: that step is too big to spring on someone */ SEL.diff++; PROG.streak.w = 0; saveProg(); saveSel(); return '连胜 3 局，AI 难度升为「' + DIFF[SEL.diff].name + '」'; }
   return null;
 }
 const themeUnlocked = k => !THEMES[k].locked || PROG.trophies >= THEMES[k].locked;

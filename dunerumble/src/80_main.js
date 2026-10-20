@@ -5,6 +5,8 @@ if (SEL.mode === 'online') { SEL.mode = 'duo'; SEL.online = true; }
 if (!MODES[SEL.mode]) SEL.mode = 'solo';
 if (!PLAYABLE.includes(SEL.hero)) SEL.hero = 0;
 SEL.sp = SEL.sp || {}; SEL.skin = SEL.skin || {};
+// v2 difficulty retune: the old auto-difficulty could promote to 困难; start everyone saved there back on 普通 once
+if (!SEL.dv2) { if (SEL.diff === 2) SEL.diff = 1; SEL.dv2 = 1; LS.set('sel', SEL); }
 const $ = id => document.getElementById(id);
 const myName = () => (SEL.name || '').trim().slice(0, 8) || '玩家';
 const curSp = () => { const H = HEROES[SEL.hero]; return H.sps.includes(SEL.sp[H.k]) ? SEL.sp[H.k] : H.sps[0]; };
@@ -428,7 +430,7 @@ function refreshMenu() {
   seg('playSeg', [['local', '本机 + AI'], ['online', '联机（2–6 人）']], SEL.online ? 'online' : 'local', v => { SEL.online = v === 'online'; if (SEL.online && SEL.mode === 'train') SEL.mode = 'duo'; if (!SEL.online && NET.role) netLeave(); saveSel(); refreshMenu(); });
   seg('mapSeg', [...Object.entries(THEMES).map(([k, t]) => [k, themeUnlocked(k) ? t.name : `🔒${t.name}（${t.locked}🏆）`, !themeUnlocked(k)]), ['random', '随机']], SEL.map, v => { SEL.map = v; saveSel(); refreshMenu(); });
   seg('diffSeg', DIFF.map((d, i) => [String(i), d.name]), String(SEL.diff), v => { SEL.diff = +v; saveSel(); refreshMenu(); });
-  $('diffNote').textContent = SET.autoDiff ? '已开启自动调节：连输 3 局降一档，连胜 3 局升一档' : '';
+  $('diffNote').textContent = SET.autoDiff ? '已开启自动调节：连输 3 局降一档，连胜 3 局升一档（自动最高到「普通」，「困难」要手动选）' : '';
   $('diffSec').classList.toggle('hidden', SEL.mode === 'train');
   $('mapSec').classList.toggle('hidden', SEL.mode === 'train');
   $('nameIn').value = SEL.name || '';
@@ -487,7 +489,7 @@ function openQuests() {
 }
 const SETTINGS = [
   ['cb', '色盲友好配色', 'bool', '队友蓝 / 敌人橙，替换红绿'], ['shake', '屏幕震动', 'bool'], ['nums', '伤害数字', 'bool'],
-  ['autoDiff', '自动调节 AI 难度', 'bool', '连输 3 局降一档，连胜 3 局升一档'],
+  ['autoDiff', '自动调节 AI 难度', 'bool', '连输 3 局降一档，连胜 3 局升一档（自动最高到普通）'],
   ['quality', '画质', [['auto', '自动'], ['high', '高'], ['low', '流畅']], '刷新页面后生效'],
   ['stick', '摇杆大小', [[0.85, '小'], [1, '中'], [1.2, '大']]], ['hand', '操作手', [['right', '右手攻击'], ['left', '左手攻击']], '触屏：攻击摇杆放在哪一侧'],
   ['vol', '音量', 'range'],

@@ -11,7 +11,7 @@ function botInit(b) {
   return b.ai;
 }
 function botThink(b, dt) {
-  const A = b.ai || botInit(b), D = DIFF[G.cfg.diff];
+  const A = b.ai || botInit(b), D = b.diffP || DIFF[G.cfg.diff];
   A.thinkT -= dt;
   if (A.thinkT <= 0) { A.thinkT = D.think * rr(0.8, 1.25); botDecide(b, A, D); }
   botSteer(b, A, dt);
@@ -30,7 +30,7 @@ function freeTileNear(x, z) {
 }
 /* human-like aim: partial lead, slowly drifting bias (misses cluster), sloppier first shots at a new target */
 function aimAt(b, tx, tz, tvx, tvz, a, err, tid) {
-  const A = b.ai || botInit(b), D = DIFF[G.cfg.diff];
+  const A = b.ai || botInit(b), D = b.diffP || DIFF[G.cfg.diff];
   const dd = dist(b.x, b.z, tx, tz);
   const tFlight = a.flight ? a.flight : (a.type === 'melee' || a.type === 'chain') ? 0.05 : a.type === 'zone' ? 0.6 : a.type === 'leap' ? 0.5 : dd / (a.speed || 15);
   const lead = rr(D.lead[0], D.lead[1]);
@@ -58,6 +58,7 @@ function pickTarget(b, A, aggro) {
     let sc = dd + (e.hp / e.mhp) * 3.5 - (e.id === A.targetId ? 1.8 : 0) - (focus ? 6 : 0) - (e.H.k === 'boss' ? 1 : 0);
     let n = 0; for (const o of G.ents) if (o !== b && o.alive && o.isBot && o.team === b.team && o.ai && o.ai.targetId === e.id) n++;
     if (n >= 2) sc += 5;
+    if (e.human && !b.human) sc += (b.diffP || DIFF[G.cfg.diff]).hAvoid || 0;
     if (sc < best) { best = sc; tgt = e; }
   }
   return tgt;
@@ -159,7 +160,8 @@ function botDecide(b, A, D) {
 /* ---------- showdown ---------- */
 function decideShowdown(b, A, D) {
   const H = b.H, inp = b.inp, hpF = b.hp / b.mhp, P = persOf(b);
-  let aggro = G.t < 28 ? 2.2 : clamp(3.2 + (G.t - 28) / 12 + G.cfg.diff * 0.4 + (b.cubes > 2 ? 1.5 : 0), 3.2, 12.5);
+  const calm = D.calm || 28;
+  let aggro = G.t < calm ? 2.2 : clamp(3.2 + (G.t - calm) / 12 + G.cfg.diff * 0.4 + (b.cubes > 2 ? 1.5 : 0), 3.2, 12.5);
   aggro = clamp(aggro + P.aggro, 1.8, 12.5);
   if (b.pers === 'farmer' && b.cubes < 4 && G.t < 100) aggro = Math.min(aggro, 3);
   if (hpF < 0.65 && G.t < 120) aggro = Math.min(aggro, 3);

@@ -35,11 +35,12 @@ const BAL = {
   turretLife: 20, turretHp: 2600, turretRange: 7.5, turretRate: 0.45, turretDmg: 260,
 };
 /* AI difficulty profiles. err = aim error (rad), lead = how much of the target's motion is predicted,
-   supDelay = seconds a bot waits before using a ready super, warm = first-shot error multiplier on a new target */
+   supDelay = seconds a bot waits before using a ready super, warm = first-shot error multiplier on a new target,
+   hv = damage bots deal to human players, hAvoid = target-score penalty for picking a human, calm = showdown seconds before bots get aggressive */
 const DIFF = [
-  { name: '简单', err: 0.34, react: 0.75, dodge: 0.08, think: 0.26, superP: 0.4, supDelay: [1.0, 2.2], keep: 1, fireCd: 1.2, lead: [0, 0.3], warm: 1.8 },
-  { name: '普通', err: 0.28, react: 0.65, dodge: 0.20, think: 0.17, superP: 0.5, supDelay: [0.5, 1.5], keep: 0, fireCd: 0.95, lead: [0.3, 0.6], warm: 1.6 },
-  { name: '困难', err: 0.06, react: 0.16, dodge: 0.70, think: 0.11, superP: 1, supDelay: [0, 0.3], keep: 0, fireCd: 0.38, lead: [0.55, 1.0], warm: 1.15 },
+  { name: '简单', err: 0.42, react: 1.0, dodge: 0.05, think: 0.28, superP: 0.35, supDelay: [1.2, 2.6], keep: 1, fireCd: 1.5, lead: [0, 0.25], warm: 1.9, hv: 0.6, hAvoid: 4, calm: 45 },
+  { name: '普通', err: 0.34, react: 0.8, dodge: 0.14, think: 0.19, superP: 0.45, supDelay: [0.8, 1.8], keep: 1, fireCd: 1.15, lead: [0.2, 0.5], warm: 1.7, hv: 0.75, hAvoid: 2, calm: 35 },
+  { name: '困难', err: 0.06, react: 0.16, dodge: 0.70, think: 0.11, superP: 1, supDelay: [0, 0.3], keep: 0, fireCd: 0.38, lead: [0.55, 1.0], warm: 1.15, hv: 1, hAvoid: 0, calm: 28 },
 ];
 const GADGETS = {
   nova: { name: '冲击波', desc: '推开身边的敌人并造成少量伤害', cd: 6 },

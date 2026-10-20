@@ -3996,11 +3996,12 @@ const BAL = {
   turretLife: 20, turretHp: 2600, turretRange: 7.5, turretRate: 0.45, turretDmg: 260,
 };
 /* AI difficulty profiles. err = aim error (rad), lead = how much of the target's motion is predicted,
-   supDelay = seconds a bot waits before using a ready super, warm = first-shot error multiplier on a new target */
+   supDelay = seconds a bot waits before using a ready super, warm = first-shot error multiplier on a new target,
+   hv = damage bots deal to human players, hAvoid = target-score penalty for picking a human, calm = showdown seconds before bots get aggressive */
 const DIFF = [
-  { name: '简单', err: 0.34, react: 0.75, dodge: 0.08, think: 0.26, superP: 0.4, supDelay: [1.0, 2.2], keep: 1, fireCd: 1.2, lead: [0, 0.3], warm: 1.8 },
-  { name: '普通', err: 0.28, react: 0.65, dodge: 0.20, think: 0.17, superP: 0.5, supDelay: [0.5, 1.5], keep: 0, fireCd: 0.95, lead: [0.3, 0.6], warm: 1.6 },
-  { name: '困难', err: 0.06, react: 0.16, dodge: 0.70, think: 0.11, superP: 1, supDelay: [0, 0.3], keep: 0, fireCd: 0.38, lead: [0.55, 1.0], warm: 1.15 },
+  { name: '简单', err: 0.42, react: 1.0, dodge: 0.05, think: 0.28, superP: 0.35, supDelay: [1.2, 2.6], keep: 1, fireCd: 1.5, lead: [0, 0.25], warm: 1.9, hv: 0.6, hAvoid: 4, calm: 45 },
+  { name: '普通', err: 0.34, react: 0.8, dodge: 0.14, think: 0.19, superP: 0.45, supDelay: [0.8, 1.8], keep: 1, fireCd: 1.15, lead: [0.2, 0.5], warm: 1.7, hv: 0.75, hAvoid: 2, calm: 35 },
+  { name: '困难', err: 0.06, react: 0.16, dodge: 0.70, think: 0.11, superP: 1, supDelay: [0, 0.3], keep: 0, fireCd: 0.38, lead: [0.55, 1.0], warm: 1.15, hv: 1, hAvoid: 0, calm: 28 },
 ];
 const GADGETS = {
   nova: { name: '冲击波', desc: '推开身边的敌人并造成少量伤害', cd: 6 },
@@ -5130,6 +5131,7 @@ function hurt(t, dmg, src, o = {}) {
   if (window.__dbg && window.__dbg.god && t.human === 1) return;
   if (t.kind === 'b' && t.invulnT > 0) { if (!o.gas) ev('immune', { id: t.id, x: +t.x.toFixed(2), z: +t.z.toFixed(2) }); return; }
   if (t.kind === 'b') { if (t.armorT > 0) dmg *= 0.4; if (t.sp === 'laststand' && t.hp < t.mhp * 0.35) dmg *= 0.75; }
+  if (t.kind === 'b' && t.human && src) { const ab = src.kind === 'b' ? src : src.owner ? entById(src.owner) : null; if (ab && !ab.human) dmg *= DIFF[G.cfg.diff].hv || 1; }
   dmg = Math.round(dmg);
   if (t.kind === 'b' && t.H.k === 'dummy' && src && src.human === 1 && G.ms && G.ms.k === 'train') G.ms.hits++;
   if (t.kind === 'b' && t.shield > 0 && !o.gas) {
@@ -5909,7 +5911,7 @@ function botInit(b) {
   return b.ai;
 }
 function botThink(b, dt) {
-  const A = b.ai || botInit(b), D = DIFF[G.cfg.diff];
+  const A = b.ai || botInit(b), D = b.diffP || DIFF[G.cfg.diff];
   A.thinkT -= dt;
   if (A.thinkT <= 0) { A.thinkT = D.think * rr(0.8, 1.25); botDecide(b, A, D); }
   botSteer(b, A, dt);
@@ -5928,7 +5930,7 @@ function freeTileNear(x, z) {
 }
 /* human-like aim: partial lead, slowly drifting bias (misses cluster), sloppier first shots at a new target */
 function aimAt(b, tx, tz, tvx, tvz, a, err, tid) {
-  const A = b.ai || botInit(b), D = DIFF[G.cfg.diff];
+  const A = b.ai || botInit(b), D = b.diffP || DIFF[G.cfg.diff];
   const dd = dist(b.x, b.z, tx, tz);
   const tFlight = a.flight ? a.flight : (a.type === 'melee' || a.type === 'chain') ? 0.05 : a.type === 'zone' ? 0.6 : a.type === 'leap' ? 0.5 : dd / (a.speed || 15);
   const lead = rr(D.lead[0], D.lead[1]);
@@ -5956,6 +5958,7 @@ function pickTarget(b, A, aggro) {
     let sc = dd + (e.hp / e.mhp) * 3.5 - (e.id === A.targetId ? 1.8 : 0) - (focus ? 6 : 0) - (e.H.k === 'boss' ? 1 : 0);
     let n = 0; for (const o of G.ents) if (o !== b && o.alive && o.isBot && o.team === b.team && o.ai && o.ai.targetId === e.id) n++;
     if (n >= 2) sc += 5;
+    if (e.human && !b.human) sc += (b.diffP || DIFF[G.cfg.diff]).hAvoid || 0;
     if (sc < best) { best = sc; tgt = e; }
   }
   return tgt;
@@ -6057,7 +6060,8 @@ function botDecide(b, A, D) {
 /* ---------- showdown ---------- */
 function decideShowdown(b, A, D) {
   const H = b.H, inp = b.inp, hpF = b.hp / b.mhp, P = persOf(b);
-  let aggro = G.t < 28 ? 2.2 : clamp(3.2 + (G.t - 28) / 12 + G.cfg.diff * 0.4 + (b.cubes > 2 ? 1.5 : 0), 3.2, 12.5);
+  const calm = D.calm || 28;
+  let aggro = G.t < calm ? 2.2 : clamp(3.2 + (G.t - calm) / 12 + G.cfg.diff * 0.4 + (b.cubes > 2 ? 1.5 : 0), 3.2, 12.5);
   aggro = clamp(aggro + P.aggro, 1.8, 12.5);
   if (b.pers === 'farmer' && b.cubes < 4 && G.t < 100) aggro = Math.min(aggro, 3);
   if (hpF < 0.65 && G.t < 120) aggro = Math.min(aggro, 3);
@@ -7606,6 +7610,8 @@ if (SEL.mode === 'online') { SEL.mode = 'duo'; SEL.online = true; }
 if (!MODES[SEL.mode]) SEL.mode = 'solo';
 if (!PLAYABLE.includes(SEL.hero)) SEL.hero = 0;
 SEL.sp = SEL.sp || {}; SEL.skin = SEL.skin || {};
+// v2 difficulty retune: the old auto-difficulty could promote to 困难; start everyone saved there back on 普通 once
+if (!SEL.dv2) { if (SEL.diff === 2) SEL.diff = 1; SEL.dv2 = 1; LS.set('sel', SEL); }
 const $ = id => document.getElementById(id);
 const myName = () => (SEL.name || '').trim().slice(0, 8) || '玩家';
 const curSp = () => { const H = HEROES[SEL.hero]; return H.sps.includes(SEL.sp[H.k]) ? SEL.sp[H.k] : H.sps[0]; };
@@ -8029,7 +8035,7 @@ function refreshMenu() {
   seg('playSeg', [['local', '本机 + AI'], ['online', '联机（2–6 人）']], SEL.online ? 'online' : 'local', v => { SEL.online = v === 'online'; if (SEL.online && SEL.mode === 'train') SEL.mode = 'duo'; if (!SEL.online && NET.role) netLeave(); saveSel(); refreshMenu(); });
   seg('mapSeg', [...Object.entries(THEMES).map(([k, t]) => [k, themeUnlocked(k) ? t.name : `🔒${t.name}（${t.locked}🏆）`, !themeUnlocked(k)]), ['random', '随机']], SEL.map, v => { SEL.map = v; saveSel(); refreshMenu(); });
   seg('diffSeg', DIFF.map((d, i) => [String(i), d.name]), String(SEL.diff), v => { SEL.diff = +v; saveSel(); refreshMenu(); });
-  $('diffNote').textContent = SET.autoDiff ? '已开启自动调节：连输 3 局降一档，连胜 3 局升一档' : '';
+  $('diffNote').textContent = SET.autoDiff ? '已开启自动调节：连输 3 局降一档，连胜 3 局升一档（自动最高到「普通」，「困难」要手动选）' : '';
   $('diffSec').classList.toggle('hidden', SEL.mode === 'train');
   $('mapSec').classList.toggle('hidden', SEL.mode === 'train');
   $('nameIn').value = SEL.name || '';
@@ -8088,7 +8094,7 @@ function openQuests() {
 }
 const SETTINGS = [
   ['cb', '色盲友好配色', 'bool', '队友蓝 / 敌人橙，替换红绿'], ['shake', '屏幕震动', 'bool'], ['nums', '伤害数字', 'bool'],
-  ['autoDiff', '自动调节 AI 难度', 'bool', '连输 3 局降一档，连胜 3 局升一档'],
+  ['autoDiff', '自动调节 AI 难度', 'bool', '连输 3 局降一档，连胜 3 局升一档（自动最高到普通）'],
   ['quality', '画质', [['auto', '自动'], ['high', '高'], ['low', '流畅']], '刷新页面后生效'],
   ['stick', '摇杆大小', [[0.85, '小'], [1, '中'], [1.2, '大']]], ['hand', '操作手', [['right', '右手攻击'], ['left', '左手攻击']], '触屏：攻击摇杆放在哪一侧'],
   ['vol', '音量', 'range'],
@@ -8390,7 +8396,7 @@ function recordMatch(m) {
 function adaptDifficulty() {
   if (!SET.autoDiff) return null;
   if (PROG.streak.l >= 3 && SEL.diff > 0) { SEL.diff--; PROG.streak.l = 0; saveProg(); saveSel(); return '连输 3 局，AI 难度降为「' + DIFF[SEL.diff].name + '」'; }
-  if (PROG.streak.w >= 3 && SEL.diff < 2) { SEL.diff++; PROG.streak.w = 0; saveProg(); saveSel(); return '连胜 3 局，AI 难度升为「' + DIFF[SEL.diff].name + '」'; }
+  if (PROG.streak.w >= 3 && SEL.diff < 1) { /* never auto-promote into 困难: that step is too big to spring on someone */ SEL.diff++; PROG.streak.w = 0; saveProg(); saveSel(); return '连胜 3 局，AI 难度升为「' + DIFF[SEL.diff].name + '」'; }
   return null;
 }
 const themeUnlocked = k => !THEMES[k].locked || PROG.trophies >= THEMES[k].locked;

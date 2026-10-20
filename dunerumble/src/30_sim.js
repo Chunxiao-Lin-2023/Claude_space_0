@@ -193,6 +193,7 @@ function hurt(t, dmg, src, o = {}) {
   if (window.__dbg && window.__dbg.god && t.human === 1) return;
   if (t.kind === 'b' && t.invulnT > 0) { if (!o.gas) ev('immune', { id: t.id, x: +t.x.toFixed(2), z: +t.z.toFixed(2) }); return; }
   if (t.kind === 'b') { if (t.armorT > 0) dmg *= 0.4; if (t.sp === 'laststand' && t.hp < t.mhp * 0.35) dmg *= 0.75; }
+  if (t.kind === 'b' && t.human && src) { const ab = src.kind === 'b' ? src : src.owner ? entById(src.owner) : null; if (ab && !ab.human) dmg *= DIFF[G.cfg.diff].hv || 1; }
   dmg = Math.round(dmg);
   if (t.kind === 'b' && t.H.k === 'dummy' && src && src.human === 1 && G.ms && G.ms.k === 'train') G.ms.hits++;
   if (t.kind === 'b' && t.shield > 0 && !o.gas) {

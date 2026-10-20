@@ -4,7 +4,7 @@ const { chromium } = require('playwright');
   const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome', args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] });
   const p = await b.newPage(); const errs = []; p.on('pageerror', e => errs.push(e.message));
   await p.route(/fonts\.(googleapis|gstatic)/, r => r.abort());
-  await p.goto('http://localhost:8765/test.html'); await p.waitForTimeout(1500);
+  await p.goto('http://localhost:8765/test.html', { waitUntil: 'domcontentloaded' }); await p.waitForFunction(() => !document.getElementById('loading'), { timeout: 60000 });
   const modes = (process.env.MODES || 'solo,duo,gem,ball,bounty,boss').split(','), runs = +(process.env.RUNS || 3);
   for (const mode of modes) for (let r = 0; r < runs; r++) {
     const res = await p.evaluate(([mode, diff]) => {
