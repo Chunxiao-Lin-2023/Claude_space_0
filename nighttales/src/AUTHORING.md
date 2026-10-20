@@ -81,7 +81,7 @@ street: {
 - 方向：0下 1左 2右 3上。玩家面对实体所在的格子按调查键触发 `on`；非实心实体站在上面也能调查。
 - 挂墙的东西（门、窗、镜子、画、黑板）放在墙面那一行，玩家从下面一格朝上调查。
 - 高家具（衣柜、书架、钟、冰箱）只占一格，画的时候向上伸出。
-- **会被客机看见的状态**只能用这些字段：`open covered cracked blood face power off lit full read eyes red coat flowers thread knife col text water locked flicker num`，
+- **会被客机看见的状态**只能用这些字段：`open covered cracked blood face power off lit full read eyes red coat flowers thread knife col text water locked flicker num ox oy`，
   或者放进 `e.s`（任意键，例如 `S.ent('x').s.lit2 = true`；自定义精灵里 `e.lit2` 就能读到）。其它自定义字段不会同步。
   **`on` 是调查处理函数，绝不能当状态用**（以前电视写 `on:true` 会把处理函数覆盖/读档后被删掉）；开关类状态用 `power`。
   `solid` 的变化也会同步给客机。

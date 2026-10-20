@@ -66,7 +66,7 @@ const UI = {
     for (const [k, n] of ns) { const d = document.createElement('div'); d.className = 'it clk'; d.tabIndex = 0; d.innerHTML = `<b>${esc(n.title)}</b><div>${esc(n.text.slice(0, 40))}…</div>`; d.onclick = () => { this.closeModal(); showLocalNote(n); }; L.appendChild(d); }
   },
   buildSelect() {
-    const G = $('chgrid'); G.innerHTML = ''; const done = store.get('done', []);
+    const G = $('chgrid'); G.innerHTML = ''; const done = store.get('done', []), gotN = store.get('notes', []);
     $('selSub').textContent = NET.role === 'guest' ? '已加入房间 · 等待房主选择章节' : NET.role === 'host' && NET.up ? '对方已加入 · 选择今晚要讲的故事' : '选择今晚要听的故事';
     $('sBack').textContent = NET.role === 'guest' ? '离开房间' : '‹ 返回';
     CHAPTERS.forEach((ch, i) => {
@@ -75,7 +75,8 @@ const UI = {
       const hasCp = !!store.get('cp.' + ch.id, null);
       c.appendChild(cv2);
       const meta = document.createElement('div'); meta.className = 'meta';
-      meta.innerHTML = `<div class="no">第${'一二三四五六七八九十'[i] || i + 1}夜 · ${esc(ch.origin || '')}</div><div class="tt">${esc(ch.title)}</div><div class="tl">${esc(ch.sub || '')}</div>`;
+      const nAll = Object.keys(ch.notes || {}), nGot = nAll.filter(k => gotN.includes(ch.id + ':' + k)).length;
+      meta.innerHTML = `<div class="no">第${'一二三四五六七八九十'[i] || i + 1}夜 · ${esc(ch.origin || '')}</div><div class="tt">${esc(ch.title)}</div><div class="tl">${esc(ch.sub || '')}${nAll.length && (nGot || done.includes(ch.id)) ? ` · 笔记 ${nGot}/${nAll.length}` : ''}</div>`;
       c.appendChild(meta);
       if (done.includes(ch.id)) { const b = document.createElement('div'); b.className = 'badge done'; b.textContent = '已通关'; c.appendChild(b); }
       else if (hasCp) { const b = document.createElement('div'); b.className = 'badge cp'; b.textContent = '有存档'; c.appendChild(b); }

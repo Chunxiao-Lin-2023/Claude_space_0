@@ -10,7 +10,7 @@ const BASE_LEGEND = {
 };
 /* 实体上的这些字段会同步给客机并影响绘制 */
 /* 注意：'on' 是调查处理函数，不能当状态；电视/收音机/钢琴的开关状态用 power */
-const VKEYS = ['open', 'covered', 'cracked', 'blood', 'face', 'power', 'off', 'lit', 'full', 'read', 'eyes', 'red', 'coat', 'flowers', 'thread', 'knife', 'col', 'text', 'water', 'locked', 'flicker', 'num'];
+const VKEYS = ['open', 'covered', 'cracked', 'blood', 'face', 'power', 'off', 'lit', 'full', 'read', 'eyes', 'red', 'coat', 'flowers', 'thread', 'knife', 'col', 'text', 'water', 'locked', 'flicker', 'num', 'ox', 'oy'];
 const NONSOLID = new Set(['note', 'paper', 'key', 'item', 'sparkle', 'coin', 'footprints', 'stain', 'puddle', 'handprint', 'marigold', 'newspaper', 'photo', 'scissors', 'knife', 'cup', 'salt', 'rice', 'thread', 'paw', 'candy', 'flashlight', 'match', 'towel', 'book', 'dock', 'rope', 'shoes', 'brush', 'invisible', 'skin', 'whisk']);
 
 let W = null;          // 当前章节运行态（主机权威；客机是镜像）
