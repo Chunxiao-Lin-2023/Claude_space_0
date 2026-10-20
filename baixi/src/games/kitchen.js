@@ -707,11 +707,12 @@ BX.register({
       g.fillStyle = '#fffaf0'; D.rr(g, 0, 0, w, h, 6); g.fill(); g.shadowColor = 'transparent';
       g.fillStyle = frac < .25 ? '#c23a2b' : '#8a2a20'; D.rr(g, 0, 0, w, h * .2, 6); g.fill(); g.fillRect(0, h * .1, w, h * .1);
       D.text(g, r.n, w / 2, h * .1, {size: Math.min(h * .15, w * .17), color: '#fff3e0', weight: 800});
-      const ds = Math.min(h * .48, w * .62); drawDish(g, w / 2, h * .2 + ds * .48, ds, o.r);
-      const n = r.ing.length, is = Math.min(h * .2, w / (n + 1.6)), rowY = h * .82 - is * .25;
-      let ix = w / 2 - (n * is + is * .9) / 2 + is / 2;
-      for (const t of r.ing) { drawIng(g, ix, rowY, is * 1.15, t, ING[t].chop); ix += is; }
-      seal(g, ix + is * .05, rowY, is * .8, STN_CH[r.st], '#3f7f6b');
+      const ds = Math.min(h * .4, w * .5); drawDish(g, w / 2, h * .2 + ds * .5, ds, o.r);
+      const n = r.ing.length, is = Math.min(h * .27, (w - 8) / (n + 1.3)), rowY = h * .78 - is * .1;
+      let ix = w / 2 - (n * is + is * .8) / 2 + is / 2;
+      g.fillStyle = 'rgba(200,160,100,.18)'; D.rr(g, 3, rowY - is * .55, w - 6, is * 1.1, 4); g.fill();
+      for (const t of r.ing) { drawIng(g, ix, rowY, is * 1.45, t, ING[t].chop); ix += is; }
+      seal(g, ix - is * .05, rowY, is * .72, STN_CH[r.st], '#3f7f6b');
       // patience bar
       g.fillStyle = 'rgba(0,0,0,.12)'; g.fillRect(4, h - 6, w - 8, 4);
       g.fillStyle = frac > .5 ? '#3f9a4a' : frac > .25 ? '#e0a020' : '#d0533f'; g.fillRect(4, h - 6, (w - 8) * frac, 4);

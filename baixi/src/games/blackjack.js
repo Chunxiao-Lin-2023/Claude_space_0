@@ -441,7 +441,7 @@ BX.register({
           if (level === 1) b = BX.pick([10, 20, 50, 50, 100, 100, 150, 200, 300]);
           else if (level === 2) b = Math.round(st.chips[s] * .07 / 10) * 10;
           else { const tc = trueCount(), unit = Math.max(10, Math.round(st.chips[s] / 60 / 10) * 10); b = tc < 1 ? unit : unit * Math.min(6, Math.floor(tc) + 1); }
-          b = Math.max(MINB, Math.min(cap, Math.floor(b / 10) * 10));
+          b = Math.max(MINB, Math.floor(Math.min(cap, b) / 10) * 10);
           return {t: 'bet', amt: b};
         }
         if (L.ins) return {t: 'ins', take: level === 1 ? rnd() < .35 : level === 3 ? trueCount() >= 3 : false};

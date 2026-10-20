@@ -223,7 +223,7 @@ BX.register({
     const hit = (p, G) => { let c = Math.floor((p.x - G.ox) / G.s), r = Math.floor((p.y - G.oy) / G.s); if (r < 0 || r > 7 || c < 0 || c > 7) return -1; if (flip()) { r = 7 - r; c = 7 - c; } return r * 8 + c; };
     const refreshLegal = () => { legal = st.over ? [] : legalMoves(Eng(st)); };
     function status() {
-      const mat = c => st.caps[c].reduce((a, p) => a + VAL[p & 7], 0) / 100;
+      const mat = c => Math.round(st.caps[c].reduce((a, p) => a + VAL[p & 7], 0) / 100);
       const d = mat(0) - mat(1);
       ctx.info(0, d > 0 ? '+' + d : ''); ctx.info(1, d < 0 ? '+' + (-d) : '');
       if (st.over) return ctx.status(st.result.text);
