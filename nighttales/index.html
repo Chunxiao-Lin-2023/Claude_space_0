@@ -11419,8 +11419,8 @@ IN.handlers.push(n => {
           { x: 15, y: 5, spr: 'spade', on: S => S.narr('一堆新挖出来的湿土，上面插着一把铁锹。\n锹刃上的泥，被雨冲得一道一道的。') },
           { x: 16, y: 5, spr: 'crate', on: S => S.narr('挖墓人的工具箱。绳子、撬棍、一盏没点的马灯。') },
           { id: 'milepost', x: 10, y: 10, spr: 'milepost', on: S => S.narr('路边插着一块木头路牌：\n\n　　金链花别墅　2 英里 →\n\n两英里。走回去，得走上一个多钟头。') },
-          { id: 'cgate', x: 9, y: 12, spr: 'invisible', async touch(S) {
-            if (!S.f.cemTalk) { S.pos(9, 11, 3); return S.narr('她还站在墓前。你不能把她一个人留在这儿。'); }
+          { id: 'cgate', x: 9, y: 11, spr: 'invisible', async touch(S) {   // 出口在最下面一行（地图只有 12 行，y=12 在图外、走不到）
+            if (!S.f.cemTalk) { S.pos(9, 10, 3); return S.narr('她还站在墓前。你不能把她一个人留在这儿。'); }
             if (S.once('milepostPass')) await S.narr('你们走过那块路牌。\n金链花别墅，2 英里。她回头看了一眼。');
             await S.fade(1, 900);
             S.hide('wife_c');

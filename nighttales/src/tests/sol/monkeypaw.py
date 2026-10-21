@@ -48,7 +48,7 @@ SOL = [
     ['use', 'milepost'],
     ['use', 'hgrave'],
     ['use', 'wife_c'],
-    ['step', 9, 12],                          # 一周后的深夜
+    ['step', 9, 11],                          # 一周后的深夜
     ['expect', f"{W}.f.act === 'fetch'"],
     ['shot', 'night'],
     ['step', 4, 6],                           # 下楼
