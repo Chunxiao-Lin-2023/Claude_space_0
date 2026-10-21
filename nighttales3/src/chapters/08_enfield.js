@@ -535,7 +535,7 @@
     v('camtri', is('chest', 'develop', 'photo', 'dark'));
     for (const b of ['b1', 'b2', 'b3']) v(b, is('knocks', 'fetched', 'heard', 'chest', 'develop', 'photo', 'dark'));
     v('rec_u', is('placed', 'knocks')); S.ent('rec_u').lit = true;
-    if (a === 'morning' && S.ent('tommy_l').x !== 2) { S.place('tommy_l', 2, 5, 2); S.place('sue_l', 8, 5, 1); }
+    if (a === 'morning' && (Math.round(S.ent('tommy_l').px / 16) !== 2 || Math.round(S.ent('sue_l').px / 16) !== 8)) { S.place('tommy_l', 2, 5, 2); S.place('sue_l', 8, 5, 1); }   // 用 px 判断：重来后 e.x 不会跟着更新
     if (a === 'morning') { S.place('lucy_u', 2, 5, 3); S.ent('lucy_u').oy = 0; S.ent('lucy_u').spr = '@lucy'; } else S.hide('lucy_u');
   }
   function light(S) {

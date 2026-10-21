@@ -805,6 +805,7 @@
     if (S.f.tutT >= 3.6) { S.f.phase = 'tutx'; S.after(0, tutPass); }
   }
   async function tutFail(S) {
+    S.f.tutFails = (S.f.tutFails || 0) + 1;
     const [bx, by] = behind(S);
     S.place('kt2', bx, by); S.face('kt2', 'pl'); S.ent('kt2').alpha = 1;
     S.toast('香味一下子变成了腐臭——');

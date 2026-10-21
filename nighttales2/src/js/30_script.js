@@ -211,7 +211,7 @@ function applyCP(cp) {
     const m = W.maps[k]; if (!m) continue; m.mods = Object.assign({}, cp.maps[k].mods); m.dirty = true;
     cp.maps[k].ents.forEach((o, i) => {
       let e = m.ents[i]; if (!e || e.id !== o.id) e = m.ents.find(z => z.id === o.id && o.id); if (!e) return;
-      Object.assign(e, { px: o.px, py: o.py, dir: o.dir, hidden: o.hidden, alpha: o.alpha, spr: o.spr, solid: o.solid, s: Object.assign({}, o.s), follow: o.follow, light: o.light, chase: null, mv: null });
+      Object.assign(e, { px: o.px, py: o.py, x: Math.round(o.px / TS), y: Math.round(o.py / TS), dir: o.dir, hidden: o.hidden, alpha: o.alpha, spr: o.spr, solid: o.solid, s: Object.assign({}, o.s), follow: o.follow, light: o.light, chase: null, mv: null });
       for (const v of VKEYS) { if (typeof e[v] === 'function') continue; if (o[v] !== undefined) e[v] = o[v]; else if (e[v] !== undefined && !(v in e.def)) delete e[v]; }
       e.frozen = false;
     });
