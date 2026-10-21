@@ -105,6 +105,7 @@ kbd{display:inline-block;border:1px solid #555;border-bottom-width:2px;padding:0
 #note{background:rgba(0,0,0,.72);flex-direction:column;cursor:pointer}
 #note .paper{background:var(--paper);color:#2a2018;max-width:560px;width:100%;padding:26px 28px;font-family:var(--serif);box-shadow:0 10px 40px #000;transform:rotate(-.6deg);background-image:repeating-linear-gradient(transparent 0 29px,rgba(80,60,40,.12) 29px 30px);max-height:calc(100dvh - 90px);overflow:auto;animation:fin .3s}
 #note h3{margin:0 0 12px;letter-spacing:3px;font-size:20px;border-bottom:1px solid rgba(80,60,40,.3);padding-bottom:8px}
+#kpP{white-space:pre-line}
 #note .tx{white-space:pre-wrap;line-height:1.9;font-size:16.5px}
 #keypad{background:rgba(0,0,0,.65)}
 #keypad .panel{max-width:400px;text-align:center}
@@ -837,7 +838,7 @@ function newWorld(ch) {
 }
 function buildMap(ch, id) {
   const d = ch.maps[id], rows = d.rows, h = rows.length, wd = Math.max(...rows.map(r => r.length));
-  const leg = Object.assign({}, BASE_LEGEND, ch.legend || {}, d.legend || {});
+  const leg = Object.assign({}, BASE_LEGEND, (ch.legend && typeof ch.legend === 'object') ? ch.legend : {}, d.legend || {});   // ch.legend 是档案正文字符串时不能合并
   const m = { id, def: d, w: wd, h, leg, rows: rows.map(r => r.padEnd(wd, ' ')), mods: {}, ents: [], cache: null, dirty: true };
   for (const ed of (d.ents || [])) m.ents.push(makeEnt(ed, ch));
   return m;
@@ -1285,6 +1286,8 @@ const SAPI = {
   get moving() { const p = W.pl; if (isHost() && !iControl()) return !!(p.rmv && RT - p.rT < .3); return !!p.mv; },
   get running() { const p = W.pl; if (isHost() && !iControl()) return !!(p.rmv && p.rrun && RT - p.rT < .3); return !!(p.mv && p.run); },
   get coop() { return NET.role !== 'solo' && NET.up; },
+  /* 是否有剧本正在运行（tick 里判断用） */
+  get busy() { return !!(W && W.busy); },
   async say(who, text, o = {}) {
     const g = GEN; const pages = Array.isArray(text) ? text : [text];
     for (const t of pages) {
@@ -1380,6 +1383,11 @@ const SAPI = {
   /* o.during=true：对话/密码盘打开时也照样计时，到点会打断当前对话 */
   timer(sec, label, fn, o = {}) { W.timer = { left: sec, label, fn, during: !!o.during }; },
   clearTimer() { W.timer = null; },
+  /* 倒计时剩余秒数（没有计时为 null）；timerAdd 加减秒数（负数=扣时间，最少留 0.1 秒） */
+  get timerLeft() { return W.timer ? W.timer.left : null; },
+  timerAdd(sec) { if (W.timer) W.timer.left = Math.max(.1, W.timer.left + sec); },
+  /* 在 tick 等非剧本位置立刻开始一段剧本（等同引擎内部 runScript） */
+  run(fn) { runScript(fn); },
   focus(x, y) { W.camFocus = x == null ? null : [x, y]; },
   hidePlayer(b = true) { W.pl.hidden = b; },
   wear(spr) { W.pl.spr = spr; },
@@ -1418,7 +1426,9 @@ const SAPI = {
     const g = GEN;
     if (!SAPI.coop) { const v = await SAPI.ask(text, opts, who, o); return { v, agree: true, h: v, g: v }; }
     const r = await waitInput('dlg', { dlg: { id: ++DLGID, who: who || '', text, choices: opts, sel: 0, full: false, t0: RT, style: o.style || '', vote: { h: null, g: null } } });
-    chk(g); W.dlg = null; return r;
+    chk(g); W.dlg = null;
+    if (r && !r.agree && o.onSplit != null) r.v = o.onSplit;   // 意见不一致时固定走某一项（例如安全项）
+    return r;
   },
 };
 function markDone(id) { const d = store.get('done', []); if (!d.includes(id)) { d.push(id); store.set('done', d); } }
@@ -1439,7 +1449,7 @@ function applyCP(cp) {
     const m = W.maps[k]; if (!m) continue; m.mods = Object.assign({}, cp.maps[k].mods); m.dirty = true;
     cp.maps[k].ents.forEach((o, i) => {
       let e = m.ents[i]; if (!e || e.id !== o.id) e = m.ents.find(z => z.id === o.id && o.id); if (!e) return;
-      Object.assign(e, { px: o.px, py: o.py, dir: o.dir, hidden: o.hidden, alpha: o.alpha, spr: o.spr, solid: o.solid, s: Object.assign({}, o.s), follow: o.follow, light: o.light, chase: null, mv: null });
+      Object.assign(e, { px: o.px, py: o.py, x: Math.round(o.px / TS), y: Math.round(o.py / TS), dir: o.dir, hidden: o.hidden, alpha: o.alpha, spr: o.spr, solid: o.solid, s: Object.assign({}, o.s), follow: o.follow, light: o.light, chase: null, mv: null });
       for (const v of VKEYS) { if (typeof e[v] === 'function') continue; if (o[v] !== undefined) e[v] = o[v]; else if (e[v] !== undefined && !(v in e.def)) delete e[v]; }
       e.frozen = false;
     });
@@ -1756,7 +1766,9 @@ const UI = {
     els[i].focus(); els[i].scrollIntoView({ block: 'nearest' }); return true;
   },
   toast(t) {
-    const el = document.createElement('div'); el.className = 'toast'; el.textContent = t; $('toasts').appendChild(el);
+    const el = document.createElement('div'); el.className = 'toast'; el.textContent = t;
+    if (String(t).startsWith('目标：')) { el.dataset.k = 'goal'; $('toasts').querySelectorAll('[data-k="goal"]').forEach(x => x.remove()); }   // 新目标替换旧目标，不叠成几行
+    $('toasts').appendChild(el);
     while ($('toasts').children.length > 3) $('toasts').firstChild.remove();
     setTimeout(() => el.remove(), 2600);
   },
@@ -1790,7 +1802,7 @@ const UI = {
       c.appendChild(cv2);
       const meta = document.createElement('div'); meta.className = 'meta';
       const nAll = Object.keys(ch.notes || {}), nGot = nAll.filter(k => gotN.includes(ch.id + ':' + k)).length;
-      meta.innerHTML = `<div class="no">第${'一二三四五六七八九十'[i] || i + 1}夜 · ${esc(ch.origin || '')}</div><div class="tt">${esc(ch.title)}</div><div class="tl">${esc(ch.sub || '')}${nAll.length && (nGot || done.includes(ch.id)) ? ` · 笔记 ${nGot}/${nAll.length}` : ''}</div>`;
+      meta.innerHTML = `<div class="no">第${'一二三四五六七八九十'[(ch.n || i + 1) - 1] || ch.n || i + 1}夜 · ${esc(ch.origin || '')}</div><div class="tt">${esc(ch.title)}</div><div class="tl">${esc(ch.sub || '')}${nAll.length && (nGot || done.includes(ch.id)) ? ` · 笔记 ${nGot}/${nAll.length}` : ''}</div>`;
       c.appendChild(meta);
       if (done.includes(ch.id)) { const b = document.createElement('div'); b.className = 'badge done'; b.textContent = '已通关'; c.appendChild(b); }
       else if (hasCp) { const b = document.createElement('div'); b.className = 'badge cp'; b.textContent = '有存档'; c.appendChild(b); }
@@ -1818,7 +1830,7 @@ const UI = {
       const ok = done.includes(ch.id);
       const ns = Object.entries(ch.notes || {}); const have = ns.filter(([k]) => got.includes(ch.id + ':' + k));
       const es = Object.entries(ch.endings || {}), eh = es.filter(([k]) => ends.includes(ch.id + ':' + k));
-      d.innerHTML = `<h3>第${'一二三四五六七八九十'[i]}夜　${esc(ch.title)}　<span style="font-size:12px;color:var(--dim)">${esc(ch.origin || '')}</span></h3>` +
+      d.innerHTML = `<h3>第${'一二三四五六七八九十'[(ch.n || i + 1) - 1] || ch.n || i + 1}夜　${esc(ch.title)}　<span style="font-size:12px;color:var(--dim)">${esc(ch.origin || '')}</span></h3>` +
         (ok ? `<div class="legend">${esc(ch.legend || '')}</div>` : `<div class="lock">通关后解锁</div>`) +
         (ns.length ? `<div class="nlist">笔记 ${have.length}/${ns.length}${have.length ? '：' + have.map(([k, n]) => esc(n.title)).join('、') : ''}</div>` : '') +
         (es.length ? `<div class="nlist">结局 ${eh.length}/${es.length}${eh.length ? '：' + eh.map(([k, n]) => esc(n)).join('、') : ''}</div>` : '');
@@ -1870,7 +1882,7 @@ const UI = {
     if (cd) { if (cd.id !== this._cardId) { this._cardId = cd.id; const C = $('card'); C.classList.remove('hidden'); C.querySelector('.t').textContent = cd.title; C.querySelector('.s').textContent = cd.sub; C.querySelector('.b').textContent = cd.body; C.style.animation = 'none'; void C.offsetWidth; C.style.animation = ''; } }
     else if (this._cardId !== -1) { $('card').classList.add('hidden'); this._cardId = -1; }
     const nt = W.note;
-    if (nt) { if (nt.id !== this._noteId) { this._noteId = nt.id; const N = $('note'); N.classList.remove('hidden'); N.querySelector('h3').textContent = nt.title; N.querySelector('.tx').textContent = nt.text; N.querySelector('.paper').scrollTop = 0; } }
+    if (nt) { if (nt.id !== this._noteId) { this._noteId = nt.id; const N = $('note'); N.classList.remove('hidden'); N.querySelector('h3').textContent = nt.title; N.querySelector('.tx').textContent = nt.text; N.querySelector('.paper').scrollTop = 0; noteMore(N); } }
     else if (this._noteId !== -1 && !this._localNote) { $('note').classList.add('hidden'); this._noteId = -1; }
     const kp = W.keypad;
     if (kp) {
@@ -1899,9 +1911,11 @@ const UI = {
   }
 };
 function showLocalNote(n) {
-  UI._localNote = true; const N = $('note'); N.classList.remove('hidden'); N.querySelector('h3').textContent = n.title; N.querySelector('.tx').textContent = n.text;
+  UI._localNote = true; const N = $('note'); N.classList.remove('hidden'); N.querySelector('h3').textContent = n.title; N.querySelector('.tx').textContent = n.text; N.querySelector('.paper').scrollTop = 0; noteMore(N);
   UI.modal = 'note'; if (W && NET.role === 'solo') W.paused = true;
 }
+/* 笔记太长时提示可以滑动（纸面本身可滚动） */
+function noteMore(N) { const P = N.querySelector('.paper'), K = N.querySelector('.k'); requestAnimationFrame(() => { K.textContent = P.scrollHeight > P.clientHeight + 4 ? '— 下面还有 · 滑动查看 · 点击合上 —' : '— 点击合上 —'; }); }
 function closeLocalNote() { UI._localNote = false; $('note').classList.add('hidden'); UI.modal = null; UI._noteId = -1; if (W) W.paused = false; }
 
 /* ---------- 章节缩略图 ---------- */
@@ -14203,7 +14217,7 @@ IN.handlers.push(n => {
 /* ---- js/99_main.js ---- */
 /* ================= 十夜怪谈 · 主循环 ================= */
 let lastT = now();
-function updateHint() { W.hint = (iControl() && canMove()) ? facingEnt() : null; }
+function updateHint() { W.hint = (iControl() && canMove() && !W.pl.hidden) ? facingEnt() : null; }
 function frame() {
   const t = now(); const dt = Math.min(.05, (t - lastT) / 1000); lastT = t;
   try {

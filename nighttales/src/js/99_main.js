@@ -1,6 +1,6 @@
 /* ================= 十夜怪谈 · 主循环 ================= */
 let lastT = now();
-function updateHint() { W.hint = (iControl() && canMove()) ? facingEnt() : null; }
+function updateHint() { W.hint = (iControl() && canMove() && !W.pl.hidden) ? facingEnt() : null; }
 function frame() {
   const t = now(); const dt = Math.min(.05, (t - lastT) / 1000); lastT = t;
   try {

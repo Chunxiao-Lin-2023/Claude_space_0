@@ -97,7 +97,7 @@ function netSnapshot() {
     return [i, Math.round(e.px), Math.round(e.py), e.dir, e.fr, e.hidden ? 1 : 0, Math.round((e.alpha ?? 1) * 100), e.spr === e.def.spr ? 0 : e.spr, any ? fl : 0, s, e.light === e.def.light ? 0 : (e.light || null), e.bubble && e.bubble.until > RT ? [e.bubble.k, Math.round((e.bubble.until - RT) * 1000)] : 0, e.solid ? 1 : 0];
   });
   const v = {
-    t: 'v', gen: GEN, ch: W.ch.id, map: W.mapId, k: W.forceK, pl: [p.x, p.y, Math.round(p.px), Math.round(p.py), p.dir, p.fr, p.hidden ? 1 : 0, p.spr, p.speed || 1],
+    t: 'v', gen: GEN, ch: W.ch.id, map: W.mapId, k: W.forceK, pl: [p.x, p.y, Math.round(p.px), Math.round(p.py), p.dir, p.fr, p.hidden ? 1 : 0, p.spr, p.speed || 1, p.bubble && p.bubble.until > RT ? [p.bubble.k, Math.round((p.bubble.until - RT) * 1000)] : 0],
     ctrl: W.ctrl, req: W.req || null, busy: W.busy, fade: Math.round(W.fade * 100) / 100, dark: W.mapDark[W.mapId] ?? null, plr: W.plr, goal: W.goal, inv: W.inv,
     timer: W.timer ? [W.timer.label, Math.round(W.timer.left * 10) / 10] : null, nr: !!W.noRun, dlg: W.dlg, card: W.card, note: W.note, keypad: W.keypad, end: W.endScreen || null,
     ents, mods: m.mods, cf: W.camFocus || null, ended: W.ended, paused: false, xl: W.extraLights && W.extraLights.length ? W.extraLights : 0
@@ -132,7 +132,7 @@ function applyV(v) {
     if (jump) { p.px = P[2]; p.py = P[3]; p.mv = null; }
     NET.myK = v.k;
   }
-  p.hidden = !!P[6]; p.spr = P[7]; p.speed = P[8];
+  p.hidden = !!P[6]; p.spr = P[7]; p.speed = P[8]; p.bubble = P[9] ? { k: P[9][0], until: RT + P[9][1] / 1000 } : null;
   W.ctrl = v.ctrl; W.req = v.req; W.busy = v.busy; W.fade = v.fade; W.mapDark = { [v.map]: v.dark }; W.plr = v.plr; W.goal = v.goal; W.inv = v.inv;
   W.timer = v.timer ? { label: v.timer[0], left: v.timer[1] } : null; W.camFocus = v.cf; W.ended = v.ended; W.noRun = v.nr; W.extraLights = v.xl || [];
   const keepT = (cur, nv) => { if (!nv) return null; if (cur && cur.id === nv.id) { nv.t0 = cur.t0; } else nv.t0 = RT; return nv; };

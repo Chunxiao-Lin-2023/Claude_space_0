@@ -9,6 +9,7 @@
   ['use', 实体id 或 [x,y], [选项...]]   传送到实体旁、面向它并调查；自动翻完对话，遇到选项按顺序选（默认 0）
   ['step', x, y, [选项...]]             传送到格子并触发踩踏事件（出口、机关）
   ['wait', 毫秒]  ['js', 代码, [选项]]  ['expect', 返回真值的 JS]  ['shot', 名字]
+  ['retry']                             上一步死亡后从检查点重来（只有紧跟 retry 的那一步允许死亡）
 密码盘（S.keypad）也从选项列表里取一个字符串（逐字符按键）或一个列表（每项一个键，如 ["10","开"]）。
 """
 import os, sys, json, time, threading, http.server, socketserver, functools
@@ -20,6 +21,7 @@ SOL = {}
 for _f in sorted(_glob.glob(os.path.join(HERE, 'sol', '*.py'))):
     _sp = importlib.util.spec_from_file_location('sol_' + os.path.basename(_f)[:-3], _f); _m = importlib.util.module_from_spec(_sp); _sp.loader.exec_module(_m)
     SOL[os.path.basename(_f)[:-3]] = _m.SOL
+WARN = []
 PEERJS = '/home/claude/testdeps/node_modules/peerjs/dist/peerjs.min.js'
 
 AUTO_JS = r"""
@@ -38,6 +40,23 @@ window.__auto = async (picks, maxMs) => {
     await sleep(50);
   }
   return 'timeout';
+};
+window.__reach = () => {   // 从玩家当前位置真实走路能到的格子（当前地图）
+  const D = window.__dbg, W = D.W, m = W.maps[W.mapId], seen = new Set(), q = [[W.pl.x, W.pl.y]];
+  seen.add(W.pl.x + ',' + W.pl.y);
+  while (q.length) { const [x, y] = q.pop(); for (const [dx, dy] of [[1,0],[-1,0],[0,1],[0,-1]]) { const nx = x + dx, ny = y + dy, k = nx + ',' + ny; if (seen.has(k)) continue; if (!passable(m, nx, ny, W.pl)) continue; seen.add(k); q.push([nx, ny]); } }
+  return { map: W.mapId, cells: [...seen] };
+};
+window.__cands = t => {   // 能调查目标的所有站位（和 __dbg.face 的候选一致）
+  const D = window.__dbg, W = D.W, m = W.maps[W.mapId];
+  if (typeof t === 'number') return null;
+  const e = Array.isArray(t) ? m.ents.find(z => !z.hidden && Math.round(z.px / TS) <= t[0] && t[0] < Math.round(z.px / TS) + z.w && Math.round(z.py / TS) <= t[1] && t[1] < Math.round(z.py / TS) + z.h && z.on) : D.ent(t);
+  if (!e) return null;
+  const ex = Math.round(e.px / TS), ey = Math.round(e.py / TS), c = [];
+  for (let x = ex; x < ex + e.w; x++) { c.push(x + ',' + (ey + e.h)); c.push(x + ',' + (ey - 1)); }
+  for (let y = ey; y < ey + e.h; y++) { c.push((ex - 1) + ',' + y); c.push((ex + e.w) + ',' + y); }
+  if (!e.solid) for (let x = ex; x < ex + e.w; x++) for (let y = ey; y < ey + e.h; y++) c.push(x + ',' + y);
+  return c;
 };
 """
 
@@ -59,15 +78,29 @@ def run_chapter(page, cid, steps, shots=None):
     r = auto(steps[0] if steps and isinstance(steps[0], list) and all(isinstance(x, int) for x in steps[0]) else [])
     i0 = 1 if steps and isinstance(steps[0], list) and all(isinstance(x, int) for x in steps[0]) else 0
     shot_n = 0
-    for st in steps[i0:]:
+    def check_reach(cid, st, pre):
+        now = page.evaluate("(() => { const W = window.__dbg.W; return {map: W.mapId, x: W.pl.x, y: W.pl.y}; })()")
+        cells = set(pre['cells'])
+        ok = f"{now['x']},{now['y']}" in cells or (pre.get('cands') and any(c in cells for c in pre['cands']))
+        if now['map'] == pre['map'] and not ok:
+            WARN.append(f"{cid}: 从 {tuple(pre['xy'])} 走不到 {st[:3] if st[0]=='step' else st[:2]} -> ({now['x']},{now['y']}) on {now['map']}（可达 {len(cells)} 格；测试是传送过去的，真人可能被堵住）")
+    rest = steps[i0:]
+    for si, st in enumerate(rest):
         kind = st[0]
+        if kind in ('use', 'step'):
+            pre = page.evaluate("window.__reach()")
+            pre['cands'] = page.evaluate("t => window.__cands(t)", st[1]) if kind == 'use' else None
+            pre['xy'] = page.evaluate("(() => { const W = window.__dbg.W; return [W.pl.x, W.pl.y]; })()")
         if kind == 'use':
             tgt = st[1]; picks = st[2] if len(st) > 2 else []
             ok = page.evaluate("t => window.__dbg.face(t)", tgt)
+            check_reach(cid, st, pre)
             if not ok: raise AssertionError(f'{cid}: cannot reach {tgt} on map {page.evaluate("window.__dbg.W.mapId")}')
             page.evaluate("window.__dbg.doAct('use')")
             r = auto(picks)
         elif kind == 'step':
+            page.evaluate("([x,y]) => window.__dbg.tp(x,y)", [st[1], st[2]])
+            check_reach(cid, st, pre)
             page.evaluate("([x,y]) => window.__dbg.step(x,y)", [st[1], st[2]])
             r = auto(st[3] if len(st) > 3 else [])
         elif kind == 'wait':
@@ -78,13 +111,15 @@ def run_chapter(page, cid, steps, shots=None):
             if shots:
                 shot_n += 1; page.screenshot(path=os.path.join(shots, f'{cid}_{shot_n:02d}_{st[1]}.png'))
             continue
+        elif kind == 'retry':   # 死亡后从检查点重来（上一步允许以死亡结束）
+            page.wait_for_timeout(1200); page.evaluate("window.__dbg.retryFromCP()"); page.wait_for_timeout(400); r = auto()
         elif kind == 'expect':
             v = page.evaluate(st[1])
             if not v: raise AssertionError(f'{cid}: expect failed: {st[1]}')
             continue
         state = page.evaluate("(() => { const W = window.__dbg.W; return W ? {map: W.mapId, x: W.pl.x, y: W.pl.y, goal: W.goal, end: W.endScreen && W.endScreen.kind, inv: W.inv} : null })()")
         log.append((st, r, state))
-        if state and state['end'] == 'die':
+        if state and state['end'] == 'die' and not (si + 1 < len(rest) and rest[si + 1][0] == 'retry'):
             raise AssertionError(f'{cid}: died at step {st} -> {state}')
     end = page.evaluate("window.__dbg.W && window.__dbg.W.endScreen && window.__dbg.W.endScreen.kind")
     if shots:
@@ -125,6 +160,7 @@ def main():
         b.close()
     httpd.shutdown()
     for k, v in results.items(): print(f'{k:12s} {v}')
+    if WARN: print('REACH WARNINGS:'); [print('  ', w) for w in WARN]
     if errors: print('ERRORS:'); [print('  ', e[:300]) for e in errors[:20]]
     sys.exit(0 if all(v == 'OK' for v in results.values()) and not errors else 1)
 

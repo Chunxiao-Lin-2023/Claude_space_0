@@ -48,6 +48,8 @@ const SAPI = {
   get moving() { const p = W.pl; if (isHost() && !iControl()) return !!(p.rmv && RT - p.rT < .3); return !!p.mv; },
   get running() { const p = W.pl; if (isHost() && !iControl()) return !!(p.rmv && p.rrun && RT - p.rT < .3); return !!(p.mv && p.run); },
   get coop() { return NET.role !== 'solo' && NET.up; },
+  /* 是否有剧本正在运行（tick 里判断用） */
+  get busy() { return !!(W && W.busy); },
   async say(who, text, o = {}) {
     const g = GEN; const pages = Array.isArray(text) ? text : [text];
     for (const t of pages) {
@@ -143,6 +145,11 @@ const SAPI = {
   /* o.during=true：对话/密码盘打开时也照样计时，到点会打断当前对话 */
   timer(sec, label, fn, o = {}) { W.timer = { left: sec, label, fn, during: !!o.during }; },
   clearTimer() { W.timer = null; },
+  /* 倒计时剩余秒数（没有计时为 null）；timerAdd 加减秒数（负数=扣时间，最少留 0.1 秒） */
+  get timerLeft() { return W.timer ? W.timer.left : null; },
+  timerAdd(sec) { if (W.timer) W.timer.left = Math.max(.1, W.timer.left + sec); },
+  /* 在 tick 等非剧本位置立刻开始一段剧本（等同引擎内部 runScript） */
+  run(fn) { runScript(fn); },
   focus(x, y) { W.camFocus = x == null ? null : [x, y]; },
   hidePlayer(b = true) { W.pl.hidden = b; },
   wear(spr) { W.pl.spr = spr; },
@@ -181,7 +188,9 @@ const SAPI = {
     const g = GEN;
     if (!SAPI.coop) { const v = await SAPI.ask(text, opts, who, o); return { v, agree: true, h: v, g: v }; }
     const r = await waitInput('dlg', { dlg: { id: ++DLGID, who: who || '', text, choices: opts, sel: 0, full: false, t0: RT, style: o.style || '', vote: { h: null, g: null } } });
-    chk(g); W.dlg = null; return r;
+    chk(g); W.dlg = null;
+    if (r && !r.agree && o.onSplit != null) r.v = o.onSplit;   // 意见不一致时固定走某一项（例如安全项）
+    return r;
   },
 };
 function markDone(id) { const d = store.get('done', []); if (!d.includes(id)) { d.push(id); store.set('done', d); } }
@@ -202,7 +211,7 @@ function applyCP(cp) {
     const m = W.maps[k]; if (!m) continue; m.mods = Object.assign({}, cp.maps[k].mods); m.dirty = true;
     cp.maps[k].ents.forEach((o, i) => {
       let e = m.ents[i]; if (!e || e.id !== o.id) e = m.ents.find(z => z.id === o.id && o.id); if (!e) return;
-      Object.assign(e, { px: o.px, py: o.py, dir: o.dir, hidden: o.hidden, alpha: o.alpha, spr: o.spr, solid: o.solid, s: Object.assign({}, o.s), follow: o.follow, light: o.light, chase: null, mv: null });
+      Object.assign(e, { px: o.px, py: o.py, x: Math.round(o.px / TS), y: Math.round(o.py / TS), dir: o.dir, hidden: o.hidden, alpha: o.alpha, spr: o.spr, solid: o.solid, s: Object.assign({}, o.s), follow: o.follow, light: o.light, chase: null, mv: null });
       for (const v of VKEYS) { if (typeof e[v] === 'function') continue; if (o[v] !== undefined) e[v] = o[v]; else if (e[v] !== undefined && !(v in e.def)) delete e[v]; }
       e.frozen = false;
     });
