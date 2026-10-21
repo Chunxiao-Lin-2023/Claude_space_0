@@ -92,6 +92,7 @@
           'TTTTTTTTTTTdTTTTTTTTTT'];
   const GLOW = { r: 2.2, col: 'rgba(220,230,220,.14)' };
   /* 坟场里的鸡蛋花树：白花在黑里泛着一点光（红花那棵泛粉），一眼看得出树长在坟的哪一头 */
+  const TRAIL = { r: .8, col: 'rgba(240,240,225,.08)' };
   const KLW = { r: 1.25, col: 'rgba(240,240,225,.12)', dy: -8 }, KLR = { r: 1.25, col: 'rgba(240,120,150,.14)', dy: -8 };
 
   const caughtK = async S => {
@@ -463,11 +464,9 @@
           { x: 11, y: 29, spr: 'invisible', async touch(S) { await S.narr('不能回去。孩子还在她手里。\n天亮之前，得把孩子带回来。'); await S.walk('pl', 'u', 5); } },
           { x: 11, y: 0, spr: 'invisible', async touch(S) { await S.go('makam', 11, 17, 3); } },
           { id: 'pondok', x: 3, y: 24, w: 2, spr: 'pondok', async on(S) { if (S.once('pondok')) await S.narr('割胶工的小棚子。棚里挂着几把割胶刀，一盏熄了的头灯。\n门口钉着一块木板，上面用木炭写满了字。'); await S.note('papan'); } },
-          { x: 16, y: 26, spr: 'bunga', decal: true, on: S => S.narr('地上又是几朵鸡蛋花，花心朝上，像一只只睁着的眼睛。') },
-          { x: 19, y: 22, spr: 'bunga', decal: true },
-          { x: 3, y: 15, spr: 'bunga', decal: true },
-          { x: 19, y: 8, spr: 'bunga', decal: true },
-          { x: 9, y: 2, spr: 'bunga', decal: true },
+          /* 地上一路落着的鸡蛋花，微微泛白，引着人走到每一道木板桥 */
+          { x: 16, y: 26, spr: 'bunga', decal: true, light: TRAIL, on: S => S.narr('地上又是几朵鸡蛋花，花心朝上，像一只只睁着的眼睛。') },
+          ...[[13, 26], [19, 22], [15, 17], [8, 17], [3, 15], [10, 11], [14, 9], [19, 8], [13, 3], [9, 2]].map(([x, y]) => ({ x, y, spr: 'bunga', decal: true, light: TRAIL })),
           { x: 13, y: 18, spr: 'kain', z: 1, on: S => S.narr('一缕白布挂在橡胶树的割口上，被树胶粘住了。\n布边绣着一圈红线。') },
           { x: 8, y: 11, spr: 'barrel', on: S => S.narr('一只接胶水的铁桶，里面的胶乳已经凝成了白色的一坨，像一块冷掉的豆腐。') },
           { x: 15, y: 5, spr: 'basket', on: S => S.narr('一只倒扣的竹篮，篮子底下压着一双胶鞋。\n鞋子是湿的，鞋尖朝着村子的方向，好像有人脱了鞋，光着脚往林子深处去了。') },
@@ -479,7 +478,7 @@
           if (S.f.phase === 'night') {
             S.f.phase = 'kebun';
             await S.narr('橡胶树一排一排，整整齐齐，像一队站着睡着的人。\n每棵树干上都斜斜地割着一道道口子，底下挂着接胶的椰壳碗。风一吹，碗和碗碰在一起，咯咯地响。');
-            await S.narr('地上的鸡蛋花，一朵，一朵，一直往北。');
+            await S.narr('地上的鸡蛋花，一朵，一朵，在黑里泛着一点白，一直引到前面的水沟边。');
             await S.think('外婆说过：笑声听着近，她还远；听着远——她就在旁边。\n地上全是落叶和椰壳碗，跑起来动静太大。慢慢走。');
             S.goal('往北穿过橡胶园（笑声轻、虫不叫、头顶落花＝站住别动）');
             resetK(S); S.f.kt = 1.2; S.f.kn = 0;
@@ -834,8 +833,8 @@
 
   /* ================= 橡胶园：反着听 ================= */
   /* 事件表：L＝笑声又响又近（她其实在远处的树间，快走）；S＝笑声又轻又闷（她就在身边，站住别动）。
-     进园先来一次 L，第二次一定是 S（进园约 6 秒），走完全程（禁跑，约 30 秒）至少遇到 3 次 S。 */
-  const SEQ = 'LSLSLLSSLSLS';
+     进园先来一次 L，第二次一定是 S（进园约 5 秒）；照规矩走完全程（禁跑）约 30 秒，会遇到 3 次左右的 S。 */
+  const SEQ = 'LSLSSLSLSSLS';
   const KNEAR = 4.4, KGRACE = 1.3;   // 轻笑持续 4.4 秒；轻笑响起后头 1.3 秒内还在走不算（真人要听清、反应、松手）
   function resetK(S) {
     S.stop('kk'); const k = S.ent('kk');
@@ -850,17 +849,17 @@
     if (f.kph === 'near') {
       if (f.kt < KNEAR - KGRACE && S.moving) f.kmv += dt;
       if (f.kmv > .35) {   // 她看见你了：木板第五条——香味变臭，跑
-        f.kph = 'hunt'; f.kt = 3.6; k.alpha = 1; k.light = GLOW; cue(S, 0);
+        f.kph = 'hunt'; f.kt = 4.2; k.alpha = 1; k.light = GLOW; cue(S, 0);
         S.sfx('sting'); laugh(S, 'far'); S.toast('香味一下子变成了腐臭——她看见你了！跑！'); S.bubble('kk', '!', 800);
         S.norun(false);
-        S.chase('kk', { spd: 3, catch: caughtK });
+        S.chase('kk', { spd: 3.2, catch: caughtK });
         return;
       }
-      if (f.kt <= 0) { k.alpha = 0; k.light = null; f.kph = 'gap'; f.kt = 1.2 + Math.random() * .8; S.amb('night'); S.toast('香味……散了。虫子又叫起来了。'); }
+      if (f.kt <= 0) { k.alpha = 0; k.light = null; f.kph = 'gap'; f.kt = .9 + Math.random() * .6; S.amb('night'); S.toast('香味……散了。虫子又叫起来了。'); }
       return;
     }
     if (f.kph === 'hunt') { if (f.kt <= 0) { S.stop('kk'); k.alpha = 0; k.light = null; f.kph = 'gap'; f.kt = 1.6; S.norun(true); S.amb('night'); S.toast('腐臭慢慢淡了。她又不见了。'); } return; }
-    if (f.kph === 'far') { if (f.kt <= 0) { k.alpha = 0; k.light = null; f.kph = 'gap'; f.kt = 1 + Math.random() * .8; } return; }
+    if (f.kph === 'far') { if (f.kt <= 0) { k.alpha = 0; k.light = null; f.kph = 'gap'; f.kt = .7 + Math.random() * .5; } return; }
     if (f.kt > 0) return;
     const c = SEQ[(f.kn || 0) % SEQ.length]; f.kn = (f.kn || 0) + 1;
     if (c === 'S') {   // 听着远：虫子先停，头顶落花，她半透明地站在两三格外
@@ -872,7 +871,7 @@
     } else {   // 听着近：耳边炸开，远处树间闪过一个发着白光的影子
       const [x, y] = spot(S, 7, 11); S.place('kk', x, y); S.face('kk', 'pl');
       k.alpha = .55; k.light = GLOW;
-      f.kph = 'far'; f.kt = 2.6 + Math.random() * .6;
+      f.kph = 'far'; f.kt = 2.2 + Math.random() * .5;
       laugh(S, 'near'); cue(S, 'L', 1.5); S.shake(250, 1); S.bubble('pl', '!', 700);
       S.toast(pick(LOUD));
     }
@@ -976,7 +975,7 @@
   async function badFar(S) {
     S.f.phase = 'far';
     await S.narr('你朝河边走过去。\n笑声还是很远、很远——你走得越近，它好像就越远。');
-    laugh(S, 'far'); S.toast(SOFT[0]);
+    laugh(S, 'far'); cue(S, 'S', 4); S.toast(SOFT[0]);
     await S.walk('pl', [21, 15], 3);
     S.hide('kfar');
     await S.narr('雾里的白影子不见了。\n脚下的泥变成了水。水漫过了脚踝，凉丝丝的。');
@@ -1008,7 +1007,7 @@
   }
   async function finale(S) {
     S.f.phase = 'final';
-    S.hide('kfar'); S.amb('none');
+    S.hide('kfar'); S.amb('none'); cue(S, 0);
     S.toast('鸡蛋花的香味，就贴在你的后脖子上。');
     await S.wait(500);
     await S.narr('笑声停了。\n河边那个白影子，不知道什么时候不见了。\n……香味就在你身后。近得能感觉到一口凉气，吹在你的后脖子上。');
