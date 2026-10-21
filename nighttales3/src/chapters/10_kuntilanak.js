@@ -21,15 +21,19 @@
   }
   /* 画面提示：'L' 耳朵两边炸开锯齿声纹（笑声响）；'S' 头顶往下落鸡蛋花瓣（笑声轻、她就在旁边） */
   function cue(S, m, sec) {
+    for (const k in W.maps) for (const z of W.maps[k].ents) if (z.id === 'ear') { z.hidden = true; z.s.m = 0; }   // 一次只亮一个
     const e = curMap().ents.find(z => z.id === 'ear'); if (!e) return;
-    if (!m) { e.hidden = true; e.s.m = 0; S.f.cueT = 0; return; }
+    if (!m) { S.f.cueT = 0; return; }
     e.s.m = m; e.hidden = false; e.px = W.pl.px; e.py = W.pl.py; S.f.cueT = sec;
   }
   function cueTick(S, dt) {
     if (!(S.f.cueT > 0)) return;
     S.f.cueT -= dt;
+    if (S.f.cueT <= 0) {   // 到点：每张图上的标记都收起来（换图时留在旧图上的那个也不例外）
+      for (const k in W.maps) for (const z of W.maps[k].ents) if (z.id === 'ear') { z.hidden = true; z.s.m = 0; }
+      return;
+    }
     const e = curMap().ents.find(z => z.id === 'ear'); if (!e) return;
-    if (S.f.cueT <= 0) { e.hidden = true; e.s.m = 0; return; }
     e.px = W.pl.px; e.py = W.pl.py;
   }
   const EAR = { id: 'ear', x: 1, y: 1, spr: 'sheng', solid: false, hidden: true, z: 2 };
@@ -200,9 +204,10 @@
         const ox = W.pl.px - e.px, oy = W.pl.py - e.py;
         if (e.m === 'L') {   // 笑声响：耳朵两边炸开的锯齿声纹
           for (let k = 0; k < 3; k++) {
-            const p = (t * 3 + k / 3) % 1, r = 2 + p * 9, c = `rgba(255,244,200,${((1 - p) * .9).toFixed(2)})`;
-            for (let j = -3; j <= 2; j++) { const jx = j & 1; R(ox + 1 - r - jx, oy - 3 + j * 2, 1, 2, c); R(ox + 14 + r + jx, oy - 3 + j * 2, 1, 2, c); }
+            const p = (t * 3 + k / 3) % 1, r = 1 + p * 12, h = 3 + Math.round(p * 3), c = `rgba(255,246,210,${((1 - p) * .95).toFixed(2)})`;
+            for (let j = -h; j <= h; j++) { const jx = (j & 1) * 2, bow = Math.round(Math.abs(j) * Math.abs(j) / 6); R(ox - r - jx + bow, oy - 4 + j * 2, 2, 2, c); R(ox + 14 + r + jx - bow, oy - 4 + j * 2, 2, 2, c); }
           }
+          if ((t * 6) % 1 < .5) { R(ox + 3, oy - 15, 1, 3, '#fff6d2'); R(ox + 7, oy - 17, 2, 4, '#fff6d2'); R(ox + 12, oy - 15, 1, 3, '#fff6d2'); }   // 头顶几道刺
         } else if (e.m === 'S') {   // 笑声轻：她就在头顶——鸡蛋花瓣一片一片往下落
           for (let i = 0; i < 7; i++) {
             const y = ((t * 9 + i * 7.3) % 30) - 24, x = 7 + Math.sin(t * 1.3 + i * 2.1) * (6 + (i % 3) * 4), a = Math.min(1, (6 - y) / 10) * .85;

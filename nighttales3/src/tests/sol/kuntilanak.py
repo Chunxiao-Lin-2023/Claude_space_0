@@ -24,6 +24,7 @@ SOL = [
     ['expect', "window.__dbg.W.f.tin && window.__dbg.W.inv.includes('bedung') && window.__dbg.W.inv.includes('paku')"],
     ['step', 7, 10],
     ['shot', 'kampung_night'],
+    ['expect', "window.__dbg.W.maps.kampung.ents.find(e => e.id === 'ear').hidden"],
     ['use', [26, 4]],
     ['use', 'ustaz', [0]],
     ['expect', "window.__dbg.W.f.phase === 'night'"],
