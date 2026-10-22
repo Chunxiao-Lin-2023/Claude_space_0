@@ -71,7 +71,7 @@ input:focus{border-color:var(--gold)}
 .stat b{font-family:var(--num);font-size:19px;font-weight:500;white-space:nowrap}
 .stat.flash b{animation:fl .6s}@keyframes fl{0%{color:#fff;text-shadow:0 0 10px var(--gold)}100%{}}
 #tGoal{flex:1;padding:6px 12px;display:flex;flex-direction:column;justify-content:center;gap:4px;min-width:160px;cursor:pointer}
-#tGoal .gl{display:flex;justify-content:space-between;font-size:12px;color:var(--sub)}#tGoal .gl b{color:var(--gold);font-family:var(--num);font-weight:500;font-size:14px}
+#tGoal .gl{display:flex;justify-content:space-between;gap:8px;font-size:12px;color:var(--sub)}#tGoal .gl span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}#tGoal .gl b{color:var(--gold);font-family:var(--num);font-weight:500;font-size:14px}
 .bar{height:8px;background:rgba(255,255,255,.08);border-radius:4px;overflow:hidden;position:relative}
 .bar>i{display:block;height:100%;background:linear-gradient(90deg,#c9952a,#f5c451);transition:width .4s}
 .bar>i.p1{background:linear-gradient(90deg,#1c8f82,#34d1bf)}.bar>i.p2{background:linear-gradient(90deg,#7351c4,#b48cff)}
@@ -132,6 +132,17 @@ canvas.spark{width:72px;height:26px;flex:none}
 #monthFx div{font-family:var(--title);font-size:clamp(40px,7vw,72px);color:#fff6dc;text-shadow:0 0 20px rgba(0,0,0,.6),0 4px 0 rgba(0,0,0,.35)}
 @keyframes mfx{0%{opacity:0;transform:scale(.92)}20%{opacity:1;transform:scale(1)}70%{opacity:1}100%{opacity:0}}
 #phoneTabs{display:none}
+.deal{display:inline-block;font-family:var(--font);font-size:12px;font-weight:700;padding:1px 7px;border-radius:5px;line-height:1.5}
+.deal.great{background:var(--gold);color:#1d1406}.deal.good{background:#2c9b6c;color:#fff}.deal.fair{background:rgba(255,255,255,.1);color:#cfd8e2}.deal.high{background:#4d5a6b;color:#c8d1db}
+.adv{display:inline-block;font-size:12px;padding:0 6px;border-radius:5px;font-weight:700}
+.adv.sell{background:#c8463b;color:#fff}.adv.ok{background:rgba(245,196,81,.2);color:#ffe2a0}.adv.wait{background:rgba(255,255,255,.08);color:var(--sub)}
+.verdict{display:flex;align-items:baseline;gap:10px;font-size:22px;font-weight:700;padding:8px 12px;border-radius:8px}
+.verdict small{font-size:14px;font-weight:400}
+.verdict.great{background:rgba(245,196,81,.18);color:#ffd970}.verdict.good{background:rgba(44,155,108,.22);color:#8ff0c2}.verdict.fair{background:rgba(255,255,255,.06);color:#dfe6ee}.verdict.high{background:rgba(120,130,145,.2);color:#b7c2cf}
+#coach{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(92px + var(--sa-b));width:min(460px,calc(100vw - 680px));min-width:300px;z-index:8;background:rgba(24,30,44,.96);border:1.5px solid var(--gold);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:8px;font-size:15px;line-height:1.6;box-shadow:0 0 0 4px rgba(245,196,81,.12),0 10px 30px rgba(0,0,0,.5)}
+#coach button{min-height:36px;padding:4px 12px;font-size:14px}
+.pulse{animation:pls 1.3s ease-in-out infinite!important;border-color:var(--gold)!important}
+@keyframes pls{0%,100%{box-shadow:0 0 0 0 rgba(245,196,81,.85)}60%{box-shadow:0 0 0 8px rgba(245,196,81,0)}}
 /* end screen */
 #endScr .card{width:min(620px,94vw);display:flex;flex-direction:column;gap:12px;max-height:calc(100dvh - 16px);overflow:auto;margin:auto;text-align:center}
 #endScr h2{margin:0;font-family:var(--title);font-weight:400;font-size:44px;color:#fff3cf}
@@ -169,7 +180,11 @@ canvas.spark{width:72px;height:26px;flex:none}
  #toasts{top:calc(64px + var(--sa-t))}
  .toast{font-size:14px}
 }
+@media (max-width:1000px){ #coach{width:min(440px,calc(100vw - 32px));bottom:auto;top:calc(84px + var(--sa-t))} }
+@media (max-width:760px),(pointer:coarse) and (max-height:500px){ #coach{font-size:14px;padding:9px 12px;top:calc(62px + var(--sa-t));min-width:0} }
+@media (pointer:coarse) and (max-width:500px){ #coach{top:calc(108px + var(--sa-t))} }
 @media (pointer:coarse) and (max-height:500px){
+ #coach{left:auto;right:calc(8px + var(--sa-r));transform:none;width:min(360px,46vw);top:calc(58px + var(--sa-t))}
  #top{top:calc(6px + var(--sa-t))}
  #tMonth small{display:none}
  #side,#detail{height:auto;top:calc(60px + var(--sa-t));bottom:calc(64px + var(--sa-b));max-height:none}
@@ -186,14 +201,13 @@ canvas.spark{width:72px;height:26px;flex:none}
  #tMoney{flex:1;min-width:0;justify-content:space-around}
  #tBtns{gap:4px}#tBtns button{min-width:40px;min-height:40px;padding:2px 6px;font-size:15px}
  #detail canvas{height:72px}
-}
-@media (pointer:coarse) and (max-width:380px){
- .stat{padding:1px 3px}.stat b{font-size:13.5px}#tMonth{padding:4px 7px}#tMonth b{font-size:14px}
- #tGoal .gl span{display:none}
  .stat.cash small,.stat.net small{font-size:10px}
  #top{flex-wrap:wrap}
  #tGoal{order:5;flex-basis:100%;min-height:0;padding:4px 10px}
  #side,#detail{bottom:calc(64px + var(--sa-b))}
+}
+@media (pointer:coarse) and (max-width:380px){
+ .stat{padding:1px 3px}.stat b{font-size:13.5px}#tMonth{padding:4px 7px}#tMonth b{font-size:14px}
 }
 </style>
 <body>
@@ -206,6 +220,8 @@ canvas.spark{width:72px;height:26px;flex:none}
   <div class="logo"><h1>房产大亨</h1><div class="en">REAL ESTATE MOGUL</div><div class="tag">低买高卖 · 攒钱买下山顶的终极豪宅</div></div>
   <div class="menu card">
    <div class="row"><span class="lbl" style="flex:none">名字</span><input id="nameIn" maxlength="8" placeholder="你的名字"></div>
+   <div class="row"><span class="lbl" style="flex:none">难度</span><div class="seg" id="diffSeg" style="flex:1"><button data-d="easy">简单</button><button data-d="normal">普通</button><button data-d="hard">困难</button></div></div>
+   <div class="best" id="diffDesc" style="margin-top:-4px"></div>
    <div class="row"><span class="lbl" style="flex:none">玩法</span><div class="seg" id="modeSeg" style="flex:1"><button data-m="pure">纯粹</button><button data-m="full">完整</button><button data-m="custom">自定义</button></div></div>
    <div class="optBox" id="optBox"></div>
    <div class="lbl">单人</div>
@@ -224,6 +240,7 @@ canvas.spark{width:72px;height:26px;flex:none}
  <div class="lbl" style="text-align:center">房间码（发给朋友）</div>
  <div class="code" id="lCode">····</div>
  <div class="plist"><div class="pl"><div class="n" id="lP0" style="color:var(--p0)">房主</div><div class="s">房主</div></div><div class="pl"><div class="n" id="lP1" style="color:var(--p1)">等待加入…</div><div class="s" id="lP1s">　</div></div></div>
+ <div class="row"><span class="lbl" style="flex:none">难度</span><div class="seg" id="lDiffSeg" style="flex:1"><button data-d="easy">简单</button><button data-d="normal">普通</button><button data-d="hard">困难</button></div></div>
  <div class="row"><span class="lbl" style="flex:none">玩法</span><div class="seg" id="lModeSeg" style="flex:1"><button data-m="pure">纯粹</button><button data-m="full">完整</button><button data-m="custom">自定义</button></div></div>
  <div class="optBox" id="lOptBox"></div>
  <div class="row"><span class="lbl" style="flex:none">电脑对手</span><div class="seg" id="lAiSeg" style="flex:1"><button data-ai="0">不加</button><button data-ai="1">加入王老板</button></div></div>
@@ -233,9 +250,12 @@ canvas.spark{width:72px;height:26px;flex:none}
 
 <div id="help" class="scr hidden"><div class="card">
  <p class="sub">开局可选玩法：<b>纯粹</b>只有房价涨跌和买卖；<b>完整</b>加上贷款、房租、装修、验房、新闻和手续费；<b>自定义</b>挑着开。下面带 ★ 的只在开了对应选项时有。</p>
- <h3>目标</h3><p>从 80 万起步，在城里低价买房、高价卖出，攒够钱<b>全款买下半山顶的终极豪宅</b>就赢。豪宅价格也跟着楼市涨跌。双人时谁先买下谁赢；120 个月后还没人买下，比净资产。</p>
- <h3>每个月</h3><p>点地图上的房子或左边的「房源」看挂牌房。操作完点「下个月」（双人要两人都点）。月底房价变动、出新房源（★ 还会收房租、付物业费和利息、出新闻）。挂牌房几个月卖不掉会降价，过期就下架。</p>
- <h3>怎么赚钱</h3><p>每套房都有「参考价」，挂牌价可能比它低也可能高，「急售」的常常便宜。各区有自己的走势，楼市还有牛熊周期，房价也会围着走势上下波动。你手里的房每个月都有买家出价，出价合适就卖。★ 估价误差：参考价只是中介估的，有误差，花一点钱「验房」才能看到真实价值。★ 手续费：买入 2%，卖出 3%。</p>
+ <h3>目标</h3><p>攒钱，用<b>现金一次付清</b>买下半山顶的终极豪宅就赢。双人时谁先买下谁赢；120 个月后还没人买下，比总身家（现金 + 房子的市场价）。</p>
+ <h3>怎么赚钱</h3><p>每套房都有一个<b>市场价</b>。挂出来卖的房，售价有时比市场价便宜，有时贵：房源里标着 <span class="deal great">超值</span> <span class="deal good">划算</span> 的就是便宜货，买下来。房价每个月会涨涨跌跌；你的房每个月都有人出价，写着「已经赚了，可以卖」就卖掉，钱就变多了。再拿钱去买下一套便宜的，一直这样滚下去。</p>
+ <h3>每个月</h3><p>买卖做完后点右下角「下个月」（双人要两人都点）。之后房价变动，冒出新的房源。挂着的房几个月卖不掉会降价，太久就撤下了。</p>
+ <h3>难度</h3><p>简单：豪宅便宜，便宜房多，买家出价厚道，适合第一次玩。普通、困难依次变难。</p>
+ <h3>★ 估价误差</h3><p>市场价是中介估的，可能差 10% 左右，花一点钱「验房」才知道真价。</p>
+ <h3>★ 手续费</h3><p>买入 2%，卖出 3%。</p>
  <h3>★ 按揭</h3><p>首付 30% 就能买，剩下的是贷款，每月付利息（利率随新闻变化），卖房时自动还清。杠杆放大收益也放大亏损：月底现金为负，银行会按 85% 的价格强制卖掉你的房，没房可卖就破产。豪宅只能全款。</p>
  <h3>★ 其他</h3><p>装修能把破旧房变普通、普通变精装，涨价比花的钱多，但装修期间不能卖、没房租。传闻不一定成真；拆迁传闻成真时，那条街的老房按 1.8 倍价值补偿。</p>
  <h3>操作</h3><p>拖动地图平移，滚轮或双指缩放；回车 = 下个月；Esc = 菜单。</p>
@@ -246,6 +266,7 @@ canvas.spark{width:72px;height:26px;flex:none}
  <div style="font-family:var(--title);font-size:30px;text-align:center;color:#fff3cf">菜单</div>
  <button id="mResume" class="primary">继续</button>
  <button id="mHelp">玩法说明</button>
+ <button id="mTut">重看新手引导</button>
  <button id="mSound">音效：开</button>
  <button id="mTitle">返回标题</button>
  <button id="mHub" class="hidden">返回游戏厅</button>
@@ -267,10 +288,10 @@ canvas.spark{width:72px;height:26px;flex:none}
   <div id="tMonth" class="glass"><b id="tM">第 1 年 1 月</b><small id="tMs">第 1 / 120 月</small></div>
   <div id="tMoney" class="glass">
    <div class="stat cash"><small>现金</small><b id="tCash">0</b></div>
-   <div class="stat net"><small>净资产</small><b id="tNet">0</b></div>
+   <div class="stat net"><small>总身家</small><b id="tNet">0</b></div>
    <div class="stat debt"><small>贷款 · 利率</small><b id="tDebt">0</b></div>
   </div>
-  <div id="tGoal" class="glass"><div class="gl"><span>终极豪宅</span><b id="tGoalP">0</b></div><div class="bars2" id="tBars"></div></div>
+  <div id="tGoal" class="glass"><div class="gl"><span id="tGoalL">山顶豪宅</span><b id="tGoalP">0</b></div><div class="bars2" id="tBars"></div></div>
   <div id="tBtns"><button id="sndBtn" class="ghost" title="音效 (M)">🔊</button><button id="menuBtn" class="ghost" title="菜单 (Esc)">☰</button></div>
  </div>
  <div id="side" class="glass">
@@ -278,6 +299,7 @@ canvas.spark{width:72px;height:26px;flex:none}
   <div class="tabBody" id="tabBody"></div>
  </div>
  <div id="detail" class="glass hidden"></div>
+ <div id="coach" class="hidden"><div id="coachT"></div><div class="row" style="justify-content:flex-end"><button id="coachSkip" class="ghost">跳过引导</button><button id="coachOk" class="primary hidden">知道了</button></div></div>
  <div id="bottom">
   <div id="news" class="glass"></div>
   <div id="phoneTabs" class="glass"><button data-t="mkt">行情</button><button data-t="list">房源<small id="pcList"></small></button><button data-t="mine">我的<small id="pcMine"></small></button><button data-t="news">新闻</button></div>

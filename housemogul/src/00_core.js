@@ -84,4 +84,11 @@ const OPTS = [
 ];
 const PRESET = { pure: { loan: 0, rent: 0, reno: 0, insp: 0, news: 0, fee: 0 }, full: { loan: 1, rent: 1, reno: 1, insp: 1, news: 1, fee: 1 } };
 const OP = k => !G || !G.opt || !!G.opt[k];
+/* difficulty: mansion price multiplier, share of bargain listings, buyer-offer centre, min bargains on the market */
+const DIFF = {
+  easy: { n: '简单', man: 0.7, hot: 0.22, offer: 0.985, minGood: 3, d: '豪宅便宜，捡漏房多，买家出价厚道' },
+  normal: { n: '普通', man: 1, hot: 0.13, offer: 0.962, minGood: 1, d: '标准难度' },
+  hard: { n: '困难', man: 1.15, hot: 0.1, offer: 0.95, minGood: 0, d: '豪宅更贵，便宜房更少' }
+};
+const DF = () => DIFF[(G && G.diff) || 'normal'];
 const monthLabel = m => '第 ' + (Math.floor(m / 12) + 1) + ' 年 ' + (m % 12 + 1) + ' 月';

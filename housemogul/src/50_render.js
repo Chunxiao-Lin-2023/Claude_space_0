@@ -388,9 +388,9 @@ function drawLabels() {
   for (const { p, s, listed, mine } of tags) {
     let txt, bg, fg = '#fff', badge = null;
     if (p.kind === 'mansion') { txt = '豪宅 ' + fmtM(p.list ? p.list.ask : val(p)); bg = '#c9952a'; fg = '#1d1406'; }
-    else if (listed) { txt = fmtM(p.list.ask); bg = 'rgba(16,24,36,.88)'; if (p.list.tag === 'hot') badge = ['急售', '#d63a2f']; else if (p.list.age === 0) badge = ['新', '#2a6fb8']; else if (p.list.cut) badge = ['降', '#56657a']; }
-    else { const r = p.reno ? 0 : p.offer * (1 - sellFee()) / p.paid - 1; txt = p.reno ? '装修中' : pct(r, 0); bg = p.reno ? 'rgba(120,90,40,.9)' : r >= 0 ? 'rgba(200,60,50,.92)' : 'rgba(30,140,90,.92)'; if (p.offerHot) badge = ['抢', '#f5c451']; }
-    const sel = p.id === STATE.sel, tw = ctx.measureText(txt).width + 14, bw = badge ? 22 : 0, W = tw + bw, H = 21;
+    else if (listed) { txt = fmtM(p.list.ask); bg = 'rgba(16,24,36,.88)'; const d = dealOf(p, ME); badge = d.k === 'great' ? ['超值', '#f5c451'] : d.k === 'good' ? ['划算', '#2c9b6c'] : d.k === 'high' ? ['贵', '#56657a'] : null; }
+    else { const a = sellAdvice(p), pr = p.offer * (1 - sellFee()) - p.paid; txt = p.reno ? '装修中' : (pr >= 0 ? '赚' : '亏') + fmtM(Math.abs(pr)).replace('¥', ''); bg = p.reno ? 'rgba(120,90,40,.9)' : pr >= 0 ? 'rgba(200,60,50,.92)' : 'rgba(30,140,90,.92)'; if (a.k === 'sell') badge = ['卖', '#f5c451']; }
+    const sel = p.id === STATE.sel, tw = ctx.measureText(txt).width + 14, bw = badge ? (badge[0].length > 1 ? 34 : 22) : 0, W = tw + bw, H = 21;
     const x = s[0] - W / 2, y = s[1] - H - 6 - (sel ? 4 + Math.abs(Math.sin(RND.t * 4)) * 4 : 0);
     ctx.fillStyle = 'rgba(0,0,0,.25)'; rr2(x + 1, y + 2, W, H, 6); ctx.fill();
     ctx.fillStyle = bg; rr2(x, y, W, H, 6); ctx.fill();

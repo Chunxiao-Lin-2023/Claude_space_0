@@ -23,26 +23,28 @@ function bot(i, agg) {
   }
   if (OP('reno')) for (const p of ownedBy(i)) { const R = renoInfo(p); if (R && !p.reno && pl.cash > R.cost * 2) doAct(i, 'reno', { id: p.id }); }
 }
-function run(opt, ai, agg, seed) {
-  newGame(seed, ['bot'], ai, opt);
+function run(opt, ai, agg, seed, diff) {
+  newGame(seed, ['bot'], ai, opt, diff);
   while (!G.over) { bot(0, agg); if (G.over) break; G.pl[0].ready = true; endMonth(); }
   return G.over;
 }
 `, ctx);
-const stat = (opt, ai, agg, n = 60) => {
+const stat = (opt, ai, agg, diff, n = 60) => {
   const res = []; let wins = 0, aiw = 0;
-  for (let s = 1; s <= n; s++) { const o = ctx.run(opt, ai, agg, s * 101); if (o.reason === 'mansion' && o.winner === 0) { res.push(o.m + 1); wins++; } else if (o.winner === 1) aiw++; }
+  for (let s = 1; s <= n; s++) { const o = ctx.run(opt, ai, agg, s * 101, diff); if (o.reason === 'mansion' && o.winner === 0) { res.push(o.m + 1); wins++; } else if (o.winner === 1) aiw++; }
   res.sort((a, b) => a - b);
   return 'bot wins ' + wins + '/' + n + ' ai ' + aiw + '  months p25/p50/p75 ' + [0.25, 0.5, 0.75].map(q => res[Math.floor(q * (res.length - 1))]).join('/');
 };
 const P = ctx.PRESET;
-console.log('pure,  no ai, cautious', stat(P.pure, 0, 1));
-console.log('pure,  no ai, aggr    ', stat(P.pure, 0, 2));
-console.log('full,  no ai, cautious', stat(P.full, 0, 1));
-console.log('full,  no ai, aggr    ', stat(P.full, 0, 2));
-console.log('pure,  vs ai          ', stat(P.pure, 1, 1));
-console.log('full,  vs ai          ', stat(P.full, 1, 2));
-// AI alone: bot never acts
-ctx.vm_noop = 1;
-vm.runInContext(`function runAI(opt, seed){ newGame(seed, ['idle'], 1, opt); while(!G.over){ G.pl[0].ready=true; endMonth(); } return G.over; }`, ctx);
-for (const [k, o] of [['pure', P.pure], ['full', P.full]]) { const r = []; let w = 0; for (let s = 1; s <= 60; s++) { const x = ctx.runAI(o, s * 7); if (x.winner === 1 && x.reason === 'mansion') { w++; r.push(x.m + 1); } } r.sort((a, b) => a - b); console.log('AI alone', k, 'wins', w, '/60 median', r[r.length >> 1]); }
+for (const d of ['easy', 'normal', 'hard']) {
+  console.log(d, 'pure  cautious', stat(P.pure, 0, 1, d));
+  console.log(d, 'full  aggr    ', stat(P.full, 0, 2, d));
+  console.log(d, 'pure  vs ai   ', stat(P.pure, 1, 1, d));
+}
+// a naive novice: buys anything labelled 超值/划算 it can afford, sells as soon as it is in profit
+vm.runInContext(`function novice(i){ const pl=G.pl[i]; const man=mansionP(), need=man.list?man.list.ask*(1+buyFee()):1e9;
+  if(pl.cash>=need){doAct(i,'buy',{id:man.id});return;}
+  for(const p of ownedBy(i)){ const a=sellAdvice(p); if(a.k==='sell'||netWorth(i)>need) doAct(i,'sell',{id:p.id}); }
+  for(const p of G.props.filter(p=>p.list&&p.owner===-1&&p.kind!=='mansion')){ const d=dealOf(p,i); if((d.k==='great'||d.k==='good')&&pl.cash>=buyCost(p.list.ask,false)) doAct(i,'buy',{id:p.id}); } }
+function runN(opt,seed,diff){ newGame(seed,['n'],0,opt,diff); while(!G.over){ novice(0); if(G.over)break; G.pl[0].ready=true; endMonth(); } return G.over; }`, ctx);
+for (const d of ['easy', 'normal']) { const r = []; let w = 0; for (let s = 1; s <= 60; s++) { const o = ctx.runN(P.pure, s * 13, d); if (o.reason === 'mansion') { w++; r.push(o.m + 1); } } r.sort((a, b) => a - b); console.log('novice pure', d, 'wins', w, '/60 p25/50/75', [.25, .5, .75].map(q => r[Math.floor(q * (r.length - 1))]).join('/')); }

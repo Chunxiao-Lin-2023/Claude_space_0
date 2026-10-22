@@ -81,11 +81,11 @@ function guestGone() {
   if (STATE.mode === 'play' && G && G.pl[1]) { G.pl[1].gone = true; toast('对方断开了连接，你可以继续玩（对方能用同一个房间码重新加入）', 'bad'); maybeAdvance(); renderUI(); }
   if (STATE.mode === 'lobby') lobbyUI();
 }
-function sendLobby() { sendRaw(NET.gctl, { t: 'lobby', ready: NET.ready, host: SET.name || '房主', code: NET.code, ai: NET.ai, opt: NET.opt, preset: NET.preset }); }
+function sendLobby() { sendRaw(NET.gctl, { t: 'lobby', ready: NET.ready, host: SET.name || '房主', code: NET.code, ai: NET.ai, opt: NET.opt, preset: NET.preset, diff: NET.diff }); }
 function hostStart() {
   if (!NET.gctl || !NET.gctl.open || !NET.ready) return;
   const seed = (Math.random() * 1e9) | 0;
-  newGame(seed, [SET.name || '房主', NET.guestName || '玩家二'], NET.ai, NET.opt); G.preset = NET.preset;
+  newGame(seed, [SET.name || '房主', NET.guestName || '玩家二'], NET.ai, NET.opt, NET.diff); G.preset = NET.preset;
   sendRaw(NET.gctl, { t: 'start', G, me: 1 });
   enterGame(0);
 }
@@ -123,7 +123,7 @@ function guestRecv(m) {
     case 'busy': titleStatus('房间已满或已经开始'); netLeave(); toTitle(); return;
     case 'bye': hostGone(); return;
     case 'ping': sendRaw(NET.ctl, { t: 'ping' }); return;
-    case 'lobby': Object.assign(NET, { ready: m.ready, hostName: m.host, ai: m.ai, opt: m.opt, preset: m.preset }); lobbyUI(); return;
+    case 'lobby': Object.assign(NET, { ready: m.ready, hostName: m.host, ai: m.ai, opt: m.opt, preset: m.preset, diff: m.diff }); lobbyUI(); return;
     case 'start': G = m.G; STATE.lastSeq = G.seq; enterGame(m.me); return;
     case 'st': if (G && (STATE.mode === 'play' || STATE.mode === 'end')) { const sel = STATE.sel; G = m.G; STATE.sel = sel; onState(); } return;
     case 'err': toast(m.msg, 'bad'); sfx('err'); return;

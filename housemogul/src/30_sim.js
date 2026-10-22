@@ -2,14 +2,14 @@
 function mkPlayer(i, name, kind) {
   return { i, name, kind, cash: BAL.start, alive: true, ready: false, gone: false, wh: [], flow: null, st: { buys: 0, sells: 0, profit: 0, best: 0, reno: 0, insp: 0, forced: 0 } };
 }
-function newGame(seed, names, aiOn, opt) {
+function newGame(seed, names, aiOn, opt, diff) {
   G = {
     v: 1, rs: seed | 0, seed, month: 0, rate: BAL.rate0, reg: { k: 'calm', left: 6 },
     d: DISTS.map(() => ({ idx: 1, base: 1, n: 0, hist: [], pend: [] })),
     news: [], ev: [], seq: 0, rumors: [], over: null, pl: [], solo: names.length === 1,
-    opt: Object.assign({}, PRESET.full, opt || {})
+    opt: Object.assign({}, PRESET.full, opt || {}), diff: DIFF[diff] ? diff : 'normal'
   };
-  G.manBase = BAL.mansion[G.opt.loan ? 1 : 0];
+  G.manBase = BAL.mansion[G.opt.loan ? 1 : 0] * DIFF[G.diff].man;
   Object.assign(G, genWorld());
   names.forEach((nm, i) => G.pl.push(mkPlayer(i, nm, 'human')));
   if (aiOn) G.pl.push(mkPlayer(G.pl.length, '王老板', 'ai'));
@@ -125,10 +125,10 @@ function resolveRumors() {
 }
 
 /* ---------- listings & offers ---------- */
-function makeListing(p) {
-  const r = rnd(); let f, tag = '';
-  if (r < 0.13) { f = rr(0.72, 0.88); tag = 'hot'; }
-  else if (r < 0.17) { f = rr(0.96, 1.08); tag = 'hot'; }      // 喊急售但不便宜
+function makeListing(p, cheap) {
+  const r = cheap ? 0 : rnd(), H = DF().hot; let f, tag = '';
+  if (r < H) { f = rr(0.72, 0.88); tag = 'hot'; }
+  else if (r < H + 0.04) { f = rr(0.96, 1.08); tag = 'hot'; }      // 喊急售但不便宜
   else if (r < 0.27) f = rr(1.14, 1.3);
   else f = clamp(1.04 + gauss() * 0.065, 0.86, 1.2);
   const v = val(p);
@@ -150,7 +150,10 @@ function refreshListings(init) {
   const cnt = G.props.filter(p => p.list && p.kind !== 'mansion').length;
   const want = init ? 10 : Math.max(2, ri(BAL.listTarget[0], BAL.listTarget[1]) - cnt);
   const cand = shuffle(G.props.filter(p => p.owner === -1 && !p.list && !p.cool && p.kind !== 'mansion'));
-  for (let k = 0; k < want && k < cand.length; k++) makeListing(cand[k]);
+  let k = 0;
+  for (; k < want && k < cand.length; k++) makeListing(cand[k]);
+  const cheapNow = () => G.props.filter(p => p.list && p.kind !== 'mansion' && p.list.f <= 0.9).length;
+  for (let tries = 0; cheapNow() < DF().minGood && k < cand.length && tries < 6; tries++, k++) makeListing(cand[k], true);
   const m = mansionP();
   if (m.owner === -1) { const v = val(m); m.list = { ask: v, f: 1, est: 1, left: 99, age: 0, tag: 'goal', cut: false, m0: 0 }; }
 }
@@ -159,7 +162,7 @@ function refreshOffers() {
   for (const p of G.props) if (p.owner >= 0) {
     const v = val(p);
     if (rnd() < 0.07) { p.offer = v * rr(1.09, 1.2); p.offerHot = true; }
-    else { p.offer = v * clamp(0.962 + h + gauss() * 0.042, 0.84, 1.1); p.offerHot = false; }
+    else { p.offer = v * clamp(DF().offer + h + gauss() * 0.042, 0.84, 1.12); p.offerHot = false; }
   }
 }
 
@@ -191,6 +194,7 @@ function doAct(pi, a, v) {
     case 'sell': {
       if (!p || p.owner !== pi) return '这不是你的房';
       if (p.reno) return '装修中，不能卖';
+      if (p.boughtM === G.month) return '刚买的房要办过户，下个月才能卖';
       const got = sellNet(p), prof = p.offer * (1 - sellFee()) - p.paid;
       pl.cash += got; pl.st.sells++; pl.st.profit += prof; pl.st.best = Math.max(pl.st.best, prof);
       ev('sell', pl.name + ' 卖出 ' + propName(p) + '，' + (prof >= 0 ? '赚了 ' : '亏了 ') + fmtM(Math.abs(prof)), pi, p.id, prof);

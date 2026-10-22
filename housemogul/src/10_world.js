@@ -92,6 +92,20 @@ const buyFee = () => OP('fee') ? BAL.buyFee : 0, sellFee = () => OP('fee') ? BAL
 const buyCost = (ask, loan) => loan ? ask * BAL.down + ask * buyFee() : ask * (1 + buyFee());
 const sellNet = p => p.offer * (1 - sellFee()) - p.loan;
 function renoInfo(p) { if (p.cond >= 2) return null; const R = RENO[p.cond], v = val(p); return { cost: v * R.c, t: R.t, gain: v * (COND[p.cond + 1].m / COND[p.cond].m - 1) }; }
+function refVal(p, pi) { return !OP('insp') || knows(p, pi) ? val(p) : estOf(p); }
+function dealOf(p, pi) {
+  const r = p.list.ask / refVal(p, pi);
+  return r <= 0.87 ? { k: 'great', n: '超值', r } : r <= 0.955 ? { k: 'good', n: '划算', r } : r <= 1.06 ? { k: 'fair', n: '正常', r } : { k: 'high', n: '偏贵', r };
+}
+function sellAdvice(p) {
+  if (p.reno) return { k: 'wait', n: '装修中', r: 0 };
+  if (p.boughtM === G.month) return { k: 'wait', n: '刚买的，下个月才能卖', r: p.offer * (1 - sellFee()) / p.paid - 1 };
+  const r = p.offer * (1 - sellFee()) / p.paid - 1, q = p.offer / val(p);
+  if (r >= 0 && q >= 1.06) return { k: 'sell', n: '出价很高，快卖', r };
+  if (r >= 0.08) return { k: 'sell', n: '已经赚了，可以卖', r };
+  if (r >= 0) return { k: 'ok', n: '小赚，可以再等等', r };
+  return { k: 'wait', n: '现在卖会亏，再等等', r };
+}
 function estOf(p) { return p.list && OP('insp') ? val(p) * p.list.est : val(p); }   // the agent's (noisy) estimate
 const knows = (p, i) => p.insp.includes(i);
 function heat() { // smoothed market temperature from last 3 months of district moves

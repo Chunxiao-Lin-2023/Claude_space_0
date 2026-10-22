@@ -1,5 +1,5 @@
 /* ================= UI (DOM) ================= */
-const SET = Object.assign({ name: '', ai: 0, preset: 'pure', opt: Object.assign({}, PRESET.pure) }, LS.get('set', {}));
+const SET = Object.assign({ name: '', ai: 0, preset: 'pure', diff: 'easy', opt: Object.assign({}, PRESET.pure) }, LS.get('set', {}));
 const saveSet = () => LS.set('set', SET);
 const HUB = /\/housemogul\/(index\.html)?$/.test(location.pathname) && !inArtifact();
 const SCREENS = ['title', 'lobby', 'help', 'menuScr', 'endScr', 'confirm'];
@@ -20,11 +20,12 @@ function renderModeUI(segId, boxId, preset, opt, ro) {
   box.innerHTML = preset === 'custom' ? OPTS.map(o => '<button data-k="' + o.k + '" class="' + (opt[o.k] ? 'on' : '') + '" title="' + esc(o.d) + '"><i>' + (opt[o.k] ? '✓' : '') + '</i>' + o.n + '</button>').join('')
     : '<div class="modeDesc" style="grid-column:1/-1">' + (preset === 'pure' ? '只有房价涨跌、挂牌和买卖：看准时机低买高卖，攒钱买豪宅。' : '全部玩法：按揭贷款、房租物业、装修、估价误差与验房、新闻传闻、交易手续费。') + '</div>';
 }
-function bestKey() { return 'best_' + (SET.preset === 'custom' ? 'c' + OPTS.map(o => SET.opt[o.k] ? 1 : 0).join('') : SET.preset) + '_' + SET.ai; }
+function bestKey() { return 'best_' + SET.diff + '_' + (SET.preset === 'custom' ? 'c' + OPTS.map(o => SET.opt[o.k] ? 1 : 0).join('') : SET.preset) + '_' + SET.ai; }
 function titleUI() {
   $('nameIn').value = SET.name;
   [...$('aiSeg').children].forEach(b => b.classList.toggle('sel', +b.dataset.ai === SET.ai));
   renderModeUI('modeSeg', 'optBox', SET.preset, SET.opt);
+  [...$('diffSeg').children].forEach(b => b.classList.toggle('sel', b.dataset.d === SET.diff)); $('diffDesc').textContent = DIFF[SET.diff].d;
   const sv = LS.get('save', null);
   $('contBtn').classList.toggle('hidden', !sv);
   if (sv) $('contBtn').textContent = '继续（' + monthLabel(sv.month) + '）';
@@ -35,11 +36,12 @@ function titleUI() {
 }
 $('nameIn').addEventListener('input', e => { SET.name = e.target.value.trim().slice(0, 8); saveSet(); });
 $('aiSeg').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; SET.ai = +b.dataset.ai; saveSet(); sfx('click'); titleUI(); });
+$('diffSeg').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; SET.diff = b.dataset.d; saveSet(); sfx('click'); titleUI(); });
 $('modeSeg').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; SET.preset = b.dataset.m; saveSet(); sfx('click'); titleUI(); });
 $('optBox').addEventListener('click', e => { const b = e.target.closest('button'); if (!b || SET.preset !== 'custom') return; SET.opt[b.dataset.k] = SET.opt[b.dataset.k] ? 0 : 1; saveSet(); sfx('click'); titleUI(); });
-$('newBtn').onclick = () => { audioInit(); sfx('click'); netLeave(); NETROLE = 'solo'; newGame((Math.random() * 1e9) | 0, [SET.name || '我'], SET.ai, optOf(SET.preset)); G.preset = SET.preset; G.bestKey = bestKey(); enterGame(0); saveGame(); };
+$('newBtn').onclick = () => { audioInit(); sfx('click'); netLeave(); NETROLE = 'solo'; newGame((Math.random() * 1e9) | 0, [SET.name || '我'], SET.ai, optOf(SET.preset), SET.diff); G.preset = SET.preset; G.bestKey = bestKey(); enterGame(0); saveGame(); };
 $('contBtn').onclick = () => { audioInit(); const sv = LS.get('save', null); if (!sv) return; netLeave(); NETROLE = 'solo'; G = sv; STATE.lastSeq = G.seq; enterGame(0); };
-$('hostBtn').onclick = () => { audioInit(); sfx('click'); NET.ai = SET.ai; NET.preset = SET.preset; NET.opt = optOf(SET.preset); netHost(); };
+$('hostBtn').onclick = () => { audioInit(); sfx('click'); NET.ai = SET.ai; NET.diff = SET.diff; NET.preset = SET.preset; NET.opt = optOf(SET.preset); netHost(); };
 $('joinBtn').onclick = () => { audioInit(); sfx('click'); netJoin($('codeIn').value); };
 $('helpBtn').onclick = () => openHelp();
 $('hubBtn').onclick = () => { location.href = '../'; };
@@ -55,6 +57,7 @@ function lobbyUI(st) {
   [...$('lAiSeg').children].forEach(b => { b.classList.toggle('sel', +b.dataset.ai === (+NET.ai || 0)); b.disabled = !host; });
   [...$('lModeSeg').children].forEach(b => { b.disabled = !host; });
   renderModeUI('lModeSeg', 'lOptBox', NET.preset || 'pure', NET.opt || PRESET.pure, !host);
+  [...$('lDiffSeg').children].forEach(b => { b.classList.toggle('sel', b.dataset.d === (NET.diff || 'easy')); b.disabled = !host; });
   $('lReady').classList.toggle('hidden', host); $('lStart').classList.toggle('hidden', !host);
   $('lReady').textContent = NET.ready ? '取消准备' : '准备'; $('lReady').classList.toggle('green', !!NET.ready);
   $('lStart').disabled = !(host && NET.gctl && NET.gctl.open && NET.ready);
@@ -62,6 +65,7 @@ function lobbyUI(st) {
 }
 function hostLobbyChanged() { if (NETROLE === 'host') { NET.ready = false; sendLobby(); lobbyUI(); } }
 $('lAiSeg').addEventListener('click', e => { const b = e.target.closest('button'); if (!b || NETROLE !== 'host') return; NET.ai = +b.dataset.ai; SET.ai = NET.ai; saveSet(); hostLobbyChanged(); });
+$('lDiffSeg').addEventListener('click', e => { const b = e.target.closest('button'); if (!b || NETROLE !== 'host') return; NET.diff = b.dataset.d; SET.diff = NET.diff; saveSet(); hostLobbyChanged(); });
 $('lModeSeg').addEventListener('click', e => { const b = e.target.closest('button'); if (!b || NETROLE !== 'host') return; NET.preset = b.dataset.m; SET.preset = NET.preset; NET.opt = optOf(NET.preset); saveSet(); hostLobbyChanged(); });
 $('lOptBox').addEventListener('click', e => { const b = e.target.closest('button'); if (!b || NETROLE !== 'host' || NET.preset !== 'custom') return; SET.opt[b.dataset.k] = SET.opt[b.dataset.k] ? 0 : 1; NET.opt = optOf('custom'); saveSet(); hostLobbyChanged(); });
 $('lReady').onclick = () => { NET.ready = !NET.ready; sendRaw(NET.ctl, { t: 'lready', v: NET.ready }); sfx('ready'); lobbyUI(); };
@@ -79,7 +83,7 @@ function enterGame(me) {
   ME = me; STATE.mode = 'play'; STATE.sel = -1; STATE.lastSeq = G.seq; RND.hiD = -1; RND.trees = null; for (const k in _dc) delete _dc[k];
   showScreen(null); $('hud').classList.remove('hidden');
   STATE.tab = innerWidth <= 760 || PHONE.matches ? 'list' : 'list'; $('side').classList.remove('open');
-  fitCam(); renderUI(); sfx('month');
+  fitCam(); TUT.step = -1; TUT.m = 0; tutStart(false); renderUI(); sfx('month');
   if (G.over) showEnd();
 }
 function openMenu() { $('menuScr').classList.remove('hidden'); $('mHub').classList.toggle('hidden', !HUB); $('mStatus').textContent = NETROLE === 'solo' ? '单人游戏每个月自动存档' : ''; delete $('mTitle').dataset.arm; $('mTitle').textContent = '返回标题'; delete $('mHub').dataset.arm; $('mHub').textContent = '返回游戏厅'; }
@@ -91,6 +95,9 @@ function askConfirm(html, yes, fn) { $('cTxt').innerHTML = html; $('cYes').textC
 function closeConfirm() { $('confirm').classList.add('hidden'); confirmFn = null; }
 $('cNo').onclick = closeConfirm; $('cYes').onclick = () => { const f = confirmFn; closeConfirm(); f && f(); };
 $('menuBtn').onclick = () => { sfx('click'); openMenu(); };
+$('mTut').onclick = () => { closeMenu(); if (NETROLE !== 'solo') { toast('新手引导只在单人游戏里有', ''); return; } TUT.m = 0; tutStart(true); renderUI(); };
+$('coachSkip').onclick = () => { tutEnd(); toast('可以在菜单里重看新手引导', ''); };
+$('coachOk').onclick = () => tutEnd();
 $('mResume').onclick = closeMenu; $('mHelp').onclick = openHelp; $('helpClose').onclick = closeHelp;
 $('mSound').onclick = () => setSound(!AU.on); $('sndBtn').onclick = () => { audioInit(); setSound(!AU.on); };
 function armTwice(btn, fn) { if (NETROLE === 'solo' || btn.dataset.arm) { fn(); return; } btn.dataset.arm = 1; btn.textContent = '再点一次确认'; }
@@ -98,7 +105,7 @@ $('mTitle').onclick = () => armTwice($('mTitle'), () => { if (NETROLE === 'solo'
 $('mHub').onclick = () => armTwice($('mHub'), () => { if (NETROLE === 'solo') saveGame(); netLeave(); location.href = '../'; });
 $('eAgain').onclick = () => {
   if (NETROLE === 'solo') { $('newBtn').onclick(); return; }
-  if (NETROLE === 'host' && NET.gctl && NET.gctl.open) { newGame((Math.random() * 1e9) | 0, [SET.name || '房主', NET.guestName || '玩家二'], NET.ai, NET.opt); G.preset = NET.preset; sendRaw(NET.gctl, { t: 'start', G, me: 1 }); enterGame(0); return; }
+  if (NETROLE === 'host' && NET.gctl && NET.gctl.open) { newGame((Math.random() * 1e9) | 0, [SET.name || '房主', NET.guestName || '玩家二'], NET.ai, NET.opt, NET.diff); G.preset = NET.preset; sendRaw(NET.gctl, { t: 'start', G, me: 1 }); enterGame(0); return; }
   if (NETROLE === 'guest') { toast('等房主开新的一局', ''); return; }
   netLeave(); toTitle();
 };
@@ -223,6 +230,7 @@ function renderUI() {
   if (OP('loan')) { dsm.textContent = '贷款 · 月利率'; $('tDebt').textContent = fmtM(debtOf(ME)) + ' · ' + (G.rate * 100).toFixed(2) + '%'; }
   else { dsm.textContent = '持有'; $('tDebt').textContent = ownedBy(ME).length + ' 套'; }
   $('tGoalP').textContent = fmtM(mp);
+  const needC = mp * (1 + buyFee()) - me.cash; $('tGoalL').textContent = needC > 0 ? '山顶豪宅 · 现金还差 ' + fmtM(needC) : '山顶豪宅 · 现金够了，快去买！';
   $('tBars').innerHTML = G.pl.map(pl => { const v = pl.alive ? clamp(netWorth(pl.i) / mp, 0, 1) : 0; return '<div class="bar" title="' + esc(pl.name) + ' 净资产 ' + Math.round(v * 100) + '%"><i class="p' + pl.i + '" style="width:' + (v * 100).toFixed(1) + '%"></i></div>'; }).join('');
   // tabs
   const listed = G.props.filter(p => p.list && p.owner === -1), mine = ownedBy(ME);
@@ -233,6 +241,7 @@ function renderUI() {
   $('tabs').querySelector('[data-t="news"]').classList.toggle('hidden', !OP('news') && !narrow && false);
   renderTab();
   renderDetail();
+  tutCheck();
   // news ticker
   const nl = G.news.slice(-3).reverse();
   $('news').innerHTML = nl.map(n => '<div class="nl ' + n.tone + '"><i>' + (Math.floor(n.m / 12) + 1) + '年' + (n.m % 12 + 1) + '月</i><b>' + esc(n.tag) + '</b>' + esc(n.txt) + '</div>').join('');
@@ -244,9 +253,9 @@ function renderUI() {
 }
 const REGLABEL = () => { const h = heat(); return h > 0.03 ? '楼市火热' : h > 0.008 ? '楼市回暖' : h < -0.03 ? '楼市冰冷' : h < -0.008 ? '楼市降温' : '楼市平稳'; };
 function ownerName(o) { return o < 0 ? '业主' : o === ME ? '你' : G.pl[o].name; }
-function itemHTML(p, right, sub) {
+function itemHTML(p, right, sub, cls) {
   const D = DISTS[p.d];
-  return '<div class="item' + (p.id === STATE.sel ? ' sel' : '') + '" data-id="' + p.id + '"><span class="sw" style="background:' + D.col + '"></span><div class="main"><div class="nm">' + esc(propName(p)) + '</div><div class="ds">' + sub + '</div></div><div class="rt">' + right + '</div></div>';
+  return '<div class="item' + (p.id === STATE.sel ? ' sel' : '') + (cls || '') + '" data-id="' + p.id + '"><span class="sw" style="background:' + D.col + '"></span><div class="main"><div class="nm">' + esc(propName(p)) + '</div><div class="ds">' + sub + '</div></div><div class="rt">' + right + '</div></div>';
 }
 function renderTab() {
   const tb = $('tabBody'), t = STATE.tab; let h = '';
@@ -260,28 +269,28 @@ function renderTab() {
     h += '<div class="secT">点一个区，地图上会高亮它</div>';
   } else if (t === 'list') {
     const ls = G.props.filter(p => p.list && p.owner === -1);
-    const man = ls.find(p => p.kind === 'mansion'), rest = ls.filter(p => p.kind !== 'mansion').sort((a, b) => (b.list.tag === 'hot') - (a.list.tag === 'hot') || a.list.ask / estOf(a) - b.list.ask / estOf(b));
-    if (man) h += itemHTML(man, '<span class="gold">' + fmtM(man.list.ask) + '</span><small class="sub">全款</small>', '<span class="tagx goal">目标</span> 买下就赢');
-    h += '<div class="secT">挂牌中 ' + rest.length + ' 套 · ' + (OP('insp') ? '按挂牌价 / 中介估价排序' : '按挂牌价 / 参考价排序') + '</div>';
-    if (!rest.length) h += '<div class="empty">这个月没有挂牌房源</div>';
+    const man = ls.find(p => p.kind === 'mansion'), rest = ls.filter(p => p.kind !== 'mansion').sort((a, b) => dealOf(a, ME).r - dealOf(b, ME).r);
+    if (man) h += itemHTML(man, '<span class="gold">' + fmtM(man.list.ask) + '</span><small class="sub">终极目标</small>', '<span class="tagx goal">目标</span> 全款买下就赢');
+    h += '<div class="secT">挂牌中 ' + rest.length + ' 套 · 越靠前越划算</div>';
+    if (!rest.length) h += '<div class="empty">这个月没有挂牌房源，点「下个月」等新房源。</div>';
     for (const p of rest) {
-      const e = knows(p, ME) ? val(p) : estOf(p), r = p.list.ask / e - 1, L = p.list;
-      const tags = (L.tag === 'hot' ? '<span class="tagx hot">急售</span>' : '') + (L.age === 0 ? '<span class="tagx new">新</span>' : L.cut ? '<span class="tagx cut">降价</span>' : '') + (p.demo ? '<span class="tagx rumor">拆迁传闻</span>' : '');
-      h += itemHTML(p, fmtM(L.ask) + '<small style="color:' + (r < -0.04 ? 'var(--gold)' : 'var(--sub)') + '">' + (knows(p, ME) ? '真实 ' : OP('insp') ? '估 ' : '参考 ') + pct(r, 0) + '</small>', KINDS[p.kind].n + ' · ' + DISTS[p.d].n + ' · 剩 ' + L.left + ' 月' + tags);
+      const L = p.list, d = dealOf(p, ME), good = d.k === 'great' || d.k === 'good';
+      const tags = (L.age === 0 ? '<span class="tagx new">新</span>' : L.cut ? '<span class="tagx cut">降价</span>' : '') + (p.demo ? '<span class="tagx rumor">拆迁传闻</span>' : '');
+      h += itemHTML(p, fmtM(L.ask) + '<small><span class="deal ' + d.k + '">' + d.n + '</span></small>', KINDS[p.kind].n + ' · ' + DISTS[p.d].n + ' · 还挂 ' + L.left + ' 月' + tags, TUT.step === 0 && good && G.pl[ME].cash >= buyCost(L.ask, false) ? ' pulse' : '');
     }
   } else if (t === 'mine') {
     const mine = ownedBy(ME), me = G.pl[ME];
-    if (!mine.length) h += '<div class="empty">你还没有房产。<br>去「房源」里挑一套挂牌价划算的买下来吧。</div>';
+    if (!mine.length) h += '<div class="empty">你还没有房子。<br>去「房源」里挑一套标着<b>超值</b>或<b>划算</b>的买下来。</div>';
     else {
       let mv = 0, ln = 0; for (const p of mine) { mv += val(p); ln += p.loan; }
       const f = monthlyFlow(ME);
-      h += '<div class="mktHead"><div>持有 <b>' + mine.length + '</b> 套 · 市值 <b class="num">' + fmtM(mv) + '</b>' + (OP('loan') ? ' · 贷款 <b class="num">' + fmtM(ln) + '</b>' : '') + '</div>' + (OP('rent') || OP('loan') ? '<div>每月现金流 <b class="num ' + udc(f.net) + '">' + fmtM(f.net, 1) + '</b></div>' : '') + '</div>';
-      for (const p of mine.sort((a, b) => (b.offer / b.paid) - (a.offer / a.paid))) {
-        const r = p.offer * (1 - sellFee()) / p.paid - 1;
-        h += itemHTML(p, p.reno ? '<span class="gold">装修中</span><small class="sub">还剩 ' + p.reno + ' 月</small>' : fmtM(p.offer) + '<small class="' + udc(r) + '">' + pct(r) + '</small>', KINDS[p.kind].n + ' · 买入 ' + fmtM(p.paid) + (p.offerHot ? '<span class="tagx hot">抢手</span>' : '') + (p.loan ? ' · 按揭' : ''));
+      h += '<div class="mktHead"><div>你有 <b>' + mine.length + '</b> 套房，市场价共 <b class="num">' + fmtM(mv) + '</b>' + (OP('loan') ? '，欠银行 <b class="num">' + fmtM(ln) + '</b>' : '') + '</div>' + (OP('rent') || OP('loan') ? '<div>每月进账 <b class="num ' + udc(f.net) + '">' + fmtM(f.net, 1) + '</b></div>' : '') + '<div>右边是<b>现在卖能卖多少</b>，下面写着赚还是亏</div></div>';
+      for (const p of mine.sort((a, b) => sellAdvice(b).r - sellAdvice(a).r)) {
+        const a = sellAdvice(p), prof = p.offer * (1 - sellFee()) - p.paid;
+        h += itemHTML(p, p.reno ? '<span class="gold">装修中</span><small class="sub">还剩 ' + p.reno + ' 月</small>' : fmtM(p.offer) + '<small class="' + udc(prof) + '">' + (prof >= 0 ? '赚 ' : '亏 ') + fmtM(Math.abs(prof)) + '</small>', '<span class="adv ' + a.k + '">' + a.n + '</span>' + (p.loan ? ' · 按揭' : ''), TUT.step === 3 && a.k !== 'wait' ? ' pulse' : '');
       }
     }
-    if (me.st.sells || me.st.profit) h += '<div class="secT">累计卖出 ' + me.st.sells + ' 套，盈亏 <span class="' + udc(me.st.profit) + '">' + fmtM(me.st.profit, 1) + '</span></div>';
+    if (me.st.sells || me.st.profit) h += '<div class="secT">已经卖了 ' + me.st.sells + ' 套，一共' + (me.st.profit >= 0 ? '赚了 ' : '亏了 ') + '<span class="' + udc(me.st.profit) + '">' + fmtM(Math.abs(me.st.profit)) + '</span></div>';
   } else if (t === 'news') {
     const ns = G.news.slice().reverse();
     if (!OP('news')) h += '<div class="empty" style="padding:6px">本局没开「新闻与传闻」，这里只有楼市大事。</div>';
@@ -296,64 +305,69 @@ function renderDetail() {
   if (id < 0 || !G.props[id]) { el.classList.add('hidden'); return; }
   el.classList.remove('hidden');
   const p = G.props[id], K = KINDS[p.kind], D = DISTS[p.d], v = val(p), me = G.pl[ME], man = p.kind === 'mansion';
-  const listed = p.list && p.owner === -1, mine = p.owner === ME, kn = knows(p, ME) || !OP('insp');
+  const listed = p.list && p.owner === -1, mine = p.owner === ME;
   let h = '<h2><span class="sw" style="background:' + D.col + ';width:12px;height:12px"></span>' + esc(propName(p)) + '<button class="x ghost" id="dClose">✕</button></h2>';
   h += '<div class="meta">' + K.n + ' · ' + D.n + ' · ' + (man ? '庄园' : COND[p.cond].n) + (p.owner >= 0 ? ' · <b style="color:' + PCOL[p.owner] + '">' + esc(ownerName(p.owner)) + '的房</b>' : '') + (p.demo ? ' · <span class="tagx rumor">拆迁传闻</span>' : '') + '</div>';
-  h += '<canvas id="dChart"></canvas>';
   const lines = [];
+  let body = '';
   if (man) {
     const need = p.list ? p.list.ask * (1 + buyFee()) : v;
-    h += '<div class="kv"><span>价格</span><span class="big gold">' + fmtM(p.list ? p.list.ask : v) + '</span><span>你的现金</span><span>' + fmtM(me.cash) + '</span><span>你的净资产</span><span>' + fmtM(netWorth(ME)) + '</span></div>';
-    if (p.owner >= 0) h += '<div class="note good">' + esc(ownerName(p.owner)) + ' 已经买下了终极豪宅。</div>';
+    body += '<div class="kv"><span>售价</span><span class="big gold">' + fmtM(p.list ? p.list.ask : v) + '</span><span>你的现金</span><span>' + fmtM(me.cash) + '</span><span>你的总身家</span><span>' + fmtM(netWorth(ME)) + '</span></div>';
+    if (p.owner >= 0) body += '<div class="note good">' + esc(ownerName(p.owner)) + ' 已经买下了终极豪宅。</div>';
     else {
-      h += '<div class="note">终极目标：<b>全款</b>买下就赢' + (G.pl.length > 1 ? '，谁先买下谁赢' : '') + '。价格跟着半山的房价涨跌。' + (OP('fee') ? '另收 2% 手续费。' : '') + '</div>';
-      h += '<div class="acts"><button id="dBuyMan" class="primary"' + (me.cash >= need && me.alive ? '' : ' disabled') + '>全款买下 ' + fmtM(need) + '<small>' + (me.cash >= need ? '现在就能买！' : '还差 ' + fmtM(need - me.cash) + ' 现金') + '</small></button></div>';
+      body += '<div class="note">终极目标：用<b>现金一次付清</b>买下就赢' + (G.pl.length > 1 ? '，谁先买下谁赢' : '') + '。房子也算钱，但要先卖掉换成现金。豪宅的价格也会跟着楼市涨跌。</div>';
+      body += '<div class="acts"><button id="dBuyMan" class="primary"' + (me.cash >= need && me.alive ? '' : ' disabled') + '>买下豪宅 ' + fmtM(need) + '<small>' + (me.cash >= need ? '现在就能买！' : '现金还差 ' + fmtM(need - me.cash)) + '</small></button></div>';
     }
-    lines.push();
   } else if (listed) {
-    const L = p.list, e = kn ? v : estOf(p), r = L.ask / e - 1;
-    h += '<div class="kv"><span>挂牌价</span><span class="big">' + fmtM(L.ask) + '</span>';
-    h += '<span>' + (knows(p, ME) ? '真实价值（已验房）' : OP('insp') ? '中介估价（±10%）' : '参考价') + '</span><span style="color:' + (r < -0.04 ? 'var(--gold)' : 'inherit') + '">' + fmtM(e) + ' <small class="sub">' + (r <= 0 ? '低 ' : '高 ') + Math.abs(r * 100).toFixed(0) + '%</small></span>';
-    h += '<span>挂牌</span><span>' + (L.age === 0 ? '本月新挂' : '已挂 ' + L.age + ' 个月') + '，还剩 ' + L.left + ' 月</span></div>';
-    if (L.tag === 'hot') h += '<div class="note warn">业主说急着用钱，想尽快出手。</div>';
-    if (L.cut) h += '<div class="note">卖了几个月没卖掉，这个月降价了。</div>';
-    if (knows(p, ME)) { const [qn, qc] = QUAL(p.q); h += '<div class="note insp">验房结果：房屋质量<b>' + qn + '</b>，真实价值 ' + fmtM(v) + '。</div>'; }
-    lines.push({ v: L.ask, col: '#ffd27a', n: '挂牌' });
-    const fc = buyCost(L.ask, false), lc = buyCost(L.ask, true);
-    h += '<div class="acts">';
-    if (OP('insp') && !knows(p, ME)) h += '<button id="dInsp">验房 ' + fmtM(inspCost(p)) + '<small>看到真实价值和房屋质量</small></button>';
-    h += '<div class="row"><button id="dBuy" class="primary"' + (me.cash >= fc && me.alive ? '' : ' disabled') + '>全款买入<small>' + fmtM(fc) + (OP('fee') ? ' 含手续费' : '') + '</small></button>';
-    if (OP('loan')) h += '<button id="dLoan" class="primary"' + (me.cash >= lc && me.alive ? '' : ' disabled') + '>按揭买入<small>首付 ' + fmtM(lc) + '</small></button>';
-    h += '</div>';
-    if (OP('loan')) h += '<div class="sub" style="font-size:12px">按揭：贷款 ' + fmtM(L.ask * (1 - BAL.down)) + '，每月利息约 ' + fmtM(L.ask * (1 - BAL.down) * G.rate) + (OP('rent') ? '，月租约 ' + fmtM(v * BAL.rent) : '') + '</div>';
-    else if (OP('rent')) h += '<div class="sub" style="font-size:12px">月租约 ' + fmtM(v * BAL.rent) + '，物业费约 ' + fmtM(v * BAL.upkeep) + '</div>';
-    h += '</div>';
+    const L = p.list, d = dealOf(p, ME), ref = refVal(p, ME), est = OP('insp') && !knows(p, ME);
+    const pc = Math.abs(d.r - 1) * 100;
+    body += '<div class="verdict ' + d.k + '">' + d.n + '<small>' + (d.r < 0.995 ? '比市场价便宜 ' + pc.toFixed(0) + '%' : d.r > 1.005 ? '比市场价贵 ' + pc.toFixed(0) + '%' : '和市场价差不多') + '</small></div>';
+    body += '<div class="kv"><span>售价</span><span class="big">' + fmtM(L.ask) + '</span>';
+    body += '<span>' + (knows(p, ME) ? '真实市场价（已验房）' : est ? '市场价（中介估的）' : '市场价') + '</span><span>' + fmtM(ref) + '</span>';
+    body += '<span>还挂多久</span><span>' + L.left + ' 个月' + (L.cut ? '（刚降过价）' : '') + '</span></div>';
+    body += '<div class="note ' + (d.k === 'great' || d.k === 'good' ? 'good' : d.k === 'high' ? 'warn' : '') + '">' +
+      (d.k === 'great' ? '很便宜！买下来，等房价涨一点再卖，大概率能赚。' : d.k === 'good' ? '比较便宜，买下来等几个月，卖掉一般能赚。' : d.k === 'fair' ? '价格正常。买了要等房价涨起来才能赚，不急的话可以等更便宜的。' : '太贵了，买了很可能亏，不建议。') +
+      (L.tag === 'hot' ? '业主急着用钱。' : '') + '</div>';
+    if (est) body += '<div class="sub" style="font-size:12px">中介估的市场价可能差 10% 左右，花一点钱验房就知道准不准。</div>';
+    if (knows(p, ME)) { const [qn] = QUAL(p.q); body += '<div class="note insp">验房结果：房屋质量' + qn + '，真实市场价 ' + fmtM(v) + '。</div>'; }
+    lines.push({ v: L.ask, col: '#ffd27a', n: '售价' });
+    const fc = buyCost(L.ask, false), lc = buyCost(L.ask, true), can = me.cash >= fc && me.alive;
+    body += '<div class="acts">';
+    if (OP('insp') && !knows(p, ME)) body += '<button id="dInsp">验房 ' + fmtM(inspCost(p)) + '<small>看真实市场价</small></button>';
+    body += '<div class="row"><button id="dBuy" class="primary"' + (can ? '' : ' disabled') + '>买下 ' + fmtM(fc) + '<small>' + (can ? (OP('fee') ? '含 2% 手续费' : '用现金付') : '现金还差 ' + fmtM(fc - me.cash)) + '</small></button>';
+    if (OP('loan')) body += '<button id="dLoan" class="primary"' + (me.cash >= lc && me.alive ? '' : ' disabled') + '>贷款买<small>先付 ' + fmtM(lc) + '</small></button>';
+    body += '</div>';
+    if (OP('loan')) body += '<div class="sub" style="font-size:12px">贷款买：先付三成，剩下 ' + fmtM(L.ask * (1 - BAL.down)) + ' 向银行借，每月付利息约 ' + fmtM(L.ask * (1 - BAL.down) * G.rate) + '，卖房时自动还清。现金变成负数，银行会低价卖掉你的房。</div>';
+    if (OP('rent')) body += '<div class="sub" style="font-size:12px">拿着这套房，每月能收租约 ' + fmtM(v * BAL.rent) + '，交物业费约 ' + fmtM(v * BAL.upkeep) + '。</div>';
+    body += '</div>';
   } else if (mine) {
-    const net = sellNet(p), prof = p.offer * (1 - sellFee()) - p.paid, r = prof / p.paid;
-    h += '<div class="kv"><span>买入成本</span><span>' + fmtM(p.paid) + ' <small class="sub">' + (G.month - p.boughtM) + ' 个月前</small></span>';
-    h += '<span>参考价</span><span>' + fmtM(v) + '</span>';
-    h += '<span>本月买家出价</span><span class="big ' + udc(p.offer - p.paid) + '">' + (p.reno ? '—' : fmtM(p.offer)) + '</span>';
-    if (p.loan) h += '<span>贷款余额</span><span>' + fmtM(p.loan) + '</span>';
-    if (!p.reno) h += '<span>卖出到手</span><span>' + fmtM(net) + ' <small class="' + udc(prof) + '">' + (prof >= 0 ? '赚 ' : '亏 ') + fmtM(Math.abs(prof)) + '（' + pct(r) + '）</small></span>';
-    if (OP('rent')) h += '<span>每月</span><span>租 ' + fmtM(p.reno ? 0 : v * BAL.rent, 1) + ' · 物业 ' + fmtM(-v * BAL.upkeep) + (p.loan ? ' · 息 ' + fmtM(-p.loan * G.rate) : '') + '</span>';
-    else if (p.loan) h += '<span>每月利息</span><span>' + fmtM(-p.loan * G.rate) + '</span>';
-    h += '</div>';
-    if (p.offerHot) h += '<div class="note good">有买家特别想要这套，出价比平时高。</div>';
-    if (p.reno) h += '<div class="note insp">装修中，还要 ' + p.reno + ' 个月，完工后变成' + COND[p.renoTo].n + '。装修期间不能卖' + (OP('rent') ? '、没有房租' : '') + '。</div>';
-    if (knows(p, ME) && OP('insp')) { const [qn] = QUAL(p.q); h += '<div class="sub" style="font-size:12px">验房记录：房屋质量' + qn + '</div>'; }
-    lines.push({ v: p.paid, col: PCOL[ME], n: '成本' });
-    h += '<div class="acts">';
-    h += '<button id="dSell" class="' + (prof >= 0 ? 'red' : 'green') + '"' + (p.reno || !me.alive ? ' disabled' : '') + '>以 ' + fmtM(p.offer) + ' 卖出<small>' + (OP('fee') ? '扣 3% 手续费' : '') + (p.loan ? (OP('fee') ? '、' : '') + '还清贷款' : '') + (OP('fee') || p.loan ? '后' : '') + '到手 ' + fmtM(net) + '</small></button>';
+    const a = sellAdvice(p), net = sellNet(p), prof = p.offer * (1 - sellFee()) - p.paid;
+    body += '<div class="verdict ' + (a.k === 'sell' ? 'great' : a.k === 'ok' ? 'good' : 'fair') + '">' + a.n + '<small>' + (p.reno ? '还要 ' + p.reno + ' 个月' : p.boughtM === G.month ? '' : (prof >= 0 ? '现在卖能赚 ' : '现在卖会亏 ') + fmtM(Math.abs(prof))) + '</small></div>';
+    body += '<div class="kv"><span>买的时候花了</span><span>' + fmtM(p.paid) + ' <small class="sub">' + (G.month - p.boughtM) + ' 个月前</small></span>';
+    body += '<span>市场价</span><span>' + fmtM(v) + '</span>';
+    body += '<span>现在有人出价</span><span class="big ' + udc(p.offer - p.paid) + '">' + (p.reno ? '—' : fmtM(p.offer)) + '</span>';
+    if (p.loan) body += '<span>欠银行</span><span>' + fmtM(p.loan) + '</span>';
+    if (!p.reno && (OP('fee') || p.loan)) body += '<span>卖掉到手</span><span>' + fmtM(net) + '</span>';
+    if (OP('rent')) body += '<span>每月</span><span>租 ' + fmtM(p.reno ? 0 : v * BAL.rent, 1) + ' · 物业 ' + fmtM(-v * BAL.upkeep) + (p.loan ? ' · 利息 ' + fmtM(-p.loan * G.rate) : '') + '</span>';
+    else if (p.loan) body += '<span>每月利息</span><span>' + fmtM(-p.loan * G.rate) + '</span>';
+    body += '</div>';
+    if (p.boughtM === G.month) body += '<div class="note">刚买下，要办过户，下个月起就能卖。房价和买家出价每个月都会变。</div>';
+    else if (!p.reno) body += '<div class="note ' + (a.k === 'sell' ? 'good' : '') + '">' + (p.offerHot ? '有买家特别想要这套，出价比平时高，好机会！' : a.k === 'sell' ? '赚钱了，可以卖掉换成现金，再去买下一套便宜的。' : a.k === 'ok' ? '小赚一点。可以卖，也可以等房价再涨涨。买家出价每个月都会变。' : '现在卖会亏。买家出价每个月都会变，等房价回来再卖。') + '</div>';
+    else body += '<div class="note insp">装修中，还要 ' + p.reno + ' 个月，完工后变成' + COND[p.renoTo].n + '，更值钱。装修期间不能卖' + (OP('rent') ? '、没有房租' : '') + '。</div>';
+    lines.push({ v: p.paid, col: PCOL[ME], n: '买价' });
+    body += '<div class="acts">';
+    const fresh = p.boughtM === G.month;
+    body += '<button id="dSell" class="' + (prof >= 0 ? 'red' : 'green') + '"' + (p.reno || fresh || !me.alive ? ' disabled' : '') + '>' + (fresh ? '下个月才能卖' : '卖掉，拿 ' + fmtM(net)) + '<small>' + (fresh ? '刚买的房要办过户' : (prof >= 0 ? '赚 ' : '亏 ') + fmtM(Math.abs(prof)) + (OP('fee') ? '（已扣 3% 手续费）' : '')) + '</small></button>';
     const R = OP('reno') ? renoInfo(p) : null;
-    if (R && !p.reno) h += '<button id="dReno"' + (me.cash >= R.cost ? '' : ' disabled') + '>装修成' + COND[p.cond + 1].n + ' ' + fmtM(R.cost) + '<small>' + R.t + ' 个月，参考价约 +' + fmtM(R.gain) + '</small></button>';
-    if (OP('loan') && p.loan > 0) h += '<button id="dRepay" class="ghost"' + (me.cash >= p.loan ? '' : ' disabled') + '>提前还清贷款 ' + fmtM(p.loan) + '</button>';
-    h += '</div>';
+    if (R && !p.reno) body += '<button id="dReno"' + (me.cash >= R.cost ? '' : ' disabled') + '>装修成' + COND[p.cond + 1].n + ' ' + fmtM(R.cost) + '<small>要 ' + R.t + ' 个月，房子能多值约 ' + fmtM(R.gain) + '</small></button>';
+    if (OP('loan') && p.loan > 0) body += '<button id="dRepay" class="ghost"' + (me.cash >= p.loan ? '' : ' disabled') + '>提前还清贷款 ' + fmtM(p.loan) + '</button>';
+    body += '</div>';
   } else {
-    h += '<div class="kv"><span>参考价</span><span class="big">' + (OP('insp') && p.owner < 0 ? '约 ' : '') + fmtM(OP('insp') && p.owner < 0 ? Math.round(v / 5) * 5 : v) + '</span></div>';
-    h += '<div class="note">' + (p.owner >= 0 ? esc(ownerName(p.owner)) + ' 持有这套房。' : p.cool ? '刚成交不久，业主暂时不卖。' : '业主暂时没挂牌，以后可能会卖。') + '</div>';
-    if (OP('rent') && p.owner < 0) h += '<div class="sub" style="font-size:12px">' + D.hint + '</div>';
+    body += '<div class="kv"><span>市场价</span><span class="big">' + (OP('insp') && p.owner < 0 ? '约 ' + fmtM(Math.round(v / 5) * 5) : fmtM(v)) + '</span></div>';
+    body += '<div class="note">' + (p.owner >= 0 ? esc(ownerName(p.owner)) + ' 的房，买不了。' : p.cool ? '刚卖出去不久，业主暂时不卖。' : '业主现在不卖，以后可能会挂出来。') + '</div>';
+    body += '<div class="sub" style="font-size:12px">' + D.n + '：' + D.hint + '</div>';
   }
-  el.innerHTML = h;
+  el.innerHTML = h + '<canvas id="dChart"></canvas><div class="sub" style="font-size:11.5px;margin-top:-4px">蓝线：这套房的市场价，最近 ' + p.hist.length + ' 个月</div>' + body;
   const hist = p.hist.slice();
   bigChart($('dChart'), [{ data: hist, col: '#8fd0ff', fill: 'rgba(143,208,255,.25)' }], { lines, from: hist.length + ' 个月前' });
   const on = (i, f) => { const b = $(i); if (b) b.onclick = f; };
@@ -364,7 +378,52 @@ function renderDetail() {
   on('dSell', () => act('sell', { id }));
   on('dReno', () => act('reno', { id }));
   on('dRepay', () => act('repay', { id }));
-  on('dBuyMan', () => askConfirm('全款 <b class="gold">' + fmtM(p.list.ask * (1 + buyFee())) + '</b> 买下终极豪宅？', '买下！', () => act('buy', { id, loan: false })));
+  on('dBuyMan', () => askConfirm('用现金 <b class="gold">' + fmtM(p.list.ask * (1 + buyFee())) + '</b> 买下终极豪宅？', '买下！', () => act('buy', { id, loan: false })));
+}
+
+/* ---------- beginner guide (solo, first game) ---------- */
+const TUT = { step: -1, m: 0 };
+function tutStart(force) {
+  if (NETROLE !== 'solo' || (!force && LS.get('tutDone', false))) { TUT.step = -1; tutRender(); return; }
+  TUT.step = 0; tutCheck();
+}
+function tutEnd() { TUT.step = -1; LS.set('tutDone', true); tutRender(); renderTab(); }
+function tutCheck() {
+  if (TUT.step < 0 || !G || G.over) { tutRender(); return; }
+  const me = G.pl[ME], own = ownedBy(ME).length, sp = STATE.sel >= 0 ? G.props[STATE.sel] : null;
+  if (TUT.step <= 1) TUT.step = own ? 2 : sp && sp.list && sp.owner === -1 && sp.kind !== 'mansion' ? 1 : 0;
+  if (TUT.step === 2 && !TUT.m) TUT.m = G.month + 1;
+  if (TUT.step === 2 && G.month >= TUT.m) TUT.step = 3;
+  if (TUT.step === 3 && me.st.sells > 0) TUT.step = 4;
+  if ((TUT.step === 2 || TUT.step === 3) && !own && !me.st.sells) { TUT.step = 0; TUT.m = 0; }
+  tutRender();
+}
+function tutRender() {
+  document.querySelectorAll('.pulse').forEach(e => { if (!e.classList.contains('item')) e.classList.remove('pulse'); });
+  const c = $('coach'); if (!c) return;
+  if (TUT.step < 0 || STATE.mode !== 'play') { c.classList.add('hidden'); return; }
+  c.classList.remove('hidden');
+  const narrow = innerWidth <= 760 || PHONE.matches, tab = t => (narrow ? $('phoneTabs') : $('tabs')).querySelector('[data-t="' + t + '"]');
+  const hl = el => el && el.classList.add('pulse');
+  let txt = '';
+  $('coachOk').classList.toggle('hidden', TUT.step !== 4); $('coachSkip').classList.toggle('hidden', TUT.step === 4);
+  if (TUT.step === 0) {
+    txt = '<b>目标：攒钱买下山顶的终极豪宅。</b><br>第一步：打开「房源」，找一套标着 <span class="deal great">超值</span> 或 <span class="deal good">划算</span> 的房子，点开它。';
+    const open = !narrow || $('side').classList.contains('open');
+    if (STATE.tab !== 'list' || !open) hl(tab('list'));
+  } else if (TUT.step === 1) {
+    const p = G.props[STATE.sel], d = dealOf(p, ME), can = G.pl[ME].cash >= buyCost(p.list.ask, false);
+    if ((d.k === 'great' || d.k === 'good') && can) { txt = '这套<b>比市场价便宜</b>，买下来等涨价再卖就能赚。点「买下」。'; hl($('dBuy')); }
+    else if (!can) txt = '这套太贵，现金不够。换一套便宜点的、标着超值或划算的。';
+    else txt = '这套价格' + d.n + '，买了不容易赚。换一套标着 <span class="deal great">超值</span> 或 <span class="deal good">划算</span> 的。';
+  } else if (TUT.step === 2) { txt = '买到了！房价<b>每个月都会变</b>。点右下角「下个月」，看看会怎样。'; hl($('endBtn')); }
+  else if (TUT.step === 3) {
+    txt = '打开「我的」看看你的房：写着现在卖<b>能赚多少</b>。<b>赚了就卖</b>，会亏就点「下个月」再等等。';
+    const sp = STATE.sel >= 0 ? G.props[STATE.sel] : null;
+    if (sp && sp.owner === ME) { const a = sellAdvice(sp); if (a.k !== 'wait') { txt = '赚钱了！点「卖掉」把房子换回现金。'; hl($('dSell')); } else { txt = '现在卖会亏，点「下个月」再等等。'; hl($('endBtn')); } }
+    else hl(tab('mine'));
+  } else if (TUT.step === 4) txt = '赚到第一笔了！就这样一直<b>低买高卖</b>，钱会越滚越多。现金够了，点顶上的豪宅进度条就能去买豪宅。';
+  $('coachT').innerHTML = txt;
 }
 
 /* ---------- end screen ---------- */
@@ -378,7 +437,7 @@ function showEnd() {
   else if (o.reason === 'time') { title = w < 0 ? '时间到' : won ? '你赢了' : esc(G.pl[w].name) + ' 赢了'; sub = BAL.maxMonth + ' 个月过去了，' + (w < 0 ? '还没买下豪宅' : '按净资产排名'); }
   else { title = '破产了'; sub = w >= 0 ? esc(G.pl[w].name) + ' 笑到了最后' : '资不抵债'; }
   if (won && o.reason === 'mansion' && NETROLE === 'solo' && G.bestKey) { const b = LS.get(G.bestKey, null); if (!b || o.m + 1 < b) { LS.set(G.bestKey, o.m + 1); sub += '，新纪录！'; } else sub += '（纪录 ' + b + ' 个月）'; }
-  sub += ' · 玩法：' + presetName(G.preset || (OPTS.every(x => G.opt[x.k]) ? 'full' : OPTS.every(x => !G.opt[x.k]) ? 'pure' : 'custom'), G.opt);
+  sub += ' · ' + DIFF[G.diff || 'normal'].n + ' · 玩法：' + presetName(G.preset || (OPTS.every(x => G.opt[x.k]) ? 'full' : OPTS.every(x => !G.opt[x.k]) ? 'pure' : 'custom'), G.opt);
   $('eTitle').textContent = title.replace(/&amp;/g, '&'); $('eSub').innerHTML = sub;
   const rank = G.pl.slice().sort((a, b) => (b.i === w) - (a.i === w) || netWorth(b.i) - netWorth(a.i));
   $('eRank').innerHTML = rank.map((pl, k) => '<div><span class="sw" style="background:' + PCOL[pl.i] + ';width:12px;height:12px"></span><b>' + (k + 1) + '. ' + esc(pl.name) + (pl.alive ? '' : '（破产）') + '</b><span>净资产 ' + fmtM(pl.alive ? netWorth(pl.i) : 0) + '</span><span class="sub" style="font-size:13px">买 ' + pl.st.buys + ' 卖 ' + pl.st.sells + ' · 最赚一笔 ' + fmtM(pl.st.best) + '</span></div>').join('');
