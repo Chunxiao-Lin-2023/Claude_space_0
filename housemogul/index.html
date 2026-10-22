@@ -1,0 +1,1888 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="房产大亨"><meta name="theme-color" content="#0e1724">
+<title>房产大亨</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=ZCOOL+XiaoWei&family=Noto+Sans+SC:wght@400;700&family=Oswald:wght@500;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+<style>
+:root{--bg:#86b9cc;--panel:rgba(18,26,38,.9);--panel2:rgba(28,38,54,.92);--line:rgba(245,196,81,.22);--txt:#eef2f6;--sub:#9eacbd;--gold:#f5c451;--gold2:#c9952a;
+ --up:#ff5f52;--down:#2fc27a;--p0:#ff9a3c;--p1:#34d1bf;--p2:#b48cff;
+ --font:"Noto Sans SC","PingFang SC","Microsoft YaHei",system-ui,sans-serif;--title:"ZCOOL XiaoWei","Noto Serif SC","Noto Sans SC",serif;--num:"Oswald","Noto Sans SC",sans-serif;
+ color-scheme:dark;--sa-t:env(safe-area-inset-top,0px);--sa-b:env(safe-area-inset-bottom,0px);--sa-l:env(safe-area-inset-left,0px);--sa-r:env(safe-area-inset-right,0px)}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--txt);font-family:var(--font);overscroll-behavior:none;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+canvas#cv{position:fixed;inset:0;width:100%;height:100%;display:block;cursor:grab}
+canvas#cv.drag{cursor:grabbing}
+.hidden{display:none!important}
+button{font-family:var(--font);cursor:pointer;color:var(--txt);background:linear-gradient(#2a3850,#1b2536);border:1px solid rgba(245,196,81,.35);border-radius:7px;padding:8px 14px;font-size:15px;min-height:42px;box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 2px 8px rgba(0,0,0,.35);touch-action:manipulation;transition:background .15s,border-color .15s}
+button:hover,button.sel{border-color:var(--gold);background:linear-gradient(#34466a,#212d42)}
+button:active{transform:translateY(1px)}
+button.primary{background:linear-gradient(#e0a92e,#a8711a);border-color:#ffd77a;color:#1d1406;font-weight:700}
+button.primary:hover{background:linear-gradient(#f0bb40,#b8801f)}
+button.red{background:linear-gradient(#c8463b,#8c271f);border-color:#ff8a7e;color:#fff;font-weight:700}
+button.green{background:linear-gradient(#25a066,#156a42);border-color:#6fe2a6;color:#fff;font-weight:700}
+button.ghost{background:rgba(255,255,255,.04);border-color:rgba(255,255,255,.14);box-shadow:none}
+button:disabled{opacity:.42;cursor:default;transform:none}
+input{font-family:var(--font);font-size:16px;color:var(--txt);background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.16);border-radius:7px;padding:8px 12px;min-height:42px;outline:none;width:100%}
+input:focus{border-color:var(--gold)}
+.up{color:var(--up)}.down{color:var(--down)}.gold{color:var(--gold)}.sub{color:var(--sub)}
+.num{font-family:var(--num);letter-spacing:.02em}
+.scr{position:fixed;inset:0;z-index:20;display:flex;align-items:safe center;justify-content:center;overflow:auto;padding:calc(14px + var(--sa-t)) calc(14px + var(--sa-r)) calc(14px + var(--sa-b)) calc(14px + var(--sa-l))}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px 20px;box-shadow:0 14px 44px rgba(0,0,0,.45);backdrop-filter:blur(6px)}
+.row{display:flex;gap:10px;align-items:center}
+.lbl{font-size:13px;color:var(--sub);letter-spacing:.06em}
+.status{min-height:20px;font-size:14px;color:var(--gold);text-align:center}
+/* title */
+#title{flex-direction:column;background:radial-gradient(ellipse at 50% 40%,rgba(10,20,34,.05),rgba(10,20,34,.55) 70%,rgba(8,14,24,.8))}
+.wrapT{display:flex;flex-direction:column;align-items:center;gap:14px;margin:auto}
+.logo{text-align:center;pointer-events:none}
+.logo h1{margin:0;font-family:var(--title);font-weight:400;font-size:clamp(56px,10vw,108px);line-height:1;color:#fff6dc;letter-spacing:.08em;text-shadow:0 0 26px rgba(245,196,81,.45),0 4px 0 #6b4a12,0 8px 18px rgba(0,0,0,.5)}
+.logo .en{font-family:var(--num);letter-spacing:.5em;font-size:clamp(12px,1.7vw,15px);color:#ffe7a8;margin-top:8px;padding-left:.5em;text-shadow:0 2px 4px #000}
+.logo .tag{margin-top:8px;color:#f3ead6;font-size:15px;letter-spacing:.14em;text-shadow:0 2px 5px #000}
+.menu{display:flex;flex-direction:column;gap:10px;width:min(420px,92vw)}
+.seg{display:flex;gap:6px}.seg button{flex:1;min-height:40px;padding:6px;font-size:14px}
+.hubBack{position:fixed;left:calc(12px + var(--sa-l));top:calc(12px + var(--sa-t));z-index:22;font-size:14px;padding:8px 14px;min-height:40px}
+.best{font-size:13px;color:var(--sub);text-align:center}
+.optBox{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.optBox button{min-height:38px;padding:4px 8px;font-size:13px;text-align:left;display:flex;align-items:center;gap:7px;background:rgba(255,255,255,.03);box-shadow:none;border-color:rgba(255,255,255,.12)}
+.optBox button i{font-style:normal;width:16px;height:16px;border-radius:4px;border:1px solid rgba(255,255,255,.35);display:inline-flex;align-items:center;justify-content:center;font-size:12px;flex:none}
+.optBox button.on{border-color:rgba(245,196,81,.6);color:#ffe9b5}.optBox button.on i{background:var(--gold);color:#1d1406;border-color:var(--gold)}
+.optBox.ro button{cursor:default}
+.modeDesc{font-size:13px;color:#cfd8e2;line-height:1.55;background:rgba(255,255,255,.04);border-radius:7px;padding:6px 10px}
+#lobby .card,#help .card,#menuScr .card{width:min(540px,94vw);display:flex;flex-direction:column;gap:12px;max-height:calc(100dvh - 16px);overflow:auto;margin:auto}
+.code{font-family:var(--num);font-size:46px;letter-spacing:.3em;color:var(--gold);text-align:center;padding-left:.3em}
+.plist{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.pl{border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:12px;background:rgba(0,0,0,.2);text-align:center}
+.pl .n{font-size:18px;font-weight:700}.pl .s{font-size:13px;color:var(--sub);margin-top:4px}
+#help .card{width:min(640px,94vw);font-size:14px;line-height:1.7}
+#help h3{margin:6px 0 0;color:var(--gold);font-size:16px}
+#help p{margin:0;color:#d9e1ea}
+/* HUD */
+#hud{position:fixed;inset:0;z-index:5;pointer-events:none}
+#hud>*{pointer-events:auto}
+.glass{background:var(--panel);border:1px solid rgba(255,255,255,.08);border-radius:10px;box-shadow:0 6px 22px rgba(0,0,0,.35);backdrop-filter:blur(5px)}
+#top{position:absolute;left:calc(10px + var(--sa-l));right:calc(10px + var(--sa-r));top:calc(10px + var(--sa-t));display:flex;gap:10px;align-items:stretch;pointer-events:none}
+#top>*{pointer-events:auto}
+#tMonth{padding:6px 14px;display:flex;flex-direction:column;justify-content:center;min-width:118px}
+#tMonth b{font-size:17px}#tMonth small{font-size:12px;color:var(--sub)}
+#tMoney{display:flex;gap:4px;padding:4px 8px;align-items:center}
+.stat{display:flex;flex-direction:column;align-items:flex-start;padding:2px 10px;min-width:92px}
+.stat small{font-size:11px;color:var(--sub);letter-spacing:.06em}
+.stat b{font-family:var(--num);font-size:19px;font-weight:500;white-space:nowrap}
+.stat.flash b{animation:fl .6s}@keyframes fl{0%{color:#fff;text-shadow:0 0 10px var(--gold)}100%{}}
+#tGoal{flex:1;padding:6px 12px;display:flex;flex-direction:column;justify-content:center;gap:4px;min-width:160px;cursor:pointer}
+#tGoal .gl{display:flex;justify-content:space-between;font-size:12px;color:var(--sub)}#tGoal .gl b{color:var(--gold);font-family:var(--num);font-weight:500;font-size:14px}
+.bar{height:8px;background:rgba(255,255,255,.08);border-radius:4px;overflow:hidden;position:relative}
+.bar>i{display:block;height:100%;background:linear-gradient(90deg,#c9952a,#f5c451);transition:width .4s}
+.bar>i.p1{background:linear-gradient(90deg,#1c8f82,#34d1bf)}.bar>i.p2{background:linear-gradient(90deg,#7351c4,#b48cff)}
+.bars2{display:flex;flex-direction:column;gap:3px}
+#tBtns{display:flex;gap:6px;align-items:center}
+#tBtns button{min-width:44px;min-height:44px;padding:4px 10px;font-size:17px}
+/* side panels */
+#side{position:absolute;left:calc(10px + var(--sa-l));top:calc(84px + var(--sa-t));bottom:calc(84px + var(--sa-b));width:300px;display:flex;flex-direction:column;overflow:hidden}
+.tabs{display:flex;gap:4px;padding:6px 6px 0}
+.tabs button{flex:1;min-height:36px;padding:4px;font-size:14px;border-radius:7px 7px 0 0;border-bottom:none;background:rgba(255,255,255,.03);box-shadow:none;border-color:rgba(255,255,255,.08)}
+.tabs button.sel{background:rgba(245,196,81,.14);border-color:var(--gold);color:var(--gold)}
+.tabs button .cnt{font-family:var(--num);font-size:12px;margin-left:3px;color:var(--sub)}
+.tabBody{flex:1;overflow:auto;padding:8px;border-top:1px solid rgba(245,196,81,.25);-webkit-overflow-scrolling:touch;touch-action:pan-y}
+.item{display:flex;gap:8px;align-items:center;padding:8px;border-radius:8px;cursor:pointer;border:1px solid transparent}
+.item:hover{background:rgba(255,255,255,.05)}.item.sel{border-color:var(--gold);background:rgba(245,196,81,.08)}
+.item .main{flex:1;min-width:0}.item .nm{font-size:14px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.item .ds{font-size:12px;color:var(--sub);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.item .rt{text-align:right;font-family:var(--num);font-size:15px;white-space:nowrap}.item .rt small{display:block;font-size:12px}
+.sw{width:10px;height:10px;border-radius:3px;flex:none}
+.tagx{display:inline-block;font-size:11px;padding:0 5px;border-radius:4px;margin-left:4px;vertical-align:1px;font-weight:700}
+.tagx.hot{background:#c8463b;color:#fff}.tagx.new{background:#2a6fb8;color:#fff}.tagx.cut{background:#4d5a6b;color:#dfe6ee}.tagx.goal{background:var(--gold);color:#1d1406}.tagx.rumor{background:#7a4cc2;color:#fff}
+.mktHead{padding:6px 4px 10px;font-size:13px;color:var(--sub);display:flex;flex-direction:column;gap:6px}
+.heat{display:flex;align-items:center;gap:8px}.heat .bar{flex:1;height:7px}.heat .bar>i{background:linear-gradient(90deg,#2fc27a,#f5c451,#ff5f52)}
+.secT{font-size:12px;color:var(--sub);letter-spacing:.1em;padding:10px 4px 4px}
+.empty{color:var(--sub);font-size:13px;padding:14px 6px;text-align:center;line-height:1.6}
+canvas.spark{width:72px;height:26px;flex:none}
+/* detail */
+#detail{position:absolute;right:calc(10px + var(--sa-r));top:calc(84px + var(--sa-t));width:330px;max-height:calc(100% - 178px - var(--sa-t) - var(--sa-b));overflow:auto;padding:14px 16px;display:flex;flex-direction:column;gap:9px;touch-action:pan-y}
+#detail h2{margin:0;font-size:20px;display:flex;align-items:center;gap:8px}
+#detail .x{margin-left:auto;min-height:32px;min-width:32px;padding:0 8px;font-size:15px}
+#detail .meta{font-size:13px;color:var(--sub)}
+#detail canvas{width:100%;height:96px;display:block;border-radius:6px;background:rgba(0,0,0,.2)}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:14px;align-items:baseline}
+.kv>span:nth-child(odd){color:var(--sub);font-size:13px}.kv>span:nth-child(even){text-align:right;font-family:var(--num);font-size:16px}
+.kv .big{font-size:22px!important;color:#fff}
+.note{font-size:13px;color:#cfd8e2;background:rgba(255,255,255,.05);border-radius:7px;padding:7px 10px;line-height:1.55}
+.note.warn{background:rgba(200,70,59,.18);color:#ffd2cc}.note.good{background:rgba(47,194,122,.15);color:#c9f5df}.note.insp{background:rgba(245,196,81,.12);color:#ffe9b5}
+.acts{display:flex;flex-direction:column;gap:7px}
+.acts .row button{flex:1}
+.acts button small{display:block;font-size:12px;font-weight:400;opacity:.85}
+/* bottom */
+#bottom{position:absolute;left:calc(10px + var(--sa-l));right:calc(10px + var(--sa-r));bottom:calc(10px + var(--sa-b));display:flex;gap:10px;align-items:stretch;pointer-events:none}
+#bottom>*{pointer-events:auto}
+#news{flex:1;padding:6px 12px;display:flex;flex-direction:column;justify-content:center;gap:2px;min-width:0;cursor:pointer;min-height:64px}
+#news .nl{font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#news .nl i{font-style:normal;font-family:var(--num);color:var(--sub);margin-right:6px;font-size:12px}
+#news .nl.good b{color:var(--up)}#news .nl.bad b{color:var(--down)}#news .nl.rumor b{color:#c9a4ff}#news .nl.info b{color:var(--gold)}
+#news .nl b{font-weight:700;margin-right:4px}
+#endBtn{min-width:190px;font-size:19px;padding:6px 18px;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.2}
+#endBtn small{font-size:12px;font-weight:400}
+#endBtn.wait{background:linear-gradient(#2a3850,#1b2536);color:var(--sub);border-color:rgba(255,255,255,.2)}
+#toasts{position:fixed;left:50%;top:calc(92px + var(--sa-t));transform:translateX(-50%);z-index:15;display:flex;flex-direction:column;gap:6px;align-items:center;pointer-events:none;width:min(560px,90vw)}
+.toast{background:rgba(14,20,30,.92);border:1px solid var(--line);border-radius:9px;padding:8px 14px;font-size:15px;box-shadow:0 6px 20px rgba(0,0,0,.4);animation:tin .25s ease-out,tout .5s ease-in 3.2s forwards;text-align:center}
+.toast.good{border-color:rgba(255,95,82,.6)}.toast.bad{border-color:rgba(47,194,122,.6)}.toast.gold{border-color:var(--gold);color:#ffe9b5}
+@keyframes tin{from{opacity:0;transform:translateY(-8px)}}@keyframes tout{to{opacity:0;transform:translateY(-6px)}}
+#monthFx{position:fixed;inset:0;z-index:14;pointer-events:none;display:flex;align-items:center;justify-content:center;opacity:0}
+#monthFx.show{animation:mfx 1.3s ease-out}
+#monthFx div{font-family:var(--title);font-size:clamp(40px,7vw,72px);color:#fff6dc;text-shadow:0 0 20px rgba(0,0,0,.6),0 4px 0 rgba(0,0,0,.35)}
+@keyframes mfx{0%{opacity:0;transform:scale(.92)}20%{opacity:1;transform:scale(1)}70%{opacity:1}100%{opacity:0}}
+#phoneTabs{display:none}
+/* end screen */
+#endScr .card{width:min(620px,94vw);display:flex;flex-direction:column;gap:12px;max-height:calc(100dvh - 16px);overflow:auto;margin:auto;text-align:center}
+#endScr h2{margin:0;font-family:var(--title);font-weight:400;font-size:44px;color:#fff3cf}
+#endChart{width:100%;height:200px;background:rgba(0,0,0,.2);border-radius:8px}
+.rank{display:flex;flex-direction:column;gap:6px;text-align:left}
+.rank div{display:flex;gap:10px;align-items:center;padding:8px 12px;border-radius:8px;background:rgba(255,255,255,.05);font-size:15px}
+.rank div b{flex:1}.rank div span{font-family:var(--num)}
+#confirm{z-index:40;background:rgba(0,0,0,.35)}
+#confirm .card{width:min(400px,92vw);display:flex;flex-direction:column;gap:12px;text-align:center;margin:auto}
+#loading{position:fixed;inset:0;z-index:60;background:#0e1724;display:flex;align-items:center;justify-content:center;font-family:var(--title);font-size:44px;color:#f5d48a}
+
+/* medium screens (iPad portrait, small laptops) */
+@media (max-width:1000px){
+ #side{width:270px}#detail{width:300px}
+ .stat{min-width:80px;padding:2px 6px}.stat b{font-size:17px}
+}
+/* narrow / phone layout: panels become bottom sheets */
+@media (max-width:760px),(pointer:coarse) and (max-height:500px){
+ #top{gap:6px}
+ #tMonth{min-width:0;padding:4px 10px}#tMonth b{font-size:15px}
+ #tMoney{padding:2px 4px;gap:0}.stat{min-width:0;padding:1px 6px}.stat b{font-size:15px}.stat small{font-size:10px}
+ .stat.debt{display:none}
+ #tGoal{min-width:90px;padding:4px 8px}
+ #side{display:none;left:calc(6px + var(--sa-l));right:calc(6px + var(--sa-r));width:auto;top:auto;bottom:calc(66px + var(--sa-b));height:min(56dvh,430px);z-index:6}
+ #side.open{display:flex}
+ #side .tabs{display:none}
+ #detail{left:calc(6px + var(--sa-l));right:calc(6px + var(--sa-r));width:auto;top:auto;bottom:calc(66px + var(--sa-b));max-height:min(62dvh,520px);z-index:7}
+ #bottom{left:calc(6px + var(--sa-l));right:calc(6px + var(--sa-r));bottom:calc(6px + var(--sa-b));gap:6px}
+ #news{display:none}
+ #phoneTabs{display:flex;flex:1;gap:4px;padding:4px}
+ #phoneTabs button{flex:1;min-height:48px;padding:2px;font-size:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.15}
+ #phoneTabs button small{font-family:var(--num);font-size:11px;color:var(--sub)}
+ #phoneTabs button.sel{border-color:var(--gold);color:var(--gold)}
+ #endBtn{min-width:110px;font-size:16px;padding:4px 10px}
+ #toasts{top:calc(64px + var(--sa-t))}
+ .toast{font-size:14px}
+}
+@media (pointer:coarse) and (max-height:500px){
+ #top{top:calc(6px + var(--sa-t))}
+ #tMonth small{display:none}
+ #side,#detail{height:auto;top:calc(60px + var(--sa-t));bottom:calc(64px + var(--sa-b));max-height:none}
+ #side{width:min(380px,48vw);right:auto}
+ #detail{width:min(380px,48vw);left:auto}
+ .logo h1{font-size:52px}.wrapT{gap:10px}
+}
+@media (pointer:coarse) and (max-height:500px){
+ #detail{padding:10px 12px;gap:6px}#detail h2{font-size:17px}#detail canvas{height:58px}
+ .kv{font-size:13px;gap:2px 10px}.kv>span:nth-child(even){font-size:15px}.kv .big{font-size:19px!important}
+ .note{padding:5px 8px;font-size:12.5px}
+}
+@media (pointer:coarse) and (max-width:500px){
+ #tMoney{flex:1;min-width:0;justify-content:space-around}
+ #tBtns{gap:4px}#tBtns button{min-width:40px;min-height:40px;padding:2px 6px;font-size:15px}
+ #detail canvas{height:72px}
+}
+@media (pointer:coarse) and (max-width:380px){
+ .stat{padding:1px 3px}.stat b{font-size:13.5px}#tMonth{padding:4px 7px}#tMonth b{font-size:14px}
+ #tGoal .gl span{display:none}
+ .stat.cash small,.stat.net small{font-size:10px}
+ #top{flex-wrap:wrap}
+ #tGoal{order:5;flex-basis:100%;min-height:0;padding:4px 10px}
+ #side,#detail{bottom:calc(64px + var(--sa-b))}
+}
+</style>
+</head>
+<body>
+<canvas id="cv"></canvas>
+<div id="loading">房产大亨</div>
+
+<div id="title" class="scr">
+ <button id="hubBtn" class="hubBack ghost hidden">‹ 游戏厅</button>
+ <div class="wrapT">
+  <div class="logo"><h1>房产大亨</h1><div class="en">REAL ESTATE MOGUL</div><div class="tag">低买高卖 · 攒钱买下山顶的终极豪宅</div></div>
+  <div class="menu card">
+   <div class="row"><span class="lbl" style="flex:none">名字</span><input id="nameIn" maxlength="8" placeholder="你的名字"></div>
+   <div class="row"><span class="lbl" style="flex:none">玩法</span><div class="seg" id="modeSeg" style="flex:1"><button data-m="pure">纯粹</button><button data-m="full">完整</button><button data-m="custom">自定义</button></div></div>
+   <div class="optBox" id="optBox"></div>
+   <div class="lbl">单人</div>
+   <div class="row"><span class="lbl" style="flex:none">对手</span><div class="seg" id="aiSeg" style="flex:1"><button data-ai="0">无（竞速）</button><button data-ai="1">王老板</button></div></div>
+   <div class="row"><button id="newBtn" class="primary" style="flex:1">新的一局</button><button id="contBtn" style="flex:1" class="hidden">继续</button></div>
+   <div class="best" id="bestTxt"></div>
+   <div class="lbl" style="margin-top:4px">双人联机</div>
+   <div class="row"><button id="hostBtn" style="flex:1">创建房间</button><input id="codeIn" maxlength="4" placeholder="房间码" style="width:96px;flex:none;text-transform:uppercase;text-align:center;letter-spacing:.2em"><button id="joinBtn">加入</button></div>
+   <div class="status" id="titleStatus"></div>
+   <div class="row"><button id="helpBtn" class="ghost" style="flex:1">玩法说明</button></div>
+  </div>
+ </div>
+</div>
+
+<div id="lobby" class="scr hidden"><div class="card">
+ <div class="lbl" style="text-align:center">房间码（发给朋友）</div>
+ <div class="code" id="lCode">····</div>
+ <div class="plist"><div class="pl"><div class="n" id="lP0" style="color:var(--p0)">房主</div><div class="s">房主</div></div><div class="pl"><div class="n" id="lP1" style="color:var(--p1)">等待加入…</div><div class="s" id="lP1s">　</div></div></div>
+ <div class="row"><span class="lbl" style="flex:none">玩法</span><div class="seg" id="lModeSeg" style="flex:1"><button data-m="pure">纯粹</button><button data-m="full">完整</button><button data-m="custom">自定义</button></div></div>
+ <div class="optBox" id="lOptBox"></div>
+ <div class="row"><span class="lbl" style="flex:none">电脑对手</span><div class="seg" id="lAiSeg" style="flex:1"><button data-ai="0">不加</button><button data-ai="1">加入王老板</button></div></div>
+ <div class="status" id="lStatus"></div>
+ <div class="row"><button id="lLeave" class="ghost" style="flex:1">离开</button><button id="lReady" style="flex:1" class="hidden">准备</button><button id="lStart" class="primary" style="flex:1" disabled>开始</button></div>
+</div></div>
+
+<div id="help" class="scr hidden"><div class="card">
+ <p class="sub">开局可选玩法：<b>纯粹</b>只有房价涨跌和买卖；<b>完整</b>加上贷款、房租、装修、验房、新闻和手续费；<b>自定义</b>挑着开。下面带 ★ 的只在开了对应选项时有。</p>
+ <h3>目标</h3><p>从 80 万起步，在城里低价买房、高价卖出，攒够钱<b>全款买下半山顶的终极豪宅</b>就赢。豪宅价格也跟着楼市涨跌。双人时谁先买下谁赢；120 个月后还没人买下，比净资产。</p>
+ <h3>每个月</h3><p>点地图上的房子或左边的「房源」看挂牌房。操作完点「下个月」（双人要两人都点）。月底房价变动、出新房源（★ 还会收房租、付物业费和利息、出新闻）。挂牌房几个月卖不掉会降价，过期就下架。</p>
+ <h3>怎么赚钱</h3><p>每套房都有「参考价」，挂牌价可能比它低也可能高，「急售」的常常便宜。各区有自己的走势，楼市还有牛熊周期，房价也会围着走势上下波动。你手里的房每个月都有买家出价，出价合适就卖。★ 估价误差：参考价只是中介估的，有误差，花一点钱「验房」才能看到真实价值。★ 手续费：买入 2%，卖出 3%。</p>
+ <h3>★ 按揭</h3><p>首付 30% 就能买，剩下的是贷款，每月付利息（利率随新闻变化），卖房时自动还清。杠杆放大收益也放大亏损：月底现金为负，银行会按 85% 的价格强制卖掉你的房，没房可卖就破产。豪宅只能全款。</p>
+ <h3>★ 其他</h3><p>装修能把破旧房变普通、普通变精装，涨价比花的钱多，但装修期间不能卖、没房租。传闻不一定成真；拆迁传闻成真时，那条街的老房按 1.8 倍价值补偿。</p>
+ <h3>操作</h3><p>拖动地图平移，滚轮或双指缩放；回车 = 下个月；Esc = 菜单。</p>
+ <button id="helpClose" class="primary">知道了</button>
+</div></div>
+
+<div id="menuScr" class="scr hidden" style="background:rgba(0,0,0,.4)"><div class="card" style="width:min(360px,92vw)">
+ <div style="font-family:var(--title);font-size:30px;text-align:center;color:#fff3cf">菜单</div>
+ <button id="mResume" class="primary">继续</button>
+ <button id="mHelp">玩法说明</button>
+ <button id="mSound">音效：开</button>
+ <button id="mTitle">返回标题</button>
+ <button id="mHub" class="hidden">返回游戏厅</button>
+ <div class="status" id="mStatus"></div>
+</div></div>
+
+<div id="endScr" class="scr hidden" style="background:rgba(0,0,0,.45)"><div class="card">
+ <h2 id="eTitle">胜利</h2>
+ <div id="eSub" class="sub"></div>
+ <canvas id="endChart"></canvas>
+ <div class="rank" id="eRank"></div>
+ <div class="row"><button id="eTitleBtn" class="ghost" style="flex:1">返回标题</button><button id="eAgain" class="primary" style="flex:1">再来一局</button></div>
+</div></div>
+
+<div id="confirm" class="scr hidden"><div class="card"><div id="cTxt"></div><div class="row"><button id="cNo" class="ghost" style="flex:1">取消</button><button id="cYes" class="primary" style="flex:1">确定</button></div></div></div>
+
+<div id="hud" class="hidden">
+ <div id="top">
+  <div id="tMonth" class="glass"><b id="tM">第 1 年 1 月</b><small id="tMs">第 1 / 120 月</small></div>
+  <div id="tMoney" class="glass">
+   <div class="stat cash"><small>现金</small><b id="tCash">0</b></div>
+   <div class="stat net"><small>净资产</small><b id="tNet">0</b></div>
+   <div class="stat debt"><small>贷款 · 利率</small><b id="tDebt">0</b></div>
+  </div>
+  <div id="tGoal" class="glass"><div class="gl"><span>终极豪宅</span><b id="tGoalP">0</b></div><div class="bars2" id="tBars"></div></div>
+  <div id="tBtns"><button id="sndBtn" class="ghost" title="音效 (M)">🔊</button><button id="menuBtn" class="ghost" title="菜单 (Esc)">☰</button></div>
+ </div>
+ <div id="side" class="glass">
+  <div class="tabs" id="tabs"><button data-t="mkt">行情</button><button data-t="list">房源<span class="cnt" id="cList"></span></button><button data-t="mine">我的<span class="cnt" id="cMine"></span></button><button data-t="news">新闻</button></div>
+  <div class="tabBody" id="tabBody"></div>
+ </div>
+ <div id="detail" class="glass hidden"></div>
+ <div id="bottom">
+  <div id="news" class="glass"></div>
+  <div id="phoneTabs" class="glass"><button data-t="mkt">行情</button><button data-t="list">房源<small id="pcList"></small></button><button data-t="mine">我的<small id="pcMine"></small></button><button data-t="news">新闻</button></div>
+  <button id="endBtn" class="primary">下个月 ▸<small id="endSub">回车</small></button>
+ </div>
+</div>
+<div id="toasts"></div>
+<div id="monthFx"><div id="monthFxT"></div></div>
+<script>
+
+/* ---- 00_core.js ---- */
+'use strict';
+/* ================= core: utils, rng, data tables ================= */
+const QS = new URLSearchParams(location.search);
+const $ = id => document.getElementById(id);
+const clamp = (v, a, b) => v < a ? a : v > b ? b : v, lerp = (a, b, t) => a + (b - a) * t;
+const LS = {
+  get(k, d) { try { const v = localStorage.getItem('housemogul.' + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem('housemogul.' + k, JSON.stringify(v)); } catch (e) { } },
+  del(k) { try { localStorage.removeItem('housemogul.' + k); } catch (e) { } }
+};
+let G = null;          // shared game state (host authoritative, sent whole to guest)
+let ME = 0;            // my player index
+let NETROLE = null;    // 'solo' | 'host' | 'guest'
+const STATE = { mode: 'title', sel: -1, tab: 'list', hover: -1, lastSeq: 0, sheet: false };
+
+/* seeded rng: state lives in G.rs so the host's sim is reproducible from a save */
+function rnd() { let t = (G.rs = (G.rs + 0x6D2B79F5) | 0); t = Math.imul(t ^ t >>> 15, t | 1); t ^= t + Math.imul(t ^ t >>> 7, t | 61); return ((t ^ t >>> 14) >>> 0) / 4294967296; }
+const rr = (a, b) => a + (b - a) * rnd(), ri = (a, b) => Math.floor(rr(a, b + 1)), pick = a => a[Math.floor(rnd() * a.length)];
+function gauss() { let u = 0; while (!u) u = rnd(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * rnd()); }
+function wpick(list) { let s = 0; for (const e of list) s += e.w; let r = rnd() * s; for (const e of list) { r -= e.w; if (r <= 0) return e; } return list[list.length - 1]; }
+function shuffle(a) { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+const hash2 = (x, y) => { let h = (x * 374761393 + y * 668265263) | 0; h = Math.imul(h ^ h >>> 13, 1274126177); return ((h ^ h >>> 16) >>> 0) / 4294967296; };
+
+/* money is in 万元 */
+function fmtM(v, sign) {
+  const s = v < 0 ? '-' : sign && v > 0 ? '+' : ''; v = Math.abs(v);
+  return s + '¥' + (v >= 10000 ? (v / 10000).toFixed(2) + '亿' : v >= 100 ? Math.round(v) + '万' : v >= 10 ? v.toFixed(1) + '万' : v.toFixed(2) + '万');
+}
+const pct = (v, d = 1) => (v >= 0 ? '+' : '') + (v * 100).toFixed(d) + '%';
+const udc = v => v > 0.0005 ? 'up' : v < -0.0005 ? 'down' : '';
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+/* ---------- balance ---------- */
+const BAL = {
+  start: 80,            // starting cash
+  maxMonth: 120,        // game ends after this many months
+  buyFee: 0.02, sellFee: 0.03,
+  down: 0.3,            // mortgage down payment
+  rate0: 0.0045, rateMin: 0.0025, rateMax: 0.0080,   // monthly interest
+  rent: 0.0034, upkeep: 0.0009,                       // per month, fraction of value
+  inspect: [0.3, 0.004],                              // min cost, fraction of ask
+  listTarget: [9, 13],
+  mansion: [900, 1400],                               // mansion base price without / with mortgages
+  forced: 0.85,                                       // forced sale price / value
+  estNoise: 0.075,                                    // agent estimate sd
+  demolish: 1.8,                                      // demolition compensation / value
+  hist: 36
+};
+const KINDS = {
+  bungalow: { n: '老平房', base: 42, w: 1, h: 1, fl: 1, roof: 'hip', col: '#d9b38a', rc: '#9a4a36' },
+  walkup: { n: '老公房', base: 66, w: 1, h: 1, fl: 4, roof: 'flat', col: '#c9b6a2', rc: '#8a7d70' },
+  townhouse: { n: '联排小楼', base: 98, w: 1, h: 1, fl: 2, roof: 'gable', col: '#e6d2b3', rc: '#7c3f30' },
+  schoolflat: { n: '学区房', base: 112, w: 1, h: 1, fl: 5, roof: 'flat', col: '#e2cfb3', rc: '#9b8a76' },
+  newflat: { n: '回迁新楼', base: 150, w: 1, h: 1, fl: 7, roof: 'flat', col: '#e8e3d6', rc: '#a9a395' },
+  techflat: { n: '科技园公寓', base: 175, w: 2, h: 2, fl: 9, roof: 'flat', col: '#b9c7d4', rc: '#7d8a99', glass: 1 },
+  riverflat: { n: '江景大平层', base: 255, w: 2, h: 2, fl: 11, roof: 'flat', col: '#c7dbe8', rc: '#86a0b4', glass: 1 },
+  house: { n: '独栋洋房', base: 380, w: 2, h: 2, fl: 2, roof: 'hip', col: '#f0dfc2', rc: '#a5503a' },
+  villa: { n: '半山别墅', base: 620, w: 2, h: 2, fl: 2, roof: 'hip', col: '#f7efe0', rc: '#3f5168' },
+  mansion: { n: '终极豪宅', base: 900, w: 3, h: 3, fl: 3, roof: 'hip', col: '#fbf5e8', rc: '#2c3a50' }
+};
+const DISTS = [
+  { k: 'old', n: '老城区', mu: 0.0006, vol: 0.020, beta: 0.8, grass: [126, 160, 88], col: '#e0a35a', hint: '房子便宜，涨得慢，可能拆迁' },
+  { k: 'river', n: '江景区', mu: 0.0024, vol: 0.026, beta: 1.15, grass: [112, 166, 104], col: '#58a6d6', hint: '大平层，跟着楼市大起大落' },
+  { k: 'school', n: '学府区', mu: 0.0034, vol: 0.016, beta: 0.65, grass: [128, 170, 92], col: '#e6c84f', hint: '学区房，稳步上涨' },
+  { k: 'tech', n: '科技新区', mu: 0.0038, vol: 0.036, beta: 1.45, grass: [110, 152, 102], col: '#8e7fe6', hint: '涨得最快，跌得也最狠' },
+  { k: 'sub', n: '城郊', mu: -0.0004, vol: 0.028, beta: 1.0, grass: [146, 172, 86], col: '#78c25a', hint: '最便宜，靠地铁和规划翻身' },
+  { k: 'hill', n: '半山', mu: 0.0016, vol: 0.012, beta: 0.55, grass: [92, 146, 78], col: '#d77b9c', hint: '别墅区，终极豪宅在这里' }
+];
+const DI = Object.fromEntries(DISTS.map((d, i) => [d.k, i]));
+const COND = [{ n: '破旧', m: 0.82 }, { n: '普通', m: 1 }, { n: '精装', m: 1.14 }];
+const RENO = [{ c: 0.11, t: 1 }, { c: 0.095, t: 2 }];   // cost as fraction of current value, months
+const QUAL = q => q < 0.93 ? ['有隐患', 'warn'] : q < 0.98 ? ['一般', ''] : q < 1.04 ? ['良好', ''] : ['很好', 'good'];
+const PCOL = ['#ff9a3c', '#34d1bf', '#b48cff'];
+const REG = { bull: { n: '牛市', d: 0.011 }, calm: { n: '平稳', d: 0.0015 }, bear: { n: '熊市', d: -0.0095 } };
+const YEAR0 = 2026;
+/* optional mechanics: 'pure' turns them all off */
+const OPTS = [
+  { k: 'loan', n: '按揭贷款', d: '首付 30% 加杠杆，付利息，现金为负会被强制卖房' },
+  { k: 'rent', n: '房租与物业费', d: '持有的房每月收租、交物业费' },
+  { k: 'reno', n: '装修', d: '花钱把破旧房装成普通、精装，提升房价' },
+  { k: 'insp', n: '估价误差与验房', d: '中介估价有误差，花钱验房看真实价值' },
+  { k: 'news', n: '新闻与传闻', d: '地铁、拆迁、加息等事件，传闻不一定成真' },
+  { k: 'fee', n: '交易手续费', d: '买入 2%、卖出 3%' }
+];
+const PRESET = { pure: { loan: 0, rent: 0, reno: 0, insp: 0, news: 0, fee: 0 }, full: { loan: 1, rent: 1, reno: 1, insp: 1, news: 1, fee: 1 } };
+const OP = k => !G || !G.opt || !!G.opt[k];
+const monthLabel = m => '第 ' + (Math.floor(m / 12) + 1) + ' 年 ' + (m % 12 + 1) + ' 月';
+
+/* ---- 10_world.js ---- */
+/* ================= world: map layout, properties, valuation ================= */
+const N = 21;
+const T_GRASS = 0, T_ROAD = 1, T_WATER = 2, T_PLAZA = 3, T_PATH = 4;
+const XR = [[0, 3], [5, 8], [10, 13], [15, 20]], YR = [[3, 6], [8, 11], [13, 16], [18, 20]];
+const BLOCKS_DEF = [
+  [0, 0, 'river', '滨江大道'], [1, 0, 'river', '望江路'], [2, 0, 'river', '观澜路'], [3, 0, 'river', '江湾路'],
+  [0, 1, 'old', '梧桐巷'], [1, 1, 'old', '槐花街'], [2, 1, 'tech', '创新大道'], [3, 1, 'tech', '云谷路'],
+  [0, 2, 'old', '鼓楼街'], [1, 2, 'school', '学府路'], [2, 2, 'school', '书院街'],
+  [0, 3, 'sub', '柳岸村'], [1, 3, 'sub', '桃园路'], [2, 3, 'sub', '麦田路']
+];
+const ti = (x, y) => y * N + x;
+const inMap = (x, y) => x >= 0 && y >= 0 && x < N && y < N;
+
+function genWorld() {
+  const tiles = new Array(N * N).fill(T_GRASS), tdist = new Array(N * N).fill(-1);
+  for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+    let t = T_GRASS;
+    if (y <= 1) t = T_WATER;
+    else if (y === 2 || y === 7 || y === 12) t = T_ROAD;
+    else if (y === 17 && x <= 13) t = T_ROAD;
+    else if ((x === 4 || x === 9) && y >= 2) t = T_ROAD;
+    else if (x === 14 && y >= 2) t = T_ROAD;
+    tiles[ti(x, y)] = t;
+  }
+  const blocks = [], props = [], deco = [], used = new Set();
+  const occ = (x, y, w, h) => { for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) used.add(ti(x + i, y + j)); };
+  const streetNo = {};
+  const addProp = (kind, b, x, y, cond) => {
+    const K = KINDS[kind]; occ(x, y, K.w, K.h);
+    streetNo[b.st] = (streetNo[b.st] || 0) + 1 + (kind === 'mansion' ? 0 : ri(0, 1));
+    const p = {
+      id: props.length, kind, d: b.d, x, y, w: K.w, h: K.h, st: b.st, num: kind === 'mansion' ? 1 : streetNo[b.st], b: blocks.indexOf(b),
+      q: kind === 'mansion' ? 1 : clamp(1 + gauss() * 0.06, 0.86, 1.14),
+      cond: cond != null ? cond : wpick(b.d === DI.old || b.d === DI.sub ? [{ v: 0, w: 5 }, { v: 1, w: 4 }, { v: 2, w: 1 }] : [{ v: 0, w: 2 }, { v: 1, w: 5 }, { v: 2, w: 3 }]).v,
+      bonus: 0, owner: -1, loan: 0, paid: 0, boughtM: -1, reno: 0, renoTo: 0, list: null, offer: 0, insp: [], hist: [], cool: 0
+    };
+    props.push(p); return p;
+  };
+  const addDeco = (k, x, y, w, h, extra) => { occ(x, y, w, h); deco.push(Object.assign({ k, x, y, w, h }, extra || {})); };
+  for (const [xi, yi, dk, st] of BLOCKS_DEF) {
+    const [x0, x1] = XR[xi], [y0, y1] = YR[yi];
+    const b = { x0, y0, x1, y1, d: DI[dk], st }; blocks.push(b);
+    for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) tdist[ti(x, y)] = b.d;
+    const W = x1 - x0 + 1;
+    if (dk === 'river') {
+      const spots = []; for (let oy = 0; oy < 4; oy += 2) for (let ox = 0; ox + 1 < W; ox += 2) spots.push([x0 + ox, y0 + oy]);
+      const decoAt = W > 4 ? 5 : [2, 1, 3][xi];
+      spots.forEach(([x, y], k) => { if (k === decoAt) addDeco(['park', 'plaza', 'pond', 'park'][xi], x, y, 2, 2, { nm: ['滨江公园', '滨江广场', '观澜湖', '江湾绿地'][xi] }); else addProp('riverflat', b, x, y); });
+    } else if (dk === 'old') {
+      const mask = ['1101', '1111', '0110', '1101'];
+      for (let oy = 0; oy < 4; oy++) for (let ox = 0; ox < 4; ox++) if (mask[(oy + xi + yi) % 4][ox] === '1') addProp(rnd() < 0.6 ? 'bungalow' : 'walkup', b, x0 + ox, y0 + oy);
+    } else if (dk === 'tech') {
+      if (W === 4) { addProp('techflat', b, x0, y0); addProp('techflat', b, x0 + 2, y0); addDeco('mall', x0, y0 + 2, 4, 2, { nm: '星光商场' }); }
+      else { addProp('techflat', b, x0, y0); addProp('techflat', b, x0 + 2, y0); addDeco('office', x0 + 4, y0, 2, 2, { nm: '云谷大厦' }); addDeco('office', x0, y0 + 2, 2, 2, { nm: '创新中心', lo: 1 }); addProp('techflat', b, x0 + 2, y0 + 2); addProp('techflat', b, x0 + 4, y0 + 2); }
+    } else if (dk === 'school') {
+      if (xi === 1) { addDeco('school', x0, y0, 2, 4, { nm: '实验小学' }); for (let oy = 0; oy < 4; oy++) for (let ox = 2; ox < 4; ox++) if (!(ox === 3 && oy === 1)) addProp('schoolflat', b, x0 + ox, y0 + oy); }
+      else { addProp('house', b, x0, y0); addProp('house', b, x0 + 2, y0); for (let ox = 0; ox < 4; ox++) if (ox !== 2) addProp('schoolflat', b, x0 + ox, y0 + 3); }
+    } else if (dk === 'sub') {
+      const H = y1 - y0 + 1;
+      if (xi === 2) addDeco('factory', x0 + 2, y0, 2, 2, { nm: '化工厂' });
+      const cells = []; for (let oy = 0; oy < H; oy++) for (let ox = 0; ox < 4; ox++) if (!used.has(ti(x0 + ox, y0 + oy))) cells.push([x0 + ox, y0 + oy]);
+      shuffle(cells).slice(0, xi === 2 ? 5 : 6).sort((a, b) => a[1] - b[1] || a[0] - b[0]).forEach(([x, y]) => addProp(rnd() < 0.55 ? 'townhouse' : 'bungalow', b, x, y));
+    }
+  }
+  // the hill
+  const hb = { x0: 15, y0: 13, x1: 20, y1: 20, d: DI.hill, st: '半山道' }; blocks.push(hb);
+  for (let y = 13; y <= 20; y++) for (let x = 15; x <= 20; x++) tdist[ti(x, y)] = DI.hill;
+  for (const [x, y] of [[15, 13], [19, 13], [15, 15], [19, 15], [15, 18]]) addProp('villa', hb, x, y, wpick([{ v: 1, w: 3 }, { v: 2, w: 2 }]).v);
+  const man = addProp('mansion', hb, 17, 17, 1);
+  for (let y = 13; y <= 16; y++) tiles[ti(17, y)] = T_PATH;
+  // plaza tiles under river plaza / malls
+  for (const d of deco) if (d.k === 'plaza' || d.k === 'mall' || d.k === 'office') for (let j = 0; j < d.h; j++) for (let i = 0; i < d.w; i++) tiles[ti(d.x + i, d.y + j)] = T_PLAZA;
+  return { tiles, tdist, blocks, props, deco, mansion: man.id };
+}
+
+/* ---------- valuation ---------- */
+function val(p) { const K = KINDS[p.kind], D = G.d[p.d]; return (p.kind === 'mansion' ? G.manBase || K.base : K.base) * D.idx * p.q * COND[p.cond].m * (1 + p.bonus); }
+const mansionP = () => G.props[G.mansion];
+const mansionPrice = () => mansionP().list ? mansionP().list.ask : val(mansionP());
+function propName(p) { return p.kind === 'mansion' ? '半山顶 · 终极豪宅' : p.st + ' ' + p.num + ' 号'; }
+const ownedBy = i => G.props.filter(p => p.owner === i);
+function equity(i) { let s = 0; for (const p of G.props) if (p.owner === i) s += val(p) - p.loan; return s; }
+function debtOf(i) { let s = 0; for (const p of G.props) if (p.owner === i) s += p.loan; return s; }
+const netWorth = i => G.pl[i].cash + equity(i);
+function monthlyFlow(i) {
+  let rent = 0, up = 0, int = 0; const R = OP('rent');
+  for (const p of G.props) if (p.owner === i) { const v = val(p); if (R) { if (!p.reno) rent += v * BAL.rent; up += v * BAL.upkeep; } int += p.loan * G.rate; }
+  return { rent, up, int, net: rent - up - int };
+}
+const inspCost = p => Math.max(BAL.inspect[0], (p.list ? p.list.ask : val(p)) * BAL.inspect[1]);
+const buyFee = () => OP('fee') ? BAL.buyFee : 0, sellFee = () => OP('fee') ? BAL.sellFee : 0;
+const buyCost = (ask, loan) => loan ? ask * BAL.down + ask * buyFee() : ask * (1 + buyFee());
+const sellNet = p => p.offer * (1 - sellFee()) - p.loan;
+function renoInfo(p) { if (p.cond >= 2) return null; const R = RENO[p.cond], v = val(p); return { cost: v * R.c, t: R.t, gain: v * (COND[p.cond + 1].m / COND[p.cond].m - 1) }; }
+function estOf(p) { return p.list && OP('insp') ? val(p) * p.list.est : val(p); }   // the agent's (noisy) estimate
+const knows = (p, i) => p.insp.includes(i);
+function heat() { // smoothed market temperature from last 3 months of district moves
+  let s = 0, n = 0; for (const d of G.d) { const h = d.hist, k = h.length; if (k > 3) { s += Math.log(h[k - 1] / h[k - 4]); n++; } }
+  return n ? s / n : 0;
+}
+
+/* ---- 30_sim.js ---- */
+/* ================= simulation (host authoritative) ================= */
+function mkPlayer(i, name, kind) {
+  return { i, name, kind, cash: BAL.start, alive: true, ready: false, gone: false, wh: [], flow: null, st: { buys: 0, sells: 0, profit: 0, best: 0, reno: 0, insp: 0, forced: 0 } };
+}
+function newGame(seed, names, aiOn, opt) {
+  G = {
+    v: 1, rs: seed | 0, seed, month: 0, rate: BAL.rate0, reg: { k: 'calm', left: 6 },
+    d: DISTS.map(() => ({ idx: 1, base: 1, n: 0, hist: [], pend: [] })),
+    news: [], ev: [], seq: 0, rumors: [], over: null, pl: [], solo: names.length === 1,
+    opt: Object.assign({}, PRESET.full, opt || {})
+  };
+  G.manBase = BAL.mansion[G.opt.loan ? 1 : 0];
+  Object.assign(G, genWorld());
+  names.forEach((nm, i) => G.pl.push(mkPlayer(i, nm, 'human')));
+  if (aiOn) G.pl.push(mkPlayer(G.pl.length, '王老板', 'ai'));
+  for (let k = 0; k < 24; k++) marketStep(true);
+  for (const p of G.props) { const D = G.d[p.d], v = val(p); p.hist = D.hist.slice(-BAL.hist).map(x => v * x / D.idx); }
+  refreshListings(true);
+  for (const pl of G.pl) pl.wh.push(netWorth(pl.i));
+  news('info', '开局', '你带着 ' + fmtM(BAL.start) + ' 来到这座城市。半山顶的终极豪宅挂牌 ' + fmtM(mansionPrice()) + '，全款买下它！');
+  news('info', '行情', '楼市目前' + REG[G.reg.k].n + (OP('loan') ? '，房贷月利率 ' + (G.rate * 100).toFixed(2) + '%' : ''));
+  return G;
+}
+
+/* ---------- event log (synced; each client plays new ones once) ---------- */
+function ev(k, txt, pi, id, amt) { G.ev.push({ s: ++G.seq, k, txt, pi: pi == null ? -1 : pi, id: id == null ? -1 : id, amt: amt || 0, m: G.month }); if (G.ev.length > 60) G.ev.shift(); }
+function news(tone, tag, txt, d) { G.news.push({ m: G.month, tone, tag, txt, d: d == null ? -1 : d }); if (G.news.length > 80) G.news.shift(); ev('news', txt, -1, -1, tone === 'good' ? 1 : tone === 'bad' ? -1 : 0); }
+
+/* ---------- market ---------- */
+function marketStep(pre) {
+  if (--G.reg.left <= 0) {
+    const k = G.reg.k;
+    const nx = k === 'calm' ? wpick([{ v: 'bull', w: 5 }, { v: 'bear', w: 3 }, { v: 'calm', w: 2 }]).v
+      : k === 'bull' ? wpick([{ v: 'calm', w: 6 }, { v: 'bear', w: 3 }, { v: 'bull', w: 1 }]).v
+        : wpick([{ v: 'calm', w: 6 }, { v: 'bull', w: 4 }]).v;
+    G.reg = { k: nx, left: nx === 'calm' ? ri(4, 10) : ri(7, 16) };
+    if (!pre && nx !== k && OP('news')) {
+      if (nx === 'bull') news('good', '楼市', pick(['楼市回暖，看房的人明显多了', '成交量连续放大，楼市进入上涨周期', '开发商纷纷提价，楼市热起来了']));
+      else if (nx === 'bear') news('bad', '楼市', pick(['楼市降温，买家观望情绪浓厚', '成交量大跌，房价开始松动', '中介门店冷清，楼市进入下行周期']));
+      else news('info', '楼市', pick(['楼市趋于平稳，涨跌都不大', '量价平稳，市场进入盘整期']));
+    }
+  }
+  const rd = REG[G.reg.k].d - (G.rate - BAL.rate0) * 2.2;
+  G.d.forEach((s, i) => {
+    const D = DISTS[i]; let shock = 0;
+    s.pend = s.pend.filter(e => { if (e.after > 0) { e.after--; return true; } shock += e.k; return --e.m > 0; });
+    s.base *= Math.exp(D.mu + D.beta * rd + shock);
+    s.n = 0.78 * s.n + D.vol * gauss();
+    s.idx = s.base * Math.exp(s.n);
+    s.hist.push(s.idx); if (s.hist.length > 200) s.hist.shift();
+  });
+}
+const shockD = (d, total, months, after) => G.d[d].pend.push({ k: total / months, m: months, after: after || 0 });
+const shockAll = (total, months) => G.d.forEach((s, i) => shockD(i, total * (0.6 + 0.4 * DISTS[i].beta), months));
+
+const EVENTS = [
+  { w: 2.6, f() { // metro rumor
+      if (G.rumors.some(r => r.k === 'metro')) return false;
+      const d = pick([DI.sub, DI.sub, DI.old, DI.tech]), line = ri(3, 9);
+      G.rumors.push({ k: 'metro', d, line, at: G.month + ri(2, 4), real: rnd() < 0.62 });
+      shockD(d, 0.03, 2);
+      news('rumor', '传闻', '地铁 ' + line + ' 号线可能延伸到' + DISTS[d].n + '，几个月内会有消息', d);
+    } },
+  { w: 2.2, f() { // demolition rumor
+      if (G.rumors.some(r => r.k === 'demo')) return false;
+      const bs = G.blocks.map((b, i) => i).filter(i => G.blocks[i].d === DI.old && G.props.some(p => p.b === i && (p.kind === 'bungalow' || p.kind === 'walkup')));
+      if (!bs.length) return false;
+      const b = pick(bs), real = rnd() < 0.5;
+      G.rumors.push({ k: 'demo', b, at: G.month + ri(2, 5), real });
+      for (const p of G.props) if (p.b === b && (p.kind === 'bungalow' || p.kind === 'walkup')) { p.bonus += 0.08; p.demo = 1; }
+      news('rumor', '传闻', G.blocks[b].st + '一带的老房子可能要拆迁，补偿据说很高', DI.old);
+    } },
+  { w: 1.3, f() { shockD(DI.school, 0.09, 2); news('good', '学府区', pick(['省重点中学在学府区开分校', '实验小学扩招，学区房一房难求']), DI.school); } },
+  { w: 1.2, f() { shockD(DI.tech, 0.13, 3); news('good', '科技新区', pick(['互联网大厂总部落户科技新区', '新能源车企在科技新区建研发中心，数千人入职']), DI.tech); } },
+  { w: 1.1, f() { shockD(DI.tech, -0.12, 2); news('bad', '科技新区', pick(['科技公司裁员潮，园区写字楼空置率上升', '明星创业公司倒闭，科技新区租房的人少了']), DI.tech); } },
+  { w: 1.2, f() { if (!OP('loan') || G.rate >= BAL.rateMax - 1e-6) return false; G.rate = Math.min(BAL.rateMax, G.rate + 0.0008); shockAll(-0.03, 1); news('bad', '利率', '央行加息，房贷月利率升到 ' + (G.rate * 100).toFixed(2) + '%'); } },
+  { w: 1.2, f() { if (!OP('loan') || G.rate <= BAL.rateMin + 1e-6) return false; G.rate = Math.max(BAL.rateMin, G.rate - 0.0008); shockAll(0.03, 1); news('good', '利率', '央行降息，房贷月利率降到 ' + (G.rate * 100).toFixed(2) + '%'); } },
+  { w: 0.8, f() { shockAll(-0.05, 2); if (G.reg.k === 'calm') G.reg = { k: 'bear', left: ri(6, 12) }; news('bad', '政策', '出台限购令，二套房首付提高，市场观望'); } },
+  { w: 0.8, f() { shockAll(0.05, 2); if (G.reg.k === 'calm') G.reg = { k: 'bull', left: ri(6, 12) }; news('good', '政策', '放开限购，购房补贴落地，买房的人多了'); } },
+  { w: 0.9, f() { shockD(DI.river, 0.08, 2); news('good', '江景区', pick(['滨江步道全线贯通，江景房更抢手了', '江边要建音乐厅，江景区身价看涨']), DI.river); } },
+  { w: 0.6, f() { shockD(DI.river, -0.09, 1); shockD(DI.river, 0.05, 2, 2); news('bad', '江景区', '江水上涨，江景区几个小区地库进水', DI.river); } },
+  { w: 0.8, f() {
+      const fac = G.deco.find(d => d.k === 'factory');
+      if (fac && rnd() < 0.4) { G.deco.splice(G.deco.indexOf(fac), 1); G.deco.push({ k: 'park', x: fac.x, y: fac.y, w: 2, h: 2, nm: '湿地公园' }); shockD(DI.sub, 0.1, 2); news('good', '城郊', '化工厂整体搬迁，原址改建湿地公园', DI.sub); }
+      else if (fac) { shockD(DI.sub, -0.08, 2); news('bad', '城郊', '城郊化工厂被曝偷排废水', DI.sub); }
+      else { shockD(DI.sub, 0.06, 2); news('good', '城郊', '城郊湿地公园成了网红打卡地', DI.sub); }
+    } },
+  { w: 0.7, f() { shockD(DI.sub, 0.08, 2); news('good', '城郊', '城郊要建大型购物中心和三甲医院分院', DI.sub); } },
+  { w: 0.7, f() { shockD(DI.old, 0.06, 2); news('good', '老城区', '老城区改造，鼓楼一带变成步行街', DI.old); } },
+  { w: 0.6, f() { shockD(DI.hill, 0.06, 2); news('info', '半山', '外地富豪扎堆半山买别墅，豪宅也跟着涨价', DI.hill); } },
+  { w: 0.5, f() { shockD(DI.hill, -0.05, 2); news('info', '半山', '半山别墅区修路封山半年，看房的人少了', DI.hill); } },
+  { w: 1.6, f() { news('info', '城事', pick(['本月城市新增常住人口三千人', '房产中介开始流行直播带看', '物业费调价听证会召开', '城市马拉松从江边跑到半山脚下', '一家网红奶茶店在老城区排起长队', '统计局：上月二手房成交与前月持平'])); } }
+];
+function monthEvents() {
+  if (!OP('news')) return;
+  const n = rnd() < 0.25 ? 2 : rnd() < 0.85 ? 1 : 0;
+  for (let k = 0, tries = 0; k < n && tries < 10; tries++) if (wpick(EVENTS).f() !== false) k++;
+}
+function resolveRumors() {
+  G.rumors = G.rumors.filter(r => {
+    if (r.at > G.month) return true;
+    if (r.k === 'metro') {
+      if (r.real) {
+        shockD(r.d, 0.2, 3); news('good', '地铁', '确定了！地铁 ' + r.line + ' 号线延伸到' + DISTS[r.d].n + '，站点开工', r.d);
+        const b = G.blocks.findIndex(b => b.d === r.d); const free = [];
+        G.blocks.forEach(bb => { if (bb.d !== r.d) return; for (let y = bb.y0; y <= bb.y1; y++) for (let x = bb.x0; x <= bb.x1; x++) if (G.tiles[ti(x, y)] === T_GRASS && !G.props.some(p => x >= p.x && x < p.x + p.w && y >= p.y && y < p.y + p.h) && !G.deco.some(d => x >= d.x && x < d.x + d.w && y >= d.y && y < d.y + d.h)) free.push([x, y]); });
+        if (free.length) { const [x, y] = pick(free); G.deco.push({ k: 'metro', x, y, w: 1, h: 1, nm: r.line + ' 号线' }); }
+      } else { shockD(r.d, -0.04, 1); news('bad', '辟谣', '地铁 ' + r.line + ' 号线不经过' + DISTS[r.d].n + '，之前是谣言', r.d); }
+    } else if (r.k === 'demo') {
+      const st = G.blocks[r.b].st;
+      const hit = G.props.filter(p => p.b === r.b && p.demo);
+      for (const p of hit) { p.bonus = Math.max(0, p.bonus - 0.08); p.demo = 0; }
+      if (r.real) {
+        for (const p of hit) {
+          const v = val(p);
+          if (p.owner >= 0) { const pl = G.pl[p.owner], got = v * BAL.demolish - p.loan, prof = v * BAL.demolish - p.paid; pl.cash += got; pl.st.profit += prof; pl.st.best = Math.max(pl.st.best, prof); ev('demo', pl.name + ' 的 ' + propName(p) + ' 拆迁，拿到补偿 ' + fmtM(v * BAL.demolish), p.owner, p.id, prof); }
+          Object.assign(p, { kind: 'newflat', cond: 2, owner: -1, loan: 0, paid: 0, list: null, insp: [], reno: 0, cool: ri(2, 4), bonus: 0 });
+          p.hist = p.hist.map(x => x * KINDS.newflat.base * COND[2].m / (KINDS.bungalow.base * 0.9));
+        }
+        news('good', '拆迁', st + '拆迁方案公布：老房按评估价 ' + BAL.demolish + ' 倍补偿，原地建回迁新楼', DI.old);
+      } else news('bad', '辟谣', st + '拆迁传闻落空，附近房价回落', DI.old);
+    }
+    return false;
+  });
+}
+
+/* ---------- listings & offers ---------- */
+function makeListing(p) {
+  const r = rnd(); let f, tag = '';
+  if (r < 0.13) { f = rr(0.72, 0.88); tag = 'hot'; }
+  else if (r < 0.17) { f = rr(0.96, 1.08); tag = 'hot'; }      // 喊急售但不便宜
+  else if (r < 0.27) f = rr(1.14, 1.3);
+  else f = clamp(1.04 + gauss() * 0.065, 0.86, 1.2);
+  const v = val(p);
+  p.list = { ask: v * f, f, est: clamp(1 + gauss() * BAL.estNoise, 0.84, 1.16), left: ri(2, 5), age: 0, tag, cut: false, m0: G.month };
+  p.insp = [];
+}
+function refreshListings(init) {
+  for (const p of G.props) {
+    if (p.kind === 'mansion') continue;
+    if (p.cool > 0) p.cool--;
+    if (p.list && !init) {
+      if (p.owner !== -1) { p.list = null; continue; }
+      p.list.age++; p.list.left--;
+      if (p.list.left <= 0) { p.list = null; p.cool = ri(1, 3); continue; }
+      const v = val(p), cut = p.list.age >= 2 && rnd() < 0.45 ? rr(0.93, 0.98) : 1;
+      p.list.f = Math.max(0.62, p.list.f * cut); p.list.ask = v * p.list.f; p.list.cut = cut < 1;
+    }
+  }
+  const cnt = G.props.filter(p => p.list && p.kind !== 'mansion').length;
+  const want = init ? 10 : Math.max(2, ri(BAL.listTarget[0], BAL.listTarget[1]) - cnt);
+  const cand = shuffle(G.props.filter(p => p.owner === -1 && !p.list && !p.cool && p.kind !== 'mansion'));
+  for (let k = 0; k < want && k < cand.length; k++) makeListing(cand[k]);
+  const m = mansionP();
+  if (m.owner === -1) { const v = val(m); m.list = { ask: v, f: 1, est: 1, left: 99, age: 0, tag: 'goal', cut: false, m0: 0 }; }
+}
+function refreshOffers() {
+  const h = clamp(heat() * 1.4, -0.045, 0.045);
+  for (const p of G.props) if (p.owner >= 0) {
+    const v = val(p);
+    if (rnd() < 0.07) { p.offer = v * rr(1.09, 1.2); p.offerHot = true; }
+    else { p.offer = v * clamp(0.962 + h + gauss() * 0.042, 0.84, 1.1); p.offerHot = false; }
+  }
+}
+
+/* ---------- player actions ---------- */
+function doAct(pi, a, v) {
+  if (!G || G.over) return '本局已结束';
+  const pl = G.pl[pi]; if (!pl || !pl.alive) return '你已出局';
+  const p = v && v.id != null ? G.props[v.id] : null;
+  switch (a) {
+    case 'ready': pl.ready = !!v.on; return null;
+    case 'inspect': {
+      if (!OP('insp')) return '本局没有验房';
+      if (!p || !p.list || p.owner !== -1) return '这套房没在挂牌';
+      if (knows(p, pi)) return null;
+      const c = inspCost(p); if (pl.cash < c) return '现金不够付验房费';
+      pl.cash -= c; p.insp.push(pi); pl.st.insp++;
+      ev('inspect', '验房完成：' + propName(p), pi, p.id); return null;
+    }
+    case 'buy': {
+      if (!p || !p.list || p.owner !== -1) return '这套房已经被别人买走了';
+      const man = p.kind === 'mansion', loan = !!v.loan && !man && OP('loan'), ask = p.list.ask, cost = buyCost(ask, loan);
+      if (pl.cash < cost - 1e-9) return man ? '现金不够，豪宅只能全款' : '现金不够';
+      pl.cash -= cost; pl.st.buys++;
+      Object.assign(p, { owner: pi, loan: loan ? ask * (1 - BAL.down) : 0, paid: ask * (1 + buyFee()), boughtM: G.month, list: null, offer: val(p) * rr(0.86, 0.94), offerHot: false });
+      if (man) { G.over = { winner: pi, reason: 'mansion', m: G.month }; ev('win', pl.name + ' 全款买下了终极豪宅！', -1, p.id); }
+      else ev('buy', pl.name + ' 买下 ' + propName(p) + '（' + fmtM(ask) + (loan ? '，按揭' : '') + '）', pi, p.id, ask);
+      return null;
+    }
+    case 'sell': {
+      if (!p || p.owner !== pi) return '这不是你的房';
+      if (p.reno) return '装修中，不能卖';
+      const got = sellNet(p), prof = p.offer * (1 - sellFee()) - p.paid;
+      pl.cash += got; pl.st.sells++; pl.st.profit += prof; pl.st.best = Math.max(pl.st.best, prof);
+      ev('sell', pl.name + ' 卖出 ' + propName(p) + '，' + (prof >= 0 ? '赚了 ' : '亏了 ') + fmtM(Math.abs(prof)), pi, p.id, prof);
+      Object.assign(p, { owner: -1, loan: 0, paid: 0, list: null, insp: [], cool: ri(2, 4), offer: 0 });
+      return null;
+    }
+    case 'reno': {
+      if (!OP('reno')) return '本局没有装修';
+      if (!p || p.owner !== pi) return '这不是你的房';
+      if (p.reno) return '已经在装修了';
+      const R = renoInfo(p); if (!R) return '已经是精装了';
+      if (pl.cash < R.cost) return '现金不够付装修费';
+      pl.cash -= R.cost; p.reno = R.t; p.renoTo = p.cond + 1; p.paid += R.cost; pl.st.reno++;
+      ev('reno', propName(p) + ' 开始装修（' + R.t + ' 个月）', pi, p.id); return null;
+    }
+    case 'repay': {
+      if (!p || p.owner !== pi || p.loan <= 0) return '没有贷款';
+      if (pl.cash < p.loan) return '现金不够还清贷款';
+      pl.cash -= p.loan; ev('repay', propName(p) + ' 的贷款已还清', pi, p.id); p.loan = 0; return null;
+    }
+  }
+  return '未知操作';
+}
+
+/* ---------- month end ---------- */
+function forcedSales(pl) {
+  if (pl.cash >= 0) return;
+  const mine = ownedBy(pl.i).sort((a, b) => (val(b) * BAL.forced - b.loan) - (val(a) * BAL.forced - a.loan));
+  for (const p of mine) {
+    if (pl.cash >= 0) break;
+    const got = val(p) * BAL.forced - p.loan, prof = val(p) * BAL.forced - p.paid;
+    if (got <= 0 && pl.cash + got < pl.cash) continue;
+    pl.cash += got; pl.st.profit += prof; pl.st.forced++;
+    ev('forced', '现金为负，银行强制卖掉了 ' + pl.name + ' 的 ' + propName(p) + '（' + fmtM(val(p) * BAL.forced) + '）', pl.i, p.id, prof);
+    Object.assign(p, { owner: -1, loan: 0, paid: 0, list: null, insp: [], reno: 0, cool: ri(2, 4), offer: 0 });
+  }
+  if (pl.cash < 0) {
+    pl.alive = false;
+    for (const p of ownedBy(pl.i)) Object.assign(p, { owner: -1, loan: 0, paid: 0, list: null, insp: [], reno: 0, cool: 2 });
+    ev('bankrupt', pl.name + ' 资不抵债，破产出局了', -1);
+    news('bad', '破产', pl.name + ' 资不抵债，破产出局');
+  }
+}
+function endMonth() {
+  if (!G || G.over) return;
+  for (const pl of G.pl) if (pl.kind === 'ai' && pl.alive) { aiTurn(pl); if (G.over) return; }
+  for (const pl of G.pl) { if (!pl.alive) continue; const f = monthlyFlow(pl.i); pl.cash += f.net; pl.flow = f; }
+  for (const p of G.props) if (p.reno > 0 && --p.reno === 0) { p.cond = p.renoTo; if (p.owner >= 0) ev('renodone', propName(p) + ' 装修完成，现在是' + COND[p.cond].n, p.owner, p.id); }
+  G.month++;
+  marketStep(false); monthEvents(); resolveRumors();
+  for (const p of G.props) { p.hist.push(val(p)); if (p.hist.length > BAL.hist) p.hist.shift(); }
+  refreshListings(false); refreshOffers();
+  for (const pl of G.pl) if (pl.alive) forcedSales(pl);
+  for (const pl of G.pl) { pl.wh.push(pl.alive ? netWorth(pl.i) : 0); pl.ready = false; }
+  const humans = G.pl.filter(p => p.kind === 'human');
+  if (!humans.some(p => p.alive)) { const ai = G.pl.find(p => p.kind === 'ai' && p.alive); G.over = { winner: ai ? ai.i : -1, reason: 'bankrupt', m: G.month }; }
+  else if (G.month >= BAL.maxMonth) {
+    let best = -1, bw = -1e18; for (const pl of G.pl) if (pl.alive && netWorth(pl.i) > bw) { bw = netWorth(pl.i); best = pl.i; }
+    G.over = { winner: G.solo && G.pl.length === 1 ? -1 : best, reason: 'time', m: G.month };
+  }
+  ev('month', monthLabel(G.month), -1);
+}
+const humansReady = () => G.pl.every(p => p.kind !== 'human' || !p.alive || p.gone || p.ready);
+
+/* ---------- AI rival ---------- */
+function aiTurn(pl) {
+  const i = pl.i, man = mansionP(), mp = man.list ? man.list.ask : val(man);
+  const fullMan = mp * (1 + buyFee());
+  if (pl.cash >= fullMan) { doAct(i, 'buy', { id: man.id, loan: false }); return; }
+  const goal = netWorth(i) > fullMan * 1.06, h = heat();
+  for (const p of ownedBy(i)) {
+    if (p.reno) continue;
+    const v = val(p), g = p.offer * (1 - sellFee()) / p.paid;
+    if (goal || p.offer > v * 1.06 || g > 1.2 || (h < -0.025 && g > 1.03) || (p.loan && h < -0.05)) doAct(i, 'sell', { id: p.id });
+  }
+  if (goal) { if (pl.cash >= fullMan) doAct(i, 'buy', { id: man.id, loan: false }); return; }
+  if (h < -0.04) return;
+  const cands = G.props.filter(p => p.list && p.owner === -1 && p.kind !== 'mansion')
+    .map(p => ({ p, e: val(p) * (1 + gauss() * 0.045) / p.list.ask })).filter(c => c.e > 1.08).sort((a, b) => b.e - a.e);
+  let n = 0;
+  for (const c of cands) {
+    if (n >= 2) break;
+    const ask = c.p.list.ask, loan = OP('loan') && pl.cash < ask * (1 + buyFee()) * 1.15, cost = buyCost(ask, loan);
+    const reserve = (debtOf(i) + (loan ? ask * (1 - BAL.down) : 0)) * G.rate * 5 + 2;
+    if (pl.cash - cost > reserve) { doAct(i, 'buy', { id: c.p.id, loan }); n++; }
+  }
+  if (OP('reno')) for (const p of ownedBy(i)) { const R = renoInfo(p); if (R && !p.reno && p.cond === 0 && pl.cash > R.cost * 3) doAct(i, 'reno', { id: p.id }); }
+}
+
+/* ---- 50_render.js ---- */
+/* ================= isometric renderer (Canvas 2D, all procedural) ================= */
+const cv = $('cv'), ctx = cv.getContext('2d');
+let VW = 0, VH = 0, DPR = 1;
+const TW = 64, TH = 32, FH = 8.5;
+const CAM = { x: 0, y: N * TH / 2, z: 1, tx: null, ty: null, tz: null };
+const RND = { t: 0, pick: [], cars: [], clouds: [], smoke: [], tags: [], pulse: [], hiD: -1 };
+const PHONE = matchMedia('(pointer:coarse) and (max-height:500px), (pointer:coarse) and (max-width:500px)');
+function resize() {
+  DPR = Math.min(window.devicePixelRatio || 1, 2); VW = innerWidth; VH = innerHeight;
+  cv.width = Math.round(VW * DPR); cv.height = Math.round(VH * DPR);
+}
+addEventListener('resize', resize); addEventListener('orientationchange', () => setTimeout(resize, 200));
+
+const iso = (x, y, z) => [(x - y) * TW / 2, (x + y) * TH / 2 - (z || 0)];
+const w2s = (ix, iy) => [(ix - CAM.x) * CAM.z + VW / 2, (iy - CAM.y) * CAM.z + VH / 2];
+const s2w = (sx, sy) => [(sx - VW / 2) / CAM.z + CAM.x, (sy - VH / 2) / CAM.z + CAM.y];
+const iso2tile = (ix, iy) => [iy / TH + ix / TW, iy / TH - ix / TW];
+
+/* ---------- colors ---------- */
+const _cc = new Map();
+function hexRgb(h) { if (Array.isArray(h)) return h; if (h[0] === 'r') return h.slice(h.indexOf('(') + 1, -1).split(',').map(Number); const n = parseInt(h.slice(1), 16); return [n >> 16 & 255, n >> 8 & 255, n & 255]; }
+function shade(c, a) {
+  const key = c + '|' + a; let r = _cc.get(key); if (r) return r;
+  const [R, Gg, B] = hexRgb(c), f = a >= 0 ? v => v + (255 - v) * a : v => v * (1 + a);
+  r = 'rgb(' + (f(R) | 0) + ',' + (f(Gg) | 0) + ',' + (f(B) | 0) + ')'; _cc.set(key, r); return r;
+}
+const rgb = (a, d = 0) => 'rgb(' + clamp(a[0] + d, 0, 255) + ',' + clamp(a[1] + d, 0, 255) + ',' + clamp(a[2] + d, 0, 255) + ')';
+
+/* ---------- primitives (world iso coords) ---------- */
+function poly(pts, fill, stroke, lw) {
+  ctx.beginPath(); ctx.moveTo(pts[0][0], pts[0][1]); for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i][0], pts[i][1]); ctx.closePath();
+  if (fill) { ctx.fillStyle = fill; ctx.fill(); }
+  if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = lw || 1; ctx.stroke(); }
+}
+const diamond = (x, y, w, h, z) => [iso(x, y, z), iso(x + w, y, z), iso(x + w, y + h, z), iso(x, y + h, z)];
+function box(x0, y0, x1, y1, z0, z1, c, o) {
+  o = o || {};
+  const L = shade(c, o.l != null ? o.l : -0.1), R = shade(c, o.r != null ? o.r : -0.3), Tp = shade(c, o.t != null ? o.t : 0.1);
+  poly([iso(x0, y1, z0), iso(x1, y1, z0), iso(x1, y1, z1), iso(x0, y1, z1)], L);
+  poly([iso(x1, y0, z0), iso(x1, y1, z0), iso(x1, y1, z1), iso(x1, y0, z1)], R);
+  if (!o.noTop) poly([iso(x0, y0, z1), iso(x1, y0, z1), iso(x1, y1, z1), iso(x0, y1, z1)], Tp);
+  if (o.edge) { ctx.strokeStyle = o.edge; ctx.lineWidth = 0.6; ctx.beginPath(); const a = iso(x1, y1, z0), b = iso(x1, y1, z1); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.stroke(); }
+}
+// windows on the two visible faces
+function windows(x0, y0, x1, y1, z0, fl, fh, col, lit, seed) {
+  const cw = (x1 - x0), ch = (y1 - y0);
+  const nx = Math.max(1, Math.round(cw * 3.2)), ny = Math.max(1, Math.round(ch * 3.2));
+  for (let f = 0; f < fl; f++) {
+    const za = z0 + f * fh + fh * 0.32, zb = z0 + f * fh + fh * 0.78;
+    for (let c = 0; c < nx; c++) {
+      const a = x0 + cw * (c + 0.22) / nx, b = x0 + cw * (c + 0.78) / nx;
+      const on = lit && hash2(seed + c, f) < lit;
+      poly([iso(a, y1, za), iso(b, y1, za), iso(b, y1, zb), iso(a, y1, zb)], on ? '#ffe39a' : col);
+    }
+    for (let c = 0; c < ny; c++) {
+      const a = y0 + ch * (c + 0.22) / ny, b = y0 + ch * (c + 0.78) / ny;
+      const on = lit && hash2(seed + 50 + c, f) < lit;
+      poly([iso(x1, a, za), iso(x1, b, za), iso(x1, b, zb), iso(x1, a, zb)], on ? '#f5d27e' : shade(col, -0.25));
+    }
+  }
+}
+function hipRoof(x0, y0, x1, y1, z, rh, c) {
+  const cx = (x0 + x1) / 2, cy = (y0 + y1) / 2, ov = 0.06;
+  x0 -= ov; y0 -= ov; x1 += ov; y1 += ov;
+  const w = x1 - x0, h = y1 - y0;
+  let A, B; // ridge endpoints
+  if (Math.abs(w - h) < 0.05) { A = B = [cx, cy]; } else if (w > h) { const d = h / 2; A = [x0 + d, cy]; B = [x1 - d, cy]; } else { const d = w / 2; A = [cx, y0 + d]; B = [cx, y1 - d]; }
+  const zt = z + rh, P = (p, zz) => iso(p[0], p[1], zz), X = w > h;
+  const c00 = iso(x0, y0, z), c10 = iso(x1, y0, z), c11 = iso(x1, y1, z), c01 = iso(x0, y1, z), a = P(A, zt), b = P(B, zt);
+  poly([c00, c10, X ? b : a, a], shade(c, -0.05));
+  poly([c00, c01, X ? a : b, a], shade(c, -0.12));
+  poly([c10, c11, b, X ? b : a], shade(c, -0.32));
+  poly([c01, c11, b, X ? a : b], shade(c, 0.08));
+  // ridge line
+  ctx.strokeStyle = shade(c, -0.45); ctx.lineWidth = 0.7; ctx.beginPath(); const e = c11; ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.lineTo(e[0], e[1]); ctx.stroke();
+}
+function gableRoof(x0, y0, x1, y1, z, rh, c, wall) {
+  const ym = (y0 + y1) / 2, ov = 0.05; x0 -= ov; x1 += ov;
+  poly([iso(x0, y0, z), iso(x1, y0, z), iso(x1, ym, z + rh), iso(x0, ym, z + rh)], shade(c, -0.12));
+  poly([iso(x1, y0 + ov, z), iso(x1, y1 - ov, z), iso(x1, ym, z + rh)], shade(wall, -0.3));
+  poly([iso(x0, y1, z), iso(x1, y1, z), iso(x1, ym, z + rh), iso(x0, ym, z + rh)], shade(c, 0.06));
+}
+function tree(x, y, s, v) {
+  const [bx, by] = iso(x, y, 0), k = s || 1;
+  ctx.fillStyle = 'rgba(20,40,10,.22)'; ctx.beginPath(); ctx.ellipse(bx + 2, by + 1, 9 * k, 4.5 * k, 0, 0, 6.283); ctx.fill();
+  ctx.fillStyle = '#6b4a2e'; ctx.fillRect(bx - 1.2, by - 9 * k, 2.4, 9 * k);
+  const g = [[58, 120, 52], [72, 138, 58], [48, 110, 60], [88, 140, 50]][Math.floor(v * 4)];
+  ctx.fillStyle = rgb(g, -12); ctx.beginPath(); ctx.arc(bx, by - 13 * k, 8.5 * k, 0, 6.283); ctx.fill();
+  ctx.fillStyle = rgb(g); ctx.beginPath(); ctx.arc(bx - 2 * k, by - 15 * k, 6.5 * k, 0, 6.283); ctx.fill();
+  ctx.fillStyle = rgb(g, 22); ctx.beginPath(); ctx.arc(bx - 3.5 * k, by - 17 * k, 3.2 * k, 0, 6.283); ctx.fill();
+}
+function pine(x, y, s, v) {
+  const [bx, by] = iso(x, y, 0), k = s || 1, g = v > 0.5 ? [52, 104, 66] : [44, 96, 58];
+  ctx.fillStyle = 'rgba(20,40,10,.22)'; ctx.beginPath(); ctx.ellipse(bx + 2, by + 1, 7 * k, 3.5 * k, 0, 0, 6.283); ctx.fill();
+  ctx.fillStyle = '#5a3d26'; ctx.fillRect(bx - 1, by - 5 * k, 2, 5 * k);
+  for (let i = 0; i < 3; i++) { ctx.fillStyle = rgb(g, i * 9); ctx.beginPath(); ctx.moveTo(bx - (8 - i * 2) * k, by - (4 + i * 7) * k); ctx.lineTo(bx + (8 - i * 2) * k, by - (4 + i * 7) * k); ctx.lineTo(bx, by - (16 + i * 7) * k); ctx.closePath(); ctx.fill(); }
+}
+
+/* ---------- ground ---------- */
+const MARGIN = 5;
+function tileType(x, y) { if (inMap(x, y)) return G.tiles[ti(x, y)]; if (y <= 1) return T_WATER; return -1; }
+function drawGround() {
+  const t = RND.t;
+  for (let y = -MARGIN; y < N + MARGIN; y++) for (let x = -MARGIN; x < N + MARGIN; x++) {
+    const tt = tileType(x, y), h = hash2(x + 99, y + 7), pts = diamond(x, y, 1, 1, 0);
+    if (tt === T_WATER) {
+      const w = Math.sin(t * 1.2 + x * 0.7 + y * 0.9) * 6;
+      poly(pts, rgb([58, 138, 186], (w | 0) - (y < -1 ? 10 : 0)));
+    } else if (tt === T_ROAD) poly(pts, '#7a7f87');
+    else if (tt === T_PLAZA) poly(pts, (x + y) & 1 ? '#ddd3c2' : '#d3c8b5');
+    else if (tt === T_PATH) poly(pts, '#d8c59c');
+    else if (tt === T_GRASS && inMap(x, y)) {
+      const d = G.tdist[ti(x, y)]; const base = d >= 0 ? DISTS[d].grass : [120, 158, 90];
+      poly(pts, rgb(base, ((h * 14) | 0) - 7 + (RND.hiD === d ? 22 : 0)));
+    } else { // countryside outside the map
+      const far = Math.max(-x, -y, x - N + 1, y - N + 1);
+      const field = (Math.floor(x / 3) + Math.floor(y / 3)) & 1;
+      poly(pts, rgb(field ? [150, 170, 96] : [128, 160, 88], ((h * 12) | 0) - 6 - far * 4));
+    }
+  }
+  // shoreline + embankment along y=2
+  ctx.strokeStyle = 'rgba(255,255,255,.35)'; ctx.lineWidth = 1.5; ctx.beginPath();
+  let a = iso(-MARGIN, 2), b = iso(N + MARGIN, 2); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.stroke();
+  for (let k = 0; k < 14; k++) { // glints
+    const gx = ((k * 37.3 + t * 0.6) % (N + 2 * MARGIN)) - MARGIN, gy = -MARGIN + 0.5 + (k * 0.61 % 6.2);
+    const p = iso(gx, gy), al = 0.25 + 0.25 * Math.sin(t * 2 + k);
+    ctx.fillStyle = 'rgba(255,255,255,' + al.toFixed(2) + ')'; ctx.fillRect(p[0] - 6, p[1], 12, 1.2);
+  }
+  // road markings + curbs
+  for (let y = 2; y < N; y++) for (let x = -MARGIN; x < N + MARGIN; x++) {
+    if (tileType(x, y) !== T_ROAD) continue;
+    const ex = tileType(x - 1, y) === T_ROAD || tileType(x + 1, y) === T_ROAD, ey = tileType(x, y - 1) === T_ROAD || tileType(x, y + 1) === T_ROAD;
+    ctx.strokeStyle = 'rgba(255,240,190,.75)'; ctx.lineWidth = 1.1; ctx.beginPath();
+    if (ex && !ey) { const p = iso(x + 0.25, y + 0.5), q = iso(x + 0.75, y + 0.5); ctx.moveTo(p[0], p[1]); ctx.lineTo(q[0], q[1]); }
+    else if (ey && !ex) { const p = iso(x + 0.5, y + 0.25), q = iso(x + 0.5, y + 0.75); ctx.moveTo(p[0], p[1]); ctx.lineTo(q[0], q[1]); }
+    ctx.stroke();
+  }
+}
+
+/* ---------- objects ---------- */
+function decoTrees() { // stable list of trees on free grass
+  if (RND.trees && RND.treesV === G.deco.length + ':' + G.props.length) return RND.trees;
+  const used = new Set();
+  for (const o of G.props.concat(G.deco)) for (let j = 0; j < o.h; j++) for (let i = 0; i < o.w; i++) used.add((o.x + i) + ',' + (o.y + j));
+  const out = [];
+  for (let y = -MARGIN; y < N + MARGIN; y++) for (let x = -MARGIN; x < N + MARGIN; x++) {
+    if (tileType(x, y) !== T_GRASS && tileType(x, y) !== -1) continue;
+    if (used.has(x + ',' + y)) continue;
+    const inside = inMap(x, y), d = inside ? G.tdist[ti(x, y)] : -1, h = hash2(x, y);
+    const prob = !inside ? 0.12 : d === DI.hill ? 0.95 : d >= 0 ? 0.75 : 0.3;
+    if (h > prob) continue;
+    const n = inside && d >= 0 ? (h < prob * 0.5 ? 2 : 1) : 1;
+    for (let k = 0; k < n; k++) out.push({ x: x + 0.3 + hash2(x + k * 3, y + 11) * 0.45, y: y + 0.3 + hash2(x + 7, y + k * 5) * 0.45, s: 0.8 + hash2(x, y + k) * 0.45, v: hash2(y, x + k), pine: d === DI.hill || (!inside && h < 0.05) });
+  }
+  RND.trees = out; RND.treesV = G.deco.length + ':' + G.props.length; return out;
+}
+function propTopZ(p) { const K = KINDS[p.kind]; if (p.kind === 'mansion') return 4 * FH + 36; return K.fl * FH + 3 + (K.roof === 'hip' ? 10 + p.w * 3 : K.roof === 'gable' ? 9 : 4); }
+
+function drawProp(p, hov, sel) {
+  const K = KINDS[p.kind], t = RND.t;
+  if (p.kind === 'mansion') return drawMansion(p, hov, sel);
+  const e = p.w > 1 ? 0.16 : 0.13, x0 = p.x + e, y0 = p.y + e, x1 = p.x + p.w - e, y1 = p.y + p.h - e;
+  // lot ground
+  const own = p.owner;
+  poly(diamond(p.x + 0.04, p.y + 0.04, p.w - 0.08, p.h - 0.08, 0), own >= 0 ? hexA(PCOL[own], 0.38) : 'rgba(255,255,255,.12)', own >= 0 ? PCOL[own] : null, 2);
+  if (sel) { const a = 0.45 + 0.35 * Math.sin(t * 6); poly(diamond(p.x, p.y, p.w, p.h, 0), null, 'rgba(255,224,120,' + a.toFixed(2) + ')', 3); }
+  let c = K.col; if (p.cond === 0) c = shade(c, -0.14); if (hov || sel) c = shade(c, 0.12);
+  const zt = K.fl * FH + 3;
+  box(x0, y0, x1, y1, 0, zt, c, { edge: 'rgba(0,0,0,.12)' });
+  // door
+  const dm = (x0 + x1) / 2; poly([iso(dm - 0.08, y1, 0), iso(dm + 0.08, y1, 0), iso(dm + 0.08, y1, 6), iso(dm - 0.08, y1, 6)], '#6b4a34');
+  if (K.glass) {
+    for (let f = 0; f < K.fl; f++) { const za = 3 + f * FH + 1.6, zb = 3 + f * FH + FH - 1.2;
+      poly([iso(x0 + 0.03, y1, za), iso(x1 - 0.03, y1, za), iso(x1 - 0.03, y1, zb), iso(x0 + 0.03, y1, zb)], f % 3 === 1 ? '#8fc4e6' : '#6ea8cf');
+      poly([iso(x1, y0 + 0.03, za), iso(x1, y1 - 0.03, za), iso(x1, y1 - 0.03, zb), iso(x1, y0 + 0.03, zb)], f % 3 === 1 ? '#5d93ba' : '#4b7fa6'); }
+  } else windows(x0, y0, x1, y1, 2, K.fl, FH, p.cond === 0 ? '#4a4f55' : '#3f5f7a', p.cond === 2 ? 0.25 : 0.08, p.id * 13);
+  if (K.roof === 'hip') hipRoof(x0, y0, x1, y1, zt, 9 + p.w * 3, p.cond === 0 ? shade(K.rc, -0.15) : K.rc);
+  else if (K.roof === 'gable') gableRoof(x0, y0, x1, y1, zt, 9, K.rc, c);
+  else {
+    // parapet + rooftop box
+    poly(diamond(x0 + 0.06, y0 + 0.06, x1 - x0 - 0.12, y1 - y0 - 0.12, zt), shade(K.rc, 0.05));
+    const s = p.w > 1 ? 0.35 : 0.22; box(x0 + 0.12, y0 + 0.12, x0 + 0.12 + s, y0 + 0.12 + s, zt, zt + 5, K.rc);
+    if (p.kind === 'techflat') { const a = iso(x1 - 0.3, y1 - 0.3, zt), b = iso(x1 - 0.3, y1 - 0.3, zt + 14); ctx.strokeStyle = '#9aa7b4'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.stroke(); ctx.fillStyle = Math.sin(t * 3 + p.id) > 0 ? '#ff5f52' : '#7a2a24'; ctx.fillRect(b[0] - 1.2, b[1] - 1.2, 2.4, 2.4); }
+  }
+  if (p.cond === 0 && p.owner === -1) { // a bit of grime
+    ctx.fillStyle = 'rgba(70,60,40,.18)'; poly([iso(x0, y1, 0), iso(x1, y1, 0), iso(x1, y1, 5), iso(x0, y1, 5)], 'rgba(60,50,35,.25)');
+  }
+  if (p.reno) scaffold(x0, y0, x1, y1, zt);
+  if (own >= 0) flag(x1 - 0.12, y1 - 0.12, zt + (K.roof === 'flat' ? 0 : 3), PCOL[own]);
+  if (p.list && p.owner === -1) saleSign(p.x + p.w - 0.1, p.y + p.h - 0.1, p.list.tag === 'hot');
+}
+function hexA(h, a) { const [r, g, b] = hexRgb(h); return 'rgba(' + r + ',' + g + ',' + b + ',' + a + ')'; }
+function flag(x, y, z, col) {
+  const a = iso(x, y, z), b = iso(x, y, z + 15), w = Math.sin(RND.t * 4 + x) * 1.5;
+  ctx.strokeStyle = '#333'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.stroke();
+  ctx.fillStyle = col; ctx.beginPath(); ctx.moveTo(b[0], b[1]); ctx.lineTo(b[0] + 9, b[1] + 2.5 + w); ctx.lineTo(b[0], b[1] + 5.5); ctx.closePath(); ctx.fill();
+}
+function saleSign(x, y, hot) {
+  const a = iso(x, y, 0), b = iso(x, y, 11);
+  ctx.strokeStyle = '#4a3a2a'; ctx.lineWidth = 1.2; ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.stroke();
+  ctx.fillStyle = hot ? '#e0392d' : '#d8452f'; ctx.fillRect(b[0] - 6, b[1] - 6, 12, 7);
+  ctx.fillStyle = '#fff'; ctx.font = 'bold 6px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('售', b[0], b[1] - 2.4);
+}
+function scaffold(x0, y0, x1, y1, zt) {
+  ctx.strokeStyle = 'rgba(150,100,40,.85)'; ctx.lineWidth = 0.8; ctx.beginPath();
+  for (let z = 0; z <= zt + 2; z += 6) { let a = iso(x0 - 0.04, y1 + 0.04, z), b = iso(x1 + 0.04, y1 + 0.04, z), c = iso(x1 + 0.04, y0 - 0.04, z); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.lineTo(c[0], c[1]); }
+  for (const [x, y] of [[x0 - 0.04, y1 + 0.04], [(x0 + x1) / 2, y1 + 0.04], [x1 + 0.04, y1 + 0.04], [x1 + 0.04, (y0 + y1) / 2], [x1 + 0.04, y0 - 0.04]]) { const a = iso(x, y, 0), b = iso(x, y, zt + 2); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); }
+  ctx.stroke();
+  poly([iso(x0, y1 + 0.05, 0), iso(x1, y1 + 0.05, 0), iso(x1, y1 + 0.05, zt * 0.6), iso(x0, y1 + 0.05, zt * 0.6)], 'rgba(60,140,90,.28)');
+}
+function drawMansion(p, hov, sel) {
+  const x = p.x, y = p.y, t = RND.t;
+  poly(diamond(x + 0.04, y + 0.04, 2.92, 2.92, 0), p.owner >= 0 ? hexA(PCOL[p.owner], 0.45) : '#8fc06e', p.owner >= 0 ? PCOL[p.owner] : '#e8d28a', 2);
+  if (sel) { const a = 0.45 + 0.35 * Math.sin(t * 6); poly(diamond(x, y, 3, 3, 0), null, 'rgba(255,224,120,' + a.toFixed(2) + ')', 3.5); }
+  // hedge
+  box(x + 0.08, y + 0.08, x + 2.92, y + 0.2, 0, 4, '#3e7a3c'); box(x + 0.08, y + 0.2, x + 0.2, y + 2.92, 0, 4, '#3e7a3c');
+  // pool
+  poly(diamond(x + 2.0, y + 0.45, 0.8, 1.3, 0.5), '#e9e2d0'); poly(diamond(x + 2.08, y + 0.53, 0.64, 1.14, 0.6), shade('#4cb4e0', Math.sin(t * 2) * 0.05));
+  let c = hov || sel ? '#fffaf0' : KINDS.mansion.col;
+  // main house + wing
+  const MH = 4 * FH + 4;
+  box(x + 0.3, y + 0.35, x + 1.85, y + 2.0, 0, MH, c, { edge: 'rgba(0,0,0,.1)' });
+  windows(x + 0.3, y + 0.35, x + 1.85, y + 2.0, 3, 4, FH, '#3b5d80', 0.35, 77);
+  poly([iso(x + 0.3, y + 2.0, MH - 2), iso(x + 1.85, y + 2.0, MH - 2), iso(x + 1.85, y + 2.0, MH), iso(x + 0.3, y + 2.0, MH)], '#e2b84a');
+  // columns porch
+  for (let k = 0; k < 4; k++) { const cx = x + 0.55 + k * 0.33; box(cx, y + 2.0, cx + 0.07, y + 2.07, 0, 2 * FH, '#fffaf2'); }
+  box(x + 0.45, y + 2.0, x + 1.7, y + 2.25, 2 * FH, 2 * FH + 3, '#efe6d2');
+  hipRoof(x + 0.3, y + 0.35, x + 1.85, y + 2.0, MH, 18, KINDS.mansion.rc);
+  box(x + 0.95, y + 1.0, x + 1.2, y + 1.25, MH + 8, MH + 22, '#f3ead6'); hipRoof(x + 0.95, y + 1.0, x + 1.2, y + 1.25, MH + 22, 9, '#2c3a50');
+  box(x + 0.4, y + 2.25, x + 1.3, y + 2.85, 0, 2 * FH + 2, c);
+  windows(x + 0.4, y + 2.25, x + 1.3, y + 2.85, 2, 2, FH, '#3b5d80', 0.35, 31);
+  hipRoof(x + 0.4, y + 2.25, x + 1.3, y + 2.85, 2 * FH + 2, 9, KINDS.mansion.rc);
+  // gold finial
+  const f = iso(x + 1.075, y + 1.125, MH + 31); ctx.fillStyle = '#f5c451'; ctx.beginPath(); ctx.arc(f[0], f[1] - 2, 2.4, 0, 6.283); ctx.fill();
+  // fountain
+  const fo = iso(x + 1.9, y + 2.4, 0); ctx.fillStyle = '#e3dccb'; ctx.beginPath(); ctx.ellipse(fo[0], fo[1], 9, 4.5, 0, 0, 6.283); ctx.fill(); ctx.fillStyle = '#5cbde6'; ctx.beginPath(); ctx.ellipse(fo[0], fo[1], 7, 3.4, 0, 0, 6.283); ctx.fill();
+  ctx.fillStyle = 'rgba(220,240,255,.8)'; for (let k = 0; k < 5; k++) { const ph = (t * 1.6 + k / 5) % 1; ctx.fillRect(fo[0] - 0.8 + Math.sin(k * 2) * ph * 4, fo[1] - 9 * Math.sin(ph * Math.PI) - 2, 1.4, 1.4); }
+  if (p.owner >= 0) flag(x + 1.075, y + 1.125, MH + 31, PCOL[p.owner]);
+}
+function drawDeco(d) {
+  const t = RND.t, { x, y, w, h } = d;
+  if (d.k === 'park') {
+    poly(diamond(x + 0.05, y + 0.05, w - 0.1, h - 0.1, 0), '#7fbf68');
+    poly(diamond(x + w / 2 - 0.08, y + 0.1, 0.16, h - 0.2, 0.2), '#e1cf9f'); poly(diamond(x + 0.1, y + h / 2 - 0.08, w - 0.2, 0.16, 0.2), '#e1cf9f');
+    for (const [a, b] of [[0.45, 0.45], [1.5, 0.5], [0.5, 1.5], [1.5, 1.55]]) tree(x + a, y + b, 1.05, hash2(x + a * 9, y + b * 7));
+  } else if (d.k === 'pond') {
+    poly(diamond(x + 0.05, y + 0.05, w - 0.1, h - 0.1, 0), '#86c070');
+    const c = iso(x + w / 2, y + h / 2); ctx.fillStyle = '#d9e8c8'; ctx.beginPath(); ctx.ellipse(c[0], c[1], 44, 21, 0, 0, 6.283); ctx.fill();
+    ctx.fillStyle = shade('#4aa5d4', Math.sin(t) * 0.05); ctx.beginPath(); ctx.ellipse(c[0], c[1], 40, 18, 0, 0, 6.283); ctx.fill();
+    ctx.fillStyle = '#5c9a4a'; for (let k = 0; k < 4; k++) { ctx.beginPath(); ctx.ellipse(c[0] - 18 + k * 11, c[1] - 4 + (k % 2) * 8, 3.5, 1.8, 0, 0, 6.283); ctx.fill(); }
+    tree(x + 0.3, y + 1.7, 1, 0.2); tree(x + 1.7, y + 0.3, 1, 0.6);
+  } else if (d.k === 'plaza') {
+    const c = iso(x + w / 2, y + h / 2); ctx.fillStyle = '#bfb39c'; ctx.beginPath(); ctx.ellipse(c[0], c[1], 22, 11, 0, 0, 6.283); ctx.fill();
+    ctx.fillStyle = '#56b6de'; ctx.beginPath(); ctx.ellipse(c[0], c[1], 18, 8.5, 0, 0, 6.283); ctx.fill();
+    ctx.fillStyle = 'rgba(230,245,255,.85)'; for (let k = 0; k < 7; k++) { const ph = (t * 1.3 + k / 7) % 1; ctx.fillRect(c[0] + Math.cos(k) * ph * 9, c[1] - 14 * Math.sin(ph * Math.PI) - 2, 1.5, 1.5); }
+    for (const [a, b] of [[0.2, 0.2], [1.8, 0.2], [0.2, 1.8], [1.8, 1.8]]) { const p = iso(x + a, y + b, 0), q = iso(x + a, y + b, 14); ctx.strokeStyle = '#444'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(p[0], p[1]); ctx.lineTo(q[0], q[1]); ctx.stroke(); ctx.fillStyle = '#ffe9a8'; ctx.beginPath(); ctx.arc(q[0], q[1], 2, 0, 6.283); ctx.fill(); }
+  } else if (d.k === 'mall') {
+    box(x + 0.15, y + 0.15, x + w - 0.15, y + h - 0.15, 0, 26, '#e7dccb');
+    poly([iso(x + 0.15, y + h - 0.15, 14), iso(x + w - 0.15, y + h - 0.15, 14), iso(x + w - 0.15, y + h - 0.15, 22), iso(x + 0.15, y + h - 0.15, 22)], '#d0453a');
+    poly([iso(x + 0.3, y + h - 0.15, 2), iso(x + w - 0.3, y + h - 0.15, 2), iso(x + w - 0.3, y + h - 0.15, 11), iso(x + 0.3, y + h - 0.15, 11)], '#7fb6d8');
+    const c = iso(x + w / 2, y + h - 0.15, 18); ctx.save(); ctx.translate(c[0], c[1]); ctx.transform(1, -0.5, 0, 1, 0, 0); ctx.fillStyle = '#fff'; ctx.font = 'bold 7px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('星光商场', 0, 0); ctx.restore();
+  } else if (d.k === 'office') {
+    const H = d.lo ? 80 : 118;
+    box(x + 0.22, y + 0.22, x + w - 0.22, y + h - 0.22, 0, H, '#9fb4c6');
+    for (let z = 4; z < H - 4; z += 6) { poly([iso(x + 0.25, y + h - 0.22, z), iso(x + w - 0.25, y + h - 0.22, z), iso(x + w - 0.25, y + h - 0.22, z + 3.5), iso(x + 0.25, y + h - 0.22, z + 3.5)], '#7db3d8'); poly([iso(x + w - 0.22, y + 0.25, z), iso(x + w - 0.22, y + h - 0.25, z), iso(x + w - 0.22, y + h - 0.25, z + 3.5), iso(x + w - 0.22, y + 0.25, z + 3.5)], '#5487ad'); }
+    box(x + 0.6, y + 0.6, x + w - 0.6, y + h - 0.6, H, H + 8, '#8496a8');
+  } else if (d.k === 'school') {
+    poly(diamond(x + 0.08, y + 2.1, 1.84, 1.8, 0), '#c76a4a');
+    const c = iso(x + 1, y + 3); ctx.strokeStyle = 'rgba(255,255,255,.8)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.ellipse(c[0], c[1], 26, 13, 0, 0, 6.283); ctx.stroke();
+    ctx.fillStyle = '#6fae5a'; ctx.beginPath(); ctx.ellipse(c[0], c[1], 20, 9, 0, 0, 6.283); ctx.fill();
+    box(x + 0.2, y + 0.2, x + 1.8, y + 1.8, 0, 3 * FH + 3, '#ead9c0');
+    windows(x + 0.2, y + 0.2, x + 1.8, y + 1.8, 2, 3, FH, '#3f5f7a', 0, 5);
+    hipRoof(x + 0.2, y + 0.2, x + 1.8, y + 1.8, 3 * FH + 3, 12, '#b0563c');
+    const a = iso(x + 1.92, y + 1.92, 0), b = iso(x + 1.92, y + 1.92, 34); ctx.strokeStyle = '#ccc'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.stroke();
+    ctx.fillStyle = '#e03a2e'; ctx.fillRect(b[0], b[1], 10, 6 + Math.sin(t * 3) * 0.6);
+  } else if (d.k === 'factory') {
+    box(x + 0.15, y + 0.15, x + w - 0.15, y + h - 0.15, 0, 18, '#a9a39a');
+    for (let k = 0; k < 3; k++) { const a = x + 0.15 + k * 0.57; poly([iso(a, y + h - 0.15, 18), iso(a + 0.57, y + h - 0.15, 18), iso(a, y + h - 0.15, 26)], '#8b857c'); }
+    for (const [a, b] of [[0.45, 0.5], [0.9, 0.4]]) { box(x + a, y + b, x + a + 0.16, y + b + 0.16, 18, 46, '#b55d4c'); const s = iso(x + a + 0.08, y + b + 0.08, 46); for (let k = 0; k < 4; k++) { const ph = (t * 0.35 + k / 4 + a) % 1; ctx.fillStyle = 'rgba(170,170,165,' + (0.5 * (1 - ph)).toFixed(2) + ')'; ctx.beginPath(); ctx.arc(s[0] + ph * 14, s[1] - ph * 26, 3 + ph * 7, 0, 6.283); ctx.fill(); } }
+  } else if (d.k === 'metro') {
+    poly(diamond(x + 0.15, y + 0.15, 0.7, 0.7, 0), '#cfc6b5');
+    box(x + 0.3, y + 0.3, x + 0.75, y + 0.75, 0, 12, '#e8e2d6');
+    poly(diamond(x + 0.25, y + 0.25, 0.55, 0.55, 12), '#2a6fb8');
+    const c = iso(x + 0.52, y + 0.52, 26); ctx.fillStyle = '#d0302a'; ctx.beginPath(); ctx.arc(c[0], c[1], 6, 0, 6.283); ctx.fill(); ctx.fillStyle = '#fff'; ctx.font = 'bold 8px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('M', c[0], c[1] + 0.5);
+    const a = iso(x + 0.52, y + 0.52, 12); ctx.strokeStyle = '#555'; ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(c[0], c[1] + 6); ctx.stroke();
+  }
+}
+
+/* ---------- cars & clouds ---------- */
+function initAmbient() {
+  RND.cars = [];
+  const lanesX = [2, 7, 12], lanesY = [4, 9, 14];
+  for (let k = 0; k < 14; k++) {
+    const ax = k % 2 === 0, line = ax ? lanesX[k % 3] : lanesY[k % 3], dir = (k >> 1) % 2 ? 1 : -1;
+    RND.cars.push({ ax, line: line + (dir > 0 ? 0.32 : 0.68), pos: Math.random() * (N + 2 * MARGIN) - MARGIN, dir, sp: 1.1 + Math.random() * 0.9, col: ['#e8e4dc', '#d1453b', '#2f6db3', '#f2c14e', '#3a3f47', '#6fb5a7'][k % 6] });
+  }
+  RND.clouds = Array.from({ length: 5 }, (_, k) => ({ x: Math.random(), y: 0.1 + Math.random() * 0.7, s: 0.6 + Math.random() * 0.8, v: 0.004 + Math.random() * 0.006 }));
+}
+function stepAmbient(dt) {
+  for (const c of RND.cars) { c.pos += c.dir * c.sp * dt; const L = N + MARGIN; if (c.pos > L) c.pos = -MARGIN; if (c.pos < -MARGIN) c.pos = L; }
+  for (const c of RND.clouds) { c.x += c.v * dt; if (c.x > 1.3) c.x = -0.3; }
+}
+function drawCar(c) {
+  const len = 0.32, wd = 0.17;
+  let x0, y0, x1, y1;
+  if (c.ax) { x0 = c.pos; x1 = c.pos + len; y0 = c.line - wd / 2; y1 = c.line + wd / 2; } else { y0 = c.pos; y1 = c.pos + len; x0 = c.line - wd / 2; x1 = c.line + wd / 2; }
+  box(x0, y0, x1, y1, 0.5, 4, c.col);
+  const m = 0.08; box(x0 + (c.ax ? m : 0.02), y0 + (c.ax ? 0.02 : m), x1 - (c.ax ? m : 0.02), y1 - (c.ax ? 0.02 : m), 4, 7, shade(c.col, 0.1), { t: -0.2 });
+}
+
+/* ---------- frame ---------- */
+function render(dt) {
+  RND.t += dt; stepAmbient(dt);
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  const g = ctx.createLinearGradient(0, 0, 0, cv.height); g.addColorStop(0, '#9ccbe0'); g.addColorStop(1, '#7cae8a');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, cv.width, cv.height);
+  if (!G) return;
+  const z = CAM.z;
+  ctx.setTransform(DPR * z, 0, 0, DPR * z, DPR * (VW / 2 - CAM.x * z), DPR * (VH / 2 - CAM.y * z));
+  ctx.lineJoin = 'round';
+  drawGround();
+  // district tint when highlighted
+  if (RND.hiD >= 0) for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) if (G.tdist[ti(x, y)] === RND.hiD) poly(diamond(x, y, 1, 1, 0), 'rgba(255,230,140,.16)');
+  // sortable objects
+  const objs = [];
+  for (const p of G.props) objs.push({ k: p.x + p.w / 2 + p.y + p.h / 2, p });
+  for (const d of G.deco) objs.push({ k: d.x + d.w / 2 + d.y + d.h / 2, d });
+  for (const t of decoTrees()) objs.push({ k: t.x + t.y, t });
+  for (const c of RND.cars) objs.push({ k: (c.ax ? c.pos + 0.16 + c.line : c.line + c.pos + 0.16), c });
+  objs.sort((a, b) => a.k - b.k);
+  const sel = STATE.sel, hov = STATE.hover;
+  for (const o of objs) {
+    if (o.p) drawProp(o.p, o.p.id === hov, o.p.id === sel);
+    else if (o.d) drawDeco(o.d);
+    else if (o.t) (o.t.pine ? pine : tree)(o.t.x, o.t.y, o.t.s, o.t.v);
+    else drawCar(o.c);
+  }
+  // pick polygons (front first)
+  RND.pick = G.props.map(p => {
+    const e = 0.1, zt = propTopZ(p), pts = [];
+    for (const [a, b] of [[p.x + e, p.y + e], [p.x + p.w - e, p.y + e], [p.x + p.w - e, p.y + p.h - e], [p.x + e, p.y + p.h - e]]) { pts.push(iso(a, b, 0)); pts.push(iso(a, b, zt)); }
+    return { id: p.id, k: p.x + p.y + p.w / 2 + p.h / 2, poly: hull(pts) };
+  }).sort((a, b) => b.k - a.k);
+  // screen-space overlays
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  drawLabels();
+  for (const c of RND.clouds) { const cx = c.x * VW, cy = c.y * VH, s = c.s * 80; ctx.fillStyle = 'rgba(255,255,255,.07)'; ctx.beginPath(); ctx.ellipse(cx, cy, s * 2, s * 0.7, 0, 0, 6.283); ctx.fill(); ctx.beginPath(); ctx.ellipse(cx + s * 0.6, cy - s * 0.3, s, s * 0.55, 0, 0, 6.283); ctx.fill(); }
+}
+function hull(P) {
+  P = P.slice().sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+  const cr = (o, a, b) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
+  const lo = [], up = [];
+  for (const p of P) { while (lo.length >= 2 && cr(lo[lo.length - 2], lo[lo.length - 1], p) <= 0) lo.pop(); lo.push(p); }
+  for (let i = P.length - 1; i >= 0; i--) { const p = P[i]; while (up.length >= 2 && cr(up[up.length - 2], up[up.length - 1], p) <= 0) up.pop(); up.push(p); }
+  return lo.slice(0, -1).concat(up.slice(0, -1));
+}
+function inPoly(pt, P) { let c = false; for (let i = 0, j = P.length - 1; i < P.length; j = i++) { const a = P[i], b = P[j]; if ((a[1] > pt[1]) !== (b[1] > pt[1]) && pt[0] < (b[0] - a[0]) * (pt[1] - a[1]) / (b[1] - a[1]) + a[0]) c = !c; } return c; }
+function pickAt(sx, sy) { const w = s2w(sx, sy); for (const r of RND.pick) if (inPoly(w, r.poly)) return r.id; return -1; }
+
+function rr2(x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
+function drawLabels() {
+  const z = CAM.z;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  // district names
+  if (z < 1.25) {
+    const al = clamp((1.25 - z) / 0.5, 0, 1) * 0.9;
+    ctx.font = '700 ' + Math.round(clamp(15 * z + 4, 12, 20)) + 'px "Noto Sans SC",sans-serif';
+    for (let i = 0; i < DISTS.length; i++) {
+      const c = distCenter(i), s = w2s(...iso(c[0], c[1], 0));
+      ctx.fillStyle = 'rgba(10,18,28,' + (al * 0.55).toFixed(2) + ')'; const tw = ctx.measureText(DISTS[i].n).width + 16; rr2(s[0] - tw / 2, s[1] - 12, tw, 24, 12); ctx.fill();
+      ctx.fillStyle = 'rgba(255,255,255,' + al.toFixed(2) + ')'; ctx.fillText(DISTS[i].n, s[0], s[1]);
+    }
+  }
+  // price tags
+  if (window.__dbg && __dbg.notags) return;
+  const showAll = z >= 0.62;
+  const tags = [];
+  for (const p of G.props) {
+    const listed = p.list && p.owner === -1, mine = p.owner === ME && p.owner >= 0;
+    if (!listed && !mine) continue;
+    if (!showAll && p.id !== STATE.sel && p.kind !== 'mansion' && !(listed && p.list.tag === 'hot')) continue;
+    const s = w2s(...iso(p.x + p.w / 2, p.y + p.h / 2, propTopZ(p) + 8));
+    if (s[0] < -60 || s[0] > VW + 60 || s[1] < -30 || s[1] > VH + 30) continue;
+    tags.push({ p, s, listed, mine });
+  }
+  tags.sort((a, b) => a.s[1] - b.s[1]);
+  ctx.font = '600 13px Oswald,"Noto Sans SC",sans-serif';
+  for (const { p, s, listed, mine } of tags) {
+    let txt, bg, fg = '#fff', badge = null;
+    if (p.kind === 'mansion') { txt = '豪宅 ' + fmtM(p.list ? p.list.ask : val(p)); bg = '#c9952a'; fg = '#1d1406'; }
+    else if (listed) { txt = fmtM(p.list.ask); bg = 'rgba(16,24,36,.88)'; if (p.list.tag === 'hot') badge = ['急售', '#d63a2f']; else if (p.list.age === 0) badge = ['新', '#2a6fb8']; else if (p.list.cut) badge = ['降', '#56657a']; }
+    else { const r = p.reno ? 0 : p.offer * (1 - sellFee()) / p.paid - 1; txt = p.reno ? '装修中' : pct(r, 0); bg = p.reno ? 'rgba(120,90,40,.9)' : r >= 0 ? 'rgba(200,60,50,.92)' : 'rgba(30,140,90,.92)'; if (p.offerHot) badge = ['抢', '#f5c451']; }
+    const sel = p.id === STATE.sel, tw = ctx.measureText(txt).width + 14, bw = badge ? 22 : 0, W = tw + bw, H = 21;
+    const x = s[0] - W / 2, y = s[1] - H - 6 - (sel ? 4 + Math.abs(Math.sin(RND.t * 4)) * 4 : 0);
+    ctx.fillStyle = 'rgba(0,0,0,.25)'; rr2(x + 1, y + 2, W, H, 6); ctx.fill();
+    ctx.fillStyle = bg; rr2(x, y, W, H, 6); ctx.fill();
+    if (sel) { ctx.strokeStyle = '#ffe07a'; ctx.lineWidth = 2; ctx.stroke(); }
+    ctx.beginPath(); ctx.moveTo(s[0] - 5, y + H); ctx.lineTo(s[0] + 5, y + H); ctx.lineTo(s[0], y + H + 6); ctx.closePath(); ctx.fillStyle = bg; ctx.fill();
+    if (badge) { ctx.fillStyle = badge[1]; rr2(x + 2, y + 2, bw - 3, H - 4, 4); ctx.fill(); ctx.fillStyle = badge[1] === '#f5c451' ? '#1d1406' : '#fff'; ctx.font = '700 11px "Noto Sans SC",sans-serif'; ctx.fillText(badge[0], x + 2 + (bw - 3) / 2, y + H / 2 + 0.5); ctx.font = '600 13px Oswald,"Noto Sans SC",sans-serif'; }
+    ctx.fillStyle = fg; ctx.fillText(txt, x + bw + tw / 2, y + H / 2 + 1);
+  }
+  // floating money pops
+  RND.pulse = RND.pulse.filter(f => (f.t += 1 / 60) < 1.6);
+  ctx.font = '700 17px Oswald,"Noto Sans SC",sans-serif';
+  for (const f of RND.pulse) {
+    const p = G.props[f.id]; if (!p) continue;
+    const s = w2s(...iso(p.x + p.w / 2, p.y + p.h / 2, propTopZ(p) + 30 + f.t * 30));
+    ctx.globalAlpha = clamp(1.6 - f.t, 0, 1); ctx.fillStyle = f.col; ctx.strokeStyle = 'rgba(0,0,0,.6)'; ctx.lineWidth = 3; ctx.strokeText(f.txt, s[0], s[1]); ctx.fillText(f.txt, s[0], s[1]); ctx.globalAlpha = 1;
+  }
+}
+const _dc = {};
+function distCenter(i) {
+  if (_dc[i]) return _dc[i];
+  let sx = 0, sy = 0, n = 0; for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) if (G.tdist[ti(x, y)] === i) { sx += x + 0.5; sy += y + 0.5; n++; }
+  if (i === DI.river) sy -= 0.6;
+  return (_dc[i] = [sx / n, sy / n]);
+}
+function popMoney(id, txt, col) { RND.pulse.push({ id, txt, col, t: 0 }); }
+
+/* ---------- camera ---------- */
+function viewInsets() {
+  const narrow = innerWidth <= 760 || PHONE.matches;
+  if (narrow) return { l: 0, r: 0, t: 60, b: 70 };
+  return { l: $('side') && !$('hud').classList.contains('hidden') ? 320 : 0, r: STATE.sel >= 0 ? 350 : 0, t: 80, b: 84 };
+}
+function focusTile(x, y, zoom) {
+  const ins = viewInsets(), [ix, iy] = iso(x, y, 0), z = zoom || CAM.z;
+  const ox = (ins.l - ins.r) / 2, oy = (ins.t - ins.b) / 2;
+  CAM.tx = ix - ox / z; CAM.ty = iy - 30 - oy / z; CAM.tz = z;
+}
+function fitCam() {
+  const ins = viewInsets(), w = VW - ins.l - ins.r, h = VH - ins.t - ins.b;
+  const z = clamp(Math.min(w / (N * TW * 0.95), h / (N * TH * 1.05)), 0.35, 1.6);
+  CAM.z = z; CAM.x = (ins.r - ins.l) / 2 / z; CAM.y = N * TH / 2 - 20 + (ins.b - ins.t) / 2 / z; CAM.tx = CAM.ty = CAM.tz = null;
+}
+function camStep(dt) {
+  const k = Math.min(1, dt * 7);
+  if (CAM.tx != null) { CAM.x = lerp(CAM.x, CAM.tx, k); CAM.y = lerp(CAM.y, CAM.ty, k); if (Math.abs(CAM.x - CAM.tx) < 0.5 && Math.abs(CAM.y - CAM.ty) < 0.5) CAM.tx = CAM.ty = null; }
+  if (CAM.tz != null) { CAM.z = lerp(CAM.z, CAM.tz, k); if (Math.abs(CAM.z - CAM.tz) < 0.003) CAM.tz = null; }
+  const R = N * TW / 2 + 60; CAM.x = clamp(CAM.x, -R, R); CAM.y = clamp(CAM.y, -80, N * TH + 80);
+}
+
+/* ---- 60_audio.js ---- */
+/* ================= synthesized sound (Web Audio, no files) ================= */
+const AU = { ctx: null, master: null, noise: null, on: LS.get('sound', true), last: {} };
+function audioInit() {
+  if (AU.ctx) { if (AU.ctx.state === 'suspended') AU.ctx.resume(); return; }
+  try {
+    const C = new (window.AudioContext || window.webkitAudioContext)();
+    const comp = C.createDynamicsCompressor(); comp.connect(C.destination);
+    const m = C.createGain(); m.gain.value = AU.on ? 0.5 : 0; m.connect(comp);
+    const b = C.createBuffer(1, C.sampleRate, C.sampleRate), d = b.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+    AU.ctx = C; AU.master = m; AU.noise = b;
+  } catch (e) { }
+}
+function setSound(on) { AU.on = on; LS.set('sound', on); if (AU.master) AU.master.gain.value = on ? 0.5 : 0; const t = on ? '🔊' : '🔇'; $('sndBtn').textContent = t; $('mSound').textContent = '音效：' + (on ? '开' : '关'); }
+function tone(type, f0, f1, dur, vol, delay, lp) {
+  const C = AU.ctx; if (!C || !AU.on) return;
+  const t0 = C.currentTime + (delay || 0), o = C.createOscillator(), g = C.createGain(), j = 1 + (Math.random() - 0.5) * 0.06;
+  o.type = type; o.frequency.setValueAtTime(f0 * j, t0); if (f1 && f1 !== f0) o.frequency.exponentialRampToValueAtTime(Math.max(20, f1 * j), t0 + dur);
+  g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(vol, t0 + 0.012); g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+  let out = g; if (lp) { const f = C.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = lp; g.connect(f); out = f; }
+  o.connect(g); out.connect(AU.master); o.start(t0); o.stop(t0 + dur + 0.05);
+}
+function noise(dur, vol, ft, f0, f1, Q, delay) {
+  const C = AU.ctx; if (!C || !AU.on) return;
+  const t0 = C.currentTime + (delay || 0), s = C.createBufferSource(), f = C.createBiquadFilter(), g = C.createGain();
+  s.buffer = AU.noise; f.type = ft; f.Q.value = Q || 1; f.frequency.setValueAtTime(f0, t0); if (f1) f.frequency.exponentialRampToValueAtTime(f1, t0 + dur);
+  g.gain.setValueAtTime(vol, t0); g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+  s.connect(f); f.connect(g); g.connect(AU.master); s.start(t0, Math.random() * 0.5); s.stop(t0 + dur + 0.05);
+}
+function sfx(k, big) {
+  const now = performance.now(); if (AU.last[k] && now - AU.last[k] < 70) return; AU.last[k] = now;
+  switch (k) {
+    case 'click': tone('triangle', 880, 660, 0.06, 0.08); break;
+    case 'sel': tone('sine', 620, 820, 0.08, 0.07); break;
+    case 'buy': noise(0.05, 0.12, 'highpass', 4000); [1046, 1318, 1568].forEach((f, i) => tone('triangle', f, f, 0.22, 0.12, i * 0.06)); break;
+    case 'sell':
+      noise(0.04, 0.15, 'bandpass', 3000, 0, 2); tone('square', 1568, 1568, 0.08, 0.05, 0.02, 3000);
+      [1318, 1760, 2093].forEach((f, i) => tone('triangle', f, f, 0.3, 0.12, 0.08 + i * 0.07));
+      if (big) [2637, 3136].forEach((f, i) => tone('sine', f, f, 0.4, 0.07, 0.3 + i * 0.08)); break;
+    case 'loss': tone('triangle', 520, 330, 0.35, 0.12); tone('triangle', 390, 260, 0.4, 0.08, 0.12); break;
+    case 'month': noise(0.18, 0.06, 'bandpass', 1800, 900, 1.5); tone('sine', 523, 523, 0.18, 0.06, 0.05); tone('sine', 784, 784, 0.25, 0.05, 0.13); break;
+    case 'news': tone('sine', 1318, 1318, 0.12, 0.06); tone('sine', 1046, 1046, 0.18, 0.05, 0.1); break;
+    case 'good': tone('triangle', 784, 1046, 0.2, 0.08); break;
+    case 'bad': tone('sawtooth', 220, 150, 0.3, 0.05, 0, 900); break;
+    case 'err': tone('square', 220, 180, 0.12, 0.06, 0, 1200); break;
+    case 'insp': noise(0.12, 0.08, 'bandpass', 2500, 1200, 3); tone('sine', 1200, 1500, 0.1, 0.05, 0.1); break;
+    case 'reno': for (let i = 0; i < 3; i++) noise(0.06, 0.14, 'bandpass', 900 + i * 300, 0, 4, i * 0.09); break;
+    case 'ready': tone('sine', 660, 990, 0.14, 0.08); break;
+    case 'win': [523, 659, 784, 1046, 784, 1046, 1318].forEach((f, i) => tone('triangle', f, f, i === 6 ? 0.8 : 0.22, 0.13, i * 0.13)); break;
+    case 'lose': [392, 349, 311, 262].forEach((f, i) => tone('triangle', f, f, 0.4, 0.1, i * 0.2)); break;
+  }
+}
+
+/* ---- 62_input.js ---- */
+/* ================= input: pan / zoom / pick, keyboard ================= */
+const PTR = new Map();
+let pinch0 = null, drag = null;
+function zoomAt(sx, sy, nz) {
+  nz = clamp(nz, 0.32, 2.6); const [wx, wy] = s2w(sx, sy);
+  CAM.z = nz; CAM.tz = null; CAM.tx = CAM.ty = null;
+  CAM.x = wx - (sx - VW / 2) / nz; CAM.y = wy - (sy - VH / 2) / nz;
+}
+cv.addEventListener('pointerdown', e => {
+  audioInit();
+  cv.setPointerCapture(e.pointerId); PTR.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  if (PTR.size === 1) drag = { x: e.clientX, y: e.clientY, cx: CAM.x, cy: CAM.y, moved: 0 };
+  else if (PTR.size === 2) { const [a, b] = [...PTR.values()]; pinch0 = { d: Math.hypot(a.x - b.x, a.y - b.y), z: CAM.z, mx: (a.x + b.x) / 2, my: (a.y + b.y) / 2 }; if (drag) drag.moved = 99; }
+});
+cv.addEventListener('pointermove', e => {
+  if (!PTR.has(e.pointerId)) {
+    if (e.pointerType === 'mouse' && STATE.mode === 'play') { const h = pickAt(e.clientX, e.clientY); if (h !== STATE.hover) { STATE.hover = h; cv.style.cursor = h >= 0 ? 'pointer' : ''; } }
+    return;
+  }
+  PTR.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  if (PTR.size === 2 && pinch0) {
+    const [a, b] = [...PTR.values()], d = Math.hypot(a.x - b.x, a.y - b.y);
+    zoomAt(pinch0.mx, pinch0.my, pinch0.z * d / Math.max(20, pinch0.d)); return;
+  }
+  if (drag && PTR.size === 1) {
+    const dx = e.clientX - drag.x, dy = e.clientY - drag.y; drag.moved = Math.max(drag.moved, Math.hypot(dx, dy));
+    if (drag.moved > 6) { cv.classList.add('drag'); CAM.tx = CAM.ty = null; CAM.x = drag.cx - dx / CAM.z; CAM.y = drag.cy - dy / CAM.z; }
+  }
+});
+function ptrUp(e) {
+  if (!PTR.has(e.pointerId)) return;
+  PTR.delete(e.pointerId); cv.classList.remove('drag');
+  if (PTR.size < 2) pinch0 = null;
+  if (drag && PTR.size === 0) {
+    if (drag.moved <= 6 && STATE.mode === 'play') { const id = pickAt(e.clientX, e.clientY); selectProp(id, false); }
+    drag = null;
+  }
+}
+cv.addEventListener('pointerup', ptrUp); cv.addEventListener('pointercancel', ptrUp);
+cv.addEventListener('wheel', e => { e.preventDefault(); zoomAt(e.clientX, e.clientY, CAM.z * Math.exp(-e.deltaY * (e.ctrlKey ? 0.01 : 0.0015))); }, { passive: false });
+document.addEventListener('gesturestart', e => e.preventDefault());
+document.addEventListener('dblclick', e => { if (e.target === cv) e.preventDefault(); });
+
+const KEYS = {};
+addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT') { if (e.key === 'Enter' && e.target.id === 'codeIn') $('joinBtn').click(); return; }
+  audioInit();
+  const k = e.key.toLowerCase(); KEYS[k] = true;
+  if (STATE.mode !== 'play') { if (k === 'escape') { if (!$('help').classList.contains('hidden')) closeHelp(); } return; }
+  if (k === 'escape') { if (!$('confirm').classList.contains('hidden')) closeConfirm(); else if (!$('menuScr').classList.contains('hidden')) closeMenu(); else if (!$('help').classList.contains('hidden')) closeHelp(); else if (STATE.sel >= 0) selectProp(-1); else openMenu(); e.preventDefault(); return; }
+  if (!$('menuScr').classList.contains('hidden') || !$('confirm').classList.contains('hidden') || !$('help').classList.contains('hidden')) return;
+  if (k === 'enter') { e.preventDefault(); endTurnClick(); }
+  else if (k === 'm') setSound(!AU.on);
+  else if (k === '=' || k === '+') zoomAt(VW / 2, VH / 2, CAM.z * 1.2);
+  else if (k === '-' || k === '_') zoomAt(VW / 2, VH / 2, CAM.z / 1.2);
+  else if (k === 'f') { fitCam(); }
+  else if (k === '1') setTab('mkt'); else if (k === '2') setTab('list'); else if (k === '3') setTab('mine'); else if (k === '4') setTab('news');
+});
+addEventListener('keyup', e => { KEYS[e.key.toLowerCase()] = false; });
+function keyPan(dt) {
+  if (STATE.mode !== 'play' && STATE.mode !== 'end') return;
+  const s = 520 * dt / CAM.z; let dx = 0, dy = 0;
+  if (KEYS.arrowleft || KEYS.a) dx -= s; if (KEYS.arrowright || KEYS.d) dx += s; if (KEYS.arrowup || KEYS.w) dy -= s; if (KEYS.arrowdown || KEYS.s) dy += s;
+  if (dx || dy) { CAM.tx = CAM.ty = null; CAM.x += dx; CAM.y += dy; }
+}
+
+/* ---- 70_net.js ---- */
+/* ================= networking (PeerJS, host authoritative, whole-state sync) ================= */
+const inArtifact = () => !!window.__ARTIFACT__ || /(^|\.)(claudeusercontent\.com|claude\.ai|claude\.site)$/.test(location.hostname);
+const PEER_SRC = ['https://unpkg.com/peerjs@1.5.5/dist/peerjs.min.js', 'https://cdn.jsdelivr.net/npm/peerjs@1.5.5/dist/peerjs.min.js'];
+const PEER_OPTS = QS.get('peerhost') ? { host: QS.get('peerhost'), port: +(QS.get('peerport') || 9000), path: QS.get('peerpath') || '/', secure: QS.get('peersecure') === '1' } : {};
+const CODE_CH = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+const genCode = () => Array.from({ length: 4 }, () => CODE_CH[Math.floor(Math.random() * CODE_CH.length)]).join('');
+const NET = { peer: null, code: '', ctl: null, gctl: null, guestName: '', hostName: '', ready: false, seen: 0, pingT: 0, ai: 0, opt: null, preset: 'pure', chunks: {} };
+function loadPeer() { return new Promise((res, rej) => { if (window.Peer) return res(); let i = 0; const next = () => { if (i >= PEER_SRC.length) return rej(new Error('load')); const sc = document.createElement('script'); sc.src = PEER_SRC[i++]; sc.onload = () => window.Peer ? res() : next(); sc.onerror = next; document.head.appendChild(sc); }; next(); }); }
+const linkUp = () => NETROLE === 'host' ? !!(NET.gctl && NET.gctl.open) : NETROLE === 'guest' ? !!(NET.ctl && NET.ctl.open) : false;
+const roundJSON = o => JSON.stringify(o, (k, v) => typeof v === 'number' && !Number.isInteger(v) ? +v.toPrecision(6) : v);
+let chunkId = 0;
+function sendRaw(c, o) {
+  try {
+    if (!c || !c.open) return;
+    const s = typeof o === 'string' ? o : roundJSON(o);
+    if (s.length <= 12000) { c.send(s); return; }
+    const id = ++chunkId, n = Math.ceil(s.length / 12000);
+    for (let i = 0; i < n; i++) c.send(JSON.stringify({ t: 'ch', id, i, n, d: s.slice(i * 12000, (i + 1) * 12000) }));
+  } catch (e) { }
+}
+function recvRaw(d, fn) {
+  let m; try { m = JSON.parse(d); } catch (e) { return; }
+  if (m.t === 'ch') {
+    const b = NET.chunks[m.id] || (NET.chunks[m.id] = { n: m.n, got: 0, parts: [] });
+    if (b.parts[m.i] == null) { b.parts[m.i] = m.d; b.got++; }
+    if (b.got === b.n) { delete NET.chunks[m.id]; try { m = JSON.parse(b.parts.join('')); } catch (e) { return; } } else return;
+  }
+  try { fn(m); } catch (e) { console.error(e); }
+}
+const netSend = o => sendRaw(NETROLE === 'host' ? NET.gctl : NET.ctl, o);
+function netLeave() {
+  try { netSend({ t: 'bye' }); } catch (e) { }
+  try { NET.peer && NET.peer.destroy(); } catch (e) { }
+  Object.assign(NET, { peer: null, code: '', ctl: null, gctl: null, guestName: '', ready: false, chunks: {} });
+  NETROLE = null;
+}
+addEventListener('pagehide', () => { try { netSend({ t: 'bye' }); } catch (e) { } });
+
+/* ---------- host ---------- */
+async function netHost() {
+  if (inArtifact()) { titleStatus('这个版本只能单人游玩，联机请到游戏厅网页版'); return; }
+  netLeave(); NETROLE = 'host'; showScreen('lobby'); STATE.mode = 'lobby'; lobbyUI('正在创建房间…');
+  try { await loadPeer(); } catch (e) { NETROLE = null; lobbyUI('联机组件加载失败，请检查网络'); return; }
+  const open = tries => {
+    const code = genCode(), peer = new Peer('housemogul-' + code, PEER_OPTS); NET.peer = peer; NET.code = code;
+    peer.on('open', () => lobbyUI(''));
+    peer.on('error', err => { if (err.type === 'unavailable-id' && tries < 4) { try { peer.destroy(); } catch (e) { } open(tries + 1); } else if (!linkUp()) lobbyUI('房间出错（' + err.type + '）'); });
+    peer.on('disconnected', () => { if (NET.peer === peer && !peer.destroyed) try { peer.reconnect(); } catch (e) { } });
+    peer.on('connection', conn => {
+      const rejoin = STATE.mode === 'play' && G && G.pl[1] && G.pl[1].gone;
+      if ((NET.gctl && NET.gctl.open) || (STATE.mode === 'play' && !rejoin) || STATE.mode === 'end') { conn.on('open', () => { conn.send(JSON.stringify({ t: 'busy' })); setTimeout(() => conn.close(), 300); }); return; }
+      NET.gctl = conn;
+      conn.on('open', () => { NET.seen = performance.now(); });
+      conn.on('data', d => recvRaw(d, hostRecv));
+      conn.on('close', () => { if (NET.gctl === conn) guestGone(); });
+    });
+  };
+  open(0);
+}
+function hostRecv(m) {
+  NET.seen = performance.now();
+  switch (m.t) {
+    case 'hello':
+      NET.guestName = (m.name || '玩家二').slice(0, 8);
+      if (STATE.mode === 'play' && G && G.pl[1] && G.pl[1].gone) { G.pl[1].gone = false; sendRaw(NET.gctl, { t: 'start', G, me: 1 }); toast(NET.guestName + ' 重新连上了', 'gold'); renderUI(); return; }
+      NET.ready = false; sendLobby(); lobbyUI(); sfx('ready'); return;
+    case 'bye': guestGone(); return;
+    case 'lready': NET.ready = !!m.v; sendLobby(); lobbyUI(); return;
+    case 'ping': return;
+    case 'act': {
+      if (!G || STATE.mode !== 'play') return;
+      const err = doAct(1, m.a, m.v);
+      if (err) { sendRaw(NET.gctl, { t: 'err', msg: err }); return; }
+      afterAct();
+      return;
+    }
+  }
+}
+function guestGone() {
+  NET.gctl = null; NET.guestName = ''; NET.ready = false;
+  if (STATE.mode === 'play' && G && G.pl[1]) { G.pl[1].gone = true; toast('对方断开了连接，你可以继续玩（对方能用同一个房间码重新加入）', 'bad'); maybeAdvance(); renderUI(); }
+  if (STATE.mode === 'lobby') lobbyUI();
+}
+function sendLobby() { sendRaw(NET.gctl, { t: 'lobby', ready: NET.ready, host: SET.name || '房主', code: NET.code, ai: NET.ai, opt: NET.opt, preset: NET.preset }); }
+function hostStart() {
+  if (!NET.gctl || !NET.gctl.open || !NET.ready) return;
+  const seed = (Math.random() * 1e9) | 0;
+  newGame(seed, [SET.name || '房主', NET.guestName || '玩家二'], NET.ai, NET.opt); G.preset = NET.preset;
+  sendRaw(NET.gctl, { t: 'start', G, me: 1 });
+  enterGame(0);
+}
+function sync() { if (NETROLE === 'host') sendRaw(NET.gctl, { t: 'st', G }); }
+function hostNetTick(dt) {
+  if (!NET.gctl || !NET.gctl.open) return;
+  if (performance.now() - NET.seen > 15000) { try { NET.gctl.close(); } catch (e) { } guestGone(); return; }
+  if ((NET.pingT -= dt) <= 0) { NET.pingT = 3; sendRaw(NET.gctl, { t: 'ping' }); }
+}
+
+/* ---------- guest ---------- */
+async function netJoin(code) {
+  if (inArtifact()) { titleStatus('这个版本只能单人游玩，联机请到游戏厅网页版'); return; }
+  code = (code || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+  if (code.length !== 4) { titleStatus('房间码是 4 位'); return; }
+  netLeave(); NETROLE = 'guest'; titleStatus('正在连接…');
+  try { await loadPeer(); } catch (e) { NETROLE = null; titleStatus('联机组件加载失败，请检查网络'); return; }
+  const peer = new Peer(PEER_OPTS); NET.peer = peer; NET.code = code;
+  peer.on('error', err => { if (!linkUp()) { titleStatus(err.type === 'peer-unavailable' ? '找不到这个房间' : '连接失败（' + err.type + '）'); NETROLE = null; } });
+  peer.on('open', () => {
+    const ctl = peer.connect('housemogul-' + code, { label: 'ctl', reliable: true, serialization: 'raw' });
+    NET.ctl = ctl;
+    ctl.on('open', () => { NET.seen = performance.now(); sendRaw(ctl, { t: 'hello', name: SET.name || '' }); titleStatus(''); if (STATE.mode !== 'play') { showScreen('lobby'); STATE.mode = 'lobby'; lobbyUI(); } });
+    ctl.on('data', d => recvRaw(d, guestRecv));
+    ctl.on('close', () => { if (NET.ctl === ctl) hostGone(); });
+  });
+}
+function hostGone() {
+  const was = STATE.mode; netLeave();
+  if (was === 'play' || was === 'lobby' || was === 'end') { toTitle(); titleStatus('房主断开了连接'); }
+}
+function guestRecv(m) {
+  NET.seen = performance.now();
+  switch (m.t) {
+    case 'busy': titleStatus('房间已满或已经开始'); netLeave(); toTitle(); return;
+    case 'bye': hostGone(); return;
+    case 'ping': sendRaw(NET.ctl, { t: 'ping' }); return;
+    case 'lobby': Object.assign(NET, { ready: m.ready, hostName: m.host, ai: m.ai, opt: m.opt, preset: m.preset }); lobbyUI(); return;
+    case 'start': G = m.G; STATE.lastSeq = G.seq; enterGame(m.me); return;
+    case 'st': if (G && (STATE.mode === 'play' || STATE.mode === 'end')) { const sel = STATE.sel; G = m.G; STATE.sel = sel; onState(); } return;
+    case 'err': toast(m.msg, 'bad'); sfx('err'); return;
+    case 'toLobby': return;
+  }
+}
+function guestNetTick(dt) {
+  if (!NET.ctl || !NET.ctl.open) return;
+  if (performance.now() - NET.seen > 15000) hostGone();
+}
+
+/* ---- 80_ui.js ---- */
+/* ================= UI (DOM) ================= */
+const SET = Object.assign({ name: '', ai: 0, preset: 'pure', opt: Object.assign({}, PRESET.pure) }, LS.get('set', {}));
+const saveSet = () => LS.set('set', SET);
+const HUB = /\/housemogul\/(index\.html)?$/.test(location.pathname) && !inArtifact();
+const SCREENS = ['title', 'lobby', 'help', 'menuScr', 'endScr', 'confirm'];
+function showScreen(id) { for (const s of SCREENS) $(s).classList.toggle('hidden', s !== id); }
+function titleStatus(t) { $('titleStatus').textContent = t || ''; }
+function toast(txt, cls) {
+  const d = document.createElement('div'); d.className = 'toast ' + (cls || ''); d.textContent = txt; $('toasts').appendChild(d);
+  while ($('toasts').children.length > 4) $('toasts').firstChild.remove();
+  setTimeout(() => d.remove(), 3800);
+}
+const optOf = preset => preset === 'custom' ? Object.assign({}, SET.opt) : Object.assign({}, PRESET[preset]);
+const presetName = (pr, opt) => pr === 'pure' ? '纯粹' : pr === 'full' ? '完整' : '自定义（' + (OPTS.filter(o => opt[o.k]).map(o => o.n).join('、') || '全关') + '）';
+
+/* ---------- title ---------- */
+function renderModeUI(segId, boxId, preset, opt, ro) {
+  [...$(segId).children].forEach(b => b.classList.toggle('sel', b.dataset.m === preset));
+  const box = $(boxId); box.classList.toggle('ro', !!ro);
+  box.innerHTML = preset === 'custom' ? OPTS.map(o => '<button data-k="' + o.k + '" class="' + (opt[o.k] ? 'on' : '') + '" title="' + esc(o.d) + '"><i>' + (opt[o.k] ? '✓' : '') + '</i>' + o.n + '</button>').join('')
+    : '<div class="modeDesc" style="grid-column:1/-1">' + (preset === 'pure' ? '只有房价涨跌、挂牌和买卖：看准时机低买高卖，攒钱买豪宅。' : '全部玩法：按揭贷款、房租物业、装修、估价误差与验房、新闻传闻、交易手续费。') + '</div>';
+}
+function bestKey() { return 'best_' + (SET.preset === 'custom' ? 'c' + OPTS.map(o => SET.opt[o.k] ? 1 : 0).join('') : SET.preset) + '_' + SET.ai; }
+function titleUI() {
+  $('nameIn').value = SET.name;
+  [...$('aiSeg').children].forEach(b => b.classList.toggle('sel', +b.dataset.ai === SET.ai));
+  renderModeUI('modeSeg', 'optBox', SET.preset, SET.opt);
+  const sv = LS.get('save', null);
+  $('contBtn').classList.toggle('hidden', !sv);
+  if (sv) $('contBtn').textContent = '继续（' + monthLabel(sv.month) + '）';
+  const b = LS.get(bestKey(), null);
+  $('bestTxt').textContent = b ? '这个玩法的最快纪录：' + b + ' 个月买下豪宅' : '';
+  $('hubBtn').classList.toggle('hidden', !HUB);
+  if (inArtifact()) { $('hostBtn').disabled = $('joinBtn').disabled = true; $('codeIn').disabled = true; titleStatus('这个版本只能单人游玩，联机请到游戏厅网页版'); }
+}
+$('nameIn').addEventListener('input', e => { SET.name = e.target.value.trim().slice(0, 8); saveSet(); });
+$('aiSeg').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; SET.ai = +b.dataset.ai; saveSet(); sfx('click'); titleUI(); });
+$('modeSeg').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; SET.preset = b.dataset.m; saveSet(); sfx('click'); titleUI(); });
+$('optBox').addEventListener('click', e => { const b = e.target.closest('button'); if (!b || SET.preset !== 'custom') return; SET.opt[b.dataset.k] = SET.opt[b.dataset.k] ? 0 : 1; saveSet(); sfx('click'); titleUI(); });
+$('newBtn').onclick = () => { audioInit(); sfx('click'); netLeave(); NETROLE = 'solo'; newGame((Math.random() * 1e9) | 0, [SET.name || '我'], SET.ai, optOf(SET.preset)); G.preset = SET.preset; G.bestKey = bestKey(); enterGame(0); saveGame(); };
+$('contBtn').onclick = () => { audioInit(); const sv = LS.get('save', null); if (!sv) return; netLeave(); NETROLE = 'solo'; G = sv; STATE.lastSeq = G.seq; enterGame(0); };
+$('hostBtn').onclick = () => { audioInit(); sfx('click'); NET.ai = SET.ai; NET.preset = SET.preset; NET.opt = optOf(SET.preset); netHost(); };
+$('joinBtn').onclick = () => { audioInit(); sfx('click'); netJoin($('codeIn').value); };
+$('helpBtn').onclick = () => openHelp();
+$('hubBtn').onclick = () => { location.href = '../'; };
+
+/* ---------- lobby ---------- */
+function lobbyUI(st) {
+  if (st != null) $('lStatus').textContent = st;
+  const host = NETROLE === 'host';
+  $('lCode').textContent = NET.code || '····';
+  $('lP0').textContent = host ? (SET.name || '房主') : (NET.hostName || '房主');
+  $('lP1').textContent = host ? (NET.guestName || '等待加入…') : (SET.name || '玩家二');
+  $('lP1s').textContent = (host ? NET.guestName : 1) ? (NET.ready ? '已准备' : '未准备') : '　';
+  [...$('lAiSeg').children].forEach(b => { b.classList.toggle('sel', +b.dataset.ai === (+NET.ai || 0)); b.disabled = !host; });
+  [...$('lModeSeg').children].forEach(b => { b.disabled = !host; });
+  renderModeUI('lModeSeg', 'lOptBox', NET.preset || 'pure', NET.opt || PRESET.pure, !host);
+  $('lReady').classList.toggle('hidden', host); $('lStart').classList.toggle('hidden', !host);
+  $('lReady').textContent = NET.ready ? '取消准备' : '准备'; $('lReady').classList.toggle('green', !!NET.ready);
+  $('lStart').disabled = !(host && NET.gctl && NET.gctl.open && NET.ready);
+  if (host && !st && NET.peer && NET.peer.open) $('lStatus').textContent = NET.guestName ? (NET.ready ? '对方已准备，可以开始' : '等对方点准备') : '把房间码发给朋友';
+}
+function hostLobbyChanged() { if (NETROLE === 'host') { NET.ready = false; sendLobby(); lobbyUI(); } }
+$('lAiSeg').addEventListener('click', e => { const b = e.target.closest('button'); if (!b || NETROLE !== 'host') return; NET.ai = +b.dataset.ai; SET.ai = NET.ai; saveSet(); hostLobbyChanged(); });
+$('lModeSeg').addEventListener('click', e => { const b = e.target.closest('button'); if (!b || NETROLE !== 'host') return; NET.preset = b.dataset.m; SET.preset = NET.preset; NET.opt = optOf(NET.preset); saveSet(); hostLobbyChanged(); });
+$('lOptBox').addEventListener('click', e => { const b = e.target.closest('button'); if (!b || NETROLE !== 'host' || NET.preset !== 'custom') return; SET.opt[b.dataset.k] = SET.opt[b.dataset.k] ? 0 : 1; NET.opt = optOf('custom'); saveSet(); hostLobbyChanged(); });
+$('lReady').onclick = () => { NET.ready = !NET.ready; sendRaw(NET.ctl, { t: 'lready', v: NET.ready }); sfx('ready'); lobbyUI(); };
+$('lStart').onclick = () => hostStart();
+$('lLeave').onclick = () => { netLeave(); toTitle(); };
+
+/* ---------- screens ---------- */
+function toTitle() {
+  STATE.mode = 'title'; STATE.sel = -1; RND.hiD = -1;
+  $('hud').classList.add('hidden'); showScreen('title'); titleUI();
+  if (!G) newGame(12345, ['我'], 0, PRESET.full); // backdrop city
+  fitCam(); CAM.z *= 1.15;
+}
+function enterGame(me) {
+  ME = me; STATE.mode = 'play'; STATE.sel = -1; STATE.lastSeq = G.seq; RND.hiD = -1; RND.trees = null; for (const k in _dc) delete _dc[k];
+  showScreen(null); $('hud').classList.remove('hidden');
+  STATE.tab = innerWidth <= 760 || PHONE.matches ? 'list' : 'list'; $('side').classList.remove('open');
+  fitCam(); renderUI(); sfx('month');
+  if (G.over) showEnd();
+}
+function openMenu() { $('menuScr').classList.remove('hidden'); $('mHub').classList.toggle('hidden', !HUB); $('mStatus').textContent = NETROLE === 'solo' ? '单人游戏每个月自动存档' : ''; delete $('mTitle').dataset.arm; $('mTitle').textContent = '返回标题'; delete $('mHub').dataset.arm; $('mHub').textContent = '返回游戏厅'; }
+function closeMenu() { $('menuScr').classList.add('hidden'); }
+function openHelp() { $('help').classList.remove('hidden'); }
+function closeHelp() { $('help').classList.add('hidden'); }
+let confirmFn = null;
+function askConfirm(html, yes, fn) { $('cTxt').innerHTML = html; $('cYes').textContent = yes || '确定'; confirmFn = fn; $('confirm').classList.remove('hidden'); }
+function closeConfirm() { $('confirm').classList.add('hidden'); confirmFn = null; }
+$('cNo').onclick = closeConfirm; $('cYes').onclick = () => { const f = confirmFn; closeConfirm(); f && f(); };
+$('menuBtn').onclick = () => { sfx('click'); openMenu(); };
+$('mResume').onclick = closeMenu; $('mHelp').onclick = openHelp; $('helpClose').onclick = closeHelp;
+$('mSound').onclick = () => setSound(!AU.on); $('sndBtn').onclick = () => { audioInit(); setSound(!AU.on); };
+function armTwice(btn, fn) { if (NETROLE === 'solo' || btn.dataset.arm) { fn(); return; } btn.dataset.arm = 1; btn.textContent = '再点一次确认'; }
+$('mTitle').onclick = () => armTwice($('mTitle'), () => { if (NETROLE === 'solo') saveGame(); netLeave(); closeMenu(); toTitle(); });
+$('mHub').onclick = () => armTwice($('mHub'), () => { if (NETROLE === 'solo') saveGame(); netLeave(); location.href = '../'; });
+$('eAgain').onclick = () => {
+  if (NETROLE === 'solo') { $('newBtn').onclick(); return; }
+  if (NETROLE === 'host' && NET.gctl && NET.gctl.open) { newGame((Math.random() * 1e9) | 0, [SET.name || '房主', NET.guestName || '玩家二'], NET.ai, NET.opt); G.preset = NET.preset; sendRaw(NET.gctl, { t: 'start', G, me: 1 }); enterGame(0); return; }
+  if (NETROLE === 'guest') { toast('等房主开新的一局', ''); return; }
+  netLeave(); toTitle();
+};
+$('eTitleBtn').onclick = () => { netLeave(); toTitle(); };
+function saveGame() { if (NETROLE === 'solo' && G) { if (G.over) LS.del('save'); else LS.set('save', G); } }
+
+/* ---------- actions ---------- */
+function act(a, v) {
+  audioInit();
+  if (NETROLE === 'guest') { netSend({ t: 'act', a, v }); return; }
+  const err = doAct(ME, a, v);
+  if (err) { toast(err, 'bad'); sfx('err'); return; }
+  afterAct();
+}
+function afterAct() { maybeAdvance(); onState(); sync(); saveGame(); }
+function maybeAdvance() {
+  if (NETROLE === 'guest' || !G || G.over) return;
+  if (humansReady()) endMonth();
+}
+function endTurnClick() {
+  if (!G || G.over || STATE.mode !== 'play') return;
+  const me = G.pl[ME]; if (!me.alive) return;
+  sfx('click');
+  act('ready', { on: !me.ready });
+}
+$('endBtn').onclick = endTurnClick;
+function onState() { processEvents(); renderUI(); if (G.over && STATE.mode === 'play') setTimeout(showEnd, 900); }
+
+function processEvents() {
+  const evs = G.ev.filter(e => e.s > STATE.lastSeq); STATE.lastSeq = G.seq;
+  let month = false;
+  for (const e of evs) {
+    const mine = e.pi === ME, other = e.pi >= 0 && e.pi !== ME;
+    switch (e.k) {
+      case 'buy': if (mine) { sfx('buy'); popMoney(e.id, '-' + fmtM(e.amt), '#ffd27a'); } else { toast(e.txt, ''); popMoney(e.id, '已售出', '#ffffff'); } break;
+      case 'sell': if (mine) { sfx(e.amt >= 0 ? 'sell' : 'loss', e.amt > 50); popMoney(e.id, (e.amt >= 0 ? '+' : '') + fmtM(e.amt), e.amt >= 0 ? '#ff7a6e' : '#4fe09a'); toast(e.txt, e.amt >= 0 ? 'good' : 'bad'); } else if (other) toast(e.txt, ''); break;
+      case 'demo': if (mine) { sfx('sell', true); popMoney(e.id, '拆迁 +' + fmtM(e.amt), '#ffd27a'); } toast(e.txt, 'gold'); break;
+      case 'forced': if (mine) { sfx('bad'); toast(e.txt, 'bad'); } else toast(e.txt, ''); break;
+      case 'reno': if (mine) sfx('reno'); break;
+      case 'renodone': if (mine) { toast(e.txt, 'good'); sfx('good'); } break;
+      case 'inspect': if (mine) sfx('insp'); break;
+      case 'repay': if (mine) { sfx('good'); toast(e.txt, ''); } break;
+      case 'bankrupt': toast(e.txt, 'bad'); sfx('bad'); break;
+      case 'win': break;
+      case 'month': month = true; break;
+    }
+  }
+  if (month) {
+    sfx('month'); const fx = $('monthFx'); $('monthFxT').textContent = monthLabel(G.month); fx.classList.remove('show'); void fx.offsetWidth; fx.classList.add('show');
+    const nws = evs.filter(e => e.k === 'news');
+    if (nws.length) setTimeout(() => { sfx(nws.some(e => e.amt > 0) ? 'news' : 'news'); for (const e of nws) toast(e.txt, e.amt > 0 ? 'good' : e.amt < 0 ? 'bad' : ''); }, 700);
+    const me = G.pl[ME];
+    if (me && me.flow && (OP('rent') || OP('loan')) && Math.abs(me.flow.net) > 0.005) { const f = me.flow, txt = '月结：' + [OP('rent') && f.rent > 0.004 ? '房租 ' + fmtM(f.rent, 1) : '', OP('rent') && f.up > 0.004 ? '物业 ' + fmtM(-f.up) : '', OP('loan') && f.int > 0.004 ? '利息 ' + fmtM(-f.int) : ''].filter(Boolean).join('，'); setTimeout(() => toast(txt, ''), 1100); }
+  }
+}
+
+/* ---------- selection & tabs ---------- */
+function selectProp(id, focus) {
+  if (id === STATE.sel && !focus) id = -1;
+  STATE.sel = id; RND.hiD = -1;
+  if (id >= 0) { sfx('sel'); $('side').classList.remove('open'); if (focus) { const p = G.props[id]; focusTile(p.x + p.w / 2, p.y + p.h / 2, Math.max(CAM.z, 1)); } }
+  renderUI();
+}
+function setTab(t) {
+  const narrow = innerWidth <= 760 || PHONE.matches;
+  if (narrow) { const open = $('side').classList.contains('open'); if (open && STATE.tab === t) { $('side').classList.remove('open'); renderUI(); return; } $('side').classList.add('open'); STATE.sel = -1; }
+  STATE.tab = t; sfx('click'); renderUI();
+}
+$('tabs').addEventListener('click', e => { const b = e.target.closest('button'); if (b) setTab(b.dataset.t); });
+$('phoneTabs').addEventListener('click', e => { const b = e.target.closest('button'); if (b) setTab(b.dataset.t); });
+$('news').onclick = () => setTab('news');
+$('tGoal').onclick = () => selectProp(G.mansion, true);
+$('tabBody').addEventListener('click', e => {
+  const it = e.target.closest('[data-id]'); if (it) { selectProp(+it.dataset.id, true); return; }
+  const d = e.target.closest('[data-d]'); if (d) { const i = +d.dataset.d; RND.hiD = RND.hiD === i ? -1 : i; STATE.sel = -1; if (RND.hiD >= 0) { const c = distCenter(i); focusTile(c[0], c[1], Math.max(CAM.z, 0.8)); } sfx('sel'); renderUI(); }
+});
+
+/* ---------- charts ---------- */
+function spark(cvs, data, col) {
+  const r = Math.min(devicePixelRatio || 1, 2), w = cvs.clientWidth || 72, h = cvs.clientHeight || 26; cvs.width = w * r; cvs.height = h * r;
+  const c = cvs.getContext('2d'); c.scale(r, r);
+  if (data.length < 2) return;
+  let lo = Math.min(...data), hi = Math.max(...data); if (hi - lo < 1e-9) { hi += 1; lo -= 1; }
+  c.strokeStyle = col; c.lineWidth = 1.5; c.lineJoin = 'round'; c.beginPath();
+  data.forEach((v, i) => { const x = 1 + i / (data.length - 1) * (w - 2), y = h - 2 - (v - lo) / (hi - lo) * (h - 4); i ? c.lineTo(x, y) : c.moveTo(x, y); }); c.stroke();
+}
+function bigChart(cvs, series, opt) {
+  opt = opt || {};
+  const r = Math.min(devicePixelRatio || 1, 2), w = cvs.clientWidth || 300, h = cvs.clientHeight || 96; cvs.width = w * r; cvs.height = h * r;
+  const c = cvs.getContext('2d'); c.scale(r, r);
+  const all = series.flatMap(s => s.data).concat(opt.lines ? opt.lines.map(l => l.v) : []);
+  if (!all.length) return;
+  let lo = Math.min(...all), hi = Math.max(...all); const pad = (hi - lo) * 0.12 || hi * 0.05 || 1; lo -= pad; hi += pad;
+  if (opt.zero) lo = Math.min(lo, 0);
+  const L = 4, R = 46, T = 6, B = 14, n = Math.max(...series.map(s => s.data.length));
+  const X = i => L + i / Math.max(1, n - 1) * (w - L - R), Y = v => T + (1 - (v - lo) / (hi - lo)) * (h - T - B);
+  c.font = '10px Oswald,sans-serif'; c.fillStyle = 'rgba(255,255,255,.45)'; c.textAlign = 'left'; c.textBaseline = 'middle';
+  for (let k = 0; k <= 2; k++) { const v = lo + (hi - lo) * (0.15 + k * 0.35), y = Y(v); c.strokeStyle = 'rgba(255,255,255,.07)'; c.beginPath(); c.moveTo(L, y); c.lineTo(w - R, y); c.stroke(); c.fillText(fmtM(v).replace('¥', ''), w - R + 4, y); }
+  if (opt.lines) for (const l of opt.lines) { const y = Y(l.v); c.setLineDash([4, 3]); c.strokeStyle = l.col; c.lineWidth = 1.2; c.beginPath(); c.moveTo(L, y); c.lineTo(w - R, y); c.stroke(); c.setLineDash([]); c.fillStyle = l.col; c.fillText(l.n, L + 2, y - 7); }
+  for (const s of series) {
+    if (s.data.length < 2) continue;
+    const off = n - s.data.length;
+    c.strokeStyle = s.col; c.lineWidth = 2; c.lineJoin = 'round'; c.beginPath();
+    s.data.forEach((v, i) => { const x = X(i + off), y = Y(v); i ? c.lineTo(x, y) : c.moveTo(x, y); }); c.stroke();
+    if (s.fill) { c.lineTo(X(n - 1), h - B); c.lineTo(X(off), h - B); c.closePath(); const g = c.createLinearGradient(0, T, 0, h); g.addColorStop(0, s.fill); g.addColorStop(1, 'rgba(0,0,0,0)'); c.fillStyle = g; c.fill(); }
+    const lv = s.data[s.data.length - 1]; c.fillStyle = s.col; c.beginPath(); c.arc(X(n - 1), Y(lv), 3, 0, 6.283); c.fill();
+  }
+  c.fillStyle = 'rgba(255,255,255,.4)'; c.textAlign = 'left'; c.fillText(opt.from || '', L, h - 6); c.textAlign = 'right'; c.fillText('本月', w - R, h - 6);
+}
+
+/* ---------- main HUD render ---------- */
+function flashStat(id, v) { const el = $(id); if (el.dataset.v !== String(v)) { if (el.dataset.v != null) { el.parentNode.classList.remove('flash'); void el.offsetWidth; el.parentNode.classList.add('flash'); } el.dataset.v = String(v); } }
+function renderUI() {
+  if (!G || STATE.mode === 'title') return;
+  const me = G.pl[ME], mp = mansionPrice();
+  $('tM').textContent = monthLabel(G.month);
+  $('tMs').textContent = '第 ' + (G.month + 1) + ' / ' + BAL.maxMonth + ' 月 · ' + REGLABEL();
+  $('tCash').textContent = fmtM(me.cash); flashStat('tCash', Math.round(me.cash * 10));
+  $('tCash').className = me.cash < 0 ? 'down' : '';
+  $('tNet').textContent = fmtM(netWorth(ME));
+  const dsm = document.querySelector('.stat.debt small');
+  if (OP('loan')) { dsm.textContent = '贷款 · 月利率'; $('tDebt').textContent = fmtM(debtOf(ME)) + ' · ' + (G.rate * 100).toFixed(2) + '%'; }
+  else { dsm.textContent = '持有'; $('tDebt').textContent = ownedBy(ME).length + ' 套'; }
+  $('tGoalP').textContent = fmtM(mp);
+  $('tBars').innerHTML = G.pl.map(pl => { const v = pl.alive ? clamp(netWorth(pl.i) / mp, 0, 1) : 0; return '<div class="bar" title="' + esc(pl.name) + ' 净资产 ' + Math.round(v * 100) + '%"><i class="p' + pl.i + '" style="width:' + (v * 100).toFixed(1) + '%"></i></div>'; }).join('');
+  // tabs
+  const listed = G.props.filter(p => p.list && p.owner === -1), mine = ownedBy(ME);
+  $('cList').textContent = listed.length; $('cMine').textContent = mine.length || ''; $('pcList').textContent = listed.length; $('pcMine').textContent = mine.length || '';
+  for (const b of $('tabs').children) b.classList.toggle('sel', b.dataset.t === STATE.tab);
+  const narrow = innerWidth <= 760 || PHONE.matches;
+  for (const b of $('phoneTabs').children) b.classList.toggle('sel', b.dataset.t === STATE.tab && $('side').classList.contains('open'));
+  $('tabs').querySelector('[data-t="news"]').classList.toggle('hidden', !OP('news') && !narrow && false);
+  renderTab();
+  renderDetail();
+  // news ticker
+  const nl = G.news.slice(-3).reverse();
+  $('news').innerHTML = nl.map(n => '<div class="nl ' + n.tone + '"><i>' + (Math.floor(n.m / 12) + 1) + '年' + (n.m % 12 + 1) + '月</i><b>' + esc(n.tag) + '</b>' + esc(n.txt) + '</div>').join('');
+  // end button
+  const eb = $('endBtn'), others = G.pl.filter(p => p.kind === 'human' && p.i !== ME && p.alive && !p.gone);
+  if (!me.alive) { eb.disabled = true; eb.className = 'wait'; eb.innerHTML = '已出局<small>看对手继续</small>'; }
+  else if (me.ready) { eb.disabled = false; eb.className = 'wait'; eb.innerHTML = '等待 ' + esc(others.map(p => p.name).join('、')) + '…<small>点击取消</small>'; }
+  else { eb.disabled = false; eb.className = 'primary'; const w = others.filter(p => p.ready).length; eb.innerHTML = (G.month + 1 >= BAL.maxMonth ? '最后一个月 ▸' : '下个月 ▸') + '<small>' + (others.length ? (w ? '对方已准备' : '两人都点了才翻月') : (narrow ? '' : '回车')) + '</small>'; }
+}
+const REGLABEL = () => { const h = heat(); return h > 0.03 ? '楼市火热' : h > 0.008 ? '楼市回暖' : h < -0.03 ? '楼市冰冷' : h < -0.008 ? '楼市降温' : '楼市平稳'; };
+function ownerName(o) { return o < 0 ? '业主' : o === ME ? '你' : G.pl[o].name; }
+function itemHTML(p, right, sub) {
+  const D = DISTS[p.d];
+  return '<div class="item' + (p.id === STATE.sel ? ' sel' : '') + '" data-id="' + p.id + '"><span class="sw" style="background:' + D.col + '"></span><div class="main"><div class="nm">' + esc(propName(p)) + '</div><div class="ds">' + sub + '</div></div><div class="rt">' + right + '</div></div>';
+}
+function renderTab() {
+  const tb = $('tabBody'), t = STATE.tab; let h = '';
+  if (t === 'mkt') {
+    const ht = heat(), hv = clamp((ht + 0.06) / 0.12, 0, 1);
+    h += '<div class="mktHead"><div class="heat"><span>冷</span><div class="bar"><i style="width:' + (hv * 100).toFixed(0) + '%"></i></div><span>热</span></div><div>' + REGLABEL() + '，近三个月均价 <b class="' + udc(ht) + '">' + pct(Math.exp(ht) - 1) + '</b>' + (OP('loan') ? '　房贷月利率 <b class="gold">' + (G.rate * 100).toFixed(2) + '%</b>' : '') + '</div></div>';
+    DISTS.forEach((D, i) => {
+      const s = G.d[i], hs = s.hist, c3 = hs.length > 3 ? hs[hs.length - 1] / hs[hs.length - 4] - 1 : 0, c12 = hs.length > 12 ? hs[hs.length - 1] / hs[hs.length - 13] - 1 : 0;
+      h += '<div class="item' + (RND.hiD === i ? ' sel' : '') + '" data-d="' + i + '"><span class="sw" style="background:' + D.col + '"></span><div class="main"><div class="nm">' + D.n + ' <span class="num" style="font-weight:400;color:var(--sub);font-size:13px">' + Math.round(s.idx * 100) + '</span></div><div class="ds">' + D.hint + '</div></div><canvas class="spark" data-sp="' + i + '"></canvas><div class="rt"><span class="' + udc(c3) + '">' + pct(c3) + '</span><small class="' + udc(c12) + '">年 ' + pct(c12, 0) + '</small></div></div>';
+    });
+    h += '<div class="secT">点一个区，地图上会高亮它</div>';
+  } else if (t === 'list') {
+    const ls = G.props.filter(p => p.list && p.owner === -1);
+    const man = ls.find(p => p.kind === 'mansion'), rest = ls.filter(p => p.kind !== 'mansion').sort((a, b) => (b.list.tag === 'hot') - (a.list.tag === 'hot') || a.list.ask / estOf(a) - b.list.ask / estOf(b));
+    if (man) h += itemHTML(man, '<span class="gold">' + fmtM(man.list.ask) + '</span><small class="sub">全款</small>', '<span class="tagx goal">目标</span> 买下就赢');
+    h += '<div class="secT">挂牌中 ' + rest.length + ' 套 · ' + (OP('insp') ? '按挂牌价 / 中介估价排序' : '按挂牌价 / 参考价排序') + '</div>';
+    if (!rest.length) h += '<div class="empty">这个月没有挂牌房源</div>';
+    for (const p of rest) {
+      const e = knows(p, ME) ? val(p) : estOf(p), r = p.list.ask / e - 1, L = p.list;
+      const tags = (L.tag === 'hot' ? '<span class="tagx hot">急售</span>' : '') + (L.age === 0 ? '<span class="tagx new">新</span>' : L.cut ? '<span class="tagx cut">降价</span>' : '') + (p.demo ? '<span class="tagx rumor">拆迁传闻</span>' : '');
+      h += itemHTML(p, fmtM(L.ask) + '<small style="color:' + (r < -0.04 ? 'var(--gold)' : 'var(--sub)') + '">' + (knows(p, ME) ? '真实 ' : OP('insp') ? '估 ' : '参考 ') + pct(r, 0) + '</small>', KINDS[p.kind].n + ' · ' + DISTS[p.d].n + ' · 剩 ' + L.left + ' 月' + tags);
+    }
+  } else if (t === 'mine') {
+    const mine = ownedBy(ME), me = G.pl[ME];
+    if (!mine.length) h += '<div class="empty">你还没有房产。<br>去「房源」里挑一套挂牌价划算的买下来吧。</div>';
+    else {
+      let mv = 0, ln = 0; for (const p of mine) { mv += val(p); ln += p.loan; }
+      const f = monthlyFlow(ME);
+      h += '<div class="mktHead"><div>持有 <b>' + mine.length + '</b> 套 · 市值 <b class="num">' + fmtM(mv) + '</b>' + (OP('loan') ? ' · 贷款 <b class="num">' + fmtM(ln) + '</b>' : '') + '</div>' + (OP('rent') || OP('loan') ? '<div>每月现金流 <b class="num ' + udc(f.net) + '">' + fmtM(f.net, 1) + '</b></div>' : '') + '</div>';
+      for (const p of mine.sort((a, b) => (b.offer / b.paid) - (a.offer / a.paid))) {
+        const r = p.offer * (1 - sellFee()) / p.paid - 1;
+        h += itemHTML(p, p.reno ? '<span class="gold">装修中</span><small class="sub">还剩 ' + p.reno + ' 月</small>' : fmtM(p.offer) + '<small class="' + udc(r) + '">' + pct(r) + '</small>', KINDS[p.kind].n + ' · 买入 ' + fmtM(p.paid) + (p.offerHot ? '<span class="tagx hot">抢手</span>' : '') + (p.loan ? ' · 按揭' : ''));
+      }
+    }
+    if (me.st.sells || me.st.profit) h += '<div class="secT">累计卖出 ' + me.st.sells + ' 套，盈亏 <span class="' + udc(me.st.profit) + '">' + fmtM(me.st.profit, 1) + '</span></div>';
+  } else if (t === 'news') {
+    const ns = G.news.slice().reverse();
+    if (!OP('news')) h += '<div class="empty" style="padding:6px">本局没开「新闻与传闻」，这里只有楼市大事。</div>';
+    for (const n of ns) h += '<div class="item" style="cursor:default;align-items:flex-start"><span class="num sub" style="font-size:12px;width:46px;flex:none">' + (Math.floor(n.m / 12) + 1) + '年' + (n.m % 12 + 1) + '月</span><div class="main"><div style="font-size:13.5px;line-height:1.5;white-space:normal"><b class="' + (n.tone === 'good' ? 'up' : n.tone === 'bad' ? 'down' : n.tone === 'rumor' ? '' : 'gold') + '" style="' + (n.tone === 'rumor' ? 'color:#c9a4ff' : '') + '">' + esc(n.tag) + '</b> ' + esc(n.txt) + '</div></div></div>';
+  }
+  const st = tb.scrollTop; tb.innerHTML = h; tb.scrollTop = st;
+  tb.querySelectorAll('canvas[data-sp]').forEach(c => { const i = +c.dataset.sp; spark(c, G.d[i].hist.slice(-24), DISTS[i].col); });
+}
+
+function renderDetail() {
+  const el = $('detail'), id = STATE.sel;
+  if (id < 0 || !G.props[id]) { el.classList.add('hidden'); return; }
+  el.classList.remove('hidden');
+  const p = G.props[id], K = KINDS[p.kind], D = DISTS[p.d], v = val(p), me = G.pl[ME], man = p.kind === 'mansion';
+  const listed = p.list && p.owner === -1, mine = p.owner === ME, kn = knows(p, ME) || !OP('insp');
+  let h = '<h2><span class="sw" style="background:' + D.col + ';width:12px;height:12px"></span>' + esc(propName(p)) + '<button class="x ghost" id="dClose">✕</button></h2>';
+  h += '<div class="meta">' + K.n + ' · ' + D.n + ' · ' + (man ? '庄园' : COND[p.cond].n) + (p.owner >= 0 ? ' · <b style="color:' + PCOL[p.owner] + '">' + esc(ownerName(p.owner)) + '的房</b>' : '') + (p.demo ? ' · <span class="tagx rumor">拆迁传闻</span>' : '') + '</div>';
+  h += '<canvas id="dChart"></canvas>';
+  const lines = [];
+  if (man) {
+    const need = p.list ? p.list.ask * (1 + buyFee()) : v;
+    h += '<div class="kv"><span>价格</span><span class="big gold">' + fmtM(p.list ? p.list.ask : v) + '</span><span>你的现金</span><span>' + fmtM(me.cash) + '</span><span>你的净资产</span><span>' + fmtM(netWorth(ME)) + '</span></div>';
+    if (p.owner >= 0) h += '<div class="note good">' + esc(ownerName(p.owner)) + ' 已经买下了终极豪宅。</div>';
+    else {
+      h += '<div class="note">终极目标：<b>全款</b>买下就赢' + (G.pl.length > 1 ? '，谁先买下谁赢' : '') + '。价格跟着半山的房价涨跌。' + (OP('fee') ? '另收 2% 手续费。' : '') + '</div>';
+      h += '<div class="acts"><button id="dBuyMan" class="primary"' + (me.cash >= need && me.alive ? '' : ' disabled') + '>全款买下 ' + fmtM(need) + '<small>' + (me.cash >= need ? '现在就能买！' : '还差 ' + fmtM(need - me.cash) + ' 现金') + '</small></button></div>';
+    }
+    lines.push();
+  } else if (listed) {
+    const L = p.list, e = kn ? v : estOf(p), r = L.ask / e - 1;
+    h += '<div class="kv"><span>挂牌价</span><span class="big">' + fmtM(L.ask) + '</span>';
+    h += '<span>' + (knows(p, ME) ? '真实价值（已验房）' : OP('insp') ? '中介估价（±10%）' : '参考价') + '</span><span style="color:' + (r < -0.04 ? 'var(--gold)' : 'inherit') + '">' + fmtM(e) + ' <small class="sub">' + (r <= 0 ? '低 ' : '高 ') + Math.abs(r * 100).toFixed(0) + '%</small></span>';
+    h += '<span>挂牌</span><span>' + (L.age === 0 ? '本月新挂' : '已挂 ' + L.age + ' 个月') + '，还剩 ' + L.left + ' 月</span></div>';
+    if (L.tag === 'hot') h += '<div class="note warn">业主说急着用钱，想尽快出手。</div>';
+    if (L.cut) h += '<div class="note">卖了几个月没卖掉，这个月降价了。</div>';
+    if (knows(p, ME)) { const [qn, qc] = QUAL(p.q); h += '<div class="note insp">验房结果：房屋质量<b>' + qn + '</b>，真实价值 ' + fmtM(v) + '。</div>'; }
+    lines.push({ v: L.ask, col: '#ffd27a', n: '挂牌' });
+    const fc = buyCost(L.ask, false), lc = buyCost(L.ask, true);
+    h += '<div class="acts">';
+    if (OP('insp') && !knows(p, ME)) h += '<button id="dInsp">验房 ' + fmtM(inspCost(p)) + '<small>看到真实价值和房屋质量</small></button>';
+    h += '<div class="row"><button id="dBuy" class="primary"' + (me.cash >= fc && me.alive ? '' : ' disabled') + '>全款买入<small>' + fmtM(fc) + (OP('fee') ? ' 含手续费' : '') + '</small></button>';
+    if (OP('loan')) h += '<button id="dLoan" class="primary"' + (me.cash >= lc && me.alive ? '' : ' disabled') + '>按揭买入<small>首付 ' + fmtM(lc) + '</small></button>';
+    h += '</div>';
+    if (OP('loan')) h += '<div class="sub" style="font-size:12px">按揭：贷款 ' + fmtM(L.ask * (1 - BAL.down)) + '，每月利息约 ' + fmtM(L.ask * (1 - BAL.down) * G.rate) + (OP('rent') ? '，月租约 ' + fmtM(v * BAL.rent) : '') + '</div>';
+    else if (OP('rent')) h += '<div class="sub" style="font-size:12px">月租约 ' + fmtM(v * BAL.rent) + '，物业费约 ' + fmtM(v * BAL.upkeep) + '</div>';
+    h += '</div>';
+  } else if (mine) {
+    const net = sellNet(p), prof = p.offer * (1 - sellFee()) - p.paid, r = prof / p.paid;
+    h += '<div class="kv"><span>买入成本</span><span>' + fmtM(p.paid) + ' <small class="sub">' + (G.month - p.boughtM) + ' 个月前</small></span>';
+    h += '<span>参考价</span><span>' + fmtM(v) + '</span>';
+    h += '<span>本月买家出价</span><span class="big ' + udc(p.offer - p.paid) + '">' + (p.reno ? '—' : fmtM(p.offer)) + '</span>';
+    if (p.loan) h += '<span>贷款余额</span><span>' + fmtM(p.loan) + '</span>';
+    if (!p.reno) h += '<span>卖出到手</span><span>' + fmtM(net) + ' <small class="' + udc(prof) + '">' + (prof >= 0 ? '赚 ' : '亏 ') + fmtM(Math.abs(prof)) + '（' + pct(r) + '）</small></span>';
+    if (OP('rent')) h += '<span>每月</span><span>租 ' + fmtM(p.reno ? 0 : v * BAL.rent, 1) + ' · 物业 ' + fmtM(-v * BAL.upkeep) + (p.loan ? ' · 息 ' + fmtM(-p.loan * G.rate) : '') + '</span>';
+    else if (p.loan) h += '<span>每月利息</span><span>' + fmtM(-p.loan * G.rate) + '</span>';
+    h += '</div>';
+    if (p.offerHot) h += '<div class="note good">有买家特别想要这套，出价比平时高。</div>';
+    if (p.reno) h += '<div class="note insp">装修中，还要 ' + p.reno + ' 个月，完工后变成' + COND[p.renoTo].n + '。装修期间不能卖' + (OP('rent') ? '、没有房租' : '') + '。</div>';
+    if (knows(p, ME) && OP('insp')) { const [qn] = QUAL(p.q); h += '<div class="sub" style="font-size:12px">验房记录：房屋质量' + qn + '</div>'; }
+    lines.push({ v: p.paid, col: PCOL[ME], n: '成本' });
+    h += '<div class="acts">';
+    h += '<button id="dSell" class="' + (prof >= 0 ? 'red' : 'green') + '"' + (p.reno || !me.alive ? ' disabled' : '') + '>以 ' + fmtM(p.offer) + ' 卖出<small>' + (OP('fee') ? '扣 3% 手续费' : '') + (p.loan ? (OP('fee') ? '、' : '') + '还清贷款' : '') + (OP('fee') || p.loan ? '后' : '') + '到手 ' + fmtM(net) + '</small></button>';
+    const R = OP('reno') ? renoInfo(p) : null;
+    if (R && !p.reno) h += '<button id="dReno"' + (me.cash >= R.cost ? '' : ' disabled') + '>装修成' + COND[p.cond + 1].n + ' ' + fmtM(R.cost) + '<small>' + R.t + ' 个月，参考价约 +' + fmtM(R.gain) + '</small></button>';
+    if (OP('loan') && p.loan > 0) h += '<button id="dRepay" class="ghost"' + (me.cash >= p.loan ? '' : ' disabled') + '>提前还清贷款 ' + fmtM(p.loan) + '</button>';
+    h += '</div>';
+  } else {
+    h += '<div class="kv"><span>参考价</span><span class="big">' + (OP('insp') && p.owner < 0 ? '约 ' : '') + fmtM(OP('insp') && p.owner < 0 ? Math.round(v / 5) * 5 : v) + '</span></div>';
+    h += '<div class="note">' + (p.owner >= 0 ? esc(ownerName(p.owner)) + ' 持有这套房。' : p.cool ? '刚成交不久，业主暂时不卖。' : '业主暂时没挂牌，以后可能会卖。') + '</div>';
+    if (OP('rent') && p.owner < 0) h += '<div class="sub" style="font-size:12px">' + D.hint + '</div>';
+  }
+  el.innerHTML = h;
+  const hist = p.hist.slice();
+  bigChart($('dChart'), [{ data: hist, col: '#8fd0ff', fill: 'rgba(143,208,255,.25)' }], { lines, from: hist.length + ' 个月前' });
+  const on = (i, f) => { const b = $(i); if (b) b.onclick = f; };
+  on('dClose', () => selectProp(-1));
+  on('dInsp', () => act('inspect', { id }));
+  on('dBuy', () => act('buy', { id, loan: false }));
+  on('dLoan', () => act('buy', { id, loan: true }));
+  on('dSell', () => act('sell', { id }));
+  on('dReno', () => act('reno', { id }));
+  on('dRepay', () => act('repay', { id }));
+  on('dBuyMan', () => askConfirm('全款 <b class="gold">' + fmtM(p.list.ask * (1 + buyFee())) + '</b> 买下终极豪宅？', '买下！', () => act('buy', { id, loan: false })));
+}
+
+/* ---------- end screen ---------- */
+function showEnd() {
+  if (STATE.mode === 'end' || !G.over) return;
+  STATE.mode = 'end'; selectProp(-1);
+  const o = G.over, w = o.winner, me = G.pl[ME];
+  const won = w === ME;
+  let title, sub;
+  if (o.reason === 'mansion') { title = won ? '豪宅到手！' : esc(G.pl[w].name) + ' 赢了'; sub = (won ? '你' : esc(G.pl[w].name)) + '用了 ' + (o.m + 1) + ' 个月买下终极豪宅'; }
+  else if (o.reason === 'time') { title = w < 0 ? '时间到' : won ? '你赢了' : esc(G.pl[w].name) + ' 赢了'; sub = BAL.maxMonth + ' 个月过去了，' + (w < 0 ? '还没买下豪宅' : '按净资产排名'); }
+  else { title = '破产了'; sub = w >= 0 ? esc(G.pl[w].name) + ' 笑到了最后' : '资不抵债'; }
+  if (won && o.reason === 'mansion' && NETROLE === 'solo' && G.bestKey) { const b = LS.get(G.bestKey, null); if (!b || o.m + 1 < b) { LS.set(G.bestKey, o.m + 1); sub += '，新纪录！'; } else sub += '（纪录 ' + b + ' 个月）'; }
+  sub += ' · 玩法：' + presetName(G.preset || (OPTS.every(x => G.opt[x.k]) ? 'full' : OPTS.every(x => !G.opt[x.k]) ? 'pure' : 'custom'), G.opt);
+  $('eTitle').textContent = title.replace(/&amp;/g, '&'); $('eSub').innerHTML = sub;
+  const rank = G.pl.slice().sort((a, b) => (b.i === w) - (a.i === w) || netWorth(b.i) - netWorth(a.i));
+  $('eRank').innerHTML = rank.map((pl, k) => '<div><span class="sw" style="background:' + PCOL[pl.i] + ';width:12px;height:12px"></span><b>' + (k + 1) + '. ' + esc(pl.name) + (pl.alive ? '' : '（破产）') + '</b><span>净资产 ' + fmtM(pl.alive ? netWorth(pl.i) : 0) + '</span><span class="sub" style="font-size:13px">买 ' + pl.st.buys + ' 卖 ' + pl.st.sells + ' · 最赚一笔 ' + fmtM(pl.st.best) + '</span></div>').join('');
+  showScreen('endScr');
+  bigChart($('endChart'), G.pl.map(pl => ({ data: pl.wh, col: PCOL[pl.i] })), { lines: [{ v: mansionPrice(), col: '#f5c451', n: '豪宅' }], from: '第 1 月' });
+  $('eAgain').textContent = NETROLE === 'solo' ? '再来一局' : NETROLE === 'host' && linkUp() ? '再来一局' : NETROLE === 'guest' ? '等房主开新局' : '返回标题';
+  $('eAgain').disabled = NETROLE === 'guest';
+  sfx(won ? 'win' : 'lose');
+  saveGame();
+}
+
+/* ---- 90_main.js ---- */
+/* ================= main loop ================= */
+let lastT = performance.now(), titleA = 0;
+function frame(now) {
+  const dt = Math.min(0.05, (now - lastT) / 1000); lastT = now;
+  if (STATE.mode === 'title' || STATE.mode === 'lobby') { titleA += dt * 0.05; CAM.x = Math.sin(titleA) * 160; CAM.y = N * TH / 2 - 10 + Math.cos(titleA * 0.7) * 50; }
+  camStep(dt); keyPan(dt);
+  if (NETROLE === 'host') hostNetTick(dt); else if (NETROLE === 'guest') guestNetTick(dt);
+  render(dt);
+  requestAnimationFrame(frame);
+}
+addEventListener('resize', () => { if (STATE.mode === 'play') renderUI(); });
+PHONE.addEventListener && PHONE.addEventListener('change', () => { if (STATE.mode === 'play') renderUI(); });
+
+/* ---- 99_boot.js ---- */
+/* ================= boot ================= */
+resize(); initAmbient(); setSound(AU.on);
+toTitle();
+$('loading').classList.add('hidden');
+window.__ready = true;
+requestAnimationFrame(t => { lastT = t; frame(t); });
+
+</script>
+</body>
+
+</html>

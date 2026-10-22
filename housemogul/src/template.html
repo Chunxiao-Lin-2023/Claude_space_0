@@ -1,0 +1,290 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+__IOSMETA__
+<title>房产大亨</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=ZCOOL+XiaoWei&family=Noto+Sans+SC:wght@400;700&family=Oswald:wght@500;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+<style>
+:root{--bg:#86b9cc;--panel:rgba(18,26,38,.9);--panel2:rgba(28,38,54,.92);--line:rgba(245,196,81,.22);--txt:#eef2f6;--sub:#9eacbd;--gold:#f5c451;--gold2:#c9952a;
+ --up:#ff5f52;--down:#2fc27a;--p0:#ff9a3c;--p1:#34d1bf;--p2:#b48cff;
+ --font:"Noto Sans SC","PingFang SC","Microsoft YaHei",system-ui,sans-serif;--title:"ZCOOL XiaoWei","Noto Serif SC","Noto Sans SC",serif;--num:"Oswald","Noto Sans SC",sans-serif;
+ color-scheme:dark;--sa-t:env(safe-area-inset-top,0px);--sa-b:env(safe-area-inset-bottom,0px);--sa-l:env(safe-area-inset-left,0px);--sa-r:env(safe-area-inset-right,0px)}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--txt);font-family:var(--font);overscroll-behavior:none;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+canvas#cv{position:fixed;inset:0;width:100%;height:100%;display:block;cursor:grab}
+canvas#cv.drag{cursor:grabbing}
+.hidden{display:none!important}
+button{font-family:var(--font);cursor:pointer;color:var(--txt);background:linear-gradient(#2a3850,#1b2536);border:1px solid rgba(245,196,81,.35);border-radius:7px;padding:8px 14px;font-size:15px;min-height:42px;box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 2px 8px rgba(0,0,0,.35);touch-action:manipulation;transition:background .15s,border-color .15s}
+button:hover,button.sel{border-color:var(--gold);background:linear-gradient(#34466a,#212d42)}
+button:active{transform:translateY(1px)}
+button.primary{background:linear-gradient(#e0a92e,#a8711a);border-color:#ffd77a;color:#1d1406;font-weight:700}
+button.primary:hover{background:linear-gradient(#f0bb40,#b8801f)}
+button.red{background:linear-gradient(#c8463b,#8c271f);border-color:#ff8a7e;color:#fff;font-weight:700}
+button.green{background:linear-gradient(#25a066,#156a42);border-color:#6fe2a6;color:#fff;font-weight:700}
+button.ghost{background:rgba(255,255,255,.04);border-color:rgba(255,255,255,.14);box-shadow:none}
+button:disabled{opacity:.42;cursor:default;transform:none}
+input{font-family:var(--font);font-size:16px;color:var(--txt);background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.16);border-radius:7px;padding:8px 12px;min-height:42px;outline:none;width:100%}
+input:focus{border-color:var(--gold)}
+.up{color:var(--up)}.down{color:var(--down)}.gold{color:var(--gold)}.sub{color:var(--sub)}
+.num{font-family:var(--num);letter-spacing:.02em}
+.scr{position:fixed;inset:0;z-index:20;display:flex;align-items:safe center;justify-content:center;overflow:auto;padding:calc(14px + var(--sa-t)) calc(14px + var(--sa-r)) calc(14px + var(--sa-b)) calc(14px + var(--sa-l))}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px 20px;box-shadow:0 14px 44px rgba(0,0,0,.45);backdrop-filter:blur(6px)}
+.row{display:flex;gap:10px;align-items:center}
+.lbl{font-size:13px;color:var(--sub);letter-spacing:.06em}
+.status{min-height:20px;font-size:14px;color:var(--gold);text-align:center}
+/* title */
+#title{flex-direction:column;background:radial-gradient(ellipse at 50% 40%,rgba(10,20,34,.05),rgba(10,20,34,.55) 70%,rgba(8,14,24,.8))}
+.wrapT{display:flex;flex-direction:column;align-items:center;gap:14px;margin:auto}
+.logo{text-align:center;pointer-events:none}
+.logo h1{margin:0;font-family:var(--title);font-weight:400;font-size:clamp(56px,10vw,108px);line-height:1;color:#fff6dc;letter-spacing:.08em;text-shadow:0 0 26px rgba(245,196,81,.45),0 4px 0 #6b4a12,0 8px 18px rgba(0,0,0,.5)}
+.logo .en{font-family:var(--num);letter-spacing:.5em;font-size:clamp(12px,1.7vw,15px);color:#ffe7a8;margin-top:8px;padding-left:.5em;text-shadow:0 2px 4px #000}
+.logo .tag{margin-top:8px;color:#f3ead6;font-size:15px;letter-spacing:.14em;text-shadow:0 2px 5px #000}
+.menu{display:flex;flex-direction:column;gap:10px;width:min(420px,92vw)}
+.seg{display:flex;gap:6px}.seg button{flex:1;min-height:40px;padding:6px;font-size:14px}
+.hubBack{position:fixed;left:calc(12px + var(--sa-l));top:calc(12px + var(--sa-t));z-index:22;font-size:14px;padding:8px 14px;min-height:40px}
+.best{font-size:13px;color:var(--sub);text-align:center}
+.optBox{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.optBox button{min-height:38px;padding:4px 8px;font-size:13px;text-align:left;display:flex;align-items:center;gap:7px;background:rgba(255,255,255,.03);box-shadow:none;border-color:rgba(255,255,255,.12)}
+.optBox button i{font-style:normal;width:16px;height:16px;border-radius:4px;border:1px solid rgba(255,255,255,.35);display:inline-flex;align-items:center;justify-content:center;font-size:12px;flex:none}
+.optBox button.on{border-color:rgba(245,196,81,.6);color:#ffe9b5}.optBox button.on i{background:var(--gold);color:#1d1406;border-color:var(--gold)}
+.optBox.ro button{cursor:default}
+.modeDesc{font-size:13px;color:#cfd8e2;line-height:1.55;background:rgba(255,255,255,.04);border-radius:7px;padding:6px 10px}
+#lobby .card,#help .card,#menuScr .card{width:min(540px,94vw);display:flex;flex-direction:column;gap:12px;max-height:calc(100dvh - 16px);overflow:auto;margin:auto}
+.code{font-family:var(--num);font-size:46px;letter-spacing:.3em;color:var(--gold);text-align:center;padding-left:.3em}
+.plist{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.pl{border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:12px;background:rgba(0,0,0,.2);text-align:center}
+.pl .n{font-size:18px;font-weight:700}.pl .s{font-size:13px;color:var(--sub);margin-top:4px}
+#help .card{width:min(640px,94vw);font-size:14px;line-height:1.7}
+#help h3{margin:6px 0 0;color:var(--gold);font-size:16px}
+#help p{margin:0;color:#d9e1ea}
+/* HUD */
+#hud{position:fixed;inset:0;z-index:5;pointer-events:none}
+#hud>*{pointer-events:auto}
+.glass{background:var(--panel);border:1px solid rgba(255,255,255,.08);border-radius:10px;box-shadow:0 6px 22px rgba(0,0,0,.35);backdrop-filter:blur(5px)}
+#top{position:absolute;left:calc(10px + var(--sa-l));right:calc(10px + var(--sa-r));top:calc(10px + var(--sa-t));display:flex;gap:10px;align-items:stretch;pointer-events:none}
+#top>*{pointer-events:auto}
+#tMonth{padding:6px 14px;display:flex;flex-direction:column;justify-content:center;min-width:118px}
+#tMonth b{font-size:17px}#tMonth small{font-size:12px;color:var(--sub)}
+#tMoney{display:flex;gap:4px;padding:4px 8px;align-items:center}
+.stat{display:flex;flex-direction:column;align-items:flex-start;padding:2px 10px;min-width:92px}
+.stat small{font-size:11px;color:var(--sub);letter-spacing:.06em}
+.stat b{font-family:var(--num);font-size:19px;font-weight:500;white-space:nowrap}
+.stat.flash b{animation:fl .6s}@keyframes fl{0%{color:#fff;text-shadow:0 0 10px var(--gold)}100%{}}
+#tGoal{flex:1;padding:6px 12px;display:flex;flex-direction:column;justify-content:center;gap:4px;min-width:160px;cursor:pointer}
+#tGoal .gl{display:flex;justify-content:space-between;font-size:12px;color:var(--sub)}#tGoal .gl b{color:var(--gold);font-family:var(--num);font-weight:500;font-size:14px}
+.bar{height:8px;background:rgba(255,255,255,.08);border-radius:4px;overflow:hidden;position:relative}
+.bar>i{display:block;height:100%;background:linear-gradient(90deg,#c9952a,#f5c451);transition:width .4s}
+.bar>i.p1{background:linear-gradient(90deg,#1c8f82,#34d1bf)}.bar>i.p2{background:linear-gradient(90deg,#7351c4,#b48cff)}
+.bars2{display:flex;flex-direction:column;gap:3px}
+#tBtns{display:flex;gap:6px;align-items:center}
+#tBtns button{min-width:44px;min-height:44px;padding:4px 10px;font-size:17px}
+/* side panels */
+#side{position:absolute;left:calc(10px + var(--sa-l));top:calc(84px + var(--sa-t));bottom:calc(84px + var(--sa-b));width:300px;display:flex;flex-direction:column;overflow:hidden}
+.tabs{display:flex;gap:4px;padding:6px 6px 0}
+.tabs button{flex:1;min-height:36px;padding:4px;font-size:14px;border-radius:7px 7px 0 0;border-bottom:none;background:rgba(255,255,255,.03);box-shadow:none;border-color:rgba(255,255,255,.08)}
+.tabs button.sel{background:rgba(245,196,81,.14);border-color:var(--gold);color:var(--gold)}
+.tabs button .cnt{font-family:var(--num);font-size:12px;margin-left:3px;color:var(--sub)}
+.tabBody{flex:1;overflow:auto;padding:8px;border-top:1px solid rgba(245,196,81,.25);-webkit-overflow-scrolling:touch;touch-action:pan-y}
+.item{display:flex;gap:8px;align-items:center;padding:8px;border-radius:8px;cursor:pointer;border:1px solid transparent}
+.item:hover{background:rgba(255,255,255,.05)}.item.sel{border-color:var(--gold);background:rgba(245,196,81,.08)}
+.item .main{flex:1;min-width:0}.item .nm{font-size:14px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.item .ds{font-size:12px;color:var(--sub);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.item .rt{text-align:right;font-family:var(--num);font-size:15px;white-space:nowrap}.item .rt small{display:block;font-size:12px}
+.sw{width:10px;height:10px;border-radius:3px;flex:none}
+.tagx{display:inline-block;font-size:11px;padding:0 5px;border-radius:4px;margin-left:4px;vertical-align:1px;font-weight:700}
+.tagx.hot{background:#c8463b;color:#fff}.tagx.new{background:#2a6fb8;color:#fff}.tagx.cut{background:#4d5a6b;color:#dfe6ee}.tagx.goal{background:var(--gold);color:#1d1406}.tagx.rumor{background:#7a4cc2;color:#fff}
+.mktHead{padding:6px 4px 10px;font-size:13px;color:var(--sub);display:flex;flex-direction:column;gap:6px}
+.heat{display:flex;align-items:center;gap:8px}.heat .bar{flex:1;height:7px}.heat .bar>i{background:linear-gradient(90deg,#2fc27a,#f5c451,#ff5f52)}
+.secT{font-size:12px;color:var(--sub);letter-spacing:.1em;padding:10px 4px 4px}
+.empty{color:var(--sub);font-size:13px;padding:14px 6px;text-align:center;line-height:1.6}
+canvas.spark{width:72px;height:26px;flex:none}
+/* detail */
+#detail{position:absolute;right:calc(10px + var(--sa-r));top:calc(84px + var(--sa-t));width:330px;max-height:calc(100% - 178px - var(--sa-t) - var(--sa-b));overflow:auto;padding:14px 16px;display:flex;flex-direction:column;gap:9px;touch-action:pan-y}
+#detail h2{margin:0;font-size:20px;display:flex;align-items:center;gap:8px}
+#detail .x{margin-left:auto;min-height:32px;min-width:32px;padding:0 8px;font-size:15px}
+#detail .meta{font-size:13px;color:var(--sub)}
+#detail canvas{width:100%;height:96px;display:block;border-radius:6px;background:rgba(0,0,0,.2)}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:14px;align-items:baseline}
+.kv>span:nth-child(odd){color:var(--sub);font-size:13px}.kv>span:nth-child(even){text-align:right;font-family:var(--num);font-size:16px}
+.kv .big{font-size:22px!important;color:#fff}
+.note{font-size:13px;color:#cfd8e2;background:rgba(255,255,255,.05);border-radius:7px;padding:7px 10px;line-height:1.55}
+.note.warn{background:rgba(200,70,59,.18);color:#ffd2cc}.note.good{background:rgba(47,194,122,.15);color:#c9f5df}.note.insp{background:rgba(245,196,81,.12);color:#ffe9b5}
+.acts{display:flex;flex-direction:column;gap:7px}
+.acts .row button{flex:1}
+.acts button small{display:block;font-size:12px;font-weight:400;opacity:.85}
+/* bottom */
+#bottom{position:absolute;left:calc(10px + var(--sa-l));right:calc(10px + var(--sa-r));bottom:calc(10px + var(--sa-b));display:flex;gap:10px;align-items:stretch;pointer-events:none}
+#bottom>*{pointer-events:auto}
+#news{flex:1;padding:6px 12px;display:flex;flex-direction:column;justify-content:center;gap:2px;min-width:0;cursor:pointer;min-height:64px}
+#news .nl{font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#news .nl i{font-style:normal;font-family:var(--num);color:var(--sub);margin-right:6px;font-size:12px}
+#news .nl.good b{color:var(--up)}#news .nl.bad b{color:var(--down)}#news .nl.rumor b{color:#c9a4ff}#news .nl.info b{color:var(--gold)}
+#news .nl b{font-weight:700;margin-right:4px}
+#endBtn{min-width:190px;font-size:19px;padding:6px 18px;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.2}
+#endBtn small{font-size:12px;font-weight:400}
+#endBtn.wait{background:linear-gradient(#2a3850,#1b2536);color:var(--sub);border-color:rgba(255,255,255,.2)}
+#toasts{position:fixed;left:50%;top:calc(92px + var(--sa-t));transform:translateX(-50%);z-index:15;display:flex;flex-direction:column;gap:6px;align-items:center;pointer-events:none;width:min(560px,90vw)}
+.toast{background:rgba(14,20,30,.92);border:1px solid var(--line);border-radius:9px;padding:8px 14px;font-size:15px;box-shadow:0 6px 20px rgba(0,0,0,.4);animation:tin .25s ease-out,tout .5s ease-in 3.2s forwards;text-align:center}
+.toast.good{border-color:rgba(255,95,82,.6)}.toast.bad{border-color:rgba(47,194,122,.6)}.toast.gold{border-color:var(--gold);color:#ffe9b5}
+@keyframes tin{from{opacity:0;transform:translateY(-8px)}}@keyframes tout{to{opacity:0;transform:translateY(-6px)}}
+#monthFx{position:fixed;inset:0;z-index:14;pointer-events:none;display:flex;align-items:center;justify-content:center;opacity:0}
+#monthFx.show{animation:mfx 1.3s ease-out}
+#monthFx div{font-family:var(--title);font-size:clamp(40px,7vw,72px);color:#fff6dc;text-shadow:0 0 20px rgba(0,0,0,.6),0 4px 0 rgba(0,0,0,.35)}
+@keyframes mfx{0%{opacity:0;transform:scale(.92)}20%{opacity:1;transform:scale(1)}70%{opacity:1}100%{opacity:0}}
+#phoneTabs{display:none}
+/* end screen */
+#endScr .card{width:min(620px,94vw);display:flex;flex-direction:column;gap:12px;max-height:calc(100dvh - 16px);overflow:auto;margin:auto;text-align:center}
+#endScr h2{margin:0;font-family:var(--title);font-weight:400;font-size:44px;color:#fff3cf}
+#endChart{width:100%;height:200px;background:rgba(0,0,0,.2);border-radius:8px}
+.rank{display:flex;flex-direction:column;gap:6px;text-align:left}
+.rank div{display:flex;gap:10px;align-items:center;padding:8px 12px;border-radius:8px;background:rgba(255,255,255,.05);font-size:15px}
+.rank div b{flex:1}.rank div span{font-family:var(--num)}
+#confirm{z-index:40;background:rgba(0,0,0,.35)}
+#confirm .card{width:min(400px,92vw);display:flex;flex-direction:column;gap:12px;text-align:center;margin:auto}
+#loading{position:fixed;inset:0;z-index:60;background:#0e1724;display:flex;align-items:center;justify-content:center;font-family:var(--title);font-size:44px;color:#f5d48a}
+
+/* medium screens (iPad portrait, small laptops) */
+@media (max-width:1000px){
+ #side{width:270px}#detail{width:300px}
+ .stat{min-width:80px;padding:2px 6px}.stat b{font-size:17px}
+}
+/* narrow / phone layout: panels become bottom sheets */
+@media (max-width:760px),(pointer:coarse) and (max-height:500px){
+ #top{gap:6px}
+ #tMonth{min-width:0;padding:4px 10px}#tMonth b{font-size:15px}
+ #tMoney{padding:2px 4px;gap:0}.stat{min-width:0;padding:1px 6px}.stat b{font-size:15px}.stat small{font-size:10px}
+ .stat.debt{display:none}
+ #tGoal{min-width:90px;padding:4px 8px}
+ #side{display:none;left:calc(6px + var(--sa-l));right:calc(6px + var(--sa-r));width:auto;top:auto;bottom:calc(66px + var(--sa-b));height:min(56dvh,430px);z-index:6}
+ #side.open{display:flex}
+ #side .tabs{display:none}
+ #detail{left:calc(6px + var(--sa-l));right:calc(6px + var(--sa-r));width:auto;top:auto;bottom:calc(66px + var(--sa-b));max-height:min(62dvh,520px);z-index:7}
+ #bottom{left:calc(6px + var(--sa-l));right:calc(6px + var(--sa-r));bottom:calc(6px + var(--sa-b));gap:6px}
+ #news{display:none}
+ #phoneTabs{display:flex;flex:1;gap:4px;padding:4px}
+ #phoneTabs button{flex:1;min-height:48px;padding:2px;font-size:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.15}
+ #phoneTabs button small{font-family:var(--num);font-size:11px;color:var(--sub)}
+ #phoneTabs button.sel{border-color:var(--gold);color:var(--gold)}
+ #endBtn{min-width:110px;font-size:16px;padding:4px 10px}
+ #toasts{top:calc(64px + var(--sa-t))}
+ .toast{font-size:14px}
+}
+@media (pointer:coarse) and (max-height:500px){
+ #top{top:calc(6px + var(--sa-t))}
+ #tMonth small{display:none}
+ #side,#detail{height:auto;top:calc(60px + var(--sa-t));bottom:calc(64px + var(--sa-b));max-height:none}
+ #side{width:min(380px,48vw);right:auto}
+ #detail{width:min(380px,48vw);left:auto}
+ .logo h1{font-size:52px}.wrapT{gap:10px}
+}
+@media (pointer:coarse) and (max-height:500px){
+ #detail{padding:10px 12px;gap:6px}#detail h2{font-size:17px}#detail canvas{height:58px}
+ .kv{font-size:13px;gap:2px 10px}.kv>span:nth-child(even){font-size:15px}.kv .big{font-size:19px!important}
+ .note{padding:5px 8px;font-size:12.5px}
+}
+@media (pointer:coarse) and (max-width:500px){
+ #tMoney{flex:1;min-width:0;justify-content:space-around}
+ #tBtns{gap:4px}#tBtns button{min-width:40px;min-height:40px;padding:2px 6px;font-size:15px}
+ #detail canvas{height:72px}
+}
+@media (pointer:coarse) and (max-width:380px){
+ .stat{padding:1px 3px}.stat b{font-size:13.5px}#tMonth{padding:4px 7px}#tMonth b{font-size:14px}
+ #tGoal .gl span{display:none}
+ .stat.cash small,.stat.net small{font-size:10px}
+ #top{flex-wrap:wrap}
+ #tGoal{order:5;flex-basis:100%;min-height:0;padding:4px 10px}
+ #side,#detail{bottom:calc(64px + var(--sa-b))}
+}
+</style>
+<body>
+<canvas id="cv"></canvas>
+<div id="loading">房产大亨</div>
+
+<div id="title" class="scr">
+ <button id="hubBtn" class="hubBack ghost hidden">‹ 游戏厅</button>
+ <div class="wrapT">
+  <div class="logo"><h1>房产大亨</h1><div class="en">REAL ESTATE MOGUL</div><div class="tag">低买高卖 · 攒钱买下山顶的终极豪宅</div></div>
+  <div class="menu card">
+   <div class="row"><span class="lbl" style="flex:none">名字</span><input id="nameIn" maxlength="8" placeholder="你的名字"></div>
+   <div class="row"><span class="lbl" style="flex:none">玩法</span><div class="seg" id="modeSeg" style="flex:1"><button data-m="pure">纯粹</button><button data-m="full">完整</button><button data-m="custom">自定义</button></div></div>
+   <div class="optBox" id="optBox"></div>
+   <div class="lbl">单人</div>
+   <div class="row"><span class="lbl" style="flex:none">对手</span><div class="seg" id="aiSeg" style="flex:1"><button data-ai="0">无（竞速）</button><button data-ai="1">王老板</button></div></div>
+   <div class="row"><button id="newBtn" class="primary" style="flex:1">新的一局</button><button id="contBtn" style="flex:1" class="hidden">继续</button></div>
+   <div class="best" id="bestTxt"></div>
+   <div class="lbl" style="margin-top:4px">双人联机</div>
+   <div class="row"><button id="hostBtn" style="flex:1">创建房间</button><input id="codeIn" maxlength="4" placeholder="房间码" style="width:96px;flex:none;text-transform:uppercase;text-align:center;letter-spacing:.2em"><button id="joinBtn">加入</button></div>
+   <div class="status" id="titleStatus"></div>
+   <div class="row"><button id="helpBtn" class="ghost" style="flex:1">玩法说明</button></div>
+  </div>
+ </div>
+</div>
+
+<div id="lobby" class="scr hidden"><div class="card">
+ <div class="lbl" style="text-align:center">房间码（发给朋友）</div>
+ <div class="code" id="lCode">····</div>
+ <div class="plist"><div class="pl"><div class="n" id="lP0" style="color:var(--p0)">房主</div><div class="s">房主</div></div><div class="pl"><div class="n" id="lP1" style="color:var(--p1)">等待加入…</div><div class="s" id="lP1s">　</div></div></div>
+ <div class="row"><span class="lbl" style="flex:none">玩法</span><div class="seg" id="lModeSeg" style="flex:1"><button data-m="pure">纯粹</button><button data-m="full">完整</button><button data-m="custom">自定义</button></div></div>
+ <div class="optBox" id="lOptBox"></div>
+ <div class="row"><span class="lbl" style="flex:none">电脑对手</span><div class="seg" id="lAiSeg" style="flex:1"><button data-ai="0">不加</button><button data-ai="1">加入王老板</button></div></div>
+ <div class="status" id="lStatus"></div>
+ <div class="row"><button id="lLeave" class="ghost" style="flex:1">离开</button><button id="lReady" style="flex:1" class="hidden">准备</button><button id="lStart" class="primary" style="flex:1" disabled>开始</button></div>
+</div></div>
+
+<div id="help" class="scr hidden"><div class="card">
+ <p class="sub">开局可选玩法：<b>纯粹</b>只有房价涨跌和买卖；<b>完整</b>加上贷款、房租、装修、验房、新闻和手续费；<b>自定义</b>挑着开。下面带 ★ 的只在开了对应选项时有。</p>
+ <h3>目标</h3><p>从 80 万起步，在城里低价买房、高价卖出，攒够钱<b>全款买下半山顶的终极豪宅</b>就赢。豪宅价格也跟着楼市涨跌。双人时谁先买下谁赢；120 个月后还没人买下，比净资产。</p>
+ <h3>每个月</h3><p>点地图上的房子或左边的「房源」看挂牌房。操作完点「下个月」（双人要两人都点）。月底房价变动、出新房源（★ 还会收房租、付物业费和利息、出新闻）。挂牌房几个月卖不掉会降价，过期就下架。</p>
+ <h3>怎么赚钱</h3><p>每套房都有「参考价」，挂牌价可能比它低也可能高，「急售」的常常便宜。各区有自己的走势，楼市还有牛熊周期，房价也会围着走势上下波动。你手里的房每个月都有买家出价，出价合适就卖。★ 估价误差：参考价只是中介估的，有误差，花一点钱「验房」才能看到真实价值。★ 手续费：买入 2%，卖出 3%。</p>
+ <h3>★ 按揭</h3><p>首付 30% 就能买，剩下的是贷款，每月付利息（利率随新闻变化），卖房时自动还清。杠杆放大收益也放大亏损：月底现金为负，银行会按 85% 的价格强制卖掉你的房，没房可卖就破产。豪宅只能全款。</p>
+ <h3>★ 其他</h3><p>装修能把破旧房变普通、普通变精装，涨价比花的钱多，但装修期间不能卖、没房租。传闻不一定成真；拆迁传闻成真时，那条街的老房按 1.8 倍价值补偿。</p>
+ <h3>操作</h3><p>拖动地图平移，滚轮或双指缩放；回车 = 下个月；Esc = 菜单。</p>
+ <button id="helpClose" class="primary">知道了</button>
+</div></div>
+
+<div id="menuScr" class="scr hidden" style="background:rgba(0,0,0,.4)"><div class="card" style="width:min(360px,92vw)">
+ <div style="font-family:var(--title);font-size:30px;text-align:center;color:#fff3cf">菜单</div>
+ <button id="mResume" class="primary">继续</button>
+ <button id="mHelp">玩法说明</button>
+ <button id="mSound">音效：开</button>
+ <button id="mTitle">返回标题</button>
+ <button id="mHub" class="hidden">返回游戏厅</button>
+ <div class="status" id="mStatus"></div>
+</div></div>
+
+<div id="endScr" class="scr hidden" style="background:rgba(0,0,0,.45)"><div class="card">
+ <h2 id="eTitle">胜利</h2>
+ <div id="eSub" class="sub"></div>
+ <canvas id="endChart"></canvas>
+ <div class="rank" id="eRank"></div>
+ <div class="row"><button id="eTitleBtn" class="ghost" style="flex:1">返回标题</button><button id="eAgain" class="primary" style="flex:1">再来一局</button></div>
+</div></div>
+
+<div id="confirm" class="scr hidden"><div class="card"><div id="cTxt"></div><div class="row"><button id="cNo" class="ghost" style="flex:1">取消</button><button id="cYes" class="primary" style="flex:1">确定</button></div></div></div>
+
+<div id="hud" class="hidden">
+ <div id="top">
+  <div id="tMonth" class="glass"><b id="tM">第 1 年 1 月</b><small id="tMs">第 1 / 120 月</small></div>
+  <div id="tMoney" class="glass">
+   <div class="stat cash"><small>现金</small><b id="tCash">0</b></div>
+   <div class="stat net"><small>净资产</small><b id="tNet">0</b></div>
+   <div class="stat debt"><small>贷款 · 利率</small><b id="tDebt">0</b></div>
+  </div>
+  <div id="tGoal" class="glass"><div class="gl"><span>终极豪宅</span><b id="tGoalP">0</b></div><div class="bars2" id="tBars"></div></div>
+  <div id="tBtns"><button id="sndBtn" class="ghost" title="音效 (M)">🔊</button><button id="menuBtn" class="ghost" title="菜单 (Esc)">☰</button></div>
+ </div>
+ <div id="side" class="glass">
+  <div class="tabs" id="tabs"><button data-t="mkt">行情</button><button data-t="list">房源<span class="cnt" id="cList"></span></button><button data-t="mine">我的<span class="cnt" id="cMine"></span></button><button data-t="news">新闻</button></div>
+  <div class="tabBody" id="tabBody"></div>
+ </div>
+ <div id="detail" class="glass hidden"></div>
+ <div id="bottom">
+  <div id="news" class="glass"></div>
+  <div id="phoneTabs" class="glass"><button data-t="mkt">行情</button><button data-t="list">房源<small id="pcList"></small></button><button data-t="mine">我的<small id="pcMine"></small></button><button data-t="news">新闻</button></div>
+  <button id="endBtn" class="primary">下个月 ▸<small id="endSub">回车</small></button>
+ </div>
+</div>
+<div id="toasts"></div>
+<div id="monthFx"><div id="monthFxT"></div></div>
+__SCRIPTS__
+</body>

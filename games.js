@@ -136,5 +136,16 @@ window.GAMES = [
     status: 'dev',
     tags: ['单人', '双人联机', 'iPad', '棋牌'],
     hue: 6
+  },
+  {
+    id: 'housemogul',
+    title: '房产大亨',
+    sub: '2.5D 炒房 · 低买高卖',
+    desc: '一座等距小城里的老平房、学区房、江景大平层和半山别墅，房价每月涨跌，挂牌有贵有便宜，还有急售。低买高卖攒钱，全款买下山顶的终极豪宅。可选纯粹玩法，或加上按揭、房租、装修、验房、新闻传闻。单人、对抗王老板，或双人联机抢房。',
+    url: 'housemogul/',
+    cover: 'covers/housemogul.webp',
+    status: 'dev',
+    tags: ['单人', '双人联机', 'iPad', '经营'],
+    hue: 44
   }
 ];
