@@ -54,7 +54,7 @@ function heroTick(e, dt) {
   if (!e) return;
   e.castLock = Math.max(0, (e.castLock || 0) - dt); e.iframe = Math.max(0, (e.iframe || 0) - dt); e.comboT = (e.comboT || 0) - dt;
   for (const k in e.cds) if (e.cds[k] > 0) e.cds[k] -= dt;
-  tickBuffs(e, dt); tickDash(e, dt);
+  tickBuffs(e, dt); tickDash(e, dt); if (e.walk) tickWalk(e, dt);
   if (e.kbx || e.kbz) { moveEnt(e, e.kbx * dt, e.kbz * dt, dt); e.kbx *= Math.pow(0.02, dt); e.kbz *= Math.pow(0.02, dt); if (Math.abs(e.kbx) + Math.abs(e.kbz) < 0.2) e.kbx = e.kbz = 0; }
   if (e.alive) { const ooc = W.t - (e.inCombat || -99) > BAL.oocT && W.t - (e.lastHit || -99) > BAL.oocT; e.hp = Math.min(e.hpMax, e.hp + e.hpMax * (ooc ? BAL.regenOOC : BAL.regenIn) * dt); e.mp = Math.min(e.mpMax, e.mp + e.mpMax * BAL.mpRegen * dt * (ooc ? 2 : 1)); }
   else if (e.downed) { e.downT -= dt; if (e.downT <= 0 || W.P.every(p => !p || !p.alive)) respawnParty(); }

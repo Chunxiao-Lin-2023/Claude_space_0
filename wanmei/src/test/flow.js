@@ -9,7 +9,7 @@ const { chromium } = require('playwright');
   await pg.evaluate(() => { localStorage.clear(); __dbg.autoDlg = 0.15; __dbg.skipDraw = true; __dbg.speed = +(new URLSearchParams(location.search).get('spd') || 8); });
   await pg.click('#bnew'); await pg.waitForTimeout(200); await pg.fill('#pn', '团团'); await pg.click('#pok');
   const until = +(process.env.UNTIL || 99); let lastQ = -1, stuck = 0, lastKey = '';
-  for (let iter = 0; iter < 4000; iter++) {
+  for (let iter = 0; iter < 9000; iter++) {
     const st = await pg.evaluate(async () => {
       const s = curStep(), q = curQ(); if (!q) return { done: true };
       const me = W.P[0]; const key = STORY.qi + ':' + STORY.si;
