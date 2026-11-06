@@ -11,6 +11,8 @@ function textFromB64(b) { const bin = atob(b.replace(/\s+/g, '')); const u8 = ne
 function blobToB64(blob) { return new Promise((res, rej) => { const fr = new FileReader(); fr.onload = () => res(fr.result.slice(fr.result.indexOf(',') + 1)); fr.onerror = () => rej(fr.error); fr.readAsDataURL(blob); }); }
 const extWithDot = name => { const e = extOf(name); return e ? '.' + e : ''; };
 const MAX_UP = 95 * 1024 * 1024;
+const NEW_REPO_URL = 'https://github.com/new?name=moyue-library&visibility=private&description=' + encodeURIComponent('Moyue reader sync data');
+const TOKEN_URL = 'https://github.com/settings/personal-access-tokens/new?name=moyue-reader&description=' + encodeURIComponent('Moyue reader sync (one private repo, contents read/write)') + '&expires_in=366&contents=write';
 
 const Sync = {
   cfg: null,
@@ -91,8 +93,8 @@ const Sync = {
     const tok = h('input', { type: 'password', placeholder: 'github_pat_…', value: this.cfg ? this.cfg.token : '', autocomplete: 'off' });
     const msg = h('p', { class: 'ghmsg' });
     const steps = h('ol', { class: 'ghsteps' },
-      h('li', {}, t('ghStep1a'), h('a', { href: 'https://github.com/new', target: '_blank', rel: 'noopener' }, 'github.com/new'), t('ghStep1b')),
-      h('li', {}, t('ghStep2a'), h('a', { href: 'https://github.com/settings/personal-access-tokens/new', target: '_blank', rel: 'noopener' }, t('ghStep2link')), t('ghStep2b')),
+      h('li', {}, t('ghStep1a'), h('a', { href: NEW_REPO_URL, target: '_blank', rel: 'noopener' }, t('ghNewRepoLink')), t('ghStep1b')),
+      h('li', {}, t('ghStep2a'), h('a', { href: TOKEN_URL, target: '_blank', rel: 'noopener' }, t('ghStep2link')), t('ghStep2b')),
       h('li', { text: t('ghStep3') }));
     const body = h('div', {}, steps, h('label', { class: 'fl', text: t('ghRepo') }), repo, h('label', { class: 'fl', text: 'Token' }), tok, msg, h('p', { class: 'ghnote', text: t('ghTokenNote') }));
     const buttons = [{ label: t('cancel'), value: null }];

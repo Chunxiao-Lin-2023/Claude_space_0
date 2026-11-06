@@ -619,8 +619,8 @@ const I18N = {
   ghConnect: ['连接 GitHub 同步', 'Connect GitHub sync'], ghSyncNow: ['立即同步', 'Sync now'], ghSettings: ['设置', 'Settings'],
   ghSyncing: ['正在同步…', 'Syncing…'], ghError: ['同步出错：{0}', 'Sync error: {0}'], ghSynced: ['已同步到 {0}，{1}', 'Synced to {0}, {1}'], ghConnected: ['已连接 {0}', 'Connected to {0}'],
   ghArtifactOnly: ['claude.ai 里的这个页面不能访问 GitHub。请打开 GitHub Pages 上的墨阅，在那里连接同步：', 'This page on claude.ai cannot reach GitHub. Open Moyue on GitHub Pages and connect there:'],
-  ghStep1a: ['在 GitHub 新建一个私有仓库，例如 moyue-library：', 'Create a private repository on GitHub, e.g. moyue-library: '], ghStep1b: ['（可见性选 Private）', ' (set visibility to Private)'],
-  ghStep2a: ['创建一个 ', 'Create a '], ghStep2link: ['fine-grained token', 'fine-grained token'], ghStep2b: ['：Repository access 只选这个仓库，Permissions 里把 Contents 设为 Read and write。', ': under Repository access pick only that repository, and set Contents to Read and write under Permissions.'],
+  ghStep1a: ['', ''], ghNewRepoLink: ['新建私有仓库 moyue-library', 'Create the private repository moyue-library'], ghStep1b: ['（名称和 Private 已填好，点 Create repository）', ' (name and Private are prefilled; click Create repository)'],
+  ghStep2a: ['', ''], ghStep2link: ['生成 token', 'Generate a token'], ghStep2b: ['（权限已填好。在 Repository access 选 Only select repositories，勾上 moyue-library，然后点 Generate token 并复制）', ' (permissions are prefilled. Under Repository access choose Only select repositories, tick moyue-library, then Generate token and copy it)'],
   ghStep3: ['把仓库名和 token 填到下面。每台设备填一次。', 'Enter the repository and token below, once on each device.'],
   ghRepo: ['仓库（用户名/仓库名）', 'Repository (owner/name)'],
   ghTokenNote: ['token 只保存在这台设备的浏览器里，用来直接访问 GitHub，不会发送到其他地方。', 'The token is kept only in this browser and is sent only to GitHub.'],
@@ -1752,6 +1752,8 @@ function textFromB64(b) { const bin = atob(b.replace(/\s+/g, '')); const u8 = ne
 function blobToB64(blob) { return new Promise((res, rej) => { const fr = new FileReader(); fr.onload = () => res(fr.result.slice(fr.result.indexOf(',') + 1)); fr.onerror = () => rej(fr.error); fr.readAsDataURL(blob); }); }
 const extWithDot = name => { const e = extOf(name); return e ? '.' + e : ''; };
 const MAX_UP = 95 * 1024 * 1024;
+const NEW_REPO_URL = 'https://github.com/new?name=moyue-library&visibility=private&description=' + encodeURIComponent('Moyue reader sync data');
+const TOKEN_URL = 'https://github.com/settings/personal-access-tokens/new?name=moyue-reader&description=' + encodeURIComponent('Moyue reader sync (one private repo, contents read/write)') + '&expires_in=366&contents=write';
 
 const Sync = {
   cfg: null,
@@ -1832,8 +1834,8 @@ const Sync = {
     const tok = h('input', { type: 'password', placeholder: 'github_pat_…', value: this.cfg ? this.cfg.token : '', autocomplete: 'off' });
     const msg = h('p', { class: 'ghmsg' });
     const steps = h('ol', { class: 'ghsteps' },
-      h('li', {}, t('ghStep1a'), h('a', { href: 'https://github.com/new', target: '_blank', rel: 'noopener' }, 'github.com/new'), t('ghStep1b')),
-      h('li', {}, t('ghStep2a'), h('a', { href: 'https://github.com/settings/personal-access-tokens/new', target: '_blank', rel: 'noopener' }, t('ghStep2link')), t('ghStep2b')),
+      h('li', {}, t('ghStep1a'), h('a', { href: NEW_REPO_URL, target: '_blank', rel: 'noopener' }, t('ghNewRepoLink')), t('ghStep1b')),
+      h('li', {}, t('ghStep2a'), h('a', { href: TOKEN_URL, target: '_blank', rel: 'noopener' }, t('ghStep2link')), t('ghStep2b')),
       h('li', { text: t('ghStep3') }));
     const body = h('div', {}, steps, h('label', { class: 'fl', text: t('ghRepo') }), repo, h('label', { class: 'fl', text: 'Token' }), tok, msg, h('p', { class: 'ghnote', text: t('ghTokenNote') }));
     const buttons = [{ label: t('cancel'), value: null }];
