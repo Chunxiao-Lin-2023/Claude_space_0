@@ -55,16 +55,16 @@ function coreNPCs() {
 ZONES.shicun.populate = function () {
   RNG = mulberry32(99); villagers(); coreNPCs(); RNG = mulberry32(Date.now() & 0xffff);
   // wild animals of the outer forest
-  const wolves = [[60, -20], [-50, -30], [90, 10], [-80, 40], [40, -150], [-130, -80], [-90, -130], [-140, -40], [100, -100], [-60, -180]]; wolves.forEach(([x, z], i) => spawnMob(i % 4 === 3 ? 'lynx' : 'wolf', x, z, { lv: i < 4 ? 2 : 4 + (i % 3) }));
+  const wolves = [[30, -50], [-24, -62], [60, -84], [-40, -98], [84, -44], [4, -102], [-120, -130], [-150, -100], [-180, -140], [-100, -170]]; wolves.forEach(([x, z], i) => spawnMob(i % 4 === 3 ? 'lynx' : 'wolf', x, z, { lv: i < 4 ? 2 : 4 + (i % 3) }));
   [[130, -150], [150, -190], [115, -185], [165, -150]].forEach(([x, z], i) => spawnMob('snake', x, z, { lv: 4 + (i % 2) }));
   for (let i = 0; i < 4; i++) spawnMob('mangniu', MEADOW.x + rr(-14, 14), MEADOW.z + rr(-14, 14), { lv: 4, wanderR: 14 });
-  spawnMob('biao', 250, 60, { lv: 10, wanderR: 10 });
+  spawnMob('biao', 136, 112, { lv: 10, wanderR: 10 });
   // 嗅宝 secrets
-  W.secrets = [[70, 20, 'herb', 3], [-120, 10, 'milk', 1], [150, -120, 'blood', 1], [-60, -150, 'yaosan', 2], [200, -40, 'blood', 1], [-150, 120, 'milk', 2], [30, 160, 'herb', 4], [-200, -120, 'yaosan', 1]].map(([x, z, id, n], i) => {
+  W.secrets = [[30, -90, 'herb', 3], [-36, 116, 'milk', 1], [150, -128, 'blood', 1], [-150, -122, 'yaosan', 2], [196, -138, 'blood', 1], [132, 168, 'milk', 2], [90, 120, 'herb', 4], [-196, -100, 'yaosan', 1]].map(([x, z, id, n], i) => {
     const m = lootMesh();
     const s = { x, z, id, n, got: false }; const e = mkProp('secret' + i, m, x, z, { vis: false, spin: 1.5, interact: { label: '挖出宝物', fn: () => { s.got = true; e.vis = false; e.interact = null; addItem(id, n); sfx('loot'); burst(x, terrH(x, z) + 0.5, z, 0xffe08a, 20, 4); } } }); s.e = e; return s; });
   // berry bushes (pickable)
-  [[64, 30], [-56, 20], [40, 128], [-48, 118], [84, -30], [-70, -50], [20, -60], [-30, 140]].forEach(([x, z], i) => { place('berrybush', x, z, 0, 1.1); const e = mkProp('berry' + i, new Obj2D(), x, z, { interact: { label: '摘红浆果', fn: (p, t) => { if (W.t - (t.picked || -99) < 60) { toast('浆果还没长出来'); return; } t.picked = W.t; addItem('berry', ri(1, 2)); sfx('loot'); } } }); });
+  [[34, -48], [-30, -46], [72, 112], [96, 104], [60, -92], [-46, -70], [12, -60], [-120, -96]].forEach(([x, z], i) => { place('berrybush', x, z, 0, 1.1, { force: true }); const e = mkProp('berry' + i, new Obj2D(), x, z, { interact: { label: '摘红浆果', fn: (p, t) => { if (W.t - (t.picked || -99) < 60) { toast('浆果还没长出来'); return; } t.picked = W.t; addItem('berry', ri(1, 2)); sfx('loot'); } } }); });
   W.checkpoint = { x: WILLOW.x + 4, z: WILLOW.z + 12 };
   ZONES.shicun.tick = dt => { for (const s of W.secrets || []) if (!s.got && s.e) s.e.vis = W.sniffT > 0 && W.P[0] && d2(s.x, s.z, W.P[0].x, W.P[0].z) < 40 * 40; };
   rebuildStaticIfNeeded();
@@ -168,9 +168,9 @@ QUESTS = [
   ] },
 /* ---------- 第三·四章 ---------- */
 { id: 'q3', chapter: '第三章', chapterSub: '祭灵', title: '祭灵与药浴', desc: '狩猎队满载而归。祭祀祭灵之后，就是孩子们最怕的药浴。', xp: 420,
-  onStart: () => { setLight('dusk'); netEv({ k: 'light', n: 'dusk' }); const lh = entByTag('linhu'), fj = entByTag('feijiao'); teleport(lh, 22, -70, 0); teleport(fj, 18, -74, 0); for (let i = 0; i < 4; i++) npc('hunter' + i, 'villager', 20 + (i % 2) * 3, -78 - Math.floor(i / 2) * 3, { seed: 60 + i, kind: 'man', name: '石村猎手', rot: 0, weapon: [i % 2 ? 'spear' : 'club', 1] }); },
+  onStart: () => { setLight('dusk'); netEv({ k: 'light', n: 'dusk' }); const lh = entByTag('linhu'), fj = entByTag('feijiao'); teleport(lh, 2, -14, 0); teleport(fj, -1, -14.5, 0); for (let i = 0; i < 4; i++) npc('hunter' + i, 'villager', -3 + i * 2, -15.2, { seed: 60 + i, kind: 'man', name: '石村猎手', rot: 0, weapon: [i % 2 ? 'spear' : 'club', 1] }); },
   steps: [
-    { t: 'script', text: '……', run: async () => { const lh = entByTag('linhu'), fj = entByTag('feijiao'), hs = [0, 1, 2, 3].map(i => entByTag('hunter' + i)); cine(true); camShot([10, terrH(10, -10) + 6, -2], [12, terrH(12, -40) + 2, -40], 1.5);
+    { t: 'script', text: '……', run: async () => { const lh = entByTag('linhu'), fj = entByTag('feijiao'), hs = [0, 1, 2, 3].map(i => entByTag('hunter' + i)); cine(true); camShot([4, terrH(4, -4) + 6, 6], [2, terrH(2, -8) + 2, -6], 1.5);
       await Promise.all([walkTo(lh, 4, -8, 3.2), walkTo(fj, 0, -9, 3.2), ...hs.map((h, i) => walkTo(h, -6 + i * 4, -13, 3.2))]);
       await talk([['石林虎', '族长！这回进山，一个人都没伤着！'], ['石飞蛟', '龙角象、独足夔兽、飞蟒、双头火犀……还有一头血脉不纯的貔貅。'], ['石林虎', '夜里有超级巨兽路过，把好多凶兽都踩伤了。山里还有个大脚印，形状像人足，足有近百米长。'], ['族长', '……近百米长？大荒深处，怕是出了了不得的东西。']]); cine(false); } },
     { t: 'goto', x: ALTAR.x, z: ALTAR.z + 6, r: 6, text: '到祭台前参加祭祀', onStart: () => { const ch = entByTag('chief'); teleport(ch, ALTAR.x, ALTAR.z + 3.5, 0); crowdAt(ALTAR.x, ALTAR.z + 8, 10, 6, ALTAR.x, ALTAR.z); } },
@@ -328,7 +328,7 @@ QUESTS = [
 /* ---------- 第十三章 ---------- */
 { id: 'q9', chapter: '第十三章', chapterSub: '怒', title: '狈村越界', desc: '狈村越界抢猎物、挖兽坑、放冷箭。', xp: 900,
   steps: [
-    { t: 'collect', item: 'berry', n: 5, text: '摘一篮红浆果送给石守山（村外的浆果丛）', go: () => ({ x: 64, z: 30 }) },
+    { t: 'collect', item: 'berry', n: 5, text: '摘一篮红浆果送给石守山（村外的浆果丛）', go: () => ({ x: 34, z: -48 }) },
     { t: 'talk', npc: 'shoushan', text: '把红浆果送给石守山', say: [['小不点', '石阿叔，吃浆果，可甜了。'], ['石守山', '……好孩子。阿叔这条命硬着呢。'], ['皮猴', '是狈村一个十四五岁的少年射的！长得白皙俊俏，眼神冷得吓人！'], ['族长', '我们不惹事，但也不怕事。'], ['族长', '狈村的人这些天在咱们的狩猎区挖兽坑、插铁矛，已经有人掉进去了。'], ['族长', '小不点，跟着林虎去西北的狩猎区看看——小心。']], onDone: () => { takeItem('berry', 5); const lh = entByTag('linhu'); teleport(lh, -100, -96); lh.npcAI = null; ['beitrap0', 'beitrap1', 'beitrap2'].forEach((t, i) => { const [x, z] = [[-96, -112], [-118, -96], [-128, -126]][i]; mkProp(t, trapMesh(), x, z, { r: 1.2, name: '兽坑', interact: { label: '填平兽坑', fn: (p, e) => { e.done = true; despawn(t); dust(x, terrH(x, z), z, 16); sfx('boom'); STORY.traps = (STORY.traps || 0) + 1; hudDirty(); } } }).noPlate = false; }); for (let i = 0; i < 4; i++) spawnMob('bhunter', -112 + rr(-12, 12), -112 + rr(-12, 12), { lv: 6, story: true, respawn: false, tag: 'scout' }); } },
     { t: 'cond', text: '在狩猎区填平狈村的兽坑', prog: () => `（${STORY.traps || 0}/3）`, go: () => { const t = ['beitrap0', 'beitrap1', 'beitrap2'].map(entByTag).find(Boolean); return t ? { x: t.x, z: t.z } : null; }, check: () => (STORY.traps || 0) >= 3 },
     { t: 'kill', mob: 'scout', n: 4, text: '赶走狈村的探子', go: () => ({ x: -112, z: -112 }) },

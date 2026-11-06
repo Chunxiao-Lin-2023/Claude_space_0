@@ -59,8 +59,9 @@ function terrH(x, z) {
 }
 function terrN(x, z) { const e = TER.cell; const hx = terrH(x + e, z) - terrH(x - e, z), hz = terrH(x, z + e) - terrH(x, z - e); const L = Math.hypot(hx, 2 * e, hz); return { x: -hx / L, y: 2 * e / L, z: -hz / L }; }
 function slopeAt(x, z) { return 1 - terrN(x, z).y; }
-function waterAt(x, z) { const N = TER.seg; let [gx, gz] = gidx(x, z); const i = clamp(Math.round(gx), 0, N), j = clamp(Math.round(gz), 0, N); return TER.wl[j * (N + 1) + i]; }
-function pathAt(x, z) { const N = TER.seg; let [gx, gz] = gidx(x, z); gx = clamp(gx, 0, N - 1e-6); gz = clamp(gz, 0, N - 1e-6); const i = Math.floor(gx), j = Math.floor(gz), fx = gx - i, fz = gz - j, P = TER.pm, r = N + 1; const v = lerp(lerp(P[j * r + i], P[j * r + i + 1], fx), lerp(P[(j + 1) * r + i], P[(j + 1) * r + i + 1], fx), fz); return v; }
+function waterAt(x, z) { return tget(x, z) === T.WATER ? terrH(x, z) + 0.6 : -1e9; }
+function pathAt(x, z) { const t = tget(x, z); return t === T.DIRT || t === T.COBBLE || t === T.FIELD || t === T.PLANK ? 1 : 0; }
+function pathAtOld(x, z) { const N = TER.seg; let [gx, gz] = gidx(x, z); gx = clamp(gx, 0, N - 1e-6); gz = clamp(gz, 0, N - 1e-6); const i = Math.floor(gx), j = Math.floor(gz), fx = gx - i, fz = gz - j, P = TER.pm, r = N + 1; const v = lerp(lerp(P[j * r + i], P[j * r + i + 1], fx), lerp(P[(j + 1) * r + i], P[(j + 1) * r + i + 1], fx), fz); return v; }
 /* ground height including standable props */
 function groundH(x, z, y = 1e9) { return Math.max(terrH(x, z), topAt(x, z, y)); }
 function inBounds(x, z, m = 6) { const S = TER.size / 2 - m; return Math.abs(x) < S && Math.abs(z) < S; }
@@ -75,11 +76,12 @@ function buildTerrain(Z) {
   for (let pass = 0; pass < 3; pass++) { const src = TER.h.slice(); for (let j = 2; j < W - 2; j++) for (let i = 2; i < W - 2; i++) { const k = j * W + i, m = TER.pm[k]; if (m <= 0.01) continue; let s = 0; for (let a = -2; a <= 2; a++) for (let b = -2; b <= 2; b++) s += src[(j + a) * W + i + b]; TER.h[k] = lerp(src[k], s / 25, m * 0.85); } }
   TER.chunks.clear();
   // sparkle points along water for the per-frame shimmer
-  TER.water = []; for (let n = 0; n < 6000; n++) { const x = (hash2(n, 7) - 0.5) * S, z = (hash2(n, 13) - 0.5) * S; const w = waterAt(x, z); if (w > terrH(x, z) + 0.3) TER.water.push([x, z, hash2(n, 29) * TAU]); }
+  TER.water = []; if (Z.tiles) Z.tiles(); for (let n = 0; n < 60000; n++) { const x = (hash2(n, 7) - 0.5) * S, z = (hash2(n, 13) - 0.5) * S; if (tget(x, z) === T.WATER && tget(x + 1.5, z) === T.WATER && tget(x - 1.5, z) === T.WATER) TER.water.push([x, z, hash2(n, 29) * TAU]); }
 }
 /* ---------- painted ground chunks ---------- */
 const CH = { size: 16, ppm: 20, max: 40 };
-function groundColor(x, z, out) {
+function groundColor(x, z, out) { const tc = tileMapColor(tget(x, z)); out[0] = tc[0]; out[1] = tc[1]; out[2] = tc[2]; return tget(x, z) === T.WATER ? 1 : 0; }
+function groundColorOld(x, z, out) {
   const Z = TER.Z, B = Z.biome, h = terrH(x, z), n = terrN(x, z), sl = 1 - n.y, wl = waterAt(x, z), pm = pathMaskFeat(Z, x, z, true);
   const n1 = fbm(x * 0.02, z * 0.02, 3), n2 = vnoise(x * 0.11, z * 0.11), n3 = vnoise(x * 0.5, z * 0.5);
   let c = mixRGB(B.grass1, B.grass2, clamp(0.5 + n1 * 1.3, 0, 1)); c = mixRGB3(c, B.grass3 || B.grass2, clamp(n2 * 0.7, 0, 0.55));
@@ -146,11 +148,11 @@ function paintChunk(ci, cj) {
   return c;
 }
 function groundSample2(x, z) { const h = terrH(x, z), w = waterAt(x, z); return { water: w > h - 0.1, pm: pathAt(x, z), sl: slopeAt(x, z) }; }
-function getChunk(ci, cj) { const key = ci + ',' + cj; let c = TER.chunks.get(key); if (c) { c.t = V.t; return c; } c = { cv: paintChunk(ci, cj), t: V.t }; TER.chunks.set(key, c); if (TER.chunks.size > CH.max) { let old = null, ot = 1e9; for (const [k2, v] of TER.chunks) if (v.t < ot) { ot = v.t; old = k2; } TER.chunks.delete(old); } return c; }
+function getChunk(ci, cj) { const key = ci + ',' + cj; let c = TER.chunks.get(key); if (c) { c.t = V.t; return c; } c = { cv: paintTileChunk(ci, cj, CH.size), t: V.t }; TER.chunks.set(key, c); if (TER.chunks.size > CH.max) { let old = null, ot = 1e9; for (const [k2, v] of TER.chunks) if (v.t < ot) { ot = v.t; old = k2; } TER.chunks.delete(old); } return c; }
 let chunkBudget = 0;
 function drawGround(g) {
   const K = k(), S = CH.size, [wx0, wz0] = a2w(-4, -4), [wx1, wz1] = a2w(V.W + 4, V.H + 4); chunkBudget = 1;
-  g.fillStyle = '#5a7a40'; g.fillRect(0, 0, V.W, V.H);
+  g.fillStyle = '#0c0a0e'; g.fillRect(0, 0, V.W, V.H);
   for (let cj = Math.floor(wz0 / S); cj <= Math.floor(wz1 / S); cj++) for (let ci = Math.floor(wx0 / S); ci <= Math.floor(wx1 / S); ci++) {
     const key = ci + ',' + cj; let c = TER.chunks.get(key); if (!c) { if (chunkBudget-- <= 0) continue; c = getChunk(ci, cj); } c.t = V.t;
     const [sx, sy] = w2s0(ci * S, cj * S); g.drawImage(c.cv, sx, sy);
@@ -171,6 +173,8 @@ function scatterPoints(Z, spec, cb) {
     if (!spec.inWater && waterAt(x, z) > terrH(x, z) - 0.6) continue;
     if (!spec.onPath && pathAt(x, z) > 0.15) continue;
     if (LIFTS.length && liftAt(x, z)) continue; // nothing random grows on cliff tops
+    if (!(spec.on || [T.GRASS, T.FLOOR, T.GRAVEL, T.SAND]).includes(tget(x, z))) continue;
+    if (spec.area && (areaAt(x, z) || {}).id !== spec.area) continue;
     if (Z.noScatter && Z.noScatter(x, z)) continue;
     const sl = slopeAt(x, z); if (sl > (spec.slopeMax ?? 0.32)) continue;
     if (Z.clear && Z.clear.some(c => d2(x, z, c.x, c.z) < c.r * c.r)) continue;

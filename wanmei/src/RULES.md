@@ -7,6 +7,7 @@
 | 1 | **移动时必须换帧，不能滑行/瞬移。** 动画速度取自实体每帧的真实位移（`syncEnt` 里的 `e.vel`），不取 AI 想走的速度；走路循环 `WALKF = 6` 帧，步频按身高算，且移动中不低于每秒约 1 个循环；正面/背面走路也要有抬脚、1 像素起伏、摆臂。新写的 NPC 移动代码（剧情、AI、联机插值）不需要设 `mvSpd`，动画自动跟上。 | 「有些 NPC 走的时候不够流畅，好像在瞬移」 | `node test/walkcheck.js`：屏幕内每个在移动的角色，同一帧停留不得超过 0.45 秒 |
 | 2 | **物体之间不能穿模/重叠。** 所有 `place()` 都经过占地检测（`FP` 占地表 + `fpBlocked`）：硬物（房屋、石头、树干、骨头、鼎…）互不重叠；地被（草、花、灌木…）不能长在硬物里；后放的硬物会清掉压在下面的地被；随机散布遇到占用直接跳过，手工摆放就近挪到 4 米内的空位，挪不开就跳过并记进 `PLACE.skipped`。NPC 的出生点、闲逛目标都用 `freeSpot()` 找空地。崖顶（`LIFTS`）上不随机长东西，崖脚不放硬物。**新加道具时给它在 `FP` 里登记真实占地大小**（贴图比碰撞体大的尤其要登记）。 | 「青石和一个房间重叠了」 | `node test/overlap.js`：全图硬物/地被重叠数、NPC 家的位置落在硬物里的数量都必须为 0 |
 | 3 | **角色要好看，侧面尤其要好看。** 场景里的人物用 `12_pxman.js` 直接按像素画（不再用矢量缩小）：大头 Q 版比例、3 阶色、带色描边、每个发型单独的剪影；侧面要有清楚的脸部轮廓（额头、鼻尖、下巴）、一只眼睛、头发盖住后脑；穿长袍的角色走路时腿藏在袍子里，只露脚，下摆随步子摆动。改人物外观后必须看 `node test/sidegal.js` 的大图（正/侧/背 + 6 帧侧走 + 6 帧正走），侧面那一列要一个一个检查。 | 「角色还是不好看，参考一下现有相关武侠玄幻像素游戏的角色，侧面的时候有点丑」 | 人工看图：`test/sidegal.js`、`test/pxgal.js acts`、`test/showcase.js` |
+| 3b | **地图按星露谷的规则做，不做无边际的自由大地图。** 世界由手工规划的分区组成（`AREAS`：石村、山林、石林、莽牛坡、狈村边界），每块四周是密林/石壁（`areaWalls`），只在路口（`linkAreas`）留缺口，走进缺口淡出换图，宠物和跟随的 NPC 一起过去，镜头不出区域边界。地面是 1 米一格的图块（草地、泥路、石板、水、沙、碎石、林地、田垄、木桥），不同地面之间是圆润的像素过渡，不是锯齿台阶。布局一律用规则（矩形、圆、路径、整齐的房屋行）摆，不靠全图随机。剧情坐标必须落在某个区域里；任务指引跨区域时指向通往目标的路口。 | 「目前地图自由度太高了，可以考虑星露谷物语这种有规则的来减少工作量，并且把细节做精致」 | `node test/travel.js`（每个路口都能走通、宠物跟上、不会卡进墙里；任务路线指向正确路口）+ `node test/flow.js` |
 | 4 | 剧情能从头打到尾。 | — | `node test/flow.js` |
 | 5 | 双人联机正常。 | — | `node test/peerserver.js` 开着，再 `node test/coop.js` |
 | 6 | 不经用户确认不改平衡数值。 | 用户要求 | 改 `BAL` 前先问 |
@@ -15,7 +16,7 @@
 
 ```
 python3 build.py && node test/serve.js out 8765 &   # 另开一个 peer 服务器: node test/peerserver.js &
-node test/walkcheck.js && node test/overlap.js && node test/flow.js && node test/coop.js
+node test/walkcheck.js && node test/overlap.js && node test/travel.js && node test/flow.js && node test/coop.js
 ```
 
 ## 新内容的检查清单
@@ -23,4 +24,5 @@ node test/walkcheck.js && node test/overlap.js && node test/flow.js && node test
 - 新道具：在 `FP` 里登记占地；是地被就加进 `PLACE.soft`；跑 `overlap.js`。
 - 新 NPC / 新的移动方式：直接改 `e.x/e.z` 也可以（动画看真实位移），跑 `walkcheck.js`。
 - 新发型 / 新服装：在 `12_pxman.js` 里加剪影，跑 `sidegal.js` 看正、侧、背三面和走路帧。
+- 新区域：`addArea` + `linkAreas`，在 `buildShicunTiles` 里用 `trect/tdisc/tpath` 画地面，`areaWalls` 围边；道具用 `scatterPoints({ area })` 或按格子摆；跑 `travel.js`、`overlap.js`。
 - 新的悬崖、高台：用 `addLift()`，地形 `mesa` 和 `LIFTS` 共用同一个 `rimF`，崖顶的东西排序在崖体之后。
