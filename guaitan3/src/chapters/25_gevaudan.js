@@ -81,7 +81,6 @@
   const B = { mode: 'off', x: 0, y: 0, dir: 1, th: 0, r: 3, fear: 0, behind: 0, t: 0, cool: 0, anim: 0, bark: 0, growl: 0, litT: 0, rth: 0, flee: null };
   let NOON_DIED = 0, NIGHT_DIED = 0, NIGHT_LEFT = null, BELL_T = 0, CUE_T = 0, BAA_T = 0, AMB_T = 4;
   const FA = [Math.PI / 2, Math.PI, 0, -Math.PI / 2];
-  if (QS.get('debug') === '1') window.__gvB = B;   // 测试钩子
   const DAYP = { fear: 1.5, lunge: .75, om: 1.75, ls: 9.5, stalk: 4.2 };
   const NIGHTP = { fear: 1.3, lunge: .7, om: 1.6, ls: 9.5, stalk: 5.4 };
   function ad(a, b) { let d = a - b; while (d > Math.PI) d -= 2 * Math.PI; while (d < -Math.PI) d += 2 * Math.PI; return d; }
@@ -1015,7 +1014,7 @@
     const G = grid(38, 30, '"');
     G.rect(0, 0, 37, 1, 'P'); G.rect(0, 28, 37, 29, 'P'); G.rect(0, 2, 0, 27, 'P'); G.rect(37, 2, 37, 27, 'P');
     G.rect(0, 9, 0, 10, 'd');
-    G.rect(4, 3, 9, 6, 'Q'); G.rect(17, 2, 23, 5, 'Q'); G.rect(29, 3, 35, 6, 'Q');
+    G.rect(4, 3, 9, 6, 'Q'); G.rect(17, 3, 23, 6, 'Q'); G.rect(29, 3, 35, 6, 'Q');
     G.rect(1, 9, 13, 10, 'd'); G.rect(6, 7, 6, 8, 'd'); G.rect(12, 7, 28, 12, 'd'); G.rect(28, 7, 35, 8, 'd'); G.rect(14, 13, 14, 15, 'd');
     G.rect(10, 16, 18, 22, 'V'); G.rect(11, 17, 17, 21, 'd');
     G.set(14, 16, 'd'); G.set(10, 19, 'd'); G.set(11, 22, 'G');
@@ -1105,8 +1104,8 @@
       const R = (x, y, ww, hh, c) => { if (!c) return; g.fillStyle = c; g.fillRect(ox + x * sc, oy + y * sc, ww * sc, hh * sc); };
       SPRITES.beast(g, { dir: 1, fr: 1 }, 0, R);
       g.fillStyle = 'rgba(255,220,80,.25)'; g.beginPath(); g.arc(ox - 4 * sc, oy - 2.5 * sc, 7, 0, 7); g.fill();
-      const R2 = (x, y, ww, hh, c) => { if (!c) return; g.fillStyle = c; g.fillRect(14 + x * 2, gy - 34 + y * 2, ww * 2, hh * 2); };
-      SPRITES.sheep(g, { dir: 2, fr: 0, px: 0, bell: true }, 0, R2);
+      const R2 = (x, y, ww, hh, c) => { if (!c) return; g.fillStyle = c; g.fillRect(w - 40 + x * 2, gy - 22 + y * 2, ww * 2, hh * 2); };
+      SPRITES.sheep(g, { dir: 1, fr: 0, px: 0, bell: true }, 0, R2);
     },
     resume: {
       noon: async S => {
@@ -1185,9 +1184,9 @@
         ents: [
           { id: 'houseF', x: 4, y: 6, w: 6, spr: 'front', wallC: '#8a8274', door: 2, wins: [0, 4], on: N('你家的石头房子。屋顶的石板是爷爷那一辈铺的，漏雨的那块一直没换。') },
           { id: 'hdoor', x: 6, y: 6, spr: 'invisible', solid: true, on: houseDoor },
-          { id: 'church', x: 17, y: 5, w: 7, spr: 'church', on: churchUse },
-          { id: 'cdoor', x: 20, y: 5, spr: 'invisible', solid: true, on: churchDoor },
-          { id: 'madonna', x: 25, y: 5, spr: 'madonna', on: madonnaUse },
+          { id: 'church', x: 17, y: 6, w: 7, spr: 'church', on: churchUse },
+          { id: 'cdoor', x: 20, y: 6, spr: 'invisible', solid: true, on: churchDoor },
+          { id: 'madonna', x: 25, y: 6, spr: 'madonna', on: madonnaUse },
           { id: 'forgeF', x: 29, y: 6, w: 7, spr: 'forge', light: { r: 3.4, col: 'rgba(255,130,50,.24)', flick: true, dx: 72, dy: 8 }, on: N('铁匠铺。炉膛里的火终年不灭，铁砧上叮叮当当的。\n门口靠着一排新打的矛头。') },
           { id: 'anvil', x: 31, y: 8, spr: 'anvil', on: N('铁砧被锤得发亮，一边磕出了好几个豁口。') },
           { id: 'smith', x: 33, y: 8, spr: '@smith', dir: 1, on: smithTalk },

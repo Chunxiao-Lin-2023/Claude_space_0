@@ -5,9 +5,9 @@
   const PARADE_MIN = 90;     // 重来后至少给的秒数
   const KSPD = 3.2;          // 坎卜斯追人的速度（玩家走 4.2 / 跑 6.8）
   const KFAR = 4.0;          // 落后超过 5 格时它加快到这个速度：走路的人甩不掉它，跑的人才甩得掉
-  const LOSE = 8.5;          // 拉开超过这么多格，它就不追了，转头去找孩子（实测：走路最远 7.2 格，一路跑会到 10 格以上）
+  const LOSE = 8.5;          // 拉开超过这么多格，它就不追了，转头去找孩子（实测：走路时保持在 3–7 格，一路跑会拉到 9 格以上）
   const WARN = 7.5;          // 超过这个距离先警告一次
-  const REGAIN = 6;          // 回到这么近，它又盯上你
+  const REGAIN = 7;          // 回到这么近，它又盯上你
   const KIDS = [27, 16];     // 菲利克斯在广场东头的位置
   /* ---------- 跨重来保留的计数（W.f 会被检查点还原） ---------- */
   let ACC_WRONG = 0, CARD_WRONG = 0, TONI_WRONG = 0, PARADE_LEFT = null, PARADE_FAILS = 0, LURE_DIED = 0, FOREST_DIED = 0;
@@ -1130,12 +1130,12 @@
     if (L.mode === 'chase') {
       if (kr.chase) kr.chase.spd = dist > 5 ? KFAR : KSPD;
       if (dist < .9) { kr.chase = null; S.run(kCatch); return; }
-      if (dist > WARN && !L.warned) { L.warned = true; S.bubble('kr', '?', 1200); S.toast('慢一点——它快跟不上你了'); }
+      if ((dist > WARN || (S.running && dist > 4.5)) && !L.warned) { L.warned = true; S.bubble('kr', '?', 1200); S.toast('慢一点——它快跟不上你了'); }
       if (dist < 5) L.warned = false;
-      if (dist > LOSE) {
+      if (dist > LOSE || (S.running && dist > 6)) {   // 跑起来的人，它跟不上就不跟了
         L.far += dt;
         if (L.far > .4) {
-          L.mode = 'kids'; L.far = 0; S.stop('kr'); S.bubble('kr', '…', 1500); S.bubble('felix_p', '!', 1600);
+          L.mode = 'kids'; L.far = 0; L.pause = .9; S.stop('kr'); S.bubble('kr', '…', 1500); S.bubble('felix_p', '!', 1600);
           for (let i = 0; i < 4; i++) bellJ(S, .09, i * .12);
           S.toast('它不追你了——它转身往菲利克斯那边去了！回去把它引过来！');
         }
@@ -1145,7 +1145,8 @@
     if (L.mode === 'kids') {
       if (dist <= REGAIN) { L.mode = 'chase'; S.chase('kr', { spd: KSPD, wait: .3, catch: kCatch }); S.bubble('kr', '!', 900); S.toast('它又盯上你了'); return; }
       if (Math.abs(tx - KIDS[0]) + Math.abs(ty - KIDS[1]) <= 1) { L.mode = 'x'; S.run(kidsTaken); return; }
-      if (!kr.mv) { const d = bfsStep(curMap(), tx, ty, KIDS[0], KIDS[1], kr); if (d >= 0) startMove(kr, d, 2.6); }
+      if (L.pause > 0) { L.pause -= dt; return; }   // 它先停一下、回头看看，再往孩子那边走
+      if (!kr.mv) { const d = bfsStep(curMap(), tx, ty, KIDS[0], KIDS[1], kr); if (d >= 0) startMove(kr, d, 2.2); }
     }
   }
   async function kCatch(S) {

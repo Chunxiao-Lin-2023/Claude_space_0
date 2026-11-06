@@ -9,7 +9,7 @@
   const ORDER = ['pE', 'pN1', 'pN2', 'pN3', 'pW'];
   const JUNC = { j1: 'b1', j2: 'b2', j3: 'b3' };
   const CHASERS = ['pw', 'pw2'];
-  const SPD = [2.9, 3.05, 3.2];
+  const SPD = [2.8, 2.95, 3.1];
   /* 墓门上的六种印（密码盘只用数字键，避免字母触发引擎快捷键） */
   const SEALS = ['一只站着的胡狼，举着一把刀', '一只趴着的胡狼，底下九个捆着手的人', '一个椭圆圈，圈里是一只流着三道泪的眼睛', '一个椭圆圈，圈里：篮子、圣甲虫、三道竖、太阳', '一只张开翅膀的秃鹫，爪下一行字「死亡将展开翅膀」', '一个骷髅，底下两根交叉的骨头'];
   const SEAL_OK = '24';
@@ -266,7 +266,7 @@
     await startDark(S, false);
   }
   function litAt(S, x, y) {
-    for (const j in JUNC) { const b = S.ent(JUNC[j]); if (b && !b.off && (x - b.x) ** 2 + (y - b.y) ** 2 <= 2.2 * 2.2) return true; }
+    for (const j in JUNC) { const b = S.ent(JUNC[j]); if (b && !b.off && (x - b.x) ** 2 + (y - b.y) ** 2 <= 2.4 * 2.4) return true; }
     return false;
   }
   function chaseOn(S, id, wait) {
@@ -276,18 +276,21 @@
   }
   function stopAll(S) { for (const id of CHASERS) { S.stop(id); S.freeze(id, false); } }
   function near(S, c) { return Math.abs(c.px - S.pl.px) + Math.abs(c.py - S.pl.py) < 16.5; }
-  /* 把报纸怪甩到一个离玩家 6—8 格、没有灯的地方 */
-  function knockBack(S, id) {
-    const cand = [[10, 9], [16, 10], [16, 2], [12, 3], [8, 7], [1, 10], [5, 5], [11, 7], [14, 4]];
-    let best = null, bd = 1e9;
+  /* 把报纸怪甩开：离玩家至少 5 格、没有灯，并且尽量远离还没接好的接头（不会正好堵在下一个目标上） */
+  function farSpot(S) {
+    const cand = [[10, 9], [16, 10], [16, 2], [12, 3], [8, 7], [1, 10], [5, 5], [11, 7], [14, 4], [9, 3], [3, 2]];
+    const left = Object.keys(JUNC).filter(j => S.ent(j).s.loose).map(j => S.ent(j));
+    let best = null, bs = -1e9;
     for (const [x, y] of cand) {
       if (litAt(S, x, y)) continue;
-      const d = Math.abs(x - S.pl.x) + Math.abs(y - S.pl.y), score = Math.abs(d - 7);
-      if (d >= 5 && score < bd) { bd = score; best = [x, y]; }
+      const dp = Math.abs(x - S.pl.x) + Math.abs(y - S.pl.y); if (dp < 5) continue;
+      const dj = left.length ? Math.min(...left.map(j => Math.abs(x - j.x) + Math.abs(y - j.y))) : dp;
+      const sc = Math.min(dj, 9) * 10 - Math.abs(dp - 7);
+      if (sc > bs) { bs = sc; best = [x, y]; }
     }
-    if (!best) best = [10, 9];
-    S.place(id, best[0], best[1], 1);
+    return best || [10, 9];
   }
+  function knockBack(S, id) { const [x, y] = farSpot(S); S.place(id, x, y, 1); }
   async function startDark(S, retry) {
     stopAll(S);
     S.hide('pw2'); S.hidePlayer(false);
@@ -319,7 +322,7 @@
     if (!e.s.loose) return S.toast('这个接头已经接好了。');
     for (const id of CHASERS) { const c = S.ent(id); if (c.chase) c.chase.always = true; }
     S.sfx('switch'); S.toast('拧紧接头……');
-    await S.wait(900);
+    await S.wait(600);
     for (const id of CHASERS) { const c = S.ent(id); if (c.chase) c.chase.always = false; }
     for (const id of CHASERS) { const c = S.ent(id); if (!c.hidden && c.chase && near(S, c)) return hitBy(S, id); }
     e.s.loose = false;
@@ -327,12 +330,12 @@
     S.sfx('switch'); buzz(S);
     S.f.jn = (S.f.jn || 0) + 1;
     if (S.f.jn >= 3) return victory(S);
-    for (const id of CHASERS) { const c = S.ent(id); if (!c.hidden && litAt(S, Math.round(c.px / 16), Math.round(c.py / 16))) { S.stop(id); knockBack(S, id); shriek(S); chaseOn(S, id, 1.2); } }
+    /* 灯泡一亮，一闪：三格以内的纸片都被惊散，给你喘口气 */
+    for (const id of CHASERS) { const c = S.ent(id); const cx = Math.round(c.px / 16), cy = Math.round(c.py / 16); if (!c.hidden && c.chase && (litAt(S, cx, cy) || Math.abs(cx - S.pl.x) + Math.abs(cy - S.pl.y) <= 3)) { S.stop(id); knockBack(S, id); shriek(S); chaseOn(S, id, 1.2); } }
     for (const id of CHASERS) { const c = S.ent(id); if (c.chase) c.chase.spd = SPD[S.f.jn]; }
     S.goal('接好三个电线接头（还剩 ' + (3 - S.f.jn) + ' 个）——灯下它不敢过来');
-    if (S.f.jn === 1) {
-      const piles = [[16, 10], [16, 2], [10, 9]].sort((a, b) => (Math.abs(b[0] - S.pl.x) + Math.abs(b[1] - S.pl.y)) - (Math.abs(a[0] - S.pl.x) + Math.abs(a[1] - S.pl.y)));
-      const p = piles[0]; const b = S.ent('pw2'); S.place('pw2', p[0], p[1], 1); b.alpha = 0;
+    if (S.f.jn === 2) {
+      const p = farSpot(S); const b = S.ent('pw2'); S.place('pw2', p[0], p[1], 1); b.alpha = 0;
       flutter(S, .05, 12);
       S.toast('灯亮了！……可是另一摞报纸，也飞起来了。');
       await S.alpha('pw2', 1, 700);
