@@ -561,7 +561,7 @@
     S.speed(WIND_DRAG); S.f.wmode = 'suck'; S.amb('none');
     S.place('rrock', 25, 7); S.show('gap');
     const it = S.ent('it'); S.stop('it'); S.place('it', 26, 8, 1); it.alpha = 0;
-    S.pos(Math.min(S.pl.x, 23), S.pl.y, 1);
+    S.pos(22, 8, 1);   // 你踉跄着退开几步：它从缝里探出来时离你四格
     S.sfx('sting'); S.bubble('pl', '!', 1000);
     await S.alpha('it', 1, 500);
     if (FLEE_DIED) await S.think(FLEE_DIED === 1 ? '别停。别回头看。\n顺着来的路，一直往左跑——按住跑步键。' : '贴着洞厅北边跑，绕开那几块大石头。\n碎石坡就在最左边。');
