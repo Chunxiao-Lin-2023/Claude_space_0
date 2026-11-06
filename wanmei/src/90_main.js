@@ -47,7 +47,7 @@ function startSolo(sv) {
   $('title').classList.add('hide'); STATE.mode = 'play'; document.body.classList.remove('notplay');
   const pname = PARTY.pname; resetParty(); PARTY.pname = pname || SET.petName || '绒灵';
   let zone = 'shicun', qi = 0, si = 0, pos = null;
-  if (sv) { Object.assign(PARTY, JSON.parse(JSON.stringify(sv.party))); if (NETROLE === 'host' && NET.guestName) PARTY.pname = NET.guestName; zone = sv.zone; qi = sv.qi; si = 0; pos = [sv.x, sv.z]; for (const [k, v] of Object.entries(sv.side || {})) if (SIDEQ[k]) { SIDEQ[k].st = v.st === 1 || v.st === 2 ? v.st : v.st; SIDEQ[k].n = v.n || 0; } for (let i = 0; i < qi; i++) QUESTS[i]._started = true; }
+  if (sv) { Object.assign(PARTY, JSON.parse(JSON.stringify(sv.party))); if (NETROLE === 'host' && NET.guestName) PARTY.pname = NET.guestName; zone = sv.zone; qi = sv.qi; si = 0; pos = areaAt(sv.x, sv.z) && !tileSolid(sv.x, sv.z) ? [sv.x, sv.z] : null; for (const [k, v] of Object.entries(sv.side || {})) if (SIDEQ[k]) { SIDEQ[k].st = v.st === 1 || v.st === 2 ? v.st : v.st; SIDEQ[k].n = v.n || 0; } for (let i = 0; i < qi; i++) QUESTS[i]._started = true; }
   loadZone(zone); setupWorld();
   const start = pos || [WILLOW.x + 5, WILLOW.z + 14]; createHeroes(start[0], start[1]); W.me = 0;
   for (const p of W.P) p.specRef = p.type === 'player' ? ['@p1'] : ['@pet'];
@@ -92,7 +92,7 @@ function step(dt) {
   if (W.sniffT > 0) W.sniffT -= dt;
   tickDlg(dt); tickWillow(dt);
   for (const e of W.ents) syncEnt(e, dt);
-  updateParticles(dt); updateFX(dt); updateCrits(dt);
+  updateParticles(dt); updateFX(dt); updateCrits(dt); areaTick(dt);
   updateCam(dt); updateLight(dt);
   updateHUD(dt); tickMusic(dt);
   W.saveT = (W.saveT || 0) + dt; if (W.saveT > 20) { W.saveT = 0; saveGame(); }
@@ -108,6 +108,7 @@ function render(dt) {
   if (UI.target && UI.target.alive !== false && !UI.target.removed) drawTargetRing(g, UI.target);
   queueStatic(); queueLifts(); queueScene(); queueCrits(); queueFX(); flushQueue(g);
   drawParticles(g);
+  maskOutsideArea(g);
   LAMPS.length = 0; if (LCUR.dark > 0.02) { for (const L of STATIC.lamps) if (onScreen(L.x, L.z, L.r + 2)) LAMPS.push(L); sceneLamps(LAMPS); for (const L of CRIT.lamps) LAMPS.push(L); } drawLighting(g);
   blitLow();
 }

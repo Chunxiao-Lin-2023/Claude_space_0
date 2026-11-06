@@ -64,7 +64,8 @@ function tryStepInteract(target) {
   if ((s.t === 'talk' || s.t === 'interact') && target.tag === s.npc) { if (s.say || s.run) { runScript(async () => { if (s.say) await talk(s.say); if (s.run) await s.run(target); }); } else stepDone(); return true; }
   return false;
 }
-function stepTarget() { const s = curStep(); if (!s) return null; if (s.go) return typeof s.go === 'function' ? s.go() : s.go; if (s.t === 'goto') return { x: s.x, z: s.z }; if (s.npc) { const e = entByTag(s.npc); if (e) return { x: e.x, z: e.z }; } if (s.t === 'boss' || s.t === 'kill') { const e = entByTag(s.tag || s.mob); if (e) return { x: e.x, z: e.z }; } return null; }
+function stepTarget() { const t = stepTargetRaw(), me = P1 && P1(); return t && me ? routeTo(me.x, me.z, t.x, t.z) : t; }
+function stepTargetRaw() { const s = curStep(); if (!s) return null; if (s.go) return typeof s.go === 'function' ? s.go() : s.go; if (s.t === 'goto') return { x: s.x, z: s.z }; if (s.npc) { const e = entByTag(s.npc); if (e) return { x: e.x, z: e.z }; } if (s.t === 'boss' || s.t === 'kill') { const e = entByTag(s.tag || s.mob); if (e) return { x: e.x, z: e.z }; } return null; }
 function stepText() { const s = curStep(); if (!s) return STORY.done ? '主线暂告一段落' : ''; let t = s.text || ''; if (s.t === 'kill' && s.n > 1) t += `（${s._n || 0}/${s.n}）`; if (s.t === 'collect') t += `（${Math.min(PARTY.items[s.item] || 0, s.n || 1)}/${s.n || 1}）`; if (s.prog) t += s.prog(); return t; }
 /* ---------- side quests (MMO style: ! givers, ? turn-in) ---------- */
 function sideOffer(sq) { return SIDEQ[sq].st == null && (!SIDEQ[sq].req || SIDEQ[sq].req()); }
