@@ -10,9 +10,7 @@
 | 沙丘乱斗 | `dunerumble/` | 开发中 |
 | 猫猫咕咕的家 | `pawpals/` | 开发中 |
 | 幽宅双影 | `hollowmanor/` | 开发中 |
-| 十夜怪谈 | `nighttales/` | 开发中 |
-| 十夜怪谈·贰 | `nighttales2/` | 开发中 |
-| 十夜怪谈·叁 | `nighttales3/` | 开发中 |
+| 怪谈·壹 | `nighttales/` | 开发中 |
 | 尸夜孤楼 | `lasttower/` | 开发中 |
 | 尸潮堡垒 | `deadtide/` | 开发中 |
 | 百戏茶馆 | `baixi/` | 开发中 |
