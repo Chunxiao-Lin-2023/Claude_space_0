@@ -169,7 +169,7 @@
     for (const id of ['hwin1', 'hwin2', 'hwin3', 'hwin4']) S.ent(id).light = { r: 1.6, col: 'rgba(70,90,150,.06)', dy: 20 };
     S.place('halmaeH', 26, 3, 1); h.alpha = 0; h.spr = '@halmae1';
     bell(S); await S.wait(450); bell(S);
-    await S.narr(again ? '楼梯下面，又响起了那串铃铛声——' : '头顶的日光灯「啪」地灭了。\n叮铃……叮铃……楼梯下面，传来一串小铃铛的声音。一级，一级，往上走。');
+    await S.narr(again ? '楼梯下面，又响起了那串铃铛声——' : '头顶的日光灯「啪」地灭了。只有走廊那头的女厕所里，还亮着一盏，一闪一闪。\n叮铃……叮铃……楼梯下面，传来一串小铃铛的声音。一级，一级，往上走。');
     meow(S);
     await S.alpha('halmaeH', 1, 650);
     if (again && DIED.hide >= 2) await S.think('别往楼梯跑，也别愣着——\n往左跑，厕所在走廊左边的下面。第一到第三间都行。第四间不行！');
@@ -346,8 +346,8 @@
   async function askKey(S, prompt, keys, len, alias) {
     if (S.timerLeft == null) S.timer(S.f.qt || qT(S, 45), '她在数', onTimeout, { during: true });
     for (;;) {
-      const v = await S.keypad(prompt, keys, len, { sep: '|', alias });
-      if (v != null) { S.clearTimer(); return v.split('|'); }
+      const v = await S.keypad(prompt, keys, len, { sep: ' ', alias });
+      if (v != null) { S.clearTimer(); return v.split(' '); }
       await S.say('老奶奶', '……嗯？奶奶等着呢。', { style: 'whisper' });
     }
   }
@@ -935,6 +935,7 @@
           { x: 3, y: 7, spr: 'sink', solid: true, on: S => S.narr('洗手池里泡着一块用剩的肥皂，软软的。') },
           ...[1, 2, 3, 4].map(n => ({ id: 'st' + n, x: 7 + n, y: 7, spr: 'kstall', solid: true, num: n === 4, on: S => hideStall(S, n) })),
           { x: 12, y: 10, spr: 'box', on: S => S.narr('拖把桶。桶底的水是灰的。') },
+          { id: 'wcl', x: 6, y: 8, spr: 'invisible', light: { r: 3.2, col: 'rgba(200,235,215,.17)', flick: true } },   // 厕所里那盏没灭的灯：灭灯以后，它照着入口
           { id: 'halmaeH', x: 26, y: 3, spr: '@halmae1', solid: false, hidden: true }
         ],
         tick(S, dt) {   // 她在走廊里追的时候：越近，铃铛越响、越密，心跳越快

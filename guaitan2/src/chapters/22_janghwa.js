@@ -82,7 +82,8 @@
       extra(g, d, fr, G, R) { R(2, G.hT + 1, 12, 1, '#141214'); if (d === 0) R(4, G.tT + 1, 8, 6, '#a83a2a'); R(7, G.hT - 3, 2, 2, '#c8302a'); } },
     ojak: { key: 'jh-ojak', skin: '#c89a74', hair: '#3a3430', hs: 'short', top: '#7a7a6a', bottom: '#5a5a4e', shoes: '#2a2a2a', hat: 'scarf', hatC: '#d8d0c0' },
     fisher: { key: 'jh-fish', skin: '#b88a62', hair: '#9a948e', hs: 'short', top: '#8a8070', top2: '#c8c0b0', bottom: '#5a5448', shoes: '#3a3020', hat: 'straw' },
-    vil: { key: 'jh-vil', skin: '#c89a74', hair: '#1a1414', hs: 'short', top: '#d8d0c0', bottom: '#a8a090', shoes: '#4a3a2a', hat: 'scarf', hatC: '#ece6d8' },
+    vil: { key: 'jh-vil', skin: '#c89a74', hair: '#1a1414', hs: 'short', top: '#8a6a44', top2: '#a8885a', bottom: '#6a5a44', shoes: '#4a3a2a', hat: 'straw', hatC: '#b8954a' },
+    vil2: { key: 'jh-vil2', skin: '#d8b08a', hair: '#1a1414', hs: 'bun', top: '#6a7a5a', top2: '#d8d0c0', bottom: '#4a4a3a', robe: true, shoes: '#3a2a2a' },
     hong: { key: 'jh-hong', skin: '#dfe4e6', hair: '#07080c', hs: 'long', cover: true, top: '#eef0ec', top2: '#ffffff', bottom: '#e6e8e4', robe: true, ghost: true, eye: '#0a0a10', mouth: '#6a7a8a', extra: wetX },
     jangG: { key: 'jh-jangG', skin: '#d4dcda', hair: '#08090b', hs: 'long', cover: true, top: '#e6eae6', top2: '#ffffff', bottom: '#dfe3df', robe: true, ghost: true, eye: '#0a0a10', mouth: '#5a6a6a',
       extra(g, d, fr, G, R) { wetX(g, d, fr, G, R); R(3, G.hT + 3, 1, 7, '#2e4a2c'); R(12, G.hT + 2, 1, 9, '#3e5e38'); } },
@@ -253,19 +254,19 @@
     if (n >= 5) return S.goal('证物齐了（5/5）——回府衙');
     S.goal('查访裴座首家和城外池塘，收集证物（' + n + '/5）');
   }
-  function prepLeft(S) {
+  function prepLeft(S, where) {
     const f = S.f, L = [];
-    if (!f.diary) L.push('看前任留下的册子');
-    if (!S.ent('lamp').full) L.push('给灯添油');
-    if (!S.has('fire')) L.push('找火镰');
-    if (!f.robe) L.push('换上官服');
+    if (!f.diary) L.push(where ? '书案上前任的册子还没看' : '看前任留下的册子');
+    if (!S.ent('lamp').full) L.push(where ? (S.has('oil') ? '灯油拿来了，还没添进灯里' : '灯油在院子西边的库房') : '给灯添油');
+    if (!S.has('fire')) L.push(where ? '火镰在院子东边的吏房' : '找火镰');
+    if (!f.robe) L.push(where ? '官服挂在屋角的衣架上' : '换上官服');
     return L;
   }
   function prepGoal(S) { const L = prepLeft(S); S.goal(L.length ? '天黑以前准备好：' + L.join('、') : '准备好了——到书案后坐下'); }
 
   /* 吓死：前任们就是这样死的 */
-  async function scared(S, msg, title, kind) {
-    S.clearTimer(); S.lights(null);
+  async function scared(S, msg, title, kind, why) {
+    S.clearTimer(); S.lights(null); lastDeath = why || '';
     if (kind === 'face') await S.scare('face', { spr: '@hongF', dur: 1 });
     else { S.fx('red'); await S.scare('flash', { dur: .8, sfx: 'scream' }); }
     await S.die(msg, title);
@@ -392,7 +393,7 @@
   async function winUse(S) {
     const f = S.f, w = S.ent('win');
     if (f.ns === 'dark' && w.open) {
-      w.open = false; S.sfx('close'); S.amb('night'); S.lights(null);
+      w.open = false; S.sfx('close'); S.amb('night'); S.lights([EMBER]);
       await S.narr('你扑到窗边，把窗扇拽回来，插上了插销。');
       S.goal('窗关上了——点灯！');
       return;
@@ -413,9 +414,9 @@
   async function seatUse(S) {
     const f = S.f;
     if (f.ph === 'prep' || f.ph === 'arrive') {
-      const L = prepLeft(S);
+      const L = prepLeft(S, true);
       if (f.ph === 'arrive') return S.narr('书案后面的方席。坐上去，正对着门。');
-      if (L.length) return S.narr('还没准备好：' + L.join('、') + '。');
+      if (L.length) return S.narr('还没准备好——\n' + L.join('；\n') + '。');
       const r = await S.ask('就在这里，坐到天亮？', ['坐下，等她们来', '再准备一下']);
       if (r) return;
       return startNight(S);
@@ -437,13 +438,14 @@
   }
 
   /* ================= 夜：东轩 ================= */
-  const SEAT = [6, 3], LAMP_T = 9, SIT_T = 6, STILL_T = 7;
-  let stillWarnT = 0, dripT = 2;
+  const SEAT = [6, 3], LAMP_T = 10, SIT_T = 5, STILL_T = 7, EMBER = [8 * 16 + 8, 4 * 16 - 4, .9, .32];
+  const NIGHT_GOAL = '端坐书案后，守着灯（一人盯窗和门，一人守灯）';
+  let stillWarnT = 0, dripT = 2, hbT = 0, lastDeath = '';
   function seatPl(S) { S.pos(SEAT[0], SEAT[1], 0); }
   function nightReset(S) {
     const f = S.f;
     S.clearTimer(); S.lights(null);
-    S.ent('lamp').off = false; S.ent('win').open = false;
+    S.ent('lamp').off = false; S.ent('win').open = false; S.ent('ddoor').open = false;
     ['hong', 'jangG', 'wet1', 'wet2', 'wet3'].forEach(i => S.hide(i));
     S.ent('hong').alpha = 1; S.place('hong', 6, 8, 3); S.hide('hong');
     S.dark(.84); S.plr(null); S.amb('night'); seatPl(S);
@@ -456,7 +458,7 @@
     S.dark(.92, 'gwana'); S.dark(.84); S.amb('night'); seatPl(S);
     await S.card('那天夜里', '', '金吏房和衙役们，天没黑就走光了。\n偌大一座府衙，只剩下我一个人，\n和东轩里这一盏灯。');
     await S.fade(0, 700);
-    S.goal('端坐书案后，守着灯（一人盯窗和门，一人守灯）');
+    S.goal(NIGHT_GOAL);
     nightReset(S); f.ph = 'night';
     S.cp('night');
     await ev1(S, false);
@@ -476,25 +478,25 @@
     S.sfx('heart'); await S.wait(500);
     S.shake(600, 3); S.sfx('glass'); S.ent('win').open = true; S.ent('lamp').off = true;
     S.dark(.97); S.plr(1.3); S.amb('wind');
-    S.lights([[10 * 16 + 8, 2 * 16 + 8, 2, .45]]);   // 撞开的窗外透进来一点月光
+    S.lights([[10 * 16 + 8, 2 * 16 + 8, 2, .45], EMBER]);   // 撞开的窗外透进来一点月光；灯芯上还剩一点红
     await S.say('', '灯灭了。', { style: 'big' });
-    f.ns = 'dark';
+    f.ns = 'dark'; S.ent('ddoor').open = false;
     S.goal('风把窗撞开了，灯灭了——先关窗，再点灯！');
     S.timer(LAMP_T, '黑暗', async S => {
       S.f.ns = 0;
-      await scared(S, '黑暗里，水声停在了你面前。\n一只又湿又冷的手，摸上了你的脸。\n\n第二天早上，金吏房在书案后面找到了你。眼睛睁得很大。', '灯灭了', 'face');
+      await scared(S, '黑暗里，水声停在了你面前。\n一只又湿又冷的手，摸上了你的脸。\n\n第二天早上，金吏房在书案后面找到了你。眼睛睁得很大。', '灯灭了', 'face', 'lamp');
     }, { during: true });
   }
   async function ev2(S) {
     const f = S.f;
-    f.ns = 'sit';
+    f.ns = 'sit'; S.ent('ddoor').open = true; S.sfx('open');
     S.show('wet1'); drip(S, .07);
     await S.narr('门——开着一条缝。\n门槛上，一串湿脚印，正一个一个，朝屋里印过来。');
     S.show('wet2');
     S.goal('回到书案后，端坐！');
     S.timer(SIT_T, '它进来了', async S => {
       S.f.ns = 0;
-      await scared(S, '你还站在屋子当中。\n湿脚印一直印到了你的脚尖前面。\n有人贴着你的耳朵，叹了一口气。冷得像井水。', '你没坐住');
+      await scared(S, '你还站在屋子当中。\n湿脚印一直印到了你的脚尖前面。\n有人贴着你的耳朵，叹了一口气。冷得像井水。', '你没坐住', 'red', 'sit');
     }, { during: true });
   }
   async function startStill(S) {
@@ -513,8 +515,10 @@
   function dongTick(S, dt) {
     const f = S.f;
     if (f.ph === 'night' && (f.ns === 0 || f.ns === 'sit' || f.ns === 'still') && !W.busy) {
-      dripT -= dt; if (dripT <= 0) { dripT = 1.4 + Math.random() * 1.8; drip(S, f.ns === 'still' ? .05 : .025); }
+      const near = f.ns === 'still' ? 8 - S.ent('hong').py / TS : 0;   // 她越近，水声越响
+      dripT -= dt; if (dripT <= 0) { dripT = 1.4 + Math.random() * 1.8 - near * .25; drip(S, .025 + near * .014); }
     }
+    if (f.ns === 'dark' && S.timerLeft != null && S.timerLeft < 3.5) { hbT -= dt; if (hbT <= 0) { hbT = .55; S.sfx('heart'); } }   // 快来不及了：心跳
     if (f.ns !== 'still' || W.busy) return;
     const h = S.ent('hong'), ty = 5 * TS;
     if (h.py > ty) { h.py = Math.max(ty, h.py - dt * TS * 3.2 / STILL_T); h.y = Math.round(h.py / TS); h.fr = ((W.t * 2) | 0) % 2 ? 1 : 3; }
@@ -530,13 +534,14 @@
         });
       } else {
         f.ns = 0; S.clearTimer();
-        S.run(async S => scared(S, '你只是挪了一下膝盖。\n她猛地抬起头——\n灯，灭了。', '你动了', 'face'));
+        S.run(async S => scared(S, '你只是挪了一下膝盖。\n她猛地抬起头——\n灯，灭了。', '你动了', 'red', 'move'));
       }
     }
   }
   async function stillDone(S) {
     const f = S.f;
     f.ns = 'face'; S.place('hong', 6, 5, 3); S.ent('hong').alpha = .92;
+    S.goal('她停在书案前——别喊，别跑');
     S.cp('face');
     await ev3(S);
   }
@@ -549,8 +554,7 @@
     let r = await S.ask('灯芯「哔剥」响了一声。', ['（屏住呼吸，端坐不动）', '「来——来人哪！」', '（夺门而逃）']);
     if (r === 1) return scared(S, '「来人——」\n喊声撞在墙上，又弹回来。没有人来。\n她脸上的水，一下子全涌了出来。\n灯，灭了。', '你喊出了声');
     if (r === 2) return fleeEnd(S);
-    S.face('hong', 0);
-    await S.narr('她跪了下去。');
+    await S.narr('她在你面前跪了下去。');
     let quiet = 0;
     for (;;) {
       r = await S.ask('她的嘴唇动了动，没有声音。\n……她在等你先开口。', ['「你是何人？有何冤情，起来说话。」', '「妖孽！还不退下！」', '（一言不发）']);
@@ -575,7 +579,7 @@
     await S.say('红莲', ['我们去找过五位大人。只想说一句冤枉。', '可他们一看见我们，就……', '大人。姐姐不是那样的人。求您，替她把名声要回来。'], { style: 'whisper' });
     await S.say('你', '我是铁山府使。这桩案子，我接了。');
     await S.narr('两个人对着你，深深地拜了下去。\n再抬起头的时候，屋里已经没有人了。\n只有地板上，两滩水。');
-    S.hide('hong'); S.hide('jangG'); S.show('pud');
+    S.hide('hong'); S.hide('jangG'); S.show('pud'); S.ent('ddoor').open = false;
     f.ns = 'done';
     await S.fade(1, 900);
     S.dark(null); S.dark(null, 'gwana'); S.amb('room'); S.ent('win').lit = true;
@@ -588,7 +592,7 @@
   }
   async function morning(S) {
     const f = S.f;
-    S.sfx('open');
+    S.sfx('open'); S.ent('ddoor').open = true;
     await S.narr('门被推开了。金吏房带着福童和两个衙役，抬着一块门板站在门口。\n——是来收尸的。');
     S.bubble('kimD', '!', 1400); S.bubble('bokD', '!', 1400);
     await S.say('福童', '……活、活的！大人是活的！');
@@ -641,7 +645,8 @@
     return cyc('裴座首', [
       '……大人。家丑，家丑啊。',
       '蔷花……那孩子从小就懂事。我怎么也想不到……可那东西，我是亲眼看见的。',
-      '红莲走的那天早上，窗外有只鸟一直叫。我嫌吵，拿竹竿把它赶走了。……要是没赶走就好了。'
+      '红莲走的那天早上，窗外有只鸟一直叫。我嫌吵，拿竹竿把它赶走了。……要是没赶走就好了。',
+      '她们娘留下的那只箱子……我一直锁着，钥匙贴身带着。我没脸打开。'
     ], '_bae')(S);
   }
   async function jangTalk(S) {
@@ -658,6 +663,7 @@
     const n = f.ymN = (f.ymN || 0) + 1;
     if (n === 1) {
       await S.narr('井边洗衣裳的老妇人，看见你，先往大厅那边瞟了一眼。');
+      S.face('heo', 0); S.bubble('heo', '…', 1600);
       await S.say('乳母', ['大人……夫人在那边，老身不敢多嘴。', '……老身是两位小姐的乳母。她们是吃我的奶长大的。'], { style: 'whisper' });
       await S.say('乳母', ['出事前一天，库房的鼠笼里逮着一只耗子，这么大——（她比了一下，比猫还大）', '第二天一早，笼子空了。夫人一个人在灶房里烧东西，不许人进去。', '……然后，大小姐的褥子里，就有了「那个」。'], { style: 'whisper' });
       return;
@@ -755,7 +761,7 @@
   }
   async function pondEnter(S, first) {
     const f = S.f;
-    if (f.ph === 'after') return drainScene(S);
+    if (f.ph === 'after') { if (f.drained) return S.goal('在碑前上一炷香'); return drainScene(S); }
     if (first) { await S.narr('城外的池塘。四面是柳树和芦苇。\n明明是正午，这里却凉飕飕的，连蝉都不叫。'); }
     dayGoal(S);
   }
@@ -792,11 +798,11 @@
   }
 
   /* ================= 升堂 ================= */
-  const TRIAL = ['heoT', 'jangT', 'baeT', 'yumoT', 'run1', 'run2', 'bundle'];
+  const TRIAL = ['heoT', 'jangT', 'baeT', 'yumoT', 'run1', 'run2', 'bundle', 'crowd1', 'crowd2', 'crowd3', 'crowd4'];
   function trialStage(S, on) {
     TRIAL.forEach(i => S.show(i, on));
-    if (on) { S.place('kim', 9, 5, 0); S.show('bok'); S.place('bok', 14, 5, 0); }
-    else { S.place('kim', 8, 9, 0); S.place('bok', 15, 10, 0); S.hide('ojakT'); }
+    if (on) { S.place('kim', 9, 5, 0); S.show('bok'); S.place('bok', 14, 5, 0); S.focus(11, 9); }
+    else { S.focus(null); S.place('kim', 8, 9, 0); S.place('bok', 15, 10, 0); S.hide('ojakT'); }
   }
   async function trialStart(S) {
     const f = S.f;
@@ -881,10 +887,11 @@
     const f = S.f;
     for (;;) {
       const ids = Object.keys(EVN).filter(i => S.has(i));
-      const r = await S.ask(q, ids.map(i => '出示：' + EVN[i]).concat(['（翻看案卷）']), '');
+      const sh = f.shown || [];
+      const r = await S.ask(q, ids.map(i => '出示：' + EVN[i] + (sh.includes(i) ? '（已出示）' : '')).concat(['（翻看案卷）']), '');
       if (r === ids.length) { await S.note('case'); continue; }
       const id = ids[r];
-      if (ok.includes(id)) { gavel(S); S.sfx('good'); return id; }
+      if (ok.includes(id)) { gavel(S); S.sfx('good'); f.shown = sh.concat([id]); return id; }
       const n = f['w_' + k] = (f['w_' + k] || 0) + 1;
       const WR = {
         trap: '许氏：「一只破鼠笼？大人这是要审耗子？」', fur: '许氏：「一张烂皮子，跟这事有什么相干？」',
@@ -913,7 +920,6 @@
   /* ================= 平冤 ================= */
   async function drainScene(S) {
     const f = S.f;
-    if (f.drained) return;
     ['vil1', 'vil2', 'kimP', 'baeP', 'yumoP'].forEach(i => S.show(i));
     S.show('baeP', f.mercy);
     S.hide('bird');
@@ -931,7 +937,7 @@
     await S.narr('过了这么久，她们的脸还像睡着了一样。\n连头发上的水草，都是青的。');
     S.focus(null);
     if (f.mercy) await S.say('裴座首', '蔷花……红莲……爹来接你们了……', { style: 'whisper' });
-    await S.say('乳母', '小姐……', { style: 'whisper' });
+    await S.say('乳母', f.mercy ? '小姐……老爷来接你们了。' : '小姐……老爷要是能来送送你们就好了……', { style: 'whisper' });
     await S.fade(1, 900);
     S.hide('sh1'); S.hide('sh2'); S.show('mound'); S.show('stele');
     S.place('kimP', 4, 7, 3); S.place('yumoP', 2, 7, 3); S.place('baeP', 5, 6, 1);
@@ -947,8 +953,9 @@
     st.lit = true; st.flowers = true; S.sfx('match');
     await S.narr('你点了一炷香，插在碑前。\n烟直直地往上走，一点都不散。');
     if (S.has('letter')) {
-      await S.narr('你把红莲的字条折好，压在了香炉底下。');
-      f.letterBack = true;
+      const r = await S.ask('袖子里，还揣着红莲那张字条。', ['把字条压在碑前，还给她们', '收好，带回府衙存档']);
+      if (r === 0) { S.take('letter'); f.letterBack = true; await S.narr('你把字条折好，压在了香炉底下。\n风吹过来，纸角动了动，没有被吹走。'); }
+      else await S.narr('你把字条收进了袖子里。这是案子的一部分。');
     }
     await S.fade(1, 900);
     S.ent('lamp').off = false;
@@ -992,7 +999,7 @@
           { x: 17, y: 12, spr: 'woodpile', on: N('柴火码得整整齐齐。是前任府使到任那天码的，一根也没烧。') },
           { id: 'kim', x: 8, y: 9, spr: '@kim', dir: 0, on: kimTalk },
           { id: 'bok', x: 15, y: 10, spr: '@bok', dir: 0, on: bokTalk },
-          { id: 'steward', x: 10, y: 13, spr: '@steward', hidden: true, dir: 3, on: S => S.say('许家管事', '大人……') },
+          { id: 'steward', x: 10, y: 13, spr: '@steward', hidden: true, dir: 3, on: S => (S.f.ph === 'day' && !S.f.bribed ? bribe(S) : S.say('许家管事', '大人……')) },
           { id: 'silver', x: 9, y: 13, spr: 'silver', hidden: true, on: N('红漆木箱。') },
           { id: 'heoT', x: 10, y: 9, spr: '@heo', hidden: true, dir: 3, on: N('许氏跪得笔直。') },
           { id: 'jangT', x: 13, y: 9, spr: '@jang', hidden: true, dir: 3, on: N('长锁的眼睛一直往门外瞟。') },
@@ -1001,6 +1008,10 @@
           { id: 'run1', x: 8, y: 7, spr: '@runner', hidden: true, dir: 2, on: N('衙役拄着水火棍，目不斜视。') },
           { id: 'run2', x: 15, y: 7, spr: '@runner', hidden: true, dir: 1, on: N('衙役拄着水火棍，目不斜视。') },
           { id: 'ojakT', x: 11, y: 9, spr: '@ojak', hidden: true, dir: 3 },
+          { id: 'crowd1', x: 9, y: 14, spr: '@vil', hidden: true, dir: 3, on: N('看热闹的百姓踮着脚，往堂上张望。') },
+          { id: 'crowd2', x: 10, y: 14, spr: '@vil2', hidden: true, dir: 3, on: N('「就是她，裴家那个后娘……」') },
+          { id: 'crowd3', x: 13, y: 14, spr: '@vil', hidden: true, dir: 3, on: N('「三年了，头一回升堂。」') },
+          { id: 'crowd4', x: 14, y: 14, spr: '@vil2', hidden: true, dir: 3, on: N('有人小声念着两个小姐的名字。') },
           { id: 'bundle', x: 10, y: 10, spr: 'bundle', hidden: true, solid: false, on: N('一团用白布包着的东西。布上渗着发黑的血迹。') }
         ],
         enter: gwanaEnter
@@ -1030,6 +1041,7 @@
           { id: 'bokD', x: 7, y: 8, spr: '@bok', hidden: true, dir: 3 },
           { id: 'hongD', x: 6, y: 6, spr: '@hongD', hidden: true, solid: false, dir: 3 },
           { id: 'jangD', x: 7, y: 6, spr: '@jangD', hidden: true, solid: false, dir: 3 },
+          { id: 'ddoor', x: 6, y: 9, spr: 'mun', decal: true, solid: false },
           { x: 6, y: 9, spr: 'invisible', touch: dongDoor }
         ],
         tick: dongTick,
@@ -1106,7 +1118,7 @@
           { id: 'mound', x: 2, y: 4, w: 2, spr: 'mound', hidden: true, on: N('新堆的坟。土还是湿的。') },
           { id: 'stele', x: 3, y: 5, spr: 'stele', hidden: true, on: steleUse },
           { id: 'vil1', x: 8, y: 12, spr: '@vil', hidden: true, dir: 3, on: N('乡亲们低着头，谁也不说话。') },
-          { id: 'vil2', x: 19, y: 12, spr: '@vil', hidden: true, dir: 3, on: N('「作孽啊……」') },
+          { id: 'vil2', x: 19, y: 12, spr: '@vil2', hidden: true, dir: 3, on: N('「作孽啊……」') },
           { id: 'kimP', x: 6, y: 14, spr: '@kim', hidden: true, dir: 3, on: N('金吏房红着眼圈，假装在看天。') },
           { id: 'baeP', x: 10, y: 14, spr: '@bae', hidden: true, dir: 3, on: N('裴座首跪在地上，一动不动。') },
           { id: 'yumoP', x: 11, y: 14, spr: '@yumo', hidden: true, dir: 3, on: N('乳母抱着两件绿色的小袄。') },
@@ -1153,7 +1165,12 @@
     legend: '《蔷花红莲传》（장화홍련전）是朝鲜王朝后期流传的古典小说，作者不详，有汉文本和多种谚文本，情节大同小异。一般认为它取材于十七世纪中叶平安道铁山的一桩案子：据说孝宗年间，一位新到任的铁山府使审理了一桩姐妹冤死的案子，后人据此敷衍成书。小说里，铁山座首裴武龙的前妻张氏留下两个女儿蔷花、红莲；续娶的许氏把一只剥了皮的大老鼠塞进蔷花的被褥，诬她小产失节，又让儿子长锁趁夜把她带到池塘边推下水，长锁当场被林中窜出的老虎咬掉了耳朵（一说还有一条胳膊和一条腿）。红莲后来跟着一只青鸟来到池边，也没入了水中。\n\n此后，姐妹的冤魂夜夜向新任府使诉冤，接连几任府使都被吓死，铁山府一度无人敢去。直到一位胆大的府使端坐灯下，问明了冤情，第二天升堂审案：许氏拿出所谓的「胎」作证，府使命人当堂剖开，里面全是老鼠屎，真相大白。许氏和长锁被依律处死（各本刑罚的说法不一），裴武龙获释。姐妹的尸身从池中打捞上来，面色如生，被安葬立碑。不少版本还有后话：裴武龙再娶后得了一对孪生女儿，仍取名蔷花、红莲，被看作姐妹转世。\n\n这个故事在韩国家喻户晓，是「继母型」家庭小说和公案故事的代表。它背后是朝鲜民间对「冤鬼」（원귀）的观念：含冤而死的人冤情不雪，就不得安息，会一次次回来诉说，而平冤、安葬与立碑才能让亡魂安心离去。二十世纪以来它被多次搬上银幕，1924 年就有了电影改编；2003 年的电影《蔷花，红莲》（英文名 A Tale of Two Sisters）借用了姐妹与继母的框架，讲的是一个全新的现代故事，后来还有好莱坞翻拍。\n\n（本章中的尹府使、金吏房、福童、乳母、渔翁、许家管事等人物，前任府使的册子和刑房案卷的文字，灯油、火镰、关窗与端坐不动的守夜规矩，鼠笼、灰坑、袖子、嫁妆单这几样证物和升堂问答的顺序，红莲的字条，许家送银子的情节，以及孪生姐妹后颈上的红痣，均为游戏虚构。小说中对许氏相貌的丑化描写，本章没有沿用。）',
     start: { map: 'gwana', x: 11, y: 14, dir: 3 },
     resume: {
-      night: async S => { nightReset(S); S.f.ph = 'night'; S.goal('端坐书案后，守着灯'); await S.think('（灯一灭，先关窗，再点灯。点着了就坐回去——别动，别出声。）'); await ev1(S, true); },
+      night: async S => {
+        nightReset(S); S.f.ph = 'night'; S.goal(NIGHT_GOAL);
+        const T = { lamp: '（灯一灭，别愣着：窗在右上角，灯在书案右边。先关窗，再点灯。）', sit: '（灯一点着，马上坐回方席上。她已经在门口了。）', move: '（她进门以后，一下也不能动。手离开方向键。）' };
+        await S.think(T[lastDeath] || '（灯一灭，先关窗，再点灯。点着了就坐回去——别动，别出声。）'); lastDeath = '';
+        await ev1(S, true);
+      },
       face: async S => {
         S.clearTimer(); S.lights(null); S.ent('lamp').off = false; S.ent('win').open = false; S.dark(.84); S.plr(null); S.amb('night'); seatPl(S);
         S.place('hong', 6, 5, 3); S.ent('hong').alpha = .92; S.hide('jangG'); S.f.ns = 'face';
@@ -1161,7 +1178,7 @@
         await ev3(S);
       },
       day: async S => { ['hong', 'jangG', 'kimD', 'bokD', 'pud'].forEach(i => S.hide(i)); dayGoal(S); },
-      bribe: async S => { await S.think('（许家的人还在门口等着。）'); await bribe(S); },
+      bribe: async S => { S.show('steward'); S.show('silver'); S.ent('silver').open = false; S.goal('许家管事还在门口等着回话'); await S.think('（许家的人还在门口等着。……这一回，想清楚再答。）'); },
       trial: async S => { trialStage(S, false); S.f.ph = 'trialwait'; await S.think('（许氏每说一句，就拿证物驳她。拿不准的时候，翻翻案卷，按她说的那一条去找。）'); },
       after: async S => { trialStage(S, false); }
     },
