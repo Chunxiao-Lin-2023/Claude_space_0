@@ -387,7 +387,7 @@
     f.lock = true;
     await S.narr('你拉开车门，把手电和水袋扔到副驾驶上。');
     await S.say('老杰克', '等等——十点了。');
-    SND.genOff(S); S.sfx('switch'); S.after(2600, async S => SND.dingo(S));
+    SND.genOff(S); S.sfx('switch'); S.tone('sine', 480, 720, .9, .02, 2.6, 1800); S.tone('sine', 720, 560, 1.1, .018, 3.45, 1800);   // 熄灯以后，远处一声野狗嚎
     for (const id of ['win1', 'win2', 'bulb', 'genset']) { const e = S.ent(id); e.off = true; if (e.lit) e.lit = false; }
     S.dark(.9);
     await S.narr('工具棚那边，发电机「突、突、突」地喘了几声，停了。\n门廊的灯泡暗下去，窗户一扇一扇地黑了。');
