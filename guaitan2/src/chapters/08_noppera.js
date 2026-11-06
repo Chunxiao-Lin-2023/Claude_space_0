@@ -219,13 +219,13 @@
       if (!fixed && dist > 3.8) return;
       if (dist < .2) { dx = 0; dy = 1; }
       const n = Math.hypot(dx, dy) || 1; dx /= n; dy /= n;
-      const L = Math.round(fixed ? 14 : 12 + Math.min(9, dist * 3)), a = fixed || dist < 2.6 ? .62 : .45, col = `rgba(6,3,8,${a})`;
+      const L = Math.round(fixed ? 13 : 8 + Math.min(6, dist * 2)), a = fixed || dist < 2.6 ? .72 : .5, col = `rgba(6,3,8,${a})`;   // 短一点、浓一点：别落到灯照不到的地方
       const P = (u, v, w, h) => R(ax + 8 + dx * u + px * v - w / 2, 14 + (dy * u + py * v) * .6 - h / 2, w, h, col);
       let px = -dy, py = dx; if (py > 0 || (Math.abs(py) < .3 && px < 0)) { px = -px; py = -py; }   // 尾巴朝画面上方翘，看得清
       for (let i = 0; i <= L; i++) P(i, 0, i < 3 || i > L - 5 ? 5 : 3, 2);
       if (e.tail) {
-        const b = L * .45;
-        for (let j = 1; j <= 10; j++) P(b - j * j * .05, j * 1.35, j > 7 ? 6 : j > 4 ? 4 : 3, j > 7 ? 5 : j > 4 ? 4 : 3);
+        const b = L * .35;
+        for (let j = 1; j <= 9; j++) P(b - j * j * .04, j * 1.6, j > 6 ? 6 : j > 3 ? 4 : 3, j > 6 ? 6 : j > 3 ? 4 : 3);
         P(L, 3, 2, 3); P(L, -3, 2, 3);
       }
     },
@@ -925,7 +925,7 @@
           if (!S.f.gone || S.f.helped) return;
           const left = S.timerLeft;
           if (left != null) {
-            S.plr(1.6 + 1.6 * Math.max(0, Math.min(1, left / CANDLE)));
+            S.plr(1.9 + 1.7 * Math.max(0, Math.min(1, left / CANDLE)));
             if (left < 30 && !S.f.candleWarn) { S.f.candleWarn = true; S.toast('蜡烛快烧完了！'); for (let i = 0; i < 4; i++) S.tone('square', 900, 300, .03, .05, i * .23, 2000); S.sfx('heart'); }
             for (const k of FIG) if (!S.f.gone[k] && !S.f.chk[k + '_tail']) { const e = S.ent('f_' + k); if (Math.hypot(e.px / TS - S.pl.x, e.py / TS - S.pl.y) <= 2.6) S.f.chk[k + '_tail'] = true; }
           }
