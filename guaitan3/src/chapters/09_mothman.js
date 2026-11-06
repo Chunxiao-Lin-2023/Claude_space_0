@@ -2,8 +2,8 @@
 (() => {
   /* ---------- 常量 ---------- */
   const ANSWER = '352614';                                   // 按日期从早到晚：③红眼睛 ⑤狗 ②黑衣人 ⑥河上的光 ①电视 ④电话
-  const BR_BASE = 86, BR_MIN = 76, BR_FLOOR = 74;            // 桥上的倒计时（秒）：基础 / 排错卡后最少 / 死后重来的下限
-  const BOARD_PEN = 3, ARG_PEN = 9;                          // 排错一次扣桥上 3 秒；劝错一句扣 9 秒
+  const BR_BASE = 92, BR_MIN = 82, BR_FLOOR = 80;            // 桥上的倒计时（秒）：基础 / 排错卡后最少 / 死后重来的下限
+  const BOARD_PEN = 3, ARG_PEN = 6;                          // 排错一次扣桥上 3 秒；劝错一句扣 6 秒
   const CHASE_SPD = 2.8, CHASE_WAIT = 1.0;                   // TNT：它的速度（格/秒）、现身后愣多久才追
   const LAMPS = [8, 18, 23, 28, 38, 43];                     // 桥灯（北侧护栏）
   const VER = ['v1', 'v2', 'v4', 'v5', 'v6'];                // 要核实的五张卡（③是诺拉自己的）
@@ -638,9 +638,13 @@
     await S.think('多丽丝、卡尔、巴德，都堵在桥上。\n一个人喊没人信——得说他们自己见过的那件事。');
   }
   async function finale(S) {
-    S.f.phase = 'final'; S.clearTimer();
-    await S.narr('你跑回了桥头。脚底下是结结实实的土地。');
-    await S.narr('身后，桥上的车一辆一辆空着，车灯还亮着，排成一条长长的光带，一直连到对岸。');
+    S.f.phase = 'final'; S.clearTimer(); S.dark(.78);
+    if (S.once('final1')) {
+      await S.narr('你跑回了桥头。脚底下是结结实实的土地。');
+      await S.narr('身后，桥上的车一辆一辆空着，车灯还亮着，排成一条长长的光带，一直连到对岸。');
+      S.goal('……');
+      S.cp('final');
+    }
     const m = S.ent('moth_b'); m.open = true; screech(S, 1.2); S.shake(400, 2);
     S.focus(33, 3);
     await S.narr('塔顶上，那个东西张开了翅膀。');
@@ -747,6 +751,7 @@
         startTntChase(S);
       },
       deduce: async S => { await deduce(S); },
+      final: async S => { S.ent('moth_b').open = false; await finale(S); },
       bridge: async S => {
         S.f.phase = 'bridge'; S.dark(null); S.focus(null);
         if (brDeaths) await S.think(brDeaths === 1 ? '还来得及。先找认识的人：多丽丝、卡尔、巴德。\n说他们自己见过的那件事。劝完了，自己也要回到桥头。' : '别跟黑西装的人说话，别在桥上停。\n多丽丝——那通电话；卡尔——强尼；巴德——TNT 那晚。');
@@ -763,10 +768,10 @@
       g.fillStyle = '#1a1620'; for (let x = 0; x < w; x++) g.fillRect(x, 46 + Math.round(Math.sin(x * .08) * 3), 1, 12);
       g.fillStyle = '#141a26'; g.fillRect(0, 58, w, h - 58);
       g.fillStyle = '#b8bcc2'; g.fillRect(0, 56, w, 3);
-      for (const x of [36, 116]) { g.fillRect(x, 14, 3, 44); g.fillRect(x + 7, 14, 3, 44); g.fillRect(x, 14, 10, 2); }
-      for (let x = 0; x < w; x++) { const y = x < 37 ? 16 + (37 - x) * 1.1 : x > 125 ? 16 + (x - 125) * 1.1 : 16 + 32 * (1 - Math.pow((x - 81) / 44, 2)); g.fillRect(x, Math.round(y), 1, 1); if (x % 6 === 0) g.fillRect(x, Math.round(y), 1, 56 - Math.round(y)); }
+      for (const x of [36, 116]) { g.fillRect(x, 24, 3, 34); g.fillRect(x + 7, 24, 3, 34); g.fillRect(x, 24, 10, 2); }
+      for (let x = 0; x < w; x++) { const y = x < 37 ? 26 + (37 - x) * .8 : x > 125 ? 26 + (x - 125) * .8 : 26 + 24 * (1 - Math.pow((x - 81) / 44, 2)); g.fillRect(x, Math.round(y), 1, 1); if (x % 6 === 0) g.fillRect(x, Math.round(y), 1, 56 - Math.round(y)); }
       g.fillStyle = '#ffe8a0'; for (let x = 4; x < w; x += 12) g.fillRect(x, 55, 1, 1);
-      const cx = 121, cy = 2;   // 塔顶上的天蛾人
+      const cx = 121, cy = 10;   // 塔顶上的天蛾人
       g.fillStyle = '#0c0a0a';
       for (let r = 0; r < 12; r++) { const ext = r < 4 ? 4 + r * 3 : 16 - (r - 4); g.fillRect(cx - 2 - ext, cy + 3 + r, ext, 1); g.fillRect(cx + 4, cy + 3 + r, ext, 1); }
       g.fillRect(cx - 3, cy, 8, 14); g.fillRect(cx - 2, cy - 2, 6, 3);

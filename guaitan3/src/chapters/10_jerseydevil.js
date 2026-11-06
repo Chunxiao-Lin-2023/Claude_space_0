@@ -14,6 +14,8 @@
   }
   // 枪声：一声闷响 + 一道尖的
   function gunshot(S, d = 0, v = 1) { S.tone('square', 170, 30, .28, .13 * v, d, 900); S.tone('sawtooth', 1400, 70, .14, .06 * v, d, 2600); S.tone('triangle', 60, 30, .5, .08 * v, d + .02, 260); }
+  // 远处的猎狗：两声短促的吠叫，压低了音色显得远
+  function hound(S, d = 0) { for (const t of [0, .32, .9]) { S.tone('square', 540, 380, .14, .018, d + t, 1300); S.tone('sawtooth', 300, 220, .16, .012, d + t, 900); } }
   // 冰裂：几下脆响，后面拖一声闷的
   function crack(S, d = 0) { [0, .07, .17, .3].forEach((t, i) => S.tone('triangle', 2800 - i * 420, 760, .05, .05, d + t, 5400)); S.tone('sine', 240, 80, .5, .05, d + .1, 600); }
   // 利兹妈妈的摇篮曲（游戏原创的小调，四句）
@@ -39,19 +41,19 @@
     const P = (a, b, w, h, c) => v ? R(a, b, w, h, c) : R(b, a, h, w, c);
     const k = e.k;
     if (k === 'dev' || k === 'old' || k === 'fake') {
-      const c = k === 'old' ? '#a4acbc' : '#5e6880', c2 = k === 'old' ? '#b4bccb' : '#424a60';
+      const c = k === 'old' ? '#9ca4b6' : '#46506a', c2 = k === 'old' ? '#b4bccb' : '#2c3448';
       const ox = k === 'fake' ? 0 : j, oy = k === 'fake' ? 0 : ((e.x * 7 + e.y * 3) % 5) - 2;
       if (e.gap) return;
       // 两瓣、圆头：像一只小马驹的蹄子从中间裂开
-      P(5 + ox, 5 + oy, 2, 4, c); P(9 + ox, 5 + oy, 2, 4, c); P(5 + ox, 4 + oy, 1, 1, c2); P(10 + ox, 4 + oy, 1, 1, c2);
-      P(6 + ox, 8 + oy, 1, 1, c2); P(9 + ox, 8 + oy, 1, 1, c2);
-      if (k === 'fake') { P(5, 6, 2, 1, '#8a94a8'); P(9, 6, 2, 1, '#8a94a8'); P(12, 10, 2, 3, '#7a8498'); P(12, 13, 1, 1, '#7a8498'); }   // 木纹 + 旁边倒着走的小鞋印
+      P(4 + ox, 5 + oy, 3, 5, c); P(9 + ox, 5 + oy, 3, 5, c); P(5 + ox, 4 + oy, 2, 1, c); P(9 + ox, 4 + oy, 2, 1, c);
+      P(5 + ox, 6 + oy, 1, 3, c2); P(10 + ox, 6 + oy, 1, 3, c2); P(4 + ox, 10 + oy, 8, 1, 'rgba(255,255,255,.25)');
+      if (k === 'fake') { P(4, 7, 3, 1, '#7a849a'); P(9, 7, 3, 1, '#7a849a'); P(13, 10, 2, 4, '#5a647a'); P(13, 14, 1, 1, '#5a647a'); }   // 木纹 + 旁边倒着走的小鞋印
       return;
     }
-    if (k === 'deer') { const c = '#6e788c'; P(3, 2, 1, 3, c); P(5, 2, 1, 3, c); P(4, 4, 1, 1, c); P(10, 9, 1, 3, c); P(12, 9, 1, 3, c); P(11, 11, 1, 1, c); return; }
-    if (k === 'boot') { const c = '#727c90'; P(2, 1, 4, 6, c); P(3, 2, 1, 1, '#4a5266'); P(4, 4, 1, 1, '#4a5266'); P(10, 8, 4, 6, c); P(11, 9, 1, 1, '#4a5266'); P(12, 11, 1, 1, '#4a5266'); P(7, 3, 2, 2, '#7a8498'); P(7, 2, 1, 1, '#7a8498'); P(8, 12, 2, 2, '#7a8498'); return; }
-    if (k === 'fox') { const c = '#66708a'; P(7, 2, 2, 2, c); P(6, 1, 1, 1, c); P(9, 1, 1, 1, c); P(7, 10, 2, 2, c); P(6, 9, 1, 1, c); P(9, 9, 1, 1, c); return; }
-    if (k === 'kid') { const c = '#7a8498'; P(4, 3, 2, 4, c); P(10, 9, 2, 4, c); return; }
+    if (k === 'deer') { const c = '#4a5470'; P(3, 2, 1, 3, c); P(5, 2, 1, 3, c); P(4, 4, 1, 1, c); P(10, 9, 1, 3, c); P(12, 9, 1, 3, c); P(11, 11, 1, 1, c); return; }
+    if (k === 'boot' || k === 'heel') { const c = '#56607a'; if (k === 'heel') { P(2, 1, 4, 6, c); P(2, 6, 4, 1, '#2c3448'); P(2, 5, 1, 1, '#2c3448'); P(5, 5, 1, 1, '#2c3448'); P(10, 8, 4, 6, c); P(10, 13, 4, 1, '#2c3448'); P(10, 12, 1, 1, '#2c3448'); P(13, 12, 1, 1, '#2c3448'); return; } P(2, 1, 4, 6, c); P(3, 2, 1, 1, '#4a5266'); P(4, 4, 1, 1, '#4a5266'); P(10, 8, 4, 6, c); P(11, 9, 1, 1, '#4a5266'); P(12, 11, 1, 1, '#4a5266'); P(7, 3, 2, 2, '#7a8498'); P(7, 2, 1, 1, '#7a8498'); P(8, 12, 2, 2, '#7a8498'); return; }
+    if (k === 'fox') { const c = '#4a5470'; P(7, 2, 2, 2, c); P(6, 1, 1, 1, c); P(9, 1, 1, 1, c); P(7, 10, 2, 2, c); P(6, 9, 1, 1, c); P(9, 9, 1, 1, c); return; }
+    if (k === 'kid') { const c = '#5a647a'; P(4, 3, 2, 4, c); P(10, 9, 2, 4, c); return; }
   }
 
   /* ---------- 泽西恶魔精灵 ---------- */
@@ -97,21 +99,21 @@
   const VOL1 = '十个夜晚。\n推特上只许问两个问题的小男孩；没有厂牌的街机；\n雪花屏里的木偶戏；一道会吹风的石缝——\n它们生在网上。帖子一层一层地往下盖，\n每一个回帖的人都说：「我也记得。」\n\n然后是更老的故事：\n阿彻大道上搭车的白裙姑娘，玻璃柜里的水手娃娃，\n运河小岛上挂满的娃娃，草原上数骨头的口哨，\n河边的红眼睛，还有松林里，第十三个孩子。\n\n网线和松林隔着两百年，讲的却是同一件事：\n怪谈从来不是一个人的。\n有人讲，有人信，有人回一句话——\n它就一直活着，等下一个人，在夜里接下去。';
 
   defChapter({
-    id: 'jerseydevil', n: 10, title: '泽西恶魔', sub: '据说利兹妈妈的第十三个孩子，生下来就长出了蹄子和翅膀，尖叫着从烟囱飞进了松林。', origin: '美国新泽西州松林泥炭地传说', color: '#3c2420',
+    id: 'jerseydevil', n: 10, title: '泽西恶魔', sub: '据说利兹妈妈的第十三个孩子，生下来就长出了蹄子和翅膀，尖叫着从烟囱飞进了松林。', origin: '美国新泽西松林传说', color: '#3c2420',
     amb: 'wind', floor: 'snow', floor2: 'needle', wall: 'wood', dark: .84, plr: 2.4,
     thumb(g, w, h) {
       const gr = g.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, '#0c1020'); gr.addColorStop(1, '#2a3248'); g.fillStyle = gr; g.fillRect(0, 0, w, h);
-      g.fillStyle = '#e8e4d0'; g.beginPath(); g.arc(w * .7, h * .28, h * .16, 0, 7); g.fill();
-      g.fillStyle = '#0c1020'; g.beginPath(); g.arc(w * .7 + h * .06, h * .25, h * .14, 0, 7); g.fill();
+      for (let i = 0; i < 40; i++) { g.fillStyle = i % 3 ? 'rgba(220,226,240,.55)' : 'rgba(255,255,255,.9)'; g.fillRect((hash(i, 1, 9) * w) | 0, (hash(i, 2, 9) * h * .55) | 0, i % 5 ? 1 : 2, i % 5 ? 1 : 2); }   // 朔月：没有月亮，只有星星
       g.fillStyle = '#c8d0dc'; g.fillRect(0, h * .8, w, h * .2);
       g.fillStyle = '#0a1210';
       for (let i = 0; i < 9; i++) { const x = i * w / 8 - 8, th = h * (.3 + ((i * 37) % 11) / 40); g.beginPath(); g.moveTo(x, h * .82); g.lineTo(x + 10, h * .82 - th); g.lineTo(x + 20, h * .82); g.fill(); }
       // 一截砖烟囱，顶上蹲着它
-      g.fillStyle = '#4a2a24'; g.fillRect(w * .44, h * .42, w * .12, h * .42); g.fillStyle = '#2a1814'; g.fillRect(w * .42, h * .4, w * .16, h * .04);
-      const sc = 1.7, ox = w / 2 - 8 * sc, oy = h * .4 - 16 * sc;
+      g.fillStyle = '#4a2a24'; g.fillRect(w * .44, h * .52, w * .12, h * .32); g.fillStyle = '#2a1814'; g.fillRect(w * .42, h * .5, w * .16, h * .04);
+      // 烟囱顶上蹲着它（整只都要在画面里：从角尖到蹄子约 32 个单位）
+      const sc = h * .4 / 32, ox = w / 2 - 8 * sc, oy = h * .5 - 14 * sc;
       const R = (x, y, ww, hh, c) => { if (!c) return; g.fillStyle = c; g.fillRect(ox + x * sc, oy + y * sc, ww * sc, hh * sc); };
-      devilSpr(g, { dir: 0, fly: true, fr: 0 }, .3, R);
-      g.fillStyle = 'rgba(255,60,20,.35)'; g.fillRect(ox + 5 * sc, oy - 19 * sc, 6 * sc, 2 * sc);
+      devilSpr(g, { dir: 0, fly: false, fr: 0 }, .3, R);
+      g.fillStyle = 'rgba(255,60,20,.4)'; g.fillRect(ox + 4 * sc, oy - 12 * sc, 8 * sc, 3 * sc);
     },
     /* 惊吓大头像（32×32）：长长的马脸，两只弯角，烧红的眼睛；两边的蝙蝠翅膀慢慢张开，嘴越张越大 */
     faces: {
@@ -125,14 +127,14 @@
           R(X(0, 1), 6 - sp, 1, 2, WI); R(X(3, 1), 24, 1, 2, WI);
         }
         R(9, 1, 2, 6, HN); R(8, 0, 2, 2, HN); R(7, 0, 1, 1, '#a89878'); R(21, 1, 2, 6, HN); R(22, 0, 2, 2, HN); R(24, 0, 1, 1, '#a89878');
-        R(10, 5, 12, 9, B); R(11, 4, 10, 2, B); R(11, 14, 10, 6, B); R(12, 20, 8, 7, '#35261f'); R(19, 6, 3, 17, BD); R(20, 20, 1, 6, BD);
-        R(8, 6, 2, 4, B); R(22, 6, 2, 4, BD);
-        for (let i = 0; i < 5; i++) R(11 + i * 2, 4, 1, 2, '#2a1a14');
-        R(15, 12, 2, 8, '#4a362c');
+        R(10, 5, 12, 8, B); R(11, 4, 10, 2, B); R(12, 13, 8, 8, B); R(12, 21, 8, 6, '#35261f'); R(11, 23, 10, 4, '#35261f'); R(18, 6, 3, 15, BD); R(19, 21, 2, 6, BD);
+        R(8, 5, 2, 5, B); R(22, 5, 2, 5, BD); R(9, 4, 1, 2, B); R(22, 4, 1, 2, BD);
+        for (let i = 0; i < 6; i++) R(13 + (i % 3) * 2, 1 + i, 1, 3, '#1a100c');   // 额前一绺一绺的鬃毛
+        R(15, 12, 2, 10, '#4a362c');
         const gl = .6 + Math.sin(t * 9) * .2;
         R(11, 8, 5, 4, `rgba(255,60,20,${.25 * gl})`); R(16, 8, 5, 4, `rgba(255,60,20,${.25 * gl})`);
         R(12, 9, 3, 2, '#ff3a1a'); R(17, 9, 3, 2, '#ff3a1a'); R(13, 9, 1, 1, '#ffd8a8'); R(18, 9, 1, 1, '#ffd8a8');
-        R(13, 22, 2, 2, '#100808'); R(17, 22, 2, 2, '#100808');
+        R(12, 23, 3, 2, '#100808'); R(17, 23, 3, 2, '#100808'); R(12, 22, 1, 1, '#4a362c'); R(19, 22, 1, 1, '#4a362c');
         const mh = Math.round(a * 5);
         R(12, 26, 8, 1, '#100808');
         if (mh) { R(12, 26, 8, mh, '#1a0505'); R(12, 26, 1, 2, '#d8d0b8'); R(14, 26, 1, 1, '#d8d0b8'); R(17, 26, 1, 1, '#d8d0b8'); R(19, 26, 1, 2, '#d8d0b8'); R(13, 25 + mh, 1, 1, '#d8d0b8'); R(18, 25 + mh, 1, 1, '#d8d0b8'); }
@@ -258,8 +260,14 @@
     tiles: {
       snow: { solid: false, paint: pSnow },
       snowp: { solid: false, paint(R, X, Y) { pSnow(R, X, Y); const o = hash(X, Y, 61) < .5 ? 0 : 1; R(3 + o, 2, 3, 5, '#8e98ac'); R(4 + o, 3, 1, 3, '#76809a'); R(10 - o, 9, 3, 5, '#8e98ac'); R(11 - o, 10, 1, 3, '#76809a'); } },
-      needle: { solid: false, paint(R, X, Y) { speck(R, '#3e3226', ['#5a4228', '#6e4e2c', '#2e261c', '#8a6a3a'], X, Y, 24, 45); if (hash(X, Y, 46) < .5) R((hash(X, Y, 47) * 14) | 0, (hash(X, Y, 48) * 14) | 0, 2, 1, '#9aa2b2'); } },
-      ice: { solid: false, paint(R, X, Y) { R(0, 0, 16, 16, '#7f9cb2'); speck(R, '#7f9cb2', ['#93aec2', '#6f8ca2', '#a8c0d2'], X, Y, 10, 49); const a = (hash(X, Y, 50) * 10) | 0, b = (hash(X, Y, 51) * 12) | 0; R(a, b, 6, 1, '#c8dcea'); R(a + 5, b + 1, 4, 1, '#c8dcea'); if (hash(X, Y, 52) < .4) R(b, a, 1, 5, '#5f7c92'); } },
+      needle: { solid: false, paint(R, X, Y) {
+        speck(R, '#4a3a2a', ['#6a4e30', '#7e5a34', '#3a2e22', '#9a7444'], X, Y, 26, 45);
+        // 边上混进一点雪，和雪地自然过渡
+        for (let i = 0; i < 4; i++) { const h = hash(X, Y, 46 + i), side = (h * 4) | 0, o = (hash(X, Y, 50 + i) * 12) | 0, L = 3 + ((hash(X, Y, 54 + i) * 4) | 0);
+          if (side === 0) R(o, 0, L, 2, '#b8c0ce'); else if (side === 1) R(o, 14, L, 2, '#b8c0ce'); else if (side === 2) R(0, o, 2, L, '#b8c0ce'); else R(14, o, 2, L, '#b8c0ce'); }
+        if (hash(X, Y, 58) < .6) R((hash(X, Y, 47) * 12 + 2) | 0, (hash(X, Y, 48) * 12 + 2) | 0, 2, 1, '#c2cad8');
+      } },
+      ice: { solid: false, paint(R, X, Y) { R(0, 0, 16, 16, '#9ab8d0'); speck(R, '#9ab8d0', ['#b0cce0', '#86a4bc', '#c8dcec'], X, Y, 12, 49); R(0, 0, 16, 1, '#c8dcec'); const a = (hash(X, Y, 50) * 10) | 0, b = (hash(X, Y, 51) * 12) | 0; R(a, b, 6, 1, '#c8dcea'); R(a + 5, b + 1, 4, 1, '#c8dcea'); if (hash(X, Y, 52) < .4) R(b, a, 1, 5, '#5f7c92'); } },
       spine: { solid: true, paint(R, X, Y) { pPine(R, X, Y, '#14261c', '#c8d2de'); } },
       cedar: { solid: true, paint(R, X, Y) { pSnow(R, X, Y); const c = '#0e1c1a'; R(6, 0, 4, 15, c); R(4, 3, 8, 3, c); R(3, 7, 10, 3, c); R(2, 11, 12, 3, c); R(5, 3, 3, 1, '#c8d2de'); R(4, 7, 4, 1, '#c8d2de'); R(3, 11, 5, 1, '#c8d2de'); R(9, 8, 2, 1, '#1e3430'); R(7, 15, 2, 1, '#2a1c12'); } },
       soak: { solid: true, paint(R, X, Y) { pSnow(R, X, Y); const c = '#4e4640'; R(7, 6, 2, 10, c); R(3, 4, 5, 1, c); R(8, 3, 5, 1, c); R(4, 1, 1, 4, c); R(11, 0, 1, 4, c); R(6, 2, 1, 3, c); R(3, 3, 3, 1, '#dce2ec'); R(9, 2, 3, 1, '#dce2ec'); R(10, 15, 3, 1, '#9aa2b2'); } },
@@ -286,7 +294,7 @@
           '#######.########'],
         ents: [
           { id: 'hearth', x: 6, y: 2, w: 2, spr: 'fireplace', light: { r: 4.4, col: 'rgba(255,150,60,.24)', flick: true }, on: S => S.narr(S.f.zeke ? '松木疙瘩烧得噼噼啪啪，爆出一股松油的香味。\n外公说，它是从烟囱里飞出去的。所以它到哪儿，都先找烟囱。' : '壁炉里烧着松木疙瘩，噼噼啪啪地爆着松油。\n昨天夜里，蹄声就是顺着这根烟囱传下来的：咯哒，咯哒，绕着烟囱走了一圈，又一圈。') },
-          { id: 'cwin1', x: 2, y: 1, spr: 'window', light: { r: 2, col: 'rgba(160,180,230,.08)', dy: 24 }, on: S => S.narr('窗外的雪地被月亮照得发蓝。松林黑压压的，一直连到天边。\n这一带的人说，松林里走丢的东西，从来找不回来。') },
+          { id: 'cwin1', x: 2, y: 1, spr: 'window', light: { r: 2, col: 'rgba(160,180,230,.08)', dy: 24 }, on: S => S.narr('今晚没有月亮。窗外的雪地自己泛着一点灰白的光，松林黑压压的，一直连到天边。\n这一带的人说，松林里走丢的东西，从来找不回来。') },
           { id: 'cwin2', x: 13, y: 1, spr: 'window', light: { r: 2, col: 'rgba(160,180,230,.08)', dy: 24 }, on: S => S.narr('窗玻璃上结了一层冰花。你哈了口气，擦出一小块——\n院子里，屋檐底下的雪地上，砸出一个坑。像是有什么很重的东西，从屋顶上跳了下来。') },
           { id: 'clock', x: 4, y: 1, spr: 'wallclock', on: S => S.narr('墙上的钟指着九点四十。\n舅舅说，他们半夜在利兹角动手。') },
           { id: 'rack', x: 11, y: 1, spr: 'gunrack', on: async S => {
@@ -349,19 +357,19 @@
           'PPTPTTPPPTTPTPTP..PPPPPPPPTTPPPPTPPPPTPP',
           'PPPPPPPPPPPPPPPP..PTTPPPPPPPPPPPPPPPPPPP',
           'TPPPPPPPPPPP..........PPPPPTPPPPPPP..PPP',
-          'PPP.........,..........PPPTPP..PPPP..PPP',
-          'PPP...........K........PPPPPP..PPPP..PPT',
-          'PPTPPPTPPPT..........,.PTTPPT..PTPT..PPP',
+          'PPP.........................P..PPPP..PPP',
+          'PPP...........K.............P..PPPP..PPT',
+          'PPTPPPTPPPT............PTTPPT..PTPT..PPP',
           'PPPPTPTPPPPP..........PTPPPPP..PPPP..PTP',
           'TPPPTPPPPPPPPPPP..PPPPTPPPPPT..PTTP..PPP',
           'PPPPPPPPTPPPPPPP..PPPPPPPTPPT..PPPP..PPP',
           'PTPPTPPPPPPPPPPP..PPPPPTTPPPP..PPTP..PTP',
           'PPPPPPPPPPPPPPPP..PTTPPPPPPPT..PPPP..PPP',
           'PPPTTPPPPPPPPPPP..PPPTPPPPPP.........PPP',
-          'PPPPPPPPPPPTPTPP..PPPPPPTPP.,.........PT',
+          'PPPPPPPPPPPTPTPP..PPPPPPTPP...........PT',
           'TPPPPTPPPPPPTPPP..................K...PT',
           'PPPPPPPPPPPTPPPP......................PP',
-          'PPPPPPPTTPPPPPPPPPPTPPPPPTP.........,.PP',
+          'PPPPPPPTTPPPPPPPPPPTPPPPPTP...........PP',
           'PPPTPPPTTTPPPPPPPPPPPPTPPPPP..........PP',
           'PPPPPPPTPPPTTPPPPPP..PPPPPPPPPPP..PPPPPP',
           'PPPPPPPPPPPTPPPPTPT..PPPPPPPPTPP..PPPPPP',
@@ -371,9 +379,9 @@
           'PPPPPPPPPPPPPPTPPPP..PPPPPPPTPPP..PPTPPP',
           'PPPPTPPPPPPPPPPPPTP..PPPPTTPPPPP..PTTPTP',
           'PPPPPPPPPPTPPPP..........PTPPPTP..PPPPPP',
-          'PPPPT..........,..................PPPPPP',
+          'PPPPT.............................PPPPPP',
           'PPPPP............K................PPPPTP',
-          'PPTPTTPPPPPPTT..........,.PPTPPPPPPPPTPP',
+          'PPTPTTPPPPPPTT............PPTPPPPPPPPTPP',
           'TPPPTPPPPPPPPPP..........PPPPTPTPPPPPPPP',
           'PPPPPPPPPPPPPPPPPPP..PPPPPPPPPPPTPTPPPPP',
           'PPTPPTPPPPPPPPPPPPP..PPPPPPPPPPPTPPPPPPP',
@@ -381,11 +389,11 @@
           'PPPPPPPPPPPPPPPPPPP..PPPPPPPPPPPPPTPPPPP',
           'PPPPPPTPPPPPPTTPPPT..PPPPPPPPPPPPPPPPPPP',
           'PPPPPTPPPPPP................PPPPPTPPPPPP',
-          'PPPPPPPPPPP..,...............PPPPPPPPPPP',
+          'PPPPPPPPPPP..................PPPPPPPPPPP',
           'PPPPPTPTPPP..................PTPPPPPPTPP',
           'PTTPPPTPPTP..................PPTPPPPPTPP',
           'PPPPPPPPPPP..................PPPTPPPPPTP',
-          'PPPPPPPPPTP...............,..PPPPPPPPPPP',
+          'PPPPPPPPPTP..................PPPPPPPPPPP',
           'PPPTPPTPPPPP................PPTTPPPPPTPP',
           'TPPPPPPPPPPPPTPPPPPTPPPPTPPPPPPPTPPPPPPP',
           'PTPPTPPPPPPPTPPPPPPPPPPTPPPPPPPPPPPPPPTP'],
@@ -406,7 +414,7 @@
           ...trail('t1U', 'boot', [[20, 25, 3], [19, 24, 3], [20, 23, 3]]),
           { id: 'h1R', x: 26, y: 29, solid: false, spr: 'trk', k: 'dev', dir: 2, on: S => S.narr('东边这串：一行蹄印，一个接一个排成一条线。\n每个印子是两瓣，头却是圆的，像小马驹的蹄子，只有茶杯口那么大。\n步子忽长忽短。有一处，隔了一丈多才又接上。') },
           ...trail('t1R', 'dev', [[28, 28, 2], [29, 29, 2], [32, 28, 2], [33, 26, 3], [32, 25, 3], [33, 23, 3], [32, 21, 3]]),
-          { id: 'sc1', x: 31, y: 26, spr: 'scr', solid: true, on: S => S.narr('松树的树皮上有三道新鲜的爪痕，比你高出一头，木头茬子还是白的。\n松油顺着爪痕淌下来，还没冻住。') },
+          { id: 'sc1', x: 27, y: 27, spr: 'scr', solid: true, on: S => S.narr('松树的树皮上有三道新鲜的爪痕，比你高出一头，木头茬子还是白的。\n松油顺着爪痕淌下来，还没冻住。') },
           /* 第二个岔口 */
           { id: 'h2U', x: 35, y: 13, solid: false, spr: 'trk', k: 'fox', dir: 3, on: S => S.narr('东北这串：一串小小的印子，一个接一个，排成一条笔直的线，一下都没歪。\n每个印子前头，有四个小点。') },
           ...trail('t2U', 'fox', [[36, 11, 3], [35, 9, 3], [36, 7, 3]]),
@@ -414,7 +422,7 @@
           ...trail('t2B', 'old', [[29, 11, 3], [30, 10, 3], [29, 8, 3]]),
           { id: 'h2L', x: 26, y: 16, solid: false, spr: 'trk', k: 'dev', dir: 1, on: S => S.narr('西边这串：圆头的两瓣蹄印，一行。\n印子的边又硬又脆，你用手指一碰，「咔」地碎成了小冰碴。印子底上，雪被踩得发亮。') },
           ...trail('t2L', 'dev', [[24, 17, 1], [23, 16, 1], [19, 16, 1], [17, 15, 3], [16, 13, 3], [17, 12, 3], [16, 10, 3]]),
-          { id: 'sc2', x: 22, y: 15, spr: 'scr', solid: true, on: S => S.narr('又是三道爪痕，比人高一头。树皮被撕开了，一绺一绺地翘着。\n爪痕底下的雪上，落着几根粗硬的、黑褐色的毛。') },
+          { id: 'sc2', x: 25, y: 15, spr: 'scr', solid: true, on: S => S.narr('又是三道爪痕，比人高一头。树皮被撕开了，一绺一绺地翘着。\n爪痕底下的雪上，落着几根粗硬的、黑褐色的毛。') },
           ...trail('beh', 'dev', [[25, 16, 1], [26, 17, 1], [27, 16, 1]], true),
           { id: 'ktrap', x: 28, y: 18, spr: 'invisible', decal: true, on: S => S.narr('雪里埋着一只生锈的捕兽夹，夹子合着，夹住的是一截松枝。\n夹子边上，一圈雪化过又冻上了。像是有什么东西在这儿站了很久，低头看它。') },
           /* 第三个岔口 */
@@ -422,6 +430,8 @@
           { id: 'h3L', x: 10, y: 6, solid: false, spr: 'trk', k: 'fake', dir: 1, on: S => S.narr('西边这串：圆头的两瓣蹄印，一行，边是脆的——是新的。\n每一步都一样长，一样深，像拿尺子量过。印子底上有一道一道细细的纹，像木头的纹路。\n旁边还有一串小鞋印，脚尖朝着你。') },
           ...trail('t3L', 'fake', [[9, 6, 1], [8, 6, 1], [7, 6, 1], [6, 6, 1], [5, 6, 1]]),
           ...trail('t3K', 'kid', [[9, 7, 1], [7, 7, 1], [5, 7, 1]]),
+          { id: 'h3R', x: 23, y: 7, solid: false, spr: 'trk', k: 'heel', dir: 2, on: S => S.narr('东边这串：一前一后两行大靴子印。后跟上钉着半圆的铁掌，在雪上压出一个个小小的马蹄形——乍一看，真像是蹄子。\n……舅舅的靴跟上就钉着这样的铁掌。去年冬天，你看着他钉的。') },
+          ...trail('t3R', 'heel', [[24, 6, 2], [25, 7, 2], [26, 6, 2]]),
           { id: 'h3U', x: 17, y: 4, solid: false, spr: 'trk', k: 'dev', dir: 3, on: S => S.narr('北边这串：圆头的两瓣蹄印，一行，新的。\n步子乱得很——一步短，一步长；有一步深得像是从高处跳下来的，雪溅出去一圈。') },
           ...trail('t3U', 'dev', [[16, 3, 3], [16, 2, 3, true], [17, 1, 3]]),
           { id: 'sc3', x: 15, y: 2, spr: 'scr', solid: true, on: S => S.narr('印子到这棵松树底下就没了。树皮上三道爪痕，一直抓到你够不着的地方。\n树枝上的雪被扑掉了一大片。……往前几步，雪地上砸出一个坑，印子又接上了。') },
@@ -439,7 +449,7 @@
         async enter(S, first) {
           if (S.has('lantern')) S.plr(3.4);
           if (!first) return;
-          await S.narr('屋外，雪停了。月亮从云缝里钻出来，把整片松林照得发蓝。\n冷气一下子钻进了领口。');
+          await S.narr('屋外，雪停了。今晚没有月亮，只有雪地自己泛着一层灰白的光。\n松林黑得像一堵墙。冷气一下子钻进了领口。');
           await S.narr('屋檐底下的雪地上有一个坑。坑边上，一串蹄印往北，进了松林。');
           await S.think('外公的口诀……我记的那张纸，在「笺」里。');
           S.goal('跟着蹄印进松林（遇到岔路先蹲下看清楚，对照「笺」里外公的口诀）');
@@ -448,6 +458,9 @@
         },
         step(S, x, y) {
           const f = S.f, k = f.fk || 0;
+          if (k === 0 && x >= 14 && x <= 25 && y >= 27 && y <= 31 && S.once('atF1')) return atFork(S, 1);
+          if (k === 1 && x >= 27 && x <= 37 && y >= 14 && y <= 19 && S.once('atF2')) return atFork(S, 2);
+          if (k === 2 && x >= 11 && x <= 22 && y >= 5 && y <= 9 && S.once('atF3')) return atFork(S, 3);
           if (k === 0) {
             if (y >= 28 && y <= 29 && x <= 8) return wrong(S, 1, 'deer');
             if ((x === 19 || x === 20) && y <= 22) return wrong(S, 1, 'posse');
@@ -461,6 +474,7 @@
           if (k === 2 && !f.behind && (y === 16 || y === 17) && x <= 20) return behind(S);
           if (k === 2) {
             if ((y === 6 || y === 7) && x <= 6) return wrong(S, 3, 'fake');
+            if ((y === 6 || y === 7) && x >= 26) return wrong(S, 3, 'heel');
             if ((x === 16 || x === 17) && y <= 3) return right(S, 3);
           }
           if (y >= 28 && y <= 29 && x <= 8 && k > 0 && S.once('deerBack')) return S.narr('那串两行的鹿蹄印。你已经认得它了。');
@@ -473,6 +487,9 @@
         rows: [
           'PPPPPPPPPPPPPPPPPPPPPPPeeeee',
           'PPPPPPPPPPPPPPPPPPPPPPPeeeee',
+          'PPPPPPPPPPPPPPPPPPPPPPPeeeee',
+          'PPPPPPPPPPPPPPPPPPPPPPPeeeee',
+          'PPPPPPPPPPPPPPPPPPPPPPPeeeee',
           'PPPP..................Pe~~~~',
           'PPP....................e~~~~',
           'PP.....QQQxQQQQQQQQ....e~~~~',
@@ -481,42 +498,42 @@
           'PP.....QxxxxxxxxxxQ....e~~~~',
           'PP.....Qxxxxxxxxxxx.....eeee',
           'PP.....QxxxxxxxxxxQ.....iii.',
-          'PP...,.QxxxxxxxxxxQ.....iii.',
+          'PP.....QxxxxxxxxxxQ.....iii.',
           'PP.....QxxxxxxxxxxQ.....eeee',
           'PP.....QQQQQxxQQQQQ....e~~~~',
           'PP.....................e~~~~',
           'PP.....................e~~~~',
-          'PP...P...,.............e~~~~',
-          'PP...............,.....e~~~~',
+          'PP...P.................e~~~~',
+          'PP.....................e~~~~',
           'PP.....................e~~~~',
           'PPPP.................PPeeeee',
           'PPPPPPPPPPPP...PPPPPPPPeeeee'],
         ents: [
-          { id: 'chim', x: 11, y: 4, w: 2, spr: 'chimney', on: chimOn },
-          { id: 'rtable', x: 8, y: 6, w: 2, spr: 'table2', col: '#4a3422', on: S => S.narr('一张倒了一条腿的桌子，桌面斜搭在地上，积满了雪。') },
-          { id: 'bibleE', x: 9, y: 6, spr: 'book', col: '#3a2a22', z: 1, solid: false, on: bibleOn },
-          { id: 'cradle', x: 15, y: 10, spr: 'cradle', on: cradleOn },
-          { id: 'rchest', x: 17, y: 5, spr: 'chest2', on: async S => {
+          { id: 'chim', x: 11, y: 7, w: 2, spr: 'chimney', on: chimOn },
+          { id: 'rtable', x: 8, y: 9, w: 2, spr: 'table2', col: '#4a3422', on: S => S.narr('一张倒了一条腿的桌子，桌面斜搭在地上，积满了雪。') },
+          { id: 'bibleE', x: 9, y: 9, spr: 'book', col: '#3a2a22', z: 1, solid: false, on: bibleOn },
+          { id: 'cradle', x: 15, y: 13, spr: 'cradle', on: cradleOn },
+          { id: 'rchest', x: 17, y: 8, spr: 'chest2', on: async S => {
             S.ent('rchest').open = true;
             await S.narr('一口橡木箱子，箱盖早被人撬开了。里面空空的，只有老鼠做的一个窝。');
             if (S.once('chest2')) await S.narr('箱盖内侧刻着一个字母：「L」。\n……来翻过这口箱子的人，不止一拨。他们要找的东西，不在箱子里。');
           } },
-          { id: 'rwheel', x: 9, y: 10, spr: 'wheel', on: S => S.narr('一架纺车，轮子散了架，歪在雪里。\n十二个孩子的衣裳，大概都是在这架纺车上纺出来的。') },
-          { id: 'rbeam', x: 13, y: 8, w: 2, spr: 'beam', on: S => S.narr('塌下来的房梁，烧焦了一头。\n松林里的人说，这座宅子后来着过一场火，是谁放的，没人说得清。') },
-          { id: 'rwell', x: 4, y: 8, spr: 'rwell', on: S => S.narr('一口老井，井口盖着朽了的木板。\n你往里看了一眼。井底的冰面上，映着月亮，和你的马灯。') },
-          { id: 'gr1', x: 20, y: 14, spr: 'grave', on: S => S.narr('一块没有字的小石头。\n这一带的贵格会不兴在墓碑上刻字，也不兴刻花样。') },
-          { id: 'gr2', x: 21, y: 15, spr: 'grave', on: S => S.narr('又是一块。和旁边那块一样大，一样不说话。') },
-          { id: 'gr3', x: 19, y: 16, spr: 'grave', k: 1, on: S => S.narr('第三块石头上落着一层雪。雪上有一个蹄印——只有一个。\n像是有谁在这儿站了一会儿，低着头。') },
-          { id: 'marsh', x: 23, y: 13, spr: 'invisible', solid: true, on: S => S.narr('盐沼的芦苇冻得硬邦邦的。再往东，就是大湾。海风里有一股咸味。\n东边那条冻上的水道，冰面看着还算结实。') },
-          { id: 'dv_r', x: 11, y: 1, spr: 'devil', dir: 0, solid: false, hidden: true, z: 1, ox: 8, oy: -18, s: { fly: false }, light: { r: 1, col: 'rgba(255,40,20,.25)', dy: -16 } },
-          { id: 'wade_r', x: 13, y: 19, spr: '@wade', dir: 3, solid: false, hidden: true, light: { r: 2.6, col: 'rgba(255,180,80,.18)' } },
-          ...[12, 13, 14].map(x => ({ id: 'exS' + x, x, y: 19, spr: 'invisible', touch: ruinSouth })),
-          ...[9, 10].map(y => ({ id: 'exE' + y, x: 27, y, spr: 'invisible', touch: ruinEast }))
+          { id: 'rwheel', x: 9, y: 13, spr: 'wheel', on: S => S.narr('一架纺车，轮子散了架，歪在雪里。\n十二个孩子的衣裳，大概都是在这架纺车上纺出来的。') },
+          { id: 'rbeam', x: 13, y: 11, w: 2, spr: 'beam', on: S => S.narr('塌下来的房梁，烧焦了一头。\n松林里的人说，这座宅子后来着过一场火，是谁放的，没人说得清。') },
+          { id: 'rwell', x: 4, y: 11, spr: 'rwell', on: S => S.narr('一口老井，井口盖着朽了的木板。\n你往里看了一眼。井底的冰面上，只映着你的马灯，和你自己的脸。') },
+          { id: 'gr1', x: 20, y: 17, spr: 'grave', on: S => S.narr('一块没有字的小石头。\n这一带的贵格会不兴在墓碑上刻字，也不兴刻花样。') },
+          { id: 'gr2', x: 21, y: 18, spr: 'grave', on: S => S.narr('又是一块。和旁边那块一样大，一样不说话。') },
+          { id: 'gr3', x: 19, y: 19, spr: 'grave', k: 1, on: S => S.narr('第三块石头上落着一层雪。雪上有一个蹄印——只有一个。\n像是有谁在这儿站了一会儿，低着头。') },
+          { id: 'marsh', x: 23, y: 16, spr: 'invisible', solid: true, on: S => S.narr('盐沼的芦苇冻得硬邦邦的。再往东，就是大湾。海风里有一股咸味。\n东边那条冻上的水道，冰面看着还算结实。') },
+          { id: 'dv_r', x: 11, y: 4, spr: 'devil', dir: 0, solid: false, hidden: true, z: 1, ox: 8, oy: -18, s: { fly: false }, light: { r: 1, col: 'rgba(255,40,20,.25)', dy: -16 } },
+          { id: 'wade_r', x: 13, y: 22, spr: '@wade', dir: 3, solid: false, hidden: true, light: { r: 2.6, col: 'rgba(255,180,80,.18)' } },
+          ...[12, 13, 14].map(x => ({ id: 'exS' + x, x, y: 22, spr: 'invisible', touch: ruinSouth })),
+          ...[12, 13].map(y => ({ id: 'exE' + y, x: 27, y, spr: 'invisible', touch: ruinEast }))
         ],
         async enter(S, first) {
           if (!first) return;
           await S.narr('松林在这儿到了头。前面是一片白茫茫的盐沼，再往东，能听见海浪。\n利兹角。');
-          await S.narr('老宅子只剩一圈石头地基，和一根孤零零的砖烟囱，直直地戳在月亮底下。\n雪地上，那串蹄印绕着烟囱，转了一圈又一圈。');
+          await S.narr('老宅子只剩一圈石头地基，和一根孤零零的砖烟囱，直直地戳进没有月亮的夜空。\n雪地上，那串蹄印绕着烟囱，转了一圈又一圈。');
           await S.think('它每天夜里都回来。回来找什么？');
           S.goal('在老宅里找利兹妈妈的百衲被');
           S.cp('ruin');
@@ -554,18 +571,14 @@
         async enter(S, first) {
           if (!first) return;
           S.norun(true);
-          await S.narr('雪松沼泽。白雪松长得又高又密，枝子被雪压得低低的。\n雪一下子深到了小腿肚——跑不起来，只能一步一步地拔着腿往前走。');
+          await S.narr('雪松沼泽。雪一下子深到了小腿肚——跑不起来，只能一步一步地拔着腿往前走。');
           S.pos(0, 8, 2);
           await S.walk('pl', [6, 8], 3);
-          wings(S, 5, 0, .34, .5);
-          await S.narr('身后很远的地方，翅膀扑了几下，停了。');
-          await S.wait(600);
-          S.sfx('whisper');
-          await S.narr('然后是一种声音。很轻，一下一下的。\n像狗趴在地上，在闻什么东西。');
+          wings(S, 5, 0, .34, .5); S.sfx('whisper');
+          await S.narr('身后很远的地方，翅膀扑了几下，停了。\n然后是一种很轻的声音，一下一下的，像狗趴在地上闻什么东西。');
           S.turn(1);
           await S.narr('你回过头。马灯照着你自己的脚印——一个一个，从盐沼那边一直跟到你脚下。');
-          await S.think('它在闻我的脚印。\n雪地上的每一个脚印，都是给它指的路。');
-          await S.narr('松针底下没有雪。冻住的水面上，也踩不出印子。');
+          await S.think('它在闻我的脚印。雪地上的每一个脚印，都是给它指的路。\n……松针底下没有雪，冰面上也踩不出印子。');
           S.goal('往东找它的窝——别在雪地上停；踩松针、踩冰面不留脚印（冰上别久站）');
           if (S.coop) S.toast('一个人看前面的路，一个人盯着身后');
           S.turn(2);
@@ -588,25 +601,25 @@
   /* ================= 木屋 ================= */
   async function zekeTalk(S) {
     const f = S.f; S.face('zeke', 'pl');
-    if (!f.zeke) {
+    if (!f.zk1) {   // 第一段：传说
       const r = await S.ask('外公拍了拍身边的小板凳。\n「昨天夜里，屋顶上的动静，你也听见了吧？」', ['听见了。像有人在屋顶上走。', '……我以为是风。'], '露丝');
       if (r === 1) await S.say('齐克外公', '风不会绕着烟囱走两圈。');
-      await S.say('齐克外公', ['它在屋顶上站了好久，就站在烟囱跟前。', '它在找烟囱。']);
-      await S.say('齐克外公', ['我奶奶跟我讲过。一百七十多年前，利兹角有个女人，大家都叫她利兹妈妈。', '她已经有了十二个孩子，家里穷得揭不开锅。怀上第十三个的时候，她说了一句气话——']);
+      await S.say('齐克外公', ['它在屋顶上站了好久，就站在烟囱跟前。它在找烟囱。', '一百七十多年前，利兹角有个女人，大家都叫她利兹妈妈。\n十二个孩子，家里穷得揭不开锅。怀上第十三个的时候，她说了一句气话——']);
       S.sfx('whisper');
       await S.say('齐克外公', '「让魔鬼把这一个带走吧。」', { style: 'whisper' });
-      await S.say('齐克外公', ['那天夜里下着暴雨。孩子生下来，是个好好的孩子。', '可接生婆还没把他擦干净，他就变了。长出了蹄子，长出了翅膀，脑袋拉得老长，像马。', '他尖叫了一声，顺着烟囱飞了出去。从那以后，松林里就有了它。']);
-      await S.say('齐克外公', ['我奶奶说，利兹妈妈后来后悔了一辈子。她给十三个孩子各缝了一格百衲被。', '第十三格，空着。她到死也没往上绣一个字。', '那床被子，就压在利兹角的老宅子里。']);
-      await S.say('齐克外公', ['它一百多年来，一回一回地回利兹角。回去找什么？', '……它找它妈。']);
+      await S.say('齐克外公', ['那天夜里下着暴雨。孩子生下来，好好的。\n可接生婆还没把他擦干，他就变了：长出了蹄子，长出了翅膀，脑袋拉得老长，像马。', '他尖叫了一声，顺着烟囱飞了出去。从那以后，松林里就有了它。', '利兹妈妈后悔了一辈子。她给十三个孩子各缝了一格百衲被，第十三格空着，到死也没绣上一个字。\n那床被子，就压在利兹角的老宅子里。', '它一百多年来，一回一回地回利兹角。回去找什么？\n……它找它妈。']);
+      f.zk1 = true;
+      S.goal('再和外公说说话');
+      return;
+    }
+    if (!f.zeke) {   // 第二段：托付
       const r2 = await S.ask('外公看着炉火，半天没说话。', ['舅舅他们会打死它的。', '它会伤了舅舅他们吗？'], '露丝');
-      await S.say('齐克外公', r2 === 0 ? ['打不死的。打它，只会让它记住你。', '可韦德那帮人，一半是喝了酒去的。慌起来，枪口对着谁都不知道。'] : ['它不吃人。可它要是被逼急了……', '韦德那帮人，一半是喝了酒去的。慌起来，枪口对着谁都不知道。']);
-      await S.say('齐克外公', ['露丝，你去。比他们先到。', '把那床被子找出来，给它送回窝里去。它拿到了，就不会再回来找了。']);
-      await S.say('齐克外公', ['它的窝在哪儿？我不知道。可它的脚印知道。', '它昨天夜里刚从咱屋顶上下来。跟着它的脚印走。', '我教你认脚印的时候，你记的那张纸，还在吧？']);
+      await S.say('齐克外公', r2 === 0 ? '打不死的。可韦德那帮人，一半是喝了酒去的。慌起来，枪口对着谁都不知道。' : '它不吃人。可它要是被逼急了……韦德那帮人，一半是喝了酒去的。');
+      await S.say('齐克外公', ['露丝，你去。比他们先到。\n把那床被子找出来，送回它窝里去。它拿到了，就不会再回来找了。', '它的窝在哪儿，我不知道。可它的脚印知道。\n它昨天夜里刚从咱屋顶上下来——跟着它的脚印走。', '我教你认脚印的时候，你记的那张纸，还在吧？']);
       S.sfx('paper'); await S.note('tracks');
-      await S.say('齐克外公', ['认准了再走。松林里的印子多着呢，鹿的、狐狸的、韦德他们的——', '还有这几天，镇上那帮想登报的小崽子做的假印子。']);
+      await S.say('齐克外公', '认准了再走。鹿的、狐狸的、韦德他们的，还有镇上想登报的小崽子做的假印子。');
       const rk = S.ent('rack'); rk.s.g2 = true; S.give('musket');
-      await S.say('齐克外公', ['拿着这个。老火枪，就一发。', '这是给人看的，不是给它的。真碰上了——别对着它开枪。', '听说一百年前，有个海军的大官在炼铁厂试炮，一炮打穿了它，它照样飞走了。']);
-      await S.say('齐克外公', '马灯在门边挂着。去吧。');
+      await S.say('齐克外公', ['拿着这个。老火枪，就一发。这是给人看的，不是给它的。', '真碰上了——别对着它开枪。\n听说早年有个海军的大官拿炮打穿过它，它照样飞走了。打它，只会让它记住你。', '马灯在门边挂着。去吧。']);
       f.zeke = true;
       S.goal('拿上门边的马灯');
       return;
@@ -616,12 +629,13 @@
     const L = !S.has('lantern') ? ['马灯在门边挂着。'] :
       k === 0 ? ['第一个岔口？先看它是几条腿走路的。', '四条腿的走两行。它是两条腿走的。'] :
       k === 1 ? ['看印子的边。新的边是脆的，旧的里头落了雪。', '狐狸的印子也是一行，可狐狸有趾头。'] :
-      ['一样长、一样深的，是人摆出来的。', '找爪痕。它走过的地方，树上有爪痕。'];
+      k === 2 ? ['一样长、一样深的，是人摆出来的。', '找爪痕。它走过的地方，树上有爪痕。', '两行的不是它。韦德的靴跟上钉着马掌铁，别看岔了。'] :
+      ['利兹角就在松林外头。去吧。'];
     await S.say('齐克外公', L[(f._zk = ((f._zk ?? -1) + 1) % L.length)]);
   }
   async function cabinDoor(S) {
     const f = S.f;
-    if (!f.zeke) { await S.say('齐克外公', '露丝，先别走。过来。'); return S.walk('pl', 'u', 5); }
+    if (!f.zeke) { await S.say('齐克外公', f.zk1 ? '露丝，我话还没说完。' : '露丝，先别走。过来。'); return S.walk('pl', 'u', 5); }
     if (!S.has('lantern')) { await S.narr('外面黑得什么也看不见。\n门边挂着马灯。'); return S.walk('pl', 'u', 5); }
     S.sfx('open');
     if (S.once('leaveCabin')) await S.say('齐克外公', '露丝。……记着，别对着它开枪。');
@@ -635,7 +649,7 @@
     2: ['口诀：新印子边是脆的，旧印子里落了雪；狐狸的印子前头有趾头。', '西边那一串的边，一碰就碎。', '往西。'],
     3: ['口诀：一样长、一样深的，是摆出来的。印子没了，就抬头看树。', '北边那条道旁边的松树上，有爪痕。', '往北。']
   };
-  const GOALK = { 1: '第一个岔口：对照口诀，认出它的蹄印', 2: '第二个岔口：哪一串是它刚刚踩出来的？', 3: '第三个岔口：哪一串是真的？' };
+  const GOALK = { 1: '第一个岔口：蹲下看三串印子，对照「笺」里的口诀，认出它的蹄印', 2: '第二个岔口：哪一串是它刚刚踩出来的？', 3: '第三个岔口：三串印子，哪一串是真的？' };
   async function wrong(S, k, kind) {
     const f = S.f, key = 'w' + k;
     f[key] = (f[key] || 0) + 1;
@@ -666,6 +680,11 @@
       await S.narr('头顶上，有什么东西从树梢上掠了过去。松枝上的雪落了你一头一脸。');
       S.hide('dvp');
       await S.think('这是昨天的印子——印子里落了今天下午的雪。');
+    } else if (kind === 'heel') {
+      crack(S); S.sfx('splash'); S.shake(500, 3);
+      await S.scare('flash', { dur: .3 });
+      await S.narr('印子拐下一道坡，是一片冻住的红莓地。你刚踩上去，冰面「咔」地裂开了——\n一条腿陷进了冰水里，一直没到膝盖。');
+      await S.think('……这是舅舅的靴子印，两行。他是往大路那边去的，抄了红莓地的近道。');
     } else if (kind === 'fake') {
       S.show('boyA'); S.show('boyB'); S.place('boyA', 4, 6, 2); S.place('boyB', 3, 7, 2);
       S.sfx('scream'); await S.scare('flash', { dur: .3 });
@@ -676,9 +695,18 @@
       await S.think('一样长、一样深——是摆出来的。');
     }
     const n = f[key];
-    if (n >= 2) { const h = HINT[k][Math.min(n - 2, 2)]; await S.think(h); S.goal(n >= 4 ? HINT[k][2] : GOALK[k]); }
+    if (n >= 2) { const h = HINT[k][Math.min(n - 2, 2)]; await S.think(h); S.goal(n >= 3 ? GOALK[k].split('：')[0] + '：' + h : GOALK[k]); }
     else S.goal(GOALK[k]);
     await S.walk('pl', BACK[k], 5);
+  }
+  async function atFork(S, k) {
+    if (k === 1) await S.narr('松林里空出一小片。印子在这儿乱成了一团——\n三串印子，往西、往北、往东，各走各的。');
+    else if (k === 2) {
+      hound(S); gunshot(S, 1.4, .35);
+      await S.narr('远处，大路那边，猎狗叫了几声。接着是一声闷闷的枪响。\n搜索队离这儿不远。');
+      await S.narr('前面又是一个岔口。三串印子：东北、正北、往西。');
+    } else await S.narr('第三个岔口。一块歪倒的木牌。\n往西、往北、往东，又是三串。');
+    S.goal(GOALK[k]);
   }
   async function right(S, k) {
     const f = S.f; f.fk = k;
@@ -709,7 +737,7 @@
   }
   async function toRuin(S) {
     if ((S.f.fk || 0) < 3) return S.walk('pl', 'd', 5);
-    await S.go('ruin', 13, 18, 3);
+    await S.go('ruin', 13, 21, 3);
   }
 
   /* ================= 利兹老宅 ================= */
@@ -717,15 +745,22 @@
     const f = S.f;
     if (S.once('bible')) await S.narr('倒了的桌子底下压着一本旧圣经，泡得发胀。\n你把它抽出来，抖掉上面的雪。');
     await S.note('bible');
-    if (!f.bible) { f.bible = true; await S.think('「他该睡的地方」……'); S.goal('「被子放在他该睡的地方」——第十三个孩子该睡在哪儿？'); }
+    if (!f.bible) { f.bible = true; await S.think('「他该睡的地方」……'); S.goal('「被子放在他该睡的地方」——第十三个孩子该睡在哪儿？'); if (S.coop) S.toast('一个人念家谱最后那句话，一个人在宅子里找'); }
   }
   async function chimOn(S) {
     const f = S.f, c = S.ent('chim');
     if (f.letter) return S.narr('烟道里那块砖已经被你抽出来了，砖缝里黑洞洞的。\n爪痕一道一道，一直往上，往上，抓到了烟囱口。');
-    await S.narr('一根孤零零的砖烟囱。壁炉口黑洞洞的，里面落满了雪。\n你举着马灯往烟道里照——砖上全是爪痕，一道压着一道，一直往上，抓到了看不见的地方。');
-    await S.narr('一百七十年前，他就是从这里出去的。');
+    if (!f.chim1) {
+      f.chim1 = true;
+      await S.narr('一根孤零零的砖烟囱。壁炉口黑洞洞的，里面落满了雪。\n你把手搭在冰凉的砖上——');
+      S.sfx('whisper'); S.tone('triangle', 70, 50, 2.4, .06, 0, 300);
+      await S.card('一七三五年', '利兹角　一个暴雨的夜里', '雨从屋顶的破洞里漏下来，滴进木盆。\n十二个孩子挤在隔壁，谁也不敢出声。\n\n接生婆说：「是个男孩。」\n\n然后，她尖叫了起来。\n\n壁炉里的火「呼」地一下被吸进了烟道——\n有什么东西，顺着烟囱，飞了出去。');
+      await S.narr('……你回过神来。马灯在手里晃。\n烟道里的砖上全是爪痕，一道压着一道，一直往上，抓到了看不见的地方。');
+      return;
+    }
+    await S.narr('你又举着马灯，往烟道深处照了照。\n爪痕最密的地方，有一块砖的灰缝是新抠过的——砖是松的。');
     S.sfx('open');
-    await S.narr('马灯一晃，你看见烟道里有一块砖是松的。你把它抠了出来。\n砖后面塞着一卷油布。');
+    await S.narr('你把它抠了出来。砖后面塞着一卷油布。');
     f.letter = true; c.s.brick = true;
     await S.note('letter');
     await S.think('……塞缪尔。');
@@ -748,17 +783,17 @@
     screech(S);
     S.shake(500, 2);
     await S.narr('头顶上，有什么东西叫了一声。\n像女人在尖叫，又像马在嘶。');
-    S.focus(11, 2);
-    const d = S.ent('dv_r'); d.alpha = 0; d.s.fly = false; S.place('dv_r', 11, 1, 0);
+    S.focus(11, 5);
+    const d = S.ent('dv_r'); d.alpha = 0; d.s.fly = false; S.place('dv_r', 11, 4, 0);
     S.sfx('heart'); await S.alpha('dv_r', 1, 1400);
-    await S.narr('烟囱顶上，蹲着一个东西。月亮在它身后，像一盏灯。');
+    await S.narr('烟囱顶上，蹲着一个东西。\n它身后是满天的星星——它把星星挡住了黑黑的一大块。');
     await S.narr('它有你两个高。脑袋长长的，像马，头顶上弯着两只角。\n两只蝙蝠一样的翅膀收在背后，身后拖着一条分叉的尾巴。\n它的眼睛是红的。');
     S.sfx('heart');
     await S.narr('它低下头。\n它在看你怀里的被子。');
     await S.scare('face', { face: 'devil', sfx: 'scare', dur: 1 });
     await S.wait(300);
     gunshot(S, 0, .5); gunshot(S, .5, .5);
-    S.show('wade_r'); S.place('wade_r', 13, 19, 3); S.ent('wade_r').alpha = .9;
+    S.show('wade_r'); S.place('wade_r', 13, 22, 3); S.ent('wade_r').alpha = .9;
     await S.say('远处的人声', ['在那儿！烟囱上！', '开枪！开枪啊！'], { style: 'big' });
     d.s.fly = true; screech(S, 0, 1.2); wings(S, 6, 0, .26);
     await S.walk('dv_r', 'rrrrrrrrrrr', 8);
@@ -819,6 +854,7 @@
     DV.segT += dt;
     // 2) 冰面：站久了会裂（先警告，再落水）
     if (tileAt(m, p.x, p.y) === 'i') {
+      if (!f.iceTold) { f.iceTold = true; S.toast('冰面上踩不出脚印——可别在冰上站久了'); }
       DV.ice += dt;
       if (DV.ice > 2.4 && !DV.iceW) { DV.iceW = true; crack(S); S.shake(300, 1); S.toast('脚下的冰「咔」地响了一声——快离开冰面！'); }
       if (DV.ice > 4.6) { f.ph = 'dead'; S.run(iceDeath); return; }
@@ -867,6 +903,7 @@
       if (last && cur && last[2] !== cur[2] && DV.t > 1.1 && (DV.segN >= 3 || DV.segT > 2.2)) {
         DV.st = 'fly'; DV.t = 0; e.s.fly = true; e.s.sniff = false; wings(S, 4, 0, .26, .9);
         e.hidden = true;
+        if (!f.flyTold) { f.flyTold = true; S.toast('它闻不着了——它飞起来，在找你新脚印开头的地方'); }
       } else if (last && cur && last[2] === cur[2] && DV.i < tr.length - 1) { DV.st = 'follow'; e.s.sniff = false; }
       return;
     }
@@ -882,7 +919,7 @@
     e.hidden = false; e.alpha = 1; e.s.fly = false; e.s.sniff = true; e.mv = null;
     e.px = c[0] * TS; e.py = c[1] * TS; e.x = c[0]; e.y = c[1]; e.dir = 2;
     DV.st = 'follow'; DV.t = 0; DV.adj = 0;
-    S.sfx('thud'); screech(S, 0, .45);
+    S.sfx('thud'); S.shake(250, 2); screech(S, 0, .45);
   }
   async function caught(S) {
     DEATHS++;
@@ -924,7 +961,13 @@
     d.s.fly = true; screech(S, 0, 1.1); S.shake(400, 2);
     await S.narr('它张开翅膀，冲着舅舅他们的马灯尖叫起来。\n舅舅端起了猎枪。你听见他拉开了枪栓。');
     const r = await S.ask('你怀里抱着那床被子。手边，是外公的老火枪。', ['把百衲被铺进窝里', '举起外公的火枪，对准它'], '露丝');
-    if (r === 1) return shotEnd(S);
+    if (r === 1) {
+      await S.narr('你把火枪抵在肩上。手冻得发僵，准星在马灯光里一跳一跳。');
+      await S.think('「别对着它开枪。打它，只会让它记住你。」');
+      const r3 = await S.ask('准星里，是那双红眼睛。', ['……还是扣下扳机', '把枪放下'], '露丝');
+      if (r3 === 0) return shotEnd(S);
+      await S.narr('你把枪口压了下去。');
+    }
     await S.narr('你转过身，背对着舅舅的枪口，跪下来。\n把那床百衲被抖开，一格一格，铺进了窝里。');
     S.ent('furn').s.quilt = true; S.take('quilt');
     await S.say('露丝', '舅舅，别开枪。');
@@ -947,8 +990,9 @@
     await S.narr('它慢慢地蜷了起来，像一个很大很大的婴儿，躺在了那床被子上。\n翅膀合拢，把自己裹住了。');
     S.tone('sine', 330, 330, 1.6, .03); S.tone('sine', 262, 262, 2, .025, .6);
     await S.narr('那一声尖叫，再也没有响起来。\n雪又开始下了，一片一片，落在炼铁炉的石头上。');
-    await S.say('韦德舅舅', '……回家吧。跟你外公说，我错了。');
+    await S.say('韦德舅舅', '……回家吧。');
     await S.fade(1, 1200);
+    await S.card('第二天早上', '外公的木屋', '舅舅是跟着你一起回来的。\n他把猎枪挂回墙上，在外公的摇椅边站了很久。\n\n「爸，」他说，「它没吃鸡。它是回家去了。」\n\n外公没抬头，往炉子里添了一块松木。');
     await S.card('卷一　终', '', VOL1);
     return S.end({ id: 'nest', title: '第十三格', text: '1909年1月的那个星期以后，泽西恶魔再也没有成群结队地被人看见。\n报纸换了别的新闻。学校复了课，厂子又开了工。费城的悬赏，没有人领到。\n舅舅把猎枪挂回墙上，再也没有摘下来过。\n\n松林里的人说，它还在。\n隔几年，就有人在雪地上看见一行圆头的两瓣蹄印，一直走到哪棵松树底下，就没了。\n可它再也没有回过利兹角。\n\n它找到了它要找的东西。\n只是那第十三格，一直空着。' });
   }
@@ -968,11 +1012,11 @@
     await S.say('韦德舅舅', '……露丝，刚才那是……');
     await S.say('露丝', '是他妈妈。');
     await S.fade(1, 1200);
+    await S.card('第二天早上', '外公的木屋', '你把那封信，一个字一个字地念给外公听。\n舅舅站在门口，帽子攥在手里，没有进来，也没有走。\n\n念到最后一行，炉子里的松木「噼」地爆了一声。');
     await S.card('卷一　终', '', VOL1);
-    return S.end({ id: 'name', title: '他叫塞缪尔', text: '塞缪尔。意思是「神听见了」。\n利兹妈妈把这个名字写在信里，塞进烟道的砖缝，等了一百七十年，\n等一个人替她念出来。\n\n外公听完，很久没说话。最后他说：「那她总算是说出口了。」\n\n1909年1月的那个星期以后，泽西恶魔再也没有成群结队地被人看见。\n后来每年下第一场雪的晚上，外公都让你在窗台上点一盏马灯。\n松林深处，偶尔会传来一声长长的叫声。\n不像尖叫。\n像一个孩子，在应一声名字。' });
+    return S.end({ id: 'name', title: '他叫塞缪尔', text: '塞缪尔。意思是「神听见了」。\n利兹妈妈把这个名字写在信里，塞进烟道的砖缝，等了一百七十年，\n等一个人替她念出来。\n\n外公很久没说话。最后他说：「那她总算是说出口了。」\n\n1909年1月的那个星期以后，泽西恶魔再也没有成群结队地被人看见。\n后来每年下第一场雪的晚上，外公都让你在窗台上点一盏马灯。\n松林深处，偶尔会传来一声长长的叫声。\n不像尖叫。\n像一个孩子，在应一声名字。' });
   }
   async function shotEnd(S) {
-    await S.narr('你把火枪抵在肩上。手冻得发僵，准星在月光里一跳一跳。');
     await S.narr('你扣下了扳机。');
     gunshot(S, 0, 1.3); S.shake(700, 4);
     await S.scare('flash', { dur: .4 });
