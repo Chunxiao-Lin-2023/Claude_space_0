@@ -81,6 +81,7 @@
   const B = { mode: 'off', x: 0, y: 0, dir: 1, th: 0, r: 3, fear: 0, behind: 0, t: 0, cool: 0, anim: 0, bark: 0, growl: 0, litT: 0, rth: 0, flee: null };
   let NOON_DIED = 0, NIGHT_DIED = 0, NIGHT_LEFT = null, BELL_T = 0, CUE_T = 0;
   const FA = [Math.PI / 2, Math.PI, 0, -Math.PI / 2];
+  if (QS.get('debug') === '1') window.__gvB = B;   // 测试钩子
   const DAYP = { fear: 1.5, lunge: .75, om: 1.75, ls: 9.5, stalk: 4.2 };
   const NIGHTP = { fear: 1.3, lunge: .7, om: 1.6, ls: 9.5, stalk: 5.4 };
   function ad(a, b) { let d = a - b; while (d > Math.PI) d -= 2 * Math.PI; while (d < -Math.PI) d += 2 * Math.PI; return d; }
