@@ -59,12 +59,13 @@ function updateCam(dt) {
   const C = CAM;
   if (W.cine && C.cine) { const S = C.cine; S.t += dt; const q = S.d ? smooth(clamp(S.t / S.d, 0, 1)) : 1; C.tx = lerp(S.x0, S.x1, q); C.tz = lerp(S.z0, S.z1, q); C.zoom = lerp(S.k0, S.k1, q); }
   else { const me = W.P[W.me]; if (me) { const q = Math.min(1, dt * 6); C.tx = lerp(C.tx, me.x + (me.vx || 0) * 0, q); C.tz = lerp(C.tz, me.z, q); } C.zoom = lerp(C.zoom, C.zoomT, Math.min(1, dt * 5)); }
-  V.cx = C.tx; V.cz = C.tz - 0.6; V.zoom = C.zoom;
-  if (V.shake > 0) { const s = V.shake * 40; V.sx = (Math.random() - 0.5) * s; V.sy = (Math.random() - 0.5) * s; V.shake = Math.max(0, V.shake - dt * 2.5); } else V.sx = V.sy = 0;
+  V.cx = C.tx; V.cz = C.tz - 0.6; V.zoom = C.zoom; fitLow();
+  if (V.shake > 0) { const s = V.shake * 14; V.sx = Math.round((Math.random() - 0.5) * s); V.sy = Math.round((Math.random() - 0.5) * s); V.shake = Math.max(0, V.shake - dt * 2.5); } else V.sx = V.sy = 0;
+  camSnap();
 }
 function camBlocked() { return false; }
 /* cinematic camera: a 3D-style shot (camera position, look-at point) becomes a 2D pan to the look point with a zoom from the distance */
-function shotZoom(d) { return clamp(1.62 - d * 0.028, 0.62, 1.5); }
+function shotZoom(d) { return d < 7 ? 1.5 : d < 30 ? 1 : 0.5; }
 function camShot(pos, look, d = 1.2) { const dd = Math.hypot(pos[0] - look[0], pos[1] - look[1], pos[2] - look[2]); CAM.cine = { x0: CAM.tx, z0: CAM.tz, k0: CAM.zoom, x1: look[0], z1: look[2], k1: shotZoom(dd), t: 0, d }; W.cine = true; }
 function camShotOn(e, o = {}) { const d = o.d ?? Math.max(3, e.h * 2.2); CAM.cine = { x0: CAM.tx, z0: CAM.tz, k0: CAM.zoom, x1: e.x, z1: e.z - e.h * 0.3, k1: shotZoom(d), t: 0, d: o.t ?? 1.0 }; W.cine = true; }
 function camRelease() { W.cine = false; CAM.cine = null; }

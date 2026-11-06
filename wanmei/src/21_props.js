@@ -5,11 +5,15 @@ const PROTO = {}, STATIC = { list: [], grid: new Map(), cell: 24, lamps: [] };
 const CACHE_K = 1.4;
 function proto(name, o) { PROTO[name] = Object.assign({ name, w: 2, h: 2, ax: 0.5, ay: 0.92, col: 0, vars: 1 }, o); }
 function getProto(name) { const P = PROTO[name]; if (!P) throw new Error('proto ' + name); return P; }
-function protoBitmap(P, v = 0) {
-  P.cache = P.cache || []; if (P.cache[v]) return P.cache[v];
-  const s = Math.min(V.PPM * CACHE_K * Math.min(2, V.dpr || 1), 2400 / Math.max(P.w, P.h)), c = cnv(P.w * s, P.h * s), g = c.getContext('2d'); g.translate(P.w * s * P.ax, P.h * s * P.ay); LW = 1.7 * Math.min(2, V.dpr || 1);
-  if (P.sh) { const [rx, ry, dx, dy] = P.sh; g.save(); g.translate((dx || 0) * s, (dy || 0) * s); g.scale(1, ry / rx); const gr = g.createRadialGradient(0, 0, 0, 0, 0, rx * s); gr.addColorStop(0, 'rgba(18,30,10,0.34)'); gr.addColorStop(0.65, 'rgba(18,30,10,0.24)'); gr.addColorStop(1, 'rgba(18,30,10,0)'); g.fillStyle = gr; g.beginPath(); g.arc(0, 0, rx * s, 0, TAU); g.fill(); g.restore(); }
-  P.draw(g, s, mulberry32(v * 9973 + P.name.length * 31), v); return P.cache[v] = { cv: c, s };
+function protoBitmap(P, v = 0, sc = 1) {
+  P.cache = P.cache || {}; const key = v + '|' + sc.toFixed(2); if (P.cache[key]) return P.cache[key];
+  const K = V.PPM * sc, kk = Math.max(P.w, P.h) * K > 400 ? 3 : 4, s = K * kk, W = Math.ceil(P.w * K), H = Math.ceil(P.h * K), ax = Math.round(W * P.ax), ay = Math.round(H * P.ay);
+  const hi = cnv(W * kk, H * kk), g = hi.getContext('2d'); g.translate(ax * kk, ay * kk); LW = 0.9 * kk;
+  P.draw(g, s, mulberry32(v * 9973 + P.name.length * 31), v);
+  const px = pixelize(hi, kk, { colors: P.colors || 28 }), out = cnv(W, H), og = out.getContext('2d');
+  if (P.sh) { const [rx, ry, dx, dy] = P.sh, cx = ax + (dx || 0) * K, cy = ay + (dy || 0) * K; og.fillStyle = 'rgba(16,28,10,0.32)'; for (let y = Math.floor(cy - ry * K); y <= cy + ry * K; y++) for (let x = Math.floor(cx - rx * K); x <= cx + rx * K; x++) { const q = ((x + 0.5 - cx) / (rx * K)) ** 2 + ((y + 0.5 - cy) / (ry * K)) ** 2; if (q > 1) continue; if (q > 0.6 && bayer(x, y) < (q - 0.6) / 0.4) continue; og.fillRect(x, y, 1, 1); } }
+  og.drawImage(px.canvas(), 0, 0);
+  return P.cache[key] = { cv: out, ax, ay };
 }
 /* ---------- placement (colliders as before) ---------- */
 function place(name, x, z, rot = 0, s = 1, o = {}) {
@@ -23,14 +27,14 @@ function place(name, x, z, rot = 0, s = 1, o = {}) {
 function buildStatic() { /* bitmaps are made lazily */ }
 function clearStatic() { STATIC.list.length = 0; STATIC.grid.clear(); STATIC.lamps.length = 0; }
 function queueStatic() {
-  const K = k(), [wx0, wz0] = s2w(-200, -150), [wx1, wz1] = s2w(V.W + 200, V.H + 600), C = STATIC.cell, me = W.P[W.me];
+  const K = k(), [wx0, wz0] = a2w(-200, -150), [wx1, wz1] = a2w(V.W + 200, V.H + 600), C = STATIC.cell, me = W.P[W.me];
   for (let cj = Math.floor(wz0 / C); cj <= Math.floor(wz1 / C); cj++) for (let ci = Math.floor(wx0 / C); ci <= Math.floor(wx1 / C); ci++) {
     const a = STATIC.grid.get(ci + ',' + cj); if (!a) continue;
     for (const it of a) {
       const P = it.P, sw = P.w * K * it.s, sh = P.h * K * it.s; const [sx, sy] = w2s(it.x, it.z); if (sx + sw < -20 || sx - sw > V.W + 20 || sy - sh > V.H + 20 || sy + sh * (1 - P.ay) < -20) continue;
       // fade tall things that hide the hero
       let alpha = 1; if (me && P.fade && it.z > me.z && it.z - me.z < P.h * it.s * 0.8 && Math.abs(it.x - me.x) < P.w * it.s * 0.45) alpha = 0.45; it.alpha = lerp(it.alpha, alpha, 0.15);
-      queue(it.z + (P.zoff || 0), g => { const B = protoBitmap(P, it.v); g.save(); g.globalAlpha = it.alpha; g.translate(sx, sy + it.dy * K); if (it.flip) g.scale(-1, 1); const q = K * it.s / B.s; g.drawImage(B.cv, -P.w * P.ax * B.s * q, -P.h * P.ay * B.s * q, B.cv.width * q, B.cv.height * q); g.restore(); }, P.layer ?? 1);
+      queue(it.z + (P.zoff || 0), g => { const B = protoBitmap(P, it.v, Math.round(it.s * 20) / 20); g.save(); g.globalAlpha = it.alpha > 0.97 ? 1 : it.alpha; g.translate(sx, sy + Math.round(it.dy * K)); if (it.flip) g.scale(-1, 1); g.drawImage(B.cv, -B.ax, -B.ay); g.restore(); }, P.layer ?? 1);
     }
   }
 }

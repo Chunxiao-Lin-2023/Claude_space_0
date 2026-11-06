@@ -1,0 +1,38 @@
+<!doctype html><html><head><meta charset="utf-8"><style>body{margin:0;background:#2a3a2a}canvas{image-rendering:pixelated;display:block}</style></head><body>
+<canvas id="c"></canvas>
+<script src="../00_core.js"></script><script src="../10_view.js"></script><script src="../11_vec.js"></script><script src="../11_pix.js"></script><script src="../12_pxhuman.js"></script><script src="../13_pxbeast.js"></script><script src="../23_chars.js"></script><script src="vec_chibi.js"></script><script src="vec_beasts.js"></script><script src="pixelize.js"></script>
+<script>
+window.LAB = {
+  pixtest(scale = 4) {
+    const c = document.getElementById('c'), g = c.getContext('2d'); c.width = 1600; c.height = 900; g.imageSmoothingEnabled = false; g.fillStyle = '#5f8a46'; g.fillRect(0, 0, 1600, 900);
+    let x = 10; const keys = ['xiaobudian', 'chief', 'linhu', 'ermeng', 'beifeng', 'pihou'];
+    // portraits 80px
+    for (const kk of keys) { const P = CHARS[kk](); const hi = chibiPortrait(P, 'open', 320); const px = pixelize(hi, 4, { colors: 24 }).canvas(); g.drawImage(px, x, 10, px.width * 3, px.height * 3); x += px.width * 3 + 8; }
+    // sprites: vector chibi rendered at target height then pixelized
+    x = 10; for (const H of [44, 56]) { for (const kk of keys) { const P = CHARS[kk](), k = 6, hh = chibiHeight(P), Ht = H * (P.build === 'kid' ? 0.68 : P.build === 'child' ? 0.8 : P.build === 'brute' ? 1.05 : 0.95), sc = Ht * k / hh; for (const view of ['front', 'side', 'back']) { const hi = cnv(Math.ceil(Ht * 1.2 * k), Math.ceil(Ht * 1.15 * k)), hg = hi.getContext('2d'); hg.translate(hi.width / 2, hi.height - 2 * k); hg.scale(sc, sc); LW = 1.15 / sc * k * 0.9; drawChibi(hg, P, { view, t: 0, walk: 0, ph: 0 }, sc); const px = pixelize(hi, k, { colors: 16 }).canvas(); g.drawImage(px, x, H === 44 ? 270 : 520, px.width * scale, px.height * scale); x += px.width * scale + 2; } x += 10; if (x > 1450) break; } x = 10; }
+  },
+  sheet(which, scale = 3) {
+    const c = document.getElementById('c'), g = c.getContext('2d');
+    const specs = [];
+    if (which === 'people' || which === 'poses') { for (const k of ['xiaobudian', 'chief', 'linhu', 'feijiao', 'ermeng', 'pihou', 'dazhuang', 'beifeng', 'beishan']) specs.push([k, CHARS[k]()]); specs.push(['hunter', CHARS.beiHunter(2)]); for (const [i, kd] of [[1, 'man'], [2, 'woman'], [3, 'old'], [4, 'child'], [5, 'woman'], [6, 'man']]) specs.push(['v' + kd, CHARS.villager(i, kd)]); }
+    if (which === 'beasts') { for (const k of ['wolf', 'lynx', 'snake', 'zjsnake', 'mangniu', 'biao', 'dog', 'qingying', 'dapeng', 'xiaoqing', 'ziyun', 'wuseque', 'stakeS']) specs.push([k, CHARS[k]()]); for (const [k, f] of Object.entries(PARTNER_FORMS)) specs.push([k, f.spec(12)]); }
+    const tiles = [];
+    for (const [k, P] of specs) {
+      if (P.rig === 'chibi') { const row = which === 'poses' ? [['front', {}], ['side', {}], ['back', {}], ['side', { walk: 1, ph: 0.4 }], ['side', { walk: 1, ph: 2 }], ['front', { walk: 1, ph: 2 }], ['side', { act: { k: 'punch', k01: 0.5 } }], ['front', { act: { k: 'cast', k01: 0.5 } }], ['front', { act: { k: 'lift', k01: 0.9 } }], ['side', { act: { k: 'kick', k01: 0.5 } }], ['front', { pose: 'train', t: 0 }], ['front', { mood: 'happy' }], ['side', { pose: 'kneel' }]] : [['front', {}], ['side', {}], ['back', {}]];
+        for (const [d, a] of row) tiles.push([k, drawHumanPX(P, Object.assign({ t: 0, walk: 0, ph: 0 }, a), d).canvas()]); if (which === 'poses') break; }
+      else { tiles.push([k, drawBeastPX(P, { t: 0.4 }).canvas()]); if (which === 'beasts') tiles.push([k + '·walk', drawBeastPX(P, { t: 0.4, walk: 1, ph: 1, fly: P.rig === 'bird' && k === 'qingying' }).canvas()]); }
+    }
+    let x = 4, y = 4, rowH = 0; const W = 1600 / scale; const pos = [];
+    for (const [k, cv] of tiles) { if (x + cv.width > W) { x = 4; y += rowH + 8; rowH = 0; } pos.push([k, cv, x, y]); x += cv.width + 4; rowH = Math.max(rowH, cv.height); }
+    c.width = 1600; c.height = (y + rowH + 12) * scale; g.imageSmoothingEnabled = false; g.fillStyle = '#5f8a46'; g.fillRect(0, 0, c.width, c.height);
+    for (const [k, cv, x, y] of pos) { g.drawImage(cv, x * scale, y * scale, cv.width * scale, cv.height * scale); g.fillStyle = '#fff'; g.font = '11px sans-serif'; g.fillText(k, x * scale, (y + cv.height) * scale + 10); }
+  },
+  portraits(scale = 3) {
+    const c = document.getElementById('c'), g = c.getContext('2d'); const list = [['xiaobudian', 'open'], ['xiaobudian', 'happy'], ['xiaobudian', 'talk'], ['chief', 'open'], ['chief', 'happy'], ['linhu', 'angry'], ['ermeng', 'open'], ['pihou', 'happy'], ['beifeng', 'open'], ['feijiao', 'open']];
+    const extra = [['wolf', CHARS.wolf()], ['rongling', PARTNER_FORMS.rongling.spec(1)], ['qinglin', PARTNER_FORMS.qinglin.spec(12)], ['villager2', CHARS.villager(2, 'woman')], ['old', CHARS.villager(3, 'old')]];
+    c.width = 1600; c.height = 2 * (64 * scale + 24) + 10; g.imageSmoothingEnabled = false; g.fillStyle = '#3a3040'; g.fillRect(0, 0, c.width, c.height);
+    let i = 0; for (const [k, m] of list) { const cv = pxPortrait(CHARS[k](), m).canvas(); g.drawImage(cv, (i % 8) * (64 * scale + 6), Math.floor(i / 8) * (64 * scale + 24), 64 * scale, 64 * scale); g.fillStyle = '#fff'; g.fillText(k + ' ' + m, (i % 8) * (64 * scale + 6), Math.floor(i / 8) * (64 * scale + 24) + 64 * scale + 12); i++; }
+    for (const [k, P] of extra) { const cv = pxPortrait(P, 'open').canvas(); g.drawImage(cv, (i % 8) * (64 * scale + 6), Math.floor(i / 8) * (64 * scale + 24), 64 * scale, 64 * scale); g.fillStyle = '#fff'; g.fillText(k, (i % 8) * (64 * scale + 6), Math.floor(i / 8) * (64 * scale + 24) + 64 * scale + 12); i++; }
+  }
+};
+</script></body></html>

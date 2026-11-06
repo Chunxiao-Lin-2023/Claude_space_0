@@ -62,4 +62,4 @@ const PARTNER_FORMS = {
     glow: '#ffd040', skills: [] },
 };
 /* character height in metres for collision / UI, derived from the drawing */
-function specHeight(P) { if (P.rig === 'chibi') return chibiHeight(P) * UM_C; const S = P.size || 1; if (P.rig === 'bird') return S * 160 * UM_B * (1 - (P.chibi || 0) * 0.25); if (P.rig === 'snake') return 0.35 * S; if (P.rig === 'stake') return 1.6; return S * (P.legH + P.bodyR * 2.2) * UM_B; }
+function specHeight(P) { if (P.rig === 'chibi') return (PXH[P.build || 'kid'] || 46) * (P.pxK || 1) / 20; const S = P.size || 1, u = PXB * S / 20; if (P.rig === 'bird') return 160 * u * (1 - (P.chibi || 0) * 0.25); if (P.rig === 'snake') return P.r * 2.6 * u + 0.1; if (P.rig === 'stake') return 1.4; return (P.legH + P.bodyR * 2.2) * u; }

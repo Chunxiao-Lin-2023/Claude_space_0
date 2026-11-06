@@ -21,7 +21,7 @@ function sceneClear() { SCENE.children.length = 0; }
 /* draw one object (and its children) with the canvas already translated to its anchor */
 function drawObj(g, o, K) {
   if (!o.visible) return; const op = o.material.opacity; if (op <= 0.003) return;
-  g.save(); if (op < 1) g.globalAlpha *= op; if (o.rotation.z) g.rotate(o.rotation.z); if (o.scale.x !== 1 || o.scale.y !== 1) g.scale(o.scale.x, o.scale.x);
+  g.save(); if (op < 1) g.globalAlpha *= op; if (o.rotation.z) g.rotate(o.rotation.z); if (!o.noScale && (o.scale.x !== 1 || o.scale.y !== 1)) g.scale(o.scale.x, o.scale.x);
   if (o.draw) o.draw(g, K, o);
   for (const c of o.children) { if (!c.visible) continue; g.save(); g.translate(c.position.x * K, (c.position.z - c.position.y) * K); drawObj(g, c, K); g.restore(); }
   g.restore();
@@ -31,7 +31,7 @@ function queueScene() {
   for (const o of SCENE.children) {
     if (!o.visible || o.noDraw) continue; const p = o.position; if (!onScreen(p.x, p.z, o.cullR || 12)) continue;
     const elev = o.absY ? 0 : p.y - (o.groundY ?? terrH(p.x, p.z));
-    if (o.shadow) { const r = o.shadow * K * (o.scale.x || 1); queue(p.z, g => { const [sx, sy] = w2s(p.x, p.z); const f = clamp(1 - elev * 0.12, 0.35, 1); shadowBlob(g, sx, sy, r * 1.15 * f, r * 0.42 * f, 0.26 * f); }, 0); }
+    if (o.shadow) { const r = o.shadow * K * (o.scale.x || 1); queue(p.z, g => { const [sx, sy] = w2s(p.x, p.z); const f = clamp(1 - elev * 0.12, 0.35, 1); pxShadow(g, sx, sy, Math.max(2, Math.round(r * 1.15 * f)), Math.max(1, Math.round(r * 0.45 * f))); }, 0); }
     queue(p.z + (o.zoff || 0), g => { const [sx, sy] = w2s(p.x, p.z, elev); g.save(); g.translate(sx, sy); drawObj(g, o, K); g.restore(); }, o.layer ?? 1);
   }
 }
@@ -64,3 +64,11 @@ function birdFX(col, s = 1) { // a spirit bird made of fire / light
 }
 function lootMesh() { return new Obj2D((g, K, o) => { const b = Math.sin(W.t * 3) * 0.1 * K; g.save(); g.globalCompositeOperation = 'lighter'; const gr = g.createLinearGradient(0, 0, 0, -2.6 * K); gr.addColorStop(0, 'rgba(255,216,106,0.55)'); gr.addColorStop(1, 'rgba(255,216,106,0)'); g.fillStyle = gr; g.fillRect(-0.18 * K, -2.6 * K, 0.36 * K, 2.6 * K); glowDot(g, 0, -0.35 * K + b, 0.5 * K, 0xffd86a, 0.8); g.restore(); g.fillStyle = '#ffe08a'; g.strokeStyle = INK; g.lineWidth = 1.2; g.beginPath(); g.moveTo(0, -0.55 * K + b); g.lineTo(0.16 * K, -0.35 * K + b); g.lineTo(0, -0.15 * K + b); g.lineTo(-0.16 * K, -0.35 * K + b); g.closePath(); g.fill(); g.stroke(); }); }
 function weaponMesh(kind, s = 1) { const o = new Obj2D((g, K, ob) => { const a = scrAng(ob.rotation.y); g.save(); g.rotate(a + PI / 2); const px = UM_C * K * s; g.scale(px, px); LW = 1.2 / px; drawWeapon(g, kind, 1); g.restore(); }); o.kind = kind; return o; }
+
+/* pixel drop shadow: a dithered ellipse, cached by size */
+const _shadowC = new Map();
+function pxShadow(g, sx, sy, rx, ry) {
+  const key = rx + 'x' + ry; let c = _shadowC.get(key);
+  if (!c) { c = cnv(rx * 2 + 1, ry * 2 + 1); const cg = c.getContext('2d'); cg.fillStyle = 'rgba(14,22,10,0.38)'; for (let y = -ry; y <= ry; y++) for (let x = -rx; x <= rx; x++) { const q = (x / (rx + 0.5)) ** 2 + (y / (ry + 0.5)) ** 2; if (q > 1) continue; if (q > 0.55 && bayer(x + 64, y + 64) < (q - 0.55) / 0.45) continue; cg.fillRect(x + rx, y + ry, 1, 1); } _shadowC.set(key, c); }
+  g.drawImage(c, sx - rx, sy - ry);
+}

@@ -65,7 +65,7 @@ const HAIRS = {
   bun: { vol: 1.0, top: -136, base: -74, bangs: [16, 26, 18, 28, 16], side: 40, back: 20, bun: true },
   bald: { vol: 1.0, top: -104, base: -100, bangs: null, side: 0, back: 0, bald: true },
 };
-function hairShine(g, path, C, top, s) { g.save(); g.clip(path); g.globalAlpha = 0.38; g.strokeStyle = C.hl; g.lineWidth = 7 * s; g.beginPath(); g.ellipse(0, top + 30 * s, 80 * s, 46 * s, 0, PI * 1.12, PI * 1.88); g.stroke(); g.globalAlpha = 0.6; g.lineWidth = 2.2 * s; g.beginPath(); g.ellipse(0, top + 26 * s, 74 * s, 42 * s, 0, PI * 1.2, PI * 1.45); g.stroke(); g.beginPath(); g.ellipse(0, top + 26 * s, 74 * s, 42 * s, 0, PI * 1.55, PI * 1.8); g.stroke(); g.restore(); }
+function hairShine(g, path, C, top, s) { g.save(); g.clip(path); g.globalAlpha = PIXLW > 1 ? 0 : 0.38; g.strokeStyle = C.hl; g.lineWidth = 7 * s; g.beginPath(); g.ellipse(0, top + 30 * s, 80 * s, 46 * s, 0, PI * 1.12, PI * 1.88); g.stroke(); g.globalAlpha = 0.6; g.lineWidth = 2.2 * s; g.beginPath(); g.ellipse(0, top + 26 * s, 74 * s, 42 * s, 0, PI * 1.2, PI * 1.45); g.stroke(); g.beginPath(); g.ellipse(0, top + 26 * s, 74 * s, 42 * s, 0, PI * 1.55, PI * 1.8); g.stroke(); g.restore(); }
 function bangPts(H, s) { const L = H.bangs, n = L.length, x0 = -96 * s, x1 = 96 * s, yb = H.base * s, pts = [[x0 - 8 * s, yb - 44 * s]]; for (let i = 0; i <= n; i++) { const x = lerp(x0, x1, i / n); if (i > 0) pts.push([x - (x1 - x0) / n / 2 + (i / n - 0.5) * 8 * s, yb + L[i - 1] * s]); pts.push([x, yb - 2 * s]); } pts.push([x1 + 8 * s, yb - 44 * s]); return pts; }
 function domePts(H, s, inner) { const v = H.vol, t = H.top; const outer = [[-104 * v, 10], [-110 * v, -70], [-72 * v, t + 20], [0, t], [72 * v, t + 20], [110 * v, -70], [104 * v, 10]]; const hl = H.base; const inn = [[92, hl + 44], [60, hl + 22], [0, hl + 16], [-60, hl + 22], [-92, hl + 44]]; return sc2(outer.concat(inner === false ? [] : inn), s); }
 function spikesPath(H, s) { if (!H.spikes) return null; const n = H.spikes, pts = []; for (let i = 0; i <= n; i++) { const a = PI * 1.05 + i / n * PI * 0.9, r = 108 * H.vol; pts.push([Math.cos(a) * r * s, (Math.sin(a) * (-H.top) * 0.98) * s]); if (i < n) { const am = a + PI * 0.9 / n / 2; pts.push([Math.cos(am) * (r + H.spH * 1.2) * s, (Math.sin(am) * (-H.top + H.spH)) * s]); } } pts.push([0, -40 * s]); return polyQ(pts); }
@@ -128,7 +128,7 @@ function drawWeapon(g, kind, s) { const p = weaponPath(kind, s); cel(g, p, WCOL[
    A: { view, ph, walk (0..1), act:{k,k01}, pose, mood, blink, talk, tilt, look, carry } */
 function drawChibi(g, P, A, px) {
   const B = BUILD[P.build || 'kid'], s = B.head, view = A.view || 'front', w = A.walk || 0, ph = A.ph || 0, det = px * s > 0.42;
-  LW = Math.max(1.0, 1.2 / px) * (P.lwK || 1);
+  LW = Math.max(1.0, 1.2 / px) * (P.lwK || 1) * PIXLW;
   const H = HAIRS[P.hair || 'short'];
   const C = { skin: P.skin || '#fde8dc', skinSh: P.skinSh || mix(P.skin || '#fde8dc', '#d87a78', 0.28), hair: { c: P.hairC || '#1a1b28', sh: P.hairSh || mix(P.hairC || '#1a1b28', '#000', 0.45), hl: P.hairHl || mix(P.hairC || '#1a1b28', '#b8c4ff', 0.4) } };
   const sw = Math.sin(ph), cw = Math.cos(ph), bob = Math.abs(sw) * 6 * w;

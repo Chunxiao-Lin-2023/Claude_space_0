@@ -14,7 +14,7 @@ function beastEye(g, x, y, r, P, A, s) {
 }
 function drawQuad(g, P, A, px) {
   const S = 1, L = P.len, hgt = P.legH, R = P.bodyR, c1 = P.c1, c2 = P.c2 || c1, cb = P.belly || c2;
-  LW = Math.max(1, 1.2 / px);
+  LW = Math.max(1, 1.2 / px) * PIXLW;
   const w = A.walk || 0, ph = A.ph || 0, sw = Math.sin(ph), run = clamp((A.spd || 0) / 6, 0, 1);
   const act = A.act, k = act ? act.k01 : 0, up = act ? sstep(0, 0.3, k) * (1 - sstep(0.6, 1, k)) : 0;
   let bodyTilt = Math.sin(ph * 2) * 0.03 * w, headA = Math.sin((A.t || 0) * 1.3) * 0.04, jaw = 0, lunge = 0, rear = 0, lift = Math.abs(Math.sin(ph)) * 5 * w;
@@ -68,7 +68,7 @@ function drawQuad(g, P, A, px) {
 }
 /* ---------- birds (青鳞鹰 family: metal scales instead of feathers) ---------- */
 function drawBird(g, P, A, px) {
-  LW = Math.max(1, 1.2 / px);
+  LW = Math.max(1, 1.2 / px) * PIXLW;
   const c1 = P.c1, c2 = P.c2 || c1, cb = P.belly || c2, ch = P.chibi || 0, fly = A.fly, t = A.t || 0;
   const act = A.act, k = act ? act.k01 : 0, up = act ? sstep(0, 0.3, k) * (1 - sstep(0.6, 1, k)) : 0;
   const BL = 100 * (1 - ch * 0.3), BR = 55 * (1 + ch * 0.2), legH = fly ? 0 : 60 * (1 - ch * 0.45), w = A.walk || 0, ph = A.ph || 0;
@@ -99,11 +99,11 @@ function drawBird(g, P, A, px) {
 }
 /* ---------- serpents ---------- */
 function drawSnake(g, P, A, px) {
-  LW = Math.max(1, 1.2 / px); const n = P.n || 14, r0 = P.r, t = A.t || 0, spd = clamp((A.spd || 0) / 2, 0.3, 1); const pts = [];
+  LW = Math.max(1, 1.2 / px) * PIXLW; const n = P.n || 14, r0 = P.r, t = A.t || 0, spd = clamp((A.spd || 0) / 2, 0.3, 1); const pts = [];
   for (let i = 0; i < n; i++) { const x = -i * r0 * 1.15, y = Math.sin(t * 5 - i * 0.7) * r0 * 0.8 * spd * (i > 0 ? 1 : 0.3); pts.push([x, y]); }
   const strike = A.act ? sstep(0, 0.4, A.act.k01) * (1 - sstep(0.6, 1, A.act.k01)) : 0;
   for (let i = n - 1; i >= 0; i--) { const r = r0 * (i === 0 ? 1.15 : (1 - i / n * 0.75)); const [x, y] = pts[i]; const yy = -r - (i < 3 ? (3 - i) * r0 * (0.5 + strike * 1.6) : 0); const p = ellP(x + (i === 0 ? strike * r0 * 2 : 0), yy + y * 0.3, r * 1.1, r); cel(g, p, i % 2 ? P.c1 : P.c2, { sx: -3, sy: -4 }); if (i === 0) { const ex = x + strike * r0 * 2 + r * 0.35, ey = yy - r * 0.3; g.fillStyle = hex(P.eye || 0xffd020); g.beginPath(); g.ellipse(ex, ey, r * 0.24, r * 0.2, 0, 0, TAU); g.fill(); g.fillStyle = '#100'; g.beginPath(); g.ellipse(ex + 1, ey, r * 0.07, r * 0.17, 0, 0, TAU); g.fill(); if (P.crest) { const cp = new Path2D(); cp.moveTo(x - r * 0.4, yy - r * 0.8); cp.lineTo(x - r * 0.1, yy - r * 1.8); cp.lineTo(x + r * 0.2, yy - r * 0.8); cp.closePath(); cel(g, cp, P.crest); } g.strokeStyle = '#d02020'; g.lineWidth = 2; g.beginPath(); g.moveTo(x + r * 1.0 + strike * r0 * 2, yy + r * 0.2); g.lineTo(x + r * 1.5 + strike * r0 * 2, yy + r * 0.1 + Math.sin(t * 20) * 3); g.stroke(); } }
 }
 /* ---------- the training dummy ---------- */
-function drawStake(g, P, A, px) { LW = Math.max(1, 1.2 / px); const hit = A.act ? Math.sin(A.act.k01 * 30) * 0.12 * (1 - A.act.k01) : 0; g.save(); g.rotate(hit); const post = new Path2D(); post.rect(-10, -230, 20, 230); cel(g, post, '#6a4a2a'); const bar = new Path2D(); bar.rect(-70, -170, 140, 16); cel(g, bar, '#c8b070'); const body = smoothP([[-34, -200], [34, -200], [38, -120], [-38, -120]]); cel(g, body, '#d8c080'); const head = ellP(0, -235, 30, 32); cel(g, head, '#e0c888'); g.strokeStyle = '#a08040'; g.lineWidth = 2; for (let i = 0; i < 4; i++) { g.beginPath(); g.moveTo(-30, -190 + i * 18); g.lineTo(30, -186 + i * 18); g.stroke(); } g.restore(); }
+function drawStake(g, P, A, px) { LW = Math.max(1, 1.2 / px) * PIXLW; const hit = A.act ? Math.sin(A.act.k01 * 30) * 0.12 * (1 - A.act.k01) : 0; g.save(); g.rotate(hit); const post = new Path2D(); post.rect(-10, -230, 20, 230); cel(g, post, '#6a4a2a'); const bar = new Path2D(); bar.rect(-70, -170, 140, 16); cel(g, bar, '#c8b070'); const body = smoothP([[-34, -200], [34, -200], [38, -120], [-38, -120]]); cel(g, body, '#d8c080'); const head = ellP(0, -235, 30, 32); cel(g, head, '#e0c888'); g.strokeStyle = '#a08040'; g.lineWidth = 2; for (let i = 0; i < 4; i++) { g.beginPath(); g.moveTo(-30, -190 + i * 18); g.lineTo(30, -186 + i * 18); g.stroke(); } g.restore(); }
 function drawBeast(g, P, A, px) { if (P.rig === 'bird') return drawBird(g, P, A, px); if (P.rig === 'snake') return drawSnake(g, P, A, px); if (P.rig === 'stake') return drawStake(g, P, A, px); return drawQuad(g, P, A, px); }

@@ -1,17 +1,29 @@
 /* ================= 2D view: canvas, camera, world<->screen, draw queue, day/night lighting ================= */
-const V = { cv: null, g: null, W: 1, H: 1, dpr: 1, PPM: 64, zoom: 1, cx: 0, cz: 0, shake: 0, sx: 0, sy: 0, light: null, lightCv: null, t: 0 };
+const V = { ox: 0, oz: 0, cv: null, g: null, sg: null, lo: null, W: 1, H: 1, dpr: 1, PPM: 20, SC: 2, zoom: 1, cx: 0, cz: 0, shake: 0, sx: 0, sy: 0, light: null, lightCv: null, t: 0 };
+/* pixel pipeline: the world is drawn 1:1 into a small canvas (V.lo, V.W×V.H art pixels, 20 px per metre) and
+   blown up with nearest-neighbour by an integer factor V.SC (device px per art px) onto the screen canvas. */
 function initView() {
-  const cv = document.createElement('canvas'); document.getElementById('gl').appendChild(cv); V.cv = cv; V.g = cv.getContext('2d');
-  V.lightCv = document.createElement('canvas'); V.lg = V.lightCv.getContext('2d');
+  const cv = document.createElement('canvas'); document.getElementById('gl').appendChild(cv); V.cv = cv; V.sg = cv.getContext('2d');
+  V.lo = document.createElement('canvas'); V.lightCv = document.createElement('canvas'); V.lg = V.lightCv.getContext('2d');
   addEventListener('resize', resizeView); resizeView();
 }
-function resizeView() { const q = SET.quality; V.dpr = Math.min(devicePixelRatio || 1, q === 'high' ? 2 : q === 'mid' ? 1.5 : 1); V.W = innerWidth; V.H = innerHeight; V.cv.width = Math.round(V.W * V.dpr); V.cv.height = Math.round(V.H * V.dpr); V.cv.style.width = V.W + 'px'; V.cv.style.height = V.H + 'px'; V.lightCv.width = Math.ceil(V.W / 4); V.lightCv.height = Math.ceil(V.H / 4); }
-const R3 = { get W() { return V.W; }, get H() { return V.H; } }; // UI code reads R3.W/H
-function k() { return V.PPM * V.zoom; }
+function resizeView() { V.dpr = Math.min(devicePixelRatio || 1, 3); V.cv.width = Math.round(innerWidth * V.dpr); V.cv.height = Math.round(innerHeight * V.dpr); V.cv.style.width = innerWidth + 'px'; V.cv.style.height = innerHeight + 'px'; V.scKey = null; fitLow(); }
+function baseSC() { return Math.max(1, Math.round(V.cv.height / 340)); }
+function fitLow() {
+  const sc = Math.max(1, Math.round(baseSC() * V.zoom)), key = sc + 'x' + V.cv.width + 'x' + V.cv.height; if (key === V.scKey) return; V.scKey = key; V.SC = sc;
+  V.W = Math.ceil(V.cv.width / sc); V.H = Math.ceil(V.cv.height / sc); V.lo.width = V.W; V.lo.height = V.H; V.g = V.lo.getContext('2d'); V.g.imageSmoothingEnabled = false;
+  V.lightCv.width = Math.ceil(V.W / 2); V.lightCv.height = Math.ceil(V.H / 2);
+}
+function blitLow() { const g = V.sg; g.imageSmoothingEnabled = false; g.drawImage(V.lo, 0, 0, V.W * V.SC, V.H * V.SC); }
+const R3 = { get W() { return innerWidth; }, get H() { return innerHeight; } }; // UI code reads R3.W/H (CSS px)
+const CSSPX = () => V.SC / V.dpr; // CSS px per art px
+function k() { return V.PPM; }
 function elevS(y) { return y < 3 ? y : 3 + (y - 3) * 0.4; } // tall heights are compressed so flyers stay on screen
-function w2s(x, z, y = 0) { const K = k(); return [(x - V.cx) * K + V.W / 2 + V.sx, (z - V.cz) * K + V.H / 2 + V.sy - elevS(y) * K]; }
-function s2w(sx, sy) { const K = k(); return [(sx - V.W / 2 - V.sx) / K + V.cx, (sy - V.H / 2 - V.sy) / K + V.cz]; }
-function onScreen(x, z, m = 4) { const K = k(), hw = V.W / 2 / K + m, hh = V.H / 2 / K + m; return Math.abs(x - V.cx) < hw && Math.abs(z - V.cz) < hh + m; }
+function camSnap() { const K = V.PPM; V.ox = Math.round(V.cx * K - V.W / 2 - V.sx); V.oz = Math.round(V.cz * K - V.H / 2 - V.sy); }
+function w2s(x, z, y = 0) { const K = V.PPM; return [Math.round(x * K) - V.ox, Math.round(z * K) - V.oz - Math.round(elevS(y) * K)]; }
+function a2w(ax, ay) { const K = V.PPM; return [(ax + V.ox) / K, (ay + V.oz) / K]; }
+function s2w(cx, cy) { const f = CSSPX(); return a2w(cx / f, cy / f); } // from CSS pixels (mouse)
+function onScreen(x, z, m = 4) { const K = V.PPM, hw = V.W / 2 / K + m, hh = V.H / 2 / K + m; return Math.abs(x - V.cx) < hw && Math.abs(z - V.cz) < hh + m; }
 /* ---------- draw queue: everything with a depth (world z) is sorted before drawing ---------- */
 const DQ = [];
 function queue(z, fn, layer = 1) { DQ.push({ z, fn, layer }); }

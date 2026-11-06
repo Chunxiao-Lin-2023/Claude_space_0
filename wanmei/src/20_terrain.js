@@ -78,7 +78,7 @@ function buildTerrain(Z) {
   TER.water = []; for (let n = 0; n < 6000; n++) { const x = (hash2(n, 7) - 0.5) * S, z = (hash2(n, 13) - 0.5) * S; const w = waterAt(x, z); if (w > terrH(x, z) + 0.3) TER.water.push([x, z, hash2(n, 29) * TAU]); }
 }
 /* ---------- painted ground chunks ---------- */
-const CH = { size: 16, ppm: 40, max: 44 };
+const CH = { size: 16, ppm: 20, max: 40 };
 function groundColor(x, z, out) {
   const Z = TER.Z, B = Z.biome, h = terrH(x, z), n = terrN(x, z), sl = 1 - n.y, wl = waterAt(x, z), pm = pathMaskFeat(Z, x, z, true);
   const n1 = fbm(x * 0.02, z * 0.02, 3), n2 = vnoise(x * 0.11, z * 0.11), n3 = vnoise(x * 0.5, z * 0.5);
@@ -96,41 +96,67 @@ function groundColor(x, z, out) {
 }
 function mixRGB(a, b, t) { const A = typeof a === 'number' ? [a >> 16 & 255, a >> 8 & 255, a & 255] : a, B = typeof b === 'number' ? [b >> 16 & 255, b >> 8 & 255, b & 255] : b; return [lerp(A[0], B[0], t), lerp(A[1], B[1], t), lerp(A[2], B[2], t)]; }
 function mixRGB3(a, b, t) { return mixRGB(a, b, t); }
+/* ---------- pixel ground: a coarse sample field, then per-pixel material choice with ordered dithering ---------- */
+function groundSample(x, z) {
+  const Z = TER.Z, B = Z.biome, h = terrH(x, z), n = terrN(x, z), sl = 1 - n.y, wl = waterAt(x, z), pm = pathMaskFeat(Z, x, z, true);
+  const n1 = fbm(x * 0.02, z * 0.02, 3), n2 = vnoise(x * 0.11, z * 0.11), n3 = vnoise(x * 0.5, z * 0.5);
+  let c = mixRGB(B.grass1, B.grass2, clamp(0.5 + n1 * 1.3, 0, 1)); c = mixRGB(c, B.grass3 || B.grass2, clamp(n2 * 0.7, 0, 0.55));
+  const rk = sstep(B.rockSl ?? 0.24, (B.rockSl ?? 0.24) + 0.18, sl + n2 * 0.05); if (rk > 0) c = mixRGB(c, mixRGB(B.rock, B.rock2 || B.rock, clamp(0.5 + n3, 0, 1)), rk);
+  if (B.hiRock && h > B.hiRock) c = mixRGB(c, B.rock, sstep(B.hiRock, B.hiRock + 25, h));
+  if (B.snow && h > B.snowH) c = mixRGB(c, B.snow, sstep(B.snowH, B.snowH + 12, h + n1 * 8));
+  let paint = 0; if (Z.paint) for (const P of Z.paint) { const d = Math.hypot(x - P.x, z - P.z); if (d < P.r) { const k2 = (P.k ?? 1) * sstep(P.r, P.r * (P.soft ?? 0.6), d) * (P.noise ? clamp(0.6 + n2, 0, 1) : 1); c = mixRGB(c, P.col, k2); paint = Math.max(paint, k2); } }
+  let wd = -9, sand = 0; if (wl > -1e8) { sand = sstep(wl + 0.9, wl + 0.15, h); wd = wl - h; }
+  const lam = clamp(1.0 + (-n.x * 0.55 - n.z * 0.75) * 1.3, 0.72, 1.15);
+  const dirt = mixRGB(B.dirt, B.dirt2 || B.dirt, clamp(0.5 + n3, 0, 1));
+  return [c[0], c[1], c[2], dirt[0], dirt[1], dirt[2], pm, lam, wd, sand, sl];
+}
 function paintChunk(ci, cj) {
-  const S = CH.size, P = CH.ppm, px = S * P, c = cnv(px, px), g = c.getContext('2d'), x0 = ci * S, z0 = cj * S;
-  // 1) smooth low-res colour field
-  const n = 33, lo = cnv(n, n), lg = lo.getContext('2d'), id = lg.createImageData(n, n), out = [0, 0, 0], wmask = new Float32Array(n * n);
-  for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) { const x = x0 + (i - 0.5) / (n - 2) * S, z = z0 + (j - 0.5) / (n - 2) * S, q = (j * n + i) * 4; wmask[j * n + i] = groundColor(x, z, out); id.data[q] = out[0]; id.data[q + 1] = out[1]; id.data[q + 2] = out[2]; id.data[q + 3] = 255; }
-  lg.putImageData(id, 0, 0); g.imageSmoothingEnabled = true; g.imageSmoothingQuality = 'high'; const st = px / (n - 2); g.drawImage(lo, -st * 0.5, -st * 0.5, st * n, st * n);
-  // 2) details: grass strokes, dirt specks, flowers, pebbles, water ripples
-  const B = TER.Z.biome, R = mulberry32(ci * 7919 + cj * 104729);
-  const grassDens = TER.Z.grassDens || (() => 1);
-  for (let q = 0; q < 900; q++) { const lx = R() * S, lz = R() * S, x = x0 + lx, z = z0 + lz; const h = terrH(x, z), w = waterAt(x, z), pm = pathAt(x, z), sl = slopeAt(x, z); const sx = lx * P, sy = lz * P;
-    if (w > h - 0.1) { if (R() < 0.5) { g.strokeStyle = 'rgba(255,255,255,.22)'; g.lineWidth = 1.5; g.beginPath(); g.moveTo(sx - 8, sy); g.quadraticCurveTo(sx, sy - 3, sx + 8, sy); g.stroke(); } continue; }
-    if (pm > 0.45) { if (R() < 0.35) { g.fillStyle = R() < 0.5 ? 'rgba(90,64,36,.16)' : 'rgba(255,240,200,.14)'; g.beginPath(); g.ellipse(sx, sy, 2 + R() * 3, 1 + R() * 1.5, 0, 0, TAU); g.fill(); } if (R() < 0.018) { g.fillStyle = R() < 0.5 ? '#a8a092' : '#968e80'; g.beginPath(); g.ellipse(sx, sy, 2.5 + R() * 2.5, 1.6 + R() * 1.6, 0, 0, TAU); g.fill(); g.fillStyle = 'rgba(255,255,255,.35)'; g.beginPath(); g.ellipse(sx - 1, sy - 0.8, 1.2, 0.6, 0, 0, TAU); g.fill(); } continue; }
-    if (pm > 0.18) { if (R() < 0.6) { const hh = 3 + R() * 4; g.strokeStyle = R() < 0.5 ? 'rgba(60,100,40,.5)' : 'rgba(160,190,90,.45)'; g.lineWidth = 1.2; g.beginPath(); g.moveTo(sx - 1.5, sy); g.lineTo(sx - 2.5, sy - hh); g.moveTo(sx + 1.5, sy); g.lineTo(sx + 2.5, sy - hh * 0.8); g.stroke(); } continue; }
-    if (sl > 0.32) { g.strokeStyle = 'rgba(40,36,30,.25)'; g.lineWidth = 1.2; g.beginPath(); g.moveTo(sx, sy - 4); g.lineTo(sx + 1, sy + 6); g.stroke(); continue; }
-    if (R() > grassDens(x, z)) continue;
-    const dark = R() < 0.5, tone = R(); g.strokeStyle = dark ? (tone < 0.5 ? 'rgba(30,70,25,.42)' : 'rgba(40,90,50,.38)') : (tone < 0.5 ? 'rgba(220,240,160,.38)' : 'rgba(180,225,120,.36)'); g.lineWidth = 1.4; g.lineCap = 'round'; const hh = (4 + R() * 5) * (R() < 0.08 ? 1.8 : 1); g.beginPath(); g.moveTo(sx - 2, sy); g.lineTo(sx - 3.5, sy - hh); g.moveTo(sx, sy); g.lineTo(sx + 0.5, sy - hh * 1.2); g.moveTo(sx + 2, sy); g.lineTo(sx + 4, sy - hh * 0.9); g.stroke();
-    if (R() < 0.035) { const cols = ['#ffffff', '#ffe060', '#ff9ab8', '#c0a0ff', '#ff7a5a']; const cc = cols[Math.floor(R() * 5)]; for (let f = 0; f < 3; f++) { g.fillStyle = cc; g.beginPath(); g.arc(sx + (R() - 0.5) * 12, sy + (R() - 0.5) * 8, 2.2, 0, TAU); g.fill(); } } }
-  // shoreline foam
-  g.strokeStyle = 'rgba(240,252,255,.55)'; g.lineWidth = 2;
-  for (let j = 1; j < n - 1; j++) for (let i = 1; i < n - 1; i++) { const wv = wmask[j * n + i] > 0, e = wmask[j * n + i + 1] > 0, s = wmask[(j + 1) * n + i] > 0; const sx = (i - 0.5) * st, sy = (j - 0.5) * st; if (wv !== e) { g.beginPath(); g.moveTo(sx + st * 0.5, sy - st * 0.4); g.quadraticCurveTo(sx + st * 0.62, sy, sx + st * 0.5, sy + st * 0.4); g.stroke(); } if (wv !== s) { g.beginPath(); g.moveTo(sx - st * 0.4, sy + st * 0.5); g.quadraticCurveTo(sx, sy + st * 0.62, sx + st * 0.4, sy + st * 0.5); g.stroke(); } }
+  const S = CH.size, P = V.PPM, N = S * P, c = cnv(N, N), g = c.getContext('2d'), x0 = ci * S, z0 = cj * S, B = TER.Z.biome, Wt = TER.Z.water || {};
+  const st = 8, n = N / st + 1, F = []; for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) F.push(groundSample(x0 + i * st / P, z0 + j * st / P));
+  const id = g.createImageData(N, N), d = id.data, sandC = mixRGB(B.sand, B.sand, 0), shal = mixRGB(Wt.shal || 0x6ac8c8, Wt.shal || 0x6ac8c8, 0), deep = mixRGB(Wt.deep || 0x1f6c8a, Wt.deep || 0x1f6c8a, 0);
+  const v = new Float32Array(11), gx0 = ci * N, gz0 = cj * N;
+  for (let y = 0; y < N; y++) { const fy = y / st, j = Math.min(n - 2, Math.floor(fy)), ty = fy - j;
+    for (let x = 0; x < N; x++) { const fx = x / st, i = Math.min(n - 2, Math.floor(fx)), tx = fx - i, A = F[j * n + i], Bq = F[j * n + i + 1], C = F[(j + 1) * n + i], D = F[(j + 1) * n + i + 1];
+      for (let q = 0; q < 11; q++) v[q] = (A[q] * (1 - tx) + Bq[q] * tx) * (1 - ty) + (C[q] * (1 - tx) + D[q] * tx) * ty;
+      const gx = gx0 + x, gy = gz0 + y, by = bayer(gx, gy), tn = vnoise(gx * 0.13, gy * 0.13) * 0.8 + vnoise(gx * 0.41, gy * 0.41) * 0.35;
+      let r, gg, b;
+      const pmS = clamp((v[6] - 0.32) * 3.2, 0, 1), isDirt = pmS + (by - 0.5) * 0.08 + (tn - 0.55) * 0.35 > 0.5;
+      if (isDirt) { r = v[3]; gg = v[4]; b = v[5]; } else { r = v[0]; gg = v[1]; b = v[2]; }
+      if (v[9] + (by - 0.5) * 0.1 + (tn - 0.55) * 0.2 > 0.5) { r = sandC[0]; gg = sandC[1]; b = sandC[2]; }
+      let lv = tn + (by - 0.5) * 0.12; let mul = lv < 0.42 ? 0.88 : lv < 0.78 ? 1 : 1.09; if (isDirt) mul = lv < 0.45 ? 0.93 : lv > 0.85 ? 1.06 : 1;
+      let lam = Math.round(v[7] * 14) / 14; mul *= lam;
+      if (v[8] > 0) { const wd = v[8]; if (wd < 0.12 && by < 0.6) { r = 236; gg = 248; b = 250; mul = 1; } else { const t = clamp(wd / 2.2 + (by - 0.5) * 0.25, 0, 1), q2 = t < 0.33 ? 0 : t < 0.66 ? 0.5 : 1; r = lerp(shal[0], deep[0], q2); gg = lerp(shal[1], deep[1], q2); b = lerp(shal[2], deep[2], q2); mul = 1 + (tn > 0.8 ? 0.08 : 0); } }
+      const o = (y * N + x) * 4; d[o] = Math.min(255, r * mul) & 0xFC; d[o + 1] = Math.min(255, gg * mul) & 0xFC; d[o + 2] = Math.min(255, b * mul) & 0xFC; d[o + 3] = 255; } }
+  g.putImageData(id, 0, 0);
+  // pixel details: grass tufts, flowers, pebbles, dirt specks
+  const R = mulberry32(ci * 7919 + cj * 104729), grassDens = TER.Z.grassDens || (() => 1), gr = ramp(mixRGB(B.grass2, B.grass2, 0).map(Math.round));
+  const put = (x, y, col) => { g.fillStyle = col; g.fillRect(x, y, 1, 1); };
+  for (let q = 0; q < 900; q++) { const lx = Math.floor(R() * N), ly = Math.floor(R() * N), x = x0 + lx / P, z = z0 + ly / P, smp = groundSample2(x, z);
+    if (smp.water) continue;
+    if (smp.pm > 0.5) { if (R() < 0.12) { put(lx, ly, '#9a9284'); put(lx + 1, ly, '#7e776a'); put(lx, ly - 1, '#c8c0b0'); } else if (R() < 0.3) put(lx, ly, 'rgba(70,50,30,.35)'); continue; }
+    if (smp.sl > 0.32 || R() > grassDens(x, z)) continue;
+    const dk = `rgb(${gr[0].join(',')})`, md = `rgb(${gr[1].join(',')})`, lt = `rgb(${gr[3].join(',')})`, hl = `rgb(${gr[4].join(',')})`;
+    const kind = R();
+    if (kind < 0.62) { put(lx, ly, md); put(lx + 2, ly, md); put(lx + 1, ly - 1, dk); put(lx - 1, ly - 1, lt); put(lx + 3, ly - 1, lt); if (R() < 0.4) put(lx + 1, ly - 2, hl); }
+    else if (kind < 0.9) { put(lx, ly, dk); put(lx, ly - 1, md); put(lx + 1, ly - 2, lt); }
+    else if (kind < 0.965) { const cols = ['#ffffff', '#ffe060', '#ff9ab8', '#c0a0ff', '#ff7a5a']; const cc = cols[Math.floor(R() * 5)]; put(lx, ly, cc); put(lx + 1, ly + 1, cc); put(lx - 1, ly + 1, cc); put(lx, ly + 2, cc); put(lx, ly + 1, '#ffd040'); }
+    else { put(lx, ly, '#8a8476'); put(lx + 1, ly, '#a8a294'); put(lx, ly + 1, '#5a564e'); put(lx + 1, ly + 1, '#6a665c'); }
+  }
   return c;
 }
+function groundSample2(x, z) { const h = terrH(x, z), w = waterAt(x, z); return { water: w > h - 0.1, pm: pathAt(x, z), sl: slopeAt(x, z) }; }
 function getChunk(ci, cj) { const key = ci + ',' + cj; let c = TER.chunks.get(key); if (c) { c.t = V.t; return c; } c = { cv: paintChunk(ci, cj), t: V.t }; TER.chunks.set(key, c); if (TER.chunks.size > CH.max) { let old = null, ot = 1e9; for (const [k2, v] of TER.chunks) if (v.t < ot) { ot = v.t; old = k2; } TER.chunks.delete(old); } return c; }
 let chunkBudget = 0;
 function drawGround(g) {
-  const K = k(), S = CH.size, [wx0, wz0] = s2w(-40, -40), [wx1, wz1] = s2w(V.W + 40, V.H + 40); chunkBudget = 3;
+  const K = k(), S = CH.size, [wx0, wz0] = a2w(-4, -4), [wx1, wz1] = a2w(V.W + 4, V.H + 4); chunkBudget = 1;
   g.fillStyle = '#5a7a40'; g.fillRect(0, 0, V.W, V.H);
   for (let cj = Math.floor(wz0 / S); cj <= Math.floor(wz1 / S); cj++) for (let ci = Math.floor(wx0 / S); ci <= Math.floor(wx1 / S); ci++) {
     const key = ci + ',' + cj; let c = TER.chunks.get(key); if (!c) { if (chunkBudget-- <= 0) continue; c = getChunk(ci, cj); } c.t = V.t;
-    const [sx, sy] = w2s(ci * S, cj * S); g.drawImage(c.cv, Math.floor(sx), Math.floor(sy), Math.ceil(S * K) + 1, Math.ceil(S * K) + 1);
+    const [sx, sy] = w2s(ci * S, cj * S); g.drawImage(c.cv, sx, sy);
   }
-  // water shimmer
-  g.save(); g.globalCompositeOperation = 'lighter'; g.strokeStyle = 'rgba(200,240,255,.35)'; g.lineWidth = Math.max(1, 1.5 * V.zoom);
-  for (const [x, z, p] of TER.water) { if (!onScreen(x, z, 2)) continue; const a = Math.sin(V.t * 1.6 + p); if (a < 0.3) continue; const [sx, sy] = w2s(x + Math.sin(V.t * 0.4 + p) * 0.4, z); const L = 10 * V.zoom * a; g.globalAlpha = (a - 0.3) * 1.2; g.beginPath(); g.moveTo(sx - L, sy); g.quadraticCurveTo(sx, sy - 3 * V.zoom, sx + L, sy); g.stroke(); }
-  g.restore();
+  // water glints: little pixel dashes
+  g.fillStyle = 'rgba(230,250,255,.75)';
+  for (const [x, z, p] of TER.water) { if (!onScreen(x, z, 2)) continue; const a = Math.sin(V.t * 1.6 + p); if (a < 0.4) continue; const [sx, sy] = w2s(x + Math.sin(V.t * 0.4 + p) * 0.4, z); const L = a > 0.8 ? 4 : 2; g.fillRect(sx - L / 2, sy, L, 1); }
 }
 function prewarmChunks(cx, cz, r = 2) { for (let j = -r; j <= r; j++) for (let i = -r; i <= r; i++) getChunk(Math.floor(cx / CH.size) + i, Math.floor(cz / CH.size) + j); }
 
