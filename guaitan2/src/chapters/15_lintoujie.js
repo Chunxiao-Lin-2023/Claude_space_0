@@ -226,6 +226,10 @@
       for (let i = 0; i < 5; i++) R(0, 8 + i * 16 - (i === 2 ? 6 : 0), 12 - Math.abs(2 - i) * 4, 16, '#3e2a1a');
       R(0, 26, 22, 28, '#4a321e'); R(18, 30, 6, 20, '#3e2a1a'); R(22, 36, 4, 8, '#2a1a10'); R(0, 26, 22, 2, '#6a4a2e'); R(0, 52, 22, 2, '#22160e');
     },
+    eave(g, e, t, R) {   // 船尾舵楼伸出来的檐（宽 3 格），压在左舷上方，底下浪打不进来
+      R(-2, -10, 52, 6, '#2a1a10'); R(0, -4, 48, 3, '#4a2a18'); for (let x = 0; x < 48; x += 6) R(x, -10, 1, 6, '#1a100a');
+      R(46, -4, 2, 120, '#3a2414'); R(46, -4, 2, 1, '#c9a35a'); R(36, -1, 4, 6, e.off ? '#3a1a14' : '#c8382a'); R(37, 1, 2, 2, '#ffb060');
+    },
     stern(g, e, t, R) {   // 高高的船尾板，红底黑边，画着一个八卦
       R(4, -4, 12, 120, '#2a1a10'); R(6, -2, 9, 116, '#7a1e16'); R(6, 46, 9, 22, '#1a1210'); R(8, 50, 5, 14, '#c9a35a'); R(9, 53, 3, 8, '#1a1210');
       R(6, -2, 9, 2, '#c9a35a'); R(6, 112, 9, 2, '#c9a35a');
@@ -833,7 +837,7 @@
       if (WV.t > 0) return;
       const r = Math.random();   // 一半打在你要去的前方，三成打在你身上，剩下的打在远处，给人喘口气
       let c = WV.idle < .35 && WV.vx && r < .5 ? cx + WV.vx * 4 : r < .8 ? cx + ((Math.random() * 3) | 0) - 1 : cx + (Math.random() < .5 ? -6 : 6);
-      c = clamp(c, 4, 25);
+      c = clamp(c, 7, 25);   // 船尾 x≤5 在舵楼檐下，浪打不进来
       S.place('wv', c - 1, 3); e.s.st = 1; WV.st = 1; WV.t = WARN + (f.kind ? .25 : 0); WV.t0 = WV.t;
       const mine = cx >= c - 1 && cx <= c + 1;
       SND.swell(S, mine);
@@ -1183,12 +1187,13 @@
       crate(10, 3, '#7a5a3a'), crate(10, 4, '#6a4a2e'), crate(10, 5, '#7a5a3a'), crate(10, 6, '#6a4a2e'),
       { id: 'cask', x: 13, y: 3, spr: 'barrel', col: '#4a3a2a', on: say('装淡水的木桶，用麻绳绑在船舷上。\n躲在它背后，浪头打不着。') },
       { id: 'mast1', x: 18, y: 4, spr: 'mast', on: say('主桅。帆绳绷得吱吱响。\n贴着桅杆背后站，浪头会被它挡开。') },
-      { id: 'mast2', x: 7, y: 4, spr: 'mast', on: say('后桅。桅杆上钉着一道黄符，被雨打得透湿。') },
+      { id: 'mast2', x: 7, y: 4, spr: 'mast', on: say('后桅。桅杆上钉着一道黄符，被雨打得透湿。\n再往船尾去，就是舵楼的檐下了，浪头打不进去。') },
       { id: 'hatch', x: 23, y: 5, spr: 'hatch2', decal: true, on: say('舱口。底下的水已经漫过脚踝了。') },
       { id: 'mazu', x: 3, y: 5, spr: 'mazu', on: mazuUse },
       { x: 3, y: 8, spr: 'tiller', on: say('舵杆。船老大用整个身子压着它。') },
       { x: 24, y: 2, spr: 'boweye', solid: false }, { x: 24, y: 10, spr: 'boweye', solid: false },
       { x: 28, y: 4, w: 2, h: 5, spr: 'prow', solid: false }, { x: 0, y: 3, h: 7, spr: 'stern', solid: false },
+      { x: 3, y: 3, w: 3, spr: 'eave', solid: false, z: 1 },
       { id: 'wv', x: 20, y: 3, w: 3, h: 7, spr: 'wave', z: 1, solid: false, hidden: true },
       { x: 5, y: 6, spr: 'invisible', light: { r: 3, col: 'rgba(255,190,110,.14)' } },
       { x: 22, y: 7, spr: 'invisible', light: { r: 2.6, col: 'rgba(255,190,110,.1)' } },

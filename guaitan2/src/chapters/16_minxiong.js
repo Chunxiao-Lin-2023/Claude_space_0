@@ -82,7 +82,7 @@
     jade: { name: '玉镯', desc: '一只翠绿的玉镯，冰得像刚从水里捞上来。\n内侧刻着一个小小的「刘」字。' }
   };
   const NOTES_M = {
-    album: { title: '阿嬷的相簿（照片背面）', text: '第一页\n昭和十年十月十日　洋楼落成六周年　全家写真\n——自铁门入，第五块石板上，面北。\n\n第二页\n同日　大厅　奉茶\n——自神明桌前，退七步，面北。\n\n第三页\n同日　后院　井边\n——出了后门，往南走八步，再往西走九步，面北。\n\n最后一页，是阿嬷的字。铅笔，抖得很厉害：\n「阿春姊仔没有偷。照片里有。\n我那时候八岁，不敢讲。\n晴仔，帮阿嬷还给伊。」' },
+    album: { title: '阿嬷的相簿（照片背面）', text: '第一页\n昭和十年十月十日　洋楼落成六周年　全家写真\n——自铁门入，第五块石板，往左三步，面北。\n\n第二页\n同日　大厅　奉茶\n——自神明桌前，退七步，面北。\n\n第三页\n同日　后院　井边\n——出了后门，往南走八步，再往西走九步，面北。\n\n最后一页，是阿嬷的字。铅笔，抖得很厉害：\n「阿春姊仔没有偷。照片里有。\n我那时候八岁，不敢讲。\n晴仔，帮阿嬷还给伊。」' },
     tvcrew: { title: '外景场记单（压在器材箱底下）', text: '《○○灵异档案》外景　民雄古厝　2001.7.14\n\n01　外观　OK\n02　大厅　OK（灯架倒了两次）\n03　东厢楼梯　NG（楼梯断了，上不去）\n04　后院「古井」　拍立得今昔对照\n　　第一张：正常。\n　　第二张：井边多一个人影？（导演：留着，后制再说）\n　　第三张：摄影大哥按完就说不拍了。\n\n备注：\n· 隔壁阿婆说，以前有人要拆，怪手一开进院子就熄火，换了三台都一样。（导演：这段可以用）\n· 先撤。器材箱明天再回来拿。' },
     heitai: { title: '日本兵留下的木牌与刻字', text: '木牌（墨字）：\n　夜間　井戸ニ近ヅクベカラズ　　部隊長\n　（夜间不得接近井边。）\n\n墙上用刺刀刻的字，一行一行，歪歪斜斜：\n　昭和十九年八月　本隊　此ノ屋ニ宿営ス\n　旧井戸ハ埋メ立テラレ　所在不明\n　新井戸ヲ東ニ掘ル\n　（旧井已被填平，位置不明。新井挖在东边。）\n　夜毎　井戸ノ辺ニ　女ノ泣ク声\n　（每夜，井边都有女人的哭声。）\n\n最底下一行刻得很浅：\n　帰リタイ（想回家）' },
     iou: { title: '铁盒里的借据', text: '借　据\n今借到　金参百圆整\n言明一月内连本带利奉还，不得延误。\n昭和十年十月九日\n借款人　刘○○（印）\n\n借据背面，铅笔写了一行小字：\n「镯仔暂放花瓶脚下，等风头过了再拿去当。」' }
@@ -335,10 +335,9 @@
   }
 
   /* ---------- 照片对照：三组 ---------- */
-  const O = (id, x, y, spr, on, ex) => Object.assign({ id, x: 1 + x, y: 1 + y, spr, solid: false, on }, ex || {});
   /* 横屏：老照片在左、拍立得在右；竖屏（iPad 竖着拿）：老照片在上、拍立得在下 */
   function phRows(o, n, v) {
-    if (v) { const r = [' '.repeat(10)]; for (let y = 0; y < 7; y++) r.push(' ' + o[y] + ' '); r.push(' ' + '.'.repeat(8) + ' ', ' ' + '.'.repeat(8) + ' '); for (let y = 0; y < 7; y++) r.push(' ' + n[y] + ' '); r.push(' ' + '.'.repeat(8) + ' ', ' '.repeat(10)); return r; }
+    if (v) { const r = []; for (let y = 0; y < 7; y++) r.push(' ' + o[y] + ' '); r.push(' ' + '.'.repeat(8) + ' '); for (let y = 0; y < 7; y++) r.push(' ' + n[y] + ' '); r.push(' ' + '.'.repeat(8) + ' '); return r; }   // 16 行：iPad 竖屏一屏放得下
     const r = [' '.repeat(20)]; for (let y = 0; y < 7; y++) r.push(' ' + o[y] + '..' + n[y] + ' '); r.push(' ' + '.'.repeat(18) + ' '); r.push(' '.repeat(20)); return r;
   }
   const say = t => S => S.narr(t);
@@ -356,7 +355,7 @@
       name: '洋楼正面', need: ['face', 'geta', 'banyan'],
       dirHint: ['看看二楼的窗户。', '看看老照片里阿春站的地方。', '看看左边那棵小榕树。'],
       posHint: ['二楼正中间那扇窗户。', '台阶上，右边数第二个人的位置。', '左下角，那一大团树。'],
-      ret: ['yard', 11, 9]
+      ret: ['yard', 8, 9]
     },
     B: {
       name: '大厅', need: ['door', 'frame', 'kneel'],
@@ -399,13 +398,14 @@
     C_cap: async S => { await S.narr('右下角那口水泥封住的「井」。\n老照片里，那个地方什么都没有。\n——电视台拍的「古井」，七十年前根本不存在。'); }
   };
   function phEnts(k, v) {
-    const nx = v ? 1 : 11, ny = v ? 10 : 1;
+    const nx = v ? 1 : 11, ny = v ? 8 : 1, oy = v ? 0 : 1;
+    const O = (id, x, y, spr, on, ex) => Object.assign({ id, x: 1 + x, y: oy + y, spr, solid: false, on }, ex || {});
     const N = (id, x, y, spr, on, ex) => Object.assign({ id, x: nx + x, y: ny + y, spr, solid: false, on }, ex || {});
     const df = (id, x, y, spr, ex) => N(k + '_' + id, x, y, spr, S => found(S, k, id), ex);
     const wets = [];
     const mi = (id, x, y, spr, t, ex) => { wets.push(N('wt_' + k + '_' + id, x, y, 'wet', null, { hidden: true, z: 1 })); return N(k + '_' + id, x, y, spr, S => miss(S, k, t, id), ex); };
     const rg = (id, x, y, w) => ({ id: 'rg_' + k + '_' + id, x: nx + x, y: ny + y, w: w || 1, spr: 'ring', hidden: true, solid: false, z: 2 });
-    const fr = [{ x: 1, y: 1, w: 8, h: 7, spr: 'frame', s: { k: 'old' }, decal: true, solid: false }, { x: nx, y: ny, w: 8, h: 7, spr: 'frame', s: { k: 'pola' }, decal: true, solid: false }];
+    const fr = [{ x: 1, y: oy, w: 8, h: 7, spr: 'frame', s: { k: 'old' }, decal: true, solid: false }, { x: nx, y: ny, w: 8, h: 7, spr: 'frame', s: { k: 'pola' }, decal: true, solid: false }];
     if (k === 'A') return fr.concat([
       O(null, 0, 2, 'o_pfacade', null, { w: 8, decal: true, s: { k: 'o' } }),
       O('Ao_plq', 3, 0, 'o_plaque', say('山墙上的圆形浮雕，中间刻着几个字，糊掉了看不清。'), { w: 2 }),
@@ -538,13 +538,14 @@
     if (!S.f.nWarn) {
       S.f.nWarn = 1; S.fx('red'); S.shake(400, 3); clog(S); clog(S, .12);
       await S.narr('一只冰凉的手攥住了你的手腕。\n「镯仔……交出来……」');
-      await S.narr('你拼命一甩——挣开了。\n手腕上留下五道青紫色的指印。');
-      const p = S.pl; let bi = 0, bd = -1;
-      NWP.forEach(([x, y], i) => { const dd = Math.abs(x - p.x) + Math.abs(y - p.y); if (dd > bd) { bd = dd; bi = i; } });
-      S.ent('tai').s.off = true; S.sfx('switch');
-      await S.narr('灯笼「噗」地灭了。\n一片漆黑里，木屐声往大厅另一头去了。');
-      S.place('tai', NWP[bi][0], NWP[bi][1], 0); S.ent('tai').s.off = false; S.fx('flash');
-      PAT = { st: 'pause', t: 2.2, wp: (bi + 1) % NWP.length, lost: 0 };
+      S.ent('tai').s.off = true; S.sfx('switch'); S.fade(1, 300);
+      await S.narr('你拼命一甩——挣开了。灯笼「噗」地灭了。\n你在一片漆黑里跌跌撞撞地往回跑，一直跑到神明桌旁边，才停下来。');
+      S.pos(11, 3, 3);
+      const te = S.ent('tai'); if (Math.hypot(te.px / TS - 11, te.py / TS - 3) < 4.5) S.place('tai', 17, 3, 0);
+      await S.fade(0, 400);
+      S.ent('tai').s.off = false; S.fx('flash');
+      await S.narr('手腕上，五道青紫色的指印。\n灯笼又亮了——她还在那里，慢慢地转着头。');
+      PAT = { st: 'pause', t: 2.4, wp: PAT && PAT.wp != null ? PAT.wp : 1, lost: 0 };
       S.toast('再被抓到一次，就逃不掉了');
       return;
     }
@@ -570,7 +571,7 @@
     if (!f.backOpen) return 'night'; if (!f.pC) return 'C'; if (!f.wellFound) return 'dig'; return 'end';
   }
   const IDLE_H = {
-    A: ['「第一张：铁门进来，第五块石板……铁门那一格不算喔。」', '「从铁门往屋子走，数石板：一、二、三、四、五——站上去，面对房子。」'],
+    A: ['「第一张：铁门进来，第五块石板，再往左三步……铁门那一格不算喔。」', '「从铁门往屋子走，数石板：一、二、三、四、五——再往左走三步，面对房子。」'],
     B: ['「第二张在大厅：神明桌前面退七步。」', '「先站到神明桌正前面那一格，再往后退七步。」'],
     bar: ['「撬那块砖要工具吧……东厢那边好像有电视台丢下的东西。」', '「东厢那个铝箱子，去翻翻看。」'],
     pry: ['「神明桌右边，那块裂开的地砖。」', '「就是她跪着按住的那块。神明桌右边。」'],
@@ -695,7 +696,7 @@
           { id: 'az_y', x: 12, y: 16, spr: '@azhe', dir: 3 }
         ],
         async enter(S, first) { azHere(S); if (first) await opening(S); },
-        step(S, x, y) { return spotStep(S, 'A', x, y, [[11, 9]]); }
+        step(S, x, y) { return spotStep(S, 'A', x, y, [[8, 9]]); }
       },
       /* ---------------- 古厝一楼 ---------------- */
       hall: {
@@ -715,11 +716,11 @@
           '######........######',
           '######Y......Y######',
           '######Y......Y######',
-          '#########..#########',
+          '############..######',
           '####################'],
         ents: [
-          { x: 9, y: 13, spr: 'invisible', touch: S => leaveHall(S) },
-          { x: 10, y: 13, spr: 'invisible', touch: S => leaveHall(S) },
+          { x: 12, y: 13, spr: 'invisible', touch: S => leaveHall(S) },
+          { x: 13, y: 13, spr: 'invisible', touch: S => leaveHall(S) },
           { id: 'altar', x: 8, y: 2, w: 3, spr: 'shenming', s: { k: 'ruin' }, on: S => S.narr('神明桌塌了一角。桌上的神像早就没了，只剩一块被香熏黑的印子。\n香炉里插着几支新的香脚——有人来拜过。') },
           { id: 'crack', x: 11, y: 2, spr: 'crack', decal: true, solid: false, on: S => crackOn(S) },
           { id: 'fam', x: 9, y: 1, spr: 'famframe', s: { brk: true }, on: S => S.narr(S.f.pB ? '你凑近看——\n玻璃碎了，相片泡过水，可是看得出来：头家娘的那张脸，真的被刮掉了。一圈一圈，刮得好深。' : '墙上挂着一个相框，玻璃碎了，相片泡过水，黄黄的，看不清楚。') },
@@ -766,11 +767,11 @@
           '######........######',
           '######........######',
           '######........######',
-          '#########..#########',
+          '############..######',
           '####################'],
         ents: [
-          { x: 9, y: 13, spr: 'invisible', touch: S => frontLocked(S) },
-          { x: 10, y: 13, spr: 'invisible', touch: S => frontLocked(S) },
+          { x: 12, y: 13, spr: 'invisible', touch: S => frontLocked(S) },
+          { x: 13, y: 13, spr: 'invisible', touch: S => frontLocked(S) },
           { x: 8, y: 2, w: 3, spr: 'shenming', s: { k: 'new' }, on: S => S.narr('神明桌上的观音低着眼睛。两盏油灯的火苗，一动也不动。') },
           { x: 11, y: 2, spr: 'vase', on: S => S.narr('青花大花瓶。木架子底下那块地砖，边缝里的灰是新的。') },
           { x: 9, y: 1, spr: 'famframe', on: S => S.narr('全家福里的头家娘，正端端正正地看着你。') },
@@ -841,7 +842,10 @@
 
   /* ================= 前院 ================= */
   async function opening(S) {
-    await S.narr('晚上十点四十分。省道旁边的小路，路灯坏了一半。\n铁栏杆后面，那栋红砖洋楼被两棵大榕树抱在怀里，像一只慢慢合起来的手。');
+    await S.narr('晚上十点四十分。省道旁边的小路，路灯坏了一半。');
+    S.focus(11, 5); await S.wait(700);
+    await S.narr('铁栏杆后面，那栋红砖洋楼被两棵大榕树抱在怀里，像一只慢慢合起来的手。\n二楼正中间那扇窗，玻璃破了一个洞。');
+    S.focus(null); await S.wait(300);
     S.face('az_y', 'pl');
     await S.say('阿哲', ['……就是这间？民雄鬼屋？', '我高中的时候来夜游过一次，走到门口就跑了。', '你说要来拍「今昔对照」，我还以为你是要交社团作业。']);
     const r = await S.ask('阿哲看着你。', ['是阿嬷的事。', '也算是作业啦。']);
@@ -851,9 +855,9 @@
     await S.say('阿哲', ['拍立得我带了，一盒十张。', '拍出来的相纸要等一下才会显影，不要甩它。']);
     await S.narr('你翻开相簿。第一页的照片背面，有一行钢笔字。');
     await S.note('album'); S.f.album = true; S.f.film = 10; S.f.aj = 0;
-    await S.think('第一张：「自铁门入，第五块石板上，面北。」\n站到老照片拍的那个位置，再拍一张一样的。');
+    await S.think('第一张：「自铁门入，第五块石板，往左三步，面北。」\n站到老照片拍的那个位置，再拍一张一样的。');
     S.f.az = true; S.follow('az_y', true);
-    S.goal('照相簿第一页：从铁门进来，站到第五块石板上');
+    S.goal('照相簿第一页：铁门进来第五块石板，往左三步');
     S.toast('相簿背面的字，按 J 随时可以重看');
     if (S.coop) S.toast('联机：一个人翻相簿念背面的字，一个人照着走');
   }
@@ -902,7 +906,7 @@
     await S.wait(400);
     S.f.view = k; S.wear('loupe');
     const v = VH > VW && VW < 300;   // 竖屏：上下摆
-    await S.go('ph' + k + (v ? 'v' : ''), v ? 5 : 10, v ? 9 : 8, 3);
+    await S.go('ph' + k + (v ? 'v' : ''), v ? 5 : 10, v ? 7 : 8, 3);
   }
   async function viewIntro(S, k) {
     if (k === 'A') await S.narr('你把老照片和刚显影的拍立得并排摊在机车坐垫上，阿哲用手电筒照着。\n左边，是七十年前。右边，是今晚。');
@@ -963,7 +967,7 @@
   /* ================= 屋里 ================= */
   async function enterHall(S) {
     if (!S.f.pA) { S.face('az_y', 'pl'); return S.say('阿哲', '欸，第一张都还没拍耶。先照你阿嬷的相簿来啦。'); }
-    S.sfx('open'); await S.go('hall', 9, 12, 3);
+    S.sfx('open'); await S.go('hall', 12, 12, 3);
   }
   async function leaveHall(S) {
     await S.go('yard', 10, 4, 0);
@@ -1119,7 +1123,9 @@
       const n = S.f.shots + 1;
       if (n === 3) {
         S.face('az_b', 'pl');
-        await S.say('阿哲', ['第三下了！', '阿婆讲的——头一下拍人，第二下拍伊，第三下……'], { style: 'big' });
+        if (S.f.rule) await S.say('阿哲', ['第三下了！', '阿婆讲的——头一下拍人，第二下拍伊，第三下……'], { style: 'big' });
+        else if (S.f.crew) await S.say('阿哲', ['第三下了！', '那张场记单……电视台的摄影，就是拍完第三张就不拍了。'], { style: 'big' });
+        else await S.say('阿哲', ['等一下！', '……我不知道为什么，可是不要再按了。拜托。'], { style: 'big' });
         const c = await S.ask('你的手指压在快门上。', ['……不按了', '按下去']);
         if (c === 0) { await S.narr('你慢慢把手指移开。\n阿哲抓着你的手腕，抓得好紧。'); continue; }
         return shutterEnd(S);

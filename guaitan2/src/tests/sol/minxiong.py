@@ -6,10 +6,10 @@ SOL = [
     ['use', 'apo', [0]],
     ['expect', 'window.__dbg.W.f.rule'],
     ['use', 'sign'], ['use', 'jinlu'],
-    # 第一张：铁门进来第五块石板（先站错一格）
-    ['step', 11, 10],
+    # 第一张：铁门进来第五块石板，往左三步（先站错一格）
+    ['step', 9, 9],
     ['expect', "window.__dbg.W.mapId === 'yard'"],
-    ['step', 11, 9, [0]],
+    ['step', 8, 9, [0]],
     ['expect', "window.__dbg.W.mapId === 'phA'"],
     ['shot', 'phA'],
     ['use', 'Ao_tai'], ['use', 'Ao_ajiao'],
