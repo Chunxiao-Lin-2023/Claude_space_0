@@ -20,7 +20,7 @@ NIGHT = ("(async () => { const D = window.__dbg, S = D.SAPI, sl = ms => new Prom
          "  if (!b.hidden && bd < 4.6) { S.face('pl', 'beastV'); await sl(30); continue; }"
          "  const f = w.f, lo = f.fuel[0] <= f.fuel[1] ? 0 : 1;"
          "  if (f.logs > 0 && f.fuel[lo] <= 55) { S.pos(F[lo][1], F[lo][2], F[lo][3]); D.doAct('use'); await sl(80); continue; }"
-         "  if (f.logs < 2 && f.wood > 0 && Math.min(...f.fuel) < 75) { S.pos(4, 14, 3); D.doAct('use'); await sl(80); continue; }"
+         "  if (f.logs < 2 && f.wood > 0 && Math.min(...f.fuel) < 75) { S.pos(3, 12, 3); D.doAct('use'); await sl(80); continue; }"
          "  await sl(30); } })()")
 
 SOL = [

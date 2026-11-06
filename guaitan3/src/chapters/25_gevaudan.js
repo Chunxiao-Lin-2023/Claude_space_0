@@ -82,7 +82,7 @@
   let NOON_DIED = 0, NIGHT_DIED = 0, NIGHT_LEFT = null, BELL_T = 0, CUE_T = 0;
   const FA = [Math.PI / 2, Math.PI, 0, -Math.PI / 2];
   const DAYP = { fear: 1.5, lunge: .75, om: 1.75, ls: 9.5, stalk: 4.2 };
-  const NIGHTP = { fear: 1.3, lunge: .85, om: 1.5, ls: 9.5, stalk: 4.6 };
+  const NIGHTP = { fear: 1.3, lunge: .7, om: 1.6, ls: 9.5, stalk: 5.4 };
   function ad(a, b) { let d = a - b; while (d > Math.PI) d -= 2 * Math.PI; while (d < -Math.PI) d += 2 * Math.PI; return d; }
   function bEnt() { const m = W.maps[W.mapId]; return m.ents.find(e => e.id === BID[W.mapId]); }
   function bSet(mode, o) { B.mode = mode; B.t = 0; B.fear = 0; B.behind = 0; B.litT = 0; if (o) Object.assign(B, o); }
@@ -138,7 +138,8 @@
         let gx = R.px + Math.cos(R.th) * 3.1, gy = R.py + Math.sin(R.th) * 3.1;
         if (night) [gx, gy] = pushOut(gx, gy);
         moved = bStep(gx, gy, P.stalk, dt); if (night) [B.x, B.y] = pushOut(B.x, B.y);
-        if (R.d <= 3.6) bSet('circle', { th: R.th, r: Math.max(2.4, R.d) });
+        if (R.off > 2.0 && R.d < 3.6 && !plLit) { B.behind += dt; if (B.behind >= P.lunge) { bSet('lunge'); SND.snarl(S); break; } }   // 你背对着它走：它不用绕，直接扑
+        if (R.d <= 3.6 && R.off <= 2.0) bSet('circle', { th: R.th, r: Math.max(2.4, R.d) });
         break;
       }
       case 'circle': {
@@ -1169,8 +1170,8 @@
           { id: 'placard', x: 22, y: 7, spr: 'placard', on: S => S.note('placard') },
           { id: 'cure', x: 19, y: 7, spr: '@cure', dir: 0, on: cureTalk },
           { id: 'sgt', x: 26, y: 10, spr: '@sgt', dir: 1, on: sgtTalk },
-          { id: 'hay', x: 3, y: 12, spr: 'hay', on: N('草垛。去年秋天割的草，只剩下小半垛了。') },
-          { id: 'woodpile', x: 4, y: 13, spr: 'woodpile', num: 10, on: woodUse },
+          { id: 'hay', x: 2, y: 11, spr: 'hay', on: N('草垛。去年秋天割的草，只剩下小半垛了。') },
+          { id: 'woodpile', x: 3, y: 11, spr: 'woodpile', num: 10, on: woodUse },
           { id: 'pgate', x: 14, y: 16, spr: 'gate', on: penGate },
           { id: 'wgate', x: 10, y: 19, spr: 'gate', solid: true, on: N('西边的栅门，用树枝编的，上了麻绳。\n结实是结实，可挡不住什么真想进来的东西。') },
           { id: 'swtrack', x: 9, y: 22, spr: 'bprint', decal: true, solid: false, on: swTrack },
