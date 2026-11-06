@@ -44,7 +44,7 @@ function startSolo(next) {
 }
 function enterGame() {
   STATE.mode = 'play'; hideEnd(); closeMenu(); showScreen('hud');
-  Object.assign(STATE, { tz: 1, tpan: [0, 0], lastPhase: null, sel: null, pend: null, ghost: null, form: null, ripples: [], pops: [], kcd: 0, lastWh: '' });
+  Object.assign(STATE, { dgKey: [], puffs: [], tz: 1, tpan: [0, 0], lastPhase: null, sel: null, pend: null, ghost: null, form: null, ripples: [], pops: [], kcd: 0, lastWh: '' });
   CAM.x = G.pl[ME].x; CAM.y = G.pl[ME].y;
   renderActs();
 }

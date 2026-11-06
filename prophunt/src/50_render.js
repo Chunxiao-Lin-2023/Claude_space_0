@@ -19,18 +19,25 @@ function shade(hex, k) {
 }
 
 /* project prisms of one object into faces */
-function projObj(prs, ox, dim) {
+function projObj(prs, ox, dim, keep) {
   const faces = [], list = prs.map(p => { let cx = 0, cy = 0; for (const q of p.pts) { cx += q[0]; cy += q[1]; } return [p, Math.round(p.z0 * 50), rotY(cx / p.pts.length, cy / p.pts.length)]; });
-  list.sort((a, b) => a[1] - b[1] || a[2] - b[2]);
+  if (!keep) list.sort((a, b) => a[1] - b[1] || a[2] - b[2]);
   let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9;
   for (const [pr] of list) {
     const n = pr.pts.length, bot = [], top = [];
-    for (const [x, y] of pr.pts) { const b = P(x, y, pr.z0), t = P(x, y, pr.z1); b[0] += ox; t[0] += ox; bot.push(b); top.push(t); }
-    for (let i = 0; i < n; i++) {
+    const tp = pr.pts2 || pr.pts;
+    for (let i = 0; i < n; i++) { const b = P(pr.pts[i][0], pr.pts[i][1], pr.z0), t = P(tp[i][0], tp[i][1], pr.z1); b[0] += ox; t[0] += ox; bot.push(b); top.push(t); }
+    if (!pr.pts2) for (let i = 0; i < n; i++) {
       const j = (i + 1) % n, ex = pr.pts[j][0] - pr.pts[i][0], ey = pr.pts[j][1] - pr.pts[i][1], L = Math.hypot(ex, ey) || 1, nx = ey / L, ny = -ex / L;
       if (nx * SY + ny * CY > 0.02) { const k = (0.62 + 0.25 * (nx * LX + ny * LY)) * dim; faces.push({ p: [bot[i], bot[j], top[j], top[i]], f: shade(pr.c, k), s: shade(pr.c, k * .72) }); }
+    } else for (let i = 0; i < n; i++) {   // frustum side: true 3D normal (e1 x e2)
+      const j = (i + 1) % n, e1x = pr.pts[j][0] - pr.pts[i][0], e1y = pr.pts[j][1] - pr.pts[i][1], e2x = tp[i][0] - pr.pts[i][0], e2y = tp[i][1] - pr.pts[i][1], e2z = pr.z1 - pr.z0;
+      let nx = e1y * e2z, ny = -e1x * e2z, nz = e1x * e2y - e1y * e2x; const L = Math.hypot(nx, ny, nz); if (L < 1e-7) continue; nx /= L; ny /= L; nz /= L;
+      if ((nx * SY + ny * CY) * ZP + nz * SP <= 0.01) continue;
+      const h = Math.hypot(nx, ny) || 1, up = Math.max(0, nz), k = ((0.62 + 0.25 * (nx / h * LX + ny / h * LY)) * (1 - up) + 1.02 * up) * dim;
+      faces.push({ p: [bot[i], bot[j], top[j], top[i]], f: shade(pr.c, k), s: shade(pr.c, k * .8) });
     }
-    faces.push({ p: top, f: shade(pr.c, dim), s: shade(pr.c, dim * .74) });
+    if (!pr.noTop && (!pr.pts2 || pr.pts2.some((q, i) => Math.hypot(q[0] - pr.pts2[(i + 1) % n][0], q[1] - pr.pts2[(i + 1) % n][1]) > .012))) faces.push({ p: top, f: shade(pr.c, dim), s: shade(pr.c, dim * (pr.pts2 ? .85 : .74)) });
     for (const q of top) { if (q[0] < x0) x0 = q[0]; if (q[0] > x1) x1 = q[0]; if (q[1] < y0) y0 = q[1]; }
     for (const q of bot) { if (q[0] < x0) x0 = q[0]; if (q[0] > x1) x1 = q[0]; if (q[1] > y1) y1 = q[1]; if (q[1] < y0) y0 = q[1]; }
   }
@@ -70,23 +77,10 @@ function topoSort(objs) {
   return out;
 }
 
-/* people */
-function humanPrims(p, look, t) {
-  const sw = p.mv ? Math.sin(t * 11) * .11 : 0, a = p.d;
-  const co = Math.cos(a), si = Math.sin(a), tf = (px, py) => [p.x + px * co - py * si, p.y + px * si + py * co];
-  const parts = [B(-.13, -.06 + sw, -.02, .06 + sw, 0, .46, look.leg), B(.02, -.06 - sw, .13, .06 - sw, 0, .46, look.leg), B(-.18, -.1, .18, .1, .44, 1.0, look.body),
-    B(-.27, -.07 - sw, -.18, .07 - sw, .5, .95, look.body), B(.18, -.07 + sw, .27, .07 + sw, .5, .95, look.body), B(-.13, -.12, .13, .13, 1.0, 1.28, '#f2c9a0'),
-    B(-.085, .13, -.035, .135, 1.12, 1.17, '#2a2420'), B(.035, .13, .085, .135, 1.12, 1.17, '#2a2420'), ...look.hat];
-  return parts.map(q => partPrism(q, tf));
-}
-const LOOK = {
-  seek: { leg: '#3a4458', body: '#d8473b', hat: [B(-.15, -.14, .15, .15, 1.24, 1.36, '#2f3a52'), B(-.15, .1, .15, .27, 1.24, 1.27, '#2f3a52')] },
-  hide: { leg: '#3a4458', body: '#3ba6d8', hat: [B(-.14, -.14, .14, .14, 1.22, 1.33, '#5a3a26'), B(-.14, -.15, .14, -.05, 1.0, 1.3, '#5a3a26')] }
-};
 function plPrims(i) {
   const p = G.pl[i];
   if (p.dg) return prismsFor(p.dg.k, p.dg.v, p.dg.r, p.x, p.y);
-  return humanPrims(p, i === G.hider ? LOOK.hide : LOOK.seek, STATE.t + i);
+  return humanPrims(p, i === G.hider ? PEOPLE.hide : PEOPLE.seek, STATE.t + i);
 }
 
 /* ---------- frame ---------- */
@@ -113,21 +107,25 @@ function render(dt) {
   }
   for (const w of WALLS) { if (!w.q) { w.q = rq(w.fp); w.dep = rotY((w.fp[0] + w.fp[2]) / 2, (w.fp[1] + w.fp[3]) / 2); } objs.push({ kind: 'wall', w, q: w.q, h: w.h, dep: w.dep, pr: w.pr, ox: 0 }); }
   if (play) for (let i = 0; i < 2; i++) {
-    const p = G.pl[i]; if (p.gone && i !== ME) continue;
+    const p = G.pl[i], key = p.dg ? p.dg.k + p.dg.v : '';
+    if (STATE.dgKey[i] !== undefined && STATE.dgKey[i] !== key && (i !== G.hider || !meSeek || hiderSeen())) puff(p.x, p.y);
+    STATE.dgKey[i] = key;
+    if (p.gone && i !== ME) continue;
     if (G.mode === 'turn') { if (i !== G.hider || !p.dg) continue; }
     if (i === G.hider && meSeek && !hiderSeen()) continue;
     if (i === G.hider && p.dg && T[p.dg.k].flat) { const o = projObj(plPrims(i), 0, 1); drawFaces(o.faces); DRAWN_FLAT.push({ pl: i, ...o }); continue; }
     const fp = plBox(p, p.x, p.y);
-    objs.push({ kind: 'pl', i, q: rq(fp), h: p.dg ? 1 : 1.3, dep: rotY(p.x, p.y), pr: plPrims(i), ox: 0 });
+    objs.push({ kind: 'pl', i, q: rq(fp), h: p.dg ? 1 : 1.3, dep: rotY(p.x, p.y), pr: plPrims(i), ox: 0, keep: !p.dg });
   }
   // shadows
   ctx.fillStyle = 'rgba(30,20,10,.16)';
-  for (const o of objs) { if (o.kind === 'wall') continue; const f = o.kind === 'item' ? o.it.fp : plBox(G.pl[o.i], G.pl[o.i].x, G.pl[o.i].y); const e = o.kind === 'pl' && !G.pl[o.i].dg ? -.04 : .05; polyPath([P(f[0] - e, f[1] - e, 0), P(f[2] + e, f[1] - e, 0), P(f[2] + e + .06, f[3] + e + .06, 0), P(f[0] - e + .06, f[3] + e + .06, 0)]); ctx.fill(); }
-  for (const o of objs) { const r = projObj(o.pr, o.ox, 1); o.faces = r.faces; o.bb = r.bb; }
+  for (const o of objs) { if (o.kind === 'wall') continue; if (o.kind === 'pl' && !G.pl[o.i].dg) { const p = G.pl[o.i], [cx, cy] = P(p.x, p.y, 0); ctx.beginPath(); ctx.ellipse(cx, cy, .27 * CAM.S, .27 * CAM.S * SP, 0, 0, 6.283); ctx.fill(); continue; } const f = o.kind === 'item' ? o.it.fp : plBox(G.pl[o.i], G.pl[o.i].x, G.pl[o.i].y); const e = o.kind === 'pl' && !G.pl[o.i].dg ? -.04 : .05; polyPath([P(f[0] - e, f[1] - e, 0), P(f[2] + e, f[1] - e, 0), P(f[2] + e + .06, f[3] + e + .06, 0), P(f[0] - e + .06, f[3] + e + .06, 0)]); ctx.fill(); }
+  for (const o of objs) { const r = projObj(o.pr, o.ox, 1, o.keep); o.faces = r.faces; o.bb = r.bb; }
   const sorted = topoSort(objs);
   for (const o of sorted) drawFaces(o.faces);
   DRAWN = sorted;
   drawMarks(lit, litSet);
+  drawPuffs(dt);
   drawFx(dt);
   DRAWN_FLAT_LAST = DRAWN_FLAT; DRAWN_FLAT = [];
 }
@@ -205,6 +203,12 @@ function drawFx(dt) {
   }
   STATE.pops = STATE.pops.filter(p => (p.t += dt) < 1.6);
   for (const p of STATE.pops) { const [x, y] = P(p.x, p.y, p.z + p.t * .7); ctx.globalAlpha = Math.min(1, (1.6 - p.t) * 2); ctx.font = '900 ' + (p.big ? 24 : 17) + 'px ' + FONT; ctx.textAlign = 'center'; ctx.lineWidth = 4; ctx.strokeStyle = 'rgba(10,10,14,.8)'; ctx.strokeText(p.s, x, y); ctx.fillStyle = p.c; ctx.fillText(p.s, x, y); ctx.globalAlpha = 1; }
+}
+function puff(x, y) { for (let k = 0; k < 9; k++) { const a = k / 9 * 6.283 + Math.random() * .5; STATE.puffs.push({ x, y, a, z: .25 + Math.random() * .7, t: -Math.random() * .08, s: .7 + Math.random() * .6 }); } }
+function drawPuffs(dt) {
+  STATE.puffs = STATE.puffs.filter(q => (q.t += dt) < .7);
+  for (const q of STATE.puffs) { if (q.t < 0) continue; const k = q.t / .7, d = .15 + k * .55, [x, y] = P(q.x + Math.cos(q.a) * d, q.y + Math.sin(q.a) * d, q.z + k * .4), r = (.1 + k * .16) * q.s * CAM.S;
+    ctx.fillStyle = 'rgba(250,248,240,' + (1 - k) * .85 + ')'; ctx.beginPath(); ctx.arc(x, y, r, 0, 6.283); ctx.fill(); ctx.strokeStyle = 'rgba(190,185,175,' + (1 - k) * .6 + ')'; ctx.lineWidth = 1.5; ctx.stroke(); }
 }
 function pop(x, y, z, s, c, big) { STATE.pops.push({ x, y, z, s, c, t: 0, big }); }
 

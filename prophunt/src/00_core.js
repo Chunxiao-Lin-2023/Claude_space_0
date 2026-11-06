@@ -12,7 +12,7 @@ let G = null;          // shared round state (host authoritative; items are NOT 
 let MAP = null;        // generated house for G.seed
 let ME = 0;            // my player index
 let NETROLE = null;    // 'solo' | 'host' | 'guest'
-const STATE = { tz: 1, tpan: [0, 0], mode: 'title', hover: null, sel: null, pend: null, ghostR: 0, form: null, t: 0, fx: [], ripples: [], pops: [], banner: null };
+const STATE = { dgKey: [], puffs: [], tz: 1, tpan: [0, 0], mode: 'title', hover: null, sel: null, pend: null, ghostR: 0, form: null, t: 0, fx: [], ripples: [], pops: [], banner: null };
 
 function mkRng(seed) { let s = seed | 0; return () => { let t = (s = (s + 0x6D2B79F5) | 0); t = Math.imul(t ^ t >>> 15, t | 1); t ^= t + Math.imul(t ^ t >>> 7, t | 61); return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
 let simR = mkRng(Date.now() | 0);           // host-only randomness (AI, whistle offset)

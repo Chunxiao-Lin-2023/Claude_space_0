@@ -10,7 +10,7 @@
 
 ## 源码
 
-- `src/` 按序拼接：`00_core.js`（工具、随机数、平衡参数 `BAL`）、`10_props.js`（家具库，盒子/多边柱拼成）、`15_map.js`（房间、门、墙、随机布置）、`30_sim.js`（规则、碰撞、敲击、哨声、电脑躲方）、`50_render.js`（Canvas 2D 正交斜视渲染、按占地拓扑排序、拾取）、`60_audio.js`、`62_input.js`、`70_net.js`、`80_ui.js`、`90_main.js`、`99_boot.js`；页面骨架 `template.html`。
+- `src/` 按序拼接：`00_core.js`（工具、随机数、平衡参数 `BAL`）、`10_props.js`（家具库，盒子/多边柱拼成）、`15_map.js`（房间、门、墙、随机布置）、`20_people.js`（Q 版人物：躲方连帽衫小孩、抓方侦探，球/圆台拼成，按朝向排序）、`30_sim.js`（规则、碰撞、敲击、哨声、电脑躲方）、`50_render.js`（Canvas 2D 正交斜视渲染、按占地拓扑排序、拾取）、`60_audio.js`、`62_input.js`、`70_net.js`、`80_ui.js`、`90_main.js`、`99_boot.js`；页面骨架 `template.html`。
 - 构建：`python3 prophunt/src/build.py --deploy`（写 `../index.html`；`src/out/` 里另有 `test.html` 和单人版 `artifact.html`）。
-- 测试（仓库根目录 `python3 -m http.server 8765`；playwright 等装在任意 `node_modules`，用 `NODE_PATH` 指过去）：`test/smoke.js`（单人两种模式）、`test/coop.js` 和 `test/turncoop.js`（先 `node test/peerserver.js`；实时/回合联机 + iPad 触屏摇杆）、`test/phone.js`（iPhone 竖横屏、iPad、桌面各界面截图）、`test/cover.js`（游戏厅封面）。
+- 测试（仓库根目录 `python3 -m http.server 8765`；playwright 等装在任意 `node_modules`，用 `NODE_PATH` 指过去）：`test/smoke.js`（单人两种模式）、`test/coop.js` 和 `test/turncoop.js`（先 `node test/peerserver.js`；实时/回合联机 + iPad 触屏摇杆）、`test/phone.js`（iPhone 竖横屏、iPad、桌面各界面截图）、`test/cover.js`（游戏厅封面）、`test/people.js`（两个角色 8 个朝向的特写）。
 - 本地存储键前缀 `prophunt.`；联机房间 id 前缀 `prophunt-`。
