@@ -132,6 +132,24 @@ canvas.spark{width:72px;height:26px;flex:none}
 #monthFx div{font-family:var(--title);font-size:clamp(40px,7vw,72px);color:#fff6dc;text-shadow:0 0 20px rgba(0,0,0,.6),0 4px 0 rgba(0,0,0,.35)}
 @keyframes mfx{0%{opacity:0;transform:scale(.92)}20%{opacity:1;transform:scale(1)}70%{opacity:1}100%{opacity:0}}
 #phoneTabs{display:none}
+.tabs button.main{flex:2}
+.item .ib{flex:none;min-width:96px;min-height:42px;padding:3px 10px;font-size:14.5px;line-height:1.2;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:var(--num);font-weight:500}
+.item .ib small{font-family:var(--font);font-size:11px;font-weight:400;opacity:.9}
+.item .ib.ghost{color:var(--sub)}
+.item .ib:disabled,#qc .qb:disabled{background:rgba(255,255,255,.04);border-color:rgba(255,255,255,.1);color:var(--sub);box-shadow:none;opacity:1}
+.item .ib:disabled small{opacity:.75}
+.item.goal{background:rgba(245,196,81,.07);border-color:rgba(245,196,81,.25);margin-bottom:2px}
+.item.goal.ready{border-color:var(--gold);background:rgba(245,196,81,.16)}
+.secT{display:flex;justify-content:space-between;align-items:baseline}.secT span{font-size:11px;letter-spacing:.02em;color:rgba(158,172,189,.75)}
+.empty .deal{margin:0 2px}
+#qc{position:absolute;z-index:6;width:236px;padding:10px 12px 12px;display:flex;flex-direction:column;gap:6px;border-color:rgba(245,196,81,.35)}
+#qc .qh{display:flex;align-items:baseline;gap:6px;flex-wrap:wrap}#qc .qh b{font-size:15px}#qc .qh .sub{font-size:12px;flex:1}
+#qc .x{min-height:28px;min-width:28px;padding:0 6px;font-size:13px;margin-left:auto}
+#qc .qp{font-family:var(--num);font-size:24px;line-height:1.1;display:flex;align-items:center;gap:8px}
+#qc .qp .deal{font-size:13px}
+#qc .qs{font-size:13px;color:#cfd8e2}
+#qc .qb{min-height:46px;font-size:17px;font-weight:700}
+#qc .qd{min-height:32px;font-size:13px;padding:2px 8px;align-self:flex-start;color:var(--sub)}
 .deal{display:inline-block;font-family:var(--font);font-size:12px;font-weight:700;padding:1px 7px;border-radius:5px;line-height:1.5}
 .deal.great{background:var(--gold);color:#1d1406}.deal.good{background:#2c9b6c;color:#fff}.deal.fair{background:rgba(255,255,255,.1);color:#cfd8e2}.deal.high{background:#4d5a6b;color:#c8d1db}
 .adv{display:inline-block;font-size:12px;padding:0 6px;border-radius:5px;font-weight:700}
@@ -172,6 +190,8 @@ canvas.spark{width:72px;height:26px;flex:none}
  #detail{left:calc(6px + var(--sa-l));right:calc(6px + var(--sa-r));width:auto;top:auto;bottom:calc(66px + var(--sa-b));max-height:min(62dvh,520px);z-index:7}
  #bottom{left:calc(6px + var(--sa-l));right:calc(6px + var(--sa-r));bottom:calc(6px + var(--sa-b));gap:6px}
  #news{display:none}
+ #qc{left:calc(6px + var(--sa-l));right:calc(6px + var(--sa-r));width:auto;bottom:calc(66px + var(--sa-b));top:auto}
+ #qc .qb{min-height:50px}
  #phoneTabs{display:flex;flex:1;gap:4px;padding:4px}
  #phoneTabs button{flex:1;min-height:48px;padding:2px;font-size:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.15}
  #phoneTabs button small{font-family:var(--num);font-size:11px;color:var(--sub)}
@@ -295,14 +315,15 @@ canvas.spark{width:72px;height:26px;flex:none}
   <div id="tBtns"><button id="sndBtn" class="ghost" title="音效 (M)">🔊</button><button id="menuBtn" class="ghost" title="菜单 (Esc)">☰</button></div>
  </div>
  <div id="side" class="glass">
-  <div class="tabs" id="tabs"><button data-t="mkt">行情</button><button data-t="list">房源<span class="cnt" id="cList"></span></button><button data-t="mine">我的<span class="cnt" id="cMine"></span></button><button data-t="news">新闻</button></div>
+  <div class="tabs" id="tabs"><button data-t="home" class="main">房子<span class="cnt" id="cHome"></span></button><button data-t="mkt">行情</button><button data-t="news">新闻</button></div>
   <div class="tabBody" id="tabBody"></div>
  </div>
  <div id="detail" class="glass hidden"></div>
+ <div id="qc" class="glass hidden"></div>
  <div id="coach" class="hidden"><div id="coachT"></div><div class="row" style="justify-content:flex-end"><button id="coachSkip" class="ghost">跳过引导</button><button id="coachOk" class="primary hidden">知道了</button></div></div>
  <div id="bottom">
   <div id="news" class="glass"></div>
-  <div id="phoneTabs" class="glass"><button data-t="mkt">行情</button><button data-t="list">房源<small id="pcList"></small></button><button data-t="mine">我的<small id="pcMine"></small></button><button data-t="news">新闻</button></div>
+  <div id="phoneTabs" class="glass"><button data-t="home" class="main">房子<small id="pcHome"></small></button><button data-t="mkt">行情</button><button data-t="news">新闻</button></div>
   <button id="endBtn" class="primary">下个月 ▸<small id="endSub">回车</small></button>
  </div>
 </div>

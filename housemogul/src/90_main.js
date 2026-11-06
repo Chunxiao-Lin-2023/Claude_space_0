@@ -6,6 +6,7 @@ function frame(now) {
   camStep(dt); keyPan(dt);
   if (NETROLE === 'host') hostNetTick(dt); else if (NETROLE === 'guest') guestNetTick(dt);
   render(dt);
+  if (STATE.mode === 'play' && STATE.sel >= 0) placeQC();
   requestAnimationFrame(frame);
 }
 addEventListener('resize', () => { if (STATE.mode === 'play') renderUI(); });

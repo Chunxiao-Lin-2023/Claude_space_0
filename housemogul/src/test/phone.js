@@ -13,8 +13,7 @@ const UA = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/6
     const nb = p.locator('#newBtn'); await nb.scrollIntoViewIfNeeded(); await nb.tap(); await p.waitForTimeout(700);
     await p.evaluate(() => { const q = G.props.filter(p => p.list && p.kind !== 'mansion').sort((a, b) => a.list.ask - b.list.ask)[0]; doAct(0, 'buy', { id: q.id }); endMonth(); renderUI(); });
     await p.waitForTimeout(400); await p.screenshot({ path: `${OUT}/ph_${tag}_2game.png` });
-    const tabBtn = (await p.locator('#phoneTabs').isVisible()) ? '#phoneTabs button[data-t="list"]' : '#tabs button[data-t="list"]';
-    await p.locator(tabBtn).tap(); await p.waitForTimeout(300); await p.screenshot({ path: `${OUT}/ph_${tag}_3list.png` });
+    await p.screenshot({ path: `${OUT}/ph_${tag}_3list.png` });
     await p.locator('#tabBody .item[data-id]').nth(1).tap(); await p.waitForTimeout(800); await p.screenshot({ path: `${OUT}/ph_${tag}_4detail.png` });
     // tap on map to select something
     await p.evaluate(() => { selectProp(-1); $('side').classList.remove('open'); const q = G.props[G.mansion]; focusTile(q.x + 1.5, q.y + 1.5, 1); }); await p.waitForTimeout(1200);

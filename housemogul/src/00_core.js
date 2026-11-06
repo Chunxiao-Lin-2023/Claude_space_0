@@ -11,7 +11,7 @@ const LS = {
 let G = null;          // shared game state (host authoritative, sent whole to guest)
 let ME = 0;            // my player index
 let NETROLE = null;    // 'solo' | 'host' | 'guest'
-const STATE = { mode: 'title', sel: -1, tab: 'list', hover: -1, lastSeq: 0, sheet: false };
+const STATE = { mode: 'title', sel: -1, tab: 'home', detail: false, hover: -1, lastSeq: 0, sheet: false };
 
 /* seeded rng: state lives in G.rs so the host's sim is reproducible from a save */
 function rnd() { let t = (G.rs = (G.rs + 0x6D2B79F5) | 0); t = Math.imul(t ^ t >>> 15, t | 1); t ^= t + Math.imul(t ^ t >>> 7, t | 61); return ((t ^ t >>> 14) >>> 0) / 4294967296; }

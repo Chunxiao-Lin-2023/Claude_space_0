@@ -22,6 +22,7 @@ const { chromium } = require('playwright'); const OUT = process.env.OUT || '/tmp
   // guest buys a listing
   const id = await Gu.evaluate(() => G.props.filter(p => p.list && p.kind !== 'mansion').sort((a, b) => a.list.ask - b.list.ask)[0].id);
   await Gu.evaluate(id => { selectProp(id, true); }, id); await Gu.waitForTimeout(500);
+  await Gu.click('#qc [data-q="more"]'); await Gu.waitForTimeout(300);
   await Gu.click('#dInsp'); await Gu.waitForTimeout(500);
   await Gu.click('#dBuy'); await Gu.waitForTimeout(800);
   console.log('host sees owner', await H.evaluate(id => G.props[id].owner, id), 'guest sees', await Gu.evaluate(id => G.props[id].owner, id), 'insp', await H.evaluate(id => G.props[id].insp.join(','), id));
@@ -35,7 +36,7 @@ const { chromium } = require('playwright'); const OUT = process.env.OUT || '/tmp
   console.log('after both ready month host/guest', await H.evaluate(() => G.month), await Gu.evaluate(() => G.month));
   await H.screenshot({ path: OUT + '/c_host.png' }); await Gu.screenshot({ path: OUT + '/c_guest.png' });
   // guest sells
-  await Gu.evaluate(id => selectProp(id, true), id); await Gu.waitForTimeout(400); await Gu.click('#dSell'); await Gu.waitForTimeout(700);
+  await Gu.evaluate(id => selectProp(id, true), id); await Gu.waitForTimeout(400); await Gu.click('#qc [data-q="sell"]'); await Gu.waitForTimeout(700);
   console.log('after guest sell owner', await H.evaluate(id => G.props[id].owner, id), 'guest cash', await Gu.evaluate(() => G.pl[1].cash.toFixed(1)));
   // size of state
   console.log('state json KB', await H.evaluate(() => (roundJSON(G).length / 1024).toFixed(1)));

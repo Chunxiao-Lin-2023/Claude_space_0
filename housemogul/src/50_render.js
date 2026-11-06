@@ -421,7 +421,7 @@ function popMoney(id, txt, col) { RND.pulse.push({ id, txt, col, t: 0 }); }
 function viewInsets() {
   const narrow = innerWidth <= 760 || PHONE.matches;
   if (narrow) return { l: 0, r: 0, t: 60, b: 70 };
-  return { l: $('side') && !$('hud').classList.contains('hidden') ? 320 : 0, r: STATE.sel >= 0 ? 350 : 0, t: 80, b: 84 };
+  return { l: $('side') && !$('hud').classList.contains('hidden') ? 320 : 0, r: STATE.sel >= 0 && STATE.detail ? 350 : 0, t: 80, b: 84 };
 }
 function focusTile(x, y, zoom) {
   const ins = viewInsets(), [ix, iy] = iso(x, y, 0), z = zoom || CAM.z;

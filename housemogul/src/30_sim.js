@@ -153,7 +153,9 @@ function refreshListings(init) {
   let k = 0;
   for (; k < want && k < cand.length; k++) makeListing(cand[k]);
   const cheapNow = () => G.props.filter(p => p.list && p.kind !== 'mansion' && p.list.f <= 0.9).length;
-  for (let tries = 0; cheapNow() < DF().minGood && k < cand.length && tries < 6; tries++, k++) makeListing(cand[k], true);
+  const pool = cand.slice(k).sort((a, b) => val(a) - val(b)).slice(0, 14);   // forced bargains come from the cheaper homes, so a beginner can afford one
+  shuffle(pool);
+  for (let j = 0; cheapNow() < DF().minGood && j < pool.length && j < 6; j++) makeListing(pool[j], true);
   const m = mansionP();
   if (m.owner === -1) { const v = val(m); m.list = { ask: v, f: 1, est: 1, left: 99, age: 0, tag: 'goal', cut: false, m0: 0 }; }
 }
