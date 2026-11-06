@@ -1,0 +1,36 @@
+# 第四夜 牛首 · 自动通关步骤（格式见 tests/play.py 顶部）
+SOL = [
+    [],
+    ['shot', 'genkan'],
+    ['use', 'register'], ['use', 'okami'],
+    # 大广间：第八十九个 → 你讲第九十个（选第一个故事）
+    ['use', 'hdoor', [0]],
+    ['expect', "window.__dbg.W.f.ph === 'myturn' && window.__dbg.W.f.P === 1"],
+    ['shot', 'hall'],
+    ['use', 'rules'],
+    ['use', 'hdoorR'],
+    ['use', 'andon'], ['use', 'kyodai'],
+    ['expect', "window.__dbg.W.f.ph === 'back' && window.__dbg.ent('andon').num === 10"],
+    ['shot', 'oku'],
+    ['use', 'odoor'],
+    ['expect', "window.__dbg.W.f.ph === 'break' && window.__dbg.W.f.cnt === 91"],
+    # 休息：真壁的记录本 → 女将 → 库房
+    ['use', 'makabe'],
+    ['use', 'segawa'],
+    ['use', 'hdoorL'],
+    ['use', 'kuradoor'],
+    ['use', 'okami'],
+    ['use', 'kuradoor'],
+    ['use', 'chest', [0]],
+    ['use', 'phone'],
+    ['shot', 'kura'],
+    ['use', 'hdoor', [0]],
+    ['expect', "window.__dbg.W.f.ph === 'accuse' && window.__dbg.W.f.cnt === 97 && !window.__dbg.W.f.urge"],
+    # 指认：先要一次提示，再说出濑川
+    ['use', 'yuki', [1]],
+    ['use', 'yuki', [0, 4]],
+    ['expect', "window.__dbg.W.f.ph === 'final' && window.__dbg.W.mapId === 'oku'"],
+    ['shot', 'final'],
+    ['use', 'kyodai'],
+    ['use', 'andon', [0, 0]],
+]
