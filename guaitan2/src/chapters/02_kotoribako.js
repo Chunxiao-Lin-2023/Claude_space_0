@@ -42,7 +42,7 @@
 
   /* ---------- 夜里：抱着箱子穿过院子 ---------- */
   const NT = { t: 0, spd: 2.8, near: 0, warned: false, saved: false, frz: 0, ft: 0, wt: 0 };
-  const SHO0 = 2.8, SHOMAX = 3.3;
+  const SHO0 = 2.8, SHOMAX = 3.3; window.__NT = NT;
   let TRIES = 0, DEATHS = 0, VTRIES = 0;
   const KT = { t: 3 };   // 主机本地：第几次走这段、死过几次（不进检查点，重来时用来给提示）
   const HOUSE = [1, 6, 7, 10];   // 主屋在院子地图上的范围 x0,y0,x1,y1
