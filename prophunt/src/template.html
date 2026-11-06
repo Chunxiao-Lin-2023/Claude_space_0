@@ -1,0 +1,196 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+__IOSMETA__
+<title>百变迷藏</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&family=Noto+Sans+SC:wght@400;700;900&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+<style>
+:root{--panel:rgba(20,24,34,.88);--line:rgba(255,211,106,.25);--txt:#f2f0ea;--sub:#a9b0bd;--gold:#ffd36a;--hide:#3ba6d8;--seek:#e0533f;--ok:#7dff9a;--bad:#ff7a6a;
+ --font:"Noto Sans SC","PingFang SC","Microsoft YaHei",system-ui,sans-serif;--title:"ZCOOL KuaiLe","Noto Sans SC",sans-serif;
+ color-scheme:dark;--sa-t:env(safe-area-inset-top,0px);--sa-b:env(safe-area-inset-bottom,0px);--sa-l:env(safe-area-inset-left,0px);--sa-r:env(safe-area-inset-right,0px)}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;overflow:hidden;background:#5c7a52;color:var(--txt);font-family:var(--font);overscroll-behavior:none;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+canvas#cv{position:fixed;inset:0;width:100%;height:100%;display:block}
+.hidden{display:none!important}
+button{font-family:var(--font);cursor:pointer;color:var(--txt);background:linear-gradient(#323b52,#232a3b);border:1px solid rgba(255,255,255,.16);border-radius:10px;padding:8px 14px;font-size:15px;min-height:44px;box-shadow:0 2px 8px rgba(0,0,0,.3);touch-action:manipulation}
+button:hover{border-color:var(--gold)}
+button:active{transform:translateY(1px)}
+button.sel{border-color:var(--gold);background:linear-gradient(#4a4a3a,#33331f);color:var(--gold)}
+button.primary{background:linear-gradient(#ffd36a,#e8a93a);border-color:#fff0b8;color:#2a1c05;font-weight:900}
+button.pink{background:linear-gradient(#e86fb0,#b84a86);border-color:#ffc2e2;color:#fff;font-weight:700}
+button.ghost{background:rgba(255,255,255,.05);box-shadow:none}
+button:disabled{opacity:.4;cursor:default;transform:none}
+input{font-family:var(--font);font-size:16px;color:var(--txt);background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.18);border-radius:10px;padding:8px 12px;min-height:44px;outline:none;width:100%}
+input:focus{border-color:var(--gold)}
+.scr{position:fixed;inset:0;z-index:20;display:flex;align-items:safe center;justify-content:center;padding:calc(16px + var(--sa-t)) calc(16px + var(--sa-r)) calc(16px + var(--sa-b)) calc(16px + var(--sa-l))}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:22px 24px;width:min(460px,100%);max-height:calc(100dvh - 16px);overflow:auto;box-shadow:0 20px 60px rgba(0,0,0,.45);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);position:relative}
+h1{font-family:var(--title);font-weight:400;font-size:52px;margin:6px 0 0;text-align:center;letter-spacing:.06em;color:var(--gold);text-shadow:0 3px 0 #8a5a1a,0 6px 18px rgba(0,0,0,.4)}
+.tsub{text-align:center;color:var(--sub);margin:4px 0 16px;font-size:14px}
+.seg{display:flex;gap:6px}.seg button{flex:1}
+.mdesc{font-size:13px;color:var(--sub);line-height:1.6;margin:8px 2px 14px;min-height:42px}
+.row{display:flex;gap:8px;margin-top:10px;align-items:center}
+.row input{flex:1}
+.big{font-size:18px;min-height:52px;width:100%}
+.status{min-height:20px;margin-top:10px;font-size:13px;color:var(--gold);text-align:center}
+.hubBack{position:absolute;left:12px;top:12px;min-height:36px;padding:4px 12px;font-size:14px}
+.lbl2{font-size:12px;color:var(--sub);margin:14px 0 6px}
+#lCode{font-family:var(--title);font-size:56px;text-align:center;letter-spacing:.25em;color:var(--gold);margin:4px 0 2px}
+.plist div{padding:8px 12px;background:rgba(255,255,255,.05);border-radius:9px;margin-top:6px}
+/* HUD */
+#hud{position:fixed;inset:0;z-index:10;pointer-events:none}
+#hud button,#hud .pe{pointer-events:auto}
+#hTop{position:absolute;top:calc(10px + var(--sa-t));left:50%;transform:translateX(-50%);display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:center;max-width:calc(100% - 120px)}
+.chip:empty{display:none}
+.chip{background:var(--panel);border:1px solid rgba(255,255,255,.12);border-radius:999px;padding:6px 12px;font-size:14px;font-weight:700;white-space:nowrap}
+.chip.hide{color:#9fdcff;border-color:rgba(59,166,216,.6)}.chip.seek{color:#ffb2a6;border-color:rgba(224,83,63,.6)}
+#hPhase.urgent{color:#ff8a7a;animation:pulse 1s infinite}
+@keyframes pulse{50%{transform:scale(1.06)}}
+#hTaps i{font-style:normal;color:#555c6a;margin-left:2px}#hTaps i.on{color:var(--gold)}#hTaps .lbl{font-size:12px;color:var(--sub);font-weight:400;margin-right:4px}
+#hScore{position:absolute;top:calc(10px + var(--sa-t));left:calc(12px + var(--sa-l));font-size:13px;color:var(--sub)}
+#hRoom{position:absolute;top:calc(36px + var(--sa-t));left:calc(12px + var(--sa-l));font-size:14px;font-weight:700;text-shadow:0 1px 3px #000}
+#menuBtn,#sndBtn{position:absolute;top:calc(8px + var(--sa-t));min-height:40px;width:44px;padding:0;font-size:18px}
+#menuBtn{right:calc(10px + var(--sa-r))}#sndBtn{right:calc(60px + var(--sa-r))}
+#hTip{position:absolute;bottom:calc(12px + var(--sa-b));left:50%;transform:translateX(-50%);font-size:13px;color:#fff;background:rgba(14,16,22,.6);padding:5px 12px;border-radius:999px;white-space:nowrap;max-width:94vw;overflow:hidden;text-overflow:ellipsis}
+#hTip:empty{display:none}
+#hTip.top{bottom:auto;top:calc(54px + var(--sa-t))}
+#acts{position:absolute;right:calc(14px + var(--sa-r));bottom:calc(48px + var(--sa-b));display:grid;grid-template-columns:repeat(2,auto);gap:8px}
+.act{min-width:82px;min-height:52px;font-size:16px;font-weight:700;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.1}
+.act small{font-size:11px;opacity:.7;font-weight:400}
+.act.big{min-width:110px;min-height:64px;font-size:19px;grid-column:span 2}
+#turnPanel{position:absolute;left:50%;bottom:calc(12px + var(--sa-b));transform:translateX(-50%);width:min(560px,96vw);background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px 14px;font-size:14px;line-height:1.6;pointer-events:auto}
+#turnPanel .row{margin-top:8px}#turnPanel .row button{flex:1}
+#turnPanel .st{margin-top:4px;font-size:13px}#turnPanel .bad{color:var(--bad)}#turnPanel .ok{color:var(--ok)}
+#turnPanel .legend{font-size:12px;margin-top:4px;display:flex;gap:10px;font-weight:700}
+#turnPanel .wh{color:var(--gold);font-weight:700}
+#joy{position:fixed;width:120px;height:120px;border-radius:50%;background:rgba(255,255,255,.1);border:2px solid rgba(255,255,255,.25);z-index:12;pointer-events:none}
+#joyKnob{position:absolute;left:35px;top:35px;width:50px;height:50px;border-radius:50%;background:rgba(255,255,255,.4)}
+#blind,#curtain{position:fixed;inset:0;z-index:9;background:radial-gradient(circle at 50% 45%,#1c2030,#07080c);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;pointer-events:none}
+#curtain{background:rgba(8,9,14,.94)}
+#blind .bt,#curtain .bt{font-family:var(--title);font-size:34px;color:var(--gold)}
+#blindN{font-family:var(--title);font-size:120px;color:#fff;line-height:1.1}
+#blind .bs,#curtain .bs{color:var(--sub);font-size:15px;margin-top:6px;padding:0 20px}
+#banner{position:fixed;left:50%;top:28%;transform:translate(-50%,-50%) scale(.8);z-index:15;text-align:center;opacity:0;pointer-events:none;transition:opacity .25s,transform .25s}
+#banner.show{opacity:1;transform:translate(-50%,-50%) scale(1)}
+#banner b{display:block;font-family:var(--title);font-weight:400;font-size:46px;color:var(--gold);text-shadow:0 3px 0 #6a3f10,0 6px 20px rgba(0,0,0,.6);white-space:nowrap}
+#banner span{display:inline-block;margin-top:6px;background:rgba(14,16,22,.75);padding:5px 14px;border-radius:999px;font-size:15px}
+#toasts{position:fixed;top:calc(92px + var(--sa-t));left:50%;transform:translateX(-50%);z-index:16;display:flex;flex-direction:column;gap:6px;align-items:center;pointer-events:none}
+.toast{background:rgba(14,16,22,.9);border:1px solid rgba(255,255,255,.14);padding:7px 14px;border-radius:999px;font-size:14px;transition:opacity .4s;white-space:nowrap}
+.toast.bad{border-color:var(--bad);color:#ffc0b6}.toast.warn{border-color:#f2b84a;color:#ffe2a6}.toast.gold{border-color:var(--gold);color:var(--gold);font-weight:700}
+.toast.out{opacity:0}
+#endScr{position:fixed;left:50%;bottom:calc(24px + var(--sa-b));transform:translateX(-50%);z-index:18;width:min(440px,94vw)}
+#endScr .card{text-align:center;padding:18px}
+#eTitle{font-family:var(--title);font-size:44px;margin:0}#eTitle.win{color:var(--gold)}#eTitle.lose{color:#b8c0d0}
+#eWhy{color:var(--txt);margin:6px 0}#eScore{color:var(--sub);font-size:15px;margin-bottom:10px}
+#endScr .row button{flex:1}
+#menu .card button,#help .card button.wide{width:100%;margin-top:8px}
+#help .card{width:min(600px,100%);font-size:14px;line-height:1.7}
+#help h2{font-family:var(--title);font-weight:400;color:var(--gold);margin:0 0 6px;font-size:28px}
+#help h3{margin:14px 0 2px;font-size:15px;color:var(--gold)}
+#help ul{margin:4px 0;padding-left:20px}
+#loading{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;font-family:var(--title);font-size:28px;color:var(--gold);background:#1a1d26;z-index:50}
+@media (max-width:640px){h1{font-size:42px}#banner b{font-size:34px}#hTip{font-size:12px}.act{min-width:72px}}
+/* phones only (iPad / desktop untouched) */
+@media (pointer:coarse) and (max-width:500px){
+ .card{padding:16px}h1{font-size:40px;margin-top:34px}
+ #hTop{top:calc(54px + var(--sa-t));max-width:96vw;gap:5px}#hTop .chip{font-size:12px;padding:4px 9px}
+ #toasts{top:calc(122px + var(--sa-t))}#hTip.top{top:calc(116px + var(--sa-t))}
+ #banner{top:34%}#banner b{font-size:30px}#banner span{font-size:13px}
+ .act{min-width:64px;min-height:46px;font-size:14px}.act.big{min-width:96px;min-height:56px;font-size:17px}
+ #turnPanel{font-size:13px;padding:10px 12px;line-height:1.5}
+ #eTitle{font-size:34px}#blindN{font-size:96px}
+}
+@media (pointer:coarse) and (max-height:500px){
+ .card{padding:12px 16px}h1{font-size:32px;margin:0}.tsub{margin:2px 0 8px}.mdesc{margin:4px 2px 6px;min-height:0;font-size:12px}.row{margin-top:6px}.big{min-height:44px;font-size:16px}
+ #lCode{font-size:40px}.lbl2{margin:8px 0 4px}
+ #hTop{gap:5px;max-width:calc(100% - 260px)}#hTop .chip{font-size:12px;padding:4px 9px}
+ #hTip{display:none}#toasts{top:calc(50px + var(--sa-t))}
+ #banner{top:38%}#banner b{font-size:28px}#banner span{font-size:13px}
+ #acts{bottom:calc(12px + var(--sa-b))}.act{min-width:64px;min-height:44px;font-size:14px}.act.big{min-width:96px;min-height:52px}
+ #turnPanel{left:auto;right:calc(10px + var(--sa-r));bottom:calc(8px + var(--sa-b));transform:none;width:min(330px,42vw);font-size:12px;line-height:1.45;padding:8px 10px}
+ #turnPanel .legend{gap:6px}#turnPanel .row button{min-height:40px;padding:4px 8px;font-size:13px}
+ #endScr{bottom:calc(6px + var(--sa-b))}#endScr .card{padding:10px 14px}#eTitle{font-size:28px}#eWhy{margin:2px 0;font-size:13px}#eScore{margin-bottom:4px}
+ #blindN{font-size:72px}#blind .bt,#curtain .bt{font-size:26px}
+ #help .card{font-size:13px;line-height:1.55}
+}
+</style>
+<body>
+<canvas id="cv"></canvas>
+<div id="loading">百变迷藏…</div>
+
+<div id="title" class="scr hidden"><div class="card">
+ <button id="hubBtn" class="hubBack ghost hidden">‹ 游戏厅</button>
+ <h1>百变迷藏</h1>
+ <div class="tsub">变身捉迷藏 · 一个藏成家具，一个来敲</div>
+ <div class="seg" id="modeSeg"><button data-m="rt">实时追逐</button><button data-m="turn">回合推理</button></div>
+ <div class="mdesc" id="modeDesc"></div>
+ <button id="soloBtn" class="primary big">单人：电脑藏，你来找</button>
+ <div class="row"><button id="hostBtn">创建房间</button><input id="codeIn" maxlength="4" placeholder="房间码" autocomplete="off" style="text-transform:uppercase"><button id="joinBtn">加入</button></div>
+ <div class="row"><input id="nameIn" maxlength="8" placeholder="你的名字（可不填）"><button id="helpBtn" class="ghost">玩法说明</button></div>
+ <div id="tStatus" class="status"></div>
+</div></div>
+
+<div id="lobby" class="scr hidden"><div class="card">
+ <div class="lbl2" style="text-align:center;margin-top:0">房间码</div>
+ <div id="lCode">····</div>
+ <div class="plist"><div id="lP0"></div><div id="lP1"></div></div>
+ <div class="lbl2">玩法</div>
+ <div class="seg" id="lModeSeg"><button data-m="rt">实时追逐</button><button data-m="turn">回合推理</button></div>
+ <div class="mdesc" id="lModeDesc"></div>
+ <div class="lbl2" style="margin-top:0">第一局谁来藏（之后每局交换）</div>
+ <div class="seg" id="lFirstSeg"><button data-f="host">房主</button><button data-f="guest">客人</button><button data-f="rand">随机</button></div>
+ <div class="row"><button id="lLeave" class="ghost">离开</button><button id="lStart" class="primary" style="flex:1">开始</button><div id="lWait" style="flex:1;text-align:center;color:var(--sub)">等待房主开始…</div></div>
+ <div id="lStatus" class="status"></div>
+</div></div>
+
+<div id="hud" class="hidden">
+ <div id="hTop"><div id="hRole" class="chip"></div><div id="hPhase" class="chip"></div><div id="hTaps" class="chip"></div><div id="hWh" class="chip"></div></div>
+ <div id="hScore"></div><div id="hRoom"></div>
+ <button id="sndBtn">🔊</button><button id="menuBtn">≡</button>
+ <div id="hTip"></div>
+ <div id="acts"></div>
+ <div id="turnPanel" class="hidden"></div>
+</div>
+<div id="joy" class="hidden"><div id="joyKnob"></div></div>
+<div id="blind" class="hidden"><div class="bt">闭上眼睛数数…</div><div id="blindN">30</div><div class="bs">对方正在找地方，变成房子里的某件家具</div></div>
+<div id="curtain" class="hidden"><div class="bt" id="curT">对方正在行动…</div><div class="bs">别偷看！对方行动完你会看到房子的新样子——仔细回忆刚才的布置</div></div>
+<div id="banner"></div>
+<div id="toasts"></div>
+
+<div id="endScr" class="hidden"><div class="card">
+ <h2 id="eTitle"></h2><div id="eWhy"></div><div id="eScore"></div>
+ <div class="row"><button id="eTitle2" class="ghost">返回标题</button><button id="eNext" class="primary">下一局</button><div id="eWait" class="hidden" style="flex:1;color:var(--sub)">等待房主开始下一局…</div></div>
+</div></div>
+
+<div id="menu" class="scr hidden"><div class="card" style="width:min(320px,100%)">
+ <button id="mResume" class="primary">继续</button>
+ <button id="mSound">音效：开</button>
+ <button id="mHelp">玩法说明</button>
+ <button id="mTitle">返回标题</button>
+ <button id="mHub" class="hidden">返回游戏厅</button>
+</div></div>
+
+<div id="help" class="scr hidden"><div class="card">
+ <h2>怎么玩</h2>
+ 一个人<b>藏</b>，一个人<b>找</b>。藏的人可以变成房子里的家具——椅子、盆栽、纸箱、马桶……找的人只能一件件去<b>敲</b>，敲错的次数有限。
+ <h3>实时追逐</h3>
+ <ul>
+  <li>开局躲方有 30 秒，抓方闭眼数数。躲方走到家具旁，按 <b>E</b> 或点它，就会变成一模一样的东西；<b>R</b> 旋转，<b>Q</b> 变回人形。</li>
+  <li>抓方只看得见<b>自己所在的房间</b>。走近可疑的东西按 <b>E</b> 或点它敲一下：敲中就赢，敲错 5 次或 3 分钟到了就输。</li>
+  <li>躲方每 30 秒会自动吹一声哨，抓方会听到大致方向和房间名。躲方也可以主动<b>嘲讽</b>（T）：吹一声哨，换来时间 -15 秒。</li>
+  <li>变身后也能慢慢挪动，但在抓方的房间里挪动会被看见，还会发出摩擦声。人形走路有脚步声。</li>
+  <li>小窍门：房间里本来就有好几把一样的椅子时，多出一把最不显眼；把家具摆得和原来的朝向一致。</li>
+ </ul>
+ <h3>回合推理</h3>
+ <ul>
+  <li>整栋房子都看得见。躲方先选一种家具、放在某个房间里——只能变成那个房间里本来就有的东西。</li>
+  <li>抓方每回合敲一件。敲错会显示 <b style="color:#ff3b2f">烫</b>（2.5 米内）/<b style="color:#ff9a2f">热</b>（5 米）/<b style="color:#f2d34a">温</b>（8 米）/<b style="color:#5fb6ff">冷</b>。敲错 6 次就输。</li>
+  <li>每次被敲之后，躲方可以挪动 3 米以内、就地变成 3 米内的另一种东西，或者不动。这时抓方的屏幕是黑的——靠记忆找出哪里变了。</li>
+  <li>每 3 回合躲方吹一次哨，抓方会知道躲方在哪个房间。</li>
+ </ul>
+ <h3>单人和联机</h3>
+ 单人模式里电脑藏、你来找。两个人可以创建房间联机对战，每局交换角色。<br>
+ <span style="color:var(--sub);font-size:12px">玩法灵感来自 Garry's Mod 的 Prop Hunt 模式和《女巫来了》等变身躲猫猫游戏。</span>
+ <button id="helpClose" class="primary wide">知道了</button>
+</div></div>
+__SCRIPTS__
+</body>

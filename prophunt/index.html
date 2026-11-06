@@ -1,0 +1,1739 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="百变迷藏"><meta name="theme-color" content="#1a1d26">
+<title>百变迷藏</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&family=Noto+Sans+SC:wght@400;700;900&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+<style>
+:root{--panel:rgba(20,24,34,.88);--line:rgba(255,211,106,.25);--txt:#f2f0ea;--sub:#a9b0bd;--gold:#ffd36a;--hide:#3ba6d8;--seek:#e0533f;--ok:#7dff9a;--bad:#ff7a6a;
+ --font:"Noto Sans SC","PingFang SC","Microsoft YaHei",system-ui,sans-serif;--title:"ZCOOL KuaiLe","Noto Sans SC",sans-serif;
+ color-scheme:dark;--sa-t:env(safe-area-inset-top,0px);--sa-b:env(safe-area-inset-bottom,0px);--sa-l:env(safe-area-inset-left,0px);--sa-r:env(safe-area-inset-right,0px)}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;overflow:hidden;background:#5c7a52;color:var(--txt);font-family:var(--font);overscroll-behavior:none;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+canvas#cv{position:fixed;inset:0;width:100%;height:100%;display:block}
+.hidden{display:none!important}
+button{font-family:var(--font);cursor:pointer;color:var(--txt);background:linear-gradient(#323b52,#232a3b);border:1px solid rgba(255,255,255,.16);border-radius:10px;padding:8px 14px;font-size:15px;min-height:44px;box-shadow:0 2px 8px rgba(0,0,0,.3);touch-action:manipulation}
+button:hover{border-color:var(--gold)}
+button:active{transform:translateY(1px)}
+button.sel{border-color:var(--gold);background:linear-gradient(#4a4a3a,#33331f);color:var(--gold)}
+button.primary{background:linear-gradient(#ffd36a,#e8a93a);border-color:#fff0b8;color:#2a1c05;font-weight:900}
+button.pink{background:linear-gradient(#e86fb0,#b84a86);border-color:#ffc2e2;color:#fff;font-weight:700}
+button.ghost{background:rgba(255,255,255,.05);box-shadow:none}
+button:disabled{opacity:.4;cursor:default;transform:none}
+input{font-family:var(--font);font-size:16px;color:var(--txt);background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.18);border-radius:10px;padding:8px 12px;min-height:44px;outline:none;width:100%}
+input:focus{border-color:var(--gold)}
+.scr{position:fixed;inset:0;z-index:20;display:flex;align-items:safe center;justify-content:center;padding:calc(16px + var(--sa-t)) calc(16px + var(--sa-r)) calc(16px + var(--sa-b)) calc(16px + var(--sa-l))}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:22px 24px;width:min(460px,100%);max-height:calc(100dvh - 16px);overflow:auto;box-shadow:0 20px 60px rgba(0,0,0,.45);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);position:relative}
+h1{font-family:var(--title);font-weight:400;font-size:52px;margin:6px 0 0;text-align:center;letter-spacing:.06em;color:var(--gold);text-shadow:0 3px 0 #8a5a1a,0 6px 18px rgba(0,0,0,.4)}
+.tsub{text-align:center;color:var(--sub);margin:4px 0 16px;font-size:14px}
+.seg{display:flex;gap:6px}.seg button{flex:1}
+.mdesc{font-size:13px;color:var(--sub);line-height:1.6;margin:8px 2px 14px;min-height:42px}
+.row{display:flex;gap:8px;margin-top:10px;align-items:center}
+.row input{flex:1}
+.big{font-size:18px;min-height:52px;width:100%}
+.status{min-height:20px;margin-top:10px;font-size:13px;color:var(--gold);text-align:center}
+.hubBack{position:absolute;left:12px;top:12px;min-height:36px;padding:4px 12px;font-size:14px}
+.lbl2{font-size:12px;color:var(--sub);margin:14px 0 6px}
+#lCode{font-family:var(--title);font-size:56px;text-align:center;letter-spacing:.25em;color:var(--gold);margin:4px 0 2px}
+.plist div{padding:8px 12px;background:rgba(255,255,255,.05);border-radius:9px;margin-top:6px}
+/* HUD */
+#hud{position:fixed;inset:0;z-index:10;pointer-events:none}
+#hud button,#hud .pe{pointer-events:auto}
+#hTop{position:absolute;top:calc(10px + var(--sa-t));left:50%;transform:translateX(-50%);display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:center;max-width:calc(100% - 120px)}
+.chip:empty{display:none}
+.chip{background:var(--panel);border:1px solid rgba(255,255,255,.12);border-radius:999px;padding:6px 12px;font-size:14px;font-weight:700;white-space:nowrap}
+.chip.hide{color:#9fdcff;border-color:rgba(59,166,216,.6)}.chip.seek{color:#ffb2a6;border-color:rgba(224,83,63,.6)}
+#hPhase.urgent{color:#ff8a7a;animation:pulse 1s infinite}
+@keyframes pulse{50%{transform:scale(1.06)}}
+#hTaps i{font-style:normal;color:#555c6a;margin-left:2px}#hTaps i.on{color:var(--gold)}#hTaps .lbl{font-size:12px;color:var(--sub);font-weight:400;margin-right:4px}
+#hScore{position:absolute;top:calc(10px + var(--sa-t));left:calc(12px + var(--sa-l));font-size:13px;color:var(--sub)}
+#hRoom{position:absolute;top:calc(36px + var(--sa-t));left:calc(12px + var(--sa-l));font-size:14px;font-weight:700;text-shadow:0 1px 3px #000}
+#menuBtn,#sndBtn{position:absolute;top:calc(8px + var(--sa-t));min-height:40px;width:44px;padding:0;font-size:18px}
+#menuBtn{right:calc(10px + var(--sa-r))}#sndBtn{right:calc(60px + var(--sa-r))}
+#hTip{position:absolute;bottom:calc(12px + var(--sa-b));left:50%;transform:translateX(-50%);font-size:13px;color:#fff;background:rgba(14,16,22,.6);padding:5px 12px;border-radius:999px;white-space:nowrap;max-width:94vw;overflow:hidden;text-overflow:ellipsis}
+#hTip:empty{display:none}
+#hTip.top{bottom:auto;top:calc(54px + var(--sa-t))}
+#acts{position:absolute;right:calc(14px + var(--sa-r));bottom:calc(48px + var(--sa-b));display:grid;grid-template-columns:repeat(2,auto);gap:8px}
+.act{min-width:82px;min-height:52px;font-size:16px;font-weight:700;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.1}
+.act small{font-size:11px;opacity:.7;font-weight:400}
+.act.big{min-width:110px;min-height:64px;font-size:19px;grid-column:span 2}
+#turnPanel{position:absolute;left:50%;bottom:calc(12px + var(--sa-b));transform:translateX(-50%);width:min(560px,96vw);background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px 14px;font-size:14px;line-height:1.6;pointer-events:auto}
+#turnPanel .row{margin-top:8px}#turnPanel .row button{flex:1}
+#turnPanel .st{margin-top:4px;font-size:13px}#turnPanel .bad{color:var(--bad)}#turnPanel .ok{color:var(--ok)}
+#turnPanel .legend{font-size:12px;margin-top:4px;display:flex;gap:10px;font-weight:700}
+#turnPanel .wh{color:var(--gold);font-weight:700}
+#joy{position:fixed;width:120px;height:120px;border-radius:50%;background:rgba(255,255,255,.1);border:2px solid rgba(255,255,255,.25);z-index:12;pointer-events:none}
+#joyKnob{position:absolute;left:35px;top:35px;width:50px;height:50px;border-radius:50%;background:rgba(255,255,255,.4)}
+#blind,#curtain{position:fixed;inset:0;z-index:9;background:radial-gradient(circle at 50% 45%,#1c2030,#07080c);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;pointer-events:none}
+#curtain{background:rgba(8,9,14,.94)}
+#blind .bt,#curtain .bt{font-family:var(--title);font-size:34px;color:var(--gold)}
+#blindN{font-family:var(--title);font-size:120px;color:#fff;line-height:1.1}
+#blind .bs,#curtain .bs{color:var(--sub);font-size:15px;margin-top:6px;padding:0 20px}
+#banner{position:fixed;left:50%;top:28%;transform:translate(-50%,-50%) scale(.8);z-index:15;text-align:center;opacity:0;pointer-events:none;transition:opacity .25s,transform .25s}
+#banner.show{opacity:1;transform:translate(-50%,-50%) scale(1)}
+#banner b{display:block;font-family:var(--title);font-weight:400;font-size:46px;color:var(--gold);text-shadow:0 3px 0 #6a3f10,0 6px 20px rgba(0,0,0,.6);white-space:nowrap}
+#banner span{display:inline-block;margin-top:6px;background:rgba(14,16,22,.75);padding:5px 14px;border-radius:999px;font-size:15px}
+#toasts{position:fixed;top:calc(92px + var(--sa-t));left:50%;transform:translateX(-50%);z-index:16;display:flex;flex-direction:column;gap:6px;align-items:center;pointer-events:none}
+.toast{background:rgba(14,16,22,.9);border:1px solid rgba(255,255,255,.14);padding:7px 14px;border-radius:999px;font-size:14px;transition:opacity .4s;white-space:nowrap}
+.toast.bad{border-color:var(--bad);color:#ffc0b6}.toast.warn{border-color:#f2b84a;color:#ffe2a6}.toast.gold{border-color:var(--gold);color:var(--gold);font-weight:700}
+.toast.out{opacity:0}
+#endScr{position:fixed;left:50%;bottom:calc(24px + var(--sa-b));transform:translateX(-50%);z-index:18;width:min(440px,94vw)}
+#endScr .card{text-align:center;padding:18px}
+#eTitle{font-family:var(--title);font-size:44px;margin:0}#eTitle.win{color:var(--gold)}#eTitle.lose{color:#b8c0d0}
+#eWhy{color:var(--txt);margin:6px 0}#eScore{color:var(--sub);font-size:15px;margin-bottom:10px}
+#endScr .row button{flex:1}
+#menu .card button,#help .card button.wide{width:100%;margin-top:8px}
+#help .card{width:min(600px,100%);font-size:14px;line-height:1.7}
+#help h2{font-family:var(--title);font-weight:400;color:var(--gold);margin:0 0 6px;font-size:28px}
+#help h3{margin:14px 0 2px;font-size:15px;color:var(--gold)}
+#help ul{margin:4px 0;padding-left:20px}
+#loading{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;font-family:var(--title);font-size:28px;color:var(--gold);background:#1a1d26;z-index:50}
+@media (max-width:640px){h1{font-size:42px}#banner b{font-size:34px}#hTip{font-size:12px}.act{min-width:72px}}
+/* phones only (iPad / desktop untouched) */
+@media (pointer:coarse) and (max-width:500px){
+ .card{padding:16px}h1{font-size:40px;margin-top:34px}
+ #hTop{top:calc(54px + var(--sa-t));max-width:96vw;gap:5px}#hTop .chip{font-size:12px;padding:4px 9px}
+ #toasts{top:calc(122px + var(--sa-t))}#hTip.top{top:calc(116px + var(--sa-t))}
+ #banner{top:34%}#banner b{font-size:30px}#banner span{font-size:13px}
+ .act{min-width:64px;min-height:46px;font-size:14px}.act.big{min-width:96px;min-height:56px;font-size:17px}
+ #turnPanel{font-size:13px;padding:10px 12px;line-height:1.5}
+ #eTitle{font-size:34px}#blindN{font-size:96px}
+}
+@media (pointer:coarse) and (max-height:500px){
+ .card{padding:12px 16px}h1{font-size:32px;margin:0}.tsub{margin:2px 0 8px}.mdesc{margin:4px 2px 6px;min-height:0;font-size:12px}.row{margin-top:6px}.big{min-height:44px;font-size:16px}
+ #lCode{font-size:40px}.lbl2{margin:8px 0 4px}
+ #hTop{gap:5px;max-width:calc(100% - 260px)}#hTop .chip{font-size:12px;padding:4px 9px}
+ #hTip{display:none}#toasts{top:calc(50px + var(--sa-t))}
+ #banner{top:38%}#banner b{font-size:28px}#banner span{font-size:13px}
+ #acts{bottom:calc(12px + var(--sa-b))}.act{min-width:64px;min-height:44px;font-size:14px}.act.big{min-width:96px;min-height:52px}
+ #turnPanel{left:auto;right:calc(10px + var(--sa-r));bottom:calc(8px + var(--sa-b));transform:none;width:min(330px,42vw);font-size:12px;line-height:1.45;padding:8px 10px}
+ #turnPanel .legend{gap:6px}#turnPanel .row button{min-height:40px;padding:4px 8px;font-size:13px}
+ #endScr{bottom:calc(6px + var(--sa-b))}#endScr .card{padding:10px 14px}#eTitle{font-size:28px}#eWhy{margin:2px 0;font-size:13px}#eScore{margin-bottom:4px}
+ #blindN{font-size:72px}#blind .bt,#curtain .bt{font-size:26px}
+ #help .card{font-size:13px;line-height:1.55}
+}
+</style>
+</head>
+<body>
+<canvas id="cv"></canvas>
+<div id="loading">百变迷藏…</div>
+
+<div id="title" class="scr hidden"><div class="card">
+ <button id="hubBtn" class="hubBack ghost hidden">‹ 游戏厅</button>
+ <h1>百变迷藏</h1>
+ <div class="tsub">变身捉迷藏 · 一个藏成家具，一个来敲</div>
+ <div class="seg" id="modeSeg"><button data-m="rt">实时追逐</button><button data-m="turn">回合推理</button></div>
+ <div class="mdesc" id="modeDesc"></div>
+ <button id="soloBtn" class="primary big">单人：电脑藏，你来找</button>
+ <div class="row"><button id="hostBtn">创建房间</button><input id="codeIn" maxlength="4" placeholder="房间码" autocomplete="off" style="text-transform:uppercase"><button id="joinBtn">加入</button></div>
+ <div class="row"><input id="nameIn" maxlength="8" placeholder="你的名字（可不填）"><button id="helpBtn" class="ghost">玩法说明</button></div>
+ <div id="tStatus" class="status"></div>
+</div></div>
+
+<div id="lobby" class="scr hidden"><div class="card">
+ <div class="lbl2" style="text-align:center;margin-top:0">房间码</div>
+ <div id="lCode">····</div>
+ <div class="plist"><div id="lP0"></div><div id="lP1"></div></div>
+ <div class="lbl2">玩法</div>
+ <div class="seg" id="lModeSeg"><button data-m="rt">实时追逐</button><button data-m="turn">回合推理</button></div>
+ <div class="mdesc" id="lModeDesc"></div>
+ <div class="lbl2" style="margin-top:0">第一局谁来藏（之后每局交换）</div>
+ <div class="seg" id="lFirstSeg"><button data-f="host">房主</button><button data-f="guest">客人</button><button data-f="rand">随机</button></div>
+ <div class="row"><button id="lLeave" class="ghost">离开</button><button id="lStart" class="primary" style="flex:1">开始</button><div id="lWait" style="flex:1;text-align:center;color:var(--sub)">等待房主开始…</div></div>
+ <div id="lStatus" class="status"></div>
+</div></div>
+
+<div id="hud" class="hidden">
+ <div id="hTop"><div id="hRole" class="chip"></div><div id="hPhase" class="chip"></div><div id="hTaps" class="chip"></div><div id="hWh" class="chip"></div></div>
+ <div id="hScore"></div><div id="hRoom"></div>
+ <button id="sndBtn">🔊</button><button id="menuBtn">≡</button>
+ <div id="hTip"></div>
+ <div id="acts"></div>
+ <div id="turnPanel" class="hidden"></div>
+</div>
+<div id="joy" class="hidden"><div id="joyKnob"></div></div>
+<div id="blind" class="hidden"><div class="bt">闭上眼睛数数…</div><div id="blindN">30</div><div class="bs">对方正在找地方，变成房子里的某件家具</div></div>
+<div id="curtain" class="hidden"><div class="bt" id="curT">对方正在行动…</div><div class="bs">别偷看！对方行动完你会看到房子的新样子——仔细回忆刚才的布置</div></div>
+<div id="banner"></div>
+<div id="toasts"></div>
+
+<div id="endScr" class="hidden"><div class="card">
+ <h2 id="eTitle"></h2><div id="eWhy"></div><div id="eScore"></div>
+ <div class="row"><button id="eTitle2" class="ghost">返回标题</button><button id="eNext" class="primary">下一局</button><div id="eWait" class="hidden" style="flex:1;color:var(--sub)">等待房主开始下一局…</div></div>
+</div></div>
+
+<div id="menu" class="scr hidden"><div class="card" style="width:min(320px,100%)">
+ <button id="mResume" class="primary">继续</button>
+ <button id="mSound">音效：开</button>
+ <button id="mHelp">玩法说明</button>
+ <button id="mTitle">返回标题</button>
+ <button id="mHub" class="hidden">返回游戏厅</button>
+</div></div>
+
+<div id="help" class="scr hidden"><div class="card">
+ <h2>怎么玩</h2>
+ 一个人<b>藏</b>，一个人<b>找</b>。藏的人可以变成房子里的家具——椅子、盆栽、纸箱、马桶……找的人只能一件件去<b>敲</b>，敲错的次数有限。
+ <h3>实时追逐</h3>
+ <ul>
+  <li>开局躲方有 30 秒，抓方闭眼数数。躲方走到家具旁，按 <b>E</b> 或点它，就会变成一模一样的东西；<b>R</b> 旋转，<b>Q</b> 变回人形。</li>
+  <li>抓方只看得见<b>自己所在的房间</b>。走近可疑的东西按 <b>E</b> 或点它敲一下：敲中就赢，敲错 5 次或 3 分钟到了就输。</li>
+  <li>躲方每 30 秒会自动吹一声哨，抓方会听到大致方向和房间名。躲方也可以主动<b>嘲讽</b>（T）：吹一声哨，换来时间 -15 秒。</li>
+  <li>变身后也能慢慢挪动，但在抓方的房间里挪动会被看见，还会发出摩擦声。人形走路有脚步声。</li>
+  <li>小窍门：房间里本来就有好几把一样的椅子时，多出一把最不显眼；把家具摆得和原来的朝向一致。</li>
+ </ul>
+ <h3>回合推理</h3>
+ <ul>
+  <li>整栋房子都看得见。躲方先选一种家具、放在某个房间里——只能变成那个房间里本来就有的东西。</li>
+  <li>抓方每回合敲一件。敲错会显示 <b style="color:#ff3b2f">烫</b>（2.5 米内）/<b style="color:#ff9a2f">热</b>（5 米）/<b style="color:#f2d34a">温</b>（8 米）/<b style="color:#5fb6ff">冷</b>。敲错 6 次就输。</li>
+  <li>每次被敲之后，躲方可以挪动 3 米以内、就地变成 3 米内的另一种东西，或者不动。这时抓方的屏幕是黑的——靠记忆找出哪里变了。</li>
+  <li>每 3 回合躲方吹一次哨，抓方会知道躲方在哪个房间。</li>
+ </ul>
+ <h3>单人和联机</h3>
+ 单人模式里电脑藏、你来找。两个人可以创建房间联机对战，每局交换角色。<br>
+ <span style="color:var(--sub);font-size:12px">玩法灵感来自 Garry's Mod 的 Prop Hunt 模式和《女巫来了》等变身躲猫猫游戏。</span>
+ <button id="helpClose" class="primary wide">知道了</button>
+</div></div>
+<script>
+
+/* ---- 00_core.js ---- */
+'use strict';
+/* ================= core: utils, rng, balance ================= */
+const QS = new URLSearchParams(location.search);
+const $ = id => document.getElementById(id);
+const clamp = (v, a, b) => v < a ? a : v > b ? b : v, lerp = (a, b, t) => a + (b - a) * t;
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const LS = {
+  get(k, d) { try { const v = localStorage.getItem('prophunt.' + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem('prophunt.' + k, JSON.stringify(v)); } catch (e) { } }
+};
+let G = null;          // shared round state (host authoritative; items are NOT in G, both sides rebuild them from G.seed)
+let MAP = null;        // generated house for G.seed
+let ME = 0;            // my player index
+let NETROLE = null;    // 'solo' | 'host' | 'guest'
+const STATE = { tz: 1, tpan: [0, 0], mode: 'title', hover: null, sel: null, pend: null, ghostR: 0, form: null, t: 0, fx: [], ripples: [], pops: [], banner: null };
+
+function mkRng(seed) { let s = seed | 0; return () => { let t = (s = (s + 0x6D2B79F5) | 0); t = Math.imul(t ^ t >>> 15, t | 1); t ^= t + Math.imul(t ^ t >>> 7, t | 61); return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+let simR = mkRng(Date.now() | 0);           // host-only randomness (AI, whistle offset)
+const rnd = () => simR(), rr = (a, b) => a + (b - a) * rnd(), pick = a => a[Math.floor(rnd() * a.length)];
+
+/* ---------- balance (all tunables in one place) ---------- */
+const BAL = {
+  hideT: 30,          // realtime: seconds the hider gets while the seeker counts
+  hideTSolo: 4,       // solo: the computer hides instantly
+  seekT: 180,         // realtime: seek phase length
+  maxWrong: 5,        // realtime: wrong knocks allowed
+  whistleEvery: 30,   // realtime: forced whistle period
+  tauntCut: 15, tauntCD: 12,   // taunt: shortens the clock, cooldown
+  reach: 2.3,         // seeker knock reach (m, to the object's footprint)
+  copyReach: 2.2,     // hider can copy furniture within this distance
+  knockCD: 0.7,
+  spdSeek: 3.6, spdHide: 3.4, spdProp: 1.5,
+  nearHint: 2.5,      // realtime: wrong knock this close to the hider gives a "something is near" hint
+  whistleFuzz: 2.2,   // whistle ripple centre is offset up to this far from the hider
+  turnWrong: 6,       // turn mode: wrong knocks allowed
+  turnMove: 3,        // turn mode: hider may move / copy within this distance per turn
+  placeT: 60, hideTurnT: 30,
+  whistleTurns: 3,    // turn mode: every Nth seek turn the hider's room is revealed
+  bands: [2.5, 5, 8]  // turn mode hint distances: 烫 / 热 / 温 / 冷
+};
+const BAND = [{ n: '烫', c: '#ff3b2f' }, { n: '热', c: '#ff9a2f' }, { n: '温', c: '#f2d34a' }, { n: '冷', c: '#5fb6ff' }];
+const bandOf = d => d < BAL.bands[0] ? 0 : d < BAL.bands[1] ? 1 : d < BAL.bands[2] ? 2 : 3;
+
+/* ---- 10_props.js ---- */
+/* ================= furniture library =================
+   Each type is built from prisms in local metres, centred on its footprint, facing +y (its back at -y).
+   B = box, C = n-gon cylinder. w = footprint along x, d = along y (before rotation). */
+const B = (x0, y0, x1, y1, z0, z1, c) => ({ t: 'b', x0, y0, x1, y1, z0, z1, c });
+const C = (cx, cy, r, z0, z1, c, n) => ({ t: 'c', cx, cy, r, z0, z1, c, n: n || 8 });
+const T = {};
+function def(k, o) { o.k = k; o.vars = o.vars || [{}]; T[k] = o; }
+const legs4 = (hw, hd, t, h, c) => [B(-hw, -hd, -hw + t, -hd + t, 0, h, c), B(hw - t, -hd, hw, -hd + t, 0, h, c), B(-hw, hd - t, -hw + t, hd, 0, h, c), B(hw - t, hd - t, hw, hd, 0, h, c)];
+
+def('chair', { n: '椅子', w: .46, d: .46, vars: [{ a: '#a8774a', b: '#c9533f' }, { a: '#5d6b7a', b: '#e2c26c' }, { a: '#efe9df', b: '#5f9bc8' }, { a: '#3f3a36', b: '#8bbf74' }],
+  P: c => [...legs4(.2, .2, .05, .43, c.a), B(-.22, -.22, .22, .22, .43, .48, c.a), B(-.19, -.17, .19, .2, .48, .52, c.b), B(-.22, -.23, .22, -.17, .48, .98, c.a), B(-.16, -.22, .16, -.16, .62, .88, c.b)] });
+def('stool', { n: '高脚凳', w: .4, d: .4, vars: [{ a: '#7a5638', b: '#d8c7a8' }, { a: '#2f3640', b: '#e8604c' }],
+  P: c => [C(0, 0, .05, 0, .62, c.a, 6), C(0, 0, .18, .02, .06, c.a), C(0, 0, .2, .62, .7, c.b, 10)] });
+def('armchair', { n: '扶手椅', w: .86, d: .82, vars: [{ a: '#8f4b3c', b: '#b8644f' }, { a: '#4c6a58', b: '#6b9078' }, { a: '#c9b590', b: '#e2d2ae' }],
+  P: c => [B(-.43, -.41, .43, .41, .08, .42, c.a), ...legs4(.38, .36, .06, .08, '#3b2a20'), B(-.3, -.22, .3, .38, .42, .52, c.b), B(-.43, -.41, .43, -.2, .42, .9, c.a), B(-.43, -.2, -.29, .41, .42, .64, c.a), B(.29, -.2, .43, .41, .42, .64, c.a)] });
+def('sofa', { n: '沙发', w: 2.0, d: .86, vars: [{ a: '#55657a', b: '#6f819a' }, { a: '#8c5a3c', b: '#a8724f' }, { a: '#d6cbb8', b: '#e9e0d0' }],
+  P: c => [B(-1, -.43, 1, .43, .08, .4, c.a), ...legs4(.94, .38, .06, .08, '#3b2a20'), B(-.84, -.2, -.01, .4, .4, .5, c.b), B(.01, -.2, .84, .4, .4, .5, c.b), B(-1, -.43, 1, -.2, .4, .86, c.a), B(-1, -.2, -.84, .43, .4, .64, c.a), B(.84, -.2, 1, .43, .4, .64, c.a), B(-.8, -.22, -.4, -.12, .5, .8, c.b), B(.4, -.22, .8, -.12, .5, .8, c.b)] });
+def('ctable', { n: '茶几', w: 1.0, d: .56, vars: [{ a: '#6b4a32', b: '#8a6342' }, { a: '#e8e2d6', b: '#cfc6b6' }],
+  P: c => [...legs4(.46, .24, .05, .38, c.a), B(-.48, -.26, .48, .26, .2, .23, c.a), B(-.5, -.28, .5, .28, .38, .43, c.b)] });
+def('dtable', { n: '餐桌', w: 1.6, d: .92, vars: [{ a: '#8a5a36', b: '#a8774a' }, { a: '#e8e2d6', b: '#f4f0e8' }, { a: '#3f3a36', b: '#5a524c' }],
+  P: c => [...legs4(.74, .4, .07, .72, c.a), B(-.8, -.46, .8, .46, .72, .78, c.b)] });
+def('bed', { n: '床', w: 1.5, d: 2.0, vars: [{ a: '#8a5a36', b: '#f2efe8', q: '#6f93c6' }, { a: '#e9e4da', b: '#f6f2ea', q: '#d47f78' }, { a: '#3f3a36', b: '#ece7de', q: '#7fae86' }],
+  P: c => [B(-.75, -1, .75, 1, .08, .34, c.a), B(-.71, -.96, .71, .96, .34, .54, c.b), B(-.6, -.92, -.08, -.56, .54, .66, c.b), B(.08, -.92, .6, -.56, .54, .66, c.b), B(-.73, -.42, .73, .98, .54, .6, c.q), B(-.75, -1, .75, -.92, .08, 1.05, c.a)] });
+def('kbed', { n: '小床', w: 1.0, d: 1.7, vars: [{ a: '#e3b55a', b: '#f6f2ea', q: '#f08ea0' }, { a: '#7fb3d9', b: '#f6f2ea', q: '#f6d26a' }],
+  P: c => [B(-.5, -.85, .5, .85, .08, .3, c.a), B(-.46, -.81, .46, .81, .3, .48, c.b), B(-.3, -.78, .3, -.5, .48, .58, c.b), B(-.48, -.36, .48, .83, .48, .53, c.q), B(-.5, -.85, .5, -.77, .08, .9, c.a), B(-.5, .77, .5, .85, .08, .62, c.a)] });
+def('nstand', { n: '床头柜', w: .46, d: .4, vars: [{ a: '#8a5a36', b: '#a8774a' }, { a: '#e9e4da', b: '#f6f2ea' }, { a: '#3f3a36', b: '#5a524c' }],
+  P: c => [B(-.23, -.2, .23, .2, 0, .52, c.a), B(-.2, .2, .2, .22, .28, .46, c.b), B(-.24, -.21, .24, .21, .52, .56, c.b)] });
+def('wardrobe', { n: '衣柜', w: 1.2, d: .6, vars: [{ a: '#8a5a36', b: '#6b4a32' }, { a: '#ebe6dc', b: '#cfc6b6' }, { a: '#4a4f58', b: '#353940' }],
+  P: c => [B(-.6, -.3, .6, .3, 0, 2.0, c.a), B(-.012, .3, .012, .315, .1, 1.9, c.b), B(-.08, .3, -.05, .33, .9, 1.15, '#d8c48a'), B(.05, .3, .08, .33, .9, 1.15, '#d8c48a'), B(-.62, -.32, .62, .32, 2.0, 2.05, c.b)] });
+def('dresser', { n: '五斗柜', w: 1.0, d: .5, vars: [{ a: '#8a5a36', b: '#a8774a' }, { a: '#e9e4da', b: '#d6cfc2' }, { a: '#5f7f6e', b: '#7ea08e' }],
+  P: c => [B(-.5, -.25, .5, .25, 0, .86, c.a), B(-.46, .25, .46, .27, .58, .8, c.b), B(-.46, .25, .46, .27, .32, .54, c.b), B(-.46, .25, .46, .27, .06, .28, c.b), B(-.52, -.27, .52, .27, .86, .9, c.b)] });
+def('desk', { n: '书桌', w: 1.2, d: .6, vars: [{ a: '#a8774a', b: '#c89a66' }, { a: '#e8e2d6', b: '#f4f0e8' }, { a: '#3f3a36', b: '#5a524c' }],
+  P: c => [B(-.58, -.28, -.52, .28, 0, .72, c.a), B(.2, -.28, .58, .28, 0, .72, c.a), B(.22, .28, .56, .3, .5, .66, c.b), B(-.6, -.3, .6, .3, .72, .76, c.b), B(-.25, -.2, .1, -.05, .76, .78, '#f6f4ee')] });
+def('ochair', { n: '转椅', w: .56, d: .56, vars: [{ a: '#2f3640', b: '#4b5563' }, { a: '#2f3640', b: '#c0504d' }],
+  P: c => [C(0, 0, .26, .02, .07, c.a, 5), C(0, 0, .04, .07, .44, '#9aa3ad', 6), B(-.24, -.22, .24, .24, .44, .52, c.b), B(-.22, -.26, .22, -.18, .52, 1.02, c.b)] });
+def('shelf', { n: '书架', w: .9, d: .36, vars: [{ a: '#8a5a36' }, { a: '#e9e4da' }, { a: '#3f3a36' }],
+  P: c => { const L = [B(-.45, -.18, -.41, .18, 0, 1.8, c.a), B(.41, -.18, .45, .18, 0, 1.8, c.a), B(-.45, -.18, .45, -.15, 0, 1.8, c.a)];
+    const bk = ['#c0504d', '#4f81bd', '#9bbb59', '#e8b04a', '#8064a2', '#f2f2f2'];
+    for (let i = 0; i < 4; i++) { const z = .04 + i * .44; L.push(B(-.41, -.15, .41, .18, z, z + .03, c.a)); let x = -.39; for (let j = 0; x < .3; j++) { const w = .05 + ((i * 7 + j * 3) % 4) * .02; L.push(B(x, -.13, x + w, .1, z + .03, z + .26 + ((i + j) % 3) * .04, bk[(i * 2 + j) % 6])); x += w + .01; } }
+    L.push(B(-.45, -.18, .45, .18, 1.8, 1.84, c.a)); return L; } });
+def('tv', { n: '电视柜', w: 1.4, d: .46, vars: [{ a: '#6b4a32', b: '#8a6342' }, { a: '#e8e2d6', b: '#cfc6b6' }],
+  P: c => [B(-.7, -.23, .7, .23, 0, .46, c.a), B(-.66, .23, -.02, .25, .06, .4, c.b), B(.02, .23, .66, .25, .06, .4, c.b), B(-.1, -.08, .1, .06, .46, .52, '#222'), B(-.6, -.04, .6, .02, .52, 1.22, '#1b1e24'), B(-.56, .02, .56, .03, .56, 1.18, '#2e3a4c')] });
+def('plant', { n: '盆栽', w: .5, d: .5, vars: [{ a: '#c2683f', b: '#4e8f4a', g: '#62a85a' }, { a: '#e8e2d6', b: '#3f7d52', g: '#58a06a' }, { a: '#2f3640', b: '#6a9a3c', g: '#86b84e' }],
+  P: c => [C(0, 0, .19, 0, .36, c.a, 8), C(0, 0, .3, .36, .7, c.b, 7), C(.04, -.02, .22, .7, .98, c.g, 6), C(-.02, .03, .1, .98, 1.1, c.g, 5)] });
+def('lamp', { n: '落地灯', w: .42, d: .42, vars: [{ a: '#2f3640', b: '#f3e2b3' }, { a: '#b08a4f', b: '#f6f0e2' }],
+  P: c => [C(0, 0, .17, 0, .04, c.a), C(0, 0, .025, .04, 1.32, c.a, 5), C(0, 0, .2, 1.3, 1.62, c.b, 10)] });
+def('fridge', { n: '冰箱', w: .7, d: .7, vars: [{ a: '#e9edf0', b: '#c5ccd3' }, { a: '#9aa3ad', b: '#7c858f' }, { a: '#8fc6c0', b: '#6fa8a2' }],
+  P: c => [B(-.35, -.35, .35, .35, 0, 1.82, c.a), B(-.33, .35, .33, .365, 1.18, 1.2, c.b), B(.23, .35, .27, .39, 1.25, 1.6, c.b), B(.23, .35, .27, .39, .7, 1.05, c.b)] });
+def('stove', { n: '灶台', w: .7, d: .62, vars: [{ a: '#e9edf0', b: '#2a2d33' }, { a: '#9aa3ad', b: '#2a2d33' }],
+  P: c => [B(-.35, -.31, .35, .31, 0, .88, c.a), B(-.3, .31, .3, .325, .18, .7, '#3a3e46'), B(-.35, -.31, .35, .31, .88, .91, c.b), C(-.17, -.12, .1, .91, .93, '#555'), C(.17, -.12, .1, .91, .93, '#555'), C(-.17, .14, .08, .91, .93, '#555'), C(.17, .14, .08, .91, .93, '#555')] });
+def('counter', { n: '橱柜', w: .8, d: .62, vars: [{ a: '#e9e4da', b: '#5a524c' }, { a: '#6f8fa8', b: '#e8e2d6' }, { a: '#8a5a36', b: '#2f3640' }],
+  P: c => [B(-.4, -.31, .4, .31, 0, .86, c.a), B(-.012, .31, .012, .32, .08, .8, '#8e8a84'), B(-.41, -.32, .41, .32, .86, .91, c.b)] });
+def('sink', { n: '水槽柜', w: .8, d: .6, vars: [{ a: '#e9e4da', b: '#c9ced4' }, { a: '#6f8fa8', b: '#c9ced4' }],
+  P: c => [B(-.4, -.3, .4, .3, 0, .86, c.a), B(-.41, -.31, .41, .31, .86, .9, c.b), B(-.25, -.15, .25, .2, .9, .91, '#8b939c'), C(0, -.22, .025, .9, 1.12, '#b8c0c8', 5), B(-.02, -.24, .02, -.04, 1.1, 1.14, '#b8c0c8')] });
+def('trash', { n: '垃圾桶', w: .36, d: .36, vars: [{ a: '#7c8b96', b: '#5f6c75' }, { a: '#e9edf0', b: '#c5ccd3' }, { a: '#5a9a5a', b: '#447a44' }],
+  P: c => [C(0, 0, .16, 0, .56, c.a, 8), C(0, 0, .175, .56, .62, c.b, 8)] });
+def('box', { n: '纸箱', w: .5, d: .5, vars: [{ a: '#c89a5c', b: '#e3c68e' }, { a: '#b88a4c', b: '#d9b77a' }],
+  P: c => [B(-.25, -.25, .25, .25, 0, .46, c.a), B(-.06, -.25, .06, .25, .46, .465, c.b), B(-.25, .25, .25, .255, .4, .44, c.b)] });
+def('toilet', { n: '马桶', w: .46, d: .68, vars: [{ a: '#f4f6f8', b: '#dde2e6' }],
+  P: c => [B(-.22, -.34, .22, -.14, .38, .82, c.a), B(-.24, -.36, .24, -.12, .82, .86, c.b), C(0, .08, .17, 0, .4, c.a, 8), C(0, .08, .2, .4, .44, c.b, 10)] });
+def('tub', { n: '浴缸', w: .8, d: 1.7, vars: [{ a: '#f4f6f8', b: '#cfe3ee' }],
+  P: c => [B(-.4, -.85, .4, .85, 0, .56, c.a), B(-.32, -.77, .32, .77, .46, .5, c.b), C(0, -.8, .03, .56, .72, '#b8c0c8', 5)] });
+def('washer', { n: '洗衣机', w: .62, d: .62, vars: [{ a: '#f1f3f5', b: '#3a4552' }],
+  P: c => [B(-.31, -.31, .31, .31, 0, .86, c.a), B(-.31, -.31, .31, -.18, .86, .9, '#d8dde2'), B(-.2, .31, .2, .32, .2, .6, c.b), B(-.14, .32, .14, .33, .26, .54, '#7aa7c9')] });
+def('basket', { n: '脏衣篮', w: .46, d: .36, vars: [{ a: '#c8a878', b: '#a8885a' }, { a: '#b8c6d4', b: '#98a6b4' }],
+  P: c => [B(-.23, -.18, .23, .18, 0, .5, c.a), B(-.23, .18, .23, .185, .1, .45, c.b), B(-.2, -.15, .2, .15, .5, .56, '#f2efe8')] });
+def('toychest', { n: '玩具箱', w: .8, d: .46, vars: [{ a: '#e86a5a', b: '#f6d26a' }, { a: '#5aa8e8', b: '#9be07a' }],
+  P: c => [B(-.4, -.23, .4, .23, 0, .44, c.a), B(-.42, -.25, .42, .25, .44, .52, c.b), B(-.1, .23, .1, .25, .3, .42, c.b)] });
+def('beanbag', { n: '懒人沙发', w: .72, d: .72, vars: [{ a: '#e3884a', b: '#f0a064' }, { a: '#6a7fd8', b: '#8496e8' }, { a: '#d85a8a', b: '#e87aa0' }],
+  P: c => [C(0, 0, .36, 0, .22, c.a, 10), C(0, -.04, .29, .22, .4, c.b, 9), C(0, -.12, .18, .4, .5, c.b, 7)] });
+def('bench', { n: '长椅', w: 1.4, d: .44, vars: [{ a: '#8a5a36', b: '#2f3640' }, { a: '#5f8f6e', b: '#2f3640' }],
+  P: c => [B(-.62, -.18, -.56, .2, 0, .44, c.b), B(.56, -.18, .62, .2, 0, .44, c.b), B(-.7, -.06, .7, .2, .44, .48, c.a), B(-.7, -.2, .7, -.14, .5, .86, c.a), B(-.62, -.2, -.56, -.14, .44, .86, c.b), B(.56, -.2, .62, -.14, .44, .86, c.b)] });
+def('bush', { n: '灌木', w: .9, d: .9, vars: [{ a: '#3f7d3a', b: '#58a04a' }, { a: '#4f8a3a', b: '#7ab84e' }],
+  P: c => [C(0, 0, .42, 0, .5, c.a, 9), C(.03, -.02, .33, .5, .82, c.b, 8), C(-.02, .02, .16, .82, .95, c.b, 6)] });
+def('fpot', { n: '花盆', w: .42, d: .42, vars: [{ a: '#c2683f', b: '#58a04a', f: '#f27a8a' }, { a: '#c2683f', b: '#58a04a', f: '#f6d24a' }, { a: '#8b939c', b: '#4f8a3a', f: '#b48cff' }],
+  P: c => [C(0, 0, .17, 0, .3, c.a, 8), C(0, 0, .19, .3, .34, c.a, 8), C(0, 0, .16, .34, .48, c.b, 7), C(.05, -.03, .06, .48, .56, c.f, 5), C(-.06, .04, .06, .46, .54, c.f, 5)] });
+def('bin', { n: '大垃圾桶', w: .62, d: .7, vars: [{ a: '#3f7d52', b: '#2f6040' }, { a: '#4a5562', b: '#353e48' }],
+  P: c => [B(-.29, -.33, .29, .33, .06, 1.0, c.a), B(-.31, -.35, .31, .35, 1.0, 1.06, c.b), C(-.2, .3, .07, 0, .14, '#222', 6), C(.2, .3, .07, 0, .14, '#222', 6)] });
+def('barrel', { n: '木桶', w: .56, d: .56, vars: [{ a: '#8a5a36', b: '#4a4f58' }],
+  P: c => [C(0, 0, .25, 0, .1, c.b, 10), C(0, 0, .27, .1, .62, c.a, 10), C(0, 0, .265, .62, .7, c.b, 10), C(0, 0, .25, .7, .8, c.a, 10)] });
+def('clock', { n: '座钟', w: .5, d: .36, vars: [{ a: '#6b4a32', b: '#e9e0c8' }, { a: '#3f3a36', b: '#f2ecd8' }],
+  P: c => [B(-.25, -.18, .25, .18, 0, .3, c.a), B(-.19, -.14, .19, .14, .3, 1.5, c.a), B(-.23, -.17, .23, .17, 1.5, 1.95, c.a), B(-.15, .17, .15, .19, 1.58, 1.86, c.b), B(-.04, .14, .04, .16, .5, 1.2, '#c9a24a')] });
+def('rug', { n: '地毯', w: 2.0, d: 1.4, flat: 1, vars: [{ a: '#b8584a', b: '#e2c27a' }, { a: '#4f6f9a', b: '#d8d0c0' }, { a: '#7a9a6a', b: '#efe6d2' }],
+  P: c => [B(-1, -.7, 1, .7, 0, .02, c.a), B(-.8, -.5, .8, .5, .02, .025, c.b)] });
+def('piano', { n: '钢琴', w: 1.5, d: .62, vars: [{ a: '#1e1f24', b: '#f4f2ec' }, { a: '#5a3a26', b: '#f4f2ec' }],
+  P: c => [B(-.75, -.31, .75, 0, 0, 1.22, c.a), B(-.75, 0, -.68, .31, 0, .76, c.a), B(.68, 0, .75, .31, 0, .76, c.a), B(-.68, 0, .68, .31, .68, .74, c.b), B(-.75, -.31, .75, .06, 1.22, 1.26, c.a)] });
+def('suitcase', { n: '行李箱', w: .46, d: .28, vars: [{ a: '#4f81bd', b: '#2f4f7d' }, { a: '#d85a4a', b: '#9a3a2e' }, { a: '#e8b04a', b: '#a8781e' }],
+  P: c => [B(-.23, -.14, .23, .14, .04, .68, c.a), B(-.2, .14, .2, .15, .1, .62, c.b), B(-.08, -.03, -.06, .03, .68, .78, c.b), B(.06, -.03, .08, .03, .68, .78, c.b), B(-.08, -.03, .08, .03, .78, .8, c.b)] });
+def('ball', { n: '皮球', w: .32, d: .32, vars: [{ a: '#e8504a', b: '#f6f2ea' }, { a: '#4a9ae8', b: '#f6d24a' }],
+  P: c => [C(0, 0, .11, 0, .06, c.a, 8), C(0, 0, .16, .06, .24, c.b, 8), C(0, 0, .11, .24, .3, c.a, 8)] });
+def('cabinet', { n: '储物柜', w: .6, d: .36, vars: [{ a: '#e9e4da', b: '#cfc6b6' }, { a: '#8a5a36', b: '#6b4a32' }],
+  P: c => [B(-.3, -.18, .3, .18, 0, 1.4, c.a), B(-.28, .18, .28, .19, .74, 1.36, c.b), B(-.28, .18, .28, .19, .06, .68, c.b), B(-.32, -.2, .32, .2, 1.4, 1.44, c.b)] });
+def('shoes', { n: '鞋柜', w: .9, d: .32, vars: [{ a: '#e9e4da', b: '#5a524c' }, { a: '#8a5a36', b: '#3f3a36' }],
+  P: c => [B(-.45, -.16, .45, .16, 0, .52, c.a), B(-.42, .16, .42, .17, .06, .46, c.b), B(-.46, -.17, .46, .17, .52, .55, c.b)] });
+def('coat', { n: '衣帽架', w: .46, d: .46, vars: [{ a: '#6b4a32', b: '#5f7f9e' }, { a: '#2f3640', b: '#b8584a' }],
+  P: c => [C(0, 0, .2, 0, .05, c.a, 6), C(0, 0, .03, .05, 1.75, c.a, 5), B(-.16, -.14, .04, .1, 1.05, 1.6, c.b), C(0, 0, .09, 1.75, 1.8, c.a, 6)] });
+def('umb', { n: '伞桶', w: .32, d: .32, vars: [{ a: '#4f6f9a', b: '#e8504a' }, { a: '#2f3640', b: '#f6d24a' }],
+  P: c => [C(0, 0, .14, 0, .5, c.a, 8), C(-.04, .02, .025, .5, .9, c.b, 4), C(.05, -.03, .025, .5, .82, '#2f3640', 4)] });
+def('radiator', { n: '暖气片', w: .9, d: .16, vars: [{ a: '#eef0f2', b: '#d8dde2' }],
+  P: c => { const L = [B(-.45, -.08, .45, .08, .12, .2, c.b)]; for (let i = 0; i < 7; i++) L.push(B(-.43 + i * .13, -.07, -.35 + i * .13, .07, .1, .66, c.a)); return L; } });
+
+/* ---- geometry: build world prisms for a placed piece (exact quarter-turn trig, no Math.sin in map gen) ---- */
+const ROT4 = [[1, 0], [0, 1], [-1, 0], [0, -1]];   // [cos, sin] for r*90deg
+const footWD = (k, r) => r & 1 ? [T[k].d, T[k].w] : [T[k].w, T[k].d];
+const PART_CACHE = {};
+function typeParts(k, v) { const key = k + v; return PART_CACHE[key] || (PART_CACHE[key] = T[k].P(T[k].vars[v % T[k].vars.length])); }
+function prismsFor(k, v, r, x, y, ang) {
+  // ang (radians) overrides the quarter-turn r (used for people); returns [{pts:[[x,y]..], z0, z1, c}]
+  let co, si; if (ang == null) { [co, si] = ROT4[r & 3]; } else { co = Math.cos(ang); si = Math.sin(ang); }
+  const tf = (px, py) => [x + px * co - py * si, y + px * si + py * co];
+  return typeParts(k, v).map(p => partPrism(p, tf));
+}
+function partPrism(p, tf) {
+  let pts;
+  if (p.t === 'b') pts = [tf(p.x0, p.y0), tf(p.x1, p.y0), tf(p.x1, p.y1), tf(p.x0, p.y1)];
+  else { pts = []; for (let i = 0; i < p.n; i++) { const a = (i + .5) / p.n * Math.PI * 2; pts.push(tf(p.cx + Math.cos(a) * p.r, p.cy + Math.sin(a) * p.r)); } }
+  return { pts, z0: p.z0, z1: p.z1, c: p.c };
+}
+
+/* ---- 15_map.js ---- */
+/* ================= the house: rooms, doors, walls, random furnishing ================= */
+const ROOMS = [
+  { id: 'kitchen', n: '厨房', r: [0, 0, 7, 7], fl: 'tile', fc: ['#e8e4dc', '#d6d0c4'] },
+  { id: 'dining', n: '餐厅', r: [7, 0, 13, 7], fl: 'wood', fc: ['#c99e6e', '#b88d5e'] },
+  { id: 'bed', n: '主卧', r: [13, 0, 20, 7], fl: 'carpet', fc: ['#b9b3c9', '#ada6be'] },
+  { id: 'bath', n: '浴室', r: [20, 0, 24, 7], fl: 'tile', fc: ['#cfe3ea', '#b9d3dc'] },
+  { id: 'living', n: '客厅', r: [0, 7, 10, 16], fl: 'wood', fc: ['#d4ad7c', '#c39c6b'] },
+  { id: 'hall', n: '走廊', r: [10, 7, 13, 16], fl: 'wood', fc: ['#b98d5e', '#a87d50'] },
+  { id: 'study', n: '书房', r: [13, 7, 19, 16], fl: 'wood', fc: ['#a8825c', '#98734e'] },
+  { id: 'kids', n: '儿童房', r: [19, 7, 24, 16], fl: 'carpet', fc: ['#bfd9b4', '#b2cea6'] },
+  { id: 'garden', n: '花园', r: [0, 16, 24, 22], fl: 'grass', fc: ['#8cc06a', '#82b660'], out: 1 }
+];
+ROOMS.forEach((r, i) => r.i = i);
+// v:1 = gap in a vertical wall x=c, v:0 = gap in a horizontal wall y=c; gap runs a..b
+const DOORS = [
+  { v: 1, c: 7, a: 2.6, b: 4.0 }, { v: 0, c: 7, a: 2.0, b: 3.4 }, { v: 0, c: 7, a: 10.8, b: 12.2 }, { v: 1, c: 10, a: 11, b: 12.4 },
+  { v: 1, c: 13, a: 9.0, b: 10.4 }, { v: 1, c: 13, a: 4.6, b: 6.0 }, { v: 1, c: 20, a: 2.4, b: 3.8 }, { v: 1, c: 19, a: 12, b: 13.4 },
+  { v: 0, c: 7, a: 21, b: 22.4 }, { v: 0, c: 7, a: 15.2, b: 16.6 }, { v: 0, c: 16, a: 10.8, b: 12.2 }, { v: 0, c: 16, a: 3.4, b: 5.4 }
+];
+const HOUSE = { w: 24, h: 22 }, WALL_T = 0.16;
+const SPAWN_SEEK = [11.5, 20.7], SPAWN_HIDE = [11.5, 11.7];
+const DOORZ = DOORS.map(d => d.v ? [d.c - 1.1, d.a - .1, d.c + 1.1, d.b + .1] : [d.a - .1, d.c - 1.1, d.b + .1, d.c + 1.1]);
+const GARDEN_PATH = [10.3, 16, 12.7, 22];
+const ovl = (a, b, m) => { m = m || 0; return a[0] < b[2] + m && a[2] > b[0] - m && a[1] < b[3] + m && a[3] > b[1] - m; };
+const inner = room => [room.r[0] + WALL_T / 2, room.r[1] + WALL_T / 2, room.r[2] - WALL_T / 2, room.r[3] - WALL_T / 2];
+function fpOf(k, r, x, y) { const [w, d] = footWD(k, r); return [x - w / 2, y - d / 2, x + w / 2, y + d / 2]; }
+function roomAt(x, y, pad) { pad = pad || 0; for (const r of ROOMS) if (x >= r.r[0] - pad && x <= r.r[2] + pad && y >= r.r[1] - pad && y <= r.r[3] + pad) return r; return null; }
+function roomsNear(x, y, pad) { const out = []; for (const r of ROOMS) if (x >= r.r[0] - pad && x <= r.r[2] + pad && y >= r.r[1] - pad && y <= r.r[3] + pad) out.push(r.i); return out; }
+
+/* ---------- walls (built once) ---------- */
+const WALLS = (() => {
+  const lines = [  // [horizontal?, c, a, b, height, fence]
+    [1, 0, 0, 24, 2.4], [1, 7, 0, 24, .5], [1, 16, 0, 24, .5], [1, 22, 0, 24, .7, 1],
+    [0, 0, 0, 16, 2.4], [0, 24, 0, 16, .5], [0, 7, 0, 7, .5], [0, 13, 0, 7, .5], [0, 20, 0, 7, .5],
+    [0, 10, 7, 16, .5], [0, 13, 7, 16, .5], [0, 19, 7, 16, .5], [0, 0, 16, 22, .7, 1], [0, 24, 16, 22, .7, 1]
+  ];
+  const out = [];
+  for (const [hz, c, a, b, h, fence] of lines) {
+    let spans = [[a, b]];
+    for (const d of DOORS) if ((d.v === 0) === !!hz && d.c === c) spans = spans.flatMap(([s, e]) => d.b <= s || d.a >= e ? [[s, e]] : [[s, d.a], [d.b, e]].filter(q => q[1] - q[0] > .01));
+    for (const [s, e] of spans) {
+      const n = Math.max(1, Math.round(e - s));
+      for (let i = 0; i < n; i++) {
+        let s0 = s + (e - s) * i / n, s1 = s + (e - s) * (i + 1) / n;
+        const t = fence ? .06 : WALL_T / 2;
+        if (i === 0 && s === a) s0 -= t; if (i === n - 1 && e === b) s1 += t;
+        const fp = hz ? [s0, c - t, s1, c + t] : [c - t, s0, c + t, s1];
+        const w = { wall: 1, fence: !!fence, h, fp, tall: h > 1 };
+        const box = (x0, y0, x1, y1, z0, z1, col) => ({ pts: [[x0, y0], [x1, y0], [x1, y1], [x0, y1]], z0, z1, c: col });
+        if (fence) {
+          const [x0, y0, x1, y1] = fp, px = hz ? [x0, y0, x0 + .09, y1] : [x0, y0, x1, y0 + .09];
+          w.pr = [box(px[0], px[1], px[2], px[3], 0, .74, '#f4efe4'), box(x0, y0 + (hz ? .015 : 0), x1, y1 - (hz ? .015 : 0), .52, .6, '#e8e1d2'), box(x0, y0 + (hz ? .015 : 0), x1, y1 - (hz ? .015 : 0), .24, .32, '#e8e1d2')];
+        } else {
+          const col = h > 1 ? '#e2d6c0' : '#efe6d6';
+          w.pr = [box(fp[0], fp[1], fp[2], fp[3], 0, h, col), box(fp[0] - .005, fp[1] - .005, fp[2] + .005, fp[3] + .005, h, h + .03, '#9c8a72')];
+          if (h > 1) w.pr.splice(1, 0, box(fp[0], fp[1], fp[2], fp[3] + .004, 0, .9, '#c9b28e'));
+        }
+        out.push(w);
+      }
+    }
+  }
+  return out;
+})();
+
+/* ---------- random furnishing (deterministic from the seed; no trig here) ---------- */
+function genMap(seed) {
+  const R = mkRng(seed ^ 0x5bd1e995), M = { seed, items: [] };
+  const X = { R, M, vv: {}, ri: (a, b) => a + Math.floor(R() * (b - a + 1)), rf: (a, b) => a + R() * (b - a), ch: a => a[Math.floor(R() * a.length)] };
+  for (const room of ROOMS) GEN[room.id](room, X);
+  M.items.forEach((it, i) => { it.id = i; it.pr = prismsFor(it.k, it.v, it.r, it.x, it.y); it.flat = !!T[it.k].flat; it.room = roomAt(it.x, it.y).i; it.wob = 0; it.mark = -1; });
+  return M;
+}
+const snap = v => Math.round(v * 20) / 20;
+const offR = (r, lx, ly) => { const [co, si] = ROT4[r & 3]; return [lx * co - ly * si, lx * si + ly * co]; };
+function vOf(X, room, k) { const key = room.id + k; if (X.vv[key] == null) X.vv[key] = Math.floor(X.R() * T[k].vars.length); return X.vv[key]; }
+function canPut(X, room, k, r, x, y, m) {
+  const f = fpOf(k, r, x, y), ib = inner(room), e = .035, flat = !!T[k].flat;
+  if (f[0] < ib[0] - e || f[1] < ib[1] - e || f[2] > ib[2] + e || f[3] > ib[3] + e) return false;
+  for (const z of DOORZ) if (ovl(f, z)) return false;
+  if (room.id === 'garden' && ovl(f, GARDEN_PATH)) return false;
+  for (const it of X.M.items) { const fl2 = !!T[it.k].flat; if (flat !== fl2) continue; if (ovl(f, it.fp, m)) return false; }
+  return true;
+}
+function put(X, room, k, r, x, y, v) { const it = { k, v: v == null ? vOf(X, room, k) : v, r: r & 3, x: snap(x), y: snap(y) }; it.fp = fpOf(k, it.r, it.x, it.y); X.M.items.push(it); return it; }
+function tryPut(X, room, k, r, x, y, m) { x = snap(x); y = snap(y); return canPut(X, room, k, r, x, y, m == null ? .04 : m) ? put(X, room, k, r, x, y) : null; }
+// side: 0=N 1=E 2=S 3=W ; the piece's back goes against that wall
+function wallPut(X, room, k, o) {
+  o = o || {}; const ib = inner(room), sides = o.sides || [0, 1, 2, 3], gap = o.gap || 0;
+  for (let t = 0; t < (o.tries || 40); t++) {
+    const s = X.ch(sides), r = s, [w, d] = footWD(k, r);
+    let x, y;
+    const along = (lo, hi, sz) => o.corner ? (X.R() < .5 ? lo + sz / 2 : hi - sz / 2) : X.rf(lo + sz / 2, hi - sz / 2);
+    if (s === 0) { y = ib[1] + d / 2 + gap; x = along(ib[0], ib[2], w); }
+    else if (s === 2) { y = ib[3] - d / 2 - gap; x = along(ib[0], ib[2], w); }
+    else if (s === 1) { x = ib[2] - w / 2 - gap; y = along(ib[1], ib[3], d); }
+    else { x = ib[0] + w / 2 + gap; y = along(ib[1], ib[3], d); }
+    const it = tryPut(X, room, k, r, x, y, o.m == null ? .05 : o.m); if (it) return it;
+  }
+  return null;
+}
+function freePut(X, room, k, o) {
+  o = o || {}; const ib = inner(room);
+  for (let t = 0; t < (o.tries || 40); t++) {
+    const r = o.r != null ? o.r : X.ri(0, 3); let x, y;
+    if (o.near) { x = o.near[0] + X.rf(-o.near[2], o.near[2]); y = o.near[1] + X.rf(-o.near[2], o.near[2]); }
+    else { x = X.rf(ib[0] + .4, ib[2] - .4); y = X.rf(ib[1] + .4, ib[3] - .4); }
+    const it = tryPut(X, room, k, r, x, y, o.m == null ? .45 : o.m); if (it) return it;
+  }
+  return null;
+}
+const times = (X, a, b, f) => { const n = X.ri(a, b); for (let i = 0; i < n; i++) f(i); };
+// a piece plus things arranged around it in its local frame: [k, lx, ly, dr]  (dr = rotation relative to the anchor)
+function around(X, room, anchor, list, m) { for (const [k, lx, ly, dr] of list) { const [ox, oy] = offR(anchor.r, lx, ly); tryPut(X, room, k, (anchor.r + dr) & 3, anchor.x + ox, anchor.y + oy, m == null ? .02 : m); } }
+function diningSet(X, room, cx, cy, chairs) {
+  const r = X.ri(0, 1), t = tryPut(X, room, 'dtable', r, cx, cy, .9) || freePut(X, room, 'dtable', { r, m: .9 });
+  if (!t) return;
+  const L = [['chair', -.4, -.74, 0], ['chair', .4, -.74, 0], ['chair', -.4, .74, 2], ['chair', .4, .74, 2]];
+  if (chairs > 4) L.push(['chair', -1.08, 0, 3]); if (chairs > 5) L.push(['chair', 1.08, 0, 1]);
+  around(X, room, t, L);
+}
+function sofaSet(X, room) {
+  const s = X.ri(0, 3), sofa = wallPut(X, room, 'sofa', { sides: [s], m: .3 }) || wallPut(X, room, 'sofa', { m: .3 }); if (!sofa) return;
+  around(X, room, sofa, [['ctable', 0, 1.05, 0], ['rug', 0, 1.15, 0]], .05);
+  if (X.R() < .8) around(X, room, sofa, [['armchair', -1.55, 1.1, 1]], .1);
+  if (X.R() < .5) around(X, room, sofa, [['armchair', 1.55, 1.1, 3]], .1);
+  wallPut(X, room, 'tv', { sides: [(sofa.r + 2) & 3], m: .2 });
+}
+function deskSet(X, room, ck) { const d = wallPut(X, room, 'desk', { m: .5 }); if (d) around(X, room, d, [[ck || 'ochair', -.15, .62, 2]], .02); return d; }
+function bedSet(X, room, k) {
+  const b = wallPut(X, room, k || 'bed', { sides: k ? [0, 1, 2, 3] : [0], m: .3 }); if (!b) return;
+  const [w, d] = [T[b.k].w, T[b.k].d];
+  if (!k) around(X, room, b, [['nstand', -(w / 2 + .27), -d / 2 + .2, 0], ['nstand', w / 2 + .27, -d / 2 + .2, 0]]);
+  if (X.R() < .5) around(X, room, b, [['rug', 0, d / 2 + .3, 0]], .05);
+}
+const GEN = {
+  kitchen(room, X) {
+    const ib = inner(room); let x = X.R() < .5 ? .1 : .9;
+    const seq = ['fridge', 'counter', 'stove', 'counter', 'sink', 'counter', 'counter'].slice(0, X.ri(5, 7));
+    if (X.R() < .5) seq.reverse();
+    for (const k of seq) { const [w, d] = footWD(k, 0); if (tryPut(X, room, k, 0, x + w / 2, ib[1] + d / 2, -.001)) x += w; }
+    if (X.R() < .6) { const c1 = tryPut(X, room, 'counter', 2, 3.1, 3.6, .7); if (c1) { tryPut(X, room, 'counter', 2, 3.9, 3.6, -.001); times(X, 2, 3, i => tryPut(X, room, 'stool', 0, 2.9 + i * .65, 4.35, .05)); } }
+    else diningSet(X, room, 3.4, 3.8, 4);
+    times(X, 1, 2, () => wallPut(X, room, 'trash', { sides: [1, 2, 3] }));
+    if (X.R() < .6) wallPut(X, room, 'plant', { corner: 1 });
+    times(X, 0, 2, () => freePut(X, room, 'box'));
+    if (X.R() < .5) wallPut(X, room, 'cabinet', { sides: [3, 2] });
+    times(X, 0, 2, () => freePut(X, room, 'stool', { m: .3 }));
+  },
+  dining(room, X) {
+    diningSet(X, room, X.rf(9.4, 10.6), X.rf(3.0, 3.8), X.ri(4, 6));
+    times(X, 1, 2, () => wallPut(X, room, X.ch(['dresser', 'cabinet', 'shelf'])));
+    times(X, 1, 3, () => wallPut(X, room, 'plant', { corner: 1 }));
+    if (X.R() < .6) wallPut(X, room, 'clock');
+    if (X.R() < .5) wallPut(X, room, 'lamp', { corner: 1 });
+    if (X.R() < .4) wallPut(X, room, 'radiator', { sides: [0] });
+  },
+  bed(room, X) {
+    bedSet(X, room);
+    times(X, 1, 2, () => wallPut(X, room, 'wardrobe', { sides: [1, 2, 3] }));
+    if (X.R() < .7) wallPut(X, room, 'dresser', { sides: [1, 2, 3] });
+    times(X, 0, 1, () => wallPut(X, room, 'plant', { corner: 1 }));
+    times(X, 0, 2, () => X.R() < .5 ? wallPut(X, room, 'suitcase') : freePut(X, room, 'suitcase'));
+    if (X.R() < .6) wallPut(X, room, 'basket');
+    if (X.R() < .5) wallPut(X, room, 'armchair', { corner: 1 });
+    if (X.R() < .5) wallPut(X, room, 'lamp', { corner: 1 });
+    times(X, 0, 2, () => freePut(X, room, 'box'));
+  },
+  bath(room, X) {
+    wallPut(X, room, 'tub', { sides: [0, 1], corner: 1 });
+    wallPut(X, room, 'toilet', { sides: [1, 3, 0] });
+    times(X, 1, 2, () => wallPut(X, room, 'sink', { m: .03 }));
+    wallPut(X, room, 'washer');
+    times(X, 1, 2, () => wallPut(X, room, 'basket'));
+    wallPut(X, room, 'trash');
+    if (X.R() < .6) wallPut(X, room, 'cabinet');
+    if (X.R() < .5) wallPut(X, room, 'plant', { corner: 1 });
+  },
+  living(room, X) {
+    sofaSet(X, room);
+    times(X, 2, 3, () => wallPut(X, room, 'plant', { corner: 1 }));
+    times(X, 1, 2, () => wallPut(X, room, 'lamp', { corner: 1 }));
+    times(X, 0, 2, () => wallPut(X, room, 'shelf'));
+    if (X.R() < .5) freePut(X, room, 'beanbag');
+    if (X.R() < .4) wallPut(X, room, 'piano');
+    if (X.R() < .5) wallPut(X, room, 'clock');
+    times(X, 0, 1, () => freePut(X, room, 'armchair'));
+    times(X, 0, 2, () => freePut(X, room, 'box'));
+  },
+  hall(room, X) {
+    const pool = ['shoes', 'coat', 'umb', 'plant', 'plant', 'box', 'clock', 'cabinet', 'coat', 'box', 'radiator'];
+    times(X, 5, 7, () => wallPut(X, room, X.ch(pool), { sides: [1, 3], m: .08 }));
+  },
+  study(room, X) {
+    deskSet(X, room); if (X.R() < .5) deskSet(X, room);
+    times(X, 2, 4, () => wallPut(X, room, 'shelf', { m: .02 }));
+    if (X.R() < .7) wallPut(X, room, 'armchair', { corner: 1 });
+    wallPut(X, room, 'lamp', { corner: 1 });
+    times(X, 1, 3, () => X.R() < .5 ? freePut(X, room, 'box') : wallPut(X, room, 'box'));
+    times(X, 1, 2, () => wallPut(X, room, 'plant', { corner: 1 }));
+    if (X.R() < .4) freePut(X, room, 'rug', { m: .1 });
+    if (X.R() < .5) wallPut(X, room, 'cabinet');
+    if (X.R() < .4) wallPut(X, room, 'clock');
+  },
+  kids(room, X) {
+    bedSet(X, room, 'kbed');
+    wallPut(X, room, 'toychest');
+    times(X, 1, 2, () => freePut(X, room, 'beanbag'));
+    times(X, 1, 3, () => freePut(X, room, 'ball', { m: .3 }));
+    times(X, 0, 2, () => freePut(X, room, 'box'));
+    if (X.R() < .6) deskSet(X, room, 'chair');
+    if (X.R() < .6) wallPut(X, room, 'shelf');
+    if (X.R() < .5) wallPut(X, room, 'plant', { corner: 1 });
+    if (X.R() < .5) freePut(X, room, 'rug', { m: .1 });
+    if (X.R() < .5) wallPut(X, room, 'basket');
+  },
+  garden(room, X) {
+    times(X, 4, 7, () => wallPut(X, room, 'fpot', { sides: [0], m: .15 }));
+    times(X, 5, 8, () => wallPut(X, room, 'bush', { sides: [1, 2, 3], m: .2 }));
+    times(X, 1, 3, () => freePut(X, room, 'bush', { m: .6 }));
+    times(X, 1, 2, () => freePut(X, room, 'bench', { r: X.ch([0, 2]), m: .6 }));
+    times(X, 1, 2, () => wallPut(X, room, 'bin', { sides: [0], m: .05 }));
+    times(X, 0, 2, () => freePut(X, room, 'barrel', { m: .5 }));
+    if (X.R() < .6) freePut(X, room, 'ball', { m: .4 });
+    times(X, 0, 2, () => wallPut(X, room, 'plant', { sides: [0], m: .1 }));
+  }
+};
+
+/* ---- 30_sim.js ---- */
+/* ================= rules: rounds, collisions, knocks, whistles, computer hider ================= */
+const mkPl = () => ({ x: 0, y: 0, d: 0, mv: 0, dg: null, gone: 0 });
+const seekerIdx = () => 1 - G.hider;
+const amHider = () => G && ME === G.hider;
+const isPlay = () => STATE.mode === 'play' && G;
+
+function newRound(o) {
+  G = { seed: o.seed, mode: o.mode, round: o.round || 1, score: o.score || [0, 0], hider: o.hider, ai: o.ai ? 1 : 0, names: o.names || ['你', '电脑'],
+    phase: '', t: 0, wrong: 0, maxWrong: o.mode === 'rt' ? BAL.maxWrong : BAL.turnWrong, kcd: 0, wT: BAL.whistleEvery, tauntCD: 0, turnN: 0, hints: [], res: null, aiT: 0, q: 0,
+    pl: [mkPl(), mkPl()] };
+  MAP = genMap(G.seed);
+  const h = G.pl[G.hider], s = G.pl[seekerIdx()];
+  [h.x, h.y] = SPAWN_HIDE; [s.x, s.y] = SPAWN_SEEK; s.d = Math.PI;
+  if (G.mode === 'rt') { G.phase = 'hide'; G.t = G.ai ? BAL.hideTSolo : BAL.hideT; if (G.ai) { aiHide(); G.aiT = rr(14, 24); } }
+  else { G.phase = 'place'; G.t = BAL.placeT; if (G.ai) { aiHide(); nextSeekTurn(); } }
+}
+
+/* ---------- geometry & collision ---------- */
+const HB = 0.26;
+function plBox(p, x, y) { return p.dg && !T[p.dg.k].flat ? fpOf(p.dg.k, p.dg.r, x, y) : [x - HB, y - HB, x + HB, y + HB]; }
+const distFp = (x, y, f) => Math.hypot(Math.max(f[0] - x, 0, x - f[2]), Math.max(f[1] - y, 0, y - f[3]));
+function blocked(box, self) {
+  if (box[0] < -.2 || box[1] < -.2 || box[2] > HOUSE.w + .2 || box[3] > HOUSE.h + .2) return true;
+  for (const w of WALLS) if (ovl(box, w.fp)) return true;
+  for (const it of MAP.items) if (!it.flat && ovl(box, it.fp)) return true;
+  if (G.mode === 'rt') { const o = G.pl[1 - self]; if (o && !o.gone && ovl(box, plBox(o, o.x, o.y))) return true; }
+  return false;
+}
+function movePl(i, dx, dy) {
+  const p = G.pl[i];
+  if (blocked(plBox(p, p.x, p.y), i)) { p.x += dx; p.y += dy; return; }   // squeezed in: let it walk out
+  if (dx && !blocked(plBox(p, p.x + dx, p.y), i)) p.x += dx;
+  if (dy && !blocked(plBox(p, p.x, p.y + dy), i)) p.y += dy;
+}
+const OFFS = (() => { const o = [[0, 0]]; for (let r = .1; r <= .81; r += .1) for (let a = 0; a < 16; a++) o.push([Math.round(Math.cos(a / 16 * 6.2832) * r * 100) / 100, Math.round(Math.sin(a / 16 * 6.2832) * r * 100) / 100]); return o; })();
+function findFit(i, dg, x, y) { const q = { dg }; for (const [ox, oy] of OFFS) if (!blocked(plBox(q, x + ox, y + oy), i)) return [x + ox, y + oy]; return null; }
+function segHitsWall(x0, y0, x1, y1) {
+  const n = Math.ceil(Math.hypot(x1 - x0, y1 - y0) / .05);
+  for (let i = 1; i < n; i++) { const x = lerp(x0, x1, i / n), y = lerp(y0, y1, i / n); for (const w of WALLS) if (x > w.fp[0] && x < w.fp[2] && y > w.fp[1] && y < w.fp[3]) return true; }
+  return false;
+}
+// rooms the seeker can currently see (realtime). Turn mode: the whole house.
+function litRooms() { if (!G || G.mode === 'turn') return ROOMS.map(r => r.i); const s = G.pl[seekerIdx()]; return roomsNear(s.x, s.y, .4); }
+function hiderSeen() { if (G.mode === 'turn') return true; const lit = litRooms(), h = G.pl[G.hider]; return roomsNear(h.x, h.y, 0).some(i => lit.includes(i)); }
+
+/* ---------- hider: copy / rotate / revert (run on the hider's own machine) ---------- */
+function tryDisguise(i, it) {
+  const p = G.pl[i], dg = { k: it.k, v: it.v, r: it.r };
+  if (p.dg && p.dg.k === dg.k && p.dg.v === dg.v && p.dg.r === dg.r) return null;
+  const sp = findFit(i, dg, p.x, p.y); if (!sp) return '这里放不下' + T[it.k].n;
+  p.x = sp[0]; p.y = sp[1]; p.dg = dg; return null;
+}
+function rotateDisguise(i) {
+  const p = G.pl[i]; if (!p.dg) return null;
+  const dg = { k: p.dg.k, v: p.dg.v, r: (p.dg.r + 1) & 3 }, sp = findFit(i, dg, p.x, p.y);
+  if (!sp) return '转不开'; p.x = sp[0]; p.y = sp[1]; p.dg = dg; return null;
+}
+function autoDisguise(i) {
+  const p = G.pl[i]; const list = MAP.items.filter(it => !it.flat).map(it => [distFp(p.x, p.y, it.fp), it]).sort((a, b) => a[0] - b[0]);
+  for (const [d, it] of list.slice(0, 12)) if (!tryDisguise(i, it)) { toast('时间到，自动变成了' + T[it.k].n); return; }
+  toast('附近没有能变的东西，你还是人形！', 'bad');
+}
+
+/* ---------- actions (host/solo authoritative) ---------- */
+function act(a, v) { if (NETROLE === 'guest') netSend({ t: 'act', a, v: v || {} }); else { const e = doAct(ME, a, v || {}); if (e) { toast(e, 'bad'); sfx('err'); } } }
+function doAct(i, a, v) {
+  if (!G || G.phase === 'end') return;
+  switch (a) {
+    case 'knock': {
+      if (i === G.hider || G.phase !== 'seek') return;
+      const s = G.pl[i], rt = G.mode === 'rt';
+      if (rt && G.kcd > 0) return;
+      const h = G.pl[G.hider];
+      if (v.id === -1) {
+        if (!hiderSeen()) return;
+        if (rt && distFp(s.x, s.y, plBox(h, h.x, h.y)) > BAL.reach + .6) return '太远了，走近一点';
+        emit({ e: 'knock', id: -1, ok: 1 }); endRound('seeker', 'caught'); return;
+      }
+      const it = MAP.items[v.id]; if (!it) return;
+      if (rt) { if (!litRooms().includes(it.room)) return; if (distFp(s.x, s.y, it.fp) > BAL.reach + .6) return '太远了，走近一点'; }
+      if (!rt && G.hints.some(q => q[0] === it.id)) return '这件已经敲过了';
+      G.kcd = BAL.knockCD; G.wrong++;
+      const dist = Math.hypot(it.x - h.x, it.y - h.y);
+      if (rt) {
+        const near = dist < BAL.nearHint ? 1 : 0; emit({ e: 'knock', id: it.id, ok: 0, near });
+        if (near && G.ai) G.aiT = Math.min(G.aiT, 4);
+        if (G.wrong >= G.maxWrong) endRound('hider', 'taps');
+      } else {
+        const band = bandOf(dist); G.hints.push([it.id, band]); emit({ e: 'knock', id: it.id, ok: 0, band });
+        if (G.wrong >= G.maxWrong) endRound('hider', 'taps');
+        else { G.phase = 'hturn'; G.t = BAL.hideTurnT; G.aiT = 1.3; emit({ e: 'hturn' }); }
+      }
+      return;
+    }
+    case 'taunt':
+      if (i !== G.hider || G.mode !== 'rt' || G.phase !== 'seek' || G.tauntCD > 0) return;
+      whistle(1); G.t = Math.max(1, G.t - BAL.tauntCut); G.tauntCD = BAL.tauntCD; return;
+    case 'place': case 'tmove': {
+      if (i !== G.hider || G.mode !== 'turn' || G.phase !== (a === 'place' ? 'place' : 'hturn')) return;
+      const e = checkPlace(i, v, a); if (e) return e;
+      const p = G.pl[i]; p.x = v.x; p.y = v.y; p.dg = { k: v.k, v: v.v, r: v.r & 3 };
+      if (a === 'place') emit({ e: 'placed' }); else emit({ e: 'hdone', moved: 1 });
+      nextSeekTurn(); return;
+    }
+    case 'tpass':
+      if (i !== G.hider || G.mode !== 'turn' || G.phase !== 'hturn') return;
+      emit({ e: 'hdone', moved: 0 }); nextSeekTurn(); return;
+  }
+}
+const typesInRoom = ri => new Set(MAP.items.filter(it => it.room === ri).map(it => it.k + '|' + it.v));
+function checkPlace(i, v, a) {
+  if (!v || !T[v.k] || !isFinite(v.x) || !isFinite(v.y)) return '无效位置';
+  const room = roomAt(v.x, v.y); if (!room) return '要藏在房子或花园里';
+  const box = T[v.k].flat ? [v.x - HB, v.y - HB, v.x + HB, v.y + HB] : fpOf(v.k, v.r & 3, v.x, v.y);
+  if (blocked(box, i)) return '这里放不下';
+  if (a === 'place') { if (!typesInRoom(room.i).has(v.k + '|' + v.v)) return room.n + '里没有这样的' + T[v.k].n + '，会很显眼'; return null; }
+  const p = G.pl[i], same = p.dg && p.dg.k === v.k && p.dg.v === v.v;
+  if (!same) {   // change form in place: needs a real one within reach
+    if (Math.hypot(v.x - p.x, v.y - p.y) > .85) return '变形时不能同时挪动';
+    if (!MAP.items.some(it => it.k === v.k && it.v === v.v && distFp(p.x, p.y, it.fp) <= BAL.turnMove)) return '附近 ' + BAL.turnMove + ' 米内没有这种东西';
+    return null;
+  }
+  if (Math.hypot(v.x - p.x, v.y - p.y) > BAL.turnMove + .05) return '一回合最多挪 ' + BAL.turnMove + ' 米';
+  if (segHitsWall(p.x, p.y, v.x, v.y)) return '不能穿墙';
+  return null;
+}
+function nextSeekTurn() {
+  G.turnN++; G.phase = 'seek'; G.t = 0;
+  if (G.turnN % BAL.whistleTurns === 0) whistle(0);
+  emit({ e: 'turn', n: G.turnN });
+}
+function whistle(taunt) {
+  const h = G.pl[G.hider], a = rnd() * 6.2832, d = rnd() * BAL.whistleFuzz, room = roomAt(h.x, h.y);
+  emit({ e: 'wh', x: +(h.x + Math.cos(a) * d).toFixed(2), y: +(h.y + Math.sin(a) * d).toFixed(2), hx: +h.x.toFixed(2), hy: +h.y.toFixed(2), room: room ? room.n : '外面', taunt: taunt ? 1 : 0 });
+}
+function endRound(win, why) {
+  if (G.phase === 'end') return;
+  G.phase = 'end'; G.res = { win, why }; G.score[win === 'hider' ? G.hider : seekerIdx()]++;
+  const h = G.pl[G.hider];
+  emit({ e: 'end', res: G.res, score: G.score, hx: h.x, hy: h.y, dg: h.dg });
+}
+
+function simTick(dt) {
+  if (!G || G.phase === 'end') return;
+  G.kcd = Math.max(0, G.kcd - dt);
+  if (G.mode === 'rt') {
+    G.t -= dt;
+    if (G.phase === 'hide' && G.t <= 0) { G.phase = 'seek'; G.t = BAL.seekT; G.wT = BAL.whistleEvery; emit({ e: 'seek' }); }
+    else if (G.phase === 'seek') {
+      G.wT -= dt; G.tauntCD = Math.max(0, G.tauntCD - dt);
+      if (G.wT <= 0) { G.wT += BAL.whistleEvery; whistle(0); }
+      if (G.ai) aiTick(dt);
+      if (G.t <= 0) { G.t = 0; endRound('hider', 'time'); }
+    }
+  } else if (G.phase === 'place' || G.phase === 'hturn') {
+    if (G.ai) { G.aiT -= dt; if (G.aiT <= 0 && G.phase === 'hturn') aiTurn(); }
+    else if (!G.pl[G.hider].gone || G.hider === 0) {
+      G.t -= dt;
+      if (G.t <= 0) { if (G.phase === 'place') { const sp = aiChooseSpot(G.hider, {}); if (sp) doAct(G.hider, 'place', sp); } else doAct(G.hider, 'tpass'); }
+    } else { G.t -= dt; if (G.t <= 0) { if (G.phase === 'place') { const sp = aiChooseSpot(G.hider, {}); if (sp) doAct(G.hider, 'place', sp); } else doAct(G.hider, 'tpass'); } }
+  }
+}
+
+/* ---------- the computer hider ---------- */
+const FREE_KINDS = new Set(['ball', 'beanbag', 'box', 'stool', 'bush', 'barrel', 'chair', 'suitcase', 'bench']);
+function aiChooseSpot(hi, o) {
+  let best = null, bs = -1e9;
+  const avoid = o.avoid || [], pool = ROOMS.filter(r => !avoid.includes(r.i));
+  for (let t = 0; t < 320; t++) {
+    let room, x, y, tpl;
+    if (o.near) { x = o.near[0] + rr(-o.near[2], o.near[2]); y = o.near[1] + rr(-o.near[2], o.near[2]); room = roomAt(x, y); if (!room) continue; }
+    else { room = pick(pool); if (room.out && rnd() < .5) continue; }
+    const its = MAP.items.filter(it => it.room === room.i && !it.flat); if (!its.length) continue;
+    tpl = o.keep ? { k: o.keep.k, v: o.keep.v, r: o.keep.r } : pick(its);
+    if (!o.keep && o.near && distFp(o.near[0], o.near[1], tpl.fp) > BAL.turnMove) continue;
+    let r = rnd() < .7 ? tpl.r : Math.floor(rnd() * 4);
+    if (!o.near) { const ib = inner(room); if (rnd() < .55 && tpl.fp) { x = tpl.x + rr(-1.7, 1.7); y = tpl.y + rr(-1.7, 1.7); } else { x = rr(ib[0] + .3, ib[2] - .3); y = rr(ib[1] + .3, ib[3] - .3); } }
+    x = Math.round(x * 20) / 20; y = Math.round(y * 20) / 20;
+    if (o.keep && o.inPlace) { x = o.near[0]; y = o.near[1]; }
+    const f = fpOf(tpl.k, r, x, y), ib = inner(room);
+    if (f[0] < ib[0] || f[1] < ib[1] || f[2] > ib[2] || f[3] > ib[3]) continue;
+    if (DOORZ.some(z => ovl(f, z, -.3))) continue;
+    if (blocked(f, hi)) continue;
+    if (o.near) { if (Math.hypot(x - o.near[0], y - o.near[1]) > o.near[2]) continue; if (segHitsWall(o.near[0], o.near[1], x, y)) continue; }
+    let sc = rnd() * 2.2;
+    for (const it of its) if (it.k === tpl.k && Math.hypot(it.x - x, it.y - y) < 2.4) sc += 1.4;
+    const wallD = Math.min(f[0] - ib[0], f[1] - ib[1], ib[2] - f[2], ib[3] - f[3]);
+    if (!FREE_KINDS.has(tpl.k)) sc += wallD < .2 ? 1.6 : -1; else sc += .5;
+    if (r === tpl.r) sc += .6;
+    if (o.far) sc += Math.hypot(x - o.far[0], y - o.far[1]) * .5;
+    if (sc > bs) { bs = sc; best = { x, y, k: tpl.k, v: tpl.v, r }; }
+  }
+  return best;
+}
+function aiHide() {
+  const sp = aiChooseSpot(G.hider, {}) || { x: SPAWN_HIDE[0], y: SPAWN_HIDE[1], k: 'box', v: 0, r: 0 };
+  const h = G.pl[G.hider]; h.x = sp.x; h.y = sp.y; h.dg = { k: sp.k, v: sp.v, r: sp.r };
+}
+function aiTick(dt) {
+  G.aiT -= dt; if (G.aiT > 0) return;
+  G.aiT = rr(15, 28);
+  const s = G.pl[seekerIdx()], h = G.pl[G.hider], d = Math.hypot(s.x - h.x, s.y - h.y);
+  if (!hiderSeen() && d > 5 && rnd() < .55) {
+    const lit = litRooms(), sp = aiChooseSpot(G.hider, { avoid: lit });
+    if (sp && !roomsNear(sp.x, sp.y, .2).some(i => lit.includes(i))) { h.x = sp.x; h.y = sp.y; h.dg = { k: sp.k, v: sp.v, r: sp.r }; return; }
+  }
+  if (d > 9 && G.tauntCD <= 0 && rnd() < .35) doAct(G.hider, 'taunt');
+}
+function aiTurn() {
+  G.aiT = 1e9;
+  const last = G.hints[G.hints.length - 1], band = last ? last[1] : 3, h = G.pl[G.hider];
+  const pMove = [.85, .6, .25, .08][band];
+  if (rnd() < pMove) {
+    const it = MAP.items[last[0]];
+    if (rnd() < .7) { const sp = aiChooseSpot(G.hider, { near: [h.x, h.y, BAL.turnMove], keep: h.dg, far: [it.x, it.y] }); if (sp && !doAct(G.hider, 'tmove', sp)) return; }
+    const cands = MAP.items.filter(q => !q.flat && q.k !== h.dg.k && distFp(h.x, h.y, q.fp) <= BAL.turnMove);
+    for (const q of cands.sort(() => rnd() - .5).slice(0, 6)) {
+      const sp = findFit(G.hider, { k: q.k, v: q.v, r: q.r }, h.x, h.y);
+      if (sp && Math.hypot(sp[0] - h.x, sp[1] - h.y) <= .8 && !doAct(G.hider, 'tmove', { x: sp[0], y: sp[1], k: q.k, v: q.v, r: q.r })) return;
+    }
+  }
+  doAct(G.hider, 'tpass');
+}
+
+/* ---- 50_render.js ---- */
+/* ================= renderer: low-poly 2.5D (orthographic, yawed), painter's sort by footprint ================= */
+const cv = $('cv'), ctx = cv.getContext('2d');
+let W = 0, H = 0, DPR = 1;
+const CAM = { x: 12, y: 11, S: 50, zoom: LS.get('zoom', 1) };
+const YAW = 0.34, CY = Math.cos(YAW), SY = Math.sin(YAW), SP = 0.78, ZP = 0.74;
+const LX = -0.42, LY = 0.9;
+function resize() { DPR = Math.min(2, devicePixelRatio || 1); W = innerWidth; H = innerHeight; cv.width = Math.round(W * DPR); cv.height = Math.round(H * DPR); ctx.setTransform(DPR, 0, 0, DPR, 0, 0); }
+addEventListener('resize', resize);
+const P = (x, y, z) => { const dx = x - CAM.x, dy = y - CAM.y; return [W / 2 + (dx * CY - dy * SY) * CAM.S, H / 2 + (dx * SY + dy * CY) * CAM.S * SP - z * CAM.S * ZP]; };
+const unP = (sx, sy) => { const xr = (sx - W / 2) / CAM.S, yr = (sy - H / 2) / (CAM.S * SP); return [CAM.x + xr * CY + yr * SY, CAM.y - xr * SY + yr * CY]; };
+const rotY = (x, y) => x * SY + y * CY, rotX = (x, y) => x * CY - y * SY;
+
+/* colour shading with a cache */
+const SHC = {};
+function shade(hex, k) {
+  const key = hex + (k * 64 | 0); let s = SHC[key]; if (s) return s;
+  const n = parseInt(hex.slice(1, 7), 16), f = c => Math.max(0, Math.min(255, Math.round(c * k)));
+  return (SHC[key] = 'rgb(' + f(n >> 16 & 255) + ',' + f(n >> 8 & 255) + ',' + f(n & 255) + ')');
+}
+
+/* project prisms of one object into faces */
+function projObj(prs, ox, dim) {
+  const faces = [], list = prs.map(p => { let cx = 0, cy = 0; for (const q of p.pts) { cx += q[0]; cy += q[1]; } return [p, Math.round(p.z0 * 50), rotY(cx / p.pts.length, cy / p.pts.length)]; });
+  list.sort((a, b) => a[1] - b[1] || a[2] - b[2]);
+  let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9;
+  for (const [pr] of list) {
+    const n = pr.pts.length, bot = [], top = [];
+    for (const [x, y] of pr.pts) { const b = P(x, y, pr.z0), t = P(x, y, pr.z1); b[0] += ox; t[0] += ox; bot.push(b); top.push(t); }
+    for (let i = 0; i < n; i++) {
+      const j = (i + 1) % n, ex = pr.pts[j][0] - pr.pts[i][0], ey = pr.pts[j][1] - pr.pts[i][1], L = Math.hypot(ex, ey) || 1, nx = ey / L, ny = -ex / L;
+      if (nx * SY + ny * CY > 0.02) { const k = (0.62 + 0.25 * (nx * LX + ny * LY)) * dim; faces.push({ p: [bot[i], bot[j], top[j], top[i]], f: shade(pr.c, k), s: shade(pr.c, k * .72) }); }
+    }
+    faces.push({ p: top, f: shade(pr.c, dim), s: shade(pr.c, dim * .74) });
+    for (const q of top) { if (q[0] < x0) x0 = q[0]; if (q[0] > x1) x1 = q[0]; if (q[1] < y0) y0 = q[1]; }
+    for (const q of bot) { if (q[0] < x0) x0 = q[0]; if (q[0] > x1) x1 = q[0]; if (q[1] > y1) y1 = q[1]; if (q[1] < y0) y0 = q[1]; }
+  }
+  return { faces, bb: [x0, y0, x1, y1] };
+}
+function polyPath(p) { ctx.beginPath(); ctx.moveTo(p[0][0], p[0][1]); for (let i = 1; i < p.length; i++) ctx.lineTo(p[i][0], p[i][1]); ctx.closePath(); }
+function drawFaces(faces, alpha) {
+  ctx.lineWidth = 1; ctx.lineJoin = 'round'; if (alpha != null) ctx.globalAlpha = alpha;
+  for (const f of faces) { polyPath(f.p); ctx.fillStyle = f.f; ctx.fill(); ctx.strokeStyle = f.s; ctx.stroke(); }
+  ctx.globalAlpha = 1;
+}
+function inPoly(p, x, y) { let c = false; for (let i = 0, j = p.length - 1; i < p.length; j = i++) { if ((p[i][1] > y) !== (p[j][1] > y) && x < (p[j][0] - p[i][0]) * (y - p[i][1]) / (p[j][1] - p[i][1]) + p[i][0]) c = !c; } return c; }
+
+/* footprint in rotated space, for ordering */
+function rq(fp) { const pts = [[fp[0], fp[1]], [fp[2], fp[1]], [fp[2], fp[3]], [fp[0], fp[3]]].map(([x, y]) => [rotX(x, y), rotY(x, y)]); let a = 1e9, b = -1e9; for (const q of pts) { if (q[0] < a) a = q[0]; if (q[0] > b) b = q[0]; } return { pts, x0: a, x1: b }; }
+function section(q, c) { let mn = 1e9, mx = -1e9; const p = q.pts; for (let i = 0; i < 4; i++) { const a = p[i], b = p[(i + 1) & 3]; if ((a[0] - c) * (b[0] - c) <= 0 && a[0] !== b[0]) { const y = a[1] + (c - a[0]) / (b[0] - a[0]) * (b[1] - a[1]); if (y < mn) mn = y; if (y > mx) mx = y; } } return mn > mx ? null : [mn, mx]; }
+function before(A, B) {   // -1: A behind B, 1: B behind A, 0: unknown
+  const lo = Math.max(A.q.x0, B.q.x0), hi = Math.min(A.q.x1, B.q.x1); if (hi - lo < 1e-4) return 0;
+  const c = (lo + hi) / 2, a = section(A.q, c), b = section(B.q, c); if (!a || !b) return 0;
+  if (a[1] <= b[0] + 1e-3) return -1; if (b[1] <= a[0] + 1e-3) return 1;
+  const d = (a[0] + a[1]) - (b[0] + b[1]); return Math.abs(d) < 1e-4 ? (A.h - B.h) : d;
+}
+function topoSort(objs) {
+  const n = objs.length, indeg = new Array(n).fill(0), adj = objs.map(() => []);
+  for (let i = 0; i < n; i++) for (let j = i + 1; j < n; j++) {
+    const A = objs[i], B = objs[j];
+    if (A.bb[2] < B.bb[0] || B.bb[2] < A.bb[0] || A.bb[3] < B.bb[1] || B.bb[3] < A.bb[1]) continue;
+    const o = before(A, B); if (o < 0) { adj[i].push(j); indeg[j]++; } else if (o > 0) { adj[j].push(i); indeg[i]++; }
+  }
+  const out = [], done = new Array(n).fill(false);
+  for (let c = 0; c < n; c++) {
+    let best = -1;
+    for (let i = 0; i < n; i++) if (!done[i] && indeg[i] === 0 && (best < 0 || objs[i].dep < objs[best].dep)) best = i;
+    if (best < 0) for (let i = 0; i < n; i++) if (!done[i] && (best < 0 || objs[i].dep < objs[best].dep)) best = i;   // cycle: break it
+    done[best] = true; out.push(objs[best]); for (const j of adj[best]) indeg[j]--;
+  }
+  return out;
+}
+
+/* people */
+function humanPrims(p, look, t) {
+  const sw = p.mv ? Math.sin(t * 11) * .11 : 0, a = p.d;
+  const co = Math.cos(a), si = Math.sin(a), tf = (px, py) => [p.x + px * co - py * si, p.y + px * si + py * co];
+  const parts = [B(-.13, -.06 + sw, -.02, .06 + sw, 0, .46, look.leg), B(.02, -.06 - sw, .13, .06 - sw, 0, .46, look.leg), B(-.18, -.1, .18, .1, .44, 1.0, look.body),
+    B(-.27, -.07 - sw, -.18, .07 - sw, .5, .95, look.body), B(.18, -.07 + sw, .27, .07 + sw, .5, .95, look.body), B(-.13, -.12, .13, .13, 1.0, 1.28, '#f2c9a0'),
+    B(-.085, .13, -.035, .135, 1.12, 1.17, '#2a2420'), B(.035, .13, .085, .135, 1.12, 1.17, '#2a2420'), ...look.hat];
+  return parts.map(q => partPrism(q, tf));
+}
+const LOOK = {
+  seek: { leg: '#3a4458', body: '#d8473b', hat: [B(-.15, -.14, .15, .15, 1.24, 1.36, '#2f3a52'), B(-.15, .1, .15, .27, 1.24, 1.27, '#2f3a52')] },
+  hide: { leg: '#3a4458', body: '#3ba6d8', hat: [B(-.14, -.14, .14, .14, 1.22, 1.33, '#5a3a26'), B(-.14, -.15, .14, -.05, 1.0, 1.3, '#5a3a26')] }
+};
+function plPrims(i) {
+  const p = G.pl[i];
+  if (p.dg) return prismsFor(p.dg.k, p.dg.v, p.dg.r, p.x, p.y);
+  return humanPrims(p, i === G.hider ? LOOK.hide : LOOK.seek, STATE.t + i);
+}
+
+/* ---------- frame ---------- */
+let DRAWN = [];
+function render(dt) {
+  ctx.fillStyle = '#5c7a52'; ctx.fillRect(0, 0, W, H);
+  if (!MAP) return;
+  const play = isPlay() && G.phase !== '';
+  const meSeek = play && ME === seekerIdx() && G.mode === 'rt' && G.phase !== 'end';
+  const lit = play ? (meSeek ? litRooms() : ROOMS.map(r => r.i)) : ROOMS.map(r => r.i);
+  const litSet = new Set(lit), seekLit = play && G.mode === 'rt' ? new Set(litRooms()) : null;
+  // ground outside the fence
+  { const c = [[-6, -6], [30, -6], [30, 28], [-6, 28]].map(([x, y]) => P(x, y, 0)); polyPath(c); ctx.fillStyle = '#6f8f5c'; ctx.fill(); }
+  for (const r of ROOMS) drawFloor(r, litSet.has(r.i), seekLit && !meSeek && seekLit.has(r.i) && G.phase === 'seek');
+  // flat things (rugs) + shadows
+  const objs = [];
+  for (const it of MAP.items) {
+    if (!litSet.has(it.room)) continue;
+    it.wob = Math.max(0, it.wob - dt * 1.6);
+    const ox = it.wob > 0 ? Math.sin(STATE.t * 48) * it.wob * 3.2 : 0;
+    if (it.flat) { const o = projObj(it.pr, ox, 1); drawFaces(o.faces); DRAWN_FLAT.push({ it, ...o }); continue; }
+    if (!it.q) { it.q = rq(it.fp); it.h = Math.max(...it.pr.map(p => p.z1)); it.dep = rotY(it.x, it.y); }
+    objs.push({ kind: 'item', it, q: it.q, h: it.h, dep: it.dep, pr: it.pr, ox });
+  }
+  for (const w of WALLS) { if (!w.q) { w.q = rq(w.fp); w.dep = rotY((w.fp[0] + w.fp[2]) / 2, (w.fp[1] + w.fp[3]) / 2); } objs.push({ kind: 'wall', w, q: w.q, h: w.h, dep: w.dep, pr: w.pr, ox: 0 }); }
+  if (play) for (let i = 0; i < 2; i++) {
+    const p = G.pl[i]; if (p.gone && i !== ME) continue;
+    if (G.mode === 'turn') { if (i !== G.hider || !p.dg) continue; }
+    if (i === G.hider && meSeek && !hiderSeen()) continue;
+    if (i === G.hider && p.dg && T[p.dg.k].flat) { const o = projObj(plPrims(i), 0, 1); drawFaces(o.faces); DRAWN_FLAT.push({ pl: i, ...o }); continue; }
+    const fp = plBox(p, p.x, p.y);
+    objs.push({ kind: 'pl', i, q: rq(fp), h: p.dg ? 1 : 1.3, dep: rotY(p.x, p.y), pr: plPrims(i), ox: 0 });
+  }
+  // shadows
+  ctx.fillStyle = 'rgba(30,20,10,.16)';
+  for (const o of objs) { if (o.kind === 'wall') continue; const f = o.kind === 'item' ? o.it.fp : plBox(G.pl[o.i], G.pl[o.i].x, G.pl[o.i].y); const e = o.kind === 'pl' && !G.pl[o.i].dg ? -.04 : .05; polyPath([P(f[0] - e, f[1] - e, 0), P(f[2] + e, f[1] - e, 0), P(f[2] + e + .06, f[3] + e + .06, 0), P(f[0] - e + .06, f[3] + e + .06, 0)]); ctx.fill(); }
+  for (const o of objs) { const r = projObj(o.pr, o.ox, 1); o.faces = r.faces; o.bb = r.bb; }
+  const sorted = topoSort(objs);
+  for (const o of sorted) drawFaces(o.faces);
+  DRAWN = sorted;
+  drawMarks(lit, litSet);
+  drawFx(dt);
+  DRAWN_FLAT_LAST = DRAWN_FLAT; DRAWN_FLAT = [];
+}
+let DRAWN_FLAT = [], DRAWN_FLAT_LAST = [];
+function drawFloor(r, on, seekTint) {
+  const [x0, y0, x1, y1] = r.r, poly = [P(x0, y0, 0), P(x1, y0, 0), P(x1, y1, 0), P(x0, y1, 0)];
+  polyPath(poly);
+  if (!on) {
+    ctx.fillStyle = '#1b1d24'; ctx.fill();
+    const [cx, cy] = P((x0 + x1) / 2, (y0 + y1) / 2, 0); ctx.fillStyle = 'rgba(255,255,255,.22)'; ctx.font = '600 ' + Math.round(CAM.S * .32) + 'px ' + FONT; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(r.n, cx, cy);
+    return;
+  }
+  ctx.fillStyle = r.fc[0]; ctx.fill();
+  ctx.save(); polyPath(poly); ctx.clip(); ctx.strokeStyle = r.fc[1]; ctx.lineWidth = 1;
+  ctx.beginPath();
+  if (r.fl === 'tile') { for (let x = x0; x <= x1; x += .5) { const a = P(x, y0, 0), b = P(x, y1, 0); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); } for (let y = y0; y <= y1; y += .5) { const a = P(x0, y, 0), b = P(x1, y, 0); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); } }
+  else if (r.fl === 'wood') { let k = 0; for (let y = y0; y <= y1; y += .25, k++) { const a = P(x0, y, 0), b = P(x1, y, 0); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); for (let x = x0 + (k % 3) * .55; x < x1; x += 1.6) { const c = P(x, y, 0), d = P(x, Math.min(y1, y + .25), 0); ctx.moveTo(c[0], c[1]); ctx.lineTo(d[0], d[1]); } } }
+  else if (r.fl === 'grass') { for (let i = 0; i < 160; i++) { const x = x0 + hash(i, 1) * (x1 - x0), y = y0 + hash(i, 2) * (y1 - y0), a = P(x, y, 0), b = P(x + .05, y - .1, 0); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); } }
+  ctx.stroke();
+  if (r.id === 'garden') { ctx.fillStyle = '#d9c9a4'; polyPath([P(10.6, 16, 0), P(12.4, 16, 0), P(12.4, 22, 0), P(10.6, 22, 0)]); ctx.fill(); }
+  if (seekTint) { polyPath(poly); ctx.fillStyle = 'rgba(255,214,90,.16)'; ctx.fill(); }
+  ctx.restore();
+}
+const hash = (a, b) => { let h = Math.imul(a * 374761393 + b * 668265263, 1274126177); h ^= h >>> 15; return ((h >>> 0) % 10000) / 10000; };
+const FONT = '"Noto Sans SC","PingFang SC","Microsoft YaHei",system-ui,sans-serif';
+
+/* markers: hover outline, own-disguise arrow, turn-mode hint rings, seeker reach ring */
+function drawMarks(lit, litSet) {
+  if (!isPlay()) return;
+  const t = STATE.t;
+  // turn-mode hints
+  if (G.mode === 'turn' || G.phase === 'end') for (const [id, band] of G.hints) {
+    const it = MAP.items[id]; if (!it || !litSet.has(it.room)) continue;
+    const [cx, cy] = P(it.x, it.y, 0), rx = (Math.max(it.fp[2] - it.fp[0], it.fp[3] - it.fp[1]) / 2 + .25) * CAM.S;
+    ctx.strokeStyle = BAND[band].c; ctx.lineWidth = 3; ctx.beginPath(); ctx.ellipse(cx, cy, rx, rx * SP, 0, 0, 6.283); ctx.stroke();
+    const [tx, ty] = P(it.x, it.y, it.h + .35); tag(tx, ty, BAND[band].n, BAND[band].c);
+  }
+  // focus outline
+  const f = STATE.focus;
+  if (f) {
+    const o = f.kind === 'pl' ? DRAWN.find(d => d.kind === 'pl' && d.i === f.i) || DRAWN_FLAT_LAST.find(d => d.pl === f.i) : DRAWN.find(d => d.kind === 'item' && d.it === f.it) || DRAWN_FLAT_LAST.find(d => d.it === f.it);
+    if (o) { ctx.lineWidth = 2.5; ctx.strokeStyle = f.ok ? 'rgba(255,255,255,' + (.65 + .3 * Math.sin(t * 7)) + ')' : 'rgba(255,255,255,.3)'; for (const fc of o.faces) { polyPath(fc.p); ctx.stroke(); } }
+  }
+  // turn-mode pending ghost
+  if (STATE.ghost) {
+    const g = STATE.ghost, o = projObj(prismsFor(g.k, g.v, g.r, g.x, g.y), 0, 1);
+    drawFaces(o.faces, .55); ctx.lineWidth = 2; ctx.strokeStyle = g.ok ? '#7dff9a' : '#ff6a5a'; for (const fc of o.faces) { polyPath(fc.p); ctx.stroke(); }
+  }
+  // own marker when disguised / range circles
+  if (amHider() && G.phase !== 'end') {
+    const p = G.pl[ME];
+    if (G.mode === 'turn' && G.phase === 'hturn' && p.dg) { const [cx, cy] = P(p.x, p.y, 0), r = BAL.turnMove * CAM.S; ctx.setLineDash([8, 6]); ctx.strokeStyle = 'rgba(125,255,154,.8)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.ellipse(cx, cy, r, r * SP, 0, 0, 6.283); ctx.stroke(); ctx.setLineDash([]); }
+    if (p.dg || G.mode === 'rt') { const h = p.dg ? Math.max(...prismsFor(p.dg.k, p.dg.v, p.dg.r, 0, 0).map(q => q.z1)) : 1.35; const [ax, ay] = P(p.x, p.y, h + .3); const b = Math.sin(t * 5) * 3; ctx.fillStyle = '#7dff9a'; ctx.beginPath(); ctx.moveTo(ax, ay + 8 + b); ctx.lineTo(ax - 7, ay - 2 + b); ctx.lineTo(ax + 7, ay - 2 + b); ctx.fill(); if (G.mode === 'rt') tag(ax, ay - 12 + b, '你', '#7dff9a'); }
+  }
+  // hider sees the seeker counting
+  if (G.mode === 'rt' && G.phase === 'hide' && amHider()) { const s = G.pl[seekerIdx()], [x, y] = P(s.x, s.y, 1.75); tag(x, y, '闭眼数数 ' + Math.ceil(G.t), '#ffd36a'); }
+  if (G.mode === 'rt' && ME === seekerIdx() && G.phase === 'seek') { const s = G.pl[ME], [cx, cy] = P(s.x, s.y, 0), r = BAL.reach * CAM.S; ctx.strokeStyle = 'rgba(255,255,255,.13)'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.ellipse(cx, cy, r, r * SP, 0, 0, 6.283); ctx.stroke(); }
+  // end: reveal
+  if (G.phase === 'end') { const h = G.pl[G.hider]; const [cx, cy] = P(h.x, h.y, 0), r = (1 + .15 * Math.sin(t * 6)) * CAM.S; ctx.strokeStyle = '#ffd36a'; ctx.lineWidth = 3; ctx.beginPath(); ctx.ellipse(cx, cy, r, r * SP, 0, 0, 6.283); ctx.stroke(); const [tx, ty] = P(h.x, h.y, 1.8); tag(tx, ty, h.dg ? '藏在这里：' + T[h.dg.k].n : '藏在这里', '#ffd36a'); }
+}
+function tag(x, y, s, col) {
+  ctx.font = '700 13px ' + FONT; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  const w = ctx.measureText(s).width + 12; ctx.fillStyle = 'rgba(14,16,22,.78)'; rrect(x - w / 2, y - 10, w, 20, 6); ctx.fill();
+  ctx.fillStyle = col; ctx.fillText(s, x, y + 1);
+}
+function rrect(x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
+
+/* effects: whistle ripples, floating text */
+function drawFx(dt) {
+  STATE.ripples = STATE.ripples.filter(r => (r.t += dt) < 2.6);
+  for (const r of STATE.ripples) {
+    const [cx, cy] = P(r.x, r.y, 0);
+    for (let k = 0; k < 3; k++) { const tt = r.t - k * .35; if (tt < 0) continue; const rad = (.4 + tt * 1.3) * CAM.S, a = Math.max(0, 1 - tt / 2.2); ctx.strokeStyle = (r.taunt ? 'rgba(255,120,200,' : 'rgba(255,214,90,') + a * .85 + ')'; ctx.lineWidth = 3; ctx.beginPath(); ctx.ellipse(cx, cy, rad, rad * SP, 0, 0, 6.283); ctx.stroke(); }
+    if (r.t < 2) { ctx.globalAlpha = Math.min(1, 2 - r.t); tag(cx, cy - 30, (r.taunt ? '😜 ' : '🔔 ') + r.room, r.taunt ? '#ff9bd8' : '#ffd36a'); ctx.globalAlpha = 1; }
+  }
+  STATE.pops = STATE.pops.filter(p => (p.t += dt) < 1.6);
+  for (const p of STATE.pops) { const [x, y] = P(p.x, p.y, p.z + p.t * .7); ctx.globalAlpha = Math.min(1, (1.6 - p.t) * 2); ctx.font = '900 ' + (p.big ? 24 : 17) + 'px ' + FONT; ctx.textAlign = 'center'; ctx.lineWidth = 4; ctx.strokeStyle = 'rgba(10,10,14,.8)'; ctx.strokeText(p.s, x, y); ctx.fillStyle = p.c; ctx.fillText(p.s, x, y); ctx.globalAlpha = 1; }
+}
+function pop(x, y, z, s, c, big) { STATE.pops.push({ x, y, z, s, c, t: 0, big }); }
+
+/* picking: front-most drawn object under the pointer */
+function pickAt(sx, sy) {
+  for (let i = DRAWN.length - 1; i >= 0; i--) { const o = DRAWN[i]; if (o.kind === 'wall') continue; if (sx < o.bb[0] || sx > o.bb[2] || sy < o.bb[1] || sy > o.bb[3]) continue; for (const f of o.faces) if (inPoly(f.p, sx, sy)) return o.kind === 'pl' ? { kind: 'pl', i: o.i } : { kind: 'item', it: o.it }; }
+  for (let i = DRAWN_FLAT_LAST.length - 1; i >= 0; i--) { const o = DRAWN_FLAT_LAST[i]; for (const f of o.faces) if (inPoly(f.p, sx, sy)) return o.pl != null ? { kind: 'pl', i: o.pl } : { kind: 'item', it: o.it }; }
+  return null;
+}
+
+/* camera */
+function camStep(dt) {
+  let tx = 12, ty = 11, tS = Math.min(W, H) / 10.5 * CAM.zoom;
+  if (isPlay()) {
+    if (G.mode === 'turn' || (G.phase === 'end')) {
+      if (G.mode === 'turn' && G.phase !== 'end') { const fit = fitHouse(); tS = fit * STATE.tz; const xr = STATE.fitOff[0] / tS, yr = STATE.fitOff[1] / (tS * SP); tx = 12 - (xr * CY + yr * SY) + STATE.tpan[0]; ty = 11.2 - (-xr * SY + yr * CY) + STATE.tpan[1]; }
+      else { const h = G.pl[G.hider]; tx = h.x; ty = h.y; tS = Math.min(W, H) / 9; }
+    } else { const p = G.pl[ME]; tx = p.x; ty = p.y; tS = clamp(Math.min(W, H) / 10.5, 32, 90) * CAM.zoom; }
+  } else { tS = fitHouse() * 1.15; tx = 12 + Math.sin(STATE.t * .07) * 3; ty = 11 + Math.cos(STATE.t * .05) * 2; }
+  const k = 1 - Math.exp(-dt * 6);
+  CAM.x += (tx - CAM.x) * k; CAM.y += (ty - CAM.y) * k; CAM.S += (tS - CAM.S) * k;
+}
+function fitHouse() {
+  let a = 1e9, b = -1e9, c = 1e9, d = -1e9;
+  for (const [x, y] of [[0, 0], [24, 0], [24, 22], [0, 22]]) { const xr = rotX(x - 12, y - 11.2), yr = rotY(x - 12, y - 11.2) * SP; a = Math.min(a, xr); b = Math.max(b, xr); c = Math.min(c, yr - 2.4 * ZP); d = Math.max(d, yr); }
+  const land = TOUCH && H < 500, pad = W < 700 ? 16 : 50, top = land ? 44 : 96, bot = land ? 10 : W < 700 ? 200 : 150, right = land ? Math.min(340, W * .42) : 0;
+  const s = Math.min((W - pad * 2 - right) / (b - a), (H - top - bot) / (d - c));
+  STATE.fitOff = [-right / 2, (top - bot) / 2]; return s;
+}
+
+/* ---- 60_audio.js ---- */
+/* ================= synthesized sound (Web Audio, no files) ================= */
+const AU = { ctx: null, master: null, noise: null, on: LS.get('sound', true), last: {} };
+function audioInit() {
+  if (AU.ctx) { if (AU.ctx.state === 'suspended') AU.ctx.resume(); return; }
+  try {
+    const C = new (window.AudioContext || window.webkitAudioContext)();
+    const comp = C.createDynamicsCompressor(); comp.connect(C.destination);
+    const m = C.createGain(); m.gain.value = AU.on ? 0.55 : 0; m.connect(comp);
+    const b = C.createBuffer(1, C.sampleRate, C.sampleRate), d = b.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+    AU.ctx = C; AU.master = m; AU.noise = b;
+  } catch (e) { }
+}
+function setSound(on) { AU.on = on; LS.set('sound', on); if (AU.master) AU.master.gain.value = on ? 0.55 : 0; $('sndBtn').textContent = on ? '🔊' : '🔇'; $('mSound').textContent = '音效：' + (on ? '开' : '关'); }
+function outNode(pan) { const C = AU.ctx; if (pan == null || !C.createStereoPanner) return AU.master; const p = C.createStereoPanner(); p.pan.value = clamp(pan, -1, 1); p.connect(AU.master); return p; }
+function tone(type, f0, f1, dur, vol, delay, lp, pan) {
+  const C = AU.ctx; if (!C || !AU.on || vol < .002) return;
+  const t0 = C.currentTime + (delay || 0), o = C.createOscillator(), g = C.createGain(), j = 1 + (Math.random() - 0.5) * 0.08;
+  o.type = type; o.frequency.setValueAtTime(f0 * j, t0); if (f1 && f1 !== f0) o.frequency.exponentialRampToValueAtTime(Math.max(20, f1 * j), t0 + dur);
+  g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(vol, t0 + 0.012); g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+  let out = g; if (lp) { const f = C.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = lp; g.connect(f); out = f; }
+  o.connect(g); out.connect(outNode(pan)); o.start(t0); o.stop(t0 + dur + 0.05);
+}
+function noise(dur, vol, ft, f0, f1, Q, delay, pan) {
+  const C = AU.ctx; if (!C || !AU.on || vol < .002) return;
+  const t0 = C.currentTime + (delay || 0), s = C.createBufferSource(), f = C.createBiquadFilter(), g = C.createGain();
+  s.buffer = AU.noise; f.type = ft; f.Q.value = Q || 1; f.frequency.setValueAtTime(f0, t0); if (f1) f.frequency.exponentialRampToValueAtTime(f1, t0 + dur);
+  g.gain.setValueAtTime(vol, t0); g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+  s.connect(f); f.connect(g); g.connect(outNode(pan)); s.start(t0, Math.random() * 0.5); s.stop(t0 + dur + 0.05);
+}
+// where a world point sits for the listener: volume 0..1 and pan -1..1
+function spatial(x, y) {
+  if (!G) return [1, 0];
+  const p = G.mode === 'rt' ? G.pl[ME] : { x: CAM.x, y: CAM.y }, d = Math.hypot(x - p.x, y - p.y);
+  const [sx] = P(x, y, 0); return [clamp(1.15 - d / 16, .12, 1), clamp((sx - W / 2) / (W / 2), -1, 1) * .8];
+}
+function sfx(k, a, b) {
+  const now = performance.now(); if (AU.last[k] && now - AU.last[k] < 60) return; AU.last[k] = now;
+  switch (k) {
+    case 'click': tone('triangle', 880, 660, 0.05, 0.07); break;
+    case 'knock': noise(0.08, 0.35, 'bandpass', 520, 300, 3); tone('sine', 190, 120, 0.12, 0.22); noise(0.06, 0.25, 'bandpass', 600, 380, 3, .13); tone('sine', 200, 125, 0.1, 0.16, .13); break;
+    case 'empty': tone('triangle', 330, 180, 0.32, 0.12, .25); tone('triangle', 250, 140, 0.3, 0.08, .38); break;
+    case 'near': tone('sine', 110, 104, 0.9, 0.16, .3); tone('sine', 165, 160, 0.9, 0.08, .3); break;
+    case 'catch': noise(0.15, 0.3, 'highpass', 2000); [523, 659, 784, 1046].forEach((f, i) => tone('square', f, f, .16, .07, .1 + i * .08, 3000)); tone('triangle', 1318, 1318, .6, .12, .45); break;
+    case 'poof': noise(0.28, 0.22, 'bandpass', 3200, 600, 1.4); tone('sine', 520, 1300, .18, .07); break;
+    case 'unpoof': noise(0.2, 0.16, 'bandpass', 700, 2600, 1.4); break;
+    case 'rot': noise(0.07, 0.1, 'bandpass', 1500, 900, 4); break;
+    case 'whistle': {  // a: volume 0..1, b: pan
+      const v = (a == null ? 1 : a) * .16, p = b || 0;
+      tone('sine', 1650, 2300, .22, v, 0, 0, p); tone('sine', 2300, 1700, .25, v, .24, 0, p); tone('sine', 1700, 2500, .3, v, .5, 0, p); break;
+    }
+    case 'taunt': { const v = (a == null ? 1 : a) * .14, p = b || 0; [880, 660, 990, 740, 1180].forEach((f, i) => tone('square', f, f * 1.05, .1, v * .6, i * .09, 2400, p)); break; }
+    case 'step': noise(0.05, (a || .5) * .12, 'lowpass', 500, 200, 1, 0, b); break;
+    case 'scrape': noise(0.22, (a || .5) * .1, 'bandpass', 900, 500, 2, 0, b); break;
+    case 'tick': tone('square', 1200, 1200, 0.04, 0.05, 0, 2500); break;
+    case 'go': tone('triangle', 523, 523, .12, .1); tone('triangle', 784, 784, .2, .12, .12); break;
+    case 'turn': tone('sine', 660, 990, 0.14, 0.08); break;
+    case 'err': tone('square', 220, 180, 0.12, 0.06, 0, 1200); break;
+    case 'win': [523, 659, 784, 1046, 784, 1046, 1318].forEach((f, i) => tone('triangle', f, f, i === 6 ? 0.8 : 0.22, 0.13, i * 0.13)); break;
+    case 'lose': [392, 349, 311, 262].forEach((f, i) => tone('triangle', f, f, 0.4, 0.1, i * 0.2)); break;
+    case 'ready': tone('sine', 660, 990, 0.14, 0.08); break;
+  }
+}
+
+/* ---- 62_input.js ---- */
+/* ================= input: keyboard, mouse, touch joystick ================= */
+const KEY = {};
+const PTR = { mx: -1, my: -1, mouseT: 0, joy: null, taps: {} };
+const menuOpen = () => !$('menu').classList.contains('hidden') || !$('help').classList.contains('hidden');
+function canWalk() {
+  if (!isPlay() || G.mode !== 'rt' || G.phase === 'end' || menuOpen()) return false;
+  return amHider() ? (G.phase === 'hide' || G.phase === 'seek') : G.phase === 'seek';
+}
+addEventListener('keydown', e => {
+  if (e.target && e.target.tagName === 'INPUT') { if (e.key === 'Enter' && e.target.id === 'codeIn') $('joinBtn').click(); return; }
+  audioInit();
+  const k = e.key.toLowerCase(); KEY[k] = 1;
+  if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright', ' '].includes(k)) e.preventDefault();
+  if (k === 'm') { setSound(!AU.on); return; }
+  if (k === 'escape') { if (!$('help').classList.contains('hidden')) { $('help').classList.add('hidden'); return; } if (isPlay()) { menuOpen() ? closeMenu() : openMenu(); } return; }
+  if (!isPlay() || menuOpen() || e.repeat) return;
+  if (k === 'e' || k === ' ' || k === 'enter') primary();
+  else if (k === 'q') revert();
+  else if (k === 'r') rotateKey();
+  else if (k === 't') taunt();
+});
+addEventListener('keyup', e => { KEY[e.key.toLowerCase()] = 0; });
+addEventListener('blur', () => { for (const k in KEY) KEY[k] = 0; });
+
+cv.addEventListener('pointerdown', e => {
+  audioInit(); if (!isPlay() || menuOpen()) return;
+  if (e.pointerType !== 'mouse' && canWalk() && !PTR.joy && e.clientX < W * .5 && e.clientY > H * .3) {
+    PTR.joy = { id: e.pointerId, x0: e.clientX, y0: e.clientY, x: e.clientX, y: e.clientY }; joyShow(); return;
+  }
+  PTR.taps[e.pointerId] = { x: e.clientX, y: e.clientY, cx: e.clientX, cy: e.clientY };
+  if (e.pointerType === 'mouse') { PTR.mx = e.clientX; PTR.my = e.clientY; PTR.mouseT = performance.now(); }
+});
+addEventListener('pointermove', e => {
+  if (PTR.joy && e.pointerId === PTR.joy.id) { PTR.joy.x = e.clientX; PTR.joy.y = e.clientY; joyShow(); return; }
+  const t = PTR.taps[e.pointerId];
+  if (t && isPlay() && G.mode === 'turn') { dragPan(t, e.clientX, e.clientY); t.cx = e.clientX; t.cy = e.clientY; }
+  if (e.pointerType === 'mouse') { PTR.mx = e.clientX; PTR.my = e.clientY; PTR.mouseT = performance.now(); }
+});
+const endPtr = e => {
+  if (PTR.joy && e.pointerId === PTR.joy.id) { PTR.joy = null; $('joy').classList.add('hidden'); return; }
+  const t = PTR.taps[e.pointerId]; delete PTR.taps[e.pointerId]; if (Object.keys(PTR.taps).length < 2) PTR.pinch = 0;
+  if (t && !t.drag && e.type === 'pointerup' && Math.hypot(e.clientX - t.x, e.clientY - t.y) < 14 && isPlay() && !menuOpen()) tapAt(e.clientX, e.clientY, e.pointerType);
+};
+addEventListener('pointerup', endPtr); addEventListener('pointercancel', endPtr);
+cv.addEventListener('wheel', e => {
+  if (!isPlay()) return; e.preventDefault(); const f = e.deltaY > 0 ? .9 : 1.1;
+  if (G.mode === 'turn') { const [ax, ay] = unP(e.clientX, e.clientY); STATE.tz = clamp(STATE.tz * f, 1, 3.2); if (STATE.tz === 1) STATE.tpan = [0, 0]; else { STATE.tpan[0] += (ax - CAM.x) * (1 - 1 / f); STATE.tpan[1] += (ay - CAM.y) * (1 - 1 / f); clampPan(); } return; }
+  CAM.zoom = clamp(CAM.zoom * f, .6, 1.7); LS.set('zoom', CAM.zoom);
+}, { passive: false });
+function clampPan() { const m = 9 * (1 - 1 / STATE.tz) + 1; STATE.tpan[0] = clamp(STATE.tpan[0], -m, m); STATE.tpan[1] = clamp(STATE.tpan[1], -m, m); }
+function dragPan(t, x, y) {   // turn mode: one finger / mouse drags the view, two fingers pinch
+  const ids = Object.keys(PTR.taps);
+  if (ids.length >= 2) {
+    const [a, b] = ids.map(k => PTR.taps[k]), d = Math.hypot(a.cx - b.cx, a.cy - b.cy);
+    if (PTR.pinch) { STATE.tz = clamp(STATE.tz * d / PTR.pinch, 1, 3.2); if (STATE.tz === 1) STATE.tpan = [0, 0]; }
+    PTR.pinch = d; a.drag = b.drag = true; return;
+  }
+  if (!t.drag && Math.hypot(x - t.x, y - t.y) < 14) return;
+  t.drag = true; if (STATE.tz <= 1.001) return;
+  const [ax, ay] = unP(t.cx, t.cy), [bx, by] = unP(x, y);
+  STATE.tpan[0] -= bx - ax; STATE.tpan[1] -= by - ay; CAM.x -= bx - ax; CAM.y -= by - ay; clampPan();
+}
+cv.addEventListener('contextmenu', e => e.preventDefault());
+function joyShow() {
+  const j = PTR.joy, el = $('joy'), dx = j.x - j.x0, dy = j.y - j.y0, L = Math.hypot(dx, dy), m = Math.min(L, 50), k = L ? m / L : 0;
+  el.classList.remove('hidden'); el.style.left = (j.x0 - 60) + 'px'; el.style.top = (j.y0 - 60) + 'px';
+  $('joyKnob').style.transform = 'translate(' + dx * k + 'px,' + dy * k + 'px)';
+}
+function moveInput() {
+  let mx = (KEY.d || KEY.arrowright ? 1 : 0) - (KEY.a || KEY.arrowleft ? 1 : 0), my = (KEY.s || KEY.arrowdown ? 1 : 0) - (KEY.w || KEY.arrowup ? 1 : 0);
+  if (PTR.joy) { const dx = PTR.joy.x - PTR.joy.x0, dy = PTR.joy.y - PTR.joy.y0, L = Math.hypot(dx, dy); if (L > 8) { const s = Math.min(1, L / 50); mx = dx / L * s; my = dy / L * s; } }
+  const L = Math.hypot(mx, my); if (L > 1) { mx /= L; my /= L; }
+  return [mx, my];
+}
+
+/* ---------- what the player is pointing at ---------- */
+function validTarget(o) {
+  if (!o) return false;
+  if (amHider()) return o.kind === 'item';
+  if (o.kind === 'pl') return o.i === G.hider;
+  return true;
+}
+function targetFp(o) { if (o.kind === 'item') return o.it.fp; const p = G.pl[o.i]; return plBox(p, p.x, p.y); }
+function inReach(o) { const p = G.pl[ME]; return distFp(p.x, p.y, targetFp(o)) <= (amHider() ? BAL.copyReach : BAL.reach); }
+function computeFocus() {
+  STATE.focus = null; if (!isPlay() || G.phase === 'end' || menuOpen()) return;
+  const mouseRecent = performance.now() - PTR.mouseT < 4000 && PTR.mx >= 0;
+  if (G.mode === 'turn') {
+    if (STATE.sel) { STATE.focus = { ...STATE.sel, ok: true }; return; }
+    if (mouseRecent) { const o = pickAt(PTR.mx, PTR.my); if (o && (o.kind === 'item' || (o.i === G.hider && !amHider()))) STATE.focus = { ...o, ok: false }; }
+    return;
+  }
+  if (!amHider() && G.phase !== 'seek') return;
+  let c = null;
+  if (mouseRecent) { const o = pickAt(PTR.mx, PTR.my); if (validTarget(o)) c = o; }
+  if (!c) {   // nearest in reach, biased to where I face
+    const p = G.pl[ME], fx = -Math.sin(p.d), fy = Math.cos(p.d); let bs = 1e9;
+    for (const d of DRAWN) {
+      if (d.kind === 'wall') continue; const o = d.kind === 'pl' ? { kind: 'pl', i: d.i } : { kind: 'item', it: d.it };
+      if (!validTarget(o) || (o.kind === 'pl' && o.i === ME)) continue;
+      const f = targetFp(o), dist = distFp(p.x, p.y, f); if (dist > (amHider() ? BAL.copyReach : BAL.reach)) continue;
+      const cx = (f[0] + f[2]) / 2 - p.x, cy = (f[1] + f[3]) / 2 - p.y, L = Math.hypot(cx, cy) || 1, sc = dist - .7 * (cx * fx + cy * fy) / L;
+      if (sc < bs) { bs = sc; c = o; }
+    }
+  }
+  if (c) { c.ok = inReach(c); STATE.focus = c; }
+}
+
+/* ---------- actions ---------- */
+function primary() {
+  if (!isPlay() || G.phase === 'end') return;
+  if (G.mode === 'turn') { turnConfirm(); return; }
+  const f = STATE.focus;
+  if (!f) { if (!amHider() && G.phase === 'seek') toast('附近没有能敲的东西', 'warn'); return; }
+  useTarget(f);
+}
+function useTarget(o) {
+  if (!validTarget(o)) return;
+  if (!inReach(o)) { toast(amHider() ? '太远了，走近一点才能变' : '太远了，走近一点', 'warn'); return; }
+  if (amHider()) {
+    if (G.phase !== 'hide' && G.phase !== 'seek') return;
+    const e = tryDisguise(ME, o.it); if (e) { toast(e, 'bad'); sfx('err'); return; }
+    sfx('poof'); const p = G.pl[ME]; pop(p.x, p.y, 1, '变成了' + T[o.it.k].n, '#7dff9a'); renderActs();
+  } else {
+    if (G.phase !== 'seek') return;
+    if (STATE.kcd > 0) return; STATE.kcd = BAL.knockCD;
+    act('knock', { id: o.kind === 'pl' ? -1 : o.it.id });
+  }
+}
+function revert() { if (!isPlay() || !amHider() || G.mode !== 'rt' || G.phase === 'end') return; const p = G.pl[ME]; if (!p.dg) return; p.dg = null; sfx('unpoof'); renderActs(); }
+function rotateKey() {
+  if (!isPlay() || !amHider() || G.phase === 'end') return;
+  if (G.mode === 'turn') { turnRotate(); return; }
+  const e = rotateDisguise(ME); if (e) { toast(e, 'warn'); sfx('err'); } else sfx('rot');
+}
+function taunt() { if (!isPlay() || !amHider() || G.mode !== 'rt' || G.phase !== 'seek') return; if (G.tauntCD > 0) { toast('嘲讽冷却中', 'warn'); return; } act('taunt'); }
+function tapAt(sx, sy, ptype) {
+  const o = pickAt(sx, sy);
+  if (G.mode === 'turn') { turnTap(sx, sy, o); return; }
+  if (o && validTarget(o) && !(o.kind === 'pl' && o.i === ME)) { STATE.focus = { ...o, ok: inReach(o) }; useTarget(o); }
+}
+
+/* ---------- turn mode ---------- */
+function turnTap(sx, sy, o) {
+  if (G.phase === 'end') return;
+  if (!amHider()) {
+    if (G.phase !== 'seek') return;
+    if (!o || !(o.kind === 'item' || o.i === G.hider)) { STATE.sel = null; turnPanel(); return; }
+    const same = STATE.sel && STATE.sel.kind === o.kind && (o.kind === 'pl' || STATE.sel.it === o.it);
+    if (same) { turnConfirm(); return; }
+    STATE.sel = o; sfx('click'); turnPanel(); return;
+  }
+  const p = G.pl[ME];
+  if (G.phase === 'place') {
+    if (o && o.kind === 'item') { STATE.form = { k: o.it.k, v: o.it.v }; STATE.ghostR = o.it.r; sfx('click'); if (STATE.pend) setPend(STATE.pend.x, STATE.pend.y); turnPanel(); return; }
+    if (!STATE.form) { toast('先点一件家具，选好要变成什么', 'warn'); return; }
+    const [x, y] = unP(sx, sy); setPend(x, y); return;
+  }
+  if (G.phase === 'hturn') {
+    if (o && o.kind === 'item') {
+      if (distFp(p.x, p.y, o.it.fp) > BAL.turnMove) { toast('只能变成虚线圈里的东西', 'warn'); return; }
+      const sp = findFit(ME, { k: o.it.k, v: o.it.v, r: o.it.r }, p.x, p.y);
+      STATE.pend = sp ? { x: sp[0], y: sp[1], k: o.it.k, v: o.it.v, r: o.it.r } : { x: p.x, y: p.y, k: o.it.k, v: o.it.v, r: o.it.r };
+      STATE.ghostR = o.it.r; validatePend(); sfx('click'); return;
+    }
+    const [x, y] = unP(sx, sy);
+    STATE.pend = { x: Math.round(x * 20) / 20, y: Math.round(y * 20) / 20, k: p.dg.k, v: p.dg.v, r: STATE.ghostR }; validatePend(); sfx('click');
+  }
+}
+function setPend(x, y) { STATE.pend = { x: Math.round(x * 20) / 20, y: Math.round(y * 20) / 20, k: STATE.form.k, v: STATE.form.v, r: STATE.ghostR }; validatePend(); sfx('click'); }
+function validatePend() {
+  const q = STATE.pend; if (!q) { STATE.ghost = null; turnPanel(); return; }
+  q.err = checkPlace(ME, q, G.phase === 'place' ? 'place' : 'tmove') || null;
+  STATE.ghost = { ...q, ok: !q.err }; turnPanel();
+}
+function turnRotate() {
+  STATE.ghostR = (STATE.ghostR + 1) & 3; sfx('rot');
+  if (STATE.pend) { STATE.pend.r = STATE.ghostR; validatePend(); }
+  else if (G.phase === 'hturn') { const p = G.pl[ME]; STATE.pend = { x: p.x, y: p.y, k: p.dg.k, v: p.dg.v, r: STATE.ghostR }; validatePend(); }
+}
+function turnConfirm() {
+  if (G.phase === 'end') return;
+  if (!amHider()) { if (G.phase !== 'seek' || !STATE.sel) return; const s = STATE.sel; STATE.sel = null; act('knock', { id: s.kind === 'pl' ? -1 : s.it.id }); turnPanel(); return; }
+  const q = STATE.pend; if (!q) { toast(G.phase === 'place' ? '先选家具再点地板放下' : '没有改动：要不动就点「不动」', 'warn'); return; }
+  if (q.err) { toast(q.err, 'bad'); sfx('err'); return; }
+  act(G.phase === 'place' ? 'place' : 'tmove', { x: q.x, y: q.y, k: q.k, v: q.v, r: q.r });
+}
+function turnPass() { if (isPlay() && amHider() && G.phase === 'hturn') act('tpass'); }
+
+/* ---- 70_net.js ---- */
+/* ================= networking (PeerJS, host authoritative; guest owns its own position in realtime) ================= */
+const inArtifact = () => !!window.__ARTIFACT__ || /(^|\.)(claudeusercontent\.com|claude\.ai|claude\.site)$/.test(location.hostname);
+const PEER_SRC = ['https://unpkg.com/peerjs@1.5.5/dist/peerjs.min.js', 'https://cdn.jsdelivr.net/npm/peerjs@1.5.5/dist/peerjs.min.js'];
+const PEER_OPTS = QS.get('peerhost') ? { host: QS.get('peerhost'), port: +(QS.get('peerport') || 9000), path: QS.get('peerpath') || '/', secure: QS.get('peersecure') === '1' } : {};
+const CODE_CH = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+const genCode = () => Array.from({ length: 4 }, () => CODE_CH[Math.floor(Math.random() * CODE_CH.length)]).join('');
+const NET = { peer: null, code: '', ctl: null, snap: null, gctl: null, gsnap: null, guestName: '', hostName: '', seen: 0, pingT: 0, sendT: 0, q: 0, lastQ: -1, tgt: null, lobby: { mode: 'rt', first: 'host' } };
+function loadPeer() { return new Promise((res, rej) => { if (window.Peer) return res(); let i = 0; const next = () => { if (i >= PEER_SRC.length) return rej(new Error('load')); const sc = document.createElement('script'); sc.src = PEER_SRC[i++]; sc.onload = () => window.Peer ? res() : next(); sc.onerror = next; document.head.appendChild(sc); }; next(); }); }
+const linkUp = () => NETROLE === 'host' ? !!(NET.gctl && NET.gctl.open) : NETROLE === 'guest' ? !!(NET.ctl && NET.ctl.open) : false;
+const roundJSON = o => JSON.stringify(o, (k, v) => typeof v === 'number' && !Number.isInteger(v) ? +v.toFixed(3) : v);
+function sendRaw(c, o) { try { if (c && c.open) c.send(typeof o === 'string' ? o : roundJSON(o)); } catch (e) { } }
+function recvRaw(d, fn) { let m; try { m = JSON.parse(d); } catch (e) { return; } try { fn(m); } catch (e) { console.error(e); } }
+const netSend = o => sendRaw(NETROLE === 'host' ? NET.gctl : NET.ctl, o);
+const snapSend = o => { const c = NETROLE === 'host' ? (NET.gsnap && NET.gsnap.open ? NET.gsnap : NET.gctl) : (NET.snap && NET.snap.open ? NET.snap : NET.ctl); sendRaw(c, o); };
+function netLeave() {
+  try { netSend({ t: 'bye' }); } catch (e) { }
+  try { NET.peer && NET.peer.destroy(); } catch (e) { }
+  Object.assign(NET, { peer: null, code: '', ctl: null, snap: null, gctl: null, gsnap: null, guestName: '', lastQ: -1, tgt: null });
+  NETROLE = null;
+}
+addEventListener('pagehide', () => { try { netSend({ t: 'bye' }); } catch (e) { } });
+
+/* ---------- host ---------- */
+async function netHost() {
+  if (inArtifact()) { titleStatus('这个版本只能单人游玩，联机请到游戏厅网页版'); return; }
+  netLeave(); NETROLE = 'host'; ME = 0; G = null; showScreen('lobby'); STATE.mode = 'lobby'; lobbyUI('正在创建房间…');
+  try { await loadPeer(); } catch (e) { NETROLE = null; lobbyUI('联机组件加载失败，请检查网络'); return; }
+  const open = tries => {
+    const code = genCode(), peer = new Peer('prophunt-' + code, PEER_OPTS); NET.peer = peer; NET.code = code;
+    peer.on('open', () => lobbyUI(''));
+    peer.on('error', err => { if (err.type === 'unavailable-id' && tries < 4) { try { peer.destroy(); } catch (e) { } open(tries + 1); } else if (!linkUp()) lobbyUI('房间出错（' + err.type + '）'); });
+    peer.on('disconnected', () => { if (NET.peer === peer && !peer.destroyed) try { peer.reconnect(); } catch (e) { } });
+    peer.on('connection', conn => {
+      if (conn.label === 'snap') { conn.on('open', () => { NET.gsnap = conn; }); conn.on('data', d => recvRaw(d, hostRecv)); return; }
+      if ((NET.gctl && NET.gctl.open) || STATE.mode === 'play') { conn.on('open', () => { conn.send(JSON.stringify({ t: 'busy' })); setTimeout(() => conn.close(), 300); }); return; }
+      NET.gctl = conn;
+      conn.on('open', () => { NET.seen = performance.now(); });
+      conn.on('data', d => recvRaw(d, hostRecv));
+      conn.on('close', () => { if (NET.gctl === conn) guestGone(); });
+    });
+  };
+  open(0);
+}
+function hostRecv(m) {
+  if (NETROLE !== 'host') return;
+  NET.seen = performance.now();
+  switch (m.t) {
+    case 'hello': NET.guestName = (m.name || '玩家二').slice(0, 8); sendLobby(); lobbyUI(); sfx('ready'); return;
+    case 'bye': guestGone(); return;
+    case 'ping': return;
+    case 'p':
+      if (G && G.mode === 'rt' && (G.phase === 'hide' || G.phase === 'seek') && m.r === G.round) {
+        const p = G.pl[1]; p.x = m.x; p.y = m.y; p.d = m.d; p.mv = m.mv; p.dg = m.dg && T[m.dg.k] ? m.dg : null;
+      }
+      return;
+    case 'act': { if (!G || STATE.mode !== 'play') return; const err = doAct(1, m.a, m.v || {}); if (err) sendRaw(NET.gctl, { t: 'err', msg: err }); return; }
+  }
+}
+function guestGone() {
+  NET.gctl = null; NET.gsnap = null; NET.guestName = '';
+  if (STATE.mode === 'play' || STATE.mode === 'end') { toast('对方断开了连接，可以用同一个房间码重新加入', 'bad'); hideEnd(); showScreen('lobby'); STATE.mode = 'lobby'; }
+  if (STATE.mode === 'lobby') lobbyUI();
+}
+function sendLobby() { sendRaw(NET.gctl, { t: 'lobby', host: myName() || '房主', code: NET.code, lobby: NET.lobby, score: NET.score || [0, 0] }); }
+function hostStart(next) {
+  if (!linkUp()) return;
+  const L = NET.lobby, prev = next && G ? G : null;
+  const hider = prev ? 1 - prev.hider : L.first === 'host' ? 0 : L.first === 'guest' ? 1 : (Math.random() < .5 ? 0 : 1);
+  newRound({ seed: (Math.random() * 1e9) | 0, mode: prev ? prev.mode : L.mode, hider, score: prev ? prev.score.slice() : (NET.score || [0, 0]).slice(), round: prev ? prev.round + 1 : 1, names: [myName() || '房主', NET.guestName || '玩家二'] });
+  NET.q = 0; sendRaw(NET.gctl, { t: 'st', G }); enterGame();
+}
+function hostNetTick(dt) {
+  if (!NET.gctl || !NET.gctl.open) return;
+  if (performance.now() - NET.seen > 15000) { try { NET.gctl.close(); } catch (e) { } guestGone(); return; }
+  if ((NET.pingT -= dt) <= 0) { NET.pingT = 3; sendRaw(NET.gctl, { t: 'ping' }); }
+  if (G && (STATE.mode === 'play') && (NET.sendT -= dt) <= 0) { NET.sendT = 0.05; G.q = ++NET.q; snapSend({ t: 'st', G }); }
+}
+
+/* ---------- guest ---------- */
+async function netJoin(code) {
+  if (inArtifact()) { titleStatus('这个版本只能单人游玩，联机请到游戏厅网页版'); return; }
+  code = (code || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+  if (code.length !== 4) { titleStatus('房间码是 4 位'); return; }
+  netLeave(); NETROLE = 'guest'; ME = 1; G = null; titleStatus('正在连接…');
+  try { await loadPeer(); } catch (e) { NETROLE = null; titleStatus('联机组件加载失败，请检查网络'); return; }
+  const peer = new Peer(PEER_OPTS); NET.peer = peer; NET.code = code;
+  peer.on('error', err => { if (!linkUp()) { titleStatus(err.type === 'peer-unavailable' ? '找不到这个房间' : '连接失败（' + err.type + '）'); NETROLE = null; } });
+  peer.on('open', () => {
+    const ctl = peer.connect('prophunt-' + code, { label: 'ctl', reliable: true, serialization: 'raw' });
+    NET.ctl = ctl;
+    ctl.on('open', () => {
+      NET.seen = performance.now(); sendRaw(ctl, { t: 'hello', name: myName() }); titleStatus('');
+      const sn = peer.connect('prophunt-' + code, { label: 'snap', reliable: false, serialization: 'raw' }); NET.snap = sn; sn.on('data', d => recvRaw(d, guestRecv));
+      if (STATE.mode !== 'play') { showScreen('lobby'); STATE.mode = 'lobby'; lobbyUI(); }
+    });
+    ctl.on('data', d => recvRaw(d, guestRecv));
+    ctl.on('close', () => { if (NET.ctl === ctl) hostGone(); });
+  });
+}
+function hostGone() { const was = STATE.mode; netLeave(); hideEnd(); if (was !== 'title') { toTitle(); titleStatus('房主断开了连接'); } }
+function guestRecv(m) {
+  if (NETROLE !== 'guest') return;
+  NET.seen = performance.now();
+  switch (m.t) {
+    case 'busy': titleStatus('房间已满或已经开始'); netLeave(); toTitle(); return;
+    case 'bye': hostGone(); return;
+    case 'ping': sendRaw(NET.ctl, { t: 'ping' }); return;
+    case 'lobby': NET.hostName = m.host; NET.lobby = m.lobby; NET.score = m.score; lobbyUI(); return;
+    case 'st': applyState(m.G); return;
+    case 'ev': if (G) handleEv(m.ev); return;
+    case 'err': toast(m.msg, 'bad'); sfx('err'); return;
+  }
+}
+function applyState(ng) {
+  const fresh = !G || ng.seed !== G.seed || ng.round !== G.round;
+  if (!fresh) {
+    if (ng.q <= NET.lastQ && ng.q) return;
+    if (G.phase === 'end' && ng.phase !== 'end') return;
+  }
+  NET.lastQ = ng.q || 0;
+  const mine = !fresh && ng.mode === 'rt' && (ng.phase === 'hide' || ng.phase === 'seek') ? G.pl[ME] : null;
+  const prevO = !fresh && G ? G.pl[1 - ME] : null;
+  G = ng;
+  if (fresh) { MAP = genMap(G.seed); enterGame(); }
+  if (mine) G.pl[ME] = mine;
+  const o = G.pl[1 - ME]; NET.tgt = { x: o.x, y: o.y };
+  if (prevO && Math.hypot(prevO.x - o.x, prevO.y - o.y) < 2.5) { o.x = prevO.x; o.y = prevO.y; }
+}
+function guestNetTick(dt) {
+  if (!NET.ctl || !NET.ctl.open) return;
+  if (performance.now() - NET.seen > 15000) { hostGone(); return; }
+  if (G && NET.tgt) { const o = G.pl[1 - ME], k = 1 - Math.exp(-dt * 14); o.x += (NET.tgt.x - o.x) * k; o.y += (NET.tgt.y - o.y) * k; }
+  if (G && STATE.mode === 'play' && G.mode === 'rt' && (NET.sendT -= dt) <= 0) { NET.sendT = 1 / 30; const p = G.pl[ME]; snapSend({ t: 'p', r: G.round, x: p.x, y: p.y, d: p.d, mv: p.mv, dg: p.dg }); }
+}
+
+/* ---- 80_ui.js ---- */
+/* ================= UI: screens, HUD, events ================= */
+const HUB = /\/prophunt\/(index\.html)?$/.test(location.pathname) && !inArtifact();
+const TOUCH = matchMedia('(pointer: coarse)').matches;
+const myName = () => ($('nameIn').value || '').trim().slice(0, 8);
+let PICK_MODE = LS.get('mode', 'rt');
+const MODE_DESC = {
+  rt: '实时追逐：躲方有 30 秒找地方变成家具；抓方只看得见自己所在的房间，3 分钟内敲错 5 次就输。躲方每 30 秒会吹一次哨。',
+  turn: '回合推理：整栋房子摊在眼前。抓方每回合敲一件，敲错会得到 烫/热/温/冷 提示；躲方每回合可以挪 3 米、就地变形或不动。敲错 6 次就输。'
+};
+const fmtT = s => { s = Math.max(0, Math.ceil(s)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
+
+function showScreen(n) { for (const id of ['title', 'lobby']) $(id).classList.toggle('hidden', id !== n); $('hud').classList.toggle('hidden', n !== 'hud'); }
+function toTitle() {
+  if (NETROLE && NETROLE !== 'solo') netLeave(); NETROLE = null;
+  STATE.mode = 'title'; G = null; MAP = genMap((Math.random() * 1e9) | 0);
+  hideEnd(); closeMenu(); showScreen('title'); $('blind').classList.add('hidden'); $('curtain').classList.add('hidden'); $('joy').classList.add('hidden');
+  $('hubBtn').classList.toggle('hidden', !HUB);
+  if (inArtifact()) { $('hostBtn').disabled = $('joinBtn').disabled = $('codeIn').disabled = true; titleStatus('这个版本只能单人游玩，联机请到游戏厅网页版'); }
+  modeUI();
+}
+function titleStatus(s) { $('tStatus').textContent = s || ''; }
+function modeUI() {
+  for (const b of document.querySelectorAll('#modeSeg button')) b.classList.toggle('sel', b.dataset.m === PICK_MODE);
+  $('modeDesc').textContent = MODE_DESC[PICK_MODE];
+}
+function lobbyUI(st) {
+  const host = NETROLE === 'host', L = NET.lobby;
+  $('lCode').textContent = NET.code || '····';
+  $('lP0').textContent = '🏠 ' + (host ? (myName() || '房主') + '（你）' : (NET.hostName || '房主'));
+  $('lP1').textContent = host ? (NET.guestName ? '🎮 ' + NET.guestName : '⏳ 等待对手加入…') : '🎮 ' + (myName() || '你') + '（你）';
+  for (const b of document.querySelectorAll('#lModeSeg button')) { b.classList.toggle('sel', b.dataset.m === L.mode); b.disabled = !host; }
+  for (const b of document.querySelectorAll('#lFirstSeg button')) { b.classList.toggle('sel', b.dataset.f === L.first); b.disabled = !host; }
+  $('lModeDesc').textContent = MODE_DESC[L.mode];
+  $('lStart').classList.toggle('hidden', !host); $('lStart').disabled = !(host && NET.guestName);
+  $('lWait').classList.toggle('hidden', host);
+  if (st != null) $('lStatus').textContent = st;
+  else $('lStatus').textContent = host ? (NET.guestName ? '对手已加入，可以开始了' : '把房间码告诉对手') : '等待房主开始…';
+}
+function startSolo(next) {
+  NETROLE = 'solo'; ME = 0;
+  const prev = next && G ? G : null;
+  newRound({ seed: (Math.random() * 1e9) | 0, mode: prev ? prev.mode : PICK_MODE, hider: 1, ai: 1, score: prev ? prev.score.slice() : [0, 0], round: prev ? prev.round + 1 : 1, names: [myName() || '你', '电脑'] });
+  enterGame();
+}
+function enterGame() {
+  STATE.mode = 'play'; hideEnd(); closeMenu(); showScreen('hud');
+  Object.assign(STATE, { tz: 1, tpan: [0, 0], lastPhase: null, sel: null, pend: null, ghost: null, form: null, ripples: [], pops: [], kcd: 0, lastWh: '' });
+  CAM.x = G.pl[ME].x; CAM.y = G.pl[ME].y;
+  renderActs();
+}
+function onPhase() {
+  STATE.sel = null; STATE.pend = null; STATE.ghost = null;
+  if (G.mode === 'turn' && G.phase === 'hturn' && amHider() && G.pl[ME].dg) STATE.ghostR = G.pl[ME].dg.r;
+  if (G.mode === 'turn' && G.phase === 'place' && amHider()) { STATE.form = null; STATE.ghostR = 0; }
+  if (G.mode === 'turn' && G.phase === 'place' && amHider()) banner('你来藏', '点一件家具选好变身，再点地板放下');
+  if (G.mode === 'rt' && G.phase === 'hide') banner(amHider() ? '快藏起来！' : '闭眼数数', amHider() ? '走到家具旁按 E（或点它）变成一样的东西' : '对方正在找地方变成家具');
+  renderActs(); turnPanel();
+}
+
+/* ---------- per-frame HUD ---------- */
+let hudT = 0;
+function hudTick(dt) {
+  if (!isPlay()) return;
+  const blind = G.mode === 'rt' && G.phase === 'hide' && !amHider();
+  $('blind').classList.toggle('hidden', !blind);
+  if (blind) $('blindN').textContent = Math.max(0, Math.ceil(G.t));
+  const curtain = G.mode === 'turn' && !amHider() && (G.phase === 'place' || G.phase === 'hturn');
+  $('curtain').classList.toggle('hidden', !curtain);
+  if (curtain) $('curT').textContent = G.phase === 'place' ? '对方正在藏…' : '对方正在行动…';
+  if ((hudT -= dt) > 0) return; hudT = .1;
+  $('hRole').textContent = amHider() ? '🙈 你在藏' : '🔍 你在找';
+  $('hRole').className = 'chip ' + (amHider() ? 'hide' : 'seek');
+  let ph = '';
+  if (G.mode === 'rt') ph = G.phase === 'hide' ? '躲藏 ' + fmtT(G.t) : G.phase === 'seek' ? '剩余 ' + fmtT(G.t) : '本局结束';
+  else ph = G.phase === 'place' ? '躲方藏身中' + (G.ai ? '' : ' ' + fmtT(G.t)) : G.phase === 'seek' ? '第 ' + G.turnN + ' 回合 · 抓方敲' : G.phase === 'hturn' ? '躲方行动' + (G.ai ? '' : ' ' + fmtT(G.t)) : '本局结束';
+  $('hPhase').textContent = ph;
+  $('hPhase').classList.toggle('urgent', G.mode === 'rt' && G.phase === 'seek' && G.t < 20);
+  const rem = G.maxWrong - G.wrong;
+  $('hTaps').innerHTML = '<span class="lbl">可敲错</span>' + '<i class="on">●</i>'.repeat(Math.max(0, rem)) + '<i>●</i>'.repeat(Math.min(G.maxWrong, G.wrong));
+  $('hWh').textContent = G.mode === 'rt' && G.phase === 'seek' ? '🔔 ' + Math.ceil(G.wT) + 's' : G.mode === 'turn' ? '🔔 每 ' + BAL.whistleTurns + ' 回合' : '';
+  $('hScore').textContent = G.names[0] + ' ' + G.score[0] + ' : ' + G.score[1] + ' ' + G.names[1];
+  const me = G.pl[ME], rm = G.mode === 'rt' ? roomAt(me.x, me.y) : null; $('hRoom').textContent = rm ? '📍 ' + rm.n : '';
+  const tb = $('aTaunt'); if (tb) { tb.disabled = G.phase !== 'seek' || G.tauntCD > 0; tb.querySelector('small').textContent = G.tauntCD > 0 ? Math.ceil(G.tauntCD) + 's' : '-' + BAL.tauntCut + '秒'; }
+  const kb = $('aKnock'); if (kb) kb.disabled = G.phase !== 'seek';
+  $('hTip').textContent = tipText(); $('hTip').classList.toggle('top', G.mode === 'turn');
+}
+function tipText() {
+  if (G.phase === 'end') return '';
+  if (G.mode === 'turn') return TOUCH ? '双指缩放 · 放大后拖动查看' : '滚轮缩放 · 放大后拖动查看';
+  if (amHider()) return TOUCH ? '左下拖动移动 · 点附近的家具变成它 · 变身后移动会被看见' : 'WASD 移动 · 点附近的家具或按 E 变成它 · Q 变回 · R 旋转 · T 嘲讽 · 变身后移动会被看见';
+  if (G.phase === 'hide') return '';
+  return TOUCH ? '左下拖动移动 · 点可疑的东西敲一下（要走近）' : 'WASD 移动 · 走近可疑的东西按 E 或点它敲一下 · 滚轮缩放';
+}
+function renderActs() {
+  const el = $('acts'); if (!isPlay() || G.mode !== 'rt' || G.phase === 'end') { el.innerHTML = ''; return; }
+  if (amHider()) {
+    const dg = G.pl[ME].dg;
+    el.innerHTML = '<button id="aCopy" class="act primary">变身<small>E</small></button><button id="aRev" class="act" ' + (dg ? '' : 'disabled') + '>变回<small>Q</small></button><button id="aRot" class="act" ' + (dg ? '' : 'disabled') + '>旋转<small>R</small></button><button id="aTaunt" class="act pink">嘲讽<small></small></button>';
+    $('aCopy').onclick = () => { audioInit(); primary(); }; $('aRev').onclick = revert; $('aRot').onclick = rotateKey; $('aTaunt').onclick = taunt;
+  } else {
+    el.innerHTML = '<button id="aKnock" class="act primary big">敲一下<small>E</small></button>';
+    $('aKnock').onclick = () => { audioInit(); primary(); };
+  }
+}
+function turnPanel() {
+  const el = $('turnPanel');
+  if (!isPlay() || G.mode !== 'turn' || G.phase === 'end') { el.classList.add('hidden'); return; }
+  el.classList.remove('hidden');
+  const legend = '<div class="legend">' + BAND.map((b, i) => '<span style="color:' + b.c + '">' + b.n + (i < 3 ? '&lt;' + BAL.bands[i] + 'm' : '') + '</span>').join(' ') + '</div>';
+  let h = '';
+  if (!amHider()) {
+    if (G.phase === 'seek') {
+      const s = STATE.sel;
+      h = '<b>轮到你敲</b>：点一件可疑的东西，再点一次或按「敲下去」。还能敲错 <b>' + (G.maxWrong - G.wrong) + '</b> 次。' + (STATE.lastWh ? '<div class="wh">🔔 本回合哨声来自：' + esc(STATE.lastWh) + '</div>' : '') + legend +
+        '<div class="row"><button id="tGo" class="primary" ' + (s ? '' : 'disabled') + '>敲下去' + (s ? '：' + (s.kind === 'pl' ? T[G.pl[G.hider].dg.k].n : T[s.it.k].n) : '') + '</button></div>';
+    } else h = '<b>对方行动中</b>…' + legend;
+  } else {
+    if (G.phase === 'place') {
+      const q = STATE.pend;
+      h = '<b>藏起来</b>：先点一件家具（变成它），再点地板放下。只能变成那个房间里已有的东西。' +
+        '<div class="st">' + (STATE.form ? '变身：<b>' + T[STATE.form.k].n + '</b>' : '还没选家具') + (q && q.err ? ' · <span class="bad">' + esc(q.err) + '</span>' : q ? ' · <span class="ok">可以放这里</span>' : '') + '</div>' +
+        '<div class="row"><button id="tRot">⟳ 旋转</button><button id="tGo" class="primary" ' + (q && !q.err ? '' : 'disabled') + '>藏好了</button></div>';
+    } else if (G.phase === 'hturn') {
+      const last = G.hints[G.hints.length - 1], q = STATE.pend;
+      h = (last ? '他敲了<b>' + T[MAP.items[last[0]].k].n + '</b>，提示「<span style="color:' + BAND[last[1]].c + '">' + BAND[last[1]].n + '</span>」。' : '') + '在虚线圈内点地板挪动，或点圈里的家具就地变形，也可以不动。' +
+        (q ? '<div class="st">' + (q.err ? '<span class="bad">' + esc(q.err) + '</span>' : '<span class="ok">可以</span>') + '</div>' : '') +
+        '<div class="row"><button id="tRot">⟳ 旋转</button><button id="tStay">不动</button><button id="tGo" class="primary" ' + (q && !q.err ? '' : 'disabled') + '>确认</button></div>';
+    } else h = '<b>抓方在敲</b>…看看他会不会找到你。' + legend;
+  }
+  el.innerHTML = h;
+  const b = id => $(id) && ($(id).onclick = { tGo: turnConfirm, tRot: turnRotate, tStay: turnPass }[id]);
+  b('tGo'); b('tRot'); b('tStay');
+}
+
+/* ---------- events (applied on both machines) ---------- */
+function emit(ev) { handleEv(ev); if (NETROLE === 'host') netSend({ t: 'ev', ev }); }
+function handleEv(ev) {
+  if (!G) return;
+  switch (ev.e) {
+    case 'knock': {
+      if (ev.id === -1) { const h = G.pl[G.hider]; sfx('knock'); sfx('catch'); pop(h.x, h.y, 1.3, '抓到了！', '#ffd36a', 1); break; }
+      const it = MAP.items[ev.id]; if (!it) break;
+      it.wob = 1; sfx('knock'); const hz = (it.h || Math.max(...it.pr.map(p => p.z1)));
+      pop(it.x, it.y, hz, '咚咚', '#ffffff');
+      setTimeout(() => {
+        if (ev.band != null) { pop(it.x, it.y, hz + .3, BAND[ev.band].n + '！', BAND[ev.band].c, 1); sfx('empty'); }
+        else { pop(it.x, it.y, hz + .3, '空的', '#ff8a7a', 1); sfx('empty'); }
+        if (ev.near) { sfx('near'); toast(ME === G.hider ? '好险！他敲到你旁边了' : '……附近好像有动静', 'warn'); }
+      }, 260);
+      break;
+    }
+    case 'wh': {
+      const mine = ME === G.hider, x = mine ? ev.hx : ev.x, y = mine ? ev.hy : ev.y;
+      STATE.ripples.push({ x, y, t: 0, room: ev.room, taunt: ev.taunt });
+      const [v, p] = mine ? [1, 0] : spatial(ev.x, ev.y); sfx(ev.taunt ? 'taunt' : 'whistle', v, p);
+      if (!mine) { STATE.lastWh = ev.room; toast((ev.taunt ? '😜 对方在嘲讽！声音来自：' : '🔔 哨声来自：') + ev.room, 'gold'); }
+      else toast(ev.taunt ? '你嘲讽了一下，时间 -' + BAL.tauntCut + ' 秒' : '你吹了一声哨，他知道你在' + ev.room + '附近', 'warn');
+      turnPanel();
+      break;
+    }
+    case 'seek':
+      if (G.phase === 'hide') G.phase = 'seek';
+      if (ME === G.hider) { if (!G.pl[ME].dg) autoDisguise(ME); banner('他来找了！', '别乱动，或者趁他不在悄悄换地方'); }
+      else banner('开始找！', '敲错 ' + G.maxWrong + ' 次就输 · 只看得见所在的房间');
+      sfx('go'); renderActs(); break;
+    case 'turn':
+      if (!amHider()) { if ((ev.n || G.turnN) % BAL.whistleTurns !== 0) STATE.lastWh = ''; banner('轮到你敲', '还能敲错 ' + (G.maxWrong - G.wrong) + ' 次'); sfx('turn'); }
+      STATE.sel = null; STATE.pend = null; STATE.ghost = null; turnPanel(); break;
+    case 'hturn':
+      if (amHider()) { banner('轮到你了', '挪一挪、换个样子，或者不动'); sfx('turn'); }
+      break;
+    case 'end':
+      G.phase = 'end'; if (ev.res) { G.res = ev.res; G.score = ev.score; }
+      if (ev.hx != null) { const h = G.pl[G.hider]; if (ME !== G.hider) { h.x = ev.hx; h.y = ev.hy; h.dg = ev.dg; } }
+      { const iWon = (G.res.win === 'hider') === amHider(); setTimeout(() => sfx(iWon ? 'win' : 'lose'), 500); }
+      STATE.endAt = performance.now(); renderActs(); turnPanel();
+      setTimeout(showEnd, 1800); break;
+  }
+}
+
+/* ---------- end of round ---------- */
+function showEnd() {
+  if (!G || G.phase !== 'end' || STATE.mode !== 'play') return;
+  const iWon = (G.res.win === 'hider') === amHider(), h = G.pl[G.hider], what = h.dg ? T[h.dg.k].n : '人形';
+  const why = G.res.why === 'caught' ? (amHider() ? '你变成的' + what + '被敲中了' : '在第 ' + (G.wrong + 1) + ' 次敲中了变成' + what + '的对手') :
+    G.res.why === 'taps' ? (amHider() ? '对方敲错了 ' + G.wrong + ' 次，你一直是' + what : '敲错了 ' + G.wrong + ' 次。对方变成了' + what) :
+      (amHider() ? '时间到，你一直藏成' + what : '时间到。对方藏成了' + what);
+  $('eTitle').textContent = iWon ? (amHider() ? '躲过去了！' : '抓到了！') : (amHider() ? '被找到了' : '没找到…');
+  $('eTitle').className = iWon ? 'win' : 'lose';
+  $('eWhy').textContent = why;
+  $('eScore').textContent = G.names[0] + '  ' + G.score[0] + ' : ' + G.score[1] + '  ' + G.names[1];
+  const canNext = NETROLE !== 'guest';
+  $('eNext').classList.toggle('hidden', !canNext); $('eWait').classList.toggle('hidden', canNext);
+  $('eNext').textContent = NETROLE === 'solo' ? '再来一局' : '下一局（交换角色）';
+  $('endScr').classList.remove('hidden');
+}
+function hideEnd() { $('endScr').classList.add('hidden'); }
+
+/* ---------- menu / toasts / banner ---------- */
+function openMenu() { $('menu').classList.remove('hidden'); $('mHub').classList.toggle('hidden', !HUB); for (const id of ['mTitle', 'mHub']) { delete $(id).dataset.arm; } $('mTitle').textContent = '返回标题'; $('mHub').textContent = '返回游戏厅'; }
+function closeMenu() { $('menu').classList.add('hidden'); }
+function armClick(id, fn) { const b = $(id); if (b.dataset.arm) { fn(); return; } b.dataset.arm = 1; b.textContent = '再点一次确认'; setTimeout(() => { if (b.dataset.arm) { delete b.dataset.arm; b.textContent = id === 'mHub' ? '返回游戏厅' : '返回标题'; } }, 2500); }
+function toast(s, cls) {
+  const el = document.createElement('div'); el.className = 'toast ' + (cls || ''); el.textContent = s; $('toasts').appendChild(el);
+  while ($('toasts').children.length > 3) $('toasts').firstChild.remove();
+  setTimeout(() => el.classList.add('out'), 2600); setTimeout(() => el.remove(), 3100);
+}
+let bannerTO = 0;
+function banner(t, sub) { const el = $('banner'); el.innerHTML = '<b>' + esc(t) + '</b>' + (sub ? '<span>' + esc(sub) + '</span>' : ''); el.classList.remove('show'); void el.offsetWidth; el.classList.add('show'); clearTimeout(bannerTO); bannerTO = setTimeout(() => el.classList.remove('show'), 2200); }
+
+/* ---------- wiring ---------- */
+function wireUI() {
+  $('nameIn').value = LS.get('name', ''); $('nameIn').addEventListener('change', () => LS.set('name', myName()));
+  for (const b of document.querySelectorAll('#modeSeg button')) b.onclick = () => { PICK_MODE = b.dataset.m; LS.set('mode', PICK_MODE); modeUI(); sfx('click'); };
+  $('soloBtn').onclick = () => { audioInit(); startSolo(false); };
+  $('hostBtn').onclick = () => { audioInit(); NET.lobby.mode = PICK_MODE; NET.score = [0, 0]; netHost(); };
+  $('joinBtn').onclick = () => { audioInit(); netJoin($('codeIn').value); };
+  $('helpBtn').onclick = () => $('help').classList.remove('hidden');
+  $('helpClose').onclick = () => $('help').classList.add('hidden');
+  $('hubBtn').onclick = () => { location.href = '../'; };
+  for (const b of document.querySelectorAll('#lModeSeg button')) b.onclick = () => { if (NETROLE !== 'host') return; NET.lobby.mode = b.dataset.m; sendLobby(); lobbyUI(); };
+  for (const b of document.querySelectorAll('#lFirstSeg button')) b.onclick = () => { if (NETROLE !== 'host') return; NET.lobby.first = b.dataset.f; sendLobby(); lobbyUI(); };
+  $('lStart').onclick = () => hostStart(false);
+  $('lLeave').onclick = () => toTitle();
+  $('menuBtn').onclick = () => openMenu();
+  $('sndBtn').onclick = () => { audioInit(); setSound(!AU.on); };
+  $('mResume').onclick = closeMenu;
+  $('mSound').onclick = () => { audioInit(); setSound(!AU.on); };
+  $('mHelp').onclick = () => $('help').classList.remove('hidden');
+  $('mTitle').onclick = () => armClick('mTitle', toTitle);
+  $('mHub').onclick = () => armClick('mHub', () => { netLeave(); location.href = '../'; });
+  $('eNext').onclick = () => { hideEnd(); if (NETROLE === 'solo') startSolo(true); else if (NETROLE === 'host') { if (linkUp()) hostStart(true); else { showScreen('lobby'); STATE.mode = 'lobby'; lobbyUI(); } } };
+  $('eTitle2').onclick = () => toTitle();
+}
+
+/* ---- 90_main.js ---- */
+/* ================= main loop ================= */
+let lastT = performance.now();
+function localControl(dt) {
+  const me = G.pl[ME];
+  if (!canWalk()) { me.mv = 0; return; }
+  const [mx, my] = moveInput(), L = Math.hypot(mx, my);
+  if (L < .05) { me.mv = 0; return; }
+  const dx = mx * CY + my * SY, dy = -mx * SY + my * CY;
+  const spd = amHider() ? (me.dg ? BAL.spdProp : BAL.spdHide) : BAL.spdSeek;
+  const ox = me.x, oy = me.y;
+  movePl(ME, dx * spd * dt, dy * spd * dt);
+  if (!me.dg) me.d = Math.atan2(-dx, dy);
+  me.mv = Math.hypot(me.x - ox, me.y - oy) > .001 ? 1 : 0;
+}
+// the seeker hears the hider move (footsteps when human, scraping when disguised)
+function hearHider(dt) {
+  if (G.mode !== 'rt' || G.phase !== 'seek' || amHider()) return;
+  const h = G.pl[G.hider], s = G.pl[ME];
+  if (!h.mv) return;
+  if ((STATE.stepT = (STATE.stepT || 0) - dt) > 0) return;
+  STATE.stepT = h.dg ? .45 : .32;
+  const d = Math.hypot(h.x - s.x, h.y - s.y); if (d > 9) return;
+  const [, p] = spatial(h.x, h.y); sfx(h.dg ? 'scrape' : 'step', 1 - d / 9, p);
+}
+function placeHoverGhost() {
+  if (G.mode !== 'turn' || !amHider() || STATE.pend) return;
+  if (G.phase !== 'place' || !STATE.form || TOUCH || performance.now() - PTR.mouseT > 4000) { STATE.ghost = null; return; }
+  const [x, y] = unP(PTR.mx, PTR.my), q = { x: Math.round(x * 20) / 20, y: Math.round(y * 20) / 20, k: STATE.form.k, v: STATE.form.v, r: STATE.ghostR };
+  STATE.ghost = { ...q, ok: !checkPlace(ME, q, 'place') };
+}
+function frame(now) {
+  const dt = Math.min(0.05, (now - lastT) / 1000); lastT = now; STATE.t += dt;
+  STATE.kcd = Math.max(0, (STATE.kcd || 0) - dt);
+  try {
+    if (isPlay()) {
+      if (NETROLE === 'solo' || NETROLE === 'host') simTick(dt);
+      if (STATE.lastPhase !== G.phase) { STATE.lastPhase = G.phase; onPhase(); }
+      localControl(dt); hearHider(dt); placeHoverGhost();
+    }
+    if (NETROLE === 'host') hostNetTick(dt); else if (NETROLE === 'guest') guestNetTick(dt);
+    camStep(dt); render(dt); computeFocus(); hudTick(dt);
+  } catch (e) { console.error(e); if (window.__dbg) throw e; }
+  requestAnimationFrame(frame);
+}
+
+/* ---- 99_boot.js ---- */
+/* ================= boot ================= */
+resize(); wireUI(); setSound(AU.on);
+toTitle();
+$('loading').classList.add('hidden');
+window.__ready = true;
+requestAnimationFrame(t => { lastT = t; frame(t); });
+
+</script>
+</body>
+
+</html>

@@ -125,5 +125,16 @@ window.GAMES = [
     status: 'dev',
     tags: ['单人', '双人联机', 'iPad', '经营'],
     hue: 44
+  },
+  {
+    id: 'prophunt',
+    title: '百变迷藏',
+    sub: '变身捉迷藏 · 一个藏一个找',
+    desc: 'Prop Hunt 式变身捉迷藏：躲方变成房子里的椅子、盆栽、纸箱、马桶，抓方只能一件件去敲，敲错次数有限。实时追逐（只看得见所在房间、定时哨声、嘲讽）或回合推理（烫/热/温/冷提示）。单人找电脑，或双人联机轮流藏。',
+    url: 'prophunt/',
+    cover: 'covers/prophunt.webp',
+    status: 'dev',
+    tags: ['单人', '双人联机', 'iPad', '派对'],
+    hue: 46
   }
 ];
