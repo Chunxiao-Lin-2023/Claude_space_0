@@ -519,10 +519,10 @@
     if (m === 'yard') {
       const g = S.ent('gate'), dog = S.ent('dog'), bir = S.ent('birch');
       if (!CS.creak && p.y >= 11 && !g.s.oiled) { CS.creak = true; creak(S, 1.6); S.toast('门轴「吱——呀——」一声尖叫：「她跑啦！」'); if (!CS.started) CS.startAt = Math.min(CS.startAt, CS.t + CH.creakLead); }
-      if (!CS.bit && !dog.s.fed && p.x >= 10 && p.x <= 12 && p.y >= 10 && p.y <= 11) { CS.bit = true; CS.bite = CH.biteT; growl(S); S.toast('看门狗一口咬住了你的裙角！'); }
+      if (!CS.bit && !dog.s.fed && p.x >= 10 && p.x <= 12 && p.y >= 10 && p.y <= 11) { CS.bit = true; CS.bite = CH.biteT; S.pos(p.x, p.y, p.dir); growl(S); S.toast('看门狗一口咬住了你的裙角！'); }
       let spd = 1;
       if (!bir.s.ribbon && p.x >= 8 && p.x <= 10 && p.y >= 7 && p.y <= 10) { spd = CH.birch; if (!CS.birchMsg) { CS.birchMsg = true; S.tone('triangle', 3000, 900, .12, .04, 0, 5000); S.toast('白桦的枝子劈头盖脸抽过来，你睁不开眼！'); } }
-      if (CS.bite > 0) { CS.bite -= dt; spd = .02; }
+      if (CS.bite > 0) { CS.bite -= dt; spd = .001; if (CS.bite <= 0) { S.pos(p.x, p.y, p.dir); spd = 1; } }   // 被咬住：原地停一下（结束时取消那一步）
       S.speed(spd);
       if (!CS.started) {
         if (!CS.warned && CS.t >= CS.startAt - .8) { CS.warned = true; S.sfx('thud'); S.shake(300, 2); S.toast('身后，小屋的门「砰」地撞开了——'); }

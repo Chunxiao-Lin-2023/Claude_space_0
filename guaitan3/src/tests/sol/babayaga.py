@@ -39,7 +39,7 @@ SOL = [
     ['expect', f"{F}.act === 'd1' && {W}.mapId === 'yard' && !{E}('hut').s.front"],
     ['shot', 'day1'],
     ['use', 'hut', [['面', '树林', '背', '我']]],   # 念成了它现在的样子
-    ['expect', f"{F}.spBad === 1 && !{E}('hut').s.front"],
+    ['expect', f"{F}.spBad === 1 && !{E}('hut').s.front && !{E}('lt5').hidden"],
     ['use', 'hut', SPELL],
     ['expect', f"{E}('hut').s.front"],
     ['use', 'well'],
@@ -60,9 +60,11 @@ SOL = [
     ['expect', f"{W}.mapId === 'yard'"],
     ['js', f"{F}.dollT = 99"],
     ['step', 5, 7], ['step', 14, 5], ['step', 12, 9], ['step', 4, 9], ['step', 18, 6],
-    ['expect', f"{F}.tk.sw === 5"],
+    ['step', 7, 6],                            # 念错那一次，鸡腿踢出来的那堆
+    ['expect', f"{F}.tk.sw === 6 && {F}.tk.ex === 1"],
     ['use', 'well'], ['use', 'trough'], ['use', 'line'],
-    ['use', 'dog', [0]], ['use', 'birch', [0]], ['use', 'gate'],
+    ['use', 'dog', [0]], ['use', 'birch', [0]],
+    ['js', "window.__dbg.tp(10, 10, 0); window.__dbg.doAct('use')"],   # 从院子里给门轴上油
     ['expect', f"{E}('dog').s.fed && {E}('birch').s.ribbon && {E}('gate').s.oiled"],
     ['use', 'woodpile'],
     ['shot', 'yard_day'],

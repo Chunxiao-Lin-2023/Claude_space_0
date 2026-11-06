@@ -326,16 +326,15 @@
         if (L === -1) {   // 直直地立着
           R(hx - (sm ? 0 : 1), hy - 4 + f + sm, sm ? 2 : 4, 3 - f, '#ffcf5a'); R(hx, hy - 6 + f + sm * 2, 2, 2, '#ffcf5a'); R(hx, hy - 2, 2, 1, '#fff2b0');
           if (!sm) R(hx + (f ? 1 : 0), hy - 7 + f, 1, 1, '#ff8a2a');
-        } else {   // 歪向一边，火舌拉长，前头飘着几道风纹
-          const v = DIRS[L], bx = hx + .5, by = hy - 2;
-          R(hx - 1, hy - 3, 4, 2, '#fff2b0');
-          for (let i = 1; i <= 4 - sm; i++) {
-            const x = Math.round(bx + v[0] * i * 1.6 - .5), y = Math.round(by + v[1] * i * 1.6 - (v[1] ? 0 : i * .4)), w = i < 3 ? 3 : i < 4 ? 2 : 1;
-            R(x - (w > 1 ? 1 : 0), y - (w > 2 ? 1 : 0), w, w, i < 2 ? '#fff2b0' : i < 3 ? '#ffcf5a' : '#ff8a2a');
-          }
-          for (let k = 0; k < 4; k++) {
-            const p = (t * 1.6 + k / 4) % 1, a = ((1 - p) * .85).toFixed(2), sx = v[1] ? (k % 2 ? 2 : -2) : 0, sy = v[0] ? (k % 2 ? 2 : -2) : 0;
-            R(Math.round(bx + v[0] * (6 + p * 12) + sx), Math.round(by + v[1] * (6 + p * 12) + sy), v[0] ? 2 : 1, v[1] ? 2 : 1, `rgba(255,226,160,${a})`);
+        } else {   // 歪向一边：火舌被扯过去，前面一串风纹往那边飘（朝上/下歪时火舌偏到身子外侧，不挡蜡烛）
+          const v = DIRS[L], side = d === 1 ? -1 : 1;
+          const tx = hx + (v[1] ? side * 3 : v[0] * 4), ty = hy - 3 + (v[1] ? v[1] * 2 : 0);
+          R(hx, hy - 2, 2, 2, '#fff2b0');
+          R(Math.min(hx, tx), Math.min(hy - 3, ty), Math.abs(tx - hx) + 2, Math.abs(ty - (hy - 3)) + 2 - sm, '#ffcf5a');
+          R(tx, ty, 1, 1, '#ff8a2a'); R(hx + (tx > hx ? 0 : 1), hy - 2, 1, 1, '#fff8d8');
+          for (let k = 0; k < 5; k++) {
+            const p = (t * 1.4 + k / 5) % 1, dist = 6 + p * 20, j = Math.sin(t * 5 + k * 1.7) * 2, a = ((1 - p) * .9).toFixed(2);
+            R(Math.round(hx + .5 + v[0] * dist + (v[1] ? j : 0)), Math.round(hy - 2 + v[1] * dist + (v[0] ? j : 0)), v[0] ? 2 : 1, v[1] ? 2 : 1, `rgba(255,230,170,${a})`);
           }
         }
       },
