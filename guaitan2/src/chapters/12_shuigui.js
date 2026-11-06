@@ -107,7 +107,7 @@
     D: { girl: 'yD', rip: 'rD', st: [26, 8], g: [26, 6], real: true }
   };
   const GOAL_BUOY = '去三叔公的棚屋拿救生圈（小路西头）';
-  const GOAL_FIND = '认出真的小芸，站在岸上抛救生圈（别下水；可一人念本子、一人去看）';
+  const GOAL_FIND = '认出真的小芸，在岸上抛救生圈（别下水；可一人念本子一人看）';
 
   function ghostPlace(S, x, y, st = 'swim', t = 0) {
     S.place('gui', x, y, 0); const e = S.ent('gui'); e.s = { st, t }; G = null;
@@ -127,6 +127,7 @@
       return;
     }
     if (s.st !== 'swim') return;
+    if (G && (e.x !== G.fx || e.y !== G.fy)) G = null;   // 被剧本挪过位置（读档、被烫走）：丢掉半截的移动
     if (G) {
       if (busy) return;
       G.p = Math.min(1, G.p + GSPD * dt);
