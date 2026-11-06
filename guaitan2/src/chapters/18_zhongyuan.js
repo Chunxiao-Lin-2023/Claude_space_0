@@ -11,7 +11,7 @@
   /* 归途：田埂上提灯的队伍（行 y、速度格/秒、几个） */
   const LANES = [{ y: 15, v: 2.4, n: 4 }, { y: 12, v: -2.8, n: 3 }, { y: 9, v: 2.1, n: 4 }, { y: 6, v: -3.1, n: 3 }, { y: 3, v: 2.6, n: 4 }];
   const LANEY = new Set(LANES.map(l => l.y));
-  const RET_FULL = 45, RET_FLOOR = 34;
+  const RET_FULL = 28, RET_FLOOR = 22;
   let DEATHS = 0, LASTLEFT = null;
 
   /* ---------------- 合成声音（双方都听得见） ---------------- */
@@ -321,7 +321,7 @@
     const f = S.f;
     goal(S, '锣响三声再动');
     await S.fade(1, 250); S.pos(5, 9, 3);
-    [['m1', 3], ['afeng', 5], ['m2', 7]].forEach(([id, x]) => { S.place(id, x, 6, 3); S.ent(id).oy = 0; });
+    [['m1', 3], ['afeng', 5], ['m2', 7]].forEach(([id, x]) => { S.place(id, x, 7, 3); S.ent(id).oy = 0; });
     S.ent('gupeng').s.flag = 1; S.hide('gui'); S.place('mg', 9, 8, 1);
     await S.fade(0, 300);
     await S.narr('人群一拥而上，把你挤到了孤棚底下。\n庙公提着一面铜锣，走到孤棚底下。\n孤棚的柱子上涂满了牛油，在火光里亮得发腻。');
@@ -342,9 +342,9 @@
     gong(S, 1.6); gong(S, .7, .25); S.shake(600, 2.5); roar(S); firecracker(S);
     await S.narr('「铛——！」\n第三声。孤棚底下一下子炸开了锅——');
     S.hide('gui');
-    await climb(S, -36, 900);
+    await climb(S, -80, 1100);
     for (const id of ['luo1', 'luo2', 'luo3']) S.show(id);
-    S.show('tianG'); S.focus(5, 3); await S.wait(300);
+    S.show('tianG'); S.focus(5, 4); await S.wait(300);
     await S.narr('汉子们一个踩着一个往上爬，粿、肉、米包噼里啪啦往下掉。\n孤棚顶上，那一堆供品中间——站着一个光脚的小男孩。');
     await S.wait(300);
     await S.scare('face', { face: 'tian', sfx: 'sting' });
@@ -502,7 +502,8 @@
     return endLook(S);
   }
   async function voice(S) {
-    const f = S.f; f.voice = true; const t0 = S.timerLeft;
+    const f = S.f; f.voice = true;
+    if (W.timer) W.timer.during = false;   // 阿公喊你的这一段，子时的倒计时停着
     callTone(S);
     await S.say('', '「小满——」', { style: 'whisper' });
     await S.think('……是阿公的声音。从身后，溪那边传过来的。');
@@ -512,7 +513,7 @@
     if (c === 0) return endLook(S);
     await S.narr('你咬住嘴唇，没有回头。\n身后静了很久。然后，阿公叹了口气，就像以前坐在饭桌边上那样。');
     await S.say('阿公', '……好孩子。走吧。');
-    if (t0 != null && S.timerLeft != null) S.timerAdd(t0 - S.timerLeft);   // 这段对话不算时间
+    if (W.timer) W.timer.during = true;
   }
   async function endLook(S) {
     S.clearTimer(); stopReturn(S);
@@ -1005,9 +1006,9 @@
         ents: [
           { x: 12, y: 1, w: 8, spr: 'miaomen', light: { r: 3, col: 'rgba(255,90,60,.14)', dy: 10 } },
           { id: 'mdoor', x: 15, y: 1, w: 2, spr: 'invisible', solid: true, on: S => S.go('miao', 7, 9, 3) },
-          { id: 'gupeng', x: 3, y: 4, w: 5, h: 2, spr: 'gupeng', s: { flag: 1 }, async on(S) {
+          { id: 'gupeng', x: 3, y: 5, w: 5, h: 2, spr: 'gupeng', s: { flag: 1 }, async on(S) {
             if (S.f.ph === 'back') return S.narr('孤棚上空了，四根柱子上的牛油被人蹭得一道一道。\n顶上的顺风旗没了。');
-            S.focus(5, 1); await S.wait(500);
+            S.focus(5, 2); await S.wait(500);
             await S.narr('孤棚有两层楼高。四根竹柱子涂满了牛油，顶上的木台堆满了粿、肉、米包，正中插着一面黄色的顺风旗。');
             S.focus(null);
             if (S.once('gupengThink')) await S.think('柱子是新换的，底座的水泥也是新的。\n……为什么要换？');
@@ -1036,7 +1037,7 @@
           { id: 'luo2', x: 6, y: 8, spr: 'luo', hidden: true, decal: true, on: S => S.narr('地上一摊碎粿。') },
           { id: 'luo3', x: 8, y: 7, spr: 'luo', hidden: true, decal: true, on: S => S.narr('一只被踩扁的米包。') },
           { id: 'gui', x: 6, y: 9, spr: 'gui', hidden: true, solid: false },
-          { id: 'tianG', x: 5, y: 5, spr: '@tian', hidden: true, solid: false, z: 1, oy: -78, alpha: .9 },
+          { id: 'tianG', x: 5, y: 6, spr: '@tian', hidden: true, solid: false, z: 1, oy: -78, alpha: .9 },
           { id: 'kid', x: 15, y: 11, spr: '@kid', dir: 0, async on(S) {
             S.face('kid', 'pl');
             if (S.once('kid1')) return S.say('小孩', ['姐姐！那边石板缝里有钱！亮晶晶的！', '我阿妈不让我捡……你捡呗？']);

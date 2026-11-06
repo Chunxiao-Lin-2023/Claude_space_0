@@ -11,7 +11,7 @@
   const KEYS = KORD.map(i => SIGNS[i]);
   const KALIAS = {}; KEYS.forEach((k, i) => { KALIAS[String((i + 1) % 10)] = k; });
   /* 散市（逃出段）参数：鸡叫倒计时、重来下限、灰袍客速度 */
-  const ESC_T = 36, ESC_FLOOR = 28, HP_SPD = 2.7;
+  const ESC_T = 33, ESC_FLOOR = 26, HP_SPD = 3.0;
   const CRATES = ['cr1a', 'cr1b', 'cr2a', 'cr2b', 'cr3a', 'cr3b'];
   const CUSTOM = ['c1', 'c2', 'c3', 'c4', 'w1', 'w2'];
   const MATS = ['tan_zhi', 'tan_xie', 'tan_yi', 'tan_jiu', 'tan_deng', 'tan_zhong', 'tan_cha', 'tan_shu', 'tan_tang', 'tan_hua', 'tan_wan'];
@@ -22,8 +22,8 @@
     { id: 'q2', y: 5, lo: 2, hi: 18, x0: 11, spd: 1.8 },
     { id: 'q3', y: 8, lo: 12, hi: 29, x0: 29, spd: 1.8 },
     { id: 'q4', y: 9, lo: 12, hi: 29, x0: 22, spd: 1.8 },
-    { id: 'q5', y: 4, lo: 26, hi: 38, x0: 38, spd: 1.9 },
-    { id: 'q6', y: 5, lo: 26, hi: 38, x0: 32, spd: 1.9 }
+    { id: 'q5', y: 4, lo: 26, hi: 38, x0: 38, spd: 1.7 },
+    { id: 'q6', y: 5, lo: 26, hi: 38, x0: 32, spd: 1.7 }
   ];
 
   /* ---------- 合成音（双方都听得到） ---------- */
@@ -876,7 +876,7 @@
 
   /* ================= 第五幕：散市 ================= */
   function startTimer(S) {
-    const base = ESC_T - 3 * Math.min(3, S.f.bidWrong || 0) - (S.f.escPen || 0);
+    const base = Math.max(ESC_FLOOR, ESC_T - 2 * Math.min(3, S.f.bidWrong || 0) - (S.f.escPen || 0));   // 答错、乱摆会扣时间，但不低于下限
     const t = S.f._escT != null ? Math.min(base, Math.max(ESC_FLOOR, S.f._escT)) : base;
     S.timer(t, '鸡叫', dawnBad, { during: true });
   }
@@ -888,9 +888,9 @@
     MATS.forEach(id => { S.ent(id).off = true; S.hide(id + '_k'); });   // 摊主都收摊走了，只剩摊布
     if (S.f.kindXie) { S.hide('cr2a'); S.hide('cr2b'); S.place('tan_xie_k', 19, 3, 0); }   // 替他穿过针：老汉把那摞箱笼挪开了
     S.lights(ROUTE.map(([x, y]) => [x * TS + 8, y * TS + 8, 1.5, .6]));
-    CROWD.forEach(c => { const e = S.ent(c.id); S.place(c.id, c.x0, c.y, 1); e.alpha = .85; });
+    CROWD.forEach(c => { const e = S.ent(c.id); S.place(c.id, c.x0, c.y, 1); e.alpha = .85; e.s.away = 0; });
     const h = S.ent('hp_g'); S.stop('hp_g'); h.px = 0; h.py = 8 * TS; h.x = 0; h.y = 8; h.hidden = true;
-    S.f._hpOn = false; S.f._hpT = 3; S.f._hpWarn = false; S.f._hitCD = false; S.f._hits = 0;
+    S.f._hpOn = false; S.f._hpT = 2.4; S.f._hpWarn = false; S.f._hitCD = false; S.f._hits = 0;
     if (!S.f._escD && S.once('escIntro')) {
       await S.narr('鬼市在散。卖东西的卷起地上的布，扛起包袱，逆着你往巷子里走。\n摊上的灯笼都灭了——只剩一路，还亮着。');
       if (S.f.kindXie) await S.narr('路当中摞着的箱笼旁边，光脚的老汉朝你作了个揖，把一摞箱笼推到了墙根。');
@@ -911,7 +911,13 @@
     S.f._rs = (S.f._rs ?? .5) - dt;
     if (S.f._rs <= 0) { S.f._rs = .75; let dm = 99; for (const c of CROWD) { const e = S.ent(c.id); if (e && !e.hidden) dm = Math.min(dm, Math.abs(e.px - p.px) / TS + Math.abs(e.py - p.py) / TS); } if (dm <= 5) PAPER(S, .25 + .6 * (1 - dm / 5)); }
     for (const c of CROWD) {
-      const e = S.ent(c.id); if (!e || e.hidden) continue;
+      const e = S.ent(c.id); if (!e) continue;
+      if (e.s.away > 0) {   // 撞过你的那个先走远几秒，再从东头回来
+        e.s.away -= dt;
+        if (e.s.away <= 0) { if (Math.abs(p.x - c.hi) + Math.abs(p.y - c.y) > 4) { e.px = c.hi * TS; e.py = c.y * TS; e.x = c.hi; e.y = c.y; e.mv = null; e.hidden = false; } else e.s.away = .5; }
+        continue;
+      }
+      if (e.hidden) continue;
       if (!e.mv) {
         const x = Math.round(e.px / TS);
         if (x <= c.lo) { if (Math.abs(p.x - c.hi) + Math.abs(p.y - c.y) > 3) { e.px = c.hi * TS; e.py = c.y * TS; e.x = c.hi; e.y = c.y; } }
@@ -931,11 +937,11 @@
         return S.die('收摊的人流从你身上漫过去，像一阵冷水。\n你被裹在包袱和袍子中间，脚不沾地，跟着他们，往鬼市的深处走去。\n手里的长命锁，一点一点，凉了。', '卷进了人流');
       }
       S.sfx('sting'); S.shake(300, 2);
-      e.px = c.hi * TS; e.py = c.y * TS; e.x = c.hi; e.y = c.y; e.mv = null;
+      e.mv = null; e.hidden = true; e.s.away = 4;
       await S.narr('一只冰凉的手攥住了你的手腕——\n收摊的人扛着包袱，从你身上挤过去，像一阵冷水漫过。你使劲一挣，挣开了。');
       S.timerAdd(-4);
       await S.think('别碰着他们……再被卷住，就出不去了。');
-      S.f._hitCD = false; S.f._grace = 1.5;
+      S.f._hitCD = false; S.f._grace = 2;
     };
   }
   async function hpCatch(S) {

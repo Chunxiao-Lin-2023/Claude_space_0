@@ -20,18 +20,18 @@
     '######################',
     '######################',
     '#mmmmmmmmmmmmmmmmmmmm#',
-    '#dddmdddmmmmmmmdddddd#',
-    '#dddmddddddmdddddmddd#',
-    '#uudmddddddmdddddmddd#',
-    '#uuuuuuddddmdddddmddd#',
-    '#uuuuuuuuuumdddddmddd#',
-    '#ddduuuuuuuuuuudddddd#',
-    '#ddddddduuuuuuuuuuudd#',
-    '#dddmddddddduuuuuuuuu#',
-    '#dddmdmmmmdddddduuuuu#',
-    '#dddmdddddddddddddduu#',
-    '#dddmdddddddddmmmmmmd#',
-    '#dddddddddddddddddddd#',
+    '#dddmddummmmmmudddddd#',
+    '#dddmdududdmdududmddd#',
+    '#uudmddudddmdduddmdud#',
+    '#uuumuuddddmdddddmudu#',
+    '#uuumuumuuumdddddmdud#',
+    '#uuumuumuuuuuuudddddd#',
+    '#dddmddduuuuuuuumuudd#',
+    '#dddmddddddduuuumuuuu#',
+    '#dudmdmmmmddddddmuuuu#',
+    '#udumdddddudddddddduu#',
+    '#dudmddddududdmmmmmmd#',
+    '#dddddddddudddddddddd#',
     '######################'];
   const zone = (x, y) => (PIT[y] || '')[x] || '#';
   const SONS = {
@@ -47,13 +47,13 @@
   };
   const ORDER = ['qn', 'yz', 'cf', 'pl', 'sn', 'bx', 'ba', 'fx', 'cw'];
   const CREEK = [[1, 6], [5, 7], [9, 8], [13, 9], [17, 10], [20, 11]];
-  const FULL = 190, FLOOR = 90;
+  const FULL = 240, FLOOR = 100;
   const TRACES = ['t_stone', 't_photo', 't_bell'];
   const GLOW = { r: 1, col: 'rgba(150,210,160,.10)' };   // 石兽眼睛里一点幽绿的光：远远看得见在哪
   const traceN = S => TRACES.filter(k => S.f[k]).length;
   let PH = null;   // 喘气的周期（只在主机上推进；检查点里不存，重来时重建）
 
-  const lowDur = S => Math.max(6, 10 - (S.f.rouse || 0) * .8);
+  const lowDur = S => Math.max(5, 8 - (S.f.rouse || 0) * .8);
   /* kind：null 恢复原样，'S' 渗水（预警），'F' 淹没；big = 连高地一起 */
   function setWater(S, kind, big) {
     for (let y = 2; y < 15; y++) for (let x = 1; x < 21; x++) { const z = zone(x, y); if (z === 'u' || (big && z === 'd')) S.tile(x, y, kind || z, 'pit'); }
@@ -81,7 +81,7 @@
     else if (n <= 3) S.toast('泥里咕嘟咕嘟冒泡——水要上来了');
   }
   function toFlood(S) {
-    PH.st = 'flood'; PH.t = 0; PH.dur = PH.big ? 4.5 : 4;
+    PH.st = 'flood'; PH.t = 0; PH.dur = PH.big ? 4.5 : 5;
     setWater(S, 'F', PH.big); S.sfx('splash'); S.amb('river');
     const sh = S.ent('shadow'); S.place('shadow', 1, 6, 2); sh.alpha = .6;
   }
@@ -97,16 +97,17 @@
   }
   function riteTick(S, dt) {
     if (!PH || !S.f.rite || S.f.riteDone || S.map !== 'pit' || W.ended || W.endScreen) return;
-    if (PH.grab || S.busy) return;
-    PH.t += dt; PH.idle = (PH.idle || 0) + dt;
-    if (PH.idle > 45 && PH.st === 'low') { PH.idle = 0; return idleHint(S); }
+    if (PH.grab) return;
+    /* 水不等人：对话、插香的时候照样喘气；只是抓脚要等对话合上（站在浜底插香，就得赶在冒泡前插完） */
+    PH.t += dt; if (!S.busy) PH.idle = (PH.idle || 0) + dt;
+    if (PH.idle > 45 && PH.st === 'low' && !S.busy) { PH.idle = 0; return idleHint(S); }
     /* 老法师的木鱼：平常一秒一下，水要上来时敲得又急又响 */
-    PH.mu -= dt; if (PH.mu <= 0) { PH.mu = PH.st === 'warn' ? .3 : 1.05; muyu(S, 0, PH.st === 'warn' ? .06 : .035); }
+    PH.mu -= dt; if (PH.mu <= 0 && !S.busy) { PH.mu = PH.st === 'warn' ? .3 : 1.05; muyu(S, 0, PH.st === 'warn' ? .06 : .035); }
     if (PH.st === 'low') { if (PH.t >= PH.dur) toWarn(S, false); }
     else if (PH.st === 'warn') { if (PH.t >= PH.dur) toFlood(S); }
     else if (PH.st === 'flood') {
       shadowMove(S);
-      if (tileName(curMap(), S.pl.x, S.pl.y) === 'flood') return grab(S);
+      if (!S.busy && tileName(curMap(), S.pl.x, S.pl.y) === 'flood') return grab(S);
       if (PH.t >= PH.dur) toLow(S);
     }
   }
@@ -884,7 +885,7 @@
           await S.narr('铁梯子又湿又滑。你一级一级往下爬，探照灯越来越远，泥腥味越来越重。');
           await S.narr('老法师在坑顶的铁板上盘腿坐下，点上一炷很长很长的香。\n他敲了一下木鱼。');
           muyu(S, 0, .06);
-          await S.narr('这才看清：坑底的泥里，东一只、西一只，露出九个长满青苔的石兽头。\n一道更低的沟从西往东斜着穿过坑底，泥水汪汪的——那就是老浜底。');
+          await S.narr('这才看清：坑底的泥里，东一只、西一只，露出九个长满青苔的石兽头。\n一道更低的沟从西往东斜着穿过坑底，泥水汪汪的——那就是老浜底。\n沟上横着几块铺路钢板；石兽脚边的泥，也都塌成了一个个小水坑。');
           await S.say('老法师', ['九个孩子都在这里了。从老大请起，一个一个来。', '它在喘气。泥里冒泡、木鱼敲急，水就要上来——上铁板，上高地。', '我这炷香烧完之前，要请完。去吧。']);
           S.goal('给九子请安：从老大开始（0/9）');
           if (S.coop) S.toast('两个人：一个翻「笺」里的抄本念，一个下去请安、盯着水');

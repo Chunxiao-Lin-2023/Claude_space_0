@@ -674,13 +674,13 @@
   }
   function chaseOn(S) {
     S.norun(true);
-    S.chase('beom', { spd: CH_SPD, wait: .9, catch: async S => caught(S, 'chase', '「' + L2 + '」\n声音就在你耳朵后面。\n一只又湿又冷的东西，搭上了你的肩膀。', '它追上你了') });
+    S.chase('beom', { spd: CH_SPD, wait: .8, catch: async S => caught(S, 'chase', '「' + L2 + '」\n声音就在你耳朵后面。\n一只又湿又冷的东西，搭上了你的肩膀。', '它追上你了') });
   }
-  const CH_SPD = 3.1;
+  const CH_SPD = 3.2;
   async function startChase(S, again) {
     const f = S.f;
     f.chaseOn = true; mimicT = 2.5; mimicI = 0;
-    S.stop('beom'); S.place('beom', 21, 11, 1); S.ent('beom').alpha = 1;
+    S.stop('beom'); S.place('beom', 19, 11, 1); S.ent('beom').alpha = 1;
     if (!again) {
       S.amb('river'); breath(S, .07);
       await S.narr('身后，右边的林子「哗啦」一声分开了。');
@@ -880,11 +880,11 @@
     G.rect(8, 11, 9, 18, 'd'); G.rect(8, 13, 9, 14, 'k');
     G.rect(22, 14, 23, 18, 'd');
     G.rect(8, 11, 16, 12, 'd');
-    G.rect(15, 5, 16, 10, 'd'); G.rect(15, 7, 16, 8, 'k');
+    G.rect(15, 7, 16, 10, 'd'); G.rect(15, 7, 16, 8, 'k');
     G.rect(17, 11, 26, 12, 'd');
-    G.rect(8, 5, 24, 6, 'd');
-    G.rect(23, 0, 24, 4, 'k');
-    G.set(11, 20, 'K'); G.set(20, 19, 'K'); G.set(25, 11, 'K'); G.set(9, 6, 'K');
+    G.rect(8, 6, 24, 6, 'd');   // 第三个岔路：单行道，钻进左边的死胡同，它就堵在你和出口之间
+    G.rect(23, 0, 24, 5, 'k');
+    G.set(11, 20, 'K'); G.set(20, 19, 'K'); G.set(25, 11, 'K');
     return G.rows();
   }
   function fallsRows() {
@@ -984,7 +984,7 @@
           { id: 'doltap', x: 14, y: 21, spr: 'doltap', on: async S => { await S.narr('路边垒着一座小石塔。来往的人一人放一块石头，许一个愿。'); if (!S.f.f1ok) { await S.think('（……再听一遍。）'); await f1Voices(S); } } },
           { id: 'tie', x: 9, y: 16, spr: 'tie', solid: false, on: tieUse },
           { id: 'doltap2', x: 14, y: 9, spr: 'doltap', on: N('又一座石塔。最上面那块石头，是湿的。') },
-          { id: 'tie2', x: 22, y: 5, spr: 'tie', solid: false, on: N('另一根粉色的发圈，挂在右边的树枝上。……她往这边走了。') },
+          { id: 'tie2', x: 21, y: 6, spr: 'tie', solid: false, on: N('另一根粉色的发圈，挂在右边的树枝上。……她往这边走了。') },
           { id: 'beom', x: 21, y: 11, spr: 'beom', hidden: true, solid: false },
           { id: 'toFalls', x: 23, y: 0, w: 2, solid: false, touch: toFalls }
         ],
@@ -1052,13 +1052,16 @@
       const by = h - 22;
       for (let i = 0; i < 16; i++) R(i * 10, by - 34 - Math.round(Math.abs(Math.sin(i * .7)) * 22), 10, 60, '#121c22');
       for (let i = 0; i < 20; i++) R(i * 8, by - 18 - (i * 37 % 9), 8, 20, '#0c1418');
-      R(30, by - 52, 5, 40, 'rgba(210,224,232,.75)'); R(31, by - 52, 2, 40, '#f0f6fa'); R(24, by - 14, 18, 3, 'rgba(220,232,240,.6)');
-      const x0 = 70, y0 = by - 40;
-      R(x0, y0 + 8, 60, 32, '#e8e5dd'); R(x0 + 6, y0 + 2, 46, 10, '#e8e5dd'); R(x0 - 4, y0 + 18, 70, 18, '#e8e5dd');
-      for (let i = 0; i < 16; i++) R(x0 - 2 + i * 4 + (i % 2), y0 + 10 + (i % 3) * 3, 2, 26, i % 2 ? '#c8c3b8' : '#d8d4ca');
-      R(x0 + 16, y0 + 10, 22, 22, '#8e887f'); R(x0 + 14, y0 + 6, 26, 6, '#e8e5dd'); R(x0 + 14, y0 + 10, 3, 14, '#e8e5dd'); R(x0 + 37, y0 + 10, 3, 14, '#e8e5dd');
-      R(x0 + 19, y0 + 16, 6, 5, '#050505'); R(x0 + 29, y0 + 16, 6, 5, '#050505'); R(x0 + 20, y0 + 16, 2, 2, '#ffffff'); R(x0 + 30, y0 + 16, 2, 2, '#ffffff');
-      R(x0 + 23, y0 + 25, 8, 4, '#3a0e12'); R(x0 + 24, y0 + 26, 6, 2, '#100204');
+      R(22, by - 60, 22, 8, '#1a2228'); R(26, by - 54, 10, 44, 'rgba(210,224,232,.7)'); R(28, by - 54, 3, 44, '#f0f6fa'); R(33, by - 50, 2, 40, '#dce8ee'); R(20, by - 12, 24, 4, 'rgba(220,232,240,.6)');
+      const x0 = 72, y0 = by - 50;
+      R(x0 - 2, y0 + 4, 54, 46, '#e8e5dd'); R(x0 + 4, y0, 42, 6, '#e8e5dd'); R(x0 - 8, y0 + 26, 66, 24, '#e8e5dd');   // 一大团垂到地上的白毛
+      for (let i = 0; i < 18; i++) R(x0 - 6 + i * 4 + (i % 2), y0 + 6 + (i % 3) * 4, 2, 44 - (i % 3) * 4, i % 2 ? '#c8c3b8' : '#d8d4ca');
+      R(x0 + 15, y0 + 8, 18, 30, '#8e887f'); R(x0 + 15, y0 + 8, 2, 30, '#7a746e'); R(x0 + 31, y0 + 8, 2, 30, '#7a746e');   // 又窄又长的灰脸
+      R(x0 + 12, y0 + 4, 24, 7, '#e8e5dd'); R(x0 + 13, y0 + 8, 3, 20, '#e8e5dd'); R(x0 + 32, y0 + 8, 3, 20, '#e8e5dd');
+      for (let i = 0; i < 4; i++) R(x0 + 17 + i * 4, y0 + 8, 1, 6 + (i % 2) * 6, '#d8d4ca');
+      R(x0 + 17, y0 + 17, 5, 5, '#050505'); R(x0 + 26, y0 + 17, 5, 5, '#050505'); R(x0 + 18, y0 + 17, 1, 1, '#ffffff'); R(x0 + 27, y0 + 17, 1, 1, '#ffffff');
+      R(x0 + 20, y0 + 28, 8, 7, '#4a0e12'); R(x0 + 21, y0 + 29, 6, 5, '#120204'); for (let i = 0; i < 4; i++) R(x0 + 21 + i * 2, y0 + 28, 1, 1, '#e8e2d4');   // 张着嘴喊「哥——」
+      R(x0 - 10, by - 6, 10, 4, '#d8d4ca'); R(x0 + 50, by - 6, 10, 4, '#d8d4ca');
       R(x0 - 6, by - 4, 74, 4, 'rgba(0,0,0,.4)');
     },
     resume: {
