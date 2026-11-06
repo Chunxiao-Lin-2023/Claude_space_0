@@ -63,8 +63,8 @@ SOL = [
     ['expect', W + ".f.wrong === 1"],
     ['js', DIG_RIGHT, [0]],
     ['expect', W + ".inv.includes('gu') && " + W + ".f.ph === 'run0'"],
-    ['step', 12, 15],
-    ['expect', W + ".mapId === 'si' && " + W + ".f.ph === 'run' && " + W + ".f.bag === 3"],
+    ['step', 12, 17],
+    ['expect', W + ".mapId === 'si' && " + W + ".f.ph === 'run' && " + W + ".f.bag === 2"],
     ['shot', 'chase'],
     ['step', 16, 23],                                       # （真人速度的追逐在 scratchpad 变体里测）
     ['expect', W + ".mapId === 'jia'"],

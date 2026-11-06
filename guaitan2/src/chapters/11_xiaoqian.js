@@ -6,7 +6,7 @@
      d4 燕生赠革囊 → dig 寺北找坟 → run0 抱骨回寺 → run 夜叉追 → ep 宁家 */
   const DIED = { n2: 0, n3: 0, run: 0 };      // 本局各段死过几次（只影响提示；新开一局清零，重来不清）
   const CH = { frz: 0, spawn: 0, slow: 0, near: 0, beat: 0, warnT: 0, snore: 0 };   // 追逐段的瞬时状态（不进存档，resume 里复位）
-  const YC_SPD = 4.4, BAG_R = 2.6, FRZ_T = 2.2, WALK_K = .8;
+  const YC_SPD = 5.0, BAG_R = 2.6, FRZ_T = 2.2, WALK_K = .8;
   const POP = ['B', 'D', 'E'];                 // 三棵白杨（寺北荒坟），每局随机分配：乌巢 / 喜鹊窝 / 掉在地上的窝
   const POP_AT = { B: '北边偏西那棵', D: '东北角那棵', E: '西边坟堆中间那棵' };
   const ROLES = ['crow', 'magpie', 'fallen'];
@@ -62,6 +62,7 @@
           else if (d === 3) { R(5, G.tT + 1, 6, 10, '#3a2a18'); R(5, G.tT + 1, 6, 1, '#6a4a28'); }   // 背上的箱箧
         } },
       lanxi: { skin: '#f0cca8', hair: '#1a1210', hs: 'bun', top: '#7a5a8a', top2: '#ece4d4', bottom: '#4a3a5a', robe: true, shoes: '#222', hat: 'cap', hatC: '#2a2a3a' },
+      mu: { skin: '#e0c0a4', hair: '#b8b4ac', hs: 'bun', top: '#3a4a5a', top2: '#d8d4cc', bottom: '#2a3440', skirt: true, shoes: '#222' },
       pu: { skin: '#d4a882', hair: '#2a2420', hs: 'short', top: '#6a6050', bottom: '#3a3428', shoes: '#1a1a1a', hat: 'straw', hatC: '#a89060' },
       yao: { skin: '#f6ece8', hair: '#0a0808', hs: 'long', top: '#e8dce4', bottom: '#d8ccd8', robe: true, ghost: true },
       yecha: { key: 'xq-ycha', big: true, skin: '#2f5f6a', hair: '#b8241a', hs: 'messy', top: '#1a1a20', top2: '#3a1a14', bottom: '#24161a', shoes: '#101010', eye: '#fff27a', mouth: '#1a0404',
@@ -137,7 +138,7 @@
     },
     async intro(S) {
       for (const k in DIED) DIED[k] = 0;
-      await S.card('第十一夜　聂小倩', '清　浙江金华　城北', '浙江有个书生，姓宁，名采臣。\n他常对人说：「我这辈子，只认一个女人。」\n\n那年学使来金华主持考试，\n城里的客店贵得住不起。\n他背着书箧，往城北走。');
+      await S.card('第十一夜　聂小倩', '清　浙江金华　城北', '浙江有个书生，姓宁，名采臣。\n他常对人说：「生平无二色。」\n——这辈子，只认一个女人。\n\n那年学使来金华主持考试，\n城里的客店贵得住不起。\n他背着书箧，往城北走。');
     },
     tick(S, dt) { chaseTick(S, dt); snoreTick(S, dt); },
     thumb(g, w, h) {   // 月下寺顶、一棵挂着乌巢的白杨、一道剑光
@@ -158,10 +159,8 @@
         R(5, 7, 2, 2, '#8a6a30'); R(9, 7, 2, 2, '#8a6a30');
         if (e.open) { R(2, -1, 12, 17, '#0a0606'); R(4, 3, 8, 13, 'rgba(200,170,90,.07)'); }
         R(-8, -15, 32, 11, '#1a0e06'); R(-7, -14, 30, 9, '#22302a'); R(-8, -15, 32, 1, '#a88a3a'); R(-8, -5, 32, 1, '#a88a3a');
-        const G = '#c8a040';   // 三个字的笔画（只是示意）
-        R(-4, -12, 5, 1, G); R(-3, -10, 3, 1, G); R(-5, -8, 7, 1, G); R(-2, -12, 1, 5, G);
-        R(5, -12, 6, 1, G); R(7, -13, 1, 3, G); R(5, -10, 6, 1, G); R(6, -9, 1, 2, G); R(6, -8, 4, 1, G); R(9, -9, 1, 2, G);
-        R(14, -13, 1, 7, G); R(13, -11, 6, 1, G); R(17, -13, 1, 7, G); R(15, -8, 1, 1, G);
+        const G = '#c8a040', GD = '#8a6a2a';   // 匾上的字：只画成三团墨迹般的金色笔触，不去拼真字
+        for (let k = 0; k < 3; k++) for (let i = 0; i < 14; i++) { const h = hash(k, i, 7), x = -5 + k * 9 + ((h * 6) | 0), y = -13 + ((hash(i, k, 9) * 7) | 0); R(x, y, h > .6 ? 2 : 1, h < .3 ? 2 : 1, h > .45 ? G : GD); }
       },
       pagoda(g, e, t, R) {   // 七层砖塔（只占一格，向上画）
         const S = '#6a6660', D = '#262422', L = '#8a8680';
@@ -242,8 +241,17 @@
           R(x, y, ww, 4, '#3e5e38'); if ((i + (fl > 0 ? 1 : 0)) % 2) R(x + 1, y + 1, ww - 2, 2, '#c8d2c4');
         }
         R(4, -36, 2, 1, '#cfcbbd'); R(10, -38, 3, 1, '#cfcbbd');
-        if (e.nest === 'crow') { R(3, -46, 10, 3, '#3a2a1a'); R(4, -43, 8, 2, '#2a1e12'); R(2, -46, 2, 1, '#4a3a22'); R(12, -45, 2, 1, '#4a3a22'); const b = Math.sin(t * 3 + 1) > 0 ? 1 : 0; R(5, -48 - b, 2, 2, '#111'); R(9, -48 + b, 2, 2, '#111'); R(4, -47 - b, 1, 1, '#4a4020'); }
-        else if (e.nest === 'magpie') { R(4, -52, 8, 9, '#3a2a1a'); R(5, -53, 6, 1, '#3a2a1a'); R(3, -50, 1, 5, '#3a2a1a'); R(12, -50, 1, 5, '#3a2a1a'); R(10, -48, 2, 2, '#0a0604'); R(5, -51, 2, 1, '#4a3a22'); if (e.perch) { const h = Math.sin(t * 2) > .6 ? 1 : 0; R(6, -56, 4, 3, '#111'); R(5 - h, -57, 2, 2, '#111'); R(4 - h, -56, 1, 1, '#4a4020'); R(9, -55, 3, 1, '#111'); } }
+        if (e.nest === 'crow') {   // 敞口的大碗：宽、扁，口朝上，窝沿上探出两个黑脑袋
+          R(1, -47, 14, 4, '#3a2a1a'); R(2, -43, 12, 2, '#2a1e12'); R(0, -48, 3, 1, '#4a3a22'); R(13, -48, 3, 1, '#4a3a22'); R(5, -44, 1, 2, '#4a3a22'); R(10, -44, 1, 2, '#4a3a22');
+          R(3, -47, 10, 1, '#0e0a06');
+          const b = Math.sin(t * 3 + 1) > 0 ? 1 : 0; R(4, -50 - b, 3, 3, '#111'); R(9, -50 + b, 3, 3, '#111'); R(3, -49 - b, 1, 1, '#6a5a20'); R(12, -49 + b, 1, 1, '#6a5a20'); R(5, -50 - b, 1, 1, '#d8d0a0');
+        }
+        else if (e.nest === 'magpie') {   // 圆球形封顶窝：高、圆，侧面一个黑洞；一只老鸹蹲在顶上
+          R(4, -57, 8, 1, '#3a2a1a'); R(3, -56, 10, 12, '#3a2a1a'); R(2, -53, 1, 7, '#3a2a1a'); R(13, -53, 1, 7, '#3a2a1a'); R(4, -44, 8, 1, '#2a1e12');
+          R(4, -55, 3, 1, '#4a3a22'); R(9, -52, 3, 1, '#4a3a22'); R(5, -48, 2, 1, '#4a3a22');
+          R(10, -51, 3, 3, '#050302'); R(10, -52, 3, 1, '#5a4a30');
+          if (e.perch) { const h = Math.sin(t * 2) > .6 ? 1 : 0; R(6, -61, 4, 4, '#111'); R(5 - h, -62, 2, 2, '#111'); R(4 - h, -61, 1, 1, '#6a5a20'); R(9, -59, 3, 1, '#111'); }
+        }
         else if (e.nest === 'fallen') { R(9, 11, 7, 3, '#3a2a1a'); R(8, 13, 3, 1, '#4a3a22'); R(14, 10, 2, 1, '#4a3a22'); R(11, 12, 2, 1, '#0c0c10'); R(12, 10, 1, 2, '#0c0c10'); }
       },
       willow(g, e, t, R) {   // 柳树（带一个敞口的老鸹窝）
@@ -365,10 +373,10 @@
           { id: 'pu', x: 17, y: 22, spr: '@pu', dir: 3, hidden: true, on: S => puTalk(S) },
           { id: 'shi', x: 26, y: 13, w: 2, spr: 'shiti', hidden: true, on: S => shiOn(S) },
           /* 第二夜：院子里的诱惑 */
-          { id: 'g1', x: 13, y: 6, spr: 'gold', hidden: true, light: { r: .9, col: 'rgba(255,210,110,.25)' }, on: S => lureGold(S, 'g1') },
+          { id: 'g1', x: 17, y: 6, spr: 'gold', hidden: true, light: { r: .9, col: 'rgba(255,210,110,.25)' }, on: S => lureGold(S, 'g1') },
           { id: 'g2', x: 22, y: 10, spr: 'gold', hidden: true, light: { r: .9, col: 'rgba(255,210,110,.25)' }, on: S => lureGold(S, 'g2') },
           { id: 'g3', x: 25, y: 12, spr: 'gold', hidden: true, light: { r: .9, col: 'rgba(255,210,110,.25)' }, on: S => lureGold(S, 'g3') },
-          { id: 'yao', x: 11, y: 12, spr: '@yao', dir: 2, hidden: true, light: { r: 1.6, col: 'rgba(200,210,240,.12)' }, on: S => lureYao(S) },
+          { id: 'yao', x: 22, y: 13, spr: '@yao', dir: 1, hidden: true, light: { r: 1.6, col: 'rgba(200,210,240,.12)' }, on: S => lureYao(S) },
           /* 第四天：血点子 */
           { id: 'xue1', x: 31, y: 2, spr: 'xue', decal: true, hidden: true },
           { id: 'xue2', x: 30, y: 3, spr: 'xue', decal: true, hidden: true },
@@ -401,9 +409,9 @@
             chaseSetup(S);
             thump(S, .08); S.shake(300, 2);
             await S.narr('你刚进角门，身后的墙头上「咚」的一声，有什么重东西落了下来。\n……又一声。');
-            await S.think('别跑——抱着她，跑不起来。走稳了。\n燕生说过：它扑过来的时候，站定别动。');
-            coopG(S, '往南走，从山门出去！它扑到三四步远时站定别动（剑袋）；别踩地上的金子',
-              '往南走，从山门出去！一人盯身后报距离，一人走：它到三四步远时站定别动（剑袋）；别踩金子');
+            await S.think('别跑——抱着她，跑不起来。走稳了。\n燕生说过：它扑过来的时候，站定别动。\n（它离得近了，剑袋会发亮，「叮」地一响——那就是站住的时候。）');
+            coopG(S, '往南出山门！剑袋「叮」一响就站定别动；别踩金子',
+              '往南出山门！一人走，一人听剑袋「叮」就喊停；别踩金子');
             S.cp('chase');
             chaseSpawnSoon(S);
           }
@@ -418,7 +426,7 @@
           if (ph === 'n2') {
             if (y === 11 && x <= 6 && !S.f.voiceDone && S.once('xsVoice')) { S.sfx('whisper'); return S.say('西边的僧舍里', '宁相公……这边……', { style: 'whisper' }); }
             const yo = S.ent('yao');
-            if (yo && !yo.hidden && Math.abs(x - 11) + Math.abs(y - 12) <= 2 && S.once('yaoTalk')) return (async () => {
+            if (yo && !yo.hidden && Math.abs(x - 22) + Math.abs(y - 13) <= 2 && S.once('yaoTalk')) return (async () => {
               S.bubble('yao', '…', 1500); hum(S, .02);
               await S.narr('池边坐着一个白衣裳的女人，背对着你，两只脚泡在黑水里。\n她在哼一支小曲。');
               await S.say('池边的女人', '相公……我的鞋掉进水里了，帮我捞一捞……', { style: 'whisper' });
@@ -445,7 +453,7 @@
           '#..........#.........#',
           '#..........#.........#',
           '#..........#.........#',
-          '#####k##########k#####'],
+          '#####.##########.#####'],
         ents: [
           /* 西屋（你的） */
           { id: 'swin', x: 5, y: 7, spr: 'shichuang', on: S => swinOn(S) },
@@ -487,7 +495,7 @@
         }
       },
       /* ---------------- 寺北荒坟 ----------------
-         六棵树，每棵树下一座坟：A 柳 (4,4)、B 白杨 (9,3)、C 槐 (15,4)、D 白杨 (21,3)、E 白杨 (6,9)、F 松 (19,9)。坟在树的正下方一格。
+         六棵树，每棵树下一座坟：A 柳 (4,6)、B 白杨 (9,5)、C 槐 (15,6)、D 白杨 (21,5)、E 白杨 (6,11)、F 松 (19,11)。坟在树的正下方一格。
          三棵白杨的窝每局随机：乌巢（敞口）/ 喜鹊窝（封顶，上面蹲着老鸹）/ 窝掉在树根下。 */
       fen: {
         amb: 'wind', dark: .42, plr: 3.6, floor: 'dirt',
@@ -495,6 +503,8 @@
         tileOpts: { grassC: '#34402a', treeC: '#1e2e1c' },
         rows: [
           'PTTPTTPTTPTTPTTPTTPTTPTTPT',
+          'P""""""""""""""""""""""""T',
+          'T""""""""""""""""""""""""P',
           'T""""""""""""""""""""""""P',
           'P"""""""""""""""""G""""""T',
           'T"G"""""""""G""""""""""""P',
@@ -511,22 +521,22 @@
           'P"""""""""""dd"""""""""""T',
           'PTPTPTPTPTPTddPTPTPTPTPTPT'],
         ents: [
-          { id: 'tA', x: 4, y: 4, spr: 'willow', on: S => treeOn(S, 'A') },
-          { id: 'tB', x: 9, y: 3, spr: 'poplar', on: S => treeOn(S, 'B') },
-          { id: 'tC', x: 15, y: 4, spr: 'huai', on: S => treeOn(S, 'C') },
-          { id: 'tD', x: 21, y: 3, spr: 'poplar', on: S => treeOn(S, 'D') },
-          { id: 'tE', x: 6, y: 9, spr: 'poplar', on: S => treeOn(S, 'E') },
-          { id: 'tF', x: 19, y: 9, spr: 'song', on: S => treeOn(S, 'F') },
-          { id: 'mA', x: 4, y: 5, spr: 'mound', on: S => digOn(S, 'A') },
-          { id: 'mB', x: 9, y: 4, spr: 'mound', on: S => digOn(S, 'B') },
-          { id: 'mC', x: 15, y: 5, spr: 'mound', on: S => digOn(S, 'C') },
-          { id: 'mD', x: 21, y: 4, spr: 'mound', on: S => digOn(S, 'D') },
-          { id: 'mE', x: 6, y: 10, spr: 'mound', on: S => digOn(S, 'E') },
-          { id: 'mF', x: 19, y: 10, spr: 'mound', on: S => digOn(S, 'F') },
-          { x: 12, y: 8, spr: 'gravestone', on: S => S.narr('一块倒了的石碑，字叫青苔吃得只剩一个「之」字。') },
-          { x: 17, y: 13, spr: 'invisible', solid: true, on: S => S.narr('一座没有碑的荒坟，坟头上压着一块瓦片。不知道是谁的。') },
-          { x: 12, y: 15, spr: 'invisible', touch: S => fenExit(S) },
-          { x: 13, y: 15, spr: 'invisible', touch: S => fenExit(S) }
+          { id: 'tA', x: 4, y: 6, spr: 'willow', on: S => treeOn(S, 'A') },
+          { id: 'tB', x: 9, y: 5, spr: 'poplar', on: S => treeOn(S, 'B') },
+          { id: 'tC', x: 15, y: 6, spr: 'huai', on: S => treeOn(S, 'C') },
+          { id: 'tD', x: 21, y: 5, spr: 'poplar', on: S => treeOn(S, 'D') },
+          { id: 'tE', x: 6, y: 11, spr: 'poplar', on: S => treeOn(S, 'E') },
+          { id: 'tF', x: 19, y: 11, spr: 'song', on: S => treeOn(S, 'F') },
+          { id: 'mA', x: 4, y: 7, spr: 'mound', on: S => digOn(S, 'A') },
+          { id: 'mB', x: 9, y: 6, spr: 'mound', on: S => digOn(S, 'B') },
+          { id: 'mC', x: 15, y: 7, spr: 'mound', on: S => digOn(S, 'C') },
+          { id: 'mD', x: 21, y: 6, spr: 'mound', on: S => digOn(S, 'D') },
+          { id: 'mE', x: 6, y: 12, spr: 'mound', on: S => digOn(S, 'E') },
+          { id: 'mF', x: 19, y: 12, spr: 'mound', on: S => digOn(S, 'F') },
+          { x: 12, y: 10, spr: 'gravestone', on: S => S.narr('一块倒了的石碑，字叫青苔吃得只剩一个「之」字。') },
+          { x: 17, y: 15, spr: 'invisible', solid: true, on: S => S.narr('一座没有碑的荒坟，坟头上压着一块瓦片。不知道是谁的。') },
+          { x: 12, y: 17, spr: 'invisible', touch: S => fenExit(S) },
+          { x: 13, y: 17, spr: 'invisible', touch: S => fenExit(S) }
         ],
         async enter(S, first) {
           if (S.f.ph === 'd4') S.f.ph = 'dig';
@@ -540,8 +550,8 @@
             crow(S, 2, .03, .3);
             await S.narr('角门外是一片荒坟，一座挨一座，有的连碑都没有。\n几棵树稀稀拉拉地站在坟堆中间。风一过，有一种树的叶子哗啦啦地响。');
             await S.think('白杨之上，有乌巢者……\n燕生画的那张纸，得好好对一对。');
-            coopG(S, '找到「白杨之上，有乌巢者」，在那棵树下的坟里挖（对照燕生画的树：按 J 看笺）',
-              '找「白杨之上，有乌巢者」：一人看笺（J）念燕生画的树和窝，一人去认树、挖坟');
+            coopG(S, '找「白杨之上，有乌巢者」，在树下挖（对照燕生的图：J 看笺）',
+              '一人看笺（J）念燕生的图，一人认树：找「白杨之上，有乌巢者」');
             S.cp('fen');
           }
         }
@@ -573,7 +583,8 @@
           { x: 17, y: 4, spr: 'window', lit: true, on: S => S.narr('堂屋的窗亮着。母亲的影子映在窗纸上，一动不动。') },
           { x: 0, y: 8, spr: 'invisible', touch: async S => { await S.narr('回渡口的路。船已经走了。'); S.pos(1, 8, 2); } },
           { x: 2, y: 3, spr: 'invisible', solid: true, on: S => S.narr('书斋外的野地，长着一人高的荒草。远处是水田，有人在田里唱秧歌。') },
-          { id: 'qj', x: 4, y: 8, spr: '@qian', dir: 2, hidden: true, solid: false }
+          { id: 'qj', x: 4, y: 8, spr: '@qian', dir: 2, hidden: true, solid: false },
+          { id: 'mu', x: 16, y: 5, spr: '@mu', dir: 1, hidden: true, solid: false }
         ],
         async enter(S, first) {
           light(S);
@@ -646,12 +657,13 @@
     await Promise.all([w1, w2]);
     S.hide('lanxi'); S.hide('pu'); S.ent('dxw').lit = true;
     S.f.ph = 'a2'; light(S); S.amb('night');
-    S.goal('天黑了。回你那间僧舍歇下（燕生隔壁，西边那扇门）');
+    S.goal('天黑了，回你那间僧舍歇下（燕生隔壁）');
   }
   async function doorNing(S) {
     const ph = S.f.ph;
     if (ph === 'run') return S.toast('不能进屋——它会堵住门！');
-    if (['a1', 'a1d', 'a1y'].includes(ph)) { seeA1(S, 'nd'); return S.narr('一间空僧舍，比别的几间干净些。北墙上开着一扇小石窗。\n（先等这里的主人回来，打声招呼再住下。）'); }
+    if (ph === 'a1y') return S.narr('一间空僧舍，北墙上开着一扇小石窗。\n（那人就站在隔壁门口。先打个招呼，再住下。）');
+    if (['a1', 'a1d'].includes(ph)) { seeA1(S, 'nd'); return S.narr('一间空僧舍，比别的几间干净些。北墙上开着一扇小石窗。\n（先等这里的主人回来，打声招呼再住下。）'); }
     if (ph === 'a2' || (ph === 'n2' && S.f.dxDone) || (ph === 'd3b' && !S.has('puga') && !S.f.bedMoved)) { S.sfx('open'); return S.go('fang', 5, 11, 3); }
     if (ph === 'n2') return S.narr('（先去东厢看看那个仆人。）');
     if (ph === 'd2' || ph === 'd2b') return S.narr('（东厢出了这样的事，哪还有心思回屋。）');
@@ -662,6 +674,7 @@
     const ph = S.f.ph;
     if (ph === 'run') return S.toast('燕生不在屋里！他在山门外等你！');
     if (ph === 'a1' || ph === 'a1d') { seeA1(S, 'yd'); return S.narr('只有这一间，门上挂着一把新锁，锃亮锃亮的。\n——有人住。'); }
+    if (ph === 'a1y') return S.narr('锁已经开了。屋子的主人就站在门口看着你。');
     if (ph === 'd3b') { if (!S.has('puga')) return S.narr('（先回自己屋里，把铺盖卷过来。）'); S.sfx('open'); return S.go('fang', 16, 11, 3); }
     if (ph === 'n2') return S.narr('燕生屋里黑着。隔着门，鼾声像打雷一样。');
     if (['d4', 'dig', 'run0'].includes(ph)) return S.narr('燕生一早就进城去了。门虚掩着，北窗上的石棂断了一根。');
@@ -678,7 +691,7 @@
   async function jiaoOn(S) {
     const ph = S.f.ph;
     if (ph === 'run') return S.toast('它就是从那边来的！往南——去山门！');
-    if (ph === 'd4' || ph === 'dig') { if (!S.f.gotNang) return S.narr('门闩锈死了。（先去问问燕生。）'); S.sfx('open'); return S.go('fen', 12, 14, 3); }
+    if (ph === 'd4' || ph === 'dig') { if (!S.f.gotNang) return S.narr('门闩锈死了。（先去问问燕生。）'); S.sfx('open'); return S.go('fen', 12, 16, 3); }
     seeA1(S, 'jiao');
     return S.narr(ph === 'n2' ? '角门外黑漆漆的。风从门缝里钻进来，带着一股土腥味，还有……烧纸的味道。' : '北墙上一道小角门，门闩锈死了。门缝里吹进来一股凉气，带着土腥味。');
   }
@@ -725,8 +738,7 @@
     S.ent('swin').lit = true; S.show('moon');
     S.place('lao', 8, 3, 2); S.place('fu', 10, 3, 1);
     S.focus(10, 4);
-    await S.narr('你伏在石窗底下往外看。\n短墙外头是个小院子，月亮照得雪白。');
-    await S.narr('院里站着一个四十来岁的妇人；还有一个老太婆，穿一身暗红的衣裳，头上插着一把大银梳，驼着背，老得腰都直不起来。\n两个人对着月亮说话。');
+    await S.narr('你伏在石窗底下往外看。短墙外头是个小院子，月亮照得雪白。\n院里站着一个四十来岁的妇人；还有一个老太婆，穿一身暗红的衣裳，头上插着一把大银梳，驼着背，腰都直不起来。');
     await S.say('妇人', '小倩怎么这么久还不来？');
     await S.say('老太婆', '快来了吧。');
     await S.say('妇人', '是不是又跟姥姥闹别扭了？');
@@ -938,7 +950,7 @@
     S.f.ph = 'n2'; light(S); S.amb('night');
     S.hide('shi'); S.hide('pu');
     ['g1', 'g2', 'g3', 'yao'].forEach(k => S.show(k));
-    S.ent('yao').dir = 2;
+    S.ent('yao').dir = 1;
     S.ent('dx').open = false;
     if (S.f.puSaved) { S.ent('dxw').lit = false; S.ent('dxw').s.sh = 0; } else { S.ent('dxw').lit = true; S.ent('dxw').s.sh = 1; }
     S.pos(4, 5, 0);
@@ -946,7 +958,7 @@
     await S.narr('天黑透了。院子里的蓬蒿沙沙地响，一只夜鸟也没有。');
     if (S.f.puSaved) await S.think('那个仆人，天黑前走了没有？\n……还是去东厢看一眼。');
     else await S.think('那个仆人一个人守在东厢。\n昨天夜里，他家公子就是在那间屋里……\n去看看他。');
-    coopG(S, '去东厢看看那个仆人（院子里的东西，别捡、别理）', '去东厢看看那个仆人（院子里的东西别捡、别理——两个人互相盯着点）');
+    coopG(S, '去东厢看看那个仆人（院里的东西，别捡别理）', '去东厢看看那个仆人（院里的东西别捡别理，两人互相盯着）');
     S.cp('n2');
   }
   async function lureGold(S, id) {
@@ -1161,16 +1173,14 @@
     S.sfx('scream'); await S.alpha('ycw', 0, 400);
     S.ent('ewin').s.box = true;
     S.ent('yta').s.who = null; S.place('yanf', 19, 9, 1);
-    await S.narr('燕生醒了，翻身坐起。你赶紧装睡，眯着眼睛看他。');
     await S.walk('yanf', [16, 8], 3); S.face('yanf', 3);
-    await S.narr('他捧起箱子看了一遍，从里面取出一样东西，对着月光闻了闻——\n白光莹莹的，二寸来长，韭菜叶那么宽。他一层一层包好，放回破箱子里。');
+    await S.narr('燕生醒了。你赶紧装睡，眯着眼看他：他捧起箱子，取出一样东西对着月光闻了闻——\n白光莹莹的，二寸来长，韭菜叶那么宽。他一层一层包好，放回破箱子里。');
     await S.say('燕赤霞', '什么老魅，这么大胆子，把我的箱子都弄坏了。', { style: 'whisper' });
     S.face('yanf', 'pl');
     await S.say('宁采臣', '燕兄……刚才那是什么？');
     await S.say('燕赤霞', ['既然你看见了，也不瞒你。我，是个剑客。', '要不是窗上那根石棂挡了一下，那妖物当场就死了。不过，它也伤得不轻。']);
     const c3 = await S.ask('……', ['「能让我看看吗？」', '「……原来如此。」'], '宁采臣');
     if (c3 === 0) await S.narr('燕生很爽快地拿出来给你看——是一把小剑，荧荧的，像一片会发光的冰。');
-    await S.narr('从那以后，你更敬重燕生了。');
     return dayFour(S);
   }
 
@@ -1181,7 +1191,7 @@
     S.hide('ycw'); S.hide('yanf'); S.ent('edoor').locked = false;
     ['xue1', 'xue2', 'xue3', 'xueI'].forEach(k => S.show(k));
     S.place('yan', 28, 4, 2);
-    await S.card('第四天', '', '天亮了。\n北墙根底下，一路滴着黑红的血点子，一直滴到角门边上。');
+    await S.card('第四天', '', '天亮了。打那一夜起，你更敬重燕生了。\n北墙根底下，一路滴着黑红的血点子，一直滴到角门边上。');
     await S.go('si', 8, 5, 0);
   }
   async function yanD4(S) {
@@ -1199,7 +1209,7 @@
     await S.narr('燕生走到角门前，一拳砸在锈死的门闩上。「哐」的一声，门闩开了。');
     S.sfx('thud'); S.ent('jiao').locked = false;
     S.f.gotNang = true;
-    S.goal('找把锄头（西边塌了的僧舍里），从北墙角门去寺北荒坟');
+    S.goal('找把锄头（西边塌了的僧舍），从北墙角门去寺北荒坟');
     await S.walk('yan', [16, 22], 3.6); S.hide('yan');
   }
   const TREE_TXT = {
@@ -1214,10 +1224,11 @@
     fallen: '树上光秃秃的，什么也没有。\n树根底下倒摔着一个散了架的鸟窝，几根枯枝里夹着两片黑羽毛。'
   };
   function roleOf(S, k) { const i = POP.indexOf(k); return i < 0 ? null : S.f.pr[i]; }
-  async function treeOn(S, k) {
-    if (TREE_TXT[k]) { if (k !== 'F') crow(S, 1, .025); return S.narr(TREE_TXT[k]); }
-    const r = roleOf(S, k); if (r === 'crow' || r === 'magpie') crow(S, 1, .025);
-    return S.narr(POP_BASE + POP_NEST[r]);
+  async function treeOn(S, k) {   // 看树时镜头抬到树梢，窝看得见
+    const t = S.ent('t' + k); S.focus(t.x, Math.max(0, t.y - 3));
+    if (TREE_TXT[k]) { if (k !== 'F') crow(S, 1, .025); await S.narr(TREE_TXT[k]); }
+    else { const r = roleOf(S, k); if (r === 'crow' || r === 'magpie') crow(S, 1, .025); await S.narr(POP_BASE + POP_NEST[r]); }
+    S.focus(null);
   }
   const WHY = {
     A: '柳树皮是黑的，枝条垂着——这不是白杨。',
@@ -1242,13 +1253,15 @@
     S.sfx('sting'); S.shake(260, 2);
     await S.narr(BONES[(S.f.wrong - 1) % BONES.length]);
     await S.narr('你赶紧把土填回去，对着坟作了三个揖。\n天，又暗了一截。');
+    if (n1st(S)) { thump(S, .06); await S.narr('怀里的剑袋「嗤」地一响——坟里冒出来的冷气，把一块补丁冲裂了。\n（剑袋只剩两块补丁了。再挖错，惊动的只会更多。）'); }
     const n = S.f.wrong, why = WHY[k] || WHY[roleOf(S, k)];
     let hint = why;
     if (n === 2) hint += '\n（白杨……燕生说，皮是灰白的，长着「眼睛」，叶背发白。这里只有三棵那样的。）';
-    else if (n === 3) hint += '\n（三棵白杨里，只有一棵树上的窝，是敞着口、像碗的。）';
+    else if (n === 3) hint += '\n（三棵白杨：北边偏西一棵、东北角一棵、西边坟堆中间一棵。只有一棵树上的窝，是敞着口、像碗的。）';
     else if (n >= 4) hint += `\n（就是${POP_AT[ok]}——树梢上那个像碗一样的窝。）`;
     await S.think(hint);
   }
+  function n1st(S) { if (S.f.bagLost) return false; S.f.bagLost = 1; return true; }
   async function foundBones(S, k) {
     const m = S.ent('m' + k);
     m.s.dug = 2;
@@ -1259,12 +1272,12 @@
     await S.narr('你脱下身上的青衫，把骨头一根一根捡起来，包好，抱在怀里。\n轻得像一捆柴。');
     m.s.dug = 3; S.give('gu');
     S.f.ph = 'run0'; light(S);
-    crow(S, 5, .05);
+    crow(S, 5, .05); bell(S, .04, .8);
     S.shake(300, 2);
-    await S.narr('就在这时，一大群老鸹「呼」地从白杨上炸了起来，满天乱叫。\n太阳沉下去了。');
+    await S.narr('就在这时，一大群老鸹「呼」地从白杨上炸了起来，满天乱叫。\n城里的暮钟响了。太阳沉下去了。');
     await S.say('风里', '……谁动了我的丫头？', { style: 'whisper' });
     S.norun(true); S.speed(WALK_K);
-    coopG(S, '抱着她回寺里，从南边山门出去——燕生在山门外等（抱着骨头跑不起来）', '抱着她回寺里，从南边山门出去——燕生在山门外等（抱着骨头跑不起来；一人看路，一人盯身后）');
+    coopG(S, '抱着她回寺里，从南边山门出去（跑不起来）', '抱着她回寺里，从南边山门出去（跑不起来；一人走，一人喊停）');
   }
   async function fenExit(S) {
     if (S.f.ph === 'run0') { S.f.ph = 'run'; return S.go('si', 29, 2, 0); }
@@ -1273,7 +1286,7 @@
 
   /* ======================= 夜叉追逐 ======================= */
   function chaseSetup(S) {
-    S.f.bag = 3; S.f.warned = false;
+    S.f.bag = 3 - (S.f.bagLost || 0); S.f.warned = false;
     ['gd1', 'gd2', 'gd3', 'gd4', 'gd5'].forEach(k => S.show(k));
     ['yan', 'lanxi', 'pu', 'shi', 'g1', 'g2', 'g3', 'yao', 'xueI'].forEach(k => S.hide(k));
     S.show('bagl'); S.hide('yc'); S.ent('yc').alpha = 1;
@@ -1281,7 +1294,7 @@
     for (const k in CH) CH[k] = 0;
   }
   function chaseReset(S) {
-    S.stop('yc'); S.freeze('yc', false); S.hide('yc'); S.ent('yc').alpha = 1;
+    S.stop('yc'); S.freeze('yc', false); S.hide('yc'); S.ent('yc').alpha = 1; S.ent('yc').light = null;
     S.norun(true); S.speed(WALK_K); S.show('bagl'); S.lights(null); light(S);
     for (const k in CH) CH[k] = 0;
   }
@@ -1290,44 +1303,59 @@
     if (S.f.ph !== 'run' || S.map !== 'si') return;
     const p = S.pl, y = S.ent('yc');
     if (CH.flash > 0) { CH.flash -= dt; if (CH.flash <= 0) S.lights(null); }
-    if (CH.pend) {
+    if (CH.pend) {   // 夜叉从北墙头跳下来：只落在离玩家至少 4 步的墙根；玩家磨蹭不走，先给一句提醒
       if (S.busy) return;
       CH.spawn -= dt;
-      if (Math.abs(p.x - 29) + Math.abs(p.y - 2) >= 5 || CH.spawn <= 0) { CH.pend = 0; S.run(spawnYc); }
+      const pt = spawnPt(S), gone = Math.abs(p.x - 29) + Math.abs(p.y - 2) >= 5;
+      if (pt && (gone || CH.spawn <= 0)) { CH.pend = 0; CH.pt = pt; S.run(spawnYc); }
+      else if (!pt && CH.spawn <= 0 && !CH.nag) { CH.nag = 1; S.bubble('pl', '!', 1200); S.toast('墙头上有东西在看着你——快走！'); }
       return;
     }
     if (!y || y.hidden || !y.chase) return;
     if (CH.slow > 0) { CH.slow -= dt; if (CH.slow <= 0) S.speed(WALK_K); }
-    if (CH.frz > 0) { CH.frz -= dt; if (CH.frz <= 0) S.freeze('yc', false); }
+    if (CH.frz > 0) {
+      CH.frz -= dt;
+      if (CH.frz <= 0) { S.freeze('yc', false); y.light = null; }
+      else if (CH.frz < .6 && !CH.thaw) { CH.thaw = 1; y.light = { r: 1.5, flick: true, col: 'rgba(220,235,255,.3)' }; }
+    }
+    const yt = Math.round(y.px / TS) + ',' + Math.round(y.py / TS);
+    if (yt !== CH.yt) { CH.yt = yt; const dd = Math.hypot(y.px - p.px, y.py - p.py) / TS; S.tone('sine', 74, 38, .2, Math.max(.015, .09 - dd * .008), 0, 380); }   // 夜叉的脚步：越近越重
     CH.still = S.moving ? 0 : (CH.still || 0) + dt;
     const d = Math.hypot(y.px - p.px, y.py - p.py) / TS;
     const lv = S.f.bag > 0 && CH.frz <= 0 ? (d < 3 ? 2 : d < 5 ? 1 : 0) : 0;   // 剑袋越近越亮
     if (lv !== CH.lv) { CH.lv = lv; S.ent('bagl').light = { r: [1.3, 1.9, 2.5][lv], pl: true, flick: lv > 0, col: ['rgba(210,180,120,.14)', 'rgba(235,205,135,.24)', 'rgba(255,225,150,.34)'][lv] }; }
     CH.beat -= dt; if (d < 6 && CH.beat <= 0 && CH.frz <= 0) { S.sfx('heart'); CH.beat = .3 + d * .12; }
+    if (d <= BAG_R + 1.2 && S.f.bag > 0 && CH.frz <= 0 && !CH.ping) { CH.ping = 1; S.tone('triangle', 1760, 1750, .18, .05, 0); S.tone('triangle', 2640, 2630, .14, .03, .06); }   // 剑袋「叮」：现在站住！
+    if (d > 4.5) CH.ping = 0;
     if (!S.busy && CH.frz <= 0 && S.f.bag > 0 && d <= BAG_R && CH.still >= .12) repel(S);
   }
   function repel(S) {
-    S.f.bag--; CH.frz = FRZ_T; S.freeze('yc', true);
+    S.f.bag--; CH.frz = FRZ_T; CH.thaw = 0; S.freeze('yc', true);
+    S.ent('yc').light = { r: 1.5, col: 'rgba(220,235,255,.34)' };   // 定住：身上罩一层冷白的光，快解冻时一闪一闪
     thump(S, .12); S.shake(260, 3); S.bubble('yc', '!', 900);
     S.lights([[S.pl.px + 8, S.pl.py + 4, 3.6, .9]]); CH.flash = .3;
     S.toast(S.f.bag ? `剑袋猛地鼓了起来——它被定住了！快走！（补丁还剩 ${S.f.bag} 块）` : '最后一块补丁「嗤」地裂开了——它被定住了！快走！');
   }
+  const SPAWN = [[29, 2], [31, 2], [27, 2], [32, 3], [25, 3]];
+  function spawnPt(S) {
+    const p = S.pl; let best = null, bd = 3;
+    for (const q of SPAWN) { const dd = Math.abs(q[0] - p.x) + Math.abs(q[1] - p.y); if (dd > bd) { bd = dd; best = q; } }
+    return best;
+  }
   async function spawnYc(S) {
-    const p = S.pl, pts = [[29, 2], [32, 2], [25, 2], [27, 3]];
-    let best = pts[0], bd = -1;
-    for (const q of pts) { const dd = Math.abs(q[0] - p.x) + Math.abs(q[1] - p.y); if (dd > bd) { bd = dd; best = q; } }
+    const best = CH.pt || spawnPt(S) || SPAWN[0];
     S.place('yc', best[0], best[1], 0); S.ent('yc').alpha = 0;
     S.bubble('pl', '!', 900); thump(S, .1); S.shake(400, 3);
     await S.alpha('yc', 1, 600);
     S.sfx('scream');
     S.chase('yc', { spd: YC_SPD, catch: ycCatch, wait: .5 });
   }
-  function knockBack(S) {   // 被骨头撞开：退到离玩家 6~9 步、离它原来位置最近的一格
+  function knockBack(S) {   // 被骨头撞开：退到离玩家 4~5 步、离它原来位置最近的一格
     const m = curMap(), y = S.ent('yc'), p = S.pl, yx = Math.round(y.px / TS), yy = Math.round(y.py / TS);
     let best = null, bd = 1e9;
-    for (let dx = -9; dx <= 9; dx++) for (let dy = -9; dy <= 9; dy++) {
+    for (let dx = -5; dx <= 5; dx++) for (let dy = -5; dy <= 5; dy++) {
       const x = p.x + dx, yv = p.y + dy, md = Math.abs(dx) + Math.abs(dy);
-      if (md < 6 || md > 9 || !passable(m, x, yv, y)) continue;
+      if (md < 4 || md > 5 || !passable(m, x, yv, y)) continue;
       const dd = Math.abs(x - yx) + Math.abs(yv - yy);
       if (dd < bd) { bd = dd; best = [x, yv]; }
     }
@@ -1340,7 +1368,7 @@
       knockBack(S);
       await S.narr('一只爪子从背后扫过来——\n怀里的骨头忽然一烫，「嗡」的一声，把那东西撞出去老远！');
       await S.think('（是她在护着你……可这只能有一回。）');
-      S.chase('yc', { spd: YC_SPD, catch: ycCatch, wait: 1.2 });
+      S.chase('yc', { spd: YC_SPD, catch: ycCatch, wait: .6 });
       return;
     }
     DIED.run++;
@@ -1349,7 +1377,7 @@
     await S.die('一只爪子从背后扣住了你的肩膀。\n怀里的青衫包「哗」地散开，骨头撒了一地。\n\n你最后听见的，是墙头上一个老太婆在笑：\n「我的丫头，谁也带不走。」', '夜叉');
   }
   async function escape(S) {
-    S.stop('yc'); CH.frz = 0; CH.pend = 0; S.lights(null);
+    S.stop('yc'); S.freeze('yc', false); CH.frz = 0; CH.pend = 0; S.lights(null); S.ent('yc').light = null;
     S.ent('shanmen').open = true; S.sfx('open');
     S.place('yan', 18, 22, 1); S.ent('yan').light = { r: 3, col: 'rgba(255,180,90,.22)', flick: true };
     await S.say('燕赤霞', '低头！');
@@ -1374,6 +1402,7 @@
       if (!S.has('gu')) return S.narr('挖好的坑。');
       S.take('gu'); p.s.st = 1;
       await S.narr('你把青衫包轻轻放进坑里，一捧一捧地把土盖上，\n又把那块烂木牌插在坟前。');
+      await S.narr('烂木牌旁边，你另插了一块新削的木板，用墨写上：「聂氏小倩之墓」。\n她娘没能来接她。如今，有人接她回家了。');
       S.goal('舀一瓯浆水来祭她（书斋门口的水缸）');
       return;
     }
@@ -1397,7 +1426,7 @@
   async function callBack(S) {
     await S.wait(300);
     hum(S, .02);
-    await S.say('身后', '等等我——一起走！');
+    await S.say('身后', '缓待同行！——等等我，一起走！');
     S.turn(1);
     const p = S.pl, qx = Math.max(1, p.x - 4);
     S.place('qj', qx, 8, 2); S.ent('qj').alpha = 0;
@@ -1410,10 +1439,13 @@
     await S.narr('太阳底下，你第一回把她看清楚：脸上像映着晚霞。\n白天看，比夜里还要好看。');
     await S.ask('她看着你。', ['「走吧。我带你去见我娘。」', '「……走吧。」'], '宁采臣');
     S.follow('qj', true);
-    await S.walk('pl', [16, 5], 3.4);
-    S.turn(3);
+    await S.walk('pl', [15, 5], 3.4);
+    S.turn(2); S.place('mu', 16, 5, 1); S.sfx('open');
+    await S.say('母亲', '儿啊，你可回来了……这、这位姑娘是——');
+    S.follow('qj', false); S.face('qj', 2);
+    await S.narr('小倩从你身后走出来，低着头，给老人家行了个礼。\n母亲看着她，半天说不出话来。');
     await S.fade(1, 1200);
-    const head = '宁采臣带她进了堂屋，拜见母亲。\n老太太吓得说不出话。小倩不敢住下，每天天不亮就来，烧水做饭，洗衣扫地；天黑了，再自己回野地里的坟去。\n\n她起初什么也不吃。过了半年，才慢慢能喝一点稀粥。\n后来宁的妻子病故，母亲做了主，宁采臣娶了小倩。\n\n有一夜，她叫人把燕生那只破革囊挂到门上。半夜里，一个东西像鸟一样扑下来——电一样的眼睛，血红的舌头。\n革囊「格」地一响，一下胀得有筐那么大，里面探出半截什么，把那东西揪了进去。\n囊口一合，又缩回了原样。两个人凑过去看：袋子里，只有几斗清水。\n\n又过了几年，宁采臣中了进士。小倩给他生了一个儿子。';
+    const head = '你告诉母亲，她是谁、从哪里来。\n老太太吓得不敢留她。小倩不敢住下，每天天不亮就来，烧水做饭，洗衣扫地；天黑了，再自己回野地里的坟去。\n\n她起初什么也不吃。过了半年，才慢慢能喝一点稀粥。\n后来宁的妻子病故，母亲做了主，宁采臣娶了小倩。\n\n有一夜，她叫人把燕生那只破革囊挂到门上。半夜里，一个东西像鸟一样扑下来——电一样的眼睛，血红的舌头。\n革囊「格」地一响，一下胀得有筐那么大，里面探出半截什么，把那东西揪了进去。\n囊口一合，又缩回了原样。两个人凑过去看：袋子里，只有几斗清水。\n\n又过了几年，宁采臣中了进士。小倩给他生了一个儿子。\n书斋外那座坟前，一新一旧两块木牌，一直并排立着。';
     const pu = '\n\n那年秋天，兰溪托人捎来一封信，字写得很吃力：\n「宁相公，我还活着。」';
     await S.end(S.f.puSaved ? { id: 'pu', title: '东厢没有再死人', text: head + pu } : { id: 'home', title: '缓待同行', text: head });
   }

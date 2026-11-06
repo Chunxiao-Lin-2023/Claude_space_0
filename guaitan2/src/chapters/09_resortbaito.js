@@ -559,7 +559,7 @@
   async function fdoorUse(S) {
     const f = S.f, d = S.ent('fdoor');
     if (f.ph === 'd2') {
-      await S.narr('纸门上贴满了御札。一张压着一张，旧的发黄，新的还白着。门缝里透出一股潮乎乎的海水味。');
+      await S.narr('纸门上贴满了御札。一张压着一张，旧的发黄，新的还白着。门缝里透出一股潮乎乎的海水味。\n门口摆着早上收回来的膳：碗空了，一粒饭都不剩，筷子还竖着插在空碗里。');
       const r = await S.ask('规矩一：浜之间，不许进去。', ['别碰', '把门拉开一条缝']);
       if (r === 0) return;
       d.open = true; S.sfx('open');
@@ -632,12 +632,6 @@
     }
     if (f.ph === 'n2') return S.narr('镜子蒙得好好的。你不想再碰它。');
     await S.narr('蒙着白布的镜子。');
-  }
-  async function zspotUse(S) {
-    const f = S.f;
-    if (f.ph === 'n2' && f.n2s === 'up') return placeZen(S);
-    if (f.ph === 'd2') return S.narr('早上收回来的膳，摆在门口。\n碗空了，一粒饭都不剩。筷子还竖着插在空碗里。\n地板上，几粒饭粒，一直撒到镜子跟前。');
-    return S.narr('漆盘放在门口。');
   }
   /* 回头——健太 */
   async function kentaBehind(S, forced) {
@@ -868,7 +862,7 @@
   }
 
   /* ================= 守夜 ================= */
-  const CANDLES = ['c0', 'c1', 'c2', 'c3'], CRAWL_SPD = .72, CRAWL_WAIT = 1.1, C_T = 12;
+  const CANDLES = ['c0', 'c1', 'c2', 'c3'], CRAWL_SPD = .72, CRAWL_WAIT = 2, C_T = 13;
   async function vigilSetup(S) {
     const f = S.f;
     await S.fade(1, 800);
@@ -1110,7 +1104,7 @@
     ];
   }
   function kan2Rows() {
-    const room = '#tttttt#tttttt#llll#ttttttt#';
+    const room = '#tttttt#tttttt#llll#XXXXXXX#';
     return ['#'.repeat(28), '#'.repeat(28), room, room, room, room, '###l######l#####l###########', '#' + 'w'.repeat(26) + '#', '#' + 'w'.repeat(26) + '#', '#'.repeat(28), '#'.repeat(28)];
   }
   function umibeRows() {
@@ -1258,7 +1252,8 @@
       },
       /* ---------------- 汐见屋 二楼 ---------------- */
       kan2: {
-        amb: 'room', dark: .2, plr: 3, wall: 'paper', floor: 'tatami', legend: LEG,
+        amb: 'room', dark: .2, plr: 3, wall: 'paper', floor: 'tatami',
+        legend: Object.assign({ X: { t: 'tatami', solid: true } }, LEG),
         rows: kan2Rows(),
         ents: [
           { x: 1, y: 7, spr: 'stairsdown', solid: false, touch: stairsDown },
@@ -1274,7 +1269,7 @@
           { x: 13, y: 6, spr: 'painting', on: N('走廊上挂着一张全家福。老板、老板娘，和一个小男孩。\n小男孩的脸，被人用指甲刮花了——不，是被手摸了太多遍，摸花了。') },
           { id: 'photoF', x: 21, y: 8, spr: 'photo', on: photoUse },
           { id: 'fdoor', x: 23, y: 6, spr: 'fdoor', on: fdoorUse },
-          { id: 'zspot', x: 23, y: 7, spr: 'zenspot', solid: false, full: false, on: zspotUse },
+          { id: 'zspot', x: 23, y: 7, spr: 'zenspot', solid: false, full: false },
           { id: 'kagami', x: 26, y: 6, spr: 'kagami', covered: true, on: kagamiUse },
           { id: 'kenta2', x: 23, y: 7, spr: '@kentaP', hidden: true, solid: false, dir: 3 }
         ],
