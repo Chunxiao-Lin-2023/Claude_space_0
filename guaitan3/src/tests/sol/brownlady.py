@@ -35,9 +35,9 @@ SOL = [
     ['use', 'hk_5'],                               # 摘灯
     ['use', 'hk_10'],                              # 挂第十级
     ['use', 'tripod', [0, ['15']]],
-    ['wait', 400],
+    ['wait', 1000],
     ['shot', 'exposing'],
-    ['wait', 1400],
+    ['wait', 1600],
     ['expect', f"{D}.W.f.plate === 'lady10' && {D}.W.f.sawLady"],
     ['use', 'h_dkdoor'],
     ['use', 'd_tray', [0]],                        # 楼梯上的女人
@@ -50,7 +50,9 @@ SOL = [
     ['use', 'c_win'],
     ['use', 'c_board'],                            # 还没看底片：只是一块会响的地板
     ['use', 'c_chest', [1, ['30']]],               # 吹灭油灯，月光三十秒
-    ['wait', 2900],
+    ['wait', 2000],
+    ['shot', 'room_expo'],
+    ['wait', 2800],
     ['expect', f"{D}.W.f.plate === 'room'"],
     ['step', 6, 8],
     ['step', 20, 3],                               # 仆人楼梯 → 暗房
@@ -58,7 +60,7 @@ SOL = [
     ['expect', f"{D}.W.f.act === 'found' && {D}.W.f.plate2"],
     ['use', 'wrapped'],
     ['expect', f"{D}.W.f.act === 'chase' && {D}.W.inv.includes('portrait') && {D}.W.cp.name === 'chase'"],
-    ['wait', 1300],
+    ['wait', 2000],
     ['expect', f"!{D}.ent('lady').hidden && {D}.W.mapId === 'darkroom'"],
     ['shot', 'chase_dark'],
     ['step', 12, 2],                               # 仆人楼梯上楼

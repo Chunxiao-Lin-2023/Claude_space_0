@@ -5,7 +5,7 @@
      谜题：油灯挂在哪个灯钩、快门开几秒（曝光笔记 + 「淡的东西要十五秒往上」两个条件一起推）。
      危险：抱着她的画像回她的房间。油灯照着她的脸，她会站住、把脸扭开——可灯油有限，往前走又得把背对着她。
      双人：一人在「笺」里念曝光笔记、一人挂灯开快门；追逐时一人盯着她喊「转身照她」，一人赶路。 */
-  let DIED = 0;   // 本局被她追上几次（只影响重来时的提示和惊吓方式）
+  let DIED = 0, DIEDAT = '';   // 本局被她追上几次、最后一次在哪张图（只影响重来时的提示和惊吓方式）
   const SPD = 3.0, OIL = 5;   // 她的速度（格/秒）；灯油：能照住她的总秒数
   const DUSK = ['arrive', 'tut', 'tut2', 'tut3'];
   const KEYS = ['1', '2', '4', '8', '15', '30'], AL = { '5': '15', '3': '30' };
@@ -25,7 +25,7 @@
     shutter(S) { S.tone('square', 2600, 1300, .03, .07, 0, 4200); S.tone('triangle', 900, 520, .06, .14, .025, 0); },
     creak(S, d = 0) { S.tone('sawtooth', 190, 120, .4, .045, d, 520); S.tone('sine', 74, 52, .22, .26, d, 0); },
     step(S, d = 0, v = .22) { S.tone('sine', 120, 68, .11, v, d, 0); S.tone('triangle', 240, 150, .05, v * .3, d, 900); },
-    rustle(S, v = .012) { for (let i = 0; i < 6; i++) S.tone('sawtooth', 2400 + Math.random() * 1200, 1700, .05, v, i * .055, 3000); },   // 锦缎裙摆擦过地板
+    rustle(S, v = .024) { for (let i = 0; i < 6; i++) S.tone('sawtooth', 2400 + Math.random() * 1200, 1700, .05, v, i * .055, 3000); },   // 锦缎裙摆擦过地板
     chime(S) { [659, 587, 523, 392].forEach((f, i) => { S.tone('sine', f, f, 1.6, .12, i * .55, 0); S.tone('sine', f * 2, f * 2, 1.0, .03, i * .55, 0); }); },   // 落地钟的一刻钟报时
     boom(S) { S.tone('sawtooth', 170, 38, .55, .42, 0, 900); S.tone('square', 1400, 200, .18, .1, 0, 2600); S.tone('sine', 60, 30, .8, .4, .02, 0); },   // 镁粉「砰」
     hum(S) {   // 她哼的一支很老的曲子（小调，很轻）
@@ -63,7 +63,7 @@
         const xl = Math.round(9 - (y - 11) * .42), xr = Math.round(22 + (y - 11) * .42);
         R(xl, y, 1, 1, SP[0]); R(xr, y, 1, 1, SP[0]); if (y % 3 === 0) { R(xl - 1, y, 1, 3, SP[1]); R(xr + 1, y, 1, 3, SP[1]); }   // 两边的扶手
       }
-      if (o.lamp) { R(22, 22, 2, 2, SP[8]); R(21, 21, 4, 4, SP[6]); R(22, 22, 2, 2, SP[9]); }                     // 第十级的油灯
+      if (o.lamp) { R(23, 20, 5, 5, SP[5]); R(24, 21, 3, 3, SP[7]); R(25, 22, 1, 1, SP[9]); R(25, 19, 1, 1, SP[3]); }   // 右边扶手第十级上的油灯
       if (o.smear) { R(14, 8, 3, 4, SP[3]); R(15, 7, 1, 6, SP[4]); }                                               // 平台上那一小团白
       if (o.lady) {
         const k2 = clamp((a - .3) / .35, 0, 1), F = (x, y, w, h, c) => R(x, y, w, h, mixc(SP[2], c, k2));
@@ -108,12 +108,13 @@
   }
   const FACES = {
     pl_dusk: stairsPlate({ smear: true }),
-    pl_empty: stairsPlate({ moon: true }),
+    pl_empty: stairsPlate({ moon: true, smear: true }),
     pl_lamp: stairsPlate({ moon: true, lamp: true }),
     pl_under: stairsPlate({ moon: true, under: .78 }),
     pl_over: stairsPlate({ moon: true, over: .8 }),
     pl_blur: stairsPlate({ moon: true, blur: true }),
     pl_lady: stairsPlate({ moon: true, lady: true }),
+    pl_lady10: stairsPlate({ moon: true, lady: true, lamp: true }),
     pl_flash(R0, a) {   // 全白。正中间两个挨得很近的小黑点
       const R = devR(R0, a, {}); R(0, 0, 32, 32, SP[9]); R(11, 4, 10, 18, '#f0e8d6'); R(13, 6, 6, 4, '#ece2cc');
       if (a > .4) { R(14, 8, 1, 1, SP[0]); R(17, 8, 1, 1, SP[0]); }
@@ -183,7 +184,7 @@
       ring: { name: '戒指', desc: '一枚很小的金戒指，镶着一颗钻石。钻石的尖上磨出了一道细细的白痕——像是在玻璃上划过很多字。' }
     },
     notes: {
-      table: { title: '黑尔先生的曝光笔记', text: '雷纳姆 · 大楼梯（下午试拍时记的）\n相机架在楼梯脚南边，镜头对着平台。\n\n油灯一盏，人站在平台上时，曝光几秒刚好：\n· 灯挂在平台的灯钩上 ………… 1 秒\n· 灯挂在第五级 ……………………… 4 秒\n· 灯挂在第十级 ……………………… 15 秒\n· 灯在楼梯脚（或拿在相机边）… 30 秒\n· 不点灯，只有月光照着平台 …… 30 秒\n给少了：一片黑。给多了：一片白。\n\n另：这批底片吃光慢。淡的东西——烟、纱帘、\n台阶上扬起来的灰——快门不开到十五秒往上，\n底片上是不会有的。\n\n（页边小字：快门开着的时候，谁也别动。\n动的东西留不下来，只留下一道糊影。）' },
+      table: { title: '黑尔先生的曝光笔记', text: '雷纳姆 · 大楼梯（下午试拍时记的）\n相机架在楼梯脚南边，镜头对着平台。\n\n油灯一盏，人站在平台上时，曝光几秒刚好：\n· 灯挂在平台的灯钩上 ………… 1 秒\n· 灯挂在第五级 ……………………… 4 秒\n· 灯挂在第十级 ……………………… 15 秒\n· 灯在楼梯脚（或拿在相机边）… 30 秒\n· 不点灯，只有月光照着平台 …… 30 秒\n给少了：一片黑。给多了：一片白。\n\n另：这批底片吃光慢。淡的东西——烟、纱帘、\n台阶上扬起来的灰——快门不开到十五秒往上，\n底片上顶多留下一小团说不清的白。\n\n（页边小字：快门开着的时候，谁也别动。\n动的东西留不下来，只留下一道糊影。）' },
       guest: { title: '访客留言簿里夹着的一页（1836年）', text: '……我们三个人提着灯，从走廊这头往那头走。\n她从对面过来。棕色的锦缎裙子，手里也提着一盏灯。\n\n走近了，她把灯举起来，朝我们笑了一下。\n那个笑容，我这辈子不愿再见第二回。\n\n我手里正好有一把手枪。我开了枪。\n子弹穿过她，钉进了她身后的门板。\n她不见了。\n\n（下面是另一个人的字：「前一年圣诞，有位上校说他在楼梯上看清过她的脸——发着光，可是眼睛的地方，是两个黑洞。」）\n（再下面，铅笔：弹孔至今还在楼上走廊那扇门上。）' },
       pane: { title: '窗玻璃上的字', text: '（一块窗玻璃上，有人用戒指上的钻石，一笔一笔划出来的字。很小，歪歪斜斜。）\n\n他们说我病了。\n门从外面锁上，钥匙在他口袋里。\n孩子们在楼下，我听得见，看不见。\n\n我只剩墙上这一个我——\n年轻的，穿着那条棕色的裙子。\n我每天看她，她也看我。\n\nD. 1726' },
       letter: { title: '地板底下的信', text: '（折得很小，墨水已经褪成了褐色。）\n\n给我的孩子们：\n\n要是你们读到这个，我大概已经不在这间屋子里了——\n或者，还在。\n\n他们会把我的画像摘下来，说看着不吉利。\n别让他们这么做。挂回床头去。\n那是我每天早上睁开眼，第一个看见的地方；\n那时候我还没有被锁起来，你们还会爬到我床上来。\n\n要是有一天，我在楼梯上走来走去，\n那只是因为，我在找回这间屋子的路。\n\n——你们的母亲' }
@@ -199,8 +200,12 @@
         S.norun(true); S.speed(.8); setLights(S);
         if (DIED) {
           S.sfx('heart');
-          await S.think(DIED === 1 ? '……再来。\n她会从暗房门口进来。抱着画往东头的仆人楼梯走，别停下。\n到了楼上，她要是迎面过来，就举着灯朝她走——灯照着她的脸，她会站住。'
-            : '别在门口发愣，也别把背对着她太久。\n底片上，画像挂在床头。');
+          await S.think({
+            darkroom: '……再来。\n她会从暗房的门口进来——一拿到画，马上往东头的仆人楼梯走，别等她。',
+            hall: '……再来。\n大厅那条路太长了。暗房东头的仆人楼梯，直通楼上走廊。',
+            upper: '……再来。\n到了楼上，她会从走廊那头迎面过来。别躲——举着灯朝她走，灯照着她的脸，她会往后退。',
+            chamber: '……再来。\n进了门别发愣，她就跟在后面。底片上，画像挂在床头。'
+          }[DIEDAT] || '……再来。抱着画往仆人楼梯走，别停下。');
         }
         startChase(S);
       },
@@ -360,13 +365,13 @@
         ents: [
           { id: 'u_down', x: 1, y: 3, spr: 'stairsdown', solid: false, async touch(S) { await S.go('hall', 14, 2, 1); } },
           { id: 'u_back', x: 20, y: 3, spr: 'stairsdown', solid: false, async touch(S) { await S.go('darkroom', 12, 3, 0); } },
-          { id: 'cdoor', x: 9, y: 1, spr: 'door', col: '#4a2e1e', locked: true, on: S => chamberDoor(S) },
+          { id: 'cdoor', x: 11, y: 1, spr: 'door', col: '#4a2e1e', locked: true, on: S => chamberDoor(S) },
           { id: 'u_hdoor', x: 5, y: 1, spr: 'door', col: '#5a3a24', on: S => S.narr(DUSK.includes(S.f.act) || S.f.act === 'night' ? '客房。佩尔太太给你们收拾好了，床头搁着一个暖床的铜壶。' : '黑尔先生的房间。门缝里传出很响的鼾声。\n……你忽然很羡慕他。') },
           { id: 'u_pdoor', x: 16, y: 1, spr: 'door', col: '#5a3a24', on: S => S.narr(['arrive', 'tut', 'tut2', 'tut3', 'night'].includes(S.f.act) ? '佩尔太太的房间，门锁着。' : '佩尔太太的房间。门缝底下的灯已经熄了。') },
           { id: 'u_bdoor', x: 13, y: 1, spr: 'bulletdoor', on: S => S.narr('一扇旧门。齐胸高的地方有一个小圆洞，用木塞堵过，木塞又掉了。\n你把手指伸进去——洞很深，里面还卡着一点发黑的铅。') },
           { id: 'u_p1', x: 3, y: 1, spr: 'portrait', col: '#3a2a2a', on: S => S.narr('一位戴珍珠耳环的老夫人。画框下面的铜牌被人撬走了。') },
           { id: 'u_p2', x: 7, y: 1, spr: 'portrait', col: '#2a3a2a', on: S => S.narr('两个穿蕾丝领的孩子，手拉着手站在草地上。\n画的背面贴着一张小纸片：「她的孩子们」。') },
-          { id: 'u_p3', x: 11, y: 1, spr: 'portrait', col: '#3a3a2a', on: S => S.narr('一个骑马的青年。画上的天空裂了好几道细纹。') },
+          { id: 'u_p3', x: 9, y: 1, spr: 'portrait', col: '#3a3a2a', on: S => S.narr('一个骑马的青年。画上的天空裂了好几道细纹。') },
           { id: 'u_p4', x: 18, y: 1, spr: 'portrait', col: '#2a2a3a', on: S => S.narr('一位穿军装的先生，胸前挂满了勋章，表情像是刚闻到什么不好的味道。') },
           { id: 'u_win', x: 20, y: 1, spr: 'window', on: S => S.narr(DUSK.includes(S.f.act) ? '走廊尽头的窗外是草地和湖。湖面上已经起了一层薄雾。' : '窗外全是雾。雾里好像有一盏灯，在很远的地方慢慢地晃。') },
           { id: 'u_table', x: 6, y: 4, spr: 'table', col: '#4a2e1a', on: S => S.narr('一张靠墙的小桌，上面一只青花瓷瓶，插着几枝早就干透的薰衣草。') },
@@ -394,11 +399,11 @@
           '#..........#',
           '######.#####'],
         ents: [
-          { id: 'c_exit', x: 6, y: 8, spr: 'invisible', solid: false, async touch(S) { await S.go('upper', 9, 2, 0); } },
+          { id: 'c_exit', x: 6, y: 8, spr: 'invisible', solid: false, async touch(S) { await S.go('upper', 11, 2, 0); } },
           { id: 'mkA', x: 2, y: 1, spr: 'mark', on: S => markOn(S, 'A') },
           { id: 'c_win', x: 3, y: 1, spr: 'bwindow', light: MOON2, async on(S) {
             await S.narr('窗户外面钉着铁栏杆，一根一根，比你的手腕还粗。\n月光从栏杆缝里漏进来。有一块玻璃上，划满了很小很小的字。');
-            await S.note('pane');
+            await S.note('pane'); S.f.readPane = true;
           } },
           { id: 'mkB', x: 5, y: 1, spr: 'mark', on: S => markOn(S, 'B') },
           { id: 'c_fire', x: 8, y: 2, w: 2, spr: 'fireplace', on: S => S.narr('壁炉冷了两百年。炉膛里有一小堆灰，灰里埋着半截烧剩的蜡烛。') },
@@ -513,7 +518,8 @@
     f.act = 'night'; f.fails = 0; stage(S); setLights(S);
     S.pos(6, 13, 3);
     await S.fade(0, 800);
-    S.goal('拍夜里的楼梯：油灯挂上灯钩，再到相机后面定曝光（曝光笔记在「笺」里；两人时一人念笔记、一人挂灯开快门）');
+    S.goal('拍夜里的楼梯：油灯挂上灯钩，再到相机后面定曝光');
+    S.toast('（曝光笔记在「笺」里。两人时：一人念笔记，一人挂灯、开快门）');
     S.cp('night');
   }
 
@@ -543,7 +549,7 @@
     const f = S.f, e = S.ent('hk_' + k);
     const where = HOOKN[k], dist = { p: '贴着平台', '5': '离平台五级', '10': '离平台十级', f: '离平台十五级——整道下半截楼梯' }[k];
     if (f.act !== 'night') return S.narr(k === 'f' ? `楼梯脚的柱头，雕成一颗松果，顶上钉着一只黄铜灯钩。${dist}。` : `扶手上的一只黄铜灯钩：${where}，${dist}。\n从前仆人们夜里在这儿挂灯，照着主人上楼。`);
-    if (f.expo) return S.narr('快门开着呢。别动。');
+    if (f.expo) return S.toast('快门开着——别动');
     if (e.lit) {
       e.lit = false; e.light = null; f.lamp = null; S.give('lamp', true); S.sfx('switch'); lampPlr(S);
       return S.narr(`你把油灯从${where}的灯钩上摘了下来。`);
@@ -556,7 +562,7 @@
   }
   async function tripodOn(S) {
     const f = S.f, a = f.act;
-    if (f.expo) return S.narr('快门开着呢。别碰相机，也别动。');
+    if (f.expo) return S.toast('快门开着——别碰相机，也别动');
     if (a === 'arrive') return S.narr('黑尔先生的大画幅相机，架在胡桃木三脚架上，镜头对着楼梯平台。\n皮腔、黄铜镜头、一块黑罩布——比你的年纪还大。');
     if (a === 'tut') {
       const v = await S.keypad('曝光几秒？\n黑尔先生：「窗光，四秒。」', KEYS, 1, { alias: AL });
@@ -584,7 +590,7 @@
       } else light = 'moon';
     }
     if (light === 'moon') { f.lampOut = true; lampPlr(S); S.sfx('switch'); }
-    const v = await S.keypad(`曝光几秒？\n灯：${LN[light]}\n（曝光笔记可以在「笺」里翻看）`, KEYS, 1, { alias: AL });
+    const v = await S.keypad(`曝光几秒？\n灯：${LN[light]}\n（曝光笔记在「笺」里；键盘按 5 是十五秒、3 是三十秒）`, KEYS, 1, { alias: AL });
     if (v == null) { if (f.lampOut) { f.lampOut = false; lampPlr(S); } return; }
     await S.narr('你钻到黑罩布底下，对好焦，又钻出来，手指捏住镜头盖。\n大厅里只剩落地钟的声音。');
     beginExpo(S, 'night', light, +v);
@@ -615,7 +621,7 @@
   function beginExpo(S, kind, light, secs) {
     const f = S.f;
     SND.shutter(S);
-    f.expo = { kind, light, secs, t: 0, dur: Math.max(.6, secs * .6) / FAST, st: 0 };
+    f.expo = { kind, light, secs, t: 0, dur: secs / FAST, st: 0 };
     S.timer(f.expo.dur, '快门开着 · 别动', endExpo);
     if (kind === 'room') { S.ent('c_chest').s.cam = true; S.ent('c_chest').s.open = true; }
     else S.ent('tripod').s.open = true;
@@ -631,14 +637,14 @@
       const u = clamp((k - .1) / .45, 0, 1), d = u * 9;
       const x = d <= 8 ? 14 - d : 6, y = d <= 8 ? 2 : 2 + (d - 8);
       L.px = x * 16; L.py = y * 16; L.dir = d <= 8 ? 1 : 0; L.hidden = false;
-      L.alpha = Math.min(.42, k * 3) * (k > .9 ? (1 - k) / .1 : 1);
-      const st = Math.floor(d); if (st > ex.st && d < 9) { ex.st = st; SND.step(S, 0, .18); }
+      L.alpha = Math.min(.55, k * 3) * (k > .9 ? (1 - k) / .1 : 1);
+      const st = Math.floor(d); if (st > ex.st && d < 9) { ex.st = st; SND.step(S, 0, .08 + u * .2); }   // 脚步由远及近
       ex.rs = (ex.rs ?? .4) - dt; if (ex.rs <= 0) { ex.rs = .9 + Math.random() * .6; SND.rustle(S); }
       if (k > .5 && !ex.told) { ex.told = true; S.sfx('heart'); S.bubble('pl', '!', 1400); if (!f.sawLady) S.toast('（平台上……站着一个人。别动。）'); }
     }
     if (ex.kind === 'room' && S.map === 'chamber') {
       L.hidden = false;
-      L.alpha = Math.min(.36, k * 2.5) * (k > .88 ? (1 - k) / .12 : 1);
+      L.alpha = Math.min(.45, k * 2.5) * (k > .88 ? (1 - k) / .12 : 1);
       if (k > .55 && !ex.rose) { ex.rose = true; L.oy = 0; L.dir = 0; S.sfx('whisper'); S.toast('（窗户底下那团白，站了起来）'); }
       if (k > .25 && !ex.told) { ex.told = true; SND.creak(S); S.sfx('heart'); }
     }
@@ -696,9 +702,9 @@
   }
 
   /* ---------------- 暗房：显影 ---------------- */
-  const PFACE = { dusk: 'pl_dusk', under: 'pl_under', over: 'pl_over', empty: 'pl_empty', blur: 'pl_blur', flash: 'pl_flash', lady: 'pl_lady', lady10: 'pl_lady',
+  const PFACE = { dusk: 'pl_dusk', under: 'pl_under', over: 'pl_over', empty: 'pl_empty', blur: 'pl_blur', flash: 'pl_flash', lady: 'pl_lady', lady10: 'pl_lady10',
     r_under: 'rm_under', r_over: 'rm_over', r_empty: 'rm_empty', r_blur: 'rm_blur', room: 'rm_plate' };
-  const showPlate = (S, face, dur = 6.5) => S.scare('face', { face, dur, sfx: 'paper', shake: .01, shakeMs: 1, wait: false });
+  const showPlate = (S, face, dur = 5) => S.scare('face', { face, dur, sfx: 'paper', shake: .01, shakeMs: 1, wait: false });
   async function develop(S) {
     const f = S.f, p = f.plate;
     if (f.expo) return S.narr('快门还开着呢。');
@@ -717,7 +723,7 @@
     }
     if (night.includes(p)) {
       f.fails = (f.fails || 0) + 1;
-      await S.narr({ under: '底片几乎是黑的，只认得出几道扶手的轮廓。\n——曝光不够：灯离平台太远，或者快门开得太短。', over: '一片白雾。平台、高窗和扶手糊成了一团光。\n——曝光太多：灯离得太近，或者快门开得太久。', empty: '曝光刚刚好：台阶、扶手、窗棂都清清楚楚。\n可平台上什么也没有——连下午那一小团白都不见了。' }[p]);
+      await S.narr({ under: '底片几乎是黑的，只认得出几道扶手的轮廓。\n——曝光不够：灯离平台太远，或者快门开得太短。', over: '一片白雾。平台、高窗和扶手糊成了一团光。\n——曝光太多：灯离得太近，或者快门开得太久。', empty: '曝光刚刚好：台阶、扶手、窗棂都清清楚楚。\n平台上又是那一小团说不清的白——比下午那张还淡。\n——快门太短了，那么淡的东西，吃不进去。' }[p]);
       await nightHint(S, p);
       await nightCost(S);
       return;
@@ -737,21 +743,22 @@
   }
   async function nightHint(S, p) {
     const n = S.f.fails;
-    if (n === 1 && p === 'empty') await S.think('平台上什么都没有……可下午那张，明明有一小团白。');
+    if (n === 1 && p === 'empty') await S.think('下午窗光四秒，也是这么一小团白。\n……要它变成别的什么，快门得开得更久。');
     if (n === 2) await S.think('黑尔先生的本子：灯挂在哪儿，就开多久——一行对一行。\n还有页边那几行小字：淡的东西，要开多久才吃得进去？');
     if (n === 3) await S.think('「十五秒往上」……表里哪几行是十五秒、三十秒？\n灯就挂到那一行写的地方——或者干脆不挂灯。');
     if (n >= 4) { S.sfx('knock'); await S.say('黑尔先生（隔着暗房门）', ['还没好？我都睡醒一觉了。', '灯挂第十级，开十五秒。要么灯拿在手里站在相机边上，开三十秒。照做，别跟我犟。']); }
   }
   async function nightCost(S) {   // 每错一次，夜就更深一点：她离你更近
     const n = S.f.fails;
+    SND.chime(S); await S.wait(1200); await S.narr(['大厅里，落地钟敲了一刻钟。', '落地钟又敲了一刻钟。快到半夜了。', '十二点。落地钟一下一下地敲。'][Math.min(n, 3) - 1]);
     if (n === 1) { SND.step(S, 0); SND.step(S, .7); SND.step(S, 1.4); await S.wait(1600); await S.narr('暗房门外，有人慢慢走了过去。\n裙摆擦着地板，「沙——沙——」。'); return; }
     if (n === 2) { const r = S.ent('d_red'); r.off = true; S.sfx('sting'); await S.wait(700); r.off = false; await S.narr('红灯灭了一下，又亮了。\n就在黑下来的那半秒里，你觉得有人站在你身后，往显影盘里看。'); return; }
     S.sfx('whisper'); S.shake(300, 1.5); await S.narr('暗房的门把手，慢慢地转了半圈，又转了回去。');
   }
   async function famousScene(S) {
     const f = S.f;
-    await S.narr('楼梯一级一级地浮出来。扶手，高窗，平台——\n平台底下的台阶上，站着一个人。');
-    await S.narr('一个女人。淡得像一层纱，从头到脚罩着长长的衣裳，正一级一级地往下走。\n底片是黑白的，可你知道那条裙子是什么颜色。');
+    await S.narr('楼梯一级一级地浮出来。扶手，高窗，平台——\n平台上，站着一个人。');
+    await S.narr('一个女人。淡得像一层纱，从头到脚罩着长长的衣裳。\n快门开着的那十几秒里，她一点一点往下挪，裙摆在台阶上拖成了一片雾。\n底片是黑白的，可你知道那条裙子是什么颜色。');
     await S.think('你把底片凑到红灯底下，想看清那张脸——');
     await S.scare('face', { spr: '@lady', face: 'dorothy', sfx: 'scare', dur: 1.1 });
     await S.narr('……没有眼睛。\n那张发着光的脸上，眼睛的地方，是两个黑洞。');
@@ -802,8 +809,10 @@
   function startChase(S) {
     const f = S.f;
     f.chase = true; S.stop('lady'); S.hide('lady');
-    f.spawn = { map: 'darkroom', x: 2, y: 7, t: 1.1, dir: 3 };
+    f.spawn = { map: 'darkroom', x: 2, y: 7, t: 1.8, dir: 3 };
     SND.door(S); S.toast('（暗房的门，自己开了一条缝）');
+    if (S.coop) S.after(1500, async S => S.toast('（两人时：一人盯着她喊「照她」，一人认路赶路）'));
+    S.ent('lady').on = null;   // 追逐时不能对着她调查（否则连按调查键能让她停下）
   }
   function spawnBehind(S) {   // 换图后：她从你进来的那扇门跟进来
     const f = S.f; S.stop('lady'); S.hide('lady');
@@ -833,19 +842,25 @@
     const dx = (L.px - p.px) / 16, dy = (L.py - p.py) / 16, [fx, fy] = DIRS[p.dir];
     const along = dx * fx + dy * fy, perp = Math.abs(dx * fy - dy * fx);
     const lit = f.oil > 0 && along > .3 && along <= 3.5 && perp <= 1.2;
-    if (lit) {
-      if (!L.frozen) { S.freeze('lady', true); L.dir = 3; if (S.once('freezeTip')) S.toast('她站住了，把脸扭开——油灯正照着她'); }
-      f.oil -= dt;
-      if (f.oil <= 0) { f.oil = 0; S.freeze('lady', false); lampPlr(S); S.sfx('switch'); S.toast('油灯「噗」地灭了'); }
-    } else if (L.frozen) S.freeze('lady', false);
+    if (lit) {   // 灯照着她的脸：她把脸扭开，一步一步往后退；松开以后要过半秒才转回来
+      if (!f.lit) { f.lit = true; if (S.once('freezeTip')) S.toast('她把脸扭开，往后退了一步——油灯正照着她'); }
+      L.chase.wait = Math.max(L.chase.wait || 0, .5);
+      if (!L.mv) {
+        f._rt = (f._rt ?? 0) - dt;
+        if (f._rt <= 0) { f._rt = .5; const tx = Math.round(L.px / 16) + fx, ty = Math.round(L.py / 16) + fy; if (passable(W.maps[W.mapId], tx, ty, L)) startMove(L, p.dir, 2.2); else L.dir = p.dir; }
+      }
+      const o0 = f.oil; f.oil -= dt;
+      if (o0 > OIL / 2 && f.oil <= OIL / 2) S.toast('灯芯「噼」地爆了一下——灯油只剩一半了');
+      if (f.oil <= 0) { f.oil = 0; f.lit = false; lampPlr(S); S.sfx('switch'); S.toast('油灯「噗」地灭了'); }
+    } else if (f.lit) { f.lit = false; L.chase.wait = Math.max(L.chase.wait || 0, .5); }
     f._hb = (f._hb ?? 0) - dt; const dd = Math.abs(dx) + Math.abs(dy);
     if (dd < 6 && f._hb <= 0) { f._hb = .25 + dd * .12; S.sfx('heart'); }
-    if (!L.frozen && Math.abs(L.px - p.px) + Math.abs(L.py - p.py) < 16) { S.stop('lady'); S.run(caught); }
+    if (!lit && Math.abs(L.px - p.px) + Math.abs(L.py - p.py) < 16) { S.stop('lady'); S.run(caught); }
   }
   async function caught(S) {
     const f = S.f; if (!f.chase) return;
     f.chase = false; S.stop('lady');
-    DIED++;
+    DIED++; DIEDAT = S.map;
     if (DIED === 1) await S.scare('face', { spr: '@lady', face: 'dorothy', sfx: 'scream', dur: 1 });
     else await S.scare('red', { sfx: 'scream', dur: .8 });
     await S.die('一只冰凉的手从后面搭上了画框。\n你回过头——那张发光的脸离你只有一拃远。眼睛的地方，两个黑洞，正对着你。\n画框从你怀里滑了下去。', '她找到了你');
@@ -894,11 +909,11 @@
       return;
     }
     /* 挂对了 */
-    f.chase = false; f.spawn = null; S.stop('lady'); S.freeze('lady', false);
+    f.chase = false; f.spawn = null; f.lit = false; S.stop('lady');
     S.take('portrait'); e.s.hang = 'portrait'; S.norun(false); S.speed(1);
     S.sfx('switch');
     await S.narr('画框「咔」的一声，稳稳地挂上了那颗两百年前的钉子。\n正正地，在床头上方。');
-    const L = S.ent('lady');
+    const L = S.ent('lady'); L.on = ladyOn;
     if (L.hidden || !W.maps.chamber.ents.includes(L)) { S.moveTo('lady', 'chamber', 6, 7, 3); L.alpha = 0; await S.alpha('lady', 1, 600); }
     await S.walk('lady', [4, 2], 1.6); S.face('lady', 3);
     S.amb('none'); SND.hum(S);
@@ -919,7 +934,7 @@
   }
   async function chestOn(S) {
     const f = S.f, a = f.act;
-    if (f.expo) return S.narr('快门开着呢。别动。');
+    if (f.expo) return S.toast('快门开着——别动');
     if (a === 'final') return finalShot(S);
     if (a !== 'room') return S.narr(f.plate2 ? '床尾的木箱。箱盖上落着一层薄灰，中间有一块被相机压出来的干净的方印子。' : '床尾一只雕花的木箱，箱盖上落满了灰。');
     if (f.plate) { const r = await S.ask('折叠相机里那张还没冲。', ['换一块新底片，重拍', '先去冲']); if (r === 1) return; f.plate = null; }
@@ -927,7 +942,7 @@
     if (l === 2) return;
     const light = l === 0 ? 'rlamp' : 'rmoon';
     if (light === 'rmoon') { f.lampOut = true; lampPlr(S); S.sfx('switch'); }
-    const v = await S.keypad(`曝光几秒？\n灯：${l === 0 ? '点着，就搁在相机旁边' : '吹灭了——只有窗口的月光'}`, KEYS, 1, { alias: AL });
+    const v = await S.keypad(`曝光几秒？\n灯：${l === 0 ? '点着，就搁在相机旁边' : '吹灭了——只有窗口的月光'}\n（键盘按 5 是十五秒、3 是三十秒）`, KEYS, 1, { alias: AL });
     if (v == null) { if (f.lampOut) { f.lampOut = false; lampPlr(S); } return; }
     await S.narr('你拔下镜头盖，屏住气。');
     beginExpo(S, 'room', light, +v);
@@ -943,6 +958,7 @@
       S.ent('mkB').eyes = 'void';
       await S.wait(600);
       showPlate(S, 'pl_flash', 3); await S.wait(1600);
+      await S.narr('……底片冲出来，是全白的。'); FX.length = 0;
       return S.end({ bad: true, id: 'flash', title: '镁光一闪', text: '「砰」——\n一秒钟里，整间屋子白得像正午。她猛地转过身来。\n你看清了她的脸。那两个黑洞，也看清了你。\n\n歌声停了。\n\n天亮以后，那张底片冲出来是全白的，只有正中间两个挨得很近的小黑点。\n床头那幅画像，从此眼睛的地方是两个洞。\n佩尔太太说，夜里楼梯上的脚步声又响起来了——比从前更急，像是在找什么人。' });
     }
     S.ent('c_chest').s.open = true; SND.shutter(S);
@@ -951,6 +967,7 @@
     SND.hum(S);
     await S.wait(2600);
     await S.narr('歌声慢慢低下去。\n月光从栏杆缝里移过来，一寸一寸，爬上了床头。');
+    if (f.readPane) await S.think('「我每天看她，她也看我。」\n——窗玻璃上那一行字。');
     await S.wait(1500);
     await S.narr(f.ringGiven ? '她抬起那只戴着戒指的手，搭在画框上。\n然后，她回过头来，看了你一眼。' : '她抬起一只手，搭在画框上。\n然后，她回过头来，看了你一眼。');
     await S.narr('只有一眼。\n那张脸上，有眼睛。');
@@ -958,9 +975,11 @@
     SND.shutter(S);
     await S.card('天亮', '', '你在暗房里守着红灯，冲出了最后一张。');
     await S.fade(0, 600);
-    showPlate(S, f.ringGiven ? 'rm_finring' : 'rm_fin', 5); await S.wait(2400);
+    showPlate(S, f.ringGiven ? 'rm_finring' : 'rm_fin', 4.5); await S.wait(2400);
+    await S.narr('最后一张底片，在红灯底下慢慢浮了出来。');
+    FX.length = 0;
     const tail = '\n\n黑尔先生把楼梯那张底片带回了伦敦。那年冬天，它登在了画报上，后来又被印进无数本书里。人们争了几十年：是双重曝光，是镜头上的油，还是一个真的站在楼梯上的女人。\n\n床头那一张，你没有给任何人看。\n据说从那以后，雷纳姆庄园的楼梯上，就很少再有人见过那位穿棕色锦缎裙子的夫人了。';
-    if (f.ringGiven) return S.end({ id: 'ring', title: '她的戒指', text: '底片上，床头挂着那幅画像。画像旁边，有一团很淡很淡的白——像一个人站在那儿，一只手搭在画框上。\n那只手的手指上，有一点小小的亮光。\n这一次，那张脸上有眼睛，嘴角有一点想笑的样子。' + tail });
-    return S.end({ id: 'home', title: '挂回原处', text: '底片上，床头挂着那幅画像。画像旁边，有一团很淡很淡的白——像一个人站在那儿，一只手搭在画框上。\n这一次，那张脸上有眼睛。' + tail });
+    if (f.ringGiven) return S.end({ id: 'ring', title: '她的戒指', text: '底片上，床头挂着那幅画像。画像旁边，有一团很淡很淡的白——像一个人站在那儿，一只手搭在画框上。\n那只手的手指上，有一点小小的亮光。\n这一次，那张脸上有眼睛，嘴角有一点想笑的样子。' + tail + '\n\n第二年春天，佩尔太太写信到画报社来：楼上那间屋子的门再也锁不上了，可也再没有自己开过。\n她还说，床头那幅画里的人，手指上多了一点金色。她发誓，以前是没有的。' });
+    return S.end({ id: 'home', title: '挂回原处', text: '底片上，床头挂着那幅画像。画像旁边，有一团很淡很淡的白——像一个人站在那儿，一只手搭在画框上。\n这一次，那张脸上有眼睛。' + (S.has('ring') ? '\n\n你口袋里那枚戒指，一直没有拿出来。' : '') + tail });
   }
 })();
