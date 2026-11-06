@@ -54,6 +54,7 @@ try:
             else: H_.evaluate("window.__dbg.W.dlg&&(window.__dbg.W.dlg.full=true)"); H_.wait_for_timeout(300); H_.keyboard.press('Space')
             H_.wait_for_timeout(150)
         check(H_.evaluate("!window.__dbg.W.busy && !window.__dbg.W.card"), 'host finished intro')
+        H_.evaluate("window.__dbg.tp(3, 5)"); H_.wait_for_timeout(300)   # 空旷的人行道，往右走不会被人挡住
         # 交出操作
         H_.keyboard.press('KeyT'); G.wait_for_function("window.__dbg.W.ctrl==='g'", timeout=3000)
         check(True, 'host handed control to guest')

@@ -81,11 +81,11 @@
   const FACES_M = {
     /* 天蛾人：没有脖子，脑袋长在肩膀里；两只自行车尾灯一样的红眼睛越瞪越大；身后张开的翅膀 */
     moth(R, a) {
-      const K = '#0a0808', W1 = '#1c1816', W2 = '#2a2420', RB = '#3e3630', B = '#3c3632', B2 = '#4c443e', F = '#5e564e';
+      const K = '#050404', W1 = '#3a302a', W2 = '#54483e', RB = '#6a5a4c', B = '#5a524a', B2 = '#6e645a', F = '#7e7468';
       R(0, 0, 32, 32, K);
       for (let r = 0; r < 26; r++) { const ext = r < 8 ? 4 + r : 12 - ((r - 8) >> 1); R(0, 4 + r, ext, 1, r % 6 === 3 ? RB : W1); R(32 - ext, 4 + r, ext, 1, r % 6 === 3 ? RB : W1); }
       for (let i = 0; i < 4; i++) { R(1 + i * 2, 6 + i * 4, 1, 20 - i * 4, W2); R(30 - i * 2, 6 + i * 4, 1, 20 - i * 4, W2); }
-      R(10, 2, 12, 30, B); R(8, 7, 16, 25, B); R(12, 0, 8, 3, B); R(11, 2, 10, 2, B2); R(21, 6, 3, 26, '#2e2a26');
+      R(10, 2, 12, 30, B); R(7, 8, 18, 24, B); R(5, 12, 22, 20, B); R(12, 0, 8, 3, B); R(11, 2, 10, 2, B2); R(20, 6, 3, 26, '#3e3832'); R(5, 12, 2, 20, '#3e3832'); R(25, 12, 2, 20, '#3e3832');
       for (let i = 0; i < 14; i++) R(9 + ((i * 7) % 14), 5 + ((i * 11) % 25), 1, 2, F);
       const er = 3 + Math.round(a * 1.5);
       for (const cx of [12, 20]) {
@@ -214,10 +214,11 @@
     papers(g, e, t, R) { for (let i = 0; i < 5; i++) R(2 + (i % 2), 10 - i * 2, 12, 2, i % 2 ? '#d8d2c0' : '#c8c2b0'); R(4, 3, 8, 1, '#555'); },
     coatrack(g, e, t, R) { R(7, -12, 2, 26, '#3a2a1a'); R(4, 13, 8, 2, '#3a2a1a'); R(3, -12, 10, 2, '#3a2a1a'); R(2, -10, 5, 12, '#4a3a5a'); R(1, -12, 6, 3, '#2a2a2a'); },
     /* 主街 */
-    shopsign(g, e, t, R) { R(-6, -4, 28, 11, '#1a1410'); R(-5, -3, 26, 9, e.col || '#6a1a1a'); txt(g, R, e.text || '', 8, 1, 7, '#f0e6c8'); },
-    neon(g, e, t, R) { const on = Math.sin(t * 7) > -.85 && !(Math.sin(t * 2.3) > .97); R(-6, -4, 28, 11, '#101014'); txt(g, R, e.text || '', 8, 1, 7, on ? '#ff5a7a' : '#4a2a32'); },
+    shopsign(g, e, t, R) { const W2 = Math.max(28, (e.text || '').length * 9 + 6); R(8 - W2 / 2, -5, W2, 13, '#1a1410'); R(9 - W2 / 2, -4, W2 - 2, 11, e.col || '#6a1a1a'); txt(g, R, e.text || '', 8, 1, 8, '#f6eed6'); },
+    neon(g, e, t, R) { const on = Math.sin(t * 7) > -.85 && !(Math.sin(t * 2.3) > .97), W2 = (e.text || '').length * 9 + 6; R(8 - W2 / 2, -5, W2, 13, '#101014'); txt(g, R, e.text || '', 8, 1, 8, on ? '#ff6a8a' : '#4a2a32'); },
     xlamp(g, e, t, R) {
-      R(7, -26, 2, 41, '#3a3d42'); R(4, 13, 8, 2, '#2a2d32'); R(3, -28, 10, 3, '#3a3d42'); R(4, -25, 8, 2, e.off ? '#555' : '#ffeaa0');
+      const dim = e.off || (e.flicker && Math.sin(t * 23 + e.px) > .4);
+      R(7, -26, 2, 41, '#3a3d42'); R(4, 13, 8, 2, '#2a2d32'); R(3, -28, 10, 3, '#3a3d42'); R(4, -25, 8, 2, dim ? '#555' : '#ffeaa0');
       for (let i = 0; i < 6; i++) R(6 + (i % 2) * 2, -18 + i * 4, 2, 2, '#2a5a2a');
       for (let i = 0; i < 6; i++) R(6 + ((i + 1) % 2) * 3, -17 + i * 4, 1, 1, ['#ff4040', '#ffd040', '#40a0ff'][(i + ((t * 2) | 0)) % 3]);
     },
@@ -265,8 +266,8 @@
 
   /* ================= 文本 ================= */
   const NOTES_M = {
-    cards: { title: '哈尔的预兆卡（软木板）', text: '（编号是这些事送到报社的先后，不是发生的先后。\n日期一栏全是听来的传言——哈尔在上面打了红问号。）\n\n① 电视　主街好多户人家的电视同时花屏，喇叭里一声尖啸。\n　传言：「十月底？」　去问：巴德（电视修理铺）\n② 黑衣人　两个穿一样黑西装的男人，在镇北头的旅社住了一夜。\n　传言：「去年冬天？」　去问：旅社的梅太太\n③ 红眼睛　TNT 废弃区，旧发电厂门口，红眼睛、大翅膀的东西。\n　日期：诺拉自己知道\n④ 电话　餐馆的多丽丝半夜接到怪电话，听筒里「嘀嘀」响。\n　传言：「好几个月了」　去问：多丽丝\n⑤ 狗　卡尔家的狗冲进 TNT 区南口的林子，再没回来。\n　传言：「开春？」　去问：卡尔\n⑥ 河上的光　河堤上好多人看见几团光，逆着风飞。\n　传言：「独立日放烟花那晚？」　去问：多丽丝\n\n（卡片背面，哈尔的字：「它们是排着队来的。」）' },
-    ledger: { title: '巴德电视修理铺 · 登记簿（摘抄）', text: '10月30日　米勒太太家　显像管老化　换管\n11月2日　 浸信会教堂　喇叭有杂音　焊好\n\n11月6日（礼拜一）\n　晚上十点四十起，一个钟头里来了十七个电话：\n　画面全成了黑白格子，喇叭里一声尖啸，\n　关机、拔插头都没用。\n　十一点零五分，全好了。自己好的。\n　（这一行巴德画了两个圈，涂成了红色。）\n\n11月9日　卡尔家　天线被风吹歪\n11月20日　多丽丝家　「电话一响，电视就雪花」？？' },
+    cards: { title: '哈尔的预兆卡（软木板）', text: '（编号是这些事送到报社的先后，不是发生的先后。\n日期一栏全是听来的传言——哈尔在上面打了红问号。）\n\n① 电视　主街好多户人家的电视同时花屏，喇叭里一声尖啸。\n　传言：「十月底？」　去问：巴德（电视修理铺）\n② 黑衣人　两个穿一样黑西装的男人，在镇北头的旅社住了一夜。\n　传言：「去年冬天？」　去问：旅社的梅太太\n③ 红眼睛　TNT 废弃区，旧发电厂门口，红眼睛、大翅膀的东西。\n　日期：诺拉自己知道（那晚巴德也在，是他开车逃出来的）\n④ 电话　餐馆的多丽丝半夜接到怪电话，听筒里「嘀嘀」响。\n　传言：「好几个月了」　去问：多丽丝\n⑤ 狗　卡尔家的狗冲进 TNT 区南口的林子，再没回来。\n　传言：「开春？」　去问：卡尔\n⑥ 河上的光　河堤上好多人看见几团光，逆着风飞。\n　传言：「独立日放烟花那晚？」　去问：多丽丝\n\n（卡片背面，哈尔的字：「它们是排着队来的。」）' },
+    ledger: { title: '巴德电视修理铺 · 登记簿（摘抄）', text: '10月30日　米勒太太家　显像管老化　换管\n11月2日　 浸信会教堂　喇叭有杂音　焊好\n\n11月6日（礼拜一）\n　晚上十点四十起，一个钟头里来了十七个电话：\n　画面全成了黑白格子，喇叭里一声尖啸，\n　关机、拔插头都没用。\n　十一点零五分，全好了。自己好的。\n　（这一行巴德画了两个圈，涂成了红色。）\n\n11月9日　卡尔家　天线被风吹歪\n11月24日　多丽丝家　「半夜电话一响，电视就雪花」？？' },
     register: { title: '河畔旅社 · 住客登记簿', text: '6月24日　推销员（吸尘器）　一晚\n6月27日　卡车司机　一晚\n\n6月31日　（两个签名，笔迹一模一样，\n　　　　　像照着字帖一笔一笔描出来的）\n　　来自：「这里」\n　　事由：「看看」\n　　房费：一沓崭新的一美元钞票，号码是连着的。\n\n7月2日　（这一页夹着一面小小的纸国旗，\n　　　　 是独立日那天镇上发的）\n\n（六月只有三十天。）' },
     clip: { title: '剪报 · 本报 1966年11月16日', text: '【TNT 区出现「人那么大的鸟」？】\n\n昨夜（11月15日）十一点多，几名本镇青年在 TNT 废弃区的旧发电厂附近，看见一个灰色的东西：比人还高，翅膀张开有十来英尺，眼睛像自行车的尾灯那样红。\n\n他们开车逃走，那东西在车顶上方跟了一路。车速开到每小时一百英里，也没甩掉。\n\n警长表示已派人查看，未见异常。\n\n（剪报边上，排字房的人用铅笔写着：\n「天蛾人」——照电视上正火的《蝙蝠侠》起的外号。）' }
   };
@@ -349,7 +350,7 @@
   function townGoal(S) {
     if (S.f.solved) return;
     const n = nVer(S);
-    S.goal(n < 5 ? '核实卡片日期 ' + n + '/5 · 主街（两人时一人按 J 看卡片）' : '回报社，把六张卡按日期排好');
+    S.goal(n < 5 ? '核实日期 ' + n + '/5 · 主街（两人时一人按 J 看卡片）' : '回报社，把六张卡按日期排好');
   }
   async function verify(S, k) {
     if (S.f[k]) return;
@@ -371,7 +372,7 @@
     await S.note('核实进度', boardText(S));
     const r = await S.ask('把卡片按日期重新排一遍吗？', ['按日期从早到晚重新排好', '先不排']);
     if (r) return;
-    const v = await S.keypad('从最早到最晚，依次按下六张卡片的编号', ['1', '2', '3', '4', '5', '6'], 6);
+    const v = await S.keypad('从最早到最晚，依次按下卡片编号\n①电视 ②黑衣人 ③红眼睛\n④电话 ⑤狗 ⑥河上的光', ['1', '2', '3', '4', '5', '6'], 6);
     if (v == null) return S.narr('你把图钉又按了回去。');
     if (v === ANSWER) return solved(S);
     return boardWrong(S, v);
@@ -410,9 +411,12 @@
     return deduce(S);
   }
   async function deduce(S) {
-    jingle(S);
-    await S.say('收音机', '……今天傍晚，总统将在华盛顿按下按钮，点亮国家圣诞树……');
-    await S.say('哈尔', ['多丽丝接的那通电话，全镇都传遍了：', '「总统按下按钮、圣诞树亮起来的时候，河上会有很多灯一起熄灭。」', '……都说是要大停电。']);
+    if (S.once('deduce1')) {
+      jingle(S);
+      await S.say('收音机', '……今天傍晚，总统将在华盛顿按下按钮，点亮国家圣诞树……');
+      if (S.f.proph) await S.think('多丽丝那通电话：「圣诞树亮起来的时候，河上会有很多灯一起熄灭。」\n镇上都说，是要大停电。');
+      else await S.say('哈尔', ['多丽丝接的那通电话，全镇都传遍了：', '「总统按下按钮、圣诞树亮起来的时候，河上会有很多灯一起熄灭。」', '……都说是要大停电。']);
+    } else await S.think('「圣诞树亮起来的时候，河上会有很多灯一起熄灭。」');
     for (;;) {
       const r = await S.ask('「河上会有很多灯一起熄灭」——说的是哪儿？', ['河边的变电站：全城大停电', '银桥：桥上的路灯，和堵在桥上的车灯', 'TNT 废弃区：它的老窝']);
       if (r === 2) { await S.think('不对。螺旋是往里收的，一圈比一圈近。\n它不会回去了。'); continue; }
@@ -509,7 +513,9 @@
   }
   async function mibAppear(S) {
     S.show('mib'); S.ent('mib').alpha = 1;
-    S.focus(20, 6);
+    S.focus(20, 6); whine(S, 1.4); S.sfx('tv');
+    for (const id of ['tlamp2', 'tlamp3']) S.ent(id).flicker = true;
+    S.ent('tlamp2').off = true; await S.wait(250); S.ent('tlamp2').off = false;
     await S.narr('马路对面，路灯底下，站着一个穿黑西装、戴礼帽的男人。\n大冷天，他没穿大衣。他一动不动地看着你。');
     S.focus(null);
   }
@@ -524,6 +530,7 @@
     S.sfx('car');
     await S.narr('一辆运煤的卡车从你们中间开了过去。\n等它过去，路灯底下已经没有人了。');
     S.hide('mib');
+    for (const id of ['tlamp2', 'tlamp3']) S.ent(id).flicker = false;
   }
   async function townRight(S) {
     if (!S.f.deduced) {
@@ -561,7 +568,7 @@
   const nOff = S => PEOPLE_B.filter(k => S.f['pd_' + k]).length;
   function bridgeGoal(S) {
     const n = nOff(S);
-    S.goal(n < 3 ? '把认识的人劝下桥 ' + n + '/3（两人时一人看笺：谁见过哪件事）' : '回到桥头（西岸）！');
+    S.goal(n < 3 ? '劝认识的人下桥 ' + n + '/3，再回桥头（两人时一人看笺）' : '回到桥头（西岸）！');
   }
   async function persuade(S, k) {
     const P = PERS[k];
@@ -574,18 +581,22 @@
     const r = await S.ask(P.q, left.map(i => P.opts[i]));
     const i = left[r];
     if (i !== P.ok) {
-      S.timerAdd(-ARG_PEN); S.f['pw_' + k] = used.concat([i]); S.sfx('bad'); honk(S, 300, 0, .7);
+      if (S.f.phase !== 'bridge') return;
+      S.timerAdd(-ARG_PEN); S.f['pw_' + k] = used.concat([i]); S.sfx('bad'); honk(S, 300, 0, .7); S.bubble(k + '_b', '…', 1400); S.fx('red', { dur: .5 });
       await S.say(P.who, P.no[i]);
       S.toast('（又耽误了好几秒）');
       if (S.once('hint_' + k)) await S.think(P.hint);
       return;
     }
+    if (S.f.phase !== 'bridge') return;
     S.sfx('good');
     await P.yes(S);
+    if (S.f.phase !== 'bridge') return;
     S.f['pd_' + k] = true;
     const fade = [S.alpha(k + '_b', 0, 450)];
     if (k === 'carl') { S.ent('pickup_b').s.kid = false; }
     await Promise.all(fade);
+    if (S.f.phase !== 'bridge') return;
     S.show(k + '_h'); if (k === 'carl') S.show('susie_h');
     if (nOff(S) >= 3) return rally(S);
     bridgeGoal(S);
@@ -594,6 +605,7 @@
     honk(S, 330); honk(S, 330, .5); honk(S, 280, 1);
     await S.narr('卡尔按住喇叭不放。巴德站上货车的踏板，扯着嗓子喊：\n「都下车！往回走！」');
     await S.narr('一扇接一扇的车门打开了。\n裹着大衣的人们，一个跟着一个，往西弗吉尼亚这头走。');
+    S.f.rally = true;
     for (const id of ['crowd1', 'crowd2', 'crowd3', 'crowd4']) S.show(id);
     bridgeGoal(S);
   }
@@ -665,6 +677,7 @@
     await S.narr('你没有回头看。桥头上，谁都没有回头看。');
     await S.fade(1, 1500);
     await S.card('1967年12月15日　下午五点零四分', '点普莱森特', '那天晚上，镇上没有停电。\n华盛顿的圣诞树照常亮了，电视里在放。\n\n巴德修好的那台电视，没有送到对岸。\n多丽丝的外甥女，那年圣诞节收到了一个晚了几天的娃娃。');
+    if (!S.has('drawing') && S.f.v5) await S.narr('苏西把那张蜡笔画贴在了床头。\n画上那只灰色的大鸟站在桥上，眼睛涂成了红色。她一直没舍得撕。');
     if (S.has('drawing')) await S.narr('苏西的那张画，你一直没有贴到报纸上。\n它夹在你的采访本里。\n「它在等灯亮。」——很多年以后，你还是不知道，它等的究竟是什么。');
     if (S.f.mibTalk) await S.narr('那个穿黑西装的男人，镇上再没有人见过。\n旅社的登记簿上，「6月31日」那一页，后来不知被谁撕走了。');
     return S.end({ id: 'dusk', title: '第九夜　完', text: '后来，河上修起了一座新桥。\n\n镇上的人很少再提起那年的红眼睛。\n只有哈尔那块软木板，一直挂在报社的墙上，\n红毛线绕成的螺旋，一圈比一圈小。\n\n有人说它是来报信的；\n也有人说，是灯把它引来的——就像飞蛾。' });
@@ -706,7 +719,7 @@
     while (x + 1 <= x1) {
       if (gaps.includes(x)) { x++; continue; }
       if (gaps.includes(x + 1)) { x += 2; continue; }
-      out.push({ id: 'car' + y + '_' + x, x, y, w: 2, spr: 'bcar', col: cols[i++ % cols.length], solid: true, on: S => S.narr(['车里没人。车灯还亮着，雨刷停在半截。', '后座上堆着包好的圣诞礼物，系着红丝带。', '收音机开着，在放圣诞歌。', '仪表盘上的钟：四点五十几分。'][(x + y) % 4]) });
+      out.push({ id: 'car' + y + '_' + x, x, y, w: 2, spr: 'bcar', col: cols[i++ % cols.length], solid: true, on: S => S.narr(S.f.rally ? ['车里没人了。车灯还亮着，雨刷停在半截。', '后座上堆着包好的圣诞礼物，系着红丝带。没人顾得上拿。', '车门敞着。收音机里还在放圣诞歌。', '仪表盘上的钟：四点五十几分。'][(x + y) % 4] : ['司机缩在驾驶座里，不耐烦地拍着方向盘。\n他没听见你在喊什么。', '一家人挤在车里，后座堆满了圣诞礼物。\n孩子把脸贴在车窗上，冲你做鬼脸。', '车窗摇得严严实实，收音机里在放圣诞歌。', '司机瞪了你一眼：「堵着呢，看不见吗？」'][(x + y) % 4]) });
       x += 2;
     }
     return out;
@@ -759,7 +772,7 @@
     maps: {
       /* ---------------- TNT 废弃区（1966年11月15日 深夜） ---------------- */
       tnt: {
-        amb: 'wind', dark: .88, plr: 3.0, wall: 'brick', wallC: { face: '#4a2e26', trim: '#24160f' }, darkC: '#04040a',
+        amb: 'wind', dark: .86, plr: 3.2, wall: 'brick', wallC: { face: '#4a2e26', trim: '#24160f' }, darkC: '#04040a',
         tileOpts: { grassC: '#283422', treeC: '#14221a', fenceBase: 'grass' },
         rows: TNT_ROWS,
         ents: ids('tnt', [
@@ -775,6 +788,7 @@
           { id: 'bwin2', x: 16, y: 3, spr: 'bwin', on: S => S.narr('窗户里面黑漆漆的。\n你好像听见里面有什么东西，在慢慢地呼吸。') },
           { id: 'prints', x: 16, y: 6, spr: 'prints', decal: true, on: S => S.narr('泥地上有两行很大的印子。三个趾头，像鸟爪——\n可一个印子就比你的手掌还大。\n印子是往发电厂那边去的。') },
           { id: 'tsign', x: 17, y: 11, spr: 'tntsign', on: S => S.narr('「禁止入内　西弗吉尼亚军械厂（已废弃）」\n牌子被人打了好几个枪眼。') },
+          { id: 'moon', x: 13, y: 3, spr: 'invisible', solid: false, light: { r: 6.5, dy: 2, a: .45, col: 'rgba(130,150,210,.05)' } },
           { id: 'moth', x: 13, y: 4, spr: 'moth', hidden: true, solid: false, light: { r: 1.3, dx: 8, dy: -19, col: 'rgba(255,40,20,.6)' } }
         ]),
         async enter(S, first) {
@@ -868,6 +882,7 @@
         },
         tick(S, dt) {
           const ph = S.ent('payph');
+          if (ph && ph.s.ring && S.f.solved) ph.s.ring = false;
           if (ph && ph.s.ring) { SND.ring -= dt; if (SND.ring <= 0) { SND.ring = 2.2; ring(S); S.bubble('payph', '!', 900); } }
           if (!S.busy && !S.f.mibShown && nVer(S) >= 3 && S.pl.x > 12 && S.pl.x < 30) { S.f.mibShown = true; S.run(mibAppear); }
         }
@@ -921,7 +936,8 @@
           if (S.busy) return;
           SND.honk -= dt; if (SND.honk <= 0) { SND.honk = 3 + Math.random() * 4; honk(S, 260 + Math.random() * 120, 0, .6); }
           SND.scr -= dt; if (SND.scr <= 0) { SND.scr = 8 + Math.random() * 5; screech(S, .5); S.bubble('moth_b', '!', 900); }
-          SND.creak -= dt; if (SND.creak <= 0) { const late = left != null && left < 18; SND.creak = late ? 2.2 : 7 + Math.random() * 4; creak(S, late ? 1.6 : .7); if (late) S.shake(300, 1); }
+          if (left != null && left < 20 && !S.f.lateWarn) { S.f.lateWarn = true; S.toast('桥身在呻吟……快！'); creak(S, 2); S.shake(500, 2); }
+          SND.creak -= dt; if (SND.creak <= 0) { const late = left != null && left < 20; SND.creak = late ? 2.2 : 7 + Math.random() * 4; creak(S, late ? 1.6 : .7); if (late) S.shake(300, 1); }
         }
       }
     }
