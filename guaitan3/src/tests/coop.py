@@ -41,8 +41,8 @@ try:
         H_.wait_for_function("window.__dbg.UI.scene==='select'", timeout=15000)
         G.wait_for_function("window.__dbg.UI.scene==='select'", timeout=15000)
         check(True, 'both in chapter select')
-        H_.evaluate("window.__dbg.startChapter('merry', false)")
-        G.wait_for_function("window.__dbg.W && window.__dbg.W.ch.id==='merry' && window.__dbg.W.card", timeout=8000)
+        H_.evaluate("window.__dbg.startChapter('deardavid', false)")
+        G.wait_for_function("window.__dbg.W && window.__dbg.W.ch.id==='deardavid' && window.__dbg.W.card", timeout=8000)
         check(True, 'guest mirrors chapter + intro card')
         # 观看者翻页无效
         G.evaluate("window.__dbg.UI.scene"); G.keyboard.press('Space'); G.wait_for_timeout(400)
@@ -54,6 +54,7 @@ try:
             else: H_.evaluate("window.__dbg.W.dlg&&(window.__dbg.W.dlg.full=true)"); H_.wait_for_timeout(300); H_.keyboard.press('Space')
             H_.wait_for_timeout(150)
         check(H_.evaluate("!window.__dbg.W.busy && !window.__dbg.W.card"), 'host finished intro')
+        H_.evaluate("window.__dbg.tp(3, 3)"); H_.wait_for_timeout(300)   # 空走廊，往右走不会被人挡住
         # 交出操作
         H_.keyboard.press('KeyT'); G.wait_for_function("window.__dbg.W.ctrl==='g'", timeout=3000)
         check(True, 'host handed control to guest')
@@ -66,8 +67,8 @@ try:
         check(x1 > x0, f'guest movement reaches host ({x0}->{x1})')
         hx = H_.evaluate("window.__dbg.W.pl.px"); gx = G.evaluate("window.__dbg.W.pl.px")
         check(abs(hx - gx) < 4, f'positions agree host={hx} guest={gx}')
-        # 客机调查妈妈 -> 主机出现对话
-        G.evaluate("window.__dbg.face('mama')")
+        # 客机调查贝丝 -> 主机出现对话
+        G.evaluate("window.__dbg.face('beth')")
         G.wait_for_timeout(300); G.keyboard.press('Space')
         H_.wait_for_function("!!window.__dbg.W.dlg", timeout=4000)
         G.wait_for_function("!!window.__dbg.W.dlg", timeout=4000)
@@ -92,16 +93,16 @@ try:
         check(H_.evaluate("window.__dbg.W && true") and H_.evaluate("document.getElementById('cv') && true"), 'ping sent (visual)')
         if shots: H_.screenshot(path=shots + '/coop_host_ping.png')
         # 切地图同步
-        H_.evaluate("window.__dbg.SAPI.go('court', 4, 3); 0")
-        G.wait_for_function("window.__dbg.W.mapId==='court'", timeout=5000)
+        H_.evaluate("window.__dbg.SAPI.go('apt', 3, 3); 0")
+        G.wait_for_function("window.__dbg.W.mapId==='apt'", timeout=5000)
         check(True, 'map change mirrored to guest')
         # S.moveTo 跨地图：客机按 _k 找到实体；存档后重来，实体仍在新地图（不按下标错位）
-        H_.evaluate("window.__dbg.SAPI.moveTo('mama', 'court', 6, 3)"); G.wait_for_timeout(700)
-        check(G.evaluate("(()=>{const W=window.__dbg.W,e=W.maps.court.ents.find(z=>z.id==='mama');return !!e&&!e.hidden})()"), 'moveTo entity mirrored to guest map')
+        H_.evaluate("window.__dbg.SAPI.moveTo('beth', 'apt', 5, 3)"); G.wait_for_timeout(700)
+        check(G.evaluate("(()=>{const W=window.__dbg.W,e=W.maps.apt.ents.find(z=>z.id==='beth');return !!e&&!e.hidden})()"), 'moveTo entity mirrored to guest map')
         H_.evaluate("window.__dbg.SAPI.cp('t'); window.__dbg.retryFromCP(); 0"); H_.wait_for_timeout(900)
-        check(H_.evaluate("(()=>{const W=window.__dbg.W;return W.maps.court.ents.some(z=>z.id==='mama')&&!W.maps.town.ents.some(z=>z.id==='mama')&&W.maps.town.ents.some(z=>z.id==='tbox')})()"), 'checkpoint retry keeps moved entity on its new map')
+        check(H_.evaluate("(()=>{const W=window.__dbg.W;return W.maps.apt.ents.some(z=>z.id==='beth')&&!W.maps.hall.ents.some(z=>z.id==='beth')&&W.maps.hall.ents.some(z=>z.id==='door5c')})()"), 'checkpoint retry keeps moved entity on its new map')
         G.wait_for_timeout(700)
-        check(G.evaluate("(()=>{const W=window.__dbg.W,e=W.maps.court.ents.find(z=>z.id==='mama');return !!e&&!e.hidden})()"), 'guest still sees moved entity after retry')
+        check(G.evaluate("(()=>{const W=window.__dbg.W,e=W.maps.apt.ents.find(z=>z.id==='beth');return !!e&&!e.hidden})()"), 'guest still sees moved entity after retry')
         # solid 同步
         H_.evaluate("(()=>{const W=window.__dbg.W, e=W.maps[W.mapId].ents.find(z=>z.solid); window.__sid=W.maps[W.mapId].ents.indexOf(e); e.solid=false;})()")
         G.wait_for_timeout(400)
