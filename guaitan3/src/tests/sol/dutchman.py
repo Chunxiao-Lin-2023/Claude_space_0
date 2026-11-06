@@ -8,7 +8,7 @@ D = 'window.__dbg'
 # pause=[x, 毫秒] 表示走到 x 时愣住一会儿；ignore=True 表示完全不理阵风
 def DRIVE(react=350, resume=300, pause=None, ignore=False, until=-1):
     return ("(async () => { const sl = ms => new Promise(r => setTimeout(r, ms)), D = window.__dbg;"
-            " const t0 = performance.now(); let tS = 0, tG = 0, stopped = false, paused = false;"
+             " window.__gap = 99; const t0 = performance.now(); let tS = 0, tG = 0, stopped = false, paused = false;"
             " const PZ = %s, IG = %s;"
             " while (performance.now() - t0 < 150000) {"
             "  const W = D.W; if (!W || W.endScreen || W.mapId !== 'sea' || W.pl.x <= %d) break;"
@@ -18,10 +18,10 @@ def DRIVE(react=350, resume=300, pause=None, ignore=False, until=-1):
             "  if (g >= 2 && !IG) { if (!tS) tS = n + %d; if (n >= tS) stopped = true; tG = 0; }"
             "  else { tS = 0; if (stopped) { if (!tG) tG = n + %d; if (n >= tG) { stopped = false; tG = 0; } } }"
             "  if (PZ && !paused && W.pl.x <= PZ[0]) { paused = true; IN.stack = []; await sl(PZ[1]); }"
+            "  const gq = W.maps.sea.ents.find(e => e.id === 'gship'); if (gq && gq.chase) window.__gap = Math.min(window.__gap ?? 99, Math.round((Math.abs(gq.px - W.pl.px) + Math.abs(gq.py - W.pl.py)) / 16));"
             "  const d = bfsStep(W.maps.sea, W.pl.x, W.pl.y, 2, 8, W.pl);"
             "  IN.stack = (stopped || d < 0) ? [] : [d]; await sl(30); }"
-            " IN.stack = []; const gs = D.W && D.W.maps.sea.ents.find(e => e.id === 'gship');"
-            " window.__gap = gs ? Math.round(Math.abs(gs.px - D.W.pl.px) / 16) : -1; })()"
+            " IN.stack = []; })()"
             % ('[%d,%d]' % tuple(pause) if pause else 'null', 'true' if ignore else 'false', until, react, resume))
 
 SOL = [
