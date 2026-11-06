@@ -1,5 +1,5 @@
 # 第十一夜 无头骑士 · 自动通关步骤（格式见 tests/play.py 顶部）
-# 舞会听三个故事、找线索、和凯特琳谈话 → 马厩认马（先认错一次）→ 夜路：少校树、威利沼泽、坡顶现形 → 追逐（测试里直接传送到桥头）
+# 舞会听三个故事、找线索、和凯特琳谈话 → 马厩认马（没灯先看一次、认错一次马灯灭了重点）→ 夜路：少校树、威利沼泽、坡顶现形 → 追逐（测试里直接传送到桥头）
 # → 过桥后回头两次（警告 + 坏结局）→ 从桥上重来 → 教堂门口凑齐线索，转身喊布罗姆 → 南瓜结局
 D = 'window.__dbg'
 RETRY = ("(async () => { const D = window.__dbg; for (let i = 0; i < 60 && D.W.endScreen; i++) { D.doAct('retry'); await new Promise(r => setTimeout(r, 100)); } })()")
@@ -20,6 +20,7 @@ SOL = [
     ['step', 11, 11],
     ['expect', f"{D}.W.mapId === 'yard'"],
     ['use', 'y_stem'], ['use', 'y_crack'], ['use', 'y_scare'],
+    ['expect', f"{D}.W.f.c_stem && {D}.W.f.c_whisper && {D}.W.f.c_seeds"],
     ['step', 13, 15],
     ['expect', f"{D}.W.mapId === 'yard'"],
     ['shot', 'yard'],
@@ -30,7 +31,8 @@ SOL = [
     ['use', 's_lant'],
     ['use', 's_dd'],
     ['use', 's_d', [1]],
-    ['expect', f"{D}.W.f.wp === 1"],
+    ['expect', f"{D}.W.f.wp === 1 && !{D}.W.inv.includes('lantern') && !{D}.ent('s_lant').off"],
+    ['use', 's_lant'],
     ['use', 's_gp', [1]],
     ['expect', f"{D}.W.f.gpFound && !{D}.W.f.gp"],
     ['use', 's_peg'],
@@ -42,6 +44,7 @@ SOL = [
     ['step', 5, 10],
     ['step', 14, 10],
     ['shot', 'tulip'],
+    ['step', 23, 10],
     ['step', 27, 10, [0]],
     ['expect', f"{D}.W.f.ph === 'escort' && !{D}.ent('hessian').hidden && {D}.W.pl.x === 35"],
     ['step', 45, 10],
@@ -54,7 +57,11 @@ SOL = [
     ['expect', f"{D}.W.f.ph === 'nolook' && {D}.ent('hessian').hidden && !{D}.ent('hessian').chase"],
     # 回头：第一次警告，第二次坏结局
     ['js', f"{D}.W.pl.dir = 1"],
+    ['expect', f"!{D}.W.f.warnLook && {D}.W.pl.dir === 2"],   # 刚过桥的那一下不算（按住的方向键）
+    ['wait', 800],
+    ['js', f"{D}.W.pl.dir = 1"],
     ['expect', f"{D}.W.f.warnLook && {D}.W.pl.dir === 2 && !{D}.W.endScreen"],
+    ['wait', 1500],
     ['js', f"{D}.W.pl.dir = 1"],
     ['expect', f"{D}.W.endScreen && {D}.W.endScreen.kind === 'badend'"],
     ['js', RETRY],

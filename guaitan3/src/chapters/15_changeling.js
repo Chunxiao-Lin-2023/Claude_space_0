@@ -24,13 +24,13 @@
   const CRX = [12, 14, 16, 18, 20];
   /* ---------- 地下舞厅 ---------- */
   const RING = cx => [[cx - 1, 4], [cx - 1, 3], [cx, 3], [cx + 1, 3], [cx + 1, 4], [cx + 1, 5], [cx, 5], [cx - 1, 5]];   // 顺时针
-  const DANCERS = [
+  const DANCERS = [   // 第一环一个人慢慢转；第二环一对舞伴逆着转；第三环一对转得快
     { id: 'd1', cx: 7, i: 4, dn: 1, spd: 2.0 },
-    { id: 'd2', cx: 16, i: 2, dn: -1, spd: 2.3 },
+    { id: 'd2', cx: 16, i: 4, dn: -1, spd: 2.3 },
     { id: 'd3', cx: 16, i: 6, dn: -1, spd: 2.3 },
-    { id: 'd4', cx: 26, i: 0, dn: 1, spd: 2.7 },
-    { id: 'd5', cx: 26, i: 4, dn: 1, spd: 2.7 }];
-  const ESC_T = 34;
+    { id: 'd4', cx: 26, i: 0, dn: 1, spd: 3.0 },
+    { id: 'd5', cx: 26, i: 3, dn: 1, spd: 3.0 }];
+  const ESC_T = 28, TOUCH_PX = 10;
   const KP = { alias: { '1': '倒水', '2': '开口', '3': '敲蛋', '4': '撒麦', '5': '摆壳' } };
   const RITE = ['敲蛋', '摆壳', '倒水', '撒麦', '开口'];
   /* 尖耳朵 */
@@ -885,7 +885,7 @@
         const dir = DIRS.findIndex(q => q[0] === nx - ex && q[1] === ny - ey);
         if (dir >= 0) { e.s.i = ni; startMove(e, dir, d.spd); } else { S.place(d.id, R[e.s.i][0], R[e.s.i][1]); }
       }
-      if (Math.abs(e.px - p.px) + Math.abs(e.py - p.py) < 12) { S.f.catching = true; S.run(S => caught(S, d)); return; }
+      if (Math.abs(e.px - p.px) + Math.abs(e.py - p.py) < TOUCH_PX) { S.f.catching = true; S.run(S => caught(S, d)); return; }
     }
   }
   async function caught(S, d) {

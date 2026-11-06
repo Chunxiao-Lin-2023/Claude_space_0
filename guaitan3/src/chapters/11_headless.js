@@ -49,16 +49,19 @@
   /* ---------- 跨重来的本地状态（只在主机推进） ---------- */
   let DEATHS = 0;            // 被追上几次（死亡次数，决定逐级提示）
   let camHold = false;       // 剧情演出时暂停镜头前瞻
+  let GRACE = 0;             // 「别回头」段：剧本刚结束的这一小会儿不判定回头（按住的方向键不算）
   const HO = { p: 0, k: 0, h: 0, hk: 0 };   // 马蹄声节拍
-  const CH = { trail: [], htrail: [], slipT: 0, wobT: 0, wobbled: false, lastTile: '', hTile: '' };
+  const CH = { trail: [], htrail: [], slipT: 0, wobT: 0, wobbled: false, lastTile: '', hTile: '', low: false };
   const MUS = { t: 0, i: 0 };
-  const resetChase = () => { CH.trail = []; CH.htrail = []; CH.slipT = 0; CH.wobT = 0; CH.wobbled = false; CH.lastTile = ''; CH.hTile = ''; };
+  const resetChase = () => { CH.trail = []; CH.htrail = []; CH.slipT = 0; CH.wobT = 0; CH.wobbled = false; CH.lastTile = ''; CH.hTile = ''; CH.low = false; };
 
   const CLUES = [['c_stem', '南瓜地里那截还湿着的断茬'], ['c_stall', '马厩里「恶魔」那个空隔间'], ['c_whisper', '谷仓里压着嗓子的笑声'], ['c_seeds', '屋门口那几粒湿漉漉的南瓜子']];
   const clueN = S => CLUES.filter(([k]) => S.f[k]).length;
+  function clue(S, k) { if (S.f[k]) return; S.f[k] = true; S.toast('（不对劲的事：' + clueN(S) + '/4）'); }
   const HSPD = 6.5;          // 黑森骑兵的基本速度（格/秒）；火药小跑 5.46、狂奔 8.84
   const setSpd = (S, v) => { if (Math.abs((S.pl.speed || 1) - v) > .01) S.speed(v); };
   const riding = S => S.f.ride;
+  const LOGL = { r: 1.3, col: 'rgba(170,190,230,.07)' };   // 倒树上一点月光，黑路上早一点看得见
 
   /* ---------- 合成音：口哨、夜鹰、赞美诗、钟、马嘶 ---------- */
   const OLD100 = [[392, .55], [392, .42], [370, .42], [330, .42], [294, .55], [392, .42], [440, .42], [494, .8]];
@@ -73,7 +76,7 @@
   const JIG = [[587, 1], [740, 1], [880, 1], [740, 1], [587, 1], [440, 1], [494, 1], [587, 1], [740, 1], [659, 2], [0, 1], [659, 1], [740, 1], [784, 1], [740, 1], [659, 1], [587, 1], [494, 1], [440, 1], [494, 1], [587, 2], [0, 1]];
 
   /* ---------- 精灵：火药 + 伊卡博德（侧面，基准朝左） ---------- */
-  function gunpowder(R0, e, t, flip, saddle) {
+  function gunpowder(R0, e, t, flip, saddle, low) {
     const R = (x, y, w, h, c) => R0(flip ? 16 - x - w : x, y, w, h, c);
     const fr = e.fr || 0, run = fr !== 0;
     const C = '#7a4a2a', D = '#4e2e1a', L = '#9a6a42', M = '#8a3e1e', BU = '#6a7a2a';
@@ -86,6 +89,7 @@
     R(-4, 0 + by, 4, 6, C); R(-3, 3 + by, 2, 2, L); R(-4, 0 + by, 1, 2, D);   // 往下塌的母羊脖子
     R(-10, -3 + by, 7, 5, C); R(-11, -1 + by, 2, 3, D); R(-11, 1 + by, 1, 1, '#1a120c');   // 锤子似的大脑袋
     R(-5, -5 + by, 1, 2, C); R(-7, -2 + by, 1, 1, '#ecebe2');   // 耳朵、没有瞳仁的白眼
+    if (low) { const k = (t * 6 | 0) % 2; R(-12, 0 + by + k, 1, 1, '#f4f2ea'); R(-11, 2 + by, 1, 1, '#e8e6de'); R(-10, 1 + by - k, 1, 1, '#f4f2ea'); }   // 口吐白沫
     R(-3, -2 + by, 3, 2, M); R(-1, 0 + by, 2, 4, M); R(-2, -1 + by, 1, 1, BU); R(0, 2 + by, 1, 1, BU);
     if (saddle) { R(4, 1 + by, 7, 3, '#3a2010'); R(4, 1 + by, 7, 1, '#6a4a2a'); R(7, 4 + by, 1, 4, '#8a8a84'); R(6, 8 + by, 3, 1, '#8a8a84'); }
     const ry = by + (fr === 3 ? -1 : 0);
@@ -98,12 +102,19 @@
     R(6, -16 + ry, 4, 1, '#4a3420'); R(9, -16 + ry, 1, 3, '#4a3420'); R(9, -13 + ry, 1, 2, '#d8b498'); R(6, -14 + ry, 1, 1, '#2e4a2e');
     R(5, -18 + ry, 5, 2, '#2a2420'); R(4, -16 + ry, 7, 1, '#2a2420');
   }
+  const hudS = () => { if (!W || W.mapId !== 'road') return null; const h = getEnt('hud', 'road'); return h && h.s.on ? h.s : null; };
+  /* 身后的威胁：马尾巴后面画红色箭头，越近越多（竖屏看不见身后也知道他有多近） */
+  function behind(R, flip) {
+    const h = hudS(); if (!h || h.g == null || h.g >= 6) return;
+    const n = h.g < 2 ? 3 : h.g < 4 ? 2 : 1, c = Math.sin(RT * 14) > -.2 ? '#ff4a2a' : '#8a1a10';
+    for (let i = 0; i < n; i++) { const x0 = flip ? -9 - i * 4 : 22 + i * 4, d = flip ? 1 : -1; for (let k = 0; k < 3; k++) { R(x0 + k * d, 4 + k, 1, 1, c); R(x0 + k * d, 8 - k, 1, 1, c); } }
+  }
+  function ride(R, e, t, flip, saddle) { const h = hudS(); gunpowder(R, e, t, flip, saddle, h && h.st < 25); behind(R, flip); staminaBar(R); }
   function staminaBar(R) {
-    if (W.mapId !== 'road') return;
-    const h = getEnt('hud', 'road'); if (!h || !h.s.on) return;
-    const st = clamp((h.s.st ?? 100) / 100, 0, 1);
+    const h = hudS(); if (!h) return;
+    const st = clamp((h.st ?? 100) / 100, 0, 1);
     R(1, -26, 14, 4, '#0a0a0a'); R(2, -25, 12, 2, '#2a2420');
-    R(2, -25, Math.round(12 * st), 2, h.s.w ? (Math.sin(RT * 12) > 0 ? '#e04030' : '#701810') : st > .45 ? '#d8c070' : '#e07030');
+    R(2, -25, Math.round(12 * st), 2, h.w ? (Math.sin(RT * 12) > 0 ? '#e04030' : '#701810') : st > .45 ? '#d8c070' : '#e07030');
   }
   /* 黑森骑兵（侧面，基准朝左）：e.hd 朝向，e.rev 露出没有头，e.rise 站在马镫上，e.nohead 脑袋扔出去了 */
   function hessian(R0, e, t) {
@@ -267,6 +278,11 @@
     f.wp = (f.wp || 0) + 1;
     neigh(S); S.sfx('thud'); S.shake(400, 3);
     await S.narr('你刚去解缰绳，它猛地扬起前蹄——蹄子擦着你的帽檐过去，「砰」地踹在隔板上。');
+    if (S.has('lantern')) {   // 认错的代价：马灯脱手灭了，得摸黑回门口重新点
+      S.take('lantern'); S.ent('s_lant').off = false; S.plr(null); S.sfx('glass');
+      await S.narr('马灯脱了手，「噗」地灭在地上。\n你摸黑把它捡起来，挂回门口的钩子上——得重新点上。');
+      S.goal('回门口重新点上马灯，再认火药');
+    }
     if (f.wp === 1) { S.sfx('laugh'); await S.narr('院子那头，谷仓里传来一阵哄笑。'); }
     await S.think(H.why);
     if (f.wp === 2) await S.think('汉斯的纸条上写了四样毛病（按 J 能在档案里重看）。四样全对上的，才是火药。');
@@ -275,7 +291,7 @@
   }
   async function pickGunpowder(S) {
     const f = S.f;
-    if (!S.has('saddle')) { f.gpFound = true; S.goal('找到汉斯那副礼拜天的马鞍'); return S.think('就是它。火药。\n……可是鞍子呢？汉斯那副礼拜天的马鞍——你骑来的时候，长工把它卸下来挂到哪儿去了？'); }
+    if (!S.has('saddle')) { f.gpFound = true; S.goal('找到汉斯那副礼拜天的马鞍'); S.bubble('s_peg', '!', 2500); return S.think('就是它。火药。\n……可是鞍子呢？汉斯那副礼拜天的马鞍——长工卸了鞍，一般随手挂在隔板的木桩上。'); }
     f.gp = true;
     await S.narr('火药翻着那只白眼瞅你，好像早就认出你来了，就是懒得搭理。');
     await S.narr('你把汉斯的礼拜天马鞍搭上它的背，勒紧肚带。\n肚带上那个快磨断的扣眼，「吱」地响了一声。你假装没听见。');
@@ -296,7 +312,7 @@
     S.goal('骑马回汉斯家（一直往东）');
   }
   async function tulipTree(S) {
-    await narrAt(S, 17, 8, '路中间那棵大郁金香树，像个巨人似的立在黑地里。树枝又粗又怪，扭得能当别的树的树干。\n据说当年就是在这棵树底下，抓住过一个英国少校。打那以后，大家都叫它「少校树」。');
+    await narrAt(S, 17, 6, '路中间那棵大郁金香树，像个巨人似的立在黑地里。树枝又粗又怪，扭得能当别的树的树干。\n据说当年就是在这棵树底下，抓住过一个英国少校。打那以后，大家都叫它「少校树」。');
     await S.narr('你吹起了口哨，给自己壮胆。');
     for (const [a, b, d] of [[988, 1175, .16], [1175, 1319, .16], [1319, 988, .3]]) { S.tone('sine', a, b, d, .035, 0); await S.wait(d * 1000 + 40); }
     await S.wait(500);
@@ -319,6 +335,7 @@
     S.sfx('splash');
     await S.narr('就在这时，溪边「啪嗒」一声——有什么东西踩了一脚水。');
     const h = S.ent('hessian'); h.s.hd = 1; h.s.rev = false; h.alpha = 0; S.place('hessian', 37, 13, 1); h.alpha = 0;
+    h.light = { r: 1.4, col: 'rgba(150,170,220,.10)' };   // 一点冷冷的反光，黑地里看得见他的轮廓
     await S.alpha('hessian', .92, 1200);
     await S.narr('桥那头，小溪边的树影里，立着一个东西。\n又黑、又大、奇形怪状，一动不动，像一个蹲着的巨人，随时要扑过来。');
     await S.say('伊卡博德', '你……你是谁？');
@@ -348,7 +365,7 @@
     S.sfx('sting');
     await S.scare('face', { face: 'hessian', dur: 1.3, shake: 4 });
     await S.narr('什么也没有。\n他没有头。那颗本该长在他肩膀上的脑袋，搁在他身前的马鞍头上。');
-    await S.narr('你疯了似的捶打火药。火药像是挨了一鞭子，一声长嘶，撒开四蹄狂奔起来——');
+    await S.narr('你疯了似的捶打火药。火药像是挨了一鞭子，一声长嘶，撒开四蹄狂奔起来——\n（按住跑步键，火药就狂奔；马背上那道小横条是它的气力，跑空了只能小跑。）');
     neigh(S);
     camFree(S);
     S.place('hessian', Math.max(44, S.pl.x - 5), 11, 2); h.s.hd = 2;
@@ -356,7 +373,6 @@
     resetChase();
     S.goal('逃到教堂桥——他过不了桥！');
     S.cp('chase');
-    S.toast('按住跑步键＝策马狂奔（耗气力）；松开＝小跑回气');
     if (S.coop) S.toast('联机：旁观的人看得清岔路口的路牌——替骑马的人指路');
     startChase(S, .9);
   }
@@ -405,7 +421,7 @@
     S.turn(2);
     S.goal('别回头。骑到教堂门口');
     S.cp('nolook');
-    await S.think('老布劳尔说：过了桥，别回头。');
+    await S.think(f.bookish ? '书上说，邪祟渡不过流水。你刚刚过了。\n……可老布劳尔也说过：过了桥，别回头。' : '老布劳尔说：过了桥，别回头。');
   }
   async function lookWarn(S) {
     S.f.warnLook = true;
@@ -414,6 +430,7 @@
     S.turn(2);
     await S.narr('你硬生生把脑袋扭了回来，死死盯着火药的两只耳朵。');
     S.toast('再回头，就真的看见了');
+    GRACE = W.t + 1.2;
   }
   async function lookBack(S) {
     const f = S.f, p = S.pl, h = S.ent('hessian');
@@ -462,6 +479,12 @@
     let extra = '';
     if (n >= 3) extra = '\n\n你有时候会想：那天夜里，要是在教堂门口转过身去，喊一声布罗姆的名字，会怎么样？';
     else if (n >= 1) extra = '\n\n只是有一件事，你一直没想通：' + CLUES.filter(([k]) => f[k]).map(c => c[1]).join('、') + '……\n要是那天夜里多留心一点就好了。';
+    const tr = [];
+    if (f.grazed) tr.push('你那件最好的黑外套，后领上多了一道口子，像是被冰碴子划开的。');
+    if (f.t_up) tr.push('汉斯说，那天半夜他听见有马在院门口站了一会儿，喘得像个风箱，又走了。');
+    if (f.t_gy) tr.push('老墓地里那座没名字的坟前，泥地被刨得乱七八糟。');
+    if (f.bare) tr.push('汉斯那副礼拜天的马鞍，是在路边的烂泥里找着的。他心疼了一整个冬天。');
+    if (tr.length) extra = '\n\n' + tr.join('\n') + extra;
     await S.end({ id: 'bridge', title: '第十一夜　完', text: '没过几天，伊卡博德·克兰先生离开了睡谷。\n有人说他去了纽约，学了法律，后来还当上了法官。\n\n睡谷的老人们讲起那个骑马的，现在会多讲一句：\n「那个教书先生，是过了桥的。他没回头。」' + extra });
   }
   async function pumpkinEnd(S) {
@@ -496,7 +519,8 @@
   function roadTick(S, dt) {
     const f = S.f, p = S.pl, m = curMap();
     if (!f.ride) return;
-    if (!camHold && f.ph !== 'end') S.focus(p.px / TS + (f.hf === 1 ? -3 : 3), p.py / TS);
+    const la = f.ph === 'escort' ? 1 : 2;   // 镜头往前多看几格；跟随段少看一点，好让身后的他留在画面里
+    if (!camHold && f.ph !== 'end') S.focus(p.px / TS + (f.hf === 1 ? -la : la), p.py / TS);
     const ph = f.ph, h = getEnt('hessian', 'road'), hud = getEnt('hud', 'road');
     if (ph !== 'chase') { S.norun(true); setSpd(S, ph === 'nolook' ? 1 : 1.15); }
     // 火药的马蹄
@@ -518,7 +542,8 @@
     if (tileName(m, p.x, p.y) === 'mud') sp *= .6;
     if (CH.wobT > 0) { CH.wobT -= dt; sp *= .5; }
     setSpd(S, sp);
-    if (hud) { const st = Math.round(f.st), w = f.wind ? 1 : 0; if (hud.s.st !== st || hud.s.w !== w || !hud.s.on) hud.s = { on: 1, st, w }; }
+    if (hud) { const st = Math.round(f.st), w = f.wind ? 1 : 0, gg = h && !h.hidden ? Math.round((Math.abs(h.px - p.px) + Math.abs(h.py - p.py)) / TS) : 99; if (hud.s.st !== st || hud.s.w !== w || hud.s.g !== gg || !hud.s.on) hud.s = { on: 1, st, w, g: gg }; }
+    if (!CH.low && f.st < 25 && !f.wind) { CH.low = true; S.toast('火药嘴边冒白沫了——缓一缓，小跑回口气！'); snort(S); }
     // 足迹（被擦过之后，把他放回你身后）
     const k = p.x + ',' + p.y; if (k !== CH.lastTile) { CH.lastTile = k; CH.trail.push([p.x, p.y]); if (CH.trail.length > 40) CH.trail.shift(); }
     // 他：离得远了就追得更快（不让你把他甩出视野），踩进泥里一样慢
@@ -555,16 +580,19 @@
     endings: { bridge: '过了桥', pumpkin: '南瓜', lookback: '回头看' },
     thumb(g, w, h) {
       const P = (c, x, y, ww, hh) => { g.fillStyle = c; g.fillRect(x, y, ww, hh); };
-      g.fillStyle = 'rgba(220,214,190,.16)'; g.beginPath(); g.arc(118, 24, 20, 0, 7); g.fill();
-      g.fillStyle = '#e6e0c8'; g.beginPath(); g.arc(118, 24, 11, 0, 7); g.fill();
-      P('#0c0a0c', 0, 58, 160, 10); for (let x = 6; x < 160; x += 16) P('#0c0a0c', x, 54, 3, 6);
-      const K = '#050406';
-      P(K, 52, 38, 34, 12); P(K, 82, 26, 8, 16); P(K, 86, 20, 12, 8); P(K, 96, 23, 3, 4);   // 黑马（扬起前蹄）
-      P(K, 84, 46, 4, 10); P(K, 90, 42, 4, 8); P(K, 54, 48, 4, 12); P(K, 62, 48, 4, 10); P(K, 42, 36, 12, 4); P(K, 38, 39, 6, 10);
-      P(K, 60, 14, 15, 26); P(K, 74, 18, 10, 12); P(K, 50, 20, 12, 14);   // 斗篷
-      P('#1a1820', 61, 12, 13, 3);   // 领子上面空空的
-      P(K, 73, 4, 4, 12);            // 举起来的胳膊
-      P('#c8701a', 70, -2 + 6, 11, 8); P('#e08a2a', 72, 5, 7, 1); P('#ffe080', 72, 7, 2, 2); P('#ffe080', 77, 7, 2, 2); P('#ffd060', 73, 10, 5, 1);
+      g.fillStyle = 'rgba(220,214,190,.13)'; g.beginPath(); g.arc(78, 34, 34, 0, 7); g.fill();
+      g.fillStyle = '#e2dcc4'; g.beginPath(); g.arc(78, 34, 24, 0, 7); g.fill();   // 大月亮衬在骑手身后
+      g.fillStyle = '#cfc8ae'; g.fillRect(66, 26, 5, 4); g.fillRect(86, 40, 4, 3);
+      P('#0c0a0c', 0, 60, 160, 8); for (let x = 4; x < 160; x += 12) P('#0c0a0c', x, 54, 2, 7); P('#0c0a0c', 0, 54, 160, 2);   // 教堂桥的栏杆
+      const K = '#040305';
+      P(K, 54, 42, 6, 20); P(K, 64, 44, 5, 18);                                   // 后腿着地
+      P(K, 50, 36, 30, 10); P(K, 60, 32, 24, 8); P(K, 46, 38, 6, 3); P(K, 42, 40, 5, 12);   // 身子（往上扬）、尾巴
+      P(K, 80, 20, 8, 16); P(K, 84, 14, 13, 7); P(K, 96, 17, 4, 4); P(K, 85, 11, 2, 4); P(K, 89, 12, 2, 3);   // 脖子、脑袋、耳朵
+      P(K, 82, 36, 4, 8); P(K, 85, 42, 6, 3); P(K, 89, 34, 4, 7); P(K, 92, 39, 5, 3);   // 扬起的前蹄
+      P(K, 63, 12, 12, 22); P(K, 54, 16, 10, 16); P(K, 50, 22, 6, 9);             // 斗篷往后飘
+      P(K, 61, 9, 3, 5); P(K, 73, 9, 3, 5);                                       // 竖着的领子，中间空着——月亮从那儿透出来
+      P(K, 73, 0, 4, 12);                                                          // 举起来的胳膊
+      P('#c8701a', 70, 0, 10, 7); P('#e08a2a', 72, 0, 6, 1); P('#ffe080', 72, 2, 2, 2); P('#ffe080', 76, 2, 2, 2); P('#ffd060', 73, 5, 4, 1);
     },
     people: {
       me: { key: 'hl-me', skin: '#ecd4bc', hair: '#4a3420', hs: 'short', top: '#22202a', top2: '#e8e4d8', bottom: '#3a3428', shoes: '#1a1410', coat: true,
@@ -585,18 +613,19 @@
       gang2: { skin: '#e0b898', hair: '#7a4a20', hs: 'short', top: '#5a3a3a', bottom: '#2a2a30', hat: 'cap', hatC: '#3a2a1a', shoes: '#1a1410' }
     },
     faces: {
-      /* 没有头的骑手：高领斗篷上面空空的，月亮在领口上方；他手里拎着一颗发着光的脑袋 */
+      /* 没有头的骑手：高领斗篷上面空空的——本该是脑袋的地方，只有月亮；他手里拎着一颗发着光的脑袋 */
       hessian(R, a, t) {
-        R(0, 0, 32, 32, '#06070c'); R(0, 0, 32, 16, '#0c1020');
-        R(21, 2, 7, 7, '#cfd4d6'); R(22, 1, 5, 1, '#cfd4d6'); R(22, 9, 5, 1, '#cfd4d6'); R(23, 3, 2, 2, '#b4bcc0');
-        R(0, 18, 32, 14, '#0a0a10'); R(2, 16, 28, 4, '#0a0a10'); R(5, 13, 22, 6, '#16161e'); R(8, 14, 16, 4, '#020203');
-        R(11, 14, 10, 1, '#3a0c0c'); R(13, 15, 6, 1, '#240606');
-        for (let i = 0; i < 5; i++) R(4 + i * 6, 20, 1, 12, '#18181f');
-        const gl = .6 + Math.sin(t * 9) * .2 + a * .3;
-        R(1, 21, 11, 9, '#7a4012'); R(2, 20, 9, 1, '#7a4012'); R(5, 19, 2, 2, '#2a3a14'); R(4, 21, 1, 9, '#5a2e0c'); R(8, 21, 1, 9, '#5a2e0c');
-        const E = `rgba(255,214,110,${clamp(gl, 0, 1).toFixed(2)})`;
-        R(3, 23, 2, 2, E); R(8, 23, 2, 2, E); R(3, 27, 6, 1 + Math.round(a * 2), E); R(5, 27, 1, 1, '#7a4012');
-        R(2, 29, 9, 3, '#141016');
+        for (let y = 0; y < 32; y++) R(0, y, 32, 1, y < 6 ? '#121a34' : y < 14 ? '#0e1428' : '#0a0e1c');
+        R(11, 1, 10, 11, '#d6dad2'); R(10, 3, 12, 7, '#d6dad2'); R(12, 0, 8, 13, '#d6dad2'); R(13, 3, 3, 2, '#b8beb8'); R(17, 7, 2, 2, '#c2c8c2'); R(14, 9, 1, 1, '#c2c8c2');
+        R(0, 21, 32, 11, '#040406'); R(1, 18, 30, 4, '#040406'); R(4, 16, 24, 3, '#040406');   // 宽肩、斗篷
+        R(7, 9, 4, 10, '#07070a'); R(21, 9, 4, 10, '#07070a'); R(10, 13, 12, 5, '#07070a');   // 高高竖起的领子
+        R(8, 8, 2, 1, '#07070a'); R(22, 8, 2, 1, '#07070a');
+        const o = Math.round(a * 2); R(11, 12 - o, 10, 2 + o, '#000'); R(12, 13, 8, 1, '#4a0c0c'); R(13, 14, 6, 1, '#2a0606');   // 领口里空的
+        R(6, 22, 1, 10, '#121218'); R(25, 22, 1, 10, '#121218'); R(15, 19, 2, 13, '#0e0e14'); R(10, 24, 1, 8, '#0e0e14'); R(21, 24, 1, 8, '#0e0e14');
+        const gl = .6 + Math.sin(t * 9) * .2 + a * .3, E = `rgba(255,214,110,${clamp(gl, 0, 1).toFixed(2)})`;
+        R(1, 22, 10, 8, '#7a4012'); R(2, 21, 8, 1, '#7a4012'); R(5, 19, 2, 3, '#2a3a14'); R(4, 22, 1, 8, '#5a2e0c'); R(8, 22, 1, 8, '#5a2e0c');
+        R(2, 24, 2, 2, E); R(7, 24, 2, 2, E); R(3, 27, 5, 1 + Math.round(a * 2), E); R(5, 27, 1, 1, '#7a4012');
+        R(1, 29, 10, 3, '#100c10'); R(0, 30, 3, 2, '#100c10');   // 拎着它的那只手
       },
       /* 扔过来的那颗脑袋：越来越近，嘴越张越大 */
       head(R, a, t) {
@@ -654,10 +683,10 @@
       }
     },
     sprites: {
-      rideR(g, e, t, R) { gunpowder(R, e, t, true, true); staminaBar(R); },
-      rideL(g, e, t, R) { gunpowder(R, e, t, false, true); staminaBar(R); },
-      rideRb(g, e, t, R) { gunpowder(R, e, t, true, false); staminaBar(R); },
-      rideLb(g, e, t, R) { gunpowder(R, e, t, false, false); staminaBar(R); },
+      rideR(g, e, t, R) { ride(R, e, t, true, true); },
+      rideL(g, e, t, R) { ride(R, e, t, false, true); },
+      rideRb(g, e, t, R) { ride(R, e, t, true, false); },
+      rideLb(g, e, t, R) { ride(R, e, t, false, false); },
       hess(g, e, t, R) { hessian(R, e, t); },
       shorse(g, e, t, R) { stallHorse(R, e, t); },
       head(g, e, t, R) { const gl = .7 + Math.sin(t * 13) * .2; R(3, 3, 10, 9, '#9a4e16'); R(4, 2, 8, 1, '#9a4e16'); R(7, 0, 2, 3, '#3a4a1a'); R(5, 5, 2, 2, `rgba(255,220,110,${gl.toFixed(2)})`); R(9, 5, 2, 2, `rgba(255,220,110,${gl.toFixed(2)})`); R(5, 9, 6, 1, `rgba(255,200,90,${gl.toFixed(2)})`); },
@@ -668,6 +697,7 @@
       post(g, e, t, R) {
         R(7, -10, 2, 25, '#4a3420'); R(0, -14, 16, 6, '#6a5038'); R(0, -6, 16, 6, '#6a5038'); R(0, -14, 16, 1, '#7a6048'); R(0, -6, 16, 1, '#7a6048');
         const see = e.lit || !iControl(), I = '#1a120a';
+        if (!iControl() && hudS() && Math.abs(W.pl.px - e.px) < 8 * TS && Math.abs(W.pl.py - e.py) < 8 * TS && Math.sin(RT * 10) > 0) { R(-1, -15, 18, 1, '#ffe08a'); R(-1, 0, 18, 1, '#ffe08a'); R(-1, -15, 1, 16, '#ffe08a'); R(16, -15, 1, 16, '#ffe08a'); }   // 联机：旁观的人这边，快到岔口时路牌一闪一闪——该报路了
         if (!see) { R(3, -12, 9, 2, '#4a3828'); R(3, -4, 9, 2, '#4a3828'); return; }
         if (e.kind === 1) {   // 上：房子（汉斯家） 下：十字（教堂）
           R(2, -12, 1, 3, I); R(1, -11, 3, 1, I); R(6, -12, 5, 3, I); R(7, -13, 3, 1, I); R(8, -11, 1, 2, '#6a5038');
@@ -757,7 +787,7 @@
             await S.narr('满满一桌：油炸甜甜圈、荷兰油饼、脆麻花、姜饼、蜂蜜蛋糕；苹果派、桃子派、南瓜派；一片片火腿和熏牛肉；蜜饯李子、桃子、梨；一大碗牛奶和奶油……');
             await S.think('你在心里把桌上的每一样都换算了一遍：要是娶了凯特琳，这些就都是——\n……咳。');
           } },
-          { id: 'h_fiddler', x: 14, y: 3, spr: '@fiddler', dir: 0, on: S => S.say('老琴师', S.f.kat ? '（他在擦琴。）路上黑，先生。听见什么，都别回头。' : '（他一边拉，一边冲你挤挤眼。）先生，再来一支？') },
+          { id: 'h_fiddler', x: 14, y: 3, spr: '@fiddler', dir: 0, on: S => S.say('老琴师', S.f.kat ? '（他在擦琴。）路上黑，先生。火药认得路，您别跟它犟。' : '（他一边拉，一边冲你挤挤眼。）先生，再来一支？') },
           { id: 'h_clock', x: 22, y: 2, spr: 'clock', on: S => S.narr('高脚座钟。指针快到十二点了。\n钟摆每晃一下，炉子里的火就好像暗了一点。') },
           { id: 'h_mbook', x: 19, y: 2, w: 2, spr: 'seat', async on(S) { if (S.once('mb')) await S.narr('窗台下的长凳上，放着你那本《新英格兰巫术史》——你走到哪儿都揣着它。\n凯特琳刚才问你能不能借她看看，你没舍得。'); await S.note('mather'); } },
           { id: 'h_kat', x: 12, y: 6, spr: '@katrina', dir: 0, on: katTalk },
@@ -772,7 +802,7 @@
           { id: 'h_quilt', x: 17, y: 9, w: 3, spr: 'quilt', on: S => S.narr('缝了一半的百衲被绷在木架上。下午的时候，全谷的太太们围着它缝了一下午，嘴也没闲着。\n被角上绣着一行字：1790年秋。') },
           { id: 'h_wheel', x: 21, y: 9, spr: 'wheel', on: S => S.narr('纺车。轮子自己还在慢慢地转——大概是谁跳舞的时候碰了一下。') },
           { id: 'h_bible', x: 2, y: 9, spr: 'lectern', async on(S) { if (S.once('bb')) await S.narr('架子上摊着范·塔赛尔家的大圣经，比你的歌本厚十倍。扉页上密密麻麻写满了字。'); await S.note('bible'); } },
-          { id: 'h_seeds', x: 10, y: 10, spr: 'seeds', decal: true, solid: false, hidden: true, on(S) { S.f.c_seeds = true; return S.narr('门边的地板上，有几粒南瓜子。湿漉漉的，还连着几丝橙色的瓤。\n布罗姆他们刚才就是从这儿出去的。'); } },
+          { id: 'h_seeds', x: 10, y: 10, spr: 'seeds', decal: true, solid: false, hidden: true, on(S) { clue(S, 'c_seeds'); return S.narr('门边的地板上，有几粒南瓜子。湿漉漉的，还连着几丝橙色的瓤。\n布罗姆他们刚才就是从这儿出去的。'); } },
           { id: 'h_exit', x: 11, y: 11, spr: 'invisible', async touch(S) {
             const f = S.f;
             if (!f.tales) { await S.narr('故事还没听完呢。这么好的机会，你舍不得走。'); return S.walk('pl', 'u', 5); }
@@ -820,7 +850,7 @@
             await S.say('谷仓里的声音', ['……布罗姆呢？', '早走了。骑着「恶魔」走的，怀里还揣着个——', '嘘！你小点声！', '……他说了，今晚要请那位先生「看场戏」。'], { style: 'whisper' });
             S.sfx('laugh');
             await S.narr('里头爆出一阵憋不住的笑，跟着是「啪」的一巴掌，又安静了。');
-            S.f.c_whisper = true;
+            clue(S, 'c_whisper');
           } },
           { id: 'y_scare', x: 17, y: 10, spr: 'scarecrow', on: S => S.narr('南瓜地里的稻草人，穿着一件旧军装。\n它的脑袋是一个干瘪的老南瓜，眼睛和嘴是用刀剜出来的，在风里一晃一晃，像是在点头。') },
           { id: 'y_p1', x: 19, y: 10, spr: 'pumpkin', on: S => S.narr('一个大南瓜，圆滚滚的，敲上去「咚咚」响。') },
@@ -830,7 +860,7 @@
           { id: 'y_stem', x: 20, y: 12, spr: 'stem', async on(S) {
             await S.narr('南瓜地正当中，空出了一块。\n藤上留着一截断茬——断口齐齐的，是刀割的，还湿着。');
             await S.think('这块地方……原来应该长着全地里最大的那个南瓜。\n谁大半夜的来割南瓜？');
-            S.f.c_stem = true;
+            clue(S, 'c_stem');
           } },
           { id: 'y_gate1', x: 13, y: 15, spr: 'invisible', touch: S => yardGate(S) },
           { id: 'y_gate2', x: 14, y: 15, spr: 'invisible', touch: S => yardGate(S) },
@@ -842,7 +872,7 @@
         },
         tick(S, dt) {
           if (S.f.ride) { S.norun(true); setSpd(S, 1.15); if (S.moving) { HO.p -= dt; if (HO.p <= 0) { HO.p = .2; HO.k ^= 1; S.tone('triangle', HO.k ? 190 : 160, 80, .05, .035, 0, 800); } } }
-          if (!S.f.c_whisper) { MUS.t -= dt; if (MUS.t <= 0) { MUS.t = 8 + Math.random() * 5; S.sfx('laugh'); } }
+          if (!S.f.c_whisper) { MUS.t -= dt; if (MUS.t <= 0) { MUS.t = 8 + Math.random() * 5; const p = S.pl; if (Math.abs(p.x - 22) + Math.abs(p.y - 6) <= 9) S.sfx('laugh'); } }   // 走近谷仓才听得见
         }
       },
       /* ---------------- 马厩 ---------------- */
@@ -865,7 +895,7 @@
             await S.narr('这个隔间是空的。木牌上刻着两个字：「恶魔」——布罗姆那匹黑马。');
             await S.narr('缰绳挂在栏杆上，是解开的，不是挣断的。马槽里的燕麦还剩一半。');
             await S.think('布罗姆刚才不是说，他先「走一步」吗？\n……他走得可真急。');
-            S.f.c_stall = true;
+            clue(S, 'c_stall');
           } },
           { id: 's_div4', x: 4, y: 2, spr: 'stalldiv', on: S => S.narr('隔板上全是马啃出来的牙印。') },
           { id: 's_e', x: 5, y: 2, spr: 'shorse', col: '#8a4a2a', mane: '#6a2e16', ewe: true, ham: true, burrM: true, burrT: true, on: inspectHorse },
@@ -917,19 +947,20 @@
           { id: 'r_vlamp', x: 1, y: 9, spr: 'invisible', light: { r: 3, col: 'rgba(255,190,110,.12)' } },
           { id: 'r_tulip', x: 16, y: 6, w: 3, h: 3, spr: 'tulip', on: S => S.narr('少校树。树皮上那块被雷劈白了的地方，在黑地里像一只睁着的眼睛。') },
           { id: 'r_moon1', x: 17, y: 10, spr: 'invisible', light: { r: 3.4, col: 'rgba(170,190,230,.06)' } },
+          { id: 'r_moon0', x: 17, y: 6, spr: 'invisible', light: { r: 3.8, col: 'rgba(170,190,230,.10)', dy: -12 } },
           { id: 'r_moon2', x: 32, y: 10, spr: 'invisible', light: { r: 3, col: 'rgba(170,190,230,.05)' } },
           { id: 'r_moon3', x: 55, y: 10, spr: 'invisible', light: { r: 4.4, col: 'rgba(180,200,240,.08)' } },
           { id: 'r_block', x: 34, y: 10, h: 2, spr: 'invisible', solid: true, hidden: true, bump: S => S.narr('身后的桥头，那团黑影就在那儿。\n你连掉转马头的胆子都没有。') },
           { id: 'hessian', x: 37, y: 13, spr: 'hess', solid: false, hidden: true, s: { hd: 1 } },
-          { id: 'r_log1', x: 64, y: 10, spr: 'log', on: S => S.narr('一棵倒在路上的老树。') },
-          { id: 'r_log2', x: 85, y: 7, spr: 'log', on: S => S.narr('一棵倒在路上的老树。') },
-          { id: 'r_log3', x: 97, y: 12, spr: 'log', on: S => S.narr('一棵倒在路上的老树。') },
+          { id: 'r_log1', x: 64, y: 10, spr: 'log', light: LOGL, on: S => S.narr('一棵倒在路上的老树。') },
+          { id: 'r_log2', x: 85, y: 7, spr: 'log', light: LOGL, on: S => S.narr('一棵倒在路上的老树。') },
+          { id: 'r_log3', x: 97, y: 12, spr: 'log', light: LOGL, on: S => S.narr('一棵倒在路上的老树。') },
           { id: 'r_sign1', x: 98, y: 7, spr: 'post', kind: 1, light: { r: 1.6, col: 'rgba(170,190,230,.08)' }, on: S => S.narr('岔路口的路牌。往上，是回汉斯家的坡路；往下，是去老荷兰教堂的路。') },
-          { id: 'r_log4', x: 106, y: 17, spr: 'log', on: S => S.narr('一棵倒在路上的老树。') },
-          { id: 'r_log5', x: 121, y: 16, spr: 'log', on: S => S.narr('一棵倒在路上的老树。') },
+          { id: 'r_log4', x: 106, y: 17, spr: 'log', light: LOGL, on: S => S.narr('一棵倒在路上的老树。') },
+          { id: 'r_log5', x: 121, y: 16, spr: 'log', light: LOGL, on: S => S.narr('一棵倒在路上的老树。') },
           { id: 'r_hgate', x: 130, y: 3, h: 2, spr: 'hgate', on: S => S.narr('汉斯家的院门。门闩着，里头的狗一声都不叫。') },
           { id: 'r_sign2', x: 133, y: 15, spr: 'post', kind: 2, light: { r: 1.6, col: 'rgba(170,190,230,.08)' }, on: S => S.narr('路牌。往上是老墓地；往前，过了溪，就是教堂。') },
-          { id: 'r_log6', x: 140, y: 17, spr: 'log', on: S => S.narr('一棵倒在路上的老树。') },
+          { id: 'r_log6', x: 140, y: 17, spr: 'log', light: LOGL, on: S => S.narr('一棵倒在路上的老树。') },
           ...[[136, 11], [138, 13], [139, 9], [142, 12], [144, 10], [146, 12], [137, 9]].map(([x, y], i) => ({ id: 'r_gs' + i, x, y, spr: 'gravestone', on: S => S.narr('一块歪歪斜斜的老墓碑，字早就磨平了。') })),
           { id: 'r_hgrave', x: 141, y: 10, spr: 'cross', on: S => S.narr('一座没有名字的坟。木十字上拴着一截缰绳，被什么东西扯得笔直。') },
           { id: 'r_fire', x: BR - 2, y: 16, h: 2, spr: 'fireglow', solid: false, hidden: true, light: { r: 4, col: 'rgba(255,120,30,.3)' } },
@@ -950,6 +981,7 @@
           if (f.ph === 'ride') {
             if (x >= 4 && S.once('r_intro')) return rideIntro(S);
             if (x >= 13 && S.once('r_tree')) return tulipTree(S);
+            if (x >= 22 && S.once('r_far')) return (async () => { for (let i = 0; i < 8; i++) if (i % 4 !== 3) S.tone('sine', 85, 42, .1, .016, i * .13, 420); await S.wait(1200); await S.think('……身后很远的地方，好像有一阵马蹄声。\n你勒住马听了听。没了。'); })();
             if (x >= 26 && S.once('r_swamp')) return swamp(S);
             return;
           }
@@ -970,7 +1002,8 @@
         tick(S, dt) {
           roadTick(S, dt);
           const f = S.f;
-          if (f.ph === 'nolook' && !S.busy && !W.ended && S.pl.dir === 1) S.run(f.warnLook ? lookBack : lookWarn);
+          if (S.busy) GRACE = Math.max(GRACE, W.t + .5);
+          if (f.ph === 'nolook' && !S.busy && !W.ended && S.pl.dir === 1) { if (W.t < GRACE) S.turn(2); else S.run(f.warnLook ? lookBack : lookWarn); }
         }
       }
     }

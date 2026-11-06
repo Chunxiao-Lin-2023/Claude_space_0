@@ -9,7 +9,7 @@
   let DIED = 0;        // 本局在飑里失败几次（只影响重来时的提示）
   let SQ = { left: null };   // 飑的倒计时：重来时取「上次剩余」与下限的较大者
   let GW = false;      // 舵轮边的人只吓一次
-  const T0 = 17, TMIN = 16;   // 飑的倒计时（秒）
+  const T0 = 20, TMIN = 18;   // 飑的倒计时（秒）
   /* 横杆：在主桅后面（第 22–27 列）左右甩；REST 秒停一下，WARN 秒前「嘎」一声预警，SWEEP 秒甩过去 */
   const REST = 2.6, WARN = .85, SWEEP = .5, OYA = 0, OYB = 128, OYM = 64;
   const B = { t: 0, side: 0, sw: false, p: 0, from: 0, to: 0, warned: false, hit: false, lt: 4, atL: false };
@@ -480,7 +480,7 @@
     }
   }
   function dgNightStage(S) {
-    S.place('mh', 4, 4, 0); S.place('deveau_g', 6, 6, 1); S.place('wright_g', 11, 8, 2); S.place('helmsman', 10, 4, 3);
+    S.place('mh', 4, 4, 0); S.place('deveau_g', 7, 6, 1); S.place('wright_g', 11, 8, 2); S.place('helmsman', 10, 4, 3);
     S.ent('dglant').off = false; S.dark(.84, 'dg'); S.plr(3);
   }
   async function mhTalk(S) {

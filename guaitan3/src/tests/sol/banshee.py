@@ -46,7 +46,7 @@ SOL = [
     # 答错一次（人错）：扣时间、给针对性提示
     ['use', 'nan', [0, ['小肖恩'], ['发高烧']]],
     ['expect', 'window.__dbg.W.f.wrong === 1 && window.__dbg.W.f.pen === 15'],
-    ['use', 'nan', [0, ['迈克尔叔叔'], ['马车翻进渡口']]],
+    ['use', 'nan', [0, ['迈克尔叔叔'], ['赶车过渡口时翻车']]],
     ['expect', "window.__dbg.W.f.ph === 'fate' && window.__dbg.W.timer && window.__dbg.W.timer.left > 95 && window.__dbg.W.cp.name === 'fate'"],
     ['shot', 'fate'],
     ['use', 'mick', [0]],

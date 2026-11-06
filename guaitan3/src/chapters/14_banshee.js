@@ -5,6 +5,13 @@
   const CN = '零一二三四五六七八九';
   const cn = n => n < 10 ? CN[n] : n < 20 ? '十' + (n % 10 ? CN[n % 10] : '') : CN[(n / 10) | 0] + '十' + (n % 10 ? CN[n % 10] : '');
 
+  /* 她：长白发一直垂到腰下，右手里一把银梳子 */
+  function beanExtra(g, d, fr, G, R) {
+    const h = '#d8d8de';
+    if (d === 0) { R(3, G.tT, 1, 10, h); R(12, G.tT, 1, 10, h); R(2, G.tT + 4, 1, 7, '#c4c4cc'); R(13, G.tT + 7, 2, 1, '#e8eef4'); R(13, G.tT + 6, 1, 1, '#ffffff'); }
+    else if (d === 3) { R(4, G.tT + 3, 8, 11, h); R(5, G.tT + 14, 6, 3, '#c4c4cc'); R(12, G.tT + 2, 2, 1, '#e8eef4'); }
+    else { R(9, G.tT + 2, 3, 12, h); R(4, G.tT + 6, 2, 1, '#e8eef4'); }
+  }
   /* ---------- 跨重来保留的数据（不进 S.f，读档/开新局时在 intro 里清零） ---------- */
   let FORD_DIED = 0, FATE_LEFT = null, FATE_FAILS = 0;
   const FATE_BASE = 120, FATE_FLOOR = 85, FATE_PEN = 15;
@@ -58,9 +65,9 @@
 
   /* ---------- 谜题 ---------- */
   const WHO = ['奶奶', '妈妈', '迈克尔叔叔', '小肖恩', '汤米', '我'];
-  const HOW = ['发高烧', '马车翻进渡口', '失火', '从梯子上摔下来'];
+  const HOW = ['发高烧', '走过渡口时失足', '赶车过渡口时翻车', '掉进井里', '从谷仓的梯子上摔下来'];
   const WHO_TXT = '她为谁而哭？\n（键盘 1 奶奶　2 妈妈　3 迈克尔叔叔\n　　　4 小肖恩　5 汤米　6 我）';
-  const HOW_TXT = '会怎么出事？\n（键盘 1 发高烧　2 马车翻进渡口\n　　　3 失火　4 从梯子上摔下来）';
+  const HOW_TXT = '会怎么出事？\n（键盘 1 发高烧　2 走过渡口时失足\n　3 赶车过渡口时翻车　4 掉进井里\n　5 从谷仓的梯子上摔下来）';
 
   function nightGoal(S) {
     if (S.has('shirt')) return '回屋告诉奶奶：她为谁哭、会怎么出事';
@@ -68,10 +75,11 @@
   }
   function fateGoal(S) {
     const f = S.f, left = [];
-    if (!f.cartFixed) left.push('修好车辖');
-    if (!f.tommyUp) left.push('叫醒汤米');
-    if (!f.shirtShown) left.push('拿衬衫劝住叔叔');
-    return '四点前：' + left.join('、');
+    if (!f.cartFixed) left.push(S.has('pin') ? '换上车辖（院里大车）' : '修好车辖（谷仓工具箱）');
+    if (!f.tommyUp) left.push('叫醒汤米（谷仓）');
+    if (!f.shirtShown) left.push('拿衬衫劝住叔叔（灶屋）');
+    if (!left.length) return '等天亮';
+    return '四点前：' + left.join('、') + (S.coop && left.length > 1 ? '（双人：分头去）' : '');
   }
   function clockText(S) {
     const f = S.f;
@@ -96,12 +104,9 @@
         extra(g, d, fr, G, R) { const v = '#3a3a46'; if (d === 0) { R(4, G.tT + 1, 3, G.tB - G.tT, v); R(9, G.tT + 1, 3, G.tB - G.tT, v); R(7, G.tT + 4, 2, 1, '#c9a35a'); R(9, G.tT + 4, 1, 1, '#c9a35a'); } else if (d === 3) R(4, G.tT, 8, G.tB - G.tT + 1, v); else R(5, G.tT + 1, 5, G.tB - G.tT, v); } },
       tommy: { skin: '#f0cfb4', hair: '#c8a060', hs: 'messy', hat: 'cap', hatC: '#4a4038', top: '#b8ac8a', top2: '#a0946e', bottom: '#3a3428', shoes: '#2a1e16' },
       bean: { key: 'bean', skin: '#dcdcd8', hair: '#d8d8de', hs: 'long', cover: true, redEye: true, ghost: true, dress: true, top: '#3e5446', hat: 'hood', hatC: '#5c5e66',
-        extra(g, d, fr, G, R) {
-          const h = '#d8d8de';
-          if (d === 0) { R(3, G.tT, 1, 10, h); R(12, G.tT, 1, 10, h); R(2, G.tT + 4, 1, 7, '#c4c4cc'); R(13, G.tT + 7, 2, 1, '#e8eef4'); R(13, G.tT + 6, 1, 1, '#ffffff'); }
-          else if (d === 3) { R(4, G.tT + 3, 8, 11, h); R(5, G.tT + 14, 6, 3, '#c4c4cc'); R(12, G.tT + 2, 2, 1, '#e8eef4'); }
-          else { R(9, G.tT + 2, 3, 12, h); R(4, G.tT + 6, 2, 1, '#e8eef4'); }
-        } }
+        extra: beanExtra },
+      bean_big: { key: 'bean-big', big: true, skin: '#dcdcd8', hair: '#d8d8de', hs: 'long', cover: true, redEye: true, ghost: true, dress: true, top: '#3e5446', hat: 'hood', hatC: '#5c5e66',
+        extra: beanExtra }
     },
     /* 惊吓大头像：灰斗篷、被风吹开的白发、一张长长的灰白的脸、哭肿的红眼眶、越张越大的嘴 */
     faces: {
@@ -112,12 +117,14 @@
         R(5, 4, 22, 4, HA); R(4 + w, 8, 4, 24, HA); R(24 - w, 8, 4, 24, HA); R(5 + w, 25, 4, 7, HA2); R(23 - w, 25, 4, 7, HA2); R(3 + w, 14, 1, 14, HA2); R(28 - w, 12, 1, 16, HA2);
         R(9, 7, 14, 20, SK); R(10, 27, 12, 2, SK); R(11, 29, 10, 1, SK); R(20, 8, 3, 19, SK2);
         R(9, 6, 14, 3, HA); R(15, 6, 2, 5, HA2); R(9, 9, 2, 6, HA); R(21, 9, 2, 5, HA);
-        R(10, 12, 5, 4, K); R(17, 12, 5, 4, K); R(10, 11, 5, 1, RIM); R(17, 11, 5, 1, RIM); R(10, 16, 5, 1, RIM); R(17, 16, 5, 1, RIM);
+        R(10, 11, 5, 6, '#5a5e62'); R(17, 11, 5, 6, '#5a5e62');
+        R(10, 12, 5, 4, K); R(17, 12, 5, 4, K); R(10, 11, 5, 1, RIM); R(17, 11, 5, 1, RIM); R(10, 16, 5, 1, RIM); R(17, 16, 5, 1, RIM); R(9, 13, 1, 2, RIM); R(22, 13, 1, 2, RIM);
         R(12, 13, 2, 2, '#ff3a3a'); R(19, 13, 2, 2, '#ff3a3a'); R(12, 13, 1, 1, '#ffd0d0'); R(19, 13, 1, 1, '#ffd0d0');
+        for (let i = 0; i < 6; i++) R(9 + i, 9 + i * 2, 1, 2, HA2); for (let i = 0; i < 5; i++) R(22 - i, 10 + i * 3, 1, 2, HA);
         R(11, 17, 1, 8, '#9ab8d0'); R(21, 17, 1, 7, '#9ab8d0');
         R(9, 18, 2, 5, SK2); R(21, 18, 2, 5, SK2);
         const mh = 3 + Math.round(Math.min(1, a * 2) * 7);
-        R(13, 20, 6, mh, K); R(14, 21, 4, mh - 2, '#3a0a0e'); R(12, 21, 1, mh - 2, K); R(19, 21, 1, mh - 2, K);
+        R(14, 20, 4, mh + 1, K); R(13, 21, 6, mh - 1, K); R(14, 22, 4, mh - 3, '#3a0a0e'); R(14, 20, 1, 1, '#c8c8c0'); R(17, 20, 1, 1, '#c8c8c0');
       }
     },
     thumb(g, w, h) {
@@ -176,15 +183,16 @@
         FATE_LEFT = S.timerLeft;
         if (S.timerLeft < 30 && !f._w30) { f._w30 = 1; S.toast('灶屋里，迈克尔叔叔在系靴带了……'); strike(S, 1); }
         if (S.timerLeft < 12 && !f._w12) { f._w12 = 1; S.toast('迈克尔叔叔拿起了马鞭。'); S.sfx('heart'); }
-        if (S.map === 'house') { f._tk = (f._tk ?? 1) - dt; if (f._tk <= 0) { f._tk = 1; S.sfx('tick'); } }
+        if (S.map === 'house') { f._tk = (f._tk ?? 1) - dt; if (f._tk <= 0) { f._tk = S.timerLeft < 30 ? 1 : 2; S.sfx('tick'); } }
       }
       if (S.busy || (f.ph !== 'night' && f.ph !== 'fate')) return;
       /* 背景里的哀嚎：屋里闷，院子里清楚，谷仓里最远 */
       f._wl = (f._wl ?? 6) - dt;
       if (f._wl <= 0) {
         f._wl = 9 + Math.random() * 5;
-        if (S.map === 'house') keen(S, .03, 850);
-        else if (S.map === 'yard') { keen(S, .045, 1500); if (Math.random() < .5) S.after(2600, async S => { whine(S); S.bubble('dog', '…', 1400); }); }
+        const far = f.sawBean ? .7 : 1;
+        if (S.map === 'house') keen(S, .03 * far, f.sawBean ? 650 : 850);
+        else if (S.map === 'yard') { keen(S, .045 * far, f.sawBean ? 1100 : 1500); if (Math.random() < .5) S.after(2600, async S => { whine(S); S.bubble('dog', '…', 1400); }); }
         else if (S.map === 'barn') keen(S, .022, 700);
         else if (S.map === 'ford') keen(S, .02, 900);
       }
@@ -332,7 +340,7 @@
         for (let i = 0; i < 6; i++) {
           const x = ((hash(e.x, e.y, i) * 15) | 0), hgt = 9 + ((hash(e.y, e.x, i) * 7) | 0), sw = Math.round(Math.sin(t * 1.7 + i + e.x) * .8);
           R(x + sw, 14 - hgt, 1, hgt, i % 2 ? 'rgba(84,104,54,.92)' : 'rgba(64,82,40,.92)');
-          if (i % 2) R(x + sw, 13 - hgt, 1, 3, '#7a6a40');
+          if (i % 2) R(x + sw, 13 - hgt, 1, 3, '#7a6a40'); else R(x + sw, 14 - hgt, 1, 1, 'rgba(200,210,225,.55)');
         }
       },
       /* 谷仓：草堆里睡着的汤米 */
@@ -420,7 +428,7 @@
       },
       /* ---------------- 院子 ---------------- */
       yard: {
-        amb: 'wind', dark: .82, plr: 3, floor: 'dirt', floor2: 'cobble', fog: .18,
+        amb: 'wind', dark: .76, plr: 3.2, floor: 'dirt', floor2: 'cobble', fog: .18,
         legend: { '^': 'thatch', H: 'whitewash', I: 'byrewall', Q: 'shedroof', G: 'drystone', S: 'turfstack' },
         tileOpts: { grassC: '#22301e', treeC: '#121c14' },
         rows: [
@@ -447,7 +455,7 @@
           { id: 'wwin_y', x: 7, y: 2, spr: 'window', on: S => S.narr(S.f.sawBean ? '西屋的窗户。窗台底下的泥地上，一个脚印也没有。\n可是窗台上落着几根长长的白头发。' : '西屋的窗户，黑着。肖恩和迈克尔叔叔睡在里面。') },
           { id: 'kwin_y', x: 15, y: 2, spr: 'window', lit: true, light: { r: 2.2, col: 'rgba(255,170,90,.16)' }, on: S => S.narr('灶屋的窗户里透出一点火光。奶奶的影子映在窗纸上，一动不动。') },
           { id: 'ewin_y', x: 19, y: 2, spr: 'window', on: S => S.narr('东屋的窗户。你的床就在窗户底下。') },
-          { id: 'bean_y', x: 7, y: 3, spr: '@bean', hidden: true, solid: false, dir: 3, light: { r: 2.4, col: 'rgba(190,205,225,.18)' } },
+          { id: 'bean_y', x: 7, y: 3, spr: '@bean_big', hidden: true, solid: false, dir: 3, light: { r: 2.4, col: 'rgba(190,205,225,.18)' } },
           { id: 'cart', x: 24, y: 3, w: 2, spr: 'cart2', on: S => cartUse(S) },
           { id: 'comb', x: 23, y: 3, spr: 'comb', light: { r: .9, col: 'rgba(210,220,240,.25)' }, on: S => combUse(S) },
           { id: 'horse', x: 26, y: 5, w: 2, spr: 'horse', async on(S) { snort(S); await S.narr(S.f.ph === 'eve' ? '老马贝丝。' : '老马贝丝不安地刨着蹄子，耳朵一直朝着南边——朝着渡口。'); } },
@@ -457,7 +465,9 @@
           { id: 'well', x: 17, y: 6, spr: 'well', on: S => S.narr('井口盖着木板。往下看，水面黑得像一只眼睛。') },
           { id: 'barrel', x: 21, y: 4, spr: 'barrel', on: S => S.narr('接雨水的木桶，满满的。水面上浮着一层薄薄的雾。') },
           { id: 'haw', x: 4, y: 10, spr: 'hawthorn', on: S => S.narr('地中间孤零零一棵山楂树。爷爷犁地的时候，宁可绕着它犁一个圈，也不肯砍。\n老人们说，那是「仙女的刺」。') },
-          { id: 'lane', x: 12, y: 16, spr: 'invisible', touch: S => toFord(S) }
+          { id: 'lane', x: 12, y: 16, spr: 'invisible', touch: S => toFord(S) },
+          { id: 'moonY', x: 18, y: 7, spr: 'invisible', light: { r: 9, a: .35, col: 'rgba(140,160,200,.06)' } },
+          { id: 'moonC', x: 24, y: 4, spr: 'invisible', light: { r: 3.4, a: .45, col: 'rgba(150,170,210,.08)' } }
         ],
         async enter(S, first) {
           if (S.f.ph === 'night' && !S.f.sawBean) return beanAtWindow(S);
@@ -493,7 +503,7 @@
       },
       /* ---------------- 渡口 ---------------- */
       ford: {
-        amb: 'river', dark: .86, plr: 2.7, floor: 'mud', fog: .3,
+        amb: 'river', dark: .8, plr: 2.8, floor: 'mud', fog: .26,
         legend: { r: 'reedc' },
         tileOpts: { grassC: '#1e2a1a', treeC: '#101a12' },
         rows: FORD_ROWS,
@@ -503,6 +513,7 @@
           { id: 'road', x: 11, y: 21, spr: 'invisible', touch: S => roadEnnis(S) },
           { id: 'road2', x: 12, y: 21, spr: 'invisible', touch: S => roadEnnis(S) },
           { id: 'moon', x: 12, y: 17, spr: 'invisible', light: { r: 3.2, col: 'rgba(150,170,200,.12)' } },
+          { id: 'moonB', x: 12, y: 9, spr: 'invisible', light: { r: 7.5, a: .3, col: 'rgba(140,160,200,.05)' } },
           { id: 'washer', x: HX, y: HY, spr: 'washer', solid: false, light: { r: 2.2, col: 'rgba(190,205,225,.2)' } },
           { id: 'wstone', x: 13, y: 16, spr: 'wstone', solid: true, on: S => washStone(S) },
           ...[...COVER].map(k => { const [x, y] = k.split(',').map(Number); return { x, y, spr: 'reedfg', z: 1, solid: false }; })
@@ -516,17 +527,16 @@
 
   /* ================= 剧情 ================= */
   async function opening(S) {
-    await S.narr('泥炭火烧得通红。烟从烟囱里出不去的那一半，在屋梁底下慢慢地打着转。');
+    await S.narr('泥炭火烧得通红。烟从烟囱里出不去的那一半，在屋梁底下慢慢地打着转。\n西屋里传来小肖恩一阵一阵的咳嗽。');
     await S.say('妈妈', '迈克尔，你那件美国衬衫我给洗了，搭在炉边椅背上，明早就干。');
-    await S.say('迈克尔叔叔', '谢谢嫂子。波士顿的洗衣房洗一件要五分钱，领子还洗不白。');
     S.sfx('open'); S.place('tommy_h', 11, 8, 3); await S.walk('tommy_h', [12, 7], 4);
-    await S.say('汤米', ['……奶奶，我刚才在院子里，看见车辕上坐着一个女的。', '灰斗篷，头发白得发亮，一直拖到地上。她在梳头，一边梳一边哼什么调子。']);
+    await S.say('汤米', '……奶奶，我刚才在院子里，看见车辕上坐着一个女的。灰斗篷，白头发一直拖到地上，一边梳头一边哼着什么。');
     S.bubble('nan', '!', 900);
     await S.say('奶奶', '你碰了什么没有？');
     await S.say('汤米', '没、没有！我喊了一声，一眨眼人就没了。车辕上落着一把梳子，银的，在月亮底下闪。');
     await S.say('奶奶', '谁也不许去碰那把梳子。听见没有？谁也不许。');
     await S.say('迈克尔叔叔', '妈，汤米八成是看见隔壁的寡妇出来收衣裳了。……仙女？波士顿可没有这玩意儿。');
-    await S.narr('奶奶没有笑。她盯着炉火，手里的念珠一颗一颗地往下捻。\n西屋里传来小肖恩一阵一阵的咳嗽。');
+    await S.narr('奶奶没有笑。她盯着炉火，手里的念珠一颗一颗地往下捻。');
     await S.say('妈妈', '好了，都早点睡。汤米，回谷仓去。艾琳，跟奶奶道个晚安，回东屋睡觉。');
     S.sfx('close'); S.hide('tommy_h');
     S.goal('跟家里人说说话，回东屋睡觉');
@@ -586,19 +596,22 @@
       '她来过两回。你爷爷走那年，你爸爸走那年。两回我都听见了，两回都是三夜。',
       S.f.sawWash ? '你都看见了。去对一对吧：族谱、窗户、衣裳。' : '她在哪个窗下哭、在浅滩上洗谁的衣裳——看清楚了，就知道是谁。'
     ]);
-    if (!S.f.sawWash) return S.say('奶奶', ['……你还没去渡口看过。', '她在浅滩上洗的是谁的衣裳，比什么都准。从院门出去，顺着小路往南走。']);
+    if (!S.f.sawWash) {
+      const tip = !S.f.readBible ? '先翻翻碗柜上的圣经，看看哪些人是奥弗林家的血。' : !(S.f.sawBean || S.f.seanTold) ? '听听她在哪个窗户底下哭。出去看看，或者问问西屋的肖恩。' : '她在浅滩上洗的是谁的衣裳，比什么都准。从院门出去，顺着小路往南，就是渡口。';
+      return S.say('奶奶', ['……你还没看全。', tip]);
+    }
     return guess(S);
   }
 
   async function guess(S) {
     const who = await S.keypad(WHO_TXT, WHO, 1, { alias: { 1: WHO[0], 2: WHO[1], 3: WHO[2], 4: WHO[3], 5: WHO[4], 6: WHO[5] } });
     if (who == null) return S.say('奶奶', '想好了再说。');
-    const how = await S.keypad(HOW_TXT, HOW, 1, { alias: { 1: HOW[0], 2: HOW[1], 3: HOW[2], 4: HOW[3] } });
+    const how = await S.keypad(HOW_TXT, HOW, 1, { alias: { 1: HOW[0], 2: HOW[1], 3: HOW[2], 4: HOW[3], 5: HOW[4] } });
     if (how == null) return S.say('奶奶', '想好了再说。');
-    if (who === '迈克尔叔叔' && how === '马车翻进渡口') return rightAnswer(S);
+    if (who === '迈克尔叔叔' && how === HOW[2]) return rightAnswer(S);
     const f = S.f; f.wrong = (f.wrong || 0) + 1; f.pen = Math.min(FATE_PEN * 3, (f.pen || 0) + FATE_PEN);
     keen(S, .075, 2000); S.shake(500, 2); S.sfx('heart');
-    await S.narr('外头的哭声一下子高了起来，像是就贴在门板上。\n挂钟的指针，又往前走了一大截。');
+    await S.narr('外头的哭声一下子高了起来，像是就贴在门板上。\n挂钟的指针往前跳了一大截——离四点，又近了。');
     const lines = [];
     if (who !== '迈克尔叔叔') lines.push({
       '奶奶': '傻孩子，我是伯克家的人，嫁进来的。族谱上写着呢。',
@@ -607,9 +620,9 @@
       '小肖恩': '西屋的窗下没错……可你在浅滩上看见的，是孩子穿的衣裳吗？',
       '我': '你是奥弗林家的血，这不假。可她站在你的窗底下了吗？'
     }[who]);
-    else lines.push('人……对了。可是怎么出事？她把梳子落在哪儿了？她又是在哪儿洗的衣裳？');
+    else lines.push(how === HOW[1] ? '人对了，地方也对了。可他是走着过河的吗？她的梳子，落在什么上头了？' : '人……对了。可是怎么出事？她把梳子落在哪儿了？她又是在哪儿洗的衣裳？');
     if (f.wrong === 2) lines.push('三样东西对一对：族谱上的血、她站的窗下、她洗的衣裳。三样都对得上的，只有一个人。');
-    if (f.wrong === 3) lines.push('西屋里睡着两个人，孩子的衣裳没有那么大。梳子落在车辕上，衣裳在车道下水的地方洗。');
+    if (f.wrong === 3) lines.push('西屋里睡着两个人，孩子的衣裳没有那么大。梳子落在车辕上，左轮的车辖裂着，衣裳在车道下水的地方洗。');
     if (f.wrong >= 4) lines.push('……是迈克尔。是那辆车，在渡口。');
     await S.say('奶奶', lines);
   }
@@ -628,7 +641,7 @@
     S.face('nan', 'pl');
     await S.say('奶奶', ['命还没落地，就还能拧一拧。', '别让他上那辆车。车要去，就让不姓奥弗林的人赶——车也得修结实了。']);
     S.place('mick', 12, 7, 0);
-    await S.think('四点……钟上已经快三点了。' + (S.coop ? '\n（双人：一个人跑谷仓，一个人劝叔叔）' : ''));
+    await S.think('四点……钟上已经快三点了。');
     FATE_LEFT = null;
     S.goal(fateGoal(S)); S.cp('fate');
     startFate(S, baseT(S));
@@ -674,7 +687,7 @@
 
   async function mickTalk(S) {
     const f = S.f; S.face('mick', 'pl');
-    if (f.ph === 'eve') return S.say('迈克尔叔叔', ['波士顿的电车整夜整夜地响，响得人睡不着。回到这儿，倒是静得睡不着了。', '等肖恩的咳嗽好了，开春我们就回去。']);
+    if (f.ph === 'eve') return S.say('迈克尔叔叔', ['波士顿的电车整夜整夜地响，响得人睡不着。回到这儿，倒是静得睡不着了。', '肖恩烧了三天了。明早要是还不退，我就套车去恩尼斯请大夫——过了渡口，十几里路。']);
     if (f.ph === 'night') return S.say('迈克尔叔叔', ['别跟我说仙女，艾琳。我在波士顿住了十年，从来没有谁在窗外哭过。', '……四点。四点我就走。']);
     if (f.ph === 'done') return S.say('迈克尔叔叔', '我守着肖恩。');
     if (f.shirtShown) {
@@ -689,7 +702,7 @@
     await S.narr('你把那件湿透的条纹衬衫递给他。水顺着他的手指往下滴。');
     S.bubble('mick', '!', 900);
     await S.say('迈克尔叔叔', ['……这是我的。', '在渡口？……在她手里？']);
-    await S.narr('迈克尔叔叔看着那件衬衫，脸一点一点地白了。\n他想起了什么——波士顿的寄宿屋，三楼，窗户对着海湾。');
+    await S.narr(f.readLetter ? '迈克尔叔叔看着那件衬衫，脸一点一点地白了。\n你知道他想起了什么——波士顿码头边的寄宿屋，三楼，窗户对着海湾。' : '迈克尔叔叔看着那件衬衫，脸一点一点地白了。');
     await S.say('迈克尔叔叔', '……好。我不去。可是总得有人去恩尼斯请大夫——你看肖恩烧成什么样了。');
     S.goal(fateGoal(S));
     await checkFate(S);
@@ -760,7 +773,8 @@
     await S.ask('梳子在你手心里，越来越凉。', ['推开窗，把梳子递给她', '把梳子藏进被窝里']);
     keen(S, .09, 2400);
     await S.scare('face', { spr: '@bean', sfx: 'scream', dur: 1.1 });
-    await S.end({ bad: true, id: 'comb', title: '银梳子', text: '第二天早上，妈妈在东屋的窗下找到了你。\n你的右手攥得紧紧的，怎么也掰不开。手心里什么也没有。\n\n那一年，奥弗林家的人听见她哭了两回。\n一回，为天亮前出门的迈克尔；一回，为窗下的你。\n\n（路上看见的梳子，千万别用手去捡。）' });
+    const who = S.f.shirtShown ? '那一年，奥弗林家的人又听见她哭了一回——为窗下的你。' : '那一年，奥弗林家的人听见她哭了两回。\n一回，为天亮前赶车出门的迈克尔；一回，为窗下的你。';
+    await S.end({ bad: true, id: 'comb', title: '银梳子', text: '第二天早上，妈妈在东屋的窗下找到了你。\n你的右手攥得紧紧的，怎么也掰不开。手心里什么也没有。\n\n' + who + '\n\n（路上看见的梳子，千万别用手去捡。）' });
   }
 
   async function tongs(S) {
@@ -795,7 +809,7 @@
 
   async function leaveFord(S) {
     if (S.f.sawWash && S.ent('wstone').s.shirt) { await S.think('……石头上那件衬衫。得带回去。'); return S.walk('pl', 'd', 4); }
-    if (S.f.ph === 'ford') { S.f.ph = 'night'; S.norun(false); await S.go('yard', 12, 15, 3); return S.think('……还没看清她洗的是什么。'); }
+    if (S.f.ph === 'ford') { S.f.ph = 'night'; S.norun(false); S.plr(null); await S.go('yard', 12, 15, 3); return S.think('……还没看清她洗的是什么。'); }
     await S.go('yard', 12, 15, 3);
   }
 
@@ -814,7 +828,7 @@
   function fordReset(S) {
     const f = S.f; f.ph = 'ford'; f._fph = 'k'; f._ft = 2.6 + Math.random() * 1.2; f._fc = 0; f._seg = 0; f._ki = 0; f.seen = 0;
     const w = S.ent('washer'); if (w) { S.place('washer', HX, HY, 0); w.alpha = 1; w.s.look = 0; w.s.lift = 0; }
-    S.norun(true);
+    S.norun(true); S.plr(null);
   }
   async function fordStart(S) {
     fordReset(S);
@@ -823,10 +837,10 @@
       S.focus(12, 15); keen(S, .055, 1500);
       await S.narr('渡口的浅滩上，跪着一个人。\n她背对着岸，面前一块平平的大石头。她在洗衣裳——一下，一下，往石头上捶。');
       sob(S);
-      S.ent('washer').s.look = 1;
+      S.ent('washer').s.look = 1; S.plr(1.9); S.sfx('heart');
       await S.narr('哭声停了。\n她抬起头，慢慢地转过来，朝岸上望。');
       await S.think('……别动。');
-      S.ent('washer').s.look = 0; keen(S, .05, 1500);
+      S.ent('washer').s.look = 0; S.plr(null); keen(S, .05, 1500);
       await S.narr('过了一会儿，她又低下头去，接着捶那件衣裳。哭声又起来了。');
       S.focus(null);
     } else await S.narr('雾还是那么浓。浅滩上，她还在洗。');
@@ -843,14 +857,14 @@
         f._seg = .26; const i = f._ki = ((f._ki || 0) + 1) % (KEEN_C.length - 1);
         S.tone('sawtooth', KEEN_C[i], KEEN_C[i + 1], .34, vol, 0, 1600); S.tone('sine', KEEN_C[i] * 2, KEEN_C[i + 1] * 2, .34, vol * .45, 0, 2400);
       }
-      if (f._ft <= 0) { f._fph = 'w'; f._ft = .8; sob(S, vol); S.bubble('washer', '…', 900); w.s.look = 0; }
+      if (f._ft <= 0) { f._fph = 'w'; f._ft = .8; sob(S, vol); S.bubble('washer', '…', 900); S.bubble('pl', '…', 900); w.s.look = 0; }
     } else if (f._fph === 'w') {
-      if (f._ft <= 0) { f._fph = 'l'; f._ft = 2 + Math.random() * .8; w.s.look = 1; }
+      if (f._ft <= 0) { f._fph = 'l'; f._ft = 2 + Math.random() * .8; w.s.look = 1; S.plr(1.9); S.sfx('heart'); }
     } else if (f._fph === 'l') {
       const cov = COVER.has(p.x + ',' + p.y);
       if (!cov && ((S.moving && d <= SIGHT) || d <= NEAR)) { f._fph = 'x'; S.run(spotted); return; }
       if (f._ft <= 0) {
-        w.s.look = 0; f._fc = (f._fc || 0) + 1;
+        w.s.look = 0; S.plr(null); f._fc = (f._fc || 0) + 1;
         if (f._fc >= MAXC) { f._fph = 'x'; S.run(washDone); return; }
         if (f._fc === MAXC - 2) { S.toast('她把衣裳拎起来拧了拧——快洗完了'); w.s.lift = 1; S.after(700, async S => { S.ent('washer').s.lift = 0; }); }
         f._fph = 'k'; f._ft = 2.6 + Math.random() * 1.4; f._seg = 0;
@@ -866,7 +880,7 @@
       await S.wait(500);
       await S.narr('过了很久，很久，她才慢慢低下头去，接着捶那件衣裳。');
       S.toast('哭声停的时候别动——或者躲进芦苇里');
-      w.s.look = 0; f._fph = 'k'; f._ft = 2.8 + Math.random(); f._seg = 0;
+      w.s.look = 0; S.plr(null); f._fph = 'k'; f._ft = 2.8 + Math.random(); f._seg = 0;
       return;
     }
     FORD_DIED++;
@@ -882,7 +896,7 @@
     await S.die('她站起身，走进了雾里。\n你没能看清，她洗的是谁的衣裳。\n\n（一丛芦苇、一丛芦苇地往前挪，别等太久。）', '她洗完了');
   }
   async function peek(S) {
-    const f = S.f; f._fph = 'x'; f.ph = 'night'; f.sawWash = true; S.norun(false);
+    const f = S.f; f._fph = 'x'; f.ph = 'night'; f.sawWash = true; S.norun(false); S.plr(null);
     const w = S.ent('washer'); w.s.look = 0;
     S.focus(12, 15);
     await S.narr('你从芦苇缝里看过去。她就在你面前两步远。');
@@ -922,9 +936,10 @@
   async function toolbox(S) {
     const f = S.f;
     if (S.has('pin') || f.cartFixed) return S.narr('工具箱里剩下凿子、铁丝，和一把生锈的钳子。');
-    if (!f.crack) return S.narr('汤米的工具箱：锤子、凿子、一捆铁丝，还有一根新打的铁车辖，用油布包着。');
+    if (!f.crack && f.ph !== 'fate') return S.narr('汤米的工具箱：锤子、凿子、一捆铁丝，还有一根新打的铁车辖，用油布包着。');
     S.give('pin'); S.give('hammer'); S.ent('toolbox').s.took = true;
     await S.narr('你拿出那根新车辖，还有锤子。\n汤米说过，车辖早该换了。');
+    if (f.ph === 'fate') S.goal(fateGoal(S));
   }
 
   async function tommyYard(S) {
@@ -948,7 +963,7 @@
     await S.fade(0, 500);
     strike(S, 4);
     await S.narr('墙上的挂钟，敲了四下。');
-    await S.say('迈克尔叔叔', '我不能再等了。');
+    await S.say('迈克尔叔叔', f.shirtShown ? (f.tommyUp ? '车辖还裂着，汤米不肯走……那我自己去。' : '汤米叫不醒……那我自己去。') : '我不能再等了。');
     await S.walk('mick', [11, 8], 4); S.sfx('open'); S.hide('mick');
     await S.narr('院子里，马打了个响鼻。车轮碾过石子，出了院门，往渡口去了。');
     await S.fade(1, 900);
@@ -960,7 +975,7 @@
   }
 
   async function finale(S) {
-    const f = S.f; S.clearTimer(); f.ph = 'done';
+    const f = S.f; S.clearTimer(); f.ph = 'done'; S.goal('等天亮');
     await S.narr('院子里传来马蹄声。汤米赶着大车，出了院门，往渡口去了。\n车轮转得稳稳的，一点也不晃。');
     await S.fade(1, 800);
     if (S.map !== 'house') await S.go('house', 4, 4, 3, { fade: false });
@@ -978,6 +993,7 @@
     await S.wait(1500);
     await S.narr('哭声停了。\n不是慢慢小下去的——是一口气吸到一半，停住了。像有人在门外，轻轻地把门带上。');
     await S.say('奶奶', '……天亮了。', { style: 'whisper' });
+    if (f.readLetter) await S.say('迈克尔叔叔', ['……那年在波士顿，我也听见过她。', '我跟谁都说是猫。'], { style: 'whisper' });
     const tail = f.combBack
       ? '那把拧成麻花的火钳，奶奶一直挂在灶台边上，谁也掰不直。\n从那以后，基尔莫纳再没有人在路上见过银梳子。'
       : '车辕上那把银梳子，天亮的时候不见了。汤米说他碰都没碰。谁也不知道是什么时候没的。';
