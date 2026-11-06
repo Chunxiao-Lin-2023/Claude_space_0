@@ -891,7 +891,7 @@ const Side = {
   },
   goToc(x) {
     if (S.view === Flow) { if (x.s == null) return; Flow.show(x.s, { anchor: x.anchor || null }); }
-    else if (S.view === Pdf) { if (x.p != null) Pdf.goto(x.p); else if (x.url) window.open(x.url, '_blank'); }
+    else if (S.view === Pdf) { if (x.p != null) Pdf.goto(x.p); else if (x.url) openExternal(x.url); }
     else if (S.view === Gallery) Gallery.goto(x.p);
   },
   r_thumbs(body) {
@@ -1131,7 +1131,7 @@ const Shelf = {
     const groups = [['fgDoc', 'PDF  DOCX  ODT  RTF'], ['fgBook', 'EPUB  MOBI  AZW3  FB2  TXT'], ['fgSheet', 'XLSX  XLS  ODS  CSV  TSV'], ['fgSlide', 'PPTX'], ['fgWeb', 'Markdown  HTML  JSON  XML'], ['fgCode', t('fgCodeList')], ['fgImg', 'PNG  JPG  WebP  GIF  SVG  AVIF  CBZ']];
     const rp = h('div', { class: 'rp' }, h('h3', { text: t('formats') }), h('dl', { class: 'fmt-list' }, groups.map(([k, v]) => h('div', {}, h('dt', { text: t(k) }), h('dd', { text: v })))));
     const book = h('div', { class: 'book' }, lp, rp);
-    const head = h('div', { class: 'home-head' }, h('div', { class: 'seal big', text: '墨' }), h('div', {}, h('h1', { text: t('appName') }), h('p', { text: t('tagline') })), h('div', { class: 'spacer' }));
+    const head = h('div', { class: 'home-head' }, h('div', { class: 'seal big', text: '墨' }), h('div', {}, h('h1', { text: t('appName') }), h('p', { text: t('tagline') })), h('div', { class: 'spacer' }), Release.button('btn sm dlbtn'));
     const shelfHead = h('div', { class: 'shelf-head' }, h('h2', { text: t('shelf') }), h('div', { id: 'sync-status', class: 'sync-status' }), h('span', { class: 'cnt', text: books.length ? t('bookCount', books.length) : '' }));
     const shelf = h('div', { class: 'shelf' });
     for (const b of books) {
@@ -1279,6 +1279,7 @@ function renderMore(pop) {
   if (document.fullscreenEnabled || document.webkitFullscreenEnabled) m.append(item('full', t('fullscreen'), 'F', toggleFullscreen));
   if (S.doc) { m.append(item('eye', t('immersive'), 'Z', () => UI.toggleImmersive())); m.append(item('scroll', t(Auto.on ? 'autoStop' : 'autoScroll'), 'A', () => Auto.toggle(), S.view === Gallery)); }
   m.append(item('globe', t('ghMenu'), '', () => Sync.setup()));
+  m.append(item('download', Release.label(), '', () => Release.show()));
   m.append(item('key', t('shortcuts'), '?', showKeys));
   m.append(h('hr'));
   m.append(item('globe', LANG === 'zh' ? 'English' : '中文', '', () => { LANG = LANG === 'zh' ? 'en' : 'zh'; S.set.lang = LANG; saveSet(); UI.i18n(); if (S.doc) { Side.render(); UI.updatePos(); UI.updateZoom(); $('#b-alt-l').textContent = S.doc.alt ? t(S.doc.alt.label) : ''; } }));
@@ -1404,5 +1405,6 @@ function init() {
   if (!TTS.ok) $('#b-tts').classList.add('hidden');
   UI.readerMode(false);
   if (Sync.on()) Sync.syncAll();
+  Desktop.init(); Release.autoCheck();
 }
 init();

@@ -1,0 +1,70 @@
+# Builds the 墨阅 (reader/) desktop installers for macOS and Windows and publishes them
+# as a GitHub Release tagged reader-v<version>. Run it from the Actions tab, or push a
+# tag reader-v<version>. Bump "version" in reader/desktop/src-tauri/tauri.conf.json first.
+name: reader-desktop
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ['reader-v*']
+
+permissions:
+  contents: write
+
+concurrency:
+  group: reader-desktop
+  cancel-in-progress: false
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-latest
+            args: --target universal-apple-darwin
+            targets: aarch64-apple-darwin,x86_64-apple-darwin
+          - os: windows-latest
+            args: ''
+            targets: x86_64-pc-windows-msvc
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: reader/desktop/package-lock.json
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.targets }}
+
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: reader/desktop/src-tauri -> target
+
+      - name: Install npm packages
+        working-directory: reader/desktop
+        run: npm ci
+
+      - uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          projectPath: reader/desktop
+          tagName: reader-v__VERSION__
+          releaseName: 墨阅 v__VERSION__
+          releaseBody: |
+            墨阅桌面版安装包。macOS 用 .dmg（Apple 芯片与 Intel 通用），Windows 用 -setup.exe。
+            安装包没有付费代码签名：Windows 首次运行点“更多信息 → 仍要运行”；macOS 到“系统设置 → 隐私与安全性”点“仍要打开”。
+
+            Moyue desktop installers. macOS: .dmg (universal). Windows: -setup.exe.
+          releaseDraft: false
+          prerelease: false
+          args: ${{ matrix.args }}

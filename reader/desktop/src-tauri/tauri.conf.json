@@ -1,0 +1,117 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Moyue",
+  "mainBinaryName": "moyue",
+  "version": "1.0.0",
+  "identifier": "io.github.chunxiaolin.moyue",
+  "build": {
+    "beforeBuildCommand": "node prepare.mjs",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "withGlobalTauri": true,
+    "windows": [
+      {
+        "label": "main",
+        "title": "墨阅",
+        "width": 1280,
+        "height": 860,
+        "minWidth": 420,
+        "minHeight": 520,
+        "dragDropEnabled": false,
+        "center": true
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "category": "Productivity",
+    "shortDescription": "墨阅 document reader",
+    "longDescription": "墨阅 (Moyue): a lightweight reader for PDF, EPUB, MOBI, DOCX, TXT, Markdown, spreadsheets, slides, code and comics.",
+    "copyright": "Chunxiao Lin",
+    "publisher": "Chunxiao Lin",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "fileAssociations": [
+      {
+        "ext": [
+          "pdf"
+        ],
+        "name": "PDF document",
+        "role": "Viewer",
+        "mimeType": "application/pdf"
+      },
+      {
+        "ext": [
+          "epub"
+        ],
+        "name": "EPUB book",
+        "role": "Viewer",
+        "mimeType": "application/epub+zip"
+      },
+      {
+        "ext": [
+          "mobi",
+          "azw",
+          "azw3"
+        ],
+        "name": "Kindle book",
+        "role": "Viewer"
+      },
+      {
+        "ext": [
+          "fb2"
+        ],
+        "name": "FictionBook",
+        "role": "Viewer"
+      },
+      {
+        "ext": [
+          "txt"
+        ],
+        "name": "Text",
+        "role": "Viewer",
+        "mimeType": "text/plain"
+      },
+      {
+        "ext": [
+          "md",
+          "markdown"
+        ],
+        "name": "Markdown",
+        "role": "Viewer",
+        "mimeType": "text/markdown"
+      },
+      {
+        "ext": [
+          "cbz"
+        ],
+        "name": "Comic book archive",
+        "role": "Viewer"
+      }
+    ],
+    "macOS": {
+      "signingIdentity": "-",
+      "minimumSystemVersion": "10.15"
+    },
+    "windows": {
+      "nsis": {
+        "languages": [
+          "SimpChinese",
+          "English"
+        ],
+        "displayLanguageSelector": false,
+        "installMode": "currentUser"
+      }
+    }
+  }
+}

@@ -30,3 +30,12 @@
 - 其他构建：`build.py artifact <out>`（claude.ai 页面，无 GitHub 同步）、`build.py local <out>`（优先从 `./lib` 加载库，离线使用）。
 - 本地存储前缀 `moyue.`，IndexedDB 库名 `moyue`。
 - 解析库按需从 jsDelivr（备用 cdnjs）加载：pdf.js 3.11、JSZip、mammoth、docx-preview、SheetJS、marked、DOMPurify、highlight.js、KaTeX。
+
+## 桌面版（Windows / macOS）
+
+`reader/desktop/` 是 Tauri 外壳，自带全部解析库（可离线，中文 PDF 字符映射齐全），支持双击 PDF、EPUB 等文件用墨阅打开。
+
+- 发布：先改 `reader/desktop/src-tauri/tauri.conf.json` 里的 `version`，再在 Actions 里运行 **reader-desktop**（或推送标签 `reader-v<版本>`）。工作流在 macOS 和 Windows 上构建，发布到 Releases，标签 `reader-v<版本>`。
+- 网页版和桌面版里的「下载桌面版 / 检查更新」按钮读取最新的 `reader-v*` Release。
+- 本地构建：`cd reader/desktop && npm ci && npx tauri build`（`beforeBuildCommand` 会运行 `prepare.mjs` 生成 `dist/`）。
+- 安装包未做付费代码签名，macOS 使用 ad-hoc 签名。

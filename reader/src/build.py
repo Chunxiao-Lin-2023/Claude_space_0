@@ -1,5 +1,6 @@
 """Build 墨阅 reader: python3 reader/src/build.py [pages|artifact|local] [out]
 pages (default) -> reader/index.html, libraries from CDN, GitHub sync on
+desktop         -> Tauri app page (reader/desktop/prepare.mjs calls this), local libraries
 artifact        -> claude.ai artifact page (no GitHub sync, system fonts for PDFs)
 local           -> loads libraries from ./lib first (offline copy with pdf.js cmaps)"""
 import os, sys, urllib.parse
@@ -8,9 +9,13 @@ build = sys.argv[1] if len(sys.argv) > 1 else 'pages'
 out = sys.argv[2] if len(sys.argv) > 2 else os.path.join(HERE, '..', 'index.html')
 rd = lambda f: open(os.path.join(HERE, f), encoding='utf-8').read()
 css, body = rd('app.css'), rd('body.html')
-js = '\n'.join(rd(f) for f in ['i18n.js', 'formats.js', 'sync.js', 'app.js'])
+js = '\n'.join(rd(f) for f in ['i18n.js', 'formats.js', 'sync.js', 'release.js', 'app.js'])
 assert "const BUILD = 'local';" in js
 js = js.replace("const BUILD = 'local';", "const BUILD = '%s';" % build)
+import json
+conf = os.path.join(HERE, '..', 'desktop', 'src-tauri', 'tauri.conf.json')
+version = sys.argv[3] if len(sys.argv) > 3 else (json.load(open(conf, encoding='utf-8'))['version'] if os.path.exists(conf) else '0.0.0')
+js = js.replace("const APP_VERSION = '0.0.0';", "const APP_VERSION = '%s';" % version)
 glyphs = ''.join(sorted(set('墨阅文把文件拖到这里书架无法打开这个MoyueReaderDropafilehereLibraryThisdocumentcouldnotbeopened')))
 seal = 'https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@700;900&display=swap&text=' + urllib.parse.quote(glyphs)
 html = f'''<!DOCTYPE html>

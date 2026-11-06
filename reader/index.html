@@ -323,6 +323,18 @@ body.pdf-invert .textLayer mark{mix-blend-mode:screen}
 #dropmask div{background:var(--panel);border:2px dashed var(--accent);border-radius:12px;padding:28px 44px;font:700 20px var(--seal);color:var(--accent)}
 body.dragging #dropmask{display:grid}
 
+.dlbtn.upd{border-color:var(--accent);color:var(--accent)}
+.dlbtn.upd::after{content:"";width:7px;height:7px;border-radius:50%;background:#D9480F;margin-left:2px}
+.rel p{margin:0 0 10px}
+.rel .muted{color:var(--ink2)}
+.rel .ok{color:var(--accent);font-weight:600}
+.rel .dl{display:flex;flex-direction:column;gap:8px;margin:6px 0 14px}
+.rel .dl .btn{height:auto;padding:10px 14px;text-decoration:none;justify-content:flex-start}
+.rel .dl .btn span{display:flex;flex-direction:column;line-height:1.35;text-align:left}
+.rel .dl .btn small{font-weight:400;opacity:.75;font-size:12px}
+.rel .dl .alt{font-size:12.5px;color:var(--ink2)}
+.rel .notes{margin:0 0 12px;padding-left:18px;font-size:12.5px;color:var(--ink2);line-height:1.7}
+.rel a{color:var(--accent)}
 /* ---------- popovers ---------- */
 .pop{position:fixed;z-index:60;background:var(--panel);border:1px solid var(--line);border-radius:12px;box-shadow:0 16px 48px rgba(0,0,0,.2);width:372px;max-width:calc(100vw - 16px);max-height:calc(100dvh - 72px);overflow:auto;display:none;color:var(--ink)}
 .pop.open{display:block;animation:popin .14s ease-out}
@@ -452,6 +464,7 @@ body.dragging #dropmask{display:grid}
   <symbol id="i-dict" viewBox="0 0 24 24"><path d="M5 4.5h11.5a1.5 1.5 0 0 1 1.5 1.5v14H6.5A1.5 1.5 0 0 1 5 18.5z"/><path d="M5 18.5A1.5 1.5 0 0 1 6.5 17H18M9 8.5h5"/></symbol>
   <symbol id="i-trans" viewBox="0 0 24 24"><path d="M3.5 5.5h9M8 3.5v2M5.5 5.5c.8 3 3 5.5 6 6.5M11 5.5c-.8 3.4-3 6-6.5 7.5"/><path d="M13 20.5l3.8-9 3.7 9M14.3 17.5h5"/></symbol>
   <symbol id="i-home" viewBox="0 0 24 24"><path d="M4 10.5 12 4l8 6.5V20h-5.5v-5.5h-5V20H4z"/></symbol>
+  <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 4v11M7.5 10.5 12 15l4.5-4.5M5 19.5h14"/></symbol>
   <symbol id="i-layout" viewBox="0 0 24 24"><rect x="4" y="3.5" width="16" height="17" rx="1.5"/><path d="M7.5 8h9M7.5 11.5h9M7.5 15h5"/></symbol>
   <symbol id="i-scroll" viewBox="0 0 24 24"><path d="M12 4v16M8 8l4-4 4 4M8 16l4 4 4-4"/></symbol>
 </svg>
@@ -636,6 +649,18 @@ const I18N = {
   ghTooBig: ['《{0}》超过 95 MB，只保存在本机，不上传', '"{0}" is over 95 MB and stays on this device only'],
   ghUploading: ['正在上传 {0}/{1}：{2}', 'Uploading {0}/{1}: {2}'], ghUploaded: ['已上传 {0} 本到 GitHub', 'Uploaded {0} items to GitHub'],
   ghDownloading: ['正在从 GitHub 下载《{0}》', 'Downloading "{0}" from GitHub'],
+  getDesktop: ['下载桌面版', 'Desktop app'], getDesktopTitle: ['下载墨阅桌面版', 'Get the Moyue desktop app'], checkUpdate: ['检查更新', 'Check for updates'],
+  updAvailShort: ['有新版本', 'Update available'], updAvail: ['墨阅 {0} 已发布，点“有新版本”下载', 'Moyue {0} is out. Use "Update available" to download it'],
+  relLoading: ['正在查找最新版本…', 'Looking up the latest release…'], relOffline: ['暂时连不上 GitHub，可以直接打开发布页下载。', 'GitHub could not be reached. Open the releases page to download.'],
+  relNone: ['安装包还在构建中，几分钟后再来看看。', 'The installers are still being built. Check back in a few minutes.'],
+  relAll: ['所有版本', 'All releases'], relNotes: ['更新说明', 'Release notes'],
+  curVersion: ['当前版本 {0}', 'Installed version {0}'], upToDate: ['已是最新版本', 'You have the latest version'],
+  newVersion: ['新版本 {0}（{1}）可以下载：', 'Version {0} ({1}) is available:'], latestVersion: ['最新版本 {0}（{1}）', 'Latest version {0} ({1})'],
+  dlMac: ['macOS 版（Apple 芯片与 Intel 通用）', 'macOS (Apple silicon and Intel)'], dlWin: ['Windows 版（64 位安装程序）', 'Windows (64-bit installer)'], dlMsi: ['需要 MSI 安装包？', 'Need an MSI installer?'],
+  noteWin: ['Windows 首次运行若提示“Windows 已保护你的电脑”，点“更多信息”→“仍要运行”。', 'On Windows, if SmartScreen says it protected your PC, choose More info → Run anyway.'],
+  noteMac: ['macOS 首次打开若提示无法验证开发者，到“系统设置 → 隐私与安全性”点“仍要打开”。', 'On macOS, if the developer cannot be verified, go to System Settings → Privacy & Security and choose Open Anyway.'],
+  noteDesktop: ['桌面版自带所有组件，可离线使用，也能双击 PDF、EPUB 等文件直接打开。GitHub 同步需要在桌面版里再填一次 token。', 'The desktop app works offline and opens PDF, EPUB and other files by double-click. Enter your GitHub token once more in the app to sync.'],
+  noteUpdate: ['下载后直接安装，会覆盖旧版本，书架和笔记都会保留。', 'Install it over the current version; your library and notes are kept.'],
   cloudOnly: ['云端', 'Cloud'], syncingState: ['正在同步阅读进度', 'Syncing reading position'],
   justNow: ['刚刚', 'just now'], minsAgo: ['{0} 分钟前', '{0} min ago'], hrsAgo: ['{0} 小时前', '{0} h ago'],
   sampleName: ['墨阅 · 试读', 'Moyue sample'],
@@ -731,9 +756,9 @@ Done? Go back to the library and drop in a file of your own.`],
 };
 
 /* ===================== formats.js — parsers ===================== */
-const BUILD = 'pages'; // build flag: local | artifact | pages
+const BUILD = 'pages'; // build flag: local | artifact | pages | desktop
 const PAGES_URL = 'https://chunxiao-lin-2023.github.io/Claude_space_0/reader/';
-const PREFER_CDN = BUILD !== 'local';
+const PREFER_CDN = BUILD === 'artifact' || BUILD === 'pages';
 const LIBS = {
   pdf:      ['lib/pdf.min.js', 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js', 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js'],
   jszip:    ['lib/jszip.min.js', 'https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js', 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js'],
@@ -2048,6 +2073,97 @@ const Sync = {
 };
 function relTime(ts) { const m = Math.round((Date.now() - ts) / 60000); if (m < 1) return t('justNow'); if (m < 60) return t('minsAgo', m); const hh = Math.round(m / 60); if (hh < 24) return t('hrsAgo', hh); return fmtDate(ts); }
 
+/* ===================== release.js — desktop downloads, updates, Tauri glue ===================== */
+const APP_VERSION = '1.0.0'; // build fills from desktop/src-tauri/tauri.conf.json
+const IS_DESKTOP = BUILD === 'desktop';
+const RELEASES_API = 'https://api.github.com/repos/Chunxiao-Lin-2023/Claude_space_0/releases?per_page=30';
+const RELEASES_PAGE = 'https://github.com/Chunxiao-Lin-2023/Claude_space_0/releases';
+function cmpVer(a, b) { const pa = String(a).split('.').map(n => parseInt(n, 10) || 0), pb = String(b).split('.').map(n => parseInt(n, 10) || 0); for (let i = 0; i < 3; i++) { const d = (pa[i] || 0) - (pb[i] || 0); if (d) return d; } return 0; }
+function openExternal(url) {
+  if (Desktop.on && window.__TAURI__.opener) { window.__TAURI__.opener.openUrl(url).catch(e => toast(String(e))); return; }
+  const a = h('a', { href: url, target: '_blank', rel: 'noopener' }); document.body.append(a); a.click(); a.remove();
+}
+const Release = {
+  latest: null, checked: false,
+  async fetch() {
+    if (BUILD === 'artifact') return null;
+    try {
+      const r = await fetch(RELEASES_API, { headers: { Accept: 'application/vnd.github+json' }, cache: 'no-cache' });
+      if (!r.ok) return null;
+      const rel = (await r.json()).find(x => !x.draft && !x.prerelease && /^reader-v\d/.test(x.tag_name));
+      this.checked = true;
+      if (!rel) return this.latest = { none: true };
+      return this.latest = { version: rel.tag_name.replace(/^reader-v/, ''), url: rel.html_url, date: rel.published_at, assets: (rel.assets || []).map(a => ({ name: a.name, url: a.browser_download_url, size: a.size })) };
+    } catch { return null; }
+  },
+  pick(assets) {
+    const find = re => assets.find(a => re.test(a.name));
+    return { win: find(/-setup\.exe$/i) || find(/\.exe$/i), msi: find(/\.msi$/i), mac: find(/universal\.dmg$/i) || find(/\.dmg$/i) };
+  },
+  os() { const ua = navigator.userAgent; return /Macintosh|Mac OS X/.test(ua) && !/iPhone|iPad/.test(ua) ? 'mac' : /Windows/.test(ua) ? 'win' : 'other'; },
+  hasUpdate() { return IS_DESKTOP && this.latest && this.latest.version && cmpVer(this.latest.version, APP_VERSION) > 0; },
+  label() { return IS_DESKTOP ? (this.hasUpdate() ? t('updAvailShort') : t('checkUpdate')) : t('getDesktop'); },
+  button(cls = 'btn') { const b = h('button', { class: cls + (this.hasUpdate() ? ' upd' : ''), onclick: () => this.show() }, icon('download'), this.label()); return b; },
+  async show() {
+    closePops();
+    const body = h('div', { class: 'rel' }, h('p', { class: 'muted', text: t('relLoading') }));
+    modal({ title: IS_DESKTOP ? t('checkUpdate') : t('getDesktopTitle'), body, width: '520px' });
+    const rel = await this.fetch();
+    body.innerHTML = '';
+    if (IS_DESKTOP) body.append(h('p', { text: t('curVersion', APP_VERSION) }));
+    if (!rel) { body.append(h('p', { text: t('relOffline') }), h('p', {}, h('a', { href: RELEASES_PAGE, target: '_blank', rel: 'noopener' }, t('relAll')))); return; }
+    if (rel.none) { body.append(h('p', { text: t('relNone') }), h('p', {}, h('a', { href: RELEASES_PAGE, target: '_blank', rel: 'noopener' }, t('relAll')))); return; }
+    if (IS_DESKTOP && !this.hasUpdate()) { body.append(h('p', { class: 'ok', text: t('upToDate') })); return; }
+    const p = this.pick(rel.assets), os = this.os();
+    const date = rel.date ? new Date(rel.date).toLocaleDateString(LANG === 'zh' ? 'zh-CN' : 'en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : '';
+    body.append(h('p', { text: IS_DESKTOP ? t('newVersion', rel.version, date) : t('latestVersion', rel.version, date) }));
+    const mb = a => a && a.size ? ` · ${(a.size / 1048576).toFixed(1)} MB` : '';
+    const rows = [['mac', p.mac, t('dlMac')], ['win', p.win, t('dlWin')]].sort((a, b) => (b[0] === os) - (a[0] === os));
+    const box = h('div', { class: 'dl' });
+    for (const [k, a, label] of rows) {
+      if (!a) continue;
+      box.append(h('a', { class: 'btn' + (k === os || (os === 'other' && k === 'win') ? ' primary' : ''), href: a.url, target: '_blank', rel: 'noopener' }, icon('download'), h('span', {}, label, h('small', { text: a.name.replace(/^Moyue_/, '') + mb(a) }))));
+    }
+    if (p.msi) box.append(h('a', { class: 'alt', href: p.msi.url, target: '_blank', rel: 'noopener', text: t('dlMsi') }));
+    body.append(box);
+    body.append(h('ul', { class: 'notes' }, h('li', { text: t('noteWin') }), h('li', { text: t('noteMac') }), h('li', { text: IS_DESKTOP ? t('noteUpdate') : t('noteDesktop') })));
+    body.append(h('p', {}, h('a', { href: rel.url, target: '_blank', rel: 'noopener' }, t('relNotes')), '   ', h('a', { href: RELEASES_PAGE, target: '_blank', rel: 'noopener' }, t('relAll'))));
+  },
+  async autoCheck() {
+    if (!IS_DESKTOP) return;
+    if (Date.now() - LS.get('relCheck', 0) < 6 * 3600e3 && !LS.get('relHas', false)) return;
+    LS.set('relCheck', Date.now());
+    await this.fetch();
+    LS.set('relHas', this.hasUpdate());
+    if (this.hasUpdate()) { toast(t('updAvail', this.latest.version), 5000); if (!S.doc) Shelf.render(); }
+  },
+};
+const Desktop = {
+  on: IS_DESKTOP && !!window.__TAURI__,
+  seen: new Map(),
+  async open(paths) {
+    const { invoke } = window.__TAURI__.core;
+    for (const p of paths || []) {
+      if (Date.now() - (this.seen.get(p) || 0) < 3000) continue;
+      this.seen.set(p, Date.now());
+      try { const buf = await invoke('read_file', { path: p }); const name = p.split(/[\\/]/).pop(); await openFile(new File([buf], name)); }
+      catch (e) { toast(String(e), 4000); }
+      break;
+    }
+  },
+  async init() {
+    if (!this.on) return;
+    document.documentElement.classList.add('desktop');
+    document.addEventListener('click', e => {
+      const a = e.target.closest && e.target.closest('a[href]'); if (!a) return;
+      const href = a.getAttribute('href') || '';
+      if (/^(https?:|mailto:)/i.test(href)) { e.preventDefault(); e.stopPropagation(); openExternal(href); }
+    }, true);
+    try { await window.__TAURI__.event.listen('open-files', e => this.open(e.payload)); } catch {}
+    try { const pend = await window.__TAURI__.core.invoke('take_pending'); if (pend && pend.length) this.open(pend); } catch {}
+  },
+};
+
 /* ===================== app.js — UI & viewers ===================== */
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
@@ -2941,7 +3057,7 @@ const Side = {
   },
   goToc(x) {
     if (S.view === Flow) { if (x.s == null) return; Flow.show(x.s, { anchor: x.anchor || null }); }
-    else if (S.view === Pdf) { if (x.p != null) Pdf.goto(x.p); else if (x.url) window.open(x.url, '_blank'); }
+    else if (S.view === Pdf) { if (x.p != null) Pdf.goto(x.p); else if (x.url) openExternal(x.url); }
     else if (S.view === Gallery) Gallery.goto(x.p);
   },
   r_thumbs(body) {
@@ -3181,7 +3297,7 @@ const Shelf = {
     const groups = [['fgDoc', 'PDF  DOCX  ODT  RTF'], ['fgBook', 'EPUB  MOBI  AZW3  FB2  TXT'], ['fgSheet', 'XLSX  XLS  ODS  CSV  TSV'], ['fgSlide', 'PPTX'], ['fgWeb', 'Markdown  HTML  JSON  XML'], ['fgCode', t('fgCodeList')], ['fgImg', 'PNG  JPG  WebP  GIF  SVG  AVIF  CBZ']];
     const rp = h('div', { class: 'rp' }, h('h3', { text: t('formats') }), h('dl', { class: 'fmt-list' }, groups.map(([k, v]) => h('div', {}, h('dt', { text: t(k) }), h('dd', { text: v })))));
     const book = h('div', { class: 'book' }, lp, rp);
-    const head = h('div', { class: 'home-head' }, h('div', { class: 'seal big', text: '墨' }), h('div', {}, h('h1', { text: t('appName') }), h('p', { text: t('tagline') })), h('div', { class: 'spacer' }));
+    const head = h('div', { class: 'home-head' }, h('div', { class: 'seal big', text: '墨' }), h('div', {}, h('h1', { text: t('appName') }), h('p', { text: t('tagline') })), h('div', { class: 'spacer' }), Release.button('btn sm dlbtn'));
     const shelfHead = h('div', { class: 'shelf-head' }, h('h2', { text: t('shelf') }), h('div', { id: 'sync-status', class: 'sync-status' }), h('span', { class: 'cnt', text: books.length ? t('bookCount', books.length) : '' }));
     const shelf = h('div', { class: 'shelf' });
     for (const b of books) {
@@ -3329,6 +3445,7 @@ function renderMore(pop) {
   if (document.fullscreenEnabled || document.webkitFullscreenEnabled) m.append(item('full', t('fullscreen'), 'F', toggleFullscreen));
   if (S.doc) { m.append(item('eye', t('immersive'), 'Z', () => UI.toggleImmersive())); m.append(item('scroll', t(Auto.on ? 'autoStop' : 'autoScroll'), 'A', () => Auto.toggle(), S.view === Gallery)); }
   m.append(item('globe', t('ghMenu'), '', () => Sync.setup()));
+  m.append(item('download', Release.label(), '', () => Release.show()));
   m.append(item('key', t('shortcuts'), '?', showKeys));
   m.append(h('hr'));
   m.append(item('globe', LANG === 'zh' ? 'English' : '中文', '', () => { LANG = LANG === 'zh' ? 'en' : 'zh'; S.set.lang = LANG; saveSet(); UI.i18n(); if (S.doc) { Side.render(); UI.updatePos(); UI.updateZoom(); $('#b-alt-l').textContent = S.doc.alt ? t(S.doc.alt.label) : ''; } }));
@@ -3454,6 +3571,7 @@ function init() {
   if (!TTS.ok) $('#b-tts').classList.add('hidden');
   UI.readerMode(false);
   if (Sync.on()) Sync.syncAll();
+  Desktop.init(); Release.autoCheck();
 }
 init();
 

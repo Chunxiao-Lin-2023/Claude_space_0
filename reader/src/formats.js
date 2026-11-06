@@ -1,7 +1,7 @@
 /* ===================== formats.js — parsers ===================== */
-const BUILD = 'local'; // build flag: local | artifact | pages
+const BUILD = 'local'; // build flag: local | artifact | pages | desktop
 const PAGES_URL = 'https://chunxiao-lin-2023.github.io/Claude_space_0/reader/';
-const PREFER_CDN = BUILD !== 'local';
+const PREFER_CDN = BUILD === 'artifact' || BUILD === 'pages';
 const LIBS = {
   pdf:      ['lib/pdf.min.js', 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js', 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js'],
   jszip:    ['lib/jszip.min.js', 'https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js', 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js'],

@@ -311,6 +311,18 @@ body.pdf-invert .textLayer mark{mix-blend-mode:screen}
 #dropmask div{background:var(--panel);border:2px dashed var(--accent);border-radius:12px;padding:28px 44px;font:700 20px var(--seal);color:var(--accent)}
 body.dragging #dropmask{display:grid}
 
+.dlbtn.upd{border-color:var(--accent);color:var(--accent)}
+.dlbtn.upd::after{content:"";width:7px;height:7px;border-radius:50%;background:#D9480F;margin-left:2px}
+.rel p{margin:0 0 10px}
+.rel .muted{color:var(--ink2)}
+.rel .ok{color:var(--accent);font-weight:600}
+.rel .dl{display:flex;flex-direction:column;gap:8px;margin:6px 0 14px}
+.rel .dl .btn{height:auto;padding:10px 14px;text-decoration:none;justify-content:flex-start}
+.rel .dl .btn span{display:flex;flex-direction:column;line-height:1.35;text-align:left}
+.rel .dl .btn small{font-weight:400;opacity:.75;font-size:12px}
+.rel .dl .alt{font-size:12.5px;color:var(--ink2)}
+.rel .notes{margin:0 0 12px;padding-left:18px;font-size:12.5px;color:var(--ink2);line-height:1.7}
+.rel a{color:var(--accent)}
 /* ---------- popovers ---------- */
 .pop{position:fixed;z-index:60;background:var(--panel);border:1px solid var(--line);border-radius:12px;box-shadow:0 16px 48px rgba(0,0,0,.2);width:372px;max-width:calc(100vw - 16px);max-height:calc(100dvh - 72px);overflow:auto;display:none;color:var(--ink)}
 .pop.open{display:block;animation:popin .14s ease-out}
