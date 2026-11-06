@@ -140,7 +140,7 @@
     if (SH.st === 'idle') {
       SH.t -= dt;
       if (SH.t <= 0) {
-        SH.st = 'warn'; SH.k = 1.3; SH.fl = 0; S.bubble('pl', '!', 1300);
+        SH.st = 'warn'; SH.k = 1.5; SH.fl = 0; S.bubble('pl', '!', 1500);
         S.toast(S.f.skyN < 3 ? '扑——扑——头顶上有翅膀的声音！躲到屋檐下或芭蕉叶底下！' : '扑——扑——');
         S.f.skyN = (S.f.skyN || 0) + 1;
       }
@@ -148,7 +148,7 @@
     }
     if (SH.st === 'warn') {
       SH.k -= dt; SH.fl -= dt;
-      if (SH.fl <= 0) { SH.fl = .42; flap(S, .1 + (1.3 - SH.k) * .06, 1); }
+      if (SH.fl <= 0) { SH.fl = .42; flap(S, .1 + (1.5 - SH.k) * .06, 1); }
       if (SH.k <= 0) {
         SH.st = 'pass'; SH.k = 0; SH.chk = false;
         const dir = Math.random() < .5 ? 1 : -1; SH.dir = dir; SH.x0 = W.pl.px - dir * 11 * TS;
@@ -1017,7 +1017,7 @@
 
   /* ================= 天亮之前 ================= */
   async function siegeStart(S, retry) {
-    S.f.ph = 'siege'; S.f.water = 0; S.f.hand = 0; S.f.towel = 0; S.f.ev = 0; S.f.sstrike = 0; LZ.st = 'off';
+    S.f.ph = 'siege'; S.f.water = 0; S.f.hand = 0; S.f.towel = 0; S.f.ev = 0; S.f.sstrike = 0; S.f.lz1 = 0; S.f.lz2 = 0; LZ.st = 'off';
     S.clearTimer(); S.plr(null);
     S.ent('lola').spr = '@lolaS'; S.place('lola', 9, 3, 2);
     S.ent('bed').s.labor = 1;
@@ -1070,7 +1070,7 @@
   async function dawnWait(S) {
     S.f.ph = 'dawnwait'; S.f.ev = 0; S.f.evT = 4;
     S.goal('守到天亮（不管多闷，别开天窗）');
-    S.timer(36 + (S.coop ? 6 : 0), '离天亮', dawnCome, { during: true });
+    S.timer(40 + (S.coop ? 6 : 0), '离天亮', dawnCome, { during: true });
   }
   function loosen(S) {
     const m = curMap(), D = bfsDist(m, W.pl.x, W.pl.y);
@@ -1098,12 +1098,10 @@
   }
   const SIEGE_EV = [
     S => { scratch(S, .07); S.toast('（沙沙——堂屋顶上。蒜味顶着，她下不来。）'); },
-    S => loosen(S),
     S => { S.sfx('thud'); S.shake(400, 2); S.toast('（咚！咚！——厨房的天窗在震。）'); },
     S => S.run(async S2 => { S2.ent('hatch').s.smoke = 1; S2.dark(.88); await S2.say('莉莎', '好闷……拉蒙……把天窗打开一点……就一点……', { style: 'whisper' }); }),
     S => { tiktik(S, .02); S.toast('（tik……tik……轻得几乎听不见。她就在屋顶上。）'); },
     S => { S.sfx('thud'); S.shake(500, 3); scratch(S, .08); S.toast('（天窗的竹框被抓得吱吱响。）'); },
-    S => loosen(S),
     S => S.run(async S2 => { await S2.think('烟呛得人眼泪直流……开一条缝透透气，应该没事吧？'); }),
     S => { flap(S, .1, 3); S.toast('（翅膀扑扑地，绕着屋顶转圈。）'); }
   ];
@@ -1115,8 +1113,10 @@
       if (LZ.k >= 1) { LZ.st = 'hit'; S.run(siegeStrike); }
       return;
     }
+    const tl = S.timerLeft;   // 两次「蒜被抠松」按离天亮的剩余时间排，不受对话快慢影响
+    if (tl != null && LZ.st === 'off' && ((!S.f.lz1 && tl <= 31) || (!S.f.lz2 && tl <= 17))) { if (!S.f.lz1) S.f.lz1 = 1; else S.f.lz2 = 1; return loosen(S); }
     S.f.evT -= dt;
-    if (S.f.evT <= 0) { S.f.evT = 5.2; const f = SIEGE_EV[S.f.ev % SIEGE_EV.length]; S.f.ev++; f(S); }
+    if (S.f.evT <= 0) { S.f.evT = 4.6; const f = SIEGE_EV[S.f.ev % SIEGE_EV.length]; S.f.ev++; f(S); }
   }
   async function hatchOn(S) {
     const ph = S.f.ph;

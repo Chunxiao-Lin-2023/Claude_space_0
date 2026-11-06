@@ -18,7 +18,7 @@
 
   const WP = {
     village: [[14, 5], [20, 5], [24, 7], [24, 12], [21, 16], [16, 16], [13, 13], [11, 9], [9, 4], [11, 5]],
-    field: [[10, 12], [16, 11], [24, 9], [30, 9], [31, 15], [26, 16], [18, 19], [11, 17], [7, 13]]
+    field: [[12, 12], [18, 14], [24, 12], [29, 10], [31, 15], [26, 17], [20, 19], [14, 17]]
   };
 
   /* ---- 合成音 ---- */
@@ -69,13 +69,13 @@
     HEAD.hum -= dt; if (HEAD.hum <= 0) { HEAD.hum = 2.4; const v = .1 * (1 - d / 13); if (v > .006) hum(S, v); }
     HEAD.t += dt;
     switch (HEAD.st) {
-      case 'patrol': { const w = L[HEAD.wp % L.length]; if (fly(e, w[0], w[1], 1.7, dt) === true) HEAD.wp = (HEAD.wp + 1) % L.length; break; }
+      case 'patrol': { const w = L[HEAD.wp % L.length]; if (fly(e, w[0], w[1], map === 'field' ? 1.9 : 1.7, dt) === true) HEAD.wp = (HEAD.wp + 1) % L.length; break; }
       case 'noise': { if (fly(e, HEAD.noise[0], HEAD.noise[1], 2.6, dt, map)) { HEAD.st = 'hover'; HEAD.t = 0; } break; }
       case 'hover': if (HEAD.t > 2.2) { HEAD.st = 'patrol'; HEAD.wp = nearestWp(L, e); } break;
       case 'alert': if (HEAD.t > .85) { HEAD.st = 'chase'; HEAD.t = 0; } break;
       case 'chase': {
-        const r = fly(e, P.px / 16, P.py / 16, 3.7, dt, map);
-        if (r === 'blocked' || safe || d > 7.5 || HEAD.t > 7) {
+        const r = fly(e, P.px / 16, P.py / 16, 4.8, dt, map);   // 比走路快、比跑慢：被发现了就得跑，或者跑上刺枝
+        if (r === 'blocked' || safe || d > 7.5 || HEAD.t > 6) {
           HEAD.st = 'lost'; HEAD.t = 0; e.s.mad = false;
           if (safe && d < 5) { S.bubble(e.id, '…', 1400); S.tone('sine', 900, 500, .5, .05, 0, 1800); }
         }
@@ -87,7 +87,7 @@
     if (safe) { if (!P.hidden && S.once('safeTip')) S.toast('站在刺枝上——她不敢钻过来'); return; }
     if ((HEAD.st === 'chase' || HEAD.st === 'alert') && d < .7) { S.run(caught); return; }
     if (HEAD.st === 'patrol' || HEAD.st === 'noise' || HEAD.st === 'hover') {
-      if (d < 1.6 || (S.moving && d < 3.2) || (S.running && d < 4.6)) {
+      if (d < 1.6 || (S.moving && d < 3) || (S.running && d < 4.4)) {
         HEAD.st = 'alert'; HEAD.t = 0; e.s.mad = true; S.bubble(e.id, '!', 900); screech(S); S.fx('red'); S.shake(300, 1);
         if (!HEAD.warned) { HEAD.warned = true; S.toast('她发现你了！快跑远，或者站到铺着刺枝的地上！'); }
       }
@@ -96,10 +96,10 @@
   /* 卡住了：按剩下的时间逐级给提示（只弹小字，不打断） */
   function nudge(S) {
     const L = S.timerLeft, f = S.f; if (L == null) return;
-    if (L < 185 && !f.l_LA && !f.l_LD) { if (S.once('nd1')) S.toast('提示：村子北边、西北边，有几家晾着没收的衣服'); }
-    else if (L < 135 && !f._v_field) { if (S.once('nd2')) S.toast('提示：衣服上的印子都是从北边来的——去田里（村子北头）'); }
-    else if (L < 100 && f._v_field && !f.l_sc) { if (S.once('nd3')) S.toast('提示：田当中的稻草人身上，也挂着一件衣服'); }
-    else if (L < 60) { if (S.once('nd4')) S.toast('提示：田东头，坎家的谷仓'); }
+    if (L < 185 && !f.l_LA && !f.l_LD && S.once('nd1')) S.toast('提示：村子北边、西北边，有几家晾着没收的衣服');
+    if (L < 135 && !f._v_field && S.once('nd2')) S.toast('提示：衣服上的印子都是从北边来的——去田里（村子北头）');
+    if (L < 100 && !f.l_sc && S.once('nd3')) S.toast('提示：田当中的稻草人身上，也挂着一件衣服');
+    if (L < 60 && S.once('nd4')) S.toast('提示：田东头，坎家的谷仓');
   }
   function noise(S) { HEAD.noise = [S.pl.x, S.pl.y]; if (HEAD.st !== 'chase' && HEAD.st !== 'alert') { HEAD.st = 'noise'; HEAD.t = 0; } }
 
@@ -173,8 +173,10 @@
       for (const x of [4, 6, 25, 28]) R(x, 8 + (x % 3) * 3, 1, 18, '#1c2a20');
       R(10, 5, 12, 15, '#c4d2ba'); R(11, 20, 10, 2, '#c4d2ba'); R(13, 22, 6, 1, '#aebca4'); R(19, 6, 3, 14, '#a4b29a');
       R(10, 5, 12, 3, HAIR); R(10, 8, 2, 8, HAIR); R(15, 5, 1, 6, HAIR); R(21, 8, 1, 9, HAIR);
-      R(12, 10, 3, 2, '#eef4e6'); R(17, 10, 3, 2, '#eef4e6'); R(13, 10, 1, 2, '#080808'); R(18, 10, 1, 2, '#080808');
-      R(14, 10, 1, 1, '#7aff9a'); R(19, 10, 1, 1, '#7aff9a'); R(12, 12, 3, 1, '#7c8c76'); R(17, 12, 3, 1, '#7c8c76');
+      R(11, 9, 5, 1, '#8c9a86'); R(16, 9, 5, 1, '#8c9a86'); R(11, 12, 5, 2, '#7c8c76'); R(16, 12, 5, 2, '#7c8c76');   // 深陷的眼窝
+      R(12, 10, 3, 2, '#dfe6d6'); R(17, 10, 3, 2, '#dfe6d6'); R(13, 10, 2, 2, '#080808'); R(17, 10, 2, 2, '#080808');   // 眼珠往你这边斜
+      R(13, 10, 1, 1, '#7aff9a'); R(17, 10, 1, 1, '#7aff9a');
+      R(13, 5, 1, 12, HAIR); R(18, 6, 1, 7, HAIR); R(20, 12, 2, 6, HAIR);   // 湿发一缕缕贴在脸上
       const o = Math.round(Math.min(1, a * 1.4) * 3);
       R(13, 16, 6, 1, '#8a1010'); R(14, 17, 4, o, '#1a0404'); R(13, 17 + o, 6, 1, '#760c0c'); R(11, 17, 2, 1, '#5e0e0e'); R(19, 18 + o, 2, 1, '#5e0e0e');
       trail(R, 16, 23, 9, t, .6 + a * .4);
@@ -573,7 +575,7 @@
           [22, 2, 33, 7, 'a'],
           [13, 19, 17, 21, 'o'], [14, 20, 16, 20, '~'],
           [1, 2, 2, 6, 'B'], [6, 2, 7, 3, 'B'],
-          [11, 7, 12, 8, 'Z'], [20, 13, 21, 14, 'Z'], [23, 18, 24, 19, 'Z'], [5, 8, 6, 9, 'Z']
+          [11, 7, 12, 8, 'Z'], [22, 9, 23, 10, 'Z'], [32, 12, 33, 13, 'Z'], [11, 20, 12, 21, 'Z'], [24, 20, 25, 21, 'Z'], [5, 8, 6, 9, 'Z']
         ]); SAFE.field = zset(r); return r; })(),
         ents: [
           { id: 'hut', x: 3, y: 3, w: 3, h: 2, spr: 'hut', on: S => hutOn(S) },
@@ -1067,7 +1069,7 @@
   }
   function seen(S) { if (G.st === 'seen') return; G.st = 'seen'; S.run(seenEnd); }
   async function seenEnd(S) {
-    FAILS.s++;
+    FAILS.s++; S.goal('');
     S.hidePlayer(false);
     const e = S.ent('kg'); e.s.mad = true; e.alpha = 1;
     S.bubble('kg', '!', 1200); screech(S);
@@ -1111,11 +1113,12 @@
     await S.wait(900);
     for (let i = 10; i >= 0; i--) { e.alpha = i / 10; await S.wait(140); }
     e.hidden = true;
+    S.goal('');
     await S.narr('鸡叫第三遍的时候，绿光灭了。');
     await S.end({ bad: true, id: 'thorn', title: '刺篱笆', text: '天亮以后，坎婶在谷仓里找到了阿芬。村里人说，她是在睡梦里走的，走得很安静。\n外婆替她擦了身子，换上一条干净的筒裙，一句话也没有说。\n\n通嫂的孩子满月那天，全村都去喝了酒。只有外婆没去。\n她坐在家门口，把那块没用上的白布，叠了又叠。\n\n从那以后，田那边再也没有亮过绿光。' });
   }
   async function dawnGood(S) {
-    S.f.ph = 'end';
+    S.f.ph = 'end'; S.goal('');
     S.ent('kg').hidden = true;
     const saw = S.f.how === 'saw';
     S.fx('flash'); anklet(S, 1);

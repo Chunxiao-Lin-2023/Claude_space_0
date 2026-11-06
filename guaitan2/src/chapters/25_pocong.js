@@ -19,6 +19,7 @@
   const PING = S => { S.tone('sine', 1180, 1150, .14, .055); S.tone('sine', 590, 580, .3, .045, .02); };
   const LOCKC = S => { S.tone('square', 1900, 1750, .03, .045); S.tone('square', 1300, 1200, .04, .04, .07); };
   const HEART = (S, n = 2) => { for (let i = 0; i < n; i++) { S.tone('sine', 62, 50, .14, .16, i * .55); S.tone('sine', 58, 46, .12, .11, i * .55 + .17); } };
+  const WHOOSH = S => { S.tone('sawtooth', 520, 140, .35, .03, 0, 1100); S.tone('sine', 220, 90, .3, .06); };   // 扑过来：裹尸布破风
   const KNOCK2 = S => { S.tone('sine', 120, 70, .16, .2, 0, 500); S.tone('sine', 120, 70, .16, .2, .42, 500); };
 
   /* ---------- 人物 ---------- */
@@ -27,7 +28,7 @@
   const both = (...fs) => (g, d, fr, G, R) => fs.forEach(f => f(g, d, fr, G, R));
   const PEOPLE = {
     me: { key: 'pc-me', skin: '#c8946a', hair: '#1a1410', hs: 'short', top: '#ece8de', top2: '#c8c2b4', bottom: '#3a4a6a', skirt: true, shoes: '#2a2018', extra: both(PECI, SARUNG('#22304a')) },
-    mbah: { key: 'pc-mbah', skin: '#b4865e', hair: '#cfcac0', hs: 'bun', top: '#6a4a5a', top2: '#4a3040', bottom: '#5a3a1e', skirt: true, shoes: '#3a2a1a', hat: 'veil', hatC: '#e6e0d2', extra: SARUNG('#7a5a2a') },
+    mbah: { key: 'pc-mbah', skin: '#b4865e', hair: '#cfcac0', hs: 'bun', top: '#6a4a5a', top2: '#4a3040', bottom: '#5a3a1e', skirt: true, shoes: '#3a2a1a', hat: 'veil', hatC: '#4a3a52', extra: SARUNG('#7a5a2a') },
     modin: { key: 'pc-modin', skin: '#a87a52', hair: '#c8c4bc', hs: 'short', top: '#dcd6c4', top2: '#bab4a2', bottom: '#3a3a2a', skirt: true, shoes: '#2a2018',
       extra: both(PECI, SARUNG('#5a5a3a'), (g, d, fr, G, R) => { if (d === 0) { R(6, G.hT + 7, 4, 2, '#d8d4cc'); R(7, G.hT + 9, 2, 1, '#d8d4cc'); } else if (d === 1) R(4, G.hT + 6, 3, 2, '#d8d4cc'); }) },
     paklik: { key: 'pc-paklik', skin: '#b8865e', hair: '#1c1612', hs: 'short', top: '#7a4a24', top2: '#5a3418', bottom: '#2a2a2a', shoes: '#2a2018',
@@ -45,32 +46,40 @@
   const FACES = {
     /* 门缝里看见的：白布从头顶裹到脚，头顶扎成一个结；布中间露出一张灰青的脸，两个黑窟窿一样的眼窝 */
     pocong(R, a) {
-      const C = '#e8e6da', C2 = '#c4c1b2', T = '#7a776a', SK = '#8a907c', SK2 = '#6a7062', E = '#040404';
-      R(13, 0, 6, 3, C); R(11, 0, 2, 2, C2); R(19, 0, 2, 2, C2); R(12, 3, 8, 1, T);   // 头顶的结
+      const C = '#e6e4d8', C2 = '#c2bfb0', C3 = '#a8a492', T = '#7a776a', SK = '#868c78', SK2 = '#666c5c', SK3 = '#4e5446', E = '#030303', MOLD = '#8a8a6a';
+      R(13, 0, 6, 3, C); R(11, 0, 2, 2, C2); R(19, 0, 3, 2, C2); R(12, 3, 8, 1, T);   // 头顶的结
       R(5, 4, 22, 28, C); R(3, 8, 26, 24, C); R(24, 6, 3, 26, C2); R(3, 8, 2, 24, C2);
       for (let i = 0; i < 5; i++) R(6 + i * 4, 4 + (i % 2), 1, 4, C2);   // 布褶
-      R(9, 8, 14, 17, SK); R(10, 7, 12, 1, SK); R(10, 25, 12, 1, SK); R(19, 9, 4, 16, SK2); R(9, 22, 14, 3, SK2);
-      R(9, 8, 2, 3, C); R(21, 8, 2, 3, C); R(9, 23, 2, 2, C); R(21, 23, 2, 2, C);   // 布压着脸的边
-      // 眼窝：深黑，眼皮青紫；a 大了以后，窟窿里亮起一粒针尖
-      R(10, 12, 5, 5, '#3a3a40'); R(17, 12, 5, 5, '#3a3a40'); R(11, 13, 3, 3, E); R(18, 13, 3, 3, E);
-      if (a > .35) { R(12, 14, 1, 1, '#e8f0d8'); R(19, 14, 1, 1, '#e8f0d8'); }
-      R(15, 17, 2, 3, SK2); R(15, 19, 1, 1, '#2a2a26'); R(17, 19, 1, 1, '#2a2a26');
-      const mh = 1 + Math.round(a * 2); R(13, 22, 6, mh, '#1a1412'); R(14, 22 + mh, 4, 1, SK2);
+      R(4, 14, 2, 3, MOLD); R(26, 20, 2, 4, MOLD); R(7, 26, 3, 2, C3); R(23, 9, 2, 2, C3);   // 受潮发霉的斑
+      // 脸：瘦长，略歪向一边；布紧紧勒着脸颊
+      R(10, 7, 12, 19, SK); R(9, 10, 1, 13, SK); R(22, 9, 1, 12, SK2); R(18, 8, 4, 18, SK2); R(10, 23, 12, 3, SK2);
+      R(9, 7, 2, 4, C); R(21, 7, 2, 3, C); R(9, 24, 2, 3, C); R(21, 23, 2, 4, C);
+      R(10, 19, 3, 3, SK3); R(19, 18, 3, 4, SK3);   // 塌下去的腮
+      // 眼窝：左边大一点、低一点；a 大了以后窟窿深处亮起一粒针尖
+      R(10, 12, 6, 6, '#34343a'); R(17, 11, 5, 5, '#34343a'); R(11, 13, 4, 4, E); R(18, 12, 3, 3, E);
+      if (a > .35) { R(12, 15, 1, 1, '#e8f0d8'); R(19, 13, 1, 1, '#e8f0d8'); }
+      R(10, 11, 6, 1, SK3); R(17, 10, 5, 1, SK3);
+      // 鼻孔里塞着白棉花（入殓时的做法）
+      R(15, 15, 2, 4, SK2); R(14, 19, 2, 2, '#f2f0e6'); R(17, 19, 2, 2, '#f2f0e6');
+      const mh = 1 + Math.round(a * 2); R(13, 22, 7, mh, '#1a1412'); R(12, 23, 1, mh, '#1a1412'); R(14, 22 + mh, 5, 1, SK3);
       R(3, 27, 26, 2, T); R(3, 30, 26, 1, T);   // 脖子上的绳
-      R(6, 29, 4, 3, '#8a7a5a'); R(22, 30, 5, 2, '#8a7a5a');   // 泥
+      R(6, 29, 4, 3, '#8a7a5a'); R(22, 30, 5, 2, '#8a7a5a'); R(13, 31, 3, 1, '#6a5a40');   // 泥
     },
-    /* 被扑到时：脸贴到眼前，半边脸颊沾着坟土，眼白翻上来 */
+    /* 被扑到时：脸贴到眼前，半边脸颊沾着坟土，眼白翻上来，嘴张成一个黑洞 */
     pocong2(R, a) {
-      const C = '#e8e6da', C2 = '#c4c1b2', T = '#7a776a', SK = '#9a9e8c', SK2 = '#747a6a', DIRT = '#4a3a26';
+      const C = '#e8e6da', C2 = '#c4c1b2', T = '#7a776a', SK = '#9a9e8c', SK2 = '#747a6a', SK3 = '#585e50', DIRT = '#4a3a26', DIRT2 = '#6a5236';
       R(0, 0, 32, 32, C); R(0, 0, 4, 32, C2); R(28, 0, 4, 32, C2); R(10, 0, 12, 2, T);
       R(5, 3, 22, 27, SK); R(4, 6, 1, 20, SK); R(27, 6, 1, 20, SK); R(20, 4, 7, 25, SK2);
       R(4, 3, 3, 4, C); R(25, 3, 3, 4, C);
-      R(5, 18, 7, 9, DIRT); R(6, 16, 4, 2, DIRT); R(7, 27, 4, 2, DIRT); R(9, 20, 2, 1, '#2a2016');   // 贴过土的那半边脸
+      for (let i = 0; i < 16; i++) { const x = 5 + ((hash(i, 2, 25) * 9) | 0), y = 14 + ((hash(i, 4, 25) * 14) | 0); R(x, y, 1 + (i % 2), 1, i % 3 ? DIRT : DIRT2); }   // 贴过土的那半边脸：一片斑驳的泥点
+      R(5, 20, 3, 4, DIRT); R(6, 25, 2, 2, DIRT2);
       R(6, 8, 8, 7, '#2a2a30'); R(18, 8, 8, 7, '#2a2a30');
       if (a < .25) { R(7, 11, 6, 1, '#101010'); R(19, 11, 6, 1, '#101010'); }
-      else { R(7, 9, 6, 5, '#ecebe0'); R(19, 9, 6, 5, '#ecebe0'); R(9, 9, 2, 1, '#141414'); R(21, 9, 2, 1, '#141414'); }
-      R(15, 15, 2, 4, SK2); R(14, 18, 1, 1, '#1a1a18'); R(17, 18, 1, 1, '#1a1a18');
-      const mh = 2 + Math.round(a * 4); R(11, 22, 10, mh, '#140c0c'); R(10, 23, 1, Math.max(1, mh - 2), '#140c0c'); R(21, 23, 1, Math.max(1, mh - 2), '#140c0c');
+      else { R(7, 9, 6, 5, '#ecebe0'); R(19, 9, 6, 5, '#ecebe0'); R(9, 9, 2, 1, '#141414'); R(21, 9, 2, 1, '#141414'); R(7, 13, 6, 1, '#c8c4b0'); R(19, 13, 6, 1, '#c8c4b0'); }
+      R(15, 15, 2, 4, SK2); R(14, 18, 2, 2, '#f2f0e6'); R(17, 18, 2, 2, '#f2f0e6');
+      const mh = 2 + Math.round(a * 5);
+      R(13, 21, 6, mh, '#0c0606'); R(12, 22, 8, Math.max(1, mh - 2), '#0c0606'); R(14, 21 + mh, 4, 1, '#0c0606'); R(12, 21, 1, 1, SK3); R(19, 21, 1, 1, SK3);
+      R(11, 20, 10, 1, SK3);
       R(0, 30, 32, 2, T);
     }
   };
@@ -336,7 +345,7 @@
         '~eBBBBBBBBBBBBBBBB######BBBBBBddBB',
         '~e############x###############ddBB',
         '~e############x###kkkkkk######ddBB',
-        '~e###########xxxxxxxxYxxxxYxxxxxBB',
+        '~e###########xxxxxxxxxxxxxxxxxxxBB',
         '~e#############xx############x###B',
         '~e########x####xx##N#########S###B',
         '~e########x####xx############x###B',
@@ -350,8 +359,8 @@
         '~ex###x########xxdddd#######S#N##B',
         '~ex###x#####N##xxdddd#######S##N#B',
         '~ex###x########xxdddd#######x####B',
-        '~exxxxxxxYxxxxxxxxxxxxYxxxxxxxxx#B',
-        '~exxxxxxxYxxxxxxxxxxxxYxxxxxxxxx#B',
+        '~exxxxxxxxxxxxxxxxxxxxYxxxxxxxxx#B',
+        '~exxxxxxxxxxxxxxxxxxxxYxxxxxxxxx#B',
         '~NNkkNQQQQQQQQQQQQQQQQQQQQQQQQQQNB',
         '~QQkkQQQQQQQQQQQQQQQQQQQQQQQQQQQQB',
         '~QQkkQQQQQQQQQQQQQQQQQQQQQQQQQQQQB'],
@@ -392,7 +401,7 @@
         { x: 24, y: 18, spr: 'teplok', light: { r: 2.2, col: 'rgba(255,170,80,.18)', flick: true }, on: S => S.narr('屋檐下的煤油灯。门关得死死的，门缝里塞着一条湿毛巾。') },
         { x: 27, y: 12, spr: 'teplok', light: { r: 2, col: 'rgba(255,170,80,.16)', flick: true }, on: S => S.narr('石阶巷里的一盏煤油灯，玻璃罩裂了一道缝。') },
         { x: 6, y: 15, spr: 'teplok', off: true, on: S => S.narr('一盏熄了的煤油灯。这家人好像搬走很久了。') },
-        { x: 9, y: 20, spr: 'puddle', decal: true },
+        { x: 8, y: 20, spr: 'puddle', decal: true },
         { x: 20, y: 12, spr: 'puddle', decal: true },
         { x: 16, y: 9, spr: 'puddle', decal: true },
         { x: 26, y: 5, spr: 'puddle', decal: true },
@@ -461,7 +470,7 @@
         { id: 'nisanM', x: 12, y: 4, spr: 'nisan', on: S => nisanOn(S) },
         { x: 11, y: 3, spr: 'kendi', on: S => S.narr('坟头放着一只陶水壶（kendi）。下葬那天，壶里的水洒在了坟上。') },
         { x: 13, y: 3, spr: 'payung', on: S => S.narr('插在坟头的一把纸伞。新坟要撑一把伞，像替他挡着雨。\n伞面已经被雨打出了好几个洞。') },
-        { x: 4, y: 12, spr: 'sign', col: '#4a3a2a', on: S => S.narr('坟地门口的木牌：\n「进来的人，请为亡者祈祷」') },
+        { x: 1, y: 13, spr: 'sign', col: '#4a3a2a', on: S => S.narr('坟地门口的木牌：\n「进来的人，请为亡者祈祷」') },
         { x: 9, y: 4, spr: 'invisible', solid: false, on: S => S.narr('脚下的草被踩倒了一片，一路通向外公的坟——是蹦过去的印子，一个坑，一个坑。') },
         { id: 'pcm', x: 12, y: 6, dir: 0, spr: 'pocong', solid: false, s: { hop: 1 }, light: { r: 2, col: 'rgba(225,230,215,.16)' } },
         { id: 'joko_m', x: 3, y: 14, dir: 3, spr: '@joko', hidden: true, solid: false }
@@ -475,14 +484,14 @@
      减速坎前要停下来蓄一口气；石阶只能一级一级地蹦。
      charge（坟地）：你站进它正对着的那条线，它就直直地扑过来，撞到东西才停。 */
   const CFG = {
-    village: { map: 'kampung', id: 'pc', v0: 2.6, acc: .6, vmax: 6.4, turn: .6, sill: 1.0, stair: 1.3 },
-    grave: { map: 'makam', id: 'pcm', v0: 1.4, acc: .15, vmax: 2.2, turn: .85, sill: 1, stair: 1.2, charge: true, range: 9, warn: .55, cv0: 3.2, cacc: .9, cvmax: 8.5 }
+    village: { map: 'kampung', id: 'pc', v0: 2.6, acc: 1.0, vmax: 8.0, turn: .45, sill: .6, stair: 1.3 },
+    grave: { map: 'makam', id: 'pcm', v0: 1.4, acc: .15, vmax: 2.2, turn: .85, sill: 1, stair: 1.2, charge: true, guard: true, range: 9, warn: .55, cv0: 3.2, cacc: .9, cvmax: 8.5, uv0: 2.4, uacc: .5, uvmax: 4.5 }
   };
   const UNTIE = 2.6;
   const AI = { on: false, cfg: CFG.village };
-  let hbT = 0, ambT = 6;
-  function aiStart(cfg, delay) { Object.assign(AI, { on: true, cfg, turn: 0, turnTo: -1, turnMid: -1, turnHalf: -1, pause: delay ?? .8, streak: 0, charge: false, warn: 0, grace: 0, gath: false }); }
-  function aiStop() { AI.on = false; AI.charge = false; AI.warn = 0; }
+  let hbT = 0, ambT = 6, lockHint = false;
+  function aiStart(cfg, delay) { Object.assign(AI, { on: true, cfg, turn: 0, turnTo: -1, turnMid: -1, turnHalf: -1, pause: delay ?? .8, streak: 0, charge: false, warn: 0, grace: 0, gath: false, home: !!cfg.guard, idle: 0 }); }
+  function aiStop() { AI.on = false; AI.charge = false; AI.warn = 0; if (W) W.extraLights = []; }
   function pcFree(m, x, y, e) {   // 布包鬼能落脚的格子（不算玩家——蹦到玩家身上就是扑到了）
     if (tileSolid(m, x, y)) return false;
     for (const o of m.ents) { if (o === e || o.hidden || !o.solid) continue; const ox = Math.round(o.px / TS), oy = Math.round(o.py / TS); if (x >= ox && x < ox + o.w && y >= oy && y < oy + o.h) return false; }
@@ -538,15 +547,27 @@
     if (e.mv) return;
     if (AI.pause > 0) { AI.pause -= dt; return; }
     if (AI.turn > 0) { AI.turn -= dt; if (AI.turnMid >= 0 && AI.turn <= AI.turnHalf) { e.dir = AI.turnMid; AI.turnMid = -1; } if (AI.turn <= 0) e.dir = AI.turnTo; return; }
-    if (AI.warn > 0) { AI.warn -= dt; if (AI.warn <= 0) { AI.charge = true; AI.streak = 0; } return; }
+    if (AI.warn > 0) { AI.warn -= dt; if (AI.warn <= 0) { AI.charge = true; AI.streak = 0; WHOOSH(S); } return; }
     if (AI.charge) {
       const nx = ex + DIRS[e.dir][0], ny = ey + DIRS[e.dir][1];
-      if (!pcFree(m, nx, ny, e)) { AI.charge = false; AI.streak = 0; AI.pause = .6; e.s.alert = false; S.sfx('thud'); S.shake(160, 1); if (S.once('miss')) S.run(chargeMiss); return; }
+      if (!pcFree(m, nx, ny, e)) { AI.charge = false; AI.home = false; AI.streak = 0; AI.pause = .6; e.s.alert = false; S.lights(null); S.sfx('thud'); S.shake(160, 1); if (S.once('miss')) S.run(chargeMiss); return; }
       hop(e, e.dir, Math.min(c.cvmax, c.cv0 + AI.streak++ * c.cacc)); return;
     }
     if (c.charge) {
       const ld = lineDir(m, e, ex, ey, p.x, p.y, c.range);
-      if (ld >= 0) { if (ld !== e.dir) { startTurn(S, e, ld); return; } AI.warn = c.warn; e.s.alert = true; S.bubble(c.id, '!', 700); PING(S); return; }
+      if (ld >= 0) {
+        if (ld !== e.dir) { startTurn(S, e, ld); return; }
+        AI.warn = c.warn; e.s.alert = true; S.bubble(c.id, '!', 700); PING(S);
+        const L = []; for (let i = 1; i <= Math.min(6, dd); i++) L.push([(ex + DIRS[ld][0] * i) * TS + 8, (ey + DIRS[ld][1] * i) * TS + 8, .7, .35]);   // 扑之前，那条线上泛起一道惨白的光
+        S.lights(L); return;
+      }
+    }
+    const ut = c.guard && S.f.untying;   // 你在解结：它闻得到，扭头就往坟头蹦
+    if (AI.home && !ut && (AI.idle = (AI.idle || 0) + .3) > 12) { AI.home = false; S.bubble(c.id, '…', 900); }   // 你一直不过来，它就自己蹦下坟来找你
+    if (AI.home && !ut) {   // 守在坟上：不离开，只慢慢转过身来对着你
+      const dx = p.x - ex, dy = p.y - ey, want = Math.abs(dx) >= Math.abs(dy) ? (dx < 0 ? 1 : 2) : (dy < 0 ? 3 : 0);
+      if (want !== e.dir) startTurn(S, e, want); else AI.pause = .3;
+      return;
     }
     const d = pcStep(m, e, ex, ey, p.x, p.y);
     if (d < 0) { AI.pause = .3; return; }
@@ -555,12 +576,12 @@
     if (tn === 'polisi' && !AI.gath) { AI.gath = true; AI.pause = c.sill; AI.streak = 0; RUSTLE(S, .5); return; }   // 坎前停下，蓄一口气
     AI.gath = false;
     if (tn === 'tangga' || here === 'tangga') { AI.streak = 0; hop(e, d, c.stair); return; }
-    hop(e, d, Math.min(c.vmax, c.v0 + AI.streak++ * c.acc));
+    hop(e, d, ut ? Math.min(c.uvmax, c.uv0 + AI.streak++ * c.uacc) : Math.min(c.vmax, c.v0 + AI.streak++ * c.acc));
   }
   async function pcCatch(S) {
     const c = AI.cfg, e = S.ent(c.id), v = c === CFG.village;
     pauseUntie(S, false);
-    S.stop(c.id); Object.assign(AI, { charge: false, warn: 0, turn: 0, gath: false, streak: 0 }); e.oy = 0; e.s.alert = false;
+    S.stop(c.id); Object.assign(AI, { charge: false, warn: 0, turn: 0, gath: false, streak: 0 }); e.oy = 0; e.s.alert = false; S.lights(null);
     const k = v ? 'hitV' : 'hitG'; S.f[k] = (S.f[k] || 0) + 1;
     if (S.f[k] === 1) {
       S.sfx('thud'); S.shake(450, 3); HEART(S, 3);
@@ -593,6 +614,7 @@
       S.sfx('locked'); await S.narr(ph === 'eve' ? '雨还在下。客人刚散，外婆一个人在厨房忙……先跟外婆和莫丁老伯说说话。' : '后门……后门有东西。先去厨房看看。');
       return back(S);
     }
+    if (S.once('outCard')) { await S.fade(1, 400); await S.card('凌晨一点', '', '雨小了。\n离天亮，还有三个钟头。'); }
     await S.go('kampung', 3, 22, 3);
   }
   async function modinOn(S) {
@@ -691,7 +713,7 @@
     S.face('paklik', 'pl');
     await S.say('舅舅', '乔科这几天天天缩在巡夜岗亭里，就在大路和下巷的路口。我守着你外婆——去吧。');
     S.f.ph = 'out';
-    S.goal('去村里找乔科，拿回那截打结的绳子（巡夜岗亭：大路和下巷的路口）');
+    S.goal('去巡夜岗亭找乔科（大路和下巷的路口）');
     S.cp('out');
   }
 
@@ -703,7 +725,9 @@
       TOK(S, .4); TOK(S, .4, .5);
     }
   }
+  const DEAD = { '6,17': 1, '13,15': 1, '14,3': 1, '30,13': 1, '23,9': 1, '10,10': 1 };
   function kampungStep(S, x, y) {
+    if (S.f.ph === 'chase' && DEAD[x + ',' + y]) { S.toast('死胡同！快退出去'); S.sfx('locked'); return; }
     if (S.f.ph === 'out' && (x === 15 || x === 16) && y >= 13 && y <= 18 && S.once('sight')) return sighting(S);
   }
   async function sighting(S) {
@@ -783,8 +807,12 @@
   async function kalengOn(S) {
     const k = S.ent('kaleng');
     if (k.open) return S.narr('铁盒空了。盒底沾着几片干了的花瓣，和一点黑色的香灰。');
-    if (S.once('kal1')) await S.narr('一只红色的饼干铁盒，盖子上画着一家人围着桌子喝茶。\n盒子被铁丝缠了好几圈，铁丝上挂着一把四位数的密码锁。');
-    const v = await S.keypad('四位数的密码锁' + (S.coop ? '\n（另一位可以在「档案」里翻读过的笔记）' : '\n（读过的笔记，可以在「档案」里重看）'), ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'], 4);
+    if (S.once('kal1')) {
+      await S.narr('一只红色的饼干铁盒，盖子上画着一家人围着桌子喝茶。\n盒子被铁丝缠了好几圈，铁丝上挂着一把四位数的密码锁。');
+      if (!S.f.rdJoko) await S.think('……乔科这种人，什么号码都要记下来。桌上那个油腻腻的小本子？');
+    }
+    const fmt = S.f.rdJoko ? '\n（本子上：前两位＝挖它那一夜，后两位＝它归我那一夜）' : '';
+    const v = await S.keypad('四位数的密码锁' + fmt + (S.coop ? '\n（另一位可以在「档案」里翻读过的笔记）' : '\n（读过的笔记，可以在「档案」里重看）'), ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'], 4);
     if (v == null) return;
     LOCKC(S);
     if (v === '1410') return openBox(S);
@@ -823,20 +851,21 @@
     TITIR(S, .6, 14);
     await S.narr('远处，竹梆连成了一片：笃笃笃笃笃笃笃。');
     S.f.ph = 'chase0';
-    S.goal('带着绳子去坟地（村子东北角的竹林小路）——别跟它跑直线');
+    S.goal('带着绳子去坟地（东北角竹林小路）');
     S.cp('chase');
   }
   async function startChase(S) {
-    S.f.ph = 'chase'; S.f.hitV = 0;
-    const e = S.ent('pc'); S.place('pc', 10, 12, 1); e.s.alert = false; e.alpha = 1;
+    S.f.ph = 'chase'; S.f.hitV = 0; S.hide('joko');   // 梆子一响，乔科从岗亭里溜走了
+    const e = S.ent('pc'); S.place('pc', 13, 12, 1); e.s.alert = false; e.alpha = 1;
     S.focus(7, 12); S.bubble('pc', '!', 1200); PING(S);
     await S.narr('横巷里，减速坎那头，站着一个白的东西。\n它慢慢地，朝你这边转了过来。');
     S.focus(null);
     const n = S.f._dV || 0;
-    if (n === 0) await S.think('……别跟它比直路。往河边那条小巷跑——下坡，再往东，走东头的石阶巷！');
+    if (n === 0) await S.think('……别跟它比直路。河边那条小巷往南，到下巷往东，再拐进东头的石阶巷！');
     else { await S.think(n === 1 ? '它在直路上越蹦越快。……下巷有减速坎，东头的石阶巷弯多、台阶多。' : '先往河边的小巷跑，下石阶到下巷，往东翻过减速坎，再拐进东头的石阶巷——一路拐弯。'); S.toast('提示：河边小巷（往南）→ 下巷（往东）→ 东头石阶巷（往北）→ 竹林小路'); }
-    S.goal('去坟地（村子东北角的竹林小路）——别跟它跑直线：拐弯、上石阶、翻减速坎');
-    aiStart(CFG.village, .35);
+    S.goal('去东北角竹林小路——别跑直线，走东头石阶巷');
+    if (S.coop) S.toast('双人：一人走，一人盯着它喊「拐弯」');
+    aiStart(CFG.village, .5);
   }
   async function lockedEnd(S) {
     aiStop(); const e = S.ent('pc'); S.stop('pc'); e.s.alert = false; e.oy = 0;
@@ -858,12 +887,13 @@
   }
 
   /* ================= 第三幕：坟地 ================= */
-  const GOAL_G = S => '到坟头的木牌前站定，解开那个结——别站在它正对着的那条线上' + (S.coop ? '（一人盯着它的朝向喊）' : '');
+  const GOAL_G = S => '在木牌旁站定解结——别站进它正对着的线' + (S.coop ? '（一人盯它的朝向）' : '');
   async function makamEnter(S, first) {
     if (!first) return;
     S.f.ph = 'grave'; S.f.untieLeft = UNTIE; S.f.untying = false; S.f.hitG = 0;
     await S.narr('竹林尽头，是村里的坟地。\n雨小了。鸡蛋花一树一树地开着，白花瓣落了一地。');
-    S.fx('flash'); S.sfx('sting'); S.shake(300, 2); S.focus(12, 8);
+    S.fx('flash'); S.focus(12, 8);
+    await S.scare('face', { face: 'pocong', sfx: 'sting', dur: .9 });
     await S.narr('一道闪电。\n——外公的新坟上，站着那个白的东西。\n它比你先到了。');
     S.focus(null);
     await S.think(['莫丁老伯说：在坟头上，把结解开。', '它只会朝它面对的方向直直地扑过来，撞到东西才停。要扑别的方向，得先慢慢地转过身。']);
@@ -883,6 +913,7 @@
     S.timer(Math.max(.3, S.f.untieLeft ?? UNTIE), '解结', untieDone);
     S.toast('站着别动……一点一点地抠开');
     RUSTLE(S, .8);
+    const e = S.ent('pcm'); if (e && !e.hidden && AI.on) { S.bubble('pcm', '!', 900); S.sfx('whisper'); }   // 它闻到了结，扭头往坟头蹦
   }
   function pauseUntie(S, msg) {
     if (!S.f.untying) return;
@@ -908,6 +939,7 @@
   async function finale(S) {
     S.place('joko_m', 3, 14, 3);
     await S.say('乔科', '别解！！', { style: 'big' });
+    if (S.once('jkFollow')) await S.narr('是乔科。梆子一响，他就从岗亭里溜了出来，一路远远地跟着你。');
     await S.walk('joko_m', [3, 12], 3.4);
     await S.say('乔科', ['阿迪……那是我的命啊。我欠了人家八百万盾，人家说再不还就……', '天一亮，它就归我了。它给我号，我把钱还上，我给你外公修最好的坟——', '把绳子给我！求你了！']);
     const r = await S.ask('乔科伸着手，在雨里浑身发抖。\n坟头上，那个白的东西一动不动。', ['解开最后一个结', '把绳子扔给乔科']);
@@ -923,9 +955,10 @@
     await S.wait(800);
     await S.narr('它慢慢地躺了下去，躺回坟上，侧着身，脸朝着西边。\n雨停了。');
     await S.alpha('pcm', 0, 1800);
-    for (let i = 0; i < 3; i++) { BEDUK(S, .55 + i * .15); await S.wait(1100); }
+    for (let i = 0; i < 3; i++) { BEDUK(S, .55 + i * .15); S.dark(.8 - (i + 1) * .1); await S.wait(1100); }   // 天慢慢亮起来
     for (let i = 0; i < 6; i++) BEDUK(S, .5, i * .32);
     await S.wait(2000);
+    S.dark(.38); S.plr(5);
     await S.narr('村那头，小礼拜堂里，有人敲响了大鼓。\n咚——咚——咚——\n然后，晨礼的唤拜声远远地飘过了竹林。');
     const ts = S.has('tasbih');
     if (ts) {
@@ -933,6 +966,7 @@
       await S.narr('你把外公的念珠，挂在了木牌上。');
       await S.think(S.f.beduk ? ['三十年，每天天不亮，他就坐在小礼拜堂的门廊上一颗一颗地数着它，等着敲第一声鼓。', '……今天，换别人敲了。外公，你听见了吗？'] : '……外公，你听见了吗？');
     }
+    if (S.f.peek) await S.think('门缝外那张灰青的脸……那双黑窟窿一样的眼睛，现在合上了。');
     S.face('joko_m', 3);
     await S.narr('乔科跪在泥里，把脸埋进了手里。');
     await S.end({ id: 'rest', title: '第二十五夜　完', text: '第四十一天的早上，雨停了。\n\n莫丁老伯带着几个年轻人上山，把外公的坟重新培好，又在坟前替他念了经。老人在坟前坐了很久，一句话也没说。\n\n乔科把那个小本子扔进了灶膛。听说他去邻村的砖窑干活了，欠的钱，一点一点地还。\n\n外婆说，从那天夜里起，后门再也没响过。' + (ts && S.f.beduk ? '\n只是每天天快亮的时候，她还是会醒过来，听一会儿小礼拜堂的鼓声，然后轻轻地说：\n「你外公起来了。」' : '') });
@@ -967,17 +1001,20 @@
       R(w - 28, by - 14, 6, 12, '#8a867a'); R(w - 16, by - 10, 6, 8, '#8a867a');   // 远处的老坟
       R(54, by - 6, 60, 6, '#3a2a1e'); for (let i = 0; i < 14; i++) R(56 + (i * 23 % 56), by - 5 + (i % 3), 2, 1, ['#d83a4a', '#f4f0e0', '#f0d050'][i % 3]);   // 新坟和花瓣
       R(57, by - 30, 1, 26, '#4a3a2a'); R(48, by - 36, 20, 4, '#e8e0c8'); R(51, by - 38, 14, 2, '#d8d0b4');   // 纸伞
-      const x0 = 78, y0 = by - 64, C = '#ebe9de', C2 = '#c6c3b4', T = '#86836f';
-      R(x0 + 7, y0, 4, 6, C); R(x0 + 3, y0 - 2, 4, 3, C2); R(x0 + 11, y0 - 2, 4, 3, C2); R(x0 + 6, y0 + 5, 6, 2, T);   // 头顶的结
-      R(x0 + 2, y0 + 6, 14, 16, C); R(x0, y0 + 22, 18, 34, C); R(x0 + 2, y0 + 56, 14, 4, C); R(x0 + 14, y0 + 22, 4, 34, C2);
-      R(x0 + 2, y0 + 21, 14, 2, T); for (const y of [28, 36, 44, 52]) R(x0, y0 + y, 18, 2, T);
-      R(x0 + 4, y0 + 9, 10, 11, '#8e9482'); R(x0 + 5, y0 + 12, 3, 3, '#060606'); R(x0 + 10, y0 + 12, 3, 3, '#060606'); R(x0 + 6, y0 + 13, 1, 1, '#e8f0d8'); R(x0 + 11, y0 + 13, 1, 1, '#e8f0d8'); R(x0 + 7, y0 + 17, 4, 1, '#2a2a26');
-      R(x0 + 3, y0 + 52, 12, 2, '#6e5c40'); R(x0 - 2, by - 2, 22, 2, 'rgba(0,0,0,.4)');
+      /* 布包鬼：放大到占满卡片高度，白得发亮，一眼能认出头顶那个结 */
+      const x0 = 74, y0 = by - 76, C = '#efede2', C2 = '#c6c3b4', T = '#86836f', K = (x, y, ww, hh, c) => R(x0 + x * 1.25, y0 + y * 1.25, ww * 1.25, hh * 1.25, c);
+      R(x0 - 8, y0 - 6, 40, 86, 'rgba(230,235,220,.06)');
+      K(7, 0, 4, 6, C); K(3, -2, 4, 3, C2); K(11, -2, 4, 3, C2); K(6, 5, 6, 2, T);   // 头顶的结
+      K(2, 6, 14, 16, C); K(0, 22, 18, 34, C); K(2, 56, 14, 4, C); K(14, 22, 4, 34, C2);
+      K(2, 21, 14, 2, T); for (const y of [28, 36, 44, 52]) K(0, y, 18, 2, T);
+      K(4, 9, 10, 11, '#8e9482'); K(5, 12, 3, 3, '#060606'); K(10, 11, 3, 3, '#060606'); K(6, 13, 1, 1, '#e8f0d8'); K(11, 12, 1, 1, '#e8f0d8'); K(7, 17, 4, 1, '#2a2a26');
+      K(3, 52, 12, 2, '#6e5c40'); R(x0 - 2, by - 2, 26, 2, 'rgba(0,0,0,.4)');
     },
     resume: {
       out: async S => { aiStop(); },
       chase: async S => {
         aiStop(); S.stop('pc'); S.hide('pc'); S.f.ph = 'chase0';
+        if (store.get('ends', []).includes('pocong:locked') && !lockHint) { lockHint = true; await S.think('……空屋里的「咚、咚」，一夜也没停过。\n不能把外公关起来。坟地——一定要到坟地去。'); }
         const n = S.f._dV || 0;
         if (n) await S.think(n === 1 ? '……又回到了乔科的竹屋。\n这回出了门，先往河边的小巷跑。' : '出门往西，下河边小巷，到下巷往东，再进东头的石阶巷。直路上它比你快。');
       },
@@ -994,6 +1031,8 @@
       hopTick(S); pcTick(S, dt); untieTick(S);
       /* 去拿绳子之前，村子里偶尔远远地「咚」一声 */
       if (S.map === 'kampung' && S.f.ph === 'out' && !S.busy) { ambT -= dt; if (ambT <= 0) { ambT = 9 + Math.random() * 8; HOP(S, .12); } }
+      /* 追逐中：巡夜岗亭那边的竹梆一阵接一阵地敲，离岗亭越近越响 */
+      if (S.map === 'kampung' && S.f.ph === 'chase' && !S.busy) { ambT -= dt; if (ambT <= 0) { ambT = 2.4; TITIR(S, Math.max(.12, .7 - (Math.abs(S.pl.x - 18) + Math.abs(S.pl.y - 17)) / 30), 7); } }
     },
     maps: MAPS()
   });
