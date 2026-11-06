@@ -24,7 +24,7 @@
   /* ---------- 常量 ---------- */
   const GONG_ANS = '才台才台七仓';     // 戏本上的「收头」
   const PAT_SPD = 2.2;               // 巷子里那个旦角的步速（玩家走 4.2）
-  const FOUL_R = 3, NEAR_R = 6;      // 这么近还在动 = 犯规；这么近开始心跳
+  const FOUL_R = 2, NEAR_R = 6;      // 这么近（曼哈顿距离）还在动 = 犯规；6 格内开始心跳
   const RUN3_T = 12;                 // 第三上：背着锣鼓声走的时限（对白念完才开始计）
   const CXC = 16, CYC = 11;          // 槐台中心
   const LURES = ['lure0', 'lure1', 'lure2'];

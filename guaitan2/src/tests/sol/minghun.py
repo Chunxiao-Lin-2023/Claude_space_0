@@ -28,17 +28,18 @@ SOL = [
     ['use', 'tin'],
     ['use', 'zhiche', [0]],
     ['expect', "window.__dbg.W.f.bike"],
-    # 写错一次（年份错），再写对：丙午年 五月初五 丑时
-    ['use', 'bench', ['甲', '子', ['五月初五'], ['丑时']]],
+    # 写错一次（年份错），再写对：丙午年 五月初五 丑时（写对的日子和时辰会留在红纸上，第二次只填年份）
+    ['use', 'bench', [0, '甲', '子', ['五月初五'], ['丑时']]],
     ['expect', "window.__dbg.W.f.bzWrong === 1 && !window.__dbg.W.f.solved"],
     ['shot', 'shop'],
-    ['use', 'bench', ['丙', '午', ['五月初五'], ['丑时']]],
+    ['use', 'bench', [0, '丙', '午']],
     ['expect', "window.__dbg.W.f.solved && window.__dbg.W.f.ph === 'sneak' && window.__dbg.W.cp.name === 'sneak'"],
     ['step', 6, 9],
     ['expect', "window.__dbg.W.mapId === 'village' && window.__dbg.W.f.sneakOn && window.__dbg.W.timer"],
     ['shot', 'sneak'],
+    ['js', "window.__dbg.tp(17, 6, 0)"],   # 先躲进北边岔巷深处
     ['js', WAIT_SAFE],
-    ['use', 'luDoor', [1]],
+    ['use', 'luDoor', [0]],
     ['expect', "window.__dbg.W.mapId === 'lu' && window.__dbg.W.f.ph === 'lu' && !window.__dbg.W.timer"],
     ['shot', 'lu'],
     ['step', 3, 6],

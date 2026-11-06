@@ -8,7 +8,7 @@
   /* 纸人走动：一串很短的高频「沙沙」 */
   function rustle(S, v = 1) { for (let i = 0; i < 5; i++) S.tone('square', 2200 + Math.random() * 1800, 1600, .035, .01 * v, i * .06 + Math.random() * .03, 3400); }
   /* 拜堂的锣：包了布，闷 */
-  function gong(S, v = 1) { S.tone('triangle', 196, 176, 1.5, .065 * v, 0, 1300); S.tone('sine', 392, 366, .9, .02 * v, 0, 2000); S.tone('square', 98, 90, .7, .012 * v, 0, 500); }
+  function gong(S, v = 1, k = 1) { S.tone('triangle', 196 * k, 176 * k, 1.5, .065 * v, 0, 1300); S.tone('sine', 392 * k, 366 * k, .9, .02 * v, 0, 2000); S.tone('square', 98 * k, 90 * k, .7, .012 * v, 0, 500); }
   /* 鞭炮：一串噼啪 */
   function crackers(S, n = 16, v = 1) { for (let i = 0; i < n; i++) S.tone('square', 80 + Math.random() * 70, 36, .05, .05 * v, i * .075 + Math.random() * .03, 1900); }
   /* 远处的喜乐：二胡似的颤音，五声音阶，慢一拍——像喜事又像丧事 */
@@ -92,9 +92,13 @@
   }
   function patMove(S, e, dt) {
     if (e.mv) return;
-    if (e.s.pause > 0) { e.s.pause -= dt; return; }
+    if (e.s.pause > 0) {
+      e.s.pause -= dt;
+      if (e.s.flip > 0 && (e.s.flip -= dt) <= 0) e.dir = dirTo(tileOf(e), e.s.to ? PAT[e.id].b : PAT[e.id].a);
+      return;
+    }
     const P = PAT[e.id], [ex, ey] = tileOf(e), tgt = e.s.to ? P.b : P.a;
-    if (ex === tgt[0] && ey === tgt[1]) { e.s.to = 1 - e.s.to; e.s.pause = 1.1; e.dir = dirTo([ex, ey], e.s.to ? P.b : P.a); return; }
+    if (ex === tgt[0] && ey === tgt[1]) { e.s.to = 1 - e.s.to; e.s.pause = 1.1; e.s.flip = .45; e.bubble = { k: '…', until: RT + .8 }; return; }
     startMove(e, dirTo([ex, ey], tgt), PSPD);
   }
 
@@ -321,6 +325,7 @@
         R(9, 0, 4, 9, '#c8a050'); R(10, 1, 2, 2, '#e8c8a0'); R(9, 3, 4, 3, '#2a5a3a'); R(10, 6, 2, 3, '#a02018');
         if (e.locked) R(7, 8, 2, 2, '#8a8a8a');
       },
+      flatpaper(g, e, t, R) { R(2, 4, 12, 9, PAPER); R(4, 5, 8, 4, '#ece6d6'); R(5, 6, 2, 1, '#e85a6a'); R(9, 6, 2, 1, '#e85a6a'); R(7, 8, 2, 1, '#c81828'); R(2, 10, 12, 3, '#c82838'); R(1, 7, 1, 5, '#9a7a4a'); R(14, 6, 1, 6, '#9a7a4a'); },
       xitieS(g, e, t, R) { R(3, 10, 11, 5, 'rgba(0,0,0,.3)'); R(3, 8, 11, 6, RED); R(4, 9, 9, 1, GOLD); xiChar(R, 5, 9, GOLD); },
       guali(g, e, t, R) { R(3, -2, 10, 14, '#e8e4d8'); R(4, -1, 8, 6, '#d88a8a'); R(6, 0, 4, 3, '#f0d0b0'); R(6, -1, 4, 1, '#2a1a1a'); R(4, 6, 8, 1, RED); R(5, 8, 6, 1, '#8a8a80'); R(5, 10, 6, 1, '#8a8a80'); },
       zhumie(g, e, t, R) { for (let i = 0; i < 7; i++) R(3 + i, -4 + (i % 3), 1, 18 - (i % 3), i % 2 ? '#c8a868' : '#a88848'); R(2, 6, 10, 2, RED); },
@@ -419,6 +424,8 @@
           { id: 'jz', x: 11, y: 8, w: 3, spr: 'jiazhuang', hidden: true, on: S => S.narr(['纸扎的嫁妆：一口描金红木箱，一台「熊猫」电视机，一台「蝴蝶」缝纫机。', '都是八十年代姑娘出嫁最体面的东西。\n纸糊得一丝不苟——只是每样东西上，都贴着一张小红纸，写着「许川」。']) },
           { id: 'zrA', x: 10, y: 9, spr: '@zr0', hidden: true, solid: false, dir: 0 },
           { id: 'zrB', x: 14, y: 9, spr: '@zr0b', hidden: true, solid: false, dir: 0 },
+          { id: 'flatA', x: 10, y: 9, spr: 'flatpaper', hidden: true, decal: true, solid: false, on: S => S.narr('一张纸人皮，平平地贴在石板上，脸朝天。\n竹篾骨架散了，两团腮红还是那么红。') },
+          { id: 'flatB', x: 14, y: 9, spr: 'flatpaper', hidden: true, decal: true, solid: false, on: S => S.narr('另一张纸人皮。你用脚尖碰了碰——它动也不动，就是一张纸。\n可你总觉得，它刚才在看你。') },
           { id: 'xitie', x: 9, y: 10, spr: 'xitieS', solid: false, hidden: true, on: S => xitie(S) },
           { x: 9, y: 11, spr: 'invisible', touch: S => leaveHome(S) }
         ],
@@ -506,8 +513,8 @@
           /* 院子 */
           { x: 4, y: 9, spr: 'yuanzhuo', on: S => S.narr('酒席摆好了，碗筷一副一副排得整整齐齐。\n一桌十个位子，一个客人也没有。') },
           { x: 15, y: 9, spr: 'yuanzhuo', on: S => S.narr('这一桌的碗里，盛着一碗碗白米饭，饭上都插着一双筷子。') },
-          { x: 8, y: 7, spr: 'denglong', solid: false, light: { r: 2, col: 'rgba(255,70,50,.2)', flick: true, dy: 14 } },
-          { x: 16, y: 7, spr: 'denglong', solid: false, light: { r: 2, col: 'rgba(255,70,50,.2)', flick: true, dy: 14 } },
+          { x: 8, y: 7, spr: 'denglong', solid: false, light: { r: 2, col: 'rgba(255,70,50,.2)', flick: true, dy: 14 }, on: S => S.narr('红灯笼底下吊着一串纸钱。\n喜事的灯笼，丧事的纸钱，挂在同一根绳子上。') },
+          { x: 16, y: 7, spr: 'denglong', solid: false, light: { r: 2, col: 'rgba(255,70,50,.2)', flick: true, dy: 14 }, on: S => S.narr('灯笼纸是新糊的，糊灯笼的浆糊里掺了金粉。\n——松记纸扎的手艺。') },
           ...[[2, 10], [7, 11], [12, 9], [17, 11], [13, 11]].map(([x, y]) => ({ x, y, spr: 'paohua', decal: true, solid: false })),
           { id: 'songL', x: 10, y: 11, spr: '@song', hidden: true, dir: 3 },
           { id: 'bikeL', x: 9, y: 9, w: 2, spr: 'zhiche', hidden: true, solid: false },
@@ -527,7 +534,7 @@
   const DZ = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥'];
   const MD = ['正月初一', '三月初三', '五月初五', '七月初七', '八月十五', '九月初九'];
   const SC = DZ.map(z => z + '时');
-  const GOAL_SNEAK = '子时前把牌位送进林家大门（别站到纸人灯笼前面，别跑）';
+  const GOAL_SNEAK = '子时前把牌位送进林家大门（躲开灯笼，别跑）';
 
   /* ================= 村子 ================= */
   function vLight(S) {
@@ -601,6 +608,7 @@
     f.threw = true; S.take('hongbao'); S.sfx('paper');
     await S.narr('你把红包扔进了垃圾桶，拍了拍手。');
     S.after(2500, async S2 => {
+      if (S2.f.hbBack) return; S2.f.hbBack = true;
       S2.give('hongbao', true); S2.toast('红包回到了你的口袋里');
       await S2.think('外套口袋忽然一沉。\n……红包又回来了。封口的红线，缠得比刚才还紧。');
     });
@@ -633,6 +641,7 @@
   /* ================= 阿嬷家 ================= */
   async function homeArrive(S) {
     const f = S.f; f.night = true; f.ph = 'home';
+    if (!S.has('hongbao')) { f.hbBack = true; S.give('hongbao', true); await S.narr('跨进门槛的时候，外套口袋忽然一沉。\n……扔掉的红包，又回来了。'); }
     S.face('ama', 'pl');
     await S.say('阿嬷', '阿川回来啦！冷不冷？锅里有番薯粥——');
     S.bubble('ama', '!', 1200);
@@ -693,7 +702,7 @@
     S.face('zrA', 'pl'); S.face('zrB', 'pl');
     await S.scare('face', { face: 'zhiren0', sfx: 'scream' });
     await S.narr('白脸，红腮帮。眼睛的位置——空着。\n两个纸人朝你弯了弯腰，像是行礼。然后「啪」的一声，平平地倒在地上，成了两张纸。');
-    S.hide('zrA'); S.hide('zrB'); S.amb('room');
+    S.hide('zrA'); S.hide('zrB'); S.show('flatA'); S.show('flatB'); S.amb('room');
     S.face('man', 0);
     await S.say('小满', '表、表哥！！', { style: 'big' });
     f.dowry = true;
@@ -707,9 +716,13 @@
       await S.say('阿嬷', ['纸人送嫁妆……这是要把礼走完啊。', '你说镜子里那姑娘讲「不是你」……我想起来了。']);
       await S.say('阿嬷', ['那年月蕙跟陈家的小儿子阿树好过。林老三嫌陈家穷，死活不肯，把阿树的庚帖都撕了。', '月蕙走了以后，阿树出去打工。听说过了几年，也没了。']);
       await S.say('阿嬷', ['老辈人讲，退阴亲，得弄清楚姑娘自己想嫁谁。', '她心里要是有人，就把婚书改回给那个人——拿那人的庚帖，换掉你的。', '阿树他哥陈松，开纸扎铺的，就在咱家往西隔一户。林家的纸人，都是他扎的。']);
-      await S.say('阿嬷', '排八字用得着你阿公那本通书，就挂在墙上，阿公的相片旁边。');
+      if (!f.readTS) {
+        await S.say('阿嬷', '排八字，用得着你阿公那本通书。拿着。');
+        await S.narr('阿嬷踮起脚，把墙上的通书摘下来，塞进你怀里。');
+        S.hide('tongshu'); await readTongshu(S);
+      } else { await S.say('阿嬷', '通书你看过了？拿着，路上还用得着。'); S.hide('tongshu'); S.toast('通书收进了「笺」，随时能翻'); }
       f.amaDone = true; f.ph = 'shop';
-      S.goal('去隔壁「松记纸扎」找陈松（排八字可以看厅里墙上的通书）');
+      S.goal('去隔壁「松记纸扎」找陈松');
       S.cp();
       return;
     }
@@ -793,13 +806,24 @@
     const f = S.f;
     if (f.solved) return S.narr('工作台上摊着竹篾和彩纸。写剩的红纸边角，被陈松收进了抽屉。');
     if (!f.songTold) return S.narr('工作台上摊着竹篾、彩纸和一碗浆糊。还有一沓裁好的红纸。');
-    await S.narr('你铺开一张红纸，提起毛笔。\n乾造　陈树　□□年　□□□□　□□　生');
-    const tg = await S.keypad('乾造　陈树　□□年\n年份的天干是？', TG, 1); if (tg == null) return;
-    const dz = await S.keypad(`乾造　陈树　${tg}□年\n年份的地支是？`, DZ, 1); if (dz == null) return;
-    const md = await S.keypad(`乾造　陈树　${tg}${dz}年\n哪一天生的？`, MD, 1); if (md == null) return;
-    const sc = await S.keypad(`乾造　陈树　${tg}${dz}年　${md}\n什么时辰？`, SC, 1); if (sc == null) return;
+    const K = f.bzKeep || (f.bzKeep = {});
+    for (; ;) {   // 单人也能边看边写：提笔前先翻一翻已经拿到的笔记
+      const N = [['gengtie', '红包里的庚帖'], ['tongshu', '阿公的通书', f.readTS], ['letter', '铁盒里的信', f.readLetter]].filter(n => n[2] !== false);
+      const r = await S.ask('乾造　陈树　' + (K.y || '□□') + '年　' + (K.d || '□□□□') + '　' + (K.h || '□□') + '　生\n提笔之前——', ['（提笔就写）', ...N.map(n => '（先看一眼' + n[1] + '）')], '许川');
+      if (r === 0) break;
+      await S.note(N[r - 1][0]);
+    }
+    let tg, dz, md, sc;
+    if (K.y) { tg = K.y[0]; dz = K.y[1]; }
+    else {
+      tg = await S.keypad('乾造　陈树　□□年\n年份的天干是？', TG, 1); if (tg == null) return;
+      dz = await S.keypad(`乾造　陈树　${tg}□年\n年份的地支是？`, DZ, 1); if (dz == null) return;
+    }
+    if (K.d) md = K.d; else { md = await S.keypad(`乾造　陈树　${tg}${dz}年\n哪一天生的？`, MD, 1); if (md == null) return; }
+    if (K.h) sc = K.h; else { sc = await S.keypad(`乾造　陈树　${tg}${dz}年　${md}\n什么时辰？`, SC, 1); if (sc == null) return; }
     const okY = tg === '丙' && dz === '午', okD = md === '五月初五', okH = sc === '丑时';
     if (okY && okD && okH) return solved(S);
+    if (okY) K.y = tg + dz; if (okD) K.d = md; if (okH) K.h = sc;   // 写对的格子留在红纸上，下次只改错的
     const n = f.bzWrong = (f.bzWrong || 0) + 1;
     S.sfx('bad'); rustle(S, 1.2);
     const z = 'sz' + (1 + (n - 1) % 4); S.face(z, 'pl');
@@ -807,7 +831,7 @@
     else if (n === 2) { S.fx('flash'); await S.narr('灯泡「滋」地闪了一下。\n靠墙的纸人，又有一个转过了脸。'); }
     else await S.narr('……又一个纸人转过了脸，空眼眶对着你。');
     const bad = []; if (!okY) bad.push('年份'); if (!okD) bad.push('日子'); if (!okH) bad.push('时辰');
-    await S.say('陈松', bad.join('、') + '……不对。');
+    await S.say('陈松', bad.join('、') + '……不对。' + (bad.length < 3 ? '对的那几格，我给你留着。' : ''));
     if (n >= 4) return S.say('陈松', ['我想起来了！丙午年，五月初五，丑时。', '我娘念叨过一百遍——你就这么写。']);
     const H = {
       2: { 年份: '年份：月蕙是哪年生的？她的庚帖上有，通书上能对出是公历哪一年。阿树比她大三岁。', 日子: '日子：端午是哪一天？通书的「节令」里写着。', 时辰: '时辰：「鸡叫头遍」是什么时辰？通书里有一首时辰歌。' },
@@ -842,6 +866,7 @@
   }
   async function sneakBrief(S) {
     S.goal(GOAL_SNEAK);
+    if (S.coop) S.toast('两个人：一个盯着纸人的背影报方向，一个走');
     if (deaths > 0) await S.think(lastCause === 'time'
       ? '……太慢了。纸人走到巷子尽头会停一下，再掉头。\n趁它背对你的时候走，别在一个地方干等。'
       : '纸人只看得见正前方四步，脖子转不过来。\n躲进岔巷深处，等它背过身再走。别跑，也别贴着它。');
@@ -859,6 +884,9 @@
     if (!deaths && S.once('sneak1')) {
       rustle(S, 1);
       await S.narr('巷子里亮着四盏红灯笼。\n灯笼底下，是四个挑着灯的纸人，一步一顿地走着，脚不沾地。');
+      const z = S.ent('z4'); S.focus(Math.round(z.px / TS) + 2, 9);
+      await S.narr('看它的灯笼。\n灯光往前照出去四五步——那就是它看得见的地方。走到巷子尽头，它会停一停，再僵硬地掉过头来。');
+      S.focus(null);
       await S.think('林家在正街最西头。\n……躲开灯笼照着的地方。等它们背过身去。');
     }
     f.sneakOn = true;
@@ -871,6 +899,10 @@
     const p = W.pl, px = Math.round(p.px / TS), py = Math.round(p.py / TS);
     let near = 99;
     if (f.grace > 0) f.grace -= dt;
+    if (f._ht > 0) f._ht -= dt;
+    /* 喜乐从林家那头传过来：越近越响，给巷子里一点方向感 */
+    f._xl = (f._xl ?? 3) - dt;
+    if (f._xl <= 0) { f._xl = 7; const dl = Math.abs(px - 4) + Math.abs(py - 9); xiyue(S, Math.max(.25, Math.min(1, 1.15 - dl / 26)), false); }
     for (const id in PAT) {
       const e = S.ent(id); if (!e || e.hidden) continue;
       const [ex, ey] = tileOf(e), d = Math.abs(ex - px) + Math.abs(ey - py); near = Math.min(near, d);
@@ -878,12 +910,13 @@
       else if (S.running && d <= 4 && !e.mv) {   // 听见跑步声：转过身来
         e.dir = Math.abs(px - ex) >= Math.abs(py - ey) ? (px < ex ? 1 : 2) : (py < ey ? 3 : 0);
         e.s.pause = Math.max(e.s.pause || 0, 1.6); e.s.heard = 2.5; e.bubble = { k: '?', until: RT + 1 };
+        if (!(f._ht > 0)) { f._ht = 5; S.toast('纸人听见了你的脚步声，转过身来'); }
       }
       patMove(S, e, dt);
       if (e.dir !== e._ld) setLamp(e);
       const r = seen(e);
       if (r && f.grace <= 0) {
-        if (!f.warned) { f.warned = true; f.grace = 2.4; e.s.pause = Math.max(e.s.pause || 0, 2.6); S.run(S2 => warnSeen(S2, id, r)); }
+        if (!f.warned) { f.warned = true; f.grace = 2.4; e.s.pause = Math.max(e.s.pause || 0, 2.6); warnSeen(S, id, r); }
         else { f._pend = true; S.run(S2 => caught(S2, id)); }
         return;
       }
@@ -891,13 +924,12 @@
     f._sn = (f._sn || 0) - dt;
     if (f._sn <= 0) { f._sn = 1.2; if (near <= 6) rustle(S, Math.max(.3, 1.3 - near * .15)); if (near <= 3) S.sfx('heart'); }
   }
-  async function warnSeen(S, id, r) {
+  /* 第一次被发现：不弹对话，不打断走路——只有气泡、音效和一行提示，给 2.4 秒躲开 */
+  function warnSeen(S, id, r) {
     const e = S.ent(id);
-    S.sfx('sting'); S.shake(300, 2); if (e) e.bubble = { k: '!', until: RT + 1.8 };
+    S.sfx('sting'); S.shake(300, 2); if (e) e.bubble = { k: '!', until: RT + 2.2 };
     rustle(S, 1.4);
-    await S.think(r === 'near'
-      ? '——碰到它了！纸做的袖子擦过手背，凉得像冰。\n快走开！（再被发现一次，就没有下次了。）'
-      : '——灯笼照到我了！它停住了……\n快离开它的正前方！（再被发现一次，就没有下次了。）');
+    S.toast(r === 'near' ? '碰到纸人了！快走开——再被发现就没有下次' : '灯笼照到你了！快离开它的正前方——再被发现就没有下次');
   }
   async function caught(S, id) {
     const f = S.f; f.sneakOn = false; lastLeft = S.timerLeft; S.clearTimer(); deaths++; lastCause = 'caught';
@@ -913,7 +945,7 @@
     await S.narr('远处传来钟声。一下，两下……十二下。\n子时到了。');
     for (const id in PAT) { const e = S.ent(id); if (e && !e.hidden) { S.face(id, 'pl'); e.bubble = { k: '!', until: RT + 2 }; } }
     await S.scare('face', { face: 'zhiren', sfx: 'scream' });
-    await S.die('四盏红灯笼，从四条巷子里同时朝你飘过来。\n「吉时到——请新郎——」', '子时到了');
+    await S.die(S.map === 'shop' ? '铺子的门「吱呀」一声开了。\n四个纸人挑着灯站在门口，齐齐地弯下腰：「吉时到——请新郎——」\n陈松挡在你前面，被它们轻轻地推开了。' : '四盏红灯笼，从四条巷子里同时朝你飘过来。\n「吉时到——请新郎——」', '子时到了');
   }
 
   /* ================= 林家 ================= */
@@ -930,8 +962,9 @@
     }
     S.face('hongyi', 'pl');
     await S.say('红姨', '哎哟，姑爷可算来了！吉时就到——快，到堂前跪下！');
-    const r = await S.ask('纸新娘立在供桌旁边，白脸朝着门口。', ['（走过去，跪下）', '「等一下！」'], '许川');
-    if (r === 0) return badBai(S, 'arrive');
+    if (f.lie && S.once('lie')) await S.say('红姨', ['还拿假八字糊弄红姨？', '骗得了我，骗不了红包。喜帖上写的是哪天，你自己看过了吧？']);
+    const r = await S.ask('纸新娘立在供桌旁边，白脸朝着门口。', ['「等一下！」', '（走过去，跪下）'], '许川');
+    if (r === 1) return badBai(S, 'arrive');
     await S.say('许川', '等一下！');
     S.face('linbo', 'pl');
     await S.say('林伯', '你怀里抱的什么？');
@@ -971,7 +1004,7 @@
   async function linboTalk(S) {
     const f = S.f; S.face('linbo', 'pl');
     if (f.agreed) return S.say('林伯', f.swapped ? '……把牌位摆上去吧。' : '改吧。照她的意思改。');
-    if (!S.has('diary')) return S.say('林伯', '……红包认人。你跑不了的。');
+    if (!S.has('diary')) return S.say('林伯', f.boudoir ? '……屋里的东西，你看见了？' : '……她的屋子在左边。你去看吧。我不进去。');
     const r = await S.ask('林伯背对着你。给他看什么？', ['（月蕙的日记）', '（半张烧焦的庚帖）', '（阿树的牌位）'], '许川');
     if (r === 0) return agree(S);
     f.evWrong = (f.evWrong || 0) + 1;
@@ -1048,15 +1081,15 @@
     if (r === 1) return badBai(S, 'final');
     S.ent('gchair').s.pw = false;
     await S.narr('你从椅子上捧起阿树的牌位，抱在胸前，在红垫子上跪下，朝门外的天磕了一个头。');
-    gong(S);
+    gong(S, 1, 1);
     await S.say('林伯', '二拜高堂——');
     S.turn(1);
     await S.narr('你转过身，朝林伯和林婶磕了一个头。\n林婶捂着嘴，哭出了声。');
-    gong(S);
+    gong(S, 1, 1.12);
     await S.say('林伯', '夫妻对拜——');
     S.turn(2); S.face('yhr', 1);
     await S.narr('你转向她。\n她也转过来——不是对着你，是对着你怀里的牌位。');
-    gong(S, 1.2);
+    gong(S, 1.2, 1.26);
     S.place('shu', 13, 5, 1); S.ent('shu').alpha = 0;
     await S.alpha('shu', .9, 1000);
     await S.narr('怀里的牌位忽然轻了。\n你身边多了一个人：白衬衫，袖子挽到胳膊肘，剃着平头。');
@@ -1074,6 +1107,9 @@
       await S.narr('火光里，一个后生推着一辆二八自行车，后座上坐着梳辫子的姑娘。\n车铃「叮铃、叮铃」响了两声。');
     } else await S.narr('两个人并肩走下台阶，走过空荡荡的酒席，走出了林家的大门。\n谁也没有回头。');
     bg(S.alpha('yhr', 0, 1400)); await S.alpha('shu', 0, 1400);
+    S.face('hongyi', 'pl');
+    await S.say('红姨', ['……做了三十年媒，头一回让新娘自己挑。', '这一单，红姨不收钱了。']);
+    await S.alpha('hongyi', 0, 800);
     S.take('hongbao');
     await S.narr('你摸了摸口袋。红包轻了。\n打开一看，里面只剩一张红纸，墨迹淡得几乎看不见了。');
     await S.fade(1, 1400);
@@ -1099,9 +1135,9 @@
     S.turn(3); S.amb('none');
     await S.say('红姨', '一拜天地——', { style: 'big' }); gong(S);
     await S.narr('一只手按在你的后颈上，冰凉。你的额头碰到了地砖。');
-    await S.say('红姨', '二拜高堂——', { style: 'big' }); gong(S);
+    await S.say('红姨', '二拜高堂——', { style: 'big' }); gong(S, 1, 1.12);
     await S.narr('林伯坐在上首，眼睛通红。林婶别过了脸。');
-    await S.say('红姨', '夫妻对拜——', { style: 'big' }); gong(S, 1.3);
+    await S.say('红姨', '夫妻对拜——', { style: 'big' }); gong(S, 1.3, 1.26);
     S.turn(2);
     await S.narr(kind === 'final'
       ? '你转过身。对面的姑娘没有弯腰。\n她只是看着椅子上的牌位，看了很久，很久。'
