@@ -4,11 +4,13 @@
   const cyc = (S, key, lines) => lines[(S.f[key] = ((S.f[key] ?? -1) + 1) % lines.length)];
   let DEATHS = 0;            // 沙暴里死过几次（跨检查点保留，用来给重来提示）
   const SF = {};             // 主机上的声音计时（不进存档）
-  const USPD = 2.3;          // 蹄子声的主人走得比人慢，可你一停，她就到了
+  const USPD = 2.0;          // 蹄子声的主人走得比人慢，可你一停，她就到了
 
   /* ---------------- 合成音效（双方都听得到） ---------------- */
   function hoof(S, v) { S.tone('square', 230, 120, .05, v, 0, 900); S.tone('triangle', 900, 300, .03, v * .5, 0, 2400); S.tone('square', 200, 110, .05, v * .8, .17, 900); S.tone('triangle', 820, 280, .03, v * .4, .17, 2400); }
   function scratch(S, v = .045) { for (let i = 0; i < 6; i++) S.tone('sawtooth', 2200 + Math.random() * 900, 1500, .045, v, i * .075, 4200); }
+  /* 不是你画的那一笔：更慢、更低、像指甲 */
+  function claw(S, v = .04) { for (let i = 0; i < 4; i++) { S.tone('sawtooth', 1100 + Math.random() * 300, 700, .12, v, i * .16, 2200); S.tone('triangle', 320, 180, .1, v * .6, i * .16 + .02, 900); } }
   function piping(S, v) {   // 风笛似的长音（haban）垫底，上面一支高高低低的小调
     S.tone('sawtooth', 147, 147, 2.8, v * .45, 0, 650); S.tone('sawtooth', 221, 221, 2.8, v * .3, 0, 750);
     [587, 659, 698, 659, 587, 523, 587, 698, 659].forEach((f, i) => S.tone('square', f, f * 1.006, .27, v * .55, .1 + i * .29, 1500));
@@ -43,9 +45,9 @@
   const DEADS = [[35, 20], [36, 20], [37, 20], [25, 15], [33, 22], [23, 14], [10, 10], [4, 14]];
   const DIRW = ['下（南）', '左（西）', '右（东）', '上（北）'];
   const NORM = { 1: '一个「1」，头上那一小撇朝左，写得端端正正。', 2: '一个「2」，写得端端正正。', 3: '一个「3」，两个弯朝右鼓，写得端端正正。', 4: '一个「4」，小三角在左、竖笔在右，写得端端正正。', 5: '一个「5」，肚子朝右鼓，写得端端正正。' };
-  const MIRR = { 1: '一个「1」——可它头上那一小撇，是朝右撇的。', 2: '一个「2」——可它的弯钩朝左鼓，底下那一横往左甩了出去。', 3: '一个「3」——可它的两个弯，是朝左鼓出来的。', 4: '一个「4」——可它的竖笔在左边，小三角挂在右边。', 5: '一个「5」——可它的肚子朝左鼓。' };
-  /* 3×5 像素数字（镜像时左右翻转） */
-  const DIG = { 1: ['010', '110', '010', '010', '111'], 2: ['111', '001', '111', '100', '111'], 3: ['111', '001', '111', '001', '111'], 4: ['101', '101', '111', '001', '001'], 5: ['111', '100', '111', '001', '111'] };
+  const MIRR = { 1: '一个「1」——可它头上那一小撇，是朝右撇的。', 2: '一个「2」——可它上头的弯钩，是朝左鼓出来的。', 3: '一个「3」——可它的两个弯，是朝左鼓出来的。', 4: '一个「4」——可它的竖笔在左边，小三角挂在右边。', 5: '一个「5」——可它的肚子朝左鼓。' };
+  /* 4×5 像素数字（镜像时左右翻转）。不用 3×5：那种字形里反写的 5 正好是 2 */
+  const DIG = { 1: ['0010', '0110', '0010', '0010', '0111'], 2: ['0110', '1001', '0010', '0100', '1111'], 3: ['1110', '0001', '0110', '0001', '1110'], 4: ['1010', '1010', '1111', '0010', '0010'], 5: ['1111', '1000', '1110', '0001', '1110'] };
   function arrow(R, d, ox, oy, c) {
     const A = (x, y, w, h) => R(ox + x, oy + y, w, h, c);
     if (d === 2) { A(0, 3, 6, 2); A(5, 1, 1, 6); A(6, 2, 1, 4); A(7, 3, 1, 2); }
@@ -106,7 +108,7 @@
       const c = '#f4d040', R = (x, y, ww, hh) => { g.fillStyle = c; g.fillRect(x, y, ww, hh); };
       const ox = 10, oy = base - 11;   // 墙上一个黄箭头 + 一个反写的 3
       R(ox, oy + 3, 9, 2); R(ox + 7, oy + 1, 1, 6); R(ox + 8, oy + 2, 1, 4); R(ox + 9, oy + 3, 1, 2);
-      const d3 = DIG[3]; for (let y = 0; y < 5; y++) for (let x = 0; x < 3; x++) if (d3[y][2 - x] === '1') R(ox + 14 + x * 2, oy + y * 2 - 1, 2, 2);
+      const d3 = DIG[3]; for (let y = 0; y < 5; y++) for (let x = 0; x < 4; x++) if (d3[y][3 - x] === '1') R(ox + 14 + x * 2, oy + y * 2 - 1, 2, 2);
       for (let i = 0; i < 40; i++) { g.fillStyle = `rgba(220,170,110,${.15 + hash(i, 9, 30) * .3})`; g.fillRect((hash(i, 1, 30) * w) | 0, (hash(i, 2, 30) * base) | 0, 4 + (hash(i, 3, 30) * 5 | 0), 1); }
     },
     endings: { dawn: '日出时回到车上', wedding: '沙夜的喜事', take: '带走的东西' },
@@ -194,7 +196,7 @@
         if (e.er) { for (let i = 0; i < 7; i++) R(2 + ((hash(e.x, i, 3) * 10) | 0), 2 + ((hash(i, e.y, 3) * 9) | 0), 3 + ((hash(i, i, 3) * 4) | 0), 1, i % 2 ? 'rgba(244,208,64,.55)' : 'rgba(200,170,60,.4)'); for (let i = 0; i < 4; i++) R(3 + i * 3, 2, 1, 9, 'rgba(40,30,20,.45)'); return; }
         arrow(R, e.d, 1, 3, c);
         const dg = DIG[e.n] || DIG[1];
-        for (let y = 0; y < 5; y++) for (let x = 0; x < 3; x++) if (dg[y][e.mir ? 2 - x : x] === '1') R(11 + x, 3 + y, 1, 1, c);
+        for (let y = 0; y < 5; y++) for (let x = 0; x < 4; x++) if (dg[y][e.mir ? 3 - x : x] === '1') R(11 + x, 3 + y, 1, 1, c);
         if ((t * 2 + e.x) % 3 < .15) R(0, 0, 16, 13, 'rgba(255,230,120,.06)');
       },
       taqa(g, e, t, R) {   // 墙上的尖拱壁龛：白灰框，里面黑，底下放着香炉或一堆沙
@@ -333,7 +335,7 @@
           { x: 3, y: 9, spr: 'palm', s: { dead: 1 }, on: S => S.narr('一棵枯死的椰枣树，只剩光秃秃的树干。') },
           { x: 1, y: 5, spr: 'invisible', on: S => S.narr('村子外面的老墙，珊瑚石垒的，石头里还嵌着细小的贝壳。\n一块一块，都是当年从海里采上来的。') },
           { x: 1, y: 9, spr: 'invisible', on: S => S.narr('老墙塌下来的一角。墙根底下，沙子被风推成了一道小小的坡。') },
-          { id: 'maryR', x: 12, y: 8, spr: '@mary', dir: 1, solid: false, on: S => maryTalk(S) },
+          { id: 'maryR', x: 12, y: 8, spr: '@mary', dir: 1, solid: false, on: (S, e) => fwd(S, e) || maryTalk(S) },
           { id: 'saifR', x: 12, y: 9, spr: '@saif', solid: false, hidden: true },
           { id: 'stormR', x: 11, y: 8, spr: 'storm', solid: false, hidden: true, z: 9, light: { pl: true, r: 2.8, col: 'rgba(190,125,60,.34)' } }
         ],
@@ -424,8 +426,8 @@
           { x: 13, y: 20, spr: 'palm', s: { dead: 1 } }, { x: 23, y: 18, spr: 'palm' }, { x: 7, y: 18, spr: 'palm' }, { x: 40, y: 19, spr: 'palm' },
           { x: 25, y: 25, spr: 'palm' }, { x: 32, y: 6, spr: 'palm' }, { x: 32, y: 18, spr: 'palm', s: { dead: 1 } }, { x: 17, y: 4, spr: 'palm' },
           /* 人 */
-          { id: 'maryV', x: 42, y: 15, spr: '@mary', solid: false, hidden: true, on: S => maryTalk(S) },
-          { id: 'saifV', x: 14, y: 25, spr: '@saif', solid: false, hidden: true, on: S => S.say('赛义夫', '……姐，我好像听见妈妈在叫我。', { style: 'whisper' }) },
+          { id: 'maryV', x: 42, y: 15, spr: '@mary', solid: false, hidden: true, on: (S, e) => fwd(S, e) || maryTalk(S) },
+          { id: 'saifV', x: 14, y: 25, spr: '@saif', solid: false, hidden: true, on: (S, e) => fwd(S, e) || S.say('赛义夫', cyc(S, '_sv', ['……姐，我好像听见妈妈在叫我。', '那个香味又来了……', '我不看。我不回头。']), { style: 'whisper' }) },
           { id: 'umm', x: 12, y: 25, spr: '@umm', solid: false, hidden: true, light: { r: 1.5, col: 'rgba(170,120,210,.18)' } },
           /* 画面效果 */
           { id: 'storm', x: 14, y: 25, spr: 'storm', solid: false, hidden: true, z: 9, light: { pl: true, r: 2.6, col: 'rgba(190,125,60,.34)' } },
@@ -478,7 +480,7 @@
           { x: 14, y: 6, spr: 'window', on: S => S.narr('窗格里卡着一根干枯的红树枝。') },
           { x: 15, y: 11, spr: 'invisible', on: S => S.narr('院子的地上铺过一层碎贝壳，踩上去咔嚓咔嚓地响。') },
           { id: 'saifB', x: 20, y: 4, spr: '@saif', dir: 1, on: S => saifTalk(S) },
-          { id: 'maryB', x: 11, y: 13, spr: '@mary', solid: false, hidden: true, on: S => maryTalk(S) }
+          { id: 'maryB', x: 11, y: 13, spr: '@mary', solid: false, hidden: true, on: (S, e) => fwd(S, e) || maryTalk(S) }
         ],
         async enter(S, first) { if (first) return baytEnter(S); }
       }
@@ -500,6 +502,14 @@
   function fpEnts() {
     const fp = spineCells().filter((_, i) => i % 2 === 0).concat([[19, 12], [18, 10], [16, 9], [20, 9]]);
     return fp.map(([x, y], i) => ({ id: 'fp' + i, x, y, spr: 'footprints', decal: true, col: 'rgba(40,28,18,.5)' }));
+  }
+  /* 跟着走的人站在玩家脚下时，调查键会先选中她——这时改为调查玩家面前的东西 */
+  function fwd(S, e) {
+    const p = S.pl; if (Math.round(e.px / TS) !== p.x || Math.round(e.py / TS) !== p.y) return null;
+    const m = curMap(), tx = p.x + DIRS[p.dir][0], ty = p.y + DIRS[p.dir][1];
+    const t = pickTop(m, entsAt(m, tx, ty, z => typeof z.on === 'function' && z !== e && !z.follow));
+    if (!t) return null;
+    t.read = true; return t.on(S, t) || true;
   }
   function freeSpot(S, list) {
     const m = curMap();
@@ -705,7 +715,7 @@
     await S.say('玛雅姆', '赛义夫？……赛义夫！');
     sob(S); await S.wait(700);
     await S.narr('东北角那间屋子里，有人吸了一下鼻子。');
-    scratch(S, .035); S.show('wm0');
+    claw(S, .04); S.show('wm0');
     await S.narr('……身边的墙上，「嚓、嚓」响了两声。\n手电扫过去：院墙上有一个黄色的箭头，旁边写着一个「5」。\n可那个 5 的肚子，是朝左鼓的。');
     await S.say('玛雅姆', ['……这不是我们画的。我们画的那个在外面巷子里。', '外婆说，它们学人，总学反。……它在学我们。'], { style: 'whisper' });
     S.goal('找到赛义夫（东北角的屋子）');
@@ -746,6 +756,7 @@
     }
     S.f.letter = 1;
     await S.note('letter');
+    if (S.f.ph === 'bayt' && S.has('pearl')) S.cp('pearl');   // 读过信再存一次：坏结局重来后不必再翻一遍箱子
   }
   async function niche(S, id) {
     const e = S.ent(id), d = NICHE[id];
@@ -765,7 +776,7 @@
     S.give('pearl', true);
     await S.narr('……「啪」的一声，红布包从壁龛里掉了出来，落在你脚边。\n像是被谁从里面推了出来。');
     if (!S.f.wm) {
-      S.f.wm = 1; S.place('wm', d.wm[0], d.wm[1]); scratch(S, .04);
+      S.f.wm = 1; S.place('wm', d.wm[0], d.wm[1]); claw(S, .04);
       await S.narr('壁龛旁边的墙上，「嚓、嚓」响了两声。\n手电照过去——那里多了一道黄色的记号：一个箭头，旁边写着一个「3」。\n可那个 3 的两个弯，是朝左鼓出来的。');
       await S.say('玛雅姆', ['……它们在学我们画记号。', '外婆说的——学人，总学反。'], { style: 'whisper' });
     }
@@ -838,7 +849,7 @@
     if (f.ph !== 'storm') return;
     const tr = f.trail || (f.trail = []); tr.push([x, y]); if (tr.length > 40) tr.shift();
     for (const k in J) if (J[k].x === x && J[k].y === y && !f['v' + k]) return stormJ(S, +k);
-    if (x === 28 && y === 18 && f.v3 && !f.fake3c) { f.fake3c = 1; S.show('fk3c'); scratch(S, .03); S.toast('身后的墙上，传来「嚓、嚓」的刮擦声。'); return; }
+    if (x === 28 && y === 18 && f.v3 && !f.fake3c) { f.fake3c = 1; S.show('fk3c'); claw(S, .035); S.toast('身后的墙上，传来「嚓、嚓」的刮擦声。'); return; }
     if (x === 10 && y === 6) return badHouse(S);
     if (x >= 14 && x <= 22 && y >= 8 && y <= 10 && !f.sq) { f.sq = 1; return squareStorm(S); }
     if (DEADS.some(([a, b]) => a === x && b === y) && SF.dt <= 0) { SF.dt = 3; S.toast('死胡同！'); }
@@ -885,6 +896,13 @@
     await S.say('玛雅姆', '……外婆说了，别凑过去。', { style: 'whisper' });
   }
   async function badHouse(S) {
+    if (S.f.bh) {
+      const r = await S.ask('门里的灯还亮着，吹奏声一刻也没停。「进来吧，孩子们。」', ['进去躲一躲', '退回去']);
+      if (r === 0) return badWedding(S);
+      if (S.pl.x === 10 && S.pl.y === 6) await S.walk('pl', 'r', 4);
+      return;
+    }
+    S.f.bh = 1;
     await S.narr('门开着。门里亮着暖黄的灯，铜咖啡壶在炭火上咕嘟咕嘟地响，乳香和小豆蔻的味道一阵阵飘出来。\n吹奏声就是从这里传出来的。还有拍手声、笑声，羊在院子里咩咩地叫。');
     await S.say('门里', '外面风大，孩子们，进来坐坐吧。喝杯咖啡，等天亮。', { style: 'whisper' });
     await S.say('玛雅姆', '……别进去。', { style: 'whisper' });

@@ -915,9 +915,9 @@
     await runStart(S);
   }
   /* ---------- 天亮前跑出城 ---------- */
-  const RUN_T = 38, RUN_MIN = 26;
+  const RUN_T = 32;
   let LAST_LEFT = null;
-  const RUNNERS = [['r1', 3, 15], ['r2', 34, 6], ['r3', 21, 15], ['r4', 22, 4], ['r5', 30, 11], ['r6', 12, 16]];
+  const RUNNERS = [['r1', 3, 5], ['r2', 34, 6], ['r3', 14, 4], ['r4', 24, 4], ['r5', 41, 15], ['r6', 17, 17]];   // 从身后、两侧和开阔地扑过来，不堵在一格宽的口子上
   async function runStart(S) {
     S.f.ph = 'run';
     SND.rumble(S); S.shake(800, 3);
@@ -1059,8 +1059,8 @@
         aiReset(S); setCloud(S, false); CL.t = MOON_T;
         if (DEATHS && S.map === 'bazaar') await S.think(DEATHS > 1 ? '影子里别跑、别乱动。被发现了就往月光底下、灯底下躲。\n云遮月之前（起风的时候），先站到铺子的灯底下。' : '……在影子里别跑。被发现了，就往亮处躲。');
       },
-      run: async S => { await runResume(S, 26); },
-      run2: async S => { runChase(S); await runResume(S, 20); }
+      run: async S => { await runResume(S, 24); },
+      run2: async S => { runChase(S); await runResume(S, 18); }
     },
     async intro(S) {
       WH30 = false; WH10 = false; DEATHS = 0; LAST_LEFT = null; AI = {}; CLOUD_ON = false; CAUGHT = false; INV = 0;

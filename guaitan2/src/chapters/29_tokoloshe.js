@@ -89,11 +89,11 @@
     S.hide('gogo_h'); S.hide('sipho_h'); clearDrips(S);
     S.ent('kdrum').covered = false; S.ent('plamp').off = false;
     S.place('tok', DRINK[0], DRINK[1], 1); const e = S.ent('tok'); e.s.vis = 0; e.alpha = 1;
-    S.f.tk = { st: 'go', t: 0, bed: null, carry: 0, last: '', lx: DRINK[0], ly: DRINK[1] };
+    S.f.tk = { st: 'drink', t: 2.6, bed: null, carry: 0, last: '', lx: DRINK[0], ly: DRINK[1], cd: 0 };
     S.f.tk.bed = pickBed(S);
     Object.assign(S.f, { catches: 0, warn: 0, dz: 0, dzw: 0, lost: 0, hunt: true });
     S.dark(.9); S.plr(2.6); S.amb('night');
-    S.pos(12, 3, 0); SHOUT = 1.2; PT = 0; HB = 0;
+    S.pos(12, 3, 0); SHOUT = .4; PT = 0; HB = 0;
     S.goal(huntGoal(S));
   }
   function dropBrick(S, x, y) {
@@ -173,12 +173,30 @@
     if (S.f.dz < .3) S.f.dzw = 0;
     if (S.f.dz >= 1) { S.run(S2 => doze(S2)); return; }
     /* 扑住：走进它所在的格子 */
-    if ((T.st === 'go' || T.st === 'steal' || T.st === 'carry') && !e.hidden && Math.abs(e.px - p.px) + Math.abs(e.py - p.py) < 12) { T.st = 'caught'; S.run(onCatch); return; }
+    const near = Math.abs(e.px - p.px) + Math.abs(e.py - p.py);
+    if ((T.st === 'go' || T.st === 'steal' || T.st === 'carry' || T.st === 'drink') && !e.hidden && near < 12) { T.st = 'caught'; S.run(onCatch); return; }
+    /* 扑过一回以后它学精了：走着的时候，你一靠近（1.6 格内、你在动），它就往远离你的方向蹿两格；偷砖的时候顾不上躲 */
+    T.cd -= dt;
+    if ((T.st === 'go' || T.st === 'carry') && (S.f.catches || 0) >= 1 && T.cd <= 0 && !e.mv && near <= 1.6 * TS && S.moving) {
+      const m = curMap(); let best = -1, bd = -1;
+      for (let d = 0; d < 4; d++) { const nx = ex + DIRS[d][0], ny = ey + DIRS[d][1]; if (!passable(m, nx, ny, e)) continue; const dd = Math.abs(nx - p.x) + Math.abs(ny - p.y); if (dd > bd) { bd = dd; best = d; } }
+      if (best >= 0 && bd > Math.abs(ex - p.x) + Math.abs(ey - p.y)) { startMove(e, best, 4.8); T.cd = 1.8; S.tone('sine', 1400, 2200, .08, .03, 0, 0); return; }
+    }
     /* 隐身时走过的格子留下水迹 */
     if (!e.hidden && !e.s.vis && (ex !== T.lx || ey !== T.ly)) { dripAt(S, T.lx, T.ly, e.dir); const dd = (Math.abs(e.px - p.px) + Math.abs(e.py - p.py)) / TS; if (dd < 7) drip(S, .045 - dd * .006); T.lx = ex; T.ly = ey; }
     T.t -= dt;
-    if (T.st === 'out') {
-      if (T.t <= 0) { S.place('tok', DOOR[0], DOOR[1], 3); e.s.vis = 0; [T.lx, T.ly] = DOOR; T.bed = pickBed(S); T.st = 'go'; S.sfx('open'); kid(S, 1); S.toast('西菲：「它又进来了！从大门！」'); SHOUT = 2.6; }
+    if (T.st === 'drink') {
+      if (T.t <= 0) { T.st = 'go'; T.bed = pickBed(S); }
+      else if (SHOUT <= 0) { SHOUT = 2.8; kid(S, 1); gulp(S); S.toast('西菲：「它在水缸里喝水！就在厨房！」'); }
+    } else if (T.st === 'out') {
+      if (T.t <= 0) {   // 它是水里的东西：有时从大门钻进来，有时直接从水缸里爬出来（两处离得远，守不住两头）
+        const far = ([x, y]) => Math.abs(x - p.x) + Math.abs(y - p.y) > 3;   // 不刷在玩家身边
+        let drum = Math.random() < .5; if (!far(drum ? DRINK : DOOR)) drum = !drum;
+        const at = drum ? DRINK : DOOR;
+        if (!far(at)) { T.t = .5; return; }
+        S.place('tok', at[0], at[1], drum ? 1 : 3); e.s.vis = 0; [T.lx, T.ly] = at; T.bed = pickBed(S); T.st = 'go'; kid(S, 1); SHOUT = 2.6;
+        if (drum) { gulp(S); S.toast('西菲：「它从水缸里爬出来了！」'); } else { S.sfx('open'); S.toast('西菲：「它又进来了！从大门！」'); }
+      }
     } else if (T.st === 'go') {
       const st = BEDS[T.bed].st;
       if (stepTo(e, st[0], st[1], SPD.go) && !e.mv) { T.st = 'steal'; T.t = STEAL; scrape(S); kid(S, 1); S.toast(`西菲：「它在${BEDS[T.bed].at}！在拿砖！」`); SHOUT = 2.6; }
