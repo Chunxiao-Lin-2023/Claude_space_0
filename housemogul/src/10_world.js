@@ -32,7 +32,7 @@ function genWorld() {
       id: props.length, kind, d: b.d, x, y, w: K.w, h: K.h, st: b.st, num: kind === 'mansion' ? 1 : streetNo[b.st], b: blocks.indexOf(b),
       q: kind === 'mansion' ? 1 : clamp(1 + gauss() * 0.06, 0.86, 1.14),
       cond: cond != null ? cond : wpick(b.d === DI.old || b.d === DI.sub ? [{ v: 0, w: 5 }, { v: 1, w: 4 }, { v: 2, w: 1 }] : [{ v: 0, w: 2 }, { v: 1, w: 5 }, { v: 2, w: 3 }]).v,
-      bonus: 0, owner: -1, loan: 0, paid: 0, boughtM: -1, reno: 0, renoTo: 0, list: null, offer: 0, insp: [], hist: [], cool: 0
+      bonus: 0, owner: -1, loan: 0, paid: 0, boughtT: -99, reno: 0, renoTo: 0, list: null, offer: 0, insp: [], hist: [], cool: 0, j: 0, on: 0, hotT: 0, stage: null, bt: 0
     };
     props.push(p); return p;
   };
@@ -54,7 +54,7 @@ function genWorld() {
       else { addProp('techflat', b, x0, y0); addProp('techflat', b, x0 + 2, y0); addDeco('office', x0 + 4, y0, 2, 2, { nm: '云谷大厦' }); addDeco('office', x0, y0 + 2, 2, 2, { nm: '创新中心', lo: 1 }); addProp('techflat', b, x0 + 2, y0 + 2); addProp('techflat', b, x0 + 4, y0 + 2); }
     } else if (dk === 'school') {
       if (xi === 1) { addDeco('school', x0, y0, 2, 4, { nm: '实验小学' }); for (let oy = 0; oy < 4; oy++) for (let ox = 2; ox < 4; ox++) if (!(ox === 3 && oy === 1)) addProp('schoolflat', b, x0 + ox, y0 + oy); }
-      else { addProp('house', b, x0, y0); addProp('house', b, x0 + 2, y0); for (let ox = 0; ox < 4; ox++) if (ox !== 2) addProp('schoolflat', b, x0 + ox, y0 + 3); }
+      else { addProp('house', b, x0, y0); for (let ox = 0; ox < 4; ox++) if (ox !== 2) addProp('schoolflat', b, x0 + ox, y0 + 3); }
     } else if (dk === 'sub') {
       const H = y1 - y0 + 1;
       if (xi === 2) addDeco('factory', x0 + 2, y0, 2, 2, { nm: '化工厂' });
@@ -65,20 +65,22 @@ function genWorld() {
   // the hill
   const hb = { x0: 15, y0: 13, x1: 20, y1: 20, d: DI.hill, st: '半山道' }; blocks.push(hb);
   for (let y = 13; y <= 20; y++) for (let x = 15; x <= 20; x++) tdist[ti(x, y)] = DI.hill;
-  for (const [x, y] of [[15, 13], [19, 13], [15, 15], [19, 15], [15, 18]]) addProp('villa', hb, x, y, wpick([{ v: 1, w: 3 }, { v: 2, w: 2 }]).v);
+  for (const [x, y] of [[15, 13], [19, 13], [15, 15]]) addProp('villa', hb, x, y, wpick([{ v: 1, w: 3 }, { v: 2, w: 2 }]).v);
   const man = addProp('mansion', hb, 17, 17, 1);
   for (let y = 13; y <= 16; y++) tiles[ti(17, y)] = T_PATH;
   // plaza tiles under river plaza / malls
   for (const d of deco) if (d.k === 'plaza' || d.k === 'mall' || d.k === 'office') for (let j = 0; j < d.h; j++) for (let i = 0; i < d.w; i++) tiles[ti(d.x + i, d.y + j)] = T_PLAZA;
-  return { tiles, tdist, blocks, props, deco, mansion: man.id };
+  return { tiles, tdist, blocks, props, deco, mansion: man.id, streetNo };
 }
 
 /* ---------- valuation ---------- */
-function val(p) { const K = KINDS[p.kind], D = G.d[p.d]; return (p.kind === 'mansion' ? G.manBase || K.base : K.base) * D.idx * p.q * COND[p.cond].m * (1 + p.bonus); }
+function val(p) { const K = KINDS[p.kind], D = G.d[p.d]; return (p.kind === 'mansion' ? G.manBase || K.base : K.base) * D.idx * p.q * COND[p.cond].m * (1 + p.bonus) * (1 + (p.j || 0)); }
+const live = p => !p.gone && !p.stage;   // standing house (not under construction / being demolished / removed)
+const canSell = p => !p.reno && G.t - p.boughtT >= BAL.hold;
 const mansionP = () => G.props[G.mansion];
 const mansionPrice = () => mansionP().list ? mansionP().list.ask : val(mansionP());
 function propName(p) { return p.kind === 'mansion' ? '半山顶 · 终极豪宅' : p.st + ' ' + p.num + ' 号'; }
-const ownedBy = i => G.props.filter(p => p.owner === i);
+const ownedBy = i => G.props.filter(p => p.owner === i && !p.gone);
 function equity(i) { let s = 0; for (const p of G.props) if (p.owner === i) s += val(p) - p.loan; return s; }
 function debtOf(i) { let s = 0; for (const p of G.props) if (p.owner === i) s += p.loan; return s; }
 const netWorth = i => G.pl[i].cash + equity(i);
@@ -99,7 +101,7 @@ function dealOf(p, pi) {
 }
 function sellAdvice(p) {
   if (p.reno) return { k: 'wait', n: '装修中', r: 0 };
-  if (p.boughtM === G.month) return { k: 'wait', n: '刚买的，下个月才能卖', r: p.offer * (1 - sellFee()) / p.paid - 1 };
+  if (!canSell(p)) return { k: 'wait', n: '过户中…', r: p.offer * (1 - sellFee()) / p.paid - 1 };
   const r = p.offer * (1 - sellFee()) / p.paid - 1, q = p.offer / val(p);
   if (r >= 0 && q >= 1.06) return { k: 'sell', n: '出价很高，快卖', r };
   if (r >= 0.08) return { k: 'sell', n: '已经赚了，可以卖', r };
@@ -108,7 +110,7 @@ function sellAdvice(p) {
 }
 function estOf(p) { return p.list && OP('insp') ? val(p) * p.list.est : val(p); }   // the agent's (noisy) estimate
 const knows = (p, i) => p.insp.includes(i);
-function heat() { // smoothed market temperature from last 3 months of district moves
-  let s = 0, n = 0; for (const d of G.d) { const h = d.hist, k = h.length; if (k > 3) { s += Math.log(h[k - 1] / h[k - 4]); n++; } }
+function heat() { // market temperature: average district move over the last 30 s
+  let s = 0, n = 0; for (const d of G.d) { const h = d.hist, k = h.length; if (k > 15) { s += Math.log(h[k - 1] / h[k - 16]); n++; } }
   return n ? s / n : 0;
 }

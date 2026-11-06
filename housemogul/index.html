@@ -135,6 +135,14 @@ canvas.spark{width:72px;height:26px;flex:none}
 #monthFx div{font-family:var(--title);font-size:clamp(40px,7vw,72px);color:#fff6dc;text-shadow:0 0 20px rgba(0,0,0,.6),0 4px 0 rgba(0,0,0,.35)}
 @keyframes mfx{0%{opacity:0;transform:scale(.92)}20%{opacity:1;transform:scale(1)}70%{opacity:1}100%{opacity:0}}
 #phoneTabs{display:none}
+#tMonth{min-width:104px}#tMonth b{font-size:20px;font-weight:500;letter-spacing:.02em}#tMonth small.up{color:#ff9a90}#tMonth small.down{color:#6fe0a8}
+#tGoal.ready{border-color:var(--gold);box-shadow:0 0 0 3px rgba(245,196,81,.35),0 6px 22px rgba(0,0,0,.35);animation:pls 1.3s ease-in-out infinite}
+#mineBtn{min-height:48px;padding:6px 16px;font-size:16px;border-radius:10px;background:var(--panel);border-color:rgba(255,255,255,.12)}
+#mineBtn b{color:var(--gold);font-size:18px;margin:0 2px}
+#speed{display:flex;gap:4px;padding:4px}
+#speed button{min-width:48px;min-height:42px;padding:2px 10px;font-family:var(--num),var(--font);font-size:15px;background:rgba(255,255,255,.04);box-shadow:none;border-color:rgba(255,255,255,.1)}
+#speed button.sel{border-color:var(--gold);color:var(--gold);background:rgba(245,196,81,.14)}
+#pausedTag{position:absolute;left:50%;top:calc(86px + var(--sa-t));transform:translateX(-50%);z-index:4;background:rgba(14,20,30,.85);border:1px solid var(--line);border-radius:20px;padding:4px 14px;font-size:13px;color:#ffe9b5;pointer-events:none}
 .tabs button.main{flex:2}
 .item .ib{flex:none;min-width:96px;min-height:42px;padding:3px 10px;font-size:14.5px;line-height:1.2;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:var(--num);font-weight:500}
 .item .ib small{font-family:var(--font);font-size:11px;font-weight:400;opacity:.9}
@@ -160,7 +168,7 @@ canvas.spark{width:72px;height:26px;flex:none}
 .verdict{display:flex;align-items:baseline;gap:10px;font-size:22px;font-weight:700;padding:8px 12px;border-radius:8px}
 .verdict small{font-size:14px;font-weight:400}
 .verdict.great{background:rgba(245,196,81,.18);color:#ffd970}.verdict.good{background:rgba(44,155,108,.22);color:#8ff0c2}.verdict.fair{background:rgba(255,255,255,.06);color:#dfe6ee}.verdict.high{background:rgba(120,130,145,.2);color:#b7c2cf}
-#coach{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(92px + var(--sa-b));width:min(460px,calc(100vw - 680px));min-width:300px;z-index:8;background:rgba(24,30,44,.96);border:1.5px solid var(--gold);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:8px;font-size:15px;line-height:1.6;box-shadow:0 0 0 4px rgba(245,196,81,.12),0 10px 30px rgba(0,0,0,.5)}
+#coach{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(78px + var(--sa-b));width:min(460px,calc(100vw - 32px));min-width:300px;z-index:8;background:rgba(24,30,44,.96);border:1.5px solid var(--gold);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:8px;font-size:15px;line-height:1.6;box-shadow:0 0 0 4px rgba(245,196,81,.12),0 10px 30px rgba(0,0,0,.5)}
 #coach button{min-height:36px;padding:4px 12px;font-size:14px}
 .pulse{animation:pls 1.3s ease-in-out infinite!important;border-color:var(--gold)!important}
 @keyframes pls{0%,100%{box-shadow:0 0 0 0 rgba(245,196,81,.85)}60%{box-shadow:0 0 0 8px rgba(245,196,81,0)}}
@@ -199,12 +207,13 @@ canvas.spark{width:72px;height:26px;flex:none}
  #phoneTabs button{flex:1;min-height:48px;padding:2px;font-size:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.15}
  #phoneTabs button small{font-family:var(--num);font-size:11px;color:var(--sub)}
  #phoneTabs button.sel{border-color:var(--gold);color:var(--gold)}
- #endBtn{min-width:110px;font-size:16px;padding:4px 10px}
+ #speed button{min-width:40px;padding:2px 4px;font-size:14px}#speed button[data-s="3"]{display:none}
+ #mineBtn{padding:4px 12px;font-size:15px}
  #toasts{top:calc(64px + var(--sa-t))}
  .toast{font-size:14px}
 }
-@media (max-width:1000px){ #coach{width:min(440px,calc(100vw - 32px));bottom:auto;top:calc(84px + var(--sa-t))} }
-@media (max-width:760px),(pointer:coarse) and (max-height:500px){ #coach{font-size:14px;padding:9px 12px;top:calc(62px + var(--sa-t));min-width:0} }
+
+@media (max-width:760px),(pointer:coarse) and (max-height:500px){ #coach{font-size:14px;padding:9px 12px;top:calc(62px + var(--sa-t));bottom:auto;min-width:0} }
 @media (pointer:coarse) and (max-width:500px){ #coach{top:calc(108px + var(--sa-t))} }
 @media (pointer:coarse) and (max-height:500px){
  #coach{left:auto;right:calc(8px + var(--sa-r));transform:none;width:min(360px,46vw);top:calc(58px + var(--sa-t))}
@@ -274,15 +283,15 @@ canvas.spark{width:72px;height:26px;flex:none}
 
 <div id="help" class="scr hidden"><div class="card">
  <p class="sub">开局可选玩法：<b>纯粹</b>只有房价涨跌和买卖；<b>完整</b>加上贷款、房租、装修、验房、新闻和手续费；<b>自定义</b>挑着开。下面带 ★ 的只在开了对应选项时有。</p>
- <h3>目标</h3><p>攒钱，用<b>现金一次付清</b>买下半山顶的终极豪宅就赢。双人时谁先买下谁赢；120 个月后还没人买下，比总身家（现金 + 房子的市场价）。</p>
- <h3>怎么赚钱</h3><p>每套房都有一个<b>市场价</b>。挂出来卖的房，售价有时比市场价便宜，有时贵：房源里标着 <span class="deal great">超值</span> <span class="deal good">划算</span> 的就是便宜货，买下来。房价每个月会涨涨跌跌；你的房每个月都有人出价，写着「已经赚了，可以卖」就卖掉，钱就变多了。再拿钱去买下一套便宜的，一直这样滚下去。</p>
- <h3>每个月</h3><p>买卖做完后点右下角「下个月」（双人要两人都点）。之后房价变动，冒出新的房源。挂着的房几个月卖不掉会降价，太久就撤下了。</p>
- <h3>难度</h3><p>简单：豪宅便宜，便宜房多，买家出价厚道，适合第一次玩。普通、困难依次变难。</p>
+ <h3>目标</h3><p>攒钱，用<b>现金一次付清</b>买下山顶豪宅就赢。时间一直在走，越快越好；双人时谁先买下谁赢，15 分钟到了还没人买下就比总身家（现金 + 房子的市场价）。</p>
+ <h3>怎么玩</h3><p>城市一直在变：房价时涨时跌，房子随时挂出来卖，开发商在空地上盖新楼，老房子会被拆掉。地图上每套在卖的房子头上都有价签，旁边的小圆圈是还能卖多久。简单难度标着 <span class="deal great">超值</span> <span class="deal good">划算</span> 的就是比市场价便宜；其他难度显示便宜或贵了百分之几。</p>
+ <p>点房子（或它的价签）会弹出小卡片，一下就能买。你自己的房子头上写着<b>现在卖能赚多少</b>，数字一直在跳，看准了点它再点「卖」。刚买的房要过户几秒才能卖；有人抢着要时会亮起「抢手」，出价特别高。</p>
+ <h3>难度</h3><p>简单：豪宅便宜，便宜房多，有「超值 / 可以卖」提示。普通、困难依次变难，提示也更少。</p>
  <h3>★ 估价误差</h3><p>市场价是中介估的，可能差 10% 左右，花一点钱「验房」才知道真价。</p>
  <h3>★ 手续费</h3><p>买入 2%，卖出 3%。</p>
- <h3>★ 按揭</h3><p>首付 30% 就能买，剩下的是贷款，每月付利息（利率随新闻变化），卖房时自动还清。杠杆放大收益也放大亏损：月底现金为负，银行会按 85% 的价格强制卖掉你的房，没房可卖就破产。豪宅只能全款。</p>
+ <h3>★ 按揭</h3><p>首付 30% 就能买，剩下的是贷款，时间一走就付利息（利率随新闻变化），卖房时自动还清。杠杆放大收益也放大亏损：现金一变成负数，银行会按 85% 的价格强制卖掉你的房，没房可卖就破产。豪宅只能全款。</p>
  <h3>★ 其他</h3><p>装修能把破旧房变普通、普通变精装，涨价比花的钱多，但装修期间不能卖、没房租。传闻不一定成真；拆迁传闻成真时，那条街的老房按 1.8 倍价值补偿。</p>
- <h3>操作</h3><p>拖动地图平移，滚轮或双指缩放；回车 = 下个月；Esc = 菜单。</p>
+ <h3>操作</h3><p>拖动地图平移，滚轮或双指缩放；空格 = 暂停（单人），1 / 2 / 3 = 倍速，H = 看我的房，G = 看豪宅，Esc = 菜单。</p>
  <button id="helpClose" class="primary">知道了</button>
 </div></div>
 
@@ -309,30 +318,25 @@ canvas.spark{width:72px;height:26px;flex:none}
 
 <div id="hud" class="hidden">
  <div id="top">
-  <div id="tMonth" class="glass"><b id="tM">第 1 年 1 月</b><small id="tMs">第 1 / 120 月</small></div>
+  <div id="tMonth" class="glass"><b id="tClock" class="num">0:00</b><small id="tMood">楼市平稳</small></div>
   <div id="tMoney" class="glass">
    <div class="stat cash"><small>现金</small><b id="tCash">0</b></div>
    <div class="stat net"><small>总身家</small><b id="tNet">0</b></div>
-   <div class="stat debt"><small>贷款 · 利率</small><b id="tDebt">0</b></div>
   </div>
-  <div id="tGoal" class="glass"><div class="gl"><span id="tGoalL">山顶豪宅</span><b id="tGoalP">0</b></div><div class="bars2" id="tBars"></div></div>
+  <div id="tGoal" class="glass" title="点这里看豪宅 (G)"><div class="gl"><span id="tGoalL">山顶豪宅</span><b id="tGoalP">0</b></div><div class="bars2" id="tBars"></div></div>
   <div id="tBtns"><button id="sndBtn" class="ghost" title="音效 (M)">🔊</button><button id="menuBtn" class="ghost" title="菜单 (Esc)">☰</button></div>
  </div>
- <div id="side" class="glass">
-  <div class="tabs" id="tabs"><button data-t="home" class="main">房子<span class="cnt" id="cHome"></span></button><button data-t="mkt">行情</button><button data-t="news">新闻</button></div>
-  <div class="tabBody" id="tabBody"></div>
- </div>
+ <div id="pausedTag" class="hidden">已暂停</div>
  <div id="detail" class="glass hidden"></div>
  <div id="qc" class="glass hidden"></div>
  <div id="coach" class="hidden"><div id="coachT"></div><div class="row" style="justify-content:flex-end"><button id="coachSkip" class="ghost">跳过引导</button><button id="coachOk" class="primary hidden">知道了</button></div></div>
  <div id="bottom">
-  <div id="news" class="glass"></div>
-  <div id="phoneTabs" class="glass"><button data-t="home" class="main">房子<small id="pcHome"></small></button><button data-t="mkt">行情</button><button data-t="news">新闻</button></div>
-  <button id="endBtn" class="primary">下个月 ▸<small id="endSub">回车</small></button>
+  <button id="mineBtn" class="glass" title="依次看我的房 (H)">我的房 <b id="mineN" class="num">0</b> ›</button>
+  <div style="flex:1"></div>
+  <div id="speed" class="glass"><button data-s="0" title="暂停 (空格)">暂停</button><button data-s="1">1×</button><button data-s="2">2×</button><button data-s="3">3×</button></div>
  </div>
 </div>
 <div id="toasts"></div>
-<div id="monthFx"><div id="monthFxT"></div></div>
 <script>
 
 /* ---- 00_core.js ---- */
@@ -349,7 +353,7 @@ const LS = {
 let G = null;          // shared game state (host authoritative, sent whole to guest)
 let ME = 0;            // my player index
 let NETROLE = null;    // 'solo' | 'host' | 'guest'
-const STATE = { mode: 'title', sel: -1, tab: 'home', detail: false, hover: -1, lastSeq: 0, sheet: false };
+const STATE = { mode: 'title', sel: -1, detail: false, hover: -1, lastSeq: 0, paused: false, speed: 1, myIdx: 0 };
 
 /* seeded rng: state lives in G.rs so the host's sim is reproducible from a save */
 function rnd() { let t = (G.rs = (G.rs + 0x6D2B79F5) | 0); t = Math.imul(t ^ t >>> 15, t | 1); t ^= t + Math.imul(t ^ t >>> 7, t | 61); return ((t ^ t >>> 14) >>> 0) / 4294967296; }
@@ -369,20 +373,26 @@ const udc = v => v > 0.0005 ? 'up' : v < -0.0005 ? 'down' : '';
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
 /* ---------- balance ---------- */
+/* real time: every number below is per second unless noted. MON = seconds in one "month" for rent / interest rates */
+const MON = 15;
 const BAL = {
-  start: 80,            // starting cash
-  maxMonth: 120,        // game ends after this many months
+  start: 80,                 // starting cash (万)
+  limit: 900,                // game ends after this many seconds (15 min), richest wins
   buyFee: 0.02, sellFee: 0.03,
-  down: 0.3,            // mortgage down payment
-  rate0: 0.0045, rateMin: 0.0025, rateMax: 0.0080,   // monthly interest
-  rent: 0.0034, upkeep: 0.0009,                       // per month, fraction of value
-  inspect: [0.3, 0.004],                              // min cost, fraction of ask
-  listTarget: [9, 13],
-  mansion: [900, 1400],                               // mansion base price without / with mortgages
-  forced: 0.85,                                       // forced sale price / value
-  estNoise: 0.075,                                    // agent estimate sd
-  demolish: 1.8,                                      // demolition compensation / value
-  hist: 36
+  down: 0.3,                 // mortgage down payment
+  rate0: 0.0045, rateMin: 0.0025, rateMax: 0.0080,   // interest per MON
+  rent: 0.0034, upkeep: 0.0009,                       // per MON, fraction of value
+  inspect: [0.3, 0.004],     // min cost, fraction of ask
+  listTarget: 11,            // listings on the market at a time
+  listLife: [24, 46],        // seconds a listing stays up
+  cutEvery: 11,              // seconds between possible price cuts
+  hold: 5,                   // seconds after buying before you can resell
+  renoT: [12, 18],           // renovation seconds (破旧→普通, 普通→精装)
+  mansion: [1100, 1500],     // mansion base price without / with mortgages
+  forced: 0.85, estNoise: 0.075, demolish: 1.8,
+  histDt: 2, hist: 60,       // price history: one sample every 2 s, keep 2 minutes
+  buildEvery: [9, 17], buildT: 9, demoEvery: [15, 30], demoT: 2.6, maxProps: 104,
+  aiEvery: 3.5
 };
 const KINDS = {
   bungalow: { n: '老平房', base: 42, w: 1, h: 1, fl: 1, roof: 'hip', col: '#d9b38a', rc: '#9a4a36' },
@@ -406,7 +416,7 @@ const DISTS = [
 ];
 const DI = Object.fromEntries(DISTS.map((d, i) => [d.k, i]));
 const COND = [{ n: '破旧', m: 0.82 }, { n: '普通', m: 1 }, { n: '精装', m: 1.14 }];
-const RENO = [{ c: 0.11, t: 1 }, { c: 0.095, t: 2 }];   // cost as fraction of current value, months
+const RENO = [{ c: 0.11, t: 12 }, { c: 0.095, t: 18 }];   // cost as fraction of current value, months
 const QUAL = q => q < 0.93 ? ['有隐患', 'warn'] : q < 0.98 ? ['一般', ''] : q < 1.04 ? ['良好', ''] : ['很好', 'good'];
 const PCOL = ['#ff9a3c', '#34d1bf', '#b48cff'];
 const REG = { bull: { n: '牛市', d: 0.011 }, calm: { n: '平稳', d: 0.0015 }, bear: { n: '熊市', d: -0.0095 } };
@@ -429,7 +439,7 @@ const DIFF = {
   hard: { n: '困难', man: 1.15, hot: 0.1, offer: 0.95, minGood: 0, d: '豪宅更贵，便宜房更少' }
 };
 const DF = () => DIFF[(G && G.diff) || 'normal'];
-const monthLabel = m => '第 ' + (Math.floor(m / 12) + 1) + ' 年 ' + (m % 12 + 1) + ' 月';
+const clock = t => { t = Math.max(0, Math.floor(t)); return Math.floor(t / 60) + ':' + String(t % 60).padStart(2, '0'); };
 
 /* ---- 10_world.js ---- */
 /* ================= world: map layout, properties, valuation ================= */
@@ -466,7 +476,7 @@ function genWorld() {
       id: props.length, kind, d: b.d, x, y, w: K.w, h: K.h, st: b.st, num: kind === 'mansion' ? 1 : streetNo[b.st], b: blocks.indexOf(b),
       q: kind === 'mansion' ? 1 : clamp(1 + gauss() * 0.06, 0.86, 1.14),
       cond: cond != null ? cond : wpick(b.d === DI.old || b.d === DI.sub ? [{ v: 0, w: 5 }, { v: 1, w: 4 }, { v: 2, w: 1 }] : [{ v: 0, w: 2 }, { v: 1, w: 5 }, { v: 2, w: 3 }]).v,
-      bonus: 0, owner: -1, loan: 0, paid: 0, boughtM: -1, reno: 0, renoTo: 0, list: null, offer: 0, insp: [], hist: [], cool: 0
+      bonus: 0, owner: -1, loan: 0, paid: 0, boughtT: -99, reno: 0, renoTo: 0, list: null, offer: 0, insp: [], hist: [], cool: 0, j: 0, on: 0, hotT: 0, stage: null, bt: 0
     };
     props.push(p); return p;
   };
@@ -488,7 +498,7 @@ function genWorld() {
       else { addProp('techflat', b, x0, y0); addProp('techflat', b, x0 + 2, y0); addDeco('office', x0 + 4, y0, 2, 2, { nm: '云谷大厦' }); addDeco('office', x0, y0 + 2, 2, 2, { nm: '创新中心', lo: 1 }); addProp('techflat', b, x0 + 2, y0 + 2); addProp('techflat', b, x0 + 4, y0 + 2); }
     } else if (dk === 'school') {
       if (xi === 1) { addDeco('school', x0, y0, 2, 4, { nm: '实验小学' }); for (let oy = 0; oy < 4; oy++) for (let ox = 2; ox < 4; ox++) if (!(ox === 3 && oy === 1)) addProp('schoolflat', b, x0 + ox, y0 + oy); }
-      else { addProp('house', b, x0, y0); addProp('house', b, x0 + 2, y0); for (let ox = 0; ox < 4; ox++) if (ox !== 2) addProp('schoolflat', b, x0 + ox, y0 + 3); }
+      else { addProp('house', b, x0, y0); for (let ox = 0; ox < 4; ox++) if (ox !== 2) addProp('schoolflat', b, x0 + ox, y0 + 3); }
     } else if (dk === 'sub') {
       const H = y1 - y0 + 1;
       if (xi === 2) addDeco('factory', x0 + 2, y0, 2, 2, { nm: '化工厂' });
@@ -499,20 +509,22 @@ function genWorld() {
   // the hill
   const hb = { x0: 15, y0: 13, x1: 20, y1: 20, d: DI.hill, st: '半山道' }; blocks.push(hb);
   for (let y = 13; y <= 20; y++) for (let x = 15; x <= 20; x++) tdist[ti(x, y)] = DI.hill;
-  for (const [x, y] of [[15, 13], [19, 13], [15, 15], [19, 15], [15, 18]]) addProp('villa', hb, x, y, wpick([{ v: 1, w: 3 }, { v: 2, w: 2 }]).v);
+  for (const [x, y] of [[15, 13], [19, 13], [15, 15]]) addProp('villa', hb, x, y, wpick([{ v: 1, w: 3 }, { v: 2, w: 2 }]).v);
   const man = addProp('mansion', hb, 17, 17, 1);
   for (let y = 13; y <= 16; y++) tiles[ti(17, y)] = T_PATH;
   // plaza tiles under river plaza / malls
   for (const d of deco) if (d.k === 'plaza' || d.k === 'mall' || d.k === 'office') for (let j = 0; j < d.h; j++) for (let i = 0; i < d.w; i++) tiles[ti(d.x + i, d.y + j)] = T_PLAZA;
-  return { tiles, tdist, blocks, props, deco, mansion: man.id };
+  return { tiles, tdist, blocks, props, deco, mansion: man.id, streetNo };
 }
 
 /* ---------- valuation ---------- */
-function val(p) { const K = KINDS[p.kind], D = G.d[p.d]; return (p.kind === 'mansion' ? G.manBase || K.base : K.base) * D.idx * p.q * COND[p.cond].m * (1 + p.bonus); }
+function val(p) { const K = KINDS[p.kind], D = G.d[p.d]; return (p.kind === 'mansion' ? G.manBase || K.base : K.base) * D.idx * p.q * COND[p.cond].m * (1 + p.bonus) * (1 + (p.j || 0)); }
+const live = p => !p.gone && !p.stage;   // standing house (not under construction / being demolished / removed)
+const canSell = p => !p.reno && G.t - p.boughtT >= BAL.hold;
 const mansionP = () => G.props[G.mansion];
 const mansionPrice = () => mansionP().list ? mansionP().list.ask : val(mansionP());
 function propName(p) { return p.kind === 'mansion' ? '半山顶 · 终极豪宅' : p.st + ' ' + p.num + ' 号'; }
-const ownedBy = i => G.props.filter(p => p.owner === i);
+const ownedBy = i => G.props.filter(p => p.owner === i && !p.gone);
 function equity(i) { let s = 0; for (const p of G.props) if (p.owner === i) s += val(p) - p.loan; return s; }
 function debtOf(i) { let s = 0; for (const p of G.props) if (p.owner === i) s += p.loan; return s; }
 const netWorth = i => G.pl[i].cash + equity(i);
@@ -533,7 +545,7 @@ function dealOf(p, pi) {
 }
 function sellAdvice(p) {
   if (p.reno) return { k: 'wait', n: '装修中', r: 0 };
-  if (p.boughtM === G.month) return { k: 'wait', n: '刚买的，下个月才能卖', r: p.offer * (1 - sellFee()) / p.paid - 1 };
+  if (!canSell(p)) return { k: 'wait', n: '过户中…', r: p.offer * (1 - sellFee()) / p.paid - 1 };
   const r = p.offer * (1 - sellFee()) / p.paid - 1, q = p.offer / val(p);
   if (r >= 0 && q >= 1.06) return { k: 'sell', n: '出价很高，快卖', r };
   if (r >= 0.08) return { k: 'sell', n: '已经赚了，可以卖', r };
@@ -542,216 +554,302 @@ function sellAdvice(p) {
 }
 function estOf(p) { return p.list && OP('insp') ? val(p) * p.list.est : val(p); }   // the agent's (noisy) estimate
 const knows = (p, i) => p.insp.includes(i);
-function heat() { // smoothed market temperature from last 3 months of district moves
-  let s = 0, n = 0; for (const d of G.d) { const h = d.hist, k = h.length; if (k > 3) { s += Math.log(h[k - 1] / h[k - 4]); n++; } }
+function heat() { // market temperature: average district move over the last 30 s
+  let s = 0, n = 0; for (const d of G.d) { const h = d.hist, k = h.length; if (k > 15) { s += Math.log(h[k - 1] / h[k - 16]); n++; } }
   return n ? s / n : 0;
 }
 
 /* ---- 30_sim.js ---- */
-/* ================= simulation (host authoritative) ================= */
+/* ================= real-time simulation (host / solo authoritative) =================
+   step(dt) advances G.t by dt seconds. Prices move continuously, listings pop up and expire,
+   buyer offers wobble, and the city builds and demolishes on its own. */
 function mkPlayer(i, name, kind) {
-  return { i, name, kind, cash: BAL.start, alive: true, ready: false, gone: false, wh: [], flow: null, st: { buys: 0, sells: 0, profit: 0, best: 0, reno: 0, insp: 0, forced: 0 } };
+  return { i, name, kind, cash: BAL.start, alive: true, gone: false, wh: [], aiT: 0, st: { buys: 0, sells: 0, profit: 0, best: 0, reno: 0, insp: 0, forced: 0 } };
 }
 function newGame(seed, names, aiOn, opt, diff) {
   G = {
-    v: 1, rs: seed | 0, seed, month: 0, rate: BAL.rate0, reg: { k: 'calm', left: 6 },
+    v: 2, rs: seed | 0, seed, t: 0, rate: BAL.rate0, reg: { k: 'calm', left: 50 },
     d: DISTS.map(() => ({ idx: 1, base: 1, n: 0, hist: [], pend: [] })),
-    news: [], ev: [], seq: 0, rumors: [], over: null, pl: [], solo: names.length === 1,
-    opt: Object.assign({}, PRESET.full, opt || {}), diff: DIFF[diff] ? diff : 'normal'
+    news: [], ev: [], seq: 0, sv: 0, rumors: [], over: null, pl: [], solo: names.length === 1,
+    opt: Object.assign({}, PRESET.full, opt || {}), diff: DIFF[diff] ? diff : 'normal',
+    histT: 0, listT: 0, cutT: 0, devT: 6, demT: 18, evT: 20, cheapT: 0, fac: 1
   };
   G.manBase = BAL.mansion[G.opt.loan ? 1 : 0] * DIFF[G.diff].man;
   Object.assign(G, genWorld());
   names.forEach((nm, i) => G.pl.push(mkPlayer(i, nm, 'human')));
   if (aiOn) G.pl.push(mkPlayer(G.pl.length, '王老板', 'ai'));
-  for (let k = 0; k < 24; k++) marketStep(true);
+  // warm up: two minutes of market history before the game starts
+  for (let k = 0; k < 120 / 0.5; k++) { marketStep(0.5, true); if (k % 4 === 3) for (const s of G.d) s.hist.push(s.idx); }
   for (const p of G.props) { const D = G.d[p.d], v = val(p); p.hist = D.hist.slice(-BAL.hist).map(x => v * x / D.idx); }
-  refreshListings(true);
+  for (let k = 0; k < BAL.listTarget; k++) { const c = listCandidates(); if (c.length) makeListing(pick(c)); }
+  ensureCheap(true);
+  updateOffers(0);
   for (const pl of G.pl) pl.wh.push(netWorth(pl.i));
-  news('info', '开局', '你带着 ' + fmtM(BAL.start) + ' 来到这座城市。半山顶的终极豪宅挂牌 ' + fmtM(mansionPrice()) + '，全款买下它！');
-  news('info', '行情', '楼市目前' + REG[G.reg.k].n + (OP('loan') ? '，房贷月利率 ' + (G.rate * 100).toFixed(2) + '%' : ''));
+  news('info', '开局', '你带着 ' + fmtM(BAL.start) + ' 来到这座城市。山顶豪宅现价 ' + fmtM(mansionPrice()) + '，攒够现金买下它！');
   return G;
 }
 
 /* ---------- event log (synced; each client plays new ones once) ---------- */
-function ev(k, txt, pi, id, amt) { G.ev.push({ s: ++G.seq, k, txt, pi: pi == null ? -1 : pi, id: id == null ? -1 : id, amt: amt || 0, m: G.month }); if (G.ev.length > 60) G.ev.shift(); }
-function news(tone, tag, txt, d) { G.news.push({ m: G.month, tone, tag, txt, d: d == null ? -1 : d }); if (G.news.length > 80) G.news.shift(); ev('news', txt, -1, -1, tone === 'good' ? 1 : tone === 'bad' ? -1 : 0); }
+function ev(k, txt, pi, id, amt) { G.ev.push({ s: ++G.seq, k, txt, pi: pi == null ? -1 : pi, id: id == null ? -1 : id, amt: amt || 0, t: G.t }); if (G.ev.length > 60) G.ev.shift(); }
+function news(tone, tag, txt, d) { G.news.push({ t: G.t, tone, tag, txt, d: d == null ? -1 : d }); if (G.news.length > 60) G.news.shift(); ev('news', txt, -1, -1, tone === 'good' ? 1 : tone === 'bad' ? -1 : 0); }
+const bumpSV = () => { G.sv++; };
 
-/* ---------- market ---------- */
-function marketStep(pre) {
-  if (--G.reg.left <= 0) {
+/* ---------- market (continuous) ---------- */
+const OU_TH = 0.025;                     // district noise mean reversion (1/s)
+function marketStep(dt, pre) {
+  if ((G.reg.left -= dt) <= 0) {
     const k = G.reg.k;
     const nx = k === 'calm' ? wpick([{ v: 'bull', w: 5 }, { v: 'bear', w: 3 }, { v: 'calm', w: 2 }]).v
       : k === 'bull' ? wpick([{ v: 'calm', w: 6 }, { v: 'bear', w: 3 }, { v: 'bull', w: 1 }]).v
         : wpick([{ v: 'calm', w: 6 }, { v: 'bull', w: 4 }]).v;
-    G.reg = { k: nx, left: nx === 'calm' ? ri(4, 10) : ri(7, 16) };
+    G.reg = { k: nx, left: nx === 'calm' ? rr(40, 90) : rr(60, 140) };
     if (!pre && nx !== k && OP('news')) {
-      if (nx === 'bull') news('good', '楼市', pick(['楼市回暖，看房的人明显多了', '成交量连续放大，楼市进入上涨周期', '开发商纷纷提价，楼市热起来了']));
-      else if (nx === 'bear') news('bad', '楼市', pick(['楼市降温，买家观望情绪浓厚', '成交量大跌，房价开始松动', '中介门店冷清，楼市进入下行周期']));
-      else news('info', '楼市', pick(['楼市趋于平稳，涨跌都不大', '量价平稳，市场进入盘整期']));
+      if (nx === 'bull') news('good', '楼市', pick(['楼市回暖，看房的人明显多了', '成交量放大，楼市进入上涨期', '开发商纷纷提价，楼市热起来了']));
+      else if (nx === 'bear') news('bad', '楼市', pick(['楼市降温，买家都在观望', '成交量大跌，房价开始松动', '中介门店冷清，楼市进入下行期']));
+      else news('info', '楼市', pick(['楼市趋于平稳', '量价平稳，市场在盘整']));
     }
   }
-  const rd = REG[G.reg.k].d - (G.rate - BAL.rate0) * 2.2;
+  const rd = (REG[G.reg.k].d - (G.rate - BAL.rate0) * 2.2) / MON;
+  const sq = Math.sqrt(dt);
   G.d.forEach((s, i) => {
     const D = DISTS[i]; let shock = 0;
-    s.pend = s.pend.filter(e => { if (e.after > 0) { e.after--; return true; } shock += e.k; return --e.m > 0; });
-    s.base *= Math.exp(D.mu + D.beta * rd + shock);
-    s.n = 0.78 * s.n + D.vol * gauss();
+    s.pend = s.pend.filter(e => { if (e.after > 0) { e.after -= dt; return true; } const u = Math.min(dt, e.left); shock += e.k * u; e.left -= u; return e.left > 1e-6; });
+    s.base *= Math.exp((D.mu / MON + D.beta * rd) * dt + shock);
+    const sd = D.vol * 1.6;
+    s.n += -OU_TH * s.n * dt + sd * Math.sqrt(2 * OU_TH) * sq * gauss();
     s.idx = s.base * Math.exp(s.n);
-    s.hist.push(s.idx); if (s.hist.length > 200) s.hist.shift();
   });
 }
-const shockD = (d, total, months, after) => G.d[d].pend.push({ k: total / months, m: months, after: after || 0 });
-const shockAll = (total, months) => G.d.forEach((s, i) => shockD(i, total * (0.6 + 0.4 * DISTS[i].beta), months));
+// a shock of `total` (log) spread over `secs` seconds, optionally starting after `after` seconds
+const shockD = (d, total, secs, after) => G.d[d].pend.push({ k: total / secs, left: secs, after: after || 0 });
+const shockAll = (total, secs) => G.d.forEach((s, i) => shockD(i, total * (0.6 + 0.4 * DISTS[i].beta), secs));
 
+/* per-house wobble (fast, small) and buyer-offer wobble */
+function houseStep(dt) {
+  const sq = Math.sqrt(dt), hot = clamp(heat() * 1.2, -0.045, 0.045), DO = DF().offer;
+  for (const p of G.props) {
+    if (p.gone) continue;
+    p.j += -0.15 * p.j * dt + 0.011 * Math.sqrt(0.3) * sq * gauss();
+    if (p.owner >= 0) {
+      p.on += -0.13 * p.on * dt + 0.042 * Math.sqrt(0.26) * sq * gauss();
+      if (p.hotT > 0) p.hotT = Math.max(0, p.hotT - dt);
+      else if (rnd() < dt / 110) p.hotT = rr(5, 8);
+    }
+  }
+  updateOffers(hot, DO);
+}
+function updateOffers(hot, DO) {
+  if (hot == null) hot = clamp(heat() * 1.2, -0.045, 0.045);
+  if (DO == null) DO = DF().offer;
+  for (const p of G.props) if (p.owner >= 0 && !p.gone) p.offer = val(p) * (p.hotT > 0 ? 1.13 + p.on * 0.3 : clamp(DO + hot + p.on, 0.84, 1.12));
+}
+
+/* ---------- events (only with the news option) ---------- */
 const EVENTS = [
-  { w: 2.6, f() { // metro rumor
+  { w: 2.6, f() {
       if (G.rumors.some(r => r.k === 'metro')) return false;
       const d = pick([DI.sub, DI.sub, DI.old, DI.tech]), line = ri(3, 9);
-      G.rumors.push({ k: 'metro', d, line, at: G.month + ri(2, 4), real: rnd() < 0.62 });
-      shockD(d, 0.03, 2);
-      news('rumor', '传闻', '地铁 ' + line + ' 号线可能延伸到' + DISTS[d].n + '，几个月内会有消息', d);
+      G.rumors.push({ k: 'metro', d, line, at: G.t + rr(25, 45), real: rnd() < 0.62 });
+      shockD(d, 0.03, 12);
+      news('rumor', '传闻', '地铁 ' + line + ' 号线可能延伸到' + DISTS[d].n + '，过一阵会有消息', d);
     } },
-  { w: 2.2, f() { // demolition rumor
+  { w: 2.2, f() {
       if (G.rumors.some(r => r.k === 'demo')) return false;
-      const bs = G.blocks.map((b, i) => i).filter(i => G.blocks[i].d === DI.old && G.props.some(p => p.b === i && (p.kind === 'bungalow' || p.kind === 'walkup')));
+      const bs = G.blocks.map((b, i) => i).filter(i => G.blocks[i].d === DI.old && G.props.some(p => p.b === i && live(p) && (p.kind === 'bungalow' || p.kind === 'walkup')));
       if (!bs.length) return false;
-      const b = pick(bs), real = rnd() < 0.5;
-      G.rumors.push({ k: 'demo', b, at: G.month + ri(2, 5), real });
-      for (const p of G.props) if (p.b === b && (p.kind === 'bungalow' || p.kind === 'walkup')) { p.bonus += 0.08; p.demo = 1; }
+      const b = pick(bs);
+      G.rumors.push({ k: 'demo', b, at: G.t + rr(25, 50), real: rnd() < 0.5 });
+      for (const p of G.props) if (p.b === b && live(p) && (p.kind === 'bungalow' || p.kind === 'walkup')) { p.bonus += 0.08; p.demo = 1; }
       news('rumor', '传闻', G.blocks[b].st + '一带的老房子可能要拆迁，补偿据说很高', DI.old);
     } },
-  { w: 1.3, f() { shockD(DI.school, 0.09, 2); news('good', '学府区', pick(['省重点中学在学府区开分校', '实验小学扩招，学区房一房难求']), DI.school); } },
-  { w: 1.2, f() { shockD(DI.tech, 0.13, 3); news('good', '科技新区', pick(['互联网大厂总部落户科技新区', '新能源车企在科技新区建研发中心，数千人入职']), DI.tech); } },
-  { w: 1.1, f() { shockD(DI.tech, -0.12, 2); news('bad', '科技新区', pick(['科技公司裁员潮，园区写字楼空置率上升', '明星创业公司倒闭，科技新区租房的人少了']), DI.tech); } },
-  { w: 1.2, f() { if (!OP('loan') || G.rate >= BAL.rateMax - 1e-6) return false; G.rate = Math.min(BAL.rateMax, G.rate + 0.0008); shockAll(-0.03, 1); news('bad', '利率', '央行加息，房贷月利率升到 ' + (G.rate * 100).toFixed(2) + '%'); } },
-  { w: 1.2, f() { if (!OP('loan') || G.rate <= BAL.rateMin + 1e-6) return false; G.rate = Math.max(BAL.rateMin, G.rate - 0.0008); shockAll(0.03, 1); news('good', '利率', '央行降息，房贷月利率降到 ' + (G.rate * 100).toFixed(2) + '%'); } },
-  { w: 0.8, f() { shockAll(-0.05, 2); if (G.reg.k === 'calm') G.reg = { k: 'bear', left: ri(6, 12) }; news('bad', '政策', '出台限购令，二套房首付提高，市场观望'); } },
-  { w: 0.8, f() { shockAll(0.05, 2); if (G.reg.k === 'calm') G.reg = { k: 'bull', left: ri(6, 12) }; news('good', '政策', '放开限购，购房补贴落地，买房的人多了'); } },
-  { w: 0.9, f() { shockD(DI.river, 0.08, 2); news('good', '江景区', pick(['滨江步道全线贯通，江景房更抢手了', '江边要建音乐厅，江景区身价看涨']), DI.river); } },
-  { w: 0.6, f() { shockD(DI.river, -0.09, 1); shockD(DI.river, 0.05, 2, 2); news('bad', '江景区', '江水上涨，江景区几个小区地库进水', DI.river); } },
+  { w: 1.3, f() { shockD(DI.school, 0.09, 15); news('good', '学府区', pick(['省重点中学在学府区开分校', '实验小学扩招，学区房一房难求']), DI.school); } },
+  { w: 1.2, f() { shockD(DI.tech, 0.13, 20); news('good', '科技新区', pick(['互联网大厂总部落户科技新区', '新能源车企在科技新区建研发中心']), DI.tech); } },
+  { w: 1.1, f() { shockD(DI.tech, -0.12, 15); news('bad', '科技新区', pick(['科技公司裁员潮，园区写字楼空了一片', '明星创业公司倒闭，科技新区租房的人少了']), DI.tech); } },
+  { w: 1.2, f() { if (!OP('loan') || G.rate >= BAL.rateMax - 1e-6) return false; G.rate = Math.min(BAL.rateMax, G.rate + 0.0008); shockAll(-0.03, 8); news('bad', '利率', '央行加息，房贷利率涨了'); } },
+  { w: 1.2, f() { if (!OP('loan') || G.rate <= BAL.rateMin + 1e-6) return false; G.rate = Math.max(BAL.rateMin, G.rate - 0.0008); shockAll(0.03, 8); news('good', '利率', '央行降息，房贷利率降了'); } },
+  { w: 0.8, f() { shockAll(-0.05, 15); if (G.reg.k === 'calm') G.reg = { k: 'bear', left: rr(50, 90) }; news('bad', '政策', '出台限购令，买房的人一下子少了'); } },
+  { w: 0.8, f() { shockAll(0.05, 15); if (G.reg.k === 'calm') G.reg = { k: 'bull', left: rr(50, 90) }; news('good', '政策', '放开限购、发购房补贴，买房的人多了'); } },
+  { w: 0.9, f() { shockD(DI.river, 0.08, 15); news('good', '江景区', pick(['滨江步道全线贯通，江景房更抢手了', '江边要建音乐厅，江景区身价看涨']), DI.river); } },
+  { w: 0.6, f() { shockD(DI.river, -0.09, 6); shockD(DI.river, 0.05, 15, 15); news('bad', '江景区', '江水上涨，江景区几个小区地库进水', DI.river); } },
   { w: 0.8, f() {
       const fac = G.deco.find(d => d.k === 'factory');
-      if (fac && rnd() < 0.4) { G.deco.splice(G.deco.indexOf(fac), 1); G.deco.push({ k: 'park', x: fac.x, y: fac.y, w: 2, h: 2, nm: '湿地公园' }); shockD(DI.sub, 0.1, 2); news('good', '城郊', '化工厂整体搬迁，原址改建湿地公园', DI.sub); }
-      else if (fac) { shockD(DI.sub, -0.08, 2); news('bad', '城郊', '城郊化工厂被曝偷排废水', DI.sub); }
-      else { shockD(DI.sub, 0.06, 2); news('good', '城郊', '城郊湿地公园成了网红打卡地', DI.sub); }
+      if (fac && rnd() < 0.4) { G.deco.splice(G.deco.indexOf(fac), 1); G.deco.push({ k: 'park', x: fac.x, y: fac.y, w: 2, h: 2, nm: '湿地公园' }); bumpSV(); shockD(DI.sub, 0.1, 15); news('good', '城郊', '化工厂搬走了，原址改建湿地公园', DI.sub); }
+      else if (fac) { shockD(DI.sub, -0.08, 15); news('bad', '城郊', '城郊化工厂被曝偷排废水', DI.sub); }
+      else { shockD(DI.sub, 0.06, 15); news('good', '城郊', '城郊湿地公园成了网红打卡地', DI.sub); }
     } },
-  { w: 0.7, f() { shockD(DI.sub, 0.08, 2); news('good', '城郊', '城郊要建大型购物中心和三甲医院分院', DI.sub); } },
-  { w: 0.7, f() { shockD(DI.old, 0.06, 2); news('good', '老城区', '老城区改造，鼓楼一带变成步行街', DI.old); } },
-  { w: 0.6, f() { shockD(DI.hill, 0.06, 2); news('info', '半山', '外地富豪扎堆半山买别墅，豪宅也跟着涨价', DI.hill); } },
-  { w: 0.5, f() { shockD(DI.hill, -0.05, 2); news('info', '半山', '半山别墅区修路封山半年，看房的人少了', DI.hill); } },
-  { w: 1.6, f() { news('info', '城事', pick(['本月城市新增常住人口三千人', '房产中介开始流行直播带看', '物业费调价听证会召开', '城市马拉松从江边跑到半山脚下', '一家网红奶茶店在老城区排起长队', '统计局：上月二手房成交与前月持平'])); } }
+  { w: 0.7, f() { shockD(DI.sub, 0.08, 15); news('good', '城郊', '城郊要建大型购物中心和医院分院', DI.sub); } },
+  { w: 0.7, f() { shockD(DI.old, 0.06, 15); news('good', '老城区', '老城区改造，鼓楼一带变成步行街', DI.old); } },
+  { w: 0.6, f() { shockD(DI.hill, 0.06, 15); news('info', '半山', '外地富豪扎堆半山买别墅，豪宅也跟着涨价', DI.hill); } },
+  { w: 0.5, f() { shockD(DI.hill, -0.05, 15); news('info', '半山', '半山修路封山，看房的人少了，豪宅也便宜了点', DI.hill); } }
 ];
-function monthEvents() {
-  if (!OP('news')) return;
-  const n = rnd() < 0.25 ? 2 : rnd() < 0.85 ? 1 : 0;
-  for (let k = 0, tries = 0; k < n && tries < 10; tries++) if (wpick(EVENTS).f() !== false) k++;
-}
 function resolveRumors() {
   G.rumors = G.rumors.filter(r => {
-    if (r.at > G.month) return true;
+    if (r.at > G.t) return true;
     if (r.k === 'metro') {
       if (r.real) {
-        shockD(r.d, 0.2, 3); news('good', '地铁', '确定了！地铁 ' + r.line + ' 号线延伸到' + DISTS[r.d].n + '，站点开工', r.d);
-        const b = G.blocks.findIndex(b => b.d === r.d); const free = [];
-        G.blocks.forEach(bb => { if (bb.d !== r.d) return; for (let y = bb.y0; y <= bb.y1; y++) for (let x = bb.x0; x <= bb.x1; x++) if (G.tiles[ti(x, y)] === T_GRASS && !G.props.some(p => x >= p.x && x < p.x + p.w && y >= p.y && y < p.y + p.h) && !G.deco.some(d => x >= d.x && x < d.x + d.w && y >= d.y && y < d.y + d.h)) free.push([x, y]); });
-        if (free.length) { const [x, y] = pick(free); G.deco.push({ k: 'metro', x, y, w: 1, h: 1, nm: r.line + ' 号线' }); }
-      } else { shockD(r.d, -0.04, 1); news('bad', '辟谣', '地铁 ' + r.line + ' 号线不经过' + DISTS[r.d].n + '，之前是谣言', r.d); }
+        shockD(r.d, 0.2, 20); news('good', '地铁', '确定了！地铁 ' + r.line + ' 号线延伸到' + DISTS[r.d].n + '，站点开工', r.d);
+        const free = freeCells(r.d);
+        if (free.length) { const [x, y] = pick(free); G.deco.push({ k: 'metro', x, y, w: 1, h: 1, nm: r.line + ' 号线' }); bumpSV(); }
+      } else { shockD(r.d, -0.04, 6); news('bad', '辟谣', '地铁 ' + r.line + ' 号线不经过' + DISTS[r.d].n + '，之前是谣言', r.d); }
     } else if (r.k === 'demo') {
-      const st = G.blocks[r.b].st;
-      const hit = G.props.filter(p => p.b === r.b && p.demo);
+      const st = G.blocks[r.b].st, hit = G.props.filter(p => p.b === r.b && p.demo && !p.gone);
       for (const p of hit) { p.bonus = Math.max(0, p.bonus - 0.08); p.demo = 0; }
       if (r.real) {
         for (const p of hit) {
+          if (p.stage) continue;
           const v = val(p);
-          if (p.owner >= 0) { const pl = G.pl[p.owner], got = v * BAL.demolish - p.loan, prof = v * BAL.demolish - p.paid; pl.cash += got; pl.st.profit += prof; pl.st.best = Math.max(pl.st.best, prof); ev('demo', pl.name + ' 的 ' + propName(p) + ' 拆迁，拿到补偿 ' + fmtM(v * BAL.demolish), p.owner, p.id, prof); }
-          Object.assign(p, { kind: 'newflat', cond: 2, owner: -1, loan: 0, paid: 0, list: null, insp: [], reno: 0, cool: ri(2, 4), bonus: 0 });
-          p.hist = p.hist.map(x => x * KINDS.newflat.base * COND[2].m / (KINDS.bungalow.base * 0.9));
+          if (p.owner >= 0) { const pl = G.pl[p.owner], prof = v * BAL.demolish - p.paid; pl.cash += v * BAL.demolish - p.loan; pl.st.profit += prof; pl.st.best = Math.max(pl.st.best, prof); ev('demo', pl.name + ' 的 ' + propName(p) + ' 拆迁，拿到补偿 ' + fmtM(v * BAL.demolish), p.owner, p.id, prof); }
+          startDemolish(p);
         }
-        news('good', '拆迁', st + '拆迁方案公布：老房按评估价 ' + BAL.demolish + ' 倍补偿，原地建回迁新楼', DI.old);
+        news('good', '拆迁', st + '拆迁了！老房按 ' + BAL.demolish + ' 倍补偿，原地要盖新楼', DI.old);
       } else news('bad', '辟谣', st + '拆迁传闻落空，附近房价回落', DI.old);
     }
     return false;
   });
 }
 
-/* ---------- listings & offers ---------- */
-function makeListing(p, cheap) {
+/* ---------- listings ---------- */
+const listCandidates = () => G.props.filter(p => live(p) && p.owner === -1 && !p.list && p.cool <= 0 && p.kind !== 'mansion');
+function makeListing(p, cheap, fresh) {
   const r = cheap ? 0 : rnd(), H = DF().hot; let f, tag = '';
-  if (r < H) { f = rr(0.72, 0.88); tag = 'hot'; }
-  else if (r < H + 0.04) { f = rr(0.96, 1.08); tag = 'hot'; }      // 喊急售但不便宜
-  else if (r < 0.27) f = rr(1.14, 1.3);
+  if (fresh) { f = rnd() < 0.35 ? rr(0.84, 0.92) : rr(0.97, 1.08); tag = 'new'; }
+  else if (r < H) { f = rr(0.72, 0.88); tag = 'hot'; }
+  else if (r < H + 0.04) { f = rr(0.96, 1.08); tag = 'hot'; }
+  else if (r < H + 0.14) f = rr(1.14, 1.3);
   else f = clamp(1.04 + gauss() * 0.065, 0.86, 1.2);
-  const v = val(p);
-  p.list = { ask: v * f, f, est: clamp(1 + gauss() * BAL.estNoise, 0.84, 1.16), left: ri(2, 5), age: 0, tag, cut: false, m0: G.month };
+  const life = rr(BAL.listLife[0], BAL.listLife[1]);
+  p.list = { ask: val(p) * f, est: clamp(1 + gauss() * BAL.estNoise, 0.84, 1.16), left: life, life, tag, cut: 0, t0: G.t };
   p.insp = [];
 }
-function refreshListings(init) {
+function ensureCheap(init) {
+  const cheapNow = G.props.filter(p => p.list && p.kind !== 'mansion' && p.list.ask / val(p) <= 0.9).length;
+  if (cheapNow >= DF().minGood) return;
+  // forced bargains come from the cheaper homes, so a beginner can afford one
+  const pool = listCandidates().sort((a, b) => val(a) - val(b)).slice(0, 14);
+  for (let k = cheapNow; k < DF().minGood && pool.length; k++) makeListing(pool.splice(Math.floor(rnd() * pool.length), 1)[0], true);
+}
+function listingStep(dt) {
   for (const p of G.props) {
-    if (p.kind === 'mansion') continue;
-    if (p.cool > 0) p.cool--;
-    if (p.list && !init) {
-      if (p.owner !== -1) { p.list = null; continue; }
-      p.list.age++; p.list.left--;
-      if (p.list.left <= 0) { p.list = null; p.cool = ri(1, 3); continue; }
-      const v = val(p), cut = p.list.age >= 2 && rnd() < 0.45 ? rr(0.93, 0.98) : 1;
-      p.list.f = Math.max(0.62, p.list.f * cut); p.list.ask = v * p.list.f; p.list.cut = cut < 1;
-    }
+    if (p.cool > 0) p.cool -= dt;
+    if (!p.list || p.kind === 'mansion') continue;
+    if (p.owner !== -1 || p.stage) { p.list = null; continue; }
+    if ((p.list.left -= dt) <= 0) { p.list = null; p.cool = rr(8, 20); continue; }
+  }
+  if ((G.cutT -= dt) <= 0) {
+    G.cutT = BAL.cutEvery;
+    for (const p of G.props) if (p.list && p.kind !== 'mansion' && G.t - p.list.t0 > 14 && rnd() < 0.4) { p.list.ask *= rr(0.93, 0.97); p.list.cut = G.t; }
   }
   const cnt = G.props.filter(p => p.list && p.kind !== 'mansion').length;
-  const want = init ? 10 : Math.max(2, ri(BAL.listTarget[0], BAL.listTarget[1]) - cnt);
-  const cand = shuffle(G.props.filter(p => p.owner === -1 && !p.list && !p.cool && p.kind !== 'mansion'));
-  let k = 0;
-  for (; k < want && k < cand.length; k++) makeListing(cand[k]);
-  const cheapNow = () => G.props.filter(p => p.list && p.kind !== 'mansion' && p.list.f <= 0.9).length;
-  const pool = cand.slice(k).sort((a, b) => val(a) - val(b)).slice(0, 14);   // forced bargains come from the cheaper homes, so a beginner can afford one
-  shuffle(pool);
-  for (let j = 0; cheapNow() < DF().minGood && j < pool.length && j < 6; j++) makeListing(pool[j], true);
+  const lam = Math.max(0, BAL.listTarget - cnt) / 9 + 0.03;          // more arrivals when the market is thin
+  if (rnd() < lam * dt) { const c = listCandidates(); if (c.length) makeListing(pick(c)); }
+  if ((G.cheapT -= dt) <= 0) { G.cheapT = 4; ensureCheap(); }
   const m = mansionP();
-  if (m.owner === -1) { const v = val(m); m.list = { ask: v, f: 1, est: 1, left: 99, age: 0, tag: 'goal', cut: false, m0: 0 }; }
+  if (m.owner === -1) { const v = val(m); m.list = { ask: v, est: 1, left: 999, life: 999, tag: 'goal', cut: 0, t0: 0 }; }
 }
-function refreshOffers() {
-  const h = clamp(heat() * 1.4, -0.045, 0.045);
-  for (const p of G.props) if (p.owner >= 0) {
-    const v = val(p);
-    if (rnd() < 0.07) { p.offer = v * rr(1.09, 1.2); p.offerHot = true; }
-    else { p.offer = v * clamp(DF().offer + h + gauss() * 0.042, 0.84, 1.12); p.offerHot = false; }
+
+/* ---------- the city builds and demolishes on its own ---------- */
+const BUILD_KINDS = {
+  old: [['townhouse', 3], ['newflat', 2], ['walkup', 1]], sub: [['townhouse', 3], ['newflat', 1], ['bungalow', 1]],
+  school: [['schoolflat', 3], ['house', 1]], tech: [['techflat', 3], ['newflat', 1]], river: [['riverflat', 3], ['newflat', 1]], hill: [['villa', 1]]
+};
+function occupied() {
+  const u = new Set();
+  for (const o of G.props) if (!o.gone) for (let j = 0; j < o.h; j++) for (let i = 0; i < o.w; i++) u.add(ti(o.x + i, o.y + j));
+  for (const o of G.deco) for (let j = 0; j < o.h; j++) for (let i = 0; i < o.w; i++) u.add(ti(o.x + i, o.y + j));
+  return u;
+}
+function freeCells(d) {
+  const u = occupied(), out = [];
+  for (const b of G.blocks) { if (d != null && b.d !== d) continue; for (let y = b.y0; y <= b.y1; y++) for (let x = b.x0; x <= b.x1; x++) if (G.tiles[ti(x, y)] === T_GRASS && !u.has(ti(x, y))) out.push([x, y]); }
+  return out;
+}
+function buildSites() {
+  const u = occupied(), out = [];
+  G.blocks.forEach((b, bi) => {
+    const dk = DISTS[b.d].k;
+    for (const [kind, w] of BUILD_KINDS[dk]) {
+      const K = KINDS[kind];
+      for (let y = b.y0; y + K.h - 1 <= b.y1; y++) for (let x = b.x0; x + K.w - 1 <= b.x1; x++) {
+        let ok = true;
+        for (let j = 0; j < K.h && ok; j++) for (let i = 0; i < K.w && ok; i++) { const t = ti(x + i, y + j); if (u.has(t) || G.tiles[t] !== T_GRASS) ok = false; }
+        if (ok) out.push({ b: bi, x, y, kind, w: w * (K.w > 1 ? 1.4 : 1) });
+      }
+    }
+  });
+  return out;
+}
+function startBuild() {
+  if (G.props.filter(p => !p.gone).length >= BAL.maxProps) return false;
+  const sites = buildSites(); if (!sites.length) return false;
+  const s = wpick(sites), b = G.blocks[s.b], K = KINDS[s.kind];
+  G.streetNo[b.st] = (G.streetNo[b.st] || 0) + 1;
+  const p = {
+    id: G.props.length, kind: s.kind, d: b.d, x: s.x, y: s.y, w: K.w, h: K.h, st: b.st, num: G.streetNo[b.st], b: s.b,
+    q: clamp(1.02 + gauss() * 0.04, 0.94, 1.12), cond: 2, bonus: 0, owner: -1, loan: 0, paid: 0, boughtT: -99, reno: 0, renoTo: 0,
+    list: null, offer: 0, insp: [], hist: [], cool: 0, j: 0, on: 0, hotT: 0, stage: 'build', bt: 0
+  };
+  const D = G.d[b.d]; p.hist = D.hist.slice(-BAL.hist).map(x => K.base * x * p.q * COND[2].m);
+  G.props.push(p); bumpSV();
+  ev('build', b.st + '开工了一栋' + K.n, -1, p.id);
+  return true;
+}
+function startDemolish(p) {
+  Object.assign(p, { stage: 'demo', bt: 0, owner: -1, loan: 0, paid: 0, list: null, insp: [], reno: 0 });
+  bumpSV(); ev('demolish', propName(p) + ' 被拆了', -1, p.id);
+}
+function cityStep(dt) {
+  for (const p of G.props) {
+    if (!p.stage) continue;
+    p.bt += dt;
+    if (p.stage === 'build' && p.bt >= BAL.buildT) {
+      p.stage = null; G.d[p.d].base *= 1.004;                 // a new building lifts the neighbourhood a little
+      makeListing(p, false, true); bumpSV();
+      ev('built', propName(p) + ' 新楼盘开卖', -1, p.id);
+    } else if (p.stage === 'demo' && p.bt >= BAL.demoT) { p.stage = null; p.gone = true; bumpSV(); }
+  }
+  if ((G.devT -= dt) <= 0) { G.devT = rr(BAL.buildEvery[0], BAL.buildEvery[1]); startBuild(); }
+  if ((G.demT -= dt) <= 0) {
+    G.demT = rr(BAL.demoEvery[0], BAL.demoEvery[1]);
+    const old = G.props.filter(p => live(p) && p.owner === -1 && !p.list && (p.kind === 'bungalow' || (p.kind === 'walkup' && p.cond === 0) || (p.kind === 'townhouse' && p.cond === 0)));
+    if (old.length && G.props.filter(p => !p.gone).length > 70) startDemolish(pick(old));
   }
 }
 
 /* ---------- player actions ---------- */
 function doAct(pi, a, v) {
-  if (!G || G.over) return '本局已结束';
+  if (!G || G.over) return '这局已经结束了';
   const pl = G.pl[pi]; if (!pl || !pl.alive) return '你已出局';
   const p = v && v.id != null ? G.props[v.id] : null;
+  if (p && p.gone) return '这栋楼已经拆了';
   switch (a) {
-    case 'ready': pl.ready = !!v.on; return null;
     case 'inspect': {
       if (!OP('insp')) return '本局没有验房';
-      if (!p || !p.list || p.owner !== -1) return '这套房没在挂牌';
+      if (!p || !p.list || p.owner !== -1) return '这套房没在卖';
       if (knows(p, pi)) return null;
       const c = inspCost(p); if (pl.cash < c) return '现金不够付验房费';
       pl.cash -= c; p.insp.push(pi); pl.st.insp++;
       ev('inspect', '验房完成：' + propName(p), pi, p.id); return null;
     }
     case 'buy': {
-      if (!p || !p.list || p.owner !== -1) return '这套房已经被别人买走了';
+      if (!p || !p.list || p.owner !== -1 || p.stage) return '晚了一步，这套房已经卖掉了';
       const man = p.kind === 'mansion', loan = !!v.loan && !man && OP('loan'), ask = p.list.ask, cost = buyCost(ask, loan);
       if (pl.cash < cost - 1e-9) return man ? '现金不够，豪宅只能全款' : '现金不够';
       pl.cash -= cost; pl.st.buys++;
-      Object.assign(p, { owner: pi, loan: loan ? ask * (1 - BAL.down) : 0, paid: ask * (1 + buyFee()), boughtM: G.month, list: null, offer: val(p) * rr(0.86, 0.94), offerHot: false });
-      if (man) { G.over = { winner: pi, reason: 'mansion', m: G.month }; ev('win', pl.name + ' 全款买下了终极豪宅！', -1, p.id); }
-      else ev('buy', pl.name + ' 买下 ' + propName(p) + '（' + fmtM(ask) + (loan ? '，按揭' : '') + '）', pi, p.id, ask);
-      return null;
+      Object.assign(p, { owner: pi, loan: loan ? ask * (1 - BAL.down) : 0, paid: ask * (1 + buyFee()), boughtT: G.t, list: null, on: -0.06, hotT: 0 });
+      updateOffers();
+      if (man) { G.over = { winner: pi, reason: 'mansion', t: G.t }; ev('win', pl.name + ' 买下了山顶豪宅！', -1, p.id); }
+      else ev('buy', pl.name + ' 买下 ' + propName(p) + '（' + fmtM(ask) + (loan ? '，贷款' : '') + '）', pi, p.id, ask);
+      bumpSV(); return null;
     }
     case 'sell': {
       if (!p || p.owner !== pi) return '这不是你的房';
       if (p.reno) return '装修中，不能卖';
-      if (p.boughtM === G.month) return '刚买的房要办过户，下个月才能卖';
+      if (!canSell(p)) return '刚买的房还在过户，等几秒';
       const got = sellNet(p), prof = p.offer * (1 - sellFee()) - p.paid;
       pl.cash += got; pl.st.sells++; pl.st.profit += prof; pl.st.best = Math.max(pl.st.best, prof);
       ev('sell', pl.name + ' 卖出 ' + propName(p) + '，' + (prof >= 0 ? '赚了 ' : '亏了 ') + fmtM(Math.abs(prof)), pi, p.id, prof);
-      Object.assign(p, { owner: -1, loan: 0, paid: 0, list: null, insp: [], cool: ri(2, 4), offer: 0 });
-      return null;
+      Object.assign(p, { owner: -1, loan: 0, paid: 0, list: null, insp: [], cool: rr(10, 25), offer: 0, hotT: 0 });
+      bumpSV(); return null;
     }
     case 'reno': {
       if (!OP('reno')) return '本局没有装修';
@@ -760,78 +858,96 @@ function doAct(pi, a, v) {
       const R = renoInfo(p); if (!R) return '已经是精装了';
       if (pl.cash < R.cost) return '现金不够付装修费';
       pl.cash -= R.cost; p.reno = R.t; p.renoTo = p.cond + 1; p.paid += R.cost; pl.st.reno++;
-      ev('reno', propName(p) + ' 开始装修（' + R.t + ' 个月）', pi, p.id); return null;
+      ev('reno', propName(p) + ' 开始装修', pi, p.id); bumpSV(); return null;
     }
     case 'repay': {
       if (!p || p.owner !== pi || p.loan <= 0) return '没有贷款';
       if (pl.cash < p.loan) return '现金不够还清贷款';
-      pl.cash -= p.loan; ev('repay', propName(p) + ' 的贷款已还清', pi, p.id); p.loan = 0; return null;
+      pl.cash -= p.loan; ev('repay', propName(p) + ' 的贷款还清了', pi, p.id); p.loan = 0; bumpSV(); return null;
     }
   }
   return '未知操作';
 }
 
-/* ---------- month end ---------- */
+/* ---------- money flow, forced sales, end ---------- */
+function flowStep(dt) {
+  const R = OP('rent'), L = OP('loan');
+  if (!R && !L) return;
+  for (const pl of G.pl) {
+    if (!pl.alive) continue;
+    let f = 0;
+    for (const p of G.props) if (p.owner === pl.i && !p.gone) { const v = val(p); if (R) { if (!p.reno) f += v * BAL.rent; f -= v * BAL.upkeep; } f -= p.loan * G.rate; }
+    pl.cash += f * dt / MON; pl.flow = f;
+  }
+}
 function forcedSales(pl) {
-  if (pl.cash >= 0) return;
+  if (pl.cash >= 0 || !pl.alive) return;
   const mine = ownedBy(pl.i).sort((a, b) => (val(b) * BAL.forced - b.loan) - (val(a) * BAL.forced - a.loan));
   for (const p of mine) {
     if (pl.cash >= 0) break;
     const got = val(p) * BAL.forced - p.loan, prof = val(p) * BAL.forced - p.paid;
-    if (got <= 0 && pl.cash + got < pl.cash) continue;
     pl.cash += got; pl.st.profit += prof; pl.st.forced++;
-    ev('forced', '现金为负，银行强制卖掉了 ' + pl.name + ' 的 ' + propName(p) + '（' + fmtM(val(p) * BAL.forced) + '）', pl.i, p.id, prof);
-    Object.assign(p, { owner: -1, loan: 0, paid: 0, list: null, insp: [], reno: 0, cool: ri(2, 4), offer: 0 });
+    ev('forced', '现金变成负数，银行低价卖掉了 ' + pl.name + ' 的 ' + propName(p), pl.i, p.id, prof);
+    Object.assign(p, { owner: -1, loan: 0, paid: 0, list: null, insp: [], reno: 0, cool: 15, offer: 0 });
+    bumpSV();
   }
   if (pl.cash < 0) {
     pl.alive = false;
-    for (const p of ownedBy(pl.i)) Object.assign(p, { owner: -1, loan: 0, paid: 0, list: null, insp: [], reno: 0, cool: 2 });
-    ev('bankrupt', pl.name + ' 资不抵债，破产出局了', -1);
-    news('bad', '破产', pl.name + ' 资不抵债，破产出局');
+    for (const p of ownedBy(pl.i)) Object.assign(p, { owner: -1, loan: 0, paid: 0, list: null, insp: [], reno: 0, cool: 10 });
+    ev('bankrupt', pl.name + ' 资不抵债，破产出局了', -1); news('bad', '破产', pl.name + ' 资不抵债，破产出局'); bumpSV();
   }
 }
-function endMonth() {
-  if (!G || G.over) return;
-  for (const pl of G.pl) if (pl.kind === 'ai' && pl.alive) { aiTurn(pl); if (G.over) return; }
-  for (const pl of G.pl) { if (!pl.alive) continue; const f = monthlyFlow(pl.i); pl.cash += f.net; pl.flow = f; }
-  for (const p of G.props) if (p.reno > 0 && --p.reno === 0) { p.cond = p.renoTo; if (p.owner >= 0) ev('renodone', propName(p) + ' 装修完成，现在是' + COND[p.cond].n, p.owner, p.id); }
-  G.month++;
-  marketStep(false); monthEvents(); resolveRumors();
-  for (const p of G.props) { p.hist.push(val(p)); if (p.hist.length > BAL.hist) p.hist.shift(); }
-  refreshListings(false); refreshOffers();
-  for (const pl of G.pl) if (pl.alive) forcedSales(pl);
-  for (const pl of G.pl) { pl.wh.push(pl.alive ? netWorth(pl.i) : 0); pl.ready = false; }
+function checkEnd() {
+  if (G.over) return;
   const humans = G.pl.filter(p => p.kind === 'human');
-  if (!humans.some(p => p.alive)) { const ai = G.pl.find(p => p.kind === 'ai' && p.alive); G.over = { winner: ai ? ai.i : -1, reason: 'bankrupt', m: G.month }; }
-  else if (G.month >= BAL.maxMonth) {
+  if (!humans.some(p => p.alive)) { const ai = G.pl.find(p => p.kind === 'ai' && p.alive); G.over = { winner: ai ? ai.i : -1, reason: 'bankrupt', t: G.t }; }
+  else if (G.t >= BAL.limit) {
     let best = -1, bw = -1e18; for (const pl of G.pl) if (pl.alive && netWorth(pl.i) > bw) { bw = netWorth(pl.i); best = pl.i; }
-    G.over = { winner: G.solo && G.pl.length === 1 ? -1 : best, reason: 'time', m: G.month };
+    G.over = { winner: G.solo && G.pl.length === 1 ? -1 : best, reason: 'time', t: G.t };
   }
-  ev('month', monthLabel(G.month), -1);
 }
-const humansReady = () => G.pl.every(p => p.kind !== 'human' || !p.alive || p.gone || p.ready);
+
+/* ---------- one tick ---------- */
+const SIM_DT = 0.1;
+function step(dt) {
+  if (!G || G.over) return;
+  G.t += dt;
+  marketStep(dt, false);
+  houseStep(dt);
+  listingStep(dt);
+  cityStep(dt);
+  for (const p of G.props) if (p.reno > 0 && (p.reno -= dt) <= 0) { p.reno = 0; p.cond = p.renoTo; if (p.owner >= 0) ev('renodone', propName(p) + ' 装修好了，现在是' + COND[p.cond].n, p.owner, p.id); bumpSV(); }
+  if (OP('news')) { if ((G.evT -= dt) <= 0) { G.evT = rr(18, 40); for (let k = 0; k < 4 && wpick(EVENTS).f() === false; k++); } resolveRumors(); }
+  flowStep(dt);
+  for (const pl of G.pl) if (pl.kind === 'ai' && pl.alive && (pl.aiT -= dt) <= 0) { pl.aiT = BAL.aiEvery * rr(0.7, 1.3); aiThink(pl); if (G.over) return; }
+  for (const pl of G.pl) forcedSales(pl);
+  if ((G.histT -= dt) <= 0) {
+    G.histT = BAL.histDt;
+    for (const s of G.d) { s.hist.push(s.idx); if (s.hist.length > 200) s.hist.shift(); }
+    for (const p of G.props) if (!p.gone) { p.hist.push(val(p)); if (p.hist.length > BAL.hist) p.hist.shift(); }
+    for (const pl of G.pl) pl.wh.push(pl.alive ? netWorth(pl.i) : 0);
+  }
+  checkEnd();
+}
 
 /* ---------- AI rival ---------- */
-function aiTurn(pl) {
-  const i = pl.i, man = mansionP(), mp = man.list ? man.list.ask : val(man);
-  const fullMan = mp * (1 + buyFee());
-  if (pl.cash >= fullMan) { doAct(i, 'buy', { id: man.id, loan: false }); return; }
+function aiThink(pl) {
+  const i = pl.i, man = mansionP(), fullMan = mansionPrice() * (1 + buyFee());
+  if (man.owner === -1 && pl.cash >= fullMan) { doAct(i, 'buy', { id: man.id, loan: false }); return; }
   const goal = netWorth(i) > fullMan * 1.06, h = heat();
   for (const p of ownedBy(i)) {
-    if (p.reno) continue;
+    if (!canSell(p)) continue;
     const v = val(p), g = p.offer * (1 - sellFee()) / p.paid;
-    if (goal || p.offer > v * 1.06 || g > 1.2 || (h < -0.025 && g > 1.03) || (p.loan && h < -0.05)) doAct(i, 'sell', { id: p.id });
+    if (goal || p.hotT > 0 || g > 1.16 || (h < -0.025 && g > 1.03) || (p.loan && h < -0.05)) doAct(i, 'sell', { id: p.id });
   }
-  if (goal) { if (pl.cash >= fullMan) doAct(i, 'buy', { id: man.id, loan: false }); return; }
+  if (goal) { if (pl.cash >= fullMan && man.owner === -1) doAct(i, 'buy', { id: man.id, loan: false }); return; }
   if (h < -0.04) return;
-  const cands = G.props.filter(p => p.list && p.owner === -1 && p.kind !== 'mansion')
-    .map(p => ({ p, e: val(p) * (1 + gauss() * 0.045) / p.list.ask })).filter(c => c.e > 1.08).sort((a, b) => b.e - a.e);
-  let n = 0;
-  for (const c of cands) {
-    if (n >= 2) break;
+  const cands = G.props.filter(p => p.list && p.owner === -1 && p.kind !== 'mansion' && !p.stage)
+    .map(p => ({ p, e: val(p) * (1 + gauss() * 0.045) / p.list.ask })).filter(c => c.e > 1.09).sort((a, b) => b.e - a.e);
+  for (const c of cands.slice(0, 1)) {
     const ask = c.p.list.ask, loan = OP('loan') && pl.cash < ask * (1 + buyFee()) * 1.15, cost = buyCost(ask, loan);
     const reserve = (debtOf(i) + (loan ? ask * (1 - BAL.down) : 0)) * G.rate * 5 + 2;
-    if (pl.cash - cost > reserve) { doAct(i, 'buy', { id: c.p.id, loan }); n++; }
+    if (pl.cash - cost > reserve) doAct(i, 'buy', { id: c.p.id, loan });
   }
   if (OP('reno')) for (const p of ownedBy(i)) { const R = renoInfo(p); if (R && !p.reno && p.cond === 0 && pl.cash > R.cost * 3) doAct(i, 'reno', { id: p.id }); }
 }
@@ -842,7 +958,7 @@ const cv = $('cv'), ctx = cv.getContext('2d');
 let VW = 0, VH = 0, DPR = 1;
 const TW = 64, TH = 32, FH = 8.5;
 const CAM = { x: 0, y: N * TH / 2, z: 1, tx: null, ty: null, tz: null };
-const RND = { t: 0, pick: [], cars: [], clouds: [], smoke: [], tags: [], pulse: [], hiD: -1 };
+const RND = { t: 0, pick: [], cars: [], clouds: [], smoke: [], tags: [], pulse: [], hiD: -1, tagHit: [], seen: new Map(), flash: new Map(), prevV: new Map(), ring: -1 };
 const PHONE = matchMedia('(pointer:coarse) and (max-height:500px), (pointer:coarse) and (max-width:500px)');
 function resize() {
   DPR = Math.min(window.devicePixelRatio || 1, 2); VW = innerWidth; VH = innerHeight;
@@ -978,9 +1094,9 @@ function drawGround() {
 
 /* ---------- objects ---------- */
 function decoTrees() { // stable list of trees on free grass
-  if (RND.trees && RND.treesV === G.deco.length + ':' + G.props.length) return RND.trees;
+  if (RND.trees && RND.treesV === G.sv + ':' + G.deco.length) return RND.trees;
   const used = new Set();
-  for (const o of G.props.concat(G.deco)) for (let j = 0; j < o.h; j++) for (let i = 0; i < o.w; i++) used.add((o.x + i) + ',' + (o.y + j));
+  for (const o of G.props.filter(q => !q.gone).concat(G.deco)) for (let j = 0; j < o.h; j++) for (let i = 0; i < o.w; i++) used.add((o.x + i) + ',' + (o.y + j));
   const out = [];
   for (let y = -MARGIN; y < N + MARGIN; y++) for (let x = -MARGIN; x < N + MARGIN; x++) {
     if (tileType(x, y) !== T_GRASS && tileType(x, y) !== -1) continue;
@@ -991,7 +1107,7 @@ function decoTrees() { // stable list of trees on free grass
     const n = inside && d >= 0 ? (h < prob * 0.5 ? 2 : 1) : 1;
     for (let k = 0; k < n; k++) out.push({ x: x + 0.3 + hash2(x + k * 3, y + 11) * 0.45, y: y + 0.3 + hash2(x + 7, y + k * 5) * 0.45, s: 0.8 + hash2(x, y + k) * 0.45, v: hash2(y, x + k), pine: d === DI.hill || (!inside && h < 0.05) });
   }
-  RND.trees = out; RND.treesV = G.deco.length + ':' + G.props.length; return out;
+  RND.trees = out; RND.treesV = G.sv + ':' + G.deco.length; return out;
 }
 function propTopZ(p) { const K = KINDS[p.kind]; if (p.kind === 'mansion') return 4 * FH + 36; return K.fl * FH + 3 + (K.roof === 'hip' ? 10 + p.w * 3 : K.roof === 'gable' ? 9 : 4); }
 
@@ -1162,26 +1278,27 @@ function render(dt) {
   if (RND.hiD >= 0) for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) if (G.tdist[ti(x, y)] === RND.hiD) poly(diamond(x, y, 1, 1, 0), 'rgba(255,230,140,.16)');
   // sortable objects
   const objs = [];
-  for (const p of G.props) objs.push({ k: p.x + p.w / 2 + p.y + p.h / 2, p });
+  for (const p of G.props) if (!p.gone) objs.push({ k: p.x + p.w / 2 + p.y + p.h / 2, p });
   for (const d of G.deco) objs.push({ k: d.x + d.w / 2 + d.y + d.h / 2, d });
   for (const t of decoTrees()) objs.push({ k: t.x + t.y, t });
   for (const c of RND.cars) objs.push({ k: (c.ax ? c.pos + 0.16 + c.line : c.line + c.pos + 0.16), c });
   objs.sort((a, b) => a.k - b.k);
   const sel = STATE.sel, hov = STATE.hover;
   for (const o of objs) {
-    if (o.p) drawProp(o.p, o.p.id === hov, o.p.id === sel);
+    if (o.p) drawAny(o.p, o.p.id === hov, o.p.id === sel);
     else if (o.d) drawDeco(o.d);
     else if (o.t) (o.t.pine ? pine : tree)(o.t.x, o.t.y, o.t.s, o.t.v);
     else drawCar(o.c);
   }
   // pick polygons (front first)
-  RND.pick = G.props.map(p => {
+  RND.pick = G.props.filter(p => !p.gone).map(p => {
     const e = 0.1, zt = propTopZ(p), pts = [];
     for (const [a, b] of [[p.x + e, p.y + e], [p.x + p.w - e, p.y + e], [p.x + p.w - e, p.y + p.h - e], [p.x + e, p.y + p.h - e]]) { pts.push(iso(a, b, 0)); pts.push(iso(a, b, zt)); }
     return { id: p.id, k: p.x + p.y + p.w / 2 + p.h / 2, poly: hull(pts) };
   }).sort((a, b) => b.k - a.k);
   // screen-space overlays
   ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  trackFlashes();
   drawLabels();
   for (const c of RND.clouds) { const cx = c.x * VW, cy = c.y * VH, s = c.s * 80; ctx.fillStyle = 'rgba(255,255,255,.07)'; ctx.beginPath(); ctx.ellipse(cx, cy, s * 2, s * 0.7, 0, 0, 6.283); ctx.fill(); ctx.beginPath(); ctx.ellipse(cx + s * 0.6, cy - s * 0.3, s, s * 0.55, 0, 0, 6.283); ctx.fill(); }
 }
@@ -1194,57 +1311,161 @@ function hull(P) {
   return lo.slice(0, -1).concat(up.slice(0, -1));
 }
 function inPoly(pt, P) { let c = false; for (let i = 0, j = P.length - 1; i < P.length; j = i++) { const a = P[i], b = P[j]; if ((a[1] > pt[1]) !== (b[1] > pt[1]) && pt[0] < (b[0] - a[0]) * (pt[1] - a[1]) / (b[1] - a[1]) + a[0]) c = !c; } return c; }
-function pickAt(sx, sy) { const w = s2w(sx, sy); for (const r of RND.pick) if (inPoly(w, r.poly)) return r.id; return -1; }
+function pickAt(sx, sy) {
+  for (let i = RND.tagHit.length - 1; i >= 0; i--) { const r = RND.tagHit[i]; if (sx >= r.x && sx <= r.x + r.w && sy >= r.y && sy <= r.y + r.h) return r.id; }
+  const w = s2w(sx, sy); for (const r of RND.pick) if (inPoly(w, r.poly)) return r.id; return -1;
+}
 
 function rr2(x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
-function drawLabels() {
-  const z = CAM.z;
-  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-  // district names
-  if (z < 1.25) {
-    const al = clamp((1.25 - z) / 0.5, 0, 1) * 0.9;
-    ctx.font = '700 ' + Math.round(clamp(15 * z + 4, 12, 20)) + 'px "Noto Sans SC",sans-serif';
-    for (let i = 0; i < DISTS.length; i++) {
-      const c = distCenter(i), s = w2s(...iso(c[0], c[1], 0));
-      ctx.fillStyle = 'rgba(10,18,28,' + (al * 0.55).toFixed(2) + ')'; const tw = ctx.measureText(DISTS[i].n).width + 16; rr2(s[0] - tw / 2, s[1] - 12, tw, 24, 12); ctx.fill();
-      ctx.fillStyle = 'rgba(255,255,255,' + al.toFixed(2) + ')'; ctx.fillText(DISTS[i].n, s[0], s[1]);
+/* ---------- construction & demolition ---------- */
+function drawStage(p, sel) {
+  const K = KINDS[p.kind], t = RND.t, e = p.w > 1 ? 0.16 : 0.13, x0 = p.x + e, y0 = p.y + e, x1 = p.x + p.w - e, y1 = p.y + p.h - e;
+  const zt = K.fl * FH + 3;
+  if (p.stage === 'build') {
+    const k = clamp(p.bt / BAL.buildT, 0, 1);
+    poly(diamond(p.x + 0.04, p.y + 0.04, p.w - 0.08, p.h - 0.08, 0), '#bfa47a', 'rgba(120,90,50,.6)', 1);
+    // dirt piles & barrier
+    const c = iso(p.x + 0.2, p.y + p.h - 0.25, 0); ctx.fillStyle = '#a08458'; ctx.beginPath(); ctx.ellipse(c[0], c[1], 7, 3, 0, 0, 6.283); ctx.fill();
+    if (sel) { const a = 0.45 + 0.35 * Math.sin(t * 6); poly(diamond(p.x, p.y, p.w, p.h, 0), null, 'rgba(255,224,120,' + a.toFixed(2) + ')', 3); }
+    const h = Math.max(2, zt * (0.12 + 0.88 * k));
+    box(x0, y0, x1, y1, 0, h, k < 0.75 ? '#b9b4aa' : shade(K.col, -0.05), { edge: 'rgba(0,0,0,.15)' });
+    if (k >= 0.75) windows(x0, y0, x1, y1, 2, Math.max(1, Math.floor(K.fl * (h / zt))), FH, '#56718a', 0, p.id * 7);
+    scaffold(x0, y0, x1, y1, h);
+    // crane
+    const mx = x1 + 0.05, my = y0 + 0.1, top = zt + 22, base = iso(mx, my, 0), tp = iso(mx, my, top);
+    ctx.strokeStyle = '#e0a52a'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(base[0], base[1]); ctx.lineTo(tp[0], tp[1]); ctx.stroke();
+    const ang = Math.sin(t * 0.7 + p.id) * 0.9, jl = 40, jx = tp[0] - Math.cos(ang) * jl, jy = tp[1] + Math.sin(ang) * jl * 0.35;
+    ctx.lineWidth = 1.6; ctx.beginPath(); ctx.moveTo(tp[0] + Math.cos(ang) * 12, tp[1] - Math.sin(ang) * 4); ctx.lineTo(jx, jy); ctx.stroke();
+    ctx.strokeStyle = 'rgba(60,60,60,.7)'; ctx.lineWidth = 0.8; const hy = jy + 14 + Math.sin(t * 2 + p.id) * 4; ctx.beginPath(); ctx.moveTo(jx, jy); ctx.lineTo(jx, hy); ctx.stroke();
+    ctx.fillStyle = '#7a6a55'; ctx.fillRect(jx - 3, hy, 6, 3);
+    // sparks of welding
+    if (Math.sin(t * 9 + p.id * 3) > 0.6) { const w = iso(x0 + (x1 - x0) * hash2(p.id, Math.floor(t * 3)), y1, h * 0.8); ctx.fillStyle = '#fff3b0'; ctx.fillRect(w[0] - 1, w[1] - 1, 2.4, 2.4); }
+  } else if (p.stage === 'demo') {
+    const k = clamp(p.bt / BAL.demoT, 0, 1);
+    poly(diamond(p.x + 0.04, p.y + 0.04, p.w - 0.08, p.h - 0.08, 0), '#b8a585');
+    const h = zt * (1 - k);
+    if (h > 1) { box(x0 + k * 0.05, y0, x1, y1 - k * 0.05, 0, h, shade(K.col, -0.25)); }
+    // rubble
+    const c = iso((x0 + x1) / 2, (y0 + y1) / 2, 0); ctx.fillStyle = '#8f7f68'; ctx.beginPath(); ctx.ellipse(c[0], c[1] + 2, 12 * p.w * k + 2, 5 * p.w * k + 1, 0, 0, 6.283); ctx.fill();
+    // dust
+    for (let i = 0; i < 9; i++) {
+      const ph = (k * 1.4 + i / 9) % 1, ang = i * 2.4 + p.id, r = (8 + ph * 26) * p.w;
+      ctx.fillStyle = 'rgba(205,195,175,' + (0.55 * (1 - ph) * (1 - k * 0.6)).toFixed(2) + ')';
+      ctx.beginPath(); ctx.arc(c[0] + Math.cos(ang) * r, c[1] - ph * 30 - zt * 0.3 + Math.sin(ang) * r * 0.4, 5 + ph * 12, 0, 6.283); ctx.fill();
     }
   }
-  // price tags
+}
+function drawAny(p, hov, sel) { if (p.gone) return; if (p.stage) drawStage(p, sel); else drawProp(p, hov, sel); }
+
+/* ---------- labels: district trends, live price tags ---------- */
+const distTrend = i => { const h = G.d[i].hist, k = h.length; return k > 15 ? h[k - 1] / h[k - 16] - 1 : 0; };
+const easyHints = () => (G.diff || 'normal') === 'easy';
+function dealChip(p) {
+  const d = dealOf(p, ME);
+  if (easyHints()) return d.k === 'great' ? ['超值', '#f5c451', '#1d1406'] : d.k === 'good' ? ['划算', '#2c9b6c', '#fff'] : d.k === 'high' ? ['贵', '#56657a', '#dfe6ee'] : ['正常', '#3a4658', '#cfd8e2'];
+  const r = Math.round((d.r - 1) * 100);
+  return [(r > 0 ? '+' : '') + r + '%', r <= -12 ? '#f5c451' : r <= -4 ? '#2c9b6c' : r <= 6 ? '#3a4658' : '#56657a', r <= -12 ? '#1d1406' : '#fff'];
+}
+function ring(x, y, r, f, col) {
+  ctx.lineWidth = 2.4; ctx.strokeStyle = 'rgba(255,255,255,.18)'; ctx.beginPath(); ctx.arc(x, y, r, 0, 6.283); ctx.stroke();
+  ctx.strokeStyle = col; ctx.beginPath(); ctx.arc(x, y, r, -Math.PI / 2, -Math.PI / 2 + 6.283 * clamp(f, 0, 1)); ctx.stroke();
+}
+function drawLabels() {
+  const z = CAM.z, T = G.t;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
   if (window.__dbg && __dbg.notags) return;
-  const showAll = z >= 0.62;
+  // district names with 30 s trend
+  const al = clamp(1.35 - z * 0.45, 0.45, 0.95);
+  for (let i = 0; i < DISTS.length; i++) {
+    const c = distCenter(i), s = w2s(...iso(c[0], c[1], 0)), tr = distTrend(i);
+    const fs = Math.round(clamp(14 * z + 5, 12, 17));
+    ctx.font = '700 ' + fs + 'px "Noto Sans SC",sans-serif';
+    const nm = DISTS[i].n, nw = ctx.measureText(nm).width;
+    ctx.font = '600 ' + (fs - 1) + 'px Oswald,sans-serif';
+    const tt = (tr >= 0 ? '▲' : '▼') + Math.abs(tr * 100).toFixed(1) + '%', tw = ctx.measureText(tt).width, W = nw + tw + 24;
+    ctx.fillStyle = 'rgba(10,18,28,' + (al * 0.62).toFixed(2) + ')'; rr2(s[0] - W / 2, s[1] - 12, W, 24, 12); ctx.fill();
+    ctx.globalAlpha = al;
+    ctx.font = '700 ' + fs + 'px "Noto Sans SC",sans-serif'; ctx.fillStyle = '#fff'; ctx.textAlign = 'left'; ctx.fillText(nm, s[0] - W / 2 + 10, s[1] + 0.5);
+    ctx.font = '600 ' + (fs - 1) + 'px Oswald,sans-serif'; ctx.fillStyle = Math.abs(tr) < 0.002 ? '#cfd8e2' : tr > 0 ? '#ff8a7e' : '#5fe0a0'; ctx.fillText(tt, s[0] - W / 2 + 14 + nw, s[1] + 1);
+    ctx.globalAlpha = 1; ctx.textAlign = 'center';
+  }
+  if (window.__dbg && __dbg.notags) return;
+  // collect tags
   const tags = [];
   for (const p of G.props) {
-    const listed = p.list && p.owner === -1, mine = p.owner === ME && p.owner >= 0;
-    if (!listed && !mine) continue;
-    if (!showAll && p.id !== STATE.sel && p.kind !== 'mansion' && !(listed && p.list.tag === 'hot')) continue;
-    const s = w2s(...iso(p.x + p.w / 2, p.y + p.h / 2, propTopZ(p) + 8));
-    if (s[0] < -60 || s[0] > VW + 60 || s[1] < -30 || s[1] > VH + 30) continue;
-    tags.push({ p, s, listed, mine });
+    if (p.gone || p.stage === 'demo') continue;
+    const listed = p.list && p.owner === -1, mine = p.owner === ME && p.owner >= 0, building = p.stage === 'build', other = p.owner >= 0 && p.owner !== ME;
+    if (!listed && !mine && !building && !other) continue;
+    const s = w2s(...iso(p.x + p.w / 2, p.y + p.h / 2, propTopZ(p) * (building ? 0.6 : 1) + 8));
+    if (s[0] < -70 || s[0] > VW + 70 || s[1] < -30 || s[1] > VH + 40) continue;
+    tags.push({ p, s, listed, mine, building, other });
   }
   tags.sort((a, b) => a.s[1] - b.s[1]);
-  ctx.font = '600 13px Oswald,"Noto Sans SC",sans-serif';
-  for (const { p, s, listed, mine } of tags) {
-    let txt, bg, fg = '#fff', badge = null;
-    if (p.kind === 'mansion') { txt = '豪宅 ' + fmtM(p.list ? p.list.ask : val(p)); bg = '#c9952a'; fg = '#1d1406'; }
-    else if (listed) { txt = fmtM(p.list.ask); bg = 'rgba(16,24,36,.88)'; const d = dealOf(p, ME); badge = d.k === 'great' ? ['超值', '#f5c451'] : d.k === 'good' ? ['划算', '#2c9b6c'] : d.k === 'high' ? ['贵', '#56657a'] : null; }
-    else { const a = sellAdvice(p), pr = p.offer * (1 - sellFee()) - p.paid; txt = p.reno ? '装修中' : (pr >= 0 ? '赚' : '亏') + fmtM(Math.abs(pr)).replace('¥', ''); bg = p.reno ? 'rgba(120,90,40,.9)' : pr >= 0 ? 'rgba(200,60,50,.92)' : 'rgba(30,140,90,.92)'; if (a.k === 'sell') badge = ['卖', '#f5c451']; }
-    const sel = p.id === STATE.sel, tw = ctx.measureText(txt).width + 14, bw = badge ? (badge[0].length > 1 ? 34 : 22) : 0, W = tw + bw, H = 21;
+  RND.tagHit = [];
+  const NUMF = '600 13px Oswald,"Noto Sans SC",sans-serif', CHF = '700 11px "Noto Sans SC",sans-serif';
+  for (const tg of tags) {
+    const { p, s, listed, mine, building, other } = tg;
+    let txt, bg, fg = '#fff', chip = null, timer = null, glow = false;
+    if (p.kind === 'mansion') { txt = '豪宅 ' + fmtM(mansionPrice()); bg = '#c9952a'; fg = '#1d1406'; }
+    else if (building) { txt = '施工中'; bg = 'rgba(110,96,70,.9)'; timer = [p.bt / BAL.buildT, '#f5c451']; }
+    else if (other) { txt = esc(G.pl[p.owner].name).slice(0, 4); bg = hexA(PCOL[p.owner], 0.85); fg = '#10161f'; if (z < 0.8 && p.id !== STATE.sel) continue; }
+    else if (listed) {
+      txt = fmtM(p.list.ask); bg = 'rgba(16,24,36,.9)'; chip = dealChip(p);
+      timer = [p.list.left / p.list.life, p.list.left < 6 ? '#ff6a5c' : 'rgba(255,255,255,.75)'];
+      if (p.list.tag === 'new' && G.t - p.list.t0 < 6) chip = chip || ['新', '#2a6fb8', '#fff'];
+    } else if (mine) {
+      if (p.reno) { txt = '装修中'; bg = 'rgba(120,90,40,.92)'; timer = [1 - p.reno / (RENO[p.renoTo - 1] || RENO[0]).t, '#f5c451']; }
+      else {
+        const pr = p.offer * (1 - sellFee()) - p.paid;
+        txt = (pr >= 0 ? '赚 ' : '亏 ') + fmtM(Math.abs(pr)).replace('¥', ''); bg = pr >= 0 ? 'rgba(200,60,50,.94)' : 'rgba(30,140,90,.94)';
+        if (!canSell(p)) { timer = [(G.t - p.boughtT) / BAL.hold, '#fff']; txt = '过户 ' + txt; }
+        else if (p.hotT > 0) { chip = ['抢手', '#f5c451', '#1d1406']; glow = true; }
+        else if (easyHints() && sellAdvice(p).k === 'sell') { chip = ['卖!', '#f5c451', '#1d1406']; glow = true; }
+      }
+    }
+    const sel = p.id === STATE.sel;
+    // pop-in when a listing / building first appears
+    const sk = listed ? 'L' + p.id + ':' + (p.list.t0 | 0) : mine ? 'M' + p.id + ':' + (p.boughtT | 0) : 'B' + p.id, k0 = RND.seen.get(sk); if (k0 == null) RND.seen.set(sk, RND.t);
+    const age = RND.t - (k0 == null ? RND.t : k0), sc = age < 0.35 ? 0.4 + 0.6 * Math.sin(age / 0.35 * Math.PI / 2) * 1.08 : 1;
+    ctx.font = NUMF; const tw = ctx.measureText(txt).width + 14;
+    ctx.font = CHF; const cw = chip ? ctx.measureText(chip[0]).width + 10 : 0;
+    const rw = timer ? 18 : 0, W = (tw + cw + rw) * sc, H = 22 * sc;
     const x = s[0] - W / 2, y = s[1] - H - 6 - (sel ? 4 + Math.abs(Math.sin(RND.t * 4)) * 4 : 0);
+    if (glow) { ctx.fillStyle = 'rgba(245,196,81,' + (0.25 + 0.2 * Math.sin(RND.t * 7)).toFixed(2) + ')'; rr2(x - 4, y - 4, W + 8, H + 8, 9); ctx.fill(); }
     ctx.fillStyle = 'rgba(0,0,0,.25)'; rr2(x + 1, y + 2, W, H, 6); ctx.fill();
     ctx.fillStyle = bg; rr2(x, y, W, H, 6); ctx.fill();
-    if (sel) { ctx.strokeStyle = '#ffe07a'; ctx.lineWidth = 2; ctx.stroke(); }
+    if (sel || RND.ring === p.id) { ctx.strokeStyle = '#ffe07a'; ctx.lineWidth = 2; rr2(x, y, W, H, 6); ctx.stroke(); }
     ctx.beginPath(); ctx.moveTo(s[0] - 5, y + H); ctx.lineTo(s[0] + 5, y + H); ctx.lineTo(s[0], y + H + 6); ctx.closePath(); ctx.fillStyle = bg; ctx.fill();
-    if (badge) { ctx.fillStyle = badge[1]; rr2(x + 2, y + 2, bw - 3, H - 4, 4); ctx.fill(); ctx.fillStyle = badge[1] === '#f5c451' ? '#1d1406' : '#fff'; ctx.font = '700 11px "Noto Sans SC",sans-serif'; ctx.fillText(badge[0], x + 2 + (bw - 3) / 2, y + H / 2 + 0.5); ctx.font = '600 13px Oswald,"Noto Sans SC",sans-serif'; }
-    ctx.fillStyle = fg; ctx.fillText(txt, x + bw + tw / 2, y + H / 2 + 1);
+    if (sc < 0.999) { RND.tagHit.push({ id: p.id, x, y, w: W, h: H + 6 }); continue; }
+    let cx = x;
+    if (timer) { ring(cx + 11, y + H / 2, 6, timer[0], timer[1]); cx += rw; }
+    if (chip) { ctx.fillStyle = chip[1]; rr2(cx + 2, y + 3, cw - 2, H - 6, 4); ctx.fill(); ctx.fillStyle = chip[2]; ctx.font = CHF; ctx.fillText(chip[0], cx + 1 + cw / 2, y + H / 2 + 0.5); cx += cw; }
+    ctx.font = NUMF; ctx.fillStyle = fg; ctx.fillText(txt, cx + tw / 2, y + H / 2 + 1);
+    // up / down flash when the number moved in the last half second
+    const fl = RND.flash.get(p.id);
+    if (fl && RND.t - fl.t < 0.6) { ctx.fillStyle = fl.d > 0 ? '#ff7a6e' : '#4fe09a'; ctx.font = '700 11px sans-serif'; ctx.fillText(fl.d > 0 ? '▲' : '▼', x + W + 7, y + H / 2); }
+    RND.tagHit.push({ id: p.id, x: x - 4, y: y - 4, w: W + 8, h: H + 12 });
+    // tutorial pointer
+    if (RND.ring === p.id) { const by = y - 14 - Math.abs(Math.sin(RND.t * 4)) * 8; ctx.fillStyle = '#f5c451'; ctx.beginPath(); ctx.moveTo(s[0] - 9, by - 10); ctx.lineTo(s[0] + 9, by - 10); ctx.lineTo(s[0], by); ctx.closePath(); ctx.fill(); }
   }
   // floating money pops
   RND.pulse = RND.pulse.filter(f => (f.t += 1 / 60) < 1.6);
   ctx.font = '700 17px Oswald,"Noto Sans SC",sans-serif';
   for (const f of RND.pulse) {
     const p = G.props[f.id]; if (!p) continue;
-    const s = w2s(...iso(p.x + p.w / 2, p.y + p.h / 2, propTopZ(p) + 30 + f.t * 30));
+    const s = w2s(...iso(p.x + p.w / 2, p.y + p.h / 2, propTopZ(p) + 34 + f.t * 30));
     ctx.globalAlpha = clamp(1.6 - f.t, 0, 1); ctx.fillStyle = f.col; ctx.strokeStyle = 'rgba(0,0,0,.6)'; ctx.lineWidth = 3; ctx.strokeText(f.txt, s[0], s[1]); ctx.fillText(f.txt, s[0], s[1]); ctx.globalAlpha = 1;
+  }
+}
+// sample tag numbers twice a second to flash ▲ / ▼
+function trackFlashes() {
+  if (!G || (RND.flT = (RND.flT || 0) - 1) > 0) return; RND.flT = 30;
+  for (const p of G.props) {
+    if (p.gone || p.stage) continue;
+    const v = p.owner === ME && p.owner >= 0 ? p.offer : p.list && p.owner === -1 && p.kind !== 'mansion' ? val(p) : p.kind === 'mansion' ? val(p) : null;
+    if (v == null) continue;
+    const pv = RND.prevV.get(p.id); RND.prevV.set(p.id, v);
+    if (pv && Math.abs(v / pv - 1) > 0.004) RND.flash.set(p.id, { d: v > pv ? 1 : -1, t: RND.t });
   }
 }
 const _dc = {};
@@ -1259,8 +1480,8 @@ function popMoney(id, txt, col) { RND.pulse.push({ id, txt, col, t: 0 }); }
 /* ---------- camera ---------- */
 function viewInsets() {
   const narrow = innerWidth <= 760 || PHONE.matches;
-  if (narrow) return { l: 0, r: 0, t: 60, b: 70 };
-  return { l: $('side') && !$('hud').classList.contains('hidden') ? 320 : 0, r: STATE.sel >= 0 && STATE.detail ? 350 : 0, t: 80, b: 84 };
+  if (narrow) return { l: 0, r: 0, t: 70, b: 70 };
+  return { l: 0, r: STATE.sel >= 0 && STATE.detail ? 350 : 0, t: 76, b: 70 };
 }
 function focusTile(x, y, zoom) {
   const ins = viewInsets(), [ix, iy] = iso(x, y, 0), z = zoom || CAM.z;
@@ -1382,14 +1603,15 @@ addEventListener('keydown', e => {
   audioInit();
   const k = e.key.toLowerCase(); KEYS[k] = true;
   if (STATE.mode !== 'play') { if (k === 'escape') { if (!$('help').classList.contains('hidden')) closeHelp(); } return; }
-  if (k === 'escape') { if (!$('confirm').classList.contains('hidden')) closeConfirm(); else if (!$('menuScr').classList.contains('hidden')) closeMenu(); else if (!$('help').classList.contains('hidden')) closeHelp(); else if (STATE.detail) { STATE.detail = false; renderUI(); } else if (STATE.sel >= 0) selectProp(-1); else openMenu(); e.preventDefault(); return; }
+  if (k === 'escape') { if (!$('confirm').classList.contains('hidden')) closeConfirm(); else if (!$('menuScr').classList.contains('hidden')) closeMenu(); else if (!$('help').classList.contains('hidden')) closeHelp(); else if (STATE.detail) { STATE.detail = false; renderHUD(true); } else if (STATE.sel >= 0) selectProp(-1); else openMenu(); e.preventDefault(); return; }
   if (!$('menuScr').classList.contains('hidden') || !$('confirm').classList.contains('hidden') || !$('help').classList.contains('hidden')) return;
-  if (k === 'enter') { e.preventDefault(); endTurnClick(); }
+  if (k === ' ') { e.preventDefault(); setSpeed(0); }
   else if (k === 'm') setSound(!AU.on);
   else if (k === '=' || k === '+') zoomAt(VW / 2, VH / 2, CAM.z * 1.2);
   else if (k === '-' || k === '_') zoomAt(VW / 2, VH / 2, CAM.z / 1.2);
   else if (k === 'f') { fitCam(); }
-  else if (k === '1') setTab('home'); else if (k === '2') setTab('mkt'); else if (k === '3') setTab('news');
+  else if (k === '1') setSpeed(1); else if (k === '2') setSpeed(2); else if (k === '3') setSpeed(3);
+  else if (k === 'h') $('mineBtn').click(); else if (k === 'g') selectProp(G.mansion, true);
 });
 addEventListener('keyup', e => { KEYS[e.key.toLowerCase()] = false; });
 function keyPan(dt) {
@@ -1410,6 +1632,8 @@ const NET = { peer: null, code: '', ctl: null, gctl: null, guestName: '', hostNa
 function loadPeer() { return new Promise((res, rej) => { if (window.Peer) return res(); let i = 0; const next = () => { if (i >= PEER_SRC.length) return rej(new Error('load')); const sc = document.createElement('script'); sc.src = PEER_SRC[i++]; sc.onload = () => window.Peer ? res() : next(); sc.onerror = next; document.head.appendChild(sc); }; next(); }); }
 const linkUp = () => NETROLE === 'host' ? !!(NET.gctl && NET.gctl.open) : NETROLE === 'guest' ? !!(NET.ctl && NET.ctl.open) : false;
 const roundJSON = o => JSON.stringify(o, (k, v) => typeof v === 'number' && !Number.isInteger(v) ? +v.toPrecision(6) : v);
+// state updates leave out price history (the guest records its own) to keep messages small
+const leanJSON = o => JSON.stringify(o, (k, v) => k === 'hist' || k === 'wh' ? undefined : typeof v === 'number' && !Number.isInteger(v) ? +v.toPrecision(5) : v);
 let chunkId = 0;
 function sendRaw(c, o) {
   try {
@@ -1464,7 +1688,7 @@ function hostRecv(m) {
   switch (m.t) {
     case 'hello':
       NET.guestName = (m.name || '玩家二').slice(0, 8);
-      if (STATE.mode === 'play' && G && G.pl[1] && G.pl[1].gone) { G.pl[1].gone = false; sendRaw(NET.gctl, { t: 'start', G, me: 1 }); toast(NET.guestName + ' 重新连上了', 'gold'); renderUI(); return; }
+      if (STATE.mode === 'play' && G && G.pl[1] && G.pl[1].gone) { G.pl[1].gone = false; sendRaw(NET.gctl, { t: 'start', G, me: 1 }); toast(NET.guestName + ' 重新连上了', 'gold'); renderHUD(true); return; }
       NET.ready = false; sendLobby(); lobbyUI(); sfx('ready'); return;
     case 'bye': guestGone(); return;
     case 'lready': NET.ready = !!m.v; sendLobby(); lobbyUI(); return;
@@ -1473,14 +1697,14 @@ function hostRecv(m) {
       if (!G || STATE.mode !== 'play') return;
       const err = doAct(1, m.a, m.v);
       if (err) { sendRaw(NET.gctl, { t: 'err', msg: err }); return; }
-      afterAct();
+      onState(); syncNow();
       return;
     }
   }
 }
 function guestGone() {
   NET.gctl = null; NET.guestName = ''; NET.ready = false;
-  if (STATE.mode === 'play' && G && G.pl[1]) { G.pl[1].gone = true; toast('对方断开了连接，你可以继续玩（对方能用同一个房间码重新加入）', 'bad'); maybeAdvance(); renderUI(); }
+  if (STATE.mode === 'play' && G && G.pl[1]) { G.pl[1].gone = true; toast('对方断开了连接，你可以继续玩（对方能用同一个房间码重新加入）', 'bad'); renderHUD(true); }
   if (STATE.mode === 'lobby') lobbyUI();
 }
 function sendLobby() { sendRaw(NET.gctl, { t: 'lobby', ready: NET.ready, host: SET.name || '房主', code: NET.code, ai: NET.ai, opt: NET.opt, preset: NET.preset, diff: NET.diff }); }
@@ -1491,11 +1715,26 @@ function hostStart() {
   sendRaw(NET.gctl, { t: 'start', G, me: 1 });
   enterGame(0);
 }
-function sync() { if (NETROLE === 'host') sendRaw(NET.gctl, { t: 'st', G }); }
+/* host → guest: whole state when something structural happens (buy/sell/build/news), compact numbers 5 times a second */
+const SYNC = { sv: -1, seq: -1, fullT: 0, tickT: 0 };
+function syncNow() { if (NETROLE === 'host' && NET.gctl && NET.gctl.open) { sendRaw(NET.gctl, leanJSON({ t: 'st', G, wh: G.over ? G.pl.map(p => p.wh) : null })); SYNC.sv = G.sv; SYNC.seq = G.seq; SYNC.fullT = 3; } }
+function packTick() {
+  return { t: 'tk', T: G.t, rate: G.rate, n: G.props.length, d: G.d.map(s => s.idx), c: G.pl.map(p => p.cash),
+    p: G.props.map(p => p.gone ? 0 : [p.j, p.offer, p.hotT, p.list ? p.list.ask : -1, p.list ? p.list.left : 0, p.reno, p.bt]) };
+}
+function applyTick(m) {
+  if (!G || m.n !== G.props.length) return;
+  G.t = m.T; G.rate = m.rate; m.d.forEach((v, i) => { G.d[i].idx = v; }); m.c.forEach((v, i) => { if (G.pl[i]) G.pl[i].cash = v; });
+  m.p.forEach((a, i) => { if (!a) return; const p = G.props[i]; [p.j, p.offer, p.hotT] = a; if (p.list && a[3] >= 0) { p.list.ask = a[3]; p.list.left = a[4]; } p.reno = a[5]; p.bt = a[6]; });
+}
 function hostNetTick(dt) {
   if (!NET.gctl || !NET.gctl.open) return;
   if (performance.now() - NET.seen > 15000) { try { NET.gctl.close(); } catch (e) { } guestGone(); return; }
   if ((NET.pingT -= dt) <= 0) { NET.pingT = 3; sendRaw(NET.gctl, { t: 'ping' }); }
+  if (STATE.mode !== 'play' && STATE.mode !== 'end') return;
+  SYNC.fullT -= dt; SYNC.tickT -= dt;
+  if (G.sv !== SYNC.sv || G.seq !== SYNC.seq || SYNC.fullT <= 0 || G.over) { if (SYNC.fullT < 2.75 || SYNC.fullT <= 0) syncNow(); }
+  else if (SYNC.tickT <= 0) { SYNC.tickT = 0.2; sendRaw(NET.gctl, packTick()); }
 }
 
 /* ---------- guest ---------- */
@@ -1527,20 +1766,36 @@ function guestRecv(m) {
     case 'ping': sendRaw(NET.ctl, { t: 'ping' }); return;
     case 'lobby': Object.assign(NET, { ready: m.ready, hostName: m.host, ai: m.ai, opt: m.opt, preset: m.preset, diff: m.diff }); lobbyUI(); return;
     case 'start': G = m.G; STATE.lastSeq = G.seq; enterGame(m.me); return;
-    case 'st': if (G && (STATE.mode === 'play' || STATE.mode === 'end')) { const sel = STATE.sel; G = m.G; STATE.sel = sel; onState(); } return;
+    case 'st': if (G && (STATE.mode === 'play' || STATE.mode === 'end')) {
+      const old = G; G = m.G;
+      G.d.forEach((s, i) => { s.hist = old.d[i] ? old.d[i].hist : []; });
+      G.props.forEach(p => { const o = old.props[p.id]; p.hist = o && o.hist ? o.hist : []; });
+      G.pl.forEach((pl, i) => { pl.wh = m.wh ? m.wh[i] : old.pl[i] ? old.pl[i].wh : []; });
+      onState();
+    } return;
+    case 'tk': if (STATE.mode === 'play') applyTick(m); return;
     case 'err': toast(m.msg, 'bad'); sfx('err'); return;
     case 'toLobby': return;
   }
 }
+let gHistT = 0;
 function guestNetTick(dt) {
   if (!NET.ctl || !NET.ctl.open) return;
+  if (G && STATE.mode === 'play' && (gHistT -= dt) <= 0) {
+    gHistT = BAL.histDt;
+    for (const s of G.d) { s.hist.push(s.idx); if (s.hist.length > 200) s.hist.shift(); }
+    for (const p of G.props) if (!p.gone) { (p.hist = p.hist || []).push(val(p)); if (p.hist.length > BAL.hist) p.hist.shift(); }
+    for (const pl of G.pl) { (pl.wh = pl.wh || []).push(pl.alive ? netWorth(pl.i) : 0); }
+  }
   if (performance.now() - NET.seen > 15000) hostGone();
 }
 
 /* ---- 80_ui.js ---- */
 /* ================= UI (DOM) ================= */
+const SET0 = LS.get('set', {}); if (SET0.v !== 2) LS.del('save');
 const SET = Object.assign({ name: '', ai: 0, preset: 'pure', diff: 'easy', opt: Object.assign({}, PRESET.pure) }, LS.get('set', {}));
-const saveSet = () => LS.set('set', SET);
+const saveSet = () => { SET.v = 2; LS.set('set', SET); };
+if (SET0.v !== 2) saveSet();   // old turn-based saves were dropped above; mark settings as current
 const HUB = /\/housemogul\/(index\.html)?$/.test(location.pathname) && !inArtifact();
 const SCREENS = ['title', 'lobby', 'help', 'menuScr', 'endScr', 'confirm'];
 function showScreen(id) { for (const s of SCREENS) $(s).classList.toggle('hidden', s !== id); }
@@ -1568,9 +1823,9 @@ function titleUI() {
   [...$('diffSeg').children].forEach(b => b.classList.toggle('sel', b.dataset.d === SET.diff)); $('diffDesc').textContent = DIFF[SET.diff].d;
   const sv = LS.get('save', null);
   $('contBtn').classList.toggle('hidden', !sv);
-  if (sv) $('contBtn').textContent = '继续（' + monthLabel(sv.month) + '）';
+  if (sv) $('contBtn').textContent = '继续（' + clock(sv.t || 0) + '）';
   const b = LS.get(bestKey(), null);
-  $('bestTxt').textContent = b ? '这个玩法的最快纪录：' + b + ' 个月买下豪宅' : '';
+  $('bestTxt').textContent = b && b > 30 ? '这个玩法的最快纪录：' + clock(b) + ' 买下豪宅' : '';
   $('hubBtn').classList.toggle('hidden', !HUB);
   if (inArtifact()) { $('hostBtn').disabled = $('joinBtn').disabled = true; $('codeIn').disabled = true; titleStatus('这个版本只能单人游玩，联机请到游戏厅网页版'); }
 }
@@ -1580,7 +1835,7 @@ $('diffSeg').addEventListener('click', e => { const b = e.target.closest('button
 $('modeSeg').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; SET.preset = b.dataset.m; saveSet(); sfx('click'); titleUI(); });
 $('optBox').addEventListener('click', e => { const b = e.target.closest('button'); if (!b || SET.preset !== 'custom') return; SET.opt[b.dataset.k] = SET.opt[b.dataset.k] ? 0 : 1; saveSet(); sfx('click'); titleUI(); });
 $('newBtn').onclick = () => { audioInit(); sfx('click'); netLeave(); NETROLE = 'solo'; newGame((Math.random() * 1e9) | 0, [SET.name || '我'], SET.ai, optOf(SET.preset), SET.diff); G.preset = SET.preset; G.bestKey = bestKey(); enterGame(0); saveGame(); };
-$('contBtn').onclick = () => { audioInit(); const sv = LS.get('save', null); if (!sv) return; netLeave(); NETROLE = 'solo'; G = sv; STATE.lastSeq = G.seq; enterGame(0); };
+$('contBtn').onclick = () => { audioInit(); const sv = LS.get('save', null); if (!sv || sv.v !== 2) { LS.del('save'); titleUI(); return; } netLeave(); NETROLE = 'solo'; G = sv; STATE.lastSeq = G.seq; enterGame(0); };
 $('hostBtn').onclick = () => { audioInit(); sfx('click'); NET.ai = SET.ai; NET.diff = SET.diff; NET.preset = SET.preset; NET.opt = optOf(SET.preset); netHost(); };
 $('joinBtn').onclick = () => { audioInit(); sfx('click'); netJoin($('codeIn').value); };
 $('helpBtn').onclick = () => openHelp();
@@ -1614,19 +1869,25 @@ $('lLeave').onclick = () => { netLeave(); toTitle(); };
 
 /* ---------- screens ---------- */
 function toTitle() {
-  STATE.mode = 'title'; STATE.sel = -1; RND.hiD = -1;
+  STATE.mode = 'title'; STATE.sel = -1; STATE.detail = false; RND.hiD = -1; RND.ring = -1;
   $('hud').classList.add('hidden'); showScreen('title'); titleUI();
-  if (!G) newGame(12345, ['我'], 0, PRESET.full); // backdrop city
+  if (!G || G.over || NETROLE !== 'backdrop') { newGame(12345, ['我'], 0, PRESET.pure, 'normal'); NETROLE = 'backdrop'; }
   fitCam(); CAM.z *= 1.15;
 }
 function enterGame(me) {
-  ME = me; STATE.mode = 'play'; STATE.sel = -1; STATE.lastSeq = G.seq; RND.hiD = -1; RND.trees = null; for (const k in _dc) delete _dc[k];
+  ME = me; STATE.mode = 'play'; STATE.sel = -1; STATE.detail = false; STATE.lastSeq = G.seq; STATE.paused = false; STATE.speed = 1; STATE.myIdx = 0;
+  RND.hiD = -1; RND.ring = -1; RND.trees = null; RND.seen.clear(); RND.flash.clear(); RND.prevV.clear(); for (const k in _dc) delete _dc[k];
   showScreen(null); $('hud').classList.remove('hidden');
-  STATE.tab = 'home'; STATE.detail = false; $('side').classList.toggle('open', innerWidth <= 760 || PHONE.matches);
-  fitCam(); TUT.step = -1; TUT.m = 0; tutStart(false); renderUI(); sfx('month');
+  fitCam(); if (innerWidth <= 760 || PHONE.matches) { CAM.z = clamp(CAM.z * 1.55, 0.5, 1); CAM.x = -40; CAM.y = 330; }
+  TUT.step = -1; tutStart(false); renderHUD(true); sfx('month');
   if (G.over) showEnd();
 }
-function openMenu() { $('menuScr').classList.remove('hidden'); $('mHub').classList.toggle('hidden', !HUB); $('mStatus').textContent = NETROLE === 'solo' ? '单人游戏每个月自动存档' : ''; delete $('mTitle').dataset.arm; $('mTitle').textContent = '返回标题'; delete $('mHub').dataset.arm; $('mHub').textContent = '返回游戏厅'; }
+function openMenu() {
+  $('menuScr').classList.remove('hidden'); $('mHub').classList.toggle('hidden', !HUB);
+  $('mStatus').textContent = NETROLE === 'solo' ? '单人游戏会自动存档；菜单打开时时间暂停' : '联机时时间不会暂停';
+  delete $('mTitle').dataset.arm; $('mTitle').textContent = '返回标题'; delete $('mHub').dataset.arm; $('mHub').textContent = '返回游戏厅';
+}
+const menuOpen = () => !$('menuScr').classList.contains('hidden') || !$('help').classList.contains('hidden') || !$('confirm').classList.contains('hidden');
 function closeMenu() { $('menuScr').classList.add('hidden'); }
 function openHelp() { $('help').classList.remove('hidden'); }
 function closeHelp() { $('help').classList.add('hidden'); }
@@ -1635,7 +1896,7 @@ function askConfirm(html, yes, fn) { $('cTxt').innerHTML = html; $('cYes').textC
 function closeConfirm() { $('confirm').classList.add('hidden'); confirmFn = null; }
 $('cNo').onclick = closeConfirm; $('cYes').onclick = () => { const f = confirmFn; closeConfirm(); f && f(); };
 $('menuBtn').onclick = () => { sfx('click'); openMenu(); };
-$('mTut').onclick = () => { closeMenu(); if (NETROLE !== 'solo') { toast('新手引导只在单人游戏里有', ''); return; } TUT.m = 0; tutStart(true); renderUI(); };
+$('mTut').onclick = () => { closeMenu(); if (NETROLE !== 'solo') { toast('新手引导只在单人游戏里有', ''); return; } tutStart(true); };
 $('coachSkip').onclick = () => { tutEnd(); toast('可以在菜单里重看新手引导', ''); };
 $('coachOk').onclick = () => tutEnd();
 $('mResume').onclick = closeMenu; $('mHelp').onclick = openHelp; $('helpClose').onclick = closeHelp;
@@ -1652,6 +1913,15 @@ $('eAgain').onclick = () => {
 $('eTitleBtn').onclick = () => { netLeave(); toTitle(); };
 function saveGame() { if (NETROLE === 'solo' && G) { if (G.over) LS.del('save'); else LS.set('save', G); } }
 
+/* ---------- time controls (solo only) ---------- */
+const simRuns = () => STATE.mode === 'play' && G && !G.over && (NETROLE === 'solo' || NETROLE === 'host') && !(NETROLE === 'solo' && (STATE.paused || menuOpen() || TUT.pause));
+function setSpeed(s) {
+  if (NETROLE !== 'solo') return;
+  if (s === 0) STATE.paused = !STATE.paused; else { STATE.paused = false; STATE.speed = s; }
+  sfx('click'); renderHUD(true);
+}
+$('speed').addEventListener('click', e => { const b = e.target.closest('button'); if (b) setSpeed(+b.dataset.s); });
+
 /* ---------- actions ---------- */
 function act(a, v) {
   audioInit();
@@ -1660,28 +1930,18 @@ function act(a, v) {
   if (err) { toast(err, 'bad'); sfx('err'); return; }
   afterAct();
 }
-function afterAct() { maybeAdvance(); onState(); sync(); saveGame(); }
-function maybeAdvance() {
-  if (NETROLE === 'guest' || !G || G.over) return;
-  if (humansReady()) endMonth();
-}
-function endTurnClick() {
-  if (!G || G.over || STATE.mode !== 'play') return;
-  const me = G.pl[ME]; if (!me.alive) return;
-  sfx('click');
-  act('ready', { on: !me.ready });
-}
-$('endBtn').onclick = endTurnClick;
-function onState() { processEvents(); renderUI(); if (G.over && STATE.mode === 'play') setTimeout(showEnd, 900); }
+function afterAct() { onState(); syncNow(); }
+function onState() { processEvents(); renderHUD(true); if (G.over && STATE.mode === 'play') setTimeout(showEnd, 900); }
 
 function processEvents() {
+  if (STATE.lastSeq > G.seq) STATE.lastSeq = 0;
   const evs = G.ev.filter(e => e.s > STATE.lastSeq); STATE.lastSeq = G.seq;
-  let month = false;
+  if (STATE.mode !== 'play') return;
   for (const e of evs) {
     const mine = e.pi === ME, other = e.pi >= 0 && e.pi !== ME;
     switch (e.k) {
-      case 'buy': if (mine) { sfx('buy'); popMoney(e.id, '-' + fmtM(e.amt), '#ffd27a'); } else { toast(e.txt, ''); popMoney(e.id, '已售出', '#ffffff'); } break;
-      case 'sell': if (mine) { sfx(e.amt >= 0 ? 'sell' : 'loss', e.amt > 50); popMoney(e.id, (e.amt >= 0 ? '+' : '') + fmtM(e.amt), e.amt >= 0 ? '#ff7a6e' : '#4fe09a'); toast(e.txt, e.amt >= 0 ? 'good' : 'bad'); } else if (other) toast(e.txt, ''); break;
+      case 'buy': if (mine) { sfx('buy'); popMoney(e.id, '-' + fmtM(e.amt), '#ffd27a'); } else { toast(e.txt, ''); popMoney(e.id, '被抢走了', '#ffffff'); if (STATE.sel === e.id) sfx('err'); } break;
+      case 'sell': if (mine) { sfx(e.amt >= 0 ? 'sell' : 'loss', e.amt > 50); popMoney(e.id, (e.amt >= 0 ? '+' : '') + fmtM(e.amt), e.amt >= 0 ? '#ff7a6e' : '#4fe09a'); } else if (other) toast(e.txt, ''); break;
       case 'demo': if (mine) { sfx('sell', true); popMoney(e.id, '拆迁 +' + fmtM(e.amt), '#ffd27a'); } toast(e.txt, 'gold'); break;
       case 'forced': if (mine) { sfx('bad'); toast(e.txt, 'bad'); } else toast(e.txt, ''); break;
       case 'reno': if (mine) sfx('reno'); break;
@@ -1689,49 +1949,121 @@ function processEvents() {
       case 'inspect': if (mine) sfx('insp'); break;
       case 'repay': if (mine) { sfx('good'); toast(e.txt, ''); } break;
       case 'bankrupt': toast(e.txt, 'bad'); sfx('bad'); break;
-      case 'win': break;
-      case 'month': month = true; break;
+      case 'build': if (onScreen(e.id)) sfx('build'); break;
+      case 'demolish': if (onScreen(e.id)) sfx('demolish'); break;
+      case 'built': popMoney(e.id, '新楼盘', '#ffe9a8'); break;
+      case 'news': toast(e.txt, e.amt > 0 ? 'good' : e.amt < 0 ? 'bad' : ''); sfx('news'); break;
     }
   }
-  if (month) {
-    sfx('month'); const fx = $('monthFx'); $('monthFxT').textContent = monthLabel(G.month); fx.classList.remove('show'); void fx.offsetWidth; fx.classList.add('show');
-    const nws = evs.filter(e => e.k === 'news');
-    if (nws.length) setTimeout(() => { sfx(nws.some(e => e.amt > 0) ? 'news' : 'news'); for (const e of nws) toast(e.txt, e.amt > 0 ? 'good' : e.amt < 0 ? 'bad' : ''); }, 700);
-    const me = G.pl[ME];
-    if (me && me.flow && (OP('rent') || OP('loan')) && Math.abs(me.flow.net) > 0.005) { const f = me.flow, txt = '月结：' + [OP('rent') && f.rent > 0.004 ? '房租 ' + fmtM(f.rent, 1) : '', OP('rent') && f.up > 0.004 ? '物业 ' + fmtM(-f.up) : '', OP('loan') && f.int > 0.004 ? '利息 ' + fmtM(-f.int) : ''].filter(Boolean).join('，'); setTimeout(() => toast(txt, ''), 1100); }
-  }
 }
+function onScreen(id) { const p = G.props[id]; if (!p) return false; const s = w2s(...iso(p.x + p.w / 2, p.y + p.h / 2, 10)); return s[0] > 0 && s[0] < VW && s[1] > 0 && s[1] < VH; }
 
-/* ---------- selection & tabs ---------- */
+function ownerName(o) { return o < 0 ? '业主' : o === ME ? '你' : G.pl[o].name; }
+
+/* ---------- selection ---------- */
 function selectProp(id, focus) {
   if (id === STATE.sel && !focus) id = -1;
-  STATE.sel = id; RND.hiD = -1; STATE.detail = false;
-  if (id >= 0) { sfx('sel'); $('side').classList.remove('open'); if (focus) { const p = G.props[id]; focusTile(p.x + p.w / 2, p.y + p.h / 2, Math.max(CAM.z, 1)); } }
-  renderUI();
+  if (id >= 0 && G.props[id] && G.props[id].gone) id = -1;
+  STATE.sel = id; STATE.detail = false; RND.hiD = -1;
+  if (id >= 0) { sfx('sel'); if (focus) { const p = G.props[id]; focusTile(p.x + p.w / 2, p.y + p.h / 2, Math.max(CAM.z, innerWidth <= 760 || PHONE.matches ? 0.8 : 0.95)); } }
+  QC.key = ''; renderHUD(true);
 }
-function setTab(t) {
-  const narrow = innerWidth <= 760 || PHONE.matches;
-  if (narrow) { const open = $('side').classList.contains('open'); if (open && STATE.tab === t) { $('side').classList.remove('open'); renderUI(); return; } $('side').classList.add('open'); STATE.sel = -1; }
-  STATE.tab = t; sfx('click'); renderUI();
-}
-$('tabs').addEventListener('click', e => { const b = e.target.closest('button'); if (b) setTab(b.dataset.t); });
-$('phoneTabs').addEventListener('click', e => { const b = e.target.closest('button'); if (b) setTab(b.dataset.t); });
-$('news').onclick = () => setTab('news');
 $('tGoal').onclick = () => selectProp(G.mansion, true);
-$('tabBody').addEventListener('click', e => {
-  const bb = e.target.closest('[data-buy],[data-sell]');
-  if (bb) {
-    e.stopPropagation(); if (bb.disabled) return;
-    if (bb.dataset.sell) { act('sell', { id: +bb.dataset.sell }); return; }
-    const id = +bb.dataset.buy;
-    if (G.props[id].kind === 'mansion') askConfirm('用现金 <b class="gold">' + fmtM(mansionPrice() * (1 + buyFee())) + '</b> 买下终极豪宅？', '买下！', () => act('buy', { id, loan: false }));
-    else act('buy', { id, loan: !!bb.dataset.loan });
-    return;
+$('mineBtn').onclick = () => {
+  const mine = ownedBy(ME).sort((a, b) => a.id - b.id);
+  if (!mine.length) { toast('你还没有房子。点地图上标着' + (easyHints() ? '「超值」「划算」' : '负百分比') + '的房子买一套', ''); return; }
+  STATE.myIdx = (STATE.myIdx + (mine.some(p => p.id === STATE.sel) ? 1 : 0)) % mine.length;
+  selectProp(mine[STATE.myIdx].id, true);
+};
+
+/* ---------- quick card next to the selected house (updated in place, so taps never get lost) ---------- */
+const QC = { key: '' };
+function qcModel(p) {
+  const me = G.pl[ME];
+  if (p.gone || p.stage === 'demo') return { mode: 'none', p: '已拆除', s: '', b: null };
+  if (p.stage === 'build') return { mode: 'build', p: '施工中', s: Math.ceil(BAL.buildT - p.bt) + ' 秒后开盘', b: null };
+  if (p.kind === 'mansion' && p.owner === -1) {
+    const need = mansionPrice() * (1 + buyFee()), can = me.cash >= need && me.alive;
+    return { mode: 'man', p: fmtM(need), pc: 'gold', s: can ? '现金够了，买下就赢！' : '现金还差 ' + fmtM(need - me.cash), b: { t: can ? '买下豪宅' : '钱还不够', cls: 'primary', dis: !can, q: 'buy' } };
   }
-  const it = e.target.closest('[data-id]'); if (it) { selectProp(+it.dataset.id, true); return; }
-  const d = e.target.closest('[data-d]'); if (d) { const i = +d.dataset.d; RND.hiD = RND.hiD === i ? -1 : i; STATE.sel = -1; if (RND.hiD >= 0) { const c = distCenter(i); focusTile(c[0], c[1], Math.max(CAM.z, 0.8)); } sfx('sel'); renderUI(); }
+  if (p.list && p.owner === -1) {
+    const L = p.list, d = dealOf(p, ME), full = buyCost(L.ask, false), dp = buyCost(L.ask, true);
+    const useLoan = OP('loan') && me.cash < full && me.cash >= dp, can = me.alive && (me.cash >= full || useLoan), chip = dealChip(p);
+    return { mode: 'list', p: fmtM(L.ask), chip, s: '市场价 ' + fmtM(refVal(p, ME)) + ' · 还剩 ' + Math.ceil(L.left) + ' 秒', b: { t: can ? (useLoan ? '贷款买，先付 ' + fmtM(dp) : '买下') : '钱不够', cls: d.k === 'high' ? '' : 'primary', dis: !can, q: 'buy', loan: useLoan } };
+  }
+  if (p.owner === ME && p.owner >= 0) {
+    const prof = p.offer * (1 - sellFee()) - p.paid;
+    if (p.reno) return { mode: 'reno', p: '装修中', s: '还要 ' + Math.ceil(p.reno) + ' 秒', b: null };
+    if (!canSell(p)) return { mode: 'hold', p: (prof >= 0 ? '赚 ' : '亏 ') + fmtM(Math.abs(prof)), pc: udc(prof), s: '过户中，' + Math.ceil(BAL.hold - (G.t - p.boughtT)) + ' 秒后能卖', b: { t: '过户中…', cls: 'ghost', dis: true, q: 'sell' } };
+    const a = sellAdvice(p);
+    return { mode: 'mine', p: (prof >= 0 ? '赚 ' : '亏 ') + fmtM(Math.abs(prof)), pc: udc(prof), chip: p.hotT > 0 ? ['抢手', '#f5c451', '#1d1406'] : null, s: p.hotT > 0 ? '有人抢着要，出价特别高！' : easyHints() ? a.n : '买价 ' + fmtM(p.paid) + ' · 有人出 ' + fmtM(p.offer), b: { t: '卖 ' + fmtM(p.offer), cls: prof >= 0 ? 'red' : 'green', dis: false, q: 'sell' } };
+  }
+  if (p.owner >= 0) return { mode: 'other', p: fmtM(val(p)), s: esc(G.pl[p.owner].name) + '的房', b: null };
+  return { mode: 'idle', p: fmtM(val(p)), s: p.cool > 0 ? '刚成交，业主暂时不卖' : '业主现在不卖，过一阵可能挂出来', b: null };
+}
+function renderQC() {
+  const el = $('qc'), id = STATE.sel;
+  if (id < 0 || STATE.detail || STATE.mode !== 'play' || !G.props[id]) { el.classList.add('hidden'); QC.key = ''; return; }
+  const p = G.props[id], m = qcModel(p), key = id + ':' + m.mode + ':' + !!m.b;
+  if (key !== QC.key) {
+    QC.key = key;
+    el.innerHTML = '<div class="qh"><b>' + esc(p.kind === 'mansion' ? '山顶豪宅' : propName(p)) + '</b><span class="sub">' + KINDS[p.kind].n + ' · ' + DISTS[p.d].n + '</span><button class="x ghost" data-q="close">✕</button></div>' +
+      '<div class="qp"><span id="qcP"></span><span id="qcC" class="deal"></span></div><div class="qs" id="qcS"></div>' +
+      (m.b ? '<button class="qb" id="qcB"></button>' : '') + (m.mode === 'none' ? '' : '<button class="ghost qd" data-q="more">详情 ›</button>');
+  }
+  el.classList.remove('hidden');
+  $('qcP').textContent = m.p; $('qcP').className = m.pc || '';
+  const c = $('qcC'); if (m.chip) { c.textContent = m.chip[0]; c.style.background = m.chip[1]; c.style.color = m.chip[2]; c.hidden = false; } else c.hidden = true;
+  $('qcS').innerHTML = m.s;
+  if (m.b) {
+    const b = $('qcB'); b.textContent = m.b.t; b.disabled = m.b.dis; b.dataset.q = m.b.q; b.dataset.loan = m.b.loan ? 1 : '';
+    b.className = 'qb ' + m.b.cls + (RND.ring === id && !m.b.dis ? ' pulse' : '');
+  }
+  placeQC();
+}
+function placeQC() {
+  const el = $('qc'); if (el.classList.contains('hidden') || STATE.sel < 0) return;
+  if (innerWidth <= 760 || PHONE.matches) { el.style.left = el.style.top = ''; return; }
+  const p = G.props[STATE.sel], s = w2s(...iso(p.x + p.w / 2, p.y + p.h / 2, propTopZ(p))), w = el.offsetWidth, hh = el.offsetHeight;
+  let x = s[0] + 40, y = s[1] - hh / 2;
+  if (x + w > VW - 12) x = s[0] - 40 - w;
+  x = clamp(x, 12, VW - w - 12); y = clamp(y, 76, VH - hh - 76);
+  el.style.left = x + 'px'; el.style.top = y + 'px';
+}
+$('qc').addEventListener('click', e => {
+  const b = e.target.closest('[data-q]'); if (!b || b.disabled) return;
+  const id = STATE.sel, q = b.dataset.q;
+  if (q === 'close') selectProp(-1);
+  else if (q === 'more') { STATE.detail = true; sfx('click'); renderHUD(true); }
+  else if (q === 'buy') { if (G.props[id].kind === 'mansion') askConfirm('用现金 <b class="gold">' + fmtM(mansionPrice() * (1 + buyFee())) + '</b> 买下山顶豪宅？', '买下！', () => act('buy', { id, loan: false })); else act('buy', { id, loan: !!b.dataset.loan }); }
+  else if (q === 'sell') act('sell', { id });
 });
 
+/* ---------- top bar & bottom controls ---------- */
+const MOOD = () => { const h = heat(); return h > 0.03 ? ['楼市火热', 'up'] : h > 0.008 ? ['楼市回暖', 'up'] : h < -0.03 ? ['楼市冰冷', 'down'] : h < -0.008 ? ['楼市降温', 'down'] : ['楼市平稳', '']; };
+let hudT = 0, detT = 0;
+function renderHUD(force) {
+  if (!G || STATE.mode !== 'play' && STATE.mode !== 'end') return;
+  const me = G.pl[ME], mp = mansionPrice(), need = mp * (1 + buyFee());
+  $('tClock').textContent = clock(G.t) + ' / ' + clock(BAL.limit);
+  const md = MOOD(); $('tMood').textContent = md[0]; $('tMood').className = md[1];
+  $('tCash').textContent = fmtM(me.cash); $('tCash').className = me.cash < 0 ? 'down' : '';
+  $('tNet').textContent = fmtM(netWorth(ME));
+  $('tGoalP').textContent = fmtM(need);
+  $('tGoalL').textContent = me.cash >= need ? '山顶豪宅 · 现金够了，点这里买！' : '山顶豪宅 · 现金还差 ' + fmtM(need - me.cash);
+  $('tGoal').classList.toggle('ready', me.cash >= need && mansionP().owner === -1);
+  const bars = $('tBars'); if (bars.children.length !== G.pl.length) bars.innerHTML = G.pl.map(pl => '<div class="bar" title="' + esc(pl.name) + '"><i class="p' + pl.i + '"></i></div>').join('');
+  G.pl.forEach((pl, k) => { bars.children[k].firstChild.style.width = (pl.alive ? clamp(netWorth(pl.i) / need, 0, 1) * 100 : 0).toFixed(1) + '%'; });
+  const mine = ownedBy(ME); $('mineN').textContent = mine.length;
+  const solo = NETROLE === 'solo';
+  $('speed').classList.toggle('hidden', !solo);
+  if (solo) for (const b of $('speed').children) { const s = +b.dataset.s; b.classList.toggle('sel', s === 0 ? STATE.paused : !STATE.paused && STATE.speed === s); if (s === 0) b.textContent = STATE.paused ? '继续' : '暂停'; }
+  $('pausedTag').classList.toggle('hidden', !(solo && (STATE.paused || TUT.pause)));
+  $('pausedTag').textContent = TUT.pause ? '引导中，时间暂停' : '已暂停';
+  renderQC();
+  if (force || (detT -= 1) <= 0) { detT = 10; if (!$('detail').matches(':hover')) renderDetail(); }
+  tutCheck();
+}
 /* ---------- charts ---------- */
 function spark(cvs, data, col) {
   const r = Math.min(devicePixelRatio || 1, 2), w = cvs.clientWidth || 72, h = cvs.clientHeight || 26; cvs.width = w * r; cvs.height = h * r;
@@ -1762,103 +2094,7 @@ function bigChart(cvs, series, opt) {
     if (s.fill) { c.lineTo(X(n - 1), h - B); c.lineTo(X(off), h - B); c.closePath(); const g = c.createLinearGradient(0, T, 0, h); g.addColorStop(0, s.fill); g.addColorStop(1, 'rgba(0,0,0,0)'); c.fillStyle = g; c.fill(); }
     const lv = s.data[s.data.length - 1]; c.fillStyle = s.col; c.beginPath(); c.arc(X(n - 1), Y(lv), 3, 0, 6.283); c.fill();
   }
-  c.fillStyle = 'rgba(255,255,255,.4)'; c.textAlign = 'left'; c.fillText(opt.from || '', L, h - 6); c.textAlign = 'right'; c.fillText('本月', w - R, h - 6);
-}
-
-/* ---------- main HUD render ---------- */
-function flashStat(id, v) { const el = $(id); if (el.dataset.v !== String(v)) { if (el.dataset.v != null) { el.parentNode.classList.remove('flash'); void el.offsetWidth; el.parentNode.classList.add('flash'); } el.dataset.v = String(v); } }
-function renderUI() {
-  if (!G || STATE.mode === 'title') return;
-  const me = G.pl[ME], mp = mansionPrice();
-  $('tM').textContent = monthLabel(G.month);
-  $('tMs').textContent = '第 ' + (G.month + 1) + ' / ' + BAL.maxMonth + ' 月 · ' + REGLABEL();
-  $('tCash').textContent = fmtM(me.cash); flashStat('tCash', Math.round(me.cash * 10));
-  $('tCash').className = me.cash < 0 ? 'down' : '';
-  $('tNet').textContent = fmtM(netWorth(ME));
-  const dsm = document.querySelector('.stat.debt small');
-  if (OP('loan')) { dsm.textContent = '贷款 · 月利率'; $('tDebt').textContent = fmtM(debtOf(ME)) + ' · ' + (G.rate * 100).toFixed(2) + '%'; }
-  else { dsm.textContent = '持有'; $('tDebt').textContent = ownedBy(ME).length + ' 套'; }
-  $('tGoalP').textContent = fmtM(mp);
-  const needC = mp * (1 + buyFee()) - me.cash; $('tGoalL').textContent = needC > 0 ? '山顶豪宅 · 现金还差 ' + fmtM(needC) : '山顶豪宅 · 现金够了，快去买！';
-  $('tBars').innerHTML = G.pl.map(pl => { const v = pl.alive ? clamp(netWorth(pl.i) / mp, 0, 1) : 0; return '<div class="bar" title="' + esc(pl.name) + ' 净资产 ' + Math.round(v * 100) + '%"><i class="p' + pl.i + '" style="width:' + (v * 100).toFixed(1) + '%"></i></div>'; }).join('');
-  // tabs
-  const listed = G.props.filter(p => p.list && p.owner === -1), mine = ownedBy(ME);
-  $('cHome').textContent = listed.length - 1 + mine.length; $('pcHome').textContent = (mine.length ? mine.length + ' · ' : '') + (listed.length - 1) + ' 在售';
-  for (const b of $('tabs').children) b.classList.toggle('sel', b.dataset.t === STATE.tab);
-  const narrow = innerWidth <= 760 || PHONE.matches;
-  for (const b of $('phoneTabs').children) b.classList.toggle('sel', b.dataset.t === STATE.tab && $('side').classList.contains('open'));
-  renderTab();
-  renderDetail();
-  renderQC();
-  // news ticker
-  const nl = G.news.slice(-3).reverse();
-  $('news').innerHTML = nl.map(n => '<div class="nl ' + n.tone + '"><i>' + (Math.floor(n.m / 12) + 1) + '年' + (n.m % 12 + 1) + '月</i><b>' + esc(n.tag) + '</b>' + esc(n.txt) + '</div>').join('');
-  // end button
-  const eb = $('endBtn'), others = G.pl.filter(p => p.kind === 'human' && p.i !== ME && p.alive && !p.gone);
-  if (!me.alive) { eb.disabled = true; eb.className = 'wait'; eb.innerHTML = '已出局<small>看对手继续</small>'; }
-  else if (me.ready) { eb.disabled = false; eb.className = 'wait'; eb.innerHTML = '等待 ' + esc(others.map(p => p.name).join('、')) + '…<small>点击取消</small>'; }
-  else { eb.disabled = false; eb.className = 'primary'; const w = others.filter(p => p.ready).length; eb.innerHTML = (G.month + 1 >= BAL.maxMonth ? '最后一个月 ▸' : '下个月 ▸') + '<small>' + (others.length ? (w ? '对方已准备' : '两人都点了才翻月') : (narrow ? '' : '回车')) + '</small>'; }
-  tutCheck();
-}
-const REGLABEL = () => { const h = heat(); return h > 0.03 ? '楼市火热' : h > 0.008 ? '楼市回暖' : h < -0.03 ? '楼市冰冷' : h < -0.008 ? '楼市降温' : '楼市平稳'; };
-function ownerName(o) { return o < 0 ? '业主' : o === ME ? '你' : G.pl[o].name; }
-function itemHTML(p, right, sub, cls) {
-  const D = DISTS[p.d];
-  return '<div class="item' + (p.id === STATE.sel ? ' sel' : '') + (cls || '') + '" data-id="' + p.id + '"><span class="sw" style="background:' + D.col + '"></span><div class="main"><div class="nm">' + esc(propName(p)) + '</div><div class="ds">' + sub + '</div></div><div class="rt">' + right + '</div></div>';
-}
-function renderTab() {
-  const tb = $('tabBody'), t = STATE.tab; let h = '';
-  if (t === 'mkt') {
-    const ht = heat(), hv = clamp((ht + 0.06) / 0.12, 0, 1);
-    h += '<div class="mktHead"><div class="heat"><span>冷</span><div class="bar"><i style="width:' + (hv * 100).toFixed(0) + '%"></i></div><span>热</span></div><div>' + REGLABEL() + '，近三个月均价 <b class="' + udc(ht) + '">' + pct(Math.exp(ht) - 1) + '</b>' + (OP('loan') ? '　房贷月利率 <b class="gold">' + (G.rate * 100).toFixed(2) + '%</b>' : '') + '</div></div>';
-    DISTS.forEach((D, i) => {
-      const s = G.d[i], hs = s.hist, c3 = hs.length > 3 ? hs[hs.length - 1] / hs[hs.length - 4] - 1 : 0, c12 = hs.length > 12 ? hs[hs.length - 1] / hs[hs.length - 13] - 1 : 0;
-      h += '<div class="item' + (RND.hiD === i ? ' sel' : '') + '" data-d="' + i + '"><span class="sw" style="background:' + D.col + '"></span><div class="main"><div class="nm">' + D.n + ' <span class="num" style="font-weight:400;color:var(--sub);font-size:13px">' + Math.round(s.idx * 100) + '</span></div><div class="ds">' + D.hint + '</div></div><canvas class="spark" data-sp="' + i + '"></canvas><div class="rt"><span class="' + udc(c3) + '">' + pct(c3) + '</span><small class="' + udc(c12) + '">年 ' + pct(c12, 0) + '</small></div></div>';
-    });
-    h += '<div class="secT">点一个区，地图上会高亮它</div>';
-  } else if (t === 'home') {
-    const me = G.pl[ME], mine = ownedBy(ME), man = mansionP();
-    const ls = G.props.filter(p => p.list && p.owner === -1 && p.kind !== 'mansion').sort((a, b) => dealOf(a, ME).r - dealOf(b, ME).r);
-    // goal row
-    if (man.owner === -1) {
-      const need = mansionPrice() * (1 + buyFee()), can = me.cash >= need && me.alive;
-      h += '<div class="item goal' + (man.id === STATE.sel ? ' sel' : '') + (can ? ' ready' : '') + '" data-id="' + man.id + '"><span class="sw" style="background:var(--gold)"></span><div class="main"><div class="nm">山顶豪宅 · 终极目标</div><div class="ds">' + (can ? '现金够了，买下就赢！' : '现金还差 ' + fmtM(need - me.cash)) + '</div></div>' +
-        '<button class="ib primary" data-buy="' + man.id + '"' + (can ? '' : ' disabled') + '>买 ' + fmtM(need) + '<small>' + (can ? '赢下这局' : '全款') + '</small></button></div>';
-    }
-    // my houses
-    h += '<div class="secT">我的房 ' + (mine.length || '') + (mine.length ? '<span>赚了就卖</span>' : '') + '</div>';
-    if (!mine.length) h += '<div class="empty">还没有房子。在下面挑一套<span class="deal great">超值</span>或<span class="deal good">划算</span>的，点「买」。</div>';
-    let firstSell = TUT.step === 3;
-    for (const p of mine.sort((a, b) => sellAdvice(b).r - sellAdvice(a).r)) {
-      const a = sellAdvice(p), prof = p.offer * (1 - sellFee()) - p.paid, fresh = p.boughtM === G.month, off = p.reno || fresh || !me.alive;
-      const pl = firstSell && !off && a.k !== 'wait' ? ' pulse' : ''; if (pl) firstSell = false;
-      const btn = off ? '<button class="ib ghost" disabled>' + (p.reno ? '装修中' : '下月可卖') + '<small>' + (p.reno ? '还剩 ' + p.reno + ' 月' : '刚买的') + '</small></button>'
-        : '<button class="ib ' + (prof >= 0 ? 'red' : 'green') + pl + '" data-sell="' + p.id + '">卖 ' + fmtM(p.offer) + '<small>' + (prof >= 0 ? '赚 ' : '亏 ') + fmtM(Math.abs(prof)) + '</small></button>';
-      h += '<div class="item' + (p.id === STATE.sel ? ' sel' : '') + '" data-id="' + p.id + '"><span class="sw" style="background:' + DISTS[p.d].col + '"></span><div class="main"><div class="nm">' + esc(propName(p)) + '</div><div class="ds"><span class="adv ' + a.k + '">' + (off ? (fresh ? '买价 ' + fmtM(p.paid) : '装修中') : a.n) + '</span></div></div>' + btn + '</div>';
-    }
-    // listings
-    const afford = p => { const full = buyCost(p.list.ask, false); return me.alive && (me.cash >= full || (OP('loan') && me.cash >= buyCost(p.list.ask, true))); };
-    const can1 = ls.filter(afford), cant = ls.filter(p => !afford(p));
-    h += '<div class="secT">买得起 ' + can1.length + '<span>越靠前越便宜</span></div>';
-    if (!ls.length) h += '<div class="empty">这个月没有房子在卖，点「下个月」。</div>';
-    else if (!can1.length) h += '<div class="empty">在卖的房子你现在都买不起，先卖掉手里的房，或者点「下个月」。</div>';
-    let firstBuy = TUT.step === 0, cantHead = false;
-    for (const p of can1.concat(cant)) {
-      if (!cantHead && cant.includes(p)) { cantHead = true; h += '<div class="secT">钱还不够 ' + cant.length + '</div>'; }
-      const L = p.list, d = dealOf(p, ME), full = buyCost(L.ask, false), dp = buyCost(L.ask, true);
-      const useLoan = OP('loan') && me.cash < full && me.cash >= dp, can = me.alive && (me.cash >= full || useLoan);
-      const pl = firstBuy && can && (d.k === 'great' || d.k === 'good') ? ' pulse' : ''; if (pl) firstBuy = false;
-      const tags = (L.age === 0 ? '<span class="tagx new">新</span>' : L.cut ? '<span class="tagx cut">降价</span>' : '') + (p.demo ? '<span class="tagx rumor">拆迁传闻</span>' : '');
-      h += '<div class="item' + (p.id === STATE.sel ? ' sel' : '') + '" data-id="' + p.id + '"><span class="sw" style="background:' + DISTS[p.d].col + '"></span><div class="main"><div class="nm">' + esc(propName(p)) + '</div><div class="ds"><span class="deal ' + d.k + '">' + d.n + '</span> ' + KINDS[p.kind].n + tags + '</div></div>' +
-        '<button class="ib ' + (d.k === 'great' || d.k === 'good' ? 'primary' : '') + pl + '" data-buy="' + p.id + '"' + (useLoan ? ' data-loan="1"' : '') + (can ? '' : ' disabled') + '>买 ' + fmtM(L.ask) + '<small>' + (can ? (useLoan ? '贷款，先付 ' + fmtM(dp) : d.r < 0.995 ? '便宜 ' + Math.round((1 - d.r) * 100) + '%' : d.r > 1.005 ? '贵 ' + Math.round((d.r - 1) * 100) + '%' : '原价') : '钱不够') + '</small></button></div>';
-    }
-  } else if (t === 'news') {
-    const ns = G.news.slice().reverse();
-    if (!OP('news')) h += '<div class="empty" style="padding:6px">本局没开「新闻与传闻」，这里只有楼市大事。</div>';
-    for (const n of ns) h += '<div class="item" style="cursor:default;align-items:flex-start"><span class="num sub" style="font-size:12px;width:46px;flex:none">' + (Math.floor(n.m / 12) + 1) + '年' + (n.m % 12 + 1) + '月</span><div class="main"><div style="font-size:13.5px;line-height:1.5;white-space:normal"><b class="' + (n.tone === 'good' ? 'up' : n.tone === 'bad' ? 'down' : n.tone === 'rumor' ? '' : 'gold') + '" style="' + (n.tone === 'rumor' ? 'color:#c9a4ff' : '') + '">' + esc(n.tag) + '</b> ' + esc(n.txt) + '</div></div></div>';
-  }
-  const st = tb.scrollTop; tb.innerHTML = h; tb.scrollTop = st;
-  tb.querySelectorAll('canvas[data-sp]').forEach(c => { const i = +c.dataset.sp; spark(c, G.d[i].hist.slice(-24), DISTS[i].col); });
+  c.fillStyle = 'rgba(255,255,255,.4)'; c.textAlign = 'left'; c.fillText(opt.from || '', L, h - 6); c.textAlign = 'right'; c.fillText(opt.to || '现在', w - R, h - 6);
 }
 
 function renderDetail() {
@@ -1879,16 +2115,18 @@ function renderDetail() {
       body += '<div class="note">终极目标：用<b>现金一次付清</b>买下就赢' + (G.pl.length > 1 ? '，谁先买下谁赢' : '') + '。房子也算钱，但要先卖掉换成现金。豪宅的价格也会跟着楼市涨跌。</div>';
       body += '<div class="acts"><button id="dBuyMan" class="primary"' + (me.cash >= need && me.alive ? '' : ' disabled') + '>买下豪宅 ' + fmtM(need) + '<small>' + (me.cash >= need ? '现在就能买！' : '现金还差 ' + fmtM(need - me.cash)) + '</small></button></div>';
     }
-  } else if (listed) {
+  } else if (p.stage === 'build') {
+    body += '<div class="note">开发商正在盖' + K.n + '，' + Math.ceil(BAL.buildT - p.bt) + ' 秒后作为新楼盘开卖。新楼盘有时会打折开盘。</div>';
+  } else if (listed && p.kind !== 'mansion') {
     const L = p.list, d = dealOf(p, ME), ref = refVal(p, ME), est = OP('insp') && !knows(p, ME);
     const pc = Math.abs(d.r - 1) * 100;
-    body += '<div class="verdict ' + d.k + '">' + d.n + '<small>' + (d.r < 0.995 ? '比市场价便宜 ' + pc.toFixed(0) + '%' : d.r > 1.005 ? '比市场价贵 ' + pc.toFixed(0) + '%' : '和市场价差不多') + '</small></div>';
+    body += '<div class="verdict ' + d.k + '">' + (easyHints() ? d.n : dealChip(p)[0]) + '<small>' + (d.r < 0.995 ? '比市场价便宜 ' + pc.toFixed(0) + '%' : d.r > 1.005 ? '比市场价贵 ' + pc.toFixed(0) + '%' : '和市场价差不多') + '</small></div>';
     body += '<div class="kv"><span>售价</span><span class="big">' + fmtM(L.ask) + '</span>';
     body += '<span>' + (knows(p, ME) ? '真实市场价（已验房）' : est ? '市场价（中介估的）' : '市场价') + '</span><span>' + fmtM(ref) + '</span>';
-    body += '<span>还挂多久</span><span>' + L.left + ' 个月' + (L.cut ? '（刚降过价）' : '') + '</span></div>';
+    body += '<span>还挂多久</span><span>' + Math.ceil(L.left) + ' 秒' + (L.cut ? '（降过价）' : '') + '</span></div>';
     body += '<div class="note ' + (d.k === 'great' || d.k === 'good' ? 'good' : d.k === 'high' ? 'warn' : '') + '">' +
-      (d.k === 'great' ? '很便宜！买下来，等房价涨一点再卖，大概率能赚。' : d.k === 'good' ? '比较便宜，买下来等几个月，卖掉一般能赚。' : d.k === 'fair' ? '价格正常。买了要等房价涨起来才能赚，不急的话可以等更便宜的。' : '太贵了，买了很可能亏，不建议。') +
-      (L.tag === 'hot' ? '业主急着用钱。' : '') + '</div>';
+      (d.k === 'great' ? '很便宜！买下来，等房价涨一点再卖，大概率能赚。' : d.k === 'good' ? '比较便宜，买下来等一会儿，卖掉一般能赚。' : d.k === 'fair' ? '价格正常。买了要等房价涨起来才能赚，不急的话可以等更便宜的。' : '太贵了，买了很可能亏，不建议。') +
+      (L.tag === 'hot' ? '业主急着用钱。' : L.tag === 'new' ? '刚盖好的新楼盘。' : '') + '</div>';
     if (est) body += '<div class="sub" style="font-size:12px">中介估的市场价可能差 10% 左右，花一点钱验房就知道准不准。</div>';
     if (knows(p, ME)) { const [qn] = QUAL(p.q); body += '<div class="note insp">验房结果：房屋质量' + qn + '，真实市场价 ' + fmtM(v) + '。</div>'; }
     lines.push({ v: L.ask, col: '#ffd27a', n: '售价' });
@@ -1898,29 +2136,30 @@ function renderDetail() {
     body += '<div class="row"><button id="dBuy" class="primary"' + (can ? '' : ' disabled') + '>买下 ' + fmtM(fc) + '<small>' + (can ? (OP('fee') ? '含 2% 手续费' : '用现金付') : '现金还差 ' + fmtM(fc - me.cash)) + '</small></button>';
     if (OP('loan')) body += '<button id="dLoan" class="primary"' + (me.cash >= lc && me.alive ? '' : ' disabled') + '>贷款买<small>先付 ' + fmtM(lc) + '</small></button>';
     body += '</div>';
-    if (OP('loan')) body += '<div class="sub" style="font-size:12px">贷款买：先付三成，剩下 ' + fmtM(L.ask * (1 - BAL.down)) + ' 向银行借，每月付利息约 ' + fmtM(L.ask * (1 - BAL.down) * G.rate) + '，卖房时自动还清。现金变成负数，银行会低价卖掉你的房。</div>';
-    if (OP('rent')) body += '<div class="sub" style="font-size:12px">拿着这套房，每月能收租约 ' + fmtM(v * BAL.rent) + '，交物业费约 ' + fmtM(v * BAL.upkeep) + '。</div>';
+    if (OP('loan')) body += '<div class="sub" style="font-size:12px">贷款买：先付三成，剩下 ' + fmtM(L.ask * (1 - BAL.down)) + ' 向银行借，每分钟付利息约 ' + fmtM(L.ask * (1 - BAL.down) * G.rate * 60 / MON) + '，卖房时自动还清。现金变成负数，银行会低价卖掉你的房。</div>';
+    if (OP('rent')) body += '<div class="sub" style="font-size:12px">拿着这套房，每分钟能收租约 ' + fmtM(v * BAL.rent * 60 / MON) + '，交物业费约 ' + fmtM(v * BAL.upkeep * 60 / MON) + '。</div>';
     body += '</div>';
   } else if (mine) {
     const a = sellAdvice(p), net = sellNet(p), prof = p.offer * (1 - sellFee()) - p.paid;
-    body += '<div class="verdict ' + (a.k === 'sell' ? 'great' : a.k === 'ok' ? 'good' : 'fair') + '">' + a.n + '<small>' + (p.reno ? '还要 ' + p.reno + ' 个月' : p.boughtM === G.month ? '' : (prof >= 0 ? '现在卖能赚 ' : '现在卖会亏 ') + fmtM(Math.abs(prof))) + '</small></div>';
-    body += '<div class="kv"><span>买的时候花了</span><span>' + fmtM(p.paid) + ' <small class="sub">' + (G.month - p.boughtM) + ' 个月前</small></span>';
+    body += '<div class="verdict ' + (a.k === 'sell' ? 'great' : a.k === 'ok' ? 'good' : 'fair') + '">' + (easyHints() || a.k === 'wait' ? a.n : prof >= 0 ? '赚钱中' : '亏钱中') + '<small>' + (p.reno ? '还要 ' + Math.ceil(p.reno) + ' 秒' : !canSell(p) ? '' : (prof >= 0 ? '现在卖能赚 ' : '现在卖会亏 ') + fmtM(Math.abs(prof))) + '</small></div>';
+    body += '<div class="kv"><span>买的时候花了</span><span>' + fmtM(p.paid) + '</span>';
     body += '<span>市场价</span><span>' + fmtM(v) + '</span>';
     body += '<span>现在有人出价</span><span class="big ' + udc(p.offer - p.paid) + '">' + (p.reno ? '—' : fmtM(p.offer)) + '</span>';
     if (p.loan) body += '<span>欠银行</span><span>' + fmtM(p.loan) + '</span>';
     if (!p.reno && (OP('fee') || p.loan)) body += '<span>卖掉到手</span><span>' + fmtM(net) + '</span>';
-    if (OP('rent')) body += '<span>每月</span><span>租 ' + fmtM(p.reno ? 0 : v * BAL.rent, 1) + ' · 物业 ' + fmtM(-v * BAL.upkeep) + (p.loan ? ' · 利息 ' + fmtM(-p.loan * G.rate) : '') + '</span>';
-    else if (p.loan) body += '<span>每月利息</span><span>' + fmtM(-p.loan * G.rate) + '</span>';
+    const PM = 60 / MON;
+    if (OP('rent')) body += '<span>每分钟</span><span>租 ' + fmtM(p.reno ? 0 : v * BAL.rent * PM, 1) + ' · 物业 ' + fmtM(-v * BAL.upkeep * PM) + (p.loan ? ' · 利息 ' + fmtM(-p.loan * G.rate * PM) : '') + '</span>';
+    else if (p.loan) body += '<span>每分钟利息</span><span>' + fmtM(-p.loan * G.rate * PM) + '</span>';
     body += '</div>';
-    if (p.boughtM === G.month) body += '<div class="note">刚买下，要办过户，下个月起就能卖。房价和买家出价每个月都会变。</div>';
-    else if (!p.reno) body += '<div class="note ' + (a.k === 'sell' ? 'good' : '') + '">' + (p.offerHot ? '有买家特别想要这套，出价比平时高，好机会！' : a.k === 'sell' ? '赚钱了，可以卖掉换成现金，再去买下一套便宜的。' : a.k === 'ok' ? '小赚一点。可以卖，也可以等房价再涨涨。买家出价每个月都会变。' : '现在卖会亏。买家出价每个月都会变，等房价回来再卖。') + '</div>';
-    else body += '<div class="note insp">装修中，还要 ' + p.reno + ' 个月，完工后变成' + COND[p.renoTo].n + '，更值钱。装修期间不能卖' + (OP('rent') ? '、没有房租' : '') + '。</div>';
+    if (!canSell(p) && !p.reno) body += '<div class="note">刚买下，过户要几秒钟，之后就能卖。买家出价一直在变。</div>';
+    else if (!p.reno) body += '<div class="note ' + (a.k === 'sell' ? 'good' : '') + '">' + (p.offerHot ? '有买家特别想要这套，出价比平时高，好机会！' : a.k === 'sell' ? '赚钱了，可以卖掉换成现金，再去买下一套便宜的。' : a.k === 'ok' ? '小赚一点。可以卖，也可以等出价再涨涨。' : '现在卖会亏。买家出价一直在变，等它涨回来再卖。') + '</div>';
+    else body += '<div class="note insp">装修中，还要 ' + Math.ceil(p.reno) + ' 秒，完工后变成' + COND[p.renoTo].n + '，更值钱。装修期间不能卖' + (OP('rent') ? '、没有房租' : '') + '。</div>';
     lines.push({ v: p.paid, col: PCOL[ME], n: '买价' });
     body += '<div class="acts">';
-    const fresh = p.boughtM === G.month;
-    body += '<button id="dSell" class="' + (prof >= 0 ? 'red' : 'green') + '"' + (p.reno || fresh || !me.alive ? ' disabled' : '') + '>' + (fresh ? '下个月才能卖' : '卖掉，拿 ' + fmtM(net)) + '<small>' + (fresh ? '刚买的房要办过户' : (prof >= 0 ? '赚 ' : '亏 ') + fmtM(Math.abs(prof)) + (OP('fee') ? '（已扣 3% 手续费）' : '')) + '</small></button>';
+    const fresh = !canSell(p);
+    body += '<button id="dSell" class="' + (prof >= 0 ? 'red' : 'green') + '"' + (p.reno || fresh || !me.alive ? ' disabled' : '') + '>' + (fresh ? '过户中…' : '卖掉，拿 ' + fmtM(net)) + '<small>' + (fresh ? '刚买的房要等几秒' : (prof >= 0 ? '赚 ' : '亏 ') + fmtM(Math.abs(prof)) + (OP('fee') ? '（已扣 3% 手续费）' : '')) + '</small></button>';
     const R = OP('reno') ? renoInfo(p) : null;
-    if (R && !p.reno) body += '<button id="dReno"' + (me.cash >= R.cost ? '' : ' disabled') + '>装修成' + COND[p.cond + 1].n + ' ' + fmtM(R.cost) + '<small>要 ' + R.t + ' 个月，房子能多值约 ' + fmtM(R.gain) + '</small></button>';
+    if (R && !p.reno) body += '<button id="dReno"' + (me.cash >= R.cost ? '' : ' disabled') + '>装修成' + COND[p.cond + 1].n + ' ' + fmtM(R.cost) + '<small>要 ' + R.t + ' 秒，房子能多值约 ' + fmtM(R.gain) + '</small></button>';
     if (OP('loan') && p.loan > 0) body += '<button id="dRepay" class="ghost"' + (me.cash >= p.loan ? '' : ' disabled') + '>提前还清贷款 ' + fmtM(p.loan) + '</button>';
     body += '</div>';
   } else {
@@ -1928,11 +2167,11 @@ function renderDetail() {
     body += '<div class="note">' + (p.owner >= 0 ? esc(ownerName(p.owner)) + ' 的房，买不了。' : p.cool ? '刚卖出去不久，业主暂时不卖。' : '业主现在不卖，以后可能会挂出来。') + '</div>';
     body += '<div class="sub" style="font-size:12px">' + D.n + '：' + D.hint + '</div>';
   }
-  el.innerHTML = h + '<canvas id="dChart"></canvas><div class="sub" style="font-size:11.5px;margin-top:-4px">蓝线：这套房的市场价，最近 ' + p.hist.length + ' 个月</div>' + body;
+  el.innerHTML = h + '<canvas id="dChart"></canvas><div class="sub" style="font-size:11.5px;margin-top:-4px">蓝线：这套房的市场价，最近 ' + Math.round(p.hist.length * BAL.histDt / 6) / 10 + ' 分钟</div>' + body;
   const hist = p.hist.slice();
-  bigChart($('dChart'), [{ data: hist, col: '#8fd0ff', fill: 'rgba(143,208,255,.25)' }], { lines, from: hist.length + ' 个月前' });
+  bigChart($('dChart'), [{ data: hist, col: '#8fd0ff', fill: 'rgba(143,208,255,.25)' }], { lines, from: Math.round(hist.length * BAL.histDt) + ' 秒前' });
   const on = (i, f) => { const b = $(i); if (b) b.onclick = f; };
-  on('dBack', () => { STATE.detail = false; renderUI(); });
+  on('dBack', () => { STATE.detail = false; renderHUD(true); });
   on('dInsp', () => act('inspect', { id }));
   on('dBuy', () => act('buy', { id, loan: false }));
   on('dLoan', () => act('buy', { id, loan: true }));
@@ -1942,92 +2181,44 @@ function renderDetail() {
   on('dBuyMan', () => askConfirm('用现金 <b class="gold">' + fmtM(p.list.ask * (1 + buyFee())) + '</b> 买下终极豪宅？', '买下！', () => act('buy', { id, loan: false })));
 }
 
-/* ---------- quick card: one button next to the selected house ---------- */
-function renderQC() {
-  const el = $('qc'), id = STATE.sel;
-  if (id < 0 || STATE.detail || STATE.mode !== 'play' || !G.props[id]) { el.classList.add('hidden'); return; }
-  const p = G.props[id], me = G.pl[ME], man = p.kind === 'mansion', listed = p.list && p.owner === -1, mine = p.owner === ME;
-  let h = '<div class="qh"><b>' + esc(man ? '山顶豪宅' : propName(p)) + '</b><span class="sub">' + KINDS[p.kind].n + ' · ' + DISTS[p.d].n + '</span><button class="x ghost" data-q="close">✕</button></div>';
-  if (man && p.owner === -1) {
-    const need = mansionPrice() * (1 + buyFee()), can = me.cash >= need && me.alive;
-    h += '<div class="qp gold">' + fmtM(need) + '</div><div class="qs">' + (can ? '现金够了，买下就赢！' : '现金还差 ' + fmtM(need - me.cash)) + '</div>';
-    h += '<button class="primary qb" data-q="buy"' + (can ? '' : ' disabled') + '>' + (can ? '买下豪宅' : '钱还不够') + '</button>';
-  } else if (listed) {
-    const L = p.list, d = dealOf(p, ME), full = buyCost(L.ask, false), dp = buyCost(L.ask, true);
-    const useLoan = OP('loan') && me.cash < full && me.cash >= dp, can = me.alive && (me.cash >= full || useLoan);
-    h += '<div class="qp">' + fmtM(L.ask) + ' <span class="deal ' + d.k + '">' + d.n + '</span></div><div class="qs">市场价 ' + fmtM(refVal(p, ME)) + (d.r < 0.995 ? '，便宜 ' + Math.round((1 - d.r) * 100) + '%' : d.r > 1.005 ? '，贵 ' + Math.round((d.r - 1) * 100) + '%' : '') + '</div>';
-    h += '<button class="' + (d.k === 'high' ? '' : 'primary') + ' qb" data-q="buy"' + (useLoan ? ' data-loan="1"' : '') + (can ? '' : ' disabled') + '>' + (can ? (useLoan ? '贷款买，先付 ' + fmtM(dp) : '买下') : '钱不够') + '</button>';
-  } else if (mine) {
-    const a = sellAdvice(p), prof = p.offer * (1 - sellFee()) - p.paid, fresh = p.boughtM === G.month;
-    if (p.reno || fresh) h += '<div class="qp">' + fmtM(p.paid) + '</div><div class="qs">' + (p.reno ? '装修中，还剩 ' + p.reno + ' 个月' : '刚买的，下个月就能卖') + '</div>';
-    else {
-      h += '<div class="qp ' + udc(prof) + '">' + (prof >= 0 ? '赚 ' : '亏 ') + fmtM(Math.abs(prof)) + '</div><div class="qs">' + a.n + '</div>';
-      h += '<button class="' + (prof >= 0 ? 'red' : 'green') + ' qb' + (TUT.step === 3 && a.k !== 'wait' ? ' pulse' : '') + '" data-q="sell">卖 ' + fmtM(p.offer) + '</button>';
-    }
-  } else h += '<div class="qp">' + fmtM(val(p)) + '</div><div class="qs">' + (p.owner >= 0 ? esc(ownerName(p.owner)) + '的房' : '业主现在不卖') + '</div>';
-  h += '<button class="ghost qd" data-q="more">详情 ›</button>';
-  el.innerHTML = h; el.classList.remove('hidden');
-  if (TUT.step === 0 && listed) { const d = dealOf(p, ME); const b = el.querySelector('[data-q="buy"]'); if (b && !b.disabled && (d.k === 'great' || d.k === 'good')) b.classList.add('pulse'); }
-  placeQC();
-}
-function placeQC() {
-  const el = $('qc'); if (el.classList.contains('hidden') || STATE.sel < 0) return;
-  if (innerWidth <= 760 || PHONE.matches) { el.style.left = el.style.top = ''; return; }
-  const p = G.props[STATE.sel], s = w2s(...iso(p.x + p.w / 2, p.y + p.h / 2, propTopZ(p))), w = el.offsetWidth, hh = el.offsetHeight;
-  const ins = viewInsets();
-  let x = s[0] + 34, y = s[1] - hh / 2;
-  if (x + w > VW - 12) x = s[0] - 34 - w;
-  x = clamp(x, ins.l + 6, VW - w - 12); y = clamp(y, 84, VH - hh - 92);
-  el.style.left = x + 'px'; el.style.top = y + 'px';
-}
-$('qc').addEventListener('click', e => {
-  const b = e.target.closest('[data-q]'); if (!b || b.disabled) return;
-  const id = STATE.sel, q = b.dataset.q;
-  if (q === 'close') selectProp(-1);
-  else if (q === 'more') { STATE.detail = true; sfx('click'); renderUI(); }
-  else if (q === 'buy') { if (G.props[id].kind === 'mansion') askConfirm('用现金 <b class="gold">' + fmtM(mansionPrice() * (1 + buyFee())) + '</b> 买下终极豪宅？', '买下！', () => act('buy', { id, loan: false })); else act('buy', { id, loan: !!b.dataset.loan }); }
-  else if (q === 'sell') act('sell', { id });
-});
-
-/* ---------- beginner guide (solo, first game) ---------- */
-const TUT = { step: -1, m: 0 };
+/* ---------- beginner guide (solo): time is frozen until the first purchase ---------- */
+const TUT = { step: -1, pause: false, focused: -1 };
 function tutStart(force) {
-  if (NETROLE !== 'solo' || (!force && LS.get('tutDone', false))) { TUT.step = -1; tutRender(); return; }
-  TUT.step = 0; tutCheck();
+  if (NETROLE !== 'solo' || (!force && LS.get('tutDone', false))) { TUT.step = -1; TUT.pause = false; RND.ring = -1; tutRender(); return; }
+  TUT.step = ownedBy(ME).length ? 1 : 0; TUT.pause = TUT.step === 0; TUT.focused = -1; tutRender();
 }
-function tutEnd() { TUT.step = -1; LS.set('tutDone', true); tutRender(); renderTab(); }
+function tutEnd() { TUT.step = -1; TUT.pause = false; RND.ring = -1; LS.set('tutDone', true); tutRender(); renderHUD(true); }
+function tutTarget() {
+  const me = G.pl[ME];
+  const ls = G.props.filter(p => p.list && p.owner === -1 && p.kind !== 'mansion' && !p.stage && me.cash >= buyCost(p.list.ask, false)).sort((a, b) => dealOf(a, ME).r - dealOf(b, ME).r);
+  return ls.length ? ls[0].id : -1;
+}
 function tutCheck() {
-  if (TUT.step < 0 || !G || G.over) { tutRender(); return; }
-  const me = G.pl[ME], own = ownedBy(ME).length, was = TUT.step;
-  if (TUT.step <= 1) TUT.step = own ? 2 : 0;
-  if (TUT.step === 2 && !TUT.m) TUT.m = G.month + 1;
-  if (TUT.step === 2 && G.month >= TUT.m) TUT.step = 3;
-  if (TUT.step === 3 && me.st.sells > 0) TUT.step = 4;
-  if ((TUT.step === 2 || TUT.step === 3) && !own && !me.st.sells) { TUT.step = 0; TUT.m = 0; }
-  if (TUT.step !== was) { renderTab(); renderQC(); }
+  if (TUT.step < 0 || !G || G.over || STATE.mode !== 'play') { RND.ring = -1; tutRender(); return; }
+  const me = G.pl[ME], mine = ownedBy(ME);
+  if (TUT.step === 0 && mine.length) { TUT.step = 1; TUT.pause = false; }
+  if (TUT.step === 1 && me.st.sells > 0) TUT.step = 2;
+  if (TUT.step === 0) {
+    const keep = RND.ring >= 0 && G.props[RND.ring].list && G.props[RND.ring].owner === -1, t = keep ? RND.ring : tutTarget();
+    if (t !== RND.ring || TUT.focused !== t) { RND.ring = t; TUT.focused = t; if (t >= 0 && STATE.sel !== t) { const p = G.props[t]; focusTile(p.x + p.w / 2, p.y + p.h / 2, Math.max(CAM.z, innerWidth <= 760 || PHONE.matches ? 0.8 : 0.9)); } }
+  }
+  else if (TUT.step === 1) RND.ring = mine.length ? mine.sort((a, b) => (b.offer - b.paid) - (a.offer - a.paid))[0].id : -1;
+  else RND.ring = -1;
   tutRender();
 }
 function tutRender() {
   const c = $('coach'); if (!c) return;
-  document.querySelectorAll('#endBtn.pulse,#tabs .pulse,#phoneTabs .pulse').forEach(e => e.classList.remove('pulse'));
   if (TUT.step < 0 || STATE.mode !== 'play') { c.classList.add('hidden'); return; }
   c.classList.remove('hidden');
-  const narrow = innerWidth <= 760 || PHONE.matches, open = !narrow || $('side').classList.contains('open');
-  const homeTab = (narrow ? $('phoneTabs') : $('tabs')).querySelector('[data-t="home"]'), hl = el => el && el.classList.add('pulse');
-  const needHome = () => { if (STATE.tab !== 'home' || !open) hl(homeTab); };
+  $('coachOk').classList.toggle('hidden', TUT.step !== 2); $('coachSkip').classList.toggle('hidden', TUT.step === 2);
+  const cheap = easyHints() ? '标着 <span class="deal great">超值</span> 或 <span class="deal good">划算</span>' : '标着金色、绿色<b>负百分比</b>（比市场价便宜）';
   let txt = '';
-  $('coachOk').classList.toggle('hidden', TUT.step !== 4); $('coachSkip').classList.toggle('hidden', TUT.step === 4);
-  if (TUT.step === 0) {
-    const me = G.pl[ME], ok = G.props.some(p => p.list && p.owner === -1 && p.kind !== 'mansion' && me.cash >= buyCost(p.list.ask, false) && ['great', 'good'].includes(dealOf(p, ME).k));
-    if (ok) { txt = '<b>目标：攒钱买下山顶豪宅。</b><br>在「买得起」里找标着 <span class="deal great">超值</span> 或 <span class="deal good">划算</span> 的房子，点它右边的<b>「买」</b>。'; if (STATE.sel < 0) needHome(); }
-    else { txt = '<b>目标：攒钱买下山顶豪宅。</b><br>这个月没有又便宜又买得起的房子，点「下个月」等新房子。'; hl($('endBtn')); }
-  }
-  else if (TUT.step === 2) { txt = '买到了！房价<b>每个月都会变</b>。点右下角「下个月」。'; hl($('endBtn')); }
-  else if (TUT.step === 3) {
-    const any = ownedBy(ME).some(p => sellAdvice(p).k !== 'wait' && p.boughtM !== G.month && !p.reno);
-    if (any) { txt = '你的房涨价了！在「我的房」里点<b>「卖」</b>，赚到的钱就到手了。'; if (STATE.sel < 0) needHome(); }
-    else { txt = '现在卖会亏，先别卖。点「下个月」再等等，房价会变。'; hl($('endBtn')); }
-  } else if (TUT.step === 4) txt = '赚到第一笔了！就这样<b>便宜买、涨了卖</b>，钱越滚越多。现金够了，列表最上面就能买豪宅。';
+  if (TUT.step === 0) txt = STATE.sel === RND.ring && RND.ring >= 0 ? '这套比市场价便宜。点<b>「买下」</b>，时间就开始走。' : '<b>目标：攒钱买下山顶豪宅。</b><br>地图上' + cheap + '的房子便宜。点有箭头的那套。';
+  else if (TUT.step === 1) {
+    const p = RND.ring >= 0 ? G.props[RND.ring] : null, prof = p ? p.offer * (1 - sellFee()) - p.paid : 0;
+    if (p && canSell(p) && prof > 0) txt = STATE.sel === p.id ? '现在卖是赚的，点<b>「卖」</b>！' : '你的房现在卖是<b>赚</b>的！点它，再点「卖」。';
+    else txt = '时间开始走了。你的房子上写着<b>现在卖能赚多少</b>，数字一直在变。等它变成红色「赚」再卖。';
+  } else txt = '赚到第一笔了！就这样<b>便宜买、涨了卖</b>。顶上进度条满了，就去山顶买豪宅。时间不等人，房子也会被别人抢走。';
   $('coachT').innerHTML = txt;
 }
 
@@ -2038,16 +2229,16 @@ function showEnd() {
   const o = G.over, w = o.winner, me = G.pl[ME];
   const won = w === ME;
   let title, sub;
-  if (o.reason === 'mansion') { title = won ? '豪宅到手！' : esc(G.pl[w].name) + ' 赢了'; sub = (won ? '你' : esc(G.pl[w].name)) + '用了 ' + (o.m + 1) + ' 个月买下终极豪宅'; }
-  else if (o.reason === 'time') { title = w < 0 ? '时间到' : won ? '你赢了' : esc(G.pl[w].name) + ' 赢了'; sub = BAL.maxMonth + ' 个月过去了，' + (w < 0 ? '还没买下豪宅' : '按净资产排名'); }
+  if (o.reason === 'mansion') { title = won ? '豪宅到手！' : esc(G.pl[w].name) + ' 赢了'; sub = (won ? '你' : esc(G.pl[w].name)) + '用了 ' + clock(o.t) + ' 买下山顶豪宅'; }
+  else if (o.reason === 'time') { title = w < 0 ? '时间到' : won ? '你赢了' : esc(G.pl[w].name) + ' 赢了'; sub = clock(BAL.limit) + ' 到了，' + (w < 0 ? '还没买下豪宅' : '按总身家排名'); }
   else { title = '破产了'; sub = w >= 0 ? esc(G.pl[w].name) + ' 笑到了最后' : '资不抵债'; }
-  if (won && o.reason === 'mansion' && NETROLE === 'solo' && G.bestKey) { const b = LS.get(G.bestKey, null); if (!b || o.m + 1 < b) { LS.set(G.bestKey, o.m + 1); sub += '，新纪录！'; } else sub += '（纪录 ' + b + ' 个月）'; }
+  if (won && o.reason === 'mansion' && NETROLE === 'solo' && G.bestKey) { const b = LS.get(G.bestKey, null); if (!b || o.t < b) { LS.set(G.bestKey, o.t); sub += '，新纪录！'; } else sub += '（纪录 ' + clock(b) + '）'; }
   sub += ' · ' + DIFF[G.diff || 'normal'].n + ' · 玩法：' + presetName(G.preset || (OPTS.every(x => G.opt[x.k]) ? 'full' : OPTS.every(x => !G.opt[x.k]) ? 'pure' : 'custom'), G.opt);
   $('eTitle').textContent = title.replace(/&amp;/g, '&'); $('eSub').innerHTML = sub;
   const rank = G.pl.slice().sort((a, b) => (b.i === w) - (a.i === w) || netWorth(b.i) - netWorth(a.i));
-  $('eRank').innerHTML = rank.map((pl, k) => '<div><span class="sw" style="background:' + PCOL[pl.i] + ';width:12px;height:12px"></span><b>' + (k + 1) + '. ' + esc(pl.name) + (pl.alive ? '' : '（破产）') + '</b><span>净资产 ' + fmtM(pl.alive ? netWorth(pl.i) : 0) + '</span><span class="sub" style="font-size:13px">买 ' + pl.st.buys + ' 卖 ' + pl.st.sells + ' · 最赚一笔 ' + fmtM(pl.st.best) + '</span></div>').join('');
+  $('eRank').innerHTML = rank.map((pl, k) => '<div><span class="sw" style="background:' + PCOL[pl.i] + ';width:12px;height:12px"></span><b>' + (k + 1) + '. ' + esc(pl.name) + (pl.alive ? '' : '（破产）') + '</b><span>总身家 ' + fmtM(pl.alive ? netWorth(pl.i) : 0) + '</span><span class="sub" style="font-size:13px">买 ' + pl.st.buys + ' 卖 ' + pl.st.sells + ' · 最赚一笔 ' + fmtM(pl.st.best) + '</span></div>').join('');
   showScreen('endScr');
-  bigChart($('endChart'), G.pl.map(pl => ({ data: pl.wh, col: PCOL[pl.i] })), { lines: [{ v: mansionPrice(), col: '#f5c451', n: '豪宅' }], from: '第 1 月' });
+  bigChart($('endChart'), G.pl.map(pl => ({ data: pl.wh, col: PCOL[pl.i] })), { lines: [{ v: mansionPrice(), col: '#f5c451', n: '豪宅' }], from: '0:00' });
   $('eAgain').textContent = NETROLE === 'solo' ? '再来一局' : NETROLE === 'host' && linkUp() ? '再来一局' : NETROLE === 'guest' ? '等房主开新局' : '返回标题';
   $('eAgain').disabled = NETROLE === 'guest';
   sfx(won ? 'win' : 'lose');
@@ -2056,18 +2247,30 @@ function showEnd() {
 
 /* ---- 90_main.js ---- */
 /* ================= main loop ================= */
-let lastT = performance.now(), titleA = 0;
+let lastT = performance.now(), titleA = 0, simAcc = 0, hudAcc = 0, saveAcc = 0;
 function frame(now) {
   const dt = Math.min(0.05, (now - lastT) / 1000); lastT = now;
-  if (STATE.mode === 'title' || STATE.mode === 'lobby') { titleA += dt * 0.05; CAM.x = Math.sin(titleA) * 160; CAM.y = N * TH / 2 - 10 + Math.cos(titleA * 0.7) * 50; }
+  if (STATE.mode === 'title' || STATE.mode === 'lobby') {
+    titleA += dt * 0.05; CAM.x = Math.sin(titleA) * 160; CAM.y = N * TH / 2 - 10 + Math.cos(titleA * 0.7) * 50;
+    if (NETROLE === 'backdrop' && G && !G.over) { simAcc += dt; while (simAcc >= SIM_DT) { step(SIM_DT); simAcc -= SIM_DT; } }   // the city keeps building behind the title
+  } else if (simRuns()) {
+    simAcc += dt * (NETROLE === 'solo' ? STATE.speed : 1);
+    let n = 0; while (simAcc >= SIM_DT && n++ < 12) { step(SIM_DT); simAcc -= SIM_DT; }
+    if (G.seq !== STATE.lastSeq || G.over) onState();
+  }
   camStep(dt); keyPan(dt);
   if (NETROLE === 'host') hostNetTick(dt); else if (NETROLE === 'guest') guestNetTick(dt);
   render(dt);
-  if (STATE.mode === 'play' && STATE.sel >= 0) placeQC();
+  if (STATE.mode === 'play') {
+    if ((hudAcc -= dt) <= 0) { hudAcc = 0.2; renderHUD(false); }
+    if (STATE.sel >= 0) placeQC();
+    if (NETROLE === 'solo' && (saveAcc -= dt) <= 0) { saveAcc = 5; saveGame(); }
+  }
   requestAnimationFrame(frame);
 }
-addEventListener('resize', () => { if (STATE.mode === 'play') renderUI(); });
-PHONE.addEventListener && PHONE.addEventListener('change', () => { if (STATE.mode === 'play') renderUI(); });
+addEventListener('resize', () => { if (STATE.mode === 'play') renderHUD(true); });
+PHONE.addEventListener && PHONE.addEventListener('change', () => { if (STATE.mode === 'play') renderHUD(true); });
+addEventListener('pagehide', () => { if (STATE.mode === 'play') saveGame(); });
 
 /* ---- 99_boot.js ---- */
 /* ================= boot ================= */

@@ -8,6 +8,8 @@ const NET = { peer: null, code: '', ctl: null, gctl: null, guestName: '', hostNa
 function loadPeer() { return new Promise((res, rej) => { if (window.Peer) return res(); let i = 0; const next = () => { if (i >= PEER_SRC.length) return rej(new Error('load')); const sc = document.createElement('script'); sc.src = PEER_SRC[i++]; sc.onload = () => window.Peer ? res() : next(); sc.onerror = next; document.head.appendChild(sc); }; next(); }); }
 const linkUp = () => NETROLE === 'host' ? !!(NET.gctl && NET.gctl.open) : NETROLE === 'guest' ? !!(NET.ctl && NET.ctl.open) : false;
 const roundJSON = o => JSON.stringify(o, (k, v) => typeof v === 'number' && !Number.isInteger(v) ? +v.toPrecision(6) : v);
+// state updates leave out price history (the guest records its own) to keep messages small
+const leanJSON = o => JSON.stringify(o, (k, v) => k === 'hist' || k === 'wh' ? undefined : typeof v === 'number' && !Number.isInteger(v) ? +v.toPrecision(5) : v);
 let chunkId = 0;
 function sendRaw(c, o) {
   try {
@@ -62,7 +64,7 @@ function hostRecv(m) {
   switch (m.t) {
     case 'hello':
       NET.guestName = (m.name || '玩家二').slice(0, 8);
-      if (STATE.mode === 'play' && G && G.pl[1] && G.pl[1].gone) { G.pl[1].gone = false; sendRaw(NET.gctl, { t: 'start', G, me: 1 }); toast(NET.guestName + ' 重新连上了', 'gold'); renderUI(); return; }
+      if (STATE.mode === 'play' && G && G.pl[1] && G.pl[1].gone) { G.pl[1].gone = false; sendRaw(NET.gctl, { t: 'start', G, me: 1 }); toast(NET.guestName + ' 重新连上了', 'gold'); renderHUD(true); return; }
       NET.ready = false; sendLobby(); lobbyUI(); sfx('ready'); return;
     case 'bye': guestGone(); return;
     case 'lready': NET.ready = !!m.v; sendLobby(); lobbyUI(); return;
@@ -71,14 +73,14 @@ function hostRecv(m) {
       if (!G || STATE.mode !== 'play') return;
       const err = doAct(1, m.a, m.v);
       if (err) { sendRaw(NET.gctl, { t: 'err', msg: err }); return; }
-      afterAct();
+      onState(); syncNow();
       return;
     }
   }
 }
 function guestGone() {
   NET.gctl = null; NET.guestName = ''; NET.ready = false;
-  if (STATE.mode === 'play' && G && G.pl[1]) { G.pl[1].gone = true; toast('对方断开了连接，你可以继续玩（对方能用同一个房间码重新加入）', 'bad'); maybeAdvance(); renderUI(); }
+  if (STATE.mode === 'play' && G && G.pl[1]) { G.pl[1].gone = true; toast('对方断开了连接，你可以继续玩（对方能用同一个房间码重新加入）', 'bad'); renderHUD(true); }
   if (STATE.mode === 'lobby') lobbyUI();
 }
 function sendLobby() { sendRaw(NET.gctl, { t: 'lobby', ready: NET.ready, host: SET.name || '房主', code: NET.code, ai: NET.ai, opt: NET.opt, preset: NET.preset, diff: NET.diff }); }
@@ -89,11 +91,26 @@ function hostStart() {
   sendRaw(NET.gctl, { t: 'start', G, me: 1 });
   enterGame(0);
 }
-function sync() { if (NETROLE === 'host') sendRaw(NET.gctl, { t: 'st', G }); }
+/* host → guest: whole state when something structural happens (buy/sell/build/news), compact numbers 5 times a second */
+const SYNC = { sv: -1, seq: -1, fullT: 0, tickT: 0 };
+function syncNow() { if (NETROLE === 'host' && NET.gctl && NET.gctl.open) { sendRaw(NET.gctl, leanJSON({ t: 'st', G, wh: G.over ? G.pl.map(p => p.wh) : null })); SYNC.sv = G.sv; SYNC.seq = G.seq; SYNC.fullT = 3; } }
+function packTick() {
+  return { t: 'tk', T: G.t, rate: G.rate, n: G.props.length, d: G.d.map(s => s.idx), c: G.pl.map(p => p.cash),
+    p: G.props.map(p => p.gone ? 0 : [p.j, p.offer, p.hotT, p.list ? p.list.ask : -1, p.list ? p.list.left : 0, p.reno, p.bt]) };
+}
+function applyTick(m) {
+  if (!G || m.n !== G.props.length) return;
+  G.t = m.T; G.rate = m.rate; m.d.forEach((v, i) => { G.d[i].idx = v; }); m.c.forEach((v, i) => { if (G.pl[i]) G.pl[i].cash = v; });
+  m.p.forEach((a, i) => { if (!a) return; const p = G.props[i]; [p.j, p.offer, p.hotT] = a; if (p.list && a[3] >= 0) { p.list.ask = a[3]; p.list.left = a[4]; } p.reno = a[5]; p.bt = a[6]; });
+}
 function hostNetTick(dt) {
   if (!NET.gctl || !NET.gctl.open) return;
   if (performance.now() - NET.seen > 15000) { try { NET.gctl.close(); } catch (e) { } guestGone(); return; }
   if ((NET.pingT -= dt) <= 0) { NET.pingT = 3; sendRaw(NET.gctl, { t: 'ping' }); }
+  if (STATE.mode !== 'play' && STATE.mode !== 'end') return;
+  SYNC.fullT -= dt; SYNC.tickT -= dt;
+  if (G.sv !== SYNC.sv || G.seq !== SYNC.seq || SYNC.fullT <= 0 || G.over) { if (SYNC.fullT < 2.75 || SYNC.fullT <= 0) syncNow(); }
+  else if (SYNC.tickT <= 0) { SYNC.tickT = 0.2; sendRaw(NET.gctl, packTick()); }
 }
 
 /* ---------- guest ---------- */
@@ -125,12 +142,26 @@ function guestRecv(m) {
     case 'ping': sendRaw(NET.ctl, { t: 'ping' }); return;
     case 'lobby': Object.assign(NET, { ready: m.ready, hostName: m.host, ai: m.ai, opt: m.opt, preset: m.preset, diff: m.diff }); lobbyUI(); return;
     case 'start': G = m.G; STATE.lastSeq = G.seq; enterGame(m.me); return;
-    case 'st': if (G && (STATE.mode === 'play' || STATE.mode === 'end')) { const sel = STATE.sel; G = m.G; STATE.sel = sel; onState(); } return;
+    case 'st': if (G && (STATE.mode === 'play' || STATE.mode === 'end')) {
+      const old = G; G = m.G;
+      G.d.forEach((s, i) => { s.hist = old.d[i] ? old.d[i].hist : []; });
+      G.props.forEach(p => { const o = old.props[p.id]; p.hist = o && o.hist ? o.hist : []; });
+      G.pl.forEach((pl, i) => { pl.wh = m.wh ? m.wh[i] : old.pl[i] ? old.pl[i].wh : []; });
+      onState();
+    } return;
+    case 'tk': if (STATE.mode === 'play') applyTick(m); return;
     case 'err': toast(m.msg, 'bad'); sfx('err'); return;
     case 'toLobby': return;
   }
 }
+let gHistT = 0;
 function guestNetTick(dt) {
   if (!NET.ctl || !NET.ctl.open) return;
+  if (G && STATE.mode === 'play' && (gHistT -= dt) <= 0) {
+    gHistT = BAL.histDt;
+    for (const s of G.d) { s.hist.push(s.idx); if (s.hist.length > 200) s.hist.shift(); }
+    for (const p of G.props) if (!p.gone) { (p.hist = p.hist || []).push(val(p)); if (p.hist.length > BAL.hist) p.hist.shift(); }
+    for (const pl of G.pl) { (pl.wh = pl.wh || []).push(pl.alive ? netWorth(pl.i) : 0); }
+  }
   if (performance.now() - NET.seen > 15000) hostGone();
 }

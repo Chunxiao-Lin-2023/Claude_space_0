@@ -6,7 +6,7 @@ const { chromium } = require('playwright'); const OUT = process.env.OUT || '/tmp
   const p = await c.newPage(); p.on('pageerror', e => console.log('ERR', e.message));
   await p.goto('http://localhost:8765/housemogul/src/out/test.html'); await p.waitForFunction(() => window.__ready);
   await p.evaluate(() => {
-    NETROLE = 'solo'; newGame(777, ['我', '小青'], 1, PRESET.full); enterGame(0);
+    NETROLE = 'solo'; newGame(777, ['我', '小青'], 1, PRESET.full); for (let k = 0; k < 400; k++) step(SIM_DT); startBuild(); startBuild(); for (let k = 0; k < 40; k++) step(SIM_DT); LS.set('tutDone', true); enterGame(0); STATE.paused = true;
     document.getElementById('hud').style.display = 'none'; document.getElementById('toasts').style.display = 'none';
     const own = (i, n) => G.props.filter(q => q.owner === -1 && q.kind !== 'mansion' && !q.list).slice(n, n + 3).forEach(q => { q.owner = i; q.paid = val(q) * 0.85; q.offer = val(q) * 1.12; });
     own(0, 4); own(1, 30); own(2, 50);

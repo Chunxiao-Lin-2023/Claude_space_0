@@ -132,6 +132,14 @@ canvas.spark{width:72px;height:26px;flex:none}
 #monthFx div{font-family:var(--title);font-size:clamp(40px,7vw,72px);color:#fff6dc;text-shadow:0 0 20px rgba(0,0,0,.6),0 4px 0 rgba(0,0,0,.35)}
 @keyframes mfx{0%{opacity:0;transform:scale(.92)}20%{opacity:1;transform:scale(1)}70%{opacity:1}100%{opacity:0}}
 #phoneTabs{display:none}
+#tMonth{min-width:104px}#tMonth b{font-size:20px;font-weight:500;letter-spacing:.02em}#tMonth small.up{color:#ff9a90}#tMonth small.down{color:#6fe0a8}
+#tGoal.ready{border-color:var(--gold);box-shadow:0 0 0 3px rgba(245,196,81,.35),0 6px 22px rgba(0,0,0,.35);animation:pls 1.3s ease-in-out infinite}
+#mineBtn{min-height:48px;padding:6px 16px;font-size:16px;border-radius:10px;background:var(--panel);border-color:rgba(255,255,255,.12)}
+#mineBtn b{color:var(--gold);font-size:18px;margin:0 2px}
+#speed{display:flex;gap:4px;padding:4px}
+#speed button{min-width:48px;min-height:42px;padding:2px 10px;font-family:var(--num),var(--font);font-size:15px;background:rgba(255,255,255,.04);box-shadow:none;border-color:rgba(255,255,255,.1)}
+#speed button.sel{border-color:var(--gold);color:var(--gold);background:rgba(245,196,81,.14)}
+#pausedTag{position:absolute;left:50%;top:calc(86px + var(--sa-t));transform:translateX(-50%);z-index:4;background:rgba(14,20,30,.85);border:1px solid var(--line);border-radius:20px;padding:4px 14px;font-size:13px;color:#ffe9b5;pointer-events:none}
 .tabs button.main{flex:2}
 .item .ib{flex:none;min-width:96px;min-height:42px;padding:3px 10px;font-size:14.5px;line-height:1.2;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:var(--num);font-weight:500}
 .item .ib small{font-family:var(--font);font-size:11px;font-weight:400;opacity:.9}
@@ -157,7 +165,7 @@ canvas.spark{width:72px;height:26px;flex:none}
 .verdict{display:flex;align-items:baseline;gap:10px;font-size:22px;font-weight:700;padding:8px 12px;border-radius:8px}
 .verdict small{font-size:14px;font-weight:400}
 .verdict.great{background:rgba(245,196,81,.18);color:#ffd970}.verdict.good{background:rgba(44,155,108,.22);color:#8ff0c2}.verdict.fair{background:rgba(255,255,255,.06);color:#dfe6ee}.verdict.high{background:rgba(120,130,145,.2);color:#b7c2cf}
-#coach{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(92px + var(--sa-b));width:min(460px,calc(100vw - 680px));min-width:300px;z-index:8;background:rgba(24,30,44,.96);border:1.5px solid var(--gold);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:8px;font-size:15px;line-height:1.6;box-shadow:0 0 0 4px rgba(245,196,81,.12),0 10px 30px rgba(0,0,0,.5)}
+#coach{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(78px + var(--sa-b));width:min(460px,calc(100vw - 32px));min-width:300px;z-index:8;background:rgba(24,30,44,.96);border:1.5px solid var(--gold);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:8px;font-size:15px;line-height:1.6;box-shadow:0 0 0 4px rgba(245,196,81,.12),0 10px 30px rgba(0,0,0,.5)}
 #coach button{min-height:36px;padding:4px 12px;font-size:14px}
 .pulse{animation:pls 1.3s ease-in-out infinite!important;border-color:var(--gold)!important}
 @keyframes pls{0%,100%{box-shadow:0 0 0 0 rgba(245,196,81,.85)}60%{box-shadow:0 0 0 8px rgba(245,196,81,0)}}
@@ -196,12 +204,13 @@ canvas.spark{width:72px;height:26px;flex:none}
  #phoneTabs button{flex:1;min-height:48px;padding:2px;font-size:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.15}
  #phoneTabs button small{font-family:var(--num);font-size:11px;color:var(--sub)}
  #phoneTabs button.sel{border-color:var(--gold);color:var(--gold)}
- #endBtn{min-width:110px;font-size:16px;padding:4px 10px}
+ #speed button{min-width:40px;padding:2px 4px;font-size:14px}#speed button[data-s="3"]{display:none}
+ #mineBtn{padding:4px 12px;font-size:15px}
  #toasts{top:calc(64px + var(--sa-t))}
  .toast{font-size:14px}
 }
-@media (max-width:1000px){ #coach{width:min(440px,calc(100vw - 32px));bottom:auto;top:calc(84px + var(--sa-t))} }
-@media (max-width:760px),(pointer:coarse) and (max-height:500px){ #coach{font-size:14px;padding:9px 12px;top:calc(62px + var(--sa-t));min-width:0} }
+
+@media (max-width:760px),(pointer:coarse) and (max-height:500px){ #coach{font-size:14px;padding:9px 12px;top:calc(62px + var(--sa-t));bottom:auto;min-width:0} }
 @media (pointer:coarse) and (max-width:500px){ #coach{top:calc(108px + var(--sa-t))} }
 @media (pointer:coarse) and (max-height:500px){
  #coach{left:auto;right:calc(8px + var(--sa-r));transform:none;width:min(360px,46vw);top:calc(58px + var(--sa-t))}
@@ -270,15 +279,15 @@ canvas.spark{width:72px;height:26px;flex:none}
 
 <div id="help" class="scr hidden"><div class="card">
  <p class="sub">开局可选玩法：<b>纯粹</b>只有房价涨跌和买卖；<b>完整</b>加上贷款、房租、装修、验房、新闻和手续费；<b>自定义</b>挑着开。下面带 ★ 的只在开了对应选项时有。</p>
- <h3>目标</h3><p>攒钱，用<b>现金一次付清</b>买下半山顶的终极豪宅就赢。双人时谁先买下谁赢；120 个月后还没人买下，比总身家（现金 + 房子的市场价）。</p>
- <h3>怎么赚钱</h3><p>每套房都有一个<b>市场价</b>。挂出来卖的房，售价有时比市场价便宜，有时贵：房源里标着 <span class="deal great">超值</span> <span class="deal good">划算</span> 的就是便宜货，买下来。房价每个月会涨涨跌跌；你的房每个月都有人出价，写着「已经赚了，可以卖」就卖掉，钱就变多了。再拿钱去买下一套便宜的，一直这样滚下去。</p>
- <h3>每个月</h3><p>买卖做完后点右下角「下个月」（双人要两人都点）。之后房价变动，冒出新的房源。挂着的房几个月卖不掉会降价，太久就撤下了。</p>
- <h3>难度</h3><p>简单：豪宅便宜，便宜房多，买家出价厚道，适合第一次玩。普通、困难依次变难。</p>
+ <h3>目标</h3><p>攒钱，用<b>现金一次付清</b>买下山顶豪宅就赢。时间一直在走，越快越好；双人时谁先买下谁赢，15 分钟到了还没人买下就比总身家（现金 + 房子的市场价）。</p>
+ <h3>怎么玩</h3><p>城市一直在变：房价时涨时跌，房子随时挂出来卖，开发商在空地上盖新楼，老房子会被拆掉。地图上每套在卖的房子头上都有价签，旁边的小圆圈是还能卖多久。简单难度标着 <span class="deal great">超值</span> <span class="deal good">划算</span> 的就是比市场价便宜；其他难度显示便宜或贵了百分之几。</p>
+ <p>点房子（或它的价签）会弹出小卡片，一下就能买。你自己的房子头上写着<b>现在卖能赚多少</b>，数字一直在跳，看准了点它再点「卖」。刚买的房要过户几秒才能卖；有人抢着要时会亮起「抢手」，出价特别高。</p>
+ <h3>难度</h3><p>简单：豪宅便宜，便宜房多，有「超值 / 可以卖」提示。普通、困难依次变难，提示也更少。</p>
  <h3>★ 估价误差</h3><p>市场价是中介估的，可能差 10% 左右，花一点钱「验房」才知道真价。</p>
  <h3>★ 手续费</h3><p>买入 2%，卖出 3%。</p>
- <h3>★ 按揭</h3><p>首付 30% 就能买，剩下的是贷款，每月付利息（利率随新闻变化），卖房时自动还清。杠杆放大收益也放大亏损：月底现金为负，银行会按 85% 的价格强制卖掉你的房，没房可卖就破产。豪宅只能全款。</p>
+ <h3>★ 按揭</h3><p>首付 30% 就能买，剩下的是贷款，时间一走就付利息（利率随新闻变化），卖房时自动还清。杠杆放大收益也放大亏损：现金一变成负数，银行会按 85% 的价格强制卖掉你的房，没房可卖就破产。豪宅只能全款。</p>
  <h3>★ 其他</h3><p>装修能把破旧房变普通、普通变精装，涨价比花的钱多，但装修期间不能卖、没房租。传闻不一定成真；拆迁传闻成真时，那条街的老房按 1.8 倍价值补偿。</p>
- <h3>操作</h3><p>拖动地图平移，滚轮或双指缩放；回车 = 下个月；Esc = 菜单。</p>
+ <h3>操作</h3><p>拖动地图平移，滚轮或双指缩放；空格 = 暂停（单人），1 / 2 / 3 = 倍速，H = 看我的房，G = 看豪宅，Esc = 菜单。</p>
  <button id="helpClose" class="primary">知道了</button>
 </div></div>
 
@@ -305,29 +314,24 @@ canvas.spark{width:72px;height:26px;flex:none}
 
 <div id="hud" class="hidden">
  <div id="top">
-  <div id="tMonth" class="glass"><b id="tM">第 1 年 1 月</b><small id="tMs">第 1 / 120 月</small></div>
+  <div id="tMonth" class="glass"><b id="tClock" class="num">0:00</b><small id="tMood">楼市平稳</small></div>
   <div id="tMoney" class="glass">
    <div class="stat cash"><small>现金</small><b id="tCash">0</b></div>
    <div class="stat net"><small>总身家</small><b id="tNet">0</b></div>
-   <div class="stat debt"><small>贷款 · 利率</small><b id="tDebt">0</b></div>
   </div>
-  <div id="tGoal" class="glass"><div class="gl"><span id="tGoalL">山顶豪宅</span><b id="tGoalP">0</b></div><div class="bars2" id="tBars"></div></div>
+  <div id="tGoal" class="glass" title="点这里看豪宅 (G)"><div class="gl"><span id="tGoalL">山顶豪宅</span><b id="tGoalP">0</b></div><div class="bars2" id="tBars"></div></div>
   <div id="tBtns"><button id="sndBtn" class="ghost" title="音效 (M)">🔊</button><button id="menuBtn" class="ghost" title="菜单 (Esc)">☰</button></div>
  </div>
- <div id="side" class="glass">
-  <div class="tabs" id="tabs"><button data-t="home" class="main">房子<span class="cnt" id="cHome"></span></button><button data-t="mkt">行情</button><button data-t="news">新闻</button></div>
-  <div class="tabBody" id="tabBody"></div>
- </div>
+ <div id="pausedTag" class="hidden">已暂停</div>
  <div id="detail" class="glass hidden"></div>
  <div id="qc" class="glass hidden"></div>
  <div id="coach" class="hidden"><div id="coachT"></div><div class="row" style="justify-content:flex-end"><button id="coachSkip" class="ghost">跳过引导</button><button id="coachOk" class="primary hidden">知道了</button></div></div>
  <div id="bottom">
-  <div id="news" class="glass"></div>
-  <div id="phoneTabs" class="glass"><button data-t="home" class="main">房子<small id="pcHome"></small></button><button data-t="mkt">行情</button><button data-t="news">新闻</button></div>
-  <button id="endBtn" class="primary">下个月 ▸<small id="endSub">回车</small></button>
+  <button id="mineBtn" class="glass" title="依次看我的房 (H)">我的房 <b id="mineN" class="num">0</b> ›</button>
+  <div style="flex:1"></div>
+  <div id="speed" class="glass"><button data-s="0" title="暂停 (空格)">暂停</button><button data-s="1">1×</button><button data-s="2">2×</button><button data-s="3">3×</button></div>
  </div>
 </div>
 <div id="toasts"></div>
-<div id="monthFx"><div id="monthFxT"></div></div>
 __SCRIPTS__
 </body>

@@ -1,4 +1,4 @@
-// Two real clients over a local PeerJS server (node test/peerserver.js), repo root served on :8765.
+// Two real clients over a local PeerJS server (node test/peerserver.js), repo root served on :8765. Real-time version.
 const { chromium } = require('playwright'); const OUT = process.env.OUT || '/tmp/hm';
 (async () => {
   const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome', args: ['--disable-features=WebRtcHideLocalIpsWithMdns'] });
@@ -12,46 +12,32 @@ const { chromium } = require('playwright'); const OUT = process.env.OUT || '/tmp
   await Gu.fill('#codeIn', code); await Gu.click('#joinBtn');
   await H.waitForFunction(() => NET.guestName === '小青', null, { timeout: 30000 });
   await H.click('#lAiSeg button[data-ai="1"]'); await Gu.waitForTimeout(500);
-  console.log('guest sees ai/preset', await Gu.evaluate(() => NET.ai + ' ' + NET.preset));
-  console.log('start disabled before ready', await H.evaluate(() => $('lStart').disabled));
   await Gu.click('#lReady'); await H.waitForFunction(() => NET.ready, null, { timeout: 10000 });
-  await H.screenshot({ path: OUT + '/c_lobby.png' }); await Gu.screenshot({ path: OUT + '/c_lobby_g.png' });
   await H.click('#lStart');
   await Gu.waitForFunction(() => STATE.mode === 'play' && G && G.pl.length === 3, null, { timeout: 20000 });
-  console.log('guest ME', await Gu.evaluate(() => ME + ' names ' + G.pl.map(p => p.name).join(',') + ' opt ' + JSON.stringify(G.opt)));
-  // guest buys a listing
-  const id = await Gu.evaluate(() => G.props.filter(p => p.list && p.kind !== 'mansion').sort((a, b) => a.list.ask - b.list.ask)[0].id);
-  await Gu.evaluate(id => { selectProp(id, true); }, id); await Gu.waitForTimeout(500);
-  await Gu.click('#qc [data-q="more"]'); await Gu.waitForTimeout(300);
-  await Gu.click('#dInsp'); await Gu.waitForTimeout(500);
-  await Gu.click('#dBuy'); await Gu.waitForTimeout(800);
-  console.log('host sees owner', await H.evaluate(id => G.props[id].owner, id), 'guest sees', await Gu.evaluate(id => G.props[id].owner, id), 'insp', await H.evaluate(id => G.props[id].insp.join(','), id));
-  // host tries to buy the same -> error
+  console.log('guest ME', await Gu.evaluate(() => ME + ' names ' + G.pl.map(p => p.name).join(',') + ' speed ctl hidden ' + $('speed').classList.contains('hidden')));
+  await Gu.waitForTimeout(2000);
+  const tt = await Promise.all([H.evaluate(() => G.t), Gu.evaluate(() => G.t)]); console.log('clock host/guest', tt.map(x => x.toFixed(1)).join(' / '));
+  const pv = await Promise.all([H.evaluate(() => val(G.props[5])), Gu.evaluate(() => val(G.props[5]))]); console.log('price host/guest', pv.map(x => x.toFixed(2)).join(' / '));
+  // guest buys via quick card
+  const id = await Gu.evaluate(() => G.props.filter(p => p.list && p.owner === -1 && p.kind !== 'mansion' && G.pl[1].cash >= buyCost(p.list.ask, false)).sort((a, b) => a.list.ask - b.list.ask)[0].id);
+  await Gu.evaluate(id => selectProp(id, true), id); await Gu.waitForTimeout(400);
+  await Gu.click('#qcB'); await Gu.waitForTimeout(800);
+  console.log('host sees owner', await H.evaluate(id => G.props[id].owner, id), 'guest sees', await Gu.evaluate(id => G.props[id].owner, id));
   const err = await H.evaluate(id => doAct(0, 'buy', { id }), id); console.log('host double-buy err:', err);
-  // month: host ready, then guest ready
-  await H.click('#endBtn'); await H.waitForTimeout(400);
-  console.log('host waiting btn', await H.evaluate(() => $('endBtn').textContent), 'month', await H.evaluate(() => G.month));
-  await Gu.screenshot({ path: OUT + '/c_guest_wait.png' });
-  await Gu.keyboard.press('Enter'); await Gu.waitForTimeout(1200);
-  console.log('after both ready month host/guest', await H.evaluate(() => G.month), await Gu.evaluate(() => G.month));
-  await H.screenshot({ path: OUT + '/c_host.png' }); await Gu.screenshot({ path: OUT + '/c_guest.png' });
-  // guest sells
-  await Gu.evaluate(id => selectProp(id, true), id); await Gu.waitForTimeout(400); await Gu.click('#qc [data-q="sell"]'); await Gu.waitForTimeout(700);
+  await Gu.waitForTimeout(6000);
+  await Gu.evaluate(id => selectProp(id, true), id); await Gu.waitForTimeout(400); await Gu.click('#qcB'); await Gu.waitForTimeout(800);
   console.log('after guest sell owner', await H.evaluate(id => G.props[id].owner, id), 'guest cash', await Gu.evaluate(() => G.pl[1].cash.toFixed(1)));
-  // size of state
-  console.log('state json KB', await H.evaluate(() => (roundJSON(G).length / 1024).toFixed(1)));
-  // guest disconnect & rejoin
+  console.log('tick KB', await H.evaluate(() => (roundJSON(packTick()).length / 1024).toFixed(1)), 'full KB', await H.evaluate(() => (leanJSON({ t: 'st', G }).length / 1024).toFixed(1)), 'guest hist', await Gu.evaluate(() => G.props[5].hist.length + ' heat ' + heat().toFixed(4)));
+  await H.screenshot({ path: OUT + '/c_host.png' }); await Gu.screenshot({ path: OUT + '/c_guest.png' });
   await Gu.context().close(); await H.waitForTimeout(2500);
-  console.log('gone', await H.evaluate(() => G.pl[1].gone));
-  await H.click('#endBtn'); await H.waitForTimeout(500); console.log('host advances alone', await H.evaluate(() => G.month));
+  console.log('gone', await H.evaluate(() => G.pl[1].gone), 'host clock keeps going', await H.evaluate(() => G.t.toFixed(1)));
   const G2 = await mk('小青'); await G2.fill('#codeIn', code); await G2.click('#joinBtn');
   await G2.waitForFunction(() => STATE.mode === 'play', null, { timeout: 20000 });
-  console.log('rejoined ME', await G2.evaluate(() => ME + ' month ' + G.month), 'host gone flag', await H.evaluate(() => G.pl[1].gone));
-  // win: give host money and buy mansion
+  console.log('rejoined ME', await G2.evaluate(() => ME + ' t ' + G.t.toFixed(1)), 'gone flag', await H.evaluate(() => G.pl[1].gone));
   await H.evaluate(() => { G.pl[0].cash = 99999; act('buy', { id: G.mansion }); });
   await G2.waitForTimeout(2000);
   console.log('guest end screen', await G2.evaluate(() => STATE.mode + ' ' + $('eTitle').textContent));
-  await G2.screenshot({ path: OUT + '/c_end_g.png' });
   console.log('errs host', H.errs, 'guest', Gu.errs, G2.errs);
   await b.close();
 })();

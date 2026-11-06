@@ -11,7 +11,7 @@ const LS = {
 let G = null;          // shared game state (host authoritative, sent whole to guest)
 let ME = 0;            // my player index
 let NETROLE = null;    // 'solo' | 'host' | 'guest'
-const STATE = { mode: 'title', sel: -1, tab: 'home', detail: false, hover: -1, lastSeq: 0, sheet: false };
+const STATE = { mode: 'title', sel: -1, detail: false, hover: -1, lastSeq: 0, paused: false, speed: 1, myIdx: 0 };
 
 /* seeded rng: state lives in G.rs so the host's sim is reproducible from a save */
 function rnd() { let t = (G.rs = (G.rs + 0x6D2B79F5) | 0); t = Math.imul(t ^ t >>> 15, t | 1); t ^= t + Math.imul(t ^ t >>> 7, t | 61); return ((t ^ t >>> 14) >>> 0) / 4294967296; }
@@ -31,20 +31,26 @@ const udc = v => v > 0.0005 ? 'up' : v < -0.0005 ? 'down' : '';
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
 /* ---------- balance ---------- */
+/* real time: every number below is per second unless noted. MON = seconds in one "month" for rent / interest rates */
+const MON = 15;
 const BAL = {
-  start: 80,            // starting cash
-  maxMonth: 120,        // game ends after this many months
+  start: 80,                 // starting cash (万)
+  limit: 900,                // game ends after this many seconds (15 min), richest wins
   buyFee: 0.02, sellFee: 0.03,
-  down: 0.3,            // mortgage down payment
-  rate0: 0.0045, rateMin: 0.0025, rateMax: 0.0080,   // monthly interest
-  rent: 0.0034, upkeep: 0.0009,                       // per month, fraction of value
-  inspect: [0.3, 0.004],                              // min cost, fraction of ask
-  listTarget: [9, 13],
-  mansion: [900, 1400],                               // mansion base price without / with mortgages
-  forced: 0.85,                                       // forced sale price / value
-  estNoise: 0.075,                                    // agent estimate sd
-  demolish: 1.8,                                      // demolition compensation / value
-  hist: 36
+  down: 0.3,                 // mortgage down payment
+  rate0: 0.0045, rateMin: 0.0025, rateMax: 0.0080,   // interest per MON
+  rent: 0.0034, upkeep: 0.0009,                       // per MON, fraction of value
+  inspect: [0.3, 0.004],     // min cost, fraction of ask
+  listTarget: 11,            // listings on the market at a time
+  listLife: [24, 46],        // seconds a listing stays up
+  cutEvery: 11,              // seconds between possible price cuts
+  hold: 5,                   // seconds after buying before you can resell
+  renoT: [12, 18],           // renovation seconds (破旧→普通, 普通→精装)
+  mansion: [1100, 1500],     // mansion base price without / with mortgages
+  forced: 0.85, estNoise: 0.075, demolish: 1.8,
+  histDt: 2, hist: 60,       // price history: one sample every 2 s, keep 2 minutes
+  buildEvery: [9, 17], buildT: 9, demoEvery: [15, 30], demoT: 2.6, maxProps: 104,
+  aiEvery: 3.5
 };
 const KINDS = {
   bungalow: { n: '老平房', base: 42, w: 1, h: 1, fl: 1, roof: 'hip', col: '#d9b38a', rc: '#9a4a36' },
@@ -68,7 +74,7 @@ const DISTS = [
 ];
 const DI = Object.fromEntries(DISTS.map((d, i) => [d.k, i]));
 const COND = [{ n: '破旧', m: 0.82 }, { n: '普通', m: 1 }, { n: '精装', m: 1.14 }];
-const RENO = [{ c: 0.11, t: 1 }, { c: 0.095, t: 2 }];   // cost as fraction of current value, months
+const RENO = [{ c: 0.11, t: 12 }, { c: 0.095, t: 18 }];   // cost as fraction of current value, months
 const QUAL = q => q < 0.93 ? ['有隐患', 'warn'] : q < 0.98 ? ['一般', ''] : q < 1.04 ? ['良好', ''] : ['很好', 'good'];
 const PCOL = ['#ff9a3c', '#34d1bf', '#b48cff'];
 const REG = { bull: { n: '牛市', d: 0.011 }, calm: { n: '平稳', d: 0.0015 }, bear: { n: '熊市', d: -0.0095 } };
@@ -91,4 +97,4 @@ const DIFF = {
   hard: { n: '困难', man: 1.15, hot: 0.1, offer: 0.95, minGood: 0, d: '豪宅更贵，便宜房更少' }
 };
 const DF = () => DIFF[(G && G.diff) || 'normal'];
-const monthLabel = m => '第 ' + (Math.floor(m / 12) + 1) + ' 年 ' + (m % 12 + 1) + ' 月';
+const clock = t => { t = Math.max(0, Math.floor(t)); return Math.floor(t / 60) + ':' + String(t % 60).padStart(2, '0'); };

@@ -47,14 +47,15 @@ addEventListener('keydown', e => {
   audioInit();
   const k = e.key.toLowerCase(); KEYS[k] = true;
   if (STATE.mode !== 'play') { if (k === 'escape') { if (!$('help').classList.contains('hidden')) closeHelp(); } return; }
-  if (k === 'escape') { if (!$('confirm').classList.contains('hidden')) closeConfirm(); else if (!$('menuScr').classList.contains('hidden')) closeMenu(); else if (!$('help').classList.contains('hidden')) closeHelp(); else if (STATE.detail) { STATE.detail = false; renderUI(); } else if (STATE.sel >= 0) selectProp(-1); else openMenu(); e.preventDefault(); return; }
+  if (k === 'escape') { if (!$('confirm').classList.contains('hidden')) closeConfirm(); else if (!$('menuScr').classList.contains('hidden')) closeMenu(); else if (!$('help').classList.contains('hidden')) closeHelp(); else if (STATE.detail) { STATE.detail = false; renderHUD(true); } else if (STATE.sel >= 0) selectProp(-1); else openMenu(); e.preventDefault(); return; }
   if (!$('menuScr').classList.contains('hidden') || !$('confirm').classList.contains('hidden') || !$('help').classList.contains('hidden')) return;
-  if (k === 'enter') { e.preventDefault(); endTurnClick(); }
+  if (k === ' ') { e.preventDefault(); setSpeed(0); }
   else if (k === 'm') setSound(!AU.on);
   else if (k === '=' || k === '+') zoomAt(VW / 2, VH / 2, CAM.z * 1.2);
   else if (k === '-' || k === '_') zoomAt(VW / 2, VH / 2, CAM.z / 1.2);
   else if (k === 'f') { fitCam(); }
-  else if (k === '1') setTab('home'); else if (k === '2') setTab('mkt'); else if (k === '3') setTab('news');
+  else if (k === '1') setSpeed(1); else if (k === '2') setSpeed(2); else if (k === '3') setSpeed(3);
+  else if (k === 'h') $('mineBtn').click(); else if (k === 'g') selectProp(G.mansion, true);
 });
 addEventListener('keyup', e => { KEYS[e.key.toLowerCase()] = false; });
 function keyPan(dt) {

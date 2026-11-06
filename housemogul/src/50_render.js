@@ -3,7 +3,7 @@ const cv = $('cv'), ctx = cv.getContext('2d');
 let VW = 0, VH = 0, DPR = 1;
 const TW = 64, TH = 32, FH = 8.5;
 const CAM = { x: 0, y: N * TH / 2, z: 1, tx: null, ty: null, tz: null };
-const RND = { t: 0, pick: [], cars: [], clouds: [], smoke: [], tags: [], pulse: [], hiD: -1 };
+const RND = { t: 0, pick: [], cars: [], clouds: [], smoke: [], tags: [], pulse: [], hiD: -1, tagHit: [], seen: new Map(), flash: new Map(), prevV: new Map(), ring: -1 };
 const PHONE = matchMedia('(pointer:coarse) and (max-height:500px), (pointer:coarse) and (max-width:500px)');
 function resize() {
   DPR = Math.min(window.devicePixelRatio || 1, 2); VW = innerWidth; VH = innerHeight;
@@ -139,9 +139,9 @@ function drawGround() {
 
 /* ---------- objects ---------- */
 function decoTrees() { // stable list of trees on free grass
-  if (RND.trees && RND.treesV === G.deco.length + ':' + G.props.length) return RND.trees;
+  if (RND.trees && RND.treesV === G.sv + ':' + G.deco.length) return RND.trees;
   const used = new Set();
-  for (const o of G.props.concat(G.deco)) for (let j = 0; j < o.h; j++) for (let i = 0; i < o.w; i++) used.add((o.x + i) + ',' + (o.y + j));
+  for (const o of G.props.filter(q => !q.gone).concat(G.deco)) for (let j = 0; j < o.h; j++) for (let i = 0; i < o.w; i++) used.add((o.x + i) + ',' + (o.y + j));
   const out = [];
   for (let y = -MARGIN; y < N + MARGIN; y++) for (let x = -MARGIN; x < N + MARGIN; x++) {
     if (tileType(x, y) !== T_GRASS && tileType(x, y) !== -1) continue;
@@ -152,7 +152,7 @@ function decoTrees() { // stable list of trees on free grass
     const n = inside && d >= 0 ? (h < prob * 0.5 ? 2 : 1) : 1;
     for (let k = 0; k < n; k++) out.push({ x: x + 0.3 + hash2(x + k * 3, y + 11) * 0.45, y: y + 0.3 + hash2(x + 7, y + k * 5) * 0.45, s: 0.8 + hash2(x, y + k) * 0.45, v: hash2(y, x + k), pine: d === DI.hill || (!inside && h < 0.05) });
   }
-  RND.trees = out; RND.treesV = G.deco.length + ':' + G.props.length; return out;
+  RND.trees = out; RND.treesV = G.sv + ':' + G.deco.length; return out;
 }
 function propTopZ(p) { const K = KINDS[p.kind]; if (p.kind === 'mansion') return 4 * FH + 36; return K.fl * FH + 3 + (K.roof === 'hip' ? 10 + p.w * 3 : K.roof === 'gable' ? 9 : 4); }
 
@@ -323,26 +323,27 @@ function render(dt) {
   if (RND.hiD >= 0) for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) if (G.tdist[ti(x, y)] === RND.hiD) poly(diamond(x, y, 1, 1, 0), 'rgba(255,230,140,.16)');
   // sortable objects
   const objs = [];
-  for (const p of G.props) objs.push({ k: p.x + p.w / 2 + p.y + p.h / 2, p });
+  for (const p of G.props) if (!p.gone) objs.push({ k: p.x + p.w / 2 + p.y + p.h / 2, p });
   for (const d of G.deco) objs.push({ k: d.x + d.w / 2 + d.y + d.h / 2, d });
   for (const t of decoTrees()) objs.push({ k: t.x + t.y, t });
   for (const c of RND.cars) objs.push({ k: (c.ax ? c.pos + 0.16 + c.line : c.line + c.pos + 0.16), c });
   objs.sort((a, b) => a.k - b.k);
   const sel = STATE.sel, hov = STATE.hover;
   for (const o of objs) {
-    if (o.p) drawProp(o.p, o.p.id === hov, o.p.id === sel);
+    if (o.p) drawAny(o.p, o.p.id === hov, o.p.id === sel);
     else if (o.d) drawDeco(o.d);
     else if (o.t) (o.t.pine ? pine : tree)(o.t.x, o.t.y, o.t.s, o.t.v);
     else drawCar(o.c);
   }
   // pick polygons (front first)
-  RND.pick = G.props.map(p => {
+  RND.pick = G.props.filter(p => !p.gone).map(p => {
     const e = 0.1, zt = propTopZ(p), pts = [];
     for (const [a, b] of [[p.x + e, p.y + e], [p.x + p.w - e, p.y + e], [p.x + p.w - e, p.y + p.h - e], [p.x + e, p.y + p.h - e]]) { pts.push(iso(a, b, 0)); pts.push(iso(a, b, zt)); }
     return { id: p.id, k: p.x + p.y + p.w / 2 + p.h / 2, poly: hull(pts) };
   }).sort((a, b) => b.k - a.k);
   // screen-space overlays
   ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  trackFlashes();
   drawLabels();
   for (const c of RND.clouds) { const cx = c.x * VW, cy = c.y * VH, s = c.s * 80; ctx.fillStyle = 'rgba(255,255,255,.07)'; ctx.beginPath(); ctx.ellipse(cx, cy, s * 2, s * 0.7, 0, 0, 6.283); ctx.fill(); ctx.beginPath(); ctx.ellipse(cx + s * 0.6, cy - s * 0.3, s, s * 0.55, 0, 0, 6.283); ctx.fill(); }
 }
@@ -355,57 +356,161 @@ function hull(P) {
   return lo.slice(0, -1).concat(up.slice(0, -1));
 }
 function inPoly(pt, P) { let c = false; for (let i = 0, j = P.length - 1; i < P.length; j = i++) { const a = P[i], b = P[j]; if ((a[1] > pt[1]) !== (b[1] > pt[1]) && pt[0] < (b[0] - a[0]) * (pt[1] - a[1]) / (b[1] - a[1]) + a[0]) c = !c; } return c; }
-function pickAt(sx, sy) { const w = s2w(sx, sy); for (const r of RND.pick) if (inPoly(w, r.poly)) return r.id; return -1; }
+function pickAt(sx, sy) {
+  for (let i = RND.tagHit.length - 1; i >= 0; i--) { const r = RND.tagHit[i]; if (sx >= r.x && sx <= r.x + r.w && sy >= r.y && sy <= r.y + r.h) return r.id; }
+  const w = s2w(sx, sy); for (const r of RND.pick) if (inPoly(w, r.poly)) return r.id; return -1;
+}
 
 function rr2(x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
-function drawLabels() {
-  const z = CAM.z;
-  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-  // district names
-  if (z < 1.25) {
-    const al = clamp((1.25 - z) / 0.5, 0, 1) * 0.9;
-    ctx.font = '700 ' + Math.round(clamp(15 * z + 4, 12, 20)) + 'px "Noto Sans SC",sans-serif';
-    for (let i = 0; i < DISTS.length; i++) {
-      const c = distCenter(i), s = w2s(...iso(c[0], c[1], 0));
-      ctx.fillStyle = 'rgba(10,18,28,' + (al * 0.55).toFixed(2) + ')'; const tw = ctx.measureText(DISTS[i].n).width + 16; rr2(s[0] - tw / 2, s[1] - 12, tw, 24, 12); ctx.fill();
-      ctx.fillStyle = 'rgba(255,255,255,' + al.toFixed(2) + ')'; ctx.fillText(DISTS[i].n, s[0], s[1]);
+/* ---------- construction & demolition ---------- */
+function drawStage(p, sel) {
+  const K = KINDS[p.kind], t = RND.t, e = p.w > 1 ? 0.16 : 0.13, x0 = p.x + e, y0 = p.y + e, x1 = p.x + p.w - e, y1 = p.y + p.h - e;
+  const zt = K.fl * FH + 3;
+  if (p.stage === 'build') {
+    const k = clamp(p.bt / BAL.buildT, 0, 1);
+    poly(diamond(p.x + 0.04, p.y + 0.04, p.w - 0.08, p.h - 0.08, 0), '#bfa47a', 'rgba(120,90,50,.6)', 1);
+    // dirt piles & barrier
+    const c = iso(p.x + 0.2, p.y + p.h - 0.25, 0); ctx.fillStyle = '#a08458'; ctx.beginPath(); ctx.ellipse(c[0], c[1], 7, 3, 0, 0, 6.283); ctx.fill();
+    if (sel) { const a = 0.45 + 0.35 * Math.sin(t * 6); poly(diamond(p.x, p.y, p.w, p.h, 0), null, 'rgba(255,224,120,' + a.toFixed(2) + ')', 3); }
+    const h = Math.max(2, zt * (0.12 + 0.88 * k));
+    box(x0, y0, x1, y1, 0, h, k < 0.75 ? '#b9b4aa' : shade(K.col, -0.05), { edge: 'rgba(0,0,0,.15)' });
+    if (k >= 0.75) windows(x0, y0, x1, y1, 2, Math.max(1, Math.floor(K.fl * (h / zt))), FH, '#56718a', 0, p.id * 7);
+    scaffold(x0, y0, x1, y1, h);
+    // crane
+    const mx = x1 + 0.05, my = y0 + 0.1, top = zt + 22, base = iso(mx, my, 0), tp = iso(mx, my, top);
+    ctx.strokeStyle = '#e0a52a'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(base[0], base[1]); ctx.lineTo(tp[0], tp[1]); ctx.stroke();
+    const ang = Math.sin(t * 0.7 + p.id) * 0.9, jl = 40, jx = tp[0] - Math.cos(ang) * jl, jy = tp[1] + Math.sin(ang) * jl * 0.35;
+    ctx.lineWidth = 1.6; ctx.beginPath(); ctx.moveTo(tp[0] + Math.cos(ang) * 12, tp[1] - Math.sin(ang) * 4); ctx.lineTo(jx, jy); ctx.stroke();
+    ctx.strokeStyle = 'rgba(60,60,60,.7)'; ctx.lineWidth = 0.8; const hy = jy + 14 + Math.sin(t * 2 + p.id) * 4; ctx.beginPath(); ctx.moveTo(jx, jy); ctx.lineTo(jx, hy); ctx.stroke();
+    ctx.fillStyle = '#7a6a55'; ctx.fillRect(jx - 3, hy, 6, 3);
+    // sparks of welding
+    if (Math.sin(t * 9 + p.id * 3) > 0.6) { const w = iso(x0 + (x1 - x0) * hash2(p.id, Math.floor(t * 3)), y1, h * 0.8); ctx.fillStyle = '#fff3b0'; ctx.fillRect(w[0] - 1, w[1] - 1, 2.4, 2.4); }
+  } else if (p.stage === 'demo') {
+    const k = clamp(p.bt / BAL.demoT, 0, 1);
+    poly(diamond(p.x + 0.04, p.y + 0.04, p.w - 0.08, p.h - 0.08, 0), '#b8a585');
+    const h = zt * (1 - k);
+    if (h > 1) { box(x0 + k * 0.05, y0, x1, y1 - k * 0.05, 0, h, shade(K.col, -0.25)); }
+    // rubble
+    const c = iso((x0 + x1) / 2, (y0 + y1) / 2, 0); ctx.fillStyle = '#8f7f68'; ctx.beginPath(); ctx.ellipse(c[0], c[1] + 2, 12 * p.w * k + 2, 5 * p.w * k + 1, 0, 0, 6.283); ctx.fill();
+    // dust
+    for (let i = 0; i < 9; i++) {
+      const ph = (k * 1.4 + i / 9) % 1, ang = i * 2.4 + p.id, r = (8 + ph * 26) * p.w;
+      ctx.fillStyle = 'rgba(205,195,175,' + (0.55 * (1 - ph) * (1 - k * 0.6)).toFixed(2) + ')';
+      ctx.beginPath(); ctx.arc(c[0] + Math.cos(ang) * r, c[1] - ph * 30 - zt * 0.3 + Math.sin(ang) * r * 0.4, 5 + ph * 12, 0, 6.283); ctx.fill();
     }
   }
-  // price tags
+}
+function drawAny(p, hov, sel) { if (p.gone) return; if (p.stage) drawStage(p, sel); else drawProp(p, hov, sel); }
+
+/* ---------- labels: district trends, live price tags ---------- */
+const distTrend = i => { const h = G.d[i].hist, k = h.length; return k > 15 ? h[k - 1] / h[k - 16] - 1 : 0; };
+const easyHints = () => (G.diff || 'normal') === 'easy';
+function dealChip(p) {
+  const d = dealOf(p, ME);
+  if (easyHints()) return d.k === 'great' ? ['超值', '#f5c451', '#1d1406'] : d.k === 'good' ? ['划算', '#2c9b6c', '#fff'] : d.k === 'high' ? ['贵', '#56657a', '#dfe6ee'] : ['正常', '#3a4658', '#cfd8e2'];
+  const r = Math.round((d.r - 1) * 100);
+  return [(r > 0 ? '+' : '') + r + '%', r <= -12 ? '#f5c451' : r <= -4 ? '#2c9b6c' : r <= 6 ? '#3a4658' : '#56657a', r <= -12 ? '#1d1406' : '#fff'];
+}
+function ring(x, y, r, f, col) {
+  ctx.lineWidth = 2.4; ctx.strokeStyle = 'rgba(255,255,255,.18)'; ctx.beginPath(); ctx.arc(x, y, r, 0, 6.283); ctx.stroke();
+  ctx.strokeStyle = col; ctx.beginPath(); ctx.arc(x, y, r, -Math.PI / 2, -Math.PI / 2 + 6.283 * clamp(f, 0, 1)); ctx.stroke();
+}
+function drawLabels() {
+  const z = CAM.z, T = G.t;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
   if (window.__dbg && __dbg.notags) return;
-  const showAll = z >= 0.62;
+  // district names with 30 s trend
+  const al = clamp(1.35 - z * 0.45, 0.45, 0.95);
+  for (let i = 0; i < DISTS.length; i++) {
+    const c = distCenter(i), s = w2s(...iso(c[0], c[1], 0)), tr = distTrend(i);
+    const fs = Math.round(clamp(14 * z + 5, 12, 17));
+    ctx.font = '700 ' + fs + 'px "Noto Sans SC",sans-serif';
+    const nm = DISTS[i].n, nw = ctx.measureText(nm).width;
+    ctx.font = '600 ' + (fs - 1) + 'px Oswald,sans-serif';
+    const tt = (tr >= 0 ? '▲' : '▼') + Math.abs(tr * 100).toFixed(1) + '%', tw = ctx.measureText(tt).width, W = nw + tw + 24;
+    ctx.fillStyle = 'rgba(10,18,28,' + (al * 0.62).toFixed(2) + ')'; rr2(s[0] - W / 2, s[1] - 12, W, 24, 12); ctx.fill();
+    ctx.globalAlpha = al;
+    ctx.font = '700 ' + fs + 'px "Noto Sans SC",sans-serif'; ctx.fillStyle = '#fff'; ctx.textAlign = 'left'; ctx.fillText(nm, s[0] - W / 2 + 10, s[1] + 0.5);
+    ctx.font = '600 ' + (fs - 1) + 'px Oswald,sans-serif'; ctx.fillStyle = Math.abs(tr) < 0.002 ? '#cfd8e2' : tr > 0 ? '#ff8a7e' : '#5fe0a0'; ctx.fillText(tt, s[0] - W / 2 + 14 + nw, s[1] + 1);
+    ctx.globalAlpha = 1; ctx.textAlign = 'center';
+  }
+  if (window.__dbg && __dbg.notags) return;
+  // collect tags
   const tags = [];
   for (const p of G.props) {
-    const listed = p.list && p.owner === -1, mine = p.owner === ME && p.owner >= 0;
-    if (!listed && !mine) continue;
-    if (!showAll && p.id !== STATE.sel && p.kind !== 'mansion' && !(listed && p.list.tag === 'hot')) continue;
-    const s = w2s(...iso(p.x + p.w / 2, p.y + p.h / 2, propTopZ(p) + 8));
-    if (s[0] < -60 || s[0] > VW + 60 || s[1] < -30 || s[1] > VH + 30) continue;
-    tags.push({ p, s, listed, mine });
+    if (p.gone || p.stage === 'demo') continue;
+    const listed = p.list && p.owner === -1, mine = p.owner === ME && p.owner >= 0, building = p.stage === 'build', other = p.owner >= 0 && p.owner !== ME;
+    if (!listed && !mine && !building && !other) continue;
+    const s = w2s(...iso(p.x + p.w / 2, p.y + p.h / 2, propTopZ(p) * (building ? 0.6 : 1) + 8));
+    if (s[0] < -70 || s[0] > VW + 70 || s[1] < -30 || s[1] > VH + 40) continue;
+    tags.push({ p, s, listed, mine, building, other });
   }
   tags.sort((a, b) => a.s[1] - b.s[1]);
-  ctx.font = '600 13px Oswald,"Noto Sans SC",sans-serif';
-  for (const { p, s, listed, mine } of tags) {
-    let txt, bg, fg = '#fff', badge = null;
-    if (p.kind === 'mansion') { txt = '豪宅 ' + fmtM(p.list ? p.list.ask : val(p)); bg = '#c9952a'; fg = '#1d1406'; }
-    else if (listed) { txt = fmtM(p.list.ask); bg = 'rgba(16,24,36,.88)'; const d = dealOf(p, ME); badge = d.k === 'great' ? ['超值', '#f5c451'] : d.k === 'good' ? ['划算', '#2c9b6c'] : d.k === 'high' ? ['贵', '#56657a'] : null; }
-    else { const a = sellAdvice(p), pr = p.offer * (1 - sellFee()) - p.paid; txt = p.reno ? '装修中' : (pr >= 0 ? '赚' : '亏') + fmtM(Math.abs(pr)).replace('¥', ''); bg = p.reno ? 'rgba(120,90,40,.9)' : pr >= 0 ? 'rgba(200,60,50,.92)' : 'rgba(30,140,90,.92)'; if (a.k === 'sell') badge = ['卖', '#f5c451']; }
-    const sel = p.id === STATE.sel, tw = ctx.measureText(txt).width + 14, bw = badge ? (badge[0].length > 1 ? 34 : 22) : 0, W = tw + bw, H = 21;
+  RND.tagHit = [];
+  const NUMF = '600 13px Oswald,"Noto Sans SC",sans-serif', CHF = '700 11px "Noto Sans SC",sans-serif';
+  for (const tg of tags) {
+    const { p, s, listed, mine, building, other } = tg;
+    let txt, bg, fg = '#fff', chip = null, timer = null, glow = false;
+    if (p.kind === 'mansion') { txt = '豪宅 ' + fmtM(mansionPrice()); bg = '#c9952a'; fg = '#1d1406'; }
+    else if (building) { txt = '施工中'; bg = 'rgba(110,96,70,.9)'; timer = [p.bt / BAL.buildT, '#f5c451']; }
+    else if (other) { txt = esc(G.pl[p.owner].name).slice(0, 4); bg = hexA(PCOL[p.owner], 0.85); fg = '#10161f'; if (z < 0.8 && p.id !== STATE.sel) continue; }
+    else if (listed) {
+      txt = fmtM(p.list.ask); bg = 'rgba(16,24,36,.9)'; chip = dealChip(p);
+      timer = [p.list.left / p.list.life, p.list.left < 6 ? '#ff6a5c' : 'rgba(255,255,255,.75)'];
+      if (p.list.tag === 'new' && G.t - p.list.t0 < 6) chip = chip || ['新', '#2a6fb8', '#fff'];
+    } else if (mine) {
+      if (p.reno) { txt = '装修中'; bg = 'rgba(120,90,40,.92)'; timer = [1 - p.reno / (RENO[p.renoTo - 1] || RENO[0]).t, '#f5c451']; }
+      else {
+        const pr = p.offer * (1 - sellFee()) - p.paid;
+        txt = (pr >= 0 ? '赚 ' : '亏 ') + fmtM(Math.abs(pr)).replace('¥', ''); bg = pr >= 0 ? 'rgba(200,60,50,.94)' : 'rgba(30,140,90,.94)';
+        if (!canSell(p)) { timer = [(G.t - p.boughtT) / BAL.hold, '#fff']; txt = '过户 ' + txt; }
+        else if (p.hotT > 0) { chip = ['抢手', '#f5c451', '#1d1406']; glow = true; }
+        else if (easyHints() && sellAdvice(p).k === 'sell') { chip = ['卖!', '#f5c451', '#1d1406']; glow = true; }
+      }
+    }
+    const sel = p.id === STATE.sel;
+    // pop-in when a listing / building first appears
+    const sk = listed ? 'L' + p.id + ':' + (p.list.t0 | 0) : mine ? 'M' + p.id + ':' + (p.boughtT | 0) : 'B' + p.id, k0 = RND.seen.get(sk); if (k0 == null) RND.seen.set(sk, RND.t);
+    const age = RND.t - (k0 == null ? RND.t : k0), sc = age < 0.35 ? 0.4 + 0.6 * Math.sin(age / 0.35 * Math.PI / 2) * 1.08 : 1;
+    ctx.font = NUMF; const tw = ctx.measureText(txt).width + 14;
+    ctx.font = CHF; const cw = chip ? ctx.measureText(chip[0]).width + 10 : 0;
+    const rw = timer ? 18 : 0, W = (tw + cw + rw) * sc, H = 22 * sc;
     const x = s[0] - W / 2, y = s[1] - H - 6 - (sel ? 4 + Math.abs(Math.sin(RND.t * 4)) * 4 : 0);
+    if (glow) { ctx.fillStyle = 'rgba(245,196,81,' + (0.25 + 0.2 * Math.sin(RND.t * 7)).toFixed(2) + ')'; rr2(x - 4, y - 4, W + 8, H + 8, 9); ctx.fill(); }
     ctx.fillStyle = 'rgba(0,0,0,.25)'; rr2(x + 1, y + 2, W, H, 6); ctx.fill();
     ctx.fillStyle = bg; rr2(x, y, W, H, 6); ctx.fill();
-    if (sel) { ctx.strokeStyle = '#ffe07a'; ctx.lineWidth = 2; ctx.stroke(); }
+    if (sel || RND.ring === p.id) { ctx.strokeStyle = '#ffe07a'; ctx.lineWidth = 2; rr2(x, y, W, H, 6); ctx.stroke(); }
     ctx.beginPath(); ctx.moveTo(s[0] - 5, y + H); ctx.lineTo(s[0] + 5, y + H); ctx.lineTo(s[0], y + H + 6); ctx.closePath(); ctx.fillStyle = bg; ctx.fill();
-    if (badge) { ctx.fillStyle = badge[1]; rr2(x + 2, y + 2, bw - 3, H - 4, 4); ctx.fill(); ctx.fillStyle = badge[1] === '#f5c451' ? '#1d1406' : '#fff'; ctx.font = '700 11px "Noto Sans SC",sans-serif'; ctx.fillText(badge[0], x + 2 + (bw - 3) / 2, y + H / 2 + 0.5); ctx.font = '600 13px Oswald,"Noto Sans SC",sans-serif'; }
-    ctx.fillStyle = fg; ctx.fillText(txt, x + bw + tw / 2, y + H / 2 + 1);
+    if (sc < 0.999) { RND.tagHit.push({ id: p.id, x, y, w: W, h: H + 6 }); continue; }
+    let cx = x;
+    if (timer) { ring(cx + 11, y + H / 2, 6, timer[0], timer[1]); cx += rw; }
+    if (chip) { ctx.fillStyle = chip[1]; rr2(cx + 2, y + 3, cw - 2, H - 6, 4); ctx.fill(); ctx.fillStyle = chip[2]; ctx.font = CHF; ctx.fillText(chip[0], cx + 1 + cw / 2, y + H / 2 + 0.5); cx += cw; }
+    ctx.font = NUMF; ctx.fillStyle = fg; ctx.fillText(txt, cx + tw / 2, y + H / 2 + 1);
+    // up / down flash when the number moved in the last half second
+    const fl = RND.flash.get(p.id);
+    if (fl && RND.t - fl.t < 0.6) { ctx.fillStyle = fl.d > 0 ? '#ff7a6e' : '#4fe09a'; ctx.font = '700 11px sans-serif'; ctx.fillText(fl.d > 0 ? '▲' : '▼', x + W + 7, y + H / 2); }
+    RND.tagHit.push({ id: p.id, x: x - 4, y: y - 4, w: W + 8, h: H + 12 });
+    // tutorial pointer
+    if (RND.ring === p.id) { const by = y - 14 - Math.abs(Math.sin(RND.t * 4)) * 8; ctx.fillStyle = '#f5c451'; ctx.beginPath(); ctx.moveTo(s[0] - 9, by - 10); ctx.lineTo(s[0] + 9, by - 10); ctx.lineTo(s[0], by); ctx.closePath(); ctx.fill(); }
   }
   // floating money pops
   RND.pulse = RND.pulse.filter(f => (f.t += 1 / 60) < 1.6);
   ctx.font = '700 17px Oswald,"Noto Sans SC",sans-serif';
   for (const f of RND.pulse) {
     const p = G.props[f.id]; if (!p) continue;
-    const s = w2s(...iso(p.x + p.w / 2, p.y + p.h / 2, propTopZ(p) + 30 + f.t * 30));
+    const s = w2s(...iso(p.x + p.w / 2, p.y + p.h / 2, propTopZ(p) + 34 + f.t * 30));
     ctx.globalAlpha = clamp(1.6 - f.t, 0, 1); ctx.fillStyle = f.col; ctx.strokeStyle = 'rgba(0,0,0,.6)'; ctx.lineWidth = 3; ctx.strokeText(f.txt, s[0], s[1]); ctx.fillText(f.txt, s[0], s[1]); ctx.globalAlpha = 1;
+  }
+}
+// sample tag numbers twice a second to flash ▲ / ▼
+function trackFlashes() {
+  if (!G || (RND.flT = (RND.flT || 0) - 1) > 0) return; RND.flT = 30;
+  for (const p of G.props) {
+    if (p.gone || p.stage) continue;
+    const v = p.owner === ME && p.owner >= 0 ? p.offer : p.list && p.owner === -1 && p.kind !== 'mansion' ? val(p) : p.kind === 'mansion' ? val(p) : null;
+    if (v == null) continue;
+    const pv = RND.prevV.get(p.id); RND.prevV.set(p.id, v);
+    if (pv && Math.abs(v / pv - 1) > 0.004) RND.flash.set(p.id, { d: v > pv ? 1 : -1, t: RND.t });
   }
 }
 const _dc = {};
@@ -420,8 +525,8 @@ function popMoney(id, txt, col) { RND.pulse.push({ id, txt, col, t: 0 }); }
 /* ---------- camera ---------- */
 function viewInsets() {
   const narrow = innerWidth <= 760 || PHONE.matches;
-  if (narrow) return { l: 0, r: 0, t: 60, b: 70 };
-  return { l: $('side') && !$('hud').classList.contains('hidden') ? 320 : 0, r: STATE.sel >= 0 && STATE.detail ? 350 : 0, t: 80, b: 84 };
+  if (narrow) return { l: 0, r: 0, t: 70, b: 70 };
+  return { l: 0, r: STATE.sel >= 0 && STATE.detail ? 350 : 0, t: 76, b: 70 };
 }
 function focusTile(x, y, zoom) {
   const ins = viewInsets(), [ix, iy] = iso(x, y, 0), z = zoom || CAM.z;
