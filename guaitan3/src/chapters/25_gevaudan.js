@@ -68,7 +68,7 @@
       const d = (Math.random() * 4) | 0, nx = ex_(e) + DIRS[d][0], ny = ey_(e) + DIRS[d][1];
       if (Math.abs(nx - HOME[id][0]) + Math.abs(ny - HOME[id][1]) > 2) continue;
       if (box && !box(nx, ny)) continue;
-      if (!passable(m, nx, ny, e) || dst(nx, ny, W.pl.x, W.pl.y) < 1.5) continue;
+      if (!passable(m, nx, ny, e) || dst(ex_(e), ey_(e), W.pl.x, W.pl.y) < 3) continue;   // 你走近了，它就站着不挪
       startMove(e, d, 1.6);
     }
   }
@@ -79,7 +79,7 @@
      夜里它进不了火光；你站在火光里，它扑不到你。追上的判定按「不到一格」算。 */
   const BID = { pasture: 'beastP', forest: 'beastF', village: 'beastV' };
   const B = { mode: 'off', x: 0, y: 0, dir: 1, th: 0, r: 3, fear: 0, behind: 0, t: 0, cool: 0, anim: 0, bark: 0, growl: 0, litT: 0, rth: 0, flee: null };
-  let NOON_DIED = 0, NIGHT_DIED = 0, NIGHT_LEFT = null, BELL_T = 0, CUE_T = 0;
+  let NOON_DIED = 0, NIGHT_DIED = 0, NIGHT_LEFT = null, BELL_T = 0, CUE_T = 0, BAA_T = 0, AMB_T = 4;
   const FA = [Math.PI / 2, Math.PI, 0, -Math.PI / 2];
   if (QS.get('debug') === '1') window.__gvB = B;   // 测试钩子
   const DAYP = { fear: 1.5, lunge: .75, om: 1.75, ls: 9.5, stalk: 4.2 };
@@ -88,6 +88,7 @@
   function bEnt() { const m = W.maps[W.mapId]; return m.ents.find(e => e.id === BID[W.mapId]); }
   function bSet(mode, o) { B.mode = mode; B.t = 0; B.fear = 0; B.behind = 0; B.litT = 0; if (o) Object.assign(B, o); }
   function bSync(e, moved) {
+    const crouch = B.mode === 'lunge' || B.behind > .3; if (!!e.red !== crouch) e.red = crouch;   // 压低身子、龇牙：要扑了
     e.px = Math.round(B.x * TS); e.py = Math.round(B.y * TS); e.x = Math.round(B.x); e.y = Math.round(B.y); e.dir = B.dir;
     if (moved > 0) { B.anim += moved; e.fr = [1, 0, 3, 0][((B.anim * 3) | 0) % 4]; } else e.fr = 0;
   }
@@ -104,7 +105,15 @@
   const BURN = 2.5, LOG = 50, NIGHT_T = 100, BAPT_N = [19, 20];
   function fireR(i) { const fu = W.f.fuel ? W.f.fuel[i] : 0; return fu > 0 ? 1.7 + 2.5 * fu / 100 : 0; }
   function litAt(x, y, pad) { if (W.f.ph !== 'night') return -1; for (let i = 0; i < FIRES.length; i++) { const r = fireR(i); if (r > 0 && dst(x, y, FIRES[i][1], FIRES[i][2]) < r + pad) return i; } return -1; }
+  /* 它不翻羊圈的石墙：算出来的位置落在圈里，就推到墙外（只有火灭了从缺口钻） */
+  const PEN = [9.4, 15.4, 18.6, 22.6];
+  function penOut(x, y) {
+    if (W.mapId !== 'village' || x < PEN[0] || x > PEN[2] || y < PEN[1] || y > PEN[3]) return [x, y];
+    const d = [x - PEN[0], PEN[2] - x, y - PEN[1], PEN[3] - y], k = d.indexOf(Math.min(...d));
+    return k === 0 ? [PEN[0], y] : k === 1 ? [PEN[2], y] : k === 2 ? [x, PEN[1]] : [x, PEN[3]];
+  }
   function pushOut(x, y) {
+    [x, y] = penOut(x, y);
     for (let i = 0; i < FIRES.length; i++) {
       const r = fireR(i); if (r <= 0) continue;
       const fx = FIRES[i][1], fy = FIRES[i][2], d = dst(x, y, fx, fy);
@@ -139,7 +148,7 @@
         let gx = R.px + Math.cos(R.th) * 3.1, gy = R.py + Math.sin(R.th) * 3.1;
         if (night) [gx, gy] = pushOut(gx, gy);
         moved = bStep(gx, gy, P.stalk, dt); if (night) [B.x, B.y] = pushOut(B.x, B.y);
-        if (R.off > 2.0 && R.d < 3.6 && !plLit) { B.behind += dt; if (B.behind >= P.lunge) { bSet('lunge'); SND.snarl(S); break; } }   // 你背对着它走：它不用绕，直接扑
+        if (R.off > 2.0 && R.d < 3.6 && !plLit) { const b0 = B.behind; B.behind += dt; if (b0 < .3 && B.behind >= .3) SND.growl(S, .12); if (B.behind >= P.lunge) { bSet('lunge'); SND.snarl(S); break; } }   // 你背对着它走：它不用绕，直接扑
         if (R.d <= 3.6 && R.off <= 2.0) bSet('circle', { th: R.th, r: Math.max(2.4, R.d) });
         break;
       }
@@ -154,7 +163,7 @@
           const want = FA[p.dir] + Math.PI, dd = ad(want, B.th);
           B.th += Math.sign(dd) * Math.min(Math.abs(dd), P.om * dt);
           B.r += (3 - B.r) * Math.min(1, dt * 1.5);
-          if (R.off > 2.0 && !plLit) { B.behind += dt; if (B.behind >= P.lunge) { bSet('lunge'); SND.snarl(S); break; } }
+          if (R.off > 2.0 && !plLit) { const b0 = B.behind; B.behind += dt; if (b0 < .3 && B.behind >= .3) SND.growl(S, .12); if (B.behind >= P.lunge) { bSet('lunge'); SND.snarl(S); break; } }
           else B.behind = Math.max(0, B.behind - dt * 2);
         }
         let gx = R.px + Math.cos(B.th) * B.r, gy = R.py + Math.sin(B.th) * B.r;
@@ -222,7 +231,7 @@
   }
   function stalkCue(S) {
     const R = rel();
-    if (!S.f.belled) { S.f.belled = true; SND.cbell(S); S.toast('钟楼上，神父敲响了钟——它来了'); return; }
+    if (!S.f.belled) { S.f.belled = true; SND.cbell(S); S.toast('钟楼上，神父敲响了钟——它从' + compass(Math.atan2(B.y - 19, B.x - 14)) + '边来了'); return; }
     if (W.t - CUE_T > 6) { CUE_T = W.t; S.toast('罗兰冲着' + compass(R.th) + '边低吼'); }
   }
   function dogBark(S, R, dt) {
@@ -248,7 +257,7 @@
   /* 扎它一矛：它在一步之内、你正对着它 */
   async function stab(S) {
     const f = S.f, R = rel();
-    if (!['circle', 'lunge', 'stalk'].includes(B.mode) || R.d > 1.7 || R.off > .98) return S.narr(f.ph === 'night' ? '黑暗里那两点光。……先别动。' : '它就在那儿。别把后背给它。');
+    if (!['circle', 'lunge', 'stalk', 'prowl'].includes(B.mode) || R.d > 1.7 || R.off > .98) return S.narr(f.ph === 'night' ? '黑暗里那两点光。……先别动。' : '它就在那儿。别把后背给它。');
     S.sfx('cut'); S.shake(300, 2); SND.yelp(S, .12);
     f.stabbed = true;
     await S.narr(S.once('stab1') ? '你咬着牙，把矛往前一送——\n刺刀扎进了它的肩膀，又被它一扭身挣了出来。它嚎了一声，掉头就蹿。' : '矛尖又扎中了它。它嚎叫着蹿开了。');
@@ -332,6 +341,7 @@
   async function houseDoor(S) {
     const f = S.f;
     if (f.ph !== 'morn') return S.narr('屋里没点灯。妈妈在羊圈那边。');
+    if (f.out) return S.think('（羊都放出来了，可不能往屋里带。）');
     S.sfx('open'); await goWith(S, 'house', 5, 7, 3);
   }
   async function smithTalk(S) {
@@ -356,7 +366,7 @@
       await S.say('神父', ['阿涅丝。带弟弟去放羊？……愿天主保佑你们。', '主教大人从芒德寄来了训谕，礼拜天我念过了。我抄了一段，你拿回去让你妈妈晚上再念给你们听。']);
       await S.note('mandement');
       await S.say('神父', ['……主教大人说，这是天主降下的灾祸，因为我们的罪。', '可我在这个教区待了二十年。那些没回家的孩子，我每一个都认识。'], { style: 'whisper' });
-      await S.say('神父', '去给路口的圣母点一支蜡烛吧。不为别的——求她看着你们回来。');
+      await S.say('神父', ['去给路口的圣母点一支蜡烛吧。不为别的——求她看着你们回来。', '……还有，看见什么，都记在心里。将来总得有人把这些事说清楚。']);
       S.give('candle');
       return;
     }
@@ -519,7 +529,10 @@
     await S.walk('beastP', [19, 6], 2.2); B.x = 19; B.y = 6; B.dir = 0;
     S.sfx('heart');
     await S.narr('松林边上，走出来一个东西。\n比狼大。大得多。一身红褐色的毛，背上一道黑，尾巴又长又粗，拖在地上。');
-    await S.narr('羊就在它眼前。它连看都没看一眼。\n它在看那块大石头——看石头底下的艾蒂安。');
+    SND.baa(S, .08); SND.baa(S, .07, .2); SND.sbell(S, .07, .1);
+    for (const id of SHEEP) { const sh = S.ent(id); if (sh) S.walk(id, id === 'sh1' ? [21, 4] : SCATTER[id], 5.5); }   // 不等：羊群四散奔逃
+    await S.narr('羊群「哄」地炸开了，咩咩叫着往四面八方乱窜。白额慌不择路，一头扎向了林子那边。');
+    await S.narr('羊从它鼻子底下跑过去。它连看都没看一眼。\n它在看那块大石头——看石头底下的艾蒂安。');
     S.focus(null);
     await S.say('你', '艾蒂安！爬到石头上去！快！');
     S.place('eti', 23, 13, 0); S.ent('eti').oy = -10; S.ent('eti').solid = false;
@@ -533,7 +546,7 @@
   function startNoon(S) {
     const f = S.f; f.ph = 'noon'; f.rep = 0; f.hits = 0;
     bSet('stalk'); B.cool = 0; const e = S.ent('beastP'); B.x = ex_(e); B.y = ey_(e); e.hidden = false; e.alpha = 1;
-    S.toast('提示：轻点方向键能原地转身。它在你正前方，它就不敢扑');
+    S.toast(S.coop ? '联机：操作的人轻点方向键原地转身，另一个人盯着它喊方向' : '提示：轻点方向键能原地转身。它在你正前方，它就不敢扑');
   }
   async function noonWin(S) {
     const f = S.f; B.mode = 'hold';
@@ -657,7 +670,7 @@
     const r = await S.ask('「想好了？它今晚从哪边来？」', ['想好了，说给他听', '再看一遍口诀', '还没想好'], '巴蒂斯特');
     if (r === 1) return S.note('saying');
     if (r === 2) return S.say('巴蒂斯特', (f.wrongP || 0) ? '想想我口诀里的头两句。' : '去看看风。我的口诀里都写着呢。');
-    const v = await S.keypad('先按：风从哪边来\n再按：它会从哪边摸过来\n（点按方向；方向键选、回车确认）', DIRK, 2, { sep: '→', alias: { 7: '西北', 8: '北', 9: '东北', 4: '西', 5: '羊圈', 6: '东', 1: '西南', 2: '南', 3: '东南' } });
+    const v = await S.keypad('先按：风从哪边来\n再按：它会从哪边摸过来\n（点按方位；或方向键选、回车确认；小键盘 1–9 按方位排）', DIRK, 2, { sep: '→', alias: { 7: '西北', 8: '北', 9: '东北', 4: '西', 5: '羊圈', 6: '东', 1: '西南', 2: '南', 3: '东南' } });
     if (v == null) return;
     const [w, b] = v.split('→');
     if (w === '东北' && b === '西南') return puzzleSolved(S, false);
@@ -670,8 +683,8 @@
     else if (b === '东北') why = '从上风口来？那羊老远就闻见它了。它可没那么傻。';
     else if (b === '羊圈') why = '从羊圈当中？它又不是从地底下钻出来的。';
     else why = '风向你看对了。可它从哪边摸过来？';
-    const tip = n === 1 ? (w !== '东北' ? '抬头看看钟楼上的铁公鸡，再念念我口诀的头一句。' : '想想口诀第二句。') :
-      n === 2 ? '头一句说铁公鸡：鸡头冲哪边，风就从哪边来。第二句说下风口：风把羊的味道往哪边吹，它就蹲在哪边。' :
+    const tip = n === 1 ? '再想想。我的口诀，你翻出来再念一遍。' :
+      n === 2 ? (w !== '东北' ? '先去教堂门口抬头看看铁公鸡。口诀头一句：鸡头冲哪边，风就从哪边来。' : '口诀第二句：下风口。风把羊的味道往哪边吹，它就蹲在哪边。') :
       n === 3 ? '去羊圈西南角的矮墙外头看看。昨天夜里，它已经来踩过点了。' : null;
     if (n >= 4) { await S.say('巴蒂斯特', ['……风从东北来，它从西南来。', '记住了，下回得自己想。']); return puzzleSolved(S, true); }
     await S.say('巴蒂斯特', [why, tip]);
@@ -724,6 +737,8 @@
       if (was > 0 && f.fuel[i] <= 0) { S.toast(FN[i] + '的火灭了！羊在叫'); SND.baa(S, .07); SND.baa(S, .05, .3); }
     }
     fireVis(S);
+    BAA_T -= dt;   // 它摸到羊圈附近：羊挤成一团乱叫
+    if (BAA_T <= 0 && B.mode !== 'off' && dst(B.x, B.y, 14, 19) < 7.5) { BAA_T = 2.2 + Math.random(); SND.baa(S, .06); if (Math.random() < .5) SND.baa(S, .045, .25); }
   }
   async function woodUse(S, e) {
     const f = S.f;
@@ -745,7 +760,7 @@
     const f = S.f;
     SND.baa(S, .08); SND.baa(S, .07, .25); S.shake(300, 2);
     await S.narr('羊圈里一下子炸了锅！\n羊挤成一团往石墙上撞，咩咩地乱叫。');
-    S.place('bapt', FIRES[i][1] + 1, FIRES[i][2] + (i ? -1 : 1), 1);
+    S.place('bapt', FIRES[i][1] - 1, FIRES[i][2] + (i ? 1 : -1), 2);   // 站在火堆外侧，不会压在你身上
     await S.say('巴蒂斯特', '滚！滚开！畜生！');
     f.fuel[i] = 40; fireVis(S); SND.crackle(S, .06);
     await S.narr('老爹举着火把冲过来，把火堆重新点着了。\n那东西退回了黑暗里。');
@@ -800,13 +815,15 @@
     await S.say('猎人', ['……昨夜是你们守的羊圈？', '林子边上的脚印我们看见了。是它。', '你见过它？说说——它长什么样，怕什么，从哪边来。']);
     const V = ['「是狼。特别大的狼。」', '「不是狼。是别的什么野兽。」', '「是人弄出来的。」', '「我说不清。」'][f.verdict ?? 3];
     await S.narr('你把这两天看见的，一样一样说给他们听。\n说到最后，你说：' + V);
+    await S.say('猎人', ['「狼？那正好，我们就是打狼的。……可我打了一辈子狼，没见过放着羊不吃的。」', '「别的野兽？……我在凡尔赛的兽园里见过狮子。山里的冬天，养不活狮子。」', '「人？」\n（猎人沉默了一会儿，往林子那边看了一眼。）「……这话，别到处说。」', '「说不清就对了。说得清的人，都在吹牛。」'][f.verdict ?? 3]);
     const hidden = f.candle && clueN(f) >= 4;
     if (hidden) {
       await S.narr('那个上了年纪的猎人一直没插话。听到你说「风从东北来，它从西南来」，他点了点头。');
       await S.say('老猎人', ['丫头，你这双眼睛，比我那几个徒弟都尖。', '……路口那支蜡烛，是你点的？']);
     } else await S.say('猎人', '好。我们进林子。你们回屋去睡一觉吧。');
     if (hidden) return S.end({ id: 'blessed', title: '第二十五夜　完·圣母的蜡烛', text: '那天，猎人们在林子里搜到天黑，没有找到它。\n\n两年后，1767年6月，莫歇山下的一片沼地里，一个本地的老猎人打死了一头红褐色的大野兽。从那以后，山里再也没有人被它找上。\n\n很多年以后，有人在书里写：那个老猎人去朝过博略的圣母，他的子弹是祝过圣的——再往后，又有人说，是银的。\n妈妈听到这种故事，总是摇摇头，然后去路口的圣母像前，点上一支蜡烛。\n\n——第二十五夜　完（隐藏结局「圣母的蜡烛」）' });
-    return S.end({ id: 'dawn', title: '第二十五夜　完', text: '那天，猎人们在林子里搜到天黑，没有找到它。\n\n那年夏天，猎狼人走了，国王的火枪手来了；秋天，火枪手打死了一头大狼，做成标本送去了凡尔赛，说事情结束了。\n可到了冬天，山里又有人没能回家。\n\n这些，都是后来的事。\n那一夜，村里谁也没有出事。\n\n——第二十五夜　完' });
+    const tail = !f.candle ? '\n\n（那天早上，路口的圣母像前，没有人点蜡烛。）' : clueN(f) < 4 ? '\n\n（猎人问了很多。有几样，你没顾上细看。）' : '';
+    return S.end({ id: 'dawn', title: '第二十五夜　完', text: '那天，猎人们在林子里搜到天黑，没有找到它。\n\n那年夏天，猎狼人走了，国王的火枪手来了；秋天，火枪手打死了一头大狼，做成标本送去了凡尔赛，说事情结束了。\n可到了冬天，山里又有人没能回家。\n\n这些，都是后来的事。\n那一夜，村里谁也没有出事。' + tail + '\n\n——第二十五夜　完' });
   }
 
   /* ================= 精灵 ================= */
@@ -821,7 +838,8 @@
         R(7, -6, 2, 6, DK); R(1, -9, 3, 5, FUR2); R(12, -9, 3, 5, FUR2); R(2, -8, 1, 3, DK); R(13, -8, 1, 3, DK);
         R(4, -1, 8, 6, CR); R(6, 0, 4, 2, '#1a0e08');
         R(3, -3, 2, 2, EYE); R(11, -3, 2, 2, EYE); R(3, -3, 1, 1, '#fff8c0'); R(11, -3, 1, 1, '#fff8c0');
-        R(5, 3, 6, 2, '#3a0a08'); R(5, 3, 1, 1, '#eee'); R(10, 3, 1, 1, '#eee'); R(5, 6, 6, 4, CR);
+        R(5, 3, 6, e.red ? 3 : 2, '#3a0a08'); R(5, 3, 1, 1, '#eee'); R(10, 3, 1, 1, '#eee'); R(5, 6, 6, 4, CR);
+        if (e.red) { R(6, 3, 1, 1, '#eee'); R(8, 3, 1, 1, '#eee'); R(1, -9, 3, 3, FUR); R(12, -9, 3, 3, FUR); }
         return;
       }
       if (e.dir === 3) {
@@ -838,9 +856,11 @@
       Q(19, 1, 4, 3, FUR); Q(21, 3, 3, 7, FUR); Q(21, 9, 3, 3, DK);
       Q(4 + st, 8, 3, 7, FUR); Q(17 - st, 8, 3, 7, FUR); Q(4 + st, 14, 3, 1, DK); Q(17 - st, 14, 3, 1, DK);
       Q(-2, 3, 5, 6, CR);
-      Q(-7, -5, 9, 8, FUR); Q(-11, -2, 5, 4, FUR); Q(-11, 1, 5, 2, CR); Q(-12, -2, 2, 2, '#140a06'); Q(-10, 2, 4, 1, '#3a0a08'); Q(-9, 2, 1, 1, '#eee');
-      Q(-4, -8, 3, 4, FUR2); Q(-1, -7, 2, 3, FUR2); Q(-3, -7, 1, 2, DK);
-      Q(-5, -3, 2, 1, EYE); Q(-4, -5, 7, 1, DK);
+      const hy = e.red ? 3 : 0;   // 压低了头
+      Q(-7, -5 + hy, 9, 8, FUR); Q(-11, -2 + hy, 5, 4, FUR); Q(-11, 1 + hy, 5, 2, CR); Q(-12, -2 + hy, 2, 2, '#140a06'); Q(-10, 2 + hy, 4, 1, '#3a0a08'); Q(-9, 2 + hy, 1, 1, '#eee');
+      if (e.red) { Q(-11, 1 + hy, 5, 2, '#3a0a08'); Q(-11, 1 + hy, 1, 1, '#f4f0e0'); Q(-9, 1 + hy, 1, 1, '#f4f0e0'); Q(-10, 2 + hy, 1, 1, '#f4f0e0'); Q(-4, -5 + hy, 4, 2, FUR2); Q(-1, -4 + hy, 3, 2, FUR2); Q(2, -2, 12, 1, DK); }
+      else { Q(-4, -8, 3, 4, FUR2); Q(-1, -7, 2, 3, FUR2); Q(-3, -7, 1, 2, DK); }
+      Q(-5, -3 + hy, 2, 1, EYE); Q(-4, -5 + hy, 7, 1, DK);
     },
     sheep(g, e, t, R) {
       const mi = e.dir === 2, Q = (x, y, w, h, c) => R(mi ? 16 - x - w : x, y, w, h, c);
@@ -896,10 +916,12 @@
       R(0, -8, 112, 24, S0); R(-1, -10, 114, 3, '#2a2a32');
       for (let y = -6; y < 16; y += 4) for (let x = (y / 4 % 2) * 5; x < 112; x += 10) R(x, y, 9, 1, S1);
       R(16, -4, 6, 10, '#2a2a3a'); R(90, -4, 6, 10, '#2a2a3a'); R(17, -3, 4, 8, '#4a5a7a'); R(91, -3, 4, 8, '#4a5a7a');
-      R(46, -46, 20, 40, '#837c70'); R(46, -46, 20, 2, '#6a645a'); for (let y = -42; y < -8; y += 4) R(46, y, 20, 1, S1);
-      R(50, -40, 4, 9, '#120e0c'); R(58, -40, 4, 9, '#120e0c'); R(54, -38, 4, 5, '#5a4a2a');
-      for (let i = 0; i < 16; i++) { const wd = 2 + i * 1.3; R(56 - wd / 2, -62 + i, wd, 1, i % 3 ? '#3e3e48' : '#4a4a56'); }
-      R(55, -70, 2, 8, '#1a1a1a'); R(52, -71, 6, 2, '#222'); R(57, -73, 2, 2, '#222'); R(58, -74, 1, 1, '#a02020'); R(51, -73, 2, 2, '#222'); R(50, -74, 2, 1, '#222');
+      R(46, -40, 20, 34, '#837c70'); R(46, -40, 20, 2, '#6a645a'); for (let y = -36; y < -8; y += 4) R(46, y, 20, 1, S1);
+      R(50, -35, 4, 9, '#120e0c'); R(58, -35, 4, 9, '#120e0c'); R(54, -33, 4, 5, '#5a4a2a');
+      for (let i = 0; i < 12; i++) { const wd = 2 + i * 1.7; R(56 - wd / 2, -52 + i, wd, 1, i % 3 ? '#3e3e48' : '#4a4a56'); }
+      /* 铁公鸡：鸡头冲右上（东北），尾巴像一面小帆 */
+      R(55, -58, 2, 6, '#1a1a1a'); R(51, -61, 9, 3, '#2a2622'); R(59, -64, 3, 4, '#2a2622'); R(62, -63, 2, 1, '#c89a2a'); R(60, -66, 2, 2, '#a02020');
+      R(47, -66, 4, 6, '#2a2622'); R(46, -67, 2, 3, '#2a2622'); R(53, -58, 1, 2, '#2a2622'); R(56, -58, 1, 2, '#2a2622');
       R(52, -20, 8, 7, '#5a4a6a'); R(55, -20, 2, 7, '#3a2a4a'); R(52, -17, 8, 1, '#3a2a4a');
       R(49, -2, 14, 18, '#4a3a2a'); R(50, -4, 12, 2, '#4a3a2a'); R(51, -1, 10, 17, '#5a3a20'); R(56, -1, 1, 17, '#3a2412');
     },
@@ -1121,6 +1143,9 @@
       if (W.busy) return;
       if (f.ph === 'past' && mp === 'pasture') { f.pastT = (f.pastT || 0) + dt; if ((clueN(f) >= 2 || f.pastT > 75) && S.once('noonGo')) S.run(noonEvent); }
       if (f.ph === 'chase' && mp === 'forest' && W.pl.y <= 5 && S.once('chaseEnd')) S.run(chaseEnd);
+      if (mp === 'pasture' && ['past', 'gather', 'home'].includes(f.ph)) {   // 高地上远远近近的羊铃和咩声
+        AMB_T -= dt; if (AMB_T <= 0) { AMB_T = 6 + Math.random() * 5; if (Math.random() < .6) SND.sbell(S, .018 + Math.random() * .012); else SND.baa(S, .02); }
+      }
       if (f.ph === 'gather' && !f.foundW && (mp === 'pasture' || mp === 'forest')) {
         BELL_T -= dt;
         if (BELL_T <= 0) { BELL_T = 3.2; const d = mp === 'forest' ? dst(W.pl.x, W.pl.y, 18, 4) : dst(W.pl.x, W.pl.y, 19.5, 1) + 8; SND.sbell(S, clamp(.08 - d * .003, .012, .07)); }
@@ -1213,7 +1238,7 @@
       },
       /* ---------------- 北边的松林 ---------------- */
       forest: {
-        amb: 'night', dark: .52, plr: 3, legend: LEG, fog: .12,
+        amb: 'drone', dark: .52, plr: 3, legend: LEG, fog: .12,
         tileOpts: { grassC: '#24301e', treeC: '#14221a' },
         rows: forestRows(),
         ents: [
