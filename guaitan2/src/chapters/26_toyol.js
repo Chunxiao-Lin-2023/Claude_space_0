@@ -236,6 +236,7 @@
     kain(g, e, t, R) { const s = Math.sin(t * 2.4 + e.px) > 0 ? 1 : 0; R(4, 1, 8, 1, '#ece8dc'); R(4, 2, 8, 7 + s, e.col || '#d8c8a0'); R(5, 4, 6, 1, shade(e.col || '#d8c8a0', -.2)); },
     ayam(g, e, t, R) { const p = Math.sin(t * 3 + e.px) > .6 ? 1 : 0; R(5, 8, 7, 5, '#c8a070'); R(10, 5 + p, 3, 4, '#c8a070'); R(11, 4 + p, 1, 1, '#c02020'); R(13, 6 + p, 1, 1, '#e0a020'); R(4, 7, 2, 3, '#8a5a2a'); R(7, 13, 1, 2, '#e0a020'); R(10, 13, 1, 2, '#e0a020'); },
     biskut(g, e, t, R) { box(R, 1, -2, 14, 16, '#5a3a22'); R(2, -1, 12, 2, '#7a5232'); R(4, -6, 8, 5, '#3a6aa0'); R(4, -6, 8, 1, '#5a8ac0'); R(6, -4, 4, 2, '#e8c860'); },
+    daun(g, e, t, R) { const s = Math.sin(t * 1.2 + e.px) > .3 ? 1 : 0; R(-6 + s, -14, 12, 3, '#1e4a22'); R(8 - s, -16, 13, 3, '#24562a'); R(-3, -18, 8, 3, '#2a5e2e'); R(5, -20, 7, 4, '#1e4a22'); R(-8, -11, 5, 2, '#183c1c'); R(16, -12, 5, 2, '#183c1c'); R(6, -14, 4, 4, '#4a3a20'); R(4, -11, 2, 2, '#6a5a2a'); R(9, -11, 2, 2, '#6a5a2a'); },
     gelas(g, e, t, R) { R(6, 6, 4, 6, 'rgba(220,200,160,.7)'); R(6, 6, 4, 1, '#f0e8d0'); }
   };
 
@@ -264,7 +265,7 @@
   };
 
   const FP = 'rgba(90,112,100,.6)', FPG = 'rgba(200,198,186,.7)';
-  const TYL = { r: 1.1, col: 'rgba(170,220,170,.10)' };
+  const TYL = { r: .7, col: 'rgba(170,220,170,.06)' };
   const KR = ['T'.repeat(34),
     'T' + 'Y'.repeat(16) + 'd' + 'Y'.repeat(12) + 'OOOT',
     'T"#######""######d"#####a#####OOOT',
@@ -287,15 +288,21 @@
 
   defChapter({
     id: 'toyol', n: 26, title: '鬼仔', sub: '门锁着，窗关着，钱罐里的钱一夜少一半。豆子、镜子、弹珠、螃蟹——它毕竟是个孩子。', origin: '马来西亚民间传说', color: '#24402e',
-    thumb(g, w, h) {   // 一只扎着黄布、缠着红线的小瓶子，瓶里蜷着一个光头小人；地上撒着绿豆
-      const x = w * .2, y = h - 22 - 58;
-      g.fillStyle = '#3a2a14'; g.fillRect(x + 4, y + 14, 28, 44); g.fillStyle = '#6a4a20'; g.fillRect(x + 6, y + 16, 24, 40);
-      g.fillStyle = 'rgba(255,255,255,.18)'; g.fillRect(x + 8, y + 18, 4, 30);
-      g.fillStyle = '#3a2a14'; g.fillRect(x + 12, y + 4, 12, 12); g.fillStyle = '#d8b030'; g.fillRect(x + 10, y, 16, 8);
-      g.fillStyle = '#b02020'; for (let i = 0; i < 3; i++) g.fillRect(x + 10, y + 8 + i * 2, 16, 1);
-      g.fillStyle = '#8a9c84'; g.fillRect(x + 12, y + 30, 12, 10); g.fillRect(x + 10, y + 32, 2, 3); g.fillRect(x + 24, y + 32, 2, 3); g.fillRect(x + 14, y + 40, 8, 10);
-      g.fillStyle = '#060606'; g.fillRect(x + 14, y + 33, 3, 3); g.fillRect(x + 19, y + 33, 3, 3); g.fillStyle = '#e8d040'; g.fillRect(x + 15, y + 34, 1, 1); g.fillRect(x + 20, y + 34, 1, 1);
-      for (let i = 0; i < 26; i++) { g.fillStyle = i % 3 ? '#6aa64a' : '#8ac860'; g.fillRect((hash(i, 7, 26) * w) | 0, h - 20 + ((hash(i, 8, 26) * 16) | 0), 2, 2); }
+    thumb(g, w, h) {   // 一只扎着黄布、缠着红线的褐色小瓶，瓶里贴着玻璃往外看的光头小鬼；地上撒着绿豆、一颗猫眼弹珠
+      const F = (x, y, ww, hh, c) => { g.fillStyle = c; g.fillRect(Math.round(x), Math.round(y), Math.round(ww), Math.round(hh)); };
+      const bw = Math.min(w * .3, 46), bh = bw * 1.55, x = w * .5 - bw / 2, y = h - 22 - bh - 4;
+      F(x - 2, y + bh * .22 - 2, bw + 4, bh * .78 + 4, '#1a1008'); F(x, y + bh * .22, bw, bh * .78, '#5a3a18');
+      F(x + bw * .3, y + bh * .06, bw * .4, bh * .18, '#3a2410'); F(x + bw * .22, y, bw * .56, bh * .1, '#d8b030');
+      g.fillStyle = '#c02020'; for (let i = 0; i < 4; i++) F(x + bw * .22, y + bh * .1 + i * 2, bw * .56, 1, '#c02020');
+      const hx = x + bw * .18, hy = y + bh * .34, hw = bw * .64;   // 小鬼的大光头
+      F(hx, hy, hw, hw * .85, '#8a9c84'); F(hx - bw * .08, hy + hw * .25, bw * .1, hw * .2, '#8a9c84'); F(hx + hw - 1, hy + hw * .25, bw * .1, hw * .2, '#8a9c84');
+      F(hx + hw * .14, hy + hw * .3, hw * .26, hw * .3, '#060606'); F(hx + hw * .6, hy + hw * .3, hw * .26, hw * .3, '#060606');
+      F(hx + hw * .22, hy + hw * .4, 2, 2, '#e8d040'); F(hx + hw * .68, hy + hw * .4, 2, 2, '#e8d040');
+      F(hx + hw * .3, hy + hw * .7, hw * .4, 1, '#2a1010');
+      F(x + 3, y + bh * .26, 3, bh * .6, 'rgba(255,255,255,.22)');
+      F(hx + hw * .1, hy + hw * .85, hw * .8, bh * .2, '#7a8c74');
+      for (let i = 0; i < 34; i++) F((hash(i, 7, 26) * w) | 0, h - 21 + ((hash(i, 8, 26) * 17) | 0), 2, 2, i % 3 ? '#6aa64a' : '#8ac860');
+      F(w * .78, h - 14, 5, 5, '#d8e8f0'); F(w * .78 + 1, h - 13, 3, 3, '#4a90d0'); F(w * .78 + 1, h - 13, 1, 1, '#fff');
     },
     endings: { pulang: '送它回家', simpan: '留下的瓶子', pecah: '碎掉的瓶子' },
     amb: 'night', floor: 'dirt', wall: 'wood', dark: .3, plr: 3,
@@ -430,6 +437,7 @@
           /* 河边 */
           ...[[6, 15], [15, 15], [24, 15]].map(([x, y], i) => ({ id: 'lb' + i, x, y, spr: 'lubang', decal: true, on: S => crabOn(S) })),
           { id: 'outlet', x: 3, y: 12, spr: 'puddle', decal: true, on: S => S.narr('振兴号后面，厨房的水沟口通到这条大水沟里。水沟边的泥是湿的。') },
+          ...KR.flatMap((r, y) => [...r].map((c, x) => c === 'J' ? { x, y, spr: 'daun', solid: false, z: 1 } : null).filter(Boolean)),
           ...TRAIL.map(([x, y], i) => ({ id: 'tr' + i, x, y, spr: 'footprints', col: FPG, decal: true, hidden: true, on: i % 3 === 0 ? (S => trailOn(S)) : undefined })),
           { x: 10, y: 12, spr: 'ayam', on: S => S.narr('一只母鸡在地上啄来啄去。它啄起一颗什么东西，又吐掉了。') },
           { x: 22, y: 12, spr: 'ayam', on: S => S.narr('一只公鸡歪着头看你，喉咙里咕咕地响。') },
@@ -855,7 +863,8 @@
     if (S.f.ph !== 'd2') return;
     if ((S.f.evN || 0) >= 3) {
       S.f.ph = 'd2b';
-      await S.say('阿依莎', ['红线、矿砂、包钱的纸……还有他手上的布。', '……阿明，是 Seman 伯。']);
+      const got = [['thread', '柱子上的红线'], ['sand', '院子里的矿砂'], ['wrap', '你家包钱的纸'], ['mata', '你的猫眼'], ['band', '他手上缠的布']].filter(([k]) => S.f['ev_' + k]).map(([, t]) => t);
+      await S.say('阿依莎', [got.join('、') + '……', '……阿明，是 Seman 伯。']);
       await S.think('Seman 伯。矿关门那天，在矿湖边坐到天黑的 Seman 伯。');
       S.goal('回 1 号，把发现告诉拓婆');
       return;
@@ -964,7 +973,7 @@
     await S.alpha('ty', 0, 400);
     S.focus(null);
     await S.think('……它还会再来。\n先把东西摆好——摆在那串脚印上的圈里。');
-    S.goal('守住钱罐到天亮：诱饵摆在它路上的圈里（一人盯它、一人摆），别让它碰到你');
+    S.goal('守住钱罐到天亮：诱饵摆进脚印上的圈（一人盯、一人摆），别让它碰到你');
     n1Reset(S);
     S.cp('malam1');
     n1Start(S);
@@ -987,7 +996,14 @@
     crabTick(S, 'crabR');
     T.zz = (T.zz || 0) - dt; if (T.zz <= 0) { T.zz = 3.2; S.tone('sawtooth', 90, 70, .6, .012, 0, 300); }   // 阿爸的鼾声
     if (T.m === 'lure') { T.t -= dt; lureSnd(S, T, dt, 'ty'); }
-    if (T.m === 'out') { T.t -= dt; if (T.t <= 0) emerge1(S, e, T); return; }
+    if (T.m === 'out') {
+      T.t -= dt;
+      if (T.t <= 0) {
+        if (Math.abs(W.pl.x - DRAIN1[0]) + Math.abs(W.pl.y - DRAIN1[1]) <= 1) { T.t = 1.2; if (!T.warnD) { T.warnD = 1; gurgle(S, .07); S.toast('水沟里咕噜咕噜地冒泡——它要出来了，快离开水沟口！'); } return; }
+        T.warnD = 0; emerge1(S, e, T);
+      }
+      return;
+    }
     if (!e.hidden && T.cd <= 0 && near(e, W.pl, 12)) return bite1(S, T);
     if (e.mv) return;
     const sp = v => v * (T.fed > 0 ? 1.35 : 1);
@@ -1033,6 +1049,8 @@
     coins(S); giggle(S, .04); S.bubble('ty', '♥', 900);
     if (f.stolen >= N1.lose) { f.ph = 'n1x'; S.run(fail1); return; }
     S.toast(`叮——它从钱罐里抓走了一卷钱！（还剩 ${till.s.n} 卷；再丢一卷，店租就交不上了）`);
+    const empty = ['k1', 'k2', 'k3', 'k4'].filter(id => !S.ent(id).s.k).length;
+    if (empty && haveLures(S).length) S.after(400, async S => S.think(`脚印上还有 ${empty} 个圈空着，手里的东西还没摆完……\n趁它钻回水沟，赶紧摆上。`));
     T.m = 'back'; T.why = 'steal';
   }
   async function fail1(S) {
@@ -1048,7 +1066,7 @@
     if (!e.hidden) { S.bubble('ty', '!', 800); await S.narr('村子那头，第一声鸡叫。\n它像被烫了一下，扔下手里的东西，一溜烟钻回了水沟。'); }
     else await S.narr('村子那头，第一声鸡叫。\n水沟里咕噜咕噜响了一阵，然后就什么声音都没有了。');
     e.hidden = true; S.hide('crabR');
-    for (let i = 1; i <= 6; i++) { const z = S.ent('k' + i); if (z.s.k === 'cermin') S.give('cermin', true); z.s.k = ''; z.s.mess = 0; z.hidden = true; }
+    for (let i = 1; i <= 6; i++) { const z = S.ent('k' + i); if (z.s.k === 'cermin') S.give('cermin', true); else if (z.s.k === 'guli') S.give('guli', true); else if (z.s.k === 'ketam') S.give('ketam', true); else if (z.s.k === 'kacang') { S.f.kac = (S.f.kac || 0) + 1; S.give('kacang', true); } z.s.k = ''; z.s.mess = 0; z.hidden = true; }
     const n = S.ent('till').s.n;
     await S.narr(n >= 3 ? '钱罐里，三卷钱一卷不少。' : '钱罐里还剩两卷。丢了一卷——还能跟房东求个情。');
     const c = S.f.cl || {}, L = [];
@@ -1109,6 +1127,10 @@
       if (T.pd > N2.lost) T.lost += dt; else T.lost = 0;
       T.hb -= dt; if (T.hb <= 0) { T.hb = .62; heart(S, .07); }
     }
+    if (e.mv && T.m !== 'rest') {   // 光脚踩地板：啪嗒、啪嗒，越近越响、越亮
+      T.fs = (T.fs || 0) - dt;
+      if (T.fs <= 0) { T.fs = T.m === 'hunt' ? .22 : .38; const d = Math.abs(ex - p.x) + Math.abs(ey - p.y); if (d <= 12) { const v = .035 * (1 - d / 13); S.tone('triangle', 900, 500, .03, v, 0, 800 + 3000 * (1 - d / 13)); } }
+    }
     if (T.m === 'rest') T.t -= dt;
     if (T.m === 'lure') { T.t -= dt; lureSnd(S, T, dt, 'ty2'); }
     if ((T.m === 'prowl' || T.m === 'hunt' || T.m === 'toLure' || T.m === 'crab') && T.cd <= 0 && near(e, p, 12)) return bite2(S, T);
@@ -1118,7 +1140,7 @@
         const L = findLure(e, N2.R, T, true); if (L) { T.m = 'toLure'; T.lure = L.id; e.s.mode = ''; return; }
         if (pathLen(ex, ey, p.x, p.y, 3) <= 2) { T.m = 'prowl'; e.s.mode = ''; T.t = 0; }   // 蹲在角落里也会闻到贴近的人
       }
-      if (T.t <= 0) { T.m = 'prowl'; e.s.mode = ''; T.why = ''; }
+      if (T.t <= 0) { T.m = 'prowl'; e.s.mode = ''; T.why = ''; T.seen = []; }
       return;
     }
     if (T.m === 'prowl' || T.m === 'hunt') {
@@ -1147,12 +1169,12 @@
       if (L && T.k === 'cermin' && !L.s.k) T.t = 0;
       if (T.t > 0) return;
       let far = WP2[0], fd = -1; for (const w of WP2) { const d = Math.abs(w[0] - p.x) + Math.abs(w[1] - p.y); if (d > fd) { fd = d; far = w; } }
-      const nx = spend(S, e, T, 'crabR2', far);
+      const nx = spend(S, e, T, 'crabR2', far); if (T.seen.length > 1) T.seen.shift();
       T.m = nx === 'go' ? 'prowl' : nx === 'home' ? 'home' : 'crab'; T.why = nx === 'home' ? 'guli' : '';
       return;
     }
     if (T.m === 'home') {
-      if (stepTo(e, HOME2[0], HOME2[1], 3.4)) { T.m = 'rest'; T.t = T.why === 'bite' ? N2.rest : N2.dur.guli; e.s.mode = 'count'; }
+      if (stepTo(e, HOME2[0], HOME2[1], 3.4)) { T.m = 'rest'; T.t = T.why === 'bite' ? N2.rest : N2.dur.guli; e.s.mode = 'count'; T.seen = []; }
       return;
     }
     if (T.m === 'crab') {
@@ -1187,6 +1209,7 @@
     if (S.once('kaleng')) await S.narr('灶台边一只蓝色的饼干铁罐。打开，里面没有饼干——只有一叠叠码好的硬币，和一张叠成小方块的纸。');
     S.f.readSurat = true;
     await S.note('surat');
+    if (S.once('surat2')) S.goal('去卧室打开木盒（一人翻笔记念顺序、一人转木片；先把它引开）');
   }
   async function piringOn(S) {
     await S.narr('厨房角落里铺着一块小草席，席上一只小碟子。碟子底干了一圈暗红色的东西。\n草席边上，硬币一摞一摞码得整整齐齐。每摞十个。');
@@ -1211,10 +1234,11 @@
     await S.narr('「咔哒」——四块木片自己转回了原样。盒子里的东西狠狠撞了一下盖子。\n厨房那边，有个小东西尖尖地笑了一声，光脚踩着地板，啪嗒、啪嗒。');
     let h = '';
     if (v === '绿豆·镜子·弹珠·螃蟹') h = '……这是它自己会按的顺序：最喜欢的放最前。巫师防的就是这个。';
-    else if (f.pw === 2) h = '顺序……巫师的纸上写过怎么排；阿依莎的本子上记着它最放不下什么。（翻翻笔记）';
+    else if (f.pw === 2) h = f.readSurat ? '顺序……巫师的纸上写过怎么排；阿依莎的本子上记着它最放不下什么。（翻翻笔记）' : '瞎转是转不开的。巫师一定给 Seman 伯留了说明——厨房灶台边那只蓝色的饼干罐？';
     else if (f.pw === 3) h = '纸上说：「和它的心思反过来」——最放不下的放最后，最容易丢下的放最前。\n本子上从久到短：绿豆、镜子、弹珠、螃蟹。';
     else if (f.pw >= 4) h = '反过来，就是：螃蟹、弹珠、镜子、绿豆。';
     if (h) await S.think(h);
+    S.goal('打开卧室的木盒（一人翻笔记念顺序、一人转木片；它被吵醒了，先引开它）');
     if (T && T.m === 'hunt') S.toast('它来了——躲开，或者丢个诱饵！');
   }
   async function petiOpen(S) {
@@ -1266,7 +1290,8 @@
     await S.walk('semanS', [15, 8], 4.2);
     S.face('semanS', 'pl');
     await S.say('Seman 伯', ['还给我……把瓶子还给我！'], { style: 'big' });
-    await S.narr('他浑身是泥，大概是骑着摩托车连夜从怡保赶回来的。他喘着气，盯着你手里的瓶子。');
+    await S.narr('他浑身是泥，骑着摩托车连夜从怡保赶回来的。他喘着气，盯着你手里的瓶子。');
+    await S.say('Seman 伯', ['Nurul 的手术做完了，没事了……我在病房外面的椅子上睡着，梦见它蹲在我家楼梯底下哭。', '我一醒，就往回骑。']);
     await S.say('Seman 伯', ['Nurul 的手术费，四百块。医院说不先交钱，就排到下个月。', '矿关了，我能怎么办？我去北边找那个巫师。他说，养一个月就够了，一个月……', '每个礼拜四，我割开自己的手指头……']);
     await S.say('拓婆', 'Seman。你看看它。');
     S.face('semanS', 'tyS');
@@ -1295,6 +1320,7 @@
     await S.narr('它看着' + (S.has('cermin') ? '镜子里' : '水里') + '的自己，看了很久。\n里面不是一个青灰色的小怪物，是一个很小很小的孩子，蜷着身子，像还在睡觉——像从来没有醒过。');
     S.sfx('cry');
     await S.narr('它伸出手，摸了摸里面那张脸。\n然后它哭了。不是咯咯的笑，是一个婴儿那样细细的哭声。');
+    await S.think('夜里它照镜子，只是在玩——那时候它还被七道红线拴着。\n现在瓶口松了，它才真正看见了自己是什么。');
     const hasMata = S.has('mata');
     const r = await S.ask('「还它一样孩子玩的东西。」', hasMata ? ['把阿公留下的猫眼弹珠给它', '给它一颗普通的弹珠'] : ['给它一颗普通的弹珠'], '阿明');
     S.f.gaveMata = hasMata && r === 0;
@@ -1311,6 +1337,7 @@
   async function endPulang(S) {
     S.take('botol');
     await S.narr('你解开最后一道红线，拔掉瓶口的黄布，蹲下来，把瓶子轻轻放进水里。');
+    S.sfx('splash'); S.tone('sine', 520, 260, .5, .03, .05, 1200);
     await S.narr('瓶子没有沉。它在水面上打了个转，慢慢地，往下游漂去。');
     await S.say('伊玛目', '（他闭上眼睛，低声念起了一段祈祷。你听不懂，可你知道，那是在为一个孩子祈祷。）', { style: 'whisper' });
     hum(S, .03);
@@ -1323,6 +1350,7 @@
     ext.push('那个礼拜，Seman 伯卖掉了电视机和摩托车，挨家挨户把钱还回去。还不上的，他在祈祷室门口一家一家地道歉。');
     ext.push(S.f.ramaT ? '村长提着一袋米，走进胶园的工寮，跟拉玛萨米坐着喝了一下午的茶。' : '拉玛萨米没过多久就搬走了。村长后来说，他一直想去跟人家道个歉，可是没找到机会。');
     ext.push('伊玛目在祈祷室门口放了一个新的捐款箱，给 Nurul 凑手术费。这一回，箱子没有上锁。');
+    ext.push('礼拜六，阿爸照样去交了店租。回来的路上，他在咖啡摊坐了很久，跟 Seman 伯一人喝了一杯拉茶。');
     await S.card('1986年3月', '', ext.join('\n\n'));
     await S.end({ id: 'pulang', title: '第二十六夜　完', text: (S.f.gaveMata ? '你再也没见过那颗猫眼。\n只是那年雨季，坚打河涨水又退了以后，你在码头边的河滩上看见一串很小很小的脚印，从水里走上来，在你从前蹲过的地方转了一圈，又走回了水里。\n脚印中间的沙子上，压着一个小小的圆坑，像有人在那里放过一颗弹珠，看了很久，又拿走了。' : '后来你常常想起那颗磨花了的弹珠。\n要是那天给它的是猫眼，它会不会多回头看一眼？') + '\n\n锡价再也没有回到从前。\n坚打谷的矿湖还是那么绿，绿得不像真的。\n村里的钱，再也没有少过一半。' });
   }
