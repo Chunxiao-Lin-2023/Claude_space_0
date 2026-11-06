@@ -313,7 +313,7 @@
     },
     resume: {
       malam1: async S => { n1Reset(S); if (n1Fails) await S.think('（照着脚印的路线摆：豆子数得最久，镜子能用好几回，弹珠会让它跑回家一阵，螃蟹会把它引回水沟。\n离它远一点——它会咬人。）'); n1Start(S); },
-      malam2: async S => { n2Reset(S); if (n2Fails) await S.think('（别在屋里跑，跑起来它隔着两间屋都听得见。\n先用诱饵把它引开，再去厨房看纸、去卧室开盒子。）'); }
+      malam2: async S => { n2Reset(S); if (n2Fails) await S.think('（它追到脚边的时候，腾不出手开罐子、转木片。\n先用诱饵把它引开，再去厨房看纸、去卧室开盒子。）'); }
     },
     maps: {
       /* ---------------- 振兴号（杂货店 + 后屋） ---------------- */
@@ -973,7 +973,7 @@
     await S.alpha('ty', 0, 400);
     S.focus(null);
     await S.think('……它还会再来。\n先把东西摆好——摆在那串脚印上的圈里。');
-    S.goal('守住钱罐到天亮：诱饵摆进脚印上的圈（一人盯、一人摆），别让它碰到你');
+    S.goal('守钱罐到天亮：诱饵摆进脚印上的圈（一人盯、一人摆）');
     n1Reset(S);
     S.cp('malam1');
     n1Start(S);
@@ -1102,10 +1102,10 @@
     S.focus(null);
     await S.think('……它饿了。拓婆说，饿了的鬼仔会咬人。\n瓶子……应该在最里面的卧室。');
     await S.narr('你摸出阿依莎塞给你的那截粉笔，在门口、厅里、卧室和走廊几个地方飞快地画了圈。');
-    S.goal('找到鬼仔的瓶子（它饿了：别跑，别让它靠近；用诱饵把它引开）');
+    S.goal('找到鬼仔的瓶子（它饿了：别让它靠近；用诱饵把它引开）');
     n2Reset(S);
     S.cp('malam2');
-    S.toast('它在厨房。慢慢走——跑起来，它隔着两间屋都听得见。');
+    S.toast('它在厨房。旧地板一踩就吱呀响——在这屋里跑不起来，只能慢慢走。');
   }
   function n2Reset(S) {
     const f = S.f; f.ph = 'n2';
@@ -1113,7 +1113,7 @@
     f.crabTo = null; f.cl = f.cl || {};
     const e = S.ent('ty2'); S.stop('ty2'); S.follow('ty2', false); e.solid = false;
     e.px = HOME2[0] * TS; e.py = HOME2[1] * TS; e.x = HOME2[0]; e.y = HOME2[1]; e.hidden = false; e.alpha = .72; e.s.mode = 'count'; e.dir = 0;
-    S.hide('crabR2'); S.speed(1); S.norun(false);
+    S.hide('crabR2'); S.speed(1); S.norun(true);
     for (let i = 1; i <= 6; i++) S.show('r' + i);
   }
   function n2Tick(S, dt) {
@@ -1193,9 +1193,9 @@
     });
   }
   async function dead2(S) {
-    n2Fails++;
+    n2Fails++; S.norun(false);
     await S.scare('face', { face: 'toyol', sfx: 'scream', dur: .9 });
-    await S.die('它又一次咬住了你的脚踝，这一回，没有松口。\n冰凉的小嘴一下一下地吸着。你腿一软，坐倒在地板上，屋顶慢慢地转了起来。\n\n天亮以后，阿依莎在楼梯底下找到了你。你的脚踝上，有两排小小的牙印。\n\n（别在屋里跑；先用诱饵把它引到别处，再去拿纸、开盒子。被咬过一次以后，它会追得更快。）', '它饿了');
+    await S.die('它又一次咬住了你的脚踝，这一回，没有松口。\n冰凉的小嘴一下一下地吸着。你腿一软，坐倒在地板上，屋顶慢慢地转了起来。\n\n天亮以后，阿依莎在楼梯底下找到了你。你的脚踝上，有两排小小的牙印。\n\n（先用诱饵把它引到别处，再去拿纸、开盒子；它追到脚边时腾不出手。被咬过一次以后，它闻得更远、追得更快。）', '它饿了');
   }
   /* 它就在身后（追着你、或者贴着你转悠）的时候，腾不出手去开罐子、转木片 */
   function threat(S) {
@@ -1258,7 +1258,7 @@
     e.s.mode = 'cry';
     await S.narr('两只黑洞洞的眼睛里，慢慢地渗出了水。');
     await S.think('巫师的纸上写着：谁拿着瓶子，它就跟着谁。');
-    S.follow('ty2', true);
+    S.follow('ty2', true); S.norun(false);
     f.ph = 'n2got';
     S.goal('带着瓶子下楼（后门楼梯），天亮前去下游的旧码头');
     S.cp('got');
