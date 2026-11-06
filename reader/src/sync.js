@@ -11,14 +11,6 @@ function textFromB64(b) { const bin = atob(b.replace(/\s+/g, '')); const u8 = ne
 function blobToB64(blob) { return new Promise((res, rej) => { const fr = new FileReader(); fr.onload = () => res(fr.result.slice(fr.result.indexOf(',') + 1)); fr.onerror = () => rej(fr.error); fr.readAsDataURL(blob); }); }
 const extWithDot = name => { const e = extOf(name); return e ? '.' + e : ''; };
 const MAX_UP = 95 * 1024 * 1024;
-const PRESET = null; // build fills {repo, salt, iv, ct, iter}: the token encrypted with the owner's passphrase
-const b64ToBytes = b => Uint8Array.from(atob(b), c => c.charCodeAt(0));
-async function unlockPreset(pass) {
-  const key0 = await crypto.subtle.importKey('raw', new TextEncoder().encode(pass), 'PBKDF2', false, ['deriveKey']);
-  const key = await crypto.subtle.deriveKey({ name: 'PBKDF2', salt: b64ToBytes(PRESET.salt), iterations: PRESET.iter, hash: 'SHA-256' }, key0, { name: 'AES-GCM', length: 256 }, false, ['decrypt']);
-  const pt = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: b64ToBytes(PRESET.iv) }, key, b64ToBytes(PRESET.ct));
-  return new TextDecoder().decode(pt);
-}
 const NEW_REPO_URL = 'https://github.com/new?name=moyue-library&visibility=private&description=' + encodeURIComponent('Moyue reader sync data');
 const TOKEN_URL = 'https://github.com/settings/personal-access-tokens/new?name=moyue-reader&description=' + encodeURIComponent('Moyue reader sync (one private repo, contents read/write)') + '&expires_in=366&contents=write';
 
@@ -87,27 +79,10 @@ const Sync = {
     const el = $('#sync-status'); if (!el) return;
     el.innerHTML = '';
     if (!this.available()) return;
-    if (!this.on()) { el.append(h('button', { class: 'chip', onclick: () => PRESET ? this.unlock() : this.setup() }, t(PRESET ? 'ghUnlock' : 'ghConnect'))); return; }
+    if (!this.on()) { el.append(h('button', { class: 'chip', onclick: () => this.setup() }, t('ghConnect'))); return; }
     const txt = this.busy ? t('ghSyncing') : this.err ? t('ghError', this.err) : this.lastOk ? t('ghSynced', this.cfg.repo, relTime(this.lastOk)) : t('ghConnected', this.cfg.repo);
     el.append(h('span', { class: this.err ? 'err' : '', text: txt }), h('button', { class: 'chip', onclick: () => this.syncAll(true) }, t('ghSyncNow')), h('button', { class: 'chip', onclick: () => this.setup() }, t('ghSettings')));
   },
-  /* ---------- preset (encrypted token baked into the page) ---------- */
-  async unlock() {
-    closePops();
-    const inp = h('input', { type: 'password', placeholder: t('ghPassPh'), autocomplete: 'current-password' });
-    const msg = h('p', { class: 'ghmsg' });
-    const go = async () => {
-      if (!inp.value) return false;
-      msg.textContent = t('ghChecking');
-      let token; try { token = await unlockPreset(inp.value); } catch { msg.textContent = t('ghPassWrong'); return false; }
-      this.cfg = { repo: PRESET.repo, token }; LS.set('gh', this.cfg); this.cache = {}; this.err = '';
-      toast(t('ghConnectedToast', PRESET.repo)); this.syncAll(true); return true;
-    };
-    return modal({ title: t('ghUnlockTitle'), body: h('div', {}, h('p', { style: { margin: '0 0 12px' }, text: t('ghUnlockBody', PRESET.repo) }), inp, msg),
-      buttons: [{ label: t('ghLater'), value: null }, { label: t('ghOther'), onClick: () => { setTimeout(() => this.setup(), 50); return true; } }, { label: t('ghUnlockGo'), primary: true, onClick: go }],
-      onOpen: (b, close) => { inp.focus(); inp.onkeydown = async e => { e.stopPropagation(); if (e.key === 'Enter' && await go()) close(true); }; } });
-  },
-  maybeAskPreset() { if (PRESET && this.available() && !this.on() && !LS.get('presetAsked', false)) { LS.set('presetAsked', true); setTimeout(() => this.unlock(), 400); } },
   /* ---------- setup ---------- */
   async setup() {
     closePops();

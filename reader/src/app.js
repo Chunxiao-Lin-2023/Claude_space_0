@@ -1403,6 +1403,6 @@ function init() {
   applySettings(); UI.i18n(); bind(); TTS.init();
   if (!TTS.ok) $('#b-tts').classList.add('hidden');
   UI.readerMode(false);
-  if (Sync.on()) Sync.syncAll(); else Sync.maybeAskPreset();
+  if (Sync.on()) Sync.syncAll();
 }
 init();
