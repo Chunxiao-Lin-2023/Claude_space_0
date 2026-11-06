@@ -97,9 +97,10 @@
     const N = [[659, .45], [523, .45], [659, .45], [523, .45], [587, .3], [523, .3], [494, .3], [440, .9]]; let d = 0;
     for (const [f, l] of N) { S.tone('triangle', f, f, l * .9, vol, d, 1400); d += l; }
   }
-  function hooves(S, run) {   // 三连音的马蹄（舒伯特那架钢琴的味道）
+  function hooves(S, run, stone) {   // 三连音的马蹄（舒伯特那架钢琴的味道）；石桥上是清脆的「嗒」
     const g = run ? .085 : .12, v = run ? .16 : .12;
     S.tone('triangle', 78, 48, .06, v, 0, 520); S.tone('triangle', 72, 46, .05, v * .75, g, 520); S.tone('triangle', 84, 50, .07, v * 1.1, g * 2, 520);
+    if (stone) for (let i = 0; i < 3; i++) S.tone('square', 1400 - i * 120, 700, .025, .05, i * g, 3200);
   }
   function grip(S) { S.tone('sawtooth', 61, 58, 1.6, .09, 0, 500); S.tone('sawtooth', 65, 63, 1.6, .08, 0, 500); S.tone('sine', 1760, 1700, 1.2, .03, .1, 4000); }
   function townBell(S, n) { for (let i = 0; i < n; i++) { S.tone('sine', 392, 390, 2.2, .1, i * 1.4, 1800); S.tone('sine', 784, 780, 1.4, .04, i * 1.4, 2400); S.tone('sine', 196, 196, 2.6, .05, i * 1.4, 900); } }
@@ -170,6 +171,7 @@
     if (n && f['f' + n + 'd']) {
       await S.say('马丁', '再说一遍，卢卡斯。每条路上，你都看见了什么？');
       await describe(S, n);
+      if ((S.timerLeft ?? 99) > KID_AT) return;
     } else if (!f.talked) {
       f.talked = true;
       const c = await S.ask('卢卡斯的头一点一点地往下沉，眼皮快粘在一起了。', ['问他问题，逗他说话', '给他哼支摇篮曲，让他舒服点']);
@@ -222,11 +224,15 @@
       sum: '左（上）：金衣裳 ／ 前：岸边的花 ／ 右（下）：魔王的女儿们'
     }
   };
+  async function deny(S) {
+    const f = S.f; f.deny = (f.deny || 0) + 1;
+    if (f.deny === 2) await S.think('（格蕾特婆婆的话在耳朵边上响：他说看见什么，你别跟他说「没有」。你说没有，他就自己一个人去看了。）');
+  }
   async function describe(S, n) {
     const D = FORK[n].d;
     await S.say('卢卡斯', [D.N, D.E, D.S]);
-    S.toast(FORK[n].sum);
-    S.goal('岔路口：选一条路（J 翻笺对照路条和歌；站在路口按调查键再问卢卡斯）　双人：一人翻笺，一人骑马');
+    S.goal('岔路——' + FORK[n].sum + '（J 翻笺对照）');
+    S.toast(S.coop ? '联机：一个人按 J 翻笺对照，一个人骑马' : '站在路口按调查键，可以再问卢卡斯一遍');
   }
   async function forkArrive(S, n) {
     const f = S.f, P = FORK[n];
@@ -235,7 +241,7 @@
       await S.narr('路在这里分成了三股。\n雾浓得化不开，马灯照出去两步，就被吞掉了。');
       await S.say('卢卡斯', '爸爸，你没看见魔王吗？\n戴着王冠、拖着长尾巴的那个……');
       const c = await S.ask('卢卡斯死死揪住你的衣襟。', ['「孩子，那是一缕雾。」', '「爸爸看不见。你告诉我，他在哪儿？」']);
-      if (c === 0) { f.deny = (f.deny || 0) + 1; await S.say('卢卡斯', '……嗯。'); await S.narr('他把脸埋进斗篷，不说话了。\n过了好一会儿，才用很小很小的声音，一条路一条路地说给你听。'); }
+      if (c === 0) { await S.say('卢卡斯', '……嗯。'); await deny(S); await S.narr('他把脸埋进斗篷，不说话了。\n过了好一会儿，才用很小很小的声音，一条路一条路地说给你听。'); }
       else await S.say('卢卡斯', '你看不见……可是我看得见。爸爸，我告诉你。');
     } else {
       erlSong(S, .05);
@@ -243,7 +249,7 @@
       await S.think('……那是卢卡斯的嘴在动。可那不是他的声音。');
       await S.say('卢卡斯', '爸爸，爸爸，你没看见吗？\n魔王的女儿们，就在那黑地方！');
       const c = await S.ask('河上的风，一阵比一阵冷。', ['「孩子，我看得清清楚楚：那是几棵老柳树，灰扑扑的。」', '「我看不见。她们在哪边？爸爸听你的。」']);
-      if (c === 0) { f.deny = (f.deny || 0) + 1; await S.say('卢卡斯', '……'); await S.narr('他不说话了，可是小手一直从斗篷里伸出来，一条路一条路地指给你看。'); }
+      if (c === 0) { await S.say('卢卡斯', '……'); await deny(S); await S.narr('他不说话了，可是小手一直从斗篷里伸出来，一条路一条路地指给你看。'); }
       else await S.say('卢卡斯', '我告诉你。你别放开我。');
     }
     await describe(S, n);
@@ -293,6 +299,12 @@
       '「金衣裳」是月光底下的深水，「岸边的花」是秋水仙的烂泥滩。\n「魔王的女儿们」是老柳树——桥头那两棵。往右边（往下）走。'
     ]
   };
+  const HINT1 = {
+    '1N': '……雾浓得像牛奶的地方，脚底下是烂泥。婆婆的路条上，雾浓的地方是什么？',
+    '1S': '……那盏黄灯。婆婆说过，沼泽里夜里有鬼火，像有人提着灯。',
+    '2N': '……月亮照得发亮的那段河。婆婆写过：那里的水最深。',
+    '2E': '……那片紫花底下全是烂泥。婆婆写过：秋水仙的河滩，陷马。'
+  };
   async function wrongTurn(S, n, dir) {
     const f = S.f, P = FORK[n], k = f['w' + n] = (f['w' + n] || 0) + 1;
     await settle();
@@ -301,7 +313,7 @@
     if (left != null) { const cut = Math.min(15, Math.max(0, left - 8)); S.timerAdd(-cut); if (cut > 0) S.toast('卢卡斯更困了（-' + Math.round(cut) + ' 秒）'); }
     await S.fade(1, 450); S.pos(P.x, P.y, 2); S.dark(null); await S.fade(0, 450);
     await S.narr('等你把布劳恩拽出来，雾又合拢了。\n你又站在了那个岔路口。');
-    await S.think(HINT[n][Math.min(k, 4) - 1]);
+    await S.think(k === 1 ? HINT1[n + dir] : HINT[n][Math.min(k, 4) - 1]);
   }
   async function rightF1(S) {
     const f = S.f; f.stage = 'slope';
@@ -318,9 +330,9 @@
     await S.say('卢卡斯', '爸爸，爸爸，你没听见吗？\n魔王在小声地答应我东西……');
     const c = await S.ask('风从坡顶上刮下来，满地的枯叶都在响。', ['「别怕，安静点。那是风吹枯叶，沙沙的。」', '「他答应你什么？说给爸爸听。」']);
     if (c === 0) {
-      f.deny = (f.deny || 0) + 1;
       await S.say('卢卡斯', '……嗯。');
       await S.narr('卢卡斯不说话了。\n枯叶在马蹄底下沙沙地响，响了一路，像有人一直跟在后面小声说话。');
+      await deny(S);
     } else {
       f.lure = true;
       await S.say('卢卡斯', ['他说，河岸边开着好多花，花花绿绿的，都给我摘。', '他说他妈妈有好多金子做的衣裳，都给我穿。']);
@@ -342,16 +354,20 @@
     await S.say('卢卡斯', '爸爸！她们出来了！她们从树里走出来了！', { style: 'big' });
     await S.narr('你回过头——柳枝底下，有几团灰白的影子，慢慢地直起了身子。\n……是雾吗？是柳树吗？');
     await S.narr('卢卡斯吓得一下子醒透了，两只小手死死揪住你的衣襟。');
+    if (wrongs(S) >= 2) await S.think('……她们比你想的还近。在雾里兜的那几个圈子，让她们一路跟了过来。');
     S.face('pl', 2);
     S.goal('一路往东，骑到城门！（按住奔跑键催马；路上的雾团就是魔王——换一条道躲开）');
     f.stage = 'gallop'; f.hits = 0; f.nb1 = f.nb2 = false;
     S.cp('gallop');
     startChase(S, 1.0);
   }
+  const wrongs = S => (S.f.w1 || 0) + (S.f.w2 || 0);
   function startChase(S, wait) {
+    const w = wait - Math.min(.4, Math.floor(wrongs(S) / 2) * .2);
+    for (let i = 0; i < 3; i++) S.tone('triangle', 70, 44, .09, .2, i * .33, 520);   // 起跑：三声马蹄刨地
     DAU.forEach((id, i) => {
       S.chase(id, { spd: DSPD[i], always: true, zone: (x, y) => x >= 13, catch: caught });
-      S.ent(id).chase.wait = wait + i * .15;
+      S.ent(id).chase.wait = w + i * .15;
     });
   }
   function stopChase(S) { for (const id of DAU) S.stop(id); }
@@ -392,7 +408,9 @@
     await S.alpha('erlp', 0, 500);
     S.dark(null);
     await S.narr('父亲心里发寒，催马飞奔——\n城墙的黑影子，就在前面了。');
-    for (const id of DAU) { const e = S.ent(id); if (e.chase) e.chase.wait = .3; }
+    const px = S.pl.x, ly = [16, 15, 17];
+    DAU.forEach((id, i) => { const e = S.ent(id); if (Math.round(e.px / TS) < px - 5 - (i ? 1 : 0)) S.place(id, px - 5 - (i ? 1 : 0), ly[i], 2); if (e.chase) e.chase.wait = .4; });
+    S.sfx('giggle'); S.toast('「爸爸！她们又追上来了！」');
   }
   async function letGo(S) {
     stopChase(S); S.focus(null);
@@ -440,9 +458,10 @@
     S.sfx('open');
     S.ent('ddoor').open = true; S.place('doc', 16, 1, 0);
     await S.say('韦伯医生', '快，快进来！把他放到炉子边上——拿凉水来！');
-    await S.card('天快亮的时候', '', '韦伯医生用凉水和柳树皮粉守了一夜。\n天快亮的时候，卢卡斯出了一身大汗，烧退了。\n\n他睁开眼睛，第一句话是：「爸爸，你看见魔王了吗？」\n你说：「看见了。是你指给我看的。」');
+    await S.card('天快亮的时候', '', '韦伯医生用凉水和柳树皮粉守了一夜。\n天快亮的时候，卢卡斯出了一身大汗，烧退了。\n\n他睁开眼睛，看了你好一会儿，说：\n「爸爸，你的胡子上结霜了。」\n\n窗外，雾正在散。');
     const extra = [];
     if (S.has('toy')) extra.push('他怀里还抱着那只小木马。木马的一只耳朵，被他啃秃了。');
+    if (f.drew) extra.push('后来，你在床头那张画的背面，那行歪歪扭扭的「爸爸看不见他」底下，又添了一行：「爸爸看见了。」');
     if (!(f.deny || 0)) extra.push('很多年以后，卢卡斯跟人讲起这一夜，总要说：我爸爸是看得见魔王的。');
     await S.end({ id: 'saved', title: '天亮了', text: '歌里那位父亲，一路上说的都对：那是雾，那是风，那是柳树。\n这一夜，你也知道那是雾。\n你只是多问了一句：它在哪儿？\n\n' + (extra.length ? extra.join('\n') + '\n\n' : '') + '——孩子活着到了城里。这是歌里没有的那一节。' });
   }
@@ -459,7 +478,7 @@
     const f = S.f;
     S.face('grete', 'pl');
     if (!f.rules) {
-      await S.say('格蕾特', ['烧了两天两夜了。柳树皮熬的水灌下去三碗，一点没退。', '得去城里找韦伯医生。现在就走——等到天亮，就来不及了。']);
+      await S.say('格蕾特', ['马丁，烧了两天两夜了。柳树皮熬的水灌下去三碗，一点没退。', '得去城里找韦伯医生。现在就走——等到天亮，就来不及了。']);
       await S.say('马丁', '林子里雾这么大……');
       await S.say('格蕾特', ['路我找人给你写下来了。你认字，照着走。', '还有三件事，你给我记住。']);
       await S.say('格蕾特', ['第一，别让他睡着。烧糊涂的孩子在赤杨林里睡过去，就叫不回来了。', '第二，他说看见什么，你别跟他说「没有」。你说没有，他就自己一个人去看了。', '第三——不管他怎么哭、怎么闹、怎么喊疼，手别松。']);
@@ -544,7 +563,7 @@
       grete: { skin: '#e0b898', hair: '#d8d4cc', hs: 'bun', top: '#3a3a3a', top2: '#cfc8b4', bottom: '#5a2a22', skirt: true, apron: '#cfc8b4', shoes: '#1a1210', hat: 'scarf', hatC: '#4a4a5a' },
       doc: { skin: '#ecc8a8', hair: '#e8e4dc', hs: 'queue', top: '#1e1e26', top2: '#e8e4dc', bottom: '#1e1e26', coat: true, shoes: '#0e0e10' },
       watch: { skin: '#d8b090', hair: '#4a3a2a', top: '#5a4a2a', top2: '#3a3020', bottom: '#3a3226', coat: true, hat: 'cap', hatC: '#2a2a2a' },
-      daughter: { skin: '#e4ece8', hair: '#c8d4cc', hs: 'long', top: '#dfe6e2', dress: true, ghost: true, eye: '#0a1210' },
+      daughter: { skin: '#e8eeea', hair: '#6e8274', hs: 'long', top: '#d8e2dc', top2: '#b8c4bc', dress: true, ghost: true, eye: '#000000', mouth: '#4a2a3a' },
       erlp: { key: 'erl-king', big: true, skin: '#c8d0c8', hair: '#8a948e', hs: 'long', top: '#5a6460', top2: '#4a5450', robe: true, noFeet: true, ghost: true, eye: '#050806',
         extra(g, d, fr, G, R) { R(4, G.hT - 2, 8, 2, '#2e2618'); R(4, G.hT - 4, 1, 2, '#2e2618'); R(7, G.hT - 5, 2, 3, '#2e2618'); R(11, G.hT - 4, 1, 2, '#2e2618'); } }
     },
@@ -555,14 +574,14 @@
     },
     notes: {
       route: { title: '格蕾特婆婆的路条', text: '（从账本上撕下来的一页，字歪歪扭扭，是格蕾特婆婆找人代写的。）\n\n去城里，夜里认路：\n一、出村过石十字，进赤杨林。\n二、雾天里，林子低处全是沼泽，雾就是从那儿冒出来的——哪边雾浓，哪边就是沼泽。沼泽里夜里有鬼火，黄澄澄一点，像有人提着灯，别跟。\n三、走高处。山毛榉坡上是干的，满地枯叶，风一吹沙沙响。顺着枯叶走。\n四、下了坡到河边，只走石桥。桥头有两棵老柳树，白天看着灰扑扑的。\n　河滩上开着秋水仙，看着平，底下是烂泥，陷马。\n　老渡口早废了。月亮照得河面发亮的那一段，水最深。\n五、过了桥一直往东，就是城门。' },
-      song: { title: '歌单《魔王》', text: '（粗纸印的歌单，边上被卢卡斯画满了小马。抬头印着：「新歌一首，魏玛来的」。）\n\n这样晚了，是谁在夜风里骑行？是那位父亲，怀里抱着他的孩子。\n\n「孩子，为什么把脸藏起来，这样怕？」\n「爸爸，你没看见魔王吗？戴着王冠，拖着长尾巴？」\n「孩子，那是一缕雾。」\n\n「好孩子，来呀，跟我走！我陪你玩最好玩的游戏；\n岸边开着好多花花绿绿的花，我母亲有好多金线衣裳。」\n\n「爸爸，爸爸，你没听见吗？魔王在小声答应我什么？」\n「别怕，安静，孩子；那是风吹着枯叶沙沙响。」\n\n「好孩子，你肯跟我走吗？我的女儿们会好好服侍你；\n她们夜里领着轮舞，摇着你、跳着、唱着，哄你睡。」\n\n「爸爸，爸爸，你没看见吗？魔王的女儿们，就在那黑地方！」\n「孩子，孩子，我看得清清楚楚：那是几棵老柳树，灰扑扑的。」\n\n「我爱你，你漂亮的模样叫我动心；你要是不肯，我就动手了。」\n「爸爸，爸爸，他抓住我了！魔王把我弄疼了！」\n\n父亲心里发寒，催马飞奔，臂弯里抱着呻吟的孩子；\n好不容易赶到了院门——他怀里的孩子，已经死了。' },
+      song: { title: '歌单《魔王》', text: '（粗纸印的歌单，边上被卢卡斯画满了小马。抬头印着：「新歌一首，魏玛来的」。）\n\n这样晚了，是谁在夜风里骑行？是那位父亲，怀里抱着他的孩子。\n\n「孩子，为什么把脸藏起来？」「爸爸，你没看见魔王吗？戴着王冠，拖着长尾巴？」\n「孩子，那是一缕雾。」\n\n魔王：「好孩子，跟我走！我陪你玩最好玩的游戏；岸边开着花花绿绿的花，我母亲有好多金线衣裳。」\n\n「爸爸，你没听见吗？魔王在小声答应我什么？」\n「别怕，孩子；那是风吹着枯叶沙沙响。」\n\n魔王：「好孩子，你肯跟我走吗？我的女儿们夜里领着轮舞，摇着你、跳着、唱着，哄你睡。」\n\n「爸爸，你没看见吗？魔王的女儿们，就在那黑地方！」\n「孩子，我看得清清楚楚：那是几棵老柳树，灰扑扑的。」\n\n魔王：「我爱你，你漂亮的模样叫我动心；你要是不肯，我就动手了。」\n「爸爸，爸爸，他抓住我了！魔王把我弄疼了！」\n\n父亲心里发寒，催马飞奔，臂弯里抱着呻吟的孩子；\n好不容易赶到了院门——他怀里的孩子，已经死了。' },
       oluf: { title: '林中神龛的木牌', text: '（山毛榉坡上的小神龛，圣母像脚下钉着一块木牌，字是烙上去的，快被雨水磨平了。）\n\n愿过林的人平安。\n\n老辈人讲：从前有个骑士叫奥卢夫，夜里骑马去请喝喜酒的客人。林子边上，精灵王的女儿们正在跳轮舞。\n领头的那个拉住他的缰绳：「奥卢夫，下马来，跟我跳一支。」\n「明天我就成亲了，不能跳。」\n她许他金马刺，许他月光漂白的丝衬衫，他都不要。\n她就在他心口上，轻轻按了一下。\n奥卢夫骑回了家，脸白得像蜡。第二天早上，新娘掀开红盖头——\n\n夜里过林子：有人请你跳舞，别答应；有人许你东西，别要。' },
       draw: { title: '卢卡斯的画', text: '（钉在床头墙上的一张画。炭条画的，满纸都是黑手印。）\n\n画上有一匹马，马上有两个人，一大一小。\n旁边有一个很高很高的人，头上戴着尖尖的王冠，身后拖着一条长长的尾巴，一直拖到纸边上。\n右下角是几个手拉着手的小人，画得歪歪扭扭，像几棵树。\n\n背面是你写的字：「卢卡斯画的。画得好。」\n下面还有一行他自己写的，字母一个大一个小：\n「爸爸看不见他。」' }
     },
     legend: '《魔王》（Erlkönig）是歌德1782年写的叙事谣曲，最初是他的歌唱剧《渔家女》开场时，女主角一边干活一边唱的一首歌。全诗八节，只有四个声音：叙述者、父亲、孩子、魔王。孩子三次说看见、听见了魔王，父亲三次给出平常的解释——雾、风吹枯叶、老柳树；最后一节，父亲赶到院子，怀里的孩子已经死了。诗本身是公有领域，本作里的中文为自译。\n\n「魔王」这个词有一段曲折的来历。通常的说法是：赫尔德在1778—1779年出版的《民歌集》里，把丹麦民谣《奥卢夫先生》（精灵王的女儿请骑士跳舞，他不肯，被她夺了性命）译成德文《魔王的女儿》，把丹麦语里的「精灵王」译成了 Erlkönig，字面上成了「赤杨之王」——一般认为这是误译。歌德沿用了这个词，魔王的女儿们、夜里的轮舞，都来自这一支传统。\n\n1815年，十八岁的舒伯特把它谱成艺术歌曲（后来作为他的作品第1号出版）：一个歌手要唱四个角色，钢琴不停的三连音像马蹄，孩子那三声「我的父亲」一次比一次高；魔王的段落却用甜美的大调。另有一种流传很广的说法，说歌德是在耶拿附近听说一个农夫连夜抱着病孩骑马求医，才写下这首诗——这个说法没有找到可靠的出处，只能算查无实据。\n\n游戏虚构：父亲马丁、孩子卢卡斯、格蕾特婆婆、韦伯医生和1790年这个夜晚；赤杨林的岔路、路条和「雾即沼泽、枯叶即高地、柳树即桥头」的认路法；奥卢夫故事被写在神龛木牌上；以及孩子活着到了城里的结局——那是歌里没有的一节。',
     start: { map: 'farm', x: 7, y: 3, dir: 1 },
     async intro(S) {
-      await S.card('第十七夜　魔王', '1790年11月　图林根　萨勒河边的小村', '这样晚了，是谁在夜风里骑行？\n是那位父亲，怀里抱着他的孩子。\n\n——去年秋天赶集，卢卡斯缠着你买下一张歌单，非要你念给他听，一遍，又一遍。\n\n今夜，他烧得滚烫，嘴里一直念叨着那首歌。');
+      await S.card('第十七夜　魔王', '1790年11月　图林根　萨勒河边的小村', '这样晚了，是谁在夜风里骑行？\n是那位父亲，怀里抱着他的孩子。\n他把男孩搂在臂弯里，抱得稳稳的，暖暖的。\n\n——去年秋天赶集，卢卡斯缠着你买下一张歌单，非要你念给他听，一遍，又一遍。\n\n今夜，他烧得滚烫，嘴里一直念叨着那首歌。');
     },
     resume: {
       async ride(S) { rideOn(S); if (DIED.sleep) await S.think('（别让卢卡斯睡着：时间见底、头顶出现「!」的时候，按调查键跟他说话。）'); startAwake(S); },
@@ -578,14 +597,16 @@
       }
     },
     thumb(g, w, h) {
-      g.fillStyle = '#d8dcc8'; g.fillRect(126, 10, 10, 10); g.fillStyle = '#1a2230'; g.fillRect(129, 9, 9, 10);
-      for (let i = 0; i < 7; i++) { g.fillStyle = `rgba(180,192,204,${.07 + (i % 3) * .03})`; g.fillRect(0, 34 + i * 6, w, 3 + (i % 2) * 2); }
-      g.fillStyle = 'rgba(200,210,214,.22)'; g.fillRect(22, 18, 10, 50); g.fillRect(18, 26, 18, 30); g.fillRect(30, 60, 30, 5);
-      g.fillStyle = 'rgba(30,30,24,.9)'; g.fillRect(20, 14, 14, 3); g.fillRect(20, 10, 2, 4); g.fillRect(26, 9, 2, 5); g.fillRect(32, 10, 2, 4);
-      g.fillStyle = '#0a0c0e'; g.fillRect(24, 22, 2, 2); g.fillRect(29, 22, 2, 2);
-      for (let x = 0; x < w; x += 9) { g.fillStyle = '#0c1014'; g.fillRect(x, 50 + ((x * 7) % 9), 7, 20); }
-      const R2 = (x, y, ww, hh, c) => { g.fillStyle = c; g.fillRect(82 + x * 2, 44 + y * 2, ww * 2, hh * 2); };
-      horseSide(R2, 1, 0, true, 0);
+      g.fillStyle = '#d8dcc8'; g.fillRect(136, 8, 10, 10); g.fillStyle = '#1a2230'; g.fillRect(139, 7, 9, 10);
+      for (let i = 0; i < 7; i++) { g.fillStyle = `rgba(180,192,204,${.07 + (i % 3) * .03})`; g.fillRect(0, 30 + i * 6, w, 3 + (i % 2) * 2); }
+      const F = (x, y, ww, hh, a) => { g.fillStyle = `rgba(214,222,226,${a})`; g.fillRect(x, y, ww, hh); };
+      F(14, 22, 26, 46, .16); F(19, 16, 16, 52, .22); F(22, 20, 10, 48, .2); F(36, 40, 20, 4, .2); F(40, 48, 28, 3, .14); F(8, 60, 50, 6, .12);
+      g.fillStyle = 'rgba(236,236,228,.85)'; g.fillRect(18, 13, 18, 3); g.fillRect(18, 8, 3, 5); g.fillRect(25, 5, 4, 8); g.fillRect(33, 8, 3, 5);
+      g.fillStyle = '#05070a'; g.fillRect(22, 22, 3, 3); g.fillRect(29, 22, 3, 3); g.fillRect(24, 30, 6, 1);
+      for (let x = 0; x < w; x += 9) { g.fillStyle = '#0c1014'; g.fillRect(x, 54 + ((x * 7) % 9), 7, 16); }
+      const R2 = (x, y, ww, hh, c) => { g.fillStyle = c; g.fillRect(84 + x * 2, 36 + y * 2, ww * 2, hh * 2); };
+      horseSide((x, y, ww, hh, c) => R2(16 - x - ww, y, ww, hh, c), 1, 0, true, 0);
+      g.fillStyle = 'rgba(255,214,120,.35)'; g.fillRect(104, 38, 10, 10);
     },
     sprites: {
       ride(g, e, t, R) {
@@ -606,15 +627,16 @@
       stool(g, e, t, R) { R(4, 9, 8, 2, '#6a4a30'); R(5, 11, 1, 4, '#4a3020'); R(10, 11, 1, 4, '#4a3020'); R(6, 5, 4, 4, '#d8d0c0'); R(7, 6, 2, 1, '#6a4a2a'); R(7 + Math.sin(t * 2), 1, 1, 3, 'rgba(230,230,230,.35)'); },
       signpost(g, e, t, R) { R(7, -6, 2, 22, '#5a4430'); R(1, -6, 12, 5, '#7a6040'); R(13, -5, 2, 3, '#7a6040'); R(3, -4, 7, 1, '#2a2018'); },
       willow(g, e, t, R) {
-        R(6, 2, 4, 14, '#3a3228'); R(5, 12, 6, 4, '#2e281e');
-        R(-4, -24, 24, 7, '#5a6a54');
-        for (let i = 0; i < 10; i++) { const x = -5 + i * 2.6 + Math.sin(t * 1.4 + i) * 1.2; R(x, -20 + (i % 3), 2, 24 - (i % 4) * 3, i % 3 === 0 ? '#7a887a' : i % 3 === 1 ? '#5f6e5c' : '#8a968a'); }
+        R(6, 0, 4, 16, '#3a3228'); R(5, 13, 6, 3, '#2a241a'); R(7, 2, 1, 11, '#4a4034');
+        R(4, -7, 3, 9, '#3a3228'); R(9, -9, 3, 10, '#3a3228'); R(3, -10, 2, 4, '#3a3228'); R(11, -12, 2, 4, '#3a3228');
+        R(0, -23, 16, 4, '#56664f'); R(-2, -20, 20, 5, '#4e5c4a'); R(-4, -16, 24, 3, '#48563f'); R(2, -22, 5, 2, '#66765e');
+        for (let i = 0; i < 8; i++) { const x = -4 + i * 3 + Math.round(Math.sin(t * 1.3 + i) * 1), L = 10 + ((i * 7) % 5) * 2; R(x, -14, 1, L, i % 2 ? '#7c8a76' : '#66755f'); if (i % 3 === 0) R(x + 1, -12, 1, L - 4, '#8e9a88'); }
       },
       nebel(g, e, t, R) {
         for (let k = 0; k < 6; k++) R(3 + Math.sin(t * 2 + k) * 2, -30 + k * 7, 10, 10, 'rgba(214,222,228,.2)');
         R(5, -28, 6, 42, 'rgba(232,238,242,.2)');
-        R(4, -33, 1, 3, 'rgba(240,240,236,.45)'); R(7, -35, 2, 4, 'rgba(240,240,236,.45)'); R(11, -33, 1, 3, 'rgba(240,240,236,.45)'); R(4, -31, 8, 1, 'rgba(240,240,236,.35)');
-        R(6, -25, 1, 1, 'rgba(8,10,12,.6)'); R(9, -25, 1, 1, 'rgba(8,10,12,.6)');
+        R(3, -34, 2, 4, 'rgba(246,246,240,.7)'); R(7, -37, 2, 7, 'rgba(246,246,240,.7)'); R(11, -34, 2, 4, 'rgba(246,246,240,.7)'); R(3, -31, 10, 2, 'rgba(246,246,240,.6)');
+        R(5, -26, 2, 2, 'rgba(8,10,12,.75)'); R(9, -26, 2, 2, 'rgba(8,10,12,.75)'); R(6, -21, 4, 1, 'rgba(8,10,12,.4)');
         R(10, 8, 14 + Math.sin(t * 3) * 3, 3, 'rgba(214,222,228,.16)'); R(18, 10, 10, 2, 'rgba(214,222,228,.1)');
       },
       crocus(g, e, t, R) { for (let i = 0; i < 6; i++) { const x = (hash(e.x || 0, i, 3) * 13) | 0, y = (hash(i, e.y || 0, 4) * 11) | 0; R(x + 1, y + 2, 1, 3, '#4a6a3a'); R(x, y, 3, 2, i % 2 ? '#b898d8' : '#9a7ac0'); R(x + 1, y, 1, 1, '#e8d878'); } },
@@ -638,7 +660,10 @@
     tick(S, dt) {
       const f = S.f, p = S.pl, ride = riding(S), mid = S.map;
       const lamp = getEnt('lamp_' + mid, mid); if (lamp) lamp.hidden = !ride;
-      if (ride && S.moving) { W._hb = (W._hb || 0) - dt; if (W._hb <= 0) { const run = S.running; W._hb = run ? .36 : .52; hooves(S, run); } } else W._hb = 0;
+      if (ride && S.moving) {
+        W._hb = (W._hb || 0) - dt; if (W._hb <= 0) { const run = S.running; W._hb = run ? .36 : .52; hooves(S, run, mid === 'river' && p.x >= 18 && p.x <= 20 && p.y >= 15 && p.y <= 17); }
+        if (mid === 'forest' && tileName(curMap(), p.x, p.y) === 'leaves') { W._rs = (W._rs || 0) - dt; if (W._rs <= 0) { W._rs = .5 + Math.random() * .4; S.sfx('paper'); } }
+      } else W._hb = 0;
       const aw = !!(W.timer && W.timer.label === AWL), tl = aw ? W.timer.left : 99;
       const kid = getEnt('kid_' + mid, mid);
       if (kid) {
@@ -649,7 +674,9 @@
       if (aw && !S.busy) {
         if (tl <= KID_AT && !W._kw) { W._kw = true; S.toast('卢卡斯的头一点一点的——按调查键，跟他说说话'); }
         if (tl > KID_AT + 2) W._kw = false;
-        if (tl <= 15) { W._hbt = (W._hbt || 0) - dt; if (W._hbt <= 0) { W._hbt = 1.3; S.sfx('heart'); } }
+        if (tl <= 15) { W._hbt = (W._hbt || 0) - dt; if (W._hbt <= 0) { W._hbt = 1.3; S.sfx('heart'); } if (!W._kl) { W._kl = true; lullaby(S, .025); } }
+        if (tl <= 8 && !W._k8) { W._k8 = true; S.toast('卢卡斯快睡着了！——按调查键叫醒他'); }
+        if (tl > 20) W._kl = W._k8 = false;
       }
     },
     maps: {
@@ -661,7 +688,7 @@
           { id: 'lamp_farm', x: 0, y: 0, spr: 'invisible', hidden: true, light: { pl: true, r: 2.8, col: 'rgba(255,200,110,.16)' } },
           { id: 'fire', x: 7, y: 1, w: 2, spr: 'fireplace', light: { r: 4.6, col: 'rgba(255,140,60,.22)', flick: true }, on: S => S.narr('炉膛里的火快熄了。你添了两块劈柴，火苗舔上来，屋里亮了一点。\n墙上的影子跟着火一起跳。') },
           { id: 'win', x: 11, y: 1, spr: 'window', on: S => S.narr('窗外什么也看不见。雾贴在玻璃上，像有人在外面哈了一口气。') },
-          { id: 'drawing', x: 5, y: 1, spr: 'kiddraw', solid: false, async on(S) { if (S.once('drawi')) await S.narr('床头的墙上，钉着一张卢卡斯的画。'); await S.note('draw'); } },
+          { id: 'drawing', x: 5, y: 1, spr: 'kiddraw', solid: false, async on(S) { S.f.drew = true; if (S.once('drawi')) await S.narr('床头的墙上，钉着一张卢卡斯的画。'); await S.note('draw'); } },
           { id: 'lanternw', x: 10, y: 1, spr: 'walllamp', light: { r: 1.6, col: 'rgba(255,210,120,.18)' }, async on(S) {
             S.give('lantern'); S.hide('lanternw');
             await S.narr('你从钉子上摘下马灯，晃了晃——灯油还有大半。');
@@ -756,8 +783,8 @@
           { id: 'fallen', x: 7, y: 8, spr: 'signpost', on: S => S.narr('一根歪倒的路牌杆。牌子被风刮掉了，不知道落在哪个泥坑里。') },
           ...[[14, 8], [15, 9], [16, 10], [15, 7], [14, 10], [16, 8]].map(([x, y], i) => ({ id: 'cro' + i, x, y, spr: 'crocus', decal: true, solid: false })),
           { id: 'wil1', x: 15, y: 14, spr: 'willow', on: S => S.narr('一棵老柳树。树干裂开了一道大口子，里面黑洞洞的，能藏下一个人。') },
-          { id: 'wil2', x: 15, y: 18, spr: 'willow', on: S => S.narr('另一棵老柳树，枝条垂进了河里。风一吹，像有人在水边梳头。') },
-          ...[[24, 14], [29, 18], [35, 14], [41, 18], [47, 14], [53, 18], [57, 14]].map(([x, y], i) => ({ id: 'rw' + i, x, y, spr: 'willow' })),
+          { id: 'wil2', x: 15, y: 18, spr: 'willow', oy: 7, on: S => S.narr('另一棵老柳树，枝条垂进了河里。风一吹，像有人在水边梳头。') },
+          ...[[24, 14], [29, 18], [35, 14], [41, 18], [47, 14], [53, 18], [57, 14]].map(([x, y], i) => ({ id: 'rw' + i, x, y, spr: 'willow', oy: y === 18 ? 7 : 0 })),
           { id: 'd1', x: 15, y: 16, spr: '@daughter', dir: 2, solid: false, hidden: true, alpha: .78, light: { r: 1.2, col: 'rgba(210,225,230,.14)' } },
           { id: 'd2', x: 16, y: 15, spr: '@daughter', dir: 2, solid: false, hidden: true, alpha: .78, light: { r: 1.2, col: 'rgba(210,225,230,.14)' } },
           { id: 'd3', x: 16, y: 17, spr: '@daughter', dir: 2, solid: false, hidden: true, alpha: .78, light: { r: 1.2, col: 'rgba(210,225,230,.14)' } },
@@ -775,13 +802,14 @@
         },
         tick(S, dt) {
           const f = S.f, p = S.pl;
+          if (f.stage === 'gallop' || f.stage === 'bridge') DAU.forEach((id, i) => { const e = S.ent(id); if (!e.hidden) e.oy = Math.round(Math.sin(W.t * 5 + i * 2.1) * 2) - 2; });
           if (f.stage === 'gallop') {
             if (!W.camFocus || Math.abs(W.camFocus[0] - (p.px / TS + 4)) > .01) S.focus(p.px / TS + 4, 16);
             if (S.busy || W.ended) return;
             const lane = Math.round(p.py / TS);
             for (const [k, sx, at] of [['nb1', 27, 36], ['nb2', 38, 47]]) {
               const e = S.ent(k);
-              if (!f[k] && p.x >= sx) { f[k] = true; S.place(k, at, lane, 1); e.alpha = 0; S.alpha(k, 1, 500); S.sfx('whisper'); S.toast('「爸爸！他在前面！站在路当中！」'); }
+              if (!f[k] && p.x >= sx) { f[k] = true; S.place(k, at, lane, 1); e.alpha = 0; S.alpha(k, 1, 500); S.sfx('whisper'); erlSong(S, .05); S.toast('「爸爸！他在前面！站在路当中！」'); }
               if (!e.hidden && e.alpha > .3) {
                 if (Math.abs(e.px - p.px) < 12 && Math.abs(e.py - p.py) < 10) return S.run(S => hitFog(S, e));
                 if (p.px > e.px + 28) e.hidden = true;
