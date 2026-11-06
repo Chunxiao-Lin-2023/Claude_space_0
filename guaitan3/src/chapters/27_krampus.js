@@ -4,6 +4,7 @@
   const PARADE_T = 150;      // 游行到七点钟声的秒数
   const PARADE_MIN = 90;     // 重来后至少给的秒数
   const KSPD = 3.2;          // 坎卜斯追人的速度（玩家走 4.2 / 跑 6.8）
+  const KFAR = 4.0;          // 落后超过 5 格时它加快到这个速度：走路的人甩不掉它，跑的人才甩得掉
   const LOSE = 8.5;          // 拉开超过这么多格，它就不追了，转头去找孩子（实测：走路最远 7.2 格，一路跑会到 10 格以上）
   const WARN = 7.5;          // 超过这个距离先警告一次
   const REGAIN = 6;          // 回到这么近，它又盯上你
@@ -1127,6 +1128,7 @@
     const dist = Math.hypot(kr.px - p.px, kr.py - p.py) / 16;
     JT -= dt; if (JT <= 0) { JT = .5; bellJ(S, .06); }
     if (L.mode === 'chase') {
+      if (kr.chase) kr.chase.spd = dist > 5 ? KFAR : KSPD;
       if (dist < .9) { kr.chase = null; S.run(kCatch); return; }
       if (dist > WARN && !L.warned) { L.warned = true; S.bubble('kr', '?', 1200); S.toast('慢一点——它快跟不上你了'); }
       if (dist < 5) L.warned = false;
@@ -1154,8 +1156,8 @@
     if (L.hits === 1) {
       S.sfx('cut'); S.shake(400, 3); S.fx('red'); S.bubble('pl', '!', 800);
       await S.think('啪！桦枝抽在小腿上，火辣辣地疼——\n（别停下！走！）');
-      L.grace = 1;
-      S.chase('kr', { spd: KSPD, wait: .35, catch: kCatch });
+      L.grace = 1.3;
+      S.chase('kr', { spd: KSPD, wait: .8, catch: kCatch });
       return;
     }
     L.mode = 'x'; LURE_DIED++;
