@@ -79,7 +79,7 @@ function step(dt) {
     controlLocal(me, dt);
     for (const p of W.P) { if (!p) continue; if (p !== me && p.type === 'partner' && (p.ctrl === 'ai' || (p.ctrl === 'remote' && W.t - (p.remoteT || -99) > 3))) partnerAI(p, dt); heroTick(p, dt); }
     if (me) tickRevive(me, dt);
-    for (const e of W.ents) { if (e.type === 'mob') { if (e.alive) { for (const k in e.cds) e.cds[k] -= dt; tickBuffs(e, dt); tickDash(e, dt); if (e.kbx || e.kbz) { moveEnt(e, e.kbx * dt, e.kbz * dt, dt); e.kbx *= Math.pow(0.02, dt); e.kbz *= Math.pow(0.02, dt); if (Math.abs(e.kbx) + Math.abs(e.kbz) < 0.3) e.kbx = e.kbz = 0; } } mobAI(e, dt); physEnt(e, dt); } else if (e.type === 'npc') { tickWalk(e, dt); tickDash(e, dt); if (e.npcAI) e.npcAI(e, dt); else if (e.wanderR && !e.script && !e.walk) wander(e, dt, 0.3); physEnt(e, dt); } }
+    for (const e of W.ents) { if (e.type === 'mob') { if (e.alive) { for (const k in e.cds) e.cds[k] -= dt; tickBuffs(e, dt); tickDash(e, dt); if (e.kbx || e.kbz) { moveEnt(e, e.kbx * dt, e.kbz * dt, dt); e.kbx *= Math.pow(0.02, dt); e.kbz *= Math.pow(0.02, dt); if (Math.abs(e.kbx) + Math.abs(e.kbz) < 0.3) e.kbx = e.kbz = 0; } } mobAI(e, dt); physEnt(e, dt); } else if (e.type === 'npc') { tickWalk(e, dt); tickDash(e, dt); if (e.npcAI) e.npcAI(e, dt); else if (e.wanderR && !e.script && !e.walk) wander(e, dt, 0.6); physEnt(e, dt); } }
     separate(); updateProj(dt); updateTele(dt); updateLoot(dt); tickRespawn(dt); tickStory(dt);
     if (W.zone.tick) W.zone.tick(dt);
     hostTick(dt);

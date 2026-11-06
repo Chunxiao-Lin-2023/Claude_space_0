@@ -15,17 +15,55 @@ function protoBitmap(P, v = 0, sc = 1) {
   og.drawImage(px.canvas(), 0, 0);
   return P.cache[key] = { cv: out, ax, ay };
 }
-/* ---------- placement (colliders as before) ---------- */
+/* ---------- footprints: nothing may be placed inside a building, rock or trunk (rule: no interpenetrating props) ----------
+   hard = solid things (buildings, rocks, trunks, bones…); soft = ground cover (grass, flowers, bushes…).
+   hard may not overlap hard; soft may not sit inside hard. Random scatter skips a blocked spot; hand placement is nudged
+   to the nearest free spot within 4 m (or skipped with a warning). test/overlap.js lints the whole map. */
+const FP = { house: { hw: 3.7, hd: 2.4, dz: -1.8 }, house2: { hw: 3.0, hd: 2.1, dz: -1.5 }, chiefhouse: { hw: 4.9, hd: 3.0, dz: -2.2 }, altar: { hw: 3.8, hd: 1.6, dz: -0.6 }, cave: { hw: 5.8, hd: 2.6, dz: -1.5 },
+  tent: { r: 2.5 }, tower: { r: 1.9 }, skull: { r: 1.7 }, ribs: { hw: 2.4, hd: 0.7 }, spire: { r: 1.9 }, spire2: { r: 2.7 }, boulder: { r: 2.3 }, ding: { r: 0.9 }, blackding: { r: 1.3 }, mill: { r: 1.1 }, roller: { r: 0.8 },
+  rack: { hw: 1.6, hd: 0.4 }, firepit: { r: 0.8 }, nest: { r: 5 }, willowstump: { r: 3.5 }, ancient: { r: 3.2 }, stonelock: { r: 0.4 }, pot: { r: 0.4 } };
+const PLACE = { scatter: false, grid: new Map(), sgrid: new Map(), cell: 8, skipped: [], soft: new Set(['bush', 'berrybush', 'sapling', 'grasstuft', 'mushroom', 'flint', 'rabbithole', 'fern', 'reed', 'flowers', 'lily', 'pebbles', 'vine', 'crystal']) };
+function fpOf(P, x, z, s) {
+  const f = P.fp || FP[P.name], soft = PLACE.soft.has(P.name);
+  if (f) return f.r != null ? { x, z: z + (f.dz || 0) * s, r: f.r * s, soft } : { x, z: z + (f.dz || 0) * s, hw: f.hw * s, hd: f.hd * s, soft };
+  if (P.col && typeof P.col === 'object') return { x, z: z + (P.col.dz || 0) * s, hw: P.col.hw * s, hd: P.col.hd * s, soft };
+  if (P.col > 0) return { x, z, r: P.col * s, soft };
+  return { x, z, r: Math.min(1.1, P.w * 0.28) * s, soft: true };
+}
+function fpGap(a, b) { // >0 = apart, <0 = overlapping (approximate penetration depth)
+  if (a.r != null && b.r != null) return Math.hypot(a.x - b.x, a.z - b.z) - a.r - b.r;
+  if (a.r == null && b.r == null) return Math.max(Math.abs(a.x - b.x) - a.hw - b.hw, Math.abs(a.z - b.z) - a.hd - b.hd);
+  const c = a.r != null ? a : b, q = a.r != null ? b : a, dx = Math.max(Math.abs(c.x - q.x) - q.hw, 0), dz = Math.max(Math.abs(c.z - q.z) - q.hd, 0);
+  if (dx === 0 && dz === 0) return -Math.min(q.hw - Math.abs(c.x - q.x), q.hd - Math.abs(c.z - q.z)) - c.r; return Math.hypot(dx, dz) - c.r;
+}
+function fpBlocked(f, ignore) {
+  const C = PLACE.cell, ci = Math.floor(f.x / C), cj = Math.floor(f.z / C), test = f.soft ? Object.assign({}, f, f.r != null ? { r: f.r * 0.45 } : { hw: f.hw * 0.45, hd: f.hd * 0.45 }) : f;
+  for (let j = cj - 1; j <= cj + 1; j++) for (let i = ci - 1; i <= ci + 1; i++) { const a = PLACE.grid.get(i + ',' + j); if (a) for (const h of a) if (h !== ignore && fpGap(test, h) < (f.soft ? 0 : 0.1)) return h; }
+  if (LIFTS.length && !liftAt(f.x, f.z)) for (const L of LIFTS) { const d = Math.hypot(f.x - L.x, f.z - L.z), rr_ = f.r != null ? f.r : Math.hypot(f.hw, f.hd); if (d < L.rmax + rr_ * 0.8 + 0.3) return L; } // the foot of a cliff
+  return null;
+}
+function fpAdd(f) {
+  const C = PLACE.cell, ci = Math.floor(f.x / C), cj = Math.floor(f.z / C), G = f.soft ? PLACE.sgrid : PLACE.grid, k = ci + ',' + cj; let a = G.get(k); if (!a) G.set(k, a = []); a.push(f);
+  if (f.soft) return; // a solid thing placed later evicts the ground cover underneath it
+  for (let j = cj - 1; j <= cj + 1; j++) for (let i = ci - 1; i <= ci + 1; i++) { const sa = PLACE.sgrid.get(i + ',' + j); if (!sa) continue; for (let q = sa.length - 1; q >= 0; q--) { const s = sa[q], t = s.r != null ? Object.assign({}, s, { r: s.r * 0.45 }) : Object.assign({}, s, { hw: s.hw * 0.45, hd: s.hd * 0.45 }); if (s.it && fpGap(t, f) < 0) { sa.splice(q, 1); unplace(s.it); } } }
+}
+function unplace(it) { const i = STATIC.list.indexOf(it); if (i >= 0) STATIC.list.splice(i, 1); const a = STATIC.grid.get(Math.floor(it.x / STATIC.cell) + ',' + Math.floor(it.z / STATIC.cell)); if (a) { const j = a.indexOf(it); if (j >= 0) a.splice(j, 1); } }
+/* nearest spot where a body of radius r can stand (used for NPC homes and wander targets) */
+function freeSpot(x, z, r = 0.4) { const f = { x, z, r }; if (!fpBlocked(f)) return [x, z]; for (let i = 1; i <= 60; i++) { const a = i * 2.39996, d = 0.35 * Math.sqrt(i) * 2.2, nx = x + Math.cos(a) * d, nz = z + Math.sin(a) * d; if (!fpBlocked({ x: nx, z: nz, r }) && liftAt(nx, nz) === liftAt(x, z)) return [nx, nz]; } return [x, z]; }
 function place(name, x, z, rot = 0, s = 1, o = {}) {
-  const P = getProto(name), y = 0, v = P.vars > 1 ? Math.floor(hash2(Math.floor(x * 7), Math.floor(z * 7)) * P.vars) : 0;
+  const P0 = getProto(name);
+  if (!o.force) { let f = fpOf(P0, x, z, s);
+    if (fpBlocked(f)) { if (PLACE.scatter) return null; let ok = false; for (let i = 1; i <= 32 && !ok; i++) { const a = i * 2.39996, r = 0.25 * Math.sqrt(i) * 2.2; const nx = x + Math.cos(a) * r, nz = z + Math.sin(a) * r; f = fpOf(P0, nx, nz, s); if (!fpBlocked(f) && pathAt(nx, nz) < 0.3 && liftAt(nx, nz) === liftAt(x, z)) { x = nx; z = nz; ok = true; } } if (!ok) { PLACE.skipped.push(name + '@' + x.toFixed(1) + ',' + z.toFixed(1)); return null; } }
+    PLACE.fp = fpOf(P0, x, z, s); } else PLACE.fp = fpOf(P0, x, z, s);
+  const P = P0, y = 0, v = P.vars > 1 ? Math.floor(hash2(Math.floor(x * 7), Math.floor(z * 7)) * P.vars) : 0;
   const it = { P, x, z, s, flip: o.flip ?? (P.noFlip ? false : hash2(Math.floor(x * 3), Math.floor(z * 5)) < 0.5), v, dy: o.dy || 0, alpha: 1 };
   if (P.lamp) STATIC.lamps.push({ x: x + (P.lamp[0] || 0) * s, z: z + (P.lamp[1] || 0.4) * s, r: (P.lamp[2] || 4) * s, col: 'rgba(255,170,90,A)', k: 0.85 });
-  STATIC.list.push(it); const key = Math.floor(x / STATIC.cell) + ',' + Math.floor(z / STATIC.cell); let a = STATIC.grid.get(key); if (!a) STATIC.grid.set(key, a = []); a.push(it);
+  PLACE.fp.it = it; fpAdd(PLACE.fp); STATIC.list.push(it); const key = Math.floor(x / STATIC.cell) + ',' + Math.floor(z / STATIC.cell); let a = STATIC.grid.get(key); if (!a) STATIC.grid.set(key, a = []); a.push(it);
   if (P.col && !o.nocol) { if (typeof P.col === 'number') { if (P.col > 0) addCol({ x, z: z + (P.colDz || 0) * s, r: P.col * s, top: P.top != null ? P.top * s : null, stand: P.stand }); } else addCol({ x, z: z + (P.col.dz || 0) * s, hw: P.col.hw * s, hd: P.col.hd * s, c: 1, s: 0, top: P.top != null ? P.top * s : null, stand: P.stand }); }
   return it;
 }
 function buildStatic() { /* bitmaps are made lazily */ }
-function clearStatic() { STATIC.list.length = 0; STATIC.grid.clear(); STATIC.lamps.length = 0; }
+function clearStatic() { STATIC.list.length = 0; STATIC.grid.clear(); STATIC.lamps.length = 0; PLACE.grid.clear(); PLACE.sgrid.clear(); PLACE.skipped.length = 0; }
 function queueStatic() {
   const K = k(), [wx0, wz0] = a2w(-200, -150), [wx1, wz1] = a2w(V.W + 200, V.H + 600), C = STATIC.cell, me = W.P[W.me];
   for (let cj = Math.floor(wz0 / C); cj <= Math.floor(wz1 / C); cj++) for (let ci = Math.floor(wx0 / C); ci <= Math.floor(wx1 / C); ci++) {
