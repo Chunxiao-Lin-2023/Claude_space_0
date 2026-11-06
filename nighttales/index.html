@@ -861,7 +861,7 @@ function buildMap(ch, id) {
   const d = ch.maps[id], rows = d.rows, h = rows.length, wd = Math.max(...rows.map(r => r.length));
   const leg = Object.assign({}, BASE_LEGEND, (ch.legend && typeof ch.legend === 'object') ? ch.legend : {}, d.legend || {});   // ch.legend 是档案正文字符串时不能合并
   const m = { id, def: d, w: wd, h, leg, rows: rows.map(r => r.padEnd(wd, ' ')), mods: {}, ents: [], cache: null, dirty: true };
-  for (const ed of (d.ents || [])) m.ents.push(makeEnt(ed, ch));
+  (d.ents || []).forEach((ed, i) => { const e = makeEnt(ed, ch); e._k = id + '#' + i; m.ents.push(e); });   // _k：定义里的固定位置，检查点按它找回实体（实体被 S.moveTo 换过地图也不会错位）
   return m;
 }
 function makeEnt(ed, ch) {
@@ -1460,22 +1460,31 @@ function makeCP(name) {
   const maps = {};
   for (const k in W.maps) {
     const m = W.maps[k];
-    maps[k] = { mods: Object.assign({}, m.mods), ents: m.ents.map(e => { const o = { id: e.id, px: e.px, py: e.py, dir: e.dir, hidden: e.hidden, alpha: e.alpha, spr: e.spr, solid: e.solid, s: e.s, follow: !!e.follow, light: e.light || null }; for (const v of VKEYS) if (e[v] !== undefined && typeof e[v] !== 'function') o[v] = e[v]; return o; }) };
+    maps[k] = { mods: Object.assign({}, m.mods), ents: m.ents.map(e => { const o = { k: e._k, id: e.id, px: e.px, py: e.py, dir: e.dir, hidden: e.hidden, alpha: e.alpha, spr: e.spr, solid: e.solid, s: e.s, follow: !!e.follow, light: e.light || null }; for (const v of VKEYS) if (e[v] !== undefined && typeof e[v] !== 'function') o[v] = e[v]; return o; }) };
   }
   const p = W.pl;
   return JSON.parse(JSON.stringify({ name: name || '', map: W.mapId, pl: { x: p.x, y: p.y, dir: p.dir, spr: p.spr, speed: p.speed, hidden: p.hidden }, inv: W.inv, f: W.f, goal: W.goal, mapDark: W.mapDark, plr: W.plr, amb: AU.ambName, maps }));
 }
 function applyCP(cp) {
   W.mapId = cp.map; W.inv = cp.inv.slice(); W.f = JSON.parse(JSON.stringify(cp.f)); W.goal = cp.goal; W.mapDark = Object.assign({}, cp.mapDark || {}); W.plr = cp.plr;
+  /* 先按 _k（定义位置）找实体，旧存档没有 k 时退回按下标/id 找；实体被 S.moveTo 换过地图时，在这里搬回存档时所在的地图 */
+  const byK = {}, used = new Set(), lists = {};
+  for (const k in W.maps) for (const e of W.maps[k].ents) if (e._k) byK[e._k] = e;
+  const byId = id => { if (!id) return null; for (const k in W.maps) { const z = W.maps[k].ents.find(q => q.id === id); if (z) return z; } return null; };
   for (const k in cp.maps) {
     const m = W.maps[k]; if (!m) continue; m.mods = Object.assign({}, cp.maps[k].mods); m.dirty = true;
+    const list = lists[k] = [];
     cp.maps[k].ents.forEach((o, i) => {
-      let e = m.ents[i]; if (!e || e.id !== o.id) e = m.ents.find(z => z.id === o.id && o.id); if (!e) return;
+      let e = o.k ? byK[o.k] : null;
+      if (!e && !o.k) { e = m.ents[i]; if (!e || e.id !== o.id) e = m.ents.find(z => z.id === o.id && o.id) || byId(o.id); }
+      if (!e || used.has(e)) return;
+      used.add(e); list.push(e);
       Object.assign(e, { px: o.px, py: o.py, x: Math.round(o.px / TS), y: Math.round(o.py / TS), dir: o.dir, hidden: o.hidden, alpha: o.alpha, spr: o.spr, solid: o.solid, s: Object.assign({}, o.s), follow: o.follow, light: o.light, chase: null, mv: null });
       for (const v of VKEYS) { if (typeof e[v] === 'function') continue; if (o[v] !== undefined) e[v] = o[v]; else if (e[v] !== undefined && !(v in e.def)) delete e[v]; }
       e.frozen = false;
     });
   }
+  for (const k in lists) { const m = W.maps[k]; m.ents = lists[k].concat(m.ents.filter(e => !used.has(e))); }
   const p = W.pl; Object.assign(p, { x: cp.pl.x, y: cp.pl.y, px: cp.pl.x * TS, py: cp.pl.y * TS, dir: cp.pl.dir, spr: cp.pl.spr, speed: cp.pl.speed || 1, hidden: !!cp.pl.hidden, mv: null, prev: [cp.pl.x, cp.pl.y] });
   W.forceK++; lastPTile = W.mapId + ':' + p.x + ',' + p.y; W.cp = cp;
   if (cp.amb) emit('amb', cp.amb);
@@ -1661,7 +1670,7 @@ function netSnapshot() {
   const ents = m.ents.map((e, i) => {
     const fl = {}; let any = false; for (const k of VKEYS) if (e[k] !== undefined && e[k] !== e.def[k]) { fl[k] = e[k]; any = true; }
     const s = Object.keys(e.s).length ? e.s : 0;
-    return [i, Math.round(e.px), Math.round(e.py), e.dir, e.fr, e.hidden ? 1 : 0, Math.round((e.alpha ?? 1) * 100), e.spr === e.def.spr ? 0 : e.spr, any ? fl : 0, s, e.light === e.def.light ? 0 : (e.light || null), e.bubble && e.bubble.until > RT ? [e.bubble.k, Math.round((e.bubble.until - RT) * 1000)] : 0, e.solid ? 1 : 0];
+    return [i, Math.round(e.px), Math.round(e.py), e.dir, e.fr, e.hidden ? 1 : 0, Math.round((e.alpha ?? 1) * 100), e.spr === e.def.spr ? 0 : e.spr, any ? fl : 0, s, e.light === e.def.light ? 0 : (e.light || null), e.bubble && e.bubble.until > RT ? [e.bubble.k, Math.round((e.bubble.until - RT) * 1000)] : 0, e.solid ? 1 : 0, e._k || 0];
   });
   const v = {
     t: 'v', gen: GEN, ch: W.ch.id, map: W.mapId, k: W.forceK, pl: [p.x, p.y, Math.round(p.px), Math.round(p.py), p.dir, p.fr, p.hidden ? 1 : 0, p.spr, p.speed || 1, p.bubble && p.bubble.until > RT ? [p.bubble.k, Math.round((p.bubble.until - RT) * 1000)] : 0],
@@ -1680,8 +1689,11 @@ function applyV(v) {
   const mapChanged = W.mapId !== v.map; W.mapId = v.map;
   const m = curMap();
   if (JSON.stringify(m.mods) !== JSON.stringify(v.mods || {})) { m.mods = v.mods || {}; m.dirty = true; }
+  /* 按 _k 找实体（主机用 S.moveTo 换过地图、或重来后顺序变了，下标就对不上）；找到别的地图里的就搬过来 */
+  const seen = new Set();
+  const findK = k => { let e = m.ents.find(z => z._k === k); if (e) return e; for (const id in W.maps) { const mm = W.maps[id]; const i = mm.ents.findIndex(z => z._k === k); if (i >= 0) { e = mm.ents[i]; mm.ents.splice(i, 1); m.ents.push(e); return e; } } return null; };
   for (const a of v.ents) {
-    const e = m.ents[a[0]]; if (!e) continue;
+    const e = a[13] ? findK(a[13]) : m.ents[a[0]]; if (!e) continue; seen.add(e);
     const wasHidden = e.hidden;
     e._tx = a[1]; e._ty = a[2]; e.dir = a[3]; e.fr = a[4]; e.hidden = !!a[5]; e.alpha = a[6] / 100;
     if (wasHidden || mapChanged || Math.abs(e.px - a[1]) + Math.abs(e.py - a[2]) > 40) { e.px = a[1]; e.py = a[2]; }
@@ -1691,6 +1703,7 @@ function applyV(v) {
     e.bubble = a[11] ? { k: a[11][0], until: RT + a[11][1] / 1000 } : null;
     if (a[12] != null) e.solid = !!a[12];
   }
+  if (v.ents.some(a => a[13])) for (const e of m.ents) if (e._k && !seen.has(e)) e.hidden = true;   // 主机这张图上已经没有它了（被搬走）
   const p = W.pl, P = v.pl;
   const local = v.ctrl === 'g' && !v.busy && NET.myK === v.k && !mapChanged;
   if (!local) {
