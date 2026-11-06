@@ -459,18 +459,23 @@
     endings: { pillar: '第十七夜　完（龙柱）', dig: '擅自开挖', debt: '什么也没还' },
     /* 测试用：读写喘气周期 */
     dbg: { ph: () => PH, calm: () => { if (PH) { PH.st = 'low'; PH.t = 0; PH.dur = 999; setWater(SAPI, null, true); } } },
-    thumb(g, w, h) {   // 高架桥面压在一根粗柱子上，柱子上盘着一条金色的龙
-      const R = (x, y, ww, hh, c) => { g.fillStyle = c; g.fillRect(x, y, ww, hh); };
-      const cx = (w / 2) | 0;
-      R(0, 12, w, 9, '#4a4a4c'); R(0, 12, w, 2, '#6a6a6c'); R(0, 21, w, 2, '#2a2a2c');
-      R(0, 6, w, 4, '#3a3a3c'); R(0, 6, w, 1, '#58585a');
-      R(cx - 14, 23, 28, h - 45, '#6e6c66'); R(cx - 14, 23, 4, h - 45, '#86847c'); R(cx + 10, 23, 4, h - 45, '#4e4c48');
-      R(cx - 20, 21, 40, 4, '#5a5854');
-      const G = '#d8a838', G2 = '#8a6418';
-      for (let i = 0; i < 9; i++) { const y = 28 + i * 9, x = cx - 14 + ((i % 2) ? 14 : 0); R(x, y, 14, 4, G); R(x, y + 4, 14, 1, G2); }
-      R(cx + 6, 24, 9, 7, G); R(cx + 12, 22, 2, 3, G); R(cx + 8, 22, 2, 3, G); R(cx + 13, 27, 1, 1, '#2a1a08'); R(cx + 14, 30, 6, 1, G); R(cx + 15, 32, 5, 1, G2);
-      R(cx - 15, 70, 3, 3, '#e8d8a0'); R(cx + 13, 52, 2, 2, '#e8d8a0');
-      for (let i = 0; i < 5; i++) R(6 + i * 9, h - 26, 5, 2, 'rgba(255,220,140,.35)');
+    thumb(g, w, h) {   // 高架桥面压在一根粗柱子上，一条金龙绕着柱子盘上去（前半圈亮、后半圈暗），顶上龙头对着一颗红珠
+      const R = (x, y, ww, hh, c) => { g.fillStyle = c; g.fillRect(Math.round(x), Math.round(y), Math.ceil(ww), Math.ceil(hh)); };
+      const cx = (w / 2) | 0, top = 22, bot = h - 22;
+      R(0, 4, w, 3, '#3a3a40'); R(0, 4, w, 1, '#5a5a60');
+      R(0, 11, w, 8, '#55555a'); R(0, 11, w, 2, '#7c7c82'); R(0, 19, w, 2, '#2a2a2e');
+      R(cx - 16, 20, 32, 4, '#646259'); R(cx - 16, 20, 32, 1, '#84827a');
+      R(cx - 11, top + 2, 22, bot - top - 2, '#7a7870'); R(cx - 11, top + 2, 4, bot - top - 2, '#96948a'); R(cx + 7, top + 2, 4, bot - top - 2, '#56544e');
+      for (let pass = 0; pass < 2; pass++) for (let y = top + 12; y < bot - 1; y++) {
+        const a = (y - top) * .26, x = cx + Math.sin(a) * 10, front = Math.cos(a) > 0;
+        if (front !== !!pass) continue;
+        R(x - 3, y, 6, 1, front ? '#e0b040' : '#6a4c14'); if (front && y % 3 === 0) { R(x - 1, y, 2, 1, '#fff0a8'); R(x + 3, y, 1, 1, '#a87818'); }
+      }
+      const hx = cx + 3, hy = top + 4, G = '#e0b040';
+      R(hx, hy + 3, 11, 6, G); R(hx + 9, hy + 5, 5, 4, G); R(hx + 1, hy, 2, 4, '#f0d070'); R(hx + 5, hy - 1, 2, 5, '#f0d070'); R(hx + 7, hy + 4, 2, 2, '#2a1a08');
+      R(hx + 12, hy + 9, 8, 1, '#fff0a8'); R(hx + 13, hy + 11, 6, 1, '#d8b860'); R(hx - 1, hy + 9, 4, 6, G); R(hx + 1, hy + 14, 3, 2, '#a87818');
+      R(cx - 24, top + 8, 6, 6, '#c82a20'); R(cx - 23, top + 9, 2, 2, '#ff8a70');
+      for (let i = 0; i < 6; i++) { R(4 + i * 10, bot - 5, 4, 2, 'rgba(255,220,140,.5)'); R(w - 8 - i * 10, bot - 8, 3, 2, 'rgba(255,90,70,.45)'); }
     },
     /* 惊吓大头像：浑水里抬起来的龙头。金黄的竖瞳、鹿一样的角、长须、慢慢张开的嘴 */
     faces: {

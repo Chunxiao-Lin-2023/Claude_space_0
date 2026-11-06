@@ -593,7 +593,7 @@
     const f = S.f;
     if (f.won) return '鸡叫之前，走出鬼市东头的牌楼（不能跑，不能出声）';
     if (!f.sawCheng) return '找栓子的长命锁（栓子的画：锁挂在一个提秤的老太太手里）';
-    if (f.t_cheng) return S.has('zq7') || !f.shortMoney ? '把手伸进秤婆的袖筒比价，压过灰袍客（双人时：一人翻「档案」里爹的手势本念，一人比）' : '纸钱不够压过灰袍客——糖人摊那孩子，好像在找自己丢的东西';
+    if (f.t_cheng) return S.has('zq7') || !f.shortMoney ? '把手伸进秤婆的袖筒比价，压过灰袍客（双人时：一人翻「笺」里爹的手势本念，一人比）' : '纸钱不够压过灰袍客——糖人摊那孩子，好像在找自己丢的东西';
     if (S.has('tuo')) return '回寿巷，把秤砣摆到秤婆的摊上';
     if (S.has('jing')) return '把铜镜摆到旧货摊上，换那个秤砣';
     if (f.sawJiu) {
@@ -830,7 +830,7 @@
     HEART(S, .8);
     await S.narr('你摸着它的指头：拇指和小指支棱着，中间三根，蜷在掌心里。\n它不动，在等你出价。');
     const have = S.has('zq7') ? 7 : S.has('zq4') ? 4 : 0;
-    const v = await S.keypad('在袖筒里比你的价：压过他（兜里：纸钱' + have + '叠）' + (S.coop ? '\n（另一位可以打开「档案」里爹的手势本念给你听；键盘 1–0 对应按钮顺序）' : '\n（爹的手势本可以在「档案」里重看；键盘 1–0 对应按钮顺序）'), KEYS, 1, { alias: KALIAS });
+    const v = await S.keypad('在袖筒里比你的价：压过他（兜里：纸钱' + have + '叠）' + (S.coop ? '\n（另一位可以打开「笺」里爹的手势本念给你听；键盘 1–0 对应按钮顺序）' : '\n（爹的手势本可以在「笺」里重看；键盘 1–0 对应按钮顺序）'), KEYS, 1, { alias: KALIAS });
     if (v == null || v === '') return S.narr('你把手抽了回来。袖筒里那只纸手，还在原处。');
     const n = SIGNS.indexOf(v) + 1, money = S.has('zq7') ? 7 : S.has('zq4') ? 4 : 0;
     if (n === 7 && money >= 7) return winBid(S);
@@ -967,7 +967,7 @@
   }
   async function finale(S) {
     S.clearTimer(); S.stop('hp_g'); S.hide('hp_g'); CROWD.forEach(c => S.hide(c.id));
-    S.lights(null); S.norun(false); S.plr(null); S.f.ph = 'out';
+    S.lights(null); S.norun(false); S.plr(null); S.f.ph = 'out'; S.goal('');
     await S.go('hetan', 26, 3, 1);
   }
   async function finaleOut(S) {
