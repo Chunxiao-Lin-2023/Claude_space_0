@@ -372,7 +372,7 @@
   }
   function chaseOpts(S, retry) {
     const t = S.f.darkTone ?? 1;
-    return { spd: [2.65, 2.8, 3.1][t] - Math.min(.3, deaths * .1), catch: robCatch, always: true, wait: retry ? 1.6 : [1.3, .9, .5][t] };
+    return { spd: [2.65, 2.8, 3.1][t] - Math.min(.3, deaths * .1), catch: robCatch, always: true, wait: retry ? 1.6 : [1.0, .8, .5][t] };
   }
   function startDark(S, retry) {
     blackout(S);

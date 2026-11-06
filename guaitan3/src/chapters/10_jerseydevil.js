@@ -556,7 +556,7 @@
           S.norun(true);
           await S.narr('雪松沼泽。白雪松长得又高又密，枝子被雪压得低低的。\n雪一下子深到了小腿肚——跑不起来，只能一步一步地拔着腿往前走。');
           S.pos(0, 8, 2);
-          await S.walk('pl', [5, 8], 3);
+          await S.walk('pl', [6, 8], 3);
           wings(S, 5, 0, .34, .5);
           await S.narr('身后很远的地方，翅膀扑了几下，停了。');
           await S.wait(600);
@@ -784,7 +784,7 @@
 
   /* ================= 沼泽：它闻着你的脚印追 ================= */
   let DV = null;
-  const DSPD = 3.9;        // 它沿着脚印走的速度（格/秒）；雪里你只能走 4.2×0.7≈2.9
+  const DSPD = 3.7;        // 它沿着脚印走的速度（格/秒）；雪里你只能走 4.2×0.7≈2.9（实测：一直走能甩开，在雪上愣 2 秒就会被追上）
   function tileAt(m, x, y) { return m.mods[y * m.w + x] ?? m.rows[y][x]; }
   const printable = c => c === '.' || c === 'p';
   async function startSwamp(S, retry) {
@@ -792,7 +792,7 @@
     S.norun(true); S.plr(3.4);
     const e = S.ent('dv'); S.stop('dv'); e.hidden = true; e.alpha = 1; e.s.fly = false; e.s.sniff = false;
     // 走进沼泽那几步留下的脚印
-    const pre = [[1, 8], [2, 8], [3, 8], [4, 8], [5, 8]];
+    const pre = [[0, 8], [1, 8], [2, 8], [3, 8], [4, 8], [5, 8], [6, 8]];
     for (const [x, y] of pre) S.tile(x, y, 'p');
     DV = { w: W, trail: pre.map(([x, y]) => [x, y, 0]), seg: 0, off: false, segT: 0, segN: 0, i: 0, st: 'wait', t: 0, last: W.pl.x + ',' + W.pl.y, adj: 0, ice: 0, iceW: false, hb: 0, n0: 0 };
     f.ph = 'chase';
@@ -833,8 +833,8 @@
     DV.t += dt;
     if (DV.st === 'wait') {
       // 落地前先叫一声预警；落在你身后第 6 个脚印上（至少隔 4 格）
-      if (!DV.warned && (DV.t > 1.6 || DV.trail.length >= 9)) { DV.warned = true; DV.t = 1.6; screech(S, 0, .8); wings(S, 4, .2, .28, .8); S.toast('身后——它来了！'); }
-      if (DV.warned && DV.t > 2.6) {
+      if (!DV.warned && (DV.t > 2 || DV.trail.length >= 11)) { DV.warned = true; DV.t = 2; screech(S, 0, .8); wings(S, 4, .2, .28, .8); S.toast('身后——它来了！'); }
+      if (DV.warned && DV.t > 3) {
         let j = Math.max(0, DV.trail.length - 7);
         while (j > 0 && Math.abs(DV.trail[j][0] - p.x) + Math.abs(DV.trail[j][1] - p.y) < 4) j--;
         DV.i = j; land(S, e, DV.trail[j]);
@@ -858,9 +858,13 @@
     }
     if (DV.st === 'sniff') {
       // 断了线：低头闻；离你只有一步还站着不动，它会听见你喘气
-      if (Math.abs(ex - p.x) + Math.abs(ey - p.y) <= 1) { DV.adj += dt; if (DV.adj > 1.2) { f.ph = 'dead'; S.run(caught); return; } } else DV.adj = 0;
+      if (Math.abs(ex - p.x) + Math.abs(ey - p.y) <= 1) {
+        DV.adj += dt;
+        if (DV.adj > .4 && !DV.adjW) { DV.adjW = true; S.bubble('dv', '?', 900); S.sfx('whisper'); S.toast('它就在你身边闻……别停下！'); }
+        if (DV.adj > 1.4) { f.ph = 'dead'; S.run(caught); return; }
+      } else DV.adj = 0;
       const tr = DV.trail, cur = tr[DV.i], last = tr[tr.length - 1];
-      if (last && cur && last[2] !== cur[2] && DV.t > 1.3 && (DV.segN >= 3 || DV.segT > 2.2)) {
+      if (last && cur && last[2] !== cur[2] && DV.t > 1.1 && (DV.segN >= 3 || DV.segT > 2.2)) {
         DV.st = 'fly'; DV.t = 0; e.s.fly = true; e.s.sniff = false; wings(S, 4, 0, .26, .9);
         e.hidden = true;
       } else if (last && cur && last[2] === cur[2] && DV.i < tr.length - 1) { DV.st = 'follow'; e.s.sniff = false; }
@@ -869,6 +873,8 @@
     if (DV.st === 'fly' && DV.t > 1.1) {
       const tr = DV.trail, sg = tr[tr.length - 1][2];
       let g = tr.length - 1; while (g > 0 && tr[g - 1][2] === sg) g--;
+      // 不落在你身边：离得太近就再盘旋一会儿（磨蹭太久也照落不误）
+      if (Math.abs(tr[g][0] - p.x) + Math.abs(tr[g][1] - p.y) < 3 && DV.t < 2.2) return;
       DV.i = g; land(S, e, tr[g]);
     }
   }
