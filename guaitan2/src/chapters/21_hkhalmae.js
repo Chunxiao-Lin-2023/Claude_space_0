@@ -3,7 +3,7 @@
   /* 会话内计数（不进存档）：死过 / 坏结局过几次 → 重来时逐级给提示 */
   let FAILS = 0;
   const DIED = { phone: 0, win: 0, hide: 0 };
-  const RING = { t: 0, n: 0, lit: 0 };   // 教务室电话的铃声（只在主机上跑）
+  const RING = { t: 0, n: 0, lit: 0, gap: true };   // 教务室电话的铃声（只在主机上跑）
   let lastSec = -1;
 
   /* ---------- 合成音效（双方都听得到） ---------- */
@@ -60,7 +60,7 @@
 
   /* ---------- 教务室：电话 ---------- */
   function startRing(S) {
-    S.f.ringing = true; RING.t = 1.2; RING.n = 0; S.f.rn = 0;
+    S.f.ringing = true; RING.t = 1.2; RING.n = 0; RING.gap = true; S.f.rn = 0;
     S.goal('电话响了……接电话（别忘了班长的话）');
     if (S.coop) S.toast('联机：一个人数铃声，另一个人去接');
   }
@@ -78,7 +78,7 @@
     await S.narr('你「啪」地一声把听筒扣了回去。');
     S.amb('school');
     await S.think('刚才……它响了几声？\n惠珍说过，响不满四声，不许接。');
-    S.f.ringing = true; RING.n = 0; RING.t = 3; S.f.rn = 0;
+    S.f.ringing = true; RING.n = 0; RING.gap = true; RING.t = 3; S.f.rn = 0;
     S.goal('电话又要响了……这次数清楚，响满四声再接');
   }
   async function phoneDie(S) {
@@ -99,10 +99,10 @@
     await broadcast(S);
   }
   async function broadcast(S) {
-    S.ent('speakerO').s.on = true;
+    S.ent('speakerO').s.talk = true;
     ding(S); await S.wait(1200);
     await S.say('广播', '……放学时间已经过了。还在校内的同学，请马上离校。', { style: 'whisper' });
-    S.sfx('tv'); S.ent('speakerO').s.on = false;
+    S.sfx('tv'); S.ent('speakerO').s.talk = false;
     await S.wait(500);
     S.sfx('whisper');
     await S.narr('广播「滋啦」响了一声，像是没关好。\n杂音里，有一个很老、很老的声音，跟着念了一句：\n「……香港。」');
@@ -597,7 +597,7 @@
     },
     speaker(g, e, t, R) {   // 墙上的广播喇叭
       box(R, 4, 0, 8, 7, '#8a8070'); R(5, 1, 6, 5, '#3a3630'); for (let y = 2; y < 6; y += 2) R(5, y, 6, 1, '#5a5448');
-      if (e.s.on && Math.sin(t * 20) > 0) R(12, 2, 2, 1, '#e8e0a0');
+      if (e.s.talk && Math.sin(t * 20) > 0) R(12, 2, 2, 1, '#e8e0a0');
     },
     phonedesk(g, e, t, R) {   // 小桌 + 黑色拨盘电话；rg：正在响
       box(R, 1, 2, 14, 12, '#6a5038'); R(2, 3, 12, 2, '#8a6a4a');
@@ -676,7 +676,10 @@
       box(R, 2, 1, 12, 10, '#4a3a2a'); R(3, 2, 10, 8, '#d9c27a'); R(7, 2, 1, 8, '#4a3a2a'); R(3, 5, 10, 1, '#4a3a2a');
       R(3, 2, 3, 8, '#c8a868'); R(4, 9, 7, 3, '#5a3a2a'); R(5, 10, 2, 1, '#e8c060'); R(9, 10, 1, 1, '#c03030');
     },
-    milkbox(g, e, t, R) { box(R, 4, 2, 8, 9, '#e8e4d8'); R(5, 4, 6, 2, '#2a5a9a'); R(5, 3, 6, 1, '#c8c4b8'); }
+    kstall(g, e, t, R) {   // 厕所隔间门；feet：门缝底下停着一双白胶鞋
+      SPR.stall(g, e, t, R);
+      if (e.s.feet) { R(4, 15, 3, 1, '#f0eee6'); R(9, 15, 3, 1, '#f0eee6'); R(3, 15, 1, 1, '#1a1f36'); R(12, 15, 1, 1, '#1a1f36'); }
+    }
   };
 
   defChapter({
@@ -710,7 +713,7 @@
     legend: '「香港奶奶鬼」（홍콩할매귀신）是 1980 年代末韩国小学生之间流传最广的校园怪谈之一。最常见的说法是：一位老奶奶抱着心爱的猫坐飞机去香港，飞机失事，她和猫的魂魄合在了一起，变成一半是人、一半是猫的鬼，回到韩国，在放学路上专找小孩；也有版本说，是猫把自己的半条命分给了她。据说她一百米只要十秒左右，还能一下跳出好几米，所以「跑是跑不掉的」。\n\n孩子们同时传着一整套「保命规矩」：天黑以后别在外面；跟她说话，每句话的末尾都要加上「香港」；别让她看见指甲（伸手时要手心朝上）；电话响不满四声不要接；窗外有老奶奶叫你，不要应、不要开窗；躲进厕所第四间也没用。规矩因学校、因地区而不同，常常互相矛盾——这正是口耳相传的怪谈的样子。\n\n据报道，1989 年 6 月，MBC 电视台的新闻节目报道过首尔一些国民学校里的「香港奶奶」恐慌：有的教室里孩子们一听说她「在隔壁班吃小孩」，便哭喊成一片，不少孩子天一黑就不敢出门。事后人们给出的解释各种各样：那几年香港电影（尤其是鬼怪片）在韩国大受欢迎；八十年代几起空难的新闻，让「坐飞机出事」成了连孩子都熟悉的恐惧；拐卖儿童的报道很多；还有一种说法认为，是大人们有意讲这个故事，好让孩子天黑前回家。和日本的裂口女一样，她也是「拦住你问话、答错就完蛋」的放学路怪谈。\n\n（本章中的朴秀妍、金老师和五年三班的同学、尹奶奶和她的年糕摊、猫娜比，以及「往哪边走、几点到、有多远」这几道题、时刻表上的航班、社会科附图的页面、纸条与广播的内容，均为游戏虚构。世上并没有真实的「香港奶奶」，也没有哪位真实的老人与这个传说有关；本章只是借一个虚构的老奶奶，写孩子们口中的那个她。）',
     start: { map: 'class', x: 8, y: 8, dir: 3 },
     resume: {
-      phone: async S => { S.amb('school'); RING.t = 1.4; RING.n = 0; S.f.rn = 0; S.f.ringing = true; S.ent('phone').s.rg = false; if (DIED.phone) await S.think('（这一次，一声一声地数清楚——响满四声，再接。）'); },
+      phone: async S => { S.amb('school'); RING.t = 1.4; RING.n = 0; RING.gap = true; S.f.rn = 0; S.f.ringing = true; S.ent('phone').s.rg = false; if (DIED.phone) await S.think('（这一次，一声一声地数清楚——响满四声，再接。）'); },
       dusk: async S => { S.amb('school'); S.norun(false); if (DIED.win) await S.think('（三楼的窗外，不可能站着人。不管她说什么，都别开窗。）'); },
       hide: async S => { S.norun(false); S.hidePlayer(false); S.stop('halmaeH'); await appear(S, true); },
       street: async S => { S.amb('night'); S.norun(false); },
@@ -747,7 +750,7 @@
         ents: [
           { id: 'cdoor', x: 16, y: 1, spr: 'sliding', async on(S) {
             if (!S.f.kidsGone) { const l = dutyLeft(S); S.sfx('locked'); return S.narr('值日还没做完：' + l.join('、') + '。\n金老师说了，做完才能走。'); }
-            if (!S.has('attend')) { S.sfx('locked'); return S.think('讲台上的出勤簿……得送到教务室金老师桌上。'); }
+            if (!S.has('attend') && !S.f.book) { S.sfx('locked'); return S.think('讲台上的出勤簿……得送到教务室金老师桌上。'); }
             S.sfx('open'); await S.go('hall', 3, 2, 0);
           } },
           { id: 'motto', x: 1, y: 1, spr: 'poster', col: '#e8e0c8', on: S => S.narr('教室后墙上挂着班训，金老师写的毛笔字：「正直」。\n下面贴着上个月的「拾金不昧」光荣榜，智勋的名字排第一。') },
@@ -886,7 +889,7 @@
           { id: 'hwin3', x: 19, y: 1, spr: 'hwin', light: { r: 3, col: 'rgba(255,150,80,.14)', dy: 20 }, on: S => S.narr(S.f.tapped ? '窗外什么也没有。玻璃上，留着一个模模糊糊的手印——手心朝外。' : S.f.dusk ? '窗外黑漆漆的。这里是三楼。' : '窗台上落着一层粉笔灰。') },
           { id: 'hwin4', x: 22, y: 1, spr: 'hwin', light: { r: 3, col: 'rgba(255,150,80,.14)', dy: 20 }, on: S => S.narr('楼下的校门口，有一盏路灯。灯底下停着一辆盖着蓝塑料布的小推车。') },
           { id: 'speakerH', x: 24, y: 1, spr: 'speaker', on: S => S.narr('走廊上的广播喇叭。早上的升旗仪式，就是从这里放国歌的。') },
-          ...[2, 3, 4].map(y => ({ id: 'sd' + y, x: 26, y, spr: 'stairsdown', async touch(S) {
+          ...[2, 3, 4].map(y => ({ id: 'sd' + y, x: 26, y, spr: 'stairsdown', solid: false, async touch(S) {
             if (!S.f.called) { S.pos(25, y, 1); return S.think(S.f.book ? '……教务室的电话，好像在响？' : '出勤簿还没送到教务室呢。金老师明天会生气的。'); }
             if (S.f.hunt) { S.pos(25, y, 1); return S.think('楼梯底下，铃铛声还在响……\n不能往下走！'); }
             if (!S.f.hid) return;
@@ -897,7 +900,7 @@
           { id: 'mirror2', x: 3, y: 6, spr: 'mirror', on: S => S.narr('镜子的角落有一道裂纹。有人在裂纹旁边用口红画了一只猫。') },
           { x: 2, y: 7, spr: 'sink', solid: true, on: S => S.narr('水龙头没拧紧，一滴，一滴。') },
           { x: 3, y: 7, spr: 'sink', solid: true, on: S => S.narr('洗手池里泡着一块用剩的肥皂，软软的。') },
-          ...[1, 2, 3, 4].map(n => ({ id: 'st' + n, x: 7 + n, y: 7, spr: 'stall', solid: true, num: n === 4, on: S => hideStall(S, n) })),
+          ...[1, 2, 3, 4].map(n => ({ id: 'st' + n, x: 7 + n, y: 7, spr: 'kstall', solid: true, num: n === 4, on: S => hideStall(S, n) })),
           { x: 12, y: 10, spr: 'box', on: S => S.narr('拖把桶。桶底的水是灰的。') },
           { id: 'halmaeH', x: 26, y: 3, spr: '@halmae1', solid: false, hidden: true }
         ],
@@ -951,6 +954,7 @@
           } },
           { id: 'phone', x: 13, y: 4, spr: 'phonedesk', async on(S) {
             if (!S.f.ringing) return S.narr(S.f.called ? '黑色的拨盘电话。听筒还是温的。' : '黑色的拨盘电话。拨盘上的数字，磨得发白。');
+            if (RING.gap) return S.narr('铃声停了。听筒里只有「嘟——」的长音。\n……过一会儿，大概还会再打来。');
             if (RING.n >= 4) return momCall(S);
             return earlyPick(S);
           } },
@@ -967,8 +971,8 @@
           if (RING.lit > 0) { RING.lit -= dt; if (RING.lit <= 0) ph.s.rg = false; }
           if (!S.f.ringing || S.busy) return;
           RING.t -= dt; if (RING.t > 0) return;
-          if (RING.n >= 9) { RING.n = 0; S.f.rn = 0; RING.t = 3.5; return; }
-          RING.n++; S.f.rn = RING.n; RING.t = 1.9; ring(S); ph.s.rg = true; RING.lit = .7;
+          if (RING.n >= 9) { RING.n = 0; S.f.rn = 0; RING.gap = true; RING.t = 3.5; return; }
+          RING.gap = false; RING.n++; S.f.rn = RING.n; RING.t = 1.9; ring(S); ph.s.rg = true; RING.lit = .7;
           S.bubble('phone', '♪', 800);
         },
         async enter(S, first) {
