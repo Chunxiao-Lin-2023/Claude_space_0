@@ -1,0 +1,45 @@
+# 第十五夜 调换儿 · 自动通关步骤（格式见 tests/play.py 顶部）
+SOL = [
+    [],
+    ['shot', 'cottage'],
+    ['use', 'nain'],
+    ['use', 'bible'],
+    ['use', 'letter'],
+    ['use', 'chest'],
+    ['expect', "window.__dbg.W.f.ph === 'gather'"],
+    ['use', 'cradle', [0]],
+    ['expect', "window.__dbg.ent('cradle').s.turned"],
+    ['step', 9, 10],
+    ['expect', "window.__dbg.W.mapId === 'yard'"],
+    ['shot', 'yard'],
+    ['use', 'hens'], ['use', 'well'], ['use', 'malt'],
+    ['use', 'ydoor'],
+    ['expect', "window.__dbg.W.mapId === 'cottage'"],
+    ['use', 'hearth', [['倒水', '开口', '敲蛋', '撒麦', '摆壳']]],   # 先做错一次
+    ['expect', "window.__dbg.W.f.kpMiss === 1 && window.__dbg.W.f.ph === 'gather'"],
+    ['use', 'hearth', [['敲蛋', '摆壳', '倒水', '撒麦', '开口']]],
+    ['expect', "window.__dbg.W.f.ph === 'deal' && window.__dbg.W.inv.includes('iron') && window.__dbg.ent('chg').follow"],
+    ['shot', 'reveal'],
+    ['use', 'shawlchair', [0]],
+    ['use', 'chg'],
+    ['expect', "window.__dbg.W.f.wrapped"],
+    ['step', 9, 10],
+    ['use', 'cow', [0]],
+    ['use', 'chg'],
+    ['expect', "window.__dbg.W.f.fed"],
+    ['use', 'hag'],
+    ['use', 'mound', [0, 1]],          # 进门；名字：「我是伊万的姐姐」
+    ['expect', "window.__dbg.W.mapId === 'hall' && window.__dbg.W.f.ph === 'hall'"],
+    ['shot', 'hall'],
+    ['use', 'carve'],
+    ['step', 8, 6, [1]],               # 递来的蜂蜜饼：不吃
+    ['use', 'cr2', [0]],               # 石孔：木头
+    ['expect', "window.__dbg.ent('cr2').s.log"],
+    ['use', 'cr1', [1]],               # 认错一次（结霜的仙灵孩子）
+    ['expect', "window.__dbg.W.f.wrong === 1"],
+    ['use', 'cr4', [1]],
+    ['expect', "window.__dbg.W.mapId === 'tunnel' && window.__dbg.W.f.ph === 'escape' && window.__dbg.W.timer"],
+    ['shot', 'tunnel'],
+    ['step', 35, 4],
+    ['expect', "window.__dbg.store.get('ends', []).includes('changeling:blessing')"],
+]

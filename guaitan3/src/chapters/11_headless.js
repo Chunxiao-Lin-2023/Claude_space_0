@@ -525,6 +525,7 @@
     let gap = 99;
     if (h && !h.hidden) {
       gap = (Math.abs(h.px - p.px) + Math.abs(h.py - p.py)) / TS;
+      if (h.chase && gap < .95 && !S.busy && !W.ended) { h.chase = null; S.run(graze); return; }   // 贴到马屁股上就算追上（引擎默认 11 像素，一直在跑的人永远抓不到）
       if (h.chase) { let hs = gap > 9 ? 7.6 : HSPD - (DEATHS >= 4 ? .5 : 0); if (tileName(m, Math.round(h.px / TS), Math.round(h.py / TS)) === 'mud') hs *= .6; h.chase.spd = hs; }
       if (h.dir === 1 || h.dir === 2) h.s.hd = h.dir;
       const hk = h.x + ',' + h.y; if (hk !== CH.hTile) { CH.hTile = hk; CH.htrail.push([h.x, h.y]); if (CH.htrail.length > 40) CH.htrail.shift(); }

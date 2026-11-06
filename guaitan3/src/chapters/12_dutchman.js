@@ -375,7 +375,7 @@
     while (gs.length < 5) {
       const so = gs.length ? gs.map(n => '叮'.repeat(n)).join(' · ') : '（还没敲）';
       const k = await S.keypad('替他们把这一班的钟敲完（最多五组）\n已敲：' + so + '\n这一组敲几下？整班敲完了，按「停手」', ['1', '2', '3', '停手'], 1, { alias: { '0': '停手' } });
-      if (k == null) { if (gs.length) await S.narr('你松开了钟绳。钟声在雾里慢慢散了。'); return; }
+      if (k == null) { DT.gb = 6; if (gs.length) await S.narr('你松开了钟绳。钟声在雾里慢慢散了。'); return; }
       if (k === '停手') break;
       const n = +k;
       for (let i = 0; i < n; i++) { ding(S, false, .1); bq(.26, S2 => S2.tone('sine', 1046, 1040, 1.2, .025, 0, 700)); S.shake(120, 1); await S.wait(420); }
@@ -599,11 +599,11 @@
         const W2 = e.w * 16, b = Math.round(Math.sin(t * .9));
         for (const mx of [70, 170, 270]) { R(mx, -60, 3, 82 + b, '#0a0606'); R(mx - 34, -50, 70, 30, '#6a0c0c'); R(mx - 38, -16 + b, 78, 32, '#861212'); R(mx - 30, -12 + b, 12, 26, '#a81c1c'); R(mx - 16, -14 + b, 6, 28, '#9a1818'); R(mx + 14, -8 + b, 3, 18, '#3a0606'); R(mx - 38, 15 + b, 78, 2, '#4a0808'); R(mx - 39, -16 + b, 1, 32, '#c03030'); }
         g.fillStyle = 'rgba(255,60,40,.07)'; g.fillRect(e.sx - 30, e.sy - 10, W2 + 40, 64);
-        R(0, 22 + b, W2, 26, '#100c0a'); R(0, 22 + b, W2, 1, '#3e3028'); R(4, 19 + b, W2 - 70, 3, '#1e1612');
+        R(0, 22 + b, W2, 26, '#221914'); R(0, 22 + b, W2, 1, '#5a463a'); R(0, 30 + b, W2, 1, '#3a2c22'); R(4, 19 + b, W2 - 70, 3, '#1e1612');
         R(W2 - 70, -10 + b, 70, 58, '#140e0b'); R(W2 - 70, -10 + b, 70, 2, '#3a2a1a');
         for (let i = 0; i < 4; i++) R(W2 - 62 + i * 15, 2 + b, 8, 7, Math.sin(t * 2 + i) > .2 ? '#5a1410' : '#3a0c0a');
         R(-14, 24 + b, 14, 8, '#100c0a'); R(-26, 19 + b, 14, 2, '#1e1612');
-        for (let x = 30; x < W2 - 80; x += 26) R(x, 32 + b, 8, 6, '#050302');
+        for (let x = 30; x < W2 - 80; x += 26) { R(x, 32 + b, 8, 6, '#050302'); if (hash(x, 1, 7) < .4) R(x + 2, 34 + b, 4, 2, Math.sin(t * 3 + x) > 0 ? '#7a1a12' : '#4a0e0a'); }
         for (let i = 0; i < 46; i++) R((hash(i, 1, 9) * W2) | 0, 25 + ((hash(i, 2, 9) * 20) | 0) + b, 2, 1, i % 2 ? '#4a4a3a' : '#1e3a22');
         for (let i = 0; i < 16; i++) { const x = (hash(i, 3, 9) * W2) | 0; R(x, 46 + b, 1, 4 + ((hash(i, 4, 9) * 8) | 0), '#1e3a22'); }
         R(-14, 47, W2 + 14, 2, 'rgba(160,190,200,.22)');
@@ -772,7 +772,7 @@
           ST.beam += dt * .9;
           S.lights([[32 * 16 + 8 + Math.cos(ST.beam) * 16 * 7, 3 * 16 + Math.abs(Math.sin(ST.beam)) * 16 * 6, 2.6, .55]]);
           if (S.busy) return;
-          ST.lt -= dt; if (ST.lt <= 0) { ST.lt = 5 + Math.random() * 5; thunder(S, false); }
+          ST.lt -= dt; if (ST.lt <= 0) { ST.lt = 7 + Math.random() * 6; thunder(S, false); }
           /* 阵风：预兆 .6 秒（旁观者可见）→ 警告 1.3 秒 → 风到 1.6 秒；风到时还在动舵就算一次 */
           ST.pt += dt;
           if (ST.ph === 0) { if (ST.pt >= ST.next) { ST.ph = 1; ST.pt = 0; wd.s.g = 1; } }
