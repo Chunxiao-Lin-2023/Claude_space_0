@@ -9,6 +9,7 @@
   const ORDER = ['pE', 'pN1', 'pN2', 'pN3', 'pW'];
   const JUNC = { j1: 'b1', j2: 'b2', j3: 'b3' };
   const CHASERS = ['pw', 'pw2'];
+  let rustleT = 0, genT = 0;
   const SPD = [2.8, 2.95, 3.1];
   /* 墓门上的六种印（密码盘只用数字键，避免字母触发引擎快捷键） */
   const SEALS = ['一只站着的胡狼，举着一把刀', '一只趴着的胡狼，底下九个捆着手的人', '一个椭圆圈，圈里是一只流着三道泪的眼睛', '一个椭圆圈，圈里：篮子、圣甲虫、三道竖、太阳', '一只张开翅膀的秃鹫，爪下一行字「死亡将展开翅膀」', '一个骷髅，底下两根交叉的骨头'];
@@ -95,7 +96,8 @@
     await S.narr('坑底下，「哐」的一声。\n铁栅门开了一道缝——墓里的电灯，一盏接一盏地亮了起来。');
     S.focus(null);
     await S.say(RS, ['……那个洋人！他从后面绕过去了！', '锁是撬开的。']);
-    await S.say(RS, ['我这条腿，下不了那十六级台阶。', '你提上灯下去，把他找出来。别让他碰任何东西——里头每一件都有号、有照片。少一件，明天一早，文物局就要挨家挨户问古尔纳的人。', '我在上头看着发电机。去吧，孩子。']);
+    S.hide('donkey');
+    await S.say(RS, ['我这条腿，下不了那十六级台阶。', '送水的孩子已经骑上驴，去卢克索叫文物局的人了。', '你提上灯下去，把他找出来。别让他碰任何东西——里头每一件都有号、有照片。少一件，明天一早，文物局就要挨家挨户问古尔纳的人。', '我在上头看着发电机。去吧，孩子。']);
     S.give('lamp');
     S.f.gate = true;
     S.goal('提着灯下到墓里（坑底的铁栅门），找到闯进去的人');
@@ -127,18 +129,15 @@
     for (const id of ['cb1', 'cb2', 'cb3']) S.ent(id).off = true;
     S.dark(.95); S.plr(2.3); S.amb('otherworld');
     S.shake(300, 1);
-    await S.narr('灯灭了。\n上头的发电机咳嗽了两声，没了动静。只剩你手里这盏马灯，照着脚前两三步远。');
-    await S.wait(600);
+    await S.narr('灯灭了。上头的发电机咳嗽了两声，没了动静。\n只剩手里这盏马灯，照着脚前两三步远。');
     thud(S, .06); await S.wait(500); thud(S, .06);
-    await S.narr('甬道尽头，传来「笃、笃」的声音。\n像是有人在拍打什么软的东西。');
     S.focus(4, 3);
     const g1 = S.ent('g1'), g2 = S.ent('g2'); g1.alpha = 0; g2.alpha = 0; S.show('g1'); S.show('g2'); S.face('g1', 3); S.face('g2', 3);
-    S.ent('seal').s.st = 1;
+    S.ent('seal').s.st = 1; S.ent('seal').off = false;
     S.alpha('g1', .6, 900); await S.alpha('g2', .6, 900);
     await S.narr('通往前室的门口，不知什么时候，又砌上了一堵墙。\n墙前站着两个人影：光着膀子，腰上围着白麻布裙，头剃得干干净净。');
     for (let i = 0; i < 3; i++) { thud(S, .07); await S.wait(420); }
-    await S.narr('一个往墙上抹灰泥。另一个举着一块小东西，在湿泥上一下、一下地按。\n按一下，墙上就多一个印——一只趴着的胡狼。');
-    await S.think('……是封墓门的人。\n三千多年前，就是这样干活的人，凿好了墓，又亲手把门封上。');
+    await S.narr('一个往墙上抹灰泥。另一个举着一块小东西，在湿泥上一下、一下地按。\n按一下，墙上就多一个印——一只趴着的胡狼。\n……是封墓门的人。三千多年前，就是这样干活的人，凿好了墓，又亲手把门封上。');
     S.face('g1', 0); S.face('g2', 0); S.sfx('whisper');
     await S.wait(900);
     await S.narr('他们停下手，转过身，看了你一眼。\n眼神很平静，像收工的人，看见了来接班的人。');
@@ -148,8 +147,7 @@
     S.sfx('knock');
     await S.say('墙后面', ['Hello？！有人吗？！', '……是守墓的那个孩子吗？救救我——这里面有东西！'], { style: 'whisper' });
     await S.think('莫顿。他被封在里面了。\n墙摸上去冰凉、干硬，像是三千年前就在这儿了。只有右边那几个印，黑得发亮。');
-    S.goal('墙又封上了——看清墙上的印，找出能推开的那一块');
-    if (S.coop) S.toast('联机：一个人在「笺」里翻老爹的记工簿念印的样子，一个人去墙前选');
+    S.goal('墙又封上了——对照「笺」里老爹的记工簿，看清墙上的印（双人：一人念记工簿，一人选）');
     S.cp();
   }
   async function sealOn(S) {
@@ -170,15 +168,21 @@
     if (r === 3) return;
     if (r !== 1) {
       const n = S.f.patchTry = (S.f.patchTry || 0) + 1;
+      S.plr(Math.max(1.5, 2.3 - .3 * n));   // 推错有代价：使劲的时候马灯晃了，灯油洒出去一截
       if (r === 0) { S.sfx('thud'); await S.narr('你用肩膀抵住左边，使劲一推。\n灰泥又冷又硬，纹丝不动——这一块是当年一次抹好、一次盖满印的，三千多年没人动过。'); }
       else { S.sfx('tear'); S.shake(300, 2); flutter(S, .04, 8); await S.narr('你的手刚按上右边，湿墨水就顺着指缝往下淌。\n墙后面，有什么东西「沙」地动了一下，像一大摞纸被风掀起来。'); }
-      if (n >= 2) await S.think('老爹说过：补上的那一块，只盖着胡狼的印。\n补墙的是看守墓地的人——他们手里没有国王的印。');
+      await S.narr('马灯在手里一晃，灯油洒出去一截，火苗矮了下去。');
+      if (n === 1) await S.think('不能瞎推了。老爹说过墙上补过的事。');
+      else if (n === 2) await S.think('记工簿上写着：补上的那块，只盖着胡狼的印。\n补墙的是看守墓地的人——他们手里没有国王的印。');
+      else await S.think('是中间那块。只有胡狼印、颜色深一点的那块。');
       return;
     }
-    S.sfx('thud'); S.shake(500, 2);
+    S.sfx('thud'); S.shake(500, 2); S.plr(2.3);
     await S.narr('你用肩膀抵住中间那块颜色深一点的灰泥。\n一推，泥皮就酥了，一块一块地往下掉。');
     w.s.st = 2;
     await S.narr('墙上露出一个刚好钻得过一个人的洞。\n三千多年前，贼钻的就是这儿。后来，看守墓地的人把它补上，盖满了胡狼。');
+    await S.narr('你把马灯举到洞口，眯着眼往里照。\n热乎乎的空气从洞里往外冒，火苗晃了一下——然后，有什么东西在黑暗里闪了一下。金的。到处都是金的。');
+    await S.think('去年十一月，听说卡特先生也是这样，举着一根蜡烛往洞里看。\n有人问他看见了什么，他说：「奇妙的东西。」');
     S.goal('钻过墙洞，进前室找莫顿');
     S.cp();
   }
@@ -226,7 +230,7 @@
     await S.think('乌加特之眼。荷鲁斯的眼睛。\n老爹说，那是保人完好无损的意思。');
     await S.say(MO, ['在里面那间金屋子里捡的。就在那个大金柜子的门口，地上。', '我本来想拍完就放回去的！真的！']);
     await S.say(MO, ['听着，孩子。给你二十镑。', '你们卢克索的集市上天天在卖这种东西。少一个，谁会知道？', '要不……就让我带出去。明天的头版：「被诅咒的护身符」。我保证不写你的名字。']);
-    const r = await S.ask('他把那只蓝眼睛捏在两根指头中间。', ['「给我。我把它放回去。」', '「……那你拿走吧。」']);
+    const r = await S.ask('他把那只蓝眼睛捏在两根指头中间。', ['「给我。我把它放回去。」', '「……你拿走吧。就当我什么也没看见。」']);
     if (r === 1) return headline(S);
     await S.say('你', ['集市上卖的那些，是做给你们这种人的。', '这一只，是他的。']);
     await S.narr('莫顿看了你一会儿，把它放进了你手心。\n凉的。比你想的要轻。');
@@ -260,6 +264,7 @@
     genHum(S, .02);
     await S.narr('上头远远传来「突突突」的声音——是老爹，把发电机又摇着了！\n可前室里一盏灯也没亮。电线的接头，全叫莫顿扯断了。');
     await S.think('那东西是冲着我手里的眼睛来的。\n……它只在黑地方走。灯底下，它不敢。');
+    await S.narr('（灯下它不动；离你一格就会扑上来。在黑地方要跑——Shift，或屏幕上的「跑」键。）');
     S.f.ph = 'dark'; S.f.jn = 0;
     S.goal('接好三个电线接头（还剩 3 个）——灯下它不敢过来');
     S.cp('dark');
@@ -274,15 +279,16 @@
     S.chase(id, { spd: SPD[Math.min(2, S.f.jn || 0)], catch: S2 => hitBy(S2, id), zone: (x, y) => !litAt(S, x, y) });
     if (wait) c.chase.wait = wait;
   }
-  function stopAll(S) { for (const id of CHASERS) { S.stop(id); S.freeze(id, false); } }
+  function stopAll(S) { for (const id of CHASERS) { S.stop(id); S.freeze(id, false); S.ent(id).s.fz = false; } }
   function near(S, c) { return Math.abs(c.px - S.pl.px) + Math.abs(c.py - S.pl.py) < 16.5; }
   /* 把报纸怪甩开：离玩家至少 5 格、没有灯，并且尽量远离还没接好的接头（不会正好堵在下一个目标上） */
-  function farSpot(S) {
+  function farSpot(S, avoid) {
     const cand = [[10, 9], [16, 10], [16, 2], [12, 3], [8, 7], [1, 10], [5, 5], [11, 7], [14, 4], [9, 3], [3, 2]];
     const left = Object.keys(JUNC).filter(j => S.ent(j).s.loose).map(j => S.ent(j));
     let best = null, bs = -1e9;
     for (const [x, y] of cand) {
       if (litAt(S, x, y)) continue;
+      if (avoid) { const o = S.ent(avoid); if (!o.hidden && Math.abs(Math.round(o.px / 16) - x) + Math.abs(Math.round(o.py / 16) - y) < 3) continue; }
       const dp = Math.abs(x - S.pl.x) + Math.abs(y - S.pl.y); if (dp < 5) continue;
       const dj = left.length ? Math.min(...left.map(j => Math.abs(x - j.x) + Math.abs(y - j.y))) : dp;
       const sc = Math.min(dj, 9) * 10 - Math.abs(dp - 7);
@@ -290,13 +296,13 @@
     }
     return best || [10, 9];
   }
-  function knockBack(S, id) { const [x, y] = farSpot(S); S.place(id, x, y, 1); }
+  function knockBack(S, id) { const [x, y] = farSpot(S, id === 'pw' ? 'pw2' : 'pw'); S.place(id, x, y, 1); }
   async function startDark(S, retry) {
     stopAll(S);
     S.hide('pw2'); S.hidePlayer(false);
     S.dark(.95); S.plr(2.4);
     const a = S.ent('pw'); S.place('pw', 10, 9, 1); a.alpha = 0;
-    if (retry) await S.narr('你又回到了狮子床旁边。墙洞边上，那摞报纸又在一张一张地立起来。\n（灯底下它不动；离你一格就会扑上来。先接最近的那个接头，再一盏一盏地「跳」过去。）');
+    if (retry) await S.narr('你又回到了狮子床旁边。墙洞边上，那摞报纸又在一张一张地立起来。\n（灯下它不动；离你一格就会扑上来。黑地方一定要跑；先接最近的那个，再挑离它远的那一个，一盏一盏「跳」过去。）');
     if (S.coop) S.toast('联机：一个人盯着报纸怪喊方位，一个人跑（按 T 交接）');
     flutter(S, .045, 10);
     await S.alpha('pw', 1, 700);
@@ -335,7 +341,7 @@
     for (const id of CHASERS) { const c = S.ent(id); if (c.chase) c.chase.spd = SPD[S.f.jn]; }
     S.goal('接好三个电线接头（还剩 ' + (3 - S.f.jn) + ' 个）——灯下它不敢过来');
     if (S.f.jn === 2) {
-      const p = farSpot(S); const b = S.ent('pw2'); S.place('pw2', p[0], p[1], 1); b.alpha = 0;
+      const p = farSpot(S, 'pw'); const b = S.ent('pw2'); S.place('pw2', p[0], p[1], 1); b.alpha = 0;
       flutter(S, .05, 12);
       S.toast('灯亮了！……可是另一摞报纸，也飞起来了。');
       await S.alpha('pw2', 1, 700);
@@ -369,7 +375,7 @@
     await S.go('burial', 7, 9, 3);
   }
   async function anteExit(S) {
-    if (S.f.ph === 'dark') { S.toast('外头黑成一片——那东西就是从那边来的。先把灯接上！'); S.pos(9, 9, 3); return; }
+    if (S.f.ph === 'dark') { S.toast('外头黑成一片——那东西就是从那边来的。先把灯接上！'); S.pos(9, 10, 3); return; }   // 退回原来那一格（以前推到 9,9，正贴着报纸怪冒出来的那摞报纸）
     await S.go('corridor', 4, 2, 0);
   }
 
@@ -397,15 +403,14 @@
     await S.note('sketch');
     S.f.sketch = true; S.give('sketch', true);
     await S.think('壁画上的，是国王死了以后走的路。\n……要把他的东西还回去，是不是也得照着他的路，先走一遍？');
-    S.goal('照国王走过的路，依次摸一遍墙上的五幅画（速写本在「笺」里）');
-    if (S.coop) S.toast('联机：一个人翻「笺」里的速写本念，一个人去摸画');
+    S.goal('照国王走过的路，依次摸五幅壁画：东墙一幅、北墙三幅、西墙一幅（双人：一人念速写本，一人摸）');
   }
   async function panelOn(S, id) {
     const e = S.ent(id), d = PDESC[id];
     if (S.f.panels) return S.narr(d.done);
     if (!S.f.sketch) return S.narr(d.look + '\n\n……这画的是什么？脚手架上好像有画工留下的东西。');
     if (e.lit) return S.toast('这一幅已经亮了。');
-    if (S.once('pd_' + id)) { await S.narr(d.look); if (await S.ask('把手按在这幅画上？', ['按上去', '先不']) === 1) return; }
+    if (!S.f['pd_' + id]) { await S.narr(d.look); if (await S.ask('把手按在这幅画上？', ['按上去', '先不']) === 1) return; S.f['pd_' + id] = true; }
     const seq = S.f.seq || 0;
     if (ORDER[seq] === id) {
       e.lit = true; e.off = false; litNote(S, seq); S.f.seq = seq + 1;
@@ -479,14 +484,14 @@
     S.dark(.3, 'valley');
     S.ent('fire').off = true;
     for (const p of ['pole1', 'pole2']) S.ent(p).off = true;
-    S.place('reis', 10, 10, 2); S.place('insp', 13, 10, 1); S.place('mor', 8, 11, 2);
+    S.place('reis', 10, 10, 2); S.place('insp', 13, 10, 1); S.place('mor', 8, 11, 2); S.place('donkey', 15, 11, 1);
     await S.go('valley', 11, 9, 0, { fade: false });
     S.amb('wind');
     await S.fade(0, 1000);
     S.face('reis', 'pl');
     await S.say(RS, ['卡里姆！', '……感谢真主。你出来了。']);
     S.face('insp', 'pl');
-    await S.say(HA, ['我是文物局的哈米德。天一亮，我就带人下去看过了。', '封泥、木箱、号签……墓室里一样不少。', '神龛门前的地上，有一只蓝色的小护身符。登记簿上没有它——画工的速写本上倒是画着。我会把它补登上去。']);
+    await S.say(HA, ['我是文物局的哈米德。送水的孩子半夜敲开了我的门。', '天一亮，我就带人下去看过了。', '封泥、木箱、号签……墓室里一样不少。', '神龛门前的地上，有一只蓝色的小护身符。登记簿上没有它——画工的速写本上倒是画着。我会把它补登上去。']);
     await S.wait(500);
     await S.say(HA, ['还有一件事。', '开罗来了电报。勋爵……今天凌晨，走了。']);
     S.bubble('reis', '…', 2000);
@@ -494,19 +499,25 @@
     await S.narr('谁也没再说话。\n风从山口灌下来，把篝火的灰吹得一圈一圈地转。');
     S.face('mor', 'pl');
     await S.say(MO, ['……你知道明天的报纸会怎么写吗？「法老的诅咒应验了」。不管我写不写，都会有人这么写。', '我欠你一条命，孩子。你告诉我——下面到底有什么？我照你说的写。']);
-    const r = await S.ask('莫顿把本子摊在膝盖上，等着。', ['「有诅咒。你自己看见了。」', '「没有诅咒。只有一句祝福，和一代一代干活的人。」', '「……我什么都没看见。」']);
+    const opts = ['「有诅咒。你自己看见了。」', '「没有诅咒。只有一句祝福，和一代一代干活的人。」', '「……我什么都没看见。」'];
+    if (S.f.draft) opts.push('「『死亡将展开翅膀』——那句话，是你自己在本子上写的。」');
+    const r = await S.ask('莫顿把本子摊在膝盖上，等着。', opts);
     S.f.answer = r;
     if (r === 1) await S.say(MO, '……一句祝福，和干活的人。好。我记下了。');
     else if (r === 0) await S.say(MO, '……我就知道。');
-    else await S.say(MO, '好吧。你什么都没看见。');
+    else if (r === 2) await S.say(MO, '好吧。你什么都没看见。');
+    else { S.bubble('mor', '…', 2000); await S.narr('莫顿的笔停住了。\n他低头看了半天自己的本子，然后把那一页撕下来，揉成一团，扔进了篝火的灰里。'); await S.say(MO, '……是我写的。'); }
     await S.fade(1, 1400);
     let t = '那一年春天，世界各地的报纸都在登同一个故事：法老的诅咒。\n勋爵死了，于是诅咒是真的；后来又有人死了，诅咒就更真了。\n后来人们还说，勋爵咽气的那一刻，开罗全城的灯都灭了。\n\n';
     if (r === 1) t += '莫顿的稿子也登了出来，标题里照样有「诅咒」两个字。\n可是最后一段，有一行小字：\n「一位古尔纳的守墓人说：墓里没有诅咒，只有一句祝福，和一代一代干活的人。」\n\n';
     else if (r === 0) t += '莫顿的稿子里，多了一个「吓得浑身发抖的土著守卫」。\n你在卢克索的报摊上看见那张报纸，买下来，折好，塞进了灶膛。\n\n';
-    else t += '莫顿那天发回伦敦的稿子里，没有你。\n\n';
+    else if (r === 2) t += '莫顿那天发回伦敦的稿子里，没有你。\n\n';
+    else t += '莫顿那天没有发稿。\n可是第二天，别的报纸上，那句「死亡将展开翅膀」还是登出来了——一个字也没改。\n一句话一旦印在纸上，就再也收不回来了。\n\n';
     t += '帝王谷里，发掘照常进行。工人们一筐一筐地背土，一件一件地给东西编号。\n墓里的五千多件东西，后来都留在了埃及。那只蓝色的小眼睛，也在其中。';
     if (S.f.roster) t += '\n\n很多年以后，人们才开始把另一些名字也写进书里：\n艾哈迈德·杰里加尔、加德·哈桑、侯赛因·阿布·阿瓦德、侯赛因·艾哈迈德·赛义德……\n还有那些一筐一筐把土背出来、没留下名字的人。';
     if (S.f.cup) t += '\n\n你常常想起前室门口那只白杯子上的话：\n「……面朝北风坐着，双眼看见幸福。」';
+    const det = ['roster', 'cup', 'draft', 'aStep'].filter(k => S.f[k]).length;
+    t += '\n\n（这一夜，你留意到了 ' + det + '/4 处细节：记工簿、许愿杯、莫顿的本子、第一级台阶的故事。）';
     await S.end({ id: 'return', title: '第二十九夜　完', text: t });
   }
 
@@ -578,8 +589,15 @@
       await S.card('第二十九夜　法老的诅咒', '1923年4月4日夜　埃及卢克索　帝王谷', '去年十一月，古尔纳村的工人们\n在帝王谷的碎石底下，挖出了第一级台阶。\n\n今年春天，报纸上的字，\n比墓里的字多得多。');
     },
     tiles: {
-      pitwall: { solid: true, paint(R, X, Y) { R(0, 0, 16, 16, '#6a5838'); R(0, 0, 16, 2, '#8a7650'); for (let i = 0; i < 3; i++) R(((hash(X, Y, i) * 12) | 0), 4 + i * 4, 4, 1, '#4a3c26'); R(0, 14, 16, 2, '#3a2e1c'); } },
-      steps: { solid: false, paint(R, X, Y) { const k = Math.min(.6, Math.max(0, (10 - Y) * .1)); R(0, 0, 16, 16, shade('#9a8660', -k)); R(0, 0, 16, 2, shade('#b8a478', -k)); R(0, 13, 16, 3, shade('#5a4a30', -k)); } },
+      pitwall: { solid: true, paint(R, X, Y) {   // 凿开的岩壁：上沿亮，往坑里一侧发暗，带凿痕
+        TILE.sand.paint(R, X, Y); R(0, 0, 16, 16, '#7a6646'); R(0, 0, 16, 2, '#a08a60');
+        for (let i = 0; i < 4; i++) R(((hash(X, Y, i) * 12) | 0) + 1, 3 + i * 3, 3, 1, '#5a4a30');
+        if (X === 9) R(12, 2, 4, 14, '#3a2e1c'); else if (X === 13) R(0, 2, 4, 14, '#3a2e1c'); else R(0, 12, 16, 4, '#3a2e1c');
+      } },
+      steps: { solid: false, paint(R, X, Y) {   // 一级一级往下：越往北越暗，每格两级台阶
+        const k = Math.min(.62, Math.max(0, (10 - Y) * .12));
+        for (let i = 0; i < 2; i++) { R(0, i * 8, 16, 8, shade('#9a8660', -k - i * .05)); R(0, i * 8, 16, 1, shade('#c0ac80', -k)); R(0, i * 8 + 6, 16, 2, shade('#4a3c26', -k)); }
+      } },
       limef: { solid: false, paint(R, X, Y) { R(0, 0, 16, 16, '#8e8470'); for (let i = 0; i < 9; i++) { const h = hash(X, Y, i + 40); R((h * 15) | 0, (hash(Y, X, i + 41) * 15) | 0, 2, 1, i % 2 ? '#a0967e' : '#7a705c'); } } },
       boulder: { solid: true, paint(R, X, Y) { TILE.sand.paint(R, X, Y); R(1, 4, 14, 11, '#6a5a40'); R(2, 3, 10, 3, '#7e6c4c'); R(3, 5, 4, 2, '#90805c'); R(1, 13, 14, 2, '#3a3020'); } }
     },
@@ -735,8 +753,8 @@
         if (e.ready) { const b = (Math.sin(t * 5) + 1) / 2; R(5, 9, 6, 2, `rgba(255,240,180,${.3 + b * .5})`); R(7, 7, 2, 6, `rgba(255,240,180,${.2 + b * .5})`); }
       },
       paperwing(g, e, t, R) {
-        const fl = Math.sin(t * 16 + e.px * .1), up = Math.round(fl * 3);
-        const P = '#d8d2bc', P2 = '#b8b29c', INK = '#141012';
+        const fz = e.fz, fl = fz ? 0 : Math.sin(t * 16 + e.px * .1), up = Math.round(fl * 3);
+        const P = fz ? '#9a968a' : '#d8d2bc', P2 = fz ? '#7e7a70' : '#b8b29c', INK = '#141012';
         R(2, 13, 12, 2, 'rgba(0,0,0,.3)');
         for (let i = 0; i < 3; i++) {
           const y = -6 + i * 4 - Math.round(up * (3 - i) / 3);
@@ -748,6 +766,7 @@
         R(3, -8, 10, 2, INK);
         R(5, -4, 2, 3, INK); R(9, -4, 2, 3, INK); R(5, -1, 1, 2 + (((t * 3) | 0) % 3), INK); R(10, -1, 1, 1 + (((t * 3 + 1) | 0) % 3), INK);
         R(6, 3, 4, 2, INK); R(7, 3, 1, 1, P); R(9, 4, 1, 1, P);
+        if (fz) { const j = ((t * 20) | 0) % 2; R(-1 + j, -12, 1, 2, '#e8e0c8'); R(16 - j, -11, 1, 2, '#e8e0c8'); }   // 被灯定住：翅膀不扇，只是发抖
       }
     },
     maps: {
@@ -789,12 +808,18 @@
           { id: 'sign', x: 15, y: 10, spr: 'sign', col: '#5a4a32', on: S => S.narr('木牌上用阿拉伯文和英文写着：「文物局　发掘重地　闲人免进」。\n英文那一行，被人用小刀划了一道。') },
           { x: 21, y: 9, spr: 'zir', on: S => S.narr('一口大陶缸，装着从尼罗河边驮来的水。缸壁渗着水珠，摸上去凉丝丝的。') },
           { x: 22, y: 9, spr: 'zir', on: S => S.narr('送水的孩子每天赶着驴，一趟一趟地把这两口缸灌满。') },
-          { x: 24, y: 11, spr: 'donkey', on: S => S.narr('送水的驴，拴在桩子上打盹。你摸摸它的脖子，它甩了一下耳朵。') },
+          { id: 'donkey', x: 24, y: 11, spr: 'donkey', on: S => S.narr('送水的驴，拴在桩子上打盹。你摸摸它的脖子，它甩了一下耳朵。') },
           { x: 27, y: 2, h: 11, spr: 'invisible', async touch(S) { S.toast('往东是回卢克索的路。守夜的人不能离岗。'); S.pos(26, S.pl.y, 1); } },
           { id: 'mor', x: 26, y: 10, spr: '@mor', dir: 1, hidden: true, on: S => S.f.returned ? S.say(MO, '……') : S.say(MO, '孩子，十镑，考虑考虑。') },
           { id: 'insp', x: 13, y: 10, spr: '@insp', dir: 1, hidden: true, on: S => S.say(HA, '天亮了。今天还有很多活要干。') }
         ],
-        enter: valleyEnter
+        enter: valleyEnter,
+        tick(S, dt) {
+          if (S.f.dream || S.f.returned) return;
+          genT -= dt; if (genT > 0) return; genT = .42;
+          const d = Math.hypot(S.pl.x - 18.5, S.pl.y - 2);
+          if (d < 9) S.tone('square', 50, 48, .09, .022 * (1 - d / 9) + .002, 0, 260);
+        }
       },
       /* ---------------- 阶梯与甬道 ---------------- */
       corridor: {
@@ -823,7 +848,7 @@
           '###SSS###',
           '#########'],
         ents: [
-          { id: 'seal', x: 3, y: 1, w: 3, spr: 'sealwall', on: sealOn },
+          { id: 'seal', x: 3, y: 1, w: 3, spr: 'sealwall', off: true, light: { r: 2, dy: 12, col: 'rgba(220,205,160,.12)' }, on: sealOn },
           { id: 'cb1', x: 4, y: 4, spr: 'bulb', solid: false, z: 1, light: { r: 3.2, col: 'rgba(255,225,150,.18)' } },
           { id: 'cb2', x: 4, y: 9, spr: 'bulb', solid: false, z: 1, light: { r: 3.2, col: 'rgba(255,225,150,.18)' } },
           { id: 'cb3', x: 4, y: 14, spr: 'bulb', solid: false, z: 1, light: { r: 3.2, col: 'rgba(255,225,150,.18)' } },
@@ -889,12 +914,19 @@
           { id: 'aexit', x: 9, y: 11, spr: 'invisible', touch: anteExit }
         ],
         enter: anteEnter,
-        tick(S) {
+        tick(S, dt) {
           if (S.f.ph !== 'dark') return;
           const inL = litAt(S, S.pl.x, S.pl.y);
+          /* 纸张扇动声：每 0.5 秒一下，越近越响（声音没有左右，方位靠画面上那团微光） */
+          rustleT -= dt;
+          if (rustleT <= 0) {
+            rustleT = .5;
+            let dmin = 99; for (const id of CHASERS) { const c = S.ent(id); if (c && !c.hidden && c.chase) dmin = Math.min(dmin, Math.hypot(c.px - S.pl.px, c.py - S.pl.py) / 16); }
+            if (dmin < 9 && !S.busy) { const v = .05 * (1 - dmin / 9) + .006; S.tone('triangle', 1100, 320, .06, v, 0, 2200); S.tone('triangle', 900, 300, .05, v * .7, .07, 2200); }
+          }
           for (const id of CHASERS) {
             const c = S.ent(id); if (!c || c.hidden || !c.chase) continue;
-            if (S.isFrozen(id) !== inL) S.freeze(id, inL);
+            if (S.isFrozen(id) !== inL) { S.freeze(id, inL); c.s.fz = inL; }
             if (!S.busy && !inL && near(S, c)) { c.chase = null; S.run(S2 => hitBy(S2, id)); return; }   // 一格以内算追上（引擎默认只有 11 像素）
           }
         }

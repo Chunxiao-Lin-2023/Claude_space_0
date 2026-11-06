@@ -212,9 +212,9 @@
       g.fillStyle = '#d8dee8'; for (let i = 0; i < 40; i++) g.fillRect((hash(i, 1, 27) * w) | 0, (hash(i, 2, 27) * gy) | 0, 1, 1);
       g.fillStyle = '#141018'; for (let i = 0; i < 5; i++) { const x = i * (w / 4.5) - 6, hh = 18 + hash(i, 3, 27) * 10; g.fillRect(x, gy - hh, w / 5.5, hh); g.fillStyle = '#d0d8e4'; g.beginPath(); g.moveTo(x - 4, gy - hh); g.lineTo(x + w / 11, gy - hh - 10); g.lineTo(x + w / 5.5 + 4, gy - hh); g.fill(); g.fillStyle = '#e8b050'; g.fillRect(x + 5, gy - hh + 6, 4, 4); g.fillStyle = '#141018'; }
       g.fillStyle = '#c8d0dc'; g.fillRect(0, gy - 6, w, 28);
-      const sc = 3, ox = w * .5 - 8 * sc, oy = gy - 16 * sc + 4;
+      const sc = Math.max(2, Math.floor((gy - 6) / 38)), ox = w * .5 - 8 * sc, oy = gy + 2 - 16 * sc;
       const R = (x, y, ww, hh, c) => { if (!c) return; g.fillStyle = c; g.fillRect(ox + x * sc, oy + y * sc, ww * sc, hh * sc); };
-      krDraw(g, { dir: 1, fr: 0, fur: '#3a2418', mask: '#6a2016', horn: 'long', feet: 'hooffoot', basket: true, rev: true }, 0, R);
+      krDraw(g, { dir: 0, fr: 0, fur: '#3a2418', mask: '#6a2016', horn: 'long', feet: 'hooffoot', basket: true, rev: true }, 0, R);
       g.fillStyle = 'rgba(255,210,90,.28)'; g.beginPath(); g.arc(w * .2, gy - 8, 9, 0, 7); g.fill();
     },
     async intro(S) {
