@@ -4,7 +4,7 @@
   const row = (w, f) => Array.from({ length: w }, (_, x) => f(x)).join('');
   const T16 = 16;
   /* 白天的「日影钟」：S.f.min = 离日落还剩多少分钟（只在城里流逝，剧本运行时按动作扣） */
-  const DAY0 = 80, DAYRATE = .45;
+  const DAY0 = 66, DAYRATE = .45;
   const FRONT0 = 3, SAMX = 27;   // 宫殿的影子从 x=3 爬到苦行僧小屋 x=27
   const frontOf = min => FRONT0 + (1 - Math.max(0, Math.min(DAY0, min)) / DAY0) * (SAMX - FRONT0);
   function cost(S, n) {
@@ -132,13 +132,13 @@
   }
   function maskAt(x, y) {   // 月亮底下也照不到的地方
     if (y < 2) return false;
-    if (x <= 4) return true;                                   // 宫殿的影子
+    if (x <= 6) return true;                                   // 宫殿的影子
     if (y === 4 && x <= 31) return true;                       // 北排铺子背后的小巷
     if (x === 27 && y >= 5 && y <= 7) return true;             // 通小屋的窄道
-    if (x >= 31 && x <= 37 && y >= 4 && y <= 10) return true;  // 大榕树
-    if (y === 11 && x >= 4 && x <= 37) return true;            // 南排铺子墙根
+    if (x >= 30 && x <= 38 && y >= 4 && y <= 10) return true;  // 大榕树
+    if (y === 11 && x >= 7 && x <= 38) return true;            // 南排铺子墙根
     if (y === 10 && (x === 11 || x === 12 || x === 23 || x === 24)) return true;   // 断柱的影子
-    if (x >= 5 && x <= 7 && y >= 14 && y <= 16) return true;   // 神庙背阴
+    if (x >= 7 && x <= 8 && y >= 14 && y <= 16) return true;   // 神庙背阴
     if (x >= 31 && x <= 32 && y >= 13 && y <= 17) return true; // 舞女宅子的墙影
     return false;
   }
@@ -615,9 +615,9 @@
 
   /* ================= 夜里：月影 ================= */
   const RES = [
-    { id: 'r1', path: [[2, 5], [2, 18]] },                          // 宫殿的影子里来回走
-    { id: 'r2', path: [[32, 5], [37, 5], [37, 10], [32, 10]] },    // 大榕树底下
-    { id: 'r3', path: [[5, 11], [29, 11]] },                        // 南排铺子墙根
+    { id: 'r1', path: [[3, 4], [3, 18]], spd: 2.2 },               // 宫殿的影子里来回走
+    { id: 'r2', path: [[31, 4], [38, 4], [38, 10], [31, 10]] },    // 大榕树底下
+    { id: 'r3', path: [[8, 11], [29, 11]] },                        // 南排铺子墙根
     { id: 'r4', path: [[5, 4], [30, 4]] },                          // 北排铺子背后的小巷
     { id: 'r5', temp: true, path: [[20, 11], [20, 11]] }            // 认错铺子时被惊动的那个
   ];
@@ -669,21 +669,21 @@
       }
       if (!e.mv && !shadowAt(ex, ey)) { a.st = 'melt'; a.t = 1.2; if (S.once('melt1')) S.toast('那个人一走到亮处，就像烟一样散了。'); continue; }
       const dist = Math.abs(ex - p.x) + Math.abs(ey - p.y);
-      const R = (S.running ? 5.5 : S.moving ? 3.5 : 1.2) + (CL.on ? 1 : 0);
+      const R = (S.running ? 7 : S.moving ? 4.5 : 1.5) + (CL.on ? 1.5 : 0);
       const face = () => { const dx = p.x - ex, dy = p.y - ey; e.dir = Math.abs(dx) > Math.abs(dy) ? (dx < 0 ? 1 : 2) : (dy < 0 ? 3 : 0); };
       if (a.st === 'walk') {
-        if (pS && dist <= R && INV <= 0) { a.st = 'alert'; a.t = .85; face(); S.bubble(r.id, '!', 900); S.tone('triangle', 660, 990, .25, .05, 0, 3000); if (S.once('spot1')) S.toast('被发现了！离开影子——到月光底下或者灯底下去！'); continue; }
+        if (pS && dist <= R && INV <= 0) { a.st = 'alert'; a.t = .6; face(); S.bubble(r.id, '!', 900); S.tone('triangle', 660, 990, .25, .05, 0, 3000); if (S.once('spot1')) S.toast('被发现了！离开影子——到月光底下或者灯底下去！'); continue; }
         if (e.mv) continue;
         if (a.wait > 0) { a.wait -= dt; continue; }
         const [tx, ty] = r.path[a.i];
         if (ex === tx && ey === ty) { a.i = (a.i + 1) % r.path.length; a.wait = .4; continue; }
-        if (!stepToward(S, e, tx, ty, 1.6)) a.wait = .5;
+        if (!stepToward(S, e, tx, ty, r.spd || 1.8)) a.wait = .5;
       } else if (a.st === 'alert') {
         a.t -= dt; face();
         if (a.t <= 0) a.st = (pS && dist <= R + 3) ? 'chase' : 'walk';
       } else if (a.st === 'chase') {
         if (!pS || dist > 9) { a.lost = (a.lost || 0) + dt; if (a.lost > .8) { a.st = 'walk'; a.lost = 0; } } else a.lost = 0;
-        if (!e.mv && pS) stepToward(S, e, p.x, p.y, CL.on ? 3.2 : 3.0);
+        if (!e.mv && pS) stepToward(S, e, p.x, p.y, CL.on ? 3.8 : 3.4);
       }
       if (a.st === 'chase' && pS && INV <= 0 && !CAUGHT && Math.abs(e.px - p.px) + Math.abs(e.py - p.py) < 12) { CAUGHT = true; S.run(s => caught(s, r.id)); return; }
     }
@@ -721,7 +721,7 @@
     await S.walk('r3', 'u', 1.2);
     await S.alpha('r3', .1, 900);
     await S.narr('她一碰到月光，就像一缕烟，散了。\n……片刻之后，墙根的影子里，又慢慢站起来一个人影。');
-    e.px = 5 * T16; e.py = 11 * T16; e.alpha = .9; if (a) { a.st = 'walk'; a.i = 1; }
+    e.px = 8 * T16; e.py = 11 * T16; e.alpha = .9; if (a) { a.st = 'walk'; a.i = 1; }
     S.focus(null);
     await S.think('他们只在影子里走。\n月光底下……灯底下……够不着我。');
     if (DEATHS) await S.think('在影子里别跑，也别乱动。云遮月的时候，躲到铺子的灯底下。');
@@ -1162,7 +1162,7 @@
         },
         step(S, x, y) {
           if (S.f.ph === 'run' && x >= GATEX && S.once('gatez')) { S.toast('站在汉努曼门的灯底下——等太阳！'); S.goal('站在门灯底下，等太阳出来'); }
-          if (S.f.ph === 'night' && x <= 4 && y >= 4 && S.once('pzone')) return S.think('宫殿的影子……\n这一片，月亮永远照不到。');
+          if (S.f.ph === 'night' && x <= 6 && y >= 4 && S.once('pzone')) return S.think('宫殿的影子……\n这一片，月亮永远照不到。');
         }
       },
       /* ---------------- 宫殿 ---------------- */

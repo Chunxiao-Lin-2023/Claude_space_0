@@ -6,7 +6,7 @@
      双人：一人盯西菲的喊声和水迹报方位、一人去扑；河边一人翻「笺」对四样线索、一人去放石子。 */
 
   /* ---------- 跨重来保留（只影响提示） ---------- */
-  let DIED = 0, SLEPT = 0, WRONGMAX = 0, LEFT = 240;
+  let DIED = 0, SLEPT = 0, WRONGMAX = 0, LEFT = 240, BLAMED = 0;
   const DRIPT = [];   // 每个水迹实体放下的时间（W.t）
   let DRIPI = 0, SHOUT = 0, PT = 0, HB = 0;
 
@@ -44,6 +44,8 @@
   const heart = S => { S.tone('sine', 62, 46, .14, .08, 0, 200); S.tone('sine', 58, 44, .16, .07, .2, 200); };
   const rooster = (S, v = .03) => { S.tone('square', 560, 820, .18, v, 0, 1800); S.tone('square', 820, 900, .3, v, .2, 1800); S.tone('square', 900, 620, .45, v, .52, 1800); };
   const hum = S => { [196, 220, 247, 220, 196, 175, 196].forEach((f, i) => { S.tone('sine', f, f, .7, .07, i * .62, 0); S.tone('triangle', f / 2, f / 2, .7, .04, i * .62, 500); }); };
+  const kid = (S, hot) => { S.tone('triangle', hot ? 760 : 620, hot ? 980 : 800, .08, .035, 0, 2600); S.tone('triangle', hot ? 860 : 700, hot ? 1100 : 880, .09, .03, .11, 2600); if (hot) S.tone('triangle', 900, 1200, .1, .03, .24, 2600); };
+  const yawn = S => { S.tone('sine', 320, 170, 1.3, .035, 0, 500); S.tone('triangle', 160, 90, 1.3, .02, .1, 300); };
   const splash = S => { S.sfx('splash'); S.tone('sine', 300, 90, .4, .06, 0, 700); };
 
   /* ---------- 搬砖 ---------- */
@@ -91,7 +93,7 @@
     S.f.tk.bed = pickBed(S);
     Object.assign(S.f, { catches: 0, warn: 0, dz: 0, dzw: 0, lost: 0, hunt: true });
     S.dark(.9); S.plr(2.6); S.amb('night');
-    S.pos(12, 7, 1); SHOUT = 1.2; PT = 0; HB = 0;
+    S.pos(12, 3, 0); SHOUT = 1.2; PT = 0; HB = 0;
     S.goal(huntGoal(S));
   }
   function dropBrick(S, x, y) {
@@ -131,7 +133,7 @@
     const e = S.ent('tok'); S.f.hunt = false; e.s.vis = 1; S.stop('tok');
     cough(S);
     await S.narr('第三回。你把它死死按在地上，它浑身的毛湿得往下淌水。\n它弓起背，「咳、咳」——\n吐出来一颗小小的、圆圆的石子。');
-    S.give('stone'); S.focus(tpos(e)[0], tpos(e)[1]);
+    setCarry(S, 0); S.give('stone'); S.focus(tpos(e)[0], tpos(e)[1]);
     S.ent('bed_g').s.who = 'gogoup'; S.ent('bed_s').s.pt = -1;
     await S.narr('它没有再跑。它缩成一团，在你脚边发抖。\n现在，连你也看得见它了。');
     await S.say('奶奶', ['……老天。', '（奶奶坐在床上，看着地上那个缩成一团的小东西。她没有尖叫，看了很久。）', '它在发抖。']);
@@ -165,27 +167,27 @@
     const e = S.ent('tok'), p = W.pl, [ex, ey] = tpos(e);
     /* 困意：站着不动就往上涨，走动会消下去 */
     S.f.dz = Math.max(0, Math.min(1, S.f.dz + (S.moving ? -dt / 8 : dt / DZT)));
-    S.plr(2.6 * (1 - .45 * S.f.dz));
-    if (S.f.dz > .5 && S.f.dzw < 1) { S.f.dzw = 1; S.toast('眼皮发沉……走动走动'); }
-    if (S.f.dz > .8 && S.f.dzw < 2) { S.f.dzw = 2; S.toast('你打了个哈欠，眼前一阵阵发黑——快动起来！'); }
+    S.plr(2.6 * (1 - .45 * S.f.dz)); S.dark(.9 + .08 * Math.max(0, S.f.dz - .3));
+    if (S.f.dz > .5 && S.f.dzw < 1) { S.f.dzw = 1; yawn(S); S.toast('眼皮发沉……走动走动'); }
+    if (S.f.dz > .8 && S.f.dzw < 2) { S.f.dzw = 2; yawn(S); S.toast('你打了个哈欠，眼前一阵阵发黑——快动起来！'); }
     if (S.f.dz < .3) S.f.dzw = 0;
     if (S.f.dz >= 1) { S.run(S2 => doze(S2)); return; }
     /* 扑住：走进它所在的格子 */
     if ((T.st === 'go' || T.st === 'steal' || T.st === 'carry') && !e.hidden && Math.abs(e.px - p.px) + Math.abs(e.py - p.py) < 12) { T.st = 'caught'; S.run(onCatch); return; }
     /* 隐身时走过的格子留下水迹 */
-    if (!e.hidden && !e.s.vis && (ex !== T.lx || ey !== T.ly)) { dripAt(S, T.lx, T.ly, e.dir); drip(S, .02); T.lx = ex; T.ly = ey; }
+    if (!e.hidden && !e.s.vis && (ex !== T.lx || ey !== T.ly)) { dripAt(S, T.lx, T.ly, e.dir); const dd = (Math.abs(e.px - p.px) + Math.abs(e.py - p.py)) / TS; if (dd < 7) drip(S, .045 - dd * .006); T.lx = ex; T.ly = ey; }
     T.t -= dt;
     if (T.st === 'out') {
-      if (T.t <= 0) { S.place('tok', DOOR[0], DOOR[1], 3); e.s.vis = 0; [T.lx, T.ly] = DOOR; T.bed = pickBed(S); T.st = 'go'; S.sfx('open'); S.toast('西菲：「它又进来了！从大门！」'); SHOUT = 2.6; }
+      if (T.t <= 0) { S.place('tok', DOOR[0], DOOR[1], 3); e.s.vis = 0; [T.lx, T.ly] = DOOR; T.bed = pickBed(S); T.st = 'go'; S.sfx('open'); kid(S, 1); S.toast('西菲：「它又进来了！从大门！」'); SHOUT = 2.6; }
     } else if (T.st === 'go') {
       const st = BEDS[T.bed].st;
-      if (stepTo(e, st[0], st[1], SPD.go) && !e.mv) { T.st = 'steal'; T.t = STEAL; scrape(S); S.toast(`西菲：「它在${BEDS[T.bed].at}！在拿砖！」`); SHOUT = 2.6; }
+      if (stepTo(e, st[0], st[1], SPD.go) && !e.mv) { T.st = 'steal'; T.t = STEAL; scrape(S); kid(S, 1); S.toast(`西菲：「它在${BEDS[T.bed].at}！在拿砖！」`); SHOUT = 2.6; }
     } else if (T.st === 'steal') {
       if (T.t <= 0) {
         const b = S.ent(T.bed); T.last = T.bed;
         if ((b.s.br || 0) <= 2) { T.st = 'climbing'; const id = T.bed; S.run(S2 => onClimb(S2, id)); return; }
         b.s.br--; T.carry = 1; T.st = 'carry'; scrape(S); thud(S);
-        S.toast(`西菲：「它抱走了一块砖！${BEDS[T.bed].sn}只剩 ${b.s.br} 块了！」`); SHOUT = 2.6;
+        kid(S, 1); S.toast(`西菲：「它抱走了一块砖！${BEDS[T.bed].sn}只剩 ${b.s.br} 块了！」`); SHOUT = 2.6;
       }
     } else if (T.st === 'carry' || T.st === 'flee') {
       if (stepTo(e, DOOR[0], DOOR[1], T.st === 'flee' ? SPD.flee : SPD.carry) && !e.mv) {
@@ -203,7 +205,7 @@
       else { const dx = e.px - 6 * TS, dy = e.py - 2.5 * TS; bs.s.pt = Math.abs(dx) > Math.abs(dy) ? (dx < 0 ? 1 : 2) : (dy < 0 ? 3 : 0); }
       if (!e.hidden && !e.s.vis && Math.abs(ex - 6) + Math.abs(ey - 3) <= 3) S.bubble('bed_s', '!', 500);
     }
-    if (SHOUT <= 0 && !e.hidden && !e.s.vis) { SHOUT = 2.8; S.toast(`西菲：「${zone(ex, ey)}！」` + (T.st === 'carry' ? '（它抱着砖）' : '')); }
+    if (SHOUT <= 0 && !e.hidden && !e.s.vis) { SHOUT = 2.8; kid(S); S.toast(`西菲：「${zone(ex, ey)}！」` + (T.st === 'carry' ? '（它抱着砖）' : '')); }
     /* 离得很近时，你自己的心跳 */
     if (HB <= 0 && !e.hidden && !e.s.vis && Math.abs(e.px - p.px) + Math.abs(e.py - p.py) < 2.6 * TS) { HB = .55; heart(S); }
   }
@@ -260,8 +262,8 @@
     splash(S); await S.alpha('tok_r', 0, 1400);
     S.dark(.3); S.plr(5); rooster(S, .03);
     await S.narr('水面合上了。\n太阳从山后面出来，老水榕的影子落在回水湾上。');
-    const mz = S.f.defend && S.f.mzKind;
-    await S.end({ id: 'river', title: '第二十九夜　完', text: '西菲说，它在树底下坐着，晒它的毛。\n大人们什么也没看见。\n\n那天以后，村里再没人丢过砖。\n奶奶还是每晚把床垫高。她说，这是她的奶奶教她的。\n' + (mz ? '\n回村的路上，祖鲁老太太站在她家门口，裹着毯子，冲你们点了点头。\n那天上午，好几个人去她家坐了坐。没有人提起树底下那场村会。\n' : '') + '\n叫它来的那个人是谁，德拉米尼妈妈到最后也没有说。\n你也没有问。' });
+    const mz = S.f.defend && S.f.mzKind, mz2 = S.f.defend && !S.f.mzKind;
+    await S.end({ id: 'river', title: '第二十九夜　完', text: '西菲说，它在树底下坐着，晒它的毛。\n大人们什么也没看见。\n\n那天以后，村里再没人丢过砖。\n奶奶还是每晚把床垫高。她说，这是她的奶奶教她的。\n' + (mz ? '\n回村的路上，祖鲁老太太站在她家门口，裹着毯子，冲你们点了点头。\n那天上午，好几个人去她家坐了坐。没有人提起树底下那场村会。\n' : mz2 ? '\n回村的路上，祖鲁老太太家的门开着。她坐在门口晒太阳，看见你，抬了抬手。\n' : '') + '\n叫它来的那个人是谁，德拉米尼妈妈到最后也没有说。\n你也没有问。' });
   }
 
   /* ================= 惊吓大头像 ================= */
@@ -319,7 +321,7 @@
   };
 
   /* ================= 地图里常用的实体 ================= */
-  const drips = () => Array.from({ length: NW }, (_, i) => ({ id: 'w' + i, x: 1, y: 6, spr: 'wetp', decal: true, solid: false, hidden: true, light: { r: .8, col: 'rgba(150,195,225,.14)' } }));
+  const drips = () => Array.from({ length: NW }, (_, i) => ({ id: 'w' + i, x: 1, y: 6, spr: 'wetp', decal: true, solid: false, hidden: true, light: { r: .55, a: .45, col: 'rgba(110,165,215,.07)' } }));
   const N = t => S => S.narr(t);
 
   defChapter({
@@ -336,12 +338,12 @@
       gogo: { title: '奶奶说的规矩（记在本子上）', text: '奶奶一边说，我一边记。她说这些不是吓小孩的，是她的奶奶告诉她的。\n\n· 人们相信，河里有一种很矮的东西，叫托克洛希（utokoloshe）。浑身是毛，个子只到大人的膝盖。\n· 它够不着高的床。所以家家户户，床的四条腿底下都垫砖。\n· 它喝了水，就谁也看不见了。——大人看不见，孩子看得见。\n· 它不会自己来。人们说，是心里有坏念头的人把它叫来的。\n· 晚上把水缸盖好。地上有水迹，就是它走过。\n\n（最后一句奶奶说得很轻：「别去猜是谁叫的。猜错一个人，比它还害人。」）' },
       drawing: { title: '西菲的画（蜡笔，画在作业本背面）', text: '一条蓝色的河。河边一棵树，弯着腰，树梢都快碰到水了。\n树底下的水里，坐着一个黑乎乎、毛茸茸的小人，两只黄眼睛。\n\n旁边歪歪扭扭地写着：\n「放羊的时候看见的。它坐在弯腰树底下的水里。\n别的大人都看不见。\n它看见我了。」\n\n右下角画的是我们家：三张床，每张床底下四块红砖。\n其中一张床底下，他只画了两块。' },
       madla: { title: '德拉米尼妈妈的话', text: '（她坐在火边说的。我回去以后记下来。）\n\n「它是水里的东西，不是这里的东西。有人把它从水里叫出来，它就回不去了。\n它喝水，吞下河底的一颗小石子，大人就看不见它。孩子的眼睛还干净，看得见。\n\n要送它回去，先得让它把石子吐出来——它偷砖的时候扑住它，一回、两回、三回，它累了，石子就吐出来了。\n然后把石子放回它来的那口水里。它会跟着石子回家。\n它从哪口水里来？看它留下的东西。」\n\n我记下的、它留下的东西：\n· 昨晚那块砖上，糊着一层细细的白沙。\n· 今早水缸里，漂着一片边上带锯齿的水草叶。\n· 西菲说，它坐在一棵「弯腰树」底下的水里。\n\n（她最后说：「叫它来的人，我不说名字。你们也别说。」）' },
-      river: { title: '河湾的六口水（我画的草图）', text: '从西往东，岸边一共六口水，村里人都给它们起了名字。\n\n一　洗衣石：白沙岸。一棵刺槐，笔直。有锯齿叶。有小螺。\n二　牛饮水处：白沙岸。一棵野枣树，弯腰。有锯齿叶。只有蝌蚪，没有螺。\n三　白石滩：白沙岸。一棵老无花果，弯腰。只有芦苇。有小螺。\n四　回水湾：白沙岸。一棵老水榕，弯腰。有锯齿叶。有小螺。\n五　柳树潭：黑泥岸。一棵柳树，弯腰。有锯齿叶。有小螺。\n六　小瀑布：红土岸。没有树。只有芦苇。只有小鱼。\n\n（白沙、弯腰树、锯齿叶——对得上的还有两口。还差一样。）' }
+      river: { title: '河湾的六口水（我画的草图）', text: '从西往东，岸边一共六口水，村里人都给它们起了名字。\n\n一　洗衣石：白沙岸。一棵刺槐，笔直。有锯齿叶。有小螺。\n二　牛饮水处：白沙岸。一棵野枣树，弯腰。有锯齿叶。只有蝌蚪，没有螺。\n三　白石滩：白沙岸。一棵老无花果，弯腰。只有芦苇。有小螺。\n四　回水湾：白沙岸。一棵老水榕，弯腰。有锯齿叶。有小螺。\n五　柳树潭：黑泥岸。一棵柳树，弯腰。有锯齿叶。有小螺。\n六　小瀑布：红土岸。没有树。只有芦苇。只有小鱼。\n\n（白沙、弯腰树、锯齿叶……好像还差一样东西，才知道是哪一口。）' }
     },
     legend: '托克洛希（Tokoloshe，祖鲁语 utokoloshe，科萨语 utikoloshe）是南部非洲祖鲁、科萨等民族民间信仰里的一种精怪。流传最广的说法是：它个子很矮，大约只到人的膝盖，浑身是毛；和水有关，常被说成住在河里；它喝了水、或者吞下一颗小石子，就能隐身，只有孩子看得见它。人们相信它会在夜里来到熟睡的人身边作祟，让人生病、做噩梦，甚至更糟。\n\n防托克洛希最出名的办法，就是把床垫高——在每条床腿下面垫上砖头，据说它太矮，就够不着床上的人。这个习惯在南部非洲流传很广，城里也有人这样做，有的人只是出于习惯，或者「以防万一」。在很多说法里，托克洛希不会自己出现，而是被心怀恶意的人（祖鲁语 umthakathi，施害的巫者）召来、差去害人；传统治疗师（sangoma、inyanga）则被认为能认出并驱走它。治疗师在当地社会里是受人尊敬的角色，和「施害的巫者」是两回事。各地的版本差别很大：有的说它是水精，有的说它是巫者用法术造出来的，样子、本事和弱点都不一样。\n\n这个传说也有沉重的一面。因为和巫术指控连在一起，「有人叫来了托克洛希」一类的说法，在现实中曾被用来怀疑、指控邻里——被指为巫的，往往是独居的老人，尤其是老年妇女。据报道，1990年代中期，南非北部省（今林波波省）发生过多起针对被指为「巫者」的人的驱逐和暴力事件，政府为此专门成立了调查委员会。直到今天，被说成是巫，仍可能让一个人失去家园甚至生命。托克洛希的形象也常被媒体和流行文化拿来猎奇、取笑，这对相信它的人、对被指控的人都不公平。\n\n本章想写的，是人们相信的那一部分——砖、水、孩子的眼睛——以及猜疑怎样比怪物本身更伤人。\n\n（本章中的坦迪一家、德拉米尼妈妈、祖鲁老太太、西布西索和村里的人、村子和河湾的六口水、「扑住三回它就吐出石子」「把石子放回它来的那口水」这套送走它的办法，以及三种结局，都是游戏虚构；民间说法里并没有统一的「送走」规矩。）',
     start: { map: 'road', x: 3, y: 6, dir: 2 },
     resume: {
-      day2: async S => { if (S.f.act === 'day2' && S.f.blamed) await S.think('……这一次，想清楚再开口。'); },
+      day2: async S => { if (S.f.act === 'day2' && BLAMED) await S.think(BLAMED === 1 ? '……老太太一个人走上土路的背影，我一闭眼就看得见。\n这一次，想清楚再开口。' : '奶奶说过：猜错一个人，比它还害人。'); },
       hunt: async S => {
         if (S.f.act !== 'hunt') return;
         huntBegin(S);
@@ -357,7 +359,7 @@
       }
     },
     async intro(S) {
-      DIED = 0; SLEPT = 0; WRONGMAX = 0; LEFT = 240;
+      DIED = 0; SLEPT = 0; WRONGMAX = 0; LEFT = 240; BLAMED = 0;
       S.f.act = 'arrive';
       await S.card('第二十九夜　托克洛希', '1996年7月　南非　夸祖鲁-纳塔尔省　山里的一个村子', '七月是南非的冬天。\n山里的夜冷得发脆，河水却还在响。\n\n你放寒假，从德班坐了一下午的小巴，回奶奶家。\n村里的人说，这几天，好几户人家床脚底下的砖，不见了。');
     },
@@ -413,8 +415,8 @@
       kbed(g, e, t, R0) {
         const br = e.s.br ?? 4, low = br <= 2, lift = low ? 0 : 3, c = e.col || '#7a5a8a';
         const legs = [[2, 27], [12, 27], [2, 1], [12, 1]];
-        for (let i = 0; i < 4; i++) { const [x, y] = legs[i]; if (i < br) { R0(x - 1, y + 2, 4, 3, '#a8442a'); R0(x - 1, y + 2, 4, 1, '#c8603a'); R0(x - 1, y + 4, 4, 1, '#6a2a1a'); } }
-        const R = (x, y, w, h, col) => R0(x, y - lift + (low && y > 12 ? 2 : 0), w, h, col);
+        for (let i = 0; i < 4; i++) { const [x, y] = legs[i]; if (i < br) { R0(x - 2, y + 1, 6, 4, '#a8442a'); R0(x - 2, y + 1, 6, 1, '#d0684a'); R0(x - 2, y + 4, 6, 1, '#6a2a1a'); R0(x + 3, y + 1, 1, 4, '#7a3020'); } else R0(x - 1, y + 4, 4, 1, 'rgba(0,0,0,.35)'); }
+        const R = (x, y, w, h, col) => R0(x, y - lift + (low && y > 12 ? 3 : 0), w, h, col);
         const bx = (x, y, w, h, f) => { R(x, y, w, h, shade(f, -.45)); R(x + 1, y + 1, w - 2, h - 2, f); };
         for (const [x, y] of legs) R(x, y - 1, 2, 4, '#3a2618');
         bx(1, -4, 14, 6, '#5a3c26');
@@ -434,7 +436,7 @@
           R(2, 8, 12, 19, c); R(2, 8, 12, 2, shade(c, .2)); R(2, 25, 12, 2, shade(c, -.25));
           for (let i = 0; i < 3; i++) R(2, 13 + i * 5, 12, 1, shade(c, -.15));
         }
-        if (low) { R0(0, 30, 16, 2, 'rgba(0,0,0,.4)'); }
+        if (low) { R0(0, 30, 16, 2, 'rgba(0,0,0,.45)'); R0(1, 26, 14, 1, 'rgba(0,0,0,.35)'); if (Math.sin(t * 5) > 0) R0(14, 20, 2, 5, '#e84a2a'); }
       },
       /* 砖堆：s.n 块 */
       bpile(g, e, t, R) {
@@ -480,8 +482,8 @@
         R(1, 0, 62, 31, '#d8c8a8'); R(1, 22, 62, 9, '#4a7a5a'); R(1, 21, 62, 1, '#2a5a3a');
         R(-2, -6, 68, 7, '#8a8a84'); for (let x = -2; x < 66; x += 4) R(x, -6, 1, 7, '#6a6a64'); R(-2, 0, 68, 1, '#5a5a54');
         R(4, 3, 30, 7, '#c83a2a'); R(5, 4, 28, 5, '#e8d8b0');
-        const L = [[6, 'S'], [11, 'P'], [16, 'A'], [21, 'Z'], [26, 'A']]; void L;
-        for (let i = 0; i < 5; i++) { R(7 + i * 5, 5, 3, 1, '#2a2a2a'); R(7 + i * 5, 7, 3, 1, '#2a2a2a'); R(7 + i * 5 + (i % 2) * 2, 5, 1, 3, '#2a2a2a'); }
+        const GL = { S: ['111', '100', '111', '001', '111'], P: ['111', '101', '111', '100', '100'], A: ['010', '101', '111', '101', '101'], Z: ['111', '001', '010', '100', '111'] };
+        [...'SPAZA'].forEach((ch, i) => GL[ch].forEach((row, y) => [...row].forEach((b, x) => { if (b === '1') R(7 + i * 5 + x, 4 + y, 1, 1, '#2a2a2a'); })));
         R(38, 6, 20, 14, '#2a1a10'); R(39, 7, 18, 12, e.s.night ? '#d9b050' : '#3a2a1c');
         if (!e.s.night) { R(44, 10, 6, 6, '#5a3820'); R(44, 9, 6, 2, '#141010'); R(45, 12, 1, 1, '#eee'); R(48, 12, 1, 1, '#eee'); R(43, 16, 8, 3, '#c8c0a0'); }
         for (let x = 40; x < 57; x += 3) R(x, 7, 1, 12, '#3a3a3a');
@@ -549,7 +551,7 @@
       falls(g, e, t, R) { for (let i = 0; i < 6; i++) { const y = ((t * 30 + i * 7) % 16) | 0; R(3 + i * 2, y - 8, 1, 6, 'rgba(230,240,250,.7)'); } R(1, 12, 14, 3, 'rgba(240,248,255,.5)'); },
       /* 水面上一圈慢慢扩开的涟漪：这里可以调查 */
       pring(g, e, t, R) {
-        const r = 2 + ((t * 2 + e.px / 30) % 1) * 5, a = .35 - (r - 2) / 20;
+        const r = 2 + ((t * 2 + e.px / 30) % 1) * 5, a = (e.s.hot ? .75 : .35) - (r - 2) / (e.s.hot ? 10 : 20);
         const c = `rgba(200,225,240,${a.toFixed(2)})`;
         R(8 - r, 8, r * 2, 1, c); R(8 - r + 1, 7, r * 2 - 2, 1, c); R(8 - r + 1, 9, r * 2 - 2, 1, c);
       },
@@ -636,11 +638,10 @@
           { id: 'madla', x: 17, y: 11, spr: '@madla', dir: 1, hidden: true, async on(S) {
             S.face('madla', 'pl');
             if (S.f.act === 'day2') {
-              await S.say('德拉米尼妈妈', ['（她坐在火边，脖子上挂着一圈又一圈白珠子。锅里的草药很苦。）', 'Sawubona，坦迪。你奶奶托人来说过了。', '孩子看见它了，对吗？']);
-              await S.say('德拉米尼妈妈', ['它是水里的东西。有人把它从水里叫出来，它就回不去了，只好在别人家里偷砖、喝水、闹。', '它吞了河底的一颗石子，大人才看不见它。要让它吐出来——它偷砖的时候扑住它，三回。', '然后把石子放回它来的那口水里。它会跟着回家。']);
+              await S.say('德拉米尼妈妈', ['（她坐在火边，脖子上挂着一圈又一圈白珠子。）\nSawubona，坦迪。孩子看见它了，对吗？', '它是水里的东西。有人把它叫出来，它就回不去了，只好在别人家里偷砖、喝水。\n它吞了河底的一颗石子，大人才看不见它。', '它偷砖的时候扑住它，三回，它就把石子吐出来。\n把石子放回它来的那口水里，它会跟着回家。']);
               const r = await S.ask('你想问——', ['「它是从哪口水里来的？」', '「是谁把它叫来的？」'], '');
-              if (r === 1) await S.say('德拉米尼妈妈', ['我不说。', '我说出一个名字，那个人明天就没有家了。你在树底下，已经看见了。', '要紧的不是谁叫的，是让它回去。']);
-              await S.say('德拉米尼妈妈', ['它从哪口水里来？看它留下的东西。', '河湾里有好几口水，你去看看。天亮以前，我在河边等你们。']);
+              if (r === 1) await S.say('德拉米尼妈妈', ['我不说。我说出一个名字，那个人明天就没有家了。\n你在树底下，已经看见了。', '要紧的不是谁叫的，是让它回去。']);
+              await S.say('德拉米尼妈妈', '它从哪口水里来？看它留下的东西。河湾里有好几口水，你去看看。\n天亮以前，我在河边等你们。');
               await S.note('madla');
               S.f.act = 'river'; S.goal('去河边看看那几口水（村道往南的小路）');
               return;
@@ -723,7 +724,7 @@
             await S.think('……远处，河那边，「扑通」一声。');
             S.f.act = 'brick1'; S.goal('把砖垫回西菲的床脚下');
           } },
-          ...[[4, 4], [5, 5], [6, 6], [8, 7], [10, 8], [12, 9], [14, 10], [15, 9]].map(([x, y], i) => ({ id: 'yt' + i, x, y, spr: 'wetp', dir: i < 3 ? 0 : 2, decal: true, solid: false, hidden: true, light: { r: .8, col: 'rgba(150,195,225,.16)' } })),
+          ...[[4, 4], [5, 5], [6, 6], [8, 7], [10, 8], [12, 9], [14, 10], [15, 9]].map(([x, y], i) => ({ id: 'yt' + i, x, y, spr: 'wetp', dir: i < 3 ? 0 : 2, decal: true, solid: false, hidden: true, light: { r: .6, a: .5, col: 'rgba(110,165,215,.08)' } })),
           { x: 0, y: 5, h: 3, async touch(S) {
             const a = S.f.act;
             if (a === 'bricks' || a === 'sleep1') { await S.think('奶奶还等着我把床垫好。'); return S.pos(1, S.pl.y, 2); }
@@ -746,7 +747,7 @@
             await S.note('gogo');
             await S.say('奶奶', ['我那张床已经垫好了。西菲的床还缺两块，你的床一块都没有。', '砖在门口墙根底下。一次抱两块，别闪了腰。']);
             S.hide('gogo_y'); S.hide('sipho_y'); S.show('gogo_h'); S.show('sipho_h');
-            S.goal('给每张床的四条腿都垫上砖（砖堆在门口，一次抱两块）');
+            S.goal('给每张床的四条腿垫上砖（砖在门口）');
             return;
           }
           S.hide('gogo_y'); S.hide('sipho_y');
@@ -806,7 +807,7 @@
               await S.narr('水面上漂着一片叶子。\n不是院子里的叶子——细长，边上一圈小锯齿，像河边水草的叶子。湿得发亮，叶柄上还缠着一根很长的、黑绿色的毛。');
               d.s.leaf = 0; S.f.clueLeaf = true;
               await S.think('它昨晚又来喝过水。');
-              S.goal('去村口找治疗师德拉米尼妈妈（挂白旗那家）');
+              S.goal('去找治疗师德拉米尼妈妈（挂白旗那家）');
               return;
             }
             if (a === 'hunt') return S.narr('水缸的盖子被推到了地上。水面还在晃。');
@@ -893,16 +894,17 @@
           { x: 15, y: 6, spr: 'ltree', s: { kind: 'willow', lean: 1 }, on: N('柳树，弯着腰，枝条拖在黑泥里。') },
           { x: 17, y: 6, spr: 'sawleaf', solid: false, on: N('锯齿叶的水草，根上糊满了黑泥。') },
           { x: 19, y: 4, spr: 'falls', solid: false, decal: true },
-          { id: 'madla_r', x: 11, y: 8, spr: '@madla', dir: 3, hidden: true, async on(S) {
+          { id: 'madla_r', x: 11, y: 8, spr: '@madla', dir: 0, hidden: true, async on(S) {
             S.face('madla_r', 'pl');
             await S.say('德拉米尼妈妈', WRONGMAX >= 3 ? '回水湾。老水榕底下。' : WRONGMAX >= 2 ? '四样东西都要对上：白沙、弯腰树、锯齿叶，还有石子上的。' : '把石子放回它来的那口水。你心里有数了吗？');
           } },
           { id: 'cand_r', x: 12, y: 8, spr: 'candle', hidden: true, light: { r: 2.6, col: 'rgba(255,190,100,.2)', flick: true } },
+          { id: 'gogo_r', x: 8, y: 8, spr: '@gogo', dir: 2, hidden: true, async on(S) { S.face('gogo_r', 'pl'); await S.say('奶奶', ['（奶奶把西菲搂在身前，手一直在抖。）', '我活了七十年，头一回看见它。……它那么小。']); } },
           { id: 'sipho_r', x: 9, y: 8, spr: '@sipho', dir: 3, hidden: true, async on(S) {
             S.face('sipho_r', 'pl');
             await S.say('西菲', ['它一直在看那边。', '……它说，那里的石头底下，有好多好多小螺。']);
           } },
-          { id: 'tok_r', x: 8, y: 8, spr: 'tok', solid: false, hidden: true, s: { vis: 1 }, on: N('它缩在西菲脚边，浑身湿透，一抖一抖的。\n黄眼睛一直望着河。') },
+          { id: 'tok_r', x: 10, y: 9, spr: 'tok', solid: false, hidden: true, dir: 3, s: { vis: 1 }, light: { r: 1.1, a: .6, col: 'rgba(130,185,225,.1)' }, on: N('它缩在西菲脚边，浑身湿透，一抖一抖的。\n黄眼睛一直望着河。') },
           { x: 10, y: 12, async touch(S) {
             if (S.f.act === 'final') { await S.think('天快亮了。不能回去。'); return S.pos(10, 11, 3); }
             if (S.f.act === 'river') { await S.think('先看看那几口水。'); return S.pos(10, 11, 3); }
@@ -924,12 +926,13 @@
           }
           if (a === 'dusk2') { S.dark(.4); S.plr(3.4); return; }
           if (a === 'dawn') {
-            S.dark(.72); S.plr(3); S.show('madla_r'); S.show('cand_r'); S.show('sipho_r'); S.show('tok_r');
+            S.dark(.72); S.plr(3); S.show('madla_r'); S.show('cand_r'); S.show('sipho_r'); S.show('tok_r'); S.show('gogo_r');
+            for (const k in POOLS) S.ent(k).s.hot = 1;
             await S.narr('天边刚有一点灰。河水很响。\n德拉米尼妈妈已经在岸边等着了，手里捧着一支蜡烛。西菲牵着奶奶的手跟在后面——它跟在西菲后面，一步一滴水。');
             await S.say('德拉米尼妈妈', ['它跟来了。好。', '（她看着西菲脚边那个缩成一团的小东西，轻轻说了一句祖鲁语。它的耳朵动了动。）', '石子在你手里。它从哪口水里来，就放回哪口水里。', '要在太阳出来以前。太阳一晒，石子就干了，它就再也回不去了。']);
             await S.think('白沙、弯腰树、锯齿叶……还有石子上粘着的那个小螺壳。');
             S.f.act = 'final'; S.f.wrong = 0;
-            S.goal('把石子放进它来的那口水（一人翻笺对线索，一人去放）');
+            S.goal('把石子放回它来的那口水（一人对笺，一人去放）');
             S.cp('river');
             S.timer(LEFT, '离天亮', dawnFail, { during: true });
           }
@@ -994,14 +997,14 @@
     await S.think('西菲坐在他的床上，一只手捂着嘴，一只手朝厨房那边指。\n厨房里，「咕咚、咕咚」。');
     S.ent('bed_s').s.who = 'up'; S.ent('bed_s').s.pt = 0;
     S.place('tok', DRINK[0], DRINK[1], 2); const e = S.ent('tok'); e.s.vis = 1; e.alpha = 1;
-    S.focus(13, 6); gulp(S);
+    S.lights([[13 * TS + 8, 6 * TS + 4, 2.3, .85]]); S.focus(13, 6); gulp(S);
     await S.narr('水缸边上，蹲着一个东西。\n比西菲还矮。浑身是湿透的毛，一缕一缕往下滴水。\n它扒着桶沿，把整个脑袋埋在水缸里，咕咚、咕咚地喝。');
     await S.wait(500); S.face('tok', 0); await S.wait(300);
     await S.scare('face', { face: 'tok' });
     await S.narr('它抬起头。两只黄眼睛，越过整间屋子，看着你。\n然后它又低下头，喝完了最后一口——');
     await S.alpha('tok', 0, 1100); e.hidden = false; e.alpha = 1; e.s.vis = 0;
     await S.say('西菲', '它……它喝完了。你看不见它了，对不对？我还看得见。它往我这边来了！', { style: 'whisper' });
-    S.focus(null);
+    S.focus(null); S.lights(null);
     const P1 = [[12, 6], [11, 7], [10, 7], [9, 7], [8, 6], [7, 5], [7, 4], [7, 3]];
     for (const [x, y] of P1) { dripAt(S, x, y, 3, true); drip(S, .03); S.ent('bed_s').s.pt = x > 7 ? 2 : 0; await S.wait(300); }
     scrape(S); S.shake(200, 1); S.ent('bed_s').s.br = 3; thud(S);
@@ -1031,7 +1034,7 @@
     S.place('sipho_h', 8, 3, 0);
     await S.say('奶奶', ['（奶奶在厨房那边，声音很累。）', '德拉米尼妈妈今早从山那边回来了。你去一趟吧——你读过书，说得清楚。', '出门前……先看看厨房的水缸。今早盖子又开了。']);
     S.f.act = 'day2';
-    S.goal('看看厨房的水缸，再去村口找治疗师德拉米尼妈妈');
+    S.goal('看看水缸，再去找治疗师德拉米尼妈妈');
     S.cp('day2');
   }
 
@@ -1062,11 +1065,11 @@
       await S.think('奶奶说：猜错一个人，比它还害人。\n……我是不是应该说点什么。');
     }
     S.hide('vil2'); S.hide('vil3');
-    S.goal(S.f.clueLeaf ? '去找治疗师德拉米尼妈妈（村道南边，挂白旗那家）' : '去找治疗师德拉米尼妈妈');
+    S.goal('去找治疗师德拉米尼妈妈（挂白旗那家）');
   }
 
   async function blameEnd(S) {
-    S.f.blamed = true;
+    S.f.blamed = true; BLAMED++;
     await S.say('西布西索', '好！大家都听见了！');
     await S.fade(1, 1200);
     await S.end({ bad: true, id: 'blame', title: '指认', text: '那天下午，西布西索带着人去了老太太家。\n没有人动手。可是有人往她的门上抹了泥，有人把她的鸡放了，孩子们朝她的窗户扔石子。\n天黑以前，她裹着那条旧毯子，提着一只塑料袋，一个人走上了去镇上的土路。再也没有回来。\n\n那天夜里，奶奶床脚下的砖，还是少了一块。\n地上还是有水迹，从水缸，一直到床边。\n\n叫它来的人，从来就不是她。' });
@@ -1079,7 +1082,7 @@
     for (const k in BEDS) S.ent(k).s.br = 4;
     Object.assign(S.ent('bed_g').s, { who: 'gogo' }); Object.assign(S.ent('bed_s').s, { who: 'up', pt: 0 });
     S.ent('spare').s.n = 2; S.ent('plamp').off = false;
-    S.dark(.9); S.plr(2.6); S.amb('night'); S.pos(12, 7, 1);
+    S.dark(.9); S.plr(2.6); S.amb('night'); S.pos(12, 3, 0);
     await S.wait(400); drip(S); await S.wait(500); drip(S);
     S.ent('kdrum').covered = false; S.ent('kdrum').s.lid = 1; S.sfx('glass');
     await S.say('西菲', ['来了……它从水缸里爬出来了。它又喝饱了。', '我给你指！我喊它在哪儿，你去扑它！']);
@@ -1088,6 +1091,7 @@
     S.goal('扑住看不见的它（0/3）：看水迹、听西菲喊');
     S.cp('hunt');
     huntBegin(S);
-    S.toast('双人：一人盯西菲的喊声和水迹报方位，一人去扑');
+    S.toast('走进它所在的那一格，就能扑住它');
+    if (S.coop) S.toast('双人：一人盯西菲的喊声和水迹报方位，一人去扑');
   }
 })();
