@@ -6,7 +6,7 @@ function inputMove() {
   const k = INP.keys; let x = 0, z = 0; if (k.w || k.ArrowUp) z += 1; if (k.s || k.ArrowDown) z -= 1; if (k.a || k.ArrowLeft) x += 1; if (k.d || k.ArrowRight) x -= 1; return [x, z];
 }
 function pickEnt(sx, sy) {
-  const K = k(); let best = null, bd = 1e9;
+  sx /= CSSPX(); sy /= CSSPX(); const K = k(); let best = null, bd = 1e9;
   for (const e of W.ents) { if (!e.root || !e.vis || !e.root.visible || e === W.P[W.me] || e.type === 'prop' && !e.interact && !e.name) continue;
     const [ex, ey] = w2s(e.x, e.z, e.y - groundH(e.x, e.z)), hh = Math.max(0.6, e.h) * K, hw = Math.max(e.r * 1.4, e.h * 0.32, 0.45) * K;
     if (sx > ex - hw && sx < ex + hw && sy > ey - hh - 6 && sy < ey + 8) { const d = Math.abs(sx - ex) + Math.abs(sy - (ey - hh / 2)) * 0.5 - e.z * 0.01; if (d < bd) { bd = d; best = e; } } }
@@ -44,7 +44,7 @@ function initInput() {
     const D = INP.drag; if (D && performance.now() - D.t > 180 && !INP.chase && INP.moveTo && !INP.moveTo.ent) INP.moveTo = { x: wx, z: wz };
   });
   cv.addEventListener('pointerup', e => { if (e.pointerType !== 'mouse') return; INP.drag = null; });
-  cv.addEventListener('wheel', e => { e.preventDefault(); CAM.zoomT = clamp(CAM.zoomT * (1 - Math.sign(e.deltaY) * 0.1), 0.6, 1.5); }, { passive: false });
+  cv.addEventListener('wheel', e => { e.preventDefault(); CAM.zoomT = clamp(CAM.zoomT - Math.sign(e.deltaY) * 0.5, 0.5, 2); }, { passive: false });
   initTouch();
 }
 function rotateCam() { }
@@ -91,7 +91,7 @@ function initTouch() {
   cv.addEventListener('touchstart', e => { audioInit(); e.preventDefault(); for (const t of e.changedTouches) { const left = t.clientX < R3.W * 0.36; if (left && !INP.touchMove) { INP.touchMove = { id: t.identifier, x0: t.clientX, y0: t.clientY, x: 0, y: 0 }; stick.style.display = 'block'; stick.style.left = (t.clientX - 60) + 'px'; stick.style.top = (t.clientY - 60) + 'px'; knob.style.transform = 'translate(0px,0px)'; } else { tp.set(t.identifier, { x: t.clientX, y: t.clientY, sx: t.clientX, sy: t.clientY, t: performance.now() }); } }
     if (tp.size === 2) { const [a, b] = [...tp.values()]; INP.pinch = { d: Math.hypot(a.x - b.x, a.y - b.y), zoom: CAM.zoomT }; } }, { passive: false });
   cv.addEventListener('touchmove', e => { e.preventDefault(); for (const t of e.changedTouches) { if (INP.touchMove && t.identifier === INP.touchMove.id) { const M = INP.touchMove; let dx = t.clientX - M.x0, dy = t.clientY - M.y0; const L = Math.hypot(dx, dy), R = 55; if (L > R) { dx *= R / L; dy *= R / L; } M.x = dx / R; M.y = dy / R; knob.style.transform = `translate(${dx}px,${dy}px)`; } else if (tp.has(t.identifier)) { const P = tp.get(t.identifier); const dx = t.clientX - P.x, dy = t.clientY - P.y; P.x = t.clientX; P.y = t.clientY;  } }
-    if (tp.size === 2 && INP.pinch) { const [a, b] = [...tp.values()]; const d = Math.hypot(a.x - b.x, a.y - b.y); CAM.zoomT = clamp(INP.pinch.zoom * d / Math.max(20, INP.pinch.d), 0.6, 1.5); } }, { passive: false });
+    if (tp.size === 2 && INP.pinch) { const [a, b] = [...tp.values()]; const d = Math.hypot(a.x - b.x, a.y - b.y); CAM.zoomT = clamp(Math.round(INP.pinch.zoom * d / Math.max(20, INP.pinch.d) * 2) / 2, 0.5, 2); } }, { passive: false });
   const end = e => { for (const t of e.changedTouches) { if (INP.touchMove && t.identifier === INP.touchMove.id) { INP.touchMove = null; stick.style.display = 'none'; } else if (tp.has(t.identifier)) { const P = tp.get(t.identifier); if (Math.hypot(P.x - P.sx, P.y - P.sy) < 10 && performance.now() - P.t < 300) { if (DLG.open) advanceOrSend(); else clickWorld(P.x, P.y, false); } tp.delete(t.identifier); } } if (tp.size < 2) INP.pinch = null; };
   cv.addEventListener('touchend', end); cv.addEventListener('touchcancel', end);
 }

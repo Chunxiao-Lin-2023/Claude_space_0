@@ -26,14 +26,14 @@ function halfBody(e, mood = 'open') { // big half-length 立绘 for the dialogue
   const P = e.R.spec, key = P.key + '|' + mood; let u = HALF.get(key); if (u) return u;
   const H = 640, Wd = 540, c = cnv(Wd, H), g = c.getContext('2d');
   try {
-    if (P.rig === 'chibi') { const B = BUILD[P.build || 'kid'], tot = chibiHeight(P), z = H * 0.97 / (tot - B.leg * 0.55); g.translate(Wd / 2, H * 0.03 + tot * z); g.scale(z, z); drawChibi(g, P, { view: 'front', mood, t: 0 }, z); }
+    if (P.rig === 'chibi') { const B = BUILD[P.build || 'kid'], tot = chibiHeight(P), z = H * 0.97 / (tot - B.leg * 0.55); g.translate(Wd / 2, H * 0.03 + tot * z); g.scale(z, z); PIXLW = 5 * 0.9 / 1.2; drawChibi(g, P, { view: 'front', mood, t: 0 }, z); PIXLW = 1; }
     else { const b = beastBust(P, 420); g.drawImage(b, (Wd - 470) / 2, H - 470, 470, 470); }
   } catch (err) { console.warn(err); }
-  u = c.toDataURL(); HALF.set(key, u); return u;
+  u = pixelize(c, 5, { colors: 32 }).canvas().toDataURL(); HALF.set(key, u); return u;
 }
 function portrait(e, mood = 'open', size = 160) {
   if (!e || !e.R) return ''; const P = e.R.spec, key = P.key + '|' + mood + '|' + size; let u = PRTURL.get(key); if (u) return u;
-  try { const c = P.rig === 'chibi' ? chibiPortrait(P, mood, size) : beastBust(P, size); u = c.toDataURL(); PRTURL.set(key, u); return u; } catch (err) { console.warn(err); return ''; }
+  try { PIXLW = 3; const c = P.rig === 'chibi' ? chibiPortrait(P, mood, 320) : beastBust(P, 320); PIXLW = 1; u = pixelize(c, 4, { colors: 28 }).canvas().toDataURL(); PRTURL.set(key, u); return u; } catch (err) { PIXLW = 1; console.warn(err); return ''; }
 }
 /* ---------- dialogue box ---------- */
 function uiDialog(name, text, e, col) {
@@ -54,7 +54,7 @@ function floatText(e, txt, col, sc = 1) { if (!SET.dmgNum && /^\d/.test(txt)) re
 function floatXP(n) { const me = W.P[W.me]; if (me) floatText(me, '经验 +' + Math.round(n), '#d8b8ff', 0.8); }
 const BUBS = [];
 function bubble(e, txt, d = 3) { const b = document.createElement('div'); b.className = 'bub'; b.textContent = txt; $('plates').appendChild(b); BUBS.push({ b, e, t: d }); if (NETROLE === 'host') netEv({ k: 'bub', id: e.id, txt, d }); }
-function project(x, y, z) { const p = w2s(x, z, y - groundH(x, z)); if (p[0] < -200 || p[1] < -200 || p[0] > V.W + 200 || p[1] > V.H + 200) return null; return p; }
+function project(x, y, z) { const p = w2s(x, z, y - groundH(x, z)); if (p[0] < -100 || p[1] < -100 || p[0] > V.W + 100 || p[1] > V.H + 100) return null; const f = CSSPX(); p[0] *= f; p[1] *= f; return p; }
 function tickFloat(dt) {
   for (let i = FT.length - 1; i >= 0; i--) { const f = FT[i]; f.t += dt; f.y += f.vy * dt; f.vy *= 0.96; const p = project(f.x, f.y, f.z); if (!p || f.t > 1.1) { if (f.t > 1.1) { f.d.remove(); FT.splice(i, 1); } else f.d.style.display = 'none'; continue; } f.d.style.display = ''; f.d.style.left = p[0] + 'px'; f.d.style.top = p[1] + 'px'; f.d.style.opacity = 1 - sstep(0.6, 1.1, f.t); }
   for (let i = BUBS.length - 1; i >= 0; i--) { const B = BUBS[i]; B.t -= dt; const e = B.e; const p = e.removed ? null : project(e.x, e.y + e.h + 0.7, e.z); if (B.t <= 0 || e.removed) { B.b.remove(); BUBS.splice(i, 1); continue; } if (!p) { B.b.style.display = 'none'; continue; } B.b.style.display = ''; B.b.style.left = p[0] + 'px'; B.b.style.top = p[1] + 'px'; }

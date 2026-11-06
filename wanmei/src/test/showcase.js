@@ -12,13 +12,13 @@ const { chromium } = require('playwright');
   const shot = async (name, wait = 2200) => { await pg.waitForTimeout(wait); await pg.screenshot({ path: `${out}/${name}.png` }); console.log('shot', name); };
   const hud = on => pg.evaluate(on => { document.querySelectorAll('#hud, #party, #mm, #tracker, #chat, #bar, #hotbar, #plates, #tbtns, #menu').forEach(e => e && (e.style.visibility = on ? '' : 'hidden')); }, on);
   // A: night, the willow over the village
-  await pg.evaluate(() => { setLight('night', true); const me = W.P[0], pet = W.P[1]; teleport(me, WILLOW.x + 2.5, WILLOW.z + 8, PI); teleport(pet, WILLOW.x + 4, WILLOW.z + 8.6, PI); me.script = pet.script = true; WILLOWOBJ.boost = 0.8; const ch = entByTag('chief'); if (ch) { teleport(ch, WILLOW.x - 3, WILLOW.z + 9, PI); ch.script = true; } CAM.cine = { x0: WILLOW.x, z0: WILLOW.z + 1, k0: 0.72, x1: WILLOW.x, z1: WILLOW.z + 1, k1: 0.72, t: 0, d: 0.1 }; W.cine = true; });
+  await pg.evaluate(() => { setLight('night', true); const me = W.P[0], pet = W.P[1]; teleport(me, WILLOW.x + 2.5, WILLOW.z + 8, PI); teleport(pet, WILLOW.x + 4, WILLOW.z + 8.6, PI); me.script = pet.script = true; WILLOWOBJ.boost = 0.8; const ch = entByTag('chief'); if (ch) { teleport(ch, WILLOW.x - 3, WILLOW.z + 9, PI); ch.script = true; } CAM.cine = { x0: WILLOW.x, z0: WILLOW.z + 1, k0: 1, x1: WILLOW.x, z1: WILLOW.z - 1, k1: 1, t: 0, d: 0.1 }; W.cine = true; });
   await hud(false); await shot('A_willow_night', 3500);
   // B: morning drill at the yard
   await pg.evaluate(() => { setLight('day', true); WILLOWOBJ.boost = 0; const me = W.P[0], pet = W.P[1]; const Y = YARD; teleport(me, Y.x - 1, Y.z + 3, PI); me.A.pose = 'train'; teleport(pet, Y.x + 1.2, Y.z + 3.6, PI);
     const kids = ['ermeng', 'pihou', 'dazhuang'].map(t => entByTag(t)).filter(Boolean); kids.forEach((k, i) => { teleport(k, Y.x - 4 + i * 2.6, Y.z + 1, PI); k.script = true; k.A.pose = 'train'; });
     const ch = entByTag('chief'); if (ch) { teleport(ch, Y.x, Y.z - 5.5, 0); ch.script = true; ch.A.pose = null; }
-    CAM.cine = { x0: Y.x, z0: Y.z - 0.5, k0: 0.95, x1: Y.x, z1: Y.z - 0.5, k1: 0.95, t: 0, d: 0.1 }; W.cine = true; });
+    CAM.cine = { x0: Y.x, z0: Y.z - 0.5, k0: 1.5, x1: Y.x, z1: Y.z - 0.5, k1: 1.5, t: 0, d: 0.1 }; W.cine = true; });
   await shot('B_yard_morning', 3000);
   // C: dialogue with the big portrait
   await pg.evaluate(() => { const me = W.P[0]; me.A.pose = null; const ch = entByTag('chief'); talk([['族长', '小不点，你又偷喝兽奶了？嘴角还白白的呢。', 'happy'], ['小不点', '咿呀，我没有，我在喝水。', 'happy']]); });
@@ -34,9 +34,14 @@ const { chromium } = require('playwright');
   await pg.evaluate(() => { const me = W.P[0], t = nearestFoe(W.P[0], 15); INP.chase = t; }); await shot('D2_fight', 1400);
   await pg.evaluate(() => { const me = W.P[0], t = nearestFoe(W.P[0], 15); me.cds.chique = 0; me.mp = me.mpMax; castSkill(me, 'chique', t); }); await shot('D3_fight', 500);
   // E: village at night with warm windows
-  await pg.evaluate(() => { for (const e of W.ents) if (e.kind === 'wolf') rmEnt(e); setLight('night', true); const me = W.P[0]; teleport(me, VIL.x + 5, VIL.z + 4, 0); teleport(W.P[1], VIL.x + 6.5, VIL.z + 4.5, 0); CAM.zoomT = 0.75; });
+  await pg.evaluate(() => { for (const e of W.ents) if (e.kind === 'wolf') rmEnt(e); setLight('night', true); const me = W.P[0]; teleport(me, VIL.x + 5, VIL.z + 4, 0); teleport(W.P[1], VIL.x + 6.5, VIL.z + 4.5, 0); CAM.zoomT = 1; });
   await hud(false); await shot('E_village_night', 3000);
   await pg.evaluate(() => { setLight('day', true); }); await shot('F_village_day', 1500);
-  await pg.evaluate(() => { const me = W.P[0]; teleport(me, VIL.x + 2, VIL.z + 10, 0); teleport(W.P[1], VIL.x + 3.5, VIL.z + 10.5, 0); CAM.zoomT = 0.6; }); await shot('G_village_wide', 2500);
+  await pg.evaluate(() => { const me = W.P[0]; teleport(me, VIL.x + 2, VIL.z + 10, 0); teleport(W.P[1], VIL.x + 3.5, VIL.z + 10.5, 0); CAM.zoomT = 1; }); await shot('G_village_wide', 2500);
+  await pg.evaluate(() => { setLight('day', true); const me = W.P[0], pet = W.P[1]; const X = 60, Z = 60; teleport(me, X, Z, 0); teleport(pet, X + 1.6, Z + 0.3, 0); me.script = pet.script = true;
+    const mk = (spec, dx, dz, rot) => { const e = mkEnt({ type: 'npc', name: '', spec, x: X + dx, z: Z + dz, team: 2, r: 0.5, noPlate: true }); e.rot = rot; e.script = true; return e; };
+    mk(CHARS.chief(), -3, 0.2, 0); mk(CHARS.linhu(), -5.6, 0.4, 0); mk(CHARS.ermeng(), 3.4, 0.1, 0); mk(CHARS.wolf(), 6.4, 0.6, -HP); mk(CHARS.mangniu(), -10.5, 1.2, HP); mk(CHARS.qingying(), 12.5, 1.8, -HP);
+    CAM.cine = { x0: X + 1, z0: Z - 1.8, k0: 1, x1: X + 1, z1: Z - 1.8, k1: 1, t: 0, d: 0.1 }; W.cine = true; });
+  await hud(false); await shot('H_sizes', 2500);
   console.log(errs.slice(0, 20).join('\n') || 'no errors'); await b.close();
 })();
