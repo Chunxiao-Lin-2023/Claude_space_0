@@ -4,6 +4,8 @@
   const HARD = [0, 3, 3, 4, 4, 4, 5];          // 六段石缝各要凿几下
   const SEGX = k => 20 + k;                     // 第 k 段石缝的 x（y 固定为 6）
   const CRAWL = .5;                             // 缝里爬行的速度倍率
+  const CHASE_SPD = 3.0, WIND_DRAG = .75;        // 追逐者速度（格/秒）、逆风时玩家速度倍率
+  const AIR_STEP = 1.6;                          // 缝深处不吹风时，每隔几秒少一格空气
   const STA_MAX = 5, AIR_MAX = 5;
   const KEYS = ['手', '螺旋', '叉', '眼', '弯月', '抓痕'];
   const ANS = '弯月-眼-螺旋-手';                // 从最里面开始：最后凿下来的封石最先塞回去
@@ -31,7 +33,7 @@
     seal(S, i) { S.tone('sine', 196 - i * 18, 180 - i * 18, .5, .08, 0, 900); S.tone('triangle', 98 - i * 9, 90 - i * 9, .7, .05, .05, 500); }
   };
   function windSound(S, ph, mode) {
-    const k = mode === 'steady' ? .7 : mode === 'breath3' || mode === 'suck' ? 1.25 : 1;
+    const k = (mode === 'steady' ? .7 : mode === 'breath3' || mode === 'suck' ? 1.25 : 1) * (.75 + (S.f.seg || 0) * .08);
     if (ph === 'out') SND.windOut(S, k); else if (ph === 'in') SND.windIn(S, k);
   }
   function windPhase(mode, t) {
@@ -60,12 +62,13 @@
     bud: { key: 'tc-bud', skin: '#e2b48e', hair: '#3a2a1e', hs: 'short', top: '#3a5a8a', top2: '#2a3a5a', bottom: '#2a3a5a', shoes: '#2a2018',
       extra(g, d, fr, G, R) { helmet('#d8b028', '#fff2b0')(g, d, fr, G, R); if (d === 0) { R(5, G.hT + 5, 6, 2, '#3a2a1e'); R(6, G.hT + 7, 4, 1, '#3a2a1e'); } else if (d === 1) R(4, G.hT + 5, 3, 3, '#3a2a1e'); } },
     /* 圆石后面的东西：没有眼睛，一张圆圆的、张开的嘴，胳膊长到地上 */
-    it: { key: 'tc-it', big: true, skin: '#8e8a82', hair: '#8e8a82', hs: 'bald', top: '#2e2c28', top2: '#2e2c28', robe: true, noFeet: true, bottom: '#2e2c28', eye: '#8e8a82', mouth: '#8e8a82',
+    it: { key: 'tc-it', big: true, skin: '#b4b0a6', hair: '#b4b0a6', hs: 'bald', top: '#8a867c', top2: '#6a665e', robe: true, noFeet: true, bottom: '#8a867c', eye: '#b4b0a6', mouth: '#b4b0a6', ghost: true,
       extra(g, d, fr, G, R) {
         const h = G.hT;
-        if (d === 0) { R(4, h + 1, 8, 4, '#8e8a82'); R(5, h + 3, 2, 1, '#6a665e'); R(9, h + 3, 2, 1, '#6a665e'); R(6, h + 4, 4, 3, '#050404'); R(7, h + 4, 2, 1, '#1a1210'); R(10, h, 1, 3, '#5a564e'); }
-        else if (d === 1) { R(3, h + 4, 3, 3, '#050404'); }
-        R(2, G.tT + 1, 1, 13, '#7a766e'); R(13, G.tT + 1, 1, 13, '#7a766e'); R(1, G.tT + 13, 2, 2, '#9a968e'); R(13, G.tT + 13, 2, 2, '#9a968e');
+        if (d === 0) { R(4, h + 1, 8, 4, '#b4b0a6'); R(5, h + 3, 2, 1, '#7a766e'); R(9, h + 3, 2, 1, '#7a766e'); R(6, h + 4, 4, 3, '#050404'); R(7, h + 4, 2, 1, '#1a1210'); R(10, h, 1, 3, '#6a665e'); R(5, h - 1, 1, 2, '#6a665e'); }
+        else if (d === 1) { R(3, h + 4, 3, 3, '#050404'); R(8, h, 1, 3, '#6a665e'); }
+        else if (d === 3) { R(7, h + 1, 1, 4, '#6a665e'); }
+        R(2, G.tT + 1, 1, 14, '#c8c4ba'); R(13, G.tT + 1, 1, 14, '#c8c4ba'); R(1, G.tT + 14, 2, 1, '#d8d4ca'); R(13, G.tT + 14, 2, 1, '#d8d4ca'); R(0, G.tT + 15, 1, 1, '#d8d4ca'); R(15, G.tT + 15, 1, 1, '#d8d4ca');
       } }
   };
 
@@ -189,6 +192,7 @@
       const cx = 8, cy = 6, r = 11;
       for (let y = -r; y <= r; y++) { const w = Math.round(Math.sqrt(r * r - y * y)); R(cx - w, cy + y, w * 2, 1, y < -4 ? '#6a6052' : y > 5 ? '#3e362c' : '#544a3e'); }
       R(cx - 3, cy - 3, 6, 6, '#3e362c'); R(cx - 2, cy - 2, 4, 4, '#4a4034'); R(cx - 9, cy - 1, 2, 1, '#7a705e'); R(cx + 5, cy - 7, 2, 1, '#7a705e');
+      if (Math.sin(t * 1.3) > .2) { R(cx - 6, cy - 8, 1, 3, 'rgba(190,210,220,.5)'); R(cx + 7, cy + 2, 1, 2, 'rgba(190,210,220,.4)'); }   // 湿石头上的一点反光
       R(cx - 10, cy + 10, 20, 2, 'rgba(0,0,0,.45)');
     },
     gap(g, e, t, R) { R(-1, -4, 18, 20, '#020101'); R(0, -6, 16, 2, '#020101'); for (let i = 0; i < 4; i++) R(17, -2 + i * 4, 6, 1, 'rgba(160,150,130,.25)'); },
@@ -212,15 +216,15 @@
   const NOTES_T = {
     j1: { title: '洞穴日志 · 3月25日', text: '（你的免费个人主页「诺兰的洞穴日志」，访客计数器：0347）\n\n这周六和 B 又去了那个老洞，最里面那道会吹风的缝。\n风大得吓人，打火机凑过去，火苗直接被按平。B 说风这么大，后面肯定有个大洞厅。\n\n我们决定把缝凿宽。一锤一锤来，碎石拖到后面堆好。\n凿开第一段，掉下来一块方方正正的石头——不是天然的，是砌进去的。\n背面刻着一只手。第二块刻着一圈螺旋。\n\nB 用粉笔在石头上编了号。他说拆发动机的规矩：\n「拆下来的东西照原样装回去，最后拆的最先装。」\n\n凿开第二段以后，风声变了。\n呼——停——呼——\n像是喘气。\n\n速写：①手（石块）　②螺旋（石块）' },
     j2: { title: '洞穴日志 · 4月8日', text: '（访客计数器：1882）\n\n这次 B 带了他的狗斑点。斑点走到洞口就不肯动了，冲着里面低吼，然后夹着尾巴跑回了车底下。它从来不这样。\n\n风现在会往里吸了。一会儿往外吹，一会儿往里吸。\nB 发现，趁它吸气的时候凿，灰就被吸进缝里；吹气的时候凿，灰全扑在脸上。\n\n第三段后面没有石块，是天然的缝。\n缝壁上刻着一个叉。刻痕里的石粉是白的。\n上一次，我们根本没凿到那么深。\n\n第四段，第三块石头：一只眼睛。\n我们把它抠出来的那一刻，缝深深地吸了一口气。\n然后，从很远很远的地方，传来一声尖叫。\n接着是石头在石头上刮的声音。很慢。很长。\n\nB 说他不干了。\n\n速写：③叉（刻在缝壁上，新的）　④眼（石块）' },
-    guest: { title: '访客留言板', text: '「假的吧。照片都看不清。」\n\n「我也下洞十几年了。洞会『呼吸』是真的——外面气压一变，洞里的风就会换方向。没什么好怕的。」\n\n「……可是一会儿吹一会儿吸、跟喘气一样？那得是多大的气压变化？」\n\n「我爷爷是那一带长大的。他说老辈人讲，那边山里有些洞，是被人从里面封上的。不让碰。」\n\n「别再往里挖了。求你。」\n\n「B 怎么样了？」\n\n「楼上的，楼主说了 B 不干了。」\n\n「坐等更新。」' },
-    sketch: { title: '速写本', text: '（从第一天起就揣在胸口口袋里，纸边全是泥手印。）\n\n【石缝里凿出来的东西，从外往里】\n① 手——石块（粉笔 1）\n② 螺旋——石块（粉笔 2）\n③ 叉——刻在缝壁上，刻痕是新的\n④ 眼——石块（粉笔 3）\n⑤ 弯月——石块（粉笔 4）\n⑥ 三道抓痕——缝壁上，从里往外抓的\n\n【缝那头的壁画，从左到右】\n一只手，下面站着两个小人。\n一圈螺旋，下面站着三个小人。\n一个叉，下面没有人——是一团涂黑的东西，旁边的小人都躺着。\n一只眼睛，下面站着一个小人。\n一弯月亮，下面站着四个小人。\n三道竖线，下面也是那团黑的，小人躺着。\n\n（小人们站在记号下面，像是在守着什么。）' }
+    guest: { title: '访客留言板', text: '「假的吧。照片都看不清。」\n\n「我也下洞十几年了。洞会『呼吸』是真的——外面气压一变，洞里的风就会换方向。没什么好怕的。」\n\n「……可是一会儿吹一会儿吸、跟喘气一样？那得是多大的气压变化？」\n\n「我爷爷是那一带长大的。他说老辈人讲，那边山里有些洞，是被人从里面封上的。不让碰。」\n\n「别再往里挖了。求你。」\n\n「B 怎么样了？」\n\n「楼上的，楼主说了 B 不干了。」\n\n「下次带把枪去。说真的。」\n\n「坐等更新。」' },
+    sketch: { title: '速写本', text: '（从第一天起就揣在胸口口袋里，纸边全是泥手印。）\n\n【石缝里凿出来的东西，从外往里】\n① 手——石块（粉笔 1）　←缝口\n② 螺旋——石块（粉笔 2）\n③ 叉——刻在缝壁上，刻痕是新的\n④ 眼——石块（粉笔 3）\n⑤ 弯月——石块（粉笔 4）\n⑥ 三道抓痕——缝壁上，从里往外抓的　←最里面\n\n【缝那头的壁画，从左到右】\n一只手，下面站着两个小人。\n一圈螺旋，下面站着三个小人。\n一个叉，下面没有人——是一团涂黑的东西，旁边的小人都躺着。\n一只眼睛，下面站着一个小人。\n一弯月亮，下面站着四个小人。\n三道竖线，下面也是那团黑的，小人躺着。\n\n（小人们站在记号下面，像是在守着什么。）' }
   };
 
   /* ================= 挖缝 ================= */
   function segGoal(S) {
     const k = S.f.seg + 1, e = S.f.seg ? S.ent('seg' + S.f.seg) : null;
     if (e && e.s.rub && !e.hidden) return S.goal('把碎石清出去（面对碎石按调查键）');
-    S.goal('凿开吹风的石缝 · 第 ' + k + ' 段（两人时：一人盯布条喊口令，一人凿）');
+    S.goal('凿开石缝 · 第 ' + k + '/6 段（两人时一人看布条喊口令）');
   }
   async function segOn(S, k) {
     const e = S.ent('seg' + k);
@@ -387,13 +391,16 @@
   }
   async function dream1(S) {
     S.amb('none');
-    await S.wait(500);
+    S.dark(.97); S.plr(1.3); S.show('ctape');
+    await S.wait(300); await S.fade(0, 900);
     SND.windOut(S, .6); await S.wait(1400); SND.windIn(S, .6);
     await S.narr('……梦里，你趴在那道缝里。\n石头贴着你的后背、你的胸口、你的脸。');
     await S.narr('你举起锤子。咚。\n过了一会儿，从缝的那一头，也传来一声。\n咚。');
     SND.thump(S, 2, .1);
     await S.narr('你停下，它也停下。\n你凿一下，它也凿一下。\n它离你越来越近。');
-    await S.fade(0, 400); await S.fade(1, 200);
+    S.sfx('heart'); await S.wait(300);
+    await S.fade(1, 300);
+    S.hide('ctape'); S.dark(null); S.plr(null);
     await S.card('4月7日　傍晚', '第二次下洞', 'B 打电话来，说这周末接着干。\n「那两块石头我查了半天，」他说，「哪本书上都没有那种记号。」\n\n他还说，要带上他的狗。');
     return startTrip2(S);
   }
@@ -478,7 +485,7 @@
     S.hide('bud');
     const tp = S.ent('tape'); tp.s.mark = true; tp.s.torn = true;
     await S.fade(1, 600);
-    await S.card('4月28日　凌晨', '一个人', '你没有告诉 B。\n\n铁栅门的锁是你上次偷偷配的钥匙打开的。\n登记簿你没有签。\n\nB 的绳子挂在你的腰上。');
+    await S.card('4月28日　凌晨', '一个人', '你没有告诉 B。\n你也没有带枪——留言板上有人让你带，可你想不出来，枪能对着什么开。\n\n铁栅门的锁是你上次偷偷配的钥匙打开的。\n登记簿你没有签。\n\nB 的绳子挂在你的腰上。');
     S.amb('drone'); S.dark(null); S.plr(null); S.speed(1);
     await S.go('cave', 1, 6, 2);
     await S.narr('洞里比上次冷。\n没有 B 的头灯，你的光圈小得可怜。');
@@ -509,7 +516,7 @@
     S.f.sawWall = true;
     await S.narr(first ? '你掏出速写本，把壁画一笔一笔描了下来。' : '你又对着速写本核了一遍。');
     await S.note('sketch');
-    if (first) S.goal('看看尽头那块圆石');
+    if (first) { S.toast('速写本可以随时在「笺」里翻看'); S.goal('看看尽头那块圆石'); }
   }
   async function rrockOn(S) {
     if (S.f.rockOpen) return S.narr('圆石滚开了一半。后面的黑，比洞里任何地方都黑。');
@@ -543,7 +550,7 @@
     await S.narr('最新的那一个，刻痕还是白的。\n它戴着一顶头盔。头盔上，有一盏灯。');
     S.sfx('scare'); S.fx('black', { dur: 1.2 });
     await S.wait(900);
-    return S.end({ bad: true, id: 'inside', title: '最后那个空间', text: '「诺兰的洞穴日志」最后一次更新，是4月27日。\n\n访客留言板上的留言，后来又多了几百条。\n\n「更新呢？」\n「楼主？」\n「B 说他报了警。搜救队在洞里找到了一卷蓝色的绳子，两头都是空的。」\n「那道缝呢？」\n「……封着的。用石头封得好好的。」\n\n最后一页的链接，点下去，只会回到同一页。' });
+    return S.end({ bad: true, id: 'inside', title: '最后那个空间', text: '「诺兰的洞穴日志」最后一次更新，是4月8日。\n\n访客留言板上的留言，后来又多了几百条。\n\n「更新呢？」\n「楼主？」\n「B 说他报了警。搜救队在洞里找到了一卷蓝色的绳子，两头都是空的。」\n「那道缝呢？」\n「……封着的。用石头封得好好的。」\n\n最后一页的链接，点下去，只会回到同一页。' });
   }
   async function fleeStart(S) {
     S.f.phase = 'flee';
@@ -551,13 +558,15 @@
     return chaseGo(S);
   }
   async function chaseGo(S) {
-    S.speed(.75); S.f.wmode = 'suck'; S.amb('none');
+    S.speed(WIND_DRAG); S.f.wmode = 'suck'; S.amb('none');
     S.place('rrock', 25, 7); S.show('gap');
-    const it = S.ent('it'); it.alpha = 1; S.stop('it'); S.place('it', 26, 8, 1);
+    const it = S.ent('it'); S.stop('it'); S.place('it', 26, 8, 1); it.alpha = 0;
+    S.pos(Math.min(S.pl.x, 23), S.pl.y, 1);
     S.sfx('sting'); S.bubble('pl', '!', 1000);
+    await S.alpha('it', 1, 500);
     if (FLEE_DIED) await S.think(FLEE_DIED === 1 ? '别停。别回头看。\n顺着来的路，一直往左跑——按住跑步键。' : '贴着洞厅北边跑，绕开那几块大石头。\n碎石坡就在最左边。');
-    S.goal('跑！回到左边的碎石坡（风在往回拽你）');
-    S.chase('it', { spd: 3.0, wait: .9, catch: fleeCaught });
+    S.goal('跑！回左边的碎石坡（逆风，按住跑）');
+    S.chase('it', { spd: CHASE_SPD, wait: 1.0, catch: fleeCaught });
   }
   async function fleeCaught(S) {
     FLEE_DIED++;
@@ -569,6 +578,8 @@
     S.f.phase = 'climb';
     S.stop('it'); S.speed(1); S.plr(null);
     await S.walk('pl', [[4, 5], [4, 4]], 3.4);
+    const it = S.ent('it'), ix = Math.round(it.px / TS);
+    if (!it.hidden && ix <= 12) { S.face('it', 3); S.turn(0); await S.wait(600); S.sfx('whisper'); await S.narr('你回头看了一眼。\n它停在碎石坡底下，仰着那张没有眼睛的脸。圆圆的嘴一张一合，在吸气。'); S.turn(3); }
     await S.alpha('it', 0, 500);
     S.cp('rope');
     return ropeTug(S);
@@ -607,13 +618,13 @@
   async function sealStart(S) {
     S.f.phase = 'seal'; S.f.sealAuto = false; S.f.wmode = 'suck'; PH = '';
     S.speed(CRAWL); S.plr(null);
-    S.goal('爬回缝口，按原样把封石塞回去（两人时：一人翻速写本念记号，一人塞）');
+    S.goal('爬回缝口，把封石按原样塞回去（两人时一人翻速写本）');
     S.cp('seal');
-    const t = SEAL_LEFT == null ? 55 : Math.max(SEAL_LEFT, 40);
+    const t = SEAL_LEFT == null ? 45 : Math.max(SEAL_LEFT, 35);
     S.timer(t, '刮擦声', sealFail, { during: true });
     SND.scrape(S, 2.4, 1.2);
     if (SEAL_DIED) await S.think(SEAL_DIED === 1 ? '只塞人站在下面的那几块。\n最里面那一格先塞——最里面的，是最后凿出来的。' : '弯月、眼、螺旋、手。');
-    else await S.narr('身后的黑暗里，石头刮着石头。\n它在往这边挤。');
+    else await S.narr(['身后的黑暗里，石头刮着石头。\n它在往这边挤。', '得从缝口把四块封石照原样塞回去。\n塞错一块，缝就漏一回风——它就挤得更快。']);
   }
   async function sealFail(S) {
     SEAL_LEFT = 0; SEAL_DIED++;
@@ -629,12 +640,14 @@
     S.f.sealWrong = (S.f.sealWrong || 0) + 1;
     SEAL_LEFT = Math.max(0, (S.timerLeft || 0) - 10); S.timerAdd(-10);
     SND.scrape(S, 1.6, 1.5); S.shake(600, 3); S.sfx('sting');
-    const n = S.f.sealWrong, parts = v.split('-');
+    const n = S.f.sealWrong, parts = v.split('-'), uniq = new Set(parts).size === parts.length;
+    const allFour = uniq && ['弯月', '眼', '螺旋', '手'].every(p => parts.includes(p));
     await S.narr('最后一块怎么也塞不严。\n缝里还在漏风——吸得更凶了。');
-    if (parts.some(p => p === '叉' || p === '抓痕')) await S.think('叉和三道抓痕……那不是封石。\n壁画上，那两个记号底下站的不是人。');
-    else if (n === 1) await S.think('只有人站在下面的记号，才是封石。\n可顺序呢？……B 说过拆东西的规矩。');
-    else if (n === 2) await S.think('「最后拆的最先装。」\n最里面那一格，是你最后凿开的。');
-    else await S.think('弯月——眼——螺旋——手。');
+    if (n >= 3) await S.think('弯月——眼——螺旋——手。');
+    else if (parts.some(p => p === '叉' || p === '抓痕')) await S.think('叉和三道抓痕……那不是封石，你手里根本没有那样的石块。\n壁画上，那两个记号底下站的不是人。');
+    else if (!uniq) await S.think('同一块石头，塞不进两个格子。\n四块封石，一块一格。');
+    else if (allFour) await S.think(n === 1 ? '四块石头都对。是顺序错了。\n……B 说过拆东西的规矩。' : '「最后拆的最先装。」\n最里面那一格，是你最后凿开的那一块。');
+    else await S.think(n === 1 ? '只有人站在下面的记号，才是封石。\n可顺序呢？……B 说过拆东西的规矩。' : '「最后拆的最先装。」\n最里面那一格，是你最后凿开的那一块。');
     }
   }
   async function sealOK(S) {
@@ -667,7 +680,7 @@
     await S.say('诺兰', '……封上了。照原样。最后拆的，最先装。');
     await S.narr('B 看了很久那面重新砌好的石缝。\n然后他解下自己的布条，系在了缝口上方。\n布条垂着，一动不动。');
     S.speed(1);
-    const reg = S.f.reg ? '\n\n下山的时候，你在洞口的登记簿上补了一行：\n「4月28日　诺兰　签退。」\n就在1974年那行字的下面。' : '';
+    const reg = S.f.reg ? '\n\n下山的时候，你在洞口的登记簿上补了一行：\n「4月28日　诺兰　签退。」\n往前翻几页，1974年的那一行，出洞时间还空着。' : '';
     if (kept) return S.end({ id: 'keep', title: '桌上的石头', text: '那天之后，你又更新了一篇日志，说缝已经封上了，以后不会再去了。\n访客留言板上，有人说「烂尾」，有人说「这样最好」。' + reg + '\n\n那块刻着叉的石头，你一直摆在书桌上。\n五月的一个夜里，你被风声吵醒。\n风是从书桌那边来的。一下往外吹，一下往里吸。\n\n「诺兰的洞穴日志」，再也没有更新过。' });
     return S.end({ id: 'seal', title: '封回去', text: '那天之后，你写了最后一篇日志。\n「缝已经照原样封上了。我们不会再去了。也请你们别去找它。」\n然后你把主页关了。' + reg + '\n\n有人说那是编的。有人说他知道是哪个洞。\n你一条都没有回。\n\n只是从那以后，你再也没有下过洞。\n每年春天气压变化的时候，你会在半夜醒过来，\n听一会儿窗外的风——确认它只是在吹，没有在吸。' });
   }
@@ -813,7 +826,7 @@
         rows: CAVE_ROWS,
         ents: [
           ...[0].flatMap(x => [6, 7].map(y => ({ x, y, spr: 'invisible', solid: false, async touch(S) {
-            await S.think(S.f.trip === 3 ? '……不。今天必须把它凿通。' : S.f.phase === 'end' ? '……' : '活儿还没干完呢。');
+            await S.think(S.f.phase === 'seal' ? '缝还没封上！它会跟出来的。' : S.f.phase === 'end' ? '……' : S.f.trip === 3 ? '……不。今天必须把它凿通。' : '活儿还没干完呢。');
             S.pos(1, S.pl.y, 2);
           } }))),
           { x: 4, y: 5, spr: 'soot', on: S => S.narr('有人用电石灯的黑烟在洞顶熏了一行字。\n「到此为止」\n下面是一个年份：1974。') },
@@ -875,14 +888,15 @@
             return;
           }
           if (S.busy || S.f.tripDone || !S.f.trip) return;
-          if (S.f.sta < STA_MAX) { STA_T += dt; if (STA_T >= 1.3) { STA_T = 0; S.f.sta++; if (S.f.sta === STA_MAX) S.toast('缓过劲来了（体力 ' + STA_MAX + '/' + STA_MAX + '）'); } }
+          if (S.f.sta < STA_MAX) { if (S.f.sta <= 1) S.f.staLow = true; STA_T += dt; if (STA_T >= 1.3) { STA_T = 0; S.f.sta++; if (S.f.sta === STA_MAX && S.f.staLow) { S.f.staLow = false; S.toast('缓过劲来了（体力 ' + STA_MAX + '/' + STA_MAX + '）'); } } }
           if (S.f.trip === 3 && S.f.seg < 6 && S.f.t3a) {
             const deep = S.pl.x >= 23;
             if (deep && PH !== 'out') {
               AIR_T += dt;
-              if (AIR_T >= 2.0) {
+              if (AIR_T >= AIR_STEP) {
                 AIR_T = 0; S.f.air = Math.max(0, (S.f.air ?? AIR_MAX) - 1); airFx(S);
                 if (S.f.air <= 0) S.run(blackout);
+                else if (S.f.air === 3 && S.once('airTip')) S.run(async S => { await S.think('打火机的火苗矮了一截……\n缝里不吹风的时候，空气就不流动。\n等布条往外飘，退到缝口喘口气。'); });
                 else S.toast(['', '眼前一阵阵发黑——快退出去！', '打火机的火苗缩成了一个蓝点', '火苗矮了一截。胸口发闷', '空气有点闷'][S.f.air] + '（空气 ' + S.f.air + '/' + AIR_MAX + '）');
               }
             } else if ((S.f.air ?? AIR_MAX) < AIR_MAX) {
@@ -894,7 +908,7 @@
       },
       /* ---------------- 缝的那头 ---------------- */
       deep: {
-        amb: 'none', dark: .96, plr: 2.7, wall: 'stone', wallC: { top: '#0a0807', face: '#3e352c', trim: '#221c16' }, darkC: '#020101',
+        amb: 'none', dark: .95, plr: 3, wall: 'stone', wallC: { top: '#0a0807', face: '#3e352c', trim: '#221c16' }, darkC: '#020101',
         legend: { f: 'cfl', o: 'cbo', S: 'scr' },
         rows: DEEP_ROWS,
         ents: [
@@ -909,7 +923,7 @@
             else await S.narr('你把手缩了回来。');
           } },
           { id: 'gap', x: 25, y: 8, spr: 'gap', decal: true, hidden: true, on: S => S.narr('黑。') },
-          { id: 'rrock', x: 25, y: 8, spr: 'rrock', on: rrockOn },
+          { id: 'rrock', x: 25, y: 8, spr: 'rrock', light: { r: 1.4, dy: 6, col: 'rgba(150,170,180,.08)' }, on: rrockOn },
           { id: 'it', x: 26, y: 8, spr: '@it', dir: 1, hidden: true, solid: false },
           ...[1].map(() => ({ id: 'slope', x: 4, y: 6, spr: 'invisible', solid: false, touch: slopeTop }))
         ],
@@ -982,9 +996,14 @@
   });
 
   /* ---------------- 教学段 ---------------- */
+  async function budCatchUp(S) {
+    S.stop('bud'); const b = S.ent('bud');
+    if (Math.round(b.px / TS) !== 19 || Math.round(b.py / TS) !== 7) { await S.walk('bud', [19, 7], 5.5); }
+    S.face('bud', 2);
+  }
   async function tut1(S) {
     S.f.tut1 = true;
-    S.stop('bud'); S.place('bud', 19, 7, 2);
+    await budCatchUp(S);
     await S.narr('爬过一段只容一个人的窄道，眼前豁然一宽。\n是个不大的洞厅，钟乳石像一排獠牙。');
     S.focus(21, 6);
     SND.windOut(S, .9);
@@ -1001,7 +1020,7 @@
   }
   async function tut2(S) {
     S.f.tut2 = true;
-    S.stop('bud'); S.place('bud', 19, 7, 2);
+    await budCatchUp(S);
     await S.narr('布条还系在缝口上方。\n可它不再一股劲儿往外飘了——');
     S.focus(21, 6);
     SND.windOut(S, 1); await S.wait(900); SND.windIn(S, 1);

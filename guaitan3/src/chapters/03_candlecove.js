@@ -134,7 +134,7 @@
       const far = SPOTS.slice().sort((a, b) => d(b) - d(a))[0];
       S.place('skin_b', far[0], far[1], 0);
       await S.think('它被甩开了……可它还会过来。电闸！');
-      S.chase('skin_b', { spd: SPD, always: true, wait: .8, catch: caught });
+      S.chase('skin_b', { spd: SPD, always: true, wait: 1.4, catch: caught }); clack(S, .8, 1.2); clack(S, .8, 1.4);   // 甩开以后多给一点距离，它重新动起来时有咔咔声
       return;
     }
     DEATHS++; S.stop('skin_b');
