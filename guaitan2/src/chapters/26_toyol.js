@@ -18,7 +18,7 @@
   const N1 = { len: 65, goSpd: 2.4, backSpd: 3.4, R: 2, dur: { kacang: 12, guli: 5, ketam: 3.5 }, mir: [8, 4, 2], out: { steal: 4, guli: 9, ketam: 3, dawn: 99 }, first: 2.5, lose: 2 };
   const DRAIN1 = [2, 2], TILL1 = [4, 9];
   /* 夜二：Seman 家，饿了的鬼仔 */
-  const N2 = { prowl: 2.0, hunt: 3.0, huntFed: 3.5, R: 3, see: 3, seeRun: 6, bleed: 2, dur: { kacang: 9, guli: 4, ketam: 3.5 }, mir: [7, 4, 2], lost: 7, huntMax: 8, rest: 2.5 };
+  const N2 = { prowl: 2.0, hunt: 3.0, huntFed: 3.5, R: 3, see: 3, seeRunFar: 10, bleed: 2, dur: { kacang: 9, guli: 4, ketam: 3.5 }, mir: [7, 4, 2], lost: 7, huntMax: 8, rest: 2.5 };
   const WP2 = [[2, 4], [10, 3], [16, 4], [17, 8], [10, 9], [3, 8]];
   const HOME2 = [1, 4];
   let n1Fails = 0, n2Fails = 0;
@@ -1126,7 +1126,7 @@
       if (L) { T.m = 'toLure'; T.lure = L.id; S.bubble('ty2', '?', 600); return; }
       if (T.m === 'prowl') {
         const pd = pathLen(ex, ey, p.x, p.y, 9), bl = T.bites ? N2.bleed : 0;   // 被咬过一口，脚踝在流血，它隔得更远也闻得到
-        if (pd <= (S.running ? N2.seeRun : N2.see) + bl) { T.m = 'hunt'; T.ht = 0; T.lost = 0; T.pd = pd; S.bubble('ty2', '!', 800); giggle(S, .05); S.toast(T.huntN ? '它又闻到你了！' : '它闻到你了——它追过来了！'); T.huntN = (T.huntN || 0) + 1; return; }
+        if (pd <= (S.running ? N2.seeRunFar : N2.see + bl)) { T.m = 'hunt'; T.ht = 0; T.lost = 0; T.pd = pd; S.bubble('ty2', '!', 800); giggle(S, .05); S.toast(T.huntN ? '它又闻到你了！' : '它闻到你了——它追过来了！'); T.huntN = (T.huntN || 0) + 1; return; }
         const w = WP2[T.wp]; if (stepTo(e, w[0], w[1], N2.prowl)) T.wp = (T.wp + 1 + (Math.random() < .3 ? 1 : 0)) % WP2.length;
         return;
       }
@@ -1175,8 +1175,15 @@
     await S.scare('face', { face: 'toyol', sfx: 'scream', dur: .9 });
     await S.die('它又一次咬住了你的脚踝，这一回，没有松口。\n冰凉的小嘴一下一下地吸着。你腿一软，坐倒在地板上，屋顶慢慢地转了起来。\n\n天亮以后，阿依莎在楼梯底下找到了你。你的脚踝上，有两排小小的牙印。\n\n（别在屋里跑；先用诱饵把它引到别处，再去拿纸、开盒子。被咬过一次以后，它会追得更快。）', '它饿了');
   }
+  /* 它就在身后（追着你、或者贴着你转悠）的时候，腾不出手去开罐子、转木片 */
+  function threat(S) {
+    const T = S.f.T2, e = S.ent('ty2'); if (S.f.ph !== 'n2' || !T || !e) return false;
+    const [ex, ey] = tp(e), d = pathLen(ex, ey, S.pl.x, S.pl.y, 4);
+    return (T.m === 'hunt' && d <= 3) || ((T.m === 'prowl' || T.m === 'toLure') && d <= 2);
+  }
   async function kalengOn(S) {
     if (S.f.ph !== 'n2' && S.f.ph !== 'n2got') return S.narr('一只饼干铁罐。');
+    if (threat(S)) { S.toast('你刚伸出手——它已经扑到你脚边了！'); return bite2(S, S.f.T2); }
     if (S.once('kaleng')) await S.narr('灶台边一只蓝色的饼干铁罐。打开，里面没有饼干——只有一叠叠码好的硬币，和一张叠成小方块的纸。');
     S.f.readSurat = true;
     await S.note('surat');
@@ -1191,6 +1198,7 @@
   async function petiOn(S) {
     const f = S.f;
     if (f.peti) return S.narr('木盒空了。盒底垫着一块黄布，布上有一圈瓶底压出来的印子。');
+    if (threat(S)) { S.toast('你刚蹲下去——它已经扑到你脚边了！'); return bite2(S, f.T2); }
     if (S.once('peti0')) await S.narr('床边放着一个雕花小木盒，有饭盒那么大。盒盖上嵌着四块能转的小木片，每块都能转出四种图案：螃蟹、弹珠、镜子、绿豆。\n盒子里有什么东西，「咚」地敲了一下盖子。');
     if (!f.readSurat && S.once('peti1')) await S.think('顺序不对，肯定打不开。\nSeman 伯不像记得住这种东西的人——巫师应该给他留了说明。');
     const v = await S.keypad('盒盖上的四块木片，从左到右依次转成：\n（键盘 1 螃蟹　2 弹珠　3 镜子　4 绿豆）', ['螃蟹', '弹珠', '镜子', '绿豆'], 4, { sep: '·', alias: { 1: '螃蟹', 2: '弹珠', 3: '镜子', 4: '绿豆' } });
