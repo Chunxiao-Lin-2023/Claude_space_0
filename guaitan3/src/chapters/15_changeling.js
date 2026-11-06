@@ -59,7 +59,7 @@
 
   defChapter({
     id: 'changeling', n: 15, title: '调换儿', sub: '摇篮里的孩子不哭不笑，饿得吓人，一张脸皱得像个小老头。奶奶说：他不是伊万。', origin: '欧洲民间传说', color: '#2c3a2a',
-    icon: '@chg', iconX: 30, amb: 'wind', floor: 'stone', wall: 'stone', dark: .78, plr: 3, darkC: '#04060a',
+    icon: '@chg', iconX: 38, amb: 'wind', floor: 'stone', wall: 'stone', dark: .78, plr: 3, darkC: '#04060a',
     endings: { home: '伊万回家了', blessing: '母亲的祝福', feast: '一口蜂蜜饼', name: '说出了名字', log: '一截桤木' },
     faces: {
       /* 小老头：婴儿帽底下一张活了几百年的脸，黄眼睛，咧开的嘴里一排小尖牙 */
@@ -77,10 +77,10 @@
       },
       /* 山中夫人：银发、山楂花冠；眼睛慢慢变成两口没有眼白的黑井，笑容咧得太宽 */
       lady(R, a) {
-        const SK = '#e6ecec', SK2 = '#c4ccd0', H = '#d8dce0', H2 = '#a8b0b8';
+        const SK = '#eef2ee', SK2 = '#c4ccc8', SK3 = '#9aa49e', H = '#7e8a98', H2 = '#5a6470';
         R(2, 4, 28, 28, H); R(4, 4, 1, 28, H2); R(27, 4, 1, 28, H2);
         R(4, 1, 24, 4, '#3a5a2a'); for (let i = 0; i < 7; i++) { R(4 + i * 4, 0, 3, 2, '#f4f2ea'); R(6 + i * 4, 3, 1, 1, '#c02020'); }
-        R(8, 5, 16, 20, SK); R(10, 25, 12, 3, SK); R(13, 28, 6, 2, SK2); R(21, 6, 3, 19, SK2);
+        R(8, 5, 16, 18, SK); R(9, 23, 14, 2, SK); R(11, 25, 10, 2, SK); R(13, 27, 6, 2, SK2); R(21, 6, 3, 17, SK2); R(8, 18, 1, 5, SK3); R(23, 18, 1, 5, SK3); R(10, 9, 5, 1, SK3); R(17, 9, 5, 1, SK3);
         R(8, 5, 2, 12, H); R(22, 5, 2, 10, H);
         const k = Math.min(1, a * 1.6);
         if (k < .5) { R(10, 12, 5, 2, '#f4f6f6'); R(17, 12, 5, 2, '#f4f6f6'); R(12, 12, 2, 2, '#2a5a3a'); R(19, 12, 2, 2, '#2a5a3a'); }
@@ -97,7 +97,7 @@
         extra(g, d, fr, G, R) { R(5, 0, 6, 2, '#141216'); R(3, 2, 10, 1, '#141216'); R(5, 1, 6, 1, '#2a2830'); R(3, G.tT, 10, 3, '#8a1a1a'); if (d === 0) R(7, G.tT + 3, 2, 2, '#8a1a1a'); } },
       chg: chgP('cg-chg', false),
       chgw: chgP('cg-chgw', true),
-      lady: { key: 'cg-lady', big: true, skin: '#e6ecec', hair: '#d8dce0', hs: 'long', top: '#2a5a3a', top2: '#1a3a24', robe: true, noFeet: true, eye: '#1a2a20', mouth: '#9a4a5a',
+      lady: { key: 'cg-lady', big: true, skin: '#eef2ee', hair: '#8a96a4', hs: 'long', top: '#2a5a3a', top2: '#1a3a24', robe: true, noFeet: true, eye: '#1a2a20', mouth: '#9a4a5a',
         extra(g, d, fr, G, R) { R(4, G.hT - 1, 8, 1, '#3a5a2a'); if (d !== 3) { R(4, G.hT - 2, 1, 1, '#f4f2ea'); R(7, G.hT - 2, 1, 1, '#c02020'); R(10, G.hT - 2, 1, 1, '#f4f2ea'); } R(3, G.tT + 1, 10, 1, '#c8b860'); } },
       folk1: { key: 'cg-f1', skin: '#d8e2dc', hair: '#2a3a2a', hs: 'long', top: '#3a5a3a', robe: true, child: true, eye: '#0a1a10', extra: EARS('#d8e2dc') },
       folk2: { key: 'cg-f2', skin: '#e2e0d4', hair: '#8a7a4a', hs: 'messy', top: '#5a5a3a', bottom: '#3a3a2a', child: true, eye: '#1a1a0a', extra: EARS('#e2e0d4') },
@@ -142,14 +142,21 @@
       if (S.map === 'hall') hallTick(S, dt);
       if (S.map === 'tunnel') tunnelTick(S, dt);
     },
-    thumb(g, w, h) {
-      const sky = g.createLinearGradient(0, 0, 0, h - 22); sky.addColorStop(0, '#0c1418'); sky.addColorStop(1, '#22302a'); g.fillStyle = sky; g.fillRect(0, 0, w, h - 22);
-      g.fillStyle = '#1a2a1c'; g.beginPath(); g.ellipse(w * .36, h - 22, w * .3, 30, 0, Math.PI, 0); g.fill();
-      g.fillStyle = '#2a3e2a'; for (let i = 0; i < 16; i++) g.fillRect(w * .1 + i * 7, h - 22 - 18 - Math.sin(i / 15 * Math.PI) * 10, 3, 2);
-      g.fillStyle = '#d8f0c0'; g.fillRect(w * .36 - 5, h - 40, 10, 18); g.fillStyle = '#f4ffe0'; g.fillRect(w * .36 - 3, h - 37, 6, 15);   // 发光的山门
-      g.fillStyle = 'rgba(200,255,200,.12)'; g.fillRect(w * .36 - 14, h - 50, 28, 28);
-      g.fillStyle = '#141a14'; g.fillRect(w * .78, h - 60, 3, 38); for (let i = 0; i < 6; i++) g.fillRect(w * .78 - 10 + i * 4, h - 64 + (i % 3) * 5, 8, 3);   // 山楂树
-      g.fillStyle = '#f4f0e4'; for (let i = 0; i < 5; i++) { g.fillRect(14 + i * 9, h - 26, 5, 4); g.fillStyle = i % 2 ? '#f4f0e4' : '#e8e0c8'; }   // 一排蛋壳
+    thumb(g, w, h) {   // 炉火边的摇篮，篷子底下一双黄眼睛；窗外山坡上，仙丘的门亮着
+      const F = (x, y, ww, hh, c) => { g.fillStyle = c; g.fillRect(x | 0, y | 0, ww, hh); };
+      F(0, 0, w, h - 22, '#1a1612');
+      F(w - 48, 3, 40, 22, '#2a2420'); F(w - 46, 5, 36, 18, '#0c1418');   // 窗
+      g.fillStyle = '#1c2a1c'; g.beginPath(); g.ellipse(w - 28, 23, 14, 8, 0, Math.PI, 0); g.fill();
+      F(w - 30, 17, 4, 6, '#e8ffd8'); F(w - 34, 13, 12, 10, 'rgba(200,255,200,.16)');
+      F(w - 28, 5, 2, 18, '#2a2420');
+      F(6, 10, 44, 40, '#4a4640'); F(12, 22, 32, 28, '#0e0806');   // 壁炉
+      for (let i = 0; i < 6; i++) F(15 + i * 5, 40 - (i % 3) * 4, 4, 10 + (i % 3) * 4, i % 2 ? '#ff8a2a' : '#ffcf5a');
+      const gl = g.createRadialGradient(28, 44, 4, 28, 44, 70); gl.addColorStop(0, 'rgba(255,150,60,.35)'); gl.addColorStop(1, 'rgba(255,150,60,0)'); g.fillStyle = gl; g.fillRect(0, 0, w, h);
+      for (let i = 0; i < 5; i++) { F(10 + i * 8, h - 30, 6, 5, '#f4f0e4'); F(10 + i * 8, h - 30, 6, 1, '#c8c0a8'); }   // 炉石上一排蛋壳
+      F(52, h - 30, 40, 4, '#3a2818'); F(54, h - 44, 36, 14, '#7a5634'); F(76, h - 56, 14, 16, '#6a4a2c'); F(78, h - 54, 10, 12, '#140c08');   // 摇篮
+      F(79, h - 50, 2, 2, '#f0d040'); F(84, h - 50, 2, 2, '#f0d040');   // 一双黄眼睛
+      F(56, h - 42, 20, 4, '#ece6d6');
+      F(70, h - 70, 1, 12, '#6a6a6a'); F(67, h - 60, 1, 6, '#c8ccd0'); F(73, h - 60, 1, 6, '#c8ccd0');   // 张开的铁剪
     },
     sprites: {
       /* 壁炉：吊锅、火；shells = 炉石上摆着蛋壳 */
@@ -253,6 +260,7 @@
       slab(g, e, t, R) { box(R, 1, 6, 14, 9, '#5a5a52'); for (let i = 0; i < 4; i++) R(3, 8 + i * 2, 8 + (i % 2) * 2, 1, '#3a3a34'); R(2, 6, 4, 2, '#3a5a2a'); },
       shroom(g, e, t, R) { const gl = .6 + Math.sin(t * 2 + e.px) * .2; for (let i = 0; i < 3; i++) { const x = 2 + i * 5, h = 4 + (i % 2) * 3; R(x + 1, 14 - h, 1, h, '#c8d8c8'); R(x - 1, 13 - h, 5, 2, `rgba(140,230,200,${gl})`); } },
       roots(g, e, t, R) { for (let i = 0; i < 5; i++) { const x = 1 + i * 3, l = 6 + ((i * 5) % 7) + Math.round(Math.sin(t * .8 + i) * 1); R(x, 0, 1, l, '#3a2a1a'); R(x, l, 1, 1, '#5a4a2a'); } },
+      wspot(g, e, t, R) { for (let i = 0; i < 5; i++) { const y = 1 + i * 3; R(13, y + 1, 1, 2, '#d8d8c8'); R(12, y, 3, 1, i % 2 ? '#e8e8d8' : '#c8d8c8'); } },
       rstone(g, e, t, R) { R(1, 12, 14, 3, 'rgba(0,0,0,.4)'); box(R, 4, -4, 8, 17, '#5a6a5e'); R(5, -3, 6, 2, '#7a8a7e'); const gl = .5 + Math.sin(t * 4 + e.px) * .3; R(6, 2, 4, 2, `rgba(160,255,210,${gl})`); for (let i = 0; i < 6; i++) { const an = t * 1.5 + i; R(8 + Math.cos(an) * 9, 6 + Math.sin(an) * 5, 1, 1, '#c8ffe8'); } }
     },
     maps: {
@@ -325,6 +333,7 @@
           { id: 'ydoor', x: 4, y: 1, spr: 'door', col: '#3a2a1a', on: S => { S.sfx('open'); return go2(S, 'cottage', 9, 9, 3); } },
           { id: 'ywin1', x: 2, y: 1, spr: 'window', lit: true, light: { r: 2.2, col: 'rgba(255,170,90,.16)', dy: 14 }, on: S => S.narr('窗里透出炉火的光。\n奶奶的影子映在窗玻璃上，一动不动，在等你。') },
           { id: 'ywin2', x: 7, y: 1, spr: 'window', lit: true, light: { r: 2.2, col: 'rgba(255,170,90,.16)', dy: 14 }, on: S => S.narr('窗台下的墙缝里，塞着一把干了的花楸枝。') },
+          { id: 'ylamp', x: 6, y: 2, spr: 'lantern', light: { r: 3, col: 'rgba(255,170,80,.2)', flick: true }, on: S => S.narr('门边挂着一盏马灯。爸爸走之前换的新灯芯，火苗稳稳的。\n灯光照得到的地方，就这么一小圈。') },
           { id: 'hens', x: 1, y: 3, w: 2, spr: 'henhouse', on: S => hensOn(S) },
           { id: 'hen1', x: 4, y: 5, spr: 'hen', on: S => S.narr('一只褐色的母鸡缩着脖子，咕咕地抱怨。\n这么晚了，谁还不睡觉。') },
           { id: 'hen2', x: 2, y: 6, spr: 'hen', col: '#e8e4d8', on: S => S.narr('白母鸡歪着脑袋，用一只眼睛看你。\n它突然扭过头，朝山那边「咯」了一声。') },
@@ -344,8 +353,8 @@
         async enter(S, first) {
           if (S.f.ph === 'dawn') return;
           if (first) {
-            await S.narr('门一开，冷风就扑进怀里。\n云压得很低，看不见一颗星星。山坡上那团黑黢黢的圆影子，是仙丘。');
-            if (S.f.ph === 'gather') goalGather(S);
+            await S.narr('门一开，冷风就扑进怀里。\n云压得很低，看不见一颗星星。溪水对岸，山坡上那团黑黢黢的圆影子，是仙丘。');
+            if (S.f.ph === 'gather') { await S.think('鸡窝在西墙根，井在院子当中，麦芽袋子靠着东边的篱笆。'); goalGather(S); }
           }
         },
         step(S, x, y) {
@@ -423,6 +432,9 @@
           { id: 'rs1', x: 7, y: 4, spr: 'rstone', light: { r: 2.2, col: 'rgba(140,255,200,.16)' }, on: S => S.narr('环中间一块发光的石头。跳舞的人，就是绕着它转的。') },
           { id: 'rs2', x: 16, y: 4, spr: 'rstone', light: { r: 2.2, col: 'rgba(140,255,200,.16)' }, on: S => S.narr('第二块发光的石头。舞步在这里换了方向。') },
           { id: 'rs3', x: 26, y: 4, spr: 'rstone', light: { r: 2.2, col: 'rgba(140,255,200,.16)' }, on: S => S.narr('最后一块发光的石头。他们转得更快了。') },
+          { id: 'ws1', x: 5, y: 4, spr: 'wspot', decal: true, solid: false },
+          { id: 'ws2', x: 14, y: 4, spr: 'wspot', decal: true, solid: false },
+          { id: 'ws3', x: 24, y: 4, spr: 'wspot', decal: true, solid: false },
           { id: 'tr1', x: 3, y: 3, spr: 'roots', solid: false },
           { id: 'tr2', x: 11, y: 3, spr: 'roots', solid: false },
           { id: 'tr3', x: 21, y: 3, spr: 'roots', solid: false },
@@ -443,10 +455,14 @@
     if (!S.has('malt')) need.push('麦芽');
     if (need.length) S.goal('去院子里找：' + need.join('、'));
     else if (!S.ent('cradle').s.turned) S.goal('把摇篮转过来对着炉子，再到炉前「酿」蛋壳酒');
+    else if ((S.f.kpMiss || 0) >= 4) S.goal('到炉前：敲蛋 → 摆壳 → 倒水 → 撒麦 → 开口');
+    else if (S.f.kpMiss === 3) S.goal('到炉前：先敲蛋、再摆壳；后面三样照歌本排');
     else S.goal('到炉前，照歌本的顺序「酿」蛋壳酒（两人时：一人念歌本，一人操作）');
   }
   async function cottageFirst(S) {
     S.f.ph = 'talk';
+    hum(S, .7);
+    await S.narr('炉边，奶奶在哼那支老摇篮曲。哼到一半，停了。');
     await S.narr('炉火噼啪地响。泥炭烟混着奶腥味，屋里暖得发闷。\n摇篮就摆在炉边，一下，一下，自己轻轻地晃。');
     await S.think('……又是这样。没人碰它，它自己在晃。');
     S.goal('和炉边的奶奶说说话');
@@ -458,6 +474,11 @@
       await S.narr('奶奶坐在炉边的椅子上，手里的毛线针停了好久了。');
       await S.say('奶奶', ['格温，你也看出来了，对不对。', '三天了。他不哭，也不笑。一顿喝下三个人的奶，喝完了，就直勾勾地盯着房梁。', '你看他那张脸——皱得像个小老头。']);
       await S.say('奶奶', ['你妈妈守了他三夜，烧得说胡话。你爸爸在南边的煤矿，要过了圣诞才回得来。', '老辈人说，这是让「母亲的祝福」换走了。', '……就是山里那些人。不能直呼他们，只能说好听的。']);
+      S.f.ph = 'talk2';
+      S.goal('再和奶奶说说话');
+      return;
+    }
+    if (ph === 'talk2') {
       await S.say('格温', '那……我们怎么办？');
       await S.say('奶奶', ['山那边有人说，把它放到火铲上往炉子里伸，或者扔进河里，换孩子的就会来抢回去。', '那都是害人的话。', '我年轻的时候，见过一户人家照着做了。……被放到门外冻了一夜的，是他们自己的孩子，只是病了。']);
       await S.say('奶奶', ['我们不做那种事。不管摇篮里躺着的是谁，都不许伤他一根头发。', '有个老法子，不伤人。我外婆教的：让它看一桩它活了几百年也没见过的稀奇事，它一吃惊，就会开口。', '歌本在我的箱子里，抄在最后一页。去拿来吧。']);
@@ -471,18 +492,19 @@
       bump(S, '_nh');
       if (hasAll(S) && !S.ent('cradle').s.turned) return S.say('奶奶', ['东西齐了？好孩子。', '把摇篮转过来，让它对着炉子。它得看得见，才会吃惊。']);
       if (hasAll(S)) return ritualHint(S, true);
-      return S.say('奶奶', cycle(S, '_ng', ['鸡窝在院子西边，井在当中，麦芽在谷仓边的麻袋里。', '外头冷，把披肩裹紧。……不，别拿你妈妈那条，那条留着。', '我守着它。你去吧，它不敢在我眼皮底下怎么样。']));
+      return S.say('奶奶', cycle(S, '_ng', ['鸡窝在院子西墙根，井在院子当中，麦芽在东边篱笆底下的麻袋里。', '外头冷，把披肩裹紧。……不，别拿你妈妈那条，那条留着。', '我守着它。你去吧，它不敢在我眼皮底下怎么样。']));
     }
     if (ph === 'deal') {
       if (!S.f.nainCare && S.once('nainCare')) { S.f.nainCare = true; return S.say('奶奶', ['他嘴上不饶人，到底是个老人家。', '夜里山上冷，你妈妈那条红披肩……给他裹上吧。牛棚里的牛，也还有奶。']); }
       return S.say('奶奶', cycle(S, '_nd', ['铁剪子揣好了？别拿出来。', '他们的东西，一口都别吃。', '鸡叫之前回来。奶奶在这儿守着炉子，等你们。']));
     }
+    if (ph === 'reveal') return S.say('奶奶', '问问他。……问问他伊万在哪儿。');
     if (ph === 'dawn') return S.say('奶奶', '……回来了，回来了。');
     return S.say('奶奶', '……');
   }
   async function chestOn(S) {
     const c = S.ent('chest');
-    if (S.f.ph === 'talk') return S.narr('奶奶的樟木箱子。上头搁着一只针线筐。\n……先听奶奶把话说完。');
+    if (S.f.ph === 'talk' || S.f.ph === 'talk2') return S.narr('奶奶的樟木箱子。上头搁着一只针线筐。\n……先听奶奶把话说完。');
     c.s.open = true; S.sfx('open');
     if (S.once('chestOpen')) await S.narr('箱子里一股樟脑味。奶奶的嫁衣叠得方方正正，底下压着一本磨毛了边的歌本。');
     await S.note('songbook');
@@ -500,7 +522,7 @@
     if (S.once('cradleFirst')) {
       await S.narr('摇篮里躺着「伊万」。圆圆的襁褓，稀稀的黄头发，左边眉梢一颗小痣——什么都一样。\n可那张脸，皱得像晒干的苹果。');
       await S.narr('它闭着眼睛。\n你一转过身，后脑勺就像被什么东西盯着。');
-      if (ph === 'talk') return;
+      if (ph === 'talk' || ph === 'talk2') return;
     }
     if (ph === 'gather' && !c.s.turned) {
       const r = await S.ask('摇篮朝着墙。', ['把摇篮转过来，对着炉子', '（先不动它）']);
@@ -515,6 +537,12 @@
   async function bedOn(S) {
     const b = S.ent('boxbed');
     if (b.s.awake) return S.say('妈妈', '格温……过来，让妈妈看看你。');
+    if (S.f.ph === 'deal' && S.once('bedDeal')) {
+      hum(S, .45);
+      await S.narr('妈妈闭着眼睛，嘴唇一动一动，在梦里哼着那支老歌。');
+      await S.say('妈妈（梦话）', ['……格温？是格温吗……', '你去……把他抱回来。妈妈给你们哼歌……'], { style: 'whisper' });
+      return;
+    }
     if (S.once('bedFirst')) {
       await S.narr('妈妈睡在箱床里，额头上搭着湿布，烧得两颊通红。');
       await S.say('妈妈（梦话）', ['……不是他……摇篮是凉的……', '伊万……妈妈在这儿……'], { style: 'whisper' });
@@ -533,7 +561,9 @@
   async function leaveCottage(S) {
     const ph = S.f.ph, p = S.pl;
     const back = () => { if (p.prev && (p.prev[0] !== p.x || p.prev[1] !== p.y)) S.pos(p.prev[0], p.prev[1], 3); };
-    if (ph === 'talk' || ph === 'song') { back(); return S.think(ph === 'talk' ? '……先和奶奶说说话。' : '奶奶让我去箱子里拿歌本。'); }
+    if (ph === 'talk' || ph === 'talk2' || ph === 'song') { back(); return S.think(ph === 'song' ? '奶奶让我去箱子里拿歌本。' : '……先和奶奶说说话。'); }
+    if (ph === 'reveal') { back(); return S.think('（先听听小老头怎么说。）'); }
+    if (ph === 'deal' && !S.has('iron')) await giveIron(S);
     if (ph === 'dawn') { back(); return; }
     S.sfx('open');
     await go2(S, 'yard', 4, 2, 0);
@@ -543,19 +573,32 @@
   async function hensOn(S) {
     if (S.f.ph !== 'gather' || S.has('eggs') || S.f.usedEggs) return S.narr('鸡窝里的母鸡挤成一团，咕咕咕地，谁也不肯先睡。');
     S.give('eggs'); S.sfx('item');
-    await S.narr('你把手伸进鸡窝。母鸡们炸了毛，咕咕乱叫。\n草窝里一个一个摸出来，热乎乎的，一共十二个。');
-    goalGather(S);
+    await S.narr(S.f.kpMiss ? '母鸡们气得直扑翅膀。你在草窝最里头，又摸出一窝蛋来。' : '你把手伸进鸡窝。母鸡们炸了毛，咕咕乱叫。\n草窝里一个一个摸出来，热乎乎的，一共十二个。');
+    await gotItem(S);
   }
   async function wellOn(S) {
     if (S.f.ph !== 'gather' || S.has('water') || S.f.usedEggs) return S.narr('井口黑洞洞的。往下喊一声，回声隔了好久才上来——好像底下比井绳长得多。');
     S.sfx('water'); S.give('water');
     await S.narr('辘轳吱呀吱呀地转。打上来的井水冰得扎手，水面上浮着一片山楂叶子。');
-    goalGather(S);
+    await gotItem(S);
   }
   async function maltOn(S) {
     if (S.f.ph !== 'gather' || S.has('malt') || S.f.usedEggs) return S.narr('一麻袋麦芽，袋口用草绳扎着。闻着有股甜甜的焦香。');
     S.give('malt');
     await S.narr('你解开草绳，抓了一大把麦芽揣进围裙兜里。');
+    await gotItem(S);
+  }
+  /* 收集到第二样时：回头看见农舍窗玻璃上贴着一张皱巴巴的小脸 */
+  async function gotItem(S) {
+    const n = ['eggs', 'water', 'malt'].filter(i => S.has(i)).length;
+    if (n === 2 && S.map === 'yard' && S.once('winFace')) {
+      const w = S.ent('ywin1'); w.lit = false; w.face = true;
+      S.focus(2, 2); S.sfx('sting');
+      await S.narr('你下意识地回头看了一眼农舍——\n窗玻璃上，贴着一张皱巴巴的小脸。它在看你。');
+      w.face = false; w.lit = true; S.focus(null);
+      await S.narr('再一眨眼，窗里只有炉火，和奶奶一动不动的影子。');
+      await S.think('……它不是该躺在摇篮里吗？');
+    }
     goalGather(S);
   }
   async function cowOn(S) {
@@ -579,7 +622,7 @@
     if (!S.once('ringT')) return;
     await S.narr('脚下的草里冒出一圈白蘑菇，圆得像有人拿绳子量过。');
     await S.think('奶奶说过，夜里看见蘑菇圈，千万别站进去——进去了，就会跟着跳一百年的舞。');
-    S.pos(18, 9, 1);
+    const p = S.pl; if (p.prev && (p.prev[0] !== p.x || p.prev[1] !== p.y)) S.pos(p.prev[0], p.prev[1]);
   }
   async function moundOn(S) {
     const m = S.ent('mound'), ph = S.f.ph;
@@ -618,6 +661,7 @@
       }
       return S.say('小老头', cycle(S, '_cd', [!S.has('hag') ? '溪里那块带孔的石头，去捡来。没有它，你连门都找不着。' : '山丘就在坡顶上。走吧，走吧，鸡可不等人。', '冷……这身婴儿袍子，薄得跟纸一样。', '你奶奶是个好人。好几天了，她夜里都给我盖被子，明知道我不是。']));
     }
+    if (ph === 'reveal') return dealTalk(S);
     if (ph === 'hall') return hallHint(S);
     return S.say('小老头', '……');
   }
@@ -625,6 +669,7 @@
   /* ---------- 蛋壳酒 ---------- */
   async function hearthOn(S) {
     const ph = S.f.ph, c = S.ent('cradle');
+    if (ph === 'reveal' || ph === 'deal') return S.narr('炉石上那排蛋壳还冒着细细的热气，麦芽在水面上打着转。\n——一桩活了几百年也没见过的稀奇事。');
     if (ph !== 'gather') return S.narr(ph === 'dawn' ? '炉火烧了一整夜，还红着。炉石上那排蛋壳，被奶奶收走了。' : '炉火烧得正旺。吊锅里温着一锅燕麦粥。\n今夜是冬天的头一夜，炉火不能熄。');
     if (!hasAll(S)) { await S.think('歌本上说要鸡蛋、井水、麦芽……还缺东西。'); goalGather(S); return; }
     if (!c.s.turned) { await S.think('摇篮朝着墙——它看不见炉子。\n得先把摇篮转过来。'); goalGather(S); return; }
@@ -652,13 +697,17 @@
     else msg = '顺序不对。';
     await S.think(msg);
     if (a.filter((k, i) => a.indexOf(k) !== i).length) await S.think('（每件事只做一回。）');
+    S.take('eggs'); S.sfx('glass');
     await ritualHint(S, false);
+    if (S.f.kpMiss >= 3) { await S.say('奶奶', '蛋壳都碎了？……灶边篮子里还有一打，我留着做圣诞糕的。拿去。'); S.give('eggs'); }
+    else await S.narr('十二只蛋壳全碎了，在炉石上冒着焦味。\n——得回鸡窝再摸一窝蛋来。');
+    goalGather(S);
   }
   async function ritualHint(S, asked) {
     const n = Math.max(S.f.kpMiss || 0, asked ? 1 : 0);
     S.face('nain', 'pl');
-    if (n >= 4) { await S.say('奶奶', ['我来念，你来做。', '先敲蛋，再把壳摆上炉石，然后倒水，水上撒麦芽——', '最后，大声说。']); S.goal('敲蛋 → 摆壳 → 倒水 → 撒麦 → 开口'); }
-    else if (n === 3) { await S.say('奶奶', ['头两样是：先敲蛋，再把壳摆上炉石。', '后面三样，歌本上一句一句都写着。']); S.goal('先敲蛋、再摆壳；后面三样照歌本排'); }
+    if (n >= 4) await S.say('奶奶', ['我来念，你来做。', '先敲蛋，再把壳摆上炉石，然后倒水，水上撒麦芽——', '最后，大声说。']);
+    else if (n === 3) await S.say('奶奶', ['头两样是：先敲蛋，再把壳摆上炉石。', '后面三样，歌本上一句一句都写着。']);
     else if (n === 2) await S.say('奶奶', '歌本上每一句都在说先后：先什么，后什么，最后什么。别急，一句一句对着来。');
     else if (asked) await S.say('奶奶', '照着歌本最后一页，一句一句地做。它在看着呢。');
   }
@@ -667,18 +716,12 @@
     S.f.ph = 'reveal'; S.f.usedEggs = true;
     S.take('eggs'); S.take('water'); S.take('malt');
     S.turn(3);
-    SHELL(S, 3); await S.narr('你把十二个鸡蛋一个一个敲开，蛋黄蛋清倒进鸡食盆，蛋壳留着。');
-    h.s.shells = true; SHELL(S, 4);
-    await S.narr('十二只蛋壳，在炉石上站成一排。');
-    S.sfx('water'); await S.narr('一只一只倒进井水。');
-    h.s.brew = true; await S.narr('麦芽撒在水面上，浮着，打着转。蛋壳里冒起了细细的热气。');
-    await S.narr('身后的摇篮，不晃了。');
+    SHELL(S, 3); h.s.shells = true; await S.narr('十二个鸡蛋一个一个敲开，蛋黄蛋清倒进鸡食盆。\n十二只蛋壳，在炉石上站成一排。');
+    S.sfx('water'); h.s.brew = true; SHELL(S, 4);
+    await S.narr('一只一只倒进井水，水面上撒了麦芽。蛋壳里冒起了细细的热气。\n……身后的摇篮，不晃了。');
     await S.say('格温', '给割麦的人酿麦酒喽！十二个割麦的人，十二只蛋壳！', { style: 'big' });
-    await S.wait(900);
-    S.amb('none');
-    await S.narr('屋里静得只剩下炉火的声音。');
-    await S.wait(600);
-    await S.say('摇篮里', ['我见过橡子，还没长成橡树。', '我见过鸡蛋，还没孵成小鸡。', '活了这么多年——'], { style: 'whisper' });
+    S.amb('none'); await S.wait(1200);
+    await S.say('摇篮里', '我见过橡子，还没长成橡树。\n我见过鸡蛋，还没孵成小鸡。\n活了这么多年——', { style: 'whisper' });
     S.face('pl', 'cradle');
     await S.scare('face', { spr: '@chg', dur: 1.1 });
     await S.say('摇篮里', '还从没见过拿蛋壳给割麦的人酿酒的！', { style: 'big' });
@@ -686,49 +729,50 @@
     S.amb('fire');
     await S.say('奶奶', 'Duw annwyl……（威尔士话：老天爷啊……）');
     c.s.empty = true; c.s.revealed = true;
-    S.place('chg', 6, 5, 1); S.sfx('thud');
+    S.place('chg', 6, 5, 1); S.sfx('thud'); S.bubble('chg', '♥', 1200);
     await S.narr('襁褓一掀，一个只有膝盖高的小老头从摇篮里爬了出来，「咚」地跳到地上。\n他光着皱巴巴的脑袋，戴着伊万的蕾丝小帽，身上拖着伊万的婴儿袍。');
-    await S.say('小老头', ['哈！哈！蛋壳！三百年了，头一回！', '……行了，行了，别那么看着我。我又不咬人。']);
-    await dealTalk(S);
+    await S.say('小老头', ['哈！哈！蛋壳！三百年了，头一回！', '……行了，别那么看着我。我又不咬人。']);
+    S.goal('和小老头谈谈：伊万在哪儿？');
+    S.cp();
   }
   async function dealTalk(S) {
     S.face('chg', 'pl');
     await S.say('格温', '伊万在哪儿？把他还给我们！');
-    await S.say('小老头', ['你们家的娃娃在山里，好好的。吃蜂蜜，睡天鹅绒，比在这儿舒坦。', '可我说了不算。山里的事，得按山里的规矩——一个换一个。', '把我带回去，拿我换他。公平。山里最讲公平。']);
+    await S.say('小老头', ['你们家的娃娃在山里，好好的。吃蜂蜜，睡天鹅绒。', '可山里的事，得按山里的规矩——一个换一个。把我带回去，拿我换他。公平。']);
     await S.say('奶奶', '……你为什么会在这儿？');
     await S.say('小老头', ['老了呗。山里不养没用的老东西。拿我换一个新的、会长大的，划算。', '……你们人不也一样？我在你们的炉子边上听得多了。', '谁家的孩子病了、长不大、不会说话，就说是我们换的。那些孩子啊——多半是你们自己的。']);
     await S.say('奶奶', '……是。可怜的孩子们。');
-    await S.say('小老头', ['今天是冬天的头一夜，山门开到鸡叫。', '去溪里找一块带孔的石头，透过孔看那座山丘，就看得见门。', '进了山，听好了：他们的东西，一口都别吃。名字，别告诉他们。铁，带着，别拿出来。鸡叫之前，出来。']);
-    S.face('nain', 'pl');
-    await S.say('奶奶', '把这个揣在围裙兜里。');
-    S.ent('cradle').s.iron = false; S.give('iron');
-    await S.narr('奶奶从摇篮上头摘下那把张着口的铁剪子，合上，塞进你手里。\n小老头往后缩了一步。');
-    await S.say('小老头', ['……走吧。外头风大，我这把老骨头哟。'], { style: 'whisper' });
+    await S.say('小老头', ['今天是冬天的头一夜，山门开到鸡叫。去溪里找一块带孔的石头，透过孔看那座山丘，就看得见门。', '进了山：他们的东西，一口都别吃。名字，别告诉他们。铁，带着，别拿出来。鸡叫之前，出来。']);
     S.f.ph = 'deal';
     S.follow('chg', true);
-    S.goal('去溪边找带孔的石头，再带小老头去山坡上的仙丘');
+    S.goal('带小老头出门：去溪边找带孔的石头，再去山坡上的仙丘');
     S.cp();
+  }
+  /* 出门前奶奶叫住你，给铁剪子 */
+  async function giveIron(S) {
+    S.face('nain', 'pl');
+    await S.say('奶奶', '格温，等等！');
+    S.ent('cradle').s.iron = false; S.give('iron');
+    await S.narr('奶奶从摇篮上头摘下那把张着口的铁剪子，合上，塞进你的围裙兜里。\n小老头往后缩了一步。');
+    await S.say('奶奶', '揣好了。别拿出来——可也别离身。');
+    await S.say('小老头', '……走吧。外头风大，我这把老骨头哟。', { style: 'whisper' });
   }
 
   /* ================= 第二幕：仙丘 ================= */
   async function hallIntro(S) {
     S.f.ph = 'hallIn';
     const n = S.f._dHall || 0;
-    await S.narr(n ? '又是那扇门。又是那片绿光，那张长桌。' : '门在身后无声地合上了。\n这里比外头暖，也比外头冷——暖的是光，冷的是脚底下的土。');
-    if (!n) {
-      await S.narr('长桌上摆满了金杯和发光的果子。竖琴自己在响。\n几个只到你腰那么高的人围着桌子坐着，一齐转过头来看你。他们的耳朵，是尖的。');
-      await S.narr('最里头的宝座前站着一个女人，比爸爸还高。银色的头发一直垂到地上，头上戴着一圈山楂花。');
-    }
+    await S.narr(n ? '又是那扇门。又是那片绿光，那张长桌。' : '门在身后无声地合上了。长桌上摆满了金杯和发光的果子，竖琴自己在响。\n几个只到你腰那么高的人围着桌子，一齐转过头来——他们的耳朵，是尖的。');
+    if (!n) await S.narr('最里头的宝座前站着一个女人，比爸爸还高。银色的头发一直垂到地上，头上戴着一圈山楂花。');
     S.face('pl', 'lady');
-    await S.say('山中夫人', ['人间的孩子。', '你把我们的老人家带回来了。……你们家的炉火味，隔着山都闻得见。']);
+    await S.say('山中夫人', '人间的孩子。你把我们的老人家带回来了。');
     if (n) await S.think('……别说名字。别吃东西。');
-    const r = await S.ask('「告诉我，孩子——你叫什么名字？」', ['「我叫格温。」', '「我是伊万的姐姐。」', '（抿着嘴，不作声）'], '山中夫人');
-    if (r === 0) return nameEnd(S);
-    if (r === 1) await S.say('山中夫人', '伊万的姐姐。……好一个聪明的回答。');
-    else await S.say('山中夫人', '不肯说？聪明。也无礼。不过——我喜欢聪明人。');
-    await S.say('山中夫人', ['你来要回你的弟弟。一个换一个，这是山里的规矩。', '可是，母亲认得自己的孩子。你是姐姐，那你也试试。', '那边五只摇篮。认出你的那一个，抱走。认错了，放回去，再认。']);
-    await S.say('山中夫人', ['三次。', '第三次还认错——你抱走什么，什么就是你的弟弟。']);
-    await S.say('山中夫人', '先坐下吃点东西吧。你走了那么远的路。');
+    const r = await S.ask('「告诉我，孩子——你叫什么名字？」', ['「我是伊万的姐姐。」', '（抿着嘴，不作声）', '「我叫格温。」'], '山中夫人');
+    if (r === 2) return nameEnd(S);
+    await S.say('山中夫人', r === 0 ? '伊万的姐姐。……好一个聪明的回答。' : '不肯说？聪明。也无礼。不过——我喜欢聪明人。');
+    await S.say('山中夫人', ['一个换一个，这是山里的规矩。可是母亲认得自己的孩子——你是姐姐，你也试试。', '那边五只摇篮。认错了，放回去再认。三次。\n第三次还认错——你抱走什么，什么就是你的弟弟。', '……先坐下吃点东西吧。你走了那么远的路。']);
+    S.bubble('chg', '…', 1200);
+    await S.say('小老头', '（他扯了扯你的裙角）卡住了，就回头问我。', { style: 'whisper' });
     S.f.ph = 'hall'; S.f.wrong = 0; S.f.hintN = 0;
     S.goal('在五只摇篮里认出伊万（三次机会）——两人时：一人念「笺」里的刻字，一人去看摇篮');
     if (!S.f.readMid) await S.think('……墙根那块石头上，好像刻着字。');
@@ -830,6 +874,7 @@
     if (S.f.fed && S.f.wrapped) await S.say('山中夫人', ['你喂他喝了热奶，还给他裹上了你母亲的披肩。', '……我们拿走一个，还回一个，从来不欠谁。今夜，是山里欠了你。']);
     else if (S.f.wrapped) await S.say('山中夫人', '你给他裹上了你母亲的披肩。……山里记得。');
     else if (S.f.fed) await S.say('山中夫人', '你喂他喝了热奶。……山里记得。');
+    else await S.say('山中夫人', '你让他冷着、饿着，走了这一路。……山里也记得。');
     S.face('chg', 3);
     await S.say('小老头', S.f.fed || S.f.wrapped ? ['姑娘……替我谢谢你奶奶。', '她夜里给我盖被子，明知道我不是。'] : ['姑娘，替我谢谢你奶奶。', '……这一路，冷是冷了点。']);
     await S.say('山中夫人', ['鸡就要叫了。鸡一叫，山门就合上。', '合上的时候还在门里的——就是山里的人了。', '回去的路上有人在跳舞。别打断他们的舞，也别被拉进去。走吧。']);
@@ -852,6 +897,7 @@
     await S.end({ bad: true, id: 'feast', title: '一口蜂蜜饼', text: '很多很多年以后，一个拾柴的老人在山楂树下捡到一个姑娘。\n她穿着旧式的红法兰绒裙子，说话的口音，谁也没听过。\n\n她说她叫……\n她想不起来了。\n\n她只记得，有一个小娃娃在哭。她得把他抱回家。' });
   }
   async function logEnd(S) {
+    bump(S, '_dHall');
     S.sfx('laugh');
     await S.say('山中夫人', '三次了。', { style: 'big' });
     await S.narr('满屋子的人都笑了起来。竖琴弹得飞快。\n等你回过神来，你已经站在山坡上，怀里抱着一个凉冰冰的襁褓。东边的天，白了。');
@@ -859,15 +905,14 @@
   }
 
   /* ================= 第三幕：土廊里的舞环 ================= */
-  function escGoal(S) { S.goal('鸡叫之前穿过三个舞环，回到山坡上（顺着舞步走，别撞上跳舞的人）'); }
+  function escGoal(S) { S.goal('鸡叫之前穿过三个舞环（在白蘑菇线上等，顺着舞步走）' + (S.coop ? '——两人时：一人盯舞步喊「走」' : '')); }
   function placeDancers(S) { for (const d of DANCERS) { const [x, y] = RING(d.cx)[d.i]; S.place(d.id, x, y, 0); S.ent(d.id).s.i = d.i; } }
   async function tunnelIntro(S) {
     S.wear('@meb'); S.norun(true);
     await S.fade(0, 500);
     await S.narr('来时是一扇门，回去却是一条长长的、往上走的土廊。\n土廊上有三个圆圆的小厅，每个厅里，都有人绕着一块发光的石头在跳舞。');
     await S.narr('他们一圈一圈地转，脚不沾地，裙摆擦过土墙，沙沙地响。\n——碰上他们，就会被拉进舞里去。');
-    await S.think(['抱着伊万，跑不起来。', '站在环外面看准了：他们往哪边转，就跟着往哪边走。等前头那个转过去，再进去。']);
-    if (S.coop) S.toast('两人时：一人盯着舞步喊「走」，一人操作');
+    await S.think(['抱着伊万，跑不起来。', '每个环前头的地上，都长着一道白蘑菇。站在蘑菇线上，他们够不着。\n看准了：他们往哪边转，就跟着往哪边走。等前头那个转过去，再进去。']);
     S.f.ph = 'escape'; S.f.catching = false; S.f.ironUsed = false;
     escGoal(S);
     S.cp('escape');
@@ -875,7 +920,8 @@
   }
   function tunnelTick(S, dt) {
     S.f._mt = (S.f._mt ?? 0) - dt;
-    if (S.f._mt <= 0) { S.f._mi = ((S.f._mi || 0) + 1) % DANCE.length; PLUCK(S, DANCE[S.f._mi], S.f.ph === 'escape' ? .9 : .5); S.f._mt = .28; }
+    if (S.f._mt <= 0) { S.f._mi = ((S.f._mi || 0) + 1) % DANCE.length; PLUCK(S, DANCE[S.f._mi], S.f.ph === 'escape' ? .9 : .5); if (S.f._mi % 2 === 0) S.tone('sine', 92, 58, .14, .07, 0, 400); S.f._mt = .26; }
+    if (S.f.ph === 'escape' && S.timerLeft != null && S.timerLeft < 8 && S.once('crowWarn')) { CROW(S, .22); S.toast('……远处，鸡叫了半声'); }
     if (S.f.ph !== 'escape' || S.busy || S.f.catching) return;
     const p = S.pl;
     for (const d of DANCERS) {
@@ -893,11 +939,9 @@
     if (!S.f.ironUsed) {
       S.f.ironUsed = true;
       S.sfx('sting'); S.shake(300, 2);
-      await S.narr('一只冰凉的手抓住了你的手腕，把你往环里拽——\n围裙兜里的铁剪子「当」地撞在那只手上。');
-      S.sfx('scream');
-      await S.narr('跳舞的人尖叫一声，像被火燎了一样松开手，旋回了舞圈里。');
-      S.pos(d.cx - 2, 4, 2);
-      await S.think('……铁剪子烫得发红，再也不凉了。\n下一回，它救不了我。顺着舞步走！');
+      S.pos(d.cx - 2, 4, 2); S.sfx('scream');
+      await S.narr('一只冰凉的手抓住你的手腕——围裙兜里的铁剪子「当」地撞了上去。\n跳舞的人尖叫着松开手，旋回了舞圈。');
+      await S.think('铁剪子烫得发红。……下一回，它救不了我。');
       S.f.catching = false;
       return;
     }

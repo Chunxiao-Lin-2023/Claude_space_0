@@ -61,7 +61,7 @@
   const COVER = new Set(); FORD_ROWS.forEach((r, y) => [...r].forEach((c, x) => { if (c === 'r') COVER.add(x + ',' + y); }));
   const PEEK = new Set(['11,14', '12,14', '13,14', '11,15', '13,15']);
   const HX = 12, HY = 16;           // 她跪的地方
-  const SIGHT = 9, NEAR = 2.2, MAXC = 9;
+  const SIGHT = 9, NEAR = 2.2, MAXC = 7;
 
   /* ---------- 谜题 ---------- */
   const WHO = ['奶奶', '妈妈', '迈克尔叔叔', '小肖恩', '汤米', '我'];
@@ -826,7 +826,7 @@
 
   /* ---------- 渡口潜行 ---------- */
   function fordReset(S) {
-    const f = S.f; f.ph = 'ford'; f._fph = 'k'; f._ft = 2.6 + Math.random() * 1.2; f._fc = 0; f._seg = 0; f._ki = 0; f.seen = 0;
+    const f = S.f; f.ph = 'ford'; f._fph = 'k'; f._ft = 1.8 + Math.random() * .6; f._fc = 0; f._seg = 0; f._ki = 0; f.seen = 0;
     const w = S.ent('washer'); if (w) { S.place('washer', HX, HY, 0); w.alpha = 1; w.s.look = 0; w.s.lift = 0; }
     S.norun(true); S.plr(null);
   }
@@ -867,7 +867,7 @@
         w.s.look = 0; S.plr(null); f._fc = (f._fc || 0) + 1;
         if (f._fc >= MAXC) { f._fph = 'x'; S.run(washDone); return; }
         if (f._fc === MAXC - 2) { S.toast('她把衣裳拎起来拧了拧——快洗完了'); w.s.lift = 1; S.after(700, async S => { S.ent('washer').s.lift = 0; }); }
-        f._fph = 'k'; f._ft = 2.6 + Math.random() * 1.4; f._seg = 0;
+        f._fph = 'k'; f._ft = 2.1 + Math.random() * 1.1; f._seg = 0;
       }
     }
   }
@@ -880,7 +880,7 @@
       await S.wait(500);
       await S.narr('过了很久，很久，她才慢慢低下头去，接着捶那件衣裳。');
       S.toast('哭声停的时候别动——或者躲进芦苇里');
-      w.s.look = 0; S.plr(null); f._fph = 'k'; f._ft = 2.8 + Math.random(); f._seg = 0;
+      w.s.look = 0; S.plr(null); f._fph = 'k'; f._ft = 1.6 + Math.random() * .6; f._seg = 0;
       return;
     }
     FORD_DIED++;

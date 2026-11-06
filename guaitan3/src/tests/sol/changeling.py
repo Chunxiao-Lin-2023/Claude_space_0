@@ -3,6 +3,8 @@ SOL = [
     [],
     ['shot', 'cottage'],
     ['use', 'nain'],
+    ['expect', "window.__dbg.W.f.ph === 'talk2'"],
+    ['use', 'nain'],
     ['use', 'bible'],
     ['use', 'letter'],
     ['use', 'chest'],
@@ -16,19 +18,26 @@ SOL = [
     ['use', 'ydoor'],
     ['expect', "window.__dbg.W.mapId === 'cottage'"],
     ['use', 'hearth', [['倒水', '开口', '敲蛋', '撒麦', '摆壳']]],   # 先做错一次
-    ['expect', "window.__dbg.W.f.kpMiss === 1 && window.__dbg.W.f.ph === 'gather'"],
+    ['expect', "window.__dbg.W.f.kpMiss === 1 && window.__dbg.W.f.ph === 'gather' && !window.__dbg.W.inv.includes('eggs')"],
+    ['step', 9, 10],
+    ['use', 'hens'],                   # 蛋壳碎了，回鸡窝重新拿
+    ['use', 'ydoor'],
     ['use', 'hearth', [['敲蛋', '摆壳', '倒水', '撒麦', '开口']]],
-    ['expect', "window.__dbg.W.f.ph === 'deal' && window.__dbg.W.inv.includes('iron') && window.__dbg.ent('chg').follow"],
+    ['expect', "window.__dbg.W.f.ph === 'reveal' && window.__dbg.W.inv.length === 0"],
     ['shot', 'reveal'],
+    ['use', 'chg'],                    # 和小老头谈交易
+    ['expect', "window.__dbg.W.f.ph === 'deal' && window.__dbg.ent('chg').follow"],
+    ['use', 'boxbed'],
     ['use', 'shawlchair', [0]],
     ['use', 'chg'],
     ['expect', "window.__dbg.W.f.wrapped"],
-    ['step', 9, 10],
+    ['step', 9, 10],                   # 出门时奶奶叫住，给铁剪子
+    ['expect', "window.__dbg.W.mapId === 'yard' && window.__dbg.W.inv.includes('iron')"],
     ['use', 'cow', [0]],
     ['use', 'chg'],
     ['expect', "window.__dbg.W.f.fed"],
     ['use', 'hag'],
-    ['use', 'mound', [0, 1]],          # 进门；名字：「我是伊万的姐姐」
+    ['use', 'mound', [0, 0]],          # 进门；名字：「我是伊万的姐姐」
     ['expect', "window.__dbg.W.mapId === 'hall' && window.__dbg.W.f.ph === 'hall'"],
     ['shot', 'hall'],
     ['use', 'carve'],
