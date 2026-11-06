@@ -1036,6 +1036,8 @@
     return 's';
   }));
   const NOTEB = ['陶片', '陶片', '破瓦罐'];
+  /* 周屿会被 moveTo 搬到别的地图，地图的实体顺序会变；检查点没 id 的实体按下标恢复会错位，所以每个实体都给一个 id */
+  function withIds(maps) { for (const k in maps) maps[k].ents.forEach((e, i) => { if (!e.id) e.id = k + '_' + i; }); return maps; }
   const RES_ENTS = [['r1', '@resM'], ['r2', '@resW'], ['r3', '@resW'], ['r4', '@resM'], ['r5', '@resW'], ['r6', '@resM']].map(([id, spr]) => ({ id, x: 1, y: 19, spr, hidden: true, solid: false, alpha: .9 }));
 
   defChapter({
@@ -1058,11 +1060,12 @@
     },
     resume: {
       night: async S => {
+        fixYu(S);
         aiReset(S); setCloud(S, false); CL.t = MOON_T;
         if (DEATHS && S.map === 'bazaar') await S.think(DEATHS > 1 ? '影子里别跑、别乱动。被发现了就往月光底下、灯底下躲。\n云遮月之前（起风的时候），先站到铺子的灯底下。' : '……在影子里别跑。被发现了，就往亮处躲。');
       },
-      run: async S => { await runResume(S, 24); },
-      run2: async S => { runChase(S); await runResume(S, 18); }
+      run: async S => { fixYu(S); await runResume(S, 24); },
+      run2: async S => { fixYu(S); runChase(S); await runResume(S, 18); }
     },
     async intro(S) {
       WH30 = false; WH10 = false; DEATHS = 0; LAST_LEFT = null; AI = {}; CLOUD_ON = false; CAUGHT = false; INV = 0;
@@ -1075,7 +1078,7 @@
       else if (S.f.ph === 'night') nightTick(S, dt);
       else if (S.f.ph === 'run') runTick(S, dt);
     },
-    maps: {
+    maps: withIds({
       /* ---------------- 汉努曼门外 ---------------- */
       gate: {
         amb: 'wind', dark: .06, plr: 5, wall: 'stone', floor: 'sand', wallC: { top: '#7a6040', face: '#a8865c', trim: '#5a4630' },
@@ -1159,7 +1162,7 @@
             runChase(S);
             S.f.runLeft = Math.max(1, S.timerLeft ?? RUN_T);
             S.cp('run2');
-            if (S.once('runB')) S.toast(S.f.baluN ? '集市中间塌了！苦行僧小屋那边的小巷……它们好像不敢进去！' : '集市中间塌了！从南边的院子或者北边的小巷绕过去！');
+            if (S.once('runB')) S.toast(S.f.baluN ? '集市中间塌了！苦行僧小屋那边的小巷……它们好像不敢进去！' : '集市中间塌了！从南边的院子绕过去——北边的小巷太窄，被堵住就没处躲！');
           }
         },
         step(S, x, y) {
@@ -1201,12 +1204,18 @@
         ],
         enter: palaceEnter
       }
-    }
+    })
   });
+  /* 检查点按地图存实体，moveTo 过的周屿重来后会回到初始位置：按阶段重新摆好 */
+  function fixYu(S) {
+    const run = S.f.ph === 'run';
+    S.moveTo('yu', run ? S.map : 'palace', run ? S.pl.x : 23, run ? S.pl.y : 3, 3);
+    const e = S.ent('yu'); e.alpha = 1; e.hidden = false; e.spr = run ? '@yu' : '@yuT'; S.follow('yu', run);
+  }
   async function runResume(S, floor) {
     const cpL = S.f.runLeft ?? RUN_T, left = Math.min(cpL, Math.max(LAST_LEFT ?? 0, Math.min(cpL, floor)));
     LAST_LEFT = null;
     S.timer(left, '日出', sunrise, { during: true });
-    if (DEATHS) await S.think('别停下，一直跑。集市中间塌了——从南边的院子，或者北边的小巷绕过去。');
+    if (DEATHS) await S.think((S.f.baluN ? '别停下，一直跑。苦行僧小屋那边的小巷，它们不敢进。' : '别停下，一直跑。集市中间塌了——从南边的院子绕，看见人就绕开，院子够宽。'));
   }
 })();

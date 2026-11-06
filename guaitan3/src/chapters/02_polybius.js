@@ -636,7 +636,10 @@
         const c = '#59ff9e', c2 = '#1a7a48';
         LN(R, 8, 4, 24, 4, c); LN(R, 8, 4, 4, 12, c); LN(R, 24, 4, 28, 12, c); LN(R, 4, 12, 6, 22, c); LN(R, 28, 12, 26, 22, c);
         LN(R, 6, 22, 12, 29, c); LN(R, 26, 22, 20, 29, c); LN(R, 12, 29, 20, 29, c);
-        SPIRAL(R, 11, 13, 4 + a * 1.5, t * 2, '#ffffff', 3); SPIRAL(R, 21, 13, 4 + a * 1.5, t * 2 + .3, '#ffffff', 3);
+        for (const ex of [11, 21]) {   // 眼睛：两口往里转的方井
+          R(ex - 4, 10, 9, 7, '#000'); POLY(R, ex, 13, 4.6, 4, Math.PI / 4 + t * .8, '#ffffff'); POLY(R, ex, 13, 2.4, 4, -t * 1.6, '#8affc0');
+          R(ex, 13, 1, 1, a > .5 && Math.sin(t * 20) > 0 ? '#ff3050' : '#ffffff');
+        }
         LN(R, 16, 15, 14, 19, c2); LN(R, 14, 19, 17, 19, c2);
         const h = 1 + Math.round(a * 6);
         for (let x = 10; x < 22; x += 2) { LN(R, x, 23, x + 1, 23 + h, c); LN(R, x + 1, 23 + h, x + 2, 23, c); }
