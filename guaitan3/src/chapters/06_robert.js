@@ -111,7 +111,7 @@
     f.archived = true; f.ringing = true; ringT = 0; S.ent('dphone').s.ring = true;
     ringTone(S);
     await S.narr('……电话响了。\n凌晨一点十分。');
-    regoal(S);
+    regoal(S); S.cp('call');
   }
   async function callScene(S) {
     const f = S.f;
@@ -538,7 +538,7 @@
     start: { map: 'office', x: 7, y: 6, dir: 3 },
     resume: {
       tasks: async S => regoal(S), mail: async S => regoal(S), photoTry: async S => regoal(S), lion: async S => regoal(S), photo: async S => regoal(S),
-      letter: async S => regoal(S), posted: async S => regoal(S), lit: async S => regoal(S),
+      letter: async S => regoal(S), posted: async S => regoal(S), lit: async S => regoal(S), call: async S => { ringT = 0; regoal(S); },
       dark: async S => {
         regoal(S); blackout(S);
         S.place('robW', 12, 5); S.face('robW', 'pl');

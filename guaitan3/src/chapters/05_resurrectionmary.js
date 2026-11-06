@@ -64,7 +64,7 @@
     d2: { song: 'waltz', beat: .42, per: 3, n: 10, need: 7, early: .42, pat: [3, 2, 0, 1, 0, 1, 3, 2, 1, 2] },
     final: { song: 'silver', beat: .4, per: 3, n: 16, need: 11, early: .36, pat: [3, 2, 0, 1, 1, 1, 0, 2, 2, 3, 3, 1, 0, 0, 2, 3] }
   };
-  let failN = { d1: 0, d2: 0 }, carDeaths = 0;
+  let failN = { d1: 0, d2: 0 }, carDeaths = 0, carWarned = false;   // 擦身而过的警告整章只给一次：死过以后，再被撞到就是真的
   const GHOSTS = ['v1a', 'v1b', 'v2a', 'v2b', 'v3a', 'v3b', 'v4a', 'v4b'];
   function buildMel(key) { const out = {}; let b = 0; for (const [f, n] of SONGS[key].mel) { (out[b] = out[b] || []).push([f, n]); b += n; } return out; }
   function startDance(S, kind, mary) {
@@ -701,8 +701,8 @@
   }
   async function carHit(S) {
     const f = S.f;
-    if (!f.carWarn) {
-      f.carWarn = true;
+    if (!carWarned) {
+      carWarned = true; f.carWarn = true;
       S.sfx('brake'); S.fx('flash'); S.shake(600, 3);
       await S.narr('一团昏黄的光从背后扑过来——\n一股冷风把你掀翻在雪堆里。一辆黑色的老式轿车擦着你的衣角开了过去。');
       await S.narr('驾驶座上没有人。\n它没有刹车，也没有回头。');
@@ -826,13 +826,13 @@
       walk: async S => {
         footState(S); W._car = null;
         const c = getEnt('gcar', 'archer'); if (c) c.hidden = true;
-        if (carDeaths === 1) await S.think('规矩：听见「啊呜嘎」的喇叭，就站进亮着的路灯光圈里。\n坏掉的那盏灯前后那一大段黑路，得一口气跑过去。');
+        if (carDeaths === 1) await S.think('规矩：听见「啊呜嘎」的喇叭，就站进亮着的路灯光圈里。\n坏掉的那盏灯前后那一大段黑路，得一口气跑过去。\n这一回，它不会再偏开了。');
         else if (carDeaths > 1) S.toast('车开走以后马上动身；坏灯那一段按住奔跑键跑过去');
       },
       back: async S => { S.norun(false); }
     },
     async intro(S) {
-      failN = { d1: 0, d2: 0 }; carDeaths = 0;
+      failN = { d1: 0, d2: 0 }; carDeaths = 0; carWarned = false;
       await S.card('第五夜　复活玛丽', '1979年12月22日　美国伊利诺伊州　芝加哥西南郊 · 阿彻大道', '你叫米克，二十三岁，开夜班出租。\n星期六收工早，你把那辆黄色的方头出租车停在蓝鹭舞厅门口。\n这家老舞厅每到周六还请大乐队，来的大多是你爷爷奶奶那辈人。\n\n外头在下雪。阿彻大道上，一辆车也没有。');
     },
     tick(S, dt) { },

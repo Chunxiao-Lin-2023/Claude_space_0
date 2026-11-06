@@ -1,8 +1,8 @@
 /* ================= 第八夜 · 吹哨人 ================= */
 (() => {
   /* ---------- 常量 ---------- */
-  const BONES = 40, INT = 1.0, TOTAL = BONES * INT;          // 他数 40 根，一秒一根
-  const WHIP_BONUS = 8, AJI_BONUS = 12;                      // 鞭子、辣椒（按次序）各打乱他几根
+  const BONES = 40, INT = 1.2, TOTAL = BONES * INT;          // 他数 40 根，1.2 秒一根（按真人速度实测调的）
+  const WHIP_BONUS = 8, AJI_BONUS = 12;                      // 鞭子、辣椒（按次序）各打乱他几根骨头
   const WRONG_PEN = 5, ASC_PEN = 10, EARLY_DOG_PEN = 4, EARLY_AJI_PEN = 3;
   const TUNE = '53521';                                      // 外公唤狗的口哨：嗦咪嗦来哆
   const SCALE = [523, 587, 659, 698, 784, 880, 988];         // 哆来咪发嗦啦西
@@ -681,12 +681,11 @@
     if (!S.has('latigo')) return S.narr('你手里没有鞭子。');
     crack(S); S.shake(220, 1);
     if (f.whip) { await S.narr('啪！\n他缩了缩脖子，又接着数。（鞭子已经抽过了。）'); return; }
-    f.whip = 1; S.timerAdd(WHIP_BONUS);
+    f.whip = 1; S.timerAdd(WHIP_BONUS * INT);
     const sb = S.ent('silbon'), bn = S.ent('bones'); sb.s.pose = 'flinch'; bn.s.scatter = true;
-    await S.narr('啪！\n柠檬枝抽在窗棂上，响得像一声枪。');
-    await S.narr('门外，骨头哗啦啦散了一地。\n那个影子缩成一团，抱住了头——像很多很多年前，被人绑在树上的那个人。');
+    await S.narr('啪！柠檬枝抽在窗棂上，响得像一声枪。\n门外，骨头哗啦啦散了一地。');
+    await S.narr('那个影子缩成一团，抱住了头——\n像很多很多年前，被人绑在树上的那个人。');
     sb.s.pose = 'sit'; bn.s.scatter = false;
-    await S.think('（他又开始数了……少了好几根。他是捡起来重新数的。）');
     nightGoal(S);
   }
   async function ajiUse(S) {
@@ -697,15 +696,14 @@
     sizzle(S); S.sfx('match'); fg.s.chili = true;
     if (!f.whip) {
       S.timerAdd(-EARLY_AJI_PEN);
-      await S.narr('辣椒在火里噼啪炸开。呛人的烟顺着门缝钻出去。\n门外咳了两声——又接着数，数得更急了。');
-      await S.think('（外公写的是……先抽鞭子，再抹辣椒。没有伤口，辣椒抹给谁？）');
+      await S.narr('辣椒在火里炸开，烟顺着门缝钻出去。门外咳了两声，又接着数，数得更急了。\n（外公写的：先抽鞭子，再抹辣椒。没有伤口，辣椒抹给谁？）');
       return;
     }
     if (f.aji) return S.narr('烟已经够呛了。他还在咳。');
-    f.aji = 1; S.timerAdd(AJI_BONUS);
+    f.aji = 1; S.timerAdd(AJI_BONUS * INT);
     const sb = S.ent('silbon'), bn = S.ent('bones'); sb.s.pose = 'flinch'; bn.s.scatter = true; cough(S);
-    await S.narr('辣椒在炭火上噼啪炸开。\n辛辣的红烟贴着地，从门缝底下钻了出去——');
-    await S.narr('门外，他咳了起来。撕心裂肺地咳，像有人把辣椒一把一把抹进了他背上的鞭痕里。\n骨头又撒了一地。');
+    await S.narr('辣椒在炭火上噼啪炸开。辛辣的红烟贴着地，从门缝底下钻了出去——');
+    await S.narr('门外，他撕心裂肺地咳起来，像有人把辣椒抹进了他背上的鞭痕里。\n骨头又撒了一地。');
     sb.s.pose = 'sit'; bn.s.scatter = false;
     nightGoal(S);
   }
@@ -722,9 +720,9 @@
       if (f.whip && f.aji) return dogCome(S);
       S.timerAdd(-EARLY_DOG_PEN); whimper(S, .05);
       const dg = S.ent('canelo_c'); S.place('canelo_c', 0, 12, 2); dg.s.cower = true; dg.alpha = .8;
-      await S.narr('院子边上，一个肉桂色的影子探了探头，夹着尾巴，细细地呜咽了一声。\n卡内洛听见了。可它不敢过来。');
+      await S.narr('院子边上，一个肉桂色的影子探了探头，夹着尾巴呜咽了一声。\n卡内洛听见了。可它不敢过来。');
       S.hide('canelo_c'); dg.s.cower = false; dg.alpha = 1;
-      await S.say('外婆', '狗也怕他！先让他挨鞭子、挨辣椒——他伤了、怕了，狗才敢扑上去。', { style: 'whisper' });
+      await S.say('外婆', '狗也怕他！先鞭子、再辣椒——他伤了、怕了，狗才敢扑上去。', { style: 'whisper' });
       return nightGoal(S);
     }
     if (ascending(v)) {
@@ -747,7 +745,6 @@
     const n = f.wrongT = (f.wrongT || 0) + 1;
     S.timerAdd(-WRONG_PEN);
     S.tone('sine', 700, 650, .5, .03, 0, 900);
-    await S.narr('草原上没有动静。\n门外的数数声顿了顿，像是在听——然后数得更快了。');
     /* 逐级提示：1 次给方向（按错法），2 次指出哪几声错，3 次给前三声，4 次直接给答案 */
     let tip;
     const bad = [...v].map((c, i) => c !== TUNE[i] ? i + 1 : 0).filter(Boolean);
@@ -755,7 +752,7 @@
     else if (n === 2) tip = '第' + bad.map(cnum).join('、') + '声不对。' + (bad.includes(3) ? '\n第三声，跟头一声一样高。' : '') + (bad.includes(4) ? '\n第四声，只比最后一声高一点点。' : '');
     else if (n === 3) tip = '五、三、五……后面两声一声比一声低，最后落到一。';
     else tip = '嗦、咪、嗦、来、哆——五、三、五、二、一！';
-    await S.say('外婆', tip, { style: 'whisper' });
+    await S.say('外婆', '（草原上没有动静。门外的数数声顿了顿，又快了。）\n' + tip, { style: 'whisper' });
   }
   async function peek(S) {
     const f = S.f;
