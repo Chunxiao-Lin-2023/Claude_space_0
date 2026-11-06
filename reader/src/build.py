@@ -11,6 +11,12 @@ css, body = rd('app.css'), rd('body.html')
 js = '\n'.join(rd(f) for f in ['i18n.js', 'formats.js', 'sync.js', 'app.js'])
 assert "const BUILD = 'local';" in js
 js = js.replace("const BUILD = 'local';", "const BUILD = '%s';" % build)
+preset = os.path.join(HERE, 'preset.json')
+if build == 'pages' and os.path.exists(preset):
+    import json
+    p = json.load(open(preset))
+    assert set(p) == {'repo', 'salt', 'iv', 'ct', 'iter'} and 'github_pat_' not in json.dumps(p)
+    js = js.replace("const PRESET = null;", "const PRESET = %s;" % json.dumps(p))
 glyphs = ''.join(sorted(set('墨阅文把文件拖到这里书架无法打开这个MoyueReaderDropafilehereLibraryThisdocumentcouldnotbeopened')))
 seal = 'https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@700;900&display=swap&text=' + urllib.parse.quote(glyphs)
 html = f'''<!DOCTYPE html>
