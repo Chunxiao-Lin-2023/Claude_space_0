@@ -1164,7 +1164,7 @@
     const miss = lit.filter(v => !v).length;
     if (miss) await S.narr('花瓣路边，还有' + (miss > 1 ? '几个' : '一个') + '位置空着。\n' + (miss > 1 ? '那几个夜晚' : '那一个夜晚') + '，你还没有听完。');
     if (miss) await S.card('这一夜，讲完了。', '', '剩下的夜晚，等你回来再听。\n\n吹熄蜡烛之前——\n替那些找不到路的人，留一盏。');
-    else await S.card('十个夜晚，讲完了。', '', '吹熄蜡烛之前——\n替那些找不到路的人，留一盏。');
+    else await S.card('卷一的十个夜晚，讲完了。', '', '吹熄蜡烛之前——\n替那些找不到路的人，留一盏。');
     for (let i = 0; i < 9; i++) {
       if (!lit[i]) continue;
       const e = S.ent('tv' + i); e.off = true;

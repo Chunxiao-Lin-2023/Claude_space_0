@@ -3,7 +3,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <!--IOSMETA-->
-<title>十夜怪谈</title>
+<title>怪谈·壹</title>
 <style>
 :root{--ink:#e8e0d0;--dim:#9a8f80;--red:#b3262b;--red2:#e0484c;--paper:#e9e0c9;--bg:#07060a;--panel:rgba(14,10,14,.94);--edge:#3a2a30;--gold:#c9a35a;
  --serif:"Songti SC","STSong","Noto Serif CJK SC","Noto Serif SC","Source Han Serif SC","SimSun",serif;
@@ -32,6 +32,7 @@ button{font:inherit;color:inherit;cursor:pointer;touch-action:manipulation}
 #select{justify-content:flex-start;background:radial-gradient(ellipse at top,#1a0d12 0%,#07060a 70%)}
 #select h2,.panel h2{font-family:var(--serif);letter-spacing:.3em;margin:16px 0 4px;font-size:26px;color:#d8cfc0}
 #select .sub{color:var(--dim);font-size:13px;margin-bottom:14px;text-align:center}
+#chgrid .volh{grid-column:1/-1;font-family:var(--serif);color:#b3262b;letter-spacing:.3em;font-size:15px;padding:10px 2px 0;border-bottom:1px solid var(--edge)}
 #chgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px;width:min(1100px,100%);padding-bottom:18px}
 .card{position:relative;background:#120c10;border:1px solid var(--edge);display:flex;flex-direction:column;cursor:pointer;transition:transform .15s,border-color .15s;min-height:0}
 .card:hover,.card.sel{border-color:var(--red);transform:translateY(-2px)}
@@ -183,8 +184,9 @@ body.dlgup #bA{bottom:calc(var(--sb) + 180px)}
 <div id="endov" class="ov hidden"><div class="panel"><h2 id="enT"></h2><div class="tx" id="enX"></div><div class="lg" id="enL"></div><div class="row" style="margin-top:16px" id="enB"></div></div></div>
 
 <div id="title" class="screen">
- <h1>十夜怪谈</h1>
- <div class="tag">十个流传已久的怪谈 · 两人同看一盏灯</div>
+ <h1>怪谈</h1>
+ <div class="tag" style="font-size:26px;letter-spacing:.6em;color:#b3262b;margin:-4px 0 10px">壹</div>
+ <div class="tag">三十个流传已久的怪谈 · 两人同看一盏灯</div>
  <div class="menu" id="tmenu">
   <button class="btn primary" id="tStart">独自开始</button>
   <button class="btn" id="tHost">创建房间（双人）</button>
@@ -196,7 +198,7 @@ body.dlgup #bA{bottom:calc(var(--sb) + 180px)}
  <div class="foot" id="tfoot">像素恐怖探索合集 · 建议戴耳机、关灯游玩<br>剧情含惊吓与死亡描写</div>
 </div>
 <div id="select" class="screen hidden">
- <h2>十夜</h2><div class="sub" id="selSub">选择今晚要听的故事</div>
+ <h2 id="selH">十夜</h2><div class="sub" id="selSub">选择今晚要听的故事</div>
  <div id="chgrid"></div>
  <div id="selbar"><button class="btn small" id="sBack">‹ 返回</button><button class="btn small" id="sArch">怪谈档案</button></div>
 </div>

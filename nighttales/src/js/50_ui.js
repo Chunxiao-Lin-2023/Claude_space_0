@@ -69,16 +69,19 @@ const UI = {
   },
   buildSelect() {
     const G = $('chgrid'); G.innerHTML = ''; const done = store.get('done', []), gotN = store.get('notes', []);
+    $('selH').textContent = cnum(CHAPTERS.length) + '夜';
     $('selSub').textContent = NET.role === 'guest' ? '已加入房间 · 等待房主选择章节' : NET.role === 'host' && NET.up ? '对方已加入 · 选择今晚要讲的故事' : '选择今晚要听的故事';
     $('sBack').textContent = NET.role === 'guest' ? '离开房间' : '‹ 返回';
     CHAPTERS.forEach((ch, i) => {
+      const nn = ch.n || i + 1;
+      if (CHAPTERS.length > 10 && (nn - 1) % 10 === 0) { const h = document.createElement('div'); h.className = 'volh'; h.textContent = `${VOLS[(nn - 1) / 10 | 0] || ''}　第${cnum(nn)}夜 — 第${cnum(nn + 9)}夜`; G.appendChild(h); }
       const c = document.createElement('div'); c.className = 'card'; c.tabIndex = 0;
       const cv2 = mk(160, 90); drawThumb(cv2, ch);
       const hasCp = !!store.get('cp.' + ch.id, null);
       c.appendChild(cv2);
       const meta = document.createElement('div'); meta.className = 'meta';
       const nAll = Object.keys(ch.notes || {}), nGot = nAll.filter(k => gotN.includes(ch.id + ':' + k)).length;
-      meta.innerHTML = `<div class="no">第${'一二三四五六七八九十'[(ch.n || i + 1) - 1] || ch.n || i + 1}夜 · ${esc(ch.origin || '')}</div><div class="tt">${esc(ch.title)}</div><div class="tl">${esc(ch.sub || '')}${nAll.length && (nGot || done.includes(ch.id)) ? ` · 笔记 ${nGot}/${nAll.length}` : ''}</div>`;
+      meta.innerHTML = `<div class="no">第${cnum(ch.n || i + 1)}夜 · ${esc(ch.origin || '')}</div><div class="tt">${esc(ch.title)}</div><div class="tl">${esc(ch.sub || '')}${nAll.length && (nGot || done.includes(ch.id)) ? ` · 笔记 ${nGot}/${nAll.length}` : ''}</div>`;
       c.appendChild(meta);
       if (done.includes(ch.id)) { const b = document.createElement('div'); b.className = 'badge done'; b.textContent = '已通关'; c.appendChild(b); }
       else if (hasCp) { const b = document.createElement('div'); b.className = 'badge cp'; b.textContent = '有存档'; c.appendChild(b); }
@@ -106,7 +109,7 @@ const UI = {
       const ok = done.includes(ch.id);
       const ns = Object.entries(ch.notes || {}); const have = ns.filter(([k]) => got.includes(ch.id + ':' + k));
       const es = Object.entries(ch.endings || {}), eh = es.filter(([k]) => ends.includes(ch.id + ':' + k));
-      d.innerHTML = `<h3>第${'一二三四五六七八九十'[(ch.n || i + 1) - 1] || ch.n || i + 1}夜　${esc(ch.title)}　<span style="font-size:12px;color:var(--dim)">${esc(ch.origin || '')}</span></h3>` +
+      d.innerHTML = `<h3>第${cnum(ch.n || i + 1)}夜　${esc(ch.title)}　<span style="font-size:12px;color:var(--dim)">${esc(ch.origin || '')}</span></h3>` +
         (ok ? `<div class="legend">${esc(ch.legend || '')}</div>` : `<div class="lock">通关后解锁</div>`) +
         (ns.length ? `<div class="nlist">笔记 ${have.length}/${ns.length}${have.length ? '：' + have.map(([k, n]) => esc(n.title)).join('、') : ''}</div>` : '') +
         (es.length ? `<div class="nlist">结局 ${eh.length}/${es.length}${eh.length ? '：' + eh.map(([k, n]) => esc(n)).join('、') : ''}</div>` : '');

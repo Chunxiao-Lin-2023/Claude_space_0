@@ -2,6 +2,9 @@
 /* ================= 十夜怪谈 · core：工具、画布、输入、合成音效 ================= */
 const TS = 16;                       // 瓦片像素
 const LSP = 'nighttales.';           // 本地存储前缀
+/* 中文数字：1→一 … 10→十 … 21→二十一 */
+function cnum(n) { const D = '一二三四五六七八九'; if (n < 10) return D[n - 1] || String(n); if (n === 10) return '十'; const t = Math.floor(n / 10), u = n % 10; return (t > 1 ? D[t - 1] : '') + '十' + (u ? D[u - 1] : ''); }
+const VOLS = ['卷一', '卷二', '卷三', '卷四', '卷五', '卷六'];   // 每十夜一卷
 const QS = new URLSearchParams(location.search);
 const FAST = Math.max(1, +(QS.get('fast') || 1));   // 测试用：加速剧本等待
 const $ = id => document.getElementById(id);
@@ -17,6 +20,22 @@ const store = {
   set(k, v) { try { localStorage.setItem(LSP + k, JSON.stringify(v)); } catch (e) { } },
   del(k) { try { localStorage.removeItem(LSP + k); } catch (e) { } }
 };
+/* 合集迁移（一次）：旧的《十夜怪谈·贰》《十夜怪谈·叁》存档（nighttales2./nighttales3.）并入本合集 */
+(function mergeOldSaves() {
+  try {
+    if (store.get('merged23', false)) return;
+    for (const P of ['nighttales2.', 'nighttales3.']) {
+      const keys = []; for (let i = 0; i < localStorage.length; i++) keys.push(localStorage.key(i));   // 先收集，避免边写边遍历
+      for (const k of keys) {
+        if (!k || !k.startsWith(P)) continue;
+        const sub = k.slice(P.length), v = JSON.parse(localStorage.getItem(k));
+        if (['done', 'notes', 'ends'].includes(sub) && Array.isArray(v)) store.set(sub, [...new Set([...store.get(sub, []), ...v])]);
+        else if (sub.startsWith('cp.') && store.get(sub, null) == null) store.set(sub, v);
+      }
+    }
+    store.set('merged23', true);
+  } catch (e) { }
+})();
 function esc(s) { return String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
 
 /* ---------------- 画布：按短边约 12 格选整数倍缩放 ---------------- */
