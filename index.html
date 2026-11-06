@@ -93,7 +93,8 @@ kbd{font-family:inherit;font-size:11px;border:1px solid var(--line2);border-bott
     <span>iPhone / iPad：Safari 分享 →「添加到主屏幕」，全屏玩；iPhone 建议横屏</span>
   </footer>
 </div>
-<script src="games.js"></script>
+<!-- games.js 每次都带时间戳加载：新游戏一推送就能看到，不受浏览器/CDN 缓存影响 -->
+<script>document.write('<script src="games.js?t=' + Date.now() + '"><\/script>')</script>
 <script>
 (() => {
   const games = Array.isArray(window.GAMES) ? window.GAMES : [];
