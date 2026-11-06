@@ -82,7 +82,7 @@
     jade: { name: '玉镯', desc: '一只翠绿的玉镯，冰得像刚从水里捞上来。\n内侧刻着一个小小的「刘」字。' }
   };
   const NOTES_M = {
-    album: { title: '阿嬷的相簿（照片背面）', text: '第一页\n昭和十年十月十日　洋楼落成六周年　全家写真\n——自铁门入，第五块石板上，面北。\n\n第二页\n同日　大厅　奉茶\n——自神明桌前，退七步，面北。\n\n第三页\n同日　后院　井边\n——自后门往南八步，再往西九步，面北。\n\n最后一页，是阿嬷的字。铅笔，抖得很厉害：\n「阿春姊仔没有偷。照片里有。\n我那时候八岁，不敢讲。\n晴仔，帮阿嬷还给伊。」' },
+    album: { title: '阿嬷的相簿（照片背面）', text: '第一页\n昭和十年十月十日　洋楼落成六周年　全家写真\n——自铁门入，第五块石板上，面北。\n\n第二页\n同日　大厅　奉茶\n——自神明桌前，退七步，面北。\n\n第三页\n同日　后院　井边\n——出了后门，往南走八步，再往西走九步，面北。\n\n最后一页，是阿嬷的字。铅笔，抖得很厉害：\n「阿春姊仔没有偷。照片里有。\n我那时候八岁，不敢讲。\n晴仔，帮阿嬷还给伊。」' },
     tvcrew: { title: '外景场记单（压在器材箱底下）', text: '《○○灵异档案》外景　民雄古厝　2001.7.14\n\n01　外观　OK\n02　大厅　OK（灯架倒了两次）\n03　东厢楼梯　NG（楼梯断了，上不去）\n04　后院「古井」　拍立得今昔对照\n　　第一张：正常。\n　　第二张：井边多一个人影？（导演：留着，后制再说）\n　　第三张：摄影大哥按完就说不拍了。\n\n备注：\n· 隔壁阿婆说，以前有人要拆，怪手一开进院子就熄火，换了三台都一样。（导演：这段可以用）\n· 先撤。器材箱明天再回来拿。' },
     heitai: { title: '日本兵留下的木牌与刻字', text: '木牌（墨字）：\n　夜間　井戸ニ近ヅクベカラズ　　部隊長\n　（夜间不得接近井边。）\n\n墙上用刺刀刻的字，一行一行，歪歪斜斜：\n　昭和十九年八月　本隊　此ノ屋ニ宿営ス\n　旧井戸ハ埋メ立テラレ　所在不明\n　新井戸ヲ東ニ掘ル\n　（旧井已被填平，位置不明。新井挖在东边。）\n　夜毎　井戸ノ辺ニ　女ノ泣ク声\n　（每夜，井边都有女人的哭声。）\n\n最底下一行刻得很浅：\n　帰リタイ（想回家）' },
     iou: { title: '铁盒里的借据', text: '借　据\n今借到　金参百圆整\n言明一月内连本带利奉还，不得延误。\n昭和十年十月九日\n借款人　刘○○（印）\n\n借据背面，铅笔写了一行小字：\n「镯仔暂放花瓶脚下，等风头过了再拿去当。」' }
@@ -104,7 +104,8 @@
     grass: (R, X, Y) => TILE.grass.paint(R, X, Y, { grassC: '#34502c' }),
     dirt: (R, X, Y) => TILE.dirt.paint(R, X, Y),
     terr: (R, X, Y) => terrPaint(R, X, Y, false),
-    roots: (R, X, Y) => rootsPaint(R, X, Y)
+    terrO: (R, X, Y) => terrPaint(R, X, Y, true),
+    roots: (R, X, Y) => { TILE.dirt.paint(R, X, Y); for (let i = 0; i < 4; i++) { const x = (hash(X, Y, 240 + i) * 13) | 0, y = (hash(X, Y, 250 + i) * 10) | 0; R(x, y, 2, 16 - y, i % 2 ? '#5a4630' : '#4a3a26'); R(x + 1, y, 1, 3, '#6e5a40'); } R((hash(X, Y, 260) * 8) | 0, 9, 8, 1, '#4a3a26'); if (hash(X, Y, 261) < .5) R(3, 3, 3, 2, '#3a5a2e'); }
   };
   function slabPaint(R, X, Y) {
     TILE.grass.paint(R, X, Y, { grassC: '#2a3e26' });
@@ -130,7 +131,7 @@
     TILES_M['po_' + k] = { solid: false, paint: (R, X, Y, o) => PT[k](xR(R, SEP), X, Y, o) };
     TILES_M['pn_' + k] = { solid: false, paint: (R, X, Y, o) => PT[k](xR(R, POL), X, Y, o) };
   }
-  const PH_LEG = { T: 'po_top', F: 'po_brick', P: 'po_plaster', K: 'po_stone', S: 'po_slab', G: 'po_grass', D: 'po_dirt', M: 'po_terr',
+  const PH_LEG = { T: 'po_top', F: 'po_brick', P: 'po_plaster', K: 'po_stone', S: 'po_slab', G: 'po_grass', D: 'po_dirt', M: 'po_terrO',
     t: 'pn_top', f: 'pn_brick', p: 'pn_plaster', k: 'pn_stone', s: 'pn_slab', g: 'pn_grass', d: 'pn_dirt', m: 'pn_terr', r: 'pn_roots' };
 
   /* ---------- 自定义精灵（只用 R 画，好让照片版本统一调色） ---------- */
@@ -174,12 +175,12 @@
       const W2 = 128, B = '#7c3a2c', BL = '#5e2a20', TR = '#cbbfa6', TRD = '#9a8e78';
       R(0, -32, W2, 48, B);
       for (let y = -32; y < 16; y += 4) { R(0, y + 3, W2, 1, BL); const o = ((y / 4) & 1) ? 0 : 6; for (let x = o; x < W2; x += 12) R(x, y, 1, 3, BL); }
-      R(-1, -34, W2 + 2, 5, TR); for (let x = 3; x < W2 - 3; x += 7) R(x, -33, 2, 4, TRD);
-      R(48, -42, 32, 9, TR); R(56, -46, 16, 4, TR);
+      R(-1, -32, W2 + 2, 5, TR); for (let x = 3; x < W2 - 3; x += 7) R(x, -31, 2, 4, TRD);
+      R(52, -32, 24, 3, TR); R(58, -32, 12, 1, TRD);
       R(-1, -1, W2 + 2, 2, TR); for (const x of [0, 40, 84, 124]) R(x, -32, 4, 48, '#94503c');
       if (e.k === 'n') {
-        for (let i = 0; i < 14; i++) { const x = (hash(i, 9, 43) * 44) | 0; R(x, -38, 2, 24 + ((hash(i, 8, 43) * 30) | 0), i % 2 ? '#3a2a1a' : '#4a3824'); }
-        R(-2, -46, 50, 10, '#1e3220'); R(0, -50, 30, 6, '#24402a');
+        for (let i = 0; i < 14; i++) { const x = (hash(i, 9, 43) * 44) | 0; R(x, -30, 2, 20 + ((hash(i, 8, 43) * 30) | 0), i % 2 ? '#3a2a1a' : '#4a3824'); }
+        R(0, -32, 48, 6, '#1e3220'); R(0, -32, 30, 3, '#24402a');
         R(70, -20, 22, 8, 'rgba(30,24,20,.35)'); R(100, 4, 18, 10, 'rgba(30,24,20,.3)');
       }
     },
@@ -201,7 +202,7 @@
     plaque(g, e, t, R) { R(4, 2, 24, 10, '#cbbfa6'); R(6, 4, 20, 6, '#9a8e78'); R(10, 5, 2, 4, '#5a4a3a'); R(14, 5, 2, 4, '#5a4a3a'); R(18, 5, 2, 4, '#5a4a3a'); R(22, 5, 2, 4, '#5a4a3a'); },
     sapling(g, e, t, R) { R(7, 4, 2, 11, '#4a3624'); R(3, -4, 10, 9, '#2c4a2a'); R(5, -6, 6, 3, '#365a32'); R(4, 14, 8, 2, '#3a2c1c'); },
     banyanP(g, e, t, R) {   // 照片里的大榕树（2 格宽）
-      R(-6, -48, 44, 22, '#1a2e1c'); R(-2, -54, 30, 8, '#203a22'); R(-4, -30, 40, 16, '#162818');
+      R(0, -48, 36, 22, '#1a2e1c'); R(2, -48, 26, 6, '#203a22'); R(0, -30, 38, 16, '#162818');
       R(8, -16, 14, 32, '#3e3020'); R(10, -16, 3, 32, '#4e3e2a');
       for (let i = 0; i < 9; i++) R(-2 + i * 4, -28 + (i % 3) * 3, 1, 40 - (i % 3) * 3, i % 2 ? '#4a3a26' : '#3a2c1c');
     },
@@ -254,6 +255,7 @@
     stump(g, e, t, R) { R(3, 6, 10, 8, '#4a3624'); R(3, 6, 10, 3, '#8a7050'); R(5, 7, 6, 1, '#6a5038'); R(7, 8, 2, 1, '#6a5038'); R(1, 12, 4, 3, '#3a2a1a'); R(11, 12, 4, 3, '#3a2a1a'); },
     mango(g, e, t, R) { R(6, 0, 4, 15, '#4a3624'); R(-4, -24, 24, 18, '#1e3a1e'); R(-2, -28, 20, 6, '#244824'); R(-6, -16, 28, 10, '#1a321a'); R(0, -20, 4, 3, '#3a6a32'); R(10, -14, 4, 3, '#3a6a32'); R(4, -10, 2, 2, '#c8a040'); },
     basin(g, e, t, R) { R(2, 8, 12, 6, '#7a5a3a'); R(2, 8, 12, 1, '#9a7a52'); R(3, 9, 10, 3, '#4a6a7a'); R(4, 9, 3, 2, '#5a9a4a'); R(9, 10, 3, 1, '#6aaa5a'); },
+    wet(g, e, t, R) { R(3, 4, 10, 8, 'rgba(70,110,140,.32)'); R(5, 3, 6, 10, 'rgba(70,110,140,.28)'); R(6, 12, 1, 4, 'rgba(90,130,160,.4)'); R(10, 11, 1, 3, 'rgba(90,130,160,.35)'); R(5, 5, 3, 1, 'rgba(200,220,235,.35)'); },
     kneel(g, e, t, R) {   // 跪在地上的女人：湿头发垂到地上，两手按着地砖
       const H = '#080a0e', SK = '#c4ccd0', TP = '#3e4a5e';
       R(3, 6, 10, 8, TP); R(2, 12, 12, 3, TP); R(3, 14, 4, 1, SK); R(9, 14, 4, 1, SK);
@@ -334,11 +336,20 @@
 
   /* ---------- 照片对照：三组 ---------- */
   const O = (id, x, y, spr, on, ex) => Object.assign({ id, x: 1 + x, y: 1 + y, spr, solid: false, on }, ex || {});
-  const N = (id, x, y, spr, on, ex) => Object.assign({ id, x: 11 + x, y: 1 + y, spr, solid: false, on }, ex || {});
-  function phRows(o, n) { const r = [' '.repeat(20)]; for (let y = 0; y < 7; y++) r.push(' ' + o[y] + '..' + n[y] + ' '); r.push(' ' + '.'.repeat(18) + ' '); r.push(' '.repeat(20)); return r; }
+  /* 横屏：老照片在左、拍立得在右；竖屏（iPad 竖着拿）：老照片在上、拍立得在下 */
+  function phRows(o, n, v) {
+    if (v) { const r = [' '.repeat(10)]; for (let y = 0; y < 7; y++) r.push(' ' + o[y] + ' '); r.push(' ' + '.'.repeat(8) + ' ', ' ' + '.'.repeat(8) + ' '); for (let y = 0; y < 7; y++) r.push(' ' + n[y] + ' '); r.push(' ' + '.'.repeat(8) + ' ', ' '.repeat(10)); return r; }
+    const r = [' '.repeat(20)]; for (let y = 0; y < 7; y++) r.push(' ' + o[y] + '..' + n[y] + ' '); r.push(' ' + '.'.repeat(18) + ' '); r.push(' '.repeat(20)); return r;
+  }
   const say = t => S => S.narr(t);
   const AJ = { A: 1, B: 2, C: 4 };
-  const ajiaoOn = (k, t) => async S => { await S.narr(t); if (!(S.f.aj & AJ[k])) { S.f.aj = (S.f.aj || 0) | AJ[k]; S.sfx('chime'); } };
+  const ajiaoOn = (k, t) => async S => {
+    await S.narr(t);
+    if (S.f.aj & AJ[k]) return;
+    const first = !S.f.aj; S.f.aj = (S.f.aj || 0) | AJ[k]; S.sfx('chime');
+    if (first) await S.think('（别的照片里……会不会也有阿嬷？）');
+    else if (S.f.aj === 7) await S.think('三张照片里，都有她。\n阿嬷一直跟在阿春姊仔身边。');
+  };
   /* 每组：找出「多出来的」与「位置变了的」东西 */
   const SCN = {
     A: {
@@ -387,11 +398,14 @@
     C_stump: async S => { await S.narr('那棵芒果树只剩一个树头，被锯得平平的。\n老照片里，井就在芒果树的正后面（北边）。'); },
     C_cap: async S => { await S.narr('右下角那口水泥封住的「井」。\n老照片里，那个地方什么都没有。\n——电视台拍的「古井」，七十年前根本不存在。'); }
   };
-  function phEnts(k) {
+  function phEnts(k, v) {
+    const nx = v ? 1 : 11, ny = v ? 10 : 1;
+    const N = (id, x, y, spr, on, ex) => Object.assign({ id, x: nx + x, y: ny + y, spr, solid: false, on }, ex || {});
     const df = (id, x, y, spr, ex) => N(k + '_' + id, x, y, spr, S => found(S, k, id), ex);
-    const mi = (id, x, y, spr, t, ex) => N(k + '_' + id, x, y, spr, S => miss(S, k, t), ex);
-    const rg = (id, x, y, w) => ({ id: 'rg_' + k + '_' + id, x: 11 + x, y: 1 + y, w: w || 1, spr: 'ring', hidden: true, solid: false, z: 2 });
-    const fr = [{ x: 1, y: 1, w: 8, h: 7, spr: 'frame', s: { k: 'old' }, decal: true, solid: false }, { x: 11, y: 1, w: 8, h: 7, spr: 'frame', s: { k: 'pola' }, decal: true, solid: false }];
+    const wets = [];
+    const mi = (id, x, y, spr, t, ex) => { wets.push(N('wt_' + k + '_' + id, x, y, 'wet', null, { hidden: true, z: 1 })); return N(k + '_' + id, x, y, spr, S => miss(S, k, t, id), ex); };
+    const rg = (id, x, y, w) => ({ id: 'rg_' + k + '_' + id, x: nx + x, y: ny + y, w: w || 1, spr: 'ring', hidden: true, solid: false, z: 2 });
+    const fr = [{ x: 1, y: 1, w: 8, h: 7, spr: 'frame', s: { k: 'old' }, decal: true, solid: false }, { x: nx, y: ny, w: 8, h: 7, spr: 'frame', s: { k: 'pola' }, decal: true, solid: false }];
     if (k === 'A') return fr.concat([
       O(null, 0, 2, 'o_pfacade', null, { w: 8, decal: true, s: { k: 'o' } }),
       O('Ao_plq', 3, 0, 'o_plaque', say('山墙上的圆形浮雕，中间刻着几个字，糊掉了看不清。'), { w: 2 }),
@@ -413,7 +427,7 @@
       mi('step', 2, 3, 'invisible', '台阶还是那几级台阶。'),
       df('geta', 6, 4, 'n_geta'), df('banyan', 0, 3, 'n_banyanP', { w: 2 }),
       rg('face', 4, 1), rg('geta', 6, 4), rg('banyan', 0, 3, 2)
-    ]);
+    ], wets);
     if (k === 'B') return fr.concat([
       O('Bo_side', 0, 0, 'o_bricked', say('侧门开着，通往厨房。'), { open: true }),
       O('Bo_p1', 2, 0, 'o_portrait', say('祖先的画像，戴着瓜皮帽。')), O('Bo_fam', 3, 0, 'o_famframe', say('墙上挂着一张全家福：头家和头家娘，坐得端端正正。')), O('Bo_p2', 4, 0, 'o_portrait', say('另一张祖先画像。')),
@@ -434,7 +448,7 @@
       mi('tea', 3, 3, 'n_tea', '烂掉的八仙桌，还在老地方。', { s: { k: 'ruin' } }),
       df('kneel', 5, 1, 'n_kneel'),
       rg('door', 0, 0), rg('frame', 3, 0), rg('kneel', 5, 1)
-    ]);
+    ], wets);
     return fr.concat([
       O('Co_w1', 1, 0, 'o_window', say('后面的窗户。')), O('Co_w2', 5, 0, 'o_window', say('厨房的窗户，冒着一点蒸气。')),
       O('Co_p1', 0, 1, 'o_pillar', say('廊下的柱子，左数第一根。')), O('Co_p2', 2, 1, 'o_pillar', say('廊下的柱子，左数第二根。')), O('Co_p3', 4, 1, 'o_pillar', say('左数第三根柱子。')), O('Co_p4', 6, 1, 'o_pillar', say('左数第四根柱子。')),
@@ -448,27 +462,27 @@
       df('ghost', 3, 2, '@n_achunG', { dir: 3 }),
       df('stump', 3, 5, 'n_stump'), df('cap', 6, 5, 'n_capwell'),
       rg('stub', 2, 1), rg('ghost', 3, 2), rg('stump', 3, 5), rg('cap', 6, 5)
-    ]);
+    ], wets);
   }
-  const PH_ROWS = {
-    A: phRows(['TTTTTTTT', 'TTTTTTTT', 'FFFFFFFF', 'KKKKKKKK', 'GGGSSGGG', 'GGGSSGGG', 'GGGSSGGG'],
-      ['tttttttt', 'tttttttt', 'ffffffff', 'kkkkkkkk', 'rggssggg', 'rrgssggr', 'rggssgrr']),
-    B: phRows(['PPPPPPPP', 'MMMMMMMM', 'MMMMMMMM', 'MMMMMMMM', 'MMMMMMMM', 'MMMMMMMM', 'MMMMMMMM'],
-      ['pppppppp', 'mmmmmmmr', 'rmmmmmmm', 'mmmmmmmm', 'mmmmmmmm', 'rmmmmmmr', 'rrmmmmrr']),
-    C: phRows(['PPPPPPPP', 'KKKKKKKK', 'DDDDDDDD', 'DDDDDDDD', 'GGGGGGGG', 'GGGGGGGG', 'GGGGGGGG'],
-      ['pppppppp', 'kkkkkkkk', 'ddrrdddd', 'ddrrdddd', 'ggggggrg', 'ggrggggg', 'gggggggg'])
+  const PH_SRC = {
+    A: [['TTTTTTTT', 'TTTTTTTT', 'FFFFFFFF', 'KKKKKKKK', 'GGGSSGGG', 'GGGSSGGG', 'GGGSSGGG'],
+      ['tttttttt', 'tttttttt', 'ffffffff', 'kkkkkkkk', 'rggssggg', 'rrgssggr', 'rggssgrr']],
+    B: [['PPPPPPPP', 'MMMMMMMM', 'MMMMMMMM', 'MMMMMMMM', 'MMMMMMMM', 'MMMMMMMM', 'MMMMMMMM'],
+      ['pppppppp', 'mmmmmmmr', 'rmmmmmmm', 'mmmmmmmm', 'mmmmmmmm', 'rmmmmmmr', 'rrmmmmrr']],
+    C: [['PPPPPPPP', 'KKKKKKKK', 'DDDDDDDD', 'DDDDDDDD', 'GGGGGGGG', 'GGGGGGGG', 'GGGGGGGG'],
+      ['pppppppp', 'kkkkkkkk', 'ddrrdddd', 'ddrrdddd', 'ggggggrg', 'ggrggggg', 'gggggggg']]
   };
-  function phMap(k) {
-    return { amb: null, dark: 0, floor: 'desk', legend: PH_LEG, rows: PH_ROWS[k], ents: phEnts(k), async enter(S, first) { if (first) await viewIntro(S, k); } };
+  function phMap(k, v) {
+    return { amb: null, dark: 0, floor: 'desk', legend: PH_LEG, rows: phRows(PH_SRC[k][0], PH_SRC[k][1], v), ents: phEnts(k, v), async enter(S, first) { if (first) await viewIntro(S, k); } };
   }
 
   /* ---------- 头家娘的巡夜（那一夜的大厅） ---------- */
   let PAT = null, NDIED = 0, VOXT = 4, FTT = 0, HBT = 0;
-  const NWP = [[2, 4, 1.4], [6, 5], [9, 7], [12, 6], [16, 5], [17, 3, 1.8], [15, 6], [12, 9], [8, 8], [6, 5]];
+  const NWP = [[17, 3, 1.8], [15, 6], [12, 9], [8, 8], [6, 5], [2, 4, 1.4], [6, 5], [9, 7], [12, 6], [16, 5]];
   const VOX = ['「镯仔！我的镯仔！」', '「阿春——你给我出来！」', '「今晚没找到，谁都不准睡！」', '「贼仔……我知道你在这里……」'];
   function patReset(S) {
     PAT = { st: 'wait', t: 2.6, wp: 1, lost: 0 };
-    S.stop('tai'); S.place('tai', 2, 4, 2); S.ent('tai').alpha = 1;
+    S.stop('tai'); S.place('tai', 17, 3, 0); S.ent('tai').alpha = 1;
   }
   function losClear(m, x0, y0, x1, y1) {
     const n = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0));
@@ -501,7 +515,7 @@
     if (d <= 2.6 && losClear(m, ex, ey, p.x, p.y)) return spotPl(S);
     if (S.moving && d <= 4.5 && PAT.st !== 'alert') {
       PAT.st = 'alert'; PAT.ax = p.x; PAT.ay = p.y; S.bubble('tai', '?', 1000);
-      if (S.once('hearTip')) S.toast('她听见脚步声了——站住别动！');
+      if (S.once('hearTip')) S.toast('她听见了，正往你这边走——快绕开她的灯笼！');
     }
     if (e.mv) return;
     if (PAT.st === 'pause' || PAT.st === 'look') { PAT.t -= dt; if (PAT.t <= 0) PAT.st = 'patrol'; return; }
@@ -527,7 +541,9 @@
       await S.narr('你拼命一甩——挣开了。\n手腕上留下五道青紫色的指印。');
       const p = S.pl; let bi = 0, bd = -1;
       NWP.forEach(([x, y], i) => { const dd = Math.abs(x - p.x) + Math.abs(y - p.y); if (dd > bd) { bd = dd; bi = i; } });
-      S.place('tai', NWP[bi][0], NWP[bi][1], 0);
+      S.ent('tai').s.off = true; S.sfx('switch');
+      await S.narr('灯笼「噗」地灭了。\n一片漆黑里，木屐声往大厅另一头去了。');
+      S.place('tai', NWP[bi][0], NWP[bi][1], 0); S.ent('tai').s.off = false; S.fx('flash');
       PAT = { st: 'pause', t: 2.2, wp: (bi + 1) % NWP.length, lost: 0 };
       S.toast('再被抓到一次，就逃不掉了');
       return;
@@ -561,8 +577,13 @@
     C: ['「第三张：后门往南八步，再往西九步。」', '「从后门口出来那一格开始数：往下八步，往左九步。」'],
     dig: ['「断掉的那根柱子也要算进去喔。」', '「井在原来的第二根、第三根柱子中间，芒果树头的正后面。」']
   };
+  let DRT = 2;
   function chTick(S, dt) {
     if (S.map === 'night') return nightTick(S, dt);
+    if (S.map === 'back' && S.f.pC && !S.f.wellFound && !W.busy) {
+      DRT -= dt;
+      if (DRT <= 0) { const d = Math.hypot(S.pl.x - 8, S.pl.y - 4); DRT = 2.2 + d * .12; drip(S, 0, Math.max(.12, 1.1 - d / 9)); if (d < 2.5) drip(S, .35, .6); }
+    }
     if (W.busy || !S.f.az || S.map.startsWith('ph')) return;
     const ph = phase(S), H = IDLE_H[ph]; if (!H) return;
     if (S.f._ph !== ph) { S.f._ph = ph; S.f._idle = 0; S.f._il = 0; }
@@ -674,7 +695,7 @@
           { id: 'az_y', x: 12, y: 16, spr: '@azhe', dir: 3 }
         ],
         async enter(S, first) { azHere(S); if (first) await opening(S); },
-        step(S, x, y) { return spotStep(S, 'A', x, y, 11, 9); }
+        step(S, x, y) { return spotStep(S, 'A', x, y, [[11, 9]]); }
       },
       /* ---------------- 古厝一楼 ---------------- */
       hall: {
@@ -705,11 +726,11 @@
           { x: 7, y: 1, spr: 'portrait', on: S => S.narr('一张祖先的画像，发了霉，脸的地方长出一块一块的白斑。') },
           { x: 12, y: 1, spr: 'portrait', on: S => S.narr('另一张画像。画框歪了，你没有去扶正它。') },
           { id: 'bricked', x: 6, y: 1, spr: 'bricked', on: S => S.narr(S.f.pB ? '被红砖封死的侧门。老照片里，阿嬷就是从这里探出头来的。\n砖缝里的灰浆比墙新——是后来住进来的人封的。' : '墙上一个拱形的门洞，被红砖封死了。新砖的颜色比旁边的墙红。') },
-          { x: 13, y: 1, spr: 'window', on: S => S.narr('窗户外面就是那棵大榕树。一根气根从窗框伸进来，垂到你肩膀那么高。') },
+          { x: 13, y: 1, spr: 'window', light: { r: 2.4, col: 'rgba(140,170,220,.12)', dy: 18 }, on: S => S.narr('窗户外面就是那棵大榕树。一根气根从窗框伸进来，垂到你肩膀那么高。') },
           { id: 'table', x: 9, y: 4, spr: 'tea', s: { k: 'ruin' }, on: S => S.narr('一张烂掉的八仙桌，桌面拱起来，裂成好几块。桌脚下踩着几个空酒瓶。') },
           { x: 10, y: 4, spr: 'armchair', col: '#4a3a2a', on: S => S.narr('一张藤椅，只剩下骨架。坐垫的地方，长了一丛小小的蕨。') },
           /* 西厢：日本兵住过的房间 */
-          { x: 1, y: 1, spr: 'window', on: S => S.narr('西厢的窗户被树根撑破了，月光从缝里漏进来，照在地上，一条一条的。') },
+          { x: 1, y: 1, spr: 'window', light: { r: 2.2, col: 'rgba(140,170,220,.12)', dy: 18 }, on: S => S.narr('西厢的窗户被树根撑破了，月光从缝里漏进来，照在地上，一条一条的。') },
           { id: 'carve', x: 2, y: 1, spr: 'carve', on: S => heitaiOn(S) },
           { id: 'kisatsu', x: 3, y: 1, spr: 'kisatsu', on: S => heitaiOn(S) },
           { id: 'suitou', x: 3, y: 6, spr: 'suitou', solid: false, on: S => S.narr('一个生锈的军用水壶，壶身上印着一颗星。\n摇一摇——里面还有水的声音。你没有打开。') },
@@ -726,7 +747,7 @@
           if (S.f.backOpen) { S.ent('bdoor').s.roots = false; }
           if (first) await hallFirst(S);
         },
-        step(S, x, y) { return spotStep(S, 'B', x, y, 9, 10); }
+        step(S, x, y) { return spotStep(S, 'B', x, y, [[9, 10], [9, 9]]); }
       },
       /* ---------------- 那一夜（昭和十年十月十日） ---------------- */
       night: {
@@ -767,7 +788,7 @@
           { id: 'gN', x: 12, y: 9, spr: 'geta', solid: false, on: S => S.narr('一只木屐，绳子断了。\n……阿春刚才跑过去的时候掉的。') },
           { id: 'bdoorN', x: 17, y: 1, spr: 'bdoor', on: S => escapeNight(S) },
           { id: 'chunN', x: 12, y: 8, spr: '@achun', hidden: true, solid: false },
-          { id: 'tai', x: 2, y: 4, spr: '@taiG', solid: false, light: { r: 3, col: 'rgba(255,150,60,.22)', flick: true } }
+          { id: 'tai', x: 17, y: 3, spr: '@taiG', solid: false, hidden: true, light: { r: 3, col: 'rgba(255,150,60,.22)', flick: true } }
         ],
         async enter(S, first) { if (first) await nightEnter(S); }
       },
@@ -811,11 +832,10 @@
           { id: 'az_b', x: 17, y: 3, spr: '@azhe', dir: 0, hidden: true }
         ],
         async enter(S, first) { azHere(S); if (first) await backFirst(S); },
-        step(S, x, y) { return spotStep(S, 'C', x, y, 8, 10); }
+        step(S, x, y) { return spotStep(S, 'C', x, y, [[8, 10], [8, 9]]); }
       },
-      phA: phMap('A'),
-      phB: phMap('B'),
-      phC: phMap('C')
+      phA: phMap('A'), phB: phMap('B'), phC: phMap('C'),
+      phAv: phMap('A', true), phBv: phMap('B', true), phCv: phMap('C', true)
     }
   });
 
@@ -840,12 +860,12 @@
   async function apoOn(S) {
     S.face('apo', 'pl');
     if (S.once('apo')) {
-      await S.say('阿婆', ['少年仔，这么晚了，来这里做什么？', '……又是来拍鬼的喔？前几年电视台的人也来，扛着大台的机器，最后东西丢着就跑了。']);
+      await S.say('阿婆', '少年仔，这么晚了还来？……又是来拍鬼的喔？\n前几年电视台的人也来，扛着大台的机器，最后东西丢着就跑了。');
       const r = await S.ask('阿婆眯着眼睛看你。', ['我阿嬷以前在这里做过事。', '只是来拍照的。']);
-      if (r === 0) await S.say('阿婆', ['……恁阿嬷？那是日本时代的事了喔。', '我阿母讲，那时候刘家很好额，厝是昭和初年起的，红砖仔一块一块都是好料。']);
+      if (r === 0) await S.say('阿婆', '……恁阿嬷？那是日本时代的事了喔。\n我阿母讲，那时候刘家很好额，这间厝是昭和初年起的。');
       else await S.say('阿婆', '拍照喔……拍照好啦，不要乱摸就好。');
-      await S.say('阿婆', ['这间厝的故事，你应该听过一些。', '有人讲，刘家有一个查某囝仔（丫鬟），后来跳落后壁那口井。', '有人讲是给头家娘冤枉，有人讲是跟少爷有私情——讲的人多，讲法就多。', '后来日本兵来住过，又有人讲，夜里兵仔听到井边有人在哭。', '光复以后有人要拆，怪手开进来就熄火，换几台都一样。……这款事，我也是听人讲的。']);
-      await S.say('阿婆', ['我只给你讲一项，你要记牢：', '井边，相机按两下就好。毋通按第三下。', '头一下拍的是人，第二下拍的是伊。第三下……就换伊拍你了。']);
+      await S.say('阿婆', ['有人讲，刘家有一个查某囝仔（丫鬟），后来跳落后壁那口井。\n有人讲是给头家娘冤枉，有人讲是跟少爷有私情——讲的人多，讲法就多。', '后来日本兵来住过，又有人讲，夜里兵仔听到井边有人在哭。\n光复以后有人要拆，怪手开进来就熄火。……这款事，我也是听人讲的。']);
+      await S.say('阿婆', ['我只给你讲一项，你要记牢：\n井边，相机按两下就好。毋通按第三下。', '头一下拍的是人，第二下拍的是伊。\n第三下……就换伊拍你了。']);
       S.f.rule = true;
       return;
     }
@@ -859,16 +879,16 @@
       dig: '我阿母讲，旧的那口井，早就给人填平了。种芒果的那边。',
       end: '……恁去吧。记牢，第三下毋通按。'
     };
-    const L = [T[ph] || T.end]; if (S.f.rule && ph !== 'end') L.push('记牢：井边，相机按两下就好。');
+    const L = [T[ph] || T.end]; if (S.f.rule && ph === 'dig') L.push('记牢：井边，相机按两下就好。');
     await S.say('阿婆', L);
   }
 
   /* ================= 拍照与对照 ================= */
-  function spotStep(S, k, x, y, sx, sy) {
+  function spotStep(S, k, x, y, ok) {
     const need = k === 'A' ? S.f.album && !S.f.pA : k === 'B' ? S.f.pA && !S.f.pB : S.f.backOpen && !S.f.pC;
     if (!need) return;
-    if (x === sx && y === sy) return takeShot(S, k);
-    if (Math.abs(x - sx) + Math.abs(y - sy) === 1 && S.once('near' + k + x + ',' + y)) S.toast('取景框里的角度，跟老照片差一点点……');
+    if (ok.some(([a, b]) => a === x && b === y)) { S.f.ret = [S.map, x, y]; return takeShot(S, k); }
+    if (ok.some(([a, b]) => Math.abs(x - a) + Math.abs(y - b) === 1) && S.once('near' + k + x + ',' + y)) S.toast('取景框里的角度，跟老照片差一点点……');
   }
   const FRAME_TXT = { A: '红砖洋楼整个装进了框里，左边是那棵大榕树。', B: '神明桌在正中间，两边是墙上的画像。', C: '廊下的柱子排成一排，后墙的窗户黑洞洞的。' };
   async function takeShot(S, k) {
@@ -881,14 +901,16 @@
     S.toast('相纸还剩 ' + S.f.film + ' 张');
     await S.wait(400);
     S.f.view = k; S.wear('loupe');
-    await S.go('ph' + k, 10, 8, 3);
+    const v = VH > VW && VW < 300;   // 竖屏：上下摆
+    await S.go('ph' + k + (v ? 'v' : ''), v ? 5 : 10, v ? 9 : 8, 3);
   }
   async function viewIntro(S, k) {
     if (k === 'A') await S.narr('你把老照片和刚显影的拍立得并排摊在机车坐垫上，阿哲用手电筒照着。\n左边，是七十年前。右边，是今晚。');
     else if (k === 'B') await S.narr('你蹲下来，把第二张老照片和拍立得并排放在地上。手电筒的光在相纸上抖。');
     else await S.narr('第三张。你的手指有点冰。');
     const n = SCN[k].need.length;
-    S.goal('对照片：在右边的拍立得上找出「多出来的」和「位置变了的」东西（' + n + ' 处）');
+    S.goal('对照片：拍立得里多出来、变了位置的东西（' + n + ' 处）');
+    S.toast('「多出来的」和「位置变了的」才算；没变的不算');
     if (k === 'A') S.toast('用放大镜移到可疑的地方，按调查键。左边老照片上的人和东西也能看');
     if (k === 'A' && S.coop) S.toast('联机：一个人盯着左边的老照片念，一个人在右边找');
   }
@@ -902,8 +924,9 @@
     if (got < sc.need.length) { S.toast('找到 ' + got + ' / ' + sc.need.length); return; }
     return viewDone(S, k);
   }
-  async function miss(S, k, t) {
+  async function miss(S, k, t, id) {
     await S.narr(t);
+    S.show('wt_' + k + '_' + id);
     const m = S.f['miss' + k] = (S.f['miss' + k] || 0) + 1;
     const sc = SCN[k], i = sc.need.findIndex(n => !S.f['d_' + k + '_' + n]);
     if (i < 0) return;
@@ -923,16 +946,17 @@
       S.goal('进屋：找到相簿第二页的大厅（神明桌前退七步）');
     } else if (k === 'B') {
       await S.think('花瓶的位置——神明桌右边。\n她跪在那里，按着一块地砖。');
-      S.f.pB = true; await closeView(S);
+      S.f.pB = true; S.ent('fam').s.scr = true; await closeView(S);
       S.goal(S.has('bar') ? '撬开神明桌右边那块裂开的地砖' : '撬开神明桌右边那块裂开的地砖（先找件工具）');
     } else {
       await S.think('旧井在原来的第二根、第三根柱子正中间，廊下前面一步——\n也就是芒果树头的正后面。\n断掉的那根柱子，要算进去。');
+      await S.narr('……仔细听。后院里，有很轻的滴水声。');
       S.f.pC = true; await closeView(S);
       S.goal('在后院找到旧井的位置，用铁撬把树根和土撬开');
     }
   }
   async function closeView(S) {
-    const [m, x, y] = SCN[S.f.view].ret; S.f.view = null;
+    const [m, x, y] = S.f.ret || SCN[S.f.view].ret; S.f.view = null;
     S.wear('@me'); await S.go(m, x, y, 3);
   }
 
@@ -1007,9 +1031,13 @@
     S.sfx('close');
     await S.narr('她穿过东厢，推开后门，跑进了后院。\n——往井的方向。');
     await S.say('？？？', '镯仔！是谁偷了我的镯仔！', { style: 'big' });
-    await S.narr('西厢那边，一盏灯笼晃了出来。\n灯笼后面，是一张敷着白粉的脸。');
+    clog(S); clog(S, .5); clog(S, 1);
+    S.place('tai', 17, 3, 0); S.ent('tai').alpha = 0; S.sfx('open');
+    await S.alpha('tai', 1, 700);
+    await S.narr('后门又被推开了。一盏灯笼走进来，停在东厢的后门口。\n灯笼后面，是一张敷着白粉的脸。');
     S.goal('跟着阿春跑过的路，从东厢的后门出去（灯笼近了就别动）');
     S.toast('灯笼照得到的地方她看得见；离她四五步以内走动，她听得见');
+    S.toast('木头地板，一跑就响（这里不能奔跑）');
     if (S.coop) S.toast('联机：一个人盯着灯笼喊「停」，一个人走');
     S.cp('night');
     patReset(S); VOXT = 4;
@@ -1084,7 +1112,7 @@
     await S.say('阿哲', '……小晴。她在。', { style: 'whisper' });
     await S.think('阿嬷，我找到了。');
     while (true) {
-      const opts = ['把老照片和镯子，一起放在井边', '按下快门', '只放老照片（镯子……留着当证据）'];
+      const opts = ['把照片和镯子放回井边', '按下快门', '只放照片，镯子留着当证据'];
       const r = await S.ask('你手里拿着阿嬷的相簿、那只玉镯，和拍立得。', opts);
       if (r === 0) return goodEnd(S);
       if (r === 2) return jadeEnd(S);
@@ -1123,7 +1151,7 @@
     await S.narr('风停了。蝉又叫了起来。\n井口的石头上，镯子不见了。照片还在，被露水打湿了一角。');
     const aj = (S.f.aj || 0) === 7;
     S.focus(null);
-    return S.end({ id: 'home', title: '第十六夜　完', text: '第二天，我们把借据和阿嬷的相簿，一起交给了乡公所。\n办事员看了很久，说这种事，他也不知道该归哪一科。\n\n后来我再也没有回去过。\n听说那年秋天，后院那团榕树根底下，开出了一丛白色的野姜花。\n\n那三张拍立得，多出来的人都不见了。\n只有最后一张——井边，老照片放着的地方——\n有一个很淡、很淡的影子，弯着腰，像在捡什么东西。' + (aj ? '\n\n阿嬷的相簿里，后来多了一张照片。是我没拍过的：\n后院的井边，一个打赤脚的小女孩，牵着一个穿粗布衫的姊姊。\n她们在笑。' : '') });
+    return S.end({ id: 'home', title: '第十六夜　完', text: '第二天，我们把借据和阿嬷的相簿，一起交给了乡公所。\n办事员看了很久，说这种事，他也不知道该归哪一科。\n\n后来我再也没有回去过。\n听隔壁阿婆说，从那以后，夜里再也没人听见大厅里有木屐声，和那一声一声的「镯仔」。\n听说那年秋天，后院那团榕树根底下，开出了一丛白色的野姜花。\n\n那三张拍立得，多出来的人都不见了。\n只有最后一张——井边，老照片放着的地方——\n有一个很淡、很淡的影子，弯着腰，像在捡什么东西。' + (aj ? '\n\n阿嬷的相簿里，后来多了一张照片。是我没拍过的：\n后院的井边，一个打赤脚的小女孩，牵着一个穿粗布衫的姊姊。\n她们在笑。' : '') });
   }
   async function jadeEnd(S) {
     S.f.done = true;

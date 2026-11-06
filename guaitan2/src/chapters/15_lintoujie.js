@@ -831,7 +831,8 @@
     WV.t -= dt;
     if (WV.st === 0) {
       if (WV.t > 0) return;
-      let c = WV.idle < .35 && WV.vx ? cx + WV.vx * 4 : cx + ((Math.random() * 3) | 0) - 1;
+      const r = Math.random();   // 一半打在你要去的前方，三成打在你身上，剩下的打在远处，给人喘口气
+      let c = WV.idle < .35 && WV.vx && r < .5 ? cx + WV.vx * 4 : r < .8 ? cx + ((Math.random() * 3) | 0) - 1 : cx + (Math.random() < .5 ? -6 : 6);
       c = clamp(c, 4, 25);
       S.place('wv', c - 1, 3); e.s.st = 1; WV.st = 1; WV.t = WARN + (f.kind ? .25 : 0); WV.t0 = WV.t;
       const mine = cx >= c - 1 && cx <= c + 1;
@@ -843,7 +844,7 @@
     } else {
       const ex = Math.round(e.px / TS);
       if (!WV.hit && cx >= ex && cx <= ex + 2 && cy >= 3 && cy <= 9 && !SHELTER.has(cx + ',' + cy)) { WV.hit = true; e.s.st = 0; WV.st = 0; WV.t = 1.5; S.run(waveHit); return; }
-      if (WV.t <= 0) { e.s.st = 0; WV.st = 0; WV.t = .45 + Math.random() * .5; }
+      if (WV.t <= 0) { e.s.st = 0; WV.st = 0; WV.t = .7 + Math.random() * .6; }
     }
   }
   async function waveHit(S) {
