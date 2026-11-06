@@ -1,6 +1,6 @@
 /* ================= 2D rigs: wrap the vector chibi / beast painters into objects the game can animate ================= */
 /* pixel sizes: humans by build (sprite height in art px), beasts by size (art px per design unit) */
-const PXH = { kid: 36, child: 42, teen: 50, woman: 50, man: 56, old: 52, brute: 62 };
+const PXH = { kid: 38, child: 44, teen: 52, woman: 52, man: 58, old: 54, brute: 64 };
 const PXB = 0.2;
 const pxPerUnitC = P => (PXH[P.build || 'kid'] || 46) * (P.pxK || 1) / chibiHeight(P);
 const UM_C = 1 / 20 * (52 / 690); // nominal (metres per chibi unit for a man) – real size comes from pxPerUnitC
@@ -8,7 +8,7 @@ const UM_B = PXB / 20;
 function rigKind(spec) { const r = spec.rig || 'chibi'; return r === 'chibi' || r === 'human' ? 'human' : r; }
 function buildRig(spec) {
   const R = { kind: rigKind(spec), spec, h: specHeight(spec), A: { t: Math.random() * 10 }, flip: 1 }; R.hpx = R.h * 20;
-  R.root = new Obj2D((g, K, o) => drawRigged(g, R, R.curA || R.A, K, o.rotation.y, o.scale.x), { noScale: true });
+  R.root = new Obj2D((g, K, o) => drawRigged(g, R, R.curA || R.A, K, o.rotation.y, o.scale.x), { noScale: true }); R.root.rig = R;
   return R;
 }
 const buildBird = spec => buildRig(Object.assign({ rig: 'bird' }, spec));
@@ -35,7 +35,7 @@ function sprBox(R, A) { // art px: [w, h, anchorX, anchorY]
   const P = R.spec, h = R.hpx;
   if (R.kind === 'human') { const down = A.pose === 'down' || A.pose === 'lie'; return [Math.ceil(h * (down ? 2.3 : 1.7)) + 4, Math.ceil(h * 1.5) + 4, 0.5, 0.84]; }
   const u = PXB * (P.size || 1);
-  if (R.kind === 'bird') return [Math.ceil(440 * u) + 6, Math.ceil(420 * u) + 6, 0.5, 0.74];
+  if (R.kind === 'bird') return [Math.ceil(460 * u) + 6, Math.ceil(520 * u) + 6, 0.5, 0.72];
   if (R.kind === 'snake') { const L = (P.n || 14) * P.r * 1.3 + P.r * 6; return [Math.ceil(L * 2 * u) + 6, Math.ceil(P.r * 9 * u) + 6, 0.5, 0.75]; }
   if (R.kind === 'stake') return [Math.ceil(260 * u) + 4, Math.ceil(330 * u) + 4, 0.5, 0.9];
   return [Math.ceil((P.len * 2.7 + 60) * u) + 6, Math.ceil((P.legH + P.bodyR * 2.8 + 80) * u * 1.5) + 6, 0.5, 0.8];
@@ -71,7 +71,7 @@ function drawRigged(g, R, A, K, rot, sc = 1) {
     const px = pixelize(hi, PXK, { pal: sc !== 1 && R.spec.size > 3 ? null : rigPalette(R), colors: 24, inkF: 0.5 });
     F = { cv: px.canvas(), ax: Math.round(bw * ax), ay: Math.round(bh * ay) }; sprPut(key, F);
   }
-  R.lastF = F;
+  R.lastF = F; R.lastFlip = view === 'side' ? R.flip : 1;
   const flip = view === 'side' ? R.flip : 1;
   g.save(); g.scale(flip, 1); g.drawImage(F.cv, -F.ax, -F.ay); g.restore();
 }
@@ -79,3 +79,10 @@ function paintRigScaled(R, A2, view, Pd, bw, bh, ax, ay, dead, sc) { const k = P
 function attach(R, side, obj) { obj.visible = false; R.root.add(obj); return obj; }
 
 function satBoost(c, k = 1.15) { const [h, s, l] = rgb2hsl(c); return hsl2rgb([h, clamp(s * k, 0, 1), l]); }
+
+/* the silhouette of a flyer, cast on the ground below it */
+function flyerShadow(g, R, sx, sy, sc = 1) {
+  const F = R.lastF; if (!F) return; if (!F.sh) { const c = cnv(F.cv.width, F.cv.height), cg = c.getContext('2d'); cg.drawImage(F.cv, 0, 0); cg.globalCompositeOperation = 'source-in'; cg.fillStyle = 'rgb(20,16,30)'; cg.fillRect(0, 0, c.width, c.height); F.sh = c; }
+  const lift = R.kind === 'bird' && !(R.spec.chibi > 0.45) ? Math.round(130 * PXB * (R.spec.size || 1) * sc) : 0;
+  g.save(); g.globalAlpha = 0.34; g.translate(sx, sy + lift); g.scale(R.lastFlip || 1, 0.8); g.drawImage(F.sh, -F.ax, -F.ay); g.restore();
+}

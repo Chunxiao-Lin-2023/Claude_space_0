@@ -15,6 +15,13 @@ MOBS.stake = { name: '草靶木桩', spec: 'stakeS', hp: 40, atk: 0, def: 0, spd
 
 MOBS.yardox = { name: '青黑大莽牛', spec: 'mangniu', hp: 380, atk: 8, def: 4, spd: 4.6, r: 1.3, range: 2.8, cd: 2.6, skills: ['gore', 'charge'], xp: 120, heavy: true, loot: [] };
 /* ---------- the 青鳞鹰 mother (story creature, flies) ---------- */
+/* steer a flyer through [x, z, flyH] waypoints at speed spd (m/s); a skip finishes instantly */
+function flyAlong(e, pts, spd = 18) { return new Promise(res => { let i = 0, last = W.t; const f = () => { if (!e.alive && e.hp <= 0) return res(); const dt = Math.min(0.1, W.t - last); last = W.t;
+  if (W.skip) { const p = pts[pts.length - 1]; e.x = p[0]; e.z = p[1]; e.flyH = p[2]; return res(); }
+  const [x, z, h] = pts[i], dx = x - e.x, dz = z - e.z, d = Math.hypot(dx, dz), st = spd * dt;
+  if (d <= st + 0.05) { e.x = x; e.z = z; e.flyH = h; if (++i >= pts.length) return res(); } else { e.x += dx / d * st; e.z += dz / d * st; e.flyH = lerp(e.flyH, h, Math.min(1, st / Math.max(d, 1))); e.rot = Math.atan2(dx, dz); }
+  requestAnimationFrame(f); }; f(); }); }
+const circlePts = (cx, cz, r, h0, h1, n = 12, a0 = 0, turns = 1) => Array.from({ length: n + 1 }, (_, i) => { const k = i / n, a = a0 + k * TAU * turns; return [cx + Math.cos(a) * r, cz + Math.sin(a) * r, lerp(h0, h1, k)]; });
 function eagleEnt(x, z, o = {}) { const e = npc('eagle', 'qingying', x, z, Object.assign({ name: '青鳞鹰', title: '魔禽', team: 2, fly: true, flyH: 14, r: 2.2, noPush: true, ghost: true, script: true }, o)); e.A.fly = true; return e; }
 /* ---------- the giant silhouettes of the prologue ---------- */
 function giantBird() { const R = buildBird({ key: 'giantbird', size: 9, c1: '#0a0a10', c2: '#1a1420', belly: '#14101a', beak: '#050505', iris: ['#400000', '#ff2010', '#ff8060', '#200000'] }); R.root.layer = 3; R.root.absY = false; R.root.cullR = 60; R3.scene.add(R.root); return R; }
@@ -233,12 +240,12 @@ QUESTS = [
     { t: 'script', text: '……', run: async () => { const me = P1(); cine(true); camShot([NEST.x + 14, terrH(NEST.x, NEST.z + 24) + 4, NEST.z + 34], [NEST.x, terrH(NEST.x, NEST.z) + 6, NEST.z], 2);
       await talk([['皮猴', '好大的鸟窝啊！'], ['旁白', '石崖足有三百米高，寸草不生。崖顶是一个以黑梧木筑成的巨巢，直径足有十米，比石村的房屋都巨大。'], ['二猛', '我扔块石头试试，看上面有没有大鸟！'], ['石大壮', '别这么鲁莽！']]);
       act(entByTag('ermeng').A, 'throw', 0.6); await wait(1.2); await talk([['旁白', '没有动静。'], ['小不点', '我先上去。我比你们速度都快，有危险也逃得快。']]);
-      STORY.climb = mkProp('climb', new Obj2D(), NEST.x + 1, NEST.z + 17, { r: 1.2, name: '崖壁裂缝', interact: { label: '攀上石崖' } }); STORY.climb.noPlate = false; cine(false); } },
+      STORY.climb = mkProp('climb', new Obj2D(), NEST.x + 1, NEST.z + 10, { r: 1.2, name: '崖壁裂缝', interact: { label: '攀上石崖' } }); STORY.climb.noPlate = false; cine(false); } },
     { t: 'interact', npc: 'climb', text: '顺着崖壁上的缝隙爬上去', run: async () => { const me = P1(), pet = P2(); cine(true); faceTo(me, NEST.x, NEST.z); camShot([NEST.x + 26, terrH(NEST.x, NEST.z) + 2, NEST.z + 26], [NEST.x, terrH(NEST.x, NEST.z) - 10, NEST.z + 14], 1); await fade(true, 0.5);
-      teleport(me, NEST.x + 1, NEST.z + 9); me.y = terrH(NEST.x + 1, NEST.z + 9); if (pet && PARTY.flags.hatched) teleport(pet, NEST.x - 1, NEST.z + 9.5); await fade(false, 0.5);
+      teleport(me, NEST.x + 1, NEST.z + 5.5); me.y = terrH(NEST.x + 1, NEST.z + 5.5); if (pet && PARTY.flags.hatched) teleport(pet, NEST.x - 1, NEST.z + 6); await fade(false, 0.5);
       camShot([NEST.x + 9, terrH(NEST.x, NEST.z) + 5, NEST.z + 14], [NEST.x, terrH(NEST.x, NEST.z) + 0.6, NEST.z], 1.5);
       await talk([['旁白', '崖顶有粘着血丝的大骨头，巢边暗红，是常年进食留下的。巢里铺着柔软的金丝草，三枚水盆大、碧玉般带斑纹的蛋静静地躺着。'], ['@pet', '（' + petName() + '一直趴在小不点头上，这时竖起了耳朵）']]);
-      STORY.nest = mkProp('nest', new Obj2D(), NEST.x, NEST.z, { r: 3, name: '梧木巢', interact: { label: '取走鹰蛋' } }); STORY.nest.noPlate = false; STORY.eggs = [0, 1, 2].map(i => { const m = eggMesh(i === 2 ? 0xa8e0c8 : 0x9ad8b8, 0x5ae8a0, 0.4); m.position.set(NEST.x - 1 + i, terrH(NEST.x, NEST.z) + 0.5, NEST.z + (i % 2) * 0.6); R3.scene.add(m); return m; }); cine(false); } },
+      STORY.nest = mkProp('nest', new Obj2D(), NEST.x, NEST.z, { r: 3, name: '梧木巢', interact: { label: '取走鹰蛋' } }); STORY.nest.noPlate = false; STORY.eggs = [0, 1, 2].map(i => { const m = eggMesh(i === 2 ? 0xa8e0c8 : 0x9ad8b8, 0x5ae8a0, 0.4); m.position.set(NEST.x - 1 + i, terrH(NEST.x, NEST.z) + 0.3, NEST.z - 1 + (i % 2) * 0.6); R3.scene.add(m); return m; }); cine(false); } },
     { t: 'interact', npc: 'nest', text: '把三枚鹰蛋装进兽皮袋', run: async () => { cine(true); STORY.eggs.forEach(m => m.removeFromParent()); addItem('egg', 3); addItem('scale', 3);
       await talk([['旁白', '蛋壳上有破碎的符文传承——二猛在崖下嚷着要摸，结果先前一个碰过蛋的孩子被电麻了手。'], ['旁白', '小不点还捡了几枚婴儿巴掌大的青鳞，锋利如刀。'], ['小不点', '下去啦！']]); await fade(true, 0.5);
       const me = P1(), pet = P2(); teleport(me, NEST.x + 4, NEST.z + 24); if (pet) teleport(pet, NEST.x + 5, NEST.z + 25); despawn('climb'); despawn('nest'); await fade(false, 0.5);
@@ -247,8 +254,14 @@ QUESTS = [
 /* ---------- 第八·九章 ---------- */
 { id: 'q6', chapter: '第八章', chapterSub: '青鳞鹰', title: '凶威', desc: '雌鹰回巢，发现蛋没了。', xp: 760,
   steps: [
-    { t: 'script', text: '……', run: async () => { const me = P1(); cine(true); const eg = eagleEnt(NEST.x, NEST.z, { flyH: 30 }); sfx('eagle'); shake(0.2); camShot([me.x + 6, me.y + 3, me.z + 8], [NEST.x, terrH(NEST.x, NEST.z) + 25, NEST.z], 1.2); await wait(1.2);
-      await talk([['旁白', '一声尖啸撕裂长空。青鳞鹰回来了——体长七八米，翼展十五米，没有羽毛，全身青色金属鳞片，半米长的弯钩黑喙。'], ['孩子们', '我的娘诶，好大一只鸟，快跑呀！'], ['小不点', '往林子密的地方跑！去那个石洞——跟我来！']]);
+    { t: 'script', text: '……', run: async () => { const me = P1(); cine(true);
+      // 雌鹰从远处的天空飞回：盘旋着落回崖顶的巢里，发现蛋没了
+      const eg = eagleEnt(NEST.x + 70, NEST.z - 46, { flyH: 22 }); sfx('eagle'); camShot([NEST.x + 10, 30, NEST.z + 40], [NEST.x + 4, 0, NEST.z + 4], 1.4);
+      await talk([['旁白', '远处的天空传来一声鹰啸，一个巨大的影子掠过石林——']]);
+      await flyAlong(eg, [[NEST.x + 26, NEST.z - 10, 16], ...circlePts(NEST.x, NEST.z, 13, 14, 6, 14, -0.5, 1.15), [NEST.x, NEST.z - 0.5, 0.4]], 20);
+      eg.fly = false; eg.A.fly = false; faceTo(eg, NEST.x + 5, NEST.z + 20); await wait(0.6); act(eg.A, 'peck', 0.8); await wait(1);
+      eg.fly = true; eg.A.fly = true; eg.flyH = 6; sfx('eagle'); shake(0.3); await wait(0.6); camShot([me.x + 6, me.y + 3, me.z + 8], [NEST.x, terrH(NEST.x, NEST.z) + 10, NEST.z + 10], 1.2); await flyAlong(eg, [[NEST.x + 4, NEST.z + 16, 12]], 16);
+      await talk([['旁白', '它落回崖顶，低头看着空空的巢。一声尖啸撕裂长空——体长七八米，翼展十五米，没有羽毛，全身青色金属鳞片，半米长的弯钩黑喙。'], ['孩子们', '我的娘诶，好大一只鸟，快跑呀！'], ['小不点', '往林子密的地方跑！去那个石洞——跟我来！']]);
       for (const k of ['dazhuang', 'ermeng', 'pihou']) { const e = entByTag(k); e.npcAI = kidFollow; } STORY.eagleT = 0; cine(false); } },
     { t: 'goto', x: CAVE.x - 1, z: CAVE.z, r: 4, text: '逃！钻进藤蔓后面的石洞（躲开俯冲）', onStart: () => { STORY.eagleChase = true; }, onDone: () => { STORY.eagleChase = false; } },
     { t: 'script', text: '……', run: async () => { const me = P1(), eg = entByTag('eagle'); cine(true); for (const [k, dz] of [['dazhuang', -1.5], ['ermeng', 0], ['pihou', 1.5]]) { const e = entByTag(k); e.npcAI = null; teleport(e, CAVE.x + 2, CAVE.z + dz); faceTo(e, CAVE.x - 20, CAVE.z); }

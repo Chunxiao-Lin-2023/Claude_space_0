@@ -2,12 +2,12 @@
    Design units: head radius 100 (×build.head). Origin at the feet, y down. drawChibi(g, P, A, px) where px = on-screen px per unit. */
 const BUILD = {
   kid: { head: 1.0, torso: 108, waist: 54, shoulder: 60, hip: 50, arm: 118, armR: 16, leg: 150, legR: 20, neck: 10, belly: 1.05 },
-  child: { head: 0.9, torso: 140, waist: 58, shoulder: 70, hip: 56, arm: 148, armR: 17, leg: 185, legR: 21, neck: 14, belly: 1.0 },
-  teen: { head: 0.82, torso: 190, waist: 56, shoulder: 82, hip: 58, arm: 200, armR: 17, leg: 255, legR: 21, neck: 22, belly: 0.9 },
-  man: { head: 0.8, torso: 215, waist: 74, shoulder: 104, hip: 70, arm: 220, armR: 23, leg: 255, legR: 27, neck: 24, belly: 1.0 },
-  brute: { head: 0.78, torso: 245, waist: 94, shoulder: 136, hip: 84, arm: 245, armR: 32, leg: 260, legR: 35, neck: 28, belly: 1.1 },
-  woman: { head: 0.8, torso: 195, waist: 56, shoulder: 82, hip: 72, arm: 200, armR: 17, leg: 255, legR: 21, neck: 24, belly: 0.9 },
-  old: { head: 0.82, torso: 200, waist: 68, shoulder: 90, hip: 66, arm: 205, armR: 19, leg: 220, legR: 22, neck: 18, belly: 1.0 },
+  child: { head: 0.95, torso: 140, waist: 58, shoulder: 70, hip: 56, arm: 148, armR: 17, leg: 185, legR: 21, neck: 14, belly: 1.0 },
+  teen: { head: 0.92, torso: 185, waist: 52, shoulder: 80, hip: 56, arm: 196, armR: 15, leg: 245, legR: 18, neck: 22, belly: 0.9 },
+  man: { head: 0.9, torso: 210, waist: 68, shoulder: 104, hip: 66, arm: 216, armR: 20, leg: 240, legR: 23, neck: 24, belly: 1.0 },
+  brute: { head: 0.86, torso: 245, waist: 94, shoulder: 136, hip: 84, arm: 245, armR: 32, leg: 260, legR: 35, neck: 28, belly: 1.1 },
+  woman: { head: 0.92, torso: 190, waist: 52, shoulder: 80, hip: 70, arm: 196, armR: 15, leg: 245, legR: 18, neck: 24, belly: 0.9 },
+  old: { head: 0.92, torso: 195, waist: 64, shoulder: 88, hip: 64, arm: 200, armR: 17, leg: 210, legR: 19, neck: 18, belly: 1.0 },
 };
 function chibiHeight(P) { const B = BUILD[P.build || 'kid']; return B.leg + B.torso + B.neck + 92 * B.head + 150 * B.head; }
 /* ---------- eyes / mouth ---------- */
@@ -138,7 +138,7 @@ function drawChibi(g, P, A, px) {
   const torsoT = B.torso, chestY = hipY - torsoT, headY = chestY - B.neck - 90 * s;
   const act = A.act, k = act ? act.k01 : 0, up = act ? sstep(0, 0.35, k) * (1 - sstep(0.6, 1, k)) : 0;
   let lean = hunch, armL = { sh: 0.12 + sw * 0.5 * w, el: 0.25 }, armR = { sh: 0.12 - sw * 0.5 * w, el: 0.25 }, legLa = sw * 0.55 * w, legRa = -sw * 0.55 * w, jumpY = 0;
-  if (view !== 'side') { armL.sh = 0.12 + Math.abs(sw) * 0.14 * w; armR.sh = 0.12 + Math.abs(cw) * 0.14 * w; armL.el = armR.el = 0.2; }
+  if (view !== 'side') { const br = Math.sin((A.t || 0) * 2.2) * 0.03; armL.sh = 0.24 + br + Math.abs(sw) * 0.14 * w; armR.sh = 0.24 + br + Math.abs(cw) * 0.14 * w; armL.el = armR.el = 0.3; }
   const P_ = A.pose;
   if (P_ === 'train') { const q = Math.sin((A.t || 0) * 3); armL.sh = 1.2 + q * 0.3; armR.sh = 1.2 - q * 0.3; armL.el = armR.el = 1.4; }
   if (P_ === 'pray') { armL.sh = armR.sh = view === 'side' ? 1.0 : 0.55; armL.el = armR.el = 1.7; }
