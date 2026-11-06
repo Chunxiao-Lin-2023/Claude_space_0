@@ -98,7 +98,7 @@
   /* ---------- 夜里的火 ---------- */
   const FIRES = [['fireW', 8, 19], ['fireSW', 11, 24]];
   const FN = ['西边栅门', '西南缺口'];
-  const AP_ANG = [Math.PI + .55, Math.PI * .75];        // 它在火光外面蹲守的方向
+  const AP_ANG = [Math.PI + .2, Math.PI * .75];        // 它在火光外面蹲守的方向
   const GAP = [[9.3, 19], [11, 22.4]];                  // 火灭了，它从这里钻进羊圈
   const BURN = 2.5, LOG = 50, NIGHT_T = 100, BAPT_N = [19, 20];
   function fireR(i) { const fu = W.f.fuel ? W.f.fuel[i] : 0; return fu > 0 ? 1.7 + 2.5 * fu / 100 : 0; }
@@ -179,7 +179,7 @@
       }
       case 'cool': {
         B.cool -= dt;
-        if (night) moved = prowlMove(S, dt, true);
+        if (night) moved = coolMove(S, dt);
         else { const a = Math.atan2(B.y - R.py, B.x - R.px) + dt * .75, rr = Math.max(6, Math.min(8, R.d)); moved = bStep(R.px + Math.cos(a) * rr, R.py + Math.sin(a) * rr, 4, dt); bFaceP(); }
         if (B.mode === 'cool' && B.cool <= 0) { if (night && plLit) bSet('prowl'); else { bSet('stalk'); if (night) stalkCue(S); } }
         break;
@@ -210,6 +210,13 @@
     [B.x, B.y] = pushOut(B.x, B.y);
     if (f.fuel[best] <= 0 && dst(B.x, B.y, GAP[best][0], GAP[best][1]) < .7) breach(S, best);
     return mv;
+  }
+  /* 被你盯退以后：绕到离你最远的那一头去蹲着（有火灭了，就直奔缺口） */
+  function coolMove(S, dt) {
+    const f = S.f; if (f.fuel[0] <= 0 || f.fuel[1] <= 0) return prowlMove(S, dt, true);
+    const p = W.pl, L = [0, 1].map(i => { const fr = FIRES[i], r = fireR(i) + .9; return [fr[1] + Math.cos(AP_ANG[i]) * r, fr[2] + Math.sin(AP_ANG[i]) * r]; });
+    const far = dst(L[0][0], L[0][1], p.x, p.y) > dst(L[1][0], L[1][1], p.x, p.y) ? L[0] : L[1];
+    const mv = bStep(far[0], far[1], 2.8, dt); [B.x, B.y] = pushOut(B.x, B.y); return mv;
   }
   function stalkCue(S) {
     const R = rel();

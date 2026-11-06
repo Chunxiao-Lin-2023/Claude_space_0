@@ -12,7 +12,7 @@
   const POLSKA = [5, 6, 7, 8, 7, 6, 5, 3, 4, 5, 6, 5, 3, 4, 5, 6, 5, 4, 3, 1, 2, 3, 2, 1];
   const ELEVEN = [8, 7, 8, 9, 10, 9, 8, 7, 6, 7, 8, 5, 8, 7, 8, 9, 10, 12, 11, 10, 9, 8, 7, 8];
   /* 溪马绕潭的环路（浅水一圈），顺时针：上边 → 右边 → 下边 → 左边 */
-  const LOOP = 36, H_WALK = 3.2, H_BOLT = 8.0, T_FULL = 40, T_MIN = 32;
+  const LOOP = 36, H_WALK = 3.0, H_SHY = 5.0, H_BOLT = 8.0, T_FULL = 40, T_MIN = 32;
   function loopPos(s) {
     s = ((s % LOOP) + LOOP) % LOOP;
     if (s < 11) return { x: 9 + s, y: 3, fx: 1, fy: 0 };
@@ -20,7 +20,7 @@
     if (s < 29) return { x: 20 - (s - 18), y: 10, fx: -1, fy: 0 };
     return { x: 9, y: 10 - (s - 29), fx: 0, fy: -1 };
   }
-  let HS = { on: false, s: 12, dir: 1, pause: 0, bolt: 0, hoof: 0, mus: 0, mi: 0 };
+  let HS = { on: false, s: 12, dir: 1, pause: 0, bolt: 0, shy: 0, hoof: 0, mus: 0, mi: 0 };
   let lastLeft = null, died = false, bgT = 4, kT = 0;
   if (typeof QS !== 'undefined' && QS.get('debug') === '1') window.__nokken = { get HS() { return HS; }, loopPos };
 
@@ -605,7 +605,7 @@
 
   /* ---------------- 危险段：追溪马 ---------------- */
   function horseSetup(S) {
-    HS = { on: false, s: 12, dir: 1, pause: 0, bolt: 0, hoof: 0, mus: 0, mi: 0, seen: 0 };
+    HS = { on: false, s: 12, dir: 1, pause: 0, bolt: 0, shy: 0, hoof: 0, mus: 0, mi: 0, seen: 0 };
     const h = S.ent('horse'), p = loopPos(HS.s);
     S.place('horse', p.x, p.y, 2); h.alpha = 1; h.s.rider = 1; h.s.len = 0; h.s.hs = HS.s; h.s.hd = 1;
     S.hide('karin'); S.hide('nack');
@@ -617,21 +617,21 @@
   function horseTick(S, dt) {
     if (!HS.on || S.f.ph !== 'horse' || S.busy) return;
     const h = S.ent('horse'), p = S.pl;
-    HS.pause -= dt; HS.bolt -= dt;
+    HS.pause -= dt; HS.bolt -= dt; HS.shy -= dt;
     const hp = loopPos(HS.s), px = p.px / 16, py = p.py / 16;
     const dx = px - hp.x, dy = py - hp.y, dist = Math.hypot(dx, dy);
     const fx = hp.fx * HS.dir, fy = hp.fy * HS.dir, ahead = (dx * fx + dy * fy) / Math.max(dist, .01);
     /* 一格以内、不在它正前头：追上了 */
-    if (dist <= 1.15 && ahead <= .35) { HS.on = false; S.run(caught); return; }
-    if (dist <= .8) { HS.on = false; S.run(touched); return; }
+    if (HS.bolt > 0 && HS.charge ? dist <= 1.15 : dist <= .8 && ahead > .35) { HS.on = false; S.run(touched); return; }   // 迎面撞上（受惊冲过来时更容易撞上）
+    if (dist <= 1.3 && ahead <= .35 && HS.bolt <= 0) { HS.on = false; S.run(caught); return; }
     if (S.running && dist < 7 && HS.bolt <= 0) {   // 一跑它就惊：在它前头跑，它直冲过来；在后头跑，它甩开你
-      HS.bolt = 1.4; HS.pause = 0; whinny(S, .8); S.shake(300, 1);
+      HS.bolt = 1.4; HS.pause = 0; HS.charge = ahead > 0; whinny(S, .8); S.shake(300, 1);
       if (S.once('boltTip')) S.toast('它听见你跑——惊了！追溪马只能走');
-    } else if (!S.running && HS.bolt <= 0 && HS.pause <= 0 && ahead > .5 && dist < 5) {   // 看见你在前头：掉头
-      HS.dir = -HS.dir; HS.pause = .45; S.tone('sawtooth', 300, 180, .25, .03, 0, 900);
+    } else if (!S.running && HS.bolt <= 0 && HS.pause <= 0 && ahead > .5 && dist < 4.5) {   // 看见你在前头：掉头
+      HS.dir = -HS.dir; HS.pause = .25; HS.shy = .8; S.tone('sawtooth', 300, 180, .25, .03, 0, 900);
       if (++HS.seen === 1) S.toast('它看见你在前头，掉头了——从后面追');
     }
-    const spd = HS.pause > 0 ? 0 : HS.bolt > 0 ? H_BOLT : H_WALK;
+    const spd = HS.pause > 0 ? 0 : HS.bolt > 0 ? H_BOLT : HS.shy > 0 ? H_SHY : H_WALK;
     HS.s = ((HS.s + HS.dir * spd * dt) % LOOP + LOOP) % LOOP;
     const np = loopPos(HS.s);
     h.px = np.x * 16; h.py = np.y * 16; h.x = Math.round(np.x); h.y = Math.round(np.y);

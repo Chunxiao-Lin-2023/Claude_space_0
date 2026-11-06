@@ -346,6 +346,7 @@
     let p0 = 0;
     if (!h.hidden && hx === 9 && hy >= 1 && hy <= 6) p0 = hy - 1;   // 领头的还在北边路上：从它现在的位置接着走
     else ids.forEach(id => S.hide(id));
+    TR = null;   // 从这里起由结尾的行进接管，不再沿足迹摆放
     S.focus(9, 7);
     bell(S, .06);
     await S.narr('铃声又响了。这一次，很慢，很轻。\n队伍动了——不是朝你，是绕着你的圈。');
@@ -359,7 +360,8 @@
       await S.say('爷爷', ['回去告诉多罗特娅：窗台上的栗子，我吃了。', '叫她……诸圣节的晚上，好好睡一觉。']);
       await S.say('卢卡斯', '爷爷——');
       await S.narr('他笑了笑，把兜帽重新戴上，转身跟上了前面的烛光。');
-      await march(S, ['e5'], 9, ENDP.length + 1, 2.2, false);
+      e.spr = '@alma';
+      await march(S, ids, 9 + 5 * SP, ENDP.length + 5 * SP + 1, 2.2, false);   // 他跟上去，整条队伍一起走远
     } else {
       await march(S, ids, p0, ENDP.length + 5 * SP + 1, 2.2, !p0);
       await S.narr('每一个走过石十字架的，手里的蜡烛都悄悄灭了。\n最后一点烛光，沉进了南边那条路的黑暗里。');
