@@ -42,7 +42,7 @@
 
   /* ---------- 夜里：抱着箱子穿过院子 ---------- */
   const NT = { t: 0, spd: 2.8, near: 0, warned: false, saved: false, frz: 0, ft: 0, wt: 0 };
-  const SHO0 = 2.8, SHOMAX = 3.3; window.__NT = NT;
+  const SHO0 = 2.8, SHOMAX = 3.3;
   let TRIES = 0, DEATHS = 0, VTRIES = 0;
   const KT = { t: 3 };   // 主机本地：第几次走这段、死过几次（不进检查点，重来时用来给提示）
   const HOUSE = [1, 6, 7, 10];   // 主屋在院子地图上的范围 x0,y0,x1,y1
@@ -137,7 +137,7 @@
   }
 
   defChapter({
-    id: 'kotoribako', n: 2, title: '子取箱', sub: '旧仓最里面的桐木箱子里，装着一只精巧的机关箱。女人和孩子，不能靠近它。', origin: '日本网络怪谈（2ch）', color: '#4a3220',
+    id: 'kotoribako', n: 2, title: '子取箱', sub: '旧仓最里面的桐木箱子里，装着一只精巧的机关箱。女人和孩子，不能靠近它。', origin: '日本 2ch 怪谈', color: '#4a3220',
     amb: 'night', floor: 'darkwood', wall: 'wood', dark: .6, plr: 3.2,
     endings: { dawn: '天亮了', ret: '送还（隐藏）', opened: '箱开了', door: '门外的人' },
     /* 选章卡片：注连绳下，一只顶盖错开的寄木箱，黑缝里有一只眼睛 */

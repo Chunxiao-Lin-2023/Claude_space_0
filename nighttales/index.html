@@ -104,7 +104,7 @@ kbd{display:inline-block;border:1px solid #555;border-bottom-width:2px;padding:0
 #card .k,#note .k{margin-top:30px;color:#665c54;font-size:12px;letter-spacing:2px;animation:bob 1.6s infinite}
 @keyframes fin{from{opacity:0}}
 #note{background:rgba(0,0,0,.72);flex-direction:column;cursor:pointer}
-#note .paper{background:var(--paper);color:#2a2018;max-width:560px;width:100%;padding:26px 28px;font-family:var(--serif);box-shadow:0 10px 40px #000;transform:rotate(-.6deg);background-image:repeating-linear-gradient(transparent 0 29px,rgba(80,60,40,.12) 29px 30px);max-height:calc(100dvh - 90px);overflow:auto;animation:fin .3s}
+#note .paper{touch-action:pan-y;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;background:var(--paper);color:#2a2018;max-width:560px;width:100%;padding:26px 28px;font-family:var(--serif);box-shadow:0 10px 40px #000;transform:rotate(-.6deg);background-image:repeating-linear-gradient(transparent 0 29px,rgba(80,60,40,.12) 29px 30px);max-height:calc(100dvh - 90px);overflow:auto;animation:fin .3s}
 #note h3{margin:0 0 12px;letter-spacing:3px;font-size:20px;border-bottom:1px solid rgba(80,60,40,.3);padding-bottom:8px}
 #kpP{white-space:pre-line}
 #note .tx{white-space:pre-wrap;line-height:1.9;font-size:16.5px}
@@ -1423,12 +1423,13 @@ const SAPI = {
     chk(g);
   },
   async end(o = {}) {
-    W.ended = true; W.timer = null; emit('sfx', o.bad ? 'bad' : 'good');
+    const g = GEN; W.ended = true; W.timer = null; emit('sfx', o.bad ? 'bad' : 'good');
     for (const k in W.maps) for (const e of W.maps[k].ents) e.chase = null;
     if (!o.bad) { markDone(W.ch.id); store.del('cp.' + W.ch.id); }   // 坏结局保留检查点
     if (o.id) { const k = W.ch.id + ':' + o.id, got = store.get('ends', []); if (!got.includes(k)) { got.push(k); store.set('ends', got); } if (NET.role === 'host') netSend({ t: 'endrec', k }); }   // 结局收集（ch.endings 列出全部）
     if (NET.role === 'host' && !o.bad) netSend({ t: 'done', ch: W.ch.id });
     await waitInput('end', { endScreen: { kind: o.bad ? 'badend' : 'end', title: o.title || '完', text: o.text || '', t0: RT } });
+    chk(g);   // 玩家选了重来/返回：结束这段剧本，不再往下跑
   },
   rand(n) { return Math.floor(Math.random() * n); },
   once(k) { if (W.f['_o_' + k]) return false; W.f['_o_' + k] = true; return true; },
@@ -2043,7 +2044,16 @@ function bindUI() {
   $('kpDel').onclick = () => iControl() && sendAct('keydel'); $('kpX').onclick = () => iControl() && sendAct('keycancel');
   $('dlg').addEventListener('pointerdown', e => { if (e.target.classList.contains('ch')) return; e.preventDefault(); advanceTap(); });
   $('card').addEventListener('pointerdown', e => { e.preventDefault(); advanceTap(); });
-  $('note').addEventListener('pointerdown', e => { e.preventDefault(); if (UI._localNote) { closeLocalNote(); return; } advanceTap(); });
+  /* 笔记：手机上要能上下滑动看长笔记——按下不立刻关，抬起时移动很小（真正的点按）才关闭/翻页 */
+  let noteTap = null;
+  $('note').addEventListener('pointerdown', e => { noteTap = { x: e.clientX, y: e.clientY, t: performance.now(), st: $('note').querySelector('.paper').scrollTop }; if (e.pointerType === 'mouse') e.preventDefault(); });
+  $('note').addEventListener('pointerup', e => {
+    const t = noteTap; noteTap = null; if (!t) return;
+    const moved = Math.hypot(e.clientX - t.x, e.clientY - t.y) > 10 || Math.abs($('note').querySelector('.paper').scrollTop - t.st) > 2;
+    if (moved || performance.now() - t.t > 700) return;
+    if (UI._localNote) { closeLocalNote(); return; } advanceTap();
+  });
+  $('note').addEventListener('pointercancel', () => { noteTap = null; });   // 浏览器接管成滚动时会发 pointercancel
   for (const id of ['menu', 'inv', 'journal', 'help']) $(id).addEventListener('pointerdown', e => { if (e.target === $(id)) UI.closeModal(); });
   muteBtn();
   // 画布：点击 = 翻页 / 标记

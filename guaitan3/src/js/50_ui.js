@@ -298,7 +298,16 @@ function bindUI() {
   $('kpDel').onclick = () => iControl() && sendAct('keydel'); $('kpX').onclick = () => iControl() && sendAct('keycancel');
   $('dlg').addEventListener('pointerdown', e => { if (e.target.classList.contains('ch')) return; e.preventDefault(); advanceTap(); });
   $('card').addEventListener('pointerdown', e => { e.preventDefault(); advanceTap(); });
-  $('note').addEventListener('pointerdown', e => { e.preventDefault(); if (UI._localNote) { closeLocalNote(); return; } advanceTap(); });
+  /* 笔记：手机上要能上下滑动看长笔记——按下不立刻关，抬起时移动很小（真正的点按）才关闭/翻页 */
+  let noteTap = null;
+  $('note').addEventListener('pointerdown', e => { noteTap = { x: e.clientX, y: e.clientY, t: performance.now(), st: $('note').querySelector('.paper').scrollTop }; if (e.pointerType === 'mouse') e.preventDefault(); });
+  $('note').addEventListener('pointerup', e => {
+    const t = noteTap; noteTap = null; if (!t) return;
+    const moved = Math.hypot(e.clientX - t.x, e.clientY - t.y) > 10 || Math.abs($('note').querySelector('.paper').scrollTop - t.st) > 2;
+    if (moved || performance.now() - t.t > 700) return;
+    if (UI._localNote) { closeLocalNote(); return; } advanceTap();
+  });
+  $('note').addEventListener('pointercancel', () => { noteTap = null; });   // 浏览器接管成滚动时会发 pointercancel
   for (const id of ['menu', 'inv', 'journal', 'help']) $(id).addEventListener('pointerdown', e => { if (e.target === $(id)) UI.closeModal(); });
   muteBtn();
   // 画布：点击 = 翻页 / 标记

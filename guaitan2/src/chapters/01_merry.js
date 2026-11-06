@@ -412,7 +412,7 @@
         S.sfx('heart');
         return S.narr('……可门缝底下透进来的那一线灯光里，有一小块影子。\n它站得太矮了。猫眼里，看不见。');
       }
-      S.sfx('open');
+      S.turn(0); S.sfx('open');   // 开门的人一定是面朝着门的：身后是屋里
       await S.narr('你拧开门锁，拉开了门。\n门链「哐」地绷直——走廊里空荡荡的，什么都没有。');
       return finale(S, 'door');
     }

@@ -164,12 +164,13 @@ const SAPI = {
     chk(g);
   },
   async end(o = {}) {
-    W.ended = true; W.timer = null; emit('sfx', o.bad ? 'bad' : 'good');
+    const g = GEN; W.ended = true; W.timer = null; emit('sfx', o.bad ? 'bad' : 'good');
     for (const k in W.maps) for (const e of W.maps[k].ents) e.chase = null;
     if (!o.bad) { markDone(W.ch.id); store.del('cp.' + W.ch.id); }   // 坏结局保留检查点
     if (o.id) { const k = W.ch.id + ':' + o.id, got = store.get('ends', []); if (!got.includes(k)) { got.push(k); store.set('ends', got); } if (NET.role === 'host') netSend({ t: 'endrec', k }); }   // 结局收集（ch.endings 列出全部）
     if (NET.role === 'host' && !o.bad) netSend({ t: 'done', ch: W.ch.id });
     await waitInput('end', { endScreen: { kind: o.bad ? 'badend' : 'end', title: o.title || '完', text: o.text || '', t0: RT } });
+    chk(g);   // 玩家选了重来/返回：结束这段剧本，不再往下跑
   },
   rand(n) { return Math.floor(Math.random() * n); },
   once(k) { if (W.f['_o_' + k]) return false; W.f['_o_' + k] = true; return true; },
