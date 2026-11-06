@@ -112,8 +112,8 @@
       if (hy < 18) R(15, 18, 2, 2, sk2);
       if (hy < 21) { R(13, 22, 6, 1, '#8a2a30'); R(14, 23, 4, 1, '#6a1a20'); }
       if (a < .97) {   // 抹脸的手和袖口
-        R(8, hy, 16, 4, '#ecd8cc'); for (let i = 0; i < 4; i++) R(9 + i * 4, hy - 1, 3, 1, '#ecd8cc'); R(8, hy + 3, 16, 1, '#c8b0a4');
-        R(3, hy + 4, 15, 9, kim); R(3, hy + 4, 15, 1, '#7a3a50');
+        R(8, hy, 17, 4, '#ecd8cc'); for (let i = 0; i < 4; i++) R(9 + i * 4, hy - 1, 3, 1, '#ecd8cc'); R(8, hy + 3, 17, 1, '#c8b0a4');
+        R(24, hy - 1, 8, 8, kim); R(24, hy - 1, 1, 8, '#7a3a50');   // 袖口从右边伸进来，不挡住还没抹掉的五官
       }
       R(5, 27, 22, 5, kim); R(12, 27, 8, 2, '#efe2c8'); R(14, 29, 4, 3, kim);
     },
@@ -224,8 +224,8 @@
       let px = -dy, py = dx; if (py > 0 || (Math.abs(py) < .3 && px < 0)) { px = -px; py = -py; }   // 尾巴朝画面上方翘，看得清
       for (let i = 0; i <= L; i++) P(i, 0, i < 3 || i > L - 5 ? 5 : 3, 2);
       if (e.tail) {
-        const b = L * .42;
-        for (let j = 1; j <= 8; j++) P(b - j * j * .07, j * 1.15, j > 5 ? 5 : 3, j > 5 ? 4 : 3);
+        const b = L * .45;
+        for (let j = 1; j <= 10; j++) P(b - j * j * .05, j * 1.35, j > 7 ? 6 : j > 4 ? 4 : 3, j > 7 ? 5 : j > 4 ? 4 : 3);
         P(L, 3, 2, 3); P(L, -3, 2, 3);
       }
     },
@@ -329,7 +329,8 @@
   }
   const tx = e => Math.round(e.px / TS), ty = e => Math.round(e.py / TS);
   function figGoal(S) {   // 短一点：iPad 竖屏右上角也放得下
-    const n = FIG.filter(k => !S.f.gone[k]).length;
+    const live = FIG.filter(k => !S.f.gone[k]), n = live.length;
+    if (n === 1) return '只剩' + NAME[live[0]] + '了——向他求助';
     return '坂上 ' + n + ' 人里只有 1 个真人：查影子、手、声音，向他求助';
   }
   const KW = { tail: '影子', hand: '手', voice: '声音' };
@@ -569,7 +570,7 @@
     await S.scare('face', { face: 'soba', dur: 1 });
     await S.die('好几只冰凉的手，同时摸上了你的脸。\n「……是不是，这样的脸？」\n「……是不是，这样的脸？」', '蜡烛烧完了');
   }
-  const CANDLE = 150;
+  const CANDLE = 170;   // 实测：每页读 1.6 秒、四个人挨个查完约用 100 秒；读得慢（2.4 秒一页）也来得及，愣着就不行
   function startCandle(S, sec) { S.timer(sec, '蜡烛', candleOut, { during: true }); S.wear('@meL'); }
   async function figTalk(S, k) {
     if (S.f.helped || S.f.gone[k]) return;
@@ -745,7 +746,7 @@
     thumb(g, w, h) {
       const s = Math.max(2, Math.floor(h / 42)), ox = Math.round(w / 2 - 16 * s), oy = Math.round((h - 22) / 2 - 16 * s);
       const gr = g.createRadialGradient(w / 2, oy + 26 * s, 2, w / 2, oy + 26 * s, 24 * s); gr.addColorStop(0, 'rgba(255,180,90,.32)'); gr.addColorStop(1, 'rgba(255,180,90,0)'); g.fillStyle = gr; g.fillRect(0, 0, w, h);
-      FACES.nop((x, y, ww, hh, c) => { g.fillStyle = c; g.fillRect(ox + x * s, oy + y * s, ww * s, hh * s); }, .5, 0);
+      FACES.nop((x, y, ww, hh, c) => { g.fillStyle = c; g.fillRect(ox + x * s, oy + y * s, ww * s, hh * s); }, 1, 0);   // 抹过之后：一张光溜溜的蛋脸
     },
     people: PEOPLE8,
     faces: FACES,

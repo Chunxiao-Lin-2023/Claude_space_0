@@ -76,7 +76,9 @@
     yuki(R, a, t) {
       const H = '#05050a', HL = '#1c2030', SK = '#f2f6fb', SK2 = '#cfdae6', SK3 = '#9aaabd', LIP = '#6f88b4', EYE = '#020206', ICE = '#dff0ff';
       R(5, 1, 22, 31, H); R(2, 6, 4, 26, H); R(26, 4, 5, 24, H); R(29, 8, 3, 14, H); R(0, 14, 3, 18, H);
-      for (let i = 0; i < 6; i++) R(26 + (i % 3), 10 + i * 3, 4 + (i % 2) * 2, 1, HL);
+      const RIM = '#3a4a66';   // 发梢的一圈冷光：黑发在黑底上也看得出轮廓
+      R(8, 0, 16, 1, RIM); R(5, 1, 3, 1, RIM); R(24, 1, 3, 1, RIM); R(4, 2, 1, 4, RIM); R(1, 6, 1, 8, RIM); R(27, 3, 1, 2, RIM); R(30, 7, 1, 2, RIM); R(31, 9, 1, 12, RIM);
+      for (let i = 0; i < 4; i++) R(27 + i, 9 + i * 4, 1, 4, HL);   // 被风吹向一边的几绺
       R(7, 3, 1, 28, HL); R(24, 3, 1, 26, HL);
       R(10, 5, 12, 3, SK); R(9, 8, 14, 13, SK); R(10, 21, 12, 3, SK); R(12, 24, 8, 2, SK);
       R(20, 7, 2, 16, SK2); R(18, 23, 3, 2, SK2); R(9, 14, 1, 6, SK2);
@@ -585,7 +587,7 @@
     await S.say('茂作', ['……好，好。', '巳之吉，过来烤烤手。']);
     await S.say('茂作', '这一夜还长着呢。我跟你说说，山里人冬天的规矩。');
     await S.note('mosaku');
-    f.ph = 'night'; f.gT = 14; f._ins = undefined; S.ent('wx').s.dk = '#0c1018';
+    f.ph = 'night'; f.gT = 14; f._ins = undefined; S.ent('wx').s.dk = '#0c1018'; S.dark(.87);
     S.timer(NIGHT, '夜还长', yukiCome);
     S.goal(nightGoalText(S));
     S.cp('night');
@@ -594,7 +596,7 @@
     const f = S.f;
     f.T = Math.max(f.T ?? 0, 80); f.fire = Math.max(f.fire ?? 0, 50); f.lit = 1; f.gust = 0; f.blown = 0;
     const d = S.ent('door'); d.open = false; d.solid = false; f.gT = 12; f._dying = 0; f._ins = undefined; f._lb = -1; f._cb = -1;
-    S.hide('shade'); S.ent('mado').face = false; S.ent('wx').s.g = 0; S.ent('wx').s.dk = '#0c1018'; S.dark(null); S.plr(null); S.speed(1);
+    S.hide('shade'); S.ent('mado').face = false; S.ent('wx').s.g = 0; S.ent('wx').s.dk = '#0c1018'; S.dark(.87); S.plr(null); S.speed(1);
     iroriVis(S);
   }
   /* ---- 前半夜：每帧 ---- */
@@ -670,7 +672,7 @@
   function endGust(S) {
     const f = S.f, ins = HUT(S.pl.x, S.pl.y);
     f.gust = 0; f.gT = 15 + Math.random() * 7;
-    S.hide('shade'); S.ent('mado').face = false; S.ent('wx').s.g = 0; S.dark(null); f._cb = -1;
+    S.hide('shade'); S.ent('mado').face = false; S.ent('wx').s.g = 0; S.dark(.87); f._cb = -1;
     S.plr(ins ? 2.8 : null);
   }
   function breathHit(S) {

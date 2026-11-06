@@ -724,7 +724,7 @@
   function chaseSetup(S) {
     S.f.ph = 'chase'; S.norun(true); S.clearTimer();
     lanReset(S);
-    S.stop('ono'); S.place('ono', 16, 21, 3); S.ent('ono').alpha = 1; S.hide('ono');
+    S.stop('ono'); S.place('ono', 16, 21, 3); S.ent('ono').alpha = 1; S.ent('ono').solid = false; S.hide('ono');
     S.hide('onna');
     if (S.f.woke) { S.place('naoto2', 7, 7, 0); S.follow('naoto2', true); }
     S.goal('抱着石头逃出村口——绕开他！（跑不动）');
@@ -758,7 +758,7 @@
       for (let k = 0; k < 2 && (dx || dy); k++) if (passable(curMap(), tx + dx, ty + dy, p)) { tx += dx; ty += dy; }
       S.pos(tx, ty);
       await S.narr('斧刃擦着你的耳朵劈下来，「咚」地砍进了身边的柱子里。\n你踉跄着退了两步。他拔了两下斧头，没拔出来——');
-      REGRAZE = 1.4;   // 在 tick 里过一会儿才重新追（立刻追会马上又判定抓到）
+      REGRAZE = 1.4; S.ent('ono').solid = true;   // 在 tick 里过一会儿才重新追（立刻追会马上又判定抓到）；拔斧头时他还堵在路上
       return S.think('快走！下一次，他不会再砍偏了。');
     }
     S.clearTimer(); CDIE++;
@@ -891,6 +891,7 @@
     if (x >= 20 && x <= 25 && ((y >= 10 && y <= 12) || (y >= 16 && y <= 18))) return y === 12 || y === 18 ? '#' : 'k';
     if (y >= 21) return (x === 16 || (y === 21 && x >= 15 && x <= 17)) ? 'd' : 'P';
     if (x >= 10 && x <= 14 && ((y >= 9 && y <= 13) || (y >= 15 && y <= 19))) return 'i';
+    if ((x === 15 || x === 17) && ((y >= 9 && y <= 13) || (y >= 15 && y <= 19))) return 'h';   // 大路两边的树篱：大路是一条窄道
     if (x === 16 && y >= 5) return 'd';
     if (y >= 3 && y <= 5 && x >= 13 && x <= 19) return 'd';
     if ((y === 8 || y === 14 || y === 20) && x >= 2 && x <= 29) return 'd';
@@ -1094,7 +1095,7 @@
             const n = Math.min(LAN_IDS.length, Math.floor((1 - W.timer.left / LAN_T) * (LAN_IDS.length + 1)));
             while (LANN < n) { const e = S.ent(LAN_IDS[LANN]); if (e) { e.off = true; e.light = null; } LANN++; S.tone('sine', 320, 110, .3, .035, 0, 900); }
             const o = S.ent('ono');
-            if (REGRAZE > 0 && !W.busy) { REGRAZE -= dt; if (REGRAZE <= 0 && o && !o.chase) S.chase('ono', { spd: ONO_SPD, catch: onoCatch, wait: .1 }); }
+            if (REGRAZE > 0 && !W.busy) { REGRAZE -= dt; if (REGRAZE <= 0 && o && !o.chase) { o.solid = false; S.chase('ono', { spd: ONO_SPD, catch: onoCatch, wait: .1 }); } }
             AXT -= dt; ONOSEE -= dt;
             if (o && !o.hidden) {
               const d = Math.abs(o.px - S.pl.px) / TS + Math.abs(o.py - S.pl.py) / TS;
