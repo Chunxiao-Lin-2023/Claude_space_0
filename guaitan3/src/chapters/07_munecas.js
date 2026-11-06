@@ -747,7 +747,7 @@
     song(S, .05);
     await S.say('', '「Señora Santa Ana, ¿por qué llora la niña?……」\n（圣安娜夫人，小姑娘为什么哭？）', WS);
     await S.think('前面就是特修伊洛湖了。\n湖上别停。跟着木桩上的娃娃。');
-    S.goal('穿过湖到对岸亮灯的码头：别停，绕开水葫芦，跟着木桩');
+    S.goal('过湖去对岸亮灯的码头：别停，跟着木桩，绕开水葫芦');
     if (S.coop) S.toast('两人：一个人盯着雾里的木桩报方向，一个人撑船');
     S.cp('lago');
   }
@@ -839,7 +839,7 @@
   function islaGoal(S) {
     if ((S.f.fixed || 0) >= 4) return S.goal('把托尼奥的娃娃挂到西北角的老柳树上');
     if (!S.f.cuaderno) return S.goal('上岛看看，找到岛主的小屋');
-    S.goal(`找回娃娃们丢的东西（${S.f.fixed || 0}/4）：站定不动，看它们在看哪儿`);
+    S.goal(`找回娃娃丢的东西（${S.f.fixed || 0}/4）：站定，看它们在看哪儿`);
   }
   function gazeTick(S, dt) {
     if (S.busy || W.ended || !S.ent('arbol') || S.ent('arbol').s.mode === 'idle') { STILL = 0; return; }

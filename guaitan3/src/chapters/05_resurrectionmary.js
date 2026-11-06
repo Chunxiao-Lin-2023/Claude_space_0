@@ -695,9 +695,9 @@
     const ty2 = (safe || C.demo) ? (ty >= 9 ? 7 : 9) : clamp(py, 6, 10);
     C.y += (ty2 - C.y) * Math.min(1, dt * 4.5);
     car.px = C.x * TS; car.py = C.y * TS;
-    if (!safe && !C.demo && Math.abs(py - C.y) < 1.1 && px + .5 >= C.x - .2 && px + .5 <= C.x + 3) { C.st = 'idle'; C.t = 4; car.hidden = true; hud.s.warn = 0; S.run(carHit); return; }
+    if (!safe && !C.demo && Math.abs(py - C.y) < 1.1 && px + .5 >= C.x - .2 && px + .5 <= C.x + 3) { C.st = 'idle'; C.t = .8; car.hidden = true; hud.s.warn = 0; S.run(carHit); return; }
     if (!C.passed && C.x < px - .5) { C.passed = true; if (safe || C.demo) { S.shake(250, 1); S.tone('sawtooth', 140, 60, .5, .05, 0, 700); } }
-    if (C.x < px - 12 || C.x < -6) { C.st = 'idle'; C.t = 1.2 + Math.random() * 2.3; car.hidden = true; hud.s.warn = 0; if (C.demo) { C.demo = false; S.after(150, demoAfter); } }
+    if (C.x < px - 12 || C.x < -6) { C.st = 'idle'; C.t = .6 + Math.random() * 1.6; car.hidden = true; hud.s.warn = 0; if (C.demo) { C.demo = false; S.after(150, demoAfter); } }
   }
   async function carHit(S) {
     const f = S.f;
@@ -710,7 +710,6 @@
       const x = S.pl.x; let best = null;
       for (let d = 0; d < 40 && best == null; d++) { if (isSafe(x - d, 10)) best = -d; else if (isSafe(x + d, 10)) best = d; }
       if (best) S.toast('最近的光圈在你' + (best < 0 ? '左' : '右') + '边 ' + Math.abs(best) + ' 步（路肩那一侧）');
-      if (W._car) W._car.t = Math.max(W._car.t, 3);
       return;
     }
     carDeaths++;
