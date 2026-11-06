@@ -26,7 +26,9 @@ SOL = [
     ['step', 16, 2],                          # 上灯室：灯廊远景，开始点灯
     ['expect', f"{W}.f.ph === 'lamp' && {W}.mapId === 'tower'"],
     ['shot', 'tower'],
-    ['use', 'lens'],                          # 没预热就开阀：窜火
+    ['use', 'lens'],                          # 没预热就开阀：窜火，纱罩烧坏
+    ['expect', f"{W}.f.mantle === 1"],
+    ['use', 'mantles'],                       # 换纱罩
     ['use', 'blinds'],
     ['use', 'spirit'],
     ['wait', 8600],

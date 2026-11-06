@@ -147,7 +147,7 @@
     S.sfx('knock');
     await S.say('墙后面', ['Hello？！有人吗？！', '……是守墓的那个孩子吗？救救我——这里面有东西！'], { style: 'whisper' });
     await S.think('莫顿。他被封在里面了。\n墙摸上去冰凉、干硬，像是三千年前就在这儿了。只有右边那几个印，黑得发亮。');
-    S.goal('墙又封上了——对照「笺」里老爹的记工簿，看清墙上的印（双人：一人念记工簿，一人选）');
+    S.goal('墙又封上了——对照「笺」里的记工簿认出真印（双人：一人念，一人选）');
     S.cp();
   }
   async function sealOn(S) {
@@ -403,7 +403,7 @@
     await S.note('sketch');
     S.f.sketch = true; S.give('sketch', true);
     await S.think('壁画上的，是国王死了以后走的路。\n……要把他的东西还回去，是不是也得照着他的路，先走一遍？');
-    S.goal('照国王走过的路，依次摸五幅壁画：东墙一幅、北墙三幅、西墙一幅（双人：一人念速写本，一人摸）');
+    S.goal('照国王走过的路摸五幅画：东墙一、北墙三、西墙一（双人：一人念，一人摸）');
   }
   async function panelOn(S, id) {
     const e = S.ent(id), d = PDESC[id];
