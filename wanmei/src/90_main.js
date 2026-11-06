@@ -92,7 +92,7 @@ function step(dt) {
   if (W.sniffT > 0) W.sniffT -= dt;
   tickDlg(dt); tickWillow(dt);
   for (const e of W.ents) syncEnt(e, dt);
-  updateParticles(dt); updateFX(dt);
+  updateParticles(dt); updateFX(dt); updateCrits(dt);
   updateCam(dt); updateLight(dt);
   updateHUD(dt); tickMusic(dt);
   W.saveT = (W.saveT || 0) + dt; if (W.saveT > 20) { W.saveT = 0; saveGame(); }
@@ -106,9 +106,9 @@ function render(dt) {
   drawGround(g);
   drawTele(g);
   if (UI.target && UI.target.alive !== false && !UI.target.removed) drawTargetRing(g, UI.target);
-  queueStatic(); queueScene(); queueFX(); flushQueue(g);
+  queueStatic(); queueLifts(); queueScene(); queueCrits(); queueFX(); flushQueue(g);
   drawParticles(g);
-  LAMPS.length = 0; if (LCUR.dark > 0.02) { for (const L of STATIC.lamps) if (onScreen(L.x, L.z, L.r + 2)) LAMPS.push(L); sceneLamps(LAMPS); } drawLighting(g);
+  LAMPS.length = 0; if (LCUR.dark > 0.02) { for (const L of STATIC.lamps) if (onScreen(L.x, L.z, L.r + 2)) LAMPS.push(L); sceneLamps(LAMPS); for (const L of CRIT.lamps) LAMPS.push(L); } drawLighting(g);
   blitLow();
 }
 function drawTargetRing(g, e) { const [sx, sy] = w2s(e.x, e.z), K = k(), r = Math.round(Math.max(0.5, e.r * 1.3) * K), c = e.team === 1 ? '255,90,70' : e.team === 2 ? '255,220,90' : '120,230,140'; g.save(); g.fillStyle = `rgba(${c},0.95)`; const n = Math.max(12, Math.round(r * 1.2)); for (let i = 0; i < n; i++) { if ((i + Math.floor(W.t * 8)) % 3 === 0) continue; const a = i / n * TAU; g.fillRect(Math.round(sx + Math.cos(a) * r), Math.round(sy + Math.sin(a) * r * 0.45), 1, 1); } g.restore(); }

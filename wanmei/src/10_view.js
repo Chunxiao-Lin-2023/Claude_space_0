@@ -19,11 +19,20 @@ const R3 = { get W() { return innerWidth; }, get H() { return innerHeight; } }; 
 const CSSPX = () => V.SC / V.dpr; // CSS px per art px
 function k() { return V.PPM; }
 function elevS(y) { return y < 3 ? y : 3 + (y - 3) * 0.4; } // tall heights are compressed so flyers stay on screen
-function camSnap() { const K = V.PPM; V.ox = Math.round(V.cx * K - V.W / 2 - V.sx); V.oz = Math.round(V.cz * K - V.H / 2 - V.sy); }
-function w2s(x, z, y = 0) { const K = V.PPM; return [Math.round(x * K) - V.ox, Math.round(z * K) - V.oz - Math.round(elevS(y) * K)]; }
+/* ---------- raised ground (cliff tops): a world disc whose contents are drawn lifted up the screen ---------- */
+const LIFTS = []; V.camLift = 0; V.maxLift = 0;
+function addLift(L) { L.rim = L.rimF || (a => L.r * (1 + 0.12 * vnoise(Math.cos(a) * 2 + L.x, Math.sin(a) * 2))); L.rmax = 0; for (let i = 0; i < 180; i++) L.rmax = Math.max(L.rmax, L.rim(i / 180 * TAU - PI)); L.rmax += 0.05; L.R2 = L.rmax * L.rmax; LIFTS.push(L); V.maxLift = Math.max(V.maxLift, L.h); return L; }
+function liftAt(x, z) { for (let i = 0; i < LIFTS.length; i++) { const L = LIFTS[i], dx = x - L.x, dz = z - L.z, d2_ = dx * dx + dz * dz; if (d2_ < L.R2 && Math.sqrt(d2_) < L.rim(Math.atan2(dz, dx))) return L; } return null; }
+function liftH(x, z) { const L = LIFTS.length ? liftAt(x, z) : null; return L ? L.h : 0; }
+function zKey(x, z) { // things on a cliff top, or at the foot of its front face, sort after the cliff itself
+  for (let i = 0; i < LIFTS.length; i++) { const L = LIFTS[i], dx = x - L.x, dz = z - L.z; if (dz * dz + dx * dx > (L.rmax + 1.5) ** 2) continue; if (liftAt(x, z) === L) return L.z + L.rmax + 0.02 + dz * 0.005; if (dz > 0 && z < L.z + L.rmax + 0.2) return L.z + L.rmax + 0.2 + dz * 0.001; }
+  return z; }
+function camSnap() { const K = V.PPM, tl = liftH(V.cx, V.cz); V.camLift = Math.abs(tl - V.camLift) < 0.02 ? tl : lerp(V.camLift, tl, 0.14); V.ox = Math.round(V.cx * K - V.W / 2 - V.sx); V.oz = Math.round(V.cz * K - V.H / 2 - V.sy - V.camLift * K); }
+function w2s(x, z, y = 0) { const K = V.PPM; return [Math.round(x * K) - V.ox, Math.round(z * K) - V.oz - Math.round((elevS(y) + (LIFTS.length ? liftH(x, z) : 0)) * K)]; }
+function w2s0(x, z) { const K = V.PPM; return [Math.round(x * K) - V.ox, Math.round(z * K) - V.oz]; }
 function a2w(ax, ay) { const K = V.PPM; return [(ax + V.ox) / K, (ay + V.oz) / K]; }
-function s2w(cx, cy) { const f = CSSPX(); return a2w(cx / f, cy / f); } // from CSS pixels (mouse)
-function onScreen(x, z, m = 4) { const K = V.PPM, hw = V.W / 2 / K + m, hh = V.H / 2 / K + m; return Math.abs(x - V.cx) < hw && Math.abs(z - V.cz) < hh + m; }
+function s2w(cx, cy) { const f = CSSPX(), w = a2w(cx / f, cy / f); for (const L of LIFTS) { const z2 = w[1] + L.h; if (liftAt(w[0], z2) === L) return [w[0], z2]; } return w; } // from CSS pixels (mouse); a click on a cliff top lands on it
+function onScreen(x, z, m = 4) { const K = V.PPM, hw = V.W / 2 / K + m, hh = V.H / 2 / K + m; const dz = z - V.cz; return Math.abs(x - V.cx) < hw && dz > -hh - m - V.camLift && dz < hh + m + V.maxLift; }
 /* ---------- draw queue: everything with a depth (world z) is sorted before drawing ---------- */
 const DQ = [];
 function queue(z, fn, layer = 1) { DQ.push({ z, fn, layer }); }

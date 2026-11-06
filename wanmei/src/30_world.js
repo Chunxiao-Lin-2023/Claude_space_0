@@ -47,6 +47,7 @@ function syncEnt(e, dt) {
   o.position.set(e.x, e.y + (e.dy || 0), e.z); o.groundY = groundH(e.x, e.z); if (e.swim) o.groundY = e.y;
   if (!e.R) { o.rotation.y = e.rot; o.visible = e.vis; if (e.spin) o.rotation.z = W.t * e.spin; return; }
   if (e.R.kind === 'bird' && e.fly) o.position.y += Math.sin(W.t * 3 + e.id) * 0.15;
+  if (e.fly) { const k = Math.min(1, dt * 2.5), lh = liftH(e.x, e.z); e.vFlyH = e.vFlyH == null ? (e.flyH ?? 3.5) : lerp(e.vFlyH, e.flyH ?? 3.5, k); o.visLift = o.visLift == null ? lh : lerp(o.visLift, lh, k); o.flyElev = Math.max(0, e.vFlyH + Math.sin(W.t * 3 + e.id) * 0.15); } else { o.flyElev = null; o.visLift = null; e.vFlyH = null; }
   e.dispRot = e.dispRot == null ? e.rot : angLerp(e.dispRot, e.rot, Math.min(1, dt * 14)); o.rotation.y = e.dispRot;
   const A = e.A; A.spd = e.mvSpd || 0; A.vy = e.vy; A.fly = e.fly;
   if (!e.alive && e.type === 'mob') { A.spd = 0; A.pose = e.R.kind === 'human' ? 'down' : 'dead'; }

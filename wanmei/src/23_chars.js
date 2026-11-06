@@ -35,13 +35,13 @@ const CHARS = {
     if (kind === 'old') return Object.assign(base, { build: 'old', hair: P(['topknot', 'short', 'bald']), hairC: '#d8d8d0', hairHl: '#ffffff', robe: true, sleeve: 'long', hunch: 0.08, face: Object.assign(base.face, { ew: 21, eh: 18, browC: '#e8e8e0', browW: 7, wrinkle: true, beard: r() < 0.6 ? '#ecece4' : null }) });
     return Object.assign(base, { build: 'child', hair: P(['short', 'spiky', 'kid']), face: Object.assign(base.face, { ew: 28, eh: 33, blush: 0.32 }) }); },
   // ---------- beasts (side view) ----------
-  wolf: () => ({ rig: 'quad', key: 'wolf', size: 1.0, len: 180, legH: 70, bodyR: 42, c1: '#6e6e78', c2: '#9a9aa4', belly: '#d0d0d6', headR: 0.78, snout: 1.0, earL: 0.7, tailL: 0.8, tailUp: 0.2, tailTuft: '#9a9aa4', fangs: true, iris: EYES.amber.slice(1).concat(['#3a1a04']) }),
-  lynx: () => ({ rig: 'quad', key: 'lynx', size: 0.9, len: 170, legH: 60, bodyR: 40, c1: '#b8864e', c2: '#d8b078', belly: '#f0e0c8', stripes: '#5a3818', headR: 0.8, snout: 0.5, earL: 0.85, tailL: 0.9, horns: '#3a2a1a', hornL: 0.9, hornCurve: 0.3, iris: ['#0a3a14', '#2a9a4a', '#a0f0b0'] }),
+  wolf: () => ({ rig: 'quad', form: 'hound', key: 'wolf', size: 1.0, len: 180, legH: 70, bodyR: 42, c1: '#6e6e78', c2: '#9a9aa4', belly: '#d0d0d6', headR: 0.78, snout: 1.0, earL: 0.7, tailL: 0.8, tailUp: 0.2, tailTuft: '#9a9aa4', fangs: true, iris: EYES.amber.slice(1).concat(['#3a1a04']) }),
+  lynx: () => ({ rig: 'quad', form: 'cat', key: 'lynx', size: 0.9, len: 170, legH: 60, bodyR: 40, c1: '#b8864e', c2: '#d8b078', belly: '#f0e0c8', stripes: '#5a3818', headR: 0.8, snout: 0.5, earL: 0.85, tailL: 0.9, horns: '#3a2a1a', hornL: 0.9, hornCurve: 0.3, iris: ['#0a3a14', '#2a9a4a', '#a0f0b0'] }),
   snake: () => ({ rig: 'snake', key: 'snake', size: 1, n: 16, r: 15, c1: '#3a5a2a', c2: '#5a7a3a', eye: 0xffd020 }),
   zjsnake: () => ({ rig: 'snake', key: 'zjsnake', size: 1.6, n: 20, r: 20, c1: '#6a2a8a', c2: '#d8a830', crest: '#d8a830', eye: 0xff4020 }),
-  mangniu: () => ({ rig: 'quad', key: 'mangniu', size: 1.7, len: 230, legH: 80, bodyR: 64, humpY: 1.15, c1: '#2c3c34', c2: '#3e5244', belly: '#5a6a5a', headR: 0.62, snout: 0.7, earL: 0.35, tailL: 0.5, tailTuft: '#1a2018', horns: '#e0d4b0', hornL: 1.6, hornCurve: 0.9, hoof: '#1a1a1a', mood: 'open', iris: ['#2a1a08', '#8a5a20', '#d8a050'] }),
-  biao: () => ({ rig: 'quad', key: 'biao', size: 2.4, len: 210, legH: 70, bodyR: 48, c1: '#8a6440', c2: '#b08a5c', belly: '#e0c8a0', stripes: '#3a2814', headR: 0.8, snout: 0.55, earL: 0.55, tailL: 1.0, wings: '#6a4a2e', fangs: true, iris: EYES.gold.slice(1) }),
-  dog: () => ({ rig: 'quad', key: 'dog', size: 0.8, len: 150, legH: 55, bodyR: 34, c1: '#d8a040', c2: '#e8c070', belly: '#f4e4c0', headR: 0.85, snout: 0.7, earL: 0.5, earBack: true, tailL: 0.7, tailUp: 0.9, mood: 'cute', iris: ['#2a1a0a', '#6a4020', '#a07040'] }),
+  mangniu: () => ({ rig: 'quad', form: 'ox', key: 'mangniu', size: 1.7, len: 230, legH: 80, bodyR: 64, humpY: 1.15, c1: '#2c3c34', c2: '#3e5244', belly: '#5a6a5a', headR: 0.62, snout: 0.7, earL: 0.35, tailL: 0.5, tailTuft: '#1a2018', horns: '#e0d4b0', hornL: 1.6, hornCurve: 0.9, hoof: '#1a1a1a', mood: 'open', iris: ['#2a1a08', '#8a5a20', '#d8a050'] }),
+  biao: () => ({ rig: 'quad', form: 'cat', key: 'biao', size: 2.4, len: 210, legH: 70, bodyR: 48, c1: '#8a6440', c2: '#b08a5c', belly: '#e0c8a0', stripes: '#3a2814', headR: 0.8, snout: 0.55, earL: 0.55, tailL: 1.0, wings: '#6a4a2e', fangs: true, iris: EYES.gold.slice(1) }),
+  dog: () => ({ rig: 'quad', form: 'dog', key: 'dog', size: 0.8, len: 150, legH: 55, bodyR: 34, c1: '#d8a040', c2: '#e8c070', belly: '#f4e4c0', headR: 0.85, snout: 0.7, earL: 0.5, earBack: true, tailL: 0.7, tailUp: 0.9, mood: 'cute', iris: ['#2a1a0a', '#6a4020', '#a07040'] }),
   qingying: () => ({ rig: 'bird', key: 'qy', size: 4.0, c1: '#1e6a64', c2: '#5ac0b0', belly: '#9ad8c8', iris: EYES.amber.slice(1) }),
   dapeng: () => ({ rig: 'bird', key: 'dp', size: 0.85, chibi: 0.8, c1: '#2a7a6a', c2: '#7ad8c0', belly: '#c8f0e0', iris: EYES.gold.slice(1) }),
   xiaoqing: () => ({ rig: 'bird', key: 'xq', size: 0.8, chibi: 0.85, c1: '#2a8a7a', c2: '#8ae8d0', belly: '#d0f4e8', iris: EYES.amber.slice(1) }),
@@ -52,13 +52,13 @@ const CHARS = {
 /* ================= the original divine-beast partner (P2): evolves into the species of the novel's companion of each stage ================= */
 const PARTNER_FORMS = {
   rongling: { stage: 1, name: '绒灵', desc: '柳神护下的灵卵孵出的幼崽，一团会发光的软毛，额上有一点小角芽。', role: '辅助', tags: ['护盾', '灵光', '嗅宝'],
-    spec: () => ({ rig: 'quad', key: 'rongling', size: 0.62, len: 120, legH: 26, bodyR: 52, humpY: 1.05, chestY: 1.05, c1: '#f4f6ff', c2: '#dfeaff', belly: '#ffffff', headR: 1.15, snout: 0.25, neckUp: 0.9, earL: 1.2, tailL: 1.0, tailUp: 0.9, tailC: '#f4f6ff', tailTuft: '#bfe8ff', earC: '#eaf4ff', horn1: '#9ae8ff', legR: 0.34, claws: false, iris: EYES.cyan.slice(1), mood: 'cute', eyeR: 0.3, blush: true }),
+    spec: () => ({ rig: 'quad', form: 'fluff', key: 'rongling', size: 0.62, len: 120, legH: 26, bodyR: 52, humpY: 1.05, chestY: 1.05, c1: '#f4f6ff', c2: '#dfeaff', belly: '#ffffff', headR: 1.15, snout: 0.25, neckUp: 0.9, earL: 1.2, tailL: 1.0, tailUp: 0.9, tailC: '#f4f6ff', tailTuft: '#bfe8ff', earC: '#eaf4ff', horn1: '#9ae8ff', legR: 0.34, claws: false, iris: EYES.cyan.slice(1), mood: 'cute', eyeR: 0.3, blush: true }),
     glow: '#8ae0ff', skills: ['p_tackle', 'p_orb', 'p_shield', 'p_sniff'] },
   qinglin: { stage: 2, name: '青鳞鹰', from: 'rongling', desc: '柳树下三枚鹰卵孵化时，绒灵吸尽了卵壳上破碎的符文，蜕成一只青鳞幼鹰——无羽，周身青色金属鳞片，头顶一排小骨刺。', role: '敏捷·青月', tags: ['青月', '俯冲', '鳞甲'],
     spec: lv => ({ rig: 'bird', key: 'p_qinglin', size: lerp(0.85, 1.5, clamp((lv - 10) / 20, 0, 1)), chibi: lerp(0.8, 0.35, clamp((lv - 10) / 20, 0, 1)), c1: '#237a72', c2: '#7ae0cc', belly: '#c8f0e4', spike: '#f0e8d0', iris: EYES.cyan.slice(1) }),
     glow: '#6ae8d0', skills: ['q_peck', 'q_moon', 'q_dive', 'q_scale'] },
   zhuyan: { stage: 3, name: '朱厌', from: 'qinglin', desc: '形似猿猴，脚赤红——太古凶兽朱厌一脉。金毛里藏着一对麟角，血是能疗伤的金色。（第53章起）', role: '迅捷·偷取', tags: ['金光', '偷取', '金血'],
-    spec: () => ({ rig: 'quad', key: 'p_zhuyan', size: 0.7, len: 110, legH: 44, bodyR: 38, c1: '#e8b020', c2: '#ffd860', belly: '#fff0b0', headR: 1.0, snout: 0.35, earL: 0.4, tailL: 1.2, tailTuft: '#ffe080', legC: '#d83020', iris: EYES.gold.slice(1), mood: 'cute' }),
+    spec: () => ({ rig: 'quad', form: 'ape', key: 'p_zhuyan', size: 0.7, len: 110, legH: 44, bodyR: 38, c1: '#e8b020', c2: '#ffd860', belly: '#fff0b0', headR: 1.0, snout: 0.35, earL: 0.4, tailL: 1.2, tailTuft: '#ffe080', legC: '#d83020', iris: EYES.gold.slice(1), mood: 'cute' }),
     glow: '#ffd040', skills: [] },
 };
 /* character height in metres for collision / UI, derived from the drawing */

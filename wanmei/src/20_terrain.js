@@ -32,7 +32,7 @@ function zoneHeight(Z, x, z) {
     switch (F.t) {
       case 'mtn': case 'hill': { const d = Math.hypot(x - F.x, z - F.z); if (d > F.r) break; const k = 1 - d / F.r, s = F.t === 'mtn' ? Math.pow(k, 1.5) * (1 - (F.rough ?? 0.35) + (F.rough ?? 0.35) * ridged(x * 0.02 + F.x, z * 0.02 + F.z, 4)) : smooth(k); h += F.h * s; break; }
       case 'flat': { const d = Math.hypot(x - F.x, z - F.z), w = 1 - sstep(F.r, F.r + F.fall, d); if (w > 0) h = lerp(h, F.h + (F.n ? fbm(x * 0.05, z * 0.05, 2) * F.n : 0), w); break; }
-      case 'mesa': { const d = Math.hypot((x - F.x) / (F.sx || 1), (z - F.z) / (F.sz || 1)), ang = Math.atan2(z - F.z, x - F.x), rr = F.r * (1 + 0.12 * vnoise(Math.cos(ang) * 2 + F.x, Math.sin(ang) * 2)), w = 1 - sstep(rr, rr + F.fall, d); if (w > 0) h = Math.max(h, lerp(h, F.h + fbm(x * 0.04, z * 0.04, 3) * (F.n ?? 1.5), w)); break; }
+      case 'mesa': { const d = Math.hypot((x - F.x) / (F.sx || 1), (z - F.z) / (F.sz || 1)), ang = Math.atan2(z - F.z, x - F.x), rr = F.rimF ? F.rimF(ang) : F.r * (1 + 0.12 * vnoise(Math.cos(ang) * 2 + F.x, Math.sin(ang) * 2)), w = 1 - sstep(rr, rr + F.fall, d); if (w > 0) h = Math.max(h, lerp(h, F.h + fbm(x * 0.04, z * 0.04, 3) * (F.n ?? 1.5), w)); break; }
       case 'pit': { const d = Math.hypot(x - F.x, z - F.z); if (d < F.r) h -= F.h * smooth(1 - d / F.r); break; }
       case 'ridgeLine': { const { d } = polyDist(x, z, F.pts); if (d < F.w) h += F.h * Math.pow(1 - d / F.w, 1.3) * (0.7 + 0.3 * ridged(x * 0.03, z * 0.03, 3)); break; }
       case 'fn': h = F.fn(x, z, h); break;
@@ -105,6 +105,7 @@ function groundSample(x, z) {
   if (B.hiRock && h > B.hiRock) c = mixRGB(c, B.rock, sstep(B.hiRock, B.hiRock + 25, h));
   if (B.snow && h > B.snowH) c = mixRGB(c, B.snow, sstep(B.snowH, B.snowH + 12, h + n1 * 8));
   let paint = 0; if (Z.paint) for (const P of Z.paint) { const d = Math.hypot(x - P.x, z - P.z); if (d < P.r) { const k2 = (P.k ?? 1) * sstep(P.r, P.r * (P.soft ?? 0.6), d) * (P.noise ? clamp(0.6 + n2, 0, 1) : 1); c = mixRGB(c, P.col, k2); paint = Math.max(paint, k2); } }
+  if (Z.tint && paint < 0.5) c = Z.tint(x, z, c, n2, n3);
   let wd = -9, sand = 0; if (wl > -1e8) { sand = sstep(wl + 0.9, wl + 0.15, h); wd = wl - h; }
   const lam = clamp(1.0 + (-n.x * 0.55 - n.z * 0.75) * 1.3, 0.72, 1.15);
   const dirt = mixRGB(B.dirt, B.dirt2 || B.dirt, clamp(0.5 + n3, 0, 1));
@@ -152,7 +153,7 @@ function drawGround(g) {
   g.fillStyle = '#5a7a40'; g.fillRect(0, 0, V.W, V.H);
   for (let cj = Math.floor(wz0 / S); cj <= Math.floor(wz1 / S); cj++) for (let ci = Math.floor(wx0 / S); ci <= Math.floor(wx1 / S); ci++) {
     const key = ci + ',' + cj; let c = TER.chunks.get(key); if (!c) { if (chunkBudget-- <= 0) continue; c = getChunk(ci, cj); } c.t = V.t;
-    const [sx, sy] = w2s(ci * S, cj * S); g.drawImage(c.cv, sx, sy);
+    const [sx, sy] = w2s0(ci * S, cj * S); g.drawImage(c.cv, sx, sy);
   }
   // water glints: little pixel dashes
   g.fillStyle = 'rgba(230,250,255,.75)';
@@ -169,6 +170,8 @@ function scatterPoints(Z, spec, cb) {
     const d = spec.dens(x, z); if (d <= 0 || hash2(Math.floor(x * 7), Math.floor(z * 7) + seed) > d) continue;
     if (!spec.inWater && waterAt(x, z) > terrH(x, z) - 0.6) continue;
     if (!spec.onPath && pathAt(x, z) > 0.15) continue;
+    if (LIFTS.length && liftAt(x, z)) continue; // nothing random grows on cliff tops
+    if (Z.noScatter && Z.noScatter(x, z)) continue;
     const sl = slopeAt(x, z); if (sl > (spec.slopeMax ?? 0.32)) continue;
     if (Z.clear && Z.clear.some(c => d2(x, z, c.x, c.z) < c.r * c.r)) continue;
     cb(x, z, hash2(Math.floor(x * 13), Math.floor(z * 17)), n++);

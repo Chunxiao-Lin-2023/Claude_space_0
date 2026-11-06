@@ -30,9 +30,10 @@ function queueScene() {
   const K = k();
   for (const o of SCENE.children) {
     if (!o.visible || o.noDraw) continue; const p = o.position; if (!onScreen(p.x, p.z, o.cullR || 12)) continue;
-    const elev = o.absY ? 0 : p.y - (o.groundY ?? terrH(p.x, p.z));
-    if (o.shadow) { const r = o.shadow * K * (o.scale.x || 1); queue(p.z, g => { const [sx, sy] = w2s(p.x, p.z); const f = clamp(1 - elev * 0.12, 0.35, 1); pxShadow(g, sx, sy, Math.max(2, Math.round(r * 1.15 * f)), Math.max(1, Math.round(r * 0.45 * f))); }, 0); }
-    queue(p.z + (o.zoff || 0), g => { const [sx, sy] = w2s(p.x, p.z, elev); g.save(); g.translate(sx, sy); drawObj(g, o, K); g.restore(); }, o.layer ?? 1);
+    const elev = o.flyElev != null ? o.flyElev : o.absY ? 0 : p.y - (o.groundY ?? terrH(p.x, p.z)), fl = o.flyElev != null;
+    if (o.shadow && o.rig && o.rig.A.fly && elev > 1.2) queue(p.z, g => { const [sx, sy] = w2s(p.x, p.z); flyerShadow(g, o.rig, sx, sy, o.scale.x || 1); }, 0);
+    else if (o.shadow) { const r = o.shadow * K * (o.scale.x || 1); queue(p.z, g => { const [sx, sy] = w2s(p.x, p.z); const f = clamp(1 - elev * 0.12, 0.35, 1); pxShadow(g, sx, sy, Math.max(2, Math.round(r * 1.15 * f)), Math.max(1, Math.round(r * 0.45 * f))); }, 0); }
+    queue(zKey(p.x, p.z) + (o.zoff || 0), g => { let sx, sy; if (fl) { [sx, sy] = w2s0(p.x, p.z); sy -= Math.round((elevS(elev) + o.visLift) * K); } else [sx, sy] = w2s(p.x, p.z, elev); g.save(); g.translate(sx, sy); drawObj(g, o, K); g.restore(); }, Math.max(o.layer ?? 1, elev > 2.5 ? 2 : 0));
   }
 }
 /* lights: every PLight in the scene becomes a lamp hole in the night overlay */

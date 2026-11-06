@@ -2,6 +2,7 @@
    石村位于苍莽山脉中，四周高峰大壑。村头一株焦黑雷击木（柳神），村前空地晨练；
    北面出村一里多是石林，石林最深处三百米高的石崖顶上是青鳞鹰的梧木巢；西北是狩猎区，再往外数十里是狈村。 */
 const ZONES = {};
+const NEST_RIM = a => 8.5 * (1 + 0.13 * vnoise(Math.cos(a) * 2 + 186, Math.sin(a) * 2) + 0.07 * vnoise(Math.cos(a) * 5 + 3, Math.sin(a) * 5) + 0.025 * vnoise(Math.cos(a) * 14, Math.sin(a) * 14 + 5));
 const VIL = { x: 0, z: 55 }, WILLOW = { x: 0, z: 13 }, CHIEF = { x: 13, z: 20 }, ALTAR = { x: -13, z: 22 }, YARD = { x: 0, z: 104 }, BATH = { x: -30, z: 70 }, NEST = { x: 186, z: -214 }, CAVE = { x: 70, z: -58 }, ARENA = { x: -172, z: -182 }, STONEF = { x: 140, z: -160 }, MEADOW = { x: 100, z: 140 };
 const ROAD_N = [[0, 10], [3, -25], [22, -70], [60, -110], [110, -142], [150, -175], [178, -192]];
 const ROAD_W = [[0, 10], [-18, -18], [-58, -66], [-105, -105], [-148, -150], [-172, -182]];
@@ -12,6 +13,8 @@ ZONES.shicun = {
   id: 'shicun', name: '苍莽山脉·石村', size: 640, seg: 224, light: 'day', lvCap: 12,
   base: { h: 9, amp: 11, sc: 0.0065, ridge: 10, rsc: 0.004, fine: 0.4 },
   edge: { h: 95, w: 95 },
+  tint: (x, z, c, n2, n3) => shicunTint(x, z, c, n2, n3),
+  noScatter: (x, z) => d2(x, z, NEST.x, NEST.z) < 15 * 15 || (Math.abs(x - NEST.x - 2) < 6 && z > NEST.z && z < NEST.z + 32), // keep the cliff foot and the climb approach clear
   biome: { grass1: 0x4f8a3a, grass2: 0x86b04a, grass3: 0x3e7a3e, grassTip: 0xd8e88a, rock: 0x7a7468, rock2: 0x9a9284, dirt: 0xb4966a, dirt2: 0x9c7e56, sand: 0xc8b88a, bed: 0x4a5a50, rockSl: 0.24, hiRock: 60 },
   water: { deep: 0x1f6a7a, shal: 0x5ac0b8 },
   feat: [
@@ -20,7 +23,7 @@ ZONES.shicun = {
     { t: 'mtn', x: -60, z: -290, r: 120, h: 70, rough: 0.5 }, { t: 'mtn', x: 90, z: -300, r: 110, h: 80, rough: 0.5 }, { t: 'mtn', x: 260, z: -60, r: 90, h: 55 }, { t: 'mtn', x: -270, z: 40, r: 90, h: 50 },
     { t: 'hill', x: 85, z: -62, r: 26, h: 16 }, { t: 'hill', x: -60, z: 170, r: 50, h: 14 }, { t: 'hill', x: 160, z: 40, r: 60, h: 18 }, { t: 'hill', x: -90, z: -10, r: 40, h: 10 },
     { t: 'flat', x: STONEF.x, z: STONEF.z, r: 55, fall: 30, h: 16, n: 2.5 },
-    { t: 'mesa', x: NEST.x, z: NEST.z, r: 15, fall: 4, h: 50, n: 1.2 },
+    { t: 'mesa', x: NEST.x, z: NEST.z, r: 8.5, fall: 3, h: 50, n: 0, rimF: NEST_RIM },
     { t: 'flat', x: ARENA.x, z: ARENA.z, r: 22, fall: 18, h: 14, n: 0.6 },
     { t: 'flat', x: MEADOW.x, z: MEADOW.z, r: 34, fall: 22, h: 11, n: 0.8 },
     { t: 'path', pts: Array.from({ length: 33 }, (_, i) => [VIL.x + Math.cos(i / 32 * TAU) * 23, VIL.z + Math.sin(i / 32 * TAU) * 22]), w: 3.2 },
@@ -46,8 +49,17 @@ function forestDens(x, z) {
   if (d2(x, z, MEADOW.x, MEADOW.z) < 45 * 45) d *= 0.15;
   return d;
 }
+const RABBIT_HOLES = [];
+const birchN = (x, z) => fbm(x * 0.009 + 40, z * 0.009 - 12, 3), rockN = (x, z) => fbm(x * 0.012 - 70, z * 0.012 + 33, 3);
+const TINT = { floor: rgbOf('#34502a'), leaf: rgbOf('#a8984a'), leaf2: rgbOf('#c08a3a'), rock: rgbOf('#8a8470'), meadow: rgbOf('#8cba4a') };
+function shicunTint(x, z, c, n2, n3) { // turf types: dark needle floor in old forest, golden leaf litter under birches, grey grit on rock fields
+  const dv = Math.hypot(x - VIL.x, z - VIL.z); if (dv < 48) return c;
+  const f = forestDens(x, z), b = sstep(0.1, 0.3, birchN(x, z)), r = sstep(0.12, 0.38, rockN(x, z)), m = d2(x, z, MEADOW.x, MEADOW.z) < 55 * 55 ? 0.35 : 0, fade = sstep(48, 70, dv);
+  c = mixRGB(c, TINT.floor, f * 0.45 * fade); c = mixRGB(c, mixRGB(TINT.leaf, TINT.leaf2, clamp(0.5 + n3, 0, 1)), b * clamp(0.35 + n2 * 0.5, 0, 0.6) * fade); c = mixRGB(c, TINT.rock, r * clamp(0.4 + n2 * 0.4, 0, 0.6) * fade); c = mixRGB(c, TINT.meadow, m * (1 - f) * fade); return c;
+}
 function buildShicunProps() {
   const Z = ZONES.shicun;
+  LIFTS.length = 0; addLift({ x: NEST.x, z: NEST.z, r: 8.5, h: 11, crack: 1, seed: 5, rimF: NEST_RIM }); // the cliff under the eagle's nest
   // ---- the village ----
   const houses = [];
   for (let ring = 0; ring < 3; ring++) { const n = [9, 13, 16][ring], R = [19, 27, 35][ring]; for (let i = 0; i < n; i++) { const a = i / n * TAU + ring * 0.37; const x = VIL.x + Math.cos(a) * R, z = VIL.z + Math.sin(a) * R * 0.95; if (z < 24 && Math.abs(x) < 24) continue; if (Math.abs(x) < 5.5) continue; if (d2(x, z, BATH.x, BATH.z) < 13 * 13) continue; if (d2(x, z, 58, 96) < 14 * 14) continue; if (z > 92 && Math.abs(x) < 14) continue; houses.push([x, z, Math.atan2(VIL.x - x, VIL.z - z) + rr(-0.25, 0.25)]); } }
@@ -73,18 +85,32 @@ function buildShicunProps() {
   place('rack', VIL.x - 8, VIL.z + 1, 0); place('rack', VIL.x + 8.5, VIL.z + 2, 0); place('logpile', VIL.x + 6, VIL.z + 11, 0); place('pot', VIL.x - 6, VIL.z + 11, 0); place('pot', VIL.x - 6.8, VIL.z + 11.4, 0, 0.8);
   // ---- outskirts: rocks, bushes, berry bushes, flowers near village ----
   const rk = ['rock0', 'rock1', 'rock2', 'rock3'];
-  scatterPoints(Z, { sp: 9, seed: 3, dens: (x, z) => forestDens(x, z) * 0.65 + 0.08, slopeMax: 0.45 }, (x, z, h) => place(h < 0.5 ? 'oak' : 'pine', x, z, h * TAU, 0.8 + h * 0.6));
+  scatterPoints(Z, { sp: 7.5, seed: 3, dens: (x, z) => forestDens(x, z) * 0.7 + 0.06, slopeMax: 0.45 }, (x, z, h) => place(h < 0.5 ? 'oak' : 'pine', x, z, h * TAU, 0.8 + h * 0.6));
   scatterPoints(Z, { sp: 13, seed: 7, dens: (x, z) => 0.22 + forestDens(x, z) * 0.25, slopeMax: 0.6 }, (x, z, h) => place(rk[Math.floor(h * 4)], x, z, h * 9, 0.6 + h * 1.4));
   scatterPoints(Z, { sp: 7, seed: 11, dens: (x, z) => 0.3 + forestDens(x, z) * 0.4 }, (x, z, h) => place(h < 0.55 ? 'bush' : h < 0.75 ? 'fern' : 'flowers', x, z, h * 7, 0.7 + h * 0.6));
   scatterPoints(Z, { sp: 22, seed: 17, dens: (x, z) => sstep(50, 80, Math.hypot(x - VIL.x, z - VIL.z)) * 0.5 * (1 - sstep(140, 200, Math.hypot(x - VIL.x, z - VIL.z))) }, (x, z) => place('berrybush', x, z, 0, 1));
   scatterPoints(Z, { sp: 6, seed: 23, dens: (x, z) => { const w = waterAt(x, z); return w > -1e8 && terrH(x, z) > w - 0.4 && terrH(x, z) < w + 1.2 ? 0.7 : 0; }, inWater: true, slopeMax: 0.6 }, (x, z, h) => place('reed', x, z, h * 5, 0.8 + h * 0.4));
+  // ---- wild biomes (饥荒式的野外): birch groves, tall-grass meadows with rabbit warrens, mushroom-strewn old forest, flinty rock fields ----
+  const dvil = (x, z) => Math.hypot(x - VIL.x, z - VIL.z), open_ = (x, z) => 1 - forestDens(x, z);
+  const notStone = (x, z) => d2(x, z, STONEF.x, STONEF.z) > 70 * 70;
+  scatterPoints(Z, { sp: 8, seed: 61, dens: (x, z) => dvil(x, z) > 62 && notStone(x, z) ? sstep(0.12, 0.32, birchN(x, z)) * 0.7 : 0, slopeMax: 0.45 }, (x, z, h) => place('birch', x, z, 0, 0.8 + h * 0.4));
+  scatterPoints(Z, { sp: 4.5, seed: 63, dens: (x, z) => sstep(38, 55, dvil(x, z)) * (open_(x, z) * 0.32 + (d2(x, z, MEADOW.x, MEADOW.z) < 50 * 50 ? 0.3 : 0)) }, (x, z, h) => place('grasstuft', x, z, 0, 0.8 + h * 0.5));
+  scatterPoints(Z, { sp: 7, seed: 65, dens: (x, z) => sstep(30, 50, dvil(x, z)) * open_(x, z) * 0.22 }, (x, z, h) => place('sapling', x, z, 0, 0.8 + h * 0.5));
+  scatterPoints(Z, { sp: 7, seed: 67, dens: (x, z) => forestDens(x, z) * 0.32, slopeMax: 0.5 }, (x, z, h) => place('mushroom', x, z, 0, 0.9 + h * 0.5));
+  scatterPoints(Z, { sp: 13, seed: 69, dens: (x, z) => forestDens(x, z) * 0.45 + (sstep(0.12, 0.3, birchN(x, z)) * 0.2), slopeMax: 0.4 }, (x, z, h) => place(h < 0.55 ? 'log' : 'stump', x, z, 0, 0.85 + h * 0.4, { flip: h < 0.3 }));
+  scatterPoints(Z, { sp: 9, seed: 71, dens: (x, z) => dvil(x, z) > 55 ? sstep(0.15, 0.35, rockN(x, z)) * 0.55 + (notStone(x, z) ? 0 : 0.25) : 0, slopeMax: 0.6 }, (x, z, h) => place(h < 0.45 ? 'flint' : h < 0.7 ? 'thornbush' : rk[Math.floor(h * 13) % 4], x, z, 0, 0.8 + h * 0.6));
+  scatterPoints(Z, { sp: 6, seed: 72, dens: (x, z) => dvil(x, z) > 55 ? sstep(0.2, 0.4, rockN(x, z)) * 0.35 : 0, slopeMax: 0.6 }, (x, z, h) => place(h < 0.3 ? 'boulder' : rk[Math.floor(h * 7) % 4], x, z, h * 9, h < 0.3 ? 0.5 + h : 0.7 + h));
+  RABBIT_HOLES.length = 0; scatterPoints(Z, { sp: 26, seed: 73, dens: (x, z) => sstep(55, 80, dvil(x, z)) * open_(x, z) * 0.7 * (notStone(x, z) ? 1 : 0), slopeMax: 0.3 }, (x, z) => { place('rabbithole', x, z, 0, 1); RABBIT_HOLES.push({ x, z }); });
   // ---- 石林: stone pillars and the bones of giant beasts ----
   scatterPoints(Z, { sp: 11, seed: 31, dens: (x, z) => d2(x, z, STONEF.x, STONEF.z) < 62 * 62 && pathAt(x, z) < 0.1 ? 0.55 : 0, slopeMax: 0.7 }, (x, z, h) => place(h < 0.6 ? 'spire' : 'spire2', x, z, h * 9, 0.7 + h * 0.8, { dy: -1 }));
   for (let i = 0; i < 9; i++) { const a = i * 2.1, r = 12 + i * 5; place(i % 2 ? 'skull' : 'ribs', STONEF.x + Math.cos(a) * r, STONEF.z + Math.sin(a) * r, a, rr(0.8, 1.6)); }
   // ---- 梧木巢 cliff ----
-  for (let i = 0; i < 10; i++) { const a = i / 10 * TAU; place('cliffwall', NEST.x + Math.cos(a) * 19, NEST.z + Math.sin(a) * 19, -a + HP, 1, { dy: 2, nocol: true }); }
-  place('nest', NEST.x, NEST.z, 0, 1, { y: terrH(NEST.x, NEST.z) });
-  place('skull', NEST.x + 6, NEST.z + 3, 1, 0.7, { y: terrH(NEST.x + 6, NEST.z + 3) });
+  // 原著：巢穴筑在石林深处的崖顶，十米长，以黑色梧木筑成，占据了大半崖顶，边缘暗红；崖顶散落粘着血丝的大骨头
+  place('nest', NEST.x, NEST.z - 0.8, 0, 1, { y: terrH(NEST.x, NEST.z) });
+  place('ribs', NEST.x + 5.6, NEST.z + 3.2, 0.6, 0.8); place('skull', NEST.x - 5.4, NEST.z + 3.6, 2.2, 0.6); place('pebbles', NEST.x + 3, NEST.z + 5.5, 0, 1);
+  { const R = mulberry32(77); for (let i = 0; i < 26; i++) { const a = R() * TAU, r = 9.6 + R() * 5; const x = NEST.x + Math.cos(a) * r, z = NEST.z + Math.sin(a) * r; if (Math.abs(x - NEST.x - 1) < 2 && z > NEST.z) continue; place(R() < 0.3 ? 'boulder' : 'rock' + (i % 4), x, z, R() * TAU, R() < 0.3 ? rr(0.5, 0.8) : rr(0.8, 1.5)); }
+    for (let i = 0; i < 8; i++) { const a = R() * TAU, r = 13 + R() * 6; place(i % 3 ? 'ribs' : 'skull', NEST.x + Math.cos(a) * r, NEST.z + Math.sin(a) * r, R() * TAU, rr(0.7, 1.3)); }
+    place('deadtree', NEST.x - 11, NEST.z + 7, 0, 1.2); place('deadtree', NEST.x + 13, NEST.z - 4, 0, 1); place('spire2', NEST.x - 16, NEST.z - 3, 0, 1.4); place('spire', NEST.x + 15, NEST.z + 9, 0, 1.2); place('spire2', NEST.x + 10, NEST.z - 15, 0, 1.6); }
   // ---- 藤后石洞 ----
   place('cave', CAVE.x + 6, CAVE.z, -HP, 1.1);
   for (let i = 0; i < 4; i++) place('vine', CAVE.x + 1, CAVE.z + (i - 1.5) * 2.5, HP, 0.9, { dy: 3 });
