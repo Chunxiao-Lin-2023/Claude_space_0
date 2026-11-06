@@ -609,9 +609,10 @@
     S.sfx('open');
     await S.narr('山门「吱呀」一声。有人提着灯笼回来了。');
     S.goal('有人回来了——上去打个招呼');
-    await S.walk('yan', [9, 5], 3.2);
+    await S.walk('yan', [8, 5], 3.2);
     S.face('yan', 3); S.ent('ydoor').locked = false; S.sfx('switch');
     await S.wait(300);
+    await S.walk('yan', [9, 6], 3);
     S.face('yan', 'pl');
     S.f.ph = 'a1y';
   }
@@ -1040,3 +1041,380 @@
     S.f.toldTree = true;
     return dayThree(S);
   }
+
+  /* ======================= 第三天 / 第三夜：剑匣 ======================= */
+  async function dayThree(S) {
+    await S.fade(1, 900);
+    S.f.ph = 'd3';
+    ['g1', 'g2', 'g3', 'yao', 'pu', 'shi'].forEach(k => S.hide(k));
+    S.ent('dx').open = false; S.ent('dxw').lit = false;
+    S.place('yan', 10, 6, 1); S.ent('yan').light = null;
+    await S.card('第三天', '', S.f.puSaved ? '东厢空着。\n那个仆人昨天傍晚就走了，走之前，朝你的门口磕了一个头。' : '东厢里又抬出一个人。是那个仆人。\n脚心，一个小孔，和他家公子一模一样。');
+    await S.go('si', 4, 5, 0);
+  }
+  async function yanD3(S) {
+    await S.say('宁采臣', '燕兄，今晚……我想搬过来，跟你同住一屋。');
+    await S.say('燕赤霞', '我这人性子孤，喜欢一个人清静。');
+    const c = await S.ask('……', ['「那我也得搬。」（硬把铺盖往他屋里搬）', '「……那算了。」'], '宁采臣');
+    if (c === 1) return S.think('（可小倩说过：只有跟燕生同住一屋，才躲得过去。再求求他。）');
+    await S.narr('燕生看了你半天，叹了口气。');
+    await S.say('燕赤霞', ['罢了。我知道你是个大丈夫，心里很敬重你。只是我有些心事，一时说不明白。', '有一句你记好：我的箱子包袱，千万别翻看。违了这句，对你我都没好处。']);
+    await S.say('宁采臣', '记下了。');
+    S.f.ph = 'd3b';
+    S.goal('回你屋里卷铺盖，搬到燕生屋里');
+    await S.walk('yan', [8, 5], 3); S.face('yan', 3); S.hide('yan');
+  }
+  async function ntaOn(S) {
+    const ph = S.f.ph;
+    if (ph === 'd3b') {
+      if (!S.has('puga')) return S.narr('一张空榻，是燕生替你搬过来的。');
+      S.take('puga'); S.ent('nta').s.bedding = true; S.f.bedMoved = true;
+      return nightThree(S);
+    }
+    if (ph === 'n3') return yachaNight(S);
+    return S.narr('你的铺盖铺在这张榻上。');
+  }
+  async function nightThree(S) {
+    await S.narr('你把被褥铺开。窗外，天一点一点黑下来。');
+    await S.fade(1, 700);
+    S.f.ph = 'n3'; light(S); S.amb('night');
+    S.ent('ewin').s.box = true; S.ent('yta').s.who = 'yan'; S.ent('ecdl').off = false;
+    S.ent('edoor').locked = true;
+    S.pos(13, 9, 2);
+    await S.fade(0, 700);
+    await S.narr('燕生把背上那只旧箱箧取下来，搁在北窗的窗台上，这才躺下。\n没过一会儿，他就打起鼾来，鼾声像打雷一样。');
+    snore(S, .06); CH.snore = 3;
+    S.goal('躺下睡吧（别碰燕生的箱子）');
+    S.cp('n3');
+  }
+  function snoreTick(S, dt) {
+    if (S.map !== 'fang' || S.f.ph !== 'n3') return;
+    CH.snore -= dt; if (CH.snore <= 0) { CH.snore = 3.4; snore(S, .045); }
+  }
+  async function ytaOn(S) {
+    const ph = S.f.ph;
+    if (ph === 'n3') return S.narr('燕生睡得正香，鼾声一阵比一阵响。推了推他——他翻个身，又打起来了。');
+    return S.narr('燕生的榻。被褥叠得方方正正，枕头边上放着一块磨刀石。');
+  }
+  async function ysackOn(S) {
+    if (S.f.ph === 'n3') return S.think('燕生的包袱。……他说过，箱子包袱千万别翻看。');
+    return S.narr('燕生的包袱，用粗布扎得紧紧的。');
+  }
+  async function edoorOn(S) {
+    const ph = S.f.ph;
+    if (ph === 'n3') return S.narr('门闩着。燕生睡前亲手闩上的。');
+    S.sfx('open'); return S.go('si', 8, 5, 0);
+  }
+  async function ewinOn(S) {
+    const ph = S.f.ph, w = S.ent('ewin');
+    if (ph === 'n3') {
+      if (!S.f.boxLook) {
+        S.f.boxLook = true; w.s.box = 'glow';
+        await S.narr('燕生的箱箧搁在窗台上。黑漆木头，铜搭扣。\n箱缝里，隐隐约约透出一线白光，像月光，又比月光冷。');
+        return S.think('（他说过：千万别翻看。）');
+      }
+      w.s.box = 'glow';
+      const c = await S.ask('箱缝里那一线白光，一明一暗，像在喘气。', ['不碰它', '掀开一条缝看看'], '宁采臣');
+      if (c === 0) { w.s.box = true; return S.think('……还是算了。'); }
+      const c2 = await S.ask('手已经搭到铜搭扣上了。箱子里「嗡」的一声，像有什么醒了过来。', ['缩回手', '掀开'], '宁采臣');
+      if (c2 === 0) { w.s.box = true; return S.think('你把手缩了回来。手心全是汗。'); }
+      DIED.n3++;
+      w.s.box = 'split'; swordHum(S, .08); S.fx('flash'); S.show('pl1');
+      await S.wait(300);
+      S.hide('pl1'); w.s.broken = true; S.show('ycw'); w.eyes = true;
+      await S.scare('face', { spr: '@yecha', dur: 1 });
+      return S.die('箱缝里那道白光「嗤」地窜了出去，没头没脑，撞断了窗上的石棂。\n冷风灌进屋里。\n燕生跳起来的时候，已经晚了：\n窗外那双像打闪一样的眼睛，顺着断开的窗棂，爬了进来。', '两俱不利');
+    }
+    if (w.s.broken) return S.narr('窗上的石棂断了一根，断口齐齐的，像被刀切开的。\n窗台外面，溅着几点黑红的血。');
+    return S.narr('燕生屋里的北窗，几根石棂，外面也是那个小院子。');
+  }
+  async function yachaNight(S) {
+    S.f.ph = 'n3b';
+    await S.narr('你躺下来，睁着眼睛听燕生打鼾。');
+    await S.fade(1, 900); await S.wait(400);
+    await S.narr('……约莫一更天的时候。');
+    S.ent('ecdl').off = true;
+    await S.fade(0, 700);
+    const y = S.ent('ycw'); S.show('ycw'); y.alpha = 0;
+    S.focus(16, 5);
+    await S.alpha('ycw', .5, 900);
+    await S.narr('窗外，隐隐约约有一个人影。\n很高——比院墙还高。');
+    await S.alpha('ycw', 1, 400);
+    S.ent('ewin').eyes = true; S.sfx('heart');
+    await S.narr('它慢慢凑到窗前，往里看。两只眼睛一闪一闪，像打闪。');
+    await S.scare('face', { spr: '@yecha', dur: 1 });
+    S.focus(null);
+    knock(S); await S.wait(500);
+    await S.say('门外', S.f.puSaved ? '宁相公……开开门……我又回来了……' : '宁相公……开开门……我家公子他……', { style: 'whisper' });
+    await S.think(S.f.puSaved ? '……那个仆人？他不是走了吗？' : '……那个仆人？他不是已经……');
+    const c = await S.ask('门外的人还在敲。', ['去开门', '叫醒燕生', '一动不动，装睡'], '宁采臣');
+    if (c === 0) {
+      DIED.n3++;
+      S.ent('edoor').locked = false; S.sfx('open');
+      await S.scare('face', { spr: '@yecha', dur: .9 });
+      return S.die('门闩刚拉开一半，门外就没有声音了。\n只有一股腥风，和一双贴在门缝上的、电一样亮的眼睛。', '门外的人');
+    }
+    if (c === 1) await S.say('宁采臣', '燕——');
+    S.ent('ewin').s.box = 'split'; S.show('pl1'); swordHum(S, .09); S.fx('flash'); S.shake(500, 4);
+    await S.narr((c === 1 ? '话没出口——' : '') + '忽然有个东西撕开箱子窜了出去，亮得像一匹白绸，「咔」地撞断了窗上的石棂，一闪就射了出去，又一下缩了回来，像闪电灭了。');
+    S.hide('pl1'); S.ent('ewin').s.broken = true; S.ent('ewin').eyes = false;
+    S.sfx('scream'); await S.alpha('ycw', 0, 400);
+    S.ent('ewin').s.box = true;
+    S.ent('yta').s.who = null; S.place('yanf', 19, 9, 1);
+    await S.narr('燕生醒了，翻身坐起。你赶紧装睡，眯着眼睛看他。');
+    await S.walk('yanf', [16, 8], 3); S.face('yanf', 3);
+    await S.narr('他捧起箱子看了一遍，从里面取出一样东西，对着月光闻了闻——\n白光莹莹的，二寸来长，韭菜叶那么宽。他一层一层包好，放回破箱子里。');
+    await S.say('燕赤霞', '什么老魅，这么大胆子，把我的箱子都弄坏了。', { style: 'whisper' });
+    S.face('yanf', 'pl');
+    await S.say('宁采臣', '燕兄……刚才那是什么？');
+    await S.say('燕赤霞', ['既然你看见了，也不瞒你。我，是个剑客。', '要不是窗上那根石棂挡了一下，那妖物当场就死了。不过，它也伤得不轻。']);
+    const c3 = await S.ask('……', ['「能让我看看吗？」', '「……原来如此。」'], '宁采臣');
+    if (c3 === 0) await S.narr('燕生很爽快地拿出来给你看——是一把小剑，荧荧的，像一片会发光的冰。');
+    await S.narr('从那以后，你更敬重燕生了。');
+    return dayFour(S);
+  }
+
+  /* ======================= 第四天：革囊、白杨、骨殖 ======================= */
+  async function dayFour(S) {
+    await S.fade(1, 900);
+    S.f.ph = 'd4';
+    S.hide('ycw'); S.hide('yanf'); S.ent('edoor').locked = false;
+    ['xue1', 'xue2', 'xue3', 'xueI'].forEach(k => S.show(k));
+    S.place('yan', 28, 4, 2);
+    await S.card('第四天', '', '天亮了。\n北墙根底下，一路滴着黑红的血点子，一直滴到角门边上。');
+    await S.go('si', 8, 5, 0);
+  }
+  async function yanD4(S) {
+    if (S.f.gotNang) return S.say('燕赤霞', '太阳落山之前，到山门外来找我。');
+    await S.say('燕赤霞', '血是那东西的。它往寺北去了——那边是一片荒坟。');
+    await S.say('宁采臣', '燕兄，那姑娘求我把她的骨头带回家安葬。她说：「白杨之上，有乌巢者」。');
+    await S.say('燕赤霞', '白杨？我们秦地，满山都是白杨。');
+    await S.narr('燕生从怀里摸出一截炭条，在一张纸背上画了几笔，递给你。');
+    await S.note('yanyu');
+    await S.say('燕赤霞', ['这个也给你。是我的剑袋——破是破了，揣在身上，那些东西就不敢近你。', '记着：它扑过来的时候，站稳了别动。这袋子要人站定了才灵。补丁就三块，撑不了几回。']);
+    S.give('nang');
+    await S.say('燕赤霞', '我进城去替你雇船。太阳落山之前，我在山门外等你。');
+    const c = await S.ask('……', ['「燕兄，教我剑术吧。」', '「多谢燕兄。」'], '宁采臣');
+    if (c === 0) await S.say('燕赤霞', '像你这样讲信义、性子刚直的人，本来是可以学的。只是你是富贵中人，不是我们这一路的人。');
+    await S.narr('燕生走到角门前，一拳砸在锈死的门闩上。「哐」的一声，门闩开了。');
+    S.sfx('thud'); S.ent('jiao').locked = false;
+    S.f.gotNang = true;
+    S.goal('找把锄头（西边塌了的僧舍里），从北墙角门去寺北荒坟');
+    await S.walk('yan', [16, 22], 3.6); S.hide('yan');
+  }
+  const TREE_TXT = {
+    A: '一棵老柳树。树皮又黑又糙，裂成一道道深沟，枝条一直垂到坟头上。\n高处有个敞着口的大窝，枯枝搭的，像只破碗。一只老鸹蹲在窝沿上，冲你「呱」了一声。',
+    C: '一棵老槐。树干拧得像绞过的绳子，皮黑褐黑褐的，叶子密得透不过光。\n高处一个敞口的窝，两只老鸹挤在里面。',
+    F: '一棵松树。针叶又黑又密，树底下落满了松针。\n树上什么也没有。'
+  };
+  const POP_BASE = '这棵树笔直，树皮灰白，上面一个个黑疤，像睁着的眼睛。\n风不大，叶子却哗啦啦响个不停，一翻，就露出白白的叶背。\n';
+  const POP_NEST = {
+    crow: '树梢上搭着一个窝：枯枝堆的，敞着口，像只大碗。窝沿上探出两个黑脑袋。',
+    magpie: '树梢上一个窝，圆滚滚的，顶也用枯枝封得严严实实，侧面开着个小洞。\n一只老鸹蹲在窝顶上，歪着头看你。',
+    fallen: '树上光秃秃的，什么也没有。\n树根底下倒摔着一个散了架的鸟窝，几根枯枝里夹着两片黑羽毛。'
+  };
+  function roleOf(S, k) { const i = POP.indexOf(k); return i < 0 ? null : S.f.pr[i]; }
+  async function treeOn(S, k) {
+    if (TREE_TXT[k]) { if (k !== 'F') crow(S, 1, .025); return S.narr(TREE_TXT[k]); }
+    const r = roleOf(S, k); if (r === 'crow' || r === 'magpie') crow(S, 1, .025);
+    return S.narr(POP_BASE + POP_NEST[r]);
+  }
+  const WHY = {
+    A: '柳树皮是黑的，枝条垂着——这不是白杨。',
+    C: '这是棵槐树。她说的是白杨。',
+    F: '松树上连个窝都没有。',
+    magpie: '那窝是封顶的，门开在侧面——是喜鹊窝。老鸹只是蹲在上面歇脚。',
+    fallen: '窝摔在地上了。她说的是「白杨之上」。'
+  };
+  const BONES = ['土底下露出一副骨头——粗大的，是个男人。骷髅头上还扣着半顶烂了的方巾。', '一口薄棺材，棺盖一碰就碎了。里面的骨头缩成一团，手指骨紧紧抠着棺板。', '一副老人的骨头，牙都掉光了。骨头边上搁着一只空酒葫芦。'];
+  async function digOn(S, k) {
+    const m = S.ent('m' + k), d = m.s.dug || 0;
+    if (d === 3) return S.narr('空坑。她已经在你怀里了。');
+    if (d === 1) return S.narr('刚刨开又填回去的坟，土还是松的。……对不住了。');
+    if (S.f.ph !== 'dig') return S.narr('一座没有碑的荒坟。');
+    const c = await S.ask('树下的这座坟，没有碑。', ['在这里挖', '再想想'], '宁采臣');
+    if (c) return;
+    if (!S.has('chu')) return S.think('（空着手可刨不开。西边塌了的僧舍里，好像有把锄头。）');
+    for (let i = 0; i < 3; i++) { S.sfx('thud'); S.shake(120, 1); await S.wait(380); }
+    const ok = POP[S.f.qy];
+    if (k === ok) return foundBones(S, k);
+    S.f.wrong = (S.f.wrong || 0) + 1; m.s.dug = 1; light(S);
+    S.sfx('sting'); S.shake(260, 2);
+    await S.narr(BONES[(S.f.wrong - 1) % BONES.length]);
+    await S.narr('你赶紧把土填回去，对着坟作了三个揖。\n天，又暗了一截。');
+    const n = S.f.wrong, why = WHY[k] || WHY[roleOf(S, k)];
+    let hint = why;
+    if (n === 2) hint += '\n（白杨……燕生说，皮是灰白的，长着「眼睛」，叶背发白。这里只有三棵那样的。）';
+    else if (n === 3) hint += '\n（三棵白杨里，只有一棵树上的窝，是敞着口、像碗的。）';
+    else if (n >= 4) hint += `\n（就是${POP_AT[ok]}——树梢上那个像碗一样的窝。）`;
+    await S.think(hint);
+  }
+  async function foundBones(S, k) {
+    const m = S.ent('m' + k);
+    m.s.dug = 2;
+    await S.narr('锄头碰到了一块朽木板。\n板子底下，是一副小小的骨头，蜷着，像个睡着的孩子。几缕黑头发还缠在头骨上。');
+    await S.narr('骨头边上，压着一块烂了一半的木牌。');
+    await S.note('pai');
+    await S.say('宁采臣', '……我来接你了。');
+    await S.narr('你脱下身上的青衫，把骨头一根一根捡起来，包好，抱在怀里。\n轻得像一捆柴。');
+    m.s.dug = 3; S.give('gu');
+    S.f.ph = 'run0'; light(S);
+    crow(S, 5, .05);
+    S.shake(300, 2);
+    await S.narr('就在这时，一大群老鸹「呼」地从白杨上炸了起来，满天乱叫。\n太阳沉下去了。');
+    await S.say('风里', '……谁动了我的丫头？', { style: 'whisper' });
+    S.norun(true); S.speed(WALK_K);
+    coopG(S, '抱着她回寺里，从南边山门出去——燕生在山门外等（抱着骨头跑不起来）', '抱着她回寺里，从南边山门出去——燕生在山门外等（抱着骨头跑不起来；一人看路，一人盯身后）');
+  }
+  async function fenExit(S) {
+    if (S.f.ph === 'run0') { S.f.ph = 'run'; return S.go('si', 29, 2, 0); }
+    return S.go('si', 29, 2, 0);
+  }
+
+  /* ======================= 夜叉追逐 ======================= */
+  function chaseSetup(S) {
+    S.f.bag = 3; S.f.warned = false;
+    ['gd1', 'gd2', 'gd3', 'gd4', 'gd5'].forEach(k => S.show(k));
+    ['yan', 'lanxi', 'pu', 'shi', 'g1', 'g2', 'g3', 'yao', 'xueI'].forEach(k => S.hide(k));
+    S.show('bagl'); S.hide('yc'); S.ent('yc').alpha = 1;
+    S.norun(true); S.speed(WALK_K);
+    for (const k in CH) CH[k] = 0;
+  }
+  function chaseReset(S) {
+    S.stop('yc'); S.freeze('yc', false); S.hide('yc'); S.ent('yc').alpha = 1;
+    S.norun(true); S.speed(WALK_K); S.show('bagl'); S.lights(null); light(S);
+    for (const k in CH) CH[k] = 0;
+  }
+  function chaseSpawnSoon(S) { CH.spawn = 4.5; CH.pend = 1; }
+  function chaseTick(S, dt) {
+    if (S.f.ph !== 'run' || S.map !== 'si') return;
+    const p = S.pl, y = S.ent('yc');
+    if (CH.flash > 0) { CH.flash -= dt; if (CH.flash <= 0) S.lights(null); }
+    if (CH.pend) {
+      if (S.busy) return;
+      CH.spawn -= dt;
+      if (Math.abs(p.x - 29) + Math.abs(p.y - 2) >= 5 || CH.spawn <= 0) { CH.pend = 0; S.run(spawnYc); }
+      return;
+    }
+    if (!y || y.hidden || !y.chase) return;
+    if (CH.slow > 0) { CH.slow -= dt; if (CH.slow <= 0) S.speed(WALK_K); }
+    if (CH.frz > 0) { CH.frz -= dt; if (CH.frz <= 0) S.freeze('yc', false); }
+    CH.still = S.moving ? 0 : (CH.still || 0) + dt;
+    const d = Math.hypot(y.px - p.px, y.py - p.py) / TS;
+    const lv = S.f.bag > 0 && CH.frz <= 0 ? (d < 3 ? 2 : d < 5 ? 1 : 0) : 0;   // 剑袋越近越亮
+    if (lv !== CH.lv) { CH.lv = lv; S.ent('bagl').light = { r: [1.3, 1.9, 2.5][lv], pl: true, flick: lv > 0, col: ['rgba(210,180,120,.14)', 'rgba(235,205,135,.24)', 'rgba(255,225,150,.34)'][lv] }; }
+    CH.beat -= dt; if (d < 6 && CH.beat <= 0 && CH.frz <= 0) { S.sfx('heart'); CH.beat = .3 + d * .12; }
+    if (!S.busy && CH.frz <= 0 && S.f.bag > 0 && d <= BAG_R && CH.still >= .12) repel(S);
+  }
+  function repel(S) {
+    S.f.bag--; CH.frz = FRZ_T; S.freeze('yc', true);
+    thump(S, .12); S.shake(260, 3); S.bubble('yc', '!', 900);
+    S.lights([[S.pl.px + 8, S.pl.py + 4, 3.6, .9]]); CH.flash = .3;
+    S.toast(S.f.bag ? `剑袋猛地鼓了起来——它被定住了！快走！（补丁还剩 ${S.f.bag} 块）` : '最后一块补丁「嗤」地裂开了——它被定住了！快走！');
+  }
+  async function spawnYc(S) {
+    const p = S.pl, pts = [[29, 2], [32, 2], [25, 2], [27, 3]];
+    let best = pts[0], bd = -1;
+    for (const q of pts) { const dd = Math.abs(q[0] - p.x) + Math.abs(q[1] - p.y); if (dd > bd) { bd = dd; best = q; } }
+    S.place('yc', best[0], best[1], 0); S.ent('yc').alpha = 0;
+    S.bubble('pl', '!', 900); thump(S, .1); S.shake(400, 3);
+    await S.alpha('yc', 1, 600);
+    S.sfx('scream');
+    S.chase('yc', { spd: YC_SPD, catch: ycCatch, wait: .5 });
+  }
+  function knockBack(S) {   // 被骨头撞开：退到离玩家 6~9 步、离它原来位置最近的一格
+    const m = curMap(), y = S.ent('yc'), p = S.pl, yx = Math.round(y.px / TS), yy = Math.round(y.py / TS);
+    let best = null, bd = 1e9;
+    for (let dx = -9; dx <= 9; dx++) for (let dy = -9; dy <= 9; dy++) {
+      const x = p.x + dx, yv = p.y + dy, md = Math.abs(dx) + Math.abs(dy);
+      if (md < 6 || md > 9 || !passable(m, x, yv, y)) continue;
+      const dd = Math.abs(x - yx) + Math.abs(yv - yy);
+      if (dd < bd) { bd = dd; best = [x, yv]; }
+    }
+    if (best) S.place('yc', best[0], best[1], 0);
+  }
+  async function ycCatch(S) {
+    if (!S.f.warned) {
+      S.f.warned = true;
+      S.sfx('sting'); S.shake(500, 4); S.fx('flash');
+      knockBack(S);
+      await S.narr('一只爪子从背后扫过来——\n怀里的骨头忽然一烫，「嗡」的一声，把那东西撞出去老远！');
+      await S.think('（是她在护着你……可这只能有一回。）');
+      S.chase('yc', { spd: YC_SPD, catch: ycCatch, wait: 1.2 });
+      return;
+    }
+    DIED.run++;
+    S.lights(null);
+    await S.scare('face', { spr: '@yecha', dur: 1 });
+    await S.die('一只爪子从背后扣住了你的肩膀。\n怀里的青衫包「哗」地散开，骨头撒了一地。\n\n你最后听见的，是墙头上一个老太婆在笑：\n「我的丫头，谁也带不走。」', '夜叉');
+  }
+  async function escape(S) {
+    S.stop('yc'); CH.frz = 0; CH.pend = 0; S.lights(null);
+    S.ent('shanmen').open = true; S.sfx('open');
+    S.place('yan', 18, 22, 1); S.ent('yan').light = { r: 3, col: 'rgba(255,180,90,.22)', flick: true };
+    await S.say('燕赤霞', '低头！');
+    S.fx('flash'); swordHum(S, .09); S.shake(500, 4);
+    await S.narr('一道白光从你头顶上掠过去，像一匹白绸抖开。\n身后一声惨叫——那东西捂着脸，翻过墙头，逃了。');
+    S.sfx('scream');
+    const y = S.ent('yc'); if (y && !y.hidden) await S.alpha('yc', 0, 500);
+    S.norun(false); S.speed(1); S.hide('bagl');
+    await S.say('燕赤霞', '船在渡口。走吧。');
+    await S.narr('燕生一直把你送到河边。临上船，他看了一眼你怀里的青衫包。');
+    await S.say('燕赤霞', '那只剑袋，好好收着。');
+    S.f.ph = 'ep';
+    await S.fade(1, 900);
+    await S.card('数日后', '浙江　宁家', '你把她带回了家。\n书斋外面就是野地。\n你在那里，给她挖了一座坟。');
+    await S.go('jia', 1, 8, 2);
+  }
+
+  /* ======================= 尾声：宁家 ======================= */
+  async function pitOn(S) {
+    const p = S.ent('pit'), st = p.s.st || 0;
+    if (st === 0) {
+      if (!S.has('gu')) return S.narr('挖好的坑。');
+      S.take('gu'); p.s.st = 1;
+      await S.narr('你把青衫包轻轻放进坑里，一捧一捧地把土盖上，\n又把那块烂木牌插在坟前。');
+      S.goal('舀一瓯浆水来祭她（书斋门口的水缸）');
+      return;
+    }
+    if (st === 1) {
+      if (!S.has('jiang')) return S.think('（空着手祭她，总不像样。书斋门口的水缸里，还有半缸米浆水。）');
+      S.take('jiang'); p.s.st = 2;
+      await S.narr('你把那瓯浆水摆在坟前，作了个揖。');
+      await S.say('宁采臣', ['可怜你孤魂一个。如今葬在我书斋边上，你哭，我听得见；我唱，你也听得见。往后，再没有恶鬼能欺负你了。', '一瓯浆水，不清，也不甜——别嫌弃。']);
+      await S.narr('风从野地里吹过来。坟头上的新土，簌簌地落下来一点。');
+      S.f.prayed = true;
+      S.goal('回书斋去吧');
+      return;
+    }
+    return S.narr('新坟。木牌前摆着一瓯浆水。');
+  }
+  async function vatOn(S) {
+    const st = S.ent('pit').s.st || 0;
+    if (st === 1 && !S.has('jiang')) { S.give('jiang'); return S.narr('你从缸里舀了一瓯米浆水。不清，也不甜。'); }
+    return S.narr('书斋门口的水缸，缸里泡着半缸米浆水，是母亲留着浆衣裳的。');
+  }
+  async function callBack(S) {
+    await S.wait(300);
+    hum(S, .02);
+    await S.say('身后', '等等我——一起走！');
+    S.turn(1);
+    const p = S.pl, qx = Math.max(1, p.x - 4);
+    S.place('qj', qx, 8, 2); S.ent('qj').alpha = 0;
+    await S.alpha('qj', 1, 800);
+    await S.narr('你回过头。\n是小倩。');
+    const adj = [[p.x - 1, p.y], [p.x, p.y + 1], [p.x, p.y - 1], [p.x + 1, p.y]].find(([x, y]) => passable(curMap(), x, y, S.ent('qj')));
+    if (adj) await S.walk('qj', adj, 2.4);
+    S.face('qj', 'pl');
+    await S.say('小倩', ['你讲信义，我就是死十回也报答不了。', '让我跟你回去，拜见婆婆。就是做个丫头，也不后悔。']);
+    await S.narr('太阳底下，你第一回把她看清楚：脸上像映着晚霞。\n白天看，比夜里还要好看。');
+    await S.ask('她看着你。', ['「走吧。我带你去见我娘。」', '「……走吧。」'], '宁采臣');
+    S.follow('qj', true);
+    await S.walk('pl', [16, 5], 3.4);
+    S.turn(3);
+    await S.fade(1, 1200);
+    const head = '宁采臣带她进了堂屋，拜见母亲。\n老太太吓得说不出话。小倩不敢住下，每天天不亮就来，烧水做饭，洗衣扫地；天黑了，再自己回野地里的坟去。\n\n她起初什么也不吃。过了半年，才慢慢能喝一点稀粥。\n后来宁的妻子病故，母亲做了主，宁采臣娶了小倩。\n\n有一夜，她叫人把燕生那只破革囊挂到门上。半夜里，一个东西像鸟一样扑下来——电一样的眼睛，血红的舌头。\n革囊「格」地一响，一下胀得有筐那么大，里面探出半截什么，把那东西揪了进去。\n囊口一合，又缩回了原样。两个人凑过去看：袋子里，只有几斗清水。\n\n又过了几年，宁采臣中了进士。小倩给他生了一个儿子。';
+    const pu = '\n\n那年秋天，兰溪托人捎来一封信，字写得很吃力：\n「宁相公，我还活着。」';
+    await S.end(S.f.puSaved ? { id: 'pu', title: '东厢没有再死人', text: head + pu } : { id: 'home', title: '缓待同行', text: head });
+  }
+})();
