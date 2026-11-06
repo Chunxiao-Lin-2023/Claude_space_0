@@ -285,7 +285,7 @@
       ruta: { title: '爷爷的《航路》', text: '（一张发黄的纸，铅笔画的水道，旁边是爷爷的字。）\n\n给岛上送东西的路——\n\n一、出了家门口的码头，往东撑。\n　　头一个往北的口子满是水葫芦（lirio），别进。\n二、一直往东。看见挂着红裙子娃娃的大柳树，就在树底下往北拐。\n三、往北撑到头，往西。\n四、过了沉在水里的那条旧游船（「玛加丽塔号」），\n　　下一个往北的口子，就是进湖的水道。\n五、特修伊洛湖。别停。\n　　跟着湖里插的木桩走，桩子上挂着娃娃。\n　　对岸亮着灯的，就是岛。' },
       recorte: { title: '剪报（2001年4月）', text: '（爷爷用图钉把它钉在墙上。纸已经卷边了。）\n\n「娃娃岛」岛主辞世\n\n……据家人说，老人被发现时倒在岛边的水湾里。那里正是他多年来对人说起的、当年发现溺水女孩的地方。\n\n老人独居岛上约半个世纪，在岛上的树木间挂满了从垃圾堆和运河里捡来的娃娃。他曾对访客说，这些娃娃是为了让那个女孩的魂灵安心。\n\n近年来，越来越多的游客乘坐游船前往这座小岛。有人带去新的娃娃，也有人说，夜里在岛上听见过小女孩的歌声。' },
       dibujo: { title: '托尼奥的画', text: '一张蜡笔画，画在作业本的背面。\n\n一棵柳树，树上挂着四个娃娃：\n一个穿蓝裙子，光着一只脚；\n一个只有一只眼睛；\n一个头发散了一脸；\n一个光着头，穿白衣裳。\n\n四个娃娃的脑袋都歪向一边，像在看什么东西。\n\n树下的水里，画着一个小姑娘，只露出半张脸，头发上画了一朵紫色的花。\n\n底下是托尼奥歪歪扭扭的字：\n「LAS MUÑECAS DE LA NIÑA」\n（小姑娘的娃娃们）' },
-      cuaderno: { title: '岛主的本子', text: '（一本泡过水的账本。前面记着卖菜的账：生菜、玉米、萝卜。后面换了一种笔迹，字很大，歪歪扭扭。）\n\n她们丢了东西，就会一直看着那个东西。\n看到有人给她们找回来为止。\n\n——码头边上，穿蓝裙子的。1973 年。\n　　一只红鞋子。我在垃圾堆里一只一只配齐的。\n——小屋西边，没眼睛的那个。1988 年。\n　　玻璃眼珠掉了，我收在铁盒子里，回头给她粘上。\n——东边芦苇旁，散头发的。1965 年。\n　　红发带是在集市上买的。\n——西边水湾，穿白衣裳的。1951 年。第一个。\n　　从水上漂过来的。我给她戴了顶小草帽，怕她晒。\n\n铁盒子的锁：按她们上岛的先后，一个一个按。\n\n谁也不许把娃娃带走。\n带走一个，她就跟着那一个走了。\n\n（最后一页）\n椅子上那个是给她的。等我把裙子补好，就挂到老柳树上去。' }
+      cuaderno: { title: '岛主的本子', text: '（泡过水的账本。前面记着卖菜的账，后面的字很大，歪歪扭扭。）\n\n她们丢了东西，就一直看着那个东西，\n看到有人给她们找回来为止。\n\n码头边，穿蓝裙子的：1973。一只红鞋，垃圾堆里配齐的。\n小屋西边，没眼睛的：1988。眼珠掉了，收在铁盒子里。\n东边芦苇旁，散头发的：1965。红发带，集市上买的。\n西边水湾，穿白衣裳的：1951。第一个，从水上漂来的。\n　　给她戴了顶小草帽，怕她晒。\n\n铁盒子的锁：按她们上岛的先后，一个一个按。\n\n谁也不许把娃娃带走。带走一个，她就跟着那一个走了。\n\n（最后一页）椅子上那个是给她的。等裙子补好，就挂到老柳树上去。' }
     },
     legend: '「娃娃岛」（Isla de las Muñecas）在墨西哥城南部的霍奇米尔科（Xochimilco）。这里的运河网和浮田（chinampa）可以追溯到阿兹特克时代：人们在湖里用泥土和树枝堆出一块块狭长的田，四周种上细高的阿韦霍特柳（ahuejote）固土，田与田之间就成了水道。1987年，霍奇米尔科与墨西哥城历史中心一起被列入世界遗产。如今，游客坐着漆成彩色、拱门上写着女人名字的平底游船（trajinera）游览运河；娃娃岛在特修伊洛湖（Laguna de Teshuilo）附近，从码头出发要坐好一阵船。\n\n流传最广的说法是：上世纪中叶，一位老人独自搬到这座小岛上居住。据说他在岛边的水里发现了一个溺水身亡的小女孩，不久之后，又看见一个娃娃从水上漂来。他把娃娃挂在树上，以示对女孩的敬意，好让她的魂灵安息。此后约五十年，他相信女孩的魂灵一直在岛上，便不停地挂娃娃——从垃圾堆和运河里捡，后来也用自己种的菜跟人换。据报道，老人于2001年去世，被发现时倒在水里，传说那里正是他当年发现女孩的地方。\n\n这个故事也有别的说法：有人说娃娃是为了驱赶水里的恶灵；也有人怀疑那个女孩是否真的存在过，认为那可能只是老人独居多年后的想象。老人去世后，小岛成了有名的景点，游客常带新的娃娃去挂；风吹日晒之后，娃娃们褪色、开裂、长出青苔，更显阴森。关于娃娃会转头、会睁眼、夜里会低语的说法，大多来自游客和导游的口耳相传，查无实据。本章不写出那位老人的姓名。《圣安娜夫人》（Señora Santa Ana）是墨西哥和整个西语世界流传很广的传统摇篮曲，歌里唱的是一个丢了苹果、哭个不停的小姑娘。\n\n（本章中的玛蒂娜、托尼奥、切马爷爷一家，托尼奥从岛上带走娃娃的事，爷爷的《航路》、湖里挂娃娃的木桩和「拍水三下」的规矩，岛主的本子、各个娃娃的年份和铁盒子，「娃娃丢了东西就一直看着它」的规矩，水里追船的小姑娘，以及三个结局，均为游戏虚构。）',
     start: { map: 'casa', x: 7, y: 5, dir: 1 },
@@ -566,7 +566,7 @@
       },
       /* ---------------- 娃娃岛 ---------------- */
       isla: {
-        amb: 'night', dark: .8, plr: 3.2, floor: 'dirt', wall: 'wood', wallC: { top: '#1a140f', face: '#5a4430', trim: '#30221a' }, fog: .12,
+        amb: 'wind', dark: .8, plr: 3.2, floor: 'dirt', wall: 'wood', wallC: { top: '#1a140f', face: '#5a4430', trim: '#30221a' }, fog: .12,
         legend: { A: 'ahued', D: 'muelle' },
         tileOpts: { grassC: '#22341c' },
         rows: ISLA_ROWS,
@@ -575,7 +575,7 @@
           { x: 11, y: 19, w: 2, spr: 'barca', on: S => S.narr(S.f.fixed >= 4 ? '你的船。……还有一件事没做完。' : '你的小船，拴在码头的木桩上。\n还不能走。托尼奥的娃娃还没挂回去。') },
           { x: 15, y: 18, spr: 'farol', light: { r: 3.4, col: 'rgba(255,190,110,.2)', flick: true, dy: -10 }, on: S => S.narr('码头上的马灯。灯罩里的煤油还剩小半瓶。\n……岛主去世一年了，是谁一直在给它添油？') },
           { id: 'door_c', x: 14, y: 6, spr: 'puerta', async on(S) { S.sfx('open'); await S.go('choza', 5, 5, 3); } },
-          { x: 16, y: 6, spr: 'window', on: S => S.narr('小屋的窗户。窗台上摆了一排娃娃的脑袋，脸都朝外。') },
+          { x: 16, y: 6, spr: 'window', lit: true, light: { r: 3.2, col: 'rgba(255,180,90,.2)', flick: true, dy: 10 }, on: S => S.narr('小屋的窗户透出一点烛光。窗台上摆了一排娃娃的脑袋，脸都朝外。\n……屋里有人点着蜡烛？') },
           { x: 12, y: 6, spr: 'invisible', solid: true, on: S => S.narr('木板钉的墙上，钉满了娃娃。有的只剩一只手，有的只剩一条腿。\n门框上写着几个褪色的字：「NO TOCAR」（别碰）。') },
           { id: 'arbol', x: 3, y: 3, spr: 'arbol', s: { mode: 'idle' }, on: S => arbol(S) },
           { x: 5, y: 2, spr: 'cruz', on: S => S.narr('一个小小的木十字架，没有名字。\n底下放着一颗糖、一只小木马，和一朵已经干掉的水葫芦花。') },
@@ -595,7 +595,7 @@
           /* 结局用 */
           { id: 'nina', x: 2, y: 4, spr: '@nina', solid: false, hidden: true, dir: 2, light: { r: 2, col: 'rgba(170,210,200,.16)' } },
           { id: 'barca_v', x: 0, y: 6, w: 2, spr: 'barca', viejo: true, solid: false, hidden: true, light: { r: 2.2, col: 'rgba(255,210,150,.14)' } },
-          { id: 'doll_x', x: 14, y: 7, spr: 'muneca', solid: false, hidden: true, big: true, col: '#e8d8c8', hc: '#c4aa62', hy: 2, kind: 'eye' }
+          { id: 'doll_x', x: 14, y: 8, spr: 'muneca', solid: false, hidden: true, big: true, col: '#e8d8c8', hc: '#c4aa62', hy: 2, kind: 'eye' }
         ],
         async enter(S, first) { if (first) return islaStart(S); return islaBack(S); },
         tick(S, dt) { gazeTick(S, dt); if (S.f.fixed >= 4 && !S.busy) { SONG_T -= dt; if (SONG_T <= 0) { SONG_T = 11; song(S, .035); } } }
@@ -656,22 +656,26 @@
 
   async function abuelo(S) {
     S.face('abuelo', 'pl');
-    if (S.f.abuelo) {
+    if (S.f.abuelo >= 2) {
       if (!S.has('muneca_t')) return S.say('切马爷爷', '娃娃在托尼奥手里攥着呢。去拿过来——轻点，别吵醒他。');
       return S.say('切马爷爷', ['湖上起雾的时候别停。跟着桩子上的娃娃走，别进水葫芦。', '要是有东西抓住船帮，就拿竿子拍水，拍三下。……只灵一次。', '去吧，孩子。圣母保佑你。']);
     }
-    S.f.abuelo = true;
-    await S.say('切马爷爷', ['上礼拜天，学校带孩子们去坐船。老师带他们去了那个岛——现在城里人都爱去那儿拍照。', '这孩子从岛上带回来一个娃娃，塞在书包里，谁也没告诉。', '从那天晚上起，他就发烧。每天夜里，窗户上都有那个。']);
-    await S.say('玛蒂娜', '爷爷……你是说那个娃娃岛？');
-    await S.say('切马爷爷', ['那个岛的主人，我认识。我年轻的时候撑船，常给他捎点东西：煤油、玉米饼、旧报纸。他一个人在岛上住了五十年。', '他说，他刚上岛那几年，在岛边的水湾里捞起过一个小姑娘。淹死的。没人知道是谁家的孩子。', '过了几天，一个娃娃从同一个地方漂了过来。他把它挂在树上，跟她说：给你的，你别怕了。', '那以后，他夜里老听见那个小姑娘在岛上走，在水边唱歌。他就一个接一个地挂娃娃。从垃圾堆里捡，从水里捞，后来拿自己种的菜跟人换。', '挂了五十年。挂满了一整个岛。']);
+    if (S.f.abuelo === 1) return abueloTask(S);
+    S.f.abuelo = 1;
+    await S.say('切马爷爷', ['上礼拜天，学校带孩子们去坐船，去了那个岛——现在城里人都爱去那儿拍照。这孩子从岛上带回来一个娃娃，塞在书包里，谁也没告诉。', '从那天晚上起，他就发烧。每天夜里，窗户上都有那个。']);
+    await S.say('切马爷爷', ['那个岛的主人，我认识。我年轻的时候撑船，常给他捎点煤油、玉米饼、旧报纸。他一个人在岛上住了五十年。', '他说，他刚上岛那几年，在岛边的水湾里捞起过一个小姑娘。淹死的。没人知道是谁家的孩子。', '过了几天，一个娃娃从同一个地方漂了过来。他把它挂在树上，跟她说：给你的，你别怕了。', '那以后，他夜里老听见她在岛上走、在水边唱歌，就一个接一个地挂娃娃。从垃圾堆里捡，从水里捞，后来拿自己种的菜跟人换。挂满了一整个岛。']);
     const r = await S.ask('爷爷望着窗外的水。', ['……他后来呢？', '那都是传说吧？']);
-    if (r === 0) await S.say('切马爷爷', ['去年春天，人家发现他倒在水里。', '据说，就在他当年捞起小姑娘的那个水湾。', '……也有人说是心脏不好，一个八十岁的老头子，掉进水里，谁知道呢。']);
+    if (r === 0) await S.say('切马爷爷', ['去年春天，人家发现他倒在水里。据说，就在他当年捞起小姑娘的那个水湾。', '……也有人说是心脏不好。一个八十岁的老头子，掉进水里，谁知道呢。']);
     else await S.say('切马爷爷', ['传说？也许吧。有人说那个小姑娘根本不存在，是他一个人住久了，自己想出来的。也有人说，他挂娃娃是为了挡住水里的坏东西。', '……可窗户上的手印，不是传说。']);
-    await S.say('切马爷爷', ['那个娃娃是她的。得有人送回去，亲手挂回树上。', '我这把老腰，上礼拜在码头上摔了一跤，竿子都撑不动了。你妈在城里上夜班，天亮才回来。', '你十二岁就跟着我撑船。这条水路，你闭着眼睛也能走一半。另一半——']);
+    await S.say('切马爷爷', '那个娃娃是她的。得有人送回去。');
+    S.goal(S.has('muneca_t') ? '再跟爷爷说话：该怎么把娃娃送回去' : '从托尼奥手里拿过那个娃娃，再跟爷爷说话');
+  }
+  async function abueloTask(S) {
+    S.f.abuelo = 2;
+    await S.say('切马爷爷', ['得有人把它送回岛上，亲手挂回树上。', '我这把老腰，上礼拜在码头上摔了一跤，竿子都撑不动了。你妈在城里上夜班，天亮才回来。', '你十二岁就跟着我撑船。这条水路，你闭着眼睛也能走一半。另一半——']);
     await S.narr('爷爷从五斗柜的抽屉里摸出一张折了好几折的纸。');
-    await S.say('切马爷爷', '这是我以前给他送东西走的水路。');
     await S.note('ruta'); S.f.ruta = true;
-    await S.say('切马爷爷', ['记住：湖上起雾的时候，千万别停，一直往前撑。跟着湖里插的木桩走——他在桩子上也挂了娃娃，那是给自己认路的。水葫芦别进，缠住竿子就走不动了。', '要是……要是有什么东西抓住了船帮，就拿竿子拍水，拍三下。他说过，拍水能把她吓回去。', '可只灵一次。']);
+    await S.say('切马爷爷', ['湖上起雾的时候，千万别停，一直往前撑。跟着湖里插的木桩走——他在桩子上也挂了娃娃，给自己认路的。水葫芦别进，缠住竿子就走不动了。', '要是……要是有什么东西抓住了船帮，就拿竿子拍水，拍三下。他说过，拍水能把她吓回去。', '可只灵一次。']);
     if (S.coop) S.toast('两人：一个人在「笺」里看《航路》念给撑船的人听');
     S.goal(S.has('muneca_t') ? '去门口的码头，撑船去娃娃岛' : '从托尼奥手里拿过那个娃娃，撑船去娃娃岛');
   }
@@ -680,7 +684,7 @@
     if (S.has('muneca_t')) {
       if (S.f.tono2) return S.say('托尼奥', '……姐姐，你别不理她。', WS);
       S.f.tono2 = true;
-      return S.say('托尼奥', ['……她说，那些娃娃都丢了东西。老爷爷不在了，没人给她们找回来。', '她们丢了东西，就一直、一直盯着看……'], WS);
+      return S.say('托尼奥', ['……她说，她在岛上等你。', '她说，你会帮她的娃娃们把东西找回来。'], WS);
     }
     await S.narr('托尼奥的脸烧得通红，嘴唇却是青的。\n他睁开眼睛，看了你很久，才认出你来。');
     await S.say('托尼奥', ['姐姐……', '我不是偷的。是她让我带的。', '她在岛上一直跟着我们。别人都看不见她，就我看得见。她浑身湿漉漉的，头发上挂着一朵紫色的花。', '她说岛上好冷。老爷爷不在了，娃娃们都坏了，丢了东西，没人管她们了。', '她说她想跟我回家……所以我就把她的娃娃带回来了。她就能跟着娃娃来。'], WS);
@@ -688,14 +692,15 @@
     S.give('muneca_t');
     await S.say('托尼奥', '姐姐，你别把她挂回去，好不好？她一个人在那儿……好可怜。', WS);
     await S.think('窗户上的水，还在往下淌。');
-    if (S.f.abuelo) S.goal('去门口的码头，撑船去娃娃岛');
+    if (S.f.abuelo >= 2) S.goal('去门口的码头，撑船去娃娃岛');
+    else if (S.f.abuelo) S.goal('再跟爷爷说话：该怎么把娃娃送回去');
     else S.goal('问问爷爷该怎么办');
   }
 
   async function leaveHome(S) {
-    if (!S.f.abuelo || !S.has('muneca_t')) {
+    if (!(S.f.abuelo >= 2) || !S.has('muneca_t')) {
       S.sfx('locked');
-      await S.think(!S.f.abuelo ? '……先问问爷爷，到底是怎么回事。' : '娃娃还在托尼奥手里。');
+      await S.think(!S.f.abuelo ? '……先问问爷爷，到底是怎么回事。' : !S.has('muneca_t') ? '娃娃还在托尼奥手里。' : '……先问问爷爷，去岛上的路怎么走。');
       return S.walk('pl', 'u', 4);
     }
     await S.narr('门外就是自家的小码头。雾已经从水面上升起来了。\n你解开船绳，跳上了爷爷的小船（chalupa）。');
@@ -717,6 +722,7 @@
     const n = tileName(curMap(), x, y);
     S.speed(n === 'lirio' ? .45 : 1);
     if (n === 'lirio' && S.f.ph === 'canal' && S.once('lirio1')) S.toast('水葫芦缠住了竿子，船一下子慢了下来');
+    if (S.f.ph === 'canal' && x >= 26 && x <= 27 && y <= 27) S.f.v3 = true;
     if (S.f.ph === 'canal') {
       for (const k in DEADS) if (DEADS[k](x, y) && S.once('dead_' + k)) return deadEnd(S, k);
       if (x >= 24 && y >= 30 && S.once('c1see')) return c1See(S);
@@ -742,14 +748,17 @@
     await S.say('', '「Señora Santa Ana, ¿por qué llora la niña?……」\n（圣安娜夫人，小姑娘为什么哭？）', WS);
     await S.think('前面就是特修伊洛湖了。\n湖上别停。跟着木桩上的娃娃。');
     S.goal('穿过湖到对岸亮灯的码头：别停，绕开水葫芦，跟着木桩');
+    if (S.coop) S.toast('两人：一个人盯着雾里的木桩报方向，一个人撑船');
     S.cp('lago');
   }
   async function lagoStart(S) {
     S.f.ph = 'lago'; S.f.grab = S.f.grab || 0;
     S.sfx('splash'); S.shake(300, 2);
-    S.place('nina_l', 14, 15, 3); S.ent('nina_l').alpha = 0; S.alpha('nina_l', 1, 700); S.bubble('nina_l', '!', 1000);
+    S.place('nina_l', 14, 17, 3); S.ent('nina_l').alpha = 0; S.alpha('nina_l', 1, 700); S.bubble('nina_l', '!', 1000);
+    S.amb('none'); S.plr(2.8);
     await S.narr('歌声停了。\n身后的水道里，「哗啦」一声。');
-    S.chase('nina_l', { spd: NSPD, wait: .8, catch: grab, zone: LAGO });
+    await S.think('别停——撑！');
+    S.chase('nina_l', { spd: NSPD, wait: 1, catch: grab, zone: LAGO });
     DRIP_T = .5;
   }
   /* 她身后 6 格左右的水面（离入口更近的一边） */
@@ -770,9 +779,9 @@
     }
     S.sfx('splash'); await S.scare('flash', { sfx: 'sting' }); S.shake(700, 3);
     await S.narr('一只冰凉的小手搭上了船帮。\n船猛地往一边歪——');
-    await S.think('拍水！拍三下！');
+    await S.keypad('拍水！拍三下！\n（点按钮，或按数字 1）', ['拍水'], 3, { cancel: false, alias: { 1: '拍水', 2: '拍水', 3: '拍水' } });
     splash3(S);
-    for (let i = 0; i < 3; i++) { S.sfx('splash'); S.shake(160, 2); await S.wait(320); }
+    for (let i = 0; i < 3; i++) { S.sfx('splash'); S.shake(160, 2); await S.wait(200); }
     const [bx2, by2] = behind(S, 6);
     S.place('nina_l', bx2, by2, 3); S.ent('nina_l').alpha = 0;
     await S.narr('那只手缩回了黑水里。\n……爷爷说过，只灵一次。');
@@ -782,7 +791,8 @@
   function canalTick(S, dt) {
     if (S.busy) return;
     const p = W.pl;
-    if (S.f.ph === 'canal' && ((p.y <= 21 && p.x <= 22) || (p.x >= 14 && p.x <= 15 && p.y <= 21))) {
+    if (S.f.ph === 'canal' && !S.f.v3) { S.f.navT = (S.f.navT || 0) + dt; if (S.f.navT > 120 && S.once('navHint')) { S.goal('往东撑，在挂红裙子娃娃的柳树下往北拐'); S.toast('爷爷的话：一直往东，红裙子娃娃的树下往北'); } }
+    if ((S.f.ph === 'canal' && p.y <= 21 && p.x <= 22) || S.f.ph === 'lago0') {
       SONG_T -= dt;
       if (SONG_T <= 0) { SONG_T = 10; const d = Math.abs(p.x - 14) + Math.abs(p.y - 12); song(S, Math.max(.012, .04 - d * .0016)); }
     }
@@ -796,7 +806,7 @@
   async function arrive(S) {
     S.stop('nina_l'); S.hide('nina_l');
     S.f.ph = 'isla';
-    walkMode(S);
+    walkMode(S); S.plr(null);
     await S.go('isla', 13, 19, 3);
   }
 
@@ -821,7 +831,7 @@
       S.show('doll_x'); S.ent('doll_x').alpha = 1;
       await S.narr('你推开门——');
       await S.scare('face', { spr: '@nina', face: 'muneca', sfx: 'scare' });
-      await S.narr('门口的地上，坐着一个没有眼睛的瓷娃娃，仰着脸看你。\n刚才进门的时候，这里什么也没有。');
+      await S.narr('门前的地上，坐着一个没有眼睛的瓷娃娃，仰着脸看你。\n刚才进门的时候，这里什么也没有。');
       await S.alpha('doll_x', 0, 600);
       await S.think('……它在等它的眼睛。');
     }
@@ -840,9 +850,9 @@
       const ex = Math.round(e.px / 16), ey = Math.round(e.py / 16);
       const near = !e.s.ok && Math.abs(p.x - ex) + Math.abs(p.y - ey) <= 8;
       const look = near && STILL > 1;
-      if (look && e.s.lx == null) { e.s.lx = Math.round(tg.px / 16); e.s.ly = Math.round(tg.py / 16); creak(S, 1, .03); }
+      if (look && e.s.lx == null) { e.s.lx = Math.round(tg.px / 16); e.s.ly = Math.round(tg.py / 16); creak(S, 1, .035); if (Math.abs(p.x - ex) + Math.abs(p.y - ey) <= 6) S.bubble(D.id, '…', 900); }
       else if (!look && e.s.lx != null) { delete e.s.lx; delete e.s.ly; }
-      const gl = !e.s.ok && ((near && STILL > 3.2) || !!tg.s.hint);
+      const gl = !e.s.ok && ((near && STILL > 2.5) || !!tg.s.hint);
       if (!!tg.s.gl !== gl) { tg.s.gl = gl; tg.light = gl ? GLINT : null; }
     }
   }
@@ -858,6 +868,7 @@
     if (S.has(D.item)) {
       S.take(D.item); e.s.ok = true; delete e.s.lx; delete e.s.ly; tg.s.gl = false; tg.s.hint = false; tg.light = null;
       chime(S);
+      if (S.f.dim) { S.f.dim = Math.max(0, S.f.dim - 2); S.plr(S.f.dim ? 3.2 - .45 * S.f.dim : null); }
       await S.narr(D.fix);
       S.f.fixed = (S.f.fixed || 0) + 1;
       if (S.f.fixed >= 4) return allFixed(S);
@@ -882,21 +893,24 @@
       else if (id.startsWith('ju')) { e.s.ribbon = false; await S.narr('你拨开芦苇。一根红发带缠在芦苇秆上，打了好几个死结，像是被谁故意系上去的。\n你一个结一个结地解开了。'); }
       else { S.sfx('splash'); await S.narr('你把竹竿伸进水纹中间，轻轻一挑——\n竿头挂上来一顶巴掌大的小草帽，湿淋淋的，帽檐上缝着一圈红线。'); }
       S.give(D.item);
+      S.goal(`把${itemName(D.item)}还给${D.name}`);
       return;
     }
     S.f['w' + di] = (S.f['w' + di] || 0) + 1;
     if (id.startsWith('mo')) e.s.dug = true;
     e.s.done = true;
     await S.narr(WRONG[id]);
-    if (S.f['w' + di] === 1) { S.sfx('giggle'); await S.think('……身后的树上，好像有谁「嘻」地笑了一声。'); }
-    else await S.think(`不是这里。……${D.name}，到底在看哪儿？\n站在它附近别动，看它的头。`);
+    /* 选错的代价：岛上的雾浓一层（光圈缩小），所有娃娃一起转过头来；找回一样东西才亮回来 */
+    S.f.dim = (S.f.dim || 0) + 1; S.plr(Math.max(1.8, 3.2 - .45 * S.f.dim));
+    chorus(S); S.shake(250, 1);
+    if (S.f['w' + di] === 1) { S.sfx('giggle'); await S.think('……身后的树上，好像有谁「嘻」地笑了一声。\n雾一下子浓了。'); }
+    else await S.think(`不是这里。雾又浓了。\n……${D.name}，到底在看哪儿？站在它附近别动，看它的头。`);
   }
   async function mesa(S) {
     const first = !S.f.cuaderno;
     await S.note('cuaderno'); S.f.cuaderno = true; S.ent('mesa').read = true;
     if (first) {
       await S.think('「她们丢了东西，就会一直看着那个东西。」\n……刚才上岛的时候，那几个娃娃一直歪着头。');
-      if (S.coop) S.toast('两人：一个人翻笺里的本子念年份，一个人去按铜钮');
       islaGoal(S);
     }
   }
@@ -905,6 +919,7 @@
     if (e.open) return S.narr('铁盒子空了。只剩那张老照片。');
     await S.narr('一个铁皮饼干盒，上面挂着一把旧铜锁。\n锁上有四个铜钮，每个钮上刻着一个小小的娃娃。');
     const keys = ['蓝裙子', '没眼睛', '散头发', '白衣裳'];
+    if (S.coop && S.once('boxCoop')) S.toast('两人：一个人翻笺里的本子念年份，一个人按铜钮');
     const v = await S.keypad('四个铜钮：按她们上岛的先后，一个一个按\n（键盘 1 蓝裙子　2 没眼睛　3 散头发　4 白衣裳）', keys, 4, { sep: '·', alias: { 1: '蓝裙子', 2: '没眼睛', 3: '散头发', 4: '白衣裳' } });
     if (v == null) return;
     if (v === '白衣裳·散头发·蓝裙子·没眼睛') {
@@ -928,7 +943,7 @@
     await S.narr('椅子上坐着一个娃娃。白裙子，裙摆上补了一块蓝布，针脚又大又歪，很认真。\n针还别在布上，线头没剪。');
     if (!S.f.cuaderno) return S.think('……这个娃娃，好像是特意放在这儿的。');
     await S.think('「椅子上那个是给她的。等我把裙子补好，就挂到老柳树上去。」\n……他没来得及。');
-    const r = await S.ask('', ['把它带上，替他挂到老柳树上', '别动它']);
+    const r = await S.ask('要带上它吗？', ['把它带上，替他挂到老柳树上', '别动它']);
     if (r !== 0) return;
     e.s.taken = true; S.give('muneca_v');
     await S.narr('你咬断了线头，把针别回线卷上。\n娃娃很轻。');
@@ -937,8 +952,11 @@
     await S.narr('最后一个娃娃安静了下来。');
     await S.wait(500);
     chorus(S); S.ent('arbol').s.mode = 'all'; S.shake(500, 1);
-    await S.narr('「咯、咯、咯……」\n岛上所有的娃娃，一起把头转向了同一个地方——\n西北角，那棵最老的柳树。');
-    song(S, .05);
+    if (S.f.dim) { S.f.dim = 0; S.plr(null); }
+    await S.narr('「咯、咯、咯……」\n岛上所有的娃娃，一起把头转向了同一个地方——');
+    S.focus(4, 4); song(S, .05); await S.wait(900);
+    await S.narr('西北角，那棵最老的柳树。');
+    S.focus(null);
     await S.think('……她在那儿等着。');
     S.goal('把托尼奥的娃娃挂到西北角的老柳树上');
     SONG_T = 11;
@@ -958,6 +976,7 @@
     await S.narr('水面上站着一个小姑娘。\n浑身湿透，头发贴在脸上，头发里别着一朵紫色的水葫芦花。\n她没有看你。她在看你手里的娃娃。');
     await S.say('小姑娘', '「Señora Santa Ana, ¿por qué llora la niña?」\n（圣安娜夫人，小姑娘为什么哭？）', WS);
     await S.think('托尼奥说：「你别把她挂回去，好不好？她一个人在那儿，好可怜。」');
+    if (S.coop) S.toast('两个人商量好再选');
     const r = await S.ask('托尼奥的娃娃在你手里，凉凉的。', ['把娃娃挂到柳树上', '把娃娃抱回船上（托尼奥说，她想跟他回家）']);
     if (r === 1) return takeEnding(S);
     S.take('muneca_t'); S.ent('arbol').s.hung = true; chime(S);
@@ -966,7 +985,8 @@
     await S.narr('小姑娘伸出手，碰了碰娃娃光着的小脚。\n然后，她第一次抬起头，看了你一眼。');
     if (S.has('muneca_v')) return bothEnding(S);
     await S.alpha('nina', 0, 1600);
-    await S.end({ id: 'hang', title: '最后一个娃娃', text: '你把托尼奥的娃娃挂上了老柳树。\n小姑娘看了它很久，然后转过身，走进了雾里。\n\n回去的路上，雾散了。湖里的木桩一根一根从船边滑过去，桩顶的娃娃都低着头，像睡着了。\n\n天亮的时候，托尼奥的烧退了。\n他说他梦见一个小姑娘坐在柳树底下，给一排娃娃梳头。\n「她说谢谢。」他说，「她说，她不冷了。」\n\n窗户上的手印，再也没有出现过。' });
+    const chair = S.f.cuaderno ? '\n\n只是你一直会想起，小屋里那把椅子上，还坐着一个补了一半裙子的娃娃。\n它没能挂上老柳树。' : '';
+    await S.end({ id: 'hang', title: '最后一个娃娃', text: '你把托尼奥的娃娃挂上了老柳树。\n小姑娘看了它很久，然后转过身，走进了雾里。\n\n回去的路上，雾散了。湖里的木桩一根一根从船边滑过去，桩顶的娃娃都低着头，像睡着了。\n\n天亮的时候，托尼奥的烧退了。\n他说他梦见一个小姑娘坐在柳树底下，给一排娃娃梳头。\n「她说谢谢。」他说，「她说，她不冷了。」\n\n窗户上的手印，再也没有出现过。' + chair });
   }
   async function bothEnding(S) {
     S.take('muneca_v'); S.ent('arbol').s.hung2 = true; chime(S);

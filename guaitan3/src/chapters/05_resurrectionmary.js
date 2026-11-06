@@ -697,7 +697,7 @@
     car.px = C.x * TS; car.py = C.y * TS;
     if (!safe && !C.demo && Math.abs(py - C.y) < 1.1 && px + .5 >= C.x - .2 && px + .5 <= C.x + 3) { C.st = 'idle'; C.t = 4; car.hidden = true; hud.s.warn = 0; S.run(carHit); return; }
     if (!C.passed && C.x < px - .5) { C.passed = true; if (safe || C.demo) { S.shake(250, 1); S.tone('sawtooth', 140, 60, .5, .05, 0, 700); } }
-    if (C.x < px - 12 || C.x < -6) { C.st = 'idle'; C.t = 1.2 + Math.random() * 2.3; car.hidden = true; hud.s.warn = 0; if (C.demo) S.after(150, demoAfter); }
+    if (C.x < px - 12 || C.x < -6) { C.st = 'idle'; C.t = 1.2 + Math.random() * 2.3; car.hidden = true; hud.s.warn = 0; if (C.demo) { C.demo = false; S.after(150, demoAfter); } }
   }
   async function carHit(S) {
     const f = S.f;

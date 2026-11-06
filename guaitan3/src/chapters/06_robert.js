@@ -5,7 +5,7 @@
   /* 闸刀从左到右：修复间｜总闸｜展厅｜走廊；正确顺序：总闸 → 展厅（最远）→ 走廊 → 修复间（最近） */
   const LVNAME = ['修复间', '总闸', '展厅', '走廊'], ORDER = [1, 2, 3, 0];
   const STARE = 2.6;                  // 盯着他超过这么多秒就算失礼
-  let stareT = 0, lurchT = 0, lastTile = '', deaths = 0, robHold = false, lookAway = 0, ringT = 0, nearT = 0, trail = [];
+  let stareT = 0, lurchT = 0, lastTile = '', deaths = 0, robHold = false, lookAway = 0, ringT = 0, nearT = 0, trail = [], seenT = 0;
 
   /* ---------------- 通用 ---------------- */
   function goalText(S) {
@@ -372,13 +372,24 @@
   }
   function chaseOpts(S, retry) {
     const t = S.f.darkTone ?? 1;
-    return { spd: [2.45, 2.7, 3.0][t] - Math.min(.3, deaths * .1), catch: robCatch, always: true, wait: retry ? 1.8 : [2.2, 1.1, .6][t] };
+    return { spd: [2.65, 2.8, 3.1][t] - Math.min(.3, deaths * .1), catch: robCatch, always: true, wait: retry ? 1.6 : [1.3, .9, .5][t] };
   }
   function startDark(S, retry) {
     blackout(S);
     S.place('robW', 12, 5); S.face('robW', 'pl');
-    stareT = 0; lurchT = 0; robHold = false; lastTile = ''; trail = []; nearT = 0;
+    stareT = 0; lurchT = 0; robHold = false; lastTile = ''; trail = []; nearT = 0; seenT = 0;
     S.chase('robW', chaseOpts(S, retry));
+  }
+  /* 被手电照住过的他，你一移开视线，就退回暗处（离你 7 格以外的门口附近） */
+  const BACK = [[13, 4], [13, 5], [14, 3], [12, 4], [15, 6], [11, 5], [14, 5], [16, 4], [16, 5], [12, 3]];
+  function retreat(S) {
+    const p = S.pl, ds = q => Math.abs(q[0] - p.x) + Math.abs(q[1] - p.y), m = curMap();
+    let c = BACK.filter(q => ds(q) >= 7 && passable(m, q[0], q[1], S.ent('robW')));
+    if (!c.length) c = BACK.slice().sort((a, b) => ds(b) - ds(a)).slice(0, 2);
+    const q = c[S.rand(c.length)];
+    S.stop('robW'); S.place('robW', q[0], q[1]); S.face('robW', 'pl'); S.chase('robW', Object.assign(chaseOpts(S), { wait: .25 }));
+    lastTile = q[0] + ',' + q[1]; trail = [];
+    if (!S.f.toldBack) { S.f.toldBack = true; S.toast('……他退回暗处去了。被你看见，他就不敢往前走'); }
   }
   async function wbenchUse(S) {
     const f = S.f;
@@ -550,6 +561,9 @@
           else if (lurchT > 0) { lurchT -= dt; if (S.isFrozen('robW')) S.freeze('robW', false); }
           else {
             const look = seesEnt(S, d, 7);
+            const dd = Math.abs(d.px - S.pl.px) / 16 + Math.abs(d.py - S.pl.py) / 16;
+            if (look) seenT += dt;
+            else { if (seenT >= .45 && dd <= 5.5) retreat(S); seenT = 0; }
             if (look) {
               if (!S.isFrozen('robW')) { if (d.mv) { S.stop('robW'); S.chase('robW', Object.assign(chaseOpts(S), { wait: 0 })); } S.freeze('robW', true); }
               stareT += dt;

@@ -620,11 +620,12 @@
     S.speed(CRAWL); S.plr(null);
     S.goal('爬回缝口，把封石按原样塞回去（两人时一人翻速写本）');
     S.cp('seal');
-    const t = SEAL_LEFT == null ? 45 : Math.max(SEAL_LEFT, 35);
-    S.timer(t, '刮擦声', sealFail, { during: true });
     SND.scrape(S, 2.4, 1.2);
+    /* 先讲完再开始计时：读提示不该吃掉倒计时 */
     if (SEAL_DIED) await S.think(SEAL_DIED === 1 ? '只塞人站在下面的那几块。\n最里面那一格先塞——最里面的，是最后凿出来的。' : '弯月、眼、螺旋、手。');
     else await S.narr(['身后的黑暗里，石头刮着石头。\n它在往这边挤。', '得从缝口把四块封石照原样塞回去。\n塞错一块，缝就漏一回风——它就挤得更快。']);
+    const t = SEAL_LEFT == null ? 45 : Math.max(SEAL_LEFT, 35);
+    S.timer(t, '刮擦声', sealFail, { during: true });
   }
   async function sealFail(S) {
     SEAL_LEFT = 0; SEAL_DIED++;

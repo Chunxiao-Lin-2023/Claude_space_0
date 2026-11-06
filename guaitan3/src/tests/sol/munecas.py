@@ -6,6 +6,8 @@ SOL = [
     ['use', 'ventana'],
     ['use', 'abuelo', [0]],
     ['use', 'tono'],
+    ['expect', f"{D}.W.goal.includes('再跟爷爷说话')"],
+    ['use', 'abuelo'],
     ['use', 'dibujo'],
     ['use', 'recorte'],
     ['expect', f"{D}.W.inv.includes('muneca_t') && {D}.W.f.abuelo && {D}.W.f.ruta"],
