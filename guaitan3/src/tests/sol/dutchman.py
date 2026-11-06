@@ -21,7 +21,7 @@ def DRIVE(react=350, resume=300, pause=None, ignore=False, until=-1):
             "  const gq = W.maps.sea.ents.find(e => e.id === 'gship'); if (gq && gq.chase) window.__gap = Math.min(window.__gap ?? 99, Math.round((Math.abs(gq.px - W.pl.px) + Math.abs(gq.py - W.pl.py)) / 16));"
             "  const d = bfsStep(W.maps.sea, W.pl.x, W.pl.y, 2, 8, W.pl);"
             "  IN.stack = (stopped || d < 0) ? [] : [d]; await sl(30); }"
-            " IN.stack = []; })()"
+            " IN.stack = []; window.__endT = D.W.endScreen ? D.W.endScreen.title : ''; })()"
             % ('[%d,%d]' % tuple(pause) if pause else 'null', 'true' if ignore else 'false', until, react, resume))
 
 SOL = [

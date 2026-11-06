@@ -56,7 +56,7 @@
 
   const CLUES = [['c_stem', '南瓜地里那截还湿着的断茬'], ['c_stall', '马厩里「恶魔」那个空隔间'], ['c_whisper', '谷仓里压着嗓子的笑声'], ['c_seeds', '屋门口那几粒湿漉漉的南瓜子']];
   const clueN = S => CLUES.filter(([k]) => S.f[k]).length;
-  const HSPD = 6.2;          // 黑森骑兵的基本速度（格/秒）；火药小跑 5.46、狂奔 8.84
+  const HSPD = 6.5;          // 黑森骑兵的基本速度（格/秒）；火药小跑 5.46、狂奔 8.84
   const setSpd = (S, v) => { if (Math.abs((S.pl.speed || 1) - v) > .01) S.speed(v); };
   const riding = S => S.f.ride;
 
