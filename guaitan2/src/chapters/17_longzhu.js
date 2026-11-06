@@ -437,7 +437,7 @@
     amb: 'wind', floor: 'concrete', wall: 'metal', dark: .82, plr: 3.2,
     endings: { pillar: '第十七夜　完（龙柱）', dig: '擅自开挖', debt: '什么也没还' },
     /* 测试用：读写喘气周期 */
-    dbg: { ph: () => PH, calm: () => { if (PH) { PH.st = 'low'; PH.t = 0; PH.dur = 999; } } },
+    dbg: { ph: () => PH, calm: () => { if (PH) { PH.st = 'low'; PH.t = 0; PH.dur = 999; setWater(SAPI, null, true); } } },
     thumb(g, w, h) {   // 高架桥面压在一根粗柱子上，柱子上盘着一条金色的龙
       const R = (x, y, ww, hh, c) => { g.fillStyle = c; g.fillRect(x, y, ww, hh); };
       const cx = (w / 2) | 0;
