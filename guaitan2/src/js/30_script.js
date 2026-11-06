@@ -1,4 +1,4 @@
-/* ================= 怪谈·贰 · 剧本 API ================= */
+/* ================= 百物语·贰 · 剧本 API ================= */
 let GEN = 1;
 const ABORT = { abort: true };
 addEventListener('unhandledrejection', e => { if (e.reason === ABORT) e.preventDefault(); });

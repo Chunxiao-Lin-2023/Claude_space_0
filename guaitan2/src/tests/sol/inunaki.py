@@ -18,6 +18,8 @@ SOL = [
     ['use', 'cam'],
     ['use', 'shelter'],
     ['use', 'hokora', [0]],
+    ['step', 5, 13],
+    ['expect', 'window.__dbg.W.f.mimic'],
     ['use', 'naya', [0]],
     ['expect', 'window.__dbg.W.f.rescued'],
     ['js', "window.__dbg.ent('mura').hidden = true"],

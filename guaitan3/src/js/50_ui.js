@@ -1,4 +1,4 @@
-/* ================= 怪谈·叁 · 界面 ================= */
+/* ================= 百物语·叁 · 界面 ================= */
 const HUB = /\/guaitan3\/(index\.html)?$/.test(location.pathname);
 const SCREENS = ['title', 'select', 'lobby', 'archive'];
 const UI = {
@@ -69,7 +69,7 @@ const UI = {
   },
   buildSelect() {
     const G = $('chgrid'); G.innerHTML = ''; const done = store.get('done', []), gotN = store.get('notes', []);
-    $('selH').textContent = cnum(CHAPTERS.length) + '夜';
+    $('selH').textContent = cnum(CHAPTERS.length) + '则怪谈';
     $('selSub').textContent = NET.role === 'guest' ? '已加入房间 · 等待房主选择章节' : NET.role === 'host' && NET.up ? '对方已加入 · 选择今晚要讲的故事' : '选择今晚要听的故事';
     $('sBack').textContent = NET.role === 'guest' ? '离开房间' : '‹ 返回';
     CHAPTERS.forEach((ch, i) => {

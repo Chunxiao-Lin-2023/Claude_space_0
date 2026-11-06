@@ -22,7 +22,7 @@ assert '</script' not in js
 IOS = '''<meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="怪谈·叁">
+<meta name="apple-mobile-web-app-title" content="百物语·叁">
 <meta name="theme-color" content="#07060a">'''
 PEER = '<script src="https://unpkg.com/peerjs@1.5.5/dist/peerjs.min.js"></script>'
 std = '<!doctype html>\n' + shell.replace('<!--IOSMETA-->', IOS).replace('<!--PEERJS-->', PEER).replace('/*@JS*/', js)

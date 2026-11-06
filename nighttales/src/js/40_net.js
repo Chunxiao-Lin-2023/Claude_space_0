@@ -1,4 +1,4 @@
-/* ================= 十夜怪谈 · 联机（PeerJS，主机权威，共享一个角色） ================= */
+/* ================= 百物语 · 联机（PeerJS，主机权威，共享一个角色） ================= */
 const NET = { role: 'solo', peer: null, ctl: null, snap: null, code: '', up: false, ctrlPref: 'h', snapT: 0, posT: 0, lastV: null, myK: -1, scene: 'title' };
 const PEER_OPTS = QS.get('peerhost') ? { host: QS.get('peerhost'), port: +(QS.get('peerport') || 9000), path: QS.get('peerpath') || '/', secure: QS.get('peersecure') === '1', debug: 0 } : { debug: 0 };
 const CODECH = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';

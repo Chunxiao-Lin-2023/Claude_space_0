@@ -1,4 +1,4 @@
-/* ================= 怪谈·贰 · 主循环 ================= */
+/* ================= 百物语·贰 · 主循环 ================= */
 let lastT = now();
 function updateHint() { W.hint = (iControl() && canMove() && !W.pl.hidden) ? facingEnt() : null; }
 function frame() {

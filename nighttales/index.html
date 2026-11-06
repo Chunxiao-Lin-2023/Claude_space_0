@@ -6,9 +6,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="怪谈·壹">
+<meta name="apple-mobile-web-app-title" content="百物语·壹">
 <meta name="theme-color" content="#07060a">
-<title>怪谈·壹</title>
+<title>百物语·壹</title>
 <style>
 :root{--ink:#e8e0d0;--dim:#9a8f80;--red:#b3262b;--red2:#e0484c;--paper:#e9e0c9;--bg:#07060a;--panel:rgba(14,10,14,.94);--edge:#3a2a30;--gold:#c9a35a;
  --serif:"Songti SC","STSong","Noto Serif CJK SC","Noto Serif SC","Source Han Serif SC","SimSun",serif;
@@ -189,7 +189,7 @@ body.dlgup #bA{bottom:calc(var(--sb) + 180px)}
 <div id="endov" class="ov hidden"><div class="panel"><h2 id="enT"></h2><div class="tx" id="enX"></div><div class="lg" id="enL"></div><div class="row" style="margin-top:16px" id="enB"></div></div></div>
 
 <div id="title" class="screen">
- <h1>怪谈</h1>
+ <h1>百物语</h1>
  <div class="tag" style="font-size:26px;letter-spacing:.6em;color:#b3262b;margin:-4px 0 10px">壹</div>
  <div class="tag">三十个流传已久的怪谈 · 两人同看一盏灯</div>
  <div class="menu" id="tmenu">
@@ -203,7 +203,7 @@ body.dlgup #bA{bottom:calc(var(--sb) + 180px)}
  <div class="foot" id="tfoot">像素恐怖探索合集 · 建议戴耳机、关灯游玩<br>剧情含惊吓与死亡描写</div>
 </div>
 <div id="select" class="screen hidden">
- <h2 id="selH">十夜</h2><div class="sub" id="selSub">选择今晚要听的故事</div>
+ <h2 id="selH">百物语</h2><div class="sub" id="selSub">选择今晚要听的故事</div>
  <div id="chgrid"></div>
  <div id="selbar"><button class="btn small" id="sBack">‹ 返回</button><button class="btn small" id="sArch">怪谈档案</button></div>
 </div>
@@ -231,7 +231,7 @@ body.dlgup #bA{bottom:calc(var(--sb) + 180px)}
 
 /* ---- js/00_core.js ---- */
 'use strict';
-/* ================= 十夜怪谈 · core：工具、画布、输入、合成音效 ================= */
+/* ================= 百物语 · core：工具、画布、输入、合成音效 ================= */
 const TS = 16;                       // 瓦片像素
 const LSP = 'nighttales.';           // 本地存储前缀
 /* 中文数字：1→一 … 10→十 … 21→二十一 */
@@ -252,7 +252,7 @@ const store = {
   set(k, v) { try { localStorage.setItem(LSP + k, JSON.stringify(v)); } catch (e) { } },
   del(k) { try { localStorage.removeItem(LSP + k); } catch (e) { } }
 };
-/* 合集迁移（一次）：旧的《十夜怪谈·贰》《十夜怪谈·叁》存档（nighttales2./nighttales3.）并入本合集 */
+/* 合集迁移（一次）：旧的《十夜百物语·贰》《十夜百物语·叁》存档（nighttales2./nighttales3.）并入本合集 */
 (function mergeOldSaves() {
   try {
     if (store.get('merged23', false)) return;
@@ -434,7 +434,7 @@ const AU = {
 ['pointerdown', 'touchstart', 'keydown'].forEach(ev => addEventListener(ev, () => AU.init(), { passive: true }));
 
 /* ---- js/10_sprites.js ---- */
-/* ================= 十夜怪谈 · 精灵：人物生成器、瓦片、道具 ================= */
+/* ================= 百物语 · 精灵：人物生成器、瓦片、道具 ================= */
 function shade(hex, k) {   // k>0 变亮，k<0 变暗
   let h = hex.replace('#', ''); if (h.length === 3) h = h.split('').map(c => c + c).join('');
   const n = parseInt(h, 16); let r = n >> 16, g = (n >> 8) & 255, b = n & 255;
@@ -830,7 +830,7 @@ Object.assign(SPR, {
 });
 
 /* ---- js/20_world.js ---- */
-/* ================= 十夜怪谈 · 世界：地图、实体、移动、渲染、光照 ================= */
+/* ================= 百物语 · 世界：地图、实体、移动、渲染、光照 ================= */
 const CHAPTERS = [];
 function defChapter(def) { CHAPTERS.push(def); CHAPTERS.sort((a, b) => a.n - b.n); }
 const BASE_LEGEND = {
@@ -1257,7 +1257,7 @@ function drawFX(g, dt) {
 }
 
 /* ---- js/30_script.js ---- */
-/* ================= 十夜怪谈 · 剧本 API ================= */
+/* ================= 百物语 · 剧本 API ================= */
 let GEN = 1;
 const ABORT = { abort: true };
 addEventListener('unhandledrejection', e => { if (e.reason === ABORT) e.preventDefault(); });
@@ -1564,7 +1564,7 @@ function voteFallback() { const d = W && W.dlg; if (d && d.vote) { const h = d.v
 function resolveWait(v) { const r = DLGWAIT; DLGWAIT = null; if (r) r.res(v); }
 
 /* ---- js/40_net.js ---- */
-/* ================= 十夜怪谈 · 联机（PeerJS，主机权威，共享一个角色） ================= */
+/* ================= 百物语 · 联机（PeerJS，主机权威，共享一个角色） ================= */
 const NET = { role: 'solo', peer: null, ctl: null, snap: null, code: '', up: false, ctrlPref: 'h', snapT: 0, posT: 0, lastV: null, myK: -1, scene: 'title' };
 const PEER_OPTS = QS.get('peerhost') ? { host: QS.get('peerhost'), port: +(QS.get('peerport') || 9000), path: QS.get('peerpath') || '/', secure: QS.get('peersecure') === '1', debug: 0 } : { debug: 0 };
 const CODECH = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -1743,7 +1743,7 @@ function sendPing(wx, wy) {
 }
 
 /* ---- js/50_ui.js ---- */
-/* ================= 十夜怪谈 · 界面 ================= */
+/* ================= 百物语 · 界面 ================= */
 const HUB = /\/nighttales\/(index\.html)?$/.test(location.pathname);
 const SCREENS = ['title', 'select', 'lobby', 'archive'];
 const UI = {
@@ -1814,7 +1814,7 @@ const UI = {
   },
   buildSelect() {
     const G = $('chgrid'); G.innerHTML = ''; const done = store.get('done', []), gotN = store.get('notes', []);
-    $('selH').textContent = cnum(CHAPTERS.length) + '夜';
+    $('selH').textContent = cnum(CHAPTERS.length) + '则怪谈';
     $('selSub').textContent = NET.role === 'guest' ? '已加入房间 · 等待房主选择章节' : NET.role === 'host' && NET.up ? '对方已加入 · 选择今晚要讲的故事' : '选择今晚要听的故事';
     $('sBack').textContent = NET.role === 'guest' ? '离开房间' : '‹ 返回';
     CHAPTERS.forEach((ch, i) => {
@@ -37547,7 +37547,7 @@ IN.handlers.push(n => {
 })();
 
 /* ---- js/99_main.js ---- */
-/* ================= 十夜怪谈 · 主循环 ================= */
+/* ================= 百物语 · 主循环 ================= */
 let lastT = now();
 function updateHint() { W.hint = (iControl() && canMove() && !W.pl.hidden) ? facingEnt() : null; }
 function frame() {

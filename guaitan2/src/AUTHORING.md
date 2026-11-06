@@ -1,7 +1,7 @@
 # 十夜怪谈 · 章节编写手册
 
 每一章是 `src/chapters/NN_id.js` 里的一个 `defChapter({...})`，外面包一层 `(() => { ... })();`。
-**参考实现：《怪谈·壹》的章节 `nighttales/src/chapters/*.js`（只读），尤其 `01_mary.js`、`11_kisaragi.js`、`17_bixian.js`、`23_akaheya.js`**（地图、剧情、追逐、检查点、好/坏结局的写法都在里面）。
+**参考实现：《百物语·壹》的章节 `nighttales/src/chapters/*.js`（只读），尤其 `01_mary.js`、`11_kisaragi.js`、`17_bixian.js`、`23_akaheya.js`**（地图、剧情、追逐、检查点、好/坏结局的写法都在里面）。
 
 引擎文件 `src/js/*.js` 是共享的，**章节作者不要改**。需要新的道具/瓦片/人物外观，写在自己章节的
 `sprites` / `tiles` / `people` 里；引擎 bug 写进最终报告，不要自己改引擎。

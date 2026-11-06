@@ -1,4 +1,4 @@
-/* ================= 怪谈·贰 · 世界：地图、实体、移动、渲染、光照 ================= */
+/* ================= 百物语·贰 · 世界：地图、实体、移动、渲染、光照 ================= */
 const CHAPTERS = [];
 function defChapter(def) { CHAPTERS.push(def); CHAPTERS.sort((a, b) => a.n - b.n); }
 const BASE_LEGEND = {

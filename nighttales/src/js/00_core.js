@@ -1,5 +1,5 @@
 'use strict';
-/* ================= 十夜怪谈 · core：工具、画布、输入、合成音效 ================= */
+/* ================= 百物语 · core：工具、画布、输入、合成音效 ================= */
 const TS = 16;                       // 瓦片像素
 const LSP = 'nighttales.';           // 本地存储前缀
 /* 中文数字：1→一 … 10→十 … 21→二十一 */
@@ -20,7 +20,7 @@ const store = {
   set(k, v) { try { localStorage.setItem(LSP + k, JSON.stringify(v)); } catch (e) { } },
   del(k) { try { localStorage.removeItem(LSP + k); } catch (e) { } }
 };
-/* 合集迁移（一次）：旧的《十夜怪谈·贰》《十夜怪谈·叁》存档（nighttales2./nighttales3.）并入本合集 */
+/* 合集迁移（一次）：旧的《十夜百物语·贰》《十夜百物语·叁》存档（nighttales2./nighttales3.）并入本合集 */
 (function mergeOldSaves() {
   try {
     if (store.get('merged23', false)) return;

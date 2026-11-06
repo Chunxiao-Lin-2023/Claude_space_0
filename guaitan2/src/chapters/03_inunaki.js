@@ -19,9 +19,9 @@
     const c = txtBmp(s, px, col); g.drawImage(c, Math.round(X - c.width / 2), Math.round(Y - c.height / 2));
   }
   const row = (w, f) => Array.from({ length: w }, (_, x) => f(x)).join('');
-  const EXIT_T = 34;          // 出隧道的「信号」倒计时（秒）
+  const EXIT_T = 36;          // 出隧道的「信号」倒计时（秒）
   let PAT = null;             // 村人巡逻状态（进村 / 重来时重置）
-  let RINGT = 0, DRIPT = 0, HOWLT = 9, LASTBAR = -1, DIED = 0;
+  let RINGT = 0, DRIPT = 0, HOWLT = 9, LASTBAR = -1, DIED = 0, SCRT = 0;
 
   /* ---------- S.tone 合成音效（双方都听得到） ---------- */
   function ring(S) {   // 老式公用电话的电子铃：「噗噜噜噜——」两声
@@ -55,6 +55,8 @@
         else if (d === 1) { R(5, h + 2, 6, 5, '#211a14'); R(6, h + 4, 1, 1, '#e8e2c0'); R(3, G.tT + 1, 1, 10, '#6a4a2a'); R(1, G.tT, 3, 3, '#9aa0a6'); R(10, G.tT + 6, 3, 3, '#e8a050'); }
         else { R(13, G.tT + 1, 1, 10, '#6a4a2a'); R(12, G.tT, 3, 3, '#9aa0a6'); R(2, G.tT + 6, 3, 3, '#c88040'); }
       } },
+    meX: { key: 'in-mex', skin: '#e6dccf', hair: '#1e1614', hs: 'bob', top: '#5e6e52', top2: '#e8e4d8', bottom: '#2c3446', shoes: '#e4e0d8', eye: '#000',
+      extra(g, d, fr, G, R) { if (d === 0) { R(5, G.hT + 3, 2, 3, '#000'); R(9, G.hT + 3, 2, 3, '#000'); R(6, G.hT + 6, 4, 1, '#3a0a0a'); } } },
     stand: { key: 'in-stand', skin: '#b8b0a4', hair: '#141210', hs: 'short', top: '#3a3a34', top2: '#2a2a26', bottom: '#2a2a26', shoes: '#141210' }
   };
 
@@ -172,10 +174,10 @@
     /* 传说里最有名的那块牌子：此处之后，日本国宪法不适用 */
     kenpo(g, e, t, R) {
       R(5, 0, 2, 15, '#4a3a28'); R(25, 0, 2, 15, '#4a3a28');
-      box(R, -3, -24, 38, 26, '#d6d0be', '#3a3020');
-      for (let i = 0; i < 6; i++) R(-1 + (hash(i, 1, 33) * 32 | 0), -22 + (hash(i, 2, 33) * 20 | 0), 3, 2, 'rgba(90,70,40,.35)');
+      box(R, -3, -30, 38, 32, '#d6d0be', '#3a3020');
+      for (let i = 0; i < 6; i++) R(-1 + (hash(i, 1, 33) * 32 | 0), -28 + (hash(i, 2, 33) * 26 | 0), 3, 2, 'rgba(90,70,40,.35)');
       const L = String(e.text || '').split('|');
-      L.forEach((s, i) => txt(g, R, s, 16, -17 + i * 8 - (L.length - 3) * 4, 7, /憲法|おかえり/.test(s) ? '#a01810' : '#1a1410'));
+      L.forEach((s, i) => txt(g, R, s, 16, -22 + i * 9 + (3 - L.length) * 4, 7, /憲法|おかえり/.test(s) ? '#a01810' : '#1a1410'));
     },
     minka(g, e, t, R) {   // 3×2 的老房子
       R(-3, -10, 54, 6, '#16141a'); R(-1, -14, 50, 4, '#1e1c22'); R(4, -17, 40, 3, '#121016');
@@ -203,7 +205,7 @@
     },
     kennel(g, e, t, R) {
       R(2, 2, 12, 12, '#5a3a24'); R(1, -1, 14, 4, '#3a2418'); R(6, 7, 4, 7, '#0a0606');
-      const taut = e.taut && (W.t - e.taut < 3);
+      const taut = e.taut != null && W.t >= e.taut && W.t - e.taut < 3;
       if (taut) for (let i = 0; i < 6; i++) R(9 + i, 12 - i, 1, 1, '#9a9a96'); else { R(9, 12, 6, 1, '#8a8a86'); R(13, 13, 2, 1, '#8a8a86'); }
     },
     hokora(g, e, t, R) {
@@ -212,7 +214,7 @@
       if (e.lit) { const f = Math.sin(t * 13) > 0 ? 1 : 0; R(7, 8, 2, 2, '#e8e2cc'); R(7, 6 + f, 2, 2 - f, '#ffcf5a'); }
     },
     cans(g, e, t, R) {   // 挂满空罐头的草绳（竖着拦在路上）
-      const sw = e.rung && W.t - e.rung < 1.5 ? Math.round(Math.sin(t * 30) * 2) : 0;
+      const sw = e.rung != null && W.t >= e.rung && W.t - e.rung < 1.5 ? Math.round(Math.sin(t * 30) * 2) : 0;
       if (e.end === 't') R(6, -3, 3, 6, '#5a4a32'); if (e.end === 'b') R(6, 12, 3, 6, '#5a4a32');
       R(7, 0, 1, 16, '#9a8a62');
       R(4 + sw, 3, 4, 4, '#b8bcc0'); R(4 + sw, 3, 4, 1, '#e4e8ea'); R(8 - sw, 10, 4, 4, '#a8acb0'); R(8 - sw, 10, 4, 1, '#dce0e2');
@@ -270,7 +272,11 @@
     const p = W.pl; h.px = p.px; h.py = p.py; h.x = p.x; h.y = p.y;
     h.hidden = !S.f.phone || S.f.ph === 'done';
     const b = bars(S); h.num = b;
-    if (S.f.phone && LASTBAR >= 0 && b !== LASTBAR && !W.ended) sigBeep(S, b > LASTBAR);
+    if (S.f.phone && LASTBAR >= 0 && b !== LASTBAR && !W.ended) {
+      sigBeep(S, b > LASTBAR);
+      if (S.map === 'forks' && !W.busy && (S.f.ftoast || 0) < 3) { S.f.ftoast = (S.f.ftoast || 0) + 1; S.toast(b ? `信号 ${b} 格 ${b > LASTBAR ? '↑' : '↓'}` : '信号：圏外 ✕'); }
+      if (S.map === 'tunnel' && !b && S.once('tun0')) S.toast('信号：圏外 ✕');
+    }
     LASTBAR = b;
   }
   const HUD = { id: 'hud', x: 0, y: 0, spr: 'sighud', z: 5, solid: false, hidden: true, num: 0, light: { r: 1.1, pl: true, dx: 16, dy: -13, col: 'rgba(150,240,200,.12)' } };
@@ -291,7 +297,9 @@
     await S.narr('他把摄像机挂在脖子上，踩着水泥块爬上去，从那道缝里钻了进去。\n手电筒的光晃了两下，就看不见了。');
     S.give('phone', true); S.give('key', true); S.f.phone = true;
     await S.narr('你掏出手机看了一眼。凌晨零点二十分。\n屏幕右上角的信号格，还有三格。');
-    S.goal('在车边等拓也（可以先四处看看）');
+    S.toast('头顶的小图标：手机信号格');
+    S.bubble('car', '!', 2600);
+    S.goal('回车上等拓也（车停在路的下面；也可以先四处看看）');
   }
   async function carOn(S) {
     const ph = S.f.ph;
@@ -302,6 +310,7 @@
       return callEvent(S);
     }
     if (ph === 'booth') return goodEnd(S);
+    if (S.once('stall')) { S.sfx('car'); await S.narr('你想把车往前挪一点，用大灯照照那道缝——\n钥匙拧下去，发动机「咔、咔」响了两声，熄了火。'); await S.think('……网页上写着，车子靠近这里会熄火。'); return; }
     await S.narr('车灯还亮着，照着那堵水泥块。\n副驾驶座上空荡荡的。');
     await S.think('拓也还在里面。');
   }
@@ -461,10 +470,10 @@
     S.norun(true); S.speed(.6);
     S.f.exitGo = true;
     await S.narr('你面朝着村子，脚跟先落地，一步，一步，往后退。\n拓也攥着你的袖子，跟着你一起退。');
-    S.goal('倒着走出隧道（一直看着村子，别转身）——信号没了之前');
+    S.goal('倒着走出隧道（一直看着村子，别转身）——信号没了之前' + (S.coop ? '（双人：一人盯着油灯，一人替同伴看出口那边的路）' : ''));
     if (S.coop) S.toast('双人：观看的一方替同伴看着出口那边的路');
     S.timer(EXIT_T, '信号', exitFail, { during: true });
-    S.chase('mur1', { spd: 1.6, catch: exitCaught }); S.chase('mur2', { spd: 1.5, catch: exitCaught });
+    S.chase('mur1', { spd: 1.5, catch: exitCaught, wait: 2 }); S.chase('mur2', { spd: 1.4, catch: exitCaught, wait: 2.4 });
   }
   const VOICE = [
     null,
@@ -496,19 +505,19 @@
     S.f.exitGo = false; for (const id of ['mur1', 'mur2']) S.stop(id);
     S.sfx('blip');
     await S.narr('手机屏幕上，最后一格信号，灭了。\n「圏外」。');
-    await S.scare('face', { face: 'voice', dur: .8 });
+    S.focus(null); await S.scare('static', { dur: 1 });
     DIED++;
     return S.die('你身后的出口，不见了。\n隧道的两头，都是村子。', '信号没了');
   }
   async function exitCaught(S) {
-    S.clearTimer(); S.f.exitGo = false; for (const id of ['mur1', 'mur2']) S.stop(id);
+    S.clearTimer(); S.focus(null); S.f.exitGo = false; for (const id of ['mur1', 'mur2']) S.stop(id);
     chop(S);
     await S.scare('face', { spr: '@mura', dur: .9 });
     DIED++;
     return S.die('油灯的光贴到了你的脸上。\n你一直盯着它——可你退得太慢了。', '被追上了');
   }
   async function exitDone(S) {
-    S.clearTimer(); S.f.exitGo = false;
+    S.clearTimer(); S.f.exitGo = false; S.focus(null);
     for (const id of ['mur1', 'mur2']) { S.stop(id); S.hide(id); }
     S.follow('takuT', false); S.hide('takuT');
     await S.narr('后背碰到了冰凉的水泥块。\n你摸到那道缝，倒着，一点一点挤了出去。\n那两盏油灯停在隧道里，没有再跟过来。');
@@ -537,7 +546,7 @@
     return true;
   }
   function spot(S, e) {
-    PAT.st = 'spot'; PAT.t = .9; e.mv = null;
+    PAT.st = 'spot'; PAT.t = S.f.spotN ? .9 : 1.6; S.f.spotN = (S.f.spotN || 0) + 1; e.mv = null;
     S.face('mura', 'pl'); S.bubble('mura', '!', 1200); S.sfx('sting'); chop(S);
     if (S.once('spotTip')) S.toast('被发现了！快跑，甩开它，或者躲进水桶里');
   }
@@ -552,8 +561,10 @@
     clank(S); howl(S, false, .35);
     const k = S.ent('kennel'); if (k) k.s.taut = W.t;
     if (rope) for (const id of rope) { const c = S.ent(id); if (c) c.s.rung = W.t; }
-    if (PAT && PAT.st !== 'chase' && PAT.st !== 'spot') { PAT.st = 'alert'; PAT.ax = x; PAT.ay = y; S.bubble('mura', '!', 900); }
-    if (S.once('canTip')) S.toast('哐啷——！空罐头响了。提斧头的人朝这边来了');
+    if (PAT && PAT.st !== 'chase' && PAT.st !== 'spot') {
+      if (!S.f.alarmed) { S.f.alarmed = true; const m = S.ent('mura'), dx = x - Math.round(m.px / TS), dy = y - Math.round(m.py / TS); m.dir = Math.abs(dx) > Math.abs(dy) ? (dx < 0 ? 1 : 2) : (dy < 0 ? 3 : 0); PAT.st = 'look'; PAT.t = 2.2; PAT.look = 1.4; S.bubble('mura', '?', 1400); S.toast('哐啷——！空罐头响了。草帽转过来张望……下次它就会走过来'); }
+      else { PAT.st = 'alert'; PAT.ax = x; PAT.ay = y; S.bubble('mura', '!', 900); if (S.once('canTip')) S.toast('罐头又响了——提斧头的人朝这边来了！'); }
+    }
   }
   function nearestWp(e) {
     const ex = Math.round(e.px / TS), ey = Math.round(e.py / TS); let bi = 0, bd = 1e9;
@@ -604,7 +615,8 @@
   async function hideIn(S, e) {
     if (!PAT || S.map !== 'village') return S.narr('一只盛雨水的大木桶，盖子歪着。');
     S.f.hiding = true; S.hidePlayer(true); S.sfx('close');
-    if (S.f.rescued) await S.narr('你把拓也推进旁边的阴影里，自己掀开桶盖，蹲了进去。\n桶里一股烂木头和雨水的味道。');
+    if (S.f.rescued) { S.follow('takuV', false); S.hide('takuV'); }
+    if (S.f.rescued) await S.narr('你让拓也缩进屋檐底下的柴堆后面，自己掀开桶盖，蹲了进去。\n桶里一股烂木头和雨水的味道。');
     else await S.narr('你掀开桶盖，蹲了进去，把盖子轻轻拉回来。\n桶里一股烂木头和雨水的味道。');
     let t = 0;
     while (true) {
@@ -614,6 +626,7 @@
       if (t % 1.5 < .25) heart(S, 1);
     }
     S.hidePlayer(false); S.f.hiding = false; S.sfx('open');
+    if (S.f.rescued) { const p = S.pl; S.place('takuV', p.x, p.y, 0); S.follow('takuV', true); }
     await S.narr('脚步声远了。你慢慢地爬了出来。');
   }
   async function villageIntro(S) {
@@ -639,12 +652,28 @@
     if (S.coop) S.toast('双人：一个人操作，另一个人盯着那盏油灯的方向');
     S.cp('village');
   }
+  async function mimicScene(S) {
+    S.f.mimic = true;
+    const p = S.pl, mx = p.x === 3 && p.y === 16 ? 2 : 3;
+    S.place('mimic', mx, 16, 3); S.ent('mimic').alpha = 1; S.ent('mimic').spr = '@meX';
+    S.focus(3, 15);
+    S.sfx('knock'); await S.wait(300); S.sfx('knock');
+    await S.narr('仓库门前站着一个人，正在敲门。');
+    await S.say('？？？', '拓也，开门。是我，千夏。', { style: 'whisper' });
+    await S.narr('……那是你的声音。\n连句尾往上挑的那个习惯，都一模一样。\n那个人身上，穿着和你一样的外套。');
+    S.face('mimic', 0); S.sfx('sting'); S.fx('glitch');
+    await S.narr('它慢慢地把头转了过来——\n脸是你的脸。眼睛的地方，是两个黑洞。');
+    await S.alpha('mimic', 0, 500);
+    await S.narr('眨一下眼，门前什么都没有了。\n只有门板上，留着几个湿漉漉的手印。');
+    S.focus(null);
+    await S.think('会学人说话的东西……\n拓也一定被它骗怕了。');
+  }
   async function aloneEnd(S) {
     await S.narr('你转过身，一头扎回了隧道里。');
     await S.fade(1, 900); S.amb('drone');
     await S.narr('你跑了很久。久得不像一条隧道该有的长度。\n手机一直是「圏外」。');
     await S.narr('等你从水泥块的缝里滚出来的时候，天已经蒙蒙亮了。');
-    return S.end({ bad: true, id: 'alone', title: '一个人', text: '警察来了，消防队也来了。\n他们说，旧犬鸣隧道很多年前就被水泥块封死了，\n连一条能钻过人的缝都没有。\n\n拓也再也没有找到。\n\n只是从那以后，你的手机每天夜里两点都会响一次。\n来电显示：拓也。\n信号格那里，永远是一个红色的「×」。' });
+    return S.end({ bad: true, id: 'alone', title: '一个人', text: '警察来了，消防队也来了。\n他们说，旧犬鸣隧道很多年前就被水泥块封死了，\n连一条能钻过人的缝都没有。\n舅舅的车停在旧道上，怎么也打不着火，最后是拖车拖下山的。\n\n拓也再也没有找到。\n\n只是从那以后，你的手机每天夜里两点都会响一次。\n来电显示：拓也。\n信号格那里，永远是一个红色的「×」。' });
   }
   async function kenpoOn(S) {
     if (S.f.sealed) return S.narr('「おかえりなさい」——欢迎回来。\n木牌上的墨，像是刚写上去的，还在往下淌。');
@@ -694,7 +723,8 @@
     S.f.rescued = true; S.f.ph = 'rescued';
     S.follow('takuV', true); S.speed(.85);
     if (S.has('cam')) await S.narr('你把摄像机塞回他手里。他攥得指节发白。');
-    S.goal('扶着拓也，回到村口的隧道（东北角）');
+    if (!S.f.memo) { await S.say('拓也', '……对了。我逃过来的时候，看见村子中间那个候车亭的长椅上，钉着一张纸。\n上面好像写着……怎么出去。'); S.bubble('shelter', '!', 2600); }
+    S.goal('扶着拓也，回到村口的隧道（东北角）' + (S.f.memo ? '' : '；候车亭里那张纸也许有用'));
     S.cp('village2');
   }
   async function sealEvent(S) {
@@ -708,6 +738,7 @@
     await S.narr('旁边那块木牌上的字，又变了：\n「おかえりなさい」——欢迎回来。');
     await S.think(S.f.memo ? '……纸上写着：只有信号格不会骗人。' : '……手机。看看手机。');
     S.sfx('blip');
+    await S.narr('GPS 地图上，你们的蓝点停在一大片蓝色的正中间。\n「犬鸣水库」。');
     await S.narr('你举着手机，慢慢转了一圈。\n屏幕朝着村子西南边的时候，信号格那里，跳出来一格。');
     S.goal('跟着信号走：村子西南角往山里去的小路');
     S.cp('sealed');
@@ -736,6 +767,8 @@
     await S.narr('你合起双手，低下头。\n……远处的狗叫，停了一拍。');
   }
   async function vilResume(S) {
+    for (const id of ['c1', 'c2', 'c3', 'c4']) { const c = S.ent(id); if (c) c.s.rung = null; }
+    const k = S.ent('kennel'); if (k) k.s.taut = null;
     patReset(S); S.hidePlayer(false); S.f.hiding = false; S.norun(false);
     if (S.f.rescued) { const p = S.pl; S.place('takuV', p.x, Math.min(16, p.y + 1), 0); S.follow('takuV', true); S.speed(.85); }
     else S.speed(1);
@@ -759,7 +792,8 @@
     S.show('jizo', st >= 1); S.show('shoe', st >= 2);
     S.stop('muraF'); S.hide('muraF');
     if (!first) { S.pos(10, 9, 3); S.place('takuF', 10, 10, 3); S.follow('takuF', true); }
-    S.goal(`岔路口 ${st + 1}/3：找出回去的路（每条岔路走进去两步，看信号格）`);
+    S.f.ftoast = 0;
+    S.goal(`岔路口 ${st + 1}/3：找出回去的路（每条岔路走进去两步，看信号格）` + (S.coop ? '（双人：一人盯信号格，一人盯身后的油灯）' : ''));
     if (S.coop) S.toast('双人：一个人盯着信号格，一个人盯着身后的油灯');
     S.cp('forks');
     S.sfx('blip');
@@ -791,9 +825,10 @@
     S.pos(10, 9, 3); S.place('takuF', 10, 10, 3); S.follow('takuF', true); S.hide('muraF');
     await S.fade(0, 400);
     howl(S, true);
-    await S.narr(['你们走了很久，很久。\n——眼前，又是那块路牌。', '……又回来了。\n路牌上的字，和刚才不一样了。', '又是这里。\n远处的狗叫声，近了。'][Math.min(2, w - 1)]);
+    await S.narr(['你们走了很久，很久。\n——眼前，又是那块路牌。', '……又回来了。\n路牌上的字，和刚才不一样了。', '又是这里。\n远处的狗叫声，近了。', '又是这块路牌。\n拓也攥着你袖子的手，在发抖。'][Math.min(3, w - 1)]);
     if (w === 1) await S.think(S.f.memo ? '纸上写着——只有信号格不会骗人。\n刚才那条路上，信号格是什么样的？' : '路牌在骗人。\n……手机。看看信号格。');
     else if (w === 2) await S.think('先别急着走到头。\n每条岔路都往里走两步，看信号格——是多了一格，还是变成红色的「×」。');
+    else if (w === 3) await S.think('三条岔路里，有两条一走进去就是「圏外」。\n只有一条，信号格会多出来——别管路牌，三条都试一遍。');
     else await S.think(`是${DIRNAME[d.ok]}那条。\n往那边走的时候，信号格多了一格。`);
     return muraFIn(S, Math.max(12, 16 - 2 * w));
   }
@@ -863,7 +898,7 @@
     amb: 'night', floor: 'dirt', wall: 'stone', dark: .82, plr: 3, darkC: '#03050a',
     people: PEOPLE_I, tiles: TILES_I, sprites: SPR_I, items: ITEMS_I, notes: NOTES_I, faces: FACES_I,
     endings: { out: '第三夜　完', booth: '电话亭', alone: '一个人' },
-    legend: '犬鸣峠（いぬなきとうげ）位于日本福冈县宫若市与久山町之间的山里。山口的旧犬鸣隧道在上世纪七十年代新隧道开通后就很少有车走了，后来入口被人用水泥块封住。大约从九十年代起，关于这一带的怪谈在年轻人和网络上越传越多，「犬鸣村」就是其中最出名的一个：据说旧隧道后面有一个与外界断绝来往、不在任何地图上的村子，村口立着写有「この先、日本国憲法つうじません」（此处之后，日本国宪法不适用）的牌子；村子四周拉着挂满空罐头的绳子，一碰就响；闯进去的人会被拿着斧头或镰刀的村民追赶；附近手机没有信号、车子会熄火；峠上的公用电话亭半夜会响。\n\n这些说法都查无实据，不同的人讲出来的版本也各不相同。真实的背景是：「犬鸣」确实是这一带山谷的旧地名，这里后来修建了犬鸣水库（九十年代建成），据说有一部分旧聚落因此迁走、沉进了水底，「消失的村子」的联想大概就是从这里来的。也有一种说法认为，九十年代旧隧道附近据说发生过的一起真实刑事案件，让这一带在传闻里更添了阴影；本章不涉及其细节。\n\n需要说明的是，「宪法不适用的村子」「排斥外人的村民」这类说法，长期以来被批评为是在把历史上遭受歧视的社群妖魔化——现实中从来没有这样的村子，住在这片山谷里的人，只是因为修水库而搬到了别处，过着和所有人一样的生活。2020 年，这个传说被改编成电影《犬鸣村》，让「犬鸣」的名字传得更广，也让不少人专程去旧隧道「探险」；当地多次提醒，旧道和旧隧道一带禁止进入，深夜擅闯既危险也违法。\n\n（本章中的千夏和拓也、拓也打印的网页、告示牌上的涂鸦、钉在候车亭里的纸条和写纸条的人、信号格指路和「倒着走出隧道」的规矩、会学人说话的村人、仓库门前的「车钥匙」问答、三个岔路口、石壁下的小祠，以及所有结局，均为游戏虚构。）',
+    legend: '犬鸣峠（いぬなきとうげ）位于日本福冈县宫若市与久山町之间的山里。山口的旧犬鸣隧道在上世纪七十年代新隧道开通后就很少有车走了，后来入口被人用水泥块封住。大约从九十年代起，关于这一带的怪谈在年轻人和网络上越传越多，「犬鸣村」就是其中最出名的一个：据说旧隧道后面有一个与外界断绝来往、不在任何地图上的村子，村口立着写有「この先、日本国憲法つうじません」（此处之后，日本国宪法不适用）的牌子；村子四周拉着挂满空罐头的绳子，一碰就响；闯进去的人会被拿着斧头或镰刀的村民追赶；附近手机没有信号、车子会熄火；峠上的公用电话亭半夜会响。\n\n这些说法都查无实据，不同的人讲出来的版本也各不相同。真实的背景是：「犬鸣」确实是这一带山谷的旧地名，这里后来修建了犬鸣水库（九十年代建成），据说有一部分旧聚落因此迁走、沉进了水底，「消失的村子」的联想大概就是从这里来的。也有一种说法认为，八十年代末旧隧道附近发生过的一起真实刑事案件，让这一带在传闻里更添了阴影；本章不涉及其细节。\n\n需要说明的是，「宪法不适用的村子」「排斥外人的村民」这类说法，长期以来被批评为是在把历史上遭受歧视的社群妖魔化——现实中从来没有这样的村子，住在这片山谷里的人，只是因为修水库而搬到了别处，过着和所有人一样的生活。2020 年，这个传说被改编成电影《犬鸣村》，让「犬鸣」的名字传得更广，也让不少人专程去旧隧道「探险」；当地多次提醒，旧道和旧隧道一带禁止进入，深夜擅闯既危险也违法。\n\n（本章中的千夏和拓也、拓也打印的网页、告示牌上的涂鸦、钉在候车亭里的纸条和写纸条的人、信号格指路和「倒着走出隧道」的规矩、会学人说话的村人、仓库门前的「车钥匙」问答、三个岔路口、石壁下的小祠，以及所有结局，均为游戏虚构。）',
     start: { map: 'pass', x: 10, y: 6, dir: 3 },
     resume: {
       village: vilResume, village2: vilResume, sealed: vilResume,
@@ -951,7 +986,17 @@
           if (x >= 18 && !S.f.v1) return voice(S, 1);
           if (x >= 29 && S.f.vturn >= 1 && !S.f.v2) return voice(S, 2);
         },
-        tick(S, dt) { DRIPT -= dt; if (DRIPT <= 0) { DRIPT = 1.4 + Math.random() * 2.4; S.sfx('drip'); } }
+        tick(S, dt) {
+          DRIPT -= dt; if (DRIPT <= 0) { DRIPT = 1.4 + Math.random() * 2.4; S.sfx('drip'); }
+          if (!S.f.exitGo || W.busy) return;
+          const p = S.pl; S.focus(Math.max(0, p.x - 3), p.y);   // 镜头偏向村子那边：盯着油灯；出口那边交给同伴
+          SCRT -= dt;
+          if (SCRT <= 0) {   // 斧头拖在水泥地上的刮擦声：越近越响、越亮
+            let dmin = 99; for (const id of ['mur1', 'mur2']) { const e = S.ent(id); if (e && !e.hidden) dmin = Math.min(dmin, Math.abs(e.px / TS - p.x) + Math.abs(e.py / TS - p.y)); }
+            const v = clamp(.07 - dmin * .006, .008, .07); SCRT = clamp(.35 + dmin * .08, .4, 1.2);
+            S.tone('sawtooth', 150, 95, .3, v, 0, 600 + Math.max(0, 8 - dmin) * 180); S.tone('square', 2400, 1800, .05, v * .25, .05, 3000);
+          }
+        }
       },
       /* ---------------- 犬鸣村 ---------------- */
       village: {
@@ -979,13 +1024,17 @@
           ...[[10, 10], [9, 13], [6, 13], [3, 13], [1, 14], [1, 16]].map(([x, y]) => ({ x, y, spr: 'footprints', decal: true, col: 'rgba(80,60,38,.85)' })),
           { id: 'cam', x: 11, y: 8, spr: 'camcorder', solid: false, light: { r: .9, col: 'rgba(255,60,60,.12)' }, on: camOn },
           { id: 'naya', x: 2, y: 14, w: 2, h: 2, spr: 'naya', on: nayaOn },
+          { id: 'mimic', x: 3, y: 16, spr: '@meX', dir: 3, hidden: true, solid: false },
           { id: 'takuV', x: 3, y: 16, spr: '@taku', hidden: true, on: S => S.say('拓也', '……我没事，还能走。快点离开这儿。') },
           ...[20, 21].map(y => ({ x: 6, y, spr: 'invisible', solid: false, touch: toForks })),
           { id: 'mura', x: 5, y: 9, spr: '@mura', solid: false, dir: 2, light: { r: 2.3, dx: 6, dy: 10, col: 'rgba(255,150,70,.2)', flick: true } },
           Object.assign({}, HUD)
         ],
         async enter(S, first) { if (first) return villageIntro(S); },
-        step(S, x, y) { if (S.f.rescued && !S.f.sealed && y <= 5 && x >= 22 && x <= 27) return sealEvent(S); },
+        step(S, x, y) {
+          if (S.f.rescued && !S.f.sealed && y <= 5 && x >= 22 && x <= 27) return sealEvent(S);
+          if (!S.f.rescued && !S.f.mimic && x <= 7 && y >= 13 && y <= 16) return mimicScene(S);
+        },
         tick: vilTick
       },
       /* ---------------- 山里的岔路口 ---------------- */
