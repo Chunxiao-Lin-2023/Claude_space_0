@@ -120,13 +120,17 @@
   };
   const TILES_M = {
     dsky: { solid: true, paint(R, X, Y) {
-      R(0, 0, 16, 6, '#241e3a'); R(0, 6, 16, 5, '#3a2a48'); R(0, 11, 16, 5, '#5a3448');
-      if (hash(X, Y, 3) < .2) R((hash(X, Y, 4) * 15) | 0, (hash(X, Y, 5) * 6) | 0, 1, 1, '#9a8ab0');
+      if (Y === 0) { R(0, 0, 16, 8, '#1a1630'); R(0, 8, 16, 8, '#221c3a'); }
+      else { R(0, 0, 16, 6, '#2c2244'); R(0, 6, 16, 5, '#3e2a4a'); R(0, 11, 16, 5, '#583248'); }
+      if (hash(X, Y, 3) < (Y ? .1 : .25)) R((hash(X, Y, 4) * 15) | 0, (hash(X, Y, 5) * 12) | 0, 1, 1, '#9a8ab0');
+    } },
+    dhor: { solid: true, paint(R, X, Y) {
+      R(0, 0, 16, 5, '#7a3a4a'); R(0, 5, 16, 5, '#a85448'); R(0, 10, 16, 3, '#c87a50');
+      const h = (11 + Math.sin(X * .5) * 2 + hash(X, 0, 9) * 2) | 0; R(0, h, 16, 16 - h, '#1a1620'); R(0, h, 16, 1, '#2a2230');
     } },
     dsky2: { solid: true, paint(R, X, Y) {
-      R(0, 0, 16, 4, '#7a3a4a'); R(0, 4, 16, 4, '#a85448'); R(0, 8, 16, 3, '#c87a50');
-      const h = (10 + Math.sin(X * .5) * 2 + hash(X, 0, 9) * 2) | 0; R(0, h, 16, 16 - h, '#1a1620'); R(0, h, 16, 1, '#2a2230');
-      if (X > 36 && hash(X, 1, 7) < .5) R((hash(X, 2, 7) * 14) | 0, h + 2, 1, 1, '#f0c870');
+      R(0, 0, 16, 16, '#141018'); R(0, 12, 16, 4, '#100c14');
+      if (X > 36 && hash(X, 1, 7) < .6) R((hash(X, 2, 7) * 14) | 0, 4 + ((hash(X, 3, 7) * 6) | 0), 1, 1, '#f0c870');
       for (let i = 0; i < 16; i += 2) { const y = Math.round(chainY(X + i / 16)); R(i, y, 2, 2, '#c8ccd0'); R(i, y + 2, 2, 1, '#7a7e84'); if ((X * 16 + i) % 12 === 0) R(i, y + 3, 1, 16 - y - 3, '#8a8e94'); }
     } },
     truss: { solid: true, paint(R, X, Y) {
@@ -134,13 +138,13 @@
       for (let i = 0; i < 16; i += 4) R(i, 0, 1, 12, '#9aa0a8');
       R(0, 2, 16, 2, '#c8ccd2'); R(0, 9, 16, 3, '#aab0b8'); R(0, 12, 16, 4, '#5a5e66');
       for (let i = 0; i < 16; i += 8) { R(i + 1, 4, 1, 1, '#9aa0a8'); R(i + 2, 5, 1, 1, '#9aa0a8'); R(i + 3, 6, 1, 1, '#9aa0a8'); R(i + 4, 7, 1, 2, '#9aa0a8'); }
-      if (Y > 4) R(0, 0, 16, 2, '#2a2a30');
+      if (Y > 6) R(0, 0, 16, 2, '#2a2a30');
     } },
     walk: { solid: false, paint(R, X, Y) { R(0, 0, 16, 16, '#6e6c6a'); for (let y = 0; y < 16; y += 4) R(0, y, 16, 1, '#5c5a58'); if (hash(X, Y, 2) < .3) R(4, 6, 3, 1, '#7c7a78'); R(0, 15, 16, 1, '#3a3836'); } },
-    lane: { solid: false, paint(R, X, Y) { speck(R, '#34343a', ['#3e3e44', '#2a2a30'], X, Y, 14, 12); if (Y === 4) for (let i = 0; i < 16; i += 8) R(i + 1, 15, 5, 1, '#a89040'); } },
+    lane: { solid: false, paint(R, X, Y) { speck(R, '#34343a', ['#3e3e44', '#2a2a30'], X, Y, 14, 12); if (Y === 6) for (let i = 0; i < 16; i += 8) R(i + 1, 15, 5, 1, '#a89040'); } },
     river: { solid: true, paint(R, X, Y) {
-      R(0, 0, 16, 16, Y === 7 ? '#141a26' : '#18202e');
-      for (let i = 0; i < 3; i++) { const h = hash(X, Y, 20 + i); R((h * 12) | 0, (hash(X, Y, 30 + i) * 14) | 0, 3, 1, i === 0 && Y < 9 ? '#8a5a40' : '#2a3a52'); }
+      R(0, 0, 16, 16, Y === 9 ? '#141a26' : '#18202e');
+      for (let i = 0; i < 3; i++) { const h = hash(X, Y, 20 + i); R((h * 12) | 0, (hash(X, Y, 30 + i) * 14) | 0, 3, 1, i === 0 && Y < 11 ? '#8a5a40' : '#2a3a52'); }
     } },
     fwall: { solid: true, paint(R, X, Y) {
       R(0, 0, 16, 16, '#6a6a66'); R(0, 0, 16, 2, '#8a8a84'); R(0, 14, 16, 2, '#4a4a46');
@@ -250,9 +254,9 @@
     /* 桥 */
     tower(g, e, t, R) {
       const S1 = '#c4c8ce', S2 = '#8a8e96', S3 = '#5a5e66';
-      R(2, -34, 4, 48, S1); R(10, -34, 4, 48, S2); R(2, -34, 12, 3, S1); R(2, -20, 12, 2, S2); R(2, -6, 12, 2, S3);
-      R(3, -34, 1, 48, '#e0e4e8'); R(5, -36, 6, 2, S2);
-      R(4, -30, 8, 1, S3); R(5, -29, 1, 8, S3); R(10, -29, 1, 8, S3);
+      R(2, -24, 4, 38, S1); R(10, -24, 4, 38, S2); R(2, -24, 12, 3, S1); R(2, -12, 12, 2, S2); R(2, -2, 12, 2, S3);
+      R(3, -24, 1, 38, '#e0e4e8'); R(5, -26, 6, 2, S2);
+      R(4, -20, 8, 1, S3); R(5, -19, 1, 6, S3); R(10, -19, 1, 6, S3);
     },
     blamp(g, e, t, R) { R(7, -20, 2, 24, '#5a5e66'); R(4, -22, 8, 3, '#5a5e66'); R(5, -19, 6, 2, e.off ? '#3a3a3a' : '#fff0b0'); },
     bcar(g, e, t, R) {
@@ -295,7 +299,7 @@
     S.show('eyes'); S.sfx('heart');
     await S.narr('门框里，离地两米多高的地方——\n亮起了两个红点。');
     await S.say('巴德', '……诺拉。别动。', { style: 'whisper' });
-    await S.walk('pl', 'sss', 5); S.turn(3);
+    await S.walk('pl', 'ssss', 5); S.turn(3);
     S.hide('eyes');
     const m = S.ent('moth'); S.place('moth', 13, 3, 0); m.alpha = 0; m.open = false;
     await S.alpha('moth', 1, 600);
@@ -537,7 +541,7 @@
       await S.think(S.f.solved ? '先想清楚那个预言说的是哪儿。' : '桥那头……现在去做什么？\n先把卡片的事弄清楚。');
       return S.pos(35, S.pl.y, 1);
     }
-    await S.go('bridge', 1, 3, 2);
+    await S.go('bridge', 1, 5, 2);
   }
 
   /* ================= 银桥 ================= */
@@ -627,7 +631,7 @@
     await S.narr('主街东头，银桥。\n四十年的老桥，刷着铝粉漆，远看银闪闪的。');
     honk(S, 330); honk(S, 260, .4);
     await S.narr('下班的车堵了一桥，一辆贴着一辆，谁也动不了。\n喇叭声此起彼伏。');
-    S.focus(33, 2); screech(S, .8);
+    S.focus(33, 3); screech(S, .8);
     await S.narr('东边那座塔的塔顶上，蹲着一个灰色的东西。\n两点红光。');
     await S.think('……和 TNT 那晚一模一样。');
     S.focus(null);
@@ -638,7 +642,7 @@
     await S.narr('你跑回了桥头。脚底下是结结实实的土地。');
     await S.narr('身后，桥上的车一辆一辆空着，车灯还亮着，排成一条长长的光带，一直连到对岸。');
     const m = S.ent('moth_b'); m.open = true; screech(S, 1.2); S.shake(400, 2);
-    S.focus(33, 2);
+    S.focus(33, 3);
     await S.narr('塔顶上，那个东西张开了翅膀。');
     S.sfx('whisper');
     await S.say('？？？', '……诺拉姐姐——\n你过来呀——', { style: 'whisper' });
@@ -652,9 +656,9 @@
   }
   async function onBridgeEnd(S) {
     await S.narr('你松开了苏西的手。');
-    await S.walk('pl', [11, 3], 4);
+    await S.walk('pl', [11, 5], 4);
     const m = S.ent('moth_b'); await S.alpha('moth_b', 0, 400);
-    S.place('moth_b', 14, 3, 1); m.s.fly = false; m.open = true; m.alpha = 0;
+    S.place('moth_b', 14, 5, 1); m.oy = 0; m.s.fly = false; m.open = true; m.alpha = 0;
     wingbeat(S, 1.5); await S.alpha('moth_b', 1, 500);
     await S.narr('它落在了你前面的桥面上，比路灯还高。');
     await S.scare('face', { face: 'moth', dur: .9 });
@@ -707,10 +711,10 @@
   })();
   /* 银桥 46×12 */
   const BRIDGE_ROWS = (() => {
-    const g = grid(46, 12, 'V');
-    g.rect(5, 0, 45, 0, 'N').rect(5, 1, 45, 1, 'M').rect(5, 2, 45, 2, 'Q').rect(5, 3, 45, 3, 'D').rect(5, 4, 45, 5, 'A').rect(5, 6, 45, 6, 'Q');
-    g.rect(0, 0, 4, 1, '#').rect(0, 2, 4, 3, '_').rect(0, 4, 4, 5, ':').rect(0, 6, 4, 7, '_').rect(0, 8, 4, 11, '"');
-    g.set(0, 9, 'B').set(4, 10, 'B').set(2, 11, 'B');
+    const g = grid(46, 14, 'V');
+    g.rect(5, 0, 45, 1, 'N').rect(5, 2, 45, 2, 'O').rect(5, 3, 45, 3, 'M').rect(5, 4, 45, 4, 'Q').rect(5, 5, 45, 5, 'D').rect(5, 6, 45, 7, 'A').rect(5, 8, 45, 8, 'Q');
+    g.rect(0, 0, 4, 3, '#').rect(0, 4, 4, 5, '_').rect(0, 6, 4, 7, ':').rect(0, 8, 4, 9, '_').rect(0, 10, 4, 13, '"');
+    g.set(0, 11, 'B').set(4, 12, 'B').set(2, 13, 'B');
     return g.rows();
   })();
   /* 桥上的车：两格一辆，空出劝人的位置 */
@@ -890,34 +894,34 @@
       /* ---------------- 银桥 ---------------- */
       bridge: {
         amb: 'river', dark: .5, plr: 3.4, wall: 'brick', floor: 'concrete', darkC: '#08060e',
-        legend: { N: 'dsky', M: 'dsky2', Q: 'truss', D: 'walk', A: 'lane', V: 'river' },
+        legend: { N: 'dsky', O: 'dhor', M: 'dsky2', Q: 'truss', D: 'walk', A: 'lane', V: 'river' },
         tileOpts: { grassC: '#2a3424' },
         rows: BRIDGE_ROWS,
         ents: ids('bridge', [
-          { id: 'bsign_b', x: 3, y: 2, spr: 'bsign', on: S => S.narr('「银桥　1928」。\n桥头的铜牌上刻着：「连接两个州的友谊」。') },
-          ...TOWERS.map(x => ({ id: 'towerN' + x, x, y: 2, spr: 'tower', on: S => S.narr('桥塔。铆钉一颗挨着一颗，铝粉漆剥落的地方露出铁锈。\n吊链从塔顶垂下来，一节一节，是一根根扁扁的铁杆串起来的。') })),
-          ...TOWERS.map(x => ({ id: 'towerS' + x, x, y: 6, spr: 'tower' })),
-          ...LAMPS.map(x => ({ id: 'lamp' + x, x, y: 2, spr: 'blamp', light: { r: 2.6, dy: -16, col: 'rgba(255,230,160,.14)' }, on: S => S.narr(S.ent('lamp' + x).off ? '灯灭了。' : '桥灯。灯罩上结着薄冰。\n底下的吊链在风里轻轻地「咔、咔」响。') })),
-          ...laneCars(4, 5, 45, [9, 10, 11, 21, 22, 23, 31, 32, 33], CAR_COLS),
-          ...laneCars(5, 5, 45, [], CAR_COLS.slice().reverse()),
-          { id: 'dcar', x: 9, y: 4, w: 2, spr: 'bcar', col: '#d88a9a', on: S => S.narr('多丽丝的粉色小轿车。后视镜上挂着一个塑料天使。') },
-          { id: 'pickup_b', x: 22, y: 4, w: 2, spr: 'pickup', s: { kid: true }, on: S => S.narr(S.f.pd_carl ? '皮卡空了。车斗里放着两串还没拆封的彩灯。' : '卡尔的皮卡。苏西趴在窗户上，一直盯着塔顶。') },
-          { id: 'van_b', x: 32, y: 4, w: 2, spr: 'van', on: S => S.narr('巴德的货车。车厢里绑着那台修好的电视。') },
-          { id: 'doris_b', x: 11, y: 4, spr: '@doris', dir: 3, on: S => persuade(S, 'doris') },
-          { id: 'carl_b', x: 21, y: 4, spr: '@carl', dir: 3, on: S => persuade(S, 'carl') },
-          { id: 'bud_b', x: 31, y: 4, spr: '@bud', dir: 3, on: S => persuade(S, 'bud') },
-          { id: 'mib_b', x: 40, y: 3, spr: '@mib', dir: 1, on: async S => { await S.say('黑西装的男人', ['诺拉小姐。', '现在几点了？']); await S.narr('他抬起手腕给你看他的表。\n表上没有指针。'); } },
-          { id: 'moth_b', x: 33, y: 1, spr: 'moth', solid: false, z: 1, oy: -14, light: { r: 1.4, dx: 8, dy: -33, col: 'rgba(255,40,20,.6)' } },
-          { id: 'doris_h', x: 1, y: 6, spr: '@doris', dir: 2, hidden: true, on: S => S.say('多丽丝', '……我刚才，就差一点。') },
-          { id: 'carl_h', x: 2, y: 7, spr: '@carl', dir: 2, hidden: true, on: S => S.say('卡尔', '强尼……那天晚上，它是不是也想告诉我们什么？') },
-          { id: 'susie_h', x: 3, y: 7, spr: '@susie', dir: 2, hidden: true, on: S => S.say('苏西', '大鸟还在看我们。') },
-          { id: 'bud_h', x: 3, y: 6, spr: '@bud', dir: 2, hidden: true, on: S => S.say('巴德', '跟那晚一样……它一直跟着。') },
-          { id: 'crowd1', x: 0, y: 6, spr: '@man1', dir: 2, hidden: true, on: S => S.say('男人', '到底怎么回事？') },
-          { id: 'crowd2', x: 1, y: 7, spr: '@woman1', dir: 2, hidden: true, on: S => S.say('女人', '车还在桥上呢……') },
-          { id: 'crowd3', x: 0, y: 7, spr: '@man2', dir: 2, hidden: true, on: S => S.say('男人', '谁让我们下车的？') },
-          { id: 'crowd4', x: 2, y: 8, spr: '@man1', dir: 3, hidden: true, on: S => S.say('男人', '……那是什么？塔顶上那个。') },
-          { id: 'exB', x: 45, y: 3, spr: 'invisible', solid: false, async touch(S) { await S.think('再往前就是俄亥俄那头了。'); S.pos(43, 3, 1); } },
-          ...[2, 3, 4, 5, 6, 7].map(y => ({ id: 'exBL' + y, x: 0, y, spr: 'invisible', solid: false, async touch(S) { await S.think(S.f.phase === 'bridge' ? '桥上还有人。' : '……'); S.pos(1, S.pl.y, 2); } }))
+          { id: 'bsign_b', x: 3, y: 4, spr: 'bsign', on: S => S.narr('「银桥　1928」。\n桥头的铜牌上刻着：「连接两个州的友谊」。') },
+          ...TOWERS.map(x => ({ id: 'towerN' + x, x, y: 4, spr: 'tower', on: S => S.narr('桥塔。铆钉一颗挨着一颗，铝粉漆剥落的地方露出铁锈。\n吊链从塔顶垂下来，一节一节，是一根根扁扁的铁杆串起来的。') })),
+          ...TOWERS.map(x => ({ id: 'towerS' + x, x, y: 8, spr: 'tower' })),
+          ...LAMPS.map(x => ({ id: 'lamp' + x, x, y: 4, spr: 'blamp', light: { r: 2.6, dy: -16, col: 'rgba(255,230,160,.14)' }, on: S => S.narr(S.ent('lamp' + x).off ? '灯灭了。' : '桥灯。灯罩上结着薄冰。\n底下的吊链在风里轻轻地「咔、咔」响。') })),
+          ...laneCars(6, 5, 45, [9, 10, 11, 21, 22, 23, 31, 32, 33], CAR_COLS),
+          ...laneCars(7, 5, 45, [], CAR_COLS.slice().reverse()),
+          { id: 'dcar', x: 9, y: 6, w: 2, spr: 'bcar', col: '#d88a9a', on: S => S.narr('多丽丝的粉色小轿车。后视镜上挂着一个塑料天使。') },
+          { id: 'pickup_b', x: 22, y: 6, w: 2, spr: 'pickup', s: { kid: true }, on: S => S.narr(S.f.pd_carl ? '皮卡空了。车斗里放着两串还没拆封的彩灯。' : '卡尔的皮卡。苏西趴在窗户上，一直盯着塔顶。') },
+          { id: 'van_b', x: 32, y: 6, w: 2, spr: 'van', on: S => S.narr('巴德的货车。车厢里绑着那台修好的电视。') },
+          { id: 'doris_b', x: 11, y: 6, spr: '@doris', dir: 3, on: S => persuade(S, 'doris') },
+          { id: 'carl_b', x: 21, y: 6, spr: '@carl', dir: 3, on: S => persuade(S, 'carl') },
+          { id: 'bud_b', x: 31, y: 6, spr: '@bud', dir: 3, on: S => persuade(S, 'bud') },
+          { id: 'mib_b', x: 40, y: 5, spr: '@mib', dir: 1, on: async S => { await S.say('黑西装的男人', ['诺拉小姐。', '现在几点了？']); await S.narr('他抬起手腕给你看他的表。\n表上没有指针。'); } },
+          { id: 'moth_b', x: 33, y: 2, spr: 'moth', solid: false, z: 1, oy: -5, light: { r: 1.4, dx: 8, dy: -26, col: 'rgba(255,40,20,.6)' } },
+          { id: 'doris_h', x: 1, y: 8, spr: '@doris', dir: 2, hidden: true, on: S => S.say('多丽丝', '……我刚才，就差一点。') },
+          { id: 'carl_h', x: 2, y: 9, spr: '@carl', dir: 2, hidden: true, on: S => S.say('卡尔', '强尼……那天晚上，它是不是也想告诉我们什么？') },
+          { id: 'susie_h', x: 3, y: 9, spr: '@susie', dir: 2, hidden: true, on: S => S.say('苏西', '大鸟还在看我们。') },
+          { id: 'bud_h', x: 3, y: 8, spr: '@bud', dir: 2, hidden: true, on: S => S.say('巴德', '跟那晚一样……它一直跟着。') },
+          { id: 'crowd1', x: 0, y: 8, spr: '@man1', dir: 2, hidden: true, on: S => S.say('男人', '到底怎么回事？') },
+          { id: 'crowd2', x: 1, y: 9, spr: '@woman1', dir: 2, hidden: true, on: S => S.say('女人', '车还在桥上呢……') },
+          { id: 'crowd3', x: 0, y: 9, spr: '@man2', dir: 2, hidden: true, on: S => S.say('男人', '谁让我们下车的？') },
+          { id: 'crowd4', x: 2, y: 10, spr: '@man1', dir: 3, hidden: true, on: S => S.say('男人', '……那是什么？塔顶上那个。') },
+          { id: 'exB', x: 45, y: 5, spr: 'invisible', solid: false, async touch(S) { await S.think('再往前就是俄亥俄那头了。'); S.pos(43, 5, 1); } },
+          ...[4, 5, 6, 7, 8, 9].map(y => ({ id: 'exBL' + y, x: 0, y, spr: 'invisible', solid: false, async touch(S) { await S.think(S.f.phase === 'bridge' ? '桥上还有人。' : '……'); S.pos(1, S.pl.y, 2); } }))
         ]),
         async enter(S, first) {
           if (!first) return;

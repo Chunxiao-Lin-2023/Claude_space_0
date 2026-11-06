@@ -45,5 +45,5 @@ SOL = [
     ['use', 'bud_b', [0]],
     ['expect', "window.__dbg.W.f.pd_doris && window.__dbg.W.f.pd_carl && window.__dbg.W.f.pd_bud"],
     ['shot', 'rally'],
-    ['step', 4, 3, [1]],
+    ['step', 4, 5, [1]],
 ]

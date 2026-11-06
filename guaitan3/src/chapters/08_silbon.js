@@ -588,7 +588,7 @@
     const r = await S.ask('照着简谱拨几个音？', ['拨几个音试试', '挂回去']);
     if (r) return;
     f.kpMode = 'cuatro'; KP.id = -1;
-    await S.keypad('四弦琴（简谱）　1=哆 2=来 3=咪 4=发 5=嗦 6=啦 7=西\n随便拨五个音。', ['1', '2', '3', '4', '5', '6', '7'], 5);
+    await S.keypad('四弦琴（简谱）　随便拨五个音\n1=哆　2=来　3=咪　4=发\n5=嗦　6=啦　7=西', ['1', '2', '3', '4', '5', '6', '7'], 5);
     f.kpMode = null;
   }
 
@@ -711,7 +711,7 @@
   async function whistleUse(S) {
     const f = S.f;
     f.kpMode = 'whistle'; KP.id = -1;
-    const v = await S.keypad('吹口哨（简谱）　1=哆 2=来 3=咪 4=发 5=嗦 6=啦 7=西\n吹五个音。', ['1', '2', '3', '4', '5', '6', '7'], 5);
+    const v = await S.keypad('吹口哨（简谱）　吹五个音\n1=哆　2=来　3=咪　4=发\n5=嗦　6=啦　7=西', ['1', '2', '3', '4', '5', '6', '7'], 5);
     f.kpMode = null;
     if (v == null) return;
     await S.wait(500);

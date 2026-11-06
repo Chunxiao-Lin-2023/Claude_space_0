@@ -398,31 +398,31 @@
           { id: 'crater0', x: 23, y: 41, spr: 'crater', decal: true, on: S => S.narr('屋檐底下的雪地上砸出一个坑，像是有什么很重的东西从屋顶上跳了下来。\n坑边上接出一串蹄印——一个接一个，往北，进了松林。') },
           { id: 'wpile', x: 12, y: 40, spr: 'woodpile', on: S => S.narr('劈好的松木码得整整齐齐。最上面一层的雪被踩塌了一块——\n是一个圆头的、两瓣的蹄印。') },
           { id: 'ccoop', x: 25, y: 40, w: 2, spr: 'ccoop', on: S => S.narr('鸡窝里，母鸡们挤成一团，一只也不少。\n它们一声也不敢吭。') },
-          ...trail('t0', 'dev', [[23, 40, 3], [22, 39, 3], [21, 38, 3], [20, 37, 3], [20, 36, 3], [19, 35, 3], [20, 34, 3], [19, 33, 3], [19, 32, 3]]),
+          ...trail('t0', 'dev', [[23, 40, 3], [23, 39, 3], [22, 38, 1], [21, 38, 1], [20, 37, 3], [20, 36, 3], [19, 35, 3], [20, 34, 3], [19, 33, 3], [19, 32, 3]]),
           /* 第一个岔口 */
-          { id: 'h1L', x: 13, y: 28, spr: 'trk', k: 'deer', dir: 1, on: S => S.narr('西边这串：两行蹄印，左右错开，一前一后。\n每个印子是两瓣尖尖的，像一颗倒过来的心。步子一样长，规规矩矩。') },
+          { id: 'h1L', x: 13, y: 28, solid: false, spr: 'trk', k: 'deer', dir: 1, on: S => S.narr('西边这串：两行蹄印，左右错开，一前一后。\n每个印子是两瓣尖尖的，像一颗倒过来的心。步子一样长，规规矩矩。') },
           ...trail('t1L', 'deer', [[12, 29, 1], [10, 28, 1], [9, 29, 1], [7, 28, 1]]),
-          { id: 'h1U', x: 19, y: 26, spr: 'trk', k: 'boot', dir: 3, on: S => S.narr('北边这串：一大片乱糟糟的钉靴印，四五个人；中间夹着一串狗爪印。\n雪上扔着一个烟头，一根没烧完的火柴。……是往大路那边去的。') },
+          { id: 'h1U', x: 19, y: 26, solid: false, spr: 'trk', k: 'boot', dir: 3, on: S => S.narr('北边这串：一大片乱糟糟的钉靴印，四五个人；中间夹着一串狗爪印。\n雪上扔着一个烟头，一根没烧完的火柴。……是往大路那边去的。') },
           ...trail('t1U', 'boot', [[20, 25, 3], [19, 24, 3], [20, 23, 3]]),
-          { id: 'h1R', x: 26, y: 29, spr: 'trk', k: 'dev', dir: 2, on: S => S.narr('东边这串：一行蹄印，一个接一个排成一条线。\n每个印子是两瓣，头却是圆的，像小马驹的蹄子，只有茶杯口那么大。\n步子忽长忽短。有一处，隔了一丈多才又接上。') },
+          { id: 'h1R', x: 26, y: 29, solid: false, spr: 'trk', k: 'dev', dir: 2, on: S => S.narr('东边这串：一行蹄印，一个接一个排成一条线。\n每个印子是两瓣，头却是圆的，像小马驹的蹄子，只有茶杯口那么大。\n步子忽长忽短。有一处，隔了一丈多才又接上。') },
           ...trail('t1R', 'dev', [[28, 28, 2], [29, 29, 2], [32, 28, 2], [33, 26, 3], [32, 25, 3], [33, 23, 3], [32, 21, 3]]),
           { id: 'sc1', x: 31, y: 26, spr: 'scr', solid: true, on: S => S.narr('松树的树皮上有三道新鲜的爪痕，比你高出一头，木头茬子还是白的。\n松油顺着爪痕淌下来，还没冻住。') },
           /* 第二个岔口 */
-          { id: 'h2U', x: 35, y: 13, spr: 'trk', k: 'fox', dir: 3, on: S => S.narr('东北这串：一串小小的印子，一个接一个，排成一条笔直的线，一下都没歪。\n每个印子前头，有四个小点。') },
+          { id: 'h2U', x: 35, y: 13, solid: false, spr: 'trk', k: 'fox', dir: 3, on: S => S.narr('东北这串：一串小小的印子，一个接一个，排成一条笔直的线，一下都没歪。\n每个印子前头，有四个小点。') },
           ...trail('t2U', 'fox', [[36, 11, 3], [35, 9, 3], [36, 7, 3]]),
-          { id: 'h2B', x: 30, y: 13, spr: 'trk', k: 'old', dir: 3, on: S => S.narr('正北这串：又是那种圆头的两瓣蹄印，一行，步子忽长忽短。\n可印子里积了一层薄薄的雪，边是软的、塌的。你用手指一按，没有声音。') },
+          { id: 'h2B', x: 30, y: 13, solid: false, spr: 'trk', k: 'old', dir: 3, on: S => S.narr('正北这串：又是那种圆头的两瓣蹄印，一行，步子忽长忽短。\n可印子里积了一层薄薄的雪，边是软的、塌的。你用手指一按，没有声音。') },
           ...trail('t2B', 'old', [[29, 11, 3], [30, 10, 3], [29, 8, 3]]),
-          { id: 'h2L', x: 26, y: 16, spr: 'trk', k: 'dev', dir: 1, on: S => S.narr('西边这串：圆头的两瓣蹄印，一行。\n印子的边又硬又脆，你用手指一碰，「咔」地碎成了小冰碴。印子底上，雪被踩得发亮。') },
+          { id: 'h2L', x: 26, y: 16, solid: false, spr: 'trk', k: 'dev', dir: 1, on: S => S.narr('西边这串：圆头的两瓣蹄印，一行。\n印子的边又硬又脆，你用手指一碰，「咔」地碎成了小冰碴。印子底上，雪被踩得发亮。') },
           ...trail('t2L', 'dev', [[24, 17, 1], [23, 16, 1], [19, 16, 1], [17, 15, 3], [16, 13, 3], [17, 12, 3], [16, 10, 3]]),
           { id: 'sc2', x: 22, y: 15, spr: 'scr', solid: true, on: S => S.narr('又是三道爪痕，比人高一头。树皮被撕开了，一绺一绺地翘着。\n爪痕底下的雪上，落着几根粗硬的、黑褐色的毛。') },
           ...trail('beh', 'dev', [[25, 16, 1], [26, 17, 1], [27, 16, 1]], true),
           { id: 'ktrap', x: 28, y: 18, spr: 'invisible', decal: true, on: S => S.narr('雪里埋着一只生锈的捕兽夹，夹子合着，夹住的是一截松枝。\n夹子边上，一圈雪化过又冻上了。像是有什么东西在这儿站了很久，低头看它。') },
           /* 第三个岔口 */
           { id: 'sign3', x: 21, y: 5, spr: 'sign', col: '#5a3a22', on: S => S.narr('一块歪倒的木牌：「利兹角　三英里」。字是拿烧红的铁条烙上去的。\n木牌背面，有人用小刀刻了一行小字：「它在看着」。') },
-          { id: 'h3L', x: 10, y: 6, spr: 'trk', k: 'fake', dir: 1, on: S => S.narr('西边这串：圆头的两瓣蹄印，一行，边是脆的——是新的。\n每一步都一样长，一样深，像拿尺子量过。印子底上有一道一道细细的纹，像木头的纹路。\n旁边还有一串小鞋印，脚尖朝着你。') },
+          { id: 'h3L', x: 10, y: 6, solid: false, spr: 'trk', k: 'fake', dir: 1, on: S => S.narr('西边这串：圆头的两瓣蹄印，一行，边是脆的——是新的。\n每一步都一样长，一样深，像拿尺子量过。印子底上有一道一道细细的纹，像木头的纹路。\n旁边还有一串小鞋印，脚尖朝着你。') },
           ...trail('t3L', 'fake', [[9, 6, 1], [8, 6, 1], [7, 6, 1], [6, 6, 1], [5, 6, 1]]),
           ...trail('t3K', 'kid', [[9, 7, 1], [7, 7, 1], [5, 7, 1]]),
-          { id: 'h3U', x: 17, y: 4, spr: 'trk', k: 'dev', dir: 3, on: S => S.narr('北边这串：圆头的两瓣蹄印，一行，新的。\n步子乱得很——一步短，一步长；有一步深得像是从高处跳下来的，雪溅出去一圈。') },
+          { id: 'h3U', x: 17, y: 4, solid: false, spr: 'trk', k: 'dev', dir: 3, on: S => S.narr('北边这串：圆头的两瓣蹄印，一行，新的。\n步子乱得很——一步短，一步长；有一步深得像是从高处跳下来的，雪溅出去一圈。') },
           ...trail('t3U', 'dev', [[16, 3, 3], [16, 2, 3, true], [17, 1, 3]]),
           { id: 'sc3', x: 15, y: 2, spr: 'scr', solid: true, on: S => S.narr('印子到这棵松树底下就没了。树皮上三道爪痕，一直抓到你够不着的地方。\n树枝上的雪被扑掉了一大片。……往前几步，雪地上砸出一个坑，印子又接上了。') },
           { id: 'crater3', x: 17, y: 1, spr: 'crater', decal: true },
@@ -508,7 +508,7 @@
           { id: 'gr2', x: 21, y: 15, spr: 'grave', on: S => S.narr('又是一块。和旁边那块一样大，一样不说话。') },
           { id: 'gr3', x: 19, y: 16, spr: 'grave', k: 1, on: S => S.narr('第三块石头上落着一层雪。雪上有一个蹄印——只有一个。\n像是有谁在这儿站了一会儿，低着头。') },
           { id: 'marsh', x: 23, y: 13, spr: 'invisible', solid: true, on: S => S.narr('盐沼的芦苇冻得硬邦邦的。再往东，就是大湾。海风里有一股咸味。\n东边那条冻上的水道，冰面看着还算结实。') },
-          { id: 'dv_r', x: 11, y: 1, spr: 'devil', dir: 0, solid: false, hidden: true, z: 1, oy: -18, s: { fly: false }, light: { r: 1, col: 'rgba(255,40,20,.25)', dy: -16 } },
+          { id: 'dv_r', x: 11, y: 1, spr: 'devil', dir: 0, solid: false, hidden: true, z: 1, ox: 8, oy: -18, s: { fly: false }, light: { r: 1, col: 'rgba(255,40,20,.25)', dy: -16 } },
           { id: 'wade_r', x: 13, y: 19, spr: '@wade', dir: 3, solid: false, hidden: true, light: { r: 2.6, col: 'rgba(255,180,80,.18)' } },
           ...[12, 13, 14].map(x => ({ id: 'exS' + x, x, y: 19, spr: 'invisible', touch: ruinSouth })),
           ...[9, 10].map(y => ({ id: 'exE' + y, x: 27, y, spr: 'invisible', touch: ruinEast }))
@@ -545,7 +545,7 @@
           'CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC'],
         ents: [
           { id: 'furn', x: 40, y: 6, w: 3, h: 2, spr: 'furnace', s: {} },
-          { id: 'dv', x: 1, y: 8, spr: 'devil', dir: 2, solid: false, hidden: true, s: { fly: false, sniff: false }, light: { r: 1, col: 'rgba(255,40,20,.28)', dy: -4 } },
+          { id: 'dv', x: 1, y: 8, spr: 'devil', dir: 2, solid: false, hidden: true, z: 1, s: { fly: false, sniff: false }, light: { r: 1, col: 'rgba(255,40,20,.28)', dy: -4 } },
           { id: 'wade_s', x: 34, y: 9, spr: '@wade', dir: 2, solid: false, hidden: true, light: { r: 2.8, col: 'rgba(255,180,80,.2)' } },
           { id: 'pos1s', x: 33, y: 10, spr: '@posse', dir: 2, solid: false, hidden: true, light: { r: 2.2, col: 'rgba(255,180,80,.16)' } },
           { id: 'pos2s', x: 33, y: 8, spr: '@posse2', dir: 2, solid: false, hidden: true },
@@ -640,7 +640,7 @@
     const f = S.f, key = 'w' + k;
     f[key] = (f[key] || 0) + 1;
     if (kind === 'deer') {
-      S.sfx('step'); S.show('deer1'); S.place('deer1', 6, 28, 1); S.alpha('deer1', 1, 1);
+      S.sfx('step'); S.place('deer1', 6, 28, 1); S.ent('deer1').alpha = 1;
       await S.scare('flash', { dur: .3 });
       await S.narr('前面的灌木里猛地窜出一个东西——\n一头白尾鹿。它一跃，白尾巴一翘，钻进了松林。');
       await S.alpha('deer1', 0, 500);
@@ -761,7 +761,7 @@
     S.show('wade_r'); S.place('wade_r', 13, 19, 3); S.ent('wade_r').alpha = .9;
     await S.say('远处的人声', ['在那儿！烟囱上！', '开枪！开枪啊！'], { style: 'big' });
     d.s.fly = true; screech(S, 0, 1.2); wings(S, 6, 0, .26);
-    await S.walk('dv_r', [[16, 1], [22, 2]], 6);
+    await S.walk('dv_r', 'rrrrrrrrrrr', 8);
     await S.alpha('dv_r', 0, 600);
     S.focus(null);
     await S.narr('它张开翅膀，从烟囱顶上扑了下来，贴着盐沼飞了出去——往东。\n往雪松沼泽那边去了。');
@@ -862,7 +862,7 @@
       const tr = DV.trail, cur = tr[DV.i], last = tr[tr.length - 1];
       if (last && cur && last[2] !== cur[2] && DV.t > 1.3 && (DV.segN >= 3 || DV.segT > 2.2)) {
         DV.st = 'fly'; DV.t = 0; e.s.fly = true; e.s.sniff = false; wings(S, 4, 0, .26, .9);
-        S.alpha('dv', 0, 350);
+        e.hidden = true;
       } else if (last && cur && last[2] === cur[2] && DV.i < tr.length - 1) { DV.st = 'follow'; e.s.sniff = false; }
       return;
     }
@@ -907,7 +907,7 @@
     S.focus(null);
     wings(S, 6, 0, .28);
     await S.wait(900);
-    const d = S.ent('dv'); d.s.fly = true; d.alpha = 0; d.z = 1; d.oy = -26; S.place('dv', 41, 6, 0);
+    const d = S.ent('dv'); d.s.fly = true; d.alpha = 0; d.oy = -26; S.place('dv', 41, 6, 0);
     await S.alpha('dv', 1, 900); d.s.fly = false;
     S.sfx('heart');
     await S.narr('炉顶上，它落了下来。翅膀收拢，长长的脑袋垂着，红眼睛看着你。');
@@ -925,9 +925,10 @@
     await S.say('韦德舅舅', '……露丝！');
     await S.say('露丝', '它不是来吃鸡的。它是来找它妈的。');
     await S.narr('舅舅的枪口抖了一下，慢慢地，垂了下去。');
-    d.s.fly = false;
-    await S.walk('dv', [41, 7], 1.2).catch(() => {});
-    S.place('dv', 41, 7, 0); d.oy = -6;
+    d.s.fly = true; wings(S, 3, 0, .3, .6);
+    await S.alpha('dv', 0, 400);
+    S.place('dv', 41, 7, 0); d.oy = -4; d.s.fly = false; d.s.sniff = true;
+    await S.alpha('dv', 1, 600);
     await S.narr('它从炉顶上落下来，落在窝边。\n它低下那颗长长的、马一样的脑袋，闻了闻被子。一格，一格，闻过去。');
     await S.narr('闻到第十三格，它停住了。');
     if (f.letter) {
@@ -949,8 +950,8 @@
     await S.say('露丝', '……塞缪尔。');
     await S.narr('它抬起了头。');
     await S.say('露丝', '你叫塞缪尔。她让我告诉你的。');
-    S.show('mom'); S.ent('mom').alpha = 0; S.place('mom', 41, 8, 3);
     S.pos(40, 9, 3);
+    S.ent('mom').alpha = 0; S.place('mom', 41, 8, 3);
     await S.alpha('mom', .75, 1800);
     await S.narr('炉口的微光里，多了一个女人的影子。旧式的长裙，头上包着白头巾。\n她跪在窝边，伸出手，摸了摸那颗长长的脑袋。');
     const L = lullaby(S, 0, 1);

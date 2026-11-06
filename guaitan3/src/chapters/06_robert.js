@@ -481,12 +481,12 @@
     await S.think('（三天以后，它会绕一圈，回到这座炮台。\n回到他的墙上。）');
     const g = S.ent('gunR');
     S.focus(15, 2); await S.wait(500);
-    g.s.face = true; musicBox(S, .035, 5);
+    g.s.face = true; g.s.off = false; musicBox(S, .035, 5);
     await S.narr('你回头看了一眼堡垒。\n墙上的炮眼黑漆漆的。其中一个里面，有一个小小的、白色的影子。\n水手帽。');
     await S.wait(500);
     g.s.tilt = true; await S.wait(700);
     await S.narr('它歪了歪头。\n然后，不见了。');
-    g.s.face = false; g.s.tilt = false; S.focus(null);
+    g.s.face = false; g.s.tilt = false; g.s.off = true; S.focus(null);
     await S.think('（那后面……是展厅。）');
     regoal(S); S.cp('posted');
   }
@@ -884,7 +884,7 @@
           { id: 'gunL', x: 4, y: 1, spr: 'gunport', on: S => S.narr('炮眼。黑漆漆的。里面是炮台走廊。') },
           { id: 'gate', x: 9, y: 1, spr: 'door', col: '#3a2a1a', to: ['office', 7, 7, 3] },
           { id: 'fsign', x: 12, y: 1, spr: 'fsign', on: S => S.narr('铜牌：「东马泰洛堡　1862」。\n底下一行小字：「基韦斯特艺术与历史学会」。') },
-          { id: 'gunR', x: 15, y: 1, spr: 'gunport', on: S => S.narr(S.f.posted ? '黑漆漆的炮眼。……里面什么也没有。' : '炮眼。黑漆漆的。后面是展厅。') },
+          { id: 'gunR', x: 15, y: 1, spr: 'gunport', s: { off: true }, light: { r: 1.2, col: 'rgba(220,220,255,.16)' }, on: S => S.narr(S.f.posted ? '黑漆漆的炮眼。……里面什么也没有。' : '炮眼。黑漆漆的。后面是展厅。') },
           { id: 'lampY', x: 7, y: 6, spr: 'streetlamp', light: { r: 3.6, col: 'rgba(255,200,120,.16)', dy: -8 }, on: S => S.narr('路灯底下飞着一团小虫。') },
           { id: 'mailbox', x: 11, y: 6, spr: 'mailbox', on: mailboxUse },
           { id: 'rooster', x: 4, y: 4, spr: 'rooster', on: S => S.narr('一只公鸡，脖子上的羽毛油亮亮的。\n基韦斯特满街都是这种野鸡。它歪着头看了你一眼——你忍不住想，这是不是同意的意思。') },
