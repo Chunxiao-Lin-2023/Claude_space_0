@@ -500,7 +500,7 @@
     S.focus(null);
     await S.think('它在给这条路做记号。\n……从里面那头。');
     await S.narr('缝的呼吸比上次快，也比上次深。\n越往里，空气越闷。你把打火机揣进了胸口的口袋。');
-    await S.think('火苗缩小了就退回来喘口气。\n趁它往外吹的时候喘气，趁它往里吸的时候凿。');
+    await S.think('火苗缩小了，就退到缝口喘口气——缝深处是喘不上气的。\n趁它往外吹的时候退出来歇，趁它往里吸的时候凿。');
     segGoal(S);
   }
 
@@ -737,14 +737,15 @@
       const cx = w / 2, gy = h - 22;
       g.fillStyle = '#2a1e14'; g.fillRect(0, 0, w, gy);
       g.fillStyle = '#3a2c1e'; for (let i = 0; i < 12; i++) g.fillRect((hash(i, 5, 4) * w) | 0, (hash(i, 6, 4) * gy) | 0, 10 + ((hash(i, 7, 4) * 16) | 0), 3);
-      g.fillStyle = '#050302'; g.beginPath(); g.moveTo(cx - 3, 8); g.lineTo(cx + 4, 20); g.lineTo(cx + 2, 38); g.lineTo(cx + 6, 56); g.lineTo(cx + 1, gy); g.lineTo(cx - 4, gy); g.lineTo(cx - 1, 54); g.lineTo(cx - 5, 36); g.lineTo(cx - 2, 20); g.closePath(); g.fill();
+      g.fillStyle = '#4a3a2a'; g.beginPath(); g.moveTo(cx - 6, 6); g.lineTo(cx + 8, 20); g.lineTo(cx + 5, 38); g.lineTo(cx + 10, 56); g.lineTo(cx + 4, gy); g.lineTo(cx - 8, gy); g.lineTo(cx - 4, 54); g.lineTo(cx - 9, 36); g.lineTo(cx - 5, 20); g.closePath(); g.fill();
+      g.fillStyle = '#030201'; g.beginPath(); g.moveTo(cx - 4, 8); g.lineTo(cx + 6, 20); g.lineTo(cx + 3, 38); g.lineTo(cx + 8, 56); g.lineTo(cx + 2, gy); g.lineTo(cx - 6, gy); g.lineTo(cx - 2, 54); g.lineTo(cx - 7, 36); g.lineTo(cx - 3, 20); g.closePath(); g.fill();
       g.fillStyle = '#ff7a1a';
       for (let i = 0; i < 16; i++) g.fillRect(cx + 6 - i * 1.6, 30 + Math.round(Math.sin(i * .9) * 2 * (i / 16)), 2, 3);
       g.fillStyle = '#4a4036'; g.fillRect(cx + 4, 28, 4, 4);
       g.strokeStyle = 'rgba(220,210,190,.45)'; g.lineWidth = 1;
-      for (let i = 0; i < 4; i++) { g.beginPath(); g.moveTo(cx + 8, 40 + i * 6); g.lineTo(cx + 26 + i * 6, 38 + i * 6); g.stroke(); }
+      for (let i = 0; i < 4; i++) { g.beginPath(); g.moveTo(cx - 8, 42 + i * 6); g.lineTo(cx - 26 - i * 6, 40 + i * 6); g.stroke(); }
       const gr = g.createRadialGradient(cx, 40, 4, cx, 40, 70); gr.addColorStop(0, 'rgba(255,220,150,.18)'); gr.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = gr; g.fillRect(0, 0, w, h);
-      g.fillStyle = '#e8e0ce'; for (let i = 0; i < 6; i++) { g.fillRect(cx - 24 + i, 18 + i, 1, 1); g.fillRect(cx - 19 - i, 18 + i, 1, 1); }
+      g.fillStyle = '#e8e0ce'; for (let i = 0; i < 6; i++) { g.fillRect(cx + 18 + i, 16 + i, 1, 1); g.fillRect(cx + 23 - i, 16 + i, 1, 1); }
     },
     async intro(S) {
       WT = 0; PH = ''; STA_T = 0; AIR_T = 0; SEAL_LEFT = null; FLEE_DIED = 0; ROPE_DIED = 0; SEAL_DIED = 0;
@@ -899,9 +900,10 @@
                 else if (S.f.air === 3 && S.once('airTip')) S.run(async S => { await S.think('打火机的火苗矮了一截……\n缝里不吹风的时候，空气就不流动。\n等布条往外飘，退到缝口喘口气。'); });
                 else S.toast(['', '眼前一阵阵发黑——快退出去！', '打火机的火苗缩成了一个蓝点', '火苗矮了一截。胸口发闷', '空气有点闷'][S.f.air] + '（空气 ' + S.f.air + '/' + AIR_MAX + '）');
               }
-            } else if ((S.f.air ?? AIR_MAX) < AIR_MAX) {
-              AIR_T -= dt * (PH === 'out' ? 2 : 1);
-              if (AIR_T <= -1.2) { AIR_T = 0; S.f.air++; airFx(S); if (S.f.air === AIR_MAX) S.toast('风从缝里吹出来，你大口喘了几口气（空气 ' + AIR_MAX + '/' + AIR_MAX + '）'); }
+            } else if (deep) { AIR_T = Math.min(AIR_T, 0); }   // 缝深处吹风时：不再变差，但也缓不过来
+            else if ((S.f.air ?? AIR_MAX) < AIR_MAX) {     // 退到缝口才喘得上气
+              AIR_T -= dt;
+              if (AIR_T <= -.6) { AIR_T = 0; S.f.air++; airFx(S); if (S.f.air === AIR_MAX) S.toast('你在缝口大口喘了几口气（空气 ' + AIR_MAX + '/' + AIR_MAX + '）'); }
             } else AIR_T = 0;
           }
         }

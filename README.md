@@ -11,6 +11,7 @@
 | 猫猫咕咕的家 | `pawpals/` | 开发中 |
 | 幽宅双影 | `hollowmanor/` | 开发中 |
 | 百物语·壹 | `nighttales/` | 开发中 |
+| 百物语·贰 | `guaitan2/` | 开发中 |
 | 尸夜孤楼 | `lasttower/` | 开发中 |
 | 尸潮堡垒 | `deadtide/` | 开发中 |
 | 百戏茶馆 | `baixi/` | 开发中 |

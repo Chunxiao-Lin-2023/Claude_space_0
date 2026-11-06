@@ -29,7 +29,7 @@ function buildMap(ch, id) {
   const d = ch.maps[id], rows = d.rows, h = rows.length, wd = Math.max(...rows.map(r => r.length));
   const leg = Object.assign({}, BASE_LEGEND, (ch.legend && typeof ch.legend === 'object') ? ch.legend : {}, d.legend || {});   // ch.legend 是档案正文字符串时不能合并
   const m = { id, def: d, w: wd, h, leg, rows: rows.map(r => r.padEnd(wd, ' ')), mods: {}, ents: [], cache: null, dirty: true };
-  for (const ed of (d.ents || [])) m.ents.push(makeEnt(ed, ch));
+  (d.ents || []).forEach((ed, i) => { const e = makeEnt(ed, ch); e._k = id + '#' + i; m.ents.push(e); });   // _k：定义里的固定位置，检查点按它找回实体（实体被 S.moveTo 换过地图也不会错位）
   return m;
 }
 function makeEnt(ed, ch) {

@@ -94,7 +94,7 @@ function netSnapshot() {
   const ents = m.ents.map((e, i) => {
     const fl = {}; let any = false; for (const k of VKEYS) if (e[k] !== undefined && e[k] !== e.def[k]) { fl[k] = e[k]; any = true; }
     const s = Object.keys(e.s).length ? e.s : 0;
-    return [i, Math.round(e.px), Math.round(e.py), e.dir, e.fr, e.hidden ? 1 : 0, Math.round((e.alpha ?? 1) * 100), e.spr === e.def.spr ? 0 : e.spr, any ? fl : 0, s, e.light === e.def.light ? 0 : (e.light || null), e.bubble && e.bubble.until > RT ? [e.bubble.k, Math.round((e.bubble.until - RT) * 1000)] : 0, e.solid ? 1 : 0];
+    return [i, Math.round(e.px), Math.round(e.py), e.dir, e.fr, e.hidden ? 1 : 0, Math.round((e.alpha ?? 1) * 100), e.spr === e.def.spr ? 0 : e.spr, any ? fl : 0, s, e.light === e.def.light ? 0 : (e.light || null), e.bubble && e.bubble.until > RT ? [e.bubble.k, Math.round((e.bubble.until - RT) * 1000)] : 0, e.solid ? 1 : 0, e._k || 0];
   });
   const v = {
     t: 'v', gen: GEN, ch: W.ch.id, map: W.mapId, k: W.forceK, pl: [p.x, p.y, Math.round(p.px), Math.round(p.py), p.dir, p.fr, p.hidden ? 1 : 0, p.spr, p.speed || 1, p.bubble && p.bubble.until > RT ? [p.bubble.k, Math.round((p.bubble.until - RT) * 1000)] : 0],
@@ -113,8 +113,11 @@ function applyV(v) {
   const mapChanged = W.mapId !== v.map; W.mapId = v.map;
   const m = curMap();
   if (JSON.stringify(m.mods) !== JSON.stringify(v.mods || {})) { m.mods = v.mods || {}; m.dirty = true; }
+  /* 按 _k 找实体（主机用 S.moveTo 换过地图、或重来后顺序变了，下标就对不上）；找到别的地图里的就搬过来 */
+  const seen = new Set();
+  const findK = k => { let e = m.ents.find(z => z._k === k); if (e) return e; for (const id in W.maps) { const mm = W.maps[id]; const i = mm.ents.findIndex(z => z._k === k); if (i >= 0) { e = mm.ents[i]; mm.ents.splice(i, 1); m.ents.push(e); return e; } } return null; };
   for (const a of v.ents) {
-    const e = m.ents[a[0]]; if (!e) continue;
+    const e = a[13] ? findK(a[13]) : m.ents[a[0]]; if (!e) continue; seen.add(e);
     const wasHidden = e.hidden;
     e._tx = a[1]; e._ty = a[2]; e.dir = a[3]; e.fr = a[4]; e.hidden = !!a[5]; e.alpha = a[6] / 100;
     if (wasHidden || mapChanged || Math.abs(e.px - a[1]) + Math.abs(e.py - a[2]) > 40) { e.px = a[1]; e.py = a[2]; }
@@ -124,6 +127,7 @@ function applyV(v) {
     e.bubble = a[11] ? { k: a[11][0], until: RT + a[11][1] / 1000 } : null;
     if (a[12] != null) e.solid = !!a[12];
   }
+  if (v.ents.some(a => a[13])) for (const e of m.ents) if (e._k && !seen.has(e)) e.hidden = true;   // 主机这张图上已经没有它了（被搬走）
   const p = W.pl, P = v.pl;
   const local = v.ctrl === 'g' && !v.busy && NET.myK === v.k && !mapChanged;
   if (!local) {

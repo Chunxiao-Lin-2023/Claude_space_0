@@ -32,6 +32,7 @@ SOL = [
     ['expect', "window.__dbg.W.mapId === 'hill' && window.__dbg.W.f.trip === 2"],
     ['step', 17, 5],
     ['expect', 'window.__dbg.W.f.dogEv'],
+    ['shot', 'dog'],
     ['use', 'gate'],
     ['step', 16, 6],
     ['expect', 'window.__dbg.W.f.tut2'],

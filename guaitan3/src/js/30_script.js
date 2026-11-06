@@ -201,22 +201,31 @@ function makeCP(name) {
   const maps = {};
   for (const k in W.maps) {
     const m = W.maps[k];
-    maps[k] = { mods: Object.assign({}, m.mods), ents: m.ents.map(e => { const o = { id: e.id, px: e.px, py: e.py, dir: e.dir, hidden: e.hidden, alpha: e.alpha, spr: e.spr, solid: e.solid, s: e.s, follow: !!e.follow, light: e.light || null }; for (const v of VKEYS) if (e[v] !== undefined && typeof e[v] !== 'function') o[v] = e[v]; return o; }) };
+    maps[k] = { mods: Object.assign({}, m.mods), ents: m.ents.map(e => { const o = { k: e._k, id: e.id, px: e.px, py: e.py, dir: e.dir, hidden: e.hidden, alpha: e.alpha, spr: e.spr, solid: e.solid, s: e.s, follow: !!e.follow, light: e.light || null }; for (const v of VKEYS) if (e[v] !== undefined && typeof e[v] !== 'function') o[v] = e[v]; return o; }) };
   }
   const p = W.pl;
   return JSON.parse(JSON.stringify({ name: name || '', map: W.mapId, pl: { x: p.x, y: p.y, dir: p.dir, spr: p.spr, speed: p.speed, hidden: p.hidden }, inv: W.inv, f: W.f, goal: W.goal, mapDark: W.mapDark, plr: W.plr, amb: AU.ambName, maps }));
 }
 function applyCP(cp) {
   W.mapId = cp.map; W.inv = cp.inv.slice(); W.f = JSON.parse(JSON.stringify(cp.f)); W.goal = cp.goal; W.mapDark = Object.assign({}, cp.mapDark || {}); W.plr = cp.plr;
+  /* 先按 _k（定义位置）找实体，旧存档没有 k 时退回按下标/id 找；实体被 S.moveTo 换过地图时，在这里搬回存档时所在的地图 */
+  const byK = {}, used = new Set(), lists = {};
+  for (const k in W.maps) for (const e of W.maps[k].ents) if (e._k) byK[e._k] = e;
+  const byId = id => { if (!id) return null; for (const k in W.maps) { const z = W.maps[k].ents.find(q => q.id === id); if (z) return z; } return null; };
   for (const k in cp.maps) {
     const m = W.maps[k]; if (!m) continue; m.mods = Object.assign({}, cp.maps[k].mods); m.dirty = true;
+    const list = lists[k] = [];
     cp.maps[k].ents.forEach((o, i) => {
-      let e = m.ents[i]; if (!e || e.id !== o.id) e = m.ents.find(z => z.id === o.id && o.id); if (!e) return;
+      let e = o.k ? byK[o.k] : null;
+      if (!e && !o.k) { e = m.ents[i]; if (!e || e.id !== o.id) e = m.ents.find(z => z.id === o.id && o.id) || byId(o.id); }
+      if (!e || used.has(e)) return;
+      used.add(e); list.push(e);
       Object.assign(e, { px: o.px, py: o.py, x: Math.round(o.px / TS), y: Math.round(o.py / TS), dir: o.dir, hidden: o.hidden, alpha: o.alpha, spr: o.spr, solid: o.solid, s: Object.assign({}, o.s), follow: o.follow, light: o.light, chase: null, mv: null });
       for (const v of VKEYS) { if (typeof e[v] === 'function') continue; if (o[v] !== undefined) e[v] = o[v]; else if (e[v] !== undefined && !(v in e.def)) delete e[v]; }
       e.frozen = false;
     });
   }
+  for (const k in lists) { const m = W.maps[k]; m.ents = lists[k].concat(m.ents.filter(e => !used.has(e))); }
   const p = W.pl; Object.assign(p, { x: cp.pl.x, y: cp.pl.y, px: cp.pl.x * TS, py: cp.pl.y * TS, dir: cp.pl.dir, spr: cp.pl.spr, speed: cp.pl.speed || 1, hidden: !!cp.pl.hidden, mv: null, prev: [cp.pl.x, cp.pl.y] });
   W.forceK++; lastPTile = W.mapId + ':' + p.x + ',' + p.y; W.cp = cp;
   if (cp.amb) emit('amb', cp.amb);
