@@ -1123,7 +1123,7 @@
     const kr = S.ent('kr'), p = S.pl, tx = Math.round(kr.px / 16), ty = Math.round(kr.py / 16);
     if (L.mode === 'done' || L.mode === 'x') return;
     if (ty <= 6 && tx >= 13 && tx <= 19) { L.mode = 'done'; S.stop('kr'); S.run(chained); return; }
-    if (L.grace > 0) { L.grace -= dt; if (L.grace <= 0) S.chase('kr', { spd: KSPD, catch: kCatch }); return; }
+    if (L.grace > 0) { L.grace -= dt; return; }   // 刚挨了一下：它照样跟着，但这一小会儿不会再抓
     const dist = Math.hypot(kr.px - p.px, kr.py - p.py) / 16;
     JT -= dt; if (JT <= 0) { JT = .5; bellJ(S, .06); }
     if (L.mode === 'chase') {
@@ -1148,12 +1148,14 @@
   }
   async function kCatch(S) {
     if (!L || L.mode !== 'chase') return;
+    if (L.grace > 0) { S.chase('kr', { spd: KSPD, catch: kCatch }); return; }
     S.stop('kr');
     L.hits++;
     if (L.hits === 1) {
       S.sfx('cut'); S.shake(400, 3); S.fx('red'); S.bubble('pl', '!', 800);
       await S.think('啪！桦枝抽在小腿上，火辣辣地疼——\n（别停下！走！）');
-      L.grace = 1.4;
+      L.grace = 1;
+      S.chase('kr', { spd: KSPD, wait: .35, catch: kCatch });
       return;
     }
     L.mode = 'x'; LURE_DIED++;
