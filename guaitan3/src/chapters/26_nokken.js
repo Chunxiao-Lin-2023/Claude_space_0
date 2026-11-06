@@ -5,8 +5,8 @@
   const FQ = [0, 293.66, 329.63, 369.99, 392.00, 440.00, 493.88, 554.37];
   const fq = n => FQ[((n - 1) % 7) + 1] * Math.pow(2, Math.floor((n - 1) / 7));
   const ROUND = {
-    1: { name: '《摇篮曲》', q: [5, 3, 2, 1], a: '3567', human: '1235' },
-    2: { name: '《奈克调》', q: [7, 5, 6, 3], a: '1325', human: '' }
+    1: { name: '《摇篮曲》', q: [5, 3, 2, 1], a: '3567', human: '1235', desc: '四个音，一个比一个低' },
+    2: { name: '《奈克调》', q: [7, 5, 6, 3], a: '1325', human: '', desc: '头一个音高得刺耳，后三个落下去，又往上挑了一下' }
   };
   const NACK_FULL = [[7, 1], [5, .5], [6, .5], [3, 1], [1, .5], [3, .5], [2, .5], [5, .5], [6, .5], [7, .5], [8, 1], [7, .5], [5, .5], [6, .5], [4, .5], [3, 1.5]];
   const POLSKA = [5, 6, 7, 8, 7, 6, 5, 3, 4, 5, 6, 5, 3, 4, 5, 6, 5, 4, 3, 1, 2, 3, 2, 1];
@@ -21,7 +21,7 @@
     return { x: 9, y: 10 - (s - 29), fx: 0, fy: -1 };
   }
   let HS = { on: false, s: 12, dir: 1, pause: 0, bolt: 0, shy: 0, hoof: 0, mus: 0, mi: 0 };
-  let lastLeft = null, died = false, bgT = 4, kT = 0;
+  let lastLeft = null, died = false, bgT = 4, kT = 0, nT = 0;
   if (typeof QS !== 'undefined' && QS.get('debug') === '1') window.__nokken = { get HS() { return HS; }, loopPos };
 
   const N = (S, t, o) => S.say('奈克', t, o);
@@ -35,7 +35,7 @@
       const d = b * beat;
       if (n) {
         const f = fq(n) * (o.oct || 1);
-        S.tone('sawtooth', f, f * (o.sour ? .97 : 1.004), d * .95, vol, t, lp);
+        S.tone(o.type || 'sawtooth', f, f * (o.sour ? .97 : 1.004), d * .95, vol, t, lp);
         S.tone('triangle', f * 2, f * 2.006, d * .85, vol * .3, t + .01, lp + 800);
         S.tone('square', f * 3, f * 3, .035, vol * .25, t, 3800);
       }
@@ -53,6 +53,8 @@
   function pluck(S, f, d = 0, v = .05) { S.tone('triangle', f, f * .998, .9, v, d, 3000); S.tone('sine', f * 2, f * 2, .5, v * .3, d, 4000); }
   function splash(S, v = 1) { S.sfx('splash'); S.tone('sine', 900, 260, .18, .02 * v, 0, 3000); }
   const sleep = (S, ms) => S.wait(ms);
+  /* 卡琳脚下的水位：0 没过脚踝，1 没过膝盖，2 快到腰（答错一次涨一格） */
+  function kwLevel(S, lv) { const k = S.ent('karin'), w = S.ent('kwater'); k.oy = lv; w.s.d = lv; return lv; }
 
   /* ---------------- 人物 ---------------- */
   const PEOPLE = {
@@ -125,7 +127,7 @@
   const NOTES = {
     tunes: { title: '外公的琴谱', text: '（牛皮纸封面，里面是一行一行的数字。外公说过：1 最低，7 最高，跟教堂里的数字谱一个记法。）\n\n《摇篮曲》——卡琳每晚要听\n　问：5 3 2 1　　答：1 2 3 5\n\n《婚礼进行曲》——下礼拜六要拉\n　问：1 3 5 5　　答：6 5 3 1\n\n《奈克调》——跟瘸腿佩尔学的\n　问：■ 5 6 3（第一个数字被水泡开了）\n　答：（空着，一直没写上）\n\n页边小字：\n备用的E弦，在磨坊工具架上的铁盒里。\n好的那瓶白兰地留着嫁闺女，藏在地窖土豆底下。别让老婆子知道。\n\n最后一页，墨水是新的：\n「年轻时候我给了他半瓶酒，他只教会我调弦。剩下的，我自己摸了五十年。」' },
     bible: { title: '家里的圣经（扉页）', text: '扉页上是外婆的母亲写的字，墨水已经褪成了褐色。\n\n「孩子们去溪边，要念：\n　奈克，奈克，偷针贼——\n　你在水里，我在岸上。\n念的时候，把钢针扔进水里。」\n\n底下还抄了一个故事：\n牧师家的两个孩子在河边玩，看见奈克坐在水里拉琴。孩子们笑他：「你拉得再好有什么用？你永远进不了天堂。」\n奈克扔下琴，哭了。\n牧师听说了，叫孩子们回去告诉他：「你也能得救。」\n那天晚上，河里的琴声一直响到天亮，是人们听过的最快活的曲子。' },
-    pelle: { title: '佩尔的信', text: '安德斯老兄：\n\n你问奈克调后半首怎么拉。我只能告诉你我知道的。\n\n那年我十九，连着三个星期四晚上去磨坊下面的水闸边。头一回我带了一瓶白兰地。他还要过别的——三滴……我没给。\n\n他拉一句，你得回一句。可不能像岸上那样回。他是水里的人，你在岸上看他，什么都是倒过来的——磨坊那根水尺你天天看，照着它的影子回他。\n\n奈克调开头那个音，是七个音里最高的，高得像要从水里跳出来。\n\n还有：奈克调一共十一段变奏。第十一段千万别拉。一拉，桌子、椅子、老太太、摇篮里的娃娃，全都要跳起来，跳到天亮也停不下。\n\n——瘸腿佩尔' }
+    pelle: { title: '佩尔的信', text: '安德斯老兄：\n\n你问奈克调后半首怎么拉。我只能告诉你我知道的。\n\n那年我十九，连着三个星期四晚上去磨坊下面的水闸边。头一回我带了一瓶白兰地。他还要过别的——三滴……我没给。\n\n回他的琴，可不能像岸上那样回。他是水里的人，你在岸上看他，什么都是倒过来的——磨坊那根水尺你天天看，照着它的影子回他。\n\n奈克调开头那个音，是七个音里最高的，高得像要从水里跳出来。\n\n还有：奈克调一共十一段变奏。第十一段千万别拉。一拉，桌子、椅子、老太太、摇篮里的娃娃，全都要跳起来，跳到天亮也停不下。\n\n——瘸腿佩尔' }
   };
 
   const LEGEND = '奈克（瑞典语 Näcken，挪威叫 Nøkken，丹麦叫 Nøkke，和英格兰的 nix、德国的 Nix 同出一源）是北欧流传最广的水怪之一。在瑞典，人们说他常化作一个光着身子的年轻男人，坐在溪流、瀑布或磨坊的水闸边拉提琴，夏天的夜里、星期四的晚上和仲夏夜最容易遇到。他的琴声好听得叫人挪不开脚，听的人会跟着跳舞，一直跳进水里——据说他尤其爱引诱女人和孩子。和他相近的还有「溪中琴师」（strömkarlen），流传着一支「溪中琴师调」，据说有十一段变奏，第十一段不能拉：一拉，桌椅、老人、摇篮里的婴儿都会跳起来，停不下来。\n\n奈克也会教人拉琴。流传的条件五花八门：一只黑色的牲口、一瓶白兰地（瑞典的 brännvin）、一撮鼻烟，或者三滴血；有的说要连着三个星期四晚上去水边。学琴的人手指会被他按得流血，学成之后，琴声能让树木起舞、瀑布停流。有一种说法：贡品给得不够，他就只教你怎么调弦。防他的办法也代代相传：身上带钢——针、刀、船底钉一颗钉子；下水前把钢针扔进水里，念「奈克，奈克，偷针贼，你在水里，我在岸上」；叫出他的名字，他就失了法力。\n\n他还会变成一匹白马，叫「溪马」（bäckahästen），在雾里的河边吃草。孩子们爬上它的背，它的背就一截一截地变长，好让更多的孩子坐上去，然后驮着他们走进水里——直到有个孩子喊出了它的名字（有的版本里是喊了一句祷告），它才消失。也有许多故事说奈克渴望得救：两个孩子笑他永远进不了天堂，他扔下琴大哭；孩子们的父亲是牧师，叫他们回去告诉他「你也能得救」，那一夜河上的琴声快活得出奇。十九世纪末，北欧的画家们把他画进了画里：瀑布下拉琴的裸身少年，黑水里只露出一双眼睛的怪物。也有研究者认为，这些说法一面是在吓唬孩子别靠近水，一面也和乡村琴手的名声有关——拉得太好的人，常被说成「跟奈克学过」。\n\n（本章中的奥洛夫、卡琳、外婆、外公安德斯、瘸腿佩尔，外公的琴谱、佩尔的信、圣经扉页上的字，琴谱的具体数字、磨坊水尺的「倒影」规则、回琴石，追溪马的规则，以及三个结局，均为游戏虚构；瑞典十九世纪确有用数字给赞美诗记谱的做法，本章借用了这个形式。）';
@@ -229,6 +231,17 @@
     },
     cog(g, e, t, R) { const a = t * .8; R(5, -14, 6, 30, '#5a4028'); for (let i = 0; i < 10; i++) { const k = a + i * Math.PI / 5; R(8 + Math.cos(k) * 6 - 1, -4 + Math.sin(k) * 6 - 1, 2, 2, '#7a5a38'); } R(6, -6, 4, 4, '#3a2616'); },
     /* 溪边 */
+    kwater(g, e, t, R) {   // 盖在卡琳腿上的一圈水面
+      const d = e.d || 0, top = 11 - d * 4, k = Math.sin(t * 4) * 1.5;
+      R(-1, top, 18, 16 - top, 'rgba(60,100,130,.6)'); R(-1, top, 18, 1, 'rgba(200,225,240,.75)');
+      R(1 + k, top + 2, 5, 1, 'rgba(200,225,240,.4)'); R(10 - k, top + 3, 4, 1, 'rgba(200,225,240,.35)');
+    },
+    rocker(g, e, t, R) {   // 外婆的摇椅（画在她身后）
+      const a = Math.round(Math.sin(t * 1.2));
+      R(2, -10 + a, 12, 2, '#5a3c22'); R(2, -10 + a, 2, 21, '#4a3018'); R(12, -10 + a, 2, 21, '#4a3018');
+      for (let y = -7; y < 6; y += 3) R(4, y + a, 8, 1, '#6a4a2a');
+      R(0, 13, 16, 1, '#3a2616'); R(-1, 12, 2, 1, '#3a2616'); R(15, 12, 2, 1, '#3a2616');
+    },
     falls(g, e, t, R) {   // 瀑布（4 格宽、4 格高），落进深潭
       R(0, -4, 64, 4, '#4a4e50');
       for (let x = 2; x < 62; x += 3) { const o = ((t * 60 + x * 7) % 16); for (let y = -2; y < 38; y += 16) R(x, y + o, 2, Math.min(7, 44 - y - o), x % 2 ? 'rgba(220,236,248,.75)' : 'rgba(170,200,224,.6)'); }
@@ -286,19 +299,16 @@
     S.f.ph = 'night';
     S.face('mor', 0);
     fidFar(S, .3);
-    await S.narr('半夜。你是被琴声吵醒的。');
-    await S.narr('不是外公的琴——外公的琴还挂在墙上。\n声音从窗外来，从溪那边来。又细又长，像有人在水底下拉。');
+    await S.narr('半夜。你是被琴声吵醒的——不是外公的琴，外公的琴还挂在墙上。\n声音从窗外来，从溪那边来。又细又长，像有人在水底下拉。');
     S.bubble('pl', '!', 1000); S.sfx('heart');
     await S.narr('卡琳的床空着。被子掀在地上，窗户大开，雾正一点一点地往屋里爬。');
     S.face('mor', 'pl');
-    await S.say('外婆', ['……你也听见了。', '卡琳不见了。光着脚走的，木鞋还在床底下。', '今天是星期四。溪里那位，星期四晚上拉琴。']);
+    await S.say('外婆', ['……你也听见了。卡琳光着脚走的，木鞋还在床底下。', '今天是星期四。溪里那位，星期四晚上拉琴。']);
     await ME(S, '奈克？那不是吓唬小孩的吗？');
-    await S.say('外婆', ['你外公年轻时候见过他。你外公那手琴，有一半是跟水里学的。', '我这双腿追不上了。你去。记住四件事。']);
+    await S.say('外婆', '你外公年轻时候见过他。我这双腿追不上了——你去。');
     S.give('needle');
     await S.narr('她从针线笸箩里抽出一根钢针，别在你的衣领上，针尖朝外。');
-    await S.say('外婆', ['一，身上带着钢。', '二，他拉琴，是在问话。他问，你得回。回得上，他就不碰你；回不上，他就拉跳舞的那支，拉到人跳进水里为止。', '三，他最怕人叫他的名字。可早了晚了都不顶用——得等他把真身露出来。', '四，他要是变成一匹白马……别站在它前头，也别跑。']);
-    await ME(S, '……外婆，你怎么知道这么多？');
-    await S.say('外婆', '你外公什么都记在他的琴谱上。琴谱在箱子里。拿上琴，去吧。');
+    await S.say('外婆', ['身上带着钢。他拉琴是在问话——他问，你就得回。', '他最怕人叫他的名字，可得等他露出真身再叫。要是他变成一匹白马……别站在它前头，也别跑。', '你外公什么都记在琴谱上，琴谱在蓝箱子里。拿上琴，去吧。']);
     S.goal('拿上外公的琴（墙上）和琴谱（蓝木箱），出门去溪边找卡琳');
     S.cp();
   }
@@ -311,6 +321,7 @@
         f.askCellar = true;
         return S.say('外婆', ['……地窖里的酒？', '你外公那老东西，以为藏在土豆底下我就不知道。', '拿去吧。那位挑剔得很——给得不够，他就只教你一半。']);
       }
+      if (!f.readBible) return S.say('外婆', ['桌上那本圣经，扉页上有你太姥姥写的几句话。', '出门前念一遍。溪边的孩子，都是念着那几句长大的。']);
       return S.say('外婆', ['钢针别好了？', '……去吧。外婆在家里点着灯等你们。']);
     }
     await S.say('外婆', '卡琳……奥洛夫，求你了。');
@@ -335,8 +346,7 @@
     goalHouse(S);
   }
   async function cellarDown(S) {
-    if (!S.f.readTunes && S.once('cellarNo')) return S.narr('地窖的盖板。底下存着土豆和腌鱼，冬天才下去。');
-    if (await S.ask('地窖的盖板。要下去吗？', ['（掀开盖板，下去）', '（算了）'])) return;
+    if (await S.ask('地窖的盖板，底下存着土豆和腌鱼。要下去吗？', ['（掀开盖板，下去）', '（算了）'])) return;
     S.sfx('open'); await S.fade(1, 300);
     S.pos(34, 2, 0); S.plr(2); S.dark(.86);
     await S.fade(0, 300);
@@ -366,6 +376,7 @@
 
   /* ---------------- 草场 ---------------- */
   async function meadowEnter(S, first) {
+    bgT = 3;
     if (first) {
       await S.narr('外面起了雾。\n雾贴着草皮往前爬，没过了脚脖子。琴声从南边的桦树林后面飘过来，一会儿近，一会儿远。');
       S.goal(S.has('string') ? '穿过南边的桦树林，去溪边找卡琳' : '先去东边的磨坊拿外公的备用E弦，再穿过南边的桦树林去溪边');
@@ -398,7 +409,7 @@
     await S.narr('一个小水塘，黑得像一块铁。水面上浮着两片睡莲叶子。');
     if (await S.ask('要蹲下去看看吗？', ['（蹲下去看）', '（算了）'])) return;
     S.f.pondSeen = true;
-    e.open = true; S.sfx('heart');
+    e.open = true; S.sfx('heart'); S.tone('sine', 180, 60, .7, .05, 0, 600); S.tone('sine', 240, 90, .4, .03, .5, 600);
     await S.narr('……水底下有两点光。\n不是月亮的倒影。月亮在你背后。');
     await S.narr('那两点光，眨了一下。');
     await S.scare('face', { spr: '@nack', dur: .9 });
@@ -445,10 +456,10 @@
     S.face('nack', 0);
     await N(S, ['……安德斯家的小子。', '你外公的琴，我认得。']);
     await N(S, ['星期四晚上的规矩，你外婆告诉你了吧？', '我拉，你回。回得上，你妹妹就慢慢地转；回不上——']);
-    splash(S); S.ent('karin').oy = 3;
+    splash(S); kwLevel(S, 1);
     await S.narr('卡琳往深处挪了一步。水没过了她的膝盖。');
     await N(S, '我就拉跳舞的那支。');
-    S.ent('karin').oy = 0;
+    kwLevel(S, 0);
     await N(S, '第一句。你外公每天晚上都在你们家拉。');
     await sleep(S, fid(S, ROUND[1].q, { beat: .5 }) * 1000 + 200);
     await S.narr('四个音，一个比一个低，像一只手在摸小孩的头。\n——是外公的《摇篮曲》。');
@@ -471,9 +482,9 @@
       await S.narr(r === 1 ? '5、3、2、1——一个比一个低。外公的《摇篮曲》。' : '头一个音高得刺耳，后面三个音落下去，又往上挑了一下。\n——外公琴谱上被水泡过的那首《奈克调》。');
       return;
     }
-    const v = await S.keypad('回他的' + R0.name + '：拉四个音（1 最低，7 最高）\n按 J 可以翻外公的琴谱', ['1', '2', '3', '4', '5', '6', '7'], 4);
+    const v = await S.keypad('回他的' + R0.name + '：拉四个音（1 最低，7 最高）\n他拉的：' + R0.desc + '\n按 J 可以翻外公的琴谱', ['1', '2', '3', '4', '5', '6', '7'], 4);
     if (v == null) return;
-    await sleep(S, fid(S, [...v].map(Number), { beat: .4, vol: .045 }) * 1000 + 150);
+    await sleep(S, fid(S, [...v].map(Number), { beat: .4, vol: .06, type: 'triangle', lp: 3400 }) * 1000 + 150);
     if (v === R0.a) return roundWin(S, r);
     return roundWrong(S, r, v);
   }
@@ -483,16 +494,17 @@
     const tot = (f.wrongAll = (f.wrongAll || 0) + 1);
     fid(S, [[1, .5], [2, .5]], { beat: .3, sour: true, vol: .04 });
     splash(S); S.fx('red');
-    const k = S.ent('karin'); k.oy = Math.min(4, (k.oy || 0) + 2);
+    const prev = S.ent('kwater').s.d || 0, lv = kwLevel(S, Math.min(2, prev + 1));
     if (r === 1 && n === 2 && S.once('faceR1')) await S.scare('face', { spr: '@nack', dur: .8 });
     /* 针对错法的回应 */
     const q = R0.q.join(''), rev = R0.q.slice().reverse().join('');
     if (v === q) await N(S, '学舌？那是八哥干的事。我问你，你得回我。');
     else if (r === 1 && v === R0.human) await N(S, ['那是岸上的答法。', '你在岸上，我在水里——你外公的琴谱，是写给岸上的人看的。']);
     else if (v === rev) await N(S, '倒着拉？水里的影子是上下颠倒，不是前后颠倒。');
+    else if (r === 2 && v === ROUND[1].a) await N(S, '那是《摇篮曲》的回法。这一句，是我的。');
     else if (r === 2 && v.slice(1) === R0.a.slice(1)) await N(S, '后三个音对了。开头那个……你外公的琴谱上泡掉的那个，真当我不知道？');
     else await N(S, S.rand(2) ? '不对。' : '……不对。水都替你害臊了。');
-    await S.narr(['卡琳往深处挪了一步。水没过了她的膝盖。', '卡琳又往深处挪了一步。水快到她的腰了。'][Math.min(1, ((k.oy || 0) / 2) - 1)] || '卡琳在水里晃了晃。');
+    await S.narr(prev >= 2 ? '卡琳在水里晃了晃，差一点就站不住了。水已经到她的腰了。' : lv === 2 ? '卡琳又往深处挪了一步。水快到她的腰了。' : '卡琳往深处挪了一步。水没过了她的膝盖。');
     /* 逐级提示：卡住 2 次给方向，3 次给具体位置，4 次直接给答案 */
     if (n === 2) {
       if (r === 1) S.toast(f.gauge ? '提示：想想磨坊那根水尺——「回水里的话，照影子说」' : '提示：佩尔的信里说过怎么回水里的人；去磨坊看看那根水尺');
@@ -506,12 +518,14 @@
     if (tot === 3) await S.think('（照这样下去，卡琳会走进深水里的。按 J，把琴谱和佩尔的信再看一遍。）');
   }
   async function roundWin(S, r) {
-    const f = S.f; S.ent('karin').oy = 0;
+    const f = S.f; kwLevel(S, 0);
     if (r === 1) {
       S.sfx('chime');
       await S.narr('琴声落进水里，水面轻轻一荡。');
       await N(S, ['……照着水回的。', '佩尔那个瘸子，嘴倒是不严。']);
-      await S.narr('卡琳的脚步慢了一下，像在梦里听见了外公的琴。\n然后她又转了起来。');
+      await S.narr('卡琳的脚步慢了一下，像在梦里听见了外公的琴。');
+      await S.say('卡琳', '……外公？', { style: 'whisper' });
+      await S.narr('然后她又转了起来。');
       await N(S, '那第二句——听我的。');
       await sleep(S, fid(S, ROUND[2].q, { beat: .5 }) * 1000 + 200);
       await S.narr('头一个音高得刺耳，像一条鱼从水里蹿出来；后面三个音落下去，又往上挑了一下。\n——是外公琴谱上被水泡过的那首《奈克调》。');
@@ -585,7 +599,7 @@
     await S.narr('卡琳身边的水鼓起一个大包——\n一匹白马从水里站了起来。');
     await S.narr('雾里看见过的那匹马。白得发亮，鬃毛上缠着水草，一绺一绺往下滴水。\n它朝卡琳低下头。');
     await S.narr('卡琳伸手摸了摸它的鼻子，笑了。\n然后她抓住鬃毛，爬了上去。');
-    S.hide('karin'); h.s.rider = 1; S.sfx('splash');
+    S.hide('karin'); S.hide('kwater'); h.s.rider = 1; S.sfx('splash');
     await sleep(S, 400);
     for (let i = 1; i <= 2; i++) { h.s.len = i; S.tone('sawtooth', 120, 90, .3, .03, 0, 400); await sleep(S, 350); }
     await S.narr('马背……变长了。\n像有人把它往两头拉，长出一截，又长出一截——好像在给更多的孩子腾地方。');
@@ -608,7 +622,7 @@
     HS = { on: false, s: 12, dir: 1, pause: 0, bolt: 0, shy: 0, hoof: 0, mus: 0, mi: 0, seen: 0 };
     const h = S.ent('horse'), p = loopPos(HS.s);
     S.place('horse', p.x, p.y, 2); h.alpha = 1; h.s.rider = 1; h.s.len = 0; h.s.hs = HS.s; h.s.hd = 1;
-    S.hide('karin'); S.hide('nack');
+    S.hide('karin'); S.hide('nack'); S.hide('kwater');
   }
   function horseStart(S, sec) {
     HS.on = true; HS.pause = .8;
@@ -625,10 +639,11 @@
     if (HS.bolt > 0 && HS.charge ? dist <= 1.15 : dist <= .8 && ahead > .35) { HS.on = false; S.run(touched); return; }   // 迎面撞上（受惊冲过来时更容易撞上）
     if (dist <= 1.3 && ahead <= .35 && HS.bolt <= 0) { HS.on = false; S.run(caught); return; }
     if (S.running && dist < 7 && HS.bolt <= 0) {   // 一跑它就惊：在它前头跑，它直冲过来；在后头跑，它甩开你
-      HS.bolt = 1.4; HS.pause = 0; HS.charge = ahead > 0; whinny(S, .8); S.shake(300, 1);
+      HS.charge = ahead > 0; HS.bolt = HS.charge ? 1.75 : 1.4; HS.pause = HS.charge ? .35 : 0;   // 冲过来之前先人立而起一下
+      whinny(S, .8); S.shake(300, 1); S.bubble('horse', '!', 700);
       if (S.once('boltTip')) S.toast('它听见你跑——惊了！追溪马只能走');
     } else if (!S.running && HS.bolt <= 0 && HS.pause <= 0 && ahead > .5 && dist < 4.5) {   // 看见你在前头：掉头
-      HS.dir = -HS.dir; HS.pause = .25; HS.shy = .8; S.tone('sawtooth', 300, 180, .25, .03, 0, 900);
+      HS.dir = -HS.dir; HS.pause = .25; HS.shy = .8; S.tone('sawtooth', 300, 180, .25, .03, 0, 900); S.bubble('horse', '!', 600);
       if (++HS.seen === 1) S.toast('它看见你在前头，掉头了——从后面追');
     }
     const spd = HS.pause > 0 ? 0 : HS.bolt > 0 ? H_BOLT : HS.shy > 0 ? H_SHY : H_WALK;
@@ -638,9 +653,10 @@
     const mx = np.fx * HS.dir; if (mx) h.dir = mx < 0 ? 1 : 2;
     h.fr = spd > 0 ? [1, 0, 3, 0][Math.floor(HS.hw = (HS.hw || 0) + spd * dt * 3) % 4] : 0;
     h.s.hs = HS.s; h.s.hd = HS.dir;
-    const left = S.timerLeft; if (left != null) h.s.len = Math.min(3, Math.floor((1 - left / T_FULL) * 4));
+    const left = S.timerLeft;
+    if (left != null) { const L = Math.min(3, Math.floor((1 - left / T_FULL) * 4)); if (L > (h.s.len || 0)) { S.tone('sawtooth', 130, 85, .45, .04, 0, 420); S.tone('square', 95, 70, .3, .02, .2, 300); S.toast(['', '马背又长了一截……', '马背又长了一截，它离潭心更近了', '马背长得像一条船——快！'][L]); } h.s.len = L; }
     /* 蹄声（踩在浅水里）和奈克调的跳舞曲：越到后来越快 */
-    if (spd > 0) { HS.hoof -= dt * spd / H_WALK; if (HS.hoof <= 0) { HS.hoof = .3; S.tone('triangle', 140, 70, .05, .045, 0, 700); S.tone('sine', 900, 300, .06, .012, .01, 3000); } }
+    if (spd > 0) { HS.hoof -= dt * spd / H_WALK; if (HS.hoof <= 0) { HS.hoof = .3; const v = clamp(1.4 - dist / 10, .25, 1); S.tone('triangle', 140, 70, .05, .05 * v, 0, 700); S.tone('sine', 900, 300, .06, .015 * v, .01, 3000); } }   // 蹄声远轻近响：看不见它时也听得出远近
     HS.mus -= dt; if (HS.mus <= 0) {
       const urg = left != null ? 1 - left / T_FULL : 0;
       HS.mus = .2 - urg * .07; const n = POLSKA[HS.mi++ % POLSKA.length];
@@ -727,7 +743,7 @@
     await S.narr('潭心的石头上，那个年轻人又坐在那儿了。\n头发贴在脸上，琴搁在膝头。他没有拉。');
     await N(S, '……你叫了我的名字。');
     if (S.f.learned === 'full') await N(S, ['你外公学了一半就跑了。你比他强。', '下礼拜六，你拉吧。拉什么都行——别拉第十一段。']);
-    else await N(S, ['半瓶酒，半门手艺，再加一根钢针。', '……下礼拜六，你就拿调准的弦，拉你会的那三首吧。']);
+    else await N(S, ['半瓶酒，半门手艺，再加一根钢针。', '你外公那年十九，口袋里只有半瓶酒的钱。后来他常坐在磨坊里，拉给水听——拉得不好，可我每回都听完了。', '……下礼拜六，你就拿调准的弦，拉你会的那三首吧。']);
     let saved = false;
     if (S.f.readBible) {
       await N(S, '你家圣经上抄的那个故事……');
@@ -740,9 +756,9 @@
       } else await S.narr('他点了点头，什么也没说，慢慢地沉进了水里。');
     } else await S.narr('他点了点头，慢慢地沉进了水里。');
     S.tone('sine', 660, 990, 1.4, .03, .3, 3000); S.tone('sine', 990, 880, 1.2, .025, 1.7, 3000);
-    await S.narr('远处，从家那边，传来外婆喊人回家的长调子，一声比一声高。\n天边已经有点发白了。');
+    await S.narr('远处，从家那边，传来外婆喊人回家的长调子，一声比一声高。\n东边的天还黑着，可雾已经开始散了。');
     await S.fade(1, 1200);
-    const home = '天亮的时候，你背着卡琳回了家。外婆站在门口，一句话也没说，把你们俩一起搂住了。\n\n';
+    const home = '那天后半夜，你背着卡琳回了家。外婆站在门口，一句话也没说，把你们俩一起搂住了。\n\n';
     const tail = saved ? '\n\n那年秋天，有人说夜里经过溪边，听见水里有人在拉一支赞美诗。' : '';
     if (S.f.learned === 'full') return S.end({ id: 'name', title: '叫出他的名字', text: home + '下礼拜六的婚礼上，你拉了外公的《婚礼进行曲》，又拉了好多外公没教过的曲子。\n一屋子人跳到半夜，没有一个想停下来——可是到了半夜，大家都停下了。\n\n你的手指上留着几道浅浅的白印子。\n每到星期四晚上，它们就会有点凉。' + tail });
     return S.end({ id: 'tune', title: '半瓶酒', text: home + '下礼拜六的婚礼上，你只拉了外公教你的那三首曲子，翻来覆去地拉。\n可你的弦调得那么准，准得连邻村的老琴手都跑来问你是怎么调的。\n\n你没告诉他们。\n后来，你也像外公一样，自己摸了五十年。' + tail });
@@ -752,7 +768,7 @@
     await N(S, '……你想学第十一段？');
     await S.narr('白马的身子在雾里化开，又变回了那个坐在石头上的年轻人。\n卡琳从半空里落下来，落进浅水里，接着转圈。');
     const h = S.ent('horse'), kx = Math.round(h.px / 16), ky = Math.round(h.py / 16);
-    S.hide('horse'); S.place('karin', kx, ky, 0); S.f.kdance = true; S.ent('nack').alpha = 1; S.show('nack');
+    S.hide('horse'); S.place('karin', kx, ky, 0); S.place('kwater', kx, ky); S.ent('kwater').s.d = 0; S.f.kdance = true; S.ent('nack').alpha = 1; S.show('nack');
     await N(S, ['好。我拉一遍，你跟一遍。', '你外公没学会的、佩尔不敢学的——你学。']);
     await sleep(S, fid(S, ELEVEN.concat(ELEVEN), { beat: .1, vol: .055 }) * 1000);
     S.shake(1600, 2);
@@ -798,6 +814,7 @@
         e.s.taken = true; S.give('brandyH');
         await S.narr('架子上有半瓶白兰地，是外公喝剩的。软木塞上还有他的牙印。\n你把它揣进了怀里。');
       } },
+      { id: 'rocker', x: 11, y: 3, spr: 'rocker', solid: false },
       { id: 'mor', x: 11, y: 3, spr: '@mor', dir: 0, on: S => morTalk(S) },
       { id: 'kista', x: 15, y: 4, spr: 'kista', on: S => readTunes(S) },
       { id: 'tbl', x: 6, y: 7, w: 2, spr: 'table2', col: '#5a3e26', async on(S) {
@@ -819,6 +836,7 @@
       { x: 37, y: 6, spr: 'puddle', decal: true }
     ],
     async enter(S, first) {
+      bgT = 3;
       if (!S.f.ph) return wake(S);
       if (first) return;
       S.plr(null); S.dark(null);
@@ -874,7 +892,7 @@
       } },
       { id: 'rstone', x: 23, y: 10, spr: 'rstone', on: S => S.narr('一块界石，上面刻着一道竖线、一道横线。\n老人们说，界石那边的地，夜里归别人。') },
       { id: 'gate', x: 15, y: 12, w: 2, spr: 'gate', on: S => gateUse(S) },
-      { id: 'hglimpse', x: 25, y: 16, spr: 'horse', hidden: true, solid: false, dir: 1 },
+      { id: 'hglimpse', x: 22, y: 9, spr: 'horse', hidden: true, solid: false, dir: 1 },
       { id: 'xMeadowS', x: 15, y: 21, w: 2, spr: 'invisible', to: ['brook', 14, 14, 3] }
     ],
     enter: meadowEnter,
@@ -952,6 +970,7 @@
         await S.narr('你抓住她的胳膊——她的胳膊冰凉，脚下还在转，力气大得吓人，一下就把你甩开了。');
         await S.think('（拉不走。得先让他停下琴。）');
       } },
+      { id: 'kwater', x: 17, y: 10, spr: 'kwater', solid: false, z: 1 },
       { id: 'horse', x: 19, y: 10, spr: 'horse', hidden: true, solid: false, dir: 1, light: { r: 1.6, a: .5, col: 'rgba(220,235,245,.1)' } },
       { id: 'astone', x: 14, y: 12, spr: 'astone', on: S => stoneUse(S) },
       { x: 12, y: 11, spr: 'invisible', solid: false, on: S => S.narr('岸边的泥地上有一串小脚印，一直走进水里。没有走出来的。') },
@@ -962,6 +981,7 @@
       } }
     ],
     async enter(S, first) {
+      bgT = 3;
       if (first && S.f.ph !== 'brook') return brookArrive(S);
     },
     tick(S, dt) {
@@ -969,6 +989,7 @@
       if (f.kdance) {   // 卡琳在浅水里转圈
         kT -= dt; if (kT <= 0) { kT = .28; const k = S.ent('karin'); if (k && !k.hidden) { k.dir = [0, 2, 3, 1][(([0, 2, 3, 1].indexOf(k.dir) + 1) % 4)]; k.fr = k.fr === 1 ? 3 : 1; } }
       }
+      if (f.ph === 'brook') { nT -= dt; if (nT <= 0) { nT = .22; const n = S.ent('nack'); n.fr = n.fr === 1 ? 3 : 1; } }   // 他一直在拉：手臂跟着弓子摆
       if (f.ph === 'horse') return horseTick(S, dt);
       if (S.busy || f.ph !== 'brook') return;
       bgT -= dt; if (bgT <= 0) { bgT = 6 + Math.random() * 3; fid(S, POLSKA.slice(0, 12).map(n => [n, .5]), { beat: .3, vol: .022, lp: 1600 }); }
