@@ -431,6 +431,7 @@
     SND.cry(S); await S.wait(1500);
     await S.think('烧——肉——粽——\n……阿爸喊了二十年，满街都认得他的声音。我一喊，嗓子就劈了。');
     f.cust = 1;
+    S.goal('卖粽：收钱先验——掂一掂、照一照、弹一弹');
     return n1geng(S);
   }
   async function n1geng(S) {
@@ -574,6 +575,7 @@
     townLight(S);
     await S.go('town', 25, 8, 0);
     S.amb('night');
+    S.goal('卖粽：一个个验钱，认出她的钱（认钱，莫认人）');
     return n2yu(S);
   }
   async function n2yu(S) {
@@ -817,7 +819,7 @@
     S.cp('storm');
     startStorm(S);
   }
-  const STORM_SEC = 30, WARN = 1.0, HITW = .45;
+  const STORM_SEC = 24, WARN = 1.0, HITW = .45;
   const SHELTER = new Set(['18,5', '18,6', '7,5', '7,6', '13,4', '13,5']);
   function startStorm(S, grace) {
     const f = S.f; f.hits = 0; f.storm = true;
@@ -831,12 +833,13 @@
     if (!WV || S.busy) return;
     const f = S.f, p = S.pl, e = S.ent('wv');
     const cx = Math.round(p.px / TS), cy = Math.round(p.py / TS);
-    if (S.moving) { WV.idle = 0; WV.vx = p.dir === 1 ? -1 : p.dir === 2 ? 1 : 0; } else WV.idle += dt;
+    if (S.moving) { WV.idle = 0; WV.walk = (WV.walk || 0) + dt; WV.vx = p.dir === 1 ? -1 : p.dir === 2 ? 1 : 0; } else { WV.idle += dt; if (WV.idle > .25) WV.walk = 0; }
     WV.t -= dt;
     if (WV.st === 0) {
       if (WV.t > 0) return;
-      const r = Math.random();   // 一半打在你要去的前方，三成打在你身上，剩下的打在远处，给人喘口气
-      let c = WV.idle < .35 && WV.vx && r < .5 ? cx + WV.vx * 4 : r < .8 ? cx + ((Math.random() * 3) | 0) - 1 : cx + (Math.random() < .5 ? -6 : 6);
+      // 一直闷头走的，浪多半打在你前面；走走停停的，一半打前方、三成打身上、剩下打远处给人喘口气
+      const r = Math.random(), ahead = WV.idle < .35 && WV.vx && r < (WV.walk > 1.2 ? .85 : .5);
+      let c = ahead ? cx + WV.vx * 4 : r < .8 ? cx + ((Math.random() * 3) | 0) - 1 : cx + (Math.random() < .5 ? -6 : 6);
       c = clamp(c, 7, 25);   // 船尾 x≤5 在舵楼檐下，浪打不进来
       S.place('wv', c - 1, 3); e.s.st = 1; WV.st = 1; WV.t = WARN + (f.kind ? .25 : 0); WV.t0 = WV.t;
       const mine = cx >= c - 1 && cx <= c + 1;
@@ -848,7 +851,7 @@
     } else {
       const ex = Math.round(e.px / TS);
       if (!WV.hit && cx >= ex && cx <= ex + 2 && cy >= 3 && cy <= 9 && !SHELTER.has(cx + ',' + cy)) { WV.hit = true; e.s.st = 0; WV.st = 0; WV.t = 1.5; S.run(waveHit); return; }
-      if (WV.t <= 0) { e.s.st = 0; WV.st = 0; WV.t = .7 + Math.random() * .6; }
+      if (WV.t <= 0) { e.s.st = 0; WV.st = 0; WV.t = .5 + Math.random() * .5; }
     }
   }
   async function waveHit(S) {
@@ -940,7 +943,7 @@
     startRage(S);
   }
   const RPATH = [[14, 6], [15, 6], [16, 6], [17, 6], [18, 6], [18, 7], [19, 7], [20, 7], [21, 7], [22, 7], [23, 7], [23, 6], [23, 5]];
-  const RSTEP = 1.05;
+  const RSTEP = 1.15;
   function startRage(S) {
     const f = S.f; f.rage = true; f.ri = 0; RG = -1.2;
     S.place('rg', 14, 6, 2); S.ent('rg').alpha = 1;
@@ -1276,7 +1279,7 @@
     resume: {
       storm: async S => {
         WV = null; S.ent('wv').s.st = 0; S.ent('wv').hidden = true;
-        startStorm(S, DEATHS.storm ? 2.6 : 1.8);
+        startStorm(S, DEATHS.storm ? 2.4 : 1.8);
         if (DEATHS.storm) await S.think('看准左舷：白浪一翻起来，就别往那几列走——停下或者退开，等它砸完再过去。\n桅杆和水桶背后，浪打不着。');
       },
       rage: async S => {
