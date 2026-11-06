@@ -174,6 +174,6 @@ function scatterPoints(Z, spec, cb) {
     if (Z.noScatter && Z.noScatter(x, z)) continue;
     const sl = slopeAt(x, z); if (sl > (spec.slopeMax ?? 0.32)) continue;
     if (Z.clear && Z.clear.some(c => d2(x, z, c.x, c.z) < c.r * c.r)) continue;
-    cb(x, z, hash2(Math.floor(x * 13), Math.floor(z * 17)), n++);
+    PLACE.scatter = true; try { cb(x, z, hash2(Math.floor(x * 13), Math.floor(z * 17)), n++); } finally { PLACE.scatter = false; }
   }
 }

@@ -72,7 +72,7 @@ function mobAI(e, dt) {
 }
 function wander(e, dt, sp = 0.4) {
   const ai = e.ai; ai.wt -= dt;
-  if (ai.wt <= 0) { ai.wt = rr(3, 8); const r = e.wanderR ?? 6; ai.wx = e.home.x + rr(-r, r); ai.wz = e.home.z + rr(-r, r); }
+  if (ai.wt <= 0) { ai.wt = rr(3, 8); const r = e.wanderR ?? 6; [ai.wx, ai.wz] = freeSpot(e.home.x + rr(-r, r), e.home.z + rr(-r, r), (e.r || 0.4) + 0.2); }
   const d = dist(e.x, e.z, ai.wx, ai.wz); if (d > 0.6) { const a = Math.atan2(ai.wx - e.x, ai.wz - e.z); e.rot = angLerp(e.rot, a, dt * 4); const s = e.spd * sp; moveEnt(e, Math.sin(a) * s * dt, Math.cos(a) * s * dt, dt); e.mvSpd = s; }
 }
 const MOBQ = [];

@@ -49,7 +49,10 @@ function syncEnt(e, dt) {
   if (e.R.kind === 'bird' && e.fly) o.position.y += Math.sin(W.t * 3 + e.id) * 0.15;
   if (e.fly) { const k = Math.min(1, dt * 2.5), lh = liftH(e.x, e.z); e.vFlyH = e.vFlyH == null ? (e.flyH ?? 3.5) : lerp(e.vFlyH, e.flyH ?? 3.5, k); o.visLift = o.visLift == null ? lh : lerp(o.visLift, lh, k); o.flyElev = Math.max(0, e.vFlyH + Math.sin(W.t * 3 + e.id) * 0.15); } else { o.flyElev = null; o.visLift = null; e.vFlyH = null; }
   e.dispRot = e.dispRot == null ? e.rot : angLerp(e.dispRot, e.rot, Math.min(1, dt * 14)); o.rotation.y = e.dispRot;
-  const A = e.A; A.spd = e.mvSpd || 0; A.vy = e.vy; A.fly = e.fly;
+  // animate from the distance actually travelled, not from what the AI asked for: no sliding, no walking on the spot
+  const mv = e._lx == null ? 0 : Math.hypot(e.x - e._lx, e.z - e._lz) / Math.max(dt, 1e-3); e._lx = e.x; e._lz = e.z;
+  e.vel = mv > 14 && !e.fly ? 0 : lerp(e.vel || 0, mv, Math.min(1, dt * 12)); if (e.vel < 0.05) e.vel = 0;
+  const A = e.A; A.spd = e.vel; A.vy = e.vy; A.fly = e.fly;
   if (!e.alive && e.type === 'mob') { A.spd = 0; A.pose = e.R.kind === 'human' ? 'down' : 'dead'; }
   A.talkOn = DLG.open && DLG.e === e && DLG.typing < DLG.full.length;
   o.visible = e.vis; o.shadow = e.swim ? 0 : e.r * (e.R.kind === 'human' ? 1.1 : 1.2) * (e.scale || 1);
