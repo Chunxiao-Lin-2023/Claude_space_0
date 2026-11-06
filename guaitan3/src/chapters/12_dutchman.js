@@ -56,7 +56,7 @@
   let DEATHS = 0, SCARED = {};
   let DT = { gb: 4, sh: 0, si: 0, cr: 3 };
   const TBOAT = 140;            // 小艇从雾里漂到舷边的秒数
-  const SEA = { spd: .62, torn: .55, gspd: 1.7, gap: 14, start: [70, 8] };
+  const SEA = { spd: .62, torn: .55, gspd: 1.75, gap: 12, start: [70, 8] };
   const GUSTS = [3, 7, 6.5, 8, 7, 7.5, 6.5, 8, 7, 7.5];
   let ST = null;
   const newST = () => ({ gi: 0, next: GUSTS[0], ph: 0, pt: 0, hit: false, spawned: false, done: false, lt: 5, beam: 0, hb: 0 });

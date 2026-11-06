@@ -50,9 +50,9 @@
   let DEATHS = 0;            // 被追上几次（死亡次数，决定逐级提示）
   let camHold = false;       // 剧情演出时暂停镜头前瞻
   const HO = { p: 0, k: 0, h: 0, hk: 0 };   // 马蹄声节拍
-  const CH = { trail: [], slipT: 0, wobT: 0, wobbled: false, lastTile: '' };
+  const CH = { trail: [], htrail: [], slipT: 0, wobT: 0, wobbled: false, lastTile: '', hTile: '' };
   const MUS = { t: 0, i: 0 };
-  const resetChase = () => { CH.trail = []; CH.slipT = 0; CH.wobT = 0; CH.wobbled = false; CH.lastTile = ''; };
+  const resetChase = () => { CH.trail = []; CH.htrail = []; CH.slipT = 0; CH.wobT = 0; CH.wobbled = false; CH.lastTile = ''; CH.hTile = ''; };
 
   const CLUES = [['c_stem', '南瓜地里那截还湿着的断茬'], ['c_stall', '马厩里「恶魔」那个空隔间'], ['c_whisper', '谷仓里压着嗓子的笑声'], ['c_seeds', '屋门口那几粒湿漉漉的南瓜子']];
   const clueN = S => CLUES.filter(([k]) => S.f[k]).length;
@@ -382,9 +382,10 @@
     await S.scare('red', { sfx: 'scream', dur: .8 });
     await S.die('那个没有头的骑手俯下身来，斗篷像一面黑旗，把你整个儿罩住了。\n你最后听见的，是火药一声长嘶。', '他追上来了');
   }
+  /* 把他甩回他自己来时的路上（死路里掉头撞上他，也不会把他放到你要逃的方向） */
   function placeBack(S) {
-    const p = S.pl, m = curMap(), tr = CH.trail;
-    for (let i = tr.length - 1; i >= 0; i--) {
+    const p = S.pl, m = curMap();
+    for (const tr of [CH.htrail, CH.trail]) for (let i = tr.length - 1; i >= 0; i--) {
       const [x, y] = tr[i]; if (Math.abs(x - p.x) + Math.abs(y - p.y) >= 7 && passable(m, x, y, null)) { S.place('hessian', x, y); return; }
     }
     for (const [dx, dy] of [[-7, 0], [-7, 1], [-7, -1], [-6, 0], [0, -7], [0, 7]]) if (passable(m, p.x + dx, p.y + dy, null)) { S.place('hessian', p.x + dx, p.y + dy); return; }
@@ -526,6 +527,7 @@
       gap = (Math.abs(h.px - p.px) + Math.abs(h.py - p.py)) / TS;
       if (h.chase) { let hs = gap > 9 ? 7.6 : HSPD - (DEATHS >= 4 ? .5 : 0); if (tileName(m, Math.round(h.px / TS), Math.round(h.py / TS)) === 'mud') hs *= .6; h.chase.spd = hs; }
       if (h.dir === 1 || h.dir === 2) h.s.hd = h.dir;
+      const hk = h.x + ',' + h.y; if (hk !== CH.hTile) { CH.hTile = hk; CH.htrail.push([h.x, h.y]); if (CH.htrail.length > 40) CH.htrail.shift(); }
       if (h.mv) { HO.h -= dt; if (HO.h <= 0) { HO.h = .11; HO.hk = (HO.hk + 1) % 5; if (HO.hk !== 4) { const v = .12 * clamp(1 - gap / 16, .12, 1); S.tone('sine', 92, 42, .1, v, 0, 520); S.tone('triangle', 150, 70, .04, v * .4, 0, 700); } } }
     }
     // 肚带断了：鞍子往下滑的 1.6 秒里别狂奔
