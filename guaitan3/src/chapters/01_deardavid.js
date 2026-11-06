@@ -460,7 +460,7 @@
   async function catOn(S, k) {
     const a = S.f.act;
     meow(S, .09);
-    if (a === 'eve' && S.f.midnight) { if (k === 2) purr(S); } if (a === 'eve' && S.f.midnight) return S.narr(k === 1 ? '棉花仰着头，眼睛一眨不眨地盯着猫眼。你挡在它前面，它就绕过你，接着看。' : '煤球的尾巴竖得笔直，尾巴尖一抖一抖。它在冲着门「咕噜咕噜」——那是它见到熟人才有的声音。');
+    if (a === 'eve' && S.f.midnight) { if (k === 2) purr(S); return S.narr(k === 1 ? '棉花仰着头，眼睛一眨不眨地盯着猫眼。你挡在它前面，它就绕过你，接着看。' : '煤球的尾巴竖得笔直，尾巴尖一抖一抖。它在冲着门「咕噜咕噜」——那是它见到熟人才有的声音。'); }
     if (['day', 'day2'].includes(a)) return S.narr(k === 1 ? '棉花蜷在沙发上睡得正香。它们守了一夜的门。' : '煤球在舔爪子。它的左前爪上，粘着一根褪色的红线头。');
     if (!S.f.fed) return S.narr(k === 1 ? '棉花蹭着你的裤腿，绕着圈喵喵叫。饿了。' : '煤球蹲在猫碗旁边，用一种「你迟到了」的眼神看着你。');
     return S.narr(k === 1 ? '棉花吃饱了，在地毯上打滚。' : '煤球吃完了，把碗舔得锃亮。');
@@ -728,11 +728,11 @@
   }
   function behind(S, k) {   // 沿着来路往回数 k 格（BFS 距离为 k、且离起点最近的格子），把甩开的大卫放在那儿
     const m = W.maps.ware, w = m.w, h = m.h, bfs = (sx, sy) => { const D = new Map([[sx + ',' + sy, 0]]), q = [[sx, sy]]; while (q.length) { const [x, y] = q.shift(), d = D.get(x + ',' + y); for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const nx = x + dx, ny = y + dy, kk = nx + ',' + ny; if (nx < 0 || ny < 0 || nx >= w || ny >= h || D.has(kk) || tileSolid(m, nx, ny)) continue; D.set(kk, d + 1); q.push([nx, ny]); } } return D; };
-    const fromP = bfs(W.pl.x, W.pl.y), fromS = bfs(2, 12); let best = null, bd = 1e9;
-    for (const [kk, d] of fromP) if (d === k) { const ds = fromS.get(kk) ?? 1e9; if (ds < bd) { bd = ds; best = kk; } }
+    const fromP = bfs(W.pl.x, W.pl.y), fromS = bfs(1, 12), me = fromS.get(W.pl.x + ',' + W.pl.y) ?? 0; let best = null, bd = -1;
+    for (const [kk, d] of fromP) { const ds = fromS.get(kk) ?? 1e9; if (d >= 2 && d <= k && ds < me && (d > bd || d === bd && ds < fromS.get(best))) { bd = d; best = kk; } }   // 只往来路上放，不会放到玩家前面
     return best ? best.split(',').map(Number) : [1, 12];
   }
-  const SPD = 3.0;
+  const SPD = 2.9;
   function startChase(S) {
     const f = S.f; f.chase = true; f._hb = 0; f._dg = 0; f._mw = 0;
     S.place('wdv', 1, 12, 2); S.ent('wdv').alpha = 1;
@@ -746,9 +746,9 @@
     if (!f.grabbed) {   // 第一次：挣脱，留一圈淤青；他被甩开几步
       f.grabbed = true; S.sfx('thud'); S.shake(500, 3); S.fx('red', { dur: .6 });
       await S.narr('一只冰凉的小手攥住了你的胳膊！\n你拼命一甩——挣开了。胳膊上火辣辣的。');
-      const [bx0, by0] = behind(S, 5); S.place('wdv', bx0, by0, 0);
+      const [bx0, by0] = behind(S, 4); S.place('wdv', bx0, by0, 0);
       await S.think('下一次，就挣不开了。别停。');
-      S.chase('wdv', { spd: SPD, catch: caught }); S.ent('wdv').chase.wait = 1.0;
+      S.chase('wdv', { spd: SPD, catch: caught }); S.ent('wdv').chase.wait = .8;
       return;
     }
     DIED++; f.chase = false;

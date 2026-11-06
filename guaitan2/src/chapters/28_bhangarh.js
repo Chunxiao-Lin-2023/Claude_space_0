@@ -917,7 +917,9 @@
   /* ---------- 天亮前跑出城 ---------- */
   const RUN_T = 32;
   let LAST_LEFT = null;
-  const RUNNERS = [['r1', 3, 5], ['r2', 34, 6], ['r3', 14, 4], ['r4', 24, 4], ['r5', 41, 15], ['r6', 17, 17]];   // 从身后、两侧和开阔地扑过来，不堵在一格宽的口子上
+  const RUNNERS = [['r1', 2, 17], ['r2', 34, 6], ['r3', 18, 17], ['r4', 32, 18], ['r5', 41, 15], ['r6', 44, 13]];   // 从身后、两侧和开阔地扑过来，不堵在一格宽的口子上
+  /* 跑的时候城里的人能走的地方：城门灯下不去；夜里拜过苦行僧的话，他小屋那边的小巷它们也不敢进 */
+  const runZone = S => (x, y) => x < GATEX - 2 && !(S.f.baluN && ((y <= 4 && x >= 7 && x <= 31) || (x === 27 && y <= 7)));
   async function runStart(S) {
     S.f.ph = 'run';
     SND.rumble(S); S.shake(800, 3);
@@ -940,7 +942,7 @@
     for (const [id, x, y] of RUNNERS) {
       const e = S.ent(id); if (!e) continue;
       e.s.park = false; S.place(id, x, y, 0); e.alpha = .9; e.mv = null;
-      S.chase(id, { spd: 3.0, zone: (zx, zy) => zx < GATEX - 2, wander: false, catch: runCaught });
+      S.chase(id, { spd: 3.0, zone: runZone(S), wander: false, catch: runCaught });
     }
   }
   async function runCaught(S) {
@@ -949,14 +951,14 @@
       S.take('thread'); S.f.threadUsed = true; S.sfx('cut'); S.fx('flash');
       S.toast('手腕上的红线「啪」地断了——那只手缩了回去！');
       const g = GEN;
-      for (const [id] of RUNNERS) { const e = S.ent(id); if (e && Math.abs(e.px - S.pl.px) + Math.abs(e.py - S.pl.py) < 40) { S.stop(id); e.alpha = .3; setTimeout(() => { if (g === GEN && W && W.f.ph === 'run' && !e.hidden) { e.alpha = .9; S.chase(id, { spd: 3.0, zone: (zx, zy) => zx < GATEX - 2, wander: false, catch: runCaught }); } }, 1500); } }
+      for (const [id] of RUNNERS) { const e = S.ent(id); if (e && Math.abs(e.px - S.pl.px) + Math.abs(e.py - S.pl.py) < 40) { S.stop(id); e.alpha = .3; setTimeout(() => { if (g === GEN && W && W.f.ph === 'run' && !e.hidden) { e.alpha = .9; S.chase(id, { spd: 3.0, zone: runZone(S), wander: false, catch: runCaught }); } }, 1500); } }
       return;
     }
     if (!S.f.gracedR) {
       S.f.gracedR = true; S.sfx('sting'); S.shake(300, 2);
       S.toast('有只手抓住了你的衣角——你挣开了！别停！');
       const g = GEN;
-      for (const [id] of RUNNERS) { const e = S.ent(id); if (e && Math.abs(e.px - S.pl.px) + Math.abs(e.py - S.pl.py) < 40) { S.stop(id); e.alpha = .3; setTimeout(() => { if (g === GEN && W && W.f.ph === 'run' && !e.hidden) { e.alpha = .9; S.chase(id, { spd: 3.0, zone: (zx, zy) => zx < GATEX - 2, wander: false, catch: runCaught }); } }, 1500); } }
+      for (const [id] of RUNNERS) { const e = S.ent(id); if (e && Math.abs(e.px - S.pl.px) + Math.abs(e.py - S.pl.py) < 40) { S.stop(id); e.alpha = .3; setTimeout(() => { if (g === GEN && W && W.f.ph === 'run' && !e.hidden) { e.alpha = .9; S.chase(id, { spd: 3.0, zone: runZone(S), wander: false, catch: runCaught }); } }, 1500); } }
       return;
     }
     DEATHS++;
@@ -1157,7 +1159,7 @@
             runChase(S);
             S.f.runLeft = Math.max(1, S.timerLeft ?? RUN_T);
             S.cp('run2');
-            if (S.once('runB')) S.toast('集市中间塌了！从南边的院子或者北边的小巷绕过去！');
+            if (S.once('runB')) S.toast(S.f.baluN ? '集市中间塌了！苦行僧小屋那边的小巷……它们好像不敢进去！' : '集市中间塌了！从南边的院子或者北边的小巷绕过去！');
           }
         },
         step(S, x, y) {

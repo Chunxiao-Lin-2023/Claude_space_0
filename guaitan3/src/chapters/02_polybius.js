@@ -4,7 +4,7 @@
   const CODE = ['31', '15', '44', '23', '15'], WORD = 'LETHE', HI = 9990, STEP = 1500;
   const GRID = 'ABCDEFGHIKLMNOPQRSTUVWXYZ'.split('');   // 波利比乌斯方阵：I/J 共用一格
   const DEAD = 180;                                     // 02:00（从 23:00 起算的分钟）
-  const ISLAND = ['i1', 'i2', 'i3', 'i4', 'i5', 'i6', 'c1', 'c2', 'c3'];
+  const ISLAND = ['i1', 'i2', 'i3', 'i4', 'i5', 'i6', 'i7', 'i8', 'i9', 'i10', 'c1', 'c2', 'c3'];
   const FOES = ['e1', 'e2', 'e3'], DOTS = ['d1', 'd2', 'd3'];
   const WORDS = ['OBEY', 'NO THOUGHT', 'DO NOT SLEEP', 'FORGET', 'KEEP PLAYING', 'YOU ARE NOT TIRED'];
   let G = null;            // 当前这一局街机（主机）
@@ -46,12 +46,22 @@
   function digitBeeps(S, code) { code.split('').forEach((d, i) => bleep(S, 300 + (+d) * 140, .12, .14, i * .16)); }
   function panelBeeps(S, n = 5) { for (let i = 0; i < n; i++) S.tone('sine', 1180, 1180, .07, .12, i * .26); }
   function hum(S, v = .08) { S.tone('sawtooth', 58, 56, 1.4, v, 0, 220); }
+  /* 那台机器的嗡嗡声：离得越近越响、越亮（只有低频，靠近了才听见高一点的啸叫） */
+  function proxHum(S, dt) {
+    const f = S.f; f._hm = (f._hm ?? 0) - dt; if (f._hm > 0) return; f._hm = 1.7;
+    const p = getEnt('poly', 'arcade'); if (!p || p.off || S.map !== 'arcade') return;
+    const d = Math.abs(W.pl.x - 16) + Math.abs(W.pl.y - 2), k = Math.max(0, 1 - d / 15);
+    if (k <= 0) return;
+    S.tone('sawtooth', 58, 57, 1.8, .025 + .07 * k, 0, 140 + 500 * k);
+    if (d <= 3) S.tone('sine', 15600 / 2, 15600 / 2, 1.6, .006 + .01 * k);
+  }
 
   /* ---------------- 状态小工具 ---------------- */
   function hudSet(S, o) { const h = S.ent('hud'); if (h) Object.assign(h.s, o); }
   function setClock(S) { const c = S.ent('clk'); if (c) c.s.m = S.f.clock; }
   function applySym(S) {
     const n = S.f.frags || 0;
+    for (const id of ['vg0', 'vg1', 'vg2', 'vg3']) { const e = getEnt(id, 'arcade'); if (e) e.hidden = !(n >= 4 && S.f.phase === 'night'); }
     S.dark(Math.min(.8, .6 + n * .04), 'arcade');
     S.plr(n >= 3 ? 2.8 : null);
     for (const id of ISLAND) { const e = getEnt(id, 'arcade'); if (e) e.s.poly = n >= 2; }
@@ -65,6 +75,19 @@
 
   /* ================= 街机：矢量小游戏 ================= */
   const PILLARS = [[3, 4], [8, 4], [3, 8], [8, 8]], EXIT = [10, 10], SPAWN = [6, 7];
+  const GAME_ROWS = [
+    'HHHHHHHHHHHH',
+    'XXXXXXXXXXXX',
+    'X..........X',
+    'X..........X',
+    'X..X....X..X',
+    'X..........X',
+    'X..........X',
+    'X..........X',
+    'X..X....X..X',
+    'X..........X',
+    'X..........X',
+    'XXXXXXXXXXXX'];
   const ARENA = [];
   for (let y = 2; y <= 10; y++) for (let x = 1; x <= 10; x++) if (!PILLARS.some(p => p[0] === x && p[1] === y)) ARENA.push([x, y]);
   function freeCell(S, minD, ref) {
@@ -80,8 +103,10 @@
     if (G && G.th >= 2) S.place('e3', 1, 10, 3); else S.hide('e3');
     for (const id of FOES) getEnt(id, 'game').s.gold = false;
   }
+  const baseSp = S => Math.min(3.0, 2.25 - .1 * Math.min(3, S.f.mercy || 0) + .14 * G.th);
+  function farCorner() { const C = [[1, 2], [10, 2], [1, 10]]; return C.sort((a, b) => (Math.abs(b[0] - W.pl.x) + Math.abs(b[1] - W.pl.y)) - (Math.abs(a[0] - W.pl.x) + Math.abs(a[1] - W.pl.y)))[0]; }
   function chaseFoes(S, spin) {
-    const sp = spin ? 2.9 : Math.min(3.0, 2.25 + .14 * G.th);
+    const sp = spin ? 2.9 : baseSp(S);
     FOES.forEach((id, i) => { const e = getEnt(id, 'game'); if (e && !e.hidden) S.chase(id, { spd: sp - i * .12, catch: hitShip, wait: spin ? 0 : .6 }); });
   }
   async function startSession(S) {
@@ -123,9 +148,9 @@
     await S.wait(1300);
     if (f.frags === 3 && S.once('polyFace')) { await S.scare('face', { face: 'poly', sfx: 'scare', dur: 1 }); await S.think('（……刚才那一帧不是数字。是一张脸。用线画的脸。）'); }
     if (f.frags >= 5) return startSpin(S);
-    const sp = Math.min(3.0, 2.25 + .14 * G.th);
+    const sp = baseSp(S);
     FOES.forEach((id, i) => { const e = getEnt(id, 'game'); if (e && e.chase) e.chase.spd = sp - i * .12; });
-    if (G.th >= 2 && getEnt('e3', 'game').hidden) { const c = W.pl.x < 6 ? [10, 2] : [1, 2]; S.place('e3', c[0], c[1], 0); S.chase('e3', { spd: sp - .24, catch: hitShip, wait: 1 }); S.tone('sawtooth', 120, 480, .4, .08); }
+    if (G.th >= 2 && getEnt('e3', 'game').hidden) { const c = farCorner(); S.place('e3', c[0], c[1], 0); S.chase('e3', { spd: sp - .24, catch: hitShip, wait: 1 }); S.tone('sawtooth', 120, 480, .4, .08); }
   }
   /* 第五个数字之后：分数自己往上跳，要赶在 9990 之前跑到出口 */
   async function startSpin(S) {
@@ -189,6 +214,7 @@
     hum(S, .05);
     await S.narr((why === 'over' ? 'GAME OVER。你松开摇杆，手心全是汗。\n' : why === 'escape' ? '你把飞船撞进 EXIT 的那一刻，屏幕猛地一黑——\n' : '你松开摇杆。\n') + '墙上的钟：' + clockStr(f.clock) + '。你只觉得玩了三四分钟。');
     if (f.sess === 1) await S.think('（……二十五分钟。时间被它吃掉了一块。）');
+    if (why === 'over') { f.mercy = (f.mercy || 0) + 1; if (S.once('overHint')) await S.think('（它们只会直直地朝我冲过来。\n绕着那四根柱子兜圈子，就能把它们甩在后面。）'); }
     if (got > 0 && f.frags < 5) await S.think('（手背上，用圆珠笔写着：' + handTxt(f.frags) + '。\n……还差 ' + (5 - f.frags) + ' 个。）');
     else if (got === 0 && f.frags < 5) await S.think('（这一局什么都没看到。分数要再高一点，它才会「眨眼」。）');
     if (f.frags >= 3 && S.once('halluc')) { S.show('hall'); S.ent('hall').alpha = .55; }
@@ -209,7 +235,7 @@
     } else await S.narr(f.frags >= 3 ? '绿色的线条在屏幕里转。\n你盯着它，想不起来自己上一次眨眼是什么时候。' : '绿色的线条一圈一圈地往里转。最高分 9990，名字那一栏是空的。');
     const r = await S.ask('投一枚二十五美分的硬币？', ['投币', '算了']);
     if (r) return;
-    S.goal('在游戏里记下闪过的数字（' + f.frags + '/5）——别破 9990 的纪录');
+    S.goal('在游戏里记下闪过的数字（' + f.frags + '/5）——别破 9990 的纪录' + (S.coop ? '（双人：一人握摇杆，一人盯屏幕报数字）' : ''));
     S.cp('cab');
     return startSession(S);
   }
@@ -219,7 +245,8 @@
     const f = S.f;
     if (f.phase === 'pro') return S.narr('机器左边的铁皮背板。');
     if (f.phase === 'done') return S.narr('背板敞着。红色的总闸拉在最下面，磁带不转了。');
-    if (!f.seenPanel) {
+    if (f.phase === 'climax') { if (!f.seenPanel) { f.seenPanel = true; await S.think('（五排五列的字母键，左上角 A，右下角 Z，没有 J。\n第一下，第三排最左边——）'); } }
+    else if (!f.seenPanel) {
       f.seenPanel = true;
       await S.narr(['机身左侧有一块巴掌大的铁皮背板，四颗螺丝都焊死了。\n侧面靠下烫着一行很小的字：©1981 SINNESLÖSCHEN。你不认识这个词。', '背板上是一片小小的方形按键——五排，每排五个，刻着字母。\n左上角是 A，右下角是 Z。数了一遍：没有 J。']);
       await S.think('（那天夜里，黑西装就是在这儿按了五下。\n第一下，按在第三排最左边。）');
@@ -233,8 +260,9 @@
   async function wrongCode(S, v) {
     const f = S.f;
     S.tone('square', 140, 120, .5, .16); S.sfx('locked'); S.fx('glitch');
-    f.wrong = (f.wrong || 0) + 1;
+    if (f.frags >= 5) f.wrong = (f.wrong || 0) + 1;
     if (f.phase === 'climax') { S.timerAdd(-5); await S.narr('背板「嘟——」地叫了一声，又长又刺耳。\n门外，车门好像响了一下。'); }
+    else if (f.frags < 5 && !f.freeWrong) { f.freeWrong = true; await S.narr('背板「嘟——」地叫了一声。屏幕猛地亮了一下。\n……你盯着墙上的钟看了好一会儿。还好，秒针还在走。'); }
     else { f.clock += 10; setClock(S); await S.narr('背板「嘟——」地叫了一声。屏幕猛地亮了一下。\n你再看墙上的钟：' + clockStr(f.clock) + '。又过去了十分钟。'); }
     if (f.frags < 5) {
       await S.think('（手背上的数字还不全。缺的那几个，只能回到它的屏幕里去找。）');
@@ -253,12 +281,13 @@
   function mibNear(d) { for (const id of ['mib1', 'mib2']) { const e = getEnt(id, 'arcade'); if (e && !e.hidden && e.chase && Math.abs(e.px - W.pl.px) + Math.abs(e.py - W.pl.py) < d) return true; } return false; }
   async function climax(S) {
     const f = S.f;
-    f.phase = 'climax';
-    S.ent('ricky').s.sleep = true; S.place('ricky', 17, 9, 0);
+    f.phase = 'climax'; S.hide('hall'); applySym(S);
+    S.ent('ricky').s.sleep = true; S.place('ricky', 17, 9, 0); S.show('zz');
     S.lights([[152, 182, 4.5, .85], [128, 182, 3, .5]]);
     S.sfx('car'); S.tone('sawtooth', 70, 64, 2.5, .08, 0, 300);
     await S.narr('门外，一道车灯扫过玻璃门，停住了。\n引擎没有熄火。');
-    await S.think('（现在才 ' + clockStr(f.clock) + '。他们提前来了。\n……是它把他们叫来的。我看完了它所有的数字。）');
+    if (f.clock >= DEAD) await S.think('（两点了。……他们准时来了。\n可我已经看完了它所有的数字。）');
+    else await S.think('（现在才 ' + clockStr(f.clock) + '。他们提前来了。\n……是它把他们叫来的。我看完了它所有的数字。）');
     await S.think('（手背上：' + handTxt(5) + '。\n背板在机器左边——趁他们还没下车！）');
     S.goal('黑衣人进门之前，在机器左侧的背板上输入密码');
     S.cp('mib');
@@ -267,7 +296,7 @@
   function mibSetup(S) {
     S.lights([[152, 182, 4.5, .85], [128, 182, 3, .5]]);
     S.hide('mib1'); S.hide('mib2'); S.show('mibcar');
-    S.ent('ricky').s.sleep = true;
+    S.ent('ricky').s.sleep = true; S.show('zz');
     S.timer(DIED ? 30 : 45, '黑衣人', mibEnter, { during: true });   // 实测：知道答案的人 10 秒内能按完；边数格子边按约 30–40 秒
     S.goal('黑衣人进门之前，在机器左侧的背板上输入密码');
   }
@@ -314,13 +343,15 @@
     await S.say('黑西装', '撤。', { style: 'whisper' });
     await S.narr('他们谁都没有看你。\n磁带停在背板里，离你的手只有一拃远。');
     const r = await S.ask('他们正盯着那块黑掉的屏幕——', ['把磁带塞进外套', '别碰它']);
+    const photo = f.sawPhoto ? '\n\n失物招领箱里那张夏天的照片，你后来拿给他看。\n他看了很久，说：「这天我记得。」' : '';
+    const card = f._o_readN4 ? '\n你想起雨里那张卡片上的字：「如遇断电——中止，撤收，不留痕迹。」他们说到做到。' : '';
     if (r === 0) {
       S.sfx('item');
       await S.narr('你把磁带抽出来，塞进外套里面。\n它贴着你的肚子，微微发热。');
-      await S.end({ id: 'tape', title: '样本 11', text: '那天夜里，瑞奇在长椅上睡着了。他睡了整整十四个小时。\n醒来以后，他想起了你的名字，想起了他妈妈的生日。只有那十天，他怎么也想不起来。\n\n那盘磁带，你一直没有放。\n\n很多年以后，一个街机资料网站上出现了一条奇怪的条目：一台叫「波利比乌斯」的机器，1981 年，波特兰。\n下面有人回帖：编的吧。\n你盯着屏幕看了很久，没有留言。\n抽屉最深处，那盘磁带贴着你的手指，微微发热——像是还在转。' });
+      await S.end({ id: 'tape', title: '样本 11', text: '那天夜里，瑞奇在长椅上睡着了。他睡了整整十四个小时。\n醒来以后，他想起了你的名字，想起了他妈妈的生日。只有那十天，他怎么也想不起来。' + photo + '\n\n那盘磁带，你一直没有放。\n\n很多年以后，一个街机资料网站上出现了一条奇怪的条目：一台叫「波利比乌斯」的机器，1981 年，波特兰。\n下面有人回帖：编的吧。\n你盯着屏幕看了很久，没有留言。\n抽屉最深处，那盘磁带贴着你的手指，微微发热——像是还在转。' });
       return;
     }
-    await S.end({ id: 'unplug', title: '拔掉电源', text: '那天夜里，他们没有带走任何人。\n天快亮的时候，瑞奇在长椅上睡着了。他睡了整整十四个小时。\n醒来以后，他想起了你的名字，想起了他妈妈的生日。只有那十天，他怎么也想不起来。\n\n几周后的一个早上，厄尔打开店门，发现最里面的角落空了。\n地毯上只剩下一块方方正正的、没有褪色的印子。\n没有人看见它是怎么被搬走的。后来，再也没有人见过一台叫「波利比乌斯」的机器。\n\n你偶尔还会失眠。\n闭上眼睛，黑暗里有一圈很淡很淡的绿线，转一下，就停了。' });
+    await S.end({ id: 'unplug', title: '拔掉电源', text: '那天夜里，他们没有带走任何人。\n天快亮的时候，瑞奇在长椅上睡着了。他睡了整整十四个小时。\n醒来以后，他想起了你的名字，想起了他妈妈的生日。只有那十天，他怎么也想不起来。' + photo + '\n\n几周后的一个早上，厄尔打开店门，发现最里面的角落空了。\n地毯上只剩下一块方方正正的、没有褪色的印子。\n没有人看见它是怎么被搬走的。' + card + '\n后来，再也没有人见过一台叫「波利比乌斯」的机器。\n\n你偶尔还会失眠。\n闭上眼睛，黑暗里有一圈很淡很淡的绿线，转一下，就停了。' });
   }
   async function mibEnd(S) {
     const f = S.f;
@@ -425,7 +456,7 @@
     hiboard(g, e, t, R) {
       R(1, 1, 14, 12, '#d8d0b0'); R(1, 1, 14, 2, '#a02a2a'); R(2, 1, 12, 1, '#c84a3a');
       for (let i = 0; i < 4; i++) { R(3, 5 + i * 2, 6, 1, '#4a4a5a'); R(10, 5 + i * 2, 3, 1, i === 3 ? '#b01818' : '#4a4a5a'); }
-      R(9, 10, 5, 3, 'rgba(176,24,24,.0)'); R(9, 10, 5, 1, '#b01818'); R(9, 12, 5, 1, '#b01818');
+      R(9, 10, 5, 1, '#b01818'); R(9, 12, 5, 1, '#b01818');
     },
     /* 挂钟：e.s.m = 分钟（从 23:00 起） */
     clock2(g, e, t, R) {
@@ -453,13 +484,21 @@
     bike(g, e, t, R) { R(1, 8, 6, 6, '#111'); R(2, 9, 4, 4, '#2a2a2a'); R(9, 8, 6, 6, '#111'); R(10, 9, 4, 4, '#2a2a2a'); R(4, 7, 8, 1, '#c03030'); R(7, 5, 1, 4, '#c03030'); R(11, 4, 1, 4, '#888'); R(10, 4, 3, 1, '#333'); R(6, 4, 3, 1, '#222'); R(11, 5, 4, 3, '#555'); },
     dumpster(g, e, t, R) { box(R, 0, 2, 16, 13, '#2a5a3a'); R(0, 0, 16, 3, '#1e4a2e'); R(2, 6, 12, 1, '#1e4a2e'); R(3, 14, 2, 2, '#111'); R(11, 14, 2, 2, '#111'); },
     oil(g, e, t, R) { R(2, 4, 26, 8, 'rgba(10,10,14,.55)'); R(6, 6, 6, 3, 'rgba(80,60,120,.25)'); R(18, 7, 5, 2, 'rgba(40,90,100,.25)'); },
+    zzz(g, e, t, R) { for (let i = 0; i < 3; i++) { const p = (t * .5 + i / 3) % 1, x = 9 + Math.sin(p * 6 + i) * 2 + p * 4, y = -14 - p * 12; const c = `rgba(220,230,255,${(1 - p) * .8})`; R(x, y, 3, 1, c); R(x + 1, y + 1, 1, 1, c); R(x, y + 2, 3, 1, c); } },
+    vgrid(g, e, t, R) {   /* 幻觉：游戏厅里一闪而过的矢量网格（每 7 秒左右闪不到半秒） */
+      const k = (t + e.px * .003) % 7; if (k > .4 || Math.sin(k * 40) < -.2) return;
+      const c = 'rgba(90,255,160,.35)';
+      for (let x = 0; x < e.w * 16; x += 16) R(x, 32, 1, 160, c);
+      for (let y = 32; y < 192; y += 16) R(0, y, e.w * 16, 1, c);
+    },
+    register(g, e, t, R) { R(3, 2, 10, 6, '#2a2a30'); R(4, 3, 6, 2, '#3aff8a'); R(4, 6, 8, 1, '#8a8a90'); R(10, 0, 2, 3, '#555'); },
     card(g, e, t, R) { R(4, 8, 8, 5, '#d8d4c8'); R(5, 9, 5, 1, '#666'); R(5, 11, 4, 1, '#888'); R(10, 9, 1, 1, '#333'); },
     /* ---------- 游戏里 ---------- */
     ship(g, e, t, R) {
       const a = [Math.PI, -Math.PI / 2, Math.PI / 2, 0][e.dir || 0], c = Math.cos(a), s = Math.sin(a);
       const P = ([x, y]) => [8 + (x - 8) * c - (y - 8) * s, 8 + (x - 8) * s + (y - 8) * c];
       const n = P([8, 2]), l = P([3, 13]), r = P([13, 13]), m = P([8, 10]);
-      const col = (G && G.ph === 'hit' && Math.sin(t * 40) > 0) ? '#ff4060' : '#8ff4ff';
+      const H = getEnt('hud', 'game'), col = (H && H.s.ph === 'hit' && Math.sin(t * 40) > 0) ? '#ff4060' : '#8ff4ff';
       LN(R, n[0], n[1], l[0], l[1], col); LN(R, n[0], n[1], r[0], r[1], col); LN(R, l[0], l[1], m[0], m[1], col); LN(R, r[0], r[1], m[0], m[1], col);
       if (Math.sin(t * 30) > 0) { const q = P([8, 13]); R(q[0], q[1], 1, 1, '#ffb040'); }
     },
@@ -479,10 +518,10 @@
       R(-12, -12, W2 + 24, 12, '#141418'); R(-12, H2, W2 + 24, 12, '#141418'); R(-12, 0, 12, H2, '#141418'); R(W2, 0, 12, H2, '#141418');
       R(-2, -2, W2 + 4, 2, '#2a2a30'); R(-2, H2, W2 + 4, 2, '#2a2a30'); R(-2, 0, 2, H2, '#2a2a30'); R(W2, 0, 2, H2, '#2a2a30');
       const sc = e.sc || 0, ph = e.ph;
-      TXT(R, 4, 2, '1UP', '#ff5a5a'); TXT(R, 4, 8, pad5(sc), sc > 9000 ? (Math.sin(t * 14) > 0 ? '#ff4040' : '#ffd040') : '#ffffff');
+      TXT(R, 3, 3, pad5(sc), sc > 9000 ? (Math.sin(t * 14) > 0 ? '#ff4040' : '#ffd040') : '#ffffff', 2);
       const hiC = ph === 'spin' ? (Math.sin(t * 16) > 0 ? '#ff3030' : '#ffffff') : '#ffd040';
-      TXT(R, W2 - 4 - TW('HI'), 2, 'HI', hiC); TXT(R, W2 - 4 - TW('09990'), 8, '09990', hiC);
-      TXT(R, W2 / 2 - TW('POLYBIUS') / 2, 2, 'POLYBIUS', '#3a8a5a');
+      TXT(R, W2 - 3 - TW('09990', 2), 3, '09990', hiC, 2); TXT(R, W2 - 3 - TW('09990', 2) - 10, 8, 'HI', hiC);
+      TXT(R, W2 / 2 - TW('POLYBIUS') / 2, 1, 'POLYBIUS', '#3a8a5a');
       for (let i = 0; i < (e.li ?? 3); i++) { const x = W2 / 2 - 10 + i * 8; LN(R, x + 3, 9, x, 14, '#8ff4ff'); LN(R, x + 3, 9, x + 6, 14, '#8ff4ff'); LN(R, x, 14, x + 6, 14, '#8ff4ff'); }
       const M = SPRX._m;
       if (e.flN !== M.flN) { M.flN = e.flN; M.flT = t; }
@@ -513,6 +552,15 @@
   const svcDraw = SPR2.svc;
   SPR2.svc = (g, e, t, R) => { svcDraw(g, e, t, R); kpCols(); };
   SPR2.polycab = ((f) => (g, e, t, R) => { f(g, e, t, R); kpCols(); })(SPR2.polycab);
+  /* 字母密码盘：W/A/S/D、E、I、J、M、T、X、Y、N、Z 等字母同时是引擎快捷键（移动焦点、确认、背包、静音、取消……），
+     在本章这块 25 键的背板打开时，先在捕获阶段截下字母键，只当作「按下这个字母」 */
+  addEventListener('keydown', e => {
+    if (!W || W.ch.id !== 'polybius' || !W.keypad || !W.keypad.keys || W.keypad.keys.length !== 25 || UI.modal) return;
+    if (!e.key || e.key.length !== 1 || !/[a-z]/i.test(e.key)) return;
+    e.stopImmediatePropagation(); e.preventDefault();
+    if (e.repeat || !iControl()) return;
+    const k = e.key.toUpperCase(); sendAct('key', k === 'J' ? 'I' : k);
+  }, true);
   function kpCols() {
     const K = document.getElementById('kpK'); if (!K) return;
     const want = (W && W.keypad && W.keypad.keys && W.keypad.keys.length === 25) ? 'repeat(5,1fr)' : '';
@@ -522,7 +570,21 @@
   const TILESX = {
     arc: { solid: false, paint(R, X, Y) { R(0, 0, 16, 16, '#15122a'); const cs = ['#e0408a', '#38c8e8', '#e8c838', '#7a50e0']; for (let i = 0; i < 6; i++) { const h = hash(X * 7 + i, Y * 13 + i, 5); R((h * 15) | 0, (hash(X, Y, i + 40) * 15) | 0, i % 3 ? 1 : 2, 1, cs[i % 4]); } R(0, 15, 16, 1, '#100e20'); } },
     vfloor: { solid: false, paint(R) { R(0, 0, 16, 16, '#020504'); R(0, 0, 16, 1, '#071a10'); R(0, 0, 1, 16, '#071a10'); R(0, 0, 1, 1, '#145a34'); } },
-    vwall: { solid: true, paint(R) { R(0, 0, 16, 16, '#000'); R(1, 1, 14, 1, '#1aa8d8'); R(1, 14, 14, 1, '#1aa8d8'); R(1, 1, 1, 14, '#1aa8d8'); R(14, 1, 1, 14, '#1aa8d8'); R(4, 4, 8, 8, '#03121a'); R(5, 5, 6, 1, '#0a4a62'); } },
+    vwall: { solid: true, paint(R, X, Y) {
+      const open = (x, y) => { const r = GAME_ROWS[y]; return !!r && r[x] === '.'; };
+      const u = open(X, Y - 1), d = open(X, Y + 1), l = open(X - 1, Y), r = open(X + 1, Y), C = '#2ad0ff', C2 = '#0c4a66';
+      R(0, 0, 16, 16, '#000');
+      const H = (y, a, b, c) => R(a, y, b - a + 1, 1, c), V = (x, a, b, c) => R(x, a, 1, b - a + 1, c);
+      if (u) { H(2, l ? 2 : 0, r ? 13 : 15, C); H(4, l ? 4 : 0, r ? 11 : 15, C2); }
+      if (d) { H(13, l ? 2 : 0, r ? 13 : 15, C); H(11, l ? 4 : 0, r ? 11 : 15, C2); }
+      if (l) { V(2, u ? 2 : 0, d ? 13 : 15, C); V(4, u ? 4 : 0, d ? 11 : 15, C2); }
+      if (r) { V(13, u ? 2 : 0, d ? 13 : 15, C); V(11, u ? 4 : 0, d ? 11 : 15, C2); }
+      /* 凹角：两边都是墙、斜对角是空地 */
+      if (!u && !l && open(X - 1, Y - 1)) { R(0, 2, 3, 1, C); R(2, 0, 1, 3, C); }
+      if (!u && !r && open(X + 1, Y - 1)) { R(13, 2, 3, 1, C); R(13, 0, 1, 3, C); }
+      if (!d && !l && open(X - 1, Y + 1)) { R(0, 13, 3, 1, C); R(2, 13, 1, 3, C); }
+      if (!d && !r && open(X + 1, Y + 1)) { R(13, 13, 3, 1, C); R(13, 13, 1, 3, C); }
+    } },
     hudrow: { solid: true, paint(R) { R(0, 0, 16, 16, '#000'); } }
   };
 
@@ -659,7 +721,19 @@
           { id: 'ricky', x: 17, y: 9, spr: '@ricky', hidden: true, on: rickyUse },
           { id: 'bag', x: 18, y: 9, spr: 'bag', solid: false, hidden: true, on: bagUse },
           { id: 'earl', x: 3, y: 10, spr: '@earl', hidden: true },
-          { id: 'hall', x: 18, y: 4, spr: '@mibg', solid: false, hidden: true, dir: 1 },
+          { id: 'zz', x: 17, y: 9, spr: 'zzz', solid: false, z: 1, hidden: true },
+          { id: 'vg0', x: 0, y: 0, w: 5, h: 12, spr: 'vgrid', solid: false, z: 1, hidden: true },
+          { id: 'vg1', x: 5, y: 0, w: 5, h: 12, spr: 'vgrid', solid: false, z: 1, hidden: true },
+          { id: 'vg2', x: 10, y: 0, w: 5, h: 12, spr: 'vgrid', solid: false, z: 1, hidden: true },
+          { id: 'vg3', x: 15, y: 0, w: 5, h: 12, spr: 'vgrid', solid: false, z: 1, hidden: true },
+          { id: 'i7', x: 7, y: 8, spr: 'cab', col: '#8a2a6a', s: { k: 4 }, light: { r: 1.5, col: 'rgba(255,140,220,.12)', dy: 2 }, on: S => S.narr(S.ent('i7').s.poly ? '砖块排成了一个方框。球打进去，就再也没出来。' : '又一台打砖块。挡板左边缺了一个像素，是被人用指甲抠掉的。') },
+          { id: 'i8', x: 8, y: 8, spr: 'cab', col: '#2a5a8a', s: { k: 3 }, light: { r: 1.5, col: 'rgba(140,200,255,.12)', dy: 2 }, on: S => S.narr('潜艇大战。投币口里卡着一枚加拿大硬币。') },
+          { id: 'i9', x: 9, y: 8, spr: 'cab', col: '#5a7a2a', s: { k: 0 }, light: { r: 1.5, col: 'rgba(200,255,140,.12)', dy: 2 }, on: S => S.narr(S.ent('i9').s.poly ? '外星人不往下降了。它们排成一圈，绕着屏幕中间转。' : '「蜈蚣」。一条一节一节的虫子，从屏幕顶上蜿蜒着爬下来。') },
+          { id: 'i10', x: 10, y: 8, spr: 'cab', col: '#9a4a2a', s: { k: 2 }, light: { r: 1.5, col: 'rgba(255,170,120,.12)', dy: 2 }, on: S => S.narr('坦克大战。两个摇杆，一个人玩不过来。\n你和瑞奇以前一人一个。') },
+          { x: 18, y: 10, spr: 'vending', on: S => S.narr('可乐贩卖机。冷藏的嗡嗡声，和那台黑机器的声音一点都不像。\n——你发现自己在拿它们做比较。') },
+          { x: 1, y: 10, spr: 'plant', on: S => S.narr('一盆塑料棕榈树。叶子上落满了灰，还插着一根吸管。') },
+          { x: 2, y: 9, spr: 'register', solid: false, z: 1, oy: -6 },
+          { id: 'hall', x: 18, y: 6, spr: '@mibg', solid: false, hidden: true, dir: 1 },
           { id: 'mib1', x: 9, y: 11, spr: '@mib', solid: false, hidden: true, dir: 3 },
           { id: 'mib2', x: 8, y: 10, spr: '@mib', solid: false, hidden: true, dir: 3 },
           { id: 'gdoor', x: 9, y: 11, spr: 'gdoor', decal: true, solid: false, touch: async S => {
@@ -677,7 +751,7 @@
         },
         step(S, x, y) {
           const h = getEnt('hall', 'arcade');
-          if (h && !h.hidden && Math.abs(x - 18) + Math.abs(y - 4) <= 4) {
+          if (h && !h.hidden && S.f.phase === 'night' && Math.abs(x - 18) + Math.abs(y - 6) <= 2) {
             return (async () => { S.sfx('whisper'); await S.alpha('hall', 0, 500); await S.think('（……刚才那儿站着一个穿黑西装的人。\n现在什么都没有。）'); })();
           }
         },
@@ -688,8 +762,10 @@
             if (tl != null && tl < 12) { f._hb = (f._hb ?? 0) - dt; if (f._hb <= 0) { f._hb = tl < 5 ? .45 : .85; S.sfx('heart'); } }
             /* 他们走到身边时，正在按的键盘、正在看的字都会被打断 */
             if ((W.keypad || W.dlg) && mibNear(18)) interruptWait();
+            proxHum(S, dt);
             return;
           }
+          if (f.phase === 'night') proxHum(S, dt);
           if (S.busy || f.phase !== 'night') return;
           f._bl = (f._bl ?? 3) - dt;
           if (f._bl <= 0) { f._bl = 2.5 + Math.random() * 4; const n = [392, 523, 587, 659, 784, 880]; bleep(S, n[(Math.random() * n.length) | 0], .05, .025); }
@@ -716,7 +792,7 @@
           { id: 'phone', x: 3, y: 3, spr: 'phone', on: phoneUse },
           { x: 1, y: 3, spr: 'lamp', light: { r: 3, col: 'rgba(255,200,120,.16)' }, on: S => S.narr('台灯。灯罩上烫了一个焦黄的洞。') },
           { x: 8, y: 4, h: 2, spr: 'bed', col: '#5a5a42', on: S => S.narr('厄尔的行军床。枕头上有一个凹下去的印子。\n他说他只是偶尔在这儿眯一会儿。') },
-          { x: 1, y: 6, spr: 'box', on: S => S.narr('失物招领箱：一只手套，一副耳机，一顶棒球帽，十几枚游戏币。\n最底下有一张照片：瑞奇和你，在弹珠台前面比着胜利的手势。是夏天拍的。') },
+          { x: 1, y: 6, spr: 'box', on: S => { S.f.sawPhoto = true; return S.narr('失物招领箱：一只手套，一副耳机，一顶棒球帽，十几枚游戏币。\n最底下有一张照片：瑞奇和你，在弹珠台前面比着胜利的手势。是夏天拍的。'); } },
           { x: 4, y: 7, spr: 'invisible', to: ['arcade', 2, 2, 0] }
         ],
         async enter(S, first) { if (first) await S.narr('后屋。烟味和旧纸板的味道。\n厄尔不在的时候，这里安静得能听见冰箱的压缩机。'); }
@@ -755,19 +831,7 @@
       game: {
         amb: 'drone', dark: 0, floor: 'vfloor', shimmer: false,
         legend: { X: 'vwall', H: 'hudrow' },
-        rows: [
-          'HHHHHHHHHHHH',
-          'XXXXXXXXXXXX',
-          'X..........X',
-          'X..........X',
-          'X..X....X..X',
-          'X..........X',
-          'X..........X',
-          'X..........X',
-          'X..X....X..X',
-          'X..........X',
-          'X..........X',
-          'XXXXXXXXXXXX'],
+        rows: GAME_ROWS,
         ents: [
           { id: 'exitp', x: 10, y: 10, spr: 'exitpad', solid: false, decal: true, touch: exitTouch },
           { id: 'd1', x: 2, y: 3, spr: 'dot', solid: false, touch: collectDot },
@@ -800,12 +864,10 @@
     f.phase = 'pro'; f.clock = 178; f.frags = 0; f.sess = 0;
     S.dark(.66, 'arcade');
     await S.card('十天前', '1981年10月13日　星期二　凌晨一点五十八分', '');
-    await S.narr('星港游戏厅早就打烊了。\n只有最里面那台黑色的机器还亮着——它从来不关。');
-    await S.think('（厄尔说，两点会有人来。让他们进来，别多问。）');
-    await S.wait(500);
+    await S.narr('游戏厅早就打烊了。只有最里面那台黑色的机器还亮着——它从来不关。\n厄尔交代过：两点会有人来。让他们进来，别多问。');
     S.sfx('knock'); await S.wait(380); S.sfx('knock'); await S.wait(380); S.sfx('knock');
     await S.wait(500);
-    S.place('mib1', 9, 11, 3); S.place('mib2', 9, 11, 3); S.hide('mib2');
+    S.place('mib1', 9, 11, 3);
     S.tone('triangle', 2637, 2637, .5, .1); S.sfx('open');
     await S.narr('玻璃门外站着两个人。黑西装，黑领带，夜里还戴着墨镜。\n你还没走到门口，门就自己开了。');
     const a = S.walk('mib1', [14, 2], 3);
@@ -813,17 +875,15 @@
     await S.walk('mib2', [16, 3], 3); await a;
     S.face('mib1', 2); S.face('mib2', 3); S.face('pl', 'mib1');
     panelBeeps(S, 5); await S.wait(1400);
-    await S.narr('前面那个人蹲下来，在机器左侧的铁皮背板上按了五下。\n嘀、嘀、嘀、嘀、嘀。');
-    await S.think('（……第一下，按在第三排最左边。）');
+    await S.narr('前面那个人蹲下来，在机器左侧的铁皮背板上按了五下。\n嘀、嘀、嘀、嘀、嘀。……第一下，按在第三排最左边。');
     S.ent('svc').open = true; S.sfx('open');
-    await S.narr('背板弹开了。他取出一盘磁带，换进去一盘新的。\n另一个人对着屏幕上的分数，在夹板上写字。');
+    await S.narr('背板弹开了。他取出一盘磁带，换进一盘新的。\n另一个人对着屏幕上的分数，在夹板上写字。');
     S.ent('svc').open = false; S.sfx('close');
     S.face('mib2', 'pl'); await S.wait(300);
+    await S.scare('face', { face: 'mib', sfx: 'sting', dur: .8 });
     await S.say('黑西装', '你玩过它吗？');
     const r = await S.ask('墨镜后面，看不见他的眼睛。', ['「没、没有。」', '「……玩过一次。」']);
-    if (r === 0) await S.say('黑西装', '很好。');
-    else { await S.say('黑西装', '……多少分？'); await S.say('凯尔', '三、三百多。'); await S.say('黑西装', '那就不算。'); }
-    await S.say('黑西装', '别让任何人破它的纪录。');
+    await S.say('黑西装', (r === 0 ? '很好。' : '……那就别再玩了。') + '\n别让任何人破它的纪录。');
     const b = S.walk('mib1', [9, 11], 3.2); await S.wait(300); await S.walk('mib2', [9, 10], 3.2); await b;
     S.hide('mib1'); S.hide('mib2'); S.sfx('close');
     await S.narr('门关上了。外面传来汽车发动的声音。\n雨地里，好像有一张白色的小卡片，从他们身上掉了下来。');
@@ -835,18 +895,17 @@
     S.place('earl', 3, 10, 3); S.place('ricky', 16, 3, 3); S.pos(6, 8, 3);
     await S.fade(0, 500);
     S.face('earl', 'pl');
-    await S.say('厄尔', ['我走了。两点那伙人来，给他们开门，别的不用管。', '……还有。劝那小子回家。他在那台机器前面坐了一整天了。']);
+    await S.say('厄尔', '我走了。两点那伙人来，开门就行，别的不用管。\n……还有，劝那小子回家。他在那台机器前面坐了一整天了。');
     await S.walk('earl', [9, 11], 3.5); S.hide('earl'); S.sfx('close');
     await S.walk('pl', [16, 4], 4);
-    S.face('pl', 3);
-    await S.narr('瑞奇的脸被屏幕照得发绿。眼睛下面是两块青黑色的印子。');
-    S.face('ricky', 0);
+    S.face('pl', 3); S.face('ricky', 0);
+    await S.narr('瑞奇转过头。他的脸被屏幕照得发绿，眼睛下面是两块青黑色的印子。');
     await S.say('瑞奇', '……你是新来的？');
     await S.say('凯尔', '瑞奇。是我，凯尔。');
-    await S.say('瑞奇', ['凯尔……对。凯尔。', '我睡不着，凯尔。一闭眼就是那些线。绿的，一直转。', '它在画面里眨眼。两个数字、两个数字地眨……我本来记下来了。记在哪儿了……', '别过一万。纪录那一栏……没有名字。']);
+    await S.say('瑞奇', ['凯尔……对。我睡不着，凯尔。一闭眼就是那些线，绿的，一直转。', '它在画面里眨眼，两个数字、两个数字地眨……\n别过一万。纪录那一栏，没有名字。']);
     await S.walk('ricky', [17, 8], 2.4); await S.walk('ricky', [17, 9], 2.4); S.face('ricky', 1);
     S.show('bag');
-    await S.think('（瑞奇说的「黑西装」，就是那天夜里那两个人。\n两点他们就会来。——在那之前，我要把这台机器关掉。）');
+    await S.think('（瑞奇说的黑西装，就是那天夜里那两个人。两点他们就会来。\n——在那之前，我要把这台机器关掉。）');
     goalNight(S);
   }
 

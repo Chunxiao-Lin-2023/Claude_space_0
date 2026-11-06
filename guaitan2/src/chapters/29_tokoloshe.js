@@ -339,7 +339,7 @@
   };
 
   /* ================= 地图里常用的实体 ================= */
-  const drips = () => Array.from({ length: NW }, (_, i) => ({ id: 'w' + i, x: 1, y: 6, spr: 'wetp', decal: true, solid: false, hidden: true, light: { r: .55, a: .45, col: 'rgba(110,165,215,.07)' } }));
+  const drips = () => Array.from({ length: NW }, (_, i) => ({ id: 'w' + i, x: 1, y: 6, spr: 'wetp', decal: true, solid: false, hidden: true, light: null }));   // 屋里的水迹不发光：只有走到跟前、在你的光圈里才看得见
   const N = t => S => S.narr(t);
 
   defChapter({
@@ -384,7 +384,7 @@
     /* 选章卡片：垫在四块红砖上的床，床底下的黑影里有两只黄眼睛；一串湿脚印从左边的河水那边过来 */
     thumb(g, w, h) {
       const R = (x, y, ww, hh, c) => { g.fillStyle = c; g.fillRect(x, y, ww, hh); };
-      R(10, 8, 9, 9, '#e8e0c0'); R(13, 7, 8, 9, shade('#6a4424', -.55));   // 月牙
+      for (let y = -6; y <= 6; y++) { const w = Math.round(Math.sqrt(36 - y * y)), w2 = Math.round(Math.sqrt(Math.max(0, 30 - (y + 1) * (y + 1)))); R(16 - w, 14 + y, w * 2, 1, '#e8e0c0'); if (w2) R(19 - w2, 14 + y, w2 * 2, 1, shade('#6a4424', -.5)); }   // 月牙
       R(0, 58, 26, 10, '#2a4a5a'); R(2, 60, 8, 1, '#5a8aa0'); R(14, 63, 6, 1, '#5a8aa0');
       for (let i = 0; i < 5; i++) { const x = 26 + i * 12, y = 64 - i * 2; R(x, y, 3, 2, 'rgba(150,200,230,.75)'); R(x + 5, y + 3, 3, 2, 'rgba(150,200,230,.6)'); }
       R(84, 36, 60, 6, '#5a3c26'); R(84, 24, 8, 14, '#5a3c26'); R(86, 26, 6, 10, '#e6e2d6');   // 床头、枕头

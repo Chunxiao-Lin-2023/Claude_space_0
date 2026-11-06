@@ -30,7 +30,7 @@ SOL = [
     ['step', 10, 10, [1]],
     ['expect', "window.__dbg.W.mapId === 'arcade' && window.__dbg.W.f.clock === 55"],
     ['use', 'svc', [0, 'ABCDE']],
-    ['expect', 'window.__dbg.W.f.clock === 65'],
+    ['expect', 'window.__dbg.W.f.clock === 55 && window.__dbg.W.f.freeWrong'],
     # 第二局：把剩下四个数字看完，然后在分数冲破 9990 前跑进出口
     ['use', 'poly', [0]],
 ] + [['js', EAT]] * 12 + [
