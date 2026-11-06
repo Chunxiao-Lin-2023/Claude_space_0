@@ -346,8 +346,8 @@
         '~eddddddxxxYxxxxx###NN###x#######B',
         '~ex############xx########xxxxxxx#B',
         '~ex#N###N######xx###########x####B',
-        '~eS#########xxxxx#####N#####x####B',
-        '~eS###x########xxdddd#######S#N##B',
+        '~ex#########xxxxx#####N#####x####B',
+        '~ex###x########xxdddd#######S#N##B',
         '~ex###x#####N##xxdddd#######S##N#B',
         '~ex###x########xxdddd#######x####B',
         '~exxxxxxxYxxxxxxxxxxxxYxxxxxxxxx#B',
@@ -475,7 +475,7 @@
      减速坎前要停下来蓄一口气；石阶只能一级一级地蹦。
      charge（坟地）：你站进它正对着的那条线，它就直直地扑过来，撞到东西才停。 */
   const CFG = {
-    village: { map: 'kampung', id: 'pc', v0: 2.4, acc: .5, vmax: 6.0, turn: .6, sill: 1.0, stair: 1.3 },
+    village: { map: 'kampung', id: 'pc', v0: 2.6, acc: .6, vmax: 6.4, turn: .6, sill: 1.0, stair: 1.3 },
     grave: { map: 'makam', id: 'pcm', v0: 1.4, acc: .15, vmax: 2.2, turn: .85, sill: 1, stair: 1.2, charge: true, range: 9, warn: .55, cv0: 3.2, cacc: .9, cvmax: 8.5 }
   };
   const UNTIE = 2.6;
@@ -828,9 +828,9 @@
   }
   async function startChase(S) {
     S.f.ph = 'chase'; S.f.hitV = 0;
-    const e = S.ent('pc'); S.place('pc', 15, 12, 1); e.s.alert = false; e.alpha = 1;
-    S.focus(10, 12); S.bubble('pc', '!', 1200); PING(S);
-    await S.narr('横巷那头，大路口上，站着一个白的东西。\n它慢慢地，朝你这边转了过来。');
+    const e = S.ent('pc'); S.place('pc', 10, 12, 1); e.s.alert = false; e.alpha = 1;
+    S.focus(7, 12); S.bubble('pc', '!', 1200); PING(S);
+    await S.narr('横巷里，减速坎那头，站着一个白的东西。\n它慢慢地，朝你这边转了过来。');
     S.focus(null);
     const n = S.f._dV || 0;
     if (n === 0) await S.think('……别跟它比直路。往河边那条小巷跑——下坡，再往东，走东头的石阶巷！');

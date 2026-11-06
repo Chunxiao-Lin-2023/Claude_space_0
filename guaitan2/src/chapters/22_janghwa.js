@@ -602,7 +602,7 @@
     await S.say('金吏房', ['……大人怎么知道的？', '裴家大小姐蔷花，说是失了身，夜里小产，羞得连夜跑了。二小姐红莲没过多久也不见了。', '这是裴家自己报上来的。前任李大人觉得蹊跷，批了个「待查」。……第二天，就是下官进来收的他。']);
     await S.note('case');
     await S.say('金吏房', ['裴家在城东。许氏、长锁都在家。城外有个池塘，人家都说……二小姐是在那儿不见的。']);
-    S.hide('kimD'); S.hide('bokD'); S.hide('pud');
+    S.hide('kimD'); S.hide('bokD');
     dayGoal(S);
     S.cp('day');
   }
@@ -782,7 +782,7 @@
     const r = await S.ask('「大人？」', ['（收下银子，按「失节潜逃」结案）', '「拿回去。告诉许氏，明日升堂。」']);
     if (r === 0) return silverEnd(S);
     await S.narr('管事的脸色变了变，赔着笑，叫人把箱子抬走了。');
-    S.hide('steward'); S.hide('silver');
+    S.hide('steward'); S.hide('silver'); S.hide('pud');
     f.bribed = true; f.ph = 'trialwait';
     S.goal('升堂——跟金吏房说一声（两人：一人翻案卷念供词，一人挑证物）');
     S.cp('trial');
@@ -1177,7 +1177,7 @@
         await S.think('（别喊，别跑。……她是来告状的。）');
         await ev3(S);
       },
-      day: async S => { ['hong', 'jangG', 'kimD', 'bokD', 'pud'].forEach(i => S.hide(i)); dayGoal(S); },
+      day: async S => { ['hong', 'jangG', 'kimD', 'bokD'].forEach(i => S.hide(i)); S.show('pud'); dayGoal(S); },
       bribe: async S => { S.show('steward'); S.show('silver'); S.ent('silver').open = false; S.goal('许家管事还在门口等着回话'); await S.think('（许家的人还在门口等着。……这一回，想清楚再答。）'); },
       trial: async S => { trialStage(S, false); S.f.ph = 'trialwait'; await S.think('（许氏每说一句，就拿证物驳她。拿不准的时候，翻翻案卷，按她说的那一条去找。）'); },
       after: async S => { trialStage(S, false); }

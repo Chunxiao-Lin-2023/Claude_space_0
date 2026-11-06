@@ -49,7 +49,7 @@
     const m = curMap(), D = bfsDist(m, W.pl.x, W.pl.y);
     const open = Object.keys(SPOTS).filter(id => !S.ent(id).s.seal);
     const dd = id => { const e = S.ent(id); return D.get(Math.round(e.px / TS) + ',' + Math.round(e.py / TS)) ?? 99; };
-    let c = open.filter(id => dd(id) >= 5 && dd(id) <= 13);
+    let c = S.f.pn === 0 ? open.filter(id => dd(id) >= 3 && dd(id) <= 8) : open.filter(id => dd(id) >= 5 && dd(id) <= 13);   // 第一道离得近一点，先让人学会
     if (!c.length) c = open.filter(id => dd(id) >= 2);
     if (!c.length) c = open;
     const id = pick(c), e = S.ent(id);
