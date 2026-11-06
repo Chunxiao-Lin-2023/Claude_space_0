@@ -939,7 +939,8 @@
     S.ent('c0').off = true; S.ent('c3').off = true; S.sfx('switch'); S.shake(400, 2);
     await S.narr('「哗啦」一声，被褥空了。\n健太四肢着地，朝门口爬过去。\n西北角和东南角的灯明，一起灭了！');
     await S.say('修一', '我——我动不了！身上像压着什么东西！');
-    S.goal('先按住健太！再把两盏灯明点上！（联机：一人盯着健太和灯明报位置，一人跑）');
+    S.goal('先按住健太！再点上两盏灯明！');
+    if (S.coop) S.toast('联机：一人盯着健太和灯明报位置，一人跑');
     f.crawl = true; f.crawlWait = CRAWL_WAIT;
     S.timer(C_T, '灯明', candleFail, { during: true });
   }

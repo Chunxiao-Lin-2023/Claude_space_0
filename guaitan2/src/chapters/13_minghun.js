@@ -69,7 +69,7 @@
     z3: { a: [1, 14], b: [25, 14], st: [6, 14], to: 1 },
     z4: { a: [17, 9], b: [26, 9], st: [23, 9], to: 1 }
   };
-  const PSPD = 1.5, SIGHT = 4, T0 = 110, TMIN = 70;
+  const PSPD = 1.5, SIGHT = 4, T0 = 80, TMIN = 55;
   let lastLeft = null, deaths = 0, lastCause = '';
   const dirTo = (a, b) => { const dx = Math.sign(b[0] - a[0]), dy = Math.sign(b[1] - a[1]); return dx > 0 ? 2 : dx < 0 ? 1 : dy > 0 ? 0 : 3; };
   const tileOf = e => [Math.round(e.px / TS), Math.round(e.py / TS)];
