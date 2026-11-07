@@ -108,7 +108,7 @@ const SAPI = {
   show(id, v = true) { const e = getEnt(id); if (e) e.hidden = !v; },
   hide(id) { SAPI.show(id, false); },
   place(id, x, y, dir) { const e = getEnt(id); if (!e) return; e.px = x * TS; e.py = y * TS; e.x = x; e.y = y; e.mv = null; if (dir != null) e.dir = dir; e.hidden = false; },
-  moveTo(id, map, x, y, dir) { let e = null, from = null; for (const k in W.maps) { const i = W.maps[k].ents.findIndex(z => z.id === id); if (i >= 0) { from = W.maps[k]; e = from.ents[i]; from.ents.splice(i, 1); break; } } if (!e) return; W.maps[map].ents.push(e); e.px = x * TS; e.py = y * TS; e.mv = null; e.hidden = false; if (dir != null) e.dir = dir; },
+  moveTo(id, map, x, y, dir) { let e = null, from = null; for (const k in W.maps) { const i = W.maps[k].ents.findIndex(z => z.id === id); if (i >= 0) { from = W.maps[k]; e = from.ents[i]; from.ents.splice(i, 1); break; } } if (!e) return; W.maps[map].ents.push(e); e.x = x; e.y = y; e.px = x * TS; e.py = y * TS; e.mv = null; e.hidden = false; if (dir != null) e.dir = dir; },
   async walk(id, path, spd = 3) {
     /* path: 'uulr' 方向串 | [x,y] 目标格（自动寻路）| [[x,y],[x,y]] 依次经过 */
     const g = GEN; const e = id === 'pl' ? W.pl : getEnt(id); if (!e) return; const m = curMap();

@@ -67,8 +67,8 @@ try:
         check(x1 > x0, f'guest movement reaches host ({x0}->{x1})')
         hx = H_.evaluate("window.__dbg.W.pl.px"); gx = G.evaluate("window.__dbg.W.pl.px")
         check(abs(hx - gx) < 4, f'positions agree host={hx} guest={gx}')
-        # 客机调查贝丝 -> 主机出现对话
-        G.evaluate("window.__dbg.face('beth')")
+        # 客机调查5D的门 -> 主机出现对话（开场阶段贝丝不接话）
+        G.evaluate("window.__dbg.face('door5d')")
         G.wait_for_timeout(300); G.keyboard.press('Space')
         H_.wait_for_function("!!window.__dbg.W.dlg", timeout=4000)
         G.wait_for_function("!!window.__dbg.W.dlg", timeout=4000)

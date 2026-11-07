@@ -335,12 +335,15 @@ function bindUI() {
   $('bRun').addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); IN.runLatch = !IN.runLatch; $('bRun').classList.toggle('on', IN.runLatch); });
   // 键盘：密码盘
   addEventListener('keydown', e => {
-    if (!W || !W.keypad || !iControl() || UI.modal) return;
+    if (!W || !W.keypad || !iControl() || UI.modal || e.ctrlKey || e.metaKey || e.altKey) return;
+    if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
     const k = e.key.length === 1 ? e.key.toUpperCase() : e.key;
     const al = W.keypad.alias && W.keypad.alias[k];   // 键盘别名，如 {'0':'10', O:'开', C:'关'}
-    if (al && W.keypad.keys.includes(al)) { sendAct('key', al); e.preventDefault(); }
-    else if (k !== ' ' && W.keypad.keys.includes(k)) { sendAct('key', k); e.preventDefault(); }
-  });
+    const hit = al && W.keypad.keys.includes(al) ? al : (k !== ' ' && W.keypad.keys.includes(k) ? k : null);
+    if (!hit) return;
+    e.preventDefault(); e.stopImmediatePropagation();   // 捕获阶段截下：字母同时是快捷键（E/X/I/J/W/A/S/D…），密码盘上有这个键时只当输入
+    if (!e.repeat) sendAct('key', hit);
+  }, true);
 }
 function muteBtn() { $('hMute').textContent = AU.muted ? '✕' : '♪'; }
 function advanceTap() { if (!W) return; if (!iControl()) { if (NET.role !== 'solo') UI.toast('对方在操作 · 按 T 或顶部按钮请求'); return; } sendAct('adv'); }

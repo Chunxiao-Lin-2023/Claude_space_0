@@ -317,7 +317,7 @@ function render(dt) {
   // 光照
   drawLighting(g, m, ox, oy);
   // 可调查提示
-  if (W.hint && !W.busy && W.hint.on && !W.hint.hidden) { const e = W.hint; drawBubble(g, Math.round(e.px - ox + e.w * 8), Math.round(e.py - oy - (typeof sprOf(e.spr) === 'object' ? 10 : 2) + Math.sin(RT * 6)), '!'); }
+  if (W.hint && !W.busy && W.hint.on && !W.hint.hidden) { const e = W.hint; drawBubble(g, Math.round(e.px - ox + e.w * 8), Math.round(e.py - oy + (e.oy || 0) - (typeof sprOf(e.spr) === 'object' ? 10 : 2) + Math.sin(RT * 6)), '!'); }
   // ping
   for (let i = PINGS.length - 1; i >= 0; i--) {
     const p = PINGS[i], a = RT - p.t; if (a > 2.2) { PINGS.splice(i, 1); continue; }
