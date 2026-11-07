@@ -1149,7 +1149,7 @@ function render(dt) {
   // 光照
   drawLighting(g, m, ox, oy);
   // 可调查提示
-  if (W.hint && !W.busy && W.hint.on && !W.hint.hidden) { const e = W.hint; drawBubble(g, Math.round(e.px - ox + e.w * 8), Math.round(e.py - oy - (typeof sprOf(e.spr) === 'object' ? 10 : 2) + Math.sin(RT * 6)), '!'); }
+  if (W.hint && !W.busy && W.hint.on && !W.hint.hidden) { const e = W.hint; drawBubble(g, Math.round(e.px - ox + e.w * 8), Math.round(e.py - oy + (e.oy || 0) - (typeof sprOf(e.spr) === 'object' ? 10 : 2) + Math.sin(RT * 6)), '!'); }
   // ping
   for (let i = PINGS.length - 1; i >= 0; i--) {
     const p = PINGS[i], a = RT - p.t; if (a > 2.2) { PINGS.splice(i, 1); continue; }
@@ -1367,7 +1367,7 @@ const SAPI = {
   show(id, v = true) { const e = getEnt(id); if (e) e.hidden = !v; },
   hide(id) { SAPI.show(id, false); },
   place(id, x, y, dir) { const e = getEnt(id); if (!e) return; e.px = x * TS; e.py = y * TS; e.x = x; e.y = y; e.mv = null; if (dir != null) e.dir = dir; e.hidden = false; },
-  moveTo(id, map, x, y, dir) { let e = null, from = null; for (const k in W.maps) { const i = W.maps[k].ents.findIndex(z => z.id === id); if (i >= 0) { from = W.maps[k]; e = from.ents[i]; from.ents.splice(i, 1); break; } } if (!e) return; W.maps[map].ents.push(e); e.px = x * TS; e.py = y * TS; e.mv = null; e.hidden = false; if (dir != null) e.dir = dir; },
+  moveTo(id, map, x, y, dir) { let e = null, from = null; for (const k in W.maps) { const i = W.maps[k].ents.findIndex(z => z.id === id); if (i >= 0) { from = W.maps[k]; e = from.ents[i]; from.ents.splice(i, 1); break; } } if (!e) return; W.maps[map].ents.push(e); e.x = x; e.y = y; e.px = x * TS; e.py = y * TS; e.mv = null; e.hidden = false; if (dir != null) e.dir = dir; },
   async walk(id, path, spd = 3) {
     /* path: 'uulr' 方向串 | [x,y] 目标格（自动寻路）| [[x,y],[x,y]] 依次经过 */
     const g = GEN; const e = id === 'pl' ? W.pl : getEnt(id); if (!e) return; const m = curMap();
@@ -2094,12 +2094,15 @@ function bindUI() {
   $('bRun').addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); IN.runLatch = !IN.runLatch; $('bRun').classList.toggle('on', IN.runLatch); });
   // 键盘：密码盘
   addEventListener('keydown', e => {
-    if (!W || !W.keypad || !iControl() || UI.modal) return;
+    if (!W || !W.keypad || !iControl() || UI.modal || e.ctrlKey || e.metaKey || e.altKey) return;
+    if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
     const k = e.key.length === 1 ? e.key.toUpperCase() : e.key;
     const al = W.keypad.alias && W.keypad.alias[k];   // 键盘别名，如 {'0':'10', O:'开', C:'关'}
-    if (al && W.keypad.keys.includes(al)) { sendAct('key', al); e.preventDefault(); }
-    else if (k !== ' ' && W.keypad.keys.includes(k)) { sendAct('key', k); e.preventDefault(); }
-  });
+    const hit = al && W.keypad.keys.includes(al) ? al : (k !== ' ' && W.keypad.keys.includes(k) ? k : null);
+    if (!hit) return;
+    e.preventDefault(); e.stopImmediatePropagation();   // 捕获阶段截下：字母同时是快捷键（E/X/I/J/W/A/S/D…），密码盘上有这个键时只当输入
+    if (!e.repeat) sendAct('key', hit);
+  }, true);
 }
 function muteBtn() { $('hMute').textContent = AU.muted ? '✕' : '♪'; }
 function advanceTap() { if (!W) return; if (!iControl()) { if (NET.role !== 'solo') UI.toast('对方在操作 · 按 T 或顶部按钮请求'); return; } sendAct('adv'); }
