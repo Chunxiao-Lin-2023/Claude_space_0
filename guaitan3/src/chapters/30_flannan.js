@@ -383,7 +383,7 @@
   function stormTick(S, dt) {
     const f = S.f;
     f.sE += dt; f.P -= dt / PD; f.C -= dt / CD;
-    if (f.gd > 0) { f.gd -= dt; f.P -= dt / 5; }
+    if (f.gd > 0) { f.gd -= dt; f.P -= dt / 8; }
     const pe = S.ent('pump'), ce = S.ent('clock');
     if (Math.abs((pe.s.p || 0) - f.P) > .04) { pe.s.p = Math.max(0, f.P); lensLight(S); }
     if (Math.abs((ce.s.c || 0) - f.C) > .04) ce.s.c = Math.max(0, f.C);
