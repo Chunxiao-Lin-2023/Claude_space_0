@@ -9,7 +9,7 @@ build = sys.argv[1] if len(sys.argv) > 1 else 'pages'
 out = sys.argv[2] if len(sys.argv) > 2 else os.path.join(HERE, '..', 'index.html')
 rd = lambda f: open(os.path.join(HERE, f), encoding='utf-8').read()
 css, body = rd('app.css'), rd('body.html')
-js = '\n'.join(rd(f) for f in ['i18n.js', 'formats.js', 'sync.js', 'release.js', 'app.js'])
+js = '\n'.join(rd(f) for f in ['i18n.js', 'formats.js', 'sync.js', 'release.js', 'azure.js', 'app.js'])
 assert "const BUILD = 'local';" in js
 js = js.replace("const BUILD = 'local';", "const BUILD = '%s';" % build)
 import json

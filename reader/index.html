@@ -381,6 +381,10 @@ body.dragging #dropmask{display:grid}
 .ttsrow{display:flex;gap:8px;align-items:center}
 .ttsrow .btn{flex:1;justify-content:center}
 .pop .warn{font-size:12.5px;color:#B3261E}
+.row3{display:grid;grid-template-columns:64px 1fr 32px;align-items:center;gap:8px;margin:8px 0}
+.row3 > span{color:var(--ink2);font-size:13px}
+.row3 .ib{height:30px;min-width:30px;padding:0}
+.row3 select{min-width:0}
 .ttsnote{margin:8px 0 0;font-size:12px;color:var(--ink2);line-height:1.65}
 
 /* ---------- selection bar ---------- */
@@ -626,6 +630,27 @@ const I18N = {
   // tts
   tts: ['朗读', 'Read aloud'], readFromHere: ['从当前位置朗读', 'Read from here'], pause: ['暂停', 'Pause'], resume: ['继续', 'Resume'], stop: ['停止', 'Stop'],
   voice: ['声音', 'Voice'], voiceAuto: ['自动', 'Automatic'], rate: ['语速', 'Rate'], voiceZh: ['中文声音', 'Chinese voice'], voiceEn: ['英文声音', 'English voice'], online: ['在线', 'online'],
+  ttsEngine: ['声音来源', 'Voice source'], engSystem: ['系统语音', 'System voices'], engAzure: ['Azure 神经语音', 'Azure neural'],
+  timbreZh: ['中文音色', 'Chinese'], timbreEn: ['英文音色', 'English'], emotion: ['情绪', 'Emotion'], emotionDeg: ['情绪强度', 'Intensity'], pitch: ['音调', 'Pitch'], preview: ['试听', 'Preview'],
+  styleAuto: ['自动（按句子判断）', 'Automatic (per sentence)'], styleAutoNone: ['这个音色没有情绪风格', 'This voice has no styles'], styleNone: ['不加情绪', 'No style'],
+  female: ['女声', 'female'], male: ['男声', 'male'], nStyles: ['{0} 种情绪', '{0} styles'],
+  azAutoNote: ['自动情绪：旁白用讲述语气，引号里的对话用聊天语气，感叹句更兴奋，悲伤、恐怖、愤怒的句子各换对应风格。只有部分音色支持情绪，晓晓、云希支持的最多。', 'Automatic emotion: narration in a storytelling tone, quoted dialogue conversational, exclamations livelier, and sad, frightening or angry sentences in matching styles. Only some voices have styles; Xiaoxiao and Yunxi have the most.'],
+  azUsage: ['本月约用 {0} / 500,000 字符（汉字按 2 个计，估算）', 'About {0} / 500,000 characters used this month (CJK counted twice, estimate)'], azChange: ['修改 Azure 设置', 'Azure settings'],
+  azTitle: ['设置 Azure 神经语音', 'Set up Azure neural voices'], azStep1a: ['在 Azure 门户', 'In the Azure portal, '], azStep1link: ['创建“语音服务”资源', 'create a Speech service resource'],
+  azStep1b: ['：定价层选 Free F0（每月 50 万字符免费，用完会暂停而不会扣费），区域选离你近的，例如 East US。没有账号先免费注册。', ': pick the Free F0 pricing tier (500,000 characters a month; it pauses rather than bills when used up) and a nearby region such as East US. Sign up for free if needed.'],
+  azStep2: ['资源建好后打开“密钥和终结点”，复制“密钥 1”和“位置/区域”。', 'When it is ready, open Keys and Endpoint and copy KEY 1 and the Location/Region.'],
+  azStep3: ['填在下面。密钥只保存在这台设备的浏览器里，不会同步到 GitHub。', 'Enter them below. The key stays in this browser and is not synced to GitHub.'],
+  azKey: ['密钥', 'Key'], azKeyPh: ['密钥 1', 'KEY 1'], azRegion: ['区域', 'Region'], azSave: ['保存并连接', 'Save and connect'], azNeedKey: ['请填写密钥。', 'Enter the key.'],
+  azNote: ['朗读的文字会发送到 Azure 语音服务生成声音。', 'Text being read is sent to Azure Speech to generate audio.'],
+  azReady: ['Azure 已连接，找到 {0} 个中文音色', 'Azure connected: {0} Chinese voices'], azRemoved: ['已移除 Azure 设置', 'Azure settings removed'],
+  azBadKey: ['Azure 密钥不对，或和区域不匹配', 'The Azure key is wrong or does not match the region'], azQuota: ['Azure 本月免费额度用完了，或请求太快，请稍后再试', 'Azure free quota used up or too many requests; try again later'],
+  azBadReq: ['Azure 不接受这段文字的格式', 'Azure rejected the request'], azHttp: ['Azure 返回错误 {0}', 'Azure error {0}'],
+  azNet: ['连不上 Azure 语音服务，请检查网络和区域', 'Could not reach Azure Speech; check the network and region'], azTapToPlay: ['浏览器拦住了自动播放，请再点一次朗读', 'The browser blocked playback; tap Read again'],
+  natural_win: ['想要更自然的声音：用 Edge 浏览器打开网页版，可选“Microsoft Xiaoxiao Online (Natural)”等在线自然语音。', 'For more natural voices, open the web version in Edge and pick an online Natural voice such as Microsoft Xiaoxiao Online.'],
+  natural_mac: ['想要更自然的声音：系统设置 → 辅助功能 → 朗读内容 → 系统声音 → 管理声音，下载中文“婷婷（增强）”等增强版声音。', 'For more natural voices, download an Enhanced Chinese voice (e.g. Tingting Enhanced) in System Settings → Accessibility → Spoken Content → Manage Voices.'],
+  natural_ios: ['想要更自然的声音：设置 → 辅助功能 → 朗读内容 → 声音 → 中文，下载“增强”或“高级”版本。', 'For more natural voices, download an Enhanced or Premium Chinese voice in Settings → Accessibility → Spoken Content → Voices.'],
+  natural_android: ['想要更自然的声音：在系统的文字转语音设置里安装 Google 的中文高质量语音包。', 'For more natural voices, install Google high-quality Chinese voice data in text-to-speech settings.'],
+  natural_other: ['系统语音的语气基本固定；想要有感情的朗读，可以切换到 Azure 神经语音。', 'System voices have a fixed tone; switch to Azure neural voices for expressive reading.'],
   noZhVoiceShort: ['这台设备没有中文语音', 'No Chinese voice on this device'], noEnVoiceShort: ['这台设备没有英文语音', 'No English voice on this device'],
   ttsNote: ['中文段落用中文声音读，英文段落用英文声音读；句号、逗号处会停顿。选一个声音会先试读一句。', 'Chinese passages use the Chinese voice and English passages the English voice, pausing at full stops and commas. Picking a voice plays a short sample.'],
   noZhVoiceTitle: ['没有中文语音', 'No Chinese voice'], noZhVoice: ['这台设备的浏览器里没有中文语音，所以读不了中文。装好中文语音后，重新打开墨阅即可。', 'This browser has no Chinese voice, so Chinese text cannot be read aloud. Install one, then reopen Moyue.'],
@@ -2181,6 +2206,164 @@ const Desktop = {
   },
 };
 
+/* ===================== azure.js — Azure neural voices for read-aloud ===================== */
+const AZ_REGIONS = ['eastus','eastus2','westus','westus2','westus3','centralus','northcentralus','southcentralus','westcentralus','canadacentral','brazilsouth','westeurope','northeurope','uksouth','francecentral','germanywestcentral','swedencentral','switzerlandnorth','norwayeast','eastasia','southeastasia','japaneast','japanwest','koreacentral','australiaeast','centralindia','uaenorth'];
+const AZ_LOCALE = { 'zh-CN': ['普通话', 'Mandarin'], 'zh-TW': ['台湾国语', 'Taiwanese Mandarin'], 'zh-HK': ['粤语（香港）', 'Cantonese (HK)'], 'yue-CN': ['粤语', 'Cantonese'], 'wuu-CN': ['吴语', 'Wu'], 'zh-CN-liaoning': ['东北话', 'Northeastern'], 'zh-CN-sichuan': ['四川话', 'Sichuanese'], 'zh-CN-shaanxi': ['陕西话', 'Shaanxi'], 'zh-CN-henan': ['河南话', 'Henan'], 'zh-CN-shandong': ['山东话', 'Shandong'], 'zh-CN-guangxi': ['广西话', 'Guangxi'], 'en-US': ['美式英语', 'US English'], 'en-GB': ['英式英语', 'UK English'], 'en-AU': ['澳洲英语', 'Australian English'], 'en-CA': ['加拿大英语', 'Canadian English'], 'en-IN': ['印度英语', 'Indian English'] };
+const AZ_STYLE = { 'narration-relaxed': ['轻松讲述', 'relaxed narration'], 'narration-professional': ['专业讲述', 'professional narration'], 'documentary-narration': ['纪录片旁白', 'documentary'], 'gentle': ['温柔', 'gentle'], 'calm': ['平静', 'calm'], 'lyrical': ['抒情', 'lyrical'], 'poetry-reading': ['诗朗诵', 'poetry reading'], 'affectionate': ['亲切', 'affectionate'], 'cheerful': ['开心', 'cheerful'], 'excited': ['兴奋', 'excited'], 'hopeful': ['充满希望', 'hopeful'], 'friendly': ['友好', 'friendly'], 'chat': ['聊天', 'chat'], 'chat-casual': ['随意聊天', 'casual chat'], 'sad': ['悲伤', 'sad'], 'depressed': ['沮丧', 'depressed'], 'sorry': ['抱歉', 'sorry'], 'fearful': ['害怕', 'fearful'], 'terrified': ['惊恐', 'terrified'], 'whispering': ['耳语', 'whispering'], 'whisper': ['耳语', 'whisper'], 'angry': ['生气', 'angry'], 'disgruntled': ['不满', 'disgruntled'], 'unfriendly': ['冷淡', 'unfriendly'], 'shouting': ['喊叫', 'shouting'], 'serious': ['严肃', 'serious'], 'embarrassed': ['尴尬', 'embarrassed'], 'envious': ['羡慕', 'envious'], 'empathetic': ['共情', 'empathetic'], 'newscast': ['新闻播报', 'newscast'], 'assistant': ['助手', 'assistant'], 'customerservice': ['客服', 'customer service'], 'sports-commentary': ['体育解说', 'sports commentary'], 'advertisement-upbeat': ['广告', 'upbeat ad'], 'story': ['讲故事', 'story'] };
+/** For automatic emotion: each mood lists styles to try, in order, among what the chosen voice supports. */
+const AZ_MOOD = {
+  narr: ['narration-relaxed', 'story', 'gentle', 'calm', 'lyrical', 'narration-professional'],
+  talk: ['chat', 'friendly', 'chat-casual', 'affectionate', 'cheerful'],
+  excited: ['excited', 'cheerful'],
+  sad: ['sad', 'depressed', 'sorry'],
+  fear: ['fearful', 'terrified', 'whispering', 'whisper'],
+  angry: ['angry', 'disgruntled', 'unfriendly'],
+};
+const xmlEsc = s => String(s).replace(/[<>&"']/g, c => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;', "'": '&apos;' }[c]));
+const Azure = {
+  voices: null, ctrl: null, audio: null,
+  cfg() { return LS.get('azure', null); },
+  ok() { const c = this.cfg(); return !!(c && c.key && c.region); },
+  base() { return `https://${this.cfg().region}.tts.speech.microsoft.com/cognitiveservices`; },
+  label(v) {
+    const loc = AZ_LOCALE[v.locale] ? AZ_LOCALE[v.locale][LANG === 'zh' ? 0 : 1] : v.locale;
+    const g = v.gender === 'Female' ? t('female') : v.gender === 'Male' ? t('male') : '';
+    return [v.local, g, loc, v.styles.length ? t('nStyles', v.styles.length) : ''].filter(Boolean).join(LANG === 'zh' ? '，' : ', ');
+  },
+  styleLabel: s => AZ_STYLE[s] ? AZ_STYLE[s][LANG === 'zh' ? 0 : 1] : s,
+  async fetchVoices(cfg) {
+    const r = await fetch(`https://${cfg.region}.tts.speech.microsoft.com/cognitiveservices/voices/list`, { headers: { 'Ocp-Apim-Subscription-Key': cfg.key } });
+    if (!r.ok) throw this.err(r.status);
+    const list = await r.json();
+    return list.filter(v => /^(zh|yue|wuu|en)-/.test(v.Locale)).map(v => ({ name: v.ShortName, local: v.LocalName || v.DisplayName, gender: v.Gender, locale: v.Locale, styles: v.StyleList || [] }))
+      .sort((a, b) => (a.locale === 'zh-CN' ? 0 : a.locale.startsWith('zh') ? 1 : 2) - (b.locale === 'zh-CN' ? 0 : b.locale.startsWith('zh') ? 1 : 2) || b.styles.length - a.styles.length || a.name.localeCompare(b.name));
+  },
+  async ensureVoices() {
+    if (this.voices) return this.voices;
+    const c = this.cfg(); const cached = LS.get('azureVoices', null);
+    if (cached && cached.region === c.region && Date.now() - cached.t < 7 * 864e5) return this.voices = cached.list;
+    this.voices = await this.fetchVoices(c);
+    LS.set('azureVoices', { region: c.region, t: Date.now(), list: this.voices });
+    return this.voices;
+  },
+  err(status) {
+    const e = new Error(status === 401 || status === 403 ? t('azBadKey') : status === 429 ? t('azQuota') : status === 400 ? t('azBadReq') : t('azHttp', status));
+    e.status = status; return e;
+  },
+  listFor(lang) { return (this.voices || []).filter(v => lang === 'zh' ? /^(zh|yue|wuu)-/.test(v.locale) : v.locale.startsWith('en-')); },
+  voiceFor(lang) {
+    const want = S.set[lang === 'zh' ? 'azVoiceZh' : 'azVoiceEn'];
+    const list = this.listFor(lang);
+    return list.find(v => v.name === want) || list.find(v => v.name === (lang === 'zh' ? 'zh-CN-XiaoxiaoNeural' : 'en-US-JennyNeural')) || list[0] || null;
+  },
+  mood(s) {
+    if (/^[\s　]*[“"「『‘]|[“"「『][^”"」』]{2,}[”"」』]/.test(s)) return 'talk';
+    if (/[泪哭泣悲哀痛逝叹惋凄]|死了|\b(tears?|cried|cry|weep|grief|mourn|sorrow)\b/i.test(s)) return 'sad';
+    if (/[鬼怕惧恐惊颤尖叫阴森诡]|毛骨悚然|\b(afraid|scared|terror|horror|ghost|scream)\w*/i.test(s)) return 'fear';
+    if (/[怒吼骂]|滚开|混蛋|\b(angry|furious|rage|shouted)\b/i.test(s)) return 'angry';
+    if (/[！!]/.test(s)) return 'excited';
+    return 'narr';
+  },
+  styleFor(s, v) {
+    const pick = S.set.azStyle || 'auto';
+    if (pick === 'none' || !v.styles.length) return null;
+    if (pick !== 'auto') return v.styles.includes(pick) ? pick : null;
+    const cands = AZ_MOOD[this.mood(s)];
+    return cands.find(x => v.styles.includes(x)) || AZ_MOOD.narr.find(x => v.styles.includes(x)) || null;
+  },
+  ssml(sentences, v) {
+    const rate = Math.round((S.set.ttsRate - 1) * 100), pitch = Math.round(((S.set.ttsPitch || 1) - 1) * 50);
+    const sign = n => (n >= 0 ? '+' : '') + n + '%';
+    const deg = clamp(+S.set.azDegree || 1.2, 0.5, 2).toFixed(2);
+    const body = sentences.map(s => {
+      const inner = `<prosody rate="${sign(rate)}" pitch="${sign(pitch)}">${xmlEsc(s)}</prosody>`;
+      const st = this.styleFor(s, v);
+      return st ? `<mstts:express-as style="${st}" styledegree="${deg}">${inner}</mstts:express-as>` : inner;
+    }).join('');
+    return `<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xmlns:mstts="https://www.w3.org/2001/mstts" xml:lang="${v.locale}"><voice name="${v.name}">${body}</voice></speak>`;
+  },
+  countUsage(text) {
+    const m = new Date().toISOString().slice(0, 7); const u = LS.get('azUsage', { m, chars: 0 });
+    if (u.m !== m) { u.m = m; u.chars = 0; }
+    u.chars += text.length + (text.match(/[㐀-鿿豈-﫿぀-ヿ가-힯]/g) || []).length; // CJK counted twice
+    LS.set('azUsage', u);
+  },
+  usage() { const m = new Date().toISOString().slice(0, 7); const u = LS.get('azUsage', { m, chars: 0 }); return u.m === m ? u.chars : 0; },
+  async synth(ssml, plain) {
+    const c = this.cfg();
+    const r = await fetch(this.base() + '/v1', { method: 'POST', signal: this.ctrl.signal, headers: { 'Ocp-Apim-Subscription-Key': c.key, 'Content-Type': 'application/ssml+xml', 'X-Microsoft-OutputFormat': 'audio-24khz-48kbitrate-mono-mp3' }, body: ssml });
+    if (!r.ok) throw this.err(r.status);
+    this.countUsage(plain);
+    return URL.createObjectURL(await r.blob());
+  },
+  /** iOS only lets audio start inside a tap; play a silent clip on the shared element right away so later clips may follow. */
+  unlock() {
+    this.audio ||= new Audio();
+    try { this.audio.src = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA='; const p = this.audio.play(); if (p && p.catch) p.catch(() => {}); } catch {}
+  },
+  fail(e) {
+    TTS.stop();
+    if (e && e.name === 'AbortError') return;
+    const msg = e instanceof TypeError ? t('azNet') : (e && e.message) || String(e);
+    toast(msg, 4500);
+  },
+  async speak(text, done, g) {
+    try { await this.ensureVoices(); } catch (e) { this.fail(e); return; }
+    if (g !== TTS.gen) return;
+    this.ctrl = this.ctrl && !this.ctrl.signal.aborted ? this.ctrl : new AbortController();
+    const items = [];
+    for (const r of TTS.runs(text)) {
+      const v = this.voiceFor(r.lang); if (!v) continue;
+      let buf = [], len = 0;
+      const flush = () => { if (buf.length) { items.push({ ssml: this.ssml(buf, v), plain: buf.join('') }); buf = []; len = 0; } };
+      for (const s of TTS.chunks(r.text, r.lang)) { if (len + s.length > 380) flush(); buf.push(s); len += s.length; }
+      flush();
+    }
+    if (!items.length) return done && done();
+    let i = 0, next = this.synth(items[0].ssml, items[0].plain);
+    next.catch(() => {});
+    const playNext = async () => {
+      if (g !== TTS.gen) return;
+      if (i >= items.length) return done && done();
+      const cur = next; i++;
+      next = i < items.length ? this.synth(items[i].ssml, items[i].plain) : null;
+      if (next) next.catch(() => {});
+      let url; try { url = await cur; } catch (e) { if (g === TTS.gen) this.fail(e); return; }
+      if (g !== TTS.gen) { URL.revokeObjectURL(url); return; }
+      const a = this.audio ||= new Audio();
+      a.onended = () => { URL.revokeObjectURL(url); playNext(); };
+      a.onerror = () => { URL.revokeObjectURL(url); playNext(); };
+      a.src = url;
+      try { await a.play(); } catch (e) { if (g === TTS.gen) this.fail(new Error(t('azTapToPlay'))); }
+    };
+    playNext();
+  },
+  pause(p) { if (!this.audio) return; if (p) this.audio.pause(); else this.audio.play().catch(() => {}); },
+  stop() { if (this.ctrl) { this.ctrl.abort(); this.ctrl = null; } if (this.audio) { this.audio.pause(); this.audio.onended = null; this.audio.removeAttribute('src'); } },
+  async setup() {
+    const c = this.cfg() || {};
+    const key = h('input', { type: 'password', placeholder: t('azKeyPh'), value: c.key || '', autocomplete: 'off' });
+    const reg = h('select', {}, AZ_REGIONS.map(r => h('option', { value: r, selected: (c.region || 'eastus') === r }, r)));
+    const msg = h('p', { class: 'ghmsg' });
+    const steps = h('ol', { class: 'ghsteps' },
+      h('li', {}, t('azStep1a'), h('a', { href: 'https://portal.azure.com/#create/Microsoft.CognitiveServicesSpeechServices', target: '_blank', rel: 'noopener' }, t('azStep1link')), t('azStep1b')),
+      h('li', { text: t('azStep2') }), h('li', { text: t('azStep3') }));
+    const buttons = [{ label: t('cancel'), value: null }];
+    if (this.ok()) buttons.push({ label: t('ghDisconnect'), onClick: () => { LS.del('azure'); LS.del('azureVoices'); this.voices = null; S.set.ttsEngine = 'system'; saveSet(); toast(t('azRemoved')); renderTTS($('#p-tts')); return true; } });
+    buttons.push({ label: t('azSave'), primary: true, onClick: async () => {
+      const cfg = { key: key.value.trim(), region: reg.value };
+      if (!cfg.key) { msg.textContent = t('azNeedKey'); return false; }
+      msg.textContent = t('ghChecking');
+      try { const list = await this.fetchVoices(cfg); LS.set('azure', cfg); this.voices = list; LS.set('azureVoices', { region: cfg.region, t: Date.now(), list }); }
+      catch (e) { msg.textContent = e instanceof TypeError ? t('azNet') : e.message; return false; }
+      S.set.ttsEngine = 'azure'; saveSet(); toast(t('azReady', this.listFor('zh').length));
+      setTimeout(() => { const pop = $('#p-tts'); if (pop.classList.contains('open')) renderTTS(pop); }, 50);
+      return true;
+    } });
+    return modal({ title: t('azTitle'), body: h('div', {}, steps, h('label', { class: 'fl', text: t('azKey') }), key, h('label', { class: 'fl', text: t('azRegion') }), reg, msg, h('p', { class: 'ghnote', text: t('azNote') })), buttons, onOpen: () => key.focus() });
+  },
+};
+
 /* ===================== app.js — UI & viewers ===================== */
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
@@ -2268,7 +2451,7 @@ const IDB = (() => {
 })();
 
 /* ---------- settings ---------- */
-const DEF = { theme: 'paper', lang: null, cjk: 'sys-serif', latin: 'follow', mono: 'sys-mono', fs: 19, lh: 1.85, ps: 0.6, ls: 0, pw: 720, align: 'justify', indent: 'auto', mode: 'scroll', pdfInvert: true, pdfFit: 'width', spread: false, ttsRate: 1, voiceZh: 'auto', voiceEn: 'auto', autoSpeed: 40, side: true, sideTab: 'toc' };
+const DEF = { theme: 'paper', lang: null, cjk: 'sys-serif', latin: 'follow', mono: 'sys-mono', fs: 19, lh: 1.85, ps: 0.6, ls: 0, pw: 720, align: 'justify', indent: 'auto', mode: 'scroll', pdfInvert: true, pdfFit: 'width', spread: false, ttsRate: 1, ttsPitch: 1, voiceZh: 'auto', voiceEn: 'auto', ttsEngine: 'system', azVoiceZh: '', azVoiceEn: '', azStyle: 'auto', azDegree: 1.2, autoSpeed: 40, side: true, sideTab: 'toc' };
 const S = { set: Object.assign({}, DEF, LS.get('settings', {})), doc: null, view: null, st: null, id: null, file: null, u8: null, fmt: null, lastAct: Date.now() };
 let LANG = S.set.lang || ((navigator.language || 'zh').toLowerCase().startsWith('zh') ? 'zh' : 'en');
 function t(k, ...a) { const e = I18N[k]; let s = e ? (LANG === 'zh' ? e[0] : e[1]) : k; a.forEach((v, i) => { s = s.split('{' + i + '}').join(v); }); return s; }
@@ -3010,7 +3193,13 @@ const TTS = {
   chunks(text, lang) {
     text = text.replace(/\s+/g, ' ').replace(/[—–]{1,2}/g, lang === 'zh' ? '，' : ', ').replace(/…+|\.{3,}/g, lang === 'zh' ? '。' : '. ').trim();
     if (!text) return [];
-    const sentences = text.split(/(?<=[。！？!?；;])\s*|(?<=[.:])\s+(?=[A-Z0-9“"(])/).filter(s => s.trim());
+    const sentences = [];
+    for (const piece of text.split(/(?<=[。！？!?；;])\s*|(?<=[.:])\s+(?=[A-Z0-9“"(])/)) {
+      // keep closing quotes/brackets with the sentence they end: “你听见了吗？” stays together
+      const m = /^[”’」』"')）\]]+/.exec(piece);
+      if (m && sentences.length) { sentences[sentences.length - 1] += m[0]; const rest = piece.slice(m[0].length); if (rest.trim()) sentences.push(rest); }
+      else if (piece.trim()) sentences.push(piece);
+    }
     const out = [];
     for (let s of sentences) {
       while (s.length > 90) {
@@ -3027,7 +3216,9 @@ const TTS = {
     this.stop();
     modal({ title: t('noZhVoiceTitle'), body: h('div', {}, h('p', { text: t('noZhVoice') }), h('p', { style: { color: 'var(--ink2)' }, text: t('zhVoiceHow_' + osKind()) })) });
   },
+  useAzure() { return S.set.ttsEngine === 'azure' && Azure.ok(); },
   async speak(text, done) {
+    if (this.useAzure()) return Azure.speak(text, done, this.gen);
     await this.ready();
     const g = this.gen; const items = [];
     for (const r of this.runs(text)) {
@@ -3040,15 +3231,15 @@ const TTS = {
       if (g !== this.gen) return; if (i >= items.length) return done && done();
       const it = items[i++]; const u = new SpeechSynthesisUtterance(it.text);
       if (it.v) { u.voice = it.v; u.lang = it.v.lang; } else u.lang = it.lang === 'zh' ? 'zh-CN' : 'en-US';
-      u.rate = S.set.ttsRate;
+      u.rate = S.set.ttsRate; u.pitch = S.set.ttsPitch || 1;
       u.onend = step; u.onerror = ev => { if (g === this.gen && ev.error !== 'interrupted' && ev.error !== 'canceled') step(); };
       speechSynthesis.speak(u);
     };
     step();
   },
-  speakOnly(text) { this.stop(); this.gen++; this.speak(text, () => {}); },
+  speakOnly(text) { this.stop(); this.gen++; if (this.useAzure()) Azure.unlock(); this.speak(text, () => {}); },
   start() {
-    if (!this.ok || !S.view) return; this.stop(); this.warned = false; this.on = true; this.paused = false; this.gen++; UI.syncTTS();
+    if (!S.view || (!this.ok && !this.useAzure())) return; this.stop(); this.warned = false; this.on = true; this.paused = false; this.gen++; if (this.useAzure()) Azure.unlock(); UI.syncTTS();
     if (S.view === Flow) { this.queue = this.blocksFrom(Flow.anchorO); this.nextBlock(); }
     else if (S.view === Pdf) this.pdfPage(Pdf.cur);
   },
@@ -3075,8 +3266,8 @@ const TTS = {
     const text = tc.items.map(x => (x.str || '') + (x.hasEOL ? (/[㐀-鿿]$/.test(x.str || '') ? '' : ' ') : '')).join('');
     this.speak(text || ' ', () => this.pdfPage(p + 1));
   },
-  pause() { if (!this.on) return; if (this.paused) { speechSynthesis.resume(); this.paused = false; } else { speechSynthesis.pause(); this.paused = true; } UI.syncTTS(); },
-  stop() { this.on = false; this.paused = false; this.gen++; if (this.ok) speechSynthesis.cancel(); $$('.tts-cur').forEach(x => x.classList.remove('tts-cur')); UI.syncTTS(); },
+  pause() { if (!this.on) return; this.paused = !this.paused; if (this.useAzure()) Azure.pause(this.paused); else if (this.paused) speechSynthesis.pause(); else speechSynthesis.resume(); UI.syncTTS(); },
+  stop() { this.on = false; this.paused = false; this.gen++; Azure.stop(); if (this.ok) speechSynthesis.cancel(); $$('.tts-cur').forEach(x => x.classList.remove('tts-cur')); UI.syncTTS(); },
 };
 function osKind() { const ua = navigator.userAgent; return /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1) ? 'ios' : /Android/.test(ua) ? 'android' : /Macintosh|Mac OS X/.test(ua) ? 'mac' : /Windows/.test(ua) ? 'win' : 'other'; }
 
@@ -3521,21 +3712,50 @@ function renderAa(pop) {
 }
 function renderTTS(pop) {
   pop.innerHTML = '';
-  const pick = (lang, key) => {
-    const list = TTS.list(lang);
-    const sel = h('select', {}, h('option', { value: 'auto', selected: !S.set[key] || S.set[key] === 'auto' }, t('voiceAuto') + (list[0] ? ` (${list[0].name})` : '')), list.map(v => h('option', { value: v.voiceURI, selected: S.set[key] === v.voiceURI }, `${v.name} (${v.lang})${v.localService ? '' : ' · ' + t('online')}`)));
-    sel.onchange = () => { S.set[key] = sel.value; saveSet(); if (TTS.on) TTS.start(); else TTS.speakOnly(lang === 'zh' ? '你好，这是墨阅的中文朗读。' : 'Hello, this is Moyue reading aloud.'); };
-    return { sel, n: list.length };
-  };
-  const zh = pick('zh', 'voiceZh'), en = pick('en', 'voiceEn');
+  const az = S.set.ttsEngine === 'azure';
+  const sample = lang => lang === 'zh' ? '夜深了，窗外的雨还在下。“你听见了吗？”她轻声问。' : 'The rain kept falling. "Did you hear that?" she whispered.';
+  const tryBtn = lang => h('button', { class: 'ib', title: t('preview'), onclick: () => TTS.speakOnly(sample(lang)) }, icon('play'));
   pop.append(h('section', {}, h('h4', { text: t('tts') }), h('div', { class: 'ttsrow' },
     h('button', { class: 'btn primary', onclick: () => TTS.on ? TTS.pause() : TTS.start() }, icon(TTS.on && !TTS.paused ? 'pause' : 'play'), t(TTS.on ? (TTS.paused ? 'resume' : 'pause') : 'readFromHere')),
-    h('button', { class: 'btn', disabled: !TTS.on, onclick: () => TTS.stop() }, icon('stop'), t('stop')))),
-    h('section', {},
-      h('div', { class: 'row2' }, h('span', { text: t('voiceZh') }), zh.n ? zh.sel : h('span', { class: 'warn', text: t('noZhVoiceShort') })),
-      h('div', { class: 'row2' }, h('span', { text: t('voiceEn') }), en.n ? en.sel : h('span', { class: 'warn', text: t('noEnVoiceShort') })),
-      sliderRow(t('rate'), 'ttsRate', 0.5, 2.5, 0.1, x => x.toFixed(1) + '×'),
-      h('p', { class: 'ttsnote', text: zh.n ? t('ttsNote') : t('zhVoiceHow_' + osKind()) })));
+    h('button', { class: 'btn', disabled: !TTS.on, onclick: () => TTS.stop() }, icon('stop'), t('stop')))));
+  pop.append(h('section', {}, h('h4', { text: t('ttsEngine') }), seg([['system', t('engSystem')], ['azure', t('engAzure')]], az ? 'azure' : 'system', v => {
+    if (v === 'azure' && !Azure.ok()) { closePops(); Azure.setup(); return; }
+    TTS.stop(); S.set.ttsEngine = v; saveSet(); renderTTS(pop);
+  })));
+  const sec = h('section', {}); pop.append(sec);
+  if (az && Azure.ok()) {
+    const voicesBox = h('div', {}, h('p', { class: 'ttsnote', text: t('relLoading') }));
+    sec.append(voicesBox);
+    Azure.ensureVoices().then(() => {
+      voicesBox.innerHTML = '';
+      const pick = (lang, key) => {
+        const list = Azure.listFor(lang), cur = Azure.voiceFor(lang);
+        const sel = h('select', {}, list.map(v => h('option', { value: v.name, selected: cur && v.name === cur.name }, Azure.label(v))));
+        sel.onchange = () => { S.set[key] = sel.value; saveSet(); renderTTS(pop); TTS.speakOnly(sample(lang)); };
+        return h('div', { class: 'row3' }, h('span', { text: t(lang === 'zh' ? 'timbreZh' : 'timbreEn') }), sel, tryBtn(lang));
+      };
+      const zv = Azure.voiceFor('zh');
+      const styles = zv ? zv.styles : [];
+      const ssel = h('select', {}, h('option', { value: 'auto', selected: S.set.azStyle === 'auto' }, t(styles.length ? 'styleAuto' : 'styleAutoNone')), h('option', { value: 'none', selected: S.set.azStyle === 'none' }, t('styleNone')), styles.map(st => h('option', { value: st, selected: S.set.azStyle === st }, Azure.styleLabel(st))));
+      ssel.onchange = () => { S.set.azStyle = ssel.value; saveSet(); TTS.speakOnly(sample('zh')); };
+      voicesBox.append(pick('zh', 'azVoiceZh'), pick('en', 'azVoiceEn'),
+        h('div', { class: 'row3' }, h('span', { text: t('emotion') }), ssel, tryBtn('zh')),
+        sliderRow(t('emotionDeg'), 'azDegree', 0.5, 2, 0.1, x => x.toFixed(1) + '×'),
+        h('p', { class: 'ttsnote', text: t('azAutoNote') }),
+        h('p', { class: 'ttsnote' }, t('azUsage', Azure.usage().toLocaleString()), '  ', h('a', { href: '#', onclick: e => { e.preventDefault(); closePops(); Azure.setup(); } }, t('azChange'))));
+    }).catch(e => { voicesBox.innerHTML = ''; voicesBox.append(h('p', { class: 'warn', text: e instanceof TypeError ? t('azNet') : e.message }), h('button', { class: 'btn sm', onclick: () => { closePops(); Azure.setup(); } }, t('azChange'))); });
+  } else {
+    const pick = (lang, key) => {
+      const list = TTS.list(lang);
+      if (!list.length) return h('div', { class: 'row2' }, h('span', { text: t(lang === 'zh' ? 'voiceZh' : 'voiceEn') }), h('span', { class: 'warn', text: t(lang === 'zh' ? 'noZhVoiceShort' : 'noEnVoiceShort') }));
+      const sel = h('select', {}, h('option', { value: 'auto', selected: !S.set[key] || S.set[key] === 'auto' }, t('voiceAuto') + ` (${list[0].name})`), list.map(v => h('option', { value: v.voiceURI, selected: S.set[key] === v.voiceURI }, `${v.name} (${v.lang})${v.localService ? '' : ', ' + t('online')}`)));
+      sel.onchange = () => { S.set[key] = sel.value; saveSet(); TTS.speakOnly(sample(lang)); };
+      return h('div', { class: 'row3' }, h('span', { text: t(lang === 'zh' ? 'voiceZh' : 'voiceEn') }), sel, tryBtn(lang));
+    };
+    sec.append(pick('zh', 'voiceZh'), pick('en', 'voiceEn'));
+    sec.append(h('p', { class: 'ttsnote', text: TTS.list('zh').length ? t('natural_' + osKind()) : t('zhVoiceHow_' + osKind()) }));
+  }
+  pop.append(h('section', {}, sliderRow(t('rate'), 'ttsRate', 0.5, 2.5, 0.1, x => x.toFixed(1) + '×'), sliderRow(t('pitch'), 'ttsPitch', 0.5, 1.5, 0.05, x => x.toFixed(2))));
 }
 function renderMore(pop) {
   pop.innerHTML = ''; const m = h('div', { class: 'menu' });

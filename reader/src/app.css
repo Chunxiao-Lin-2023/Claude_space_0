@@ -369,6 +369,10 @@ body.dragging #dropmask{display:grid}
 .ttsrow{display:flex;gap:8px;align-items:center}
 .ttsrow .btn{flex:1;justify-content:center}
 .pop .warn{font-size:12.5px;color:#B3261E}
+.row3{display:grid;grid-template-columns:64px 1fr 32px;align-items:center;gap:8px;margin:8px 0}
+.row3 > span{color:var(--ink2);font-size:13px}
+.row3 .ib{height:30px;min-width:30px;padding:0}
+.row3 select{min-width:0}
 .ttsnote{margin:8px 0 0;font-size:12px;color:var(--ink2);line-height:1.65}
 
 /* ---------- selection bar ---------- */

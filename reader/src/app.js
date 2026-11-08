@@ -85,7 +85,7 @@ const IDB = (() => {
 })();
 
 /* ---------- settings ---------- */
-const DEF = { theme: 'paper', lang: null, cjk: 'sys-serif', latin: 'follow', mono: 'sys-mono', fs: 19, lh: 1.85, ps: 0.6, ls: 0, pw: 720, align: 'justify', indent: 'auto', mode: 'scroll', pdfInvert: true, pdfFit: 'width', spread: false, ttsRate: 1, voiceZh: 'auto', voiceEn: 'auto', autoSpeed: 40, side: true, sideTab: 'toc' };
+const DEF = { theme: 'paper', lang: null, cjk: 'sys-serif', latin: 'follow', mono: 'sys-mono', fs: 19, lh: 1.85, ps: 0.6, ls: 0, pw: 720, align: 'justify', indent: 'auto', mode: 'scroll', pdfInvert: true, pdfFit: 'width', spread: false, ttsRate: 1, ttsPitch: 1, voiceZh: 'auto', voiceEn: 'auto', ttsEngine: 'system', azVoiceZh: '', azVoiceEn: '', azStyle: 'auto', azDegree: 1.2, autoSpeed: 40, side: true, sideTab: 'toc' };
 const S = { set: Object.assign({}, DEF, LS.get('settings', {})), doc: null, view: null, st: null, id: null, file: null, u8: null, fmt: null, lastAct: Date.now() };
 let LANG = S.set.lang || ((navigator.language || 'zh').toLowerCase().startsWith('zh') ? 'zh' : 'en');
 function t(k, ...a) { const e = I18N[k]; let s = e ? (LANG === 'zh' ? e[0] : e[1]) : k; a.forEach((v, i) => { s = s.split('{' + i + '}').join(v); }); return s; }
@@ -827,7 +827,13 @@ const TTS = {
   chunks(text, lang) {
     text = text.replace(/\s+/g, ' ').replace(/[—–]{1,2}/g, lang === 'zh' ? '，' : ', ').replace(/…+|\.{3,}/g, lang === 'zh' ? '。' : '. ').trim();
     if (!text) return [];
-    const sentences = text.split(/(?<=[。！？!?；;])\s*|(?<=[.:])\s+(?=[A-Z0-9“"(])/).filter(s => s.trim());
+    const sentences = [];
+    for (const piece of text.split(/(?<=[。！？!?；;])\s*|(?<=[.:])\s+(?=[A-Z0-9“"(])/)) {
+      // keep closing quotes/brackets with the sentence they end: “你听见了吗？” stays together
+      const m = /^[”’」』"')）\]]+/.exec(piece);
+      if (m && sentences.length) { sentences[sentences.length - 1] += m[0]; const rest = piece.slice(m[0].length); if (rest.trim()) sentences.push(rest); }
+      else if (piece.trim()) sentences.push(piece);
+    }
     const out = [];
     for (let s of sentences) {
       while (s.length > 90) {
@@ -844,7 +850,9 @@ const TTS = {
     this.stop();
     modal({ title: t('noZhVoiceTitle'), body: h('div', {}, h('p', { text: t('noZhVoice') }), h('p', { style: { color: 'var(--ink2)' }, text: t('zhVoiceHow_' + osKind()) })) });
   },
+  useAzure() { return S.set.ttsEngine === 'azure' && Azure.ok(); },
   async speak(text, done) {
+    if (this.useAzure()) return Azure.speak(text, done, this.gen);
     await this.ready();
     const g = this.gen; const items = [];
     for (const r of this.runs(text)) {
@@ -857,15 +865,15 @@ const TTS = {
       if (g !== this.gen) return; if (i >= items.length) return done && done();
       const it = items[i++]; const u = new SpeechSynthesisUtterance(it.text);
       if (it.v) { u.voice = it.v; u.lang = it.v.lang; } else u.lang = it.lang === 'zh' ? 'zh-CN' : 'en-US';
-      u.rate = S.set.ttsRate;
+      u.rate = S.set.ttsRate; u.pitch = S.set.ttsPitch || 1;
       u.onend = step; u.onerror = ev => { if (g === this.gen && ev.error !== 'interrupted' && ev.error !== 'canceled') step(); };
       speechSynthesis.speak(u);
     };
     step();
   },
-  speakOnly(text) { this.stop(); this.gen++; this.speak(text, () => {}); },
+  speakOnly(text) { this.stop(); this.gen++; if (this.useAzure()) Azure.unlock(); this.speak(text, () => {}); },
   start() {
-    if (!this.ok || !S.view) return; this.stop(); this.warned = false; this.on = true; this.paused = false; this.gen++; UI.syncTTS();
+    if (!S.view || (!this.ok && !this.useAzure())) return; this.stop(); this.warned = false; this.on = true; this.paused = false; this.gen++; if (this.useAzure()) Azure.unlock(); UI.syncTTS();
     if (S.view === Flow) { this.queue = this.blocksFrom(Flow.anchorO); this.nextBlock(); }
     else if (S.view === Pdf) this.pdfPage(Pdf.cur);
   },
@@ -892,8 +900,8 @@ const TTS = {
     const text = tc.items.map(x => (x.str || '') + (x.hasEOL ? (/[㐀-鿿]$/.test(x.str || '') ? '' : ' ') : '')).join('');
     this.speak(text || ' ', () => this.pdfPage(p + 1));
   },
-  pause() { if (!this.on) return; if (this.paused) { speechSynthesis.resume(); this.paused = false; } else { speechSynthesis.pause(); this.paused = true; } UI.syncTTS(); },
-  stop() { this.on = false; this.paused = false; this.gen++; if (this.ok) speechSynthesis.cancel(); $$('.tts-cur').forEach(x => x.classList.remove('tts-cur')); UI.syncTTS(); },
+  pause() { if (!this.on) return; this.paused = !this.paused; if (this.useAzure()) Azure.pause(this.paused); else if (this.paused) speechSynthesis.pause(); else speechSynthesis.resume(); UI.syncTTS(); },
+  stop() { this.on = false; this.paused = false; this.gen++; Azure.stop(); if (this.ok) speechSynthesis.cancel(); $$('.tts-cur').forEach(x => x.classList.remove('tts-cur')); UI.syncTTS(); },
 };
 function osKind() { const ua = navigator.userAgent; return /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1) ? 'ios' : /Android/.test(ua) ? 'android' : /Macintosh|Mac OS X/.test(ua) ? 'mac' : /Windows/.test(ua) ? 'win' : 'other'; }
 
@@ -1338,21 +1346,50 @@ function renderAa(pop) {
 }
 function renderTTS(pop) {
   pop.innerHTML = '';
-  const pick = (lang, key) => {
-    const list = TTS.list(lang);
-    const sel = h('select', {}, h('option', { value: 'auto', selected: !S.set[key] || S.set[key] === 'auto' }, t('voiceAuto') + (list[0] ? ` (${list[0].name})` : '')), list.map(v => h('option', { value: v.voiceURI, selected: S.set[key] === v.voiceURI }, `${v.name} (${v.lang})${v.localService ? '' : ' · ' + t('online')}`)));
-    sel.onchange = () => { S.set[key] = sel.value; saveSet(); if (TTS.on) TTS.start(); else TTS.speakOnly(lang === 'zh' ? '你好，这是墨阅的中文朗读。' : 'Hello, this is Moyue reading aloud.'); };
-    return { sel, n: list.length };
-  };
-  const zh = pick('zh', 'voiceZh'), en = pick('en', 'voiceEn');
+  const az = S.set.ttsEngine === 'azure';
+  const sample = lang => lang === 'zh' ? '夜深了，窗外的雨还在下。“你听见了吗？”她轻声问。' : 'The rain kept falling. "Did you hear that?" she whispered.';
+  const tryBtn = lang => h('button', { class: 'ib', title: t('preview'), onclick: () => TTS.speakOnly(sample(lang)) }, icon('play'));
   pop.append(h('section', {}, h('h4', { text: t('tts') }), h('div', { class: 'ttsrow' },
     h('button', { class: 'btn primary', onclick: () => TTS.on ? TTS.pause() : TTS.start() }, icon(TTS.on && !TTS.paused ? 'pause' : 'play'), t(TTS.on ? (TTS.paused ? 'resume' : 'pause') : 'readFromHere')),
-    h('button', { class: 'btn', disabled: !TTS.on, onclick: () => TTS.stop() }, icon('stop'), t('stop')))),
-    h('section', {},
-      h('div', { class: 'row2' }, h('span', { text: t('voiceZh') }), zh.n ? zh.sel : h('span', { class: 'warn', text: t('noZhVoiceShort') })),
-      h('div', { class: 'row2' }, h('span', { text: t('voiceEn') }), en.n ? en.sel : h('span', { class: 'warn', text: t('noEnVoiceShort') })),
-      sliderRow(t('rate'), 'ttsRate', 0.5, 2.5, 0.1, x => x.toFixed(1) + '×'),
-      h('p', { class: 'ttsnote', text: zh.n ? t('ttsNote') : t('zhVoiceHow_' + osKind()) })));
+    h('button', { class: 'btn', disabled: !TTS.on, onclick: () => TTS.stop() }, icon('stop'), t('stop')))));
+  pop.append(h('section', {}, h('h4', { text: t('ttsEngine') }), seg([['system', t('engSystem')], ['azure', t('engAzure')]], az ? 'azure' : 'system', v => {
+    if (v === 'azure' && !Azure.ok()) { closePops(); Azure.setup(); return; }
+    TTS.stop(); S.set.ttsEngine = v; saveSet(); renderTTS(pop);
+  })));
+  const sec = h('section', {}); pop.append(sec);
+  if (az && Azure.ok()) {
+    const voicesBox = h('div', {}, h('p', { class: 'ttsnote', text: t('relLoading') }));
+    sec.append(voicesBox);
+    Azure.ensureVoices().then(() => {
+      voicesBox.innerHTML = '';
+      const pick = (lang, key) => {
+        const list = Azure.listFor(lang), cur = Azure.voiceFor(lang);
+        const sel = h('select', {}, list.map(v => h('option', { value: v.name, selected: cur && v.name === cur.name }, Azure.label(v))));
+        sel.onchange = () => { S.set[key] = sel.value; saveSet(); renderTTS(pop); TTS.speakOnly(sample(lang)); };
+        return h('div', { class: 'row3' }, h('span', { text: t(lang === 'zh' ? 'timbreZh' : 'timbreEn') }), sel, tryBtn(lang));
+      };
+      const zv = Azure.voiceFor('zh');
+      const styles = zv ? zv.styles : [];
+      const ssel = h('select', {}, h('option', { value: 'auto', selected: S.set.azStyle === 'auto' }, t(styles.length ? 'styleAuto' : 'styleAutoNone')), h('option', { value: 'none', selected: S.set.azStyle === 'none' }, t('styleNone')), styles.map(st => h('option', { value: st, selected: S.set.azStyle === st }, Azure.styleLabel(st))));
+      ssel.onchange = () => { S.set.azStyle = ssel.value; saveSet(); TTS.speakOnly(sample('zh')); };
+      voicesBox.append(pick('zh', 'azVoiceZh'), pick('en', 'azVoiceEn'),
+        h('div', { class: 'row3' }, h('span', { text: t('emotion') }), ssel, tryBtn('zh')),
+        sliderRow(t('emotionDeg'), 'azDegree', 0.5, 2, 0.1, x => x.toFixed(1) + '×'),
+        h('p', { class: 'ttsnote', text: t('azAutoNote') }),
+        h('p', { class: 'ttsnote' }, t('azUsage', Azure.usage().toLocaleString()), '  ', h('a', { href: '#', onclick: e => { e.preventDefault(); closePops(); Azure.setup(); } }, t('azChange'))));
+    }).catch(e => { voicesBox.innerHTML = ''; voicesBox.append(h('p', { class: 'warn', text: e instanceof TypeError ? t('azNet') : e.message }), h('button', { class: 'btn sm', onclick: () => { closePops(); Azure.setup(); } }, t('azChange'))); });
+  } else {
+    const pick = (lang, key) => {
+      const list = TTS.list(lang);
+      if (!list.length) return h('div', { class: 'row2' }, h('span', { text: t(lang === 'zh' ? 'voiceZh' : 'voiceEn') }), h('span', { class: 'warn', text: t(lang === 'zh' ? 'noZhVoiceShort' : 'noEnVoiceShort') }));
+      const sel = h('select', {}, h('option', { value: 'auto', selected: !S.set[key] || S.set[key] === 'auto' }, t('voiceAuto') + ` (${list[0].name})`), list.map(v => h('option', { value: v.voiceURI, selected: S.set[key] === v.voiceURI }, `${v.name} (${v.lang})${v.localService ? '' : ', ' + t('online')}`)));
+      sel.onchange = () => { S.set[key] = sel.value; saveSet(); TTS.speakOnly(sample(lang)); };
+      return h('div', { class: 'row3' }, h('span', { text: t(lang === 'zh' ? 'voiceZh' : 'voiceEn') }), sel, tryBtn(lang));
+    };
+    sec.append(pick('zh', 'voiceZh'), pick('en', 'voiceEn'));
+    sec.append(h('p', { class: 'ttsnote', text: TTS.list('zh').length ? t('natural_' + osKind()) : t('zhVoiceHow_' + osKind()) }));
+  }
+  pop.append(h('section', {}, sliderRow(t('rate'), 'ttsRate', 0.5, 2.5, 0.1, x => x.toFixed(1) + '×'), sliderRow(t('pitch'), 'ttsPitch', 0.5, 1.5, 0.05, x => x.toFixed(2))));
 }
 function renderMore(pop) {
   pop.innerHTML = ''; const m = h('div', { class: 'menu' });
