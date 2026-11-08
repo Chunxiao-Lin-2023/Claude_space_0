@@ -27,7 +27,7 @@ const Azure = {
     const r = await fetch(`https://${cfg.region}.tts.speech.microsoft.com/cognitiveservices/voices/list`, { headers: { 'Ocp-Apim-Subscription-Key': cfg.key } });
     if (!r.ok) throw this.err(r.status);
     const list = await r.json();
-    return list.filter(v => /^(zh|yue|wuu|en)-/.test(v.Locale)).map(v => ({ name: v.ShortName, local: v.LocalName || v.DisplayName, gender: v.Gender, locale: v.Locale, styles: v.StyleList || [] }))
+    return list.filter(v => /^(zh|wuu|en)-/.test(v.Locale) && !/^zh-HK/.test(v.Locale)).map(v => ({ name: v.ShortName, local: v.LocalName || v.DisplayName, gender: v.Gender, locale: v.Locale, styles: v.StyleList || [] }))
       .sort((a, b) => (a.locale === 'zh-CN' ? 0 : a.locale.startsWith('zh') ? 1 : 2) - (b.locale === 'zh-CN' ? 0 : b.locale.startsWith('zh') ? 1 : 2) || b.styles.length - a.styles.length || a.name.localeCompare(b.name));
   },
   async ensureVoices() {
@@ -42,7 +42,7 @@ const Azure = {
     const e = new Error(status === 401 || status === 403 ? t('azBadKey') : status === 429 ? t('azQuota') : status === 400 ? t('azBadReq') : t('azHttp', status));
     e.status = status; return e;
   },
-  listFor(lang) { return (this.voices || []).filter(v => lang === 'zh' ? /^(zh|yue|wuu)-/.test(v.locale) : v.locale.startsWith('en-')); },
+  listFor(lang) { return (this.voices || []).filter(v => lang === 'zh' ? /^(zh|wuu)-/.test(v.locale) && !/^zh-HK/.test(v.locale) : v.locale.startsWith('en-')); },
   voiceFor(lang) {
     const want = S.set[lang === 'zh' ? 'azVoiceZh' : 'azVoiceEn'];
     const list = this.listFor(lang);
@@ -99,29 +99,29 @@ const Azure = {
     const msg = e instanceof TypeError ? t('azNet') : (e && e.message) || String(e);
     toast(msg, 4500);
   },
-  async speak(text, done, g) {
+  async speak(text, done, g, el) {
     try { await this.ensureVoices(); } catch (e) { this.fail(e); return; }
     if (g !== TTS.gen) return;
     this.ctrl = this.ctrl && !this.ctrl.signal.aborted ? this.ctrl : new AbortController();
-    const items = [];
-    for (const r of TTS.runs(text)) {
-      const v = this.voiceFor(r.lang); if (!v) continue;
-      let buf = [], len = 0;
-      const flush = () => { if (buf.length) { items.push({ ssml: this.ssml(buf, v), plain: buf.join('') }); buf = []; len = 0; } };
-      for (const s of TTS.chunks(r.text, r.lang)) { if (len + s.length > 380) flush(); buf.push(s); len += s.length; }
-      flush();
+    // group consecutive sentences of one language into requests of up to ~380 characters
+    const groups = [];
+    for (const it of TTS.items(text)) {
+      const v = this.voiceFor(it.lang); if (!v) continue;
+      const last = groups[groups.length - 1];
+      if (last && last.v === v && last.len + it.text.length <= 380) { last.sents.push(it.text); last.len += it.text.length; last.end = it.end; }
+      else groups.push({ v, sents: [it.text], len: it.text.length, start: it.start, end: it.end });
     }
-    if (!items.length) return done && done();
-    let i = 0, next = this.synth(items[0].ssml, items[0].plain);
-    next.catch(() => {});
+    if (!groups.length) return done && done();
+    const req = gr => this.synth(this.ssml(gr.sents, gr.v), gr.sents.join(''));
+    let i = 0, next = req(groups[0]); next.catch(() => {});
     const playNext = async () => {
       if (g !== TTS.gen) return;
-      if (i >= items.length) return done && done();
-      const cur = next; i++;
-      next = i < items.length ? this.synth(items[i].ssml, items[i].plain) : null;
-      if (next) next.catch(() => {});
+      if (i >= groups.length) { TTS.clearSent(el); return done && done(); }
+      const gr = groups[i], cur = next; i++;
+      next = i < groups.length ? req(groups[i]) : null; if (next) next.catch(() => {});
       let url; try { url = await cur; } catch (e) { if (g === TTS.gen) this.fail(e); return; }
       if (g !== TTS.gen) { URL.revokeObjectURL(url); return; }
+      TTS.markSent(el, gr);
       const a = this.audio ||= new Audio();
       a.onended = () => { URL.revokeObjectURL(url); playNext(); };
       a.onerror = () => { URL.revokeObjectURL(url); playNext(); };

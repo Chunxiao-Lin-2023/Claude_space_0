@@ -88,6 +88,7 @@ const I18N = {
   // tts
   tts: ['朗读', 'Read aloud'], readFromHere: ['从当前位置朗读', 'Read from here'], pause: ['暂停', 'Pause'], resume: ['继续', 'Resume'], stop: ['停止', 'Stop'],
   voice: ['声音', 'Voice'], voiceAuto: ['自动', 'Automatic'], rate: ['语速', 'Rate'], voiceZh: ['中文声音', 'Chinese voice'], voiceEn: ['英文声音', 'English voice'], online: ['在线', 'online'],
+  ttsExpr: ['语气起伏', 'Expressive'], qNatural: ['自然', 'natural'], qEnhanced: ['增强', 'enhanced'],
   ttsEngine: ['声音来源', 'Voice source'], engSystem: ['系统语音', 'System voices'], engAzure: ['Azure 神经语音', 'Azure neural'],
   timbreZh: ['中文音色', 'Chinese'], timbreEn: ['英文音色', 'English'], emotion: ['情绪', 'Emotion'], emotionDeg: ['情绪强度', 'Intensity'], pitch: ['音调', 'Pitch'], preview: ['试听', 'Preview'],
   styleAuto: ['自动（按句子判断）', 'Automatic (per sentence)'], styleAutoNone: ['这个音色没有情绪风格', 'This voice has no styles'], styleNone: ['不加情绪', 'No style'],
@@ -110,7 +111,7 @@ const I18N = {
   natural_android: ['想要更自然的声音：在系统的文字转语音设置里安装 Google 的中文高质量语音包。', 'For more natural voices, install Google high-quality Chinese voice data in text-to-speech settings.'],
   natural_other: ['系统语音的语气基本固定；想要有感情的朗读，可以切换到 Azure 神经语音。', 'System voices have a fixed tone; switch to Azure neural voices for expressive reading.'],
   noZhVoiceShort: ['这台设备没有中文语音', 'No Chinese voice on this device'], noEnVoiceShort: ['这台设备没有英文语音', 'No English voice on this device'],
-  ttsNote: ['中文段落用中文声音读，英文段落用英文声音读；句号、逗号处会停顿。选一个声音会先试读一句。', 'Chinese passages use the Chinese voice and English passages the English voice, pausing at full stops and commas. Picking a voice plays a short sample.'],
+  ttsNote: ['中文段落用中文声音读，英文段落用英文声音读；句号、逗号处停顿，段落之间稍作停留。选一个声音会先试读一句。', 'Chinese passages use the Chinese voice and English passages the English voice, pausing at full stops and commas. Picking a voice plays a short sample.'],
   noZhVoiceTitle: ['没有中文语音', 'No Chinese voice'], noZhVoice: ['这台设备的浏览器里没有中文语音，所以读不了中文。装好中文语音后，重新打开墨阅即可。', 'This browser has no Chinese voice, so Chinese text cannot be read aloud. Install one, then reopen Moyue.'],
   zhVoiceHow_win: ['Windows：设置 → 时间和语言 → 语音 → 添加语音，选“中文(简体，中国)”。装好后重启浏览器或墨阅。用 Edge 浏览器打开网页版，还能用晓晓等在线自然语音。', 'Windows: Settings → Time & language → Speech → Add voices → Chinese (Simplified, China), then restart the browser or app. Edge also offers online natural Chinese voices.'],
   zhVoiceHow_mac: ['macOS：系统设置 → 辅助功能 → 朗读内容 → 系统声音 → 管理声音，勾选中文（普通话）里的声音（如婷婷）下载。', 'macOS: System Settings → Accessibility → Spoken Content → System Voice → Manage Voices, then download a Chinese (Mandarin) voice such as Tingting.'],

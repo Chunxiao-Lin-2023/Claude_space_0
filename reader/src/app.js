@@ -85,7 +85,7 @@ const IDB = (() => {
 })();
 
 /* ---------- settings ---------- */
-const DEF = { theme: 'paper', lang: null, cjk: 'sys-serif', latin: 'follow', mono: 'sys-mono', fs: 19, lh: 1.85, ps: 0.6, ls: 0, pw: 720, align: 'justify', indent: 'auto', mode: 'scroll', pdfInvert: true, pdfFit: 'width', spread: false, ttsRate: 1, ttsPitch: 1, voiceZh: 'auto', voiceEn: 'auto', ttsEngine: 'system', azVoiceZh: '', azVoiceEn: '', azStyle: 'auto', azDegree: 1.2, autoSpeed: 40, side: true, sideTab: 'toc' };
+const DEF = { theme: 'paper', lang: null, cjk: 'sys-serif', latin: 'follow', mono: 'sys-mono', fs: 19, lh: 1.85, ps: 0.6, ls: 0, pw: 720, align: 'justify', indent: 'auto', mode: 'scroll', pdfInvert: true, pdfFit: 'width', spread: false, ttsRate: 1, ttsPitch: 1, ttsExpr: true, voiceZh: 'auto', voiceEn: 'auto', ttsEngine: 'system', azVoiceZh: '', azVoiceEn: '', azStyle: 'auto', azDegree: 1.2, autoSpeed: 40, side: true, sideTab: 'toc' };
 const S = { set: Object.assign({}, DEF, LS.get('settings', {})), doc: null, view: null, st: null, id: null, file: null, u8: null, fmt: null, lastAct: Date.now() };
 let LANG = S.set.lang || ((navigator.language || 'zh').toLowerCase().startsWith('zh') ? 'zh' : 'en');
 function t(k, ...a) { const e = I18N[k]; let s = e ? (LANG === 'zh' ? e[0] : e[1]) : k; a.forEach((v, i) => { s = s.split('{' + i + '}').join(v); }); return s; }
@@ -778,8 +778,10 @@ const Sel = {
 };
 
 /* ======================= TTS ======================= */
+const TTS_NOVELTY = /^(Albert|Bad News|Bahh|Bells|Boing|Bubbles|Cellos|Good News|Jester|Organ|Pipe Organ|Superstar|Trinoids|Whisper|Wobble|Zarvox|Eddy|Flo|Grandma|Grandpa|Reed|Rocko|Sandy|Shelley|Fred|Junior|Kathy|Ralph|Deranged|Hysterical)\b/i;
+const CJK_RE = /[぀-ヿ㐀-鿿豈-﫿가-힯]/;
 const TTS = {
-  ok: 'speechSynthesis' in window, on: false, paused: false, gen: 0, voices: [], queue: [], driving: false, warned: false,
+  ok: 'speechSynthesis' in window, on: false, paused: false, gen: 0, voices: [], queue: [], driving: false, warned: false, cur: null,
   init() {
     if (!this.ok) return;
     const load = () => { this.voices = speechSynthesis.getVoices() || []; if ($('#p-tts').classList.contains('open')) renderTTS($('#p-tts')); };
@@ -787,89 +789,122 @@ const TTS = {
     if ('voice' in S.set) { delete S.set.voice; saveSet(); } // old single-voice setting read Chinese with English voices
   },
   async ready() { if (this.voices.length) return; for (let i = 0; i < 15 && !this.voices.length; i++) { await sleep(100); this.voices = speechSynthesis.getVoices() || []; } },
-  isZhVoice: v => /^(zh|cmn|yue|wuu|hak|nan)\b/i.test((v.lang || '').replace('_', '-')) || /chinese|mandarin|cantonese|普通话|國語|国语|中文|粤語|粵語/i.test(v.name || ''),
-  isEnVoice: v => /^en\b/i.test((v.lang || '').replace('_', '-')),
-  /** Voices of one language, best first: chosen one, then natural/enhanced, then mainland/US, then local. */
+  langOf: v => (v.lang || '').toLowerCase().replace('_', '-'),
+  isCantonese(v) { return /^(yue|zh-hk|zh-yue)/.test(this.langOf(v)) || /cantonese|粤|粵|香港|hong ?kong|sin-ji|sinji/i.test(v.name || ''); },
+  isZhVoice(v) { return !this.isCantonese(v) && (/^(zh|cmn|wuu)\b/.test(this.langOf(v)) || /chinese|mandarin|普通话|國語|国语|中文/i.test(v.name || '')); },
+  isEnVoice(v) { return /^en\b/.test(this.langOf(v)); },
+  /** 0 basic … 5 natural/neural; used to sort and to label voices. */
+  quality(v) {
+    const n = v.name || '';
+    if (/natural|neural|online/i.test(n)) return 5;
+    if (/premium|高级|高品質/i.test(n)) return 5;
+    if (/enhanced|增强|增強|improved/i.test(n)) return 4;
+    if (/google|siri/i.test(n)) return 3;
+    if (/compact|eloquence/i.test(n)) return 0;
+    return v.localService === false ? 3 : 1;
+  },
+  /** Short display name: “Microsoft Xiaoxiao Online (Natural) - Chinese (Mainland)” → “Xiaoxiao”. */
+  shortName(v) { return (v.name || '').replace(/^Microsoft\s+/i, '').replace(/\s+Online\s*\((Natural|Neural)\)/i, '').replace(/\s+-\s+.*$/, '').replace(/\s*\((Enhanced|Premium|增强|增強|高级)\)/i, '').trim() || v.name; },
+  qualityTag(v) { const q = this.quality(v); return q >= 5 ? t('qNatural') : q === 4 ? t('qEnhanced') : v.localService === false ? t('online') : ''; },
+  /** Usable voices of one language, best first. Cantonese and novelty voices are left out. */
   list(lang) {
-    const want = lang === 'zh' ? this.isZhVoice : this.isEnVoice;
-    const score = v => {
-      const l = (v.lang || '').toLowerCase().replace('_', '-'), n = v.name || '';
-      let s = 0;
-      if (/natural|neural|premium|enhanced|增强|xiaoxiao|yunxi|tingting|google/i.test(n)) s += 4;
-      if (lang === 'zh' ? /^(zh-cn|zh-hans|cmn-hans|cmn-cn|zh$)/.test(l) : /^en-us/.test(l)) s += 3;
-      else if (lang === 'en' && /^en-gb/.test(l)) s += 2;
-      if (lang === 'zh' && /^(yue|zh-hk)/.test(l)) s -= 1;
-      return s;
-    };
-    return this.voices.filter(want).sort((a, b) => score(b) - score(a) || a.name.localeCompare(b.name));
+    const want = v => !TTS_NOVELTY.test(v.name || '') && (lang === 'zh' ? this.isZhVoice(v) : this.isEnVoice(v));
+    const region = v => { const l = this.langOf(v); return lang === 'zh' ? (/^(zh-cn|zh-hans|cmn-hans|cmn-cn|zh$|cmn$)/.test(l) ? 2 : /^(zh-tw|cmn-hant|zh-hant)/.test(l) ? 1 : 0) : (/^en-us/.test(l) ? 2 : /^en-gb/.test(l) ? 1 : 0); };
+    return this.voices.filter(want).sort((a, b) => this.quality(b) - this.quality(a) || region(b) - region(a) || a.name.localeCompare(b.name));
   },
   voiceFor(lang) {
     const pref = S.set[lang === 'zh' ? 'voiceZh' : 'voiceEn'];
-    if (pref && pref !== 'auto') { const v = this.voices.find(x => x.voiceURI === pref); if (v) return v; }
+    if (pref && pref !== 'auto') { const v = this.voices.find(x => x.voiceURI === pref); if (v && !this.isCantonese(v)) return v; }
     return this.list(lang)[0] || null;
   },
-  /** Split text into runs that a Chinese or an English voice should read. Mostly-Chinese text stays whole: Chinese voices read Latin words and digits too. */
+  /** Runs of text for a Chinese or an English voice, with their offsets. Mostly-Chinese text stays whole: Chinese voices read Latin words and digits too. */
   runs(text) {
-    const CJK = /[぀-ヿ㐀-鿿豈-﫿가-힯]/;
-    if (!CJK.test(text)) return [{ lang: 'en', text }];
-    if (cjkRatio(text) > 0.15 || !this.voiceFor('en')) return [{ lang: 'zh', text }];
-    const out = []; let cur = null;
+    if (!CJK_RE.test(text)) return [{ lang: 'en', text, start: 0 }];
+    if (cjkRatio(text) > 0.15 || !(this.useAzure() ? Azure.voiceFor('en') : this.voiceFor('en'))) return [{ lang: 'zh', text, start: 0 }];
+    const out = []; let cur = null, i = 0;
     for (const ch of text) {
-      const k = CJK.test(ch) || /[　-〿＀-￯]/.test(ch) ? 'zh' : /[A-Za-z]/.test(ch) ? 'en' : null;
-      if (!cur) cur = { lang: k || 'en', text: '' };
-      else if (k && k !== cur.lang) { out.push(cur); cur = { lang: k, text: '' }; }
-      cur.text += ch;
+      const k = CJK_RE.test(ch) || /[　-〿＀-￯]/.test(ch) ? 'zh' : /[A-Za-z]/.test(ch) ? 'en' : null;
+      if (!cur) cur = { lang: k || 'en', text: '', start: i };
+      else if (k && k !== cur.lang) { out.push(cur); cur = { lang: k, text: '', start: i }; }
+      cur.text += ch; i += ch.length;
     }
     if (cur) out.push(cur);
     return out.filter(r => r.text.trim());
   },
-  /** Utterance-sized pieces: split after sentence punctuation; long pieces again after commas. Each piece is its own utterance, so every stop gets a real pause. */
-  chunks(text, lang) {
-    text = text.replace(/\s+/g, ' ').replace(/[—–]{1,2}/g, lang === 'zh' ? '，' : ', ').replace(/…+|\.{3,}/g, lang === 'zh' ? '。' : '. ').trim();
-    if (!text) return [];
-    const sentences = [];
-    for (const piece of text.split(/(?<=[。！？!?；;])\s*|(?<=[.:])\s+(?=[A-Z0-9“"(])/)) {
-      // keep closing quotes/brackets with the sentence they end: “你听见了吗？” stays together
-      const m = /^[”’」』"')）\]]+/.exec(piece);
-      if (m && sentences.length) { sentences[sentences.length - 1] += m[0]; const rest = piece.slice(m[0].length); if (rest.trim()) sentences.push(rest); }
-      else if (piece.trim()) sentences.push(piece);
-    }
-    const out = [];
-    for (let s of sentences) {
-      while (s.length > 90) {
-        const cut = s.slice(0, 90).search(/[，,、：:）)][^，,、：:）)]*$/);
-        const at = cut > 15 ? cut + 1 : 80;
-        out.push(s.slice(0, at)); s = s.slice(at);
+  /** Make a sentence pleasant to hear: links, footnote marks, emoji and markup symbols are dropped; dashes and ellipses become pauses. */
+  clean(s, lang) {
+    return s.replace(/https?:\/\/\S+|www\.\S+/gi, lang === 'zh' ? '链接' : 'link')
+      .replace(/\[\d{1,3}\]|［\d{1,3}］/g, '')
+      .replace(/\p{Extended_Pictographic}/gu, '')
+      .replace(/[—–]{1,2}|―/g, lang === 'zh' ? '，' : ', ')
+      .replace(/…+|\.{3,}/g, lang === 'zh' ? '。' : '. ')
+      .replace(/[*#_~^|<>{}\\`=]+/g, ' ')
+      .replace(/\s+/g, ' ').trim();
+  },
+  /** Sentence spans [start, end) in the original text; closing quotes stay with their sentence, long ones split at commas. */
+  spans(text) {
+    const out = []; let start = 0, m;
+    const re = /[。！？!?；;]+[”’」』"')）\]]*|[.:](?=\s+[A-Z0-9“"(])[”’"')]*/g;
+    const push = (a, b) => {
+      while (b - a > 90) {
+        const seg = text.slice(a, a + 90); const k = seg.search(/[，,、：:）)][^，,、：:）)]*$/);
+        const cut = k > 15 ? a + k + 1 : a + 80; out.push([a, cut]); a = cut;
       }
-      if (s.trim()) out.push(s);
+      if (text.slice(a, b).trim()) out.push([a, b]);
+    };
+    while ((m = re.exec(text))) { const end = m.index + m[0].length; push(start, end); start = end; }
+    if (start < text.length) push(start, text.length);
+    return out;
+  },
+  /** What a sentence sounds like: dialogue, exclamation or question — for light prosody on system voices and styles on Azure. */
+  kind(s) { return /^[\s　]*[“"「『‘]|[“"「『][^”"」』]{2,}[”"」』]/.test(s) ? 'talk' : /[！!]/.test(s) ? 'excl' : /[？?]/.test(s) ? 'ask' : 'narr'; },
+  /** Utterances for a passage: [{lang, text, raw, start, end, kind}], offsets relative to the passage. */
+  items(text) {
+    const out = [];
+    for (const r of this.runs(text)) for (const [a, b] of this.spans(r.text)) {
+      const raw = r.text.slice(a, b), clean = this.clean(raw, r.lang);
+      if (!clean || !/[\p{L}\p{N}]/u.test(clean)) continue;
+      out.push({ lang: r.lang, text: clean, raw, start: r.start + a, end: r.start + b, kind: this.kind(raw) });
     }
     return out;
   },
+  markSent(el, it) {
+    if (!el) return; this.clearSent(el);
+    try { const ms = wrapRange(el, it.start, it.end, () => h('mark', { class: 'tts-sent' })); if (ms[0] && S.view === Flow) { Flow.revealEl(ms[0]); if (Flow.isPaged()) Flow.userMoved(); } } catch {}
+  },
+  clearSent(el) { if (el) unwrap(el, 'mark.tts-sent'); else if (Flow.art) unwrap(Flow.art, 'mark.tts-sent'); },
   missingZh() {
     if (this.warned) return; this.warned = true;
     this.stop();
     modal({ title: t('noZhVoiceTitle'), body: h('div', {}, h('p', { text: t('noZhVoice') }), h('p', { style: { color: 'var(--ink2)' }, text: t('zhVoiceHow_' + osKind()) })) });
   },
   useAzure() { return S.set.ttsEngine === 'azure' && Azure.ok(); },
-  async speak(text, done) {
-    if (this.useAzure()) return Azure.speak(text, done, this.gen);
+  async speak(text, done, el) {
+    if (this.useAzure()) return Azure.speak(text, done, this.gen, el);
     await this.ready();
-    const g = this.gen; const items = [];
-    for (const r of this.runs(text)) {
-      const v = this.voiceFor(r.lang);
-      if (r.lang === 'zh' && !v) { this.missingZh(); return; }
-      for (const c of this.chunks(r.text, r.lang)) items.push({ text: c, v, lang: r.lang });
+    const items = this.items(text);
+    for (const it of items) { it.v = this.voiceFor(it.lang); if (it.lang === 'zh' && !it.v) { this.missingZh(); return; } }
+    this.cur = { items, i: 0, done, el };
+    this.step();
+  },
+  /** Speak the current utterance of this.cur; pause cancels and resume restarts the same sentence (speechSynthesis.resume is unreliable). */
+  step() {
+    const c = this.cur; if (!c) return; const g = this.gen;
+    if (c.i >= c.items.length) { this.clearSent(c.el); this.cur = null; return c.done && c.done(); }
+    const it = c.items[c.i];
+    this.markSent(c.el, it);
+    const u = new SpeechSynthesisUtterance(it.text);
+    if (it.v) { u.voice = it.v; u.lang = it.v.lang; } else u.lang = it.lang === 'zh' ? 'zh-CN' : 'en-US';
+    let r = S.set.ttsRate, p = S.set.ttsPitch || 1;
+    if (S.set.ttsExpr !== false) {
+      if (it.kind === 'talk') { p *= 1.08; r *= 1.04; }
+      else if (it.kind === 'excl') { p *= 1.1; r *= 1.03; }
+      else if (it.kind === 'ask') p *= 1.05;
     }
-    let i = 0;
-    const step = () => {
-      if (g !== this.gen) return; if (i >= items.length) return done && done();
-      const it = items[i++]; const u = new SpeechSynthesisUtterance(it.text);
-      if (it.v) { u.voice = it.v; u.lang = it.v.lang; } else u.lang = it.lang === 'zh' ? 'zh-CN' : 'en-US';
-      u.rate = S.set.ttsRate; u.pitch = S.set.ttsPitch || 1;
-      u.onend = step; u.onerror = ev => { if (g === this.gen && ev.error !== 'interrupted' && ev.error !== 'canceled') step(); };
-      speechSynthesis.speak(u);
-    };
-    step();
+    u.rate = clamp(r, 0.1, 4); u.pitch = clamp(p, 0, 2);
+    u.onend = () => { if (g !== this.gen || this.cur !== c) return; c.i++; this.step(); };
+    u.onerror = ev => { if (g !== this.gen || this.cur !== c || ev.error === 'interrupted' || ev.error === 'canceled') return; c.i++; this.step(); };
+    speechSynthesis.speak(u);
   },
   speakOnly(text) { this.stop(); this.gen++; if (this.useAzure()) Azure.unlock(); this.speak(text, () => {}); },
   start() {
@@ -877,31 +912,39 @@ const TTS = {
     if (S.view === Flow) { this.queue = this.blocksFrom(Flow.anchorO); this.nextBlock(); }
     else if (S.view === Pdf) this.pdfPage(Pdf.cur);
   },
-  blocks() { return $$('p,h1,h2,h3,h4,h5,h6,li,blockquote,pre,td,th,dt,dd,figcaption,div.sp', Flow.art).filter(el => !el.querySelector('p,li,h1,h2,h3,h4,h5,h6,blockquote,td,dd') && el.textContent.trim()); },
+  blocks() { return $$('p,h1,h2,h3,h4,h5,h6,li,blockquote,pre,td,th,dt,dd,figcaption,div.sp', Flow.art).filter(el => !el.querySelector('p,li,h1,h2,h3,h4,h5,h6,blockquote,td,dd') && el.textContent.trim() && !el.closest('pre') ); },
   blocksFrom(o) { const bl = this.blocks(); const art = Flow.art; let k = bl.findIndex(el => { const end = offsetOf(art, el, el.childNodes.length); return end > o; }); return bl.slice(Math.max(0, k)); },
   nextBlock() {
     if (!this.on) return;
     $$('.tts-cur', stage).forEach(x => x.classList.remove('tts-cur'));
     const el = this.queue.shift();
     if (!el) {
-      if (Flow.si < Flow.doc.sections.length - 1) { this.driving = true; Flow.show(Flow.si + 1).then(() => { this.driving = false; this.queue = this.blocks(); this.nextBlock(); }); }
+      if (Flow.si < Flow.doc.sections.length - 1) { this.driving = true; Flow.show(Flow.si + 1).then(() => { this.driving = false; this.queue = this.blocks(); setTimeout(() => this.nextBlock(), 600); }); }
       else this.stop();
       return;
     }
     el.classList.add('tts-cur');
     Flow.revealEl(el); if (Flow.isPaged()) Flow.userMoved();
-    this.speak(el.textContent, () => this.nextBlock());
+    const heading = /^H[1-6]$/.test(el.tagName);
+    const g = this.gen;
+    // a short breath between paragraphs, a longer one after headings
+    this.speak(el.textContent, () => { if (g === this.gen || this.on) setTimeout(() => this.nextBlock(), heading ? 650 : 320); }, el);
   },
   async pdfPage(p) {
     if (!this.on) return; if (p >= Pdf.n) return this.stop();
     if (Pdf.cur !== p) Pdf.goto(p);
     const tc = await Pdf.textContent(p);
-    // join text items with line breaks where the PDF has them, so sentences across lines still pause correctly
     const text = tc.items.map(x => (x.str || '') + (x.hasEOL ? (/[㐀-鿿]$/.test(x.str || '') ? '' : ' ') : '')).join('');
-    this.speak(text || ' ', () => this.pdfPage(p + 1));
+    this.speak(text || ' ', () => setTimeout(() => this.pdfPage(p + 1), 400));
   },
-  pause() { if (!this.on) return; this.paused = !this.paused; if (this.useAzure()) Azure.pause(this.paused); else if (this.paused) speechSynthesis.pause(); else speechSynthesis.resume(); UI.syncTTS(); },
-  stop() { this.on = false; this.paused = false; this.gen++; Azure.stop(); if (this.ok) speechSynthesis.cancel(); $$('.tts-cur').forEach(x => x.classList.remove('tts-cur')); UI.syncTTS(); },
+  pause() {
+    if (!this.on) return; this.paused = !this.paused;
+    if (this.useAzure()) Azure.pause(this.paused);
+    else if (this.paused) { this.gen++; speechSynthesis.cancel(); }
+    else { this.gen++; this.step(); }
+    UI.syncTTS();
+  },
+  stop() { this.on = false; this.paused = false; this.gen++; this.cur = null; Azure.stop(); if (this.ok) speechSynthesis.cancel(); $$('.tts-cur').forEach(x => x.classList.remove('tts-cur')); this.clearSent(); UI.syncTTS(); },
 };
 function osKind() { const ua = navigator.userAgent; return /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1) ? 'ios' : /Android/.test(ua) ? 'android' : /Macintosh|Mac OS X/.test(ua) ? 'mac' : /Windows/.test(ua) ? 'win' : 'other'; }
 
@@ -1382,11 +1425,12 @@ function renderTTS(pop) {
     const pick = (lang, key) => {
       const list = TTS.list(lang);
       if (!list.length) return h('div', { class: 'row2' }, h('span', { text: t(lang === 'zh' ? 'voiceZh' : 'voiceEn') }), h('span', { class: 'warn', text: t(lang === 'zh' ? 'noZhVoiceShort' : 'noEnVoiceShort') }));
-      const sel = h('select', {}, h('option', { value: 'auto', selected: !S.set[key] || S.set[key] === 'auto' }, t('voiceAuto') + ` (${list[0].name})`), list.map(v => h('option', { value: v.voiceURI, selected: S.set[key] === v.voiceURI }, `${v.name} (${v.lang})${v.localService ? '' : ', ' + t('online')}`)));
+      const tag = v => { const q = TTS.qualityTag(v); return q ? `，${q}` : ''; };
+      const sel = h('select', {}, h('option', { value: 'auto', selected: !S.set[key] || S.set[key] === 'auto' }, t('voiceAuto') + `（${TTS.shortName(list[0])}）`), list.map(v => h('option', { value: v.voiceURI, selected: S.set[key] === v.voiceURI, title: v.name }, `${TTS.shortName(v)}（${v.lang}${tag(v)}）`)));
       sel.onchange = () => { S.set[key] = sel.value; saveSet(); TTS.speakOnly(sample(lang)); };
       return h('div', { class: 'row3' }, h('span', { text: t(lang === 'zh' ? 'voiceZh' : 'voiceEn') }), sel, tryBtn(lang));
     };
-    sec.append(pick('zh', 'voiceZh'), pick('en', 'voiceEn'));
+    sec.append(pick('zh', 'voiceZh'), pick('en', 'voiceEn'), h('div', { class: 'row2' }, h('span', { text: t('ttsExpr') }), seg([[true, t('on')], [false, t('off')]], S.set.ttsExpr !== false, v => { S.set.ttsExpr = v; saveSet(); renderTTS(pop); TTS.speakOnly(sample('zh')); })));
     sec.append(h('p', { class: 'ttsnote', text: TTS.list('zh').length ? t('natural_' + osKind()) : t('zhVoiceHow_' + osKind()) }));
   }
   pop.append(h('section', {}, sliderRow(t('rate'), 'ttsRate', 0.5, 2.5, 0.1, x => x.toFixed(1) + '×'), sliderRow(t('pitch'), 'ttsPitch', 0.5, 1.5, 0.05, x => x.toFixed(2))));

@@ -145,6 +145,7 @@ body.immersive #imm-exit:hover,body.immersive #imm-exit:focus-visible{opacity:1}
 .flow .poem,.flow .stanza{margin:1em 0 1em 2em;text-indent:0}
 .flow .subtitle{text-align:center;text-indent:0;color:var(--ink2)}
 .flow .epigraph{margin:1em 0 1.4em 30%;font-style:italic;color:var(--ink2)}
+.flow mark.tts-sent{background:color-mix(in srgb,var(--accent) 22%,transparent);color:inherit;border-radius:2px;padding:0}
 .flow .tts-cur{background:color-mix(in srgb,var(--accent) 14%,transparent);border-radius:3px;box-shadow:0 0 0 4px color-mix(in srgb,var(--accent) 14%,transparent)}
 mark.hl{color:inherit;background:color-mix(in srgb,var(--c) calc(var(--hla) * 100%),transparent);border-radius:2px;cursor:pointer;padding:0}
 mark.hl.has-note{text-decoration:underline dotted color-mix(in srgb,var(--c) 90%,var(--ink));text-decoration-thickness:2px;text-underline-offset:3px}
