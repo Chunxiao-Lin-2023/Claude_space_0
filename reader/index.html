@@ -123,6 +123,11 @@ body.immersive #top{margin-top:calc(-1 * (var(--topH) + env(safe-area-inset-top)
 body.immersive #bottom{margin-bottom:calc(-1 * (var(--botH) + env(safe-area-inset-bottom)) - 1px)}
 body.immersive #side{margin-left:calc(-1 * var(--side) - 1px)}
 
+#imm-exit{position:fixed;z-index:40;top:calc(env(safe-area-inset-top) + 10px);right:calc(env(safe-area-inset-right) + 12px);display:none;align-items:center;gap:6px;height:34px;padding:0 12px;border-radius:17px;border:1px solid var(--line);background:color-mix(in srgb,var(--panel) 88%,transparent);color:var(--ink2);font-size:13px;box-shadow:0 4px 14px rgba(0,0,0,.12);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);transition:opacity .4s}
+#imm-exit svg.i{width:16px;height:16px}
+body.immersive #imm-exit{display:flex}
+body.immersive #imm-exit.dim{opacity:.35}
+body.immersive #imm-exit:hover,body.immersive #imm-exit:focus-visible{opacity:1}
 /* ---------- flow content ---------- */
 .flow-wrap{min-height:100%;display:flex;flex-direction:column}
 .flow{width:100%;max-width:var(--pw);margin:0 auto;padding:56px 32px 32px;font-family:var(--f-body);font-size:var(--fs);line-height:var(--lh);letter-spacing:var(--ls);text-align:var(--align);color:var(--ink);overflow-wrap:break-word;hyphens:auto;font-kerning:normal;font-variant-ligatures:common-ligatures;text-rendering:optimizeLegibility;-webkit-font-smoothing:antialiased;flex:none}
@@ -519,6 +524,7 @@ body.dragging #dropmask{display:grid}
 <div class="pop" id="p-aa"></div>
 <div class="pop" id="p-tts"></div>
 <div class="pop" id="p-more" style="width:260px"></div>
+<button id="imm-exit" type="button"><svg class="i"><use href="#i-eye"/></svg><span id="imm-exit-l"></span></button>
 <div id="selbar"></div>
 <div id="modal"><div class="mbox" id="mbox"></div></div>
 <div id="toast"></div>
@@ -620,6 +626,7 @@ const I18N = {
   voice: ['声音', 'Voice'], voiceAuto: ['自动（按语言选择）', 'Automatic (by language)'], rate: ['语速', 'Rate'],
   noVoices: ['系统里没有可用的中文或英文语音。', 'No Chinese or English system voices are available.'],
   // more / misc
+  immExit: ['退出沉浸', 'Exit focus'], immHint: ['轻点页面或右上角按钮即可退出沉浸阅读', 'Tap the page or the button at the top right to leave focus mode'],
   fullscreen: ['全屏', 'Full screen'], immersive: ['沉浸阅读', 'Focus mode'], shortcuts: ['键盘快捷键', 'Keyboard shortcuts'], fsFail: ['当前窗口不允许全屏', 'Full screen is not allowed here'],
   close: ['好', 'OK'], cancel: ['取消', 'Cancel'], save: ['保存', 'Save'], open: ['打开', 'Open'],
   password: ['密码', 'Password'], pwNeed: ['这个 PDF 需要密码', 'This PDF needs a password'], pwWrong: ['密码不对，请重试', 'Wrong password, try again'],
@@ -2413,12 +2420,13 @@ const Flow = {
     stage.onscroll = throttle(() => this.onScroll(), 90);
     stage.onwheel = e => { if (this.isPaged() && !e.ctrlKey) { e.preventDefault(); const now = Date.now(); if (now - (this.wt || 0) < 280 || Math.abs(e.deltaY) + Math.abs(e.deltaX) < 4) return; this.wt = now; (e.deltaY + e.deltaX > 0 ? this.next() : this.prev()); } };
     this.art.addEventListener('click', e => this.onClick(e));
+    stage.onclick = e => { if (!this.isPaged() || !this.art.contains(e.target)) UI.tapExitsImmersive(e); };
     this.ro = new ResizeObserver(debounce(() => this.relayout(this.anchorO), 150)); this.ro.observe(stage);
     this.onImg = debounce(() => this.relayout(this.anchorO), 120);
     const pos = S.st.pos;
     return pos && pos.s != null ? this.show(pos.s, { offset: pos.o }) : this.show(0);
   },
-  unmount() { if (this.ro) this.ro.disconnect(); stage.onscroll = null; stage.onwheel = null; document.body.classList.remove('paged', 'spread'); $('#pagefoot').classList.add('hidden'); },
+  unmount() { if (this.ro) this.ro.disconnect(); stage.onscroll = null; stage.onwheel = null; stage.onclick = null; document.body.classList.remove('paged', 'spread'); $('#pagefoot').classList.add('hidden'); },
   isPaged() { return this.doc && !this.doc.fixed && S.set.mode !== 'scroll'; },
   spread() { return S.set.mode === 'spread' && stage.clientWidth >= 860; },
   sec() { return this.doc.sections[this.si]; },
@@ -2610,6 +2618,7 @@ const Pdf = {
     stage.onscroll = throttle(() => this.onScroll(), 90);
     stage.onwheel = e => { if (e.ctrlKey || e.metaKey) { e.preventDefault(); this.zoomBy(e.deltaY < 0 ? 1.1 : 1 / 1.1); } };
     this.ro = new ResizeObserver(debounce(() => { if (this.fit !== 'num') this.applyScale(); }, 150)); this.ro.observe(stage);
+    stage.addEventListener('click', this.onTap = e => UI.tapExitsImmersive(e));
     stage.addEventListener('mousedown', this.onDown = e => { const tl = e.target.closest && e.target.closest('.textLayer'); if (tl) tl.classList.add('selecting'); });
     document.addEventListener('mouseup', this.onUp = () => $$('.textLayer.selecting').forEach(x => x.classList.remove('selecting')));
     applySettings();
@@ -2617,7 +2626,7 @@ const Pdf = {
     const pos = S.st.pos;
     if (pos && pos.p != null) this.goto(pos.p, pos.y || 0); else this.afterMove();
   },
-  unmount() { if (this.io) this.io.disconnect(); if (this.ro) this.ro.disconnect(); stage.onscroll = null; stage.onwheel = null; stage.removeEventListener('mousedown', this.onDown); document.removeEventListener('mouseup', this.onUp); this.P.forEach(p => { try { p.task && p.task.cancel(); } catch {} }); document.body.classList.remove('pdf-invert'); },
+  unmount() { if (this.io) this.io.disconnect(); if (this.ro) this.ro.disconnect(); stage.onscroll = null; stage.onwheel = null; stage.removeEventListener('mousedown', this.onDown); stage.removeEventListener('click', this.onTap); document.removeEventListener('mouseup', this.onUp); this.P.forEach(p => { try { p.task && p.task.cancel(); } catch {} }); document.body.classList.remove('pdf-invert'); },
   sizeOf(i) { const s = this.sizes[i] || this.base; return this.rot % 180 ? { w: s.h, h: s.w } : s; },
   scale() { return this.zoom * PX; },
   computeZoom() {
@@ -2741,6 +2750,7 @@ const Gallery = {
       this.box.onclick = e => { if (this.zoom > 1) return; const r = stage.getBoundingClientRect(); const fx = (e.clientX - r.left) / r.width; if (fx < 0.3) this.prev(); else if (fx > 0.7) this.next(); else UI.toggleImmersive(); };
     } else {
       this.doc.items.forEach((it, i) => this.box.append(h('img', { src: it.url, alt: it.name, loading: 'lazy', 'data-i': i, style: { transform: tr } })));
+      this.box.onclick = e => UI.tapExitsImmersive(e);
     }
     stage.append(this.box);
     if (this.mode === 'strip' && this.cur) requestAnimationFrame(() => { const im = this.box.children[this.cur]; if (im) stage.scrollTop = im.offsetTop - 12; });
@@ -3165,7 +3175,19 @@ const UI = {
   },
   syncBookmark() { const b = $('#b-bm'); if (!S.doc) return; const on = Bookmarks.current().length > 0; b.classList.toggle('on', on); b.title = t(on ? 'bmRemove' : 'bmAdd'); },
   syncTTS() { $('#b-tts').classList.toggle('on', TTS.on); if ($('#p-tts').classList.contains('open')) renderTTS($('#p-tts')); },
-  toggleImmersive(force) { const on = force != null ? force : !document.body.classList.contains('immersive'); document.body.classList.toggle('immersive', on); closePops(); Sel.hide(); },
+  toggleImmersive(force) {
+    const on = force != null ? force : !document.body.classList.contains('immersive');
+    document.body.classList.toggle('immersive', on); closePops(); Sel.hide();
+    const b = $('#imm-exit'); b.classList.remove('dim'); clearTimeout(this.immTm);
+    if (on) { this.immTm = setTimeout(() => b.classList.add('dim'), 2500); if (!this.immHinted) { this.immHinted = true; toast(t('immHint'), 2600); } }
+  },
+  /** In focus mode a plain tap on the page (not a link, mark or selection) brings the bars back. */
+  tapExitsImmersive(e) {
+    if (!document.body.classList.contains('immersive')) return false;
+    if (e.target.closest && e.target.closest('a,button,mark.hl,input,select,textarea')) return false;
+    if (!getSelection().isCollapsed) return false;
+    this.toggleImmersive(false); return true;
+  },
   i18n() {
     document.documentElement.lang = LANG === 'zh' ? 'zh-CN' : 'en';
     for (const el of $$('[data-tip]')) el.title = t('tip_' + el.dataset.tip);
@@ -3173,6 +3195,7 @@ const UI = {
     $('#b-prev').title = t('prev'); $('#b-next').title = t('next');
     $('#z-in').title = t('zoomIn'); $('#z-out').title = t('zoomOut'); $('#z-rot').title = t('rotate'); $('#z-val').title = t('zoomReset');
     $('#dropmask-t').textContent = t('dropHere');
+    $('#imm-exit-l').textContent = t('immExit');
     if (!S.doc) { $('#t-title').textContent = t('appName'); Shelf.render(); }
   },
   readerMode(on) {
@@ -3472,6 +3495,7 @@ function openSample() {
 /* ======================= Events ======================= */
 function bind() {
   $('#b-side').onclick = () => Side.toggle();
+  $('#imm-exit').onclick = () => UI.toggleImmersive(false);
   $('#scrim').onclick = () => Side.close();
   $('#b-home').onclick = () => { if (S.doc) closeDoc(); };
   $('#b-aa').onclick = e => openPop($('#p-aa'), e.currentTarget, renderAa);

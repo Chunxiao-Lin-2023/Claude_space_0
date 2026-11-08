@@ -247,12 +247,13 @@ const Flow = {
     stage.onscroll = throttle(() => this.onScroll(), 90);
     stage.onwheel = e => { if (this.isPaged() && !e.ctrlKey) { e.preventDefault(); const now = Date.now(); if (now - (this.wt || 0) < 280 || Math.abs(e.deltaY) + Math.abs(e.deltaX) < 4) return; this.wt = now; (e.deltaY + e.deltaX > 0 ? this.next() : this.prev()); } };
     this.art.addEventListener('click', e => this.onClick(e));
+    stage.onclick = e => { if (!this.isPaged() || !this.art.contains(e.target)) UI.tapExitsImmersive(e); };
     this.ro = new ResizeObserver(debounce(() => this.relayout(this.anchorO), 150)); this.ro.observe(stage);
     this.onImg = debounce(() => this.relayout(this.anchorO), 120);
     const pos = S.st.pos;
     return pos && pos.s != null ? this.show(pos.s, { offset: pos.o }) : this.show(0);
   },
-  unmount() { if (this.ro) this.ro.disconnect(); stage.onscroll = null; stage.onwheel = null; document.body.classList.remove('paged', 'spread'); $('#pagefoot').classList.add('hidden'); },
+  unmount() { if (this.ro) this.ro.disconnect(); stage.onscroll = null; stage.onwheel = null; stage.onclick = null; document.body.classList.remove('paged', 'spread'); $('#pagefoot').classList.add('hidden'); },
   isPaged() { return this.doc && !this.doc.fixed && S.set.mode !== 'scroll'; },
   spread() { return S.set.mode === 'spread' && stage.clientWidth >= 860; },
   sec() { return this.doc.sections[this.si]; },
@@ -444,6 +445,7 @@ const Pdf = {
     stage.onscroll = throttle(() => this.onScroll(), 90);
     stage.onwheel = e => { if (e.ctrlKey || e.metaKey) { e.preventDefault(); this.zoomBy(e.deltaY < 0 ? 1.1 : 1 / 1.1); } };
     this.ro = new ResizeObserver(debounce(() => { if (this.fit !== 'num') this.applyScale(); }, 150)); this.ro.observe(stage);
+    stage.addEventListener('click', this.onTap = e => UI.tapExitsImmersive(e));
     stage.addEventListener('mousedown', this.onDown = e => { const tl = e.target.closest && e.target.closest('.textLayer'); if (tl) tl.classList.add('selecting'); });
     document.addEventListener('mouseup', this.onUp = () => $$('.textLayer.selecting').forEach(x => x.classList.remove('selecting')));
     applySettings();
@@ -451,7 +453,7 @@ const Pdf = {
     const pos = S.st.pos;
     if (pos && pos.p != null) this.goto(pos.p, pos.y || 0); else this.afterMove();
   },
-  unmount() { if (this.io) this.io.disconnect(); if (this.ro) this.ro.disconnect(); stage.onscroll = null; stage.onwheel = null; stage.removeEventListener('mousedown', this.onDown); document.removeEventListener('mouseup', this.onUp); this.P.forEach(p => { try { p.task && p.task.cancel(); } catch {} }); document.body.classList.remove('pdf-invert'); },
+  unmount() { if (this.io) this.io.disconnect(); if (this.ro) this.ro.disconnect(); stage.onscroll = null; stage.onwheel = null; stage.removeEventListener('mousedown', this.onDown); stage.removeEventListener('click', this.onTap); document.removeEventListener('mouseup', this.onUp); this.P.forEach(p => { try { p.task && p.task.cancel(); } catch {} }); document.body.classList.remove('pdf-invert'); },
   sizeOf(i) { const s = this.sizes[i] || this.base; return this.rot % 180 ? { w: s.h, h: s.w } : s; },
   scale() { return this.zoom * PX; },
   computeZoom() {
@@ -575,6 +577,7 @@ const Gallery = {
       this.box.onclick = e => { if (this.zoom > 1) return; const r = stage.getBoundingClientRect(); const fx = (e.clientX - r.left) / r.width; if (fx < 0.3) this.prev(); else if (fx > 0.7) this.next(); else UI.toggleImmersive(); };
     } else {
       this.doc.items.forEach((it, i) => this.box.append(h('img', { src: it.url, alt: it.name, loading: 'lazy', 'data-i': i, style: { transform: tr } })));
+      this.box.onclick = e => UI.tapExitsImmersive(e);
     }
     stage.append(this.box);
     if (this.mode === 'strip' && this.cur) requestAnimationFrame(() => { const im = this.box.children[this.cur]; if (im) stage.scrollTop = im.offsetTop - 12; });
@@ -999,7 +1002,19 @@ const UI = {
   },
   syncBookmark() { const b = $('#b-bm'); if (!S.doc) return; const on = Bookmarks.current().length > 0; b.classList.toggle('on', on); b.title = t(on ? 'bmRemove' : 'bmAdd'); },
   syncTTS() { $('#b-tts').classList.toggle('on', TTS.on); if ($('#p-tts').classList.contains('open')) renderTTS($('#p-tts')); },
-  toggleImmersive(force) { const on = force != null ? force : !document.body.classList.contains('immersive'); document.body.classList.toggle('immersive', on); closePops(); Sel.hide(); },
+  toggleImmersive(force) {
+    const on = force != null ? force : !document.body.classList.contains('immersive');
+    document.body.classList.toggle('immersive', on); closePops(); Sel.hide();
+    const b = $('#imm-exit'); b.classList.remove('dim'); clearTimeout(this.immTm);
+    if (on) { this.immTm = setTimeout(() => b.classList.add('dim'), 2500); if (!this.immHinted) { this.immHinted = true; toast(t('immHint'), 2600); } }
+  },
+  /** In focus mode a plain tap on the page (not a link, mark or selection) brings the bars back. */
+  tapExitsImmersive(e) {
+    if (!document.body.classList.contains('immersive')) return false;
+    if (e.target.closest && e.target.closest('a,button,mark.hl,input,select,textarea')) return false;
+    if (!getSelection().isCollapsed) return false;
+    this.toggleImmersive(false); return true;
+  },
   i18n() {
     document.documentElement.lang = LANG === 'zh' ? 'zh-CN' : 'en';
     for (const el of $$('[data-tip]')) el.title = t('tip_' + el.dataset.tip);
@@ -1007,6 +1022,7 @@ const UI = {
     $('#b-prev').title = t('prev'); $('#b-next').title = t('next');
     $('#z-in').title = t('zoomIn'); $('#z-out').title = t('zoomOut'); $('#z-rot').title = t('rotate'); $('#z-val').title = t('zoomReset');
     $('#dropmask-t').textContent = t('dropHere');
+    $('#imm-exit-l').textContent = t('immExit');
     if (!S.doc) { $('#t-title').textContent = t('appName'); Shelf.render(); }
   },
   readerMode(on) {
@@ -1306,6 +1322,7 @@ function openSample() {
 /* ======================= Events ======================= */
 function bind() {
   $('#b-side').onclick = () => Side.toggle();
+  $('#imm-exit').onclick = () => UI.toggleImmersive(false);
   $('#scrim').onclick = () => Side.close();
   $('#b-home').onclick = () => { if (S.doc) closeDoc(); };
   $('#b-aa').onclick = e => openPop($('#p-aa'), e.currentTarget, renderAa);

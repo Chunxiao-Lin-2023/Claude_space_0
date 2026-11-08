@@ -111,6 +111,11 @@ body.immersive #top{margin-top:calc(-1 * (var(--topH) + env(safe-area-inset-top)
 body.immersive #bottom{margin-bottom:calc(-1 * (var(--botH) + env(safe-area-inset-bottom)) - 1px)}
 body.immersive #side{margin-left:calc(-1 * var(--side) - 1px)}
 
+#imm-exit{position:fixed;z-index:40;top:calc(env(safe-area-inset-top) + 10px);right:calc(env(safe-area-inset-right) + 12px);display:none;align-items:center;gap:6px;height:34px;padding:0 12px;border-radius:17px;border:1px solid var(--line);background:color-mix(in srgb,var(--panel) 88%,transparent);color:var(--ink2);font-size:13px;box-shadow:0 4px 14px rgba(0,0,0,.12);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);transition:opacity .4s}
+#imm-exit svg.i{width:16px;height:16px}
+body.immersive #imm-exit{display:flex}
+body.immersive #imm-exit.dim{opacity:.35}
+body.immersive #imm-exit:hover,body.immersive #imm-exit:focus-visible{opacity:1}
 /* ---------- flow content ---------- */
 .flow-wrap{min-height:100%;display:flex;flex-direction:column}
 .flow{width:100%;max-width:var(--pw);margin:0 auto;padding:56px 32px 32px;font-family:var(--f-body);font-size:var(--fs);line-height:var(--lh);letter-spacing:var(--ls);text-align:var(--align);color:var(--ink);overflow-wrap:break-word;hyphens:auto;font-kerning:normal;font-variant-ligatures:common-ligatures;text-rendering:optimizeLegibility;-webkit-font-smoothing:antialiased;flex:none}

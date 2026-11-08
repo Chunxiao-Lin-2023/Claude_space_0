@@ -90,6 +90,7 @@ const I18N = {
   voice: ['声音', 'Voice'], voiceAuto: ['自动（按语言选择）', 'Automatic (by language)'], rate: ['语速', 'Rate'],
   noVoices: ['系统里没有可用的中文或英文语音。', 'No Chinese or English system voices are available.'],
   // more / misc
+  immExit: ['退出沉浸', 'Exit focus'], immHint: ['轻点页面或右上角按钮即可退出沉浸阅读', 'Tap the page or the button at the top right to leave focus mode'],
   fullscreen: ['全屏', 'Full screen'], immersive: ['沉浸阅读', 'Focus mode'], shortcuts: ['键盘快捷键', 'Keyboard shortcuts'], fsFail: ['当前窗口不允许全屏', 'Full screen is not allowed here'],
   close: ['好', 'OK'], cancel: ['取消', 'Cancel'], save: ['保存', 'Save'], open: ['打开', 'Open'],
   password: ['密码', 'Password'], pwNeed: ['这个 PDF 需要密码', 'This PDF needs a password'], pwWrong: ['密码不对，请重试', 'Wrong password, try again'],
