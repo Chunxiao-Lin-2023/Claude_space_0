@@ -1,6 +1,7 @@
-/* 游戏列表：大厅只读这一个文件。加一个新游戏 = 在下面加一项 + 在 covers/ 放一张 16:9 封面。
+/* 游戏与工具列表：大厅只读这一个文件。加一个新游戏或工具 = 在下面加一项 + 在 covers/ 放一张 16:9 封面。
    大厅只放链接，不包含任何游戏代码，所以改动这里不会影响任何游戏，反之亦然。
 
+   kind:   可省略，省略时是游戏 | 'tool' 工具（大厅里单独分类，卡片按钮写“打开工具”）
    status: 'done' 已完成 | 'dev' 开发中
    url:    游戏所在文件夹（相对路径），或完整网址
    cover:  可省略，省略时显示标题色块 */
@@ -169,5 +170,17 @@ window.GAMES = [
     status: 'dev',
     tags: ['单人', '双人联机', '剧情', '像素'],
     hue: 120
+  },
+  {
+    id: 'reader',
+    kind: 'tool',
+    title: '墨阅',
+    sub: '文档阅读器 · 中英文排版',
+    desc: '打开 PDF、EPUB、MOBI、DOCX、TXT、Markdown、表格、幻灯片、代码和漫画。中文和英文字体分开选，滚动、分页或双页阅读，划线笔记、全文搜索、朗读；书和笔记可同步到自己的 GitHub 私有仓库，也有 Windows / macOS 桌面版。',
+    url: 'reader/',
+    cover: 'covers/reader.webp',
+    status: 'done',
+    tags: ['电脑', 'iPad', 'iPhone', '桌面版', 'GitHub 同步'],
+    hue: 210
   }
 ];

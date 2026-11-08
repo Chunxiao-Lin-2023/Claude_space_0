@@ -70,6 +70,11 @@ h1{font-family:"Noto Serif SC",serif;font-weight:900;font-size:clamp(40px,7vw,64
 .play{flex:none;font-size:14px;font-weight:700;color:var(--gold);white-space:nowrap}
 .card:hover .play,.card:focus-visible .play{color:var(--gold2)}
 .empty{color:var(--ink3);text-align:center;padding:60px 0;grid-column:1/-1}
+.sec{grid-column:1/-1;display:flex;align-items:baseline;gap:12px;margin:18px 0 -4px;padding-bottom:10px;border-bottom:1px solid var(--line)}
+.sec:first-child{margin-top:0}
+.sec h3{font-family:"Noto Serif SC",serif;font-size:22px;letter-spacing:.08em;margin:0;color:var(--ink)}
+.sec span{color:var(--ink3);font-size:13px}
+.chip-sep{width:1px;align-self:stretch;margin:6px 4px;background:var(--line2)}
 footer{margin-top:40px;padding-top:18px;border-top:1px solid var(--line);color:var(--ink3);font-size:12px;line-height:1.8;display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
 kbd{font-family:inherit;font-size:11px;border:1px solid var(--line2);border-bottom-width:2px;border-radius:5px;padding:0 5px;color:var(--ink2)}
 @media (pointer:coarse),(hover:none){.chip{padding:12px 18px;min-height:44px}.key{display:none}}
@@ -83,7 +88,7 @@ kbd{font-family:inherit;font-size:11px;border:1px solid var(--line2);border-bott
     <div>
       <div class="eyebrow">GAME ROOM</div>
       <h1>游戏厅</h1>
-      <p class="lede">自己做的网页小游戏。点开即玩，电脑、iPad、iPhone 都可以；每个游戏独立运行，存档各自保存在本机浏览器里。</p>
+      <p class="lede">自己做的网页小游戏和小工具。点开即用，电脑、iPad、iPhone 都可以；每个游戏和工具独立运行，存档各自保存在本机浏览器里。</p>
     </div>
     <nav class="filters" id="filters" aria-label="筛选"></nav>
   </header>
@@ -99,7 +104,10 @@ kbd{font-family:inherit;font-size:11px;border:1px solid var(--line2);border-bott
 (() => {
   const games = Array.isArray(window.GAMES) ? window.GAMES : [];
   const STATUS = { done: '已完成', dev: '开发中' };
-  const FILTERS = [['all', '全部'], ['done', '已完成'], ['dev', '开发中']];
+  const KINDS = [['game', '游戏'], ['tool', '工具']];
+  const kindOf = g => g.kind === 'tool' ? 'tool' : 'game';
+  const FILTERS = [['all', '全部'], ...KINDS, ['done', '已完成'], ['dev', '开发中']];
+  const match = (g, f) => f === 'all' || (f === 'game' || f === 'tool' ? kindOf(g) === f : g.status === f);
   let filter = 'all';
   try { filter = localStorage.getItem('hub.filter') || 'all'; } catch (e) {}
   if (!FILTERS.some(f => f[0] === filter)) filter = 'all';
@@ -110,19 +118,26 @@ kbd{font-family:inherit;font-size:11px;border:1px solid var(--line2);border-bott
 
   function renderFilters() {
     $filters.innerHTML = FILTERS.map(([k, label]) => {
-      const n = k === 'all' ? games.length : games.filter(g => g.status === k).length;
-      return `<button class="chip" data-f="${k}" aria-pressed="${k === filter}">${label}<span class="n">${n}</span></button>`;
+      const n = games.filter(g => match(g, k)).length;
+      return (k === 'done' ? '<span class="chip-sep" aria-hidden="true"></span>' : '') +
+        `<button class="chip" data-f="${k}" aria-pressed="${k === filter}">${label}<span class="n">${n}</span></button>`;
     }).join('');
   }
 
   function renderGrid() {
-    const list = games.filter(g => filter === 'all' || g.status === filter);
-    if (!list.length) { $grid.innerHTML = '<div class="empty">这里还没有游戏</div>'; return; }
+    const filtered = games.filter(g => match(g, filter));
+    if (!filtered.length) { $grid.innerHTML = '<div class="empty">这里还没有内容</div>'; return; }
+    // 游戏在前、工具在后；同时有两类时加分类标题
+    const list = [...filtered.filter(g => kindOf(g) === 'game'), ...filtered.filter(g => kindOf(g) === 'tool')];
+    const grouped = new Set(list.map(kindOf)).size > 1;
     $grid.innerHTML = list.map((g, i) => {
+      const k = kindOf(g);
+      const head = grouped && (i === 0 || kindOf(list[i - 1]) !== k)
+        ? `<div class="sec"><h3>${KINDS.find(x => x[0] === k)[1]}</h3><span>${list.filter(x => kindOf(x) === k).length}</span></div>` : '';
       const hue = Number.isFinite(g.hue) ? g.hue : 30;
       const ph = `<div class="ph" style="background:linear-gradient(135deg,hsl(${hue} 45% 32%),hsl(${(hue + 40) % 360} 40% 18%))">${esc(g.title)}</div>`;
       const cover = g.cover ? `<img src="${esc(g.cover)}" alt="" loading="lazy" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'ph',textContent:${esc(JSON.stringify(g.title))}}))">` : '';
-      return `<a class="card" href="${esc(g.url)}" data-i="${i}">
+      return head + `<a class="card" href="${esc(g.url)}" data-i="${i}">
         <div class="cover">${g.cover ? '' : ph}${cover}
           <span class="badge ${g.status === 'dev' ? 'dev' : 'done'}">${STATUS[g.status] || STATUS.done}</span>
           ${i < 9 ? `<span class="key">${i + 1}</span>` : ''}
@@ -132,7 +147,7 @@ kbd{font-family:inherit;font-size:11px;border:1px solid var(--line2);border-bott
           ${g.desc ? `<p class="desc">${esc(g.desc)}</p>` : ''}
           <div class="foot">
             <div class="tags">${(g.tags || []).map(t => `<span class="tag">${esc(t)}</span>`).join('')}</div>
-            <span class="play">开始游戏 →</span>
+            <span class="play">${k === 'tool' ? '打开工具 →' : '开始游戏 →'}</span>
           </div>
         </div>
       </a>`;
