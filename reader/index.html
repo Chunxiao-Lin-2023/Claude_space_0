@@ -380,6 +380,8 @@ body.dragging #dropmask{display:grid}
 .menu hr{border:0;border-top:1px solid var(--line);margin:5px 4px}
 .ttsrow{display:flex;gap:8px;align-items:center}
 .ttsrow .btn{flex:1;justify-content:center}
+.pop .warn{font-size:12.5px;color:#B3261E}
+.ttsnote{margin:8px 0 0;font-size:12px;color:var(--ink2);line-height:1.65}
 
 /* ---------- selection bar ---------- */
 #selbar{position:fixed;z-index:70;display:none;align-items:center;gap:2px;background:var(--ink);color:var(--paper);border-radius:10px;padding:4px;box-shadow:0 8px 28px rgba(0,0,0,.28);transform:translate(-50%,-100%)}
@@ -623,7 +625,15 @@ const I18N = {
   autoOn: ['自动滚屏中，按空格或 Esc 停止', 'Auto-scrolling. Press Space or Esc to stop'], autoOff: ['已停止滚屏', 'Auto-scroll stopped'], autoNeedScroll: ['自动滚屏需要“滚动”翻页方式', 'Auto-scroll needs the Scroll page mode'],
   // tts
   tts: ['朗读', 'Read aloud'], readFromHere: ['从当前位置朗读', 'Read from here'], pause: ['暂停', 'Pause'], resume: ['继续', 'Resume'], stop: ['停止', 'Stop'],
-  voice: ['声音', 'Voice'], voiceAuto: ['自动（按语言选择）', 'Automatic (by language)'], rate: ['语速', 'Rate'],
+  voice: ['声音', 'Voice'], voiceAuto: ['自动', 'Automatic'], rate: ['语速', 'Rate'], voiceZh: ['中文声音', 'Chinese voice'], voiceEn: ['英文声音', 'English voice'], online: ['在线', 'online'],
+  noZhVoiceShort: ['这台设备没有中文语音', 'No Chinese voice on this device'], noEnVoiceShort: ['这台设备没有英文语音', 'No English voice on this device'],
+  ttsNote: ['中文段落用中文声音读，英文段落用英文声音读；句号、逗号处会停顿。选一个声音会先试读一句。', 'Chinese passages use the Chinese voice and English passages the English voice, pausing at full stops and commas. Picking a voice plays a short sample.'],
+  noZhVoiceTitle: ['没有中文语音', 'No Chinese voice'], noZhVoice: ['这台设备的浏览器里没有中文语音，所以读不了中文。装好中文语音后，重新打开墨阅即可。', 'This browser has no Chinese voice, so Chinese text cannot be read aloud. Install one, then reopen Moyue.'],
+  zhVoiceHow_win: ['Windows：设置 → 时间和语言 → 语音 → 添加语音，选“中文(简体，中国)”。装好后重启浏览器或墨阅。用 Edge 浏览器打开网页版，还能用晓晓等在线自然语音。', 'Windows: Settings → Time & language → Speech → Add voices → Chinese (Simplified, China), then restart the browser or app. Edge also offers online natural Chinese voices.'],
+  zhVoiceHow_mac: ['macOS：系统设置 → 辅助功能 → 朗读内容 → 系统声音 → 管理声音，勾选中文（普通话）里的声音（如婷婷）下载。', 'macOS: System Settings → Accessibility → Spoken Content → System Voice → Manage Voices, then download a Chinese (Mandarin) voice such as Tingting.'],
+  zhVoiceHow_ios: ['iPhone / iPad：设置 → 辅助功能 → 朗读内容 → 声音 → 中文，下载一个声音（如婷婷）。', 'iPhone / iPad: Settings → Accessibility → Spoken Content → Voices → Chinese, and download a voice such as Tingting.'],
+  zhVoiceHow_android: ['安卓：设置 → 系统 → 语言和输入法 → 文字转语音输出，在首选引擎里安装中文语音数据。', 'Android: Settings → System → Languages & input → Text-to-speech output, and install Chinese voice data for the engine.'],
+  zhVoiceHow_other: ['请在系统的语音或辅助功能设置里安装中文语音。', 'Install a Chinese voice in your system speech or accessibility settings.'],
   noVoices: ['系统里没有可用的中文或英文语音。', 'No Chinese or English system voices are available.'],
   // more / misc
   immExit: ['退出沉浸', 'Exit focus'], immHint: ['轻点页面或右上角按钮即可退出沉浸阅读', 'Tap the page or the button at the top right to leave focus mode'],
@@ -2258,7 +2268,7 @@ const IDB = (() => {
 })();
 
 /* ---------- settings ---------- */
-const DEF = { theme: 'paper', lang: null, cjk: 'sys-serif', latin: 'follow', mono: 'sys-mono', fs: 19, lh: 1.85, ps: 0.6, ls: 0, pw: 720, align: 'justify', indent: 'auto', mode: 'scroll', pdfInvert: true, pdfFit: 'width', spread: false, ttsRate: 1, voice: 'auto', autoSpeed: 40, side: true, sideTab: 'toc' };
+const DEF = { theme: 'paper', lang: null, cjk: 'sys-serif', latin: 'follow', mono: 'sys-mono', fs: 19, lh: 1.85, ps: 0.6, ls: 0, pw: 720, align: 'justify', indent: 'auto', mode: 'scroll', pdfInvert: true, pdfFit: 'width', spread: false, ttsRate: 1, voiceZh: 'auto', voiceEn: 'auto', autoSpeed: 40, side: true, sideTab: 'toc' };
 const S = { set: Object.assign({}, DEF, LS.get('settings', {})), doc: null, view: null, st: null, id: null, file: null, u8: null, fmt: null, lastAct: Date.now() };
 let LANG = S.set.lang || ((navigator.language || 'zh').toLowerCase().startsWith('zh') ? 'zh' : 'en');
 function t(k, ...a) { const e = I18N[k]; let s = e ? (LANG === 'zh' ? e[0] : e[1]) : k; a.forEach((v, i) => { s = s.split('{' + i + '}').join(v); }); return s; }
@@ -2952,34 +2962,93 @@ const Sel = {
 
 /* ======================= TTS ======================= */
 const TTS = {
-  ok: 'speechSynthesis' in window, on: false, paused: false, gen: 0, voices: [], queue: [], driving: false,
-  init() { if (!this.ok) return; const load = () => { this.voices = speechSynthesis.getVoices(); if ($('#p-tts').classList.contains('open')) renderTTS($('#p-tts')); }; load(); speechSynthesis.onvoiceschanged = load; },
-  pickVoice(text) {
-    if (S.set.voice !== 'auto') { const v = this.voices.find(v2 => v2.voiceURI === S.set.voice); if (v) return v; }
-    const zh = cjkRatio(text) > 0.25; const pref = zh ? ['zh-cn', 'zh'] : [(navigator.language || 'en').toLowerCase().startsWith('en') ? navigator.language.toLowerCase() : 'en-us', 'en'];
-    for (const p of pref) { const v = this.voices.find(v2 => v2.lang.toLowerCase().replace('_', '-').startsWith(p)); if (v) return v; }
-    return null;
+  ok: 'speechSynthesis' in window, on: false, paused: false, gen: 0, voices: [], queue: [], driving: false, warned: false,
+  init() {
+    if (!this.ok) return;
+    const load = () => { this.voices = speechSynthesis.getVoices() || []; if ($('#p-tts').classList.contains('open')) renderTTS($('#p-tts')); };
+    load(); speechSynthesis.onvoiceschanged = load;
+    if ('voice' in S.set) { delete S.set.voice; saveSet(); } // old single-voice setting read Chinese with English voices
   },
-  chunks(text) {
-    const out = []; const parts = text.replace(/\s+/g, ' ').trim().split(/(?<=[。！？!?；;…]|\.\s)/);
-    let cur = ''; for (const p of parts) { if ((cur + p).length > 160 && cur) { out.push(cur); cur = ''; } cur += p; while (cur.length > 220) { out.push(cur.slice(0, 200)); cur = cur.slice(200); } }
-    if (cur.trim()) out.push(cur); return out;
+  async ready() { if (this.voices.length) return; for (let i = 0; i < 15 && !this.voices.length; i++) { await sleep(100); this.voices = speechSynthesis.getVoices() || []; } },
+  isZhVoice: v => /^(zh|cmn|yue|wuu|hak|nan)\b/i.test((v.lang || '').replace('_', '-')) || /chinese|mandarin|cantonese|普通话|國語|国语|中文|粤語|粵語/i.test(v.name || ''),
+  isEnVoice: v => /^en\b/i.test((v.lang || '').replace('_', '-')),
+  /** Voices of one language, best first: chosen one, then natural/enhanced, then mainland/US, then local. */
+  list(lang) {
+    const want = lang === 'zh' ? this.isZhVoice : this.isEnVoice;
+    const score = v => {
+      const l = (v.lang || '').toLowerCase().replace('_', '-'), n = v.name || '';
+      let s = 0;
+      if (/natural|neural|premium|enhanced|增强|xiaoxiao|yunxi|tingting|google/i.test(n)) s += 4;
+      if (lang === 'zh' ? /^(zh-cn|zh-hans|cmn-hans|cmn-cn|zh$)/.test(l) : /^en-us/.test(l)) s += 3;
+      else if (lang === 'en' && /^en-gb/.test(l)) s += 2;
+      if (lang === 'zh' && /^(yue|zh-hk)/.test(l)) s -= 1;
+      return s;
+    };
+    return this.voices.filter(want).sort((a, b) => score(b) - score(a) || a.name.localeCompare(b.name));
   },
-  speak(text, done) {
-    const chunks = this.chunks(text); let i = 0; const g = this.gen;
+  voiceFor(lang) {
+    const pref = S.set[lang === 'zh' ? 'voiceZh' : 'voiceEn'];
+    if (pref && pref !== 'auto') { const v = this.voices.find(x => x.voiceURI === pref); if (v) return v; }
+    return this.list(lang)[0] || null;
+  },
+  /** Split text into runs that a Chinese or an English voice should read. Mostly-Chinese text stays whole: Chinese voices read Latin words and digits too. */
+  runs(text) {
+    const CJK = /[぀-ヿ㐀-鿿豈-﫿가-힯]/;
+    if (!CJK.test(text)) return [{ lang: 'en', text }];
+    if (cjkRatio(text) > 0.15 || !this.voiceFor('en')) return [{ lang: 'zh', text }];
+    const out = []; let cur = null;
+    for (const ch of text) {
+      const k = CJK.test(ch) || /[　-〿＀-￯]/.test(ch) ? 'zh' : /[A-Za-z]/.test(ch) ? 'en' : null;
+      if (!cur) cur = { lang: k || 'en', text: '' };
+      else if (k && k !== cur.lang) { out.push(cur); cur = { lang: k, text: '' }; }
+      cur.text += ch;
+    }
+    if (cur) out.push(cur);
+    return out.filter(r => r.text.trim());
+  },
+  /** Utterance-sized pieces: split after sentence punctuation; long pieces again after commas. Each piece is its own utterance, so every stop gets a real pause. */
+  chunks(text, lang) {
+    text = text.replace(/\s+/g, ' ').replace(/[—–]{1,2}/g, lang === 'zh' ? '，' : ', ').replace(/…+|\.{3,}/g, lang === 'zh' ? '。' : '. ').trim();
+    if (!text) return [];
+    const sentences = text.split(/(?<=[。！？!?；;])\s*|(?<=[.:])\s+(?=[A-Z0-9“"(])/).filter(s => s.trim());
+    const out = [];
+    for (let s of sentences) {
+      while (s.length > 90) {
+        const cut = s.slice(0, 90).search(/[，,、：:）)][^，,、：:）)]*$/);
+        const at = cut > 15 ? cut + 1 : 80;
+        out.push(s.slice(0, at)); s = s.slice(at);
+      }
+      if (s.trim()) out.push(s);
+    }
+    return out;
+  },
+  missingZh() {
+    if (this.warned) return; this.warned = true;
+    this.stop();
+    modal({ title: t('noZhVoiceTitle'), body: h('div', {}, h('p', { text: t('noZhVoice') }), h('p', { style: { color: 'var(--ink2)' }, text: t('zhVoiceHow_' + osKind()) })) });
+  },
+  async speak(text, done) {
+    await this.ready();
+    const g = this.gen; const items = [];
+    for (const r of this.runs(text)) {
+      const v = this.voiceFor(r.lang);
+      if (r.lang === 'zh' && !v) { this.missingZh(); return; }
+      for (const c of this.chunks(r.text, r.lang)) items.push({ text: c, v, lang: r.lang });
+    }
+    let i = 0;
     const step = () => {
-      if (g !== this.gen) return; if (i >= chunks.length) return done && done();
-      const u = new SpeechSynthesisUtterance(chunks[i++]); const v = this.pickVoice(u.text);
-      if (v) { u.voice = v; u.lang = v.lang; } else u.lang = cjkRatio(u.text) > 0.25 ? 'zh-CN' : 'en-US';
+      if (g !== this.gen) return; if (i >= items.length) return done && done();
+      const it = items[i++]; const u = new SpeechSynthesisUtterance(it.text);
+      if (it.v) { u.voice = it.v; u.lang = it.v.lang; } else u.lang = it.lang === 'zh' ? 'zh-CN' : 'en-US';
       u.rate = S.set.ttsRate;
-      u.onend = step; u.onerror = e => { if (g === this.gen && e.error !== 'interrupted' && e.error !== 'canceled') step(); };
+      u.onend = step; u.onerror = ev => { if (g === this.gen && ev.error !== 'interrupted' && ev.error !== 'canceled') step(); };
       speechSynthesis.speak(u);
     };
     step();
   },
   speakOnly(text) { this.stop(); this.gen++; this.speak(text, () => {}); },
   start() {
-    if (!this.ok || !S.view) return; this.stop(); this.on = true; this.paused = false; this.gen++; UI.syncTTS();
+    if (!this.ok || !S.view) return; this.stop(); this.warned = false; this.on = true; this.paused = false; this.gen++; UI.syncTTS();
     if (S.view === Flow) { this.queue = this.blocksFrom(Flow.anchorO); this.nextBlock(); }
     else if (S.view === Pdf) this.pdfPage(Pdf.cur);
   },
@@ -3001,12 +3070,15 @@ const TTS = {
   async pdfPage(p) {
     if (!this.on) return; if (p >= Pdf.n) return this.stop();
     if (Pdf.cur !== p) Pdf.goto(p);
-    const text = await Pdf.pageText(p);
+    const tc = await Pdf.textContent(p);
+    // join text items with line breaks where the PDF has them, so sentences across lines still pause correctly
+    const text = tc.items.map(x => (x.str || '') + (x.hasEOL ? (/[㐀-鿿]$/.test(x.str || '') ? '' : ' ') : '')).join('');
     this.speak(text || ' ', () => this.pdfPage(p + 1));
   },
   pause() { if (!this.on) return; if (this.paused) { speechSynthesis.resume(); this.paused = false; } else { speechSynthesis.pause(); this.paused = true; } UI.syncTTS(); },
   stop() { this.on = false; this.paused = false; this.gen++; if (this.ok) speechSynthesis.cancel(); $$('.tts-cur').forEach(x => x.classList.remove('tts-cur')); UI.syncTTS(); },
 };
+function osKind() { const ua = navigator.userAgent; return /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1) ? 'ios' : /Android/.test(ua) ? 'android' : /Macintosh|Mac OS X/.test(ua) ? 'mac' : /Windows/.test(ua) ? 'win' : 'other'; }
 
 /* ======================= Auto scroll ======================= */
 const Auto = {
@@ -3449,14 +3521,21 @@ function renderAa(pop) {
 }
 function renderTTS(pop) {
   pop.innerHTML = '';
-  const voices = TTS.voices.filter(v => /^(zh|en|ja|ko)/i.test(v.lang)).sort((a, b) => a.lang.localeCompare(b.lang));
-  const sel = h('select', {}, h('option', { value: 'auto', selected: S.set.voice === 'auto' }, t('voiceAuto')), voices.map(v => h('option', { value: v.voiceURI, selected: S.set.voice === v.voiceURI }, `${v.name} (${v.lang})`)));
-  sel.onchange = () => { S.set.voice = sel.value; saveSet(); if (TTS.on) TTS.start(); };
+  const pick = (lang, key) => {
+    const list = TTS.list(lang);
+    const sel = h('select', {}, h('option', { value: 'auto', selected: !S.set[key] || S.set[key] === 'auto' }, t('voiceAuto') + (list[0] ? ` (${list[0].name})` : '')), list.map(v => h('option', { value: v.voiceURI, selected: S.set[key] === v.voiceURI }, `${v.name} (${v.lang})${v.localService ? '' : ' · ' + t('online')}`)));
+    sel.onchange = () => { S.set[key] = sel.value; saveSet(); if (TTS.on) TTS.start(); else TTS.speakOnly(lang === 'zh' ? '你好，这是墨阅的中文朗读。' : 'Hello, this is Moyue reading aloud.'); };
+    return { sel, n: list.length };
+  };
+  const zh = pick('zh', 'voiceZh'), en = pick('en', 'voiceEn');
   pop.append(h('section', {}, h('h4', { text: t('tts') }), h('div', { class: 'ttsrow' },
     h('button', { class: 'btn primary', onclick: () => TTS.on ? TTS.pause() : TTS.start() }, icon(TTS.on && !TTS.paused ? 'pause' : 'play'), t(TTS.on ? (TTS.paused ? 'resume' : 'pause') : 'readFromHere')),
     h('button', { class: 'btn', disabled: !TTS.on, onclick: () => TTS.stop() }, icon('stop'), t('stop')))),
-    h('section', {}, h('div', { class: 'row2' }, h('span', { text: t('voice') }), sel), sliderRow(t('rate'), 'ttsRate', 0.5, 2.5, 0.1, x => x.toFixed(1) + '×'),
-      !voices.length ? h('p', { style: { margin: '6px 0 0', fontSize: '12px', color: 'var(--ink2)' }, text: t('noVoices') }) : null));
+    h('section', {},
+      h('div', { class: 'row2' }, h('span', { text: t('voiceZh') }), zh.n ? zh.sel : h('span', { class: 'warn', text: t('noZhVoiceShort') })),
+      h('div', { class: 'row2' }, h('span', { text: t('voiceEn') }), en.n ? en.sel : h('span', { class: 'warn', text: t('noEnVoiceShort') })),
+      sliderRow(t('rate'), 'ttsRate', 0.5, 2.5, 0.1, x => x.toFixed(1) + '×'),
+      h('p', { class: 'ttsnote', text: zh.n ? t('ttsNote') : t('zhVoiceHow_' + osKind()) })));
 }
 function renderMore(pop) {
   pop.innerHTML = ''; const m = h('div', { class: 'menu' });

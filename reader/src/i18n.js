@@ -87,7 +87,15 @@ const I18N = {
   autoOn: ['自动滚屏中，按空格或 Esc 停止', 'Auto-scrolling. Press Space or Esc to stop'], autoOff: ['已停止滚屏', 'Auto-scroll stopped'], autoNeedScroll: ['自动滚屏需要“滚动”翻页方式', 'Auto-scroll needs the Scroll page mode'],
   // tts
   tts: ['朗读', 'Read aloud'], readFromHere: ['从当前位置朗读', 'Read from here'], pause: ['暂停', 'Pause'], resume: ['继续', 'Resume'], stop: ['停止', 'Stop'],
-  voice: ['声音', 'Voice'], voiceAuto: ['自动（按语言选择）', 'Automatic (by language)'], rate: ['语速', 'Rate'],
+  voice: ['声音', 'Voice'], voiceAuto: ['自动', 'Automatic'], rate: ['语速', 'Rate'], voiceZh: ['中文声音', 'Chinese voice'], voiceEn: ['英文声音', 'English voice'], online: ['在线', 'online'],
+  noZhVoiceShort: ['这台设备没有中文语音', 'No Chinese voice on this device'], noEnVoiceShort: ['这台设备没有英文语音', 'No English voice on this device'],
+  ttsNote: ['中文段落用中文声音读，英文段落用英文声音读；句号、逗号处会停顿。选一个声音会先试读一句。', 'Chinese passages use the Chinese voice and English passages the English voice, pausing at full stops and commas. Picking a voice plays a short sample.'],
+  noZhVoiceTitle: ['没有中文语音', 'No Chinese voice'], noZhVoice: ['这台设备的浏览器里没有中文语音，所以读不了中文。装好中文语音后，重新打开墨阅即可。', 'This browser has no Chinese voice, so Chinese text cannot be read aloud. Install one, then reopen Moyue.'],
+  zhVoiceHow_win: ['Windows：设置 → 时间和语言 → 语音 → 添加语音，选“中文(简体，中国)”。装好后重启浏览器或墨阅。用 Edge 浏览器打开网页版，还能用晓晓等在线自然语音。', 'Windows: Settings → Time & language → Speech → Add voices → Chinese (Simplified, China), then restart the browser or app. Edge also offers online natural Chinese voices.'],
+  zhVoiceHow_mac: ['macOS：系统设置 → 辅助功能 → 朗读内容 → 系统声音 → 管理声音，勾选中文（普通话）里的声音（如婷婷）下载。', 'macOS: System Settings → Accessibility → Spoken Content → System Voice → Manage Voices, then download a Chinese (Mandarin) voice such as Tingting.'],
+  zhVoiceHow_ios: ['iPhone / iPad：设置 → 辅助功能 → 朗读内容 → 声音 → 中文，下载一个声音（如婷婷）。', 'iPhone / iPad: Settings → Accessibility → Spoken Content → Voices → Chinese, and download a voice such as Tingting.'],
+  zhVoiceHow_android: ['安卓：设置 → 系统 → 语言和输入法 → 文字转语音输出，在首选引擎里安装中文语音数据。', 'Android: Settings → System → Languages & input → Text-to-speech output, and install Chinese voice data for the engine.'],
+  zhVoiceHow_other: ['请在系统的语音或辅助功能设置里安装中文语音。', 'Install a Chinese voice in your system speech or accessibility settings.'],
   noVoices: ['系统里没有可用的中文或英文语音。', 'No Chinese or English system voices are available.'],
   // more / misc
   immExit: ['退出沉浸', 'Exit focus'], immHint: ['轻点页面或右上角按钮即可退出沉浸阅读', 'Tap the page or the button at the top right to leave focus mode'],
