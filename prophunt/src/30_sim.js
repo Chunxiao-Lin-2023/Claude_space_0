@@ -6,7 +6,7 @@ const isPlay = () => STATE.mode === 'play' && G;
 
 function newRound(o) {
   G = { seed: o.seed, mode: o.mode, round: o.round || 1, score: o.score || [0, 0], hider: o.hider, ai: o.ai ? 1 : 0, names: o.names || ['你', '电脑'],
-    phase: '', t: 0, wrong: 0, maxWrong: o.mode === 'rt' ? BAL.maxWrong : BAL.turnWrong, kcd: 0, wT: BAL.whistleEvery, tauntCD: 0, turnN: 0, hints: [], res: null, aiT: 0, q: 0,
+    phase: '', t: 0, wrong: 0, maxWrong: o.mode === 'rt' ? BAL.finalKnocks : BAL.turnWrong, kn: BAL.knockStart, regenT: BAL.knockRegen, fin: 0, kcd: 0, wT: 0, tauntCD: 0, turnN: 0, hints: [], res: null, aiT: 0, q: 0,
     pl: [mkPl(), mkPl()] };
   MAP = genMap(G.seed);
   const h = G.pl[G.hider], s = G.pl[seekerIdx()];
@@ -70,6 +70,7 @@ function doAct(i, a, v) {
       if (i === G.hider || G.phase !== 'seek') return;
       const s = G.pl[i], rt = G.mode === 'rt';
       if (rt && G.kcd > 0) return;
+      if (rt && G.kn <= 0) return G.fin ? '最后的敲击次数用完了' : '没有敲击次数了，等它恢复';
       const h = G.pl[G.hider];
       if (v.id === -1) {
         if (!hiderSeen()) return;
@@ -79,12 +80,12 @@ function doAct(i, a, v) {
       const it = MAP.items[v.id]; if (!it) return;
       if (rt) { if (!litRooms().includes(it.room)) return; if (distFp(s.x, s.y, it.fp) > BAL.reach + .6) return '太远了，走近一点'; }
       if (!rt && G.hints.some(q => q[0] === it.id)) return '这件已经敲过了';
-      G.kcd = BAL.knockCD; G.wrong++;
+      G.kcd = BAL.knockCD; G.wrong++; if (rt) G.kn--;
       const dist = Math.hypot(it.x - h.x, it.y - h.y);
       if (rt) {
         const near = dist < BAL.nearHint ? 1 : 0; emit({ e: 'knock', id: it.id, ok: 0, near });
         if (near && G.ai) G.aiT = Math.min(G.aiT, 4);
-        if (G.wrong >= G.maxWrong) endRound('hider', 'taps');
+        if (G.fin && G.kn <= 0) endRound('hider', 'taps');
       } else {
         const band = bandOf(dist); G.hints.push([it.id, band]); emit({ e: 'knock', id: it.id, ok: 0, band });
         if (G.wrong >= G.maxWrong) endRound('hider', 'taps');
@@ -93,8 +94,8 @@ function doAct(i, a, v) {
       return;
     }
     case 'taunt':
-      if (i !== G.hider || G.mode !== 'rt' || G.phase !== 'seek' || G.tauntCD > 0) return;
-      whistle(1); G.t = Math.max(1, G.t - BAL.tauntCut); G.tauntCD = BAL.tauntCD; return;
+      if (i !== G.hider || G.mode !== 'rt' || G.phase !== 'seek' || G.fin || G.tauntCD > 0) return;
+      whistle(1); G.t = Math.max(BAL.finalT + .05, G.t - BAL.tauntCut); G.tauntCD = BAL.tauntCD; return;
     case 'place': case 'tmove': {
       if (i !== G.hider || G.mode !== 'turn' || G.phase !== (a === 'place' ? 'place' : 'hturn')) return;
       const e = checkPlace(i, v, a); if (e) return e;
@@ -145,11 +146,15 @@ function simTick(dt) {
   G.kcd = Math.max(0, G.kcd - dt);
   if (G.mode === 'rt') {
     G.t -= dt;
-    if (G.phase === 'hide' && G.t <= 0) { G.phase = 'seek'; G.t = BAL.seekT; G.wT = BAL.whistleEvery; emit({ e: 'seek' }); }
+    if (G.phase === 'hide' && G.t <= 0) { G.phase = 'seek'; G.t = BAL.seekT; G.kn = BAL.knockStart; G.regenT = BAL.knockRegen; emit({ e: 'seek' }); }
     else if (G.phase === 'seek') {
-      G.wT -= dt; G.tauntCD = Math.max(0, G.tauntCD - dt);
-      if (G.wT <= 0) { G.wT += BAL.whistleEvery; whistle(0); }
-      if (G.ai) aiTick(dt);
+      G.tauntCD = Math.max(0, G.tauntCD - dt);
+      if (!G.fin) {
+        if (G.kn < BAL.knockMax) { if ((G.regenT -= dt) <= 0) { G.kn++; G.regenT = BAL.knockRegen; } } else G.regenT = BAL.knockRegen;
+        if (G.t <= BAL.finalT) { G.fin = 1; G.kn = BAL.finalKnocks; G.wT = 0; emit({ e: 'final' }); }
+      }
+      if (G.fin && (G.wT -= dt) <= 0) { G.wT += BAL.finalWhistle; whistle(0); }
+      if (G.ai && !G.fin) aiTick(dt);
       if (G.t <= 0) { G.t = 0; endRound('hider', 'time'); }
     }
   } else if (G.phase === 'place' || G.phase === 'hturn') {

@@ -45,6 +45,7 @@ h1{font-family:var(--title);font-weight:400;font-size:52px;margin:6px 0 0;text-a
 .chip.hide{color:#9fdcff;border-color:rgba(59,166,216,.6)}.chip.seek{color:#ffb2a6;border-color:rgba(224,83,63,.6)}
 #hPhase.urgent{color:#ff8a7a;animation:pulse 1s infinite}
 @keyframes pulse{50%{transform:scale(1.06)}}
+#hTaps.fin{border-color:#ff7a6a;color:#ffd0c8}
 #hTaps i{font-style:normal;color:#555c6a;margin-left:2px}#hTaps i.on{color:var(--gold)}#hTaps .lbl{font-size:12px;color:var(--sub);font-weight:400;margin-right:4px}
 #hScore{position:absolute;top:calc(10px + var(--sa-t));left:calc(12px + var(--sa-l));font-size:13px;color:var(--sub)}
 #hRoom{position:absolute;top:calc(36px + var(--sa-t));left:calc(12px + var(--sa-l));font-size:14px;font-weight:700;text-shadow:0 1px 3px #000}
@@ -175,8 +176,10 @@ h1{font-family:var(--title);font-weight:400;font-size:52px;margin:6px 0 0;text-a
  <h3>实时追逐</h3>
  <ul>
   <li>开局躲方有 30 秒，抓方闭眼数数。躲方走到家具旁，按 <b>E</b> 或点它，就会变成一模一样的东西；<b>R</b> 旋转，<b>Q</b> 变回人形。</li>
-  <li>抓方只看得见<b>自己所在的房间</b>。走近可疑的东西按 <b>E</b> 或点它敲一下：敲中就赢，敲错 5 次或 3 分钟到了就输。</li>
-  <li>躲方每 30 秒会自动吹一声哨，抓方会听到大致方向和房间名。躲方也可以主动<b>嘲讽</b>（T）：吹一声哨，换来时间 -15 秒。</li>
+  <li>抓方只看得见<b>自己所在的房间</b>。走近可疑的东西按 <b>E</b> 或点它敲一下，敲中就赢。</li>
+  <li>敲击要消耗次数：开局 3 次，每 15 秒恢复 1 次，最多存 5 次。敲错只是用掉一次，不会直接输——所以平时就该大胆去敲。</li>
+  <li><b>最后 20 秒</b>：躲方每 5 秒自动出一次声（显示房间名和大致位置），但抓方的次数会变成<b>只剩 3 次</b>，3 次都没敲中或时间到就输。</li>
+  <li>躲方可以主动<b>嘲讽</b>（T）：出一声，换来时间 -15 秒（最多提前到最后 20 秒）。</li>
   <li>变身后也能慢慢挪动，但在抓方的房间里挪动会被看见，还会发出摩擦声。人形走路有脚步声。</li>
   <li>小窍门：房间里本来就有好几把一样的椅子时，多出一把最不显眼；把家具摆得和原来的朝向一致。</li>
  </ul>

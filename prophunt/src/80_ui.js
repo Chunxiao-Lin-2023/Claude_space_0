@@ -4,7 +4,7 @@ const TOUCH = matchMedia('(pointer: coarse)').matches;
 const myName = () => ($('nameIn').value || '').trim().slice(0, 8);
 let PICK_MODE = LS.get('mode', 'rt');
 const MODE_DESC = {
-  rt: '实时追逐：躲方有 30 秒找地方变成家具；抓方只看得见自己所在的房间，3 分钟内敲错 5 次就输。躲方每 30 秒会吹一次哨。',
+  rt: '实时追逐：躲方有 30 秒找地方变成家具；抓方只看得见所在的房间，敲击次数每 15 秒恢复一次。最后 20 秒躲方会不停出声，但抓方只剩 3 次敲击。',
   turn: '回合推理：整栋房子摊在眼前。抓方每回合敲一件，敲错会得到 烫/热/温/冷 提示；躲方每回合可以挪 3 米、就地变形或不动。敲错 6 次就输。'
 };
 const fmtT = s => { s = Math.max(0, Math.ceil(s)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
@@ -71,17 +71,23 @@ function hudTick(dt) {
   $('hRole').textContent = amHider() ? '🙈 你在藏' : '🔍 你在找';
   $('hRole').className = 'chip ' + (amHider() ? 'hide' : 'seek');
   let ph = '';
-  if (G.mode === 'rt') ph = G.phase === 'hide' ? '躲藏 ' + fmtT(G.t) : G.phase === 'seek' ? '剩余 ' + fmtT(G.t) : '本局结束';
+  if (G.mode === 'rt') ph = G.phase === 'hide' ? '躲藏 ' + fmtT(G.t) : G.phase === 'seek' ? (G.fin ? '最后 ' : '剩余 ') + fmtT(G.t) : '本局结束';
   else ph = G.phase === 'place' ? '躲方藏身中' + (G.ai ? '' : ' ' + fmtT(G.t)) : G.phase === 'seek' ? '第 ' + G.turnN + ' 回合 · 抓方敲' : G.phase === 'hturn' ? '躲方行动' + (G.ai ? '' : ' ' + fmtT(G.t)) : '本局结束';
   $('hPhase').textContent = ph;
-  $('hPhase').classList.toggle('urgent', G.mode === 'rt' && G.phase === 'seek' && G.t < 20);
-  const rem = G.maxWrong - G.wrong;
-  $('hTaps').innerHTML = '<span class="lbl">可敲错</span>' + '<i class="on">●</i>'.repeat(Math.max(0, rem)) + '<i>●</i>'.repeat(Math.min(G.maxWrong, G.wrong));
-  $('hWh').textContent = G.mode === 'rt' && G.phase === 'seek' ? '🔔 ' + Math.ceil(G.wT) + 's' : G.mode === 'turn' ? '🔔 每 ' + BAL.whistleTurns + ' 回合' : '';
+  $('hPhase').classList.toggle('urgent', G.mode === 'rt' && G.phase === 'seek' && !!G.fin);
+  if (G.mode === 'rt') {
+    const cap = G.fin ? BAL.finalKnocks : BAL.knockMax, k = clamp(G.kn, 0, cap);
+    $('hTaps').innerHTML = '<span class="lbl">' + (G.fin ? '最后机会' : '敲击') + '</span>' + '<i class="on">●</i>'.repeat(k) + '<i>●</i>'.repeat(cap - k) + (!G.fin && G.phase === 'seek' && k < cap ? '<span class="lbl"> +1 ' + Math.ceil(G.regenT) + 's</span>' : '');
+    $('hTaps').classList.toggle('fin', !!G.fin);
+  } else {
+    const rem = G.maxWrong - G.wrong;
+    $('hTaps').innerHTML = '<span class="lbl">可敲错</span>' + '<i class="on">●</i>'.repeat(Math.max(0, rem)) + '<i>●</i>'.repeat(Math.min(G.maxWrong, G.wrong));
+  }
+  $('hWh').textContent = G.mode === 'rt' && G.phase === 'seek' ? (G.fin ? '🔔 每 ' + BAL.finalWhistle + ' 秒出声' : '🔔 最后 ' + BAL.finalT + ' 秒出声') : G.mode === 'turn' ? '🔔 每 ' + BAL.whistleTurns + ' 回合' : '';
   $('hScore').textContent = G.names[0] + ' ' + G.score[0] + ' : ' + G.score[1] + ' ' + G.names[1];
   const me = G.pl[ME], rm = G.mode === 'rt' ? roomAt(me.x, me.y) : null; $('hRoom').textContent = rm ? '📍 ' + rm.n : '';
-  const tb = $('aTaunt'); if (tb) { tb.disabled = G.phase !== 'seek' || G.tauntCD > 0; tb.querySelector('small').textContent = G.tauntCD > 0 ? Math.ceil(G.tauntCD) + 's' : '-' + BAL.tauntCut + '秒'; }
-  const kb = $('aKnock'); if (kb) kb.disabled = G.phase !== 'seek';
+  const tb = $('aTaunt'); if (tb) { tb.disabled = G.phase !== 'seek' || !!G.fin || G.tauntCD > 0; tb.querySelector('small').textContent = G.tauntCD > 0 ? Math.ceil(G.tauntCD) + 's' : '-' + BAL.tauntCut + '秒'; }
+  const kb = $('aKnock'); if (kb) kb.disabled = G.phase !== 'seek' || (G.mode === 'rt' && G.kn <= 0);
   $('hTip').textContent = tipText(); $('hTip').classList.toggle('top', G.mode === 'turn');
 }
 function tipText() {
@@ -161,8 +167,13 @@ function handleEv(ev) {
     case 'seek':
       if (G.phase === 'hide') G.phase = 'seek';
       if (ME === G.hider) { if (!G.pl[ME].dg) autoDisguise(ME); banner('他来找了！', '别乱动，或者趁他不在悄悄换地方'); }
-      else banner('开始找！', '敲错 ' + G.maxWrong + ' 次就输 · 只看得见所在的房间');
+      else banner('开始找！', '敲击次数会慢慢恢复 · 最后 ' + BAL.finalT + ' 秒他会出声，但只剩 ' + BAL.finalKnocks + ' 次');
       sfx('go'); renderActs(); break;
+    case 'final':
+      G.fin = 1;
+      if (amHider()) banner('最后 ' + BAL.finalT + ' 秒！', '你会每 ' + BAL.finalWhistle + ' 秒自动出声，撑住！');
+      else banner('最后 ' + BAL.finalT + ' 秒！', '他会不停出声 · 只剩 ' + BAL.finalKnocks + ' 次敲击');
+      sfx('go'); break;
     case 'turn':
       if (!amHider()) { if ((ev.n || G.turnN) % BAL.whistleTurns !== 0) STATE.lastWh = ''; banner('轮到你敲', '还能敲错 ' + (G.maxWrong - G.wrong) + ' 次'); sfx('turn'); }
       STATE.sel = null; STATE.pend = null; STATE.ghost = null; turnPanel(); break;
@@ -183,7 +194,7 @@ function showEnd() {
   if (!G || G.phase !== 'end' || STATE.mode !== 'play') return;
   const iWon = (G.res.win === 'hider') === amHider(), h = G.pl[G.hider], what = h.dg ? T[h.dg.k].n : '人形';
   const why = G.res.why === 'caught' ? (amHider() ? '你变成的' + what + '被敲中了' : '在第 ' + (G.wrong + 1) + ' 次敲中了变成' + what + '的对手') :
-    G.res.why === 'taps' ? (amHider() ? '对方敲错了 ' + G.wrong + ' 次，你一直是' + what : '敲错了 ' + G.wrong + ' 次。对方变成了' + what) :
+    G.res.why === 'taps' ? (G.mode === 'rt' ? (amHider() ? '对方最后 ' + BAL.finalKnocks + ' 次都没敲中，你一直是' + what : '最后 ' + BAL.finalKnocks + ' 次都没敲中。对方变成了' + what) : (amHider() ? '对方敲错了 ' + G.wrong + ' 次，你一直是' + what : '敲错了 ' + G.wrong + ' 次。对方变成了' + what)) :
       (amHider() ? '时间到，你一直藏成' + what : '时间到。对方藏成了' + what);
   $('eTitle').textContent = iWon ? (amHider() ? '躲过去了！' : '抓到了！') : (amHider() ? '被找到了' : '没找到…');
   $('eTitle').className = iWon ? 'win' : 'lose';
