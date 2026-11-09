@@ -118,3 +118,22 @@ checks for page errors, that turn games end, replay determinism, and with `--onl
 `python3 /home/claude/bxtools/montage.py <out.png> <png...>` and **look at it** (Read tool) to judge layout and polish at desktop and phone sizes.
 Tests share 2 CPUs with other sessions; t.sh queues automatically — run focused tests, not the whole suite.
 Quick manual peek: `python3 build.py --only <ids> --out /tmp/x.html` then Playwright, or `?game=<id>&mode=ai` deep link.
+
+## v1.1 additions — player prefs, hints, first-play guide, reconnect
+- `howto: ['…', '…']` in the def — 2–5 short Chinese lines (HTML ok) explaining the **controls** (tap/drag/keys, what the buttons do).
+  Shown once automatically the first time a player opens the game, and at the top of the 规则 dialog. Every game must have one.
+- Hint button 💡 (top bar, ai/local modes only) appears automatically when the instance has either
+  - `showHint(action, seat)` (turn games with `aiMove`): the framework calls `aiMove(seat, 3)` for the local player and passes the result;
+    draw a clear pulsing highlight of that move (source + target), clear it when state changes. Never apply it.
+  - or `hint()` — the game does everything itself (solo puzzles, realtime games, complex multi-step turns).
+  Def `hint: false` hides it (e.g. games where a hint is meaningless).
+- `ctx.needConfirm(e)` — true when this tap should only preview and a second tap on the same target confirms (player pref 落子确认:
+  default = touch only). Use it instead of checking `pointerType` yourself, for every irreversible placement/move where mis-taps are likely.
+- `ctx.pref('hints')` — boolean, show legal-move / playable-card markers. Default true. Respect it (when false, still show selection + last move).
+- `ctx.pref('speed')` — 1 normal / 2 fast. `ctx.anim`, `ctx.after`, sysMove delays and AI think delay are already scaled; read it only for
+  timings you do yourself (e.g. your own frame-based tweens or dealing sequences).
+- `ctx.buzz(ms)` — light haptic (phones that support it); use sparingly: illegal move, being captured/hit, your win.
+- Top bar is now `‹ 大厅 · seats/status · ↶ 💡 ❚❚ ☺ ⋯`; the ⋯ menu holds 规则 / 重开 / 声音 / prefs. Don't duplicate these inside the game UI.
+- Online: a guest whose link drops auto-reconnects; meanwhile its seat is played by the AI and handed back on return (turn games resend the
+  action log; realtime games get fresh snapshots — so `restore(d)` must rebuild everything visible from one snapshot).
+- Test a dropped link: `bash test/t.sh --games <id> --online --rejoin`.

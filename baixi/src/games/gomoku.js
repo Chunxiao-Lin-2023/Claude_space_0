@@ -57,6 +57,7 @@ BX.register({
   id: 'gomoku', title: '五子棋', cat: 'classic', order: 3, sub: '先连成五子者胜',
   desc: '黑白双方轮流落子，横、竖、斜任意方向先连成五子即胜。电脑三档难度，高级会主动做杀。',
   kind: 'turn', seats: 2, seatNames: ['黑方', '白方'], seatColors: ['#1c1a18', '#ece8df'], firstLabel: '执子',
+  howto: ['点击交叉点落子；触屏默认先点一下预览、再点同一处确认（可在「⋯」菜单里改成点一下直接落子）。', '红点标出上一手，连成五子时会画出连线。', '↶ 悔棋会退回到你的上一步；💡 提示会标出电脑推荐的落点。'],
   rules: `<p>标准 15 路棋盘，<b>黑先白后</b>，轮流在交叉点上落子，落下后不能移动。</p>
 <p>任何一方先在横、竖或斜方向上连成<b>五个或更多</b>同色棋子即获胜；棋盘下满仍无人连五则为和棋。</p>
 <p>本版为<b>无禁手</b>规则（自由五子棋）。触屏上第一次点击预览落点，再点同一位置确认。</p>`,
@@ -71,7 +72,7 @@ BX.register({
     /* ALL game state lives in `st` and is changed ONLY inside apply(). It must be JSON-serializable. */
     const st = {b: new Array(N * N).fill(0), turn: 0, last: -1, win: null, moves: 0, over: false};
     const cv = ctx.canvas();
-    let hover = -1, preview = -1, drop = {i: -1, t: 1};
+    let hover = -1, preview = -1, drop = {i: -1, t: 1}, hint = -1, hintT = 0;
     const geo = () => { const f = BX.fit(cv.w, cv.h, N + 1, N + 1, 6); return {cell: f.s, ox: f.x + f.s, oy: f.y + f.s}; };
     const cellAt = p => { const {cell, ox, oy} = geo(); const x = Math.round((p.x - ox) / cell), y = Math.round((p.y - oy) / cell); return inb(x, y) ? idx(x, y) : -1; };
     const myTurn = () => ctx.canAct(st.turn);
@@ -80,7 +81,7 @@ BX.register({
     ctx.on(cv.cv, 'pointerdown', e => {
       if (!myTurn()) return;
       const i = cellAt(cv.pos(e)); if (i < 0 || st.b[i]) return;
-      if (e.pointerType !== 'mouse' && preview !== i) { preview = i; ctx.sfx('tick'); return; }   // touch: tap twice
+      if (ctx.needConfirm(e) && preview !== i) { preview = i; ctx.sfx('tick'); return; }   // tap to preview, tap again to place
       preview = -1; ctx.act({i}, st.turn);
     });
     const status = () => {
@@ -93,7 +94,7 @@ BX.register({
       toMove: () => st.over ? null : st.turn,
       valid: a => Number.isInteger(a.i) && a.i >= 0 && a.i < N * N && !st.b[a.i],
       apply(a, by) {
-        st.b[a.i] = st.turn + 1; st.last = a.i; st.moves++; preview = -1;
+        st.b[a.i] = st.turn + 1; st.last = a.i; st.moves++; preview = -1; hint = -1;
         drop = {i: a.i, t: 0}; ctx.anim(160, k => drop.t = k);
         ctx.sfx('stone');
         const line = fiveLine(st.b, a.i % N, Math.floor(a.i / N));
@@ -123,6 +124,7 @@ BX.register({
         return {i: BX.ai.byLevel(scored, level)};
       },
       onTurn: status,
+      showHint(a) { hint = a.i; hintT = performance.now(); },
       frame() {
         const g = cv.g; cv.clear();
         const {cell, ox, oy} = geo(), R = cell * .46;
@@ -139,6 +141,7 @@ BX.register({
         }
         if (st.last >= 0) { const x = ox + (st.last % N) * cell, y = oy + Math.floor(st.last / N) * cell; g.fillStyle = C.red; D.circle(g, x, y, cell * .1); g.fill(); }
         if (st.win) { g.strokeStyle = C.red; g.lineWidth = cell * .12; g.lineCap = 'round'; const L = st.win.line; const p = i => [ox + (i % N) * cell, oy + Math.floor(i / N) * cell]; g.beginPath(); g.moveTo(...p(L[0])); g.lineTo(...p(L[L.length - 1])); g.stroke(); }
+        if (hint >= 0 && !st.b[hint]) { const k = (performance.now() - hintT) / 1000; g.strokeStyle = 'rgba(63,160,120,' + (.55 + .35 * Math.sin(k * 6)) + ')'; g.lineWidth = cell * .1; D.circle(g, ox + (hint % N) * cell, oy + Math.floor(hint / N) * cell, R * (1.05 + .08 * Math.sin(k * 6))); g.stroke(); }
         const ghost = preview >= 0 ? preview : hover;
         if (ghost >= 0 && !st.b[ghost] && myTurn()) { g.globalAlpha = preview >= 0 ? .75 : .45; D.stone(g, ox + (ghost % N) * cell, oy + Math.floor(ghost / N) * cell, R, st.turn === 1); g.globalAlpha = 1; }
       },

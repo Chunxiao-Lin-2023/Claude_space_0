@@ -155,6 +155,17 @@ details.rd[open] summary::before{content:"▾ "}
 .emo-pop{position:absolute;top:calc(var(--barH) + env(safe-area-inset-top) + 6px);right:max(8px,env(safe-area-inset-right));display:grid;grid-template-columns:repeat(4,1fr);gap:6px;background:rgba(30,18,8,.95);padding:10px;border-radius:14px;z-index:20;box-shadow:0 8px 24px rgba(0,0,0,.4)}
 .emo-pop button{border:none;background:rgba(255,255,255,.08);border-radius:10px;min-width:44px;height:44px;font-size:22px;color:#f3e2c0}
 .emo-pop button.ph{grid-column:span 2;font-size:14px}
+.gm-menu{position:absolute;top:calc(var(--barH) + env(safe-area-inset-top) + 6px);right:max(8px,env(safe-area-inset-right));width:min(340px,calc(100vw - 16px));max-height:calc(100dvh - var(--barH) - env(safe-area-inset-top) - 16px);overflow:auto;background:rgba(30,18,8,.96);color:#f3e2c0;padding:12px;border-radius:14px;z-index:20;box-shadow:0 8px 24px rgba(0,0,0,.45);border:1px solid rgba(230,197,125,.25)}
+.gm-menu .mbtns{display:flex;gap:8px;margin-bottom:8px}
+.gm-menu .mbtns button{flex:1;border:none;border-radius:10px;min-height:44px;background:rgba(255,255,255,.1);color:#f3e2c0;font-size:15px}
+.mrow{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:6px 0;border-top:1px solid rgba(230,197,125,.12)}
+.mrow > span{font-size:14px;white-space:nowrap}
+.seg.sm{flex-wrap:nowrap;gap:4px}
+.seg.sm button{min-height:36px;padding:6px 9px;font-size:13px;white-space:nowrap}
+.gm-menu .seg button{background:rgba(255,255,255,.08);color:#f3e2c0;border-color:rgba(230,197,125,.25)}
+.gm-menu .seg button.on{background:#e6c57d;color:#3a2410;border-color:#e6c57d}
+.mlist .mrow{border-top-color:var(--line)}
+.howto ul{margin:.2em 0;padding-left:1.3em}.howto li{margin:.35em 0}
 .bubble{position:fixed;z-index:45;background:#fffaf0;color:var(--ink);padding:8px 14px;border-radius:16px;font-size:20px;box-shadow:0 6px 18px rgba(0,0,0,.35);animation:bub 2.4s forwards;pointer-events:none!important;white-space:nowrap}
 @keyframes bub{0%{opacity:0;transform:translateY(10px) scale(.8)}10%{opacity:1;transform:none}80%{opacity:1}100%{opacity:0;transform:translateY(-14px)}}
 

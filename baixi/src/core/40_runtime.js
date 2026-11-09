@@ -6,6 +6,10 @@ BX.CATS = [
   ['words', '文字游戏', '文', '#5e4b38'], ['folk', '传统民间', '俗', '#9a3a2a'], ['coop', '双人合作', '合', '#3a9aa0'], ['solo', '单人休闲', '闲', '#6b7a3a'],
 ];
 BX.LEVELS = ['', '初级', '中级', '高级'];
+/* player preferences (global, shared by all games). Games read them with ctx.pref(key). */
+BX.PREF_DEF = {speed: 1, confirm: 'auto', hints: true, vibrate: true};
+BX.pref = k => { const v = BX.store.get('pref.' + k, null); return v == null ? BX.PREF_DEF[k] : v; };
+BX.setPref = (k, v) => { BX.store.set('pref.' + k, v); document.dispatchEvent(new CustomEvent('bx-pref', {detail: {k, v}})); };
 BX.AI_NAMES = ['掌柜', '说书先生', '账房先生', '茶博士', '琴师', '跑堂小二'];
 BX.MODE_NAMES = {ai: '人机对战', local: '同屏对战', online: '联机对战', solo: '开始游戏'};
 
@@ -45,7 +49,7 @@ BX.makeSeats = function (def, sel) {
 let S = null;            // current session
 BX.session = () => S;
 const STEP = 1 / 60;
-const tScale = () => BX.test ? .04 : 1;
+const tScale = () => BX.test ? .04 : BX.pref('speed') === 2 ? .55 : 1;
 
 function rethrow(e, where) {
   console.error('[' + where + ']', e);
@@ -85,7 +89,21 @@ function makeInstance(log) {
   if (S.ended && log.length) { /* replayed into a finished game */ }
   try { S.inst.ready && S.inst.ready(); } catch (e) { rethrow(e, 'ready'); }
   refreshBar(); check();
+  if (!log.length) maybeHowto();
 }
+function howtoHtml(def) { const h0 = def.howto; return !h0 ? '' : Array.isArray(h0) ? '<ul>' + h0.map(x => '<li>' + x + '</li>').join('') + '</ul>' : h0; }
+function maybeHowto() {
+  const def = S.def; if (!def.howto || BX.test || BX.bot || BX.store.get('seen.' + def.id, false)) return;
+  BX.store.set('seen.' + def.id, true);
+  const gen = S.gen;
+  setTimeout(() => { if (S && S.gen === gen && !S.ended) BX.modal({title: '怎么玩 · ' + def.title, body: h('div', {class: 'rules howto', style: {textAlign: 'left'}, html: howtoHtml(def)}), buttons: [{label: '完整规则', value: 'r', cls: 'ghost'}, {label: '知道了', value: 1, cls: 'red'}], dismiss: 1, width: 480}).then(v => { if (v === 'r') showRules(); }); }, 350);
+}
+function showRules() {
+  const def = S && S.def; if (!def) return;
+  const hw = howtoHtml(def);
+  BX.modal({title: def.title + ' · 规则', body: h('div', {class: 'rules', style: {textAlign: 'left'}, html: (hw ? '<p><b>操作</b></p>' + hw + '<hr style="border:none;border-top:1px solid var(--line);margin:10px 0">' : '') + (def.rules || '暂无说明')}), buttons: [{label: '知道了', value: 1}], dismiss: 1, width: 560});
+}
+BX.showRules = showRules;
 
 function makeCtx(gen, root) {
   const cfg = S.cfg, def = S.def;
@@ -157,6 +175,10 @@ function makeCtx(gen, root) {
     best(k, v, dir = 'max') { const key = 'g.' + def.id + '.best.' + k, old = BX.store.get(key, null); const isNew = old == null || (dir === 'max' ? v > old : v < old); if (isNew && !BX.test) BX.store.set(key, v); return {best: isNew ? v : old, isNew, old}; },
     get log() { return S.log; },
     restart() { BX.restart(); },
+    pref: k => BX.pref(k),
+    /* true when a tap should only preview and a second tap on the same target confirms (pref 落子确认: auto = touch only) */
+    needConfirm(e) { const c = BX.pref('confirm'); return c === 'on' || (c === 'auto' && !!e && e.pointerType !== 'mouse'); },
+    buzz(ms = 12) { if (!ctx.fast && live() && !BX.test && BX.pref('vibrate') && navigator.vibrate) try { navigator.vibrate(ms); } catch (e) {} },
   };
   return ctx;
 }
@@ -177,6 +199,7 @@ function check() {
   tm = tm == null || tm === -1 ? [] : Array.isArray(tm) ? tm : [tm];
   ctx.turn = tm; refreshSeats();
   try { inst.onTurn && inst.onTurn(tm); } catch (e) { rethrow(e, 'onTurn'); }
+  refreshHint();
   const L = S.log.length, gen = S.gen;
   const stale = () => !S || S.gen !== gen || S.log.length !== L || S.ended || !S.alive;
   if (S.ended) return;
@@ -192,7 +215,7 @@ function check() {
   if (S.handoff) return;
   // your-turn chime when control returns to a local human in AI / online games
   const mine = tm.some(s => ctx.isLocal(s)), wasMine = S.prevTurn.some(s => ctx.isLocal(s));
-  if (mine && !wasMine && L > 0 && S.cfg.mode !== 'local' && !BX.bot && !def.noTurnChime) BX.sfx.play('your');
+  if (mine && !wasMine && L > 0 && S.cfg.mode !== 'local' && !BX.bot && !def.noTurnChime) { BX.sfx.play('your'); ctx.buzz(25); }
   S.prevTurn = tm;
   // system move (timers that change state, e.g. flip cards back) — host only
   if (ctx.isHost && inst.sysMove && S.sysTok !== L) {
@@ -204,7 +227,7 @@ function check() {
     const run = (ctx.isAI(s) && ctx.isHost) || (BX.bot && ctx.isLocal(s));
     if (!run || S.aiTok[s] === L || !inst.aiMove) continue;
     S.aiTok[s] = L;
-    const delay = BX.test ? 5 : (def.aiDelay != null ? def.aiDelay : 420) + Math.random() * 200;
+    const delay = BX.test ? 5 : ((def.aiDelay != null ? def.aiDelay : 420) + Math.random() * 200) * (BX.pref('speed') === 2 ? .5 : 1);
     const t = setTimeout(async () => {
       S && S.timers.delete(t); if (stale()) return;
       let a = null; try { a = await inst.aiMove(s, ctx.level(s)); } catch (e) { rethrow(e, 'aiMove ' + def.id); return; }
@@ -332,6 +355,30 @@ BX.rematch = function () {
 };
 BX.restart = function () { if (!S) return; if (S.cfg.mode === 'online') { BX.rematch(); return; } BX.launch(S.def, Object.assign({}, S.cfg, {seed: BX.newSeed(), log: []})); };
 
+/* ---------------- hint ---------------- */
+/* A game supports hints with either inst.hint() (does everything itself, e.g. solo puzzles)
+   or inst.showHint(action) + aiMove (framework asks the strongest AI for the local player's move). */
+function hintAvail() {
+  if (!S || !S.inst || S.ended || S.def.hint === false || S.cfg.mode === 'online') return false;
+  const inst = S.inst; if (inst.hint) return true;
+  return S.def.kind === 'turn' && !!inst.showHint && !!inst.aiMove;
+}
+function refreshHint() {
+  const b = $id('gbHint'); if (!b) return; const av = hintAvail(); b.hidden = !av;
+  if (av && S.def.kind === 'turn' && !S.inst.hint) b.disabled = !S.ctx.turn.some(s => S.ctx.canAct(s));
+  else b.disabled = false;
+}
+BX.hint = async function () {
+  if (!hintAvail()) return; const inst = S.inst, ctx = S.ctx, gen = S.gen, L = S.log.length;
+  if (inst.hint) { try { inst.hint(); } catch (e) { rethrow(e, 'hint'); } return; }
+  const seat = ctx.turn.find(s => ctx.canAct(s)); if (seat == null) return;
+  const b = $id('gbHint'); if (b) b.disabled = true;
+  let a = null; try { a = await inst.aiMove(seat, 3); } catch (e) { rethrow(e, 'hint aiMove'); }
+  if (!S || S.gen !== gen || S.log.length !== L) return;
+  if (b) b.disabled = false;
+  if (a != null) { S.hints = (S.hints || 0) + 1; try { inst.showHint(a, seat); } catch (e) { rethrow(e, 'showHint'); } BX.sfx.play('select'); }
+};
+
 /* ---------------- undo / resume ---------------- */
 function canUndo() { return S && S.def.kind === 'turn' && S.cfg.mode !== 'online' && S.def.undo !== false && S.log.some(([a, by]) => S.ctx.isLocal(by)); }
 BX.undo = function () {
@@ -389,22 +436,44 @@ function buildBar() {
   bar.append(back, h('div', {class: 'gm-title', text: def.title}),
     h('div', {class: 'gm-mid'}, h('div', {class: 'seats', id: 'gmSeats'}), h('div', {class: 'gm-status', id: 'gmStatus'})));
   if (def.kind === 'turn' && S.cfg.mode !== 'online' && def.undo !== false) bar.append(h('button', {class: 'gb', id: 'gbUndo', title: '悔棋', text: '↶', on: {click: () => BX.undo()}}));
+  if (def.hint !== false && S.cfg.mode !== 'online') bar.append(h('button', {class: 'gb', id: 'gbHint', title: '提示', hidden: true, text: '💡', on: {click: () => BX.hint()}}));
   if (def.kind === 'realtime' && S.cfg.mode !== 'online') bar.append(h('button', {class: 'gb', id: 'gbPause', title: '暂停', text: '❚❚', on: {click: () => setPaused(true)}}));
   if (S.cfg.mode === 'online') bar.append(h('button', {class: 'gb', id: 'gbEmo', title: '表情', text: '☺', on: {click: emoPop}}));
-  bar.append(h('button', {class: 'gb', id: 'gbRules', title: '规则', text: '?', on: {click: () => BX.modal({title: def.title + ' · 规则', body: h('div', {class: 'rules', style: {textAlign: 'left'}, html: def.rules || '暂无说明'}), buttons: [{label: '知道了', value: 1}], dismiss: 1, width: 560})}}));
-  const re = h('button', {class: 'gb', id: 'gbRe', title: '重开', text: '↻', on: {click: async () => {
-    if (S && S.cfg.mode === 'online' && !BX.net.isHost) { BX.toast('只有房主可以重开'); return; }
-    if (S && !S.ended && S.log.length && !(await BX.confirm('放弃这一局，重新开始？', '重开'))) return; BX.restart();
-  }}});
-  const snd = h('button', {class: 'gb', id: 'gbSnd', title: '声音', text: BX.sfx.muted ? '🔇' : '🔊', on: {click: () => { BX.sfx.toggle(); }}});
-  bar.append(re, snd);
+  bar.append(h('button', {class: 'gb', id: 'gbMenu', title: '菜单', text: '⋯', on: {click: menuPop}}));
 }
-document.addEventListener('bx-mute', () => { const b = $id('gbSnd'); if (b) b.textContent = BX.sfx.muted ? '🔇' : '🔊'; });
+async function doRestart() {
+  if (S && S.cfg.mode === 'online' && !BX.net.isHost) { BX.toast('只有房主可以重开'); return; }
+  if (S && !S.ended && S.log.length && !(await BX.confirm('放弃这一局，重新开始？', '重开'))) return; BX.restart();
+}
+BX.doRestart = doRestart;
+/* settings rows shared by the in-game menu and the lobby settings dialog */
+BX.prefRows = function () {
+  const row = (label, key, opts, get, set) => h('div', {class: 'mrow'}, h('span', {text: label}), h('div', {class: 'seg sm'}, opts.map(([v, t]) => h('button', {class: get() === v ? 'on' : '', text: t, 'data-v': String(v), on: {click: e => { set(v); for (const b of e.target.parentNode.children) b.classList.toggle('on', b === e.target); }}}))));
+  const pr = (label, key, opts) => row(label, key, opts, () => BX.pref(key), v => BX.setPref(key, v));
+  return [
+    row('声音', 'snd', [[false, '开'], [true, '关']], () => BX.sfx.muted, v => BX.sfx.setMuted(v)),
+    pr('动画速度', 'speed', [[1, '正常'], [2, '快速']]),
+    pr('落子确认', 'confirm', [['auto', '触屏点两下'], ['on', '总是'], ['off', '点一下']]),
+    pr('走法提示', 'hints', [[true, '显示'], [false, '隐藏']]),
+    pr('震动反馈', 'vibrate', [[true, '开'], [false, '关']]),
+  ];
+};
+function menuPop() {
+  const old = document.querySelector('.gm-menu'); if (old) { old.remove(); return; }
+  const close = () => pop.remove();
+  const pop = h('div', {class: 'gm-menu', id: 'gmMenu'},
+    h('div', {class: 'mbtns'},
+      h('button', {id: 'mRules', text: '📜 规则', on: {click: () => { close(); showRules(); }}}),
+      h('button', {id: 'mRe', text: '↻ 重开', on: {click: () => { close(); doRestart(); }}})),
+    BX.prefRows());
+  $id('game').append(pop);
+  setTimeout(() => addEventListener('pointerdown', function f(ev) { if (!pop.isConnected) { removeEventListener('pointerdown', f, true); return; } if (!pop.contains(ev.target) && ev.target.id !== 'gbMenu') { pop.remove(); removeEventListener('pointerdown', f, true); } }, true), 0);
+}
 function refreshBar() {
   if (!S) return;
   const u = $id('gbUndo'); if (u) u.disabled = !canUndo();
   const p = $id('gbPause'); if (p) p.disabled = !!S.ended;
-  refreshSeats();
+  refreshSeats(); refreshHint();
 }
 function refreshSeats() {
   if (!S || !S.ctx) return; const el = $id('gmSeats'); if (!el) return;
@@ -444,7 +513,8 @@ BX.startOnline = function (def, opts, sel) {
 BX.onNet = function (m) {
   if (m.t === 'start') {
     const def = BX.games[m.id]; if (!def) { BX.toast('版本不一致：对方的游戏这里没有'); return; }
-    BX.launch(def, {mode: 'online', opts: m.opts, seed: m.seed, isHost: false, g: m.g, seats: m.seats.map(s => ({name: s.name, level: s.level, ctrl: s.owner === 'guest' ? 'local' : s.owner === 'host' ? 'remote' : 'ai'}))});
+    BX.launch(def, {mode: 'online', opts: m.opts, seed: m.seed, isHost: false, g: m.g, log: m.log || [], seats: m.seats.map(s => ({name: s.name, level: s.level, ctrl: s.owner === 'guest' ? 'local' : s.owner === 'host' ? 'remote' : 'ai'}))});
+    if (m.log && m.log.length) BX.toast('已回到对局');
     return;
   }
   if (m.t === 'suggest') { const def = BX.games[m.id]; if (def && BX.lobby) BX.lobby.suggested(def); return; }
@@ -478,12 +548,29 @@ BX.onNet = function (m) {
     case 'left': remoteGone('对方回到了大厅'); break;
   }
 };
-BX.onNetGone = function () { if (S && S.cfg.mode === 'online') { if (S.ctx.isHost) remoteGone('对方断线了'); else { BX.toLobby(true); } } };
+BX.onNetGone = function (why) {
+  if (!S || S.cfg.mode !== 'online') return;
+  if (S.ctx.isHost) remoteGone('对方断线了');
+  else if (why === 'guest-retry') { S.reqPending = false; ctxStatusNote('连接中断，正在重连…'); }
+  else BX.toLobby(true);
+};
+function ctxStatusNote(t) { const e = $id('gmStatus'); if (e) e.textContent = t; }
+/* host: the guest came back (auto-reconnect or re-entered the code) while a match is running → hand its seat back and resend the match */
+BX.onRejoin = function () {
+  if (!S || S.cfg.mode !== 'online' || !S.ctx.isHost || S.ended) return;
+  const ctx = S.ctx, back = ctx.seats.filter(s => s.wasRemote);
+  if (!back.length) return;
+  back.forEach(s => { s.ctrl = 'remote'; s.name = (BX.net.other || {}).name || s.origName; delete s.wasRemote; });
+  S.remoteIn = {};
+  const seats = ctx.seats.map(s => ({name: s.name, level: s.level, owner: s.ctrl === 'local' ? 'host' : s.ctrl === 'remote' ? 'guest' : 'ai'}));
+  BX.net.send({t: 'start', id: S.def.id, opts: S.cfg.opts, seed: S.cfg.seed, seats, g: S.g, log: S.def.kind === 'turn' ? S.log : []});
+  S.aiTok = {}; refreshSeats(); BX.toast('对方回来了，继续对局'); check();
+};
 function remoteGone(msg) {
   if (!S || S.cfg.mode !== 'online' || !S.ctx.isHost) return;
   const ctx = S.ctx, rs = ctx.seats.filter(s => s.ctrl === 'remote');
   if (S.ended) { BX.toast(msg); return; }
   const canAI = S.def.kind === 'turn' ? !!S.inst.aiMove : S.def.kind === 'realtime' ? !!S.inst.aiInput : false;
-  if (canAI && !S.def.noAI) { rs.forEach(s => { s.ctrl = 'ai'; s.level = 2; s.name += '(电脑)'; }); BX.toast(msg + '，由电脑接手'); refreshSeats(); check(); }
+  if (canAI && !S.def.noAI) { rs.forEach(s => { s.origName = s.name; s.wasRemote = true; s.ctrl = 'ai'; s.level = 2; s.name += '(电脑)'; }); BX.toast(msg + '，暂由电脑接手；对方重连后会交还'); refreshSeats(); check(); }
   else { BX.toast(msg); BX.toLobby(true); }
 }

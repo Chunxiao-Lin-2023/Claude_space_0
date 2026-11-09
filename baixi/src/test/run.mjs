@@ -91,7 +91,14 @@ async function onlineGame(id) {
     await G.waitForFunction(() => BX.session() && BX.session().cfg.mode === 'online', null, {timeout: 10000});
     const kind = await H.evaluate(id => BX.games[id].kind, id);
     const t0 = Date.now(); let a, b;
-    while (Date.now() - t0 < (kind === 'realtime' ? 12000 : TIME)) { await H.waitForTimeout(600); a = await sstate(H); b = await sstate(G); if (kind === 'turn' && a.ended && b.ended) break; if (H.errs.length || G.errs.length) break; }
+    let dropped = 0;
+    while (Date.now() - t0 < (kind === 'realtime' ? 12000 : TIME)) {
+      await H.waitForTimeout(600); a = await sstate(H); b = await sstate(G);
+      // --rejoin: once the match is under way, cut the guest's link and expect auto-reconnect + resume
+      if (arg('rejoin') && !dropped && a && !a.ended && (kind !== 'turn' || a.log >= 3) && Date.now() - t0 > (kind === 'turn' ? 600 : 2500)) { dropped = Date.now(); await G.evaluate(() => BX.net._drop()); msg += 'dropped; '; }
+      if (dropped === -1) {} else if (dropped && Date.now() - dropped > 1000) { const back = await G.evaluate(() => BX.net.up && !!BX.session() && BX.session().cfg.mode === 'online'); if (back) { msg += `rejoined after ${((Date.now() - dropped) / 1000).toFixed(1)}s; `; dropped = -1; } else if (Date.now() - dropped > 40000) { ok = false; msg += 'NO REJOIN; '; break; } }
+      if (kind === 'turn' && a.ended && b.ended) break; if (H.errs.length || G.errs.length) break;
+    }
     await shot(H, id, 'online_host'); await shot(G, id, 'online_guest');
     if (kind === 'turn') { if (a.st !== b.st) { ok = false; msg += 'STATE DIVERGED host/guest; '; } msg += `host ended=${a.ended} guest ended=${b.ended} actions=${a.log}/${b.log}`; if (!a.ended) ok = false; }
     else { const moved = await G.evaluate(() => JSON.stringify(BX.session().inst.st || {}).length); msg += `realtime guest state size ${moved}`; }

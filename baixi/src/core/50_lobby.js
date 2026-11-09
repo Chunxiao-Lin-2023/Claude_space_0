@@ -192,7 +192,8 @@ BX.lobby = (function () {
     const name = h('input', {class: 'txt', value: BX.myName(), maxLength: 10});
     const body = h('div', {style: {textAlign: 'left'}},
       h('div', {class: 'fld'}, h('label', {text: '你的名字（联机时对方看到）'}), name),
-      h('div', {class: 'fld'}, h('label', {text: '声音'}), h('div', {class: 'seg'}, h('button', {class: BX.sfx.muted ? '' : 'on', text: '开', on: {click: e => { BX.sfx.setMuted(false); e.target.classList.add('on'); e.target.nextSibling.classList.remove('on'); }}}), h('button', {class: BX.sfx.muted ? 'on' : '', text: '关', on: {click: e => { BX.sfx.setMuted(true); e.target.classList.add('on'); e.target.previousSibling.classList.remove('on'); }}}))),
+      h('div', {class: 'fld'}, h('label', {text: '游戏设置（所有游戏通用，游戏内「⋯」菜单也能改）'}), h('div', {class: 'mlist'}, BX.prefRows())),
+      h('div', {class: 'fld'}, h('label', {text: '新手指引'}), h('div', {class: 'seg'}, h('button', {text: '重新显示各游戏的操作说明', on: {click: e => { for (const k of Object.keys(localStorage)) if (k.startsWith('baixi.seen.')) localStorage.removeItem(k); e.target.textContent = '已重置'; }}}))),
       h('div', {class: 'fld'}, h('label', {text: '数据'}), h('div', {class: 'seg'}, h('button', {text: '清除战绩', on: {click: async () => { if (await BX.confirm('清除所有游戏的战绩和存档？', '清除')) { for (const k of Object.keys(localStorage)) if (k.startsWith('baixi.stats') || k.startsWith('baixi.resume.') || k.startsWith('baixi.g.')) localStorage.removeItem(k); BX.toast('已清除'); } }}}))));
     BX.modal({title: '设置', body, buttons: [{label: '保存', value: 1}], dismiss: 0}).then(v => {
       const nm = name.value.trim().slice(0, 10); if (nm) { BX.store.set('name', nm); BX.net.sendName(); } render();
