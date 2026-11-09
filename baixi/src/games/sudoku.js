@@ -363,7 +363,7 @@ BX.register({
         D.text(g, `${LVN[lv]}  ·  ${K.fmt(time)}` + (MIS ? `  ·  错误 ${mistakes}/${MIS}` : ''), I.x + (L.keys[0].y > by + bs ? I.w / 2 : I.w / 2), I.y, {size: 16, color: '#f3e2c0', weight: 700, shadow: true});
         // keypad
         L.keys.forEach((k, j) => {
-          const v = j + 1, left = 9 - countOf(v), on = numSel === v, pr = keyPress === j;
+          const v = j + 1, left = Math.max(0, 9 - countOf(v)), on = numSel === v, pr = keyPress === j;
           g.save(); if (pr) { g.translate(0, 2); }
           g.shadowColor = 'rgba(0,0,0,.4)'; g.shadowBlur = 6; g.shadowOffsetY = pr ? 1 : 3;
           D.rr(g, k.x, k.y, k.w, k.h, Math.min(k.w, k.h) * .18);
