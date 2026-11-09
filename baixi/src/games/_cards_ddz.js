@@ -770,7 +770,7 @@ L.climb = function (ctx, G) {
         else { D.text(g, '底分 ' + st.base, bx - 10, by + bhh * .32, Object.assign({}, o, {align: 'right'})); D.text(g, '倍数 ×' + m, bx - 10, by + bhh * .72, Object.assign({}, o, {align: 'right', color: m > 1 ? '#ffd76a' : '#f3e2c0', size: fs * (m > 1 ? 1.12 : 1)})); }
       } else D.text(g, st.ph === 'bid' ? (st.bidMax ? '当前 ' + st.bidMax + ' 分' : '叫分中') : '底牌', lay.portrait ? w / 2 : bx - 10, lay.portrait ? by + bhh + 13 : by + bhh / 2, Object.assign({}, o, {align: lay.portrait ? 'center' : 'right'}));
     } else {
-      if (!st.last || lay.portrait) D.text(g, N === 2 ? '两人 · 各 16 张' : '三人 · 各 16 张', w / 2, midY + Math.min(w, h) * .14 + 16, {size: BX.clamp(cw * .2, 12, 15), color: 'rgba(243,226,192,.45)'});
+      if (!st.shown.some(x => x && x.c)) D.text(g, N === 2 ? '两人 · 各 16 张' : '三人 · 各 16 张', w / 2, midY + Math.min(w, h) * .14 + 16, {size: BX.clamp(cw * .2, 12, 15), color: 'rgba(243,226,192,.45)'});
     }
     // deal animation: deck in the middle + flying backs
     if (st.ph === 'deal') {
