@@ -1425,9 +1425,10 @@ const SAPI = {
   async end(o = {}) {
     const g = GEN; W.ended = true; W.timer = null; emit('sfx', o.bad ? 'bad' : 'good');
     for (const k in W.maps) for (const e of W.maps[k].ents) e.chase = null;
-    if (!o.bad) { markDone(W.ch.id); store.del('cp.' + W.ch.id); }   // 坏结局保留检查点
+    const clear = !o.bad && !o.secret;   // secret：隐藏结局——按好结局演出，但不算通关、保留检查点
+    if (clear) { markDone(W.ch.id); store.del('cp.' + W.ch.id); }   // 坏结局保留检查点
     if (o.id) { const k = W.ch.id + ':' + o.id, got = store.get('ends', []); if (!got.includes(k)) { got.push(k); store.set('ends', got); } if (NET.role === 'host') netSend({ t: 'endrec', k }); }   // 结局收集（ch.endings 列出全部）
-    if (NET.role === 'host' && !o.bad) netSend({ t: 'done', ch: W.ch.id });
+    if (NET.role === 'host' && clear) netSend({ t: 'done', ch: W.ch.id });
     await waitInput('end', { endScreen: { kind: o.bad ? 'badend' : 'end', title: o.title || '完', text: o.text || '', t0: RT } });
     chk(g);   // 玩家选了重来/返回：结束这段剧本，不再往下跑
   },
@@ -7159,11 +7160,11 @@ IN.handlers.push(n => {
       await S.scare('face', { spr: '@womanF', dur: 1.2 });
       S.fx('red');
       await S.say('她', '……你看见我了。', { style: 'whisper' });
-      return S.end({ bad: true, title: '你看见了她的脸', text: '第二天早上，3号梯停在了五楼。\n门开着，里面没有人。\n\n物业调出了那一晚的监控：电梯从十楼下到五楼，在五楼停了整整四个小时。\n画面里只有你一个人。你一直侧着头，像是在听谁说话。' });
+      return S.end({ id: 'face', bad: true, title: '你看见了她的脸', text: '第二天早上，3号梯停在了五楼。\n门开着，里面没有人。\n\n物业调出了那一晚的监控：电梯从十楼下到五楼，在五楼停了整整四个小时。\n画面里只有你一个人。你一直侧着头，像是在听谁说话。' });
     }
     await S.say('她', '……你终于肯理我了。', { style: 'whisper' });
     S.sfx('laugh'); S.fx('glitch');
-    return S.end({ bad: true, title: '你回答了她', text: '「你是一个人吗？」\n\n从那天起，你再也不是一个人了。\n不管走到哪里，你总能听见身后半步远的地方，有一个很轻、很轻的呼吸声。\n它在等你回头。' });
+    return S.end({ id: 'answer', bad: true, title: '你回答了她', text: '「你是一个人吗？」\n\n从那天起，你再也不是一个人了。\n不管走到哪里，你总能听见身后半步远的地方，有一个很轻、很轻的呼吸声。\n它在等你回头。' });
   }
   async function whisper1(S) {
     if (!S.f.woman || S.f._fail) return;
@@ -7299,7 +7300,7 @@ IN.handlers.push(n => {
     await S.scare('face', { spr: '@zhou', dur: 1.1 });
     S.fx('red');
     await S.say('周屿', '……小满，你怎么不看我？', { style: 'whisper' });
-    return S.end({ bad: true, title: '两个人', text: '第二天早上，物业在3号梯里找到了你。\n你说你是和周屿一起回来的。你说了很多遍。\n\n监控里，电梯从二楼开始，就一直只有你一个人。\n可你每说一句话，都会停下来，侧过头，\n像是在等身边的谁，替你把话说完。' });
+    return S.end({ id: 'two', bad: true, title: '两个人', text: '第二天早上，物业在3号梯里找到了你。\n你说你是和周屿一起回来的。你说了很多遍。\n\n监控里，电梯从二楼开始，就一直只有你一个人。\n可你每说一句话，都会停下来，侧过头，\n像是在等身边的谁，替你把话说完。' });
   }
 
   /* ---------------- 隐藏：另一边的十二楼 ---------------- */
@@ -7497,7 +7498,7 @@ IN.handlers.push(n => {
     await S.narr('你回过头。\n大堂里灯火通明。老郑低头看着收音机。\n电梯间那边，3号梯的门，正在慢慢地合上。');
     await S.fade(1, 1200);
     await S.note('endA');
-    await S.end({ title: '第五夜　完', text: '有时候你会想：\n那天晚上，回到的那个一楼，真的是原来的那一个吗？\n\n' + (f.chkMir ? '镜子里的你，再也没有慢过半拍。' : '那面镜子，你始终没敢再看。') + '\n……大概吧。' });
+    await S.end({ id: 'out', title: '第五夜　完', text: '有时候你会想：\n那天晚上，回到的那个一楼，真的是原来的那一个吗？\n\n' + (f.chkMir ? '镜子里的你，再也没有慢过半拍。' : '那面镜子，你始终没敢再看。') + '\n……大概吧。' });
   }
   /* 结局二：对的那一个一楼 */
   async function endingB(S) {
@@ -7514,7 +7515,7 @@ IN.handlers.push(n => {
     await S.narr('……他没有再看你一眼。');
     await S.fade(1, 1400);
     await S.note('endB');
-    await S.end({ title: '第五夜　完 · 另一个一楼', text: '这里的镜子不慢半拍。这里的钟往前走。\n这里的周屿，明天还会来上班。\n\n只是这里，已经有一个林小满了。' });
+    await S.end({ id: 'other', title: '第五夜　完 · 另一个一楼', text: '这里的镜子不慢半拍。这里的钟往前走。\n这里的周屿，明天还会来上班。\n\n只是这里，已经有一个林小满了。' });
   }
 
   /* ---------------- 另一边 ---------------- */
@@ -7572,7 +7573,7 @@ IN.handlers.push(n => {
   async function stayedTooLong(S) {
     S.fx('red'); S.sfx('bad');
     await S.narr('窗外的红十字，忽然灭了。\n整层楼的暗红色，一点一点地，变成了纯粹的黑。');
-    return S.end({ bad: true, title: '你在那边待得太久了', text: '帖子里说过：那边的时间和这边不一样。\n\n华康大厦的物业后来又贴了一张寻人启事，就贴在周屿那张的旁边。\n照片上的女孩留着齐耳短发，背着挂小熊的帆布包。\n\n两张启事上的日期，是同一天。' });
+    return S.end({ id: 'stay', bad: true, title: '你在那边待得太久了', text: '帖子里说过：那边的时间和这边不一样。\n\n华康大厦的物业后来又贴了一张寻人启事，就贴在周屿那张的旁边。\n照片上的女孩留着齐耳短发，背着挂小熊的帆布包。\n\n两张启事上的日期，是同一天。' });
   }
 
   const LOBBY_ROWS = [
@@ -7635,6 +7636,7 @@ IN.handlers.push(n => {
       phone: { name: '手机', desc: '你的手机。电量 31%。' },
       phoneD: { name: '手机', desc: '屏幕是黑的。长按电源键，没有反应。' }
     },
+    endings: { out: '推门出去', other: '另一个一楼', face: '你看见了她的脸', answer: '你回答了她', two: '两个人', stay: '你在那边待得太久了' },
     notes: {
       rules: { title: '周屿工位上的便签', text: '（便利贴，周屿的字，越写越潦草）\n\n电梯游戏\n· 楼至少十层。一个人。\n· 一楼进电梯，按 4 → 2 → 6 → 2 → 10\n  每一层都不要出去。中途有人进来 = 失败\n· 到十楼按 5\n· 五楼可能会进来一个女人\n  不要看她！！不要跟她说话！！\n  她会站在你正后方。千万别回头\n· 按 1。如果电梯往上走，去了十楼——就成了\n· 回来：同样的顺序再走一遍。回到一楼，好好看看周围\n\n（最底下补了一行，墨水洇开了）\n小满肯定说我无聊。等我回来讲给她听。' },
       forum: { title: '打印出来的帖子', text: '【转】去异世界的方法（电梯版）　发帖时间 23:12\n\n据说最早是日本那边传过来的，也有人说是韩国。英文论坛上也翻来翻去好几个版本了，细节每个人说的都不一样。\n\n有的版本说，十楼走出去，世界看起来和原来一模一样，只是灯全灭了，整栋楼只剩你一个人。窗外远处能看见一个红色的十字。\n有的版本说，那边手机能用；有的说一格信号都没有，屏幕根本点不亮。\n有的版本说，五楼进来的那个「女人」，不是人。你看了她，她就会跟你回来。\n\n怎么回来：坐同一部电梯，把顺序再按一遍。回到一楼以后，先别急着出去——仔细看看，周围还是不是原来的样子。如果有哪里不对，就再来一遍。\n\n——楼下回复 #3：楼主你自己试过吗？\n——楼下回复 #4：试过的人怎么回帖啊（笑）\n\n（打印机出的最后一页，页脚印着：打印人 周屿　11月19日 23:31）' },
@@ -10390,7 +10392,7 @@ IN.handlers.push(n => {
     await S.say('赫伯特', '两百英镑，就这么烧了。（他笑着摇头）爸爸，你可真是个明白人。');
     await S.fade(1, 900);
     await S.card('那年冬天', '', '那年冬天，什么也没有发生。\n\n路还是那么泥泞，棋还是那么难赢。\n赫伯特照旧每天早上吹着口哨去厂里上工。\n\n两年后，房子的钱还清了——\n是赫伯特一个先令一个先令，攒着帮你还上的。');
-    await S.end({ id: 'wise', title: '像个明白人那样', text: '（隐藏结局）\n\n「听我的——像个明白人那样，把它扔回火里去。」\n你听了。\n\n有些门，不打开，就永远不用知道门外是什么。\n\n……可你是不是也想知道，\n要是那天晚上你把它留下了，会怎么样？' });
+    await S.end({ id: 'wise', secret: true, title: '像个明白人那样', text: '（隐藏结局）\n\n「听我的——像个明白人那样，把它扔回火里去。」\n你听了。\n\n有些门，不打开，就永远不用知道门外是什么。\n\n……可你是不是也想知道，\n要是那天晚上你把它留下了，会怎么样？' });
   }
 
   /* ---------------- 第二幕：第一个愿望 ---------------- */

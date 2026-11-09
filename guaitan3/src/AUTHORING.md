@@ -158,7 +158,7 @@ faces: { mary(R, a, t) { /* 32×32 网格，R(x,y,w,h,col)；a = 特效进度 0�
 | `S.hidePlayer(true)` `S.wear('@wife'\|'car')` `S.speed(倍)` | 玩家隐藏（躲藏时追逐者会乱逛）/换外观/速度 |
 | `S.cp(名)` | 存检查点（死亡后从这里重来；名字对应 `resume`） |
 | `await S.die(文本, 标题)` | 死亡 → 从检查点重来 |
-| `await S.end({title, text})` / `S.end({bad:true, title, text})` | 好结局（解锁档案、清除存档）/ 坏结局（保留检查点，可重来）。加 `id:'名'` 记入结局收集；章节对象写 `endings: {名: '结局标题', …}`，档案里显示「结局 n/N」 |
+| `await S.end({title, text})` / `S.end({bad:true, title, text})` | 好结局（解锁档案、清除存档）/ 坏结局（保留检查点，可重来）。加 `id:'名'` 记入结局收集；章节对象写 `endings: {名: '结局标题', …}`，档案里显示「结局 n/N」。`secret:true`：隐藏结局——按好结局演出、记入收集，但不算通关、不清除检查点 |
 
 音效 `S.sfx`：step blip select item paper open close locked knock switch match scare sting heart whisper bell ding glass scream thud cry tv giggle drip water splash phone tick car brake tear chime good bad laugh chant cut。
 环境声 `S.amb` / 地图 `amb`：drone room wind rain bus car river night tv elevator otherworld school fire market none。
