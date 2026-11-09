@@ -289,7 +289,7 @@ function drawDeco(d) {
 /* ---------- cars & clouds ---------- */
 function initAmbient() {
   RND.cars = [];
-  const lanesX = [2, 7, 12], lanesY = [4, 9, 14];
+  const lanesX = [2, 8, 14], lanesY = [5, 11, 17];
   for (let k = 0; k < 14; k++) {
     const ax = k % 2 === 0, line = ax ? lanesX[k % 3] : lanesY[k % 3], dir = (k >> 1) % 2 ? 1 : -1;
     RND.cars.push({ ax, line: line + (dir > 0 ? 0.32 : 0.68), pos: Math.random() * (N + 2 * MARGIN) - MARGIN, dir, sp: 1.1 + Math.random() * 0.9, col: ['#e8e4dc', '#d1453b', '#2f6db3', '#f2c14e', '#3a3f47', '#6fb5a7'][k % 6] });
@@ -357,7 +357,13 @@ function hull(P) {
 }
 function inPoly(pt, P) { let c = false; for (let i = 0, j = P.length - 1; i < P.length; j = i++) { const a = P[i], b = P[j]; if ((a[1] > pt[1]) !== (b[1] > pt[1]) && pt[0] < (b[0] - a[0]) * (pt[1] - a[1]) / (b[1] - a[1]) + a[0]) c = !c; } return c; }
 function pickAt(sx, sy) {
-  for (let i = RND.tagHit.length - 1; i >= 0; i--) { const r = RND.tagHit[i]; if (sx >= r.x && sx <= r.x + r.w && sy >= r.y && sy <= r.y + r.h) return r.id; }
+  const inR = r => sx >= r.x && sx <= r.x + r.w && sy >= r.y && sy <= r.y + r.h;
+  for (let i = RND.tagHit.length - 1; i >= 0; i--) { const r = RND.tagHit[i]; if (!r.dot && inR(r)) return r.id; }
+  for (const r of RND.tagHit) if (r.dot && inR(r)) return r.id;
+  // a near miss still counts: nearest tag within 26 px
+  let best = -1, bd = 26 * 26;
+  for (const r of RND.tagHit) { const dx = clamp(sx, r.x, r.x + r.w) - sx, dy = clamp(sy, r.y, r.y + r.h) - sy, d = dx * dx + dy * dy; if (d < bd) { bd = d; best = r.id; } }
+  if (best >= 0) return best;
   const w = s2w(sx, sy); for (const r of RND.pick) if (inPoly(w, r.poly)) return r.id; return -1;
 }
 
@@ -419,8 +425,8 @@ function drawLabels() {
   const z = CAM.z, T = G.t;
   ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
   if (window.__dbg && __dbg.notags) return;
-  // district names with 30 s trend
-  const al = clamp(1.35 - z * 0.45, 0.45, 0.95);
+  // district names with 30 s trend (drawn after tags are placed; hidden where a price tag sits)
+  const al = clamp(1.35 - z * 0.45, 0.45, 0.95), dlab = [];
   for (let i = 0; i < DISTS.length; i++) {
     const c = distCenter(i), s = w2s(...iso(c[0], c[1], 0)), tr = distTrend(i);
     const fs = Math.round(clamp(14 * z + 5, 12, 17));
@@ -428,14 +434,22 @@ function drawLabels() {
     const nm = DISTS[i].n, nw = ctx.measureText(nm).width;
     ctx.font = '600 ' + (fs - 1) + 'px Oswald,sans-serif';
     const tt = (tr >= 0 ? '▲' : '▼') + Math.abs(tr * 100).toFixed(1) + '%', tw = ctx.measureText(tt).width, W = nw + tw + 24;
-    ctx.fillStyle = 'rgba(10,18,28,' + (al * 0.62).toFixed(2) + ')'; rr2(s[0] - W / 2, s[1] - 12, W, 24, 12); ctx.fill();
-    ctx.globalAlpha = al;
-    ctx.font = '700 ' + fs + 'px "Noto Sans SC",sans-serif'; ctx.fillStyle = '#fff'; ctx.textAlign = 'left'; ctx.fillText(nm, s[0] - W / 2 + 10, s[1] + 0.5);
-    ctx.font = '600 ' + (fs - 1) + 'px Oswald,sans-serif'; ctx.fillStyle = Math.abs(tr) < 0.002 ? '#cfd8e2' : tr > 0 ? '#ff8a7e' : '#5fe0a0'; ctx.fillText(tt, s[0] - W / 2 + 14 + nw, s[1] + 1);
-    ctx.globalAlpha = 1; ctx.textAlign = 'center';
+    dlab.push({ s, tr, fs, nm, nw, tt, W, x: s[0] - W / 2, y: s[1] - 12, w: W, h: 24 });
   }
+  const drawDist = blocked => {
+    for (const L of dlab) {
+      if (blocked && blocked.some(r => L.x < r.x + r.w && L.x + L.w > r.x && L.y < r.y + r.h && L.y + L.h > r.y)) continue;
+      const { s, tr, fs, nm, nw, tt, W } = L;
+      ctx.fillStyle = 'rgba(10,18,28,' + (al * 0.62).toFixed(2) + ')'; rr2(s[0] - W / 2, s[1] - 12, W, 24, 12); ctx.fill();
+      ctx.globalAlpha = al;
+      ctx.font = '700 ' + fs + 'px "Noto Sans SC",sans-serif'; ctx.fillStyle = '#fff'; ctx.textAlign = 'left'; ctx.fillText(nm, s[0] - W / 2 + 10, s[1] + 0.5);
+      ctx.font = '600 ' + (fs - 1) + 'px Oswald,sans-serif'; ctx.fillStyle = Math.abs(tr) < 0.002 ? '#cfd8e2' : tr > 0 ? '#ff8a7e' : '#5fe0a0'; ctx.fillText(tt, s[0] - W / 2 + 14 + nw, s[1] + 1);
+      ctx.globalAlpha = 1; ctx.textAlign = 'center';
+    }
+  };
   if (window.__dbg && __dbg.notags) return;
   // collect tags
+  const NUMF = '600 13px Oswald,"Noto Sans SC",sans-serif', CHF = '700 11px "Noto Sans SC",sans-serif';
   const tags = [];
   for (const p of G.props) {
     if (p.gone || p.stage === 'demo') continue;
@@ -443,22 +457,16 @@ function drawLabels() {
     if (!listed && !mine && !building && !other) continue;
     const s = w2s(...iso(p.x + p.w / 2, p.y + p.h / 2, propTopZ(p) * (building ? 0.6 : 1) + 8));
     if (s[0] < -70 || s[0] > VW + 70 || s[1] < -30 || s[1] > VH + 40) continue;
-    tags.push({ p, s, listed, mine, building, other });
-  }
-  tags.sort((a, b) => a.s[1] - b.s[1]);
-  RND.tagHit = [];
-  const NUMF = '600 13px Oswald,"Noto Sans SC",sans-serif', CHF = '700 11px "Noto Sans SC",sans-serif';
-  for (const tg of tags) {
-    const { p, s, listed, mine, building, other } = tg;
-    let txt, bg, fg = '#fff', chip = null, timer = null, glow = false;
-    if (p.kind === 'mansion') { txt = '豪宅 ' + fmtM(mansionPrice()); bg = '#c9952a'; fg = '#1d1406'; }
-    else if (building) { txt = '施工中'; bg = 'rgba(110,96,70,.9)'; timer = [p.bt / BAL.buildT, '#f5c451']; }
-    else if (other) { txt = esc(G.pl[p.owner].name).slice(0, 4); bg = hexA(PCOL[p.owner], 0.85); fg = '#10161f'; if (z < 0.8 && p.id !== STATE.sel) continue; }
+    let txt, bg, fg = '#fff', chip = null, timer = null, glow = false, pri = 3;
+    if (p.kind === 'mansion') { txt = '豪宅 ' + fmtM(mansionPrice()); bg = '#c9952a'; fg = '#1d1406'; pri = 1; }
+    else if (building) { txt = '施工中'; bg = 'rgba(110,96,70,.9)'; timer = [p.bt / BAL.buildT, '#f5c451']; pri = 5; }
+    else if (other) { txt = esc(G.pl[p.owner].name).slice(0, 4); bg = hexA(PCOL[p.owner], 0.85); fg = '#10161f'; pri = 4; }
     else if (listed) {
       txt = fmtM(p.list.ask); bg = 'rgba(16,24,36,.9)'; chip = dealChip(p);
       timer = [p.list.left / p.list.life, p.list.left < 6 ? '#ff6a5c' : 'rgba(255,255,255,.75)'];
-      if (p.list.tag === 'new' && G.t - p.list.t0 < 6) chip = chip || ['新', '#2a6fb8', '#fff'];
+      const d = dealOf(p, ME); pri = d.k === 'great' ? 2 : d.k === 'good' ? 2.5 : 3;
     } else if (mine) {
+      pri = 1;
       if (p.reno) { txt = '装修中'; bg = 'rgba(120,90,40,.92)'; timer = [1 - p.reno / (RENO[p.renoTo - 1] || RENO[0]).t, '#f5c451']; }
       else {
         const pr = p.offer * (1 - sellFee()) - p.paid;
@@ -468,30 +476,59 @@ function drawLabels() {
         else if (easyHints() && sellAdvice(p).k === 'sell') { chip = ['卖!', '#f5c451', '#1d1406']; glow = true; }
       }
     }
-    const sel = p.id === STATE.sel;
-    // pop-in when a listing / building first appears
-    const sk = listed ? 'L' + p.id + ':' + (p.list.t0 | 0) : mine ? 'M' + p.id + ':' + (p.boughtT | 0) : 'B' + p.id, k0 = RND.seen.get(sk); if (k0 == null) RND.seen.set(sk, RND.t);
-    const age = RND.t - (k0 == null ? RND.t : k0), sc = age < 0.35 ? 0.4 + 0.6 * Math.sin(age / 0.35 * Math.PI / 2) * 1.08 : 1;
+    if (p.id === STATE.sel || p.id === RND.ring) pri = 0;
     ctx.font = NUMF; const tw = ctx.measureText(txt).width + 14;
     ctx.font = CHF; const cw = chip ? ctx.measureText(chip[0]).width + 10 : 0;
-    const rw = timer ? 18 : 0, W = (tw + cw + rw) * sc, H = 22 * sc;
-    const x = s[0] - W / 2, y = s[1] - H - 6 - (sel ? 4 + Math.abs(Math.sin(RND.t * 4)) * 4 : 0);
+    const rw = timer ? 18 : 0, W = tw + cw + rw, H = 22;
+    tags.push({ p, s, txt, bg, fg, chip, timer, glow, pri, tw, cw, rw, W, H });
+  }
+  // place tags so none overlap: most important first; nudge up / sideways, else shrink to a dot
+  tags.sort((a, b) => a.pri - b.pri || a.s[1] - b.s[1]);
+  const placed = [], dots = [];
+  const hit = (x, y, w, h) => placed.some(r => x < r.x + r.w + 3 && x + w + 3 > r.x && y < r.y + r.h + 3 && y + h + 3 > r.y);
+  const offs = [[0, 0], [0, -1], [-0.6, -0.5], [0.6, -0.5], [0, -2], [-0.6, -1.5], [0.6, -1.5]];
+  for (const tg of tags) {
+    const bx = tg.s[0] - tg.W / 2, by = tg.s[1] - tg.H - 6 - (tg.pri === 0 && tg.p.id === STATE.sel ? 4 + Math.abs(Math.sin(RND.t * 4)) * 4 : 0);
+    let ok = false;
+    for (const [ox, oy] of offs) {
+      const x = bx + ox * tg.W, y = by + oy * (tg.H + 4);
+      if (!hit(x, y, tg.W, tg.H)) { tg.x = x; tg.y = y; tg.moved = ox !== 0 || oy !== 0; ok = true; break; }
+    }
+    if (!ok && tg.pri === 0) { tg.x = bx; tg.y = by; tg.moved = false; ok = true; }
+    if (ok) placed.push({ x: tg.x, y: tg.y, w: tg.W, h: tg.H, tg }); else dots.push(tg);
+  }
+  drawDist(placed);
+  RND.tagHit = [];
+  // collapsed tags: a small coloured dot on the house (tap or zoom in to see it)
+  for (const tg of dots) {
+    const [x, y] = [tg.s[0], tg.s[1] - 4];
+    ctx.fillStyle = 'rgba(0,0,0,.35)'; ctx.beginPath(); ctx.arc(x, y + 1, 6.5, 0, 6.283); ctx.fill();
+    ctx.fillStyle = tg.chip ? tg.chip[1] : tg.bg; ctx.beginPath(); ctx.arc(x, y, 5.5, 0, 6.283); ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,.85)'; ctx.lineWidth = 1.5; ctx.stroke();
+    RND.tagHit.push({ id: tg.p.id, x: x - 11, y: y - 11, w: 22, h: 22, dot: 1 });
+  }
+  placed.sort((a, b) => a.y - b.y);
+  for (const r of placed) {
+    const { p, s, txt, bg, fg, chip, timer, glow, tw, cw, rw, W, H } = r.tg, x = r.tg.x, y = r.tg.y, sel = p.id === STATE.sel;
+    // pop-in when a listing / building first appears
+    const sk = p.list && p.owner === -1 ? 'L' + p.id + ':' + (p.list.t0 | 0) : p.owner === ME ? 'M' + p.id + ':' + (p.boughtT | 0) : 'B' + p.id, k0 = RND.seen.get(sk); if (k0 == null) RND.seen.set(sk, RND.t);
+    const age = RND.t - (k0 == null ? RND.t : k0);
+    if (age < 0.3) { const k = age / 0.3; ctx.globalAlpha = k; }
+    if (r.tg.moved) { ctx.strokeStyle = 'rgba(255,255,255,.7)'; ctx.lineWidth = 1.2; ctx.beginPath(); ctx.moveTo(s[0], s[1] - 4); ctx.lineTo(clamp(s[0], x + 6, x + W - 6), y + H); ctx.stroke(); ctx.fillStyle = bg; ctx.beginPath(); ctx.arc(s[0], s[1] - 4, 3, 0, 6.283); ctx.fill(); }
     if (glow) { ctx.fillStyle = 'rgba(245,196,81,' + (0.25 + 0.2 * Math.sin(RND.t * 7)).toFixed(2) + ')'; rr2(x - 4, y - 4, W + 8, H + 8, 9); ctx.fill(); }
     ctx.fillStyle = 'rgba(0,0,0,.25)'; rr2(x + 1, y + 2, W, H, 6); ctx.fill();
     ctx.fillStyle = bg; rr2(x, y, W, H, 6); ctx.fill();
     if (sel || RND.ring === p.id) { ctx.strokeStyle = '#ffe07a'; ctx.lineWidth = 2; rr2(x, y, W, H, 6); ctx.stroke(); }
-    ctx.beginPath(); ctx.moveTo(s[0] - 5, y + H); ctx.lineTo(s[0] + 5, y + H); ctx.lineTo(s[0], y + H + 6); ctx.closePath(); ctx.fillStyle = bg; ctx.fill();
-    if (sc < 0.999) { RND.tagHit.push({ id: p.id, x, y, w: W, h: H + 6 }); continue; }
+    if (!r.tg.moved) { ctx.beginPath(); ctx.moveTo(s[0] - 5, y + H); ctx.lineTo(s[0] + 5, y + H); ctx.lineTo(s[0], y + H + 6); ctx.closePath(); ctx.fillStyle = bg; ctx.fill(); }
     let cx = x;
     if (timer) { ring(cx + 11, y + H / 2, 6, timer[0], timer[1]); cx += rw; }
     if (chip) { ctx.fillStyle = chip[1]; rr2(cx + 2, y + 3, cw - 2, H - 6, 4); ctx.fill(); ctx.fillStyle = chip[2]; ctx.font = CHF; ctx.fillText(chip[0], cx + 1 + cw / 2, y + H / 2 + 0.5); cx += cw; }
     ctx.font = NUMF; ctx.fillStyle = fg; ctx.fillText(txt, cx + tw / 2, y + H / 2 + 1);
-    // up / down flash when the number moved in the last half second
+    ctx.globalAlpha = 1;
     const fl = RND.flash.get(p.id);
     if (fl && RND.t - fl.t < 0.6) { ctx.fillStyle = fl.d > 0 ? '#ff7a6e' : '#4fe09a'; ctx.font = '700 11px sans-serif'; ctx.fillText(fl.d > 0 ? '▲' : '▼', x + W + 7, y + H / 2); }
-    RND.tagHit.push({ id: p.id, x: x - 4, y: y - 4, w: W + 8, h: H + 12 });
-    // tutorial pointer
-    if (RND.ring === p.id) { const by = y - 14 - Math.abs(Math.sin(RND.t * 4)) * 8; ctx.fillStyle = '#f5c451'; ctx.beginPath(); ctx.moveTo(s[0] - 9, by - 10); ctx.lineTo(s[0] + 9, by - 10); ctx.lineTo(s[0], by); ctx.closePath(); ctx.fill(); }
+    RND.tagHit.push({ id: p.id, x: x - 3, y: y - 3, w: W + 6, h: H + 8 });
+    if (RND.ring === p.id) { const by = y - 14 - Math.abs(Math.sin(RND.t * 4)) * 8; ctx.fillStyle = '#f5c451'; ctx.beginPath(); ctx.moveTo(x + W / 2 - 9, by - 10); ctx.lineTo(x + W / 2 + 9, by - 10); ctx.lineTo(x + W / 2, by); ctx.closePath(); ctx.fill(); }
   }
   // floating money pops
   RND.pulse = RND.pulse.filter(f => (f.t += 1 / 60) < 1.6);

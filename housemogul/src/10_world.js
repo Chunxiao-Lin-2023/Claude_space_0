@@ -1,7 +1,9 @@
 /* ================= world: map layout, properties, valuation ================= */
-const N = 21;
+const N = 25;
 const T_GRASS = 0, T_ROAD = 1, T_WATER = 2, T_PLAZA = 3, T_PATH = 4;
-const XR = [[0, 3], [5, 8], [10, 13], [15, 20]], YR = [[3, 6], [8, 11], [13, 16], [18, 20]];
+/* 5-tile blocks between roads (y = 2, 8, 14, 20; x = 5, 11, 17). Every house keeps a one-tile yard
+   around it (no two houses touch, not even diagonally), so each one is easy to tap. */
+const XR = [[0, 4], [6, 10], [12, 16], [18, 24]], YR = [[3, 7], [9, 13], [15, 19], [21, 24]];
 const BLOCKS_DEF = [
   [0, 0, 'river', '滨江大道'], [1, 0, 'river', '望江路'], [2, 0, 'river', '观澜路'], [3, 0, 'river', '江湾路'],
   [0, 1, 'old', '梧桐巷'], [1, 1, 'old', '槐花街'], [2, 1, 'tech', '创新大道'], [3, 1, 'tech', '云谷路'],
@@ -10,23 +12,31 @@ const BLOCKS_DEF = [
 ];
 const ti = (x, y) => y * N + x;
 const inMap = (x, y) => x >= 0 && y >= 0 && x < N && y < N;
+const MANSION_XY = [20, 21];
+// can a w×h house stand at (x, y) inside block b? tiles must be free grass and no other house may touch it
+function lotFree(props, deco, tiles, b, x, y, w, h) {
+  if (x < b.x0 || y < b.y0 || x + w - 1 > b.x1 || y + h - 1 > b.y1) return false;
+  for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) if (tiles[ti(x + i, y + j)] !== T_GRASS) return false;
+  for (const o of deco) if (x < o.x + o.w && x + w > o.x && y < o.y + o.h && y + h > o.y) return false;
+  for (const o of props) if (!o.gone && x - 1 < o.x + o.w && x + w + 1 > o.x && y - 1 < o.y + o.h && y + h + 1 > o.y) return false;
+  return true;
+}
 
 function genWorld() {
   const tiles = new Array(N * N).fill(T_GRASS), tdist = new Array(N * N).fill(-1);
   for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
     let t = T_GRASS;
     if (y <= 1) t = T_WATER;
-    else if (y === 2 || y === 7 || y === 12) t = T_ROAD;
-    else if (y === 17 && x <= 13) t = T_ROAD;
-    else if ((x === 4 || x === 9) && y >= 2) t = T_ROAD;
-    else if (x === 14 && y >= 2) t = T_ROAD;
+    else if (y === 2 || y === 8 || y === 14) t = T_ROAD;
+    else if (y === 20 && x <= 16) t = T_ROAD;
+    else if ((x === 5 || x === 11 || x === 17) && y >= 2) t = T_ROAD;
     tiles[ti(x, y)] = t;
   }
-  const blocks = [], props = [], deco = [], used = new Set();
-  const occ = (x, y, w, h) => { for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) used.add(ti(x + i, y + j)); };
+  const blocks = [], props = [], deco = [];
   const streetNo = {};
   const addProp = (kind, b, x, y, cond) => {
-    const K = KINDS[kind]; occ(x, y, K.w, K.h);
+    const K = KINDS[kind];
+    if (!lotFree(props, deco, tiles, b, x, y, K.w, K.h)) return null;
     streetNo[b.st] = (streetNo[b.st] || 0) + 1 + (kind === 'mansion' ? 0 : ri(0, 1));
     const p = {
       id: props.length, kind, d: b.d, x, y, w: K.w, h: K.h, st: b.st, num: kind === 'mansion' ? 1 : streetNo[b.st], b: blocks.indexOf(b),
@@ -36,39 +46,42 @@ function genWorld() {
     };
     props.push(p); return p;
   };
-  const addDeco = (k, x, y, w, h, extra) => { occ(x, y, w, h); deco.push(Object.assign({ k, x, y, w, h }, extra || {})); };
+  const addDeco = (k, x, y, w, h, extra) => deco.push(Object.assign({ k, x, y, w, h }, extra || {}));
+  // place up to n houses of size sz on a stride lattice inside block b, leaving `skip` lots empty for future builds
+  const fill = (b, sz, n, kindFn) => {
+    const st = sz + 1, lots = [];
+    for (let y = b.y0; y + sz - 1 <= b.y1; y += st) for (let x = b.x0; x + sz - 1 <= b.x1; x += st) lots.push([x, y]);
+    let k = 0; for (const [x, y] of shuffle(lots)) { if (k >= n) break; if (addProp(kindFn(), b, x, y)) k++; }
+  };
   for (const [xi, yi, dk, st] of BLOCKS_DEF) {
     const [x0, x1] = XR[xi], [y0, y1] = YR[yi];
     const b = { x0, y0, x1, y1, d: DI[dk], st }; blocks.push(b);
     for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) tdist[ti(x, y)] = b.d;
-    const W = x1 - x0 + 1;
     if (dk === 'river') {
-      const spots = []; for (let oy = 0; oy < 4; oy += 2) for (let ox = 0; ox + 1 < W; ox += 2) spots.push([x0 + ox, y0 + oy]);
-      const decoAt = W > 4 ? 5 : [2, 1, 3][xi];
-      spots.forEach(([x, y], k) => { if (k === decoAt) addDeco(['park', 'plaza', 'pond', 'park'][xi], x, y, 2, 2, { nm: ['滨江公园', '滨江广场', '观澜湖', '江湾绿地'][xi] }); else addProp('riverflat', b, x, y); });
+      if (xi === 1) addDeco('plaza', x0 + 3, y0 + 3, 2, 2, { nm: '滨江广场' });
+      if (xi === 3) addDeco('pond', x0 + 3, y0, 2, 2, { nm: '观澜湖' });
+      if (xi === 0) addDeco('park', x0, y0 + 3, 2, 2, { nm: '滨江公园' });
+      fill(b, 2, 3, () => 'riverflat');
     } else if (dk === 'old') {
-      const mask = ['1101', '1111', '0110', '1101'];
-      for (let oy = 0; oy < 4; oy++) for (let ox = 0; ox < 4; ox++) if (mask[(oy + xi + yi) % 4][ox] === '1') addProp(rnd() < 0.6 ? 'bungalow' : 'walkup', b, x0 + ox, y0 + oy);
+      fill(b, 1, 7, () => rnd() < 0.6 ? 'bungalow' : 'walkup');
     } else if (dk === 'tech') {
-      if (W === 4) { addProp('techflat', b, x0, y0); addProp('techflat', b, x0 + 2, y0); addDeco('mall', x0, y0 + 2, 4, 2, { nm: '星光商场' }); }
-      else { addProp('techflat', b, x0, y0); addProp('techflat', b, x0 + 2, y0); addDeco('office', x0 + 4, y0, 2, 2, { nm: '云谷大厦' }); addDeco('office', x0, y0 + 2, 2, 2, { nm: '创新中心', lo: 1 }); addProp('techflat', b, x0 + 2, y0 + 2); addProp('techflat', b, x0 + 4, y0 + 2); }
+      if (xi === 2) addDeco('mall', x0, y0 + 3, 4, 2, { nm: '星光商场' });
+      else { addDeco('office', x0 + 3, y0, 2, 2, { nm: '云谷大厦' }); addDeco('office', x0 + 5, y0 + 3, 2, 2, { nm: '创新中心', lo: 1 }); }
+      fill(b, 2, 3, () => 'techflat');
     } else if (dk === 'school') {
-      if (xi === 1) { addDeco('school', x0, y0, 2, 4, { nm: '实验小学' }); for (let oy = 0; oy < 4; oy++) for (let ox = 2; ox < 4; ox++) if (!(ox === 3 && oy === 1)) addProp('schoolflat', b, x0 + ox, y0 + oy); }
-      else { addProp('house', b, x0, y0); for (let ox = 0; ox < 4; ox++) if (ox !== 2) addProp('schoolflat', b, x0 + ox, y0 + 3); }
+      if (xi === 1) { addDeco('school', x0, y0, 2, 5, { nm: '实验小学' }); fill(b, 1, 5, () => 'schoolflat'); }
+      else { addProp('house', b, x0, y0); fill(b, 1, 4, () => 'schoolflat'); }
     } else if (dk === 'sub') {
-      const H = y1 - y0 + 1;
       if (xi === 2) addDeco('factory', x0 + 2, y0, 2, 2, { nm: '化工厂' });
-      const cells = []; for (let oy = 0; oy < H; oy++) for (let ox = 0; ox < 4; ox++) if (!used.has(ti(x0 + ox, y0 + oy))) cells.push([x0 + ox, y0 + oy]);
-      shuffle(cells).slice(0, xi === 2 ? 5 : 6).sort((a, b) => a[1] - b[1] || a[0] - b[0]).forEach(([x, y]) => addProp(rnd() < 0.55 ? 'townhouse' : 'bungalow', b, x, y));
+      fill(b, 1, xi === 2 ? 4 : 5, () => rnd() < 0.55 ? 'townhouse' : 'bungalow');
     }
   }
-  // the hill
-  const hb = { x0: 15, y0: 13, x1: 20, y1: 20, d: DI.hill, st: '半山道' }; blocks.push(hb);
-  for (let y = 13; y <= 20; y++) for (let x = 15; x <= 20; x++) tdist[ti(x, y)] = DI.hill;
-  for (const [x, y] of [[15, 13], [19, 13], [15, 15]]) addProp('villa', hb, x, y, wpick([{ v: 1, w: 3 }, { v: 2, w: 2 }]).v);
-  const man = addProp('mansion', hb, 17, 17, 1);
-  for (let y = 13; y <= 16; y++) tiles[ti(17, y)] = T_PATH;
-  // plaza tiles under river plaza / malls
+  // the hill: villas around a path up to the mansion
+  const hb = { x0: 18, y0: 15, x1: 24, y1: 24, d: DI.hill, st: '半山道' }; blocks.push(hb);
+  for (let y = 15; y <= 24; y++) for (let x = 18; x <= 24; x++) tdist[ti(x, y)] = DI.hill;
+  for (let y = 15; y <= 20; y++) tiles[ti(MANSION_XY[0] + 1, y)] = T_PATH;
+  const man = addProp('mansion', hb, MANSION_XY[0], MANSION_XY[1], 1);
+  for (const [x, y] of [[18, 15], [23, 15], [18, 18]]) addProp('villa', hb, x, y, wpick([{ v: 1, w: 3 }, { v: 2, w: 2 }]).v);
   for (const d of deco) if (d.k === 'plaza' || d.k === 'mall' || d.k === 'office') for (let j = 0; j < d.h; j++) for (let i = 0; i < d.w; i++) tiles[ti(d.x + i, d.y + j)] = T_PLAZA;
   return { tiles, tdist, blocks, props, deco, mansion: man.id, streetNo };
 }

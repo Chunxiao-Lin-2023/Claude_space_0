@@ -49,7 +49,7 @@ const BAL = {
   mansion: [1100, 1500],     // mansion base price without / with mortgages
   forced: 0.85, estNoise: 0.075, demolish: 1.8,
   histDt: 2, hist: 60,       // price history: one sample every 2 s, keep 2 minutes
-  buildEvery: [9, 17], buildT: 9, demoEvery: [15, 30], demoT: 2.6, maxProps: 104,
+  buildEvery: [9, 17], buildT: 9, demoEvery: [15, 30], demoT: 2.6, maxProps: 90,
   aiEvery: 3.5
 };
 const KINDS = {

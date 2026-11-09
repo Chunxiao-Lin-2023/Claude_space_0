@@ -85,7 +85,7 @@ function enterGame(me) {
   ME = me; STATE.mode = 'play'; STATE.sel = -1; STATE.detail = false; STATE.lastSeq = G.seq; STATE.paused = false; STATE.speed = 1; STATE.myIdx = 0;
   RND.hiD = -1; RND.ring = -1; RND.trees = null; RND.seen.clear(); RND.flash.clear(); RND.prevV.clear(); for (const k in _dc) delete _dc[k];
   showScreen(null); $('hud').classList.remove('hidden');
-  fitCam(); if (innerWidth <= 760 || PHONE.matches) { CAM.z = clamp(CAM.z * 1.55, 0.5, 1); CAM.x = -40; CAM.y = 330; }
+  fitCam(); if (innerWidth <= 760 || PHONE.matches) { const c = distCenter(DI.old); CAM.z = 0.85; const w = iso(c[0] + 1, c[1] - 2, 0); CAM.x = w[0]; CAM.y = w[1]; }
   TUT.step = -1; tutStart(false); renderHUD(true); sfx('month');
   if (G.over) showEnd();
 }

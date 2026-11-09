@@ -202,16 +202,13 @@ function freeCells(d) {
   return out;
 }
 function buildSites() {
-  const u = occupied(), out = [];
+  const out = [];
   G.blocks.forEach((b, bi) => {
     const dk = DISTS[b.d].k;
     for (const [kind, w] of BUILD_KINDS[dk]) {
       const K = KINDS[kind];
-      for (let y = b.y0; y + K.h - 1 <= b.y1; y++) for (let x = b.x0; x + K.w - 1 <= b.x1; x++) {
-        let ok = true;
-        for (let j = 0; j < K.h && ok; j++) for (let i = 0; i < K.w && ok; i++) { const t = ti(x + i, y + j); if (u.has(t) || G.tiles[t] !== T_GRASS) ok = false; }
-        if (ok) out.push({ b: bi, x, y, kind, w: w * (K.w > 1 ? 1.4 : 1) });
-      }
+      for (let y = b.y0; y + K.h - 1 <= b.y1; y++) for (let x = b.x0; x + K.w - 1 <= b.x1; x++)
+        if (lotFree(G.props, G.deco, G.tiles, b, x, y, K.w, K.h)) out.push({ b: bi, x, y, kind, w: w * (K.w > 1 ? 1.4 : 1) });
     }
   });
   return out;
