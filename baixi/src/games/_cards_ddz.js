@@ -448,7 +448,7 @@ L.climb = function (ctx, G) {
         if (ddz && c[16] && c[17] && (after[16] + after[17] === 1)) s -= 45;
       }
       // L3: an enemy is about to go out → follow with the biggest blocker, not the cheapest
-      if (level >= 3 && !lead && danger <= 2 && !big) s += m.it.v * 6;
+      if (level >= 3 && !lead && danger <= 2 && !big && !ally(st.last.s)) s += m.it.v * 6;
       if (lead) s += m.ids.length * 4;
       if (m.it.v >= 15 && !big) s -= 14;
       if (big) s -= (h <= 1 || danger <= 3 || (!lead && danger <= 5)) ? 10 : 140;
@@ -468,7 +468,8 @@ L.climb = function (ctx, G) {
       }
       if (unseen) {
         const ctl = !gen(unseen, G, m.it).length;
-        if (ctl) s += h <= 1 ? 500 : 25;
+        // an unbeatable play is worth a lot only when it wins the lead back for the finish; otherwise keep control cards
+        if (ctl) s += h <= 1 ? 500 : h === 2 && lead ? 40 : 0;
         else if (lead && h <= 1) s -= 30;
       }
       out.push([m, s]);

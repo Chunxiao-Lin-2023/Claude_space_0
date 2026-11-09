@@ -130,6 +130,7 @@ BX.register({
       if (st.act >= 0 && st.big[st.act] === 0) return st.act;
       if (kbBoard >= 0) return kbBoard;
       if (focus >= 0 && st.big[focus] === 0) return focus;
+      if (st.last >= 0 && (st.over || !myTurn())) return (st.last / 9) | 0;   // otherwise show where the last stone went
       return -1;
     };
     const zoomCellAt = p => { const Z = lay().Z, bi = zoomBoard(); if (!Z || bi < 0) return -2; if (p.x < Z.x || p.y < Z.y || p.x >= Z.x + Z.s || p.y >= Z.y + Z.s) return -2; return bi * 9 + Math.floor((p.y - Z.y) / Z.s * 3) * 3 + Math.floor((p.x - Z.x) / Z.s * 3); };
