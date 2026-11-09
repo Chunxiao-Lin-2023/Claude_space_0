@@ -105,7 +105,7 @@ function rate(b, maxLv = 2) {
   return left ? 9 : used;
 }
 /* generate: returns {p, s} */
-function generate(lv, rng) {
+function generate(lv, rng, fixed) {
   const target = [44, 36, 30, 24][lv];
   let best = null;
   const t0 = performance.now();
@@ -128,7 +128,7 @@ function generate(lv, rng) {
     const score = (good ? 0 : 100) + Math.abs(clues - target);
     if (!best || score < best.score) best = {p, s: sol, score, clues, r};
     if (good && clues <= target + (lv === 3 ? 3 : 2)) break;
-    if (performance.now() - t0 > 1400) break;
+    if (fixed ? attempt >= 9 : performance.now() - t0 > 1400) break;
   }
   return best;
 }
@@ -139,15 +139,18 @@ BX.register({
   kind: 'solo',
   options: [
     {key: 'lv', label: '难度', choices: [[0, '入门'], [1, '简单'], [2, '中等'], [3, '困难']], def: 1},
-    {key: 'mis', label: '错误', choices: [[0, '不限错误'], [3, '错 3 次结束']], def: 0},
+    {key: 'mis', label: '检错', choices: [[0, '只标冲突'], [1, '即时标错'], [3, '错 3 次结束']], def: 0},
+    {key: 'src', label: '题目', choices: [['r', '随机出题'], ['d', '每日一题']], def: 'r'},
   ],
+  howto: ['点选格子，再点下方数字填入；或<b>先点数字</b>（锁定），再连续点空格子填同一个数。', '「笔记」切换填候选数；填正式数字时，同行/列/宫的相关笔记自动清除；「候选」一键填好全部候选数。', '选中格子会高亮所在行列宫和所有相同数字；数字键上的小字是该数还剩几个。', '💡 提示会替你填一格并说明理由。键盘：1–9 填数、方向键移动、退格删除、N 笔记、Z 撤销。'],
   rules: `<p>在 9×9 的盘面中填入数字 1–9，使<b>每一行、每一列、每个 3×3 宫</b>内的数字都不重复。题目给出的数字（深色）不能修改，每道题有且只有一个解。</p>
 <p><b>操作</b>：点选格子，再点下方数字键填入（也可以先选数字再连续点格子）。键盘可用 1–9、方向键、退格删除、N 切换笔记。<br>
 · <b>笔记</b>：打开后填入的是小号候选数，再点一次同一数字可去掉；填入正式数字时，同行同列同宫的相关笔记会自动清除。<br>
 · 选中格子时会高亮所在行、列、宫以及盘面上所有相同的数字；违反规则的重复数字会标红。<br>
 · <b>提示</b>：替你正确填出一格（优先填选中的格子）。<b>撤销</b>次数不限。</p>
 <p><b>难度</b>：入门/简单只需"唯一候选数"与"排除法"即可解出；中等需要数对、区块等技巧；困难需要三链数、X-Wing 等进阶技巧或更细致的推理。</p>
-<p>选择"错 3 次结束"时，填入与答案不符的数字记一次错误，满 3 次本局失败。数字键上的小数字表示该数字还剩几个未填。进度自动保存。</p>`,
+<p><b>检错</b>：「只标冲突」只把与同行/列/宫重复的数字标红；「即时标错」与答案不符的数字立即标红；「错 3 次结束」在此基础上记错误数，满 3 次本局失败。</p>
+<p><b>每日一题</b>：每天每个难度一道固定题目，所有人相同。数字键上的小数字表示该数字还剩几个未填。进度自动保存。</p>`,
   icon(g, w, h) {
     D.paper(g, 0, 0, w, h, {color: '#f3e9d2'});
     const s = h * .8 / 9, ox = (w - 9 * s) / 2, oy = h * .1;
@@ -158,13 +161,13 @@ BX.register({
     K.seal(g, w * .9, h * .82, h * .2, '独');
   },
   create(ctx) {
-    const lv = +(ctx.opts.lv != null ? ctx.opts.lv : 1), MIS = +ctx.opts.mis || 0;
+    const lv = +(ctx.opts.lv != null ? ctx.opts.lv : 1), CHK = +ctx.opts.mis || 0, MIS = CHK === 3 ? 3 : 0, DAY = ctx.opts.src === 'd' ? K.daily('sdk' + lv) : null;
     const cv = ctx.canvas(), fx = K.fx(), say = K.status(ctx);
-    let P, S, cur, notes, given, time = 0, sel = -1, numSel = 0, noteMode = false, mistakes = 0, won = false, lost = false, undoS = [], hintCnt = 0, moves = 0;
-    let pulse = new Float32Array(81), unitFlash = [], banner = null, errCell = -1, errT = 0;
-    const key = 'cur_' + lv + '_' + MIS;
+    let P, S, cur, notes, given, time = 0, sel = -1, numSel = 0, lock = false, noteMode = false, mistakes = 0, won = false, lost = false, undoS = [], hintCnt = 0, moves = 0;
+    let pulse = new Float32Array(81), unitFlash = [], banner = null, errCell = -1, errT = 0, hintWhy = null;
+    const key = 'cur_' + lv + '_' + MIS + (DAY ? '_d' + DAY.key : '');
     function fresh() {
-      const r = generate(lv, ctx.rng);
+      const r = DAY ? generate(lv, BX.rng(DAY.seed), true) : generate(lv, ctx.rng);
       P = r.p; S = r.s; cur = P.slice(); notes = new Array(81).fill(0); given = P.map(v => !!v); time = 0; mistakes = 0; undoS = []; hintCnt = 0; moves = 0;
       BX.range(81).forEach(i => pulse[i] = given[i] ? -(ROW(i) + COL(i)) * .03 : 1);
     }
@@ -173,7 +176,7 @@ BX.register({
       {k: 'undo', ic: '↶', t: '撤销', on: () => undo()},
       {k: 'erase', ic: '⌫', t: '擦除', on: () => erase()},
       {k: 'note', ic: '✎', t: '笔记', on: () => { noteMode = !noteMode; bar.on('note', noteMode); ctx.sfx('tick'); }},
-      {k: 'hint', ic: '☞', t: '提示', on: () => hint()},
+      {k: 'auto', ic: '⁂', t: '候选', on: () => autoNotes()},
       {k: 'new', ic: '↻', t: '新题', on: async () => { if (moves && !won && !lost && !(await BX.confirm('放弃这道题，换一道新题？', '新题'))) return; ctx.save(key, null); ctx.restart(); }},
     ]);
     const sv = ctx.load(key, null);
@@ -201,28 +204,51 @@ BX.register({
       push(); cur[i] = v; notes[i] = 0; moves++;
       for (const j of PEERS[i]) notes[j] &= ~(1 << (v - 1));
       pulse[i] = 0;
+      if (v !== S[i] && CHK) { errCell = i; errT = .6; ctx.buzz(25); }
       if (v !== S[i] && MIS) {
-        mistakes++; errCell = i; errT = .6; ctx.sfx('buzz');
+        mistakes++; ctx.sfx('buzz');
         if (mistakes >= MIS) { lost = true; ctx.save(key, null); ctx.end({win: false, title: '错误已满 3 次', text: `用时 ${K.fmt(time)} · 已填 ${cur.filter((x, k) => x && x === S[k]).length}/81`, delay: 900}); }
         save(); return;
       }
-      ctx.sfx(conflict(i) ? 'error' : 'stone');
+      ctx.sfx(conflict(i) ? 'error' : 'stone'); if (conflict(i)) ctx.buzz(15);
       // completed units flash
       for (const u of CELLU[i]) if (UNITS[u].every(k => cur[k] && cur[k] === S[k])) { unitFlash.push({u, t: 0}); }
       if (cur.every((x, k) => x === S[k])) win();
       save();
     }
+    function autoNotes() {
+      if (won || lost) return;
+      const nn = BX.range(81).map(i => { if (cur[i]) return 0; let m = 511; for (const j of PEERS[i]) if (cur[j]) m &= ~(1 << (cur[j] - 1)); return m; });
+      if (nn.every((m, i) => m === notes[i])) { ctx.toast('候选数已是最新'); return; }
+      push(); notes = nn; moves++; ctx.sfx('pen'); save(); ctx.toast('已填入全部候选数');
+    }
     function erase() { if (sel < 0 || given[sel] || won || lost) return; if (!cur[sel] && !notes[sel]) return; push(); cur[sel] = 0; notes[sel] = 0; moves++; ctx.sfx('tick'); save(); }
     function hint() {
       if (won || lost) return;
       let i = sel >= 0 && !given[sel] && cur[sel] !== S[sel] ? sel : -1;
-      if (i < 0) { // easiest: empty cell with fewest candidates
+      if (i < 0) for (let k = 0; k < 81; k++) if (!cur[k] && explain(k, S[k])) { i = k; break; }   // a cell we can explain (single)
+      if (i < 0) { // else: empty cell with fewest candidates
         let bc = 10; for (let k = 0; k < 81; k++) if (cur[k] !== S[k]) { let m = 511; for (const j of PEERS[k]) if (cur[j]) m &= ~(1 << (cur[j] - 1)); const c = POP[m] || 9; if (c < bc) { bc = c; i = k; } }
       }
       if (i < 0) return;
       const nm = noteMode; noteMode = false; sel = i; numSel = S[i]; hintCnt++;
+      const why = explain(i, S[i]);
       place(i, S[i], true); noteMode = nm; pulse[i] = -.15;
+      hintWhy = why ? {i, u: why.u, t: 0} : null;
+      ctx.toast(why ? why.text : `这一格应填 ${S[i]}`, 3200);
       ctx.sfx('bell');
+    }
+    /* why must cell i be v?  naked single / hidden single in a unit */
+    function explain(i, v) {
+      const used = new Set(PEERS[i].map(j => cur[j]).filter(x => x));
+      const UN = ['行', '列', '宫'];
+      for (let k = 0; k < 3; k++) {
+        const u = CELLU[i][k];
+        if (UNITS[u].some(j => cur[j] === v)) continue;
+        if (UNITS[u].every(j => j === i || cur[j] || PEERS[j].some(q => cur[q] === v))) return {u, text: `这一${UN[k]}里，${v} 只能放在这一格（其他空格的同行、同列或同宫已有 ${v}）`};
+      }
+      if (used.size === 8 && !used.has(v)) return {u: -1, text: `这一格的同行、同列、同宫已出现另外 8 个数字，只能填 ${v}`};
+      return null;
     }
     function win() {
       won = true; ctx.save(key, null);
@@ -230,7 +256,9 @@ BX.register({
       ctx.save('solved_' + lv, ctx.load('solved_' + lv, 0) + 1);
       for (let k = 0; k < 81; k++) pulse[k] = -(Math.abs(ROW(k) - 4) + Math.abs(COL(k) - 4)) * .06;
       fx.rain(cv.w, cv.h, 60);
-      ctx.end({win: true, title: '解题成功', text: `用时 ${K.fmt(secs)} 步数 ${moves}` + (hintCnt ? ` · 提示 ${hintCnt} 次` : '') + (b.isNew ? ' · 新纪录！' : ` · 最快 ${K.fmt(b.best)}`), delay: 1600});
+      if (DAY) ctx.save('daily_' + lv, DAY.key);
+      ctx.buzz(30);
+      ctx.end({win: true, title: DAY ? '每日一题完成' : '解题成功', text: (DAY ? `${DAY.label} ${LVN[lv]} · ` : '') + `用时 ${K.fmt(secs)} 步数 ${moves}` + (hintCnt ? ` · 提示 ${hintCnt} 次` : '') + (mistakes ? ` · 错误 ${mistakes}` : '') + (b.isNew ? ' · 新纪录！' : ` · 最快 ${K.fmt(b.best)}`), delay: 1600});
     }
 
     /* ---------- layout ---------- */
@@ -265,18 +293,19 @@ BX.register({
       const i = cellAt(p);
       if (i >= 0) {
         hideBan();
-        if (numSel && !cur[i] && !given[i] && sel === i) { place(i, numSel); return; }
-        sel = i; if (cur[i]) numSel = cur[i]; else if (numSel && !given[i] && e.pointerType !== 'mouse' && false) place(i, numSel);
+        if (lock && numSel && !given[i] && (!cur[i] || cur[i] === numSel)) { sel = i; place(i, numSel); return; }   // number-first: fill straight away
+        sel = i; if (cur[i]) numSel = cur[i];
         ctx.sfx('click'); return;
       }
       const k = keyAt(p);
       if (k >= 0) {
         keyPress = k; ctx.after(120, () => keyPress = -1);
-        if (sel >= 0 && !given[sel]) place(sel, k + 1);
-        numSel = k + 1; if (sel < 0 || given[sel]) ctx.sfx('tick');
+        if (!lock && sel >= 0 && !given[sel]) { place(sel, k + 1); numSel = k + 1; return; }
+        if (lock && numSel === k + 1) { lock = false; numSel = 0; ctx.sfx('tick'); return; }
+        lock = true; numSel = k + 1; sel = -1; ctx.sfx('tick');
         return;
       }
-      sel = -1; numSel = 0;
+      sel = -1; numSel = 0; lock = false;
     });
 
     /* ---------- drawing ---------- */
@@ -301,6 +330,10 @@ BX.register({
           if (bgc) { g.fillStyle = bgc; g.fillRect(x, y, cs, cs); }
           if (cur[i] && conflict(i)) { g.fillStyle = 'rgba(208,83,63,.2)'; g.fillRect(x, y, cs, cs); }
         }
+        if (hintWhy) { hintWhy.t += dt; const a = .5 + .4 * Math.sin(hintWhy.t * 7); g.strokeStyle = `rgba(63,160,120,${a})`; g.lineWidth = 3;
+          if (hintWhy.u >= 0) { const c = UNITS[hintWhy.u], x0 = Math.min(...c.map(COL)), y0 = Math.min(...c.map(ROW)), x1 = Math.max(...c.map(COL)), y1 = Math.max(...c.map(ROW)); g.strokeRect(bx + x0 * cs + 2, by + y0 * cs + 2, (x1 - x0 + 1) * cs - 4, (y1 - y0 + 1) * cs - 4); }
+          g.strokeRect(bx + COL(hintWhy.i) * cs + 3, by + ROW(hintWhy.i) * cs + 3, cs - 6, cs - 6);
+          if (hintWhy.t > 3.2) hintWhy = null; }
         for (const f of unitFlash) { f.t += dt; const a = Math.sin(Math.min(1, f.t / .7) * Math.PI) * .45; g.fillStyle = `rgba(230,197,125,${a})`; for (const i of UNITS[f.u]) g.fillRect(bx + COL(i) * cs, by + ROW(i) * cs, cs, cs); }
         unitFlash = unitFlash.filter(f => f.t < .7);
         D.grid(g, bx, by, 9, 9, cs, 'rgba(70,45,20,.35)', 1);
@@ -313,7 +346,7 @@ BX.register({
           const pk = pulse[i] < 0 ? 0 : pulse[i], sc = pk < 1 ? BX.ease.back(pk) : 1;
           if (cur[i]) {
             if (pulse[i] < 0) continue;
-            const wrong = conflict(i) || (MIS && !given[i] && cur[i] !== S[i]);
+            const wrong = conflict(i) || (CHK && !given[i] && cur[i] !== S[i]);
             const col = given[i] ? '#2b2118' : wrong ? '#c0291f' : '#2f5d8a';
             let ox = 0; if (i === errCell && errT > 0) ox = Math.sin(errT * 50) * cs * .06;
             D.text(g, String(cur[i]), x + ox, y + cs * .04, {size: cs * .64 * sc, color: col, weight: given[i] ? 800 : 600, font: given[i] ? 'serif' : 'sans'});
@@ -334,6 +367,7 @@ BX.register({
           g.save(); if (pr) { g.translate(0, 2); }
           g.shadowColor = 'rgba(0,0,0,.4)'; g.shadowBlur = 6; g.shadowOffsetY = pr ? 1 : 3;
           D.rr(g, k.x, k.y, k.w, k.h, Math.min(k.w, k.h) * .18);
+          if (on && lock) { g.save(); g.shadowColor = 'transparent'; g.lineWidth = 3; g.strokeStyle = '#ffd76a'; g.stroke(); g.restore(); }
           const gr = g.createLinearGradient(k.x, k.y, k.x, k.y + k.h);
           if (on) { gr.addColorStop(0, '#d0533f'); gr.addColorStop(1, '#a33022'); } else { gr.addColorStop(0, '#fbf3e0'); gr.addColorStop(1, '#e3d0a8'); }
           g.fillStyle = gr; g.fill(); g.restore();
@@ -345,13 +379,14 @@ BX.register({
           g.globalAlpha = 1;
         });
         fx.draw(g, dt);
-        say(noteMode ? '笔记模式：填入候选数' : sel < 0 ? '点选格子，再点数字填入' : given[sel] ? '题目给定的数字不能修改' : '选择数字填入');
-        bar.dis('undo', !undoS.length || won || lost); bar.dis('hint', won || lost); bar.dis('erase', sel < 0 || given[sel] || (!cur[sel] && !notes[sel]));
+        say(lock && numSel ? `已锁定 ${numSel}：点空格连续${noteMode ? '记笔记' : '填入'}，再点 ${numSel} 解锁` : noteMode ? '笔记模式：填入候选数' : sel < 0 ? '点选格子再点数字，或先点数字再点格子' : given[sel] ? '题目给定的数字不能修改' : '选择数字填入');
+        bar.dis('undo', !undoS.length || won || lost); bar.dis('auto', won || lost); bar.dis('erase', sel < 0 || given[sel] || (!cur[sel] && !notes[sel]));
       },
+      hint: () => hint(),
       key(e) {
         if (won || lost) return;
         const d = /^Digit([1-9])$|^Numpad([1-9])$/.exec(e.code);
-        if (d) { const v = +(d[1] || d[2]); numSel = v; if (sel >= 0) place(sel, v); return; }
+        if (d) { const v = +(d[1] || d[2]); numSel = v; lock = false; if (sel >= 0) place(sel, v); return; }
         if (e.code === 'Backspace' || e.code === 'Delete' || e.code === 'Digit0') { erase(); return; }
         if (e.code === 'KeyN') { noteMode = !noteMode; bar.on('note', noteMode); return; }
         if (e.code === 'KeyZ') { undo(); return; }

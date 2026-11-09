@@ -20,7 +20,12 @@ BX.data.pk = (function () {
 .pk-seg button small{display:block;font-size:10px;opacity:.8}
 .pk-seg button.on{background:linear-gradient(180deg,#e6c57d,#c8a052);color:#3a2410;font-weight:700}
 .pk-seg button:disabled{opacity:.32}
-.pk-go{min-height:42px!important;padding:6px 16px!important}`;
+.pk-go{min-height:42px!important;padding:6px 16px!important}
+.pk-adj button{font-size:19px;font-weight:700;touch-action:none;-webkit-user-select:none;user-select:none}
+.pk-adj button:active{background:rgba(230,197,125,.25)}
+.pk-val{display:inline-block;min-width:44px;text-align:center;color:#ffe9b8;font-weight:700;font-size:14px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.pk-val small{display:block;font-size:10px;font-weight:500;opacity:.8;color:#f3e2c0}
+@media (max-width:420px){.pk-seg button{min-width:38px;padding:0 5px}.pk-val{min-width:40px}}`;
     document.head.append(s);
   };
   /* segmented control: items [[value, html]], returns {el, set(v), refresh()} */
@@ -31,6 +36,53 @@ BX.data.pk = (function () {
     parent.append(el); refresh();
     return {el, bs, refresh};
   };
+
+  /* fine-adjust stepper  [label] [−] value [+]  — press and hold repeats (accelerating). step(dir, n) n = repeat count */
+  K.adj = function (parent, label, fmt, step, o = {}) {
+    const el = BX.h('div', {class: 'pk-seg pk-adj'}); if (label) el.append(BX.h('b', {text: label}));
+    const val = BX.h('span', {class: 'pk-val'}); let last = null;
+    const refresh = () => { const v = fmt(); if (v !== last) { last = v; val.innerHTML = v; } };
+    const mk = (html, d) => {
+      const b = BX.h('button', {html}); let t1 = 0, t2 = 0, n = 0;
+      const stop = () => { clearTimeout(t1); clearInterval(t2); t1 = t2 = 0; };
+      b.addEventListener('pointerdown', e => {
+        e.preventDefault(); e.stopPropagation(); stop(); n = 0; step(d, 0); refresh(); BX.sfx.play('tick');
+        t1 = setTimeout(() => { t2 = setInterval(() => { if (!b.isConnected) return stop(); n++; step(d, n); refresh(); }, 75); }, 360);
+      });
+      for (const ev of ['pointerup', 'pointercancel', 'pointerleave']) b.addEventListener(ev, stop);
+      b.addEventListener('click', e => e.stopPropagation());
+      return b;
+    };
+    el.append(mk(o.minus || '−', -1), val, mk(o.plus || '+', 1)); parent.append(el); refresh();
+    return {el, refresh};
+  };
+  /* big action button (fire / throw) */
+  K.go = function (parent, html, fn, cls = 'red') {
+    const b = BX.h('button', {class: 'bx-btn pk-go ' + cls, html, on: {click: e => { e.stopPropagation(); fn(); }}}); parent.append(b); return b;
+  };
+  /* tap the canvas (or press space) during a playback → fast-forward it */
+  K.skip = function (ctx, cv, pb) {
+    ctx.on(cv.cv, 'pointerdown', () => { if (pb.on && !pb.ff && pb.t > .15) { pb.ff = true; BX.sfx.play('whoosh'); } });
+    return e => { if (pb.on && !pb.ff && /^(Space|Enter|Escape)$/.test(e.code)) { pb.ff = true; return true; } return pb.on; };
+  };
+  K.skipLabel = function (g, x, y, pb) {
+    if (!pb.on || pb.t < .5) return;
+    D.text(g, pb.ff ? '⏩ 快进中' : '点击画面快进 ⏩', x, y, {size: 12, color: '#fff3d6', stroke: 'rgba(30,15,5,.7)', strokeW: 3});
+  };
+  /* faint dashed path of the previous shot + end marker (screen points) */
+  K.ghost = function (g, pts, o = {}) {
+    if (!pts || pts.length < 2) return;
+    g.save(); g.globalAlpha = o.alpha || .5; g.strokeStyle = o.color || '#fff6dd'; g.lineWidth = o.w || 2; g.setLineDash(o.dash || [2, 6]); g.lineCap = 'round';
+    g.beginPath(); pts.forEach((p, i) => i ? g.lineTo(p[0], p[1]) : g.moveTo(p[0], p[1])); g.stroke(); g.setLineDash([]);
+    const [ex, ey] = pts[pts.length - 1], r = o.r || 6;
+    if (o.mark !== false) { g.lineWidth = 2.5; g.beginPath(); g.moveTo(ex - r, ey - r); g.lineTo(ex + r, ey + r); g.moveTo(ex + r, ey - r); g.lineTo(ex - r, ey + r); g.stroke(); }
+    if (o.label) D.text(g, o.label, ex, ey - r - 9, {size: 11, color: o.color || '#fff6dd', stroke: 'rgba(30,15,5,.6)', strokeW: 3});
+    g.restore();
+  };
+  K.HINT = 'rgba(63,170,128,1)';
+  K.pulse = (t0, sp = 6) => .55 + .35 * Math.sin((performance.now() - t0) / 1000 * sp);
+  /* measured height of a bottom bar (works while visibility:hidden) */
+  K.barH = (bar, d = 60) => bar && bar.offsetHeight ? bar.offsetHeight + 12 : d;
 
   /* ---------- playback clock (frame driven, slow-mo windows, fast in tests, fallback timer) ---------- */
   K.playback = function (ctx) {
@@ -47,7 +99,7 @@ BX.data.pk = (function () {
       if (!pb.on) return;
       pb.rate = 1;
       if (!pb.ff) for (const s of pb.slow) if (pb.t > s[0] && pb.t < s[1]) pb.rate = s[2] || .3;
-      pb.t += dt * (BX.test ? 25 : 1) * pb.rate * (pb.ff ? 4 : 1);
+      pb.t += dt * (BX.test ? 25 : 1) * pb.rate * (pb.ff ? 4 : 1) * (BX.pref('speed') === 2 ? 1.6 : 1);
       if (pb.t >= pb.dur) { pb.t = pb.dur; pb.finish(); }
     };
     return pb;
@@ -207,13 +259,15 @@ BX.data.pk = (function () {
     g.restore();
   };
   /* wind flag/arrow at (x,y); w −1..1 */
-  K.wind = function (g, x, y, w, size = 1, label = '风') {
+  K.wind = function (g, x, y, w, size = 1, label = '风', val = null) {
     g.save(); g.translate(x, y); g.scale(size, size);
-    g.fillStyle = 'rgba(30,18,8,.72)'; D.rr(g, -58, -20, 116, 40, 12); g.fill();
-    D.text(g, label, -40, 1, {size: 15, color: '#e6c57d', font: 'deco', weight: 400});
-    const L = Math.abs(w) * 48, dir = w >= 0 ? 1 : -1;
+    const vh = val != null && val !== '' ? 8 : 0;
+    g.fillStyle = 'rgba(30,18,8,.72)'; D.rr(g, -58, -20, 116, 40 + vh, 12); g.fill();
+    D.text(g, label, -40, 1 + vh / 2, {size: 15, color: '#e6c57d', font: 'deco', weight: 400});
+    const L = Math.max(Math.abs(w) * 48, w ? 8 : 0), dir = w >= 0 ? 1 : -1;
     g.strokeStyle = '#f3e2c0'; g.lineWidth = 3; g.lineCap = 'round';
-    if (L < 3) { D.text(g, '无风', 12, 1, {size: 13, color: '#f3e2c0'}); g.restore(); return; }
+    if (!w) { D.text(g, '无风', 12, 1 + vh / 2, {size: 13, color: '#f3e2c0'}); g.restore(); return; }
+    if (vh) { D.text(g, String(val), 12, 15, {size: 11, color: '#ffe9b8', weight: 700}); g.translate(0, -4); }
     const x0 = 12 - dir * L / 2, x1 = 12 + dir * L / 2;
     g.beginPath(); g.moveTo(x0, 0); g.lineTo(x1, 0); g.moveTo(x1, 0); g.lineTo(x1 - dir * 8, -6); g.moveTo(x1, 0); g.lineTo(x1 - dir * 8, 6); g.stroke();
     g.restore();

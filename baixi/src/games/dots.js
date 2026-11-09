@@ -80,7 +80,8 @@ BX.register({
   id: 'dots', title: '点格棋', cat: 'party', order: 3, sub: '连线围格，围满多者胜',
   desc: '在点阵上轮流连线，谁画下一个小方格的第四条边，这一格就归谁，并且还能接着画。格子多者获胜。高级电脑懂得“让二控局”。',
   kind: 'turn', seats: 2, seatNames: ['朱方', '青方'], seatColors: PC, firstLabel: '先手', anyTimeActs: true,
-  options: [{key: 'size', label: '棋盘', choices: [[4, '4×4 格'], [5, '5×5 格'], [6, '6×6 格']], def: 5}],
+  options: [{key: 'size', label: '棋盘', choices: [[3, '3×3 格（入门）'], [4, '4×4 格'], [5, '5×5 格'], [6, '6×6 格'], [7, '7×7 格']], def: 5}],
+  howto: ['点两个相邻点之间的空白处画线（离线越近越好点）；触屏默认先点一下预览虚线，再点同一条确认。', '预览时会提示：<b>得格</b>（这一笔能围住方格）或 <b>送格</b>（会画出方格的第三条边，让对手白拿）。', '围住方格后会提示「再画一笔」；残局时盘面会标出每条“链”和“环”的格数，帮助你决定先送哪一条。', '💡 提示会标出电脑推荐的一笔。'],
   rules: `<p>棋盘是一片点阵（默认 5×5 个方格，即 6×6 个点）。双方轮流在<b>相邻两点</b>之间（横或竖）画一条线。</p>
 <p>谁画下了某个方格的<b>第四条边</b>，这个方格就归谁（盖上自己的印），并且<b>必须再画一条</b>；一笔同时完成两格则两格都得。没有完成方格则换对方。</p>
 <p>所有线画完后，<b>占格多者获胜</b>（偶数格的棋盘可能平局）。</p>
@@ -100,7 +101,7 @@ BX.register({
     const n = +ctx.opts.size || 5, T = getTopo(n);
     const st = {n, L: new Array(T.NL).fill(0), box: new Array(T.NB).fill(-1), turn: 0, sc: [0, 0], last: -1, moves: 0, over: false};
     const cv = ctx.canvas();
-    let hover = -1, preview = -1, lineAnim = {l: -1, k: 1}; const stamp = {};
+    let hover = -1, preview = -1, lineAnim = {l: -1, k: 1}, hint = -1, hintT = 0, t = 0, again = null; const stamp = {};
     const geo = () => { const f = BX.fit(cv.w, cv.h, n + .9, n + .9, 6); return {s: f.s, ox: f.x + f.s * .45, oy: f.y + f.s * .45}; };
     const lineAt = p => {
       const {s, ox, oy} = geo(); const x = (p.x - ox) / s, y = (p.y - oy) / s;
@@ -120,21 +121,23 @@ BX.register({
     ctx.on(cv.cv, 'pointerdown', e => {
       if (!myTurn()) return;
       const l = lineAt(cv.pos(e)); if (l < 0) { preview = -1; return; }
-      if (e.pointerType !== 'mouse' && preview !== l) { preview = l; ctx.sfx('tick'); return; }
+      if (ctx.needConfirm(e) && preview !== l) { preview = l; ctx.sfx('tick'); return; }
       preview = -1; hover = -1; ctx.act({l}, st.turn);
     });
     const status = () => {
       ctx.info(0, st.sc[0] + ' 格'); ctx.info(1, st.sc[1] + ' 格');
       if (st.over) return ctx.status(st.sc[0] === st.sc[1] ? '平分秋色' : '<b>' + ctx.name(st.sc[0] > st.sc[1] ? 0 : 1) + '</b> 占格更多');
       const dot = '<span style="color:' + PC[st.turn] + '">■</span> ';
-      ctx.status(dot + (myTurn() ? (ctx.hotseat ? ctx.name(st.turn) + ' 画线' : '轮到你画线') : '等待 ' + ctx.name(st.turn) + '…'));
+      let safeN = 0; if (ctx.pref('hints')) for (let l = 0; l < T.NL; l++) if (!st.L[l] && isSafe(T, st.L, l)) safeN++;
+      const left = T.NB - st.sc[0] - st.sc[1];
+      ctx.status(dot + (myTurn() ? (ctx.hotseat ? ctx.name(st.turn) + ' 画线' : '轮到你画线') : '等待 ' + ctx.name(st.turn) + '…') + ' · 剩 ' + left + ' 格' + (ctx.pref('hints') ? (safeN ? ' · 安全线 ' + safeN : ' · <b>无安全线</b>') : ''));
     };
     const inst = {
       st,
       toMove: () => st.over ? null : st.turn,
       valid: (a, by) => by === st.turn && !st.over && Number.isInteger(a.l) && a.l >= 0 && a.l < T.NL && !st.L[a.l],
       apply(a) {
-        st.L[a.l] = st.turn + 1; st.last = a.l; st.moves++; preview = -1;
+        st.L[a.l] = st.turn + 1; st.last = a.l; st.moves++; preview = -1; hint = -1;
         const la = {l: a.l, k: 0}; lineAnim = la; ctx.anim(160, k => la.k = k);
         let got = 0;
         for (const b of T.lineBoxes[a.l]) if (sides(T, st.L, b) === 4 && st.box[b] < 0) {
@@ -148,12 +151,14 @@ BX.register({
           return;
         }
         if (!got) st.turn = 1 - st.turn;
+        else if (!ctx.fast && ctx.isLocal(st.turn)) again = {txt: got > 1 ? '一笔双格！再画一笔' : '再画一笔', t: 1.1, c: PC[st.turn]};
         status();
       },
       aiMove(seat, level) { return {l: aiLine(st.L.slice(), level)}; },
       onTurn: status,
+      showHint(a) { hint = a.l; hintT = t; },
       frame(dt) {
-        const g = cv.g; cv.clear();
+        const g = cv.g; cv.clear(); t += dt;
         const {s, ox, oy} = geo();
         // paper sheet on wood
         D.wood(g, ox - s * .42, oy - s * .42, n * s + s * .84, n * s + s * .84, {r: s * .2, seed: 5, base: '#a8723d', dark: '#5a3418'});
@@ -190,11 +195,35 @@ BX.register({
           g.beginPath(); g.moveTo(x1, y1); g.lineTo(x2, y2); g.stroke();
           if (l === st.last) { g.strokeStyle = 'rgba(255,236,170,.75)'; g.lineWidth = Math.max(1.5, s * .03); g.beginPath(); g.moveTo(x1, y1); g.lineTo(x2, y2); g.stroke(); }
         }
+        // hint
+        if (hint >= 0 && !st.L[hint] && myTurn()) {
+          const [x1, y1, x2, y2] = end(T.seg(hint)), k = t - hintT; g.strokeStyle = `rgba(63,200,140,${.55 + .4 * Math.sin(k * 7)})`; g.lineWidth = s * .14;
+          g.beginPath(); g.moveTo(x1, y1); g.lineTo(x2, y2); g.stroke();
+        }
+        // preview verdict: completes a box / hands one over (3rd side)
+        if (gh >= 0 && !st.L[gh] && myTurn() && ctx.pref('hints')) {
+          let gets = 0, gives = 0;
+          for (const b of T.lineBoxes[gh]) { const k = sides(T, st.L, b); if (k === 3) gets++; else if (k === 2) gives++; }
+          const q = T.seg(gh), mx = ox + (q.h ? q.c + .5 : q.c) * s, my = oy + (q.h ? q.r : q.r + .5) * s;
+          if (gives && !gets) for (const b of T.lineBoxes[gh]) if (sides(T, st.L, b) === 2) { const r = Math.floor(b / n), c = b % n; g.fillStyle = 'rgba(200,60,40,.14)'; g.fillRect(ox + c * s + 3, oy + r * s + 3, s - 6, s - 6); }
+          const txt = gets ? '得格' + (gets > 1 ? '×2' : '') : gives ? '送格' : '';
+          if (txt) { const fs = Math.max(12, s * .2), w = fs * 2.8; g.fillStyle = gets ? 'rgba(63,127,107,.92)' : 'rgba(178,58,43,.92)'; D.rr(g, mx - w / 2, my - s * .42 - fs * .7, w, fs * 1.4, fs * .5); g.fill(); D.text(g, txt, mx, my - s * .42, {size: fs, color: '#fff6e6', weight: 800}); }
+        }
+        // endgame: no safe lines left -> label every chain / loop with its length
+        if (!st.over && ctx.pref('hints') && !capturable(T, st.L).length) {
+          let anySafe = false; for (let l = 0; l < T.NL && !anySafe; l++) if (!st.L[l] && isSafe(T, st.L, l)) anySafe = true;
+          if (!anySafe) for (const cp of components(T, st.L)) {
+            const b = cp.boxes[Math.floor(cp.boxes.length / 2)], r = Math.floor(b / n), c = b % n;
+            for (const bb of cp.boxes) { const r2 = Math.floor(bb / n), c2 = bb % n; g.fillStyle = cp.loop ? 'rgba(47,93,138,.08)' : 'rgba(160,110,40,.09)'; g.fillRect(ox + c2 * s + 2, oy + r2 * s + 2, s - 4, s - 4); }
+            D.text(g, (cp.loop ? '环' : '链') + cp.len, ox + (c + .5) * s, oy + (r + .5) * s, {size: Math.max(11, s * .24), color: cp.loop ? 'rgba(47,93,138,.75)' : 'rgba(140,90,30,.8)', weight: 800});
+          }
+        }
         // dots
         for (let r = 0; r <= n; r++) for (let c = 0; c <= n; c++) {
           g.fillStyle = '#1e1610'; D.circle(g, ox + c * s, oy + r * s, Math.max(3.5, s * .075)); g.fill();
           g.fillStyle = 'rgba(255,255,255,.25)'; D.circle(g, ox + c * s - s * .02, oy + r * s - s * .02, Math.max(1, s * .025)); g.fill();
         }
+        if (again) { again.t -= dt; if (again.t <= 0) again = null; else { const a = Math.min(1, again.t * 2); D.text(g, again.txt, ox + n * s / 2, oy + n * s / 2, {size: Math.min(40, s * .6), color: `rgba(255,248,225,${a})`, font: 'deco', weight: 400, stroke: D.alpha(again.c, a), strokeW: 6}); } }
       },
     };
     status();

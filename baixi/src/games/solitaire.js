@@ -38,11 +38,13 @@ function drawFace(g, x, y, w, h, c) {
   D.rr(g, x, y, w, h, r);
   const gr = g.createLinearGradient(x, y, x, y + h); gr.addColorStop(0, '#fffcf3'); gr.addColorStop(1, '#f0e4cb');
   g.fillStyle = gr; g.fill(); g.lineWidth = Math.max(1, w * .014); g.strokeStyle = 'rgba(70,45,20,.5)'; g.stroke();
-  const fs = w * (rk === '10' ? .32 : .36);
+  const big = w < 66;   // small cards (portrait phones): large-print index that stays readable in the fanned strip
+  const fs = w * (big ? (rk === '10' ? .42 : .48) : rk === '10' ? .32 : .36);
   g.font = `800 ${fs}px ${BX.F.sans}`; g.textAlign = 'left'; g.textBaseline = 'alphabetic'; g.fillStyle = col;
-  const maxW = w * .4, tw = Math.min(maxW, g.measureText(rk).width), bx = x + w * .07, by = y + w * .06 + fs * .74;
+  const maxW = w * (big ? .56 : .4), tw = Math.min(maxW, g.measureText(rk).width), bx = x + w * (big ? .05 : .07), by = y + w * (big ? .03 : .06) + fs * .74;
   g.fillText(rk, bx, by, maxW);
-  g.fillStyle = col; suitPath(g, bx + tw + w * .15, by - fs * .34, w * .25, c.s);
+  g.fillStyle = col;
+  if (big) suitPath(g, x + w * .79, by - fs * .36, w * .3, c.s); else suitPath(g, bx + tw + w * .15, by - fs * .34, w * .25, c.s);
   if (w >= 56) {   // bottom-right index
     g.save(); g.translate(x + w, y + h); g.rotate(Math.PI);
     g.font = `800 ${fs * .7}px ${BX.F.sans}`; g.fillStyle = col; g.fillText(rk, w * .07, w * .05 + fs * .52, maxW * .7);
@@ -81,11 +83,62 @@ function drawBack(g, x, y, w, h) {
   D.text(g, '戏', cx, cy + w * .02, {size: w * .3, color: '#f0d590', font: 'deco', weight: 400});
 }
 
+/* Klondike solver with full information (used to pick deals that are guaranteed winnable).
+   tab: 7 columns of card ids (bottom→top), down: face-down count per column, talon: stock cards in draw order.
+   draw 1: every talon card is reachable by cycling (exact); draw 3: only cards a fresh pass shows (conservative).
+   → true (solved) / false (no win) / null (gave up after `budget` nodes) */
+function kSolve(cards, tab0, down0, talon0, draw, budget) {
+  const red = s => s === 1 || s === 3;
+  let nodes = 0; const seen = new Set();
+  const clone = S => ({tab: S.tab.map(c => c.slice()), down: S.down.slice(), talon: S.talon.slice(), fnd: S.fnd.slice()});
+  const toF = (S, id) => S.fnd[cards[id].s] === cards[id].r - 1;
+  const canT = (S, id, col) => { const a = S.tab[col]; if (!a.length) return cards[id].r === 13; const t = cards[a[a.length - 1]], c = cards[id]; return t.r === c.r + 1 && red(t.s) !== red(c.s); };
+  const fix = (S, col) => { const a = S.tab[col]; if (S.down[col] >= a.length) S.down[col] = Math.max(0, a.length - 1); };
+  const reach = S => { const n = S.talon.length, o = []; for (let k = 0; k < n; k++) if (draw === 1 || k % 3 === 2 || k === n - 1) o.push(k); return o; };
+  const safe = (S, id) => { const c = cards[id]; if (c.r <= 2) return true; const o = red(c.s) ? [0, 2] : [1, 3]; return S.fnd[o[0]] >= c.r - 1 && S.fnd[o[1]] >= c.r - 1; };
+  function auto(S) {
+    for (let any = true; any;) {
+      any = false;
+      for (let col = 0; col < 7; col++) { const a = S.tab[col]; if (!a.length) continue; const id = a[a.length - 1]; if (toF(S, id) && safe(S, id)) { a.pop(); S.fnd[cards[id].s]++; fix(S, col); any = true; } }
+      for (const k of reach(S)) { const id = S.talon[k]; if (toF(S, id) && safe(S, id)) { S.talon.splice(k, 1); S.fnd[cards[id].s]++; any = true; break; } }
+    }
+  }
+  const key = S => S.fnd.join(',') + '|' + S.talon.join(',') + '|' + S.tab.map((a, i) => S.down[i] + ':' + a.join(',')).sort().join('|');
+  function dfs(S) {
+    if (++nodes > budget) return null;
+    auto(S);
+    if (S.fnd[0] + S.fnd[1] + S.fnd[2] + S.fnd[3] === 52) return true;
+    const k = key(S); if (seen.has(k)) return false; seen.add(k);
+    const mv = [];
+    for (let col = 0; col < 7; col++) {
+      const a = S.tab[col]; if (!a.length) continue;
+      const d = S.down[col];
+      for (let dst = 0; dst < 7; dst++) if (dst !== col && canT(S, a[d], dst) && !(d === 0 && !S.tab[dst].length)) mv.push([d > 0 ? 0 : 3, 't', col, d, dst]);
+      for (let i = d + 1; i < a.length; i++) if (toF(S, a[i - 1])) for (let dst = 0; dst < 7; dst++) if (dst !== col && canT(S, a[i], dst)) mv.push([2, 't', col, i, dst]);
+      if (toF(S, a[a.length - 1])) mv.push([1, 'f', col]);
+    }
+    for (const k2 of reach(S)) { const id = S.talon[k2]; if (toF(S, id)) mv.push([1, 'wf', k2]); for (let dst = 0; dst < 7; dst++) if (canT(S, id, dst)) { mv.push([2, 'wt', k2, dst]); if (!S.tab[dst].length) break; } }
+    mv.sort((x, y) => x[0] - y[0]);
+    for (const m of mv) {
+      const C = clone(S);
+      if (m[1] === 't') { C.tab[m[4]].push(...C.tab[m[2]].splice(m[3])); fix(C, m[2]); }
+      else if (m[1] === 'f') { C.fnd[cards[C.tab[m[2]].pop()].s]++; fix(C, m[2]); }
+      else if (m[1] === 'wf') C.fnd[cards[C.talon.splice(m[2], 1)[0]].s]++;
+      else C.tab[m[3]].push(C.talon.splice(m[2], 1)[0]);
+      const r = dfs(C); if (r) return true; if (r === null) return null;
+    }
+    return false;
+  }
+  return dfs({tab: tab0.map(c => c.slice()), down: down0.slice(), talon: talon0.slice(), fnd: [0, 0, 0, 0]});
+}
+
 BX.register({
   id: 'solitaire', title: '纸牌接龙', cat: 'solo', order: 1, sub: '克朗代克与蜘蛛纸牌',
   desc: '最经典的单人纸牌：克朗代克（翻一张/翻三张）与蜘蛛纸牌（单色/双色/四色）。拖动或轻点即可移牌，无限撤销，附带提示与自动收牌。',
   kind: 'solo',
-  options: [{key: 'v', label: '玩法', choices: [['k1', '克朗代克·翻一张'], ['k3', '克朗代克·翻三张'], ['s1', '蜘蛛·单色'], ['s2', '蜘蛛·双色'], ['s4', '蜘蛛·四色']], def: 'k1'}],
+  options: [{key: 'v', label: '玩法', choices: [['k1', '克朗代克·翻一张'], ['k3', '克朗代克·翻三张'], ['s1', '蜘蛛·单色'], ['s2', '蜘蛛·双色'], ['s4', '蜘蛛·四色']], def: 'k1'},
+    {key: 'deal', label: '发牌', choices: [['r', '随机发牌'], ['w', '保证有解'], ['d', '每日挑战']], def: 'r'}],
+  howto: ['<b>轻点</b>一张牌（或一串牌）会自动移到最合适的位置；也可以<b>按住拖动</b>，拖动时可放的位置会发光。', '点左上（蜘蛛为右上）牌库翻牌/发牌；所有暗牌翻开后自动收牌。', '底部：撤销（不限次）、自动收牌/发牌、重来本局、新局；💡 提示可多次点击轮换。', '「发牌」选项：保证有解（克朗代克）或每日挑战（每天一副相同的牌）。键盘 Z 撤销、H 提示、空格翻牌。'],
   rules: `<p><b>克朗代克</b>（一副 52 张）：7 列牌桌，第 n 列发 n 张，只有最上面一张翻开；左上为牌库，右侧为 4 个收牌区。</p>
 <p>· 牌桌上按<b>红黑相间、点数递减</b>叠放（如黑 9 上放红 8），可以整串移动已排好的牌；空列只能放 <b>K</b>（或以 K 开头的牌串）。<br>
 · 收牌区按<b>同花色从 A 到 K</b> 依次收牌，收齐四门即获胜；收牌区顶牌也可拖回牌桌。<br>
@@ -95,7 +148,8 @@ BX.register({
 <p>· 任何花色都可按<b>点数递减</b>叠放，但只有<b>同花色</b>的连续递减牌串才能整串移动；空列可以放任意牌或牌串。<br>
 · 点右上角牌库发一轮：给每列各发一张；<b>有空列时不能发牌</b>。<br>
 · 在一列中凑成同花色 <b>K 到 A</b> 的完整一串时自动移走；移走全部 8 串即获胜。单色只有黑桃，双色为黑桃与红心，四色四门花色齐全。</p>
-<p><b>操作</b>：拖动牌（串）到目标位置；或<b>轻点</b>一张牌自动移到最合适的位置（能收牌时优先收牌）。底部按钮：撤销（无限次）、提示（多次点击轮换不同提示）、自动收牌/发牌、新局。键盘：Z 撤销、H 提示、空格翻牌/发牌。</p>`,
+<p><b>操作</b>：拖动牌（串）到目标位置；或<b>轻点</b>一张牌自动移到最合适的位置（能收牌时优先收牌）。底部按钮：撤销（无限次）、自动收牌/发牌、重来本局（回到刚发牌时）、新局；顶栏 💡 提示（多次点击轮换不同提示）。键盘：Z 撤销、H 提示、空格翻牌/发牌。</p>
+<p><b>发牌方式</b>：「保证有解」只发求解器验证过能赢的克朗代克牌局（蜘蛛纸牌仍为随机）；「每日挑战」每天一副固定的牌，所有人相同，克朗代克同样保证有解。每种玩法分别统计胜率与连胜。</p>`,
   icon(g, w, h) {
     K.table(g, w, h, 'felt');
     const cw = h * .42, ch = cw * 1.4;
@@ -105,15 +159,16 @@ BX.register({
   },
   create(ctx) {
     const V = ctx.opts.v || 'k1', SP = V[0] === 's', DRAW = V === 'k3' ? 3 : 1, NS = SP ? +V[1] : 4, NT = SP ? 10 : 7;
-    const cv = ctx.canvas(), fx = K.fx(), say = K.status(ctx);
-    let cards = [], P = {}, up = [], moves = 0, time = 0, started = false, won = false;
+    const DEAL = ctx.opts.deal || 'r', DAY = DEAL === 'd' ? K.daily('sol' + V) : null, SKEY = 'cur_' + V + (DAY ? '_d' + DAY.key : DEAL === 'w' ? '_w' : '');
+    const cv = ctx.canvas(), fx = K.fx(), say = K.status(ctx), stats = K.stats(ctx, V);
+    let cards = [], P = {}, up = [], moves = 0, time = 0, started = false, won = false, init = null, stuckKey = '';
     let undoS = [], vis = [], tgt = [], L = null, drag = null, hint = null, hintList = null, hintIdx = 0, autoT = 0, autoRun = false, autoOff = false, casc = null, banner = null;
     let lastTap = {t: 0, x: 0, y: 0};
     const tableaus = BX.range(NT).map(i => 't' + i), founds = SP ? BX.range(8).map(i => 'd' + i) : BX.range(4).map(i => 'f' + i);
     const bar = K.bar(ctx, [
       {k: 'undo', ic: '↶', t: '撤销', on: () => undo()},
-      {k: 'hint', ic: '☞', t: '提示', on: () => showHint()},
       SP ? {k: 'deal', ic: '⇟', t: '发牌', on: () => dealRow()} : {k: 'auto', ic: '⇪', t: '自动收牌', on: () => { autoOff = false; if (canAuto()) runAuto(); }},
+      {k: 'redo', ic: '⟲', t: '重来本局', on: async () => { if (!init || won || autoRun || !moves) return; if (!(await BX.confirm('回到这一副牌刚发好的样子？', '重来本局'))) return; restartDeal(); }},
       {k: 'new', ic: '↻', t: '新局', on: async () => { if (started && !won && !(await BX.confirm('放弃这一局，重新发牌？', '新局'))) return; ctx.restart(); }},
     ]);
 
@@ -121,7 +176,18 @@ BX.register({
       cards = [];
       if (!SP) for (let s = 0; s < 4; s++) for (let r = 1; r <= 13; r++) cards.push({r, s});
       else { const su = NS === 1 ? [0] : NS === 2 ? [0, 1] : [0, 1, 2, 3]; for (let k = 0; k < 8; k++) for (let r = 1; r <= 13; r++) cards.push({r, s: su[k % su.length]}); }
-      const ids = ctx.rng.shuffle(cards.map((_, i) => i));
+      const rng = DAY ? BX.rng(DAY.seed) : ctx.rng;
+      let ids = rng.shuffle(cards.map((_, i) => i));
+      if (!SP && DEAL !== 'r') {   // keep shuffling until the solver proves the deal winnable
+        const t0 = performance.now();
+        for (let tries = 0; tries < 400; tries++) {
+          const rest = ids.slice(), tab = BX.range(7).map(() => []);
+          for (let row = 0; row < 7; row++) for (let c = row; c < 7; c++) tab[c].push(rest.pop());
+          if (kSolve(cards, tab, tab.map(a => a.length - 1), rest.reverse(), DRAW, 6000)) break;
+          if (!DAY && performance.now() - t0 > 1500) break;
+          ids = rng.shuffle(ids);
+        }
+      }
       P = {stock: [], waste: []}; for (const t of tableaus) P[t] = []; for (const f of founds) P[f] = [];
       up = cards.map(() => false);
       const order = [];
@@ -135,7 +201,12 @@ BX.register({
       order.forEach((id, k) => vis[id].wait = .25 + k * (SP ? .026 : .045));
     }
     resetVis(newDeal());
+    init = JSON.stringify({P, up});
     ctx.after(200, () => ctx.sfx('shuffle'));
+    function restartDeal() {
+      const o = JSON.parse(init); P = o.P; up = o.up; moves = 0; time = 0; undoS = []; hint = null; hintList = null; stuckKey = '';
+      resetVis(Object.values(P).flat()); ctx.sfx('shuffle'); saveCur(); refreshBar();
+    }
 
     /* ---------- rules ---------- */
     const topId = pk => P[pk][P[pk].length - 1];
@@ -159,7 +230,7 @@ BX.register({
     }
     const snap = () => JSON.stringify({P, up, moves});
     function pushUndo() { undoS.push(snap()); if (undoS.length > 3000) undoS.shift(); }
-    function start() { if (!started) { started = true; } hideBanner(); }
+    function start() { if (!started) { started = true; stats.start(); } hideBanner(); }
     function flipTop(pk) { const a = P[pk]; if (a.length && !up[a[a.length - 1]]) up[a[a.length - 1]] = true; }
     function doMove(from, i, to) {
       pushUndo(); start();
@@ -170,7 +241,16 @@ BX.register({
       if (SP && to[0] === 't') checkRun(to);
       afterChange();
     }
-    function afterChange() { hint = null; hintList = null; saveCur(); checkWin(); }
+    function afterChange() { hint = null; hintList = null; saveCur(); checkWin(); if (!won) ctx.after(700, checkStuck); }
+    /* no useful move left? (talon cards that fit nowhere + no tableau hints) → tell the player once */
+    function fitsAny(id) { const c = cards[id]; for (const f of founds) { const b = P[f]; if (!SP && ((!b.length && c.r === 1) || (b.length && cards[b[b.length - 1]].s === c.s && cards[b[b.length - 1]].r + 1 === c.r))) return true; } for (const t of tableaus) { const b = P[t]; if (!b.length ? (SP || c.r === 13) : (up[b[b.length - 1]] && cards[b[b.length - 1]].r === c.r + 1 && (SP || isRed(cards[b[b.length - 1]].s) !== isRed(c.s)))) return true; } return false; }
+    function checkStuck() {
+      if (won || autoRun || drag) return;
+      const hs = computeHints().filter(h => h.pk !== 'stock');
+      const stuck = !hs.length && (SP ? !P.stock.length : ![...P.stock, ...P.waste].some(fitsAny));
+      const k = snap(); if (!stuck || k === stuckKey) return; stuckKey = k;
+      ctx.toast('已经没有可走的牌了：可以撤销、重来本局或开新局', 3200); ctx.sfx('error');
+    }
     function checkRun(pk) {
       const a = P[pk]; if (a.length < 13) return false;
       const i = a.length - 13; if (cards[a[a.length - 1]].r !== 1 || cards[a[i]].r !== 13 || !runOk(pk, i)) return false;
@@ -204,7 +284,7 @@ BX.register({
     }
     function undo() {
       if (!undoS.length || won || autoRun) { ctx.sfx('error'); return; }
-      const o = JSON.parse(undoS.pop()); P = o.P; up = o.up; moves = o.moves; hint = null; hintList = null;
+      const o = JSON.parse(undoS.pop()); P = o.P; up = o.up; moves = o.moves; hint = null; hintList = null; ctx.buzz(8);
       ctx.sfx('whoosh'); saveCur(); refreshBar();
     }
     function checkWin() {
@@ -232,26 +312,26 @@ BX.register({
       step();
     }
     function onWin() {
-      won = true; hint = null; drag = null; ctx.save('cur_' + V, null);
+      won = true; hint = null; drag = null; ctx.save(SKEY, null);
       const secs = Math.floor(time), tb = ctx.best('t_' + V, secs, 'min'), mb = ctx.best('m_' + V, moves, 'min');
-      ctx.save('wins_' + V, ctx.load('wins_' + V, 0) + 1);
-      refreshBar(); say(`用时 ${K.fmt(secs)} · 步数 ${moves} · 完成！`);
+      const stt = stats.win(); if (DAY) ctx.save('daily_' + V, DAY.key);
+      refreshBar(); say(`用时 ${K.fmt(secs)} · 步数 ${moves} · 完成！`); ctx.buzz(30);
       ctx.after(450, startCascade);
-      ctx.end({win: true, title: '大功告成', text: `用时 ${K.fmt(secs)} 步数 ${moves}` + (tb.isNew ? ' · 最快纪录！' : tb.best != null ? ` · 最快 ${K.fmt(tb.best)}` : '') + (mb.isNew && !tb.isNew ? ' · 最少步数！' : ''), delay: 4200});
+      ctx.end({win: true, title: DAY ? '每日挑战完成' : '大功告成', html: (DAY ? `${DAY.label} 每日挑战 · ` : '') + `用时 ${K.fmt(secs)} 步数 ${moves}` + (tb.isNew ? ' · 最快纪录！' : tb.best != null ? ` · 最快 ${K.fmt(tb.best)}` : '') + (mb.isNew && !tb.isNew ? ' · 最少步数！' : '') + `<br><span style="font-size:13px;opacity:.75">${stats.line(stt)}${stt.best > 1 ? ' · 最长连胜 ' + stt.best : ''}</span>`, delay: 4200});
     }
     function refreshBar() {
       bar.dis('undo', !undoS.length || won || autoRun);
-      bar.dis('hint', won || autoRun);
+      bar.dis('redo', won || autoRun || !moves || !init);
       if (SP) { bar.dis('deal', won || !P.stock.length); bar.label('deal', '发牌 ' + (P.stock.length / 10)); }
       else { bar.dis('auto', !canAuto() || autoRun); bar.on('auto', canAuto() && !autoRun); }
     }
     /* ---------- save / resume ---------- */
-    function saveCur() { if (!won) ctx.save('cur_' + V, {cards, P, up, moves, time: Math.floor(time)}); }
-    const saved = ctx.load('cur_' + V, null);
+    function saveCur() { if (!won) ctx.save(SKEY, {cards, P, up, moves, init, time: Math.floor(time)}); }
+    const saved = ctx.load(SKEY, null);
     if (saved && saved.P && saved.moves > 0) {
       K.css();
       banner = BX.h('div', {class: 'sk-ban'}, BX.h('span', {text: '上一局还没打完'}),
-        BX.h('button', {class: 'bx-btn jade', text: '继续上局', on: {click: e => { e.stopPropagation(); cards = saved.cards; P = saved.P; up = saved.up; moves = saved.moves; time = saved.time || 0; started = true; undoS = []; resetVis(Object.values(P).flat()); hideBanner(); refreshBar(); ctx.sfx('deal'); }}}),
+        BX.h('button', {class: 'bx-btn jade', text: '继续上局', on: {click: e => { e.stopPropagation(); cards = saved.cards; P = saved.P; up = saved.up; moves = saved.moves; time = saved.time || 0; started = true; stats.resume(); undoS = []; init = saved.init || null; resetVis(Object.values(P).flat()); hideBanner(); refreshBar(); ctx.sfx('deal'); }}}),
         BX.h('button', {class: 'bx-btn ghost', text: '✕', on: {click: e => { e.stopPropagation(); hideBanner(); }}}));
       banner.addEventListener('pointerdown', e => e.stopPropagation());
       ctx.el.append(banner);
@@ -303,21 +383,21 @@ BX.register({
     function showHint() {
       if (won || autoRun) return;
       if (!hintList) { hintList = computeHints(); hintIdx = 0; }
-      if (!hintList.length) { ctx.toast(SP && P.stock.length ? '先把空列填上才能发牌' : '没有可走的步了，试试撤销或新局', 2500); ctx.sfx('error'); return; }
+      if (!hintList.length) { ctx.toast(SP && P.stock.length ? '先把空列填上才能发牌' : '没有可走的步了，试试撤销或重来本局', 2500); ctx.sfx('error'); return; }
       hint = Object.assign({t: 0}, hintList[hintIdx % hintList.length]); hintIdx++;
       ctx.sfx('tick');
     }
 
     /* ---------- layout ---------- */
     function layout() {
-      const A = bar.area(cv.w, cv.h), W = A.w, H = A.h, pad = Math.max(6, Math.min(W, H) * .02);
-      const gT = Math.max(3, Math.min(10, W * .01));
+      const A = bar.area(cv.w, cv.h), W = A.w, H = A.h, narrow = W < 520, pad = narrow ? 3 : Math.max(6, Math.min(W, H) * .02);
+      const gT = narrow ? 2.5 : Math.max(3, Math.min(10, W * .01));
       const needT = SP ? 6.1 : 5.7, needS = SP ? 5.0 : 4.7;
       const cwT = Math.min((W - 2 * pad - (NT - 1) * gT) / NT, (H - 2 * pad) / needT / 1.4);
       const extra = SP ? 1 : 2;
       const cwS = Math.min((W - 2 * pad - (NT - 1) * gT - extra * gT * 2) / (NT + extra), (H - 2 * pad) / needS / 1.4, SP ? 1e9 : (H - 2 * pad - 3 * gT) / 4 / 1.4);
       const side = cwS > cwT * 1.05;
-      const cw = Math.floor(Math.min(side ? cwS : cwT, 128)), ch = Math.round(cw * 1.4), g = Math.max(3, Math.min(gT, cw * .12));
+      const cw = Math.floor(Math.min(side ? cwS : cwT, 128)), ch = Math.round(cw * 1.4), g = Math.max(narrow ? 2.5 : 3, Math.min(gT, cw * .12));
       const S = {};
       if (!side) {
         const tw = NT * cw + (NT - 1) * g, x0 = A.x + (W - tw) / 2, y0 = A.y + pad, cx = i => x0 + i * (cw + g);
@@ -355,7 +435,7 @@ BX.register({
       L.colH = {};
       for (const t of tableaus) {
         const a = P[t], s = S[t]; if (!a.length) { L.colH[t] = ch; continue; }
-        const dn = ch * .11, upS = ch * (SP ? .25 : .27);
+        const dn = ch * .11, upS = ch * (cw < 66 ? (SP ? .34 : .37) : SP ? .25 : .27);
         let sum = 0; for (let k = 1; k < a.length; k++) sum += up[a[k - 1]] ? upS : dn;
         const avail = L.bottom - s.y - ch; let f = sum > avail && sum > 0 ? Math.max(.25, avail / sum) : 1;
         let y = s.y;
@@ -374,7 +454,7 @@ BX.register({
     }
 
     /* ---------- input ---------- */
-    function shake(id) { if (vis[id]) vis[id].sh = .35; ctx.sfx('error'); }
+    function shake(id) { if (vis[id]) vis[id].sh = .35; ctx.sfx('error'); ctx.buzz(15); }
     function autoTap(pk, i) {
       const ids = P[pk].slice(i), c = cards[ids[0]], cand = [];
       if (!SP && ids.length === 1 && pk[0] !== 'f') for (const f of founds) if (canDrop(pk, i, f)) { cand.push([f, 0]); break; }
@@ -541,6 +621,9 @@ BX.register({
           blit(g, id, face, v.x + ox, v.y, sx);
         };
         still.forEach(drawCard); flying.forEach(drawCard);
+        if (dragSet.size && ctx.pref('hints')) {   // where can this go?
+          for (const to of [...founds, ...tableaus]) if (canDrop(drag.pk, drag.i, to)) { const b = P[to], q = b.length && to[0] === 't' ? tgt[b[b.length - 1]] : S[to]; if (q) glow(g, q.x, q.y, cw, ch, .45); }
+        }
         if (dragSet.size) {
           const v0 = vis[drag.ids[0]];
           g.fillStyle = 'rgba(0,0,0,.22)'; D.rr(g, v0.x + cw * .08, v0.y + ch * .1, cw, (vis[drag.ids[drag.ids.length - 1]].y - v0.y) + ch, cw * .08); g.fill();
@@ -560,6 +643,7 @@ BX.register({
         if (casc) stepCascade(g, dt);
         fx.draw(g, dt);
       },
+      hint: () => showHint(),
       key(e) {
         if (e.code === 'KeyZ') undo();
         else if (e.code === 'KeyH') showHint();

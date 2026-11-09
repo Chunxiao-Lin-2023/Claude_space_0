@@ -22,17 +22,62 @@ function drawFlag(g, x, y, s, wrong) {
   g.restore();
 }
 
+/* Logic deduction on what the player can see.  st: 0 unknown · 1 open (number cnt[i]) · 2 known mine · 3 known safe (unopened).
+   Single-cell rule, subset rule between nearby numbers, then the global mine count.  Marks st in place; returns true if anything new was found. */
+function deduce(W, M, nbs, st, cnt, once) {
+  const N = st.length; let found = false;
+  for (let guard = 0; guard < 500; guard++) {
+    let prog = false; const front = [];
+    for (let i = 0; i < N; i++) if (st[i] === 1 && cnt[i]) {
+      let u = 0, m = 0; for (const j of nbs[i]) { if (!st[j]) u++; else if (st[j] === 2) m++; }
+      if (!u) continue;
+      const rem = cnt[i] - m;
+      if (rem === 0 || rem === u) { for (const j of nbs[i]) if (!st[j]) st[j] = rem ? 2 : 3; prog = true; } else front.push(i);
+    }
+    if (!prog) {
+      const U = front.map(i => { const a = []; let m = 0; for (const j of nbs[i]) { if (!st[j]) a.push(j); else if (st[j] === 2) m++; } return {a, r: cnt[i] - m}; });
+      outer: for (let x = 0; x < front.length; x++) for (let y = 0; y < front.length; y++) {
+        if (x === y || Math.abs(front[x] % W - front[y] % W) > 2 || Math.abs(((front[x] / W) | 0) - ((front[y] / W) | 0)) > 2) continue;
+        const A = U[x], B = U[y]; if (!A.a.every(j => B.a.includes(j))) continue;
+        const diff = B.a.filter(j => !A.a.includes(j)), dr = B.r - A.r; if (!diff.length) continue;
+        if (dr === 0 || dr === diff.length) { for (const j of diff) st[j] = dr ? 2 : 3; prog = true; break outer; }
+      }
+    }
+    if (!prog) {
+      let unk = 0, mk = 0; for (let i = 0; i < N; i++) { if (!st[i]) unk++; else if (st[i] === 2) mk++; }
+      if (unk && (M - mk === 0 || M - mk === unk)) { for (let i = 0; i < N; i++) if (!st[i]) st[i] = M - mk ? 2 : 3; prog = true; }
+    }
+    if (!prog) break;
+    found = true; if (once) break;
+  }
+  return found;
+}
+/* can this layout be cleared from `start` by pure logic? */
+function noGuess(W, M, nbs, mine, cnt, start) {
+  const N = mine.length, st = new Int8Array(N); let opened = 0;
+  const open = i => { const q = [i]; while (q.length) { const k = q.pop(); if (st[k] === 1) continue; st[k] = 1; opened++; if (!cnt[k]) for (const j of nbs[k]) if (st[j] !== 1) q.push(j); } };
+  open(start);
+  while (opened < N - M) {
+    if (!deduce(W, M, nbs, st, cnt)) return false;
+    for (let i = 0; i < N; i++) if (st[i] === 3) open(i);
+  }
+  return true;
+}
+
 BX.register({
   id: 'minesweeper', title: '扫雷', cat: 'solo', order: 2, sub: '避开地雷，翻开全部安全格',
   desc: '经典扫雷三档难度：初级 9×9、中级 16×16、高级 30×16。第一下必定安全，支持插旗、快速开格、长按插旗，手机上可缩放平移。',
   kind: 'solo',
-  options: [{key: 'lv', label: '难度', choices: [['e', '初级 9×9·10雷'], ['m', '中级 16×16·40雷'], ['h', '高级 30×16·99雷']], def: 'e'}],
+  options: [{key: 'lv', label: '难度', choices: [['e', '初级 9×9·10雷'], ['m', '中级 16×16·40雷'], ['h', '高级 30×16·99雷']], def: 'e'},
+    {key: 'ng', label: '雷区', choices: [[0, '经典随机'], [1, '无需猜测']], def: 0}],
+  howto: ['<b>轻点</b>翻开格子，<b>长按</b>插旗（长按时格子上有一圈进度）；或打开底部「插旗模式」后轻点插旗。', '点一下旗数已满足的数字 = 一次翻开它周围其余的格子（快速开格）。', '电脑：左键翻开、右键插旗，鼠标停在格子上按<b>空格</b>插旗/快速开格；滚轮缩放。', '💡 提示会指出一格<b>可以推理确定</b>的格子（安全或是雷），罚时 10 秒。「无需猜测」雷区保证全程靠推理就能解开。'],
   rules: `<p>雷区中藏着若干地雷。翻开一个格子：若是地雷则失败；否则显示它周围 8 格中地雷的数量，数字为 0 时会自动翻开周围一片。</p>
 <p>根据数字推断地雷位置，用<b>旗子</b>标记确定的地雷。<b>翻开全部非雷格子</b>即获胜（不要求插完旗）。第一次翻开的格子及其周围必定无雷。</p>
 <p><b>操作</b><br>· 电脑：左键翻开，右键插旗/取消；在已满足旗数的数字上点击（或左右键同按、双击）可一次翻开周围其余格子（快速开格）。<br>
 · 触屏：轻点翻开，<b>长按插旗</b>；也可点底部「插旗模式」切换轻点的功能；轻点已满足旗数的数字即快速开格。<br>
 · 高级雷区在手机上可<b>双指缩放、拖动平移</b>，竖屏手机上自动转为 16×30 竖向排列。</p>
-<p>左上显示剩余雷数（总雷数减旗数），并计时；每档难度记录最快用时。</p>`,
+<p>左上显示剩余雷数（总雷数减旗数），并计时；每档难度记录最快用时与胜率。</p>
+<p><b>无需猜测</b>：开局后生成的雷区经过求解器验证，从第一下开始，只靠数字推理（单格推理、两格包含关系、剩余雷数）就能一路解开，不会遇到五五开的瞎猜。</p>`,
   icon(g, w, h) {
     D.wood(g, 0, 0, w, h, {base: '#8a5a30', dark: '#4a2a12', seed: 9});
     const s = h / 4.6, ox = (w - 6 * s) / 2, oy = (h - 4 * s) / 2;
@@ -45,8 +90,8 @@ BX.register({
     g.save(); g.translate(w * .82, h * .78); drawMine(g, 0, 0, h * .14); g.restore();
   },
   create(ctx) {
-    const lvK = ctx.opts.lv || 'e', [W0, H0, M] = LV[lvK];
-    const cv = ctx.canvas(), fx = K.fx(), say = K.status(ctx);
+    const lvK = ctx.opts.lv || 'e', [W0, H0, M] = LV[lvK], NG = +ctx.opts.ng || 0;
+    const cv = ctx.canvas(), fx = K.fx(), say = K.status(ctx), stats = K.stats(ctx, lvK + NG);
     let W = W0, H = H0, rotated = false;     // logical board is W0×H0; when rotated, displayed transposed
     const N = W0 * H0;
     let mine = new Uint8Array(N), cnt = new Uint8Array(N), open = new Uint8Array(N), flag = new Uint8Array(N);
@@ -56,16 +101,20 @@ BX.register({
     const bar = K.bar(ctx, [
       {k: 'flag', ic: '⚑', t: '插旗模式', on: () => { flagMode = !flagMode; bar.on('flag', flagMode); ctx.sfx('tick'); }},
       {k: 'fit', ic: '⤢', t: '适应屏幕', on: () => { view.user = false; ctx.sfx('tick'); }},
-      {k: 'hint', ic: '☞', t: '提示', on: () => doHint()},
       {k: 'new', ic: '↻', t: '新局', on: async () => { if (started && !over && !(await BX.confirm('放弃这一局？', '新局'))) return; ctx.restart(); }},
     ]);
-    const nb = i => { const x = i % W0, y = (i / W0) | 0, o = []; for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) { if (!dx && !dy) continue; const X = x + dx, Y = y + dy; if (X >= 0 && Y >= 0 && X < W0 && Y < H0) o.push(Y * W0 + X); } return o; };
+    const NBS = BX.range(N).map(i => { const x = i % W0, y = (i / W0) | 0, o = []; for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) { if (!dx && !dy) continue; const X = x + dx, Y = y + dy; if (X >= 0 && Y >= 0 && X < W0 && Y < H0) o.push(Y * W0 + X); } return o; });
+    const nb = i => NBS[i];
     function place(first) {
       const banned = new Set([first, ...nb(first)]), pool = [];
       for (let i = 0; i < N; i++) if (!banned.has(i)) pool.push(i);
-      ctx.rng.shuffle(pool);
-      for (let k = 0; k < M; k++) mine[pool[k]] = 1;
-      for (let i = 0; i < N; i++) cnt[i] = nb(i).reduce((a, j) => a + mine[j], 0);
+      const t0 = performance.now();
+      for (let tries = 0; ; tries++) {
+        ctx.rng.shuffle(pool); mine.fill(0);
+        for (let k = 0; k < M; k++) mine[pool[k]] = 1;
+        for (let i = 0; i < N; i++) { let c = 0; for (const j of NBS[i]) c += mine[j]; cnt[i] = c; }
+        if (!NG || noGuess(W0, M, NBS, mine, cnt, first) || tries > 6000 || performance.now() - t0 > 1500) break;
+      }
       placed = true;
     }
     function reveal(i0, delayBase) {
@@ -84,7 +133,9 @@ BX.register({
       const list = []; for (let k = 0; k < N; k++) if (mine[k] && !flag[k] && k !== i) list.push(k);
       const bx = i % W0, by = (i / W0) | 0; list.sort((a, b) => Math.hypot(a % W0 - bx, (a / W0 | 0) - by) - Math.hypot(b % W0 - bx, (b / W0 | 0) - by));
       list.forEach((k, j) => { open[k] = 2; revealAnim[k] = -.3 - j * Math.min(.04, 1.5 / list.length); });
-      ctx.end({win: false, title: '踩到地雷了', text: `用时 ${K.fmt(time)} · 已翻开 ${opened}/${N - M} 格`, delay: 1800});
+      ctx.buzz(60);
+      const sl = stats.line();
+      ctx.end({win: false, title: '踩到地雷了', html: `用时 ${K.fmt(time)} · 已翻开 ${opened}/${N - M} 格` + (sl ? `<br><span style="font-size:13px;opacity:.75">${sl}</span>` : ''), delay: 1800});
       say('💥 踩雷了');
     }
     function checkWin() {
@@ -92,15 +143,16 @@ BX.register({
         over = won = true;
         for (let k = 0; k < N; k++) if (mine[k]) flag[k] = 1;
         const secs = Math.round(time * 10) / 10, b = ctx.best('t_' + lvK, secs, 'min');
-        ctx.sfx('win'); fx.rain(cv.w, cv.h, 70);
+        ctx.sfx('win'); fx.rain(cv.w, cv.h, 70); ctx.buzz(30);
         say(`扫雷成功 · 用时 ${secs.toFixed(1)} 秒`);
-        ctx.end({win: true, title: '扫雷成功', text: `用时 ${secs.toFixed(1)} 秒 步数 ${clicks}` + (b.isNew ? ' · 新纪录！' : ` · 最快 ${(+b.best).toFixed(1)} 秒`), delay: 1600});
+        const stt = stats.win();
+        ctx.end({win: true, title: '扫雷成功', html: `用时 ${secs.toFixed(1)} 秒 步数 ${clicks}` + (hints ? ` · 提示 ${hints} 次` : '') + (b.isNew ? ' · 新纪录！' : ` · 最快 ${(+b.best).toFixed(1)} 秒`) + `<br><span style="font-size:13px;opacity:.75">${stats.line(stt)}</span>`, delay: 1600});
       }
     }
     function openCell(i) {
       if (over || open[i] || flag[i]) return;
       if (!placed) place(i);
-      if (!started) started = true;
+      if (!started) { started = true; stats.start(); }
       clicks++;
       if (mine[i]) { open[i] = 1; lose(i); return; }
       const n = reveal(i); ctx.sfx(n > 1 ? 'swish' : 'click');
@@ -120,20 +172,27 @@ BX.register({
     function toggleFlag(i) {
       if (over || open[i]) return;
       flag[i] ^= 1; ctx.sfx(flag[i] ? 'pen' : 'tick'); if (!started && placed) started = true;
-      if (navigator.vibrate && flag[i]) try { navigator.vibrate(20); } catch (e) {}
+      if (flag[i]) ctx.buzz(15);
     }
+    let hints = 0;
     function doHint() {
       if (over) return;
-      if (!placed) { const c = ((H0 / 2) | 0) * W0 + ((W0 / 2) | 0); hintCell = {i: c, t: 0, safe: true}; ctx.toast('第一下点哪里都安全'); return; }
-      // find a closed safe cell adjacent to an opened number (deducible-ish), else any safe cell
-      let best = -1;
-      for (let i = 0; i < N && best < 0; i++) if (open[i] && cnt[i]) { const ns = nb(i), f = ns.filter(j => flag[j] || (!open[j] && mine[j])).length; for (const j of ns) if (!open[j] && !flag[j] && !mine[j] && f === cnt[i]) { best = j; break; } }
+      if (!placed) { const c = ((H0 / 2) | 0) * W0 + ((W0 / 2) | 0); hintCell = {i: c, t: 0, safe: true}; ctx.toast('第一下点哪里都安全，中间最容易开出一大片'); return; }
+      const pen = () => { time += 10; hints++; ctx.sfx('tick'); };
       const wrongFlag = flag.findIndex((f, i) => f && !mine[i]);
-      if (wrongFlag >= 0 && best < 0) { hintCell = {i: wrongFlag, t: 0, wrong: true}; ctx.toast('这面旗插错了'); return; }
-      if (best < 0) for (let i = 0; i < N; i++) if (!open[i] && !mine[i] && !flag[i]) { best = i; break; }
-      if (best >= 0) { hintCell = {i: best, t: 0, safe: true}; ctx.sfx('tick'); time += 10; ctx.toast('提示：这一格是安全的（罚时 10 秒）'); }
+      // what can be proven from the numbers on screen (ignores the player's own flags)
+      const st = new Int8Array(N); for (let i = 0; i < N; i++) st[i] = open[i] ? 1 : 0;
+      deduce(W0, M, NBS, st, cnt);
+      const near = i => nb(i).some(j => open[j]);
+      let safe = -1, mn = -1;
+      for (let i = 0; i < N; i++) { if (st[i] === 3 && !flag[i] && (safe < 0 || near(i) && !near(safe))) safe = i; if (st[i] === 2 && !flag[i] && mn < 0) mn = i; }
+      if (wrongFlag >= 0 && (safe < 0 || st[wrongFlag] === 3)) { hintCell = {i: wrongFlag, t: 0, wrong: true}; pen(); ctx.toast('这面旗插错了（罚时 10 秒）'); return; }
+      if (safe >= 0) { hintCell = {i: safe, t: 0, safe: true}; pen(); ctx.toast('根据周围数字，这一格可以确定是安全的（罚时 10 秒）', 2600); return; }
+      if (mn >= 0) { hintCell = {i: mn, t: 0, wrong: true, mine: true}; pen(); ctx.toast('根据周围数字，这一格一定是雷，插上旗吧（罚时 10 秒）', 2600); return; }
+      let best = -1; for (let i = 0; i < N; i++) if (!open[i] && !mine[i] && !flag[i] && (best < 0 || near(i) && !near(best))) best = i;
+      if (best >= 0) { hintCell = {i: best, t: 0, safe: true}; pen(); ctx.toast('这里只能靠猜——提示一格安全的（罚时 10 秒）', 2600); }
     }
-    let hintCell = null;
+    let hintCell = null, pressNb = new Set();
 
     /* ---------- geometry ---------- */
     function layout() {
@@ -164,7 +223,9 @@ BX.register({
     function cellXY(i) { const d = dispXY(i); return {x: view.x + (d.dx + .5) * view.s, y: view.y + (d.dy + .5) * view.s}; }
 
     /* ---------- input: tap / long press / right click / pan / pinch ---------- */
-    const ptrs = new Map(); let gest = null, lpT = 0, lastUp = {t: 0, i: -1};
+    const ptrs = new Map(); let gest = null, lpT = 0, lastUp = {t: 0, i: -1}, hover = -1;
+    ctx.on(cv.cv, 'pointermove', e => { if (e.pointerType === 'mouse') hover = cellAt(cv.pos(e)); });
+    ctx.on(cv.cv, 'pointerleave', () => { hover = -1; });
     ctx.on(cv.cv, 'contextmenu', e => e.preventDefault());
     ctx.on(cv.cv, 'pointerdown', e => {
       const p = cv.pos(e); ptrs.set(e.pointerId, p);
@@ -180,7 +241,7 @@ BX.register({
         if (e.button === 2 || (e.buttons & 3) === 3) { if (i >= 0) { if ((e.buttons & 3) === 3) chord(i); else toggleFlag(i); } gest = {done: true}; return; }
         if (e.button === 1) { gest = {pan: true, sx: p.x, sy: p.y, vx: view.x, vy: view.y, moved: true}; return; }
       }
-      gest = {sx: p.x, sy: p.y, vx: view.x, vy: view.y, i, moved: false, mouse: e.pointerType === 'mouse', lp: false};
+      gest = {sx: p.x, sy: p.y, vx: view.x, vy: view.y, i, moved: false, mouse: e.pointerType === 'mouse', lp: false, t0: performance.now()};
       press = i;
       if (e.pointerType !== 'mouse' && i >= 0) lpT = setTimeout(() => { if (gest && !gest.moved && !gest.pinch) { gest.lp = true; press = -1; if (!open[gest.i]) toggleFlag(gest.i); else chord(gest.i); } }, 380);
     });
@@ -251,6 +312,7 @@ BX.register({
         if (started && !over) time += dt;
         bg(g);
         const s = view.s, bx = view.x, by = view.y;
+        pressNb = new Set(); { const pc = press >= 0 ? press : -1; if (pc >= 0 && open[pc] && cnt[pc]) for (const j of nb(pc)) if (!open[j] && !flag[j]) pressNb.add(j); }
         g.save(); g.beginPath(); g.rect(0, geo.top - 4, cv.w, cv.h); g.clip();
         // board frame
         g.fillStyle = 'rgba(0,0,0,.35)'; D.rr(g, bx - 6, by - 3, W * s + 12, H * s + 12, 10); g.fill();
@@ -271,7 +333,7 @@ BX.register({
             const k = open[i] ? (ra <= 0 ? 1 : 1 - ra) : 1;
             if (k > 0) {
               g.save(); if (k < 1) { g.globalAlpha = k; g.translate(X + s / 2, Y + s / 2); g.scale(.6 + .4 * k, .6 + .4 * k); g.translate(-X - s / 2, -Y - s / 2); }
-              const hl = press === i || (chordFlash && chordFlash.ids.includes(i));
+              const hl = press === i || (chordFlash && chordFlash.ids.includes(i)) || (!over && (i === hover || pressNb.has(i)));
               if (press === i && !flag[i]) { g.fillStyle = '#e3d0a8'; g.fillRect(X, Y, s, s); } else tile(g, X, Y, s, hl);
               if (flag[i]) drawFlag(g, X + s / 2, Y + s / 2, s * .9, over && !won && !mine[i]);
               g.restore();
@@ -279,19 +341,28 @@ BX.register({
           }
           if (over && !won && flag[i] && !mine[i] && open[i] !== 1) { /* drawn above */ }
         }
+        if (gest && !gest.mouse && !gest.moved && !gest.lp && !gest.pinch && !gest.done && gest.i >= 0 && !open[gest.i] && !over) {   // long-press progress ring
+          const k = Math.min(1, (performance.now() - gest.t0) / 380), p = cellXY(gest.i);
+          if (k > .15) { g.strokeStyle = 'rgba(194,58,43,.9)'; g.lineWidth = Math.max(3, s * .1); g.beginPath(); g.arc(p.x, p.y, s * .62, -Math.PI / 2, -Math.PI / 2 + k * Math.PI * 2); g.stroke(); }
+        }
         if (hintCell) {
           hintCell.t += dt; const p = cellXY(hintCell.i), a = .5 + .5 * Math.sin(hintCell.t * 10);
           g.strokeStyle = hintCell.wrong ? `rgba(220,60,40,${a})` : `rgba(60,200,140,${a})`; g.lineWidth = 3; D.rr(g, p.x - s / 2 + 1, p.y - s / 2 + 1, s - 2, s - 2, s * .15); g.stroke();
-          if (hintCell.t > 3 || open[hintCell.i] || (hintCell.wrong && !flag[hintCell.i])) hintCell = null;
+          if (hintCell.t > 4 || open[hintCell.i] || (hintCell.mine ? flag[hintCell.i] : hintCell.wrong && !flag[hintCell.i])) hintCell = null;
         }
         g.restore();
         if (chordFlash && (chordFlash.t -= dt) <= 0) chordFlash = null;
         hud(g);
         fx.draw(g, dt);
         if (!over) say(`${LV[lvK][3]} · ${flagMode ? '插旗模式：轻点插旗' : BX.TOUCH.matches ? '轻点翻开 · 长按插旗' : '左键翻开 · 右键插旗'}`);
-        bar.dis('fit', !view.user); bar.dis('hint', over);
+        bar.dis('fit', !view.user);
       },
-      key(e) { if (e.code === 'KeyF') { flagMode = !flagMode; bar.on('flag', flagMode); } },
+      hint: () => doHint(),
+      key(e) {
+        if (e.code === 'KeyF') { flagMode = !flagMode; bar.on('flag', flagMode); }
+        else if (e.code === 'KeyH') doHint();
+        else if (e.code === 'Space' && hover >= 0 && !over) { e.preventDefault && e.preventDefault(); if (open[hover]) chord(hover); else toggleFlag(hover); }
+      },
       debug: {
         center(i) { const d = dispXY(i); view.user = true; view.x = cv.w / 2 - (d.dx + .5) * view.s; view.y = cv.h / 2 - (d.dy + .5) * view.s; clampView(); },
         get mine() { return mine; }, get open() { return open; }, W0, H0, get rotated() { return rotated; }, get view() { return view; },

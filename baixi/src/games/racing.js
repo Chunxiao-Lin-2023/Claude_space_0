@@ -32,8 +32,13 @@ const angDiff = (a, b) => { let d = a - b; while (d > Math.PI) d -= Math.PI * 2;
 BX.register({
   id: 'racing', title: '飞驰赛车', cat: 'sports', order: 3, sub: '漂移过弯，三圈定胜负',
   desc: '俯视角小赛车，在三条原创赛道上跑三圈。车辆会轻微漂移，出赛道会减速，车与车可以碰撞。最多四人，空位由电脑车手补上。',
-  kind: 'realtime', seats: [2, 4], defSeats: 2, noFirst: true,
-  options: [{key: 'trk', label: '赛道', choices: [[0, '茶园环线'], [1, '九曲回廊'], [2, '龙脊山道']], def: 0}, {key: 'laps', label: '圈数', choices: [[2, '2 圈'], [3, '3 圈'], [5, '5 圈']], def: 3}],
+  kind: 'realtime', seats: [2, 4], defSeats: 2, noFirst: true, hint: false,
+  options: [{key: 'trk', label: '赛道', choices: [[0, '茶园环线'], [1, '九曲回廊'], [2, '龙脊山道']], def: 0}, {key: 'laps', label: '圈数', choices: [[2, '2 圈'], [3, '3 圈'], [5, '5 圈']], def: 3},
+    {key: 'assist', label: '辅助转向', choices: [[1, '开'], [0, '关']], def: 1}],
+  howto: ['触屏<b>自动油门</b>：按住 ◀ ▶ 转向，按「刹」减速/倒车；键盘 ↑↓←→ 或 WASD。',
+    '单人时镜头跟随你的车，右上角小地图显示全场；左上角是名次、本圈用时和最快圈。',
+    '「辅助转向」开启时，不打方向也会被轻轻带回赛道中线；半透明的车是你的<b>最快圈幽灵</b>，追上它！',
+    '弯前松一点或点刹，比冲出赛道进草地快得多。'],
   rules: `<p>所有赛车在起点线后发车，倒计时「3、2、1、开！」后起跑，<b>先跑完规定圈数（默认 3 圈）者获胜</b>。第一名冲线后，其余车手还有 15 秒冲线时间，之后按跑过的距离排名。</p>
 <ul><li>驶出赛道（草地）会大幅减速；</li><li>高速转弯时车尾会轻微甩动（漂移），松一点油门更好过弯；</li><li>车与车会相互碰撞推挤；</li><li>必须按赛道方向依次跑完整圈，倒着跑不计圈。</li></ul>
 <p>键盘：单人用 方向键 或 WASD（↑ 油门、↓ 刹车/倒车、←→ 转向）。同屏多人：玩家一 WASD，玩家二 方向键，玩家三 IJKL，玩家四 小键盘 8456。</p>
@@ -145,10 +150,21 @@ BX.register({
       const tl = pads.held('l', seat), tr = pads.held('r', seat), tb = pads.held('b', seat);
       let t = up ? 1 : dn ? -1 : 0;
       if (pads.touched && !up && !dn) t = tb ? -1 : 1;
-      return {s: ((r || tr) ? 1 : 0) - ((l || tl) ? 1 : 0), t};
+      let sv = ((r || tr) ? 1 : 0) - ((l || tl) ? 1 : 0);
+      if (!sv && ctx.opts.assist !== 0 && st.ph !== 'cd') sv = assistSteer(st.c[seat]);
+      return {s: sv, t};
+    }
+    /* gentle pull toward the centre line ahead (like kart games' smart steering) — only while the player isn't steering */
+    function assistSteer(c) {
+      const sp = Math.hypot(c.vx, c.vy); if (sp < 20) return 0;
+      const ti = (c.ci + Math.round(7 + sp * .08)) % N, p = TR.pts[ti];
+      const err = angDiff(Math.atan2(p[1] - c.y, p[0] - c.x), c.a);
+      return BX.clamp(err * 2.2, -1, 1) * (c.off ? .9 : .5);
     }
     /* ---------- view ---------- */
     const touchUI = () => BX.TOUCH.matches || pads.touched;
+    /* single local driver → chase camera (zoomed, follows your car); several local drivers / spectator → whole track */
+    const cam = {x: null, y: null};
     function view() {
       const W = cv.w, H = cv.h, hasLocal = nLoc() > 0 && touchUI();
       const side = hasLocal && W > H * 1.3 && nLoc() <= 2, sideW = side ? Math.min(W * .19, 170) : 0;
@@ -156,7 +172,22 @@ BX.register({
       const aw = W - sideW * 2, ah = H - ctrlH, port = ah > aw * 1.05;
       const lw = port ? WH : WW, lh = port ? WW : WH;
       const f = BX.fit(aw, ah, lw, lh, 4);
+      if (nLoc() === 1 && cam.x != null) {
+        const s = BX.clamp(Math.max(f.s * 1.6, Math.min(aw, ah) / 300), 1, 2.4);
+        const rx = port ? WH - cam.y : cam.x, ry = port ? cam.x : cam.y;
+        const ws = lw * s, hs = lh * s;
+        let ox = sideW + aw / 2 - rx * s, oy = ah / 2 - ry * s;
+        ox = ws > aw ? BX.clamp(ox, sideW + aw - ws, sideW) : sideW + (aw - ws) / 2; oy = hs > ah ? BX.clamp(oy, ah - hs, 0) : (ah - hs) / 2;
+        return {W, H, ctrlH, sideW, port, s, ox, oy, cam: true, aw, ah, full: f.s};
+      }
       return {W, H, ctrlH, sideW, port, s: f.s, ox: f.x + sideW, oy: f.y};
+    }
+    function moveCam(dt) {
+      if (nLoc() !== 1) { cam.x = null; return; }
+      const c = st.c[ctx.mySeats[0]]; if (!c) return;
+      const tx = c.x + c.vx * .32, ty = c.y + c.vy * .32;
+      if (cam.x == null) { cam.x = tx; cam.y = ty; return; }
+      const k = 1 - Math.exp(-dt * 4.5); cam.x += (tx - cam.x) * k; cam.y += (ty - cam.y) * k;
     }
     const T = (v, x, y) => v.port ? [v.ox + (WH - y) * v.s, v.oy + x * v.s] : [v.ox + x * v.s, v.oy + y * v.s];
     function ctrlBtns(v) {
@@ -191,13 +222,27 @@ BX.register({
       K.evPlay(st, evSeen, e => {
         const v = view();
         if (e[0] === 'cd') ctx.sfx('tick');
-        else if (e[0] === 'go') { ctx.sfx('gong'); fx.flash(.5); }
-        else if (e[0] === 'lap') { if (ctx.isLocal(e[2]) || nLoc() === 0) { ctx.sfx('bell'); const c = st.c[e[2]], [x, y] = T(v, c.x, c.y); fx.text(x, y - 26, e[3] >= LAPS - 1 ? '最后一圈！' : '第 ' + (e[3] + 1) + ' 圈', {size: 22, color: '#ffe08a'}); } }
+        else if (e[0] === 'go') { ctx.sfx('gong'); fx.flash(.5); for (const L of lapI) L.t0 = time; rec = []; recT = 0; }
+        else if (e[0] === 'lap') {
+          const L = lapI[e[2]], lt = L.t0 != null ? time - L.t0 : 0; L.last = lt; if (lt && (!L.best || lt < L.best)) L.best = lt; L.t0 = time;
+          const me = nLoc() === 1 && ctx.isLocal(e[2]);
+          if (me && lt > 3) {
+            const ms = Math.round(lt * 1000), rb = ctx.best('lap.' + TKEY, ms, 'min');
+            if (!ghost || ms < ghost.ms) { ghost = {ms, p: rec}; ctx.save('ghost.' + TKEY, ghost); }
+            rec = []; recT = 0;
+            if (rb.isNew && rb.old != null) { const c = st.c[e[2]], [x, y] = T(v, c.x, c.y); fx.text(x, y - 52, '赛道新纪录 ' + fmt(lt), {size: 20, color: '#7fe0a0', life: 1.8}); ctx.sfx('win'); }
+          }
+          if (ctx.isLocal(e[2]) || nLoc() === 0) { ctx.sfx('bell'); const c = st.c[e[2]], [x, y] = T(v, c.x, c.y); fx.text(x, y - 26, (e[3] >= LAPS - 1 ? '最后一圈！' : '第 ' + (e[3] + 1) + ' 圈') + (me ? '  ' + fmt(lt) : ''), {size: 22, color: '#ffe08a'}); }
+        }
         else if (e[0] === 'fin') { ctx.sfx(e[3] === 1 ? 'win' : 'score'); const c = st.c[e[2]], [x, y] = T(v, c.x, c.y); fx.burst(x, y, {n: 40, color: ['#ffd76a', '#fff', ctx.color(e[2]), '#c23a2b'], sp: 300, square: true, up: 100}); fx.text(x, y - 30, '第 ' + e[3] + ' 名', {size: 28, color: '#ffe08a', life: 1.6}); if (e[3] === 1) fx.flash(.8); }
         else if (e[0] === 'bump') { ctx.sfx('hit'); const [x, y] = T(v, e[2], e[3]); fx.burst(x, y, {n: 10, color: ['#ffd76a', '#fff'], sp: 160, size: 3, grav: 0}); fx.shake(Math.min(6, e[4] / 30)); }
         else if (e[0] === 'end') ctx.sfx('bell');
       });
     }
+    const TKEY = 't' + (ctx.opts.trk || 0), lapI = BX.range(n).map(() => ({t0: null, best: 0, last: 0}));
+    let ghost = ctx.load('ghost.' + TKEY, null), rec = [], recT = 0, wrongT = 0;
+    if (ghost && !(ghost.p && ghost.p.length > 5)) ghost = null;
+    const fmt = t => { const m = Math.floor(t / 60), sec = t - m * 60; return (m ? m + ':' + (sec < 10 ? '0' : '') : '') + sec.toFixed(1) + (m ? '' : 's'); };
     function ranking() { return BX.range(n).sort((a, b) => prog(st.c[b]) - prog(st.c[a])); }
     function info() {
       const rk = ranking();
@@ -231,12 +276,33 @@ BX.register({
       draw(dt) {
         time += dt; fx.update(dt);
         if (!ctx.isHost) for (const c of st.c) { c.x += c.vx * dt * .5; c.y += c.vy * dt * .5; }
+        moveCam(dt);
         pads.begin(); const v = view(); for (const b of ctrlBtns(v)) pads.add(b);
         const g = cv.g; cv.clear('#2a190d');
-        const key = [v.W, v.H, v.ctrlH, v.port].join(',');
-        if (key !== bgKey) { bgKey = key; bg = renderBG(v); }
         const [ox, oy] = fx.offset(); g.save(); g.translate(ox, oy);
-        g.drawImage(bg, 0, 0, v.W, v.H);
+        if (v.cam) {
+          const wv = {s: v.s, ox: 0, oy: 0, port: v.port, W: (v.port ? WH : WW) * v.s, H: (v.port ? WW : WH) * v.s};
+          const key = 'cam' + v.s.toFixed(3) + v.port;
+          if (key !== bgKey) { bgKey = key; bg = renderBG(wv, Math.min(cv.dpr, Math.sqrt(4e6 / (wv.W * wv.H))), true); }
+          g.fillStyle = '#4a7f40'; g.fillRect(0, 0, v.W, v.H);
+          g.drawImage(bg, v.ox, v.oy, wv.W, wv.H);
+        } else {
+          const key = [v.W, v.H, v.ctrlH, v.port].join(',');
+          if (key !== bgKey) { bgKey = key; bg = renderBG(v); }
+          g.drawImage(bg, 0, 0, v.W, v.H);
+        }
+        // record my lap (for the best-lap ghost) and draw the ghost
+        const me = nLoc() === 1 ? ctx.mySeats[0] : -1, mc = me >= 0 ? st.c[me] : null;
+        if (mc && (st.ph === 'race' || st.ph === 'fin') && !mc.fin) {
+          recT += dt; if (recT >= .1) { recT -= .1; if (rec.length < 1500) rec.push([Math.round(mc.x), Math.round(mc.y), Math.round(mc.a * 100)]); }
+          const L = lapI[me];
+          if (ghost && L.t0 != null) {
+            const gt = (time - L.t0) / .1, i0 = Math.floor(gt), q0 = ghost.p[i0], q1 = ghost.p[i0 + 1];
+            if (q0 && q1) { const k = gt - i0, [gx, gy] = T(v, q0[0] + (q1[0] - q0[0]) * k, q0[1] + (q1[1] - q0[1]) * k); g.globalAlpha = .38; car(g, gx, gy, (q0[2] + angDiff(q1[2] / 100, q0[2] / 100) * 100 * k) / 100 + (v.port ? Math.PI / 2 : 0), Math.max(1, v.s * 1.15), '#f3ead8', 0); g.globalAlpha = 1; }
+          }
+          const fd = TR.dir[mc.ci], dot = mc.vx * Math.cos(fd) + mc.vy * Math.sin(fd);
+          wrongT = dot < -35 ? wrongT + dt : 0;
+        } else wrongT = 0;
         // skid marks
         for (let i = 0; i < n; i++) {
           const c = st.c[i], fxx = Math.cos(c.a), fy = Math.sin(c.a), vl = Math.abs(-c.vx * fy + c.vy * fxx), sp = Math.hypot(c.vx, c.vy);
@@ -264,10 +330,10 @@ BX.register({
         fx.drawFlash(g, v.W, v.H);
       },
     };
-    function renderBG(v) {
-      const c2 = document.createElement('canvas'), d = cv.dpr; c2.width = Math.max(1, Math.round(v.W * d)); c2.height = Math.max(1, Math.round(v.H * d));
+    function renderBG(v, d = cv.dpr, world = false) {
+      const c2 = document.createElement('canvas'); c2.width = Math.max(1, Math.round(v.W * d)); c2.height = Math.max(1, Math.round(v.H * d));
       const g = c2.getContext('2d'); g.scale(d, d);
-      D.wood(g, 0, 0, v.W, v.H, {base: '#5a3418', dark: '#2a160a', seed: 4});
+      if (!world) D.wood(g, 0, 0, v.W, v.H, {base: '#5a3418', dark: '#2a160a', seed: 4});
       const [ax, ay] = T(v, 0, 0), [bx, by] = T(v, WW, WH), x0 = Math.min(ax, bx), y0 = Math.min(ay, by), w = Math.abs(bx - ax), h = Math.abs(by - ay);
       g.save(); D.rr(g, x0, y0, w, h, 12 * v.s); g.clip();
       const gr = g.createRadialGradient(x0 + w / 2, y0 + h / 2, 10, x0 + w / 2, y0 + h / 2, Math.max(w, h) * .7); gr.addColorStop(0, '#8fcf78'); gr.addColorStop(1, '#5f9f50'); g.fillStyle = gr; g.fillRect(x0, y0, w, h);
@@ -312,6 +378,20 @@ BX.register({
         D.text(g, c.fin ? '完成' : BX.clamp(c.lap + 1, 1, LAPS) + '/' + LAPS, bw, y, {size: fs, color: '#e6c57d', align: 'right'});
       });
       g.restore();
+      const me = nLoc() === 1 ? ctx.mySeats[0] : -1;
+      if (me >= 0 && st.ph !== 'cd') {   // my position / lap / timers
+        const L = lapI[me], c = st.c[me], tx = hx + 8, ty = 16 + lh * n + 6, pw = bw;
+        g.fillStyle = 'rgba(30,16,6,.72)'; D.rr(g, tx, ty, pw, fs * 3.6 + 14, 8); g.fill();
+        const cur = L.t0 != null && !c.fin ? time - L.t0 : L.last;
+        D.text(g, '本圈 ' + fmt(cur || 0), tx + 10, ty + 8 + fs * .6, {size: fs, color: '#fff6dc', align: 'left', weight: 800});
+        D.text(g, '最快 ' + (L.best ? fmt(L.best) : '—'), tx + 10, ty + 8 + fs * 1.8, {size: fs * .9, color: '#e6c57d', align: 'left'});
+        D.text(g, '纪录 ' + (ghost ? fmt(ghost.ms / 1000) : '—'), tx + 10, ty + 8 + fs * 3, {size: fs * .9, color: '#bfe8c0', align: 'left'});
+        const rk2 = rk.indexOf(me) + 1, mw = v.W - (v.sideW || 0) * 2;
+        D.text(g, c.fin ? '第 ' + c.fin + ' 名' : '第' + rk2 + '名 · ' + BX.clamp(c.lap + 1, 1, LAPS) + '/' + LAPS + '圈', (v.sideW || 0) + mw / 2, st.ph === 'fin' ? 46 : 22, {size: v.W < 500 ? 17 : 21, color: '#ffe08a', font: 'deco', weight: 400, stroke: 'rgba(40,20,5,.85)', strokeW: 4});
+        if (wrongT > .7) K.banner(g, '逆行！请掉头', (v.sideW || 0) + mw / 2, (v.H - v.ctrlH) * .3, Math.min(34, mw * .08), 1, {color: '#ff9a7a'});
+        else if (c.off && Math.hypot(c.vx, c.vy) < 120 && st.ph === 'race') D.text(g, '驶回赛道！', (v.sideW || 0) + mw / 2, (v.H - v.ctrlH) * .3, {size: 18, color: '#ffd0a0', weight: 800, stroke: 'rgba(0,0,0,.6)'});
+      }
+      if (v.cam) drawMini(g, v);
       const cy = (v.H - v.ctrlH) / 2, big = Math.min(v.W, v.H - v.ctrlH) * .22;
       if (st.ph === 'cd') { const c = Math.ceil(st.t); if (c <= 3) K.banner(g, String(c), v.W / 2, cy, big, 1 - (st.t % 1)); else K.banner(g, TR.name, v.W / 2, cy, big * .5, 1); drawLights(g, v.W / 2, cy - big * .9, c); }
       else if (st.ph === 'race' && time - (goT || (goT = time)) < .9) K.banner(g, '开！', v.W / 2, cy, big, (time - goT) / .9, {color: '#ffe08a'});
@@ -319,6 +399,15 @@ BX.register({
       if (st.ph !== 'race') goT = 0;
     }
     let goT = 0;
+    function drawMini(g, v) {
+      const lw = v.port ? WH : WW, lh = v.port ? WW : WH, mw = Math.min(v.port ? 92 : 150, (v.W - v.sideW * 2) * .3), mh = mw * lh / lw;
+      const x0 = v.W - v.sideW - mw - 8, y0 = 8, m = {s: mw / lw, ox: x0, oy: y0, port: v.port};
+      g.fillStyle = 'rgba(30,16,6,.6)'; D.rr(g, x0 - 4, y0 - 4, mw + 8, mh + 8, 8); g.fill();
+      g.beginPath(); TR.pts.forEach((p, i) => { if (i % 3) return; const [x, y] = T(m, p[0], p[1]); i ? g.lineTo(x, y) : g.moveTo(x, y); }); g.closePath();
+      g.strokeStyle = 'rgba(255,240,210,.7)'; g.lineWidth = Math.max(3, TW * m.s * .6); g.lineJoin = 'round'; g.stroke();
+      { const p = TR.pts[0], [x, y] = T(m, p[0], p[1]); g.fillStyle = '#fff'; D.circle(g, x, y, 2.5); g.fill(); }
+      for (let i = 0; i < n; i++) { const c = st.c[i], [x, y] = T(m, c.x, c.y), mine = ctx.isLocal(i); g.fillStyle = ctx.color(i); D.circle(g, x, y, mine ? 5 : 3.5); g.fill(); if (mine) { g.strokeStyle = '#fff'; g.lineWidth = 1.5; g.stroke(); } }
+    }
     function drawLights(g, x, y, c) {
       for (let i = 0; i < 3; i++) { const on = 3 - i >= c && c <= 3; K.lantern(g, x + (i - 1) * 34, y, 11, on ? '#e03a26' : '#5a2a1f', on ? .8 : 0); }
     }

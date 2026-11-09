@@ -51,7 +51,7 @@ BX.data.spk = (function () {
     const size = o.size || Math.min(hh * .46, b.w * .42);
     if (o.sub) {
       D.text(g, label, b.x + b.w / 2, top + hh * .4, {size, color: o.fg || '#3a2410', weight: 800, font: o.font});
-      D.text(g, o.sub, b.x + b.w / 2, top + hh * .76, {size: Math.max(9, size * .45), color: o.fg2 || o.fg || '#3a2410', weight: 600});
+      D.text(g, o.sub, b.x + b.w / 2, top + hh * .76, {size: o.subSize || Math.max(9, size * .45), color: o.fg2 || o.fg || '#3a2410', weight: 600, maxW: b.w - 6});
     } else D.text(g, label, b.x + b.w / 2, top + hh / 2 + 1, {size, color: o.fg || '#3a2410', weight: 800, font: o.font});
     g.restore();
   };

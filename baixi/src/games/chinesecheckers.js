@@ -25,13 +25,23 @@ function fillGoalDist(s, b) {   // sum over own marbles of distance to the goal,
   for (let i = 0; i < NC; i++) if (b[i] === s + 1) d += rowD(s, i) + Math.abs(SX[i]) * .35;
   return d;
 }
+/* rays: cells along each direction up to the board edge (for the 隔子跳 variant) */
+const RAY = CELLS.map((c, i) => DIRS.map((_, d) => { const r = []; for (let u = NB[i][d]; u >= 0; u = NB[u][d]) r.push(u); return r; }));
+let FAR = false;   // 隔子跳 / 对称跳 variant (set per game in create)
 function jumps(b, from) {   // all chain-jump destinations from `from` with a path
   const out = new Map(); const q = [from]; out.set(from, [from]);
   for (let k = 0; k < q.length; k++) {
     const u = q[k];
     for (let d = 0; d < 6; d++) {
-      const m = NB[u][d], t = JP[u][d];
-      if (m < 0 || t < 0 || !b[m] || b[t] || out.has(t)) continue;
+      let t = -1;
+      if (!FAR) { const m = NB[u][d]; t = JP[u][d]; if (m < 0 || t < 0 || !b[m]) continue; }
+      else {   // symmetric jump: one marble exactly in the middle, every other cell on the line empty
+        const ray = RAY[u][d]; let m = 0; while (m < ray.length && !b[ray[m]]) m++;
+        const L = 2 * (m + 1); if (m >= ray.length || ray.length < L) continue;
+        let ok = true; for (let j = m + 1; j < L; j++) if (b[ray[j]]) { ok = false; break; }
+        if (!ok) continue; t = ray[L - 1];
+      }
+      if (b[t] || out.has(t)) continue;
       out.set(t, out.get(u).concat(t)); q.push(t);
     }
   }
@@ -68,11 +78,17 @@ function won(b, s, ply) {
 BX.register({
   id: 'chinesecheckers', title: '跳棋', cat: 'heavy', order: 3, sub: '星盘连跳，先占对角',
   desc: '经典六角星跳棋（两人对角）。每方 10 颗弹珠，一步走一格或沿棋子连续跳跃，先把全部弹珠搬进对面三角营的一方获胜。',
-  kind: 'turn', seats: 2, seatNames: ['红方', '蓝方'], seatColors: ['#c23a2b', '#2f5d8a'],
+  kind: 'turn', seats: 2, seatNames: ['红方', '蓝方'], seatColors: ['#c23a2b', '#2f5d8a'], aiDelay: 220,
+  options: [{key: 'jump', label: '跳法', choices: [['classic', '经典跳'], ['far', '隔子跳']], def: 'classic'}],
+  howto: ['点自己的弹珠选中，亮起的孔都能到达（绿=走一格，金=跳跃）；再点目标孔，或直接把弹珠<b>拖</b>到目标孔。',
+    '选中后指向/按住目标孔会先画出完整的跳跃路线；手机上小棋盘第二次点同一孔才确认。',
+    '金色虚线是上一步的路线，空心圈是它出发的位置。💡 提示会标出推荐的一步。',
+    '开局选项「隔子跳」：可以隔着空位跳过一颗棋子，只要两边空位一样多（民间流行玩法）。'],
   rules: `<p><b>棋盘</b>：六角星形棋盘共 121 个孔。两人对局时，双方各占相对的一个三角营，每方 <b>10 颗</b>弹珠。红方先走。</p>
 <p><b>走法</b>：每回合移动自己的一颗弹珠，二选一：</p>
 <ul><li><b>移一格</b>：走到相邻的空孔（六个方向）。</li>
 <li><b>跳跃</b>：沿直线越过紧邻的<b>一颗</b>棋子（自己或对方的都可以），落在其正后方的空孔上；落下后若还能继续跳，可以<b>连续跳跃</b>，路线可以拐弯，在任意一次跳跃后停下。被跳过的棋子不会被吃掉。</li></ul>
+<p><b>隔子跳</b>（可选玩法）：跳跃时被跳的棋子不必紧挨着，只要它正好在起点与落点的正中间、且这条线上其余的孔都是空的即可（对称跳）；同样可以连续跳。</p>
 <p>同一回合不能既移一格又跳跃。弹珠进入对面三角营后，只能在营内移动，不能再离开。</p>
 <p><b>胜负</b>：先把 10 颗弹珠全部移入正对面三角营的一方获胜。<b>防堵规则</b>：如果对方有弹珠一直赖在它的出发营（也就是你的目标营）里不走，只要营内其余的孔都已被你的弹珠占满，也算你获胜（双方各走满 30 步后生效）。</p>
 <p><b>操作</b>：点自己的弹珠选中（亮出所有可达位置），再点目标孔即可；跳跃路线会以虚线显示。</p>`,
@@ -90,20 +106,21 @@ BX.register({
     g.restore();
   },
   create(ctx) {
+    FAR = ctx.opts.jump === 'far';
     const b = new Array(NC).fill(0);
     for (const i of HOME[0]) b[i] = 1; for (const i of HOME[1]) b[i] = 2;
     const st = {b, turn: 0, last: null, moves: 0, over: false, win: null};
     const cv = ctx.canvas();
-    let sel = -1, preview = -1, anim = null, think = 0;
+    let sel = -1, preview = -1, anim = null, think = 0, drag = null, hoverT = -1, hintM = null, hintT = 0;
     const flip = () => ctx.view === 1;
 
     function layout() {
       const W = cv.w, H = cv.h, port = H > W * 1.05;
       const bw = 17.4, bh = 17.4;   // round plate (radius 8.6) around the star
-      if (port) {
-        const ph = 50, f = BX.fit(W, H - 2 * ph - 12, bw, bh, 4);
+      if (port) {   // narrow screens: a hexagonal plate hugging the star instead of the round one -> ~25% bigger holes
+        const pw0 = 14.2, ph0 = 15.6, ph = 50, f = BX.fit(W, H - 2 * ph - 12, pw0, ph0, 4);
         const oy = f.y + ph + 6, pw = Math.min(W - 12, 420), px = (W - pw) / 2;
-        return {s: f.s, cx: f.x + bw / 2 * f.s, cy: oy + bh / 2 * f.s, top: {x: px, y: oy - ph - 2, w: pw, h: ph - 4}, bot: {x: px, y: oy + bh * f.s + 4, w: pw, h: ph - 4}, port};
+        return {s: f.s, cx: f.x + pw0 / 2 * f.s, cy: oy + ph0 / 2 * f.s, top: {x: px, y: oy - ph - 2, w: pw, h: ph - 4}, bot: {x: px, y: oy + ph0 * f.s + 4, w: pw, h: ph - 4}, port, hex: true};
       }
       const PW = BX.clamp(W * .2, 130, 220), f = BX.fit(W - PW - 14, H, bw, bh, 6), ox = (W - (bw * f.s + PW + 14)) / 2;
       const cx = ox + bw / 2 * f.s, cy = f.y + bh / 2 * f.s, px = ox + bw * f.s + 14, top = Math.max(8, cy - bh / 2 * f.s), ph = Math.min(90, (bh * f.s) * .22);
@@ -116,27 +133,47 @@ BX.register({
       return bd < (L.s * .62) ** 2 ? best : -1;
     }
     const myTurn = () => !st.over && ctx.canAct(st.turn);
-    const touchDev = BX.TOUCH.matches;
+    function go(t) { const f = sel; sel = -1; preview = -1; hoverT = -1; drag = null; hintM = null; ctx.act({f, t}, st.turn); }
     ctx.on(cv.cv, 'pointerdown', e => {
       if (!myTurn() || anim) return;
-      const L = layout(), i = cellAt(cv.pos(e), L); if (i < 0) { sel = -1; preview = -1; return; }
-      if (st.b[i] === st.turn + 1) { sel = sel === i ? -1 : i; preview = -1; ctx.sfx('select'); return; }
+      const L = layout(), p = cv.pos(e), i = cellAt(p, L); if (i < 0) { sel = -1; preview = -1; return; }
+      if (st.b[i] === st.turn + 1) {
+        const was = sel === i; sel = i; preview = -1; ctx.sfx('select');
+        drag = {i, x: p.x, y: p.y, x0: p.x, y0: p.y, moved: false, was, id: e.pointerId}; return;
+      }
       if (sel >= 0) {
         const mv = legalFrom(st.b, st.turn, sel);
         if (mv.has(i)) {
-          // small boards (phones): a jump target shows its path first, tap again to confirm
-          if (e.pointerType !== 'mouse' && L.s < 26 && preview !== i) { preview = i; ctx.sfx('tick'); return; }
-          const f = sel; sel = -1; preview = -1; ctx.act({f, t: i}, st.turn); return;
+          // small boards (phones): the target shows its path first, tap again to confirm
+          if (ctx.needConfirm(e) && L.s < 26 && preview !== i) { preview = i; ctx.sfx('tick'); return; }
+          go(i); return;
         }
+        if (!st.b[i]) { ctx.sfx('error'); ctx.buzz(20); }
       }
       sel = -1; preview = -1;
     });
+    ctx.on(cv.cv, 'pointermove', e => {
+      const L = layout(), p = cv.pos(e);
+      if (drag && e.pointerId === drag.id) {
+        drag.x = p.x; drag.y = p.y;
+        if (!drag.moved && Math.abs(p.x - drag.x0) + Math.abs(p.y - drag.y0) > L.s * .45) drag.moved = true;
+        if (drag.moved) { const i = cellAt(p, L); preview = i >= 0 && sel >= 0 && legalFrom(st.b, st.turn, sel).has(i) ? i : -1; }
+      } else if (e.pointerType === 'mouse') hoverT = cellAt(p, L);
+    });
+    ctx.on(cv.cv, 'pointerleave', () => { hoverT = -1; });
+    const up = e => {
+      if (!drag || e.pointerId !== drag.id) return;
+      const d = drag; drag = null;
+      if (d.moved) { if (preview >= 0 && myTurn() && !anim && sel === d.i) go(preview); else preview = -1; }
+      else if (d.was) sel = -1;   // tap on the already selected marble: deselect
+    };
+    ctx.on(cv.cv, 'pointerup', up); ctx.on(cv.cv, 'pointercancel', up);
 
     function status() {
       const inGoal = s => GOAL[s].filter(i => st.b[i] === s + 1).length;
       ctx.info(0, '入营 ' + inGoal(0) + '/10'); ctx.info(1, '入营 ' + inGoal(1) + '/10');
       if (st.over) return ctx.status(st.win != null ? ctx.name(st.win) + ' 全部入营' : '对局结束');
-      if (ctx.canAct(st.turn)) ctx.status((ctx.hotseat ? ctx.name(st.turn) + '走棋' : '轮到你走棋') + ' · 点弹珠再点目标');
+      if (ctx.canAct(st.turn)) ctx.status((ctx.hotseat ? ctx.name(st.turn) + '走棋' : '轮到你走棋') + (st.moves < 4 ? ' · 点弹珠再点目标，或直接拖动' : ''));
       else ctx.status(ctx.isAI(st.turn) ? ctx.name(st.turn) + ' 思考中…' : '等待 ' + ctx.name(st.turn) + ' 走棋…');
     }
 
@@ -203,8 +240,8 @@ BX.register({
         st.b[a.f] = 0; st.b[a.t] = s + 1; st.last = {path}; st.moves++; sel = -1; preview = -1;
         if (!ctx.fast) {
           const an = {path, k: 0, s, hop: -1}; anim = an;
-          const n = path.length - 1, step = !NB[path[0]].includes(path[1]) ? 260 : 200;
-          ctx.anim(n === 1 ? step : n * 240, k => {
+          const n = path.length - 1, step = !NB[path[0]].includes(path[1]) ? 230 : 170;
+          ctx.anim(n === 1 ? step : n * 190, k => {
             an.k = k; const h = Math.min(n - 1, Math.floor(k * n));
             if (h !== an.hop) { an.hop = h; if (n > 1 || !NB[path[0]].includes(path[1])) ctx.sfx('hit'); }
           }, () => { if (anim === an) anim = null; ctx.sfx('place'); ctx.poke(); }, k => k);
@@ -217,7 +254,10 @@ BX.register({
       },
       aiMove,
       onTurn: status,
-      onView() { sel = -1; },
+      onView() { sel = -1; preview = -1; },
+      showHint(a) { if (a) { hintM = {f: a.f, t: a.t}; hintT = performance.now(); } },
+      key(e) { if (e.code === 'Escape') { sel = -1; preview = -1; hintM = null; } },
+      __xy(i) { const r = cv.cv.getBoundingClientRect(), [x, y] = P(i, layout()); return [r.x + x, r.y + y]; },   // test helper
       frame(dt) {
         const g = cv.g; cv.clear(); think += dt;
         const L = layout(), s = L.s, R = s * .4;
@@ -225,10 +265,12 @@ BX.register({
         const k = flip() ? -1 : 1;
         g.save();
         g.shadowColor = 'rgba(0,0,0,.5)'; g.shadowBlur = 20; g.shadowOffsetY = 6;
-        const rad = s * 8.65; g.fillStyle = '#8a5a30'; D.circle(g, L.cx, L.cy, rad); g.fill(); g.restore();
-        g.save(); D.circle(g, L.cx, L.cy, rad); g.clip(); D.wood(g, L.cx - rad, L.cy - rad, rad * 2, rad * 2, {seed: 33, base: '#c58e52', dark: '#8a5a2a'}); g.restore();
-        g.strokeStyle = 'rgba(60,35,12,.6)'; g.lineWidth = 3; D.circle(g, L.cx, L.cy, rad - 2); g.stroke();
-        const star = () => { g.beginPath(); for (let t = 0; t < 2; t++) { const a0 = t ? Math.PI / 2 : -Math.PI / 2; for (let j = 0; j <= 3; j++) { const a = a0 + j * 2 * Math.PI / 3, x = L.cx + Math.cos(a) * s * 8.1, y = L.cy + Math.sin(a) * s * 8.1; j ? g.lineTo(x, y) : g.moveTo(x, y); } g.closePath(); } };
+        const rad = s * 8.65, plate = () => { if (!L.hex) { D.circle(g, L.cx, L.cy, rad); return; } g.beginPath(); for (let j = 0; j < 6; j++) { const a = j * Math.PI / 3, x = L.cx + Math.cos(a) * s * 8.15, y = L.cy + Math.sin(a) * s * 7.75; j ? g.lineTo(x, y) : g.moveTo(x, y); } g.closePath(); };
+        g.fillStyle = '#8a5a30'; plate(); g.fill(); g.restore();
+        g.save(); plate(); g.clip(); D.wood(g, L.cx - rad, L.cy - rad, rad * 2, rad * 2, {seed: 33, base: '#c58e52', dark: '#8a5a2a'}); g.restore();
+        g.strokeStyle = 'rgba(60,35,12,.6)'; g.lineWidth = 3; plate(); g.stroke();
+        const SR = L.hex ? 7.75 : 8.1;
+        const star = () => { g.beginPath(); for (let t = 0; t < 2; t++) { const a0 = t ? Math.PI / 2 : -Math.PI / 2; for (let j = 0; j <= 3; j++) { const a = a0 + j * 2 * Math.PI / 3, x = L.cx + Math.cos(a) * s * SR, y = L.cy + Math.sin(a) * s * SR; j ? g.lineTo(x, y) : g.moveTo(x, y); } g.closePath(); } };
         star(); g.fillStyle = '#f0deb4'; g.fill(); g.strokeStyle = 'rgba(90,55,20,.55)'; g.lineWidth = 2; g.stroke();
         // coloured home triangles
         for (const [seat, list] of [[0, HOME[0]], [1, HOME[1]]]) {
@@ -247,23 +289,32 @@ BX.register({
         }
         // last move path
         const lastPath = st.last && !anim ? st.last.path : null;
-        if (lastPath) drawPath(g, L, lastPath, 'rgba(200,160,82,.85)');
+        if (lastPath) { drawPath(g, L, lastPath, 'rgba(200,160,82,.85)'); const [x, y] = P(lastPath[0], L); g.strokeStyle = 'rgba(200,160,82,.95)'; g.lineWidth = Math.max(2, s * .1); D.circle(g, x, y, R * .9); g.stroke(); }
         // legal targets and preview path
         let tg = null;
         if (sel >= 0 && myTurn()) {
           tg = legalFrom(st.b, st.turn, sel);
-          for (const [t, path] of tg) {
+          if (ctx.pref('hints')) for (const [t, path] of tg) {
             const [x, y] = P(t, L); const jump = path.length > 2 || !NB[path[0]].includes(path[1]);
             D.hint(g, x, y, R * .55, jump ? 'rgba(200,160,82,.85)' : 'rgba(63,140,110,.8)');
           }
-          if (preview >= 0 && tg.has(preview)) drawPath(g, L, tg.get(preview), C.red, true);
+          const pv = preview >= 0 ? preview : hoverT;
+          if (pv >= 0 && tg.has(pv)) { drawPath(g, L, tg.get(pv), C.red, true); const [x, y] = P(pv, L); g.strokeStyle = C.red; g.lineWidth = 2; D.circle(g, x, y, R * .95); g.stroke(); }
+        }
+        if (hintM && myTurn() && st.b[hintM.f] === st.turn + 1) {
+          const k = (performance.now() - hintT) / 1000, al = .55 + .4 * Math.sin(k * 6);
+          const hp = legalFrom(st.b, st.turn, hintM.f).get(hintM.t); if (hp) drawPath(g, L, hp, 'rgba(63,160,120,' + al + ')', true);
+          for (const c of [hintM.f, hintM.t]) { const [x, y] = P(c, L); g.strokeStyle = 'rgba(63,160,120,' + al + ')'; g.lineWidth = Math.max(2.5, s * .14); D.circle(g, x, y, R * 1.25); g.stroke(); }
         }
         // marbles
         const moving = anim ? anim.path[anim.path.length - 1] : -1;
         for (let i = 0; i < NC; i++) {
           const v = st.b[i]; if (!v || i === moving) continue;
-          const [x, y] = P(i, L); marble(g, x, y, R, v - 1, i === sel);
+          const [x, y] = P(i, L);
+          if (drag && drag.moved && i === drag.i) { g.globalAlpha = .35; marble(g, x, y, R, v - 1, false); g.globalAlpha = 1; continue; }
+          marble(g, x, y, R, v - 1, i === sel);
         }
+        if (drag && drag.moved && st.b[drag.i]) marble(g, drag.x, drag.y - (BX.TOUCH.matches ? s * .8 : 0), R * 1.15, st.b[drag.i] - 1, true);
         if (anim) {
           const p = anim.path, n = p.length - 1, kk = anim.k * n, h = Math.min(n - 1, Math.floor(kk)), f = kk - h;
           const [x1, y1] = P(p[h], L), [x2, y2] = P(p[h + 1], L);
@@ -276,7 +327,11 @@ BX.register({
         // win glow
         if (st.over && st.win != null) for (const i of GOAL[st.win]) { const [x, y] = P(i, L); g.strokeStyle = C.gold2; g.lineWidth = 2.5; D.circle(g, x, y, R * 1.12); g.stroke(); }
         panels(g, L);
-        if (!ctx.ended && st.moves === 0 && myTurn()) D.text(g, '点自己的弹珠，再点亮起的目标孔', L.cx, L.cy, {size: Math.max(12, s * .55), color: 'rgba(60,35,12,.55)', font: 'serif'});
+        if (!ctx.ended && st.moves === 0 && myTurn() && sel < 0) {
+          const fs = Math.max(12, Math.min(16, s * .55)), tw = Math.min(s * 13, fs * 15);
+          g.globalAlpha = .92; D.paper(g, L.cx - tw / 2, L.cy - fs * 1.1, tw, fs * 2.2, {r: 8}); g.globalAlpha = 1;
+          D.text(g, '点（或拖）自己的弹珠到亮起的孔', L.cx, L.cy, {size: fs, color: C.ink, font: 'serif', weight: 700, maxW: tw - 12});
+        }
       },
     };
     function drawPath(g, L, path, color, dashed) {

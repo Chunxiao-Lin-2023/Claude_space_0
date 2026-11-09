@@ -7,6 +7,8 @@ for (let s = 4; s <= 17; s++) KEYS.push('s' + s);
 for (let a = 1; a <= 6; a++) for (let b = a + 1; b <= 6; b++) KEYS.push('c' + a + b);
 const KSET = new Set(KEYS);
 const CHIPV = [10, 50, 100, 500];
+const BTNS = ['undo', 'clear', 'rep', 'dbl', 'done'];
+const pct = p => (p * 100 >= 10 ? Math.round(p * 100) : (p * 100).toFixed(1)) + '%';
 const CHIPC = {10: '#e9e1cf', 50: '#3f7f6b', 100: '#b23a2b', 500: '#1f1a2e'};
 const START = 1000;
 const PERS = ['', '随性', '稳健', '算计'];
@@ -130,7 +132,8 @@ BX.register({
 <li><b>总和</b>：4 或 17 1 赔 50；5/16 1 赔 18；6/15 1 赔 14；7/14 1 赔 12；8/13 1 赔 8；9/12 与 10/11 1 赔 6。</li>
 </ul>
 <p>局数可选 8 / 12 / 20 局。全部打完（或所有人输光）后<b>筹码最多者获胜</b>；独自一人对庄时，结束时筹码<b>多于 1000</b> 即算赢。</p>
-<p>操作：底部选筹码面额，点格子加注；「撤销」退回最后一枚，「清空」全部退回，「重复」照上局押法再押一次。电脑玩家性格：初级<b>随性</b>、中级<b>稳健</b>、高级<b>算计</b>（领先时保守、落后时冒险追分）。</p>`,
+<p>操作：底部选筹码面额，点格子加注；「撤销」退回最后一枚，「清空」全部退回，「重复」照上局押法再押一次，「加倍」把本局已押的注全部翻倍；长按（电脑上右键）某格可撤回该格的注。点左上的路单可查看近局统计（大小单双比例、冷热点数）。电脑玩家性格：初级<b>随性</b>、中级<b>稳健</b>、高级<b>算计</b>（领先时保守、落后时冒险追分）。</p>`,
+  howto: ['先在底部选筹码面额，再点台面格子下注（可押多格、同格连点加码）；格子上标着赔率。', '「撤销」退一枚 ·「清空」全退 ·「重复」照上局再押 ·「加倍」本局注翻倍；<b>长按</b>（电脑右键）某格撤回该格的注。', '押好后按「下注完成」，所有人确认后庄家开盅；中奖格会发光。', '点左上路单看统计：大小单双比例、热号（常出）与冷号；💡 提示会标出推荐押法。', '键盘：1–4 选筹码，B/S/O/E 押大/小/单/双，Z 撤销，C 清空，R 重复，X 加倍，回车 完成。'],
   icon(g, w, h) {
     D.wood(g, 0, 0, w, h, {base: '#5a2416', dark: '#2a0e08', seed: 5});
     g.fillStyle = '#1f5a43'; D.rr(g, w * .05, h * .58, w * .9, h * .38, 8); g.fill();
@@ -146,12 +149,13 @@ BX.register({
   create(ctx) {
     const n = ctx.n, rounds = ctx.opts.rounds || 12;
     const st = {round: 1, rounds, phase: 'bet', chips: Array(n).fill(START), bets: Array(n).fill(null).map(() => ({})), done: Array(n).fill(false),
-      prev: Array(n).fill(null).map(() => ({})), dice: null, delta: Array(n).fill(0), hist: [], over: false};
+      prev: Array(n).fill(null).map(() => ({})), dice: null, delta: Array(n).fill(0), hist: [], over: false,
+      best: Array(n).fill(0), won: Array(n).fill(0), played: Array(n).fill(0)};
     const cv = ctx.canvas();
     /* ---------- local (visual) state ---------- */
     const drafts = {};                      // seat -> {k: amount}
     const stacks = {};                      // seat -> [[k, v], ...] for 撤销
-    let chipSel = 50, scroll = 0, lastL = null;
+    let chipSel = 50, scroll = 0, lastL = null, lastPick = null, hintB = null, hintT = 0;
     const vis = {lift: 0, shake: 0, shown: true, banner: 0, bannerText: '', resultK: 0, pulse: 0};
     const shownChips = st.chips.slice();
     const fly = [], floats = [];
@@ -207,15 +211,15 @@ BX.register({
         L.chips = CHIPV.map((v, i) => ({v, x: cx0 + s / 2 + i * (s + 6), y: T.y + T.h / 2, r: s / 2}));
         const balX = cx0 + 4 * (s + 6) + 4, balW = BX.clamp(T.w * .16, 74, 130);
         L.bal = {x: balX, y: T.y + T.h / 2, w: balW};
-        const bx0 = balX + balW, bw = Math.min(118, (T.x + T.w - bx0 - 8) / 4 - 6);
-        L.btns = ['undo', 'clear', 'rep', 'done'].map((id, i) => ({id, x: T.x + T.w - 8 - (4 - i) * (bw + 6) + 6, y: T.y + (T.h - Math.min(T.h - 12, 48)) / 2, w: bw, h: Math.min(T.h - 12, 48)}));
+        const bx0 = balX + balW, bw = Math.min(112, (T.x + T.w - bx0 - 8) / 5 - 6);
+        L.btns = BTNS.map((id, i) => ({id, x: T.x + T.w - 8 - (5 - i) * (bw + 6) + 6, y: T.y + (T.h - Math.min(T.h - 12, 48)) / 2, w: bw, h: Math.min(T.h - 12, 48)}));
       } else {
         const r1 = T.h * .48, s = Math.min(r1 - 8, 48);
         L.chips = CHIPV.map((v, i) => ({v, x: T.x + 10 + s / 2 + i * (s + 8), y: T.y + r1 / 2 + 2, r: s / 2}));
         const balX = T.x + 10 + 4 * (s + 8) + 4;
         L.bal = {x: balX, y: T.y + r1 / 2 + 2, w: T.x + T.w - balX - 6};
-        const bh = Math.min(T.h - r1 - 8, 46), bw = (T.w - 12 - 18) / 4;
-        L.btns = ['undo', 'clear', 'rep', 'done'].map((id, i) => ({id, x: T.x + 6 + i * (bw + 6), y: T.y + r1 + 2, w: bw, h: bh}));
+        const bh = Math.min(T.h - r1 - 8, 46), bw = (T.w - 12 - 24) / 5;
+        L.btns = BTNS.map((id, i) => ({id, x: T.x + 6 + i * (bw + 6), y: T.y + r1 + 2, w: bw, h: bh}));
       }
       scroll = BX.clamp(scroll, 0, L.scrollMax);
       lastL = L; return L;
@@ -224,13 +228,28 @@ BX.register({
 
     /* ---------- input ---------- */
     let down = null;
-    ctx.on(cv.cv, 'pointerdown', e => { const p = cv.pos(e); down = {x: p.x, y: p.y, sy: scroll, moved: false, id: e.pointerId}; });
+    ctx.on(cv.cv, 'pointerdown', e => {
+      const p = cv.pos(e); if (e.button === 2) return;
+      const d = down = {x: p.x, y: p.y, sy: scroll, moved: false, id: e.pointerId};
+      d.lp = ctx.after(520, () => { if (down === d && !d.moved) { d.long = true; removeCellAt(d.x, d.y); } });
+    });
+    ctx.on(cv.cv, 'contextmenu', e => { e.preventDefault(); const p = cv.pos(e); removeCellAt(p.x, p.y); });
+    ctx.on(window, 'keydown', e => {
+      if (e.repeat || e.metaKey || e.ctrlKey || e.altKey) return;
+      const c = e.code, L = lastL || layout();
+      const m = /^Digit([1-4])$/.exec(c);
+      if (m) { chipSel = CHIPV[+m[1] - 1]; ctx.sfx('chip'); updStatus(); return; }
+      const q = {KeyB: 'big', KeyS: 'small', KeyO: 'odd', KeyE: 'even'}[c];
+      if (q) { placeBet(q, L); return; }
+      const b = {KeyZ: 'undo', Backspace: 'undo', KeyC: 'clear', KeyR: 'rep', KeyX: 'dbl', Enter: 'done', Space: 'done', NumpadEnter: 'done'}[c];
+      if (b && myTurn()) { e.preventDefault(); button(b, L); }
+    });
     ctx.on(cv.cv, 'pointermove', e => {
       if (!down || down.id !== e.pointerId) return; const p = cv.pos(e), L = lastL || layout();
       if (Math.abs(p.y - down.y) > 8) down.moved = true;
       if (down.moved && L.scrollMax > 0) scroll = BX.clamp(down.sy - (p.y - down.y), 0, L.scrollMax);
     });
-    ctx.on(cv.cv, 'pointerup', e => { if (!down || down.id !== e.pointerId) return; const d = down; down = null; if (!d.moved) tap(d.x, d.y); });
+    ctx.on(cv.cv, 'pointerup', e => { if (!down || down.id !== e.pointerId) return; const d = down; down = null; ctx.cancel(d.lp); if (!d.moved && !d.long) tap(d.x, d.y); });
     ctx.on(cv.cv, 'pointercancel', () => down = null);
     ctx.on(cv.cv, 'wheel', e => { const L = lastL; if (L && L.scrollMax > 0) { scroll = BX.clamp(scroll + e.deltaY, 0, L.scrollMax); e.preventDefault(); } }, {passive: false});
     const inR = (p, r) => p.x >= r.x && p.y >= r.y && p.x <= r.x + r.w && p.y <= r.y + r.h;
@@ -238,11 +257,23 @@ BX.register({
       const L = lastL || layout(), p = {x, y};
       for (const c of L.chips) if (Math.hypot(x - c.x, y - c.y) < c.r + 4) { chipSel = c.v; ctx.sfx('chip'); return; }
       for (const b of L.btns) if (inR(p, b)) { button(b.id, L); return; }
+      if (inR(p, L.panel)) { openStats(); return; }
       if (inR(p, L.board)) {
         const cy = y - L.board.y + scroll, cx = x - L.board.x;
         const c = L.cells.find(c => cx >= c.x && cx < c.x + c.w && cy >= c.y && cy < c.y + c.h);
         if (c) placeBet(c.k, L);
       }
+    }
+    function cellAt(L, x, y) {
+      if (!inR({x, y}, L.board)) return null;
+      const cy = y - L.board.y + scroll, cx = x - L.board.x;
+      return L.cells.find(c => cx >= c.x && cx < c.x + c.w && cy >= c.y && cy < c.y + c.h) || null;
+    }
+    function removeCellAt(x, y) {
+      const L = lastL || layout(), c = cellAt(L, x, y); if (!c || !myTurn()) return;
+      const s = me(), dr = draft(s); if (!dr[c.k]) return;
+      const v = dr[c.k]; delete dr[c.k]; stacks[s] = (stacks[s] || []).filter(e => e[0] !== c.k);
+      ctx.sfx('swish'); ctx.toast(`撤回「${NAME(c.k)}」${v}`); updStatus();
     }
     function remaining(s) { return st.chips[s] - sumBets(draft(s)); }
     function placeBet(k, L) {
@@ -251,7 +282,7 @@ BX.register({
       const s = me(), v = chipSel;
       if (remaining(s) < v) { const r = remaining(s); if (r >= 10) { const vv = CHIPV.filter(c => c <= r).pop(); chipSel = vv; return placeBet(k, L); } ctx.sfx('error'); ctx.toast('筹码不足'); return; }
       draft(s)[k] = (draft(s)[k] || 0) + v; (stacks[s] = stacks[s] || []).push([k, v]);
-      ctx.sfx('chip');
+      ctx.sfx('chip'); lastPick = k;
       const ch = L.chips.find(c => c.v === v), to = cellScreen(L, k);
       if (ch && to) fly.push({x0: ch.x, y0: ch.y, x1: to.x, y1: to.y, v, t0: now(), dur: 220});
       updStatus();
@@ -265,6 +296,11 @@ BX.register({
         const pv = st.prev[s]; if (!pv || !sumBets(pv)) { ctx.toast('上局没有下注'); return; }
         if (sumBets(pv) > st.chips[s]) { ctx.toast('筹码不足以重复上局'); return; }
         drafts[s] = Object.assign({}, pv); stacks[s] = Object.entries(pv); ctx.sfx('chip');
+      } else if (id === 'dbl') {
+        const t = sumBets(dr); if (!t) { ctx.toast('先下注再加倍'); return; }
+        if (remaining(s) < t) { ctx.sfx('error'); ctx.toast('筹码不足以加倍'); return; }
+        for (const k in dr) { (stacks[s] = stacks[s] || []).push([k, dr[k]]); dr[k] *= 2; }
+        ctx.sfx('coin');
       } else if (id === 'done') {
         const b = Object.assign({}, dr); ctx.sfx('select');
         ctx.act({t: 'bet', b}, s);
@@ -326,7 +362,10 @@ BX.register({
       if (st.over) return ctx.status('终局 · ' + ranking());
       if (st.phase === 'bet') {
         const s = me();
-        if (myTurn()) { const t = sumBets(draft(s)); return ctx.status(rd + (ctx.hotseat ? ctx.name(s) + ' ' : '') + (t ? `已押 <b>${t}</b>，按「下注完成」确认` : '选筹码，点格子下注')); }
+        if (myTurn()) {
+          const t = sumBets(draft(s)), lp = lastPick && draft(s)[lastPick] ? `${NAME(lastPick)} ${ODDS(lastPick)} 胜率 ${pct(PROB[lastPick].p)} · ` : '';
+          return ctx.status(rd + (ctx.hotseat ? ctx.name(s) + ' ' : '') + (t ? `${lp}共押 <b>${t}</b>，按「下注完成」` : `筹码 ${chipSel}，点格子下注`));
+        }
         const wait = st.done.map((d, i) => d ? null : ctx.name(i)).filter(Boolean);
         return ctx.status(rd + (wait.length ? '等待 ' + wait.join('、') + ' 下注…' : '庄家摇盅…'));
       }
@@ -393,8 +432,16 @@ BX.register({
         if (m2) { const pt = (now() - vis.pulse) / 1000, a = .35 + .25 * Math.sin(pt * 6); g.save(); g.shadowColor = '#ffd76a'; g.shadowBlur = 16; g.strokeStyle = `rgba(255,215,106,${.6 + a})`; g.lineWidth = 3; D.rr(g, x, y, w, h, Math.min(8, m * .15)); g.stroke(); g.restore(); g.fillStyle = `rgba(255,215,106,${a * .35})`; g.fill(); }
         else { g.fillStyle = 'rgba(0,0,0,.28)'; D.rr(g, x, y, w, h, Math.min(8, m * .15)); g.fill(); }
       }
+      if (k[0] === 'n' && hc && ctx.pref('hints')) {
+        const f = +k[1], tag = f === hc.hot ? '热' : f === hc.cold ? '冷' : '';
+        if (tag) { const tr = BX.clamp(m * .15, 7, 11); g.fillStyle = tag === '热' ? '#c23a2b' : '#2f5d8a'; D.circle(g, x + tr + 3, y + tr + 3, tr); g.fill(); g.strokeStyle = '#f6e7c8'; g.lineWidth = 1; g.stroke(); D.text(g, tag, x + tr + 3, y + tr + 3.5, {size: tr * 1.2, color: '#fff', weight: 800}); }
+      }
+      if (hintB && hintB[k] && st.phase === 'bet') {
+        const a = .55 + .4 * Math.sin((now() - hintT) / 160);
+        g.strokeStyle = `rgba(110,230,170,${a})`; g.lineWidth = 3.5; D.rr(g, x + 1, y + 1, w - 2, h - 2, Math.min(8, m * .15)); g.stroke();
+      }
       // bets on this cell
-      const v = me(), cr = BX.clamp(m * .2, 9, 16);
+      const v = me(), cr = BX.clamp(m * .22, 10, 17);
       let mine = 0;
       if (st.phase === 'bet') mine = st.done[v] ? (st.bets[v][k] || 0) : (ctx.isLocal(v) ? draft(v)[k] || 0 : 0);
       else mine = (st.prev[v] || {})[k] || 0;
@@ -444,7 +491,8 @@ BX.register({
         D.text(g, '请下注', L.res.x, L.res.y, {size: 15, color: 'rgba(246,231,200,.75)', font: 'serif', weight: 700});
       }
       // history road
-      const Hh = L.hist, cnt = Math.max(1, Math.floor(Hh.w / (Hh.h + 3)));
+      const Hh = L.hist, cnt0 = Math.max(1, Math.floor(Hh.w / (Hh.h + 3))), cnt = L.portrait ? Math.max(1, cnt0 - 1) : cnt0;
+      if (L.portrait) { const px = Hh.x + cnt * (Hh.h + 3), pw = Hh.x + Hh.w - px; g.fillStyle = 'rgba(230,197,125,.18)'; D.rr(g, px, Hh.y, pw, Hh.h, Hh.h / 2); g.fill(); g.strokeStyle = 'rgba(230,197,125,.55)'; g.lineWidth = 1; g.stroke(); D.text(g, '统计›', px + pw / 2, Hh.y + Hh.h / 2 + 1, {size: 11, color: '#e6c57d', weight: 700, maxW: pw - 2}); }
       const hs = (vis.shown || st.phase === 'bet') ? st.hist : st.hist.slice(0, -1);
       const lst = hs.slice(-cnt);
       for (let i = 0; i < cnt; i++) {
@@ -456,7 +504,9 @@ BX.register({
       // players
       const Pl = L.players, rh = Math.min(34, Pl.h / Math.max(1, n));
       // bet slip (landscape: free space under the player list)
-      const slipY = Pl.y + n * rh + 10, slipH = Pl.y + Pl.h - slipY;
+      const statH = !L.portrait && Pl.h - n * rh > 300 ? Math.min(176, Pl.h - n * rh - 140) : 0;
+      if (statH) drawStats(g, {x: Pl.x, y: Pl.y + Pl.h - statH, w: Pl.w, h: statH});
+      const slipY = Pl.y + n * rh + 10, slipH = Pl.y + Pl.h - statH - slipY;
       if (!L.portrait && slipH > 60) {
         const v = me(), b = st.phase === 'bet' ? (st.done[v] ? st.bets[v] : ctx.isLocal(v) ? draft(v) : {}) : (st.prev[v] || {});
         const ks = Object.keys(b), lh = 20, maxN = Math.floor((slipH - 30) / lh);
@@ -466,7 +516,7 @@ BX.register({
         ks.slice(0, maxN).forEach((k, i) => {
           const y = slipY + 34 + i * lh, res = st.phase === 'reveal' && vis.shown && st.dice ? pay(k, st.dice) : -1;
           D.text(g, NAME(k), Pl.x + 10, y, {size: 13, color: '#f3e2c0', align: 'left'});
-          D.text(g, ODDS(k), Pl.x + Pl.w * .42, y, {size: 11, color: 'rgba(243,226,192,.5)', align: 'left'});
+          D.text(g, ODDS(k) + ' · ' + pct(PROB[k].p), Pl.x + Pl.w * .36, y, {size: 11, color: 'rgba(243,226,192,.5)', align: 'left', maxW: Pl.w * .4});
           D.text(g, res < 0 ? String(b[k]) : res ? '+' + b[k] * res : '−' + b[k], Pl.x + Pl.w - 8, y, {size: 13, color: res < 0 ? '#e6c57d' : res ? '#ffe08a' : '#e88a7a', align: 'right', weight: 700});
         });
         if (ks.length > maxN) D.text(g, '…', Pl.x + Pl.w / 2, slipY + 34 + maxN * lh, {size: 13, color: '#f3e2c0'});
@@ -484,6 +534,68 @@ BX.register({
           const dl = st.delta[s]; D.text(g, (dl > 0 ? '+' : '') + dl, Pl.x + Pl.w * .62, mid, {size: fs - 1, color: dl > 0 ? '#ffe08a' : '#e88a7a', weight: 700});
         }
       }
+    }
+    /* ---------- statistics (路单) ---------- */
+    function statsOf(N) {
+      const hs = (vis.shown || st.phase === 'bet') ? st.hist : st.hist.slice(0, -1), H = hs.slice(-N);
+      const r = {n: H.length, big: 0, small: 0, tri: 0, odd: 0, even: 0, face: [0, 0, 0, 0, 0, 0, 0], sums: {}};
+      for (const d of H) {
+        const s = d[0] + d[1] + d[2];
+        if (isTri(d)) r.tri++; else { if (s >= 11) r.big++; else r.small++; if (s % 2) r.odd++; else r.even++; }
+        for (const f of d) r.face[f]++;
+        r.sums[s] = (r.sums[s] || 0) + 1;
+      }
+      // current streak of 大/小
+      let sk = 0, sw = ''; for (let i = H.length - 1; i >= 0; i--) { const w = resWord(H[i]); if (!sw) sw = w; if (w !== sw) break; sk++; }
+      r.streak = sk; r.sw = sw; r.H = H;
+      return r;
+    }
+    function hotCold() {
+      const r = statsOf(20); if (r.n < 6) return null;
+      let hot = 1, cold = 1; for (let f = 2; f <= 6; f++) { if (r.face[f] > r.face[hot]) hot = f; if (r.face[f] < r.face[cold]) cold = f; }
+      return r.face[hot] === r.face[cold] ? null : {hot, cold};
+    }
+    let hc = null;
+    function drawStats(g, R) {
+      const r = statsOf(30), cream = '#f3e2c0', gold = '#e6c57d';
+      g.strokeStyle = 'rgba(200,160,82,.35)'; g.lineWidth = 1; g.beginPath(); g.moveTo(R.x + 4, R.y); g.lineTo(R.x + R.w - 4, R.y); g.stroke();
+      D.text(g, '路单统计', R.x + 6, R.y + 14, {size: 13, color: 'rgba(243,226,192,.7)', align: 'left', font: 'serif'});
+      D.text(g, r.n ? `近 ${r.n} 局 · 点此看详情` : '尚无开盅记录', R.x + R.w - 6, R.y + 14, {size: 11, color: 'rgba(243,226,192,.5)', align: 'right'});
+      if (!r.n) return;
+      const bar = (y, a, b, c, la, lb, ca, cb) => {
+        const x0 = R.x + 30, w = R.w - 60, t = a + b + c || 1;
+        D.text(g, la, R.x + 16, y, {size: 13, color: cream, weight: 800, font: 'serif'}); D.text(g, lb, R.x + R.w - 16, y, {size: 13, color: cream, weight: 800, font: 'serif'});
+        g.fillStyle = ca; g.fillRect(x0, y - 7, w * a / t, 14); g.fillStyle = '#c8a052'; g.fillRect(x0 + w * a / t, y - 7, w * c / t, 14); g.fillStyle = cb; g.fillRect(x0 + w * (a + c) / t, y - 7, w * b / t, 14);
+        D.text(g, a + '', x0 + 12, y + 1, {size: 11, color: '#fff', weight: 700}); D.text(g, b + '', x0 + w - 12, y + 1, {size: 11, color: '#fff', weight: 700});
+      };
+      bar(R.y + 38, r.small, r.big, r.tri, '小', '大', '#2f5d8a', '#b23a2b');
+      bar(R.y + 62, r.odd, r.even, r.tri, '单', '双', '#3f7f6b', '#5a6f3a');
+      if (r.streak >= 2) D.text(g, `${r.sw} 已连开 ${r.streak} 局`, R.x + R.w / 2, R.y + 84, {size: 11, color: gold});
+      const ds = Math.min(26, (R.w - 20) / 6 - 8), y0 = R.y + 96, h2 = hotCold();
+      for (let f = 1; f <= 6; f++) {
+        const cx = R.x + 10 + (f - .5) * (R.w - 20) / 6;
+        D.die(g, cx - ds / 2, y0, ds, f);
+        if (h2 && (f === h2.hot || f === h2.cold)) { g.strokeStyle = f === h2.hot ? '#ff7a5c' : '#7ab3ff'; g.lineWidth = 2; D.rr(g, cx - ds / 2 - 3, y0 - 3, ds + 6, ds + 6, 6); g.stroke(); }
+        D.text(g, r.face[f] + '次', cx, y0 + ds + 12, {size: 11, color: h2 && f === h2.hot ? '#ffb39e' : h2 && f === h2.cold ? '#a9cbff' : cream});
+      }
+      if (h2 && R.h > 150) D.text(g, `热号 ${h2.hot} · 冷号 ${h2.cold}（近 20 局）`, R.x + R.w / 2, y0 + ds + 30, {size: 11, color: 'rgba(243,226,192,.6)'});
+    }
+    function openStats() {
+      const r = statsOf(30), h2 = hotCold();
+      if (!r.n) { ctx.toast('还没有开过盅'); return; }
+      const P = (a) => r.n ? Math.round(a / r.n * 100) + '%' : '-';
+      const col = w => w === '大' ? '#b23a2b' : w === '小' ? '#2f5d8a' : '#a8803a';
+      const road = r.H.slice().reverse().slice(0, 12).map((d, i) => { const s = d[0] + d[1] + d[2], w = resWord(d); return `<tr><td>${st.round - (st.phase === 'bet' ? 1 : 0) - i}</td><td>${d.join(' · ')}</td><td><b>${s}</b></td><td><b style="color:${col(w)}">${w}</b></td><td>${isTri(d) ? '围' : s % 2 ? '单' : '双'}</td></tr>`; }).join('');
+      const faces = BX.range(6).map(i => `<td style="${h2 && i + 1 === h2.hot ? 'color:#c23a2b;font-weight:800' : h2 && i + 1 === h2.cold ? 'color:#2f5d8a;font-weight:800' : ''}">${i + 1}点<br>${r.face[i + 1]}次</td>`).join('');
+      const sums = Object.keys(r.sums).sort((a, b) => r.sums[b] - r.sums[a] || a - b).slice(0, 4).map(s => `${s}（${r.sums[s]}次）`).join('、');
+      BX.modal({title: `路单统计 · 近 ${r.n} 局`, dismiss: 1, width: 440, buttons: [{label: '知道了', value: 1}],
+        html: `<div style="text-align:left;font-size:14px;line-height:1.6">
+<p>小 <b>${r.small}</b>（${P(r.small)}） · 大 <b>${r.big}</b>（${P(r.big)}） · 围 <b>${r.tri}</b><br>单 <b>${r.odd}</b>（${P(r.odd)}） · 双 <b>${r.even}</b>（${P(r.even)}）${r.streak >= 2 ? `<br>「${r.sw}」已连开 ${r.streak} 局` : ''}</p>
+<table style="width:100%;text-align:center;border-collapse:collapse;margin:6px 0"><tr>${faces}</tr></table>
+${h2 ? `<p>热号 <b style="color:#c23a2b">${h2.hot}</b> · 冷号 <b style="color:#2f5d8a">${h2.cold}</b>（近 20 局出现次数）</p>` : ''}
+<p>常开总和：${sums}</p>
+<table style="width:100%;text-align:center;border-collapse:collapse;font-size:13px"><tr style="opacity:.7"><td>局</td><td>骰</td><td>和</td><td>大小</td><td>单双</td></tr>${road}</table>
+<p style="opacity:.7;font-size:12px">骰子没有记忆：每局各点数出现机会均等，统计仅供参考。押大小/单双的庄家优势最小（约 2.8%）。</p></div>`});
     }
     function drawTray(g, L) {
       const T = L.tray;
@@ -503,9 +615,9 @@ BX.register({
         D.text(g, (ctx.hotseat ? ctx.name(s) : '可用'), B.x, B.y - fs * .7, {size: fs * .85, color: 'rgba(243,226,192,.7)', align: 'left', maxW: B.w});
         D.text(g, String(st.phase === 'bet' ? rem : shownChips[s]), B.x, B.y + fs * .55, {size: fs * 1.25, color: '#e6c57d', weight: 800, align: 'left', maxW: B.w});
       }
-      const labels = {undo: '撤销', clear: '清空', rep: '重复', done: '下注完成'};
+      const labels = {undo: '撤销', clear: '清空', rep: '重复', dbl: '加倍', done: '下注完成'};
       for (const b of L.btns) {
-        const dis = !can || (b.id === 'undo' && !(stacks[s] || []).length) || (b.id === 'clear' && !sumBets(draft(s))) || (b.id === 'rep' && !sumBets(st.prev[s] || {}));
+        const dis = !can || (b.id === 'undo' && !(stacks[s] || []).length) || (b.id === 'clear' && !sumBets(draft(s))) || (b.id === 'rep' && !sumBets(st.prev[s] || {})) || (b.id === 'dbl' && (!sumBets(draft(s)) || rem < sumBets(draft(s))));
         const red = b.id === 'done';
         g.globalAlpha = dis ? .4 : 1;
         g.fillStyle = red ? '#7a1c12' : '#6e5222'; D.rr(g, b.x, b.y + 3, b.w, b.h - 3, 10); g.fill();
@@ -527,6 +639,7 @@ BX.register({
         return null;
       },
       apply(a, by) {
+        hintB = null;
         if (a.t === 'bet') {
           if (by < 0 || st.phase !== 'bet' || st.done[by]) return;
           st.bets[by] = clean(a.b, st.chips[by]); st.done[by] = true;
@@ -540,6 +653,7 @@ BX.register({
             const b = st.bets[s]; let dl = 0;
             for (const k in b) { const m = pay(k, d); dl += m ? b[k] * m : -b[k]; }
             st.delta[s] = dl; st.chips[s] += dl;
+            if (sumBets(b)) { st.played[s]++; if (dl > 0) st.won[s]++; if (dl > st.best[s]) st.best[s] = dl; }
             st.prev[s] = b; st.bets[s] = {};
           }
           st.phase = 'reveal';
@@ -549,9 +663,10 @@ BX.register({
           syncChips();
           if (st.round >= st.rounds || !alive()) {
             st.over = true; st.phase = 'over';
-            const text = ranking();
-            if (n === 1) ctx.end({win: st.chips[0] > START, text: `最终筹码 ${st.chips[0]}（起始 ${START}）`, title: st.chips[0] > START ? '满载而归' : st.chips[0] === START ? '不输不赢' : '庄家通吃'});
-            else { const mx = Math.max(...st.chips), w = BX.range(n).filter(i => st.chips[i] === mx); ctx.end({winner: w.length === n ? -1 : w.length === 1 ? w[0] : w, text}); }
+            const text = ranking(), bs = BX.range(n).reduce((x, y) => st.best[y] > st.best[x] ? y : x, 0);
+            const mine = n === 1 ? (st.played[0] ? ` · 押中 ${st.won[0]}/${st.played[0]} 局` + (st.best[0] ? `，单局最多赢 ${st.best[0]}` : '') : '') : st.best[bs] ? ` · 单局最佳 ${ctx.name(bs)} +${st.best[bs]}` : '';
+            if (n === 1) ctx.end({win: st.chips[0] > START, text: `最终筹码 ${st.chips[0]}（起始 ${START}）` + mine, title: st.chips[0] > START ? '满载而归' : st.chips[0] === START ? '不输不赢' : '庄家通吃'});
+            else { const mx = Math.max(...st.chips), w = BX.range(n).filter(i => st.chips[i] === mx); ctx.end({winner: w.length === n ? -1 : w.length === 1 ? w[0] : w, text: text + mine}); }
           } else {
             st.round++; st.phase = 'bet'; st.delta = Array(n).fill(0);
             st.done = st.chips.map(c => c < 10);
@@ -563,12 +678,20 @@ BX.register({
         updStatus();
       },
       aiMove(seat, level) { return {t: 'bet', b: aiBets(st, seat, level, Math.random)}; },
+      showHint(a) {
+        if (!a || !a.b || !myTurn()) return;
+        const ks = Object.keys(a.b);
+        if (!ks.length) { ctx.toast('💡 建议本局观望，不押'); return; }
+        hintB = a.b; hintT = now();
+        ctx.toast('💡 建议：' + ks.map(k => NAME(k) + ' ' + a.b[k]).join('、'));
+      },
       onTurn() { updStatus(); },
       onView() { updStatus(); },
       ready() { if (st.phase === 'reveal') { vis.lift = 1; vis.shown = true; vis.resultK = 1; } syncChips(); updStatus(); },
       frame() {
         const g = cv.g; cv.clear();
         const L = layout();
+        hc = hotCold();
         const key = L.W + 'x' + L.H;
         if (bgKey !== key) {
           bgKey = key; bg = document.createElement('canvas'); bg.width = Math.ceil(L.W); bg.height = Math.ceil(L.H);

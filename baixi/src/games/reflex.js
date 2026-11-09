@@ -1,31 +1,44 @@
 /* 反应力大比拼 — best of 5 rounds cycling 找不同 / 抢灯 / 颜色字 */
 const D = BX.draw, C = BX.C, K = BX.data.spk;
 const GN = ['找不同', '抢灯', '颜色字'];
-const GHINT = ['两幅茶馆画有 5 处不同，点中即得，先找到 3 处者胜', '灯笼变绿的瞬间拍下去！灯没变绿就拍算犯规', '看字的颜色而不是字的意思，抢先点出墨色，先得 3 分者胜'];
+const GHINT = ['两幅茶馆画有 5 处不同（变色、变大、镜像、挪位、消失），先找到 3 处者胜', '灯笼变绿的瞬间拍下去！灯没变绿就拍算犯规', '看字的颜色而不是字的意思，抢先点出墨色，先得 3 分者胜'];
 const COLS = [['红', '#d0302a'], ['绿', '#2f9a4a'], ['蓝', '#2f5dc8'], ['黄', '#e0a810'], ['紫', '#8a3ab0'], ['黑', '#222222']];
 const PAL = ['#c23a2b', '#2f5d8a', '#3f8f5b', '#d9a12b', '#7a4a9a', '#e07a3a'];
 const WALL = ['lan', 'scr', 'fan', 'cage', 'moon'], FLOOR = ['pot', 'cup', 'pla', 'vas', 'boo', 'cat', 'plt'];
 const SLOTS = [[.1, .3, 0], [.3, .27, 0], [.52, .3, 0], [.74, .26, 0], [.92, .32, 0],
   [.07, .7, 1], [.2, .62, 1], [.33, .71, 1], [.46, .63, 1], [.59, .72, 1], [.72, .62, 1], [.84, .71, 1], [.95, .62, 1]];
+/* extra, smaller objects for 标准 / 困难 (upper wall + back of the floor) */
+const SLOTS2 = [[.2, .15, 0, .07], [.41, .13, 0, .065], [.63, .15, 0, .07], [.84, .13, 0, .065], [.14, .5, 1, .065], [.4, .49, 1, .06], [.66, .5, 1, .065], [.9, .49, 1, .06]];
+const ASYM = ['pot', 'cat', 'scr', 'cage', 'cup', 'pla'];
+const SIZEK = [0, 1.4, 1.25, 1.17];
 
-/* deterministic scene from seed: objects + 5 diffs (applied to picture B) */
-function makeScene(seed) {
+/* deterministic scene from seed: objects + 5 diffs (applied to picture B). lv 1 简单 (old), 2 标准, 3 困难 */
+function makeScene(seed, lv = 1) {
   const R = BX.rng(seed);
-  const objs = SLOTS.map(([x, y, fl]) => {
+  const slots = lv > 1 ? SLOTS.concat(SLOTS2) : SLOTS;
+  const objs = slots.map(([x, y, fl, sc]) => {
     const list = fl ? FLOOR : WALL;
-    return {t: list[Math.floor(R() * list.length)], x: x + (R() - .5) * .03, y: y + (R() - .5) * .02, s: (fl ? .09 : .1) * (.85 + R() * .3), c: Math.floor(R() * PAL.length), f: R() < .5 ? -1 : 1, fl};
+    return {t: list[Math.floor(R() * list.length)], x: x + (R() - .5) * .03, y: y + (R() - .5) * .02, s: (sc || (fl ? .09 : .1)) * (.85 + R() * .3), c: Math.floor(R() * PAL.length), f: R() < .5 ? -1 : 1, fl};
   });
   const idx = R.shuffle(BX.range(objs.length)).slice(0, 5), diffs = [];
-  const kinds = R.shuffle(['gone', 'color', 'size', 'type', 'color']);
+  const pool = lv === 1 ? ['gone', 'color', 'size', 'type', 'color'] : lv === 2 ? ['gone', 'color', 'size', 'flip', 'shift', 'type', 'color'] : ['color', 'size', 'flip', 'shift', 'shift', 'color', 'gone'];
+  const kinds = R.shuffle(pool).slice(0, 5);
   idx.forEach((i, k) => {
-    const o = objs[i], kd = kinds[k], d = {i, k: kd};
-    if (kd === 'color') d.c = (o.c + 1 + Math.floor(R() * (PAL.length - 1))) % PAL.length;
+    const o = objs[i]; let kd = kinds[k];
+    if (kd === 'flip' && !ASYM.includes(o.t)) kd = 'color';
+    const d = {i, k: kd};
+    if (kd === 'color') d.c = lv === 3 ? (o.c + (R() < .5 ? 1 : PAL.length - 1)) % PAL.length : (o.c + 1 + Math.floor(R() * (PAL.length - 1))) % PAL.length;
     if (kd === 'type') { const list = o.fl ? FLOOR : WALL; let t; do t = list[Math.floor(R() * list.length)]; while (t === o.t); d.t = t; }
+    if (kd === 'size') d.z = SIZEK[lv];
+    if (kd === 'shift') d.dx = (R() < .5 ? -1 : 1) * (lv === 3 ? .022 : .03);
     diffs.push(d);
   });
-  return {objs, diffs};
+  return {objs, diffs, lv};
 }
-const diffCenter = (sc, d) => { const o = sc.objs[d.i]; const s = d.k === 'size' ? o.s * 1.4 : o.s; return {x: o.x, y: o.y - s * .5, r: Math.max(.06, s * .7)}; };
+const diffCenter = (sc, d) => {
+  const o = sc.objs[d.i], s = d.k === 'size' ? o.s * (d.z || 1.4) : o.s, dx = d.k === 'shift' ? d.dx : 0;
+  return {x: o.x + dx / 2, y: o.y - s * .5, r: Math.max(sc.lv > 1 ? .045 : .06, s * (sc.lv > 1 ? .6 : .7)) + Math.abs(dx) / 2};
+};
 
 function drawObj(g, o, X, Y, S, t, c, sz) {
   const col = PAL[c], s = S * sz;
@@ -103,8 +116,9 @@ function drawScene(g, sc, x, y, w, B, seed) {
   g.strokeStyle = 'rgba(100,60,20,.25)'; for (let i = 1; i < 5; i++) { g.beginPath(); g.moveTo(x, y + h * (.53 + i * .09)); g.lineTo(x + w, y + h * (.53 + i * .09)); g.stroke(); }
   for (let i = 0; i < sc.objs.length; i++) {
     const o = sc.objs[i]; let t = o.t, c = o.c, sz = 1;
-    if (B) { const d = sc.diffs.find(d => d.i === i); if (d) { if (d.k === 'gone') continue; if (d.k === 'color') c = d.c; if (d.k === 'size') sz = 1.4; if (d.k === 'type') t = d.t; } }
-    drawObj(g, o, x + o.x * w, y + o.y * w, o.s * w, t, c, sz);
+    let ob = o, ox = o.x;
+    if (B) { const d = sc.diffs.find(d => d.i === i); if (d) { if (d.k === 'gone') continue; if (d.k === 'color') c = d.c; if (d.k === 'size') sz = d.z || 1.4; if (d.k === 'type') t = d.t; if (d.k === 'flip') ob = Object.assign({}, o, {f: -o.f}); if (d.k === 'shift') ox += d.dx; } }
+    drawObj(g, ob, x + ox * w, y + o.y * w, o.s * w, t, c, sz);
   }
   g.restore();
   g.strokeStyle = '#3a1e0a'; g.lineWidth = 3; D.rr(g, x, y, w, h, Math.max(4, w * .02)); g.stroke();
@@ -114,6 +128,11 @@ BX.register({
   id: 'reflex', title: '反应力大比拼', cat: 'speed', order: 3, sub: '找不同·抢灯·颜色字',
   desc: '五局三胜的反应力对决，轮流进行三种小游戏：在两幅茶馆画中找不同、灯笼变绿瞬间抢拍、无视字义只认墨色。考眼力、手速与专注力。',
   kind: 'realtime', seats: 2, noFirst: true, seatColors: ['#c23a2b', '#2f5d8a'],
+  options: [{key: 'spot', label: '找不同难度', choices: [[1, '简单'], [2, '标准'], [3, '困难']], def: 2}],
+  howto: ['五局三胜，轮流玩三种小游戏；每局开始前的卡片会说明玩法。',
+    '<b>找不同</b>：在任一幅画上点不同处（会有变色、变大、镜像、挪位、消失……）；点错罚停 1 秒。💡 可短暂圈出一处（仅人机/同屏）。',
+    '<b>抢灯</b>：灯变绿的瞬间点屏幕（或空格）；早拍算犯规。每次都会显示你的反应毫秒数和个人纪录。',
+    '<b>颜色字</b>：点出字的<b>墨色</b>而不是字义。键盘 1–4（同屏右方 7–0）。'],
   rules: `<p><b>五局三胜</b>，依次循环三种小游戏（找不同 → 抢灯 → 颜色字 → …），先赢 3 局者获胜。某局打平不计分，继续加局（最多 9 局）。</p>
 <p><b>找不同</b>：两幅茶馆小画有 <b>5 处不同</b>（消失、变色、变大、换物）。在自己区域的任一幅画上点中不同处即归你；先找到 3 处者赢下本局。点错会被罚停 1 秒。</p>
 <p><b>抢灯</b>：灯笼先暗着，随机一段时间后<b>变绿</b>，谁先拍谁赢。灯还没变绿就拍算<b>犯规</b>，直接判负。</p>
@@ -137,13 +156,16 @@ BX.register({
     const queues = [K.tq(), K.tq()], seen = {}, evSeen = {v: -1};
     let scene = null, sceneSeed = -1, greenAt = {}, time = 0, wrong = [], lastCd = 0;
     const aiP = [{}, {}];
-    const getScene = () => { if (sceneSeed !== st.seed) { sceneSeed = st.seed; scene = makeScene(st.seed); } return scene; };
+    const SL = ctx.opts.spot || 2;
+    const getScene = () => { if (sceneSeed !== st.seed) { sceneSeed = st.seed; scene = makeScene(st.seed, SL); } return scene; };
+    let hintK = -1, hintT = 0, myBest = ctx.load('best.rt', null);
+    const rate = ms => ms < 200 ? '神速！' : ms < 250 ? '非常快' : ms < 310 ? '很快' : ms < 380 ? '不错' : '再练练';
 
     /* ---------- host round logic ---------- */
     function startRound() {
       st.gm = st.r % 3; st.pt = [0, 0]; st.rwin = -2; st.ph = 'play';
       if (st.gm === 0) { st.seed = (Math.random() * 1e9) >>> 0; st.cl = [-1, -1, -1, -1, -1]; st.lk = [0, 0]; st.t = BX.test ? 10 : 45; }
-      else if (st.gm === 1) { st.lamp = {ph: 'wait', wt: (BX.test ? .6 : 1.6) + Math.random() * (BX.test ? 1 : 3.4), gt: 0, cand: null, foul: -1, cw: 0}; st.t = 99; }
+      else if (st.gm === 1) { st.lamp = {ph: 'wait', wt: (BX.test ? .6 : 1.6) + Math.random() * (BX.test ? 1 : 3.4), gt: 0, cand: null, foul: -1, cw: 0, tt: [-1, -1]}; st.t = 99; }
       else { st.qn = 0; newQ(); }
       K.ev(st, 'go', st.gm);
     }
@@ -163,11 +185,13 @@ BX.register({
       const done = st.rw[0] >= 3 || st.rw[1] >= 3 || st.r >= 9;
       if (done) {
         st.over = true; st.ph = 'over'; const w = st.rw[0] === st.rw[1] ? -1 : st.rw[0] > st.rw[1] ? 0 : 1;
-        K.ev(st, 'end', w); ctx.end({winner: w, text: '局分 ' + st.rw[0] + ' : ' + st.rw[1]}); return;
+        const fast = [0, 1].filter(i => st.rt[i] > 0).sort((a, b) => st.rt[a] - st.rt[b])[0];
+        K.ev(st, 'end', w); ctx.end({winner: w, text: '局分 ' + st.rw[0] + ' : ' + st.rw[1] + (fast != null ? '　最快反应 ' + ctx.name(fast) + ' ' + Math.round(st.rt[fast] * 1000) + ' 毫秒' : '')}); return;
       }
       st.ph = 'card'; st.t = 2.4 * T; st.gm = st.r % 3; lastCd = 0;
     }
     function onItem(s, it) {
+      if (it[0] === 'l' && st.gm === 1 && st.ph === 'res' && it[1] === st.r && it[2] >= 0 && st.lamp.tt && st.lamp.tt[s] < 0 && st.lamp.foul < 0) { st.lamp.tt[s] = it[2]; return; }   // loser's time, for the result screen
       if (st.ph !== 'play' || it[1] !== st.r) return;
       if (it[0] === 'd' && st.gm === 0) {
         if (st.lk[s] > 0) return;
@@ -179,6 +203,7 @@ BX.register({
         const L = st.lamp; if (L.foul >= 0) return;
         if (it[2] < 0) { if (L.ph === 'wait') { L.foul = s; K.ev(st, 'foul', s); endRound(1 - s); return; } it = [it[0], it[1], Math.round(L.gt * 1000) / 1000]; }
         if (L.ph !== 'green') return;
+        if (L.tt && L.tt[s] < 0) L.tt[s] = it[2];
         if (!L.cand) { L.cand = [s, it[2]]; L.cw = .25; } else if (L.cand[0] !== s && it[2] < L.cand[1]) L.cand = [s, it[2]];
       } else if (it[0] === 's' && st.gm === 2) {
         if (it[2] !== st.qn || st.qw >= 0 || st.lock[s] || st.ans[s] >= 0) return;
@@ -196,7 +221,7 @@ BX.register({
         if (L.ph === 'wait') { L.wt -= dt; if (L.wt <= 0) { L.ph = 'green'; L.gt = 0; K.ev(st, 'green'); } }
         else if (L.ph === 'green') {
           L.gt += dt;
-          if (L.cand) { L.cw -= dt; if (L.cw <= 0) { L.ph = 'done'; st.rt[L.cand[0]] = L.cand[1]; K.ev(st, 'lw', L.cand[0], Math.round(L.cand[1] * 1000)); endRound(L.cand[0]); } }
+          if (L.cand) { L.cw -= dt; if (L.cw <= 0) { L.ph = 'done'; st.rt[L.cand[0]] = st.rt[L.cand[0]] > 0 ? Math.min(st.rt[L.cand[0]], L.cand[1]) : L.cand[1]; K.ev(st, 'lw', L.cand[0], Math.round(L.cand[1] * 1000)); endRound(L.cand[0]); } }
           else if (L.gt > 4) { L.ph = 'done'; endRound(-1); }
         }
       } else {
@@ -293,8 +318,10 @@ BX.register({
         const k = e[0];
         if (k === 'go') { ctx.sfx(e[2] === 1 ? 'tick' : 'start'); }
         else if (k === 'green') { ctx.sfx('bell'); }
-        else if (k === 'foul') { ctx.sfx('buzz'); fx.shake(8); fx.flash(.7, '255,80,60'); }
-        else if (k === 'lw') { ctx.sfx('score'); fx.flash(.8); fx.shake(5); for (const p of panels()) { const c = toScreen(p, {x: p.w / 2, y: p.h * .5}); fx.burst(c.x, c.y, {n: 30, color: ['#7fe0a0', '#ffd76a', '#fff'], sp: 300, square: true}); fx.text(c.x, c.y - 70, e[3] + ' 毫秒', {size: 26, color: '#ffe08a'}); } }
+        else if (k === 'foul') { ctx.sfx('buzz'); fx.shake(8); fx.flash(.7, '255,80,60'); if (ctx.isLocal(e[2])) ctx.buzz(40); }
+        else if (k === 'lw') {
+          if (nLoc() === 1 && ctx.isLocal(e[2])) { const b = ctx.best('rt', e[3], 'min'); myBest = b.best; if (b.isNew && b.old != null) ctx.toast('反应新纪录 ' + e[3] + ' 毫秒！'); }
+          ctx.sfx('score'); fx.flash(.8); fx.shake(5); for (const p of panels()) { const c = toScreen(p, {x: p.w / 2, y: p.h * .5}); fx.burst(c.x, c.y, {n: 30, color: ['#7fe0a0', '#ffd76a', '#fff'], sp: 300, square: true}); fx.text(c.x, c.y - 70, e[3] + ' 毫秒', {size: 26, color: '#ffe08a'}); } }
         else if (k === 'find') {
           ctx.sfx('score'); const sc = getScene(), c = diffCenter(sc, sc.diffs[e[3]]);
           for (const p of panels()) for (const s2 of scenes(p)) { const q = toScreen(p, {x: s2.x + c.x * s2.w, y: s2.y + c.y * s2.w}); fx.burst(q.x, q.y, {n: 10, color: [ctx.color(e[2]), '#ffd76a'], sp: 140, size: 3}); }
@@ -303,7 +330,7 @@ BX.register({
           if (ctx.isLocal(e[2])) { ctx.sfx('error'); fx.shake(4); }
           wrong.push({s: e[2], x: e[3], y: e[4], t: 0});
         } else if (k === 'ok') { ctx.sfx('score'); fx.flash(.5); for (const p of panels()) { const b = stroopL(p).btns[e[3]], c = toScreen(p, {x: b.x + b.w / 2, y: b.y + b.h / 2}); fx.burst(c.x, c.y, {n: 18, color: ['#ffd76a', ctx.color(e[2])], sp: 220, square: true}); } }
-        else if (k === 'bad') { if (ctx.isLocal(e[2])) { ctx.sfx('buzz'); fx.shake(4); } else ctx.sfx('error'); }
+        else if (k === 'bad') { if (ctx.isLocal(e[2])) { ctx.sfx('buzz'); fx.shake(4); ctx.buzz(20); } else ctx.sfx('error'); }
         else if (k === 'to') ctx.sfx('draw');
         else if (k === 'rw') { ctx.sfx(e[2] >= 0 ? 'gong' : 'draw'); fx.flash(.6); }
         else if (k === 'end') ctx.sfx('bell');
@@ -315,6 +342,11 @@ BX.register({
     }
     const inst = {
       st,
+      hint() {
+        if (st.ph !== 'play' || st.gm !== 0) { ctx.toast('💡 只在「找不同」里可用'); return; }
+        const free = getScene().diffs.map((d, k) => k).filter(k => st.cl[k] < 0); if (!free.length) return;
+        hintK = BX.pick(free); hintT = performance.now(); ctx.sfx('select');
+      },
       input(seat) { return {q: queues[seat].list()}; },
       aiInput,
       step(dt, inputs) {
@@ -328,7 +360,7 @@ BX.register({
       snapshot() {
         const r3 = v => Math.round(v * 100) / 100;
         return {r: st.r, gm: st.gm, ph: st.ph, t: r3(st.t), rw: st.rw, pt: st.pt, rwin: st.rwin, ev: st.ev, over: st.over, seed: st.seed, cl: st.cl, lk: st.lk.map(r3),
-          lamp: {ph: st.lamp.ph, foul: st.lamp.foul, cand: st.lamp.cand}, Q: st.Q, qn: st.qn, ans: st.ans, lock: st.lock, qw: st.qw, qt: r3(st.qt), rt: st.rt};
+          lamp: {ph: st.lamp.ph, foul: st.lamp.foul, cand: st.lamp.cand, tt: st.lamp.tt}, Q: st.Q, qn: st.qn, ans: st.ans, lock: st.lock, qw: st.qw, qt: r3(st.qt), rt: st.rt};
       },
       restore(d) { Object.assign(st, d); playEv(); info(); },
       key(e) {
@@ -379,10 +411,10 @@ BX.register({
       else drawStroop(g, p);
       if (st.ph === 'res') {
         const B = body(p), w = st.rwin;
-        g.fillStyle = 'rgba(20,10,4,.45)'; g.fillRect(0, hh, p.w, p.h - hh);
-        const k = 1 - st.t / (2 * T);
-        K.banner(g, w < 0 ? '本局打平' : w === s ? (nLoc() === 2 || ctx.isLocal(s) ? '赢下本局！' : ctx.name(s) + ' 赢') : ctx.name(w) + ' 赢下本局', p.w / 2, B.y + B.h / 2, Math.min(B.w * .1, 44), BX.clamp(k * 2, 0, 1), {color: w === s ? '#ffe08a' : '#fbe9d0'});
-        if (st.gm === 1 && st.lamp.foul >= 0) D.text(g, ctx.name(st.lamp.foul) + ' 抢跑犯规', p.w / 2, B.y + B.h / 2 + 46, {size: 16, color: '#ff9a8a', weight: 800, stroke: 'rgba(0,0,0,.6)'});
+        if (st.gm !== 1) { g.fillStyle = 'rgba(20,10,4,.45)'; g.fillRect(0, hh, p.w, p.h - hh); }
+        const k = 1 - st.t / (2 * T), by = st.gm === 1 ? B.y + B.h * .14 : B.y + B.h / 2;
+        K.banner(g, w < 0 ? '本局打平' : w === s ? (nLoc() === 2 || ctx.isLocal(s) ? '赢下本局！' : ctx.name(s) + ' 赢') : ctx.name(w) + ' 赢下本局', p.w / 2, by, Math.min(B.w * .1, 44), BX.clamp(k * 2, 0, 1), {color: w === s ? '#ffe08a' : '#fbe9d0'});
+        if (st.gm === 1 && st.lamp.foul >= 0) D.text(g, ctx.name(st.lamp.foul) + ' 抢跑犯规', p.w / 2, by + 40, {size: 16, color: '#ff9a8a', weight: 800, stroke: 'rgba(0,0,0,.6)'});
       }
       g.restore();
     }
@@ -407,6 +439,7 @@ BX.register({
           g.strokeStyle = ctx.color(owner); g.lineWidth = 4; D.circle(g, r.x + c.x * r.w, r.y + c.y * r.w, c.r * r.w); g.stroke();
           g.strokeStyle = '#fff'; g.lineWidth = 1.5; g.stroke();
         });
+        if (hintK >= 0 && st.cl[hintK] < 0 && ctx.isLocal(s) && performance.now() - hintT < 1600) { const c = diffCenter(sc, sc.diffs[hintK]), a = 1 - (performance.now() - hintT) / 1600; g.strokeStyle = `rgba(63,220,150,${a})`; g.lineWidth = 3; g.setLineDash([6, 5]); D.circle(g, r.x + c.x * r.w, r.y + c.y * r.w, c.r * r.w * (1.6 - a * .5)); g.stroke(); g.setLineDash([]); }
         for (const w of wrong) if (w.s === s) { const a = 1 - w.t; g.globalAlpha = a; D.text(g, '✕', r.x + w.x * r.w, r.y + w.y * r.w, {size: 30, color: '#ff4a3a', weight: 900, stroke: '#fff'}); g.globalAlpha = 1; }
       }
       // progress
@@ -417,7 +450,7 @@ BX.register({
       if (st.lk[s] > 0 && st.ph === 'play') { g.fillStyle = 'rgba(120,20,10,.25)'; g.fillRect(B.x, B.y, B.w, B.h); D.text(g, '点错了，稍候…', p.w / 2, B.y + B.h / 2, {size: 20, color: '#fff', weight: 800, stroke: 'rgba(90,10,5,.8)'}); }
     }
     function drawLamp(g, p) {
-      const B = body(p), s = p.seat, L = st.lamp, green = L.ph !== 'wait' && L.foul < 0;
+      const B = body(p), s = p.seat, o = 1 - s, L = st.lamp, green = L.ph !== 'wait' && L.foul < 0;
       const r = Math.min(B.w, B.h) * .22, cx = B.x + B.w / 2, cy = B.y + B.h * .42;
       // beam
       g.strokeStyle = '#3a1e0a'; g.lineWidth = 6; g.beginPath(); g.moveTo(B.x, B.y + 6); g.lineTo(B.x + B.w, B.y + 6); g.stroke();
@@ -433,7 +466,16 @@ BX.register({
       const msg = L.foul >= 0 ? '' : L.ph === 'wait' ? (tapped ? '已出手…' : '屏住呼吸，等灯变绿…') : L.ph === 'green' ? (tapped ? '已拍！' : '快拍！') : '';
       D.text(g, msg, cx, B.y + B.h * .78, {size: Math.min(26, B.w * .07), color: green ? '#bfffd0' : '#fbe9d0', font: 'deco', weight: 400, stroke: 'rgba(0,0,0,.5)'});
       if (ctx.isLocal(s)) D.text(g, nLoc() === 2 ? '点这半边屏幕' : '点任意位置' + (BX.TOUCH.matches ? '' : ' / 空格'), cx, B.y + B.h * .9, {size: 12, color: 'rgba(251,233,208,.7)'});
-      if (st.rt[0] || st.rt[1]) { const best = [0, 1].filter(i => st.rt[i]).map(i => ctx.name(i) + ' ' + Math.round(st.rt[i] * 1000) + 'ms').join('  '); D.text(g, '上次最快：' + best, cx, B.y + B.h - 6, {size: 11, color: 'rgba(251,233,208,.55)', base: 'bottom'}); }
+      const tt = L.tt || [-1, -1];
+      if (L.ph === 'done' || st.ph === 'res') {   // Human-Benchmark style result: big ms + rating
+        const mine = tt[s], oth = tt[o];
+        if (mine >= 0) { const ms = Math.round(mine * 1000); D.text(g, ms + ' 毫秒', cx, cy + r * 1.55, {size: Math.min(40, B.w * .11), color: '#ffe08a', font: 'deco', weight: 400, stroke: 'rgba(40,20,5,.85)', strokeW: 4}); D.text(g, rate(ms) + (oth >= 0 ? '　对手 ' + Math.round(oth * 1000) + ' 毫秒' : ''), cx, cy + r * 1.55 + Math.min(30, B.w * .08), {size: 14, color: '#fff6dc', weight: 800, stroke: 'rgba(0,0,0,.6)'}); }
+        else if (oth >= 0) D.text(g, '对手 ' + Math.round(oth * 1000) + ' 毫秒', cx, cy + r * 1.55, {size: 20, color: '#fbe9d0', weight: 800, stroke: 'rgba(0,0,0,.6)'});
+      }
+      const bests = [];
+      if (myBest != null && ctx.isLocal(s)) bests.push('个人纪录 ' + myBest + ' 毫秒');
+      if (st.rt[0] || st.rt[1]) bests.push('本场最快 ' + [0, 1].filter(i => st.rt[i]).map(i => ctx.name(i) + ' ' + Math.round(st.rt[i] * 1000)).join(' / '));
+      if (bests.length) D.text(g, bests.join('　'), cx, B.y + B.h - 6, {size: 11, color: 'rgba(251,233,208,.7)', base: 'bottom', maxW: B.w - 10});
     }
     function drawStroop(g, p) {
       const s = p.seat, o = 1 - s, Lt = stroopL(p), Q = st.Q; if (!Q) return;

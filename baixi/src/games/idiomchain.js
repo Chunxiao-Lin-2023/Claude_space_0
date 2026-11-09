@@ -32,6 +32,18 @@ const pyMark = p => { // yi1 -> yī
   if (pos < 0) return s;
   return s.slice(0, pos) + V[s[pos]][t - 1] + s.slice(pos + 1);
 };
+const meanOf = i => (BX.data.idiomMean || [])[i] || '';
+/* split text into lines that fit maxW (CJK: break anywhere) */
+function wrap(g, s, maxW, font, maxLines) {
+  g.font = font; const out = []; let line = '', cut = false;
+  for (const ch of s) {
+    if (g.measureText(line + ch).width > maxW && line) { out.push(line); line = ''; if (out.length >= maxLines) { cut = true; break; } }
+    line += ch;
+  }
+  if (line) out.push(line);
+  if (cut) out[out.length - 1] = out[out.length - 1].slice(0, -1) + '…';
+  return out;
+}
 
 BX.register({
   id: 'idiomchain', title: '成语接龙', cat: 'words', order: 1, sub: '首尾相接，接不上就出局',
@@ -39,14 +51,15 @@ BX.register({
   kind: 'turn', seats: [2, 4], defSeats: 2, aiDelay: 900,
   options: [
     {key: 'rule', label: '接法', choices: [['char', '同字相接'], ['sound', '同音也可']], def: 'char'},
-    {key: 'time', label: '每步限时', choices: [[20, '20 秒'], [30, '30 秒'], [60, '60 秒']], def: 30},
+    {key: 'time', label: '每步限时', choices: [[20, '20 秒'], [30, '30 秒'], [60, '60 秒'], [0, '不限时']], def: 30},
   ],
+  howto: ['在下方输入框用输入法打出成语，回车或点「接龙」提交；左边红印上的字已替你填好，<b>只打后三个字</b>也行。', '输入框边框变绿＝可以接，变红＝词库里没有或接不上。', '「提示」（或顶栏 💡）亮出一个可接成语的前两个字和可接总数，每人每局 3 次。', '点上方接龙谱里任意一条可查看它的释义；限时可选 20/30/60 秒或不限时。'],
   rules: `<p><b>基本规则</b>：系统先出一个成语，玩家依次接龙——下一个成语的<b>第一个字</b>必须与上一个成语的<b>最后一个字</b>相同。例：一心一<b>意</b> → <b>意</b>气风<b>发</b> → <b>发</b>扬光大……</p>
 <p><b>同音也可</b>（可选）：首字与上一个尾字<b>读音相同</b>（不计声调）也算，例如「…风<b>发</b>」后可以接「<b>法</b>不容情」。默认为同字相接。</p>
 <p>每局中<b>同一个成语不能重复使用</b>；只承认词库中收录的四字成语。</p>
 <p><b>出局</b>：轮到你时在限时内（20/30/60 秒）接不上、超时或点「认输」即出局，由下一位玩家接同一个成语。两人对战时出局即负；多人时最后留下的一位获胜。</p>
-<p><b>提示</b>：每人每局 3 次，点「提示」会亮出一个可接成语的前两个字。</p>
-<p>输入：直接用输入法打出成语，按回车或「接龙」提交。</p>`,
+<p><b>提示</b>：每人每局 3 次，点「提示」会亮出一个可接成语的前两个字，并告诉你一共还有几个成语可接。</p>
+<p>输入：直接用输入法打出成语，按回车或「接龙」提交；同字相接时可以只输入后三个字。每个成语下方附有简明释义。</p>`,
   icon(g, w, h) {
     D.paper(g, 0, 0, w, h, {color: '#f4ead2'});
     g.fillStyle = 'rgba(90,70,40,.08)'; for (let i = 0; i < 6; i++) { g.beginPath(); g.ellipse(w * (.1 + i * .18), h * .95, w * .2, h * .18, 0, Math.PI, 0); g.fill(); }
@@ -73,7 +86,7 @@ BX.register({
     for (let i = 0; i < Math.min(L.length, 1500); i++) { const k = nexts(i, false).length; if (k >= 6) pool.push(i); }
     const start = pool.length ? pool[ctx.rng.int(pool.length)] : 0;
     const st = {chain: [start], by: [-1], used: {[start]: 1}, alive: BX.range(n).map(() => true), hints: BX.range(n).map(() => 3),
-      turn: 0, turnNo: 0, hint: null, out: [], last: null, over: false, winner: -1};
+      turn: 0, turnNo: 0, hint: null, out: [], last: null, over: false, winner: -1, cnt: BX.range(n).map(() => 0)};
     /* ---------- view ---------- */
     const cv = ctx.canvas();
     const css = document.createElement('style');
@@ -81,6 +94,9 @@ BX.register({
 .ic-in{flex:1;min-width:0;height:46px;border-radius:12px;border:2px solid #c8a052;background:#fffaf0;color:#2b2118;font:700 20px "Noto Serif SC","Songti SC",serif;padding:0 12px;outline:none;letter-spacing:3px}
 .ic-in:focus{border-color:#b23a2b;box-shadow:0 0 0 3px rgba(178,58,43,.25)}
 .ic-in:disabled{background:#e9dfc8;color:#8c7a63}
+.ic-in.ok{border-color:#3f8f5b;box-shadow:0 0 0 3px rgba(63,143,91,.25)}.ic-in.bad{border-color:#b23a2b;background:#fff1ea}
+.ic-pre{flex:none;width:46px;height:46px;border-radius:10px;background:#b23a2b;color:#fff3e0;font:800 26px "Noto Serif SC","Songti SC",serif;display:flex;align-items:center;justify-content:center;box-shadow:inset 0 0 0 2px rgba(255,230,200,.45)}
+.ic-pre[hidden]{display:none}
 .ic-bar .bx-btn{flex:none;padding:8px 12px;min-width:56px}
 @media (max-width:420px){.ic-bar .bx-btn{padding:8px 9px;min-width:48px;font-size:14px}.ic-in{font-size:18px;letter-spacing:1px}}`;
     ctx.el.append(css);
@@ -90,7 +106,9 @@ BX.register({
     const bGo = BX.h('button', {class: 'bx-btn red', text: '接龙'});
     const bHint = BX.h('button', {class: 'bx-btn jade', text: '提示'});
     const bGive = BX.h('button', {class: 'bx-btn ghost', text: '认输'});
-    bar.append(inp, bGo, bHint, bGive); ui.append(bar);
+    const pre = BX.h('div', {class: 'ic-pre', title: '要接的字'});
+    bar.append(pre, inp, bGo, bHint, bGive); ui.append(bar);
+    const fine = window.matchMedia && matchMedia('(pointer:fine)').matches;
     const BAR_H = () => bar.offsetHeight || 62;
     let tStart = performance.now(), slide = 1, shake = 0, lastTick = -1, flashOut = 0;
     const cur = () => st.chain[st.chain.length - 1];
@@ -98,13 +116,24 @@ BX.register({
     function submit() {
       const s = st.turn;
       if (!ctx.canAct(s)) return;
-      const w = inp.value.replace(/[\s，。,.!！?？]/g, '');
+      const w = typed();
       if (!w) return;
       const err = check(w);
-      if (err) { ctx.toast(err); ctx.sfx('error'); shake = 1; return; }
-      inp.value = '';
+      if (err) { ctx.toast(err); ctx.sfx('error'); ctx.buzz(30); shake = 1; return; }
+      inp.value = ''; inp.className = 'ic-in';
       ctx.act({t: 'play', w}, s);
     }
+    /* typed text; in 同字 mode three characters get the required first character prepended */
+    function typed() {
+      const w = inp.value.replace(/[\s，。,.!！?？]/g, '');
+      if (!homo && [...w].length === 3 && !st.over) return need().ch + w;
+      return w;
+    }
+    function liveCheck() {
+      const w = typed(), len = [...w].length;
+      inp.className = 'ic-in' + (len < 4 ? '' : check(w) ? ' bad' : ' ok');
+    }
+    ctx.on(inp, 'input', liveCheck);
     function check(w) {
       if (w.length !== 4) return '请输入四字成语';
       const k = at.get(w);
@@ -115,19 +144,32 @@ BX.register({
     }
     ctx.on(inp, 'keydown', e => { if (e.key === 'Enter' && !e.isComposing) { e.preventDefault(); submit(); } });
     ctx.on(bGo, 'click', submit);
-    ctx.on(bHint, 'click', () => { const s = st.turn; if (ctx.canAct(s) && st.hints[s] > 0 && !(st.hint && st.hint.k === st.turnNo)) ctx.act({t: 'hint'}, s); });
+    const askHint = () => { const s = st.turn; if (ctx.canAct(s) && st.hints[s] > 0 && !(st.hint && st.hint.k === st.turnNo)) ctx.act({t: 'hint'}, s); else if (ctx.canAct(s)) ctx.toast(st.hints[s] > 0 ? '本回合已经提示过了' : '提示次数已用完'); };
+    ctx.on(bHint, 'click', askHint);
+    /* tap a history row (or the big idiom) to read its meaning */
+    let hits = [];
+    ctx.on(cv.cv, 'pointerdown', e => {
+      const p = cv.pos(e), h = hits.find(r => p.x >= r.x && p.x <= r.x + r.w && p.y >= r.y && p.y <= r.y + r.h);
+      if (!h) return;
+      const m = meanOf(h.k), py = ((BX.data.idiomPy || {})[L[h.k][0]] || []).map(pyMark).join(' ');
+      ctx.sfx('tick'); ctx.toast('「' + L[h.k][0] + '」' + py + (m ? '：' + m : ''), 4200);
+    });
     ctx.on(bGive, 'click', async () => { const s = st.turn; if (!ctx.canAct(s)) return; if (await BX.confirm('确定认输吗？你将出局。', '认输')) { if (ctx.canAct(s)) ctx.act({t: 'give'}, s); } });
+    let focusTurn = -1;
     function refreshUI() {
       const s = st.turn, mine = !st.over && ctx.canAct(s);
       inp.disabled = !mine; bGo.disabled = !mine; bGive.disabled = !mine;
+      pre.hidden = homo || st.over; pre.textContent = need().ch; pre.style.opacity = mine ? 1 : .5;
+      if (mine && fine && focusTurn !== st.turnNo && !ctx.fast) { focusTurn = st.turnNo; setTimeout(() => { if (!inp.disabled) inp.focus(); }, 30); }
+      liveCheck();
       bHint.disabled = !mine || st.hints[s] <= 0 || !!(st.hint && st.hint.k === st.turnNo);
       bHint.textContent = '提示' + (mine ? '·' + st.hints[s] : '');
       const nd = need();
-      inp.placeholder = st.over ? '本局结束' : mine ? '接「' + nd.ch + '」字开头的成语' : '等待 ' + ctx.name(s) + '…';
+      inp.placeholder = st.over ? '本局结束' : mine ? (homo ? '接「' + nd.ch + '」或同音字开头' : '打后三个字即可') : '等待 ' + ctx.name(s) + '…';
       if (!mine && document.activeElement === inp) inp.blur();
     }
     const status = () => {
-      for (let i = 0; i < n; i++) ctx.info(i, st.alive[i] ? '提示' + st.hints[i] : '出局');
+      for (let i = 0; i < n; i++) ctx.info(i, st.alive[i] ? '接' + st.cnt[i] + ' · 提示' + st.hints[i] : '出局 · 接' + st.cnt[i]);
       if (st.over) { ctx.status(ctx.name(st.winner) + ' 胜出 · 共接 ' + (st.chain.length - 1) + ' 个'); refreshUI(); return; }
       const nd = need();
       ctx.status((ctx.canAct(st.turn) ? (ctx.hotseat ? ctx.name(st.turn) + ' ' : '轮到你') : ctx.name(st.turn) + ' 思考中') + ' · 接「' + nd.ch + '」');
@@ -142,7 +184,10 @@ BX.register({
       const left = BX.range(n).filter(i => st.alive[i]);
       if (left.length <= 1) {
         st.over = true; st.winner = left[0]; status();
-        ctx.end({winner: st.winner, text: '共接 ' + (st.chain.length - 1) + ' 个成语，最后一个是「' + L[cur()][0] + '」'});
+        const rows = BX.range(n).sort((a, b) => (st.alive[b] - st.alive[a]) || st.cnt[b] - st.cnt[a]).map(i => '<b style="color:' + ctx.color(i) + '">' + BX.esc(ctx.name(i)) + '</b> 接出 ' + st.cnt[i] + ' 个' + (i === st.winner ? ' 🏆' : ''));
+        const tail = st.chain.slice(-6).map(k => L[k][0]).join(' → ');
+        const lm = meanOf(cur());
+        ctx.end({winner: st.winner, html: '共接 <b>' + (st.chain.length - 1) + '</b> 个成语<br>' + rows.join('<br>') + '<div style="margin-top:8px;font-size:13px;color:var(--ink3)">' + BX.esc(tail) + '</div>' + (lm ? '<div style="margin-top:6px;font-size:13px">「' + BX.esc(L[cur()][0]) + '」' + BX.esc(lm) + '</div>' : '')});
         return;
       }
       st.turn = nextAlive(s); newTurn();
@@ -165,19 +210,19 @@ BX.register({
           const c = nexts(cur(), homo).filter(i => !st.used[i]);
           const top = c.slice(0, 6);
           const k = top.length ? top[ctx.rng.int(top.length)] : -1;
-          st.hint = {k: st.turnNo, s: st.turn, txt: k >= 0 ? L[k][0].slice(0, 2) : ''};
+          st.hint = {k: st.turnNo, s: st.turn, txt: k >= 0 ? L[k][0].slice(0, 2) : '', n: c.length};
           ctx.sfx('bell'); return;
         }
         if (a.t === 'play') {
           const k = at.get(a.w); if (k == null) return;
-          st.chain.push(k); st.by.push(st.turn); st.used[k] = 1; st.turnNo++; st.hint = null; st.last = null;
+          st.chain.push(k); st.by.push(st.turn); st.used[k] = 1; st.turnNo++; st.hint = null; st.last = null; st.cnt[st.turn]++;
           st.turn = nextAlive(st.turn); newTurn();
           slide = 0; ctx.anim(320, t => slide = t, null, BX.ease.out);
           ctx.sfx('pen');
         }
       },
       sysMove() {
-        if (st.over) return null;
+        if (st.over || !LIMIT) return null;
         const left = BX.test ? LIMIT * 1000 : Math.max(0, LIMIT * 1000 - (performance.now() - tStart));
         return {a: {t: 'timeout', k: st.turnNo}, delay: left};
       },
@@ -195,6 +240,7 @@ BX.register({
         return {t: 'play', w: L[BX.ai.byLevel(scored, level)][0]};
       },
       onTurn: status,
+      hint: askHint,
       frame(dt) {
         const g = cv.g; cv.clear();
         const W = cv.w, H = cv.h - BAR_H() + 6;
@@ -224,7 +270,8 @@ BX.register({
         const bigW = B * 4 + B * .12 * 3;
         const histW = land ? sw * .42 : sw - 2 * pad;
         const bx0 = land ? sx + sw * .47 + (sw * .53 - bigW) / 2 : sx + (sw - bigW) / 2;
-        const by0 = land ? sy + sh * .5 - B * .75 : sy + sh - pad - B * 2.15;
+        const by0 = land ? sy + sh * .5 - B * .95 : sy + sh - pad - B * 2.75;
+        hits = [{x: bx0, y: by0, w: bigW, h: B, k: j}];
         const off = (1 - slide) * B * .8;
         g.globalAlpha = .3 + .7 * slide;
         for (let i = 0; i < 4; i++) {
@@ -244,32 +291,40 @@ BX.register({
         const by = st.by[st.by.length - 1];
         D.text(g, by < 0 ? '开局题目' : ctx.name(by) + ' 接出', bx0, by0 - B * .55, {size: Math.max(12, B * .2), color: by < 0 ? C.ink2 : ctx.color(by), align: 'left', weight: 700});
         // prompt line
-        const nd = need(), py0 = by0 + B * 1.42;
+        // meaning (释义) under the tiles
+        const mn = meanOf(j), mfs = Math.max(12, Math.min(16, B * .2)), mW = Math.min(land ? sw * .5 : sw - 2 * pad, Math.max(bigW * 1.25, 260));
+        if (mn) {
+          const lines = wrap(g, mn, mW, `500 ${mfs}px ${BX.F.serif}`, 2);
+          lines.forEach((ln, li) => D.text(g, ln, bx0 + bigW / 2, by0 + B * 1.12 + mfs * .7 + li * mfs * 1.3, {size: mfs, color: '#5e4a33', font: 'serif', weight: 500}));
+        }
+        const nd = need(), py0 = by0 + B * 1.12 + mfs * 3.4 + B * .2;
         if (!st.over) {
           const msg = '请接「' + nd.ch + '」' + (homo ? '或同音 ' + pyMark(nd.py).replace(/[āáǎà]/g, 'a') : '');
           D.text(g, '轮到 ' + ctx.name(st.turn) + ' · ' + msg, bx0 + bigW / 2, py0, {size: Math.max(13, B * .22), color: C.ink, font: 'serif', weight: 700, maxW: land ? sw * .5 : sw - 2 * pad});
           if (st.hint && st.hint.k === st.turnNo) {
-            const t = st.hint.txt ? '提示：' + st.hint.txt + '□□' : '提示：此字已无成语可接';
+            const t = st.hint.txt ? '提示：' + st.hint.txt + '□□ · 共 ' + st.hint.n + ' 个可接' : '提示：此字已无成语可接';
             D.text(g, t, bx0 + bigW / 2, py0 + B * .42, {size: Math.max(13, B * .22), color: C.jade, font: 'serif', weight: 800});
           }
           // timer ring
-          const left = Math.max(0, LIMIT - (performance.now() - tStart) / 1000), k = left / LIMIT;
+          const left = LIMIT ? Math.max(0, LIMIT - (performance.now() - tStart) / 1000) : 0, k = LIMIT ? left / LIMIT : 1;
           const tx = land ? bx0 + bigW / 2 : sx + sw - pad - timerR, ty = land ? by0 - B * 1.25 : sy + pad + timerR;
           g.fillStyle = 'rgba(255,250,235,.8)'; D.circle(g, tx, ty, timerR); g.fill();
           g.strokeStyle = 'rgba(60,40,20,.15)'; g.lineWidth = timerR * .2; D.circle(g, tx, ty, timerR * .82); g.stroke();
           g.strokeStyle = left < 6 ? C.red : C.jade; g.beginPath(); g.arc(tx, ty, timerR * .82, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * k); g.stroke();
-          D.text(g, String(Math.ceil(left)), tx, ty + 1, {size: timerR * .8, color: left < 6 ? C.red : C.ink, font: 'deco', weight: 400});
+          if (!LIMIT) { g.strokeStyle = C.jade; g.beginPath(); g.arc(tx, ty, timerR * .82, 0, Math.PI * 2); g.stroke(); D.text(g, '∞', tx, ty + 1, {size: timerR * .8, color: C.ink, font: 'serif', weight: 700}); }
+          else D.text(g, String(Math.ceil(left)), tx, ty + 1, {size: timerR * .8, color: left < 6 ? C.red : C.ink, font: 'deco', weight: 400});
           const sec = Math.ceil(left);
-          if (sec <= 5 && sec !== lastTick && sec > 0 && ctx.canAct(st.turn)) { lastTick = sec; ctx.sfx('tick'); }
+          if (LIMIT && sec <= 5 && sec !== lastTick && sec > 0 && ctx.canAct(st.turn)) { lastTick = sec; ctx.sfx('tick'); }
         } else {
-          D.text(g, '— ' + ctx.name(st.winner) + ' 胜 —', bx0 + bigW / 2, py0 + B * .1, {size: Math.max(16, B * .32), color: C.red, font: 'deco', weight: 400});
+          D.text(g, '— ' + ctx.name(st.winner) + ' 胜 —', bx0 + bigW / 2, py0, {size: Math.max(16, B * .32), color: C.red, font: 'deco', weight: 400});
         }
         // history (previous idioms)
         const hx = land ? sx + pad : sx + pad, hy = land ? sy + pad : sy + pad;
         const rowH = Math.max(24, Math.min(B * .5, 40));
-        const hBottom = land ? sy + sh - pad : by0 - B * .9;
+        const hBottom = land ? sy + sh - pad : by0 - B * .75;
         const rows = Math.max(0, Math.floor((hBottom - hy - rowH * .9) / rowH));
         D.text(g, '接龙谱 · 第 ' + (st.chain.length - 1) + ' 接', hx, hy + rowH * .4, {size: Math.max(13, rowH * .5), color: C.red, font: 'deco', weight: 400, align: 'left'});
+        if (st.chain.length > 1) { const hw0 = g.measureText('接龙谱 · 第 ' + (st.chain.length - 1) + ' 接').width, lx = hx + hw0 + 10, lim = land ? hx + histW : sx + sw - pad - timerR * 2 - 8; g.font = `500 ${Math.max(11, rowH * .34)}px ${BX.F.sans}`; if (lx + g.measureText('点成语看释义').width < lim) D.text(g, '点成语看释义', lx, hy + rowH * .4, {size: Math.max(11, rowH * .34), color: C.ink2, weight: 500, align: 'left'}); }
         const hist = [];
         for (let i = st.chain.length - 2; i >= 0 && hist.length < rows; i--) hist.push(i);
         hist.forEach((ci, r) => {
@@ -280,8 +335,13 @@ BX.register({
           D.text(g, iw.slice(0, 3), hx + 16, y, {size: rowH * .58, color: C.ink, font: 'serif', weight: 700, align: 'left'});
           const w3 = g.measureText(iw.slice(0, 3)).width;
           D.text(g, iw[3], hx + 16 + w3, y, {size: rowH * .58, color: C.red, font: 'serif', weight: 800, align: 'left'});
-          D.text(g, b2 < 0 ? '开局' : ctx.name(b2), Math.min(hx + histW, hx + 16 + rowH * 3.6), y, {size: Math.max(11, rowH * .36), color: C.ink2, weight: 500, align: 'left'});
+          const nx = Math.min(hx + histW, hx + 16 + rowH * 3.6);
+          D.text(g, b2 < 0 ? '开局' : ctx.name(b2), nx, y, {size: Math.max(11, rowH * .36), color: C.ink2, weight: 500, align: 'left'});
+          // short meaning when the row is wide enough (desktop / landscape)
+          const mx = nx + rowH * 2.6, room = hx + histW - mx;
+          if (room > 110 && r < 8) { const mm = meanOf(st.chain[ci]); if (mm) { const ln = wrap(g, mm, room, `500 ${Math.max(11, rowH * .34)}px ${BX.F.sans}`, 1)[0]; D.text(g, ln, mx, y, {size: Math.max(11, rowH * .34), color: '#7a6650', weight: 500, align: 'left'}); } }
           g.globalAlpha = 1;
+          hits.push({x: hx, y: y - rowH / 2, w: histW, h: rowH, k: st.chain[ci]});
         });
         // players eliminated marks
         if (flashOut > 0) { flashOut = Math.max(0, flashOut - dt * 1.5); g.fillStyle = `rgba(178,58,43,${flashOut * .18})`; g.fillRect(0, 0, W, cv.h); }

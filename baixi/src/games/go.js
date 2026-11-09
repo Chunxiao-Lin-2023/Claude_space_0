@@ -272,11 +272,17 @@ const fmt = v => (Math.round(v * 2) / 2).toString();
 BX.register({
   id: 'go', title: '围棋', cat: 'heavy', order: 1, sub: '黑白围地，数子定胜负',
   desc: '中国规则围棋：黑先白后，围空吃子，终局数子并贴目。支持 19/13/9 路，终局自动判断死活，双方确认后出结果。电脑采用蒙特卡洛树搜索。',
-  kind: 'turn', seats: 2, seatNames: ['黑方', '白方'], seatColors: ['#1c1a18', '#ece8df'], firstLabel: '执子',
+  kind: 'turn', seats: 2, seatNames: ['黑方', '白方'], seatColors: ['#1c1a18', '#ece8df'], firstLabel: '执子', aiDelay: 180,
   options: [
     {key: 'size', label: '棋盘', choices: [[19, '19路'], [13, '13路'], [9, '9路']], def: 19},
     {key: 'komi', label: '贴目', choices: [[7.5, '7.5目'], [6.5, '6.5目'], [0.5, '0.5目']], def: 7.5},
+    {key: 'hcap', label: '让子', choices: [[0, '不让子'], [2, '让2子'], [3, '让3子'], [4, '让4子'], [5, '让5子'], [9, '让9子']], def: 0},
   ],
+  howto: ['点交叉点落子。触屏：按住可<b>拖动瞄准</b>（十字线 + 放大镜跟随手指），松手后再点一次同一点或按「落子」确认。',
+    '「形势」显示双方势力范围与目数估计（野狐式形势判断）；「手数」在棋子上显示第几手。',
+    '「停一手」需点两次确认；双方连续停一手后自动判断死活，点棋块可改死活，双方「确认结果」即数子。',
+    '💡 提示会标出电脑推荐的落点；↶ 悔棋。新手建议先选 <b>9路</b> 快棋或在开局选项里「让子」。',
+    '键盘：P 停一手 · E 形势 · N 手数 · Esc 取消预览。'],
   rules: `<p><b>棋具</b>：19×19（亦可选 13 路、9 路）棋盘，黑白两色棋子。<b>黑先白后</b>，轮流在交叉点上落一子，落下后不再移动。</p>
 <p><b>气与提子</b>：一块棋（上下左右相连的同色棋子）相邻的空交叉点叫“气”。落子后使对方棋块没有气，就把这些子提走。</p>
 <p><b>禁着点</b>：落子后自己的棋块没有气、且不能提掉对方棋子的位置不能下（禁止自杀）。</p>
@@ -285,6 +291,7 @@ BX.register({
 <p><b>数子（中国规则）</b>：去掉双方认定的死子后，每方的得分 = 盘上活子数 + 自己围住的空点数；双方都相邻的空点（单官、双活）不计。黑方再<b>贴还 7.5 目</b>（可在开局选项里改）。得分高者胜，结果以“黑胜 / 白胜 X 目”表示。</p>
 <p><b>判断死活</b>：进入数子后电脑会自动估计死子（半透明并打叉），双方可点击棋块切换死活；双方都按“确认结果”后结束。若有争议，可点“继续对局”把棋下完。</p>
 <p><b>认输</b>：轮到自己时可以随时认输（中盘负）。</p>
+<p><b>让子</b>（可选）：黑方先在星位摆上 2–9 子，由白方先走，此时贴目改为 0.5 目。</p>
 <p><b>操作</b>：鼠标直接点击落子；触屏第一次点击预览落点（出现十字准线），再点同一点确认。</p>`,
   icon(g, w, h) {
     D.wood(g, 0, 0, w, h, {seed: 19, base: '#dcb06a'});
@@ -304,12 +311,22 @@ BX.register({
     for (const [dx, dy] of [[-.4, -.1], [0, -.18], [.38, -.08], [-.15, .08], [.2, .1]]) D.stone(g, bx + dx * br, by + dy * br, br * .2, true);
   },
   create(ctx) {
-    const N = +ctx.opts.size || 19, KOMI = ctx.opts.komi != null ? +ctx.opts.komi : 7.5;
+    const N = +ctx.opts.size || 19, HC = Math.min(+ctx.opts.hcap || 0, N === 9 ? 5 : 9);
+    const KOMI = HC >= 2 ? 0.5 : ctx.opts.komi != null ? +ctx.opts.komi : 7.5;
     const st = {N, komi: KOMI, b: new Array(N * N).fill(0), turn: 0, last: -1, ko: -1, passes: 0, caps: [0, 0], moves: 0,
       h: [0, 0], hh: [0], ph: 'play', dead: null, acc: [false, false], res: null, lastPass: -1};
+    if (HC >= 2) {   // handicap stones on the star points (standard order), white moves first
+      const [a0, m0, z0] = STAR[N], C4 = [[z0, a0], [a0, z0], [z0, z0], [a0, a0]];
+      const pts = HC === 9 ? C4.concat([[m0, m0], [a0, m0], [z0, m0], [m0, a0], [m0, z0]]) : C4.slice(0, Math.min(4, HC)).concat(HC === 5 ? [[m0, m0]] : []);
+      let h1 = 0, h2 = 0;
+      for (const [x, y] of pts) { const i = y * N + x; st.b[i] = 1; h1 ^= Z(1, i, 0); h2 ^= Z(1, i, 1); }
+      st.h = [h1 >>> 0, h2 >>> 0]; st.hh = [keyOf(st.h)]; st.turn = 1;
+    }
     const gEng = makeEng(N);
     const cv = ctx.canvas();
     let hover = -1, preview = -1, drop = {i: -1, t: 1}, fades = [], passFx = null, passArm = 0, thinkT = 0;
+    let drag = null, hintI = -1, hintT = 0, estOn = false, estC = null, showNum = !!ctx.load('nums', false);
+    const num = new Int16Array(N * N);   // move number of each stone (visual; rebuilt by replay)
 
     /* ---------- rules ---------- */
     function tryMove(i) {
@@ -343,9 +360,12 @@ BX.register({
     function layout() {
       const w = cv.w, h = cv.h, port = h > w * 1.08;
       if (port) {
-        const ph = 56; const B = Math.max(120, Math.min(w - 8, h - 2 * ph - 20));
-        const y0 = Math.max(4, (h - (B + 2 * ph + 12)) / 2), pw = Math.min(B, 520), px = (w - pw) / 2;
-        return {port, B, bx: (w - B) / 2, by: y0 + ph + 6, top: {x: px, y: y0, w: pw, h: ph - 4}, bot: {x: px, y: y0 + ph + 12 + B, w: pw, h: ph - 4}, btn: 'row'};
+        const ph = 56, tools = h - (w - 8) - 3 * ph > 30;   // room for a tools row under the board?
+        const rows = tools ? 3 : 2, B = Math.max(120, Math.min(w - 8, h - rows * ph - 20));
+        const y0 = Math.max(4, (h - (B + rows * ph + 12)) / 2), pw = Math.min(B, 520), px = (w - pw) / 2;
+        const bot = {x: px, y: y0 + ph + 12 + B, w: pw, h: ph - 4};
+        return {port, B, bx: (w - B) / 2, by: y0 + ph + 6, top: {x: px, y: y0, w: pw, h: ph - 4}, bot,
+          tools: tools ? {x: px, y: bot.y + ph, w: pw, h: ph - 6} : null};
       }
       const PW = BX.clamp(w * .26, 150, 250); const B = Math.max(120, Math.min(h - 10, w - PW - 28));
       const tot = B + 16 + PW, x0 = (w - tot) / 2, by = (h - B) / 2, px = x0 + B + 16;
@@ -361,14 +381,15 @@ BX.register({
 
     /* ---------- DOM buttons ---------- */
     const ui = ctx.ui();
-    const box = BX.h('div', {style: {position: 'absolute', display: 'flex', gap: '8px', alignItems: 'center', justifyContent: 'center', pointerEvents: 'auto'}});
-    ui.append(box);
-    const mk = (txt, cls, fn) => { const b = BX.h('button', {class: 'bx-btn ' + cls, text: txt, on: {click: fn}}); b.style.minWidth = '84px'; b.style.padding = '8px 12px'; box.append(b); return b; };
+    const mkBox = () => { const d = BX.h('div', {style: {position: 'absolute', display: 'flex', gap: '8px', alignItems: 'center', justifyContent: 'center', pointerEvents: 'auto'}}); ui.append(d); return d; };
+    const box = mkBox(), tbox = mkBox();
+    const mk = (txt, cls, fn, parent = box) => { const b = BX.h('button', {class: 'bx-btn ' + cls, text: txt, on: {click: fn}}); b.style.padding = '8px 12px'; parent.append(b); return b; };
     const actSeat = () => { for (const s of ctx.turn) if (ctx.canAct(s)) return s; return -1; };
+    let armT = 0;
     const bPass = mk('停一手', 'ghost', () => {
       const s = actSeat(); if (s < 0 || st.ph !== 'play') return;
-      if (passArm < performance.now()) { passArm = performance.now() + 2500; bPass.textContent = '确认停一手'; ctx.sfx('tick'); setTimeout(() => { bPass.textContent = '停一手'; }, 2500); return; }
-      passArm = 0; bPass.textContent = '停一手'; preview = -1; ctx.act({t: 'pass'}, s);
+      if (passArm < performance.now()) { passArm = performance.now() + 2500; ctx.sfx('tick'); clearTimeout(armT); armT = setTimeout(() => { passArm = 0; }, 2500); return; }
+      passArm = 0; preview = -1; ctx.act({t: 'pass'}, s);
     });
     const bResign = mk('认输', 'ghost', async () => {
       const s = actSeat(); if (s < 0 || st.ph !== 'play') return;
@@ -377,39 +398,84 @@ BX.register({
     });
     const bOk = mk('确认结果', 'red', () => { const s = actSeat(); if (s >= 0 && st.ph === 'score' && st.dead) ctx.act({t: 'ok'}, s); });
     const bResume = mk('继续对局', 'ghost', () => { const s = actSeat(); if (s >= 0 && st.ph === 'score' && st.dead) ctx.act({t: 'resume'}, s); });
-    let boxKey = '';
+    const toggleEst = () => { estOn = !estOn; ctx.sfx('click'); if (estOn) { estimate(); const l = estC.lead; ctx.toast('形势判断：' + (Math.abs(l) < .5 ? '双方接近' : (l > 0 ? '黑' : '白') + '约领先 ' + fmt(Math.abs(l)) + ' 目')); } status(); };
+    const toggleNum = () => { showNum = !showNum; ctx.save('nums', showNum); ctx.sfx('click'); };
+    const bEst = mk('形势', 'ghost', toggleEst, tbox);
+    const bNum = mk('手数', 'ghost', toggleNum, tbox);
+    const bPlace = mk('落子', 'red', () => { if (preview >= 0 && st.ph === 'play' && ctx.canAct(st.turn) && !st.b[preview]) place(preview); }, tbox);
+    let boxKey = '', stateKey = '';
     function placeBox(L) {
-      const sc = st.ph === 'score';
-      const show = (b, v) => { b.style.display = v ? '' : 'none'; };
-      show(bPass, !sc && st.ph === 'play'); show(bResign, !sc && st.ph === 'play'); show(bOk, sc); show(bResume, sc);
-      const mine = actSeat() >= 0;
+      const sc = st.ph === 'score', pl = st.ph === 'play';
+      const show = (b, v) => { const d = v ? '' : 'none'; if (b.style.display !== d) b.style.display = d; };
+      show(bPass, pl); show(bResign, pl); show(bOk, sc); show(bResume, sc);
+      const mine = actSeat() >= 0, myT = pl && ctx.canAct(st.turn);
+      show(bEst, pl); show(bNum, !sc); show(bPlace, myT && preview >= 0 && !st.b[preview]);
+      tbox.style.display = st.ph === 'over' && !L.port ? 'none' : 'flex';
       bPass.disabled = bResign.disabled = !mine; bOk.disabled = bResume.disabled = !mine || !st.dead;
-      if (sc && ctx.hotseat) { const s = actSeat(); bOk.textContent = s >= 0 ? (s ? '白方确认' : '黑方确认') : '确认结果'; } else bOk.textContent = '确认结果';
-      let r;
-      if (L.port) { const b = L.bot; r = {x: b.x + b.w * .42, y: b.y, w: b.w * .58, h: b.h, dir: 'row'}; }
-      else { const m = L.mid; r = {x: m.x, y: m.y, w: m.w, h: m.h, dir: 'column'}; }
-      const k = [r.x, r.y, r.w, r.h, r.dir].map(v => typeof v === 'number' ? Math.round(v) : v).join(',');
+      const armed = passArm > performance.now();
+      const sk = [armed, st.passes, mine, estOn, showNum, sc, ctx.hotseat && actSeat()].join();
+      if (sk !== stateKey) {
+        stateKey = sk;
+        bPass.textContent = armed ? '确认停一手' : st.passes === 1 && mine ? '停一手·数子' : '停一手';
+        bPass.className = 'bx-btn ' + (armed ? 'red' : st.passes === 1 && mine ? 'jade' : 'ghost');
+        bEst.className = 'bx-btn ' + (estOn ? 'jade' : 'ghost'); bNum.className = 'bx-btn ' + (showNum ? 'jade' : 'ghost');
+        if (sc && ctx.hotseat) { const s = actSeat(); bOk.textContent = s >= 0 ? (s ? '白方确认' : '黑方确认') : '确认结果'; } else bOk.textContent = '确认结果';
+      }
+      let r, t;
+      if (L.port) { const b = L.bot; r = {x: b.x + b.w * .42, y: b.y, w: b.w * .58, h: b.h}; t = L.tools || {x: b.x, y: b.y - 1e4, w: 1, h: 1}; }
+      else { const m = L.mid, hh = Math.min(m.h / 2, 60); r = {x: m.x, y: m.y + m.h / 2 - hh, w: m.w, h: hh}; t = {x: m.x, y: m.y + m.h / 2 + 2, w: m.w, h: hh}; }
+      const k = [r.x, r.y, r.w, r.h, t.x, t.y, t.w].map(v => Math.round(v)).join(',');
       if (k !== boxKey) {
-        boxKey = k; Object.assign(box.style, {left: r.x + 'px', top: r.y + 'px', width: r.w + 'px', height: r.h + 'px', flexDirection: r.dir, justifyContent: r.dir === 'row' ? 'flex-end' : 'center'});
-        for (const b of [bPass, bResign, bOk, bResume]) { b.style.minWidth = r.dir === 'row' ? '0' : '120px'; b.style.flex = r.dir === 'row' ? '0 1 auto' : 'none'; b.style.fontSize = r.w < 220 && r.dir === 'row' ? '14px' : '15px'; }
+        boxKey = k;
+        Object.assign(box.style, {left: r.x + 'px', top: r.y + 'px', width: r.w + 'px', height: r.h + 'px', justifyContent: L.port ? 'flex-end' : 'center'});
+        Object.assign(tbox.style, {left: t.x + 'px', top: t.y + 'px', width: t.w + 'px', height: t.h + 'px', justifyContent: 'center'});
+        const narrow = r.w < 230;
+        for (const b of [bPass, bResign, bOk, bResume, bEst, bNum, bPlace]) { b.style.minWidth = '0'; b.style.flex = L.port ? '0 1 auto' : '1 1 0'; b.style.fontSize = narrow ? '14px' : '15px'; b.style.padding = narrow ? '8px 8px' : '8px 12px'; b.style.minHeight = '42px'; b.style.whiteSpace = 'nowrap'; }
+        if (L.port) for (const b of [bEst, bNum, bPlace]) { b.style.flex = '1 1 0'; b.style.maxWidth = '140px'; }
       }
     }
 
     /* ---------- input ---------- */
-    ctx.on(cv.cv, 'pointermove', e => { if (e.pointerType === 'mouse') hover = cellAt(cv.pos(e)); });
+    function place(i) {
+      if (!tryMove(i)) { ctx.sfx('error'); ctx.buzz(30); ctx.toast(whyIllegal(i)); preview = -1; return; }
+      preview = -1; drag = null; ctx.act({t: 'p', i}, st.turn);
+    }
+    ctx.on(cv.cv, 'pointermove', e => {
+      const p = cv.pos(e);
+      if (e.pointerType === 'mouse') hover = cellAt(p);
+      if (drag && e.pointerId === drag.id) {
+        drag.x = p.x; drag.y = p.y;
+        const i = cellAt(p); if (i >= 0 && !st.b[i] && i !== preview && st.ph === 'play' && ctx.canAct(st.turn)) preview = i;
+      }
+    });
     ctx.on(cv.cv, 'pointerleave', () => hover = -1);
+    const endDrag = e => { if (drag && e.pointerId === drag.id) drag = null; };
+    ctx.on(cv.cv, 'pointerup', endDrag); ctx.on(cv.cv, 'pointercancel', endDrag);
     ctx.on(cv.cv, 'pointerdown', e => {
-      const i = cellAt(cv.pos(e)); if (i < 0) { preview = -1; return; }
+      const p = cv.pos(e), i = cellAt(p);
       if (st.ph === 'score') {
-        const s = actSeat(); if (s < 0 || !st.dead || !st.b[i]) return;
+        const s = actSeat(); if (i < 0 || s < 0 || !st.dead || !st.b[i]) return;
         ctx.act({t: 'tog', i}, s); return;
       }
       if (st.ph !== 'play' || !ctx.canAct(st.turn)) return;
+      if (i < 0) { preview = -1; return; }
+      if (ctx.needConfirm(e) && preview !== i) {   // aim: tap or drag the crosshair, then tap the same point (or 落子) to place
+        drag = {id: e.pointerId, x: p.x, y: p.y};
+        if (!st.b[i]) { preview = i; ctx.sfx('tick'); }
+        return;
+      }
       if (st.b[i]) return;
-      if (e.pointerType !== 'mouse' && preview !== i) { preview = i; ctx.sfx('tick'); return; }
-      if (!tryMove(i)) { ctx.sfx('error'); ctx.toast(whyIllegal(i)); preview = -1; return; }
-      preview = -1; ctx.act({t: 'p', i}, st.turn);
+      place(i);
     });
+
+    /* ---------- 形势判断 (ownership estimate) ---------- */
+    function estimate() {
+      const key = ctx.log.length + ':' + st.moves;
+      if (estC && estC.key === key) return estC;
+      const own = ownership(st.b, N, st.turn + 1, st.ko, N === 19 ? 220 : N === 13 ? 360 : 600);
+      let lead = -KOMI; for (let i = 0; i < own.length; i++) lead += own[i];
+      estC = {key, own, lead}; return estC;
+    }
 
     /* ---------- status ---------- */
     const touch = BX.TOUCH.matches;
@@ -421,8 +487,10 @@ BX.register({
         const {bs, ws} = finalCount(), d = bs - ws - KOMI;
         return ctx.status('黑 ' + bs + ' · 白 ' + ws + '+' + KOMI + ' → ' + (d > 0 ? '黑' : '白') + '胜 ' + fmt(Math.abs(d)) + ' 目 · 点棋块改死活');
       }
-      const pre = st.passes === 1 ? '对方停了一手 · ' : '';
-      if (ctx.canAct(st.turn)) ctx.status(pre + (ctx.hotseat ? ctx.name(st.turn) + '落子' : '轮到你落子') + (touch ? '（点两下确认）' : ''));
+      let pre = st.passes === 1 ? (st.lastPass >= 0 ? ctx.name(st.lastPass) : '对方') + '停了一手 · ' : '';
+      if (estOn && estC) pre = '形势：' + (Math.abs(estC.lead) < .5 ? '接近' : (estC.lead > 0 ? '黑' : '白') + '约领先' + fmt(Math.abs(estC.lead)) + '目') + ' · ' + pre;
+      const conf = ctx.pref('confirm'), aim = conf === 'on' || (conf === 'auto' && touch);
+      if (ctx.canAct(st.turn)) ctx.status(pre + (ctx.hotseat ? ctx.name(st.turn) + '落子' : '轮到你落子') + (aim && !pre ? '（拖动瞄准，再点确认）' : ''));
       else ctx.status(pre + (ctx.isAI(st.turn) ? ctx.name(st.turn) + ' 思考中…' : '等待 ' + ctx.name(st.turn) + ' 落子…'));
     }
 
@@ -430,7 +498,7 @@ BX.register({
     async function aiMove(seat, level) {
       if (st.ph === 'score') return {t: 'ok'};
       const c = seat + 1, sgn = c === 1 ? 1 : -1, L0 = ctx.log.length;
-      const ms = BX.test ? (level >= 3 ? 40 : 28) : [0, 90, 320, 700][level] * (N === 9 ? .8 : 1);
+      const ms = BX.test ? (level >= 3 ? 40 : 28) : [0, 90, N === 19 ? 320 : 380, 740][level];
       const okCache = new Map();
       const ok = p => { const i = gEng.toI(p); if (!okCache.has(i)) okCache.set(i, !!tryMove(i)); return okCache.get(i); };
       // gEng is reused by tryMove; compute the root filter from a separate index space
@@ -487,11 +555,13 @@ BX.register({
         return {a: {t: 'dead', d}, delay: 350};
       },
       apply(a, by) {
-        preview = -1;
+        preview = -1; hintI = -1; drag = null;
         if (a.t === 'p') {
           const r = tryMove(a.i); if (!r) return;
           const c = st.turn + 1; st.b[a.i] = c;
-          for (const j of r.caps) st.b[j] = 0;
+          for (const j of r.caps) { st.b[j] = 0; num[j] = 0; }
+          num[a.i] = st.moves + 1;
+          if (r.caps.length && ctx.isLocal(1 - st.turn) && !ctx.isLocal(st.turn)) ctx.buzz(40);
           st.caps[st.turn] += r.caps.length; st.h = r.h; st.hh.push(r.key); st.ko = r.ko; st.last = a.i;
           st.passes = 0; st.moves++; st.turn ^= 1;
           if (!ctx.fast) {
@@ -528,6 +598,18 @@ BX.register({
       },
       aiMove,
       onTurn() { status(); },
+      showHint(a) {
+        if (!a) return;
+        if (a.t === 'p') { hintI = a.i; hintT = performance.now(); return; }
+        ctx.toast(a.t === 'pass' ? '电脑建议：停一手' : a.t === 'resign' ? '电脑认为形势已很难挽回，可以考虑认输' : a.t === 'ok' ? '死活判断看起来没问题，可以确认结果' : '电脑也拿不准');
+      },
+      key(e) {
+        if (e.code === 'Escape') { preview = -1; hintI = -1; }
+        else if (e.code === 'KeyP' && st.ph === 'play') bPass.click();
+        else if (e.code === 'KeyE' && st.ph === 'play') toggleEst();
+        else if (e.code === 'KeyN') toggleNum();
+        else if ((e.code === 'Enter' || e.code === 'Space') && preview >= 0) bPlace.click();
+      },
       frame(dt) {
         const g = cv.g; cv.clear(); thinkT += dt;
         const L = layout(), {cell, ox, oy, coords} = geo(L), R = cell * .47;
@@ -568,6 +650,7 @@ BX.register({
           if (i === drop.i && drop.t < 1) g.globalAlpha = .4 + .6 * drop.t;
           D.stone(g, x, y, R * s, v === 2);
           g.globalAlpha = 1;
+          if (showNum && num[i] && !dead && s === 1) D.text(g, String(num[i]), x, y + cell * .02, {size: cell * (num[i] > 99 ? .36 : .44), color: i === st.last ? C.red : v === 1 ? '#f2ead8' : '#1c1a18', weight: 700, maxW: R * 1.7});
           if (dead) { g.strokeStyle = C.red; g.lineWidth = Math.max(1.5, cell * .08); const q = cell * .18; g.beginPath(); g.moveTo(x - q, y - q); g.lineTo(x + q, y + q); g.moveTo(x + q, y - q); g.lineTo(x - q, y + q); g.stroke(); }
         }
         for (const f of fades) for (const j of f.list) {
@@ -583,8 +666,20 @@ BX.register({
             g.fillRect(x - q / 2, y - q / 2, q, q); g.strokeRect(x - q / 2, y - q / 2, q, q);
           }
         }
+        // 形势判断 overlay
+        if (estOn && st.ph === 'play') {
+          const before = estC, E = estimate(); if (E !== before) status();
+          for (let i = 0; i < N * N; i++) {
+            const o = E.own[i], v = st.b[i], ao = Math.abs(o);
+            const deadish = (v === 1 && o < -.4) || (v === 2 && o > .4);
+            if (v && !deadish) continue; if (!v && ao < .25) continue;
+            const x = px(i % N), y = py((i / N) | 0), q = cell * (deadish ? .4 : .2 + .32 * Math.min(1, ao));
+            g.fillStyle = o > 0 ? 'rgba(20,16,12,' + (.35 + .5 * ao) + ')' : 'rgba(250,246,236,' + (.45 + .5 * ao) + ')';
+            g.fillRect(x - q / 2, y - q / 2, q, q);
+          }
+        }
         // last move / ko
-        if (st.last >= 0 && st.b[st.last]) {
+        if (st.last >= 0 && st.b[st.last] && !showNum) {
           const x = px(st.last % N), y = py((st.last / N) | 0);
           g.strokeStyle = st.b[st.last] === 1 ? '#f0d9a0' : C.red; g.lineWidth = Math.max(1.5, cell * .08); D.circle(g, x, y, R * .45); g.stroke();
         }
@@ -592,6 +687,13 @@ BX.register({
         // ghost
         const ghost = preview >= 0 ? preview : hover;
         if (ghost >= 0 && myT && !st.b[ghost]) { g.globalAlpha = preview >= 0 ? .78 : .45; D.stone(g, px(ghost % N), py((ghost / N) | 0), R, st.turn === 1); g.globalAlpha = 1; }
+        // hint
+        if (hintI >= 0 && !st.b[hintI] && myT) {
+          const k = (performance.now() - hintT) / 1000, x = px(hintI % N), y = py((hintI / N) | 0);
+          g.strokeStyle = 'rgba(63,160,120,' + (.6 + .35 * Math.sin(k * 6)) + ')'; g.lineWidth = Math.max(2.5, cell * .12);
+          D.circle(g, x, y, R * (1.1 + .12 * Math.sin(k * 6))); g.stroke();
+          g.globalAlpha = .4; D.stone(g, x, y, R, st.turn === 1); g.globalAlpha = 1;
+        }
         // pass banner
         if (passFx) {
           const k = passFx.t, a = k < .15 ? k / .15 : k > .75 ? (1 - k) / .25 : 1;
@@ -603,6 +705,18 @@ BX.register({
         // player panels
         const bs = bottomSeat();
         panel(g, L.top, 1 - bs, L, cnt); panel(g, L.bot, bs, L, cnt);
+        // magnifier while drag-aiming with a finger on a small grid
+        if (drag && preview >= 0 && myT && cell < 30) {
+          const cx = px(preview % N), cy = py((preview / N) | 0), sr = cell * 2.4, zr = Math.min(sr * 2.1, 92);
+          const lx = BX.clamp(drag.x, zr + 4, cv.w - zr - 4), ly = Math.max(zr + 4, drag.y - zr - 46), d = cv.dpr;
+          g.save(); g.shadowColor = 'rgba(0,0,0,.55)'; g.shadowBlur = 14; g.fillStyle = '#ddb36e'; D.circle(g, lx, ly, zr); g.fill(); g.restore();
+          g.save(); D.circle(g, lx, ly, zr - 1); g.clip();
+          try { g.drawImage(cv.cv, (cx - sr) * d, (cy - sr) * d, sr * 2 * d, sr * 2 * d, lx - zr, ly - zr, zr * 2, zr * 2); } catch (er) { /* ignore */ }
+          g.restore();
+          g.strokeStyle = C.red; g.lineWidth = 3; D.circle(g, lx, ly, zr); g.stroke();
+          const lab = LETTERS[preview % N] + (N - ((preview / N) | 0));
+          D.text(g, lab, lx, ly + zr - 12, {size: 13, color: '#fff', weight: 700, stroke: 'rgba(0,0,0,.6)'});
+        }
       },
     };
     function panel(g, r, s, L, cnt) {
@@ -618,6 +732,8 @@ BX.register({
       let sub = '提子 ' + st.caps[s];
       if (cnt) sub = (s ? cnt.ws + ' 子 +' + KOMI : cnt.bs + ' 子') + (st.ph === 'score' ? (st.acc[s] ? ' · 已确认' : '') : '');
       else if (turn && ctx.isAI(s)) sub = '思考中' + '.'.repeat(1 + ((thinkT * 3) | 0) % 3);
+      else if (st.ph === 'play' && st.passes === 1 && st.lastPass === s) sub = '停了一手';
+      if (!cnt && estOn && estC && st.ph === 'play') { const l = estC.lead * (s ? -1 : 1); sub += ' · ' + (Math.abs(l) < .5 ? '形势接近' : (l > 0 ? '约领先 ' : '约落后 ') + fmt(Math.abs(l)) + ' 目'); }
       const big = r.h > 70;
       D.text(g, ctx.name(s), nx, cy - (big ? 12 : 9), {size: big ? 17 : 14, align: 'left', color: C.ink, weight: 700, maxW, font: 'serif'});
       D.text(g, sub, nx, cy + (big ? 13 : 10), {size: big ? 14 : 12, align: 'left', color: turn ? C.red : C.ink2, weight: 600, maxW});

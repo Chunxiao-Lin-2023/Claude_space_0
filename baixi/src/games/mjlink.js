@@ -74,10 +74,13 @@ BX.register({
   options: [
     {key: 'lv', label: '难度', choices: [['e', '简单 10×6'], ['m', '普通 12×7'], ['h', '困难 14×8']], def: 'e'},
     {key: 'tm', label: '计时', choices: [[1, '限时'], [0, '不限时']], def: 1},
+    {key: 'md', label: '模式', choices: [['c', '经典'], ['s', '闯关（牌会滑动）']], def: 'c'},
   ],
+  howto: ['依次<b>轻点两张相同的牌</b>，能用不超过两个弯的线连通就会消除；连线可以绕到牌阵外面。', '选中一张牌时，同样的牌会有金色小标记；状态栏显示当前「可消几对」。', '💡 提示一对能消的牌（限时扣 10 秒）；「洗牌」打乱剩下的牌；限时模式可「暂停」。', '「闯关」模式：每关消除后牌会朝不同方向滑动（下、左、上、右、向中间），越往后越难。'],
   rules: `<p>依次点选两张<b>完全相同</b>的牌（同花色同点数，花牌须同一字），如果两张牌之间能用一条<b>最多转两个弯</b>的折线连起来，且线经过的都是空位（可以绕到棋盘外沿），两张牌就会消除。</p>
 <p>消除全部牌即获胜。限时模式下，上方进度条是剩余时间，<b>时间耗尽则失败</b>；每次消除会补回少许时间。</p>
 <p>· <b>连击</b>：3 秒内连续消除可累积连击，得分越来越高。<br>· <b>提示</b>：显示一对可以消除的牌（限时模式扣 10 秒）。<br>· <b>洗牌</b>：把剩下的牌重新打乱，每局 3 次；如果局面无牌可消会自动免费洗牌。<br>· 牌局保证有解。</p>
+<p><b>闯关模式</b>：第 1 关牌不动；之后每关规则不同——消除后其余的牌会向下、向左、向上、向右或向中间靠拢。通关后「再来一局」进入下一关，关卡进度自动保存。</p>
 <p>牌面：万子（一至九萬）、条子（一条为小鸟）、筒子、东南西北中发白、梅兰竹菊。</p>`,
   icon(g, w, h) {
     D.felt(g, 0, 0, w, h, {color: '#2f6b4f'});
@@ -88,13 +91,16 @@ BX.register({
     g.moveTo(w * .08 + tw * .45, h * .08 + th * .5); g.lineTo(w * .03, h * .08 + th * .5); g.lineTo(w * .03, h * .08 + th * 1.08 + th * .5); g.lineTo(w * .08 + tw * .45, h * .08 + th * 1.08 + th * .5); g.stroke();
   },
   create(ctx) {
-    const lvK = ctx.opts.lv || 'e', TIMED = ctx.opts.tm == null ? 1 : +ctx.opts.tm, [W, H, LIMIT] = LV[lvK];
+    const lvK = ctx.opts.lv || 'e', TIMED = ctx.opts.tm == null ? 1 : +ctx.opts.tm, [W, H, LIMIT] = LV[lvK], STG = ctx.opts.md === 's';
+    const stage = STG ? ctx.load('stage_' + lvK, 1) : 0, GRAV = STG ? [null, [0, 1], [-1, 0], [0, -1], [1, 0], 'mid'][(stage - 1) % 6] : null;
+    const GRN = ['不动', '向下', '向左', '向上', '向右', '向中间'][STG ? (stage - 1) % 6 : 0];
     const cv = ctx.canvas(), fx = K.fx(), say = K.status(ctx);
+    let paused = false, avail = -1, slide = {}, pauseEl = null;
     let grid = new Array(W * H).fill(-1), sel = -1, time = 0, left = LIMIT, score = 0, combo = 0, lastMatch = -9, moves = 0, shuffles = 3, hints = 0, over = false, started = false;
     let effects = [], pathFx = null, hintPair = null, dying = [], floaters = [], shake = {i: -1, t: 0};
     const bar = K.bar(ctx, [
-      {k: 'hint', ic: '☞', t: '提示', on: () => hint()},
-      {k: 'shuf', ic: '⟲', t: '洗牌 3', on: () => { if (shuffles > 0 && !over) { shuffles--; reshuffle(true); } }},
+      {k: 'shuf', ic: '⟲', t: '洗牌 3', on: () => { if (shuffles > 0 && !over && !paused) { shuffles--; reshuffle(true); } }},
+      ...(TIMED ? [{k: 'pause', ic: '❚❚', t: '暂停', on: () => setPause(!paused)}] : []),
       {k: 'new', ic: '↻', t: '新局', on: async () => { if (started && !over && !(await BX.confirm('放弃这一局？', '新局'))) return; ctx.restart(); }},
     ]);
     const idx = (x, y) => y * W + x;
@@ -155,12 +161,40 @@ BX.register({
       const pos = [], ks = []; grid.forEach((k, i) => { if (k >= 0) { pos.push(i); ks.push(k); } });
       for (let t = 0; t < 40; t++) { BX.shuffle(ks); const g = grid.slice(); pos.forEach((p, j) => g[p] = ks[j]); if (solvable(g) || t === 39) { grid = g; break; } }
       pos.forEach(p => effects[p] = {d: Math.random() * .25, s: 0});
-      sel = -1; hintPair = null; ctx.sfx('shuffle');
+      sel = -1; hintPair = null; avail = -1; ctx.sfx('shuffle');
       if (!manual) ctx.toast('无牌可消，已自动洗牌');
       bar.label('shuf', '洗牌 ' + shuffles); bar.dis('shuf', shuffles <= 0);
     }
+    function setPause(p) {
+      if (over) p = false; paused = p; bar.on('pause', p); bar.label('pause', p ? '继续' : '暂停', p ? '▶' : '❚❚');
+      if (p && !pauseEl) { K.css(); pauseEl = BX.h('div', {class: 'sk-pick'}, BX.h('div', {class: 'pk-box', style: {width: 'min(320px,100%)', padding: '22px', alignItems: 'center', gap: '14px'}}, BX.h('div', {style: {font: '400 26px "ZCOOL XiaoWei",serif', color: '#2b2118'}, text: '暂停中'}), BX.h('button', {class: 'bx-btn red', text: '继续', on: {click: () => setPause(false)}}))); pauseEl.addEventListener('pointerdown', e => e.stopPropagation()); ctx.el.append(pauseEl); }
+      if (!p && pauseEl) { pauseEl.remove(); pauseEl = null; }
+    }
+    function countAvail() {
+      const by = {}; grid.forEach((k, i) => { if (k >= 0) (by[k] = by[k] || []).push(i); });
+      let n = 0; for (const k in by) { const l = by[k]; for (let i = 0; i < l.length; i++) for (let j = i + 1; j < l.length; j++) if (connect(grid, l[i], l[j])) n++; }
+      avail = n;
+    }
+    /* 闯关: slide the remaining tiles after a match (direction in screen space) */
+    function gravity() {
+      if (!GRAV || !L) return;
+      const moved = {};
+      const lines = [];
+      if (GRAV === 'mid') { for (let y = 0; y < H; y++) { const r = BX.range(W).map(x => idx(x, y)), h2 = W / 2; lines.push([r.slice(0, h2).reverse(), 1], [r.slice(h2), 1]); } }   // toward the centre column pair
+      else {
+        const [ddx, ddy] = GRAV, [gx, gy] = L.tr ? [ddy, ddx] : [ddx, ddy];
+        if (gx) for (let y = 0; y < H; y++) { const r = BX.range(W).map(x => idx(x, y)); lines.push([gx > 0 ? r.reverse() : r, 1]); }
+        else for (let x = 0; x < W; x++) { const c = BX.range(H).map(y => idx(x, y)); lines.push([gy > 0 ? c.reverse() : c, 1]); }
+      }
+      for (const [cells] of lines) {   // cells listed from the side tiles slide toward
+        const from = cells.filter(i => grid[i] >= 0), vals = from.map(i => grid[i]);
+        cells.forEach((i, k) => { grid[i] = k < vals.length ? vals[k] : -1; if (k < vals.length && from[k] !== i) moved[i] = from[k]; });
+      }
+      for (const j in moved) { const a = cellXY(moved[j]), b = cellXY(+j); slide[j] = {x: a.x - b.x, y: a.y - b.y}; }
+      if (sel >= 0) sel = -1;
+    }
     function hint() {
-      if (over) return;
+      if (over || paused) return;
       const p = findPair(grid); if (!p) { reshuffle(false); return; }
       hintPair = {a: p[0], b: p[1], t: 0}; hints++;
       if (TIMED) { left = Math.max(1, left - 10); floaters.push({x: L ? L.timerX : 0, y: 30, t: 0, s: '-10 秒', c: '#ff8a70'}); }
@@ -181,18 +215,23 @@ BX.register({
       ctx.sfx(combo > 2 ? 'score' : 'pop');
       if (hintPair && (hintPair.a === a || hintPair.a === b || hintPair.b === a || hintPair.b === b)) hintPair = null;
       if (grid.every(x => x < 0)) { win(); return true; }
-      if (!findPair(grid)) ctx.after(500, () => { if (!over) reshuffle(false); });
+      if (GRAV) { gravity(); hintPair = null; }
+      countAvail();
+      if (!avail) ctx.after(500, () => { if (!over) { reshuffle(false); countAvail(); } });
       return true;
     }
     function win() {
-      over = true; sel = -1;
+      over = true; sel = -1; ctx.buzz(30);
+      const bonus = TIMED ? Math.floor(left) * 2 : 0; score += bonus;
       const secs = Math.floor(time), tb = ctx.best('t_' + lvK + TIMED, secs, 'min'), sb = ctx.best('s_' + lvK + TIMED, score, 'max');
+      if (STG && !BX.test) ctx.save('stage_' + lvK, stage + 1);
       ctx.after(400, () => { fx.rain(cv.w, cv.h, 70); });
-      ctx.end({win: true, title: '满堂清', text: `用时 ${K.fmt(secs)} 步数 ${moves} · 得分 ${score}` + (sb.isNew ? ' · 最高分！' : ` · 最高 ${sb.best}`) + (tb.isNew ? ' · 最快！' : ''), delay: 1500});
+      ctx.end({win: true, title: STG ? `第 ${stage} 关通过` : '满堂清', text: `用时 ${K.fmt(secs)} 步数 ${moves} · 得分 ${score}` + (bonus ? `（含剩余时间奖励 ${bonus}）` : '') + (sb.isNew ? ' · 最高分！' : ` · 最高 ${sb.best}`) + (tb.isNew ? ' · 最快！' : '') + (STG ? ` · 下一关：牌${['不动', '向下', '向左', '向上', '向右', '向中间'][stage % 6]}` : ''), delay: 1500});
     }
     function lose() {
       over = true; sel = -1; ctx.sfx('lose');
       const n = grid.filter(k => k >= 0).length;
+      ctx.buzz(40);
       ctx.end({win: false, title: '时间到', text: `还剩 ${n} 张牌 · 得分 ${score} · 步数 ${moves}`, delay: 900});
     }
 
@@ -215,14 +254,14 @@ BX.register({
       return L.tr ? idx(dy, dx) : idx(dx, dy);
     }
     ctx.on(cv.cv, 'pointerdown', e => {
-      if (over || !L) return;
+      if (over || !L || paused) return;
       const i = cellAt(cv.pos(e)); if (i < 0 || grid[i] < 0) { sel = -1; return; }
       started = true;
       if (sel < 0) { sel = i; ctx.sfx('click'); return; }
       if (sel === i) { sel = -1; ctx.sfx('tick'); return; }
       if (grid[sel] === grid[i]) {
         if (tryMatch(sel, i)) { sel = -1; return; }
-        shake = {i, t: .3}; ctx.sfx('error'); sel = i; return;
+        shake = {i, t: .3}; ctx.sfx('error'); ctx.buzz(15); ctx.toast('这两张牌连不通（最多拐两个弯）', 1600); sel = i; return;
       }
       sel = i; ctx.sfx('click');
     });
@@ -240,7 +279,8 @@ BX.register({
     return {
       frame(dt) {
         const g = cv.g; cv.clear(); layout();
-        if (started && !over) { time += dt; if (TIMED) { left -= dt; if (left <= 0) { left = 0; lose(); } } }
+        if (started && !over && !paused) { time += dt; if (TIMED) { left -= dt; if (left <= 0) { left = 0; lose(); } } }
+        if (avail < 0) countAvail();
         const key = cv.w + 'x' + cv.h + cv.dpr;
         if (key !== bgKey) { bgKey = key; bgC = document.createElement('canvas'); bgC.width = Math.ceil(cv.w * cv.dpr); bgC.height = Math.ceil(cv.h * cv.dpr); const b = bgC.getContext('2d'); b.scale(cv.dpr, cv.dpr); K.table(b, cv.w, cv.h, 'felt'); }
         g.drawImage(bgC, 0, 0, cv.w, cv.h);
@@ -258,6 +298,7 @@ BX.register({
           const ef = effects[i]; let sc = 1, oyy = 0;
           if (ef && ef.s < 1) { if (ef.d > 0) { ef.d -= dt; continue; } ef.s = Math.min(1, ef.s + dt * 4); sc = BX.ease.back(ef.s); oyy = (1 - ef.s) * -20; }
           let x = ox + dx * tw + 1, y = oy + dy * th + 1 + oyy;
+          const sl = slide[i]; if (sl) { const kk = Math.exp(-dt * 14); sl.x *= kk; sl.y *= kk; x += sl.x; y += sl.y; if (Math.abs(sl.x) + Math.abs(sl.y) < .5) delete slide[i]; }
           if (shake.i === i && shake.t > 0) x += Math.sin(shake.t * 60) * 3;
           const isSel = sel === i, hl = hintPair && (hintPair.a === i || hintPair.b === i);
           if (isSel) y -= 3;
@@ -265,6 +306,7 @@ BX.register({
           if (sc !== 1) { g.save(); g.translate(x + tw / 2, y + th / 2); g.scale(sc, sc); g.drawImage(c, -tw / 2 - c.pad, -th / 2 - c.pad, c.width / cv.dpr, c.height / cv.dpr); g.restore(); }
           else g.drawImage(c, x - c.pad, y - c.pad, c.width / cv.dpr, c.height / cv.dpr);
           if (isSel) { g.strokeStyle = '#ffd76a'; g.lineWidth = 2.5; D.rr(g, x - 1, y - 1, tw - 2 - tw * .09 + 2, th - 2 - tw * .09 + 2, tw * .14); g.stroke(); }
+          else if (sel >= 0 && grid[sel] === k && ctx.pref('hints')) { g.fillStyle = '#e0a020'; D.circle(g, x + tw * .78, y + th * .12, Math.max(3, tw * .08)); g.fill(); g.strokeStyle = '#fff3d0'; g.lineWidth = 1.2; g.stroke(); }
         }
         if (shake.t > 0) shake.t -= dt;
         if (hintPair) { hintPair.t += dt; if (hintPair.t > 4) hintPair = null; }
@@ -278,20 +320,26 @@ BX.register({
         dying = dying.filter(d => d.t < .5);
         // connection path
         if (pathFx) {
-          pathFx.t += dt; const a = Math.max(0, 1 - pathFx.t * 2.5);
+          pathFx.t += dt; const a = Math.max(0, 1 - Math.max(0, pathFx.t - .14) * 2.8);
           g.save(); g.globalAlpha = a; g.lineJoin = g.lineCap = 'round';
           g.shadowColor = '#ffe08a'; g.shadowBlur = 12; g.strokeStyle = '#ffd76a'; g.lineWidth = Math.max(3, tw * .1);
-          g.beginPath(); pathFx.pts.forEach((pt, j) => { const [x, y] = ptXY(pt); j ? g.lineTo(x, y) : g.moveTo(x, y); }); g.stroke();
+          const pp = pathFx.pts.map(ptXY), segs = pp.slice(1).map((q, j) => Math.hypot(q[0] - pp[j][0], q[1] - pp[j][1])), tot = segs.reduce((a, b) => a + b, 0);
+          let rem = tot * Math.min(1, pathFx.t / .14);
+          g.beginPath(); g.moveTo(pp[0][0], pp[0][1]);
+          for (let j = 0; j < segs.length && rem > 0; j++) { const f = Math.min(1, rem / Math.max(1, segs[j])); g.lineTo(pp[j][0] + (pp[j + 1][0] - pp[j][0]) * f, pp[j][1] + (pp[j + 1][1] - pp[j][1]) * f); rem -= segs[j]; }
+          g.stroke();
           g.shadowBlur = 0; g.strokeStyle = '#fff'; g.lineWidth = Math.max(1, tw * .03); g.stroke(); g.restore();
           if (a <= 0) pathFx = null;
         }
         fx.draw(g, dt);
         for (const f of floaters) { f.t += dt; D.text(g, f.s, f.x, f.y - f.t * 50, {size: f.big ? 22 : 16, color: f.c, weight: 900, stroke: 'rgba(60,20,0,.7)', strokeW: 4}); }
         floaters = floaters.filter(f => f.t < 1);
-        if (!over) say(`${LV[lvK][3]} · 剩 ${grid.filter(k => k >= 0).length} 张` + (combo > 1 && time - lastMatch < 3 ? ` · 连击 ${combo}` : ''));
-        bar.dis('hint', over); bar.dis('shuf', over || shuffles <= 0);
+        if (!over) say((STG ? `第 ${stage} 关·${GRN}` : LV[lvK][3]) + ` · 剩 ${grid.filter(k => k >= 0).length} 张` + (ctx.pref('hints') && avail >= 0 ? ` · 可消 ${avail} 对` : '') + (combo > 1 && time - lastMatch < 3 ? ` · 连击 ${combo}` : ''));
+        bar.dis('shuf', over || shuffles <= 0); bar.dis('pause', over);
       },
-      key(e) { if (e.code === 'KeyH') hint(); },
+      hint: () => hint(),
+      key(e) { if (e.code === 'KeyH') hint(); else if (e.code === 'KeyP' && TIMED) setPause(!paused); },
+      destroy() { if (pauseEl) pauseEl.remove(); },
       debug: {
         get grid() { return grid; }, findPair: () => findPair(grid), W, H,
         cellXY: i => { const p = cellXY(i), r = cv.cv.getBoundingClientRect(); return {x: p.x + r.left, y: p.y + r.top}; },

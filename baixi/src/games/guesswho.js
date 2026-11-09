@@ -100,6 +100,7 @@ BX.register({
   id: 'guesswho', title: '猜猜我是谁', cat: 'deduce', order: 1, sub: '问是或否，揪出神秘茶客',
   desc: '双方各自抽到一位神秘茶客。轮流提一个“是或否”的问题，翻下不符合的面孔，最先猜中对方角色的人获胜——可猜错就直接输了！',
   kind: 'turn', seats: 2, hidden: true, seatNames: ['甲方', '乙方'], firstLabel: '先问',
+  howto: ['「提问」打开问题菜单，每个问题旁会显示「是 / 否」各能留下几人，挑最能对半分的问。', '默认<b>自动翻牌</b>：回答后不符合的面孔自动扣下；也可以自己点面孔翻下 / 翻回。翻完点「结束回合」。', '「猜人」后点一位茶客，再点一次确认——猜错直接判负！只剩一人时按钮会闪烁。', '键盘：Q 提问、G 猜人、回车结束回合、Esc 关闭菜单。💡 提示会推荐一个问题。'],
   rules: `<p>桌上有 <b>24 位茶客</b>，每位都有不同的外貌：性别、发色、发型长短、帽子、眼镜、胡子、耳环、腮红、笑容和衣服颜色。</p>
 <p>开局时双方各自<b>秘密抽到一位茶客</b>，对手要猜的就是他。</p>
 <p>轮到你时，可以：</p>
@@ -122,31 +123,37 @@ BX.register({
     const cv = ctx.canvas();
     const me = () => ctx.view;
     let auto = ctx.load('auto', true), guessMode = false, pick = -1, panel = null, flipT = new Array(24).fill(0).map(() => [0, 0]);
-    let fresh = 0;
+    let fresh = 0, hintQ = null, hintFace = -1, hintT = 0, banner = null;
 
     /* ---------- DOM controls ---------- */
     const ui = ctx.ui();
     const bar = document.createElement('div'); bar.className = 'bx-bar'; ui.append(bar);
     const mk = (cls, txt, fn) => { const b = document.createElement('button'); b.className = 'bx-btn ' + cls; b.textContent = txt; b.onclick = fn; return b; };
     const bAsk = mk('red', '提问', () => openPanel());
-    const bGuess = mk('', '猜人', () => { guessMode = !guessMode; pick = -1; refresh(); });
+    const bGuess = mk('', '猜人', () => { closePanel(); guessMode = !guessMode; pick = -1; refresh(); });
     const bEnd = mk('jade', '结束回合', () => { if (ctx.canAct(st.turn) && st.ph === 'flip') ctx.act({end: 1}, st.turn); });
     const bAuto = mk('ghost', '', () => { auto = !auto; ctx.save('auto', auto); refresh(); });
+    const sty = document.createElement('style'); sty.textContent = '@keyframes bxPulseGW{0%,100%{box-shadow:0 0 0 0 rgba(255,215,106,.0)}50%{box-shadow:0 0 0 6px rgba(255,215,106,.55)}}'; ui.append(sty);
     bar.append(bAsk, bGuess, bEnd, bAuto);
     function openPanel() {
       if (!ctx.canAct(st.turn) || st.ph !== 'ask') return;
       closePanel(); guessMode = false;
-      const asked = new Set(st.qa.filter(x => x.by === st.turn).map(x => x.q));
+      const askedAns = new Map(st.qa.filter(x => x.by === st.turn).map(x => [x.q, x.ans]));
+      const up = BX.range(24).filter(i => !st.down[st.turn][i]), showSplit = ctx.pref('hints');
       panel = document.createElement('div'); panel.className = 'bx-panel';
       panel.style.cssText = 'position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(520px,94%);max-height:92%;overflow:auto;padding:12px 14px';
       const ttl = document.createElement('div'); ttl.style.cssText = 'font-family:var(--deco);font-size:20px;letter-spacing:2px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center';
-      ttl.innerHTML = '<span>问一个问题</span>'; const x = mk('ghost', '✕', closePanel); x.style.cssText = 'min-height:40px;padding:6px 12px'; ttl.append(x); panel.append(ttl);
+      ttl.innerHTML = '<span>问一个问题</span>' + (showSplit ? `<span style="font-family:var(--sans,sans-serif);font-size:12px;letter-spacing:0;opacity:.7">场上 ${up.length} 人 · 数字 = 是/否 各剩几人</span>` : ''); const x = mk('ghost', '✕', closePanel); x.style.cssText = 'min-height:40px;padding:6px 12px'; ttl.append(x); panel.append(ttl);
       for (const [gname, keys] of QGROUPS) {
         const row = document.createElement('div'); row.style.cssText = 'display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:6px 0';
         const lb = document.createElement('span'); lb.textContent = gname; lb.style.cssText = 'width:36px;font-size:13px;opacity:.7'; row.append(lb);
         for (const k of keys) {
-          const b = mk('ghost', QMAP[k][1].replace('吗？', '？'), () => { closePanel(); if (ctx.canAct(st.turn) && st.ph === 'ask') ctx.act({q: k, auto}, st.turn); });
-          b.style.cssText = 'min-height:40px;padding:6px 10px;font-size:14px;font-weight:600' + (asked.has(k) ? ';opacity:.45' : '');
+          const was = askedAns.get(k), y = up.filter(i => QMAP[k][2](CAST[i])).length, nn = up.length - y;
+          const b = mk(k === hintQ ? 'jade' : 'ghost', '', () => { closePanel(); if (ctx.canAct(st.turn) && st.ph === 'ask') ctx.act({q: k, auto}, st.turn); });
+          b.innerHTML = BX.esc(QMAP[k][1].replace('吗？', '？')) + (was != null ? `<small style="opacity:.8"> · 问过：${was ? '是' : '否'}</small>` : showSplit ? `<small style="opacity:.65;font-weight:400"> ${y}/${nn}</small>` : '');
+          const useless = showSplit && (y === 0 || nn === 0);
+          b.style.cssText = 'min-height:40px;padding:6px 10px;font-size:14px;font-weight:600' + (was != null || useless ? ';opacity:.42' : '');
+          if (was != null) b.disabled = true;
           row.append(b);
         }
         panel.append(row);
@@ -161,6 +168,9 @@ BX.register({
       bEnd.style.display = st.ph === 'flip' ? '' : 'none'; bEnd.disabled = !my;
       bAsk.style.display = st.ph === 'ask' ? '' : 'none';
       bGuess.disabled = !my; bGuess.textContent = guessMode ? '取消猜人' : '猜人'; bGuess.className = 'bx-btn ' + (guessMode ? 'red' : '');
+      const one = my && remaining(st.turn) === 1 && !guessMode;
+      bGuess.style.animation = one ? 'bxPulseGW 1s ease-in-out infinite' : ''; if (one) bGuess.textContent = '猜人！';
+      bEnd.style.animation = my && st.ph === 'flip' ? 'bxPulseGW 1.4s ease-in-out infinite' : '';
       bAuto.textContent = '自动翻牌：' + (auto ? '开' : '关');
       status();
     }
@@ -181,7 +191,7 @@ BX.register({
       if (!ctx.canAct(st.turn)) return;
       const i = faceAt(cv.pos(e)); if (i < 0) return;
       if (guessMode) {
-        if (pick !== i) { pick = i; ctx.sfx('tick'); return; }
+        if (pick !== i) { pick = i; ctx.sfx('tick'); status(); return; }
         guessMode = false; pick = -1; ctx.act({guess: i}, st.turn); return;
       }
       ctx.act({flip: i}, st.turn);
@@ -194,8 +204,11 @@ BX.register({
       const my = ctx.isLocal(st.turn) && (ctx.hotseat || st.turn === ctx.me);
       const who = ctx.hotseat ? ctx.name(st.turn) : '你';
       if (!my) return ctx.status('等待 ' + ctx.name(st.turn) + (st.ph === 'ask' ? ' 提问…' : ' 翻牌…'));
-      if (guessMode) return ctx.status('点一位茶客（再点一次确认）猜对手的角色');
-      ctx.status(st.ph === 'ask' ? who + '提问，或直接猜人' : '翻下不符合的面孔，然后结束回合');
+      if (guessMode) return ctx.status(pick >= 0 ? `确定猜「<b style="color:#ffd76a">${CAST[pick].name}</b>」？再点一次确认` : '点一位茶客（再点一次确认）猜对手的角色');
+      const rem = remaining(st.turn);
+      if (st.ph === 'ask') return ctx.status(rem === 1 ? '<b style="color:#ffd76a">只剩一人了，点「猜人」！</b>' : who + '提问，或直接猜人（剩 ' + rem + ' 人）');
+      const la = lastAns(st.turn);
+      ctx.status((la ? QSHORT[la.q] + '？<b style="color:' + (la.ans ? '#7fd0b0' : '#ff8a7a') + '">' + (la.ans ? '是' : '否') + '</b> · ' : '') + '翻好后点「结束回合」');
     }
     const lastAns = s => { for (let k = st.qa.length - 1; k >= 0; k--) if (st.qa[k].by === s) return st.qa[k]; return null; };
 
@@ -207,19 +220,20 @@ BX.register({
         const s = st.turn, o = 1 - s;
         if (a.q) {
           const ans = !!QMAP[a.q][2](CAST[st.secret[o]]);
-          st.qa.push({by: s, q: a.q, ans}); st.ph = 'flip'; fresh = 1;
+          st.qa.push({by: s, q: a.q, ans}); st.ph = 'flip'; fresh = 1; hintQ = null; hintFace = -1;
           ctx.sfx(ans ? 'bell' : 'buzz');
+          let n = 0;
           if (a.auto) {
-            let n = 0;
             for (let i = 0; i < 24; i++) if (!st.down[s][i] && !!QMAP[a.q][2](CAST[i]) !== ans) { st.down[s][i] = 1; n++; if (!ctx.fast && s === me()) { const k = n; ctx.after(250 + k * 45, () => ctx.sfx('flip')); } }
           }
+          if (!ctx.fast) { banner = {q: a.q, ans, by: s, n, auto: !!a.auto, t: 0}; ctx.anim(2600, k => banner && (banner.t = k), () => banner = null, k => k); }
         } else if (a.flip != null) { st.down[s][a.flip] ^= 1; ctx.sfx('flip'); }
-        else if (a.end) { st.ph = 'ask'; st.turn = o; }
+        else if (a.end) { st.ph = 'ask'; st.turn = o; banner = null; hintQ = null; hintFace = -1; }
         else if (a.guess != null) {
           const ok = a.guess === st.secret[o];
           st.guess = {by: s, i: a.guess, ok}; st.over = true;
           st.res = ok ? ctx.name(s) + ' 猜中了：' + CAST[a.guess].name : ctx.name(s) + ' 猜错了！对方是 ' + CAST[st.secret[o]].name;
-          ctx.sfx(ok ? 'gong' : 'crash');
+          ctx.sfx(ok ? 'gong' : 'crash'); if (ctx.isLocal(s) && !ok) ctx.buzz(40); else if (ctx.isLocal(s) && ok) ctx.buzz(25);
           refresh(); closePanel();
           ctx.end({winner: ok ? s : o, html: `${BX.esc(ctx.name(s))} 指认「${CAST[a.guess].name}」——${ok ? '<b style="color:#b23a2b">猜对了！</b>' : '<b>猜错了！</b>'}<br>${BX.esc(ctx.name(0))} 的角色：${CAST[st.secret[0]].name}　${BX.esc(ctx.name(1))} 的角色：${CAST[st.secret[1]].name}`, delay: 1400});
           return;
@@ -247,6 +261,19 @@ BX.register({
       },
       onTurn: refresh,
       onView() { guessMode = false; pick = -1; closePanel(); refresh(); },
+      showHint(a) {
+        hintT = performance.now();
+        if (a.q) { hintQ = a.q; ctx.toast('💡 推荐提问：' + QMAP[a.q][1]); if (!panel) openPanel(); else { closePanel(); openPanel(); } }
+        else if (a.guess != null) { hintFace = a.guess; ctx.toast('💡 可以猜：' + CAST[a.guess].name); }
+        else if (a.end) ctx.toast('💡 翻好了就点「结束回合」');
+      },
+      key(e) {
+        if (!ctx.canAct(st.turn) || st.over) return;
+        if (e.code === 'KeyQ') openPanel();
+        else if (e.code === 'KeyG') { closePanel(); guessMode = !guessMode; pick = -1; refresh(); }
+        else if (e.code === 'Escape') { closePanel(); guessMode = false; pick = -1; refresh(); }
+        else if ((e.code === 'Enter' || e.code === 'NumpadEnter') && st.ph === 'flip') ctx.act({end: 1}, st.turn);
+      },
       frame(dt) {
         const g = cv.g; cv.clear(); const l = L(), v = me();
         D.wood(g, 0, 0, cv.w, cv.h, {seed: 31, base: '#6e4428', dark: '#2e1a0c', grain: .2});
@@ -262,8 +289,8 @@ BX.register({
           // slot
           g.fillStyle = 'rgba(60,15,8,.6)'; D.rr(g, r.x, r.y, r.w, r.h, r.w * .08); g.fill();
           // tile pivots down from top edge
-          const sy = Math.cos(t * Math.PI);
-          g.save(); g.translate(r.x, r.y + r.h); g.scale(1, Math.max(.02, Math.abs(sy)) * (sy >= 0 ? 1 : -1)); g.translate(-r.x, -(r.y + r.h));
+          const sy = Math.cos(t * Math.PI);   // tile folds down onto its bottom edge, then the back rises in the same slot
+          g.save(); g.translate(r.x, r.y + r.h); g.scale(1, Math.max(.02, Math.abs(sy))); g.translate(-r.x, -(r.y + r.h));
           if (t < .5) {
             g.fillStyle = '#fffaf0'; D.rr(g, r.x, r.y, r.w, r.h, r.w * .08); g.fill();
             portrait(g, c, r.x + r.w * .05, r.y + r.w * .05, r.w * .9, r.h - r.w * .1 - r.h * .16);
@@ -276,10 +303,25 @@ BX.register({
           if (guessMode && pick === i) { g.strokeStyle = '#ffd76a'; g.lineWidth = 4; D.rr(g, r.x - 3, r.y - 3, r.w + 6, r.h + 6, r.w * .1); g.stroke(); }
           if (st.guess && st.over && st.guess.i === i && st.guess.by === v) { g.strokeStyle = st.guess.ok ? '#5aa08a' : '#ff5040'; g.lineWidth = 5; D.rr(g, r.x - 3, r.y - 3, r.w + 6, r.h + 6, r.w * .1); g.stroke(); }
         }
+        if (hintFace >= 0) { const r = rect(hintFace, l), k = (performance.now() - hintT) / 1000; g.strokeStyle = 'rgba(90,220,160,' + (.55 + .4 * Math.sin(k * 7)) + ')'; g.lineWidth = 5; D.rr(g, r.x - 4, r.y - 4, r.w + 8, r.h + 8, r.w * .1); g.stroke(); }
         if (guessMode) { g.fillStyle = 'rgba(255,215,106,.12)'; g.fillRect(0, 0, cv.w, cv.h); }
         drawSide(g, l, v);
+        if (banner) drawBanner(g, l, v);
       },
     };
+    /* big Q&A callout over the board right after a question */
+    function drawBanner(g, l, v) {
+      const b = banner, k = b.t, a = k < .08 ? k / .08 : k > .85 ? (1 - k) / .15 : 1;
+      const r0 = rect(0, l), r1 = rect(23, l), cx = (r0.x + r1.x + r1.w) / 2, cy = (r0.y + r1.y + r1.h) / 2;
+      const mine = b.by === v, w = Math.min(380, (r1.x + r1.w - r0.x) * .92), h = 96;
+      g.save(); g.globalAlpha = Math.max(0, a);
+      g.fillStyle = 'rgba(30,18,8,.88)'; D.rr(g, cx - w / 2, cy - h / 2, w, h, 16); g.fill();
+      g.strokeStyle = b.ans ? '#5aa08a' : '#c23a2b'; g.lineWidth = 3; g.stroke();
+      D.text(g, (mine ? '我问：' : ctx.name(b.by) + ' 问：') + QMAP[b.q][1], cx, cy - 24, {size: 16, color: '#f3e2c0', maxW: w - 24});
+      D.text(g, b.ans ? '是！' : '不是！', cx, cy + 8, {size: 30, color: b.ans ? '#7fd0b0' : '#ff8a7a', font: 'deco', weight: 400});
+      D.text(g, mine ? (b.auto ? '自动翻下 ' + b.n + ' 人 · 还剩 ' + remaining(v) + ' 人' : '自己翻下不符合的面孔') : '（问的是你的角色 ' + CAST[st.secret[v]].name + '）', cx, cy + 36, {size: 12, color: 'rgba(243,226,192,.75)', maxW: w - 24});
+      g.restore();
+    }
     function drawSide(g, l, v) {
       const S = l.side, o = 1 - v;
       const sc = CAST[st.secret[v]];

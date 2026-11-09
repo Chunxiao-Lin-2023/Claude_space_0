@@ -4,8 +4,14 @@ const D = BX.draw, C = BX.C, K = BX.data.spk;
 BX.register({
   id: 'whack', title: '打地鼠', cat: 'speed', order: 2, sub: '同一批地鼠，看谁敲得多',
   desc: '两人各有一块九宫格地鼠田，冒出来的地鼠完全相同，比谁手快。金地鼠加 3 分，炸弹鼠扣 3 分千万别敲，连击还有额外奖励。',
-  kind: 'realtime', seats: 2, noFirst: true, seatColors: ['#c23a2b', '#2f5d8a'],
-  options: [{key: 'len', label: '时长', choices: [[30, '30 秒'], [45, '45 秒'], [60, '60 秒']], def: 45}],
+  kind: 'realtime', seats: 2, noFirst: true, seatColors: ['#c23a2b', '#2f5d8a'], hint: false,
+  options: [{key: 'len', label: '时长', choices: [[30, '30 秒'], [45, '45 秒'], [60, '60 秒']], def: 45},
+    {key: 'pace', label: '节奏', choices: [[1, '悠闲'], [2, '标准'], [3, '疯狂']], def: 2},
+    {key: 'hel', label: '铁盔鼠', choices: [[0, '无'], [1, '有']], def: 0}],
+  howto: ['直接<b>点地鼠</b>（整格都算），手指放在下方你自己的田里；上方小田是对手的进度。',
+    '金地鼠 +3，炸弹鼠 −3 千万别敲；<b>连击</b>越高每只加分越多，连击条满 10 进入「火力全开」。',
+    '敲空、放跑地鼠、敲中炸弹都会断连击。可选「铁盔鼠」：要敲两下，得 2 分。',
+    '键盘九宫格：Q W E / A S D / Z X C（同屏右方用小键盘 7–9 或 U I O / J K L / M , .）。'],
   rules: `<p>每位玩家有自己的 <b>3×3 地鼠田</b>，双方田里冒出的地鼠<b>时间、位置、种类完全一样</b>，公平比拼手速。</p>
 <ul><li>普通地鼠：<b>+1</b> 分；</li><li><b>金地鼠</b>（闪金光）：<b>+3</b> 分；</li><li><b>炸弹鼠</b>（黑色、头顶引线）：敲中 <b>−3</b> 分，别碰！</li>
 <li><b>连击</b>：连续敲中不失手，连击达到 5 起每只额外 +1，达到 10 起额外 +2。敲空、放跑地鼠或敲中炸弹都会中断连击。</li></ul>
@@ -22,13 +28,13 @@ BX.register({
     for (let i = 0; i < 5; i++) { g.fillStyle = '#ffd76a'; D.circle(g, w * .5 + Math.cos(i * 1.3) * w * .12, h * .4 + Math.sin(i * 1.3) * h * .08, 3); g.fill(); }
   },
   create(ctx) {
-    const LEN = BX.test ? 12 : (ctx.opts.len || 45);
-    const st = {ph: 'intro', t: 3, time: 0, m: [], mid: 0, s: [0, 0], cb: [0, 0], best: [0, 0], ev: [], evId: 0, over: false, nextT: 0};
+    const LEN = BX.test ? 12 : (ctx.opts.len || 45), PACE = [0, 1.3, 1, .78][ctx.opts.pace || 2], HEL = !!ctx.opts.hel;
+    const st = {ph: 'intro', t: 3, time: 0, m: [], mid: 0, s: [0, 0], cb: [0, 0], best: [0, 0], ev: [], evId: 0, over: false, nextT: 0, hit: [0, 0], miss: [0, 0], bomb: [0, 0]};
     // m: [{i id, h hole, k 'n'|'g'|'b', t0, d, hit:[0|1|2,0|1|2]}]  hit: 0 up, 1 whacked, 2 bomb-hit
     const cv = ctx.canvas(), fx = K.fx(), pads = K.pads(ctx, cv);
     const queues = [K.tq(), K.tq()], seen = {}, evSeen = {v: -1};
     const hamm = [];       // local visual hammer swings {x,y,t}
-    let time = 0, lastCd = 4;
+    let time = 0, lastCd = 4, lastTick = 99;
     const aiSeen = [{}, {}];
 
     function spawnStep(dt) {
@@ -39,11 +45,12 @@ BX.register({
         const busy = new Set(st.m.filter(m => st.time < m.t0 + m.d + .15).map(m => m.h));
         const free = BX.range(9).filter(h => !busy.has(h));
         if (free.length) {
-          const r = Math.random(), k = r < .1 ? 'g' : r < .1 + .1 + prog * .1 ? 'b' : 'n';
-          const d = (k === 'g' ? .75 : k === 'b' ? 1.5 : 1.15) * (1 - prog * .35);
-          st.m.push({i: ++st.mid, h: BX.pick(free), k, t0: Math.round(st.time * 100) / 100, d: Math.round(d * 100) / 100, hit: [0, 0]});
+          const r = Math.random(); let k = r < .1 ? 'g' : r < .1 + .1 + prog * .1 ? 'b' : 'n';
+          if (HEL && k === 'n' && Math.random() < .22) k = 'h';
+          const d = (k === 'g' ? .75 : k === 'b' ? 1.5 : k === 'h' ? 1.6 : 1.15) * (1 - prog * .35) * PACE;
+          st.m.push({i: ++st.mid, h: BX.pick(free), k, t0: Math.round(st.time * 100) / 100, d: Math.round(d * 100) / 100, hit: [0, 0], dent: [0, 0]});
         }
-        st.nextT = (.62 - prog * .3) * (.6 + Math.random() * .8);
+        st.nextT = (.62 - prog * .3) * (.6 + Math.random() * .8) * PACE;
       }
       // expire
       for (let i = st.m.length - 1; i >= 0; i--) {
@@ -56,10 +63,11 @@ BX.register({
     }
     function whack(s, h) {
       const m = st.m.find(m => m.h === h && st.time >= m.t0 && st.time < m.t0 + m.d && !m.hit[s]);
-      if (!m) { if (st.cb[s]) { st.cb[s] = 0; } K.ev(st, 'air', s, h); return; }
-      if (m.k === 'b') { m.hit[s] = 2; st.s[s] -= 3; st.cb[s] = 0; K.ev(st, 'bomb', s, h); return; }
-      m.hit[s] = 1; st.cb[s]++; st.best[s] = Math.max(st.best[s], st.cb[s]);
-      const pts = (m.k === 'g' ? 3 : 1) + (st.cb[s] >= 10 ? 2 : st.cb[s] >= 5 ? 1 : 0);
+      if (!m) { const lost = st.cb[s]; st.cb[s] = 0; st.miss[s]++; K.ev(st, 'air', s, h, lost); return; }
+      if (m.k === 'b') { m.hit[s] = 2; st.s[s] -= 3; st.cb[s] = 0; st.bomb[s]++; K.ev(st, 'bomb', s, h); return; }
+      if (m.k === 'h' && !m.dent[s]) { m.dent[s] = 1; K.ev(st, 'clang', s, h); return; }
+      m.hit[s] = 1; st.cb[s]++; st.hit[s]++; st.best[s] = Math.max(st.best[s], st.cb[s]);
+      const pts = (m.k === 'g' ? 3 : m.k === 'h' ? 2 : 1) + (st.cb[s] >= 10 ? 2 : st.cb[s] >= 5 ? 1 : 0);
       st.s[s] += pts; K.ev(st, 'hit', s, h, m.k, pts, st.cb[s]);
     }
     /* ---------- layout ---------- */
@@ -108,13 +116,15 @@ BX.register({
           if (m.k === 'b') plan[m.i] = Math.random() < bombErr ? m.t0 + rt + .25 : 'x';
           else plan[m.i] = Math.random() < skip ? 'x' : m.t0 + rt;
         }
-        if (plan[m.i] !== 'x' && st.time >= plan[m.i]) { plan[m.i] = 'x'; q.push(m.h); }
+        if (plan[m.i] !== 'x' && st.time >= plan[m.i]) { if (m.k === 'h' && !m.dent[seat]) { plan[m.i] = st.time + [0, .3, .2, .12][level]; q.push(m.h); } else { plan[m.i] = 'x'; q.push(m.h); } }
       }
       return {q: q.list()};
     }
     function info() {
       ctx.info(0, st.s[0] + ' 分'); ctx.info(1, st.s[1] + ' 分');
-      ctx.status(st.ph === 'intro' ? '准备…' : st.over ? '时间到' : '剩余 ' + Math.max(0, Math.ceil(LEN - st.time)) + ' 秒');
+      const left = Math.max(0, Math.ceil(LEN - st.time));
+      if (st.ph === 'play' && left <= 5 && left !== lastTick) { lastTick = left; if (left > 0) ctx.sfx('tick'); }
+      ctx.status(st.ph === 'intro' ? '准备…' : st.over ? '时间到' : '剩余 ' + left + ' 秒');
     }
     function playEv() {
       K.evPlay(st, evSeen, e => {
@@ -131,10 +141,11 @@ BX.register({
             if (e[6] >= 5 && e[6] % 5 === 0 && !f.mini) { ctx.sfx('score'); fx.text(p.x, toScreen(f, {x: 0, y: G.y + G.ch * .2}).y, e[6] + ' 连击！', {size: 30, color: '#ff9a5a', life: 1.2}); }
             if (ctx.isLocal(s) && !f.mini && e[4] === 'g') fx.flash(.4, '255,220,120');
           } else if (k === 'bomb') {
-            ctx.sfx('boom'); if (!f.mini) { fx.shake(14); fx.flash(.9, '255,90,60'); }
+            ctx.sfx('boom'); if (!f.mini) { fx.shake(14); fx.flash(.9, '255,90,60'); if (ctx.isLocal(s)) ctx.buzz(60); }
             fx.burst(up.x, up.y, {n: 34, color: ['#ff6a3a', '#ffd76a', '#333', '#888'], sp: 300 * sc, size: 6 * sc, grav: 120});
             fx.text(up.x, up.y, '−3', {size: 34 * sc, color: '#ff6a5a'});
-          } else if (k === 'air' && ctx.isLocal(s) && !f.mini) { ctx.sfx('move'); fx.burst(p.x, p.y - G.ch * .1, {n: 6, color: '#8a5a2a', sp: 90, size: 3}); }
+          } else if (k === 'clang') { ctx.sfx('bounce'); fx.burst(up.x, up.y - G.ch * .2, {n: 10, color: ['#ddd', '#fff', '#999'], sp: 180 * sc, size: 3 * sc}); fx.text(up.x, up.y - 12 * sc, '当！', {size: 22 * sc, color: '#e8eef5'}); }
+          else if (k === 'air' && ctx.isLocal(s) && !f.mini) { ctx.sfx('move'); fx.burst(p.x, p.y - G.ch * .1, {n: 6, color: '#8a5a2a', sp: 90, size: 3}); if (e[4] >= 3) { fx.text(p.x, p.y - G.ch * .3, '连击中断', {size: 18, color: '#e6c57d'}); ctx.buzz(10); } }
           else if (k === 'esc' && !f.mini && ctx.isLocal(s)) fx.text(p.x, p.y - G.ch * .2, '溜了', {size: 18, color: '#e6c57d'});
         }
       });
@@ -156,15 +167,16 @@ BX.register({
           if (st.time >= LEN) {
             st.over = true; st.ph = 'over'; K.ev(st, 'end');
             const w = st.s[0] === st.s[1] ? -1 : st.s[0] > st.s[1] ? 0 : 1;
-            ctx.end({winner: w, text: st.s[0] + ' : ' + st.s[1] + '　（最高连击 ' + st.best[0] + ' / ' + st.best[1] + '）'});
+            const acc = i => { const t = st.hit[i] + st.miss[i] + st.bomb[i]; return t ? Math.round(st.hit[i] / t * 100) + '%' : '—'; };
+            ctx.end({winner: w, text: st.s[0] + ' : ' + st.s[1] + '　最高连击 ' + st.best[0] + ' / ' + st.best[1] + '　命中率 ' + acc(0) + ' / ' + acc(1)});
           }
         }
         playEv(); info();
       },
-      snapshot() { return {ph: st.ph, t: Math.round(st.t * 100) / 100, time: Math.round(st.time * 100) / 100, m: st.m.map(m => [m.i, m.h, m.k, m.t0, m.d, m.hit[0], m.hit[1]]), s: st.s, cb: st.cb, ev: st.ev, over: st.over}; },
+      snapshot() { return {ph: st.ph, t: Math.round(st.t * 100) / 100, time: Math.round(st.time * 100) / 100, m: st.m.map(m => [m.i, m.h, m.k, m.t0, m.d, m.hit[0], m.hit[1], m.dent[0], m.dent[1]]), s: st.s, cb: st.cb, best: st.best, ev: st.ev, over: st.over}; },
       restore(d) {
-        Object.assign(st, {ph: d.ph, t: d.t, time: d.time, s: d.s, cb: d.cb, ev: d.ev, over: d.over});
-        st.m = d.m.map(a => ({i: a[0], h: a[1], k: a[2], t0: a[3], d: a[4], hit: [a[5], a[6]]}));
+        Object.assign(st, {ph: d.ph, t: d.t, time: d.time, s: d.s, cb: d.cb, best: d.best || st.best, ev: d.ev, over: d.over});
+        st.m = d.m.map(a => ({i: a[0], h: a[1], k: a[2], t0: a[3], d: a[4], hit: [a[5], a[6]], dent: [a[7] || 0, a[8] || 0]}));
         playEv(); info();
       },
       key(e) {
@@ -207,10 +219,18 @@ BX.register({
       const fs = Math.min(G.head * .48, 20);
       D.text(g, ctx.name(s) + (f.mini ? '' : ctx.isLocal(s) && nLoc() === 1 ? '（你）' : ''), 10, G.head / 2, {size: fs * .8, color: '#fbe9d0', align: 'left', maxW: f.w * .4});
       D.text(g, st.s[s] + ' 分', f.w / 2, G.head / 2, {size: fs * 1.15, color: '#ffe08a', font: 'deco', weight: 400});
-      if (st.cb[s] >= 2) D.text(g, '连击 ×' + st.cb[s], f.w - 10, G.head / 2, {size: fs * .75, color: st.cb[s] >= 5 ? '#ff9a5a' : '#fbe9d0', align: 'right', weight: 800});
+      if (f.mini && st.cb[s] >= 2) D.text(g, '连击 ×' + st.cb[s], f.w - 10, G.head / 2, {size: fs * .75, color: st.cb[s] >= 5 ? '#ff9a5a' : '#fbe9d0', align: 'right', weight: 800});
       else if (!f.mini) D.text(g, Math.max(0, Math.ceil(LEN - st.time)) + 's', f.w - 10, G.head / 2, {size: fs * .8, color: '#fbe9d0', align: 'right'});
       // timer bar
-      g.fillStyle = 'rgba(0,0,0,.25)'; g.fillRect(0, G.head, f.w, 4); g.fillStyle = LEN - st.time < 10 ? '#e0533f' : '#e6c57d'; g.fillRect(0, G.head, f.w * BX.clamp(1 - st.time / LEN, 0, 1), 4);
+      g.fillStyle = 'rgba(0,0,0,.25)'; g.fillRect(0, G.head, f.w, 4); g.fillStyle = LEN - st.time < 10 ? (LEN - st.time < 5 && Math.sin(time * 12) > 0 ? '#ff8a6a' : '#e0533f') : '#e6c57d'; g.fillRect(0, G.head, f.w * BX.clamp(1 - st.time / LEN, 0, 1), 4);
+      // combo meter: 0→5 (+1 per mole) → 10 (+2, 火力全开)
+      if (!f.mini) {
+        const cb = st.cb[s], tier = cb >= 10 ? 2 : cb >= 5 ? 1 : 0, k = tier === 2 ? 1 : tier === 1 ? (cb - 5) / 5 : cb / 5, by = G.head + 5, bw = Math.min(f.w * .6, 260), bx = (f.w - bw) / 2;
+        g.fillStyle = 'rgba(30,15,5,.45)'; D.rr(g, bx, by, bw, 10, 5); g.fill();
+        g.fillStyle = ['#e6c57d', '#ff9a5a', Math.sin(time * 14) > 0 ? '#ff5a3a' : '#ffd76a'][tier]; D.rr(g, bx, by, Math.max(10, bw * k), 10, 5); g.fill();
+        D.text(g, tier === 2 ? '火力全开 每只+2' : tier === 1 ? '连击 ×' + cb + ' · 每只+1' : cb ? '连击 ×' + cb : '连击条', f.w / 2, by + 20, {size: 11, color: tier ? '#ffe08a' : 'rgba(255,250,230,.75)', weight: 800, stroke: 'rgba(40,20,5,.6)'});
+        if (tier === 2) { g.strokeStyle = `rgba(255,120,60,${.45 + .3 * Math.sin(time * 10)})`; g.lineWidth = 6; g.strokeRect(3, 3, f.w - 6, f.h - 6); }
+      }
       // holes back halves, moles, front lips
       const keys = nLoc() === 2 ? (s === ctx.mySeats[0] ? 'QWEASDZXC' : '789456123') : 'QWEASDZXC';
       for (let h = 0; h < 9; h++) {
@@ -224,7 +244,7 @@ BX.register({
           if (hs) up = Math.max(0, Math.min(1, (left + .35) / .35)) * .9;
           if (up > 0) {
             g.save(); g.beginPath(); g.rect(c.x - G.cell / 2, c.y - G.ch * 1.2, G.cell, G.ch * 1.2); g.clip();
-            mole(g, c.x, c.y + (1 - up) * G.ch * .55, rw * .9, m.k, 1, time, hs, f.mini);
+            mole(g, c.x, c.y + (1 - up) * G.ch * .55, rw * .9, m.k, 1, time, hs, f.mini, m.dent && m.dent[s]);
             g.restore();
           }
         }
@@ -234,7 +254,12 @@ BX.register({
       }
       if (!f.mini) {
         const m = Math.min(f.w, f.h);
-        if (st.ph === 'intro') K.banner(g, String(Math.max(1, Math.ceil(st.t))), f.w / 2, f.h / 2, m * .3, 1 - (st.t % 1));
+        if (st.ph === 'intro') {
+          K.banner(g, String(Math.max(1, Math.ceil(st.t))), f.w / 2, f.h / 2, m * .3, 1 - (st.t % 1));
+          const L = [['n', '+1'], ['g', '+3'], ['b', '−3 别敲'], ...(HEL ? [['h', '敲两下 +2']] : [])], lw = Math.min(f.w / L.length, 120), ly = f.h - Math.min(f.h * .12, 60), r = Math.min(lw * .16, 16);
+          g.fillStyle = 'rgba(30,15,5,.55)'; D.rr(g, f.w / 2 - lw * L.length / 2, ly - r * 2.8, lw * L.length, r * 4.4, 10); g.fill();
+          L.forEach(([k2, t2], i) => { const x = f.w / 2 + (i - (L.length - 1) / 2) * lw; mole(g, x - r * 1.9, ly + r * .4, r, k2, 1, time, 0, true); D.text(g, t2, x - r * .5, ly - r * .4, {size: Math.min(14, lw * .13), maxW: lw * .62, color: k2 === 'b' ? '#ff9a8a' : '#ffe08a', weight: 800, align: 'left'}); });
+        }
         else if (st.ph === 'play' && st.time < .8) K.banner(g, '开敲！', f.w / 2, f.h / 2, m * .2, st.time / .8, {color: '#ffe08a'});
         else if (st.ph === 'over') K.banner(g, '时间到', f.w / 2, f.h / 2, m * .18, 1, {color: '#ffe08a'});
       }
@@ -246,7 +271,7 @@ BX.register({
 });
 
 /* mole sprite: x,y = base point at hole centre, r = body radius; k: n/g/b; hs: 1 whacked, 2 bomb-hit */
-function mole(g, x, y, r, k, a, time, hs, mini) {
+function mole(g, x, y, r, k, a, time, hs, mini, dent) {
   g.save(); g.globalAlpha = a;
   const sq = hs ? .78 : 1;
   g.translate(x, y); g.scale(1 / Math.sqrt(sq), sq);
@@ -270,7 +295,9 @@ function mole(g, x, y, r, k, a, time, hs, mini) {
     g.fillStyle = gr; g.beginPath(); g.moveTo(-r, r * .2); g.lineTo(-r, -r); g.arc(0, -r, r, Math.PI, 0); g.lineTo(r, r * .2); g.fill();
     g.fillStyle = belly; g.beginPath(); g.ellipse(0, -r * .2, r * .62, r * .7, 0, 0, Math.PI * 2); g.fill();
     // little scholar cap (tea-house flavour)
-    g.fillStyle = gold ? '#b23a2b' : '#2b2118'; g.beginPath(); g.ellipse(0, -r * 1.85, r * .62, r * .2, 0, 0, Math.PI * 2); g.fill(); D.rr(g, -r * .38, -r * 2.25, r * .76, r * .42, r * .12); g.fill();
+    if (k !== 'h') { g.fillStyle = gold ? '#b23a2b' : '#2b2118'; g.beginPath(); g.ellipse(0, -r * 1.85, r * .62, r * .2, 0, 0, Math.PI * 2); g.fill(); D.rr(g, -r * .38, -r * 2.25, r * .76, r * .42, r * .12); g.fill(); }
+    else if (!dent) { const hg = g.createLinearGradient(-r, 0, r, 0); hg.addColorStop(0, '#d8dde3'); hg.addColorStop(1, '#7d8690'); g.fillStyle = hg; g.beginPath(); g.arc(0, -r * 1.25, r * 1.02, Math.PI * 1.02, Math.PI * 1.98); g.closePath(); g.fill(); g.fillStyle = '#5d646c'; g.fillRect(-r * 1.1, -r * 1.3, r * 2.2, r * .16); g.fillStyle = 'rgba(255,255,255,.6)'; g.fillRect(-r * .5, -r * 2.05, r * .25, r * .5); }
+    else { g.save(); g.translate(r * .7, -r * 2.1); g.rotate(.6); g.fillStyle = '#8d959e'; g.beginPath(); g.arc(0, 0, r * .5, Math.PI, 0); g.fill(); g.restore(); }
     if (gold) { g.fillStyle = '#ffd76a'; D.circle(g, 0, -r * 2.05, r * .1); g.fill(); }
     if (hs) {
       g.strokeStyle = '#2b2118'; g.lineWidth = r * .1;

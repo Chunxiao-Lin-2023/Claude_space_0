@@ -1,6 +1,6 @@
 /* 贪吃蛇对战 — realtime, host-authoritative, tick based. */
 const D = BX.draw, C = BX.C;
-const GW = 32, GH = 20, TICK = 1 / 20;           // sim tick 20 Hz; normal snake moves every 2 ticks (10 steps/s), boosted every tick
+const GW = 32, GH = 20;                          // each snake moves rate·dt cells per 60 Hz step (7 / 10 / 13 per s, ×1.8 boosted)
 const DIRS = [[0, -1], [1, 0], [0, 1], [-1, 0]];   // up right down left (grid)
 const WINR = 2, MAXR = 7;
 const COLS = [['#d8442f', '#f6b26b', '#7a1a10'], ['#2f7fb8', '#9fd3f0', '#123a5a']];
@@ -8,10 +8,12 @@ const COLS = [['#d8442f', '#f6b26b', '#7a1a10'], ['#2f7fb8', '#9fd3f0', '#123a5a
 BX.register({
   id: 'snake', title: '贪吃蛇对战', cat: 'arcade', order: 3, sub: '抢食长身，逼对方撞墙',
   desc: '两条蛇同场争食：吃到果子变长，撞墙、撞身体就输掉本回合，迎头相撞同归于尽。偶尔出现加速果和双倍果，三局两胜。',
-  kind: 'realtime', seats: 2, seatNames: ['赤蛇', '青蛇'], seatColors: ['#d8442f', '#2f7fb8'], noFirst: true,
-  rules: `<p>两条蛇在 32×20 的格子场地上同时前进（约每秒 10 格）。用方向键控制蛇头转向，蛇不能直接掉头。</p>
+  kind: 'realtime', seats: 2, seatNames: ['赤蛇', '青蛇'], seatColors: ['#d8442f', '#2f7fb8'], noFirst: true, hint: false,
+  options: [{key: 'speed', label: '速度', choices: [[1, '慢'], [2, '标准'], [3, '快']], def: 2}, {key: 'wrap', label: '边墙', choices: [[0, '撞墙即死'], [1, '穿墙而过']], def: 0}],
+  howto: ['在场地上任意处<b>滑动</b>即可转向（滑一下转一次，可以连续快速滑两下完成掉头），也可以按右下的方向盘。', '键盘：方向键或 WASD；同屏双人左方 WASD、右方方向键。', '连续按键会被记住、按顺序执行，不会丢；蛇头前方有危险时会闪红圈提醒。'],
+  rules: `<p>两条蛇在 32×20 的格子场地上同时前进（标准速度约每秒 10 格，开局前可选慢 / 快）。用方向键控制蛇头转向，蛇不能直接掉头。</p>
 <p><b>吃果子</b>：普通果子（桃）让蛇长 1 节、得 1 分。场上偶尔出现限时的<b>加速果</b>（闪电，5 秒内移动速度翻倍）和<b>双倍果</b>（金元宝，6 秒内吃到的果子长度和分数都翻倍），过一会儿会消失。</p>
-<p><b>死亡</b>：蛇头撞到场地边墙、自己或对方的身体即死亡。两个蛇头撞到同一格或迎面相撞，<b>双方同时死亡</b>（本回合平局，重赛）。</p>
+<p><b>死亡</b>：蛇头撞到场地边墙（选了“穿墙而过”时从对边出来）、自己或对方的身体即死亡。两个蛇头撞到同一格或迎面相撞，<b>双方同时死亡</b>（本回合平局，重赛）。</p>
 <p><b>回合</b>：只剩一条蛇存活时它赢得本回合。每回合限时 75 秒，时间到时身体更长的一方获胜，长度相同则重赛。<b>三局两胜</b>；若因平局赛满 7 回合仍未分出胜负，则按赢得回合数、再按累计吃到的果子数决定胜负。</p>
 <p><b>操作</b>：单人可用方向键或 WASD；同屏双人时左（下）方玩家用 WASD，右（上）方玩家用方向键。触屏上在场地上<b>滑动</b>即可转向，也可以按屏幕上的方向键；同屏双人各用自己那半边屏幕。</p>`,
   icon(g, w, h) {
@@ -37,10 +39,14 @@ BX.register({
       tick: 0, ev: [], evId: 0, over: false, msg: '', nextBonus: 8,
     };
     const roundLen = BX.test ? 8 : 75, MAXRT = BX.test ? 3 : MAXR, RDY = BX.test ? 1 : 2.2, BTW = BX.test ? 1.2 : 2.6;
+    const WRAP = +ctx.opts.wrap === 1, RATE = [10, 7, 10, 13][+ctx.opts.speed || 2], BOOST = 1.8;
+    const rateOf = s => RATE * (s.boost > 0 ? BOOST : 1);
+    /* neighbour cell in grid dir d (wraps around in 穿墙 mode) */
+    const nb = (x, y, d) => WRAP ? [(x + DIRS[d][0] + GW) % GW, (y + DIRS[d][1] + GH) % GH] : [x + DIRS[d][0], y + DIRS[d][1]];
     function mkSnake(i) {
       const y = i ? GH / 2 - 1 : GH / 2, x0 = i ? GW - 6 : 5, d = i ? 3 : 1, body = [];
       for (let k = 0; k < 4; k++) body.push([x0 - DIRS[d][0] * k, y]);
-      return {b: body, d, q: [], grow: 0, alive: true, boost: 0, dbl: 0, score: 0, lastIn: -1};
+      return {b: body, d, q: [], grow: 0, alive: true, boost: 0, dbl: 0, score: 0, lastIn: -1, mv: 0};
     }
     const fx = (k, a, b) => { st.ev.push({k, a, b, id: ++st.evId}); if (st.ev.length > 10) st.ev.shift(); };
     const occ = () => { const o = new Set(); for (const s of st.s) for (const c of s.b) o.add(c[0] + c[1] * GW); return o; };
@@ -72,8 +78,9 @@ BX.register({
     function moveSnakes(movers) {
       const heads = st.s.map((s, i) => {
         if (!movers[i]) return null;
-        while (s.q.length) { const nd = s.q.shift(); if ((nd + 2) % 4 !== s.d) { s.d = nd; break; } }
-        return [s.b[0][0] + DIRS[s.d][0], s.b[0][1] + DIRS[s.d][1]];
+        // buffered turns: skip no-ops (same dir / reversal) so the next real turn happens on this very step
+        while (s.q.length) { const nd = s.q.shift(); if (nd !== s.d && (nd + 2) % 4 !== s.d) { s.d = nd; break; } }
+        return nb(s.b[0][0], s.b[0][1], s.d);
       });
       // tails move first (unless growing)
       const popped = [null, null];
@@ -141,7 +148,7 @@ BX.register({
     /* ---------- input ---------- */
     const pend = [[], []];            // per local slot queued screen dirs (+ counter so host sees every press)
     const cnt = [0, 0], held = [[], []];
-    const push = (slot, sd) => { pend[slot].push(sd); if (pend[slot].length > 3) pend[slot].shift(); };
+    const push = (slot, sd) => { const q = pend[slot]; if (q.length && q[q.length - 1] === sd) return; q.push(sd); if (q.length > 3) q.shift(); };
     const KM = [{KeyW: 0, KeyD: 1, KeyS: 2, KeyA: 3}, {ArrowUp: 0, ArrowRight: 1, ArrowDown: 2, ArrowLeft: 3}];
     const sw = new Map();
     const slotOfPoint = p => {
@@ -161,13 +168,13 @@ BX.register({
     let padFlash = [];
     ctx.on(cv.cv, 'pointerdown', e => {
       const p = cv.pos(e); const ph = padHit(p);
-      if (ph) { push(ph.slot, ph.sd); padFlash.push({pd: ph.pd, sd: ph.sd, t: .18}); try { navigator.vibrate && navigator.vibrate(8); } catch (er) {} return; }
+      if (ph) { push(ph.slot, ph.sd); padFlash.push({pd: ph.pd, sd: ph.sd, t: .18}); ctx.buzz(8); return; }
       sw.set(e.pointerId, {x: p.x, y: p.y, slot: slotOfPoint(p)});
       try { cv.cv.setPointerCapture(e.pointerId); } catch (er) {}
     });
     ctx.on(cv.cv, 'pointermove', e => {
       const s = sw.get(e.pointerId); if (!s) return; const p = cv.pos(e);
-      const dx = p.x - s.x, dy = p.y - s.y, th = 22;
+      const dx = p.x - s.x, dy = p.y - s.y, th = 18;
       if (Math.abs(dx) < th && Math.abs(dy) < th) return;
       push(s.slot, Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 1 : 3) : (dy > 0 ? 2 : 0));
       s.x = p.x; s.y = p.y;
@@ -190,12 +197,12 @@ BX.register({
       for (const s of st.s) for (let k = 0; k < s.b.length - (s === me ? 1 : 0); k++) blocked[s.b[k][0] + s.b[k][1] * GW] = 1;
       const H = me.b[0], ok = (x, y) => x >= 0 && y >= 0 && x < GW && y < GH && !blocked[x + y * GW];
       const opH = op.b[0], danger = new Set();
-      if (op.alive && (level >= 3 || (level === 2 && Math.random() < .8))) for (const [dx, dy] of DIRS) danger.add((opH[0] + dx) + (opH[1] + dy) * GW);
-      const moves = [0, 1, 2, 3].filter(d => (d + 2) % 4 !== me.d && ok(H[0] + DIRS[d][0], H[1] + DIRS[d][1]));
+      if (op.alive && (level >= 3 || (level === 2 && Math.random() < .8))) for (let d = 0; d < 4; d++) { const [x, y] = nb(opH[0], opH[1], d); danger.add(x + y * GW); }
+      const moves = [0, 1, 2, 3].filter(d => (d + 2) % 4 !== me.d && ok(...nb(H[0], H[1], d)));
       if (!moves.length) { m.out = {}; return m.out; }
       const flood = (sx, sy, cap) => {
         const seen = new Uint8Array(GW * GH); seen[sx + sy * GW] = 1; const qq = [[sx, sy]]; let n = 0;
-        while (qq.length && n < cap) { const [x, y] = qq.pop(); n++; for (const [dx, dy] of DIRS) { const nx = x + dx, ny = y + dy; if (ok(nx, ny) && !seen[nx + ny * GW]) { seen[nx + ny * GW] = 1; qq.push([nx, ny]); } } }
+        while (qq.length && n < cap) { const [x, y] = qq.pop(); n++; for (let d = 0; d < 4; d++) { const [nx, ny] = nb(x, y, d); if (ok(nx, ny) && !seen[nx + ny * GW]) { seen[nx + ny * GW] = 1; qq.push([nx, ny]); } } }
         return n;
       };
       // BFS distance map from head
@@ -203,12 +210,12 @@ BX.register({
       let pick = -1;
       if (level === 1) {
         if (Math.random() < .12) pick = moves[Math.floor(Math.random() * moves.length)];
-        else { let bd = 1e9; const f = targets[0] || [GW / 2, GH / 2]; for (const d of moves) { const nx = H[0] + DIRS[d][0], ny = H[1] + DIRS[d][1], dd = Math.abs(nx - f[0]) + Math.abs(ny - f[1]) + Math.random() * .5; if (dd < bd) { bd = dd; pick = d; } } }
+        else { let bd = 1e9; const f = targets[0] || [GW / 2, GH / 2]; for (const d of moves) { const [nx, ny] = nb(H[0], H[1], d), dd = Math.abs(nx - f[0]) + Math.abs(ny - f[1]) + Math.random() * .5; if (dd < bd) { bd = dd; pick = d; } } }
       } else {
         // BFS from each candidate first move
         const dist = new Int16Array(GW * GH).fill(-1), first = new Int8Array(GW * GH).fill(-1), q = [];
-        for (const d of moves) { const nx = H[0] + DIRS[d][0], ny = H[1] + DIRS[d][1], i = nx + ny * GW; if (danger.has(i) && moves.length > 1) continue; dist[i] = 1; first[i] = d; q.push(i); }
-        for (let qi = 0; qi < q.length; qi++) { const i = q[qi], x = i % GW, y = (i - x) / GW; for (const [dx, dy] of DIRS) { const nx = x + dx, ny = y + dy, j = nx + ny * GW; if (ok(nx, ny) && dist[j] < 0) { dist[j] = dist[i] + 1; first[j] = first[i]; q.push(j); } } }
+        for (const d of moves) { const [nx, ny] = nb(H[0], H[1], d), i = nx + ny * GW; if (danger.has(i) && moves.length > 1) continue; dist[i] = 1; first[i] = d; q.push(i); }
+        for (let qi = 0; qi < q.length; qi++) { const i = q[qi], x = i % GW, y = (i - x) / GW; for (let dd = 0; dd < 4; dd++) { const [nx, ny] = nb(x, y, dd), j = nx + ny * GW; if (ok(nx, ny) && dist[j] < 0) { dist[j] = dist[i] + 1; first[j] = first[i]; q.push(j); } } }
         let best = null, bs = -1e9;
         for (const f of targets) {
           const i = f[0] + f[1] * GW; if (dist[i] < 0) continue;
@@ -217,12 +224,12 @@ BX.register({
           if (sc > bs) { bs = sc; best = first[i]; }
         }
         const need = me.b.length + 2;
-        const space = d => flood(H[0] + DIRS[d][0], H[1] + DIRS[d][1], level >= 3 ? 400 : 120);
+        const space = d => flood(...nb(H[0], H[1], d), level >= 3 ? 400 : 120);
         if (best != null && best >= 0) {
           if (level >= 3 || Math.random() < .9) { if (space(best) >= Math.min(need, level >= 3 ? 400 : 120)) pick = best; }
           else pick = best;
         }
-        if (pick < 0) { let bv = -1; for (const d of moves) { const v = space(d) - (danger.has((H[0] + DIRS[d][0]) + (H[1] + DIRS[d][1]) * GW) ? 50 : 0) + Math.random(); if (v > bv) { bv = v; pick = d; } } }
+        if (pick < 0) { let bv = -1; for (const d of moves) { const c2 = nb(H[0], H[1], d), v = space(d) - (danger.has(c2[0] + c2[1] * GW) ? 50 : 0) + Math.random(); if (v > bv) { bv = v; pick = d; } } }
       }
       m.out = {g: pick, n: (m.n = (m.n || 0) + 1)};
       return m.out;
@@ -235,8 +242,10 @@ BX.register({
         seenEv = e.id;
         if (e.k === 'eat') { ctx.sfx(e.b > 1 ? 'coin' : 'pop'); burst(st.s[e.a].b[0], COLS[e.a][1], 10); }
         else if (e.k === 'bonus') { ctx.sfx(e.b ? 'coin' : 'swish'); burst(st.s[e.a].b[0], e.b ? '#ffd76a' : '#9fe0ff', 22); banner = {txt: ctx.name(e.a) + (e.b ? ' 双倍！' : ' 加速！'), t: 1.4}; }
-        else if (e.k === 'die') { ctx.sfx('crash'); shake = 10; for (const c of st.s[e.a].b.slice(0, 12)) burst(c, COLS[e.a][0], 3); }
+        else if (e.k === 'die') { ctx.sfx('crash'); shake = 10; for (const c of st.s[e.a].b.slice(0, 12)) burst(c, COLS[e.a][0], 3); if (ctx.mySeats.includes(e.a) && !ctx.isAI(e.a)) ctx.buzz(40); }
+        else if (e.k === 'go') ctx.sfx('start');
         else if (e.k === 'round') { ctx.sfx(e.a >= 0 ? 'gong' : 'draw'); flash = 1; }
+        else if (e.k === 'cd') ctx.sfx('tick');
       }
     }
     function burst(c, col, n) { if (!c) return; for (let i = 0; i < n; i++) { const a = Math.random() * 6.28, sp = 1.5 + Math.random() * 5; parts.push({x: c[0], y: c[1], vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, t: .5 + Math.random() * .4, c: col}); } }
@@ -266,17 +275,19 @@ BX.register({
           const inp = inputs[i] || {};
           if (inp.g != null && inp.n != null && inp.n !== lastN[i].n) { lastN[i] = inp; const s = st.s[i]; if (s.q.length < 3) s.q.push(inp.g | 0); }
         }
-        if (st.ph === 'ready') { st.t -= dt; if (st.t <= 0) { st.ph = 'play'; fx('go'); } }
+        if (st.ph === 'ready') { const c0 = Math.ceil(st.t - .2); st.t -= dt; const c1 = Math.ceil(st.t - .2); if (c1 !== c0 && c1 > 0) fx('cd'); if (st.t <= 0) { st.ph = 'play'; fx('go'); } }
         else if (st.ph === 'between') { st.t -= dt; if (st.t <= 0) { st.round++; newRound(); } }
         else if (st.ph === 'play') {
-          st.acc = (st.acc || 0) + dt; st.rt += dt;
+          st.rt += dt;
           for (const s of st.s) { s.boost = Math.max(0, s.boost - dt); s.dbl = Math.max(0, s.dbl - dt); }
           if (st.bonus) { st.bonus.t -= dt; if (st.bonus.t <= 0) { st.bonus = null; st.nextBonus = 6 + Math.random() * 6; } }
           else { st.nextBonus -= dt; if (st.nextBonus <= 0) { const c = freeCell(); if (c) { st.bonus = {x: c[0], y: c[1], k: Math.random() < .5 ? 'speed' : 'dbl', t: 7}; fx('spawn'); } else st.nextBonus = 3; } }
-          while (st.acc >= TICK && st.ph === 'play') {
-            st.acc -= TICK; st.tick++;
-            const movers = st.s.map(s => s.alive && (s.boost > 0 || st.tick % 2 === 0));
-            if (movers[0] || movers[1]) moveSnakes(movers);
+          for (const s of st.s) if (s.alive) s.mv = (s.mv || 0) + rateOf(s) * dt;
+          for (let k = 0; k < 3 && st.ph === 'play'; k++) {
+            const movers = st.s.map(s => s.alive && s.mv >= 1);
+            if (!movers[0] && !movers[1]) break;
+            st.tick++; st.s.forEach((s, i) => { if (movers[i]) s.mv -= 1; });
+            moveSnakes(movers);
           }
           if (st.ph === 'play' && st.rt >= roundLen) {
             const a = st.s[0].b.length * 100 + st.s[0].score, b = st.s[1].b.length * 100 + st.s[1].score;
@@ -305,7 +316,8 @@ BX.register({
       const fw = V.gw * V.s, fh = V.gh * V.s;
       const L0 = V.portrait ? V.ox : V.ox, T0 = V.oy;
       D.wood(g, L0 - V.s * .55, T0 - V.s * .55, fw + V.s * 1.1, fh + V.s * 1.1, {r: V.s * .6, base: '#6b3a1c', dark: '#2a1206', seed: 8, vertical: V.portrait});
-      g.strokeStyle = 'rgba(230,197,125,.6)'; g.lineWidth = 1.5; D.rr(g, L0 - V.s * .3, T0 - V.s * .3, fw + V.s * .6, fh + V.s * .6, V.s * .4); g.stroke();
+      g.strokeStyle = WRAP ? 'rgba(120,220,180,.85)' : 'rgba(230,197,125,.6)'; g.lineWidth = WRAP ? 2.5 : 1.5; if (WRAP) g.setLineDash([V.s * .5, V.s * .4]);
+      D.rr(g, L0 - V.s * .3, T0 - V.s * .3, fw + V.s * .6, fh + V.s * .6, V.s * .4); g.stroke(); g.setLineDash([]);
       // grass-tea field: checker tiles
       for (let y = 0; y < V.gh; y++) for (let x = 0; x < V.gw; x++) {
         g.fillStyle = (x + y) % 2 ? '#5d7f3a' : '#668a40'; g.fillRect(L0 + x * V.s, T0 + y * V.s, V.s + .5, V.s + .5);
@@ -328,7 +340,8 @@ BX.register({
       }
       const alpha = s.alive ? 1 : .45;
       g.save(); g.globalAlpha = alpha; g.lineCap = 'round'; g.lineJoin = 'round';
-      const path = (ox, oy) => { g.beginPath(); pts.forEach(([x, y], j) => j ? g.lineTo(x + ox, y + oy) : g.moveTo(x + ox, y + oy)); if (pts.length === 1) g.lineTo(pts[0][0] + ox + .1, pts[0][1] + oy); };
+      const adj = j => Math.abs(s.b[j][0] - s.b[j - 1][0]) + Math.abs(s.b[j][1] - s.b[j - 1][1]) === 1;
+      const path = (ox, oy) => { g.beginPath(); pts.forEach(([x, y], j) => j && adj(j) ? g.lineTo(x + ox, y + oy) : (g.moveTo(x + ox, y + oy), g.lineTo(x + ox + .1, y + oy))); };
       g.strokeStyle = 'rgba(0,0,0,.28)'; g.lineWidth = r * 2; path(r * .18, r * .3); g.stroke();
       if (s.boost > 0) { g.strokeStyle = 'rgba(160,230,255,.35)'; g.lineWidth = r * 2.9; path(0, 0); g.stroke(); }
       if (s.dbl > 0) { g.strokeStyle = 'rgba(255,215,106,.4)'; g.lineWidth = r * 2.7; path(0, 0); g.stroke(); }
@@ -347,6 +360,14 @@ BX.register({
         if (!s.alive) { g.strokeStyle = '#111'; g.lineWidth = 1.5; g.beginPath(); g.moveTo(ex - r * .2, ey - r * .2); g.lineTo(ex + r * .2, ey + r * .2); g.moveTo(ex + r * .2, ey - r * .2); g.lineTo(ex - r * .2, ey + r * .2); g.stroke(); }
       }
       if (s.alive && (performance.now() / 300 | 0) % 4 === 0) { g.strokeStyle = '#c0291f'; g.lineWidth = 2; g.beginPath(); g.moveTo(hx + fx2 * r, hy + fy2 * r); g.lineTo(hx + fx2 * r * 1.7, hy + fy2 * r * 1.7); g.stroke(); }
+      // own head marker + danger warning (next cell straight ahead is deadly)
+      if (s.alive && ctx.mySeats.includes(i) && !ctx.isAI(i) && st.ph === 'play') {
+        const [nx, ny] = nb(s.b[0][0], s.b[0][1], s.d);
+        let bad = nx < 0 || ny < 0 || nx >= GW || ny >= GH;
+        if (!bad) for (const o of st.s) for (let k = 0; k < o.b.length - 1 && !bad; k++) if (o.b[k][0] === nx && o.b[k][1] === ny) bad = true;
+        if (bad) { g.strokeStyle = `rgba(255,70,50,${.55 + .4 * Math.sin(performance.now() / 70)})`; g.lineWidth = Math.max(2, r * .3); D.circle(g, hx, hy, r * 1.75); g.stroke(); }
+        else if (nLoc() === 1) { g.strokeStyle = 'rgba(255,255,255,.55)'; g.lineWidth = 1.5; D.circle(g, hx, hy, r * 1.5); g.stroke(); }
+      }
       g.restore();
     }
     function drawPeach(g, x, y, r) {
@@ -397,7 +418,7 @@ BX.register({
       for (let i = 0; i < 2; i++) {
         const s = st.s[i], hk = s.b.length ? s.b[0][0] + ',' + s.b[0][1] : '';
         if (lastHead[i] !== hk) { if (lastHead[i] != null) moveT[i] = 0; lastHead[i] = hk; prevB[i] = curB[i]; curB[i] = s.b.map(c => c.slice()); }
-        moveT[i] = Math.min(1, moveT[i] + dt / ((s.boost > 0 ? 1 : 2) * TICK));
+        moveT[i] = Math.min(1, moveT[i] + dt * rateOf(s));
       }
       for (let i = 0; i < 2; i++) drawSnake(g, i, st.s[i], moveT[i]);
       // particles (grid units)
@@ -416,9 +437,10 @@ BX.register({
         // start arrows near own snake
         for (const i of ctx.mySeats) { const s = st.s[i], [hx, hy] = T(s.b[0][0], s.b[0][1]); D.text(g, nLoc() === 2 ? ctx.name(i) : '你', hx, hy - V.s * 1.3, {size: Math.max(12, V.s * .8), color: '#fff', stroke: 'rgba(0,0,0,.6)', strokeW: 3}); }
       } else if (st.ph === 'between' || st.ph === 'over') {
-        g.fillStyle = 'rgba(20,10,4,.45)'; g.fillRect(V.ox - V.s / 2, cy - V.s * 2.2, V.gw * V.s, V.s * 4.4);
+        g.fillStyle = 'rgba(20,10,4,.45)'; g.fillRect(V.ox - V.s / 2, cy - V.s * 2.2, V.gw * V.s, V.s * 5.2);
         D.text(g, st.msg, cx, cy - V.s * .5, {size: Math.min(V.s * 1.2, cv.w / 16), color: '#fff3d6', font: 'deco', weight: 400});
         D.text(g, st.wins[0] + '  :  ' + st.wins[1], cx, cy + V.s * 1.1, {size: V.s * 1.2, color: '#ffe39a', font: 'deco', weight: 400});
+        D.text(g, '本回合长度  ' + st.s[0].b.length + ' : ' + st.s[1].b.length, cx, cy + V.s * 2.3, {size: Math.max(11, V.s * .6), color: 'rgba(255,243,214,.8)'});
       }
       if (banner) { banner.t -= dt; if (banner.t <= 0) banner = null; else D.text(g, banner.txt, cx, V.oy + V.s * 1.2, {size: Math.max(14, V.s * .9), color: '#fff3d6', stroke: 'rgba(40,20,5,.7)', strokeW: 4}); }
       g.restore();

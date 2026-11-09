@@ -62,6 +62,7 @@ BX.register({
   id: 'yacht', title: '快艇骰子', cat: 'dice', order: 1, sub: '五颗骰子，十三格计分',
   desc: '每回合最多掷三次五颗骰子，可以留下想要的骰子再掷，然后填入计分表的一格。十三轮后总分最高者获胜，五颗相同就是“快艇”！',
   kind: 'turn', seats: [1, 4], defSeats: 2, seatColors: PCOL, firstLabel: '先掷', aiDelay: 380, anyTimeActs: true,
+  howto: ['点「掷骰」（或按空格键）掷骰；每回合最多掷 3 次。', '掷过之后<b>点骰子</b>可保留/取消保留（电脑上按 1–5），被保留的骰子抬起并标“留”。', '计分表里绿色数字是这手骰子填进该格能得的分；点自己那一列的格子填分（触屏点两次确认，划 0 分时也会要求再点一次）。', '“奖励 ≥63”一行显示上半区还差多少分，以及相对“每格 3 个”的进度（+/−）。💡 会标出电脑建议保留的骰子或该填的格子。'],
   rules: `<p>每位玩家轮流进行回合，共 <b>13 轮</b>。每回合最多掷骰 <b>3 次</b>：第一次掷全部五颗，之后可以点选想<b>保留</b>的骰子，只重掷其余的。</p>
 <p>掷完（或随时停手）后，必须在自己计分表中选<b>一个空格</b>填分，每格整局只能填一次；不符合条件的格子也可以填，记 0 分。</p>
 <ul><li><b>一点～六点</b>：该点数骰子的点数之和。上半区合计 <b>≥ 63</b> 分时奖励 <b>35</b> 分。</li>
@@ -83,7 +84,7 @@ BX.register({
     const N = ctx.n;
     const st = {dice: [1, 2, 3, 4, 5], held: [0, 0, 0, 0, 0], rolls: 0, turn: 0, round: 1, cards: BX.range(N).map(() => new Array(13).fill(null)), yb: new Array(N).fill(0), last: null, rollId: 0, over: false};
     const cv = ctx.canvas();
-    let tumble = {id: -1, k: 1, from: [], rot: []}, pend = -1, flash = null, t = 0;
+    let tumble = {id: -1, k: 1, from: [], rot: []}, pend = -1, flash = null, t = 0, hint = null, hintT = 0;
     const myTurn = () => !st.over && ctx.canAct(st.turn);
     /* ---------- layout ---------- */
     function layout() {
@@ -118,7 +119,7 @@ BX.register({
       if (!myTurn()) return;
       // roll button
       const b = tg.btn;
-      if (p.x >= b.x && p.x <= b.x + b.w && p.y >= b.y && p.y <= b.y + b.h) { if (st.rolls < 3) { pend = -1; ctx.act({t: 'roll'}, st.turn); } return; }
+      if (p.x >= b.x && p.x <= b.x + b.w && p.y >= b.y && p.y <= b.y + b.h) { if (st.rolls < 3) { pend = -1; ctx.act({t: 'roll'}, st.turn); } else ctx.sfx('error'); return; }
       // dice
       if (st.rolls > 0 && st.rolls < 3) for (let i = 0; i < 5; i++) {
         const x = tg.dx + i * (tg.ds + tg.gap), y = tg.dy + (st.held[i] ? -tg.ds * .12 : 0);
@@ -132,7 +133,8 @@ BX.register({
           if (c !== st.turn && p.x > sg.x0 + sg.labW) { /* tapped another player's column: treat as own row */ }
           const ok = options(st.dice, st.cards[st.turn]).find(o => o[0] === k);
           if (!ok) { ctx.sfx('error'); return; }
-          if (e.pointerType !== 'mouse' && pend !== k) { pend = k; ctx.sfx('tick'); return; }
+          const scratch = ok[1] === 0 && options(st.dice, st.cards[st.turn]).some(o => o[1] > 0);
+          if ((ctx.needConfirm(e) || scratch) && pend !== k) { pend = k; ctx.sfx('tick'); if (scratch) ctx.buzz(10); return; }
           pend = -1; ctx.act({t: 'score', k}, st.turn);
         }
       }
@@ -219,6 +221,7 @@ BX.register({
       },
       apply(a) {
         if (a.t === 'hold') { st.held[a.i] = st.held[a.i] ? 0 : 1; ctx.sfx('click'); status(); return; }
+        hint = null;
         if (a.t === 'roll') {
           if (a.hold && st.rolls > 0) st.held = a.hold.map(x => x ? 1 : 0);
           if (st.rolls === 0) st.held = [0, 0, 0, 0, 0];
@@ -227,7 +230,12 @@ BX.register({
           st.rolls++; st.rollId++; pend = -1;
           const tb = {id: st.rollId, k: 0, from, rot: st.dice.map(() => (Math.random() - .5) * 9), mask: st.held.slice()}; tumble = tb;
           ctx.anim(560, k => tb.k = k, null, BX.ease.out); ctx.sfx('dice');
-          if (counts(st.dice).includes(5)) ctx.after(560, () => { ctx.sfx('win'); flash = {txt: '快艇！', t: 1.6}; });
+          const cc = counts(st.dice);
+          if (cc.includes(5)) ctx.after(560, () => { ctx.sfx('win'); flash = {txt: '快艇！', t: 1.6}; if (ctx.isLocal(st.turn)) ctx.buzz(40); });
+          else {
+            const combo = rawScore(st.dice, 10) ? '大顺！' : rawScore(st.dice, 9) ? '小顺' : rawScore(st.dice, 8) ? '葫芦' : rawScore(st.dice, 7) ? '四条' : '';
+            if (combo) ctx.after(520, () => { ctx.sfx('bell'); flash = {txt: combo, t: 1.1, small: true}; });
+          }
           status(); return;
         }
         if (a.t === 'score') {
@@ -244,8 +252,9 @@ BX.register({
             st.over = true; status();
             const tots = BX.range(N).map(i => total(st.cards[i], st.yb[i])), mx = Math.max(...tots);
             const win = BX.range(N).filter(i => tots[i] === mx);
-            const text = BX.range(N).map(i => ctx.name(i) + ' ' + tots[i]).join('　');
-            ctx.end(N === 1 ? {win: true, title: '总分 ' + mx, text: '本局得分 ' + mx + (ctx.best('score', mx).isNew ? '（新纪录！）' : '')} : {winner: win.length === N ? -1 : win.length === 1 ? win[0] : win, text});
+            const brk = i => { const c = st.cards[i], u = upperSum(c), lo = c.slice(6).reduce((a, b) => a + (b || 0), 0); return '上半 ' + u + (u >= 63 ? '+35' : '') + ' · 下半 ' + lo + (st.yb[i] ? ' · 奖励 ' + st.yb[i] * 100 : ''); };
+            const text = BX.range(N).map(i => BX.esc(ctx.name(i)) + ' ' + tots[i] + ' 分（' + brk(i) + '）').join('<br>');
+            ctx.end(N === 1 ? {win: true, title: '总分 ' + mx, text: '本局得分 ' + mx + '（' + brk(0) + '）' + (ctx.best('score', mx).isNew ? '（新纪录！）' : '')} : {winner: win.length === N ? -1 : win.length === 1 ? win[0] : win, html: text});
             return;
           }
           status();
@@ -253,6 +262,18 @@ BX.register({
       },
       aiMove(seat, level) { return aiAct(seat, level); },
       onTurn: status,
+      showHint(a) {
+        hint = a; hintT = t;
+        if (a.t === 'roll' && a.hold) { const diff = a.hold.some((h, i) => !!h !== !!st.held[i]); if (!diff) ctx.toast('保持当前保留，直接重掷'); }
+        if (a.t === 'score') pend = -1;
+      },
+      key(e) {
+        if (!myTurn()) return;
+        if (e.code === 'Space' || e.code === 'KeyR' || (e.code === 'Enter' && pend < 0)) { if (e.preventDefault) e.preventDefault(); if (st.rolls < 3) ctx.act({t: 'roll'}, st.turn); return; }
+        if (e.code === 'Enter' && pend >= 0) { const k = pend; pend = -1; ctx.act({t: 'score', k}, st.turn); return; }
+        const m = /^(Digit|Numpad)([1-5])$/.exec(e.code);
+        if (m && st.rolls > 0 && st.rolls < 3) ctx.act({t: 'hold', i: +m[2] - 1}, st.turn);
+      },
       frame(dt) {
         const g = cv.g; cv.clear(); t += dt;
         const L = layout(), tg = trayGeo(L), sg = sheetGeo(L);
@@ -279,9 +300,14 @@ BX.register({
           if (st.held[i]) y -= tg.ds * .12;
           D.die(g, x, y, tg.ds, v, {rot, sel: st.held[i] ? C.red2 : false});
           if (st.held[i]) { D.text(g, '留', x + tg.ds / 2, y + tg.ds + 13, {size: 13, color: C.gold2, weight: 800}); }
+          if (hint && hint.t === 'roll' && hint.hold && myTurn() && !moving) {
+            const want = !!hint.hold[i], a = .6 + .35 * Math.sin((t - hintT) * 7);
+            if (want !== !!st.held[i]) { g.strokeStyle = want ? `rgba(63,220,150,${a})` : `rgba(255,120,90,${a})`; g.lineWidth = 4; D.rr(g, x - 5, y - 5, tg.ds + 10, tg.ds + 10, tg.ds * .22); g.stroke(); D.text(g, want ? '保留' : '放开', x + tg.ds / 2, y - 12, {size: 12, color: want ? '#9fe0c4' : '#ffb39a', weight: 800}); }
+          }
         }
         // roll button
         const b = tg.btn, can = myTurn() && st.rolls < 3;
+        if (can && (st.rolls === 0 || (hint && hint.t === 'roll'))) { const pul = .5 + .5 * Math.sin(t * (hint ? 7 : 4)); g.fillStyle = hint && hint.t === 'roll' ? `rgba(63,220,150,${.25 + .3 * pul})` : `rgba(255,215,106,${.15 + .2 * pul})`; D.rr(g, b.x - 7, b.y - 6, b.w + 14, b.h + 14, 16); g.fill(); }
         g.save(); g.globalAlpha = can ? 1 : .45;
         const bg = g.createLinearGradient(0, b.y, 0, b.y + b.h); bg.addColorStop(0, '#d0533f'); bg.addColorStop(1, '#a33022');
         g.fillStyle = '#6e1d14'; D.rr(g, b.x, b.y + 3, b.w, b.h, 12); g.fill(); g.fillStyle = bg; D.rr(g, b.x, b.y, b.w, b.h, 12); g.fill();
@@ -317,14 +343,23 @@ BX.register({
                 const o = opts.find(q => q[0] === k);
                 if (o) {
                   const sel = pend === k;
+                  if (hint && hint.t === 'score' && hint.k === k && myTurn()) { g.strokeStyle = `rgba(63,200,140,${.6 + .35 * Math.sin((t - hintT) * 7)})`; g.lineWidth = 3; D.rr(g, x0 + 2, y + 1, labW + colW * (s + 1) - 4, rh - 2, 6); g.stroke(); }
                   g.fillStyle = sel ? 'rgba(63,127,107,.85)' : o[1] > 0 ? 'rgba(63,127,107,.16)' : 'rgba(0,0,0,.04)';
                   D.rr(g, cx - colW / 2 + 3, y + 3, colW - 6, rh - 6, 6); g.fill();
                   txt = String(o[1]); color = sel ? '#fff' : o[1] > 0 ? C.jade : 'rgba(43,33,24,.35)'; wgt = 600;
-                  if (sel) D.text(g, '再点确认', cx, y + rh - 5, {size: 8.5, color: '#e8fff6', weight: 500});
+                  if (sel) D.text(g, o[1] === 0 ? '再点划掉' : '再点确认', cx, y + rh - 5, {size: 8.5, color: '#e8fff6', weight: 500});
                 }
               }
             } else if (r === 6) txt = String(upperSum(card));
-            else if (r === 7) { const u = upperSum(card); txt = u >= 63 ? '35' : (card.slice(0, 6).every(x => x != null) ? '0' : '差' + (63 - u)); color = u >= 63 ? C.jade : C.ink2; wgt = u >= 63 ? 800 : 500; }
+            else if (r === 7) {
+              const u = upperSum(card), done6 = card.slice(0, 6).every(x => x != null);
+              txt = u >= 63 ? '35' : (done6 ? '0' : '差' + (63 - u)); color = u >= 63 ? C.jade : C.ink2; wgt = u >= 63 ? 800 : 500;
+              if (u < 63 && !done6 && card.slice(0, 6).some(x => x != null) && rh >= 24) {   // pace vs "three of each"
+                let par = 0; for (let q = 0; q < 6; q++) if (card[q] != null) par += card[q] - 3 * (q + 1);
+                D.text(g, (par >= 0 ? '+' : '') + par, cx, y + rh - 6, {size: Math.max(8, fs * .55), color: par >= 0 ? C.jade : C.red, weight: 700});
+                txt = '差' + (63 - u); D.text(g, txt, cx, y + rh * .36, {size: fs * .74, color, weight: wgt}); txt = '';
+              }
+            }
             else if (r === 15) txt = st.yb[s] ? String(st.yb[s] * 100) : '';
             else if (r === 16) { txt = String(total(card, st.yb[s])); color = C.red; wgt = 900; }
             if (txt) D.text(g, txt, cx, y + rh / 2 - (k >= 0 && pend === k && s === st.turn && card[k] == null ? 4 : 0), {size: r === 16 ? fs * 1.15 : r === 7 && txt.startsWith('差') ? fs * .78 : fs, color, weight: wgt});
@@ -336,7 +371,7 @@ BX.register({
         // yacht flash
         if (flash) {
           flash.t -= dt; if (flash.t <= 0) flash = null;
-          else { const a = Math.min(1, flash.t); D.text(g, flash.txt, tr.x + tr.w / 2, tg.dy + tg.ds / 2, {size: Math.min(64, tr.w / 6), color: `rgba(255,220,120,${a})`, font: 'deco', weight: 400, stroke: `rgba(90,20,10,${a})`, strokeW: 6}); }
+          else { const a = Math.min(1, flash.t * (flash.small ? 1.6 : 1)); D.text(g, flash.txt, tr.x + tr.w / 2, flash.small ? tg.dy - 4 : tg.dy + tg.ds / 2, {size: Math.min(flash.small ? 36 : 64, tr.w / (flash.small ? 9 : 6)), color: `rgba(255,220,120,${a})`, font: 'deco', weight: 400, stroke: `rgba(90,20,10,${a})`, strokeW: 6}); }
         }
       },
     };

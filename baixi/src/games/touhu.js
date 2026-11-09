@@ -97,6 +97,7 @@ BX.register({
   desc: '古人宴饮时的雅戏：站定后把箭投进远处的铜壶。入壶得一筹，穿过壶耳得两筹，还有“有初”“连中”“骁”等名目。每轮距离与风向都会变化。',
   kind: 'turn', seats: [1, 4], defSeats: 2, seatColors: ['#b23a2b', '#2f5d8a', '#3f8f5b', '#c8902b'], noFirst: false, aiDelay: 500,
   options: [{key: 'rounds', label: '轮数', choices: [[1, '1 轮'], [3, '3 轮'], [5, '5 轮']], def: 3}],
+  howto: ['在画面任意处<b>按住向后拉</b>（像拉弓弦），箭朝反方向飞出，拉得越长力量越大，松手投出。', '下方（或右侧）<b>− +</b> 微调仰角和力度（按住连续调），再点「投出」。', '本轮距离和风不变：淡色虚线是你<b>上一箭</b>的轨迹，照着微调最容易连中。', '箭在空中时点一下画面可快进；💡 提示会画出建议的出手。键盘：↑↓ 仰角、←→ 力度、空格投出。'],
   rules: `<p><b>投壶</b>是先秦至明清宴饮时的礼仪游戏。主客依次站在规定距离外，把箭（矢）投向一只细颈铜壶。</p>
 <p><b>流程：</b>共若干轮（默认 3 轮）。每轮开始时重新确定<b>壶的距离</b>（2.4～3.6 米）和<b>风向风力</b>；每位玩家轮流上场，一次投完 <b>4 支箭</b>。</p>
 <p><b>计分（筹）：</b></p>
@@ -109,7 +110,7 @@ BX.register({
 <li><b>骁</b>：箭入壶口时力道过猛、从壶中反弹而出，古人以接住再投为绝技——记 1 筹并<b>奖励一支额外的箭</b>（每轮最多一次）。骁不算“投中”，会中断连中。</li>
 </ul>
 <p>撞到壶身、壶沿会弹开，若落地即为不中。全部轮次结束后，<b>总筹数最多者胜</b>（并列则同胜）。单人时可挑战自己的最高纪录。</p>
-<p><b>操作：</b>在画面任意处按下并<b>向后拉</b>（像拉弓弦一样），出手方向与拉动方向相反，拉得越长力量越大，松手即投出。虚线为不计风时的前段轨迹；右上角显示风向。键盘：方向键微调角度/力度，空格投出。</p>`,
+<p><b>操作：</b>在画面任意处按下并<b>向后拉</b>（像拉弓弦一样），出手方向与拉动方向相反，拉得越长力量越大，松手即投出。虚线为不计风时的前段轨迹；右上角显示风向。也可以用下方的 − + 按钮微调仰角与力度后点「投出」。本轮距离和风不变时，淡色虚线显示你上一箭的轨迹。键盘：↑↓ 仰角、←→ 力度，空格投出。</p>`,
   icon(g, w, h) {
     const gr = g.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, '#f1e3c2'); gr.addColorStop(1, '#dcc59a'); g.fillStyle = gr; g.fillRect(0, 0, w, h);
     K.mountains(g, 0, h * .1, w, h * .7, {seed: 4, layers: 2, top: .25, alpha: [.15, .25]});
@@ -131,8 +132,15 @@ BX.register({
     }
     newRound();
     const cv = ctx.canvas(), pb = K.playback(ctx), fx = K.fx();
-    const ui = ctx.ui('');
-    let show = null, aim = {dx: .6, dy: .8, p: .45}, lastAim = {}, sling, keyAim = null;
+    const ui = ctx.ui(''), bar = BX.h('div', {class: 'pk-bar'}); ui.append(bar);
+    let show = null, aim = {dx: .6, dy: .8, p: .45}, lastAim = {}, sling, keyAim = null, hintA = null, hintT = 0, aiPick = null;
+    const lastThrow = {}, skipKey = K.skip(ctx, cv, pb);
+    const elevOf = a => Math.round(Math.atan2(a.dy, a.dx) * 180 / Math.PI);
+    function setElev(deg) { const a = BX.clamp(deg, 9, 84) * Math.PI / 180, d = clampDir(Math.cos(a), Math.sin(a)); aim = {dx: d[0], dy: d[1], p: aim.p}; keyAim = performance.now(); }
+    function setPow(d) { aim = Object.assign({}, aim, {p: BX.clamp(Math.round(aim.p * 100 + d) / 100, .02, 1)}); keyAim = performance.now(); }
+    const adjA = K.adj(bar, '仰角', () => elevOf(aim) + '°', (d, k) => setElev(elevOf(aim) + d * (k > 12 ? 2 : 1)));
+    const adjP = K.adj(bar, '力度', () => String(Math.round(aim.p * 100)), (d, k) => setPow(d * (k > 12 ? 3 : 1)));
+    K.go(bar, '投出', () => fire());
     let lantern = 0, Z = st;
     const cache = K.cache();
 
@@ -140,9 +148,14 @@ BX.register({
     function view() {
       const W = cv.w, H = cv.h, portrait = H > W * 1.1;
       const wx0 = -.75, wx1 = 4.4, wy0 = -.25, wy1 = 2.55;
-      const top = portrait ? 64 : 46, bot = portrait ? Math.max(150, H * .36) : 8;
+      const top = portrait ? 64 : 46;
+      // landscape with spare room at the sides → controls in a right-hand column, else a bottom bar
+      const f0 = BX.fit(W, H - top - 8, wx1 - wx0, wy1 - wy0, 6), side = !portrait && (W - (wx1 - wx0) * f0.s) / 2 >= 168;
+      const cls = side ? 'pk-side' : 'pk-bar'; if (!bar.classList.contains(cls)) { bar.classList.remove('pk-side', 'pk-bar'); bar.classList.add(cls); }
+      const barH = side ? 0 : K.barH(bar);
+      const bot = portrait ? Math.max(150, H * .36) : 8 + barH;
       const f = BX.fit(W, H - top - bot, wx1 - wx0, wy1 - wy0, 6);
-      return {s: f.s, ox: f.x - wx0 * f.s, oy: top + f.y + wy1 * f.s, portrait, top, x0: wx0, x1: wx1};
+      return {s: f.s, ox: f.x - wx0 * f.s, oy: top + f.y + wy1 * f.s, portrait, top, x0: wx0, x1: wx1, barH, side};
     }
     let V = view();
     const T = (x, y) => [V.ox + x * V.s, V.oy - y * V.s];
@@ -167,10 +180,11 @@ BX.register({
       ctx.act({vx: Math.round(aim.dx * v * 1e4) / 1e4, vy: Math.round(aim.dy * v * 1e4) / 1e4}, st.turn);
     }
     function key(e) {
+      if (skipKey(e)) return;
       if (!myTurn()) return;
-      const ang = Math.atan2(aim.dy, aim.dx);
-      if (e.code === 'ArrowUp' || e.code === 'ArrowDown') { const a = ang + (e.code === 'ArrowUp' ? 1 : -1) * Math.PI / 180; const d = clampDir(Math.cos(a), Math.sin(a)); aim.dx = d[0]; aim.dy = d[1]; keyAim = performance.now(); }
-      if (e.code === 'ArrowRight' || e.code === 'ArrowLeft') { aim.p = BX.clamp(aim.p + (e.code === 'ArrowRight' ? .01 : -.01), .02, 1); keyAim = performance.now(); }
+      const m = e.shiftKey ? 5 : 1;
+      if (e.code === 'ArrowUp' || e.code === 'ArrowDown') setElev(elevOf(aim) + (e.code === 'ArrowUp' ? 1 : -1) * m);
+      if (e.code === 'ArrowRight' || e.code === 'ArrowLeft') setPow((e.code === 'ArrowRight' ? 1 : -1) * m);
       if (e.code === 'Space' || e.code === 'Enter') fire();
     }
 
@@ -201,6 +215,8 @@ BX.register({
         if (sp > VMAX) { vx *= VMAX / sp; vy *= VMAX / sp; }
         const r = simulate({vx, vy, wind: st.wind, D: st.D}, !ctx.fast);
         const who = st.turn, feats = [];
+        hintA = null;
+        if (!ctx.fast) lastThrow[who] = {D: st.D, wind: st.wind, round: st.round, pts: r.pts.filter((q, i) => i % 3 === 0 && !q[4]).map(q => [q[0], q[1]]).concat([[r.end.x, r.end.y]])};
         let gain = 0, hit = false;
         if (r.res === 'mouth' || r.res === 'ear') {
           hit = true; const base = r.res === 'ear' ? 2 : 1; gain += base; feats.push([RES_NAME[r.res], base]);
@@ -253,15 +269,20 @@ BX.register({
         const na = [0, 3.2, 1.3, .45][level] * Math.PI / 180, nv = [0, .06, .025, .009][level];
         const g2 = () => (Math.random() + Math.random() + Math.random() - 1.5) / 1.5;
         const ang = best.ang + g2() * na, v = BX.clamp(best.v * (1 + g2() * nv), VMIN, VMAX);
-        if (!ctx.fast && !ctx.isRemote(seat)) aim = {dx: Math.cos(ang), dy: Math.sin(ang), p: (v - VMIN) / (VMAX - VMIN)};
+        aiPick = {dx: Math.cos(ang), dy: Math.sin(ang), p: (v - VMIN) / (VMAX - VMIN)};
+        if (!ctx.fast && ctx.isAI(seat)) lastAim[seat] = aiPick;
         return {vx: Math.round(Math.cos(ang) * v * 1e4) / 1e4, vy: Math.round(Math.sin(ang) * v * 1e4) / 1e4};
       },
       onTurn: status,
       key,
+      showHint() { if (aiPick) { hintA = aiPick; hintT = performance.now(); } },
       resize() { V = view(); },
       frame(dt) {
         pb.tick(dt); fx.update(dt * (pb.on ? pb.rate : 1)); lantern += dt;
-        V = view(); Z = show ? Object.assign({}, st, show.snap, {over: false}) : st; draw(dt);
+        V = view(); Z = show ? Object.assign({}, st, show.snap, {over: false}) : st;
+        bar.classList.toggle('hide', !myTurn());
+        if (myTurn()) { adjA.refresh(); adjP.refresh(); }
+        draw(dt);
       },
     };
     function endGame(delay) {
@@ -332,6 +353,14 @@ BX.register({
       const [hx, hy] = T(HAND[0], HAND[1]);
       const a = mine ? aim : (lastAim[Z.turn] || null);
       if (!a) { drawArrow(g, hx, hy, .7, .7, ARROW_L * V.s, 1, ctx.color(Z.turn)); return; }
+      const lt = lastThrow[Z.turn];
+      if (mine && lt && lt.D === Z.D && lt.wind === Z.wind && lt.round === Z.round) K.ghost(g, lt.pts.map(q => T(q[0], q[1])), {color: '#5a3416', alpha: .4, label: '上一箭'});
+      if (mine && hintA) {
+        const hv = VMIN + hintA.p * (VMAX - VMIN), hp = []; let x = HAND[0], y = HAND[1], vx = hintA.dx * hv, vy = hintA.dy * hv;
+        for (let i = 0; i < 160; i++) { vx += Z.wind * .01; vy -= G * .01; x += vx * .01; y += vy * .01; hp.push(T(x, y)); if (y < MOUTH_Y && x > Z.D - .3) break; if (y < 0) break; }
+        K.guide(g, hp, {color: K.HINT, w: 3.5, alpha: K.pulse(hintT), fade: .2, dash: [8, 6]});
+        D.text(g, `💡 仰角 ${elevOf(hintA)}° · 力度 ${Math.round(hintA.p * 100)}`, hx + 1.1 * V.s, hy - .9 * V.s, {size: 13, color: '#1f6b50', weight: 800, stroke: 'rgba(255,248,232,.9)', strokeW: 3});
+      }
       const v = VMIN + a.p * (VMAX - VMIN);
       // guide arc (no wind), first part only
       const pts = []; let x = HAND[0], y = HAND[1], vx = a.dx * v, vy = a.dy * v;
@@ -340,7 +369,7 @@ BX.register({
       drawArrow(g, hx, hy, a.dx, a.dy, ARROW_L * V.s, 1, ctx.color(Z.turn));
       if (mine && sling.on) K.drawPull(g, hx, hy, {dx: a.dx, dy: -a.dy, p: a.p}, Math.min(cv.w, cv.h) * .22, ctx.color(Z.turn));
       if (mine && (sling.on || keyAim)) K.meter(g, hx - 60, hy - 140 < V.top ? V.top + 30 : hy - 140, 12, 110, a.p, {marks: [[.5, ''], [.75, '']], labels: false});
-      if (mine && !sling.on && !keyAim && Z.thrown === 0 && Z.round === 0) D.text(g, '按住画面向后拉，松手投出', cv.w / 2, V.oy - 2.3 * V.s, {size: 15, color: '#5a3416', font: 'serif', weight: 700});
+      if (mine && !sling.on && !keyAim && !hintA && Z.thrown === 0 && Z.round === 0) D.text(g, '按住画面向后拉，松手投出', cv.w / 2, V.oy - 2.3 * V.s, {size: 15, color: '#5a3416', font: 'serif', weight: 700});
     }
     function drawFlight(g) {
       const pts = show.r.pts, n = pts.length;
@@ -370,7 +399,7 @@ BX.register({
         show.done = true;
         const r = show.r, e = r.end;
         if (r.res === 'mouth' || r.res === 'ear') {
-          ctx.sfx(r.res === 'ear' ? 'gong' : 'bell'); fx.shake(r.res === 'ear' ? 8 : 4); fx.flashOn(r.res === 'ear' ? .9 : .5);
+          ctx.sfx(r.res === 'ear' ? 'gong' : 'bell'); if (r.res === 'ear' && ctx.isLocal(show.who)) ctx.buzz(35); fx.shake(r.res === 'ear' ? 8 : 4); fx.flashOn(r.res === 'ear' ? .9 : .5);
           fx.burst(show.D + (r.res === 'ear' ? (e.x - show.D) : 0), r.res === 'ear' ? EAR_TOP : MOUTH_Y, {n: 26, sp: 1.6 * V.s, color: ['#ffe28a', '#e6c57d', '#fff6dd', '#d0533f'], life: .9, g: 2 * V.s, a0: -Math.PI / 2, spread: 2.2});
         } else if (r.res === 'xiao') { ctx.sfx('coin'); fx.flashOn(.6, '200,240,255'); }
         else { ctx.sfx('place'); fx.burst(e.x, 0, {n: 10, sp: .8 * V.s, color: '150,110,70', kind: 'smoke', life: .7, size: 4, a0: -Math.PI / 2, spread: 2.4}); }
@@ -388,8 +417,8 @@ BX.register({
     function drawHud(g) {
       const W = cv.w, port = V.portrait;
       // wind
-      K.wind(g, W - 66, 30, BX.clamp(Z.wind / 1.3, -1, 1), .95, '风');
-      if (Math.abs(Z.wind) >= .05) D.text(g, (Z.wind > 0 ? '顺风 ' : '逆风 ') + Math.abs(Z.wind).toFixed(1), W - 66, 60, {size: 12, color: '#5a3416', font: 'serif', weight: 700});
+      K.wind(g, W - 66, 30, BX.clamp(Z.wind / 1.3, -1, 1), .95, '风', Z.wind ? (Z.wind > 0 ? '顺风 ' : '逆风 ') + Math.abs(Z.wind).toFixed(2) : null);
+      K.skipLabel(g, W / 2, V.top + 14, pb);
       // scoreboard
       const n = ctx.n, rowH = port ? 30 : 20, nameW = port ? Math.min(150, W * .32) : 84;
       const colW = port ? Math.min(44, (W - 24 - nameW - 56) / Z.R) : 30;
@@ -412,7 +441,7 @@ BX.register({
       }
       // quiver: arrows left for current thrower
       if (!st.over) {
-        const left = Math.max(0, Z.quota - Z.thrown - (show ? 0 : 0)), qx = port ? W / 2 : bx + bw + 56, qy = port ? by + bh + 46 : by + 30;
+        const left = Math.max(0, Z.quota - Z.thrown - (show ? 0 : 0)), qx = port ? W / 2 : bx + bw + 56, qy = port ? Math.min(by + bh + 46, cv.h - K.barH(bar) - 30) : by + 30;
         g.fillStyle = 'rgba(30,18,8,.7)'; D.rr(g, qx - 46, qy - 26, 92, 52, 12); g.fill();
         for (let k = 0; k < Z.quota; k++) drawArrow(g, qx - 32 + k * 11, qy, .12, 1, 42, k < left ? 1 : .2, ctx.color(Z.turn));
         D.text(g, '余 ' + left, qx + 24, qy + 1, {size: 13, color: '#f3e2c0', font: 'serif'});

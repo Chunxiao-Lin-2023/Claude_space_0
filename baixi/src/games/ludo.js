@@ -27,12 +27,20 @@ function xy(pos, d, i) {
   return rot(FINISH[i], pos);
 }
 /* resolve a move: returns {d, path:[d...], caps:[[seat,i]], events:[]} without mutating */
-function resolve(pl, posOf, n, s, i, r, takeoff5) {
+/* 叠子 option: square (absolute index a) holds ≥2 planes of one opponent of seat s */
+function blockedAt(pl, posOf, n, s, a) {
+  for (let q = 0; q < n; q++) { if (q === s) continue; let c = 0; for (const qd of pl[q]) if (qd >= 1 && qd <= 51 && absIdx(posOf[q], qd) === a) c++; if (c >= 2) return true; }
+  return false;
+}
+function resolve(pl, posOf, n, s, i, r, takeoff5, blk) {
   const pos = posOf[s], d0 = pl[s][i], path = [], ev = [];
   if (d0 < 0) return {d: 0, path: [0], caps: [], ev: ['takeoff']};
-  let d = d0;
-  for (let k = 1; k <= r; k++) { const nd = d0 + k <= HOME ? d0 + k : HOME - (d0 + k - HOME); path.push(nd); }
+  const bl = dd => blk && dd >= 1 && dd <= 51 && blockedAt(pl, posOf, n, s, absIdx(pos, dd));
+  let d = d0, stopped = false;
+  for (let k = 1; k <= r; k++) { const nd = d0 + k <= HOME ? d0 + k : HOME - (d0 + k - HOME); if (bl(nd)) { stopped = true; break; } path.push(nd); }
+  if (!path.length) return null;                      // blocked right in front: this plane cannot move
   d = path[path.length - 1];
+  if (stopped) { ev.push('block'); const caps = []; return {d, path, caps, ev}; }
   if (d0 + r > HOME) ev.push('bounce');
   const caps = [];
   const hit = (dd) => {
@@ -42,12 +50,12 @@ function resolve(pl, posOf, n, s, i, r, takeoff5) {
   };
   hit(d);
   if (d0 + r <= HOME && d <= 51) {
-    if (d === FLY_FROM) {
+    if (d === FLY_FROM && !bl(FLY_TO)) {
       flyOver(); d = FLY_TO; path.push(d); hit(d); ev.push('fly');
-      d = FLY_TO + 4; path.push(d); hit(d); ev.push('jump');
-    } else if (isOwn(d) && d + 4 <= 51) {
+      if (!bl(FLY_TO + 4)) { d = FLY_TO + 4; path.push(d); hit(d); ev.push('jump'); }
+    } else if (isOwn(d) && d + 4 <= 51 && !bl(d + 4)) {
       d += 4; path.push(d); hit(d); ev.push('jump');
-      if (d === FLY_FROM) { flyOver(); d = FLY_TO; path.push(d); hit(d); ev.push('fly'); }
+      if (d === FLY_FROM && !bl(FLY_TO)) { flyOver(); d = FLY_TO; path.push(d); hit(d); ev.push('fly'); }
     }
   }
   function flyOver() {   // planes on the crossed runway square (opposite colour, d=56) are knocked out too
@@ -61,7 +69,9 @@ BX.register({
   id: 'ludo', title: '飞行棋', cat: 'party', order: 1, sub: '掷骰起飞，先回家者胜',
   desc: '经典飞行棋：红黄蓝绿四色飞机从机场起飞，绕场一周飞回终点。踩到同色格可以跳，遇到飞棋点能沿虚线飞越，还能把对手撞回机场！',
   kind: 'turn', seats: [2, 4], defSeats: 4, seatColors: [KC[0], KC[2], KC[1], KC[3]], seatNames: ['红方', '蓝方', '黄方', '绿方'], firstLabel: '先掷', aiDelay: 650, anyTimeActs: true,
-  options: [{key: 'take', label: '起飞', choices: [[6, '掷 6 起飞'], [5, '5 或 6 起飞']], def: 6}],
+  options: [{key: 'take', label: '起飞', choices: [[6, '掷 6 起飞'], [5, '5 或 6 起飞']], def: 6},
+    {key: 'stack', label: '叠子', choices: [[0, '不阻挡'], [1, '叠子阻挡']], def: 0}],
+  howto: ['轮到你时点<b>骰子</b>（或按空格键）掷骰；打开面板上的「自动掷骰」后会替你自动掷。', '能走的飞机会闪光，并标出落点（圈）与撞子（✕）；点飞机即走，只有一种走法时自动走。电脑上可按 1–4 选飞机。', '两架飞机挨得太近时，第一次点会先选中并画出路线，再点一次确认。', '💡 提示会标出推荐走的飞机；面板里的记录栏显示最近几步发生了什么。'],
   rules: `<p>每人四架飞机停在自己颜色的<b>机场</b>。轮到你时点骰子掷骰：</p>
 <ul><li><b>起飞</b>：掷出 6 点（选项可改为 5 或 6 点）才能让一架飞机从机场飞到<b>起飞点</b>；之后从起飞点出发沿顺时针绕场飞行。</li>
 <li><b>奖励</b>：掷出 6 点可以再掷一次；但<b>连续第三次掷出 6 点</b>，则上一步走动的那架飞机被罚回机场，并结束本回合。</li>
@@ -69,6 +79,7 @@ BX.register({
 <li><b>飞棋</b>：停在自己颜色的<b>飞棋点</b>（带箭头的格），沿虚线飞越对面颜色的跑道，到达虚线另一端，再跳一格；跳子后正好到飞棋点也可以飞。飞越时，停在被横穿的那格跑道上的对手飞机会被撞回机场。</li>
 <li><b>撞子</b>：停下的格子上有对手的飞机（不论几架），都被撞回各自机场。自己的飞机可以停在同一格。</li>
 <li><b>回家</b>：绕场一周后转入自己颜色的跑道，必须<b>正好</b>走到中心终点；点数多出来的部分要倒退回来。</li></ul>
+<p><b>叠子阻挡</b>（可选规则）：同一方两架以上飞机停在同一外圈格时成为“叠子”，其他玩家的飞机不能越过或停在这一格——走到叠子前一格就必须停下（不再跳子、飞棋），叠子正前方的飞机本回合不能走；跳子、飞棋的落点若是叠子也不能跳/飞。</p>
 <p>没有可以走的飞机时本次掷骰作废。只有一种走法时会自动走。<b>最先让四架飞机全部到达终点的玩家获胜</b>，其余玩家按飞行进度排名。</p>
 <p>操作：点右侧（或下方）的骰子掷骰，再点闪光的飞机走棋。</p>`,
   icon(g, w, h) {
@@ -84,12 +95,16 @@ BX.register({
     D.die(g, w * .5 - s * 1.6, h * .5 - s * 1.6, s * 3.2, 6, {rot: .25});
   },
   create(ctx) {
-    const n = ctx.n, posOf = SEAT_POS[n], t5 = +ctx.opts.take === 5;
+    const n = ctx.n, posOf = SEAT_POS[n], t5 = +ctx.opts.take === 5, blk = +ctx.opts.stack === 1;
+    const res = (s, i, r) => resolve(st.pl, posOf, n, s, i, r, t5, blk);
     const seatAt = k => posOf.indexOf(k);
     const st = {pl: BX.range(n).map(() => [-1, -1, -1, -1]), turn: 0, phase: 'roll', die: 0, sixes: 0, lastMoved: -1, pending: null, last: null, msg: '', over: false, rank: null};
     const cv = ctx.canvas();
     const vis = {};           // visual tweens: key s*4+i -> {pts:[[x,y]], k}
-    let busyUntil = 0, roll = {k: 1, faces: [1, 1]}, t = 0, btnDie = null, flash = null;
+    let busyUntil = 0, roll = {k: 1, faces: [1, 1]}, t = 0, btnDie = null, btnAuto = null, flash = null;
+    let hover = -1, pick = -1, hint = null, hintT = 0, autoT = 0, logL = [];
+    let autoRoll = !!ctx.load('autoroll', false);
+    const addLog = (s, txt) => { if (ctx.fast && logL.length > 6) logL.shift(); logL.push({c: ctx.color(s), txt}); if (logL.length > 6) logL.shift(); };
     const myTurn = () => !st.over && ctx.canAct(st.turn);
     const canTake = r => r === 6 || (t5 && r === 5);
     const nextSeat = s => { for (let k = 1; k <= 4; k++) { const q = seatAt((posOf[s] + k) % 4); if (q >= 0) return q; } return s; };
@@ -97,7 +112,8 @@ BX.register({
       const out = [], seen = new Set();
       st.pl[s].forEach((d, i) => {
         if (d === HOME || (d < 0 && !canTake(r))) return;
-        const key = d < 0 ? 'h' : 'd' + d; if (seen.has(key)) return; seen.add(key); out.push(i);
+        const key = d < 0 ? 'h' : 'd' + d; if (seen.has(key)) return; seen.add(key);
+        if (d >= 0 && !res(s, i, r)) return; out.push(i);
       });
       return out;
     }
@@ -110,9 +126,29 @@ BX.register({
     }
     const toScr = (B, p) => [B.x + p[0] * B.s / 15, B.y + p[1] * B.s / 15];
     /* ---------- input ---------- */
+    /* nearest movable option to a point: [{i, dist}] sorted (hangar box counts as a hit for the take-off option) */
+    function planesNear(p) {
+      const L = layout(), B = L.B, cell = B.s / 15, out = [];
+      for (const i of options(st.turn, st.die)) {
+        const d = st.pl[st.turn][i];
+        const cand = d < 0 ? st.pl[st.turn].map((dd, j) => dd < 0 ? j : -1).filter(j => j >= 0) : [i];
+        let bd = Infinity;
+        for (const j of cand) { const [x, y] = toScr(B, xy(posOf[st.turn], st.pl[st.turn][j], j)); bd = Math.min(bd, Math.hypot(p.x - x, p.y - y)); }
+        if (d < 0) {   // whole hangar square is a target
+          const a = toScr(B, rot([.35, .35], posOf[st.turn])), b = toScr(B, rot([4.65, 4.65], posOf[st.turn]));
+          if (p.x >= Math.min(a[0], b[0]) && p.x <= Math.max(a[0], b[0]) && p.y >= Math.min(a[1], b[1]) && p.y <= Math.max(a[1], b[1])) bd = Math.min(bd, cell * .3);
+        }
+        out.push({i, dist: bd});
+      }
+      return out.filter(o => o.dist < Math.max(cell * 1.4, 30)).sort((a, b) => a.dist - b.dist);
+    }
+    ctx.on(cv.cv, 'pointermove', e => { if (e.pointerType !== 'mouse') return; const p = cv.pos(e); hover = st.phase === 'move' && myTurn() ? ((planesNear(p)[0] || {}).i ?? -1) : -1; });
+    ctx.on(cv.cv, 'pointerleave', () => hover = -1);
     ctx.on(cv.cv, 'pointerdown', e => {
+      const p0 = cv.pos(e);
+      if (btnAuto && p0.x >= btnAuto.x && p0.x <= btnAuto.x + btnAuto.w && p0.y >= btnAuto.y - 4 && p0.y <= btnAuto.y + btnAuto.h + 4) { autoRoll = !autoRoll; ctx.save('autoroll', autoRoll); ctx.sfx('click'); autoT = 0; return; }
       if (!myTurn()) return;
-      const p = cv.pos(e), L = layout(), B = L.B, cell = B.s / 15;
+      const p = p0, L = layout();
       if (st.phase === 'roll') {
         const b = btnDie; if (b && p.x >= b.x - 10 && p.x <= b.x + b.w + 10 && p.y >= b.y - 10 && p.y <= b.y + b.h + 10) { ctx.act({t: 'roll'}, st.turn); return; }
         // tapping anywhere on the panel also rolls
@@ -120,13 +156,13 @@ BX.register({
         return;
       }
       if (st.phase === 'move') {
-        const opts = options(st.turn, st.die); let best = -1, bd = Math.max(cell * 1.4, 30);
-        for (const i of opts) {
-          const d = st.pl[st.turn][i];
-          const cand = d < 0 ? st.pl[st.turn].map((dd, j) => dd < 0 ? j : -1).filter(j => j >= 0) : [i];
-          for (const j of cand) { const [x, y] = toScr(B, xy(posOf[st.turn], st.pl[st.turn][j], j)); const dd = Math.hypot(p.x - x, p.y - y); if (dd < bd) { bd = dd; best = i; } }
-        }
-        if (best >= 0) ctx.act({t: 'move', p: best}, st.turn); else ctx.sfx('error');
+        const near = planesNear(p), cell = L.B.s / 15;
+        if (!near.length) { pick = -1; ctx.sfx('error'); ctx.buzz(10); return; }
+        const best = near[0].i;
+        // two different planes under the finger: first tap only selects (shows the route), second tap moves
+        const amb = near.length > 1 && near[1].dist - near[0].dist < cell * .45;
+        if (amb && pick !== best && ctx.needConfirm(e)) { pick = best; ctx.sfx('tick'); return; }
+        pick = -1; ctx.act({t: 'move', p: best}, st.turn);
       }
     });
     /* ---------- status ---------- */
@@ -136,7 +172,7 @@ BX.register({
       if (st.over) return ctx.status('<b>' + ctx.name(st.rank[0]) + '</b> 四机全部到达');
       const who = myTurn() ? (ctx.hotseat ? ctx.name(st.turn) + '：' : '轮到你：') : ctx.name(st.turn) + ' ';
       const dot = '<span style="color:' + ctx.color(st.turn) + '">✈</span> ';
-      const ph = st.phase === 'roll' ? (myTurn() ? '点骰子掷骰' : '掷骰中…') : (myTurn() ? '掷出 ' + st.die + '，点选要走的飞机' : '掷出 ' + st.die + '，思考中…');
+      const ph = st.phase === 'roll' ? (myTurn() ? (autoRoll ? '自动掷骰…' : '点骰子掷骰') : '掷骰中…') : (myTurn() ? '掷出 ' + st.die + '，点选要走的飞机' : '掷出 ' + st.die + '，思考中…');
       ctx.status((st.msg ? st.msg + ' · ' : '') + dot + who + ph);
     };
     /* ---------- AI ---------- */
@@ -159,7 +195,7 @@ BX.register({
       return th;
     }
     function scoreMove(s, i, lvl) {
-      const pos = posOf[s], d0 = st.pl[s][i], R = resolve(st.pl, posOf, n, s, i, st.die, t5), d = R.d;
+      const pos = posOf[s], d0 = st.pl[s][i], R = res(s, i, st.die), d = R.d;
       let v = 0;
       if (d0 < 0) v += 28 + (lvl >= 3 ? 4 * st.pl[s].filter(x => x < 0).length - 6 * st.pl[s].filter(x => x >= 0 && x < HOME).length : 0);
       else v += (d - d0) * 1.0;
@@ -172,12 +208,14 @@ BX.register({
       v -= threat(s, pos, d, deep) * (lvl >= 3 ? 34 : 22) * (d >= 1 && d <= 51 ? 1 + Math.max(0, d) / 80 : 0);
       if (lvl >= 3 && d0 >= 1 && d0 <= 51) v += threat(s, pos, d0, true) * 26 * (1 + d0 / 80);
       if (lvl >= 3 && d0 >= 52 && d < HOME) v -= 3;          // don't waste rolls in the runway
+      if (blk && d >= 1 && d <= 51 && st.pl[s].some((x, j) => j !== i && x === d)) v += lvl >= 2 ? 8 : 2;   // form a 叠子
+      if (R.ev.includes('block')) v -= 2;
       return v;
     }
     /* ---------- apply ---------- */
     function animMove(s, i, path, d0, wait) {
       const pos = posOf[s], pts = [xy(pos, d0, i)].concat(path.map(d => xy(pos, d, i)));
-      const dur = Math.min(1400, 120 * path.length + 80), tot = dur + (wait || 0);
+      const dur = Math.min(1100, 95 * path.length + 80), tot = dur + (wait || 0);
       const v = vis[s * 4 + i] = {pts, k: 0, delayK: (wait || 0) / tot}; ctx.anim(tot, k => v.k = k, () => { if (vis[s * 4 + i] === v) delete vis[s * 4 + i]; }, x => x);
     }
     function animHome(q, j, from, wait) {
@@ -191,19 +229,23 @@ BX.register({
       st.sixes = 0; st.lastMoved = -1; st.turn = nextSeat(st.turn); st.phase = 'roll';
     }
     function doMove(s, i, wait) {
-      const d0 = st.pl[s][i], R = resolve(st.pl, posOf, n, s, i, st.die, t5);
+      const d0 = st.pl[s][i], R = res(s, i, st.die);
       st.pl[s][i] = R.d; st.lastMoved = i; st.last = {s, i}; st.phase = 'roll';
       animMove(s, i, R.path, d0, wait);
-      if (!ctx.fast) busyUntil = performance.now() + wait + Math.min(1400, 120 * R.path.length + 80) + (R.caps.length ? 600 : 0);
-      const tEnd = wait + Math.min(900, 110 * R.path.length);
+      const sp = ctx.pref('speed') === 2 ? .55 : 1;
+      if (!ctx.fast) busyUntil = performance.now() + (wait + Math.min(1100, 95 * R.path.length + 80) + (R.caps.length ? 500 : 0)) * sp;
+      const tEnd = wait + Math.min(800, 90 * R.path.length);
+      hint = null; pick = -1; hover = -1;
+      addLog(s, ctx.name(s) + ' ' + st.die + ' 点 · ' + (d0 < 0 ? '起飞' : R.d === HOME ? '到达终点' : R.caps.length ? '撞回 ' + R.caps.length + ' 架' : R.ev.includes('fly') ? '飞棋' : R.ev.includes('jump') ? '跳子' : R.ev.includes('block') ? '被叠子挡住' : '前进'));
       ctx.after(wait, () => ctx.sfx(d0 < 0 ? 'whoosh' : 'move'));
       if (R.ev.includes('fly')) ctx.after(wait + 300, () => ctx.sfx('whoosh'));
       let fl = null;
       if (R.caps.length) {
         for (const [q, j] of R.caps) { const from = xy(posOf[q], st.pl[q][j], j); st.pl[q][j] = -1; animHome(q, j, from, wait); }
-        ctx.after(tEnd, () => ctx.sfx('crash')); fl = {txt: '撞子！', t: 1.2, c: ctx.color(s)};
+        ctx.after(tEnd, () => { ctx.sfx('crash'); if (R.caps.some(([q]) => ctx.isLocal(q) && !ctx.isLocal(s))) ctx.buzz(30); }); fl = {txt: '撞子！', t: 1.2, c: ctx.color(s)};
       } else if (R.ev.includes('fly')) fl = {txt: '飞棋！', t: 1, c: ctx.color(s)};
       else if (R.ev.includes('jump')) fl = {txt: '跳子', t: .8, c: ctx.color(s)};
+      else if (R.ev.includes('block')) fl = {txt: '叠子挡路', t: .9, c: ctx.color(s)};
       if (R.ev.includes('bounce') && !fl) fl = {txt: '超出折返', t: .8, c: ctx.color(s)};
       if (R.d === HOME) { ctx.after(tEnd, () => ctx.sfx('score')); fl = {txt: '到达终点', t: 1, c: ctx.color(s)}; }
       if (fl) ctx.after(wait + 150, () => { flash = fl; });
@@ -227,7 +269,7 @@ BX.register({
         return false;
       },
       apply(a, by) {
-        const s = st.turn;
+        const s = st.turn; autoT = 0;
         if (a.t === 'roll') {
           const r = 1 + ctx.rng.int(6); st.die = r; st.msg = '';
           roll = {k: 0, faces: [1 + Math.floor(Math.random() * 6), r]}; const rr = roll; ctx.anim(520, k => rr.k = k, null, BX.ease.out); ctx.sfx('dice');
@@ -235,11 +277,12 @@ BX.register({
           if (st.sixes === 3) {
             const lm = st.lastMoved;
             if (lm >= 0 && st.pl[s][lm] !== HOME && st.pl[s][lm] >= 0) { const from = xy(posOf[s], st.pl[s][lm], lm); st.pl[s][lm] = -1; animHome(s, lm, from); }
-            st.msg = ctx.name(s) + ' 连掷三个 6，罚回机场'; ctx.after(500, () => { ctx.sfx('buzz'); flash = {txt: '罚回机场', t: 1.2, c: ctx.color(s)}; });
+            st.msg = ctx.name(s) + ' 连掷三个 6，罚回机场'; addLog(s, ctx.name(s) + ' 连掷三个 6 · 罚回机场'); ctx.after(500, () => { ctx.sfx('buzz'); flash = {txt: '罚回机场', t: 1.2, c: ctx.color(s)}; });
             endTurn(false); status(); return;
           }
           const op = options(s, r);
-          if (!op.length) { st.msg = ctx.name(s) + ' 掷出 ' + r + ' 点，无棋可走' + (r === 6 ? '，再掷一次' : ''); ctx.after(450, () => { flash = {txt: '无棋可走', t: .9, c: ctx.color(s)}; }); endTurn(r === 6); }
+          hint = null;
+          if (!op.length) { st.msg = ctx.name(s) + ' 掷出 ' + r + ' 点，无棋可走' + (r === 6 ? '，再掷一次' : ''); addLog(s, ctx.name(s) + ' ' + r + ' 点 · 无棋可走'); ctx.after(450, () => { flash = {txt: '无棋可走', t: .9, c: ctx.color(s)}; }); endTurn(r === 6); }
           else if (op.length === 1) { st.msg = ''; doMove(s, op[0], 480); return; }   // only one choice: move automatically
           else st.phase = 'move';
           status(); return;
@@ -258,9 +301,22 @@ BX.register({
         return {t: 'move', p: BX.ai.byLevel(op.map(i => [i, scoreMove(s, i, lvl)]), lvl)};
       },
       onTurn: status,
+      showHint(a) { hint = a; hintT = t; },
+      key(e) {
+        if (!myTurn()) return;
+        if (st.phase === 'roll' && (e.code === 'Space' || e.code === 'Enter')) { e.preventDefault && e.preventDefault(); ctx.act({t: 'roll'}, st.turn); return; }
+        const m = /^(Digit|Numpad)([1-4])$/.exec(e.code);
+        if (m && st.phase === 'move') {
+          const j = +m[2] - 1, d = st.pl[st.turn][j], op = options(st.turn, st.die);
+          const i = op.find(o => o === j || (d < 0 && st.pl[st.turn][o] < 0) || (d >= 0 && st.pl[st.turn][o] === d));
+          if (i != null) ctx.act({t: 'move', p: i}, st.turn); else ctx.sfx('error');
+        }
+      },
       frame(dt) {
         const g = cv.g; cv.clear(); t += dt;
         const L = layout(), B = L.B, cs = B.s / 15;
+        // auto-roll for the local player (device preference)
+        if (autoRoll && myTurn() && st.phase === 'roll' && roll.k >= 1 && performance.now() > busyUntil) { autoT += dt; if (autoT > .45) { autoT = -99; ctx.act({t: 'roll'}, st.turn); } }
         const S = p => toScr(B, p);
         /* board */
         g.fillStyle = 'rgba(0,0,0,.35)'; D.rr(g, B.x + 4, B.y + 8, B.s, B.s, cs * .6); g.fill();
@@ -272,6 +328,7 @@ BX.register({
           const a = S(rot([.35, .35], k)), b = S(rot([4.65, 4.65], k));
           const x = Math.min(a[0], b[0]), y = Math.min(a[1], b[1]), w = Math.abs(b[0] - a[0]), h = Math.abs(b[1] - a[1]);
           g.fillStyle = used ? c : D.alpha(c, .35); D.rr(g, x, y, w, h, cs * .7); g.fill();
+          if (used && seatAt(k) === st.turn && !st.over) { g.strokeStyle = `rgba(255,236,160,${.55 + .35 * Math.sin(t * 4)})`; g.lineWidth = Math.max(2.5, cs * .16); D.rr(g, x - 2, y - 2, w + 4, h + 4, cs * .75); g.stroke(); }
           g.fillStyle = 'rgba(255,250,235,.28)'; D.rr(g, x + cs * .3, y + cs * .3, w - cs * .6, h - cs * .6, cs * .5); g.fill();
           for (let i = 0; i < 4; i++) { const [px, py] = S(rot(HANGAR[i], k)); g.fillStyle = 'rgba(255,255,255,.55)'; D.circle(g, px, py, cs * .62); g.fill(); g.strokeStyle = D.shade(c, -25); g.lineWidth = 1.5; g.stroke(); }
           // take-off spot
@@ -310,6 +367,26 @@ BX.register({
         const movable = st.phase === 'move' && myTurn() ? options(st.turn, st.die) : [];
         const movSet = new Set();
         for (const i of movable) { if (st.pl[st.turn][i] < 0) st.pl[st.turn].forEach((d, j) => { if (d < 0) movSet.add(j); }); else st.pl[st.turn].forEach((d, j) => { if (d === st.pl[st.turn][i]) movSet.add(j); }); }
+        /* landing previews (pref hints): ring at the landing square, ✕ where it captures; hovered/selected/hinted plane gets its route */
+        const showHints = ctx.pref('hints');
+        const hintI = hint && hint.t === 'move' && st.phase === 'move' ? hint.p : -1;
+        if (movable.length) for (const i of movable) {
+          const R = res(st.turn, i, st.die); if (!R) continue;
+          const focus = i === hover || i === pick || i === hintI || movable.length === 1;
+          if (!showHints && !focus) continue;
+          const pos = posOf[st.turn], col = ctx.color(st.turn);
+          if (focus) {
+            g.fillStyle = D.alpha('#fff6d0', .85);
+            let prev = xy(pos, st.pl[st.turn][i], i);
+            for (const d of R.path) { const q = xy(pos, d, i); const [x, y] = S(q); D.circle(g, x, y, cs * .13); g.fill(); prev = q; }
+          }
+          const [fx, fy] = S(xy(pos, R.d, i)), pul = .5 + .5 * Math.sin(t * 5);
+          const rr2 = cs * (.4 + (focus ? .06 * pul : 0)), lw = Math.max(2, cs * (focus ? .13 : .09));
+          g.strokeStyle = 'rgba(40,20,5,.6)'; g.lineWidth = lw + 2.5; D.circle(g, fx, fy, rr2); g.stroke();
+          g.strokeStyle = focus ? '#fff3b0' : 'rgba(255,246,208,.9)'; g.lineWidth = lw; D.circle(g, fx, fy, rr2); g.stroke();
+          g.fillStyle = D.alpha(col, .55); D.circle(g, fx, fy, cs * .14); g.fill();
+          if (R.caps.length) { g.strokeStyle = '#ff5a3a'; g.lineWidth = Math.max(2, cs * .1); const r2 = cs * .2; g.beginPath(); g.moveTo(fx - r2, fy - r2); g.lineTo(fx + r2, fy + r2); g.moveTo(fx + r2, fy - r2); g.lineTo(fx - r2, fy + r2); g.stroke(); }
+        }
         const stackCount = {};
         const items = [];
         for (let s = 0; s < n; s++) st.pl[s].forEach((d, i) => {
@@ -333,9 +410,17 @@ BX.register({
           x += (o % 2 ? 1 : -1) * Math.min(o, 1) * cs * .14 + (o >= 2 ? cs * .1 : 0); y -= o * cs * .1;
           const d = st.pl[it.s][it.i], sz = d >= HOME && !it.moving ? cs * .62 : cs * (it.moving ? 1.12 : .98);
           const hl = !it.moving && it.s === st.turn && movSet.has(it.i);
+          const hinted = hl && hintI >= 0 && (it.i === hintI || (d < 0 && st.pl[it.s][hintI] < 0) || (d >= 0 && d === st.pl[it.s][hintI]));
+          if (hinted) { const k2 = t - hintT; g.strokeStyle = `rgba(63,200,140,${.6 + .35 * Math.sin(k2 * 7)})`; g.lineWidth = Math.max(3, cs * .14); D.circle(g, x, y, cs * (.82 + .08 * Math.sin(k2 * 7))); g.stroke(); }
           if (hl) { const pul = .5 + .5 * Math.sin(t * 6); g.fillStyle = `rgba(255,230,120,${.35 + .35 * pul})`; D.circle(g, x, y, cs * (.62 + .1 * pul)); g.fill(); g.strokeStyle = '#fff3c4'; g.lineWidth = 2; g.stroke(); }
           if (st.last && st.last.s === it.s && st.last.i === it.i && !it.moving && !hl && d >= 0 && d < HOME) { g.strokeStyle = 'rgba(255,255,255,.75)'; g.lineWidth = 1.5; D.circle(g, x, y, cs * .55); g.stroke(); }
           planeShape(g, x, y, sz, ctx.color(it.s), it.ang + Math.PI / 2);
+        }
+        // 叠子 badges (option): count of same-seat planes on one outer square
+        if (blk) for (const key in stackCount) if (key[0] === 'a' && stackCount[key] >= 2) {
+          const a = +key.slice(1), c = PATH[a], [x, y] = S([c[0] + .5, c[1] + .5]);
+          g.fillStyle = 'rgba(30,18,8,.85)'; D.circle(g, x + cs * .36, y - cs * .36, cs * .24); g.fill();
+          D.text(g, '叠', x + cs * .36, y - cs * .35, {size: cs * .3, color: '#ffe6a8', weight: 900});
         }
         /* flash text */
         if (flash) { flash.t -= dt; if (flash.t <= 0) flash = null; else { const a = Math.min(1, flash.t * 2); D.text(g, flash.txt, ccx, B.y + B.s * .5 - cs * 1.4, {size: cs * 1.25, color: `rgba(255,248,225,${a})`, font: 'deco', weight: 400, stroke: D.alpha(flash.c, a), strokeW: 6}); } }
@@ -347,8 +432,9 @@ BX.register({
       g.fillStyle = 'rgba(30,18,8,.82)'; D.rr(g, P.x, P.y, P.w, P.h, 14); g.fill();
       g.strokeStyle = 'rgba(230,197,125,.3)'; g.lineWidth = 1; g.stroke();
       const s = st.turn, col = ctx.color(s), vert = P.h > P.w * .9;
-      const ds = Math.min(vert ? P.w * .42 : P.h * .6, 96);
-      const dx = vert ? P.x + (P.w - ds) / 2 : P.x + P.w - ds - 22, dy = vert ? P.y + P.h * .3 : P.y + (P.h - ds) / 2 - 6;
+      let ds = Math.min(vert ? P.w * .42 : P.h * .6, 96);
+      let dx = vert ? P.x + (P.w - ds) / 2 : P.x + P.w - ds - 22, dy = vert ? P.y + P.h * .3 : P.y + (P.h - ds) / 2 - 6;
+      if (!vert && dy < P.y + 48) { const d2 = Math.max(40, Math.min(ds, P.y + P.h - 26 - (P.y + 48))); dx += (ds - d2) / 2; ds = d2; dy = P.y + 48; }
       btnDie = {x: dx, y: dy, w: ds, h: ds};
       // whose turn
       const tx = vert ? P.x + P.w / 2 : P.x + 16, al = vert ? 'center' : 'left';
@@ -368,7 +454,29 @@ BX.register({
       g.globalAlpha = st.die || rolling || ready ? 1 : .5;
       D.die(g, dx, dy + jump, ds, face, {rot: rolling ? (1 - rr.k) * 6 : 0, color: ready ? '#fffaf0' : '#f2e6cf', sel: ready ? '#ffd76a' : false});
       g.globalAlpha = 1;
-      if (ready) D.text(g, '点 我 掷 骰', dx + ds / 2, dy + ds + 16, {size: 12, color: C.gold2, weight: 700});
+      if (ready) D.text(g, autoRoll ? '自 动 掷 骰' : '点 我 掷 骰', dx + ds / 2, dy + ds + 16, {size: 12, color: C.gold2, weight: 700});
+      if (ready && hint && hint.t === 'roll') { const k2 = t - hintT; g.strokeStyle = `rgba(63,200,140,${.6 + .35 * Math.sin(k2 * 7)})`; g.lineWidth = 4; D.rr(g, dx - 10, dy - 10, ds + 20, ds + 20, ds * .26); g.stroke(); }
+      // auto-roll toggle (only when this device plays a seat)
+      btnAuto = null;
+      if (ctx.mySeats && ctx.mySeats.length && !st.over) {
+        const aw = vert ? Math.min(P.w - 24, 132) : ds + 16, ah = 32;
+        const ax = vert ? P.x + (P.w - aw) / 2 : dx - 8, ay = vert ? dy + ds + 30 : P.y + 8;
+        btnAuto = {x: ax, y: ay, w: aw, h: ah};
+        g.fillStyle = autoRoll ? 'rgba(63,143,107,.9)' : 'rgba(255,250,235,.1)'; D.rr(g, ax, ay, aw, ah, ah / 2); g.fill();
+        g.strokeStyle = autoRoll ? '#9fe0c4' : 'rgba(230,197,125,.45)'; g.lineWidth = 1.2; g.stroke();
+        D.text(g, (autoRoll ? '● ' : '○ ') + '自动掷骰', ax + aw / 2, ay + ah / 2 + 1, {size: 12, color: autoRoll ? '#effff7' : 'rgba(243,226,192,.85)', weight: 700});
+      }
+      // recent events
+      {
+        const lx = vert ? P.x + 14 : P.x + 20, top = vert ? (btnAuto ? btnAuto.y + btnAuto.h + 12 : dy + ds + 30) : P.y + P.h * .55 + 18;
+        const bottom = P.y + P.h - (vert ? 44 : 36), lh = 16, nl = Math.max(0, Math.min(logL.length, Math.floor((bottom - top) / lh)));
+        const lines = logL.slice(logL.length - nl);
+        lines.forEach((l, k) => {
+          const yy = top + k * lh + 6, a = .45 + .55 * (k + 1) / lines.length;
+          g.fillStyle = D.alpha(l.c, a); D.circle(g, lx + 3, yy, 3.5); g.fill();
+          D.text(g, l.txt, lx + 12, yy, {size: 11.5, color: `rgba(243,226,192,${a})`, weight: 500, align: 'left', maxW: (vert ? P.w - 30 : P.w - ds - 70)});
+        });
+      }
       // finished counts per seat (mini)
       {
         const yy = P.y + P.h - (vert ? 26 : 20), cx0 = vert ? P.x + P.w / 2 : P.x + 16 + (P.w - ds - 60) / 2;

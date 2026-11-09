@@ -34,6 +34,42 @@ function evalN(cs, n) {
   if (p1 >= 0) return B5 + p1 * 3375 + kick([p1], 3);
   return kick([], 5);
 }
+const RN = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'], SUIT = ['♠', '♥', '♣', '♦'];
+const cardTxt = c => { const t = toCard(c); return SUIT[t.s] + RN[RK(c)]; };
+/* readable description of a made hand from its evalN value (e.g. "一对 J", "葫芦 7 带 4") */
+function descVal(v) {
+  const c = Math.floor(v / B5), r = v % B5, P = 15 ** 4;
+  switch (c) {
+    case 0: return '高牌 ' + RN[Math.floor(r / P)];
+    case 1: return '一对 ' + RN[Math.floor(r / 3375)];
+    case 2: return '两对 ' + RN[Math.floor(r / 225)] + ' 和 ' + RN[Math.floor(r / 15) % 15];
+    case 3: return '三条 ' + RN[Math.floor(r / 225)];
+    case 4: return '顺子（到 ' + RN[r] + '）';
+    case 5: return '同花（' + RN[Math.floor(r / P)] + ' 高）';
+    case 6: return '葫芦 ' + RN[Math.floor(r / 15)] + ' 带 ' + RN[r % 15];
+    case 7: return '四条 ' + RN[Math.floor(r / 15)];
+    default: return r === 12 ? '皇家同花顺' : '同花顺（到 ' + RN[r] + '）';
+  }
+}
+function handDesc(hole, board) {
+  if (hole.length < 2) return '';
+  if (!board.length) {
+    let [a, b] = hole; if (RK(b) > RK(a)) [a, b] = [b, a];
+    if (RK(a) === RK(b)) return '口袋对子 ' + RN[RK(a)] + RN[RK(b)];
+    return RN[RK(a)] + RN[RK(b)] + (SU(a) === SU(b) ? ' 同花' : ' 杂色');
+  }
+  const cs = hole.concat(board), v = evalN(cs, cs.length), cat = Math.floor(v / B5);
+  let d = descVal(v);
+  if (board.length < 5 && cat < 4) {   // draws
+    const sc4 = [0, 0, 0, 0]; let m = 0; for (const c of cs) { sc4[SU(c)]++; m |= 1 << RK(c); }
+    const extra = [];
+    if (sc4.some(k => k === 4)) extra.push('同花听牌');
+    let outs = 0; for (let r = 0; r < 13; r++) if (!(m & (1 << r)) && strHigh(m | (1 << r)) >= 0) outs++;
+    if (outs >= 2) extra.push('两头顺听'); else if (outs === 1) extra.push('卡顺听');
+    if (extra.length) d += ' · ' + extra.join(' ');
+  }
+  return d;
+}
 const handName = v => { const c = Math.floor(v / B5); return c === 8 && v % B5 === 12 ? '皇家同花顺' : HN[c]; };
 function best5(seven) {
   let bv = -1, bc = null; const t = [0, 0, 0, 0, 0];
@@ -74,6 +110,7 @@ BX.register({
     {key: 'blind', label: '涨盲', choices: [[5, '每 5 手'], [10, '每 10 手'], [15, '每 15 手']], def: 10},
     {key: 'limit', label: '结束', choices: [[0, '淘汰到底'], [30, '限 30 手'], [60, '限 60 手']], def: 0},
   ],
+  howto: ['轮到你时点 <b>弃牌 / 让牌·跟注 / 加注</b>；加注面板里有 ½池、底池等快捷额度，也可拖动滑杆或点 ± 微调。', '还没轮到你时，可先勾选「让/弃」「跟任何注」等预选操作，轮到时自动执行。', '你的牌下方会显示当前牌型（如「一对 J · 同花听牌」）；左上角「记录」查看本手与上一手的行动。', '键盘：F 弃牌 · C/空格 让牌或跟注 · R 加注 · ↑↓ 调整 · 回车 确认 · Esc 取消。'],
   rules: `<p><b>无限注德州扑克</b>锦标赛。每人 1000 筹码，盲注从 10/20 起按设定手数递增。</p>
 <p><b>座位：</b>庄家按钮每手顺时针移动一位。按钮左侧依次下小盲、大盲；<b>单挑时庄家下小盲</b>，翻牌前先行动、翻牌后后行动。</p>
 <p><b>发牌与下注：</b>每人两张底牌（只有自己能看）。共四轮下注：翻牌前、翻牌（三张公共牌）、转牌（第四张）、河牌（第五张）。轮到你时可以<b>弃牌、让牌</b>（无人下注时）、<b>跟注、加注或全下</b>。</p>
@@ -109,10 +146,13 @@ BX.register({
       st.sb = L[0]; st.bb = L[1];
       st.btn = st.hno === 1 && st.chips[st.btn] > 0 ? st.btn : nextFrom(st.btn, s => st.chips[s] > 0);
       st.deck = ctx.rng.shuffle(BX.range(52)); st.dp = 0; st.board = []; st.street = 0; st.show = false; st.res = null;
+      if (st.hl && st.hl.length) st.pl0 = {h: st.hno - 1, l: st.hl};
+      st.hl = [];
       for (let s = 0; s < n; s++) { st.dealt[s] = st.chips[s] > 0; st.fold[s] = false; st.allin[s] = false; st.bet[s] = 0; st.tot[s] = 0; st.hole[s] = []; st.agg[s] = 0; st.act[s] = ''; st.need[s] = false; st.done[s] = false; }
       let p = st.btn; for (let r = 0; r < 2; r++) for (let k = 0; k < alive.length; k++) { p = nextFrom(p, q => st.dealt[q]); st.hole[p].push(st.deck[st.dp++]); }
       const sbS = alive.length === 2 ? st.btn : nextFrom(st.btn, q => st.dealt[q]), bbS = nextFrom(sbS, q => st.dealt[q]);
       post(sbS, st.sb); post(bbS, st.bb); st.act[sbS] = '小盲'; st.act[bbS] = '大盲';
+      st.hl.push([0, sbS, '小盲 ' + st.bet[sbS]], [0, bbS, '大盲 ' + st.bet[bbS]]);
       st.curBet = st.bb; st.minR = st.bb; st.sbS = sbS; st.bbS = bbS;
       for (let s = 0; s < n; s++) st.need[s] = canBet(s);
       st.ph = 'bet'; st.cur = bbS; ctx.sfx('deal');
@@ -134,6 +174,7 @@ BX.register({
     function dealStreet() {
       st.street++; st.dp++;   // burn
       const k = st.street === 1 ? 3 : 1; for (let i = 0; i < k; i++) st.board.push(st.deck[st.dp++]);
+      st.hl.push([st.street, -1, ['', '翻牌', '转牌', '河牌'][st.street], st.board.slice()]);
       st.curBet = 0; st.minR = st.bb;
       for (let s = 0; s < n; s++) { st.need[s] = canBet(s); st.done[s] = false; if (inHand(s) && !st.allin[s]) st.act[s] = ''; }
       ctx.sfx(k === 3 ? 'deal' : 'card');
@@ -142,6 +183,7 @@ BX.register({
     }
     function award(pots) {
       st.res = {pots, hno: st.hno}; st.ph = 'res';
+      for (const p of pots) st.hl.push([st.street, -1, 'win', p.win.slice(), p.amt, p.hand || '', p.ret ? 1 : 0]);
       for (const p of pots) { const share = Math.floor(p.amt / p.win.length); let odd = p.amt - share * p.win.length;
         for (const w of [...p.win].sort((a, b) => ((a - st.btn + n - 1) % n) - ((b - st.btn + n - 1) % n))) { st.chips[w] += share + (odd > 0 ? 1 : 0); odd--; } }
       for (let s = 0; s < n; s++) st.tot[s] = 0;
@@ -166,7 +208,7 @@ BX.register({
         if (amt > 0) pots.push({amt, win, hand: el.length > 1 ? handName(top) : '', ret: el.length === 1});
         prev = L;
       }
-      st.best = {}; for (const s in vals) st.best[s] = {v: vals[s].v, name: handName(vals[s].v), cards: vals[s].cards};
+      st.best = {}; for (const s in vals) { st.best[s] = {v: vals[s].v, name: handName(vals[s].v), cards: vals[s].cards}; st.hl.push([st.street, +s, '亮牌 ' + descVal(vals[s].v), st.hole[s].slice()]); }
       award(pots); ctx.sfx('flip');
     }
     function finish() {
@@ -183,9 +225,10 @@ BX.register({
     }
     function doAct(a, s) {
       const L = legal(s);
+      let lg = '';
       if (a.t === 'fold') { st.fold[s] = true; st.act[s] = '弃牌'; ctx.sfx('whoosh'); }
       else if (a.t === 'check' || (a.t === 'call' && L.toCall === 0)) { st.act[s] = '让牌'; ctx.sfx('tick'); }
-      else if (a.t === 'call') { post(s, L.toCall); st.act[s] = st.allin[s] ? '全下' : '跟注'; ctx.sfx('chip'); }
+      else if (a.t === 'call') { post(s, L.toCall); st.act[s] = st.allin[s] ? '全下' : '跟注'; lg = st.act[s] + ' ' + L.toCall; ctx.sfx('chip'); }
       else if (a.t === 'raise') {
         const to = Math.max(L.minTo, Math.min(L.maxTo, Math.round(a.to)));
         const inc = to - st.curBet, full = inc >= st.minR;
@@ -194,10 +237,11 @@ BX.register({
           if (full) { st.minR = inc; for (let p = 0; p < n; p++) st.done[p] = false; }
           for (let p = 0; p < n; p++) if (p !== s && canBet(p)) st.need[p] = true;
           st.act[s] = st.allin[s] ? '全下' : st.curBet === 0 ? '下注 ' + to : '加注到 ' + to;
-          st.curBet = to; st.agg[s]++;
+          st.curBet = to; st.agg[s]++; if (st.allin[s]) lg = '全下 到 ' + to;
         } else st.act[s] = st.allin[s] ? '全下' : '跟注';
         ctx.sfx('chip');
       }
+      st.hl.push([st.street, s, lg || st.act[s]]);
       st.need[s] = false; st.done[s] = true;
       nextActor();
     }
@@ -281,41 +325,106 @@ BX.register({
     const cv = ctx.canvas();
     const ui = ctx.ui();
     ui.append(h('style', {text: `.he-bar{gap:8px}.he-bar .bx-btn{min-width:84px;padding:10px 12px}
-.he-rp{position:absolute;left:50%;transform:translateX(-50%);width:min(520px,calc(100% - 16px));display:flex;flex-direction:column;gap:8px}
-.he-rp .row{display:flex;gap:6px;align-items:center}.he-rp .row .bx-btn{flex:1;min-width:0;padding:8px 4px;font-size:14px}
-.he-rp input{flex:1;height:40px;accent-color:#c8a052}.he-rp b{min-width:70px;text-align:right;font-size:18px;color:#e6c57d}
-@media (max-height:500px){.he-bar .bx-btn{min-height:42px;padding:8px 10px}.he-rp{gap:5px;padding:8px 10px}.he-rp .row .bx-btn{min-height:40px}}`}));
+.he-rp{position:absolute;left:50%;transform:translateX(-50%);width:min(520px,calc(100% - 16px));display:flex;flex-direction:column;gap:8px;background:rgba(30,18,8,.97)}
+.he-rp .row{display:flex;gap:6px;align-items:center}.he-rp .row .bx-btn{flex:1;min-width:0;padding:8px 2px;font-size:14px}
+.he-rp .row .sq{flex:0 0 42px;font-size:20px;padding:0}
+.he-rp input{flex:1;min-width:60px;height:40px;accent-color:#c8a052}.he-rp b{min-width:58px;text-align:right;font-size:18px;color:#e6c57d}
+.he-pre{min-width:0!important;font-size:14px!important;padding:8px 10px!important;opacity:.92}.he-pre.on{background:#2f6a4c;color:#fff3d6;border-color:#9fd3b2;opacity:1}
+.he-log{position:absolute;left:10px;top:8px;min-height:40px;min-width:52px;padding:6px 10px;font-size:14px}
+@keyframes hePulse{50%{box-shadow:0 0 0 3px #ffd76a,0 0 18px 4px rgba(255,215,106,.9)}}.he-hint{animation:hePulse .9s ease-in-out infinite;outline:2px solid #ffd76a}
+@media (max-height:500px){.he-bar .bx-btn{min-height:42px;padding:8px 10px}.he-rp{flex-direction:row;width:min(840px,calc(100% - 16px));gap:8px;padding:6px 8px}.he-rp .row{flex:1}.he-rp .row:first-child{flex:1.2}.he-rp .row .bx-btn{min-height:40px}.he-rp b{min-width:44px;font-size:16px}}`}));
     const bar = h('div', {class: 'bx-bar he-bar'}), rp = h('div', {class: 'bx-panel he-rp'}); rp.hidden = true;
-    ui.append(rp, bar);
-    let sig = '', raiseOpen = false, rv = 0;
+    const logBtn = h('button', {class: 'bx-btn ghost he-log', text: '记录', on: {click: () => { ctx.sfx('click'); showLog(); }}});
+    ui.append(rp, bar, logBtn);
+    let sig = '', raiseOpen = false, rv = 0, pre = null, preKey = '', foldArm = false, hintA = null, autoT = 0;
     const me = () => ctx.view;
+    const pfx = () => st.hno + '/' + st.street;
+    function presets(L) {
+      const pot = potTotal() + L.toCall, out = [];
+      const cl = v => BX.clamp(Math.round(v / step()) * step(), L.minTo, L.maxTo);
+      if (st.street === 0) { for (const k of [2.5, 3, 4]) out.push([k + '倍', cl(st.curBet * k)]); }
+      else { out.push(['⅓池', cl(st.curBet + pot / 3)], ['½池', cl(st.curBet + pot / 2)], ['¾池', cl(st.curBet + pot * .75)]); }
+      out.push(['底池', cl(st.curBet + pot)], ['全下', L.maxTo]);
+      return out;
+    }
+    const step = () => Math.max(1, st.bb >= 20 ? Math.round(st.bb / 2) : st.bb);
+    const act = (a) => { const s = me(); raiseOpen = false; foldArm = false; pre = null; hintA = null; ctx.act(a, s); };
+    function inHandMe(s) { return st.ph === 'bet' && !st.over && st.dealt[s] && !st.fold[s] && !st.allin[s]; }
+    function runPre(L) {
+      if (!pre || pre.key !== pfx()) { pre = null; return; }
+      const p = pre; pre = null; let a = null;
+      if (p.k === 'cf') a = L.check ? {t: 'check'} : {t: 'fold'};
+      else if (p.k === 'ck') a = L.check ? {t: 'check'} : null;
+      else if (p.k === 'any') a = L.check ? {t: 'check'} : {t: 'call'};
+      else if (p.k === 'call') a = st.curBet === p.amt ? {t: L.check ? 'check' : 'call'} : null;
+      if (!a) { ctx.toast('有人加注，预选已取消'); return; }
+      const h0 = st.hl.length; ctx.cancel(autoT);
+      autoT = ctx.after(260, () => { const s = me(); if (ctx.canAct(s) && legal(s) && st.hl.length === h0) act(a); });
+    }
     function refreshUI(force) {
       const s = me(), L = ctx.canAct(s) ? legal(s) : null;
-      const key = JSON.stringify([L, raiseOpen, st.hno, st.ph, st.street]);
+      if (pre && pre.key !== pfx()) pre = null;
+      const waiting = !L && !ctx.hotseat && ctx.isLocal(s) && inHandMe(s) && st.cur !== s && st.cur >= 0;
+      const key = JSON.stringify([L, raiseOpen, st.hno, st.ph, st.street, waiting && [pre, st.curBet, st.bet[s]], foldArm, hintA]);
       if (key === sig && !force) return; sig = key;
       bar.innerHTML = ''; rp.innerHTML = '';
+      logBtn.hidden = !(st.hl && st.hl.length) && !st.pl0;
+      const B = (txt, cls, fn, dis, hl) => h('button', {class: 'bx-btn ' + (cls || '') + (hl ? ' he-hint' : ''), text: txt, disabled: !!dis, on: {click: () => { ctx.sfx('click'); fn(); }}});
+      if (waiting) {   // pre-action toggles
+        raiseOpen = false; rp.hidden = true;
+        const facing = st.bet[s] < st.curBet, tc = Math.min(st.curBet - st.bet[s], st.chips[s]);
+        const T = (k, txt, amt) => B((pre && pre.k === k ? '☑ ' : '☐ ') + txt, 'ghost he-pre' + (pre && pre.k === k ? ' on' : ''), () => { pre = pre && pre.k === k ? null : {k, key: pfx(), amt}; refreshUI(true); });
+        bar.append(T('cf', facing ? '弃牌' : '让/弃'));
+        if (facing) bar.append(T('call', '跟注 ' + tc, st.curBet)); else bar.append(T('ck', '让牌'));
+        bar.append(T('any', '跟任何注'));
+        return;
+      }
       if (!L) { raiseOpen = false; rp.hidden = true; return; }
-      const B = (txt, cls, fn, dis) => h('button', {class: 'bx-btn ' + (cls || ''), text: txt, disabled: !!dis, on: {click: () => { ctx.sfx('click'); fn(); }}});
-      bar.append(B('弃牌', 'ghost', () => { raiseOpen = false; ctx.act({t: 'fold'}, s); }, L.check && false));
-      bar.append(L.check ? B('让牌', 'jade', () => { raiseOpen = false; ctx.act({t: 'check'}, s); }) : B((L.toCall >= st.chips[s] ? '全下 ' : '跟注 ') + L.toCall, 'jade', () => { raiseOpen = false; ctx.act({t: 'call'}, s); }));
+      if (pre) { runPre(L); if (!pre) { /* acting automatically */ } }
+      const hk = t => hintA && hintA.t === t;
+      bar.append(B(foldArm ? '确认弃牌' : '弃牌', foldArm ? 'red' : 'ghost', () => {
+        if (L.check && !foldArm) { foldArm = true; ctx.toast('现在可以免费让牌，再点一次确认弃牌'); refreshUI(true); return; }
+        act({t: 'fold'});
+      }, false, hk('fold')));
+      bar.append(L.check ? B('让牌', 'jade', () => act({t: 'check'}), false, hk('check')) : B((L.toCall >= st.chips[s] ? '全下 ' : '跟注 ') + L.toCall, 'jade', () => act({t: 'call'}), false, hk('call')));
       if (L.canRaise) {
-        if (!raiseOpen) bar.append(B(L.minTo >= L.maxTo ? '全下 ' + L.maxTo : (st.curBet ? '加注' : '下注'), 'red', () => { if (L.minTo >= L.maxTo) ctx.act({t: 'raise', to: L.maxTo}, s); else { raiseOpen = true; rv = L.minTo; refreshUI(true); } }));
+        if (!raiseOpen) bar.append(B(L.minTo >= L.maxTo ? '全下 ' + L.maxTo : (st.curBet ? '加注' : '下注'), 'red', () => { if (L.minTo >= L.maxTo) act({t: 'raise', to: L.maxTo}); else { raiseOpen = true; rv = hintA && hintA.t === 'raise' ? hintA.to : presets(L)[st.street ? 1 : 0][1]; refreshUI(true); } }, false, hk('raise')));
         else {
-          bar.append(B('确认 ' + (rv >= L.maxTo ? '全下' : rv), 'red', () => { raiseOpen = false; ctx.act({t: 'raise', to: rv}, s); }));
-          const pot = potTotal(), step = Math.max(1, Math.round(st.bb / 2));
-          const lbl = h('b', {text: rv}), inp = h('input', {type: 'range', min: L.minTo, max: L.maxTo, step, value: rv});
-          const setV = v => { rv = BX.clamp(Math.round(v), L.minTo, L.maxTo); if (rv > L.maxTo - step) rv = L.maxTo; inp.value = rv; lbl.textContent = rv >= L.maxTo ? '全下' : rv; bar.lastChild.textContent = '确认 ' + (rv >= L.maxTo ? '全下' : rv); };
+          const conf = B('确认 ' + (rv >= L.maxTo ? '全下' : rv), 'red', () => act({t: 'raise', to: rv}), false, hk('raise'));
+          bar.append(conf);
+          const st1 = step();
+          const lbl = h('b', {text: rv}), inp = h('input', {type: 'range', min: L.minTo, max: L.maxTo, step: st1, value: rv});
+          const setV = v => { rv = BX.clamp(Math.round(v), L.minTo, L.maxTo); if (rv > L.maxTo - st1 / 2) rv = L.maxTo; inp.value = rv; lbl.textContent = rv >= L.maxTo ? '全下' : rv; conf.textContent = '确认 ' + (rv >= L.maxTo ? '全下' : rv); };
           inp.addEventListener('input', () => setV(+inp.value));
-          const q = (t, f) => B(t, 'ghost', () => setV(f()));
-          const pr = f => st.curBet + L.toCall + Math.round((pot + L.toCall) * f);
-          rp.append(h('div', {class: 'row'}, q('最小', () => L.minTo), q('½池', () => pr(.5)), q('⅔池', () => pr(2 / 3)), q('底池', () => pr(1)), q('全下', () => L.maxTo)),
-            h('div', {class: 'row'}, inp, lbl));
-          rp.append(h('div', {class: 'row'}, B('取消', 'ghost', () => { raiseOpen = false; refreshUI(true); })));
+          rp.append(h('div', {class: 'row'}, ...presets(L).map(([t, v]) => B(t, 'ghost', () => setV(v)))),
+            h('div', {class: 'row'}, B('−', 'ghost sq', () => setV(rv - st1)), inp, B('+', 'ghost sq', () => setV(rv + st1)), lbl, B('✕', 'ghost sq', () => { raiseOpen = false; refreshUI(true); })));
           setV(rv);
+          inst0.setV = setV;
         }
       }
       rp.hidden = !raiseOpen;
       requestAnimationFrame(() => { const r = bar.getBoundingClientRect(), pr = ui.getBoundingClientRect(); rp.style.bottom = (pr.bottom - r.top + 8) + 'px'; });
+    }
+    const inst0 = {setV: null};
+    function showLog() {
+      const nm = s => BX.esc(ctx.name(s));
+      const SN = ['翻牌前', '翻牌', '转牌', '河牌'];
+      const fmt = (blk, title) => {
+        let html = `<div style="font-weight:700;margin:6px 0 4px;color:#8a2a20">${title}</div>`, lastSt = -1;
+        for (const e of blk) {
+          const [stt, s, t] = e;
+          if (s === -1 && t === 'win') { html += `<div style="margin:4px 0;color:#7a5a10"><b>${e[3].map(nm).join('、')}</b> ${e[6] ? '收回' : '赢得'} <b>${e[4]}</b>${e[5] ? '（' + e[5] + '）' : ''}</div>`; continue; }
+          if (s === -1) { html += `<div style="margin:6px 0 2px;border-top:1px dashed rgba(0,0,0,.2);padding-top:4px"><b>${t}</b> ${e[3].map(cardTxt).join(' ')}</div>`; lastSt = stt; continue; }
+          if (stt !== lastSt && stt === 0) { html += `<div style="margin:2px 0;color:#666">${SN[0]}</div>`; lastSt = 0; }
+          html += `<div>${nm(s)}：${BX.esc(t)}${e[3] ? ' ' + e[3].map(cardTxt).join(' ') : ''}</div>`;
+        }
+        return html;
+      };
+      let html = '';
+      if (st.hl && st.hl.length) html += fmt(st.hl, '本手（第 ' + st.hno + ' 手）');
+      if (st.pl0) html += fmt(st.pl0.l, '上一手（第 ' + st.pl0.h + ' 手）');
+      const mine = st.hole[me()] && !ctx.hotseat ? '<div style="margin-bottom:6px">你的底牌：<b>' + st.hole[me()].map(cardTxt).join(' ') + '</b></div>' : '';
+      BX.modal({title: '牌局记录', html: `<div style="text-align:left;font-size:14px;line-height:1.55;max-height:60vh;overflow:auto">${mine}${html || '暂无记录'}</div>`, dismiss: null});
     }
     function status() {
       for (let s = 0; s < n; s++) ctx.info(s, st.chips[s] + (st.dealt[s] || st.chips[s] ? '' : ' 出局'));
@@ -324,7 +433,7 @@ BX.register({
       let m;
       if (st.over) m = '比赛结束';
       else if (st.ph === 'res') m = resText();
-      else if (L) m = who + (L.check ? '轮到你：让牌或下注' : '轮到你：需跟注 ' + L.toCall);
+      else if (L) m = who + (L.check ? '轮到你：让牌或下注' : `轮到你：需跟注 ${L.toCall}（底池 ${potTotal()}，赔率 ${Math.round(L.toCall / (potTotal() + L.toCall) * 100)}%）`);
       else if (st.ph === 'bet') m = '等待 ' + ctx.name(st.cur) + '…';
       else m = '发牌中…';
       ctx.status(head + m);
@@ -338,9 +447,9 @@ BX.register({
     /* ---------------- drawing ---------------- */
     const vis = new Map(); let visH = -1, wait = 0, flies = [], prevBets = [], resSeen = -1, glow = 0;
     function geo() {
-      const W = cv.w, br = bar.getBoundingClientRect(), barH = Math.max(br.height, 50) + 14;
+      const W = cv.w, br = bar.getBoundingClientRect(), rH = rp.hidden ? 0 : rp.getBoundingClientRect().height + 8, barH = Math.max(br.height, 50) + 14 + rH;
       const Ha = Math.max(220, cv.h - barH), wide = W / Ha > 1.5;
-      const cw = BX.clamp(Math.min(W / (W / Ha < 1 && 1 ? 8 : 7.2), Ha * (wide ? .15 : .1)), 26, 78);
+      const cw = BX.clamp(Math.min(W / (W / Ha < 1 ? 6.6 : 7.2), Ha * (wide ? .15 : .1)), 26, 90);
       return {W, Ha, wide, cw, ch: cw * 1.4, cx: W / 2, cy: Ha / 2 + (wide ? 0 : 0)};
     }
     function seatPos(s, G) {
@@ -433,6 +542,12 @@ BX.register({
         const side = p.x <= cx + 2 ? 1 : -1, bpx = p.x + side * (p.plW / 2 + 30), bpy = p.y - 8;
         p.bx = bpx; p.by = bpy;
         if (st.bet[s]) { chipStack(g, bpx, bpy + 4, st.bet[s], Math.max(7, cw * .13)); D.text(g, String(st.bet[s]), bpx, bpy + Math.max(14, cw * .3), {size: 12, color: '#fff3d6', weight: 700, stroke: 'rgba(0,0,0,.6)', strokeW: 3}); }
+        // my current hand strength (hidden from others; respects the 提示 preference)
+        if (p.mine && !(st.show && st.ph === 'res') && st.hole[s].length === 2 && !st.fold[s] && ctx.pref('hints') && (!ctx.hotseat || s === ctx.view)) {
+          const txt = handDesc(st.hole[s], st.board);
+          const ly = p.y - 18 - cw * p.scale * 1.4 * .72 - 16;
+          if (txt) { g.font = '700 13px ' + BX.F.sans; const tw2 = Math.min(W - 16, g.measureText(txt).width + 18); g.fillStyle = 'rgba(20,40,30,.88)'; D.rr(g, p.x - tw2 / 2, ly - 11, tw2, 21, 10); g.fill(); g.strokeStyle = 'rgba(159,211,178,.6)'; g.lineWidth = 1; g.stroke(); D.text(g, txt, p.x, ly, {size: 13, color: '#dff5e6', weight: 700, maxW: tw2 - 10}); }
+        }
         // hand name at showdown
         if (st.show && st.best && st.best[s] && st.ph === 'res') {
           const won = st.res.pots.some(q => q.win.includes(s) && q.hand);
@@ -463,10 +578,11 @@ BX.register({
     }
     function plate(g, p, s, extra) {
       const turn = st.cur === s && st.ph === 'bet', w = p.plW, hh = 36, x = p.x - w / 2, y = p.y - 18;
+      const won = st.ph === 'res' && st.res && st.res.pots.some(q => q.win.includes(s) && !q.ret);
       g.save();
-      if (turn) { g.shadowColor = '#ffd76a'; g.shadowBlur = 14; }
+      if (turn || won) { g.shadowColor = '#ffd76a'; g.shadowBlur = won ? 10 + 8 * Math.sin(performance.now() / 160) : 14; }
       g.fillStyle = turn ? '#3a2410' : 'rgba(18,10,4,.86)'; D.rr(g, x, y, w, hh, 10); g.fill(); g.restore();
-      g.strokeStyle = turn ? '#ffd76a' : D.alpha(ctx.color(s), .9); g.lineWidth = turn ? 2.5 : 1.5; D.rr(g, x, y, w, hh, 10); g.stroke();
+      g.strokeStyle = turn || won ? '#ffd76a' : D.alpha(ctx.color(s), .9); g.lineWidth = turn || won ? 2.5 : 1.5; D.rr(g, x, y, w, hh, 10); g.stroke();
       const nm = ctx.name(s) + (ctx.isLocal(s) && !ctx.hotseat ? '（你）' : '');
       D.text(g, nm, p.x, y + 11, {size: 12, color: st.fold[s] || extra ? 'rgba(243,226,192,.5)' : '#f3e2c0', maxW: w - 10});
       const a = extra || (st.act[s] && st.ph !== 'res' ? st.act[s] : '');
@@ -477,6 +593,13 @@ BX.register({
     return {
       st,
       toMove: () => st.ph === 'bet' && !st.over ? st.cur : null,
+      showHint(a) {
+        hintA = a; sig = '';
+        const T = {fold: '弃牌', check: '让牌', call: '跟注'};
+        if (a.t === 'raise') { const L = legal(me()); ctx.toast(L && a.to >= L.maxTo ? '建议：全下' : '建议：加注到 ' + a.to); }
+        else ctx.toast('建议：' + (T[a.t] || ''));
+        refreshUI(true);
+      },
       valid(a, by) {
         const L = legal(by); if (!L) return false;
         if (a.t === 'fold' || a.t === 'call') return true;
@@ -492,6 +615,7 @@ BX.register({
         return null;
       },
       apply(a, by) {
+        hintA = null; foldArm = false;
         if (by === -1) {
           if (a.t === 'deal') dealStreet();
           else if (a.t === 'show') showdown();
@@ -507,11 +631,19 @@ BX.register({
         return a;
       },
       onTurn: status,
-      onView() { sig = ''; raiseOpen = false; status(); },
+      onView() { sig = ''; raiseOpen = false; pre = null; status(); },
       key(e) {
         const s = me(); if (!ctx.canAct(s)) return; const L = legal(s); if (!L) return;
-        if (e.code === 'KeyF') ctx.act({t: 'fold'}, s);
-        else if (e.code === 'KeyC' || e.code === 'Space') ctx.act({t: L.check ? 'check' : 'call'}, s);
+        if (e.code === 'KeyF') { if (L.check && !foldArm) { foldArm = true; ctx.toast('现在可以免费让牌，再按一次 F 确认弃牌'); refreshUI(true); } else act({t: 'fold'}); }
+        else if (e.code === 'KeyC' || (e.code === 'Space' && !raiseOpen)) act({t: L.check ? 'check' : 'call'});
+        else if (e.code === 'KeyR' && L.canRaise) { if (L.minTo >= L.maxTo) act({t: 'raise', to: L.maxTo}); else if (!raiseOpen) { raiseOpen = true; rv = presets(L)[st.street ? 1 : 0][1]; refreshUI(true); } }
+        else if (raiseOpen && (e.code === 'Enter' || e.code === 'Space')) act({t: 'raise', to: rv});
+        else if (raiseOpen && e.code === 'Escape') { raiseOpen = false; refreshUI(true); }
+        else if (raiseOpen && inst0.setV && (e.code === 'ArrowUp' || e.code === 'ArrowRight')) inst0.setV(rv + step());
+        else if (raiseOpen && inst0.setV && (e.code === 'ArrowDown' || e.code === 'ArrowLeft')) inst0.setV(rv - step());
+        else if (raiseOpen && inst0.setV && /^Digit[1-5]$/.test(e.code)) { const ps = presets(L), i = +e.code[5] - 1; if (ps[i]) inst0.setV(ps[i][1]); }
+        else return;
+        e.preventDefault && e.preventDefault();
       },
       frame,
     };

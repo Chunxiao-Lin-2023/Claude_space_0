@@ -129,11 +129,12 @@ BX.register({
   id: 'huarongdao', title: '华容道', cat: 'solo', order: 4, sub: '移开众将，放曹操出关',
   desc: '中国古典滑块谜题。在 4×5 的棋盘里移动曹操、五虎上将和小兵，让曹操从底部出口逃出。收录横刀立马等 15 种经典布局，附最少步数与最优提示。',
   kind: 'solo',
+  howto: ['<b>按住木牌拖动</b>，或朝某个方向<b>快速一划</b>；轻点木牌会朝你点的那一侧移动（只有一种走法时直接走）。', '选中木牌时，能去的空位会用虚线框标出。', '💡 提示高亮最优的下一步（再点发光的木牌就照做）；「演示」从当前局面自动走完最优解，点棋盘可随时停下。', '「布局」选关，通关后「再来一局」进入下一个没过的布局。键盘：点选木牌后用方向键移动，Z 撤销、H 提示。'],
   rules: `<p>棋盘 4 列 5 行，有 10 块木牌：<b>曹操</b>（2×2）、关羽（横 2×1）、张飞/赵云/马超/黄忠（竖 1×2，个别布局中有横放）和 4 个<b>兵</b>（1×1），共留两个空格。</p>
 <p>每次可把一块木牌沿上下左右滑进空格，不能跳过或旋转。把<b>曹操移到底部正中的出口</b>（最下两行的中间两列）即为成功。</p>
 <p><b>计步</b>：同一块木牌连续移动（无论走几格、是否拐弯）只算一步；换一块再动才算新的一步。每个布局显示已知的最少步数（由求解器计算），达到最少步数可得满分印章。</p>
 <p><b>操作</b>：按住木牌拖动或朝某方向快速滑动；若木牌只有一种走法，轻点即可移动。键盘：先点选木牌，再用方向键移动。<br>
-「提示」会算出当前局面的最优走法并高亮下一步；「撤销」不限次数；「布局」选择关卡，已通关的布局会打勾并记录最佳步数。</p>`,
+💡「提示」会算出当前局面的最优走法并高亮下一步；「演示」从当前局面开始自动播放最优解（用过演示的这一局不计纪录）；「撤销」不限次数；「布局」选择关卡，已通关的布局会打勾并记录最佳步数。</p>`,
   icon(g, w, h) {
     D.wood(g, 0, 0, w, h, {base: '#6b4426', dark: '#2a190d', seed: 4});
     const pcs = parse(LAYS[0][1]), cs = h * .82 / 5, x0 = (w - 4 * cs) / 2, y0 = h * .06;
@@ -144,17 +145,18 @@ BX.register({
     const cv = ctx.canvas(), fx = K.fx(), say = K.status(ctx);
     let li = BX.clamp(ctx.load('lay', 0), 0, LAYS.length - 1);
     let pcs, pos, steps = 0, lastPiece = -1, undoS = [], time = 0, won = false, started = false, hintMv = null, solCache = null, vis = [], drag = null, sel = -1, exitAnim = null, minCache = Object.assign({}, MINS);
+    let demo = null, demoUsed = false;
     const recs = () => ctx.load('rec', {});
     const bar = K.bar(ctx, [
       {k: 'undo', ic: '↶', t: '撤销', on: () => undo()},
-      {k: 'hint', ic: '☞', t: '提示', on: () => hint()},
-      {k: 'lay', ic: '▦', t: '布局', on: () => pick()},
-      {k: 're', ic: '↻', t: '重摆', on: () => load(li)},
+      {k: 'lay', ic: '▦', t: '布局', on: () => { stopDemo(); pick(); }},
+      {k: 'demo', ic: '▶', t: '演示', on: () => demo ? stopDemo() : startDemo()},
+      {k: 're', ic: '↻', t: '重摆', on: () => { stopDemo(); load(li); }},
     ]);
     function load(i) {
       li = i; ctx.save('lay', i);
       pcs = parse(LAYS[i][1]); pos = []; pcs.forEach(p => pos.push(p.x, p.y));
-      steps = 0; lastPiece = -1; undoS = []; time = 0; won = false; started = false; hintMv = null; solCache = null; sel = -1; drag = null; exitAnim = null;
+      steps = 0; lastPiece = -1; undoS = []; time = 0; won = false; started = false; hintMv = null; solCache = null; sel = -1; drag = null; exitAnim = null; demoUsed = false;
       vis = pcs.map((p, k) => ({x: p.x, y: p.y - 6 - k * .3, d: k * .04}));
       ctx.sfx('shuffle');
     }
@@ -181,20 +183,38 @@ BX.register({
       ctx.sfx('move');
       return true;
     }
+    /* solution playback from the current position */
+    function startDemo() {
+      if (won || thinking) return;
+      thinking = true; say('军师推演中…');
+      ctx.after(40, () => {
+        thinking = false; const path = solve(pos.slice(), pcs); if (!path || !path.length) return;
+        demo = {path, t: 0}; demoUsed = true; hintMv = null; sel = -1; bar.label('demo', '停止', '■'); bar.on('demo', true);
+        ctx.toast(`演示最优解：还需 ${path.length} 步，点棋盘可停下`, 2200);
+        const tick = () => { if (!demo || won) return; const [i, x, y] = demo.path.shift(); lastPiece = -1; applyMove(i, x, y); if (!demo.path.length || won) { stopDemo(); return; } demo.tm = ctx.after(560, tick); };
+        demo.tm = ctx.after(350, tick);
+      });
+    }
+    function stopDemo() { if (!demo) return; if (demo.tm) ctx.cancel(demo.tm); demo = null; bar.label('demo', '演示', '▶'); bar.on('demo', false); }
     function undo() {
+      stopDemo();
       if (!undoS.length || won) { ctx.sfx('error'); return; }
       [pos, steps, lastPiece] = JSON.parse(undoS.pop()); lastPiece = -1; hintMv = null; solCache = null; ctx.sfx('whoosh');
     }
     function checkWin() {
       const ci = pcs.findIndex(p => p.t === 'C');
       if (won || pos[ci * 2] !== 1 || pos[ci * 2 + 1] !== 3) return;
-      won = true; hintMv = null;
-      const mn = minOf(li), R = recs(), old = R[li]; if (old == null || steps < old) { R[li] = steps; if (!BX.test) ctx.save('rec', R); }
-      ctx.best('s_' + li, steps, 'min');
+      won = true; hintMv = null; ctx.buzz(30);
+      const mn = minOf(li), R = recs(), old = R[li];
+      if (!demoUsed) { if (old == null || steps < old) { R[li] = steps; if (!BX.test) ctx.save('rec', R); } ctx.best('s_' + li, steps, 'min'); }
+      // 再来一局 → next layout not yet cleared
+      let nx = li; for (let k = 1; k <= LAYS.length; k++) { const j = (li + k) % LAYS.length; if (R[j] == null) { nx = j; break; } if (k === LAYS.length) nx = (li + 1) % LAYS.length; }
+      if (!demoUsed) ctx.save('lay', nx);
       exitAnim = {t: 0}; ctx.sfx('gong');
       ctx.after(700, () => { fx.rain(cv.w, cv.h, 60); ctx.sfx('win'); });
       const perfect = mn != null && steps <= mn;
-      ctx.end({win: true, title: perfect ? '神机妙算' : '曹操脱困', text: `${LAYS[li][0]} · 用时 ${K.fmt(time)} 步数 ${steps}` + (mn != null ? `（最少 ${mn}）` : '') + (old == null || steps < old ? ' · 新纪录！' : ` · 最佳 ${old}`), delay: 2000});
+      if (demoUsed) { ctx.end({win: true, title: '演示完毕', text: `${LAYS[li][0]} · 最优解共 ${mn != null ? mn : steps} 步，自己试试吧！`, delay: 2000}); return; }
+      ctx.end({win: true, title: perfect ? '神机妙算' : '曹操脱困', text: `${LAYS[li][0]} · 用时 ${K.fmt(time)} 步数 ${steps}` + (mn != null ? `（最少 ${mn}）` : '') + (old == null || steps < old ? ' · 新纪录！' : ` · 最佳 ${old}`) + (nx !== li ? ` · 下一关「${LAYS[nx][0]}」` : ''), delay: 2000});
     }
     let thinking = false;
     function hint() {
@@ -234,6 +254,7 @@ BX.register({
     }
     const pieceAt = p => { for (let i = 0; i < pcs.length; i++) { const q = pcs[i], x = L.x + pos[i * 2] * L.cs, y = L.y + pos[i * 2 + 1] * L.cs; if (p.x >= x && p.x <= x + q.w * L.cs && p.y >= y && p.y <= y + q.h * L.cs) return i; } return -1; };
     ctx.on(cv.cv, 'pointerdown', e => {
+      if (demo) { stopDemo(); return; }
       if (won || !L) return; const p = cv.pos(e), i = pieceAt(p);
       if (i < 0) { sel = -1; return; }
       drag = {i, sx: p.x, sy: p.y, gx: p.x - pos[i * 2] * L.cs, gy: p.y - pos[i * 2 + 1] * L.cs, moved: false, pid: e.pointerId, t0: performance.now(), x0: pos[i * 2], y0: pos[i * 2 + 1]};
@@ -269,10 +290,11 @@ BX.register({
         const mv = reach(pos, pcs, d.i).filter(([x, y]) => Math.abs(x - pos[d.i * 2]) + Math.abs(y - pos[d.i * 2 + 1]) === 1);
         if (hintMv && hintMv[0] === d.i) applyMove(d.i, hintMv[1], hintMv[2]);
         else if (mv.length === 1) stepPiece(d.i, mv[0][0] - pos[d.i * 2], mv[0][1] - pos[d.i * 2 + 1]);
-        else if (mv.length > 1) { // tap: prefer the hint move, else toward tap side
-          if (hintMv && hintMv[0] === d.i) applyMove(d.i, hintMv[1], hintMv[2]);
-          else ctx.toast('有多个方向，请拖动');
-        } else ctx.sfx('tick');
+        else if (mv.length > 1) { // tap: move toward the side of the piece that was tapped
+          const q = pcs[d.i], cx = L.x + (pos[d.i * 2] + q.w / 2) * L.cs, cy = L.y + (pos[d.i * 2 + 1] + q.h / 2) * L.cs;
+          let best = null, bs = -1e9; for (const [x, y] of mv) { const dx = x - pos[d.i * 2], dy = y - pos[d.i * 2 + 1], sc = dx * (p.x - cx) + dy * (p.y - cy); if (sc > bs) { bs = sc; best = [dx, dy]; } }
+          stepPiece(d.i, best[0], best[1]);
+        } else { ctx.sfx('error'); ctx.buzz(12); }
       }
       checkWin();
     };
@@ -290,7 +312,7 @@ BX.register({
         const {cs, x, y} = L;
         drawBoard(g, x, y, cs, pcs, pos);
         const mn = minOf(li), R = recs();
-        D.text(g, `「${LAYS[li][0]}」  步数 ${steps}` + (mn != null ? ` / 最少 ${mn}` : ''), L.A.x + L.A.w / 2, 22, {size: 17, color: '#f3e2c0', font: 'serif', weight: 800, shadow: true});
+        D.text(g, `「${LAYS[li][0]}」  步数 ${steps}` + (mn != null ? ` / 最少 ${mn}` : '') + (R[li] != null ? ` · 最佳 ${R[li]}` : ''), L.A.x + L.A.w / 2, 22, {size: L.A.w < 380 ? 15 : 17, color: '#f3e2c0', font: 'serif', weight: 800, shadow: true});
         g.save(); g.beginPath(); g.rect(x - 2, y - 2, 4 * cs + 4, 5 * cs + 4 + (exitAnim ? cs * 3 : 0)); g.clip();
         const k = 1 - Math.exp(-dt * 18);
         pcs.forEach((p, i) => {
@@ -301,6 +323,11 @@ BX.register({
           let glow = 0; if (hintMv && hintMv[0] === i) glow = .55 + .45 * Math.sin(performance.now() / 120);
           drawPiece(g, x + v.x * cs, y + v.y * cs, p.w * cs, p.h * cs, p, {sel: sel === i && !won && (!drag || !drag.moved), glow});
         });
+        if (sel >= 0 && !won && !demo && !(drag && drag.moved) && ctx.pref('hints')) {   // where the selected piece can go (one step)
+          const q = pcs[sel]; g.save(); g.setLineDash([4, 5]); g.strokeStyle = 'rgba(255,215,106,.55)'; g.lineWidth = 2;
+          for (const [mx, my] of reach(pos, pcs, sel)) if (Math.abs(mx - pos[sel * 2]) + Math.abs(my - pos[sel * 2 + 1]) === 1) { D.rr(g, x + mx * cs + 6, y + my * cs + 6, q.w * cs - 12, q.h * cs - 12, cs * .1); g.stroke(); }
+          g.restore();
+        }
         if (hintMv) { // ghost destination
           const p = pcs[hintMv[0]]; g.save(); g.globalAlpha = .35 + .2 * Math.sin(performance.now() / 120); g.setLineDash([6, 5]); g.strokeStyle = '#7fffc0'; g.lineWidth = 2.5;
           D.rr(g, x + hintMv[1] * cs + 4, y + hintMv[2] * cs + 4, p.w * cs - 8, p.h * cs - 8, cs * .1); g.stroke(); g.restore();
@@ -308,15 +335,18 @@ BX.register({
         g.restore();
         if (R[li] != null && !won) K.seal(g, x + 4 * cs + cs * .25, y - cs * .05, Math.max(26, cs * .36), R[li] <= (mn || 0) ? '优' : '过', .15);
         fx.draw(g, dt);
-        if (!won && !thinking) say(`用时 ${K.fmt(time)} · ` + (BX.TOUCH.matches ? '拖动或滑动木牌' : '拖动木牌，或点选后用方向键'));
-        bar.dis('undo', !undoS.length || won); bar.dis('hint', won);
+        if (!won && !thinking) say(demo ? `演示中 · 还剩 ${demo.path.length} 步 · 点棋盘停下` : `用时 ${K.fmt(time)} · ` + (BX.TOUCH.matches ? '拖动、滑动或轻点木牌' : '拖动木牌，或点选后用方向键'));
+        bar.dis('undo', !undoS.length || won); bar.dis('demo', won);
       },
+      hint: () => { stopDemo(); hint(); },
       key(e) {
-        if (won || sel < 0) return;
+        if (won) return;
+        if (e.code === 'KeyZ') { undo(); return; } if (e.code === 'KeyH') { stopDemo(); hint(); return; }
         const m = {ArrowUp: [0, -1], ArrowDown: [0, 1], ArrowLeft: [-1, 0], ArrowRight: [1, 0]}[e.code];
-        if (m) { if (!stepPiece(sel, m[0], m[1])) ctx.sfx('error'); checkWin(); }
-        if (e.code === 'KeyZ') undo(); if (e.code === 'KeyH') hint();
+        if (m && sel < 0) { sel = pcs.findIndex(p => p.t === 'C'); return; }
+        if (m && !demo) { if (!stepPiece(sel, m[0], m[1])) ctx.sfx('error'); checkWin(); }
       },
+      destroy() { stopDemo(); },
       debug: {
         get pos() { return pos; }, get pcs() { return pcs; }, get hintMv() { return hintMv; }, get steps() { return steps; }, get L() { return L; }, applyMove, load, solve: () => solve(pos.slice(), pcs), mins: () => minCache,
       },

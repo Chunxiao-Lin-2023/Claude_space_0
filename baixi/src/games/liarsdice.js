@@ -3,19 +3,21 @@ const D = BX.draw, C = BX.C;
 const PCOL = ['#c23a2b', '#2f5d8a', '#3f8f5b', '#d9a12b'];
 const ceilHalf = q => Math.ceil(q / 2);
 /* is bid b = {q,f} a legal raise over prev (or a legal opening when prev is null)? */
-function legalBid(b, prev, total) {
+function legalBid(b, prev, total, wild = true) {
   if (!b || !Number.isInteger(b.q) || !Number.isInteger(b.f) || b.f < 1 || b.f > 6 || b.q < 1 || b.q > total) return false;
+  if (!wild) return !prev || b.q > prev.q || (b.q === prev.q && b.f > prev.f);
   if (!prev) return b.f !== 1;
   if (prev.f !== 1) { if (b.f === 1) return b.q >= ceilHalf(prev.q); return b.q > prev.q || (b.q === prev.q && b.f > prev.f); }
   if (b.f === 1) return b.q > prev.q;
   return b.q >= prev.q * 2 + 1;
 }
-function minQ(f, prev) {
+function minQ(f, prev, wild = true) {
   if (!prev) return 1;
+  if (!wild) return f > prev.f ? prev.q : prev.q + 1;
   if (prev.f !== 1) return f === 1 ? ceilHalf(prev.q) : f > prev.f ? prev.q : prev.q + 1;
   return f === 1 ? prev.q + 1 : prev.q * 2 + 1;
 }
-const countFace = (dice, f) => dice.filter(v => v === f || (f !== 1 && v === 1)).length;
+const countFace = (dice, f, wild = true) => dice.filter(v => v === f || (wild && f !== 1 && v === 1)).length;
 function binomTail(n, k, p) {
   if (k <= 0) return 1; if (k > n) return 0;
   let s = 0, c = 1;
@@ -26,7 +28,9 @@ function binomTail(n, k, p) {
 BX.register({
   id: 'liarsdice', title: '吹牛骰', cat: 'dice', order: 2, sub: '扣盅叫数，敢叫就敢开',
   desc: '每人五颗骰子扣在盅里，只看得到自己的。轮流叫“几个几”，越叫越大，觉得对方在吹牛就喊“开”！输的人丢一颗骰子，最后还有骰子的人获胜。',
-  kind: 'turn', seats: [2, 4], defSeats: 2, hidden: true, seatColors: PCOL, firstLabel: '先叫', aiDelay: 650, anyTimeActs: true,
+  kind: 'turn', seats: [2, 4], defSeats: 2, hidden: true, seatColors: PCOL, firstLabel: '先叫', aiDelay: 650, anyTimeActs: true, undo: false,
+  options: [{key: 'wild', label: '1 点', choices: [[1, '1 点百搭'], [0, '不百搭（纯点数）']], def: 1}],
+  howto: ['点一个<b>点数</b>（下方小字是它现在最少要叫几个），用 <b>−/+</b> 调数量，再点绿色的「叫」；不信上家就点红色的「开」。', '按钮上的百分比是根据你自己的骰子估算的“叫数成立”概率，可在「⋯」里关掉提示。', '桌面中间是本轮叫数记录；电脑上可按 1–6 选点数、↑/↓ 调数量、回车叫、O 键开。', '💡 会把电脑建议的叫法填好（或点亮「开」）。'],
   rules: `<p>每人 <b>5 颗骰子</b>扣在骰盅里，摇过后只能偷看自己的。</p>
 <p>由一位玩家先<b>叫数</b>，如“4 个 5”，意思是：<b>全场所有骰子</b>里至少有 4 颗是 5。之后按顺序，下一位玩家必须二选一：</p>
 <ul><li><b>加叫</b>：数量更多（点数任意），或数量相同而点数更大；</li>
@@ -34,6 +38,7 @@ BX.register({
 <p><b>1 点是百搭</b>，清点时算作任何点数——除非叫的就是 1 点（叫“斋”）。<br>
 从普通点数改叫 1 点时，数量可以<b>减半（向上取整）</b>，如“7 个 4”之后可叫“4 个 1”；从 1 点改回普通点数时，数量至少为<b>两倍加一</b>，如“3 个 1”之后至少要叫“7 个 X”。每轮第一口不能叫 1 点。</p>
 <p>揭盅后若实际数量<b>达到</b>叫数，则喊开的人输；否则叫数的人输。输家<b>丢掉一颗骰子</b>，并由他开始下一轮（若他已出局则由下一位开始）。骰子丢光即出局，<b>最后还有骰子的玩家获胜</b>。</p>
+<p><b>不百搭</b>（可选规则）：1 点只算 1 点，任何点数都可以开口叫，加叫时数量更多或数量相同点数更大即可。</p>
 <p>操作：选点数和数量后点「叫」，或点「开」。同屏多人时每次轮换会提示交接设备。</p>`,
   icon(g, w, h) {
     D.felt(g, 0, 0, w, h, {color: '#6a1f1a'});
@@ -47,7 +52,8 @@ BX.register({
     D.text(g, '3个5?', w * .8, h * .2, {size: 22, color: '#ffe6a8', font: 'deco', weight: 400});
   },
   create(ctx) {
-    const N = ctx.n;
+    const N = ctx.n, wild = +ctx.opts.wild !== 0;
+    const legal = (b, prev, T) => legalBid(b, prev, T, wild), mq = (f, prev) => minQ(f, prev, wild), cf = (d, f) => countFace(d, f, wild);
     const st = {dice: BX.range(N).map(() => []), cnt: new Array(N).fill(5), turn: 0, bid: null, hist: [], phase: 'bid', res: null, round: 1, out: [], over: false};
     const total = () => st.cnt.reduce((a, b) => a + b, 0);
     const alive = s => st.cnt[s] > 0;
@@ -55,14 +61,18 @@ BX.register({
     function rollAll() { for (let s = 0; s < N; s++) { st.dice[s] = []; for (let i = 0; i < st.cnt[s]; i++) st.dice[s].push(1 + ctx.rng.int(6)); st.dice[s].sort((a, b) => a - b); } }
     st.turn = ctx.rng.int(N); rollAll();
     const cv = ctx.canvas();
-    let sel = {q: 1, f: 2}, selFor = -1, btns = [], t = 0, cupK = 0, shake = {k: 1, id: 0}, bidPop = {k: 1};
+    let sel = {q: 1, f: 2}, selFor = -1, btns = [], t = 0, cupK = 0, shake = {k: 1, id: 0}, bidPop = {k: 1}, hintA = null, hintT = 0;
+    /* chance (from the viewer's own dice) that bid b is true */
+    const pBid = (b, seat) => { if (!b) return 0; const mine = st.dice[seat] || [], U = total() - mine.length; return binomTail(U, b.q - cf(mine, b.f), pFace(b.f)); };
+    const pct = p => (p >= .995 ? '≈100' : p <= .005 ? '≈0' : Math.round(p * 100)) + '%';
+    const selFace = f => { const prev = st.bid, T = total(); sel.f = f; sel.q = Math.min(T, mq(f, prev)); ctx.sfx('click'); };
     const myTurn = () => st.phase === 'bid' && !st.over && ctx.canAct(st.turn);
     function resetSel() {
       const prev = st.bid, T = total(), myD = st.dice[st.turn] || [];
       // suggest the face we hold most of (by count incl. wilds), at its minimal legal quantity
       let best = null;
-      for (let f = 2; f <= 6; f++) { const q = minQ(f, prev); if (q <= T && legalBid({q, f}, prev, T)) { const sc = countFace(myD, f); if (!best || sc > best.sc) best = {q, f, sc}; } }
-      if (!best && prev) { const q = minQ(1, prev); if (q <= T) best = {q, f: 1}; }
+      for (let f = wild ? 2 : 1; f <= 6; f++) { const q = mq(f, prev); if (q <= T && legal({q, f}, prev, T)) { const sc = cf(myD, f); if (!best || sc > best.sc) best = {q, f, sc}; } }
+      if (!best && prev) { const q = mq(1, prev); if (q <= T) best = {q, f: 1}; }
       sel = best ? {q: best.q, f: best.f} : {q: Math.min(T, (prev ? prev.q : 0) + 1), f: 2};
       selFor = st.hist.length * 10 + st.round * 1000 + st.turn;
     }
@@ -87,7 +97,8 @@ BX.register({
       for (const b of btns) if (b.on && p.x >= b.x && p.x <= b.x + b.w && p.y >= b.y && p.y <= b.y + b.h) { b.fn(); return; }
     });
     /* ---------- status ---------- */
-    const bidTxt = b => b.q + ' 个 ' + (b.f === 1 ? '1（斋）' : b.f);
+    const bidTxt = b => b.q + ' 个 ' + (b.f === 1 && wild ? '1（斋）' : b.f);
+    const pFace = f => !wild || f === 1 ? 1 / 6 : 1 / 3;
     const status = () => {
       for (let s = 0; s < N; s++) ctx.info(s, alive(s) ? st.cnt[s] + ' 骰' : '出局');
       if (st.over) return ctx.status('终局');
@@ -100,18 +111,18 @@ BX.register({
       const T = total(), mine = st.dice[seat], U = T - mine.length, prev = st.bid;
       const inferred = f => {   // level 3: other players' bids hint at their hands
         if (level < 3) return 0; let s = 0; const seen = new Set();
-        for (const h of st.hist) if (h.by !== seat && !seen.has(h.by) && (h.f === f || (f !== 1 && h.f === 1))) { seen.add(h.by); s += Math.min(1.2, st.cnt[h.by] * .28); }
+        for (const h of st.hist) if (h.by !== seat && !seen.has(h.by) && (h.f === f || (wild && f !== 1 && h.f === 1))) { seen.add(h.by); s += Math.min(1.2, st.cnt[h.by] * .28); }
         return s;
       };
-      const pTrue = b => { const known = countFace(mine, b.f) + inferred(b.f); return binomTail(U, Math.ceil(b.q - known - 1e-9), b.f === 1 ? 1 / 6 : 1 / 3); };
+      const pTrue = b => { const known = cf(mine, b.f) + inferred(b.f); return binomTail(U, Math.ceil(b.q - known - 1e-9), pFace(b.f)); };
       const cands = [];
-      for (let f = 1; f <= 6; f++) { const q0 = minQ(f, prev); for (let q = q0; q <= Math.min(T, q0 + 2); q++) if (legalBid({q, f}, prev, T)) cands.push({q, f}); }
+      for (let f = 1; f <= 6; f++) { const q0 = mq(f, prev); for (let q = q0; q <= Math.min(T, q0 + 2); q++) if (legal({q, f}, prev, T)) cands.push({q, f}); }
       if (level === 1) {
         if (prev) {
-          const exp = countFace(mine, prev.f) + U / (prev.f === 1 ? 6 : 3);
+          const exp = cf(mine, prev.f) + U * pFace(prev.f);
           if (prev.q > exp + .6 + Math.random() * 1.5 || !cands.length) return {t: 'call'};
         }
-        let bf = 2, bc = -1; for (let f = 2; f <= 6; f++) { const c = countFace(mine, f) + Math.random() * 1.5; if (c > bc) { bc = c; bf = f; } }
+        let bf = 2, bc = -1; for (let f = 2; f <= 6; f++) { const c = cf(mine, f) + Math.random() * 1.5; if (c > bc) { bc = c; bf = f; } }
         const okc = cands.filter(c => c.f === bf); const pick = okc.length ? okc[0] : cands[Math.floor(Math.random() * cands.length)];
         if (!prev) return {t: 'bid', q: Math.max(1, Math.round(T / 4 + Math.random())), f: bf};
         return {t: 'bid', q: pick.q, f: pick.f};
@@ -119,18 +130,18 @@ BX.register({
       if (!prev) {
         // opening: face we hold most of, quantity a bit under expectation
         let best = null;
-        for (let f = 2; f <= 6; f++) { const k = countFace(mine, f); const q = Math.max(1, Math.floor(k + U / 3 * (level >= 3 ? .8 : .6))); const sc = k + Math.random() * .8; if (!best || sc > best.sc) best = {q, f, sc}; }
-        if (level >= 3 && Math.random() < .15) { const f = 2 + Math.floor(Math.random() * 5); best = {q: Math.max(1, Math.floor(U / 3)), f}; }   // bluff opening
+        for (let f = 2; f <= 6; f++) { const k = cf(mine, f); const q = Math.max(1, Math.floor(k + U * pFace(f) * (level >= 3 ? .8 : .6))); const sc = k + Math.random() * .8; if (!best || sc > best.sc) best = {q, f, sc}; }
+        if (level >= 3 && Math.random() < .15) { const f = 2 + Math.floor(Math.random() * 5); best = {q: Math.max(1, Math.floor(U * pFace(f))), f}; }   // bluff opening
         return {t: 'bid', q: Math.min(T, best.q), f: best.f};
       }
       const pPrev = pTrue(prev);
-      const scored = cands.map(c => [c, pTrue(c) - (c.q - minQ(c.f, prev)) * .04 + (level >= 3 ? countFace(mine, c.f) * .015 : 0)]);
+      const scored = cands.map(c => [c, pTrue(c) - (c.q - mq(c.f, prev)) * .04 + (level >= 3 ? cf(mine, c.f) * .015 : 0)]);
       scored.sort((a, b) => b[1] - a[1]);
       const bestRaise = scored.length ? scored[0] : null;
       const thr = level >= 3 ? .42 : .38;
       if (!bestRaise || (pPrev < thr && (!bestRaise || bestRaise[1] < pPrev + .35)) || (bestRaise && bestRaise[1] < .2 && pPrev < .55)) return {t: 'call'};
       if (level >= 3 && Math.random() < .14 && scored.length > 2) {   // bluff: plausible-looking raise on a face we don't hold
-        const bl = scored.filter(([c, v]) => v > .3 && countFace(mine, c.f) <= 1);
+        const bl = scored.filter(([c, v]) => v > .3 && cf(mine, c.f) <= 1);
         if (bl.length) { const c = bl[0][0]; return {t: 'bid', q: c.q, f: c.f}; }
       }
       const c = level === 2 && Math.random() < .25 && scored.length > 1 ? scored[1][0] : bestRaise[0];
@@ -140,16 +151,17 @@ BX.register({
     const inst = {
       st,
       toMove: () => st.over || st.phase !== 'bid' ? null : st.turn,
-      valid(a, by) { if (st.phase !== 'bid' || by !== st.turn || st.over) return false; if (a.t === 'call') return !!st.bid; return a.t === 'bid' && legalBid(a, st.bid, total()); },
+      valid(a, by) { if (st.phase !== 'bid' || by !== st.turn || st.over) return false; if (a.t === 'call') return !!st.bid; return a.t === 'bid' && legal(a, st.bid, total()); },
       sysMove: () => st.phase === 'reveal' && !st.over ? {a: {t: 'next'}, delay: 3400} : null,
       apply(a, by) {
+        hintA = null;
         if (a.t === 'bid') {
           st.bid = {q: a.q, f: a.f, by: st.turn}; st.hist.push({by: st.turn, q: a.q, f: a.f});
           ctx.sfx('chip'); bidPop = {k: 0}; const bp = bidPop; ctx.anim(320, k => bp.k = k, null, BX.ease.back);
           st.turn = nextAlive(st.turn); status(); return;
         }
         if (a.t === 'call') {
-          const b = st.bid, all = [].concat(...st.dice), count = all.filter(v => v === b.f || (b.f !== 1 && v === 1)).length;
+          const b = st.bid, all = [].concat(...st.dice), count = cf(all, b.f);
           const loser = count >= b.q ? st.turn : b.by;
           st.res = {caller: st.turn, bidder: b.by, q: b.q, f: b.f, count, loser};
           st.phase = 'reveal'; ctx.sfx('gong'); cupK = 0; ctx.anim(700, k => cupK = k, () => ctx.sfx(loser === st.turn ? 'buzz' : 'score'), BX.ease.out);
@@ -173,6 +185,16 @@ BX.register({
       aiMove,
       onTurn: status,
       onView() { selFor = -1; },
+      showHint(a) { hintA = a; hintT = t; if (a.t === 'bid') { sel = {q: a.q, f: a.f}; selFor = st.hist.length * 10 + st.round * 1000 + st.turn; } },
+      key(e) {
+        if (!myTurn()) return;
+        const T = total(), prev = st.bid, m = /^(Digit|Numpad)([1-6])$/.exec(e.code);
+        if (m) { const f = +m[2]; if (mq(f, prev) <= T && (wild ? !(f === 1 && !prev) : true)) selFace(f); return; }
+        if ((e.code === 'ArrowUp' || e.code === 'Equal' || e.code === 'NumpadAdd') && sel.q < T) { sel.q++; ctx.sfx('tick'); }
+        else if ((e.code === 'ArrowDown' || e.code === 'Minus' || e.code === 'NumpadSubtract') && legal({q: sel.q - 1, f: sel.f}, prev, T)) { sel.q--; ctx.sfx('tick'); }
+        else if (e.code === 'Enter' && legal(sel, prev, T)) ctx.act({t: 'bid', q: sel.q, f: sel.f}, st.turn);
+        else if ((e.code === 'KeyO' || e.code === 'KeyC') && prev) ctx.act({t: 'call'}, st.turn);
+      },
       frame(dt) {
         const g = cv.g; cv.clear(); t += dt; btns = [];
         const L = layout(), tb = L.table;
@@ -198,7 +220,7 @@ BX.register({
           const gap = ds * .18, dw = n * ds + (n - 1) * gap, dx = P.x - dw / 2, dy = P.y - ds / 2;
           // dice (visible ones)
           if (show) for (let i = 0; i < n; i++) {
-            const v = dice[i], hit = reveal && st.res && (v === st.res.f || (st.res.f !== 1 && v === 1));
+            const v = dice[i], hit = reveal && st.res && (v === st.res.f || (wild && st.res.f !== 1 && v === 1));
             let rot = 0, yy = dy; if (shake.k < 1) { rot = Math.sin(t * 40 + i) * .4 * (1 - shake.k); yy += Math.sin(t * 30 + i * 2) * 3 * (1 - shake.k); }
             const dim = reveal && !hit;
             g.globalAlpha = dim ? .45 : 1;
@@ -247,6 +269,20 @@ BX.register({
           D.die(g, 10, -20, 40, st.bid.f);
           g.restore();
           D.text(g, '全场共 ' + total() + ' 颗骰子', cx, cy + 44 * Math.min(Z, 1.35), {size: 12, color: 'rgba(243,226,192,.7)', weight: 500});
+          // earlier bids this round (newest first)
+          const prevs = st.hist.slice(0, -1).reverse(), cw = 64, maxN = Math.max(0, Math.floor((tb.w * (N > 2 ? .5 : .8)) / (cw + 6)));
+          const shown = prevs.slice(0, maxN), hy = cy + 44 * Math.min(Z, 1.35) + 24;
+          if (shown.length) {
+            const x0 = cx - (shown.length * (cw + 6) - 6) / 2;
+            shown.forEach((h, k) => {
+              const x = x0 + k * (cw + 6), a = 1 - k / (shown.length + 1.5);
+              g.globalAlpha = a; g.fillStyle = 'rgba(20,10,5,.55)'; D.rr(g, x, hy - 13, cw, 26, 13); g.fill();
+              g.fillStyle = PCOL[h.by]; D.circle(g, x + 11, hy, 5); g.fill();
+              D.text(g, h.q + '×', x + 30, hy, {size: 13, color: '#f3e2c0', weight: 800});
+              D.die(g, x + 42, hy - 9, 18, h.f); g.globalAlpha = 1;
+            });
+            if (prevs.length > shown.length) D.text(g, '…', x0 + shown.length * (cw + 6) + 4, hy, {size: 14, color: 'rgba(243,226,192,.6)'});
+          }
         } else if (st.phase === 'bid') {
           D.text(g, '等待开口叫数', cx, cy, {size: 17, color: 'rgba(243,226,192,.75)', font: 'deco', weight: 400});
           D.text(g, '全场共 ' + total() + ' 颗骰子', cx, cy + 26, {size: 12, color: 'rgba(243,226,192,.6)', weight: 500});
@@ -272,7 +308,8 @@ BX.register({
       g.fillStyle = sh; D.rr(g, x, y + 3, w, h, 10); g.fill();
       const gr = g.createLinearGradient(0, y, 0, y + h); gr.addColorStop(0, c1); gr.addColorStop(1, c2); g.fillStyle = gr; D.rr(g, x, y, w, h, 10); g.fill();
       if (o.sel) { g.strokeStyle = '#fff3c4'; g.lineWidth = 3; D.rr(g, x - 1, y - 1, w + 2, h + 2, 11); g.stroke(); }
-      if (label) D.text(g, label, x + w / 2, y + h / 2 + 1, {size: o.size || Math.min(18, h * .42), color: o.fg || '#3a2410', weight: 800});
+      if (label) D.text(g, label, x + w / 2, y + h / 2 + 1 - (o.sub ? 7 : 0), {size: (o.size || Math.min(18, h * .42)) * (o.sub ? .9 : 1), color: o.fg || '#3a2410', weight: 800, maxW: w - 10});
+      if (o.sub) D.text(g, o.sub, x + w / 2, y + h - 10, {size: 11, color: o.fg || '#3a2410', weight: 600, maxW: w - 8});
       g.restore();
       btns.push({x, y: y - 2, w, h: h + 6, on, fn: o.fn || (() => {})});
     }
@@ -281,37 +318,41 @@ BX.register({
       g.strokeStyle = 'rgba(230,197,125,.3)'; g.lineWidth = 1; g.stroke();
       const T = total(), prev = st.bid, can = myTurn();
       if (can && selFor !== st.hist.length * 10 + st.round * 1000 + st.turn) resetSel();
-      const pad = 10, iw = P.w - pad * 2;
-      const fw0 = Math.min((iw - 30) / 6, 54), need = 34 + fw0 + 10 + 2 * 50 + 22;
+      const pad = 10, iw = P.w - pad * 2, zz = BX.clamp(Math.min(P.w / 330, P.h / 330), 1, 1.3);
+      const fw0 = Math.min((iw - 30) / 6, 54 * zz), need = 34 + fw0 + 10 + 2 * 50 * zz + 22;
       let y = P.y + Math.max(pad, (P.h - need) / 2);
       // title row
       const tl = st.over ? '对局结束' : st.phase === 'reveal' ? '揭盅清点中…' : can ? (prev ? '加叫或开' : '你先叫数') : '等待 ' + ctx.name(st.turn) + ' 叫数…';
-      D.text(g, tl, P.x + P.w / 2, y + 10, {size: 14, color: '#f3e2c0', weight: 700}); y += 24;
+      D.text(g, tl, P.x + P.w / 2, y + 10, {size: 14 * zz, color: '#f3e2c0', weight: 700}); y += 24 * zz;
       // faces
-      const fw = Math.min((iw - 5 * 6) / 6, 54), fx0 = P.x + (P.w - (fw * 6 + 30)) / 2;
+      const fw = Math.min((iw - 5 * 6) / 6, 54 * zz), fx0 = P.x + (P.w - (fw * 6 + 30)) / 2;
       for (let f = 1; f <= 6; f++) {
-        const x = fx0 + (f - 1) * (fw + 6), q0 = minQ(f, prev), ok = can && q0 <= T && legalBid({q: Math.max(q0, sel.f === f ? sel.q : q0), f}, prev, T);
+        const x = fx0 + (f - 1) * (fw + 6), q0 = mq(f, prev), ok = can && q0 <= T && legal({q: Math.max(q0, sel.f === f ? sel.q : q0), f}, prev, T);
         g.save(); g.globalAlpha = ok ? 1 : .35;
         if (sel.f === f && can) { g.fillStyle = 'rgba(255,215,106,.35)'; D.rr(g, x - 3, y - 3, fw + 6, fw + 6, 9); g.fill(); }
         D.die(g, x + fw * .1, y + fw * .1, fw * .8, f, {sel: sel.f === f && can ? '#ffd76a' : false});
+        if (can && ok) { const bw2 = Math.max(18, fw * .46), bh2 = 14; g.fillStyle = 'rgba(30,18,8,.85)'; D.rr(g, x + fw - bw2 + 2, y - 5, bw2, bh2, 7); g.fill(); D.text(g, '≥' + q0, x + fw - bw2 / 2 + 2, y + 2, {size: 10, color: C.gold2, weight: 800}); }
         g.restore();
-        btns.push({x, y, w: fw, h: fw, on: ok, fn: () => { sel.f = f; const m = minQ(f, prev); if (!legalBid(sel, prev, T)) sel.q = Math.min(T, m); ctx.sfx('click'); }});
+        btns.push({x, y, w: fw, h: fw, on: ok, fn: () => selFace(f)});
       }
       y += fw + 10;
       // quantity stepper + bid
-      const bh = Math.max(42, Math.min(50, (P.y + P.h - y - pad) / 2 - 6));
-      const stepW = 44, qW = Math.min(70, iw * .2);
+      const bh = Math.max(42, Math.min(50 * zz, (P.y + P.h - y - pad) / 2 - 6));
+      const stepW = 44 * zz, qW = Math.min(70 * zz, iw * .2);
       const x0 = P.x + pad;
-      button(g, x0, y, stepW, bh, '−', {on: can && legalBid({q: sel.q - 1, f: sel.f}, prev, T), size: 24, fn: () => { sel.q--; ctx.sfx('tick'); }});
+      button(g, x0, y, stepW, bh, '−', {on: can && legal({q: sel.q - 1, f: sel.f}, prev, T), size: 24, fn: () => { sel.q--; ctx.sfx('tick'); }});
       g.fillStyle = 'rgba(255,250,240,.95)'; D.rr(g, x0 + stepW + 6, y, qW, bh, 10); g.fill();
       D.text(g, can ? sel.q : '-', x0 + stepW + 6 + qW / 2, y + bh / 2 - 6, {size: 22, color: C.red, weight: 900, font: 'serif'});
       D.text(g, '个', x0 + stepW + 6 + qW / 2, y + bh - 9, {size: 10, color: C.ink2, weight: 600});
       button(g, x0 + stepW + 12 + qW, y, stepW, bh, '+', {on: can && sel.q < T, size: 24, fn: () => { sel.q++; ctx.sfx('tick'); }});
       const bx = x0 + stepW * 2 + 18 + qW, bw = P.x + P.w - pad - bx;
-      const okBid = can && legalBid(sel, prev, T);
-      button(g, bx, y, bw, bh, can ? '叫 ' + sel.q + ' 个 ' + sel.f + (sel.f === 1 ? '(斋)' : '') : '叫', {on: okBid, c1: '#5aa08a', c2: '#3f7f6b', sh: '#23503f', fg: '#f0fff8', fn: () => ctx.act({t: 'bid', q: sel.q, f: sel.f}, st.turn)});
+      const okBid = can && legal(sel, prev, T), showP = can && ctx.pref('hints');
+      const glow = (x, y, w, h) => { g.strokeStyle = `rgba(90,230,160,${.6 + .35 * Math.sin((t - hintT) * 7)})`; g.lineWidth = 4; D.rr(g, x - 4, y - 4, w + 8, h + 8, 13); g.stroke(); };
+      if (hintA && hintA.t === 'bid' && can) glow(bx, y, bw, bh);
+      button(g, bx, y, bw, bh, can ? '叫 ' + sel.q + ' 个 ' + sel.f + (sel.f === 1 && wild ? '(斋)' : '') : '叫', {on: okBid, c1: '#5aa08a', c2: '#3f7f6b', sh: '#23503f', fg: '#f0fff8', sub: showP && okBid ? '成立约 ' + pct(pBid(sel, st.turn)) : '', fn: () => ctx.act({t: 'bid', q: sel.q, f: sel.f}, st.turn)});
       y += bh + 10;
-      button(g, x0, y, iw, bh, prev ? '开！（不信 ' + prev.q + ' 个 ' + prev.f + '）' : '开！', {on: can && !!prev, c1: '#d0533f', c2: '#a33022', sh: '#6e1d14', fg: '#fff3e3', fn: () => ctx.act({t: 'call'}, st.turn)});
+      if (hintA && hintA.t === 'call' && can) glow(x0, y, iw, bh);
+      button(g, x0, y, iw, bh, prev ? '开！（不信 ' + prev.q + ' 个 ' + prev.f + '）' : '开！', {on: can && !!prev, c1: '#d0533f', c2: '#a33022', sh: '#6e1d14', fg: '#fff3e3', sub: showP && prev ? '上家叫数成立约 ' + pct(pBid(prev, st.turn)) : '', fn: () => ctx.act({t: 'call'}, st.turn)});
     }
     status();
     return inst;

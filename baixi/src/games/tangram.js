@@ -84,9 +84,11 @@ BX.register({
   id: 'tangram', title: '七巧板', cat: 'solo', order: 5, sub: '七块板拼万物',
   desc: '中国古老的拼板游戏。用两大、一中、两小五块三角形，加一块正方形和一块平行四边形，拼出 35 幅剪影：几何、文字、器物、鸟兽与人物。',
   kind: 'solo',
+  options: [{key: 'ol', label: '剪影', choices: [[0, '纯剪影'], [1, '显示分块线（简单）']], def: 0}],
+  howto: ['<b>拖动</b>木板到剪影上；<b>轻点</b>木板顺时针转 45°，<b>双击平行四边形</b>翻面（也可先选中再点底部「旋转」「翻转」）。', '木板放到正确位置附近会自动吸附；角度只差 45° 时也会帮你转正。', '电脑：滚轮或右键旋转（右键逆时针），R / Q 顺 / 逆时针，F 翻转，Z 撤销。', '💡 提示：第一次高亮一块板的去处，第二次直接放好。选项「显示分块线」更适合初学。'],
   rules: `<p>七巧板由 7 块组成：<b>大三角形 2 块、中三角形 1 块、小三角形 2 块、正方形 1 块、平行四边形 1 块</b>。每幅题目都恰好用全部 7 块拼成，块与块不能重叠。</p>
 <p><b>操作</b>：拖动木板移动；<b>轻点</b>一块板使其顺时针旋转 45°；<b>双击平行四边形</b>（或点底部「翻转」）把它翻面。也可以先点选一块，再用底部「旋转」「翻转」按钮。键盘：R 旋转、F 翻转、Z 撤销、H 提示。</p>
-<p>木板靠近正确位置且角度正确时会<b>自动吸附</b>到位；当剪影被完整覆盖、没有多出的部分时即告完成（另有拼法也算）。</p>
+<p>木板靠近正确位置且角度正确（或只差 45°）时会<b>自动吸附</b>到位；当剪影被完整覆盖、没有多出的部分时即告完成（另有拼法也算）。</p>
 <p>「提示」会高亮一块板的正确位置，再按一次直接替你放好。「图谱」选择题目，已完成的题目会打勾并记录最快用时。</p>`,
   icon(g, w, h) {
     D.paper(g, 0, 0, w, h, {color: '#efe2c4'});
@@ -95,7 +97,7 @@ BX.register({
     K.seal(g, w * .88, h * .18, h * .2, '巧');
   },
   create(ctx) {
-    const cv = ctx.canvas(), fx = K.fx(), say = K.status(ctx);
+    const cv = ctx.canvas(), fx = K.fx(), say = K.status(ctx), OL = +ctx.opts.ol || 0;
     let pi = BX.clamp(ctx.load('cur', 0), 0, PUZ.length - 1);
     let P, pcs, order, sel = -1, drag = null, undoS = [], time = 0, moves = 0, started = false, won = false, hintSt = null, hints = 0, winT = 0, L = null, pendTap = null;
     const done = () => ctx.load('done', {});
@@ -103,7 +105,6 @@ BX.register({
       {k: 'undo', ic: '↶', t: '撤销', on: () => undo()},
       {k: 'rot', ic: '⟳', t: '旋转', on: () => { if (sel >= 0) act(() => rotate(sel)); else ctx.toast('先点选一块板'); }},
       {k: 'flip', ic: '⇋', t: '翻转', on: () => { sel = 6; bring(6); act(() => flip(6)); }},
-      {k: 'hint', ic: '☞', t: '提示', on: () => hint()},
       {k: 'pick', ic: '▦', t: '图谱', on: () => pick()},
     ]);
     function load(i) {
@@ -123,18 +124,21 @@ BX.register({
     /* ---------- geometry of pieces ---------- */
     const angOf = pc => pc.ka * Math.PI / 4;
     const polyOf = pc => polyAt(pc.p, angOf(pc), pc.f ? -1 : 1, pc.cx, pc.cy);
-    function trySnap(i) {
+    function trySnap(i, assist) {
       const pc = pcs[i]; pc.snap = -1;
-      const pv = polyOf(pc), c = [pc.cx, pc.cy];
-      const rel = pv.map(([a, b]) => [a - c[0], b - c[1]]);
-      let best = -1, bd = .55;
-      P.slots.forEach((s, j) => {
-        if (s.cls !== CLS[pc.p] || pcs.some((q, qi) => qi !== i && q.snap === j)) return;
-        const d = Math.hypot(s.c[0] - c[0], s.c[1] - c[1]); if (d >= bd) return;
-        const sr = s.v.map(([a, b]) => [a - s.c[0], b - s.c[1]]);
-        if (rel.every(([a, b]) => sr.some(([x, y]) => Math.abs(x - a) < .03 && Math.abs(y - b) < .03))) { best = j; bd = d; }
-      });
-      if (best >= 0) { pc.cx = P.slots[best].c[0]; pc.cy = P.slots[best].c[1]; pc.snap = best; pc.home = false; ctx.sfx('place'); return true; }
+      const c = [pc.cx, pc.cy], R0 = BX.TOUCH.matches ? .62 : .55;
+      let best = -1, bd = R0, bdl = 0;
+      for (const dl of assist ? [0, 1, -1] : [0]) {   // assist: also accept a slot that is only 45° off
+        const rel = polyAt(pc.p, (pc.ka + dl) * Math.PI / 4, pc.f ? -1 : 1, 0, 0);
+        P.slots.forEach((s, j) => {
+          if (s.cls !== CLS[pc.p] || pcs.some((q, qi) => qi !== i && q.snap === j)) return;
+          const d = Math.hypot(s.c[0] - c[0], s.c[1] - c[1]); if (d >= bd) return;
+          const sr = s.v.map(([a, b]) => [a - s.c[0], b - s.c[1]]);
+          if (rel.every(([a, b]) => sr.some(([x, y]) => Math.abs(x - a) < .03 && Math.abs(y - b) < .03))) { best = j; bd = d; bdl = dl; }
+        });
+        if (best >= 0) break;
+      }
+      if (best >= 0) { if (bdl) { pc.ka += bdl; pc.k = ((pc.k + bdl) % 8 + 8) % 8; } pc.cx = P.slots[best].c[0]; pc.cy = P.slots[best].c[1]; pc.snap = best; pc.home = false; ctx.sfx('place'); return true; }
       return false;
     }
     const snapState = () => JSON.stringify(pcs.map(q => [q.k, q.ka, q.f, q.cx, q.cy, q.home, q.snap]));
@@ -144,7 +148,7 @@ BX.register({
       JSON.parse(undoS.pop()).forEach((a, i) => { const q = pcs[i]; [q.k, q.ka, q.f, q.cx, q.cy, q.home, q.snap] = a; });
       ctx.sfx('whoosh'); hintSt = null;
     }
-    function rotate(i) { const pc = pcs[i]; pc.k = (pc.k + 1) % 8; pc.ka++; if (!pc.home) trySnap(i); ctx.sfx(pc.snap >= 0 ? 'place' : 'tick'); if (pc.home) { pc.home = false; pc.hx = pc.cx; } }
+    function rotate(i, dir = 1) { const pc = pcs[i]; pc.k = ((pc.k + dir) % 8 + 8) % 8; pc.ka += dir; if (!pc.home) trySnap(i); ctx.sfx(pc.snap >= 0 ? 'place' : 'tick'); if (pc.home) { pc.home = false; pc.hx = pc.cx; } }
     function flip(i) { const pc = pcs[i]; pc.f ^= 1; ctx.sfx('flip'); if (pc.home) pc.home = false; trySnap(i); }
     function afterAct() { hintSt = hintSt && pcs[hintSt.i].snap === hintSt.s ? null : hintSt; checkWin(); }
     /* coverage test with an offscreen raster */
@@ -175,16 +179,16 @@ BX.register({
       // next unsolved puzzle becomes current (so 再来一局 opens it)
       let nx = pi; for (let k = 1; k <= PUZ.length; k++) { const j = (pi + k) % PUZ.length; if (dn[j] == null) { nx = j; break; } if (k === PUZ.length) nx = (pi + 1) % PUZ.length; }
       ctx.save('cur', nx);
-      ctx.sfx('gong'); ctx.after(500, () => { fx.rain(cv.w, cv.h, 60); ctx.sfx('win'); });
+      ctx.sfx('gong'); ctx.buzz(30); ctx.after(500, () => { fx.rain(cv.w, cv.h, 60); ctx.sfx('win'); });
       const nd = Object.keys(dn).length;
       ctx.end({win: true, title: '巧夺天工', text: `「${P.name}」 用时 ${K.fmt(secs)} 步数 ${moves}` + (hints ? ` · 提示 ${hints} 次` : '') + (old == null || secs < old ? ' · 新纪录！' : '') + ` · 图谱 ${nd}/${PUZ.length}`, delay: 2200});
     }
     function hint() {
       if (won) return;
       if (hintSt && pcs[hintSt.i].snap !== hintSt.s) {   // second press: place it
-        const pc = pcs[hintSt.i], s = P.slots[hintSt.s];
-        act(() => { pc.k = s.k; pc.f = s.f; pc.ka = pc.ka + (((s.k - pc.ka) % 8) + 8) % 8; pc.cx = s.c[0]; pc.cy = s.c[1]; pc.home = false; trySnap(hintSt.i); if (pc.snap < 0) { pc.cx = s.c[0]; pc.cy = s.c[1]; pc.snap = hintSt.s; } });
-        bring(hintSt.i); hintSt = null; return;
+        const hi = hintSt.i, hs = hintSt.s, pc = pcs[hi], s = P.slots[hs];
+        act(() => { pc.k = s.k; pc.f = s.f; pc.ka = pc.ka + (((s.k - pc.ka) % 8) + 8) % 8; pc.cx = s.c[0]; pc.cy = s.c[1]; pc.home = false; trySnap(hi); if (pc.snap < 0) { pc.cx = s.c[0]; pc.cy = s.c[1]; pc.snap = hs; } });
+        bring(hi); hintSt = null; return;
       }
       // pick an empty slot (largest first) and a free piece of that class
       const free = P.slots.map((s, j) => j).filter(j => !pcs.some(q => q.snap === j)).sort((a, b) => P.slots[a].p - P.slots[b].p);
@@ -225,10 +229,18 @@ BX.register({
       let best = -1, bd = BX.TOUCH.matches ? .5 : .25; for (const i of order) { const d = Math.hypot(pcs[i].cx - w[0], pcs[i].cy - w[1]); if (d < bd) { bd = d; best = i; } }
       return best;
     }
+    ctx.on(cv.cv, 'contextmenu', e => e.preventDefault());
+    ctx.on(cv.cv, 'wheel', e => {
+      if (won || !L || drag) return; e.preventDefault();
+      const i = pieceAt(cv.pos(e)); if (i < 0) return;
+      const now = performance.now(); if (now - (L.wheelT || 0) < 140) return; L.wheelT = now;
+      bring(i); sel = i; act(() => rotate(i, e.deltaY < 0 ? -1 : 1));
+    }, {passive: false});
     ctx.on(cv.cv, 'pointerdown', e => {
       if (won || !L || drag) return;
       const p = cv.pos(e), i = pieceAt(p);
       if (i < 0) { sel = -1; return; }
+      if (e.button === 2) { bring(i); sel = i; act(() => rotate(i, -1)); return; }
       const w = toW(p); bring(i); sel = i;
       drag = {i, sx: p.x, sy: p.y, dx: w[0] - pcs[i].cx, dy: w[1] - pcs[i].cy, moved: false, pid: e.pointerId, before: snapState(), mouse: e.pointerType === 'mouse'};
       try { cv.cv.setPointerCapture(e.pointerId); } catch (_) {}
@@ -246,7 +258,7 @@ BX.register({
       if (won) return;
       if (d.moved) {
         undoS.push(d.before); moves++; started = true;
-        if (!trySnap(d.i)) ctx.sfx('tick');
+        if (!trySnap(d.i, true)) ctx.sfx('tick');
         afterAct(); return;
       }
       // tap: rotate, or double tap on the parallelogram: flip
@@ -282,6 +294,7 @@ BX.register({
         if (won) { winT += dt; }
         drawSil(g, P, ox, oy, u, won ? `rgba(200,160,82,${Math.min(1, winT * 2)})` : '#2b2118');
         if (!won) { g.save(); g.globalAlpha = .07; drawSil(g, P, ox + 3, oy + 4, u, '#000'); g.restore(); }
+        if (OL && !won) { g.save(); g.strokeStyle = 'rgba(243,226,192,.55)'; g.lineWidth = Math.max(1, u * .025); g.lineJoin = 'round'; for (const s of P.slots) { pathPoly(g, s.v, ox, oy, u); g.stroke(); } g.restore(); }
         // hint slot
         if (hintSt) {
           hintSt.t += dt; const s = P.slots[hintSt.s], a = .5 + .5 * Math.sin(hintSt.t * 7);
@@ -303,9 +316,11 @@ BX.register({
         if (!won) say(pcs.every(q => q.home) ? '拖动木板到剪影上 · 轻点旋转' : `已就位 ${pcs.filter(q => q.snap >= 0).length}/7 · 轻点旋转，双击平行四边形翻面`);
         bar.dis('undo', !undoS.length || won); bar.dis('rot', sel < 0 || won); bar.dis('flip', won); bar.dis('hint', won);
       },
+      hint: () => hint(),
       key(e) {
         if (won) return;
-        if (e.code === 'KeyR' && sel >= 0) act(() => rotate(sel));
+        if ((e.code === 'KeyR' || e.code === 'KeyE') && sel >= 0) act(() => rotate(sel));
+        if (e.code === 'KeyQ' && sel >= 0) act(() => rotate(sel, -1));
         if (e.code === 'KeyF') act(() => flip(6));
         if (e.code === 'KeyZ') undo();
         if (e.code === 'KeyH') hint();

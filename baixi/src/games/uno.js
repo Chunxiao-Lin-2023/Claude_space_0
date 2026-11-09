@@ -62,13 +62,20 @@ BX.register({
   desc: '朱、金、翠、靛四色彩牌，同色或同号即可接上，禁、转、+2、变色、变色+4 搅局。剩一张记得「喊一张」！',
   kind: 'turn', seats: [2, 4], defSeats: 2, hidden: true, firstLabel: '座位', aiDelay: 600, anyTimeActs: true,
   seatColors: ['#c23a2b', '#2f5d8a', '#3f8f5b', '#d9a12b'],
+  options: [{key: 'stack', label: '+2/+4 叠加', choices: [[0, '经典（不叠加）'], [1, '可以叠加']], def: 0}],
+  howto: ['能出的牌会微微抬起，不能出的变暗。点一张选中，<b>再点一次</b>或把它<b>往上一划</b>就打出；也可以按「出牌」。',
+    '点中间的<b>牌堆</b>或「摸牌」摸一张；手里没有能出的牌时会自动摸牌。',
+    '出黑牌时会弹出选色盘（标出你手里每种颜色的张数，金圈是推荐色）。',
+    '剩两张时先按「喊一张」再出牌；忘了的话出完后赶紧补按，否则罚摸 2 张。💡 显示高级电脑的建议。',
+    '键盘：Enter 出牌 · 空格/D 摸牌 · U 喊一张 · ←→ 选牌 · 选色时按 1~4。'],
   rules: `<p><b>牌组</b>：共 108 张。朱、金、翠、靛四色，每色 0 一张、1～9 各两张，以及功能牌「禁」（跳过）、「转」（反转）、「+2」各两张；另有黑色「变色」4 张、「变色+4」4 张。</p>
 <p><b>开局</b>：每人 7 张，翻开一张作为起始牌（翻到黑牌则放回重翻；翻到功能牌时其效果对第一位出牌者生效）。</p>
 <p><b>出牌</b>：轮到你时，出一张与弃牌堆顶<b>同色</b>或<b>同数字/同符号</b>的牌，或任意一张黑牌。没有可出的牌（或不想出）就<b>摸一张</b>；摸到的牌若能出，可以立刻打出，否则轮到下家。</p>
 <p><b>功能牌</b>：<b>禁</b>：下家被跳过；<b>转</b>：出牌方向反转（两人对局时等同于「禁」）；<b>+2</b>：下家摸 2 张并跳过；<b>变色</b>：任意时候可出，由你指定接下来的颜色；<b>变色+4</b>：指定颜色，下家摸 4 张并跳过——只有当你手中<b>没有当前颜色</b>的牌时才能出（本版不设质疑）。</p>
 <p><b>喊一张</b>：出完牌后手里只剩一张时，要按「喊一张」。可以在出倒数第二张牌之前先按（按钮会亮起），也可以出完后、下家行动前补喊。下家行动前还没喊，罚摸 2 张。</p>
 <p><b>胜负</b>：最先出完手牌者赢得本局，得分为其他玩家手中剩余牌的点数之和（数字牌按面值，禁/转/+2 各 20 分，黑牌各 50 分）。</p>
-<p><b>操作</b>：点一下选中（抬起），再点一次或按「出牌」打出；出黑牌时选择颜色。灰暗的牌表示现在不能出。</p>`,
+<p><b>叠加（可选玩法）</b>：开局选项开启后，被 +2 时可以再出一张 +2（或 +4）把累计张数传给下家；被 +4 时只能再叠 +4。叠不上的人一次摸走累计的全部张数并跳过。叠加时 +4 不受「没有当前颜色」的限制。</p>
+<p><b>操作</b>：点一下选中（抬起），再点一次、上划或按「出牌」打出；点牌堆摸牌；出黑牌时选择颜色。灰暗的牌表示现在不能出；没有能出的牌时自动摸牌。</p>`,
   icon(g, w, h) {
     D.iconBase(g, w, h, '#4a1f14', '#1f0c06');
     const ids = [CARDS.findIndex(c => c[0] === 0 && c[1] === 7), CARDS.findIndex(c => c[0] === 1 && c[1] === 12), CARDS.findIndex(c => c[0] === 2 && c[1] === 11), CARDS.findIndex(c => c[0] === 3 && c[1] === 10), 104];
@@ -78,15 +85,17 @@ BX.register({
   },
   create(ctx) {
     const U = BX.data.ddz.ui, N = ctx.n;
-    const st = {ph: 'deal', hands: [], pile: [], disc: [], col: 0, dir: 1, turn: 0, drawn: -1, unoP: -1, lack: [], said: [], ev: null, res: null, seq: 0, moves: 0};
+    const st = {ph: 'deal', hands: [], pile: [], disc: [], col: 0, dir: 1, turn: 0, drawn: -1, unoP: -1, lack: [], said: [], ev: null, res: null, seq: 0, moves: 0, pend: 0};
+    const STACK = +((ctx.opts || {}).stack) === 1;
     const cv = ctx.canvas();
-    const ui = {dealT: 1, sel: -1, pick: -1, unoArm: false, fx: [], fly: null, t: 0, btns: [], lay: null, shake: 0, petals: []};
+    const ui = {dealT: 1, sel: -1, pick: -1, unoArm: false, fx: [], fly: null, t: 0, btns: [], lay: null, shake: 0, petals: [], hintA: null, drag: null, autoT: -1, pileHit: null};
     const nxt = (s, k = 1) => ((s + st.dir * k) % N + N) % N;
     const top = () => st.disc[st.disc.length - 1];
     /* ---------- rules ---------- */
     function canPlay(seat, id) {
       const c = colOf(id), k = kOf(id), t = top(), tk = kOf(t);
       if (st.drawn >= 0 && id !== st.drawn) return false;
+      if (st.pend > 0) return k === 14 || (k === 12 && tk === 12);   // stacking: only +2 on +2, +4 on anything
       if (k === 13) return true;
       if (k === 14) return !st.hands[seat].some(i => i !== id && colOf(i) === st.col);
       return c === st.col || (tk < 13 && k === tk);
@@ -127,7 +136,7 @@ BX.register({
       ctx.end({winner: w, text: ctx.name(w) + ' 率先出完，得 ' + score + ' 分（' + det.join('，') + '）', delay: 1300});
     }
     function apply(a, by) {
-      st.seq++;
+      st.seq++; ui.hintA = null;
       if (a.t === 'go') { st.ph = 'play'; if (st.startK >= 10) fx(KN(st.startK), '#ffe2a0'); return; }
       if (a.t === 'uno') { if (st.unoP === by) { st.unoP = -1; st.said[by] = 1; ctx.sfx('bell'); fx(ctx.name(by) + '：喊一张！', '#ffd76a'); } return; }
       // the next player is acting: anyone who reached one card without calling gets caught
@@ -136,6 +145,13 @@ BX.register({
         if (st.hands[p].length === 1) { drawN(p, 2); ctx.sfx('buzz'); fx(ctx.name(p) + ' 忘喊一张，罚摸 2', '#ff9a7a'); }
       }
       st.moves++;
+      if (a.t === 'draw' && st.pend > 0) {   // can't stack: take the whole pile-up and lose the turn
+        const n = st.pend; st.pend = 0; const got = drawN(by, n); st.drawn = -1; st.turn = nxt(by);
+        st.ev = {k: 'pen', s: by, n: got.length, q: st.seq}; ctx.sfx('hit'); fx(ctx.name(by) + ' 摸 ' + got.length + ' 张', '#ff9a7a', n >= 6);
+        if (by === ctx.view) ctx.buzz(30);
+        if (!ctx.fast && got.length) { ui.fly = {draw: true, seat: by, id: got[0], k: 0}; ctx.anim(300, k => { if (ui.fly) ui.fly.k = k; }, () => ui.fly = null, BX.ease.out); }
+        return;
+      }
       if (a.t === 'draw') {
         st.lack[by] |= 1 << st.col;
         const got = drawN(by, 1); ctx.sfx('flip'); st.ev = {k: 'draw', s: by, n: got.length, q: st.seq};
@@ -166,9 +182,11 @@ BX.register({
         let next = nxt(by);
         if (k === 10) { fx('禁！' + ctx.name(next) + ' 跳过', '#ffe2a0'); next = nxt(by, 2); }
         else if (k === 11) { st.dir = -st.dir; fx(N === 2 ? '转！再出一手' : '转！方向反转', '#ffe2a0'); next = N === 2 ? by : nxt(by); ctx.sfx('whoosh'); }
-        else if (k === 12) { drawN(next, 2); fx(ctx.name(next) + ' 摸 2 张', '#ff9a7a'); next = nxt(by, 2); ctx.sfx('hit'); }
+        else if (k === 12 && STACK) { st.pend += 2; fx('+2！累计 ' + st.pend + ' 张', '#ff9a7a', st.pend >= 4); ctx.sfx('hit'); }
+        else if (k === 12) { drawN(next, 2); fx(ctx.name(next) + ' 摸 2 张', '#ff9a7a'); next = nxt(by, 2); ctx.sfx('hit'); if (next !== ctx.view && nxt(by) === ctx.view) ctx.buzz(25); }
         else if (k === 13) { fx('变色 · ' + CN[st.col], COL[st.col]); }
-        else if (k === 14) { drawN(next, 4); fx('变色+4 · ' + CN[st.col] + '！', COL[st.col], true); next = nxt(by, 2); ui.shake = 1; ctx.sfx('boom'); }
+        else if (k === 14 && STACK) { st.pend += 4; fx('变色+4 · ' + CN[st.col] + '！累计 ' + st.pend, COL[st.col], true); ui.shake = 1; ctx.sfx('boom'); }
+        else if (k === 14) { drawN(next, 4); fx('变色+4 · ' + CN[st.col] + '！', COL[st.col], true); next = nxt(by, 2); ui.shake = 1; ctx.sfx('boom'); if (nxt(by) === ctx.view) ctx.buzz(35); }
         if (!hand.length) { finish(by); return; }
         st.turn = next;
       }
@@ -228,11 +246,12 @@ BX.register({
       if (!showIds.length) hand.top = h - pad - ch;
       const bh = BX.clamp(cw * .56, 44, 52), btnY = hand.top - bh - 12 - cw * .14;
       const PW = BX.clamp(w * (portrait ? .3 : .15), 104, 170), PH = BX.clamp(PW * .4, 46, 62);
-      const seats = [], opp = BX.range(N - 1);
+      const seats = [], opp = BX.range(N - 1), side = !portrait && h < 520;
       for (let s = 0; s < N; s++) {
         const r = rel(s); if (!r) { seats[s] = null; continue; }
         let x, y;
-        if (portrait) { const k = N - 1, gw = (w - 2 * pad - PW) / Math.max(1, k - 1); x = k === 1 ? w / 2 - PW / 2 : pad + (r - 1) * gw; y = pad + (k === 3 && r === 2 ? 0 : k === 3 ? PH * .25 : 0); }
+        if (side) { y = pad; x = N === 2 ? pad : N === 3 ? (r === 1 ? pad : w - pad - PW) : r === 1 ? pad : r === 2 ? w / 2 - PW / 2 : w - pad - PW; }
+        else if (portrait) { const k = N - 1, gw = (w - 2 * pad - PW) / Math.max(1, k - 1); x = k === 1 ? w / 2 - PW / 2 : pad + (r - 1) * gw; y = pad + (k === 3 && r === 2 ? 0 : k === 3 ? PH * .25 : 0); }
         else if (N === 2) { x = w / 2 - PW / 2; y = pad; }
         else if (N === 3) { x = r === 1 ? pad : w - pad - PW; y = h * .12; }
         else { x = r === 1 ? pad : r === 2 ? w / 2 - PW / 2 : w - pad - PW; y = r === 2 ? pad : h * .18; }
@@ -240,9 +259,9 @@ BX.register({
       }
       // the centre (pile + ring) sits between the opponents above it and my buttons
       let topLim = pad;
-      for (const sp of seats) if (sp && (portrait || Math.abs(sp.x + PW / 2 - w / 2) < w * .25)) topLim = Math.max(topLim, sp.y + PH + 8 + cw * .75 + 22);
+      for (const sp of seats) if (sp && (portrait || Math.abs(sp.x + PW / 2 - w / 2) < w * .25)) topLim = Math.max(topLim, sp.y + PH + 8 + (side ? 18 : cw * .75 + 22));
       const avail = btnY - topLim, pw = BX.clamp(Math.min(cw * .95, avail * .62 / 1.5), 30, cw), cy = topLim + avail / 2;
-      return {w, h, portrait, pad, cw, ch, ids: showIds, hand, raise: ch * .16, bh, btnY, PW, PH, seats, cx: w / 2, cy, opp, pw, avail};
+      return {w, h, portrait, side, pad, cw, ch, ids: showIds, hand, raise: ch * .16, bh, btnY, PW, PH, seats, cx: w / 2, cy, opp, pw, avail};
     }
     /* ---------- input ---------- */
     const myTurn = () => st.ph === 'play' && ctx.canAct(st.turn);
@@ -253,14 +272,15 @@ BX.register({
       const late = st.unoP === me && ctx.isLocal(me) && !BX.bot;
       if (myTurn()) {
         const defs = [];
-        if (st.drawn >= 0) defs.push({label: '不出', kind: 'ghost', act: 'keep'});
-        else defs.push({label: '摸牌', kind: 'ghost', act: 'draw'});
+        const ha = ui.hintA && ui.hintA.seq === st.seq ? ui.hintA.a : null;
+        if (st.drawn >= 0) defs.push({label: '不出', kind: 'ghost', act: 'keep', glow: !!ha && ha.t === 'keep'});
+        else defs.push({label: st.pend ? '摸 ' + st.pend + ' 张' : '摸牌', kind: st.pend ? 'red' : 'ghost', act: 'draw', glow: !!ha && ha.t === 'draw'});
         if (st.hands[me].length === 2) defs.push({label: ui.unoArm ? '已喊 ✓' : '喊一张', kind: ui.unoArm ? 'jade' : 'gold', act: 'arm'});
-        if (late) defs.push({label: '喊一张！', kind: 'gold', act: 'late'});
-        defs.push({label: '出牌', kind: 'red', dis: !(ui.sel >= 0 && canPlay(me, ui.sel)), act: 'play'});
+        if (late) defs.push({label: '喊一张！', kind: 'gold', act: 'late', glow: true});
+        defs.push({label: '出牌', kind: st.pend ? 'gold' : 'red', dis: !(ui.sel >= 0 && canPlay(me, ui.sel)), act: 'play', glow: !!ha && ha.t === 'play'});
         return U.row(defs, lay.w / 2, lay.btnY, lay.bh, Math.min(lay.w - 2 * lay.pad, 420));
       }
-      if (late) return U.row([{label: '喊一张！', kind: 'red', act: 'late'}], lay.w / 2, lay.btnY, lay.bh, 200);
+      if (late) return U.row([{label: '喊一张！', kind: 'red', act: 'late', glow: true}], lay.w / 2, lay.btnY, lay.bh, 200);
       return out;
     }
     function playSel() {
@@ -276,29 +296,49 @@ BX.register({
       else if (b.act === 'play') playSel();
       else if (b.act === 'late') { ctx.sfx('click'); ctx.act({t: 'uno'}, meIdx()); }
     }
+    function pickCol(c) { if (ui.pick < 0 || !myTurn()) { ui.pick = -1; return; } const me = meIdx(); send({t: 'play', id: ui.pick, col: c, uno: st.hands[me].length === 2 && ui.unoArm ? 1 : 0}); ui.pick = -1; }
     ctx.on(cv.cv, 'pointerdown', e => {
       const p = cv.pos(e), lay = ui.lay; if (!lay) return;
       if (ui.pick >= 0) {
         const hit = ui.petals.find(q => (p.x - q.x) ** 2 + (p.y - q.y) ** 2 <= q.r * q.r);
-        if (hit && myTurn()) { const me = meIdx(); send({t: 'play', id: ui.pick, col: hit.c, uno: st.hands[me].length === 2 && ui.unoArm ? 1 : 0}); }
-        ui.pick = -1; return;
+        if (hit) pickCol(hit.c); else ui.pick = -1;
+        return;
       }
       const b = U.hitBtn(ui.btns, p); if (b) { b.down = true; press(b); return; }
       if (st.ph !== 'play') return;
+      const ph0 = ui.pileHit;   // tap the draw pile = 摸牌
+      if (ph0 && myTurn() && st.drawn < 0 && p.x >= ph0.x && p.x <= ph0.x + ph0.w && p.y >= ph0.y && p.y <= ph0.y + ph0.h) { press({act: 'draw'}); return; }
       const i = U.hitHand(lay.hand.rects, p, j => lay.ids[j] === ui.sel ? lay.raise : 0);
       if (i < 0) { ui.sel = -1; return; }
       const id = lay.ids[i], me = meIdx();
+      ui.drag = {id, x0: p.x, y0: p.y};
       if (!myTurn()) { ui.sel = ui.sel === id ? -1 : id; ctx.sfx('tick'); return; }
-      if (!canPlay(me, id)) { ctx.sfx('error'); ui.sel = id; ui.bad = {id, t: .35}; return; }
-      if (ui.sel === id) playSel(); else { ui.sel = id; ctx.sfx('select'); }
+      if (!canPlay(me, id)) { ctx.sfx('error'); ctx.buzz(15); ui.sel = id; ui.bad = {id, t: .35}; ui.drag = null; return; }
+      if (ui.sel === id) { ui.drag = null; playSel(); } else { ui.sel = id; ctx.sfx('select'); }
+      try { cv.cv.setPointerCapture(e.pointerId); } catch (er) {}
     });
+    ctx.on(cv.cv, 'pointermove', e => {   // flick a playable card upward to play it
+      const d = ui.drag; if (!d) return; const p = cv.pos(e), dx = p.x - d.x0, dy = p.y - d.y0;
+      if (dy < -40 && Math.abs(dy) > Math.abs(dx) * 1.3) { ui.drag = null; if (myTurn() && canPlay(meIdx(), d.id)) { ui.sel = d.id; playSel(); } }
+    });
+    const endDrag = () => { ui.drag = null; };
+    ctx.on(cv.cv, 'pointerup', endDrag); ctx.on(cv.cv, 'pointercancel', endDrag);
+    /* nothing playable → draw by itself after a short beat (a forced move) */
+    let autoTok = -1;
+    function maybeAuto() {
+      if (ctx.fast || ctx.ended || !myTurn() || st.drawn >= 0 || ui.pick >= 0) return;
+      const seq = st.seq, me = meIdx(); if (autoTok === seq) return;
+      if (playable(me).length) return;
+      autoTok = seq; ui.autoT = ui.t;
+      ctx.after(st.pend ? 1500 : 1200, () => { if (st.seq === seq && myTurn() && st.drawn < 0 && !playable(me).length) send({t: 'draw'}); });
+    }
     /* ---------- status ---------- */
     function status() {
       for (let s = 0; s < N; s++) ctx.info(s, st.ph === 'deal' ? '' : st.hands[s].length + '张');
       if (st.ph === 'over') { ctx.status(ctx.name(st.res.w) + ' 出完了！'); return; }
       if (st.ph === 'deal') { ctx.status('洗牌发牌中…'); return; }
       const c = '<b style="color:' + D.shade(COL[st.col], 25) + '">' + CN[st.col] + '色</b>';
-      if (myTurn()) ctx.status((ctx.hotseat ? ctx.name(st.turn) + '：' : '') + (st.drawn >= 0 ? '摸到能出的牌，出还是不出？' : '轮到你 · 当前 ' + c));
+      if (myTurn()) ctx.status((ctx.hotseat ? ctx.name(st.turn) + '：' : '') + (st.pend ? `叠加 +2/+4，或摸 ${st.pend} 张` : st.drawn >= 0 ? '摸到能出的牌，出还是不出？' : '轮到你 · 当前 ' + c));
       else ctx.status('等待 ' + ctx.name(st.turn) + ' · 当前 ' + c);
     }
     /* ---------- drawing ---------- */
@@ -320,8 +360,17 @@ BX.register({
       const pw = lay.pw, ph = pw * 1.5, px = cx - pw - pw * .2, py = cy - ph / 2, dx = cx + pw * .2;
       const pileN = Math.min(6, Math.ceil(st.pile.length / 15));
       for (let i = 0; i < pileN; i++) drawCard(g, px - i * 1.4, py - i * 1.4, pw, ph, null, {shadow: i === pileN - 1});
-      if (myTurn() && st.drawn < 0 && !playable(me).length) { g.strokeStyle = `rgba(255,215,106,${.5 + .5 * Math.sin(ui.t * 6)})`; g.lineWidth = 3; D.rr(g, px - pileN * 1.4 - 3, py - pileN * 1.4 - 3, pw + 6, ph + 6, pw * .12); g.stroke(); }
-      D.text(g, st.pile.length + '', px + pw / 2, py + ph + 11, {size: BX.clamp(cw * .2, 11, 14), color: 'rgba(243,226,192,.7)'});
+      ui.pileHit = {x: px - pileN * 1.4 - 8, y: py - pileN * 1.4 - 8, w: pw + 16 + pileN * 1.4, h: ph + 16 + pileN * 1.4};
+      const hd = ui.hintA && ui.hintA.seq === st.seq && ui.hintA.a.t === 'draw';
+      if (myTurn() && st.drawn < 0 && (hd || (!playable(me).length && ctx.pref('hints')))) { g.strokeStyle = `rgba(255,215,106,${.5 + .5 * Math.sin(ui.t * 6)})`; g.lineWidth = 3; D.rr(g, px - pileN * 1.4 - 3, py - pileN * 1.4 - 3, pw + 6, ph + 6, pw * .12); g.stroke(); }
+      D.text(g, '牌堆 ' + st.pile.length, px + pw / 2, py + ph + 11, {size: BX.clamp(cw * .2, 11, 14), color: 'rgba(243,226,192,.7)'});
+      if (st.ph === 'play' && st.ev && st.ev.k === 'play') D.text(g, (st.ev.s === me && !ctx.hotseat ? '你' : ctx.name(st.ev.s)) + ' 出', dx + pw / 2, py + ph + 11, {size: BX.clamp(cw * .2, 11, 14), color: 'rgba(243,226,192,.85)', maxW: pw * 1.6});
+      if (st.pend) {   // stacking: pending draw badge
+        const bx = dx + pw * .95, by = py + ph * .12, br = Math.max(16, pw * .32);
+        g.save(); g.shadowColor = 'rgba(0,0,0,.4)'; g.shadowBlur = 6; D.circle(g, bx, by, br); g.fillStyle = '#c8372d'; g.fill(); g.restore();
+        g.strokeStyle = '#ffe7a8'; g.lineWidth = 2; D.circle(g, bx, by, br); g.stroke();
+        D.text(g, '+' + st.pend, bx, by + 1, {size: br * .9, color: '#fff8ea', weight: 900});
+      }
       const nd = st.disc.length, flying = ui.fly && !ui.fly.draw ? ui.fly : null;
       for (let i = Math.max(0, nd - 4); i < nd; i++) {
         const id = st.disc[i]; if (flying && i === nd - 1) continue;
@@ -348,11 +397,12 @@ BX.register({
         const n = st.ph === 'deal' ? Math.min(st.hands[s].length, Math.floor(ui.dealT * 7.99)) : st.hands[s].length;
         // fan of backs under the plaque
         const bw = cw * .5, bhh = bw * 1.5, k = Math.min(n, 12), step = Math.min(bw * .35, (lay.PW - bw) / Math.max(1, k - 1));
-        const fx0 = sp.x + lay.PW / 2 - (bw + step * (k - 1)) / 2, fy = sp.y + lay.PH + 6;
-        if (st.ph !== 'over') for (let i = 0; i < k; i++) drawCard(g, fx0 + i * step, fy, bw, bhh, null, {shadow: false});
+        const fx0 = sp.x + lay.PW / 2 - (bw + step * (k - 1)) / 2, fy = lay.side ? sp.y + lay.PH - bhh - 2 : sp.y + lay.PH + 6;
+        if (lay.side && st.ph !== 'over') {}
+        else if (st.ph !== 'over') for (let i = 0; i < k; i++) drawCard(g, fx0 + i * step, fy, bw, bhh, null, {shadow: false});
         else { const pos = U.fanPos(n, sp.x + lay.PW / 2, fy, bw * 1.1, bhh * 1.1, 'c', Math.max(lay.PW, cw * 3)); st.hands[s].forEach((id, i) => drawCard(g, pos[i].x, pos[i].y, bw * 1.1, bhh * 1.1, id, {shadow: false})); }
         U.plaque(g, sp.x, sp.y, lay.PW, lay.PH, {name: ctx.name(s), color: ctx.color(s), active: st.turn === s && st.ph === 'play', count: n, alarm: st.ph === 'play' && n === 1, t: ui.t, sub: ctx.isAI(s) ? BX.LEVELS[ctx.level(s)] : ''});
-        if (st.ph === 'play' && st.ev && st.ev.s === s && (st.ev.k === 'draw' || st.ev.k === 'keep') && st.turn !== s) U.bubble(g, sp.x + lay.PW / 2, fy + bhh + 16, st.ev.k === 'draw' ? '摸牌' : '不出', BX.clamp(cw * .22, 12, 16));
+        if (st.ph === 'play' && st.ev && st.ev.s === s && (st.ev.k === 'draw' || st.ev.k === 'keep' || st.ev.k === 'pen') && st.turn !== s) U.bubble(g, sp.x + lay.PW / 2, fy + bhh + 16, st.ev.k === 'draw' ? '摸牌' : st.ev.k === 'pen' ? '摸 ' + st.ev.n + ' 张' : '不出', BX.clamp(cw * .22, 12, 16));
         if (st.turn === s && st.ph === 'play') { const t = ui.t; for (let i = 0; i < 3; i++) { g.fillStyle = `rgba(255,230,170,${.35 + .65 * Math.max(0, Math.sin(t * 5 - i * .8))})`; D.circle(g, sp.x + lay.PW / 2 + (i - 1) * 11, fy + bhh + 14, 3.5); g.fill(); } }
       }
       // my hand
@@ -360,18 +410,22 @@ BX.register({
       if (st.ph !== 'deal') D.text(g, mineN + ' 张' + (mineN === 1 ? (st.said[me] ? ' · 已喊' : '') : ''), lay.pad + 4, lay.btnY + lay.bh / 2, {size: BX.clamp(cw * .22, 12, 16), color: mineN === 1 ? '#ff9a7a' : '#f3e2c0', align: 'left', shadow: true, maxW: lay.portrait ? 60 : 120});
       const mt = myTurn();
       if (ui.bad) { ui.bad.t -= dt; if (ui.bad.t <= 0) ui.bad = null; }
+      const showOk = ctx.pref('hints'), hc = ui.hintA && ui.hintA.seq === st.seq && ui.hintA.a.t === 'play' ? ui.hintA.a.id : -1;
       lay.hand.rects.forEach((r, i) => {
         const id = lay.ids[i], sel = ui.sel === id, ok = mt && canPlay(me, id);
         let x = r.x; if (ui.bad && ui.bad.id === id) x += Math.sin(ui.bad.t * 60) * 4;
-        drawCard(g, x, r.y - (sel ? lay.raise : 0) - (ok && !sel ? lay.raise * .18 : 0), r.w, r.h, id, {sel: sel ? '#ffd76a' : false, dim: mt && !ok});
+        const glow = id === hc ? `rgba(80,225,170,${.65 + .35 * Math.sin(ui.t * 8)})` : null;
+        drawCard(g, x, r.y - (sel ? lay.raise : 0) - (ok && !sel && showOk ? lay.raise * .22 : 0), r.w, r.h, id, {sel: glow || (sel ? '#ffd76a' : false), dim: mt && !ok && showOk});
       });
       // buttons
       ui.btns = buttons(lay); for (const b of ui.btns) U.btn(g, b);
-      if (mt && ui.sel >= 0 && canPlay(me, ui.sel) && lay.ids.includes(ui.sel)) D.text(g, '再点一下或按「出牌」', w / 2, lay.btnY - 12, {size: BX.clamp(cw * .2, 11, 14), color: '#ffe9a8', shadow: true});
+      const tip = !mt || ui.pick >= 0 ? '' : ui.sel >= 0 && canPlay(me, ui.sel) && lay.ids.includes(ui.sel) ? '再点一下、上划或按「出牌」' : st.drawn < 0 && !playable(me).length ? (st.pend ? `叠不上，自动摸 ${st.pend} 张…` : '没有能出的牌，自动摸牌…') : st.pend ? `可叠加 +2/+4 把 ${st.pend} 张传给下家` : '';
+      if (tip) D.text(g, tip, w / 2, lay.btnY - 12, {size: BX.clamp(cw * .2, 11, 14), color: '#ffe9a8', shadow: true, maxW: w - 2 * lay.pad});
+      maybeAuto();
       // fx
       for (const e of ui.fx) {
         const a = e.k < .15 ? e.k / .15 : e.k > .75 ? (1 - e.k) / .25 : 1, sc = e.big ? 1 + (1 - Math.min(1, e.k * 4)) * .5 : 1;
-        g.save(); g.globalAlpha = a; g.translate(cx, cy - R - 10 - e.k * 16); g.scale(sc, sc);
+        g.save(); g.globalAlpha = a; g.translate(cx, Math.max(lay.pad + 24, cy - R - 10) - e.k * 16); g.scale(sc, sc);
         D.text(g, e.text, 0, 0, {size: Math.min(w * .07, 30) * (e.big ? 1.4 : 1), color: e.color, font: 'deco', weight: 400, stroke: 'rgba(40,10,5,.9)', strokeW: 5});
         g.restore();
       }
@@ -382,13 +436,17 @@ BX.register({
         g.fillStyle = 'rgba(15,8,3,.6)'; g.fillRect(0, 0, w, h);
         const pr = Math.min(w, h) * .15, ox = w / 2, oy = h * .45;
         D.text(g, '选择颜色', ox, oy - pr * 2.25, {size: Math.min(26, w * .07), color: '#f3e2c0', font: 'deco', weight: 400});
+        const cnt = [0, 0, 0, 0]; for (const id of st.hands[me] || []) if (id !== ui.pick && colOf(id) < 4) cnt[colOf(id)]++;
+        let best = 0; for (let c = 1; c < 4; c++) if (cnt[c] > cnt[best]) best = c;
         for (let c = 0; c < 4; c++) {
           const x = ox + (c % 2 ? 1 : -1) * pr * 1.08, y = oy + (c < 2 ? -1 : 1) * pr * 1.08;
           D.disc(g, x, y, pr, COL[c], {ring: 'rgba(255,240,210,.6)'});
-          D.text(g, CN[c], x, y + 2, {size: pr * .8, color: '#fff8ea', font: 'serif', weight: 900});
+          if (c === best && cnt[c]) { g.strokeStyle = `rgba(255,215,106,${.7 + .3 * Math.sin(ui.t * 6)})`; g.lineWidth = 4; D.circle(g, x, y, pr + 4); g.stroke(); }
+          D.text(g, CN[c], x, y - pr * .1, {size: pr * .7, color: '#fff8ea', font: 'serif', weight: 900});
+          D.text(g, (c + 1) + ' · 手里 ' + cnt[c] + ' 张', x, y + pr * .5, {size: Math.max(11, pr * .2), color: 'rgba(255,248,234,.9)', weight: 700});
           ui.petals.push({x, y, r: pr, c});
         }
-        D.text(g, '点空白处取消', ox, oy + pr * 2.45, {size: 13, color: 'rgba(243,226,192,.7)'});
+        D.text(g, '金圈：手里最多的颜色 · 点空白处取消', ox, oy + pr * 2.45, {size: 13, color: 'rgba(243,226,192,.75)'});
       }
       g.restore();
     }
@@ -408,9 +466,20 @@ BX.register({
         return false;
       },
       apply, aiMove, onTurn: status,
-      onView() { ui.sel = -1; ui.pick = -1; ui.unoArm = false; },
+      onView() { ui.sel = -1; ui.pick = -1; ui.unoArm = false; ui.hintA = null; },
+      showHint(a) {   // 💡: raise + pulse the suggested card (or pulse the pile / 不出 / 喊一张)
+        ui.hintA = {seq: st.seq, a};
+        if (a.t === 'play') { ui.sel = a.id; if (kOf(a.id) >= 13) ctx.toast('建议出这张，并选' + CN[a.col | 0] + '色'); if (a.uno) ui.unoArm = true; }
+        else if (a.t === 'uno') ctx.toast('快按「喊一张」！');
+      },
       key(e) {
+        if (ui.pick >= 0) { const c = {Digit1: 0, Digit2: 1, Digit3: 2, Digit4: 3}[e.code]; if (c != null) pickCol(c); else if (e.code === 'Escape') ui.pick = -1; return; }
+        if (e.code === 'KeyU' && st.unoP === meIdx() && ctx.isLocal(meIdx())) { press({act: 'late'}); return; }
         if (!myTurn()) return;
+        if (e.code === 'ArrowLeft' || e.code === 'ArrowRight') {
+          const ids = st.hands[meIdx()], ok = ids.filter(id => canPlay(meIdx(), id)), pool = ok.length ? ok : ids;
+          let j = pool.indexOf(ui.sel); j = j < 0 ? 0 : (j + (e.code === 'ArrowRight' ? 1 : pool.length - 1)) % pool.length; ui.sel = pool[j]; ctx.sfx('tick'); return;
+        }
         if (e.code === 'Enter') playSel();
         else if (e.code === 'Space' || e.code === 'KeyD') press({act: st.drawn >= 0 ? 'keep' : 'draw'});
         else if (e.code === 'KeyU') press({act: 'arm'});

@@ -79,14 +79,21 @@ BX.register({
   desc: '经典双六多米诺「摸牌接龙」：28 张骨牌，点数相同才能相接，出不了就去骨堆摸牌。先出完手牌者赢得对手剩余点数，先到目标分获胜。',
   kind: 'turn', seats: [2, 4], defSeats: 2, hidden: true, aiDelay: 520,
   seatColors: ['#c23a2b', '#2f5d8a', '#3f8f5b', '#d9a12b'],
-  options: [{key: 'target', label: '目标分', choices: [[100, '100 分'], [0, '一局定胜负']], def: 100}],
+  options: [{key: 'target', label: '目标分', choices: [[100, '100 分'], [50, '50 分'], [150, '150 分'], [0, '一局定胜负']], def: 100},
+    {key: 'rule', label: '玩法', choices: [['draw', '摸牌接龙'], ['block', '堵死赛（不摸牌）']], def: 'draw'},
+    {key: 'fives', label: '五倍加分', choices: [[0, '关'], [1, '开（两端和为 5 的倍数得分）']], def: 0}],
+  howto: ['<b>拖动</b>手中的骨牌到牌列一端的虚线框放下；也可以先点牌、再点虚线框。只有一端能接时，点一下牌即可（触屏默认再点一次确认）。',
+    '能出的牌会浮起并描绿边；右上角「记牌」显示每个点数还剩几张没露面。',
+    '「自动」开启时：没牌可出会自动摸牌 / 过，开局指定牌和唯一出法也自动打出。',
+    '💡 提示会标出推荐的骨牌和位置；键盘 1–9 选牌，← / → 接到左 / 右端，空格摸牌或过。'],
   rules: `<p>使用一副<b>双六</b>多米诺骨牌（0–0 到 6–6，共 28 张）。2 人每人摸 <b>7 张</b>，3–4 人每人 <b>5 张</b>，其余背面朝下作为<b>骨堆</b>。</p>
 <p><b>开局</b>：第一局由持有<b>最大对子</b>（6–6、5–5……）的玩家打出这张牌开局；若无人持有对子，则由持有点数最大的牌者打出该牌。之后每局由上一局的赢家先出，可出任意牌。</p>
 <p><b>出牌</b>：按顺序轮流出牌，骨牌的一端必须与桌上牌列某一端的<b>点数相同</b>才能相接。对子横着摆放（与牌列垂直）。牌列可以向两端延伸，到桌边时会转弯。</p>
 <p><b>摸牌</b>：轮到你却没有可出的牌时，必须从骨堆<b>逐张摸牌</b>，直到摸到能出的牌为止；骨堆摸完仍出不了则<b>过</b>。有牌可出时不能摸牌。</p>
 <p><b>一局结束</b>：某位玩家出完全部手牌（「出完」），他获得所有对手手中剩余的点数之和。若所有人都无法出牌（<b>堵死</b>），手中点数<b>最少</b>者获胜，获得其他玩家剩余点数之和；若最少点数并列，本局不计分。</p>
-<p><b>胜负</b>：先累计达到<b>目标分（默认 100 分）</b>者获胜；也可选择「一局定胜负」。</p>
-<p><b>操作</b>：点选手中的骨牌，再点牌列一端的虚线位置放置；只有一端可接时自动放下。无牌可出时点「摸牌」/「过」。</p>`,
+<p><b>胜负</b>：先累计达到<b>目标分（默认 100 分）</b>者获胜；也可选择 50 / 150 分或「一局定胜负」。</p>
+<p><b>可选玩法</b>：「堵死赛」——每人摸 7 张（4 人时全部发完），<b>不能摸牌</b>，接不上就过。「五倍加分」——每出一张牌后，若牌列两端点数之和（端头是对子时按两半都算）是 <b>5 的倍数</b>，出牌者立即得到这个分数；一局结束时的得分四舍五入到 5 的倍数。</p>
+<p><b>操作</b>：拖动骨牌到牌列一端，或点选骨牌后点虚线位置；只有一端可接时点牌即放下。无牌可出时点「摸牌」/「过」（开启「自动」时会自动进行）。</p>`,
   icon(g, w, h) {
     D.felt(g, 0, 0, w, h, {color: '#2f6b4f'});
     tile(g, 18, 58, 60, 30, [6, 3]); tile(g, 78, 43, 30, 60, [3, 3]); tile(g, 108, 58, 60, 30, [3, 5]);
@@ -98,12 +105,13 @@ BX.register({
     const n = ctx.n, rng = ctx.rng;
     const target = BX.test ? 0 : +ctx.opts.target || 0;
     const st = {hands: [], bone: [], chain: [], ends: [-1, -1], cur: 0, must: -1, passes: 0, score: Array(n).fill(0), round: 0, ph: 'play',
-      res: null, lack: BX.range(n).map(() => []), last: -1, lastBy: -1, over: false, starter: -1, target};
+      res: null, lack: BX.range(n).map(() => []), last: -1, lastBy: -1, over: false, starter: -1, target,
+      rule: ctx.opts.rule === 'block' ? 'block' : 'draw', fives: +ctx.opts.fives ? 1 : 0, fx5: null};
     function deal(lead) {
-      const ids = rng.shuffle(BX.range(28)), per = n === 2 ? 7 : 5;
+      const ids = rng.shuffle(BX.range(28)), per = n === 2 || st.rule === 'block' ? 7 : 5;
       st.hands = BX.range(n).map(k => ids.slice(k * per, k * per + per).sort((a, b) => a - b));
       st.bone = ids.slice(n * per); st.chain = []; st.ends = [-1, -1]; st.passes = 0; st.res = null; st.lack = BX.range(n).map(() => []);
-      st.last = -1; st.lastBy = -1; st.round++; st.ph = 'play';
+      st.last = -1; st.lastBy = -1; st.round++; st.ph = 'play'; st.fx5 = null;
       if (lead >= 0) { st.cur = lead; st.must = -1; }
       else {
         let best = -1, who = 0;
@@ -124,18 +132,27 @@ BX.register({
     }
     const playable = s => st.hands[s].filter(id => fits(id).length);
     const handPips = s => st.hands[s].reduce((a, id) => a + pipsOf(id), 0);
+    /* sum of the open ends (an end tile that is a double counts both halves) — 五倍加分 */
+    function endSum() {
+      if (!st.chain.length) return 0;
+      const c0 = st.chain[0], tip = arm => { for (let k = st.chain.length - 1; k > 0; k--) if (st.chain[k].arm === arm) return st.chain[k]; return null; };
+      const L = tip('L'), R = tip('R');
+      if (!L && !R) return c0.v[0] + c0.v[1];
+      const val = (t, e) => t ? (t.v[0] === t.v[1] ? 2 * e : e) : (c0.v[0] === c0.v[1] ? 2 * e : e);
+      return val(L, st.ends[0]) + val(R, st.ends[1]);
+    }
     function legal(a, by) {
       if (!a || st.over || st.ph !== 'play' || by !== st.cur) return false;
       if (a.t === 'play') return st.hands[by].includes(a.id) && fits(a.id).includes(a.side);
-      if (a.t === 'draw') return !playable(by).length && st.bone.length > 0;
-      if (a.t === 'pass') return !playable(by).length && !st.bone.length;
+      if (a.t === 'draw') return st.rule !== 'block' && !playable(by).length && st.bone.length > 0;
+      if (a.t === 'pass') return !playable(by).length && (!st.bone.length || st.rule === 'block');
       return false;
     }
     const nextSeat = s => (s + 1) % n;
     function endRound(winner, how) {
       const rem = BX.range(n).map(handPips);
       let pts = 0;
-      if (winner >= 0) { for (let s = 0; s < n; s++) if (s !== winner) pts += rem[s]; st.score[winner] += pts; }
+      if (winner >= 0) { for (let s = 0; s < n; s++) if (s !== winner) pts += rem[s]; if (st.fives) pts = Math.round(pts / 5) * 5; st.score[winner] += pts; }
       st.res = {w: winner, how, pts, rem};
       st.ph = 'end';
       const tgt = st.target;
@@ -160,8 +177,17 @@ BX.register({
         if (a.side === 'C') { st.chain.push({id, v: [p, q], arm: 'C'}); st.ends = [p, q]; }
         else if (a.side === 'R') { const at = st.ends[1], v = p === at ? [p, q] : [q, p]; st.chain.push({id, v, arm: 'R'}); st.ends[1] = v[1]; }
         else { const at = st.ends[0], v = p === at ? [p, q] : [q, p]; st.chain.push({id, v, arm: 'L'}); st.ends[0] = v[1]; }
-        st.must = -1; st.passes = 0; st.last = id; st.lastBy = s;
+        st.must = -1; st.passes = 0; st.last = id; st.lastBy = s; st.fx5 = null;
         if (!ctx.fast) { placeFx = {id, t: 0, by: s}; ctx.anim(260, k => placeFx && (placeFx.t = k), () => placeFx = null); ctx.sfx(isDbl(id) ? 'hit' : 'place'); }
+        if (st.fives) {
+          const sum = endSum();
+          if (sum > 0 && sum % 5 === 0) {
+            st.score[s] += sum; st.fx5 = {s, v: sum};
+            if (!ctx.fast) { ctx.sfx('score'); pop5 = {s, v: sum, t: 0}; }
+            if (st.target && st.score[s] >= st.target) { st.res = {w: s, how: 'fives', pts: sum, rem: BX.range(n).map(handPips)}; st.ph = 'end'; st.over = true;
+              ctx.end({winner: s, html: ctx.name(s) + ' 凭五倍加分率先到达 ' + st.target + ' 分！<br>' + BX.range(n).map(k => BX.esc(ctx.name(k)) + '　' + st.score[k] + ' 分').join('<br>'), delay: 1600}); return; }
+          }
+        }
         if (!st.hands[s].length) { endRound(s, 'out'); return; }
         st.cur = nextSeat(s);
       } else if (a.t === 'draw') {
@@ -182,10 +208,17 @@ BX.register({
     }
 
     /* ---- AI ---- */
+    function simSum(m) {   // 五倍加分: end sum after a hypothetical play (state restored)
+      const [p, q] = TILES[m.id], e0 = st.ends.slice();
+      let v;
+      if (m.side === 'C') { st.chain.push({id: m.id, v: [p, q], arm: 'C'}); st.ends = [p, q]; }
+      else { const at = m.side === 'L' ? st.ends[0] : st.ends[1]; v = p === at ? [p, q] : [q, p]; st.chain.push({id: m.id, v, arm: m.side}); st.ends[m.side === 'L' ? 0 : 1] = v[1]; }
+      const r = endSum(); st.chain.pop(); st.ends = e0; return r;
+    }
     function aiMove(s, lv) {
       const moves = [];
       for (const id of st.hands[s]) for (const side of fits(id)) moves.push({t: 'play', id, side});
-      if (!moves.length) return st.bone.length ? {t: 'draw'} : {t: 'pass'};
+      if (!moves.length) return st.bone.length && st.rule !== 'block' ? {t: 'draw'} : {t: 'pass'};
       if (lv === 1) return Math.random() < .5 ? BX.pick(moves) : moves.slice().sort((x, y) => pipsOf(y.id) - pipsOf(x.id))[0];
       const opp = BX.range(n).filter(k => k !== s), nxt = nextSeat(s);
       const scored = moves.map(m => {
@@ -194,6 +227,7 @@ BX.register({
         if (m.side === 'C') ends = [p, q];
         else { const at = m.side === 'L' ? st.ends[0] : st.ends[1], free = p === at ? q : p; ends = m.side === 'L' ? [free, st.ends[1]] : [st.ends[0], free]; }
         let sc = pipsOf(m.id) + (isDbl(m.id) ? 4 : 0);
+        if (st.fives) { const v = simSum(m); if (v > 0 && v % 5 === 0) sc += v * (lv >= 3 ? 1.6 : 1.1); }
         if (lv >= 3) {
           const rest = st.hands[s].filter(i => i !== m.id);
           // keep control: how many of my remaining tiles fit the new ends
@@ -221,14 +255,33 @@ BX.register({
     const bDraw = h('button', {class: 'bx-btn red', text: '摸牌', on: {click: () => tryAct({t: 'draw'})}});
     const bPass = h('button', {class: 'bx-btn', text: '过', on: {click: () => tryAct({t: 'pass'})}});
     bar.append(bDraw, bPass);
-    let sel = -1, placeFx = null, drawFx = null, bubble = null, hand = [], ghosts = [], G = null;
+    let auto = ctx.load('auto', true);
+    const bAuto = h('button', {class: 'bx-btn ghost', style: {position: 'absolute', minHeight: '40px', padding: '4px 12px', fontSize: '13px'}, on: {click: () => { auto = !auto; ctx.save('auto', auto); paintAuto(); ctx.sfx('click'); autoKey = ''; }}});
+    const paintAuto = () => { bAuto.textContent = '自动：' + (auto ? '开' : '关'); bAuto.style.opacity = auto ? '1' : '.75'; };
+    paintAuto(); ui.append(bAuto);
+    let sel = -1, placeFx = null, drawFx = null, bubble = null, hand = [], ghosts = [], G = null, pop5 = null, drag = null, hintA = null, hintT = 0, autoKey = '', autoT = 0, streak = {s: -1, k: 0};
     const me = () => ctx.view;
-    function tryAct(a) { if (!ctx.canAct(st.cur)) return; if (!legal(a, st.cur)) { ctx.sfx('error'); return; } sel = -1; ctx.act(a, st.cur); }
+    const myTurnNow = () => ctx.canAct(st.cur) && st.cur === me() && st.ph === 'play' && !st.over;
+    function tryAct(a) { if (!ctx.canAct(st.cur)) return; if (!legal(a, st.cur)) { ctx.sfx('error'); ctx.buzz(20); return; } sel = -1; hintA = null; ctx.act(a, st.cur); }
+    const legalMoves = s => { const out = []; for (const id of st.hands[s]) for (const side of fits(id)) out.push({t: 'play', id, side}); return out; };
+    /* auto actions for the local human: forced draw / pass / single legal move */
+    function autoCheck() {
+      if (!auto || BX.bot || !myTurnNow() || drag) return;
+      const s = st.cur, mv = legalMoves(s);
+      let a = null;
+      if (!mv.length) a = legal({t: 'draw'}, s) ? {t: 'draw'} : {t: 'pass'};
+      else if (mv.length === 1) a = mv[0];   // forced: only one tile fits, on only one end
+      if (!a) return;
+      const key = st.round + ':' + st.chain.length + ':' + st.hands[s].length + ':' + st.bone.length + ':' + st.passes;
+      if (key === autoKey) return;
+      autoKey = key; ctx.cancel(autoT);
+      autoT = ctx.after(a.t === 'draw' ? 380 : 650, () => { if (myTurnNow() && legal(a, st.cur)) tryAct(a); });
+    }
     function geom() {
       const W = cv.w, H = cv.h, ph = W < 560 || H < 560;
       const cnt = Math.max(5, (st.hands[ctx.view] || []).length);
-      const htw = BX.clamp(Math.min((W - 24) / cnt / 1.18, H * .065), 22, 50);
-      const handH = htw * 2 + 30, topH = BX.clamp(H * .16, 62, 108);
+      const htw = BX.clamp(Math.min((W - 24) / cnt / 1.18, H * .075), 22, 60);
+      const handH = htw * 2 + 38, topH = BX.clamp(H * .16, 62, 108);
       const table = {x: 8, y: topH, w: W - 16, h: H - topH - handH - 12};
       return {W, H, handH, topH, table, ph, htw};
     }
@@ -248,16 +301,20 @@ BX.register({
       const ox = tb.x + tb.w / 2 - (x0 + x1) / 2 * u, oy = tb.y + tb.h / 2 - (y0 + y1) / 2 * u;
       return {u, ox, oy};
     }
+    function ghostsFor(id, fit) {
+      const out = [];
+      for (const side of fits(id)) {
+        if (side === 'C') { const d = isDbl(id); out.push({side, x: fit.ox + (d ? -.5 : -1) * fit.u, y: fit.oy + (d ? -1 : -.5) * fit.u, w: (d ? 1 : 2) * fit.u, h: (d ? 2 : 1) * fit.u, v: TILES[id]}); continue; }
+        const [p, q] = TILES[id], at = side === 'L' ? st.ends[0] : st.ends[1], v = p === at ? [p, q] : [q, p];
+        const rs = layoutLine(st.chain, G.K, {id, v, arm: side, ghost: true}), r = rs.find(x => x.ghost);
+        if (r) out.push({side, x: fit.ox + r.x * fit.u, y: fit.oy + r.y * fit.u, w: r.w * fit.u, h: r.h * fit.u, v: r.v});
+      }
+      return out;
+    }
     function computeGhosts(gm, fit) {
       ghosts = [];
-      if (sel < 0 || !ctx.canAct(st.cur) || st.cur !== me()) return;
-      const sides = fits(sel);
-      for (const side of sides) {
-        if (side === 'C') { const d = isDbl(sel); ghosts.push({side, x: fit.ox + (d ? -.5 : -1) * fit.u, y: fit.oy + (d ? -1 : -.5) * fit.u, w: (d ? 1 : 2) * fit.u, h: (d ? 2 : 1) * fit.u}); continue; }
-        const [p, q] = TILES[sel], at = side === 'L' ? st.ends[0] : st.ends[1], v = p === at ? [p, q] : [q, p];
-        const rs = layoutLine(st.chain, G.K, {id: sel, v, arm: side, ghost: true}), r = rs.find(x => x.ghost);
-        if (r) ghosts.push({side, x: fit.ox + r.x * fit.u, y: fit.oy + r.y * fit.u, w: r.w * fit.u, h: r.h * fit.u, v: r.v});
-      }
+      if (sel < 0 || !myTurnNow()) return;
+      ghosts = ghostsFor(sel, fit);
     }
     function handLayout(gm) {
       const ids = st.hands[me()] || [], cnt = ids.length;
@@ -275,27 +332,56 @@ BX.register({
       });
       return out;
     }
+    const inRect = (p, r, m) => p.x >= r.x - m && p.x <= r.x + r.w + m && p.y >= r.y - m && p.y <= r.y + r.h + m;
+    function tapTile(id, e) {
+      if (!myTurnNow()) { ctx.sfx('error'); return; }
+      const sides = fits(id);
+      if (!sides.length) { ctx.sfx('error'); ctx.buzz(20); ctx.toast(st.must >= 0 ? '开局须打出 ' + TILES[st.must].join('-') : '这张牌接不上（两端是 ' + endsTxt() + '）'); return; }
+      if (sides.length === 1 && (sel === id || !ctx.needConfirm(e))) { tryAct({t: 'play', id, side: sides[0]}); return; }
+      if (sel === id && sides.length > 1) { sel = -1; return; }
+      sel = id; ctx.sfx('select');
+    }
     ctx.on(cv.cv, 'pointerdown', e => {
       const p = cv.pos(e);
-      for (const gh of ghosts) if (p.x >= gh.x - 8 && p.x <= gh.x + gh.w + 8 && p.y >= gh.y - 8 && p.y <= gh.y + gh.h + 8) { tryAct({t: 'play', id: sel, side: gh.side}); return; }
-      for (const t of hand) if (p.x >= t.x && p.x <= t.x + t.w && p.y >= t.y - 10 && p.y <= t.y + t.h) {
-        if (!ctx.canAct(st.cur) || st.cur !== me()) { ctx.sfx('error'); return; }
-        const sides = fits(t.id);
-        if (!sides.length) { ctx.sfx('error'); ctx.toast(st.must >= 0 ? '开局须打出 ' + TILES[st.must].join('-') : '这张牌接不上'); return; }
-        if (sel === t.id || sides.length === 1) { tryAct({t: 'play', id: t.id, side: sides[0]}); sel = -1; return; }
-        sel = t.id; ctx.sfx('select'); return;
+      for (const gh of ghosts) if (inRect(p, gh, 10)) { tryAct({t: 'play', id: sel, side: gh.side}); return; }
+      for (const t of hand) if (p.x >= t.x && p.x <= t.x + t.w && p.y >= t.y - 12 && p.y <= t.y + t.h) {
+        drag = {id: t.id, sx: p.x, sy: p.y, x: p.x, y: p.y, ox: p.x - t.x, oy: p.y - t.y, w: t.w, h: t.h, moved: false, e};
+        try { cv.cv.setPointerCapture(e.pointerId); } catch (er) {}
+        return;
       }
       sel = -1;
     });
+    ctx.on(cv.cv, 'pointermove', e => {
+      if (!drag) return;
+      const p = cv.pos(e); drag.x = p.x; drag.y = p.y;
+      if (!drag.moved && Math.hypot(p.x - drag.sx, p.y - drag.sy) > 10) {
+        if (!myTurnNow() || !fits(drag.id).length) { drag = null; return; }
+        drag.moved = true; sel = drag.id; ctx.sfx('select');
+      }
+    });
+    const endDrag = e => {
+      if (!drag) return;
+      const d = drag; drag = null;
+      if (!d.moved) { tapTile(d.id, d.e); return; }
+      const p = cv.pos(e), cx = p.x - d.ox + d.w / 2, cy = p.y - d.oy + d.h / 2;
+      let best = null, bd = 1e9;
+      for (const gh of ghosts) { const dd = Math.hypot(gh.x + gh.w / 2 - cx, gh.y + gh.h / 2 - cy); if (dd < bd) { bd = dd; best = gh; } }
+      const gm = geom();
+      if (best && (bd < Math.max(best.w, best.h) * 1.6 || ghosts.length === 1 && cy < gm.table.y + gm.table.h)) tryAct({t: 'play', id: d.id, side: best.side});
+      else { sel = d.id; }
+    };
+    ctx.on(cv.cv, 'pointerup', endDrag);
+    ctx.on(cv.cv, 'pointercancel', () => { drag = null; });
+    const endsTxt = () => st.ends[0] === st.ends[1] ? String(st.ends[0]) : st.ends[0] + ' 和 ' + st.ends[1];
     function status() {
       for (let s = 0; s < n; s++) ctx.info(s, st.score[s] + (st.target ? '分' : '') + ' · ' + st.hands[s].length + '张');
       if (st.ph === 'end') {
         const r = st.res;
-        ctx.status(r.w >= 0 ? (r.how === 'out' ? ctx.name(r.w) + ' 出完！' : '堵死，' + ctx.name(r.w) + ' 点数最少') + ' 得 ' + r.pts + ' 分' : '堵死，点数并列，本局不计分');
+        ctx.status(r.w >= 0 ? (r.how === 'out' ? ctx.name(r.w) + ' 出完！' : r.how === 'fives' ? ctx.name(r.w) + ' 五倍加分到达目标' : '堵死，' + ctx.name(r.w) + ' 点数最少') + ' 得 ' + r.pts + ' 分' : '堵死，点数并列，本局不计分');
         return;
       }
       const you = ctx.canAct(st.cur);
-      let t = (you ? (ctx.hotseat ? ctx.name(st.cur) + '：' : '') + (playable(st.cur).length ? (st.must >= 0 ? '请打出 ' + TILES[st.must].join('-') + ' 开局' : '选一张牌接上') : st.bone.length ? '没有能接的牌，请摸牌' : '无牌可出，只能过') : '等待 ' + ctx.name(st.cur) + '…');
+      let t = (you ? (ctx.hotseat ? ctx.name(st.cur) + '：' : '') + (playable(st.cur).length ? (st.must >= 0 ? '请打出 ' + TILES[st.must].join('-') + ' 开局' : '拖一张牌接到 ' + endsTxt()) : legal({t: 'draw'}, st.cur) ? '没有能接的牌，请摸牌' : '无牌可出，只能过') : '等待 ' + ctx.name(st.cur) + '…');
       if (st.target) t = '第 ' + st.round + ' 局 · ' + t;
       ctx.status(t);
     }
@@ -303,9 +389,17 @@ BX.register({
       const others = []; for (let k = 1; k < n; k++) others.push((me() + k) % n);
       return others.map((s, k) => ({s, x: gm.W * (k + .5) / others.length, y: gm.topH / 2 + 2}));
     }
+    /* count of each number 0..6 not yet seen by me (not on the table, not in my hand) */
+    function unseen() {
+      const c = [7, 7, 7, 7, 7, 7, 7], dec = id => { const [a, b] = TILES[id]; c[a]--; if (b !== a) c[b]--; };
+      for (const t of st.chain) dec(t.id);
+      for (const id of st.hands[me()] || []) dec(id);
+      return c;
+    }
     function frame(dt) {
       const g = cv.g; cv.clear();
       const gm = geom(); G = lineGeom(gm);
+      const hintsOn = ctx.pref('hints') !== false;
       // table
       D.wood(g, 0, 0, gm.W, gm.H, {base: '#6b4426', dark: '#3d2716', seed: 9});
       D.felt(g, 4, gm.topH - 4, gm.W - 8, gm.table.h + 8, {r: 16, color: '#2f6b4f'});
@@ -326,14 +420,31 @@ BX.register({
         tile(g, x + 1, y + 1, w - 2, hh - 2, r.v, {sel: r.id === st.last && !placeFx ? 'rgba(224,160,32,.85)' : null});
         g.globalAlpha = 1;
       }
-      // end markers
+      // open-end badges
       if (st.chain.length && st.ph === 'play') {
-        const pul = .5 + .5 * Math.sin(performance.now() / 300);
-        for (const gh of ghosts) {
-          g.save(); g.setLineDash([6, 4]); g.strokeStyle = `rgba(255,215,106,${.6 + .4 * pul})`; g.lineWidth = 2.5; D.rr(g, gh.x + 1, gh.y + 1, gh.w - 2, gh.h - 2, 6); g.stroke();
-          g.globalAlpha = .45; if (gh.v) tile(g, gh.x + 1, gh.y + 1, gh.w - 2, gh.h - 2, gh.v, {shadow: false}); g.restore();
-        }
-      } else for (const gh of ghosts) { g.save(); g.setLineDash([6, 4]); g.strokeStyle = '#ffd76a'; g.lineWidth = 2.5; D.rr(g, gh.x, gh.y, gh.w, gh.h, 6); g.stroke(); g.restore(); }
+        const tip = arm => { for (let k = st.chain.length - 1; k > 0; k--) if (st.chain[k].arm === arm) return st.chain[k].id; return st.chain[0].id; };
+        const rl = G.rects.find(r => r.id === tip('L')), rr = G.rects.find(r => r.id === tip('R'));
+        const lab = (r, v, left) => {
+          if (!r) return; const x = fit.ox + (left ? r.x : r.x + r.w) * fit.u, y = fit.oy + (r.y + r.h / 2) * fit.u, rad = Math.max(9, fit.u * .32);
+          const bx = BX.clamp(x + (left ? -rad * 1.4 : rad * 1.4), gm.table.x + rad + 2, gm.table.x + gm.table.w - rad - 2);
+          const by = BX.clamp(y - fit.u * .9, gm.table.y + rad + 2, gm.table.y + gm.table.h - rad - 2);
+          g.fillStyle = 'rgba(20,12,6,.6)'; D.circle(g, bx, by, rad); g.fill();
+          D.text(g, String(v), bx, by + 1, {size: rad * 1.25, color: '#ffd76a', weight: 900});
+        };
+        lab(rl, st.ends[0], true); if (st.chain.length > 1 || st.ends[0] !== st.ends[1]) lab(rr, st.ends[1], false);
+        if (st.fives) { const v = endSum(); D.text(g, '两端和 ' + v + (v && v % 5 === 0 ? ' ✓' : ''), gm.table.x + 14, gm.table.y + 64, {size: 12, color: v && v % 5 === 0 ? '#ffd76a' : 'rgba(243,226,192,.75)', align: 'left', weight: 700}); }
+      }
+      // end markers
+      const pul = .5 + .5 * Math.sin(performance.now() / 300);
+      for (const gh of ghosts) {
+        g.save(); g.setLineDash([6, 4]); g.strokeStyle = `rgba(255,215,106,${.6 + .4 * pul})`; g.lineWidth = 2.5; D.rr(g, gh.x + 1, gh.y + 1, gh.w - 2, gh.h - 2, 6); g.stroke();
+        g.globalAlpha = .45; if (gh.v) tile(g, gh.x + 1, gh.y + 1, gh.w - 2, gh.h - 2, gh.v, {shadow: false}); g.restore();
+      }
+      // hint target
+      if (hintA && myTurnNow() && st.hands[me()].includes(hintA.id)) {
+        const k = (performance.now() - hintT) / 1000, gh = ghostsFor(hintA.id, fit).find(x => x.side === hintA.side);
+        if (gh) { g.save(); g.strokeStyle = `rgba(63,200,140,${.55 + .4 * Math.sin(k * 6)})`; g.lineWidth = 4; D.rr(g, gh.x - 2, gh.y - 2, gh.w + 4, gh.h + 4, 7); g.stroke(); g.globalAlpha = .35; tile(g, gh.x, gh.y, gh.w, gh.h, gh.v, {shadow: false}); g.restore(); }
+      } else hintA = null;
       // opponents
       const showAll = st.ph === 'end';
       for (const sp of seatSpots(gm)) {
@@ -343,51 +454,108 @@ BX.register({
         g.fillStyle = turn ? 'rgba(255,215,106,.22)' : 'rgba(0,0,0,.18)'; D.rr(g, sp.x - gm.W / (n - 1) / 2 + 4, 4, gm.W / (n - 1) - 8, gm.topH - 8, 10); g.fill();
         if (turn) { g.strokeStyle = 'rgba(255,215,106,.8)'; g.lineWidth = 2; g.stroke(); }
         D.disc(g, sp.x - gm.W / (n - 1) / 2 + 18, 18, 7, ctx.color(sp.s), {shadow: false});
-        D.text(g, ctx.name(sp.s) + (ctx.isAI(sp.s) ? '' : '') + '  ' + cnt + ' 张', sp.x - gm.W / (n - 1) / 2 + 30, 18, {size: 13, color: '#f3e2c0', align: 'left', weight: 700, maxW: gm.W / (n - 1) - 40});
+        D.text(g, ctx.name(sp.s) + '  ' + cnt + ' 张' + (st.target || st.fives ? ' · ' + st.score[sp.s] + ' 分' : ''), sp.x - gm.W / (n - 1) / 2 + 30, 18, {size: 13, color: '#f3e2c0', align: 'left', weight: 700, maxW: gm.W / (n - 1) - 40});
         ids.forEach((id, k) => tile(g, x0 + k * tw * .62, y0, tw, th, showAll ? TILES[id] : null, {shadow: true}));
         if (showAll && st.res) D.text(g, st.res.rem[sp.s] + ' 点', sp.x + gm.W / (n - 1) / 2 - 12, 18, {size: 13, color: '#ffd76a', align: 'right', weight: 800});
         if (bubble && bubble.s === sp.s) { bubble.t += dt / Math.max(1, n - 1); D.text(g, bubble.text, sp.x, gm.topH + 18, {size: 22, color: '#ffd76a', font: 'deco', weight: 400, stroke: 'rgba(0,0,0,.6)', strokeW: 4}); }
       }
-      if (bubble) { if (bubble.s === me()) { bubble.t += dt; D.text(g, '过', gm.W / 2, gm.H - gm.handH - 22, {size: 24, color: '#ffd76a', font: 'deco', weight: 400, stroke: 'rgba(0,0,0,.6)', strokeW: 4}); } if (bubble.t > 1.1) bubble = null; }
-      // boneyard
+      if (bubble) { if (bubble.s === me()) { bubble.t += dt; D.text(g, bubble.text, gm.W / 2, gm.H - gm.handH - 22, {size: 24, color: '#ffd76a', font: 'deco', weight: 400, stroke: 'rgba(0,0,0,.6)', strokeW: 4}); } if (bubble.t > 1.1) bubble = null; }
+      // 五倍加分 pop
+      if (pop5) {
+        pop5.t += dt; const sp = seatSpots(gm).find(q => q.s === pop5.s), y = (sp ? gm.topH + 40 : gm.H - gm.handH - 50) - pop5.t * 24;
+        g.globalAlpha = Math.max(0, 1 - Math.max(0, pop5.t - 1) / .5);
+        D.text(g, '+' + pop5.v + ' 分', sp ? sp.x : gm.W / 2, y, {size: 26, color: '#ffd76a', font: 'deco', weight: 400, stroke: 'rgba(0,0,0,.65)', strokeW: 4});
+        g.globalAlpha = 1; if (pop5.t > 1.5) pop5 = null;
+      }
+      // boneyard + tracker
       const bw = gm.ph ? 14 : 20, bx = gm.W - 18 - bw * 2.6, by = gm.table.y + 10;
-      for (let k = 0; k < Math.min(st.bone.length, 8); k++) tile(g, bx + (k % 4) * 4, by + Math.floor(k / 4) * 4 - k * .6, bw, bw * 2, null, {shadow: k === 0});
-      D.text(g, '骨堆 ' + st.bone.length, bx + bw * .9, by + bw * 2 + 16, {size: 12, color: '#f3e2c0', weight: 700});
+      if (st.rule !== 'block' || st.bone.length) {
+        for (let k = 0; k < Math.min(st.bone.length, 8); k++) tile(g, bx + (k % 4) * 4, by + Math.floor(k / 4) * 4 - k * .6, bw, bw * 2, null, {shadow: k === 0});
+        D.text(g, (st.rule === 'block' ? '暗牌 ' : '骨堆 ') + st.bone.length, bx + bw * .9, by + bw * 2 + 16, {size: 12, color: '#f3e2c0', weight: 700});
+      }
+      if (hintsOn && st.ph === 'play') {
+        const c = unseen(), cw = gm.ph ? 17 : 22, x1 = gm.table.x + gm.table.w - 10, y1 = by + bw * 2 + 34;
+        const vert = y1 + 12 + 7 * (cw + 2) < gm.table.y + gm.table.h - 4;
+        const chip = (x, y, v) => {
+          const isEnd = st.ends.includes(v) && st.chain.length;
+          g.fillStyle = isEnd ? 'rgba(255,215,106,.28)' : 'rgba(0,0,0,.22)'; D.rr(g, x, y, cw * 2.1, cw, 5); g.fill();
+          D.text(g, String(v), x + cw * .55, y + cw / 2 + 1, {size: cw * .62, color: '#fffaf0', weight: 900});
+          D.text(g, '×' + c[v], x + cw * 1.5, y + cw / 2 + 1, {size: cw * .56, color: c[v] ? '#ffd76a' : 'rgba(243,226,192,.45)', weight: 800});
+        };
+        if (vert) {
+          D.text(g, '记牌', x1 - cw, y1, {size: 11, color: 'rgba(243,226,192,.8)', weight: 700});
+          for (let v = 0; v <= 6; v++) chip(x1 - cw * 2.1, y1 + 12 + v * (cw + 2), v);
+        } else {
+          const yy = gm.table.y + gm.table.h - cw - 8, x0 = x1 - 7 * (cw * 2.1 + 3);
+          D.text(g, '记牌', x0 - 18, yy + cw / 2, {size: 11, color: 'rgba(243,226,192,.8)', weight: 700});
+          for (let v = 0; v <= 6; v++) chip(x0 + v * (cw * 2.1 + 3), yy, v);
+        }
+      }
       // my hand
       hand = handLayout(gm);
-      const myTurn = ctx.canAct(st.cur) && st.cur === me() && st.ph === 'play';
+      const myTurn = myTurnNow();
       g.fillStyle = myTurn ? 'rgba(255,215,106,.12)' : 'rgba(0,0,0,.15)'; D.rr(g, 6, gm.H - gm.handH - 4, gm.W - 12, gm.handH, 12); g.fill();
+      if (myTurn) { g.strokeStyle = 'rgba(255,215,106,.55)'; g.lineWidth = 2; D.rr(g, 6, gm.H - gm.handH - 4, gm.W - 12, gm.handH, 12); g.stroke(); }
       D.disc(g, 20, gm.H - gm.handH + 10, 6, ctx.color(me()), {shadow: false});
-      D.text(g, (ctx.hotseat ? ctx.name(me()) : '我的手牌') + ' · ' + hand.length + ' 张 · ' + handPips(me()) + ' 点', 32, gm.H - gm.handH + 10, {size: 12, color: '#f3e2c0', align: 'left', weight: 700});
+      D.text(g, (ctx.hotseat ? ctx.name(me()) : '我的手牌') + ' · ' + hand.length + ' 张 · ' + handPips(me()) + ' 点' + (myTurn ? '　← 轮到你' : ''), 32, gm.H - gm.handH + 10, {size: 12, color: myTurn ? '#ffd76a' : '#f3e2c0', align: 'left', weight: 700});
       for (const t of hand) {
-        const can = myTurn && fits(t.id).length > 0, lift = t.id === sel ? 10 : can ? 3 : 0;
+        const can = myTurn && fits(t.id).length > 0, lift = t.id === sel ? 12 : can && hintsOn ? 5 : 0;
         let y = t.y - lift, al = 1;
         if (drawFx && drawFx.id === t.id && drawFx.s === me()) { y = BX.lerp(by, y, drawFx.t); al = drawFx.t; }
+        if (drag && drag.moved && drag.id === t.id) al = .25;
         g.globalAlpha = al;
-        tile(g, t.x, y, t.w, t.h, TILES[t.id], {sel: t.id === sel ? true : can ? 'rgba(90,200,150,.9)' : null, dim: myTurn && !can});
+        const isHint = hintA && hintA.id === t.id;
+        tile(g, t.x, y, t.w, t.h, TILES[t.id], {sel: t.id === sel ? true : isHint ? 'rgba(63,200,140,.95)' : can && hintsOn ? 'rgba(90,200,150,.9)' : null, dim: myTurn && !can && hintsOn});
         g.globalAlpha = 1;
       }
+      if (drag && drag.moved) { g.globalAlpha = .92; tile(g, drag.x - drag.ox, drag.y - drag.oy, drag.w, drag.h, TILES[drag.id], {sel: true}); g.globalAlpha = 1; }
       // buttons
       const showDraw = myTurn && !playable(me()).length;
-      bDraw.style.display = showDraw && st.bone.length ? '' : 'none';
-      bPass.style.display = showDraw && !st.bone.length ? '' : 'none';
+      bDraw.style.display = showDraw && legal({t: 'draw'}, me()) ? '' : 'none';
+      bPass.style.display = showDraw && !legal({t: 'draw'}, me()) ? '' : 'none';
       Object.assign(bar.style, {left: '50%', transform: 'translateX(-50%)', top: (gm.H - gm.handH - 58) + 'px'});
-      // round result overlay
+      Object.assign(bAuto.style, {left: (gm.table.x + 8) + 'px', top: (gm.table.y + 8) + 'px', display: st.over ? 'none' : ''});
+      // round result panel
       if (st.ph === 'end' && st.res) {
-        const r = st.res, msg = r.w >= 0 ? ctx.name(r.w) + (r.how === 'out' ? ' 出完！' : ' 点数最少') + '  +' + r.pts : '堵死 · 点数并列';
-        const fs = Math.max(16, Math.min(28, gm.W / 18));
-        g.font = `400 ${fs}px ${BX.F.deco}`; const tw = g.measureText(msg).width + fs * 2;
-        const cy = gm.table.y + gm.table.h - fs * 1.4;
-        g.fillStyle = 'rgba(30,18,8,.85)'; D.rr(g, gm.W / 2 - tw / 2, cy - fs, tw, fs * 2, fs); g.fill();
-        D.text(g, msg, gm.W / 2, cy, {size: fs, color: '#ffd76a', font: 'deco', weight: 400});
+        const r = st.res, msg = r.w >= 0 ? ctx.name(r.w) + (r.how === 'out' ? ' 出完！' : r.how === 'fives' ? ' 到达目标分！' : ' 点数最少') + '  +' + r.pts : '堵死 · 点数并列';
+        const fs = Math.max(16, Math.min(26, gm.W / 18)), rows = BX.range(n), lh = fs * 1.05;
+        const pw = Math.min(gm.W - 40, fs * 16), ph2 = fs * 2.2 + rows.length * lh + fs * .6;
+        const px = gm.W / 2 - pw / 2, py = gm.table.y + gm.table.h / 2 - ph2 / 2;
+        g.fillStyle = 'rgba(30,18,8,.88)'; D.rr(g, px, py, pw, ph2, 14); g.fill();
+        g.strokeStyle = 'rgba(255,215,106,.5)'; g.lineWidth = 1.5; g.stroke();
+        D.text(g, msg, gm.W / 2, py + fs * 1.1, {size: fs, color: '#ffd76a', font: 'deco', weight: 400, maxW: pw - 20});
+        rows.forEach((s, k) => {
+          const y = py + fs * 2.3 + k * lh;
+          D.disc(g, px + 22, y, 6, ctx.color(s), {shadow: false});
+          D.text(g, ctx.name(s), px + 34, y, {size: fs * .58, color: '#f3e2c0', align: 'left', weight: 700, maxW: pw * .4});
+          D.text(g, '剩 ' + r.rem[s] + ' 点', px + pw * .62, y, {size: fs * .58, color: 'rgba(243,226,192,.8)', weight: 700});
+          D.text(g, (st.target ? st.score[s] + ' 分' : '') + (s === r.w ? ' +' + r.pts : ''), px + pw - 16, y, {size: fs * .6, color: s === r.w ? '#ffd76a' : '#f3e2c0', align: 'right', weight: 800});
+        });
       }
+      autoCheck();
     }
     return {
       st, toMove: () => st.over || st.ph !== 'play' ? null : st.cur,
-      valid: legal, apply,
+      valid: legal,
+      apply(a, by) {
+        const wasDraw = a.t === 'draw' && legal(a, by);
+        apply(a, by);
+        if (ctx.fast) return;
+        if (wasDraw) { streak = streak.s === by ? {s: by, k: streak.k + 1} : {s: by, k: 1}; if (by !== me()) bubble = {s: by, text: '摸牌 ×' + streak.k, t: 0}; }
+        else streak = {s: -1, k: 0};
+        hintA = null;
+      },
       sysMove: () => st.ph === 'end' && !st.over ? {a: {t: 'next'}, delay: 3200} : null,
-      async aiMove(s, lv) { if (ctx.online && !ctx.isHost) await BX.sleep(120); const a = aiMove(s, lv); return legal(a, s) ? a : (st.bone.length ? {t: 'draw'} : {t: 'pass'}); },
-      onTurn: status, onView() { sel = -1; },
+      async aiMove(s, lv) { if (ctx.online && !ctx.isHost) await BX.sleep(120); const a = aiMove(s, lv); return legal(a, s) ? a : (legal({t: 'draw'}, s) ? {t: 'draw'} : {t: 'pass'}); },
+      showHint(a) { if (a && a.t === 'play') { hintA = a; hintT = performance.now(); sel = -1; } else if (a) ctx.toast(a.t === 'draw' ? '没有能接的牌，摸牌吧' : '只能过'); },
+      onTurn: status, onView() { sel = -1; hintA = null; },
+      key(e) {
+        if (!myTurnNow()) return;
+        const k = e.key;
+        if (/^[1-9]$/.test(k)) { const id = (st.hands[me()] || [])[+k - 1]; if (id != null) { if (fits(id).length) { sel = id; ctx.sfx('select'); } else ctx.sfx('error'); } e.preventDefault(); return; }
+        if ((e.code === 'ArrowLeft' || e.code === 'ArrowRight') && sel >= 0) { const sides = fits(sel), want = e.code === 'ArrowLeft' ? 'L' : 'R'; const side = sides.includes(want) ? want : sides.length === 1 ? sides[0] : null; if (side) tryAct({t: 'play', id: sel, side}); e.preventDefault(); return; }
+        if (e.code === 'Space' || e.code === 'Enter') { if (sel >= 0 && fits(sel).length === 1) tryAct({t: 'play', id: sel, side: fits(sel)[0]}); else if (!playable(me()).length) tryAct(legal({t: 'draw'}, me()) ? {t: 'draw'} : {t: 'pass'}); e.preventDefault(); }
+      },
       frame,
     };
   },

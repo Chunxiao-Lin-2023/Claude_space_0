@@ -111,6 +111,7 @@ BX.register({
   id: 'connect4', title: '四子棋', cat: 'party', order: 2, sub: '竖盘落子，先连四子',
   desc: '七列六行的竖立棋盘，棋子投下后会落到最底部。横、竖、斜先连成四子者获胜，高级电脑几乎不犯错。',
   kind: 'turn', seats: 2, seatNames: ['朱方', '金方'], seatColors: PCOL, firstLabel: '先手', anyTimeActs: true,
+  howto: ['点某一列投子；触屏上按住会出现预览，左右拖动选列，<b>松手落子</b>（拖出棋盘可取消）。', '半透明的棋子标出它会落到的位置；棋盘下方圈出的格子是“再下一子就连四”的威胁：<b>红圈</b>是对手的，<b>绿圈</b>是你的。', '电脑上可用 ←/→ 或数字键 1–7 选列，回车 / 空格 / ↓ 落子。', '💡 提示会标出推荐的一列。'],
   rules: `<p>棋盘竖立，共 <b>7 列 6 行</b>。双方轮流选择一列投下一枚棋子，棋子会落到该列最低的空位。</p>
 <p>任一方先在<b>横、竖或斜</b>方向连成<b>四子</b>即获胜；棋盘下满仍无人连四则为和棋。朱方先手。</p>
 <p>操作：电脑上点击某一列即可落子；触屏上按住屏幕会显示预览，左右拖动选列，<b>松手落子</b>（拖出棋盘可取消）。</p>`,
@@ -126,10 +127,10 @@ BX.register({
   create(ctx) {
     const st = {b: new Array(NC).fill(0), turn: 0, last: -1, win: null, moves: 0, over: false};
     const cv = ctx.canvas();
-    let hoverCol = -1, touchCol = -1, drop = null, glow = 0;
+    let hoverCol = -1, touchCol = -1, keyCol = -1, pendCol = -1, drop = null, glow = 0, hint = -1, hintT = 0;
     const height = c => { let r = 0; while (r < ROWS && st.b[ix(c, r)]) r++; return r; };
     const geo = () => {
-      const f = BX.fit(cv.w, cv.h, COLS + .9, ROWS + 1.75, 8), s = f.s;
+      const f = BX.fit(cv.w, cv.h, COLS + .9, ROWS + 2.05, 8), s = f.s;
       return {s, bx: f.x + .45 * s, by: f.y + 1.25 * s, top: f.y + .55 * s};
     };
     const colAt = p => { const {s, bx, by} = geo(); const c = Math.floor((p.x - bx) / s); if (c < 0 || c >= COLS || p.y < by - 1.6 * s || p.y > by + ROWS * s + .3 * s) return -1; return c; };
@@ -137,12 +138,12 @@ BX.register({
     const tryDrop = c => { if (c < 0 || !myTurn() || height(c) >= ROWS) { if (c >= 0 && myTurn()) ctx.sfx('error'); return; } ctx.act({c}, st.turn); };
     ctx.on(cv.cv, 'pointermove', e => {
       const c = colAt(cv.pos(e));
-      if (e.pointerType === 'mouse') hoverCol = c; else if (touchCol !== -2) { if (c !== touchCol && c >= 0) ctx.sfx('tick'); touchCol = c; }
+      if (e.pointerType === 'mouse') { hoverCol = c; if (c >= 0) keyCol = -1; } else if (touchCol !== -2) { if (c !== touchCol && c >= 0) ctx.sfx('tick'); touchCol = c; }
     });
     ctx.on(cv.cv, 'pointerleave', () => { hoverCol = -1; });
     ctx.on(cv.cv, 'pointerdown', e => {
       const c = colAt(cv.pos(e));
-      if (e.pointerType === 'mouse') { tryDrop(c); return; }
+      if (e.pointerType === 'mouse') { if (c >= 0 && ctx.needConfirm(e) && pendCol !== c) { pendCol = c; ctx.sfx('tick'); return; } pendCol = -1; tryDrop(c); return; }
       if (!myTurn()) return; touchCol = c; try { cv.cv.setPointerCapture(e.pointerId); } catch (er) {}
     });
     const up = e => { if (e.pointerType === 'mouse') return; const c = touchCol; touchCol = -1; if (e.type === 'pointerup') tryDrop(c >= 0 ? colAt(cv.pos(e)) : -1); };
@@ -160,13 +161,13 @@ BX.register({
       valid: (a, by) => by === st.turn && !st.over && Number.isInteger(a.c) && a.c >= 0 && a.c < COLS && height(a.c) < ROWS,
       apply(a) {
         const r = height(a.c), i = ix(a.c, r);
-        st.b[i] = st.turn + 1; st.last = i; st.moves++; hoverCol = -1;
+        st.b[i] = st.turn + 1; st.last = i; st.moves++; hoverCol = -1; hint = -1; pendCol = -1;
         const d = {i, k: 0, from: ROWS - r}; drop = d;
         ctx.anim(180 + 70 * (ROWS - r), k => d.k = k, () => { if (drop === d) drop = null; ctx.sfx('stone'); }, BX.ease.bounce);
         ctx.sfx('whoosh');
         const line = winLine(st.b, i);
-        if (line) { st.win = {seat: st.turn, line}; st.over = true; status(); ctx.end({winner: st.turn, delay: 1500}); return; }
-        if (st.moves === NC) { st.over = true; status(); ctx.end({winner: -1, delay: 1200}); return; }
+        if (line) { st.win = {seat: st.turn, line}; st.over = true; status(); if (ctx.isLocal(st.turn)) ctx.buzz(30); ctx.end({winner: st.turn, delay: 1500, text: ctx.name(st.turn) + ' 第 ' + Math.ceil(st.moves / 2) + ' 手连成四子（全局共 ' + st.moves + ' 子）'}); return; }
+        if (st.moves === NC) { st.over = true; status(); ctx.end({winner: -1, delay: 1200, text: '42 格全部下满，无人连四'}); return; }
         st.turn = 1 - st.turn; status();
       },
       aiMove(seat, level) {
@@ -185,6 +186,16 @@ BX.register({
         return {c: BX.ai.byLevel(sc, 3)};
       },
       onTurn: status,
+      showHint(a) { hint = a.c; hintT = glow; },
+      key(e) {
+        if (!myTurn()) return;
+        const cur = keyCol >= 0 ? keyCol : hoverCol >= 0 ? hoverCol : 3;
+        const m = /^(Digit|Numpad)([1-7])$/.exec(e.code);
+        if (m) { keyCol = +m[2] - 1; ctx.sfx('tick'); return; }
+        if (e.code === 'ArrowLeft' || e.code === 'KeyA') { keyCol = Math.max(0, cur - 1); ctx.sfx('tick'); }
+        else if (e.code === 'ArrowRight' || e.code === 'KeyD') { keyCol = Math.min(COLS - 1, cur + 1); ctx.sfx('tick'); }
+        else if (e.code === 'Enter' || e.code === 'Space' || e.code === 'ArrowDown' || e.code === 'KeyS') { if (e.preventDefault) e.preventDefault(); if (keyCol < 0) keyCol = cur; else tryDrop(keyCol); }
+      },
       frame(dt) {
         const g = cv.g; cv.clear(); glow += dt;
         const {s, bx, by, top} = geo(), R = s * .4;
@@ -193,16 +204,21 @@ BX.register({
         g.fillStyle = 'rgba(0,0,0,.35)'; D.rr(g, bx - s * .3 + 6, by - s * .25 + 10, COLS * s + s * .6, ROWS * s + s * .6, s * .3); g.fill();
         g.fillStyle = '#1e0d07'; D.rr(g, bx - s * .3, by - s * .25, COLS * s + s * .6, ROWS * s + s * .55, s * .3); g.fill();
         // active column highlight
-        const pc = touchCol >= 0 ? touchCol : hoverCol;
+        const pc = touchCol >= 0 ? touchCol : pendCol >= 0 ? pendCol : keyCol >= 0 ? keyCol : hoverCol;
         if (pc >= 0 && myTurn() && height(pc) < ROWS) { g.fillStyle = 'rgba(255,230,160,.10)'; g.fillRect(bx + pc * s, by, s, ROWS * s); }
         // pieces (behind the front panel)
         for (let i = 0; i < NC; i++) {
           const v = st.b[i]; if (!v) continue;
           const c = (i / ROWS) | 0, r = i % ROWS; let y = cy(r);
           if (drop && drop.i === i) y = BX.lerp(top - s * .1, cy(r), drop.k);
+          const dim = st.win && !drop && !st.win.line.includes(i);
+          if (dim) g.globalAlpha = .45;
           D.disc(g, cx(c), y, R, PCOL[v - 1], {ring: 'rgba(255,240,200,.45)', shadow: false});
           D.text(g, v === 1 ? '朱' : '金', cx(c), y + 1, {size: R * .8, color: 'rgba(255,245,220,.55)', font: 'serif', weight: 900});
+          g.globalAlpha = 1;
         }
+        // ghost of the piece at its landing slot
+        if (pc >= 0 && myTurn() && height(pc) < ROWS) { g.globalAlpha = .38; D.disc(g, cx(pc), cy(height(pc)), R, PCOL[st.turn], {ring: 'rgba(255,240,200,.45)', shadow: false}); g.globalAlpha = 1; }
         // front panel with holes (evenodd)
         g.save();
         g.beginPath(); D.rr(g, bx - s * .3, by - s * .25, COLS * s + s * .6, ROWS * s + s * .55, s * .3);
@@ -215,6 +231,35 @@ BX.register({
         g.lineWidth = Math.max(2, s * .06); g.strokeStyle = C.gold; D.rr(g, bx - s * .3, by - s * .25, COLS * s + s * .6, ROWS * s + s * .55, s * .3); g.stroke();
         // feet
         g.fillStyle = '#3a1a0c'; for (const fx of [bx - s * .1, bx + COLS * s - s * .5]) { D.rr(g, fx, by + ROWS * s + s * .25, s * .6, s * .22, s * .06); g.fill(); }
+        for (let c = 0; c < COLS; c++) D.text(g, String(c + 1), cx(c), by + ROWS * s + s * .66, {size: Math.max(10, s * .2), color: c === pc && myTurn() ? C.gold2 : 'rgba(243,226,192,.45)', weight: 700});
+        // turn plaque below the board when there is room (phones in portrait)
+        const room = cv.h - (by + ROWS * s + s * .85);
+        if (room > 70) {
+          const pw = Math.min(COLS * s, 360), ph = 52, px = bx + COLS * s / 2 - pw / 2, py = by + ROWS * s + s * .85 + Math.min(40, (room - ph) / 2);
+          g.fillStyle = 'rgba(30,18,8,.6)'; D.rr(g, px, py, pw, ph, 14); g.fill();
+          for (let q = 0; q < 2; q++) {
+            const x = px + (q ? pw * .75 : pw * .25), on = !st.over && st.turn === q;
+            if (on) { g.fillStyle = 'rgba(230,197,125,.22)'; D.rr(g, x - pw * .23, py + 5, pw * .46, ph - 10, 10); g.fill(); }
+            D.disc(g, x - pw * .14, py + ph / 2, 13, PCOL[q], {ring: 'rgba(255,240,200,.5)', shadow: false});
+            D.text(g, ctx.name(q), x + 8, py + ph / 2, {size: 14, color: on ? '#fff3d6' : 'rgba(243,226,192,.6)', weight: 700, maxW: pw * .28});
+          }
+          D.text(g, '第 ' + (st.moves + (st.over ? 0 : 1)) + ' 子', px + pw / 2, py + ph + 14, {size: 12, color: 'rgba(243,226,192,.55)', weight: 500});
+        }
+        // threats (pref hints): empty cells that would complete four for either side
+        if (!st.over && ctx.pref('hints')) {
+          const me = ctx.hotseat ? st.turn : (ctx.mySeats && ctx.mySeats.length ? ctx.mySeats[0] : st.turn);
+          const bb = st.b.slice();
+          for (let c = 0; c < COLS; c++) { const h0 = height(c); for (let r = h0; r < ROWS; r++) {
+            const i = ix(c, r);
+            for (const p of [1, 2]) { bb[i] = p; const w = isWin(bb, i); bb[i] = 0; if (!w) continue;
+              const now = r === h0, mine = p === me + 1;
+              g.strokeStyle = mine ? `rgba(90,220,160,${now ? .95 : .5})` : `rgba(255,90,60,${now ? .7 + .3 * Math.sin(glow * 6) : .5})`;
+              g.lineWidth = Math.max(2, s * (now ? .07 : .04)); g.setLineDash(now ? [] : [s * .08, s * .07]); D.circle(g, cx(c), cy(r), R * .78); g.stroke(); g.setLineDash([]);
+            }
+          } }
+        }
+        // hint
+        if (hint >= 0 && myTurn() && height(hint) < ROWS) { const k = glow - hintT, a = .6 + .35 * Math.sin(k * 7); g.strokeStyle = `rgba(63,200,140,${a})`; g.lineWidth = s * .08; D.circle(g, cx(hint), cy(height(hint)), R * 1.02); g.stroke(); g.fillStyle = `rgba(63,200,140,${a})`; g.beginPath(); g.moveTo(cx(hint) - s * .18, by - s * .5); g.lineTo(cx(hint) + s * .18, by - s * .5); g.lineTo(cx(hint), by - s * .28); g.fill(); }
         // last move marker
         if (st.last >= 0 && !(drop && drop.i === st.last) && !st.win) { g.strokeStyle = '#fff3c4'; g.lineWidth = Math.max(2, s * .05); D.circle(g, cx((st.last / ROWS) | 0), cy(st.last % ROWS), R * .55); g.stroke(); }
         // win line

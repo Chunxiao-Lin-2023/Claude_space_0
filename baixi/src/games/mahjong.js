@@ -200,6 +200,7 @@ function tileFace(g, x, y, w, h, ty, o = {}) {
   else { const fi = ty - 16; D.text(g, FLW[fi], cx, y + fh * .45, {size: w * .62, color: fi < 4 ? '#1f7a3e' : '#b8261c', font: 'serif', weight: 900}); D.text(g, String(fi % 4 + 1), x + w * .8, y + fh * .82, {size: w * .26, color: '#8a6a2c', weight: 800}); }
   if (o.sel) { g.strokeStyle = o.sel === true ? '#e0a020' : o.sel; g.lineWidth = Math.max(2, w * .08); D.rr(g, x, y, w, h - d, r); g.stroke(); }
   if (o.dim) { g.fillStyle = 'rgba(40,20,0,.28)'; D.rr(g, x, y, w, h, r); g.fill(); }
+  if (o.hl) { g.fillStyle = 'rgba(255,205,70,.3)'; D.rr(g, x, y, w, h - d, r); g.fill(); g.strokeStyle = '#ffcf4a'; g.lineWidth = Math.max(1.5, w * .06); g.stroke(); }
   g.restore();
 }
 function tileBack(g, x, y, w, h, o = {}) {
@@ -217,13 +218,14 @@ BX.register({
   desc: '两人对局的国标风味麻将：只用万子与字牌（可加花牌），吃碰杠俱全，八番起和，和牌后列出番种明细。',
   kind: 'turn', seats: 2, hidden: true, firstLabel: '坐庄', aiDelay: 480, seatColors: ['#c23a2b', '#2f5d8a'],
   options: [{key: 'flower', label: '花牌', choices: [[1, '有花（补花）'], [0, '无花']], def: 1}],
+  howto: ['轮到你时点一张牌选中、再点一次打出（鼠标单击直接打出；可在「⋯」里改成都要确认）。', '牌上的「听」表示打出它就能听牌；选中后上方列出听哪些牌、各剩几张、能否凑够 8 番。', '对手打牌后可吃/碰/杠/和时下方弹出按钮；右上角可开「自动和」「不吃」。', '💡 标出推荐打的牌；键盘：←→ 选牌 · 回车 打出 · H 和 · P 碰 · G 杠 · C 吃 · 空格/Esc 过。'],
   rules: `<p><b>牌：</b>万子一万至九万各 4 张，字牌东南西北中发白各 4 张，共 64 张；选“有花”时另加梅兰竹菊春夏秋冬 8 张花牌。</p>
 <p><b>开局：</b>庄家（东风位）14 张，闲家（西风位）13 张，圈风为东。摸到花牌立即亮出，并从牌墙尾部<b>补花</b>。</p>
 <p><b>行牌：</b>轮流摸牌、打牌。对手打出的牌可以：<br>· <b>吃</b>：与手中两张组成顺子（二人对局中对手的牌都可吃）；<br>· <b>碰</b>：手中有两张相同牌；<br>· <b>明杠</b>：手中有三张相同牌。<br>自己摸牌后可<b>暗杠</b>（四张相同）或<b>补杠</b>（加到已碰的刻子上，对手可<b>抢杠和</b>）。杠后从牌墙尾部补一张牌。</p>
 <p><b>和牌：</b>四组面子（顺子/刻子/杠）加一对将，或七个对子（七对）。自摸或和对手打出的牌均可。<b>必须达到 8 番才能和牌</b>（花牌每张 1 番，不计入起和番数）。</p>
 <p><b>常用番种：</b>大四喜 88、大三元 88、九莲宝灯 88、四杠 88、小四喜 64、小三元 64、字一色 64、四暗刻 64、混幺九 32、清一色 24、七对 24、一色三同顺 24、清龙 16、三暗刻 16、三风刻 12、妙手回春 8、海底捞月 8、杠上开花 8、抢杠和 8、碰碰和 6、混一色 6、双箭刻 6、全带幺 4、不求人 4、箭刻 2、圈风刻 2、门风刻 2、门前清 2、平和 2、四归一 2、双暗刻 2、暗杠 2、断幺 2、一般高 1、连六 1、老少副 1、幺九刻 1、明杠 1、边张/坎张/单钓将 1、自摸 1、无字 1 等。番种按国标“不重复计番”原则计算，取最高组合。</p>
 <p><b>荒庄：</b>牌墙摸完仍无人和牌则流局。一局定胜负。</p>
-<p>操作：轮到你时点选一张牌，再点一次打出（电脑上可直接单击）；可吃碰杠和时下方会弹出按钮。</p>`,
+<p>操作：轮到你时点选一张牌，再点一次打出（电脑上可直接单击）；可吃碰杠和时下方会弹出按钮。选中一张牌会显示打出后听哪些牌、剩余张数与番数。</p>`,
   icon(g, w, h) {
     const gr = g.createRadialGradient(w / 2, h / 2, 10, w / 2, h / 2, w * .7); gr.addColorStop(0, '#2f7a56'); gr.addColorStop(1, '#173d2b'); g.fillStyle = gr; g.fillRect(0, 0, w, h);
     const tw = w * .14, th = tw * 1.38;
@@ -404,33 +406,66 @@ BX.register({
     const cv = ctx.canvas();
     const ui = ctx.ui();
     ui.append(h('style', {text: `.mj-bar{gap:8px}.mj-bar .bx-btn{min-width:64px;padding:10px 14px;font-size:17px}
+.mj-tg{position:absolute;right:10px;display:flex;gap:6px}.mj-tg .bx-btn{min-height:40px;min-width:0;padding:4px 10px;font-size:13px;opacity:.85}.mj-tg .bx-btn.on{background:#2f6a4c;color:#fff3d6;border-color:#9fd3b2;opacity:1}
+@keyframes mjPulse{50%{box-shadow:0 0 0 3px #ffd76a,0 0 18px 4px rgba(255,215,106,.9)}}.mj-hint{animation:mjPulse .9s ease-in-out infinite;outline:2px solid #ffd76a}
 @media (max-height:500px){.mj-bar{bottom:6px}.mj-bar .bx-btn{min-height:42px;padding:6px 12px}}`}));
-    const bar = h('div', {class: 'bx-bar mj-bar'}); ui.append(bar);
-    let sel = -1, hover = -1, sig = '', hitBoxes = [];
+    const bar = h('div', {class: 'bx-bar mj-bar'}), tg = h('div', {class: 'mj-tg'}); ui.append(bar, tg);
+    let sel = -1, hover = -1, sig = '', hitBoxes = [], hintA = null, hintT = 0, autoN = -1;
+    const auto = Object.assign({hu: false, nochi: false}, ctx.load('mj.auto', {}) || {});
+    function drawToggles() {
+      tg.innerHTML = '';
+      const T = (k, txt) => h('button', {class: 'bx-btn ghost' + (auto[k] ? ' on' : ''), text: (auto[k] ? '☑ ' : '☐ ') + txt, on: {click: () => { auto[k] = !auto[k]; ctx.save('mj.auto', auto); ctx.sfx('click'); drawToggles(); sig = ''; refreshUI(); }}});
+      tg.append(T('hu', '自动和'), T('nochi', '不吃'));
+    }
+    drawToggles();
     const me = () => ctx.view;
+    const huFan = (s, t, self) => { const r = huEval(s, t, self); return r ? r.total + st.fl[s].length : 0; };
+    function scheduleAuto(a) {
+      if (autoN === st.nAct) return; autoN = st.nAct; const n0 = st.nAct;
+      ctx.after(380, () => { const s = me(); if (st.nAct === n0 && ctx.canAct(s) && inst.valid(a, s)) { sel = -1; ctx.act(a, s); } });
+    }
     function refreshUI(force) {
       const s = me(), can = ctx.canAct(s);
-      const key = JSON.stringify([can, st.ph, st.turn, st.nAct, s]);
+      const key = JSON.stringify([can, st.ph, st.turn, st.nAct, s, hintA]);
       if (key === sig && !force) return; sig = key;
       bar.innerHTML = '';
       if (!can) return;
-      const B = (txt, cls, a) => h('button', {class: 'bx-btn ' + (cls || ''), text: txt, on: {click: () => { ctx.sfx('click'); sel = -1; ctx.act(a, s); }}});
+      const hk = a => hintA && hintA.t === a.t && hintA.lo === a.lo && hintA.tt === a.tt;
+      const B = (txt, cls, a) => h('button', {class: 'bx-btn ' + (cls || '') + (hk(a) ? ' mj-hint' : ''), text: txt, on: {click: () => { ctx.sfx('click'); sel = -1; ctx.act(a, s); }}});
       if (st.ph === 'claim') {
         const L = claims(s), t = tyOf(st.last.id);
-        if (L.hu) bar.append(B('和', 'red', {t: 'hu'}));
+        if (L.hu) bar.append(B('和 · ' + huFan(s, t, false) + '番', 'red', {t: 'hu'}));
         if (L.gang) bar.append(B('杠', 'jade', {t: 'gang'}));
         if (L.peng) bar.append(B('碰', 'jade', {t: 'peng'}));
         for (const lo of L.chi) bar.append(B('吃 ' + [lo, lo + 1, lo + 2].map(x => NUM[x]).join(''), '', {t: 'chi', lo}));
         bar.append(B('过', 'ghost', {t: 'pass'}));
-        void t;
+        if (L.hu && auto.hu) scheduleAuto({t: 'hu'});
+        else if (auto.nochi && !L.hu && !L.peng && !L.gang) scheduleAuto({t: 'pass'});
       } else if (st.ph === 'rob') {
         bar.append(B('抢杠和', 'red', {t: 'hu'}), B('过', 'ghost', {t: 'pass'}));
+        if (auto.hu) scheduleAuto({t: 'hu'});
       } else if (st.ph === 'discard') {
         const O = turnOpts(s);
-        if (O.zimo) bar.append(B('自摸 和', 'red', {t: 'zimo'}));
+        if (O.zimo) bar.append(B('自摸 · ' + huFan(s, null, true) + '番', 'red', {t: 'zimo'}));
         for (const t of O.an) bar.append(B('暗杠 ' + tName(t), 'jade', {t: 'an', tt: t}));
         for (const t of O.bu) bar.append(B('补杠 ' + tName(t), 'jade', {t: 'bu', tt: t}));
+        if (O.zimo && auto.hu) scheduleAuto({t: 'zimo'});
       }
+    }
+    /* 听牌 helper: waits after removing one tile of type `t` (or the current 13-tile hand when t < 0) */
+    const wCache = new Map();
+    function waitInfo(s, t) {
+      const key = st.nAct + ':' + s + ':' + t; if (wCache.has(key)) return wCache.get(key);
+      if (wCache.size > 60) wCache.clear();
+      const c = counts(st.hands[s]); if (t >= 0) c[t]--;
+      const k = st.melds[s].length, U = unseen(s), out = [];
+      for (const w of waits(c, k)) {
+        c[w]++;
+        const ron = evalWin(c, st.melds[s], w, winCtx(s, false)), tsu = evalWin(c, st.melds[s], w, Object.assign(winCtx(s, true), {gang: false}));
+        c[w]--;
+        out.push({t: w, left: U[w], ron: ron ? ron.total : 0, tsu: tsu ? tsu.total : 0});
+      }
+      wCache.set(key, out); return out;
     }
     function status() {
       for (const s of [0, 1]) ctx.info(s, (wind(s) === EAST ? '东·庄' : '西') + (st.fl[s].length ? ' 花' + st.fl[s].length : ''));
@@ -446,20 +481,21 @@ BX.register({
       ctx.status(m + ' · 余 ' + live() + ' 张');
       refreshUI();
     }
-    function tapTile(id) {
-      const s = me(); if (!ctx.canAct(s) || st.ph !== 'discard') return;
-      if (sel === id) { sel = -1; ctx.act({t: 'dis', id}, s); return; }
+    const canDiscard = () => ctx.canAct(me()) && st.ph === 'discard';
+    function tapTile(id, e) {
+      const s = me(); if (!canDiscard()) return;
+      if (sel === id || !ctx.needConfirm(e)) { sel = -1; hintA = null; ctx.act({t: 'dis', id}, s); return; }
       sel = id; ctx.sfx('tick');
     }
     const hitAt = p => { for (let i = hitBoxes.length - 1; i >= 0; i--) { const b = hitBoxes[i]; if (p.x >= b.x && p.x <= b.x + b.w && p.y >= b.y - b.lift && p.y <= b.y + b.h) return b.id; } return -1; };
     ctx.on(cv.cv, 'pointerdown', e => {
       const id = hitAt(cv.pos(e));
       if (id < 0) { sel = -1; return; }
-      if (e.pointerType === 'mouse') { const s = me(); if (ctx.canAct(s) && st.ph === 'discard') { sel = -1; ctx.act({t: 'dis', id}, s); } }
-      else tapTile(id);
+      tapTile(id, e);
     });
     ctx.on(cv.cv, 'pointermove', e => { if (e.pointerType === 'mouse') hover = hitAt(cv.pos(e)); });
     ctx.on(cv.cv, 'pointerleave', () => hover = -1);
+    let order = [];   // my hand in display order (for keyboard)
 
     /* ---------------- drawing ---------------- */
     const vis = new Map(); let wait = 0;
@@ -493,11 +529,15 @@ BX.register({
       if (drawnHere) sorted.push(st.drawn);
       const canDis = ctx.canAct(s) && st.ph === 'discard';
       if (!canDis) sel = -1;
+      order = sorted;
+      const showH = ctx.pref('hints'), tingT = new Set();
+      if (canDis && showH && st.hands[s].length % 3 === 2) for (const t of new Set(sorted.filter(id => id < 64).map(tyOf))) if (waitInfo(s, t).length) tingT.add(t);
+      const hintId = hintA && hintA.t === 'dis' ? hintA.id : -1;
       sorted.forEach((id, i) => {
         const isD = drawnHere && i === sorted.length - 1, row = two && i < 7 && !(isD && i < 7) ? 0 : 1, col = two ? (row ? i - 7 : i) : i;
         const gx = isD && two ? x + 6.4 * tw : x + col * tw + (isD ? tw * .4 : 0), gy = two && !row ? topY : myY;
         const lift = canDis && (id === sel || id === hover) ? th * .22 : 0;
-        T.push({id, x: gx, y: gy - lift, w: tw, h: th, face: true, sel: id === sel});
+        T.push({id, x: gx, y: gy - lift, w: tw, h: th, face: true, sel: id === sel, mine: true, ting: tingT.has(tyOf(id)), hint: id === hintId});
         if (canDis) hitBoxes.push({id, x: gx, y: gy, w: tw, h: th, lift: th * .2});
       });
       const handEnd = x + sorted.length * tw + (drawnHere ? tw * .4 : 0);
@@ -509,7 +549,7 @@ BX.register({
         for (const m of st.melds[p]) {
           m.ids.forEach((id, j) => {
             const hide = m.k === 'kong' && !m.open && (j === 0 || j === 3) && !st.over;
-            T.push({id, x: cx, y: sy, w: mwid, h: mwid * 1.36, face: !hide, meld: true}); cx += mwid;
+            T.push({id, x: cx, y: sy, w: mwid, h: mwid * 1.36, face: !hide, back: hide, meld: true}); cx += mwid;
           });
           cx += mwid * .26;
         }
@@ -533,15 +573,25 @@ BX.register({
       st.river[o].forEach((id, i) => { const r = Math.floor(i / rCols), c = i % rCols; T.push({id, x: rx0 + c * rw, y: midY - 22 - (r + 1) * rh, w: rw, h: rh, face: true, last: st.last && st.last.id === id}); });
       st.river[s].forEach((id, i) => { const r = Math.floor(i / rCols), c = i % rCols; T.push({id, x: rx0 + c * rw, y: midY + 22 + r * rh, w: rw, h: rh, face: true, last: st.last && st.last.id === id}); });
       void rRows;
-      // center info
-      g.fillStyle = 'rgba(15,35,25,.55)'; D.rr(g, W / 2 - 92, midY - 17, 184, 34, 17); g.fill();
+      // center info (+ persistent 听牌 display when waiting)
+      const myW = !st.over && st.hands[s].length % 3 === 1 ? waitInfo(s, -1).slice(0, Math.max(1, Math.floor((W - 200) / 42))) : [];
+      const mini = 20, pillW = 150 + (myW.length ? 26 + myW.length * (mini + 22) : 0), px0 = W / 2 - pillW / 2;
+      g.fillStyle = 'rgba(15,35,25,.62)'; D.rr(g, px0, midY - 17, pillW, 34, 17); g.fill();
       g.strokeStyle = 'rgba(230,197,125,.45)'; g.lineWidth = 1; g.stroke();
-      D.text(g, '东风圈', W / 2 - 52, midY, {size: 14, color: '#e6c57d', font: 'serif', weight: 700});
-      D.text(g, '余 ' + live() + ' 张', W / 2 + 40, midY, {size: 14, color: '#f3e2c0', weight: 700});
+      D.text(g, '东风圈', px0 + 40, midY, {size: 14, color: '#e6c57d', font: 'serif', weight: 700});
+      D.text(g, '余 ' + live() + ' 张', px0 + 108, midY, {size: 14, color: '#f3e2c0', weight: 700});
+      if (myW.length) {
+        let qx = px0 + 150; D.text(g, '听', qx + 8, midY, {size: 14, color: '#ffcf4a', font: 'serif', weight: 900}); qx += 22;
+        for (const wv of myW) { tileFace(g, qx, midY - mini * .68, mini, mini * 1.36, wv.t, {shadow: false, dim: !wv.left}); D.text(g, String(wv.left), qx + mini + 8, midY, {size: 12, color: wv.ron >= 8 ? '#bff5c8' : wv.tsu >= 8 ? '#ffe3a0' : '#ff9a8a', weight: 800}); qx += mini + 22; }
+      }
       // seat wind badges
       const badge = (txt, bx, by2, col) => { D.disc(g, bx, by2, 13, col, {shadow: true}); D.text(g, txt, bx, by2 + 1, {size: 14, color: '#fff3e3', font: 'serif', weight: 900}); };
       badge(wind(o) === EAST ? '东' : '西', W - 26, oy + oh / 2, ctx.color(o));
-      badge(wind(s) === EAST ? '东' : '西', wide ? 24 : W / 2 - 110, wide ? myY + th / 2 : midY, ctx.color(s));
+      badge(wind(s) === EAST ? '东' : '西', wide ? 24 : Math.max(16, px0 - 18), wide ? myY + th / 2 : midY, ctx.color(s));
+      tg.hidden = st.over;
+      if (wide) { tg.style.left = '10px'; tg.style.right = 'auto'; tg.style.top = (midY - 20) + 'px'; }
+      else { tg.style.right = '10px'; tg.style.left = 'auto'; tg.style.top = (oy + oh + 8) + 'px'; }
+      const focusT = hover >= 0 ? tyOf(hover) : sel >= 0 ? tyOf(sel) : hintId >= 0 ? tyOf(hintId) : -1;
       // tween + draw
       const src = {x: W / 2 - tw / 2, y: midY - th / 2};
       wait = Math.max(0, wait - dt);
@@ -551,13 +601,28 @@ BX.register({
         if (v.wait > 0) { v.wait -= dt; continue; }
         const k = Math.min(1, dt * 12); v.x += (t.x - v.x) * k; v.y += (t.y - v.y) * k;
         if (t.back) tileBack(g, v.x, v.y, t.w, t.h);
-        else tileFace(g, v.x, v.y, t.w, t.h, tyOf(t.id), {sel: t.sel || (t.last ? '#ffcf4a' : false), shadow: !t.meld || true, dim: st.win && st.win.from >= 0 && false});
+        else tileFace(g, v.x, v.y, t.w, t.h, tyOf(t.id), {sel: t.sel || (t.last ? '#ffcf4a' : false), hl: !t.mine && t.face && tyOf(t.id) === focusT});
+        if (t.ting && !t.back) { const bw = Math.max(14, t.w * .42); g.fillStyle = '#b8261c'; D.rr(g, v.x + t.w - bw * .8, v.y - bw * .45, bw, bw * .8, bw * .25); g.fill(); D.text(g, '听', v.x + t.w - bw * .3, v.y - bw * .05, {size: bw * .58, color: '#fff3d6', font: 'serif', weight: 900}); }
+        if (t.hint) { const k = Math.sin(performance.now() / 150); g.strokeStyle = 'rgba(63,200,140,' + (.6 + .35 * k) + ')'; g.lineWidth = 3.5; D.rr(g, v.x - 3, v.y - 3, t.w + 6, t.h + 6, t.w * .18); g.stroke(); }
         if (t.last && st.ph === 'claim') { g.fillStyle = '#ffcf4a'; g.beginPath(); const ax = v.x + t.w / 2, ay = v.y - 4; g.moveTo(ax, ay); g.lineTo(ax - 6, ay - 9); g.lineTo(ax + 6, ay - 9); g.closePath(); g.fill(); }
       }
-      // waits hint for selected tile
-      if (sel >= 0 && canDis) {
-        const c = counts(st.hands[s]); c[tyOf(sel)]--; const ws = waits(c, st.melds[s].length);
-        if (ws.length) { const txt = '打出后听：' + ws.map(tName).join(' '); D.text(g, txt, W / 2, topY - th * .3 - 12, {size: 13, color: '#ffe3a0', weight: 700, stroke: 'rgba(0,0,0,.6)', strokeW: 3}); }
+      // 听牌 panel for the selected / hovered tile: waits, tiles left, fan count (8 番起和)
+      const fid = sel >= 0 ? sel : hover >= 0 ? hover : hintId;
+      if (fid >= 0 && canDis && showH && st.hands[s].length % 3 === 2) {
+        const ws = waitInfo(s, tyOf(fid));
+        if (ws.length) {
+          const mw = Math.max(22, Math.min(34, tw * .62)), mh = mw * 1.36, cellW = mw + 46, pw = 66 + ws.length * cellW, ph = mh + 14;
+          const pyTop = (!wide && st.melds[s].length ? my : topY) - th * .25 - ph - 8, pxL = BX.clamp(W / 2 - pw / 2, 8, W - pw - 8);
+          g.fillStyle = 'rgba(20,12,6,.88)'; D.rr(g, pxL, pyTop, Math.min(pw, W - 16), ph, 10); g.fill(); g.strokeStyle = 'rgba(230,197,125,.6)'; g.lineWidth = 1; g.stroke();
+          D.text(g, '听', pxL + 22, pyTop + ph / 2, {size: 18, color: '#ffcf4a', font: 'serif', weight: 900});
+          ws.forEach((wv, i) => {
+            const qx = pxL + 44 + i * cellW; if (qx + cellW > W) return;
+            tileFace(g, qx, pyTop + 7, mw, mh, wv.t, {shadow: false, dim: !wv.left});
+            D.text(g, '剩' + wv.left, qx + mw + 22, pyTop + ph * .34, {size: 12, color: wv.left ? '#f3e2c0' : '#ff9a8a', weight: 700});
+            const ok = wv.ron >= 8, txt = ok ? wv.ron + '番' : wv.tsu >= 8 ? '自摸' + wv.tsu : '不足8番';
+            D.text(g, txt, qx + mw + 22, pyTop + ph * .7, {size: 11, color: ok ? '#bff5c8' : wv.tsu >= 8 ? '#ffe3a0' : '#ff9a8a', weight: 700});
+          });
+        }
       }
       // win banner
       if (st.win) {
@@ -586,7 +651,7 @@ BX.register({
         return false;
       },
       apply(a, by) {
-        st.nAct++;
+        st.nAct++; hintA = null;
         if (a.t === 'deal') { deal(); status(); return; }
         const s = by;
         if (st.ph === 'discard') {
@@ -630,7 +695,27 @@ BX.register({
         return null;
       },
       onTurn: status,
-      onView() { sel = -1; sig = ''; status(); },
+      onView() { sel = -1; sig = ''; hintA = null; status(); },
+      showHint(a) {
+        hintA = a; hintT = performance.now(); sig = '';
+        if (a.t === 'dis') { sel = a.id; ctx.toast('建议打出 ' + tName(tyOf(a.id))); }
+        else ctx.toast('建议：' + ({hu: '和牌', zimo: '自摸', peng: '碰', gang: '杠', chi: '吃', pass: '过', an: '暗杠', bu: '补杠'}[a.t] || ''));
+        refreshUI(true);
+      },
+      key(e) {
+        const s = me(); if (!ctx.canAct(s)) return;
+        const clickBtn = re => { for (const b of bar.querySelectorAll('button')) if (re.test(b.textContent)) { b.click(); return true; } return false; };
+        if (e.code === 'KeyH' && clickBtn(/^(和|自摸|抢杠和)/)) return;
+        if (e.code === 'KeyP' && clickBtn(/^碰/)) return;
+        if (e.code === 'KeyG' && clickBtn(/^(杠|暗杠|补杠)/)) return;
+        if (e.code === 'KeyC' && clickBtn(/^吃/)) return;
+        if ((e.code === 'Escape' || e.code === 'KeyX' || (e.code === 'Space' && st.ph !== 'discard')) && clickBtn(/^过/)) return;
+        if (st.ph !== 'discard' || !order.length) return;
+        let i = order.indexOf(sel);
+        if (e.code === 'ArrowLeft' || e.code === 'ArrowRight') { i = i < 0 ? order.length - 1 : (i + (e.code === 'ArrowLeft' ? -1 : 1) + order.length) % order.length; sel = order[i]; ctx.sfx('tick'); }
+        else if ((e.code === 'Enter' || e.code === 'Space') && sel >= 0 && st.hands[s].includes(sel)) { const id = sel; sel = -1; hintA = null; ctx.act({t: 'dis', id}, s); }
+        else if (e.code === 'KeyD' && st.drawn != null && st.hands[s].includes(st.drawn)) { sel = -1; ctx.act({t: 'dis', id: st.drawn}, s); }
+      },
       frame,
     };
     void legalActs;

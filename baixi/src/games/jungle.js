@@ -133,6 +133,10 @@ BX.register({
   id: 'jungle', title: '斗兽棋', cat: 'heavy', order: 4, sub: '象狮虎豹，鼠能吃象',
   desc: '八种动物各有大小，大吃小、鼠吃象。只有老鼠会游泳，狮虎能跳河，谁先闯进对方兽穴谁就赢。',
   kind: 'turn', seats: 2, seatNames: ['红方', '蓝方'], seatColors: ['#c23a2b', '#2f5d8a'], firstLabel: '执子',
+  howto: ['<b>点选</b>自己的动物再点目标格，或<b>按住拖</b>过去。绿点 = 可走，红圈 = 可吃，<b>橙点</b> = 走过去会被对方吃掉。',
+    '轮到你时，正被对方威胁的动物会出现红色「!」。大小：象8 狮7 虎6 豹5 狼4 狗3 猫2 鼠1，鼠能吃象。',
+    '下方 ◀ ▶ 回看每一步，「谱」看全部走法，⇅ 翻转棋盘；电脑键盘 ← → 回看、F 翻转。',
+    '顶栏 ↶ 悔棋，💡 提示一步好棋。'],
   rules: `<p><b>棋盘</b>：7 列 × 9 行。中间有两条<b>小河</b>；双方底线中央是自己的<b>兽穴</b>，兽穴周围三格是<b>陷阱</b>。红方先走。</p>
 <p><b>动物大小</b>：象 8 &gt; 狮 7 &gt; 虎 6 &gt; 豹 5 &gt; 狼 4 &gt; 狗 3 &gt; 猫 2 &gt; 鼠 1（棋子右下角的数字）。</p>
 <p><b>走法</b>：每次把一只动物向上下左右走一格，不能走进自己的兽穴。</p>
@@ -142,7 +146,7 @@ BX.register({
 <p><b>陷阱</b>：动物走进<b>对方</b>的陷阱后，对方任何一只动物都可以吃掉它。在自己的陷阱里不受影响。</p>
 <p><b>胜负</b>：任何一只动物走进<b>对方兽穴</b>即获胜；吃光对方所有动物、或对方无子可走时也获胜。</p>
 <p><b>和棋</b>：同一局面重复出现三次，或连续 50 回合（双方共 100 步）无吃子，判和。</p>
-<p><b>操作</b>：点选自己的动物，绿点为可走位置，红圈为可吃，再点目标格。</p>`,
+<p><b>操作</b>：点选或拖动自己的动物到目标格。绿点为可走位置，红圈为可吃，橙点表示走过去会立刻被对方吃掉；轮到你时，正被威胁的动物头上会出现红色「!」。</p>`,
   icon(g, w, h) {
     g.fillStyle = '#9cc47a'; g.fillRect(0, 0, w, h);
     const s = h / 4; g.strokeStyle = 'rgba(40,70,30,.35)'; g.lineWidth = 1;
@@ -160,35 +164,59 @@ BX.register({
   create(ctx) {
     const st = {b: START.slice(), turn: 0, ply: 0, noCap: 0, keys: [Eng(START, 0).hash()], caps: [[], []], last: null, over: false, result: null};
     const cv = ctx.canvas(), boardImg = L.cache();
-    let sel = -1, legal = [], anim = null, call = null, t = 0;
-    const flip = () => ctx.mySeats.length === 1 && ctx.mySeats[0] === 1;
+    let legal = [], tgt = new Map(), danger = new Set(), threat = [], anim = null, call = null, t = 0, hint = null, uflip = !!ctx.load('flip', false);
+    const H = L.history(ctx); H.push({b: st.b.slice(), last: null, txt: '开局', side: -1});
+    const flip = () => (ctx.mySeats.length === 1 && ctx.mySeats[0] === 1) !== uflip;
     function geo() {
-      const W = cv.w, H = cv.h, land = W > H * 1.08;
-      const f = land ? BX.fit(W, H, 7.6 + 2 * 3.4, 9.6, 6) : BX.fit(W, H, 7.6, 9.6 + 2 * 1.25, 6);
-      const s = Math.min(f.s, 80), ox = Math.round(W / 2 - 3.5 * s), oy = Math.round(H / 2 - 4.5 * s), m = .3 * s;
+      const W = cv.w, H0 = cv.h, land = W > H0 * 1.08, Hs = land ? H0 : H0 - 50;
+      const f = land ? BX.fit(W, Hs, 7.6 + 2 * 3.4, 9.6, 6) : BX.fit(W, Hs, 7.6, 9.6 + 2 * 1.25, 6);
+      const s = Math.min(f.s, 80), ox = Math.round(W / 2 - 3.5 * s), oy = Math.round(Hs / 2 - 4.5 * s), m = .3 * s;
       let pl;
       if (land) { const pw = Math.min(s * 3.2, (W - 7.6 * s) / 2 - 14), ph = Math.min(s * 4.2, 260); pl = [{x: ox - m - 10 - pw, y: oy, w: pw, h: ph, v: true}, {x: ox + 7 * s + m + 10, y: oy + 9 * s - ph, w: pw, h: ph, v: true}]; }
       else { const ph = Math.min(s * 1.05, 54), pw = 7 * s + 2 * m; pl = [{x: ox - m, y: oy - m - 8 - ph, w: pw, h: ph}, {x: ox - m, y: oy + 9 * s + m + 8, w: pw, h: ph}]; }
-      return {s, ox, oy, pl, m};
+      return {s, ox, oy, pl, m, land};
     }
     const scr = (sq, G) => { let [r, c] = rc(sq); if (flip()) { r = 8 - r; c = 6 - c; } return [G.ox + (c + .5) * G.s, G.oy + (r + .5) * G.s]; };
-    const hit = (p, G) => { let c = Math.floor((p.x - G.ox) / G.s), r = Math.floor((p.y - G.oy) / G.s); if (r < 0 || r >= NR || c < 0 || c >= NC) return -1; if (flip()) { r = 8 - r; c = 6 - c; } return SQ(r, c); };
-    const refresh = () => { legal = st.over ? [] : Eng(st.b, st.turn).legal(); };
+    const hit = (p, G) => { G = G || geo(); let c = Math.floor((p.x - G.ox) / G.s), r = Math.floor((p.y - G.oy) / G.s); if (r < 0 || r >= NR || c < 0 || c >= NC) return -1; if (flip()) { r = 8 - r; c = 6 - c; } return SQ(r, c); };
+    const coord = sq => { const [r, c] = rc(sq); return 'abcdefg'[c] + (9 - r); };
+    const refresh = () => {
+      legal = st.over ? [] : Eng(st.b, st.turn).legal(); tgt = new Map(); danger = new Set(); threat = [];
+      if (st.over) return;
+      const E = Eng(st.b, st.turn);
+      for (const m of legal) {
+        const f = m >> 6, to = m & 63; if (!tgt.has(f)) tgt.set(f, []); tgt.get(f).push(to);
+        if (to === DEN[1 - st.turn]) continue;
+        E.make(m); if (E.moves(true).some(r => (r & 63) === to)) danger.add(m); E.unmake();
+      }
+      const E2 = Eng(st.b, st.turn ^ 1);
+      for (const m of E2.moves(true)) { const to = m & 63; if (st.b[to] && !threat.includes(to)) threat.push(to); }
+    };
     function status() {
       for (const s of [0, 1]) ctx.info(s, st.b.filter(p => p && (p >> 4) === s).length + '兽');
       if (st.over) return ctx.status(st.result);
-      const nm = ctx.name(st.turn);
-      ctx.status(ctx.canAct(st.turn) ? (ctx.hotseat ? nm + '走棋' : '轮到你走棋') : '等待 ' + nm + ' 走棋…');
+      const nm = ctx.name(st.turn), th = threat.length && ctx.canAct(st.turn) ? `<b style="color:#ff8a70">（${threat.length} 只动物被威胁）</b>` : '';
+      ctx.status((ctx.canAct(st.turn) ? (ctx.hotseat ? nm + '走棋' : '轮到你走棋') : '等待 ' + nm + ' 走棋…') + th);
     }
-    ctx.on(cv.cv, 'pointerdown', e => {
-      if (!ctx.canAct(st.turn) || st.over) return;
-      const G = geo(), sq = hit(cv.pos(e), G); if (sq < 0) { sel = -1; return; }
-      if (sel >= 0 && legal.includes(sel * 64 + sq)) { const f = sel; sel = -1; ctx.act({f, t: sq}, st.turn); return; }
-      const p = st.b[sq];
-      if (p && (p >> 4) === st.turn) { if (sel === sq) { sel = -1; return; } sel = sq; ctx.sfx('select'); if (!legal.some(m => (m >> 6) === sq)) ctx.toast('这只动物现在走不了'); return; }
-      if (sel >= 0) ctx.sfx('error'); sel = -1;
+    const inp = L.pieceInput(ctx, cv, {
+      hit: p => hit(p), can: () => ctx.canAct(st.turn) && !st.over && H.live(),
+      mine: sq => { const p = st.b[sq]; return p && (p >> 4) === st.turn; },
+      targets: sq => tgt.get(sq) || [], move: (f, to) => ctx.act({f, t: to}, st.turn),
+      deny: () => ctx.toast('这只动物现在走不了'),
     });
-    function finish(w, text, big) { st.over = true; st.result = text; if (big) { call = {t: big, k: 0}; ctx.anim(1700, k => { if (call) call.k = k; }, () => call = null, x => x); } ctx.end({winner: w, text}); }
+    ctx.on(cv.cv, 'pointerdown', () => { if (!H.live()) H.go(1e9); });
+    const doFlip = () => { uflip = !uflip; ctx.save('flip', uflip); ctx.sfx('whoosh'); };
+    const tb = L.toolbar(ctx, {label: true, buttons: [
+      {id: 'p', text: '◀', title: '上一步', on: () => H.prev()},
+      {id: 'n', text: '▶', title: '下一步', on: () => H.next()},
+      {id: 'l', text: '谱', title: '棋谱', on: () => H.showList('走法记录', x => x.txt)},
+      {id: 'f', text: '⇅', title: '翻转棋盘', on: doFlip},
+    ]});
+    function finish(w, text, big) {
+      st.over = true; st.result = text;
+      if (big) { call = {t: big, k: 0}; ctx.anim(1700, k => { if (call) call.k = k; }, () => call = null, x => x); }
+      if (w >= 0 && ctx.isLocal(w) && ctx.mode !== 'local') ctx.buzz(40);
+      ctx.end({winner: w, text});
+    }
     const inst = {
       st,
       toMove: () => st.over ? null : st.turn,
@@ -198,11 +226,13 @@ BX.register({
         E.make(a.f * 64 + a.t);
         st.b[a.t] = p; st.b[a.f] = 0; st.turn ^= 1; st.ply++; st.last = [a.f, a.t];
         if (q) { st.caps[mover].push(q); st.noCap = 0; } else st.noCap++;
-        st.keys.push(E.hash()); sel = -1;
+        st.keys.push(E.hash()); inp.reset(); hint = null;
         const jump = !NBR[a.f].includes(a.t);
+        H.push({b: st.b.slice(), last: [a.f, a.t], side: mover, txt: (mover ? '蓝' : '红') + NAME[p & 15] + ' ' + coord(a.f) + (q ? '×' + NAME[q & 15] + ' ' : jump ? '⤳' : '→') + coord(a.t)});
         anim = {f: a.f, t: a.t, p, q, k: 0, jump};
         ctx.anim(jump ? 420 : 240, k => { if (anim) anim.k = k; }, () => anim = null);
         ctx.sfx(q ? 'capture' : jump ? 'whoosh' : WATER[a.t] ? 'splash' : 'place');
+        if (q && ctx.isLocal(st.turn) && ctx.mode !== 'local') ctx.buzz(15);
         const nm = ctx.name(mover);
         if (a.t === DEN[1 - mover]) { ctx.after(150, () => ctx.sfx('gong')); finish(mover, nm + ' 的' + NAME[p & 15] + '闯入兽穴获胜', '入穴'); }
         else if (!st.b.some(x => x && (x >> 4) === st.turn)) finish(mover, nm + ' 吃光了对方动物', '全歼');
@@ -221,8 +251,15 @@ BX.register({
         return toA(r.move != null ? r.move : all[0]);
       },
       onTurn: status,
+      showHint(a) { H.go(1e9); inp.reset(); hint = {f: a.f, t: a.t, t0: performance.now()}; },
+      _xy: sq => scr(sq, geo()),
+      key(e) {
+        if (e.code === 'ArrowLeft') H.prev(); else if (e.code === 'ArrowRight') H.next();
+        else if (e.code === 'Escape') inp.reset(); else if (e.code === 'KeyF') doFlip();
+      },
       frame(dt) {
         const g = cv.g; cv.clear(); const G = geo(), s = G.s; t += dt;
+        const live = H.live(), view = H.cur(), B = live ? st.b : view.b, last = live ? st.last : view.last;
         g.drawImage(boardImg(g, cv.w + 'x' + cv.h + (flip() ? 'f' : ''), cv.w, cv.h, c => {
           const m = G.m;
           c.save(); c.shadowColor = 'rgba(0,0,0,.45)'; c.shadowBlur = s * .5; c.shadowOffsetY = s * .12; c.fillStyle = '#4a2a14'; D.rr(c, G.ox - m, G.oy - m, 7 * s + 2 * m, 9 * s + 2 * m, s * .25); c.fill(); c.restore();
@@ -262,26 +299,46 @@ BX.register({
           L.plate(g, pr.x, pr.y, pr.w, pr.h, {active: !st.over && st.turn === seat, color: sideCol(seat), title: ctx.name(seat), tag: (seat ? '蓝方' : '红方') + (!st.over && st.turn === seat ? ' · 走棋' : ''), vertical: pr.v,
             items: st.caps[seat].slice().sort((a, b) => (b & 15) - (a & 15)), itemR: s * .26, drawItem: (g2, x, y, r, it) => token(g2, x, y, r * .78, it)});
         }
+        const slot = L.tbSlot(G, cv.w, cv.h, G.pl[1], G.pl[0]); tb.place(slot.x, slot.y, slot.w, slot.col);
+        const n = H.list.length - 1, i = H.idx();
+        tb.label(!live ? `<b>回看 ${i}/${n}</b> · ${i ? view.txt : '开局'}` : n ? `第 ${n} 步 · ${view.txt}` : '象8 狮7 虎6 豹5 狼4 狗3 猫2 鼠1 · 鼠吃象');
+        tb.set('p', {disabled: i <= 0}); tb.set('n', {disabled: live}); tb.set('f', {on: uflip});
         const R0 = s * .36;
-        if (st.last) {
-          const [fx, fy] = scr(st.last[0], G), [tx, ty] = scr(st.last[1], G);
+        if (last) {
+          const [fx, fy] = scr(last[0], G), [tx, ty] = scr(last[1], G);
           g.fillStyle = 'rgba(255,230,120,.28)'; g.fillRect(fx - s / 2, fy - s / 2, s, s); g.fillStyle = 'rgba(255,220,90,.38)'; g.fillRect(tx - s / 2, ty - s / 2, s, s);
         }
-        for (let i = 0; i < NS; i++) {
-          const p = st.b[i]; if (!p || (anim && i === anim.t)) continue;
-          const [x, y] = scr(i, G), bob = WATER[i] ? Math.sin(t * 3 + i) * s * .03 : 0;
-          token(g, x, y + bob - (i === sel ? s * .05 : 0), R0 * (i === sel ? 1.06 : 1), p, {sel: i === sel});
+        const sel = live ? inp.sel : -1, dr = live && inp.drag && inp.drag.moved ? inp.drag : null;
+        for (let i2 = 0; i2 < NS; i2++) {
+          const p = B[i2]; if (!p || (live && anim && i2 === anim.t)) continue;
+          const [x, y] = scr(i2, G), bob = WATER[i2] ? Math.sin(t * 3 + i2) * s * .03 : 0;
+          if (dr && i2 === dr.sq) { g.globalAlpha = .35; token(g, x, y, R0, p); g.globalAlpha = 1; continue; }
+          token(g, x, y + bob - (i2 === sel ? s * .05 : 0), R0 * (i2 === sel ? 1.06 : 1), p, {sel: i2 === sel});
         }
-        if (anim) {
+        if (live && anim) {
           const [fx, fy] = scr(anim.f, G), [tx, ty] = scr(anim.t, G), k = anim.k, lift = Math.sin(k * Math.PI) * s * (anim.jump ? .7 : .1);
           if (anim.q && k < .85) { g.globalAlpha = 1 - k / .85; token(g, tx, ty, R0, anim.q); g.globalAlpha = 1; }
           token(g, BX.lerp(fx, tx, k), BX.lerp(fy, ty, k) - lift, R0 * (1 + lift / s * .4), anim.p);
         }
-        if (sel >= 0 && ctx.canAct(st.turn)) for (const m of legal) {
-          if ((m >> 6) !== sel) continue; const to = m & 63, [x, y] = scr(to, G);
-          if (st.b[to]) { g.strokeStyle = 'rgba(220,40,30,.9)'; g.lineWidth = Math.max(3, s * .07); D.circle(g, x, y, R0 * 1.15); g.stroke(); }
-          else { D.hint(g, x, y, Math.max(6, s * .14), 'rgba(30,120,80,.8)'); g.strokeStyle = 'rgba(255,255,255,.8)'; g.lineWidth = 1.5; g.stroke(); }
+        const hints = ctx.pref('hints');
+        // threatened animals ("!") — only for the local player to move
+        if (live && hints && !anim && !st.over && ctx.canAct(st.turn)) for (const q of threat) {
+          if (dr && q === dr.sq) continue;
+          const [x, y] = scr(q, G), bx = x - R0 * .78, by = y - R0 * .8, a = .75 + .25 * Math.sin(t * 7);
+          g.fillStyle = `rgba(214,48,32,${a})`; D.circle(g, bx, by, R0 * .3); g.fill(); g.strokeStyle = '#fff3e0'; g.lineWidth = Math.max(1.2, R0 * .06); g.stroke();
+          D.text(g, '!', bx, by + 1, {size: R0 * .44, color: '#fff', weight: 900});
         }
+        if (sel >= 0 && ctx.canAct(st.turn) && hints) {
+          const ht = dr ? hit(dr) : inp.hover;
+          for (const to of tgt.get(sel) || []) {
+            const [x, y] = scr(to, G), bad = danger.has(sel * 64 + to), big = to === ht;
+            if (st.b[to]) { g.strokeStyle = bad ? 'rgba(235,140,30,.95)' : 'rgba(220,40,30,.9)'; g.lineWidth = Math.max(3, s * (big ? .1 : .07)); D.circle(g, x, y, R0 * 1.15); g.stroke(); }
+            else { D.hint(g, x, y, Math.max(6, s * (big ? .2 : .14)), bad ? 'rgba(235,130,20,.92)' : 'rgba(30,120,80,.8)'); g.strokeStyle = 'rgba(255,255,255,.8)'; g.lineWidth = 1.5; g.stroke(); }
+          }
+        }
+        if (live && inp.pend) { const [x, y] = scr(inp.pend.t, G); g.globalAlpha = .55; token(g, x, y, R0, st.b[inp.pend.f]); g.globalAlpha = 1; }
+        if (live && hint && !anim) { const [fx, fy] = scr(hint.f, G), [tx, ty] = scr(hint.t, G); L.hintArrow(g, fx, fy, tx, ty, R0 * 1.1, hint.t0); }
+        if (dr) { const p = st.b[dr.sq]; if (p) token(g, dr.x, dr.y - s * .25, R0 * 1.15, p, {sel: true}); }
         if (call) L.callout(g, G.ox + 3.5 * s, G.oy + 4.5 * s, s * .8, call.t, call.k);
       },
     };

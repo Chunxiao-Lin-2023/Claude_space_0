@@ -19,6 +19,18 @@ function makeTables(N) {
   return {nb, br};
 }
 /* winner check: v=1 red rows 0→N-1, v=2 blue cols. returns path cells or null */
+/* 0-1 BFS: how many more stones side v needs to connect its two edges (opponent stones block). */
+function needOf(b, N, nb, v) {
+  const NN = N * N, dist = new Int16Array(NN).fill(999), dq = new Int16Array(NN * 4); let h = NN * 2, t = NN * 2;
+  for (let k = 0; k < N; k++) { const i = v === 1 ? k : k * N; if (b[i] === 3 - v) continue; const c = b[i] === v ? 0 : 1; if (c < dist[i]) { dist[i] = c; if (c) dq[t++] = i; else dq[--h] = i; } }
+  let best = 999;
+  while (h < t) {
+    const i = dq[h++], d = dist[i], r = (i / N) | 0, c = i % N;
+    if (v === 1 ? r === N - 1 : c === N - 1) best = Math.min(best, d);
+    for (const j of nb[i]) { if (b[j] === 3 - v) continue; const nd = d + (b[j] === v ? 0 : 1); if (nd < dist[j]) { dist[j] = nd; if (b[j] === v) dq[--h] = j; else dq[t++] = j; } }
+  }
+  return best;
+}
 function connected(b, N, nb, v, wantPath) {
   const seen = new Int16Array(N * N).fill(-2), q = [];
   for (let k = 0; k < N; k++) { const i = v === 1 ? k : k * N; if (b[i] === v) { seen[i] = -1; q.push(i); } }
@@ -104,6 +116,7 @@ BX.register({
   id: 'hex', title: '六角棋', cat: 'brain', order: 4, sub: '连通两岸，永无和棋',
   desc: '菱形棋盘铺满六角格，红方要连通上下两岸，蓝方要连通左右两岸。规则极简却变化无穷，而且永远不会和棋。可选“交换规则”保证公平。',
   kind: 'turn', seats: 2, seatNames: ['红方', '蓝方'], seatColors: COL, firstLabel: '先手',
+  howto: ['点空格放子；触屏默认先预览、再点同一格确认。红方连上下两条红边，蓝方连左右两条蓝边。', '手机上格子太小时，<b>第一次点击会放大</b>那一块，拖动可平移，右上角「全局」按钮缩回整盘；对手落子在视野外时镜头会自动跟过去。', '名字旁的「还差 N」是连通两岸最少还要几子；交换规则开启时，蓝方第一手可按「交换」取走红方的开局。', '💡 提示会标出电脑推荐的落点。'],
   options: [
     {key: 'size', label: '棋盘', choices: [[7, '7×7'], [9, '9×9'], [11, '11×11']], def: 11},
     {key: 'swap', label: '交换规则', choices: [[1, '开启'], [0, '关闭']], def: 1},
@@ -139,13 +152,40 @@ BX.register({
     ui.append(swapBtn);
     function h2(tag, cls, text) { const e = document.createElement(tag); e.className = cls; e.textContent = text; return e; }
     const canSwap = () => pie && st.moves === 1 && !st.swapped && st.turn === 1 && !st.over;
-    let hover = -1, preview = -1, drop = {i: -1, t: 1};
+    let hover = -1, preview = -1, drop = {i: -1, t: 1}, hint = -1, hintT = 0;
+    /* phone zoom: view transform screen = base * z + (ax, ay) */
+    const view = {z: 1, ax: 0, ay: 0};
+    const zoomBtn = h2('button', 'bx-btn ghost', '🔍 放大');
+    zoomBtn.style.cssText = 'position:absolute;right:10px;top:10px;min-height:40px;padding:6px 14px;font-size:15px;display:none;pointer-events:auto';
+    zoomBtn.onclick = () => { if (view.z > 1) zoomTo(1, 0, 0); else { const l = L(); const c = P((N - 1) / 2, (N - 1) / 2, l); zoomAt(c[0], c[1]); } };
+    ui.append(zoomBtn);
+    const smallCells = () => L().R < 19;
+    const zoomFactor = () => BX.clamp(26 / L().R, 1.6, 3);
+    function clampView(z, ax, ay) {   // keep the board on screen
+      const l = L(), pad = 1.15, pts = [P(-pad, -pad * .5, l), P(-pad, N - 1 + pad, l), P(N - 1 + pad, N - 1 + pad * .5, l), P(N - 1 + pad, -pad, l)];
+      const xs = pts.map(p => p[0] * z), ys = pts.map(p => p[1] * z), H = cv.h - L().bottom;
+      const minAx = cv.w - Math.max(...xs) - 20, maxAx = -Math.min(...xs) + 20, minAy = H - Math.max(...ys) - 20, maxAy = -Math.min(...ys) + 20;
+      return [minAx > maxAx ? (minAx + maxAx) / 2 : BX.clamp(ax, minAx, maxAx), minAy > maxAy ? (minAy + maxAy) / 2 : BX.clamp(ay, minAy, maxAy)];
+    }
+    function zoomTo(z, ax, ay) {
+      if (z > 1) [ax, ay] = clampView(z, ax, ay);
+      const z0 = view.z, ax0 = view.ax, ay0 = view.ay;
+      ctx.anim(260, k => { view.z = z0 + (z - z0) * k; view.ax = ax0 + (ax - ax0) * k; view.ay = ay0 + (ay - ay0) * k; }, null, BX.ease.out);
+      zoomBtn.textContent = z > 1 ? '⤢ 全局' : '🔍 放大'; ctx.sfx('whoosh');
+    }
+    function zoomAt(bx, by) { const z = zoomFactor(); zoomTo(z, cv.w / 2 - bx * z, (cv.h - L().bottom) / 2 - by * z); }
+    const toBase = p => ({x: (p.x - view.ax) / view.z, y: (p.y - view.ay) / view.z});
+    function follow(i) {   // pan so that cell i is visible while zoomed
+      if (view.z <= 1 || i < 0) return;
+      const l = L(), [x, y] = P((i / N) | 0, i % N, l), sx = x * view.z + view.ax, sy = y * view.z + view.ay, m = l.R * view.z * 2;
+      if (sx < m || sy < m || sx > cv.w - m || sy > cv.h - l.bottom - m) zoomTo(view.z, cv.w / 2 - x * view.z, (cv.h - l.bottom) / 2 - y * view.z);
+    }
 
     /* ---------- layout ---------- */
     function raw(r, c) { return [(c + r / 2) * Math.sqrt(3), r * 1.5]; }   // R = 1
     let lCache = null;
     function L() {
-      const bottom = canSwap() && ctx.canAct(1) ? 64 : 0;
+      const bottom = canSwap() && ctx.canAct(1) && !BX.bot ? 64 : 0;
       const key = cv.w + 'x' + cv.h + 'x' + bottom; if (lCache && lCache.key === key) return lCache;
       const pad = 1.15, pts = [raw(-pad, -pad * .5), raw(-pad, N - 1 + pad), raw(N - 1 + pad, N - 1 + pad * .5), raw(N - 1 + pad, -pad)];
       const ctr = raw((N - 1) / 2, (N - 1) / 2);
@@ -156,7 +196,7 @@ BX.register({
         let x0 = 1e9, x1 = -1e9, y0 = 1e9, y1 = -1e9;
         for (const [x, y] of pts) { const dx = x - ctr[0], dy = y - ctr[1], X = dx * cs - dy * sn, Y = dx * sn + dy * cs; x0 = Math.min(x0, X); x1 = Math.max(x1, X); y0 = Math.min(y0, Y); y1 = Math.max(y1, Y); }
         const f = BX.fit(cv.w, cv.h - bottom, x1 - x0, y1 - y0, 4);
-        if (!best || f.s * pref > best.R * best.pref) best = {key, pref, R: f.s, cs, sn, ctr, rot, cx: cv.w / 2 - (x0 + x1) / 2 * f.s, cy: (cv.h - bottom) / 2 - (y0 + y1) / 2 * f.s};
+        if (!best || f.s * pref > best.R * best.pref) best = {key, pref, bottom, R: f.s, cs, sn, ctr, rot, cx: cv.w / 2 - (x0 + x1) / 2 * f.s, cy: (cv.h - bottom) / 2 - (y0 + y1) / 2 * f.s};
       }
       return (lCache = best);
     }
@@ -164,19 +204,34 @@ BX.register({
       const [x, y] = raw(r, c), dx = x - l.ctr[0], dy = y - l.ctr[1];
       return [l.cx + (dx * l.cs - dy * l.sn) * l.R, l.cy + (dx * l.sn + dy * l.cs) * l.R];
     }
-    const cellAt = p => { const l = L(); let best = -1, bd = l.R * .95; for (let i = 0; i < NN; i++) { const [x, y] = P((i / N) | 0, i % N, l); const d = Math.hypot(p.x - x, p.y - y); if (d < bd) { bd = d; best = i; } } return best; };
+    const cellAt = p0 => { const p = toBase(p0), l = L(); let best = -1, bd = l.R * .95; for (let i = 0; i < NN; i++) { const [x, y] = P((i / N) | 0, i % N, l); const d = Math.hypot(p.x - x, p.y - y); if (d < bd) { bd = d; best = i; } } return best; };
     const myTurn = () => ctx.canAct(st.turn);
-    ctx.on(cv.cv, 'pointermove', e => { if (e.pointerType === 'mouse') hover = cellAt(cv.pos(e)); });
+    let down = null;
+    ctx.on(cv.cv, 'pointerdown', e => { const p = cv.pos(e); down = {x: p.x, y: p.y, ax: view.ax, ay: view.ay, moved: false, id: e.pointerId}; });
+    ctx.on(cv.cv, 'pointermove', e => {
+      const p = cv.pos(e);
+      if (down && down.id === e.pointerId && view.z > 1) {   // drag to pan while zoomed
+        const dx = p.x - down.x, dy = p.y - down.y;
+        if (down.moved || Math.hypot(dx, dy) > 10) { down.moved = true; [view.ax, view.ay] = clampView(view.z, down.ax + dx, down.ay + dy); }
+      }
+      if (e.pointerType === 'mouse') hover = cellAt(p);
+    });
     ctx.on(cv.cv, 'pointerleave', () => hover = -1);
-    ctx.on(cv.cv, 'pointerdown', e => {
+    ctx.on(cv.cv, 'pointercancel', () => down = null);
+    ctx.on(cv.cv, 'pointerup', e => {
+      const d = down; down = null; if (!d || d.moved) return;
+      const p = cv.pos(e);
+      if (e.pointerType !== 'mouse' && view.z === 1 && smallCells()) { const b = toBase(p); zoomAt(b.x, b.y); return; }   // phone: first tap zooms in
       if (!myTurn()) return;
-      const i = cellAt(cv.pos(e)); if (i < 0 || st.b[i]) return;
-      if (e.pointerType !== 'mouse' && preview !== i) { preview = i; ctx.sfx('tick'); return; }
+      const i = cellAt(p); if (i < 0 || st.b[i]) { if (i >= 0) ctx.sfx('error'); return; }
+      if (ctx.needConfirm(e) && preview !== i) { preview = i; ctx.sfx('tick'); return; }
       preview = -1; ctx.act({i}, st.turn);
     });
     const status = () => {
-      ctx.info(0, '上下'); ctx.info(1, '左右');
-      swapBtn.style.display = canSwap() && ctx.canAct(1) ? '' : 'none';
+      if (st.over) { ctx.info(0, '上下'); ctx.info(1, '左右'); }
+      else { const b = Int8Array.from(st.b); for (const s of [0, 1]) { const n = needOf(b, N, T.nb, s + 1); ctx.info(s, (s ? '左右' : '上下') + ' · 还差 ' + n); } }
+      swapBtn.style.display = canSwap() && ctx.canAct(1) && !BX.bot ? '' : 'none';
+      zoomBtn.style.display = !st.over && (L().R < 24 || view.z > 1) && !BX.bot ? '' : 'none';
       if (st.over) return ctx.status(ctx.name(st.win.seat) + ' 连通两岸');
       const me = ctx.canAct(st.turn);
       let s = me ? (ctx.hotseat ? ctx.name(st.turn) + '落子' : '轮到你落子') : '等待 ' + ctx.name(st.turn) + '…';
@@ -186,7 +241,7 @@ BX.register({
     };
     function finishIf(v) {
       const path = connected(st.b, N, T.nb, v, true);
-      if (path) { st.win = {seat: v - 1, path}; st.over = true; status(); ctx.end({winner: v - 1, text: '共 ' + st.moves + ' 手'}); return true; }
+      if (path) { st.win = {seat: v - 1, path}; st.over = true; status(); if (ctx.isLocal(v - 1)) ctx.buzz(30); if (!ctx.fast && view.z > 1) zoomTo(1, 0, 0); ctx.end({winner: v - 1, text: '共 ' + st.moves + ' 手 · 连通链 ' + path.length + ' 子'}); return true; }
       return false;
     }
     const inst = {
@@ -197,10 +252,11 @@ BX.register({
         if (a.swap) {
           const i = st.b.indexOf(1), r = (i / N) | 0, c = i % N, j = c * N + r;
           st.b[i] = 0; st.b[j] = 2; st.swapped = true; st.last = j; st.turn = 0;
-          drop = {i: j, t: 0}; ctx.anim(320, k => drop.t = k, null, BX.ease.back); ctx.sfx('whoosh');
+          drop = {i: j, t: 0}; ctx.anim(320, k => drop.t = k, null, BX.ease.back); ctx.sfx('whoosh'); hint = -1; if (!ctx.fast) follow(j);
           status(); return;
         }
-        st.b[a.i] = st.turn + 1; st.last = a.i; st.moves++; preview = -1;
+        st.b[a.i] = st.turn + 1; st.last = a.i; st.moves++; preview = -1; hint = -1;
+        if (!ctx.fast && !ctx.isLocal(st.turn)) follow(a.i);
         drop = {i: a.i, t: 0}; ctx.anim(180, k => drop.t = k); ctx.sfx('stone');
         if (finishIf(st.turn + 1)) return;
         st.turn = 1 - st.turn; status();
@@ -233,8 +289,11 @@ BX.register({
         return {i: r.m};
       },
       onTurn: status,
+      showHint(a) { if (a.swap) { ctx.toast('💡 建议：按「交换」取走这一手'); return; } hint = a.i; hintT = performance.now(); follow(a.i); },
+      resize() { lCache = null; if (view.z > 1) { view.z = 1; view.ax = view.ay = 0; } status(); },
       frame() {
         const g = cv.g; cv.clear(); const l = L(), R = l.R;
+        g.save(); g.translate(view.ax, view.ay); g.scale(view.z, view.z);
         // board base (rhombus with coloured banks)
         const corner = (r, c) => P(r, c, l);
         const pad = 1.15;
@@ -273,6 +332,8 @@ BX.register({
         // bank labels
         const lab = (p, q, txt, col) => { const x = (p[0] + q[0]) / 2, y = (p[1] + q[1]) / 2, dx = x - mid[0], dy = y - mid[1], d = Math.hypot(dx, dy) || 1; D.text(g, txt, x - dx / d * R * .05, y - dy / d * R * .05, {size: Math.max(11, R * .62), color: '#fff3e0', font: 'serif', weight: 800, shadow: 'rgba(0,0,0,.5)'}); void col; };
         if (R > 9) { lab(A2, B2, '红', COL[0]); lab(C2, D2, '红', COL[0]); lab(B2, C2, '蓝', COL[1]); lab(D2, A2, '蓝', COL[1]); }
+        if (hint >= 0 && !st.b[hint]) { const [x, y] = P((hint / N) | 0, hint % N, l), k = (performance.now() - hintT) / 1000; g.strokeStyle = 'rgba(63,200,140,' + (.55 + .4 * Math.sin(k * 6)) + ')'; g.lineWidth = R * .2; D.circle(g, x, y, R * (.75 + .06 * Math.sin(k * 6))); g.stroke(); }
+        g.restore();
       },
     };
     status();

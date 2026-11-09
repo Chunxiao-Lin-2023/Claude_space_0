@@ -198,5 +198,147 @@ BX.data.cls = (function () {
     };
   }
   const levelTime = lv => BX.test ? 25 : lv >= 3 ? 720 : lv === 2 ? 260 : 80;
-  return {MATE, zob, key, search, noisy, callout, plate, cache, levelTime};
+
+  /* ---------- shared UI (v1.1 pass): toolbar / review history / drag+tap input / hint arrow ---------- */
+  function css() {
+    if (document.getElementById('clsx-css')) return;
+    const s = document.createElement('style'); s.id = 'clsx-css';
+    s.textContent = `.clsx-tb{position:absolute;display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:center;pointer-events:auto;box-sizing:border-box}
+.clsx-tb button{min-width:44px;height:40px;border:none;border-radius:10px;background:rgba(30,18,8,.66);color:#f3e2c0;font:700 16px/1 inherit;font-family:inherit;box-shadow:inset 0 0 0 1px rgba(230,197,125,.38);padding:0 9px;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+.clsx-tb button:active{transform:translateY(1px)}
+.clsx-tb button.on{background:linear-gradient(180deg,#e6c57d,#c8a052);color:#3a2410}
+.clsx-tb button:disabled{opacity:.32;cursor:default}
+.clsx-tb .lbl{flex:1 1 auto;min-width:0;color:#f3e2c0;font-size:13.5px;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-shadow:0 1px 2px rgba(0,0,0,.6)}
+.clsx-tb.col .lbl{flex-basis:100%;text-align:center;white-space:normal}
+.clsx-tb .lbl b{color:#ffd98a}
+.clsx-list{display:grid;grid-template-columns:auto 1fr 1fr;gap:2px 10px;max-height:min(60vh,420px);overflow:auto;text-align:left;font-size:15px;padding:2px 4px}
+.clsx-list span{padding:5px 6px;border-radius:6px;cursor:pointer}
+.clsx-list span.n{color:#8a6a3c;cursor:default;text-align:right}
+.clsx-list span.cur{background:#c8a052;color:#2a1808}`;
+    document.head.append(s);
+  }
+  /* toolbar: o.buttons = [{id, text, title, on()}], o.label (bool) → {el, place(x,y,w,col), set(id,props), label(html)} */
+  function toolbar(ctx, o) {
+    css();
+    const el = document.createElement('div'); el.className = 'clsx-tb';
+    ctx.ui('').append(el);
+    let lbl = null; const btn = {};
+    if (o.label) { lbl = document.createElement('div'); lbl.className = 'lbl'; el.append(lbl); }
+    for (const b of o.buttons) {
+      const e = document.createElement('button'); e.textContent = b.text; e.title = b.title || ''; e.setAttribute('aria-label', b.title || b.text);
+      e.addEventListener('click', ev => { ev.preventDefault(); b.on(); });
+      el.append(e); btn[b.id] = e;
+    }
+    let sig = '', lsig = null;
+    return {
+      el,
+      place(x, y, w, col) {
+        const k = [x, y, w, col].map(v => typeof v === 'number' ? Math.round(v) : v).join(',');
+        if (k === sig) return; sig = k;
+        el.style.left = Math.round(x) + 'px'; el.style.top = Math.round(y) + 'px'; el.style.width = Math.round(w) + 'px';
+        el.classList.toggle('col', !!col);
+      },
+      set(id, p) { const e = btn[id]; if (!e) return; if ('disabled' in p && e.disabled !== !!p.disabled) e.disabled = !!p.disabled; if ('on' in p) e.classList.toggle('on', !!p.on); if ('text' in p && e.textContent !== p.text) e.textContent = p.text; if ('hidden' in p) e.hidden = !!p.hidden; },
+      label(html) { if (lbl && html !== lsig) { lsig = html; lbl.innerHTML = html; } },
+    };
+  }
+  /* review history. Snapshots are pushed from apply() (UI-side copy, rebuilt by replay) → step back / forward without touching st. */
+  function history(ctx) {
+    const H = {list: [], v: -1,
+      push(snap) { H.list.push(snap); H.v = -1; },
+      live: () => H.v < 0 || H.v >= H.list.length - 1,
+      cur() { return H.list[H.live() ? H.list.length - 1 : H.v]; },
+      idx() { return H.live() ? H.list.length - 1 : H.v; },
+      go(i) { const n = H.list.length - 1; i = BX.clamp(i, 0, n); const was = H.idx(); H.v = i >= n ? -1 : i; if (H.idx() !== was) ctx.sfx('tick'); },
+      prev() { H.go(H.idx() - 1); }, next() { H.go(H.idx() + 1); },
+      /* modal move list: rows = [[n, txtA, txtB]] where each txt cell maps to ply index */
+      showList(title, fmt) {
+        css();
+        const box = document.createElement('div'); box.className = 'clsx-list';
+        const plies = H.list.length - 1;
+        if (!plies) { box.style.display = 'block'; box.textContent = '还没有走棋。'; }
+        for (let i = 1; i <= plies; i += 2) {
+          const n = document.createElement('span'); n.className = 'n'; n.textContent = ((i + 1) >> 1) + '.'; box.append(n);
+          for (const j of [i, i + 1]) {
+            const c = document.createElement('span');
+            if (j <= plies) { c.innerHTML = fmt(H.list[j], j); if (j === H.idx()) c.className = 'cur'; c.addEventListener('click', () => { H.go(j); BX.closeModals(); }); }
+            box.append(c);
+          }
+        }
+        BX.modal({title, body: box, buttons: [{label: '回到当前', value: 'live', cls: 'ghost'}, {label: '关闭', value: 0, cls: 'red'}], dismiss: 0, width: 420}).then(v => { if (v === 'live') H.go(1e9); });
+        setTimeout(() => { const c = box.querySelector('.cur'); if (c) c.scrollIntoView({block: 'center'}); }, 30);
+      },
+    };
+    return H;
+  }
+  /* tap-tap + drag-and-drop for "pick a piece, then a target" games.
+     o: {hit(p) → sq|-1, can() → may act now, mine(sq) → own movable piece, targets(sq) → [sq], move(f, t), deny(sq)}
+     exposes .sel, .drag {sq, x, y, moved}, .pend (confirm-preview target) */
+  function pieceInput(ctx, cv, o) {
+    const I = {sel: -1, drag: null, pend: null, hover: -1};
+    const confirmOn = e => ctx.pref('confirm') === 'on' && ctx.needConfirm(e);
+    const tryMove = (f, t, e, dragged) => {
+      if (!dragged && confirmOn(e) && !(I.pend && I.pend.f === f && I.pend.t === t)) { I.pend = {f, t}; ctx.sfx('tick'); return true; }
+      I.pend = null; I.sel = -1; o.move(f, t); return true;
+    };
+    ctx.on(cv.cv, 'pointerdown', e => {
+      if (!o.can()) { I.sel = -1; I.pend = null; return; }
+      const p = cv.pos(e), sq = o.hit(p);
+      if (sq < 0) { I.sel = -1; I.pend = null; return; }
+      if (I.sel >= 0 && I.sel !== sq && o.targets(I.sel).includes(sq)) { tryMove(I.sel, sq, e, false); return; }
+      I.pend = null;
+      if (o.mine(sq)) {
+        const was = I.sel === sq;
+        I.sel = sq; I.drag = {sq, x: p.x, y: p.y, x0: p.x, y0: p.y, moved: false, was, id: e.pointerId};
+        try { cv.cv.setPointerCapture(e.pointerId); } catch (er) {}
+        if (!was) { ctx.sfx('select'); if (!o.targets(sq).length && o.deny) o.deny(sq); }
+        return;
+      }
+      if (I.sel >= 0) { ctx.sfx('error'); ctx.buzz(15); }
+      I.sel = -1;
+    });
+    ctx.on(cv.cv, 'pointermove', e => {
+      const p = cv.pos(e);
+      if (e.pointerType === 'mouse') I.hover = o.can() ? o.hit(p) : -1;
+      const d = I.drag; if (!d || d.id !== e.pointerId) return;
+      d.x = p.x; d.y = p.y;
+      if (!d.moved && Math.hypot(p.x - d.x0, p.y - d.y0) > 7) d.moved = true;
+    });
+    const up = e => {
+      const d = I.drag; if (!d || d.id !== e.pointerId) return; I.drag = null;
+      if (e.type === 'pointercancel' || !o.can()) return;
+      const t = o.hit(cv.pos(e));
+      if (d.moved) {
+        if (t >= 0 && t !== d.sq && o.targets(d.sq).includes(t)) tryMove(d.sq, t, e, true);
+        else if (t >= 0 && t !== d.sq) { ctx.sfx('error'); ctx.buzz(15); }
+      } else if (d.was && t === d.sq) I.sel = -1;   // tap the selected piece again → deselect
+    };
+    ctx.on(cv.cv, 'pointerup', up); ctx.on(cv.cv, 'pointercancel', up);
+    ctx.on(cv.cv, 'pointerleave', () => { I.hover = -1; });
+    I.reset = () => { I.sel = -1; I.drag = null; I.pend = null; };
+    return I;
+  }
+  /* pulsing jade hint: ring at from + arrow to target */
+  function hintArrow(g, fx, fy, tx, ty, r, t0) {
+    const k = (performance.now() - t0) / 1000, a = .6 + .3 * Math.sin(k * 6);
+    g.save();
+    g.strokeStyle = `rgba(63,190,140,${a})`; g.fillStyle = `rgba(63,190,140,${a})`; g.lineWidth = Math.max(3, r * .16); g.lineCap = 'round';
+    if (fx != null) {
+      D.circle(g, fx, fy, r * (1.08 + .05 * Math.sin(k * 6))); g.stroke();
+      const dx = tx - fx, dy = ty - fy, L0 = Math.hypot(dx, dy) || 1, ux = dx / L0, uy = dy / L0;
+      const sx = fx + ux * r * 1.1, sy = fy + uy * r * 1.1, ex = tx - ux * r * .55, ey = ty - uy * r * .55;
+      g.beginPath(); g.moveTo(sx, sy); g.lineTo(ex, ey); g.stroke();
+      const hw = r * .42; g.beginPath(); g.moveTo(ex + ux * hw, ey + uy * hw); g.lineTo(ex - ux * hw * .6 - uy * hw * .8, ey - uy * hw * .6 + ux * hw * .8); g.lineTo(ex - ux * hw * .6 + uy * hw * .8, ey - uy * hw * .6 - ux * hw * .8); g.closePath(); g.fill();
+    }
+    g.setLineDash([r * .25, r * .18]); D.circle(g, tx, ty, r * (1 + .06 * Math.sin(k * 6))); g.stroke();
+    g.restore();
+  }
+  /* toolbar slot: below the bottom plate (portrait) or bottom of the left column (landscape) */
+  function tbSlot(G, W, H, bottomPlate, leftPlate) {
+    if (!G.land) { const y = bottomPlate.y + bottomPlate.h + 8; return {x: bottomPlate.x, y: Math.min(y, H - 46), w: bottomPlate.w, col: false}; }
+    const w = Math.max(leftPlate.w, Math.min(196, leftPlate.x + leftPlate.w - 6));
+    const x = Math.max(6, leftPlate.x + leftPlate.w - w);
+    return {x, y: H - 10 - 94, w, col: true};
+  }
+  return {MATE, zob, key, search, noisy, callout, plate, cache, levelTime, toolbar, history, pieceInput, hintArrow, tbSlot};
 })();

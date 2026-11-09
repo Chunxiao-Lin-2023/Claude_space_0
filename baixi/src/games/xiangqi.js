@@ -142,10 +142,26 @@ const RED = '#b5261b', BLK = '#1f1b17';
 const colOf = p => (p >> 3) ? BLK : RED;
 const BOOK = [[[SQ(7, 7), SQ(7, 4)], [SQ(7, 1), SQ(7, 4)], [SQ(9, 7), SQ(7, 6)], [SQ(9, 6), SQ(7, 4)], [SQ(6, 2), SQ(5, 2)], [SQ(6, 6), SQ(5, 6)]],
   [[SQ(0, 7), SQ(2, 6)], [SQ(0, 1), SQ(2, 2)], [SQ(2, 7), SQ(2, 4)], [SQ(2, 1), SQ(2, 4)], [SQ(3, 6), SQ(4, 6)], [SQ(3, 2), SQ(4, 2)]]];
+/* 中文记谱（红方用一~九，黑方用 1~9；同列同种子用 前/中/后） */
+const CNUM = '零一二三四五六七八九';
+function note(b, f, t) {
+  const p = b[f], side = p >> 3, type = p & 7, ch = chOf(p);
+  const col = c => side ? c + 1 : 9 - c, num = n => side ? String(n) : CNUM[n];
+  const fr = ROW[f], fc = COL[f], tr = ROW[t], tc = COL[t];
+  const same = []; for (let r = 0; r < 10; r++) if (b[SQ(r, fc)] === p) same.push(r);
+  let head;
+  if (same.length > 1 && type !== K && type !== A && type !== B) {
+    const ord = side ? same.slice().sort((x, y) => y - x) : same.slice().sort((x, y) => x - y), i = ord.indexOf(fr);
+    head = (same.length === 2 ? '前后' : same.length === 3 ? '前中后' : '前二三四后')[Math.min(i, 4)] + ch;
+  } else head = ch + num(col(fc));
+  if (fr === tr) return head + '平' + num(col(tc));
+  const fwd = side ? tr > fr : tr < fr;
+  return head + (fwd ? '进' : '退') + num(type === N || type === B || type === A ? col(tc) : Math.abs(tr - fr));
+}
 
-function drawBoard(g, s, x0, y0) {
+function drawBoard(g, s, x0, y0, labels) {
   // x0,y0 = screen of point (0,0)
-  const m = .62 * s, W = 8 * s + 2 * m, H = 9 * s + 2 * m;
+  const m = .8 * s, W = 8 * s + 2 * m, H = 9 * s + 2 * m;
   g.save();
   g.shadowColor = 'rgba(0,0,0,.45)'; g.shadowBlur = s * .5; g.shadowOffsetY = s * .12;
   g.fillStyle = '#5a3418'; D.rr(g, x0 - m - s * .1, y0 - m - s * .1, W + s * .2, H + s * .2, s * .32); g.fill();
@@ -177,12 +193,22 @@ function drawBoard(g, s, x0, y0) {
   g.fillStyle = 'rgba(90,140,150,.10)'; g.fillRect(x0 + 1, y0 + 4 * s + 1, 8 * s - 2, s - 2);
   D.text(g, '楚  河', x0 + 2 * s, ry, {size: s * .52, color: 'rgba(80,40,14,.72)', font: 'deco', weight: 400});
   D.text(g, '汉  界', x0 + 6 * s, ry, {size: s * .52, color: 'rgba(80,40,14,.72)', font: 'deco', weight: 400});
+  // file numbers: top player counts 1..9 from its right (screen left), bottom player from its right (screen right)
+  if (labels) for (let i = 0; i < 9; i++) {
+    const o = {size: Math.max(9, s * .24), color: 'rgba(70,36,12,.62)', font: 'serif', weight: 700};
+    D.text(g, labels[0][i], x0 + i * s, y0 - s * .63, o);
+    D.text(g, labels[1][i], x0 + i * s, y0 + 9 * s + s * .63, o);
+  }
 }
 
 BX.register({
   id: 'xiangqi', title: '中国象棋', cat: 'classic', order: 1, sub: '楚河汉界，将帅对决',
   desc: '最经典的中国棋戏。红先黑后，蹩马腿、塞象眼、炮隔子吃、将帅不照面，一应俱全。电脑三档难度，高级能和你认真拼杀。',
   kind: 'turn', seats: 2, seatNames: ['红方', '黑方'], seatColors: ['#c23a2b', '#2a2420'], firstLabel: '执子',
+  howto: ['<b>点选</b>自己的棋子，再点目标；也可以直接<b>按住拖</b>到目标。绿点 = 可走，红圈 = 可吃。',
+    '被将军时将帅会闪红光，并圈出正在将军的棋子。',
+    '下方 ◀ ▶ 可回看每一步（中文记谱），「谱」打开完整棋谱，⇅ 翻转棋盘；电脑键盘可用 ← → 回看、F 翻转。',
+    '顶栏 ↶ 悔棋，💡 提示一步好棋。'],
   rules: `<p><b>棋盘与目标</b>：9 路 × 10 线，中间为「楚河汉界」。红先黑后，轮流走一步。把对方的将（帅）<b>将死</b>即获胜；轮到某方走棋却<b>无子可动（困毙）</b>，该方判负。</p>
 <p><b>帅/将</b>：只能在九宫内横竖走一格。双方将帅不能在同一直线上直接照面（中间无子）。<br>
 <b>仕/士</b>：只能在九宫内斜走一格。<br>
@@ -193,7 +219,7 @@ BX.register({
 <b>兵/卒</b>：未过河只能向前一步；过河后可向前或左右走一步，永不后退。</p>
 <p><b>将军</b>：一方走子后攻击到对方将帅，即为「将军」，对方必须应将。不能走出让自己将帅被吃或与对方将帅照面的棋。</p>
 <p><b>和棋与禁着</b>：同一局面重复出现第三次时，若一方在这段循环中<b>每步都在将军（长将）</b>而另一方没有，长将方判负；其余情况判和。连续 <b>60 回合</b>（双方各 60 步）无吃子，判和。</p>
-<p><b>操作</b>：点选自己的棋子，绿点为可走位置，红圈为可吃子，再点目标即可。顶栏 ↶ 可悔棋。</p>`,
+<p><b>操作</b>：点选或拖动自己的棋子到目标位置，绿点为可走位置，红圈为可吃子。棋盘上下两侧的数字是双方各自从右往左数的路数，与下方的中文棋谱（如「炮二平五」「马8进7」）对应。</p>`,
   icon(g, w, h) {
     D.wood(g, 0, 0, w, h, {base: '#e0b06c', seed: 5});
     const s = h / 5.2, x0 = w / 2 - 2.5 * s, y0 = h * .1;
@@ -210,7 +236,8 @@ BX.register({
   create(ctx) {
     const st = {b: START.slice(), turn: 0, ply: 0, keys: [Eng(START, 0).hash()], chk: [0], caps: [[], []], noCap: 0, last: null, over: false, result: null};
     const cv = ctx.canvas();
-    let sel = -1, legal = [], anim = null, call = null, pulse = 0;
+    let legal = [], tgt = new Map(), anim = null, call = null, pulse = 0, hint = null, checkers = [], uflip = !!ctx.load('flip', false);
+    const H = L.history(ctx); H.push({b: st.b.slice(), last: null, txt: '开局', side: -1});
     const boardImg = L.cache();
     const spr = new Map();
     function sprite(p, R) {
@@ -223,17 +250,16 @@ BX.register({
       }
       return c;
     }
-    const flip = () => ctx.mySeats.length === 1 && ctx.mySeats[0] === 1;
+    const flip = () => (ctx.mySeats.length === 1 && ctx.mySeats[0] === 1) !== uflip;
     function geo() {
-      const W = cv.w, H = cv.h, land = W > H * 1.08;
-      let s, ox, oy;
-      if (land) { const f = BX.fit(W, H, 9.5 + 2 * 4.0, 10.5, 6); s = Math.min(f.s, 82); }
-      else { const f = BX.fit(W, H, 9.5, 10.5 + 2 * 1.5, 6); s = Math.min(f.s, 82); }
-      ox = Math.round(W / 2 - 4 * s); oy = Math.round(H / 2 - 4.5 * s);
-      const m = .72 * s;
+      const W = cv.w, H0 = cv.h, land = W > H0 * 1.08, Hs = land ? H0 : H0 - 50;
+      let s;
+      if (land) { const f = BX.fit(W, Hs, 9.8 + 2 * 4.0, 10.8, 6); s = Math.min(f.s, 80); }
+      else { const f = BX.fit(W, Hs, 9.8, 10.8 + 2 * 1.4, 6); s = Math.min(f.s, 80); }
+      const ox = Math.round(W / 2 - 4 * s), oy = Math.round(Hs / 2 - 4.5 * s), m = .9 * s;
       let pl;
       if (land) {
-        const pw = Math.min(s * 3.6, (W - 9.5 * s) / 2 - 14), ph = Math.min(s * 4.4, 260);
+        const pw = Math.min(s * 3.6, (W - 9.8 * s) / 2 - 14), ph = Math.min(s * 4.4, 260);
         pl = [{x: ox - m - 10 - pw, y: oy - .6 * s, w: pw, h: ph, v: true}, {x: ox + 8 * s + m + 10, y: oy + 9.6 * s - ph, w: pw, h: ph, v: true}];
       } else {
         const ph = Math.min(s * 1.15, 58), pw = 8 * s + 2 * m;
@@ -242,27 +268,42 @@ BX.register({
       return {s, ox, oy, land, pl};
     }
     const scr = (sq, G) => { let r = ROW[sq], c = COL[sq]; if (flip()) { r = 9 - r; c = 8 - c; } return [G.ox + c * G.s, G.oy + r * G.s]; };
-    const hit = (p, G) => { let c = Math.round((p.x - G.ox) / G.s), r = Math.round((p.y - G.oy) / G.s); if (!onB(r, c)) return -1; if (Math.hypot(p.x - G.ox - c * G.s, p.y - G.oy - r * G.s) > G.s * .55) return -1; if (flip()) { r = 9 - r; c = 8 - c; } return SQ(r, c); };
-    function refreshLegal() { legal = st.over ? [] : legalMoves(Eng(st.b, st.turn)); }
+    const hit = (p, G) => { G = G || geo(); let c = Math.round((p.x - G.ox) / G.s), r = Math.round((p.y - G.oy) / G.s); if (!onB(r, c)) return -1; if (Math.hypot(p.x - G.ox - c * G.s, p.y - G.oy - r * G.s) > G.s * .62) return -1; if (flip()) { r = 9 - r; c = 8 - c; } return SQ(r, c); };
+    function refreshLegal() {
+      legal = st.over ? [] : legalMoves(Eng(st.b, st.turn)); tgt = new Map();
+      for (const m of legal) { const f = m >> 7; if (!tgt.has(f)) tgt.set(f, []); tgt.get(f).push(m & 127); }
+      checkers = [];
+      if (!st.over && st.chk[st.chk.length - 1]) {   // who is giving check
+        const kq = st.b.indexOf(st.turn * 8 + K), E2 = Eng(st.b, st.turn ^ 1);
+        for (const m of E2.moves(true)) if ((m & 127) === kq) checkers.push(m >> 7);
+        // face-to-face kings are covered by the rule check, cannons/rooks/horses/pawns found above
+      }
+    }
     const inCheckNow = () => !st.over && st.chk[st.chk.length - 1] === 1;
+    const mover = side => side ? '黑' : '红';
     function status() {
       ctx.info(0, st.caps[0].length ? '吃' + st.caps[0].length : ''); ctx.info(1, st.caps[1].length ? '吃' + st.caps[1].length : '');
       if (st.over) return ctx.status(st.result.text);
       const nm = ctx.name(st.turn), chk = inCheckNow() ? '<b style="color:#ff8a70">（被将军）</b>' : '';
       ctx.status((ctx.canAct(st.turn) ? (ctx.hotseat ? nm + '走棋' : '轮到你走棋') : '等待 ' + nm + ' 走棋…') + chk);
     }
-    ctx.on(cv.cv, 'pointerdown', e => {
-      if (!ctx.canAct(st.turn) || st.over) return;
-      const G = geo(), sq = hit(cv.pos(e), G);
-      if (sq < 0) { sel = -1; return; }
-      if (sel >= 0 && legal.includes(sel * 128 + sq)) { const f = sel; sel = -1; ctx.act({f, t: sq}, st.turn); return; }
-      const p = st.b[sq];
-      if (p && (p >> 3) === st.turn) { if (sel === sq) { sel = -1; return; } sel = sq; ctx.sfx('select'); if (!legal.some(m => (m >> 7) === sq)) ctx.toast('这个子现在走不了'); return; }
-      if (sel >= 0) ctx.sfx('error');
-      sel = -1;
+    const inp = L.pieceInput(ctx, cv, {
+      hit: p => hit(p), can: () => ctx.canAct(st.turn) && !st.over && H.live(),
+      mine: sq => { const p = st.b[sq]; return p && (p >> 3) === st.turn; },
+      targets: sq => tgt.get(sq) || [], move: (f, t) => ctx.act({f, t}, st.turn),
+      deny: () => ctx.toast('这个子现在走不了'),
     });
-    function finish(winner, text, big) {
+    ctx.on(cv.cv, 'pointerdown', () => { if (!H.live()) H.go(1e9); });
+    const doFlip = () => { uflip = !uflip; ctx.save('flip', uflip); ctx.sfx('whoosh'); };
+    const tb = L.toolbar(ctx, {label: true, buttons: [
+      {id: 'p', text: '◀', title: '上一步', on: () => H.prev()},
+      {id: 'n', text: '▶', title: '下一步', on: () => H.next()},
+      {id: 'l', text: '谱', title: '棋谱', on: () => H.showList('棋谱', x => x.txt)},
+      {id: 'f', text: '⇅', title: '翻转棋盘', on: doFlip},
+    ]});
+    function finish(winner, text) {
       st.over = true; st.result = {winner, text};
+      if (winner >= 0 && ctx.isLocal(winner) && ctx.mode !== 'local') ctx.buzz(40);
       ctx.end({winner, text});
     }
     const inst = {
@@ -270,23 +311,26 @@ BX.register({
       toMove: () => st.over ? null : st.turn,
       valid: a => a && Number.isInteger(a.f) && Number.isInteger(a.t) && legalMoves(Eng(st.b, st.turn)).includes(a.f * 128 + a.t),
       apply(a) {
-        const E = Eng(st.b, st.turn), mover = st.turn, p = st.b[a.f], q = st.b[a.t];
+        const E = Eng(st.b, st.turn), mover0 = st.turn, p = st.b[a.f], q = st.b[a.t];
+        const txt = note(st.b, a.f, a.t);
         E.make(a.f * 128 + a.t);
         st.b[a.t] = p; st.b[a.f] = 0; st.turn ^= 1; st.ply++;
-        if (q) { st.caps[mover].push(q); st.noCap = 0; } else st.noCap++;
+        if (q) { st.caps[mover0].push(q); st.noCap = 0; } else st.noCap++;
         const chk = E.inCheck() ? 1 : 0;
         st.keys.push(E.hash()); st.chk.push(chk); st.last = [a.f, a.t];
-        sel = -1;
+        inp.reset(); hint = null;
         const nLegal = legalMoves(E).length;
+        H.push({b: st.b.slice(), last: [a.f, a.t], txt: txt + (chk ? (nLegal ? ' 将' : ' 杀') : ''), side: mover0});
         // visuals
         anim = {f: a.f, t: a.t, p, q, k: 0};
         ctx.anim(q ? 260 : 230, k => { if (anim) anim.k = k; }, () => { anim = null; });
         ctx.sfx(q ? 'capture' : 'place');
-        const nm = ctx.name(mover);
+        if (q && ctx.isLocal(st.turn) && ctx.mode !== 'local') ctx.buzz(15);
+        const nm = ctx.name(mover0);
         if (!nLegal) {
-          const txt = chk ? '绝杀' : '困毙';
-          call = {t: txt, k: 0, red: true}; ctx.anim(1700, k => { if (call) call.k = k; }, () => call = null, x => x);
-          finish(mover, nm + (chk ? ' 绝杀获胜' : ' 困毙对方获胜'));
+          const t2 = chk ? '绝杀' : '困毙';
+          call = {t: t2, k: 0, red: true}; ctx.anim(1700, k => { if (call) call.k = k; }, () => call = null, x => x);
+          finish(mover0, nm + (chk ? ' 绝杀获胜' : ' 困毙对方获胜') + '（共 ' + Math.ceil(st.ply / 2) + ' 回合）');
         } else {
           const rj = repJudge(st.keys, st.chk);
           if (rj && rj.loser != null) finish(1 - rj.loser, ctx.name(rj.loser) + ' 长将，判负');
@@ -295,6 +339,7 @@ BX.register({
           else if (chk) {
             call = {t: '将军', k: 0}; ctx.anim(1300, k => { if (call) call.k = k; }, () => call = null, x => x);
             ctx.after(120, () => ctx.sfx('gong'));
+            if (ctx.isLocal(st.turn) && ctx.mode !== 'local') ctx.buzz(25);
           }
         }
         refreshLegal(); status();
@@ -334,53 +379,75 @@ BX.register({
         return toA(r.move != null ? r.move : all[0]);
       },
       onTurn: status,
+      showHint(a) { H.go(1e9); inp.reset(); hint = {f: a.f, t: a.t, t0: performance.now()}; },
+      _xy: sq => scr(sq, geo()),
+      key(e) {
+        if (e.code === 'ArrowLeft') H.prev(); else if (e.code === 'ArrowRight') H.next();
+        else if (e.code === 'Escape') inp.reset(); else if (e.code === 'KeyF') doFlip();
+      },
       frame(dt) {
         const g = cv.g; cv.clear(); const G = geo(), s = G.s;
         pulse += dt;
-        g.drawImage(boardImg(g, cv.w + 'x' + cv.h + ':' + s, cv.w, cv.h, c => drawBoard(c, s, G.ox, G.oy)), 0, 0, cv.w, cv.h);
+        const live = H.live(), view = H.cur(), B = live ? st.b : view.b, last = live ? st.last : view.last;
+        const fl = flip(), bot = fl ? 1 : 0;
+        const lab = side => BX.range(9).map(i => side ? String(i + 1) : CNUM[i + 1]);
+        const labels = fl ? [lab(0), lab(1).reverse()] : [lab(1), lab(0).reverse()];
+        g.drawImage(boardImg(g, cv.w + 'x' + cv.h + ':' + s + (fl ? 'f' : ''), cv.w, cv.h, c => drawBoard(c, s, G.ox, G.oy, labels)), 0, 0, cv.w, cv.h);
         // plates
-        const bot = flip() ? 1 : 0;
         for (const seat of [0, 1]) {
           const pr = G.pl[seat === bot ? 1 : 0];
           L.plate(g, pr.x, pr.y, pr.w, pr.h, {active: !st.over && st.turn === seat, color: seat ? '#2a2420' : '#c23a2b', title: ctx.name(seat), tag: (seat ? '黑方' : '红方') + (!st.over && st.turn === seat ? ' · 走棋' : ''), vertical: pr.v, items: st.caps[seat], itemR: s * .3,
             drawItem: (g2, x, y, r, it) => D.piece(g2, x, y, r * .92, chOf(it), colOf(it))});
         }
+        // toolbar
+        const slot = L.tbSlot(G, cv.w, cv.h, G.pl[1], G.pl[0]); tb.place(slot.x, slot.y, slot.w, slot.col);
+        const n = H.list.length - 1, i = H.idx();
+        tb.label(!live ? `<b>回看 ${i}/${n}</b> · ${i ? mover(view.side) + ' ' + view.txt : '开局'}` : n ? `第 ${n} 步 · ${mover(view.side)} ${view.txt}` : '红方先走');
+        tb.set('p', {disabled: i <= 0}); tb.set('n', {disabled: live}); tb.set('f', {on: uflip});
         const R0 = s * .445;
         // last move marks
-        if (st.last) {
-          const [fx, fy] = scr(st.last[0], G), [tx, ty] = scr(st.last[1], G);
+        if (last) {
+          const [fx, fy] = scr(last[0], G), [tx, ty] = scr(last[1], G);
           g.strokeStyle = 'rgba(178,58,43,.55)'; g.lineWidth = Math.max(1.5, s * .05); g.setLineDash([s * .08, s * .08]); D.circle(g, fx, fy, R0 * .7); g.stroke(); g.setLineDash([]);
           g.strokeStyle = '#d9472f'; g.lineWidth = Math.max(2, s * .06); const e = R0 * 1.12, l = R0 * .38;
           g.beginPath(); for (const sx of [-1, 1]) for (const sy of [-1, 1]) { g.moveTo(tx + sx * e, ty + sy * (e - l)); g.lineTo(tx + sx * e, ty + sy * e); g.lineTo(tx + sx * (e - l), ty + sy * e); } g.stroke();
         }
-        // check glow
-        if (inCheckNow()) {
+        // check glow + checking pieces
+        if (live && inCheckNow()) {
           const kq = st.b.indexOf(st.turn * 8 + K);
-          if (kq >= 0) { const [kx, ky] = scr(kq, G); const a = .45 + .25 * Math.sin(pulse * 6); const gr = g.createRadialGradient(kx, ky, R0 * .5, kx, ky, R0 * 1.7); gr.addColorStop(0, `rgba(255,60,30,${a})`); gr.addColorStop(1, 'rgba(255,60,30,0)'); g.fillStyle = gr; D.circle(g, kx, ky, R0 * 1.7); g.fill(); }
+          if (kq >= 0) {
+            const [kx, ky] = scr(kq, G); const a = .45 + .25 * Math.sin(pulse * 6); const gr = g.createRadialGradient(kx, ky, R0 * .5, kx, ky, R0 * 1.7); gr.addColorStop(0, `rgba(255,60,30,${a})`); gr.addColorStop(1, 'rgba(255,60,30,0)'); g.fillStyle = gr; D.circle(g, kx, ky, R0 * 1.7); g.fill();
+            if (!anim) for (const c of checkers) { const [cx, cy] = scr(c, G); g.strokeStyle = `rgba(230,50,30,${.5 + a * .5})`; g.lineWidth = Math.max(2, s * .07); D.circle(g, cx, cy, R0 * 1.14); g.stroke(); g.save(); g.setLineDash([s * .12, s * .1]); g.lineWidth = Math.max(1.5, s * .04); g.beginPath(); g.moveTo(cx, cy); g.lineTo(kx, ky); g.stroke(); g.restore(); }
+          }
         }
         // pieces
-        for (let i = 0; i < 90; i++) {
-          const p = st.b[i]; if (!p) continue;
-          if (anim && i === anim.t) continue;
-          const [x, y] = scr(i, G);
-          if (i === sel) { D.piece(g, x, y - s * .06, R0 * 1.07, chOf(p), colOf(p), {sel: '#ffd76a'}); continue; }
+        const sel = live ? inp.sel : -1, dr = live && inp.drag && inp.drag.moved ? inp.drag : null;
+        for (let i2 = 0; i2 < 90; i2++) {
+          const p = B[i2]; if (!p) continue;
+          if (live && anim && i2 === anim.t) continue;
+          const [x, y] = scr(i2, G);
+          if (dr && i2 === dr.sq) { g.globalAlpha = .35; g.drawImage(sprite(p, R0), x - R0 * 1.25, y - R0 * 1.25, R0 * 2.5, R0 * 2.5); g.globalAlpha = 1; continue; }
+          if (i2 === sel) { D.piece(g, x, y - s * .06, R0 * 1.07, chOf(p), colOf(p), {sel: '#ffd76a'}); continue; }
           g.drawImage(sprite(p, R0), x - R0 * 1.25, y - R0 * 1.25, R0 * 2.5, R0 * 2.5);
         }
-        if (anim) {
+        if (live && anim) {
           const [fx, fy] = scr(anim.f, G), [tx, ty] = scr(anim.t, G), k = anim.k;
           if (anim.q && k < .85) { g.globalAlpha = 1 - k / .85; D.piece(g, tx, ty, R0 * (1 - k * .15), chOf(anim.q), colOf(anim.q)); g.globalAlpha = 1; }
           const lift = Math.sin(k * Math.PI) * s * .12;
           D.piece(g, BX.lerp(fx, tx, k), BX.lerp(fy, ty, k) - lift, R0 * (1 + lift / s * .6), chOf(anim.p), colOf(anim.p));
         }
         // legal hints
-        if (sel >= 0 && ctx.canAct(st.turn)) {
-          for (const m of legal) {
-            if ((m >> 7) !== sel) continue;
-            const t = m & 127, [x, y] = scr(t, G);
-            if (st.b[t]) { g.strokeStyle = 'rgba(220,50,30,.9)'; g.lineWidth = Math.max(2.5, s * .08); D.circle(g, x, y, R0 * 1.06); g.stroke(); }
-            else { D.hint(g, x, y, Math.max(6, s * .15), 'rgba(40,140,100,.8)'); g.strokeStyle = 'rgba(255,255,255,.7)'; g.lineWidth = 1.5; g.stroke(); }
+        if (sel >= 0 && ctx.canAct(st.turn) && ctx.pref('hints')) {
+          const ht = dr ? hit(dr) : inp.hover;
+          for (const t of tgt.get(sel) || []) {
+            const [x, y] = scr(t, G), over = t === ht;
+            if (st.b[t]) { g.strokeStyle = 'rgba(220,50,30,.9)'; g.lineWidth = Math.max(2.5, s * (over ? .12 : .08)); D.circle(g, x, y, R0 * 1.06); g.stroke(); }
+            else { D.hint(g, x, y, Math.max(6, s * (over ? .24 : .15)), 'rgba(40,140,100,.8)'); g.strokeStyle = 'rgba(255,255,255,.7)'; g.lineWidth = 1.5; g.stroke(); }
           }
         }
+        if (live && inp.pend) { const [x, y] = scr(inp.pend.t, G), p = st.b[inp.pend.f]; g.globalAlpha = .6; D.piece(g, x, y, R0, chOf(p), colOf(p)); g.globalAlpha = 1; }
+        if (live && hint && !anim) { const [fx, fy] = scr(hint.f, G), [tx, ty] = scr(hint.t, G); L.hintArrow(g, fx, fy, tx, ty, R0, hint.t0); }
+        if (dr) { const p = st.b[dr.sq]; if (p) D.piece(g, dr.x, dr.y - s * .25, R0 * 1.12, chOf(p), colOf(p), {sel: '#ffd76a'}); }
         if (call) L.callout(g, G.ox + 4 * s, G.oy + 4.5 * s, s * .95, call.t, call.k);
       },
     };

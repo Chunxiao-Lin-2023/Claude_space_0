@@ -1,6 +1,5 @@
 /* 速算对战 — realtime: both see the same question, first correct answer scores */
 const D = BX.draw, C = BX.C, K = BX.data.spk;
-const NQ = 10;
 const LVN = {1: '口算', 2: '两位数', 3: '混合四则'};
 
 function genQ(lv, R) {
@@ -38,8 +37,11 @@ function genQ(lv, R) {
 BX.register({
   id: 'mathduel', title: '速算对战', cat: 'speed', order: 1, sub: '抢答算术题，手快脑更快',
   desc: '两人看同一道算术题，各自从四个答案中抢答：先答对者得分，答错本题即被锁定。十题定胜负，同屏两人各占半边屏幕。',
-  kind: 'realtime', seats: 2, noFirst: true, seatColors: ['#c23a2b', '#2f5d8a'],
-  options: [{key: 'lv', label: '难度', choices: [[1, '口算'], [2, '两位数'], [3, '混合四则']], def: 1}],
+  kind: 'realtime', seats: 2, noFirst: true, seatColors: ['#c23a2b', '#2f5d8a'], hint: false,
+  options: [{key: 'lv', label: '难度', choices: [[1, '口算'], [2, '两位数'], [3, '混合四则']], def: 1}, {key: 'nq', label: '题数', choices: [[10, '10 题'], [15, '15 题'], [20, '20 题']], def: 10}],
+  howto: ['看题后<b>点四个大按钮之一</b>抢答：先答对得 1 分；答错本题锁定，只能看对手答。',
+    '顶部圆点是每道题的归属，旁边显示双方「连对」；答对时会显示你的用时。',
+    '键盘：1–4 作答（同屏右方 7、8、9、0）。同屏时两人各用自己那半边屏幕。'],
   rules: `<p>双方同时看到同一道算术题，每人有<b>四个答案按钮</b>。</p>
 <ul><li><b>先答对</b>的一方得 1 分，本题结束；</li><li>答<b>错</b>的一方本题被锁定，只能看对手作答；</li><li>每题限时 12 秒，双方都答错或超时则无人得分。</li></ul>
 <p>共 <b>10 题</b>，得分高者获胜；若打平则进入<b>加赛</b>，逐题决胜直到有人得分。</p>
@@ -54,9 +56,10 @@ BX.register({
     g.strokeStyle = '#ffd76a'; g.lineWidth = 3; D.rr(g, w * .3, h * .58, w * .23, h * .33, 8); g.stroke();
   },
   create(ctx) {
-    const lv = ctx.opts.lv || 1;
+    const lv = ctx.opts.lv || 1, NQ = BX.test ? 10 : (ctx.opts.nq || 10), QT = 12;
     const T = BX.test ? .3 : 1;
-    const st = {q: 0, Q: null, ph: 'intro', t: 3 * T, s: [0, 0], lock: [0, 0], ans: [-1, -1], win: -1, ot: 0, ev: [], evId: 0, over: false};
+    const st = {q: 0, Q: null, ph: 'intro', t: 3 * T, s: [0, 0], lock: [0, 0], ans: [-1, -1], win: -1, ot: 0, ev: [], evId: 0, over: false,
+      hist: [], stk: [0, 0], bstk: [0, 0], tsum: [0, 0], fast: [0, 0], wrong: [0, 0]};
     const cv = ctx.canvas(), fx = K.fx(), pads = K.pads(ctx, cv);
     const queues = [K.tq(), K.tq()], seen = {}, evSeen = {v: -1};
     const aiPlan = {};
@@ -64,18 +67,23 @@ BX.register({
 
     function newQ() {
       st.q++; st.Q = genQ(lv, Math.random); st.lock = [0, 0]; st.ans = [-1, -1]; st.win = -1;
-      st.ph = 'q'; st.t = 12 * (BX.test ? .4 : 1); K.ev(st, 'new');
+      st.ph = 'q'; st.t = QT * (BX.test ? .4 : 1); K.ev(st, 'new');
     }
     function answer(s, qn, ch) {
       if (st.ph !== 'q' || qn !== st.q || st.lock[s] || st.ans[s] >= 0) return;
       st.ans[s] = ch;
-      if (ch === st.Q.a) { st.s[s]++; st.win = s; st.ph = 'rev'; st.t = 1.5 * T; K.ev(st, 'ok', s, ch); }
-      else { st.lock[s] = 1; K.ev(st, 'bad', s, ch); if (st.lock[0] && st.lock[1]) { st.ph = 'rev'; st.t = 1.5 * T; K.ev(st, 'none'); } }
+      if (ch === st.Q.a) {
+        const el = Math.round((QT * (BX.test ? .4 : 1) - st.t) * 10) / 10;
+        st.s[s]++; st.win = s; st.ph = 'rev'; st.t = 1.5 * T; st.stk[s]++; st.stk[1 - s] = 0; st.bstk[s] = Math.max(st.bstk[s], st.stk[s]); st.tsum[s] += el; if (!st.fast[s] || el < st.fast[s]) st.fast[s] = el;
+        st.hist.push(s); if (st.hist.length > 40) st.hist.shift(); K.ev(st, 'ok', s, ch, el);
+      }
+      else { st.lock[s] = 1; st.stk[s] = 0; st.wrong[s]++; K.ev(st, 'bad', s, ch); if (st.lock[0] && st.lock[1]) { st.ph = 'rev'; st.t = 1.5 * T; st.hist.push(-1); K.ev(st, 'none'); } }
     }
     function after() {
       if (st.q >= NQ && st.s[0] !== st.s[1]) {
         st.ph = 'over'; st.over = true; const w = st.s[0] > st.s[1] ? 0 : 1; K.ev(st, 'end', w);
-        ctx.end({winner: w, text: st.s[0] + ' : ' + st.s[1]}); return;
+        const sum = i => ctx.name(i) + ' 平均 ' + (st.s[i] ? (st.tsum[i] / st.s[i]).toFixed(1) + ' 秒' : '—') + '、最长连对 ' + st.bstk[i];
+        ctx.end({winner: w, text: st.s[0] + ' : ' + st.s[1] + '　' + sum(0) + '；' + sum(1)}); return;
       }
       if (st.q >= NQ) st.ot = 1;
       newQ();
@@ -95,11 +103,11 @@ BX.register({
       const wide = w > h * 1.3;
       let qBox, btns = [];
       const qw = Math.min(w - pad * 2, 680);
-      qBox = {x: (w - qw) / 2, y: head + pad, w: qw, h: Math.min((h - head) * (wide && !p.solo ? .38 : p.solo ? .34 : .34), 220)};
+      qBox = {x: (w - qw) / 2, y: head + pad + (p.solo ? 14 : 10), w: qw, h: Math.min((h - head) * (wide && !p.solo ? .36 : .32), 220)};
       const by = qBox.y + qBox.h + pad, bh = h - by - pad;
       const grid = wide && p.solo ? [4, 1] : [2, 2];
       const cw = (w - pad * (grid[0] + 1)) / grid[0], ch = (bh - pad * (grid[1] - 1)) / grid[1];
-      const maxW = p.solo ? 300 : 260, bw = Math.min(cw, maxW * (grid[0] === 4 ? .9 : 1.2)), bhh = Math.min(ch, p.solo ? 150 : 130);
+      const maxW = p.solo ? 300 : 260, bw = Math.min(cw, maxW * (grid[0] === 4 ? .9 : 1.2)), bhh = Math.min(ch, p.solo ? 190 : 140);
       const totW = bw * grid[0] + pad * (grid[0] - 1), x0 = (w - totW) / 2, totH = bhh * grid[1] + pad * (grid[1] - 1), y0 = by + (bh - totH) / 2;
       for (let i = 0; i < 4; i++) { const cx = i % grid[0], cy = Math.floor(i / grid[0]); btns.push({k: 'a' + i, i, x: x0 + cx * (bw + pad), y: y0 + cy * (bhh + pad), w: bw, h: bhh}); }
       return {head, qBox, btns, pad};
@@ -136,9 +144,9 @@ BX.register({
         if (e[0] === 'new') { ctx.sfx('flip'); pend = [-1, -1]; qShow = 0; }
         else if (e[0] === 'ok') {
           ctx.sfx('score'); fx.flash(.8); fx.shake(5);
-          for (const p of P) { const L = pLayout(p), b = L.btns[e[3]]; const c = center(p, b); fx.burst(c.x, c.y, {n: 26, color: ['#ffd76a', '#fff', ctx.color(e[2])], sp: 260, square: true}); fx.text(c.x, c.y - 20, p.seat === e[2] ? '+1' : ctx.name(e[2]) + ' 抢到', {size: p.seat === e[2] ? 34 : 18, color: '#ffe08a'}); }
+          for (const p of P) { const L = pLayout(p), b = L.btns[e[3]]; const c = center(p, b); fx.burst(c.x, c.y, {n: 26, color: ['#ffd76a', '#fff', ctx.color(e[2])], sp: 260, square: true}); fx.text(c.x, c.y - 20, p.seat === e[2] ? '+1  ' + (e[4] != null ? e[4] + ' 秒' : '') : ctx.name(e[2]) + ' 抢到', {size: p.seat === e[2] ? 30 : 18, color: '#ffe08a'}); }
         } else if (e[0] === 'bad') {
-          if (ctx.isLocal(e[2])) { ctx.sfx('buzz'); fx.shake(4); } else ctx.sfx('error');
+          if (ctx.isLocal(e[2])) { ctx.sfx('buzz'); fx.shake(4); ctx.buzz(25); } else ctx.sfx('error');
           for (const p of P) if (p.seat === e[2]) { const L = pLayout(p), c = center(p, L.btns[e[3]]); fx.text(c.x, c.y, '错！', {size: 28, color: '#ff8a7a'}); }
         } else if (e[0] === 'none' || e[0] === 'to') ctx.sfx('draw');
         else if (e[0] === 'go') ctx.sfx('start');
@@ -160,11 +168,11 @@ BX.register({
         for (let s = 0; s < 2; s++) K.take(inputs[s] && inputs[s].q, seen, s, it => answer(s, it[0], it[1]));
         st.t -= dt;
         if (st.ph === 'intro') { const c = Math.ceil(st.t); if (c < lastCd && c > 0) { lastCd = c; K.ev(st, 'cd'); } if (st.t <= 0) { K.ev(st, 'go'); newQ(); } }
-        else if (st.ph === 'q' && st.t <= 0) { st.ph = 'rev'; st.t = 1.3 * T; K.ev(st, 'to'); }
+        else if (st.ph === 'q' && st.t <= 0) { st.ph = 'rev'; st.t = 1.3 * T; st.hist.push(-1); K.ev(st, 'to'); }
         else if (st.ph === 'rev' && st.t <= 0) after();
         playEv(); info();
       },
-      snapshot() { return {q: st.q, Q: st.Q, ph: st.ph, t: Math.round(st.t * 10) / 10, s: st.s, lock: st.lock, ans: st.ans, win: st.win, ot: st.ot, ev: st.ev, over: st.over}; },
+      snapshot() { return {q: st.q, Q: st.Q, ph: st.ph, t: Math.round(st.t * 10) / 10, s: st.s, lock: st.lock, ans: st.ans, win: st.win, ot: st.ot, ev: st.ev, over: st.over, hist: st.hist.slice(-20), stk: st.stk}; },
       restore(d) { Object.assign(st, d); playEv(); info(); },
       key(e) {
         if (e.repeat) return;
@@ -197,10 +205,19 @@ BX.register({
       const fs = Math.min(hh * .38, 18);
       const sideTxt = (seat, x, al) => {
         g.fillStyle = ctx.color(seat); D.circle(g, al === 'left' ? x + 6 : x - 6, hh / 2, 6); g.fill();
-        D.text(g, ctx.name(seat) + (st.lock[seat] && st.ph === 'q' ? ' ✕' : ''), al === 'left' ? x + 18 : x - 18, hh / 2, {size: fs * .85, color: '#fbe9d0', align: al, maxW: p.w * .3});
+        D.text(g, ctx.name(seat) + (st.lock[seat] && st.ph === 'q' ? ' ✕' : ''), al === 'left' ? x + 18 : x - 18, hh / 2 - (st.stk && st.stk[seat] >= 2 ? fs * .45 : 0), {size: fs * .85, color: '#fbe9d0', align: al, maxW: p.w * .3});
+        if (st.stk && st.stk[seat] >= 2) D.text(g, '连对 ×' + st.stk[seat], al === 'left' ? x + 18 : x - 18, hh / 2 + fs * .55, {size: fs * .72, color: st.stk[seat] >= 4 ? '#ff9a5a' : '#ffe08a', align: al, weight: 800});
       };
       sideTxt(s, L.pad, 'left'); sideTxt(o, p.w - L.pad, 'right');
       D.text(g, st.s[s] + ' : ' + st.s[o], p.w / 2, hh / 2, {size: hh * .62, color: '#ffe08a', font: 'deco', weight: 400});
+      // per-question track: who won each question
+      const nd = Math.max(NQ, st.q), dr = Math.min(6, (p.w - 40) / nd / 2.8), py = hh + L.pad / 2 + 8, x0 = p.w / 2 - (nd - 1) * dr * 1.4;
+      const H2 = st.hist || [], off = Math.max(0, st.q - H2.length - (st.ph === 'q' ? 1 : 0));
+      for (let i = 0; i < nd; i++) {
+        const x = x0 + i * dr * 2.8, hv = i - off >= 0 ? H2[i - off] : undefined;
+        if (hv != null && i < st.q) { if (hv >= 0) { g.fillStyle = ctx.color(hv); D.circle(g, x, py, dr); g.fill(); } else { g.strokeStyle = 'rgba(251,233,208,.5)'; g.lineWidth = 1.5; g.beginPath(); g.moveTo(x - dr * .6, py - dr * .6); g.lineTo(x + dr * .6, py + dr * .6); g.stroke(); } }
+        else { g.strokeStyle = i === st.q - 1 && st.ph === 'q' ? '#ffd76a' : 'rgba(251,233,208,.35)'; g.lineWidth = i === st.q - 1 && st.ph === 'q' ? 2.2 : 1.2; D.circle(g, x, py, dr); g.stroke(); }
+      }
       // question card
       const q = L.qBox; const sc = st.ph === 'q' ? .85 + .15 * BX.ease.back(qShow) : 1;
       g.save(); g.translate(q.x + q.w / 2, q.y + q.h / 2); g.scale(sc, sc); g.translate(-q.w / 2, -q.h / 2);
@@ -216,7 +233,7 @@ BX.register({
         D.text(g, (st.ot ? '加赛' : '第 ' + st.q + ' 题'), 14, 18, {size: Math.min(13, q.h * .12), color: C.ink2, align: 'left'});
         const showAns = st.ph !== 'q';
         D.text(g, st.Q.text + ' = ' + (showAns ? st.Q.v : '?'), q.w / 2, q.h * .5, {size: qs, color: C.ink, font: 'serif', weight: 900, maxW: q.w - 24});
-        if (st.ph === 'q') { const k = BX.clamp(st.t / (12 * (BX.test ? .4 : 1)), 0, 1); g.fillStyle = 'rgba(60,40,20,.15)'; D.rr(g, 14, q.h - 16, q.w - 28, 7, 3); g.fill(); g.fillStyle = k < .3 ? C.red : C.jade; D.rr(g, 14, q.h - 16, (q.w - 28) * k, 7, 3); g.fill(); }
+        if (st.ph === 'q') { const k = BX.clamp(st.t / (QT * (BX.test ? .4 : 1)), 0, 1); g.fillStyle = 'rgba(60,40,20,.15)'; D.rr(g, 14, q.h - 16, q.w - 28, 7, 3); g.fill(); g.fillStyle = k < .3 ? C.red : C.jade; D.rr(g, 14, q.h - 16, (q.w - 28) * k, 7, 3); g.fill(); }
         else if (st.win >= 0) D.text(g, ctx.name(st.win) + ' 抢答成功', q.w / 2, q.h * .84, {size: Math.min(15, q.h * .13), color: ctx.color(st.win), weight: 800});
         else D.text(g, '无人答对', q.w / 2, q.h * .84, {size: Math.min(15, q.h * .13), color: C.ink2});
       }

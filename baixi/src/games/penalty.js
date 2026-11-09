@@ -17,6 +17,10 @@ BX.register({
   id: 'penalty', title: '点球大战', cat: 'sports', order: 1, sub: '五轮点球，斗智斗勇',
   desc: '每一脚点球都是一次心理博弈：罚球者暗中选择角度与力度，守门员暗中选择扑救方向，同时揭晓。五轮定胜负，平局进入突然死亡。',
   kind: 'turn', seats: 2, hidden: true, firstLabel: '先罚', seatColors: ['#c23a2b', '#2f5d8a'], aiDelay: 650,
+  howto: ['<b>罚球</b>：从球向球门<b>划一下</b>就射门——划到哪就射哪，划得越快力量越大，弧线划法会踢出弧线球。也可以先选力度，再点球门区域（触屏点两下确认）。',
+    '<b>守门</b>：点球门的左/中/右 × 上/下 区域扑救（触屏点两下确认，或点「扑救！」）。',
+    '面板会显示所选角度的打偏风险；球门里的小数字是对手以往的习惯（可在「⋯」里关闭提示）。',
+    '💡 会给出电脑推荐的角度/扑救方向。键盘：方向键或小键盘 1–9 选区域，Q/W/E 选力度，回车确认。'],
   rules: `<p>双方轮流罚点球，<b>各罚 5 球</b>，进球多者胜；若一方已无法追平则提前结束。5 轮后仍平局，进入<b>突然死亡</b>：每轮各罚一球，一方进而另一方不进即分胜负。</p>
 <p>每一脚都是<b>同时暗选</b>：</p>
 <ul><li><b>罚球者</b>在球门的 3×3 区域（高/中/低 × 左/中/右）中选目标，并选力度：<b>轻推</b>不会打偏但守门员扑向相邻一侧也可能够到；<b>标准</b>略有打高风险；<b>大力</b>即使被猜中也难扑，但瞄高位时很容易打飞或打偏。</li>
@@ -39,7 +43,7 @@ BX.register({
     const cv = ctx.canvas(), fx = K.fx();
     const shooter = () => (st.k % 2 === 0) ? st.first : 1 - st.first;
     const keeper = () => 1 - shooter();
-    let sel = {z: -1, p: 1, d: -1};
+    let sel = {z: -1, p: 1, d: -1}, hint = null, preview = -1, swipe = null;
     let rv = null;          // reveal animation {t, last}
     let crowd = null;
 
@@ -75,6 +79,7 @@ BX.register({
       rv = {t: 0, last: st.last, jx: (Math.random() - .5) * .06, jy: (Math.random() - .5) * .06, done: false};
       const L = st.last;
       ctx.sfx('whoosh');
+      ctx.after(1130, () => { const kl = ctx.isLocal(L.sh), gl = ctx.isLocal(1 - L.sh); if (kl !== gl && ((L.res === 'goal') === gl)) ctx.buzz(30); });
       ctx.anim(1900, (k, raw) => { rv.t = raw; }, null, t => t);
       ctx.after(560, () => ctx.sfx('hit'));
       ctx.after(1130, () => {
@@ -94,13 +99,14 @@ BX.register({
       },
       valid(a, by) {
         if (st.ph !== 'choose') return false;
-        if (a.t === 'kick') return by === shooter() && !st.pk && Number.isInteger(a.z) && a.z >= 0 && a.z < 9 && [0, 1, 2].includes(a.p);
+        if (a.t === 'kick') return by === shooter() && !st.pk && Number.isInteger(a.z) && a.z >= 0 && a.z < 9 && [0, 1, 2].includes(a.p) && (a.cu == null || (typeof a.cu === 'number' && Math.abs(a.cu) <= 1));
         if (a.t === 'dive') return by === keeper() && !st.pg && Number.isInteger(a.z) && a.z >= 0 && a.z < 6;
         return false;
       },
-      sysMove() { return st.ph === 'reveal' && !st.over ? {a: {t: 'next'}, delay: 2900} : null; },
+      sysMove() { return st.ph === 'reveal' && !st.over ? {a: {t: 'next'}, delay: 2500} : null; },
       apply(a, by) {
-        if (a.t === 'kick') { st.pk = {z: a.z, p: a.p}; ctx.sfx('click'); }
+        if (a.t === 'next' || ctx.isLocal(by)) { hint = null; preview = -1; }
+        if (a.t === 'kick') { st.pk = {z: a.z, p: a.p, cu: a.cu || 0}; ctx.sfx('click'); }
         else if (a.t === 'dive') { st.pg = {z: a.z}; ctx.sfx('click'); }
         else if (a.t === 'next') { st.ph = 'choose'; st.last = null; ctx.sfx('tick'); status(); return; }
         if (!(st.pk && st.pg)) { status(); return; }
@@ -112,11 +118,11 @@ BX.register({
         else res = roll3 < saveProb(kc, kh, c, r, p) ? 'save' : 'goal';
         st.res[sh].push(res === 'goal' ? 1 : 0);
         const hk = st.hist[sh * 2], hg = st.hist[kp * 2 + 1]; hk.z[z]++; hk.n++; hg.c[kc]++; hg.h[kh]++; hg.n++;
-        st.last = {z, p, d: st.pg.z, res, sh, n: st.k};
+        st.last = {z, p, d: st.pg.z, res, sh, n: st.k, cu: st.pk.cu || 0};
         st.k++; st.pk = null; st.pg = null; st.ph = 'reveal';
         startReveal();
         const w = decide();
-        if (w >= 0) { st.over = true; st.win = w; status(); ctx.end({winner: w, text: goalsOf(0) + ' : ' + goalsOf(1), delay: 2600}); return; }
+        if (w >= 0) { st.over = true; st.win = w; status(); const row = s2 => st.res[s2].map(x => x ? '✓' : '✗').join(''); ctx.end({winner: w, text: goalsOf(0) + ' : ' + goalsOf(1) + '（' + ctx.name(0) + ' ' + row(0) + ' ／ ' + ctx.name(1) + ' ' + row(1) + '）', delay: 2600}); return; }
         status();
       },
       aiMove(seat, level) {
@@ -145,9 +151,16 @@ BX.register({
       },
       onTurn: status,
       ready() { status(); },
+      showHint(a) { hint = a; },
       key(e) {
         const role = myRole(); if (!role) return;
         const nm = {Numpad7: 0, Numpad8: 1, Numpad9: 2, Numpad4: 3, Numpad5: 4, Numpad6: 5, Numpad1: 6, Numpad2: 7, Numpad3: 8, Digit7: 0, Digit8: 1, Digit9: 2, Digit4: 3, Digit5: 4, Digit6: 5, Digit1: 6, Digit2: 7, Digit3: 8};
+        const ar = {ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1]}[e.code];
+        if (ar) {
+          if (role === 'k') { const z = sel.z < 0 ? 4 : sel.z; sel.z = BX.clamp(Math.floor(z / 3) + ar[1], 0, 2) * 3 + BX.clamp(z % 3 + ar[0], 0, 2); }
+          else { const d = sel.d < 0 ? 2 : sel.d; sel.d = BX.clamp((d >> 1) + ar[0], 0, 2) * 2 + BX.clamp((d & 1) + ar[1], 0, 1); }
+          ctx.sfx('select'); return;
+        }
         if (e.code in nm) { const z = nm[e.code]; if (role === 'k') sel.z = z; else sel.d = (z % 3) * 2 + (z >= 6 ? 1 : 0); ctx.sfx('select'); }
         else if (role === 'k' && ['KeyQ', 'KeyW', 'KeyE'].includes(e.code)) { sel.p = ['KeyQ', 'KeyW', 'KeyE'].indexOf(e.code); ctx.sfx('click'); }
         else if (e.code === 'Enter' || e.code === 'NumpadEnter' || e.code === 'Space') confirm(role);
@@ -206,6 +219,7 @@ BX.register({
       }
       return out;
     }
+    const inGoal = (G, p, m = 6) => p.x >= G.x - m && p.x <= G.x + G.w + m && p.y >= G.y - m && p.y <= G.y + G.h + m;
     ctx.on(cv.cv, 'pointerdown', e => {
       const p = cv.pos(e), P = layout(), role = myRole(); if (!role) return;
       for (const b of ctrlButtons(P)) if (K.inR(p, b)) {
@@ -213,12 +227,41 @@ BX.register({
         return;
       }
       const G = P.goal;
-      if (p.x >= G.x - 6 && p.x <= G.x + G.w + 6 && p.y >= G.y - 6 && p.y <= G.y + G.h + 6) {
+      if (inGoal(G, p)) {
         const cx = BX.clamp(Math.floor((p.x - G.x) / G.w * 3), 0, 2);
-        if (role === 'k') { const r = BX.clamp(Math.floor((p.y - G.y) / G.h * 3), 0, 2); const z = r * 3 + cx; sel.z = z; }
-        else { const hh = p.y < G.y + G.h / 2 ? 0 : 1; sel.d = cx * 2 + hh; }
-        ctx.sfx('select');
+        let key;
+        if (role === 'k') { const r = BX.clamp(Math.floor((p.y - G.y) / G.h * 3), 0, 2); sel.z = r * 3 + cx; key = sel.z; }
+        else { const hh = p.y < G.y + G.h / 2 ? 0 : 1; sel.d = cx * 2 + hh; key = 10 + sel.d; }
+        if (ctx.needConfirm(e) && preview !== key) { preview = key; ctx.sfx('select'); return; }
+        preview = -1; confirm(role); return;
       }
+      // kicker: swipe from the ball toward the goal
+      if (role === 'k' && p.y > G.y + G.h && p.x >= P.S.x && p.x <= P.S.x + P.S.w && p.y <= P.S.y + P.S.h) { swipe = {id: e.pointerId, pts: [[p.x, p.y, performance.now()]]}; try { cv.cv.setPointerCapture(e.pointerId); } catch (er) {} }
+    });
+    ctx.on(cv.cv, 'pointermove', e => { if (swipe && swipe.id === e.pointerId) { const p = cv.pos(e); swipe.pts.push([p.x, p.y, performance.now()]); if (swipe.pts.length > 60) swipe.pts.splice(1, 1); } });
+    ctx.on(cv.cv, 'pointercancel', () => swipe = null);
+    ctx.on(cv.cv, 'pointerup', e => {
+      if (!swipe || swipe.id !== e.pointerId) return;
+      const sw = swipe; swipe = null; const role = myRole(); if (role !== 'k') return;
+      const P = layout(), G = P.goal, a = sw.pts[0], b = sw.pts[sw.pts.length - 1], dx = b[0] - a[0], dy = b[1] - a[1], len = Math.hypot(dx, dy);
+      if (len < 36 || dy > -20) return;
+      let z;
+      if (inGoal(G, {x: b[0], y: b[1]}, 0)) z = BX.clamp(Math.floor((b[1] - G.y) / G.h * 3), 0, 2) * 3 + BX.clamp(Math.floor((b[0] - G.x) / G.w * 3), 0, 2);
+      else {
+        const dist = Math.max(40, P.spot.y - (G.y + G.h / 2)), f = len / dist, row = f > 1 ? 0 : f > .55 ? 1 : 2;
+        const ty = G.y + G.h * (row + .5) / 3, ax = a[0] + dx * (a[1] - ty) / Math.max(1, -dy);
+        if (ax < G.x - G.w * .25 || ax > G.x + G.w * 1.25) { ctx.toast('往球门方向划'); return; }
+        z = row * 3 + BX.clamp(Math.floor((ax - G.x) / G.w * 3), 0, 2);
+      }
+      // speed → power (px per ms over the last part of the swipe), sideways bulge → curve (visual)
+      const tail = sw.pts.filter(q => q[2] >= b[2] - 120), t0 = tail[0], spd = Math.hypot(b[0] - t0[0], b[1] - t0[1]) / Math.max(16, b[2] - t0[2]) / (P.S.h / 500);
+      const pw = spd < .55 ? 0 : spd < 1.5 ? 1 : 2;
+      let bulge = 0; for (const q of sw.pts) { const cr = ((q[0] - a[0]) * dy - (q[1] - a[1]) * dx) / len; if (Math.abs(cr) > Math.abs(bulge)) bulge = cr; }
+      const cu = Math.round(BX.clamp(bulge / Math.max(30, len * .25), -1, 1) * 100) / 100;
+      sel.z = z; sel.p = pw; preview = -1;
+      const act = {t: 'kick', z, p: pw}; if (Math.abs(cu) > .15) act.cu = cu;
+      if (!ctx.hotseat) ctx.toast(ROWN[Math.floor(z / 3)] + COLN[z % 3] + ' · ' + POWN[pw] + (act.cu ? ' · 弧线' : ''));
+      sel = {z: -1, p: 1, d: -1}; ctx.act(act, shooter());
     });
 
     /* ---------------- drawing ---------------- */
@@ -317,7 +360,8 @@ BX.register({
         if (k2 > 0) {
           let tp = gp;
           const e = BX.ease.out(k2), arc = Math.sin(k2 * Math.PI) * G.h * (L.p === 2 ? .1 : .35);
-          bx = BX.lerp(P.spot.x, tp.x, e); by2 = BX.lerp(P.spot.y - bs * .8, tp.y, e) - arc; br = BX.lerp(bs, bs * .55, e); brot = k2 * 12;
+          const bend = (L.cu || 0) * G.w * .28;
+          bx = BX.lerp(P.spot.x, tp.x, e) + Math.sin(e * Math.PI) * bend; by2 = BX.lerp(P.spot.y - bs * .8, tp.y, e) - arc; br = BX.lerp(bs, bs * .55, e); brot = k2 * 12;
           if (rv.t > .6) {
             const k3 = BX.clamp((rv.t - .6) / .4, 0, 1);
             if (L.res === 'save') { const dir = (L.d >> 1) === 0 ? -1 : (L.d >> 1) === 2 ? 1 : (L.n % 2 ? 1 : -1); bx = tp.x + dir * k3 * G.w * .35; by2 = tp.y - Math.sin(k3 * Math.PI) * G.h * .4 + k3 * G.h * .9; br = bs * .55 + k3 * bs * .2; }
@@ -328,10 +372,19 @@ BX.register({
           }
           // trail
           g.strokeStyle = 'rgba(255,255,255,.25)'; g.lineWidth = br * .9; g.lineCap = 'round';
-          if (k2 < 1) { g.beginPath(); g.moveTo(BX.lerp(P.spot.x, tp.x, Math.max(0, e - .2)), BX.lerp(P.spot.y - bs * .8, tp.y, Math.max(0, e - .2)) - Math.sin(Math.max(0, k2 - .15) * Math.PI) * G.h * (L.p === 2 ? .1 : .35)); g.lineTo(bx, by2); g.stroke(); }
+          if (k2 < 1) { g.beginPath(); g.moveTo(BX.lerp(P.spot.x, tp.x, Math.max(0, e - .2)) + Math.sin(Math.max(0, e - .2) * Math.PI) * bend, BX.lerp(P.spot.y - bs * .8, tp.y, Math.max(0, e - .2)) - Math.sin(Math.max(0, k2 - .15) * Math.PI) * G.h * (L.p === 2 ? .1 : .35)); g.lineTo(bx, by2); g.stroke(); }
         }
       }
       const role = myRole();
+      const tk = (now => .55 + .35 * Math.sin(now / 160))(performance.now());
+      if (role === 'k' && hint && hint.t === 'kick') { const r = zoneRect(P, hint.z); g.strokeStyle = `rgba(63,200,140,${tk})`; g.lineWidth = 4; g.strokeRect(r.x + 4, r.y + 4, r.w - 8, r.h - 8); D.text(g, '荐 ' + POWN[hint.p], r.x + r.w / 2, r.y + r.h - 10, {size: Math.min(13, r.h * .22), color: '#bfffd8', weight: 800, stroke: 'rgba(0,0,0,.6)'}); }
+      if (role === 'g' && hint && hint.t === 'dive') { const r = diveRect(P, hint.z); g.strokeStyle = `rgba(63,200,140,${tk})`; g.lineWidth = 4; g.strokeRect(r.x + 4, r.y + 4, r.w - 8, r.h - 8); D.text(g, '荐', r.x + r.w / 2, r.y + r.h - 12, {size: 13, color: '#bfffd8', weight: 800, stroke: 'rgba(0,0,0,.6)'}); }
+      if (role && ctx.pref('hints')) {   // opponent's habits so far
+        const fs = Math.max(10, Math.min(13, G.h * .08));
+        if (role === 'k') { const h = st.hist[keeper() * 2 + 1]; if (h.n) for (let c = 0; c < 3; c++) D.text(g, '扑' + COLN[c] + ' ' + h.c[c], G.x + G.w * (c + .5) / 3, G.y + G.h + fs * .9 + 2, {size: fs, color: 'rgba(255,250,230,.85)', weight: 800, stroke: 'rgba(0,0,0,.5)'}); }
+        else { const h = st.hist[shooter() * 2]; if (h.n) for (let z = 0; z < 9; z++) if (h.z[z]) { const r = zoneRect(P, z); D.text(g, '×' + h.z[z], r.x + r.w - 14, r.y + 12, {size: fs, color: '#ffe8b0', weight: 800, stroke: 'rgba(0,0,0,.6)'}); } }
+      }
+      if (preview >= 0 && role) { D.text(g, '再点一次确认', G.x + G.w / 2, G.y - 12, {size: 15, color: '#ffe08a', weight: 800, stroke: 'rgba(40,20,5,.8)'}); }
       // zone overlay (choosing)
       if (role === 'k') {
         for (let z = 0; z < 9; z++) { const r = zoneRect(P, z); g.strokeStyle = 'rgba(255,240,200,.35)'; g.setLineDash([5, 5]); g.strokeRect(r.x + 2, r.y + 2, r.w - 4, r.h - 4); g.setLineDash([]); if (z === sel.z) { g.fillStyle = 'rgba(230,197,125,.45)'; g.fillRect(r.x + 2, r.y + 2, r.w - 4, r.h - 4); D.text(g, '◎', r.x + r.w / 2, r.y + r.h / 2, {size: Math.min(r.h * .7, 34), color: '#b23a2b', weight: 900}); } }
@@ -342,6 +395,8 @@ BX.register({
       if (behind) drawBall(g, bx, by2, br, brot);
       person(g, px, py, Math.max(40, S.h * .3), shCol, {back: true, legs: plegs, arms: .2, num: String((L ? L.n : st.k) % 9 + 2)});
       if (!behind) drawBall(g, bx, by2, br, brot);
+      if (swipe && swipe.pts.length > 1) { g.strokeStyle = 'rgba(255,240,180,.75)'; g.lineWidth = 5; g.lineCap = 'round'; g.beginPath(); swipe.pts.forEach((q, i) => i ? g.lineTo(q[0], q[1]) : g.moveTo(q[0], q[1])); g.stroke(); }
+      else if (role === 'k' && sel.z < 0 && !st.pk && !rv) { const k = (performance.now() / 900) % 1; g.globalAlpha = 1 - k; g.strokeStyle = '#fff6dc'; g.lineWidth = 3; g.setLineDash([4, 6]); g.beginPath(); g.moveTo(P.spot.x, P.spot.y - bs * 1.4); g.lineTo(P.spot.x, P.spot.y - bs * 1.4 - (P.spot.y - G.y - G.h) * .5 * k); g.stroke(); g.setLineDash([]); g.globalAlpha = 1; }
       // aim line preview for kicker
       if (role === 'k' && sel.z >= 0) {
         const r = zoneRect(P, sel.z); g.strokeStyle = 'rgba(255,240,200,.6)'; g.setLineDash([6, 8]); g.lineWidth = 2;
@@ -382,14 +437,17 @@ BX.register({
         if (st.last && st.ph === 'reveal') { const L = st.last; D.text(g, `${ROWN[Math.floor(L.z / 3)]}${COLN[L.z % 3]} · ${POWN[L.p]} ｜ 门将扑${COLN[L.d >> 1]}${L.d & 1 ? '下' : '上'}`, R.x + R.w / 2, R.y + R.h / 2 + 20, {size: sz * .85, color: '#e6c57d', maxW: R.w - 16}); }
         return;
       }
-      D.text(g, role === 'k' ? '① 点球门选角度  ② 选力度' : '点球门选扑救方向', R.x + R.w / 2, R.y + 17, {size: sz, color: '#fbe9d0', maxW: R.w - 12});
+      let tip = role === 'k' ? '向球门划动射门 · 或选力度后点球门' : '点球门选扑救方向';
+      if (role === 'k' && sel.z >= 0) { const c = sel.z % 3, r = Math.floor(sel.z / 3); tip = ROWN[r] + COLN[c] + ' · ' + POWN[sel.p] + '：打偏 ' + Math.round(missProb(c, r, sel.p) * 100) + '%，被猜中仍进 ' + Math.round((1 - SAVE[sel.p]) * 100) + '%'; }
+      else if (role === 'g' && sel.d >= 0) tip = '扑' + COLN[sel.d >> 1] + (sel.d & 1 ? '下' : '上') + '：覆盖' + COLN[sel.d >> 1] + '路' + (sel.d & 1 ? '中、低' : '高、中') + '两层';
+      D.text(g, tip, R.x + R.w / 2, R.y + 17, {size: sz, color: sel.z >= 0 || sel.d >= 0 ? '#ffe08a' : '#fbe9d0', maxW: R.w - 12});
       for (const b of ctrlButtons(P)) {
         if (b.k === 'go') {
           const ok = role === 'k' ? sel.z >= 0 : sel.d >= 0;
           K.btn(g, b, role === 'k' ? '射门！' : '扑救！', {color: ok ? '#c23a2b' : '#7a6a5a', fg: '#fff3e3', size: Math.min(b.h * .42, 24), font: 'deco'});
         } else {
           const p = +b.k[1];
-          K.btn(g, b, POWN[p], {color: sel.p === p ? '#e6c57d' : '#a88a5a', sub: ['稳·可能被够到', '中规中矩', '难扑·易打飞'][p], sel: sel.p === p ? '#fff' : null, size: Math.min(b.h * .34, 18)});
+          K.btn(g, b, POWN[p], {color: sel.p === p ? '#e6c57d' : '#a88a5a', sub: ['稳·可能被够到', '中规中矩', '难扑·易打飞'][p], sel: sel.p === p ? '#fff' : null, size: Math.min(b.h * .36, 19), fg2: '#5a3a18', subSize: BX.clamp(b.h * .2, 10, 13)});
         }
       }
     }

@@ -115,13 +115,14 @@ BX.register({
   id: 'carrom', title: '康乐球', cat: 'physics', order: 2, sub: '弹击棋子入四角袋',
   desc: '方桌四角有袋，白黑各九子加一枚红后。把击子放在自己的底线上弹出去，打进本方棋子并“盖住”红后，先清完的一方获胜。',
   kind: 'turn', seats: 2, seatNames: ['白方', '黑方'], seatColors: ['#efe6d2', '#2a211b'], firstLabel: '执白先手', aiDelay: 300,
+  howto: ['<b>定位</b>：拖动下方的<b>击子滑条</b>（或直接沿底线拖击子）把击子放到想要的位置。', '<b>瞄准</b>：在盘面上按住拖动，击子指向手指；用<b>微调轮</b>左右拖细调角度。瞄准线会显示被撞棋子的走向，能进袋时袋口亮起绿圈。', '<b>出击</b>：拖动<b>力度条</b>松手弹出（拖回起点取消）；也可以从击子向后拉弓、松手出击。', '击子运动时点一下盘面可快进；💡 会摆好推荐位置与方向并标出建议力度。键盘：←→ 移动击子、A/D 调方向（Shift 更细）、W/S 力度、空格击出。'],
   rules: `<p><b>器材</b>：方形球盘四角各有一个袋，盘上有 9 枚白子、9 枚黑子和 1 枚<b>红后</b>，开局红后居中，其余子围成两圈花形。每人有一枚较大较重的<b>击子</b>。白方先手。</p>
 <p><b>击球</b>：把击子放在自己一侧的<b>底线</b>上（两端圆圈之间，不能压住棋子），然后弹出击子撞击棋子。只能打进本方颜色的棋子才算得分。</p>
 <p><b>连击</b>：一杆打进本方棋子，可继续击球；没有打进本方棋子则换对方。打进对方棋子算对方的，并不能继续击球。</p>
 <p><b>红后</b>：须先打进至少一枚本方棋子后才能打红后（否则红后放回中心）。打进红后时如同一杆也进了本方棋子，即为“<b>盖后</b>”成功；否则可以继续击球，下一杆必须打进本方棋子来盖后，没盖住则红后放回中心。</p>
 <p><b>犯规</b>：击子落袋为犯规：本杆打进的本方棋子放回中心，并<b>罚</b>放回一枚已进的本方棋子（若还没有进子，记为欠子，以后进子时补罚），换对方击球。红后未被盖住之前，不能打进本方（或对方）的最后一枚棋子，否则该子放回中心并换人。</p>
 <p><b>胜负</b>：红后被盖住后，先把本方 9 枚棋子全部打进者获胜（若把对方最后一枚打进，则对方获胜）。本局得分 = 对方剩余棋子数，盖后者再加 3 分（仅作展示）。</p>
-<p><b>操作</b>：沿底线左右拖动击子调整位置（也可点击底线某处）；从击子向后拖动拉弓瞄准，拉得越远力量越大，松手弹出。键盘：← → 移动击子，A D 调方向（Shift 更细），W S 力度，空格击出。球盘会转到让击球方的底线在下方。</p>`,
+<p><b>操作</b>：拖动击子滑条（或沿底线左右拖动击子、点击底线某处）调整位置；在盘面上拖动瞄准，用微调轮细调，拖力度条出击；也可以从击子向后拖动拉弓瞄准，拉得越远力量越大，松手弹出。键盘：← → 移动击子，A D 调方向（Shift 更细），W S 力度，空格击出。球盘会转到让击球方的底线在下方。</p>`,
   icon(g, w, h) {
     D.iconBase(g, w, h, '#3a1c0c', '#1c0c04');
     const s = h - 16, x0 = (w - s) / 2, y0 = 8;
@@ -155,20 +156,32 @@ BX.register({
     const cv = ctx.canvas();
     let aim = {dx: 0, dy: -1}, kbPow = .55, sxLocal = S / 2, drag = null, aimFor = -1;
     let play = null, playId = 0, parts = [], shake = 0, banner = null, remoteAim = null, lastSend = 0, bg = null, bgKey = '';
-    let rot = 0, rotTarget = 0;
+    let rot = 0, rotTarget = 0, wheelPh = 0, hintMk = null;
     const myTurn = () => ctx.canAct(st.turn) && !play && !st.over;
     const viewSeat = () => {
       if (ctx.hotseat) return play ? play.by : st.turn;
       return ctx.mySeats.length ? ctx.mySeats[0] : 0;
     };
     /* ---------- layout ---------- */
+    /* portrait: trays above/below the board, controls (slider · wheel · power) along the bottom.
+       landscape: both coin trays in the left column, controls in the right column. */
     function lay() {
-      const w = cv.w, h = cv.h, portrait = h > w;
-      const tray = portrait ? Math.min(70, Math.max(46, (h - w) / 2 - 4)) : Math.min(110, Math.max(60, (w - h) / 2 - 4));
-      const aw = portrait ? w : w - 2 * tray, ah = portrait ? h - 2 * tray : h;
+      const w = cv.w, h = cv.h, portrait = h > w, CH = 140;
+      const tray = portrait ? Math.min(70, Math.max(46, (h - w) / 2 - 4)) : BX.clamp((w - h) / 2 - 4, 70, 140);
+      const aw = portrait ? w : w - 2 * tray, ah = portrait ? h - 2 * tray - CH : h;
       const f = BX.fit(aw, ah, S + 2 * FRAME, S + 2 * FRAME, 4), sc = f.s;
       const ox = (portrait ? 0 : tray) + f.x + FRAME * sc, oy = (portrait ? tray : 0) + f.y + FRAME * sc;
-      return {w, h, portrait, sc, ox, oy, tray, cx: ox + S * sc / 2, cy: oy + S * sc / 2};
+      let slider, wheel, power;
+      if (portrait) {
+        const sw = Math.min(w - 32, 560), x0 = (w - sw) / 2, y1 = h - CH + 20;
+        slider = {x: x0, y: y1, w: sw, h: 44}; wheel = {x: x0, y: y1 + 66, w: 104, h: 42};
+        power = {x: x0 + 122, y: y1 + 70, w: sw - 122 - 6, h: 34, horiz: true};
+      } else {
+        const X = w - tray + 8, cw = tray - 16;
+        slider = {x: X, y: 28, w: cw, h: 44}; wheel = {x: X, y: 28 + 44 + 28, w: cw, h: 42};
+        const py = wheel.y + 42 + 34; power = {x: X + cw / 2 - 17, y: py, w: 34, h: Math.max(60, h - py - 12), horiz: false};
+      }
+      return {w, h, portrait, sc, ox, oy, tray, cx: ox + S * sc / 2, cy: oy + S * sc / 2, slider, wheel, power};
     }
     let V = lay();
     const T = (x, y) => { const a = rot, cx = x - S / 2, cy = y - S / 2, c = Math.cos(a), s = Math.sin(a); return [V.cx + (cx * c - cy * s) * V.sc, V.cy + (cx * s + cy * c) * V.sc]; };
@@ -197,10 +210,16 @@ BX.register({
     }
     function rotAim(a) { const c = Math.cos(a), s = Math.sin(a); aim = {dx: aim.dx * c - aim.dy * s, dy: aim.dx * s + aim.dy * c}; sendAim(); }
     /* ---------- input ---------- */
+    const inR = (p, r, m = 6) => p.x >= r.x - m && p.x <= r.x + r.w + m && p.y >= r.y - m && p.y <= r.y + r.h + m;
+    const sliderTo = px => { const f = BX.clamp((px - V.slider.x - 14) / (V.slider.w - 28), 0, 1); sxLocal = BX0 + (rotTarget ? 1 - f : f) * (BX1 - BX0); sendAim(); };
     ctx.on(cv.cv, 'pointerdown', e => {
+      if (play && !st.over) { speedUp(); return; }
       if (!myTurn()) return;
       const p = cv.pos(e), t = inv(p.x, p.y), [sx, sy] = sPos(), [px, py] = T(sx, sy);
       try { cv.cv.setPointerCapture(e.pointerId); } catch (er) {}
+      if (inR(p, V.slider, 8)) { drag = {m: 'slide'}; sliderTo(p.x); ctx.sfx('tick'); return; }
+      if (inR(p, V.wheel, 8)) { drag = {m: 'wheel', last: p.x, moved: 0}; return; }
+      const pr = V.power; if (inR(p, pr, 12)) { drag = {m: 'power', x0: p.x, y0: p.y, v: 0}; return; }
       const dS = Math.hypot(p.x - px, p.y - py);
       if (dS < Math.max(30, SR * V.sc + 16)) { drag = {m: 'pend', x0: p.x, y0: p.y, sx0: sxLocal, t0: t, v: 0}; return; }
       if (Math.abs(t.y - baseY(st.turn)) < 34 && t.x > BX0 - 30 && t.x < BX1 + 30) { sxLocal = BX.clamp(t.x, BX0, BX1); drag = {m: 'place', off: 0}; ctx.sfx('tick'); sendAim(); return; }
@@ -216,6 +235,9 @@ BX.register({
         const bdx = t.x - drag.t0.x, bdy = t.y - drag.t0.y;
         drag = Math.abs(bdx) > 1.6 * Math.abs(bdy) ? {m: 'place', off: drag.sx0 - drag.t0.x} : {m: 'pull', x0: drag.x0, y0: drag.y0, v: 0};
       }
+      if (drag.m === 'slide') { sliderTo(p.x); return; }
+      if (drag.m === 'wheel') { const d = p.x - drag.last; drag.last = p.x; drag.moved += Math.abs(d); if (d) { rotAim(d * .0011); wheelPh += d; } return; }
+      if (drag.m === 'power') { const pr = V.power, d = pr.horiz ? p.x - drag.x0 : p.y - drag.y0; drag.v = BX.clamp(Math.abs(d) / ((pr.horiz ? pr.w : pr.h) * .92), 0, 1); sendAim(drag.v); return; }
       if (drag.m === 'place') { sxLocal = BX.clamp(t.x + drag.off, BX0, BX1); sendAim(); }
       else if (drag.m === 'aim') { const [sx, sy] = sPos(), l = Math.hypot(t.x - sx, t.y - sy); if (l > 3) { aim = {dx: (t.x - sx) / l, dy: (t.y - sy) / l}; sendAim(); } }
       else if (drag.m === 'pull') {
@@ -224,10 +246,11 @@ BX.register({
         drag.v = BX.clamp((Math.hypot(p.x - drag.x0, p.y - drag.y0) - 10) / Math.max(130, Math.min(230, Math.min(cv.w, cv.h) * .4)), 0, 1); sendAim(drag.v);
       }
     });
-    const up = () => {
+    const up = e => {
       const d = drag; drag = null; if (!d) return;
-      if (d.m === 'place') { ctx.sfx('place'); if (!placeOk()) sxLocal = strikerX(st.c, st.turn, sxLocal); }
-      else if (d.m === 'pull' && d.v > .03) shoot(d.v);
+      if (d.m === 'place' || d.m === 'slide') { ctx.sfx('place'); if (!placeOk()) sxLocal = strikerX(st.c, st.turn, sxLocal); }
+      else if (d.m === 'wheel' && d.moved < 6 && myTurn()) { const p = cv.pos(e), sd = p.x < V.wheel.x + V.wheel.w / 2 ? -1 : 1; rotAim(sd * .0035); wheelPh += sd * 6; ctx.sfx('tick'); }
+      else if ((d.m === 'pull' || d.m === 'power') && d.v > .03) shoot(d.v);
     };
     ctx.on(cv.cv, 'pointerup', up); ctx.on(cv.cv, 'pointercancel', () => { drag = null; });
     /* ---------- status ---------- */
@@ -235,9 +258,9 @@ BX.register({
       for (const s of [0, 1]) ctx.info(s, '进' + potted(st.c, s) + '/9' + (st.queen.s === 'cov' && st.queen.by === s ? ' 后' : '') + (st.due[s] ? ' 欠' + st.due[s] : ''));
       updRot();
       if (st.over) return ctx.status(ctx.name(st.winner) + ' 获胜');
-      if (play) return ctx.status(ctx.name(play.by) + ' 击球中…');
+      if (play) return ctx.status(ctx.name(play.by) + ' 击球中… 点盘面可快进');
       const t = st.turn, q = st.queen.s === 'pend' && st.queen.by === t ? ' · 须盖后！' : '';
-      if (ctx.canAct(t)) { initAim(); ctx.status((ctx.hotseat ? ctx.name(t) + '：' : '') + '拖动击子定位，向后拉弓出击（打' + (t ? '黑' : '白') + '子）' + q); }
+      if (ctx.canAct(t)) { initAim(); ctx.status((ctx.hotseat ? ctx.name(t) + '：' : '') + '滑条定位 · 拖盘面瞄准 · 力度条出击（打' + (t ? '黑' : '白') + '子）' + q); }
       else ctx.status('等待 ' + ctx.name(t) + ' 击球…' + q);
     }
     /* ---------- AI ---------- */
@@ -344,11 +367,17 @@ BX.register({
       if (play && play.anim) play.anim.cancel();
       const id = ++playId, ms = 250 + res.frames.length * REC * 1000 / 300 / 1.15;
       play = {id, by, frames: res.frames, ev: res.ev, ei: 0, k: 0, ms, pre: 250 / ms, a, offBefore, pots: new Map(), last: null};
-      play.anim = ctx.anim(ms, k => { if (play && play.id === id) play.k = k; }, () => {
+      play.done = () => {
         if (!play || play.id !== id) return; play = null; aimFor = -1;
         if (st.note) banner = {note: st.note, t: 2.4};
         status(); ctx.poke();
-      }, t => t);
+      };
+      play.anim = ctx.anim(ms, k => { if (play && play.id === id) play.k = k; }, play.done, t => t);
+    }
+    function speedUp() {
+      if (!play || play.fastF) return;
+      const P = play, k0 = P.k; P.fastF = true; P.anim.cancel();
+      P.anim = ctx.anim(Math.max(60, (1 - k0) * P.ms / 4), k => { if (play === P) P.k = k0 + (1 - k0) * k; }, P.done, t => t);
     }
     const inst = {
       st,
@@ -363,7 +392,8 @@ BX.register({
         const offBefore = st.c.map(q => !q[2]); offBefore.push(false);
         const r = simulate(st.c, x, baseY(sh), dx, dy, p, !ctx.fast);
         const j = judge(st, sh, r, false);
-        st.shots++;
+        st.shots++; hintMk = null;
+        if (j.foul && ctx.isLocal(sh) && !ctx.isAI(sh)) ctx.buzz(30);
         if (j.win >= 0) {
           st.over = true; st.winner = j.win;
           const w = j.win, pts = (9 - potted(st.c, 1 - w)) + (st.queen.by === w ? 3 : 0);
@@ -382,6 +412,12 @@ BX.register({
       aiMove,
       onTurn: status,
       onView: status,
+      showHint(a) {
+        if (!myTurn()) return;
+        initAim(); sxLocal = BX.clamp(+a.x, BX0, BX1); aim = {dx: a.dx, dy: a.dy}; kbPow = a.p;
+        hintMk = {shots: st.shots, p: a.p, t0: performance.now()}; sendAim();
+        ctx.toast('已摆好推荐位置和方向 · 建议力度 ' + Math.round(a.p * 100) + '%' + (BX.TOUCH.matches ? '（把力度条拖到金色标记）' : '（空格出杆，或把力度条拖到金色标记）') + '');
+      },
       onMsg(m) { if (m && m.aim) remoteAim = {a: m.aim, t: performance.now()}; },
       key(e) {
         if (!myTurn()) return;
@@ -480,14 +516,31 @@ BX.register({
       if (hit >= 0 && tB <= tw) {
         let nx = c[hit][0] - gx, ny = c[hit][1] - gy; const nl = Math.hypot(nx, ny); nx /= nl; ny /= nl;
         const cs = dx * nx + dy * ny, own = colorOf(hit) === st.turn || hit === Q;
+        const pk = own && ctx.pref('hints') ? pocketOf(c, hit, nx, ny) : null;
         g.strokeStyle = own ? 'rgba(40,130,90,.95)' : 'rgba(190,40,30,.9)'; g.lineWidth = 2.6;
-        g.beginPath(); g.moveTo(c[hit][0], c[hit][1]); g.lineTo(c[hit][0] + nx * (40 + 150 * cs), c[hit][1] + ny * (40 + 150 * cs)); g.stroke();
+        const len = pk ? pk.t : 40 + 150 * cs;
+        g.beginPath(); g.moveTo(c[hit][0], c[hit][1]); g.lineTo(c[hit][0] + nx * len, c[hit][1] + ny * len); g.stroke();
+        if (pk) { const [qx, qy] = POCK[pk.k]; g.strokeStyle = `rgba(40,170,100,${.7 + .25 * Math.sin(performance.now() / 160)})`; g.lineWidth = 4; D.circle(g, qx, qy, PR + 6); g.stroke(); }
       } else if (tw < 1e8) {
         // one bounce preview
         let rx = dx, ry = dy; if (Math.abs(gx - SR) < 1 || Math.abs(gx - (S - SR)) < 1) rx = -rx; else ry = -ry;
         g.strokeStyle = 'rgba(60,30,10,.35)'; g.setLineDash([5, 7]); g.beginPath(); g.moveTo(gx, gy); g.lineTo(gx + rx * 110, gy + ry * 110); g.stroke(); g.setLineDash([]);
       }
       g.restore();
+    }
+    /* does coin `hit`, sent along (nx,ny), reach a corner pocket before touching another coin or a cushion? */
+    function pocketOf(c, hit, nx, ny) {
+      const ox = c[hit][0], oy = c[hit][1], rr = 2 * CR;
+      let tObs = 1e9;
+      for (let m = 0; m < NC; m++) {
+        if (m === hit || !c[m][2]) continue; const ex = c[m][0] - ox, ey = c[m][1] - oy, tc = ex * nx + ey * ny; if (tc <= 0) continue;
+        const pd2 = ex * ex + ey * ey - tc * tc; if (pd2 < rr * rr) tObs = Math.min(tObs, tc - Math.sqrt(rr * rr - pd2));
+      }
+      for (let k = 0; k < 4; k++) {
+        const ex = POCK[k][0] - ox, ey = POCK[k][1] - oy, tc = ex * nx + ey * ny; if (tc <= 0 || tc > tObs + 30) continue;
+        if (ex * ex + ey * ey - tc * tc < (PR - 4) * (PR - 4)) return {k, t: tc};
+      }
+      return null;
     }
     function draw(dt) {
       const g = cv.g; cv.clear();
@@ -546,14 +599,14 @@ BX.register({
       }
       g.globalAlpha = 1;
       g.setTransform(cv.dpr, 0, 0, cv.dpr, 0, 0);
-      drawTrays(g);
+      drawTrays(g); drawCtl(g);
       if (mine && drag && drag.m === 'pull') { const [px, py] = T(pos[STK][0], pos[STK][1]); D.text(g, Math.round(drag.v * 100) + '%', px, py + (SR + 28) * V.sc, {size: 13, color: '#fff3d6', stroke: 'rgba(40,20,5,.8)', strokeW: 3}); }
       if (banner) { banner.t -= dt; if (banner.t <= 0) banner = null; else drawBanner(g, banner); }
     }
     function fire(e) {
       const [f, type, i, v] = e, fr = play.frames[Math.min(f, play.frames.length - 1)];
-      if (type === 0) { if (v > 80) ctx.sfx(v > 900 ? 'hit' : 'stone'); if (v > 600) parts.push({x: fr[i * 2], y: fr[i * 2 + 1], vx: 0, vy: 0, t: .25, t0: .25, c: 'rgba(255,240,200,.8)', ring: true}); if (v > 1600) shake = Math.max(shake, 6); }
-      else if (type === 1) { if (v > 200) ctx.sfx('bounce'); if (v > 1400) shake = Math.max(shake, 4); }
+      if (type === 0) { if (v > 80 && !play.fastF) ctx.sfx(v > 900 ? 'hit' : 'stone'); if (v > 600) parts.push({x: fr[i * 2], y: fr[i * 2 + 1], vx: 0, vy: 0, t: .25, t0: .25, c: 'rgba(255,240,200,.8)', ring: true}); if (v > 1600) shake = Math.max(shake, 6); }
+      else if (type === 1) { if (v > 200 && !play.fastF) ctx.sfx('bounce'); if (v > 1400) shake = Math.max(shake, 4); }
       else if (type === 2) {
         const ff = play.frames[Math.max(0, f - 1)]; play.pots.set(i, {x: ff[i * 2], y: ff[i * 2 + 1], k: v, t: 0});
         ctx.sfx(i === STK ? 'buzz' : i === Q ? 'gong' : 'capture');
@@ -569,20 +622,61 @@ BX.register({
         const near = s === vs, n = potted(st.c, s), r = Math.max(8, Math.min(14, V.sc * CR * .9));
         let x, y, dx = 0, dy = 0;
         if (V.portrait) { y = near ? V.oy + (S + FRAME) * V.sc + V.tray / 2 + 4 : V.oy - FRAME * V.sc - V.tray / 2 - 4; x = V.w / 2 - 4 * r * 2.2 - r; dx = r * 2.2; }
-        else { x = near ? V.ox + (S + FRAME) * V.sc + V.tray / 2 : V.ox - FRAME * V.sc - V.tray / 2; y = V.h / 2 - 4 * r * 2.2; dy = r * 2.2; }
+        else { x = V.tray * (near ? .7 : .3); y = V.h / 2 - 4 * r * 2.2; dy = r * 2.2; }
         const active = st.turn === s && !st.over;
         g.fillStyle = active ? 'rgba(230,197,125,.18)' : 'rgba(0,0,0,.25)';
         if (V.portrait) D.rr(g, x - r * 2.2, y - r * 1.6, 9 * r * 2.2 + r * 2.4, r * 3.2, r); else D.rr(g, x - r * 1.6, y - r * 3.4, r * 3.2, 9 * r * 2.2 + r * 3.2, r);
         g.fill(); if (active) { g.strokeStyle = 'rgba(230,197,125,.7)'; g.lineWidth = 1.5; g.stroke(); }
         const lbl = ctx.name(s) + (st.queen.s === 'cov' && st.queen.by === s ? ' ♛' : '');
         if (V.portrait) D.text(g, lbl, x - r * 2.2 + 4, y - r * 1.6 - 9, {size: 11, color: '#f3e2c0', align: 'left'});
-        else D.text(g, lbl, x, y - r * 3.4 - 10, {size: 11, color: '#f3e2c0', maxW: V.tray - 6});
+        else D.text(g, lbl, x, y - r * 3.4 - 10, {size: 11, color: '#f3e2c0', maxW: V.tray * .44});
         for (let k = 0; k < 9; k++) {
           const cx = x + dx * k, cy = y + dy * k;
           if (k < n) coin(g, cx, cy, s * 9, r / CR); else { g.strokeStyle = 'rgba(243,226,192,.25)'; g.lineWidth = 1; D.circle(g, cx, cy, r * .8); g.stroke(); }
         }
         if (st.queen.by === s && st.queen.s !== 'board') { const cx = x + dx * 9.4, cy = y + dy * 9.4; coin(g, cx, cy, Q, r / CR); if (st.queen.s === 'pend') D.text(g, '待盖', cx + (V.portrait ? r * 2.6 : 0), cy + (V.portrait ? 0 : r * 1.9), {size: 10, color: '#ffb4a0'}); }
       }
+    }
+    function drawCtl(g) {
+      const mine = myTurn(), sl = V.slider, wh = V.wheel, pr = V.power;
+      g.save(); g.globalAlpha = mine ? 1 : .45;
+      const lbl = (t, x, y) => D.text(g, t, x, y, {size: 11, color: 'rgba(243,226,192,.8)'});
+      // striker slider (screen-left = the striker's left as seen from below)
+      D.wood(g, sl.x, sl.y, sl.w, sl.h, {r: 12, base: '#5a2414', dark: '#200804', seed: 6});
+      g.strokeStyle = 'rgba(230,197,125,.5)'; g.lineWidth = 1; D.rr(g, sl.x, sl.y, sl.w, sl.h, 12); g.stroke();
+      const ty = sl.y + sl.h / 2; g.strokeStyle = 'rgba(243,226,192,.5)'; g.lineWidth = 2; g.beginPath(); g.moveTo(sl.x + 14, ty); g.lineTo(sl.x + sl.w - 14, ty); g.stroke();
+      for (const ex of [sl.x + 14, sl.x + sl.w - 14]) { g.fillStyle = '#b23a2b'; D.circle(g, ex, ty, 5); g.fill(); }
+      const sx = mine ? sxLocal : st.sx[st.turn], f0 = (sx - BX0) / (BX1 - BX0), f = rotTarget ? 1 - f0 : f0;
+      coin(g, sl.x + 14 + f * (sl.w - 28), ty, STK, Math.min(1, (sl.h * .42) / SR));
+      lbl('击子位置', sl.x + sl.w / 2, sl.y - 10);
+      // fine-aim wheel
+      g.save(); D.rr(g, wh.x, wh.y, wh.w, wh.h, 12); g.clip();
+      const wg = g.createLinearGradient(0, wh.y, 0, wh.y + wh.h); wg.addColorStop(0, '#2a160a'); wg.addColorStop(.5, '#6a4426'); wg.addColorStop(1, '#2a160a');
+      g.fillStyle = wg; g.fillRect(wh.x, wh.y, wh.w, wh.h);
+      const step = 7, off = ((wheelPh % step) + step) % step;
+      for (let x = wh.x - step + off; x < wh.x + wh.w + step; x += step) { const u = (x - wh.x) / wh.w * 2 - 1; g.fillStyle = `rgba(243,226,192,${.12 + .45 * Math.max(0, 1 - u * u)})`; g.fillRect(x, wh.y + 6, 1.6, wh.h - 12); }
+      g.restore(); g.strokeStyle = 'rgba(230,197,125,.55)'; g.lineWidth = 1.2; D.rr(g, wh.x, wh.y, wh.w, wh.h, 12); g.stroke();
+      D.text(g, '‹', wh.x + 9, wh.y + wh.h / 2, {size: 18, color: '#f3e2c0', weight: 700}); D.text(g, '›', wh.x + wh.w - 9, wh.y + wh.h / 2, {size: 18, color: '#f3e2c0', weight: 700});
+      lbl('微调方向', wh.x + wh.w / 2, wh.y - 10);
+      // power bar
+      const v = drag && (drag.m === 'power' || drag.m === 'pull') ? drag.v : 0;
+      D.wood(g, pr.x - 5, pr.y - 5, pr.w + 10, pr.h + 10, {r: 10, base: '#5a2414', dark: '#200804', seed: 4, vertical: !pr.horiz});
+      g.fillStyle = '#140904'; D.rr(g, pr.x, pr.y, pr.w, pr.h, 7); g.fill();
+      if (v > 0) {
+        g.save(); D.rr(g, pr.x, pr.y, pr.w, pr.h, 7); g.clip();
+        const gr = pr.horiz ? g.createLinearGradient(pr.x, 0, pr.x + pr.w, 0) : g.createLinearGradient(0, pr.y, 0, pr.y + pr.h);
+        gr.addColorStop(0, '#3f9f6b'); gr.addColorStop(.55, '#e6c57d'); gr.addColorStop(1, '#d0533f'); g.fillStyle = gr;
+        if (pr.horiz) g.fillRect(pr.x, pr.y, pr.w * v, pr.h); else g.fillRect(pr.x, pr.y, pr.w, pr.h * v);
+        g.restore();
+      }
+      if (hintMk && hintMk.shots === st.shots && mine) {
+        const hp = hintMk.p; g.strokeStyle = `rgba(255,215,106,${.65 + .3 * Math.sin(performance.now() / 160)})`; g.lineWidth = 3; g.beginPath();
+        if (pr.horiz) { g.moveTo(pr.x + pr.w * hp, pr.y - 4); g.lineTo(pr.x + pr.w * hp, pr.y + pr.h + 4); } else { g.moveTo(pr.x - 4, pr.y + pr.h * hp); g.lineTo(pr.x + pr.w + 4, pr.y + pr.h * hp); }
+        g.stroke();
+      }
+      D.disc(g, pr.horiz ? pr.x + pr.w * v : pr.x + pr.w / 2, pr.horiz ? pr.y + pr.h / 2 : pr.y + pr.h * v, 12, '#e6c57d', {ring: '#8a6a2c'});
+      lbl(v > 0 ? '力度 ' + Math.round(v * 100) + '% · 松手出击' : pr.horiz ? '拖动力度条出击 →' : '力度 ↓', pr.x + pr.w / 2, pr.y - (pr.horiz ? 12 : 22));
+      g.restore();
     }
     function drawBanner(g, b) {
       const n = b.note; let txt = n[2]; const a = Math.min(1, b.t * 2);

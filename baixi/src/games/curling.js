@@ -83,6 +83,7 @@ BX.register({
   kind: 'turn', seats: 2, seatNames: ['赤队', '金队'], seatColors: ['#c23a2b', '#d9a12b'], firstLabel: '先掷', aiDelay: 500,
   options: [{key: 'ends', label: '局数', choices: [[2, '2 局'], [4, '4 局'], [8, '8 局']], def: 4},
     {key: 'fgz', label: '自由防守区', choices: [[1, '开'], [0, '关']], def: 1}],
+  howto: ['先在下方选<b>旋转</b>（↻ 右弯 / ↺ 左弯）和<b>擦冰</b>（擦得越多滑得越远、弯得越少）。', '在冰面上<b>按住向后拉</b>：左右偏移决定瞄准点（营垒里的十字），拉得越长越有力，松手掷出；也可以用「左 / 右」「− +」微调后点「掷出」。', '力度旁的字告诉你大概会停在哪：防守壶 / 进营 / 击打。半透明壶是不计碰撞的预计停点，淡色 ✕ 是你上一壶的瞄准点。', '营垒里发光的壶是<b>目前得分的壶</b>；壶在滑行时点一下画面可快进。键盘：←→ 瞄准、↑↓ 力度、Q/E 旋转、空格掷出。'],
   rules: `<p><b>冰壶</b>：两队在冰道上轮流把冰壶推向远端的<b>营垒</b>（同心圆）。每局每队各掷 <b>8 壶</b>，双方交替出手。</p>
 <p><b>计分：</b>一局 16 壶全部掷完后，只有离营垒圆心（<b>T 点</b>）最近的一方得分：该方每有一只壶比对方最近的壶更靠近圆心，就得 1 分。只计算营垒内（外圈半径 1.83 米以内、壶身接触圆圈即算）的壶。双方都没有壶在营垒内则本局 0:0（空局）。</p>
 <p><b>后手（最后一壶）：</b>首局由先掷方的对手持后手；此后由<b>本局未得分的一方</b>获得下一局后手（空局则后手不变）。后手方每局最后出手，优势很大。</p>
@@ -105,16 +106,24 @@ BX.register({
     const ends = BX.test ? 1 : (ctx.opts.ends || 4), fgz = ctx.opts.fgz == null ? 1 : +ctx.opts.fgz;
     const st = {ends, end: 0, extra: 0, hammer: 1, turn: 0, thrown: [0, 0], stones: [], score: [0, 0], card: [[], []], hammerLog: [], over: false, last: null, fgz};
     const cv = ctx.canvas(), pb = K.playback(ctx), fx = K.fx(), cache = K.cache();
-    let show = null, Z = st, cam = {c: -2, s: 60}, aim = {xa: 0, p: .19, s: 1, w: 0}, keyT = 0, lastRemote = null;
+    const aims = [0, 1].map(() => ({xa: 0, p: .19, s: 1, w: 0})), lastShot = {};
+    let show = null, Z = st, cam = {c: -2, s: 60}, aim = aims[0], keyT = 0, lastRemote = null, hintA = null, hintT = 0, aiPick = null;
+    const skipKey = K.skip(ctx, cv, pb);
     const ui = ctx.ui('');
     const bar = BX.h('div', {class: 'pk-bar'}); ui.append(bar);
-    const segSpin = K.seg(bar, '旋转', [[1, '↻<small>顺旋·右弯</small>'], [-1, '↺<small>逆旋·左弯</small>']], () => aim.s, v => aim.s = v);
+    const segSpin = K.seg(bar, '旋转', [[1, '↻<small>右弯</small>'], [-1, '↺<small>左弯</small>']], () => aim.s, v => { aim.s = v; pvKey = ''; });
     const segSw = K.seg(bar, '擦冰', [[0, '不擦'], [1, '轻'], [2, '中'], [3, '重']], () => aim.w, v => aim.w = v);
+    const xaTxt = x => Math.abs(x) < .025 ? '中线' : (x < 0 ? '左 ' : '右 ') + Math.abs(x).toFixed(2);
+    const adjX = K.adj(bar, '瞄准', () => xaTxt(aim.xa) + '<small>米</small>', (d, k) => { aim.xa = BX.clamp(Math.round((aim.xa + d * (k > 12 ? .1 : .05)) * 100) / 100, -HALF + .1, HALF - .1); keyT = performance.now(); }, {minus: '左', plus: '右'});
+    const adjP = K.adj(bar, '力度', () => Math.round(aim.p * 100) + '<small>' + weightName(aim.p, aim.w) + '</small>', (d, k) => { aim.p = BX.clamp(Math.round(aim.p * 100 + d * (k > 12 ? 3 : 1)) / 100, 0, 1); keyT = performance.now(); });
+    K.go(bar, '掷出', () => throwIt());
+    function marks(w) { return [d2p((HOG - START_Y + .4) * SWF(w)), d2p((TEE_Y - START_Y - 1.2) * SWF(w)), d2p((BACK - START_Y + .3) * SWF(w))]; }
+    function weightName(p, w) { const m = marks(w); return p < m[0] - .02 ? '过不了线' : p < m[1] ? '防守壶' : p < m[2] ? '进营' : '击打'; }
 
     /* ---------- view ---------- */
     function layout() {
       const W = cv.w, H = cv.h, port = H > W;
-      const barH = 58, topH = port ? 50 : 0;
+      const barH = K.barH(bar, 58), topH = port ? 50 : 0;
       const main = port ? H - barH - topH : W, cross = port ? W : H - barH;
       const s = Math.min((cross - (port ? 10 : 8)) / (HALF * 2 + .4), main / (port ? 9.5 : 10.5));
       return {W, H, port, s, barH, topH, main, cross, L: main / s};
@@ -147,20 +156,24 @@ BX.register({
       return {dx: +(vx / l).toFixed(6), dy: +(vy / l).toFixed(6), v: +p2v(a.p, a.w).toFixed(4), s: a.s, w: a.w};
     }
     function key(e) {
+      if (skipKey(e)) return;
       if (!myTurn()) return;
       if (e.code === 'ArrowLeft' || e.code === 'ArrowRight') { aim.xa = BX.clamp(aim.xa + (e.code === 'ArrowRight' ? .05 : -.05), -HALF, HALF); keyT = performance.now(); }
       if (e.code === 'ArrowUp' || e.code === 'ArrowDown') { aim.p = BX.clamp(aim.p + (e.code === 'ArrowUp' ? .01 : -.01), 0, 1); keyT = performance.now(); }
       if (e.code === 'KeyQ' || e.code === 'KeyE') { aim.s = e.code === 'KeyE' ? 1 : -1; segSpin.refresh(); }
+      if (/^Digit[0-3]$/.test(e.code)) { aim.w = +e.code.slice(5); segSw.refresh(); }
       if (e.code === 'Space' || e.code === 'Enter') throwIt();
     }
     // preview path (no other stones)
     let pvKey = '', pv = null;
-    function preview() {
-      const shot = makeShot(aim); shot.t = 0;
-      const k = JSON.stringify(shot); if (k === pvKey) return pv;
-      const r = simulate([], shot, true); pvKey = k;
-      pv = r.frames.map(f => [f[0], f[1]]).filter(p => p[1] < 50);
-      return pv;
+    function preview(a = aim) {
+      const shot = makeShot(a); shot.t = 0;
+      const k = JSON.stringify(shot); if (a === aim && k === pvKey) return pv;
+      if (a !== aim && a._k === k) return a._pv;
+      const r = simulate([], shot, true);
+      const out = r.frames.map(f => [f[0], f[1]]).filter(p => p[1] < 50);
+      if (a === aim) { pvKey = k; pv = out; } else { a._k = k; a._pv = out; }
+      return out;
     }
 
     /* ---------- rules ---------- */
@@ -214,7 +227,10 @@ BX.register({
           }
           st.turn = 1 - st.hammer;
         } else st.turn = 1 - t;
+        hintA = null;
         if (!ctx.fast) {
+          const me2 = r.frames[0].length / 2 - 1;
+          lastShot[t] = {xa: Math.round(dx / dy * (TEE_Y - START_Y) * 100) / 100, pts: r.frames.filter((f, i) => i % 3 === 0 && f[me2 * 2 + 1] < 50).map(f => [f[me2 * 2], f[me2 * 2 + 1]])};
           show = {r, snap, foul, endInfo, t, w, s, done: false, ei: 0, spin: 0};
           const simT = r.steps * DT, th = r.tHouse;
           const slow = [[0, Math.max(0, th), 7], [Math.max(0, th), simT + 5, 2.2]];
@@ -229,12 +245,15 @@ BX.register({
         status();
       },
       aiMove(seat, level) { return ai(seat, level); },
-      onTurn: status, key,
+      onTurn() { status(); if (!pb.on) aim = aims[st.turn]; segSpin.refresh(); segSw.refresh(); },
+      key,
+      showHint() { if (aiPick) { hintA = Object.assign({}, aiPick); hintT = performance.now(); } },
       resize() { V = layout(); },
       frame(dt) {
         pb.tick(dt); fx.update(dt * (pb.on ? Math.min(1, pb.rate) : 1));
         V = layout(); Z = show ? Object.assign({}, st, show.snap, {over: false}) : st;
         const showBar = myTurn(); bar.classList.toggle('hide', !showBar);
+        if (showBar) { aim = aims[st.turn]; adjX.refresh(); adjP.refresh(); }
         draw(dt);
       },
     };
@@ -281,7 +300,7 @@ BX.register({
       const na = [0, .1, .05, .018][level], np = [0, .025, .012, .004][level];
       const g2 = () => (Math.random() + Math.random() + Math.random() - 1.5) / 1.5;
       const shot = Object.assign({}, best, {xa: best.xa + g2() * na, p: BX.clamp(best.p + g2() * np, 0, 1)});
-      if (!ctx.isRemote(seat)) { aim = Object.assign({}, aim, shot); }
+      aiPick = shot;
       return makeShot(shot);
     }
 
@@ -374,8 +393,16 @@ BX.register({
         for (const sd of [-1, 1]) { const [bx, by] = T(thrownPos.x + sd * .32 + sweep * sd, thrownPos.y + .55); g.fillStyle = '#3a2414'; g.beginPath(); g.ellipse(bx, by, V.s * (V.port ? .16 : .06), V.s * (V.port ? .06 : .16), 0, 0, Math.PI * 2); g.fill(); }
         if (Math.random() < .5) fx.burst(thrownPos.x, thrownPos.y + .5, {n: 1, sp: .5, color: '#ffffff', life: .4, size: 2});
       }
+      // house measurement between throws: who is lying shot
+      if (!show && !st.over && Z.stones.length) {
+        const c = count(Z.stones), [tx, ty] = T(0, 0);
+        g.save(); g.setLineDash([3, 4]); g.lineWidth = 1.5;
+        for (const k of c.counting) { const o = Z.stones[k], [x, y] = T(o.x, o.y); g.strokeStyle = 'rgba(40,30,20,.55)'; g.beginPath(); g.moveTo(tx, ty); g.lineTo(x, y); g.stroke(); g.strokeStyle = '#e6b84a'; g.lineWidth = 2.5; D.circle(g, x, y, R * V.s * 1.35); g.stroke(); g.lineWidth = 1.5; }
+        g.restore();
+      }
       // aim UI
       if (!show && !st.over) drawAim(g);
+      K.skipLabel(g, V.W / 2, V.port ? V.topH + 70 : V.cross - 16, pb);
       fx.draw(g, T, 1);
       g.restore();
       fx.drawFlash(g, V.W, V.H);
@@ -392,7 +419,7 @@ BX.register({
     function atRest() {
       const f = show.foul;
       const me = show.r.all[show.r.all.length - 1];
-      if (f === 'hog') { fx.text(me.x, Math.max(me.y, HOG - 1), '未过前掷线', {size: 20, life: 1.8}); ctx.sfx('error'); }
+      if (f === 'hog') { fx.text(me.x, Math.max(me.y, HOG - 1), '未过前掷线', {size: 20, life: 1.8}); ctx.sfx('error'); if (ctx.isLocal(show.t)) ctx.buzz(30); }
       else if (f === 'fgz') { fx.text(0, HOG + 1.5, '自由防守区违例', {size: 20, life: 1.8}); ctx.sfx('buzz'); }
       else if (me.on && inHouse(me)) { ctx.sfx('chip'); fx.burst(me.x, me.y, {n: 10, sp: 1.2 * V.s, color: ['#ffe28a', '#fff'], life: .6}); }
       if (show.endInfo) {
@@ -407,6 +434,18 @@ BX.register({
       const mine = ctx.canAct(st.turn);
       const pts = mine ? preview() : null;
       if (mine) {
+        const ls = lastShot[st.turn];
+        if (ls) {
+          K.ghost(g, ls.pts.map(p => T(p[0], p[1])), {color: D.alpha(ctx.color(st.turn), 1), alpha: .3, mark: false, dash: [2, 7]});
+          const [gx, gy] = T(ls.xa, TEE_Y); g.save(); g.globalAlpha = .45; g.strokeStyle = '#2b2118'; g.lineWidth = 2; g.beginPath(); g.moveTo(gx - 7, gy - 7); g.lineTo(gx + 7, gy + 7); g.moveTo(gx + 7, gy - 7); g.lineTo(gx - 7, gy + 7); g.stroke(); g.restore();
+        }
+        if (hintA) {
+          const hp = preview(hintA).map(p => T(p[0], p[1])), al = K.pulse(hintT);
+          K.guide(g, hp, {color: K.HINT, w: 4, alpha: al, fade: .1, dash: [8, 6]});
+          const [hx, hy] = T(hintA.xa, TEE_Y); g.strokeStyle = K.HINT; g.lineWidth = 3; D.circle(g, hx, hy, 9 + 2 * Math.sin(performance.now() / 150)); g.stroke();
+          const lab = `💡 瞄${xaTxt(hintA.xa)} · ${hintA.s > 0 ? '↻右弯' : '↺左弯'} · ${weightName(hintA.p, hintA.w)} · ${['不擦', '轻擦', '中擦', '重擦'][hintA.w]}`;
+          D.text(g, lab, V.W / 2, V.port ? V.topH + 66 : V.cross - 46, {size: 13, color: '#1f6b50', weight: 800, stroke: 'rgba(255,255,255,.9)', strokeW: 4});
+        }
         const sp = pts.map(p => T(p[0], p[1]));
         K.guide(g, sp, {color: D.alpha(ctx.color(st.turn), 1), w: 3, alpha: .85, fade: .2, dash: [4, 8]});
         const end = pts[pts.length - 1];
@@ -417,7 +456,8 @@ BX.register({
         D.circle(g, bx, by, 6); g.stroke();
         // power meter
         const mh = Math.min(170, V.H * .35), mx = V.port ? V.W - 26 : V.W - 30, my = V.port ? V.topH + 70 : 40;
-        K.meter(g, mx, my, 14, mh, aim.p, {marks: [[d2p((HOG - START_Y + .4) * SWF(aim.w)), '防守'], [d2p((TEE_Y - START_Y - 1.2) * SWF(aim.w)), '进营'], [d2p((BACK - START_Y + .3) * SWF(aim.w)), '击打']]});
+        const mk = marks(aim.w);
+        K.meter(g, mx, my, 14, mh, aim.p, {marks: [[mk[0], '防守'], [mk[1], '进营'], [mk[2], '击打']]});
         if (st.thrown[0] + st.thrown[1] < 2 && st.end === 0 && !sling.on && performance.now() - keyT > 3000) {
           const [hx, hy] = T(0, -3.2);
           D.text(g, '按住画面向后拉 · 左右偏移瞄准 · 松手掷出', V.W / 2, V.port ? hy : V.cross - 22, {size: 14, color: '#2b2118', font: 'serif', weight: 700, stroke: 'rgba(255,255,255,.7)', strokeW: 4});
@@ -444,6 +484,13 @@ BX.register({
         for (let e = 0; e < Z.card[t].length; e++) D.text(g, String(Z.card[t][e]), bx + nw + cw * e + cw / 2, y, {size: 12, color: Z.card[t][e] ? C.ink : 'rgba(0,0,0,.35)', weight: Z.card[t][e] ? 800 : 400});
         D.text(g, String(Z.score[t]), bx + nw + cw * nE + 17, y, {size: 14, color: C.red, weight: 800});
       }
+      // lying shot + free guard zone
+      const cNow = !show && Z.stones.length ? count(Z.stones) : null;
+      const lie = cNow && cNow.team >= 0 ? `目前 ${ctx.name(cNow.team)} 领先 ${cNow.pts} 分` : (!show && !st.over ? '营垒内暂无壶' : '');
+      const fz = st.fgz && !show && !st.over && Z.thrown[0] + Z.thrown[1] < 4 ? '自由防守区保护中' : '';
+      const infoY = port ? by + bh + 12 : by + bh + 46;
+      if (lie) D.text(g, lie, port ? V.W / 2 : bx + 4, infoY, {size: 12, color: cNow && cNow.team >= 0 ? D.shade(ctx.color(cNow.team), -30) : '#4a3a2a', weight: 800, align: port ? 'center' : 'left', stroke: 'rgba(255,255,255,.85)', strokeW: 3});
+      if (fz) D.text(g, fz, port ? V.W / 2 : bx + 4, infoY + 16, {size: 11, color: '#8a2a20', align: port ? 'center' : 'left', stroke: 'rgba(255,255,255,.85)', strokeW: 3});
       // stones remaining
       const rx = port ? 10 : bx, ry = port ? V.H - V.barH - 16 : by + bh + 14;
       if (!port || true) for (let t = 0; t < 2; t++) {

@@ -112,11 +112,12 @@ BX.register({
   id: 'bowling', title: '保龄球', cat: 'physics', order: 5, sub: '十瓶十局，全中补中',
   desc: '标准十瓶保龄球：选站位、瞄准、决定力度和弧线，一球击倒全部球瓶就是“全中”。十局计分，全中与补中有奖励分。',
   kind: 'turn', seats: [1, 4], defSeats: 2, seatColors: ['#c23a2b', '#2f5d8a', '#3f8f5b', '#d9a12b'], aiDelay: 500,
+  howto: ['<b>向上划</b>出球：划得越快球速越快，划的方向就是出球方向；划到最后<b>往左/右拐</b>就会打出向左/右的弧线球。', '也可以<b>按住向下拉</b>（弹弓式）再松手；下方按钮可微调站位（第几板）、方向、弧线和球速，再点「出球」。', '左上角的瓶位图显示剩余球瓶，小红点是本球预计到达的位置，淡色点是你上一球。', '球滚动时点一下画面可快进；💡 提示给出建议的打法。键盘：←→ 方向、↑↓ 球速、A/D 站位、Q/E 弧线、空格出球。'],
   rules: `<p>标准<b>十瓶保龄球</b>，每人打 <b>10 局</b>（frame），多名玩家按局轮流上场。</p>
 <p><b>每局</b>最多投 2 球：第一球击倒全部 10 个球瓶为<b>全中</b>（X），本局结束；两球合计击倒全部为<b>补中</b>（/）；否则记击倒的瓶数。</p>
 <p><b>计分：</b>全中 = 10 分 + 之后两球的瓶数；补中 = 10 分 + 下一球的瓶数；其他局 = 两球瓶数之和。第 10 局打出全中可再投 2 球、补中可再投 1 球（奖励球只用于计分）。满分 300 分（12 个全中）。</p>
 <p>球掉进两侧<b>球沟</b>就无法击倒球瓶（记 0，显示“-”）。全部打完后总分最高者胜。单人练习会记录最高分。</p>
-<p><b>操作：</b>先用下方按钮选择<b>站位</b>（在犯规线上的左右位置）和<b>弧线</b>（球在球道后段向左/右弯）。然后在画面上按住并<b>向后（向下）拉</b>，左右偏一点调整方向，拉得越长球速越快，松手出球。最佳击球点在 1 号瓶和 3 号瓶之间（右侧袋口）或 1、2 号之间（左侧袋口）。键盘：←→ 方向、↑↓ 球速、A/D 站位、空格出球。</p>`,
+<p><b>操作：</b>在画面上<b>向上划</b>即可出球（划得越快越有力，划的末段往哪边拐就打哪边的弧线）。也可以先用下方按钮选择<b>站位</b>（在犯规线上的左右位置）和<b>弧线</b>（球在球道后段向左/右弯）。然后在画面上按住并<b>向后（向下）拉</b>，左右偏一点调整方向，拉得越长球速越快，松手出球。最佳击球点在 1 号瓶和 3 号瓶之间（右侧袋口）或 1、2 号之间（左侧袋口）。键盘：←→ 方向、↑↓ 球速、A/D 站位、空格出球。</p>`,
   icon(g, w, h) {
     const gr = g.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, '#2a190d'); gr.addColorStop(1, '#5a3a20'); g.fillStyle = gr; g.fillRect(0, 0, w, h);
     g.fillStyle = '#d9b27a'; g.beginPath(); g.moveTo(w * .42, h * .12); g.lineTo(w * .58, h * .12); g.lineTo(w * .95, h); g.lineTo(w * .05, h); g.closePath(); g.fill();
@@ -131,15 +132,21 @@ BX.register({
     const st = {n: ctx.n, frame: 0, turn: 0, ball: 0, pins: rack(), rolls: BX.range(ctx.n).map(() => []), over: false, last: null};
     function rack() { return SPOT.map(([x, y]) => [Math.round((x + (ctx.rng() - .5) * .006) * 1e4) / 1e4, Math.round((y + (ctx.rng() - .5) * .006) * 1e4) / 1e4]); }
     const cv = ctx.canvas(), pb = K.playback(ctx), fx = K.fx(), cache = K.cache();
-    let show = null, Z = st, aim = {x: .18, ang: 0, p: .55, h: -.5}, keyT = 0, cam = {y: -3.2, tgt: -3.2};
+    const aims = BX.range(ctx.n).map(() => ({x: .18, ang: 0, p: .55, h: -.5})), lastBall = {};
+    let show = null, Z = st, aim = aims[0], keyT = 0, cam = {y: -3.2, tgt: -3.2}, hintA = null, hintT = 0, aiPick = null, entryX = null;
+    const skipKey = K.skip(ctx, cv, pb);
     const ui = ctx.ui(''); const bar = BX.h('div', {class: 'pk-bar'}); ui.append(bar);
-    const posSeg = K.seg(bar, '站位', [['L', '◀'], ['R', '▶']], () => null, v => { aim.x = BX.clamp(aim.x + (v === 'L' ? -.06 : .06), -.42, .42); });
+    const board = x => Math.round((LANE_HW - x) / (2 * LANE_HW) * 39 + .5);
+    const adjX = K.adj(bar, '站位', () => '第' + board(aim.x) + '板', d => { aim.x = BX.clamp(Math.round((aim.x + d * .0269) * 1e4) / 1e4, -.42, .42); keyT = performance.now(); }, {minus: '◀', plus: '▶'});
+    const adjA = K.adj(bar, '方向', () => { const a = Math.round(Math.atan(aim.ang) * 1800 / Math.PI) / 10; return (a < 0 ? '↖' : a > 0 ? '↗' : '↑') + Math.abs(a).toFixed(1) + '°'; }, d => { aim.ang = BX.clamp(Math.round((aim.ang + d * .0015) * 1e4) / 1e4, -.06, .06); keyT = performance.now(); }, {minus: '◀', plus: '▶'});
     const hookSeg = K.seg(bar, '弧线', [[-1, '↰强'], [-.5, '↰'], [0, '直'], [.5, '↱'], [1, '↱强']], () => aim.h, v => aim.h = v);
-    void posSeg;
+    const kmh = p => Math.round((VMIN + p * (VMAX - VMIN)) * 3.6);
+    const adjP = K.adj(bar, '球速', () => kmh(aim.p) + '<small>公里/时</small>', (d, k) => { aim.p = BX.clamp(Math.round((aim.p + d * (k > 10 ? .04 : .02)) * 100) / 100, 0, 1); keyT = performance.now(); });
+    K.go(bar, '出球', () => roll());
     /* ---------- projection ---------- */
     function layout() {
       const W = cv.w, H = cv.h, port = H > W;
-      const cardH = cardHeight(W, port), barH = 60;
+      const cardH = cardHeight(W, port), barH = K.barH(bar);
       const top = cardH, bot = H - barH;
       const zN = 2.2, hc = 1.25;
       const F = Math.min(W * 1.5 / 1.7 * zN, (bot - top - 26) * zN / hc);
@@ -152,18 +159,41 @@ BX.register({
     const P3 = (x, y, z = 0) => { const d = Math.max(.25, y - cam.y); return [V.cx + x * V.F / d, V.hy + (V.hc - z) * V.F / d, V.F / d]; };
     /* ---------- input ---------- */
     const myTurn = () => !st.over && !pb.on && ctx.canAct(st.turn);
+    /* two gestures: pull DOWN and release (slingshot)  or  swipe UP (speed = swipe speed, curve at the end = hook) */
+    let path = [];
+    ctx.on(cv.cv, 'pointerdown', e => { if (myTurn()) { const p = cv.pos(e); path = [[p.x, p.y, performance.now()]]; } });
+    ctx.on(cv.cv, 'pointermove', e => { if (path.length && sling.on) { const p = cv.pos(e); path.push([p.x, p.y, performance.now()]); if (path.length > 200) path.splice(1, 1); } });
+    const isSwipe = s => s.y < s.y0 - 12;
     const sling = K.sling(ctx, cv, {
       enabled: myTurn, max: () => Math.min(cv.w, cv.h) * .38, min: .05,
-      change: s => { const fwd = Math.max(.25, -s.dy); aim.ang = BX.clamp(s.dx / fwd * .05, -.06, .06); aim.p = s.p; },
-      release: () => roll(),
+      change: s => { if (isSwipe(s)) return; const fwd = Math.max(.25, -s.dy); aim.ang = BX.clamp(s.dx / fwd * .05, -.06, .06); aim.p = s.p; },
+      release: s => { if (isSwipe(s)) swipe(s); else roll(); },
     });
+    function swipe(s) {
+      const now = performance.now(); path.push([s.x, s.y, now]);
+      let i0 = 0; for (let i = path.length - 1; i >= 0; i--) { if (now - path[i][2] > 320) break; i0 = i; }
+      const seg = path.slice(i0); if (seg.length < 2) seg.unshift(path[0]);
+      const a = seg[0], b = seg[seg.length - 1], dist = Math.hypot(b[0] - a[0], b[1] - a[1]), dtm = Math.max(30, b[2] - a[2]);
+      if (b[1] > a[1] - 25) return;   // too short / not upward
+      const v = dist / dtm;   // px per ms
+      const full = path, c0 = full[0], c1 = full[full.length - 1], cl = Math.hypot(c1[0] - c0[0], c1[1] - c0[1]) || 1, ux = (c1[0] - c0[0]) / cl, uy = (c1[1] - c0[1]) / cl;
+      const mid = full[Math.floor(full.length / 2)];
+      const d1 = [mid[0] - c0[0], mid[1] - c0[1]], d2 = [c1[0] - mid[0], c1[1] - mid[1]], l1 = Math.hypot(...d1) || 1, l2 = Math.hypot(...d2) || 1;
+      const turn = (d1[0] * d2[1] - d1[1] * d2[0]) / l1 / l2;
+      aim.ang = BX.clamp(Math.round(ux / Math.max(.3, -uy) * .05 * 1e4) / 1e4, -.06, .06);
+      aim.p = BX.clamp(Math.round((v - .35) / 1.6 * 100) / 100, 0, 1);
+      aim.h = BX.clamp(Math.round(turn / .25 * 2) / 2, -1, 1);
+      hookSeg.refresh(); roll();
+    }
     function shotOf(a) { const dy = 1 / Math.sqrt(1 + a.ang * a.ang); return {x: +a.x.toFixed(4), dx: +(a.ang * dy).toFixed(6), dy: +dy.toFixed(6), v: +(VMIN + a.p * (VMAX - VMIN)).toFixed(4), h: a.h}; }
     function roll() { if (!myTurn()) return; ctx.sfx('roll'); ctx.act(shotOf(aim), st.turn); }
     function key(e) {
+      if (skipKey(e)) return;
       if (!myTurn()) return;
+      if (e.code === 'KeyQ' || e.code === 'KeyE') { aim.h = BX.clamp(aim.h + (e.code === 'KeyE' ? .5 : -.5), -1, 1); hookSeg.refresh(); }
       if (e.code === 'ArrowLeft' || e.code === 'ArrowRight') { aim.ang = BX.clamp(aim.ang + (e.code === 'ArrowRight' ? .002 : -.002), -.06, .06); keyT = performance.now(); }
       if (e.code === 'ArrowUp' || e.code === 'ArrowDown') { aim.p = BX.clamp(aim.p + (e.code === 'ArrowUp' ? .02 : -.02), 0, 1); keyT = performance.now(); }
-      if (e.code === 'KeyA' || e.code === 'KeyD') aim.x = BX.clamp(aim.x + (e.code === 'KeyD' ? .03 : -.03), -.42, .42);
+      if (e.code === 'KeyA' || e.code === 'KeyD') aim.x = BX.clamp(aim.x + (e.code === 'KeyD' ? .0269 : -.0269), -.42, .42);
       if (e.code === 'Space' || e.code === 'Enter') roll();
     }
     /* ---------- rules ---------- */
@@ -211,8 +241,16 @@ BX.register({
           st.ball = 0; st.pins = rack();
           if (who < st.n - 1) st.turn = who + 1; else { st.turn = 0; st.frame++; if (st.frame >= 10) st.over = true; }
         }
+        // split: head pin down and the standing pins fall apart into separate groups
+        if (!done && !fresh && snap.ball === 0 && !r.left[0] && after >= 2) {
+          const up = r.left.map((p, i) => p ? i : -1).filter(i => i >= 0), seen = new Set([up[0]]), q = [up[0]];
+          while (q.length) { const a = q.pop(); for (const b of up) if (!seen.has(b) && Math.abs(SPOT[a][0] - SPOT[b][0]) < .32 && Math.abs(SPOT[a][1] - SPOT[b][1]) < .3) { seen.add(b); q.push(b); } }
+          if (seen.size < up.length) label = '分瓶 · 剩 ' + after;
+        }
         st.last = {who, knocked, label};
+        hintA = null;
         if (!ctx.fast) {
+          lastBall[who] = {pts: r.frames.filter((f, i) => i % 4 === 0 && f[1] < HEAD + .3).map(f => [f[0], f[1]]), ex: entryOf(shot)};
           show = {r, snap, knocked, label, who, done: false, ei: 0, shot};
           const simT = r.steps * DT;
           pb.start(simT + 1.3, () => { show = null; status(); }, [[r.tPins - .05, r.tPins + .7, .3]]);
@@ -222,12 +260,15 @@ BX.register({
         status();
       },
       aiMove(seat, level) { return ai(seat, level); },
-      onTurn: status, key,
+      onTurn() { status(); if (!pb.on) aim = aims[st.turn]; hookSeg.refresh(); },
+      key,
+      showHint() { if (aiPick) { hintA = Object.assign({}, aiPick); hintT = performance.now(); } },
       resize() { V = layout(); },
       frame(dt) {
         pb.tick(dt); fx.update(dt * (pb.on ? Math.max(.3, pb.rate) : 1));
         Z = show ? Object.assign({}, st, show.snap, {over: false}) : st; V = layout();
         bar.classList.toggle('hide', !myTurn());
+        if (myTurn()) { aim = aims[st.turn]; adjX.refresh(); adjA.refresh(); adjP.refresh(); }
         hookSeg.refresh();
         draw(dt);
       },
@@ -262,7 +303,7 @@ BX.register({
       const na = [0, .06, .03, .006][level], nx = [0, .2, .1, .025][level];
       const g2 = () => (Math.random() + Math.random() + Math.random() - 1.5) / 1.5;
       const pick = Object.assign({}, best, {ang: best.ang + g2() * na, x: BX.clamp(best.x + g2() * nx, -.45, .45)});
-      if (!ctx.isRemote(seat)) aim = Object.assign({}, aim, pick);
+      aiPick = pick; if (ctx.isAI(seat)) Object.assign(aims[seat], pick);
       return shotOf(pick);
     }
     /* ---------- drawing ---------- */
@@ -312,7 +353,7 @@ BX.register({
     function draw(dt) {
       const g = cv.g; cv.clear('#1b1108');
       // camera
-      let bx = Z.pins ? aim.x : 0, by = 0, pins = Z.pins.map((p, i) => p ? {x: p[0], y: p[1], down: 0, i} : null), ballOn = true;
+      let bx = 0, by = 0, pins = Z.pins.map((p, i) => p ? {x: p[0], y: p[1], down: 0, i} : null), ballOn = true;
       if (show) {
         const fr = show.r.frames, k = Math.min(fr.length - 1, Math.floor(pb.t / (DT * 2))), f = fr[k];
         bx = f[0]; by = f[1]; ballOn = by < PIT - .1;
@@ -320,7 +361,7 @@ BX.register({
         cam.tgt = Math.min(by - 3.2, HEAD - 3);
         while (show.ei < show.r.ev.length && show.r.ev[show.ei][0] <= k * 2 + 1) fire(show.r.ev[show.ei++], bx, by);
         if (pb.t >= show.r.steps * DT && !show.done) { show.done = true; atRest(); }
-      } else { bx = aim.x; cam.tgt = -3.2; }
+      } else { bx = aims[Z.turn].x; cam.tgt = -3.2; }
       cam.y += (cam.tgt - cam.y) * Math.min(1, dt * (show ? 9 : 4));
       const [ox, oy] = fx.off(); g.save(); g.translate(ox, oy);
       scene(g);
@@ -335,8 +376,9 @@ BX.register({
       fx.drawFlash(g, V.W, V.H);
       drawCard(g);
       drawRack(g, show ? null : Z.pins);
+      K.skipLabel(g, V.W / 2, V.bot - 12, pb);
       if (myTurn() && (sling.on || performance.now() - keyT < 1500)) K.meter(g, V.W - 28, V.top + 50, 14, Math.min(150, (V.bot - V.top) * .45), aim.p, {});
-      if (myTurn() && Z.frame === 0 && Z.ball === 0 && !sling.on && performance.now() - keyT > 3000) D.text(g, '按住画面向下拉，左右调方向，松手出球', V.W / 2, V.bot - 14, {size: 14, color: '#fff3d6', font: 'serif', stroke: 'rgba(0,0,0,.6)', strokeW: 4});
+      if (myTurn() && Z.frame === 0 && Z.ball === 0 && !sling.on && !hintA && performance.now() - keyT > 3000) D.text(g, '向上划出球（末段拐弯＝弧线球），或向下拉后松手', V.W / 2, V.bot - 14, {size: 14, color: '#fff3d6', font: 'serif', stroke: 'rgba(0,0,0,.6)', strokeW: 4});
     }
     function drawPinAt(g, p) {
       const [x, y, s] = P3(p.x, p.y);
@@ -361,15 +403,28 @@ BX.register({
       g.fillStyle = 'rgba(20,10,5,.75)'; for (const [a, d] of [[0, .4], [.5, .45], [-.45, .42]]) { const yy = sy - r * .3 + Math.sin(rot + a) * r * .2, xx = sx + d * r * (a - .02) * 1.2; D.circle(g, xx, yy, r * .1); g.fill(); }
       g.strokeStyle = 'rgba(255,255,255,.18)'; g.lineWidth = r * .1; g.beginPath(); g.arc(sx, sy, r * .7, rot, rot + 2); g.stroke();
     }
-    function drawGuide(g) {
-      const sh = shotOf(aim); let x = sh.x, y = 0, vx = sh.dx * sh.v, vy = sh.dy * sh.v;
+    function pathOf(sh) {
+      let x = sh.x, y = 0, vx = sh.dx * sh.v, vy = sh.dy * sh.v;
       const pts = [];
       for (let i = 0; i < 400; i++) {
         if (y > OIL && y < HEAD) { const sp = Math.sqrt(vx * vx + vy * vy); vx += sh.h * HOOK * .01 * (y - OIL < 2 ? (y - OIL) / 2 : 1); const s2 = Math.sqrt(vx * vx + vy * vy); vx *= sp / s2; vy *= sp / s2; }
-        x += vx * .01; y += vy * .01; const p = P3(x, y, .01); pts.push([p[0], p[1]]);
+        x += vx * .01; y += vy * .01; pts.push([x, y]);
         if (y > HEAD - .2 || Math.abs(x) > LANE_HW) break;
       }
-      K.guide(g, pts.filter((_, i) => i % 3 === 0), {color: '#fffaf0', w: 2.5, alpha: .9, fade: .75, dash: [6, 8]});
+      return pts;
+    }
+    function entryOf(sh) { const p = pathOf(sh), e = p[p.length - 1]; return Math.abs(e[0]) > LANE_HW ? null : e[0]; }
+    function drawGuide(g) {
+      const lb = lastBall[st.turn];
+      if (lb) K.ghost(g, lb.pts.map(q => { const p = P3(q[0], q[1], .01); return [p[0], p[1]]; }), {color: '#fffaf0', alpha: .3, mark: false});
+      if (hintA) {
+        const hp = pathOf(shotOf(hintA)).filter((_, i) => i % 3 === 0).map(q => { const p = P3(q[0], q[1], .01); return [p[0], p[1]]; });
+        K.guide(g, hp, {color: K.HINT, w: 3.5, alpha: K.pulse(hintT), fade: .3, dash: [8, 6]});
+        const [hx, hy] = P3(hintA.x, 0, BR); g.strokeStyle = K.HINT; g.lineWidth = 3; D.circle(g, hx, hy, 16 + 2 * Math.sin(performance.now() / 150)); g.stroke();
+        D.text(g, `💡 第${board(hintA.x)}板 · ${hintA.h < 0 ? '↰左弧' : hintA.h > 0 ? '↱右弧' : '直球'} · ${kmh(hintA.p)}公里/时`, V.W / 2, V.bot - 34, {size: 13, color: '#bff0d8', weight: 800, stroke: 'rgba(0,0,0,.7)', strokeW: 4});
+      }
+      const pp = pathOf(shotOf(aim)), e = pp[pp.length - 1]; entryX = Math.abs(e[0]) > LANE_HW ? null : e[0];
+      K.guide(g, pp.filter((_, i) => i % 3 === 0).map(q => { const p = P3(q[0], q[1], .01); return [p[0], p[1]]; }), {color: '#fffaf0', w: 2.5, alpha: .9, fade: .75, dash: [6, 8]});
     }
     function fire(e, x, y) {
       if (e[1] === 'ball') { ctx.sfx('crash'); fx.shake(Math.min(12, 4 + e[2] * 1.2)); fx.burst(x, y + .15, {n: 16, sp: 120, color: ['#fff', '#ffe28a', '#e6c57d'], life: .5, kind: 'spark'}); }
@@ -379,6 +434,7 @@ BX.register({
     function atRest() {
       const L = show.label, strike = L === '全中！', spare = L === '补中！';
       ctx.sfx(strike || spare ? 'win' : show.knocked ? 'score' : 'buzz');
+      if ((strike || spare) && ctx.isLocal(show.who)) ctx.buzz(40);
       if (strike || spare) { fx.flashOn(1); fx.shake(8); for (let i = 0; i < 3; i++) fx.burst((Math.random() - .5) * .8, HEAD + .3, {n: 30, sp: 200, color: ['#ffe28a', '#d0533f', '#fff6dd', '#5aa08a'], life: 1.3, g: 120, a0: -Math.PI / 2, spread: 2.4}); }
       fx.text(0, HEAD - .8, L, {size: strike || spare ? 40 : 28, life: 1.6, rise: 30});
     }
@@ -404,9 +460,15 @@ BX.register({
     }
     function drawRack(g, pins) {
       if (!pins) return;
-      const s = Math.min(16, (V.bot - V.top) * .045), x0 = 14 + s * 2, y0 = V.top + 12 + s * 4;
-      g.fillStyle = 'rgba(30,18,8,.7)'; D.rr(g, x0 - s * 2.4, y0 - s * 4.2, s * 4.8, s * 4.9, 8); g.fill();
-      SPOT.forEach(([x, y], i) => { const px = x0 + x / .3048 * s * 1.1, py = y0 - (y - HEAD) / .2639 * s; g.fillStyle = pins[i] ? '#fff6e6' : 'rgba(255,255,255,.15)'; D.circle(g, px, py, s * .38); g.fill(); });
+      const s = Math.min(22, (V.bot - V.top) * .06), x0 = 14 + s * 2.4, y0 = V.top + 12 + s * 4.1;
+      g.fillStyle = 'rgba(30,18,8,.72)'; D.rr(g, x0 - s * 2.8, y0 - s * 4.2, s * 5.6, s * 6, 8); g.fill();
+      const lx = x => x0 + x / .3048 * s * 1.1;
+      g.strokeStyle = 'rgba(255,240,210,.25)'; g.lineWidth = 1; g.beginPath(); g.moveTo(lx(-LANE_HW), y0 + s * 1.6); g.lineTo(lx(-LANE_HW), y0 - s * 3.8); g.moveTo(lx(LANE_HW), y0 + s * 1.6); g.lineTo(lx(LANE_HW), y0 - s * 3.8); g.stroke();
+      SPOT.forEach(([x, y], i) => { const px = lx(x), py = y0 - (y - HEAD) / .2639 * s; g.fillStyle = pins[i] ? '#fff6e6' : 'rgba(255,255,255,.12)'; D.circle(g, px, py, s * .38); g.fill(); if (pins[i] && s >= 14) D.text(g, String(i + 1), px, py + .5, {size: s * .42, color: '#7a2a1a', weight: 700}); });
+      const by = y0 + s * 1.15, mine = myTurn();
+      const lb = lastBall[Z.turn]; if (mine && lb && lb.ex != null) { g.fillStyle = 'rgba(255,246,221,.35)'; D.circle(g, lx(lb.ex), by, s * .32); g.fill(); }
+      if (mine && entryX != null) { g.fillStyle = ctx.color(Z.turn); D.circle(g, lx(entryX), by, s * .36); g.fill(); g.strokeStyle = '#fff'; g.lineWidth = 1.5; g.stroke(); }
+      else if (mine) D.text(g, '洗沟', x0, by, {size: 11, color: '#ffb0a0', weight: 700});
     }
     status();
     return inst;

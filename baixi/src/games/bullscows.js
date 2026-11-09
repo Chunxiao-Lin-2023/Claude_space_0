@@ -1,19 +1,22 @@
 /* 猜数字 1A2B — Bulls & Cows, 4 distinct digits, two players crack each other's code. */
 const D = BX.draw, C = BX.C;
-const ALL = (() => { const r = []; for (let n = 0; n < 10000; n++) { const s = String(n).padStart(4, '0'); if (new Set(s).size === 4) r.push(s); } return r; })();
-function score(code, g) { let a = 0, b = 0; for (let i = 0; i < 4; i++) { if (g[i] === code[i]) a++; else if (code.includes(g[i])) b++; } return [a, b]; }
-const valid4 = s => typeof s === 'string' && /^\d{4}$/.test(s) && new Set(s).size === 4;
+const ALLS = {};
+const allOf = n => ALLS[n] || (ALLS[n] = (() => { const r = [], M = 10 ** n; for (let k = 0; k < M; k++) { const s = String(k).padStart(n, '0'); if (new Set(s).size === n) r.push(s); } return r; })());
+function score(code, g) { let a = 0, b = 0; for (let i = 0; i < g.length; i++) { if (g[i] === code[i]) a++; else if (code.includes(g[i])) b++; } return [a, b]; }
+const validN = (s, n) => typeof s === 'string' && s.length === n && /^\d+$/.test(s) && new Set(s).size === n;
 
 BX.register({
   id: 'bullscows', title: '猜数字', cat: 'deduce', order: 2, sub: '1A2B，看谁先破译',
   desc: '双方各设一个四位不重复的密码，轮流猜对方的数字。系统用 A、B 提示：A 是数字对且位置对，B 是数字对但位置错。先得到 4A 者破译成功！',
   kind: 'turn', seats: 2, hidden: true, seatNames: ['甲方', '乙方'], firstLabel: '先猜',
+  options: [{key: 'len', label: '密码位数', choices: [[3, '3 位（入门）'], [4, '4 位（经典）'], [5, '5 位（烧脑）']], def: 4}],
+  howto: ['用数字键盘输入（数字不能重复），点「确定」。设密码时可点「随机」。', '上方一排<b>笔记格</b>：点数字在 空白 → ✓（一定有）→ ✗（一定没有）间切换；键盘对应数字也会变暗 / 变绿。', '开启「提示标记」偏好时，已能推出的数字会自动加细框（绿 = 必有，红 = 必无），并显示「还剩 N 种可能」。', '点自己的历史记录可把那次猜测填回输入框再改；💡 提示会填入一个推荐猜测。键盘可直接输入数字，回车确定。'],
   rules: `<p>开局时双方各自秘密设定一个<b>四位数密码</b>，四个数字<b>互不相同</b>（0 可以放在首位，如 0371）。</p>
 <p>双方轮流猜对方的密码。每猜一次，会得到提示 <b>xAyB</b>：</p>
 <ul><li><b>A</b>：数字正确且位置也正确的个数；</li><li><b>B</b>：数字正确但位置不对的个数。</li></ul>
 <p>例如密码是 1234，猜 1325 得到 <b>1A2B</b>（1 位置对；3、2 数字对位置错）。</p>
-<p>先猜出 <b>4A0B</b> 者破译成功。为公平起见，若先手先猜中，后手还有<b>最后一次</b>机会：也猜中则为平局。</p>
-<p>用屏幕上的数字键盘输入，同一个数字不能重复。</p>`,
+<p>先猜出 <b>4A0B</b>（全对）者破译成功。为公平起见，若先手先猜中，后手还有<b>最后一次</b>机会：也猜中则为平局。</p>
+<p>用屏幕上的数字键盘输入，同一个数字不能重复。选项里可把密码改为 3 位（入门）或 5 位（烧脑），默认经典 4 位。</p>`,
   icon(g, w, h) {
     D.iconBase(g, w, h, '#3a2a4a', '#1e1428');
     const digits = '5307';
@@ -28,6 +31,7 @@ BX.register({
     D.text(g, '1B', w * .68, h * .75, {size: h * .17, color: '#fff', font: 'deco', weight: 400});
   },
   create(ctx) {
+    const LEN = BX.clamp(+ctx.opts.len || 4, 3, 5), ALL = allOf(LEN), valid4 = s => validN(s, LEN);
     const st = {code: [null, null], set: [false, false], hist: [[], []], turn: 0, ph: 'set', over: false, solved: [false, false], last: null, res: null};
     const cv = ctx.canvas();
     const me = () => ctx.view;
@@ -43,44 +47,72 @@ BX.register({
     const mk = (txt, cls, fn) => { const b = document.createElement('button'); b.className = 'bx-btn ' + cls; b.textContent = txt; b.style.cssText = 'min-height:44px;padding:0;font-size:20px;min-width:0'; b.onclick = fn; pad.append(b); return b; };
     for (const d of '1234567890') keys.push(mk(d, 'ghost', () => press(d)));
     const bDel = mk('⌫', 'ghost', () => { entry = entry.slice(0, -1); ctx.sfx('click'); sync(); });
-    const bMark = mk('标记', 'ghost', () => { markMode = !markMode; sync(); });
+    const bMark = mk('随机', 'ghost', () => {
+      if (!canType()) return;
+      if (st.ph === 'set') entry = ALL[(Math.random() * ALL.length) | 0];
+      else entry = '';
+      ctx.sfx('click'); sync();
+    });
     const bOk = mk('确定', 'red', submit);
-    let markMode = false;
+    /* notes row: one chip per digit, tap cycles none / ✓ / ✗ */
+    const notes = document.createElement('div'); ui.append(notes);
+    notes.style.cssText = 'position:absolute;display:grid;grid-template-columns:repeat(10,1fr);gap:4px;pointer-events:auto';
+    const chips = '1234567890'.split('').map(d => {
+      const b = document.createElement('button'); b.className = 'bx-btn ghost'; b.style.cssText = 'min-height:36px;min-width:0;padding:0;font-size:16px;position:relative';
+      b.onclick = () => { marks[+d] = (marks[+d] + 1) % 3; ctx.sfx('tick'); sync(); }; notes.append(b); return b;
+    });
+    let candN = -1, autoMk = new Array(10).fill(0), flash = {k: 1, s: -1};
+    function deduce() {   // what the viewer can infer from their own clues (only shown with the hints pref)
+      const v = me(), hs = st.hist[v];
+      if (st.ph !== 'play' || !ctx.isLocal(v)) { candN = -1; autoMk.fill(0); return; }
+      const cand = ALL.filter(c => hs.every(h => { const [a, b] = score(c, h.g); return a === h.a && b === h.b; }));
+      candN = cand.length;
+      for (let d = 0; d < 10; d++) { const ch = String(d); let inAll = true, inAny = false; for (const c of cand) { if (c.includes(ch)) inAny = true; else inAll = false; if (inAny && !inAll) break; } autoMk[d] = !inAny ? 2 : inAll ? 1 : 0; }
+    }
     function press(d) {
-      if (markMode) { marks[+d] = (marks[+d] + 1) % 3; ctx.sfx('tick'); sync(); return; }
-      if (!canType() || entry.length >= 4 || entry.includes(d)) { ctx.sfx('error'); return; }
+      if (!canType() || entry.length >= LEN || entry.includes(d)) { ctx.sfx('error'); return; }
       entry += d; ctx.sfx('click'); sync();
     }
     function canType() { const v = me(); return ctx.canAct(v) && !st.over && (st.ph === 'set' ? !st.set[v] : st.turn === v); }
     function submit() {
-      if (!canType() || entry.length !== 4) { ctx.sfx('error'); return; }
+      if (!canType() || entry.length !== LEN) { ctx.sfx('error'); return; }
       const v = me(), e = entry; entry = '';
       ctx.act(st.ph === 'set' ? {set: e} : {g: e}, v); sync();
     }
     function key(e) {
-      if (/^\d$/.test(e.key)) press(e.key); else if (e.key === 'Backspace') { entry = entry.slice(0, -1); sync(); } else if (e.key === 'Enter') submit();
+      if (/^\d$/.test(e.key) && !e.altKey) press(e.key); else if (e.key === 'Backspace') { entry = entry.slice(0, -1); sync(); } else if (e.key === 'Enter') submit();
     }
     function sync() {
-      const ok = canType();
-      pad.style.display = (ctx.isLocal(me()) && !st.over && !BX.bot) ? 'grid' : 'none';
-      keys.forEach(b => { const d = +b.textContent; const used = entry.includes(b.textContent); b.disabled = !markMode && (!ok || used); b.style.background = markMode ? (marks[d] === 1 ? '#3f7f6b' : marks[d] === 2 ? '#6e1d14' : '') : ''; });
-      bDel.disabled = !ok || !entry.length; bOk.disabled = !ok || entry.length !== 4;
-      bMark.className = 'bx-btn ' + (markMode ? 'jade' : 'ghost'); bMark.style.fontSize = '15px';
-      bMark.style.display = st.ph === 'play' ? '' : 'none';
+      const ok = canType(), showPad = ctx.isLocal(me()) && !st.over && !BX.bot;
+      deduce(); const hintsOn = ctx.pref('hints');
+      pad.style.display = showPad ? 'grid' : 'none';
+      notes.style.display = showPad && st.ph === 'play' ? 'grid' : 'none';
+      keys.forEach(b => { const d = +b.textContent; const used = entry.includes(b.textContent); b.disabled = !ok || used; const m = marks[d] || (hintsOn ? autoMk[d] : 0); b.style.background = marks[d] === 1 ? 'rgba(63,127,107,.75)' : ''; b.style.opacity = !b.disabled && m === 2 ? '.45' : ''; });
+      chips.forEach((b, k) => {
+        const d = (k + 1) % 10, m = marks[d], am = hintsOn ? autoMk[d] : 0;
+        b.textContent = String(d) + (m === 1 ? '✓' : m === 2 ? '✗' : '');
+        b.style.background = m === 1 ? '#3f7f6b' : m === 2 ? '#4a1810' : '';
+        b.style.color = m === 2 ? 'rgba(243,226,192,.5)' : '';
+        b.style.textDecoration = m === 2 ? 'line-through' : '';
+        b.style.boxShadow = am === 1 ? 'inset 0 0 0 2px #7fd0b0' : am === 2 ? 'inset 0 0 0 2px rgba(255,110,90,.75)' : '';
+      });
+      bDel.disabled = !ok || !entry.length; bOk.disabled = !ok || entry.length !== LEN;
+      bMark.style.fontSize = '15px'; bMark.textContent = st.ph === 'set' ? '随机' : '清空'; bMark.disabled = !ok;
       status();
     }
 
     /* ---------- layout ---------- */
     function L() {
       const W = cv.w, H = cv.h, portrait = H > W * 1.05;
-      const pw = portrait ? Math.min(W - 16, 380) : Math.min(300, W * .34), ph = portrait ? Math.min(176, H * .26) : Math.min(320, H * .56);
-      const cols = portrait ? 7 : 4;
+      const pw = portrait ? Math.min(W - 16, 380) : Math.min(300, W * .34), ph = portrait ? Math.min(176, H * .24) : Math.min(300, H * .5);
+      const cols = portrait ? 7 : 4, nh = st.ph === 'play' && ctx.isLocal(me()) && !BX.bot && !st.over ? 40 : 0;
       const px = portrait ? (W - pw) / 2 : W - pw - 12, py = portrait ? H - ph - 10 : H - ph - 12;
-      return {portrait, W, H, pw, ph, px, py, cols};
+      return {portrait, W, H, pw, ph, px, py, cols, nh, ny: py - nh, top: py - nh};
     }
     function placePad() {
       const l = L();
       pad.style.left = l.px + 'px'; pad.style.top = l.py + 'px'; pad.style.width = l.pw + 'px'; pad.style.height = l.ph + 'px';
+      Object.assign(notes.style, {left: l.px + 'px', top: (l.ny - 2) + 'px', width: l.pw + 'px', height: '36px'});
       if (l.portrait) {
         pad.style.gridTemplateColumns = 'repeat(6,1fr)'; pad.style.gridTemplateRows = 'repeat(3,1fr)';
         keys.forEach((b, k) => { b.style.gridColumn = String(k % 5 + 1); b.style.gridRow = String(Math.floor(k / 5) + 1); });
@@ -103,7 +135,7 @@ BX.register({
         return ctx.status('等待对方设定密码…');
       }
       const last = st.solved[0] && !st.solved[1] ? '<b style="color:#e6c57d">最后一次机会！</b> ' : '';
-      if (ctx.canAct(st.turn)) return ctx.status(last + (ctx.hotseat ? ctx.name(st.turn) + ' 猜数' : '轮到你猜') + (markMode ? ' · 标记模式：点数字切换 ✓/✗' : ''));
+      if (ctx.canAct(st.turn)) return ctx.status(last + (ctx.hotseat ? ctx.name(st.turn) + ' 猜数' : '轮到你猜') + (candN > 0 && ctx.pref('hints') ? ` · 还剩 <b style="color:#e6c57d">${candN}</b> 种可能` : ''));
       ctx.status(last + '等待 ' + ctx.name(st.turn) + ' 猜…');
     }
 
@@ -112,7 +144,7 @@ BX.register({
       const [s0, s1] = st.solved, w = s0 && s1 ? -1 : s0 ? 0 : 1;
       st.res = w < 0 ? '双方都破译了，平局' : ctx.name(w) + ' 破译成功';
       reveal = {k: 0, seat: -1}; ctx.anim(700, k => reveal.k = k);
-      sync();
+      sync(); placePad();
       ctx.end({winner: w, html: `${BX.esc(ctx.name(0))} 的密码 <b>${st.code[0]}</b>（被猜 ${st.hist[1].length} 次）<br>${BX.esc(ctx.name(1))} 的密码 <b>${st.code[1]}</b>（被猜 ${st.hist[0].length} 次）`, delay: 1300});
     }
     const inst = {
@@ -122,13 +154,14 @@ BX.register({
       apply(a, by) {
         if (a.set) {
           st.code[by] = a.set; st.set[by] = true; ctx.sfx('chip');
-          if (st.set[0] && st.set[1]) { st.ph = 'play'; ctx.sfx('gong'); }
+          if (st.set[0] && st.set[1]) { st.ph = 'play'; ctx.sfx('gong'); placePad(); }
           sync(); return;
         }
         const s = by, o = 1 - s, [A, B] = score(st.code[o], a.g);
         st.hist[s].push({g: a.g, a: A, b: B}); st.last = {s, k: st.hist[s].length - 1};
-        ctx.sfx(A === 4 ? 'win' : A + B ? 'pop' : 'tick');
-        if (A === 4) st.solved[s] = true;
+        ctx.sfx(A === LEN ? 'win' : A + B ? 'pop' : 'tick');
+        if (!ctx.fast) { flash = {k: 0, s}; ctx.anim(1400, k => flash.k = k); }
+        if (A === LEN) st.solved[s] = true;
         if (s === 1) { if (st.solved[0] || st.solved[1]) { finish(); return; } }
         else if (st.solved[0]) { /* seat 1 gets a final guess */ }
         st.turn = o;
@@ -163,8 +196,12 @@ BX.register({
         return {g: best};
       },
       onTurn() { sync(); },
-      onView() { entry = ''; markMode = false; marks = markStore[me()]; sync(); },
+      onView() { entry = ''; marks = markStore[me()]; placePad(); sync(); },
       resize() { placePad(); },
+      showHint(a) {
+        if (a.set) entry = a.set; else if (a.g) { entry = a.g; ctx.toast('💡 推荐猜 ' + a.g + '（已填入，按确定即可）'); }
+        ctx.sfx('select'); sync();
+      },
       key,
       frame() {
         const g = cv.g; cv.clear(); const l = L(), v = me(), o = 1 - v;
@@ -172,16 +209,17 @@ BX.register({
         // panels: my guesses (cracking opponent) and opponent's guesses (on my code)
         let x0, y0, w0, h0, x1, y1, w1, h1;
         if (l.portrait) {
-          const top = 112, avail = l.py - top - 8;
+          const top = 112, avail = l.top - top - 8;
           x0 = 8; y0 = top; w0 = (l.W - 24) / 2; h0 = avail; x1 = x0 + w0 + 8; y1 = top; w1 = w0; h1 = avail;
         } else {
           const avail = l.px - 24; x0 = 10; y0 = 10; w0 = avail * .5; h0 = l.H - 20; x1 = x0 + w0 + 8; y1 = 10; w1 = avail * .5; h1 = l.H - 20;
         }
-        hist(g, x0, y0, w0, h0, '我的猜测', st.hist[v], v === st.turn && st.ph === 'play' && !st.over);
-        hist(g, x1, y1, w1, h1, ctx.name(o) + ' 的猜测', st.hist[o], o === st.turn && st.ph === 'play' && !st.over);
+        rowHits = [];
+        hist(g, x0, y0, w0, h0, '我的猜测', st.hist[v], v === st.turn && st.ph === 'play' && !st.over, v);
+        hist(g, x1, y1, w1, h1, ctx.name(o) + ' 的猜测', st.hist[o], o === st.turn && st.ph === 'play' && !st.over, o);
         // entry display + own code
         let ex, ey, ew, eh;
-        if (l.portrait) { ex = 8; ey = 8; ew = l.W - 16; eh = 96; } else { ex = l.px; ey = 12; ew = l.pw; eh = l.py - 24; }
+        if (l.portrait) { ex = 8; ey = 8; ew = l.W - 16; eh = 96; } else { ex = l.px; ey = 12; ew = l.pw; eh = l.top - 24; }
         g.fillStyle = 'rgba(20,12,5,.5)'; D.rr(g, ex, ey, ew, eh, 12); g.fill();
         const mine = st.code[v], showMine = ctx.isLocal(v);
         const ent = st.ph === 'set' && st.set[v] ? '' : entry;
@@ -191,9 +229,9 @@ BX.register({
         D.text(g, lbl, ex + 12, cy + 8, {size: 13, color: 'rgba(243,226,192,.75)', align: 'left'});
         if (st.ph === 'play' && showMine && mine && !roomy) D.text(g, '我的密码 ' + mine, ex + ew - 12, cy + 8, {size: 13, color: '#e6c57d', align: 'right'});
         cy += 20;
-        const sz = Math.min(ew / 6.2, (l.portrait ? eh - 34 : roomy ? eh * .3 : eh - 34) / 1.2, 52);
-        for (let i = 0; i < 4; i++) {
-          const sx = ex + ew / 2 - 2 * sz * 1.12 + i * sz * 1.12 + sz * .06;
+        const sz = Math.min(ew / (LEN + 2.2), (l.portrait ? eh - 34 : roomy ? eh * .3 : eh - 34) / 1.2, 52);
+        for (let i = 0; i < LEN; i++) {
+          const sx = ex + ew / 2 - LEN / 2 * sz * 1.12 + i * sz * 1.12 + sz * .06;
           g.fillStyle = '#f3e9d2'; D.rr(g, sx, cy, sz, sz * 1.2, sz * .14); g.fill();
           let ch = ent[i] || '';
           if (st.over) { ch = st.code[o][i]; g.globalAlpha = reveal.k; }
@@ -205,22 +243,19 @@ BX.register({
         cy += sz * 1.2 + 14;
         if (roomy && st.ph === 'play' && showMine && mine) {
           D.text(g, '我的密码：' + mine, ex + ew / 2, cy + 8, {size: 16, color: '#e6c57d'}); cy += 22;
-          D.text(g, ctx.name(o) + ' 目前最好 ' + best(st.hist[o]), ex + ew / 2, cy + 8, {size: 12, color: 'rgba(243,226,192,.6)'}); cy += 26;
-          // digit marks strip
-          const dw = Math.min(26, ew / 11);
-          if (cy + dw * 1.2 < ey + eh) {
-            D.text(g, '标记：', ex + 12, cy + dw * .58, {size: 11, color: 'rgba(243,226,192,.6)', align: 'left'});
-            for (let d = 0; d < 10; d++) {
-              const dx = ex + ew / 2 - 5 * dw + d * dw + 14, m = marks[(d + 1) % 10];
-              g.fillStyle = m === 1 ? '#3f7f6b' : m === 2 ? 'rgba(110,29,20,.85)' : 'rgba(255,255,255,.1)'; D.rr(g, dx + 1, cy, dw - 2, dw * 1.15, 4); g.fill();
-              D.text(g, String((d + 1) % 10), dx + dw / 2, cy + dw * .58, {size: dw * .62, color: m === 2 ? 'rgba(243,226,192,.45)' : '#f3e2c0'});
-            }
-          }
-        }
+          D.text(g, ctx.name(o) + ' 目前最好 ' + best(st.hist[o]), ex + ew / 2, cy + 8, {size: 12, color: 'rgba(243,226,192,.6)'}); cy += 22;
+          if (candN > 0 && ctx.pref('hints') && cy + 10 < ey + eh) D.text(g, '还剩 ' + candN + ' 种可能', ex + ew / 2, cy + 8, {size: 13, color: '#7fd0b0'});
+        } else if (l.portrait && st.ph === 'play' && candN > 0 && ctx.pref('hints')) D.text(g, '剩 ' + candN + ' 种', ex + 12, ey + eh - 10, {size: 11, color: '#7fd0b0', align: 'left'});
       },
     };
     function best(hs) { let b = '—'; for (const h of hs) if (b === '—' || h.a * 5 + h.b > b[0] * 5 + b[1]) b = [h.a, h.b]; return b === '—' ? b : b[0] + 'A' + b[1] + 'B'; }
-    function hist(g, x, y, w, h, title, arr, active) {
+    let rowHits = [];
+    ctx.on(cv.cv, 'pointerdown', e => {   // tap one of my earlier guesses to load it into the entry
+      const p = cv.pos(e), r = rowHits.find(q => p.x >= q.x && p.x <= q.x + q.w && p.y >= q.y && p.y <= q.y + q.h);
+      if (!r || !canType() || st.ph !== 'play') return;
+      entry = r.g; ctx.sfx('click'); sync();
+    });
+    function hist(g, x, y, w, h, title, arr, active, seat) {
       g.fillStyle = 'rgba(243,233,210,.94)'; D.rr(g, x, y, w, h, 12); g.fill();
       if (active) { g.strokeStyle = '#e6c57d'; g.lineWidth = 3; D.rr(g, x, y, w, h, 12); g.stroke(); }
       D.text(g, title, x + w / 2, y + 16, {size: 14, color: C.ink, font: 'serif', weight: 800, maxW: w - 12});
@@ -230,10 +265,13 @@ BX.register({
       items.forEach((it, k) => {
         const yy = y + 36 + k * rowH + rowH / 2, fs = Math.min(rowH * .68, w * .1);
         if ((off + k) % 2) { g.fillStyle = 'rgba(200,160,82,.12)'; g.fillRect(x + 4, yy - rowH / 2, w - 8, rowH); }
+        const newest = off + k === arr.length - 1;
+        if (newest && flash.s === seat && flash.k < 1) { g.fillStyle = `rgba(230,197,125,${.55 * (1 - flash.k)})`; g.fillRect(x + 4, yy - rowH / 2, w - 8, rowH); }
+        if (seat === me() && !st.over) rowHits.push({x: x + 4, y: yy - rowH / 2, w: w - 8, h: rowH, g: it.g});
         D.text(g, String(off + k + 1), x + 14, yy, {size: fs * .7, color: C.ink2});
         D.text(g, it.g.split('').join(' '), x + w * .42, yy, {size: fs, color: C.ink, font: 'sans', weight: 700});
         const tagW = Math.min(52, w * .28), tx = x + w - tagW - 8;
-        g.fillStyle = it.a === 4 ? C.red : it.a ? '#3f7f6b' : it.b ? '#c8a052' : 'rgba(60,40,20,.25)'; D.rr(g, tx, yy - rowH * .38, tagW, rowH * .76, rowH * .3); g.fill();
+        g.fillStyle = it.a === LEN ? C.red : it.a ? '#3f7f6b' : it.b ? '#c8a052' : 'rgba(60,40,20,.25)'; D.rr(g, tx, yy - rowH * .38, tagW, rowH * .76, rowH * .3); g.fill();
         D.text(g, it.a + 'A' + it.b + 'B', tx + tagW / 2, yy + 1, {size: fs * .78, color: '#fff', weight: 800});
       });
       if (!arr.length) D.text(g, '暂无', x + w / 2, y + 56, {size: 13, color: C.ink2});

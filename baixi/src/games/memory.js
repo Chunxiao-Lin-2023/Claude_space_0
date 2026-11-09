@@ -231,6 +231,7 @@ BX.register({
   desc: '桌上扣着成对的茶馆小物：茶壶、灯笼、折扇、锦鲤……每次翻开两张，图案相同就收下并再翻一次。一人可挑战最少翻牌次数，多人比谁配对最多。',
   kind: 'turn', seats: [1, 4], defSeats: 2,
   options: [{key: 'size', label: '牌阵', choices: [['4x4', '4×4（8对）'], ['4x6', '4×6（12对）'], ['6x6', '6×6（18对）']], def: '4x6'}],
+  howto: ['点一张牌翻开，再点一张：图案相同就收下并继续翻；不同会自动扣回。', '不想等牌扣回？配对成功后可直接翻下一张；单人模式没配上时也可直接点下一张，前两张立刻扣回。', '连续配对会出现「连对」加成提示；键盘：方向键移动光标，空格 / 回车翻牌。', '💡 提示会闪烁一张值得翻的牌（若记得成对的牌，就指出它）。'],
   rules: `<p>所有牌两两成对，洗匀后背面朝上排成方阵。</p>
 <p>轮到你时<b>翻开两张牌</b>：若图案相同，这一对归你，并且<b>可以继续再翻</b>；若不同，两张牌稍后自动翻回，轮到下一位。</p>
 <p>所有牌都被配完时，<b>配对最多者获胜</b>；对数相同则并列。</p>
@@ -250,10 +251,12 @@ BX.register({
     const [R, Cn] = SIZES[ctx.opts.size] || SIZES['4x6'], N = R * Cn, n = ctx.n, solo = n === 1;
     const kinds = ctx.rng.shuffle(BX.range(MOTIFS.length)).slice(0, N / 2);
     const cards = ctx.rng.shuffle(kinds.concat(kinds));
-    const st = {R, Cn, cards, gone: new Array(N).fill(-1), up: [], turn: 0, sc: new Array(n).fill(0), tries: 0, seen: new Array(N).fill(-1), nflip: 0, pend: null, last: [], over: false};
+    const st = {R, Cn, cards, gone: new Array(N).fill(-1), up: [], turn: 0, sc: new Array(n).fill(0), tries: 0, seen: new Array(N).fill(-1), nflip: 0, pend: null, last: [], over: false, streak: 0, bestStreak: new Array(n).fill(0), miss: new Array(n).fill(0)};
     const cv = ctx.canvas();
     const vis = {f: new Array(N).fill(0), gone: new Array(N).fill(0), shake: 0, glow: 0};
-    let preview = -1;
+    let preview = -1, cursor = -1, hintI = -1, hintT = 0, pop = null;
+    const t0 = performance.now();
+    const fastPref = () => ctx.pref('speed') === 2;
     const bestRec = ctx.load('best.flips.' + (ctx.opts.size || '4x6'), null);
 
     /* ---------- layout ---------- */
@@ -272,13 +275,36 @@ BX.register({
       return {x: l.ox + sc * (l.cw + l.gp), y: l.oy + sr * (l.ch + l.gp), w: l.cw, h: l.ch};
     }
     const cardAt = p => { const l = L(); for (let i = 0; i < N; i++) { const r = rect(i, l); if (p.x >= r.x && p.x <= r.x + r.w && p.y >= r.y && p.y <= r.y + r.h) return i; } return -1; };
-    const canFlip = i => i >= 0 && st.gone[i] < 0 && !st.up.includes(i) && !st.pend;
+    /* while a pair is pending (shown face-up) the player may already flip the next card:
+       after a match the same player continues; in solo after a miss the pair is turned back at once. */
+    const early = () => !st.over && (st.pend === 'match' ? st.gone.filter(v => v < 0).length > 2 : st.pend === 'miss' && solo);
+    const goneEff = i => st.gone[i] >= 0 || (st.pend === 'match' && st.up.includes(i));
+    const upEff = () => st.pend ? [] : st.up;
+    const canFlip = i => i >= 0 && i < N && (!st.pend || early()) && !goneEff(i) && !upEff().includes(i);
+    function resolvePend() {
+      if (st.pend === 'match') { for (const i of st.up) st.gone[i] = st.turn; st.sc[st.turn]++; }
+      else if (st.pend === 'miss' && !solo) st.turn = (st.turn + 1) % n;
+      st.up = []; st.pend = null;
+    }
 
     ctx.on(cv.cv, 'pointerdown', e => {
       if (!ctx.canAct(st.turn)) return;
-      const i = cardAt(cv.pos(e)); if (!canFlip(i)) return;
-      ctx.act({i}, st.turn);
+      const i = cardAt(cv.pos(e)); if (i < 0) return;
+      if (!canFlip(i)) { if (st.gone[i] < 0 && !st.pend) ctx.sfx('error'); return; }
+      cursor = -1; ctx.act({i}, st.turn);
     });
+    function key(e) {
+      const l = L(), dirs = {ArrowLeft: [0, -1], ArrowRight: [0, 1], ArrowUp: [-1, 0], ArrowDown: [1, 0]};
+      if (dirs[e.code]) {
+        if (cursor < 0) { cursor = BX.range(N).find(i => st.gone[i] < 0) ?? 0; return; }
+        // move in screen space (layout may be transposed on portrait)
+        let [dr, dc] = dirs[e.code]; if (l.flip) [dr, dc] = [dc, dr];
+        let r = Math.floor(cursor / Cn), c = cursor % Cn;
+        for (let k = 0; k < Math.max(R, Cn); k++) { r = (r + dr + R) % R; c = (c + dc + Cn) % Cn; if (st.gone[r * Cn + c] < 0) break; }
+        cursor = r * Cn + c; ctx.sfx('tick'); return;
+      }
+      if ((e.code === 'Space' || e.code === 'Enter') && cursor >= 0 && ctx.canAct(st.turn)) { if (canFlip(cursor)) ctx.act({i: cursor}, st.turn); else ctx.sfx('error'); }
+    }
 
     const nm = s => solo ? '你' : ctx.name(s);
     function status() {
@@ -286,8 +312,9 @@ BX.register({
       if (solo) ctx.info(0, '翻 ' + st.tries + ' 次');
       if (st.over) return ctx.status('全部配完');
       const mine = ctx.isLocal(st.turn);
-      if (st.pend === 'match') return ctx.status('<b style="color:#e6c57d">配对成功！</b>' + (solo ? '' : nm(st.turn) + ' 再翻一次'));
-      if (st.pend === 'miss') return ctx.status('没配上，翻回去…');
+      const combo = st.streak >= 2 ? ` <b style="color:#ffd76a">连对 ×${st.streak}</b>` : '';
+      if (st.pend === 'match') return ctx.status('<b style="color:#e6c57d">配对成功！</b>' + combo + ' ' + (solo ? '继续翻下一张' : nm(st.turn) + ' 再翻一次'));
+      if (st.pend === 'miss') return ctx.status(solo ? '没配上 · 点任意牌继续' : '没配上，翻回去…');
       const who = solo ? '' : (ctx.hotseat ? ctx.name(st.turn) : mine ? '你' : ctx.name(st.turn));
       ctx.status(solo ? (st.up.length ? '再翻一张' : '翻开两张牌') : who + (st.up.length ? ' 翻第二张' : ' 翻牌') + (mine || ctx.hotseat ? '' : '…'));
     }
@@ -295,57 +322,68 @@ BX.register({
     function endGame() {
       st.over = true;
       if (solo) {
-        let html = `共翻牌 <b>${st.tries}</b> 次（最少可能 ${N / 2} 次）`;
+        const acc = Math.round(N / 2 / st.tries * 100), secs = Math.round((performance.now() - t0) / 1000);
+        let html = `共翻牌 <b>${st.tries}</b> 次（最少可能 ${N / 2} 次）<br>准确率 ${acc}% · 最长连对 ${st.bestStreak[0]}` + (ctx.fast ? '' : ` · 用时 ${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, '0')}`);
         const rec = ctx.best('flips.' + (ctx.opts.size || '4x6'), st.tries, 'min');
         if (!ctx.fast) html += rec.isNew ? '<br><b style="color:#b23a2b">新纪录！</b>' : `<br>最佳纪录：${rec.best} 次`;
         ctx.end({win: true, title: '全部配对', html, delay: 700});
         return;
       }
       const mx = Math.max(...st.sc), win = BX.range(n).filter(s => st.sc[s] === mx);
-      ctx.end({winner: win.length === n ? -1 : win.length === 1 ? win[0] : win, text: BX.range(n).map(s => ctx.name(s) + ' ' + st.sc[s] + ' 对').join('　'), delay: 700});
+      ctx.end({winner: win.length === n ? -1 : win.length === 1 ? win[0] : win, html: BX.range(n).map(s => `${BX.esc(ctx.name(s))}　<b>${st.sc[s]}</b> 对　<span style="opacity:.7">最长连对 ${st.bestStreak[s]}</span>`).join('<br>'), delay: 700});
     }
 
     const inst = {
       st,
-      toMove: () => st.over || st.pend ? null : st.turn,
-      valid: a => Number.isInteger(a.i) && canFlip(a.i) && st.up.length < 2,
+      toMove: () => st.over ? null : !st.pend || early() ? st.turn : null,
+      valid: a => Number.isInteger(a.i) && canFlip(a.i) && upEff().length < 2,
       sysMove: () => st.pend && !st.over ? {a: {sys: st.pend}, delay: st.pend === 'match' ? 700 : 1150} : null,
       apply(a, by) {
+        hintI = -1;
         if (a.sys) {
-          if (a.sys === 'match') {
-            for (const i of st.up) st.gone[i] = st.turn;
-            st.sc[st.turn]++; st.up = []; st.pend = null;
-            if (st.gone.every(v => v >= 0)) { status(); endGame(); return; }
-          } else { st.up = []; st.pend = null; if (!solo) st.turn = (st.turn + 1) % n; }
+          if (a.sys !== st.pend) return;
+          resolvePend();
+          if (st.gone.every(v => v >= 0)) { status(); endGame(); return; }
           status(); return;
         }
+        if (st.pend) resolvePend();   // early flip: settle the pending pair first
         const i = a.i; st.up.push(i); st.seen[i] = st.nflip++; st.last = st.up.slice();
         ctx.sfx('flip');
         if (st.up.length === 2) {
           st.tries++;
           const ok = st.cards[st.up[0]] === st.cards[st.up[1]];
           st.pend = ok ? 'match' : 'miss';
-          if (!ctx.fast) ctx.after(260, () => { ctx.sfx(ok ? 'score' : 'buzz'); if (ok) vis.glow = 1; else vis.shake = 1; });
+          if (ok) { st.streak++; st.bestStreak[st.turn] = Math.max(st.bestStreak[st.turn], st.streak); } else { st.streak = 0; st.miss[st.turn]++; }
+          if (!ctx.fast) {
+            const pair = st.up.slice(), streak = st.streak, mine = ctx.isLocal(st.turn);
+            ctx.after(fastPref() ? 150 : 260, () => {
+              ctx.sfx(ok ? 'score' : 'buzz');
+              if (ok) { vis.glow = 1; pop = {pair, t: 0, text: streak >= 2 ? '连对 ×' + streak : '配对 +1'}; ctx.anim(900, k => pop && (pop.t = k), () => pop = null); if (mine && streak >= 3) ctx.buzz(20); }
+              else vis.shake = 1;
+            });
+          }
         }
         status();
       },
       async aiMove(seat, level) {
         // online guest: give the host a moment to finish its own turn bookkeeping (avoids a rejected request race)
         if (ctx.online && !ctx.isHost) await BX.sleep(BX.test ? 120 : 30);
+        if (st.pend && !BX.test && ctx.isAI(seat)) await BX.sleep(650);   // let people see the pair (usually the pair resolves first and this call is dropped)
+        const UP = upEff();
         const P = st.nflip, mem = new Map();   // card idx -> kind for remembered cards
         const halfLife = [0, 4, 12, 999][level];
         for (let j = 0; j < N; j++) {
-          if (st.gone[j] >= 0 || st.seen[j] < 0 || st.up.includes(j)) continue;
+          if (goneEff(j) || st.seen[j] < 0 || UP.includes(j)) continue;
           const age = P - st.seen[j];
           if (level >= 3 || Math.random() < Math.pow(.5, age / halfLife)) mem.set(j, st.cards[j]);
         }
-        const free = BX.range(N).filter(j => st.gone[j] < 0 && !st.up.includes(j));
+        const free = BX.range(N).filter(j => !goneEff(j) && !UP.includes(j));
         const unseen = free.filter(j => st.seen[j] < 0);
         const unknown = free.filter(j => !mem.has(j));
         const rnd = arr => arr[Math.floor(Math.random() * arr.length)];
         if (level === 1 && Math.random() < .15) return {i: rnd(free)};
-        if (st.up.length === 1) {
-          const k = st.cards[st.up[0]];
+        if (UP.length === 1) {
+          const k = st.cards[UP[0]];
           for (const [j, v] of mem) if (v === k) return {i: j};
           return {i: rnd(unseen.length ? unseen : unknown.length ? unknown : free)};
         }
@@ -354,13 +392,15 @@ BX.register({
         return {i: rnd(unseen.length ? unseen : unknown.length ? unknown : free)};
       },
       onTurn: status,
+      key,
+      showHint(a) { hintI = a.i; hintT = performance.now(); },
       frame(dt) {
         const g = cv.g; cv.clear(); const l = L();
         // table
         D.wood(g, 0, 0, cv.w, cv.h, {seed: 21, base: '#6e4428', dark: '#2e1a0c', grain: .22});
         g.fillStyle = 'rgba(0,0,0,.18)'; g.fillRect(l.strip.x, l.strip.y, l.strip.w, l.strip.h);
         // cards
-        const sp = BX.test ? 40 : 5.5;
+        const sp = BX.test ? 40 : fastPref() ? 10 : 6;
         if (vis.shake > 0) vis.shake = Math.max(0, vis.shake - dt * 2.2);
         if (vis.glow > 0) vis.glow = Math.max(0, vis.glow - dt * 1.3);
         for (let i = 0; i < N; i++) {
@@ -387,7 +427,15 @@ BX.register({
           if (t < .5) cardBack(g, -w / 2, -h / 2, w, h);
           else cardFace(g, -w / 2, -h / 2, w, h, st.cards[i], {glow: pend && st.pend === 'match' ? '#e0a020' : pend ? '#c23a2b' : null});
           g.restore();
-          if (preview === i) { g.strokeStyle = C.gold2; g.lineWidth = 3; D.rr(g, x - 2, y - 2, w + 4, h + 4, w * .12); g.stroke(); }
+          if (preview === i || cursor === i) { g.strokeStyle = C.gold2; g.lineWidth = 3; D.rr(g, x - 2, y - 2, w + 4, h + 4, w * .12); g.stroke(); }
+          if (hintI === i && st.gone[i] < 0) { const k = (performance.now() - hintT) / 1000; g.strokeStyle = 'rgba(90,220,160,' + (.55 + .4 * Math.sin(k * 7)) + ')'; g.lineWidth = 4; D.rr(g, x - 4, y - 4, w + 8, h + 8, w * .14); g.stroke(); }
+        }
+        if (pop) {   // floating "配对 +1 / 连对 ×N" above the matched pair
+          const r0 = rect(pop.pair[0], l), r1 = rect(pop.pair[1], l);
+          const px = (r0.x + r1.x + r0.w) / 2, py = (r0.y + r1.y + r0.h) / 2 - pop.t * r0.h * .45;
+          g.globalAlpha = Math.min(1, (1 - pop.t) * 2.5);
+          D.text(g, pop.text, px, py, {size: Math.max(18, Math.min(34, r0.w * .36)), color: '#ffd76a', font: 'deco', weight: 400, stroke: '#6e1d14', strokeW: 4, shadow: true});
+          g.globalAlpha = 1;
         }
         // score strip
         drawStrip(g, l);
@@ -396,7 +444,7 @@ BX.register({
     function drawStrip(g, l) {
       const S = l.strip;
       if (solo) {
-        const items = [['翻牌次数', String(st.tries)], ['已配对', st.sc[0] + ' / ' + N / 2]];
+        const items = [['翻牌次数', String(st.tries)], ['已配对', st.sc[0] + ' / ' + N / 2], ['连对', st.streak + (st.bestStreak[0] > st.streak ? ' / 最长 ' + st.bestStreak[0] : '')]];
         if (bestRec != null) items.push(['最佳纪录', bestRec + ' 次']);
         items.forEach((it, k) => {
           let x, y, w, h;

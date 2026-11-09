@@ -102,7 +102,9 @@ BX.register({
   id: 'artillery', title: '炮弹对决', cat: 'physics', order: 1, sub: '水墨山河，炮火对轰',
   desc: '在可被炸毁的水墨山峦上架炮对轰：看风向、定角度与力度，选用普通弹、散射弹、穿地弹或火药桶，把对手轰下山头。最后存活者胜。',
   kind: 'turn', seats: [2, 4], defSeats: 2, seatColors: ['#c23a2b', '#2f5d8a', '#3f8f5b', '#c8902b'], aiDelay: 450,
-  options: [{key: 'hp', label: '血量', choices: [[60, '60'], [100, '100'], [150, '150']], def: 100}],
+  options: [{key: 'hp', label: '血量', choices: [[60, '60'], [100, '100'], [150, '150']], def: 100},
+    {key: 'guide', label: '瞄准线', choices: [[1, '短'], [2, '长'], [3, '完整']], def: 1}],
+  howto: ['在画面任意处<b>按住向后拉</b>：炮管指向拉动的反方向，拉得越长力度越大，松手开炮。', '下方 <b>◀ ▶</b> 微调角度、<b>− +</b> 微调力度（按住连续调），再点「开炮」；选弹药在左侧。', '淡色虚线和 ✕ 是<b>你上一炮</b>的轨迹与落点，照着修正即可；风标显示风向和风力。', '炮弹飞行时<b>点一下画面</b>可快进；💡 提示会画出电脑建议的弹道。键盘：←→ 角度、↑↓ 力度（Shift 加速）、1-4 选弹、空格开炮。'],
   rules: `<p>每位玩家在山地上有一门炮，<b>轮流开炮</b>。炮弹受<b>重力</b>和<b>风</b>影响（风向风力每回合都会改变，见上方风标）。</p>
 <p>爆炸会<b>炸毁地形</b>并对范围内的炮造成伤害（越靠近中心伤害越大，也会伤到自己）。脚下的山体被炸空，炮会掉落，落差较大时受到<b>摔落伤害</b>。生命值归零即被淘汰，<b>最后存活的一方获胜</b>；若最后的炮同时被毁则为平局。若回合数达到上限，剩余生命最多者胜。</p>
 <p><b>弹药：</b></p>
@@ -110,7 +112,7 @@ BX.register({
 <li><b>散射弹</b>（每人 3 发）：飞到最高点后一分为三，覆盖面大，单颗威力小。</li>
 <li><b>穿地弹</b>（每人 2 发）：落地后继续钻入山体一段再爆炸，可打穿掩体、挖出深坑。</li>
 <li><b>火药桶</b>（每人 1 发）：超大范围、超高威力。</li></ul>
-<p><b>操作：</b>先在下方选弹药，然后在画面上按住并<b>向后拉</b>：炮管朝拉动的反方向，拉得越长力度越大，松手开炮。虚线为炮弹出膛后的前段轨迹。键盘：←→ 角度、↑↓ 力度、1-4 选弹、空格开炮。</p>`,
+<p><b>操作：</b>先在下方选弹药，然后在画面上按住并<b>向后拉</b>：炮管朝拉动的反方向，拉得越长力度越大，松手开炮；也可以用下方的 ◀ ▶ / − + 微调角度和力度，再点「开炮」。虚线为炮弹出膛后的预计轨迹（长度可在开局选项「瞄准线」中选择：短 / 长 / 完整）；淡色虚线与 ✕ 是自己上一炮的落点。键盘：←→ 角度、↑↓ 力度（按住 Shift 每次 5）、1-4 选弹、空格开炮。</p>`,
   icon(g, w, h) {
     K.sky(g, 0, 0, w, h, {top: '#efe2c4', bot: '#e3d2ac', sunX: .82, sunY: .22, sunR: .1});
     K.mountains(g, 0, h * .1, w, h * .7, {seed: 6, layers: 2, top: .1, alpha: [.15, .25]});
@@ -133,11 +135,23 @@ BX.register({
       aim: tanks.map(t => t.x < WW / 2 ? [.707, .707] : [-.707, .707]), over: false, last: null, hp0};
     const newWind = () => { st.wind = Math.round((ctx.rng() * 2 - 1) * 70); };
     newWind();
-    const cv = ctx.canvas(), pb = K.playback(ctx), fx = K.fx(), cache = K.cache();
+    const cv = ctx.canvas(), pb = K.playback(ctx), fx = K.fx(), cache = K.cache(), skipKey = K.skip(ctx, cv, pb);
+    const guideN = BX.test ? 1 : (ctx.opts.guide || 1), ghosts = {};
+    let hintA = null, hintT = 0;
     let show = null, Z = st, weapon = 0, aim = {dx: st.aim[0][0], dy: st.aim[0][1], p: .55}, keyT = 0, bgKey = '';
     const aims = BX.range(n).map(i => ({dx: st.aim[i][0], dy: st.aim[i][1], p: .55}));
     const ui = ctx.ui(''); const bar = BX.h('div', {class: 'pk-bar'}); ui.append(bar);
     const wseg = K.seg(bar, '', WEAP.map((w, i) => [i, w.short + '<small>' + (w.ammo < 0 ? '∞' : '×' + w.ammo) + '</small>']), () => weapon, v => { weapon = v; });
+    const elev = a => Math.round(Math.atan2(a.dy, Math.abs(a.dx)) * 180 / Math.PI);
+    const degTxt = a => { const e = elev(a); return (e >= 90 ? '↑' : a.dx >= 0 ? '↗' : '↖') + Math.min(90, e) + '°'; };
+    function rotAim(deg) {
+      let a = Math.round(Math.atan2(aim.dy, aim.dx) * 180 / Math.PI) + deg;
+      a = BX.clamp(a, -11, 191) * Math.PI / 180; aim.dx = Math.cos(a); aim.dy = Math.sin(a); keyT = performance.now();
+    }
+    function powAim(d) { aim.p = BX.clamp(Math.round(aim.p * 100 + d) / 100, .02, 1); keyT = performance.now(); }
+    const adjA = K.adj(bar, '角度', () => degTxt(aim), (d, k) => rotAim(d * (k > 14 ? 3 : 1)), {minus: '◀', plus: '▶'});
+    const adjP = K.adj(bar, '力度', () => String(Math.round(aim.p * 100)), (d, k) => powAim(d * (k > 14 ? 3 : 1)));
+    K.go(bar, '开炮', () => fire());
     function refreshAmmo() {
       const s = st.turn, am = st.ammo[s];
       wseg.bs.forEach((b, i) => { b.innerHTML = WEAP[i].short + '<small>' + (am[i] < 0 ? '∞' : '×' + am[i]) + '</small>'; b.disabled = am[i] === 0; });
@@ -146,7 +160,7 @@ BX.register({
     }
     /* ---------- view ---------- */
     function layout() {
-      const W = cv.w, H = cv.h, port = H > W * 1.05, barH = 60;
+      const W = cv.w, H = cv.h, port = H > W * 1.05, barH = K.barH(bar);
       const vh = 560;   // visible world height (sky above is clipped; off-screen shells get a marker)
       const f = BX.fit(W, H - barH - (port ? 70 : 0), WW, vh, port ? 4 : 8);
       const oy = port ? 70 + vh * f.s : f.y + vh * f.s;
@@ -168,9 +182,11 @@ BX.register({
       ctx.act({dx: +aim.dx.toFixed(6), dy: +aim.dy.toFixed(6), p: +aim.p.toFixed(4), w: weapon}, st.turn);
     }
     function key(e) {
+      if (skipKey(e)) return;
       if (!myTurn()) return;
-      if (e.code === 'ArrowLeft' || e.code === 'ArrowRight') { const a = Math.atan2(aim.dy, aim.dx) + (e.code === 'ArrowLeft' ? 1 : -1) * Math.PI / 180; aim.dx = Math.cos(a); aim.dy = Math.sin(a); keyT = performance.now(); }
-      if (e.code === 'ArrowUp' || e.code === 'ArrowDown') { aim.p = BX.clamp(aim.p + (e.code === 'ArrowUp' ? .01 : -.01), .02, 1); keyT = performance.now(); }
+      const m = e.shiftKey ? 5 : 1;
+      if (e.code === 'ArrowLeft' || e.code === 'ArrowRight') { rotAim((e.code === 'ArrowLeft' ? 1 : -1) * m); e.preventDefault && e.preventDefault(); }
+      if (e.code === 'ArrowUp' || e.code === 'ArrowDown') { powAim((e.code === 'ArrowUp' ? 1 : -1) * m); e.preventDefault && e.preventDefault(); }
       if (/^Digit[1-4]$/.test(e.code)) { const w = +e.code.slice(5) - 1; if (st.ammo[st.turn][w] !== 0) { weapon = w; wseg.refresh(); } }
       if (e.code === 'Space' || e.code === 'Enter') fire();
     }
@@ -206,8 +222,12 @@ BX.register({
         st.T = r.T; st.tanks = r.tanks; st.aim[me] = [Math.round(dx * 1e4) / 1e4, Math.round(dy * 1e4) / 1e4];
         const dmgTotal = r.ev.filter(e => e[1] === 'boom').reduce((s2, e) => s2 + e[5].reduce((q, h) => q + (h[0] !== me ? h[1] : 0), 0), 0);
         st.last = {me, w, dmg: dmgTotal};
-        nextTurn();
+        nextTurn(); hintA = null;
         if (!ctx.fast) {
+          const gp = []; for (const f of r.frames) { let k = -1; for (let j = 0; j < f.length; j += 2) if (f[j] < 9000) { k = j; break; } if (k >= 0) gp.push([f[k], f[k + 1]]); }
+          const bo = r.ev.filter(e => e[1] === 'boom')[0];
+          if (bo) gp.push([bo[2], bo[3]]);
+          ghosts[me] = {pts: gp, hit: !!bo, dmg: dmgTotal};
           snap.aim[me] = st.aim[me].slice();
           show = {r, snap, w, me, done: false, ei: 0, T: snap.T.slice(), hp: snap.tanks.map(t => t.hp), fallT: 0};
           const simT = r.steps * DT, lastBoom = r.ev.filter(e => e[1] === 'boom').map(e => e[0] * DT).pop() || simT;
@@ -220,11 +240,13 @@ BX.register({
           else if (!al.length) winner = -1;
           else { const best = Math.max(...al.map(i => st.tanks[i].hp)); const ws = al.filter(i => st.tanks[i].hp === best); winner = ws.length === 1 ? ws[0] : ws; }
           const text = winner === -1 ? '同归于尽' : al.length > 1 ? '回合数已满，按剩余生命判定' : ctx.name(winner) + ' 屹立到最后';
-          ctx.end({winner, text, delay: show ? (r.steps * DT / 1.5 + 1.8) * 1000 : 600});
+          const hpTxt = BX.range(n).map(i => ctx.name(i) + (st.tanks[i].alive ? ' ♥' + st.tanks[i].hp : ' 已毁')).join(' · ');
+          ctx.end({winner, text: text + '<br>' + hpTxt, delay: show ? (r.steps * DT / 1.5 + 1.8) * 1000 : 600});
         }
         status();
       },
       aiMove(seat, level) { return ai(seat, level); },
+      showHint(a) { hintA = a; hintT = performance.now(); if (a.w !== weapon && st.ammo[st.turn][a.w] !== 0) { weapon = a.w; wseg.refresh(); } },
       onTurn() { status(); if (!pb.on) { aim = Object.assign({}, aims[st.turn]); refreshAmmo(); } },
       key,
       resize() { V = layout(); },
@@ -232,6 +254,7 @@ BX.register({
         pb.tick(dt); fx.update(dt * (pb.on ? Math.max(.35, pb.rate) : 1));
         Z = show ? Object.assign({}, st, show.snap, {over: false}) : st; V = layout();
         bar.classList.toggle('hide', !myTurn());
+        if (myTurn()) { adjA.refresh(); adjP.refresh(); }
         draw(dt);
       },
     };
@@ -277,7 +300,7 @@ BX.register({
       const na = [0, 4.5, 1.6, .5][level] * Math.PI / 180, np = [0, .07, .025, .008][level];
       const g2 = () => (Math.random() + Math.random() + Math.random() - 1.5) / 1.5;
       const ang = best.a + g2() * na, p = BX.clamp(best.p + g2() * np, .02, 1);
-      if (!ctx.isRemote(seat)) { aims[seat] = {dx: Math.cos(ang), dy: Math.sin(ang), p}; }
+      if (ctx.isAI(seat)) { aims[seat] = {dx: Math.cos(ang), dy: Math.sin(ang), p}; }
       return {dx: +Math.cos(ang).toFixed(6), dy: +Math.sin(ang).toFixed(6), p: +p.toFixed(4), w: best.w};
     }
     /* ---------- drawing ---------- */
@@ -370,7 +393,8 @@ BX.register({
       if (V.port) drawCards(g);
       // HUD: wind + turn
       const wx = V.W / 2, wy = V.port ? 34 : 26;
-      K.wind(g, wx, wy, BX.clamp(Z.wind / 70, -1, 1), 1, '风');
+      K.wind(g, wx, wy, BX.clamp(Z.wind / 70, -1, 1), 1, '风', Z.wind ? Math.abs(Z.wind) : null);
+      K.skipLabel(g, V.W / 2, V.port ? 74 : 66, pb);
     }
     function drawCards(g) {
       const y0 = V.oy + 40, ch = 52, cw = V.W - 24;
@@ -393,10 +417,18 @@ BX.register({
       const mine = myTurn();
       const [x, y] = P(t.x, t.y + 10);
       if (!mine) { if (ctx.isAI(st.turn) || ctx.isRemote(st.turn)) D.text(g, '瞄准中…', x, y - 60 * V.s - 12, {size: 13, color: '#5a3416', font: 'serif', weight: 700}); return; }
-      // guide: first part of the flight (ignores terrain & wind after a short while)
-      const v = 120 + aim.p * (VMAX - 120); let px = t.x + aim.dx * BARREL, py = t.y + 10 + aim.dy * BARREL, vx = aim.dx * v, vy = aim.dy * v;
-      const pts = []; for (let i = 0; i < 26; i++) { for (let k = 0; k < 2; k++) { vx += st.wind * DT; vy -= GRAV * DT; px += vx * DT; py += vy * DT; } pts.push(P(px, py)); }
-      K.guide(g, pts, {color: '#3a2414', w: 2.5, alpha: .85, fade: .85});
+      // previous shot of this player
+      const gh = ghosts[st.turn];
+      if (gh) K.ghost(g, gh.pts.map(q => P(q[0], q[1])), {color: '#3a2414', alpha: .38, label: gh.hit ? (gh.dmg ? '上一炮 -' + gh.dmg : '上一炮') : '', mark: gh.hit});
+      // hint: suggested trajectory
+      if (hintA) {
+        const hp = flight(t, hintA, 3); K.guide(g, hp, {color: K.HINT, w: 3.5, alpha: K.pulse(hintT), fade: .3, dash: [8, 6]});
+        const he = hp[hp.length - 1]; if (he) { g.strokeStyle = K.HINT; g.lineWidth = 3; D.circle(g, he[0], he[1], 10 + 3 * Math.sin(performance.now() / 160)); g.stroke(); }
+        D.text(g, `💡 ${degTxt(hintA)} 力度 ${Math.round(hintA.p * 100)} · ${WEAP[hintA.w].short}`, x, y - 60 * Math.max(1, V.s) - 14, {size: 13, color: '#1f6b50', weight: 800, stroke: 'rgba(255,248,232,.9)', strokeW: 3});
+      }
+      const pts = flight(t, aim, guideN);
+      K.guide(g, pts, {color: '#3a2414', w: 2.5, alpha: .85, fade: guideN === 3 ? .4 : .85});
+      if (guideN === 3 && pts.length) { const [ex, ey] = pts[pts.length - 1]; g.strokeStyle = '#b23a2b'; g.lineWidth = 2; D.circle(g, ex, ey, 6); g.stroke(); }
       if (sling.on) K.drawPull(g, x, y, {dx: aim.dx, dy: -aim.dy, p: aim.p}, Math.min(cv.w, cv.h) * .2, ctx.color(st.turn));
       if (sling.on || performance.now() - keyT < 1500) {
         K.meter(g, V.W - 26, V.port ? 90 : 60, 14, Math.min(150, V.H * .3), aim.p, {});
@@ -404,6 +436,17 @@ BX.register({
         D.text(g, deg + '°', x + (aim.dx >= 0 ? 34 : -34) * Math.max(1, V.s), y - 30 * Math.max(1, V.s), {size: 13, color: '#1b1510', weight: 800, stroke: 'rgba(255,248,232,.9)', strokeW: 3});
       }
       if (st.turns < n && !sling.on && performance.now() - keyT > 3000) D.text(g, '按住画面向后拉瞄准，松手开炮', V.W / 2, V.port ? 62 : 56, {size: 14, color: '#3a2414', font: 'serif', weight: 700, stroke: 'rgba(255,248,232,.8)', strokeW: 4});
+    }
+    /* aiming preview: n=1 short, 2 long, 3 whole flight until it meets the ground / a tank / leaves the map */
+    function flight(t, a, n) {
+      const v = 120 + a.p * (VMAX - 120); let px = t.x + a.dx * BARREL, py = t.y + 10 + a.dy * BARREL, vx = a.dx * v, vy = a.dy * v;
+      const pts = [], N = n === 1 ? 26 : n === 2 ? 70 : 700;
+      for (let i = 0; i < N; i++) {
+        for (let k = 0; k < 2; k++) { vx += st.wind * DT; vy -= GRAV * DT; px += vx * DT; py += vy * DT; }
+        pts.push(P(px, Math.min(py, V.vh + 400)));
+        if (n === 3 && (py <= hAt(st.T, px) || px < -40 || px > WW + 40 || (i > 6 && st.tanks.some((q, j) => q.alive && j !== st.turn && (q.x - px) * (q.x - px) + (q.y + 8 - py) * (q.y + 8 - py) < TANK_R * TANK_R)))) break;
+      }
+      return pts;
     }
     function fireEv(e) {
       if (e[1] === 'boom') {
@@ -414,7 +457,7 @@ BX.register({
         fx.burst(x, y, {n: big ? 60 : 30, sp: r * 4, color: ['#ffd76a', '#ff9a3c', '#d0533f', '#fff1c0'], life: .55, kind: 'spark', size: 3});
         fx.burst(x, y, {n: big ? 24 : 12, sp: r * 1.6, color: '60,48,38', kind: 'smoke', life: 1.4, size: r * .25, grow: 2.5, g: 0});
         fx.burst(x, y, {n: big ? 30 : 14, sp: r * 4, color: ['#3a2e22', '#5e4b38'], life: 1, g: -500, size: 2.5, a0: Math.PI / 2, spread: 2.6});
-        for (const [i, dm] of hits) { show.hp[i] = Math.max(0, show.hp[i] - dm); const t = show.snap.tanks[i]; fx.text(t.x, t.y + 30, '-' + dm, {size: 22, color: '#ffd0c0', life: 1.4, rise: 40}); }
+        for (const [i, dm] of hits) { if (ctx.isLocal(i) && dm) ctx.buzz(dm > 30 ? 40 : 20); show.hp[i] = Math.max(0, show.hp[i] - dm); const t = show.snap.tanks[i]; fx.text(t.x, t.y + 30, '-' + dm, {size: 22, color: '#ffd0c0', life: 1.4, rise: 40}); }
         const kills = hits.filter(([i]) => show.hp[i] <= 0);
         for (const [i] of kills) { const t = show.snap.tanks[i]; fx.text(t.x, t.y + 70, '击毁！', {size: 30, color: '#ffe28a', life: 2, rise: 30}); fx.burst(t.x, t.y + 10, {n: 40, sp: 260, color: ['#ffd76a', '#d0533f', '#2b2118'], life: 1, g: -400, a0: Math.PI / 2, spread: 2}); }
       } else if (e[1] === 'split') { ctx.sfx('pop'); fx.burst(e[2], e[3], {n: 12, sp: 120, color: ['#e6c57d', '#fff'], life: .4, kind: 'spark'}); }

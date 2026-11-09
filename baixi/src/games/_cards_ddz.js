@@ -257,6 +257,10 @@ U.btn = (g, b) => {
   g.fillStyle = gr; D.rr(g, b.x, b.y + press, b.w, b.h, b.h * .28); g.fill();
   g.strokeStyle = 'rgba(255,240,210,.35)'; g.lineWidth = 1; D.rr(g, b.x + 2, b.y + 2 + press, b.w - 4, b.h - 4, b.h * .24); g.stroke();
   D.text(g, b.label, b.x + b.w / 2, b.y + b.h / 2 + 1 + press, {size: Math.min(b.h * .42, b.w / Math.max(2, b.label.length) * .9), color: cols[3], weight: 800});
+  if (b.glow) {   // 💡 hint: pulsing jade ring around the suggested button
+    const k = .5 + .5 * Math.sin(performance.now() / 150);
+    g.strokeStyle = `rgba(110,235,185,${.45 + .55 * k})`; g.lineWidth = 3 + k * 1.5; D.rr(g, b.x - 4, b.y - 4, b.w + 8, b.h + 11, b.h * .34); g.stroke();
+  }
   g.restore();
 };
 U.hitBtn = (btns, p) => btns.find(b => !b.dis && p.x >= b.x - 3 && p.x <= b.x + b.w + 3 && p.y >= b.y - 3 && p.y <= b.y + b.h + 5);
@@ -307,9 +311,12 @@ U.bubble = (g, x, y, text, size, o = {}) => {
 
 /* ================= the climbing game (斗地主 'ddz' / 跑得快 'pdk') ================= */
 L.climb = function (ctx, G) {
-  const ddz = G === 'ddz', N = ctx.n, HAND = ddz ? 17 : 16;
+  const ddz = G === 'ddz', N = ctx.n, HAND = ddz ? 17 : 16, OPT = ctx.opts || {};
+  const DBL = ddz && +OPT.dbl === 1;                                   // 斗地主 option: 加倍 / 明牌 round after the bidding
+  const MUST = !ddz && (OPT.must == null || +OPT.must === 1);          // 跑得快 option: 有大必压 (classic default)
+  const DECK = ddz ? BX.range(54) : BX.range(52).filter(i => ![0, 14, 27, 40].includes(i));
   const st = {ph: 'deal', hands: [], bottom: [], aside: [], turn: 0, last: null, shown: [], passes: 0, plays: [], bombs: 0, played: [],
-    bids: [], bidMax: 0, bidBy: -1, bidStart: 0, nBid: 0, lord: -1, base: 1, redeal: 0, first: true, mustId: null, res: null, seq: 0};
+    bids: [], bidMax: 0, bidBy: -1, bidStart: 0, nBid: 0, lord: -1, base: 1, redeal: 0, first: true, mustId: null, res: null, seq: 0, dbl: [], ming: false};
   const cv = ctx.canvas();
   /* ---------- rules ---------- */
   function deal() {
@@ -320,7 +327,7 @@ L.climb = function (ctx, G) {
     st.bottom = ddz ? deck.slice(51) : []; st.aside = ddz ? [] : deck.slice(N * HAND);
     st.shown = BX.range(N).map(() => null); st.plays = BX.range(N).map(() => 0); st.bids = BX.range(N).map(() => -1);
     st.last = null; st.passes = 0; st.bombs = 0; st.played = []; st.first = true;
-    st.bidMax = 0; st.bidBy = -1; st.nBid = 0; st.lord = -1;
+    st.bidMax = 0; st.bidBy = -1; st.nBid = 0; st.lord = -1; st.dbl = BX.range(N).map(() => -1); st.ming = false;
     if (ddz) { st.bidStart = ctx.rng.int(N); st.turn = st.bidStart; }
     else {
       let lo = null, who = 0;
@@ -351,13 +358,16 @@ L.climb = function (ctx, G) {
     }
     return out;
   }
-  let cpKey = '', cpVal = false;
-  const canPass = seat => {
-    if (!st.last) return false; if (ddz) return true;
-    const k = st.seq + ':' + seat; if (k !== cpKey) { cpKey = k; cpVal = !legalMoves(seat).length; } return cpVal;
-  };
+  /* legal moves of a seat in the current position, cached per action (st.seq changes on every apply) */
+  let lmKey = '', lmVal = null;
+  const legalNow = seat => { const k = st.seq + ':' + seat + ':' + st.ph + ':' + st.hands[seat].length; if (k !== lmKey) { lmKey = k; lmVal = legalMoves(seat); } return lmVal; };
+  const canPass = seat => { if (!st.last) return false; if (!MUST) return true; return !legalNow(seat).length; };
+  const noMove = seat => st.ph === 'play' && !!st.last && !legalNow(seat).length;
+  const dblMult = () => st.dbl.reduce((m, v) => m * (v === 2 ? 4 : v === 1 ? 2 : 1), 1);
+  const curMult = () => Math.pow(2, st.bombs) * dblMult();
   /* ---------- UI state (never part of st) ---------- */
-  const ui = {dealT: 1, sel: new Set(), fly: null, fx: [], hint: -1, hintList: null, lay: null, drag: null, t: 0, newIds: null, btns: [], shake: 0, alarmed: {}, botK: 1, press: null};
+  const ui = {dealT: 1, sel: new Set(), fly: null, fx: [], hint: -1, hintList: null, lay: null, drag: null, t: 0, newIds: null, btns: [], shake: 0, alarmed: {}, botK: 1, press: null,
+    ctrOn: ctx.load('counter', true), tg: false, hintA: null, lastTap: null, autoT: -1, bad: 0};
   const live = () => !ctx.ended;
   const roleOf = s => !ddz || st.lord < 0 ? null : s === st.lord ? ['地', '#b23a2b'] : ['农', '#3f7f6b'];
   function finish(w) {
@@ -365,11 +375,16 @@ L.climb = function (ctx, G) {
     if (ddz) {
       const lw = w === st.lord, far = BX.range(N).filter(s => s !== st.lord);
       const spring = lw && far.every(s => st.plays[s] === 0), anti = !lw && st.plays[st.lord] === 1;
-      const mult = Math.pow(2, st.bombs + (spring || anti ? 1 : 0)), score = st.base * mult;
+      const mult = curMult() * (spring || anti ? 2 : 1), score = st.base * mult;
       st.res = {w, lw, spring, anti, mult, score};
-      const tags = [st.bombs ? '炸弹×' + st.bombs : '', spring ? '春天' : '', anti ? '反春' : ''].filter(Boolean).join(' · ');
-      const text = (lw ? '地主 ' + ctx.name(st.lord) + ' 获胜' : '农民获胜') + `　底分 ${st.base} × ${mult} 倍 = ${score} 分` + (tags ? '（' + tags + '）' : '');
-      ctx.end({winner: lw ? [st.lord] : far, text, delay: 1500});
+      const parts = ['叫分 ' + st.base];
+      if (st.bombs) parts.push('炸弹' + st.bombs + '个 ×' + Math.pow(2, st.bombs));
+      if (spring || anti) parts.push((spring ? '春天' : '反春') + ' ×2');
+      if (dblMult() > 1) parts.push((st.ming ? '加倍/明牌' : '加倍') + ' ×' + dblMult());
+      const text = (lw ? '地主 ' + ctx.name(st.lord) + ' 获胜' : '农民获胜') + '　' + parts.join(' × ') + ` ＝ ${score} 分`;
+      const rows = BX.range(N).map(s => { const win = (s === st.lord) === lw, d = (s === st.lord ? 2 : 1) * score; return `<tr><td style="text-align:left">${BX.esc(ctx.name(s))}${s === st.lord ? ' <b style="color:#b23a2b">地主</b>' : ' 农民'}</td><td>${st.hands[s].length ? '剩 ' + st.hands[s].length + ' 张' : '出完'}</td><td style="font-weight:800;color:${win ? '#2f7a55' : '#b23a2b'}">${win ? '+' : '−'}${d}</td></tr>`; }).join('');
+      const html = `<div>${BX.esc(lw ? '地主获胜' : '农民获胜')}${spring ? ' · 春天！' : anti ? ' · 反春！' : ''}</div><div style="margin:6px 0;font-size:14px">${parts.map(BX.esc).join(' × ')} ＝ <b>${score}</b> 分</div><table style="margin:4px auto;border-collapse:collapse;font-size:14px;line-height:1.7" cellpadding="4">${rows}</table>`;
+      ctx.end({winner: lw ? [st.lord] : far, text, html, delay: 1500});
     } else {
       let tot = 0; const det = [];
       for (let s = 0; s < N; s++) {
@@ -378,7 +393,8 @@ L.climb = function (ctx, G) {
         tot += p; det.push(ctx.name(s) + ' 剩' + n + '张' + (shut ? '（关门×2）' : n === 1 ? '（报单免罚）' : '') + ' −' + p);
       }
       st.res = {w, score: tot};
-      ctx.end({winner: w, text: ctx.name(w) + ' 率先出完，赢 ' + tot + ' 分。' + det.join('；'), delay: 1500});
+      const rows = BX.range(N).map(s => { const n = st.hands[s].length, shut = st.plays[s] === 0; let p = n === 1 ? 0 : n; if (shut) p *= 2; return `<tr><td style="text-align:left">${BX.esc(ctx.name(s))}</td><td>${s === w ? '出完' : '剩 ' + n + ' 张' + (shut ? '（关门×2）' : n === 1 ? '（报单免罚）' : '')}</td><td style="font-weight:800;color:${s === w ? '#2f7a55' : '#b23a2b'}">${s === w ? '+' + tot : '−' + p}</td></tr>`; }).join('');
+      ctx.end({winner: w, text: ctx.name(w) + ' 率先出完，赢 ' + tot + ' 分。' + det.join('；'), html: `<div>${BX.esc(ctx.name(w))} 率先出完！</div><table style="margin:6px auto;border-collapse:collapse;font-size:14px;line-height:1.7" cellpadding="4">${rows}</table>`, delay: 1500});
     }
     ctx.sfx('gong');
   }
@@ -396,8 +412,16 @@ L.climb = function (ctx, G) {
     if (!b && st.nBid === N - 1 && st.bidMax === 0 && s >= 4 && level >= 2) b = 1;
     return b;
   }
+  function aiDbl(seat, level) {
+    const c = countIds(st.hands[seat]); let s = (c[17] ? 3 : 0) + (c[16] ? 2 : 0) + c[15] * 1.2 + c[14] * .4 - minH(c, G, new Map()) * .9;
+    for (let v = 3; v <= 15; v++) if (c[v] === 4) s += 4;
+    if (seat === st.lord) s += 2.5;
+    if (level === 1) s += Math.random() * 6 - 3;
+    if (s < 1.5) return 0;
+    return seat === st.lord && s >= 6 && level >= 2 ? 2 : 1;
+  }
   function unseenCounts(seat) {
-    const all = ddz ? BX.range(54) : BX.range(52).filter(i => ![0, 14, 27, 40].includes(i));
+    const all = DECK;
     const known = new Set(st.hands[seat].concat(st.played));
     if (ddz && st.lord >= 0 && st.lord !== seat) for (const b of st.bottom) if (st.hands[st.lord].includes(b)) known.add(b);
     return countIds(all.filter(i => !known.has(i)));
@@ -418,6 +442,13 @@ L.climb = function (ctx, G) {
       const after = c.slice(); for (const v of m.vals) after[v]--;
       const h = minH(after, G, memo), big = m.it.t === 'bomb' || m.it.t === 'rocket';
       let s = -h * 100 - m.it.v * 2.2;
+      // don't tear up a bomb / the rocket for an ordinary play
+      if (!big && h > 1 && m.it.t !== 'four2' && m.it.t !== 'four22') {
+        for (const v of new Set(m.vals)) if (c[v] === 4) s -= 70;
+        if (ddz && c[16] && c[17] && (after[16] + after[17] === 1)) s -= 45;
+      }
+      // L3: an enemy is about to go out → follow with the biggest blocker, not the cheapest
+      if (level >= 3 && !lead && danger <= 2 && !big) s += m.it.v * 6;
       if (lead) s += m.ids.length * 4;
       if (m.it.v >= 15 && !big) s -= 14;
       if (big) s -= (h <= 1 || danger <= 3 || (!lead && danger <= 5)) ? 10 : 140;
@@ -442,7 +473,7 @@ L.climb = function (ctx, G) {
       }
       out.push([m, s]);
     }
-    if (st.last && ddz) {
+    if (st.last && canPass(seat)) {
       let ps = -H0 * 100;
       const by = st.last.s;
       if (ally(by)) ps += st.hands[by].length <= 2 ? 1000 : 150;
@@ -454,11 +485,12 @@ L.climb = function (ctx, G) {
   }
   function aiMove(seat, level) {
     if (st.ph === 'bid') return {t: 'bid', v: aiBid(seat, level)};
-    const moves = legalMoves(seat);
+    if (st.ph === 'dbl') return {t: 'dbl', v: aiDbl(seat, level)};
+    const moves = legalNow(seat);
     if (!moves.length) return {t: 'pass'};
     const fin = moves.find(m => m.ids.length === st.hands[seat].length); if (fin) return {t: 'play', c: fin.ids};
     if (level === 1) {
-      if (st.last && ddz && Math.random() < .25) return {t: 'pass'};
+      if (canPass(seat) && Math.random() < .25) return {t: 'pass'};
       const srt = moves.slice().sort((a, b) => ((a.it.t === 'bomb' || a.it.t === 'rocket') - (b.it.t === 'bomb' || b.it.t === 'rocket')) || a.it.v - b.it.v || b.ids.length - a.ids.length);
       const m = srt[Math.floor(Math.random() * Math.min(3, srt.length))];
       return {t: 'play', c: m.ids};
@@ -470,7 +502,8 @@ L.climb = function (ctx, G) {
   }
   /* ---------- apply ---------- */
   function apply(a, by) {
-    st.seq++;
+    st.seq++; ui.hintList = null; ui.hintA = null;
+    if (a.t === 'pass' && by === ctx.view) ui.sel.clear();
     if (a.t === 'go') { st.ph = ddz ? 'bid' : 'play'; if (ddz) st.turn = st.bidStart; return; }
     if (a.t === 'bid') {
       st.bids[by] = a.v; st.nBid++;
@@ -480,7 +513,7 @@ L.climb = function (ctx, G) {
         if (!st.bidMax) { st.redeal++; ctx.toast('无人叫分，重新洗牌'); deal(); return; }
         st.lord = st.bidBy; st.base = st.bidMax;
         st.hands[st.lord] = sortIds(st.hands[st.lord].concat(st.bottom));
-        st.ph = 'play'; st.turn = st.lord; st.shown = st.shown.map(() => null);
+        st.ph = DBL ? 'dbl' : 'play'; st.turn = DBL ? (st.lord + 1) % N : st.lord; st.shown = st.shown.map(() => null);
         ui.botK = 0; ctx.anim(700, k => ui.botK = k);
         if (st.lord === ctx.view) { ui.newIds = new Set(st.bottom); ctx.after(2500, () => ui.newIds = null); }
         ctx.sfx('gong'); fx(ctx.name(st.lord) + ' 当地主', '#ffd76a');
@@ -488,8 +521,16 @@ L.climb = function (ctx, G) {
       }
       st.turn = (by + 1) % N; return;
     }
+    if (a.t === 'dbl') {
+      st.dbl[by] = a.v; st.shown[by] = {dbl: a.v};
+      if (a.v === 2) st.ming = true;
+      ctx.sfx(a.v ? 'chip' : 'tick'); if (a.v) fx(ctx.name(by) + (a.v === 2 ? ' 明牌！' : ' 加倍！'), '#ffd76a');
+      if (by === st.lord) { st.ph = 'play'; st.turn = st.lord; st.shown = st.shown.map(() => null); }
+      else st.turn = (by + 1) % N;
+      return;
+    }
     if (a.t === 'pass') {
-      st.shown[by] = {pass: 1}; st.passes++; ctx.sfx('tick');
+      st.shown[by] = {pass: legalNow(by).length ? 1 : 2}; st.passes++; ctx.sfx('tick');
       if (st.passes >= N - 1) { st.turn = st.last.s; st.last = null; st.passes = 0; }
       else st.turn = (by + 1) % N;
       return;
@@ -510,7 +551,7 @@ L.climb = function (ctx, G) {
       st.shown[by] = {c: sortIds(ids.slice()), t: it.t};
       st.last = {s: by, c: ids, t: it.t, v: it.v, n: it.n, k: it.k}; st.passes = 0; st.first = false;
       if (by === ctx.view) { ui.sel.clear(); ui.hint = -1; }
-      ui.hintList = null;
+      ui.hintList = null; ui.hintA = null;
       if (it.t === 'bomb' || it.t === 'rocket') {
         if (ddz) st.bombs++;
         ctx.sfx(it.t === 'rocket' ? 'crash' : 'boom'); ui.shake = 1; fx(it.t === 'rocket' ? '王 炸' : '炸 弹', '#ff7a4a', true);
@@ -531,7 +572,8 @@ L.climb = function (ctx, G) {
     if (st.ph === 'deal') { ctx.status(st.redeal ? '重新洗牌发牌…' : '洗牌发牌中…'); return; }
     const me = ctx.canAct(st.turn), who = ctx.hotseat ? ctx.name(st.turn) : '你';
     if (st.ph === 'bid') { ctx.status(me ? `${ctx.hotseat ? who + '：' : ''}请叫分${st.bidMax ? '（当前 ' + st.bidMax + ' 分）' : ''}` : '等待 ' + ctx.name(st.turn) + ' 叫分…'); return; }
-    if (me) ctx.status((ctx.hotseat ? who + '：' : '') + (!st.last ? '轮到你出牌' : canPass(st.turn) && !ddz ? '要不起上家' : '压过 ' + ctx.name(st.last.s) + ' 或不出'));
+    if (st.ph === 'dbl') { ctx.status(me ? (ctx.hotseat ? who + '：' : '') + '要加倍吗？' : '等待 ' + ctx.name(st.turn) + ' 选择加倍…'); return; }
+    if (me) ctx.status((ctx.hotseat ? who + '：' : '') + (!st.last ? '轮到你出牌' : noMove(st.turn) ? '要不起上家' : '压过 ' + ctx.name(st.last.s) + (canPass(st.turn) ? ' 或不出' : '（有大必压）')));
     else ctx.status('等待 ' + ctx.name(st.turn) + ' 出牌…');
   }
   /* ---------- layout ---------- */
@@ -548,10 +590,20 @@ L.climb = function (ctx, G) {
     if (!handIds.length) hl.top = h - pad - ch;
     const bh = BX.clamp(cw * .58, 44, 52), btnY = hl.top - bh - (portrait ? 14 : 12) - cw * .12;
     const PW = BX.clamp(w * (portrait ? .3 : .15), 108, 176), PH = BX.clamp(PW * .4, 48, 64);
+    // 记牌器 (card counter) strip geometry: portrait → above my played cards; landscape → top centre (under the 底牌 for 斗地主)
+    const nV = ddz ? 15 : 13, bw = portrait ? pw * .78 : pw * .72, bhh = bw * 1.4, bgap = bw * .12, by = pad * .8 + 2, bx = w / 2 - (bw * 3 + bgap * 2) / 2;
+    let ctr;
+    if (portrait) { const cell = Math.min(30, (w - 2 * pad - 8) / (nV + 1.2)); ctr = {cell, h: BX.clamp(cell * 1.25, 28, 36), cx: w / 2, bottom: btnY - ph - 20}; }
+    else { const cell = BX.clamp(w * .46 / (nV + 1.2), 20, 32); ctr = {cell, h: BX.clamp(cell * 1.15, 26, 36), cx: w / 2, top: ddz ? by + bhh + 4 : pad + 2}; }
+    const tgB = portrait ? {x: w - pad - 64, y: btnY - 50, w: 62, h: 38} : {x: w - pad - 84, y: btnY + (bh - 40) / 2, w: 78, h: 40};
     const seats = [];
     for (let s = 0; s < N; s++) {
       const r = rel(s); let p;
-      if (r === 0) p = {px: pad, py: btnY - PH - 8, fanA: w / 2, fanT: btnY - ph - 10, align: 'c', maxW: w - 2 * pad, self: true};
+      if (r === 0) {
+        p = {px: pad, py: btnY - PH - 8, fanA: w / 2, fanT: btnY - ph - 10, align: 'c', maxW: w - 2 * pad, self: true};
+        // two players in landscape: their play on the left half, mine on the right half → never overlap
+        if (N === 2 && !portrait) Object.assign(p, {fanA: w / 2 + 10, align: 'l', maxW: w / 2 - pad - 20});
+      } else if (N === 2 && !portrait) p = {px: pad, py: pad, fanA: w / 2 - 10, fanT: pad + ctr.h + 10, align: 'r', maxW: w / 2 - pad - 20};
       else if (N === 2) p = {px: w / 2 - PW / 2, py: pad, fanA: w / 2, fanT: pad + PH + 10, align: 'c', maxW: w - 2 * pad};
       else if (portrait) {
         const right = r === 1, py = pad;
@@ -562,25 +614,35 @@ L.climb = function (ctx, G) {
       }
       seats[s] = p;
     }
-    return {w, h, portrait, pad, cw, ch, pw, ph, hand: hl, handIds, raise: ch * .17, bh, btnY, PW, PH, seats};
+    return {w, h, portrait, pad, cw, ch, pw, ph, hand: hl, handIds, raise: ch * .17, bh, btnY, PW, PH, seats, ctr, tgB, bot: {x: bx, y: by, w: bw, h: bhh, gap: bgap}};
   }
   /* ---------- input ---------- */
-  const myTurn = () => (st.ph === 'bid' || st.ph === 'play') && ctx.canAct(st.turn);
+  const myTurn = () => (st.ph === 'bid' || st.ph === 'play' || st.ph === 'dbl') && ctx.canAct(st.turn);
+  const hintOn = () => ui.hintA && ui.hintA.seq === st.seq;
+  const sameAct = (x, y) => !!x && !!y && x.t === y.t && (x.v == null || x.v === y.v);
   function buttons(lay) {
-    if (!myTurn()) return [];
+    if (!myTurn() || ui.tg) return [];
     const maxW = lay.w - 2 * lay.pad - (lay.portrait ? 0 : lay.PW * 1.4);
     const cx = lay.portrait ? lay.w / 2 + 26 : lay.w / 2, mw = lay.portrait ? lay.w - 2 * lay.pad - 56 : maxW;
-    if (st.ph === 'bid') return U.row([0, 1, 2, 3].map(v => ({label: v ? v + ' 分' : '不叫', kind: v ? (v === 3 ? 'red' : 'gold') : 'ghost', dis: v && v <= st.bidMax, act: {t: 'bid', v}})), cx, lay.btnY, lay.bh, Math.min(mw, 420));
+    const ha = hintOn() ? ui.hintA.a : null, glow = d => { d.glow = sameAct(d.act, ha); return d; };
+    if (st.ph === 'bid') return U.row([0, 1, 2, 3].map(v => glow({label: v ? v + ' 分' : '不叫', kind: v ? (v === 3 ? 'red' : 'gold') : 'ghost', dis: v && v <= st.bidMax, act: {t: 'bid', v}})), cx, lay.btnY, lay.bh, Math.min(mw, 420));
+    if (st.ph === 'dbl') {
+      const defs = [{label: '不加倍', kind: 'ghost', act: {t: 'dbl', v: 0}}, {label: '加倍', kind: 'gold', act: {t: 'dbl', v: 1}}];
+      if (st.turn === st.lord) defs.push({label: '明牌', kind: 'red', act: {t: 'dbl', v: 2}});
+      return U.row(defs.map(glow), cx, lay.btnY, lay.bh, Math.min(mw, 380));
+    }
     const sel = [...ui.sel], it = sel.length ? interpFor(st.turn, sel) : null;
+    if (noMove(st.turn)) return U.row([glow({label: '要不起', kind: 'red', act: {t: 'pass'}})], cx, lay.btnY, lay.bh, 160);
     const defs = [];
-    const passOK = canPass(st.turn), forced = !ddz && passOK;
-    if (st.last) defs.push({label: forced ? '要不起' : '不出', kind: forced ? 'red' : 'ghost', dis: !passOK, act: {t: 'pass'}});
-    if (!forced) { defs.push({label: '提示', kind: 'jade', hint: true}); defs.push({label: '出牌', kind: 'red', dis: !it, act: it ? {t: 'play', c: sel} : null}); }
+    if (st.last && canPass(st.turn)) defs.push({label: '不出', kind: 'ghost', act: {t: 'pass'}});
+    defs.push({label: '提示', kind: 'jade', hint: true});
+    defs.push({label: '出牌', kind: 'red', dis: !it, act: it ? {t: 'play', c: sel} : null, play: true});
+    for (const d of defs) d.glow = !!ha && (d.play ? ha.t === 'play' : sameAct(d.act, ha));
     return U.row(defs, cx, lay.btnY, lay.bh, Math.min(mw, 380));
   }
   function doHint() {
     const s = st.turn;
-    if (!ui.hintList) { const mv = legalMoves(s); ui.hintList = rank(s, 2, mv).filter(x => x[0]).map(x => x[0]); if (!st.last) ui.hintList.sort((a, b) => a.it.v - b.it.v || b.ids.length - a.ids.length); else ui.hintList.sort((a, b) => ((a.it.t === 'bomb' || a.it.t === 'rocket') - (b.it.t === 'bomb' || b.it.t === 'rocket')) || a.it.v - b.it.v); ui.hint = -1; }
+    if (!ui.hintList) { const mv = legalNow(s); ui.hintList = rank(s, 2, mv).filter(x => x[0]).map(x => x[0]); if (!st.last) ui.hintList.sort((a, b) => a.it.v - b.it.v || b.ids.length - a.ids.length); else ui.hintList.sort((a, b) => ((a.it.t === 'bomb' || a.it.t === 'rocket') - (b.it.t === 'bomb' || b.it.t === 'rocket')) || a.it.v - b.it.v); ui.hint = -1; }
     if (!ui.hintList.length) { ctx.toast('没有能大过上家的牌'); return; }
     ui.hint = (ui.hint + 1) % ui.hintList.length; ui.sel = new Set(ui.hintList[ui.hint].ids); ctx.sfx('select');
   }
@@ -589,15 +651,66 @@ L.climb = function (ctx, G) {
     if (!b.act) return;
     ctx.sfx('click'); ctx.act(b.act, st.turn);
   }
+  /* play the current selection (double-tap / swipe-up / Enter) */
+  function tryPlay() {
+    if (!myTurn() || st.ph !== 'play' || ui.tg) return;
+    const sel = [...ui.sel], it = sel.length ? interpFor(st.turn, sel) : null;
+    if (it) { ctx.sfx('click'); ctx.act({t: 'play', c: sel}, st.turn); return; }
+    ctx.sfx('error'); ctx.buzz(20); ui.bad = .4;
+  }
+  /* swipe across ≥5 cards: pull the best straight out of the swiped cards (智能选顺子) */
+  function smartRun(ids) {
+    const byV = {}; for (const id of ids) { const v = val(id); if (v <= 14 && !(v in byV)) byV[v] = id; }
+    const vs = Object.keys(byV).map(Number).sort((a, b) => a - b), runs = [];
+    for (let i = 0; i < vs.length;) { let j = i; while (j + 1 < vs.length && vs[j + 1] === vs[j] + 1) j++; runs.push(vs.slice(i, j + 1)); i = j + 1; }
+    let pick = null;
+    if (st.last && st.last.t === 'straight') {
+      const n = st.last.n;
+      for (const r of runs) for (let a = 0; a + n <= r.length; a++) if (r[a + n - 1] > st.last.v && (!pick || r[a + n - 1] < pick[pick.length - 1])) pick = r.slice(a, a + n);
+    } else if (!st.last) { for (const r of runs) if (r.length >= 5 && (!pick || r.length > pick.length)) pick = r; }
+    return pick ? pick.map(v => byV[v]) : null;
+  }
+  /* following a pair / trio / bomb: tapping one card selects the whole group */
+  function smartGroup(id) {
+    if (!st.last || !myTurn() || st.ph !== 'play') return;
+    const need = {pair: 2, trio: 3, bomb: 4}[st.last.t]; if (!need || val(id) <= st.last.v) return;
+    const same = st.hands[st.turn].filter(i => val(i) === val(id));
+    if (same.length < need) return;
+    const grp = [id, ...same.filter(i => i !== id)].slice(0, need);
+    if (interpFor(st.turn, grp)) ui.sel = new Set(grp);
+  }
+  function toggleTg() {
+    ui.tg = !ui.tg; autoTok = -1; ui.hintA = null; ctx.sfx(ui.tg ? 'bell' : 'tick');
+    if (ui.tg) { ui.sel.clear(); ctx.toast('已托管：电脑代你出牌'); }
+  }
+  /* auto actions: 托管 plays for me; 要不起 passes by itself after a short beat */
+  let autoTok = -1;
+  function maybeAuto() {
+    if (ctx.fast || ctx.ended || !myTurn()) return;
+    const seq = st.seq, s = st.turn; if (autoTok === seq) return;
+    if (ui.tg) { autoTok = seq; ctx.after(650, () => { if (st.seq === seq && ui.tg && myTurn()) { const a = aiMove(s, 2); if (a) ctx.act(a, s); } }); return; }
+    if (noMove(s)) { autoTok = seq; ui.autoT = ui.t; ctx.after(1100, () => { if (st.seq === seq && !ui.tg && myTurn()) ctx.act({t: 'pass'}, s); }); }
+  }
+  const inR = (p, r, m = 0) => r && p.x >= r.x - m && p.x <= r.x + r.w + m && p.y >= r.y - m && p.y <= r.y + r.h + m;
+  const tgVisible = () => !ctx.hotseat && (st.ph === 'bid' || st.ph === 'play' || st.ph === 'dbl') && ctx.isLocal(ctx.view) && !ctx.ended;
   ctx.on(cv.cv, 'pointerdown', e => {
     const p = cv.pos(e), lay = ui.lay; if (!lay) return;
+    if (tgVisible() && inR(p, lay.tgB, 4)) { toggleTg(); return; }
+    if (ui.ctrHit && inR(p, ui.ctrHit, 4)) { ui.ctrOn = !ui.ctrOn; ctx.save('counter', ui.ctrOn); ctx.sfx('tick'); return; }
     const b = U.hitBtn(ui.btns, p);
     if (b) { ui.press = b; b.down = true; setTimeout(() => { b.down = false; }, 120); press(b); return; }
     if (st.ph === 'deal' || st.ph === 'over') return;
     const i = U.hitHand(lay.hand.rects, p, j => ui.sel.has(lay.handIds[j]) ? lay.raise : 0);
     if (i >= 0) {
-      const id = lay.handIds[i], on = !ui.sel.has(id);
-      ui.drag = {start: i, on, base: new Set(ui.sel), last: i}; applyDrag(i); ctx.sfx('tick');
+      if (ui.tg) { toggleTg(); return; }            // touching the hand takes control back
+      const id = lay.handIds[i], now = performance.now(), lt = ui.lastTap;
+      if (lt && lt.id === id && now - lt.t < 360 && myTurn() && st.ph === 'play') {   // double-tap → play
+        ui.lastTap = null; ui.sel = new Set(lt.sel); tryPlay(); return;
+      }
+      const on = !ui.sel.has(id);
+      ui.drag = {start: i, on, base: new Set(ui.sel), last: i, x0: p.x, y0: p.y, vert: false}; applyDrag(i); ctx.sfx('tick');
+      if (on && ui.drag.base.size === 0) smartGroup(id);
+      ui.lastTap = {id, t: now, sel: new Set(ui.sel)};
       try { cv.cv.setPointerCapture(e.pointerId); } catch (er) {}
     } else if (p.y < lay.btnY - 4 && ui.sel.size) { ui.sel.clear(); }
   });
@@ -609,13 +722,25 @@ L.climb = function (ctx, G) {
     ui.hint = -1;
   }
   ctx.on(cv.cv, 'pointermove', e => {
-    if (!ui.drag || !ui.lay) return; const p = cv.pos(e), lay = ui.lay;
-    // horizontal-only hit within the hand band
+    const d = ui.drag; if (!d || !ui.lay) return; const p = cv.pos(e), lay = ui.lay;
+    // mostly-vertical upward flick from the starting card → play the selection
+    const dx = p.x - d.x0, dy = p.y - d.y0;
+    if (d.last === d.start && dy < -12 && Math.abs(dy) > Math.abs(dx) * 1.4) d.vert = true;
+    if (d.vert) {
+      if (dy < -42 && myTurn() && st.ph === 'play') { const id = lay.handIds[d.start]; ui.sel = new Set(d.base); ui.sel.add(id); ui.drag = null; ui.lastTap = null; tryPlay(); }
+      return;
+    }
     let i = -1; const rs = lay.hand.rects;
     for (let j = rs.length - 1; j >= 0; j--) { const r = rs[j]; if (p.x >= r.x && p.x <= r.x + r.w && p.y >= r.y - lay.raise - 30 && p.y <= r.y + r.h + 30) { i = j; break; } }
-    if (i >= 0 && i !== ui.drag.last) { ui.drag.last = i; applyDrag(i); ctx.sfx('tick'); }
+    if (i >= 0 && i !== d.last) { d.last = i; ui.lastTap = null; applyDrag(i); ctx.sfx('tick'); }
   });
-  const endDrag = () => { ui.drag = null; };
+  const endDrag = () => {
+    const d = ui.drag; ui.drag = null;
+    if (d && d.on && !d.base.size && Math.abs(d.last - d.start) >= 4 && myTurn() && st.ph === 'play') {
+      const sel = [...ui.sel];
+      if (!interpFor(st.turn, sel)) { const run = smartRun(sel); if (run) { ui.sel = new Set(run); ctx.sfx('select'); } }
+    }
+  };
   ctx.on(cv.cv, 'pointerup', endDrag); ctx.on(cv.cv, 'pointercancel', endDrag);
   /* ---------- drawing ---------- */
   function drawCard(g, id, x, y, w, h, o) { D.card(g, x, y, w, h, id == null ? null : face(id), o); }
@@ -629,7 +754,7 @@ L.climb = function (ctx, G) {
     U.emblem(g, w / 2, midY, Math.min(w, h) * .14, ddz ? '斗' : '跑');
     // bottom cards / score panel (ddz)
     if (ddz) {
-      const bw = lay.portrait ? pw * .78 : pw * .72, bhh = bw * 1.4, gap = bw * .12, tw = bw * 3 + gap * 2, bx = w / 2 - tw / 2, by = lay.pad * .8 + 2;
+      const {x: bx, y: by, w: bw, h: bhh, gap} = lay.bot;
       for (let i = 0; i < 3; i++) {
         const id = st.bottom[i]; const flip = st.lord >= 0 ? ui.botK : 0;
         const sx = Math.abs(Math.cos(flip * Math.PI)), up = flip > .5;
@@ -637,8 +762,12 @@ L.climb = function (ctx, G) {
         drawCard(g, up || st.ph === 'over' ? id : null, -bw / 2, 0, bw, bhh, {});
         g.restore();
       }
-      const info = st.lord >= 0 ? `底分 ${st.base}　倍数 ×${Math.pow(2, st.bombs)}` : st.ph === 'bid' ? (st.bidMax ? '当前 ' + st.bidMax + ' 分' : '叫分中') : '底牌';
-      D.text(g, info, w / 2, by + bhh + 13, {size: BX.clamp(cw * .2, 12, 16), color: '#f3e2c0', shadow: true});
+      const fs = BX.clamp(cw * .2, 12, 16), o = {size: fs, color: '#f3e2c0', shadow: true};
+      if (st.lord >= 0) {   // clear multiplier display: 底分 × 倍数 (bombs, 加倍, 明牌)
+        const m = curMult();
+        if (lay.portrait) D.text(g, `底分 ${st.base} · 倍数 ×${m}`, w / 2, by + bhh + 13, o);
+        else { D.text(g, '底分 ' + st.base, bx - 10, by + bhh * .32, Object.assign({}, o, {align: 'right'})); D.text(g, '倍数 ×' + m, bx - 10, by + bhh * .72, Object.assign({}, o, {align: 'right', color: m > 1 ? '#ffd76a' : '#f3e2c0', size: fs * (m > 1 ? 1.12 : 1)})); }
+      } else D.text(g, st.ph === 'bid' ? (st.bidMax ? '当前 ' + st.bidMax + ' 分' : '叫分中') : '底牌', lay.portrait ? w / 2 : bx - 10, lay.portrait ? by + bhh + 13 : by + bhh / 2, Object.assign({}, o, {align: lay.portrait ? 'center' : 'right'}));
     } else {
       if (!st.last || lay.portrait) D.text(g, N === 2 ? '两人 · 各 16 张' : '三人 · 各 16 张', w / 2, midY + Math.min(w, h) * .14 + 16, {size: BX.clamp(cw * .2, 12, 15), color: 'rgba(243,226,192,.45)'});
     }
@@ -656,7 +785,7 @@ L.climb = function (ctx, G) {
     for (let s = 0; s < N; s++) {
       const sp = lay.seats[s], r = rel(s), n = st.hands[s].length;
       const cnt = st.ph === 'deal' ? Math.min(n, Math.floor(ui.dealT * (HAND + .99))) : n;
-      if (r !== 0) U.plaque(g, sp.px, sp.py, lay.PW, lay.PH, {name: ctx.name(s), color: ctx.color(s), active: st.turn === s && st.ph !== 'deal' && st.ph !== 'over', count: cnt, role: roleOf(s), alarm: st.ph === 'play' && n > 0 && n <= 2, t: ui.t, sub: ctx.isAI(s) ? BX.LEVELS[ctx.level(s)] : ''});
+      if (r !== 0) U.plaque(g, sp.px, sp.py, lay.PW, lay.PH, {name: ctx.name(s), color: ctx.color(s), active: st.turn === s && st.ph !== 'deal' && st.ph !== 'over', count: cnt, role: roleOf(s), alarm: st.ph === 'play' && n > 0 && n <= 2, t: ui.t, sub: st.dbl[s] === 2 ? '明牌×4' : st.dbl[s] === 1 ? '加倍×2' : ctx.isAI(s) ? BX.LEVELS[ctx.level(s)] : ''});
       drawShown(g, lay, s);
     }
     // my info chip
@@ -664,7 +793,7 @@ L.climb = function (ctx, G) {
     {
       const rr = roleOf(ms), y = lay.btnY + lay.bh / 2, sz = BX.clamp(cw * .42, 22, 34);
       let x = lay.pad + 4;
-      const cnt = st.ph !== 'deal' ? mine.length + (lay.portrait ? '' : ' 张') : '';
+      const cnt = st.ph !== 'deal' ? mine.length + (lay.portrait ? '' : ' 张' + (st.dbl[ms] === 2 ? ' · 明牌' : st.dbl[ms] === 1 ? ' · 加倍' : '')) : '';
       if (lay.portrait) {
         if (rr) U.seal(g, x + sz / 2, y - sz * .3, sz, rr[0], rr[1]);
         if (cnt !== '') D.text(g, cnt + '张', x + sz / 2, y + sz * .62, {size: 12, color: mine.length <= 2 && st.ph === 'play' ? '#ff8a6a' : '#f3e2c0', shadow: true});
@@ -674,12 +803,21 @@ L.climb = function (ctx, G) {
       }
     }
     // my hand
-    const raise = lay.raise, newSet = ui.newIds;
+    const raise = lay.raise, newSet = ui.newIds, hp = hintOn() && ui.hintA.a.t === 'play' ? ui.hintA.a.c : null;
+    if (ui.bad > 0) ui.bad = Math.max(0, ui.bad - dt);
+    const shakeX = ui.bad > 0 ? Math.sin(ui.bad * 70) * 5 : 0;
     lay.hand.rects.forEach((rc, i) => {
       const id = lay.handIds[i], sel = ui.sel.has(id);
       const y = rc.y - (sel ? raise : 0);
-      drawCard(g, id, rc.x, y, rc.w, rc.h, {sel: sel ? '#e0a020' : (newSet && newSet.has(id) ? '#ffd76a' : false)});
+      const hc = hp && sel && hp.includes(id) ? `rgba(80,225,170,${.65 + .35 * Math.sin(ui.t * 8)})` : null;
+      drawCard(g, id, rc.x + (sel ? shakeX : 0), y, rc.w, rc.h, {sel: sel ? hc || '#e0a020' : (newSet && newSet.has(id) ? '#ffd76a' : false)});
     });
+    if (ui.tg && lay.hand.rects.length && st.ph !== 'over') {   // 托管 veil over my hand
+      const top = lay.hand.top - 4;
+      g.fillStyle = 'rgba(20,10,4,.42)'; D.rr(g, lay.pad, top, w - 2 * lay.pad, h - top - 2, 12); g.fill();
+      U.bubble(g, w / 2, top + 4, '托管中 · 点手牌接管', BX.clamp(cw * .2, 12, 16), {bg: 'rgba(178,58,43,.95)', color: '#fff3e0'});
+    }
+    drawCounter(g, lay);
     if (st.ph === 'over') drawReveal(g, lay);
     // buttons
     ui.btns = buttons(lay);
@@ -689,7 +827,13 @@ L.climb = function (ctx, G) {
       if (sel.length && ui.btns.length) { const b = ui.btns[ui.btns.length - 1]; D.text(g, it ? TN[it.t] : (st.last ? '大不过 / 牌型不符' : '不是有效牌型'), b.x + b.w / 2, b.y - 10, {size: BX.clamp(cw * .19, 11, 14), color: it ? '#ffe9a8' : '#ffb0a0', shadow: true}); }
       if (!st.last && st.first && !ddz && st.mustId != null && mine.includes(st.mustId)) D.text(g, '首手须含 ' + '♠♥♣♦'[face(st.mustId).s] + VN[val(st.mustId)], w / 2, lay.btnY - 12, {size: BX.clamp(cw * .2, 12, 15), color: '#ffe9a8', shadow: true});
     }
-    if (myTurn() && st.ph === 'bid') D.text(g, '看牌叫分：1~3 分，叫 3 分直接当地主', w / 2, lay.btnY - 14, {size: BX.clamp(cw * .2, 12, 15), color: '#ffe9a8', shadow: true});
+    {
+      const tip = !myTurn() || ui.tg ? '' : st.ph === 'bid' ? '看牌叫分：叫 3 分直接当地主' : st.ph === 'dbl' ? (st.turn === st.lord ? '加倍 ×2 · 明牌 ×4（亮出手牌）' : '加倍：本局倍数 ×2') : noMove(st.turn) ? '没有大过上家的牌，自动跳过…' : '';
+      if (tip) D.text(g, tip, w / 2, lay.btnY - 14, {size: BX.clamp(cw * .2, 12, 15), color: '#ffe9a8', shadow: true, maxW: lay.portrait ? w - 2 * (lay.pad + 68) : w * .6});
+    }
+    // 托管 toggle
+    if (tgVisible()) U.btn(g, Object.assign({}, lay.tgB, {label: ui.tg ? '取消托管' : '托管', kind: ui.tg ? 'red' : 'ghost'}));
+    maybeAuto();
     // effects
     for (const e of ui.fx) {
       const a = e.k < .15 ? e.k / .15 : e.k > .75 ? (1 - e.k) / .25 : 1, sc = e.big ? 1 + (1 - Math.min(1, e.k * 4)) * .6 : 1;
@@ -710,13 +854,17 @@ L.climb = function (ctx, G) {
       return;
     }
     const fs = BX.clamp(pw * .32, 13, 20), cy = sp.fanT + ph / 2;
-    if (sh.pass || sh.bid != null) {
-      const txt = sh.pass ? (ddz ? '不出' : '要不起') : sh.bid ? sh.bid + ' 分' : '不叫';
-      U.bubble(g, sp.fanA, cy, txt, fs, {align: sp.align, color: sh.bid ? '#a33022' : '#5a3a20'});
+    if (sh.pass || sh.bid != null || sh.dbl != null) {
+      const txt = sh.pass ? (sh.pass === 2 || !ddz ? '要不起' : '不出') : sh.dbl != null ? ['不加倍', '加倍', '明牌'][sh.dbl] : sh.bid ? sh.bid + ' 分' : '不叫';
+      U.bubble(g, sp.fanA, cy, txt, fs, {align: sp.align, color: sh.bid || sh.dbl ? '#a33022' : '#5a3a20'});
       return;
     }
     const pos = U.fanPos(sh.c.length, sp.fanA, sp.fanT, pw, ph, sp.align, sp.maxW);
     const fl = ui.fly && ui.fly.seat === s && st.shown[s] === sh ? ui.fly : null;
+    if (st.ph === 'play' && st.last && st.last.s === s && rel(s) !== 0 && myTurn() && (!fl || fl.k >= 1)) {   // the play I have to beat
+      const x0 = Math.min(...pos.map(q => q.x)), x1 = Math.max(...pos.map(q => q.x)) + pw, y1 = Math.max(...pos.map(q => q.y)) + ph;
+      g.save(); g.shadowColor = 'rgba(255,215,106,.9)'; g.shadowBlur = 14; g.strokeStyle = 'rgba(255,215,106,.85)'; g.lineWidth = 2; D.rr(g, x0 - 5, sp.fanT - 5, x1 - x0 + 10, y1 - sp.fanT + 10, 8); g.stroke(); g.restore();
+    }
     sh.c.forEach((id, i) => {
       let {x, y} = pos[i], ww = pw;
       if (fl && fl.k < 1) {
@@ -731,6 +879,41 @@ L.climb = function (ctx, G) {
       D.text(g, TN[sh.t], (p0.x + last.x + pw) / 2, last.y + ph + 9, {size: BX.clamp(pw * .26, 11, 14), color: '#ffe2a0', shadow: true});
     }
   }
+  /* 记牌器: how many of each rank are still out (not in my hand, not played). 4 left = a bomb is possible. */
+  let ctrKey = '', ctrVal = null;
+  function remain() {
+    const k = st.seq + ':' + ctx.view; if (k === ctrKey) return ctrVal;
+    const mine = new Set(st.hands[ctx.view] || []), pl = new Set(st.played), c = new Array(18).fill(0);
+    for (const id of DECK) if (!mine.has(id) && !pl.has(id)) c[val(id)]++;
+    ctrKey = k; ctrVal = c; return c;
+  }
+  function drawCounter(g, lay) {
+    ui.ctrHit = null;
+    if (st.ph !== 'play' && st.ph !== 'dbl') return;
+    const C0 = lay.ctr, vs = ddz ? [17, 16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3] : [15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3];
+    const ming = ddz && st.ming && st.lord !== ctx.view;
+    if (!ui.ctrOn && !ming) {
+      const pw0 = 76, ph0 = 26, x = C0.cx - pw0 / 2, y = C0.top != null ? C0.top : C0.bottom - ph0;
+      g.fillStyle = 'rgba(20,10,4,.5)'; D.rr(g, x, y, pw0, ph0, ph0 / 2); g.fill(); g.strokeStyle = 'rgba(230,197,125,.5)'; g.lineWidth = 1; g.stroke();
+      D.text(g, '记牌器 ▸', C0.cx, y + ph0 / 2 + 1, {size: 12, color: '#e6c57d', weight: 700});
+      ui.ctrHit = {x: x - 8, y: y - 8, w: pw0 + 16, h: ph0 + 16}; return;
+    }
+    const cw = C0.cell, lw = cw * 1.2, n = vs.length, rh = C0.h / 2, rows = ming ? 3 : 2, hh = rh * rows + 4;
+    const tw = lw + n * cw, x0 = C0.cx - tw / 2, y = C0.top != null ? C0.top : C0.bottom - hh;
+    g.fillStyle = 'rgba(20,10,4,.55)'; D.rr(g, x0 - 4, y, tw + 8, hh, 7); g.fill(); g.strokeStyle = 'rgba(230,197,125,.4)'; g.lineWidth = 1; g.stroke();
+    const c = remain(), lc = ming ? countIds(st.hands[st.lord]) : null, fs = Math.min(13, cw * .46);
+    D.text(g, '记牌', x0 + lw / 2, y + 2 + rh * .5, {size: fs * .9, color: '#cdb995', weight: 700});
+    D.text(g, '剩', x0 + lw / 2, y + 2 + rh * 1.5, {size: fs * .9, color: '#cdb995', weight: 700});
+    if (ming) D.text(g, '地主', x0 + lw / 2, y + 2 + rh * 2.5, {size: fs * .8, color: '#ffb08a', weight: 700});
+    vs.forEach((v, i) => {
+      const x = x0 + lw + i * cw + cw / 2, k = c[v];
+      if (i % 2 === 0) { g.fillStyle = 'rgba(255,240,210,.05)'; g.fillRect(x - cw / 2, y + 2, cw, hh - 4); }
+      D.text(g, v === 17 ? '大' : v === 16 ? '小' : VN[v], x, y + 2 + rh * .5, {size: fs * (v === 10 ? .85 : 1), color: v >= 16 ? '#ff9a7a' : '#e6c57d', weight: 700});
+      D.text(g, k ? String(k) : '·', x, y + 2 + rh * 1.5, {size: fs * 1.08, color: !k ? 'rgba(243,226,192,.3)' : k === 4 ? '#ff7a5a' : '#fff3e0', weight: 900});
+      if (ming) D.text(g, lc[v] ? String(lc[v]) : '·', x, y + 2 + rh * 2.5, {size: fs, color: lc[v] ? '#ffb08a' : 'rgba(243,226,192,.25)', weight: 800});
+    });
+    ui.ctrHit = {x: x0 - 4, y, w: tw + 8, h: hh};
+  }
   function drawReveal(g, lay) {
     const {pw, ph} = lay;
     for (let s = 0; s < N; s++) {
@@ -739,31 +922,40 @@ L.climb = function (ctx, G) {
       st.hands[s].forEach((id, i) => drawCard(g, id, pos[i].x, pos[i].y, pw * .85, ph * .85, {}));
     }
     const r = st.res; if (!r) return;
-    const txt = ddz ? (r.lw ? '地主胜' : '农民胜') + (r.spring ? ' · 春天' : r.anti ? ' · 反春' : '') : ctx.name(r.w) + ' 出完';
+    const txt = ddz ? (r.lw ? '地主胜' : '农民胜') + (r.spring ? ' · 春天' : r.anti ? ' · 反春' : '') + ' · ' + r.score + ' 分' : ctx.name(r.w) + ' 出完 · 赢 ' + r.score + ' 分';
     U.bubble(g, lay.w / 2, lay.portrait ? lay.h * .42 : (lay.seats[ctx.view].fanT - 26), txt, BX.clamp(lay.cw * .3, 15, 24), {bg: 'rgba(178,58,43,.95)', color: '#fff3e0'});
   }
   /* ---------- instance ---------- */
   deal();
   const inst = {
     st,
-    toMove: () => (st.ph === 'bid' || st.ph === 'play') ? st.turn : null,
+    toMove: () => (st.ph === 'bid' || st.ph === 'play' || st.ph === 'dbl') ? st.turn : null,
     sysMove: () => st.ph === 'deal' ? {a: {t: 'go'}, delay: 1500} : null,
     valid(a, by) {
       if (by !== st.turn) return false;
       if (a.t === 'bid') return st.ph === 'bid' && Number.isInteger(a.v) && a.v >= 0 && a.v <= 3 && (a.v === 0 || a.v > st.bidMax);
+      if (a.t === 'dbl') return st.ph === 'dbl' && (a.v === 0 || a.v === 1 || (a.v === 2 && by === st.lord));
       if (st.ph !== 'play') return false;
       if (a.t === 'pass') return canPass(by);
       if (a.t === 'play') return !!interpFor(by, a.c);
       return false;
     },
     apply, aiMove, onTurn: status,
-    onView() { ui.sel.clear(); ui.hintList = null; },
+    showHint(a) {   // 💡: pre-select the strongest AI's play and make the matching button pulse
+      ui.hintA = {seq: st.seq, a};
+      if (a.t === 'play') { ui.sel = new Set(a.c); ui.hint = -1; }
+      else if (a.t === 'pass') ctx.toast(noMove(st.turn) ? '要不起，只能不出' : '建议：这手不出');
+    },
+    onView() { ui.sel.clear(); ui.hintList = null; ui.hintA = null; },
     key(e) {
-      if (!myTurn() || st.ph !== 'play') return;
+      if (e.code === 'KeyT' && tgVisible()) { toggleTg(); return; }
+      if (!myTurn() || ui.tg) return;
       const b = ui.btns;
-      if (e.code === 'Enter') { const p = b.find(x => x.label === '出牌'); if (p && !p.dis) press(p); }
-      else if (e.code === 'Space' || e.code === 'KeyP') { const p = b.find(x => x.act && x.act.t === 'pass'); if (p && !p.dis) press(p); }
+      if (st.ph !== 'play') { const n = {Digit0: 0, Digit1: 1, Digit2: 2, Digit3: 3, Numpad0: 0, Numpad1: 1, Numpad2: 2, Numpad3: 3}[e.code]; const p = n != null && b.find(x => x.act && x.act.v === n); if (p && !p.dis) press(p); return; }
+      if (e.code === 'Enter') tryPlay();
+      else if (e.code === 'Space' || e.code === 'KeyP') { const p = b.find(x => x.act && x.act.t === 'pass'); if (p && !p.dis) press(p); if (e.preventDefault) e.preventDefault(); }
       else if (e.code === 'KeyH') doHint();
+      else if (e.code === 'Escape') ui.sel.clear();
     },
     frame,
   };

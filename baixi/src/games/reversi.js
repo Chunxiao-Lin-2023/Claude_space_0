@@ -69,7 +69,7 @@ function think(b0, me, level) {
   const b = Int8Array.from(b0), ms = movesOf(b, me);
   if (ms.length <= 1) return ms[0];
   const empt = b.reduce((a, x) => a + (x ? 0 : 1), 0), t0 = performance.now();
-  const budget = BX.test ? 30 : level >= 3 ? 700 : level === 2 ? 250 : 60;
+  const budget = BX.test ? 30 : level >= 3 ? 580 : level === 2 ? 250 : 60;
   if (level >= 3 && empt <= (BX.test ? 8 : 13)) {
     const ctr = {n: 0, stop: false}, dl = t0 + budget; let best = ms[0], bv = -Infinity, alpha = -Infinity;
     const ord = ms.slice().sort((a, c) => W8[c] - W8[a]);
@@ -82,6 +82,10 @@ function think(b0, me, level) {
     }
     if (!ctr.stop) return best;
   }
+  if (level === 1) {
+    const scored = ms.map(s => { const f = flips(b, s, me); b[s] = me; for (const t of f) b[t] = me; const v = -evalPos(b, 3 - me, 1) + f.length * 4; b[s] = 0; for (const t of f) b[t] = 3 - me; return [s, v + (Math.random() - .5) * 60]; });
+    return BX.ai.byLevel(scored, 2);
+  }
   const lv = level;
   const st = {b, me, stack: []};
   const r = BX.ai.negamax({
@@ -92,10 +96,6 @@ function think(b0, me, level) {
     evaluate: s => { if (!movesOf(s.b, s.me).length && !movesOf(s.b, 3 - s.me).length) { const [x, y] = count(s.b); const d = s.me === 1 ? x - y : y - x; return d * 1000; } return evalPos(s.b, s.me, lv); },
     order: (s, m) => m.slice().sort((a, c) => (W8[c] || 0) - (W8[a] || 0)),
   });
-  if (level === 1) {
-    const scored = ms.map(s => { const f = flips(b, s, me); b[s] = me; for (const t of f) b[t] = me; const v = -evalPos(b, 3 - me, 1) + f.length * 4; b[s] = 0; for (const t of f) b[t] = 3 - me; return [s, v + (Math.random() - .5) * 60]; });
-    return BX.ai.byLevel(scored, 2);
-  }
   return r.move != null && r.move >= 0 ? r.move : ms[0];
 }
 
@@ -103,12 +103,16 @@ BX.register({
   id: 'reversi', title: '黑白棋', cat: 'classic', order: 4, sub: '夹住就翻面',
   desc: '在 8×8 棋盘上落子夹住对方棋子并翻转成己方颜色，终局子多者胜。角与边的争夺决定胜负，高级电脑残局会精确计算。',
   kind: 'turn', seats: 2, seatNames: ['黑方', '白方'], seatColors: ['#1c1a18', '#ece8df'], firstLabel: '执子',
+  howto: ['棋盘上的<b>小圆点</b>是你可以落子的位置。电脑上鼠标移过去会预览将被翻转的棋子；触屏默认<b>先点一下预览</b>（显示会翻几子），再点同一处确认（可在「⋯」里改为点一下直接落子）。',
+    '红点标出上一手，没有地方可下时会自动停一手。',
+    '下方 ◀ ▶ 回看每一步，「谱」查看全部落子；电脑键盘 ← → 回看。',
+    '顶栏 ↶ 悔棋，💡 提示推荐落点。'],
   rules: `<p><b>开局</b>：8×8 棋盘，中央四格交叉摆放黑白各两子，<b>黑方先行</b>。</p>
 <p><b>落子</b>：每步必须落在空格上，并且至少在一个方向（横、竖、斜）上与己方另一枚棋子<b>夹住</b>一枚或连续多枚对方棋子，被夹住的棋子全部翻转为己方颜色。可以同时在多个方向上翻转。</p>
 <p><b>停手</b>：若一方没有任何合法落点，只能停一手（自动跳过），由对方继续落子；有合法落点时不能放弃。</p>
 <p><b>终局</b>：双方都无法落子（包括棋盘下满）时游戏结束，棋子多的一方获胜，数量相同为和棋。</p>
 <p><b>小提示</b>：四个角永远不会被翻转，非常宝贵；紧挨角的格子（特别是斜对角的「星位」）往往会把角送给对方。</p>
-<p>棋盘上的小点为当前可落子的位置，点击即可落子。</p>`,
+<p>棋盘上的小点为当前可落子的位置；预览时被翻转的棋子会出现金色标记，并显示能翻几子。</p>`,
   icon(g, w, h) {
     D.felt(g, 0, 0, w, h, {color: '#2e6b4c'});
     const s = h / 4.4, x0 = w / 2 - 3 * s, y0 = h / 2 - 2 * s;
@@ -124,17 +128,20 @@ BX.register({
     const b0 = new Array(64).fill(0); b0[27] = 2; b0[36] = 2; b0[28] = 1; b0[35] = 1;
     const st = {b: b0, turn: 0, last: -1, over: false, passes: 0, flipped: [], moves: 0, result: null};
     const cv = ctx.canvas(), boardImg = L.cache();
-    let flipT = 1, dropT = 1, passMsg = null, legal = [];
+    let flipT = 1, dropT = 1, passMsg = null, legal = [], preview = -1, hover = -1, hint = null, endCall = null;
+    const H = L.history(ctx); H.push({b: st.b.slice(), last: -1, txt: '开局', side: -1});
     const me = () => st.turn + 1;
+    const coord = i => 'abcdefgh'[i & 7] + ((i >> 3) + 1);
     function geo() {
-      const W = cv.w, H = cv.h, land = W > H * 1.08;
-      const f = land ? BX.fit(W, H, 8.7 + 2 * 3.2, 8.7, 6) : BX.fit(W, H, 8.7, 8.7 + 2 * 1.3, 6);
-      const s = Math.min(f.s, 84), ox = Math.round(W / 2 - 4 * s), oy = Math.round(H / 2 - 4 * s), m = .35 * s;
+      const W = cv.w, H0 = cv.h, land = W > H0 * 1.08, Hs = land ? H0 : H0 - 50;
+      const f = land ? BX.fit(W, Hs, 8.9 + 2 * 3.2, 8.9, 6) : BX.fit(W, Hs, 8.9, 8.9 + 2 * 1.3, 6);
+      const s = Math.min(f.s, 84), ox = Math.round(W / 2 - 4 * s), oy = Math.round(Hs / 2 - 4 * s), m = .45 * s;
       let pl;
-      if (land) { const pw = Math.min(s * 3, (W - 8.7 * s) / 2 - 14), ph = Math.min(s * 2.4, 150); pl = [{x: ox - m - 10 - pw, y: oy + s * .2, w: pw, h: ph, v: true}, {x: ox + 8 * s + m + 10, y: oy + 7.8 * s - ph, w: pw, h: ph, v: true}]; }
+      if (land) { const pw = Math.min(s * 3, (W - 8.9 * s) / 2 - 14), ph = Math.min(s * 2.4, 150); pl = [{x: ox - m - 10 - pw, y: oy + s * .2, w: pw, h: ph, v: true}, {x: ox + 8 * s + m + 10, y: oy + 7.8 * s - ph, w: pw, h: ph, v: true}]; }
       else { const ph = Math.min(s * 1.05, 56), pw = 8 * s + 2 * m; pl = [{x: ox - m, y: oy - m - 8 - ph, w: pw, h: ph}, {x: ox - m, y: oy + 8 * s + m + 8, w: pw, h: ph}]; }
-      return {s, ox, oy, pl, m};
+      return {s, ox, oy, pl, m, land};
     }
+    const cellAt = p => { const G = geo(), c = Math.floor((p.x - G.ox) / G.s), r = Math.floor((p.y - G.oy) / G.s); return r < 0 || r > 7 || c < 0 || c > 7 ? -1 : r * 8 + c; };
     const refresh = () => { legal = st.over ? [] : movesOf(Int8Array.from(st.b), me()); };
     function status() {
       const [x, y] = count(st.b); ctx.info(0, x); ctx.info(1, y);
@@ -142,13 +149,23 @@ BX.register({
       const nm = ctx.name(st.turn);
       ctx.status(ctx.canAct(st.turn) ? (ctx.hotseat ? nm + '落子' : '轮到你落子') + '（可落 ' + legal.length + ' 处）' : '等待 ' + nm + ' 落子…');
     }
+    const canPlay = () => ctx.canAct(st.turn) && !st.over && H.live();
+    ctx.on(cv.cv, 'pointermove', e => { if (e.pointerType === 'mouse') { const s = cellAt(cv.pos(e)); hover = canPlay() && legal.includes(s) ? s : -1; } });
+    ctx.on(cv.cv, 'pointerleave', () => hover = -1);
     ctx.on(cv.cv, 'pointerdown', e => {
-      if (!ctx.canAct(st.turn) || st.over) return;
-      const G = geo(), p = cv.pos(e), c = Math.floor((p.x - G.ox) / G.s), r = Math.floor((p.y - G.oy) / G.s);
-      if (r < 0 || r > 7 || c < 0 || c > 7) return;
-      const s = r * 8 + c;
-      if (legal.includes(s)) ctx.act({i: s}, st.turn); else ctx.sfx('error');
+      if (!H.live()) { H.go(1e9); return; }
+      if (!canPlay()) return;
+      const s = cellAt(cv.pos(e));
+      if (s < 0) { preview = -1; return; }
+      if (!legal.includes(s)) { preview = -1; ctx.sfx('error'); ctx.buzz(12); return; }
+      if (ctx.needConfirm(e) && preview !== s) { preview = s; ctx.sfx('tick'); return; }
+      preview = -1; ctx.act({i: s}, st.turn);
     });
+    const tb = L.toolbar(ctx, {label: true, buttons: [
+      {id: 'p', text: '◀', title: '上一步', on: () => H.prev()},
+      {id: 'n', text: '▶', title: '下一步', on: () => H.next()},
+      {id: 'l', text: '谱', title: '棋谱', on: () => H.showList('棋谱', x => x.txt)},
+    ]});
     function endCheck() {
       const B = Int8Array.from(st.b);
       if (movesOf(B, me()).length) return;
@@ -160,17 +177,21 @@ BX.register({
       const [x, y] = count(st.b); st.over = true;
       const w = x > y ? 0 : y > x ? 1 : -1;
       st.result = w < 0 ? `${x} : ${y} 和棋` : `${ctx.name(w)} 以 ${Math.max(x, y)} : ${Math.min(x, y)} 获胜`;
-      ctx.end({winner: w, text: `黑 ${x} : ${y} 白`});
+      endCall = {t: `黑 ${x} : ${y} 白`, k: 0}; ctx.anim(2600, k => { if (endCall) endCall.k = k; }, () => endCall = null, x2 => x2);
+      if (w >= 0 && ctx.isLocal(w) && ctx.mode !== 'local') ctx.buzz(40);
+      ctx.end({winner: w, text: `黑 ${x} : ${y} 白` + (w < 0 ? '，和棋' : '')});
     }
     const inst = {
       st,
       toMove: () => st.over ? null : st.turn,
       valid: a => a && Number.isInteger(a.i) && canMove(Int8Array.from(st.b), a.i, me()),
       apply(a) {
-        const f = flips(Int8Array.from(st.b), a.i, me());
+        const f = flips(Int8Array.from(st.b), a.i, me()), side = st.turn;
         st.b[a.i] = me(); for (const t of f) st.b[t] = me();
         st.last = a.i; st.flipped = f; st.moves++;
         st.turn ^= 1;
+        preview = -1; hover = -1; hint = null;
+        H.push({b: st.b.slice(), last: a.i, side, txt: (side ? '白 ' : '黑 ') + coord(a.i) + '<small style="opacity:.6"> 翻' + f.length + '</small>'});
         dropT = 0; flipT = 0;
         ctx.anim(140, k => dropT = k, null, BX.ease.out);
         ctx.after(90, () => { ctx.anim(380, k => flipT = k); ctx.sfx('flip'); });
@@ -182,8 +203,12 @@ BX.register({
         return {i: m != null ? m : movesOf(Int8Array.from(st.b), seat + 1)[0]};
       },
       onTurn: status,
+      showHint(a) { H.go(1e9); preview = -1; hint = {i: a.i, t0: performance.now()}; },
+      _xy: i => { const G = geo(); return [G.ox + ((i & 7) + .5) * G.s, G.oy + ((i >> 3) + .5) * G.s]; },
+      key(e) { if (e.code === 'ArrowLeft') H.prev(); else if (e.code === 'ArrowRight') H.next(); else if (e.code === 'Escape') preview = -1; },
       frame() {
         const g = cv.g; cv.clear(); const G = geo(), s = G.s;
+        const live = H.live(), view = H.cur(), B = live ? st.b : view.b, last = live ? st.last : view.last;
         g.drawImage(boardImg(g, cv.w + 'x' + cv.h, cv.w, cv.h, c => {
           const m = G.m;
           c.save(); c.shadowColor = 'rgba(0,0,0,.5)'; c.shadowBlur = s * .5; c.shadowOffsetY = s * .12; c.fillStyle = '#3a2210'; D.rr(c, G.ox - m, G.oy - m, 8 * s + 2 * m, 8 * s + 2 * m, s * .2); c.fill(); c.restore();
@@ -192,31 +217,53 @@ BX.register({
           c.strokeStyle = 'rgba(10,30,20,.65)'; c.lineWidth = Math.max(1, s * .03);
           c.beginPath(); for (let i = 0; i <= 8; i++) { c.moveTo(G.ox + i * s, G.oy); c.lineTo(G.ox + i * s, G.oy + 8 * s); c.moveTo(G.ox, G.oy + i * s); c.lineTo(G.ox + 8 * s, G.oy + i * s); } c.stroke();
           c.fillStyle = 'rgba(10,30,20,.8)'; for (const [x, y] of [[2, 2], [6, 2], [2, 6], [6, 6]]) { D.circle(c, G.ox + x * s, G.oy + y * s, s * .07); c.fill(); }
+          const fs = Math.max(9, m * .58);
+          for (let i = 0; i < 8; i++) {
+            D.text(c, 'abcdefgh'[i], G.ox + (i + .5) * s, G.oy - m * .5, {size: fs, color: 'rgba(240,215,170,.8)', font: 'serif'});
+            D.text(c, String(i + 1), G.ox - m * .5, G.oy + (i + .5) * s, {size: fs, color: 'rgba(240,215,170,.8)', font: 'serif'});
+          }
         }), 0, 0, cv.w, cv.h);
-        const [nb, nw] = count(st.b);
+        const [nb, nw] = count(B);
         for (const seat of [0, 1]) {
           const pr = G.pl[seat];
           L.plate(g, pr.x, pr.y, pr.w, pr.h, {active: !st.over && st.turn === seat, color: seat ? '#ece8df' : '#1c1a18', title: ctx.name(seat), tag: (seat ? '白' : '黑') + ' ' + (seat ? nw : nb) + ' 子', vertical: pr.v});
         }
-        const R0 = s * .42, fl = new Set(st.flipped);
+        // disc-share bar inside the bottom plate area edge
+        { const pr = G.pl[1], bw = pr.v ? pr.w - 16 : pr.w - 16, bx = pr.x + 8, by = pr.v ? pr.y + pr.h - 14 : pr.y + pr.h - 7, k = nb / Math.max(1, nb + nw);
+          g.fillStyle = '#ece8df'; D.rr(g, bx, by, bw, 4, 2); g.fill(); g.fillStyle = '#1c1a18'; D.rr(g, bx, by, Math.max(2, bw * k), 4, 2); g.fill(); }
+        const slot = L.tbSlot(G, cv.w, cv.h, G.pl[1], G.pl[0]); tb.place(slot.x, slot.y, slot.w, slot.col);
+        const n = H.list.length - 1, i0 = H.idx();
+        tb.label(!live ? `<b>回看 ${i0}/${n}</b> · ${i0 ? view.txt : '开局'}` : n ? `第 ${n} 手 · ${view.txt}` : '黑方先下');
+        tb.set('p', {disabled: i0 <= 0}); tb.set('n', {disabled: live});
+        const R0 = s * .42, fl = new Set(live ? st.flipped : []);
+        const pv = live ? (preview >= 0 ? preview : hover) : -1, pvf = pv >= 0 ? new Set(flips(Int8Array.from(st.b), pv, me()) || []) : null;
         for (let i = 0; i < 64; i++) {
-          const p = st.b[i]; if (!p) continue;
+          const p = B[i]; if (!p) continue;
           const x = G.ox + ((i & 7) + .5) * s, y = G.oy + ((i >> 3) + .5) * s;
-          if (i === st.last && dropT < 1) { D.stone(g, x, y - (1 - dropT) * s * .2, R0 * (1.15 - .15 * dropT), p === 2); continue; }
+          if (live && i === st.last && dropT < 1) { D.stone(g, x, y - (1 - dropT) * s * .2, R0 * (1.15 - .15 * dropT), p === 2); continue; }
           if (fl.has(i) && flipT < 1) {
             const k = flipT, sx = Math.abs(Math.cos(k * Math.PI)) || .02, white = k < .5 ? p !== 2 : p === 2;
             g.save(); g.translate(x, y - Math.sin(k * Math.PI) * s * .12); g.scale(Math.max(.04, sx), 1); D.stone(g, 0, 0, R0, white); g.restore();
             continue;
           }
           D.stone(g, x, y, R0, p === 2);
+          if (pvf && pvf.has(i)) { g.strokeStyle = 'rgba(255,205,90,.95)'; g.lineWidth = Math.max(2, s * .06); D.circle(g, x, y, R0 * .55); g.stroke(); }
         }
-        if (st.last >= 0) { const x = G.ox + ((st.last & 7) + .5) * s, y = G.oy + ((st.last >> 3) + .5) * s; g.fillStyle = C.red2; D.circle(g, x, y, s * .08); g.fill(); }
-        if (!st.over && ctx.canAct(st.turn)) {
-          for (const i of legal) { const x = G.ox + ((i & 7) + .5) * s, y = G.oy + ((i >> 3) + .5) * s; g.globalAlpha = .35; D.stone(g, x, y, R0 * .32, st.turn === 1); g.globalAlpha = 1; g.strokeStyle = 'rgba(255,230,160,.55)'; g.lineWidth = 1.5; D.circle(g, x, y, R0 * .34); g.stroke(); }
+        if (last >= 0) { const x = G.ox + ((last & 7) + .5) * s, y = G.oy + ((last >> 3) + .5) * s; g.fillStyle = C.red2; D.circle(g, x, y, s * .08); g.fill(); }
+        if (live && !st.over && ctx.canAct(st.turn) && ctx.pref('hints')) {
+          for (const i of legal) { if (i === pv) continue; const x = G.ox + ((i & 7) + .5) * s, y = G.oy + ((i >> 3) + .5) * s; g.globalAlpha = .35; D.stone(g, x, y, R0 * .32, st.turn === 1); g.globalAlpha = 1; g.strokeStyle = 'rgba(255,230,160,.55)'; g.lineWidth = 1.5; D.circle(g, x, y, R0 * .34); g.stroke(); }
         }
+        if (pv >= 0 && pvf) {
+          const x = G.ox + ((pv & 7) + .5) * s, y = G.oy + ((pv >> 3) + .5) * s;
+          g.globalAlpha = preview >= 0 ? .8 : .55; D.stone(g, x, y, R0, st.turn === 1); g.globalAlpha = 1;
+          D.text(g, '+' + pvf.size, x, y + 1, {size: s * .3, color: st.turn === 1 ? '#3a2410' : '#ffe9b0', weight: 800});
+        }
+        if (live && hint && !anim0()) { const x = G.ox + ((hint.i & 7) + .5) * s, y = G.oy + ((hint.i >> 3) + .5) * s; L.hintArrow(g, null, null, x, y, R0, hint.t0); }
         if (passMsg) L.callout(g, G.ox + 4 * s, G.oy + 4 * s, Math.min(s * .5, 26), passMsg.t, passMsg.k, '#3a5a4a');
+        if (endCall) L.callout(g, G.ox + 4 * s, G.oy + 4 * s, Math.min(s * .7, 34), endCall.t, endCall.k);
       },
     };
+    const anim0 = () => flipT < 1;
     refresh(); status();
     return inst;
   },

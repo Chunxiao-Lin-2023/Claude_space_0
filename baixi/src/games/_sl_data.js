@@ -58,6 +58,24 @@ BX.data.slkit = (function () {
       dis(k, f) { if (b[k]) b[k].disabled = !!f; },
     };
   };
+  /* today's date → {key:'20261109', seed, label:'11月9日'} for daily puzzles (same for everyone on that day) */
+  K.daily = function (salt) {
+    const d = new Date(), key = d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate();
+    let h = 2166136261 >>> 0; const str = key + '|' + (salt || ''); for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; }
+    return {key: String(key), seed: h, label: (d.getMonth() + 1) + '月' + d.getDate() + '日'};
+  };
+  /* play statistics per variant: started / won / streak.  K.stats(ctx, v).start() once per game, .win() on win → {played, wins, streak, best} */
+  K.stats = function (ctx, v) {
+    const k = 'st_' + v, get = () => Object.assign({played: 0, wins: 0, streak: 0, best: 0, pend: 0}, ctx.load(k, null) || {});
+    let begun = false;
+    return {
+      get,
+      start() { if (begun) return; begun = true; const s = get(); if (s.pend) s.streak = 0; s.played++; s.pend = 1; ctx.save(k, s); },
+      resume() { begun = true; },
+      win() { const s = get(); if (!begun) { s.played++; begun = true; } s.wins++; s.pend = 0; s.streak++; s.best = Math.max(s.best, s.streak); ctx.save(k, s); return s; },
+      line(s) { s = s || get(); return s.played ? `胜率 ${Math.round(100 * s.wins / s.played)}%（${s.wins}/${s.played}）` + (s.streak > 1 ? ` · 连胜 ${s.streak}` : '') : ''; },
+    };
+  };
   K.status = ctx => { let last = null; return s => { if (s !== last) { last = s; ctx.status(s); } }; };
   /* modal-ish chooser grid inside the game. items: [{label, sub, done, cur, draw(g,w,h)}] → onPick(i) */
   K.picker = function (ctx, title, items, onPick, onClose) {

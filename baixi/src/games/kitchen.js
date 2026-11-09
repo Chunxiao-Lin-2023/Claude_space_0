@@ -22,6 +22,9 @@ const REC = {
 /* map legend: # counter  . floor  ~ wet floor  F/M/V/R/S crates  C chopping board  T steamer  W wok  P pot
    L plate rack  H serving hatch  D dirty-plate return  K sink  X trash  E extinguisher (counter) */
 const LEVELS = {
+  0: {name: '新手厨房', rec: ['soup'], plates: 2, pat: 140, gap: 20, grace: 30, stars: [40, 100, 160], time: 150, tut: true, spawn: [[4, 4], [8, 4]],
+    hz: '教学关：跟着金色箭头，做出第一碗青菜汤！',
+    map: ['#####PP######', '#...........#', 'V...........H', '#...........#', 'C...........L', '#...........#', 'X...........D', '#...........K', '####E########']},
   1: {name: '茶馆后厨', rec: ['soup', 'fried', 'xlb'], plates: 3, pat: 80, gap: 17, grace: 11, stars: [60, 140, 220], spawn: [[3, 5], [9, 5]],
     hz: '入门厨房：熟悉切菜、下锅、装盘、上菜与洗碗。',
     map: ['##VMFR#TTPW##', '#...........#', 'C...........H', '#....###....#', 'C....#C#....L', '#...........#', 'X...........D', '#...........K', '####E########']},
@@ -32,10 +35,14 @@ const LEVELS = {
     hz: '五道菜齐上、火候更急；地上有水渍，踩上去会打滑。',
     map: ['#FMVRS#TTWPP#', '#...........H', 'C..~.....~..#', '#...#C#C#...L', 'C...#####...#', '#..~.....~..#', 'X...........D', '#...........K', '######E######']},
 };
-const LV_TIME = TEST ? 34 : 180, READY = TEST ? .6 : 2.6;
+const READY = TEST ? .6 : 2.6;
 const CHOP_T = TEST ? .45 : 1.5, WASH_T = TEST ? .4 : 1.3, EXT_T = TEST ? .4 : 1, RET_T = TEST ? 2 : 6;
 const cookT = r => TEST ? 2.4 : REC[r].t;
 const PAL = ['#c23a2b', '#2f7f9a'];
+const DASH_T = .16, DASH_CD = .65, FLY_V = 9, FLY_T = .55, FLOOR_MAX = 6;
+const A_KEYS = [['KeyE', 'Space', 'KeyJ'], ['Period', 'Enter', 'NumpadEnter', 'Numpad0']], U_KEYS = [['KeyQ', 'KeyF', 'ShiftLeft', 'KeyK'], ['Slash', 'ShiftRight', 'NumpadDecimal']];
+const D_KEYS = [['KeyR', 'KeyC', 'KeyL'], ['Comma', 'Numpad1']];
+const CMDS = [['', '自由'], ['prep', '备料'], ['wash', '洗碗'], ['serve', '上菜']];
 
 /* ---------- small pure helpers ---------- */
 const subMulti = (a, b) => { const m = {}; for (const x of b) m[x] = (m[x] || 0) + 1; for (const x of a) { if (!m[x]) return false; m[x]--; } return true; };
@@ -170,7 +177,13 @@ BX.register({
   id: 'kitchen', title: '双人厨房', cat: 'coop', order: 1, sub: '切菜下锅，合作出餐',
   desc: '茶馆后厨忙翻天！两位厨师分工备料、切菜、蒸煮炒、装盘上菜和洗碗，在订单超时前把点心送出窗口。三个关卡，越来越忙。',
   kind: 'realtime', seats: 2, coop: true, noFirst: true, seatNames: ['红围裙', '蓝围裙'], seatColors: PAL,
-  options: [{key: 'lv', label: '关卡', choices: [[1, '一 · 茶馆后厨'], [2, '二 · 点心铺'], [3, '三 · 年夜大席']], def: 1}],
+  options: [{key: 'lv', label: '关卡', choices: [[0, '教学 · 新手厨房'], [1, '一 · 茶馆后厨'], [2, '二 · 点心铺'], [3, '三 · 年夜大席']], def: 1},
+    {key: 'assist', label: '难度', choices: [[0, '标准'], [1, '宽松（订单更耐等、不会起火）']], def: 0}],
+  howto: ['<b>移动</b>：WASD / 方向键，或触屏左侧摇杆。脚下虚线框 = 你正对着的台子，框上的小字告诉你按键会做什么。',
+    '<b>拿/放</b>：空格 / E（触屏「拿/放」）。<b>使用</b>：按住 Q / Shift 切菜、洗碗、灭火；手里拿着食材时轻按「使用」= <b>扔出去</b>，队友空手就能接住。',
+    '<b>冲刺</b>：R / C（触屏「冲刺」）向前冲一小段。同屏双人右边：方向键 + <b>.</b> 拿放 + <b>/</b> 使用 + <b>,</b> 冲刺。',
+    '上方订单票写着菜名、原料和用哪口锅；手里的菜对得上的订单会发金光。第一次玩建议先选「教学」关卡。',
+    '人机模式可用「伙伴」按钮指挥电脑：备料 / 洗碗 / 上菜 / 自由；卡住时点 💡 会用箭头指出下一步。'],
   rules: `<p><b>目标：</b>两位厨师合作，在 <b>3 分钟</b>营业时间内按订单做菜送出窗口赚金币。达到 1 星即过关，金币越多星越多（最多 3 星）。</p>
 <p><b>菜谱：</b></p>
 <ul>
@@ -184,8 +197,10 @@ BX.register({
 <p><b>订单：</b>上方的订单票会倒计时，越快送出小费越多；超时会扣 10 金币。</p>
 <p><b>起火：</b>菜做好后要尽快装盘，锅边出现红色「！」说明快糊了，放太久会<b>起火</b>。拿起红色灭火器，对着着火的锅按住「使用」扑灭。</p>
 <p><b>洗碗：</b>送出的菜过一会儿会在回收口变成脏盘子，把它放进水槽，按住「使用」洗干净，盘子会回到盘架。</p>
-<p><b>关卡：</b>一 · 茶馆后厨（三道菜）；二 · 点心铺（厨房被长案隔开，可以隔案递食材）；三 · 年夜大席（五道菜、火候更急、地上有水渍会打滑）。</p>
-<p><b>操作：</b>任何柜台都能放一样东西。<br>键盘单人：WASD / 方向键移动，<b>空格 / E</b> 拿起·放下，<b>Q / Shift</b> 使用（切菜、洗碗、灭火，需按住）。<br>同屏双人：左边 WASD + <b>E</b> 拿放 + <b>Q</b> 使用；右边 方向键 + <b>.</b> 拿放 + <b>/</b> 使用。<br>触屏：左侧摇杆移动，右侧「拿/放」「使用」按钮；同屏双人时两人各用自己那半边的摇杆和按钮。</p>`,
+<p><b>扔食材：</b>手里拿着食材时轻按「使用」把它扔向面前，能直接扔进锅里、扔到空柜台上或扔给空手的队友；落在地上的食材走过去按「拿/放」捡起。<b>冲刺</b>可以快速穿过厨房。</p>
+<p><b>宽松模式：</b>订单等待时间 ×1.5，做好的菜放多久都不会起火，适合新手和小朋友。</p>
+<p><b>关卡：</b>教学 · 新手厨房（只做青菜汤，有箭头指引）；一 · 茶馆后厨（三道菜）；二 · 点心铺（厨房被长案隔开，可以隔案递食材）；三 · 年夜大席（五道菜、火候更急、地上有水渍会打滑）。</p>
+<p><b>操作：</b>任何柜台都能放一样东西。<br>键盘单人：WASD / 方向键移动，<b>空格 / E</b> 拿起·放下，<b>Q / Shift</b> 使用（切菜、洗碗、灭火，需按住；拿着食材时 = 扔），<b>R / C</b> 冲刺。<br>同屏双人：左边 WASD + <b>E</b> 拿放 + <b>Q</b> 使用 + <b>R</b> 冲刺；右边 方向键 + <b>.</b> 拿放 + <b>/</b> 使用 + <b>,</b> 冲刺。<br>触屏：左侧摇杆移动，右侧「拿/放」「使用」「冲刺」按钮（按钮上的字会随当前能做的动作变化）；同屏双人时两人各用自己那半边的摇杆和按钮。</p>`,
   icon(g, w, h) {
     const gr = g.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, '#f0d7a8'); gr.addColorStop(1, '#d9b077'); g.fillStyle = gr; g.fillRect(0, 0, w, h);
     const s = h / 5;
@@ -209,14 +224,16 @@ BX.register({
     const typ = i => MAP[i];
     const solidT = (c, r) => c < 0 || r < 0 || c >= GW || r >= GH || (MAP[r * GW + c] !== '.' && MAP[r * GW + c] !== '~');
     const tilesOf = chs => { const o = []; for (let i = 0; i < MAP.length; i++) if (chs.includes(MAP[i])) o.push(i); return o; };
-    const pat = TEST ? 45 : LV.pat, gap = TEST ? 7 : LV.gap, grace = TEST ? 9 : LV.grace;
+    const assist = +ctx.opts.assist === 1;
+    const pat = TEST ? 45 : Math.round(LV.pat * (assist ? 1.5 : 1)), gap = TEST ? 7 : LV.gap, grace = TEST ? 9 : LV.grace;
+    const LV_TIME = TEST ? 34 : (LV.time || 180);
     const stars = TEST ? [20, 60, 120] : LV.stars;
-    const st = {lv, ph: 'ready', t: READY, left: LV_TIME, coins: 0, served: 0, failed: 0, orders: [], oid: 0, nextO: 1.2, P: [], it: {}, stn: {}, rack: LV.plates, dret: 0, sink: {n: 0, p: 0}, pend: [], ev: [], evId: 0, over: false, star: 0};
+    const st = {lv, ph: 'ready', t: READY, left: LV_TIME, coins: 0, served: 0, failed: 0, orders: [], oid: 0, nextO: 1.2, P: [], it: {}, stn: {}, rack: LV.plates, dret: 0, sink: {n: 0, p: 0}, pend: [], ev: [], evId: 0, over: false, star: 0, fly: [], fl: []};
     for (const i of tilesOf('E')) st.it[i] = {k: 'e'};
     for (const i of tilesOf('TWP')) st.stn[i] = {c: [], s: 0, p: 0, r: null, e: 0};
-    LV.spawn.forEach(([c, r], k) => st.P.push({x: c + .5, y: r + .5, vx: 0, vy: 0, fx: 0, fy: 1, h: null, mv: 0, act: '', i: k}));
+    LV.spawn.forEach(([c, r], k) => st.P.push({x: c + .5, y: r + .5, vx: 0, vy: 0, fx: 0, fy: 1, h: null, mv: 0, act: '', i: k, ds: 0, dcd: 0}));
     const hatch = tilesOf('H')[0], rackT = tilesOf('L')[0], dretT = tilesOf('D')[0], sinkT = tilesOf('K')[0];
-    const lastA = [0, 0];
+    const lastA = [0, 0], lastU = [false, false], lastD = [0, 0];
 
     /* ================= simulation (host) ================= */
     const fx = (k, o) => { st.ev.push(Object.assign({k, id: ++st.evId}, o || {})); if (st.ev.length > 12) st.ev.shift(); };
@@ -241,7 +258,12 @@ BX.register({
     function moveP(p, inp, dt) {
       let mx = +inp.mx || 0, my = +inp.my || 0; const l = Math.hypot(mx, my); if (l > 1) { mx /= l; my /= l; }
       const wet = MAP[tileOf(p)] === '~', sp = 4.4, acc = wet ? 4.5 : 22;
-      p.vx += (mx * sp - p.vx) * Math.min(1, acc * dt); p.vy += (my * sp - p.vy) * Math.min(1, acc * dt);
+      p.dcd = Math.max(0, (p.dcd || 0) - dt);
+      if (p.ds > 0) {   // dash: burst along the facing / stick direction
+        p.ds = Math.max(0, p.ds - dt);
+        const dl = Math.hypot(p.fx, p.fy) || 1; mx = p.fx / dl; my = p.fy / dl;
+        p.vx += (mx * sp * 2.6 - p.vx) * Math.min(1, 30 * dt); p.vy += (my * sp * 2.6 - p.vy) * Math.min(1, 30 * dt);
+      } else { p.vx += (mx * sp - p.vx) * Math.min(1, acc * dt); p.vy += (my * sp - p.vy) * Math.min(1, acc * dt); }
       if (l > .25) { p.fx = Math.round(mx / Math.max(l, 1e-6) * 100) / 100; p.fy = Math.round(my / Math.max(l, 1e-6) * 100) / 100; }
       p.x += p.vx * dt; p.y += p.vy * dt; collide(p);
       p.mv = Math.hypot(p.vx, p.vy) > .5 ? 1 : 0;
@@ -252,8 +274,17 @@ BX.register({
       return LV.rec.some(r => REC[r].st === tp && subMulti(nc, REC[r].ing));
     }
     function completeRec(i) { const s = st.stn[i], tp = STN[typ(i)]; return LV.rec.find(r => REC[r].st === tp && s.c.length === REC[r].ing.length && subMulti(s.c, REC[r].ing)) || null; }
+    const faceV = p => { const l = Math.hypot(p.fx, p.fy) || 1; return [p.fx / l, p.fy / l]; };
+    function floorNear(p) {
+      const [dx, dy] = faceV(p), qx = p.x + dx * .55, qy = p.y + dy * .55;
+      let best = -1, bd = .62;
+      st.fl.forEach((o, j) => { const d = Math.min(Math.hypot(o.x - qx, o.y - qy), Math.hypot(o.x - p.x, o.y - p.y) + .1); if (d < bd) { bd = d; best = j; } });
+      return best;
+    }
     function interact(k) {
-      const p = st.P[k], f = front(p); if (f < 0) return;
+      const p = st.P[k];
+      if (!p.h) { const j = floorNear(p); if (j >= 0) { p.h = st.fl[j].it; st.fl.splice(j, 1); fx('pick', {s: k}); return; } }
+      const f = front(p); if (f < 0) return;
       const ch = typ(f), H = p.h, at = {s: k, i: f};
       const err = () => fx('err', at);
       if (CRATE[ch]) {
@@ -316,6 +347,37 @@ BX.register({
       if (ch === 'C') { const it = st.it[f]; if (it && it.k === 'i' && ING[it.t].chop && !it.c) { p.act = 'chop'; it.cp = (it.cp || 0) + dt / CHOP_T; if (it.cp >= 1) { it.c = 1; delete it.cp; fx('chopped', {s: k, i: f}); } } }
       else if (ch === 'K' && st.sink.n > 0) { p.act = 'wash'; st.sink.p += dt / WASH_T; if (st.sink.p >= 1) { st.sink.p = 0; st.sink.n--; st.rack++; fx('washed', {s: k, i: f}); } }
     }
+    /* ---- throwing ingredients (Overcooked 2 style) ---- */
+    function throwIt(k) {
+      const p = st.P[k], [dx, dy] = faceV(p);
+      st.fly.push({x: p.x + dx * .3, y: p.y + dy * .3, vx: dx * FLY_V, vy: dy * FLY_V, it: p.h, by: k, t: 0});
+      p.h = null; fx('throw', {s: k});
+    }
+    function landOn(i, it) {
+      const ch = typ(i);
+      if (STN[ch]) { const s = st.stn[i]; if (prepared(it) && accepts(i, it.t)) { s.c.push(it.t); const r = completeRec(i); if (r) { s.r = r; s.s = 1; s.p = 0; } fx('drop', {i}); return true; } return false; }
+      if (ch === 'X') { fx('trash', {i}); return true; }
+      if (CRATE[ch]) { if (it.t === CRATE[ch] && !it.c) { fx('place', {i}); return true; } return false; }
+      if ((ch === '#' || ch === 'C' || ch === 'E') && !st.it[i]) { st.it[i] = it; fx('place', {i}); return true; }
+      return false;
+    }
+    function toFloor(o, x, y) { st.fl.push({x: BX.clamp(x, .35, GW - .35), y: BX.clamp(y, .35, GH - .35), it: o.it}); if (st.fl.length > FLOOR_MAX) st.fl.shift(); fx('flop'); }
+    function stepFly(dt) {
+      for (let j = st.fly.length - 1; j >= 0; j--) {
+        const o = st.fly[j]; let done = false;
+        for (let n = 0; n < 3 && !done; n++) {
+          const px = o.x, py = o.y; o.x += o.vx * dt / 3; o.y += o.vy * dt / 3;
+          // a partner with free hands catches it
+          for (let q = 0; q < st.P.length; q++) { const P = st.P[q]; if (P.h || (q === o.by && o.t < .3)) continue; if (Math.hypot(P.x - o.x, P.y - o.y) < .5) { P.h = o.it; fx('catch', {s: q}); done = true; break; } }
+          if (done) break;
+          const c = Math.floor(o.x), r = Math.floor(o.y);
+          if (solidT(c, r)) { const i = c >= 0 && r >= 0 && c < GW && r < GH ? r * GW + c : -1; if (!(i >= 0 && landOn(i, o.it))) toFloor(o, px, py); done = true; }
+        }
+        o.t += dt;
+        if (!done && o.t >= FLY_T) { toFloor(o, o.x, o.y); done = true; }
+        if (done) st.fly.splice(j, 1);
+      }
+    }
     function newOrder() {
       let r;
       if (st.oid === 0) r = LV.rec[0];
@@ -338,14 +400,19 @@ BX.register({
         moveP(p, inp, dt);
         const a = inp.a | 0;
         if (a !== lastA[k]) { lastA[k] = a; if (st.ph === 'play') interact(k); }
-        if (inp.u && st.ph === 'play') use(k, dt); else p.act = '';
+        const dc = inp.d | 0;
+        if (dc !== lastD[k]) { lastD[k] = dc; if (st.ph === 'play' && p.dcd <= 0) { p.ds = DASH_T; p.dcd = DASH_CD; fx('dash', {s: k}); } }
+        const u = !!inp.u, uEdge = u && !lastU[k]; lastU[k] = u;
+        if (uEdge && st.ph === 'play' && p.h && p.h.k === 'i') { throwIt(k); p.act = ''; }
+        else if (u && st.ph === 'play') use(k, dt); else p.act = '';
       });
+      stepFly(dt);
       if (st.ph === 'ready') { st.t -= dt; if (st.t <= 0) { st.ph = 'play'; fx('go'); } return; }
       st.left -= dt;
       for (const i in st.stn) {
         const s = st.stn[i];
         if (s.s === 1) { s.p += dt / cookT(s.r); if (s.p >= 1) { s.s = 2; s.p = 0; fx('ding', {i: +i}); } }
-        else if (s.s === 2) { s.p += dt / grace; if (s.p >= 1) { s.s = 3; s.p = 0; s.c = []; s.r = null; s.e = 0; fx('fire', {i: +i}); } }
+        else if (s.s === 2) { s.p = assist ? Math.min(.4, s.p + dt / grace) : s.p + dt / grace; if (s.p >= 1) { s.s = 3; s.p = 0; s.c = []; s.r = null; s.e = 0; fx('fire', {i: +i}); } }
         else if (s.s === 3) s.e = Math.max(0, s.e - dt * .3);
       }
       for (let j = st.orders.length - 1; j >= 0; j--) {
@@ -361,6 +428,7 @@ BX.register({
 
     /* ================= AI partner ================= */
     const aiM = [{}, {}];
+    let aiCmd = '';   // player's order to the AI partner (ai mode): '' free · prep · wash · serve
     const NB = [[1, 0], [-1, 0], [0, 1], [0, -1]];
     function bfs(p) {
       const dist = new Array(GW * GH).fill(Infinity), prev = new Array(GW * GH).fill(-1);
@@ -393,8 +461,9 @@ BX.register({
       for (const i in tgt) miss[i] = minus(REC[tgt[i]].ing, st.stn[i].c);
       return {tgt, miss};
     }
-    function decide(k) {
+    function decide(k, guide) {
       const p = st.P[k], H = p.h, m = aiM[k], B = bfs(p);
+      const cmd = guide || !ctx.isBot(k) ? '' : (aiCmd || (LV.tut && !BX.bot ? 'tut' : '')), noFetch = cmd === 'wash' || cmd === 'serve' || cmd === 'tut', noPlate = cmd === 'prep' || cmd === 'tut';
       m.job = '';
       const G = (i, act, job) => { m.job = job || ''; return i >= 0 ? {i, act} : null; };
       const fires = Object.keys(st.stn).filter(i => st.stn[i].s === 3).map(Number);
@@ -442,10 +511,11 @@ BX.register({
         const ex = st.P.find(q => q.h && q.h.k === 'e');
         if (!ex && extAt.length) return G(nearest(B, extAt), 'a', 'fire');
       }
+      if (cmd === 'wash' && (st.sink.n > 0 || st.dret > 0)) return st.sink.n > 0 ? G(sinkT, 'u', 'dish') : G(dretT, 'a', 'dish');
       const done = Object.keys(st.stn).map(Number).filter(i => st.stn[i].s === 2);
       const soon = Object.keys(st.stn).map(Number).filter(i => st.stn[i].s === 1 && st.stn[i].p > .45);
       const plateHolders = st.P.filter((q, j) => j !== k && q.h && q.h.k === 'p' && !q.h.x && !q.h.d).length + otherJob(k, 'plate');
-      if ((done.length + soon.length) > plateHolders) {
+      if (!noPlate && (done.length + soon.length) > plateHolders) {
         if (st.rack > 0) return G(rackT, 'a', 'plate');
         if (st.sink.n > 0) return G(sinkT, 'u', 'plate');
         if (st.dret > 0) return G(dretT, 'a', 'plate');
@@ -454,7 +524,8 @@ BX.register({
       }
       // dishes lying on counters → serve
       const dishes = Object.keys(st.it).map(Number).filter(i => st.it[i].k === 'p' && st.it[i].d && ordersWant(st.it[i].d));
-      if (dishes.length) return G(nearest(B, dishes, i => otherGoal(k, i)), 'a', 'serve');
+      if (dishes.length && !noPlate) return G(nearest(B, dishes, i => otherGoal(k, i)), 'a', 'serve');
+      if (noFetch) { if ((st.sink.n > 0 || st.dret > 0) && st.rack < 4) return st.sink.n > 0 ? G(sinkT, 'u', 'dish') : G(dretT, 'a', 'dish'); return null; }
       // chopping boards: chop raw items, collect chopped ones
       const raw = tilesOf('C').filter(i => st.it[i] && st.it[i].k === 'i' && !prepared(st.it[i]));
       if (raw.length) { const t = nearest(B, raw); if (t >= 0) return G(t, 'u', 'prep'); }
@@ -465,7 +536,7 @@ BX.register({
       const parked = tilesOf('#').filter(i => st.it[i] && st.it[i].k === 'i' && !prepared(st.it[i]));
       if (parked.length && tilesOf('C').some(i => !st.it[i])) { const t = nearest(B, parked, i => otherGoal(k, i)); if (t >= 0) return G(t, 'a', 'prep'); }
       // keep plates flowing
-      if (st.rack === 0 && (st.sink.n > 0 || st.dret > 0) && !otherJob(k, 'dish')) return st.sink.n > 0 ? G(sinkT, 'u', 'dish') : G(dretT, 'a', 'dish');
+      if (!noPlate && st.rack === 0 && (st.sink.n > 0 || st.dret > 0) && !otherJob(k, 'dish')) return st.sink.n > 0 ? G(sinkT, 'u', 'dish') : G(dretT, 'a', 'dish');
       // fetch a missing ingredient (keep previous claim when still valid)
       if (m.claim && missing[m.claim.st] !== undefined && pl.miss[m.claim.st] && pl.miss[m.claim.st].includes(m.claim.t)) {
         // my claim is in-flight; make sure no one else covered it already
@@ -477,7 +548,7 @@ BX.register({
         const crates = tilesOf(Object.keys(CRATE).filter(c => CRATE[c] === t)); if (!crates.length) continue;
         m.claim = {st: i, t}; m.job = 'fetch'; return {i: nearest(B, crates), act: 'a'};
       }
-      if ((st.sink.n > 0 || st.dret > 0) && st.rack < 3 && !otherJob(k, 'dish')) return st.sink.n > 0 ? G(sinkT, 'u', 'dish') : G(dretT, 'a', 'dish');
+      if (!noPlate && (st.sink.n > 0 || st.dret > 0) && st.rack < 3 && !otherJob(k, 'dish')) return st.sink.n > 0 ? G(sinkT, 'u', 'dish') : G(dretT, 'a', 'dish');
       return null;
     }
     function aiInput(seat) {
@@ -525,32 +596,37 @@ BX.register({
       if (portrait) {
         const ch = touch ? BX.clamp(h * .2, 140, 200) : 30;
         const top = two ? ch : 0;
-        const tkH = BX.clamp(w * .22, 70, 110);
-        const availH = h - ch - top - tkH - 10, ts = Math.min((w - 12) / GW, availH / GH);
-        L.ts = ts; L.ox = (w - ts * GW) / 2; L.oy = top + tkH + 6 + Math.max(0, (availH - ts * GH) / 2);
-        L.tk = {x: 6, y: top + 4, w: w - 12 - 72, h: tkH - 8}; L.pill = {x: w - 72, y: top + 4, w: 66, h: tkH - 8, vert: true};
+        const tkH = BX.clamp(w * .34, 120, 150), extra = 66;
+        const availH = h - ch - top - tkH - 10, ts = Math.min((w - 12) / GW, (availH - extra) / GH);
+        L.ts = ts; L.ox = (w - ts * GW) / 2; L.oy = top + tkH + 6 + Math.max(0, (availH - extra - ts * GH) / 2);
+        L.below = {x: w / 2, y: L.oy + ts * GH + ts * .3 + 4, w: w - 12};
+        if (!two) L.cmd = {x: 6, y: L.below.y + 26, w: w - 12, cols: 5};
+        L.tk = {x: 6, y: top + 4, w: w - 12 - 72, h: tkH - 8, rows: 2}; L.pill = {x: w - 72, y: top + 4, w: 66, h: tkH - 8, vert: true};
         if (touch) {
           const mk = (y0, slot) => ({slot, zone: {x: 0, y: y0, w: w * .55, h: ch}, bx: w * .24, by: y0 + ch / 2, R: Math.min(56, ch * .34),
-            A: {x: w * .84, y: y0 + ch * .42, r: Math.min(40, ch * .25)}, U: {x: w * .62, y: y0 + ch * .6, r: Math.min(33, ch * .21)}});
+            A: {x: w * .84, y: y0 + ch * .4, r: Math.min(40, ch * .25)}, U: {x: w * .62, y: y0 + ch * .6, r: Math.min(33, ch * .21)},
+            Dh: {x: w * .91, y: y0 + ch * .84, r: Math.min(23, ch * .14)}});
           L.ctrls.push(mk(h - ch, 0)); if (two) L.ctrls.push(mk(0, 1));
         } else L.hint = {x: w / 2, y: h - 15};
       } else {
         const side = touch ? BX.clamp(w * .19, 120, 230) : 0;
-        const tkH = BX.clamp(h * .17, 58, 100), hint = touch ? 0 : 26;
+        const tkH = BX.clamp(h * .2, 66, 104), hint = touch ? 0 : 26;
         const aw = w - side * 2 - 8, ah = h - tkH - hint - 8, ts = Math.min(aw / GW, ah / GH);
         L.ts = ts; L.ox = side + (w - side * 2 - ts * GW) / 2; L.oy = tkH + 4 + (ah - ts * GH) / 2;
-        if (touch) { L.tk = {x: side + 4, y: 4, w: w - side * 2 - 8, h: tkH - 8}; L.pill = {x: 6, y: 6, w: side - 12, h: 40, split: w - side + 6}; }
-        else { L.tk = {x: L.ox, y: 4, w: Math.max(200, ts * GW - 170), h: tkH - 8}; L.pill = {x: L.ox + ts * GW - 160, y: 6, w: 160, h: tkH - 12}; }
+        if (touch) { L.tk = {x: side + 4, y: 4, w: w - side * 2 - 8, h: tkH - 8}; L.pill = {x: 6, y: 6, w: side - 12, h: 40, split: w - side + 6}; if (!two) L.cmd = {x: 6, y: 72, w: side - 12, cols: 2}; }
+        else { L.tk = {x: L.ox, y: 4, w: Math.max(200, ts * GW - 170), h: tkH - 8}; L.pill = {x: L.ox + ts * GW - 160, y: 6, w: 160, h: tkH - 12}; if (L.ox > 120) L.cmd = {x: Math.max(6, L.ox - 118), y: L.oy + 8, w: 104, cols: 1}; }
         if (touch) {
           const R = Math.min(60, side * .33);
           if (!two) {
             L.ctrls.push({slot: 0, zone: {x: 0, y: 50, w: side + (w - 2 * side) * .15, h: h - 50}, bx: side / 2, by: h - R - 22, R,
-              A: {x: w - side * .38, y: h - 70, r: Math.min(44, side * .25)}, U: {x: w - side * .74, y: h - 44, r: Math.min(36, side * .2)}});
+              A: {x: w - side * .38, y: h - 70, r: Math.min(44, side * .25)}, U: {x: w - side * .74, y: h - 44, r: Math.min(36, side * .2)},
+              Dh: {x: w - side * .3, y: h - 70 - Math.min(44, side * .25) - 36, r: Math.min(25, side * .15)}});
           } else {
             for (const slot of [0, 1]) {
               const x0 = slot ? w - side : 0;
               L.ctrls.push({slot, zone: {x: x0, y: h * .55, w: side, h: h * .45}, bx: x0 + side / 2, by: h - R - 16, R: Math.min(R, h * .14),
-                A: {x: x0 + side * (slot ? .3 : .7), y: h * .34, r: Math.min(36, side * .21)}, U: {x: x0 + side * (slot ? .72 : .28), y: h * .42, r: Math.min(30, side * .18)}});
+                A: {x: x0 + side * (slot ? .3 : .7), y: h * .34, r: Math.min(36, side * .21)}, U: {x: x0 + side * (slot ? .72 : .28), y: h * .42, r: Math.min(30, side * .18)},
+                Dh: {x: x0 + side * (slot ? .3 : .7), y: h * .34 + Math.min(36, side * .21) + 26, r: Math.min(21, side * .13)}});
             }
           }
         } else L.hint = {x: w / 2, y: h - 13};
@@ -558,13 +634,11 @@ BX.register({
       return L;
     }
     /* ---------- input ---------- */
-    const aCount = [0, 0], joy = [{x: 0, y: 0}, {x: 0, y: 0}], ptrs = new Map(), press = [0, 0, 0, 0];
-    const A_KEYS = [['KeyE', 'Space', 'KeyJ'], ['Period', 'Enter', 'NumpadEnter', 'Numpad0']], U_KEYS = [['KeyQ', 'KeyF', 'ShiftLeft', 'KeyK'], ['Slash', 'ShiftRight', 'NumpadDecimal']];
+    const aCount = [0, 0], dCount = [0, 0], joy = [{x: 0, y: 0}, {x: 0, y: 0}], ptrs = new Map(), press = [0, 0, 0, 0, 0, 0];
     function hitCtrl(pt) {
       const L = layout();
-      for (const c of L.ctrls) {
-        if (Math.hypot(pt.x - c.A.x, pt.y - c.A.y) < c.A.r * 1.3) return {type: 'A', slot: c.slot};
-        if (Math.hypot(pt.x - c.U.x, pt.y - c.U.y) < c.U.r * 1.3) return {type: 'U', slot: c.slot};
+      for (const f of [1, 1.3]) for (const c of L.ctrls) for (const [b, type] of [[c.Dh, 'D'], [c.A, 'A'], [c.U, 'U']]) {
+        if (b && Math.hypot(pt.x - b.x, pt.y - b.y) < b.r * f) return {type, slot: c.slot};
       }
       for (const c of L.ctrls) { const z = c.zone; if (pt.x >= z.x && pt.x <= z.x + z.w && pt.y >= z.y && pt.y <= z.y + z.h) return {type: 'J', slot: c.slot, ox: pt.x, oy: pt.y, R: c.R}; }
       return null;
@@ -577,6 +651,7 @@ BX.register({
       hit.x = pt.x; hit.y = pt.y; ptrs.set(e.pointerId, hit);
       if (hit.type === 'A') { aCount[hit.slot]++; press[hit.slot * 2] = 1; }
       if (hit.type === 'U') press[hit.slot * 2 + 1] = 1;
+      if (hit.type === 'D') { dCount[hit.slot]++; press[4 + hit.slot] = 1; }
       if (hit.type === 'J') joy[hit.slot] = {x: 0, y: 0};
     });
     ctx.on(cv.cv, 'pointermove', e => {
@@ -597,19 +672,95 @@ BX.register({
       const uk = nLocal >= 2 ? U_KEYS[slot] : U_KEYS[0].concat(U_KEYS[1]);
       let u = uk.some(c => ctx.keys.has(c));
       for (const t of ptrs.values()) if (t.type === 'U' && t.slot === sl) u = true;
-      return {mx: Math.round(mx * 100) / 100, my: Math.round(my * 100) / 100, a: aCount[sl], u};
+      return {mx: Math.round(mx * 100) / 100, my: Math.round(my * 100) / 100, a: aCount[sl], u, d: dCount[sl]};
     }
     function key(e) {
       if (e.repeat) return;
       const n = ctx.mySeats.length;
-      if (n >= 2) { for (const s of [0, 1]) if (A_KEYS[s].includes(e.code)) aCount[s]++; }
-      else if (A_KEYS[0].includes(e.code) || A_KEYS[1].includes(e.code)) aCount[0]++;
+      if (n >= 2) { for (const s of [0, 1]) { if (A_KEYS[s].includes(e.code)) aCount[s]++; if (D_KEYS[s].includes(e.code)) dCount[s]++; } }
+      else { if (A_KEYS[0].includes(e.code) || A_KEYS[1].includes(e.code)) aCount[0]++; if (D_KEYS[0].includes(e.code) || D_KEYS[1].includes(e.code)) dCount[0]++; }
+    }
+
+    /* ================= action preview, guide arrow, partner commands ================= */
+    function preview(k) {
+      const p = st.P[k], H = p.h; let a = '', u = '';
+      if (!H && floorNear(p) >= 0) a = '捡起';
+      const f = front(p), ch = f >= 0 ? typ(f) : '.';
+      if (!a && f >= 0) {
+        if (CRATE[ch]) a = !H ? '拿' + ING[CRATE[ch]].n : H.k === 'i' && H.t === CRATE[ch] && !H.c ? '放回' : '';
+        else if (STN[ch]) { const s2 = st.stn[f]; if (H && H.k === 'i' && prepared(H) && accepts(f, H.t)) a = '下锅'; else if (H && H.k === 'p' && !H.x && !H.d && s2.s === 2) a = '装盘'; }
+        else if (ch === 'L') a = !H && st.rack > 0 ? '拿盘子' : H && H.k === 'p' && !H.x && !H.d ? '放回' : '';
+        else if (ch === 'H') a = H && H.k === 'p' && H.d ? '上菜' : '';
+        else if (ch === 'D') a = !H && st.dret > 0 ? '拿脏盘' : '';
+        else if (ch === 'K') a = H && H.k === 'p' && H.x ? '放进水槽' : '';
+        else if (ch === 'X') a = H && (H.k === 'i' || (H.k === 'p' && H.d)) ? '倒掉' : '';
+        else if (ch === '#' || ch === 'C' || ch === 'E') { const it = st.it[f]; if (H && !it) a = ch === 'C' && H.k !== 'i' ? '' : '放下'; else if (!H && it) a = '拿起'; else if (H && it && H.k === 'p' && !H.x && !H.d && it.k === 'p' && it.d) a = '装盘'; }
+      }
+      if (H && H.k === 'e') u = '灭火'; else if (H && H.k === 'i') u = '扔出';
+      else if (!H && ch === 'C') { const it = st.it[f]; if (it && it.k === 'i' && ING[it.t].chop && !it.c) u = '切菜'; }
+      else if (!H && ch === 'K' && st.sink.n > 0) u = '洗碗';
+      return {a, u, f};
+    }
+    function guideText(k, g) {
+      const p = st.P[k], H = p.h, ch = typ(g.i), act = g.act, it = st.it[g.i];
+      if (CRATE[ch]) return `去「${ING[CRATE[ch]].ch}」箱拿${ING[CRATE[ch]].n}`;
+      if (!H && it && it.k === 'e') return '着火了！快拿灭火器';
+      if (ch === 'C') return act === 'u' ? '按住「使用」把食材切好' : H ? '把食材放到砧板上' : '拿起切好的' + (it && it.k === 'i' ? ING[it.t].prep : '食材');
+      if (STN[ch]) {
+        const nm = STN_NAME[STN[ch]];
+        if (act === 'u') return '对着着火的锅按住「使用」灭火！';
+        if (act === 'w') return `拿好盘子，等${nm}里的菜做好`;
+        if (H && H.k === 'p') return `对着${nm}按「拿/放」装盘`;
+        if (H && H.k === 'i') return `把${ING[H.t].prep}放进${nm}`;
+      }
+      if (ch === 'L') return H ? '把空盘子放回盘架' : '去盘架拿一个干净盘子';
+      if (ch === 'H') return '把菜送到「出菜」窗口';
+      if (ch === 'D') return '去回收口拿脏盘子';
+      if (ch === 'K') return act === 'u' ? '按住「使用」洗碗' : '把脏盘子放进水槽';
+      if (ch === 'X') return '这个用不上了，倒进垃圾桶';
+      if (H && H.k === 'e') return '把灭火器放回去';
+      if (H) return '先放在空柜台上';
+      return '拿起柜台上的' + (it && it.k === 'p' ? '菜' : '东西');
+    }
+    const guideSeats = () => BX.bot ? [] : ctx.mySeats.filter(s2 => !ctx.isBot(s2));
+    let guides = [], guideCalcT = 0, guideUntil = 0;
+    function calcGuides() {
+      guides = [];
+      if (st.ph !== 'play' || st.over) return;
+      for (const k of guideSeats()) {
+        let g = null; try { g = decide(k, true); } catch (e) { g = null; }
+        if (g && g.i >= 0) guides.push({k, i: g.i, txt: guideText(k, g)});
+        else guides.push({k, i: -1, txt: st.orders.length ? '手上的活都安排好了，看看订单' : '等客人点单…'});
+      }
+    }
+    const guideOn = () => LV.tut || tAll < guideUntil;
+    let cmdBox = null, cmdKey = '';
+    if (ctx.mode === 'ai' && !BX.bot && ctx.mySeats.length === 1 && !LV.tut) {
+      cmdBox = BX.h('div', {style: 'position:absolute;display:grid;gap:5px;align-items:center'});
+      cmdBox.append(BX.h('div', {text: '伙伴', style: 'color:#f3e2c0;font-size:13px;font-weight:700;text-align:center;opacity:.85'}));
+      for (const [c, n] of CMDS) {
+        const b = BX.h('button', {class: 'bx-btn ghost', text: n, style: 'min-height:40px;padding:2px 4px;font-size:14px;border-radius:10px', on: {click: () => {
+          aiCmd = c; ctx.sfx('click'); ctx.toast(c ? '伙伴：好，我专心' + n + '！' : '伙伴：我自己看着办～'); syncCmd();
+        }}});
+        b.dataset.c = c; cmdBox.append(b);
+      }
+      ctx.ui('kc-cmd').append(cmdBox);
+    }
+    function syncCmd() { if (cmdBox) for (const b of cmdBox.querySelectorAll('button')) b.className = 'bx-btn ' + (b.dataset.c === aiCmd ? 'jade' : 'ghost'); }
+    syncCmd();
+    function placeCmd(L) {
+      if (!cmdBox) return;
+      const c = L.cmd, key = c ? [c.x, c.y, c.w, c.cols].map(Math.round).join() : 'none';
+      if (key === cmdKey) return; cmdKey = key;
+      if (!c) { cmdBox.style.display = 'none'; return; }
+      Object.assign(cmdBox.style, {display: 'grid', left: c.x + 'px', top: c.y + 'px', width: c.w + 'px', gridTemplateColumns: `repeat(${c.cols},1fr)`});
+      cmdBox.firstChild.style.gridColumn = c.cols === 2 ? 'span 2' : '';
     }
 
     /* ================= effects / audio (local) ================= */
     let seenEv = 0, chopSnd = 0, sprSnd = 0, tAll = 0;
     const parts = [], floats = [], tkSeen = new Map(), tkGone = [], pop = [0, 0], disp = st.P.map(p => ({x: p.x, y: p.y, ph: 0}));
-    let lastL = null, banner = null;
+    let lastL = null, banner = null; const prevs = [null, null];
     const tilePx = (i, L) => [L.ox + (i % GW + .5) * L.ts, L.oy + (Math.floor(i / GW) + .45) * L.ts];
     function burst(x, y, n, col, sp, life, kind) { for (let k = 0; k < n; k++) { const a = Math.random() * 6.28, v = sp * (.4 + Math.random()); parts.push({x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v - sp * .3, life: life * (.6 + Math.random() * .6), max: life, col, kind: kind || 'dot', r: 2 + Math.random() * 3}); } }
     function playEv() {
@@ -628,9 +779,13 @@ BX.register({
           case 'chopped': ctx.sfx('select'); if (at) burst(at[0], at[1], 8, '#9ed36a', 80, .5); break;
           case 'washed': ctx.sfx('splash'); if (at) burst(at[0], at[1], 10, '#bfe6ff', 80, .6, 'star'); break;
           case 'serve': ctx.sfx('coin'); setTimeout(() => ctx.sfx('bell'), 120); if (at) { burst(at[0], at[1], 16, '#ffd34d', 130, .8, 'star'); floats.push({x: at[0], y: at[1] - 10, t: 0, s: '+' + e.g, col: '#ffd34d'}); } tkGone.push({id: e.o, t: 0, ok: true}); break;
-          case 'fail': ctx.sfx('buzz'); tkGone.push({id: e.o, t: 0, ok: false}); if (L) floats.push({x: L.tk.x + 40, y: L.tk.y + L.tk.h, t: 0, s: '-10', col: '#ff7b6b'}); break;
+          case 'fail': ctx.sfx('buzz'); ctx.buzz(25); tkGone.push({id: e.o, t: 0, ok: false}); if (L) floats.push({x: L.tk.x + 40, y: L.tk.y + L.tk.h, t: 0, s: '-10', col: '#ff7b6b'}); break;
           case 'ding': ctx.sfx('bell'); if (at) burst(at[0], at[1] - 10, 8, '#fff6c0', 70, .6, 'star'); break;
-          case 'fire': ctx.sfx('boom'); ctx.toast('着火了！快拿灭火器！'); break;
+          case 'fire': ctx.sfx('boom'); ctx.toast('着火了！快拿灭火器！'); ctx.buzz(40); break;
+          case 'throw': ctx.sfx('whoosh'); break;
+          case 'catch': ctx.sfx('pop'); if (L) { const p = st.P[e.s]; burst(L.ox + p.x * L.ts, L.oy + (p.y - .4) * L.ts, 8, '#ffe08a', 70, .5, 'star'); } break;
+          case 'flop': ctx.sfx('hit'); break;
+          case 'dash': ctx.sfx('swish'); if (L) { const p = st.P[e.s]; burst(L.ox + p.x * L.ts, L.oy + (p.y + .2) * L.ts, 7, 'rgba(230,210,170,.8)', 50, .45); } break;
           case 'out': ctx.sfx('swish'); if (at) burst(at[0], at[1], 18, '#f4f4f4', 90, .9); break;
           case 'order': ctx.sfx('flip'); break;
           case 'dirty': ctx.sfx('tick'); break;
@@ -643,7 +798,7 @@ BX.register({
     function status() {
       const m = Math.floor(Math.ceil(st.left) / 60), s = Math.ceil(st.left) % 60;
       const sr = stars.filter(v => st.coins >= v).length;
-      ctx.status(`第${lv}关 · ${LV.name}　⏱ ${m}:${String(s).padStart(2, '0')}　金币 ${st.coins}　${'★'.repeat(sr)}${'☆'.repeat(3 - sr)}`);
+      ctx.status(`${lv ? '第' + lv + '关' : '教学'} · ${LV.name}　⏱ ${m}:${String(s).padStart(2, '0')}　金币 ${st.coins}　${'★'.repeat(sr)}${'☆'.repeat(3 - sr)}` + (sr < 3 ? `（下一星差 ${stars[sr] - st.coins}）` : ''));
     }
     ctx.info(0, ''); ctx.info(1, '');
 
@@ -698,13 +853,26 @@ BX.register({
       return bg;
     }
     /* ---------- tickets ---------- */
-    function drawTicket(g, o, x, y, w, h, k, gone) {
+    function drawTicket(g, o, x, y, w, h, k, gone, glow) {
       const r = REC[o.r], frac = BX.clamp(o.p / o.pm, 0, 1);
       g.save();
       const shake = frac < .25 && !gone ? Math.sin(tAll * 30) * 1.5 : 0;
       g.translate(x + w / 2 + shake, y + h / 2); g.scale(k, k); g.translate(-w / 2, -h / 2);
+      if (glow) { g.shadowColor = '#ffd34d'; g.shadowBlur = 14; g.fillStyle = '#ffd34d'; D.rr(g, -3, -3, w + 6, h + 6, 8); g.fill(); }
       g.shadowColor = 'rgba(0,0,0,.35)'; g.shadowBlur = 6; g.shadowOffsetY = 2;
       g.fillStyle = '#fffaf0'; D.rr(g, 0, 0, w, h, 6); g.fill(); g.shadowColor = 'transparent';
+      if (w > h * 1.55) {   // wide ticket (landscape phones): dish on the left, name + recipe on the right
+        const hb = h * .3;
+        g.fillStyle = frac < .25 ? '#c23a2b' : '#8a2a20'; D.rr(g, 0, 0, w, hb, 6); g.fill(); g.fillRect(0, hb * .5, w, hb * .5);
+        D.text(g, r.n, w / 2, hb / 2 + 1, {size: Math.min(hb * .78, w * .2), color: '#fff3e0', weight: 800});
+        const ds = Math.min(h - hb - 8, w * .36); drawPlate(g, 4 + ds / 2, hb + 2 + ds / 2, ds * 1.12, false); drawDish(g, 4 + ds / 2, hb + 2 + ds * .48, ds, o.r);
+        const n = r.ing.length, x0 = ds + 8, is = Math.min(h - hb - 10, (w - x0 - 4) / (n + 1)), rowY = hb + (h - hb - 6) / 2 + 1;
+        for (let j = 0; j < n; j++) drawIng(g, x0 + is * (j + .5), rowY, is * 1.35, r.ing[j], ING[r.ing[j]].chop);
+        seal(g, x0 + is * (n + .5), rowY, is * .78, STN_CH[r.st], '#3f7f6b');
+        g.fillStyle = 'rgba(0,0,0,.12)'; g.fillRect(4, h - 5, w - 8, 3.5);
+        g.fillStyle = frac > .5 ? '#3f9a4a' : frac > .25 ? '#e0a020' : '#d0533f'; g.fillRect(4, h - 5, (w - 8) * frac, 3.5);
+        g.restore(); return;
+      }
       g.fillStyle = frac < .25 ? '#c23a2b' : '#8a2a20'; D.rr(g, 0, 0, w, h * .2, 6); g.fill(); g.fillRect(0, h * .1, w, h * .1);
       D.text(g, r.n, w / 2, h * .1, {size: Math.min(h * .15, w * .17), color: '#fff3e0', weight: 800});
       const ds = Math.min(h * .4, w * .5); drawPlate(g, w / 2, h * .2 + ds * .5, ds * 1.15, false); drawDish(g, w / 2, h * .2 + ds * .48, ds, o.r);
@@ -727,12 +895,19 @@ BX.register({
         g.fillStyle = 'rgba(40,24,10,.28)'; D.circle(g, bx, by, c.R); g.fill(); g.strokeStyle = 'rgba(255,240,210,.45)'; g.lineWidth = 2; g.stroke();
         const kx = bx + joy[c.slot].x * c.R * .9, ky = by + joy[c.slot].y * c.R * .9;
         D.disc(g, kx, ky, c.R * .42, col, {ring: 'rgba(255,255,255,.5)'});
-        for (const [b, lab, sub, i] of [[c.A, '拿/放', '', 0], [c.U, '使用', '按住', 1]]) {
-          const held = [...ptrs.values()].some(t => t.slot === c.slot && t.type === (i ? 'U' : 'A'));
-          const pr = press[c.slot * 2 + i] || held ? 1 : 0;
-          D.disc(g, b.x, b.y + pr * 2, b.r, i ? '#3f7f6b' : col, {ring: 'rgba(255,255,255,.55)'});
-          D.text(g, lab, b.x, b.y + pr * 2 - (sub ? b.r * .12 : 0), {size: b.r * .44, color: '#fff', weight: 800, shadow: true});
+        const seat = ctx.mySeats[c.slot], pv = (seat != null && prevs[seat]) || {};
+        const uHold = pv.u === '切菜' || pv.u === '洗碗' || pv.u === '灭火';
+        const btns = [[c.A, pv.a || '拿/放', '', 0, pv.a ? 1 : .8], [c.U, pv.u || '使用', pv.u ? (uHold ? '按住' : '') : '按住', 1, pv.u ? 1 : .8]];
+        if (c.Dh) btns.push([c.Dh, '冲刺', '', 2, seat != null && st.P[seat] && st.P[seat].dcd > 0 ? .45 : .9]);
+        for (const [b, lab, sub, i, al] of btns) {
+          const held = [...ptrs.values()].some(t => t.slot === c.slot && t.type === ['A', 'U', 'D'][i]);
+          const pr = (i === 2 ? press[4 + c.slot] : press[c.slot * 2 + i]) || held ? 1 : 0;
+          g.globalAlpha = al;
+          D.disc(g, b.x, b.y + pr * 2, b.r, i === 1 ? '#3f7f6b' : i === 2 ? '#8a6a3c' : col, {ring: 'rgba(255,255,255,.55)'});
+          const fs = b.r * (lab.length > 3 ? .34 : lab.length > 2 ? .4 : .46);
+          D.text(g, lab, b.x, b.y + pr * 2 - (sub ? b.r * .12 : 0), {size: fs, color: '#fff', weight: 800, shadow: true});
           if (sub) D.text(g, sub, b.x, b.y + pr * 2 + b.r * .36, {size: b.r * .26, color: 'rgba(255,255,255,.8)'});
+          g.globalAlpha = 1;
         }
         if (L.ctrls.length > 1) D.text(g, ctx.name(ctx.mySeats[c.slot]), c.bx, c.by - c.R - 12, {size: 12, color: 'rgba(255,240,210,.8)'});
       }
@@ -758,6 +933,11 @@ BX.register({
           if (tp === 'pot') { g.fillStyle = '#4a4a4e'; D.circle(g, cx, cy, ts * .3); g.fill(); g.fillStyle = '#2f2f33'; D.circle(g, cx, cy, ts * .24); g.fill(); if (s.c.length || s.s === 1 || s.s === 2) { g.fillStyle = (s.r || s.c.join()).includes('veg') || s.r === 'soup' ? '#8cc152' : '#e7bf7f'; D.circle(g, cx, cy, ts * .21); g.fill(); if (s.s === 1) for (let k = 0; k < 3; k++) { const a = tAll * 3 + k * 2.1; g.fillStyle = 'rgba(255,255,255,.6)'; D.circle(g, cx + Math.cos(a) * ts * .1, cy + Math.sin(a * 1.3) * ts * .08, ts * .03 * (1 + Math.sin(tAll * 8 + k))); g.fill(); } } g.fillStyle = '#4a4a4e'; g.fillRect(cx - ts * .42, cy - ts * .04, ts * .1, ts * .08); g.fillRect(cx + ts * .32, cy - ts * .04, ts * .1, ts * .08); }
           else if (tp === 'wok') { if (s.s === 1) drawFlames(g, cx, cy + ts * .3, ts * .5, tAll); g.fillStyle = '#1e1e20'; g.beginPath(); g.ellipse(cx, cy, ts * .32, ts * .26, 0, 0, 7); g.fill(); g.fillStyle = '#3a3a3e'; g.beginPath(); g.ellipse(cx, cy - ts * .02, ts * .25, ts * .19, 0, 0, 7); g.fill(); g.fillStyle = '#5e3a20'; g.fillRect(cx + ts * .28, cy - ts * .04, ts * .18, ts * .07); for (const t of s.c) { const o = t === 'rice' ? [-.06, 0] : [.07, .03]; g.fillStyle = t === 'rice' ? '#f7f1e0' : '#5bb35e'; g.beginPath(); g.ellipse(cx + o[0] * ts, cy + o[1] * ts, ts * .1, ts * .07, 0, 0, 7); g.fill(); } if (s.s >= 1 && s.s < 3) { const jump = s.s === 1 ? Math.abs(Math.sin(tAll * 6)) * ts * .05 : 0; g.fillStyle = '#f2c94c'; g.beginPath(); g.ellipse(cx, cy - jump, ts * .16, ts * .1, 0, 0, 7); g.fill(); } }
           else { g.fillStyle = '#c99a5a'; g.beginPath(); g.ellipse(cx, cy, ts * .33, ts * .27, 0, 0, 7); g.fill(); g.strokeStyle = '#8a5f2c'; g.lineWidth = Math.max(1, ts * .03); g.stroke(); if (s.s === 1 || s.s === 2) { g.strokeStyle = 'rgba(138,95,44,.8)'; for (const k of [-1, 0, 1]) { g.beginPath(); g.moveTo(cx - ts * .28, cy + k * ts * .08); g.lineTo(cx + ts * .28, cy + k * ts * .08); g.stroke(); } } else s.c.forEach((t, k) => drawIng(g, cx + (k ? .1 : -.1) * ts, cy, ts * .45, t, true)); }
+          if (s.s === 0 && s.c.length) {   // what is already inside (Overcooked-style icon bubble)
+            const n = s.c.length, bw = ts * (.36 * n + .14), bx = cx - bw / 2, by = y - ts * .5;
+            g.fillStyle = 'rgba(255,250,240,.95)'; D.rr(g, bx, by, bw, ts * .42, ts * .12); g.fill(); g.strokeStyle = 'rgba(90,60,30,.5)'; g.lineWidth = 1; g.stroke();
+            s.c.forEach((t, j) => drawIng(g, bx + ts * (.25 + .36 * j), by + ts * .21, ts * .5, t, true));
+          }
           if (s.s === 1) {
             if (Math.random() < dt * 8) parts.push({x: cx + (Math.random() - .5) * ts * .3, y: cy - ts * .1, vx: (Math.random() - .5) * 8, vy: -ts * .9, life: 1.1, max: 1.1, col: 'rgba(255,255,255,.55)', kind: 'steam', r: ts * .1});
             g.fillStyle = 'rgba(0,0,0,.5)'; D.rr(g, x + ts * .1, y - ts * .16, ts * .8, ts * .12, 3); g.fill(); g.fillStyle = '#6cc46a'; D.rr(g, x + ts * .12, y - ts * .14, ts * .76 * s.p, ts * .08, 2); g.fill();
@@ -790,12 +970,18 @@ BX.register({
         }
       }
       // facing highlight for local players
+      const tags = [];
       st.P.forEach((p, k) => {
-        if (!ctx.isLocal(k) || (BX.bot && !ctx.isLocal(k))) return;
+        if (!ctx.isLocal(k)) return;
+        const pv = preview(k); prevs[k] = pv;
         const f = front(p); if (f < 0 || MAP[f] === '.' || MAP[f] === '~') return;
-        const x = L.ox + (f % GW) * ts, y = L.oy + Math.floor(f / GW) * ts;
-        g.strokeStyle = D.alpha(PAL[k], .55 + .3 * Math.sin(tAll * 6)); g.lineWidth = Math.max(2, ts * .06); g.setLineDash([ts * .15, ts * .1]); D.rr(g, x + 2, y + 2, ts - 4, ts * .8 - 2, ts * .12); g.stroke(); g.setLineDash([]);
+        const x = L.ox + (f % GW) * ts, y = L.oy + Math.floor(f / GW) * ts, act = pv.a || pv.u;
+        g.fillStyle = D.alpha(PAL[k], act ? .16 : .06); D.rr(g, x + 2, y + 2, ts - 4, ts * .8 - 2, ts * .12); g.fill();
+        g.strokeStyle = D.alpha(PAL[k], (act ? .7 : .4) + .25 * Math.sin(tAll * 6)); g.lineWidth = Math.max(2, ts * (act ? .07 : .045)); g.setLineDash([ts * .15, ts * .1]); D.rr(g, x + 2, y + 2, ts - 4, ts * .8 - 2, ts * .12); g.stroke(); g.setLineDash([]);
+        if (act && ctx.pref('hints') && !BX.bot) tags.push({x: x + ts / 2, y: y + ts * .86, s: [pv.a, pv.u].filter(Boolean).join(' · '), col: PAL[k]});
       });
+      // things lying on the floor
+      for (const o of st.fl) { const x = L.ox + o.x * ts, y = L.oy + o.y * ts; g.fillStyle = 'rgba(0,0,0,.18)'; g.beginPath(); g.ellipse(x, y + ts * .14, ts * .24, ts * .08, 0, 0, 7); g.fill(); drawItem(g, x, y, ts * .62, o.it); }
       // chefs (sorted by depth)
       const order = st.P.map((p, k) => k).sort((a, b) => st.P[a].y - st.P[b].y);
       for (const k of order) {
@@ -811,8 +997,30 @@ BX.register({
           for (let n = 0; n < 2; n++) parts.push({x: sx + dx * ts * .3, y: sy - ts * .3 + dy * ts * .2, vx: dx * ts * 3 + (Math.random() - .5) * ts, vy: dy * ts * 3 + (Math.random() - .5) * ts, life: .35, max: .35, col: '#f4f8ff', kind: 'dot', r: ts * .08});
           if ((sprSnd -= dt) <= 0) { sprSnd = .3; ctx.sfx('swish'); }
         }
+        if (p.ds > 0 && Math.random() < .7) parts.push({x: sx + (Math.random() - .5) * ts * .3, y: sy - ts * .05, vx: -p.fx * ts * 2, vy: -p.fy * ts * 2 - 10, life: .35, max: .35, col: 'rgba(240,225,190,.75)', kind: 'steam', r: ts * .08});
         if (p.act === 'chop') { if ((chopSnd -= dt) <= 0) { chopSnd = .18; ctx.sfx('tick'); const f = front(p); if (f >= 0) { const [fx0, fy0] = tilePx(f, L); burst(fx0, fy0, 2, '#b7e07a', 50, .35); } } }
         if (p.act === 'wash' && Math.random() < dt * 12) { const [fx0, fy0] = tilePx(sinkT, L); parts.push({x: fx0 + (Math.random() - .5) * ts * .5, y: fy0, vx: (Math.random() - .5) * 30, vy: -40 - Math.random() * 30, life: .6, max: .6, col: 'rgba(220,240,255,.9)', kind: 'bub', r: ts * .06}); }
+      }
+      for (const o of st.fly) {
+        const k = BX.clamp((o.t || 0) / FLY_T, 0, 1), lift = Math.sin(Math.PI * Math.min(1, k * 1.3)) * ts * .45 + ts * .35;
+        const x = L.ox + o.x * ts, y = L.oy + o.y * ts;
+        g.fillStyle = 'rgba(0,0,0,.2)'; g.beginPath(); g.ellipse(x, y + ts * .1, ts * .18, ts * .06, 0, 0, 7); g.fill();
+        g.save(); g.translate(x, y - lift); g.rotate(tAll * 12); drawItem(g, 0, 0, ts * .62, o.it); g.restore();
+      }
+      for (const t of tags) {
+        const fs = Math.max(11, Math.min(15, ts * .3)); g.font = `800 ${fs}px ${BX.F ? BX.F.sans || 'sans-serif' : 'sans-serif'}`;
+        const tw2 = g.measureText(t.s).width + 12;
+        g.fillStyle = 'rgba(30,18,8,.82)'; D.rr(g, t.x - tw2 / 2, t.y, tw2, fs + 6, 6); g.fill(); g.strokeStyle = D.alpha(t.col, .9); g.lineWidth = 1.5; g.stroke();
+        D.text(g, t.s, t.x, t.y + fs / 2 + 3, {size: fs, color: '#fff3e0', weight: 800});
+      }
+      // guide arrow (tutorial level / 💡)
+      if ((guideCalcT -= dt) <= 0) { guideCalcT = .25; if (guideOn()) calcGuides(); else guides = []; }
+      if (guideOn()) for (const gd of guides) {
+        if (gd.i < 0) continue;
+        const x = L.ox + (gd.i % GW + .5) * ts, y = L.oy + Math.floor(gd.i / GW) * ts, b = Math.abs(Math.sin(tAll * 4)) * ts * .18;
+        g.strokeStyle = `rgba(255,211,77,${.6 + .3 * Math.sin(tAll * 6)})`; g.lineWidth = Math.max(2.5, ts * .08); D.rr(g, x - ts * .48, y + 1, ts * .96, ts * .8, ts * .14); g.stroke();
+        g.fillStyle = '#ffd34d'; g.strokeStyle = '#5a2a10'; g.lineWidth = 2;
+        g.beginPath(); g.moveTo(x, y - ts * .08 - b); g.lineTo(x - ts * .26, y - ts * .42 - b); g.lineTo(x - ts * .1, y - ts * .42 - b); g.lineTo(x - ts * .1, y - ts * .7 - b); g.lineTo(x + ts * .1, y - ts * .7 - b); g.lineTo(x + ts * .1, y - ts * .42 - b); g.lineTo(x + ts * .26, y - ts * .42 - b); g.closePath(); g.fill(); g.stroke();
       }
       // particles
       for (let j = parts.length - 1; j >= 0; j--) {
@@ -826,18 +1034,21 @@ BX.register({
       }
       if (parts.length > 400) parts.splice(0, parts.length - 400);
       // tickets
-      const tk = L.tk, n = 4, tw = Math.min(130, (tk.w - 6 * (n - 1)) / n), th = tk.h;
+      const tk = L.tk, rows = tk.rows || 1, n = 4 / rows, tw = Math.min(170, (tk.w - 6 * (n - 1)) / n), th = (tk.h - 6 * (rows - 1)) / rows;
+      const tkX = j => tk.x + (j % n) * (tw + 6), tkY = j => tk.y + Math.floor(j / n) * (th + 6);
       const now = tAll;
+      const held = new Set(); st.P.forEach((p, k) => { if (ctx.isLocal(k) && p.h && p.h.k === 'p' && p.h.d) held.add(p.h.d); });
+      const glowId = {}; for (const r of held) { let b = null; for (const o of st.orders) if (o.r === r && (!b || o.p < b.p)) b = o; if (b) glowId[b.id] = 1; }
       st.orders.forEach((o, j) => {
         if (!tkSeen.has(o.id)) tkSeen.set(o.id, now);
         const age = now - tkSeen.get(o.id), k = age < .45 ? BX.ease.back(Math.min(1, age / .45)) : 1;
         const bounce = age < .9 ? Math.sin(age * 14) * (1 - age / .9) * 4 : 0;
-        drawTicket(g, o, tk.x + j * (tw + 6), tk.y + bounce, tw, th, Math.max(.01, k));
+        if (j < 4) drawTicket(g, o, tkX(j), tkY(j) + bounce, tw, th, Math.max(.01, k), null, glowId[o.id]);
       });
       for (let j = tkGone.length - 1; j >= 0; j--) {
         const t = tkGone[j]; t.t += dt; if (t.t > .7) { tkGone.splice(j, 1); continue; }
         const idx = st.orders.length + tkGone.length - 1 - j;
-        if (idx < n) { g.globalAlpha = 1 - t.t / .7; drawTicketGhost(g, tk.x + idx * (tw + 6), tk.y - t.t * 40, tw, th, t.ok); g.globalAlpha = 1; }
+        if (idx < 4) { g.globalAlpha = 1 - t.t / .7; drawTicketGhost(g, tkX(idx), tkY(idx) - t.t * 40, tw, th, t.ok); g.globalAlpha = 1; }
       }
       if (!st.orders.length && st.ph === 'play') D.text(g, '等待客人点单…', tk.x + tk.w / 2, tk.y + th / 2, {size: Math.min(18, th * .3), color: 'rgba(243,226,192,.6)', font: 'serif'});
       // timer + coins pills
@@ -849,9 +1060,19 @@ BX.register({
       if (banner) { banner.t += dt; const a = banner.t; if (a > 1.6) banner = null; else { const k = BX.ease.back(Math.min(1, a / .35)); g.save(); g.globalAlpha = Math.min(1, (1.6 - a) * 3); g.translate(L.ox + GW * ts / 2, L.oy + GH * ts / 2); g.scale(k, k); D.text(g, banner.s, 0, 0, {size: ts * 1.5, color: '#ffe08a', font: 'deco', weight: 400, stroke: '#8a2a20', strokeW: 7}); g.restore(); } }
       if (L.hint) {
         const two = ctx.mySeats.length >= 2;
-        D.text(g, two ? '左：WASD 移动 · E 拿放 · Q 使用　　右：方向键 移动 · . 拿放 · / 使用' : 'WASD / 方向键 移动 · 空格 / E 拿起放下 · 按住 Q / Shift 切菜·洗碗·灭火', L.hint.x, L.hint.y, {size: 13, color: 'rgba(243,226,192,.75)', maxW: cv.w - 20});
+        D.text(g, two ? '左：WASD 移动 · E 拿放 · Q 使用 · R 冲刺　　右：方向键 · . 拿放 · / 使用 · , 冲刺' : 'WASD / 方向键 移动 · 空格 / E 拿放 · 按住 Q 切菜/洗碗/灭火（拿着食材时轻按 = 扔） · R 冲刺', L.hint.x, L.hint.y, {size: 13, color: 'rgba(243,226,192,.75)', maxW: cv.w - 20});
+      }
+      // guide text
+      if (guideOn() && guides.length && st.ph === 'play') {
+        const gd = guides[0], txt = (guides.length > 1 ? '' : (LV.tut ? '教学 · ' : '💡 ')) + guides.map(q => (guides.length > 1 ? ctx.name(q.k) + '：' : '') + q.txt).join('　');
+        const fs = Math.max(13, Math.min(17, ts * .42));
+        const bx = L.below ? L.below.x : L.ox + GW * ts / 2, by = L.below ? L.below.y : L.oy + GH * ts - fs * .2;
+        g.font = `800 ${fs}px sans-serif`; const tw2 = Math.min(cv.w - 12, g.measureText(txt).width + 24);
+        g.fillStyle = 'rgba(30,18,8,.86)'; D.rr(g, bx - tw2 / 2, by - fs * .9, tw2, fs * 1.8, fs * .5); g.fill(); g.strokeStyle = '#ffd34d'; g.lineWidth = 1.5; g.stroke();
+        D.text(g, txt, bx, by, {size: fs, color: '#ffe08a', weight: 800, maxW: tw2 - 12}); void gd;
       }
       if (L.touch) drawCtrls(g, L);
+      placeCmd(L);
       if ((statT -= dt) <= 0) { statT = .25; status(); }
     }
     function drawTicketGhost(g, x, y, w, h, ok) {
@@ -878,12 +1099,12 @@ BX.register({
       } else if (P.split) {
         pill(P.x, P.y, P.w, P.h, 't', tstr, low ? '#ff8a7a' : null);
         pill(P.split, P.y, P.w, P.h, 'c', String(st.coins));
-        D.text(g, starStr, P.split + P.w / 2, P.y + P.h + 14, {size: 16, color: '#ffd34d'});
+        D.text(g, starStr + (sr < 3 ? ` 差${stars[sr] - st.coins}` : ''), P.split + P.w / 2, P.y + P.h + 14, {size: 15, color: '#ffd34d', maxW: P.w});
       } else {
         const hh = Math.min(34, (P.h - 4) / 2);
         pill(P.x, P.y, P.w * .5 - 3, hh, 't', tstr, low ? '#ff8a7a' : null);
         pill(P.x + P.w * .5 + 3, P.y, P.w * .5 - 3, hh, 'c', String(st.coins));
-        D.text(g, starStr + `  1星 ${stars[0]}`, P.x + P.w / 2, P.y + hh + 14, {size: 14, color: '#ffd34d'});
+        D.text(g, starStr + (sr < 3 ? `  下一星差 ${stars[sr] - st.coins}` : '  满星！'), P.x + P.w / 2, P.y + hh + 14, {size: 14, color: '#ffd34d', maxW: P.w + 20});
       }
     }
 
@@ -895,10 +1116,12 @@ BX.register({
       snapshot() {
         const r2 = v => Math.round(v * 100) / 100;
         return {lv: st.lv, ph: st.ph, t: r2(st.t), left: r2(st.left), coins: st.coins, served: st.served, failed: st.failed, orders: st.orders.map(o => ({id: o.id, r: o.r, p: r2(o.p), pm: o.pm})),
-          P: st.P.map(p => ({x: r2(p.x), y: r2(p.y), vx: 0, vy: 0, fx: p.fx, fy: p.fy, h: p.h, mv: p.mv, act: p.act, i: p.i})),
+          P: st.P.map(p => ({x: r2(p.x), y: r2(p.y), vx: 0, vy: 0, fx: p.fx, fy: p.fy, h: p.h, mv: p.mv, act: p.act, i: p.i, ds: r2(p.ds), dcd: r2(p.dcd)})),
+          fly: st.fly.map(o => ({x: r2(o.x), y: r2(o.y), vx: 0, vy: 0, it: o.it, by: o.by, t: r2(o.t)})), fl: st.fl.map(o => ({x: r2(o.x), y: r2(o.y), it: o.it})),
           it: st.it, stn: st.stn, rack: st.rack, dret: st.dret, sink: {n: st.sink.n, p: r2(st.sink.p)}, ev: st.ev, evId: st.evId, over: st.over, star: st.star};
       },
       restore(d) { Object.assign(st, d); },
+      hint() { if (st.ph !== 'play') { ctx.toast('开工后再来看提示'); return; } guideUntil = tAll + 8; guideCalcT = 0; calcGuides(); if (guides[0]) ctx.toast(guides[0].txt); },
       draw,
       destroy() { parts.length = 0; },
     };

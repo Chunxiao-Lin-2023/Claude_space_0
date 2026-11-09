@@ -126,11 +126,12 @@ BX.register({
   desc: '在九个园林小球场上推杆：借边库反弹、绕过沙坑和水池、钻过假山洞。每洞看谁用的杆数少，九洞总杆数最少者胜。',
   kind: 'turn', seats: [1, 4], defSeats: 2, seatColors: ['#c23a2b', '#2f5d8a', '#3f8f5b', '#d9a12b'], aiDelay: 450,
   options: [{key: 'holes', label: '洞数', choices: [[3, '前 3 洞'], [9, '9 洞']], def: 9}],
+  howto: ['在画面任意处<b>按住向后拉</b>（像弹弓），球朝反方向滚出，拉得越长越用力，松手击球。', '球周围的<b>彩色圆环</b>是力度；虚线会显示第一次碰库后的反弹方向。', '下方 <b>↺ ↻</b> 微调方向、<b>− +</b> 微调力度（按住连续调），再点「击球」。淡色虚线是你上一杆的路线。', '球滚动时点一下画面可快进；💡 提示会画出建议的方向和力度。键盘：←→ 转向、↑↓ 力度（Shift 加速）、空格击球。'],
   rules: `<p>共 <b>9 洞</b>（可选只打前 3 洞）。每洞所有玩家依次上场，<b>每人一直推杆直到球进洞</b>，再轮到下一位。</p>
 <p><b>计杆：</b>每推一次记 1 杆。球落入<b>水池</b>罚 1 杆，球放回击球前的位置。每洞最多 <b>${CAP} 杆</b>，到达上限仍未进洞记 ${CAP} 杆。</p>
 <p><b>场地：</b>木栏可以反弹（打库边借角度）；圆形<b>石墩</b>弹性更强；<b>沙坑</b>阻力很大；<b>坡道</b>会把球往低处推（看地面箭头）；<b>假山洞</b>从一个洞口进、另一个洞口出。球速太快经过洞口会“吃边”滑走，力度要恰到好处。</p>
 <p>每洞有标准杆（<b>标准杆 Par</b>），记分卡上显示与标准杆之差。九洞总杆数<b>最少者胜</b>，并列同胜。单人练习时会记录你的最好成绩。</p>
-<p><b>操作：</b>在画面任意处按住并<b>向后拉</b>（像弹弓），球会朝相反方向击出，拉得越长越用力；虚线显示开头一段路线（不含反弹）。键盘：←→ 转向、↑↓ 力度、空格击球。</p>`,
+<p><b>操作：</b>在画面任意处按住并<b>向后拉</b>（像弹弓），球会朝相反方向击出，拉得越长越用力；球周围的圆环显示力度，虚线显示开头一段路线和第一次反弹。下方按钮可微调方向与力度。键盘：←→ 转向、↑↓ 力度、空格击球。</p>`,
   icon(g, w, h) {
     D.wood(g, 0, 0, w, h, {seed: 9, base: '#6b4426'});
     g.fillStyle = '#3f8f5b'; D.rr(g, 10, 14, w - 20, h - 28, 10); g.fill();
@@ -148,7 +149,15 @@ BX.register({
     const NH = BX.test ? 2 : (ctx.opts.holes || 9);
     const st = {n: ctx.n, NH, hole: 0, turn: 0, strokes: 0, ball: HOLES[0].tee.slice(), card: BX.range(ctx.n).map(() => []), over: false, last: null};
     const cv = ctx.canvas(), pb = K.playback(ctx), fx = K.fx(), cache = K.cache();
-    let show = null, aim = {dx: 1, dy: 0, p: .35}, keyT = 0, intro = 0;
+    let show = null, aim = {dx: 1, dy: 0, p: .35}, keyT = 0, intro = 0, hintA = null, hintT = 0, aiPick = null;
+    const skipKey = K.skip(ctx, cv, pb), lastPutt = {};
+    const ui = ctx.ui(''), bar = BX.h('div', {class: 'pk-bar'}); ui.append(bar);
+    function rot(deg) { const a = Math.atan2(aim.dy, aim.dx) + deg * Math.PI / 180; aim = {dx: Math.cos(a), dy: Math.sin(a), p: aim.p}; keyT = performance.now(); }
+    function pw(d) { aim = Object.assign({}, aim, {p: BX.clamp(Math.round(aim.p * 100 + d) / 100, .02, 1)}); keyT = performance.now(); }
+    const adjA = K.adj(bar, '方向', () => { const d = Math.round(((Math.atan2(aim.dy, aim.dx) * 180 / Math.PI) % 360 + 360) % 360 * 2) / 2; return d + '°'; }, (d, k) => rot(d * (k > 12 ? 2 : .5)), {minus: '↺', plus: '↻'});
+    const adjP = K.adj(bar, '力度', () => String(Math.round(aim.p * 100)), (d, k) => pw(d * (k > 12 ? 3 : 1)));
+    K.go(bar, '击球', () => putt());
+
     /* ---------- view ---------- */
     function bbox(hi) {
       const h = HOLES[hi]; let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9;
@@ -160,11 +169,11 @@ BX.register({
     function layout() {
       const W = cv.w, H = cv.h, port = H > W * 1.05;
       const cardH = port ? 26 + 22 * ctx.n : 0, cardW = port ? 0 : Math.min(250, W * .26);
-      const aw = W - cardW, ah = H - cardH;
+      const barH = K.barH(bar, 56), aw = W - cardW, ah = H - cardH - barH;
       const [x0, y0, x1, y1] = bbox(Math.min(Z.hole, HOLES.length - 1));
       const lw = port ? y1 - y0 : x1 - x0, lh = port ? x1 - x0 : y1 - y0;
-      const f = BX.fit(aw, ah - (port ? 44 : 0), lw, lh, 10);
-      return {W, H, port, s: f.s, ox: f.x, oy: (port ? cardH : 0) + f.y, cardH, cardW, x0, y0, x1, y1};
+      const f = BX.fit(aw, ah, lw, lh, 10);
+      return {W, H, port, s: f.s, ox: f.x, oy: (port ? cardH : 0) + f.y, cardH, cardW, x0, y0, x1, y1, barH};
     }
     let Z = st;
     let V = layout();
@@ -178,9 +187,11 @@ BX.register({
     });
     function putt() { if (!myTurn()) return; ctx.sfx('hit'); ctx.act({dx: +aim.dx.toFixed(6), dy: +aim.dy.toFixed(6), p: +aim.p.toFixed(4)}, st.turn); }
     function key(e) {
+      if (skipKey(e)) return;
       if (!myTurn()) return;
-      if (e.code === 'ArrowLeft' || e.code === 'ArrowRight') { const a = Math.atan2(aim.dy, aim.dx) + (e.code === 'ArrowRight' ? 1 : -1) * Math.PI / 120; aim.dx = Math.cos(a); aim.dy = Math.sin(a); keyT = performance.now(); }
-      if (e.code === 'ArrowUp' || e.code === 'ArrowDown') { aim.p = BX.clamp(aim.p + (e.code === 'ArrowUp' ? .01 : -.01), .02, 1); keyT = performance.now(); }
+      const m = e.shiftKey ? 5 : 1;
+      if (e.code === 'ArrowLeft' || e.code === 'ArrowRight') rot((e.code === 'ArrowRight' ? 1.5 : -1.5) * m);
+      if (e.code === 'ArrowUp' || e.code === 'ArrowDown') pw((e.code === 'ArrowUp' ? 1 : -1) * m);
       if (e.code === 'Space' || e.code === 'Enter') putt();
     }
     /* ---------- rules ---------- */
@@ -218,7 +229,9 @@ BX.register({
           st.strokes = 0;
           if (!st.over) st.ball = HOLES[st.hole].tee.slice();
         }
+        hintA = null;
         if (!ctx.fast) {
+          lastPutt[who] = {hole: snap.hole, pts: r.frames.filter((f, i) => i % 3 === 0 && !f[2]).map(f => [f[0], f[1]])};
           show = {r, snap, note, sc, who, par: h.par, done: false, ei: 0, newHole};
           const simT = r.steps * DT;
           pb.start(simT + (done ? 1.6 : .5), () => { show = null; if (newHole) intro = 1; status(); }, []);
@@ -228,10 +241,13 @@ BX.register({
       },
       aiMove(seat, level) { return ai(seat, level); },
       onTurn: status, key,
+      showHint() { if (aiPick) { hintA = aiPick; hintT = performance.now(); } },
       resize() { V = layout(); },
       frame(dt) {
         pb.tick(dt); fx.update(dt); intro = Math.max(0, intro - dt * .6);
         Z = show ? Object.assign({}, st, show.snap, {over: false}) : st; V = layout();
+        bar.classList.toggle('hide', !myTurn());
+        if (myTurn()) { adjA.refresh(); adjP.refresh(); }
         draw(dt);
       },
     };
@@ -271,7 +287,7 @@ BX.register({
       const na = [0, .1, .045, .018][level], np = [0, .14, .07, .03][level];
       const g2 = () => (Math.random() + Math.random() + Math.random() - 1.5) / 1.5;
       const ang = best.a + g2() * na, p = BX.clamp(best.p * (1 + g2() * np), .02, 1);
-      if (!ctx.isRemote(seat)) aim = {dx: Math.cos(ang), dy: Math.sin(ang), p};
+      aiPick = {dx: Math.cos(ang), dy: Math.sin(ang), p};
       return {dx: +Math.cos(ang).toFixed(6), dy: +Math.sin(ang).toFixed(6), p: +p.toFixed(4)};
     }
     function blocked(h, x, y) {
@@ -379,6 +395,7 @@ BX.register({
       fx.draw(g, T, 1);
       g.restore();
       fx.drawFlash(g, V.W, V.H);
+      K.skipLabel(g, (V.W - V.cardW) / 2, V.H - 20, pb);
       drawCard(g);
       if (intro > 0 && !st.over) {
         const a = Math.min(1, intro * 2.5), hh = HOLES[st.hole];
@@ -388,17 +405,49 @@ BX.register({
         g.globalAlpha = 1;
       }
     }
+    /* straight aim ray with up to `nb` reflections off rails / stone drums (world units) */
+    function ray(h, x, y, dx, dy, L, nb) {
+      const S2 = segs(h), pts = [[x, y]], st2 = .4; let left = L, bounces = 0;
+      while (left > 0) {
+        x += dx * st2; y += dy * st2; left -= st2;
+        let hit = null;
+        for (const s2 of S2) { const ex = s2[2] - s2[0], ey = s2[3] - s2[1], L2 = ex * ex + ey * ey; let t = ((x - s2[0]) * ex + (y - s2[1]) * ey) / L2; t = t < 0 ? 0 : t > 1 ? 1 : t; const ox = x - s2[0] - ex * t, oy = y - s2[1] - ey * t, d2 = ox * ox + oy * oy; if (d2 < BR * BR && d2 > 1e-9) { const d = Math.sqrt(d2); hit = [ox / d, oy / d]; break; } }
+        if (!hit && h.bump) for (const b of h.bump) { const ox = x - b[0], oy = y - b[1], md = BR + b[2]; if (ox * ox + oy * oy < md * md) { const d = Math.hypot(ox, oy) || 1; hit = [ox / d, oy / d]; break; } }
+        if (hit) {
+          const vn = dx * hit[0] + dy * hit[1]; if (vn >= 0) continue;
+          pts.push([x, y]); if (bounces++ >= nb) break;
+          dx -= 2 * vn * hit[0]; dy -= 2 * vn * hit[1]; left *= .75;
+        }
+        const cx = h.cup[0] - x, cy = h.cup[1] - y; if (cx * cx + cy * cy < CUP * CUP) { pts.push([h.cup[0], h.cup[1]]); return pts; }
+      }
+      pts.push([x, y]); return pts;
+    }
+    function powerRing(g, x, y, p, col, a = 1) {
+      const r = BR * V.s * 1.15 + 9; g.save(); g.globalAlpha = a; g.lineCap = 'round';
+      g.strokeStyle = 'rgba(20,12,6,.45)'; g.lineWidth = 6; D.circle(g, x, y, r); g.stroke();
+      g.strokeStyle = col || (p < .45 ? '#5aa08a' : p < .75 ? '#e6c57d' : '#d0533f'); g.lineWidth = 4; g.beginPath(); g.arc(x, y, r, -Math.PI / 2, -Math.PI / 2 + p * Math.PI * 2); g.stroke();
+      g.restore();
+    }
     function drawAim(g, x, y) {
-      const S = V.s, sdx = V.port ? aim.dy : aim.dx, sdy = V.port ? -aim.dx : aim.dy;
-      const L = (10 + aim.p * 40) * S;
-      const pts = []; for (let i = 0; i <= 12; i++) pts.push([x + sdx * L * i / 12, y + sdy * L * i / 12]);
-      K.guide(g, pts, {color: '#fffaf0', w: 3, alpha: .95, fade: .7, dash: [5, 7]});
+      const S = V.s, h = HOLES[Z.hole], sdx = V.port ? aim.dy : aim.dx, sdy = V.port ? -aim.dx : aim.dy;
+      const lp = lastPutt[Z.turn];
+      if (lp && lp.hole === Z.hole) K.ghost(g, lp.pts.map(q => T(q[0], q[1])), {color: '#fffaf0', alpha: .35, label: '上一杆'});
+      if (hintA) {
+        const hp = ray(h, Z.ball[0], Z.ball[1], hintA.dx, hintA.dy, 10 + hintA.p * 55, 2).map(q => T(q[0], q[1]));
+        K.guide(g, hp, {color: K.HINT, w: 4, alpha: K.pulse(hintT), fade: .2, dash: [8, 6]});
+        powerRing(g, x, y, hintA.p, K.HINT, .6);
+        D.text(g, '💡 力度 ' + Math.round(hintA.p * 100), x, y + BR * S + 30, {size: 13, color: '#1f6b50', weight: 800, stroke: 'rgba(255,255,255,.9)', strokeW: 3});
+      }
+      const L = 10 + aim.p * 40;
+      const wp = ctx.pref('hints') ? ray(h, Z.ball[0], Z.ball[1], aim.dx, aim.dy, L, 1) : [[Z.ball[0], Z.ball[1]], [Z.ball[0] + aim.dx * L, Z.ball[1] + aim.dy * L]];
+      K.guide(g, wp.map(q => T(q[0], q[1])), {color: '#fffaf0', w: 3, alpha: .95, fade: .6, dash: [5, 7]});
+      powerRing(g, x, y, aim.p);
       // putter
       const px = x - sdx * (BR * S * 2 + aim.p * S * 6), py = y - sdy * (BR * S * 2 + aim.p * S * 6);
       g.strokeStyle = '#2b2118'; g.lineWidth = S * 1.1; g.lineCap = 'round'; g.beginPath(); g.moveTo(px - sdy * S * 2.4, py + sdx * S * 2.4); g.lineTo(px + sdy * S * 2.4, py - sdx * S * 2.4); g.stroke();
       g.strokeStyle = C.gold; g.lineWidth = S * .5; g.stroke();
       if (sling.on || performance.now() - keyT < 1500) K.meter(g, V.W - (V.cardW || 0) - 30, (V.cardH || 0) + 40, 14, Math.min(160, V.H * .35), aim.p, {});
-      if (Z.hole === 0 && Z.strokes === 0 && !sling.on && performance.now() - keyT > 3000) D.text(g, '按住画面向后拉，松手击球', V.port ? V.W / 2 : (V.W - V.cardW) / 2, V.H - 22, {size: 15, color: '#2b2118', font: 'serif', weight: 700, stroke: 'rgba(255,250,235,.8)', strokeW: 4});
+      if (Z.hole === 0 && Z.strokes === 0 && !sling.on && performance.now() - keyT > 3000) D.text(g, '按住画面向后拉，松手击球', V.port ? V.W / 2 : (V.W - V.cardW) / 2, V.H - V.barH - 8, {size: 15, color: '#2b2118', font: 'serif', weight: 700, stroke: 'rgba(255,250,235,.8)', strokeW: 4});
     }
     function fireEv(e, x, y) {
       if (e[1] === 'wall') { ctx.sfx('bounce'); fx.burst(x, y, {n: 5, sp: 20, color: '#f3e2c0', life: .3, size: 2}); }
@@ -412,11 +461,11 @@ BX.register({
         const d = show.sc - show.par, name = show.sc === 1 ? '一杆进洞！' : d <= -2 ? '老鹰！' : d === -1 ? '小鸟！' : d === 0 ? '标准杆' : d === 1 ? '柏忌' : '+' + d;
         ctx.sfx(show.sc === 1 || d < 0 ? 'win' : 'score'); fx.flashOn(show.sc === 1 ? 1 : .5);
         fx.burst(cx, cy, {n: show.sc === 1 ? 60 : 28, sp: 60, color: ['#ffe28a', '#d0533f', '#fff6dd', '#5aa08a'], life: 1.1, g: 30});
-        if (show.sc === 1 || d < 0) fx.shake(8);
+        if (show.sc === 1 || d < 0) { fx.shake(8); if (ctx.isLocal(show.who)) ctx.buzz(40); }
         fx.text(cx, cy - 4, name, {size: show.sc === 1 ? 34 : 26, life: 1.8});
       } else if (n === 'water') {
         const fr = show.r.frames, [wx, wy] = fr[fr.length - 1];
-        ctx.sfx('splash'); fx.burst(wx, wy, {n: 20, sp: 30, color: ['#cfe8f0', '#ffffff', '#4a8fb0'], life: .7, g: 20, a0: -Math.PI / 2, spread: 2});
+        ctx.sfx('splash'); if (ctx.isLocal(show.who)) ctx.buzz(30); fx.burst(wx, wy, {n: 20, sp: 30, color: ['#cfe8f0', '#ffffff', '#4a8fb0'], life: .7, g: 20, a0: -Math.PI / 2, spread: 2});
         fx.text(wx, wy - 3, '落水 +1', {size: 22});
       } else if (n === 'cap') fx.text(show.r.x, show.r.y - 3, '已达 ' + CAP + ' 杆', {size: 20});
     }

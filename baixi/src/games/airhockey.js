@@ -5,8 +5,10 @@ const W = 600, H = 340, GOAL = 120, PR = 16, MR = 26, WIN = 7;     // table unit
 BX.register({
   id: 'airhockey', title: '桌上冰球', cat: 'arcade', order: 2, sub: '推杆击球，先进 7 球',
   desc: '按住拖动自己的推杆把冰球打进对方球门。手机、iPad 上两人可以各占半边屏幕同时对战。',
-  kind: 'realtime', seats: 2, seatColors: ['#c23a2b', '#2f5d8a'], noFirst: true,
-  rules: `<p>拖动（或用鼠标移动）自己的推杆击打冰球，把球打进对方球门得 1 分，<b>先得 7 分</b>获胜。</p>
+  kind: 'realtime', seats: 2, seatColors: ['#c23a2b', '#2f5d8a'], noFirst: true, hint: false,
+  options: [{key: 'win', label: '赛制', choices: [[5, '先得 5 分'], [7, '先得 7 分'], [11, '先得 11 分']], def: 7}],
+  howto: ['手指按住屏幕任意处（或移动鼠标），推杆会跟到手指位置；快速挥动推杆撞球，球速更快。', '推杆只能在自己半场活动；冰球打进对方球门得 1 分。', '键盘：WASD / 方向键移动推杆；同屏双人左方 WASD、右方方向键，触屏各按住自己那半边。'],
+  rules: `<p>拖动（或用鼠标移动）自己的推杆击打冰球，把球打进对方球门得 1 分，<b>先得 7 分</b>获胜（开局前可改为 5 分或 11 分）。</p>
 <p>推杆只能在自己的半场移动。失球的一方获得发球权。</p>
 <p>键盘：单人用 WASD 或方向键；同屏双人时左方 WASD、右方方向键；触屏同屏时两人各按住自己那半边屏幕。</p>`,
   icon(g, w, h) {
@@ -23,7 +25,8 @@ BX.register({
       s: [0, 0], ph: 'serve', t: 1.2, server: ctx.rng() < .5 ? 0 : 1, ev: [], evId: 0, over: false,
     };
     const cv = ctx.canvas();
-    let seenEv = 0;
+    const WINS = +ctx.opts.win || WIN;
+    let seenEv = 0, trail = [], goalTxt = null, pred = null;
     st.p.x = st.server === 0 ? W / 2 - 80 : W / 2 + 80;
     // ---------- view transform: each viewer sees their own goal on the left (landscape) or bottom (portrait) ----------
     const viewSeat = () => ctx.mySeats.length === 1 ? ctx.mySeats[0] : 0;
@@ -68,10 +71,10 @@ BX.register({
     // ---------- physics (host only) ----------
     const half = seat => seat === 0 ? [MR, W / 2 - MR] : [W / 2 + MR, W - MR];
     function moveMallet(i, inp, dt) {
-      const m = st.m[i], [x0, x1] = half(i), maxV = 1500;
+      const m = st.m[i], [x0, x1] = half(i), maxV = 2100;
       let tx = m.x, ty = m.y;
       if (inp && inp.x != null) { tx = inp.x; ty = inp.y; }
-      else if (inp && (inp.kx || inp.ky)) { const l = Math.hypot(inp.kx, inp.ky); tx = m.x + inp.kx / l * 700 * dt; ty = m.y + inp.ky / l * 700 * dt; }
+      else if (inp && (inp.kx || inp.ky)) { const l = Math.hypot(inp.kx, inp.ky); tx = m.x + inp.kx / l * 900 * dt; ty = m.y + inp.ky / l * 900 * dt; }
       tx = BX.clamp(tx, x0, x1); ty = BX.clamp(ty, MR, H - MR);
       let dx = tx - m.x, dy = ty - m.y; const d = Math.hypot(dx, dy), lim = maxV * dt;
       if (d > lim) { dx *= lim / d; dy *= lim / d; }
@@ -82,7 +85,7 @@ BX.register({
     function physics(dt) {
       const p = st.p;
       p.x += p.vx * dt; p.y += p.vy * dt;
-      p.vx *= Math.pow(.6, dt); p.vy *= Math.pow(.6, dt);
+      const fr = Math.pow(.78, dt); p.vx *= fr; p.vy *= fr;
       if (p.y < PR) { p.y = PR; p.vy = Math.abs(p.vy) * .9; fx('wall'); }
       if (p.y > H - PR) { p.y = H - PR; p.vy = -Math.abs(p.vy) * .9; fx('wall'); }
       const inGoal = Math.abs(p.y - H / 2) < GOAL / 2;
@@ -98,8 +101,8 @@ BX.register({
         }
       }
       if (p.x < -PR || p.x > W + PR) {
-        const scorer = p.x < 0 ? 1 : 0; st.s[scorer]++; fx('goal');
-        if (st.s[scorer] >= WIN) { st.over = true; st.ph = 'over'; ctx.end({winner: scorer, text: st.s[0] + ' : ' + st.s[1]}); }
+        const scorer = p.x < 0 ? 1 : 0; st.s[scorer]++; fx('goal' + scorer);
+        if (st.s[scorer] >= WINS) { st.over = true; st.ph = 'over'; ctx.end({winner: scorer, text: st.s[0] + ' : ' + st.s[1]}); }
         else serve(1 - scorer);
       }
     }
@@ -123,11 +126,19 @@ BX.register({
       return {x: BX.lerp(m.x, dx, .3 * react + .1), y: BX.lerp(m.y, BX.clamp(p.y, H / 2 - GOAL, H / 2 + GOAL), .25 * react + .08)};
     }
     function playEv() {
-      for (const e of st.ev) if (e.id > seenEv) { seenEv = e.id; ctx.sfx(e.k === 'hit' ? 'hit' : e.k === 'wall' ? 'bounce' : 'score'); if (e.k === 'goal') flash = 1; }
+      for (const e of st.ev) if (e.id > seenEv) {
+        seenEv = e.id; ctx.sfx(e.k === 'hit' ? 'hit' : e.k === 'wall' ? 'bounce' : 'score');
+        if (e.k.startsWith('goal')) {
+          const sc = +e.k.slice(4); flash = 1; trail = [];
+          const solo = ctx.mySeats.length === 1, me = ctx.mySeats[0];
+          goalTxt = {t: 1.4, txt: solo && ctx.mode !== 'local' ? (sc === me ? '进球！' : '失球…') : ctx.name(sc) + ' 得分', good: !solo || sc === me};
+          if (solo && sc !== me) ctx.buzz(30);
+        }
+      }
     }
     let flash = 0;
     const info = () => { ctx.info(0, st.s[0]); ctx.info(1, st.s[1]); };
-    info(); ctx.status('先得 ' + WIN + ' 分获胜');
+    info(); ctx.status('先得 ' + WINS + ' 分获胜 · 按住拖动推杆');
     return {
       st,
       /* input(seat, slot, nLocal): read THIS device's controls for a local seat → plain object sent to host */
@@ -155,6 +166,12 @@ BX.register({
       draw(dt) {
         const g = cv.g; cv.clear(); const v = view();
         if (!ctx.isHost) { st.p.x += st.p.vx * dt * .5; st.p.y += st.p.vy * dt * .5; }  // light extrapolation on guests
+        // guests draw their own mallet where the finger/mouse is (client-side prediction → no input lag)
+        pred = null;
+        if (!ctx.isHost && ctx.mySeats.length === 1) {
+          const me = ctx.mySeats[0], t = ptrs.size ? [...ptrs.values()].pop() : mouse;
+          if (t) { const [x0, x1] = half(me); pred = {i: me, x: BX.clamp(t.x, x0, x1), y: BX.clamp(t.y, MR, H - MR)}; }
+        }
         const [ax, ay] = T(0, 0, v), [bx, by] = T(W, H, v);
         const x0 = Math.min(ax, bx), y0 = Math.min(ay, by), tw = Math.abs(bx - ax), th = Math.abs(by - ay), s = v.s;
         // rim
@@ -175,11 +192,18 @@ BX.register({
           g.strokeStyle = ctx.color(side); g.lineWidth = 4 * s; g.stroke();
         }
         // puck & mallets
-        const [px, py] = T(st.p.x, st.p.y, v); D.disc(g, px, py, PR * s, '#1b1510', {ring: '#e6c57d'});
-        st.m.forEach((m, i) => { const [mx, my] = T(m.x, m.y, v); D.disc(g, mx, my, MR * s, ctx.color(i), {ring: 'rgba(255,255,255,.55)'}); D.disc(g, mx, my, MR * .45 * s, D.shade(ctx.color(i), -20), {shadow: false}); });
+        const [px, py] = T(st.p.x, st.p.y, v);
+        // speed trail
+        const sp = Math.hypot(st.p.vx, st.p.vy);
+        if (st.ph === 'play' && sp > 260) trail.push({x: st.p.x, y: st.p.y, t: .18}); 
+        for (const q of trail) q.t -= dt; trail = trail.filter(q => q.t > 0).slice(-14);
+        for (const q of trail) { const [qx, qy] = T(q.x, q.y, v); g.fillStyle = `rgba(255,226,150,${q.t * 1.6})`; D.circle(g, qx, qy, PR * s * (.5 + q.t * 2.5)); g.fill(); }
+        D.disc(g, px, py, PR * s, '#1b1510', {ring: '#e6c57d'});
+        st.m.forEach((m0, i) => { const m = pred && pred.i === i ? pred : m0; const [mx, my] = T(m.x, m.y, v); D.disc(g, mx, my, MR * s, ctx.color(i), {ring: 'rgba(255,255,255,.55)'}); D.disc(g, mx, my, MR * .45 * s, D.shade(ctx.color(i), -20), {shadow: false}); });
         // score + serve text
         D.text(g, st.s[0] + '  :  ' + st.s[1], cx, y0 - (v.portrait ? 0 : 0) + 30 * s, {size: 30 * s, color: 'rgba(255,255,255,.35)', font: 'deco', weight: 400});
-        if (st.ph === 'serve' && !st.over) D.text(g, '准备', cx, cy, {size: 26 * s, color: '#fff', font: 'deco', weight: 400, shadow: true});
+        if (st.ph === 'serve' && !st.over && !goalTxt) D.text(g, '准备', cx, cy, {size: 26 * s, color: '#fff', font: 'deco', weight: 400, shadow: true});
+        if (goalTxt) { goalTxt.t -= dt; if (goalTxt.t <= 0) goalTxt = null; else { g.globalAlpha = Math.min(1, goalTxt.t * 2); D.text(g, goalTxt.txt, cx, cy, {size: 40 * s, color: goalTxt.good ? '#ffe39a' : '#ffc0b0', font: 'deco', weight: 400, stroke: 'rgba(20,30,40,.7)', strokeW: 5}); g.globalAlpha = 1; } }
         if (flash > 0) { flash = Math.max(0, flash - dt * 2); g.fillStyle = `rgba(255,230,160,${flash * .25})`; g.fillRect(0, 0, cv.w, cv.h); }
       },
     };

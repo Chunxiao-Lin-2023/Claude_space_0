@@ -182,13 +182,39 @@ const CSS = `
 .mo-sec > div:first-child{font-size:12.5px;color:#8c7a63;margin:2px 0 3px}
 .mo-big{text-align:center;font-size:15px;margin:6px 0;line-height:1.6}
 .mo-big b{color:#b23a2b;font-size:20px}
+button.mo-chip{position:relative;cursor:pointer;text-align:left;font:inherit;color:inherit;min-height:34px;overflow:hidden}
+.mo-chip .wb{position:absolute;left:0;bottom:0;height:3px;border-radius:0 2px 0 0;opacity:.85}
+.mo-chip.on{border-color:#2f6b55}
+.mo-tg{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin:6px 0 2px}
+.mo-tg button{min-height:40px;border-radius:20px;border:1.5px solid rgba(60,40,20,.25);background:rgba(255,255,255,.5);padding:0 12px;font-size:13px;color:#5e4b38}
+.mo-tg button.on{background:#2f6b55;color:#fff;border-color:#2f6b55}
+.mo-gh{display:flex;align-items:center;gap:6px;margin:8px 2px 2px;font-size:12.5px;color:#5e4b38;font-weight:700}
+.mo-gh i{width:22px;height:10px;border-radius:3px}
+.mo-gh span{flex:1}
+.mo-gh .mo-sb{height:36px}
+.mo-val{display:flex;gap:6px;margin:4px 0 6px}
+.mo-val div{flex:1;background:rgba(255,255,255,.55);border-radius:9px;padding:4px 8px;font-size:12px;color:#8c7a63;line-height:1.35}
+.mo-val b{display:block;font-size:16px;color:#2b2118;font-variant-numeric:tabular-nums}
+.mo-mood{text-align:center;font-size:13px;font-weight:700;margin:2px 0 4px}
+.mo-wk{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin:2px 0 6px;text-align:center;font-size:11.5px;color:#8c7a63}
+.mo-wk b{display:block;font-size:15px;color:#2b2118;font-variant-numeric:tabular-nums}
+.mo-hint{animation:moHint 1s ease-in-out infinite}
+@keyframes moHint{50%{box-shadow:0 0 0 4px rgba(63,190,140,.65)}}
 `;
 
 BX.register({
   id: 'monopoly', title: '地产大亨', cat: 'social', order: 1, sub: '买地盖楼，收租致富',
   desc: '经典地产交易桌游：掷骰绕城一圈圈，买下街巷、驿站与公用事业，凑齐同色地段盖房建酒楼；拍卖、抵押、交易样样俱全，让对手付租付到破产。',
   kind: 'turn', seats: [2, 4], defSeats: 4, seatColors: ['#c23a2b', '#2f5d8a', '#3f8f5b', '#d9a12b'], aiDelay: 380,
-  options: [{key: 'end', label: '结束条件', choices: [['r30', '30 回合后按总资产'], ['classic', '经典（至只剩一人）']], def: 'r30'}],
+  options: [{key: 'end', label: '结束条件', choices: [['r30', '30 回合后按总资产'], ['r15', '15 回合快速局'], ['classic', '经典（至只剩一人）']], def: 'r30'},
+    {key: 'cash', label: '起始资金', choices: [[1500, '¥1500'], [1000, '¥1000'], [2000, '¥2000']], def: 1500},
+    {key: 'park', label: '免费停车奖池', choices: [[0, '关'], [1, '开（税款罚金入池）']], def: 0},
+    {key: 'auc', label: '无人购买时', choices: [[1, '拍卖'], [0, '不拍卖']], def: 1},
+    {key: 'go2', label: '正好停在起点', choices: [[0, '领 ¥200'], [1, '领 ¥400']], def: 0}],
+  howto: ['右侧（竖屏在下方）面板是操作区：<b>掷骰 → 购买 / 不买 → 结束回合</b>；空格 / 回车 = 当前主按钮。',
+    '点棋盘任意格子查看地契和<b>此刻要付的租金</b>；点上方玩家条可看该玩家的全部地产与总资产。',
+    '「管理」里集齐同色可<b>一键整组盖房</b>，也能卖房、抵押、赎回；「交易」会显示双方给出的估值和电脑的态度。',
+    '面板底部可开启「自动掷骰」「自动结束回合」；动画进行中<b>点一下棋盘</b>即可跳过。💡 提示会给出电脑推荐的操作。'],
   rules: `<p><b>目标</b>：买地、收租、盖房，让其他玩家破产。经典模式下坚持到最后的玩家获胜；「30 回合」模式在第 30 回合结束时，<b>总资产</b>（现金 + 地价（已抵押按一半）+ 房屋造价）最高者获胜。</p>
 <p><b>开局</b>：每人 ¥1500，从「起点」出发。每次<b>经过或停在起点</b>领取 ¥200。</p>
 <p><b>掷骰</b>：掷两颗骰子按点数前进。掷出<b>双数</b>可再掷一次；同一回合<b>连续三次双数</b>直接入狱。</p>
@@ -201,7 +227,8 @@ BX.register({
 <p><b>监狱</b>：踩中「入狱」、抽到入狱卡或三次双数即入狱（不经过起点、不领 ¥200）。出狱方法：回合开始付 ¥50；或使用免罪金牌；或掷骰，掷出双数即出狱并按点数前进（不再加掷）。三次都没掷出双数，须付 ¥50 后按第三次点数前进。在狱中仍可收租。</p>
 <p><b>交易</b>：轮到你时可向任一玩家提议交易，可包含现金、地产（该色组上不能有建筑）与免罪金牌；对方同意即成交。收到已抵押地产须立即付 10% 利息。</p>
 <p><b>破产</b>：欠款付不出时，可卖房、抵押来筹钱；仍不够则宣告破产——欠玩家的，你的现金、地产（保持抵押状态）和金牌全部归债主；欠银行的，地产收归银行重新出售。</p>
-<p><b>操作</b>：右侧（竖屏时下方）面板显示按钮：掷骰、购买 / 拍卖、管理（建房 / 卖房 / 抵押 / 赎回）、交易、结束回合。点棋盘上任意格子可查看地契。键盘空格 = 掷骰 / 结束回合。</p>`,
+<p><b>可选规则</b>（开局设置里选择，默认均为经典规则）：「15 回合快速局」；起始资金 ¥1000 / ¥2000；「免费停车奖池」——所得税、奢侈税、卡牌罚款、修缮费、保释金都进入奖池，停在免费停车的玩家拿走全部奖池；「不拍卖」——无人购买的地产保持无主；「正好停在起点领 ¥400」。</p>
+<p><b>操作</b>：右侧（竖屏时下方）面板显示按钮：掷骰、购买 / 拍卖、管理（整组盖房 / 建房 / 卖房 / 抵押 / 赎回）、交易、结束回合。点棋盘格子看地契与当前租金，点玩家条看其地产。键盘：空格 / 回车 = 主按钮，M = 管理，T = 交易，Esc = 返回。</p>`,
   icon(g, w, h) {
     D.wood(g, 0, 0, w, h, {seed: 21, base: '#8a5a32', dark: '#4a2a12'});
     const u = 15, x0 = 18, y0 = 14;
@@ -219,20 +246,22 @@ BX.register({
   create(ctx) {
     const n = ctx.n, rng = ctx.rng;
     const deckC = rng.shuffle(BX.range(16)), deckH = rng.shuffle(BX.range(16));
-    const maxRound = ctx.opts.end === 'classic' ? (BX.test ? 6 : 0) : (BX.test ? 6 : 30);
+    const maxRound = ctx.opts.end === 'classic' ? (BX.test ? 6 : 0) : (BX.test ? 6 : ctx.opts.end === 'r15' ? 15 : 30);
+    const cash0 = [1000, 1500, 2000].includes(+ctx.opts.cash) ? +ctx.opts.cash : 1500;
     /* ===== all game state ===== */
     const st = {
-      cash: Array(n).fill(1500), pos: Array(n).fill(0), alive: Array(n).fill(true), jail: Array(n).fill(-1), jc: BX.range(n).map(() => []),
+      cash: Array(n).fill(cash0), pos: Array(n).fill(0), alive: Array(n).fill(true), jail: Array(n).fill(-1), jc: BX.range(n).map(() => []),
       own: Array(40).fill(-1), hs: Array(40).fill(0), mort: Array(40).fill(0), bankH: 32, bankT: 12,
       cur: 0, ph: 'roll', dbl: 0, again: false, dice: [3, 4], buyP: -1, auc: null, debts: [], offer: null, prevPh: null, trades: 0,
       dC: deckC, dH: deckH, round: 1, maxRound, last: null, over: false, win: null,
+      rule: {park: +ctx.opts.park ? 1 : 0, auc: ctx.opts.auc == null || +ctx.opts.auc ? 1 : 0, go2: +ctx.opts.go2 ? 1 : 0}, pot: 0,
     };
     /* ===== visual-only state ===== */
     const logs = [];
     const vis = st.pos.slice();
     let hop = null, rolling = false, cardShow = null, floats = [], banner = null, fxCur = null;
     const fxq = [];
-    let uiMode = 'info', sel = -1, draft = null, lastLayout = '', boardCache = null, cacheKey = '';
+    let uiMode = 'info', viewP = -1, hintA = null, sel = -1, draft = null, lastLayout = '', boardCache = null, cacheKey = '';
     const name = s => s < 0 ? '银行' : ctx.name(s);
     const log = s => { logs.unshift(s); if (logs.length > 40) logs.pop(); };
 
@@ -300,6 +329,7 @@ BX.register({
         case 'bid': return ph === 'auction' && Number.isInteger(a.v) && a.v > st.auc.bid && a.v <= st.cash[by];
         case 'pass': return ph === 'auction';
         case 'build': return mine && canBuild(by, i);
+        case 'buildset': return mine && Number.isInteger(a.g) && a.g >= 0 && a.g < 8 && GROUPS[a.g].some(j => canBuild(by, j));
         case 'sell': return (mine || ph === 'debt') && canSell(by, i);
         case 'mort': return (mine || ph === 'debt') && canMort(by, i);
         case 'unmort': return mine && canUnmort(by, i);
@@ -316,21 +346,26 @@ BX.register({
     let pumpQ = false;
     function fx(e) { if (ctx.fast || document.hidden || fxq.length > 40) return; fxq.push(e); if (!fxCur && !pumpQ) { pumpQ = true; Promise.resolve().then(() => { pumpQ = false; if (!fxCur) pump(); }); } }
     function money(s, v) { if (s >= 0) fx({k: 'money', p: s, v}); }
-    function transfer(from, to, amt) {
+    function transfer(from, to, amt, fine) {
       st.cash[from] -= amt; money(from, -amt);
       if (to >= 0 && st.alive[to]) { st.cash[to] += amt; money(to, amt); }
+      else if (to < 0 && fine && st.rule.park) st.pot += amt;
     }
-    function pay(from, to, amt) {
+    function pay(from, to, amt, fine) {
       if (amt <= 0) return;
-      if (st.cash[from] >= amt) transfer(from, to, amt);
-      else { st.debts.push({from, to, amt}); log(name(from) + ' 现金不足，欠 ' + name(to) + ' ¥' + amt); }
+      if (ctx.isLocal(from) && amt >= 100) ctx.buzz(18);
+      if (st.cash[from] >= amt) transfer(from, to, amt, fine);
+      else { st.debts.push(fine ? {from, to, amt, fine: 1} : {from, to, amt}); log(name(from) + ' 现金不足，欠 ' + name(to) + ' ¥' + amt); }
     }
     function move(s, steps) {
       const from = st.pos[s], path = [];
       for (let k = 1; k <= steps; k++) path.push((from + k) % 40);
       st.pos[s] = (from + steps) % 40;
       fx({k: 'move', p: s, from, path});
-      if (from + steps >= 40) { st.cash[s] += 200; money(s, 200); log(name(s) + ' 经过起点，领取 ¥200'); }
+      if (from + steps >= 40) {
+        const v = st.rule.go2 && from + steps === 40 ? 400 : 200;
+        st.cash[s] += v; money(s, v); log(name(s) + (v === 400 ? ' 正好停在起点，领取 ¥400' : ' 经过起点，领取 ¥200'));
+      }
     }
     const moveTo = (s, to) => move(s, ((to - st.pos[s]) + 40) % 40 || 40);
     function goJail(s) {
@@ -341,7 +376,8 @@ BX.register({
     function land(s, mode) {
       const i = st.pos[s], sp = SP[i];
       if (sp.k === 'gojail') { goJail(s); return; }
-      if (sp.k === 'tax') { log(name(s) + ' 缴纳' + sp.n + ' ¥' + sp.amt); pay(s, -1, sp.amt); return; }
+      if (sp.k === 'tax') { log(name(s) + ' 缴纳' + sp.n + ' ¥' + sp.amt); pay(s, -1, sp.amt, 1); return; }
+      if (sp.k === 'park' && st.rule.park && st.pot > 0) { const v = st.pot; st.pot = 0; st.cash[s] += v; money(s, v); log(name(s) + ' 在免费停车领走奖池 ¥' + v); fx({k: 'banner', text: name(s) + ' 赢得奖池 ¥' + v}); fx({k: 'sfx', n: 'win'}); return; }
       if (sp.k === 'ch' || sp.k === 'cc') { drawCard(s, sp.k); return; }
       if (!isProp(i)) return;
       const o = st.own[i];
@@ -352,6 +388,7 @@ BX.register({
       if (sp.k === 'ut' && mode === 'ut10') { const a = 1 + rng.int(6), b = 1 + rng.int(6); st.dice = [a, b]; ds = a + b; fx({k: 'dice', d: [a, b]}); }
       const r = rentOf(i, mode, ds);
       log(name(s) + ' 在' + sp.n + '付租 ¥' + r + ' 给 ' + name(o)); fx({k: 'sfx', n: 'coin'});
+      if (r >= 200) fx({k: 'banner', text: name(s) + ' 付租 ¥' + r});
       pay(s, o, r);
     }
     function drawCard(s, kind) {
@@ -364,12 +401,12 @@ BX.register({
         case 'adv': moveTo(s, card.to); land(s); break;
         case 'advRR': { const p = st.pos[s]; moveTo(s, p < 5 || p >= 35 ? 5 : p < 15 ? 15 : p < 25 ? 25 : 35); land(s, 'rr2'); break; }
         case 'advUT': { const p = st.pos[s]; moveTo(s, p < 12 || p >= 28 ? 12 : 28); land(s, 'ut10'); break; }
-        case 'money': if (card.v > 0) { st.cash[s] += card.v; money(s, card.v); } else pay(s, -1, -card.v); break;
+        case 'money': if (card.v > 0) { st.cash[s] += card.v; money(s, card.v); } else pay(s, -1, -card.v, 1); break;
         case 'back': { const from = st.pos[s]; st.pos[s] = (from + 37) % 40; fx({k: 'move', p: s, from, path: [(from + 39) % 40, (from + 38) % 40, (from + 37) % 40]}); land(s); break; }
         case 'jail': goJail(s); break;
         case 'repair': {
           let hh = 0, ht = 0; for (let i = 0; i < 40; i++) if (st.own[i] === s) { if (st.hs[i] === 5) ht++; else hh += st.hs[i]; }
-          pay(s, -1, hh * card.h + ht * card.ht); break;
+          pay(s, -1, hh * card.h + ht * card.ht, 1); break;
         }
         case 'each':
           for (let o = 0; o < n; o++) if (o !== s && st.alive[o]) { if (card.v < 0) pay(s, o, -card.v); else pay(o, s, card.v); }
@@ -379,7 +416,7 @@ BX.register({
     function settle() {
       if (st.over) return;
       st.debts = st.debts.filter(d => st.alive[d.from]);
-      while (st.debts.length && st.cash[st.debts[0].from] >= st.debts[0].amt) { const d = st.debts.shift(); transfer(d.from, d.to, d.amt); }
+      while (st.debts.length && st.cash[st.debts[0].from] >= st.debts[0].amt) { const d = st.debts.shift(); transfer(d.from, d.to, d.amt, d.fine); }
       if (st.debts.length) { st.ph = 'debt'; return; }
       if (!st.alive[st.cur]) { nextTurn(); return; }
       if (st.buyP >= 0) { st.ph = 'buy'; return; }
@@ -418,7 +455,8 @@ BX.register({
       st.win = alive.filter((s, k) => w[k] === best);
       const rank = alive.map((s, k) => [s, w[k]]).sort((a, b) => b[1] - a[1]);
       log('第 ' + st.maxRound + ' 回合结束，按总资产结算');
-      ctx.end({winner: st.win.length === 1 ? st.win[0] : st.win, html: '回合用尽，按总资产排名：<br>' + rank.map(([s, v], k) => `${k + 1}. ${BX.esc(ctx.name(s))}　¥${v}`).join('<br>'), delay: 1400});
+      const brk = s => { let l = 0, b = 0; for (let i = 0; i < 40; i++) if (st.own[i] === s) { l += st.mort[i] ? SP[i].price / 2 : SP[i].price; if (st.hs[i]) b += st.hs[i] * SP[i].hc; } return `<small style="opacity:.75">（现金 ¥${st.cash[s]} · 地产 ¥${l} · 房屋 ¥${b}）</small>`; };
+      ctx.end({winner: st.win.length === 1 ? st.win[0] : st.win, html: '回合用尽，按总资产排名：<br>' + rank.map(([s, v], k) => `${k + 1}. <b>${BX.esc(ctx.name(s))}</b>　¥${v}<br>${brk(s)}`).join('<br>') + BX.range(n).filter(s => !st.alive[s]).map(s => `<br>— ${BX.esc(ctx.name(s))}　已破产`).join(''), delay: 1400});
     }
 
     function apply(a, by) {
@@ -432,7 +470,7 @@ BX.register({
           if (st.jail[s] >= 0) {
             st.again = false;
             if (dbl) { st.jail[s] = -1; log(name(s) + ' 掷出双数，出狱！'); move(s, d1 + d2); land(s); }
-            else if (++st.jail[s] >= 3) { st.jail[s] = -1; log(name(s) + ' 三次未出双数，付 ¥50 出狱'); pay(s, -1, 50); move(s, d1 + d2); land(s); }
+            else if (++st.jail[s] >= 3) { st.jail[s] = -1; log(name(s) + ' 三次未出双数，付 ¥50 出狱'); pay(s, -1, 50, 1); move(s, d1 + d2); land(s); }
             else fx({k: 'banner', text: '未掷出双数，留在狱中'});
           } else {
             if (dbl) { if (++st.dbl >= 3) { fx({k: 'banner', text: '连续三次双数！'}); goJail(s); settle(); break; } st.again = true; } else st.again = false;
@@ -440,10 +478,11 @@ BX.register({
           }
           settle(); break;
         }
-        case 'bail': transfer(s, -1, 50); st.jail[s] = -1; log(name(s) + ' 付 ¥50 保释出狱'); fx({k: 'sfx', n: 'coin'}); break;
+        case 'bail': transfer(s, -1, 50, 1); st.jail[s] = -1; log(name(s) + ' 付 ¥50 保释出狱'); fx({k: 'sfx', n: 'coin'}); break;
         case 'card': { const d = st.jc[s].shift(); (d === 'ch' ? st.dC : st.dH).push(FREE_ID[d]); st.jail[s] = -1; log(name(s) + ' 使用免罪金牌出狱'); fx({k: 'sfx', n: 'card'}); break; }
         case 'buy': { const p = st.buyP; transfer(s, -1, SP[p].price); st.own[p] = s; st.buyP = -1; log(name(s) + ' 买下' + SP[p].n + '（¥' + SP[p].price + '）'); fx({k: 'sfx', n: 'chip'}); settle(); break; }
         case 'decline': {
+          if (!st.rule.auc) { log(name(s) + ' 放弃购买' + SP[st.buyP].n); st.buyP = -1; settle(); break; }
           const act = []; for (let k = 0; k < n; k++) { const q = (st.cur + k) % n; if (st.alive[q]) act.push(q); }
           st.auc = {p: st.buyP, bid: 0, hi: -1, act, k: 0}; st.buyP = -1; st.ph = 'auction';
           log(name(s) + ' 放弃购买，' + SP[st.auc.p].n + ' 进入拍卖'); fx({k: 'sfx', n: 'gong'}); break;
@@ -462,6 +501,11 @@ BX.register({
         case 'build': {
           const i = a.i; st.hs[i]++; if (st.hs[i] === 5) { st.bankH += 4; st.bankT--; } else st.bankH--;
           transfer(s, -1, SP[i].hc); log(name(s) + ' 在' + SP[i].n + (st.hs[i] === 5 ? '建起酒楼' : '盖第 ' + st.hs[i] + ' 栋房')); fx({k: 'sfx', n: 'place'}); break;
+        }
+        case 'buildset': {
+          const L = GROUPS[a.g], lvl = Math.min(...L.map(j => st.hs[j])); let k = 0, cost = 0;
+          for (const i of L) if (st.hs[i] === lvl && canBuild(s, i)) { st.hs[i]++; if (st.hs[i] === 5) { st.bankH += 4; st.bankT--; } else st.bankH--; transfer(s, -1, SP[i].hc); k++; cost += SP[i].hc; }
+          log(name(s) + ' 给' + SP[L[0]].n + '一组整组加盖 ' + k + ' 处（¥' + cost + '）'); fx({k: 'sfx', n: 'place'}); break;
         }
         case 'sell': {
           const i = a.i; let back;
@@ -489,7 +533,7 @@ BX.register({
           } else { log(name(o.to) + ' 拒绝了交易'); fx({k: 'sfx', n: 'error'}); }
           st.offer = null; st.ph = st.prevPh; st.prevPh = null; break;
         }
-        case 'paydebt': { const d = st.debts.shift(); transfer(d.from, d.to, d.amt); log(name(d.from) + ' 还清 ¥' + d.amt); settle(); break; }
+        case 'paydebt': { const d = st.debts.shift(); transfer(d.from, d.to, d.amt, d.fine); log(name(d.from) + ' 还清 ¥' + d.amt); settle(); break; }
         case 'bankrupt': {
           const d = st.debts[0]; bankrupt(s, d.to);
           if (st.over) break;
@@ -499,6 +543,7 @@ BX.register({
         case 'end': nextTurn(); fx({k: 'sfx', n: 'click'}); break;
       }
       if (!ctx.fast && uiMode === 'trade' && (st.ph !== 'roll' && st.ph !== 'post')) uiMode = 'info';
+      hintA = null;
     }
 
     /* ===== AI ===== */
@@ -531,16 +576,49 @@ BX.register({
       if (lv === 1) gain += (Math.random() - .5) * 60;
       return gain - (lv === 3 ? 25 : 0);
     }
+    const tried = {};   // AI memory (not game state): offers already made → round, so it doesn't spam the same deal
+    const offerKey = o => o.to + ':' + o.gp.join(',') + '>' + o.wp.join(',');
     function aiPropose(s, lv) {
       const res = reserve(s, lv), cands = [];
       for (let g = 0; g < 8; g++) {
         const L = GROUPS[g], miss = L.filter(i => st.own[i] !== s);
         if (miss.length !== 1 || grpBuilt(g)) continue;
-        const m = miss[0], o = st.own[m]; if (o < 0 || !st.alive[o]) continue;
-        const X = Math.ceil((valOut(o, m) + GPRICE[g] * .62 + 10) / 10) * 10;
-        if (st.cash[s] - X >= res) cands.push({t: 'offer', to: o, gc: X, wc: 0, gj: 0, wj: 0, gp: [], wp: [m]});
+        const m = miss[0], o = st.own[m]; if (o < 0 || !st.alive[o] || !tradeable(o, m)) continue;
+        const k0 = tried[s + '@' + offerKey({to: o, gp: [], wp: [m]})], bump = k0 ? Math.min(3, k0.n) : 0;
+        if (k0 && st.round - k0.r < 3) continue;
+        // 1) cash offer — a little more each time it was refused
+        const X = Math.ceil((valOut(o, m) + GPRICE[g] * (.62 + .12 * bump) + 10) / 10) * 10;
+        if (st.cash[s] - X >= res) cands.push({t: 'offer', to: o, gc: X, wc: 0, gj: 0, wj: 0, gp: [], wp: [m], w: 1});
+        // 2) swap: give them the lot that completes one of THEIR sets (both sides get a monopoly), balance with cash
+        for (let h2 = 0; h2 < 8; h2++) {
+          if (h2 === g || grpBuilt(h2)) continue;
+          const M2 = GROUPS[h2].filter(i => st.own[i] !== o);
+          if (M2.length !== 1 || st.own[M2[0]] !== s || !tradeable(s, M2[0])) continue;
+          const x = M2[0], diff = Math.round((GPRICE[g] - GPRICE[h2]) * .3 / 10) * 10;
+          const gc = Math.max(0, diff), wc = Math.max(0, -diff);
+          if (st.cash[s] - gc < res * .6 || st.cash[o] < wc) continue;
+          const rev = {from: o, to: s, gc: wc, wc: gc, gj: 0, wj: 0, gp: [m], wp: [x]};
+          if (tradeGain(rev, s, Math.max(2, lv)) > -40) cands.push({t: 'offer', to: o, gc, wc, gj: 0, wj: 0, gp: [x], wp: [m], w: 2});
+        }
       }
-      return cands.length ? BX.pick(cands) : null;
+      // 3) top level: buy a cheap lot that blocks an opponent from finishing a set
+      if (lv >= 3 && !cands.length) for (let g = 0; g < 8; g++) {
+        for (let o = 0; o < n; o++) {
+          if (o === s || !st.alive[o]) continue;
+          const L = GROUPS[g], theirs = L.filter(i => st.own[i] === o).length;
+          if (theirs !== L.length - 1) continue;
+          const m = L.find(i => st.own[i] !== o); const q = st.own[m];
+          if (q < 0 || q === s || !st.alive[q] || !tradeable(q, m)) continue;
+          const X = Math.ceil(SP[m].price * 1.25 / 10) * 10;
+          if (st.cash[s] - X >= res + 100 && !tried[s + '@' + offerKey({to: q, gp: [], wp: [m]})]) cands.push({t: 'offer', to: q, gc: X, wc: 0, gj: 0, wj: 0, gp: [], wp: [m], w: 1});
+        }
+      }
+      if (!cands.length) return null;
+      cands.sort((a, b) => b.w - a.w);
+      const c = Math.random() < .7 ? cands[0] : BX.pick(cands); delete c.w;
+      const key = s + '@' + offerKey({to: c.to, gp: [], wp: c.wp}), old = tried[key];
+      tried[key] = {r: st.round, n: old ? old.n + 1 : 1};
+      return c;
     }
     function aiDebt(s) {
       const d = st.debts[0]; if (st.cash[s] >= d.amt) return {t: 'paydebt'};
@@ -612,10 +690,18 @@ BX.register({
     /* ===== visual effects queue ===== */
     const geo = {bx: 0, by: 0, bs: 100, px: 0, py: 0, pw: 0, ph: 0, land: true};
     function tileCenter(i) { const r = tileRect(i, geo.bs); return [geo.bx + r.x + r.w / 2, geo.by + r.y + r.h / 2]; }
+    let skip = false, curA = null;
+    const runAnim = (ms, fn, done, ease) => { const rec = {done}; rec.a = ctx.anim(skip ? Math.min(ms, 40) : ms, fn, () => { if (curA === rec) curA = null; done(); }, ease); curA = rec; };
+    function skipFx() {   // tap during animations: finish the current one and fast-forward the rest
+      if (!busy() || skip) return false;
+      skip = true; cardShow = null;
+      if (curA) { const r = curA; curA = null; r.a.cancel(); r.done(); }
+      return true;
+    }
     function pump() {
       while (true) {
         const e = fxq.shift();
-        if (!e) { fxCur = null; for (let p = 0; p < n; p++) vis[p] = st.pos[p]; render(); return; }
+        if (!e) { fxCur = null; skip = false; for (let p = 0; p < n; p++) vis[p] = st.pos[p]; render(); return; }
         fxCur = e;
         const done = () => { fxCur = null; pump(); };
         if (e.k === 'money') { const [x, y] = tileCenter(vis[e.p]); floats.push({x, y, text: (e.v > 0 ? '+¥' : '-¥') + Math.abs(e.v), color: e.v > 0 ? '#2f8a5b' : '#c0291f', t: 0}); if (e.v > 0) ctx.sfx('coin'); continue; }
@@ -623,11 +709,11 @@ BX.register({
         if (e.k === 'banner') { banner = {text: e.text, t: 0}; continue; }
         if (e.k === 'dice') {
           rolling = true; cardShow = null; ctx.sfx('dice');
-          ctx.anim(620, () => {}, () => { rolling = false; ctx.sfx('roll'); done(); }); return;
+          runAnim(620, () => {}, () => { rolling = false; ctx.sfx('roll'); done(); }); return;
         }
         if (e.k === 'move') {
           const L = e.path.length, per = BX.clamp(1400 / L, 60, 170); let lastStep = -1;
-          ctx.anim(per * L, k => {
+          runAnim(per * L, k => {
             const f = Math.min(L - 1e-6, k * L), idx = Math.floor(f);
             if (idx !== lastStep) { lastStep = idx; ctx.sfx('tick'); if (idx > 0) vis[e.p] = e.path[idx - 1]; }
             hop = {p: e.p, a: idx === 0 ? e.from : e.path[idx - 1], b: e.path[idx], f: f - idx, h: .55};
@@ -635,11 +721,12 @@ BX.register({
           return;
         }
         if (e.k === 'jump') {
-          ctx.anim(650, k => { hop = {p: e.p, a: e.from, b: e.to, f: k, h: 2.2}; }, () => { hop = null; vis[e.p] = e.to; done(); }); return;
+          runAnim(650, k => { hop = {p: e.p, a: e.from, b: e.to, f: k, h: 2.2}; }, () => { hop = null; vis[e.p] = e.to; done(); }); return;
         }
         if (e.k === 'card') {
           cardShow = {d: e.d, id: e.id, a: 0}; ctx.sfx('flip');
-          ctx.anim(1500, k => { cardShow && (cardShow.a = Math.min(1, k * 6)); }, done, k => k); return;
+          if (skip) { cardShow.a = 1; cardShow.until = performance.now() + 2200; continue; }
+          runAnim(1500, k => { cardShow && (cardShow.a = Math.min(1, k * 6)); }, () => { if (cardShow) cardShow.until = performance.now() + 2200; done(); }, k => k); return;
         }
       }
     }
@@ -674,8 +761,8 @@ BX.register({
     const actor = () => { const t = toMove(); return t != null && ctx.canAct(t) ? t : -1; };
     const uiSeat = () => { const a = actor(); return a >= 0 ? a : ctx.view; };
     function doAct(a) { if (busy()) return; const s = actor(); if (s < 0) { ctx.sfx('error'); return; } if (!legal(a, s)) { ctx.sfx('error'); return; } ctx.act(a, s); }
-    const btn = (label, cls, fn, dis, primary) => h('button', {class: 'bx-btn ' + (cls || ''), text: label, disabled: !!dis, 'data-primary': primary ? '1' : null, on: {click: fn}});
-    const sb = (label, cls, fn, dis) => h('button', {class: 'mo-sb ' + (cls || ''), text: label, disabled: !!dis, on: {click: fn}});
+    const btn = (label, cls, fn, dis, primary, act) => h('button', {class: 'bx-btn ' + (cls || ''), text: label, disabled: !!dis, 'data-primary': primary ? '1' : null, 'data-act': act || null, on: {click: fn}});
+    const sb = (label, cls, fn, dis, act) => h('button', {class: 'mo-sb ' + (cls || ''), text: label, disabled: !!dis, 'data-act': act || null, on: {click: fn}});
     function deed(i) {
       const sp = SP[i];
       if (!isProp(i)) {
@@ -698,25 +785,44 @@ BX.register({
         rows.push(['拥有 1 家', '骰点×4', k === 1], ['拥有 2 家', '骰点×10', k === 2], ['抵押值', 75]);
       }
       const ownerTxt = o < 0 ? '无主 · 售价 ¥' + sp.price : '地主：' + name(o) + (st.mort[i] ? '（已抵押）' : '') + (st.hs[i] ? ' · ' + (st.hs[i] === 5 ? '酒楼' : st.hs[i] + ' 栋房') : '');
+      const v = uiSeat(), L = GROUPS[sp.g];
+      let extra = '';
+      if (o >= 0 && o !== v && !st.mort[i]) extra = '此刻停在这里要付：' + (sp.k === 'ut' ? '骰点 ×' + (GROUPS[9].filter(j => st.own[j] === o).length === 2 ? 10 : 4) : '¥' + rentOf(i, '', 7));
+      else if (o === v && !st.mort[i]) extra = '对手停在这里付你：' + (sp.k === 'ut' ? '骰点 ×' + (GROUPS[9].filter(j => st.own[j] === o).length === 2 ? 10 : 4) : '¥' + rentOf(i, '', 7));
+      else if (o < 0 && v >= 0) { const have = L.filter(j => st.own[j] === v).length; extra = '买下后你拥有此组 ' + (have + 1) + ' / ' + L.length + (have + 1 === L.length && sp.k === 'st' ? '（凑齐全套！）' : ''); }
+      const owners = L.filter(j => st.own[j] >= 0).map(j => st.own[j]);
       return h('div', {class: 'mo-deed'},
         h('div', {class: 'hd', style: {background: col}}, h('small', {text: sp.k === 'st' ? '地 契' : sp.k === 'rr' ? '驿 站' : '公用事业'}), sp.n),
         h('table', {}, rows.map(r => h('tr', {class: r[2] ? 'hi' : ''}, h('td', {text: r[0]}), h('td', {text: typeof r[1] === 'number' ? '¥' + r[1] : r[1]})))),
-        h('div', {class: 'ft', style: o >= 0 ? {color: ctx.color(o), fontWeight: 700} : null, text: ownerTxt}));
+        h('div', {class: 'ft', style: o >= 0 ? {color: ctx.color(o), fontWeight: 700} : null, text: ownerTxt}),
+        extra ? h('div', {class: 'ft', style: {fontWeight: 700, color: '#2b2118', borderTop: 'none', paddingTop: 0}, text: extra}) : null,
+        owners.length && L.length > 1 ? h('div', {class: 'ft', style: {borderTop: 'none', paddingTop: 0, fontSize: '11.5px'}, text: '同组：' + L.map(j => SP[j].n + (st.own[j] >= 0 ? '·' + name(st.own[j]) : '·无主')).join('　')}) : null);
     }
     function manageList(s, allowBuild) {
       const box = h('div', {});
       box.append(h('div', {class: 'mo-h'}, h('span', {text: (ctx.hotseat ? name(s) + '的' : '我的') + '地产'}), h('small', {text: '现金 ¥' + st.cash[s] + ' · 银行余房 ' + st.bankH + ' / 酒楼 ' + st.bankT})));
-      const mine = BX.range(40).filter(i => st.own[i] === s);
+      const mine = BX.range(40).filter(i => st.own[i] === s).sort((x, y) => SP[x].g - SP[y].g || x - y);
       if (!mine.length) box.append(h('div', {class: 'mo-wait', text: '还没有地产'}));
       const act = actor() === s && !busy();
+      let lastG = -1;
       for (const i of mine) {
+        const g = SP[i].g;
+        if (g !== lastG) {
+          lastG = g; const L = GROUPS[g], have = L.filter(j => st.own[j] === s).length;
+          const gh = h('div', {class: 'mo-gh'}, h('i', {style: {background: g < 8 ? GC[g] : g === 8 ? '#4a3a2a' : '#2f6f8a'}}), h('span', {text: (g < 8 ? '色组' : g === 8 ? '驿站' : '公用事业') + ' ' + have + ' / ' + L.length + (have === L.length && g < 8 ? ' · 全套' : '')}));
+          if (g < 8 && allowBuild && have === L.length) {
+            const lvl = Math.min(...L.map(j => st.hs[j])), cost = L.filter(j => st.hs[j] === lvl).reduce((a2, j) => a2 + SP[j].hc, 0);
+            if (lvl < 5) gh.append(sb((lvl === 4 ? '整组建酒楼' : '整组 +1 房') + ' ¥' + cost, 'g', () => doAct({t: 'buildset', g}), !act || !legal({t: 'buildset', g}, s), 'buildset:' + g));
+          }
+          box.append(gh);
+        }
         const sp = SP[i], col = sp.k === 'st' ? GC[sp.g] : sp.k === 'rr' ? '#4a3a2a' : '#2f6f8a';
         const info = st.mort[i] ? '已抵押 · 赎回 ¥' + UNM(i) : sp.k === 'st' ? (st.hs[i] === 5 ? '酒楼' : st.hs[i] ? st.hs[i] + ' 栋房' : (ownsAll(sp.g, s) ? '全套 · 可盖房 ¥' + sp.hc : '空地')) : (sp.k === 'rr' ? '驿站' : '公用事业');
         const row = h('div', {class: 'mo-row'}, h('i', {class: 'c', style: {background: col}}), h('div', {class: 'n', on: {click: () => { sel = i; }}}, h('b', {text: sp.n}), h('small', {text: info})));
-        if (sp.k === 'st' && allowBuild) row.append(sb('建', 'g', () => doAct({t: 'build', i}), !act || !legal({t: 'build', i}, s)));
-        if (sp.k === 'st') row.append(sb('拆', '', () => doAct({t: 'sell', i}), !act || !legal({t: 'sell', i}, s)));
-        if (st.mort[i]) row.append(sb('赎', '', () => doAct({t: 'unmort', i}), !act || !legal({t: 'unmort', i}, s)));
-        else row.append(sb('押', 'r', () => doAct({t: 'mort', i}), !act || !legal({t: 'mort', i}, s)));
+        if (sp.k === 'st' && allowBuild) row.append(sb('建', 'g', () => doAct({t: 'build', i}), !act || !legal({t: 'build', i}, s), 'build:' + i));
+        if (sp.k === 'st') row.append(sb('拆', '', () => doAct({t: 'sell', i}), !act || !legal({t: 'sell', i}, s), 'sell:' + i));
+        if (st.mort[i]) row.append(sb('赎', '', () => doAct({t: 'unmort', i}), !act || !legal({t: 'unmort', i}, s), 'unmort:' + i));
+        else row.append(sb('押', 'r', () => doAct({t: 'mort', i}), !act || !legal({t: 'mort', i}, s), 'mort:' + i));
         box.append(row);
       }
       return box;
@@ -753,13 +859,58 @@ BX.register({
         return el;
       };
       box.append(sec('你给出', s, 'gp', 'gc', 'gj'), sec(name(d.to) + ' 给出', d.to, 'wp', 'wc', 'wj'));
+      const pv = (c, p, j) => c + p.reduce((a2, i) => a2 + (st.mort[i] ? SP[i].price / 2 : SP[i].price), 0) + 50 * j;
+      const A = pv(d.gc, d.gp, d.gj), Bv = pv(d.wc, d.wp, d.wj);
+      box.append(h('div', {class: 'mo-val'}, h('div', {}, '你给出（估值）', h('b', {text: '¥' + A})), h('div', {}, '你得到（估值）', h('b', {text: '¥' + Bv, style: {color: Bv >= A ? '#2f6b55' : '#b23a2b'}}))));
+      const o = Object.assign({}, d, {t: 'offer'});
+      if (ctx.isAI(d.to) && legal(o, s)) {
+        const gain = tradeGain(Object.assign({}, d, {from: s}), d.to, Math.max(2, ctx.level(d.to) || 2));
+        const [txt, col] = gain > 60 ? ['😀 对方很可能接受', '#2f6b55'] : gain > 0 ? ['🙂 对方可能接受', '#2f6b55'] : gain > -80 ? ['🤔 对方在犹豫，再加点码？', '#b8862b'] : ['😠 对方多半会拒绝', '#b23a2b'];
+        box.append(h('div', {class: 'mo-mood', style: {color: col}, text: txt}));
+      } else if (!legal(o, s)) box.append(h('div', {class: 'mo-mood', style: {color: '#8c7a63'}, text: st.trades >= 3 ? '本回合交易次数已用完' : '选择要交换的地产、现金或金牌'}));
       return box;
     }
     function playersBar() {
-      return h('div', {class: 'mo-pl'}, BX.range(n).map(s => h('div', {class: 'mo-chip' + (s === toMove() && !st.over ? ' cur' : '') + (st.alive[s] ? '' : ' dead')},
+      const W = BX.range(n).map(s => st.alive[s] ? worth(s) : 0), mx = Math.max(1, ...W);
+      return h('div', {class: 'mo-pl'}, BX.range(n).map(s => h('button', {class: 'mo-chip' + (s === toMove() && !st.over ? ' cur' : '') + (st.alive[s] ? '' : ' dead') + (uiMode === 'player' && viewP === s ? ' on' : ''),
+        title: '查看地产', on: {click: () => { if (uiMode === 'player' && viewP === s) uiMode = 'info'; else { uiMode = 'player'; viewP = s; } ctx.sfx('tick'); render(); }}},
         h('i', {style: {background: ctx.color(s)}}), h('b', {text: ctx.name(s)}),
         st.jail[s] >= 0 ? h('u', {text: '狱'}) : null, jcCount(s) ? h('s', {text: '牌' + (jcCount(s) > 1 ? jcCount(s) : '')}) : null,
-        h('em', {text: st.alive[s] ? '¥' + st.cash[s] : '破产'}))));
+        h('em', {text: st.alive[s] ? '¥' + st.cash[s] : '破产'}),
+        st.alive[s] ? h('span', {class: 'wb', style: {width: (W[s] / mx * 100).toFixed(1) + '%', background: ctx.color(s)}}) : null)));
+    }
+    function playerView(p) {
+      const box = h('div', {});
+      const props = BX.range(40).filter(i => st.own[i] === p).sort((x, y) => SP[x].g - SP[y].g || x - y);
+      let land = 0, bld = 0; for (const i of props) { land += st.mort[i] ? SP[i].price / 2 : SP[i].price; if (st.hs[i]) bld += st.hs[i] * SP[i].hc; }
+      box.append(h('div', {class: 'mo-h'}, h('span', {text: name(p) + ' 的资产', style: {color: ctx.color(p)}}), h('small', {text: st.alive[p] ? '总资产 ¥' + worth(p) : '已破产'})));
+      box.append(h('div', {class: 'mo-wk'}, h('div', {}, '现金', h('b', {text: '¥' + st.cash[p]})), h('div', {}, '地产', h('b', {text: '¥' + land})), h('div', {}, '房屋', h('b', {text: '¥' + bld}))));
+      if (!props.length) box.append(h('div', {class: 'mo-wait', text: '还没有地产'}));
+      for (const i of props) {
+        const sp = SP[i], col = sp.k === 'st' ? GC[sp.g] : sp.k === 'rr' ? '#4a3a2a' : '#2f6f8a';
+        const info = (st.mort[i] ? '已抵押' : sp.k === 'st' ? (st.hs[i] === 5 ? '酒楼' : st.hs[i] ? st.hs[i] + ' 栋房' : ownsAll(sp.g, p) ? '全套空地' : '空地') : sp.k === 'rr' ? '驿站' : '公用事业') + (st.mort[i] ? '' : ' · 租 ' + (sp.k === 'ut' ? '骰点×' + (GROUPS[9].filter(j => st.own[j] === p).length === 2 ? 10 : 4) : '¥' + rentOf(i, '', 7)));
+        box.append(h('div', {class: 'mo-row', on: {click: () => { sel = i; uiMode = 'info'; render(); }}}, h('i', {class: 'c', style: {background: col}}), h('div', {class: 'n'}, h('b', {text: sp.n}), h('small', {text: info}))));
+      }
+      if (jcCount(p)) box.append(h('div', {class: 'mo-log', text: '持有免罪金牌 ×' + jcCount(p)}));
+      return box;
+    }
+    /* auto-roll / auto-end (local conveniences, never game state) */
+    let autoRoll = !!ctx.load('autoRoll', false), autoEnd = !!ctx.load('autoEnd', false), autoKey = '', autoT = 0, touched = -1;
+    function toggles() {
+      const t = (label, on, fn) => h('button', {class: on ? 'on' : '', text: (on ? '✓ ' : '') + label, on: {click: () => { fn(); autoKey = ''; ctx.sfx('click'); render(); }}});
+      return h('div', {class: 'mo-tg'}, t('自动掷骰', autoRoll, () => { autoRoll = !autoRoll; ctx.save('autoRoll', autoRoll); }), t('自动结束回合', autoEnd, () => { autoEnd = !autoEnd; ctx.save('autoEnd', autoEnd); }));
+    }
+    function autoTick() {
+      if (BX.bot || st.over || busy() || uiMode !== 'info') return;
+      const a = actor(); if (a < 0 || a !== st.cur || ctx.isAI(a)) return;
+      let act = null;
+      if (st.ph === 'roll' && autoRoll && st.jail[a] < 0) act = {t: 'roll'};
+      else if (st.ph === 'post' && autoEnd && touched !== st.round * 10 + st.cur) act = {t: 'end'};
+      if (!act) return;
+      const key = ctx.log.length + ':' + st.ph;
+      if (key === autoKey) return;
+      autoKey = key; ctx.cancel(autoT);
+      autoT = ctx.after(act.t === 'roll' ? 550 : 1100, () => { if (ctx.log.length + ':' + st.ph === key && uiMode === 'info' && !busy() && legal(act, actor())) { if (act.t === 'end') sel = -1; doAct(act); } });
     }
     function render() {
       if (!panel.isConnected) return;
@@ -768,7 +919,9 @@ BX.register({
       const tm = toMove(), a = actor(), B = busy(), ph = st.ph;
       const main = h('div', {class: 'mo-main'}), bar = h('div', {class: 'mo-act'});
       const mine = a >= 0 && (ph === 'roll' || ph === 'post');
-      if (!mine && uiMode !== 'info' && ph !== 'debt') uiMode = 'info';
+      if (!mine && uiMode !== 'info' && uiMode !== 'player' && ph !== 'debt') uiMode = 'info';
+      if (uiMode === 'manage' || uiMode === 'trade') touched = st.round * 10 + st.cur;
+      if (a >= 0 && (ph === 'buy' || ph === 'auction' || ph === 'trade') && uiMode === 'player') uiMode = 'info';
       const waitTxt = t => bar.append(h('div', {class: 'mo-wait', text: st.over ? '对局结束' : B ? '……' : '等待 ' + name(t) + ' ' + t_}));
       let t_ = {roll: '行动…', post: '行动…', buy: '决定是否购买…', auction: '出价…', debt: '筹款…', trade: '考虑交易…'}[ph] || '';
       if (ph === 'trade' && st.offer) {
@@ -790,17 +943,23 @@ BX.register({
       } else if (uiMode === 'trade' && mine) {
         main.append(tradeBuilder(a));
         const o = Object.assign({}, draft, {t: 'offer'});
-        bar.append(btn('发出提议', 'red', () => { doAct({t: 'offer', to: o.to, gc: o.gc, wc: o.wc, gj: o.gj, wj: o.wj, gp: o.gp.slice(), wp: o.wp.slice()}); uiMode = 'info'; draft = null; }, B || !legal(o, a), true), btn('取消', 'ghost', () => { uiMode = 'info'; render(); }));
+        bar.append(btn('发出提议', 'red', () => { doAct({t: 'offer', to: o.to, gc: o.gc, wc: o.wc, gj: o.gj, wj: o.wj, gp: o.gp.slice(), wp: o.wp.slice()}); uiMode = 'info'; draft = null; }, B || !legal(o, a), true, 'offer:'), btn('取消', 'ghost', () => { uiMode = 'info'; render(); }));
+      } else if (uiMode === 'player' && viewP >= 0) {
+        main.append(playerView(viewP));
+        bar.append(btn('返回', 'ghost', () => { uiMode = 'info'; render(); }, false, !mine && ph !== 'buy'));
+        if (mine && ph === 'roll') bar.append(btn('掷骰', 'red', () => { uiMode = 'info'; doAct({t: 'roll'}); }, B, true));
+        else if (mine) bar.append(btn('结束回合', 'red', () => { uiMode = 'info'; sel = -1; doAct({t: 'end'}); }, B, true));
       } else if (uiMode === 'manage' && mine) {
         main.append(manageList(a, true));
         bar.append(btn('返回', 'ghost', () => { uiMode = 'info'; render(); }, false, true));
       } else {
         const showI = ph === 'buy' && st.buyP >= 0 ? st.buyP : sel >= 0 ? sel : st.pos[st.alive[st.cur] ? st.cur : 0];
         main.append(deed(showI));
+        if (!st.over) main.append(toggles());
         main.append(h('div', {class: 'mo-log'}, logs.slice(0, 8).map(l => h('div', {text: l}))));
         if (a >= 0 && ph === 'buy') {
           const p = st.buyP;
-          bar.append(btn('购买 ¥' + SP[p].price, 'jade', () => doAct({t: 'buy'}), B || st.cash[a] < SP[p].price, true), btn('不买·拍卖', 'red', () => doAct({t: 'decline'}), B));
+          bar.append(btn('购买 ¥' + SP[p].price, 'jade', () => doAct({t: 'buy'}), B || st.cash[a] < SP[p].price, true), btn(st.rule.auc ? '不买·拍卖' : '不买', 'red', () => doAct({t: 'decline'}), B));
         } else if (mine) {
           if (ph === 'roll') {
             bar.append(btn(st.jail[a] >= 0 ? '掷骰求双' : st.dbl ? '再掷一次' : '掷骰', 'red', () => doAct({t: 'roll'}), B, true));
@@ -811,6 +970,12 @@ BX.register({
       }
       panel.append(playersBar(), main, bar);
       main.scrollTop = scroll;
+      if (hintA && a >= 0) {   // 💡: pulse the button that performs the suggested action
+        const lab = {roll: '掷', end: '结束', buy: '购买', decline: '不买', pass: '放弃', bail: '付¥50', card: '金牌', accept: '接受', reject: '拒绝', paydebt: '支付', bankrupt: '破产'}[hintA.t];
+        const bid = hintA.t === 'bid' ? '+' + (hintA.v - (st.auc ? st.auc.bid : 0)) : null;
+        for (const b of bar.querySelectorAll('button')) if ((lab && b.textContent.includes(lab)) || (bid && b.textContent === bid)) { b.classList.add('mo-hint'); break; }
+        if (hintA.t === 'bid' && !bar.querySelector('.mo-hint')) { const b = bar.querySelector('button'); if (b) b.classList.add('mo-hint'); }
+      }
     }
 
     /* ===== status / info ===== */
@@ -830,8 +995,9 @@ BX.register({
       return -1;
     }
     ctx.on(cv.cv, 'pointerdown', e => {
+      if (skipFx()) return;
       const p = cv.pos(e), i = tileAt(p.x, p.y);
-      if (i >= 0) { sel = sel === i ? -1 : i; if (uiMode === 'manage') uiMode = 'info'; if (uiMode !== 'trade') { ctx.sfx('tick'); render(); } }
+      if (i >= 0) { sel = sel === i ? -1 : i; touched = st.round * 10 + st.cur; if (uiMode === 'manage' || uiMode === 'player') uiMode = 'info'; if (uiMode !== 'trade') { ctx.sfx('tick'); render(); } }
     });
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { cacheKey = ''; });
 
@@ -967,8 +1133,8 @@ BX.register({
         if (!isProp(i)) continue;
         const r = tileRect(i, bs), o = st.own[i];
         if (o >= 0) {
-          g.fillStyle = D.alpha(ctx.color(o), .2); g.fillRect(r.x + 1, r.y + 1, r.w - 2, r.h - 2);
-          const ob = Math.max(3, c * .05); g.fillStyle = ctx.color(o);
+          g.fillStyle = D.alpha(ctx.color(o), .3); g.fillRect(r.x + 1, r.y + 1, r.w - 2, r.h - 2);
+          const ob = Math.max(4, c * .075); g.fillStyle = ctx.color(o);
           if (r.side === 0) g.fillRect(r.x + 1, r.y + r.h - ob, r.w - 2, ob - 1);
           else if (r.side === 2) g.fillRect(r.x + 1, r.y + 1, r.w - 2, ob - 1);
           else if (r.side === 1) g.fillRect(r.x + 1, r.y + 1, ob - 1, r.h - 2);
@@ -999,6 +1165,8 @@ BX.register({
       // center info
       const round = st.maxRound ? `第 ${Math.min(st.round, st.maxRound)} / ${st.maxRound} 回合` : `第 ${st.round} 回合`;
       D.text(g, round, bs / 2, bs / 2 - I * .1, {size: Math.max(10, I * .045), color: '#3f5f4a', weight: 700});
+      if (st.rule.park) D.text(g, '停车奖池 ¥' + st.pot, bs / 2, bs / 2 - I * .15, {size: Math.max(9, I * .036), color: '#b8862b', weight: 800});
+      if (hintA && sel >= 0) { const r = tileRect(sel, bs), k = performance.now() / 1000; g.strokeStyle = `rgba(63,190,140,${.55 + .4 * Math.sin(k * 6)})`; g.lineWidth = Math.max(3, u * .16); g.strokeRect(r.x + 2, r.y + 2, r.w - 4, r.h - 4); }
       const tm = toMove();
       if (tm != null && !st.over) {
         const ty = bs / 2 + I * .04;
@@ -1024,7 +1192,7 @@ BX.register({
       }
       // card popup
       if (cardShow) {
-        const card = (cardShow.d === 'ch' ? CHANCE : CHEST)[cardShow.id], a = cardShow.a;
+        const card = (cardShow.d === 'ch' ? CHANCE : CHEST)[cardShow.id], fade = cardShow.until ? BX.clamp(1 - (performance.now() - cardShow.until) / 400, 0, 1) : 1, a = cardShow.a * fade;
         const w = I * .78, hh = I * .44, x = bs / 2 - w / 2, y = bs / 2 - hh / 2 + I * .02;
         g.save(); g.globalAlpha = Math.min(1, a); g.translate(bs / 2, y + hh / 2); const sc = .7 + .3 * Math.min(1, a); g.scale(sc, sc); g.translate(-bs / 2, -(y + hh / 2));
         g.shadowColor = 'rgba(0,0,0,.4)'; g.shadowBlur = u * .5; g.shadowOffsetY = u * .15;
@@ -1036,6 +1204,7 @@ BX.register({
         lines.forEach((l, k) => D.text(g, l, bs / 2, y + hh * .28 + (hh * .72 - lines.length * fs * 1.35) / 2 + fs * 1.35 * (k + .5), {size: fs, color: '#2b2118', font: 'serif', weight: 700}));
         g.strokeStyle = DECKC[cardShow.d]; g.lineWidth = 2; D.rr(g, x, y, w, hh, u * .25); g.stroke();
         g.restore();
+        if (fade <= 0) cardShow = null;
       }
       // banner
       if (banner) {
@@ -1080,12 +1249,32 @@ BX.register({
         if (!a || !legal(a, seat)) a = fallback(seat);
         return a;
       },
-      onTurn() { status(); render(); },
+      onTurn() { hintA = null; status(); render(); },
       onView() { render(); },
-      frame,
+      frame(dt) { frame(dt); autoTick(); },
       resize() { lastLayout = ''; },
+      showHint(a, seat) {
+        if (!a) return;
+        const P = i => SP[i] ? SP[i].n : '';
+        const txt = {roll: '掷骰', end: '结束回合', buy: '买下' + P(st.buyP), decline: st.rule.auc ? '不买，让它进入拍卖' : '不买', bid: '出价到 ¥' + a.v, pass: '放弃竞拍',
+          bail: '付 ¥50 出狱', card: '用免罪金牌出狱', accept: '接受交易', reject: '拒绝交易', paydebt: '支付欠款', bankrupt: '只能宣告破产了',
+          build: '在' + P(a.i) + '盖房', buildset: '给' + P((GROUPS[a.g] || [0])[0]) + '一组整组盖房', sell: '拆卖' + P(a.i) + '的房屋', mort: '抵押' + P(a.i), unmort: '赎回' + P(a.i),
+          offer: '向 ' + name(a.to) + ' 提议交易'}[a.t] || '';
+        ctx.toast('💡 建议：' + txt, 2600);
+        hintA = a;
+        if (a.i >= 0) sel = a.i; else if (a.t === 'buildset') sel = GROUPS[a.g][0];
+        if (['build', 'buildset', 'sell', 'mort', 'unmort'].includes(a.t) && st.ph !== 'debt') uiMode = 'manage';
+        if (a.t === 'offer') { uiMode = 'trade'; draft = {from: seat, to: a.to, gc: a.gc, wc: a.wc, gj: a.gj, wj: a.wj, gp: a.gp.slice(), wp: a.wp.slice()}; }
+        render();
+        const want = {build: 'build', buildset: 'buildset', sell: 'sell', mort: 'mort', unmort: 'unmort', offer: 'offer'}[a.t];
+        if (want) for (const b of panel.querySelectorAll('button')) if (b.dataset.act === want + ':' + (a.i != null ? a.i : a.g != null ? a.g : '')) { b.classList.add('mo-hint'); b.scrollIntoView({block: 'nearest'}); }
+      },
       key(e) {
-        if (e.code === 'Space' || e.code === 'Enter') { const b = panel.querySelector('[data-primary="1"]'); if (b && !b.disabled) { b.click(); e.preventDefault(); } }
+        if (e.code === 'Space' || e.code === 'Enter') { if (skipFx()) { e.preventDefault(); return; } const b = panel.querySelector('[data-primary="1"]'); if (b && !b.disabled) { b.click(); e.preventDefault(); } return; }
+        const mine = actor() >= 0 && (st.ph === 'roll' || st.ph === 'post') && !busy();
+        if (e.code === 'Escape') { uiMode = 'info'; render(); }
+        else if (e.code === 'KeyM' && mine) { uiMode = uiMode === 'manage' ? 'info' : 'manage'; render(); }
+        else if (e.code === 'KeyT' && mine && st.trades < 3) { uiMode = uiMode === 'trade' ? 'info' : 'trade'; draft = null; render(); }
       },
     };
     log('开局：每人 ¥1500，' + (maxRound ? '共 ' + maxRound + ' 回合' : '经典模式') + '。祝生意兴隆！');

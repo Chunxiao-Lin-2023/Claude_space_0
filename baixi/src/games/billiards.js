@@ -208,13 +208,14 @@ BX.register({
   id: 'billiards', title: '桌球·八球', cat: 'arcade', order: 1, sub: '十五球开局，黑八定输赢',
   desc: '经典美式八球：开球后打进一颗球即定全色或花色，清完本方七球再合法打进黑八获胜。真实的碰撞、库边与高低杆，电脑三档难度。',
   kind: 'turn', seats: 2, seatColors: ['#c23a2b', '#2f5d8a'], noTurnChime: false, firstLabel: '开球', aiDelay: 300,
+  howto: ['<b>瞄准</b>：在球台上按住拖动，球杆跟着手指转；再用侧边<b>微调轮</b>左右拖（或点两端）细调角度。', '<b>出杆</b>：拖动<b>力度条</b>（拖回起点可取消），或从白球向后拉、松手出杆；“杆法”小球设高杆 / 低杆。', '瞄准线会画出目标球的走向，能进袋时袋口亮起绿圈；自由球时直接拖动白球摆放。', '击球动画中点一下球台可快进；💡 会把球杆对准推荐线路并在力度条上标出建议力度。键盘：←→ 瞄准（Shift 更细）、↑↓ 力度、W/S 杆法、空格出杆。'],
   rules: `<p><b>器材</b>：一颗白色主球，十五颗目标球：1–7 号为<b>全色球</b>，9–15 号为<b>花色球</b>，8 号为<b>黑八</b>。开局摆成三角形，黑八居中。</p>
 <p><b>开球</b>：白球放在开球线（球台左侧/下方淡线）后任意位置击打。开球须有球入袋，或至少四颗目标球碰库，否则判犯规。开球打进黑八：黑八放回置球点，开球方继续。开球后球台为<b>开放球局</b>。</p>
 <p><b>定色</b>：开放球局时（开球之后），第一颗被合法打进的球决定该选手的球组（全色或花色），对手为另一组。开放球局可以先碰任意全色或花色球，但不能先碰黑八。</p>
 <p><b>连续击球</b>：合法打进本方球即可继续击球；没有进本方球则换对手。打进对方的球不算犯规，但不能继续。</p>
 <p><b>犯规</b>（对手获得<b>自由球</b>，可把白球放在台面任意位置）：白球落袋；白球没碰到任何球；白球首先碰到的不是本方球（清台后须先碰黑八）；碰球后没有任何球进袋、也没有任何球碰库。开球时白球落袋，对手的自由球须放在开球线后。</p>
 <p><b>胜负</b>：清完本方七球后，合法打进黑八者<b>获胜</b>。未清完本方球就打进黑八、或打进黑八的同时犯规（如白球落袋），<b>直接判负</b>。</p>
-<p><b>操作</b>：在球台上按住拖动可调整瞄准方向（球杆指向手指）；从白球附近向后拖动可直接蓄力，松手出杆。也可拖动侧边的<b>力度条</b>出杆。点击“杆法”小球设置高杆（跟进）/低杆（缩杆）。自由球时直接拖动白球摆放。键盘：←→ 微调方向（按住 Shift 更细），↑↓ 力度，W/S 杆法，空格出杆。</p>`,
+<p><b>操作</b>：在球台上按住拖动可调整瞄准方向（球杆指向手指），拖动侧边<b>微调轮</b>可精细调整；从白球附近向后拖动可直接蓄力，松手出杆。也可拖动侧边的<b>力度条</b>出杆（拖回起点取消）。点击或拖动“杆法”小球设置高杆（跟进）/低杆（缩杆）。自由球时直接拖动白球摆放。键盘：←→ 微调方向（按住 Shift 更细），↑↓ 力度，W/S 杆法，空格出杆。</p>`,
   icon(g, w, h) {
     D.wood(g, 0, 0, w, h, {base: '#7a2f1c', dark: '#3a120a', seed: 5});
     g.fillStyle = '#226a4c'; D.rr(g, 12, 12, w - 24, h - 24, 8); g.fill();
@@ -251,7 +252,7 @@ BX.register({
     /* ---------- UI state (never part of st) ---------- */
     let aim = {dx: 1, dy: 0}, kbPow = .55, spin = 0, place = null, placeBad = false, drag = null, aimFor = -1;
     let play = null, playId = 0, phase = new Array(16).fill(0), rdir = new Array(16).fill(0).map(() => [1, 0]);
-    let parts = [], shake = 0, banner = null, remoteAim = null, lastSend = 0, bg = null, bgKey = '';
+    let parts = [], shake = 0, banner = null, remoteAim = null, lastSend = 0, bg = null, bgKey = '', wheelPh = 0, hintMk = null;
     const myTurn = () => ctx.canAct(st.turn) && !play && !st.over;
     /* ---------- layout ---------- */
     function lay() {
@@ -264,12 +265,12 @@ BX.register({
       let spinW, pw, nudge;
       if (P.horiz) {
         const sr = Math.min(34, P.h * .32); spinW = {x: P.x + 14 + sr, y: P.y + P.h / 2, r: sr};
-        const nb = 44; nudge = [{x: P.w - 14 - nb * 2 - 6, y: P.y + P.h / 2 - nb / 2, w: nb, h: nb, d: -1}, {x: P.w - 14 - nb, y: P.y + P.h / 2 - nb / 2, w: nb, h: nb, d: 1}];
-        const x0 = spinW.x + sr + 18, x1 = nudge[0].x - 14; pw = {x: x0, y: P.y + P.h / 2 - 17, w: Math.max(60, x1 - x0), h: 34, horiz: true};
+        nudge = {x: P.w - 12 - 100, y: P.y + P.h / 2 - 22 + 6, w: 100, h: 44};
+        const x0 = spinW.x + sr + 18, x1 = nudge.x - 14; pw = {x: x0, y: P.y + P.h / 2 - 17, w: Math.max(60, x1 - x0), h: 34, horiz: true};
       } else {
         const sr = Math.min(34, P.w * .3); spinW = {x: P.x + P.w / 2, y: P.y + 16 + sr, r: sr};
-        const nb = 44, ny = spinW.y + sr + 14; nudge = [{x: P.x + P.w / 2 - nb - 3, y: ny, w: nb, h: nb, d: -1}, {x: P.x + P.w / 2 + 3, y: ny, w: nb, h: nb, d: 1}];
-        const y0 = ny + nb + 18; pw = {x: P.x + P.w / 2 - 17, y: y0, w: 34, h: Math.max(60, P.y + P.h - 16 - y0), horiz: false};
+        const ny = spinW.y + sr + 38, ww = Math.min(100, P.w - 10); nudge = {x: P.x + (P.w - ww) / 2, y: ny, w: ww, h: 44};
+        const y0 = ny + 44 + 30; pw = {x: P.x + P.w / 2 - 17, y: y0, w: 34, h: Math.max(60, P.y + P.h - 16 - y0), horiz: false};
       }
       return {portrait, s, ox, oy, f, panel, spinW, pw, nudge, w, h};
     }
@@ -312,8 +313,10 @@ BX.register({
     ctx.on(cv.cv, 'pointerdown', e => {
       const p = cv.pos(e); V = V.w === cv.w && V.h === cv.h ? V : lay();
       const sw = V.spinW;
-      if (Math.hypot(p.x - sw.x, p.y - sw.y) < sw.r + 10) { spin = Math.round(BX.clamp((sw.y - p.y) / sw.r, -1, 1) * 4) / 4; ctx.sfx('tick'); return; }
-      for (const nb of V.nudge) if (inRect(p, {x: nb.x - 3, y: nb.y - 3, w: nb.w + 6, h: nb.h + 6})) { if (myTurn()) { rotAim(nb.d * .0035); ctx.sfx('tick'); } return; }
+      if (play && !st.over) { speedUp(); return; }
+      if (Math.hypot(p.x - sw.x, p.y - sw.y) < sw.r + 10) { spin = Math.round(BX.clamp((sw.y - p.y) / sw.r, -1, 1) * 4) / 4; ctx.sfx('tick'); drag = {m: 'spin'}; try { cv.cv.setPointerCapture(e.pointerId); } catch (er) {} return; }
+      const nb = V.nudge;
+      if (inRect(p, {x: nb.x - 4, y: nb.y - 8, w: nb.w + 8, h: nb.h + 16})) { if (myTurn()) { drag = {m: 'wheel', x0: p.x, last: p.x, moved: 0}; try { cv.cv.setPointerCapture(e.pointerId); } catch (er) {} } return; }
       const pr = V.pw, prx = {x: pr.x - 14, y: pr.y - 10, w: pr.w + 28, h: pr.h + 20};
       if (inRect(p, prx)) { if (myTurn()) { drag = {m: 'power', x0: p.x, y0: p.y, v: 0}; try { cv.cv.setPointerCapture(e.pointerId); } catch (er) {} } return; }
       if (!myTurn()) return;
@@ -327,6 +330,8 @@ BX.register({
     ctx.on(cv.cv, 'pointermove', e => {
       if (!drag) return; const p = cv.pos(e);
       if (!myTurn()) { drag = null; return; }
+      if (drag.m === 'spin') { const sw = V.spinW, ns = Math.round(BX.clamp((sw.y - p.y) / sw.r, -1, 1) * 4) / 4; if (ns !== spin) { spin = ns; ctx.sfx('tick'); } return; }
+      if (drag.m === 'wheel') { const d = p.x - drag.last; drag.last = p.x; drag.moved += Math.abs(d); if (d) { rotAim(d * .0011); wheelPh += d; } return; }
       if (drag.m === 'aim') { const t = inv(p.x, p.y), c = cuePos(), l = Math.hypot(t.x - c[0], t.y - c[1]); if (l > 2) { aim = {dx: (t.x - c[0]) / l, dy: (t.y - c[1]) / l}; sendAim(); } }
       else if (drag.m === 'place') {
         const t = inv(p.x, p.y), k = st.bih === 'k';
@@ -342,8 +347,9 @@ BX.register({
         drag.v = BX.clamp(Math.abs(d) / (len * .92), 0, 1); sendAim(drag.v);
       }
     });
-    const up = () => {
+    const up = e => {
       const d = drag; drag = null; if (!d) return;
+      if (d.m === 'wheel' && d.moved < 6 && myTurn()) { const p = cv.pos(e), nb = V.nudge, sd = p.x < nb.x + nb.w / 2 ? -1 : 1; rotAim(sd * .0035); wheelPh += sd * 6; ctx.sfx('tick'); }
       if (d.m === 'place') { if (placeBad) { place = findFree(st.b, place[0], place[1], st.bih === 'k', true); placeBad = false; } ctx.sfx('place'); }
       else if ((d.m === 'pull' || d.m === 'power') && d.v > .03) shoot(d.v);
     };
@@ -352,7 +358,7 @@ BX.register({
     function status() {
       for (const s of [0, 1]) { const g = st.grp[s]; ctx.info(s, g < 0 ? '未定色' : GN[g] + '·' + countGroup(st.b, g)); }
       if (st.over) return ctx.status(ctx.name(st.winner) + ' 获胜');
-      if (play) return ctx.status(ctx.name(st.turn) + ' 击球中…');
+      if (play) return ctx.status('击球中… 点球台可快进');
       const t = st.turn, g = st.grp[t], tgt = g < 0 ? '' : countGroup(st.b, g) === 0 ? ' · 目标：黑八' : ' · 目标：' + GN[g];
       if (ctx.canAct(t)) {
         initAim();
@@ -461,12 +467,19 @@ BX.register({
       if (play && play.anim) play.anim.cancel();
       const id = ++playId, fr = res.frames.length, ms = 380 + fr * 1000 / 60 / 1.3;
       play = {id, offBefore, frames: res.frames, ev: res.ev, ei: 0, k: 0, ms, pre: 380 / ms, a, cue: preCue, pots: new Map(), struck: false};
-      play.anim = ctx.anim(ms, k => { if (play && play.id === id) play.k = k; }, () => {
+      play.done = () => {
         if (!play || play.id !== id) return;
         play = null; aimFor = -1;
         if (st.note) banner = {note: st.note, t: 2.6};
         status(); ctx.poke();
-      }, t => t);
+      };
+      play.anim = ctx.anim(ms, k => { if (play && play.id === id) play.k = k; }, play.done, t => t);
+    }
+    /* tap during the shot animation → play the rest 4× faster (collision clicks muted) */
+    function speedUp() {
+      if (!play || play.fastF) return;
+      const P = play, k0 = P.k; P.fastF = true; P.anim.cancel();
+      P.anim = ctx.anim(Math.max(60, (1 - k0) * P.ms / 4), k => { if (play === P) P.k = k0 + (1 - k0) * k; }, P.done, t => t);
     }
     const inst = {
       st,
@@ -489,7 +502,8 @@ BX.register({
         const p = BX.clamp(+a.p || 0, 0, 1), s = BX.clamp(+a.s || 0, -1, 1);
         const P = mkP(st.b), preCue = [st.b[0][0], st.b[0][1]], offBefore = st.b.map(q => !q[2]);
         const res = simulate(P, dx, dy, p, s, !ctx.fast);
-        const j = judge(st, sh, res);
+        const j = judge(st, sh, res); hintMk = null;
+        if (j.foul && ctx.isLocal(sh) && !ctx.isAI(sh)) ctx.buzz(30);
         for (let n = 0; n < 16; n++) st.b[n] = [P.X[n], P.Y[n], P.ON[n]];
         st.shots++;
         if (j.respot8) { st.b[8] = findFree(st.b, FOOTX, FOOTY, false, false).concat([1]); }
@@ -509,6 +523,15 @@ BX.register({
       },
       aiMove,
       onTurn: status,
+      /* 💡: point the cue along the strongest AI's shot (incl. ball-in-hand spot, spin) and mark its power on the bar */
+      showHint(a) {
+        if (!myTurn()) return;
+        initAim();
+        aim = {dx: a.dx, dy: a.dy}; spin = BX.clamp(Math.round((a.s || 0) * 4) / 4, -1, 1); kbPow = a.p;
+        if (st.bih && Number.isFinite(a.cx)) { place = [a.cx, a.cy]; placeBad = !legalSpot(st.b, a.cx, a.cy, st.bih === 'k'); }
+        hintMk = {shots: st.shots, p: a.p, t0: performance.now()}; sendAim();
+        ctx.toast('已对准推荐线路 · 建议力度 ' + Math.round(a.p * 100) + '%' + (BX.TOUCH.matches ? '（把力度条拖到金色标记）' : '（空格出杆，或把力度条拖到金色标记）') + '');
+      },
       onMsg(m, by) { if (m && m.aim) remoteAim = {a: m.aim, t: performance.now()}; },
       key(e) {
         if (!myTurn()) return;
@@ -624,13 +647,34 @@ BX.register({
       if (hit >= 0 && tBest <= tr) {
         let nx = b[hit][0] - gx, ny = b[hit][1] - gy; const nl = Math.hypot(nx, ny); nx /= nl; ny /= nl;
         const cs = dx * nx + dy * ny, ok = st.brk || targetsFor(st, st.turn).includes(hit);
+        const pk = ok && ctx.pref('hints') ? pocketOf(b, hit, nx, ny) : null;
         g.strokeStyle = ok ? 'rgba(255,220,120,.9)' : 'rgba(255,90,70,.9)'; g.lineWidth = 2.2;
-        g.beginPath(); g.moveTo(b[hit][0], b[hit][1]); g.lineTo(b[hit][0] + nx * (40 + 140 * cs), b[hit][1] + ny * (40 + 140 * cs)); g.stroke();
+        const len = pk ? pk.t : 40 + 140 * cs;
+        g.beginPath(); g.moveTo(b[hit][0], b[hit][1]); g.lineTo(b[hit][0] + nx * len, b[hit][1] + ny * len); g.stroke();
+        if (pk) { const [qx, qy] = POCK[pk.k], k2 = performance.now() / 160; g.strokeStyle = `rgba(90,230,150,${.7 + .25 * Math.sin(k2)})`; g.lineWidth = 3.5; D.circle(g, qx, qy, HOLE + 4); g.stroke(); }
         let tx = dx - cs * nx, ty = dy - cs * ny; const tl = Math.hypot(tx, ty);
         if (tl > .05) { tx /= tl; ty /= tl; g.strokeStyle = 'rgba(255,255,255,.35)'; g.lineWidth = 1.4; g.beginPath(); g.moveTo(gx, gy); g.lineTo(gx + tx * 80 * tl, gy + ty * 80 * tl); g.stroke(); }
         if (!ok) { g.strokeStyle = 'rgba(255,90,70,.9)'; g.lineWidth = 2; D.circle(g, b[hit][0], b[hit][1], R + 3); g.stroke(); }
       }
       g.restore();
+    }
+    /* where would object ball `hit` go along (nx,ny)? → {k: pocket, t: distance} if it reaches a pocket mouth before another ball / a cushion */
+    function pocketOf(b, hit, nx, ny) {
+      const ox = b[hit][0], oy = b[hit][1];
+      let tObs = 1e9;
+      for (let m = 0; m < 16; m++) {
+        if (m === hit || !b[m][2]) continue; const ex = b[m][0] - ox, ey = b[m][1] - oy, tc = ex * nx + ey * ny; if (tc <= 0) continue;
+        const pd2 = ex * ex + ey * ey - tc * tc; if (pd2 < RR) tObs = Math.min(tObs, tc - Math.sqrt(RR - pd2));
+      }
+      let t = 1e9, xLine = false;
+      if (nx > 0 && (L - R - ox) / nx < t) { t = (L - R - ox) / nx; xLine = true; } if (nx < 0 && (R - ox) / nx < t) { t = (R - ox) / nx; xLine = true; }
+      if (ny > 0 && (W - R - oy) / ny < t) { t = (W - R - oy) / ny; xLine = false; } if (ny < 0 && (R - oy) / ny < t) { t = (R - oy) / ny; xLine = false; }
+      if (!(t < tObs)) return null;
+      const cx = ox + nx * t, cy = oy + ny * t;
+      const mouth = xLine ? (cy < CG + 2 || cy > W - CG - 2) : (cx < CG + 2 || cx > L - CG - 2 || Math.abs(cx - L / 2) < SG - 4);
+      if (!mouth) return null;
+      let best = 0, bd = 1e18; for (let k = 0; k < 6; k++) { const dx = POCK[k][0] - cx, dy = POCK[k][1] - cy, d = dx * dx + dy * dy; if (d < bd) { bd = d; best = k; } }
+      return {k: best, t: t + 8};
     }
     function sunkRack(g) {
       // ball tray on the far rail: every object ball, faded once pocketed; owner's colour chip next to each group
@@ -720,8 +764,8 @@ BX.register({
     function wasOffBefore(n) { return play ? play.offBefore[n] : false; }
     function fire(e) {
       const [f, type, i, v] = e, fr = play.frames[Math.min(f, play.frames.length - 1)];
-      if (type === 0) { if (v > 60) ctx.sfx(v > 900 ? 'hit' : 'stone'); if (v > 500) { parts.push({x: fr[i * 2], y: fr[i * 2 + 1], vx: 0, vy: 0, t: .25, t0: .25, c: 'rgba(255,255,255,.6)', ring: true}); } if (v > 1500) shake = Math.max(shake, 7); }
-      else if (type === 1) { if (v > 150) ctx.sfx('bounce'); }
+      if (type === 0) { if (v > 60 && !play.fastF) ctx.sfx(v > 900 ? 'hit' : 'stone'); if (v > 500) { parts.push({x: fr[i * 2], y: fr[i * 2 + 1], vx: 0, vy: 0, t: .25, t0: .25, c: 'rgba(255,255,255,.6)', ring: true}); } if (v > 1500) shake = Math.max(shake, 7); }
+      else if (type === 1) { if (v > 150 && !play.fastF) ctx.sfx('bounce'); }
       else if (type === 2) {
         const ff = play.frames[Math.max(0, f - 1)];
         play.pots.set(i, {x: ff[i * 2], y: ff[i * 2 + 1], k: v, t: 0});
@@ -740,12 +784,22 @@ BX.register({
       g.strokeStyle = 'rgba(0,0,0,.15)'; g.lineWidth = 1; g.beginPath(); g.moveTo(sw.x - sw.r, sw.y); g.lineTo(sw.x + sw.r, sw.y); g.moveTo(sw.x, sw.y - sw.r); g.lineTo(sw.x, sw.y + sw.r); g.stroke();
       g.fillStyle = C.red; D.circle(g, sw.x, sw.y - spin * sw.r * .72, sw.r * .17); g.fill();
       D.text(g, spin > 0 ? '高杆' : spin < 0 ? '低杆' : '中杆', sw.x, sw.y + sw.r + (P.horiz ? 0 : 10), {size: 11, color: '#f3e2c0', base: P.horiz ? 'top' : 'middle'});
-      // nudge buttons
-      for (const nb of V.nudge) {
-        g.fillStyle = 'rgba(255,255,255,.08)'; D.rr(g, nb.x, nb.y, nb.w, nb.h, 10); g.fill(); g.strokeStyle = 'rgba(243,226,192,.35)'; g.lineWidth = 1; g.stroke();
-        D.text(g, nb.d < 0 ? '↺' : '↻', nb.x + nb.w / 2, nb.y + nb.h / 2, {size: 20, color: '#f3e2c0'});
+      // fine-aim wheel: drag left/right, or tap its ends
+      {
+        const nb = V.nudge, cy = nb.y + nb.h / 2;
+        g.save(); D.rr(g, nb.x, nb.y, nb.w, nb.h, 12); g.clip();
+        const wg = g.createLinearGradient(0, nb.y, 0, nb.y + nb.h); wg.addColorStop(0, '#2a160a'); wg.addColorStop(.5, '#6a4426'); wg.addColorStop(1, '#2a160a');
+        g.fillStyle = wg; g.fillRect(nb.x, nb.y, nb.w, nb.h);
+        const step = 7, off = ((wheelPh % step) + step) % step;
+        for (let x = nb.x - step + off; x < nb.x + nb.w + step; x += step) {
+          const u = (x - nb.x) / nb.w * 2 - 1, a = Math.max(0, 1 - u * u);
+          g.fillStyle = `rgba(243,226,192,${.12 + .45 * a})`; g.fillRect(x, nb.y + 6, 1.6, nb.h - 12);
+        }
+        g.restore();
+        g.strokeStyle = 'rgba(230,197,125,.55)'; g.lineWidth = 1.2; D.rr(g, nb.x, nb.y, nb.w, nb.h, 12); g.stroke();
+        D.text(g, '‹', nb.x + 9, cy, {size: 18, color: '#f3e2c0', weight: 700}); D.text(g, '›', nb.x + nb.w - 9, cy, {size: 18, color: '#f3e2c0', weight: 700});
+        D.text(g, '微调', nb.x + nb.w / 2, nb.y - 9, {size: 11, color: 'rgba(243,226,192,.8)'});
       }
-      if (!P.horiz) D.text(g, '微调', V.nudge[0].x + V.nudge[0].w + 3, V.nudge[0].y + V.nudge[0].h + 9, {size: 10, color: 'rgba(243,226,192,.6)'});
       // power bar
       const v = drag && (drag.m === 'power' || drag.m === 'pull') ? drag.v : 0;
       D.wood(g, pr.x - 5, pr.y - 5, pr.w + 10, pr.h + 10, {r: 10, base: '#5a2414', dark: '#200804', seed: 4, vertical: !pr.horiz});
@@ -764,7 +818,13 @@ BX.register({
       // handle
       const hx = pr.horiz ? pr.x + pr.w * v : pr.x + pr.w / 2, hy = pr.horiz ? pr.y + pr.h / 2 : pr.y + pr.h * v;
       D.disc(g, hx, hy, 13, '#e6c57d', {ring: '#8a6a2c'});
+      if (hintMk && hintMk.shots === st.shots && mine) {
+        const k = (performance.now() - hintMk.t0) / 1000, hp = hintMk.p; g.strokeStyle = `rgba(255,215,106,${.65 + .3 * Math.sin(k * 6)})`; g.lineWidth = 3;
+        if (pr.horiz) { g.beginPath(); g.moveTo(pr.x + pr.w * hp, pr.y - 4); g.lineTo(pr.x + pr.w * hp, pr.y + pr.h + 4); g.stroke(); }
+        else { g.beginPath(); g.moveTo(pr.x - 4, pr.y + pr.h * hp); g.lineTo(pr.x + pr.w + 4, pr.y + pr.h * hp); g.stroke(); }
+      }
       D.text(g, v > 0 ? '力度 ' + Math.round(v * 100) + '%' : (pr.horiz ? '拖动力度条出杆 →' : '力度'), pr.x + pr.w / 2, pr.horiz ? pr.y - 13 : pr.y - 20, {size: 11, color: 'rgba(243,226,192,.85)'});
+      if (v > 0 && drag && drag.m === 'power') D.text(g, '松手出杆 · 拖回取消', pr.horiz ? pr.x + pr.w / 2 : V.w / 2, pr.horiz ? pr.y + pr.h + 12 : 12, {size: 10, color: 'rgba(243,226,192,.7)'});
       if (!pr.horiz) D.text(g, '↓', pr.x + pr.w / 2, pr.y + pr.h / 2, {size: 16, color: 'rgba(243,226,192,.35)'});
       g.restore();
     }

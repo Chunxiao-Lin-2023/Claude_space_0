@@ -47,6 +47,15 @@ function doMove(st, side, m) {
   else pc.p = m.to;
   return {fish, win};
 }
+/* chance (0..1) that the opponent can hit piece i of side right after move m */
+function riskAfter(st, side, m) {
+  if (m.to >= WATER) return 0;
+  const s2 = cloneSt(st); doMove(s2, side, m);
+  if (SAFE.has(node(side, m.to))) return 0;
+  let p = 0;
+  for (let d = 1; d <= 6; d++) if (legal(s2, 1 - side, d).some(om => om.cap === m.i)) p += PSTEP[d];
+  return p;
+}
 /* ---------- AI evaluation ---------- */
 function threat(st, victimSide) {   // expected loss for victimSide from opponent's next throw
   const op = 1 - victimSide; let loss = 0;
@@ -102,7 +111,8 @@ BX.register({
 <p><b>相杀：</b>落在对方棋子上即将其吃回局外。己方棋子不能重叠；<b>四角“高”位为安全位</b>，不得在此吃子；<b>散不能吃枭</b>，枭可吃任何棋子。</p>
 <p><b>牵鱼：</b>棋子入水即“竖为骁、入水牵鱼”：散牵 <b>1</b> 尾鱼，枭冒险入水可牵 <b>2</b> 尾；之后该棋子回到局外重新出发。</p>
 <p><b>胜负：</b>吃掉对方的<b>枭</b>立即获胜；否则先牵满约定鱼数（3 或 6 尾）者胜。</p>
-<p><b>操作：</b>点「掷箸」，可走的棋子会发光；点棋子（或局外的待命棋）显示落点，再点落点或再点一次棋子确认。只有一种走法时可直接点落点。</p>`,
+<p><b>操作：</b>点「掷箸」，可走的棋子会发光；点棋子（或局外的待命棋）显示行进路线与落点，再点落点或再点一次棋子确认。只有一种走法时会自动行棋。落点旁的“险 x%”是对方下一掷能吃到它的机会。</p>`,
+  howto: ['点「掷箸」（或空格键）掷六根箸，有纹面朝上几根就走几步；全纹或全素为“满采”：走 6 步再掷一次。', '能走的棋子会发光、小点标出它们的落点；点棋子会画出逐步路线，再点落点（或再点棋子）确认。只有一种走法时自动走。', '落点旁“吃”表示能吃子，“险 25%”是对方下一掷吃回它的机会，“安全”为角上高位。', '棋子沿外圈逆时针走一圈，经本方“楬”入水牵鱼；吃掉对方的枭立即获胜。', '键盘：←/→ 换棋子，回车/空格 确认。💡 提示会标出推荐走法。'],
   icon(g, w, h) {
     g.fillStyle = '#2a1a12'; g.fillRect(0, 0, w, h);
     const s = h * .86, x0 = w / 2 - s / 2, y0 = h * .07;
@@ -123,7 +133,8 @@ BX.register({
     const mk = () => [{k: 'x', p: 0}, {k: 's', p: 0}, {k: 's', p: 0}, {k: 's', p: 0}, {k: 's', p: 0}, {k: 's', p: 0}];
     const st = {pc: [mk(), mk()], fish: [0, 0], turn: 0, ph: 'throw', sticks: null, steps: 0, extra: false, last: null, nt: 0, over: false, winner: null};
     const cv = ctx.canvas();
-    let sel = -1, hover = null;
+    let sel = -1, hover = null, hintM = null, hintT = 0, autoT = null;
+    const log = [];
     const vis = {throwT: 0, throwSeed: 1, mv: null, poof: null, fishFx: null};
     const flip = () => ctx.mySeats.length === 1 && ctx.mySeats[0] === 1 || (ctx.hotseat && false);
     const now = () => performance.now();
@@ -192,25 +203,48 @@ BX.register({
         const b = L.btn; if (p.x >= b.x && p.x <= b.x + b.w && p.y >= b.y && p.y <= b.y + b.h) { ctx.act({t: 'throw'}, st.turn); return; }
         return;
       }
-      if (st.ph !== 'move' || now() - vis.throwT < 700) return;
+      if (st.ph !== 'move' || now() - vis.throwT < lockMs()) return;
       const ms = curMoves(), side = st.turn, R = L.pr * 1.25;
       // tap a target of selected piece
       const tgtXY = m => m.to >= WATER ? B2S(L, 0, 0) : pieceXY(L, side, m.i, m.to);
       const sm = ms.find(m => m.i === sel);
-      if (sm) { const [tx, ty] = tgtXY(sm); if (Math.hypot(p.x - tx, p.y - ty) < R * (sm.to >= WATER ? 1.5 : 1)) { go(sm); return; } }
+      if (sm) { const [tx, ty] = tgtXY(sm); if (Math.hypot(p.x - tx, p.y - ty) < R * (sm.to >= WATER ? 1.5 : 1.1)) { go(sm); return; } }
       // tap a piece
       for (const m of ms) {
         const [x, y] = pieceXY(L, side, m.i, m.from);
         if (Math.hypot(p.x - x, p.y - y) < R) { if (sel === m.i) { go(m); return; } sel = m.i; ctx.sfx('select'); return; }
       }
       // tap a target directly when unambiguous
-      const hits = ms.filter(m => { const [tx, ty] = tgtXY(m); return Math.hypot(p.x - tx, p.y - ty) < R; });
-      if (hits.length === 1) { go(hits[0]); return; }
+      const hits = ms.filter(m => { const [tx, ty] = tgtXY(m); return Math.hypot(p.x - tx, p.y - ty) < R * (m.to >= WATER ? 1.5 : 1); });
+      if (hits.length === 1) { if (ctx.needConfirm(e) && sel !== hits[0].i) { sel = hits[0].i; ctx.sfx('select'); return; } go(hits[0]); return; }
       sel = -1;
     });
     ctx.on(cv.cv, 'pointermove', e => { if (e.pointerType === 'mouse') hover = cv.pos(e); });
-    function go(m) { sel = -1; ctx.act({t: 'move', i: m.i}, st.turn); }
-    ctx.on(window, 'keydown', e => { if ((e.code === 'Space' || e.code === 'Enter') && myTurn() && st.ph === 'throw') ctx.act({t: 'throw'}, st.turn); });
+    function go(m) { sel = -1; hintM = null; if (autoT) { ctx.cancel(autoT); autoT = null; } ctx.act({t: 'move', i: m.i}, st.turn); }
+    const lockMs = () => 700 * (ctx.pref('speed') === 2 ? .55 : 1);
+    ctx.on(window, 'keydown', e => {
+      if (!myTurn() || e.repeat) return;
+      const c = e.code;
+      if (st.ph === 'throw' && (c === 'Space' || c === 'Enter' || c === 'NumpadEnter')) { e.preventDefault(); ctx.act({t: 'throw'}, st.turn); return; }
+      if (st.ph !== 'move' || now() - vis.throwT < lockMs()) return;
+      const ms = curMoves(); if (!ms.length) return;
+      if (c === 'ArrowLeft' || c === 'ArrowRight' || c === 'ArrowUp' || c === 'ArrowDown' || c === 'Tab') {
+        e.preventDefault(); const j = ms.findIndex(m => m.i === sel), d = c === 'ArrowLeft' || c === 'ArrowUp' ? -1 : 1;
+        sel = ms[((j < 0 ? (d > 0 ? -1 : 0) : j) + d + ms.length) % ms.length].i; ctx.sfx('select');
+      } else if (c === 'Space' || c === 'Enter' || c === 'NumpadEnter') {
+        e.preventDefault(); const m = ms.find(x => x.i === sel); if (m) go(m); else { sel = ms[0].i; ctx.sfx('select'); }
+      }
+    });
+    /* forced move: play it automatically after a short look */
+    function maybeAuto() {
+      if (ctx.fast || st.ph !== 'move' || !myTurn()) return;
+      const ms = curMoves(); if (ms.length !== 1) return;
+      const nt = st.nt, steps = st.steps;
+      if (autoT) ctx.cancel(autoT);
+      autoT = ctx.after(1250, () => { autoT = null; if (st.nt === nt && st.ph === 'move' && st.steps === steps && myTurn() && curMoves().length === 1) { ctx.toast('唯一走法，自动行棋'); go(curMoves()[0]); } });
+    }
+    const PN = (s, i) => st.pc[s][i].k === 'x' ? '枭' : '散';
+    const spot = (side, p) => p >= WATER ? '水' : p === T_POS ? '楬' : NAMES[node(side, p)];
 
     function status() {
       ctx.info(0, '鱼 ' + st.fish[0] + '/' + goal); ctx.info(1, '鱼 ' + st.fish[1] + '/' + goal);
@@ -230,7 +264,7 @@ BX.register({
     }
     function finish(w, why) {
       st.over = true; st.ph = 'over'; st.winner = w; st.winReason = why; status();
-      ctx.end({winner: w == null ? -1 : w, text: why === 'x' ? '吃掉了对方的枭！' : `牵鱼 ${st.fish[0]} : ${st.fish[1]}`, delay: 1400});
+      ctx.end({winner: w == null ? -1 : w, text: (why === 'x' ? '吃掉了对方的枭！' : why === 'f' && st.nt >= 400 ? '回合用尽，按鱼数定胜负 · ' : '') + `牵鱼 ${st.fish[0]} : ${st.fish[1]} · 共 ${st.nt} 回合`, delay: 1400});
     }
 
     const inst = {
@@ -246,6 +280,7 @@ BX.register({
       apply(a, by) {
         if (a.t === 'throw') {
           if (st.ph !== 'throw') return;
+          hintM = null;
           const sticks = []; for (let i = 0; i < 6; i++) sticks.push(ctx.rng() < .5 ? 1 : 0);
           const up = sticks.reduce((x, y) => x + y, 0);
           st.sticks = sticks; st.steps = up === 0 || up === 6 ? 6 : up; st.extra = up === 0 || up === 6;
@@ -261,8 +296,13 @@ BX.register({
           const side = st.turn, path = [];
           for (let p = m.from; p <= m.to; p++) path.push(p);
           const capK = m.cap >= 0 ? st.pc[1 - side][m.cap].k : null, capP = m.cap >= 0 ? st.pc[1 - side][m.cap].p : 0;
+          const pn = PN(side, m.i);
           const r = doMove(st, side, m);
           st.last = {side, i: m.i, from: m.from, to: m.to, cap: m.cap};
+          hintM = null;
+          log.push({side, text: `${pn}${m.from === 0 ? '入局' : ''} 行${st.steps}步 → ${spot(side, m.to)}` + (m.cap >= 0 ? `，吃${capK === 'x' ? '枭' : '散'}` : '') + (r.fish ? `，牵鱼 ${r.fish}` : '')});
+          if (log.length > 30) log.shift();
+          if (!ctx.fast && m.cap >= 0 && ctx.isLocal(1 - side) && !ctx.isLocal(side)) ctx.after(160 * (path.length - 1) + 80, () => { ctx.buzz(30); ctx.toast(capK === 'x' ? '你的枭被吃了！' : '你的散被吃回局外'); });
           if (!ctx.fast) {
             const mv = vis.mv = {side, i: m.i, path, k: 0, water: m.to >= WATER};
             ctx.anim(160 * (path.length - 1) + 60, k => mv.k = k, () => {
@@ -279,6 +319,7 @@ BX.register({
           nextTurn(st.extra);
         } else if (a.t === 'pass') {
           if (st.ph !== 'pass') return;
+          log.push({side: st.turn, text: `掷得 ${st.steps} 步，无棋可走`}); if (log.length > 30) log.shift();
           nextTurn(st.extra);
         }
         status();
@@ -294,8 +335,15 @@ BX.register({
         const scored = ms.map(m => [m.i, scoreMove(st, seat, m, goal, level >= 3)]);
         return {t: 'move', i: BX.ai.byLevel(scored, level)};
       },
-      onTurn: status,
+      onTurn() { status(); maybeAuto(); },
       ready() { status(); },
+      showHint(a) {
+        if (!a || !myTurn()) return;
+        hintT = now();
+        if (a.t === 'throw') { hintM = {throw: true}; return; }
+        const m = curMoves().find(x => x.i === a.i); if (!m) return;
+        hintM = m; sel = m.i;
+      },
       frame() {
         const g = cv.g; cv.clear(); const L = layout(), t = now();
         // table
@@ -345,6 +393,20 @@ BX.register({
           D.text(g, NAMES[r], x, y + 1, {size: sr * .9, color: SAFE.has(r) ? 'rgba(230,197,125,.85)' : 'rgba(246,231,200,.45)', font: 'serif', weight: 700});
         }
         for (const s of [0, 1]) { const [x, y] = B2S(L, ...nodeXY(100 + s)); g.fillStyle = D.alpha(ctx.color(s) === '#2b2118' ? '#8a7a6a' : ctx.color(s), .3); D.circle(g, x, y, sr); g.fill(); g.strokeStyle = 'rgba(246,231,200,.4)'; g.stroke(); D.text(g, '楬', x, y + 1, {size: sr * .9, color: 'rgba(246,231,200,.55)', font: 'serif'}); }
+        // direction chevrons between stations (counter-clockwise path)
+        g.strokeStyle = 'rgba(230,197,125,.45)'; g.lineWidth = Math.max(1.5, S * .004);
+        for (let r = 0; r < RING; r++) {
+          if (r === START[0] || r === START[1]) continue;
+          const [x0, y0] = B2S(L, ...RING_XY[r]), [x1, y1] = B2S(L, ...RING_XY[(r + 1) % RING]);
+          const mx = (x0 + x1) / 2, my = (y0 + y1) / 2, dx = x1 - x0, dy = y1 - y0, l = Math.hypot(dx, dy) || 1, ux = dx / l, uy = dy / l, c = sr * .45;
+          g.beginPath(); g.moveTo(mx - ux * c - uy * c, my - uy * c + ux * c); g.lineTo(mx + ux * c * .4, my + uy * c * .4); g.lineTo(mx - ux * c + uy * c, my - uy * c - ux * c); g.stroke();
+        }
+        for (const s of [0, 1]) {   // entry tags
+          const [x, y] = B2S(L, ...RING_XY[START[s]]), [ox, oy] = B2S(L, RING_XY[START[s]][0] * 1.16, RING_XY[START[s]][1] * 1.16);
+          g.fillStyle = ctx.color(s) === '#2b2118' ? '#5a4a3a' : ctx.color(s); D.rr(g, ox - sr * .8, oy - sr * .55, sr * 1.6, sr * 1.1, sr * .3); g.fill();
+          g.strokeStyle = 'rgba(246,231,200,.6)'; g.lineWidth = 1; g.stroke();
+          D.text(g, '入', ox, oy + 1, {size: sr * .8, color: '#f6e7c8', font: 'serif', weight: 800}); void x; void y;
+        }
         // entry arrows
         for (const s of [0, 1]) { const [x, y] = B2S(L, ...RING_XY[START[s]]); const [ax, ay] = B2S(L, ...RING_XY[(START[s] + 1) % RING]); g.strokeStyle = D.alpha(s ? '#e6dccb' : '#e0604c', .7); g.lineWidth = 2; const mx = (x + ax) / 2, my = (y + ay) / 2, dx = ax - x, dy = ay - y, l = Math.hypot(dx, dy); g.beginPath(); g.moveTo(mx - dx / l * 6 - dy / l * 5, my - dy / l * 6 + dx / l * 5); g.lineTo(mx + dx / l * 4, my + dy / l * 4); g.lineTo(mx - dx / l * 6 + dy / l * 5, my - dy / l * 6 - dx / l * 5); g.stroke(); }
         // trays
@@ -377,16 +439,41 @@ BX.register({
           if (glow) { const a = .45 + .3 * Math.sin(t / 220); g.fillStyle = `rgba(255,215,106,${a * .5})`; D.circle(g, x, y, L.pr * 1.15); g.fill(); }
           blockPiece(g, x, y - lift, L.pr * (pc.k === 'x' ? 1.08 : .9), ctx.color(s), pc.k === 'x' ? '枭' : '散', pc.k === 'x', isSel);
         }
-        // selected target
+        // move preview: faint landing dots for every movable piece, full route + risk for the selected one
         if (mine) {
-          const showT = ms.filter(m => m.i === sel);
-          for (const m of showT) {
-            const [x, y] = m.to >= WATER ? B2S(L, 0, 0) : pieceXY(L, st.turn, m.i, m.to);
+          const side = st.turn, tXY = m => m.to >= WATER ? B2S(L, 0, 0) : pieceXY(L, side, m.i, m.to);
+          if (ctx.pref('hints')) for (const m of ms) if (m.i !== sel) { const [x, y] = tXY(m); g.fillStyle = m.cap >= 0 ? 'rgba(255,110,90,.55)' : 'rgba(120,230,170,.45)'; D.circle(g, x, y, L.pr * .28); g.fill(); }
+          for (const m of ms.filter(m => m.i === sel)) {
             const a = .55 + .3 * Math.sin(t / 200);
+            // route
+            let [px, py] = pieceXY(L, side, m.i, m.from);
+            g.strokeStyle = 'rgba(120,230,170,.55)'; g.lineWidth = Math.max(2, L.pr * .14); g.setLineDash([L.pr * .3, L.pr * .25]);
+            g.beginPath(); g.moveTo(px, py);
+            for (let p = m.from + 1; p <= m.to; p++) { const [x, y] = p >= WATER ? B2S(L, 0, 0) : pieceXY(L, side, m.i, p); g.lineTo(x, y); }
+            g.stroke(); g.setLineDash([]);
+            for (let p = m.from + 1; p < m.to; p++) {
+              const [x, y] = pieceXY(L, side, m.i, p);
+              g.fillStyle = 'rgba(20,60,40,.85)'; D.circle(g, x, y, L.pr * .36); g.fill(); g.strokeStyle = 'rgba(120,230,170,.8)'; g.lineWidth = 1.2; g.stroke();
+              D.text(g, String(p - m.from), x, y + 1, {size: L.pr * .42, color: '#c8f5dc', weight: 800});
+            }
+            void px; void py;
+            const [x, y] = tXY(m);
             g.strokeStyle = m.cap >= 0 ? `rgba(255,90,70,${a})` : `rgba(120,230,170,${a})`; g.lineWidth = 3; D.circle(g, x, y, L.pr * (m.to >= WATER ? 1.5 : 1.05)); g.stroke();
-            if (m.to >= WATER) D.text(g, '牵鱼', x, y + L.pr * 1.9, {size: L.pr * .8, color: '#e6c57d', weight: 800, stroke: '#000a', strokeW: 3});
-            else if (m.cap >= 0) D.text(g, '吃', x, y - L.pr * 1.5, {size: L.pr * .8, color: '#ff8a70', weight: 900, stroke: '#000a', strokeW: 3});
+            let tag = '', tc = '#e6c57d';
+            if (m.to >= WATER) { tag = '牵鱼 +' + (st.pc[side][m.i].k === 'x' ? 2 : 1); }
+            else {
+              const rk = riskAfter(st, side, m), safe = SAFE.has(node(side, m.to));
+              tag = (m.cap >= 0 ? '吃' + (st.pc[1 - side][m.cap].k === 'x' ? '枭！' : '散') + ' ' : '') + (safe ? '安全' : rk > 0 ? '险 ' + Math.round(rk * 100) + '%' : '无险');
+              tc = m.cap >= 0 ? '#ff8a70' : rk > .3 ? '#ff9a7a' : rk > 0 ? '#ffd27a' : '#9fe8c0';
+            }
+            const ty = y - L.pr * (m.to >= WATER ? 2.1 : 1.65);
+            D.text(g, tag, x, ty, {size: L.pr * .62, color: tc, weight: 900, stroke: '#000c', strokeW: 3});
           }
+        }
+        // 💡 hint
+        if (hintM && myTurn() && !hintM.throw && st.ph === 'move') {
+          const k = (t - hintT) / 1000, m = hintM, [x, y] = pieceXY(L, st.turn, m.i, m.from);
+          g.strokeStyle = `rgba(110,230,170,${.55 + .35 * Math.sin(k * 6)})`; g.lineWidth = 4; D.circle(g, x, y, L.pr * (1.35 + .08 * Math.sin(k * 6))); g.stroke();
         }
         // capture poof
         if (vis.poof) {
@@ -440,10 +527,26 @@ BX.register({
       if (st.sticks && k >= 1 && st.ph !== 'throw' || (st.sticks && st.ph === 'throw' && st.extra)) {
         const up = st.sticks.reduce((a, b) => a + b, 0);
         const txt = st.ph === 'throw' && st.extra ? '满采 · 再掷' : (up === 0 || up === 6 ? '满采 六步' : '有纹 ' + up + ' · 行 ' + st.steps + ' 步');
-        D.text(g, txt, L.res.x, L.res.y, {size: L.land ? 18 : 14, color: up === 0 || up === 6 ? C.red : C.ink, font: 'serif', weight: 800, maxW: L.land ? P.w - 20 : L.btn.w + 20});
+        D.text(g, txt, L.res.x, L.res.y, {size: L.land ? 20 : 16, color: up === 0 || up === 6 ? C.red : C.ink, font: 'serif', weight: 800, maxW: L.land ? P.w - 20 : L.btn.w + 20});
+      }
+      // move log (landscape panel has room)
+      if (L.land) {
+        const ly0 = L.res.y + 26, ly1 = L.btn.y - 12, lh = 19, maxN = Math.floor((ly1 - ly0 - 18) / lh);
+        if (maxN >= 2) {
+          g.strokeStyle = 'rgba(122,28,18,.25)'; g.lineWidth = 1; g.beginPath(); g.moveTo(P.x + 14, ly0); g.lineTo(P.x + P.w - 14, ly0); g.stroke();
+          D.text(g, '行棋记录', P.x + 16, ly0 + 12, {size: 12, color: C.ink2, align: 'left', font: 'serif', weight: 700});
+          log.slice(-maxN).reverse().forEach((e, i) => {
+            const y = ly0 + 32 + i * lh; g.globalAlpha = i ? .75 : 1;
+            g.fillStyle = ctx.color(e.side); D.rr(g, P.x + 16, y - 6, 9, 12, 2); g.fill();
+            D.text(g, e.text, P.x + 30, y, {size: 12.5, color: C.ink, align: 'left', maxW: P.w - 46});
+            g.globalAlpha = 1;
+          });
+          if (!log.length) D.text(g, '尚无行棋', P.x + 30, ly0 + 32, {size: 12, color: C.ink2, align: 'left'});
+        }
       }
       // button
       const b = L.btn, can = myTurn() && st.ph === 'throw';
+      if (can && hintM && hintM.throw) { const a = .5 + .4 * Math.sin((t - hintT) / 160); g.strokeStyle = `rgba(63,160,120,${a})`; g.lineWidth = 5; D.rr(g, b.x - 5, b.y - 5, b.w + 10, b.h + 6, 15); g.stroke(); }
       const lbl = st.over ? '终局' : st.ph === 'throw' ? (can ? '掷 箸' : '对方掷箸') : st.ph === 'pass' ? '无棋可走' : (myTurn() ? '选择棋子' : '对方行棋');
       g.globalAlpha = can || st.ph === 'move' && myTurn() ? 1 : .55;
       g.fillStyle = '#6e1d14'; D.rr(g, b.x, b.y + 4, b.w, b.h - 4, 12); g.fill();

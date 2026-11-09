@@ -37,12 +37,15 @@ BX.register({
   id: 'battleship', title: '海战棋', cat: 'party', order: 4, sub: '暗布舰队，炮击敌船',
   desc: '双方各自在海图上秘密布置五艘战船，然后轮流向对方海域开炮。命中、击沉都会播报，先击沉对方全部战船者获胜。',
   kind: 'turn', seats: 2, hidden: true, seatNames: ['赤水师', '青水师'], seatColors: PCOL, firstLabel: '先开炮', aiDelay: 500, anyTimeActs: true,
+  options: [{key: 'salvo', label: '开炮', choices: [[0, '每回合一炮'], [1, '齐射（剩几艘船开几炮）']], def: 0}],
+  howto: ['<b>布阵</b>：按住一艘船<b>拖动</b>到想放的位置，点已选中的船（或按 R）旋转；「随机布置」一键摆好，💡 会给出电脑推荐的布阵。红色虚影表示放不下。', '<b>开炮</b>：点敌方海图上的格子；触屏默认点一下瞄准、再点一次开火。', '<b>齐射</b>模式：先点选若干目标（数量 = 你剩余的船数），再点「开火」一起打出。', '右侧/下方的战报列出最近的炮击；敌舰名单划掉的是已击沉的船。💡 会标出推荐的炮位。'],
   rules: `<p>每方有一片 <b>10×10</b> 的海域，在其中<b>秘密</b>布置五艘战船（横放或竖放，不能重叠、不能出界）：</p>
 <ul><li>楼船 5 格、斗舰 4 格、艨艟 3 格、走舸 3 格、游艇 2 格</li></ul>
 <p>双方布阵完毕后轮流开炮，<b>每回合只开一炮</b>：在对方海图上选一格，对方报告“<b>命中</b>”或“<b>落空</b>”；当一艘船的所有格子都被击中时报告“<b>击沉</b>”，并公开这艘船的位置。</p>
 <p><b>先击沉对方全部五艘船</b>的一方获胜。</p>
+<p><b>齐射</b>（可选规则）：每回合可开的炮数等于自己<b>尚未被击沉</b>的船数（开局 5 炮），选好全部目标后一起开火，再一并报告结果。</p>
 <p>布阵操作：点「随机布置」可一键摆好；点一艘船选中它，再点海面空格把它移过去，再点一次已选中的船可以旋转（电脑上也可以直接拖动）。确认后等待对方。<br>
-开炮操作：点上方/左侧的敌方海图；触屏上第一次点击瞄准，再点一次开火。</p>`,
+开炮操作：点上方/左侧的敌方海图；触屏上第一次点击瞄准，再点一次开火。齐射模式下先点选全部目标再点「开火」。</p>`,
   icon(g, w, h) {
     const gr = g.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, '#2f6f8a'); gr.addColorStop(1, '#173c4e'); g.fillStyle = gr; g.fillRect(0, 0, w, h);
     const s = h / 7; g.strokeStyle = 'rgba(200,230,240,.18)'; g.lineWidth = 1;
@@ -53,9 +56,13 @@ BX.register({
     for (const [x, y] of [[6, 5], [2, 5], [7, 3]]) { g.strokeStyle = 'rgba(255,255,255,.75)'; g.lineWidth = 2; D.circle(g, (x + .5) * s, (y + .5) * s, s * .2); g.stroke(); }
   },
   create(ctx) {
-    const st = {phase: 'setup', ships: [null, null], shots: [new Array(N * N).fill(0), new Array(N * N).fill(0)], sunk: [[], []], hits: [0, 0], turn: 0, last: null, pend: false, over: false, winner: -1};
+    const salvo = +ctx.opts.salvo === 1;
+    const st = {phase: 'setup', ships: [null, null], shots: [new Array(N * N).fill(0), new Array(N * N).fill(0)], sunk: [[], []], hits: [0, 0], turn: 0, last: null, log: [], pend: false, over: false, winner: -1};
+    const unknownN = s => st.shots[s].filter(x => !x).length;
+    const needShots = s => salvo ? Math.min(FLEET.length - st.sunk[s].length, unknownN(s)) : 1;
+    const cellName = i => ROWL[(i / N) | 0] + COLL[i % N];
     const cv = ctx.canvas();
-    let lay = randomFleet(Math.random), sel = -1, drag = null, aim = -1, hover = -1, btns = [], t = 0, ann = null, boom = null;
+    let lay = randomFleet(Math.random), sel = -1, drag = null, aim = -1, hover = -1, btns = [], t = 0, ann = null, boom = null, picks = [], hintI = -1, hintT = 0;
     const viewer = () => ctx.view >= 0 ? ctx.view : 0;
     const myTurn = () => st.phase === 'play' && !st.pend && !st.over && ctx.canAct(st.turn);
     const needSetup = () => st.phase === 'setup' && ctx.isLocal(viewer()) && !st.ships[viewer()] && ctx.canAct(viewer());
@@ -63,15 +70,17 @@ BX.register({
     function layout() {
       const W = cv.w, H = cv.h, land = W > H * 1.1;
       if (st.phase === 'setup') {
-        if (land) { const s = Math.min(H - 40, W - 220, 560); const bx = (W - s - 200) / 2; return {land, setup: {x: bx, y: (H - s) / 2 + 10, s}, side: {x: bx + s + 24, y: (H - s) / 2 + 10, w: 176}}; }
-        const s = Math.min(W - 40, H - 200, 560); return {land, setup: {x: (W - s) / 2 + 8, y: Math.max(28, (H - s - 150) / 2 + 20), s}, side: null};
+        if (land) { const s = Math.min(H - 34, W - 220, 560); const bx = (W - s - 200) / 2 + 8; return {land, setup: {x: bx, y: (H - s) / 2 + 12, s}, side: {x: bx + s + 24, y: (H - s) / 2 + 12, w: 176, h: s}}; }
+        const s = Math.min(W - 40, H - 200, 560); return {land, setup: {x: (W - s) / 2 + 8, y: Math.max(40, (H - s - 150) / 2 + 20), s}, side: null};
       }
       if (land) {
-        const s1 = Math.min((W - 64) / 1.78, H - 44, 600), s2 = s1 * .78, gap = 40, tot = s1 + s2 + gap + 16, x0 = (W - tot) / 2 + 16;
-        return {land, tgt: {x: x0, y: (H - s1) / 2 + 12, s: s1}, own: {x: x0 + s1 + gap, y: (H - s2) / 2 + 12, s: s2}};
+        const s1 = Math.min((W - 64) / 1.72, H - 54, 600), s2 = Math.min(s1 * .72, s1 - 62), gap = 34, tot = s1 + s1 * .72 + gap + 16, x0 = (W - tot) / 2 + 16, y1 = (H - s1) / 2 + 16;
+        const own = {x: x0 + s1 + gap, y: y1, s: s2};
+        return {land, tgt: {x: x0, y: y1, s: s1}, own, side: {x: own.x - 10, y: own.y + s2 + 10, w: s1 * .72 + 10, h: y1 + s1 - (own.y + s2 + 10)}};
       }
-      const s1 = Math.min(W - 40, (H - 70) / 1.72, 560), s2 = s1 * .72, tot = s1 + s2 + 66, y0 = (H - tot) / 2 + 22;
-      return {land, tgt: {x: (W - s1) / 2 + 8, y: y0, s: s1}, own: {x: (W - s2) / 2 + 8, y: y0 + s1 + 44, s: s2}};
+      const s1 = Math.min(W - 40, (H - 70) / 1.72, 560), s2 = Math.min(s1 * .72, W - 150), tot = s1 + s2 + 66, y0 = (H - tot) / 2 + 22;
+      const own = {x: (W - s1) / 2 + 8, y: y0 + s1 + 44, s: s2};
+      return {land, tgt: {x: (W - s1) / 2 + 8, y: y0, s: s1}, own, side: {x: own.x + s2 + 12, y: own.y - 22, w: (W - s1) / 2 + 8 + s1 - (own.x + s2 + 12), h: s2 + 22}};
     }
     const cellAt = (B, p) => { const c = B.s / N, x = Math.floor((p.x - B.x) / c), y = Math.floor((p.y - B.y) / c); return x >= 0 && y >= 0 && x < N && y < N ? y * N + x : -1; };
     const shipAtLay = i => lay.findIndex(sh => cellsOf(sh).includes(i));
@@ -90,20 +99,27 @@ BX.register({
         return;
       }
       if (myTurn()) {
-        const i = cellAt(L.tgt, p); if (i < 0 || st.shots[st.turn][i]) { aim = -1; return; }
-        if (e.pointerType !== 'mouse' && aim !== i) { aim = i; ctx.sfx('tick'); return; }
+        const i = cellAt(L.tgt, p); if (i < 0) { aim = -1; return; }
+        if (st.shots[st.turn][i]) { ctx.sfx('error'); ctx.buzz(10); aim = -1; return; }
+        if (salvo) {
+          const k = picks.indexOf(i);
+          if (k >= 0) { picks.splice(k, 1); ctx.sfx('tick'); return; }
+          if (picks.length >= needShots(st.turn)) { ctx.sfx('error'); ctx.toast('炮位已选满，点「开火」或先取消一个'); return; }
+          picks.push(i); ctx.sfx('select'); return;
+        }
+        if (ctx.needConfirm(e) && aim !== i) { aim = i; ctx.sfx('tick'); return; }
         aim = -1; ctx.act({t: 'fire', i}, st.turn);
       }
     });
     ctx.on(cv.cv, 'pointermove', e => {
       const p = cv.pos(e), L = layout();
-      if (drag && needSetup()) { const i = cellAt(L.setup, p); if (i >= 0) drag.cur = i; return; }
+      if (drag && needSetup()) { const i = cellAt(L.setup, p); if (i >= 0) { if (i !== drag.cur) drag.moved = true; drag.cur = i; } return; }
       if (e.pointerType === 'mouse' && L.tgt) hover = cellAt(L.tgt, p);
     });
     const up = e => {
       if (!drag) return; const d = drag; drag = null; if (!needSetup()) return;
       const sh = lay[d.k];
-      if (d.cur !== d.start && e.type === 'pointerup') {
+      if (d.moved && e.type === 'pointerup') {
         const cx = d.cur % N, cy = (d.cur / N) | 0;
         const ns = {x: sh.h ? cx - d.off : cx, y: sh.h ? cy : cy - d.off, h: sh.h, len: sh.len};
         ns.x = BX.clamp(ns.x, 0, sh.h ? N - sh.len : N - 1); ns.y = BX.clamp(ns.y, 0, sh.h ? N - 1 : N - sh.len);
@@ -123,15 +139,23 @@ BX.register({
     }
     /* ---------- status ---------- */
     const status = () => {
-      ctx.info(0, '击中 ' + st.hits[0]); ctx.info(1, '击中 ' + st.hits[1]);
+      for (let q = 0; q < 2; q++) { const n = st.shots[q].filter(x => x).length; ctx.info(q, '中 ' + st.hits[q] + '/' + n + ' · 沉 ' + st.sunk[1 - q].length); }
       if (st.over) return ctx.status('<b>' + ctx.name(st.winner) + '</b> 全歼敌舰');
       if (st.phase === 'setup') return ctx.status(needSetup() ? (ctx.hotseat ? ctx.name(viewer()) + '：' : '') + '秘密布置你的舰队' : '等待对方布阵…');
-      if (st.pend) return ctx.status(st.last ? (st.last.res === 0 ? '落空' : st.last.res === 1 ? '命中！' : '击沉' + SHIPN[st.last.k] + '！') : '');
-      ctx.status(myTurn() ? (ctx.hotseat ? ctx.name(st.turn) + ' 开炮' : '轮到你开炮') : '等待 ' + ctx.name(st.turn) + ' 开炮…');
+      if (st.pend) return ctx.status(st.last ? ctx.name(st.last.by) + '：' + lastTxt() : '');
+      const nS = needShots(st.turn);
+      ctx.status(myTurn() ? (ctx.hotseat ? ctx.name(st.turn) + ' 开炮' : '轮到你开炮') + (salvo ? '（齐射 ' + nS + ' 炮）' : '') : '等待 ' + ctx.name(st.turn) + ' 开炮…');
     };
+    function lastTxt() {
+      const L = st.last; if (!L) return '';
+      const hit = L.shots.filter(x => x.res).length, sk = L.shots.filter(x => x.res === 2).map(x => SHIPN[x.k]);
+      if (L.shots.length === 1) { const x = L.shots[0]; return x.res === 0 ? '落空' : x.res === 1 ? '命中！' : '击沉' + SHIPN[x.k] + '！'; }
+      return sk.length ? '命中 ' + hit + ' · 击沉' + sk.join('、') + '！' : hit ? '命中 ' + hit + ' 炮！' : '全部落空';
+    }
     /* ---------- AI ---------- */
-    function aiShot(seat, level) {
-      const sh = st.shots[seat], opp = 1 - seat, sunkCells = new Set(), remain = [];
+    function aiShot(seat, level, excl) {
+      const sh0 = st.shots[seat], sh = excl && excl.size ? sh0.map((v, i) => excl.has(i) ? 3 : v) : sh0;   // 3 = already picked this salvo
+      const opp = 1 - seat, sunkCells = new Set(), remain = [];
       FLEET.forEach((len, k) => { if (st.sunk[opp].includes(k)) cellsOf(st.ships[opp][k]).forEach(c => sunkCells.add(c)); else remain.push(len); });
       const unknown = [], liveHits = [];
       for (let i = 0; i < N * N; i++) { if (!sh[i]) unknown.push(i); else if (sh[i] === 2 && !sunkCells.has(i)) liveHits.push(i); }
@@ -165,6 +189,7 @@ BX.register({
         const s = {x, y, h, len}; if (!fits(s)) continue;
         const cs = cellsOf(s); let bad = false, nh = 0;
         for (const c of cs) { if (sh[c] === 1 || sunkCells.has(c)) { bad = true; break; } if (hitSet.has(c)) nh++; }
+        // cells picked earlier in this salvo stay possible (unknown) but cannot be chosen again
         if (bad) continue;
         if (liveHits.length && !nh) { for (const c of cs) if (!sh[c]) dens[c] += 1; continue; }
         const w = liveHits.length ? Math.pow(40, nh) : 1;
@@ -184,7 +209,12 @@ BX.register({
       },
       valid(a, by) {
         if (a.t === 'place') return st.phase === 'setup' && !st.ships[by] && validFleet(a.ships);
-        if (a.t === 'fire') return st.phase === 'play' && !st.pend && by === st.turn && Number.isInteger(a.i) && a.i >= 0 && a.i < N * N && !st.shots[by][a.i];
+        if (a.t === 'fire') {
+          if (st.phase !== 'play' || st.pend || by !== st.turn) return false;
+          const ok = i => Number.isInteger(i) && i >= 0 && i < N * N && !st.shots[by][i];
+          if (!salvo) return !a.cells && ok(a.i);
+          return Array.isArray(a.cells) && a.cells.length === needShots(by) && new Set(a.cells).size === a.cells.length && a.cells.every(ok);
+        }
         return false;
       },
       sysMove: () => st.pend && !st.over ? {a: {t: 'next'}, delay: 1000} : null,
@@ -197,40 +227,64 @@ BX.register({
         }
         if (a.t === 'next') { st.pend = false; st.turn = 1 - st.turn; status(); return; }
         if (a.t === 'fire') {
-          const s = st.turn, opp = 1 - s, ships = st.ships[opp];
-          const k = ships.findIndex(sh => cellsOf(sh).includes(a.i));
-          let res = 0;
-          if (k < 0) { st.shots[s][a.i] = 1; }
-          else {
-            st.shots[s][a.i] = 2; st.hits[s]++; res = 1;
-            if (cellsOf(ships[k]).every(c => st.shots[s][c] === 2)) { st.sunk[opp].push(k); res = 2; }
+          const s = st.turn, opp = 1 - s, ships = st.ships[opp], cells = a.cells || [a.i], shots = [];
+          for (const i of cells) {
+            const k = ships.findIndex(sh => cellsOf(sh).includes(i));
+            let res = 0;
+            if (k < 0) { st.shots[s][i] = 1; }
+            else {
+              st.shots[s][i] = 2; st.hits[s]++; res = 1;
+              if (cellsOf(ships[k]).every(c => st.shots[s][c] === 2)) { st.sunk[opp].push(k); res = 2; }
+            }
+            shots.push({i, res, k}); st.log.push({by: s, i, res, k});
           }
-          st.last = {by: s, i: a.i, res, k}; st.pend = true;
-          boom = {by: s, i: a.i, res, k: 0}; const bm = boom; ctx.anim(650, q => bm.k = q, null, BX.ease.out);
-          ctx.sfx(res === 0 ? 'splash' : res === 1 ? 'boom' : 'crash');
+          st.last = {by: s, shots}; st.pend = true; picks = []; aim = -1; hintI = -1;
+          const best = Math.max(...shots.map(x => x.res));
+          boom = {by: s, list: shots, k: 0}; const bm = boom; ctx.anim(650, q => bm.k = q, null, BX.ease.out);
+          ctx.sfx(best === 0 ? 'splash' : best === 1 ? 'boom' : 'crash');
           const shooterIsMe = s === viewer();
-          ann = {txt: res === 0 ? '落空' : res === 1 ? '命中！' : '击沉' + SHIPN[k] + '！', t: 1.1, c: res === 0 ? '#cfe6f0' : res === 1 ? '#ffb070' : '#ff7a5a', on: shooterIsMe ? 'tgt' : 'own'};
+          if (best > 0 && !shooterIsMe && ctx.isLocal(opp)) ctx.buzz(best === 2 ? 40 : 20);
+          ann = {txt: lastTxt(), t: 1.1 + (shots.length > 1 ? .4 : 0), c: best === 0 ? '#cfe6f0' : best === 1 ? '#ffb070' : '#ff7a5a', on: shooterIsMe ? 'tgt' : 'own'};
           if (st.sunk[opp].length === FLEET.length) {
             st.over = true; st.winner = s; st.pend = false; status();
-            ctx.end({winner: s, delay: 1500, text: ctx.name(s) + ' 共开炮 ' + st.shots[s].filter(x => x).length + ' 次，全歼敌舰'});
+            const nf = st.shots[s].filter(x => x).length;
+            ctx.end({winner: s, delay: 1500, text: ctx.name(s) + ' 共开炮 ' + nf + ' 次、命中率 ' + Math.round(st.hits[s] * 100 / nf) + '%，全歼敌舰；' + ctx.name(opp) + ' 击沉 ' + st.sunk[s].length + ' 艘'});
             return;
           }
           status();
         }
       },
       aiMove(seat, level) {
-        if (st.phase === 'setup') return {t: 'place', ships: randomFleet(Math.random, level >= 3)};
-        return {t: 'fire', i: aiShot(seat, level)};
+        if (st.phase === 'setup') return {t: 'place', ships: randomFleet(Math.random, level >= 2)};
+        if (!salvo) return {t: 'fire', i: aiShot(seat, level)};
+        const cells = [], n = needShots(seat);
+        for (let k = 0; k < n; k++) cells.push(aiShot(seat, level, new Set(cells)));
+        return {t: 'fire', cells};
       },
       onTurn: status,
-      onView() { lay = randomFleet(Math.random); sel = -1; aim = -1; },
+      onView() { lay = randomFleet(Math.random); sel = -1; aim = -1; picks = []; hintI = -1; },
+      showHint(a) {
+        if (a.t === 'place') { lay = a.ships.map(x => Object.assign({}, x)); sel = -1; ctx.toast('已换成推荐布阵（更分散，不易被连续命中）'); return; }
+        if (a.cells) { picks = a.cells.slice(); ctx.toast('已选好推荐炮位，点「开火」'); return; }
+        hintI = a.i; hintT = t; aim = a.i;
+      },
+      key(e) {
+        if (needSetup()) {
+          if (e.code === 'KeyR' && sel >= 0) rotate(sel);
+          else if (sel >= 0 && /^Arrow/.test(e.code)) { const sh = lay[sel], d = {ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1]}[e.code]; if (e.preventDefault) e.preventDefault(); tryPlace(sel, {x: sh.x + d[0], y: sh.y + d[1], h: sh.h, len: sh.len}); }
+          else if (e.code === 'Enter') confirmFleet();
+          return;
+        }
+        if (salvo && myTurn() && e.code === 'Enter' && picks.length === needShots(st.turn)) fireSalvo();
+      },
       frame(dt) {
         const g = cv.g; cv.clear(); t += dt; btns = [];
         const L = layout(), me = viewer();
         if (st.phase === 'setup') {
           if (needSetup()) {
             const B = L.setup;
-            D.text(g, '布置你的舰队', B.x + B.s / 2, B.y - 30, {size: 17, color: '#f3e2c0', font: 'deco', weight: 400});
+            if (L.side) D.text(g, '布置你的舰队', L.side.x + L.side.w / 2, L.side.y + 10, {size: 17, color: '#f3e2c0', font: 'deco', weight: 400});
+            else D.text(g, '布置你的舰队', B.x + B.s / 2, B.y - 34, {size: 17, color: '#f3e2c0', font: 'deco', weight: 400});
             drawSea(g, B, 'own');
             lay.forEach((sh, k) => {
               let s2 = sh;
@@ -238,22 +292,24 @@ BX.register({
                 const cx = drag.cur % N, cy = (drag.cur / N) | 0;
                 s2 = {x: BX.clamp(sh.h ? cx - drag.off : cx, 0, sh.h ? N - sh.len : N - 1), y: BX.clamp(sh.h ? cy : cy - drag.off, 0, sh.h ? N - 1 : N - sh.len), h: sh.h, len: sh.len};
                 g.globalAlpha = .35; shipOn(g, B, sh, PCOL[me]); g.globalAlpha = .85;
+                if (overlaps(k, s2)) { const c = B.s / N; g.fillStyle = 'rgba(220,60,40,.45)'; g.fillRect(B.x + s2.x * c, B.y + s2.y * c, (s2.h ? s2.len : 1) * c, (s2.h ? 1 : s2.len) * c); }
               }
               shipOn(g, B, s2, PCOL[me], k === sel); g.globalAlpha = 1;
             });
-            const bw = L.side ? L.side.w : Math.min(150, (B.s - 20) / 3), bh = 46;
+            const bw = L.side ? L.side.w : Math.min(150, (B.s - 20) / 3), bh = L.side && L.side.h < 400 ? 42 : 46, gap = L.side && L.side.h < 400 ? 9 : 14;
             const items = [['随机布置', () => { lay = randomFleet(Math.random); sel = -1; ctx.sfx('shuffle'); }, {}],
               ['旋转选中', () => sel >= 0 ? rotate(sel) : ctx.toast('先点一艘船'), {on: sel >= 0}],
-              ['确认布阵', () => { if (validFleet(lay)) { sel = -1; ctx.act({t: 'place', ships: lay.map(s => ({x: s.x, y: s.y, h: s.h, len: s.len}))}, me); } }, {red: true}]];
+              ['确认布阵', confirmFleet, {red: true}]];
             items.forEach(([lb, fn, o], i) => {
-              const x = L.side ? L.side.x : B.x + B.s / 2 - (bw * 3 + 20) / 2 + i * (bw + 10), y = L.side ? L.side.y + 30 + i * (bh + 14) : B.y + B.s + 22;
+              const x = L.side ? L.side.x : B.x + B.s / 2 - (bw * 3 + 20) / 2 + i * (bw + 10), y = L.side ? L.side.y + 30 + i * (bh + gap) : B.y + B.s + 22;
               button(g, x, y, bw, bh, lb, Object.assign({fn}, o));
             });
-            const tip = sel >= 0 ? '点海面移动 · 再点该船旋转' : '点一艘船选中它';
-            if (L.side) { D.text(g, tip, L.side.x + bw / 2, L.side.y + 30 + 3 * (bh + 14) + 8, {size: 12, color: 'rgba(243,226,192,.75)', weight: 500, maxW: bw}); }
-            else D.text(g, tip, B.x + B.s / 2, B.y + B.s + 22 + bh + 22, {size: 13, color: 'rgba(243,226,192,.75)', weight: 500});
-            // fleet legend
-            if (L.side) FLEET.forEach((len, k) => D.text(g, SHIPN[k] + ' ' + len + ' 格', L.side.x + 4, L.side.y + 30 + 3 * (bh + 14) + 36 + k * 20, {size: 13, color: k === sel ? C.gold2 : 'rgba(243,226,192,.6)', align: 'left', weight: 600}));
+            const tip = sel >= 0 ? '拖动或点海面移动 · 再点该船旋转' : '拖动船只摆放 · 点船选中';
+            const ty = L.side ? L.side.y + 30 + 3 * (bh + gap) + 6 : B.y + B.s + 22 + bh + 22;
+            if (L.side) { D.text(g, tip, L.side.x + bw / 2, ty, {size: 12, color: 'rgba(243,226,192,.75)', weight: 500, maxW: bw}); }
+            else D.text(g, tip, B.x + B.s / 2, ty, {size: 13, color: 'rgba(243,226,192,.75)', weight: 500});
+            // fleet legend (two columns on narrow side panels)
+            if (L.side) { const lh = Math.min(20, (L.side.y + L.side.h - ty - 16) / 3); FLEET.forEach((len, k) => D.text(g, SHIPN[k] + ' ' + len + ' 格', L.side.x + 4 + (k % 2) * bw / 2, ty + 22 + Math.floor(k / 2) * lh, {size: 12.5, color: k === sel ? C.gold2 : 'rgba(243,226,192,.6)', align: 'left', weight: 600})); }
           } else {
             const W = cv.w, H = cv.h, s = Math.min(W - 40, H - 120, 420), B = {x: (W - s) / 2, y: (H - s) / 2 + 10, s};
             drawSea(g, B, 'own');
@@ -269,7 +325,7 @@ BX.register({
         const T = L.tgt, O = L.own;
         const turnMine = st.turn === me && !st.over;
         D.text(g, '敌方海域 · ' + ctx.name(opp), T.x + T.s / 2, T.y - 24, {size: Math.min(16, T.s / 22), color: turnMine ? C.gold2 : 'rgba(243,226,192,.7)', weight: 700});
-        D.text(g, '我方舰队 · ' + ctx.name(me), O.x + O.s / 2, O.y - 24, {size: Math.min(15, O.s / 20), color: !turnMine && !st.over ? C.gold2 : 'rgba(243,226,192,.7)', weight: 700});
+        if (L.land) D.text(g, '我方舰队 · ' + ctx.name(me), O.x + O.s / 2, O.y - 24, {size: Math.min(15, O.s / 20), color: !turnMine && !st.over ? C.gold2 : 'rgba(243,226,192,.7)', weight: 700});
         drawSea(g, T, 'tgt', turnMine);
         const c1 = T.s / N;
         // sunk enemy ships revealed (all at the end)
@@ -282,27 +338,63 @@ BX.register({
           g.strokeStyle = aim >= 0 ? '#ff6a4a' : 'rgba(255,220,170,.8)'; g.lineWidth = 2.5;
           D.circle(g, x, y, c1 * .38 * pul); g.stroke();
           g.beginPath(); g.moveTo(x - c1 * .5, y); g.lineTo(x - c1 * .18, y); g.moveTo(x + c1 * .18, y); g.lineTo(x + c1 * .5, y); g.moveTo(x, y - c1 * .5); g.lineTo(x, y - c1 * .18); g.moveTo(x, y + c1 * .18); g.lineTo(x, y + c1 * .5); g.stroke();
-          if (aim >= 0) D.text(g, '再点开火', x, y - c1 * .72, {size: 12, color: '#fff', weight: 800, stroke: 'rgba(0,0,0,.6)', strokeW: 3});
+          if (aim >= 0 && !salvo) D.text(g, '再点开火', x, y - c1 * .72, {size: 12, color: '#fff', weight: 800, stroke: 'rgba(0,0,0,.6)', strokeW: 3});
         }
+        if (hintI >= 0 && myTurn() && !st.shots[me][hintI]) { const k = t - hintT, x = T.x + (hintI % N + .5) * c1, y = T.y + (((hintI / N) | 0) + .5) * c1; g.strokeStyle = `rgba(63,220,150,${.6 + .35 * Math.sin(k * 7)})`; g.lineWidth = 3; g.strokeRect(T.x + (hintI % N) * c1 + 2, T.y + ((hintI / N) | 0) * c1 + 2, c1 - 4, c1 - 4); }
+        // salvo picks
+        if (salvo && myTurn()) picks.forEach((i, k) => {
+          const x = T.x + (i % N + .5) * c1, y = T.y + (((i / N) | 0) + .5) * c1;
+          g.fillStyle = 'rgba(255,90,60,.28)'; g.fillRect(x - c1 / 2 + 1, y - c1 / 2 + 1, c1 - 2, c1 - 2);
+          g.strokeStyle = '#ff6a4a'; g.lineWidth = 2.5; D.circle(g, x, y, c1 * .34); g.stroke();
+          g.beginPath(); g.moveTo(x - c1 * .48, y); g.lineTo(x + c1 * .48, y); g.moveTo(x, y - c1 * .48); g.lineTo(x, y + c1 * .48); g.stroke();
+          D.text(g, String(k + 1), x + c1 * .26, y - c1 * .26, {size: Math.max(10, c1 * .32), color: '#fff', weight: 900, stroke: 'rgba(60,10,0,.8)', strokeW: 3});
+        });
         // own board
         drawSea(g, O, 'own');
         st.ships[me].forEach((sh, k) => shipOn(g, O, sh, PCOL[me], false, st.sunk[me].includes(k)));
         drawMarks(g, O, st.shots[opp], opp);
         // shot effect
-        if (boom && boom.k < 1) {
-          const B = boom.by === me ? T : O, c = B.s / N, x = B.x + (boom.i % N + .5) * c, y = B.y + (((boom.i / N) | 0) + .5) * c, k = boom.k;
-          if (boom.res === 0) { g.strokeStyle = `rgba(230,245,255,${1 - k})`; g.lineWidth = 3; D.circle(g, x, y, c * (.2 + k * 1.1)); g.stroke(); D.circle(g, x, y, c * (.1 + k * .6)); g.stroke(); }
+        if (boom && boom.k < 1) for (const bs of boom.list) {
+          const B = boom.by === me ? T : O, c = B.s / N, x = B.x + (bs.i % N + .5) * c, y = B.y + (((bs.i / N) | 0) + .5) * c, k = boom.k;
+          if (bs.res === 0) { g.strokeStyle = `rgba(230,245,255,${1 - k})`; g.lineWidth = 3; D.circle(g, x, y, c * (.2 + k * 1.1)); g.stroke(); D.circle(g, x, y, c * (.1 + k * .6)); g.stroke(); }
           else { g.fillStyle = `rgba(255,${150 + 80 * (1 - k) | 0},60,${1 - k})`; D.circle(g, x, y, c * (.3 + k * 1.4)); g.fill(); g.fillStyle = `rgba(255,250,200,${1 - k})`; D.circle(g, x, y, c * (.2 + k * .6)); g.fill(); }
         }
-        // fleet status: remaining enemy ships
-        const fy = T.y + T.s + 8, fs = Math.min(12, T.s / 32);
-        if (!L.land || true) {
-          let x = T.x;
-          FLEET.forEach((len, k) => { const sunk = st.sunk[opp].includes(k); D.text(g, SHIPN[k], x, fy + 7, {size: fs, color: sunk ? 'rgba(243,226,192,.3)' : '#f3e2c0', align: 'left', weight: 700}); if (sunk) { g.strokeStyle = C.red2; g.lineWidth = 2; g.beginPath(); g.moveTo(x, fy + 7); g.lineTo(x + fs * 2, fy + 7); g.stroke(); } x += T.s / 5; });
-        }
+        drawSide(g, L, me, opp);
         drawAnn(g, L);
       },
     };
+    /* enemy fleet list, own-fleet header (portrait), salvo fire button and the shot log */
+    function fleetRow(g, x, y, w, opp, fs) {
+      FLEET.forEach((len, k) => {
+        const sunk = st.sunk[opp].includes(k), xx = x + k * w / 5;
+        D.text(g, SHIPN[k], xx, y, {size: fs, color: sunk ? 'rgba(243,226,192,.3)' : '#f3e2c0', align: 'left', weight: 700});
+        for (let j = 0; j < len; j++) { g.fillStyle = sunk ? 'rgba(178,58,43,.5)' : 'rgba(243,226,192,.55)'; g.fillRect(xx + j * (fs * .42), y + fs * .75, fs * .32, 3); }
+        if (sunk) { g.strokeStyle = C.red2; g.lineWidth = 2; g.beginPath(); g.moveTo(xx - 1, y); g.lineTo(xx + fs * 2 + 1, y); g.stroke(); }
+      });
+    }
+    function drawSide(g, L, me, opp) {
+      const T = L.tgt, S = L.side, fs = Math.max(10, Math.min(12.5, T.s / 30));
+      if (!L.land) fleetRow(g, T.x, T.y + T.s + 13, T.s, opp, fs);
+      if (!S || S.w < 60) return;
+      let y = S.y;
+      if (!L.land) { D.text(g, '我方舰队', S.x + S.w / 2, y + 9, {size: 13, color: !st.over && st.turn !== me ? C.gold2 : 'rgba(243,226,192,.75)', weight: 700, maxW: S.w}); y += 24; }
+      else { fleetRow(g, S.x + 10, y + 9, S.w - 10, opp, Math.min(12, S.w / 22)); y += 24; }
+      if (salvo && myTurn()) {
+        const need = needShots(st.turn), full = picks.length === need, bh = 42;
+        button(g, S.x + (L.land ? 10 : 0), y, S.w - (L.land ? 10 : 0), bh, '开火 ' + picks.length + '/' + need, {red: true, on: full, fn: fireSalvo});
+        y += bh + 10;
+      } else if (salvo && !st.over && st.phase === 'play' && S.h - (y - S.y) > 40) { D.text(g, '本回合 ' + needShots(st.turn) + ' 炮', S.x + S.w / 2, y + 10, {size: 12, color: 'rgba(243,226,192,.6)', weight: 600}); y += 24; }
+      const lh = 16, nl = Math.floor((S.y + S.h - y) / lh);
+      if (nl <= 0) return;
+      const list = st.log.slice(-nl).reverse();
+      list.forEach((e, k) => {
+        const yy = y + k * lh + 7, a = 1 - k / (nl + 2), mine = e.by === me;
+        g.fillStyle = D.alpha(PCOL[e.by], a); D.circle(g, S.x + (L.land ? 16 : 5), yy, 3.5); g.fill();
+        D.text(g, (mine ? '我 ' : '敌 ') + cellName(e.i) + ' ' + (e.res === 0 ? '落空' : e.res === 1 ? '命中' : '击沉'), S.x + (L.land ? 24 : 13), yy, {size: 11.5, color: e.res ? `rgba(255,190,140,${a})` : `rgba(243,226,192,${a * .8})`, weight: e.res === 2 ? 800 : 500, align: 'left', maxW: S.w - 14});
+      });
+    }
+    function confirmFleet() { if (validFleet(lay)) { sel = -1; ctx.act({t: 'place', ships: lay.map(s => ({x: s.x, y: s.y, h: s.h, len: s.len}))}, viewer()); } }
+    function fireSalvo() { if (picks.length === needShots(st.turn)) ctx.act({t: 'fire', cells: picks.slice()}, st.turn); }
     function button(g, x, y, w, h, label, o = {}) {
       const on = o.on !== false;
       g.save(); g.globalAlpha = on ? 1 : .4;
@@ -345,7 +437,7 @@ BX.register({
         const x = B.x + (i % N + .5) * c, y = B.y + (((i / N) | 0) + .5) * c;
         if (v === 1) { g.fillStyle = 'rgba(230,245,255,.75)'; D.circle(g, x, y, c * .13); g.fill(); g.strokeStyle = 'rgba(230,245,255,.35)'; g.lineWidth = 1; D.circle(g, x, y, c * .27); g.stroke(); }
         else fire(g, x, y, c * .36, t);
-        if (st.last && st.last.i === i && shots === st.shots[st.last.by]) { g.strokeStyle = '#ffd76a'; g.lineWidth = 2; g.strokeRect(x - c / 2 + 1.5, y - c / 2 + 1.5, c - 3, c - 3); }
+        if (st.last && shots === st.shots[st.last.by] && st.last.shots.some(x => x.i === i)) { g.strokeStyle = '#ffd76a'; g.lineWidth = 2; g.strokeRect(x - c / 2 + 1.5, y - c / 2 + 1.5, c - 3, c - 3); }
       }
     }
     function drawAnn(g, L) {

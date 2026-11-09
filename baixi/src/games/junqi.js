@@ -38,7 +38,10 @@ const PRESETS = [
   ['稳守', P('连 旗 雷 排 连 雷 雷 团 工 营 旅 - 炸 - 排 工 团 - 师 连 军 - 工 - 炸 营 师 排 司 旅')],
   ['猛攻', P('雷 排 雷 旗 连 排 营 工 雷 连 团 - 炸 - 营 旅 工 - 排 团 师 - 炸 - 工 师 司 连 军 旅')],
   ['铁桶', P('雷 旗 雷 排 连 工 雷 营 炸 排 连 - 团 - 工 旅 师 - 营 团 排 - 军 - 炸 工 旅 司 连 师')],
+  ['飞兵', P('雷 旗 雷 连 排 排 雷 炸 营 连 团 - 旅 - 工 师 工 - 营 团 司 - 炸 - 旅 工 军 连 排 师')],
+  ['诱敌', P('连 雷 排 旗 雷 营 工 连 雷 炸 师 - 团 - 旅 排 炸 - 司 营 工 - 军 - 团 旅 连 师 工 排')],
 ];
+const SHORT = {2: '工', 3: '排', 4: '连', 5: '营', 6: '团', 7: '旅', 8: '师', 9: '军', 10: '司', 11: '炸', 12: '雷', 13: '旗'};
 function layoutError(L) {
   if (!Array.isArray(L) || L.length !== 30) return '布阵数据错误';
   const n = {}; for (const t of TYPES) n[t] = 0;
@@ -103,7 +106,11 @@ function fight(at, dt) {
 BX.register({
   id: 'junqi', title: '军棋', cat: 'heavy', order: 2, sub: '暗棋布阵，夺旗制胜',
   desc: '经典两人陆战棋（暗棋）。双方各 25 子秘密布阵，翻不开的棋子由裁判判定大小；铁路飞驰、工兵排雷、炸弹同归于尽，先夺下对方军旗者胜。',
-  kind: 'turn', seats: 2, hidden: true, seatNames: ['红方', '绿方'], seatColors: ['#c23a2b', '#3f7f4b'],
+  kind: 'turn', seats: 2, hidden: true, seatNames: ['红方', '绿方'], seatColors: ['#c23a2b', '#3f7f4b'], aiDelay: 260,
+  howto: ['<b>布阵</b>：自动载入你上次用的阵型；点（或拖）一枚棋子到另一枚上互换位置，能换的位置会亮起；「换个阵型」轮换 5 套预设，完成后点「布阵完成」。',
+    '<b>走棋</b>：点己方棋子选中（绿点是空位，红框是可进攻的敌子），再点目标。上一步会用金色箭头标出。',
+    '<b>标记敌子</b>：点任意敌方棋子，可给它贴上你猜的身份（司/军/师…/炸/雷/旗/？），暗棋必备；交战推断出的信息（如“胜师”“工兵”）会自动标在棋背上。',
+    '「战报」查看全部交战记录和双方损失；💡 提示推荐一步棋（布阵阶段则推荐一套阵型）。'],
   rules: `<p><b>棋盘</b>：5 列 × 12 行，双方各占 6 行，中间隔着“山界”，只有左、中、右三条铁路可以通过。棋盘上有<b>兵站</b>（普通位置）、<b>行营</b>（圆圈，5 个）、<b>大本营</b>（底线两个）以及粗黑白相间的<b>铁路</b>线。</p>
 <p><b>棋子</b>（每方 25 枚，从大到小）：司令 1、军长 1、师长 2、旅长 2、团长 2、营长 2、连长 3、排长 3、工兵 3；另有地雷 3、炸弹 2、军旗 1。</p>
 <p><b>布阵</b>：双方同时秘密布阵。军旗必须放在大本营；地雷只能放在最后两排；炸弹不能放在第一排；开局时行营内不放棋子。可以选“随机布阵”或预设阵型，再点两枚棋子互换位置，完成后点“布阵完成”。</p>
@@ -112,7 +119,7 @@ BX.register({
 <ul><li>官大的吃掉官小的；同级同归于尽。</li><li>炸弹与任何棋子相碰同归于尽。</li><li>地雷：任何棋子撞上地雷都会阵亡（地雷保留），只有工兵可以排除地雷；炸弹碰地雷同归于尽。</li><li>行营里的棋子不能被攻击。</li></ul>
 <p><b>司令阵亡</b>后，这一方的军旗要亮明给对方。</p>
 <p><b>胜负</b>：吃掉对方军旗获胜；轮到某方时已无棋可走（没有可移动的棋子）判负；双方连续 ${QUIET} 步（各 ${QUIET / 2} 步）没有交战判为和棋。轮到自己时可以认输。</p>
-<p><b>操作</b>：点己方棋子选中（显示可走位置），再点目标位置走棋；交战结果会在棋盘中间和状态栏显示。</p>`,
+<p><b>操作</b>：点己方棋子选中（显示可走位置），再点目标位置走棋；交战结果会在棋盘中间和状态栏显示。点敌方棋子可以做标记（只有你自己看得到）。</p>`,
   icon(g, w, h) {
     D.paper(g, 0, 0, w, h, {color: '#efe0bd'});
     g.strokeStyle = '#2b2118'; g.lineWidth = 5; g.beginPath(); g.moveTo(0, h * .3); g.lineTo(w, h * .3); g.moveTo(w * .14, 0); g.lineTo(w * .14, h); g.stroke();
@@ -138,10 +145,19 @@ BX.register({
     const st = {ph: 'setup', b: new Array(60).fill(null), done: [false, false], turn: 0, last: null, quiet: 0, ply: 0, rev: [false, false], fx: null, lost: [[], []], res: null, nid: 0};
     const cv = ctx.canvas();
     const drafts = [null, null], presetIdx = [0, 0];
-    let sel = -1, setupSel = -1, mv = null, fade = null, banner = null, think = 0;
+    let sel = -1, setupSel = -1, mv = null, fade = null, banner = null, think = 0, sdrag = null, hintM = null, hintT = 0, markFor = -1;
     const V = () => ctx.view;
     const enemy = s => 1 - s;
-    const draft = s => { if (!drafts[s]) drafts[s] = presetLayout(Math.floor(Math.random() * PRESETS.length), Math.random() < .5); return drafts[s]; };
+    const marks = [new Map(), new Map()];   // per viewing seat: enemy piece id -> guessed type (0 = '?')
+    const battles = [];                     // visual battle log (rebuilt by replay)
+    const draft = s => {
+      if (!drafts[s]) {
+        const sv = !ctx.hotseat && ctx.isLocal(s) && !ctx.isAI(s) ? ctx.load('layout', null) : null;
+        if (sv && !layoutError(sv)) { drafts[s] = sv.slice(); if (!BX.test) ctx.after(500, () => { if (st.ph === 'setup' && !st.done[s]) ctx.toast('已载入你上次的阵型'); }); }
+        else drafts[s] = presetLayout(Math.floor(Math.random() * PRESETS.length), Math.random() < .5);
+      }
+      return drafts[s];
+    };
 
     /* ---------------- layout ---------------- */
     function layout() {
@@ -192,7 +208,8 @@ BX.register({
     const setupSeat = () => { const s = V(); return ctx.canAct(s) && st.ph === 'setup' && !st.done[s] ? s : -1; };
     const bRand = mk('随机布阵', 'ghost', () => { const s = setupSeat(); if (s < 0) return; drafts[s] = randomLayout(); setupSel = -1; ctx.sfx('shuffle'); });
     const bPre = mk('换个阵型', 'ghost', () => { const s = setupSeat(); if (s < 0) return; presetIdx[s] = (presetIdx[s] + 1) % (PRESETS.length * 2); const k = presetIdx[s]; drafts[s] = presetLayout(k >> 1, k & 1); setupSel = -1; ctx.sfx('deal'); ctx.toast('阵型：' + PRESETS[k >> 1][0] + (k & 1 ? '（镜像）' : '')); });
-    const bDone = mk('布阵完成', 'red', () => { const s = setupSeat(); if (s < 0) return; const e = layoutError(draft(s)); if (e) { ctx.toast(e); return; } setupSel = -1; ctx.act({t: 'setup', L: draft(s).slice()}, s); });
+    const bDone = mk('布阵完成', 'red', () => { const s = setupSeat(); if (s < 0) return; const e = layoutError(draft(s)); if (e) { ctx.toast(e); return; } setupSel = -1; if (!ctx.hotseat) ctx.save('layout', draft(s).slice()); ctx.act({t: 'setup', L: draft(s).slice()}, s); });
+    const bLog = mk('战报', 'ghost', () => showLog());
     const bResign = mk('认输', 'ghost', async () => {
       const s = V(); if (!ctx.canAct(s) || st.ph !== 'play') return;
       if (!(await BX.confirm('确定要认输吗？', '认输'))) return;
@@ -203,6 +220,7 @@ BX.register({
       const su = st.ph === 'setup', me = setupSeat() >= 0;
       bRand.style.display = bPre.style.display = bDone.style.display = su && me ? '' : 'none';
       bResign.style.display = st.ph === 'play' ? '' : 'none'; bResign.disabled = !ctx.canAct(V());
+      bLog.style.display = st.ph === 'setup' ? 'none' : '';
       const r = L.ctrl, row = r.row;
       const x = row ? r.x + r.w * .36 : r.x, w = row ? r.w * .64 : r.w;
       const k = [x, r.y, w, r.h, row].map(v => typeof v === 'number' ? Math.round(v) : v).join(',');
@@ -210,30 +228,83 @@ BX.register({
       Object.assign(box.style, {left: x + 'px', top: r.y + 'px', width: w + 'px', height: r.h + 'px', flexDirection: row ? 'row' : 'column', justifyContent: row ? 'flex-end' : 'center', flexWrap: row ? 'nowrap' : 'wrap'});
       const tight = !row && r.h < 170;
       box.style.gap = tight ? '5px' : '8px'; box.style.flexWrap = 'nowrap';
-      for (const b of [bRand, bPre, bDone, bResign]) { b.style.fontSize = row || tight ? '13px' : '15px'; b.style.padding = row || tight ? '4px 9px' : '8px 12px'; b.style.minWidth = row ? '0' : Math.min(140, w) + 'px'; b.style.minHeight = tight ? '40px' : '42px'; }
+      for (const b of [bRand, bPre, bDone, bResign, bLog]) { b.style.fontSize = row || tight ? '13px' : '15px'; b.style.padding = row || tight ? '4px 9px' : '8px 12px'; b.style.minWidth = row ? '0' : Math.min(140, w) + 'px'; b.style.minHeight = tight ? '40px' : '42px'; }
     }
 
+    /* ---------------- mark palette (guess enemy pieces) ---------------- */
+    const pal = BX.h('div', {class: 'bx-panel', style: {position: 'absolute', display: 'none', pointerEvents: 'auto', padding: '10px', zIndex: 6, textAlign: 'center'}});
+    const palT = BX.h('div', {style: {fontSize: '14px', marginBottom: '8px', color: '#f3e2c0'}, text: '标记这枚敌子'});
+    const grid = BX.h('div', {style: {display: 'grid', gridTemplateColumns: 'repeat(5, 46px)', gap: '6px', justifyContent: 'center'}});
+    pal.append(palT, grid); ui.append(pal);
+    for (const t of [10, 9, 8, 7, 6, 5, 4, 3, 2, 11, 12, 13, 0, -1]) {
+      const bt = BX.h('button', {class: 'bx-btn ' + (t === -1 ? 'ghost' : t === 0 ? 'ghost' : ''), text: t === -1 ? '清除' : t === 0 ? '？' : SHORT[t], on: {click: e => { e.stopPropagation(); setMark(t); }}});
+      Object.assign(bt.style, {minWidth: '46px', minHeight: '44px', padding: '4px 0', fontSize: '17px', fontFamily: 'serif', fontWeight: '800'});
+      if (t === -1) bt.style.gridColumn = 'span 2';
+      grid.append(bt);
+    }
+    function openPal(pid, L) {
+      markFor = pid; pal.style.display = 'block';
+      const r = pal.getBoundingClientRect(), W = cv.w, pw = r.width || 290, ph = r.height || 200;
+      pal.style.left = Math.round(BX.clamp(L.ox + L.bw / 2 - pw / 2, 4, W - pw - 4)) + 'px';
+      pal.style.top = Math.round(BX.clamp(L.oy + L.bh / 2 - ph / 2, 4, cv.h - ph - 4)) + 'px';
+      const cur = marks[V()].get(pid); palT.textContent = cur != null ? '当前标记：' + (cur ? NAME[cur] : '？') + ' · 改成' : '标记这枚敌子（只有你看得到）';
+      ctx.sfx('tick');
+    }
+    const closePal = () => { markFor = -1; pal.style.display = 'none'; };
+    function setMark(t) { if (markFor < 0) return; if (t === -1) marks[V()].delete(markFor); else marks[V()].set(markFor, t); ctx.sfx('pen'); closePal(); }
+
     /* ---------------- input ---------------- */
+    const setupIdx = (s, g) => g < 0 || sideRow(s, g) > 5 ? -1 : BX.range(30).find(k => toG(s, k) === g);
+    function doSwap(s, i, j) {
+      const T = draft(s).slice(); [T[i], T[j]] = [T[j], T[i]];
+      const err = layoutError(T); setupSel = -1;
+      if (err) { ctx.sfx('error'); ctx.buzz(30); ctx.toast(err); return; }
+      drafts[s] = T; ctx.sfx('place');
+    }
     ctx.on(cv.cv, 'pointerdown', e => {
-      const L = layout(), g = cellAt(cv.pos(e), L);
+      const L = layout(), pos = cv.pos(e), g = cellAt(pos, L);
+      if (markFor >= 0) { closePal(); return; }
       if (st.ph === 'setup') {
-        const s = setupSeat(); if (s < 0 || g < 0) return;
-        if (sideRow(s, g) > 5) return;
-        const i = BX.range(30).find(k => toG(s, k) === g); const Ld = draft(s);
-        if (!Ld[i]) return;
-        if (setupSel < 0 || setupSel === i) { setupSel = setupSel === i ? -1 : i; ctx.sfx('tick'); return; }
-        const T = Ld.slice(); [T[i], T[setupSel]] = [T[setupSel], T[i]];
-        const err = layoutError(T); if (err) { ctx.sfx('error'); ctx.toast(err); setupSel = -1; return; }
-        drafts[s] = T; setupSel = -1; ctx.sfx('place'); return;
+        const s = setupSeat(); if (s < 0) return;
+        const i = setupIdx(s, g), Ld = draft(s); if (i == null || i < 0 || !Ld[i]) { setupSel = -1; return; }
+        if (setupSel >= 0 && setupSel !== i) { doSwap(s, setupSel, i); return; }
+        sdrag = {i, x: pos.x, y: pos.y, x0: pos.x, y0: pos.y, moved: false, was: setupSel === i, id: e.pointerId};
+        setupSel = i; ctx.sfx('tick'); return;
       }
-      if (st.ph !== 'play' || !ctx.canAct(st.turn) || V() !== st.turn) return;
-      if (g < 0) { sel = -1; return; }
-      const p = st.b[g];
-      if (p && p.o === st.turn) { if (movable(st.b, g)) { sel = sel === g ? -1 : g; ctx.sfx('select'); } else { ctx.sfx('error'); ctx.toast(p.t === 12 ? '地雷不能移动' : p.t === 13 ? '军旗不能移动' : '大本营里的棋子不能移动'); } return; }
-      if (sel >= 0 && targets(st.b, sel).includes(g)) { const f = sel; sel = -1; ctx.act({t: 'm', f, to: g}, st.turn); return; }
-      if (sel >= 0 && p && CAMP[g]) ctx.toast('行营里的棋子不能被攻击');
+      if (st.ph !== 'play' || g < 0) { sel = -1; return; }
+      const p = st.b[g], mine = ctx.canAct(st.turn) && V() === st.turn;
+      if (mine && p && p.o === st.turn) { if (movable(st.b, g)) { sel = sel === g ? -1 : g; ctx.sfx('select'); } else { ctx.sfx('error'); ctx.toast(p.t === 12 ? '地雷不能移动' : p.t === 13 ? '军旗不能移动' : '大本营里的棋子不能移动'); } return; }
+      if (mine && sel >= 0 && targets(st.b, sel).includes(g)) { const f = sel; sel = -1; hintM = null; ctx.act({t: 'm', f, to: g}, st.turn); return; }
+      if (p && p.o !== V() && !faceUp(p) && (ctx.isLocal(V()) || ctx.online)) {
+        if (mine && sel >= 0 && CAMP[g]) ctx.toast('行营里的棋子不能被攻击');
+        sel = -1; openPal(p.id, L); return;
+      }
       sel = -1;
     });
+    ctx.on(cv.cv, 'pointermove', e => {
+      if (!sdrag || e.pointerId !== sdrag.id) return;
+      const p = cv.pos(e); sdrag.x = p.x; sdrag.y = p.y;
+      if (Math.abs(p.x - sdrag.x0) + Math.abs(p.y - sdrag.y0) > 10) sdrag.moved = true;
+    });
+    const upSetup = e => {
+      if (!sdrag || e.pointerId !== sdrag.id) return;
+      const d = sdrag; sdrag = null; const s = setupSeat(); if (s < 0) return;
+      if (d.moved) {
+        const L = layout(), j = setupIdx(s, cellAt({x: d.x, y: d.y}, L));
+        if (j != null && j >= 0 && j !== d.i && draft(s)[j]) doSwap(s, d.i, j); else setupSel = -1;
+      } else if (d.was) setupSel = -1;
+    };
+    ctx.on(cv.cv, 'pointerup', upSetup); ctx.on(cv.cv, 'pointercancel', upSetup);
+
+    function showLog() {
+      const v = V(), over = st.ph === 'over';
+      const cnt = arr => { const m = {}; for (const t of arr) m[t] = (m[t] || 0) + 1; return TYPES.filter(t => m[t]).map(t => NAME[t] + (m[t] > 1 ? '×' + m[t] : '')).join('、') || '无'; };
+      const rows = battles.slice().reverse().map(fx => '<li><span style="opacity:.6">第' + fx.ply + '步</span> ' + battleText(fx, v) + '</li>').join('');
+      const html = '<p><b>我方损失（' + st.lost[v].length + '）</b>：' + cnt(st.lost[v]) + '</p>' +
+        '<p><b>敌方损失（' + st.lost[1 - v].length + '）</b>：' + (over ? cnt(st.lost[1 - v]) : '裁判不公布敌方阵亡棋子的身份') + '</p>' +
+        '<p><b>交战记录</b></p>' + (rows ? '<ol style="padding-left:1.2em;max-height:40vh;overflow:auto;margin:0">' + rows + '</ol>' : '<p>还没有发生交战。</p>');
+      BX.modal({title: '战报', html: '<div style="text-align:left">' + html + '</div>', buttons: [{label: '关闭', value: 1, cls: 'red'}], dismiss: 1, width: 440});
+    }
 
     /* ---------------- text ---------------- */
     function battleText(fx, v) {
@@ -249,12 +320,12 @@ BX.register({
       ctx.info(0, alive(0) + '子'); ctx.info(1, alive(1) + '子');
       if (st.ph === 'setup') {
         const s = V();
-        if (setupSeat() >= 0) return ctx.status('布阵：点两枚棋子互换位置，完成后点「布阵完成」');
+        if (setupSeat() >= 0) return ctx.status('布阵：点或拖动棋子互换位置，完成后点「布阵完成」');
         return ctx.status(st.done[s] ? '布阵完成，等待对方布阵…' : '等待对方布阵…');
       }
       if (st.ph === 'over') return ctx.status(st.res || '对局结束');
       const bt = st.fx && st.fx.ply === st.ply ? battleText(st.fx, V()) + ' · ' : '';
-      if (ctx.canAct(st.turn)) ctx.status(bt + (ctx.hotseat ? ctx.name(st.turn) + '走棋' : '轮到你走棋'));
+      if (ctx.canAct(st.turn)) ctx.status(bt + (ctx.hotseat ? ctx.name(st.turn) + '走棋' : '轮到你走棋') + (!bt && st.ply < 6 ? ' · 点敌子可做标记' : ''));
       else ctx.status(bt + (ctx.isAI(st.turn) ? ctx.name(st.turn) + ' 思考中…' : '等待 ' + ctx.name(st.turn) + ' 走棋…'));
     }
 
@@ -397,7 +468,7 @@ BX.register({
         if (a.t === 'resign') { endGame(1 - by, ctx.name(by) + ' 认输'); return; }
         const b = st.b, p = b[a.f], q = b[a.to];
         if (!p || p.o !== by || !targets(b, a.f).includes(a.to)) return;
-        p.mv = 1; st.ply++; sel = -1;
+        p.mv = 1; st.ply++; sel = -1; hintM = null;
         const anim = {id: p.id, p: Object.assign({}, p), f: a.f, to: a.to, t: 0, q: q ? Object.assign({}, q) : null, res: null};
         let flagTaken = false;
         if (!q) { b[a.to] = p; b[a.f] = null; st.quiet++; ctx.sfx('move'); }
@@ -409,7 +480,8 @@ BX.register({
           else if (r === 'lose') { st.lost[p.o].push(p.t); q.beat = Math.max(q.beat, p.t); }
           else { b[a.to] = null; st.lost[p.o].push(p.t); st.lost[q.o].push(q.t); }
           for (const [x, alive] of [[p, r !== 'lose' && r !== 'both'], [q, r === 'lose']]) if (x.t === 10 && !alive) { st.rev[x.o] = true; fx.cmd = x.o; }
-          st.fx = fx; anim.fx = fx;
+          st.fx = fx; anim.fx = fx; battles.push(fx);
+          if ((r === 'win' && ctx.isLocal(q.o) && !ctx.isLocal(by)) || (r !== 'win' && ctx.isLocal(by) && !ctx.isLocal(q.o))) ctx.buzz(35);
           if (!ctx.fast) {
             ctx.after(230, () => ctx.sfx(r === 'both' ? 'boom' : q.t === 12 && r === 'lose' ? 'boom' : 'hit'));
             if (fx.cmd != null) ctx.after(700, () => ctx.sfx('gong'));
@@ -424,8 +496,8 @@ BX.register({
               const fd = {list: [], t: 0, at: a.to};
               if (anim.res !== 'win') fd.list.push(anim.p); if (anim.res !== 'lose') fd.list.push(anim.q);
               fade = fd; ctx.anim(420, k => fd.t = k, () => { if (fade === fd) fade = null; });
-              const bn = {txt: battleText(anim.fx, V()), t: 0, res: anim.res, mine: anim.p.o === V()};
-              banner = bn; ctx.anim(1900, k => bn.t = k, () => { if (banner === bn) banner = null; }, k => k);
+              const bn = {txt: battleText(anim.fx, V()), t: 0, res: anim.res, mine: anim.p.o === V(), fx: anim.fx};
+              banner = bn; ctx.anim(2000, k => bn.t = k, () => { if (banner === bn) banner = null; }, k => k);
             }
           });
         }
@@ -437,7 +509,15 @@ BX.register({
       },
       aiMove,
       onTurn: status,
-      onView() { sel = -1; setupSel = -1; status(); },
+      onView() { sel = -1; setupSel = -1; closePal(); status(); },
+      showHint(a, seat) {
+        if (!a) return;
+        if (a.t === 'setup' && st.ph === 'setup') { drafts[seat] = a.L.slice(); setupSel = -1; ctx.toast('已换成电脑推荐的阵型，可继续调整'); return; }
+        if (a.t === 'm') { hintM = {f: a.f, to: a.to}; hintT = performance.now(); sel = -1; return; }
+        if (a.t === 'resign') ctx.toast('已无棋可走');
+      },
+      __xy(gc) { const r = cv.cv.getBoundingClientRect(), [x, y] = cellXY(gc, layout()); return [r.x + x, r.y + y]; },   // test helper
+      key(e) { if (e.code === 'Escape') { sel = -1; setupSel = -1; hintM = null; closePal(); } },
       frame(dt) {
         const g = cv.g; cv.clear(); think += dt;
         const L = layout(); placeBox(L);
@@ -445,11 +525,19 @@ BX.register({
         drawPieces(g, L);
         drawPanels(g, L);
         if (banner) {
-          const k = banner.t, al = k < .1 ? k / .1 : k > .8 ? (1 - k) / .2 : 1;
-          const bw = Math.min(L.bw * .96, 380), bh = Math.min(54, L.s * 1.15), cx = L.ox + L.bw / 2, cy = L.oy + L.bh / 2;
-          g.globalAlpha = al; D.paper(g, cx - bw / 2, cy - bh / 2, bw, bh, {r: 10});
-          g.strokeStyle = banner.res === 'both' ? C.ink2 : (banner.res === 'win') === banner.mine ? C.jade : C.red; g.lineWidth = 2.5; D.rr(g, cx - bw / 2 + 3, cy - bh / 2 + 3, bw - 6, bh - 6, 8); g.stroke();
-          D.text(g, banner.txt, cx, cy, {size: Math.min(18, bh * .36), color: C.ink, weight: 700, maxW: bw - 20, font: 'serif'});
+          const k = banner.t, al = k < .08 ? k / .08 : k > .82 ? (1 - k) / .18 : 1, fx = banner.fx, v = V();
+          const bw = Math.min(L.bw * .98, 400), bh = Math.min(96, Math.max(70, L.s * 2)), cx = L.ox + L.bw / 2, cy = L.oy + L.bh / 2;
+          const good = banner.res === 'both' ? null : (banner.res === 'win') === banner.mine;
+          g.globalAlpha = al; g.save(); g.shadowColor = 'rgba(0,0,0,.5)'; g.shadowBlur = 16; D.paper(g, cx - bw / 2, cy - bh / 2, bw, bh, {r: 12}); g.restore();
+          g.strokeStyle = good == null ? C.ink2 : good ? C.jade : C.red; g.lineWidth = 3; D.rr(g, cx - bw / 2 + 4, cy - bh / 2 + 4, bw - 8, bh - 8, 9); g.stroke();
+          if (fx) {
+            const atk = {o: fx.a, t: fx.at}, def = {o: 1 - fx.a, t: fx.dt}, up = q => q.o === v || st.ph === 'over' || q.t === 13;
+            const sc = Math.min(1.25, (bh * .42) / tileWH(L)[1]), [tw] = tileWH(L), ty = cy - bh * .14, dx = Math.min(bw * .3, tw * sc * 1.25);
+            tile(g, cx - dx, ty, L, atk, up(atk), {scale: sc, nomv: true, alpha: banner.res === 'lose' || banner.res === 'both' ? .55 : 1});
+            tile(g, cx + dx, ty, L, def, up(def), {scale: sc, nomv: true, alpha: banner.res === 'win' || banner.res === 'both' ? .55 : 1});
+            D.text(g, banner.res === 'win' ? '›' : banner.res === 'lose' ? '‹' : '＝', cx, ty, {size: bh * .38, color: C.ink, weight: 900});
+            D.text(g, banner.txt, cx, cy + bh * .3, {size: Math.min(15, bh * .19), color: C.ink, weight: 700, maxW: bw - 24, font: 'serif'});
+          } else D.text(g, banner.txt, cx, cy, {size: Math.min(18, bh * .3), color: C.ink, weight: 700, maxW: bw - 20, font: 'serif'});
           g.globalAlpha = 1;
         }
       },
@@ -514,7 +602,15 @@ BX.register({
       g.fillStyle = gr; D.rr(g, x - w / 2, y - h / 2, w, h, h * .18); g.fill();
       g.strokeStyle = faceUp ? col : 'rgba(255,236,200,.55)'; g.lineWidth = Math.max(1, h * .06); D.rr(g, x - w / 2 + h * .1, y - h / 2 + h * .1, w - h * .2, h - h * .2, h * .12); g.stroke();
       if (faceUp) D.text(g, NAME[p.t], x, y + h * .03, {size: h * .5, color: col, font: 'serif', weight: 900, maxW: w * .86});
-      else D.text(g, p.o ? '绿' : '红', x, y + h * .03, {size: h * .42, color: 'rgba(255,236,200,.45)', font: 'deco', weight: 400});
+      else {
+        const mk = p.id != null && !o.nomv ? marks[V()].get(p.id) : undefined;
+        if (mk != null) {   // player's own guess
+          g.setLineDash([h * .12, h * .08]); g.strokeStyle = 'rgba(255,226,140,.95)'; g.lineWidth = Math.max(1, h * .07); D.rr(g, x - w / 2 + h * .16, y - h / 2 + h * .16, w - h * .32, h - h * .32, h * .1); g.stroke(); g.setLineDash([]);
+          D.text(g, mk ? NAME[mk] : '？', x, y + h * .03, {size: h * .46, color: '#ffe9b0', font: 'serif', weight: 900, maxW: w * .8, stroke: 'rgba(0,0,0,.35)', strokeW: 2});
+        } else if (p.eng || p.beat) {   // deduced from battles: dug a mine = 工兵, beat X = bigger than X
+          D.text(g, p.eng ? '工兵' : '胜' + SHORT[p.beat], x, y + h * .03, {size: h * .38, color: 'rgba(255,236,200,.8)', font: 'serif', weight: 800, maxW: w * .8});
+        } else D.text(g, p.o ? '绿' : '红', x, y + h * .03, {size: h * .42, color: 'rgba(255,236,200,.45)', font: 'deco', weight: 400});
+      }
       if (!faceUp && p.mv && !o.nomv) { g.fillStyle = 'rgba(255,236,200,.8)'; D.circle(g, x + w / 2 - h * .2, y - h / 2 + h * .2, h * .07); g.fill(); }
       if (o.sel) { g.strokeStyle = '#ffd76a'; g.lineWidth = Math.max(2, h * .1); D.rr(g, x - w / 2 - 2, y - h / 2 - 2, w + 4, h + 4, h * .22); g.stroke(); }
       g.restore();
@@ -524,7 +620,17 @@ BX.register({
       const v = V(), [tw, th] = tileWH(L);
       if (st.ph === 'setup') {
         for (const s of [0, 1]) {
-          if (s === v && !st.done[s]) { const Ld = draft(s); for (let i = 0; i < 30; i++) if (Ld[i]) { const [x, y] = cellXY(toG(s, i), L); tile(g, x, y, L, {o: s, t: Ld[i]}, true, {sel: setupSel === i}); } }
+          if (s === v && !st.done[s]) {
+            const Ld = draft(s), dragI = sdrag && sdrag.moved ? sdrag.i : -1;
+            for (let i = 0; i < 30; i++) if (Ld[i]) {
+              const [x, y] = cellXY(toG(s, i), L);
+              let ok = true; if (setupSel >= 0 && i !== setupSel) { const T = Ld.slice(); [T[i], T[setupSel]] = [T[setupSel], T[i]]; ok = !layoutError(T); }
+              if (i === dragI) { tile(g, x, y, L, {o: s, t: Ld[i]}, true, {alpha: .3}); continue; }
+              tile(g, x, y, L, {o: s, t: Ld[i]}, true, {sel: setupSel === i, alpha: ok ? 1 : .38});
+              if (setupSel >= 0 && i !== setupSel && ok && ctx.pref('hints')) { g.strokeStyle = 'rgba(63,140,110,.7)'; g.lineWidth = 1.5; D.rr(g, x - tw * .56, y - th * .6, tw * 1.12, th * 1.2, 5); g.stroke(); }
+            }
+            if (dragI >= 0) tile(g, sdrag.x, sdrag.y - th * .6, L, {o: s, t: Ld[dragI]}, true, {sel: true, scale: 1.15});
+          }
           else if (st.done[s]) for (let gi = 0; gi < 60; gi++) { const p = st.b[gi]; if (p && p.o === s) { const [x, y] = cellXY(gi, L); tile(g, x, y, L, p, s === v); } }
         }
         return;
@@ -545,7 +651,18 @@ BX.register({
         g.globalAlpha = 1;
       }
       // legal targets
-      if (sel >= 0 && st.ph === 'play' && ctx.canAct(st.turn)) for (const t of targets(st.b, sel)) {
+      if (st.last && !mv && st.ph !== 'setup') {   // arrow for the last move
+        const [x1, y1] = cellXY(st.last.f, L), [x2, y2] = cellXY(st.last.to, L), dx = x2 - x1, dy = y2 - y1, d = Math.hypot(dx, dy) || 1, ux = dx / d, uy = dy / d;
+        const a1 = Math.min(d * .4, th * .5), ex = x2 - ux * th * .55, ey = y2 - uy * th * .55, hs = Math.max(6, th * .3);
+        g.save(); g.globalAlpha = .85; g.strokeStyle = '#d9a640'; g.fillStyle = '#d9a640'; g.lineWidth = Math.max(2.5, th * .12); g.lineCap = 'round';
+        g.beginPath(); g.moveTo(x1 + ux * a1, y1 + uy * a1); g.lineTo(ex - ux * hs * .6, ey - uy * hs * .6); g.stroke();
+        g.beginPath(); g.moveTo(ex, ey); g.lineTo(ex - ux * hs - uy * hs * .6, ey - uy * hs + ux * hs * .6); g.lineTo(ex - ux * hs + uy * hs * .6, ey - uy * hs - ux * hs * .6); g.closePath(); g.fill(); g.restore();
+      }
+      if (hintM && st.ph === 'play' && ctx.canAct(st.turn)) {
+        const k = (performance.now() - hintT) / 1000, a = .55 + .4 * Math.sin(k * 6);
+        for (const c of [hintM.f, hintM.to]) { const [x, y] = cellXY(c, L); g.strokeStyle = 'rgba(63,160,120,' + a + ')'; g.lineWidth = 4; D.rr(g, x - tw * .62, y - th * .68, tw * 1.24, th * 1.36, 7); g.stroke(); }
+      }
+      if (sel >= 0 && st.ph === 'play' && ctx.canAct(st.turn) && ctx.pref('hints')) for (const t of targets(st.b, sel)) {
         const [x, y] = cellXY(t, L);
         if (st.b[t]) { g.strokeStyle = C.red; g.lineWidth = 3; D.rr(g, x - tw * .58, y - th * .62, tw * 1.16, th * 1.24, 6); g.stroke(); }
         else D.hint(g, x, y, th * .22, 'rgba(63,140,110,.75)');

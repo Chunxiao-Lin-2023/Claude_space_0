@@ -292,6 +292,11 @@ BX.register({
   desc: '力气大的阿木和身子轻的小灵结伴闯进机关大宅。踩压力板、推木箱、拉吊桥、找钥匙，十二道机关需要两人默契配合才能通过。',
   kind: 'realtime', seats: 2, coop: true, noFirst: true, seatNames: ['阿木', '小灵'], seatColors: [CH[0].col, CH[1].col],
   options: [{key: 'role', label: '我扮演', choices: [[0, '阿木（推箱）'], [1, '小灵（轻身）']], def: 0, modes: ['ai']}],
+  howto: ['<b>移动</b>：WASD / 方向键或摇杆；也可以直接<b>点地图上的格子</b>，角色会自己走过去。',
+    '<b>阿木</b>能推木箱；<b>小灵</b>能走裂地、钻窄缝。走不过去时角色头上会说明原因。',
+    '<b>使用</b>（空格 / E）拉拉杆。<b>↶</b> 撤销一步（Z），<b>↺</b> 重来本关（R），<b>☰</b> 选关。',
+    '人机模式点 <b>⇄</b>（Tab）随时换成另一个角色，电脑接管另一个；卡住了点 💡，地图上会用脚印标出接下来几步。',
+    '手机竖屏地图太宽时镜头会跟着你走，点 <b>🔍</b> 切换全图。'],
   rules: `<p><b>目标：</b>阿木和小灵要<b>同时</b>站到各自的出口上（阿木→棕色「木」字门，小灵→青色「灵」字门）才算过关。共 <b>12 关</b>，过关后自动进入下一关，已解锁的关卡可以在「选关」里随时挑选。</p>
 <p><b>两人的本领：</b></p>
 <ul><li><b>阿木</b>力气大，能<b>推动木箱</b>（一次只能推一只，箱子前面要有空位）。但他太重，不能走<b>裂地</b>，也钻不过<b>窄缝</b>。</li>
@@ -301,9 +306,9 @@ BX.register({
 <li><b>深坑</b>：谁也过不去，但把木箱推进去就能填平。</li>
 <li><b>拉杆与吊桥</b>：站在拉杆上按「使用」，所有吊桥一起升降。桥上有人或箱子时拉不动。</li>
 <li><b>钥匙与锁门</b>：金钥匙开金锁，玉钥匙开玉锁。钥匙两人共用，带着钥匙走进锁门即可永久打开。</li></ul>
-<p>卡住了就点「重来本关」。</p>
-<p><b>操作：</b>键盘单人：WASD / 方向键移动，空格 / E 使用拉杆。同屏双人：左边 WASD + <b>E</b>，右边 方向键 + <b>.</b>（或 Enter）。触屏：摇杆移动，「使用」按钮拉杆；同屏双人时两人各用自己那半边。</p>
-<p>人机模式可以选择自己扮演谁，电脑伙伴会按自己的计划行动，需要你帮忙时会在原地等你。</p>`,
+<p>走错了可以点 <b>↶ 撤销</b>退回一步，卡死了就点 <b>↺ 重来本关</b>；💡 提示会在地图上标出接下来的几步。</p>
+<p><b>操作：</b>点击/轻触地图格子可自动走过去。键盘单人：WASD / 方向键移动，空格 / E 使用拉杆，Z 撤销，R 重来，Tab 换人（人机模式）。同屏双人：左边 WASD + <b>E</b>，右边 方向键 + <b>.</b>（或 Enter）。触屏：摇杆移动，「使用」按钮拉杆；同屏双人时两人各用自己那半边。</p>
+<p>人机模式可以选择自己扮演谁（也可以随时点 ⇄ 换人），电脑伙伴会按自己的计划行动，需要你帮忙时会在原地等你。</p>`,
   icon(g, w, h) {
     const s = h / 4.2;
     g.fillStyle = '#3a2a22'; g.fillRect(0, 0, w, h);
@@ -318,16 +323,16 @@ BX.register({
     drawKey(g, w * .88, h * .3, s * .9, KCOL.k);
   },
   create(ctx) {
-    const role = ctx.mode === 'ai' ? (+ctx.opts.role || 0) : 0;
-    const chOf = seat => seat ^ role;          // character index controlled by a seat
-    const seatOf = ch => ch ^ role;
+    const chOf = seat => seat ^ st.role;          // character index controlled by a seat
+    const seatOf = ch => ch ^ st.role;
     let unlocked = TEST ? 1 : ctx.load('unlocked', 1);
     const startLv = TEST ? 0 : BX.clamp(ctx.load('cur', 0), 0, LEVELS.length - 1);
-    const st = {lv: startLv, S: null, ph: 'play', t: 0, gen: 0, face: ['D', 'D'], cd: [0, 0], cleared: 0, moves: 0, ev: [], evId: 0, over: false, unl: unlocked};
+    const st = {lv: startLv, S: null, ph: 'play', t: 0, gen: 0, face: ['D', 'D'], cd: [0, 0], cleared: 0, moves: 0, ev: [], evId: 0, over: false, unl: unlocked, role: ctx.mode === 'ai' ? (+ctx.opts.role || 0) : 0};
     let L = null;
+    const hist = [];   // host-only undo stack
     function load(lv) {
       st.lv = lv; const P = parse(LEVELS[lv]); L = P.L; st.S = P.S; st.ph = 'intro'; st.t = TEST ? .3 : 1.4; st.gen++; st.face = ['D', 'D']; st.cd = [0, 0]; st.moves = 0;
-      aiReset();
+      hist.length = 0; aiReset();
     }
     const fx = (k, o) => { st.ev.push(Object.assign({k, id: ++st.evId}, o || {})); if (st.ev.length > 14) st.ev.shift(); };
 
@@ -337,21 +342,49 @@ BX.register({
     function aiReset() {
       ai.forEach(a => { a.ptr = 0; a.gen = st.gen; a.wait = 0; });
       const sol = SOL[st.lv] || ''; const P = parse(LEVELS[st.lv]); let S = P.S;
-      const mv = [], pos = [];
+      const mv = [], pos = [], keys = [];
       for (const chr of sol) {
         const who = chr === chr.toLowerCase() ? 1 : 0, d = chr.toUpperCase();
-        pos.push(S.p.slice());
+        pos.push(S.p.slice()); keys.push(skey(S));
         mv.push({who, d, sens: d === 'X' || P.L.t[S.p[who]].match(/[abc]/) != null});
         const r = d === 'X' ? tryAct(P.L, S, who) : tryMove(P.L, S, who, d);
         if (r && r !== 'stuck') { if (r.push && P.L.plates && [r.crFrom].some(i => 'abc'.includes(P.L.t[i]))) mv[mv.length - 1].sens = true; S = r.S; }
       }
-      plan = {mv, pos}; visited[0] = new Set([st.S.p[0]]); visited[1] = new Set([st.S.p[1]]);
+      keys.push(skey(S));
+      plan = {mv, pos, keys}; visited[0] = new Set([st.S.p[0]]); visited[1] = new Set([st.S.p[1]]);
     }
     const visited = [new Set(), new Set()];
+    /* after undo / swap: put both AI pointers on the plan step that matches the current state */
+    function aiSync() {
+      if (!plan) return; const j = plan.keys.indexOf(skey(st.S));
+      if (j >= 0) ai.forEach(a => { a.ptr = j; }); else ai.forEach(a => { a.ptr = Math.min(a.ptr, plan.mv.length); });
+    }
+    /* moves from the current state to the goal: the stored plan when we are on it, else a short BFS back onto it */
+    function planFromHere(budgetMs = 650) {
+      if (!plan) return null;
+      const k0 = skey(st.S), j0 = plan.keys.indexOf(k0);
+      if (j0 >= 0) return plan.mv.slice(j0).map(m => ({who: m.who, d: m.d}));
+      const tgt = new Map(plan.keys.map((k, i) => [k, i]));
+      const seen = new Map([[k0, null]]), q = [st.S], kq = [k0], t0 = performance.now();
+      for (let h = 0; h < q.length; h++) {
+        if ((h & 255) === 0 && performance.now() - t0 > budgetMs) break;
+        const S = q[h], ks = kq[h];
+        const hit = isWin(L, S) ? plan.keys.length - 1 : (h ? (tgt.has(ks) ? tgt.get(ks) : -1) : -1);
+        if (hit >= 0 || isWin(L, S)) {
+          const path = []; let k = ks; while (seen.get(k)) { const [pk, mv] = seen.get(k); path.unshift(mv); k = pk; }
+          return isWin(L, S) ? path : path.concat(plan.mv.slice(hit).map(m => ({who: m.who, d: m.d})));
+        }
+        for (const who of [0, 1]) {
+          const opts = Object.keys(DIRS).map(d => [d, tryMove(L, S, who, d)]); const a = tryAct(L, S, who); if (a && a !== 'stuck') opts.push(['X', a]);
+          for (const [d, r] of opts) { if (!r) continue; const k2 = skey(r.S); if (seen.has(k2)) continue; seen.set(k2, [ks, {who, d}]); q.push(r.S); kq.push(k2); }
+        }
+      }
+      return null;
+    }
     const nextOwn = (ch, from) => { for (let i = from; i < plan.mv.length; i++) if (plan.mv[i].who === ch) return i; return Infinity; };
     function aiInput(seat) {
       const ch = chOf(seat), a = ai[seat];
-      a.uc = a.uc || 0;
+      a.uc = a.uc || 0; a.waiting = false;
       if (st.ph !== 'play' || !plan || a.gen !== st.gen) return {uc: a.uc};
       const i = nextOwn(ch, a.ptr); if (i === Infinity) return {uc: a.uc};
       const m = plan.mv[i], other = 1 - ch, oSeat = seatOf(other);
@@ -362,20 +395,35 @@ BX.register({
       } else if (m.sens) {
         // human partner: only leave a plate / pull a lever after the partner got where the plan expects
         const want = plan.pos[i][other];
-        if (!visited[other].has(want) && st.S.p[other] !== want) return {uc: a.uc};
+        if (!visited[other].has(want) && st.S.p[other] !== want) { a.waiting = true; return {uc: a.uc}; }
       }
       if (m.d === 'X') { if (a.ucFor !== i) { a.ucFor = i; a.uc++; } return {q: i, uc: a.uc}; }
       return {d: m.d, q: i, uc: a.uc};
     }
 
     /* ---------------- host simulation ---------------- */
-    const lastU = [0, 0], lastCmd = [{r: 0, s: 0}, {r: 0, s: 0}];
+    const lastU = [0, 0], lastCmd = [{r: 0, s: 0, z: 0, w: 0}, {r: 0, s: 0, z: 0, w: 0}];
+    function bumpWhy(S, who, d) {
+      const n = nb(L, S.p[who], d); if (n < 0) return '';
+      if (charAt(S, n) >= 0) return 'mate';
+      if (S.cr.includes(n)) return who === 1 ? 'heavy' : 'crate';
+      const t = L.t[n];
+      if (t === '~' && !S.fl.includes(n)) return 'pit';
+      if (t === 'x' && who === 0) return 'crack';
+      if (t === '=' && who === 0) return 'gap';
+      if ('ABC'.includes(t)) return 'door' + t.toLowerCase();
+      if ((t === 'K' || t === 'J') && !S.op.includes(n)) return 'lock' + t.toLowerCase();
+      if ((t === '_' || t === '+') && !bridgeOn(L, S, n)) return 'bridge';
+      return '';
+    }
     function step(dt, inputs) {
       if (st.over) return;
       // commands (restart / level select) from any local or remote seat
       for (let si = 0; si < inputs.length; si++) {
         const inp = inputs[si], lc = lastCmd[si]; if (!inp || !lc) continue;
         if (inp.rc != null && inp.rc > lc.r) { lc.r = inp.rc; if (st.ph !== 'clear') { fx('reset'); load(st.lv); } }
+        if (inp.zc != null && inp.zc > lc.z) { lc.z = inp.zc; if (st.ph === 'play') { if (hist.length) { const h = hist.pop(); st.S = h.S; st.face = h.face; st.moves = Math.max(0, st.moves - 1); fx('undo'); aiSync(); } else fx('noundo'); } }
+        if (inp.wc != null && inp.wc > lc.w) { lc.w = inp.wc; if (ctx.mode === 'ai' && st.ph !== 'done') { st.role ^= 1; aiSync(); fx('swap', {c: chOf(si)}); } }
         if (inp.sc != null && inp.sc > lc.s) { lc.s = inp.sc; if (inp.sl >= 0 && inp.sl < Math.max(st.unl, 1) + 0 && inp.sl < LEVELS.length) { fx('reset'); load(inp.sl); } }
       }
       if (st.ph === 'intro') { st.t -= dt; if (st.t <= 0) st.ph = 'play'; }
@@ -398,43 +446,51 @@ BX.register({
           lastU[seat] = u;
           const r = tryAct(L, st.S, ch);
           if (r === 'stuck') fx('stuck', {c: ch});
-          else if (r) { st.S = r.S; fx('lever', {c: ch}); if (inp.q != null) ai[seat].ptr = inp.q + 1; }
-          else fx('nolever', {c: ch});
+          else if (r) { hist.push({S: cloneS(st.S), face: st.face.slice()}); if (hist.length > 300) hist.shift(); st.S = r.S; fx('lever', {c: ch}); if (inp.q != null) ai[seat].ptr = inp.q + 1; }
+          else if (inp.q == null) fx('nolever', {c: ch});
         }
         if (inp.d && DIRS[inp.d] && st.cd[ch] <= 0) {
           st.face[ch] = inp.d;
           const r = tryMove(L, st.S, ch, inp.d);
           if (r) {
+            hist.push({S: cloneS(st.S), face: st.face.slice()}); if (hist.length > 300) hist.shift();
             st.S = r.S; st.cd[ch] = MOVE_T; st.moves++; visited[ch].add(r.to);
             fx('mv', {c: ch, f: r.from, t: r.to});
             if (r.push) fx(r.fill ? 'fill' : 'push', {c: ch, f: r.crFrom, t: r.crTo});
             if (r.key) fx('key', {c: ch, t: r.to}); if (r.lock) fx('lock', {t: r.to});
             if (inp.q != null) ai[seat].ptr = inp.q + 1;
-          } else { st.cd[ch] = MOVE_T * .6; if (inp.q == null) fx('bump', {c: ch}); }
+          } else { st.cd[ch] = MOVE_T * .6; if (inp.q == null) fx('bump', {c: ch, w: bumpWhy(st.S, ch, inp.d)}); }
         }
       }
       if (isWin(L, st.S)) {
         st.ph = 'clear'; st.t = TEST ? .8 : 2.2; st.cleared++; fx('win');
         if (st.lv + 2 > st.unl) st.unl = Math.min(LEVELS.length, st.lv + 2);
         if (!TEST && ctx.isHost) { ctx.save('unlocked', Math.max(ctx.load('unlocked', 1), st.unl)); ctx.save('cur', Math.min(LEVELS.length - 1, st.lv + 1)); }
+        if (!TEST && !BX.bot) { const b = ctx.best('mv' + st.lv, st.moves, 'min'); st.best = b.best; st.newBest = b.isNew && b.old != null; }
       }
     }
 
     /* ---------------- layout & input ---------------- */
     const cv = ctx.canvas();
-    let sawTouch = false;
+    let sawTouch = false, camX = null, fullView = false;
     const showTouch = () => sawTouch || BX.TOUCH.matches;
     const nLoc = () => Math.max(1, ctx.mySeats.length);
     function layout() {
       const w = cv.w, h = cv.h, touch = showTouch(), two = nLoc() >= 2;
-      const portrait = h > w * 1.08;
-      const R = {touch, portrait, ctrls: []};
-      const head = w < 640 ? 80 : 54;
+      const portrait = h > w * 1.08, narrow = w < 640;
+      const R = {touch, portrait, narrow, ctrls: [], follow: false, canZoom: false};
+      const head = narrow ? 84 : 54;
+      R.head = {y: 0, h: head};
       if (portrait) {
-        const cb = touch ? BX.clamp(h * .24, 150, 210) : 34;
-        const ah = h - head - cb - 8, ts = Math.min((w - 24) / L.w, ah / L.h);
-        R.ts = ts; R.ox = (w - ts * L.w) / 2; R.oy = head + (ah - ts * L.h) / 2;
-        R.head = {y: 0, h: head};
+        const cb = touch ? BX.clamp(h * .24, 150, 210) : 34, legend = 40;
+        const ah = h - head - cb - 8 - legend;
+        let ts = Math.min((w - 24) / L.w, ah / (L.h + .7));
+        const want = Math.min(44, ah / (L.h + .7));
+        if (ts < 34 && want > ts * 1.15) { R.canZoom = true; if (!fullView) { ts = want; R.follow = true; } }
+        const mw = ts * L.w;
+        R.ts = ts; R.oy = head + (ah - ts * L.h) / 2;
+        if (R.follow) { const cx = camX == null ? L.w / 2 : camX; R.ox = BX.clamp(w / 2 - cx * ts, w - 10 - mw, 10); } else R.ox = (w - mw) / 2;
+        R.legend = {y: R.oy + ts * L.h + ts * .35 + 22};
         if (touch) {
           const y0 = h - cb;
           if (!two) R.ctrls.push({slot: 0, zone: {x: 0, y: y0 - 20, w: w * .62, h: cb + 20}, bx: w * .26, by: y0 + cb * .5, J: Math.min(58, cb * .32), U: {x: w * .8, y: y0 + cb * .5, r: Math.min(42, cb * .22)}});
@@ -442,9 +498,8 @@ BX.register({
         } else R.hint = h - 16;
       } else {
         const side = touch ? BX.clamp(w * .2, 120, 220) : 0, hint = touch ? 0 : 26;
-        const aw = w - side * 2 - 8, ah = h - head - hint - 6, ts = Math.min(aw / L.w, ah / L.h);
+        const aw = w - side * 2 - 8, ah = h - head - hint - 6, ts = Math.min(aw / (L.w + .7), ah / (L.h + .7));
         R.ts = ts; R.ox = side + (w - side * 2 - ts * L.w) / 2; R.oy = head + (ah - ts * L.h) / 2;
-        R.head = {y: 0, h: head};
         if (touch) {
           const J = Math.min(62, side * .36, h * .17);
           if (!two) {
@@ -455,14 +510,23 @@ BX.register({
       return R;
     }
     const joy = [{x: 0, y: 0}, {x: 0, y: 0}], uCount = [0, 0], ptrs = new Map();
-    const cmd = {rc: 0, sc: 0, sl: -1};
+    const cmd = {rc: 0, sc: 0, sl: -1, zc: 0, wc: 0};
+    let goal = null;   // tap-to-move target {cell, ch}
     ctx.on(cv.cv, 'pointerdown', e => {
       if (e.pointerType === 'touch' || e.pointerType === 'pen') sawTouch = true;
       const pt = cv.pos(e), R = layout();
-      if (selOpen) return;
-      if (!R.touch) return;
-      for (const c of R.ctrls) if (Math.hypot(pt.x - c.U.x, pt.y - c.U.y) < c.U.r * 1.35) { uCount[c.slot]++; ptrs.set(e.pointerId, {type: 'U', slot: c.slot, t: 0}); return; }
-      for (const c of R.ctrls) { const z = c.zone; if (pt.x >= z.x && pt.x <= z.x + z.w && pt.y >= z.y && pt.y <= z.y + z.h) { try { cv.cv.setPointerCapture(e.pointerId); } catch (er) {} ptrs.set(e.pointerId, {type: 'J', slot: c.slot, ox: pt.x, oy: pt.y, R: c.J}); joy[c.slot] = {x: 0, y: 0}; return; } }
+      if (selOpen) { closeSel(); return; }
+      if (R.touch) {
+        for (const c of R.ctrls) if (Math.hypot(pt.x - c.U.x, pt.y - c.U.y) < c.U.r * 1.35) { uCount[c.slot]++; ptrs.set(e.pointerId, {type: 'U', slot: c.slot, t: 0}); return; }
+        for (const c of R.ctrls) { const z = c.zone; if (pt.x >= z.x && pt.x <= z.x + z.w && pt.y >= z.y && pt.y <= z.y + z.h) { try { cv.cv.setPointerCapture(e.pointerId); } catch (er) {} ptrs.set(e.pointerId, {type: 'J', slot: c.slot, ox: pt.x, oy: pt.y, R: c.J}); joy[c.slot] = {x: 0, y: 0}; goal = null; return; } }
+      }
+      // tap / click a cell: walk there
+      if (ctx.mySeats.length !== 1 || st.ph !== 'play') return;
+      const c = Math.floor((pt.x - R.ox) / R.ts), r = Math.floor((pt.y - R.oy) / R.ts);
+      if (c < 0 || r < 0 || c >= L.w || r >= L.h) return;
+      const ch = chOf(ctx.mySeats[0]), cell = r * L.w + c;
+      if (cell === st.S.p[ch]) { goal = null; return; }
+      goal = {cell, ch, t: performance.now()}; ctx.sfx('tick');
     });
     ctx.on(cv.cv, 'pointermove', e => {
       const t = ptrs.get(e.pointerId); if (!t || t.type !== 'J') return;
@@ -474,46 +538,118 @@ BX.register({
     ctx.on(cv.cv, 'pointerup', up); ctx.on(cv.cv, 'pointercancel', up);
     const keyDir = (u, r, d, l) => { const k = ctx.keys; const order = [[u, 'U'], [d, 'D'], [l, 'L'], [r, 'R']]; let best = null; for (const [c, dd] of order) if (k.has(c)) { best = dd; if (lastKey === c) return dd; } return best; };
     let lastKey = '';
+    /* next step towards the tapped cell (plain walking BFS; a final push into a crate is allowed) */
+    function goalDir(ch) {
+      if (!goal || goal.ch !== ch) { goal = null; return ''; }
+      const S = st.S, from = S.p[ch];
+      if (from === goal.cell) { goal = null; return ''; }
+      const prev = new Map([[from, null]]), q = [from];
+      for (let h = 0; h < q.length && !prev.has(goal.cell); h++) {
+        const u = q[h];
+        for (const d of Object.keys(DIRS)) {
+          const n = nb(L, u, d); if (n < 0 || prev.has(n)) continue;
+          if (charAt(S, n) >= 0 || S.cr.includes(n) || !walkable(L, S, ch, n)) continue;
+          prev.set(n, [u, d]); q.push(n);
+        }
+      }
+      if (prev.has(goal.cell)) { let c = goal.cell, d = ''; while (prev.get(c) && prev.get(c)[0] !== from) c = prev.get(c)[0]; d = prev.get(c)[1]; return d; }
+      for (const d of Object.keys(DIRS)) if (nb(L, from, d) === goal.cell) { const r = tryMove(L, S, ch, d); goal = null; if (r) return d; bubble(ch, bumpWhy(S, ch, d) || 'far'); return ''; }
+      bubble(ch, 'far'); goal = null; return '';
+    }
     function input(seat, slot, nLocal) {
       const sl = nLocal >= 2 ? slot : 0;
       let d = nLocal >= 2 ? (slot ? keyDir('ArrowUp', 'ArrowRight', 'ArrowDown', 'ArrowLeft') : keyDir('KeyW', 'KeyD', 'KeyS', 'KeyA'))
         : (keyDir('KeyW', 'KeyD', 'KeyS', 'KeyA') || keyDir('ArrowUp', 'ArrowRight', 'ArrowDown', 'ArrowLeft'));
       if (!d) { const j = joy[sl]; if (j.x || j.y) d = Math.abs(j.x) > Math.abs(j.y) ? (j.x > 0 ? 'R' : 'L') : (j.y > 0 ? 'D' : 'U'); }
+      if (d) goal = null;
+      else if (goal && nLocal === 1 && st.ph === 'play') d = goalDir(chOf(seat));
       const o = {d: d || '', uc: uCount[sl]};
-      if (sl === 0) { o.rc = cmd.rc; o.sc = cmd.sc; o.sl = cmd.sl; }
+      if (sl === 0) { o.rc = cmd.rc; o.sc = cmd.sc; o.sl = cmd.sl; o.zc = cmd.zc; o.wc = cmd.wc; }
       return o;
     }
     function key(e) {
       if (/^(Key[WASD]|Arrow)/.test(e.code)) lastKey = e.code;
+      if (e.code === 'Tab' && canSwap()) { e.preventDefault(); if (!e.repeat) doSwap(); return; }
       if (e.repeat) return;
       const two = ctx.mySeats.length >= 2;
       if (two) { if (e.code === 'KeyE' || e.code === 'Space') uCount[0]++; if (e.code === 'Period' || e.code === 'Enter' || e.code === 'NumpadEnter') uCount[1]++; }
       else if (['KeyE', 'Space', 'Enter', 'Period'].includes(e.code)) uCount[0]++;
       if (e.code === 'KeyR' && !e.ctrlKey && !e.metaKey) doRestart();
+      if ((e.code === 'KeyZ' && !e.shiftKey) || e.code === 'Backspace') { e.preventDefault(); doUndo(); }
     }
-    /* ---------- DOM buttons: restart + level select ---------- */
+    /* ---------- DOM buttons: undo, restart, level select, swap, zoom ---------- */
     const ui = ctx.ui('mp-ui');
-    const btnStyle = 'position:absolute;top:8px;min-height:40px;padding:6px 12px;font-size:14px;';
-    const bRe = BX.h('button', {class: 'bx-btn', style: btnStyle + 'right:8px', text: '↺ 重来本关', on: {click: () => doRestart()}});
-    const bSel = BX.h('button', {class: 'bx-btn ghost', style: btnStyle + 'right:118px;background:rgba(30,18,8,.6)', text: '选关', on: {click: () => openSel()}});
-    ui.append(bRe, bSel);
-    function doRestart() { cmd.rc++; ctx.sfx('whoosh'); }
+    const canSwap = () => ctx.mode === 'ai' && ctx.mySeats.length === 1;
+    const bar = BX.h('div', {style: 'position:absolute;top:6px;right:6px;display:flex;gap:5px;align-items:center'});
+    const mkB = (ic, tx, title, fn, cls) => { const b = BX.h('button', {class: 'bx-btn ' + (cls || 'ghost'), title, style: 'min-height:40px;min-width:42px;padding:4px 9px;font-size:15px;background-color:rgba(30,18,8,.55)', on: {click: e => { e.stopPropagation(); fn(); }}}); b._ic = ic; b._tx = tx; b.textContent = ic + ' ' + tx; return b; };
+    const bUndo = mkB('↶', '撤销', '撤销一步（Z）', () => doUndo());
+    const bRe = mkB('↺', '重来', '重来本关（R）', () => doRestart());
+    const bSel = mkB('☰', '选关', '选关', () => openSel());
+    const bSwap = mkB('⇄', '换人', '换成另一个角色（Tab）', () => doSwap());
+    const bZoom = mkB('🔍', '全图', '全图 / 跟随镜头', () => { fullView = !fullView; ctx.sfx('click'); });
+    bar.append(bZoom, bSwap, bUndo, bRe, bSel); ui.append(bar);
+    if (!canSwap()) bSwap.style.display = 'none';
+    let barKey = '';
+    function syncBar(R) {
+      const k = R.narrow + '|' + R.canZoom + '|' + fullView;
+      if (k === barKey) return; barKey = k;
+      for (const b of [bUndo, bRe, bSel, bSwap, bZoom]) b.textContent = R.narrow ? b._ic : b._ic + ' ' + b._tx;
+      bZoom.style.display = R.canZoom ? '' : 'none'; bZoom.textContent = R.narrow ? (fullView ? '🎯' : '🔍') : (fullView ? '🎯 跟随' : '🔍 全图');
+    }
+    function doRestart() { cmd.rc++; goal = null; hintM = null; ctx.sfx('whoosh'); }
+    function doUndo() { cmd.zc++; goal = null; ctx.sfx('click'); }
+    function doSwap() { if (!canSwap()) return; cmd.wc++; goal = null; ctx.sfx('select'); }
     let selOpen = null;
     function openSel() {
       if (selOpen) { selOpen.remove(); selOpen = null; return; }
       const unl = Math.max(st.unl || 1, TEST ? 1 : ctx.load('unlocked', 1));
       const grid = BX.h('div', {style: 'display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:8px'},
-        LEVELS.map((lvd, i) => BX.h('button', {class: 'bx-btn ' + (i === st.lv ? 'red' : i < unl ? '' : 'ghost'), disabled: i >= unl, style: 'min-height:54px;padding:4px;font-size:13px;line-height:1.25',
-          html: `<b style="font-size:17px">${i + 1}</b><br>${i < unl ? lvd.n : '🔒'}`, on: {click: () => { cmd.sl = i; cmd.sc++; ctx.sfx('click'); closeSel(); }}})));
-      selOpen = BX.h('div', {class: 'bx-panel', style: 'position:absolute;left:50%;top:56px;transform:translateX(-50%);width:min(360px,92%);z-index:5'},
-        BX.h('div', {style: 'display:flex;justify-content:space-between;align-items:center'}, BX.h('b', {text: '选择关卡', style: 'font-size:16px'}), BX.h('button', {class: 'bx-btn ghost', text: '✕', style: 'min-height:36px;padding:4px 12px', on: {click: () => closeSel()}})),
+        LEVELS.map((lvd, i) => { const bm = TEST ? null : BX.store.get('g.mechpuzzle.best.mv' + i, null); return BX.h('button', {class: 'bx-btn ' + (i === st.lv ? 'red' : i < unl ? '' : 'ghost'), disabled: i >= unl, style: 'min-height:58px;padding:4px;font-size:13px;line-height:1.25',
+          html: `<b style="font-size:17px">${i + 1}</b>${bm != null ? ' ✓' : ''}<br>${i < unl ? lvd.n : '🔒'}${bm != null ? `<br><span style="font-size:11px;opacity:.8">最佳 ${bm} 步</span>` : ''}`, on: {click: () => { cmd.sl = i; cmd.sc++; ctx.sfx('click'); hintM = null; closeSel(); }}}); }));
+      selOpen = BX.h('div', {class: 'bx-panel', style: 'position:absolute;left:50%;top:56px;transform:translateX(-50%);width:min(380px,94%);z-index:5'},
+        BX.h('div', {style: 'display:flex;justify-content:space-between;align-items:center'}, BX.h('b', {text: '选择关卡', style: 'font-size:16px'}), BX.h('button', {class: 'bx-btn ghost', text: '✕', style: 'min-height:40px;padding:4px 14px', on: {click: () => closeSel()}})),
         grid, ctx.online && !ctx.isHost ? BX.h('div', {style: 'font-size:12px;opacity:.75;margin-top:6px', text: '（按房主的解锁进度）'}) : null);
       ui.append(selOpen);
     }
     function closeSel() { if (selOpen) { selOpen.remove(); selOpen = null; } }
 
+    /* ---------------- hint: footprints of the next steps ---------------- */
+    let hintM = null;
+    const DNAME = {U: '上', D: '下', L: '左', R: '右'};
+    function makeHint(quiet) {
+      if (st.ph !== 'play') { if (!quiet) ctx.toast('稍等，关卡开始后再看提示'); return; }
+      const mv = planFromHere(quiet ? 150 : 650);
+      if (!mv) { if (!quiet) ctx.toast('这样好像走不通了，试试 ↶ 撤销或 ↺ 重来本关'); else hintM = null; return; }
+      const t0 = quiet && hintM ? hintM.t : tAll;
+      let S = st.S; const segs = [], keys = [];
+      for (const m of mv.slice(0, 10)) {
+        const r = m.d === 'X' ? tryAct(L, S, m.who) : tryMove(L, S, m.who, m.d);
+        if (!r || r === 'stuck') break;
+        segs.push({who: m.who, d: m.d, f: S.p[m.who], t: r.S.p[m.who]}); S = r.S; keys.push(skey(S));
+      }
+      hintM = {segs, keys, start: skey(st.S), t: t0, re: 0};
+      if (quiet) return;
+      const groups = []; for (const s2 of segs) { const g0 = groups[groups.length - 1]; if (g0 && g0.who === s2.who && g0.d === s2.d) g0.n++; else groups.push({who: s2.who, d: s2.d, n: 1}); }
+      const txt = groups.slice(0, 3).map(q => CH[q.who].n + (q.d === 'X' ? '拉拉杆' : '向' + DNAME[q.d] + (q.n > 1 ? q.n + '步' : '一步'))).join('，再');
+      ctx.toast('下一步：' + txt);
+    }
+    function trackHint() {
+      if (!hintM) return;
+      const k = skey(st.S); if (k === hintM.start) return;
+      if (tAll - hintM.t > 30) { hintM = null; return; }
+      const j = hintM.keys.indexOf(k);
+      if (j < 0) { if (tAll - hintM.re > .4) { hintM.re = tAll; const re = hintM.re; makeHint(true); if (hintM) hintM.re = re; } return; }   // partner moved out of order: re-plan quietly
+      hintM.segs = hintM.segs.slice(j + 1); hintM.keys = hintM.keys.slice(j + 1); hintM.start = k;
+      if (!hintM.segs.length) hintM = null;
+    }
+
     /* ---------------- effects ---------------- */
     let seenEv = 0, tAll = 0, lastGen = -1, banner = null;
+    const bubbles = [null, null], links = [], waitT = [0, 0];
+    const WHY = {mate: '让一让～', heavy: '我推不动木箱，要阿木来推', crate: '箱子那头被挡住了', pit: '是深坑！推只木箱进去填平', crack: '裂地太脆，我太重会踩塌', gap: '窄缝太小，我钻不过去',
+      doora: '门关着：要有人踩住红色压力板', doorb: '门关着：要有人踩住黄色压力板', doorc: '门关着：要有人踩住蓝色压力板', lockk: '要金钥匙才能打开', lockj: '要玉钥匙才能打开',
+      bridge: '吊桥收着，先去拉一下拉杆', far: '走不到那里', nolever: '这里没有拉杆'};
+    function bubble(ch, w) { const s2 = WHY[w]; if (!s2) return; if (bubbles[ch] && bubbles[ch].s === s2 && bubbles[ch].t < 1.2) { bubbles[ch].t = Math.min(bubbles[ch].t, .3); return; } bubbles[ch] = {s: s2, t: 0}; }
     const anim = [{f: -1, t: -1, k: 1, ph: 0, sq: 0}, {f: -1, t: -1, k: 1, ph: 0, sq: 0}], crAnim = [], parts = [];
     let lastR = null;
     const cellXY = (i, R) => [R.ox + (i % L.w + .5) * R.ts, R.oy + (Math.floor(i / L.w) + .5) * R.ts];
@@ -530,9 +666,12 @@ BX.register({
           case 'lock': ctx.sfx('gong'); if (R) { const [x, y] = cellXY(e.t, R); burst(x, y, 16, '#ffe08a', 120, .8, 'star'); } break;
           case 'lever': ctx.sfx('roll'); anim[e.c].sq = .2; break;
           case 'stuck': ctx.sfx('error'); ctx.toast('桥上有东西，拉杆拉不动'); break;
-          case 'nolever': break;
-          case 'bump': ctx.sfx('hit'); anim[e.c].sq = -.1; break;
-          case 'win': ctx.sfx('win'); banner = {s: '过关！', t: 0}; if (R) for (const i of st.S.p) { const [x, y] = cellXY(i, R); burst(x, y, 24, '#ffd34d', 150, 1, 'star'); } break;
+          case 'nolever': bubble(e.c, 'nolever'); break;
+          case 'bump': ctx.sfx('hit'); anim[e.c].sq = -.1; if (e.w) bubble(e.c, e.w); if (e.w && e.w !== 'mate' && ctx.mySeats.includes(seatOf(e.c))) ctx.buzz(15); break;
+          case 'undo': ctx.sfx('whoosh'); for (const a of anim) { a.f = -1; a.k = 1; } crAnim.length = 0; break;
+          case 'noundo': ctx.toast('已经退回到本关开头了'); break;
+          case 'swap': ctx.sfx('select'); chipInfo(); if (ctx.mySeats.length === 1) ctx.toast('现在你是' + CH[chOf(ctx.mySeats[0])].n + '：' + CH[chOf(ctx.mySeats[0])].ab); break;
+          case 'win': ctx.sfx('win'); ctx.buzz(30); hintM = null; goal = null; banner = {s: '过关！', t: 0}; if (st.newBest) ctx.toast(`新纪录：${st.moves} 步！`); if (R) for (const i of st.S.p) { const [x, y] = cellXY(i, R); burst(x, y, 24, '#ffd34d', 150, 1, 'star'); } break;
           case 'reset': ctx.sfx('whoosh'); break;
         }
       }
@@ -540,7 +679,7 @@ BX.register({
     const plateWas = {};
     function status() {
       const lvd = LEVELS[st.lv];
-      ctx.status(`第 ${st.lv + 1}/${LEVELS.length} 关「${lvd.n}」` + (st.ph === 'clear' ? ' · 过关！' : ''));
+      ctx.status(`第 ${st.lv + 1}/${LEVELS.length} 关「${lvd.n}」` + (st.ph === 'clear' ? ' · 过关！' : ` · ${st.moves} 步`));
     }
     const chipInfo = () => { for (let s = 0; s < 2; s++) ctx.info(s, ctx.name(s) === CH[chOf(s)].n ? '' : CH[chOf(s)].n); };
 
@@ -613,7 +752,7 @@ BX.register({
         const x = R.ox + (i % L.w) * ts, y = R.oy + Math.floor(i / L.w) * ts, cx = x + ts / 2, cy = y + ts / 2;
         if ('abc'.includes(t)) {
           const on = occ(S, i), col = PCOL[t];
-          if (plateWas[i] !== on) { if (plateWas[i] !== undefined) ctx.sfx(on ? 'click' : 'tick'); plateWas[i] = on; }
+          if (plateWas[i] !== on) { if (plateWas[i] !== undefined) { ctx.sfx(on ? 'click' : 'tick'); if (on) links.push({p: i, c: t, t: 0}); } plateWas[i] = on; }
           g.fillStyle = on ? D.shade(col, -20) : col; g.beginPath(); g.ellipse(cx, cy + (on ? ts * .04 : 0), ts * .32, ts * .24, 0, 0, 7); g.fill();
           g.fillStyle = on ? 'rgba(255,255,255,.15)' : 'rgba(255,255,255,.4)'; g.beginPath(); g.ellipse(cx - ts * .06, cy - ts * .05, ts * .14, ts * .07, 0, 0, 7); g.fill();
           if (on) { g.strokeStyle = D.alpha(col, .5 + .4 * Math.sin(tAll * 6)); g.lineWidth = 2; g.beginPath(); g.ellipse(cx, cy, ts * .42, ts * .33, 0, 0, 7); g.stroke(); }
@@ -673,14 +812,41 @@ BX.register({
     function draw(dt) {
       tAll += dt;
       const g = cv.g; cv.clear();
-      if (lastGen !== st.gen) { lastGen = st.gen; const P = parse(LEVELS[st.lv]); L = P.L; anim.forEach(a => { a.f = -1; a.k = 1; }); crAnim.length = 0; anim.door = {}; anim.br = {}; anim.lev = null; for (const k in plateWas) delete plateWas[k]; chipInfo(); }
+      if (lastGen !== st.gen) { lastGen = st.gen; const P = parse(LEVELS[st.lv]); L = P.L; anim.forEach(a => { a.f = -1; a.k = 1; }); crAnim.length = 0; anim.door = {}; anim.br = {}; anim.lev = null; for (const k in plateWas) delete plateWas[k]; chipInfo(); camX = null; hintM = null; goal = null; bubbles[0] = bubbles[1] = null; links.length = 0; }
+      {  // camera target: my character (or both) — used when a wide map is shown zoomed on a portrait phone
+        const xs = ctx.mySeats.length === 1 && !BX.bot ? [st.S.p[chOf(ctx.mySeats[0])]] : st.S.p;
+        const tx = xs.reduce((a, i) => a + i % L.w + .5, 0) / xs.length;
+        camX = camX == null ? tx : camX + (tx - camX) * Math.min(1, dt * 5);
+      }
       const R = layout(); lastR = R;
-      playEv();
+      playEv(); trackHint(); syncBar(R);
       const gr = g.createLinearGradient(0, 0, 0, cv.h); gr.addColorStop(0, '#2e2018'); gr.addColorStop(1, '#1a110c'); g.fillStyle = gr; g.fillRect(0, 0, cv.w, cv.h);
       g.fillStyle = 'rgba(230,197,125,.05)'; for (let x = 0; x < cv.w; x += 40) for (let y = 0; y < cv.h; y += 40) { g.beginPath(); g.arc(x + ((y / 40) % 2) * 20, y, 6, 0, 7); g.fill(); }
       const B = ensureBg(R); g.drawImage(B, R.ox - B.pad, R.oy - B.pad, B.W, B.H);
       drawDynamic(g, R);
       const ts = R.ts, S = st.S;
+      // plate → door links (who opens what)
+      for (let j = links.length - 1; j >= 0; j--) {
+        const k = links[j]; k.t += dt; if (k.t > 1.4) { links.splice(j, 1); continue; }
+        const [px, py] = cellXY(k.p, R); g.save(); g.globalAlpha = Math.min(1, (1.4 - k.t) * 2); g.strokeStyle = PCOL[k.c]; g.lineWidth = Math.max(2, ts * .07); g.setLineDash([ts * .18, ts * .12]); g.lineDashOffset = -k.t * 60;
+        L.t.forEach((t, i) => { if (t === k.c.toUpperCase()) { const [dx, dy] = cellXY(i, R); g.beginPath(); g.moveTo(px, py); g.lineTo(dx, dy); g.stroke(); } });
+        g.restore();
+      }
+      // tap-to-move target
+      if (goal) { const [x, y] = cellXY(goal.cell, R), k = Math.sin(tAll * 8) * .06; g.strokeStyle = D.alpha(CH[goal.ch].col, .85); g.lineWidth = Math.max(2, ts * .06); g.beginPath(); g.ellipse(x, y + ts * .1, ts * (.32 + k), ts * (.2 + k * .6), 0, 0, 7); g.stroke(); }
+      // hint footprints
+      if (hintM) hintM.segs.forEach((sg, j) => {
+        const [fx0, fy0] = cellXY(sg.f, R), [tx, ty] = cellXY(sg.t, R), col = CH[sg.who].col, pulse = .65 + .35 * Math.sin(tAll * 5 - j * .6);
+        g.globalAlpha = Math.max(.35, 1 - j * .07) * pulse;
+        if (sg.d === 'X') { D.disc(g, fx0, fy0 - ts * .32, ts * .2, '#ffd34d', {shadow: false}); D.text(g, '拉', fx0, fy0 - ts * .31, {size: ts * .22, color: '#5a2a10', weight: 900}); }
+        else {
+          const ang = Math.atan2(ty - fy0, tx - fx0), mx0 = (fx0 + tx) / 2, my0 = (fy0 + ty) / 2;
+          g.save(); g.translate(mx0, my0); g.fillStyle = 'rgba(255,240,200,.55)'; D.circle(g, 0, 0, ts * .24); g.fill(); g.rotate(ang); g.fillStyle = col; g.strokeStyle = '#fff3e0'; g.lineWidth = 2;
+          g.beginPath(); g.moveTo(ts * .24, 0); g.lineTo(-ts * .12, -ts * .19); g.lineTo(-ts * .04, 0); g.lineTo(-ts * .12, ts * .19); g.closePath(); g.fill(); g.stroke(); g.restore();
+          if (j < 9) D.text(g, String(j + 1), mx0, my0 - ts * .22, {size: Math.max(10, ts * .2), color: '#fff3e0', weight: 800, stroke: col, strokeW: 3});
+        }
+        g.globalAlpha = 1;
+      });
       // crates (animate pushes)
       for (let j = crAnim.length - 1; j >= 0; j--) { const a = crAnim[j]; a.k += dt / (MOVE_T * (a.fill ? 2.2 : 1)); if (a.k >= 1) crAnim.splice(j, 1); }
       for (const i of S.cr) {
@@ -713,21 +879,55 @@ BX.register({
         else { D.circle(g, q.x, q.y, q.r); g.fill(); }
         g.globalAlpha = 1;
       }
+      // speech bubbles: blocked-move reasons, start-of-level abilities, at-exit, AI waiting for you
+      const heroXY = ch => { const a = anim[ch]; let [x, y] = cellXY(S.p[ch], R); if (a.k < 1 && a.t === S.p[ch] && a.f >= 0) { const [fx0, fy0] = cellXY(a.f, R), k = BX.ease.out(a.k); x = BX.lerp(fx0, x, k); y = BX.lerp(fy0, y, k); } return [x, y]; };
+      const say = (ch, txt, col, k = 1) => {
+        const [x, y] = heroXY(ch), fs = BX.clamp(ts * .3, 12, 15); g.font = `700 ${fs}px sans-serif`;
+        const w2 = Math.min(cv.w - 8, g.measureText(txt).width + 16), bx = BX.clamp(x - w2 / 2, 4, cv.w - w2 - 4), by = y - ts * (ch ? 1.25 : 1.4) - fs * 1.6;
+        g.globalAlpha = k; g.fillStyle = 'rgba(30,18,8,.9)'; D.rr(g, bx, by, w2, fs * 1.6, fs * .5); g.fill(); g.strokeStyle = col || CH[ch].col; g.lineWidth = 1.5; g.stroke();
+        g.fillStyle = 'rgba(30,18,8,.9)'; g.beginPath(); g.moveTo(x - 5, by + fs * 1.6 - .5); g.lineTo(x + 5, by + fs * 1.6 - .5); g.lineTo(x, by + fs * 1.6 + 6); g.fill();
+        D.text(g, txt, bx + w2 / 2, by + fs * .82, {size: fs, color: '#fff3e0', weight: 700, maxW: w2 - 10}); g.globalAlpha = 1;
+      };
+      for (const ch of [0, 1]) {
+        const sd = seatOf(ch); waitT[ch] = ctx.isBot(sd) && ai[sd] && ai[sd].waiting && st.ph === 'play' ? waitT[ch] + dt : 0;
+        const b = bubbles[ch]; if (b) { b.t += dt; if (b.t > 2) bubbles[ch] = null; }
+        if (st.ph !== 'play' || BX.bot) continue;
+        if (bubbles[ch]) say(ch, bubbles[ch].s, '#d0533f', Math.min(1, (2 - bubbles[ch].t) * 3));
+        else if (st.moves === 0) { const mine = ctx.mySeats.length === 1 && chOf(ctx.mySeats[0]) === ch; say(ch, (mine ? '我是' : '') + CH[ch].n + '·' + (ch ? '能走裂地、钻窄缝' : '能推木箱')); }
+        else if (L.t[S.p[ch]] === (ch ? 'N' : 'M')) say(ch, '✓ 到出口了', '#3f9a4a');
+        else if (waitT[ch] > 2.5) say(ch, '我在等你～不知道怎么走就点 💡', '#e0a020');
+      }
+      // off-screen partner arrows (zoomed camera)
+      if (R.follow) for (const ch of [0, 1]) {
+        const [x, y] = heroXY(ch); if (x > 6 && x < cv.w - 6) continue;
+        const left = x <= 6, ax = left ? 16 : cv.w - 16, b = Math.sin(tAll * 5) * 3;
+        g.fillStyle = CH[ch].col; g.strokeStyle = '#fff3e0'; g.lineWidth = 2; g.beginPath();
+        if (left) { g.moveTo(ax - 10 + b, y); g.lineTo(ax + 6 + b, y - 11); g.lineTo(ax + 6 + b, y + 11); } else { g.moveTo(ax + 10 - b, y); g.lineTo(ax - 6 - b, y - 11); g.lineTo(ax - 6 - b, y + 11); }
+        g.closePath(); g.fill(); g.stroke();
+        D.text(g, CH[ch].n, left ? ax + 22 : ax - 22, y, {size: 12, color: '#fff3e0', weight: 700, stroke: '#1a110c', strokeW: 3});
+      }
+      // ability legend under the map (portrait)
+      if (R.legend && !BX.bot) {
+        const lw = (cv.w - 24) / 2;
+        [['阿木', '能推木箱 · 怕裂地/窄缝', CH[0].col], ['小灵', '能走裂地、钻窄缝 · 推不动箱', CH[1].col]].forEach(([n, t, col], j) => {
+          const x = 8 + j * (lw + 8), y = R.legend.y;
+          g.fillStyle = 'rgba(30,18,8,.6)'; D.rr(g, x, y - 15, lw, 30, 9); g.fill(); g.strokeStyle = D.alpha(col, .7); g.lineWidth = 1.5; g.stroke();
+          g.fillStyle = col; D.circle(g, x + 13, y, 6); g.fill();
+          D.text(g, n, x + 24, y, {size: 13, color: '#ffe08a', weight: 800, align: 'left'});
+          D.text(g, t, x + 54, y, {size: 11, color: 'rgba(243,226,192,.9)', align: 'left', maxW: lw - 60});
+        });
+      }
       // header: level name + hint
-      const lvd = LEVELS[st.lv], hx = 12, narrow = cv.w < 640;
-      D.text(g, `第${st.lv + 1}关 · ${lvd.n}`, hx, narrow ? 22 : 17, {size: narrow ? 19 : 17, color: '#ffe08a', font: 'deco', weight: 400, align: 'left'});
-      D.text(g, lvd.h, hx, narrow ? 64 : 39, {size: narrow ? 12.5 : 13.5, color: 'rgba(243,226,192,.9)', align: 'left', maxW: narrow ? cv.w - 20 : cv.w - 250});
+      const lvd = LEVELS[st.lv], hx = 12, narrow = cv.w < 640, barW = bar.offsetWidth || 0;
+      D.text(g, `第${st.lv + 1}关 · ${lvd.n}`, hx, narrow ? 24 : 17, {size: narrow ? 18 : 17, color: '#ffe08a', font: 'deco', weight: 400, align: 'left', maxW: cv.w - barW - 24});
+      D.text(g, lvd.h, hx, narrow ? 66 : 39, {size: narrow ? 12.5 : 13.5, color: 'rgba(243,226,192,.9)', align: 'left', maxW: narrow ? cv.w - 20 : cv.w - barW - 30});
       // phases
       const mx = R.ox + L.w * ts / 2, my = R.oy + L.h * ts / 2;
       if (st.ph === 'intro') { const k = BX.clamp(1 - st.t / 1.4, 0, 1); g.globalAlpha = Math.min(1, st.t * 3); D.text(g, `第${st.lv + 1}关`, mx, my - ts * .4, {size: ts * 1.1, color: '#fff3e0', font: 'deco', weight: 400, stroke: '#5a2a18', strokeW: 6}); D.text(g, lvd.n, mx, my + ts * .6, {size: ts * .7, color: '#ffe08a', font: 'deco', weight: 400, stroke: '#5a2a18', strokeW: 5}); g.globalAlpha = 1; void k; }
       if (banner) { banner.t += dt; if (banner.t > 2) banner = null; else { const k = BX.ease.back(Math.min(1, banner.t / .35)); g.save(); g.translate(mx, my); g.scale(k, k); D.text(g, banner.s, 0, 0, {size: ts * 1.4, color: '#ffe08a', font: 'deco', weight: 400, stroke: '#8a2a20', strokeW: 7}); g.restore(); } }
-      if (st.ph === 'play' && st.moves === 0 && !BX.bot) {
-        const me = ctx.mySeats.length === 1 ? chOf(ctx.mySeats[0]) : -1;
-        if (me >= 0) { const [x, y] = cellXY(S.p[me], R); const b = Math.sin(tAll * 4) * 3; g.fillStyle = 'rgba(30,18,8,.85)'; D.rr(g, x - 46, y - ts * 1.35 - 26 + b, 92, 24, 8); g.fill(); D.text(g, '我是' + CH[me].n, x, y - ts * 1.35 - 14 + b, {size: 13, color: '#fff3e0', weight: 700}); }
-      }
       if (R.hint) {
         const two = ctx.mySeats.length >= 2;
-        D.text(g, two ? '左：WASD 移动 · E 使用　　右：方向键 移动 · . 使用　　R 重来本关' : 'WASD / 方向键 移动 · 空格 / E 拉杆 · R 重来本关', cv.w / 2, R.hint, {size: 13, color: 'rgba(243,226,192,.7)', maxW: cv.w - 20});
+        D.text(g, two ? '左：WASD 移动 · E 使用　　右：方向键 移动 · . 使用　　Z 撤销 · R 重来' : 'WASD / 方向键 移动 · 点格子自动走 · 空格 / E 拉杆 · Z 撤销 · R 重来' + (canSwap() ? ' · Tab 换人' : ''), cv.w / 2, R.hint, {size: 13, color: 'rgba(243,226,192,.7)', maxW: cv.w - 20});
       }
       if (R.touch) drawCtrls(g, R);
       status();
@@ -737,7 +937,8 @@ BX.register({
     chipInfo();
     return {
       st, input, aiInput, key, step,
-      snapshot() { return {lv: st.lv, S: st.S, ph: st.ph, t: Math.round(st.t * 100) / 100, gen: st.gen, face: st.face, cleared: st.cleared, moves: st.moves, ev: st.ev, evId: st.evId, over: st.over, unl: st.unl}; },
+      hint() { makeHint(); },
+      snapshot() { return {lv: st.lv, S: st.S, ph: st.ph, t: Math.round(st.t * 100) / 100, gen: st.gen, face: st.face, cleared: st.cleared, moves: st.moves, ev: st.ev, evId: st.evId, over: st.over, unl: st.unl, role: st.role}; },
       restore(d) { Object.assign(st, d); if (!L || L.__lv !== st.lv) { L = parse(LEVELS[st.lv]).L; L.__lv = st.lv; } },
       draw,
       _dbg: () => ({lv: st.lv, ph: st.ph, p: st.S.p, ptr: ai.map(a => a.ptr), n: plan && plan.mv.length, cleared: st.cleared}),

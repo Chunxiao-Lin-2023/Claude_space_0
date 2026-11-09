@@ -1,8 +1,46 @@
 /* 你画我猜 — draw & guess. Turn game: every finished stroke / guess is an action (replayable); live strokes stream via ctx.send. */
 const D = BX.draw, C = BX.C;
 const BW = 800, BH = 600;                       // board logical size
-const COLS = ['#1b1510', '#b23a2b', '#d9822b', '#e3b22c', '#3f8f5b', '#2f5d8a', '#7a4a9a', '#8a5a2b'];
 const PAPER = '#fbf6e9', ERASER = 8;
+/* colour index 8 is the eraser (paper colour); 9+ were added later so old action logs keep their meaning */
+const COLS = ['#1b1510', '#b23a2b', '#d9822b', '#e3b22c', '#3f8f5b', '#2f5d8a', '#7a4a9a', '#8a5a2b', PAPER, '#e58fa8', '#7cc0e6', '#a5cf5e', '#8f8a84', '#ffffff'];
+const PAL = [0, 1, 2, 3, 4, 5, 6, 7, 9, 10, 11, 12, 13];
+const hex2 = c => { const v = parseInt(c.slice(1), 16); return [(v >> 16) & 255, (v >> 8) & 255, v & 255]; };
+/* flood fill on a canvas context (visual only — the action just stores the seed point + colour) */
+function flood(g, w, h, sx, sy, col) {
+  sx = Math.max(0, Math.min(w - 1, sx | 0)); sy = Math.max(0, Math.min(h - 1, sy | 0));
+  const img = g.getImageData(0, 0, w, h), d = img.data, i0 = (sy * w + sx) * 4;
+  const tr = d[i0], tg = d[i0 + 1], tb = d[i0 + 2], [fr, fg, fb] = hex2(col);
+  if (Math.abs(tr - fr) + Math.abs(tg - fg) + Math.abs(tb - fb) < 12) return;
+  const TOL = 90, mask = new Uint8Array(w * h), stack = [sx, sy];
+  const near = p => { const k = p * 4; return Math.abs(d[k] - tr) + Math.abs(d[k + 1] - tg) + Math.abs(d[k + 2] - tb) <= TOL; };
+  let guard = 0;
+  while (stack.length && guard++ < 2e6) {
+    const y = stack.pop(); let x = stack.pop(), p = y * w + x;
+    while (x > 0 && !mask[p - 1] && near(p - 1)) { x--; p--; }
+    let up = false, dn = false;
+    for (; x < w && !mask[p] && near(p); x++, p++) {
+      mask[p] = 1;
+      if (y > 0) { const q = p - w; if (!mask[q] && near(q)) { if (!up) { stack.push(x, y - 1); up = true; } } else up = false; }
+      if (y < h - 1) { const q = p + w; if (!mask[q] && near(q)) { if (!dn) { stack.push(x, y + 1); dn = true; } } else dn = false; }
+    }
+  }
+  for (let p = 0; p < w * h; p++) {   // paint region + a 1px halo over anti-aliased edges
+    if (!(mask[p] || (p % w && mask[p - 1]) || ((p + 1) % w && mask[p + 1]) || (p >= w && mask[p - w]) || (p < w * h - w && mask[p + w]))) continue;
+    const k = p * 4; d[k] = fr; d[k + 1] = fg; d[k + 2] = fb; d[k + 3] = 255;
+  }
+  g.putImageData(img, 0, 0);
+}
+/* similar-but-wrong guess → "很接近了" (shares at least half of the answer's characters, or one char off) */
+function isClose(g, w) {
+  if (w.length < 2 || !g) return false;
+  const cnt = {}; for (const c of w) cnt[c] = (cnt[c] || 0) + 1;
+  let common = 0; for (const c of g) if (cnt[c] > 0) { cnt[c]--; common++; }
+  if (g.length === w.length && common >= w.length - 1) return true;
+  return common >= Math.ceil(w.length / 2);
+}
+/* order in which a word's characters are revealed as hints (deterministic per word) */
+const revealOrder = (wi, len) => BX.range(len).sort((a, b) => ((wi + 1) * (a + 3) * 2654435761 % 4093) - ((wi + 1) * (b + 3) * 2654435761 % 4093));
 const SIZES = [4, 9, 18];
 const DRAW_T = 80, PICK_T = 15, SHOW_T = 4.5;
 const words = () => BX.data.pictWords || [['猫', '动物']];
@@ -11,15 +49,18 @@ const norm = s => String(s || '').replace(/[\s，。,.!！?？、'"“”]/g, ''
 BX.register({
   id: 'pictionary', title: '你画我猜', cat: 'social', order: 2, sub: '一人作画，众人抢答',
   desc: '轮流当画手：从三个词里挑一个画出来，其他人看图猜词，猜得越快分越高。联机时各自输入答案；同屏时大家口头抢答，画手点选猜对的人。',
-  kind: 'turn', seats: [2, 6], defSeats: 2, modes: ['local', 'online'], aiLevels: false, undo: false, hidden: true, noFirst: true, noTurnChime: true,
-  options: [{key: 'cyc', label: '每人作画', choices: [[1, '1 次'], [2, '2 次'], [3, '3 次']], def: 2}],
+  kind: 'turn', seats: [2, 6], defSeats: 2, modes: ['local', 'online'], aiLevels: false, undo: false, hidden: true, noFirst: true, noTurnChime: true, hint: false,
+  options: [{key: 'cyc', label: '每人作画', choices: [[1, '1 次'], [2, '2 次'], [3, '3 次']], def: 2},
+    {key: 'wl', label: '词库', choices: [['std', '常用词'], ['all', '常用词＋成语']], def: 'std'}],
+  howto: ['画手：先从 3 个词里点选一个，然后在画布上用手指/鼠标作画；工具栏可换颜色、笔粗，「擦」橡皮、「桶」填色、↶ 撤销一笔、✕ 清空。', '电脑上快捷键：Ctrl+Z 撤销，B 画笔、E 橡皮、F 填色，1–9 换颜色，[ ] 调笔粗。', '猜词（联机）：在输入框打答案回车；猜得接近会提示「很接近了」。时间过半后会逐个亮出字和类别提示。', '同屏：画手拿着设备给大家看，大家口头抢答，画手按猜对的先后点名字；按住「看词」可偷看词语。'],
   rules: `<p>玩家轮流担任<b>画手</b>。画手从系统给出的 <b>3 个词</b>中选一个，在 <b>${DRAW_T} 秒</b>内把它画出来——<b>不许写字、不许画数字和拼音</b>。</p>
 <p>其他人是<b>猜词者</b>：</p>
 <ul><li><b>联机对战</b>：在输入框里打出答案，猜错的话所有人可见，猜对只显示“猜对了”。</li>
 <li><b>同屏对战</b>：画手拿着设备给大家看画，其他人<b>口头抢答</b>，画手点选猜对的人的名字。画手可以按住「看词」偷看词语。</li></ul>
 <p><b>计分</b>：第一个猜对得 10 分，之后依次 8、6、4…（最少 4 分），另按速度加 0～5 分；每有一人猜对，画手得 3 分，全员猜对再奖励 2 分。</p>
 <p>所有猜词者都猜对或时间到，本轮结束并公布答案。每人作画的轮数可在开局时选择，总分最高者获胜。</p>
-<p>工具：8 种颜色、3 种笔粗、橡皮、撤销一笔、清空画布。</p>`,
+<p><b>提示</b>：作画时间过去 30% 公布词的类别，过半后亮出一个字，剩 25% 时再亮一个（至少留一个字不亮）。猜得接近时只有你会看到「很接近了」。</p>
+<p>工具：13 种颜色、3 种笔粗、橡皮、填色桶、撤销一笔、清空画布。可选「常用词＋成语」词库，加入守株待兔、画蛇添足等适合画的成语。</p>`,
   icon(g, w, h) {
     D.wood(g, 0, 0, w, h, {seed: 21, base: '#8a5a32'});
     // easel paper
@@ -47,7 +88,7 @@ BX.register({
     const total = BX.test ? Math.min(n, 2) : n * cyc;
     const st = {round: 0, total, drawer: 0, ph: 'pick', rk: 0, choices: [], word: -1, usedW: {}, strokes: [], solved: [], guesses: [], score: BX.range(n).map(() => 0), last: null, over: false};
     let phaseT = performance.now(), ver = 0;
-    const W = words();
+    const W = words().filter(x => ctx.opts.wl === 'all' || x[1] !== '成语');
     function deal() {
       const ch = [], cats = new Set();
       let guard = 0;
@@ -63,6 +104,7 @@ BX.register({
       deal(); phaseT = performance.now(); ver++;
     }
     startRound();
+    const amDrawerNow = () => ctx.isLocal(st.drawer) && (local ? ctx.view === st.drawer : ctx.me === st.drawer);
     const guessers = () => BX.range(n).filter(i => i !== st.drawer);
     const unsolved = () => guessers().filter(i => !st.solved.some(s => s.s === i));
     const word = () => st.word >= 0 ? W[st.word][0] : '';
@@ -77,13 +119,13 @@ BX.register({
     const cv = ctx.canvas();
     const css = document.createElement('style');
     css.textContent = `.pc-panel{position:absolute;display:flex;flex-direction:column;gap:8px;overflow:hidden;pointer-events:auto}
-.pc-tools{display:flex;flex-wrap:wrap;gap:6px;justify-content:center}
+.pc-tools{display:flex;flex-wrap:wrap;gap:5px;justify-content:center}
 .pc-tools button{width:40px;height:40px;border-radius:50%;border:3px solid rgba(255,255,255,.25);padding:0;box-shadow:0 2px 4px rgba(0,0,0,.35);color:#f3e2c0;font-size:16px;background:rgba(255,255,255,.08)}
 .pc-tools button.on{border-color:#ffd76a;box-shadow:0 0 0 2px #ffd76a,0 2px 6px rgba(0,0,0,.4)}
 .pc-tools .sz i{display:block;margin:auto;border-radius:50%;background:#f3e2c0}
 .pc-feed{flex:1;min-height:40px;overflow-y:auto;background:rgba(250,244,228,.94);border-radius:12px;padding:6px 10px;font-size:15px;line-height:1.55;color:#2b2118;box-shadow:inset 0 0 0 1px rgba(120,80,40,.2)}
 .pc-feed div{border-bottom:1px dashed rgba(120,80,40,.15);padding:1px 0}
-.pc-feed b{font-weight:700}.pc-feed .ok{color:#3f7f6b;font-weight:700}.pc-feed .sys{color:#8c7a63;font-size:13px}
+.pc-feed b{font-weight:700}.pc-feed .ok{color:#3f7f6b;font-weight:700}.pc-feed .sys{color:#8c7a63;font-size:13px}.pc-feed .close{color:#c8762a;font-weight:700;font-size:13px}
 .pc-row{display:flex;gap:8px;align-items:center}
 .pc-in{flex:1;min-width:0;height:46px;border-radius:12px;border:2px solid #c8a052;background:#fffaf0;color:#2b2118;font:700 18px "Noto Serif SC","Songti SC",serif;padding:0 12px;outline:none}
 .pc-in:focus{border-color:#b23a2b}
@@ -104,18 +146,21 @@ BX.register({
     const pick = BX.h('div', {class: 'pc-pick bx-panel', hidden: true});
     ui.append(panel, pick);
     // tool state (local only)
-    let col = 0, sz = 1, eraser = false, peek = false;
+    let col = 0, sz = 1, tool = 'pen', peek = false;     // tool: pen | erase | fill
     const tools = BX.h('div', {class: 'pc-tools'});
-    const colBtns = COLS.map((c, i) => BX.h('button', {style: {background: c}, title: '颜色', on: {click: () => { col = i; eraser = false; ctx.sfx('tick'); syncTools(); }}}));
-    const szBtns = SIZES.map((s, i) => BX.h('button', {class: 'sz', title: '粗细', on: {click: () => { sz = i; ctx.sfx('tick'); syncTools(); }}}, BX.h('i', {style: {width: (4 + i * 6) + 'px', height: (4 + i * 6) + 'px'}})));
-    const bErase = BX.h('button', {text: '擦', title: '橡皮', on: {click: () => { eraser = !eraser; ctx.sfx('tick'); syncTools(); }}});
-    const bUndo = BX.h('button', {text: '↶', title: '撤销一笔', on: {click: () => { if (canDraw() && st.strokes.length) queue.push({t: 'undo'}); }}});
+    const setCol = i => { col = i; if (tool === 'erase') tool = 'pen'; ctx.sfx('tick'); syncTools(); };
+    const colBtns = PAL.map(i => BX.h('button', {style: {background: COLS[i]}, title: '颜色', on: {click: () => setCol(i)}}));
+    const szBtns = SIZES.map((s, i) => BX.h('button', {class: 'sz', title: '粗细', on: {click: () => { sz = i; if (tool === 'fill') tool = 'pen'; ctx.sfx('tick'); syncTools(); }}}, BX.h('i', {style: {width: (4 + i * 6) + 'px', height: (4 + i * 6) + 'px'}})));
+    const bErase = BX.h('button', {text: '擦', title: '橡皮 (E)', on: {click: () => { tool = tool === 'erase' ? 'pen' : 'erase'; ctx.sfx('tick'); syncTools(); }}});
+    const bFill = BX.h('button', {text: '桶', title: '填色 (F)：点一块封闭区域涂满当前颜色', on: {click: () => { tool = tool === 'fill' ? 'pen' : 'fill'; ctx.sfx('tick'); syncTools(); }}});
+    const undo = () => { if (canDraw() && (st.strokes.length || queue.some(a => a.t === 's' || a.t === 'f'))) { const qi = queue.map(a => a.t).lastIndexOf('s'), fi = queue.map(a => a.t).lastIndexOf('f'), k = Math.max(qi, fi); if (k >= 0) queue.splice(k, 1); else queue.push({t: 'undo'}); ctx.sfx('tick'); } };
+    const bUndo = BX.h('button', {text: '↶', title: '撤销一笔 (Ctrl+Z)', on: {click: undo}});
     const bClear = BX.h('button', {text: '✕', title: '清空', on: {click: () => { if (canDraw() && st.strokes.length) queue.push({t: 'clear'}); }}});
-    tools.append(...colBtns, ...szBtns, bErase, bUndo, bClear);
+    tools.append(...colBtns, ...szBtns, bErase, bFill, bUndo, bClear);
     function syncTools() {
-      colBtns.forEach((b, i) => b.classList.toggle('on', !eraser && i === col));
-      szBtns.forEach((b, i) => b.classList.toggle('on', i === sz));
-      bErase.classList.toggle('on', eraser);
+      colBtns.forEach((b, k) => b.classList.toggle('on', tool !== 'erase' && PAL[k] === col));
+      szBtns.forEach((b, i) => b.classList.toggle('on', tool !== 'fill' && i === sz));
+      bErase.classList.toggle('on', tool === 'erase'); bFill.classList.toggle('on', tool === 'fill');
     }
     syncTools();
     const feed = BX.h('div', {class: 'pc-feed'});
@@ -211,7 +256,7 @@ BX.register({
       if (st.ph === 'pick') add(BX.esc(ctx.name(st.drawer)) + ' 正在选词…', 'sys');
       for (const g of st.guesses) {
         if (g.ok) add('<b style="color:' + ctx.color(g.by) + '">' + BX.esc(ctx.name(g.by)) + '</b> 猜对了！+' + g.pts, 'ok');
-        else add('<b style="color:' + ctx.color(g.by) + '">' + BX.esc(ctx.name(g.by)) + '</b>：' + BX.esc(g.txt));
+        else add('<b style="color:' + ctx.color(g.by) + '">' + BX.esc(ctx.name(g.by)) + '</b>：' + BX.esc(g.txt) + (g.close && (g.by === ctx.me || amDrawerNow()) ? ' <span class="close">很接近了！</span>' : ''));
       }
       if (st.ph === 'show' || st.over) add('答案：<b>' + BX.esc(word() || '（未选词）') + '</b>', 'ok');
       if (local && st.ph === 'draw') add('大家口头抢答，画手点名字记分', 'sys');
@@ -225,10 +270,13 @@ BX.register({
     ctx.on(cv.cv, 'pointerdown', e => {
       if (!canDraw() || !inBoard(e) || curStroke) return;
       const [x, y] = toBoard(e);
-      curStroke = {c: eraser ? ERASER : col, z: sz, p: [x, y], id: e.pointerId};
+      if (tool === 'fill') { queue.push({t: 'f', c: col, x, y}); ctx.sfx('pop'); return; }
+      curStroke = {c: tool === 'erase' ? ERASER : col, z: sz, p: [x, y], id: e.pointerId};
       try { cv.cv.setPointerCapture(e.pointerId); } catch (er) {}
     });
+    let hov = null;
     ctx.on(cv.cv, 'pointermove', e => {
+      hov = e.pointerType === 'mouse' && canDraw() && inBoard(e) ? cv.pos(e) : null;
       if (!curStroke || e.pointerId !== curStroke.id) return;
       const evs = e.getCoalescedEvents ? e.getCoalescedEvents() : [e];
       for (const ev of (evs.length ? evs : [e])) {
@@ -240,7 +288,7 @@ BX.register({
       if (ctx.online && now - sendT > 70 && curStroke) { sendT = now; ctx.send({k: 'live', c: curStroke.c, z: curStroke.z, p: curStroke.p}); }
     });
     const up = e => { if (curStroke && e.pointerId === curStroke.id) finishStroke(); };
-    ctx.on(cv.cv, 'pointerup', up); ctx.on(cv.cv, 'pointercancel', up);
+    ctx.on(cv.cv, 'pointerup', up); ctx.on(cv.cv, 'pointercancel', up); ctx.on(cv.cv, 'pointerleave', () => hov = null);
     function finishStroke() {
       const s = curStroke; curStroke = null; if (!s) return;
       if (s.p.length === 2) s.p.push(s.p[0] + 1, s.p[1]);
@@ -249,8 +297,13 @@ BX.register({
     }
     /* ---------- rendering ---------- */
     const layer = document.createElement('canvas'); const lg = layer.getContext('2d');
-    let layerSig = '';
+    let layerSig = '', layerN = 0;
+    function paint(g, s, k) {   // stroke or fill onto a layer
+      if (s.f) { flood(g, g.canvas.width, g.canvas.height, Math.round(s.x * k), Math.round(s.y * k), COLS[s.c] || COLS[0]); return; }
+      strokePath(g, s, k);
+    }
     function strokePath(g, s, k) {
+      if (s.f) return;
       const p = s.p; if (p.length < 2) return;
       g.strokeStyle = s.c === ERASER ? PAPER : COLS[s.c] || COLS[0];
       g.lineWidth = (s.c === ERASER ? SIZES[s.z] * 2.2 : SIZES[s.z] || 6) * k; g.lineCap = 'round'; g.lineJoin = 'round';
@@ -263,23 +316,29 @@ BX.register({
       const {bx, by, bw, bh, s} = G, dpr = cv.dpr;
       // easel frame
       D.wood(g, bx - 9, by - 9, bw + 18, bh + 18, {r: 6, base: '#7a4a28', dark: '#3a1f0e', seed: 5});
-      const sig = [ver, Math.round(bw * dpr), Math.round(bh * dpr)].join(',');
-      if (sig !== layerSig) {
-        layerSig = sig; layer.width = Math.max(1, Math.round(bw * dpr)); layer.height = Math.max(1, Math.round(bh * dpr));
-        lg.setTransform(1, 0, 0, 1, 0, 0); lg.fillStyle = PAPER; lg.fillRect(0, 0, layer.width, layer.height);
-        const k = s * dpr; for (const st2 of st.strokes) strokePath(lg, st2, k);
+      const lw = Math.max(1, Math.round(Math.min(bw * dpr, 1400))), lh = Math.max(1, Math.round(lw * BH / BW)), k = lw / BW;
+      const sig = [ver, lw, lh].join(',');
+      if (sig !== layerSig || st.strokes.length < layerN) {
+        layerSig = sig; layer.width = lw; layer.height = lh; layerN = 0;
+        lg.setTransform(1, 0, 0, 1, 0, 0); lg.fillStyle = PAPER; lg.fillRect(0, 0, lw, lh);
       }
+      while (layerN < st.strokes.length) paint(lg, st.strokes[layerN++], k);   // only draw what is new
       g.drawImage(layer, bx, by, bw, bh);
       g.save(); g.beginPath(); g.rect(bx, by, bw, bh); g.clip(); g.translate(bx, by);
       for (const k in live) if (live[k]) strokePath(g, live[k], s);
       for (const a of queue) if (a.t === 's') strokePath(g, a, s);
       if (curStroke) strokePath(g, curStroke, s);
       g.restore();
+      if (hov && !curStroke) {   // brush preview (mouse)
+        g.strokeStyle = 'rgba(40,30,20,.6)'; g.lineWidth = 1;
+        if (tool === 'fill') { g.fillStyle = COLS[col]; D.rr(g, hov.x + 8, hov.y - 22, 14, 14, 3); g.fill(); g.stroke(); }
+        else { const r = Math.max(2, (tool === 'erase' ? SIZES[sz] * 2.2 : SIZES[sz]) * s / 2); D.circle(g, hov.x, hov.y, r); g.stroke(); }
+      }
     }
     const fmt = t => Math.max(0, Math.ceil(t));
-    let lastSec = -1, peekWas = false;
+    let lastSec = -1, peekWas = false, revealN = 0;
     const status = () => {
-      for (let i = 0; i < n; i++) ctx.info(i, st.score[i] + '分');
+      for (let i = 0; i < n; i++) ctx.info(i, st.score[i] + '分' + (st.ph === 'draw' && i === st.drawer ? ' ✎' : st.ph === 'draw' && st.solved.some(x => x.s === i) ? ' ✓' : ''));
       if (st.over) return ctx.status('游戏结束');
       const dr = ctx.name(st.drawer), mine = ctx.isLocal(st.drawer) && ctx.canAct(st.drawer);
       if (st.ph === 'pick') ctx.status(mine ? '请选择要画的词' : dr + ' 正在选词…');
@@ -319,7 +378,7 @@ BX.register({
         if (a.t === 'pick') return st.ph === 'pick' && by === st.drawer && a.i >= 0 && a.i < 3;
         if (st.ph !== 'draw') return false;
         if (a.t === 'g') return !local && by !== st.drawer && unsolved().includes(by) && typeof a.txt === 'string' && a.txt.length <= 16;
-        if (['s', 'undo', 'clear', 'end', 'ok', 'skip'].includes(a.t)) return by === st.drawer && (a.t !== 's' || (Array.isArray(a.p) && a.p.length <= 1200));
+        if (['s', 'f', 'undo', 'clear', 'end', 'ok', 'skip'].includes(a.t)) return by === st.drawer && (a.t !== 's' || (Array.isArray(a.p) && a.p.length <= 1200));
         return false;
       },
       apply(a, by) {
@@ -328,7 +387,7 @@ BX.register({
         if (t === 'pickT' || t === 'pick') {
           if (st.ph !== 'pick' || (t === 'pickT' && a.k !== st.rk)) return;
           const wi = st.choices[BX.clamp(a.i | 0, 0, st.choices.length - 1)];
-          st.word = wi; st.usedW[wi] = 1; st.ph = 'draw'; st.rk++; phaseT = performance.now(); ver++; lastSec = -1;
+          st.word = wi; st.usedW[wi] = 1; st.ph = 'draw'; st.rk++; phaseT = performance.now(); ver++; lastSec = -1; revealN = 0;
           ctx.sfx('start'); return;
         }
         if (t === 'timeup' || t === 'next') {
@@ -338,7 +397,8 @@ BX.register({
           return;
         }
         if (st.ph !== 'draw') return;
-        if (t === 's') { st.strokes.push({c: a.c | 0, z: BX.clamp(a.z | 0, 0, 2), p: a.p.map(v => v | 0)}); if (by >= 0) delete live[by]; ver++; return; }
+        if (t === 's') { st.strokes.push({c: a.c | 0, z: BX.clamp(a.z | 0, 0, 2), p: a.p.map(v => v | 0)}); if (by >= 0) delete live[by]; return; }
+        if (t === 'f') { st.strokes.push({f: 1, c: a.c | 0, x: BX.clamp(a.x | 0, 0, BW), y: BX.clamp(a.y | 0, 0, BH)}); ctx.sfx('pop'); return; }
         if (t === 'undo') { st.strokes.pop(); ver++; return; }
         if (t === 'clear') { st.strokes = []; ver++; ctx.sfx('whoosh'); return; }
         if (t === 'skip') { endRound('skip'); return; }
@@ -355,7 +415,12 @@ BX.register({
           if (g === w || (g.length <= w.length + 2 && g.includes(w))) {
             const p = solve(by, a.el); st.guesses.push({by, ok: 1, pts: p}); ctx.sfx('score');
             if (!unsolved().length) endRound('all');
-          } else { st.guesses.push({by, txt: g.slice(0, 12)}); if (st.guesses.length > 60) st.guesses.splice(0, st.guesses.length - 60); ctx.sfx('pop'); }
+          } else {
+            const close = isClose(g, w);
+            st.guesses.push(close ? {by, txt: g.slice(0, 12), close: 1} : {by, txt: g.slice(0, 12)}); if (st.guesses.length > 60) st.guesses.splice(0, st.guesses.length - 60);
+            ctx.sfx('pop');
+            if (close && ctx.isLocal(by) && by === ctx.me) { ctx.toast('「' + g.slice(0, 12) + '」很接近了！'); ctx.buzz(15); }
+          }
         }
       },
       sysMove() {
@@ -419,35 +484,66 @@ BX.register({
         let txt = '', color = C.ink;
         if (st.over) txt = '游戏结束';
         else if (st.ph === 'pick') txt = (amDrawer ? '请选词' : ctx.name(dr) + ' 选词中…');
-        else if (st.ph === 'draw') {
+        let blanks = false;
+        if (st.ph === 'draw') {
           if (amDrawer && (!local || peek)) { txt = '画：' + w; color = C.red; }
-          else if (amDrawer) txt = '按住「看词」查看词语';
           else {
-            const solved = st.solved.some(x => x.s === ctx.me);
+            const solved = !local && st.solved.some(x => x.s === ctx.me);
             if (solved) { txt = '你猜对了：' + w; color = C.jade; }
-            else { txt = '　'.repeat(0) + w.length + ' 个字' + (elapsed() > DRAW_T / 2 ? ' · ' + W[st.word][1] : ''); }
+            else { blanks = true; const fr = elapsed() / DRAW_T; txt = w.length + ' 个字' + (fr >= .3 ? ' · ' + W[st.word][1] : ''); }
           }
         } else if (st.ph === 'show') { txt = '答案：' + w; color = C.red; }
         D.text(g, txt, hx + 12, cy + 1, {size: fs, color, font: 'serif', weight: 800, align: 'left', maxW: hw - hh - 30});
-        if (st.ph === 'draw' && !amDrawer && !st.solved.some(x => x.s === ctx.me)) {
-          // blanks
-          const bw2 = fs * 1.1, x0 = hx + 12 + g.measureText(txt).width + 14;
-          if (x0 + w.length * bw2 < hx + hw - hh - 12) for (let i = 0; i < w.length; i++) { g.fillStyle = C.ink2; g.fillRect(x0 + i * bw2, cy + fs * .45, bw2 * .8, 2); }
+        if (blanks) {
+          // letter boxes; characters are revealed one by one as time runs out (never the whole word)
+          const fr = elapsed() / DRAW_T, L2 = w.length;
+          const nRev = Math.min(L2 - 1, (fr >= .5 ? 1 : 0) + (fr >= .75 && L2 >= 3 ? 1 : 0));
+          const shown = new Set(revealOrder(st.word, L2).slice(0, Math.max(0, nRev)));
+          if (nRev > 0 && nRev !== revealN) { revealN = nRev; if (!amDrawer) ctx.sfx('bell'); }
+          g.font = `800 ${fs}px ${BX.F.serif}`;
+          const bw2 = fs * 1.25, x0 = hx + 12 + Math.min(g.measureText(txt).width, hw - hh - 30) + 14;
+          const room = hx + hw - hh - 12 - x0, bs = Math.min(bw2, room / Math.max(1, L2));
+          if (bs > 10) for (let i = 0; i < L2; i++) {
+            const bx2 = x0 + i * bs;
+            if (shown.has(i)) { g.fillStyle = 'rgba(63,143,91,.15)'; g.fillRect(bx2, cy - bs * .45, bs * .86, bs * .9); D.text(g, w[i], bx2 + bs * .43, cy + 1, {size: bs * .72, color: C.jade, font: 'serif', weight: 800}); }
+            g.fillStyle = C.ink2; g.fillRect(bx2, cy + bs * .45, bs * .86, 2);
+          }
         }
+        if (amDrawer && local && !peek && st.ph === 'draw') D.text(g, '按住「看词」', hx + hw - hh - 14, cy + 1, {size: Math.max(11, fs * .6), color: C.ink2, weight: 600, align: 'right'});
         // round label on board
         D.text(g, '第 ' + (Math.min(st.round, total - 1) + 1) + '/' + total + ' 轮 · 画手 ' + ctx.name(dr), G.bx + 8, G.by + 14, {size: 12, color: 'rgba(60,40,20,.55)', weight: 600, align: 'left'});
         // reveal card
         if (st.ph === 'show') {
-          const cw = Math.min(G.bw * .8, 340), ch2 = Math.min(G.bh * .7, 200), cx = G.bx + (G.bw - cw) / 2, cyy = G.by + (G.bh - ch2) / 2;
+          const cw = Math.min(G.bw * .86, 360), ch2 = Math.min(G.bh * .9, 200 + Math.ceil(n / 2) * 18), cx = G.bx + (G.bw - cw) / 2, cyy = G.by + (G.bh - ch2) / 2;
           g.save(); g.shadowColor = 'rgba(0,0,0,.4)'; g.shadowBlur = 16; g.fillStyle = 'rgba(255,250,236,.97)'; D.rr(g, cx, cyy, cw, ch2, 14); g.fill(); g.restore();
           g.fillStyle = C.red; D.rr(g, cx + cw - 50, cyy + 10, 40, 40, 6); g.fill(); D.text(g, '揭', cx + cw - 30, cyy + 31, {size: 26, color: '#fbe9d0', font: 'deco', weight: 400});
-          D.text(g, '答案', cx + cw / 2, cyy + ch2 * .18, {size: 14, color: C.ink2});
-          D.text(g, w || '—', cx + cw / 2, cyy + ch2 * .42, {size: Math.min(48, ch2 * .25), color: C.red, font: 'serif', weight: 900, maxW: cw - 70});
+          const u = Math.min(1, ch2 / (200 + Math.ceil(n / 2) * 18));
+          D.text(g, '答案', cx + cw / 2, cyy + 24 * u, {size: 14, color: C.ink2});
+          D.text(g, w || '—', cx + cw / 2, cyy + 62 * u, {size: Math.min(44, 46 * u), color: C.red, font: 'serif', weight: 900, maxW: cw - 70});
           const sol = st.solved.map(x => ctx.name(x.s) + ' +' + x.p).join('  ');
-          D.text(g, st.solved.length ? sol : '没有人猜中', cx + cw / 2, cyy + ch2 * .68, {size: 14, color: C.jade, weight: 700, maxW: cw - 20});
-          D.text(g, st.last && st.last.why === 'skip' ? ctx.name(dr) + '（电脑）跳过作画' : '画手 ' + ctx.name(dr) + ' +' + (st.solved.length * 3 + (st.solved.length === n - 1 && st.solved.length ? 2 : 0)), cx + cw / 2, cyy + ch2 * .86, {size: 13, color: C.ink2, maxW: cw - 20});
+          D.text(g, st.solved.length ? sol : '没有人猜中', cx + cw / 2, cyy + 104 * u, {size: 14, color: C.jade, weight: 700, maxW: cw - 20});
+          D.text(g, st.last && st.last.why === 'skip' ? ctx.name(dr) + '（电脑）跳过作画' : '画手 ' + ctx.name(dr) + ' +' + (st.solved.length * 3 + (st.solved.length === n - 1 && st.solved.length ? 2 : 0)), cx + cw / 2, cyy + 128 * u, {size: 13, color: C.ink2, maxW: cw - 20});
+          // running scoreboard
+          g.strokeStyle = 'rgba(178,58,43,.25)'; g.beginPath(); g.moveTo(cx + 20, cyy + 146 * u); g.lineTo(cx + cw - 20, cyy + 146 * u); g.stroke();
+          const order = BX.range(n).sort((a, b) => st.score[b] - st.score[a]);
+          order.forEach((i, r) => {
+            const colx = cx + (r % 2 ? cw * .52 : 22), rowy = cyy + (164 + Math.floor(r / 2) * 18) * u;
+            D.text(g, (r + 1) + '. ' + ctx.name(i), colx, rowy, {size: 13 * Math.max(.85, u), color: ctx.color(i), weight: 700, align: 'left', maxW: cw * .3});
+            D.text(g, st.score[i] + ' 分', colx + cw * .42, rowy, {size: 13 * Math.max(.85, u), color: C.ink, weight: 700, align: 'right'});
+          });
         }
         if (peek !== peekWas) peekWas = peek;
+      },
+      key(e) {
+        if (!canDraw()) return;
+        const k = e.key;
+        if ((e.ctrlKey || e.metaKey) && (k === 'z' || k === 'Z')) { e.preventDefault(); undo(); return; }
+        if (e.ctrlKey || e.metaKey || e.altKey) return;
+        if (k === 'b' || k === 'B') tool = 'pen'; else if (k === 'e' || k === 'E') tool = tool === 'erase' ? 'pen' : 'erase'; else if (k === 'f' || k === 'F') tool = tool === 'fill' ? 'pen' : 'fill';
+        else if (k === '[') sz = Math.max(0, sz - 1); else if (k === ']') sz = Math.min(2, sz + 1);
+        else if (/^[1-9]$/.test(k)) { col = PAL[+k - 1]; if (tool === 'erase') tool = 'pen'; }
+        else return;
+        ctx.sfx('tick'); syncTools();
       },
       destroy() { queue.length = 0; },
     };
