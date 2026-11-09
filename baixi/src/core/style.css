@@ -170,6 +170,15 @@ details.rd[open] summary::before{content:"▾ "}
 @keyframes bub{0%{opacity:0;transform:translateY(10px) scale(.8)}10%{opacity:1;transform:none}80%{opacity:1}100%{opacity:0;transform:translateY(-14px)}}
 
 /* ================= phones ================= */
+/* portrait phones: status line gets its own full-width row under the bar so it is never truncated */
+@media (max-width:500px) and (orientation:portrait){
+  :root{--barH:72px}
+  .gm-bar{height:auto;min-height:calc(var(--barH) + env(safe-area-inset-top));flex-wrap:wrap;row-gap:0;padding-bottom:4px}
+  .gm-mid{display:contents}
+  .gm-title{display:none}
+  .seats{flex:1;max-width:none;min-width:0}
+  .gm-status{order:99;flex:1 0 100%;font-size:13px;line-height:18px;min-height:18px;padding:0 6px;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+}
 @media (pointer:coarse) and (max-width:500px){
   .lb-title{font-size:24px;letter-spacing:2px}
   .lb-subt{display:none}
