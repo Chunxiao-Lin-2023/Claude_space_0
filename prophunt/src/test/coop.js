@@ -34,7 +34,7 @@ const { chromium } = require('playwright'); const OUT = process.env.OUT || '/tmp
   await H.evaluate(() => { const h = G.pl[1], s = G.pl[0]; for (const [ox, oy] of OFFS.map(([a, b]) => [a * 2.2, b * 2.2])) { const x = h.x + ox, y = h.y + oy; if (Math.hypot(ox, oy) > .9 && !blocked([x - .26, y - .26, x + .26, y + .26], 0)) { s.x = x; s.y = y; break; } } });
   await H.waitForTimeout(700); await H.screenshot({ path: OUT + '/c_seeker_near.png' });
   const vis = await H.evaluate(() => hiderSeen()); console.log('host sees hider', vis);
-  await H.evaluate(() => act('knock', { id: -1 })); await Gu.waitForTimeout(2600);
+  console.log('knock ret', await H.evaluate(() => (G.kcd = 0, doAct(0, 'knock', { id: -1 })) + ' kn ' + G.kn + ' seen ' + hiderSeen() + ' d ' + distFp(G.pl[0].x, G.pl[0].y, plBox(G.pl[1], G.pl[1].x, G.pl[1].y)).toFixed(2))); await Gu.waitForTimeout(2600);
   console.log('end host', await H.evaluate(() => G.phase + ' ' + JSON.stringify(G.res) + ' ' + G.score), 'guest', await Gu.evaluate(() => G.phase + ' ' + G.score + ' endScr ' + !$('endScr').classList.contains('hidden')));
   await Gu.screenshot({ path: OUT + '/c_end_g.png' });
   await H.click('#eNext');
