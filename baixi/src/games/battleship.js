@@ -378,19 +378,19 @@ BX.register({
       if (!S || S.w < 60) return;
       let y = S.y;
       if (!L.land) { D.text(g, '我方舰队', S.x + S.w / 2, y + 9, {size: 13, color: !st.over && st.turn !== me ? C.gold2 : 'rgba(243,226,192,.75)', weight: 700, maxW: S.w}); y += 24; }
-      else { fleetRow(g, S.x + 10, y + 9, S.w - 10, opp, Math.min(12, S.w / 22)); y += 24; }
+      else { fleetRow(g, S.x + 10, y + 9, S.w - 10, opp, BX.clamp(S.w / 22, 10, 14)); y += 26; }
       if (salvo && myTurn()) {
         const need = needShots(st.turn), full = picks.length === need, bh = 42;
         button(g, S.x + (L.land ? 10 : 0), y, S.w - (L.land ? 10 : 0), bh, '开火 ' + picks.length + '/' + need, {red: true, on: full, fn: fireSalvo});
         y += bh + 10;
       } else if (salvo && !st.over && st.phase === 'play' && S.h - (y - S.y) > 40) { D.text(g, '本回合 ' + needShots(st.turn) + ' 炮', S.x + S.w / 2, y + 10, {size: 12, color: 'rgba(243,226,192,.6)', weight: 600}); y += 24; }
-      const lh = 16, nl = Math.floor((S.y + S.h - y) / lh);
+      const hs = BX.clamp(S.w / 20, 11.5, 14), lh = Math.round(hs * 1.4), nl = Math.floor((S.y + S.h - y) / lh);
       if (nl <= 0) return;
       const list = st.log.slice(-nl).reverse();
       list.forEach((e, k) => {
-        const yy = y + k * lh + 7, a = 1 - k / (nl + 2), mine = e.by === me;
+        const yy = y + k * lh + lh / 2, a = 1 - k / (nl + 2), mine = e.by === me;
         g.fillStyle = D.alpha(PCOL[e.by], a); D.circle(g, S.x + (L.land ? 16 : 5), yy, 3.5); g.fill();
-        D.text(g, (mine ? '我 ' : '敌 ') + cellName(e.i) + ' ' + (e.res === 0 ? '落空' : e.res === 1 ? '命中' : '击沉'), S.x + (L.land ? 24 : 13), yy, {size: 11.5, color: e.res ? `rgba(255,190,140,${a})` : `rgba(243,226,192,${a * .8})`, weight: e.res === 2 ? 800 : 500, align: 'left', maxW: S.w - 14});
+        D.text(g, (mine ? '我 ' : '敌 ') + cellName(e.i) + ' ' + (e.res === 0 ? '落空' : e.res === 1 ? '命中' : '击沉'), S.x + (L.land ? 24 : 13), yy, {size: hs, color: e.res ? `rgba(255,190,140,${a})` : `rgba(243,226,192,${a * .8})`, weight: e.res === 2 ? 800 : 500, align: 'left', maxW: S.w - 14});
       });
     }
     function confirmFleet() { if (validFleet(lay)) { sel = -1; ctx.act({t: 'place', ships: lay.map(s => ({x: s.x, y: s.y, h: s.h, len: s.len}))}, viewer()); } }

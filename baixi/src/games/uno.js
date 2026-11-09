@@ -133,7 +133,8 @@ BX.register({
       for (let s = 0; s < N; s++) if (s !== w) { const p = st.hands[s].reduce((a, id) => a + pts(id), 0); score += p; det.push(ctx.name(s) + ' 余' + st.hands[s].length + '张 ' + p + '分'); }
       st.res = {w, score};
       ctx.sfx('gong');
-      ctx.end({winner: w, text: ctx.name(w) + ' 率先出完，得 ' + score + ' 分（' + det.join('，') + '）', delay: 1300});
+      const rows = BX.range(N).map(s => { const p = st.hands[s].reduce((a, id) => a + pts(id), 0); return `<tr><td style="text-align:left">${BX.esc(ctx.name(s))}</td><td>${s === w ? '出完' : '余 ' + st.hands[s].length + ' 张'}</td><td style="font-weight:800;color:${s === w ? '#2f7a55' : '#b23a2b'}">${s === w ? '+' + score : p + ' 点'}</td></tr>`; }).join('');
+      ctx.end({winner: w, text: ctx.name(w) + ' 率先出完，得 ' + score + ' 分（' + det.join('，') + '）', html: `<div>${BX.esc(ctx.name(w))} 率先出完，得 <b>${score}</b> 分</div><table style="margin:6px auto;border-collapse:collapse;font-size:14px;line-height:1.7" cellpadding="4">${rows}</table><div style="font-size:12px;opacity:.7">数字牌按面值 · 禁/转/+2 各 20 · 黑牌各 50</div>`, delay: 1300});
     }
     function apply(a, by) {
       st.seq++; ui.hintA = null;
