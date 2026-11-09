@@ -108,11 +108,12 @@ function prismsFor(k, v, r, x, y, ang) {
   // ang (radians) overrides the quarter-turn r (used for people); returns [{pts:[[x,y]..], z0, z1, c}]
   let co, si; if (ang == null) { [co, si] = ROT4[r & 3]; } else { co = Math.cos(ang); si = Math.sin(ang); }
   const tf = (px, py) => [x + px * co - py * si, y + px * si + py * co];
-  return typeParts(k, v).map(p => partPrism(p, tf));
+  return typeParts(k, v).map(p => framePrism(p, tf));
 }
 function partPrism(p, tf) {
   let pts;
   if (p.t === 'b') pts = [tf(p.x0, p.y0), tf(p.x1, p.y0), tf(p.x1, p.y1), tf(p.x0, p.y1)];
+  else if (p.t === 'p') pts = p.pts.map(q => tf(q[0], q[1]));
   else { pts = []; for (let i = 0; i < p.n; i++) { const a = (i + .5) / p.n * Math.PI * 2; pts.push(tf(p.cx + Math.cos(a) * p.r, p.cy + Math.sin(a) * p.r)); } }
   return { pts, z0: p.z0, z1: p.z1, c: p.c };
 }

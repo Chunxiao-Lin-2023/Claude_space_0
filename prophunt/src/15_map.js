@@ -1,72 +1,101 @@
-/* ================= the house: rooms, doors, walls, random furnishing ================= */
-const ROOMS = [
-  { id: 'kitchen', n: '厨房', r: [0, 0, 7, 7], fl: 'tile', fc: ['#e8e4dc', '#d6d0c4'] },
-  { id: 'dining', n: '餐厅', r: [7, 0, 13, 7], fl: 'wood', fc: ['#c99e6e', '#b88d5e'] },
-  { id: 'bed', n: '主卧', r: [13, 0, 20, 7], fl: 'carpet', fc: ['#b9b3c9', '#ada6be'] },
-  { id: 'bath', n: '浴室', r: [20, 0, 24, 7], fl: 'tile', fc: ['#cfe3ea', '#b9d3dc'] },
-  { id: 'living', n: '客厅', r: [0, 7, 10, 16], fl: 'wood', fc: ['#d4ad7c', '#c39c6b'] },
-  { id: 'hall', n: '走廊', r: [10, 7, 13, 16], fl: 'wood', fc: ['#b98d5e', '#a87d50'] },
-  { id: 'study', n: '书房', r: [13, 7, 19, 16], fl: 'wood', fc: ['#a8825c', '#98734e'] },
-  { id: 'kids', n: '儿童房', r: [19, 7, 24, 16], fl: 'carpet', fc: ['#bfd9b4', '#b2cea6'] },
-  { id: 'garden', n: '花园', r: [0, 16, 24, 22], fl: 'grass', fc: ['#8cc06a', '#82b660'], out: 1 }
-];
-ROOMS.forEach((r, i) => r.i = i);
-// v:1 = gap in a vertical wall x=c, v:0 = gap in a horizontal wall y=c; gap runs a..b
-const DOORS = [
-  { v: 1, c: 7, a: 2.6, b: 4.0 }, { v: 0, c: 7, a: 2.0, b: 3.4 }, { v: 0, c: 7, a: 10.8, b: 12.2 }, { v: 1, c: 10, a: 11, b: 12.4 },
-  { v: 1, c: 13, a: 9.0, b: 10.4 }, { v: 1, c: 13, a: 4.6, b: 6.0 }, { v: 1, c: 20, a: 2.4, b: 3.8 }, { v: 1, c: 19, a: 12, b: 13.4 },
-  { v: 0, c: 7, a: 21, b: 22.4 }, { v: 0, c: 7, a: 15.2, b: 16.6 }, { v: 0, c: 16, a: 10.8, b: 12.2 }, { v: 0, c: 16, a: 3.4, b: 5.4 }
-];
-const HOUSE = { w: 24, h: 22 }, WALL_T = 0.16;
-const SPAWN_SEEK = [11.5, 20.7], SPAWN_HIDE = [11.5, 11.7];
-const DOORZ = DOORS.map(d => d.v ? [d.c - 1.1, d.a - .1, d.c + 1.1, d.b + .1] : [d.a - .1, d.c - 1.1, d.b + .1, d.c + 1.1]);
-const GARDEN_PATH = [10.3, 16, 12.7, 22];
+/* ================= scene engine: rooms, doors, auto-built walls, random furnishing =================
+   A scene = rectangular rooms on an integer grid + door gaps. Walls are generated on every room boundary
+   (style per scene / per room), door gaps are cut out, then split into 1 m pieces for sorting. */
+const SCENES = {};               // filled by 16_scenes.js
+let SCENE = null, ROOMS = [], DOORS = [], HOUSE = { w: 24, h: 22 }, WALLS = [], DOORZ = [], KEEP = [], SPAWN_SEEK = [0, 0], SPAWN_HIDE = [0, 0], GEN = {};
+const WALL_T = 0.16;
+const WSTYLE = {   // thickness, low height, tall height (north/west outer edge)
+  wall: [.16, .5, 2.4], log: [.2, .55, 2.2], fence: [.12, .7, .7], hedge: [.5, .75, 2.2], rock: [.55, .7, 2.0],
+  reef: [.55, .65, 1.6], hull: [.22, .6, 1.8], ruin: [.3, .55, 1.4], steel: [.16, .5, 2.4]
+};
+const WPRIO = ['wall', 'steel', 'log', 'hull', 'ruin', 'fence', 'hedge', 'rock', 'reef'];
+function useScene(id) {
+  SCENE = SCENES[id] || SCENES.house;
+  ROOMS = SCENE.rooms; ROOMS.forEach((r, i) => r.i = i);
+  DOORS = SCENE.doors; HOUSE = { w: SCENE.w, h: SCENE.h };
+  WALLS = SCENE._walls || (SCENE._walls = buildWalls(SCENE));
+  DOORZ = DOORS.map(d => { const t = 1.35 + (d.t || 0); return d.v ? [d.c - t, d.a - .1, d.c + t, d.b + .1] : [d.a - .1, d.c - t, d.b + .1, d.c + t]; });
+  KEEP = SCENE.keep || []; SPAWN_SEEK = SCENE.seek; SPAWN_HIDE = SCENE.hide; GEN = SCENE.gen;
+}
 const ovl = (a, b, m) => { m = m || 0; return a[0] < b[2] + m && a[2] > b[0] - m && a[1] < b[3] + m && a[3] > b[1] - m; };
-const inner = room => [room.r[0] + WALL_T / 2, room.r[1] + WALL_T / 2, room.r[2] - WALL_T / 2, room.r[3] - WALL_T / 2];
+const inner = room => { const t = (room.inset || WALL_T) / 2; return [room.r[0] + t, room.r[1] + t, room.r[2] - t, room.r[3] - t]; };
 function fpOf(k, r, x, y) { const [w, d] = footWD(k, r); return [x - w / 2, y - d / 2, x + w / 2, y + d / 2]; }
 function roomAt(x, y, pad) { pad = pad || 0; for (const r of ROOMS) if (x >= r.r[0] - pad && x <= r.r[2] + pad && y >= r.r[1] - pad && y <= r.r[3] + pad) return r; return null; }
 function roomsNear(x, y, pad) { const out = []; for (const r of ROOMS) if (x >= r.r[0] - pad && x <= r.r[2] + pad && y >= r.r[1] - pad && y <= r.r[3] + pad) out.push(r.i); return out; }
+const hash = (a, b) => { let h = Math.imul(a * 374761393 + b * 668265263, 1274126177); h ^= h >>> 15; return ((h >>> 0) % 10000) / 10000; };
 
-/* ---------- walls (built once) ---------- */
-const WALLS = (() => {
-  const lines = [  // [horizontal?, c, a, b, height, fence]
-    [1, 0, 0, 24, 2.4], [1, 7, 0, 24, .5], [1, 16, 0, 24, .5], [1, 22, 0, 24, .7, 1],
-    [0, 0, 0, 16, 2.4], [0, 24, 0, 16, .5], [0, 7, 0, 7, .5], [0, 13, 0, 7, .5], [0, 20, 0, 7, .5],
-    [0, 10, 7, 16, .5], [0, 13, 7, 16, .5], [0, 19, 7, 16, .5], [0, 0, 16, 22, .7, 1], [0, 24, 16, 22, .7, 1]
-  ];
+function buildWalls(sc) {
+  const rooms = sc.rooms, W = sc.w, H = sc.h;
+  const own = (x, y) => { for (const r of rooms) if (x > r.r[0] && x < r.r[2] && y > r.r[1] && y < r.r[3]) return r; return null; };
+  const styleOf = (A, B) => {
+    if (!A || !B) { const r = A || B; return r.wso || sc.outer || 'wall'; }
+    const a = A.ws || sc.inner || 'wall', b = B.ws || sc.inner || 'wall'; return WPRIO.indexOf(a) <= WPRIO.indexOf(b) ? a : b;
+  };
+  const units = [];   // [hz, c, a, style, tall]
+  for (let y = 0; y <= H; y++) for (let x = 0; x < W; x++) {
+    const A = own(x + .5, y - .5), B = own(x + .5, y + .5); if (A === B || (A && B && A.open && A.open === B.open)) continue;
+    const st = styleOf(A, B); units.push([1, y, x, st, !A && !!B]);
+  }
+  for (let x = 0; x <= W; x++) for (let y = 0; y < H; y++) {
+    const A = own(x - .5, y + .5), B = own(x + .5, y + .5); if (A === B || (A && B && A.open && A.open === B.open)) continue;
+    const st = styleOf(A, B); units.push([0, x, y, st, !A && !!B]);
+  }
+  // merge contiguous unit edges into lines
+  units.sort((p, q) => p[0] - q[0] || p[1] - q[1] || p[2] - q[2]);
+  const lines = [];
+  for (const u of units) { const L = lines[lines.length - 1]; if (L && L[0] === u[0] && L[1] === u[1] && L[3] === u[2] && L[4] === u[3] && L[5] === u[4]) L[3] = u[2] + 1; else lines.push([u[0], u[1], u[2], u[2] + 1, u[3], u[4]]); }
   const out = [];
-  for (const [hz, c, a, b, h, fence] of lines) {
+  for (const [hz, c, a, b, st, tall] of lines) {
+    const [th, hl, ht] = WSTYLE[st] || WSTYLE.wall, h = tall ? ht : hl, t = th / 2;
     let spans = [[a, b]];
-    for (const d of DOORS) if ((d.v === 0) === !!hz && d.c === c) spans = spans.flatMap(([s, e]) => d.b <= s || d.a >= e ? [[s, e]] : [[s, d.a], [d.b, e]].filter(q => q[1] - q[0] > .01));
+    for (const d of sc.doors) if ((d.v === 0) === !!hz && d.c === c) spans = spans.flatMap(([s, e]) => d.b <= s || d.a >= e ? [[s, e]] : [[s, d.a], [d.b, e]].filter(q => q[1] - q[0] > .01));
     for (const [s, e] of spans) {
       const n = Math.max(1, Math.round(e - s));
       for (let i = 0; i < n; i++) {
         let s0 = s + (e - s) * i / n, s1 = s + (e - s) * (i + 1) / n;
-        const t = fence ? .06 : WALL_T / 2;
         if (i === 0 && s === a) s0 -= t; if (i === n - 1 && e === b) s1 += t;
         const fp = hz ? [s0, c - t, s1, c + t] : [c - t, s0, c + t, s1];
-        const w = { wall: 1, fence: !!fence, h, fp, tall: h > 1 };
-        const box = (x0, y0, x1, y1, z0, z1, col) => ({ pts: [[x0, y0], [x1, y0], [x1, y1], [x0, y1]], z0, z1, c: col });
-        if (fence) {
-          const [x0, y0, x1, y1] = fp, px = hz ? [x0, y0, x0 + .09, y1] : [x0, y0, x1, y0 + .09];
-          w.pr = [box(px[0], px[1], px[2], px[3], 0, .74, '#f4efe4'), box(x0, y0 + (hz ? .015 : 0), x1, y1 - (hz ? .015 : 0), .52, .6, '#e8e1d2'), box(x0, y0 + (hz ? .015 : 0), x1, y1 - (hz ? .015 : 0), .24, .32, '#e8e1d2')];
-        } else {
-          const col = h > 1 ? '#e2d6c0' : '#efe6d6';
-          w.pr = [box(fp[0], fp[1], fp[2], fp[3], 0, h, col), box(fp[0] - .005, fp[1] - .005, fp[2] + .005, fp[3] + .005, h, h + .03, '#9c8a72')];
-          if (h > 1) w.pr.splice(1, 0, box(fp[0], fp[1], fp[2], fp[3] + .004, 0, .9, '#c9b28e'));
-        }
-        out.push(w);
+        out.push({ wall: 1, st, h, fp, tall: h > 1, pr: wallPrisms(st, fp, h, hz, sc, hash(Math.round(s0 * 7) + c * 31, hz)) });
       }
     }
   }
   return out;
-})();
-
+}
+function wallPrisms(st, fp, h, hz, sc, rv) {
+  const box = (x0, y0, x1, y1, z0, z1, col) => ({ pts: [[x0, y0], [x1, y0], [x1, y1], [x0, y1]], z0, z1, c: col });
+  const cyl = (cx, cy, r, z0, z1, col, n) => { const pts = []; n = n || 7; for (let i = 0; i < n; i++) { const a = (i + .5) / n * 6.2832; pts.push([cx + Math.cos(a) * r, cy + Math.sin(a) * r]); } return { pts, z0, z1, c: col }; };
+  const [x0, y0, x1, y1] = fp, mx = (x0 + x1) / 2, my = (y0 + y1) / 2, len = hz ? x1 - x0 : y1 - y0, th = hz ? y1 - y0 : x1 - x0;
+  const C = sc.wallc || ['#efe6d6', '#9c8a72', '#c9b28e', '#e2d6c0'];
+  if (st === 'fence') {
+    const px = hz ? [x0, y0, x0 + .09, y1] : [x0, y0, x1, y0 + .09];
+    return [box(px[0], px[1], px[2], px[3], 0, .74, '#f4efe4'), box(x0, y0 + (hz ? .015 : 0), x1, y1 - (hz ? .015 : 0), .52, .6, '#e8e1d2'), box(x0, y0 + (hz ? .015 : 0), x1, y1 - (hz ? .015 : 0), .24, .32, '#e8e1d2')];
+  }
+  if (st === 'hedge') {
+    const g = sc.hedgec || ['#3f7a38', '#5a9a46', '#4c8a3e'], L = [box(x0, y0, x1, y1, 0, h * .78, g[0])];
+    for (let k = 0; k < 2; k++) { const f = (k + .5) / 2, cx = hz ? x0 + len * f : mx, cy = hz ? my : y0 + len * f; L.push(cyl(cx, cy, th * .62 + rv * .05, h * .5, h * (.95 + rv * .1), k ? g[2] : g[1], 7)); }
+    return L;
+  }
+  if (st === 'rock' || st === 'reef') {
+    const g = st === 'rock' ? (sc.rockc || ['#8d8a84', '#a6a29a', '#77736c']) : ['#6f7f86', '#86969c', '#5c6a70'];
+    const L = [box(x0, y0, x1, y1, 0, h * (.75 + rv * .2), g[0])];
+    const cx = hz ? x0 + len * (.3 + rv * .4) : mx, cy = hz ? my : y0 + len * (.3 + rv * .4);
+    L.push(cyl(cx, cy, th * .55, h * .3, h * (.95 + rv * .15), g[1], 6));
+    if (st === 'reef') { const cc = ['#ff7a8a', '#ffb04a', '#b98cff', '#5fd0c0'][Math.floor(rv * 4)]; L.push(cyl(hz ? x0 + len * .75 : mx, hz ? my : y0 + len * .75, .1, h * .8, h + .35, cc, 5), cyl(hz ? x0 + len * .2 : mx + .05, hz ? my + .05 : y0 + len * .2, .08, h * .7, h + .22, cc, 5)); }
+    return L;
+  }
+  if (st === 'hull') return [box(x0, y0, x1, y1, 0, h, '#7a5634'), box(x0, y0, x1, y1 + .004, h * .3, h * .36, '#5c3f24'), box(x0, y0, x1, y1 + .004, h * .65, h * .71, '#5c3f24'), box(x0 - .01, y0 - .01, x1 + .01, y1 + .01, h, h + .05, '#4a321c')];
+  if (st === 'ruin') { const hh = h * (.6 + rv * .5); return [box(x0, y0, x1, y1, 0, hh, '#cfc3a6'), box(x0 - .01, y0 - .01, x1 + .01, y1 + .01, hh, hh + .06, '#b3a688')]; }
+  if (st === 'log') return [box(x0, y0, x1, y1, 0, h, '#9a6a3e'), box(x0, y0, x1, y1 + .004, h * .33, h * .37, '#7a5030'), box(x0, y0, x1, y1 + .004, h * .66, h * .7, '#7a5030'), box(x0 - .005, y0 - .005, x1 + .005, y1 + .005, h, h + .04, '#5c3a22')];
+  const col = st === 'steel' ? '#dfe4e8' : h > 1 ? C[3] : C[0];
+  const L = [box(x0, y0, x1, y1, 0, h, col), box(x0 - .005, y0 - .005, x1 + .005, y1 + .005, h, h + .03, C[1])];
+  if (h > 1) L.splice(1, 0, box(x0, y0, x1, y1 + .004, 0, .9, C[2]));
+  return L;
+}
 /* ---------- random furnishing (deterministic from the seed; no trig here) ---------- */
 function genMap(seed) {
   const R = mkRng(seed ^ 0x5bd1e995), M = { seed, items: [] };
   const X = { R, M, vv: {}, ri: (a, b) => a + Math.floor(R() * (b - a + 1)), rf: (a, b) => a + R() * (b - a), ch: a => a[Math.floor(R() * a.length)] };
-  for (const room of ROOMS) GEN[room.id](room, X);
+  for (const room of ROOMS) { const g = GEN[room.id]; if (typeof g === 'function') g(room, X); else if (g) recipe(room, X, g); }
   M.items.forEach((it, i) => { it.id = i; it.pr = prismsFor(it.k, it.v, it.r, it.x, it.y); it.flat = !!T[it.k].flat; it.room = roomAt(it.x, it.y).i; it.wob = 0; it.mark = -1; });
   return M;
 }
@@ -77,7 +106,7 @@ function canPut(X, room, k, r, x, y, m) {
   const f = fpOf(k, r, x, y), ib = inner(room), e = .035, flat = !!T[k].flat;
   if (f[0] < ib[0] - e || f[1] < ib[1] - e || f[2] > ib[2] + e || f[3] > ib[3] + e) return false;
   for (const z of DOORZ) if (ovl(f, z)) return false;
-  if (room.id === 'garden' && ovl(f, GARDEN_PATH)) return false;
+  for (const z of KEEP) if (ovl(f, z)) return false;
   for (const it of X.M.items) { const fl2 = !!T[it.k].flat; if (flat !== fl2) continue; if (ovl(f, it.fp, m)) return false; }
   return true;
 }
@@ -132,95 +161,14 @@ function bedSet(X, room, k) {
   if (!k) around(X, room, b, [['nstand', -(w / 2 + .27), -d / 2 + .2, 0], ['nstand', w / 2 + .27, -d / 2 + .2, 0]]);
   if (X.R() < .5) around(X, room, b, [['rug', 0, d / 2 + .3, 0]], .05);
 }
-const GEN = {
-  kitchen(room, X) {
-    const ib = inner(room); let x = X.R() < .5 ? .1 : .9;
-    const seq = ['fridge', 'counter', 'stove', 'counter', 'sink', 'counter', 'counter'].slice(0, X.ri(5, 7));
-    if (X.R() < .5) seq.reverse();
-    for (const k of seq) { const [w, d] = footWD(k, 0); if (tryPut(X, room, k, 0, x + w / 2, ib[1] + d / 2, -.001)) x += w; }
-    if (X.R() < .6) { const c1 = tryPut(X, room, 'counter', 2, 3.1, 3.6, .7); if (c1) { tryPut(X, room, 'counter', 2, 3.9, 3.6, -.001); times(X, 2, 3, i => tryPut(X, room, 'stool', 0, 2.9 + i * .65, 4.35, .05)); } }
-    else diningSet(X, room, 3.4, 3.8, 4);
-    times(X, 1, 2, () => wallPut(X, room, 'trash', { sides: [1, 2, 3] }));
-    if (X.R() < .6) wallPut(X, room, 'plant', { corner: 1 });
-    times(X, 0, 2, () => freePut(X, room, 'box'));
-    if (X.R() < .5) wallPut(X, room, 'cabinet', { sides: [3, 2] });
-    times(X, 0, 2, () => freePut(X, room, 'stool', { m: .3 }));
-  },
-  dining(room, X) {
-    diningSet(X, room, X.rf(9.4, 10.6), X.rf(3.0, 3.8), X.ri(4, 6));
-    times(X, 1, 2, () => wallPut(X, room, X.ch(['dresser', 'cabinet', 'shelf'])));
-    times(X, 1, 3, () => wallPut(X, room, 'plant', { corner: 1 }));
-    if (X.R() < .6) wallPut(X, room, 'clock');
-    if (X.R() < .5) wallPut(X, room, 'lamp', { corner: 1 });
-    if (X.R() < .4) wallPut(X, room, 'radiator', { sides: [0] });
-  },
-  bed(room, X) {
-    bedSet(X, room);
-    times(X, 1, 2, () => wallPut(X, room, 'wardrobe', { sides: [1, 2, 3] }));
-    if (X.R() < .7) wallPut(X, room, 'dresser', { sides: [1, 2, 3] });
-    times(X, 0, 1, () => wallPut(X, room, 'plant', { corner: 1 }));
-    times(X, 0, 2, () => X.R() < .5 ? wallPut(X, room, 'suitcase') : freePut(X, room, 'suitcase'));
-    if (X.R() < .6) wallPut(X, room, 'basket');
-    if (X.R() < .5) wallPut(X, room, 'armchair', { corner: 1 });
-    if (X.R() < .5) wallPut(X, room, 'lamp', { corner: 1 });
-    times(X, 0, 2, () => freePut(X, room, 'box'));
-  },
-  bath(room, X) {
-    wallPut(X, room, 'tub', { sides: [0, 1], corner: 1 });
-    wallPut(X, room, 'toilet', { sides: [1, 3, 0] });
-    times(X, 1, 2, () => wallPut(X, room, 'sink', { m: .03 }));
-    wallPut(X, room, 'washer');
-    times(X, 1, 2, () => wallPut(X, room, 'basket'));
-    wallPut(X, room, 'trash');
-    if (X.R() < .6) wallPut(X, room, 'cabinet');
-    if (X.R() < .5) wallPut(X, room, 'plant', { corner: 1 });
-  },
-  living(room, X) {
-    sofaSet(X, room);
-    times(X, 2, 3, () => wallPut(X, room, 'plant', { corner: 1 }));
-    times(X, 1, 2, () => wallPut(X, room, 'lamp', { corner: 1 }));
-    times(X, 0, 2, () => wallPut(X, room, 'shelf'));
-    if (X.R() < .5) freePut(X, room, 'beanbag');
-    if (X.R() < .4) wallPut(X, room, 'piano');
-    if (X.R() < .5) wallPut(X, room, 'clock');
-    times(X, 0, 1, () => freePut(X, room, 'armchair'));
-    times(X, 0, 2, () => freePut(X, room, 'box'));
-  },
-  hall(room, X) {
-    const pool = ['shoes', 'coat', 'umb', 'plant', 'plant', 'box', 'clock', 'cabinet', 'coat', 'box', 'radiator'];
-    times(X, 5, 7, () => wallPut(X, room, X.ch(pool), { sides: [1, 3], m: .08 }));
-  },
-  study(room, X) {
-    deskSet(X, room); if (X.R() < .5) deskSet(X, room);
-    times(X, 2, 4, () => wallPut(X, room, 'shelf', { m: .02 }));
-    if (X.R() < .7) wallPut(X, room, 'armchair', { corner: 1 });
-    wallPut(X, room, 'lamp', { corner: 1 });
-    times(X, 1, 3, () => X.R() < .5 ? freePut(X, room, 'box') : wallPut(X, room, 'box'));
-    times(X, 1, 2, () => wallPut(X, room, 'plant', { corner: 1 }));
-    if (X.R() < .4) freePut(X, room, 'rug', { m: .1 });
-    if (X.R() < .5) wallPut(X, room, 'cabinet');
-    if (X.R() < .4) wallPut(X, room, 'clock');
-  },
-  kids(room, X) {
-    bedSet(X, room, 'kbed');
-    wallPut(X, room, 'toychest');
-    times(X, 1, 2, () => freePut(X, room, 'beanbag'));
-    times(X, 1, 3, () => freePut(X, room, 'ball', { m: .3 }));
-    times(X, 0, 2, () => freePut(X, room, 'box'));
-    if (X.R() < .6) deskSet(X, room, 'chair');
-    if (X.R() < .6) wallPut(X, room, 'shelf');
-    if (X.R() < .5) wallPut(X, room, 'plant', { corner: 1 });
-    if (X.R() < .5) freePut(X, room, 'rug', { m: .1 });
-    if (X.R() < .5) wallPut(X, room, 'basket');
-  },
-  garden(room, X) {
-    times(X, 4, 7, () => wallPut(X, room, 'fpot', { sides: [0], m: .15 }));
-    times(X, 5, 8, () => wallPut(X, room, 'bush', { sides: [1, 2, 3], m: .2 }));
-    times(X, 1, 3, () => freePut(X, room, 'bush', { m: .6 }));
-    times(X, 1, 2, () => freePut(X, room, 'bench', { r: X.ch([0, 2]), m: .6 }));
-    times(X, 1, 2, () => wallPut(X, room, 'bin', { sides: [0], m: .05 }));
-    times(X, 0, 2, () => freePut(X, room, 'barrel', { m: .5 }));
-    if (X.R() < .6) freePut(X, room, 'ball', { m: .4 });
-    times(X, 0, 2, () => wallPut(X, room, 'plant', { sides: [0], m: .1 }));
+
+// recipe rows: ['w'|'c'|'f', kind or [kinds], min, max, opts]  (w = against a wall, c = corner, f = free-standing)  or ['fn', fn]
+function recipe(room, X, steps) {
+  for (const s of steps) {
+    if (s[0] === 'fn') { s[1](X, room); continue; }
+    const [how, k, a, b, o] = s, ks = Array.isArray(k) ? k : [k];
+    times(X, a, b, () => { const kk = X.ch(ks); if (how === 'f') freePut(X, room, kk, o); else wallPut(X, room, kk, how === 'c' ? Object.assign({ corner: 1 }, o) : o); });
   }
-};
+}
+// rows of identical pieces, e.g. desks in a classroom
+function grid(X, room, k, r, x0, y0, dx, dy, nx, ny, m, after) { for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++) { const it = tryPut(X, room, k, r, x0 + i * dx, y0 + j * dy, m == null ? .02 : m); if (it && after) after(it); } }

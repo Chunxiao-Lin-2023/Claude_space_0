@@ -6,7 +6,7 @@ function localControl(dt) {
   const [mx, my] = moveInput(), L = Math.hypot(mx, my);
   if (L < .05) { me.mv = 0; return; }
   const dx = mx * CY + my * SY, dy = -mx * SY + my * CY;
-  const spd = amHider() ? (me.dg ? BAL.spdProp : BAL.spdHide) : BAL.spdSeek;
+  const spd = (amHider() ? (me.dg ? BAL.spdProp : BAL.spdHide) : BAL.spdSeek) * (SCENE.speed || 1);
   const ox = me.x, oy = me.y;
   movePl(ME, dx * spd * dt, dy * spd * dt);
   if (!me.dg) me.d = Math.atan2(-dx, dy);

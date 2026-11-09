@@ -30,6 +30,7 @@ input:focus{border-color:var(--gold)}
 h1{font-family:var(--title);font-weight:400;font-size:52px;margin:6px 0 0;text-align:center;letter-spacing:.06em;color:var(--gold);text-shadow:0 3px 0 #8a5a1a,0 6px 18px rgba(0,0,0,.4)}
 .tsub{text-align:center;color:var(--sub);margin:4px 0 16px;font-size:14px}
 .seg{display:flex;gap:6px}.seg button{flex:1}
+.seg.wrap{flex-wrap:wrap;margin-bottom:12px}.seg.wrap button{flex:1 1 30%;min-height:40px;padding:4px 6px;font-size:14px;white-space:nowrap}
 .mdesc{font-size:13px;color:var(--sub);line-height:1.6;margin:8px 2px 14px;min-height:42px}
 .row{display:flex;gap:8px;margin-top:10px;align-items:center}
 .row input{flex:1}
@@ -104,7 +105,8 @@ h1{font-family:var(--title);font-weight:400;font-size:52px;margin:6px 0 0;text-a
  #eTitle{font-size:34px}#blindN{font-size:96px}
 }
 @media (pointer:coarse) and (max-height:500px){
- .card{padding:12px 16px}h1{font-size:32px;margin:0}.tsub{margin:2px 0 8px}.mdesc{margin:4px 2px 6px;min-height:0;font-size:12px}.row{margin-top:6px}.big{min-height:44px;font-size:16px}
+ .card{padding:10px 16px}h1{font-size:28px;margin:0}.tsub{display:none}#title .mdesc{display:none}.mdesc{margin:4px 2px 6px;min-height:0;font-size:12px}.row{margin-top:6px}.big{min-height:44px;font-size:16px}
+ #title .seg{margin-top:6px}.seg.wrap{margin-bottom:6px;gap:4px}.seg.wrap button{flex:1 1 22%;min-height:34px;font-size:12px;padding:2px 4px}
  #lCode{font-size:40px}.lbl2{margin:8px 0 4px}
  #hTop{gap:5px;max-width:calc(100% - 260px)}#hTop .chip{font-size:12px;padding:4px 9px}
  #hTip{display:none}#toasts{top:calc(50px + var(--sa-t))}
@@ -128,6 +130,7 @@ h1{font-family:var(--title);font-weight:400;font-size:52px;margin:6px 0 0;text-a
  <div class="tsub">变身捉迷藏 · 一个藏成家具，一个来敲</div>
  <div class="seg" id="modeSeg"><button data-m="rt">实时追逐</button><button data-m="turn">回合推理</button></div>
  <div class="mdesc" id="modeDesc"></div>
+ <div class="seg wrap" id="mapSeg"></div>
  <button id="soloBtn" class="primary big">单人：电脑藏，你来找</button>
  <div class="row"><button id="hostBtn">创建房间</button><input id="codeIn" maxlength="4" placeholder="房间码" autocomplete="off" style="text-transform:uppercase"><button id="joinBtn">加入</button></div>
  <div class="row"><input id="nameIn" maxlength="8" placeholder="你的名字（可不填）"><button id="helpBtn" class="ghost">玩法说明</button></div>
@@ -141,6 +144,8 @@ h1{font-family:var(--title);font-weight:400;font-size:52px;margin:6px 0 0;text-a
  <div class="lbl2">玩法</div>
  <div class="seg" id="lModeSeg"><button data-m="rt">实时追逐</button><button data-m="turn">回合推理</button></div>
  <div class="mdesc" id="lModeDesc"></div>
+ <div class="lbl2" style="margin-top:0">地图</div>
+ <div class="seg wrap" id="lMapSeg"></div>
  <div class="lbl2" style="margin-top:0">第一局谁来藏（之后每局交换）</div>
  <div class="seg" id="lFirstSeg"><button data-f="host">房主</button><button data-f="guest">客人</button><button data-f="rand">随机</button></div>
  <div class="row"><button id="lLeave" class="ghost">离开</button><button id="lStart" class="primary" style="flex:1">开始</button><div id="lWait" style="flex:1;text-align:center;color:var(--sub)">等待房主开始…</div></div>
@@ -181,7 +186,7 @@ h1{font-family:var(--title);font-weight:400;font-size:52px;margin:6px 0 0;text-a
  <ul>
   <li>开局躲方有 30 秒，抓方闭眼数数。躲方走到家具旁，按 <b>E</b> 或点它，就会变成一模一样的东西；<b>R</b> 旋转，<b>Q</b> 变回人形。</li>
   <li>抓方只看得见<b>自己所在的房间</b>。走近可疑的东西按 <b>E</b> 或点它敲一下，敲中就赢。</li>
-  <li>敲击要消耗次数：开局 3 次，每 15 秒恢复 1 次，最多存 5 次。敲错只是用掉一次，不会直接输——所以平时就该大胆去敲。</li>
+  <li>敲击要消耗次数：开局 5 次，每 10 秒恢复 1 次，最多存 8 次。敲错只是用掉一次，不会直接输——所以平时就该大胆去敲。</li>
   <li><b>最后 20 秒</b>：躲方每 5 秒自动出一次声（显示房间名和大致位置），但抓方的次数会变成<b>只剩 3 次</b>，3 次都没敲中或时间到就输。</li>
   <li>躲方可以主动<b>嘲讽</b>（T）：出一声，换来时间 -15 秒（最多提前到最后 20 秒）。</li>
   <li>变身后也能慢慢挪动，但在抓方的房间里挪动会被看见，还会发出摩擦声。人形走路有脚步声。</li>
@@ -196,6 +201,7 @@ h1{font-family:var(--title);font-weight:400;font-size:52px;margin:6px 0 0;text-a
  </ul>
  <h3>单人和联机</h3>
  单人模式里电脑藏、你来找。两个人可以创建房间联机对战，每局交换角色。<br>
+ 地图有六张：温馨小家、放学后的学校、饭店后厨、夜班医院、林间营地、海底探险（水下走得慢一点）。每张图的家具和两个角色的造型都不一样，每局家具摆放都会重新随机。<br>
  <span style="color:var(--sub);font-size:12px">玩法灵感来自 Garry's Mod 的 Prop Hunt 模式和《女巫来了》等变身躲猫猫游戏。</span>
  <button id="helpClose" class="primary wide">知道了</button>
 </div></div>
@@ -227,9 +233,9 @@ const BAL = {
   hideT: 30,          // realtime: seconds the hider gets while the seeker counts
   hideTSolo: 4,       // solo: the computer hides instantly
   seekT: 180,         // realtime: seek phase length (the last finalT seconds are the final phase)
-  knockStart: 3,      // realtime: knock charges at the start of the seek phase
-  knockMax: 5,        // realtime: charges cap
-  knockRegen: 15,     // realtime: +1 charge every N seconds (wrong knocks only cost a charge, no loss)
+  knockStart: 5,      // realtime: knock charges at the start of the seek phase
+  knockMax: 8,        // realtime: charges cap
+  knockRegen: 10,     // realtime: +1 charge every N seconds (wrong knocks only cost a charge, no loss)
   finalT: 20,         // realtime: final phase: hider makes a sound automatically ...
   finalWhistle: 5,    // ... every N seconds,
   finalKnocks: 3,     // ... and the seeker gets exactly this many knocks; all wrong = hider wins
@@ -360,85 +366,290 @@ function prismsFor(k, v, r, x, y, ang) {
   // ang (radians) overrides the quarter-turn r (used for people); returns [{pts:[[x,y]..], z0, z1, c}]
   let co, si; if (ang == null) { [co, si] = ROT4[r & 3]; } else { co = Math.cos(ang); si = Math.sin(ang); }
   const tf = (px, py) => [x + px * co - py * si, y + px * si + py * co];
-  return typeParts(k, v).map(p => partPrism(p, tf));
+  return typeParts(k, v).map(p => framePrism(p, tf));
 }
 function partPrism(p, tf) {
   let pts;
   if (p.t === 'b') pts = [tf(p.x0, p.y0), tf(p.x1, p.y0), tf(p.x1, p.y1), tf(p.x0, p.y1)];
+  else if (p.t === 'p') pts = p.pts.map(q => tf(q[0], q[1]));
   else { pts = []; for (let i = 0; i < p.n; i++) { const a = (i + .5) / p.n * Math.PI * 2; pts.push(tf(p.cx + Math.cos(a) * p.r, p.cy + Math.sin(a) * p.r)); } }
   return { pts, z0: p.z0, z1: p.z1, c: p.c };
 }
 
+/* ---- 12_props2.js ---- */
+/* ================= scene props: school, restaurant, hospital, wild, sea =================
+   free:1 marks pieces that naturally stand in the open (the computer hider doesn't hug walls with them). */
+const ring = (cx, cy, r, z0, z1, c, n, w) => { const L = []; n = n || 10; w = w || .03; for (let i = 0; i < n; i++) { const a = i / n * 6.2832; L.push(B(cx + Math.cos(a) * r - w, cy + Math.sin(a) * r - w, cx + Math.cos(a) * r + w, cy + Math.sin(a) * r + w, z0, z1, c)); } return L; };
+const star = (r0, r1, n) => { const p = []; for (let i = 0; i < n * 2; i++) { const a = i / (n * 2) * 6.2832 - Math.PI / 2, r = i & 1 ? r1 : r0; p.push([Math.cos(a) * r, Math.sin(a) * r]); } return p; };
+const P_ = (pts, z0, z1, c) => ({ t: 'p', pts, z0, z1, c });
+
+/* ---------- school ---------- */
+def('sdesk', { n: '课桌', w: .72, d: .5, vars: [{ a: '#c89a66', b: '#8b939c' }, { a: '#e3cfa6', b: '#5f7f9e' }],
+  P: c => [...legs4(.32, .21, .035, .7, c.b), B(-.32, -.2, .32, .12, .5, .62, c.b), B(-.36, -.25, .36, .25, .7, .75, c.a), B(-.2, -.18, .05, .05, .75, .77, '#f4f2ea')] });
+def('schair', { n: '学生椅', w: .42, d: .42, vars: [{ a: '#c89a66', b: '#8b939c' }, { a: '#e3cfa6', b: '#5f7f9e' }],
+  P: c => [...legs4(.18, .18, .03, .42, c.b), B(-.2, -.19, .2, .2, .42, .46, c.a), B(-.19, -.21, -.16, -.17, .46, .86, c.b), B(.16, -.21, .19, -.17, .46, .86, c.b), B(-.2, -.22, .2, -.17, .62, .84, c.a)] });
+def('tdesk', { n: '讲台', w: 1.2, d: .6, vars: [{ a: '#8a5a36', b: '#a8774a' }, { a: '#e8e2d6', b: '#cfc6b6' }],
+  P: c => [B(-.6, -.3, .6, .3, 0, .98, c.a), B(-.56, .3, .56, .31, .1, .9, c.b), B(-.64, -.34, .64, .34, .98, 1.03, c.b), B(-.2, -.1, .1, .1, 1.03, 1.06, '#f4f2ea')] });
+def('board', { n: '黑板', w: 2.4, d: .14, vars: [{ a: '#2f5a44', b: '#a8774a' }, { a: '#f4f6f8', b: '#9aa3ad' }],
+  P: c => [B(-1.2, -.07, -1.12, .02, 0, 2.0, c.b), B(1.12, -.07, 1.2, .02, 0, 2.0, c.b), B(-1.2, -.07, 1.2, -.01, .82, 1.98, c.b), B(-1.14, -.01, 1.14, .0, .88, 1.92, c.a), B(-1.1, 0, 1.1, .07, .84, .88, c.b), B(-.4, .02, -.3, .05, .88, .9, '#f6f2ea'), B(.2, .02, .25, .05, .88, .9, '#f2c94a')] });
+def('locker', { n: '储物柜', w: .9, d: .45, vars: [{ a: '#4f81bd', b: '#3d6aa0' }, { a: '#9aa3ad', b: '#7c858f' }, { a: '#d8604c', b: '#b84a3a' }],
+  P: c => { const L = [B(-.45, -.22, .45, .22, 0, 1.82, c.a)]; for (let i = 0; i < 3; i++) { const x = -.45 + i * .3; L.push(B(x + .01, .22, x + .29, .232, .05, 1.78, c.b), B(x + .06, .232, x + .24, .24, 1.5, 1.52, '#2f3640'), B(x + .06, .232, x + .24, .24, 1.44, 1.46, '#2f3640'), B(x + .22, .232, x + .25, .25, .85, 1.0, '#d8dde2')); } return L; } });
+def('globe', { n: '地球仪', w: .42, d: .42, vars: [{ a: '#4a8ad8', b: '#7bc46a' }],
+  P: c => [C(0, 0, .16, 0, .05, '#6b4a32'), C(0, 0, .025, .05, .5, '#c9a24a', 5), ...SPH(0, 0, .68, .18, c.a, { sl: 5, n: 12 }), ...SPH(.05, .06, .74, .09, c.b, { sl: 3, n: 7 }), ...SPH(-.08, -.03, .62, .07, c.b, { sl: 3, n: 6 })] });
+def('drum', { n: '小鼓', w: .5, d: .5, free: 1, vars: [{ a: '#f4f2ea', b: '#d8473b' }, { a: '#2f3640', b: '#c9a24a' }],
+  P: c => [B(-.2, -.02, -.18, .02, 0, .5, '#9aa3ad'), B(.18, -.02, .2, .02, 0, .5, '#9aa3ad'), B(-.02, -.2, .02, -.18, 0, .5, '#9aa3ad'), C(0, 0, .23, .5, .54, c.b, 12), C(0, 0, .22, .54, .74, c.a, 12), C(0, 0, .23, .74, .78, c.b, 12)] });
+def('mstand', { n: '谱架', w: .44, d: .36, vars: [{ a: '#2f3640' }],
+  P: c => [C(0, 0, .18, 0, .03, c.a, 3), C(0, 0, .02, .03, 1.0, c.a, 5), B(-.22, -.03, .22, .02, 1.0, 1.3, c.a), B(-.2, .02, .2, .03, 1.02, 1.28, '#f6f2ea')] });
+def('labbench', { n: '实验台', w: 1.4, d: .72, vars: [{ a: '#f2f4f6', b: '#2a2d33' }],
+  P: c => [B(-.7, -.36, .7, .36, 0, .86, c.a), B(-.66, .36, -.02, .37, .08, .78, '#d8dde2'), B(.02, .36, .66, .37, .08, .78, '#d8dde2'), B(-.72, -.38, .72, .38, .86, .9, c.b), C(-.4, -.1, .06, .9, 1.06, '#bfe3f2', 8), C(-.22, -.05, .045, .9, 1.02, '#9be07a', 8), C(.35, -.12, .025, .9, 1.25, '#9aa3ad', 5), B(.25, -.18, .45, .02, 1.25, 1.27, '#9aa3ad')] });
+def('vault', { n: '跳箱', w: 1.0, d: .55, vars: [{ a: '#c89a5c', b: '#c8423a' }],
+  P: c => [B(-.5, -.27, .5, .27, 0, .22, c.a), B(-.46, -.25, .46, .25, .22, .44, c.a), B(-.42, -.23, .42, .23, .44, .66, c.a), B(-.4, -.22, .4, .22, .66, .78, c.b)] });
+def('mat', { n: '体操垫', w: 1.6, d: .9, free: 1, vars: [{ a: '#3f6fc8', b: '#2f56a0' }, { a: '#e8604c', b: '#c04a38' }],
+  P: c => [B(-.8, -.45, .8, .45, 0, .12, c.a), B(-.8, -.45, .8, .45, .12, .13, c.b), B(-.27, -.45, -.26, .45, .12, .135, c.b), B(.26, -.45, .27, .45, .12, .135, c.b)] });
+def('cone', { n: '雪糕筒', w: .36, d: .36, free: 1, vars: [{ a: '#ff7a2a', b: '#f6f2ea' }],
+  P: c => [B(-.18, -.18, .18, .18, 0, .04, c.a), F(0, 0, .14, .03, .04, .56, c.a, 8), F(0, 0, .1, .085, .22, .3, c.b, 8)] });
+def('bball', { n: '篮球', w: .3, d: .3, free: 1, vars: [{ a: '#e8762a', b: '#3a2a20' }, { a: '#f4f2ea', b: '#2f56a0' }],
+  P: c => [...SPH(0, 0, .15, .15, c.a, { sl: 5, n: 10 }), B(-.152, -.01, .152, .01, .14, .16, c.b)] });
+def('hoop', { n: '篮球架', w: 1.0, d: .9, vars: [{ a: '#2f56a0', b: '#f4f6f8' }],
+  P: c => [B(-.5, -.45, .5, .1, 0, .3, c.a), C(0, -.2, .06, .3, 2.7, c.a, 6), B(-.05, -.2, .05, .3, 2.6, 2.7, c.a), B(-.6, .28, .6, .34, 2.55, 3.3, c.b), B(-.2, .34, .2, .345, 2.65, 2.95, '#d8473b'), ...ring(0, .5, .16, 2.75, 2.78, '#ff6a2a', 10, .02)] });
+def('ballcart', { n: '球车', w: .8, d: .5, free: 1, vars: [{ a: '#9aa3ad', b: '#e8762a' }],
+  P: c => [...legs4(.36, .21, .03, .55, c.a), B(-.38, -.23, .38, .23, .15, .18, c.a), B(-.4, -.25, -.37, .25, .18, .6, c.a), B(.37, -.25, .4, .25, .18, .6, c.a), ...SPH(-.2, -.1, .3, .13, c.b, { sl: 3, n: 8 }), ...SPH(.12, -.08, .3, .13, '#f4f2ea', { sl: 3, n: 8 }), ...SPH(-.05, .1, .32, .13, c.b, { sl: 3, n: 8 }), ...SPH(.22, .12, .3, .12, c.b, { sl: 3, n: 8 }), ...SPH(-.02, -.02, .5, .13, c.b, { sl: 3, n: 8 })] });
+def('ltable', { n: '长餐桌', w: 1.8, d: .8, vars: [{ a: '#e8e2d6', b: '#8b939c' }, { a: '#c89a66', b: '#5a524c' }],
+  P: c => [...legs4(.84, .34, .05, .72, c.b), B(-.9, -.4, .9, .4, .72, .77, c.a)] });
+def('vending', { n: '售货机', w: .9, d: .75, vars: [{ a: '#d8473b', b: '#bfe3f2' }, { a: '#2f56a0', b: '#bfe3f2' }],
+  P: c => { const L = [B(-.45, -.37, .45, .37, 0, 1.85, c.a), B(-.38, .37, .2, .38, .55, 1.7, c.b)]; for (let i = 0; i < 4; i++) for (let j = 0; j < 3; j++) L.push(B(-.34 + j * .18, .38, -.22 + j * .18, .39, .65 + i * .26, .8 + i * .26, ['#f2c94a', '#9be07a', '#ff8a7a', '#f4f2ea'][(i + j) % 4])); L.push(B(.25, .37, .4, .38, 1.1, 1.4, '#2a2d33'), B(-.36, .37, .2, .38, .2, .4, '#2a2d33')); return L; } });
+def('copier', { n: '复印机', w: .72, d: .62, vars: [{ a: '#e9edf0', b: '#5f6c75' }],
+  P: c => [B(-.36, -.31, .36, .31, 0, .9, c.a), B(-.34, .31, .34, .32, .1, .5, '#d0d6dc'), B(-.36, -.31, .36, .31, .9, .98, c.b), B(.1, .1, .3, .3, .98, 1.0, '#7aa7c9')] });
+def('water', { n: '饮水机', w: .4, d: .4, vars: [{ a: '#f2f4f6', b: '#8fc6e8' }],
+  P: c => [B(-.2, -.2, .2, .2, 0, 1.0, c.a), B(-.06, .2, .06, .23, .62, .7, '#5a9ae0'), B(.08, .2, .16, .23, .62, .7, '#e05a5a'), ...SPH(0, 0, 1.2, .17, c.b, { sl: 4, n: 10, sz: 1.3 })] });
+def('rtable', { n: '圆桌', w: 1.2, d: 1.2, free: 1, vars: [{ a: '#f4f2ea', b: '#8a5a36' }, { a: '#c8423a', b: '#5a3a22' }, { a: '#c89a66', b: '#6b4a32' }],
+  P: c => [C(0, 0, .3, 0, .05, c.b, 10), C(0, 0, .06, .05, .72, c.b, 8), C(0, 0, .6, .72, .77, c.a, 16)] });
+def('tree', { n: '大树', w: 1.0, d: 1.0, free: 1, vars: [{ a: '#4f8a3a', b: '#62a248' }, { a: '#d8892a', b: '#e8a83a' }, { a: '#4f8a3a', b: '#62a248', f: '#e8504a' }],
+  P: c => { const L = [C(0, 0, .14, 0, 1.3, '#7a5236', 7), ...SPH(0, 0, 1.85, .62, c.a, { sl: 4, n: 9 }), ...SPH(.12, -.05, 2.35, .42, c.b, { sl: 3, n: 8 })]; if (c.f) for (let i = 0; i < 5; i++) L.push(...SPH(Math.cos(i * 1.3) * .5, Math.sin(i * 1.3) * .5, 1.8 + (i % 2) * .25, .07, c.f, { sl: 2, n: 6 })); return L; } });
+
+/* ---------- restaurant ---------- */
+def('sfridge', { n: '双门冰柜', w: 1.2, d: .75, vars: [{ a: '#d8dde2', b: '#aab3bc' }],
+  P: c => [B(-.6, -.37, .6, .37, 0, 2.0, c.a), B(-.008, .37, .008, .385, .05, 1.95, c.b), B(-.1, .37, -.06, .41, 1.0, 1.5, c.b), B(.06, .37, .1, .41, 1.0, 1.5, c.b), B(-.5, .37, -.2, .38, 1.7, 1.85, '#2a2d33')] });
+def('rack', { n: '不锈钢架', w: 1.2, d: .5, vars: [{ a: '#c5ccd3' }],
+  P: c => { const L = [B(-.6, -.25, -.56, -.21, 0, 1.8, c.a), B(.56, -.25, .6, -.21, 0, 1.8, c.a), B(-.6, .21, -.56, .25, 0, 1.8, c.a), B(.56, .21, .6, .25, 0, 1.8, c.a)];
+    for (let i = 0; i < 4; i++) { const z = .15 + i * .5; L.push(B(-.6, -.25, .6, .25, z, z + .03, c.a)); if (i < 3) { L.push(C(-.3, 0, .15, z + .03, z + .28, '#9aa3ad', 8), C(.05, .02, .12, z + .03, z + .2, '#7c858f', 8), B(.25, -.15, .5, .15, z + .03, z + .25, ['#c89a5c', '#e3c68e', '#d8473b'][i])); } }
+    return L; } });
+def('pot', { n: '汤桶', w: .56, d: .56, free: 1, vars: [{ a: '#b8c0c8', b: '#8b939c' }],
+  P: c => [C(0, 0, .25, 0, .62, c.a, 12), C(0, 0, .26, .62, .65, c.b, 12), C(0, 0, .04, .65, .7, c.b, 6), B(-.3, -.03, -.25, .03, .5, .56, c.b), B(.25, -.03, .3, .03, .5, .56, c.b)] });
+def('sack', { n: '米袋', w: .56, d: .42, free: 1, vars: [{ a: '#e6d7b0', b: '#c8423a' }, { a: '#d6c39a', b: '#3f6fc8' }],
+  P: c => [F(0, 0, .25, .27, 0, .3, c.a, 8, .75), F(0, 0, .27, .2, .3, .58, c.a, 8, .75), F(0, 0, .2, .06, .58, .66, c.a, 8, .75), B(-.12, .19, .12, .21, .25, .4, c.b)] });
+def('crate', { n: '木箱', w: .62, d: .46, free: 1, vars: [{ a: '#b88a54', b: '#7bc46a' }, { a: '#b88a54', b: '#f08a3a' }, { a: '#a07a4a', b: '#e8504a' }],
+  P: c => [B(-.31, -.23, .31, .23, 0, .4, c.a), B(-.31, .23, .31, .24, .12, .16, '#8a6236'), B(-.31, .23, .31, .24, .26, .3, '#8a6236'), ...SPH(-.15, -.05, .42, .1, c.b, { sl: 2, n: 7 }), ...SPH(.08, .06, .43, .1, c.b, { sl: 2, n: 7 }), ...SPH(.17, -.1, .42, .09, c.b, { sl: 2, n: 7 })] });
+def('dishrack', { n: '碗碟架', w: .9, d: .45, vars: [{ a: '#c5ccd3', b: '#f4f6f8' }],
+  P: c => { const L = [B(-.45, -.22, -.42, .22, 0, 1.4, c.a), B(.42, -.22, .45, .22, 0, 1.4, c.a), B(-.45, -.22, .45, .22, .1, .13, c.a), B(-.45, -.22, .45, .22, .7, .73, c.a), B(-.45, -.22, .45, .22, 1.37, 1.4, c.a)];
+    for (let i = 0; i < 7; i++) { L.push(B(-.36 + i * .11, -.12, -.33 + i * .11, .12, .13, .42, c.b), B(-.36 + i * .11, -.1, -.34 + i * .11, .1, .73, .95, '#e8f0f8')); } return L; } });
+def('mop', { n: '拖把桶', w: .46, d: .4, free: 1, vars: [{ a: '#f2c94a', b: '#9aa3ad' }, { a: '#4f81bd', b: '#9aa3ad' }],
+  P: c => [B(-.21, -.18, .21, .18, 0, .34, c.a), B(-.2, -.17, .2, .17, .34, .36, '#8fb8d8'), C(.05, 0, .02, .1, 1.3, c.b, 5), C(.05, 0, .08, .1, .3, '#e8e4dc', 6)] });
+def('aqua', { n: '鱼缸', w: 1.2, d: .5, vars: [{ a: '#2f3640', b: '#7fc8e8' }, { a: '#6b4a32', b: '#7fc8e8' }],
+  P: c => [B(-.6, -.25, .6, .25, 0, .78, c.a), B(-.58, -.23, .58, .23, .78, .82, '#d9c9a4'), B(-.58, -.23, .58, .23, .82, 1.4, c.b), B(-.3, .0, -.18, .02, 1.0, 1.06, '#ff8a2a'), B(.1, -.05, .22, -.03, 1.15, 1.21, '#ffd24a'), B(.3, .05, .4, .07, .95, 1.0, '#ff5a6a'), C(-.42, -.05, .04, .82, 1.15, '#4f9a4a', 5), B(-.62, -.26, .62, .26, 1.4, 1.45, c.a)] });
+def('vase', { n: '大花瓶', w: .42, d: .42, free: 1, vars: [{ a: '#f2f4f6', b: '#3f6fc8' }, { a: '#c8423a', b: '#d8b35a' }],
+  P: c => [F(0, 0, .12, .2, 0, .25, c.a, 10), F(0, 0, .2, .18, .25, .5, c.b, 10), F(0, 0, .18, .08, .5, .72, c.a, 10), F(0, 0, .08, .11, .72, .82, c.b, 10)] });
+def('pscreen', { n: '屏风', w: 1.6, d: .22, vars: [{ a: '#6b4a32', b: '#e9dcc0' }, { a: '#d8dde2', b: '#cfe3ea' }],
+  P: c => { const L = []; for (let i = 0; i < 3; i++) { const x = -.8 + i * .54, y = i === 1 ? .05 : -.05; L.push(B(x, y - .04, x + .52, y + .04, .05, 1.7, c.a), B(x + .04, y + .04, x + .48, y + .045, .2, 1.6, c.b)); L.push(B(x + .02, y - .04, x + .06, y + .04, 0, .05, c.a), B(x + .46, y - .04, x + .5, y + .04, 0, .05, c.a)); } return L; } });
+def('cashier', { n: '收银台', w: 1.4, d: .62, vars: [{ a: '#8a5a36', b: '#2f3640' }, { a: '#e8e2d6', b: '#2f3640' }],
+  P: c => [B(-.7, -.31, .7, .31, 0, 1.0, c.a), B(-.72, -.33, .72, .33, 1.0, 1.04, '#d8b35a'), B(-.2, -.2, .2, .1, 1.04, 1.2, c.b), B(-.18, -.22, .18, -.2, 1.2, 1.4, c.b), B(-.15, -.205, .15, -.2, 1.22, 1.38, '#5fd0a0')] });
+def('winerack', { n: '酒柜', w: .9, d: .4, vars: [{ a: '#6b4a32', b: '#2a3a2a' }],
+  P: c => { const L = [B(-.45, -.2, .45, .2, 0, 1.8, c.a)]; for (let i = 0; i < 6; i++) for (let j = 0; j < 4; j++) L.push(C(-.3 + j * .2, .2, .045, .2 + i * .26, .24 + i * .26, (i + j) % 3 ? c.b : '#7a2030', 6)); return L; } });
+
+/* ---------- hospital ---------- */
+def('hbed', { n: '病床', w: 1.0, d: 2.1, vars: [{ a: '#c5ccd3', b: '#f4f8fa', q: '#8fc6e8' }, { a: '#c5ccd3', b: '#f4f8fa', q: '#9be0b8' }],
+  P: c => [C(-.4, -.95, .06, 0, .1, '#2a2d33', 6), C(.4, -.95, .06, 0, .1, '#2a2d33', 6), C(-.4, .95, .06, 0, .1, '#2a2d33', 6), C(.4, .95, .06, 0, .1, '#2a2d33', 6), B(-.48, -1.0, .48, 1.0, .1, .45, c.a), B(-.45, -.97, .45, .97, .45, .6, c.b), B(-.42, -.94, .42, -.6, .6, .7, c.b), B(-.46, -.5, .46, .96, .6, .64, c.q), B(-.5, -1.05, .5, -.98, .1, 1.05, c.a), B(-.5, .98, .5, 1.05, .1, .8, c.a), B(-.52, -.4, -.49, .5, .6, .85, '#9aa3ad'), B(.49, -.4, .52, .5, .6, .85, '#9aa3ad')] });
+def('ivstand', { n: '输液架', w: .46, d: .46, free: 1, vars: [{ a: '#c5ccd3', b: '#cfe8f5' }],
+  P: c => [C(0, 0, .22, 0, .04, c.a, 5), C(0, 0, .02, .04, 1.9, c.a, 5), B(-.2, -.01, .2, .01, 1.85, 1.88, c.a), B(.1, -.05, .2, .02, 1.5, 1.78, c.b), C(.15, 0, .008, 1.0, 1.5, '#e8f0f8', 4)] });
+def('monitor', { n: '监护仪', w: .56, d: .5, vars: [{ a: '#e9edf0', b: '#1b2a24' }],
+  P: c => [...legs4(.24, .21, .03, .8, '#9aa3ad'), B(-.26, -.23, .26, .23, .78, .82, c.a), B(-.22, -.12, .22, .12, .82, 1.2, c.a), B(-.18, .12, .18, .125, .88, 1.14, c.b), B(-.16, .125, .1, .13, 1.0, 1.01, '#5fff9a'), B(-.02, .125, .02, .13, .96, 1.08, '#5fff9a')] });
+def('wchair', { n: '轮椅', w: .66, d: .78, vars: [{ a: '#5a6a7a', b: '#2a2d33' }],
+  P: c => [...SPH(-.3, -.05, .3, .3, '#9aa3ad', { sx: .12, sl: 4, n: 14 }), ...SPH(.3, -.05, .3, .3, '#9aa3ad', { sx: .12, sl: 4, n: 14 }), C(-.2, .32, .05, 0, .1, c.b, 6), C(.2, .32, .05, 0, .1, c.b, 6), B(-.24, -.25, .24, .25, .42, .48, c.a), B(-.24, -.3, .24, -.25, .48, .92, c.a), B(-.2, .25, .2, .38, .12, .15, c.b), B(-.27, -.32, -.24, .25, .48, .66, c.b), B(.24, -.32, .27, .25, .48, .66, c.b)] });
+def('gurney', { n: '推床', w: .76, d: 2.0, vars: [{ a: '#c5ccd3', b: '#f4f8fa' }],
+  P: c => [C(-.3, -.9, .05, 0, .1, '#2a2d33', 6), C(.3, -.9, .05, 0, .1, '#2a2d33', 6), C(-.3, .9, .05, 0, .1, '#2a2d33', 6), C(.3, .9, .05, 0, .1, '#2a2d33', 6), B(-.05, -.8, .05, .8, .1, .7, c.a), B(-.38, -1, .38, 1, .7, .76, c.a), B(-.35, -.97, .35, .97, .76, .84, c.b), B(-.25, -.95, .25, -.7, .84, .9, c.b)] });
+def('wseat', { n: '候诊椅', w: 1.8, d: .62, vars: [{ a: '#3f8ad8', b: '#9aa3ad' }, { a: '#f2a03a', b: '#9aa3ad' }],
+  P: c => { const L = [B(-.85, -.05, .85, .05, .3, .36, c.b), B(-.75, -.03, -.69, .03, 0, .3, c.b), B(.69, -.03, .75, .03, 0, .3, c.b)]; for (let i = 0; i < 3; i++) { const x = -.6 + i * .6; L.push(B(x - .27, -.26, x + .27, .28, .36, .44, c.a), B(x - .27, -.31, x + .27, -.24, .44, .84, c.a)); } return L; } });
+def('medshelf', { n: '药柜', w: 1.0, d: .45, vars: [{ a: '#f2f4f6', b: '#cfe8f5' }],
+  P: c => { const L = [B(-.5, -.22, .5, .22, 0, 1.9, c.a)]; for (let i = 0; i < 4; i++) { const z = .95 + i * .23; for (let j = 0; j < 5; j++) L.push(B(-.44 + j * .18, .1, -.3 + j * .18, .2, z, z + .14, ['#e8504a', '#f2c94a', '#5fb6ff', '#9be07a', '#f4f2ea'][(i + j) % 5])); }
+    L.push(B(-.48, .22, .48, .23, .9, 1.88, c.b), B(-.48, .22, -.01, .23, .05, .85, '#e2e6ea'), B(.01, .22, .48, .23, .05, .85, '#e2e6ea')); return L; } });
+def('cart', { n: '治疗车', w: .62, d: .46, free: 1, vars: [{ a: '#c5ccd3', b: '#f4f6f8' }],
+  P: c => [C(-.25, -.18, .04, 0, .08, '#2a2d33', 6), C(.25, -.18, .04, 0, .08, '#2a2d33', 6), C(-.25, .18, .04, 0, .08, '#2a2d33', 6), C(.25, .18, .04, 0, .08, '#2a2d33', 6), ...legs4(.28, .2, .025, .92, c.a).map(p => (p.z0 = .08, p)), B(-.3, -.22, .3, .22, .35, .38, c.a), B(-.3, -.22, .3, .22, .88, .92, c.a), B(-.2, -.1, .05, .1, .92, .97, c.b), B(.1, -.12, .2, .05, .92, 1.02, '#e8504a')] });
+def('exbed', { n: '检查床', w: .72, d: 1.9, vars: [{ a: '#e9edf0', b: '#6ab0a8' }],
+  P: c => [B(-.34, -.9, .34, .9, 0, .62, c.a), B(-.36, -.95, .36, .95, .62, .74, c.b), B(-.36, -.95, .36, -.5, .74, .84, c.b), B(-.3, -.5, .3, .95, .74, .75, '#f8f8f4')] });
+def('optable', { n: '手术台', w: .72, d: 2.0, vars: [{ a: '#c5ccd3', b: '#3a8a7a' }],
+  P: c => [B(-.3, -.3, .3, .3, 0, .08, c.a), C(0, 0, .12, .08, .78, c.a, 8), B(-.36, -1.0, .36, 1.0, .78, .86, c.a), B(-.34, -.98, .34, .98, .86, .94, c.b)] });
+def('oplamp', { n: '无影灯', w: .8, d: .8, free: 1, vars: [{ a: '#c5ccd3', b: '#fdf8e8' }],
+  P: c => [C(0, 0, .3, 0, .06, c.a, 5), C(0, 0, .04, .06, 1.8, c.a, 6), F(0, 0, .36, .2, 1.8, 2.0, c.a, 12), C(0, 0, .3, 1.78, 1.8, c.b, 12)] });
+def('oxygen', { n: '氧气瓶', w: .3, d: .3, free: 1, vars: [{ a: '#3a8a5a', b: '#c5ccd3' }],
+  P: c => [C(0, 0, .12, 0, 1.05, c.a, 10), ...SPH(0, 0, 1.05, .12, c.a, { a0: 0, sl: 3, n: 10 }), C(0, 0, .03, 1.15, 1.25, c.b, 6), B(-.05, -.01, .05, .01, 1.22, 1.24, c.b)] });
+def('reception', { n: '前台', w: 2.0, d: .7, vars: [{ a: '#f2f4f6', b: '#6ab0d8' }],
+  P: c => [B(-1, -.35, 1, .35, 0, 1.05, c.a), B(-1, .35, 1, .36, .3, .5, c.b), B(-1.02, -.37, 1.02, .37, 1.05, 1.1, c.b), B(-.6, -.25, -.2, -.1, 1.1, 1.4, '#2a2d33')] });
+
+/* ---------- wild ---------- */
+def('pine', { n: '松树', w: 1.1, d: 1.1, free: 1, vars: [{ a: '#2f6a3a', b: '#3f804a' }, { a: '#3a6a4a', b: '#4f8a5a' }],
+  P: c => [C(0, 0, .12, 0, .6, '#6b4a32', 6), F(0, 0, .55, .25, .5, 1.3, c.a, 8), F(0, 0, .45, .18, 1.2, 1.95, c.b, 8), F(0, 0, .33, .02, 1.85, 2.7, c.a, 8)] });
+def('stump', { n: '树桩', w: .62, d: .62, free: 1, vars: [{ a: '#7a5236', b: '#d8b888' }],
+  P: c => [F(0, 0, .32, .27, 0, .12, c.a, 9), C(0, 0, .27, .12, .42, c.a, 9), C(0, 0, .25, .42, .44, c.b, 9), C(0, 0, .12, .44, .445, '#b89868', 7)] });
+def('log', { n: '圆木', w: 1.6, d: .46, free: 1, vars: [{ a: '#7a5236', b: '#d8b888' }],
+  P: c => [B(-.78, -.2, .78, .2, 0, .08, c.a), B(-.8, -.23, .8, .23, .08, .34, c.a), B(-.78, -.2, .78, .2, .34, .42, c.a), B(-.81, -.15, -.8, .15, .06, .38, c.b), B(.8, -.15, .81, .15, .06, .38, c.b)] });
+def('rock', { n: '石头', w: .8, d: .7, free: 1, vars: [{ a: '#8d8a84', b: '#a6a29a' }, { a: '#7a8a6a', b: '#93a07a' }, { a: '#8a8070', b: '#a89c88' }],
+  P: c => [F(0, 0, .4, .3, 0, .3, c.a, 6, .85), F(.04, -.02, .3, .14, .3, .5, c.b, 6, .85)] });
+def('boulder', { n: '大石头', w: 1.3, d: 1.1, free: 1, vars: [{ a: '#8d8a84', b: '#a6a29a' }, { a: '#6a6e72', b: '#82868a' }],
+  P: c => [F(0, 0, .64, .55, 0, .5, c.a, 7, .82), F(.05, -.03, .55, .3, .5, .95, c.b, 7, .82), F(-.3, .2, .25, .18, 0, .35, c.b, 5)] });
+def('mushroom', { n: '大蘑菇', w: .5, d: .5, free: 1, vars: [{ a: '#e8504a', b: '#f4f2ea' }, { a: '#c8873a', b: '#f4e2c0' }],
+  P: c => [F(0, 0, .09, .07, 0, .38, c.b, 8), F(0, 0, .25, .05, .36, .58, c.a, 10), B(-.12, -.04, -.07, .01, .5, .53, '#fff'), B(.06, .04, .11, .09, .47, .5, '#fff'), B(.02, -.13, .07, -.08, .46, .49, '#fff')] });
+def('flower', { n: '花丛', w: .6, d: .6, free: 1, vars: [{ a: '#4f8a3a', b: '#f27a8a' }, { a: '#4f8a3a', b: '#f6d24a' }, { a: '#4f8a3a', b: '#b48cff' }],
+  P: c => [F(0, 0, .28, .22, 0, .25, c.a, 8), ...[[-.12, -.05], [.1, .08], [.05, -.13], [-.06, .12], [.15, -.04]].flatMap(([x, y], i) => SPH(x, y, .3 + (i % 2) * .05, .07, c.b, { sl: 2, n: 6 }))] });
+def('tent', { n: '帐篷', w: 1.8, d: 1.6, vars: [{ a: '#e8762a', b: '#c45a1a' }, { a: '#3f8ad8', b: '#2a68b0' }, { a: '#6aa84a', b: '#4a883a' }],
+  P: c => [F(0, 0, 1.2, .03, 0, 1.25, c.a, 4, .85, .95), B(-.2, .5, .2, .62, 0, .6, c.b)] });
+def('campfire', { n: '篝火', w: .9, d: .9, free: 1, vars: [{ a: '#8a8680', b: '#ff8a2a' }],
+  P: c => [...ring(0, 0, .38, 0, .12, c.a, 8, .07), B(-.32, -.06, .32, .06, .05, .15, '#6b4a32'), B(-.06, -.32, .06, .32, .12, .22, '#7a5236'), F(0, 0, .18, .02, .2, .65, c.b, 6), F(.06, .04, .1, .02, .2, .5, '#ffd24a', 5)] });
+def('cooler', { n: '冷藏箱', w: .62, d: .42, free: 1, vars: [{ a: '#3f8ad8', b: '#f4f6f8' }, { a: '#d8473b', b: '#f4f6f8' }],
+  P: c => [B(-.31, -.21, .31, .21, 0, .36, c.a), B(-.32, -.22, .32, .22, .36, .44, c.b), B(-.15, .21, .15, .23, .3, .34, c.b)] });
+def('cchair', { n: '露营椅', w: .56, d: .56, free: 1, vars: [{ a: '#2f6a3a', b: '#5a6470' }, { a: '#2f56a0', b: '#5a6470' }],
+  P: c => [B(-.26, -.22, -.23, .22, 0, .5, c.b), B(.23, -.22, .26, .22, 0, .5, c.b), B(-.23, -.2, .23, .2, .36, .4, c.a), B(-.23, -.24, .23, -.19, .4, .88, c.a), B(-.27, -.1, -.22, .2, .5, .54, c.b), B(.22, -.1, .27, .2, .5, .54, c.b)] });
+def('backpack', { n: '登山包', w: .42, d: .3, free: 1, vars: [{ a: '#c8423a', b: '#8a2a22' }, { a: '#3a6a4a', b: '#2a4a34' }],
+  P: c => [F(0, 0, .2, .2, 0, .5, c.a, 8, .7), ...SPH(0, 0, .5, .2, c.a, { a0: 0, sl: 2, n: 8, sy: .7 }), B(-.12, .12, .12, .17, .12, .32, c.b), B(-.2, -.02, .2, .02, .66, .7, '#e8b04a')] });
+def('woodpile', { n: '柴堆', w: 1.2, d: .6, vars: [{ a: '#7a5236', b: '#d8b888' }],
+  P: c => { const L = []; for (let i = 0; i < 3; i++) for (let j = 0; j < 4 - i; j++) { const x = -.45 + j * .3 + i * .15, z = i * .22; L.push(B(x - .13, -.28, x + .13, .28, z, z + .22, c.a), B(x - .1, .28, x + .1, .29, z + .03, z + .19, c.b)); } return L; } });
+def('reed', { n: '芦苇', w: .5, d: .5, free: 1, vars: [{ a: '#6a9a3a', b: '#8a6a3a' }],
+  P: c => [[-.12, 0, 1.2], [.08, .1, 1.4], [.1, -.12, 1.0], [-.05, .14, 1.3], [0, -.05, 1.5]].flatMap(([x, y, h]) => [C(x, y, .02, 0, h, c.a, 4), C(x, y, .04, h, h + .2, c.b, 5)]) });
+def('stove2', { n: '铁炉', w: .62, d: .62, vars: [{ a: '#2a2d33', b: '#ff8a2a' }],
+  P: c => [...legs4(.26, .26, .05, .15, c.a), B(-.29, -.29, .29, .29, .15, .8, c.a), B(-.15, .29, .15, .3, .3, .55, c.b), C(0, -.1, .08, .8, 2.2, c.a, 7)] });
+
+/* ---------- sea ---------- */
+def('coral', { n: '珊瑚', w: .7, d: .7, free: 1, vars: [{ a: '#ff7a8a', b: '#ffb0b8' }, { a: '#ffa24a', b: '#ffd08a' }, { a: '#b98cff', b: '#dcc4ff' }],
+  P: c => [F(0, 0, .2, .12, 0, .2, c.a, 7), ...[[0, 0, .9], [-.18, .08, .65], [.17, -.06, .75], [.05, .2, .55], [-.08, -.18, .6]].flatMap(([x, y, h]) => [C(x, y, .05, .15, h, c.a, 5), ...SPH(x, y, h, .07, c.b, { sl: 2, n: 6 })])] });
+def('brain', { n: '脑珊瑚', w: .8, d: .8, free: 1, vars: [{ a: '#e8c26a', b: '#c8a24a' }, { a: '#9ad87a', b: '#7ab85a' }],
+  P: c => [...SPH(0, 0, 0, .4, c.a, { a0: 0, sl: 4, n: 12, sz: .8 }), B(-.3, -.02, .3, .02, .28, .32, c.b), B(-.02, -.28, .02, .28, .29, .33, c.b)] });
+def('seafan', { n: '海扇', w: .9, d: .22, free: 1, vars: [{ a: '#e85a8a', b: '#ff9ab8' }, { a: '#e8a23a', b: '#ffd08a' }],
+  P: c => [C(0, 0, .07, 0, .25, c.a, 6), ...SPH(0, 0, .8, .45, c.a, { sy: .12, sl: 5, n: 14, sz: 1.2 }), ...SPH(0, .03, .85, .3, c.b, { sy: .1, sl: 4, n: 12 })] });
+def('anemone', { n: '海葵', w: .5, d: .5, free: 1, vars: [{ a: '#e86a4a', b: '#ffb04a' }, { a: '#8a5ad8', b: '#d8a0ff' }],
+  P: c => [C(0, 0, .2, 0, .2, c.a, 8), ...[0, 1, 2, 3, 4, 5, 6].flatMap(i => { const a = i / 7 * 6.28, x = Math.cos(a) * .12, y = Math.sin(a) * .12; return [C(x, y, .03, .2, .45 + (i % 3) * .06, c.b, 4)]; }), C(0, 0, .03, .2, .5, c.b, 4)] });
+def('kelp', { n: '海带', w: .5, d: .5, free: 1, vars: [{ a: '#3f8a4a', b: '#5aaa5a' }, { a: '#6a8a2a', b: '#8aaa3a' }],
+  P: c => { const L = [C(0, 0, .12, 0, .1, '#5a6a50', 6)]; for (let i = 0; i < 8; i++) { const o = Math.sin(i * .9) * .08; L.push(B(-.07 + o, -.02, .07 + o, .02, .1 + i * .3, .4 + i * .3, i & 1 ? c.a : c.b)); L.push(B(.06 - o, -.02, .14 - o, .02, .2 + i * .27, .45 + i * .27, c.b)); } return L; } });
+def('clam', { n: '大砗磲', w: .9, d: .7, free: 1, vars: [{ a: '#c8b8a0', b: '#4ac0d8' }],
+  P: c => [...SPH(0, 0, .2, .44, c.a, { a0: -90, a1: 0, sl: 3, n: 12, sy: .75, sz: .45 }), C(0, 0, .4, .2, .23, c.b, 12), ...SPH(0, -.05, .26, .1, '#f8f4ec', { sl: 3, n: 8 }), ...SPH(0, -.12, .35, .42, c.a, { a0: 0, a1: 70, sl: 3, n: 12, sy: .45, sz: .9 })] });
+def('shell', { n: '海螺', w: .42, d: .42, free: 1, vars: [{ a: '#f2d0b0', b: '#e8a888' }, { a: '#f8f0e0', b: '#d8c0a0' }],
+  P: c => [F(0, 0, .2, .17, 0, .1, c.a, 9), F(.02, 0, .17, .11, .1, .22, c.b, 9), F(.04, 0, .11, .05, .22, .32, c.a, 9), F(.05, 0, .05, .01, .32, .4, c.b, 7)] });
+def('starfish', { n: '海星', w: .5, d: .5, free: 1, vars: [{ a: '#ff7a3a', b: '#ffb07a' }, { a: '#e84a6a', b: '#ff9ab0' }],
+  P: c => [P_(star(.25, .09, 5), 0, .07, c.a), ...SPH(0, 0, .07, .07, c.b, { a0: 0, sl: 2, n: 8 })] });
+def('urchin', { n: '海胆', w: .42, d: .42, free: 1, vars: [{ a: '#4a2a5a', b: '#7a4a8a' }],
+  P: c => [...SPH(0, 0, .14, .14, c.a, { sl: 4, n: 10 }), ...[0, 1, 2, 3, 4, 5, 6, 7].map(i => { const a = i / 8 * 6.28; return C(Math.cos(a) * .14, Math.sin(a) * .14, .015, .05, .3 + (i % 2) * .08, c.b, 3); }), C(0, 0, .015, .2, .42, c.b, 3)] });
+def('chest', { n: '宝箱', w: .82, d: .52, free: 1, vars: [{ a: '#8a5a36', b: '#e0b84a' }],
+  P: c => [B(-.41, -.26, .41, .26, 0, .4, c.a), B(-.43, -.28, -.35, .28, 0, .42, c.b), B(.35, -.28, .43, .28, 0, .42, c.b), ...SPH(0, 0, .4, .27, c.a, { a0: 0, sl: 3, n: 10, sx: 1.52, sz: .7 }), B(-.06, .26, .06, .29, .3, .44, c.b), B(-.3, -.1, .3, .1, .42, .45, '#f6d86a')] });
+def('anchor', { n: '铁锚', w: .9, d: .42, vars: [{ a: '#4a5058', b: '#6a7078' }],
+  P: c => [B(-.45, -.06, .45, .06, 0, .14, c.a), B(-.45, -.06, -.33, .06, .14, .4, c.a), B(.33, -.06, .45, .06, .14, .4, c.a), C(0, 0, .06, .1, 1.35, c.b, 6), B(-.3, -.05, .3, .05, 1.1, 1.18, c.a), ...ring(0, 0, .1, 1.4, 1.48, c.a, 8, .03)] });
+def('cannon', { n: '大炮', w: 1.3, d: .52, free: 1, vars: [{ a: '#2a2d33', b: '#6b4a32' }],
+  P: c => [B(-.4, -.25, .4, .25, 0, .3, c.b), ...SPH(-.35, -.26, .17, .17, c.b, { sy: .2, sl: 3, n: 10 }), ...SPH(.3, -.26, .17, .17, c.b, { sy: .2, sl: 3, n: 10 }), B(-.6, -.12, .65, .12, .3, .54, c.a), B(.6, -.15, .67, .15, .27, .57, c.a)] });
+def('helm', { n: '舵轮', w: .9, d: .36, vars: [{ a: '#7a5236', b: '#c9a24a' }],
+  P: c => [B(-.12, -.15, .12, .15, 0, .7, c.a), ...SPH(0, .18, 1.0, .42, c.a, { sy: .08, sl: 6, n: 14 }), ...SPH(0, .2, 1.0, .1, c.b, { sy: .3, sl: 3, n: 8 })] });
+def('pillar', { n: '断柱', w: .62, d: .62, free: 1, vars: [{ a: '#e2d8c0', b: '#c8bc9e' }],
+  P: c => [B(-.31, -.31, .31, .31, 0, .14, c.b), C(0, 0, .22, .14, 1.4, c.a, 10), C(-.04, .02, .22, 1.4, 1.6, c.a, 6), B(-.31, -.31, -.05, .1, .16, .28, c.b)] });
+def('amphora', { n: '陶罐', w: .46, d: .46, free: 1, vars: [{ a: '#c06a3a', b: '#2a2d33' }, { a: '#a8743a', b: '#f2e2c0' }],
+  P: c => [F(0, 0, .08, .2, 0, .22, c.a, 10), F(0, 0, .2, .18, .22, .48, c.a, 10), F(0, 0, .18, .07, .48, .66, c.a, 10), F(0, 0, .07, .1, .66, .78, c.a, 10), B(-.2, -.01, .2, .01, .38, .42, c.b)] });
+def('jelly', { n: '水母', w: .56, d: .56, free: 1, vars: [{ a: '#ff9ad8', b: '#ffd0ec' }, { a: '#9ad8ff', b: '#d0f0ff' }],
+  P: c => [...[0, 1, 2, 3, 4, 5].map(i => { const a = i / 6 * 6.28; return C(Math.cos(a) * .12, Math.sin(a) * .12, .02, .25 + (i % 3) * .12, 1.0, c.b, 3); }), ...SPH(0, 0, 1.0, .28, c.a, { a0: 0, sl: 4, n: 12, sz: .8 }), C(0, 0, .29, .97, 1.0, c.b, 12)] });
+
 /* ---- 15_map.js ---- */
-/* ================= the house: rooms, doors, walls, random furnishing ================= */
-const ROOMS = [
-  { id: 'kitchen', n: '厨房', r: [0, 0, 7, 7], fl: 'tile', fc: ['#e8e4dc', '#d6d0c4'] },
-  { id: 'dining', n: '餐厅', r: [7, 0, 13, 7], fl: 'wood', fc: ['#c99e6e', '#b88d5e'] },
-  { id: 'bed', n: '主卧', r: [13, 0, 20, 7], fl: 'carpet', fc: ['#b9b3c9', '#ada6be'] },
-  { id: 'bath', n: '浴室', r: [20, 0, 24, 7], fl: 'tile', fc: ['#cfe3ea', '#b9d3dc'] },
-  { id: 'living', n: '客厅', r: [0, 7, 10, 16], fl: 'wood', fc: ['#d4ad7c', '#c39c6b'] },
-  { id: 'hall', n: '走廊', r: [10, 7, 13, 16], fl: 'wood', fc: ['#b98d5e', '#a87d50'] },
-  { id: 'study', n: '书房', r: [13, 7, 19, 16], fl: 'wood', fc: ['#a8825c', '#98734e'] },
-  { id: 'kids', n: '儿童房', r: [19, 7, 24, 16], fl: 'carpet', fc: ['#bfd9b4', '#b2cea6'] },
-  { id: 'garden', n: '花园', r: [0, 16, 24, 22], fl: 'grass', fc: ['#8cc06a', '#82b660'], out: 1 }
-];
-ROOMS.forEach((r, i) => r.i = i);
-// v:1 = gap in a vertical wall x=c, v:0 = gap in a horizontal wall y=c; gap runs a..b
-const DOORS = [
-  { v: 1, c: 7, a: 2.6, b: 4.0 }, { v: 0, c: 7, a: 2.0, b: 3.4 }, { v: 0, c: 7, a: 10.8, b: 12.2 }, { v: 1, c: 10, a: 11, b: 12.4 },
-  { v: 1, c: 13, a: 9.0, b: 10.4 }, { v: 1, c: 13, a: 4.6, b: 6.0 }, { v: 1, c: 20, a: 2.4, b: 3.8 }, { v: 1, c: 19, a: 12, b: 13.4 },
-  { v: 0, c: 7, a: 21, b: 22.4 }, { v: 0, c: 7, a: 15.2, b: 16.6 }, { v: 0, c: 16, a: 10.8, b: 12.2 }, { v: 0, c: 16, a: 3.4, b: 5.4 }
-];
-const HOUSE = { w: 24, h: 22 }, WALL_T = 0.16;
-const SPAWN_SEEK = [11.5, 20.7], SPAWN_HIDE = [11.5, 11.7];
-const DOORZ = DOORS.map(d => d.v ? [d.c - 1.1, d.a - .1, d.c + 1.1, d.b + .1] : [d.a - .1, d.c - 1.1, d.b + .1, d.c + 1.1]);
-const GARDEN_PATH = [10.3, 16, 12.7, 22];
+/* ================= scene engine: rooms, doors, auto-built walls, random furnishing =================
+   A scene = rectangular rooms on an integer grid + door gaps. Walls are generated on every room boundary
+   (style per scene / per room), door gaps are cut out, then split into 1 m pieces for sorting. */
+const SCENES = {};               // filled by 16_scenes.js
+let SCENE = null, ROOMS = [], DOORS = [], HOUSE = { w: 24, h: 22 }, WALLS = [], DOORZ = [], KEEP = [], SPAWN_SEEK = [0, 0], SPAWN_HIDE = [0, 0], GEN = {};
+const WALL_T = 0.16;
+const WSTYLE = {   // thickness, low height, tall height (north/west outer edge)
+  wall: [.16, .5, 2.4], log: [.2, .55, 2.2], fence: [.12, .7, .7], hedge: [.5, .75, 2.2], rock: [.55, .7, 2.0],
+  reef: [.55, .65, 1.6], hull: [.22, .6, 1.8], ruin: [.3, .55, 1.4], steel: [.16, .5, 2.4]
+};
+const WPRIO = ['wall', 'steel', 'log', 'hull', 'ruin', 'fence', 'hedge', 'rock', 'reef'];
+function useScene(id) {
+  SCENE = SCENES[id] || SCENES.house;
+  ROOMS = SCENE.rooms; ROOMS.forEach((r, i) => r.i = i);
+  DOORS = SCENE.doors; HOUSE = { w: SCENE.w, h: SCENE.h };
+  WALLS = SCENE._walls || (SCENE._walls = buildWalls(SCENE));
+  DOORZ = DOORS.map(d => { const t = 1.35 + (d.t || 0); return d.v ? [d.c - t, d.a - .1, d.c + t, d.b + .1] : [d.a - .1, d.c - t, d.b + .1, d.c + t]; });
+  KEEP = SCENE.keep || []; SPAWN_SEEK = SCENE.seek; SPAWN_HIDE = SCENE.hide; GEN = SCENE.gen;
+}
 const ovl = (a, b, m) => { m = m || 0; return a[0] < b[2] + m && a[2] > b[0] - m && a[1] < b[3] + m && a[3] > b[1] - m; };
-const inner = room => [room.r[0] + WALL_T / 2, room.r[1] + WALL_T / 2, room.r[2] - WALL_T / 2, room.r[3] - WALL_T / 2];
+const inner = room => { const t = (room.inset || WALL_T) / 2; return [room.r[0] + t, room.r[1] + t, room.r[2] - t, room.r[3] - t]; };
 function fpOf(k, r, x, y) { const [w, d] = footWD(k, r); return [x - w / 2, y - d / 2, x + w / 2, y + d / 2]; }
 function roomAt(x, y, pad) { pad = pad || 0; for (const r of ROOMS) if (x >= r.r[0] - pad && x <= r.r[2] + pad && y >= r.r[1] - pad && y <= r.r[3] + pad) return r; return null; }
 function roomsNear(x, y, pad) { const out = []; for (const r of ROOMS) if (x >= r.r[0] - pad && x <= r.r[2] + pad && y >= r.r[1] - pad && y <= r.r[3] + pad) out.push(r.i); return out; }
+const hash = (a, b) => { let h = Math.imul(a * 374761393 + b * 668265263, 1274126177); h ^= h >>> 15; return ((h >>> 0) % 10000) / 10000; };
 
-/* ---------- walls (built once) ---------- */
-const WALLS = (() => {
-  const lines = [  // [horizontal?, c, a, b, height, fence]
-    [1, 0, 0, 24, 2.4], [1, 7, 0, 24, .5], [1, 16, 0, 24, .5], [1, 22, 0, 24, .7, 1],
-    [0, 0, 0, 16, 2.4], [0, 24, 0, 16, .5], [0, 7, 0, 7, .5], [0, 13, 0, 7, .5], [0, 20, 0, 7, .5],
-    [0, 10, 7, 16, .5], [0, 13, 7, 16, .5], [0, 19, 7, 16, .5], [0, 0, 16, 22, .7, 1], [0, 24, 16, 22, .7, 1]
-  ];
+function buildWalls(sc) {
+  const rooms = sc.rooms, W = sc.w, H = sc.h;
+  const own = (x, y) => { for (const r of rooms) if (x > r.r[0] && x < r.r[2] && y > r.r[1] && y < r.r[3]) return r; return null; };
+  const styleOf = (A, B) => {
+    if (!A || !B) { const r = A || B; return r.wso || sc.outer || 'wall'; }
+    const a = A.ws || sc.inner || 'wall', b = B.ws || sc.inner || 'wall'; return WPRIO.indexOf(a) <= WPRIO.indexOf(b) ? a : b;
+  };
+  const units = [];   // [hz, c, a, style, tall]
+  for (let y = 0; y <= H; y++) for (let x = 0; x < W; x++) {
+    const A = own(x + .5, y - .5), B = own(x + .5, y + .5); if (A === B || (A && B && A.open && A.open === B.open)) continue;
+    const st = styleOf(A, B); units.push([1, y, x, st, !A && !!B]);
+  }
+  for (let x = 0; x <= W; x++) for (let y = 0; y < H; y++) {
+    const A = own(x - .5, y + .5), B = own(x + .5, y + .5); if (A === B || (A && B && A.open && A.open === B.open)) continue;
+    const st = styleOf(A, B); units.push([0, x, y, st, !A && !!B]);
+  }
+  // merge contiguous unit edges into lines
+  units.sort((p, q) => p[0] - q[0] || p[1] - q[1] || p[2] - q[2]);
+  const lines = [];
+  for (const u of units) { const L = lines[lines.length - 1]; if (L && L[0] === u[0] && L[1] === u[1] && L[3] === u[2] && L[4] === u[3] && L[5] === u[4]) L[3] = u[2] + 1; else lines.push([u[0], u[1], u[2], u[2] + 1, u[3], u[4]]); }
   const out = [];
-  for (const [hz, c, a, b, h, fence] of lines) {
+  for (const [hz, c, a, b, st, tall] of lines) {
+    const [th, hl, ht] = WSTYLE[st] || WSTYLE.wall, h = tall ? ht : hl, t = th / 2;
     let spans = [[a, b]];
-    for (const d of DOORS) if ((d.v === 0) === !!hz && d.c === c) spans = spans.flatMap(([s, e]) => d.b <= s || d.a >= e ? [[s, e]] : [[s, d.a], [d.b, e]].filter(q => q[1] - q[0] > .01));
+    for (const d of sc.doors) if ((d.v === 0) === !!hz && d.c === c) spans = spans.flatMap(([s, e]) => d.b <= s || d.a >= e ? [[s, e]] : [[s, d.a], [d.b, e]].filter(q => q[1] - q[0] > .01));
     for (const [s, e] of spans) {
       const n = Math.max(1, Math.round(e - s));
       for (let i = 0; i < n; i++) {
         let s0 = s + (e - s) * i / n, s1 = s + (e - s) * (i + 1) / n;
-        const t = fence ? .06 : WALL_T / 2;
         if (i === 0 && s === a) s0 -= t; if (i === n - 1 && e === b) s1 += t;
         const fp = hz ? [s0, c - t, s1, c + t] : [c - t, s0, c + t, s1];
-        const w = { wall: 1, fence: !!fence, h, fp, tall: h > 1 };
-        const box = (x0, y0, x1, y1, z0, z1, col) => ({ pts: [[x0, y0], [x1, y0], [x1, y1], [x0, y1]], z0, z1, c: col });
-        if (fence) {
-          const [x0, y0, x1, y1] = fp, px = hz ? [x0, y0, x0 + .09, y1] : [x0, y0, x1, y0 + .09];
-          w.pr = [box(px[0], px[1], px[2], px[3], 0, .74, '#f4efe4'), box(x0, y0 + (hz ? .015 : 0), x1, y1 - (hz ? .015 : 0), .52, .6, '#e8e1d2'), box(x0, y0 + (hz ? .015 : 0), x1, y1 - (hz ? .015 : 0), .24, .32, '#e8e1d2')];
-        } else {
-          const col = h > 1 ? '#e2d6c0' : '#efe6d6';
-          w.pr = [box(fp[0], fp[1], fp[2], fp[3], 0, h, col), box(fp[0] - .005, fp[1] - .005, fp[2] + .005, fp[3] + .005, h, h + .03, '#9c8a72')];
-          if (h > 1) w.pr.splice(1, 0, box(fp[0], fp[1], fp[2], fp[3] + .004, 0, .9, '#c9b28e'));
-        }
-        out.push(w);
+        out.push({ wall: 1, st, h, fp, tall: h > 1, pr: wallPrisms(st, fp, h, hz, sc, hash(Math.round(s0 * 7) + c * 31, hz)) });
       }
     }
   }
   return out;
-})();
-
+}
+function wallPrisms(st, fp, h, hz, sc, rv) {
+  const box = (x0, y0, x1, y1, z0, z1, col) => ({ pts: [[x0, y0], [x1, y0], [x1, y1], [x0, y1]], z0, z1, c: col });
+  const cyl = (cx, cy, r, z0, z1, col, n) => { const pts = []; n = n || 7; for (let i = 0; i < n; i++) { const a = (i + .5) / n * 6.2832; pts.push([cx + Math.cos(a) * r, cy + Math.sin(a) * r]); } return { pts, z0, z1, c: col }; };
+  const [x0, y0, x1, y1] = fp, mx = (x0 + x1) / 2, my = (y0 + y1) / 2, len = hz ? x1 - x0 : y1 - y0, th = hz ? y1 - y0 : x1 - x0;
+  const C = sc.wallc || ['#efe6d6', '#9c8a72', '#c9b28e', '#e2d6c0'];
+  if (st === 'fence') {
+    const px = hz ? [x0, y0, x0 + .09, y1] : [x0, y0, x1, y0 + .09];
+    return [box(px[0], px[1], px[2], px[3], 0, .74, '#f4efe4'), box(x0, y0 + (hz ? .015 : 0), x1, y1 - (hz ? .015 : 0), .52, .6, '#e8e1d2'), box(x0, y0 + (hz ? .015 : 0), x1, y1 - (hz ? .015 : 0), .24, .32, '#e8e1d2')];
+  }
+  if (st === 'hedge') {
+    const g = sc.hedgec || ['#3f7a38', '#5a9a46', '#4c8a3e'], L = [box(x0, y0, x1, y1, 0, h * .78, g[0])];
+    for (let k = 0; k < 2; k++) { const f = (k + .5) / 2, cx = hz ? x0 + len * f : mx, cy = hz ? my : y0 + len * f; L.push(cyl(cx, cy, th * .62 + rv * .05, h * .5, h * (.95 + rv * .1), k ? g[2] : g[1], 7)); }
+    return L;
+  }
+  if (st === 'rock' || st === 'reef') {
+    const g = st === 'rock' ? (sc.rockc || ['#8d8a84', '#a6a29a', '#77736c']) : ['#6f7f86', '#86969c', '#5c6a70'];
+    const L = [box(x0, y0, x1, y1, 0, h * (.75 + rv * .2), g[0])];
+    const cx = hz ? x0 + len * (.3 + rv * .4) : mx, cy = hz ? my : y0 + len * (.3 + rv * .4);
+    L.push(cyl(cx, cy, th * .55, h * .3, h * (.95 + rv * .15), g[1], 6));
+    if (st === 'reef') { const cc = ['#ff7a8a', '#ffb04a', '#b98cff', '#5fd0c0'][Math.floor(rv * 4)]; L.push(cyl(hz ? x0 + len * .75 : mx, hz ? my : y0 + len * .75, .1, h * .8, h + .35, cc, 5), cyl(hz ? x0 + len * .2 : mx + .05, hz ? my + .05 : y0 + len * .2, .08, h * .7, h + .22, cc, 5)); }
+    return L;
+  }
+  if (st === 'hull') return [box(x0, y0, x1, y1, 0, h, '#7a5634'), box(x0, y0, x1, y1 + .004, h * .3, h * .36, '#5c3f24'), box(x0, y0, x1, y1 + .004, h * .65, h * .71, '#5c3f24'), box(x0 - .01, y0 - .01, x1 + .01, y1 + .01, h, h + .05, '#4a321c')];
+  if (st === 'ruin') { const hh = h * (.6 + rv * .5); return [box(x0, y0, x1, y1, 0, hh, '#cfc3a6'), box(x0 - .01, y0 - .01, x1 + .01, y1 + .01, hh, hh + .06, '#b3a688')]; }
+  if (st === 'log') return [box(x0, y0, x1, y1, 0, h, '#9a6a3e'), box(x0, y0, x1, y1 + .004, h * .33, h * .37, '#7a5030'), box(x0, y0, x1, y1 + .004, h * .66, h * .7, '#7a5030'), box(x0 - .005, y0 - .005, x1 + .005, y1 + .005, h, h + .04, '#5c3a22')];
+  const col = st === 'steel' ? '#dfe4e8' : h > 1 ? C[3] : C[0];
+  const L = [box(x0, y0, x1, y1, 0, h, col), box(x0 - .005, y0 - .005, x1 + .005, y1 + .005, h, h + .03, C[1])];
+  if (h > 1) L.splice(1, 0, box(x0, y0, x1, y1 + .004, 0, .9, C[2]));
+  return L;
+}
 /* ---------- random furnishing (deterministic from the seed; no trig here) ---------- */
 function genMap(seed) {
   const R = mkRng(seed ^ 0x5bd1e995), M = { seed, items: [] };
   const X = { R, M, vv: {}, ri: (a, b) => a + Math.floor(R() * (b - a + 1)), rf: (a, b) => a + R() * (b - a), ch: a => a[Math.floor(R() * a.length)] };
-  for (const room of ROOMS) GEN[room.id](room, X);
+  for (const room of ROOMS) { const g = GEN[room.id]; if (typeof g === 'function') g(room, X); else if (g) recipe(room, X, g); }
   M.items.forEach((it, i) => { it.id = i; it.pr = prismsFor(it.k, it.v, it.r, it.x, it.y); it.flat = !!T[it.k].flat; it.room = roomAt(it.x, it.y).i; it.wob = 0; it.mark = -1; });
   return M;
 }
@@ -449,7 +660,7 @@ function canPut(X, room, k, r, x, y, m) {
   const f = fpOf(k, r, x, y), ib = inner(room), e = .035, flat = !!T[k].flat;
   if (f[0] < ib[0] - e || f[1] < ib[1] - e || f[2] > ib[2] + e || f[3] > ib[3] + e) return false;
   for (const z of DOORZ) if (ovl(f, z)) return false;
-  if (room.id === 'garden' && ovl(f, GARDEN_PATH)) return false;
+  for (const z of KEEP) if (ovl(f, z)) return false;
   for (const it of X.M.items) { const fl2 = !!T[it.k].flat; if (flat !== fl2) continue; if (ovl(f, it.fp, m)) return false; }
   return true;
 }
@@ -504,7 +715,24 @@ function bedSet(X, room, k) {
   if (!k) around(X, room, b, [['nstand', -(w / 2 + .27), -d / 2 + .2, 0], ['nstand', w / 2 + .27, -d / 2 + .2, 0]]);
   if (X.R() < .5) around(X, room, b, [['rug', 0, d / 2 + .3, 0]], .05);
 }
-const GEN = {
+
+// recipe rows: ['w'|'c'|'f', kind or [kinds], min, max, opts]  (w = against a wall, c = corner, f = free-standing)  or ['fn', fn]
+function recipe(room, X, steps) {
+  for (const s of steps) {
+    if (s[0] === 'fn') { s[1](X, room); continue; }
+    const [how, k, a, b, o] = s, ks = Array.isArray(k) ? k : [k];
+    times(X, a, b, () => { const kk = X.ch(ks); if (how === 'f') freePut(X, room, kk, o); else wallPut(X, room, kk, how === 'c' ? Object.assign({ corner: 1 }, o) : o); });
+  }
+}
+// rows of identical pieces, e.g. desks in a classroom
+function grid(X, room, k, r, x0, y0, dx, dy, nx, ny, m, after) { for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++) { const it = tryPut(X, room, k, r, x0 + i * dx, y0 + j * dy, m == null ? .02 : m); if (it && after) after(it); } }
+
+/* ---- 16_scenes.js ---- */
+/* ================= scenes: house, school, restaurant, hospital, wild, sea =================
+   rooms: integer-grid rectangles. ws = wall style on this room's boundary (inner), wso = style toward the outside.
+   doors: v:1 = gap in a vertical wall x=c (from y=a to b); v:0 = gap in a horizontal wall y=c (from x=a to b).
+   gen: per room either a function or a recipe list (see recipe() in 15_map.js). keep: rectangles kept empty. */
+const HOUSE_GEN = {
   kitchen(room, X) {
     const ib = inner(room); let x = X.R() < .5 ? .1 : .9;
     const seq = ['fridge', 'counter', 'stove', 'counter', 'sink', 'counter', 'counter'].slice(0, X.ri(5, 7));
@@ -597,24 +825,241 @@ const GEN = {
   }
 };
 
+SCENES.house = {
+  n: '温馨小家', icon: '🏠', w: 24, h: 22, bg: '#6f8f5c', seek: [11.5, 20.7], hide: [11.5, 11.7], keep: [[10.3, 16, 12.7, 22]], seekT: 180,
+  rooms: [
+    { id: 'kitchen', n: '厨房', r: [0, 0, 7, 7], fl: 'tile', fc: ['#e8e4dc', '#d6d0c4'] },
+    { id: 'dining', n: '餐厅', r: [7, 0, 13, 7], fl: 'wood', fc: ['#c99e6e', '#b88d5e'] },
+    { id: 'bed', n: '主卧', r: [13, 0, 20, 7], fl: 'carpet', fc: ['#b9b3c9', '#ada6be'] },
+    { id: 'bath', n: '浴室', r: [20, 0, 24, 7], fl: 'tile', fc: ['#cfe3ea', '#b9d3dc'] },
+    { id: 'living', n: '客厅', r: [0, 7, 10, 16], fl: 'wood', fc: ['#d4ad7c', '#c39c6b'] },
+    { id: 'hall', n: '走廊', r: [10, 7, 13, 16], fl: 'wood', fc: ['#b98d5e', '#a87d50'] },
+    { id: 'study', n: '书房', r: [13, 7, 19, 16], fl: 'wood', fc: ['#a8825c', '#98734e'] },
+    { id: 'kids', n: '儿童房', r: [19, 7, 24, 16], fl: 'carpet', fc: ['#bfd9b4', '#b2cea6'] },
+    { id: 'garden', n: '花园', r: [0, 16, 24, 22], fl: 'grass', fc: ['#8cc06a', '#82b660'], out: 1, wso: 'fence', path: [10.6, 16, 12.4, 22] }
+  ],
+  doors: [
+    { v: 1, c: 7, a: 2.6, b: 4.0 }, { v: 0, c: 7, a: 2.0, b: 3.4 }, { v: 0, c: 7, a: 10.8, b: 12.2 }, { v: 1, c: 10, a: 11, b: 12.4 },
+    { v: 1, c: 13, a: 9.0, b: 10.4 }, { v: 1, c: 13, a: 4.6, b: 6.0 }, { v: 1, c: 20, a: 2.4, b: 3.8 }, { v: 1, c: 19, a: 12, b: 13.4 },
+    { v: 0, c: 7, a: 21, b: 22.4 }, { v: 0, c: 7, a: 15.2, b: 16.6 }, { v: 0, c: 16, a: 10.8, b: 12.2 }, { v: 0, c: 16, a: 3.4, b: 5.4 }
+  ],
+  gen: HOUSE_GEN
+};
+
+/* ---------- school ---------- */
+function classroom(X, room) {
+  const ib = inner(room), cx = (ib[0] + ib[2]) / 2;
+  tryPut(X, room, 'board', 0, cx, ib[1] + .07, .02);
+  tryPut(X, room, 'tdesk', 0, cx + X.rf(-1, 1), ib[1] + 1.25, .1);
+  grid(X, room, 'sdesk', 0, room.r[0] + 1.3, 3.0 + room.r[1], 2.0, 1.25, 4, 3, .02, d => around(X, room, d, [['schair', 0, .5, 2]]));
+}
+SCENES.school = {
+  n: '放学后的学校', icon: '🏫', w: 30, h: 24, bg: '#7a8a6a', seek: [19, 22.6], hide: [15, 9.5], keep: [[17.5, 21, 20.5, 24]], seekT: 200,
+  wallc: ['#f2ead8', '#8a7a62', '#9ab4c8', '#e8dfca'],
+  rooms: [
+    { id: 'c1', n: '一班教室', r: [0, 0, 9, 8], fl: 'wood', fc: ['#d6b68a', '#c4a477'] },
+    { id: 'c2', n: '二班教室', r: [9, 0, 18, 8], fl: 'wood', fc: ['#d0ae80', '#bf9d70'] },
+    { id: 'music', n: '音乐室', r: [18, 0, 24, 8], fl: 'carpet', fc: ['#b8605a', '#a8544e'] },
+    { id: 'lab', n: '实验室', r: [24, 0, 30, 8], fl: 'tile', fc: ['#eef2f4', '#d8dee2'] },
+    { id: 'hall', n: '走廊', r: [0, 8, 30, 11], fl: 'lino', fc: ['#c9d6dc', '#b8c6cc'] },
+    { id: 'lib', n: '图书馆', r: [0, 11, 8, 18], fl: 'carpet', fc: ['#7aa88a', '#6e9a7e'] },
+    { id: 'office', n: '老师办公室', r: [8, 11, 13, 18], fl: 'wood', fc: ['#b8916a', '#a8825c'] },
+    { id: 'gym', n: '体育馆', r: [13, 11, 24, 18], fl: 'gym', fc: ['#e3c088', '#d4b07a'] },
+    { id: 'canteen', n: '食堂', r: [24, 11, 30, 18], fl: 'tile', fc: ['#f0e6cc', '#e0d4b6'] },
+    { id: 'yard', n: '操场', r: [0, 18, 30, 24], fl: 'grass', fc: ['#8cc06a', '#82b660'], out: 1, wso: 'fence', path: [18, 18, 20, 24] }
+  ],
+  doors: [
+    { v: 0, c: 8, a: 2.5, b: 3.9 }, { v: 0, c: 8, a: 6, b: 7.4 }, { v: 0, c: 8, a: 12.5, b: 13.9 }, { v: 0, c: 8, a: 20.3, b: 21.7 }, { v: 0, c: 8, a: 26.3, b: 27.7 },
+    { v: 0, c: 11, a: 3, b: 4.4 }, { v: 0, c: 11, a: 9.8, b: 11.2 }, { v: 0, c: 11, a: 16, b: 17.8 }, { v: 0, c: 11, a: 26.3, b: 27.7 },
+    { v: 0, c: 18, a: 5, b: 6.4 }, { v: 0, c: 18, a: 18, b: 20 }, { v: 0, c: 18, a: 26.5, b: 27.9 },
+    { v: 1, c: 8, a: 14, b: 15.4 }, { v: 1, c: 24, a: 14, b: 15.4 }, { v: 1, c: 13, a: 15.8, b: 17.2 }
+  ],
+  gen: {
+    c1: [['fn', classroom], ['w', 'locker', 1, 2, { sides: [2, 3] }], ['c', 'plant', 1, 2], ['w', 'trash', 1, 1], ['w', ['globe', 'shelf'], 0, 1], ['f', ['bball', 'box'], 0, 1]],
+    c2: [['fn', classroom], ['w', 'locker', 1, 2, { sides: [2, 1] }], ['c', 'plant', 1, 2], ['w', 'trash', 1, 1], ['w', ['globe', 'shelf'], 0, 1], ['f', ['bball', 'box'], 0, 1]],
+    music: [['w', 'piano', 1, 1, { sides: [0, 3] }], ['f', 'drum', 1, 3, { m: .3 }], ['f', 'mstand', 2, 4, { m: .3 }], ['f', 'schair', 2, 4, { m: .25 }], ['w', ['shelf', 'cabinet'], 1, 2], ['c', 'plant', 0, 1]],
+    lab: [['fn', (X, room) => grid(X, room, 'labbench', 0, 25.6, 3.0, 2.8, 2.1, 2, 2, .05, b => around(X, room, b, [['stool', -.35, .7, 0], ['stool', .35, .7, 0]]))], ['w', 'sink', 1, 2, { sides: [1, 3] }], ['w', ['cabinet', 'medshelf'], 1, 2], ['w', 'trash', 1, 1], ['f', 'box', 0, 1]],
+    hall: [['w', 'locker', 4, 7, { sides: [0, 2], m: .05 }], ['c', 'plant', 2, 3], ['w', 'trash', 1, 2, { sides: [0, 2] }], ['w', 'water', 1, 1, { sides: [0, 2] }], ['w', 'bench', 1, 2, { sides: [0, 2] }]],
+    lib: [['w', 'shelf', 5, 8, { m: .02 }], ['fn', (X, room) => { const t = freePut(X, room, 'rtable', { m: 1.1 }); if (t) around(X, room, t, [['chair', 0, -.85, 0], ['chair', 0, .85, 2], ['chair', -.85, 0, 3], ['chair', .85, 0, 1]]); }], ['f', 'beanbag', 0, 2], ['w', 'globe', 0, 1], ['c', 'plant', 1, 2], ['f', 'box', 0, 1]],
+    office: [['fn', (X, room) => { deskSet(X, room); deskSet(X, room); }], ['w', 'shelf', 1, 2], ['w', 'copier', 1, 1], ['w', 'water', 0, 1], ['c', 'plant', 1, 1], ['w', 'cabinet', 0, 1], ['f', 'box', 0, 2]],
+    gym: [['w', 'hoop', 1, 1, { sides: [3] }], ['w', 'hoop', 1, 1, { sides: [1] }], ['f', 'mat', 2, 3, { m: .4 }], ['f', 'vault', 1, 2, { m: .5 }], ['f', 'cone', 3, 6, { m: .3 }], ['f', 'bball', 2, 4, { m: .3 }], ['w', 'ballcart', 1, 1], ['w', 'bench', 1, 2, { sides: [0, 2] }]],
+    canteen: [['fn', (X, room) => { for (const y of [13.6, 15.9]) { const t = tryPut(X, room, 'ltable', 0, 27, y, .5); if (t) around(X, room, t, [['stool', -.55, -.66, 0], ['stool', .55, -.66, 0], ['stool', -.55, .66, 0], ['stool', .55, .66, 0]]); } }], ['w', 'vending', 1, 2, { sides: [1, 0] }], ['w', 'counter', 1, 2], ['w', 'trash', 1, 2], ['c', 'plant', 0, 1]],
+    yard: [['f', 'tree', 3, 5, { m: .8 }], ['w', 'bush', 3, 6, { sides: [1, 2, 3], m: .2 }], ['f', 'bench', 1, 3, { r: 2, m: .6 }], ['f', 'cone', 2, 4, { m: .4 }], ['f', 'bball', 1, 2, { m: .4 }], ['w', 'bin', 1, 2, { sides: [0] }], ['w', 'fpot', 2, 4, { sides: [0] }]]
+  }
+};
+
+/* ---------- restaurant ---------- */
+function roundSet(X, room, near) {
+  const t = near ? tryPut(X, room, 'rtable', 0, near[0], near[1], 1.1) : freePut(X, room, 'rtable', { m: 1.1 });
+  if (t) around(X, room, t, [['chair', 0, -.88, 0], ['chair', 0, .88, 2], ['chair', -.88, 0, 3], ['chair', .88, 0, 1]]);
+  return t;
+}
+SCENES.restaurant = {
+  n: '饭店后厨', icon: '🍳', w: 28, h: 22, bg: '#5a4a40', seek: [8, 21], hide: [19.5, 7.6], keep: [[6, 19.6, 10, 22]], seekT: 200,
+  wallc: ['#f3e6d0', '#7a3a2a', '#b85a3a', '#ead6b6'],
+  rooms: [
+    { id: 'kitchen', n: '后厨', r: [0, 0, 12, 9], fl: 'checker', fc: ['#f2f0ea', '#3a3d44'] },
+    { id: 'dish', n: '洗碗间', r: [12, 0, 17, 9], fl: 'tile', fc: ['#dfe8ea', '#c8d4d8'] },
+    { id: 'cold', n: '冷库', r: [17, 0, 22, 6], fl: 'tile', fc: ['#d4e4ee', '#bcd0de'], ws: 'steel' },
+    { id: 'aisle', n: '员工通道', r: [17, 6, 22, 9], fl: 'concrete', fc: ['#b8b4ac', '#a8a49c'] },
+    { id: 'store', n: '仓库', r: [22, 0, 28, 9], fl: 'concrete', fc: ['#b0aaa0', '#a09a90'] },
+    { id: 'hall', n: '大堂', r: [0, 9, 18, 22], fl: 'wood', fc: ['#b8784a', '#a86a3e'] },
+    { id: 'vip1', n: '包间·梅', r: [18, 9, 28, 15], fl: 'carpet', fc: ['#a84a4a', '#984040'] },
+    { id: 'vip2', n: '包间·兰', r: [18, 15, 28, 22], fl: 'carpet', fc: ['#4a6a9a', '#40608c'] }
+  ],
+  doors: [
+    { v: 1, c: 12, a: 4, b: 5.4 }, { v: 0, c: 9, a: 3, b: 4.6 }, { v: 0, c: 9, a: 8, b: 9.6 }, { v: 0, c: 9, a: 14, b: 15.4 },
+    { v: 0, c: 6, a: 19, b: 20.4 }, { v: 1, c: 17, a: 7.1, b: 8.5 }, { v: 1, c: 22, a: 7.1, b: 8.5 }, { v: 0, c: 9, a: 19.6, b: 21 },
+    { v: 1, c: 18, a: 11.5, b: 13.1 }, { v: 1, c: 18, a: 18, b: 19.6 }, { v: 0, c: 15, a: 24, b: 25.4 }
+  ],
+  gen: {
+    kitchen: [['fn', (X, room) => {
+      const ib = inner(room); let x = X.R() < .5 ? .1 : .9;
+      const seq = ['counter', 'stove', 'stove', 'counter', 'sink', 'counter', 'stove', 'counter', 'counter', 'stove', 'counter', 'counter'].slice(0, X.ri(9, 12));
+      for (const k of seq) { const [w, d] = footWD(k, 0); if (tryPut(X, room, k, 0, x + w / 2, ib[1] + d / 2, -.001)) x += w; }
+      for (let i = 0; i < X.ri(3, 5); i++) { tryPut(X, room, 'counter', 0, 3.6 + i * .8, 4.3, -.001); tryPut(X, room, 'counter', 2, 3.6 + i * .8, 4.92, -.001); }
+    }], ['w', 'rack', 1, 2, { sides: [3, 1] }], ['f', 'pot', 2, 3, { m: .4 }], ['w', 'sfridge', 1, 1, { sides: [3, 1] }], ['w', 'trash', 1, 2], ['f', ['crate', 'sack'], 1, 3, { m: .35 }]],
+    dish: [['w', 'sink', 2, 3, { m: .02 }], ['w', 'dishrack', 2, 3], ['f', 'mop', 1, 2, { m: .35 }], ['w', ['trash', 'basket'], 1, 2], ['w', 'rack', 0, 1]],
+    cold: [['w', 'sfridge', 2, 3, { m: .03 }], ['f', 'crate', 2, 3, { m: .3 }], ['w', ['sack', 'box', 'barrel'], 2, 3]],
+    aisle: [['w', ['box', 'mop', 'rack'], 1, 2, { sides: [0, 2] }]],
+    store: [['w', 'rack', 1, 2], ['f', 'sack', 2, 4, { m: .3 }], ['f', 'crate', 2, 3, { m: .3 }], ['w', 'barrel', 1, 3], ['w', 'box', 2, 4], ['w', 'winerack', 0, 1]],
+    hall: [['fn', (X, room) => { for (const [x, y] of [[3.5, 12.5], [8.5, 12.5], [13.5, 12.5], [3.5, 17], [13.5, 17], [8.5, 16.5]]) if (X.R() < .85) roundSet(X, room, [x + X.rf(-.5, .5), y + X.rf(-.4, .4)]); }],
+      ['w', 'cashier', 1, 1, { sides: [3] }], ['w', 'aqua', 1, 2, { sides: [0, 1, 3] }], ['c', 'plant', 3, 5], ['w', 'vase', 1, 3], ['w', 'pscreen', 0, 2], ['w', 'winerack', 0, 1]],
+    vip1: [['fn', (X, room) => roundSet(X, room, [23, 12])], ['w', 'pscreen', 0, 1], ['w', 'vase', 1, 2], ['c', 'plant', 1, 2], ['w', ['cabinet', 'winerack', 'tv'], 1, 2], ['w', 'aqua', 0, 1]],
+    vip2: [['fn', (X, room) => roundSet(X, room, [23, 18.5])], ['w', 'pscreen', 0, 1], ['w', 'vase', 1, 2], ['c', 'plant', 1, 2], ['w', ['cabinet', 'winerack', 'tv'], 1, 2], ['w', 'sofa', 0, 1]]
+  }
+};
+
+/* ---------- hospital ---------- */
+function ward(X, room) {
+  const ib = inner(room), n = X.ri(3, 3);
+  for (let i = 0; i < n; i++) { const b = tryPut(X, room, 'hbed', 0, room.r[0] + 1.2 + i * 2.6, ib[1] + 1.1, .05); if (b) around(X, room, b, [[X.ch(['ivstand', 'monitor', 'nstand']), .85, -.65, 0]], .02); }
+}
+SCENES.hospital = {
+  n: '夜班医院', icon: '🏥', w: 30, h: 22, bg: '#5a6a72', seek: [13.5, 21], hide: [15, 9.5], keep: [[11.5, 19.6, 15.5, 22]], seekT: 200,
+  wallc: ['#e8f2ee', '#6a8a84', '#a8cfc4', '#dcebe6'],
+  rooms: [
+    { id: 'w1', n: '一号病房', r: [0, 0, 8, 8], fl: 'lino', fc: ['#e6eef0', '#d4e0e4'] },
+    { id: 'w2', n: '二号病房', r: [8, 0, 16, 8], fl: 'lino', fc: ['#e6eef0', '#d4e0e4'] },
+    { id: 'or', n: '手术室', r: [16, 0, 24, 8], fl: 'tile', fc: ['#bfe0d8', '#a8d0c6'] },
+    { id: 'pharm', n: '药房', r: [24, 0, 30, 8], fl: 'lino', fc: ['#eef0e6', '#dcdfd2'] },
+    { id: 'hall', n: '走廊', r: [0, 8, 30, 11], fl: 'lino', fc: ['#cfe0e6', '#bdd0d8'] },
+    { id: 'clinic', n: '诊室', r: [0, 11, 7, 17], fl: 'lino', fc: ['#e6eef0', '#d4e0e4'] },
+    { id: 'lobby', n: '候诊大厅', r: [7, 11, 20, 22], fl: 'lino', fc: ['#e2e8ec', '#cfd8de'] },
+    { id: 'lab', n: '化验室', r: [20, 11, 25, 17], fl: 'tile', fc: ['#eef2f4', '#d8dee2'] },
+    { id: 'wc', n: '洗手间', r: [25, 11, 30, 17], fl: 'tile', fc: ['#cfe3ea', '#b9d3dc'] },
+    { id: 'garden', n: '康复花园', r: [0, 17, 7, 22], fl: 'grass', fc: ['#8cc06a', '#82b660'], out: 1, wso: 'hedge' },
+    { id: 'store', n: '储藏室', r: [20, 17, 30, 22], fl: 'concrete', fc: ['#b8b4ac', '#a8a49c'] }
+  ],
+  doors: [
+    { v: 0, c: 8, a: 3, b: 4.6 }, { v: 0, c: 8, a: 11, b: 12.6 }, { v: 0, c: 8, a: 19, b: 21 }, { v: 0, c: 8, a: 26, b: 27.4 },
+    { v: 0, c: 11, a: 2.5, b: 4 }, { v: 0, c: 11, a: 9, b: 11 }, { v: 0, c: 11, a: 15, b: 17 }, { v: 0, c: 11, a: 21.5, b: 23 }, { v: 0, c: 11, a: 26.5, b: 28 },
+    { v: 0, c: 17, a: 2, b: 3.5 }, { v: 0, c: 17, a: 21, b: 22.4 }, { v: 1, c: 7, a: 18.5, b: 20 }, { v: 1, c: 20, a: 19, b: 20.4 }
+  ],
+  gen: {
+    w1: [['fn', ward], ['w', 'pscreen', 0, 1, { sides: [2] }], ['f', 'wchair', 0, 1], ['c', 'plant', 1, 1], ['w', 'trash', 1, 1, { sides: [2, 1, 3] }], ['w', 'chair', 1, 2, { sides: [2, 1, 3] }]],
+    w2: [['fn', ward], ['w', 'pscreen', 0, 1, { sides: [2] }], ['f', 'wchair', 0, 1], ['c', 'plant', 1, 1], ['w', 'trash', 1, 1, { sides: [2, 1, 3] }], ['w', 'chair', 1, 2, { sides: [2, 1, 3] }]],
+    or: [['fn', (X, room) => { const t = tryPut(X, room, 'optable', 0, 20, 3.8, .7); if (t) around(X, room, t, [['oplamp', -.95, -.5, 0], ['monitor', .95, -.6, 0], ['cart', .95, .7, 0]], .05); }], ['f', 'ivstand', 1, 2, { m: .3 }], ['w', 'oxygen', 1, 2], ['w', 'sink', 1, 1], ['w', 'cabinet', 1, 2], ['f', 'cart', 0, 1]],
+    pharm: [['w', 'medshelf', 3, 5, { m: .02 }], ['w', 'counter', 1, 2], ['f', 'box', 2, 3, { m: .3 }], ['f', 'cart', 0, 1], ['w', 'trash', 1, 1]],
+    hall: [['w', 'wseat', 3, 5, { sides: [0, 2], m: .1 }], ['c', 'plant', 2, 3], ['w', 'water', 1, 1, { sides: [0, 2] }], ['w', 'wchair', 1, 2, { sides: [0, 2] }], ['w', 'gurney', 0, 1, { sides: [0, 2] }], ['w', 'trash', 1, 2, { sides: [0, 2] }]],
+    clinic: [['fn', (X, room) => deskSet(X, room)], ['w', 'exbed', 1, 1], ['w', 'pscreen', 0, 1], ['w', ['cabinet', 'medshelf'], 1, 2], ['w', 'chair', 1, 1], ['c', 'plant', 0, 1], ['w', 'trash', 1, 1]],
+    lobby: [['w', 'reception', 1, 1, { sides: [0] }], ['fn', (X, room) => grid(X, room, 'wseat', 2, 10.2, 15.2, 2.6, 2.0, 3, 2, .05)], ['c', 'plant', 3, 4], ['w', 'vending', 1, 2, { sides: [1, 3] }], ['w', 'water', 1, 1], ['w', 'wchair', 1, 2], ['w', 'tv', 1, 1, { sides: [1, 3] }], ['w', 'trash', 1, 2]],
+    lab: [['w', 'labbench', 1, 2], ['w', 'monitor', 1, 1], ['w', ['cabinet', 'medshelf'], 1, 2], ['f', 'ochair', 1, 2, { m: .3 }], ['w', 'trash', 1, 1]],
+    wc: [['w', 'toilet', 2, 3, { sides: [0, 1], m: .2 }], ['w', 'sink', 1, 2], ['w', ['trash', 'mop'], 1, 2], ['w', 'basket', 0, 1]],
+    garden: [['w', 'bush', 2, 4, { sides: [3, 2], m: .2 }], ['f', 'tree', 1, 2, { m: .7 }], ['f', 'bench', 1, 1, { r: 0, m: .5 }], ['w', 'fpot', 2, 3], ['f', 'wchair', 0, 1]],
+    store: [['f', 'box', 3, 5, { m: .3 }], ['w', ['hbed', 'gurney'], 1, 1], ['w', 'wchair', 1, 2], ['f', 'cart', 1, 2, { m: .3 }], ['w', 'oxygen', 1, 2], ['w', ['cabinet', 'medshelf'], 1, 2]]
+  }
+};
+
+/* ---------- wild ---------- */
+SCENES.wild = {
+  n: '林间营地', icon: '🌲', w: 32, h: 24, bg: '#34502c', seek: [17, 22.8], hide: [13, 14.6], keep: [[15.5, 21.4, 18.5, 24], [12, 13.8, 14, 15.4]], seekT: 210,
+  inner: 'hedge', outer: 'hedge',
+  rooms: [
+    { id: 'nw', n: '西边树林', r: [0, 0, 10, 8], fl: 'forest', fc: ['#5a8a46', '#4a7a3a'], out: 1 },
+    { id: 'n', n: '北边树林', r: [10, 0, 20, 8], fl: 'forest', fc: ['#5e8e48', '#4e7e3c'], out: 1 },
+    { id: 'cave', n: '山洞', r: [20, 0, 32, 8], fl: 'cave', fc: ['#6e6a66', '#5a5652'], ws: 'rock', wso: 'rock', inset: .55 },
+    { id: 'river', n: '小河边', r: [0, 8, 10, 16], fl: 'grass', fc: ['#7ab060', '#6ea456'], out: 1, water: [0, 8, 2.6, 16] },
+    { id: 'camp', n: '营地', r: [10, 8, 20, 16], fl: 'dirt', fc: ['#b89a6a', '#a68a5c'], out: 1 },
+    { id: 'cabin', n: '小木屋', r: [20, 8, 27, 16], fl: 'wood', fc: ['#b88a5a', '#a87a4c'], ws: 'log', wso: 'log' },
+    { id: 'shed', n: '柴房', r: [27, 8, 32, 16], fl: 'wood', fc: ['#a07a4e', '#906c42'], ws: 'log', wso: 'log' },
+    { id: 'flowers', n: '花田', r: [0, 16, 12, 24], fl: 'grass', fc: ['#8cc06a', '#82b660'], out: 1 },
+    { id: 'lake', n: '湖边', r: [12, 16, 22, 24], fl: 'sand', fc: ['#e2cf9a', '#d4c08a'], out: 1, water: [12, 16, 22, 17.6] },
+    { id: 'orchard', n: '果园', r: [22, 16, 32, 24], fl: 'grass', fc: ['#86b864', '#7aac58'], out: 1 }
+  ],
+  doors: [
+    { v: 0, c: 8, a: 14, b: 15.8 }, { v: 0, c: 8, a: 4, b: 5.8 }, { v: 0, c: 8, a: 23.5, b: 24.9 }, { v: 0, c: 8, a: 29, b: 30.4 },
+    { v: 1, c: 10, a: 3, b: 4.8 }, { v: 1, c: 10, a: 11, b: 12.8 }, { v: 1, c: 20, a: 3, b: 5 }, { v: 1, c: 20, a: 11.5, b: 12.9 }, { v: 1, c: 27, a: 10, b: 11.4 },
+    { v: 0, c: 16, a: 4, b: 5.8 }, { v: 0, c: 16, a: 15, b: 16.8 }, { v: 0, c: 16, a: 23.5, b: 24.9 }, { v: 0, c: 16, a: 29, b: 30.4 },
+    { v: 1, c: 12, a: 19, b: 20.8 }, { v: 1, c: 22, a: 19, b: 20.8 }
+  ],
+  gen: {
+    nw: [['f', 'pine', 4, 6, { m: .5 }], ['f', 'tree', 1, 3, { m: .6 }], ['f', 'stump', 1, 2], ['f', 'log', 1, 2, { m: .4 }], ['f', 'mushroom', 1, 3, { m: .3 }], ['w', 'bush', 2, 4, { m: .2 }], ['f', 'rock', 1, 2]],
+    n: [['f', 'pine', 3, 5, { m: .5 }], ['f', 'tree', 2, 3, { m: .6 }], ['f', 'stump', 1, 2], ['f', 'mushroom', 1, 2, { m: .3 }], ['w', 'bush', 2, 4, { m: .2 }], ['f', ['rock', 'flower'], 1, 3]],
+    cave: [['f', 'boulder', 2, 4, { m: .5 }], ['f', 'rock', 3, 5, { m: .35 }], ['f', 'mushroom', 1, 3, { m: .3 }], ['w', 'barrel', 1, 2], ['w', 'crate', 1, 2], ['f', 'chest', 0, 1]],
+    river: [['f', 'reed', 3, 5, { m: .2 }], ['f', 'rock', 3, 5, { m: .35 }], ['f', 'log', 1, 2, { m: .4 }], ['f', 'stump', 0, 1], ['f', 'boulder', 0, 1], ['f', ['cooler', 'backpack'], 0, 2]],
+    camp: [['fn', (X, room) => { const f = tryPut(X, room, 'campfire', 0, 15.2, 11.6, .1); if (f) around(X, room, f, [['log', 0, -1.15, 0], ['log', 0, 1.15, 0], ['cchair', -1.2, 0, 1]], .05); }],
+      ['w', 'tent', 2, 3, { sides: [0, 1, 3], m: .3 }], ['f', 'cchair', 1, 2, { m: .4 }], ['f', 'cooler', 1, 2, { m: .35 }], ['f', 'backpack', 1, 2, { m: .3 }], ['w', ['woodpile', 'barrel'], 0, 1]],
+    cabin: [['w', 'bed', 1, 1, { sides: [0, 1] }], ['fn', (X, room) => { const t = freePut(X, room, 'dtable', { r: 1, m: .8 }); if (t) around(X, room, t, [['chair', 0, -.74, 0], ['chair', 0, .74, 2]]); }], ['w', 'stove2', 1, 1], ['w', 'shelf', 1, 1], ['w', ['barrel', 'crate', 'backpack'], 1, 2], ['f', 'rug', 0, 1, { m: .1 }]],
+    shed: [['w', 'woodpile', 2, 3], ['w', 'barrel', 1, 2], ['f', 'crate', 1, 3, { m: .3 }], ['w', ['sack', 'box'], 1, 2]],
+    flowers: [['f', 'flower', 6, 9, { m: .25 }], ['w', 'bush', 2, 3, { sides: [2, 3], m: .2 }], ['f', 'tree', 1, 2, { m: .6 }], ['f', ['stump', 'rock'], 1, 2], ['f', 'bench', 0, 1, { m: .5 }], ['w', 'fpot', 1, 3, { sides: [0] }]],
+    lake: [['f', 'reed', 3, 5, { m: .25 }], ['f', 'rock', 2, 4, { m: .35 }], ['f', 'log', 1, 2, { m: .4 }], ['f', 'boulder', 0, 1], ['f', ['cchair', 'cooler', 'backpack'], 1, 2, { m: .4 }]],
+    orchard: [['fn', (X, room) => { X.vv['orchardtree'] = 2; grid(X, room, 'tree', 0, 24, 18.2, 2.6, 2.6, 4, 2, .3); }], ['f', 'crate', 2, 3, { m: .35 }], ['f', 'sack', 1, 2, { m: .3 }], ['w', 'barrel', 0, 1], ['w', 'bush', 1, 2, { m: .2 }], ['f', 'flower', 1, 2]]
+  }
+};
+
+/* ---------- sea ---------- */
+SCENES.sea = {
+  n: '海底探险', icon: '🌊', w: 32, h: 24, bg: '#0f3a5a', water: 1, speed: .85, seek: [16, 22.8], hide: [14, 12], keep: [[14.5, 21.4, 17.5, 24], [13, 11.2, 15, 12.8]], seekT: 210,
+  inner: 'reef', outer: 'reef', rockc: ['#5c6a70', '#738288', '#4a565c'],
+  rooms: [
+    { id: 'coral', n: '珊瑚园', r: [0, 0, 10, 8], fl: 'seabed', fc: ['#e6d0b0', '#d4bc9a'], inset: .55 },
+    { id: 'kelp', n: '海带林', r: [10, 0, 22, 8], fl: 'seabed', fc: ['#c8bc96', '#b8ac86'], inset: .55 },
+    { id: 'wreck', n: '沉船', r: [22, 0, 32, 10], fl: 'deck', fc: ['#8a6a48', '#6e5236'], ws: 'hull', wso: 'hull' },
+    { id: 'cave', n: '岩洞', r: [0, 8, 10, 16], fl: 'cave', fc: ['#5a6066', '#4a5056'], ws: 'rock', inset: .55 },
+    { id: 'plain', n: '白沙地', r: [10, 8, 22, 16], fl: 'seabed', fc: ['#f0e2c0', '#e0d0ac'], inset: .55 },
+    { id: 'ruin', n: '海底遗迹', r: [22, 10, 32, 18], fl: 'stone', fc: ['#c8c0a8', '#b0a890'], ws: 'ruin', wso: 'ruin' },
+    { id: 'bay', n: '贝壳湾', r: [0, 16, 10, 24], fl: 'seabed', fc: ['#ecd8b8', '#dcc6a4'], inset: .55 },
+    { id: 'trench', n: '深海沟', r: [10, 16, 22, 24], fl: 'seabed', fc: ['#a8a088', '#989078'], inset: .55 },
+    { id: 'jelly', n: '水母区', r: [22, 18, 32, 24], fl: 'seabed', fc: ['#c0c8c0', '#b0b8b0'], inset: .55 }
+  ],
+  doors: [
+    { v: 0, c: 8, a: 4, b: 5.8 }, { v: 0, c: 8, a: 15, b: 16.8 }, { v: 1, c: 10, a: 3, b: 4.8 }, { v: 1, c: 10, a: 11, b: 12.8 },
+    { v: 1, c: 22, a: 3, b: 4.6 }, { v: 1, c: 22, a: 12, b: 13.6 }, { v: 0, c: 10, a: 26, b: 27.6 },
+    { v: 0, c: 16, a: 4, b: 5.8 }, { v: 0, c: 16, a: 15, b: 16.8 }, { v: 1, c: 10, a: 19, b: 20.8 }, { v: 1, c: 22, a: 20, b: 21.8 }, { v: 0, c: 18, a: 27, b: 28.6 }
+  ],
+  gen: {
+    coral: [['f', 'coral', 4, 6, { m: .35 }], ['f', 'brain', 2, 3, { m: .35 }], ['w', 'seafan', 2, 3, { m: .2 }], ['f', 'anemone', 2, 3, { m: .3 }], ['f', ['shell', 'starfish'], 1, 3, { m: .3 }], ['f', 'rock', 1, 2]],
+    kelp: [['f', 'kelp', 8, 12, { m: .3 }], ['f', 'rock', 2, 3, { m: .35 }], ['f', 'urchin', 1, 3, { m: .3 }], ['f', 'shell', 0, 1]],
+    wreck: [['w', 'barrel', 2, 4], ['f', 'crate', 2, 3, { m: .35 }], ['f', 'chest', 1, 2, { m: .4 }], ['w', 'cannon', 2, 3, { sides: [0, 1] }], ['w', 'helm', 1, 1], ['w', 'anchor', 0, 1], ['w', 'box', 0, 1]],
+    cave: [['f', 'boulder', 2, 3, { m: .5 }], ['f', 'rock', 3, 4, { m: .35 }], ['f', 'urchin', 2, 3, { m: .3 }], ['f', 'clam', 1, 2, { m: .4 }], ['f', 'anemone', 1, 2, { m: .3 }], ['f', 'chest', 0, 1]],
+    plain: [['f', 'rock', 2, 3, { m: .4 }], ['f', 'starfish', 2, 4, { m: .3 }], ['f', 'shell', 2, 3, { m: .3 }], ['f', 'brain', 1, 2, { m: .4 }], ['f', 'coral', 1, 2, { m: .4 }], ['f', 'anchor', 0, 1, { m: .5 }], ['f', 'amphora', 0, 2, { m: .3 }]],
+    ruin: [['f', 'pillar', 3, 5, { m: .5 }], ['w', 'pillar', 1, 2], ['w', 'amphora', 2, 4], ['f', 'amphora', 1, 2, { m: .3 }], ['f', 'chest', 0, 1], ['f', 'rock', 1, 2]],
+    bay: [['f', 'shell', 3, 5, { m: .3 }], ['f', 'starfish', 2, 4, { m: .3 }], ['f', 'clam', 1, 2, { m: .4 }], ['f', 'rock', 2, 3, { m: .35 }], ['f', ['coral', 'anemone'], 2, 3, { m: .35 }]],
+    trench: [['f', 'rock', 2, 4, { m: .4 }], ['f', 'boulder', 1, 2, { m: .5 }], ['f', 'urchin', 2, 3, { m: .3 }], ['f', 'kelp', 2, 4, { m: .3 }], ['f', 'anemone', 1, 2, { m: .3 }], ['f', 'jelly', 0, 1, { m: .4 }]],
+    jelly: [['f', 'jelly', 4, 6, { m: .4 }], ['f', ['coral', 'anemone'], 2, 3, { m: .35 }], ['f', 'rock', 1, 2], ['f', 'kelp', 1, 2, { m: .3 }]]
+  }
+};
+const SCENE_IDS = ['house', 'school', 'restaurant', 'hospital', 'wild', 'sea'];
+
 /* ---- 20_people.js ---- */
 /* ================= people: rounded low-poly chibi characters =================
    Built from frusta (F) and sphere slices (SPH) so heads, bodies and limbs read round.
    Parts come back already in painter's order for the current facing (no per-part sort). */
-const F = (cx, cy, r0, r1, z0, z1, c, n, sy) => ({ t: 'f', cx, cy, r0: Math.max(.004, r0), r1: Math.max(.004, r1), z0, z1, c, n: n || 8, sy: sy || 1 });
+const F = (cx, cy, r0, r1, z0, z1, c, n, sy, sx) => ({ t: 'f', cx, cy, r0: Math.max(.004, r0), r1: Math.max(.004, r1), z0, z1, c, n: n || 8, sy: sy || 1, sx: sx || 1 });
 // sphere (or flattened ellipsoid) as stacked frusta between latitudes a0..a1 (degrees)
 function SPH(cx, cy, cz, r, c, o) {
-  o = o || {}; const n = o.n || 10, sl = o.sl || 5, a0 = o.a0 == null ? -90 : o.a0, a1 = o.a1 == null ? 90 : o.a1, sy = o.sy || 1, sz = o.sz || 1, out = [];
+  o = o || {}; const n = o.n || 10, sl = o.sl || 5, a0 = o.a0 == null ? -90 : o.a0, a1 = o.a1 == null ? 90 : o.a1, sy = o.sy || 1, sx = o.sx || 1, sz = o.sz || 1, out = [];
   for (let k = 0; k < sl; k++) {
     const p = (a0 + (a1 - a0) * k / sl) * Math.PI / 180, q = (a0 + (a1 - a0) * (k + 1) / sl) * Math.PI / 180;
-    out.push(F(cx, cy, r * Math.cos(p), r * Math.cos(q), cz + r * sz * Math.sin(p), cz + r * sz * Math.sin(q), c, n, sy));
+    out.push(F(cx, cy, r * Math.cos(p), r * Math.cos(q), cz + r * sz * Math.sin(p), cz + r * sz * Math.sin(q), c, n, sy, sx));
   }
   return out;
 }
 function framePrism(p, tf) {
   if (p.t !== 'f') return partPrism(p, tf);
   const pts = [], pts2 = [];
-  for (let i = 0; i < p.n; i++) { const a = (i + .5) / p.n * Math.PI * 2, ca = Math.cos(a), sa = Math.sin(a) * p.sy; pts.push(tf(p.cx + ca * p.r0, p.cy + sa * p.r0)); pts2.push(tf(p.cx + ca * p.r1, p.cy + sa * p.r1)); }
+  for (let i = 0; i < p.n; i++) { const a = (i + .5) / p.n * Math.PI * 2 + (p.rot || 0), ca = Math.cos(a) * p.sx, sa = Math.sin(a) * p.sy; pts.push(tf(p.cx + ca * p.r0, p.cy + sa * p.r0)); pts2.push(tf(p.cx + ca * p.r1, p.cy + sa * p.r1)); }
   return { pts, pts2, z0: p.z0, z1: p.z1, c: p.c, noTop: p.noTop };
 }
 
@@ -657,6 +1102,64 @@ const PEOPLE = {
     }
   }
 };
+
+/* ---------- per-scene outfits ---------- */
+const eyesGlasses = (L, hz, c) => { for (const s of [-1, 1]) L.face.push(B(s * .075 - .05, .2, s * .075 + .05, .21, hz + .045, hz + .06, c), B(s * .075 - .05, .2, s * .075 + .05, .21, hz - .05, hz - .035, c), B(s * .125 - .005, .19, s * .125 + .01, .21, hz - .05, hz + .06, c)); L.face.push(B(-.025, .2, .025, .21, hz + .01, hz + .025, c)); };
+const shortHair = (L, hz, col, bangs) => { L.cap.push(...SPH(0, -.01, hz, .216, col, { a0: 22, a1: 90, sl: 3, n: 12 })); L.backHigh.push(F(0, -.07, .2, .19, hz - .1, hz + .05, col, 12, .78)); if (bangs) L.face.push(B(-.15, .13, .15, .195, hz + .08, hz + .14, col)); };
+PEOPLE.house = { hide: PEOPLE.hide, seek: PEOPLE.seek };
+PEOPLE.school = {
+  hide: { shoe: '#f4f2ec', sole: '#8b939c', legLow: SKIN, legUp: '#2f4a7a', hip: '#2f4a7a', body: '#f6f4ee', arm: '#f6f4ee',
+    extra(L, bob) { L.neck.push(F(0, .02, .13, .08, .78 + bob, .84 + bob, '#d8342a', 3, .8)); L.bodyFront.push(B(-.03, .13, .03, .16, .62 + bob, .78 + bob, '#d8342a'), B(-.01, .14, .01, .155, .52 + bob, .6 + bob, '#d8d4cc'));
+      L.backLow.push(B(-.15, -.27, .15, -.12, .44 + bob, .8 + bob, '#3f8ad8'), B(-.12, -.29, .12, -.26, .5 + bob, .64 + bob, '#f2c94a')); },
+    hairdo(L, hz) { shortHair(L, hz, '#2a2220', 1); }, hat() { } },
+  seek: { shoe: '#3a2a20', sole: '#1a1410', legLow: '#4a4f58', legUp: '#4a4f58', hip: '#4a4f58', body: '#8a6aa0', arm: '#8a6aa0',
+    extra(L, bob) { L.neck.push(F(0, 0, .13, .11, .78 + bob, .84 + bob, '#f6f4ee', 10, .85)); for (let i = 0; i < 3; i++) L.bodyFront.push(B(-.015, .135, .015, .155, .56 + i * .08 + bob, .59 + i * .08 + bob, '#f2e6c0')); },
+    hairdo(L, hz) { shortHair(L, hz, '#4a3020'); L.cap.push(...SPH(0, -.12, hz + .17, .1, '#4a3020', { sl: 3, n: 8 })); eyesGlasses(L, hz, '#2a2028'); },
+    hat() { }, tool(arm, sw, bob) { arm.push(B(.2, .02 + sw, .34, .2 + sw, .5 + bob, .54 + bob, '#3f6fc8'), B(.21, .03 + sw, .33, .19 + sw, .54 + bob, .55 + bob, '#f6f4ee')); } }
+};
+PEOPLE.restaurant = {
+  hide: { shoe: '#2a2d33', sole: '#111', legLow: '#3a3f4f', legUp: '#3a3f4f', hip: '#3a3f4f', body: '#e8a24a', arm: '#e8a24a',
+    extra(L, bob) { L.bodyFront.push(B(-.15, .12, .15, .16, .4 + bob, .78 + bob, '#f6f4ee'), B(-.1, .155, .1, .17, .5 + bob, .6 + bob, '#e0dcd2')); L.backLow.push(B(-.17, -.17, .17, -.13, .56 + bob, .6 + bob, '#f6f4ee')); },
+    hairdo(L, hz) { L.backHigh.push(F(0, -.07, .2, .19, hz - .1, hz + .04, '#3a2a20', 12, .78)); },
+    hat(L, hz) { L.cap.push(...SPH(0, -.01, hz + .01, .222, '#d8342a', { a0: 18, a1: 90, sl: 3, n: 12 })); L.backHigh.push(...SPH(0, -.22, hz + .06, .06, '#d8342a', { sl: 3, n: 7 }), B(-.02, -.28, .06, -.22, hz - .08, hz + .04, '#d8342a')); L.face.push(B(-.17, .14, .17, .2, hz + .07, hz + .1, '#b82a22')); } },
+  seek: { shoe: '#2a2d33', sole: '#111', legLow: '#3a3a3a', legUp: '#3a3a3a', hip: '#f6f6f2', body: '#f6f6f2', arm: '#f6f6f2',
+    extra(L, bob) { L.body.unshift(F(0, 0, .2, .18, .32 + bob, .5 + bob, '#f6f6f2', 12, .82)); L.neck.push(F(0, 0, .14, .12, .78 + bob, .85 + bob, '#d8342a', 10, .85)); for (let i = 0; i < 3; i++) L.bodyFront.push(B(-.08, .13, -.05, .155, .5 + i * .09 + bob, .53 + i * .09 + bob, '#2a2d33'), B(.05, .13, .08, .155, .5 + i * .09 + bob, .53 + i * .09 + bob, '#2a2d33')); },
+    hairdo(L, hz) { L.face.push(B(-.08, .19, -.01, .215, hz - .07, hz - .045, '#3a2a20'), B(.01, .19, .08, .215, hz - .07, hz - .045, '#3a2a20')); },
+    hat(L, hz) { L.cap.push(F(0, 0, .2, .2, hz + .1, hz + .2, '#f6f6f2', 12), F(0, 0, .2, .26, hz + .2, hz + .38, '#ffffff', 12), ...SPH(0, 0, hz + .38, .26, '#ffffff', { a0: 0, sl: 3, n: 12, sz: .55 })); },
+    tool(arm, sw, bob) { arm.push(C(.27, .08 + sw, .016, .45 + bob, .78 + bob, '#b8c0c8', 5), ...SPH(.27, .1 + sw, .43 + bob, .07, '#c8d0d8', { a0: -90, a1: 0, sl: 2, n: 8 })); } }
+};
+PEOPLE.hospital = {
+  hide: { shoe: '#5f9bd8', sole: '#e8e4dc', legLow: '#cfe3f5', legUp: '#cfe3f5', hip: '#cfe3f5', body: '#cfe3f5', arm: '#cfe3f5',
+    extra(L, bob) { for (const x of [-.12, -.04, .04, .12]) L.bodyFront.push(B(x - .012, .135, x + .012, .15, .48 + bob, .8 + bob, '#5f9bd8')); L.bodyFront.push(B(-.015, .14, .015, .155, .5 + bob, .78 + bob, '#f6f4ee')); },
+    hairdo(L, hz) { shortHair(L, hz, '#6b4a2a', 1); L.face.push(B(.1, .16, .16, .18, hz - .05, hz - .03, '#f2e2c8'), B(.12, .16, .14, .18, hz - .07, hz - .01, '#f2e2c8')); },
+    hat(L, hz) { L.cap.push(F(0, 0, .222, .222, hz + .03, hz + .1, '#ffffff', 12, .98)); } },
+  seek: { shoe: '#f4f2ec', sole: '#8b939c', legLow: '#4a8a8a', legUp: '#4a8a8a', hip: '#f8f8f6', body: '#f8f8f6', arm: '#f8f8f6',
+    extra(L, bob) { L.body.unshift(F(0, 0, .21, .18, .28 + bob, .5 + bob, '#f8f8f6', 12, .82)); L.bodyFront.push(B(-.06, .13, .06, .155, .62 + bob, .8 + bob, '#4a8a8a'), B(-.11, .13, -.09, .155, .58 + bob, .78 + bob, '#2a2d33'), B(.09, .13, .11, .155, .58 + bob, .78 + bob, '#2a2d33'), ...SPH(.1, .155, .56 + bob, .03, '#9aa3ad', { sl: 2, n: 6 }), B(.08, .135, .15, .155, .66 + bob, .7 + bob, '#5f9bd8')); },
+    hairdo(L, hz) { shortHair(L, hz, '#2a2220'); },
+    hat(L, hz) { L.cap.push(F(0, 0, .222, .222, hz + .06, hz + .1, '#3a3d44', 12, .98)); L.face.push(...SPH(0, .21, hz + .1, .07, '#d8e0e8', { sy: .2, sl: 3, n: 10 })); },
+    tool(arm, sw, bob) { arm.push(B(.2, .04 + sw, .34, .26 + sw, .5 + bob, .53 + bob, '#8a5a36'), B(.21, .06 + sw, .33, .24 + sw, .53 + bob, .54 + bob, '#ffffff')); } }
+};
+PEOPLE.wild = {
+  hide: { shoe: '#6b4a32', sole: '#3a2a1a', legLow: SKIN, legUp: '#c8b080', hip: '#c8b080', body: '#6a8a4a', arm: '#6a8a4a',
+    extra(L, bob) { L.neck.push(F(0, .02, .14, .09, .78 + bob, .84 + bob, '#f2c94a', 3, .8)); L.bodyFront.push(B(-.03, .13, .03, .16, .66 + bob, .78 + bob, '#f2c94a')); L.backLow.push(B(-.16, -.3, .16, -.12, .42 + bob, .84 + bob, '#e8762a'), B(-.17, -.32, .17, -.28, .7 + bob, .86 + bob, '#c45a1a')); },
+    hairdo(L, hz) { L.backHigh.push(F(0, -.07, .2, .19, hz - .1, hz + .04, '#7a4a26', 12, .78)); },
+    hat(L, hz) { L.cap.push(F(0, 0, .3, .23, hz + .05, hz + .09, '#c8b080', 12), F(0, 0, .2, .17, hz + .09, hz + .24, '#c8b080', 12)); } },
+  seek: { shoe: '#4a3020', sole: '#2a1a10', legLow: '#4a4030', legUp: '#4a4030', hip: '#5a6a3a', body: '#5a6a3a', arm: '#5a6a3a',
+    extra(L, bob) { L.bodyFront.push(B(.05, .13, .12, .155, .68 + bob, .76 + bob, '#e8c84a'), B(-.12, .13, -.04, .155, .66 + bob, .72 + bob, '#4a5a2a')); L.neck.push(F(0, 0, .13, .12, .78 + bob, .84 + bob, '#4a5a2a', 10, .85)); },
+    hairdo(L, hz) { L.backHigh.push(F(0, -.07, .2, .19, hz - .1, hz + .03, '#2a2220', 12, .78)); L.face.push(B(-.06, .19, .06, .215, hz - .075, hz - .05, '#5a3a20')); },
+    hat(L, hz) { L.cap.push(F(0, 0, .34, .34, hz + .06, hz + .09, '#a08050', 14), F(0, 0, .2, .13, hz + .09, hz + .3, '#a08050', 4), B(-.205, -.02, .205, .02, hz + .09, hz + .13, '#5a4430')); },
+    tool(arm, sw, bob) { arm.push(C(.24, .12 + sw, .035, .52 + bob, .66 + bob, '#2a2d33', 6), C(.32, .12 + sw, .035, .52 + bob, .66 + bob, '#2a2d33', 6), B(.25, .1 + sw, .31, .14 + sw, .56 + bob, .62 + bob, '#2a2d33')); } }
+};
+PEOPLE.sea = {
+  hide: { shoe: '#f2c94a', sole: '#e0a82a', fin: 1, legLow: SKIN, legUp: '#ff7a5a', hip: '#ff7a5a', body: '#ff7a5a', arm: SKIN, sleeve: '#ff7a5a',
+    extra(L, bob) { L.bodyFront.push(B(-.1, .135, .1, .155, .6 + bob, .64 + bob, '#ffd04a')); },
+    hairdo(L, hz) { shortHair(L, hz, '#8a5a2a'); L.face.push(B(-.17, .12, .17, .2, hz + .0, hz + .06, '#2a2d33'), B(-.13, .2, -.02, .215, hz - .03, hz + .07, '#8fe0f0'), B(.02, .2, .13, .215, hz - .03, hz + .07, '#8fe0f0')); },
+    hat(L, hz) { L.cap.push(C(.2, -.05, .025, hz - .05, hz + .3, '#f2c94a', 5), B(.18, -.07, .22, .02, hz + .28, hz + .32, '#f2c94a')); } },
+  seek: { shoe: '#2a2d33', sole: '#111', fin: 1, legLow: '#2a2d33', legUp: '#2a2d33', hip: '#2a2d33', body: '#2a2d33', arm: '#2a2d33', hand: '#3a3d44',
+    extra(L, bob) { L.bodyFront.push(B(-.17, .12, -.12, .15, .5 + bob, .8 + bob, '#f2c94a'), B(.12, .12, .17, .15, .5 + bob, .8 + bob, '#f2c94a')); L.backLow.push(C(-.07, -.2, .07, .45 + bob, .92 + bob, '#f2c94a', 8), C(.07, -.2, .07, .45 + bob, .92 + bob, '#f2c94a', 8), C(0, -.2, .02, .92 + bob, 1.0 + bob, '#9aa3ad', 5)); },
+    hairdo(L, hz) { L.cap.push(...SPH(0, -.01, hz, .218, '#2a2d33', { a0: -10, a1: 90, sl: 4, n: 12 })); L.face.push(B(-.15, .19, .15, .23, hz - .06, hz + .1, '#2a2d33'), B(-.13, .23, .13, .235, hz - .04, hz + .08, '#9ae0f8'), C(0, .22, .03, hz - .16, hz - .06, '#3a3d44', 6)); },
+    hat() { }, tool(arm, sw, bob) { arm.push(C(.27, .1 + sw, .04, .44 + bob, .62 + bob, '#f2c94a', 7), C(.27, .1 + sw, .055, .62 + bob, .68 + bob, '#ffffff', 8)); } }
+};
 function humanPrims(p, look, t, idle) {
   const a = p.d, co = Math.cos(a), si = Math.sin(a), tf = (px, py) => [p.x + px * co - py * si, p.y + px * si + py * co];
   const ph = t * 10.5, mv = p.mv ? 1 : 0, sw = mv * Math.sin(ph) * .12, bob = mv ? Math.abs(Math.cos(ph)) * .03 : Math.sin(t * 2.2) * .006;
@@ -664,7 +1167,8 @@ function humanPrims(p, look, t, idle) {
   // legs + shoes
   for (const s of [-1, 1]) {
     const o = s * sw, leg = L.legs[s < 0 ? 0 : 1], lift = mv ? Math.max(0, Math.sin(ph * s + (s < 0 ? 0 : Math.PI))) * .04 : 0;
-    leg.push(B(s * .08 - .055, o - .07, s * .08 + .055, o + .12, lift, .035 + lift, look.sole), B(s * .08 - .052, o - .065, s * .08 + .052, o + .115, .035 + lift, .085 + lift, look.shoe));
+    const fl = look.fin ? .34 : .12, fw = look.fin ? .075 : .055;
+    leg.push(B(s * .08 - fw, o - .07, s * .08 + fw, o + fl, lift, .035 + lift, look.sole), B(s * .08 - .052, o - .065, s * .08 + .052, o + .115, .035 + lift, .085 + lift, look.shoe));
     leg.push(F(s * .08, o * .5, .056, .062, .08 + lift, .26, look.legLow, 7), F(s * .08, o * .25, .064, .07, .26, .4 + bob, look.legUp, 7));
   }
   L.body.push(F(0, 0, .165, .18, .36 + bob, .48 + bob, look.hip, 12, .8), F(0, 0, .185, .15, .48 + bob, .8 + bob, look.body, 12, .8));
@@ -672,7 +1176,7 @@ function humanPrims(p, look, t, idle) {
   // arms swing opposite to legs
   for (const s of [-1, 1]) {
     const o = -s * sw * .9, arm = L.arms[s < 0 ? 0 : 1];
-    arm.push(...SPH(s * .2, o * .2, .755 + bob, .068, look.arm, { sl: 3, n: 8 }), F(s * .225, o * .6, .055, .05, .53 + bob, .76 + bob, look.arm, 8), ...SPH(s * .235, o, .5 + bob, .052, SKIN, { sl: 3, n: 8 }));
+    arm.push(...SPH(s * .2, o * .2, .755 + bob, .068, look.sleeve || look.arm, { sl: 3, n: 8 }), F(s * .225, o * .6, .055, .05, .53 + bob, .76 + bob, look.arm, 8), ...SPH(s * .235, o, .5 + bob, .052, look.hand || SKIN, { sl: 3, n: 8 }));
     if (s > 0 && look.tool) look.tool(arm, o, bob);
   }
   const hz = 1.02 + bob;
@@ -701,7 +1205,8 @@ const amHider = () => G && ME === G.hider;
 const isPlay = () => STATE.mode === 'play' && G;
 
 function newRound(o) {
-  G = { seed: o.seed, mode: o.mode, round: o.round || 1, score: o.score || [0, 0], hider: o.hider, ai: o.ai ? 1 : 0, names: o.names || ['你', '电脑'],
+  useScene(o.scene || 'house');
+  G = { seed: o.seed, scene: SCENE === SCENES[o.scene] ? o.scene : 'house', mode: o.mode, round: o.round || 1, score: o.score || [0, 0], hider: o.hider, ai: o.ai ? 1 : 0, names: o.names || ['你', '电脑'],
     phase: '', t: 0, wrong: 0, maxWrong: o.mode === 'rt' ? BAL.finalKnocks : BAL.turnWrong, kn: BAL.knockStart, regenT: BAL.knockRegen, fin: 0, kcd: 0, wT: 0, tauntCD: 0, turnN: 0, hints: [], res: null, aiT: 0, q: 0,
     pl: [mkPl(), mkPl()] };
   MAP = genMap(G.seed);
@@ -842,7 +1347,7 @@ function simTick(dt) {
   G.kcd = Math.max(0, G.kcd - dt);
   if (G.mode === 'rt') {
     G.t -= dt;
-    if (G.phase === 'hide' && G.t <= 0) { G.phase = 'seek'; G.t = BAL.seekT; G.kn = BAL.knockStart; G.regenT = BAL.knockRegen; emit({ e: 'seek' }); }
+    if (G.phase === 'hide' && G.t <= 0) { G.phase = 'seek'; G.t = SCENE.seekT || BAL.seekT; G.kn = BAL.knockStart; G.regenT = BAL.knockRegen; emit({ e: 'seek' }); }
     else if (G.phase === 'seek') {
       G.tauntCD = Math.max(0, G.tauntCD - dt);
       if (!G.fin) {
@@ -866,11 +1371,13 @@ function simTick(dt) {
 const FREE_KINDS = new Set(['ball', 'beanbag', 'box', 'stool', 'bush', 'barrel', 'chair', 'suitcase', 'bench']);
 function aiChooseSpot(hi, o) {
   let best = null, bs = -1e9;
-  const avoid = o.avoid || [], pool = ROOMS.filter(r => !avoid.includes(r.i));
+  const avoid = o.avoid || [], pool = ROOMS.filter(r => !avoid.includes(r.i) && MAP.items.some(it => it.room === r.i && !it.flat));
+  // pick one room up front so every room is equally likely (dense rooms would otherwise always win)
+  let target = null; for (let k = 0; k < 6 && pool.length; k++) { target = pick(pool); if (!target.out || rnd() < .6) break; }
   for (let t = 0; t < 320; t++) {
     let room, x, y, tpl;
     if (o.near) { x = o.near[0] + rr(-o.near[2], o.near[2]); y = o.near[1] + rr(-o.near[2], o.near[2]); room = roomAt(x, y); if (!room) continue; }
-    else { room = pick(pool); if (room.out && rnd() < .5) continue; }
+    else { room = t < 220 && target ? target : pick(pool); if (!room) return null; }
     const its = MAP.items.filter(it => it.room === room.i && !it.flat); if (!its.length) continue;
     tpl = o.keep ? { k: o.keep.k, v: o.keep.v, r: o.keep.r } : pick(its);
     if (!o.keep && o.near && distFp(o.near[0], o.near[1], tpl.fp) > BAL.turnMove) continue;
@@ -883,8 +1390,9 @@ function aiChooseSpot(hi, o) {
     if (DOORZ.some(z => ovl(f, z, -.3))) continue;
     if (blocked(f, hi)) continue;
     if (o.near) { if (Math.hypot(x - o.near[0], y - o.near[1]) > o.near[2]) continue; if (segHitsWall(o.near[0], o.near[1], x, y)) continue; }
-    let sc = rnd() * 2.2;
-    for (const it of its) if (it.k === tpl.k && Math.hypot(it.x - x, it.y - y) < 2.4) sc += 1.4;
+    let sc = rnd() * 3, same = 0;
+    for (const it of its) if (it.k === tpl.k && Math.hypot(it.x - x, it.y - y) < 2.4) same++;
+    sc += Math.min(2, same) * 1.3;
     const wallD = Math.min(f[0] - ib[0], f[1] - ib[1], ib[2] - f[2], ib[3] - f[3]);
     if (!FREE_KINDS.has(tpl.k)) sc += wallD < .2 ? 1.6 : -1; else sc += .5;
     if (r === tpl.r) sc += .6;
@@ -1006,20 +1514,20 @@ function topoSort(objs) {
 function plPrims(i) {
   const p = G.pl[i];
   if (p.dg) return prismsFor(p.dg.k, p.dg.v, p.dg.r, p.x, p.y);
-  return humanPrims(p, i === G.hider ? PEOPLE.hide : PEOPLE.seek, STATE.t + i);
+  const set = PEOPLE[G.scene] || PEOPLE.house; return humanPrims(p, i === G.hider ? set.hide : set.seek, STATE.t + i);
 }
 
 /* ---------- frame ---------- */
 let DRAWN = [];
 function render(dt) {
-  ctx.fillStyle = '#5c7a52'; ctx.fillRect(0, 0, W, H);
+  ctx.fillStyle = SCENE ? SCENE.bg : '#5c7a52'; ctx.fillRect(0, 0, W, H);
   if (!MAP) return;
   const play = isPlay() && G.phase !== '';
   const meSeek = play && ME === seekerIdx() && G.mode === 'rt' && G.phase !== 'end';
   const lit = play ? (meSeek ? litRooms() : ROOMS.map(r => r.i)) : ROOMS.map(r => r.i);
   const litSet = new Set(lit), seekLit = play && G.mode === 'rt' ? new Set(litRooms()) : null;
   // ground outside the fence
-  { const c = [[-6, -6], [30, -6], [30, 28], [-6, 28]].map(([x, y]) => P(x, y, 0)); polyPath(c); ctx.fillStyle = '#6f8f5c'; ctx.fill(); }
+  { const c = [[-8, -8], [HOUSE.w + 8, -8], [HOUSE.w + 8, HOUSE.h + 8], [-8, HOUSE.h + 8]].map(([x, y]) => P(x, y, 0)); polyPath(c); ctx.fillStyle = SCENE.bg || '#6f8f5c'; ctx.fill(); }
   for (const r of ROOMS) drawFloor(r, litSet.has(r.i), seekLit && !meSeek && seekLit.has(r.i) && G.phase === 'seek');
   // flat things (rugs) + shadows
   const objs = [];
@@ -1052,6 +1560,7 @@ function render(dt) {
   DRAWN = sorted;
   drawMarks(lit, litSet);
   drawPuffs(dt);
+  if (SCENE.water) drawWater(dt);
   drawFx(dt);
   DRAWN_FLAT_LAST = DRAWN_FLAT; DRAWN_FLAT = [];
 }
@@ -1060,22 +1569,45 @@ function drawFloor(r, on, seekTint) {
   const [x0, y0, x1, y1] = r.r, poly = [P(x0, y0, 0), P(x1, y0, 0), P(x1, y1, 0), P(x0, y1, 0)];
   polyPath(poly);
   if (!on) {
-    ctx.fillStyle = '#1b1d24'; ctx.fill();
+    ctx.fillStyle = SCENE.water ? '#0a1e30' : '#1b1d24'; ctx.fill();
     const [cx, cy] = P((x0 + x1) / 2, (y0 + y1) / 2, 0); ctx.fillStyle = 'rgba(255,255,255,.22)'; ctx.font = '600 ' + Math.round(CAM.S * .32) + 'px ' + FONT; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(r.n, cx, cy);
     return;
   }
   ctx.fillStyle = r.fc[0]; ctx.fill();
   ctx.save(); polyPath(poly); ctx.clip(); ctx.strokeStyle = r.fc[1]; ctx.lineWidth = 1;
+  const L = (ax, ay, bx, by) => { const a = P(ax, ay, 0), b = P(bx, by, 0); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); };
+  const area = (x1 - x0) * (y1 - y0), fl = r.fl, seed = r.i * 1013 + 7;
   ctx.beginPath();
-  if (r.fl === 'tile') { for (let x = x0; x <= x1; x += .5) { const a = P(x, y0, 0), b = P(x, y1, 0); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); } for (let y = y0; y <= y1; y += .5) { const a = P(x0, y, 0), b = P(x1, y, 0); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); } }
-  else if (r.fl === 'wood') { let k = 0; for (let y = y0; y <= y1; y += .25, k++) { const a = P(x0, y, 0), b = P(x1, y, 0); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); for (let x = x0 + (k % 3) * .55; x < x1; x += 1.6) { const c = P(x, y, 0), d = P(x, Math.min(y1, y + .25), 0); ctx.moveTo(c[0], c[1]); ctx.lineTo(d[0], d[1]); } } }
-  else if (r.fl === 'grass') { for (let i = 0; i < 160; i++) { const x = x0 + hash(i, 1) * (x1 - x0), y = y0 + hash(i, 2) * (y1 - y0), a = P(x, y, 0), b = P(x + .05, y - .1, 0); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); } }
+  if (fl === 'tile' || fl === 'lino' || fl === 'concrete' || fl === 'stone') {
+    const st = fl === 'tile' ? .5 : fl === 'lino' ? 1 : fl === 'concrete' ? 1.5 : 1;
+    for (let x = x0; x <= x1; x += st) L(x, y0, x, y1);
+    if (fl === 'stone') { let k = 0; for (let y = y0; y <= y1; y += .8, k++) L(x0, y, x1, y); }
+    else for (let y = y0; y <= y1; y += st) L(x0, y, x1, y);
+  } else if (fl === 'checker') {
+    ctx.fillStyle = r.fc[1]; for (let y = y0, j = 0; y < y1; y += .5, j++) for (let x = x0 + (j & 1) * .5; x < x1; x += 1) { polyPath([P(x, y, 0), P(x + .5, y, 0), P(x + .5, y + .5, 0), P(x, y + .5, 0)]); ctx.fill(); }
+    ctx.beginPath();
+  } else if (fl === 'wood' || fl === 'deck' || fl === 'gym') {
+    const st = fl === 'deck' ? .32 : .25; let k = 0;
+    for (let y = y0; y <= y1; y += st, k++) { L(x0, y, x1, y); for (let x = x0 + (k % 3) * .55; x < x1; x += 1.6) L(x, y, x, Math.min(y1, y + st)); }
+  } else if (fl === 'grass' || fl === 'forest') {
+    for (let i = 0; i < area * 1.4; i++) { const x = x0 + hash(i, seed) * (x1 - x0), y = y0 + hash(i, seed + 1) * (y1 - y0); L(x, y, x + .05, y - .1); }
+  } else if (fl === 'sand' || fl === 'dirt' || fl === 'seabed' || fl === 'cave') {
+    for (let i = 0; i < area * 1.1; i++) { const x = x0 + hash(i, seed) * (x1 - x0), y = y0 + hash(i, seed + 1) * (y1 - y0), w = fl === 'cave' ? .35 : .12; L(x, y, x + w, y + (fl === 'cave' ? .12 : 0)); }
+  }
   ctx.stroke();
-  if (r.id === 'garden') { ctx.fillStyle = '#d9c9a4'; polyPath([P(10.6, 16, 0), P(12.4, 16, 0), P(12.4, 22, 0), P(10.6, 22, 0)]); ctx.fill(); }
+  if (fl === 'gym') { ctx.strokeStyle = '#f4f2ea'; ctx.lineWidth = 2; const m = .8; polyPath([P(x0 + m, y0 + m, 0), P(x1 - m, y0 + m, 0), P(x1 - m, y1 - m, 0), P(x0 + m, y1 - m, 0)]); ctx.stroke(); const [cx, cy] = P((x0 + x1) / 2, (y0 + y1) / 2, 0); ctx.beginPath(); ctx.ellipse(cx, cy, 1.4 * CAM.S, 1.4 * CAM.S * SP, 0, 0, 6.283); ctx.stroke(); ctx.beginPath(); L((x0 + x1) / 2, y0 + m, (x0 + x1) / 2, y1 - m); ctx.stroke(); }
+  if (fl === 'forest') { ctx.fillStyle = 'rgba(40,70,30,.35)'; for (let i = 0; i < area * .25; i++) { const x = x0 + hash(i, seed + 5) * (x1 - x0), y = y0 + hash(i, seed + 6) * (y1 - y0), [px, py] = P(x, y, 0); ctx.beginPath(); ctx.ellipse(px, py, .22 * CAM.S, .22 * CAM.S * SP, 0, 0, 6.283); ctx.fill(); } }
+  if (fl === 'seabed') { ctx.strokeStyle = 'rgba(255,255,255,.18)'; ctx.lineWidth = 1.5; ctx.beginPath(); for (let y = y0 + .6; y < y1; y += 1.1) for (let x = x0; x < x1; x += .6) { const yy = y + Math.sin(x * 1.7 + y) * .12; L(x, yy, x + .6, y + Math.sin((x + .6) * 1.7 + y) * .12); } ctx.stroke(); }
+  if (r.path) { const [a, b, c, d] = r.path; ctx.fillStyle = SCENE.pathc || '#d9c9a4'; polyPath([P(a, b, 0), P(c, b, 0), P(c, d, 0), P(a, d, 0)]); ctx.fill(); }
+  if (r.water) {
+    const [a, b, c, d] = r.water, t = STATE.t; ctx.fillStyle = '#5fa8d0'; polyPath([P(a, b, 0), P(c, b, 0), P(c, d, 0), P(a, d, 0)]); ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,.45)'; ctx.lineWidth = 1.5; ctx.beginPath();
+    for (let i = 0; i < (c - a) * (d - b) * .8; i++) { const x = a + hash(i, seed + 9) * (c - a), y = b + ((hash(i, seed + 10) * (d - b) + t * .15) % (d - b)); L(x, y, x + .3, y); }
+    ctx.stroke();
+  }
   if (seekTint) { polyPath(poly); ctx.fillStyle = 'rgba(255,214,90,.16)'; ctx.fill(); }
   ctx.restore();
 }
-const hash = (a, b) => { let h = Math.imul(a * 374761393 + b * 668265263, 1274126177); h ^= h >>> 15; return ((h >>> 0) % 10000) / 10000; };
 const FONT = '"Noto Sans SC","PingFang SC","Microsoft YaHei",system-ui,sans-serif';
 
 /* markers: hover outline, own-disguise arrow, turn-mode hint rings, seeker reach ring */
@@ -1130,6 +1662,16 @@ function drawFx(dt) {
   STATE.pops = STATE.pops.filter(p => (p.t += dt) < 1.6);
   for (const p of STATE.pops) { const [x, y] = P(p.x, p.y, p.z + p.t * .7); ctx.globalAlpha = Math.min(1, (1.6 - p.t) * 2); ctx.font = '900 ' + (p.big ? 24 : 17) + 'px ' + FONT; ctx.textAlign = 'center'; ctx.lineWidth = 4; ctx.strokeStyle = 'rgba(10,10,14,.8)'; ctx.strokeText(p.s, x, y); ctx.fillStyle = p.c; ctx.fillText(p.s, x, y); ctx.globalAlpha = 1; }
 }
+function drawWater(dt) {
+  const t = STATE.t;
+  ctx.fillStyle = 'rgba(20,90,170,.2)'; ctx.fillRect(0, 0, W, H);
+  ctx.save(); ctx.globalCompositeOperation = 'lighter';
+  for (let i = 0; i < 5; i++) { const x = ((i * 0.23 + t * .012) % 1.2 - .1) * W, w = W * .07; ctx.fillStyle = 'rgba(120,200,255,.05)'; ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x + w, 0); ctx.lineTo(x + w * 2.4 - W * .15, H); ctx.lineTo(x + w * 1.2 - W * .15, H); ctx.fill(); }
+  ctx.restore();
+  if (!STATE.bub) STATE.bub = []; if (STATE.bub.length < 40 && Math.random() < dt * 14) STATE.bub.push({ x: Math.random() * W, y: H + 10, r: 1.5 + Math.random() * 3.5, v: 25 + Math.random() * 40, ph: Math.random() * 6 });
+  ctx.strokeStyle = 'rgba(220,240,255,.55)'; ctx.lineWidth = 1.2;
+  STATE.bub = STATE.bub.filter(b => (b.y -= b.v * dt) > -10); for (const b of STATE.bub) { ctx.beginPath(); ctx.arc(b.x + Math.sin(t * 2 + b.ph) * 4, b.y, b.r, 0, 6.283); ctx.stroke(); }
+}
 function puff(x, y) { for (let k = 0; k < 9; k++) { const a = k / 9 * 6.283 + Math.random() * .5; STATE.puffs.push({ x, y, a, z: .25 + Math.random() * .7, t: -Math.random() * .08, s: .7 + Math.random() * .6 }); } }
 function drawPuffs(dt) {
   STATE.puffs = STATE.puffs.filter(q => (q.t += dt) < .7);
@@ -1150,16 +1692,16 @@ function camStep(dt) {
   let tx = 12, ty = 11, tS = Math.min(W, H) / 10.5 * CAM.zoom;
   if (isPlay()) {
     if (G.mode === 'turn' || (G.phase === 'end')) {
-      if (G.mode === 'turn' && G.phase !== 'end') { const fit = fitHouse(); tS = fit * STATE.tz; const xr = STATE.fitOff[0] / tS, yr = STATE.fitOff[1] / (tS * SP); tx = 12 - (xr * CY + yr * SY) + STATE.tpan[0]; ty = 11.2 - (-xr * SY + yr * CY) + STATE.tpan[1]; }
+      if (G.mode === 'turn' && G.phase !== 'end') { const fit = fitHouse(); tS = fit * STATE.tz; const xr = STATE.fitOff[0] / tS, yr = STATE.fitOff[1] / (tS * SP); tx = HOUSE.w / 2 - (xr * CY + yr * SY) + STATE.tpan[0]; ty = HOUSE.h / 2 - (-xr * SY + yr * CY) + STATE.tpan[1]; }
       else { const h = G.pl[G.hider]; tx = h.x; ty = h.y; tS = Math.min(W, H) / 9; }
     } else { const p = G.pl[ME]; tx = p.x; ty = p.y; tS = clamp(Math.min(W, H) / 10.5, 32, 90) * CAM.zoom; }
-  } else { tS = fitHouse() * 1.15; tx = 12 + Math.sin(STATE.t * .07) * 3; ty = 11 + Math.cos(STATE.t * .05) * 2; }
+  } else { tS = fitHouse() * 1.15; tx = HOUSE.w / 2 + Math.sin(STATE.t * .07) * 3; ty = HOUSE.h / 2 + Math.cos(STATE.t * .05) * 2; }
   const k = 1 - Math.exp(-dt * 6);
   CAM.x += (tx - CAM.x) * k; CAM.y += (ty - CAM.y) * k; CAM.S += (tS - CAM.S) * k;
 }
 function fitHouse() {
   let a = 1e9, b = -1e9, c = 1e9, d = -1e9;
-  for (const [x, y] of [[0, 0], [24, 0], [24, 22], [0, 22]]) { const xr = rotX(x - 12, y - 11.2), yr = rotY(x - 12, y - 11.2) * SP; a = Math.min(a, xr); b = Math.max(b, xr); c = Math.min(c, yr - 2.4 * ZP); d = Math.max(d, yr); }
+  const hw = HOUSE.w / 2, hh = HOUSE.h / 2; for (const [x, y] of [[0, 0], [HOUSE.w, 0], [HOUSE.w, HOUSE.h], [0, HOUSE.h]]) { const xr = rotX(x - hw, y - hh), yr = rotY(x - hw, y - hh) * SP; a = Math.min(a, xr); b = Math.max(b, xr); c = Math.min(c, yr - 2.4 * ZP); d = Math.max(d, yr); }
   const land = TOUCH && H < 500, pad = W < 700 ? 16 : 50, top = land ? 44 : 96, bot = land ? 10 : W < 700 ? 200 : 150, right = land ? Math.min(340, W * .42) : 0;
   const s = Math.min((W - pad * 2 - right) / (b - a), (H - top - bot) / (d - c));
   STATE.fitOff = [-right / 2, (top - bot) / 2]; return s;
@@ -1426,7 +1968,7 @@ const PEER_SRC = ['https://unpkg.com/peerjs@1.5.5/dist/peerjs.min.js', 'https://
 const PEER_OPTS = QS.get('peerhost') ? { host: QS.get('peerhost'), port: +(QS.get('peerport') || 9000), path: QS.get('peerpath') || '/', secure: QS.get('peersecure') === '1' } : {};
 const CODE_CH = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 const genCode = () => Array.from({ length: 4 }, () => CODE_CH[Math.floor(Math.random() * CODE_CH.length)]).join('');
-const NET = { peer: null, code: '', ctl: null, snap: null, gctl: null, gsnap: null, guestName: '', hostName: '', seen: 0, pingT: 0, sendT: 0, q: 0, lastQ: -1, tgt: null, lobby: { mode: 'rt', first: 'host' } };
+const NET = { peer: null, code: '', ctl: null, snap: null, gctl: null, gsnap: null, guestName: '', hostName: '', seen: 0, pingT: 0, sendT: 0, q: 0, lastQ: -1, tgt: null, lobby: { mode: 'rt', first: 'host', map: 'rand' } };
 function loadPeer() { return new Promise((res, rej) => { if (window.Peer) return res(); let i = 0; const next = () => { if (i >= PEER_SRC.length) return rej(new Error('load')); const sc = document.createElement('script'); sc.src = PEER_SRC[i++]; sc.onload = () => window.Peer ? res() : next(); sc.onerror = next; document.head.appendChild(sc); }; next(); }); }
 const linkUp = () => NETROLE === 'host' ? !!(NET.gctl && NET.gctl.open) : NETROLE === 'guest' ? !!(NET.ctl && NET.ctl.open) : false;
 const roundJSON = o => JSON.stringify(o, (k, v) => typeof v === 'number' && !Number.isInteger(v) ? +v.toFixed(3) : v);
@@ -1488,7 +2030,7 @@ function hostStart(next) {
   if (!linkUp()) return;
   const L = NET.lobby, prev = next && G ? G : null;
   const hider = prev ? 1 - prev.hider : L.first === 'host' ? 0 : L.first === 'guest' ? 1 : (Math.random() < .5 ? 0 : 1);
-  newRound({ seed: (Math.random() * 1e9) | 0, mode: prev ? prev.mode : L.mode, hider, score: prev ? prev.score.slice() : (NET.score || [0, 0]).slice(), round: prev ? prev.round + 1 : 1, names: [myName() || '房主', NET.guestName || '玩家二'] });
+  newRound({ seed: (Math.random() * 1e9) | 0, scene: (L.map || 'rand') === 'rand' || !prev ? resolveMap(L.map || 'rand') : prev.scene, mode: prev ? prev.mode : L.mode, hider, score: prev ? prev.score.slice() : (NET.score || [0, 0]).slice(), round: prev ? prev.round + 1 : 1, names: [myName() || '房主', NET.guestName || '玩家二'] });
   NET.q = 0; sendRaw(NET.gctl, { t: 'st', G }); enterGame();
 }
 function hostNetTick(dt) {
@@ -1543,7 +2085,7 @@ function applyState(ng) {
   const mine = !fresh && ng.mode === 'rt' && (ng.phase === 'hide' || ng.phase === 'seek') ? G.pl[ME] : null;
   const prevO = !fresh && G ? G.pl[1 - ME] : null;
   G = ng;
-  if (fresh) { MAP = genMap(G.seed); enterGame(); }
+  if (fresh) { useScene(G.scene); MAP = genMap(G.seed); enterGame(); }
   if (mine) G.pl[ME] = mine;
   const o = G.pl[1 - ME]; NET.tgt = { x: o.x, y: o.y };
   if (prevO && Math.hypot(prevO.x - o.x, prevO.y - o.y) < 2.5) { o.x = prevO.x; o.y = prevO.y; }
@@ -1560,9 +2102,11 @@ function guestNetTick(dt) {
 const HUB = /\/prophunt\/(index\.html)?$/.test(location.pathname) && !inArtifact();
 const TOUCH = matchMedia('(pointer: coarse)').matches;
 const myName = () => ($('nameIn').value || '').trim().slice(0, 8);
-let PICK_MODE = LS.get('mode', 'rt');
+let PICK_MODE = LS.get('mode', 'rt'), PICK_MAP = LS.get('map', 'rand');
+const resolveMap = m => m === 'rand' || !SCENES[m] ? SCENE_IDS[Math.floor(Math.random() * SCENE_IDS.length)] : m;
+const mapButtons = el => { el.innerHTML = SCENE_IDS.map(id => '<button data-map="' + id + '">' + SCENES[id].icon + ' ' + SCENES[id].n + '</button>').join('') + '<button data-map="rand">🎲 随机</button>'; };
 const MODE_DESC = {
-  rt: '实时追逐：躲方有 30 秒找地方变成家具；抓方只看得见所在的房间，敲击次数每 15 秒恢复一次。最后 20 秒躲方会不停出声，但抓方只剩 3 次敲击。',
+  rt: '实时追逐：躲方有 30 秒找地方变成家具；抓方只看得见所在的房间，敲击次数每 10 秒恢复一次。最后 20 秒躲方会不停出声，但抓方只剩 3 次敲击。',
   turn: '回合推理：整栋房子摊在眼前。抓方每回合敲一件，敲错会得到 烫/热/温/冷 提示；躲方每回合可以挪 3 米、就地变形或不动。敲错 6 次就输。'
 };
 const fmtT = s => { s = Math.max(0, Math.ceil(s)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
@@ -1570,7 +2114,7 @@ const fmtT = s => { s = Math.max(0, Math.ceil(s)); return Math.floor(s / 60) + '
 function showScreen(n) { for (const id of ['title', 'lobby']) $(id).classList.toggle('hidden', id !== n); $('hud').classList.toggle('hidden', n !== 'hud'); }
 function toTitle() {
   if (NETROLE && NETROLE !== 'solo') netLeave(); NETROLE = null;
-  STATE.mode = 'title'; G = null; MAP = genMap((Math.random() * 1e9) | 0);
+  STATE.mode = 'title'; G = null; useScene(resolveMap(PICK_MAP)); MAP = genMap((Math.random() * 1e9) | 0);
   hideEnd(); closeMenu(); showScreen('title'); $('blind').classList.add('hidden'); $('curtain').classList.add('hidden'); $('joy').classList.add('hidden');
   $('hubBtn').classList.toggle('hidden', !HUB);
   if (inArtifact()) { $('hostBtn').disabled = $('joinBtn').disabled = $('codeIn').disabled = true; titleStatus('这个版本只能单人游玩，联机请到游戏厅网页版'); }
@@ -1580,6 +2124,7 @@ function titleStatus(s) { $('tStatus').textContent = s || ''; }
 function modeUI() {
   for (const b of document.querySelectorAll('#modeSeg button')) b.classList.toggle('sel', b.dataset.m === PICK_MODE);
   $('modeDesc').textContent = MODE_DESC[PICK_MODE];
+  for (const b of document.querySelectorAll('#mapSeg button')) b.classList.toggle('sel', b.dataset.map === PICK_MAP);
 }
 function lobbyUI(st) {
   const host = NETROLE === 'host', L = NET.lobby;
@@ -1589,6 +2134,7 @@ function lobbyUI(st) {
   for (const b of document.querySelectorAll('#lModeSeg button')) { b.classList.toggle('sel', b.dataset.m === L.mode); b.disabled = !host; }
   for (const b of document.querySelectorAll('#lFirstSeg button')) { b.classList.toggle('sel', b.dataset.f === L.first); b.disabled = !host; }
   $('lModeDesc').textContent = MODE_DESC[L.mode];
+  for (const b of document.querySelectorAll('#lMapSeg button')) { b.classList.toggle('sel', b.dataset.map === (L.map || 'rand')); b.disabled = !host; }
   $('lStart').classList.toggle('hidden', !host); $('lStart').disabled = !(host && NET.guestName);
   $('lWait').classList.toggle('hidden', host);
   if (st != null) $('lStatus').textContent = st;
@@ -1597,7 +2143,7 @@ function lobbyUI(st) {
 function startSolo(next) {
   NETROLE = 'solo'; ME = 0;
   const prev = next && G ? G : null;
-  newRound({ seed: (Math.random() * 1e9) | 0, mode: prev ? prev.mode : PICK_MODE, hider: 1, ai: 1, score: prev ? prev.score.slice() : [0, 0], round: prev ? prev.round + 1 : 1, names: [myName() || '你', '电脑'] });
+  newRound({ seed: (Math.random() * 1e9) | 0, scene: PICK_MAP === 'rand' || !prev ? resolveMap(PICK_MAP) : prev.scene, mode: prev ? prev.mode : PICK_MODE, hider: 1, ai: 1, score: prev ? prev.score.slice() : [0, 0], round: prev ? prev.round + 1 : 1, names: [myName() || '你', '电脑'] });
   enterGame();
 }
 function enterGame() {
@@ -1781,8 +2327,11 @@ function banner(t, sub) { const el = $('banner'); el.innerHTML = '<b>' + esc(t) 
 function wireUI() {
   $('nameIn').value = LS.get('name', ''); $('nameIn').addEventListener('change', () => LS.set('name', myName()));
   for (const b of document.querySelectorAll('#modeSeg button')) b.onclick = () => { PICK_MODE = b.dataset.m; LS.set('mode', PICK_MODE); modeUI(); sfx('click'); };
+  mapButtons($('mapSeg')); mapButtons($('lMapSeg'));
+  for (const b of document.querySelectorAll('#mapSeg button')) b.onclick = () => { PICK_MAP = b.dataset.map; LS.set('map', PICK_MAP); modeUI(); sfx('click'); if (PICK_MAP !== 'rand') { useScene(PICK_MAP); MAP = genMap((Math.random() * 1e9) | 0); } };
+  for (const b of document.querySelectorAll('#lMapSeg button')) b.onclick = () => { if (NETROLE !== 'host') return; NET.lobby.map = b.dataset.map; sendLobby(); lobbyUI(); };
   $('soloBtn').onclick = () => { audioInit(); startSolo(false); };
-  $('hostBtn').onclick = () => { audioInit(); NET.lobby.mode = PICK_MODE; NET.score = [0, 0]; netHost(); };
+  $('hostBtn').onclick = () => { audioInit(); NET.lobby.mode = PICK_MODE; NET.lobby.map = PICK_MAP; NET.score = [0, 0]; netHost(); };
   $('joinBtn').onclick = () => { audioInit(); netJoin($('codeIn').value); };
   $('helpBtn').onclick = () => $('help').classList.remove('hidden');
   $('helpClose').onclick = () => $('help').classList.add('hidden');
@@ -1811,7 +2360,7 @@ function localControl(dt) {
   const [mx, my] = moveInput(), L = Math.hypot(mx, my);
   if (L < .05) { me.mv = 0; return; }
   const dx = mx * CY + my * SY, dy = -mx * SY + my * CY;
-  const spd = amHider() ? (me.dg ? BAL.spdProp : BAL.spdHide) : BAL.spdSeek;
+  const spd = (amHider() ? (me.dg ? BAL.spdProp : BAL.spdHide) : BAL.spdSeek) * (SCENE.speed || 1);
   const ox = me.x, oy = me.y;
   movePl(ME, dx * spd * dt, dy * spd * dt);
   if (!me.dg) me.d = Math.atan2(-dx, dy);

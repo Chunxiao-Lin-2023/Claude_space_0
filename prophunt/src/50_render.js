@@ -80,20 +80,20 @@ function topoSort(objs) {
 function plPrims(i) {
   const p = G.pl[i];
   if (p.dg) return prismsFor(p.dg.k, p.dg.v, p.dg.r, p.x, p.y);
-  return humanPrims(p, i === G.hider ? PEOPLE.hide : PEOPLE.seek, STATE.t + i);
+  const set = PEOPLE[G.scene] || PEOPLE.house; return humanPrims(p, i === G.hider ? set.hide : set.seek, STATE.t + i);
 }
 
 /* ---------- frame ---------- */
 let DRAWN = [];
 function render(dt) {
-  ctx.fillStyle = '#5c7a52'; ctx.fillRect(0, 0, W, H);
+  ctx.fillStyle = SCENE ? SCENE.bg : '#5c7a52'; ctx.fillRect(0, 0, W, H);
   if (!MAP) return;
   const play = isPlay() && G.phase !== '';
   const meSeek = play && ME === seekerIdx() && G.mode === 'rt' && G.phase !== 'end';
   const lit = play ? (meSeek ? litRooms() : ROOMS.map(r => r.i)) : ROOMS.map(r => r.i);
   const litSet = new Set(lit), seekLit = play && G.mode === 'rt' ? new Set(litRooms()) : null;
   // ground outside the fence
-  { const c = [[-6, -6], [30, -6], [30, 28], [-6, 28]].map(([x, y]) => P(x, y, 0)); polyPath(c); ctx.fillStyle = '#6f8f5c'; ctx.fill(); }
+  { const c = [[-8, -8], [HOUSE.w + 8, -8], [HOUSE.w + 8, HOUSE.h + 8], [-8, HOUSE.h + 8]].map(([x, y]) => P(x, y, 0)); polyPath(c); ctx.fillStyle = SCENE.bg || '#6f8f5c'; ctx.fill(); }
   for (const r of ROOMS) drawFloor(r, litSet.has(r.i), seekLit && !meSeek && seekLit.has(r.i) && G.phase === 'seek');
   // flat things (rugs) + shadows
   const objs = [];
@@ -126,6 +126,7 @@ function render(dt) {
   DRAWN = sorted;
   drawMarks(lit, litSet);
   drawPuffs(dt);
+  if (SCENE.water) drawWater(dt);
   drawFx(dt);
   DRAWN_FLAT_LAST = DRAWN_FLAT; DRAWN_FLAT = [];
 }
@@ -134,22 +135,45 @@ function drawFloor(r, on, seekTint) {
   const [x0, y0, x1, y1] = r.r, poly = [P(x0, y0, 0), P(x1, y0, 0), P(x1, y1, 0), P(x0, y1, 0)];
   polyPath(poly);
   if (!on) {
-    ctx.fillStyle = '#1b1d24'; ctx.fill();
+    ctx.fillStyle = SCENE.water ? '#0a1e30' : '#1b1d24'; ctx.fill();
     const [cx, cy] = P((x0 + x1) / 2, (y0 + y1) / 2, 0); ctx.fillStyle = 'rgba(255,255,255,.22)'; ctx.font = '600 ' + Math.round(CAM.S * .32) + 'px ' + FONT; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(r.n, cx, cy);
     return;
   }
   ctx.fillStyle = r.fc[0]; ctx.fill();
   ctx.save(); polyPath(poly); ctx.clip(); ctx.strokeStyle = r.fc[1]; ctx.lineWidth = 1;
+  const L = (ax, ay, bx, by) => { const a = P(ax, ay, 0), b = P(bx, by, 0); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); };
+  const area = (x1 - x0) * (y1 - y0), fl = r.fl, seed = r.i * 1013 + 7;
   ctx.beginPath();
-  if (r.fl === 'tile') { for (let x = x0; x <= x1; x += .5) { const a = P(x, y0, 0), b = P(x, y1, 0); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); } for (let y = y0; y <= y1; y += .5) { const a = P(x0, y, 0), b = P(x1, y, 0); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); } }
-  else if (r.fl === 'wood') { let k = 0; for (let y = y0; y <= y1; y += .25, k++) { const a = P(x0, y, 0), b = P(x1, y, 0); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); for (let x = x0 + (k % 3) * .55; x < x1; x += 1.6) { const c = P(x, y, 0), d = P(x, Math.min(y1, y + .25), 0); ctx.moveTo(c[0], c[1]); ctx.lineTo(d[0], d[1]); } } }
-  else if (r.fl === 'grass') { for (let i = 0; i < 160; i++) { const x = x0 + hash(i, 1) * (x1 - x0), y = y0 + hash(i, 2) * (y1 - y0), a = P(x, y, 0), b = P(x + .05, y - .1, 0); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); } }
+  if (fl === 'tile' || fl === 'lino' || fl === 'concrete' || fl === 'stone') {
+    const st = fl === 'tile' ? .5 : fl === 'lino' ? 1 : fl === 'concrete' ? 1.5 : 1;
+    for (let x = x0; x <= x1; x += st) L(x, y0, x, y1);
+    if (fl === 'stone') { let k = 0; for (let y = y0; y <= y1; y += .8, k++) L(x0, y, x1, y); }
+    else for (let y = y0; y <= y1; y += st) L(x0, y, x1, y);
+  } else if (fl === 'checker') {
+    ctx.fillStyle = r.fc[1]; for (let y = y0, j = 0; y < y1; y += .5, j++) for (let x = x0 + (j & 1) * .5; x < x1; x += 1) { polyPath([P(x, y, 0), P(x + .5, y, 0), P(x + .5, y + .5, 0), P(x, y + .5, 0)]); ctx.fill(); }
+    ctx.beginPath();
+  } else if (fl === 'wood' || fl === 'deck' || fl === 'gym') {
+    const st = fl === 'deck' ? .32 : .25; let k = 0;
+    for (let y = y0; y <= y1; y += st, k++) { L(x0, y, x1, y); for (let x = x0 + (k % 3) * .55; x < x1; x += 1.6) L(x, y, x, Math.min(y1, y + st)); }
+  } else if (fl === 'grass' || fl === 'forest') {
+    for (let i = 0; i < area * 1.4; i++) { const x = x0 + hash(i, seed) * (x1 - x0), y = y0 + hash(i, seed + 1) * (y1 - y0); L(x, y, x + .05, y - .1); }
+  } else if (fl === 'sand' || fl === 'dirt' || fl === 'seabed' || fl === 'cave') {
+    for (let i = 0; i < area * 1.1; i++) { const x = x0 + hash(i, seed) * (x1 - x0), y = y0 + hash(i, seed + 1) * (y1 - y0), w = fl === 'cave' ? .35 : .12; L(x, y, x + w, y + (fl === 'cave' ? .12 : 0)); }
+  }
   ctx.stroke();
-  if (r.id === 'garden') { ctx.fillStyle = '#d9c9a4'; polyPath([P(10.6, 16, 0), P(12.4, 16, 0), P(12.4, 22, 0), P(10.6, 22, 0)]); ctx.fill(); }
+  if (fl === 'gym') { ctx.strokeStyle = '#f4f2ea'; ctx.lineWidth = 2; const m = .8; polyPath([P(x0 + m, y0 + m, 0), P(x1 - m, y0 + m, 0), P(x1 - m, y1 - m, 0), P(x0 + m, y1 - m, 0)]); ctx.stroke(); const [cx, cy] = P((x0 + x1) / 2, (y0 + y1) / 2, 0); ctx.beginPath(); ctx.ellipse(cx, cy, 1.4 * CAM.S, 1.4 * CAM.S * SP, 0, 0, 6.283); ctx.stroke(); ctx.beginPath(); L((x0 + x1) / 2, y0 + m, (x0 + x1) / 2, y1 - m); ctx.stroke(); }
+  if (fl === 'forest') { ctx.fillStyle = 'rgba(40,70,30,.35)'; for (let i = 0; i < area * .25; i++) { const x = x0 + hash(i, seed + 5) * (x1 - x0), y = y0 + hash(i, seed + 6) * (y1 - y0), [px, py] = P(x, y, 0); ctx.beginPath(); ctx.ellipse(px, py, .22 * CAM.S, .22 * CAM.S * SP, 0, 0, 6.283); ctx.fill(); } }
+  if (fl === 'seabed') { ctx.strokeStyle = 'rgba(255,255,255,.18)'; ctx.lineWidth = 1.5; ctx.beginPath(); for (let y = y0 + .6; y < y1; y += 1.1) for (let x = x0; x < x1; x += .6) { const yy = y + Math.sin(x * 1.7 + y) * .12; L(x, yy, x + .6, y + Math.sin((x + .6) * 1.7 + y) * .12); } ctx.stroke(); }
+  if (r.path) { const [a, b, c, d] = r.path; ctx.fillStyle = SCENE.pathc || '#d9c9a4'; polyPath([P(a, b, 0), P(c, b, 0), P(c, d, 0), P(a, d, 0)]); ctx.fill(); }
+  if (r.water) {
+    const [a, b, c, d] = r.water, t = STATE.t; ctx.fillStyle = '#5fa8d0'; polyPath([P(a, b, 0), P(c, b, 0), P(c, d, 0), P(a, d, 0)]); ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,.45)'; ctx.lineWidth = 1.5; ctx.beginPath();
+    for (let i = 0; i < (c - a) * (d - b) * .8; i++) { const x = a + hash(i, seed + 9) * (c - a), y = b + ((hash(i, seed + 10) * (d - b) + t * .15) % (d - b)); L(x, y, x + .3, y); }
+    ctx.stroke();
+  }
   if (seekTint) { polyPath(poly); ctx.fillStyle = 'rgba(255,214,90,.16)'; ctx.fill(); }
   ctx.restore();
 }
-const hash = (a, b) => { let h = Math.imul(a * 374761393 + b * 668265263, 1274126177); h ^= h >>> 15; return ((h >>> 0) % 10000) / 10000; };
 const FONT = '"Noto Sans SC","PingFang SC","Microsoft YaHei",system-ui,sans-serif';
 
 /* markers: hover outline, own-disguise arrow, turn-mode hint rings, seeker reach ring */
@@ -204,6 +228,16 @@ function drawFx(dt) {
   STATE.pops = STATE.pops.filter(p => (p.t += dt) < 1.6);
   for (const p of STATE.pops) { const [x, y] = P(p.x, p.y, p.z + p.t * .7); ctx.globalAlpha = Math.min(1, (1.6 - p.t) * 2); ctx.font = '900 ' + (p.big ? 24 : 17) + 'px ' + FONT; ctx.textAlign = 'center'; ctx.lineWidth = 4; ctx.strokeStyle = 'rgba(10,10,14,.8)'; ctx.strokeText(p.s, x, y); ctx.fillStyle = p.c; ctx.fillText(p.s, x, y); ctx.globalAlpha = 1; }
 }
+function drawWater(dt) {
+  const t = STATE.t;
+  ctx.fillStyle = 'rgba(20,90,170,.2)'; ctx.fillRect(0, 0, W, H);
+  ctx.save(); ctx.globalCompositeOperation = 'lighter';
+  for (let i = 0; i < 5; i++) { const x = ((i * 0.23 + t * .012) % 1.2 - .1) * W, w = W * .07; ctx.fillStyle = 'rgba(120,200,255,.05)'; ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x + w, 0); ctx.lineTo(x + w * 2.4 - W * .15, H); ctx.lineTo(x + w * 1.2 - W * .15, H); ctx.fill(); }
+  ctx.restore();
+  if (!STATE.bub) STATE.bub = []; if (STATE.bub.length < 40 && Math.random() < dt * 14) STATE.bub.push({ x: Math.random() * W, y: H + 10, r: 1.5 + Math.random() * 3.5, v: 25 + Math.random() * 40, ph: Math.random() * 6 });
+  ctx.strokeStyle = 'rgba(220,240,255,.55)'; ctx.lineWidth = 1.2;
+  STATE.bub = STATE.bub.filter(b => (b.y -= b.v * dt) > -10); for (const b of STATE.bub) { ctx.beginPath(); ctx.arc(b.x + Math.sin(t * 2 + b.ph) * 4, b.y, b.r, 0, 6.283); ctx.stroke(); }
+}
 function puff(x, y) { for (let k = 0; k < 9; k++) { const a = k / 9 * 6.283 + Math.random() * .5; STATE.puffs.push({ x, y, a, z: .25 + Math.random() * .7, t: -Math.random() * .08, s: .7 + Math.random() * .6 }); } }
 function drawPuffs(dt) {
   STATE.puffs = STATE.puffs.filter(q => (q.t += dt) < .7);
@@ -224,16 +258,16 @@ function camStep(dt) {
   let tx = 12, ty = 11, tS = Math.min(W, H) / 10.5 * CAM.zoom;
   if (isPlay()) {
     if (G.mode === 'turn' || (G.phase === 'end')) {
-      if (G.mode === 'turn' && G.phase !== 'end') { const fit = fitHouse(); tS = fit * STATE.tz; const xr = STATE.fitOff[0] / tS, yr = STATE.fitOff[1] / (tS * SP); tx = 12 - (xr * CY + yr * SY) + STATE.tpan[0]; ty = 11.2 - (-xr * SY + yr * CY) + STATE.tpan[1]; }
+      if (G.mode === 'turn' && G.phase !== 'end') { const fit = fitHouse(); tS = fit * STATE.tz; const xr = STATE.fitOff[0] / tS, yr = STATE.fitOff[1] / (tS * SP); tx = HOUSE.w / 2 - (xr * CY + yr * SY) + STATE.tpan[0]; ty = HOUSE.h / 2 - (-xr * SY + yr * CY) + STATE.tpan[1]; }
       else { const h = G.pl[G.hider]; tx = h.x; ty = h.y; tS = Math.min(W, H) / 9; }
     } else { const p = G.pl[ME]; tx = p.x; ty = p.y; tS = clamp(Math.min(W, H) / 10.5, 32, 90) * CAM.zoom; }
-  } else { tS = fitHouse() * 1.15; tx = 12 + Math.sin(STATE.t * .07) * 3; ty = 11 + Math.cos(STATE.t * .05) * 2; }
+  } else { tS = fitHouse() * 1.15; tx = HOUSE.w / 2 + Math.sin(STATE.t * .07) * 3; ty = HOUSE.h / 2 + Math.cos(STATE.t * .05) * 2; }
   const k = 1 - Math.exp(-dt * 6);
   CAM.x += (tx - CAM.x) * k; CAM.y += (ty - CAM.y) * k; CAM.S += (tS - CAM.S) * k;
 }
 function fitHouse() {
   let a = 1e9, b = -1e9, c = 1e9, d = -1e9;
-  for (const [x, y] of [[0, 0], [24, 0], [24, 22], [0, 22]]) { const xr = rotX(x - 12, y - 11.2), yr = rotY(x - 12, y - 11.2) * SP; a = Math.min(a, xr); b = Math.max(b, xr); c = Math.min(c, yr - 2.4 * ZP); d = Math.max(d, yr); }
+  const hw = HOUSE.w / 2, hh = HOUSE.h / 2; for (const [x, y] of [[0, 0], [HOUSE.w, 0], [HOUSE.w, HOUSE.h], [0, HOUSE.h]]) { const xr = rotX(x - hw, y - hh), yr = rotY(x - hw, y - hh) * SP; a = Math.min(a, xr); b = Math.max(b, xr); c = Math.min(c, yr - 2.4 * ZP); d = Math.max(d, yr); }
   const land = TOUCH && H < 500, pad = W < 700 ? 16 : 50, top = land ? 44 : 96, bot = land ? 10 : W < 700 ? 200 : 150, right = land ? Math.min(340, W * .42) : 0;
   const s = Math.min((W - pad * 2 - right) / (b - a), (H - top - bot) / (d - c));
   STATE.fitOff = [-right / 2, (top - bot) / 2]; return s;

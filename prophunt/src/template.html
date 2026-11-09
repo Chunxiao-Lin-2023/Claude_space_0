@@ -27,6 +27,7 @@ input:focus{border-color:var(--gold)}
 h1{font-family:var(--title);font-weight:400;font-size:52px;margin:6px 0 0;text-align:center;letter-spacing:.06em;color:var(--gold);text-shadow:0 3px 0 #8a5a1a,0 6px 18px rgba(0,0,0,.4)}
 .tsub{text-align:center;color:var(--sub);margin:4px 0 16px;font-size:14px}
 .seg{display:flex;gap:6px}.seg button{flex:1}
+.seg.wrap{flex-wrap:wrap;margin-bottom:12px}.seg.wrap button{flex:1 1 30%;min-height:40px;padding:4px 6px;font-size:14px;white-space:nowrap}
 .mdesc{font-size:13px;color:var(--sub);line-height:1.6;margin:8px 2px 14px;min-height:42px}
 .row{display:flex;gap:8px;margin-top:10px;align-items:center}
 .row input{flex:1}
@@ -101,7 +102,8 @@ h1{font-family:var(--title);font-weight:400;font-size:52px;margin:6px 0 0;text-a
  #eTitle{font-size:34px}#blindN{font-size:96px}
 }
 @media (pointer:coarse) and (max-height:500px){
- .card{padding:12px 16px}h1{font-size:32px;margin:0}.tsub{margin:2px 0 8px}.mdesc{margin:4px 2px 6px;min-height:0;font-size:12px}.row{margin-top:6px}.big{min-height:44px;font-size:16px}
+ .card{padding:10px 16px}h1{font-size:28px;margin:0}.tsub{display:none}#title .mdesc{display:none}.mdesc{margin:4px 2px 6px;min-height:0;font-size:12px}.row{margin-top:6px}.big{min-height:44px;font-size:16px}
+ #title .seg{margin-top:6px}.seg.wrap{margin-bottom:6px;gap:4px}.seg.wrap button{flex:1 1 22%;min-height:34px;font-size:12px;padding:2px 4px}
  #lCode{font-size:40px}.lbl2{margin:8px 0 4px}
  #hTop{gap:5px;max-width:calc(100% - 260px)}#hTop .chip{font-size:12px;padding:4px 9px}
  #hTip{display:none}#toasts{top:calc(50px + var(--sa-t))}
@@ -124,6 +126,7 @@ h1{font-family:var(--title);font-weight:400;font-size:52px;margin:6px 0 0;text-a
  <div class="tsub">变身捉迷藏 · 一个藏成家具，一个来敲</div>
  <div class="seg" id="modeSeg"><button data-m="rt">实时追逐</button><button data-m="turn">回合推理</button></div>
  <div class="mdesc" id="modeDesc"></div>
+ <div class="seg wrap" id="mapSeg"></div>
  <button id="soloBtn" class="primary big">单人：电脑藏，你来找</button>
  <div class="row"><button id="hostBtn">创建房间</button><input id="codeIn" maxlength="4" placeholder="房间码" autocomplete="off" style="text-transform:uppercase"><button id="joinBtn">加入</button></div>
  <div class="row"><input id="nameIn" maxlength="8" placeholder="你的名字（可不填）"><button id="helpBtn" class="ghost">玩法说明</button></div>
@@ -137,6 +140,8 @@ h1{font-family:var(--title);font-weight:400;font-size:52px;margin:6px 0 0;text-a
  <div class="lbl2">玩法</div>
  <div class="seg" id="lModeSeg"><button data-m="rt">实时追逐</button><button data-m="turn">回合推理</button></div>
  <div class="mdesc" id="lModeDesc"></div>
+ <div class="lbl2" style="margin-top:0">地图</div>
+ <div class="seg wrap" id="lMapSeg"></div>
  <div class="lbl2" style="margin-top:0">第一局谁来藏（之后每局交换）</div>
  <div class="seg" id="lFirstSeg"><button data-f="host">房主</button><button data-f="guest">客人</button><button data-f="rand">随机</button></div>
  <div class="row"><button id="lLeave" class="ghost">离开</button><button id="lStart" class="primary" style="flex:1">开始</button><div id="lWait" style="flex:1;text-align:center;color:var(--sub)">等待房主开始…</div></div>
@@ -177,7 +182,7 @@ h1{font-family:var(--title);font-weight:400;font-size:52px;margin:6px 0 0;text-a
  <ul>
   <li>开局躲方有 30 秒，抓方闭眼数数。躲方走到家具旁，按 <b>E</b> 或点它，就会变成一模一样的东西；<b>R</b> 旋转，<b>Q</b> 变回人形。</li>
   <li>抓方只看得见<b>自己所在的房间</b>。走近可疑的东西按 <b>E</b> 或点它敲一下，敲中就赢。</li>
-  <li>敲击要消耗次数：开局 3 次，每 15 秒恢复 1 次，最多存 5 次。敲错只是用掉一次，不会直接输——所以平时就该大胆去敲。</li>
+  <li>敲击要消耗次数：开局 5 次，每 10 秒恢复 1 次，最多存 8 次。敲错只是用掉一次，不会直接输——所以平时就该大胆去敲。</li>
   <li><b>最后 20 秒</b>：躲方每 5 秒自动出一次声（显示房间名和大致位置），但抓方的次数会变成<b>只剩 3 次</b>，3 次都没敲中或时间到就输。</li>
   <li>躲方可以主动<b>嘲讽</b>（T）：出一声，换来时间 -15 秒（最多提前到最后 20 秒）。</li>
   <li>变身后也能慢慢挪动，但在抓方的房间里挪动会被看见，还会发出摩擦声。人形走路有脚步声。</li>
@@ -192,6 +197,7 @@ h1{font-family:var(--title);font-weight:400;font-size:52px;margin:6px 0 0;text-a
  </ul>
  <h3>单人和联机</h3>
  单人模式里电脑藏、你来找。两个人可以创建房间联机对战，每局交换角色。<br>
+ 地图有六张：温馨小家、放学后的学校、饭店后厨、夜班医院、林间营地、海底探险（水下走得慢一点）。每张图的家具和两个角色的造型都不一样，每局家具摆放都会重新随机。<br>
  <span style="color:var(--sub);font-size:12px">玩法灵感来自 Garry's Mod 的 Prop Hunt 模式和《女巫来了》等变身躲猫猫游戏。</span>
  <button id="helpClose" class="primary wide">知道了</button>
 </div></div>

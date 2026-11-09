@@ -5,7 +5,8 @@ const amHider = () => G && ME === G.hider;
 const isPlay = () => STATE.mode === 'play' && G;
 
 function newRound(o) {
-  G = { seed: o.seed, mode: o.mode, round: o.round || 1, score: o.score || [0, 0], hider: o.hider, ai: o.ai ? 1 : 0, names: o.names || ['你', '电脑'],
+  useScene(o.scene || 'house');
+  G = { seed: o.seed, scene: SCENE === SCENES[o.scene] ? o.scene : 'house', mode: o.mode, round: o.round || 1, score: o.score || [0, 0], hider: o.hider, ai: o.ai ? 1 : 0, names: o.names || ['你', '电脑'],
     phase: '', t: 0, wrong: 0, maxWrong: o.mode === 'rt' ? BAL.finalKnocks : BAL.turnWrong, kn: BAL.knockStart, regenT: BAL.knockRegen, fin: 0, kcd: 0, wT: 0, tauntCD: 0, turnN: 0, hints: [], res: null, aiT: 0, q: 0,
     pl: [mkPl(), mkPl()] };
   MAP = genMap(G.seed);
@@ -146,7 +147,7 @@ function simTick(dt) {
   G.kcd = Math.max(0, G.kcd - dt);
   if (G.mode === 'rt') {
     G.t -= dt;
-    if (G.phase === 'hide' && G.t <= 0) { G.phase = 'seek'; G.t = BAL.seekT; G.kn = BAL.knockStart; G.regenT = BAL.knockRegen; emit({ e: 'seek' }); }
+    if (G.phase === 'hide' && G.t <= 0) { G.phase = 'seek'; G.t = SCENE.seekT || BAL.seekT; G.kn = BAL.knockStart; G.regenT = BAL.knockRegen; emit({ e: 'seek' }); }
     else if (G.phase === 'seek') {
       G.tauntCD = Math.max(0, G.tauntCD - dt);
       if (!G.fin) {
@@ -170,11 +171,13 @@ function simTick(dt) {
 const FREE_KINDS = new Set(['ball', 'beanbag', 'box', 'stool', 'bush', 'barrel', 'chair', 'suitcase', 'bench']);
 function aiChooseSpot(hi, o) {
   let best = null, bs = -1e9;
-  const avoid = o.avoid || [], pool = ROOMS.filter(r => !avoid.includes(r.i));
+  const avoid = o.avoid || [], pool = ROOMS.filter(r => !avoid.includes(r.i) && MAP.items.some(it => it.room === r.i && !it.flat));
+  // pick one room up front so every room is equally likely (dense rooms would otherwise always win)
+  let target = null; for (let k = 0; k < 6 && pool.length; k++) { target = pick(pool); if (!target.out || rnd() < .6) break; }
   for (let t = 0; t < 320; t++) {
     let room, x, y, tpl;
     if (o.near) { x = o.near[0] + rr(-o.near[2], o.near[2]); y = o.near[1] + rr(-o.near[2], o.near[2]); room = roomAt(x, y); if (!room) continue; }
-    else { room = pick(pool); if (room.out && rnd() < .5) continue; }
+    else { room = t < 220 && target ? target : pick(pool); if (!room) return null; }
     const its = MAP.items.filter(it => it.room === room.i && !it.flat); if (!its.length) continue;
     tpl = o.keep ? { k: o.keep.k, v: o.keep.v, r: o.keep.r } : pick(its);
     if (!o.keep && o.near && distFp(o.near[0], o.near[1], tpl.fp) > BAL.turnMove) continue;
@@ -187,8 +190,9 @@ function aiChooseSpot(hi, o) {
     if (DOORZ.some(z => ovl(f, z, -.3))) continue;
     if (blocked(f, hi)) continue;
     if (o.near) { if (Math.hypot(x - o.near[0], y - o.near[1]) > o.near[2]) continue; if (segHitsWall(o.near[0], o.near[1], x, y)) continue; }
-    let sc = rnd() * 2.2;
-    for (const it of its) if (it.k === tpl.k && Math.hypot(it.x - x, it.y - y) < 2.4) sc += 1.4;
+    let sc = rnd() * 3, same = 0;
+    for (const it of its) if (it.k === tpl.k && Math.hypot(it.x - x, it.y - y) < 2.4) same++;
+    sc += Math.min(2, same) * 1.3;
     const wallD = Math.min(f[0] - ib[0], f[1] - ib[1], ib[2] - f[2], ib[3] - f[3]);
     if (!FREE_KINDS.has(tpl.k)) sc += wallD < .2 ? 1.6 : -1; else sc += .5;
     if (r === tpl.r) sc += .6;

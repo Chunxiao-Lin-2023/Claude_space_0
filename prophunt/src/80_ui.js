@@ -2,9 +2,11 @@
 const HUB = /\/prophunt\/(index\.html)?$/.test(location.pathname) && !inArtifact();
 const TOUCH = matchMedia('(pointer: coarse)').matches;
 const myName = () => ($('nameIn').value || '').trim().slice(0, 8);
-let PICK_MODE = LS.get('mode', 'rt');
+let PICK_MODE = LS.get('mode', 'rt'), PICK_MAP = LS.get('map', 'rand');
+const resolveMap = m => m === 'rand' || !SCENES[m] ? SCENE_IDS[Math.floor(Math.random() * SCENE_IDS.length)] : m;
+const mapButtons = el => { el.innerHTML = SCENE_IDS.map(id => '<button data-map="' + id + '">' + SCENES[id].icon + ' ' + SCENES[id].n + '</button>').join('') + '<button data-map="rand">🎲 随机</button>'; };
 const MODE_DESC = {
-  rt: '实时追逐：躲方有 30 秒找地方变成家具；抓方只看得见所在的房间，敲击次数每 15 秒恢复一次。最后 20 秒躲方会不停出声，但抓方只剩 3 次敲击。',
+  rt: '实时追逐：躲方有 30 秒找地方变成家具；抓方只看得见所在的房间，敲击次数每 10 秒恢复一次。最后 20 秒躲方会不停出声，但抓方只剩 3 次敲击。',
   turn: '回合推理：整栋房子摊在眼前。抓方每回合敲一件，敲错会得到 烫/热/温/冷 提示；躲方每回合可以挪 3 米、就地变形或不动。敲错 6 次就输。'
 };
 const fmtT = s => { s = Math.max(0, Math.ceil(s)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
@@ -12,7 +14,7 @@ const fmtT = s => { s = Math.max(0, Math.ceil(s)); return Math.floor(s / 60) + '
 function showScreen(n) { for (const id of ['title', 'lobby']) $(id).classList.toggle('hidden', id !== n); $('hud').classList.toggle('hidden', n !== 'hud'); }
 function toTitle() {
   if (NETROLE && NETROLE !== 'solo') netLeave(); NETROLE = null;
-  STATE.mode = 'title'; G = null; MAP = genMap((Math.random() * 1e9) | 0);
+  STATE.mode = 'title'; G = null; useScene(resolveMap(PICK_MAP)); MAP = genMap((Math.random() * 1e9) | 0);
   hideEnd(); closeMenu(); showScreen('title'); $('blind').classList.add('hidden'); $('curtain').classList.add('hidden'); $('joy').classList.add('hidden');
   $('hubBtn').classList.toggle('hidden', !HUB);
   if (inArtifact()) { $('hostBtn').disabled = $('joinBtn').disabled = $('codeIn').disabled = true; titleStatus('这个版本只能单人游玩，联机请到游戏厅网页版'); }
@@ -22,6 +24,7 @@ function titleStatus(s) { $('tStatus').textContent = s || ''; }
 function modeUI() {
   for (const b of document.querySelectorAll('#modeSeg button')) b.classList.toggle('sel', b.dataset.m === PICK_MODE);
   $('modeDesc').textContent = MODE_DESC[PICK_MODE];
+  for (const b of document.querySelectorAll('#mapSeg button')) b.classList.toggle('sel', b.dataset.map === PICK_MAP);
 }
 function lobbyUI(st) {
   const host = NETROLE === 'host', L = NET.lobby;
@@ -31,6 +34,7 @@ function lobbyUI(st) {
   for (const b of document.querySelectorAll('#lModeSeg button')) { b.classList.toggle('sel', b.dataset.m === L.mode); b.disabled = !host; }
   for (const b of document.querySelectorAll('#lFirstSeg button')) { b.classList.toggle('sel', b.dataset.f === L.first); b.disabled = !host; }
   $('lModeDesc').textContent = MODE_DESC[L.mode];
+  for (const b of document.querySelectorAll('#lMapSeg button')) { b.classList.toggle('sel', b.dataset.map === (L.map || 'rand')); b.disabled = !host; }
   $('lStart').classList.toggle('hidden', !host); $('lStart').disabled = !(host && NET.guestName);
   $('lWait').classList.toggle('hidden', host);
   if (st != null) $('lStatus').textContent = st;
@@ -39,7 +43,7 @@ function lobbyUI(st) {
 function startSolo(next) {
   NETROLE = 'solo'; ME = 0;
   const prev = next && G ? G : null;
-  newRound({ seed: (Math.random() * 1e9) | 0, mode: prev ? prev.mode : PICK_MODE, hider: 1, ai: 1, score: prev ? prev.score.slice() : [0, 0], round: prev ? prev.round + 1 : 1, names: [myName() || '你', '电脑'] });
+  newRound({ seed: (Math.random() * 1e9) | 0, scene: PICK_MAP === 'rand' || !prev ? resolveMap(PICK_MAP) : prev.scene, mode: prev ? prev.mode : PICK_MODE, hider: 1, ai: 1, score: prev ? prev.score.slice() : [0, 0], round: prev ? prev.round + 1 : 1, names: [myName() || '你', '电脑'] });
   enterGame();
 }
 function enterGame() {
@@ -223,8 +227,11 @@ function banner(t, sub) { const el = $('banner'); el.innerHTML = '<b>' + esc(t) 
 function wireUI() {
   $('nameIn').value = LS.get('name', ''); $('nameIn').addEventListener('change', () => LS.set('name', myName()));
   for (const b of document.querySelectorAll('#modeSeg button')) b.onclick = () => { PICK_MODE = b.dataset.m; LS.set('mode', PICK_MODE); modeUI(); sfx('click'); };
+  mapButtons($('mapSeg')); mapButtons($('lMapSeg'));
+  for (const b of document.querySelectorAll('#mapSeg button')) b.onclick = () => { PICK_MAP = b.dataset.map; LS.set('map', PICK_MAP); modeUI(); sfx('click'); if (PICK_MAP !== 'rand') { useScene(PICK_MAP); MAP = genMap((Math.random() * 1e9) | 0); } };
+  for (const b of document.querySelectorAll('#lMapSeg button')) b.onclick = () => { if (NETROLE !== 'host') return; NET.lobby.map = b.dataset.map; sendLobby(); lobbyUI(); };
   $('soloBtn').onclick = () => { audioInit(); startSolo(false); };
-  $('hostBtn').onclick = () => { audioInit(); NET.lobby.mode = PICK_MODE; NET.score = [0, 0]; netHost(); };
+  $('hostBtn').onclick = () => { audioInit(); NET.lobby.mode = PICK_MODE; NET.lobby.map = PICK_MAP; NET.score = [0, 0]; netHost(); };
   $('joinBtn').onclick = () => { audioInit(); netJoin($('codeIn').value); };
   $('helpBtn').onclick = () => $('help').classList.remove('hidden');
   $('helpClose').onclick = () => $('help').classList.add('hidden');

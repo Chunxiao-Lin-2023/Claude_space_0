@@ -4,7 +4,7 @@ const PEER_SRC = ['https://unpkg.com/peerjs@1.5.5/dist/peerjs.min.js', 'https://
 const PEER_OPTS = QS.get('peerhost') ? { host: QS.get('peerhost'), port: +(QS.get('peerport') || 9000), path: QS.get('peerpath') || '/', secure: QS.get('peersecure') === '1' } : {};
 const CODE_CH = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 const genCode = () => Array.from({ length: 4 }, () => CODE_CH[Math.floor(Math.random() * CODE_CH.length)]).join('');
-const NET = { peer: null, code: '', ctl: null, snap: null, gctl: null, gsnap: null, guestName: '', hostName: '', seen: 0, pingT: 0, sendT: 0, q: 0, lastQ: -1, tgt: null, lobby: { mode: 'rt', first: 'host' } };
+const NET = { peer: null, code: '', ctl: null, snap: null, gctl: null, gsnap: null, guestName: '', hostName: '', seen: 0, pingT: 0, sendT: 0, q: 0, lastQ: -1, tgt: null, lobby: { mode: 'rt', first: 'host', map: 'rand' } };
 function loadPeer() { return new Promise((res, rej) => { if (window.Peer) return res(); let i = 0; const next = () => { if (i >= PEER_SRC.length) return rej(new Error('load')); const sc = document.createElement('script'); sc.src = PEER_SRC[i++]; sc.onload = () => window.Peer ? res() : next(); sc.onerror = next; document.head.appendChild(sc); }; next(); }); }
 const linkUp = () => NETROLE === 'host' ? !!(NET.gctl && NET.gctl.open) : NETROLE === 'guest' ? !!(NET.ctl && NET.ctl.open) : false;
 const roundJSON = o => JSON.stringify(o, (k, v) => typeof v === 'number' && !Number.isInteger(v) ? +v.toFixed(3) : v);
@@ -66,7 +66,7 @@ function hostStart(next) {
   if (!linkUp()) return;
   const L = NET.lobby, prev = next && G ? G : null;
   const hider = prev ? 1 - prev.hider : L.first === 'host' ? 0 : L.first === 'guest' ? 1 : (Math.random() < .5 ? 0 : 1);
-  newRound({ seed: (Math.random() * 1e9) | 0, mode: prev ? prev.mode : L.mode, hider, score: prev ? prev.score.slice() : (NET.score || [0, 0]).slice(), round: prev ? prev.round + 1 : 1, names: [myName() || '房主', NET.guestName || '玩家二'] });
+  newRound({ seed: (Math.random() * 1e9) | 0, scene: (L.map || 'rand') === 'rand' || !prev ? resolveMap(L.map || 'rand') : prev.scene, mode: prev ? prev.mode : L.mode, hider, score: prev ? prev.score.slice() : (NET.score || [0, 0]).slice(), round: prev ? prev.round + 1 : 1, names: [myName() || '房主', NET.guestName || '玩家二'] });
   NET.q = 0; sendRaw(NET.gctl, { t: 'st', G }); enterGame();
 }
 function hostNetTick(dt) {
@@ -121,7 +121,7 @@ function applyState(ng) {
   const mine = !fresh && ng.mode === 'rt' && (ng.phase === 'hide' || ng.phase === 'seek') ? G.pl[ME] : null;
   const prevO = !fresh && G ? G.pl[1 - ME] : null;
   G = ng;
-  if (fresh) { MAP = genMap(G.seed); enterGame(); }
+  if (fresh) { useScene(G.scene); MAP = genMap(G.seed); enterGame(); }
   if (mine) G.pl[ME] = mine;
   const o = G.pl[1 - ME]; NET.tgt = { x: o.x, y: o.y };
   if (prevO && Math.hypot(prevO.x - o.x, prevO.y - o.y) < 2.5) { o.x = prevO.x; o.y = prevO.y; }

@@ -23,9 +23,9 @@ const BAL = {
   hideT: 30,          // realtime: seconds the hider gets while the seeker counts
   hideTSolo: 4,       // solo: the computer hides instantly
   seekT: 180,         // realtime: seek phase length (the last finalT seconds are the final phase)
-  knockStart: 3,      // realtime: knock charges at the start of the seek phase
-  knockMax: 5,        // realtime: charges cap
-  knockRegen: 15,     // realtime: +1 charge every N seconds (wrong knocks only cost a charge, no loss)
+  knockStart: 5,      // realtime: knock charges at the start of the seek phase
+  knockMax: 8,        // realtime: charges cap
+  knockRegen: 10,     // realtime: +1 charge every N seconds (wrong knocks only cost a charge, no loss)
   finalT: 20,         // realtime: final phase: hider makes a sound automatically ...
   finalWhistle: 5,    // ... every N seconds,
   finalKnocks: 3,     // ... and the seeker gets exactly this many knocks; all wrong = hider wins
