@@ -339,19 +339,29 @@ BX.register({
     /* ---------------- AI: follow the stored joint solution ---------------- */
     const ai = [{ptr: 0, gen: -1}, {ptr: 0, gen: -1}];
     let plan = null;
-    function aiReset() {
-      ai.forEach(a => { a.ptr = 0; a.gen = st.gen; a.wait = 0; });
-      const sol = SOL[st.lv] || ''; const P = parse(LEVELS[st.lv]); let S = P.S;
+    function buildPlan(LL, S, moves) {
       const mv = [], pos = [], keys = [];
-      for (const chr of sol) {
-        const who = chr === chr.toLowerCase() ? 1 : 0, d = chr.toUpperCase();
+      for (const {who, d} of moves) {
         pos.push(S.p.slice()); keys.push(skey(S));
-        mv.push({who, d, sens: d === 'X' || P.L.t[S.p[who]].match(/[abc]/) != null});
-        const r = d === 'X' ? tryAct(P.L, S, who) : tryMove(P.L, S, who, d);
-        if (r && r !== 'stuck') { if (r.push && P.L.plates && [r.crFrom].some(i => 'abc'.includes(P.L.t[i]))) mv[mv.length - 1].sens = true; S = r.S; }
+        mv.push({who, d, sens: d === 'X' || LL.t[S.p[who]].match(/[abc]/) != null});
+        const r = d === 'X' ? tryAct(LL, S, who) : tryMove(LL, S, who, d);
+        if (r && r !== 'stuck') { if (r.push && [r.crFrom].some(i => 'abc'.includes(LL.t[i]))) mv[mv.length - 1].sens = true; S = r.S; }
       }
       keys.push(skey(S));
-      plan = {mv, pos, keys}; visited[0] = new Set([st.S.p[0]]); visited[1] = new Set([st.S.p[1]]);
+      return {mv, pos, keys};
+    }
+    function aiReset() {
+      ai.forEach(a => { a.ptr = 0; a.gen = st.gen; a.wait = 0; a.div = 0; });
+      const sol = SOL[st.lv] || ''; const P = parse(LEVELS[st.lv]);
+      plan = buildPlan(P.L, P.S, [...sol].map(chr => ({who: chr === chr.toLowerCase() ? 1 : 0, d: chr.toUpperCase()})));
+      visited[0] = new Set([st.S.p[0]]); visited[1] = new Set([st.S.p[1]]);
+    }
+    /* the AI got off the plan (player swapped, undid, or took another route): re-plan from here */
+    function aiReplan() {
+      const mv = planFromHere(120); if (!mv || !mv.length) return false;
+      plan = buildPlan(L, st.S, mv); ai.forEach(a => { a.ptr = 0; a.div = 0; });
+      visited[0] = new Set([st.S.p[0]]); visited[1] = new Set([st.S.p[1]]);
+      return true;
     }
     const visited = [new Set(), new Set()];
     /* after undo / swap: put both AI pointers on the plan step that matches the current state */
@@ -388,8 +398,9 @@ BX.register({
       if (st.ph !== 'play' || !plan || a.gen !== st.gen) return {uc: a.uc};
       const i = nextOwn(ch, a.ptr); if (i === Infinity) return {uc: a.uc};
       const m = plan.mv[i], other = 1 - ch, oSeat = seatOf(other);
-      // the planned position must match; otherwise something diverged — wait
-      if (plan.pos[i][ch] !== st.S.p[ch]) return {uc: a.uc};
+      // the planned position must match; otherwise something diverged — wait a moment, then re-plan
+      if (plan.pos[i][ch] !== st.S.p[ch]) { a.div = (a.div || 0) + 1 / 60; if (a.div > 1.2 && !TEST) { a.div = 0; aiReplan(); } return {uc: a.uc}; }
+      a.div = 0;
       if (ctx.isBot(oSeat)) {
         if (nextOwn(other, ai[oSeat].ptr) < i) return {uc: a.uc};
       } else if (m.sens) {
