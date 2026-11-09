@@ -150,7 +150,7 @@ BX.register({
       const wx0 = -.75, wx1 = 4.4, wy0 = -.25, wy1 = 2.55;
       const top = portrait ? 64 : 46;
       // landscape with spare room at the sides → controls in a right-hand column, else a bottom bar
-      const f0 = BX.fit(W, H - top - 8, wx1 - wx0, wy1 - wy0, 6), side = !portrait && (W - (wx1 - wx0) * f0.s) / 2 >= 168;
+      const f0 = BX.fit(W, H - top - 8, wx1 - wx0, wy1 - wy0, 6), side = !portrait && (W - (wx1 - wx0) * f0.s) / 2 >= 150;
       const cls = side ? 'pk-side' : 'pk-bar'; if (!bar.classList.contains(cls)) { bar.classList.remove('pk-side', 'pk-bar'); bar.classList.add(cls); }
       const barH = side ? 0 : K.barH(bar);
       const bot = portrait ? Math.max(150, H * .36) : 8 + barH;

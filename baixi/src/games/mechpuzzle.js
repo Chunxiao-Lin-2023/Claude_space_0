@@ -338,7 +338,7 @@ BX.register({
 
     /* ---------------- AI: follow the stored joint solution ---------------- */
     const ai = [{ptr: 0, gen: -1}, {ptr: 0, gen: -1}];
-    let plan = null;
+    let plan = null, planGen = 0;
     function buildPlan(LL, S, moves) {
       const mv = [], pos = [], keys = [];
       for (const {who, d} of moves) {
@@ -353,13 +353,13 @@ BX.register({
     function aiReset() {
       ai.forEach(a => { a.ptr = 0; a.gen = st.gen; a.wait = 0; a.div = 0; });
       const sol = SOL[st.lv] || ''; const P = parse(LEVELS[st.lv]);
-      plan = buildPlan(P.L, P.S, [...sol].map(chr => ({who: chr === chr.toLowerCase() ? 1 : 0, d: chr.toUpperCase()})));
+      planGen++; plan = buildPlan(P.L, P.S, [...sol].map(chr => ({who: chr === chr.toLowerCase() ? 1 : 0, d: chr.toUpperCase()})));
       visited[0] = new Set([st.S.p[0]]); visited[1] = new Set([st.S.p[1]]);
     }
     /* the AI got off the plan (player swapped, undid, or took another route): re-plan from here */
     function aiReplan() {
       const mv = planFromHere(120); if (!mv || !mv.length) return false;
-      plan = buildPlan(L, st.S, mv); ai.forEach(a => { a.ptr = 0; a.div = 0; });
+      planGen++; plan = buildPlan(L, st.S, mv); ai.forEach(a => { a.ptr = 0; a.div = 0; });
       visited[0] = new Set([st.S.p[0]]); visited[1] = new Set([st.S.p[1]]);
       return true;
     }
@@ -367,7 +367,7 @@ BX.register({
     /* after undo / swap: put both AI pointers on the plan step that matches the current state */
     function aiSync() {
       if (!plan) return; const j = plan.keys.indexOf(skey(st.S));
-      if (j >= 0) ai.forEach(a => { a.ptr = j; }); else ai.forEach(a => { a.ptr = Math.min(a.ptr, plan.mv.length); });
+      if (j >= 0) ai.forEach(a => { a.ptr = j; }); else if (TEST || !aiReplan()) ai.forEach(a => { a.ptr = Math.min(a.ptr, plan.mv.length); });
     }
     /* moves from the current state to the goal: the stored plan when we are on it, else a short BFS back onto it */
     function planFromHere(budgetMs = 650) {
@@ -396,20 +396,26 @@ BX.register({
       const ch = chOf(seat), a = ai[seat];
       a.uc = a.uc || 0; a.waiting = false;
       if (st.ph !== 'play' || !plan || a.gen !== st.gen) return {uc: a.uc};
-      const i = nextOwn(ch, a.ptr); if (i === Infinity) return {uc: a.uc};
+      const i = nextOwn(ch, a.ptr);
+      if (i === Infinity) { a.div = (a.div || 0) + 1 / 60; if (a.div > 1.2 && !TEST && !isWin(L, st.S)) { a.div = 0; if (!aiReplan()) a.div = -6; } return {uc: a.uc}; }
       const m = plan.mv[i], other = 1 - ch, oSeat = seatOf(other);
       // the planned position must match; otherwise something diverged — wait a moment, then re-plan
-      if (plan.pos[i][ch] !== st.S.p[ch]) { a.div = (a.div || 0) + 1 / 60; if (a.div > 1.2 && !TEST) { a.div = 0; aiReplan(); } return {uc: a.uc}; }
+      if (plan.pos[i][ch] !== st.S.p[ch]) { a.div = (a.div || 0) + 1 / 60; if (a.div > 1.2 && !TEST) { a.div = 0; if (!aiReplan()) a.div = -6; } return {uc: a.uc}; }
       a.div = 0;
       if (ctx.isBot(oSeat)) {
         if (nextOwn(other, ai[oSeat].ptr) < i) return {uc: a.uc};
       } else if (m.sens) {
         // human partner: only leave a plate / pull a lever after the partner got where the plan expects
         const want = plan.pos[i][other];
-        if (!visited[other].has(want) && st.S.p[other] !== want) { a.waiting = true; return {uc: a.uc}; }
+        if (!visited[other].has(want) && st.S.p[other] !== want) {
+          a.waiting = true; a.wt = (a.wt || 0) + 1 / 60;
+          if (a.wt > 3 && !TEST) { a.wt = 0; if (plan.keys.indexOf(skey(st.S)) < 0 && !aiReplan()) a.wt = -6; }
+          return {uc: a.uc};
+        }
+        a.wt = 0;
       }
-      if (m.d === 'X') { if (a.ucFor !== i) { a.ucFor = i; a.uc++; } return {q: i, uc: a.uc}; }
-      return {d: m.d, q: i, uc: a.uc};
+      if (m.d === 'X') { if (a.ucFor !== i + '/' + planGen) { a.ucFor = i + '/' + planGen; a.uc++; } return {q: i, pg: planGen, uc: a.uc}; }
+      return {d: m.d, q: i, pg: planGen, uc: a.uc};
     }
 
     /* ---------------- host simulation ---------------- */
@@ -457,7 +463,7 @@ BX.register({
           lastU[seat] = u;
           const r = tryAct(L, st.S, ch);
           if (r === 'stuck') fx('stuck', {c: ch});
-          else if (r) { hist.push({S: cloneS(st.S), face: st.face.slice()}); if (hist.length > 300) hist.shift(); st.S = r.S; fx('lever', {c: ch}); if (inp.q != null) ai[seat].ptr = inp.q + 1; }
+          else if (r) { hist.push({S: cloneS(st.S), face: st.face.slice()}); if (hist.length > 300) hist.shift(); st.S = r.S; fx('lever', {c: ch}); if (inp.q != null && inp.pg === planGen) ai[seat].ptr = inp.q + 1; }
           else if (inp.q == null) fx('nolever', {c: ch});
         }
         if (inp.d && DIRS[inp.d] && st.cd[ch] <= 0) {
@@ -469,7 +475,7 @@ BX.register({
             fx('mv', {c: ch, f: r.from, t: r.to});
             if (r.push) fx(r.fill ? 'fill' : 'push', {c: ch, f: r.crFrom, t: r.crTo});
             if (r.key) fx('key', {c: ch, t: r.to}); if (r.lock) fx('lock', {t: r.to});
-            if (inp.q != null) ai[seat].ptr = inp.q + 1;
+            if (inp.q != null && inp.pg === planGen) ai[seat].ptr = inp.q + 1;
           } else { st.cd[ch] = MOVE_T * .6; if (inp.q == null) fx('bump', {c: ch, w: bumpWhy(st.S, ch, inp.d)}); }
         }
       }
@@ -952,7 +958,7 @@ BX.register({
       snapshot() { return {lv: st.lv, S: st.S, ph: st.ph, t: Math.round(st.t * 100) / 100, gen: st.gen, face: st.face, cleared: st.cleared, moves: st.moves, ev: st.ev, evId: st.evId, over: st.over, unl: st.unl, role: st.role}; },
       restore(d) { Object.assign(st, d); if (!L || L.__lv !== st.lv) { L = parse(LEVELS[st.lv]).L; L.__lv = st.lv; } },
       draw,
-      _dbg: () => ({lv: st.lv, ph: st.ph, p: st.S.p, ptr: ai.map(a => a.ptr), n: plan && plan.mv.length, cleared: st.cleared}),
+      _dbg: () => ({lv: st.lv, ph: st.ph, p: st.S.p, ptr: ai.map(a => a.ptr), n: plan && plan.mv.length, cleared: st.cleared, onPlan: plan && plan.keys.indexOf(skey(st.S)), next: plan && ai.map((a, s2) => { const i = nextOwn(chOf(s2), a.ptr); return i === Infinity ? null : [i, plan.mv[i], plan.pos[i]]; }), ai: ai.map(a => [a.waiting, a.wt, a.div])}),
     };
   },
   _mp: {LEVELS, SOL, parse, tryMove, tryAct, isWin, solve},

@@ -241,7 +241,7 @@ BX.register({
           else { const best = Math.max(...al.map(i => st.tanks[i].hp)); const ws = al.filter(i => st.tanks[i].hp === best); winner = ws.length === 1 ? ws[0] : ws; }
           const text = winner === -1 ? '同归于尽' : al.length > 1 ? '回合数已满，按剩余生命判定' : ctx.name(winner) + ' 屹立到最后';
           const hpTxt = BX.range(n).map(i => ctx.name(i) + (st.tanks[i].alive ? ' ♥' + st.tanks[i].hp : ' 已毁')).join(' · ');
-          ctx.end({winner, text: text + '<br>' + hpTxt, delay: show ? (r.steps * DT / 1.5 + 1.8) * 1000 : 600});
+          ctx.end({winner, text: text + '　（' + hpTxt + '）', delay: show ? (r.steps * DT / 1.5 + 1.8) * 1000 : 600});
         }
         status();
       },

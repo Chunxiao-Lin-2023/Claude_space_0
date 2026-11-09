@@ -1,6 +1,5 @@
 /* 汉字猜词 — guess the hidden 四字成语 in 6 tries (Wordle-style). Shared board; 2 players race alternately. */
 const D = BX.draw, C = BX.C;
-const TRIES = 6;
 let IX = null;
 function index() {
   if (IX) return IX;
@@ -48,9 +47,10 @@ BX.register({
   options: [
     {key: 'day', label: '题目', choices: [[0, '随机出题'], [1, '每日一题']], def: 0},
     {key: 'py', label: '拼音提示', choices: [[0, '关闭'], [1, '显示拼音对照']], def: 0},
+    {key: 'tries', label: '机会', choices: [[6, '6 次'], [8, '8 次'], [10, '10 次']], def: 6},
     {key: 'pool', label: '谜底范围', choices: [[800, '常用'], [2000, '较广'], [4000, '全部']], def: 800},
   ],
-  rules: `<p>系统暗中选定一个<b>四字成语</b>。你有 <b>6 次</b>机会把它猜出来，每次必须输入词库里的一个四字成语。</p>
+  rules: `<p>系统暗中选定一个<b>四字成语</b>。你有 <b>6 次</b>机会（可在开局时改成 8 或 10 次）把它猜出来，每次必须输入词库里的一个四字成语。</p>
 <p>每次猜完，每个字会翻牌显示颜色：</p>
 <ul><li><b style="color:#3f8f5b">绿色</b>：这个字在成语里，而且位置正确；</li>
 <li><b style="color:#c8962a">黄色</b>：成语里有这个字，但不在这个位置；</li>
@@ -58,9 +58,9 @@ BX.register({
 <p>字重复时按经典规则计数：谜底里有几个就最多标几个绿/黄。</p>
 <p><b>拼音提示</b>（可选）：每格下方显示这个字的拼音，<b>声母、韵母、声调</b>分别上色——绿色＝与谜底同一位置的相同，黄色＝谜底别的位置有，灰色＝谜底里没有。</p>
 <p><b>每日一题</b>（可选）：按日期出题，同一天所有人的谜底相同，可以把结果格子复制给朋友比一比。</p>
-<p><b>单人</b>：6 次内猜中即过关。<b>双人</b>：两人轮流在同一块板上猜同一个谜底，谁先猜中谁赢；6 次都没人猜中则平局。</p>
+<p><b>单人</b>：在规定次数内猜中即过关。<b>双人</b>：两人轮流在同一块板上猜同一个谜底，谁先猜中谁赢；次数用完都没人猜中则平局。</p>
 <p>输入：用输入法打出成语后回车；也可以点下方「字盘」里已经出现过的字快速填入。</p>`,
-  howto: ['在下方输入框打出一个四字成语，回车或点「猜」提交；输入框变绿＝词库里有，变红＝没有或已猜过。', '字盘里列出猜过的字（绿/黄/灰），点一下即可填入，⌫ 删一个字。', '💡 提示会推荐一个符合目前所有线索的成语，并告诉你还剩多少种可能。', '点已经翻开的一行可查看该成语的拼音和释义；结束后可「复制成绩」分享格子。'],
+  howto: ['在下方输入框打出一个四字成语，回车或点「猜」提交；输入框变绿＝词库里有，变红＝没有或已猜过。', '字盘里列出猜过的字（绿/黄/灰），点一下即可填入，⌫ 删一个字。', '💡 提示会推荐下一步猜什么，并告诉你还剩多少种可能。觉得太难，开局时可把机会改成 8/10 次或打开拼音对照。', '点已经翻开的一行可查看该成语的拼音和释义；结束后可「复制成绩」分享格子。'],
   icon(g, w, h) {
     D.paper(g, 0, 0, w, h, {color: '#f2e6cc'});
     const s = h * .2, gap = s * .14, x0 = (w - (4 * s + 3 * gap)) / 2;
@@ -79,6 +79,7 @@ BX.register({
   },
   create(ctx) {
     const {L, at} = index();
+    const TRIES = +ctx.opts.tries || 6;
     const n = ctx.n, poolN = Math.min(L.length, +ctx.opts.pool || 800), showPy = !!+ctx.opts.py;
     const secretI = ctx.rng.int(poolN), daily = !!+ctx.opts.day;
     const st = {sec: daily ? -1 : secretI, day: 0, rows: [], turn: 0, over: false, winner: -1};
@@ -177,7 +178,7 @@ BX.register({
     let hintW = '';
     function endHtml(win) {
       const sw = secret(), py = ((BX.data.idiomPy || {})[sw] || []).map(pyMark).join(' '), m = meanOf(sw);
-      const grid = st.rows.map(r => '<div style="display:flex;gap:3px;justify-content:center;margin:2px 0">' + r.r.map(v => '<i style="width:18px;height:18px;border-radius:3px;display:inline-block;background:' + ['#7a7068', '#c8962a', '#3f8f5b'][v] + '"></i>').join('') + '</div>').join('');
+      const grid = '<div style="display:flex;flex-wrap:wrap;gap:5px 9px;justify-content:center;margin:4px 0">' + st.rows.map(r => '<span style="display:inline-flex;gap:2px">' + r.r.map(v => '<i style="width:12px;height:12px;border-radius:2px;display:inline-block;background:' + ['#7a7068', '#c8962a', '#3f8f5b'][v] + '"></i>').join('') + '</span>').join('') + '</div>';
       let html = '谜底：<b style="font-size:20px;color:#b23a2b">' + BX.esc(sw) + '</b><div style="font-size:13px;color:var(--ink3)">' + BX.esc(py) + '</div>' + (m ? '<div style="font-size:14px;margin:4px 0 8px">' + BX.esc(m) + '</div>' : '') + grid;
       if (n === 1 && !ctx.fast && !BX.test && !BX.bot) {
         const key = daily ? 'statD' : 'statR', s0 = ctx.load(key, {p: 0, w: 0, cur: 0, max: 0, last: 0, dist: [0, 0, 0, 0, 0, 0]});
@@ -217,7 +218,7 @@ BX.register({
         if (n === 2) st.turn = 1 - st.turn;
       },
       aiMove(seat, level) {
-        const sz = level === 1 ? 900 : level === 2 ? 2500 : L.length;
+        const pn = daily ? DAILY_POOL : poolN, sz = Math.min(L.length, level === 1 ? pn * 3 : level === 2 ? pn * 1.5 : pn);   // the answer pool size is public (option)
         const used = new Set(st.rows.map(r => r.w));
         const cand = [];
         // weaker levels "forget" part of the feedback: 中级 sometimes ignores the latest row, 初级 only uses a random half
@@ -234,14 +235,19 @@ BX.register({
           for (let i = 0; i < L.length; i++) if (!used.has(L[i][0])) { cand.push(L[i][0]); if (cand.length > 50) break; }
           return {w: BX.pick(cand)};
         }
-        if (level === 3 && cand.length > 2) {   // pick the candidate that splits the remaining set best
-          const sample = cand.length > 60 ? BX.shuffle(cand.slice()).slice(0, 60) : cand;
-          const tgt = cand.length > 200 ? BX.shuffle(cand.slice()).slice(0, 200) : cand;
+        if (level === 3 && cand.length > 2) {   // pick the guess that splits the remaining set best
+          const sample = cand.length > 120 ? BX.shuffle(cand.slice()).slice(0, 120) : cand.slice();
+          const left = TRIES - st.rows.length;
+          // with many possibilities left, also consider "probe" idioms that can't be the answer but test many likely characters
+          if (cand.length > 12 && left > 2) for (let k = 0; k < 120; k++) { const w = L[Math.floor(Math.random() * Math.min(L.length, pn * 2))][0]; if (!used.has(w)) sample.push(w); }
+          const cs = new Set(cand);
+          const tgt = cand.length > 400 ? BX.shuffle(cand.slice()).slice(0, 400) : cand;
           let best = sample[0], bs = Infinity;
           for (const g of sample) {
             const buckets = new Map();
             for (const t of tgt) { const k = score(g, t).join(''); buckets.set(k, (buckets.get(k) || 0) + 1); }
             let e = 0; for (const v of buckets.values()) e += v * v;
+            e /= tgt.length; if (cs.has(g)) e -= 1;     // a possible answer may win outright
             if (e < bs) { bs = e; best = g; }
           }
           return {w: best};
@@ -251,9 +257,10 @@ BX.register({
       onTurn: status,
       showHint(a) {
         if (!a || !a.w) return;
-        const c = L.reduce((k, x) => k + (consistent(x[0], st.rows) && !st.rows.some(r => r.w === x[0]) ? 1 : 0), 0);
+        let c = 0; for (let i = 0; i < (daily ? DAILY_POOL : poolN); i++) if (consistent(L[i][0], st.rows) && !st.rows.some(r => r.w === L[i][0])) c++;
         hintW = a.w; inp.value = a.w; liveCheck();
-        ctx.toast((st.rows.length ? '还有 ' + c + ' 个成语符合所有线索，' : '') + '试试「' + a.w + '」', 3500);
+        const maybe = consistent(a.w, st.rows);
+        ctx.toast((st.rows.length ? '谜底范围内还有 ' + c + ' 个成语符合所有线索。' : '') + '试试「' + a.w + '」' + (maybe ? (st.rows.length ? '，说不定就是它' : '') : '——它不是答案，但能一次排除很多可能'), 4000);
       },
       frame(dt) {
         const g = cv.g; cv.clear();

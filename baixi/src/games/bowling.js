@@ -275,8 +275,9 @@ BX.register({
     };
     function finish(delay) {
       const tt = BX.range(ctx.n).map(i => scoreCard(st.rolls[i]).total), best = Math.max(...tt), win = BX.range(ctx.n).filter(i => tt[i] === best);
-      let text = BX.range(ctx.n).map(i => `${ctx.name(i)} ${tt[i]} 分`).join('　');
-      if (ctx.n === 1) { const b = ctx.best('score', tt[0], 'max'); ctx.end({win: tt[0] >= 150, title: tt[0] === 300 ? '完美比赛！' : '十局打完', text: `总分 ${tt[0]}` + (b.isNew ? ' · 新纪录！' : ` · 最高 ${b.best}`), delay}); return; }
+      const xs = i => { let x = 0, sp = 0; for (const f of scoreCard(st.rolls[i]).frames) for (const m of f.marks) { if (m === 'X') x++; else if (m === '/') sp++; } return `（全中 ${x} · 补中 ${sp}）`; };
+      let text = BX.range(ctx.n).map(i => `${ctx.name(i)} ${tt[i]} 分${xs(i)}`).join('　');
+      if (ctx.n === 1) { const b = ctx.best('score', tt[0], 'max'); ctx.end({win: tt[0] >= 150, title: tt[0] === 300 ? '完美比赛！' : '十局打完', text: `总分 ${tt[0]}${xs(0)}` + (b.isNew ? ' · 新纪录！' : ` · 最高 ${b.best}`), delay}); return; }
       ctx.end({winner: win.length === ctx.n ? -1 : win.length === 1 ? win[0] : win, text, delay});
     }
     /* ---------- AI ---------- */
@@ -467,8 +468,8 @@ BX.register({
       SPOT.forEach(([x, y], i) => { const px = lx(x), py = y0 - (y - HEAD) / .2639 * s; g.fillStyle = pins[i] ? '#fff6e6' : 'rgba(255,255,255,.12)'; D.circle(g, px, py, s * .38); g.fill(); if (pins[i] && s >= 14) D.text(g, String(i + 1), px, py + .5, {size: s * .42, color: '#7a2a1a', weight: 700}); });
       const by = y0 + s * 1.15, mine = myTurn();
       const lb = lastBall[Z.turn]; if (mine && lb && lb.ex != null) { g.fillStyle = 'rgba(255,246,221,.35)'; D.circle(g, lx(lb.ex), by, s * .32); g.fill(); }
-      if (mine && entryX != null) { g.fillStyle = ctx.color(Z.turn); D.circle(g, lx(entryX), by, s * .36); g.fill(); g.strokeStyle = '#fff'; g.lineWidth = 1.5; g.stroke(); }
-      else if (mine) D.text(g, '洗沟', x0, by, {size: 11, color: '#ffb0a0', weight: 700});
+      if (mine && entryX != null && ctx.pref('hints')) { g.fillStyle = ctx.color(Z.turn); D.circle(g, lx(entryX), by, s * .36); g.fill(); g.strokeStyle = '#fff'; g.lineWidth = 1.5; g.stroke(); }
+      else if (mine && ctx.pref('hints')) D.text(g, '洗沟', x0, by, {size: 11, color: '#ffb0a0', weight: 700});
     }
     status();
     return inst;

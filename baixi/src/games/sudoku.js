@@ -232,7 +232,7 @@ BX.register({
       }
       if (i < 0) return;
       const nm = noteMode; noteMode = false; sel = i; numSel = S[i]; hintCnt++;
-      const why = explain(i, S[i]);
+      const why = cur[i] && cur[i] !== S[i] ? {u: -1, text: `这一格填错了，正确答案是 ${S[i]}`} : explain(i, S[i]);
       place(i, S[i], true); noteMode = nm; pulse[i] = -.15;
       hintWhy = why ? {i, u: why.u, t: 0} : null;
       ctx.toast(why ? why.text : `这一格应填 ${S[i]}`, 3200);

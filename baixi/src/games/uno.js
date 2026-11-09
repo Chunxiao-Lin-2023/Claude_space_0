@@ -239,7 +239,7 @@ BX.register({
     const rel = s => (s - ctx.view + N) % N;
     function layout() {
       const w = cv.w, h = cv.h, portrait = h > w * 1.1, pad = Math.max(8, Math.min(w, h) * .025);
-      const cw = portrait ? BX.clamp(w / 6.2, 48, 86) : BX.clamp(Math.min(w / 12.5, h / 4.4), 44, 94), ch = cw * 1.5;
+      const cw = portrait ? BX.clamp(w / 5.3, 48, 92) : BX.clamp(Math.min(w / 12.5, h / 4.4), 44, 94), ch = cw * 1.5;
       const ids = st.hands[ctx.view] || [];
       let showIds = ids; if (st.ph === 'deal') showIds = ids.slice(0, Math.floor(ui.dealT * 7.99));
       const hand = U.handRects(showIds.length, pad, w - pad, h - pad * .7, cw, ch, portrait);
@@ -260,7 +260,7 @@ BX.register({
       // the centre (pile + ring) sits between the opponents above it and my buttons
       let topLim = pad;
       for (const sp of seats) if (sp && (portrait || Math.abs(sp.x + PW / 2 - w / 2) < w * .25)) topLim = Math.max(topLim, sp.y + PH + 8 + (side ? 18 : cw * .75 + 22));
-      const avail = btnY - topLim, pw = BX.clamp(Math.min(cw * .95, avail * .62 / 1.5), 30, cw), cy = topLim + avail / 2;
+      const avail = btnY - topLim, pw = BX.clamp(Math.min(cw * .95, avail * (side ? .55 : .62) / 1.5), 30, cw), cy = topLim + avail / 2;
       return {w, h, portrait, side, pad, cw, ch, ids: showIds, hand, raise: ch * .16, bh, btnY, PW, PH, seats, cx: w / 2, cy, opp, pw, avail};
     }
     /* ---------- input ---------- */

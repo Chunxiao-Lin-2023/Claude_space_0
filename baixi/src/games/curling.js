@@ -106,7 +106,7 @@ BX.register({
     const ends = BX.test ? 1 : (ctx.opts.ends || 4), fgz = ctx.opts.fgz == null ? 1 : +ctx.opts.fgz;
     const st = {ends, end: 0, extra: 0, hammer: 1, turn: 0, thrown: [0, 0], stones: [], score: [0, 0], card: [[], []], hammerLog: [], over: false, last: null, fgz};
     const cv = ctx.canvas(), pb = K.playback(ctx), fx = K.fx(), cache = K.cache();
-    const aims = [0, 1].map(() => ({xa: 0, p: .19, s: 1, w: 0})), lastShot = {};
+    const aims = [0, 1].map(() => ({xa: 0, p: .55, s: 1, w: 0})), lastShot = {};
     let show = null, Z = st, cam = {c: -2, s: 60}, aim = aims[0], keyT = 0, lastRemote = null, hintA = null, hintT = 0, aiPick = null;
     const skipKey = K.skip(ctx, cv, pb);
     const ui = ctx.ui('');
@@ -275,7 +275,7 @@ BX.register({
       const remainMe = PER - st.thrown[seat] - 1, remainOp = PER - st.thrown[1 - seat], hammerMe = st.hammer === seat;
       const cands = [];
       const xs = [0, -.4, .4, -.8, .8, -1.2, 1.2, -.2, .2, -.6, .6, -1, 1, -1.5, 1.5, -1.8, 1.8];
-      const ps = level === 1 ? [.19, .23, .14] : [.19, .55, .23, .14, .75, .28, .09, .4, 1, .32];
+      const ps = level === 1 ? [.55, .5, .6, .19] : [.55, .19, .5, .6, .23, .45, .14, .75, .28, .09, .4, 1, .32];
       // aim at existing stones for takeouts
       const targets = st.stones.filter(s => s.t !== seat).map(s => s.x);
       for (const p of ps) for (const sp of [1, -1]) for (const x of xs.concat(targets.map(x2 => x2 + sp * -.5), targets)) cands.push({xa: x, p, s: sp, w: p < .3 ? (level >= 2 ? 1 : 0) : 0});
@@ -449,7 +449,7 @@ BX.register({
         const sp = pts.map(p => T(p[0], p[1]));
         K.guide(g, sp, {color: D.alpha(ctx.color(st.turn), 1), w: 3, alpha: .85, fade: .2, dash: [4, 8]});
         const end = pts[pts.length - 1];
-        if (end) { const [ex, ey] = T(end[0], end[1]); g.globalAlpha = .45; drawStone(g, ex, ey, R * V.s, ctx.color(st.turn), 0); g.globalAlpha = 1; }
+        if (end && ctx.pref('hints')) { const [ex, ey] = T(end[0], end[1]); g.globalAlpha = .45; drawStone(g, ex, ey, R * V.s, ctx.color(st.turn), 0); g.globalAlpha = 1; }
         // broom target
         const [bx, by] = T(aim.xa, TEE_Y);
         g.strokeStyle = '#1b1510'; g.lineWidth = 2.5; g.beginPath(); g.moveTo(bx - 10, by); g.lineTo(bx + 10, by); g.moveTo(bx, by - 10); g.lineTo(bx, by + 10); g.stroke();
@@ -458,7 +458,7 @@ BX.register({
         const mh = Math.min(170, V.H * .35), mx = V.port ? V.W - 26 : V.W - 30, my = V.port ? V.topH + 70 : 40;
         const mk = marks(aim.w);
         K.meter(g, mx, my, 14, mh, aim.p, {marks: [[mk[0], '防守'], [mk[1], '进营'], [mk[2], '击打']]});
-        if (st.thrown[0] + st.thrown[1] < 2 && st.end === 0 && !sling.on && performance.now() - keyT > 3000) {
+        if (st.thrown[0] + st.thrown[1] < 2 && st.end === 0 && !sling.on && !hintA && performance.now() - keyT > 3000) {
           const [hx, hy] = T(0, -3.2);
           D.text(g, '按住画面向后拉 · 左右偏移瞄准 · 松手掷出', V.W / 2, V.port ? hy : V.cross - 22, {size: 14, color: '#2b2118', font: 'serif', weight: 700, stroke: 'rgba(255,255,255,.7)', strokeW: 4});
         }

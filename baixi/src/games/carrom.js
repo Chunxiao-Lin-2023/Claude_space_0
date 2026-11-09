@@ -537,7 +537,7 @@ BX.register({
         const pd2 = ex * ex + ey * ey - tc * tc; if (pd2 < rr * rr) tObs = Math.min(tObs, tc - Math.sqrt(rr * rr - pd2));
       }
       for (let k = 0; k < 4; k++) {
-        const ex = POCK[k][0] - ox, ey = POCK[k][1] - oy, tc = ex * nx + ey * ny; if (tc <= 0 || tc > tObs + 30) continue;
+        const ex = POCK[k][0] - ox, ey = POCK[k][1] - oy, tc = ex * nx + ey * ny; if (tc <= 0 || tc > tObs) continue;
         if (ex * ex + ey * ey - tc * tc < (PR - 4) * (PR - 4)) return {k, t: tc};
       }
       return null;
