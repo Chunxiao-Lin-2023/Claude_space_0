@@ -134,7 +134,56 @@ body.notplay #hud,body.notplay #plates{display:none}
 #tbtns button .cd{position:absolute;inset:0;border-radius:50%;background:conic-gradient(rgba(0,0,0,.7) var(--p),transparent 0)}
 body.touch #hotbar{display:none}body.touch #chat{height:90px;font-size:11px;width:44vw}body.touch #tracker{top:calc(222px + var(--st));width:200px;font-size:12px;padding:6px 8px}
 body.touch #mm,body.touch #mmc{width:130px}body.touch #mmc{height:130px}
-@media (max-height:520px){#party .unit{transform:scale(.8);transform-origin:left top}#tracker{display:none}#mm,#mmc{width:110px}#mmc{height:110px}#chat{height:70px}#dlg{min-height:96px;padding:8px 12px}#dlg .dp{width:70px;height:70px}#dlg .dt{font-size:14px}#tbtns{transform:scale(.82);transform-origin:right bottom}}
+@media (pointer:fine) and (max-height:520px){#party .unit{transform:scale(.8);transform-origin:left top}#tracker{display:none}#mm,#mmc{width:110px}#mmc{height:110px}#chat{height:70px}#dlg{min-height:96px;padding:8px 12px}#dlg .dp{width:70px;height:70px}#dlg .dt{font-size:14px}}
+/* ================= touch layouts: body.pad = iPad (bigger, thumb-sized), body.phone = iPhone (compact, safe-area aware) ================= */
+body.notplay #stick{display:none!important}
+#stick.rest{display:block!important;opacity:.45;left:calc(28px + var(--sa))!important;top:auto!important;bottom:calc(28px + var(--sb))}
+#stick.rest #knob{transform:none!important}
+body.dlgopen #tbtns,body.dlgopen #stick,body.modalopen #tbtns,body.modalopen #stick{display:none!important}
+body.touch #modal .x{min-width:44px;min-height:44px;font-size:26px}
+body.touch #modal{max-height:calc(100dvh - 24px)}
+/* --- iPad --- */
+body.pad #party{zoom:1.22}
+body.pad #mm{zoom:1.15}body.pad #mmbtns{gap:5px}body.pad #mmbtns button{width:38px;height:38px;font-size:18px}
+body.pad #tracker{zoom:1.15;top:calc(262px + var(--st));right:calc(10px + var(--sr))}
+body.pad #tbtns{zoom:1.38}
+body.pad #stick{width:150px;height:150px}body.pad #knob{left:44px;top:44px;width:60px;height:60px}
+body.pad #chat{bottom:calc(200px + var(--sb));height:96px;font-size:12px;width:min(340px,36vw)}
+body.pad #dlg{width:min(900px,92vw);min-height:150px}body.pad #dlg .dt{font-size:20px}body.pad #dlg .dn{font-size:19px}body.pad #dlg .dp{width:120px;height:120px}
+body.pad #modal{font-size:15px;width:min(940px,94vw)}body.pad #modal h2{font-size:22px}
+body.pad .plate{font-size:14px}body.pad .plate .pt{font-size:11px}
+body.pad #prompt{font-size:17px;padding:8px 16px}
+body.pad #target{zoom:1.15}body.pad #boss{zoom:1.15}
+body.pad #title .menu{min-width:320px;gap:14px}body.pad #title .btn{font-size:18px;min-height:52px}
+/* --- iPhone (both orientations) --- */
+body.phone #party{zoom:.74}
+body.phone #mm{width:94px;right:calc(8px + var(--sr));top:calc(6px + var(--st))}body.phone #mmc{width:94px;height:94px}body.phone #zname{font-size:11px;margin-top:1px}
+body.phone #mmbtns{display:grid;grid-template-columns:repeat(3,40px);gap:3px;justify-content:end;margin-top:3px}body.phone #mmbtns button{width:40px;height:40px;font-size:17px}
+body.phone #tracker{right:auto;left:calc(8px + var(--sa));top:calc(112px + var(--st));width:min(230px,46vw);font-size:11px;padding:4px 7px;background:rgba(18,14,10,.6)}
+body.phone #tracker h4{font-size:11px;margin:0 0 2px}body.phone #tracker .tq{margin-bottom:2px}body.phone #tracker .side{display:none}
+body.phone #chat{display:none}
+body.phone #tbtns{zoom:.8;right:calc(6px + var(--sr));bottom:calc(6px + var(--sb))}
+body.phone #stick{width:110px;height:110px}body.phone #knob{left:31px;top:31px;width:46px;height:46px}
+body.phone #stick.rest{left:calc(18px + var(--sa))!important;bottom:calc(18px + var(--sb))}
+body.phone #dlg{width:auto;left:calc(8px + var(--sa));right:calc(8px + var(--sr));transform:none;bottom:calc(8px + var(--sb));min-height:84px;padding:8px 12px;gap:10px}
+body.phone #dlg .dp{width:58px;height:58px}body.phone #dlg .dt{font-size:15px;line-height:1.55}body.phone #dlg .dn{font-size:14px;margin-bottom:2px}
+body.phone #lih{width:180px;height:214px;left:0}
+body.phone #modal{zoom:1;width:auto;left:calc(8px + var(--sa));right:calc(8px + var(--sr));top:calc(8px + var(--st));bottom:auto;transform:none;max-height:calc(100dvh - 16px);padding:10px 12px;font-size:13px}
+body.phone #modal h2{font-size:17px;margin-bottom:6px}
+body.phone #target{zoom:.8}body.phone #boss{zoom:.8;top:calc(46px + var(--st))}
+body.phone #prompt{top:auto;bottom:calc(150px + var(--sb));font-size:13px}
+body.phone .plate{font-size:11px}
+body.phone #title h1{font-size:min(58px,13vw)}body.phone #title .sub{font-size:12px;letter-spacing:2px;margin:4px 12px 14px;line-height:1.5}
+body.phone #title .menu{min-width:240px;gap:8px}body.phone #title .btn{min-height:42px;font-size:15px}
+body.phone #title .note{font-size:10px;bottom:calc(4px + var(--sb))}
+/* landscape iPhone: everything in from the notch, a shorter dialog, no tall half-body art */
+body.phone:not(.port) #lih{display:none}
+body.phone:not(.port) #title{justify-content:flex-start;padding-top:calc(10px + var(--st))}body.phone:not(.port) #title h1{font-size:44px}body.phone:not(.port) #title .note{display:none}
+body.phone:not(.port) #dlg{left:calc(110px + var(--sa));right:calc(110px + var(--sr))}
+/* portrait iPhone */
+body.phone.port #tbtns{zoom:.86}
+body.phone.port #tracker{top:calc(104px + var(--st))}
+
 </style>
 <body class="notplay">
 <div id="gl"></div>

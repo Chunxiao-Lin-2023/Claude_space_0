@@ -27,6 +27,9 @@ function polyDist(px, pz, pts) { let best = 1e9, bt = 0, acc = 0, tot = 0; const
 
 const QS = new URLSearchParams(location.search);
 const IS_TOUCH = matchMedia('(pointer: coarse)').matches || QS.get('touch') === '1';
+const PHONE_MQ = matchMedia('(pointer:coarse) and (max-height:500px), (pointer:coarse) and (max-width:500px)');
+function layoutClasses() { const b = document.body; if (!b) return; const phone = IS_TOUCH && (PHONE_MQ.matches || Math.min(innerWidth, innerHeight) <= 500); b.classList.toggle('touch', IS_TOUCH); b.classList.toggle('phone', phone); b.classList.toggle('pad', IS_TOUCH && !phone); b.classList.toggle('port', innerHeight > innerWidth); }
+addEventListener('resize', layoutClasses); addEventListener('orientationchange', () => setTimeout(layoutClasses, 120)); document.addEventListener('DOMContentLoaded', layoutClasses);
 const PFX = 'wanmei.';
 const LS = { get(k, d) { try { const v = localStorage.getItem(PFX + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } }, set(k, v) { try { localStorage.setItem(PFX + k, JSON.stringify(v)); } catch (e) { } }, del(k) { try { localStorage.removeItem(PFX + k); } catch (e) { } } };
 const SET = Object.assign({ vol: 0.7, music: 0.5, quality: IS_TOUCH ? 'mid' : 'high', shake: true, name: '', camSens: 1, invertY: false, dmgNum: true }, LS.get('settings', {}));

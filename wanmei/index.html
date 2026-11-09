@@ -136,7 +136,56 @@ body.notplay #hud,body.notplay #plates{display:none}
 #tbtns button .cd{position:absolute;inset:0;border-radius:50%;background:conic-gradient(rgba(0,0,0,.7) var(--p),transparent 0)}
 body.touch #hotbar{display:none}body.touch #chat{height:90px;font-size:11px;width:44vw}body.touch #tracker{top:calc(222px + var(--st));width:200px;font-size:12px;padding:6px 8px}
 body.touch #mm,body.touch #mmc{width:130px}body.touch #mmc{height:130px}
-@media (max-height:520px){#party .unit{transform:scale(.8);transform-origin:left top}#tracker{display:none}#mm,#mmc{width:110px}#mmc{height:110px}#chat{height:70px}#dlg{min-height:96px;padding:8px 12px}#dlg .dp{width:70px;height:70px}#dlg .dt{font-size:14px}#tbtns{transform:scale(.82);transform-origin:right bottom}}
+@media (pointer:fine) and (max-height:520px){#party .unit{transform:scale(.8);transform-origin:left top}#tracker{display:none}#mm,#mmc{width:110px}#mmc{height:110px}#chat{height:70px}#dlg{min-height:96px;padding:8px 12px}#dlg .dp{width:70px;height:70px}#dlg .dt{font-size:14px}}
+/* ================= touch layouts: body.pad = iPad (bigger, thumb-sized), body.phone = iPhone (compact, safe-area aware) ================= */
+body.notplay #stick{display:none!important}
+#stick.rest{display:block!important;opacity:.45;left:calc(28px + var(--sa))!important;top:auto!important;bottom:calc(28px + var(--sb))}
+#stick.rest #knob{transform:none!important}
+body.dlgopen #tbtns,body.dlgopen #stick,body.modalopen #tbtns,body.modalopen #stick{display:none!important}
+body.touch #modal .x{min-width:44px;min-height:44px;font-size:26px}
+body.touch #modal{max-height:calc(100dvh - 24px)}
+/* --- iPad --- */
+body.pad #party{zoom:1.22}
+body.pad #mm{zoom:1.15}body.pad #mmbtns{gap:5px}body.pad #mmbtns button{width:38px;height:38px;font-size:18px}
+body.pad #tracker{zoom:1.15;top:calc(262px + var(--st));right:calc(10px + var(--sr))}
+body.pad #tbtns{zoom:1.38}
+body.pad #stick{width:150px;height:150px}body.pad #knob{left:44px;top:44px;width:60px;height:60px}
+body.pad #chat{bottom:calc(200px + var(--sb));height:96px;font-size:12px;width:min(340px,36vw)}
+body.pad #dlg{width:min(900px,92vw);min-height:150px}body.pad #dlg .dt{font-size:20px}body.pad #dlg .dn{font-size:19px}body.pad #dlg .dp{width:120px;height:120px}
+body.pad #modal{font-size:15px;width:min(940px,94vw)}body.pad #modal h2{font-size:22px}
+body.pad .plate{font-size:14px}body.pad .plate .pt{font-size:11px}
+body.pad #prompt{font-size:17px;padding:8px 16px}
+body.pad #target{zoom:1.15}body.pad #boss{zoom:1.15}
+body.pad #title .menu{min-width:320px;gap:14px}body.pad #title .btn{font-size:18px;min-height:52px}
+/* --- iPhone (both orientations) --- */
+body.phone #party{zoom:.74}
+body.phone #mm{width:94px;right:calc(8px + var(--sr));top:calc(6px + var(--st))}body.phone #mmc{width:94px;height:94px}body.phone #zname{font-size:11px;margin-top:1px}
+body.phone #mmbtns{display:grid;grid-template-columns:repeat(3,40px);gap:3px;justify-content:end;margin-top:3px}body.phone #mmbtns button{width:40px;height:40px;font-size:17px}
+body.phone #tracker{right:auto;left:calc(8px + var(--sa));top:calc(112px + var(--st));width:min(230px,46vw);font-size:11px;padding:4px 7px;background:rgba(18,14,10,.6)}
+body.phone #tracker h4{font-size:11px;margin:0 0 2px}body.phone #tracker .tq{margin-bottom:2px}body.phone #tracker .side{display:none}
+body.phone #chat{display:none}
+body.phone #tbtns{zoom:.8;right:calc(6px + var(--sr));bottom:calc(6px + var(--sb))}
+body.phone #stick{width:110px;height:110px}body.phone #knob{left:31px;top:31px;width:46px;height:46px}
+body.phone #stick.rest{left:calc(18px + var(--sa))!important;bottom:calc(18px + var(--sb))}
+body.phone #dlg{width:auto;left:calc(8px + var(--sa));right:calc(8px + var(--sr));transform:none;bottom:calc(8px + var(--sb));min-height:84px;padding:8px 12px;gap:10px}
+body.phone #dlg .dp{width:58px;height:58px}body.phone #dlg .dt{font-size:15px;line-height:1.55}body.phone #dlg .dn{font-size:14px;margin-bottom:2px}
+body.phone #lih{width:180px;height:214px;left:0}
+body.phone #modal{zoom:1;width:auto;left:calc(8px + var(--sa));right:calc(8px + var(--sr));top:calc(8px + var(--st));bottom:auto;transform:none;max-height:calc(100dvh - 16px);padding:10px 12px;font-size:13px}
+body.phone #modal h2{font-size:17px;margin-bottom:6px}
+body.phone #target{zoom:.8}body.phone #boss{zoom:.8;top:calc(46px + var(--st))}
+body.phone #prompt{top:auto;bottom:calc(150px + var(--sb));font-size:13px}
+body.phone .plate{font-size:11px}
+body.phone #title h1{font-size:min(58px,13vw)}body.phone #title .sub{font-size:12px;letter-spacing:2px;margin:4px 12px 14px;line-height:1.5}
+body.phone #title .menu{min-width:240px;gap:8px}body.phone #title .btn{min-height:42px;font-size:15px}
+body.phone #title .note{font-size:10px;bottom:calc(4px + var(--sb))}
+/* landscape iPhone: everything in from the notch, a shorter dialog, no tall half-body art */
+body.phone:not(.port) #lih{display:none}
+body.phone:not(.port) #title{justify-content:flex-start;padding-top:calc(10px + var(--st))}body.phone:not(.port) #title h1{font-size:44px}body.phone:not(.port) #title .note{display:none}
+body.phone:not(.port) #dlg{left:calc(110px + var(--sa));right:calc(110px + var(--sr))}
+/* portrait iPhone */
+body.phone.port #tbtns{zoom:.86}
+body.phone.port #tracker{top:calc(104px + var(--st))}
+
 </style>
 <body class="notplay">
 <div id="gl"></div>
@@ -195,6 +244,9 @@ function polyDist(px, pz, pts) { let best = 1e9, bt = 0, acc = 0, tot = 0; const
 
 const QS = new URLSearchParams(location.search);
 const IS_TOUCH = matchMedia('(pointer: coarse)').matches || QS.get('touch') === '1';
+const PHONE_MQ = matchMedia('(pointer:coarse) and (max-height:500px), (pointer:coarse) and (max-width:500px)');
+function layoutClasses() { const b = document.body; if (!b) return; const phone = IS_TOUCH && (PHONE_MQ.matches || Math.min(innerWidth, innerHeight) <= 500); b.classList.toggle('touch', IS_TOUCH); b.classList.toggle('phone', phone); b.classList.toggle('pad', IS_TOUCH && !phone); b.classList.toggle('port', innerHeight > innerWidth); }
+addEventListener('resize', layoutClasses); addEventListener('orientationchange', () => setTimeout(layoutClasses, 120)); document.addEventListener('DOMContentLoaded', layoutClasses);
 const PFX = 'wanmei.';
 const LS = { get(k, d) { try { const v = localStorage.getItem(PFX + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } }, set(k, v) { try { localStorage.setItem(PFX + k, JSON.stringify(v)); } catch (e) { } }, del(k) { try { localStorage.removeItem(PFX + k); } catch (e) { } } };
 const SET = Object.assign({ vol: 0.7, music: 0.5, quality: IS_TOUCH ? 'mid' : 'high', shake: true, name: '', camSens: 1, invertY: false, dmgNum: true }, LS.get('settings', {}));
@@ -762,7 +814,7 @@ function pxHuman(P, A, view, bw, bh, axf, ayf, hpx) {
   const Q = chibiPose(P, A, view), B = Q.B, s = Q.s, u = hpx / chibiHeight(P), X = new PX(bw, bh);
   const walking = Q.w > 0.5, bob = walking && Math.abs(Q.sw) < 0.75 ? 1 : 0;
   const ox = Math.round(bw * axf), oy = Math.round(bh * ayf) + Math.round(Q.jumpY * u) - bob;
-  const sx = x => ox + x * u, sy = y => oy + y * u, side = view === 'side', back = view === 'back';
+  const brY = A.breath ? Q.hipY - 6 : -1e9, sx = x => ox + x * u, sy = y => oy + y * u - (y < brY ? 1 : 0), side = view === 'side', back = view === 'back';
   const SK = tri(P.skin || '#fde8dc', { soft: true }), HT = hairTones(P), TOP = tri(P.top || '#efe4cc'), LEG = tri(P.legC || P.skin || '#fde8dc'), BOOT = tri(P.boot || '#8a6040'), KILT = tri(P.kilt || '#b6844f');
   const hipY = Q.hipY, chestY = Q.chestY, P_ = Q.P_, k = PXSPR.k;
   const R1 = v => Math.max(1, v * u); // limb radius in px
@@ -784,7 +836,7 @@ function pxHuman(P, A, view, bw, bh, axf, ayf, hpx) {
     let front, sideMask, backMask, behind = null, bangLine;
     if (side) {
       // facing right: hair over the back and crown, a fringe falling over the brow
-      const fr = H === 'topknot' || bald ? -9 : H === 'short' ? -2.8 : -1.5;
+      const fr = H === 'topknot' || bald ? -9 : H === 'short' ? -3.6 : H === 'bun' ? -3.2 : -2.6;
       sideMask = (x, y) => cap(x, y) && (x < -0.6 + y * 0.35 || y < fr + (x > 4 ? (x - 4) * 0.9 : 0) || (H === 'long' || H === 'longtie' || H === 'wild' || H === 'kid') && x < 1.2 && y < 5);
     }
     bangLine = x => { // front fringe bottom edge
@@ -794,7 +846,7 @@ function pxHuman(P, A, view, bw, bh, axf, ayf, hpx) {
     };
     const sideburn = H === 'kid' || H === 'long' || H === 'longtie' || H === 'wild' ? 4.5 : H === 'spiky' ? 1.5 : H === 'bun' ? 2 : 0;
     front = (x, y) => cap(x, y) && (y < bangLine(x) || (Math.abs(x) > 5.0 && y < sideburn));
-    backMask = (x, y) => cap(x, y) && !(y > 3.4 && Math.abs(x) < 3 && !(H === 'long' || H === 'longtie' || H === 'wild' || H === 'kid'));
+    backMask = (x, y) => (x / vol) ** 2 + ((y + 0.9) / (vol * 0.98)) ** 2 <= 1 && y < 1.6 + [1.4, 2.4, 0.4][(Math.round(x) + 30) % 3] * (Math.abs(x) < vol - 1.5 ? 1 : 0) && !(y > 3.4 && Math.abs(x) < 3 && !(H === 'long' || H === 'longtie' || H === 'wild' || H === 'kid'));
     const extra = []; // hair blobs beyond the cap: [x, y, rx, ry]
     if (H === 'topknot') extra.push(side ? [-1.4, -8.6, 2.4, 2.1] : [0, -8.8, 2.5, 2.1]);
     if (H === 'bun') extra.push(side ? [-5.4, -4.6, 2.6, 2.5] : back ? [0, -5.4, 2.8, 2.6] : [0, -8.0, 2.4, 1.8]);
@@ -825,8 +877,23 @@ function pxHuman(P, A, view, bw, bh, axf, ayf, hpx) {
       if (F.beard) { const bd = tri(F.beard); for (let y = 3; y <= 9; y++) for (let x = -4; x <= 4; x++) { const hw = 3.6 - Math.max(0, y - 5) * 0.75; if (side ? (x + 2 > 5 || x + 2 < 1 || Math.abs(x) > hw) : Math.abs(x) > hw) continue; if (y === 3 && Math.abs(x) < 1) continue; set(side ? x + 3 : x, y, x > 1 ? bd.s : bd.b); } }
     }
     // hair over the skull
-    for (let y = -13; y <= 12; y++) for (let x = -10; x <= 10; x++) { if (!isHair(x, y)) continue; let c = HT.b;
-      const lx = side ? x + 1 : x, arcY = Math.round(-5.6 + (lx + 1.5) * (lx + 1.5) * 0.12); if (!back && lx >= -4 && lx <= 1 && y === arcY) c = lx === -2 ? HT.h : HT.l; if (back && y === -5 && lx >= -3 && lx <= 0) c = HT.l; if ((side ? x < -4 : x > 4) || y > 2) c = HT.s; if (!side && !back && y >= bangLine(x) - 1.1 && y < bangLine(x) && Math.abs(x) < 5) c = HT.s; set(x, y, c); }
+    // hair shading: clumps fanning from the crown (from the whorl in back view), a dark parting line between clumps,
+    // the lit edge of each clump towards the light (upper left), and a broken shine band across the crown
+    const NCL = H === 'spiky' ? 7 : H === 'kid' ? 6 : H === 'wild' ? 8 : H === 'short' ? 9 : 7;
+    const hairCol = (x, y) => {
+      const lx = side ? x + 1 : x, yy = y + 0.9, r = Math.hypot(lx, yy / 0.98);
+      if (back) { const a = Math.atan2(y + 5.5, x - 1), f = ((a / TAU * 11) % 1 + 1) % 1, rw = Math.hypot(x - 1, y + 5.5);
+        if (y > 2.5) return HT.s; if (rw < 1.2) return HT.s;
+        if (f < 0.12 && rw > 2) return HT.s; let c = x > 3.5 ? HT.s : HT.b;
+        if (f > 0.18 && f < 0.5 && y < -1 && x < 3) c = HT.l; if (rw > 2.6 && rw < 4.0 && x < 2.5 && y < -4 && f > 0.16 && f < 0.62) c = HT.h; return c; }
+      if (y > 2) return HT.s;
+      if (!side && y >= bangLine(x) - 1.1 && y < bangLine(x) && Math.abs(x) < 5) return HT.d; // under-fringe shadow
+      let f; if (yy < -0.4 && r > 2.2) { const a = Math.atan2(yy, lx); f = (((a + 0.88 * PI) / (0.76 * PI) * NCL) % 1 + 1) % 1; } else f = (((x + 14.5) / 2.6) % 1 + 1) % 1;
+      if (f < 0.12 && r > vol * 0.45) return HT.s;
+      let c = (side ? x < -4 : x > 4) ? HT.s : HT.b; if (f > 0.16 && f < 0.48 && (side ? x > -5 : x < 4.5)) c = c === HT.s ? HT.b : HT.l;
+      const sb = vol * 0.62; if (r > sb - 0.8 && r < sb + 0.8 && lx < 2.5 && yy < -1 && f > 0.15 && f < 0.7) c = lx < -1 ? HT.h : HT.l;
+      return c; };
+    for (let y = -13; y <= 12; y++) for (let x = -10; x <= 10; x++) { if (!isHair(x, y)) continue; set(x, y, hairCol(x, y)); }
     if (H === 'wild') { const bd = toRGB('#8a2a1a'); for (let x = -7; x <= 7; x++) if (!side || x < 5) set(x, -3, bd); }
     if (H === 'longtie' || H === 'bun') { const tc = toRGB(HAIRS[H].tie || '#c8a040'); if (side) set(-4, H === 'bun' ? -5 : 0, tc); else if (back) set(0, H === 'bun' ? -5 : 2, tc); }
   }
@@ -847,20 +914,26 @@ function pxHuman(P, A, view, bw, bh, axf, ayf, hpx) {
     if (P.vest && !back) { const vx = side ? tw * 0.55 : 0, vw = side ? tw * 0.6 : tw * 0.36; L.poly([[sx(vx - vw), sy(chestY)], [sx(vx + vw), sy(chestY)], [sx(vx + vw * 0.3), sy(hipY - 14)], [sx(vx - vw * 0.3), sy(hipY - 14)]], SK.R, { flat: 2, clip: clipT }); }
     if (robe && !back && !side) { const tc = toRGB(P.trim || mix(P.top || '#888', '#000', 0.4)); L.line(sx(-tw * 0.4), sy(chestY + 2), sx(ww * 0.35), sy(hipY - 6), tc); L.line(sx(ww * 0.35), sy(hipY - 6), sx(ww * 0.35), sy(rb), tc); L.line(sx(tw * 0.35), sy(chestY + 2), sx(0), sy(chestY + 40), tc); }
     if (robe && side) { const tc = toRGB(P.trim || mix(P.top || '#888', '#000', 0.4)); L.line(sx(tw * 0.9), sy(chestY + 2), sx(ww * 1.1), sy(hipY - 4), tc); }
-    if (!P.vest && !robe && !back && !side) L.line(sx(0), sy(chestY + 6), sx(0), sy(hipY - 16), TOP.s);
+    if (!P.vest && !robe && !back && !side) { const nx = Math.round(sx(0)), ny = Math.round(sy(chestY + 3)); for (let i = 0; i < 4; i++) for (let dx = -2 + Math.ceil(i / 2); dx <= 2 - Math.ceil(i / 2); dx++) L.put(nx + dx, ny + i, i < 2 ? SK.s : SK.b); L.put(nx - 3, ny, TOP.l); L.put(nx + 3, ny, TOP.s);
+      L.line(sx(-tw * 0.62), sy(chestY + B.torso * 0.5), sx(-ww * 0.45), sy(hipY - 17), TOP.s); L.line(sx(tw * 0.55), sy(chestY + B.torso * 0.42), sx(ww * 0.5), sy(hipY - 17), TOP.d); }
+    if (!P.vest && !robe && side) L.line(sx(tw * 0.2), sy(chestY + B.torso * 0.45), sx(-ww * 0.2), sy(hipY - 17), TOP.s);
+    if (!robe) { const yb = Math.round(sy(chestY + 2)); for (let x = Math.round(sx(-tw * 0.8)); x <= Math.round(sx(-tw * 0.2)); x++) if (clipT(x, yb)) L.put(x, yb, TOP.h); }
+    if (robe && !side) { const yh = Math.round(sy(rb)) - 2; for (let x = Math.round(sx(-ww * 1.3)); x <= Math.round(sx(ww * 1.3)); x++) if (clipT(x, yh)) L.put(x, yh, x < sx(0) ? TOP.s : TOP.d); for (const fx of [-0.5, 0.45]) L.line(sx(ww * fx), sy(hipY), sx(ww * fx * 1.4), sy(rb) - 3, TOP.s); }
     const band = (col, y0, y1) => { const T = tri(col); L.poly([[sx(-ww * 1.12), sy(y0)], [sx(ww * 1.12), sy(y0)], [sx(ww * 1.14), sy(y1)], [sx(-ww * 1.14), sy(y1)]], T.R, { flat: 2 }); L.poly([[sx(-ww * 1.12), sy(y0)], [sx(ww * 1.12), sy(y0)], [sx(ww * 1.14), sy(y1)], [sx(-ww * 1.14), sy(y1)]], T.R, { flat: 1, clip: x => x + 0.5 > sx(ww * 0.4) }); return T; };
     if (P.sash) { const T = band(P.sash, hipY - 22, hipY - 4); if (!back) { const kx = side ? -ww * 0.9 : ww * 0.45; for (let i = 0; i < 6; i++) L.put(Math.round(sx(kx)) + (i > 3 ? 1 : 0), Math.round(sy(hipY - 4)) + i, i % 2 ? T.s : T.b); } }
     else if (P.belt !== false && !robe) { const T = band(P.belt || '#6a4428', hipY - 16, hipY - 2); if (!back && !side) { const gold = toRGB('#f0c860'); L.put(Math.round(sx(0)), Math.round(sy(hipY - 9)), gold); L.put(Math.round(sx(0)) - 1, Math.round(sy(hipY - 9)), gold); } }
     if (P.fur) { const T = tri(P.fur), y0 = Math.round(sy(chestY - 4)), x0 = Math.round(sx(-tw * 0.98)), x1 = Math.round(sx(tw * (side ? 1.1 : 0.98))); for (let x = x0; x <= x1; x++) { const d = 1 + ((x * 7) % 3 === 0 ? 1 : 0) + (back ? 0 : 1); for (let y = 0; y <= d; y++) L.put(x, y0 + y, y === 0 ? T.l : y === d ? T.s : T.b); } }
     if (P.necklace && !back && !side) { const wh = toRGB('#f4eedc'); for (let i = -2; i <= 2; i++) L.put(Math.round(sx(0)) + i * 2, Math.round(sy(chestY + 16)) + Math.round(Math.abs(i) * -0.5) + 2, wh); }
   };
-  const lower = L => { if (robe || P.pants) return; const kw = hipW * 1.05, kb = hipW * (side ? 1.2 : 1.32); const pts = [[-kw, hipY - 10], [kw, hipY - 10], [kb, kiltBot]]; const n = side ? 4 : 6; for (let i = 1; i <= n; i++) { const x = lerp(kb, -kb, i / n); pts.push([x + kb / n, kiltBot + (i % 2 ? 9 : 2)], [x, kiltBot]); } polyT(L, pts, KILT, 0, kb); };
+  const lower = L => { if (robe || P.pants) return; const kw = hipW * 1.05, kb = hipW * (side ? 1.2 : 1.32); const pts = [[-kw, hipY - 10], [kw, hipY - 10], [kb, kiltBot]]; const n = side ? 4 : 6; for (let i = 1; i <= n; i++) { const x = lerp(kb, -kb, i / n); pts.push([x + kb / n, kiltBot + (i % 2 ? 9 : 2)], [x, kiltBot]); } polyT(L, pts, KILT, 0, kb);
+    for (let i = 1; i < n; i++) { const t = lerp(-0.8, 0.8, i / n), x0 = sx(kw * t), x1 = sx(kb * t), y0 = sy(hipY - 2), y1 = sy(kiltBot) - 1; L.line(x0, y0, x1, y1, i % 2 ? KILT.s : KILT.d); }
+    const yh = Math.round(sy(hipY - 9)); for (let x = Math.round(sx(-kw * 0.9)); x <= Math.round(sx(kw * 0.9)); x++) if (back || side) L.put(x, yh, KILT.l); };
   const boot = (L, fx, fy, fw, dir) => { const x = Math.round(sx(fx)), y = Math.round(sy(fy)), w = Math.max(2, Math.round(fw * u)); for (let j = -1; j <= 0; j++) for (let i = -Math.floor(w / 2); i < Math.ceil(w / 2) + (dir ? 1 : 0); i++) L.put(x + i + (dir > 0 && j === 0 ? 0 : 0), y + j, j < 0 ? BOOT.b : BOOT.s); if (dir) L.put(x + Math.ceil(w / 2) + 1, y, BOOT.s); };
   const legsFront = L => { for (const sd of [-1, 1]) { const lift = (Q.w > 0.5 ? Math.max(0, sd < 0 ? Q.sw : -Q.sw) : 0) * 2.2 / u; let x0 = sd * hipW * 0.42, x1 = sd * hipW * 0.46, y1 = -6 - lift; if (P_ === 'sit' || P_ === 'cross') { x1 = sd * hipW * 1.4; y1 = hipY + 34; } if (P_ === 'kneel') { y1 = -6; x1 = sd * hipW * 0.7; }
       const T = P.pants || P.legC ? LEG : SK; if (!robe) capT(L, x0, hipY, x1, y1, B.legR, B.legR * 0.85, T);
       if (P.wraps) { const wr = tri(P.wraps); for (let i = 1; i <= 2; i++) { const yy = Math.round(lerp(sy(hipY), sy(y1), 0.62 + i * 0.12)); for (let dx = -1; dx <= 1; dx++) L.put(Math.round(sx(x1)) + dx, yy, wr.b); } }
       boot(L, x1, y1 + 4, B.legR * 2.3, 0); } };
-  const legSide = (L, a, far) => { const x0 = 4, y0 = hipY, L1 = Q.legL * 0.52, L2 = Q.legL * 0.5; let kx = x0 + Math.sin(a) * L1, ky = y0 + Math.cos(a) * L1, knee = Math.max(0, -Math.sin(a + 0.3)) * 0.9 * Q.w; if (P_ === 'sit' || P_ === 'cross' || P_ === 'kneel') { kx = x0 + L1 * 0.95; ky = y0 + 6; knee = -1.5; } const fx = kx + Math.sin(a - knee) * L2, fy = Math.min(-6, ky + Math.cos(a - knee) * L2);
+  const legSide = (L, a, far) => { if (robe) a *= 0.5; const x0 = 4, y0 = hipY, L1 = Q.legL * 0.52, L2 = Q.legL * 0.5; let kx = x0 + Math.sin(a) * L1, ky = y0 + Math.cos(a) * L1, knee = Math.max(0, -Math.sin(a + 0.3)) * 0.9 * Q.w; if (P_ === 'sit' || P_ === 'cross' || P_ === 'kneel') { kx = x0 + L1 * 0.95; ky = y0 + 6; knee = -1.5; } const fx = kx + Math.sin(a - knee) * L2, fy = Math.min(-6, ky + Math.cos(a - knee) * L2);
     SIDEFEET.push(fx); const T0 = P.pants || P.legC ? LEG : SK, T = far ? { R: [T0.d, T0.d, T0.s, T0.s, T0.b] } : T0; if (!robe) { capT(L, x0, y0, kx, ky, B.legR, B.legR * 0.9, T); capT(L, kx, ky, fx, fy, B.legR * 0.9, B.legR * 0.8, T); }
     if (P.wraps && !far) { const wr = tri(P.wraps); for (let i = 0; i < 2; i++) { const t = 0.55 + i * 0.2; L.put(Math.round(lerp(sx(kx), sx(fx), t)), Math.round(lerp(sy(ky), sy(fy), t)), wr.b); L.put(Math.round(lerp(sx(kx), sx(fx), t)) + 1, Math.round(lerp(sy(ky), sy(fy), t)), wr.b); } }
     const bx = Math.round(sx(fx)), by = Math.round(sy(fy)) + 2, bc = far ? BOOT.s : BOOT.b; for (let i = -1; i <= 2; i++) L.put(bx + i, by, i === 2 ? BOOT.s : bc); L.put(bx - 1, by - 1, bc); L.put(bx, by - 1, bc); L.put(bx + 1, by - 1, BOOT.s); };
@@ -1470,8 +1543,13 @@ function texPix(t, gx, gy, out) {
       for (let i = 0; i < 7; i++) { const bx = Math.floor(thash(tx, ty, i) * 18) + 1, bv = Math.floor(thash(tx, ty, i + 9) * 16) + 2; const dx = u - bx, dy = v - bv; if (dy === 0 && Math.abs(dx) === 1 || dy === -1 && dx === 0) k = k === 2 ? 3 : 2; if (dy === 1 && dx === 0) k = 0; }
       if (h < 0.035) k = Math.max(0, k - 1); else if (h > 0.985) k = Math.min(4, k + 1); out.set(C[k]); return; }
     case T.DIRT: { C = TCOL.dirt; const n = vnoise(gx / 9, gy / 9) * 0.6; let k = n + (by - 0.5) * 0.3 > 0.2 ? 2 : 1; if (h < 0.06) k = 0; else if (h > 0.975) k = 3; if (thash(tx, ty, 3) < 0.25) { const px = Math.floor(thash(tx, ty, 4) * 16) + 2, py = Math.floor(thash(tx, ty, 5) * 16) + 2; if ((u === px || u === px + 1) && v === py) { out.set(TCOL.gravel[3]); return; } if ((u === px || u === px + 1) && v === py + 1) { out.set(TCOL.gravel[1]); return; } } out.set(C[k]); return; }
-    case T.COBBLE: { C = TCOL.cobble; const row = Math.floor(gy / 5), off = (row % 2) * 3 + (row % 3), col = Math.floor((gx + off) / 7), su = (gx + off) % 7, sv = gy % 5;
-      if (sv === 0 || su === 0) { out.set(C[0]); return; } const st = thash(col, row, 7), base = st < 0.33 ? 1 : st < 0.75 ? 2 : 3; let k = base; if (sv === 1 || su === 1) k = Math.min(4, base + 1); else if (sv === 4) k = Math.max(1, base - 1); out.set(C[k]); return; }
+    case T.COBBLE: { // irregular flagstones: Voronoi slabs, bevelled (lit top-left, shaded bottom-right), dark grout with the odd tuft of moss
+      C = TCOL.cobble; const cs = 8, cx0 = Math.floor(gx / cs), cy0 = Math.floor(gy / cs); let best = 99, b2 = 99, bdx = 0, bdy = 0, bi = 0, bj = 0;
+      for (let j = -1; j <= 1; j++) for (let i = -1; i <= 1; i++) { const ci = cx0 + i, cj = cy0 + j, cx = ci * cs + 1.5 + thash(ci, cj, 11) * (cs - 3), cy = cj * cs + 1.5 + thash(ci, cj, 12) * (cs - 3), dx = gx - cx, dy = (gy - cy) * 1.15, dd = Math.hypot(dx, dy); if (dd < best) { b2 = best; best = dd; bdx = dx; bdy = dy; bi = ci; bj = cj; } else if (dd < b2) b2 = dd; }
+      const gap = b2 - best; if (gap < 1.05) { if (thash(Math.floor(gx / 3), Math.floor(gy / 3), 13) < 0.045) { out.set(TCOL.grass[h < 0.5 ? 1 : 2]); return; } out.set(C[0]); return; }
+      const st = thash(bi, bj, 7); let k = st < 0.3 ? 1 : st < 0.8 ? 2 : 3; const e = bdx + bdy;
+      if (gap < 2.2 && e < -0.5) k = Math.min(4, k + 1); else if (gap < 2.0 && e > 0.8) k = Math.max(1, k - 1);
+      if (h < 0.04) k = Math.max(1, k - 1); else if (h > 0.985) k = Math.min(4, k + 1); out.set(C[k]); return; }
     case T.WATER: { C = TCOL.water; const w = Math.sin(gy * 0.5 + Math.sin(gx * 0.09) * 2.2); let k = 1 + (vnoise(gx / 30, gy / 30) > 0.2 ? 1 : 0); if (w > 0.93 && (gx + gy * 3) % 11 < 4) k = 3; out.set(C[k]); return; }
     case T.SAND: { C = TCOL.sand; let k = vnoise(gx / 10, gy / 10) + (by - 0.5) * 0.3 > 0.1 ? 2 : 1; if (h < 0.05) k = 0; out.set(C[k]); return; }
     case T.GRAVEL: { C = TCOL.gravel; let k = vnoise(gx / 16, gy / 16) + (by - 0.5) * 0.25 > 0.1 ? 2 : 1; if (h < 0.08) k = 0; else if (h > 0.95) k = 3; const sx = Math.floor(gx / 6), sy = Math.floor(gy / 6); if (thash(sx, sy, 2) < 0.18) { const cx = sx * 6 + 3, cy = sy * 6 + 3, d = Math.hypot(gx - cx, (gy - cy) * 1.3); if (d < 2.2) k = gy < cy ? 3 : 2; else if (d < 2.9 && gy > cy) k = 0; } out.set(C[k]); return; }
@@ -1498,16 +1576,16 @@ function paintTileChunk(ci, cj, S) {
   for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
     const gx = tx0 * P + x, gy = tz0 * P + y, fx = gx / P - 0.5, fz = gy / P - 0.5, i0 = Math.floor(fx), j0 = Math.floor(fz), ax = fx - i0, az = fz - j0;
     const A = tget(i0, j0), B = tget(i0 + 1, j0), C = tget(i0, j0 + 1), D = tget(i0 + 1, j0 + 1), own = tget(Math.floor(gx / P), Math.floor(gy / P));
-    let tt = own, lip = 0, shore = 0;
+    let tt = own, lip = 0, shore = 0, rim = 0;
     if (A !== B || A !== C || A !== D) {
       cand[0] = A; cand[1] = B; cand[2] = C; cand[3] = D; cand.sort((p, q) => TPRIO[q] - TPRIO[p]);
-      const jag = vnoise(gx * 0.3, gy * 0.3) + vnoise(gx * 0.9, gy * 0.9) * 0.35; tt = cand[3];
+      const jag = vnoise(gx * 0.3, gy * 0.3) + vnoise(gx * 0.9, gy * 0.9) * 0.35, blade = ((gx * 3 + gy * 5) % 7 === 0 ? 0.9 : (gx * 3 + gy * 5) % 7 === 1 ? 0.45 : 0) - 0.3; tt = cand[3];
       for (let k = 0; k < 3; k++) { const t = cand[k]; if (k && t === cand[k - 1]) continue; if (t === T.VOID) continue; const pr = TPRIO[t];
-        const cov = (TPRIO[A] >= pr ? (1 - ax) * (1 - az) : 0) + (TPRIO[B] >= pr ? ax * (1 - az) : 0) + (TPRIO[C] >= pr ? (1 - ax) * az : 0) + (TPRIO[D] >= pr ? ax * az : 0), th = 0.5 + jag * TEDGE[t];
-        if (cov > th) { tt = t; break; } if (cov > th - 0.09 && t !== T.WATER && !lip) lip = t; if (t !== T.WATER && cov > 0.02) shore = Math.max(shore, cov - th + 0.5); }
+        const cov = (TPRIO[A] >= pr ? (1 - ax) * (1 - az) : 0) + (TPRIO[B] >= pr ? ax * (1 - az) : 0) + (TPRIO[C] >= pr ? (1 - ax) * az : 0) + (TPRIO[D] >= pr ? ax * az : 0), th = t === T.GRASS ? 0.5 + vnoise(gx * 0.16, gy * 0.16) * 0.12 - blade * 0.16 : 0.5 + jag * TEDGE[t];
+        if (cov > th) { tt = t; if (t === T.GRASS && cov < th + 0.07) rim = 1; break; } if (cov > th - 0.09 && t !== T.WATER && !lip) lip = t; if (t !== T.WATER && cov > 0.02) shore = Math.max(shore, cov - th + 0.5); }
       if (tt === T.VOID) tt = own;
     }
-    texPix(tt, gx, gy, px); let r = px[0], gg = px[1], b = px[2];
+    texPix(tt, gx, gy, px); if (rim) px.set(TCOL.grass[0]); let r = px[0], gg = px[1], b = px[2];
     if (lip && TPRIO[lip] > TPRIO[tt]) { const k2 = lip === T.WALL || lip === T.ROCK ? 0.6 : 0.8; r *= k2; gg *= k2; b *= k2; }
     if (tt === T.WATER && shore > 0) { const f = shore > 0.36 ? TCOL.water[4] : shore > 0.22 ? TCOL.water[3] : null; if (f) { r = f[0]; gg = f[1]; b = f[2]; } }
     const o = (y * N + x) * 4; d[o] = r; d[o + 1] = gg; d[o + 2] = b; d[o + 3] = 255; }
@@ -1655,7 +1733,20 @@ function canopy(g, s, cx, cy, r, c1, c2, R, n = 7) { // a fluffy cel-shaded crow
 }
 function trunk(g, s, x0, y0, w0, w1, h, col, bend = 0) { const p = new Path2D(); p.moveTo(x0 - w0 * 1.4, y0); p.quadraticCurveTo(x0 - w0, y0 - h * 0.2, x0 - w1 + bend, y0 - h); p.lineTo(x0 + w1 + bend, y0 - h); p.quadraticCurveTo(x0 + w0, y0 - h * 0.2, x0 + w0 * 1.4, y0); p.closePath(); cel(g, p, col, { sx: -w0 * 0.5, sy: 0 }); g.strokeStyle = rgba(mix(col, '#000', 0.4), 0.6); g.lineWidth = LW * 0.8; for (let i = 0; i < 4; i++) { const xx = x0 + (i - 1.5) * w0 * 0.45; g.beginPath(); g.moveTo(xx, y0 - h * 0.08); g.quadraticCurveTo(xx + 3, y0 - h * 0.5, xx + bend * 0.5, y0 - h * 0.9); g.stroke(); } }
 function stoneBlockWall(g, x, y, w, h, c1, c2, R, rows = 3) { const p = new Path2D(); p.rect(x, y, w, h); cel(g, p, c1, { sx: 0, sy: -h * 0.15 }); g.save(); g.clip(p); for (let r = 0; r < rows; r++) { const yy = y + r * h / rows; let xx = x - (r % 2) * w * 0.08; while (xx < x + w) { const bw = w * (0.18 + R() * 0.14); g.fillStyle = mix(c1, c2, R() * 0.6); g.fillRect(xx + 1.5, yy + 1.5, bw - 3, h / rows - 3); g.strokeStyle = rgba('#2a2420', 0.55); g.lineWidth = LW * 0.7; g.strokeRect(xx + 1.5, yy + 1.5, bw - 3, h / rows - 3); xx += bw; } } g.restore(); inkP(g, p, 1); }
-function rockShape(g, x, y, rx, ry, c1, R, flat = 0.75) { const pts = []; const n = 7; for (let i = 0; i < n; i++) { const a = PI + i / (n - 1) * PI; const rr = 1 + (R() - 0.5) * 0.3; pts.push([x + Math.cos(a) * rx * rr, y + Math.sin(a) * ry * rr * flat * 1.3]); } pts.push([x + rx * 0.95, y + ry * 0.12], [x - rx * 0.95, y + ry * 0.12]); const p = smoothP(pts, true, 0.35); cel(g, p, c1, { sx: -rx * 0.22, sy: -ry * 0.16, hl: true, hla: 0.35 }); g.strokeStyle = rgba('#1a1612', 0.5); g.lineWidth = LW * 0.8; g.beginPath(); g.moveTo(x - rx * 0.3, y - ry * 0.6); g.lineTo(x - rx * 0.1, y - ry * 0.2); g.lineTo(x + rx * 0.2, y - ry * 0.3); g.stroke(); return p; }
+function rockShape(g, x, y, rx, ry, c1, R, flat = 0.75) { // a chunky faceted stone: lit top plane, shaded right flank, ground-contact shadow, a crack and lichen
+  const pts = [], n = 8; for (let i = 0; i < n; i++) { const a = PI + i / (n - 1) * PI, rr = 1 + (R() - 0.5) * 0.28; pts.push([x + Math.cos(a) * rx * rr, y + Math.sin(a) * ry * rr * flat * 1.3]); }
+  pts.push([x + rx * 0.95, y + ry * 0.12], [x - rx * 0.95, y + ry * 0.12]); const p = smoothP(pts, true, 0.22);
+  cel(g, p, c1, { sx: -rx * 0.16, sy: -ry * 0.1, line: false });
+  const top = y - ry * flat * 1.3, px = x + (R() - 0.5) * rx * 0.3, py = y - ry * 0.32;
+  g.save(); g.clip(p);
+  const f1 = new Path2D(); f1.moveTo(x - rx * 1.2, y - ry * 0.15); f1.lineTo(x - rx * 0.62, top + ry * 0.05); f1.lineTo(x + rx * 0.3, top - ry * 0.05); f1.lineTo(px + rx * 0.12, py); f1.lineTo(x - rx * 0.4, y - ry * 0.1); f1.closePath(); g.fillStyle = rgba(mix(c1, '#fff6e0', 0.38), 0.75); g.fill(f1);
+  const f2 = new Path2D(); f2.moveTo(px + rx * 0.12, py); f2.lineTo(x + rx * 0.3, top - ry * 0.05); f2.lineTo(x + rx * 1.3, y - ry * 0.4); f2.lineTo(x + rx * 1.3, y + ry); f2.lineTo(px, y + ry); f2.closePath(); g.fillStyle = rgba(mix(c1, '#1a1420', 0.55), 0.55); g.fill(f2);
+  g.fillStyle = rgba('#1a1420', 0.3); g.fillRect(x - rx * 1.3, y - ry * 0.16, rx * 2.6, ry);
+  g.strokeStyle = rgba(mix(c1, '#fff6e0', 0.6), 0.9); g.lineWidth = LW * 0.7; g.beginPath(); g.moveTo(x - rx * 0.62, top + ry * 0.08); g.lineTo(x + rx * 0.28, top - ry * 0.02); g.stroke();
+  g.strokeStyle = rgba('#1a1420', 0.6); g.lineWidth = LW * 0.7; g.beginPath(); g.moveTo(x + rx * 0.3, top - ry * 0.05); g.lineTo(px + rx * 0.12, py); g.lineTo(px - rx * 0.05, y - ry * 0.05); g.stroke();
+  if (R() < 0.7) { const cx = x - rx * (0.1 + R() * 0.4), cy = y - ry * (0.35 + R() * 0.25); g.beginPath(); g.moveTo(cx, cy); g.lineTo(cx + rx * 0.12, cy + ry * 0.18); g.lineTo(cx + rx * 0.06, cy + ry * 0.3); g.strokeStyle = rgba('#2a2228', 0.7); g.stroke(); }
+  for (let i = 0, m = 2 + Math.floor(R() * 3); i < m; i++) { const lx = x + (R() - 0.65) * rx * 1.1, ly = top + ry * (0.15 + R() * 0.4); g.fillStyle = rgba(R() < 0.5 ? '#9aa85a' : '#c8c070', 0.8); g.beginPath(); g.ellipse(lx, ly, rx * 0.09, ry * 0.06, 0, 0, TAU); g.fill(); }
+  g.restore(); inkP(g, p, 1); return p; }
 /* ---------- trees & plants ---------- */
 proto('oak', { w: 7, h: 9, ay: 0.95, col: 0.55, fade: true, vars: 3, draw(g, s, R) { trunk(g, s, 0, 0, 0.32 * s, 0.22 * s, 4.2 * s, '#6a4e34', (R() - 0.5) * 8); canopy(g, s, 0, -5.6 * s, 2.6 * s, '#2f6a2e', '#5aa04a', R, 8); } });
 proto('pine', { w: 5, h: 10, ay: 0.95, col: 0.45, fade: true, vars: 3, draw(g, s, R) { trunk(g, s, 0, 0, 0.22 * s, 0.14 * s, 3 * s, '#5a4232'); const tiers = 5; for (let i = 0; i < tiers; i++) { const t = i / (tiers - 1), y = -(2.2 + t * 6) * s, w = (2.3 - t * 1.6) * s, hh = 2.3 * s; const p = new Path2D(); p.moveTo(0, y - hh); for (let k2 = 0; k2 <= 6; k2++) { const x = lerp(w, -w, k2 / 6); p.lineTo(x, y + (k2 % 2 ? 0.25 * s : 0)); } p.closePath(); const pp = new Path2D(); pp.moveTo(0, y - hh); pp.lineTo(-w, y); pp.lineTo(w, y); pp.closePath(); g.fillStyle = '#1d4a30'; g.fill(p); g.save(); g.clip(p); g.fillStyle = '#3c7a46'; g.beginPath(); g.moveTo(0, y - hh); g.lineTo(-w * 1.2, y); g.lineTo(w * 0.2, y); g.closePath(); g.fill(); g.fillStyle = '#6aa860'; g.beginPath(); g.moveTo(0, y - hh); g.lineTo(-w * 0.8, y - hh * 0.25); g.lineTo(-w * 0.2, y - hh * 0.4); g.closePath(); g.fill(); g.restore(); g.strokeStyle = '#0e2a1a'; g.lineWidth = LW; g.stroke(p); } } });
@@ -1690,13 +1781,23 @@ proto('spire2', { w: 6, h: 15, ay: 0.96, col: 2.5, fade: true, draw(g, s, R) { c
 proto('skull', { w: 4, h: 3.2, ay: 0.85, col: 1.4, top: 2, draw(g, s, R) { const p = smoothP([[-1.6 * s, 0], [-1.7 * s, -1.4 * s], [-0.8 * s, -2.3 * s], [0.9 * s, -2.2 * s], [1.7 * s, -1.2 * s], [1.6 * s, 0], [0.8 * s, 0.3 * s], [-0.8 * s, 0.3 * s]]); cel(g, p, '#ece4d0', { sx: 0.3 * s, sy: 0.2 * s }); for (const sd of [-1, 1]) { const e = ellP(sd * 0.65 * s, -1.0 * s, 0.38 * s, 0.32 * s); flatP(g, e, '#2a2420'); const h = new Path2D(); h.moveTo(sd * 1.3 * s, -1.8 * s); h.quadraticCurveTo(sd * 2.2 * s, -3 * s, sd * 1.6 * s, -3.0 * s); h.quadraticCurveTo(sd * 1.6 * s, -2.4 * s, sd * 1.0 * s, -2.0 * s); h.closePath(); cel(g, h, '#d8ceb6'); } for (let i = 0; i < 5; i++) { const x = (-0.8 + i * 0.4) * s; const t = new Path2D(); t.rect(x - 0.08 * s, -0.2 * s, 0.16 * s, 0.32 * s); flatP(g, t, '#fffbee'); } } });
 proto('ribs', { w: 6, h: 2.6, ay: 0.85, col: 0, draw(g, s, R) { line(g, -2.6 * s, -0.4 * s, 2.6 * s, -0.5 * s, 0.22 * s, '#d8d0bc'); for (let i = 0; i < 7; i++) { const x = (-2.2 + i * 0.72) * s; g.strokeStyle = INK; g.lineWidth = 0.2 * s + LW * 2; g.beginPath(); g.moveTo(x, -0.4 * s); g.quadraticCurveTo(x + 0.7 * s, -2.2 * s, x + 0.2 * s, -2.0 * s); g.stroke(); g.strokeStyle = '#ece4d0'; g.lineWidth = 0.18 * s; g.stroke(); } } });
 /* ---------- 石村 buildings ---------- */
+function rubbleWall(g, s, x, y, w, h, c1, c2, R) { // dry-stone wall: courses of uneven, rounded stones in dark mortar, big footing stones, damp moss at the base
+  const p = new Path2D(); p.rect(x, y, w, h); g.fillStyle = mix(c2, '#2a2420', 0.45); g.fill(p); g.save(); g.clip(p);
+  let yy = y + h, r = 0; while (yy > y - 0.1 * s) { const rh = (r === 0 ? 0.55 : 0.34 + R() * 0.16) * s; let xx = x - R() * 0.45 * s;
+    while (xx < x + w) { const bw = (0.42 + R() * 0.5) * s * (r === 0 ? 1.35 : 1), m = 0.045 * s, sx0 = xx + m, sy0 = yy - rh + m, sw = bw - 2 * m, sh = rh - 2 * m, cr = Math.min(sw, sh) * 0.32;
+      const sp = new Path2D(); sp.moveTo(sx0 + cr, sy0); sp.lineTo(sx0 + sw - cr, sy0); sp.quadraticCurveTo(sx0 + sw, sy0, sx0 + sw, sy0 + cr); sp.lineTo(sx0 + sw, sy0 + sh - cr); sp.quadraticCurveTo(sx0 + sw, sy0 + sh, sx0 + sw - cr, sy0 + sh); sp.lineTo(sx0 + cr, sy0 + sh); sp.quadraticCurveTo(sx0, sy0 + sh, sx0, sy0 + sh - cr); sp.lineTo(sx0, sy0 + cr); sp.quadraticCurveTo(sx0, sy0, sx0 + cr, sy0); sp.closePath();
+      const k = R(), col = k < 0.12 ? mix(c1, '#c09a70', 0.35) : k < 0.25 ? mix(c2, '#5a5448', 0.3) : mix(c1, c2, R() * 0.7);
+      cel(g, sp, col, { sx: -0.07 * s, sy: -0.07 * s, hl: true, hla: 0.3, hx: -0.04 * s, hy: -0.04 * s, line: false }); g.strokeStyle = rgba('#241e1a', 0.55); g.lineWidth = LW * 0.6; g.stroke(sp); xx += bw; }
+    yy -= rh; r++; }
+  for (let i = 0; i < w / s * 1.6; i++) { const mx = x + R() * w; g.fillStyle = rgba(R() < 0.5 ? '#4e7034' : '#6a8a40', 0.6); g.beginPath(); g.ellipse(mx, y + h - R() * 0.25 * s, (0.12 + R() * 0.2) * s, 0.08 * s, 0, 0, TAU); g.fill(); }
+  g.restore(); inkP(g, p, 1); }
 function stoneHouse(g, s, R, W2, D, H2, roofC, o = {}) {
   // straight 3/4 view: stone front wall, thatched front roof slope rising up the screen, upturned eave corners (石村的石屋)
   const ov = 0.45 * s, rH = D * 0.5 + 1.5 * s, eaveY = -H2 + 0.15 * s, ridgeY = -H2 - rH, x0 = -W2 / 2, x1 = W2 / 2;
   // back roof sliver (seen beyond the ridge)
   const back = new Path2D(); back.moveTo(x0 - ov * 0.6, ridgeY + 0.1 * s); back.lineTo(x0 - ov * 0.3, ridgeY - 0.5 * s); back.lineTo(x1 + ov * 0.3, ridgeY - 0.5 * s); back.lineTo(x1 + ov * 0.6, ridgeY + 0.1 * s); back.closePath(); cel(g, back, mix(roofC, '#2a2018', 0.35), { sx: 0, sy: 0 });
   // wall
-  stoneBlockWall(g, x0, -H2, W2, H2, o.wall || '#b4ab98', o.wall2 || '#8e8676', R, 4);
+  rubbleWall(g, s, x0, -H2, W2, H2, o.wall || '#b8ae9a', o.wall2 || '#8a8272', R);
   // foundation strip
   const fd = new Path2D(); fd.rect(x0 - 0.1 * s, -0.25 * s, W2 + 0.2 * s, 0.25 * s); cel(g, fd, '#6e685c', { sx: 0, sy: -2 });
   // door: wooden planks in a stone frame, lintel beam
@@ -1716,11 +1817,18 @@ function stoneHouse(g, s, R, W2, D, H2, roofC, o = {}) {
   const rc2 = mix(roofC, '#fff0c0', 0.22), rc3 = mix(roofC, '#20140c', 0.35);
   g.fillStyle = rc3; g.fill(rp); g.save(); g.clip(rp);
   const grd = g.createLinearGradient(0, ridgeY, 0, eaveY); grd.addColorStop(0, rc2); grd.addColorStop(0.75, roofC); grd.addColorStop(1, rc3); g.fillStyle = grd; g.fillRect(x0 - ov, ridgeY, W2 + ov * 2, rH + 0.5 * s);
-  // thatch rows: scalloped bands with straw strokes
-  const rows = Math.max(4, Math.round(rH / (0.55 * s)));
-  for (let r = 0; r < rows; r++) { const y = ridgeY + (r + 1) / rows * (eaveY - ridgeY); g.fillStyle = rgba(rc3, 0.55); g.beginPath(); g.moveTo(x0 - ov, y); for (let x = x0 - ov; x <= x1 + ov; x += 0.32 * s) g.quadraticCurveTo(x + 0.16 * s, y + 0.14 * s, x + 0.32 * s, y); g.lineTo(x1 + ov, y - 0.08 * s); g.lineTo(x0 - ov, y - 0.08 * s); g.fill();
-    g.strokeStyle = rgba(rc2, 0.6); g.lineWidth = LW * 0.6; for (let i = 0; i < W2 / s * 6; i++) { const x = x0 - ov + R() * (W2 + 2 * ov), yy = y - R() * (eaveY - ridgeY) / rows * 0.8; g.beginPath(); g.moveTo(x, yy); g.lineTo(x + (R() - 0.5) * 0.1 * s, yy + 0.25 * s); g.stroke(); } }
+  // thatch: overlapping tiers, each throwing a scalloped shadow on the one below, light and dark straw strokes, moss patches
+  const rows = Math.max(4, Math.round(rH / (0.5 * s))), band = (eaveY - ridgeY) / rows;
+  for (let r = 0; r < rows; r++) { const yt = ridgeY + r * band;
+    if (r) { g.fillStyle = rgba(rc3, 0.9); g.beginPath(); g.moveTo(x0 - ov, yt - 0.04 * s); for (let x = x0 - ov; x <= x1 + ov; x += 0.34 * s) g.quadraticCurveTo(x + 0.17 * s, yt + (0.16 + R() * 0.1) * s, x + 0.34 * s, yt - 0.02 * s); g.lineTo(x1 + ov, yt - 0.1 * s); g.lineTo(x0 - ov, yt - 0.1 * s); g.fill();
+      g.strokeStyle = rgba(mix(rc2, '#fff8e0', 0.3), 0.75); g.lineWidth = LW * 0.8; g.beginPath(); g.moveTo(x0 - ov, yt - 0.12 * s); g.lineTo(x1 + ov, yt - 0.12 * s); g.stroke(); }
+    g.lineWidth = LW * 0.65; for (let i = 0; i < W2 / s * 10; i++) { const x = x0 - ov + R() * (W2 + 2 * ov), y0 = yt + band * (0.2 + R() * 0.35); g.strokeStyle = R() < 0.65 ? rgba(rc2, 0.85) : rgba(rc3, 0.7); g.beginPath(); g.moveTo(x, y0); g.lineTo(x + (R() - 0.5) * 0.12 * s, y0 + band * (0.35 + R() * 0.3)); g.stroke(); } }
+  for (let i = 0; i < 2 + Math.floor(R() * 3); i++) { const mx = x0 + R() * W2, my = ridgeY + (0.4 + R() * 0.5) * (eaveY - ridgeY); g.fillStyle = rgba('#5a7a34', 0.55); g.beginPath(); g.ellipse(mx, my, (0.25 + R() * 0.35) * s, 0.14 * s, 0, 0, TAU); g.fill(); g.fillStyle = rgba('#8aaa4a', 0.5); g.beginPath(); g.ellipse(mx - 0.06 * s, my - 0.04 * s, 0.14 * s, 0.07 * s, 0, 0, TAU); g.fill(); }
+  const sg = g.createLinearGradient(x0 - ov, 0, x1 + ov, 0); sg.addColorStop(0, 'rgba(255,244,210,.16)'); sg.addColorStop(0.45, 'rgba(0,0,0,0)'); sg.addColorStop(1, 'rgba(24,14,8,.28)'); g.fillStyle = sg; g.fillRect(x0 - ov, ridgeY, W2 + 2 * ov, eaveY - ridgeY + 0.6 * s);
   g.restore(); g.strokeStyle = INK; g.lineWidth = LW * 1.2; g.lineJoin = 'round'; g.stroke(rp);
+  { const qb = (t, a, c, b) => (1 - t) * (1 - t) * a + 2 * (1 - t) * t * c + t * t * b; // ragged straw ends hanging over the eave
+    for (const [ax, ay, cx, cy, bx, by] of [[x0 - ov, eaveY - lift, x0 + W2 * 0.12, eaveY + 0.08 * s, 0, eaveY + 0.08 * s], [0, eaveY + 0.08 * s, x1 - W2 * 0.12, eaveY + 0.08 * s, x1 + ov, eaveY - lift]])
+      for (let t = 0.03; t < 1; t += 0.06) { const ex = qb(t, ax, cx, bx), ey = qb(t, ay, cy, by), hh = (0.1 + R() * 0.14) * s; g.fillStyle = R() < 0.5 ? rc3 : roofC; g.beginPath(); g.moveTo(ex - 0.09 * s, ey); g.lineTo(ex + 0.09 * s, ey); g.lineTo(ex + (R() - 0.5) * 0.06 * s, ey + hh); g.closePath(); g.fill(); g.strokeStyle = rgba(INK, 0.7); g.lineWidth = LW * 0.5; g.stroke(); } }
   // ridge beam with carved ends
   const rb = new Path2D(); rb.moveTo(x0 - ov * 0.8, ridgeY + 0.05 * s); rb.lineTo(x1 + ov * 0.8, ridgeY + 0.05 * s); rb.lineTo(x1 + ov * 0.9, ridgeY - 0.3 * s); rb.lineTo(x0 - ov * 0.9, ridgeY - 0.3 * s); rb.closePath(); cel(g, rb, '#4e3a28', { sx: 0, sy: -2 });
   for (const sd of [-1, 1]) { const hx = sd > 0 ? x1 + ov * 0.85 : x0 - ov * 0.85; const hp = new Path2D(); hp.moveTo(hx, ridgeY - 0.1 * s); hp.quadraticCurveTo(hx + sd * 0.35 * s, ridgeY - 0.35 * s, hx + sd * 0.25 * s, ridgeY - 0.75 * s); hp.lineTo(hx + sd * 0.1 * s, ridgeY - 0.35 * s); hp.closePath(); cel(g, hp, '#4e3a28', { sx: 0, sy: -1 }); }
@@ -1732,7 +1840,7 @@ proto('house', { lamp: [0, 0.5, 4.5], w: 8, h: 8, ay: 0.88, col: { hw: 3.0, hd: 
 proto('house2', { lamp: [0, 0.5, 4], w: 6.4, h: 7, ay: 0.88, col: { hw: 2.3, hd: 1.6, dz: -1.6 }, fade: true, vars: 2, draw(g, s, R) { stoneHouse(g, s, R, 4.6 * s, 3.4 * s, 2.3 * s, '#a88e58'); } });
 proto('chiefhouse', { lamp: [0, 0.6, 6], w: 10.4, h: 10, ay: 0.9, col: { hw: 4.1, hd: 2.4, dz: -2.4 }, fade: true, draw(g, s, R) { stoneHouse(g, s, R, 8 * s, 5 * s, 3.0 * s, '#8a7448', { hide: true }); const fl = new Path2D(); fl.rect(-0.04 * s, -8.8 * s, 0.08 * s, 1.9 * s); flatP(g, fl, '#3a2a1a'); const fg = new Path2D(); fg.moveTo(0.04 * s, -8.8 * s); fg.quadraticCurveTo(0.6 * s, -8.9 * s, 1.1 * s, -8.5 * s); fg.quadraticCurveTo(0.6 * s, -8.3 * s, 0.04 * s, -8.1 * s); fg.closePath(); cel(g, fg, '#b02a2a'); } });
 proto('altar', { w: 8, h: 3.4, ay: 0.72, col: { hw: 3.5, hd: 1.4, dz: -0.6 }, top: 1.0, stand: true, draw(g, s, R) { const top = new Path2D(); top.moveTo(-3.4 * s, -1.0 * s); top.lineTo(3.4 * s, -1.0 * s); top.lineTo(3.0 * s, -2.4 * s); top.lineTo(-3.0 * s, -2.4 * s); top.closePath(); cel(g, top, '#a49e90', { sx: 0, sy: 0.2 * s }); stoneBlockWall(g, -3.4 * s, -1.0 * s, 6.8 * s, 1.0 * s, '#8e887a', '#787266', R, 2); g.strokeStyle = '#7a2a1a'; g.lineWidth = LW * 1.6; for (let i = 0; i < 5; i++) { g.beginPath(); g.moveTo((-2 + i) * s, -1.15 * s); g.quadraticCurveTo((-1.8 + i) * s, -1.8 * s, (-2.1 + i) * s, -2.25 * s); g.stroke(); } for (const sd of [-1, 1]) { const pl = new Path2D(); pl.rect(sd * 3.1 * s - 0.3 * s, -2.8 * s, 0.6 * s, 1.8 * s); cel(g, pl, '#8a8476'); } } });
-function cauldron(g, s, c1, c2, sc = 1) { const S2 = s * sc; for (const x of [-0.5, 0, 0.5]) { const lg = limbP(x * S2, -0.6 * S2, x * 1.1 * S2, 0, 0.1 * S2, 0.08 * S2); cel(g, lg, c1); } const body = new Path2D(); body.moveTo(-0.92 * S2, -1.45 * S2); body.bezierCurveTo(-1.0 * S2, -0.7 * S2, -0.6 * S2, -0.45 * S2, 0, -0.45 * S2); body.bezierCurveTo(0.6 * S2, -0.45 * S2, 1.0 * S2, -0.7 * S2, 0.92 * S2, -1.45 * S2); body.closePath(); cel(g, body, c2, { sx: -0.2 * S2, sy: 0, hl: true, hla: 0.3 }); g.save(); g.clip(body); g.strokeStyle = rgba(mix(c2, '#fff', 0.4), 0.55); g.lineWidth = LW; for (let i = 0; i < 6; i++) { g.beginPath(); g.arc(0, -1.0 * S2, (0.2 + i * 0.15) * S2, PI * 0.2, PI * 0.8); g.stroke(); } g.restore(); const rim = ellP(0, -1.45 * S2, 0.95 * S2, 0.28 * S2); cel(g, rim, c2); const inside = ellP(0, -1.45 * S2, 0.78 * S2, 0.19 * S2); flatP(g, inside, '#1a1410', false); for (const sd of [-1, 1]) { g.strokeStyle = INK; g.lineWidth = 0.12 * S2 + LW; g.beginPath(); g.arc(sd * 0.7 * S2, -1.65 * S2, 0.22 * S2, PI, TAU); g.stroke(); g.strokeStyle = c2; g.lineWidth = 0.12 * S2; g.stroke(); } }
+function cauldron(g, s, c1, c2, sc = 1) { const S2 = s * sc; for (const x of [-0.5, 0, 0.5]) { const lg = limbP(x * S2, -0.6 * S2, x * 1.1 * S2, 0, 0.1 * S2, 0.08 * S2); cel(g, lg, c1); } const body = new Path2D(); body.moveTo(-0.92 * S2, -1.45 * S2); body.bezierCurveTo(-1.0 * S2, -0.7 * S2, -0.6 * S2, -0.45 * S2, 0, -0.45 * S2); body.bezierCurveTo(0.6 * S2, -0.45 * S2, 1.0 * S2, -0.7 * S2, 0.92 * S2, -1.45 * S2); body.closePath(); cel(g, body, c2, { sx: -0.2 * S2, sy: 0, hl: true, hla: 0.3 }); g.save(); g.clip(body); g.fillStyle = rgba(mix(c1, '#000', 0.35), 0.8); g.fillRect(-S2, -1.2 * S2, 2 * S2, 0.28 * S2); g.fillStyle = rgba(mix(c2, '#e8d890', 0.45), 0.85); for (let i = -6; i <= 6; i++) { const fx = i * 0.15 * S2; g.fillRect(fx - 0.04 * S2, -1.15 * S2, 0.08 * S2, 0.08 * S2); g.fillRect(fx + 0.02 * S2, -1.05 * S2, 0.06 * S2, 0.06 * S2); } g.fillStyle = rgba(mix(c2, '#fff', 0.5), 0.45); g.fillRect(-0.62 * S2, -0.9 * S2, 0.12 * S2, 0.32 * S2); g.fillStyle = rgba('#000', 0.22); g.fillRect(0.45 * S2, -1.1 * S2, 0.6 * S2, 0.7 * S2); g.restore(); const rim = ellP(0, -1.45 * S2, 0.95 * S2, 0.28 * S2); cel(g, rim, c2); const inside = ellP(0, -1.45 * S2, 0.78 * S2, 0.19 * S2); flatP(g, inside, '#1a1410', false); for (const sd of [-1, 1]) { g.strokeStyle = INK; g.lineWidth = 0.12 * S2 + LW; g.beginPath(); g.arc(sd * 0.7 * S2, -1.65 * S2, 0.22 * S2, PI, TAU); g.stroke(); g.strokeStyle = c2; g.lineWidth = 0.12 * S2; g.stroke(); } }
 proto('ding', { w: 2.4, h: 2.4, ay: 0.92, col: 0.8, draw(g, s) { cauldron(g, s, '#2e5e50', '#3e7a64'); } });
 proto('blackding', { w: 3.2, h: 3.0, ay: 0.92, col: 1.2, draw(g, s) { cauldron(g, s, '#1e1c18', '#2e2a26', 1.35); } });
 proto('mill', { w: 2.4, h: 1.6, ay: 0.8, col: 1.0, top: 0.7, stand: true, draw(g, s) { const a = ellP(0, -0.25 * s, 1.0 * s, 0.4 * s); cel(g, a, '#8a857a'); const b = new Path2D(); b.rect(-1.0 * s, -0.25 * s, 2.0 * s, 0.35 * s); cel(g, b, '#7a756a'); const c = ellP(0, -0.55 * s, 0.9 * s, 0.34 * s); cel(g, c, '#9a958a'); line(g, 0.6 * s, -0.6 * s, 0.6 * s, -1.1 * s, 0.1 * s, '#5a4030'); } });
@@ -1835,13 +1943,14 @@ function drawRigged(g, R, A, K, rot, sc = 1) {
   const dead = A.pose === 'dead' && R.kind !== 'quad';
   const walking = (A.walk || 0) > 0.3, wf = walking ? ((Math.floor((A.ph || 0) / TAU * WALKF) % WALKF) + WALKF) % WALKF : -1;
   const ak = A.act ? A.act.k + (A.act.side || '') + Math.min(2, Math.floor(A.act.k01 * 3)) : '';
+  const br = R.kind === 'human' && !walking && !A.act && (!A.pose || A.pose === 'arms' || A.pose === 'point') && !PXSPR.vector ? Math.floor((A.t || 0) * 0.9 + (R._bph ?? (R._bph = Math.random() * 2))) % 2 : 0;
   const tq = R.kind === 'human' ? (A.pose === 'train' || A.pose === 'wave' ? Math.floor(A.t * 4) % 4 : 0) : (A.fly ? Math.floor(A.t * 8) % 4 : Math.floor(A.t * 3) % 6);
-  const key = (P.key || 'x') + (R._wp && Pd === R._wp ? '+' + wep : '') + '|' + view + '|' + (A.pose || '') + '|' + ak + '|' + wf + '|' + (A.mood || '') + (A.blink ? 'b' : '') + (A.talk ? 't' : '') + '|' + Math.round((A.tilt || 0) * 10) + '|' + tq + '|' + (A.fly ? 'f' : '') + '|' + (sc !== 1 ? sc.toFixed(2) : '');
+  const key = (P.key || 'x') + (R._wp && Pd === R._wp ? '+' + wep : '') + '|' + view + '|' + (A.pose || '') + '|' + ak + '|' + wf + '|' + (A.mood || '') + (A.blink ? 'b' : '') + (A.talk ? 't' : '') + '|' + Math.round((A.tilt || 0) * 10) + '|' + tq + '|' + (A.fly ? 'f' : '') + (br ? 'B' : '') + '|' + (sc !== 1 ? sc.toFixed(2) : '');
   let F = sprGet(key);
   if (!F && SPR.budget <= 0 && R.lastF) F = R.lastF;
   if (!F) {
     SPR.budget--; R.hpx = R.hpx || specHeight(P) * V.PPM; const [bw0, bh0, ax, ay] = sprBox(R, A), m = dead ? Math.max(bw0, bh0) : 0, bw = Math.ceil((m || bw0) * sc), bh = Math.ceil((m || bh0) * sc);
-    const A2 = Object.assign({}, A, { walk: walking ? 1 : 0, ph: walking ? (wf + 0.5) / WALKF * TAU : 0, t: R.kind === 'human' ? tq / 4 : tq / (A.fly ? 8 : 3), act: A.act ? { k: A.act.k, side: A.act.side, k01: (Math.min(2, Math.floor(A.act.k01 * 3)) + 0.5) / 3 } : null });
+    const A2 = Object.assign({}, A, { walk: walking ? 1 : 0, ph: walking ? (wf + 0.5) / WALKF * TAU : 0, t: R.kind === 'human' ? tq / 4 : tq / (A.fly ? 8 : 3), act: A.act ? { k: A.act.k, side: A.act.side, k01: (Math.min(2, Math.floor(A.act.k01 * 3)) + 0.5) / 3 } : null, breath: br });
     if (R.kind === 'human' && !PXSPR.vector) { F = pxFrame(R, A2, view, Pd, bw, bh, ax, ay, sc); sprPut(key, F); R.lastF = F; R.lastFlip = view === 'side' ? R.flip : 1; const fl = view === 'side' ? R.flip : 1; g.save(); g.scale(fl, 1); g.drawImage(F.cv, -F.ax, -F.ay); g.restore(); return; }
     let hi; if (sc !== 1) { const R2 = Object.assign({}, R, { spec: P }); const base = paintRigScaled(R, A2, view, Pd, bw, bh, ax, ay, dead, sc); hi = base; } else hi = paintRig(R, A2, view, Pd, bw, bh, ax, ay, dead);
     const px = pixelize(hi, PXK, { pal: sc !== 1 && R.spec.size > 3 ? null : rigPalette(R), colors: 24, inkF: 0.5 });
@@ -3442,11 +3551,11 @@ function cycleTarget() { const me = W.P[W.me]; if (!me) return; const foes = W.e
 function initTouch() {
   const cv = document.getElementById('gl'), stick = document.getElementById('stick'), knob = document.getElementById('knob');
   const tp = new Map();
-  cv.addEventListener('touchstart', e => { audioInit(); e.preventDefault(); for (const t of e.changedTouches) { const left = t.clientX < R3.W * 0.36; if (left && !INP.touchMove) { INP.touchMove = { id: t.identifier, x0: t.clientX, y0: t.clientY, x: 0, y: 0 }; stick.style.display = 'block'; stick.style.left = (t.clientX - 60) + 'px'; stick.style.top = (t.clientY - 60) + 'px'; knob.style.transform = 'translate(0px,0px)'; } else { tp.set(t.identifier, { x: t.clientX, y: t.clientY, sx: t.clientX, sy: t.clientY, t: performance.now() }); } }
+  cv.addEventListener('touchstart', e => { audioInit(); e.preventDefault(); for (const t of e.changedTouches) { const left = t.clientX < R3.W * 0.4 && !DLG.open; if (left && !INP.touchMove) { INP.touchMove = { id: t.identifier, x0: t.clientX, y0: t.clientY, x: 0, y: 0 }; const sr = stick.offsetWidth / 2 || 60; stick.classList.remove('rest'); stick.style.display = 'block'; stick.style.left = (t.clientX - sr) + 'px'; stick.style.top = (t.clientY - sr) + 'px'; knob.style.transform = 'translate(0px,0px)'; } else { tp.set(t.identifier, { x: t.clientX, y: t.clientY, sx: t.clientX, sy: t.clientY, t: performance.now() }); } }
     if (tp.size === 2) { const [a, b] = [...tp.values()]; INP.pinch = { d: Math.hypot(a.x - b.x, a.y - b.y), zoom: CAM.zoomT }; } }, { passive: false });
-  cv.addEventListener('touchmove', e => { e.preventDefault(); for (const t of e.changedTouches) { if (INP.touchMove && t.identifier === INP.touchMove.id) { const M = INP.touchMove; let dx = t.clientX - M.x0, dy = t.clientY - M.y0; const L = Math.hypot(dx, dy), R = 55; if (L > R) { dx *= R / L; dy *= R / L; } M.x = dx / R; M.y = dy / R; knob.style.transform = `translate(${dx}px,${dy}px)`; } else if (tp.has(t.identifier)) { const P = tp.get(t.identifier); const dx = t.clientX - P.x, dy = t.clientY - P.y; P.x = t.clientX; P.y = t.clientY;  } }
+  cv.addEventListener('touchmove', e => { e.preventDefault(); for (const t of e.changedTouches) { if (INP.touchMove && t.identifier === INP.touchMove.id) { const M = INP.touchMove; let dx = t.clientX - M.x0, dy = t.clientY - M.y0; const L = Math.hypot(dx, dy), R = (stick.offsetWidth || 120) * 0.46; if (L > R) { dx *= R / L; dy *= R / L; } M.x = dx / R; M.y = dy / R; knob.style.transform = `translate(${dx}px,${dy}px)`; } else if (tp.has(t.identifier)) { const P = tp.get(t.identifier); const dx = t.clientX - P.x, dy = t.clientY - P.y; P.x = t.clientX; P.y = t.clientY;  } }
     if (tp.size === 2 && INP.pinch) { const [a, b] = [...tp.values()]; const d = Math.hypot(a.x - b.x, a.y - b.y); CAM.zoomT = clamp(Math.round(INP.pinch.zoom * d / Math.max(20, INP.pinch.d) * 2) / 2, 0.5, 2); } }, { passive: false });
-  const end = e => { for (const t of e.changedTouches) { if (INP.touchMove && t.identifier === INP.touchMove.id) { INP.touchMove = null; stick.style.display = 'none'; } else if (tp.has(t.identifier)) { const P = tp.get(t.identifier); if (Math.hypot(P.x - P.sx, P.y - P.sy) < 10 && performance.now() - P.t < 300) { if (DLG.open) advanceOrSend(); else clickWorld(P.x, P.y, false); } tp.delete(t.identifier); } } if (tp.size < 2) INP.pinch = null; };
+  const end = e => { for (const t of e.changedTouches) { if (INP.touchMove && t.identifier === INP.touchMove.id) { INP.touchMove = null; stick.style.display = ''; stick.classList.add('rest'); } else if (tp.has(t.identifier)) { const P = tp.get(t.identifier); if (Math.hypot(P.x - P.sx, P.y - P.sy) < 10 && performance.now() - P.t < 300) { if (DLG.open) advanceOrSend(); else clickWorld(P.x, P.y, false); } tp.delete(t.identifier); } } if (tp.size < 2) INP.pinch = null; };
   cv.addEventListener('touchend', end); cv.addEventListener('touchcancel', end);
 }
 
@@ -3620,8 +3729,8 @@ function portrait(e, mood = 'open', size = 160) {
 }
 /* ---------- dialogue box ---------- */
 function uiDialog(name, text, e, col) {
-  const D = $('dlg'); if (name === null) { D.classList.add('hide'); return; }
-  D.classList.remove('hide'); D.classList.toggle('narr', !name); D.querySelector('.dn').textContent = name; D.querySelector('.dn').style.color = col || ''; D.querySelector('.dt').textContent = '';
+  const D = $('dlg'); if (name === null) { D.classList.add('hide'); document.body.classList.remove('dlgopen'); return; }
+  D.classList.remove('hide'); document.body.classList.add('dlgopen'); D.classList.toggle('narr', !name); D.querySelector('.dn').textContent = name; D.querySelector('.dn').style.color = col || ''; D.querySelector('.dt').textContent = '';
   D.querySelector('.dp').style.backgroundImage = e ? `url(${portrait(e, e.A && e.A.face || 'open', 320)})` : 'none';
   const L = $('lih'); if (e && e.R && name) { L.style.backgroundImage = `url(${halfBody(e, e.A && e.A.face || 'open')})`; L.classList.add('on'); L.classList.toggle('r', !(e === W.P[0] || e === W.P[1])); D.classList.add('lih'); } else { L.classList.remove('on'); D.classList.remove('lih'); }
 }
@@ -3707,7 +3816,7 @@ function updateSlots() {
     const lock = S.unlock && !PARTY.flags[S.unlock] && me.type === 'player'; el.classList.toggle('lock', !!lock); el.classList.toggle('nomp', !lock && me.mp < S.mp); });
 }
 function buildTouchButtons() {
-  const T = $('tbtns'); if (!IS_TOUCH) return; T.classList.remove('hide'); document.body.classList.add('touch');
+  const T = $('tbtns'); if (!IS_TOUCH) return; T.classList.remove('hide'); layoutClasses(); const st = document.getElementById('stick'); if (st && !INP.touchMove) st.classList.add('rest');
   const me = W.P[W.me]; const bar = me.type === 'player' ? P1_BAR : partnerBar();
   const pos = [[150, 150, 76], [72, 176, 54], [92, 106, 54], [150, 72, 54], [212, 82, 50], [228, 0, 44]];
   let h = ''; bar.forEach((id, i) => { const [x, y, s] = pos[i] || [0, 0, 44]; if (i === 5) return; h += `<button data-sk="${i}" style="left:${x - s / 2}px;top:${y - s / 2}px;width:${s}px;height:${s}px">${SK[id].icon}<div class="cd"></div></button>`; });
@@ -3751,9 +3860,9 @@ function drawMinimap() {
   g.font = '20px serif'; g.fillStyle = '#f0d38a'; g.textAlign = 'center'; g.fillText('北', N / 2, 22);
 }
 /* ---------- modals ---------- */
-function openModal(k) { if (DLG.open || W.cine) return; if (UI.modal === k) { closeModal(); return; } UI.modal = k; const M = $('modal'); M.classList.remove('hide'); renderModal(); sfx('ui'); }
-function closeModal() { UI.modal = null; $('modal').classList.add('hide'); if (STATE.paused) { STATE.paused = false; } }
-function togglePause() { if (UI.modal === 'pause') { closeModal(); return; } UI.modal = 'pause'; STATE.paused = !NETROLE; $('modal').classList.remove('hide'); renderModal(); }
+function openModal(k) { if (DLG.open || W.cine) return; if (UI.modal === k) { closeModal(); return; } UI.modal = k; const M = $('modal'); M.classList.remove('hide'); document.body.classList.add('modalopen'); renderModal(); sfx('ui'); }
+function closeModal() { UI.modal = null; $('modal').classList.add('hide'); document.body.classList.remove('modalopen'); if (STATE.paused) { STATE.paused = false; } }
+function togglePause() { if (UI.modal === 'pause') { closeModal(); return; } UI.modal = 'pause'; STATE.paused = !NETROLE; $('modal').classList.remove('hide'); document.body.classList.add('modalopen'); renderModal(); }
 function renderModal() {
   const M = $('modal'), k = UI.modal, me = W.P[W.me]; let h = '';
   const head = t => `<h2><span>${t}</span><button class="x" onclick="closeModal()">✕</button></h2>`;
@@ -3793,7 +3902,7 @@ function renderModal() {
       <div class="frame" style="padding:10px;text-align:left;line-height:2">音量 <input type="range" min="0" max="1" step="0.05" value="${SET.vol}" oninput="SET.vol=+this.value;setVol();saveSet()"><br>音乐 <input type="range" min="0" max="1" step="0.05" value="${SET.music}" oninput="SET.music=+this.value;setVol();saveSet()"><br>镜头灵敏度 <input type="range" min="0.3" max="2" step="0.1" value="${SET.camSens}" oninput="SET.camSens=+this.value;saveSet()"><br>
       <label><input type="checkbox" ${SET.shake ? 'checked' : ''} onchange="SET.shake=this.checked;saveSet()"> 画面震动</label>　<label><input type="checkbox" ${SET.dmgNum ? 'checked' : ''} onchange="SET.dmgNum=this.checked;saveSet()"> 伤害数字</label><br>
       画质 <select onchange="SET.quality=this.value;saveSet();toast('刷新页面后生效')"><option value="high" ${SET.quality === 'high' ? 'selected' : ''}>高</option><option value="mid" ${SET.quality === 'mid' ? 'selected' : ''}>中</option><option value="low" ${SET.quality === 'low' ? 'selected' : ''}>低</option></select></div>
-      <div class="frame" style="padding:10px;text-align:left;font-size:13px;line-height:1.7;color:var(--dim)">WASD 移动　鼠标拖动 转镜头　滚轮 缩放<br>左键 / J 普攻　1–5 宝术　Shift 翻滚　空格 跳<br>F 互动（长按扶起同伴）　Tab 切换目标　R 吃药<br>B 背包　K 宝术　L 任务　M 地图　C 角色　Q/E 转镜头　N 静音</div>
+      <div class="frame" style="padding:10px;text-align:left;font-size:13px;line-height:1.7;color:var(--dim)">${IS_TOUCH ? '左下摇杆 移动（在屏幕左侧任意处按下）<br>右下 拳头 普攻　小圆键 宝术　💨 翻滚　⤴ 跳<br>「互动」键 对话 / 拾取（长按扶起同伴）<br>右上按钮：地图、任务、背包、宝术、角色' : 'WASD 移动　鼠标拖动 转镜头　滚轮 缩放<br>左键 / J 普攻　1–5 宝术　Shift 翻滚　空格 跳<br>F 互动（长按扶起同伴）　Tab 切换目标　R 吃药<br>B 背包　K 宝术　L 任务　M 地图　C 角色　Q/E 转镜头　N 静音'}</div>
       ${HUB ? `<button class="btn" id="hubq">返回游戏厅</button>` : ''}
       <button class="btn" id="titq">回到标题</button></div>`;
     M.innerHTML = h;

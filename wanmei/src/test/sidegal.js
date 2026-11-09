@@ -9,7 +9,7 @@ const { chromium } = require('playwright');
     const g = c.getContext('2d'); g.imageSmoothingEnabled = false; g.fillStyle = '#7a9a52'; g.fillRect(0, 0, 1600, 1000);
     const lo = document.createElement('canvas'); lo.width = 1600 / K; lo.height = 1000 / K; const lg = lo.getContext('2d');
     let y = 4; for (const k of keys.split(',')) { const P = k.startsWith('vil') ? CHARS.villager(+k.slice(3, 4), k.slice(4)) : CHARS[k](); const R = buildRig(P); let x = 4, rh = 0;
-      const put = (A, rot) => { SPR.budget = 1e9; const [bw, bh, ax, ay] = sprBox(R, A); lg.save(); lg.translate(x + bw * ax, y + bh * ay); drawRigged(lg, R, A, 20, rot, 1); lg.restore(); x += Math.round(R.hpx * 0.75); rh = Math.max(rh, R.hpx + 8); };
+      const put = (A, rot) => { SPR.budget = 1e9; const [bw, bh, ax, ay] = sprBox(R, A); lg.save(); lg.translate(Math.round(x + bw * ax), Math.round(y + bh * ay)); drawRigged(lg, R, A, 20, rot, 1); lg.restore(); x += Math.round(R.hpx * 0.75); rh = Math.max(rh, R.hpx + 8); };
       for (const rot of [0, HP, PI]) put({ t: 0, walk: 0, ph: 0 }, rot); x += 6;
       for (let f = 0; f < WALKF; f++) put({ t: 0, walk: 1, ph: (f + 0.5) / WALKF * TAU }, HP); x += 6;
       for (let f = 0; f < WALKF; f++) put({ t: 0, walk: 1, ph: (f + 0.5) / WALKF * TAU }, 0);

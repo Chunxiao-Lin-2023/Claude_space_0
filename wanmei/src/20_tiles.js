@@ -52,8 +52,13 @@ function texPix(t, gx, gy, out) {
       for (let i = 0; i < 7; i++) { const bx = Math.floor(thash(tx, ty, i) * 18) + 1, bv = Math.floor(thash(tx, ty, i + 9) * 16) + 2; const dx = u - bx, dy = v - bv; if (dy === 0 && Math.abs(dx) === 1 || dy === -1 && dx === 0) k = k === 2 ? 3 : 2; if (dy === 1 && dx === 0) k = 0; }
       if (h < 0.035) k = Math.max(0, k - 1); else if (h > 0.985) k = Math.min(4, k + 1); out.set(C[k]); return; }
     case T.DIRT: { C = TCOL.dirt; const n = vnoise(gx / 9, gy / 9) * 0.6; let k = n + (by - 0.5) * 0.3 > 0.2 ? 2 : 1; if (h < 0.06) k = 0; else if (h > 0.975) k = 3; if (thash(tx, ty, 3) < 0.25) { const px = Math.floor(thash(tx, ty, 4) * 16) + 2, py = Math.floor(thash(tx, ty, 5) * 16) + 2; if ((u === px || u === px + 1) && v === py) { out.set(TCOL.gravel[3]); return; } if ((u === px || u === px + 1) && v === py + 1) { out.set(TCOL.gravel[1]); return; } } out.set(C[k]); return; }
-    case T.COBBLE: { C = TCOL.cobble; const row = Math.floor(gy / 5), off = (row % 2) * 3 + (row % 3), col = Math.floor((gx + off) / 7), su = (gx + off) % 7, sv = gy % 5;
-      if (sv === 0 || su === 0) { out.set(C[0]); return; } const st = thash(col, row, 7), base = st < 0.33 ? 1 : st < 0.75 ? 2 : 3; let k = base; if (sv === 1 || su === 1) k = Math.min(4, base + 1); else if (sv === 4) k = Math.max(1, base - 1); out.set(C[k]); return; }
+    case T.COBBLE: { // irregular flagstones: Voronoi slabs, bevelled (lit top-left, shaded bottom-right), dark grout with the odd tuft of moss
+      C = TCOL.cobble; const cs = 8, cx0 = Math.floor(gx / cs), cy0 = Math.floor(gy / cs); let best = 99, b2 = 99, bdx = 0, bdy = 0, bi = 0, bj = 0;
+      for (let j = -1; j <= 1; j++) for (let i = -1; i <= 1; i++) { const ci = cx0 + i, cj = cy0 + j, cx = ci * cs + 1.5 + thash(ci, cj, 11) * (cs - 3), cy = cj * cs + 1.5 + thash(ci, cj, 12) * (cs - 3), dx = gx - cx, dy = (gy - cy) * 1.15, dd = Math.hypot(dx, dy); if (dd < best) { b2 = best; best = dd; bdx = dx; bdy = dy; bi = ci; bj = cj; } else if (dd < b2) b2 = dd; }
+      const gap = b2 - best; if (gap < 1.05) { if (thash(Math.floor(gx / 3), Math.floor(gy / 3), 13) < 0.045) { out.set(TCOL.grass[h < 0.5 ? 1 : 2]); return; } out.set(C[0]); return; }
+      const st = thash(bi, bj, 7); let k = st < 0.3 ? 1 : st < 0.8 ? 2 : 3; const e = bdx + bdy;
+      if (gap < 2.2 && e < -0.5) k = Math.min(4, k + 1); else if (gap < 2.0 && e > 0.8) k = Math.max(1, k - 1);
+      if (h < 0.04) k = Math.max(1, k - 1); else if (h > 0.985) k = Math.min(4, k + 1); out.set(C[k]); return; }
     case T.WATER: { C = TCOL.water; const w = Math.sin(gy * 0.5 + Math.sin(gx * 0.09) * 2.2); let k = 1 + (vnoise(gx / 30, gy / 30) > 0.2 ? 1 : 0); if (w > 0.93 && (gx + gy * 3) % 11 < 4) k = 3; out.set(C[k]); return; }
     case T.SAND: { C = TCOL.sand; let k = vnoise(gx / 10, gy / 10) + (by - 0.5) * 0.3 > 0.1 ? 2 : 1; if (h < 0.05) k = 0; out.set(C[k]); return; }
     case T.GRAVEL: { C = TCOL.gravel; let k = vnoise(gx / 16, gy / 16) + (by - 0.5) * 0.25 > 0.1 ? 2 : 1; if (h < 0.08) k = 0; else if (h > 0.95) k = 3; const sx = Math.floor(gx / 6), sy = Math.floor(gy / 6); if (thash(sx, sy, 2) < 0.18) { const cx = sx * 6 + 3, cy = sy * 6 + 3, d = Math.hypot(gx - cx, (gy - cy) * 1.3); if (d < 2.2) k = gy < cy ? 3 : 2; else if (d < 2.9 && gy > cy) k = 0; } out.set(C[k]); return; }
@@ -80,16 +85,16 @@ function paintTileChunk(ci, cj, S) {
   for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
     const gx = tx0 * P + x, gy = tz0 * P + y, fx = gx / P - 0.5, fz = gy / P - 0.5, i0 = Math.floor(fx), j0 = Math.floor(fz), ax = fx - i0, az = fz - j0;
     const A = tget(i0, j0), B = tget(i0 + 1, j0), C = tget(i0, j0 + 1), D = tget(i0 + 1, j0 + 1), own = tget(Math.floor(gx / P), Math.floor(gy / P));
-    let tt = own, lip = 0, shore = 0;
+    let tt = own, lip = 0, shore = 0, rim = 0;
     if (A !== B || A !== C || A !== D) {
       cand[0] = A; cand[1] = B; cand[2] = C; cand[3] = D; cand.sort((p, q) => TPRIO[q] - TPRIO[p]);
-      const jag = vnoise(gx * 0.3, gy * 0.3) + vnoise(gx * 0.9, gy * 0.9) * 0.35; tt = cand[3];
+      const jag = vnoise(gx * 0.3, gy * 0.3) + vnoise(gx * 0.9, gy * 0.9) * 0.35, blade = ((gx * 3 + gy * 5) % 7 === 0 ? 0.9 : (gx * 3 + gy * 5) % 7 === 1 ? 0.45 : 0) - 0.3; tt = cand[3];
       for (let k = 0; k < 3; k++) { const t = cand[k]; if (k && t === cand[k - 1]) continue; if (t === T.VOID) continue; const pr = TPRIO[t];
-        const cov = (TPRIO[A] >= pr ? (1 - ax) * (1 - az) : 0) + (TPRIO[B] >= pr ? ax * (1 - az) : 0) + (TPRIO[C] >= pr ? (1 - ax) * az : 0) + (TPRIO[D] >= pr ? ax * az : 0), th = 0.5 + jag * TEDGE[t];
-        if (cov > th) { tt = t; break; } if (cov > th - 0.09 && t !== T.WATER && !lip) lip = t; if (t !== T.WATER && cov > 0.02) shore = Math.max(shore, cov - th + 0.5); }
+        const cov = (TPRIO[A] >= pr ? (1 - ax) * (1 - az) : 0) + (TPRIO[B] >= pr ? ax * (1 - az) : 0) + (TPRIO[C] >= pr ? (1 - ax) * az : 0) + (TPRIO[D] >= pr ? ax * az : 0), th = t === T.GRASS ? 0.5 + vnoise(gx * 0.16, gy * 0.16) * 0.12 - blade * 0.16 : 0.5 + jag * TEDGE[t];
+        if (cov > th) { tt = t; if (t === T.GRASS && cov < th + 0.07) rim = 1; break; } if (cov > th - 0.09 && t !== T.WATER && !lip) lip = t; if (t !== T.WATER && cov > 0.02) shore = Math.max(shore, cov - th + 0.5); }
       if (tt === T.VOID) tt = own;
     }
-    texPix(tt, gx, gy, px); let r = px[0], gg = px[1], b = px[2];
+    texPix(tt, gx, gy, px); if (rim) px.set(TCOL.grass[0]); let r = px[0], gg = px[1], b = px[2];
     if (lip && TPRIO[lip] > TPRIO[tt]) { const k2 = lip === T.WALL || lip === T.ROCK ? 0.6 : 0.8; r *= k2; gg *= k2; b *= k2; }
     if (tt === T.WATER && shore > 0) { const f = shore > 0.36 ? TCOL.water[4] : shore > 0.22 ? TCOL.water[3] : null; if (f) { r = f[0]; gg = f[1]; b = f[2]; } }
     const o = (y * N + x) * 4; d[o] = r; d[o + 1] = gg; d[o + 2] = b; d[o + 3] = 255; }

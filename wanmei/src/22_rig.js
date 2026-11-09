@@ -63,13 +63,14 @@ function drawRigged(g, R, A, K, rot, sc = 1) {
   const dead = A.pose === 'dead' && R.kind !== 'quad';
   const walking = (A.walk || 0) > 0.3, wf = walking ? ((Math.floor((A.ph || 0) / TAU * WALKF) % WALKF) + WALKF) % WALKF : -1;
   const ak = A.act ? A.act.k + (A.act.side || '') + Math.min(2, Math.floor(A.act.k01 * 3)) : '';
+  const br = R.kind === 'human' && !walking && !A.act && (!A.pose || A.pose === 'arms' || A.pose === 'point') && !PXSPR.vector ? Math.floor((A.t || 0) * 0.9 + (R._bph ?? (R._bph = Math.random() * 2))) % 2 : 0;
   const tq = R.kind === 'human' ? (A.pose === 'train' || A.pose === 'wave' ? Math.floor(A.t * 4) % 4 : 0) : (A.fly ? Math.floor(A.t * 8) % 4 : Math.floor(A.t * 3) % 6);
-  const key = (P.key || 'x') + (R._wp && Pd === R._wp ? '+' + wep : '') + '|' + view + '|' + (A.pose || '') + '|' + ak + '|' + wf + '|' + (A.mood || '') + (A.blink ? 'b' : '') + (A.talk ? 't' : '') + '|' + Math.round((A.tilt || 0) * 10) + '|' + tq + '|' + (A.fly ? 'f' : '') + '|' + (sc !== 1 ? sc.toFixed(2) : '');
+  const key = (P.key || 'x') + (R._wp && Pd === R._wp ? '+' + wep : '') + '|' + view + '|' + (A.pose || '') + '|' + ak + '|' + wf + '|' + (A.mood || '') + (A.blink ? 'b' : '') + (A.talk ? 't' : '') + '|' + Math.round((A.tilt || 0) * 10) + '|' + tq + '|' + (A.fly ? 'f' : '') + (br ? 'B' : '') + '|' + (sc !== 1 ? sc.toFixed(2) : '');
   let F = sprGet(key);
   if (!F && SPR.budget <= 0 && R.lastF) F = R.lastF;
   if (!F) {
     SPR.budget--; R.hpx = R.hpx || specHeight(P) * V.PPM; const [bw0, bh0, ax, ay] = sprBox(R, A), m = dead ? Math.max(bw0, bh0) : 0, bw = Math.ceil((m || bw0) * sc), bh = Math.ceil((m || bh0) * sc);
-    const A2 = Object.assign({}, A, { walk: walking ? 1 : 0, ph: walking ? (wf + 0.5) / WALKF * TAU : 0, t: R.kind === 'human' ? tq / 4 : tq / (A.fly ? 8 : 3), act: A.act ? { k: A.act.k, side: A.act.side, k01: (Math.min(2, Math.floor(A.act.k01 * 3)) + 0.5) / 3 } : null });
+    const A2 = Object.assign({}, A, { walk: walking ? 1 : 0, ph: walking ? (wf + 0.5) / WALKF * TAU : 0, t: R.kind === 'human' ? tq / 4 : tq / (A.fly ? 8 : 3), act: A.act ? { k: A.act.k, side: A.act.side, k01: (Math.min(2, Math.floor(A.act.k01 * 3)) + 0.5) / 3 } : null, breath: br });
     if (R.kind === 'human' && !PXSPR.vector) { F = pxFrame(R, A2, view, Pd, bw, bh, ax, ay, sc); sprPut(key, F); R.lastF = F; R.lastFlip = view === 'side' ? R.flip : 1; const fl = view === 'side' ? R.flip : 1; g.save(); g.scale(fl, 1); g.drawImage(F.cv, -F.ax, -F.ay); g.restore(); return; }
     let hi; if (sc !== 1) { const R2 = Object.assign({}, R, { spec: P }); const base = paintRigScaled(R, A2, view, Pd, bw, bh, ax, ay, dead, sc); hi = base; } else hi = paintRig(R, A2, view, Pd, bw, bh, ax, ay, dead);
     const px = pixelize(hi, PXK, { pal: sc !== 1 && R.spec.size > 3 ? null : rigPalette(R), colors: 24, inkF: 0.5 });

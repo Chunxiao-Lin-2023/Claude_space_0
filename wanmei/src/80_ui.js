@@ -37,8 +37,8 @@ function portrait(e, mood = 'open', size = 160) {
 }
 /* ---------- dialogue box ---------- */
 function uiDialog(name, text, e, col) {
-  const D = $('dlg'); if (name === null) { D.classList.add('hide'); return; }
-  D.classList.remove('hide'); D.classList.toggle('narr', !name); D.querySelector('.dn').textContent = name; D.querySelector('.dn').style.color = col || ''; D.querySelector('.dt').textContent = '';
+  const D = $('dlg'); if (name === null) { D.classList.add('hide'); document.body.classList.remove('dlgopen'); return; }
+  D.classList.remove('hide'); document.body.classList.add('dlgopen'); D.classList.toggle('narr', !name); D.querySelector('.dn').textContent = name; D.querySelector('.dn').style.color = col || ''; D.querySelector('.dt').textContent = '';
   D.querySelector('.dp').style.backgroundImage = e ? `url(${portrait(e, e.A && e.A.face || 'open', 320)})` : 'none';
   const L = $('lih'); if (e && e.R && name) { L.style.backgroundImage = `url(${halfBody(e, e.A && e.A.face || 'open')})`; L.classList.add('on'); L.classList.toggle('r', !(e === W.P[0] || e === W.P[1])); D.classList.add('lih'); } else { L.classList.remove('on'); D.classList.remove('lih'); }
 }
@@ -124,7 +124,7 @@ function updateSlots() {
     const lock = S.unlock && !PARTY.flags[S.unlock] && me.type === 'player'; el.classList.toggle('lock', !!lock); el.classList.toggle('nomp', !lock && me.mp < S.mp); });
 }
 function buildTouchButtons() {
-  const T = $('tbtns'); if (!IS_TOUCH) return; T.classList.remove('hide'); document.body.classList.add('touch');
+  const T = $('tbtns'); if (!IS_TOUCH) return; T.classList.remove('hide'); layoutClasses(); const st = document.getElementById('stick'); if (st && !INP.touchMove) st.classList.add('rest');
   const me = W.P[W.me]; const bar = me.type === 'player' ? P1_BAR : partnerBar();
   const pos = [[150, 150, 76], [72, 176, 54], [92, 106, 54], [150, 72, 54], [212, 82, 50], [228, 0, 44]];
   let h = ''; bar.forEach((id, i) => { const [x, y, s] = pos[i] || [0, 0, 44]; if (i === 5) return; h += `<button data-sk="${i}" style="left:${x - s / 2}px;top:${y - s / 2}px;width:${s}px;height:${s}px">${SK[id].icon}<div class="cd"></div></button>`; });
@@ -168,9 +168,9 @@ function drawMinimap() {
   g.font = '20px serif'; g.fillStyle = '#f0d38a'; g.textAlign = 'center'; g.fillText('北', N / 2, 22);
 }
 /* ---------- modals ---------- */
-function openModal(k) { if (DLG.open || W.cine) return; if (UI.modal === k) { closeModal(); return; } UI.modal = k; const M = $('modal'); M.classList.remove('hide'); renderModal(); sfx('ui'); }
-function closeModal() { UI.modal = null; $('modal').classList.add('hide'); if (STATE.paused) { STATE.paused = false; } }
-function togglePause() { if (UI.modal === 'pause') { closeModal(); return; } UI.modal = 'pause'; STATE.paused = !NETROLE; $('modal').classList.remove('hide'); renderModal(); }
+function openModal(k) { if (DLG.open || W.cine) return; if (UI.modal === k) { closeModal(); return; } UI.modal = k; const M = $('modal'); M.classList.remove('hide'); document.body.classList.add('modalopen'); renderModal(); sfx('ui'); }
+function closeModal() { UI.modal = null; $('modal').classList.add('hide'); document.body.classList.remove('modalopen'); if (STATE.paused) { STATE.paused = false; } }
+function togglePause() { if (UI.modal === 'pause') { closeModal(); return; } UI.modal = 'pause'; STATE.paused = !NETROLE; $('modal').classList.remove('hide'); document.body.classList.add('modalopen'); renderModal(); }
 function renderModal() {
   const M = $('modal'), k = UI.modal, me = W.P[W.me]; let h = '';
   const head = t => `<h2><span>${t}</span><button class="x" onclick="closeModal()">✕</button></h2>`;
@@ -210,7 +210,7 @@ function renderModal() {
       <div class="frame" style="padding:10px;text-align:left;line-height:2">音量 <input type="range" min="0" max="1" step="0.05" value="${SET.vol}" oninput="SET.vol=+this.value;setVol();saveSet()"><br>音乐 <input type="range" min="0" max="1" step="0.05" value="${SET.music}" oninput="SET.music=+this.value;setVol();saveSet()"><br>镜头灵敏度 <input type="range" min="0.3" max="2" step="0.1" value="${SET.camSens}" oninput="SET.camSens=+this.value;saveSet()"><br>
       <label><input type="checkbox" ${SET.shake ? 'checked' : ''} onchange="SET.shake=this.checked;saveSet()"> 画面震动</label>　<label><input type="checkbox" ${SET.dmgNum ? 'checked' : ''} onchange="SET.dmgNum=this.checked;saveSet()"> 伤害数字</label><br>
       画质 <select onchange="SET.quality=this.value;saveSet();toast('刷新页面后生效')"><option value="high" ${SET.quality === 'high' ? 'selected' : ''}>高</option><option value="mid" ${SET.quality === 'mid' ? 'selected' : ''}>中</option><option value="low" ${SET.quality === 'low' ? 'selected' : ''}>低</option></select></div>
-      <div class="frame" style="padding:10px;text-align:left;font-size:13px;line-height:1.7;color:var(--dim)">WASD 移动　鼠标拖动 转镜头　滚轮 缩放<br>左键 / J 普攻　1–5 宝术　Shift 翻滚　空格 跳<br>F 互动（长按扶起同伴）　Tab 切换目标　R 吃药<br>B 背包　K 宝术　L 任务　M 地图　C 角色　Q/E 转镜头　N 静音</div>
+      <div class="frame" style="padding:10px;text-align:left;font-size:13px;line-height:1.7;color:var(--dim)">${IS_TOUCH ? '左下摇杆 移动（在屏幕左侧任意处按下）<br>右下 拳头 普攻　小圆键 宝术　💨 翻滚　⤴ 跳<br>「互动」键 对话 / 拾取（长按扶起同伴）<br>右上按钮：地图、任务、背包、宝术、角色' : 'WASD 移动　鼠标拖动 转镜头　滚轮 缩放<br>左键 / J 普攻　1–5 宝术　Shift 翻滚　空格 跳<br>F 互动（长按扶起同伴）　Tab 切换目标　R 吃药<br>B 背包　K 宝术　L 任务　M 地图　C 角色　Q/E 转镜头　N 静音'}</div>
       ${HUB ? `<button class="btn" id="hubq">返回游戏厅</button>` : ''}
       <button class="btn" id="titq">回到标题</button></div>`;
     M.innerHTML = h;

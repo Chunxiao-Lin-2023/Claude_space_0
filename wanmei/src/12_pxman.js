@@ -45,7 +45,7 @@ function pxHuman(P, A, view, bw, bh, axf, ayf, hpx) {
   const Q = chibiPose(P, A, view), B = Q.B, s = Q.s, u = hpx / chibiHeight(P), X = new PX(bw, bh);
   const walking = Q.w > 0.5, bob = walking && Math.abs(Q.sw) < 0.75 ? 1 : 0;
   const ox = Math.round(bw * axf), oy = Math.round(bh * ayf) + Math.round(Q.jumpY * u) - bob;
-  const sx = x => ox + x * u, sy = y => oy + y * u, side = view === 'side', back = view === 'back';
+  const brY = A.breath ? Q.hipY - 6 : -1e9, sx = x => ox + x * u, sy = y => oy + y * u - (y < brY ? 1 : 0), side = view === 'side', back = view === 'back';
   const SK = tri(P.skin || '#fde8dc', { soft: true }), HT = hairTones(P), TOP = tri(P.top || '#efe4cc'), LEG = tri(P.legC || P.skin || '#fde8dc'), BOOT = tri(P.boot || '#8a6040'), KILT = tri(P.kilt || '#b6844f');
   const hipY = Q.hipY, chestY = Q.chestY, P_ = Q.P_, k = PXSPR.k;
   const R1 = v => Math.max(1, v * u); // limb radius in px
@@ -67,7 +67,7 @@ function pxHuman(P, A, view, bw, bh, axf, ayf, hpx) {
     let front, sideMask, backMask, behind = null, bangLine;
     if (side) {
       // facing right: hair over the back and crown, a fringe falling over the brow
-      const fr = H === 'topknot' || bald ? -9 : H === 'short' ? -2.8 : -1.5;
+      const fr = H === 'topknot' || bald ? -9 : H === 'short' ? -3.6 : H === 'bun' ? -3.2 : -2.6;
       sideMask = (x, y) => cap(x, y) && (x < -0.6 + y * 0.35 || y < fr + (x > 4 ? (x - 4) * 0.9 : 0) || (H === 'long' || H === 'longtie' || H === 'wild' || H === 'kid') && x < 1.2 && y < 5);
     }
     bangLine = x => { // front fringe bottom edge
@@ -77,7 +77,7 @@ function pxHuman(P, A, view, bw, bh, axf, ayf, hpx) {
     };
     const sideburn = H === 'kid' || H === 'long' || H === 'longtie' || H === 'wild' ? 4.5 : H === 'spiky' ? 1.5 : H === 'bun' ? 2 : 0;
     front = (x, y) => cap(x, y) && (y < bangLine(x) || (Math.abs(x) > 5.0 && y < sideburn));
-    backMask = (x, y) => cap(x, y) && !(y > 3.4 && Math.abs(x) < 3 && !(H === 'long' || H === 'longtie' || H === 'wild' || H === 'kid'));
+    backMask = (x, y) => (x / vol) ** 2 + ((y + 0.9) / (vol * 0.98)) ** 2 <= 1 && y < 1.6 + [1.4, 2.4, 0.4][(Math.round(x) + 30) % 3] * (Math.abs(x) < vol - 1.5 ? 1 : 0) && !(y > 3.4 && Math.abs(x) < 3 && !(H === 'long' || H === 'longtie' || H === 'wild' || H === 'kid'));
     const extra = []; // hair blobs beyond the cap: [x, y, rx, ry]
     if (H === 'topknot') extra.push(side ? [-1.4, -8.6, 2.4, 2.1] : [0, -8.8, 2.5, 2.1]);
     if (H === 'bun') extra.push(side ? [-5.4, -4.6, 2.6, 2.5] : back ? [0, -5.4, 2.8, 2.6] : [0, -8.0, 2.4, 1.8]);
@@ -108,8 +108,23 @@ function pxHuman(P, A, view, bw, bh, axf, ayf, hpx) {
       if (F.beard) { const bd = tri(F.beard); for (let y = 3; y <= 9; y++) for (let x = -4; x <= 4; x++) { const hw = 3.6 - Math.max(0, y - 5) * 0.75; if (side ? (x + 2 > 5 || x + 2 < 1 || Math.abs(x) > hw) : Math.abs(x) > hw) continue; if (y === 3 && Math.abs(x) < 1) continue; set(side ? x + 3 : x, y, x > 1 ? bd.s : bd.b); } }
     }
     // hair over the skull
-    for (let y = -13; y <= 12; y++) for (let x = -10; x <= 10; x++) { if (!isHair(x, y)) continue; let c = HT.b;
-      const lx = side ? x + 1 : x, arcY = Math.round(-5.6 + (lx + 1.5) * (lx + 1.5) * 0.12); if (!back && lx >= -4 && lx <= 1 && y === arcY) c = lx === -2 ? HT.h : HT.l; if (back && y === -5 && lx >= -3 && lx <= 0) c = HT.l; if ((side ? x < -4 : x > 4) || y > 2) c = HT.s; if (!side && !back && y >= bangLine(x) - 1.1 && y < bangLine(x) && Math.abs(x) < 5) c = HT.s; set(x, y, c); }
+    // hair shading: clumps fanning from the crown (from the whorl in back view), a dark parting line between clumps,
+    // the lit edge of each clump towards the light (upper left), and a broken shine band across the crown
+    const NCL = H === 'spiky' ? 7 : H === 'kid' ? 6 : H === 'wild' ? 8 : H === 'short' ? 9 : 7;
+    const hairCol = (x, y) => {
+      const lx = side ? x + 1 : x, yy = y + 0.9, r = Math.hypot(lx, yy / 0.98);
+      if (back) { const a = Math.atan2(y + 5.5, x - 1), f = ((a / TAU * 11) % 1 + 1) % 1, rw = Math.hypot(x - 1, y + 5.5);
+        if (y > 2.5) return HT.s; if (rw < 1.2) return HT.s;
+        if (f < 0.12 && rw > 2) return HT.s; let c = x > 3.5 ? HT.s : HT.b;
+        if (f > 0.18 && f < 0.5 && y < -1 && x < 3) c = HT.l; if (rw > 2.6 && rw < 4.0 && x < 2.5 && y < -4 && f > 0.16 && f < 0.62) c = HT.h; return c; }
+      if (y > 2) return HT.s;
+      if (!side && y >= bangLine(x) - 1.1 && y < bangLine(x) && Math.abs(x) < 5) return HT.d; // under-fringe shadow
+      let f; if (yy < -0.4 && r > 2.2) { const a = Math.atan2(yy, lx); f = (((a + 0.88 * PI) / (0.76 * PI) * NCL) % 1 + 1) % 1; } else f = (((x + 14.5) / 2.6) % 1 + 1) % 1;
+      if (f < 0.12 && r > vol * 0.45) return HT.s;
+      let c = (side ? x < -4 : x > 4) ? HT.s : HT.b; if (f > 0.16 && f < 0.48 && (side ? x > -5 : x < 4.5)) c = c === HT.s ? HT.b : HT.l;
+      const sb = vol * 0.62; if (r > sb - 0.8 && r < sb + 0.8 && lx < 2.5 && yy < -1 && f > 0.15 && f < 0.7) c = lx < -1 ? HT.h : HT.l;
+      return c; };
+    for (let y = -13; y <= 12; y++) for (let x = -10; x <= 10; x++) { if (!isHair(x, y)) continue; set(x, y, hairCol(x, y)); }
     if (H === 'wild') { const bd = toRGB('#8a2a1a'); for (let x = -7; x <= 7; x++) if (!side || x < 5) set(x, -3, bd); }
     if (H === 'longtie' || H === 'bun') { const tc = toRGB(HAIRS[H].tie || '#c8a040'); if (side) set(-4, H === 'bun' ? -5 : 0, tc); else if (back) set(0, H === 'bun' ? -5 : 2, tc); }
   }
@@ -130,20 +145,26 @@ function pxHuman(P, A, view, bw, bh, axf, ayf, hpx) {
     if (P.vest && !back) { const vx = side ? tw * 0.55 : 0, vw = side ? tw * 0.6 : tw * 0.36; L.poly([[sx(vx - vw), sy(chestY)], [sx(vx + vw), sy(chestY)], [sx(vx + vw * 0.3), sy(hipY - 14)], [sx(vx - vw * 0.3), sy(hipY - 14)]], SK.R, { flat: 2, clip: clipT }); }
     if (robe && !back && !side) { const tc = toRGB(P.trim || mix(P.top || '#888', '#000', 0.4)); L.line(sx(-tw * 0.4), sy(chestY + 2), sx(ww * 0.35), sy(hipY - 6), tc); L.line(sx(ww * 0.35), sy(hipY - 6), sx(ww * 0.35), sy(rb), tc); L.line(sx(tw * 0.35), sy(chestY + 2), sx(0), sy(chestY + 40), tc); }
     if (robe && side) { const tc = toRGB(P.trim || mix(P.top || '#888', '#000', 0.4)); L.line(sx(tw * 0.9), sy(chestY + 2), sx(ww * 1.1), sy(hipY - 4), tc); }
-    if (!P.vest && !robe && !back && !side) L.line(sx(0), sy(chestY + 6), sx(0), sy(hipY - 16), TOP.s);
+    if (!P.vest && !robe && !back && !side) { const nx = Math.round(sx(0)), ny = Math.round(sy(chestY + 3)); for (let i = 0; i < 4; i++) for (let dx = -2 + Math.ceil(i / 2); dx <= 2 - Math.ceil(i / 2); dx++) L.put(nx + dx, ny + i, i < 2 ? SK.s : SK.b); L.put(nx - 3, ny, TOP.l); L.put(nx + 3, ny, TOP.s);
+      L.line(sx(-tw * 0.62), sy(chestY + B.torso * 0.5), sx(-ww * 0.45), sy(hipY - 17), TOP.s); L.line(sx(tw * 0.55), sy(chestY + B.torso * 0.42), sx(ww * 0.5), sy(hipY - 17), TOP.d); }
+    if (!P.vest && !robe && side) L.line(sx(tw * 0.2), sy(chestY + B.torso * 0.45), sx(-ww * 0.2), sy(hipY - 17), TOP.s);
+    if (!robe) { const yb = Math.round(sy(chestY + 2)); for (let x = Math.round(sx(-tw * 0.8)); x <= Math.round(sx(-tw * 0.2)); x++) if (clipT(x, yb)) L.put(x, yb, TOP.h); }
+    if (robe && !side) { const yh = Math.round(sy(rb)) - 2; for (let x = Math.round(sx(-ww * 1.3)); x <= Math.round(sx(ww * 1.3)); x++) if (clipT(x, yh)) L.put(x, yh, x < sx(0) ? TOP.s : TOP.d); for (const fx of [-0.5, 0.45]) L.line(sx(ww * fx), sy(hipY), sx(ww * fx * 1.4), sy(rb) - 3, TOP.s); }
     const band = (col, y0, y1) => { const T = tri(col); L.poly([[sx(-ww * 1.12), sy(y0)], [sx(ww * 1.12), sy(y0)], [sx(ww * 1.14), sy(y1)], [sx(-ww * 1.14), sy(y1)]], T.R, { flat: 2 }); L.poly([[sx(-ww * 1.12), sy(y0)], [sx(ww * 1.12), sy(y0)], [sx(ww * 1.14), sy(y1)], [sx(-ww * 1.14), sy(y1)]], T.R, { flat: 1, clip: x => x + 0.5 > sx(ww * 0.4) }); return T; };
     if (P.sash) { const T = band(P.sash, hipY - 22, hipY - 4); if (!back) { const kx = side ? -ww * 0.9 : ww * 0.45; for (let i = 0; i < 6; i++) L.put(Math.round(sx(kx)) + (i > 3 ? 1 : 0), Math.round(sy(hipY - 4)) + i, i % 2 ? T.s : T.b); } }
     else if (P.belt !== false && !robe) { const T = band(P.belt || '#6a4428', hipY - 16, hipY - 2); if (!back && !side) { const gold = toRGB('#f0c860'); L.put(Math.round(sx(0)), Math.round(sy(hipY - 9)), gold); L.put(Math.round(sx(0)) - 1, Math.round(sy(hipY - 9)), gold); } }
     if (P.fur) { const T = tri(P.fur), y0 = Math.round(sy(chestY - 4)), x0 = Math.round(sx(-tw * 0.98)), x1 = Math.round(sx(tw * (side ? 1.1 : 0.98))); for (let x = x0; x <= x1; x++) { const d = 1 + ((x * 7) % 3 === 0 ? 1 : 0) + (back ? 0 : 1); for (let y = 0; y <= d; y++) L.put(x, y0 + y, y === 0 ? T.l : y === d ? T.s : T.b); } }
     if (P.necklace && !back && !side) { const wh = toRGB('#f4eedc'); for (let i = -2; i <= 2; i++) L.put(Math.round(sx(0)) + i * 2, Math.round(sy(chestY + 16)) + Math.round(Math.abs(i) * -0.5) + 2, wh); }
   };
-  const lower = L => { if (robe || P.pants) return; const kw = hipW * 1.05, kb = hipW * (side ? 1.2 : 1.32); const pts = [[-kw, hipY - 10], [kw, hipY - 10], [kb, kiltBot]]; const n = side ? 4 : 6; for (let i = 1; i <= n; i++) { const x = lerp(kb, -kb, i / n); pts.push([x + kb / n, kiltBot + (i % 2 ? 9 : 2)], [x, kiltBot]); } polyT(L, pts, KILT, 0, kb); };
+  const lower = L => { if (robe || P.pants) return; const kw = hipW * 1.05, kb = hipW * (side ? 1.2 : 1.32); const pts = [[-kw, hipY - 10], [kw, hipY - 10], [kb, kiltBot]]; const n = side ? 4 : 6; for (let i = 1; i <= n; i++) { const x = lerp(kb, -kb, i / n); pts.push([x + kb / n, kiltBot + (i % 2 ? 9 : 2)], [x, kiltBot]); } polyT(L, pts, KILT, 0, kb);
+    for (let i = 1; i < n; i++) { const t = lerp(-0.8, 0.8, i / n), x0 = sx(kw * t), x1 = sx(kb * t), y0 = sy(hipY - 2), y1 = sy(kiltBot) - 1; L.line(x0, y0, x1, y1, i % 2 ? KILT.s : KILT.d); }
+    const yh = Math.round(sy(hipY - 9)); for (let x = Math.round(sx(-kw * 0.9)); x <= Math.round(sx(kw * 0.9)); x++) if (back || side) L.put(x, yh, KILT.l); };
   const boot = (L, fx, fy, fw, dir) => { const x = Math.round(sx(fx)), y = Math.round(sy(fy)), w = Math.max(2, Math.round(fw * u)); for (let j = -1; j <= 0; j++) for (let i = -Math.floor(w / 2); i < Math.ceil(w / 2) + (dir ? 1 : 0); i++) L.put(x + i + (dir > 0 && j === 0 ? 0 : 0), y + j, j < 0 ? BOOT.b : BOOT.s); if (dir) L.put(x + Math.ceil(w / 2) + 1, y, BOOT.s); };
   const legsFront = L => { for (const sd of [-1, 1]) { const lift = (Q.w > 0.5 ? Math.max(0, sd < 0 ? Q.sw : -Q.sw) : 0) * 2.2 / u; let x0 = sd * hipW * 0.42, x1 = sd * hipW * 0.46, y1 = -6 - lift; if (P_ === 'sit' || P_ === 'cross') { x1 = sd * hipW * 1.4; y1 = hipY + 34; } if (P_ === 'kneel') { y1 = -6; x1 = sd * hipW * 0.7; }
       const T = P.pants || P.legC ? LEG : SK; if (!robe) capT(L, x0, hipY, x1, y1, B.legR, B.legR * 0.85, T);
       if (P.wraps) { const wr = tri(P.wraps); for (let i = 1; i <= 2; i++) { const yy = Math.round(lerp(sy(hipY), sy(y1), 0.62 + i * 0.12)); for (let dx = -1; dx <= 1; dx++) L.put(Math.round(sx(x1)) + dx, yy, wr.b); } }
       boot(L, x1, y1 + 4, B.legR * 2.3, 0); } };
-  const legSide = (L, a, far) => { const x0 = 4, y0 = hipY, L1 = Q.legL * 0.52, L2 = Q.legL * 0.5; let kx = x0 + Math.sin(a) * L1, ky = y0 + Math.cos(a) * L1, knee = Math.max(0, -Math.sin(a + 0.3)) * 0.9 * Q.w; if (P_ === 'sit' || P_ === 'cross' || P_ === 'kneel') { kx = x0 + L1 * 0.95; ky = y0 + 6; knee = -1.5; } const fx = kx + Math.sin(a - knee) * L2, fy = Math.min(-6, ky + Math.cos(a - knee) * L2);
+  const legSide = (L, a, far) => { if (robe) a *= 0.5; const x0 = 4, y0 = hipY, L1 = Q.legL * 0.52, L2 = Q.legL * 0.5; let kx = x0 + Math.sin(a) * L1, ky = y0 + Math.cos(a) * L1, knee = Math.max(0, -Math.sin(a + 0.3)) * 0.9 * Q.w; if (P_ === 'sit' || P_ === 'cross' || P_ === 'kneel') { kx = x0 + L1 * 0.95; ky = y0 + 6; knee = -1.5; } const fx = kx + Math.sin(a - knee) * L2, fy = Math.min(-6, ky + Math.cos(a - knee) * L2);
     SIDEFEET.push(fx); const T0 = P.pants || P.legC ? LEG : SK, T = far ? { R: [T0.d, T0.d, T0.s, T0.s, T0.b] } : T0; if (!robe) { capT(L, x0, y0, kx, ky, B.legR, B.legR * 0.9, T); capT(L, kx, ky, fx, fy, B.legR * 0.9, B.legR * 0.8, T); }
     if (P.wraps && !far) { const wr = tri(P.wraps); for (let i = 0; i < 2; i++) { const t = 0.55 + i * 0.2; L.put(Math.round(lerp(sx(kx), sx(fx), t)), Math.round(lerp(sy(ky), sy(fy), t)), wr.b); L.put(Math.round(lerp(sx(kx), sx(fx), t)) + 1, Math.round(lerp(sy(ky), sy(fy), t)), wr.b); } }
     const bx = Math.round(sx(fx)), by = Math.round(sy(fy)) + 2, bc = far ? BOOT.s : BOOT.b; for (let i = -1; i <= 2; i++) L.put(bx + i, by, i === 2 ? BOOT.s : bc); L.put(bx - 1, by - 1, bc); L.put(bx, by - 1, bc); L.put(bx + 1, by - 1, BOOT.s); };
