@@ -259,6 +259,56 @@ BX.register({
       }
       endTurn(st.die === 6); status();
     }
+    let bgc = null;
+    function boardImage(B0) {
+      const dpr = cv.dpr || 1, px = Math.max(1, Math.round(B0.s * dpr));
+      if (bgc && bgc.px === px) return bgc.c;
+      const c = document.createElement('canvas'); c.width = c.height = px; const g = c.getContext('2d'); g.scale(px / B0.s, px / B0.s);
+      const B = {x: 0, y: 0, s: B0.s}, cs = B.s / 15, S = p => toScr(B, p);
+      D.wood(g, B.x, B.y, B.s, B.s, {r: cs * .6, seed: 4, base: '#c99a5e', dark: '#7a4a24'});
+      D.paper(g, B.x + cs * .15, B.y + cs * .15, B.s - cs * .3, B.s - cs * .3, {r: cs * .5, color: '#f4e8cc'});
+      // hangars
+      for (let k = 0; k < 4; k++) {
+        const used = seatAt(k) >= 0, c = KC[k];
+        const a = S(rot([.35, .35], k)), b = S(rot([4.65, 4.65], k));
+        const x = Math.min(a[0], b[0]), y = Math.min(a[1], b[1]), w = Math.abs(b[0] - a[0]), h = Math.abs(b[1] - a[1]);
+        g.fillStyle = used ? c : D.alpha(c, .35); D.rr(g, x, y, w, h, cs * .7); g.fill();
+        g.fillStyle = 'rgba(255,250,235,.28)'; D.rr(g, x + cs * .3, y + cs * .3, w - cs * .6, h - cs * .6, cs * .5); g.fill();
+        for (let i = 0; i < 4; i++) { const [px, py] = S(rot(HANGAR[i], k)); g.fillStyle = 'rgba(255,255,255,.55)'; D.circle(g, px, py, cs * .62); g.fill(); g.strokeStyle = D.shade(c, -25); g.lineWidth = 1.5; g.stroke(); }
+        // take-off spot
+        const [tx, ty] = S(rot([.5, 5.5], k)); g.fillStyle = D.alpha(c, used ? .9 : .4); D.circle(g, tx, ty, cs * .44); g.fill(); g.strokeStyle = '#fff6e0'; g.lineWidth = 1.5; g.stroke();
+        D.text(g, '起', tx, ty + 1, {size: cs * .48, color: '#fff', weight: 900, font: 'serif'});
+        // seat name in the hangar corner
+        const q = seatAt(k);
+        if (q >= 0) { const [nx, ny] = S(rot([2.5, 4.95], k)); D.text(g, KN[k], nx, ny, {size: Math.max(10, cs * .45), color: D.shade(c, -40), weight: 800}); }
+      }
+      // track
+      PATH.forEach(([x, y], i) => {
+        const k = trackColor(i), [px, py] = S([x, y]);
+        g.fillStyle = KC[k]; D.rr(g, px + 1, py + 1, cs - 2, cs - 2, cs * .22); g.fill();
+        g.fillStyle = 'rgba(255,255,255,.18)'; D.rr(g, px + 2, py + 2, cs - 4, (cs - 4) * .45, cs * .18); g.fill();
+      });
+      // fly lines + markers
+      for (let k = 0; k < 4; k++) {
+        const a = S(xy(k, FLY_FROM, 0)), b = S(xy(k, FLY_TO, 0));
+        g.strokeStyle = KC[k]; g.lineWidth = Math.max(2, cs * .12); g.setLineDash([cs * .22, cs * .16]);
+        g.beginPath(); g.moveTo(a[0], a[1]); g.lineTo(b[0], b[1]); g.stroke(); g.setLineDash([]);
+        const ang = Math.atan2(b[1] - a[1], b[0] - a[0]);
+        g.save(); g.translate(a[0], a[1]); g.rotate(ang); g.fillStyle = '#fff'; g.beginPath(); g.moveTo(cs * .3, 0); g.lineTo(-cs * .15, -cs * .22); g.lineTo(-cs * .15, cs * .22); g.fill(); g.restore();
+      }
+      // runways + center
+      for (let k = 0; k < 4; k++) {
+        for (let d = 52; d < HOME; d++) { const [x, y] = S(xy(k, d, 0)); g.fillStyle = KC[k]; D.rr(g, x - cs / 2 + 1, y - cs / 2 + 1, cs - 2, cs - 2, cs * .22); g.fill(); g.fillStyle = 'rgba(255,255,255,.3)'; D.circle(g, x, y, cs * .12); g.fill(); }
+        const tri = [[6, 6], [6, 9], [7.5, 7.5]].map(p => S(rot(p, k)));
+        g.fillStyle = KC[k]; g.beginPath(); g.moveTo(...tri[0]); g.lineTo(...tri[1]); g.lineTo(...tri[2]); g.closePath(); g.fill();
+        g.strokeStyle = 'rgba(255,250,235,.8)'; g.lineWidth = 1.5; g.stroke();
+        // turn-in arrow on the last outer square
+        const [ax, ay] = S(xy(k, 51, 0)), [bx, by] = S(xy(k, 52, 0)), an = Math.atan2(by - ay, bx - ax);
+        g.save(); g.translate(ax, ay); g.rotate(an); g.fillStyle = 'rgba(255,255,255,.85)'; g.beginPath(); g.moveTo(cs * .28, 0); g.lineTo(-cs * .12, -cs * .2); g.lineTo(-cs * .12, cs * .2); g.fill(); g.restore();
+      }
+      const [ccx, ccy] = S([7.5, 7.5]); g.fillStyle = '#f4e8cc'; D.circle(g, ccx, ccy, cs * .42); g.fill(); D.text(g, '家', ccx, ccy + 1, {size: cs * .5, color: C.red, font: 'serif', weight: 900});
+      bgc = {px, c}; return c;
+    }
     const inst = {
       st,
       toMove: () => st.over ? null : st.turn,
@@ -320,49 +370,13 @@ BX.register({
         const S = p => toScr(B, p);
         /* board */
         g.fillStyle = 'rgba(0,0,0,.35)'; D.rr(g, B.x + 4, B.y + 8, B.s, B.s, cs * .6); g.fill();
-        D.wood(g, B.x, B.y, B.s, B.s, {r: cs * .6, seed: 4, base: '#c99a5e', dark: '#7a4a24'});
-        D.paper(g, B.x + cs * .15, B.y + cs * .15, B.s - cs * .3, B.s - cs * .3, {r: cs * .5, color: '#f4e8cc'});
-        // hangars
-        for (let k = 0; k < 4; k++) {
-          const used = seatAt(k) >= 0, c = KC[k];
-          const a = S(rot([.35, .35], k)), b = S(rot([4.65, 4.65], k));
+        g.drawImage(boardImage(B), B.x, B.y, B.s, B.s);
+        const [ccx] = S([7.5, 7.5]);
+        // whose turn: glowing hangar + ◀ next to the seat name
+        if (!st.over) { const k = posOf[st.turn], a = S(rot([.35, .35], k)), b = S(rot([4.65, 4.65], k));
           const x = Math.min(a[0], b[0]), y = Math.min(a[1], b[1]), w = Math.abs(b[0] - a[0]), h = Math.abs(b[1] - a[1]);
-          g.fillStyle = used ? c : D.alpha(c, .35); D.rr(g, x, y, w, h, cs * .7); g.fill();
-          if (used && seatAt(k) === st.turn && !st.over) { g.strokeStyle = `rgba(255,236,160,${.55 + .35 * Math.sin(t * 4)})`; g.lineWidth = Math.max(2.5, cs * .16); D.rr(g, x - 2, y - 2, w + 4, h + 4, cs * .75); g.stroke(); }
-          g.fillStyle = 'rgba(255,250,235,.28)'; D.rr(g, x + cs * .3, y + cs * .3, w - cs * .6, h - cs * .6, cs * .5); g.fill();
-          for (let i = 0; i < 4; i++) { const [px, py] = S(rot(HANGAR[i], k)); g.fillStyle = 'rgba(255,255,255,.55)'; D.circle(g, px, py, cs * .62); g.fill(); g.strokeStyle = D.shade(c, -25); g.lineWidth = 1.5; g.stroke(); }
-          // take-off spot
-          const [tx, ty] = S(rot([.5, 5.5], k)); g.fillStyle = D.alpha(c, used ? .9 : .4); D.circle(g, tx, ty, cs * .44); g.fill(); g.strokeStyle = '#fff6e0'; g.lineWidth = 1.5; g.stroke();
-          D.text(g, '起', tx, ty + 1, {size: cs * .48, color: '#fff', weight: 900, font: 'serif'});
-          // seat name in the hangar corner
-          const q = seatAt(k);
-          if (q >= 0) { const [nx, ny] = S(rot([2.5, 4.95], k)); D.text(g, KN[k] + (st.turn === q && !st.over ? ' ◀' : ''), nx, ny, {size: Math.max(10, cs * .45), color: D.shade(c, -40), weight: 800}); }
-        }
-        // track
-        PATH.forEach(([x, y], i) => {
-          const k = trackColor(i), [px, py] = S([x, y]);
-          g.fillStyle = KC[k]; D.rr(g, px + 1, py + 1, cs - 2, cs - 2, cs * .22); g.fill();
-          g.fillStyle = 'rgba(255,255,255,.18)'; D.rr(g, px + 2, py + 2, cs - 4, (cs - 4) * .45, cs * .18); g.fill();
-        });
-        // fly lines + markers
-        for (let k = 0; k < 4; k++) {
-          const a = S(xy(k, FLY_FROM, 0)), b = S(xy(k, FLY_TO, 0));
-          g.strokeStyle = KC[k]; g.lineWidth = Math.max(2, cs * .12); g.setLineDash([cs * .22, cs * .16]);
-          g.beginPath(); g.moveTo(a[0], a[1]); g.lineTo(b[0], b[1]); g.stroke(); g.setLineDash([]);
-          const ang = Math.atan2(b[1] - a[1], b[0] - a[0]);
-          g.save(); g.translate(a[0], a[1]); g.rotate(ang); g.fillStyle = '#fff'; g.beginPath(); g.moveTo(cs * .3, 0); g.lineTo(-cs * .15, -cs * .22); g.lineTo(-cs * .15, cs * .22); g.fill(); g.restore();
-        }
-        // runways + center
-        for (let k = 0; k < 4; k++) {
-          for (let d = 52; d < HOME; d++) { const [x, y] = S(xy(k, d, 0)); g.fillStyle = KC[k]; D.rr(g, x - cs / 2 + 1, y - cs / 2 + 1, cs - 2, cs - 2, cs * .22); g.fill(); g.fillStyle = 'rgba(255,255,255,.3)'; D.circle(g, x, y, cs * .12); g.fill(); }
-          const tri = [[6, 6], [6, 9], [7.5, 7.5]].map(p => S(rot(p, k)));
-          g.fillStyle = KC[k]; g.beginPath(); g.moveTo(...tri[0]); g.lineTo(...tri[1]); g.lineTo(...tri[2]); g.closePath(); g.fill();
-          g.strokeStyle = 'rgba(255,250,235,.8)'; g.lineWidth = 1.5; g.stroke();
-          // turn-in arrow on the last outer square
-          const [ax, ay] = S(xy(k, 51, 0)), [bx, by] = S(xy(k, 52, 0)), an = Math.atan2(by - ay, bx - ax);
-          g.save(); g.translate(ax, ay); g.rotate(an); g.fillStyle = 'rgba(255,255,255,.85)'; g.beginPath(); g.moveTo(cs * .28, 0); g.lineTo(-cs * .12, -cs * .2); g.lineTo(-cs * .12, cs * .2); g.fill(); g.restore();
-        }
-        const [ccx, ccy] = S([7.5, 7.5]); g.fillStyle = '#f4e8cc'; D.circle(g, ccx, ccy, cs * .42); g.fill(); D.text(g, '家', ccx, ccy + 1, {size: cs * .5, color: C.red, font: 'serif', weight: 900});
+          g.strokeStyle = `rgba(255,236,160,${.55 + .35 * Math.sin(t * 4)})`; g.lineWidth = Math.max(2.5, cs * .16); D.rr(g, x - 2, y - 2, w + 4, h + 4, cs * .75); g.stroke();
+          const [nx, ny] = S(rot([2.5, 4.95], k)), fs = Math.max(10, cs * .45); D.text(g, '◀', nx + fs * 1.3, ny, {size: fs * .8, color: D.shade(KC[k], -40), weight: 800}); }
         /* planes */
         const movable = st.phase === 'move' && myTurn() ? options(st.turn, st.die) : [];
         const movSet = new Set();
