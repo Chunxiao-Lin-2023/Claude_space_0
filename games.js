@@ -172,6 +172,17 @@ window.GAMES = [
     hue: 120
   },
   {
+    id: 'wanmeiol',
+    title: '完美世界OL',
+    sub: '文字网游 · 手写剧情 · 四人联机',
+    desc: '《完美世界》题材的文字角色扮演网游：从石村醒来，走过大荒、石国边城，一路进入补天阁。分支剧情全部手写；世界频道里有上百个“玩家”聊天、组队、摆摊、抢世界首领；还有公会、交易行、装备强化、虚神界排名、每日悬赏和副本。可以和最多三个朋友真人联机组队。',
+    url: 'wanmeiol/',
+    cover: 'covers/wanmeiol.webp',
+    status: 'dev',
+    tags: ['单人', '四人联机', '剧情', '文字', 'iPhone'],
+    hue: 38
+  },
+  {
     id: 'reader',
     kind: 'tool',
     title: '墨阅',
