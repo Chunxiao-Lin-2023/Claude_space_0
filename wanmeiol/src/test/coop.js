@@ -1,33 +1,27 @@
-// node test/coop.js — needs `node test/peerserver.js` (port 9000) and the out/ server on 8770
-const { chromium } = require('playwright');
-const PJ = require('fs').readFileSync(require.resolve('peerjs/dist/peerjs.min.js'), 'utf8');
+// node test/coop.js — shared-screen co-op: guest mirrors the host, control can be handed over. Needs `node test/peerserver.js` (port 9000).
+const { chromium } = require('playwright'); const PJ = require('fs').readFileSync(require.resolve('peerjs/dist/peerjs.min.js'), 'utf8');
 (async () => { const b = await chromium.launch({ args: ['--disable-gpu', '--disable-features=WebRtcHideLocalIpsWithMdns'] }); const errs = [];
-  const mk = async (name, cls) => { const ctx = await b.newContext({ viewport: { width: 1280, height: 800 } }); await ctx.route(/unpkg\.com|jsdelivr\.net/, r => r.fulfill({ status: 200, contentType: 'application/javascript', body: PJ })); await ctx.route(/fonts\.(googleapis|gstatic)\.com/, r => r.fulfill({ status: 200, body: '' })); const pg = await ctx.newPage(); pg.on('pageerror', e => errs.push(name + ': ' + e.message)); pg.on('console', m => { if (m.type() === 'error' && !/fonts/.test(m.text())) console.log(name, 'console', m.text()); });
-    await pg.addInitScript(() => { if (!sessionStorage.k) { localStorage.clear(); sessionStorage.k = 1; } }); await pg.goto('http://localhost:8770/test.html?peerhost=127.0.0.1&peerport=9000'); await pg.waitForFunction(() => window.__dbg && __dbg.ready);
-    await pg.click('text=创建角色'); await pg.click('.clsc >> nth=' + cls); await pg.fill('#nm', name); await pg.evaluate(() => { __dbg.auto = true; __dbg.noCD = true; }); await pg.click('text=进入大荒');
-    await pg.waitForFunction(() => __dbg.curQ().id !== 'q_wake' && !__dbg.STATE.scene); await pg.evaluate(() => { __dbg.C.auto = true; SET.fast = true; __dbg.gainExp(300, true); }); return pg; };
-  const H = await mk('房主', 0), G = await mk('客人', 2);
-  await H.evaluate(() => __dbg.netHost()); await H.waitForFunction(() => __dbg.NET.code && __dbg.NETROLE === 'host', null, { timeout: 15000 }); const code = await H.evaluate(() => __dbg.NET.code); console.log('code', code);
-  await G.evaluate(c => __dbg.netJoin(c), code); await G.waitForFunction(() => __dbg.NETROLE === 'guest' && Object.keys(__dbg.NET.roster).length === 2, null, { timeout: 15000 }); console.log('joined');
-  // host walks: guest follows
-  await G.evaluate(() => __dbg.go('sc_street', true, true)); await H.evaluate(() => __dbg.go('sc_street', true, true)); await H.waitForTimeout(500);
-  await H.evaluate(() => __dbg.go('sc_gate')); await G.waitForFunction(() => __dbg.C.loc === 'sc_gate', null, { timeout: 5000 }); await H.evaluate(() => __dbg.go('fl_path')); await G.waitForFunction(() => __dbg.C.loc === 'fl_path', null, { timeout: 5000 }); console.log('follow ok');
-  await H.waitForTimeout(400);
-  const g0 = await G.evaluate(() => __dbg.C.exp + __dbg.C.lv * 1e6), h0 = await H.evaluate(() => __dbg.C.exp + __dbg.C.lv * 1e6);
-  console.log('roster', JSON.stringify(await H.evaluate(() => Object.values(__dbg.NET.roster).map(p => [p.name, p.loc, p.busy, p.pid === __dbg.MYID()]))), await G.evaluate(() => JSON.stringify({ sc: __dbg.STATE.scene, b: !!__dbg.STATE.battle, d: __dbg.STATE.dungeon, busy: __dbg.STATE.busy })));
-  // host starts a fight
-  await H.evaluate(() => { __dbg.startBattle({ mobs: [['wolf', 2], ['boar', 1]], title: '联机测试' }); }); await H.waitForTimeout(300); console.log('host units', await H.evaluate(() => __dbg.STATE.battle && __dbg.STATE.battle.units.map(u => u.name + ':' + u.pid).join(',')), await H.evaluate(() => JSON.stringify(partnersHere().map(p=>p.name)))); await G.waitForFunction(() => !!__dbg.STATE.battle, null, { timeout: 5000 }); console.log('guest in battle');
-  await H.waitForFunction(() => !__dbg.STATE.battle, null, { timeout: 60000 }); await G.waitForFunction(() => !__dbg.STATE.battle, null, { timeout: 60000 });
-  const g1 = await G.evaluate(() => __dbg.C.exp + __dbg.C.lv * 1e6), h1 = await H.evaluate(() => __dbg.C.exp + __dbg.C.lv * 1e6); console.log('exp gain host', h1 - h0, 'guest', g1 - g0);
-  // guest starts one → host runs it
-  await H.waitForTimeout(500); await G.evaluate(() => { __dbg.startBattle({ mobs: [['boar', 1]], title: '客人发起' }); }); await H.waitForFunction(() => !!__dbg.STATE.battle, null, { timeout: 5000 }); console.log('host pulled into guest battle');
-  await G.waitForFunction(() => !__dbg.STATE.battle, null, { timeout: 60000 }); await H.waitForFunction(() => !__dbg.STATE.battle, null, { timeout: 60000 });
-  // chat
-  await G.evaluate(() => __dbg.sendChat('world', '大家好，测试')); await H.waitForTimeout(800);
-  const hc = await H.evaluate(() => __dbg.CHAT.world.filter(m => m.text === '大家好，测试').length), gc = await G.evaluate(() => __dbg.CHAT.world.filter(m => m.text === '大家好，测试').length); console.log('chat host', hc, 'guest', gc);
-  await G.evaluate(() => __dbg.sendChat('party', '队伍消息')); await H.waitForTimeout(600); console.log('party', await H.evaluate(() => __dbg.CHAT.party.filter(m => m.text === '队伍消息').length), await G.evaluate(() => __dbg.CHAT.party.filter(m => m.text === '队伍消息').length));
-  // gift
-  await H.evaluate(() => { __dbg.addItem('elixir', 2, true); giftTo(Object.keys(__dbg.NET.roster).find(k => k !== __dbg.MYID()), 'item', 'elixir'); }); await G.waitForTimeout(800); console.log('gift', await G.evaluate(() => __dbg.C.bag.elixir || 0));
-  // guest leaves
-  await G.evaluate(() => netLeave()); await H.waitForTimeout(1500); console.log('roster after leave', await H.evaluate(() => Object.keys(__dbg.NET.roster).length));
+  const mk = async name => { const ctx = await b.newContext({ viewport: { width: 1280, height: 800 } }); await ctx.route(/unpkg\.com|jsdelivr\.net/, r => r.fulfill({ status: 200, contentType: 'application/javascript', body: PJ })); await ctx.route(/fonts\.(googleapis|gstatic)\.com/, r => r.fulfill({ status: 200, body: '' }));
+    const pg = await ctx.newPage(); pg.on('pageerror', e => errs.push(name + ': ' + e.message)); pg.on('console', m => { if (m.type() === 'error' && !/Failed to load/.test(m.text())) errs.push(name + ' console: ' + m.text()); });
+    await pg.addInitScript(() => { if (!sessionStorage.k) { localStorage.clear(); sessionStorage.k = 1; } }); await pg.goto('http://localhost:8770/test.html?peerhost=127.0.0.1&peerport=9000'); await pg.waitForFunction(() => window.__dbg && __dbg.ready); return pg; };
+  const H = await mk('host'), G = await mk('guest');
+  await H.evaluate(() => { __dbg.instant = true; }); await H.click('text=开始'); await H.waitForSelector('#dlg.on');
+  await H.evaluate(() => __dbg.netHost()); await H.waitForFunction(() => __dbg.NETROLE === 'host' && __dbg.NET.code, null, { timeout: 15000 }); const code = await H.evaluate(() => __dbg.NET.code);
+  await G.fill('#tjoin', code); await G.click('text=加入'); await G.waitForFunction(() => __dbg.NETROLE === 'guest' && __dbg.C && __dbg.STATE.mode === 'play', null, { timeout: 15000 }); console.log('guest sees host game, quest', await G.evaluate(() => __dbg.curQ().id));
+  // guest without control cannot advance the dialogue
+  const t0 = await H.evaluate(() => __dbg.DLG && __dbg.DLG.o && __dbg.DLG.o.text); await G.click('#dlg'); await G.waitForTimeout(400); console.log('blocked while host controls:', t0 === await H.evaluate(() => __dbg.DLG && __dbg.DLG.o && __dbg.DLG.o.text));
+  // guest takes control and clicks through the opening scene
+  await G.evaluate(() => __dbg.takeControl()); await H.waitForFunction(() => __dbg.NET.ctrl !== 'host'); console.log('control handed to guest');
+  for (let i = 0; i < 30; i++) { const ch = await G.$('#dlg .chb'); if (ch) await ch.click(); else if (await G.$('#dlg.on')) await G.click('#dlg'); else break; await G.waitForTimeout(120); }
+  await H.waitForTimeout(400); console.log('host quest after guest clicked:', await H.evaluate(() => __dbg.curQ().id));
+  // guest moves 石昊 (host state changes), host is blocked meanwhile
+  await G.evaluate(() => document.querySelector('#acts .ab.dir').click()); await H.waitForTimeout(500); console.log('host loc after guest move:', await H.evaluate(() => __dbg.C.loc), 'guest sees', await G.evaluate(() => __dbg.C.loc));
+  const loc0 = await H.evaluate(() => __dbg.C.loc); await H.evaluate(() => document.querySelector('#acts .ab.dir').click()); await H.waitForTimeout(300); console.log('host blocked while guest controls:', loc0 === await H.evaluate(() => __dbg.C.loc));
+  // battle mirrored
+  await H.evaluate(() => { __dbg.takeControl(); __dbg.go('dh_forest', true, true); __dbg.startBattle({ mobs: [['boar', 1]], title: '联机测试' }); }); await G.waitForFunction(() => !!__dbg.STATE.battle, null, { timeout: 5000 }); console.log('guest sees battle');
+  await G.evaluate(() => __dbg.takeControl()); await H.waitForFunction(() => __dbg.NET.ctrl !== 'host'); await G.waitForTimeout(300);
+  for (let i = 0; i < 20; i++) { if (!(await H.evaluate(() => !!__dbg.STATE.battle))) break; await G.evaluate(() => { const b = document.querySelector('#acts .skb:not([disabled])'); if (b) b.click(); }); await G.waitForTimeout(250); }
+  console.log('battle finished by guest clicks:', !(await H.evaluate(() => !!__dbg.STATE.battle)));
+  const hl = await H.evaluate(() => document.getElementById('log').children.length), gl = await G.evaluate(() => document.getElementById('log').children.length); console.log('log lines host/guest', hl, gl);
+  await G.evaluate(() => netLeave()); await H.waitForTimeout(1200); console.log('host ctrl after guest left:', await H.evaluate(() => __dbg.NET.ctrl), 'guest back on title:', await G.evaluate(() => __dbg.STATE.mode));
   console.log('errors', errs.slice(0, 8)); await b.close(); process.exit(errs.length ? 1 : 0); })().catch(e => { console.error('FAIL', e.message); process.exit(1); });

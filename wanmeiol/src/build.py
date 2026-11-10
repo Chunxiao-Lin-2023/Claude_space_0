@@ -8,6 +8,9 @@ D = os.path.dirname(os.path.abspath(__file__))
 src = lambda f: open(os.path.join(D, f), encoding='utf-8').read()
 ORDER = sorted(f for f in os.listdir(D) if re.match(r'^\d\d_.*\.js$', f))
 game = '\n'.join(src(f) for f in ORDER)
+import collections
+dup = [n for n, c in collections.Counter(re.findall(r'^(?:async )?function ([A-Za-z_0-9]+)', game, re.M)).items() if c > 1]
+if dup: sys.exit('duplicate top-level functions (the later one silently wins): ' + ', '.join(dup))
 tpl = src('template.html')
 IOS = '<meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="完美世界OL"><meta name="theme-color" content="#100d0a">'
 def page(kind):

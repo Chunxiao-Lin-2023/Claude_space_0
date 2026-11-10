@@ -1,84 +1,71 @@
-/* ================= the player character: stats, bag, equipment, levels, save ================= */
-let C = null; // my character
-const SAVE_V = 1;
-function newChar(name, cls) {
-  const c = { v: SAVE_V, name, cls, lv: 1, exp: 0, hp: 1, mp: 1, gold: 60, loc: 'sc_chief', home: 'sc_street', bag: {}, gear: [], eq: { weapon: null, armor: null, acc: null },
-    story: { q: 0, n: 0, f: {} }, side: {}, kills: {}, daily: {}, mail: [], stats: { kills: 0, deaths: 0, bosses: 0, wb: 0, enh: 0, playMin: 0 }, arena: { rank: 0, wins: 0, best: 0 },
-    guild: null, market: [], dungeons: {}, title: '', created: now(), auto: false, seen: {} };
-  c.eq.weapon = makeEquip('w1', 0); c.eq.armor = makeEquip('a1', 0);
-  return c;
+/* ================= 石昊: stats, 宝术, 功法, 洞天, pets, bag, levels, save ================= */
+let C = null;
+const SAVE_V = 2;
+function newChar() {
+  return { v: SAVE_V, name: '石昊', lv: 1, exp: 0, hp: 1, mp: 1, loc: 'sc_chief', home: 'sc_street', bag: { milk: 2 },
+    sk: [], bar: [], gf: ['yingxia'], dt: [], pets: {}, pet: null, story: { q: 0, n: 0, f: {} }, kills: {}, stats: { kills: 0, deaths: 0, bosses: 0 },
+    arena: { rank: 0, wins: 0, tries: BAL.arenaTries, day: '' }, dungeons: {}, auto: false, seen: {}, created: now() };
 }
-function charStats(c = C, extra) {
-  const K = CLASSES[c.cls], L = c.lv - 1, s = { hpMax: K.base.hp + K.grow.hp * L, mpMax: K.base.mp + K.grow.mp * L, atk: K.base.atk + K.grow.atk * L, def: K.base.def + K.grow.def * L, spd: K.base.spd + K.grow.spd * L, crit: K.base.crit + K.grow.crit * L, leech: 0 };
-  let atkP = 0, defP = 0, hpP = 0, mpP = 0;
-  for (const sl in c.eq) { const e = c.eq[sl]; if (!e) continue; const q = eqStats(e); s.atk += q.atk; s.def += q.def; s.hpMax += q.hp; s.crit += q.crit; s.spd += q.spd; atkP += q.atkP; defP += q.defP; hpP += q.hpP; mpP += q.mpP; s.leech += q.leech; }
-  if (c.story && c.story.f.heart === 'ren') hpP += 0.05; if (c.story && c.story.f.heart === 'yong') atkP += 0.05; if (c.story && c.story.f.heart === 'zhi') mpP += 0.08;
-  if (c.guild) atkP += 0.02;
-  s.atk = Math.round(s.atk * (1 + atkP)); s.def = Math.round(s.def * (1 + defP)); s.hpMax = Math.round(s.hpMax * (1 + hpP)); s.mpMax = Math.round(s.mpMax * (1 + mpP)); s.spd = Math.round(s.spd * 10) / 10; s.crit = Math.min(0.75, s.crit);
-  s.power = Math.round(s.atk * 6 + s.def * 5 + s.hpMax * 0.6 + s.mpMax * 0.3 + s.crit * 1500 + s.spd * 15 + s.leech * 1200 + c.lv * 40);
+function charStats(c = C) {
+  const L = c.lv - 1, s = { hpMax: HERO.base.hp + HERO.grow.hp * L, mpMax: HERO.base.mp + HERO.grow.mp * L, atk: HERO.base.atk + HERO.grow.atk * L, def: HERO.base.def + HERO.grow.def * L, spd: HERO.base.spd + HERO.grow.spd * L, crit: HERO.base.crit + HERO.grow.crit * L, leech: 0, regen: 0 };
+  const P = { hpP: 0, mpP: 0, atkP: 0, defP: 0 };
+  const add = b => { for (const k in b) { if (k in P) P[k] += b[k]; else s[k] = (s[k] || 0) + b[k]; } };
+  for (const g of c.gf) if (GONGFA[g]) add(GONGFA[g].b); for (const k of c.dt) { const d = DONGTIAN.find(x => x.k === k); if (d) add(d.b); }
+  s.hpMax = Math.round(s.hpMax * (1 + P.hpP)); s.mpMax = Math.round(s.mpMax * (1 + P.mpP)); s.atk = Math.round(s.atk * (1 + P.atkP)); s.def = Math.round(s.def * (1 + P.defP)); s.spd = Math.round(s.spd * 10) / 10; s.crit = Math.min(0.6, s.crit);
+  s.power = Math.round(s.atk * 6 + s.def * 5 + s.hpMax * 0.6 + s.mpMax * 0.3 + s.crit * 1500 + s.spd * 15 + c.lv * 40);
   return s;
 }
 function fixHp() { const s = charStats(); C.hp = clamp(C.hp, 0, s.hpMax); C.mp = clamp(C.mp, 0, s.mpMax); }
 function fullHeal() { const s = charStats(); C.hp = s.hpMax; C.mp = s.mpMax; }
-function skillsOf(c = C) { // usable skills (ids) in bar order
-  const out = ['atk']; for (const id of CLASSES[c.cls].skills) if (c.lv >= SKILLS[id].lv) out.push(id);
-  if (c.story.f.thunder) out.push('sk_thunder'); if (c.story.f.suanni) out.push('sk_suanni'); out.push('guard'); return out;
-}
+function skillsOf(c = C) { return ['atk', ...c.bar.filter(id => c.sk.includes(id)), 'guard']; }
+function learnSkill(id) { if (C.sk.includes(id)) return; C.sk.push(id); if (C.bar.length < 4) C.bar.push(id); const S = SKILLS[id]; logLine(`<b class="lvup">领悟宝术</b>：${S.icon}<b>${S.name}</b>——${S.desc}`, 'sys'); sfx('epic'); }
+function toggleBar(id) { const i = C.bar.indexOf(id); if (i >= 0) C.bar.splice(i, 1); else { if (C.bar.length >= 4) { toast('最多带 4 门宝术进战斗'); return; } C.bar.push(id); } C.bar.sort((a, b) => SKILL_ORDER.indexOf(a) - SKILL_ORDER.indexOf(b)); save(); refresh(); }
+function learnGongfa(id) { if (C.gf.includes(id)) return; C.gf.push(id); const G = GONGFA[id]; fixHp(); logLine(`<b class="lvup">修炼有成</b>：${G.icon}<b>${G.name}</b>——${G.desc}`, 'sys'); sfx('epic'); }
+
+/* ---------- pets ---------- */
+function gainPet(id) { if (C.pets[id]) return; C.pets[id] = { aff: 10, hatch: 0 }; if (!C.pet) C.pet = id; const P = PETS[id]; logLine(`<b class="lvup">新伙伴</b>：${P.icon}<b>${P.name}</b>（${P.race}）——${P.desc}`, 'sys'); sfx('epic'); save(); refresh(); }
+function setPet(id) { if (!C.pets[id]) return; C.pet = C.pet === id ? null : id; sfx('click'); save(); refresh(); }
+function feedPet(id, item) { const p = C.pets[id], it = ITEMS[item]; if (!p || !it || !it.food || !takeItem(item)) return; const before = p.aff; p.aff = Math.min(100, p.aff + it.food); sfx('heal');
+  const P = PETS[id]; logLine(`${P.icon}${P.name} 吃了${it.name}，${pick(['尾巴摇个不停', '高兴得在你身边打转', '吃完还想要', '舔了舔你的手'])}。（亲近 ${before} → ${p.aff}）`, 'dim');
+  for (const s of P.sk) if (s.aff && before < s.aff && p.aff >= s.aff) logLine(`${P.icon}${P.name} 学会了 <b>${s.n}</b>！`, 'sys'); save(); refresh(); }
+const petSkillsOpen = id => PETS[id].sk.filter(s => !s.aff || (C.pets[id] && C.pets[id].aff >= s.aff));
 
 /* ---------- bag ---------- */
 const itemN = id => C.bag[id] || 0;
-function addItem(id, n = 1, quiet) { if (!ITEMS[id] || n <= 0) return; C.bag[id] = (C.bag[id] || 0) + n; if (!quiet) logLine(`获得 <span class="it">${ITEMS[id].icon}${ITEMS[id].name}</span> ×${n}`, 'loot'); onItemChange(id); }
-function takeItem(id, n = 1) { if ((C.bag[id] || 0) < n) return false; C.bag[id] -= n; if (C.bag[id] <= 0) delete C.bag[id]; onItemChange(id); return true; }
-function addGold(n, quiet) { C.gold = Math.max(0, C.gold + Math.round(n)); if (!quiet && n > 0) logLine(`获得 <span class="gold">${fmt(n)} 两</span>`, 'loot'); }
-function addEquip(e, quiet) {
-  C.gear.push(e); if (!quiet) { const R = BAL.rarity[e.r]; logLine(`获得装备 <span style="color:${R.c}">【${eqName(e)}】</span> <span class="dim">${R.n}</span>`, 'loot'); if (e.r >= 3) { sfx('epic'); worldEvent('drop', { item: eqName(e), r: e.r }); } else sfx('loot'); }
-  if (C.gear.length > 60) { // bag overflow: auto-sell the worst 凡品
-    const w = C.gear.filter(g => g.r === 0 && !g.p).sort((a, b) => eqPower(a) - eqPower(b))[0]; if (w) { C.gear.splice(C.gear.indexOf(w), 1); addGold(eqPrice(w), true); logLine(`背包已满，自动卖掉了 ${eqName(w)}（+${eqPrice(w)} 两）`, 'dim'); } }
-}
-function equipItem(u) {
-  const i = C.gear.findIndex(g => g.u === u); if (i < 0) return; const e = C.gear[i], b = EQB[e.b];
-  if (C.lv < b.lv) { toast(`需要 ${b.lv} 级`); return; }
-  C.gear.splice(i, 1); if (C.eq[b.slot]) C.gear.push(C.eq[b.slot]); C.eq[b.slot] = e; fixHp(); sfx('click'); save(); refresh();
-}
-function unequip(slot) { if (!C.eq[slot]) return; C.gear.push(C.eq[slot]); C.eq[slot] = null; fixHp(); save(); refresh(); }
-function sellEquip(u) { const i = C.gear.findIndex(g => g.u === u); if (i < 0) return; const e = C.gear[i]; C.gear.splice(i, 1); addGold(eqPrice(e), true); sfx('gold'); toast(`卖出 ${eqName(e)}，获得 ${eqPrice(e)} 两`); save(); refresh(); }
-function sellItem(id, n = 1) { const it = ITEMS[id]; if (!it || !it.price || it.type === 'key') return; n = Math.min(n, itemN(id)); if (!n || !takeItem(id, n)) return; const g = Math.floor(it.price * 0.5) * n; addGold(g, true); sfx('gold'); toast(`卖出 ${it.name}×${n}，获得 ${g} 两`); save(); refresh(); }
+function addItem(id, n = 1, quiet) { if (!ITEMS[id] || n <= 0) return; C.bag[id] = (C.bag[id] || 0) + n; if (!quiet) logLine(`获得 <span class="it">${ITEMS[id].icon}${ITEMS[id].name}</span> ×${n}`, 'loot'); }
+function takeItem(id, n = 1) { if ((C.bag[id] || 0) < n) return false; C.bag[id] -= n; if (C.bag[id] <= 0) delete C.bag[id]; return true; }
 function useItem(id, inBattle) {
-  const it = ITEMS[id]; if (!it || it.type !== 'use' || !itemN(id)) return false; const s = charStats();
-  if (it.recall) { if (inBattle || STATE.battle) { toast('战斗中不能使用'); return false; } if (STATE.scene) { toast('剧情中不能使用'); return false; } takeItem(id); go(nearestTown(C.loc), true); return true; }
-  if (it.box) { takeItem(id); for (const [k, n] of it.box) addItem(k, n); if (it.gold) addGold(it.gold); for (let i = 0; i < (it.equip || 0); i++) addEquip(rollEquip(C.lv, 0.8, 2)); save(); refresh(); return true; }
-  if (!inBattle) { if (it.heal && C.hp >= s.hpMax && !it.mpHeal) { toast('气血已满'); return false; } takeItem(id); if (it.heal) C.hp = Math.min(s.hpMax, C.hp + s.hpMax * it.heal); if (it.mpHeal) C.mp = Math.min(s.mpMax, C.mp + s.mpMax * it.mpHeal); sfx('heal'); logLine(`使用了 ${it.icon}${it.name}`, 'dim'); save(); refresh(); return true; }
-  takeItem(id); return true; // battle use applies to the unit in the battle engine
+  const it = ITEMS[id]; if (!it || !itemN(id)) return false; const s = charStats();
+  if (it.type === 'gf') { if (inBattle) return false; takeItem(id); learnGongfa(it.gf); save(); refresh(); return true; }
+  if (it.type !== 'use') return false;
+  if (inBattle) { takeItem(id); return true; }
+  if (C.hp >= s.hpMax && (!it.mp || C.mp >= s.mpMax)) { toast('气血符力都是满的'); return false; }
+  takeItem(id); if (it.heal) C.hp = Math.min(s.hpMax, C.hp + s.hpMax * it.heal); if (it.mp) C.mp = Math.min(s.mpMax, C.mp + s.mpMax * it.mp); sfx('heal'); logLine(`你用了${it.icon}${it.name}。`, 'dim'); save(); refresh(); return true;
 }
-function onItemChange(id) { if (typeof storyItemCheck === 'function') storyItemCheck(id); }
 
 /* ---------- levels & realms ---------- */
 function gainExp(n, quiet) {
-  if (n <= 0) return; n = Math.round(n * (C.guild ? 1.05 : 1)); C.exp += n; if (!quiet) logLine(`获得 <span class="exp">${fmt(n)} 经验</span>`, 'loot');
+  if (n <= 0) return; C.exp += Math.round(n); if (!quiet) logLine(`获得 <span class="exp">${fmt(n)} 经验</span>`, 'loot');
   while (C.exp >= BAL.expNext(C.lv) && C.lv < BAL.lvCap) {
-    const R = realmOf(C.lv); if (C.lv === R.to) { const nx = BAL.realms[BAL.realms.indexOf(R) + 1]; C.exp = Math.min(C.exp, BAL.expNext(C.lv)); if (!C.seen['neck' + C.lv]) { C.seen['neck' + C.lv] = 1; logLine(`你感到体内的力量撞上了一层看不见的壁障——<b>${R.name}圆满</b>。需要「${ITEMS[nx.need].name}」才能突破到${nx.name}。`, 'sys'); } break; }
+    if (C.lv === 9 && !C.story.f.jijing) { C.exp = BAL.expNext(C.lv); if (!C.seen.neck9) { C.seen.neck9 = 1; logLine('你体内的气血像江河一样奔涌，却撞上了一层看不见的壁——<b>搬血境走到头了</b>。要怎么往前走，得看机缘（跟着主线走）。', 'sys'); } break; }
+    if (C.lv === 19 && !C.story.f.end) { C.exp = BAL.expNext(C.lv); break; }
     C.exp -= BAL.expNext(C.lv); C.lv++; fullHeal(); sfx('level');
-    logLine(`<b class="lvup">等级提升！</b> 你现在是 <b>${C.lv}</b> 级。气血、符力已回满。`, 'sys');
-    for (const id of CLASSES[C.cls].skills) if (SKILLS[id].lv === C.lv) logLine(`领悟新宝术：<b>${SKILLS[id].icon}${SKILLS[id].name}</b>——${SKILLS[id].desc}`, 'sys');
-    if (C.lv % 5 === 0) worldEvent('level', { lv: C.lv });
-    netPub();
+    logLine(`<b class="lvup">境界精进！</b> ${realmOf(C.lv).name} · 第 ${C.lv} 层。气血、符力已回满。`, 'sys');
+    if (C.lv >= 10 && C.lv <= 18 && C.dt.length < C.lv - 9) STATE.dtPending = true;
   }
   if (C.lv >= BAL.lvCap) C.exp = Math.min(C.exp, BAL.expNext(C.lv));
-  if (typeof storyLevelCheck === 'function') storyLevelCheck();
+  netPub(); if (STATE.dtPending) setTimeout(dongtianPick, 400);
+  setTimeout(storyPoll, 200);
 }
-function canBreak() { const R = realmOf(C.lv); const nx = BAL.realms[BAL.realms.indexOf(R) + 1]; return nx && C.lv === R.to && C.exp >= BAL.expNext(C.lv) && C.lv < BAL.lvCap ? nx : null; }
-function breakthrough() {
-  const nx = canBreak(); if (!nx) return; if (!itemN(nx.need)) { toast(`需要「${ITEMS[nx.need].name}」`); return; }
-  if (nx.name === '铭纹境') { toast('铭纹境将在下一卷开放'); return; }
-  takeItem(nx.need); C.exp = 0; C.lv++; fullHeal(); sfx('epic');
-  logLine(`<b class="lvup">——突破！——</b><br>你服下${ITEMS[nx.need].name}，盘膝而坐。体内气血如江河奔涌，轰然冲破了那层壁障。${nx.name === '洞天境' ? '恍惚间，你仿佛看见体内开辟出一方小小的洞天，符文在其中流转不息。' : '血肉中的符文一个个亮起，像是活了过来，你的每一寸骨头都在发出低鸣。'}<br>你踏入了 <b>${nx.name}</b>！`, 'sys');
-  worldEvent('realm', { realm: nx.name }); save(); refresh(); netPub();
-  if (typeof storyLevelCheck === 'function') storyLevelCheck();
+async function dongtianPick() { // open a 洞天: pick one of two blessings
+  if (!STATE.dtPending || STATE.scene || STATE.battle || STATE.dungeon || NETROLE === 'guest') return; if (C.dt.length >= C.lv - 9 || C.lv < 10) { STATE.dtPending = false; return; }
+  STATE.dtPending = false; const pool = DONGTIAN.filter(d => !C.dt.includes(d.k) || C.dt.filter(x => x === d.k).length < 2); const opts = shuffle(pool.slice()).slice(0, 2);
+  await runScene(async () => { await nar(`你盘膝而坐，体内轰鸣——第 <b>${C.dt.length + 1}</b> 座洞天要开了。它会是什么样子？`); const c = await choose(opts.map(o => `${o.n}（${o.d}）`)); C.dt.push(opts[c].k); fixHp(); logLine(`开辟<b>${opts[c].n}</b>：${opts[c].d}`, 'sys'); sfx('epic'); });
+  if (C.dt.length < C.lv - 9) { STATE.dtPending = true; setTimeout(dongtianPick, 300); }
 }
 
 /* ---------- save ---------- */
 let saveT = 0;
-function save(now_) { if (!C || STATE.guestPreview) return; clearTimeout(saveT); const f = () => { C.savedAt = now(); store.set('save', C); }; if (now_) f(); else saveT = setTimeout(f, 300); }
-function loadSave() { const c = store.get('save', null); if (!c || c.v !== SAVE_V || !CLASSES[c.cls]) return null; // migrate missing fields
-  const d = newChar(c.name, c.cls); for (const k in d) if (c[k] === undefined) c[k] = d[k]; if (!PLACES[c.loc]) c.loc = 'sc_street'; return c; }
-function nearestTown(loc) { const a = PLACES[loc].area; if (PLACES[loc].town) return loc; if (a === 'butian' && C.story.f.inSect) return 'bt_outer'; if (a === 'dahuang' && ['road', 'th_marsh'].includes(loc) && C.story.f.city) return 'bc_gate'; return C.home && PLACES[C.home] ? C.home : 'sc_street'; }
+function save(now_) { if (!C || NETROLE === 'guest') return; clearTimeout(saveT); const f = () => { C.savedAt = now(); store.set('save2', C); }; if (now_) f(); else saveT = setTimeout(f, 300); }
+function loadSave() { const c = store.get('save2', null); if (!c || c.v !== SAVE_V) return null; const d = newChar(); for (const k in d) if (c[k] === undefined) c[k] = d[k]; if (!PLACES[c.loc]) c.loc = 'sc_street'; return c; }
+function nearestTown(loc) { const a = PLACES[loc].area; if (PLACES[loc].town) return loc; if ((a === 'butian' || a === 'baiduan') && C.story.f.joined) return 'bt_court'; if (a === 'butian') return 'bt_gate'; return 'sc_street'; }
