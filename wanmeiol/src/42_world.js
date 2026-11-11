@@ -1,6 +1,25 @@
 /* ================= the wild: events while exploring (some open as your realm grows, some only at night),
    and the 骨文 memory game used when 石昊 reads a 宝术 off its runes ================= */
 const WILD = [
+  { id: 'yy_stone', once: 1, title: '城门下的饼', when: P => P.area === 'yiyu' && C.story.q >= qi('q_yyarena') && C.story.q < qi('q_yyfalls'), scene: async () => {
+    await nar('夜里，一个异域的小孩偷偷溜到城门下，往上扔了一块饼。饼砸在你的额头上，掉了下去。');
+    await nar('他又扔了一块。这回你张嘴接住了。');
+    await say('异域小孩', '（他小声说）我娘说你是坏人。……可坏人为什么不哭？');
+    const c = await choose(['因为哭了，饼就掉了。', '……谢谢你的饼。']);
+    if (c === 0) await nar('小孩“噗”地笑了，捂着嘴跑了。');
+    else await nar('小孩愣了一下，跑远了。第二天夜里，他又来了。');
+    gainExp(BAL.expNext(C.lv) * 0.1); } },
+  { id: 'dl_lamp', once: 1, title: '长河里的灯', when: P => P.area === 'diluo', scene: async () => {
+    await nar('时光长河里漂过来一盏灯。灯里有一个小小的村子，村口有一群孩子在举石锁。其中最小的那个，举不动，在哭。');
+    await nar('你伸手想去摸那盏灯。灯从你指缝里漂走了。');
+    await me('……别哭。以后会举起来的。');
+    gainExp(BAL.expNext(C.lv) * 0.1); give('baoyao', 2); } },
+  { id: 'jh_leaf', once: 1, title: '一片叶子', when: P => P.area === 'jiehai' && C.story.q >= qi('q_kundi2'), scene: async () => {
+    await nar('界海上漂过来一片很小的枯叶——一个死掉的世界。叶子上，还有一棵很小很小的树，树上，还有一点绿。');
+    const c = await choose(['（把它推回岸边）', '（把它捧起来，带回天庭）']);
+    if (c === 1) { await nar('你把它捧回了天庭，放在那根柱子下面。第二天，那一点绿，长大了一点。'); F().leaf = 1; }
+    else await nar('你把它推回了岸边。它在岸边停住了，没有再往黑里漂。');
+    gainExp(BAL.expNext(C.lv) * 0.1); give('baoyao', 2); } },
   { id: 'sq_qilin', once: 1, title: '八珍麒', when: P => P.area === 'sanqian' && C.story.q >= qi('q_arena'), scene: async () => {
     await nar('一头小小的麒麟从草丛里钻出来，浑身的毛是八种颜色。它蹭了蹭你的腿，然后叼走了你手里的干饼。');
     await me('……喂！');
@@ -13,7 +32,7 @@ const WILD = [
     await nar('画的旁边刻着一行小字。你认不全，只认出了几个：“……留给……下一个纪元……的孩子……”');
     await me('……那就是我们。');
     await nar('你在那面墙前面站了一会儿，把手按在了画上。墙是热的。'); gainExp(BAL.expNext(C.lv) * 0.12); } },
-  { id: 'dg_letter', once: 1, title: '没寄出去的信', when: P => P.area === 'diguan' && C.story.q >= qi('q_bianhuang'), scene: async () => {
+  { id: 'dg_letter', once: 1, title: '没寄出去的信', when: P => P.area === 'diguan' && C.story.q >= qi('q_bianhuang') && C.story.q < qi('q_betray'), scene: async () => {
     await nar('城头的一块砖缝里，塞着一封信。信封上写着：“给娘”。没有寄出去。');
     await nar('你认得那个字迹——是那个说打完这一仗就回家成亲的少年。');
     const c = await choose(['（收好，等太平了替他寄回去）', '（放回砖缝里）']);

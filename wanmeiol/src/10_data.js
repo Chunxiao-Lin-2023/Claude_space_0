@@ -3,8 +3,8 @@
 const BAL = {
   expNext: lv => Math.round(16 * Math.pow(lv, 1.7) + 14),
   realms: [ // crossing 9→10 needs 极境 (story); 19→20 needs the story's last step
-    { name: '搬血境', from: 1, to: 9 }, { name: '洞天境', from: 10, to: 19 }, { name: '化灵境', from: 20, to: 24 }, { name: '铭纹境', from: 25, to: 29 }, { name: '列阵境', from: 30, to: 34 }, { name: '尊者境', from: 35, to: 39 }, { name: '神火境', from: 40, to: 44 }, { name: '真一境', from: 45, to: 49 }, { name: '圣祭境', from: 50, to: 54 }, { name: '天神境', from: 55, to: 59 }, { name: '虚道境', from: 60, to: 62 }, { name: '斩我境', from: 63, to: 65 }, { name: '遁一境', from: 66, to: 68 }, { name: '至尊境', from: 69, to: 71 }],
-  lvCap: 71, // 44→45 needs 第五卷 done, 49→50 第六卷, 54→55 第七卷, 62→63 第八卷, 68→69 重回至尊; 24→25 needs the end of 第二卷, 29→30 needs 石皇 (第三卷), 34→35 needs 第四卷 begun, 39→40 needs 登天路
+    { name: '搬血境', from: 1, to: 9 }, { name: '洞天境', from: 10, to: 19 }, { name: '化灵境', from: 20, to: 24 }, { name: '铭纹境', from: 25, to: 29 }, { name: '列阵境', from: 30, to: 34 }, { name: '尊者境', from: 35, to: 39 }, { name: '神火境', from: 40, to: 44 }, { name: '真一境', from: 45, to: 49 }, { name: '圣祭境', from: 50, to: 54 }, { name: '天神境', from: 55, to: 59 }, { name: '虚道境', from: 60, to: 62 }, { name: '斩我境', from: 63, to: 65 }, { name: '遁一境', from: 66, to: 68 }, { name: '至尊境', from: 69, to: 71 }, { name: '真仙境', from: 72, to: 75 }, { name: '仙王境', from: 76, to: 80 }, { name: '准仙帝', from: 81, to: 84 }, { name: '仙帝', from: 85, to: 85 }],
+  lvCap: 85, // 59→60 needs the betrayal, 62→63 the escape from 异域, 65→66 the flight home, 71→72 第十一卷 done, 75→76 第十二卷, 80→81 第十三卷, 84→85 仙帝; 44→45 needs 第五卷 done, 49→50 第六卷, 54→55 第七卷, 62→63 第八卷, 68→69 重回至尊; 24→25 needs the end of 第二卷, 29→30 needs 石皇 (第三卷), 34→35 needs 第四卷 begun, 39→40 needs 登天路
   defK: 40,
   critMul: 1.7,
   enemy: lv => ({ hp: 26 + lv * 20, atk: 5 + lv * 2.7, def: 2 + lv * 1.9, spd: 8 + lv * 0.35, exp: 9 + Math.round(lv * 6.5 + lv * lv * 0.35) }),
@@ -23,7 +23,7 @@ const BAL = {
 };
 /* slots grow with the realm: 宝术 you can take into battle, 宝骨 you can wear */
 const barSlots = lv => 4 + (lv >= 10) + (lv >= 14) + (lv >= 18) + (lv >= 22) + (lv >= 27) + (lv >= 32) + (lv >= 37) + (lv >= 42);
-const relicSlots = lv => 2 + (lv >= 12) + (lv >= 17) + (lv >= 24) + (lv >= 30) + (lv >= 36) + (lv >= 42) + (lv >= 50) + (lv >= 60);
+const relicSlots = lv => 2 + (lv >= 12) + (lv >= 17) + (lv >= 24) + (lv >= 30) + (lv >= 36) + (lv >= 42) + (lv >= 50) + (lv >= 60) + (lv >= 72) + (lv >= 81);
 /* 宝术熟练度: uses → 小成 / 大成 */
 const PROF = [{ n: '', s: '', at: 0, b: 0 }, { n: '入门', s: '入', at: 12, b: 0.04 }, { n: '小成', s: '小', at: 30, b: 0.1 }, { n: '精通', s: '精', at: 60, b: 0.15 }, { n: '大成', s: '大', at: 100, b: 0.2 }, { n: '圆满', s: '圆', at: 160, b: 0.26 }]; // 圆满 opens 宝术合成
 /* elements: a few beasts take more from one kind of attack */
@@ -46,10 +46,12 @@ const SKILLS = {
   wudi: { name: '无敌拳', icon: '👊', got: 'sk_wudi', mp: 36, cd: 4, tgt: 'enemy', dmg: 4.4, pierce: 1, el: 'blunt', st: [{ k: 'brk', t: 2, v: 0.3, p: 1 }], desc: '齐道临教的无敌道：这一拳只往前，不回头。4.4 倍伤害，无视防御，破甲。' },
   liushen: { name: '柳神法', icon: '🌿', got: 'sk_liushen', mp: 40, cd: 4, tgt: 'enemies', dmg: 2.4, mag: 1, pierce: 1, st: [{ k: 'bound', t: 1, p: 0.4 }], self: [{ k: 'shield', t: 2, v: 0.8 }], desc: '燃尽至尊血换来的柳神法：万千柳枝抽下来，全体 2.4 倍伤害，无视防御，可能缠住；自己得到一层厚护盾。' },
   daluo: { name: '大罗剑胎', icon: '🗡️', got: 'sk_daluo', mp: 42, cd: 4, tgt: 'enemy', dmg: 5.2, pierce: 1, el: 'blunt', st: [{ k: 'bleed', t: 3, v: 0.5, p: 1 }], desc: '一枚还没开锋的剑胎，斩出去却比任何剑都快：5.2 倍伤害，无视防御，重创流血。' },
+  tahua: { name: '他化自在', icon: '👥', got: 'sk_tahua', mp: 46, cd: 4, tgt: 'enemies', dmg: 1.2, hits: 3, mag: 1, pierce: 1, st: [{ k: 'weak', t: 2, v: 0.3, p: 0.6 }], desc: '他化自在大法：化出好几个你，一起打。全体连打三下，共 3.6 倍伤害，无视防御，虚弱。' },
+  duduan: { name: '独断万古', icon: '⚔️', got: 'sk_duduan', mp: 60, cd: 5, tgt: 'enemies', dmg: 4.2, pierce: 1, el: 'blunt', st: [{ k: 'stun', t: 1, p: 0.6 }], self: [{ k: 'shield', t: 2, v: 1 }], desc: '一剑斩断时光长河。全体 4.2 倍伤害，无视防御，大概率眩晕，自己得到一层厚护盾。' },
   lunhui: { name: '轮回', icon: '☯️', got: 'sk_lunhui', mp: 40, cd: 5, tgt: 'enemies', dmg: 2.6, mag: 1, pierce: 1, st: [{ k: 'stun', t: 1, p: 0.5 }], desc: '死过一回才看见的东西：全体 2.6 倍伤害，无视防御，一半概率眩晕。连神也挡不住。' },
   ta: { name: '小塔', icon: '🗼', got: 'sk_ta', mp: 22, cd: 5, tgt: 'allies', shield: 1.6, desc: '那座只有四层的小塔垂下光幕，全队获得 1.6 倍攻击的护盾。' },
 };
-const SKILL_ORDER = ['qly', 'sn', 'gw', 'lei', 'dsh', 'jian', 'ta', 'zhuque', 'zhizun', 'lunhui', 'wudi', 'liushen', 'daluo'];
+const SKILL_ORDER = ['qly', 'sn', 'gw', 'lei', 'dsh', 'jian', 'ta', 'zhuque', 'zhizun', 'lunhui', 'wudi', 'liushen', 'daluo', 'tahua', 'duduan'];
 const STATUS = { burst: { n: '绝境', c: '#ffe08a' }, stun: { n: '眩晕', c: '#ffd34a' }, bleed: { n: '流血', c: '#ff6a6a' }, burn: { n: '灼烧', c: '#ff8a3a' }, poison: { n: '中毒', c: '#9ad84a' }, def: { n: '坚守', c: '#ffd28a' }, taunt: { n: '嘲讽', c: '#ffb36a' }, atk: { n: '凶性', c: '#ff9a6a' }, dodge: { n: '灵动', c: '#9ad8ff' }, sure: { n: '必暴', c: '#ffe46a' }, shield: { n: '护盾', c: '#9ae8b0' }, guard: { n: '防御', c: '#c8c0b0' }, weak: { n: '虚弱', c: '#b0a0ff' }, bound: { n: '锁链', c: '#d8b070' }, brk: { n: '破甲', c: '#e0a070' }, mark: { n: '印记', c: '#c08aff' }, freeze: { n: '冰封', c: '#9ad8ff' }, rage: { n: '狂怒', c: '#ff4a2a' } };
 
 /* ---------- 功法 / 修炼所得 (passive) ---------- */
@@ -67,6 +69,12 @@ const GONGFA = {
   xiangu: { name: '仙古淬体', icon: '🏛️', desc: '仙古遗地的古殿洗过你的筋骨。防御 +10%，气血 +8%。', b: { defP: 0.1, hpP: 0.08 } },
   qiwang: { name: '七王之血', icon: '🩸', desc: '原来“罪血”，是守帝关的七王留下的血。攻击 +12%，暴击 +4%。', b: { atkP: 0.12, crit: 0.04 } },
   chongzhi: { name: '重回至尊', icon: '👑', desc: '在下界蛰伏多年，一步一步重新走回至尊。气血 +10%，攻击 +10%，防御 +8%。', b: { hpP: 0.1, atkP: 0.1, defP: 0.08 } },
+  daoze: { name: '道则补全', icon: '📜', desc: '异域天牢里一百年，蛄祖替你补全了道则。气血 +10%，符力 +12%。', b: { hpP: 0.1, mpP: 0.12 } },
+  yuanshi: { name: '原始帝城', icon: '🏯', desc: '在仙域的原始帝城里，你看见了“罪血”最早的样子。攻击 +10%，防御 +8%。', b: { atkP: 0.1, defP: 0.08 } },
+  zhenxian: { name: '真仙', icon: '✨', desc: '走出造化之门，成了真仙。气血 +12%，攻击 +10%。', b: { hpP: 0.12, atkP: 0.1 } },
+  baxi: { name: '逆活八世', icon: '♾️', desc: '在帝落时代逆着时光活了八世。全属性 +8%。', b: { hpP: 0.08, atkP: 0.08, defP: 0.08, mpP: 0.08 } },
+  zhunxiandi: { name: '准仙帝', icon: '👑', desc: '在仙域的大战里破境准仙帝。攻击 +12%，暴击 +5%。', b: { atkP: 0.12, crit: 0.05 } },
+  xiandi: { name: '荒天帝', icon: '🌌', desc: '死在界海深处，又以他化自在大法证道仙帝。气血 +15%，攻击 +15%，防御 +10%。', b: { hpP: 0.15, atkP: 0.15, defP: 0.1 } },
   lingshen: { name: '四道灵身', icon: '👥', desc: '一身化四，各领一军。攻击 +8%，身法 +4。', b: { atkP: 0.08, spd: 4 } },
   xixue: { name: '双头火犀宝血', icon: '🔥', desc: '炼化了双头火犀的宝血精华。攻击 +6%。', b: { atkP: 0.06 } },
   yaoding: { name: '药鼎洗礼', icon: '🏺', desc: '泡在族长熬的大药鼎里，脱胎换骨。气血 +6%，防御 +6%。', b: { hpP: 0.06, defP: 0.06 } },
@@ -171,6 +179,36 @@ const MOBS = {
   r_rhino: { name: '独角兕', boss: 1, roam: 1, weak: { blunt: 1 }, mul: { hp: 6, atk: 1.25, def: 1.6, spd: 0.8 }, sk: [{ n: '践踏', dmg: 0.9, aoe: 1, w: 3 }, { n: '撼地冲锋', dmg: 2.3, w: 1, charge: 1 }], loot: [['baoyao', 1], ['meat', 1]], p2: '独角兕的独角开始发光，脚下的地面寸寸龟裂！', d: '到处游荡的凶兽首领，一身甲壳刀枪不入，只怕重砸。' },
   r_snake: { name: '赤鳞巨蟒', boss: 1, roam: 1, mul: { hp: 5.5, atk: 1.3, def: 1.3 }, sk: [{ n: '毒雾', dmg: 0.7, aoe: 1, st: { k: 'poison', t: 3, v: 0.3, p: 0.7 }, w: 2 }, { n: '绞杀', dmg: 1.2, w: 3 }, { n: '吞噬', dmg: 2.3, w: 1, charge: 1 }], loot: [['baoyao', 1], ['lingyao', 1]], p2: '赤鳞巨蟒蜕下一层旧皮，鳞片红得像烧透的铁！', d: '到处游荡的凶兽首领，喷出来的雾能毒倒一片林子。' },
   r_bird: { name: '雷翅雕', boss: 1, roam: 1, mul: { hp: 5, atk: 1.35, def: 1.2, spd: 1.6 }, sk: [{ n: '雷翅', dmg: 1, aoe: 1, mag: 1, w: 3 }, { n: '雷池', dmg: 2.1, aoe: 1, mag: 1, w: 1, charge: 1 }], loot: [['baoyao', 1], ['lingyao', 1]], p2: '雷翅雕双翅一振，乌云在它头顶聚成了雷池！', d: '到处游荡的凶兽首领，翅膀扇一下就是一道雷。' },
+  // 第九卷 · 异域 / 第十卷 · 仙域
+  yuzu9: { name: '黑水狱卒', lv: 60, mul: { hp: 2.3, atk: 1.5, def: 1.6 }, sk: [{ n: '锁魂鞭', dmg: 1.25, w: 3 }, { n: '黑水泼', dmg: 0.85, aoe: 1, w: 1 }], loot: [['bone', 0.6], ['lingyao', 0.4]], d: '黑水天牢的狱卒，鞭子上沾着黑水，抽一下，皮肉就烂一块。' },
+  yytj: { name: '异域天骄', lv: 61, mul: { hp: 2.3, atk: 1.55, def: 1.5 }, sk: [{ n: '帝族秘术', dmg: 1.25, w: 3 }, { n: '天骄威压', dmg: 0.85, aoe: 1, w: 1 }], loot: [['bone', 0.6], ['lingyao', 0.4]], d: '异域各族的年轻天才，被带来拿你“磨刀”。' },
+  chiwanghy: { name: '赤王后裔', lv: 61, boss: 1, mul: { hp: 7.2, atk: 1.7, def: 1.7 }, sk: [{ n: '赤王血焰', dmg: 1.05, aoe: 1, w: 2 }, { n: '赤王拳', dmg: 1.45, w: 3 }, { n: '赤血焚天', dmg: 2.3, w: 1, charge: 1 }], loot: [['baoyao', 4]], p2: '他身上的血烧成了赤色——赤王的血，醒了！', d: '异域仙王赤王的后人，异域年轻一代里最傲的那一个。' },
+  chashu: { name: '异域帝子', lv: 62, boss: 1, mul: { hp: 7.4, atk: 1.7, def: 1.8 }, sk: [{ n: '悟道茶香', dmg: 1.05, aoe: 1, w: 2 }, { n: '帝子掌', dmg: 1.45, w: 3 }, { n: '茶树之争', dmg: 2.3, w: 1, charge: 1 }], loot: [['baoyao', 4]], p2: '帝子摘下一片茶叶含在嘴里，道则一下子清楚了十倍！', d: '悟道茶树下，异域帝族最有希望的帝子。他想要那棵茶树，也想要你的命。' },
+  haipu: { name: '海瀑追兵', lv: 62, mul: { hp: 2.3, atk: 1.5, def: 1.5 }, sk: [{ n: '追魂矛', dmg: 1.25, w: 3 }, { n: '截杀', dmg: 0.85, aoe: 1, w: 1 }], loot: [['bone', 0.6], ['lingyao', 0.4]], d: '界海海瀑边上追你的异域兵。' },
+  jhsheng: { name: '界海生灵', lv: 63, weak: { lei: 1 }, mul: { hp: 2.5, atk: 1.55, def: 1.6 }, sk: [{ n: '界海浪', dmg: 1.25, w: 3 }, { n: '吞噬', dmg: 0.85, aoe: 1, w: 1 }], loot: [['bone', 0.6], ['lingyao', 0.4]], d: '界海里游荡的生灵，长得什么样都有。' },
+  ysmo: { name: '帝城残魂', lv: 64, weak: { bone: 1 }, mul: { hp: 2.3, atk: 1.55, def: 1.5 }, sk: [{ n: '守城枪', dmg: 1.25, w: 3 }, { n: '帝城战歌', dmg: 0.85, aoe: 1, w: 1 }], loot: [['bone', 0.6], ['lingyao', 0.4]], d: '原始帝城里的残魂，死了很多很多年，还在守城。' },
+  ysjiang: { name: '帝城守将残念', lv: 65, boss: 1, weak: { bone: 1 }, mul: { hp: 7.6, atk: 1.65, def: 1.8 }, sk: [{ n: '原始战阵', dmg: 1.05, aoe: 1, w: 2 }, { n: '守将一枪', dmg: 1.45, w: 3 }, { n: '帝城不破', dmg: 2.1, w: 1, charge: 1 }], loot: [['baoyao', 4]], p2: '残念身后，整座原始帝城的城墙都亮了！', d: '原始帝城最后一个守将留下的念头。它在等一个能回答它问题的人。' },
+  // 第十二卷 · 天庭 / 第十三卷 · 帝落
+  canxiantu: { name: '残仙信徒', lv: 72, mul: { hp: 2.5, atk: 1.6, def: 1.6 }, sk: [{ n: '残仙之力', dmg: 1.25, w: 3 }, { n: '狂信', dmg: 0.85, aoe: 1, w: 1 }], loot: [['bone', 0.6], ['lingyao', 0.4]], d: '给残仙卖命的九天修士，眼睛里一点光都没有。' },
+  canxian: { name: '残仙', lv: 74, boss: 1, weak: { lei: 1 }, mul: { hp: 7.8, atk: 1.7, def: 1.9 }, sk: [{ n: '残仙道则', dmg: 1.05, aoe: 1, w: 2 }, { n: '仙骨掌', dmg: 1.45, w: 3 }, { n: '以九天为食', dmg: 2.1, w: 1, charge: 1 }], loot: [['baoyao', 4]], p2: '残仙张开嘴，九天的灵气全往它嘴里灌！', d: '一个残缺的仙，躲在九天底下，靠吃九天活了很多年。' },
+  jieling: { name: '界海黑暗生灵', lv: 73, weak: { lei: 1 }, mul: { hp: 2.6, atk: 1.6, def: 1.6 }, sk: [{ n: '黑暗浪潮', dmg: 1.25, w: 3 }, { n: '堤坝冲击', dmg: 0.85, aoe: 1, w: 1 }], loot: [['bone', 0.6], ['lingyao', 0.4]], d: '从界海往堤坝上爬的黑暗生灵。' },
+  xwhy: { name: '仙王后裔', lv: 75, boss: 1, mul: { hp: 7.8, atk: 1.75, def: 1.9 }, sk: [{ n: '仙王血脉', dmg: 1.05, aoe: 1, w: 2 }, { n: '仙王之子的一拳', dmg: 1.45, w: 3 }, { n: '仙王法相', dmg: 2.1, w: 1, charge: 1 }], loot: [['baoyao', 4]], p2: '他身后浮出了他父亲的法相——一位仙王的影子！', d: '仙域某位仙王的后人，从生下来就没输过。' },
+  zaohua: { name: '造化之门守灵', lv: 75, boss: 1, mul: { hp: 8, atk: 1.7, def: 2 }, sk: [{ n: '造化之光', dmg: 1.05, aoe: 1, w: 2 }, { n: '门之重压', dmg: 1.45, w: 3 }, { n: '造化弄人', dmg: 2.1, w: 1, charge: 1 }], loot: [['baoyao', 4]], p2: '门里伸出了无数只手，要把你拖进去！', d: '造化之门的守灵。过了它，就是真仙。' },
+  shiguang: { name: '时光残影', lv: 77, weak: { bone: 1 }, mul: { hp: 2.6, atk: 1.65, def: 1.6 }, sk: [{ n: '逆流', dmg: 1.25, w: 3 }, { n: '光阴刃', dmg: 0.85, aoe: 1, w: 1 }], loot: [['bone', 0.6], ['lingyao', 0.4]], d: '时光长河里漂着的残影，打你一下，你会忘记一点事情。' },
+  diluobing: { name: '帝落古兵', lv: 78, mul: { hp: 2.7, atk: 1.65, def: 1.7 }, sk: [{ n: '古战矛', dmg: 1.25, w: 3 }, { n: '帝落战阵', dmg: 0.85, aoe: 1, w: 1 }], loot: [['bone', 0.6], ['lingyao', 0.4]], d: '帝落时代的兵，盔甲上刻着已经没人认得的字。' },
+  qianshi: { name: '前世之敌', lv: 79, boss: 1, weak: { bone: 1 }, mul: { hp: 8, atk: 1.75, def: 1.9 }, sk: [{ n: '宿命', dmg: 1.05, aoe: 1, w: 2 }, { n: '前世一剑', dmg: 1.45, w: 3 }, { n: '因果循环', dmg: 2.1, w: 1, charge: 1 }], loot: [['baoyao', 4]], p2: '它说：“上一世，我杀过你一次。”', d: '逆活八世里，每一世都会遇见的那个人。' },
+  wangujie: { name: '万古之劫', lv: 80, boss: 1, mul: { hp: 8.2, atk: 1.9, def: 2 }, sk: [{ n: '万古长夜', dmg: 1.05, aoe: 1, w: 2 }, { n: '劫灭', dmg: 1.45, w: 3 }, { n: '时光坍塌', dmg: 2.3, w: 1, charge: 1 }], loot: [['baoyao', 4]], p2: '时光长河在你脚下倒流——它要把你冲回第一世！', d: '帝落时代压在所有人头顶的劫。' },
+  // 第十四卷 · 异域之战 / 第十五卷 · 独断万古
+  yyxwb: { name: '异域仙兵', lv: 81, mul: { hp: 2.7, atk: 1.7, def: 1.7 }, sk: [{ n: '仙兵战矛', dmg: 1.25, w: 3 }, { n: '仙阵', dmg: 0.85, aoe: 1, w: 1 }], loot: [['bone', 0.6], ['lingyao', 0.4]], d: '异域仙王麾下的兵，每一个都比九天的至尊还强。' },
+  zbx: { name: '准不朽之王', lv: 82, boss: 1, mul: { hp: 8, atk: 1.8, def: 2 }, sk: [{ n: '不朽光', dmg: 1.05, aoe: 1, w: 2 }, { n: '王之一击', dmg: 1.45, w: 3 }, { n: '不朽镇压', dmg: 2.1, w: 1, charge: 1 }], loot: [['baoyao', 4]], p2: '他身上亮起了不朽的光——就差一步，他就是不朽之王！', d: '异域的准不朽之王，看守着一座封印。封印里，是一个你很熟悉的人。' },
+  sanxw: { name: '伏击的仙王', lv: 95, boss: 1, nocodex: 1, mul: { hp: 30, atk: 4, def: 4 }, sk: [{ n: '仙王之光', dmg: 1.25, w: 3 }, { n: '仙王一击', dmg: 0.85, aoe: 1, w: 1 }], loot: [], d: '异域的三位仙王，联手伏击。' },
+  chiwang: { name: '赤王', lv: 83, boss: 1, mul: { hp: 8.4, atk: 1.95, def: 2 }, sk: [{ n: '赤王焚天', dmg: 1.05, aoe: 1, w: 2 }, { n: '赤王拳', dmg: 1.45, w: 3 }, { n: '八王围杀', dmg: 2.3, w: 1, charge: 1 }], loot: [['baoyao', 4]], p2: '又有仙王赶来了——八个，十个，越来越多！', d: '异域仙王赤王。他的后人死在你手里，他亲自来了。' },
+  daowang: { name: '刀王', lv: 84, boss: 1, mul: { hp: 8.2, atk: 1.95, def: 1.9 }, sk: [{ n: '刀王之域', dmg: 1.05, aoe: 1, w: 2 }, { n: '断天一刀', dmg: 1.45, w: 3 }, { n: '万刀归一', dmg: 2.3, w: 1, charge: 1 }], loot: [['baoyao', 4]], p2: '刀王的刀光把仙域的天劈成了两半！', d: '界海来的巨头，一把刀斩过很多仙王。' },
+  pumo: { name: '蒲魔王', lv: 84, boss: 1, mul: { hp: 8.2, atk: 1.9, def: 2 }, sk: [{ n: '魔焰', dmg: 1.05, aoe: 1, w: 2 }, { n: '蒲魔掌', dmg: 1.45, w: 3 }, { n: '魔王降世', dmg: 2.3, w: 1, charge: 1 }], loot: [['baoyao', 4]], p2: '蒲魔王身后升起一片魔海！', d: '异域巨头蒲魔王。' },
+  kundi: { name: '鲲帝', lv: 84, boss: 1, mul: { hp: 8.8, atk: 2, def: 2.1 }, sk: [{ n: '鲲鹏吞天', dmg: 1.05, aoe: 1, w: 2 }, { n: '帝拳', dmg: 1.45, w: 3 }, { n: '原始古器', dmg: 2.3, w: 1, charge: 1 }], loot: [['baoyao', 4]], p2: '鲲帝祭出了原始古器，黑色的物质从器里涌了出来！', d: '异域真正的主人，自称异域第一。' },
+  heiandi: { name: '黑暗之帝', lv: 85, boss: 1, weak: { lei: 1 }, mul: { hp: 9, atk: 2, def: 2.1 }, sk: [{ n: '永夜', dmg: 1.05, aoe: 1, w: 2 }, { n: '帝之黑手', dmg: 1.45, w: 3 }, { n: '黑暗吞帝', dmg: 2.3, w: 1, charge: 1 }], loot: [['baoyao', 4]], p2: '黑暗之帝张开了界海——整片海都是它的身子！', d: '界海里的黑暗四帝之一。' },
+  shihai0: { name: '尸骸仙帝', lv: 120, boss: 1, nocodex: 1, mul: { hp: 60, atk: 8, def: 8 }, sk: [{ n: '尸骸之光', dmg: 1.25, w: 3 }, { n: '仙帝一指', dmg: 0.85, aoe: 1, w: 1 }], loot: [], d: '黑暗的源头，界海最深处的仙帝。' },
+  shihai: { name: '尸骸仙帝', lv: 85, boss: 1, weak: { lei: 1 }, mul: { hp: 10, atk: 2.05, def: 2.2 }, sk: [{ n: '黑暗源头', dmg: 1.05, aoe: 1, w: 2 }, { n: '仙帝一指', dmg: 1.45, w: 3 }, { n: '万古成灰', dmg: 2.3, w: 1, charge: 1 }], loot: [['baoyao', 4]], p2: '尸骸仙帝把整个界海的黑暗都收了回来，压在你一个人身上！', d: '黑暗的源头。他杀过你一次。' },
   // 第六卷 · 争霸
   tianjiao6: { name: '三千州天骄', lv: 45, mul: { hp: 1.7, atk: 1.4, def: 1.4 }, sk: [{ n: '道统秘术', dmg: 1.2, w: 3 }, { n: '天骄威压', dmg: 0.8, aoe: 1, w: 1 }], loot: [['lingyao', 0.4]], d: '三千州各大道统的天才，每一个在自己家里都是“百年一遇”。' },
   yinmoshou: { name: '银磨山石兽', lv: 45, weak: { blunt: 1 }, mul: { hp: 2.2, atk: 1.3, def: 1.8, spd: 0.8 }, sk: [{ n: '银石砸', dmg: 1.2, w: 3 }, { n: '石皮', buff: { k: 'def', t: 2, v: 0.3 }, w: 1 }], loot: [['bone', 0.6]], d: '银磨山上的石兽，一身银灰色的石皮，磨刀都嫌硬。' },

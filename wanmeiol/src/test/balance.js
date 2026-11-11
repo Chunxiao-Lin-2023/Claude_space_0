@@ -54,6 +54,23 @@ const SC0 = [
   ['黑暗之首', 71, [['heianwang', 71]], ['qly', 'sn', 'lei', 'gw', 'dsh', 'jian', 'ta', 'zhuque', 'zhizun', 'lunhui', 'wudi', 'liushen', 'daluo'], 'dahong', 100, ['a_shicun']],
   ['野外·帝关', 57, [['yiyubing', 57], ['yiyuqi', 57]], ['qly', 'sn', 'lei', 'gw', 'dsh', 'jian', 'ta', 'zhuque', 'zhizun', 'lunhui', 'wudi', 'liushen', 'daluo'], 'dahong', 100, []],
   ['野外·九天', 66, [['heian', 66], ['daotong', 66]], ['qly', 'sn', 'lei', 'gw', 'dsh', 'jian', 'ta', 'zhuque', 'zhizun', 'lunhui', 'wudi', 'liushen', 'daluo'], 'dahong', 100, []],
+  ['赤王后裔', 61, [['chiwanghy', 61]], ['qly', 'sn', 'lei', 'gw', 'dsh', 'jian', 'ta', 'zhuque', 'zhizun', 'lunhui', 'wudi', 'liushen', 'daluo'], 'dahong', 100, []],
+  ['异域帝子', 62, [['chashu', 62]], ['qly', 'sn', 'lei', 'gw', 'dsh', 'jian', 'ta', 'zhuque', 'zhizun', 'lunhui', 'wudi', 'liushen', 'daluo'], 'dahong', 100, []],
+  ['海瀑追兵', 62, [['haipu', 62], ['haipu', 62], ['haipu', 62]], ['qly', 'sn', 'lei', 'gw', 'dsh', 'jian', 'ta', 'zhuque', 'zhizun', 'lunhui', 'wudi', 'liushen', 'daluo'], 'dahong', 100, ['a_sanzang']],
+  ['帝城守将', 65, [['ysjiang', 65]], ['qly', 'sn', 'lei', 'gw', 'dsh', 'jian', 'ta', 'zhuque', 'zhizun', 'lunhui', 'wudi', 'liushen', 'daluo'], 'dahong', 100, []],
+  ['残仙', 74, [['canxian', 74]], ['qly', 'sn', 'lei', 'gw', 'dsh', 'jian', 'ta', 'zhuque', 'zhizun', 'lunhui', 'wudi', 'liushen', 'daluo'], 'dahong', 100, []],
+  ['仙王后裔', 75, [['xwhy', 75]], ['qly', 'sn', 'lei', 'gw', 'dsh', 'jian', 'ta', 'zhuque', 'zhizun', 'lunhui', 'wudi', 'liushen', 'daluo'], 'dahong', 100, []],
+  ['造化守灵', 75, [['zaohua', 75]], ['qly', 'sn', 'lei', 'gw', 'dsh', 'jian', 'ta', 'zhuque', 'zhizun', 'lunhui', 'wudi', 'liushen', 'daluo'], 'dahong', 100, []],
+  ['前世之敌', 79, [['qianshi', 79]], ['qly', 'sn', 'lei', 'gw', 'dsh', 'jian', 'ta', 'zhuque', 'zhizun', 'lunhui', 'wudi', 'liushen', 'daluo'], 'dahong', 100, []],
+  ['万古之劫', 80, [['wangujie', 80]], ['qly', 'sn', 'lei', 'gw', 'dsh', 'jian', 'ta', 'zhuque', 'zhizun', 'lunhui', 'wudi', 'liushen', 'daluo'], 'dahong', 100, []],
+  ['准不朽之王', 82, [['zbx', 82]], ['qly', 'sn', 'lei', 'gw', 'dsh', 'jian', 'ta', 'zhuque', 'zhizun', 'lunhui', 'wudi', 'liushen', 'daluo'], 'dahong', 100, []],
+  ['赤王', 83, [['chiwang', 83]], ['qly', 'sn', 'lei', 'gw', 'dsh', 'jian', 'ta', 'zhuque', 'zhizun', 'lunhui', 'wudi', 'liushen', 'daluo', 'tahua'], 'dahong', 100, ['a_liushen']],
+  ['刀王', 84, [['daowang', 84]], ['qly', 'sn', 'lei', 'gw', 'dsh', 'jian', 'ta', 'zhuque', 'zhizun', 'lunhui', 'wudi', 'liushen', 'daluo', 'tahua'], 'dahong', 100, ['a_liushen']],
+  ['鲲帝', 84, [['kundi', 84]], ['qly', 'sn', 'lei', 'gw', 'dsh', 'jian', 'ta', 'zhuque', 'zhizun', 'lunhui', 'wudi', 'liushen', 'daluo', 'tahua'], 'dahong', 100, ['a_liushen']],
+  ['黑暗之帝', 84, [['heiandi', 84]], ['qly', 'sn', 'lei', 'gw', 'dsh', 'jian', 'ta', 'zhuque', 'zhizun', 'lunhui', 'wudi', 'liushen', 'daluo', 'tahua'], 'dahong', 100, ['a_liushen']],
+  ['尸骸仙帝', 85, [['shihai', 85]], ['qly', 'sn', 'lei', 'gw', 'dsh', 'jian', 'ta', 'zhuque', 'zhizun', 'lunhui', 'wudi', 'liushen', 'daluo', 'tahua'], 'dahong', 100, ['a_liushen']],
+  ['野外·异域', 61, [['yytj', 61], ['yuzu9', 61]], ['qly', 'sn', 'lei', 'gw', 'dsh', 'jian', 'ta', 'zhuque', 'zhizun', 'lunhui', 'wudi', 'liushen', 'daluo'], 'dahong', 100, []],
+  ['野外·界海', 83, [['jieling', 83], ['yyxwb', 83]], ['qly', 'sn', 'lei', 'gw', 'dsh', 'jian', 'ta', 'zhuque', 'zhizun', 'lunhui', 'wudi', 'liushen', 'daluo', 'tahua'], 'dahong', 100, []],
   ['野外·皇都外', 21, [['tiebei', 21], ['jinyuan', 21]], ['qly', 'sn', 'lei', 'gw', 'dsh', 'jian', 'ta'], 'dahong', 55, []],
   ['野外·火国', 25, [['huolang', 25], ['yanque', 25]], ['qly', 'sn', 'lei', 'gw', 'dsh', 'jian', 'ta', 'zhuque'], 'dahong', 65, []],
   ['野外·大荒深处', 8, [['bear', 8], ['leopard', 8]], ['qly', 'sn'], 'maoqiu', 30, []],
@@ -63,7 +80,7 @@ const SC = ONLY ? SC0.filter(s => ONLY.test(s[0])) : SC0;
 (async () => { const b = await chromium.launch(); const pg = await b.newPage(); const errs = []; pg.on('pageerror', e => errs.push(e.message));
   await pg.addInitScript(() => { localStorage.clear(); }); await pg.goto('http://localhost:8770/test.html'); await pg.waitForFunction(() => window.__dbg && __dbg.ready); await pg.click('text=开始'); await pg.waitForTimeout(300);
   const out = await pg.evaluate(async SC => { __dbg.auto = true; __dbg.instant = true; __dbg.dlgPick(-1); await new Promise(r => setTimeout(r, 400)); const c = __dbg.C; c.auto = true; const res = [];
-    const gfAt = lv => ['yingxia', 'xixue', 'guwen', 'yaoding', ...(lv >= 10 ? ['jijing'] : []), ...(lv >= 16 ? ['taiyi'] : []), ...(lv >= 26 ? ['niepan'] : []), ...(lv >= 28 ? ['zhizungu'] : []), ...(lv >= 30 ? ['renhuang'] : []), ...(lv >= 32 ? ['lingshen'] : []), ...(lv >= 36 ? ['shuanggu'] : []), ...(lv >= 38 ? ['yunzu'] : []), ...(lv >= 40 ? ['wudidao'] : []), ...(lv >= 43 ? ['zhizunye'] : []), ...(lv >= 49 ? ['niepanyuan'] : []), ...(lv >= 53 ? ['xiangu'] : []), ...(lv >= 56 ? ['qiwang'] : []), ...(lv >= 69 ? ['chongzhi'] : [])];
+    const gfAt = lv => ['yingxia', 'xixue', 'guwen', 'yaoding', ...(lv >= 10 ? ['jijing'] : []), ...(lv >= 16 ? ['taiyi'] : []), ...(lv >= 26 ? ['niepan'] : []), ...(lv >= 28 ? ['zhizungu'] : []), ...(lv >= 30 ? ['renhuang'] : []), ...(lv >= 32 ? ['lingshen'] : []), ...(lv >= 36 ? ['shuanggu'] : []), ...(lv >= 38 ? ['yunzu'] : []), ...(lv >= 40 ? ['wudidao'] : []), ...(lv >= 43 ? ['zhizunye'] : []), ...(lv >= 49 ? ['niepanyuan'] : []), ...(lv >= 53 ? ['xiangu'] : []), ...(lv >= 56 ? ['qiwang'] : []), ...(lv >= 62 ? ['daoze'] : []), ...(lv >= 65 ? ['yuanshi'] : []), ...(lv >= 69 ? ['chongzhi'] : []), ...(lv >= 75 ? ['zhenxian'] : []), ...(lv >= 80 ? ['baxi'] : []), ...(lv >= 84 ? ['zhunxiandi'] : []), ...(lv >= 85 ? ['xiandi'] : [])];
     for (const [name, lv, mobs, sk, pet, aff, allies] of SC) { let w = 0, rounds = 0, hp = 0; const N = 30;
       for (let i = 0; i < N; i++) { c.lv = lv; c.sk = sk.slice(); c.bar = sk.slice(0, typeof barSlots === 'function' ? barSlots(lv) : 4); c.gf = gfAt(lv); c.dt = ['li', 'ti', 'ling', 'shou', 'su', 'feng', 'li', 'ti', 'ling'].slice(0, Math.max(0, lv - 9)); c.bag = {}; c.prof = {}; c.eq = []; c.relics = {};
         c.pets = pet ? { [pet]: { aff } } : {}; c.pet = pet; fullHeal();

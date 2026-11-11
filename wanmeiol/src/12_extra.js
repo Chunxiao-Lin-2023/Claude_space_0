@@ -27,6 +27,12 @@ const RELICS = {
   r_qingluan: { n: '青鸾翎', from: 'qingluan', i: '🪶', d: '身法 +5，暴击 +3%。', b: { spd: 5, crit: 0.03 } },
   r_shichong: { n: '傀儡皇冠', from: 'shichong', i: '👑', d: '符力 +15%。', b: { mpP: 0.15 } },
   r_shenhuo: { n: '神火余烬', from: 'shenming2', i: '🔥', d: '攻击 +10%，暴击 +4%。', b: { atkP: 0.1, crit: 0.04 } },
+  r_chiwang: { n: '赤王血', from: 'chiwanghy', i: '🩸', d: '攻击 +10%，暴击 +4%。', b: { atkP: 0.1, crit: 0.04 } },
+  r_chashu: { n: '悟道茶叶', from: 'chashu', i: '🍃', d: '符力 +15%，气血 +6%。', b: { mpP: 0.15, hpP: 0.06 } },
+  r_canxian: { n: '残仙骨', from: 'canxian', i: '🦴', d: '气血 +12%，攻击 +8%。', b: { hpP: 0.12, atkP: 0.08 } },
+  r_xwhy: { n: '仙王血晶', from: 'xwhy', i: '💎', d: '全属性 +6%。', b: { hpP: 0.06, atkP: 0.06, defP: 0.06, mpP: 0.06 } },
+  r_kundi: { n: '鲲帝之鳞', from: 'kundi', i: '🐋', d: '防御 +14%，气血 +10%。', b: { defP: 0.14, hpP: 0.1 } },
+  r_shihai: { n: '尸骸仙帝的灰', from: 'shihai', i: '⚱️', d: '全属性 +10%。', b: { hpP: 0.1, atkP: 0.1, defP: 0.1, mpP: 0.1 } },
   r_baishi: { n: '白狮鬃', from: 'baishi', i: '🦁', d: '攻击 +8%，防御 +6%。', b: { atkP: 0.08, defP: 0.06 } },
   r_ningchuan: { n: '麒麟血晶', from: 'ningchuan', i: '🩸', d: '气血 +10%，攻击 +8%。', b: { hpP: 0.1, atkP: 0.08 } },
   r_dichong: { n: '帝冲战甲片', from: 'dichong', i: '🛡️', d: '防御 +12%，气血 +6%。', b: { defP: 0.12, hpP: 0.06 } },
@@ -58,6 +64,7 @@ const TRADES = [
   { npc: 'qidaolin', t: '宝药 ×2 → 一门宝术熟练度 +30（无敌道的练法，“学费”）', need: [['baoyao', 2]], prof: 30 },
   { npc: 'mengtz', t: '兽骨 ×12 → 宝药 ×4（帝关的军需）', need: [['bone', 12]], give: () => addItem('baoyao', 4) },
   { npc: 'qiwanghou', t: '凶兽肉 ×4 → 一门宝术熟练度 +25（七王祠里的旧拳谱）', need: [['meat', 4]], prof: 25 },
+  { npc: 'guzu', t: '灵药 ×6 → 一门宝术熟练度 +40（蛄祖替你理一遍道则）', need: [['lingyao', 6]], prof: 40 },
 ];
 
 /* ---------- daily bounties: one small job per person per day ---------- */
@@ -90,6 +97,11 @@ const ACH = [
   { id: 'zhengba', n: '三千州第一', d: '赢下三千州天才争霸', ok: () => !!C.story.f.v6end },
   { id: 'shuangshi', n: '双石同心', d: '和石毅并肩，打退宁川', ok: () => !!C.story.f.xgNing },
   { id: 'qiwang', n: '七王之后', d: '知道了“罪血”这两个字真正的意思', ok: () => !!C.story.f.qiwangDone },
+  { id: 'heishui', n: '黑水一百年', d: '在异域的黑水天牢里熬过一百年，从海瀑跳了出去', ok: () => !!C.story.f.yyEnd },
+  { id: 'tianting', n: '天庭', d: '立起天庭，让九天十地第一次站在一起', ok: () => !!C.story.f.tiantingDone },
+  { id: 'baxi', n: '逆活八世', d: '在时光长河里活了八辈子，又回来了', ok: () => !!C.story.f.baxi },
+  { id: 'huangtiandi', n: '荒天帝', d: '死在界海深处，又从记得你的人心里化了回来', ok: () => !!C.story.f.xiandi },
+  { id: 'duduan', n: '独断万古', d: '一剑斩断时光长河', ok: () => !!C.story.f.v15end },
   { id: 'taiping', n: '万年太平', d: '带着石村八百兵，替九天十地挣来一万年太平', ok: () => !!C.story.f.v9end },
   { id: 'pets3', n: '一猴两鸟', d: '凑齐三个伙伴', ok: () => Object.keys(C.pets).length >= 3 },
   { id: 'evo', n: '血脉觉醒', d: '让一个伙伴觉醒', ok: () => Object.values(C.pets).some(p => p.evo) },

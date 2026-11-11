@@ -78,8 +78,39 @@ async function S_bhDone() {
   await cine('阵眼里浮出七道影子。<br>他们穿着破烂的甲，看不清脸，可你知道他们是谁。<br>他们冲你点了点头。<br>其中一个，伸手拍了拍你的肩膀——<b>像族长那样</b>。', 'mem');
   gainExp(BAL.expNext(C.lv) * 0.4); F().bianhuang = 1;
 }
+async function S_box() {
+  await nar('异域的人在边荒里追了你三天三夜。你从葬士的古坟里钻过去，从天兽的林子里滚过去，一直逃到了边荒最深的那片废墟。');
+  if (!await fightRetry({ mobs: [['bhhun', slv(58)], ['yiyuqi', slv(58)], ['yiyubing', slv(58)]], title: '边荒深处 · 追兵' })) return false;
+  await nar('废墟最深处，埋着一只烂木盒子。很旧，很轻，上面一个字都没有。可你一碰到它，整片边荒都安静了——连追你的异域兵，都停下了脚步。');
+  await say('异域追兵', '……那只盒子！不朽之王点名要的东西！抢过来！');
+  const ms = await miniGame('mash', { title: '逃', desc: '抱着盒子跑！别回头——跑回帝关！', time: 7000, rate: 7 });
+  if (!ms.ok) await nar('你摔倒了三次。第四次，你是抱着盒子爬回城门的。');
+  await nar('帝关的城门在你身后关上。你靠着城墙坐下，看着怀里的盒子。你不知道里面是什么。你只知道，异域的人，很想要它。');
+  F().box = 1; gainExp(BAL.expNext(C.lv) * 0.4);
+}
+async function S_betray() {
+  await nar('三天以后，异域的大军压到了帝关城下。黑色的旗子，从边荒的这头，排到那头。');
+  await nar('一个异域帝族的至尊走到城下，声音不大，整座帝关都听得见：');
+  await say('异域帝族至尊', '把那个叫荒的罪血交出来，连同他抢走的盒子。交出来，异域五百年不犯帝关。');
+  await nar('城头上，一片死寂。孟天正在至尊大战里受了重伤，正在闭关——他不知道。');
+  await say('金太君', '（金家的老太君拄着金杖站了出来）诸位，五百年太平。用一个罪血换，划算。');
+  await say('qiwanghou', '（小七冲到了她面前，额头上那个“罪”字涨得通红）他是帝关的人！他替我们守过城！');
+  await say('金太君', '罪血也配说“帝关的人”？（她看都没看小七）谁反对，谁就去替他。');
+  await nar('有人说话了，有人没说话。说话的声音，一个一个地低了下去。');
+  await nar('你站起来，把那只烂木盒子塞进了小七怀里。');
+  await me('……帮我收着。别给他们。');
+  await say('qiwanghou', '你、你要干嘛？！');
+  const c = await choose(['（自己走下城头）', '……孟老醒了，替我跟他说一声。我吃过饭了。']);
+  if (c === 1) await nar('小七抱着盒子，哭得一个字都说不出来。');
+  await cine('你自己走下了城头，走出了城门。<br>一个至尊给你戴上了锁链，把你推进了一辆囚车。<br>囚车往边荒深处走去。<br>你回头看了一眼帝关——<b>城头上，小七抱着盒子，一直站着</b>。');
+  F().yiyu0 = 1;
+  await cine('<div class="cc"><small>第八卷</small><b>帝关</b><i>完</i></div>', 'card');
+  go('yy_jail', false, true);
+}
+/* ---------------- 第十卷 · 仙域（结尾）: 安澜 ---------------- */
 async function S_anlan() {
-  await nar('那天早上，边荒的天，忽然暗了下来。');
+  await chapterCard('第二十三章', '安澜', '那一剑');
+  await nar('你回到帝关的第七天早上，边荒的天，忽然暗了下来。');
   await cine('一个人从异域那边走过来。<br>他走得不快，可他每走一步，边荒的沙就退一里。<br>帝关城头上，所有的兵，同时握紧了兵器——手在抖。<br>有人小声说了一个名字：<b>安澜</b>。不朽之王。');
   await say('mengtz', '（孟天正把你拉到身后）……你打不过他。帝关所有人加起来，也打不过他。');
   await me('那也得打。');
@@ -95,26 +126,19 @@ async function S_anlan() {
   await nar('七王祠的孩子们，冲上了城头。他们没有喊口号，没有哭，一个一个地站在了孟天正站过的地方。小七站在最前面。');
   await cine('那一天，七王的后人，又死了很多。<br>帝关，没有破。<br>活下来的，只有几个孩子。小七是其中一个。');
   F().anlan = 1; gainExp(BAL.expNext(C.lv) * 0.5);
-  await say('qiwanghou', '（小七浑身是血，把你从城墙下面拖出来）……孟老说过，你要是活着，就让你去边荒深处。那里有一样东西，他想让你带走。');
-  tip('<b>边荒深处</b>在边荒战场东边。');
-}
-async function S_box() {
-  await nar('边荒深处是一片灰白的废墟。你一瘸一拐地走进去，废墟里到处是异域的眼睛。');
-  if (!await fightRetry({ mobs: [['bhhun', slv(61)], ['yiyuqi', slv(61)], ['yiyubing', slv(61)]], title: '边荒深处' })) return false;
-  await nar('废墟最深处，埋着一只烂木盒子。很旧，很轻，上面一个字都没有。你不知道里面是什么。你只知道孟天正想让你带走它。');
-  await nar('你把盒子揣进怀里，转身往回跑。身后，整个边荒的黑暗都追了上来。');
+  await say('qiwanghou', '（小七浑身是血，把你从城墙下面拖出来，把那只烂木盒子塞进你怀里）……孟老说过，你要是活着，就带着它回家。走！');
   const ms = await miniGame('mash', { title: '逃', desc: '跑！别回头——往下界跑！', time: 7000, rate: 7 });
   if (!ms.ok) await nar('你摔倒了三次。第四次，你是爬着过去的。');
   await cine('你穿过了帝关，穿过了九天十地，穿过了登天路——<br>一路往下掉，往下掉。<br>最后掉进了一片你闭着眼睛都认得出来的林子里。<br>你闻到了兽奶的味道。');
   F().v8end = 1; gainExp(BAL.expNext(C.lv) * 0.4);
-  await cine('<div class="cc"><small>第八卷</small><b>帝关</b><i>完</i></div>', 'card');
+  await cine('<div class="cc"><small>第十卷</small><b>仙域</b><i>完</i></div>', 'card');
   go('sc_willow', false, true);
 }
 
-/* ---------------- 第九卷 · 清算 ---------------- */
+/* ---------------- 第十一卷 · 清算 ---------------- */
 async function S_v9start() {
-  await cine('<div class="cc"><small>第九卷</small><b>清算</b><i>账，一笔一笔地算</i></div>', 'card');
-  await chapterCard('第二十章', '蛰伏', '回家');
+  await cine('<div class="cc"><small>第十一卷</small><b>清算</b><i>账，一笔一笔地算</i></div>', 'card');
+  await chapterCard('第二十四章', '蛰伏', '回家');
   await nar('你醒过来的时候，躺在族长家的小木床上。床太小了，你的脚伸在外面。');
   await say('你娘', '（她坐在床边，眼睛肿得像桃子）……醒了？醒了就好。醒了就好。');
   await say('chief', '（族长拄着拐杖站在门口）你掉在柳神的树桩旁边，浑身是血，怀里死死抱着一个烂木盒子。谁拿都拿不走。');
@@ -157,7 +181,7 @@ async function S_train() {
   tip('村前空地上，大壮好像有话要跟你说。');
 }
 async function S_army() {
-  await chapterCard('第二十一章', '清算', '石村八百兵');
+  await chapterCard('第二十五章', '清算', '石村八百兵');
   await nar('村前空地上，站满了人。不是几个，是<b>八百个</b>。');
   await say('dazhuang', '（大壮——现在是大壮爷爷了——站在最前面，胡子都白了）小不点。这些年，你在练，我们也在练。');
   await say('dazhuang', '石村的娃娃，从会走路起就举石锁。现在……能打的，都在这儿了。');
@@ -210,6 +234,5 @@ async function S_peace() {
   await nar('你回到石村的时候，是一个傍晚。柳神留下的那截树桩旁边，那只烂木盒子安安静静地放着。你一直没有打开它。');
   await nar('树桩上，冒出了一片很小很小的新叶。');
   F().v9end = 1; gainExp(BAL.expNext(C.lv) * 0.6);
-  await cine('<div class="cc"><small>第九卷</small><b>清算</b><i>完</i></div>', 'card');
-  await nar('之后还有：异域、仙域……之后再写。现在，你可以在下界、上界、九天十地各处走走，挑战虚神界，把宝术练到圆满，合成更强的宝术。');
+  await cine('<div class="cc"><small>第十一卷</small><b>清算</b><i>完</i></div>', 'card');
 }

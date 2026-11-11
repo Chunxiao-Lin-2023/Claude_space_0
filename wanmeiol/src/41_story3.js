@@ -285,6 +285,5 @@ async function S_wild() {
   give('baoyao', 3); give('lingyao', 5);
   await cine('花蕾悬在无人区的上空，慢慢地转。<br>三千州的天才，都抬起了头。<br><b>争霸，开始了。</b>');
   await cine('<div class="cc"><small>第五卷</small><b>上界</b><i>完</i></div>', 'card');
-  await nar('之后还有：三千州天才争霸、帝关、边荒……之后再写。现在，你可以在上界和下界之间来回走走，挑战虚神界，把宝术练到圆满，合成更强的宝术。');
   F().v5end = 1;
 }

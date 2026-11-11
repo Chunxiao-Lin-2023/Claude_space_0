@@ -750,7 +750,7 @@ function mvoice(type, m, t, dur, vol, lp = 0, att = 0.01) {
   let n = o; if (lp) { const f = X.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = lp; o.connect(f); n = f; } n.connect(g); g.connect(MUS.bus); o.start(t); o.stop(t + dur + 0.05);
 }
 function mnoise(t, dur, vol, type, f) { const X = AU.ctx, s = X.createBufferSource(), fl = X.createBiquadFilter(), g = X.createGain(); s.buffer = AU.noise; fl.type = type; fl.frequency.value = f; g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0001, t + dur); s.connect(fl); fl.connect(g); g.connect(MUS.bus); s.start(t, Math.random() * 0.5); s.stop(t + dur + 0.05); }
-function musicWanted() { if (!SET.music || SET.mute || STATE.mode !== 'play' || !C || !AU.ctx) return null; if (STATE.battle) return STATE.battle.epic ? 'boss' : 'battle'; const a = PLACES[C.loc].area; return { shicun: 'village', dahuang: 'wild', baiduan: 'wild', butian: 'butian', xushen: 'xushen', shiguo: 'court', huoguo: 'fire', baizu: 'battle', shangjie: 'butian', sanqian: 'battle', xiangu: 'xushen', diguan: 'boss', jiutian: 'court' }[a] || 'wild'; }
+function musicWanted() { if (!SET.music || SET.mute || STATE.mode !== 'play' || !C || !AU.ctx) return null; if (STATE.battle) return STATE.battle.epic ? 'boss' : 'battle'; const a = PLACES[C.loc].area; return { shicun: 'village', dahuang: 'wild', baiduan: 'wild', butian: 'butian', xushen: 'xushen', shiguo: 'court', huoguo: 'fire', baizu: 'battle', shangjie: 'butian', sanqian: 'battle', xiangu: 'xushen', diguan: 'boss', jiutian: 'court', yiyu: 'boss', xianyu: 'xushen', diluo: 'xushen', jiehai: 'boss' }[a] || 'wild'; }
 function musicMode() {
   const want = musicWanted(); if (want === MUS.cur) return; const X = AU.ctx; if (!X) return;
   if (!MUS.bus) { MUS.bus = X.createGain(); MUS.bus.gain.value = 0; MUS.bus.connect(AU.master); }
@@ -775,8 +775,8 @@ function musicTick() {
 const BAL = {
   expNext: lv => Math.round(16 * Math.pow(lv, 1.7) + 14),
   realms: [ // crossing 9→10 needs 极境 (story); 19→20 needs the story's last step
-    { name: '搬血境', from: 1, to: 9 }, { name: '洞天境', from: 10, to: 19 }, { name: '化灵境', from: 20, to: 24 }, { name: '铭纹境', from: 25, to: 29 }, { name: '列阵境', from: 30, to: 34 }, { name: '尊者境', from: 35, to: 39 }, { name: '神火境', from: 40, to: 44 }, { name: '真一境', from: 45, to: 49 }, { name: '圣祭境', from: 50, to: 54 }, { name: '天神境', from: 55, to: 59 }, { name: '虚道境', from: 60, to: 62 }, { name: '斩我境', from: 63, to: 65 }, { name: '遁一境', from: 66, to: 68 }, { name: '至尊境', from: 69, to: 71 }],
-  lvCap: 71, // 44→45 needs 第五卷 done, 49→50 第六卷, 54→55 第七卷, 62→63 第八卷, 68→69 重回至尊; 24→25 needs the end of 第二卷, 29→30 needs 石皇 (第三卷), 34→35 needs 第四卷 begun, 39→40 needs 登天路
+    { name: '搬血境', from: 1, to: 9 }, { name: '洞天境', from: 10, to: 19 }, { name: '化灵境', from: 20, to: 24 }, { name: '铭纹境', from: 25, to: 29 }, { name: '列阵境', from: 30, to: 34 }, { name: '尊者境', from: 35, to: 39 }, { name: '神火境', from: 40, to: 44 }, { name: '真一境', from: 45, to: 49 }, { name: '圣祭境', from: 50, to: 54 }, { name: '天神境', from: 55, to: 59 }, { name: '虚道境', from: 60, to: 62 }, { name: '斩我境', from: 63, to: 65 }, { name: '遁一境', from: 66, to: 68 }, { name: '至尊境', from: 69, to: 71 }, { name: '真仙境', from: 72, to: 75 }, { name: '仙王境', from: 76, to: 80 }, { name: '准仙帝', from: 81, to: 84 }, { name: '仙帝', from: 85, to: 85 }],
+  lvCap: 85, // 59→60 needs the betrayal, 62→63 the escape from 异域, 65→66 the flight home, 71→72 第十一卷 done, 75→76 第十二卷, 80→81 第十三卷, 84→85 仙帝; 44→45 needs 第五卷 done, 49→50 第六卷, 54→55 第七卷, 62→63 第八卷, 68→69 重回至尊; 24→25 needs the end of 第二卷, 29→30 needs 石皇 (第三卷), 34→35 needs 第四卷 begun, 39→40 needs 登天路
   defK: 40,
   critMul: 1.7,
   enemy: lv => ({ hp: 26 + lv * 20, atk: 5 + lv * 2.7, def: 2 + lv * 1.9, spd: 8 + lv * 0.35, exp: 9 + Math.round(lv * 6.5 + lv * lv * 0.35) }),
@@ -795,7 +795,7 @@ const BAL = {
 };
 /* slots grow with the realm: 宝术 you can take into battle, 宝骨 you can wear */
 const barSlots = lv => 4 + (lv >= 10) + (lv >= 14) + (lv >= 18) + (lv >= 22) + (lv >= 27) + (lv >= 32) + (lv >= 37) + (lv >= 42);
-const relicSlots = lv => 2 + (lv >= 12) + (lv >= 17) + (lv >= 24) + (lv >= 30) + (lv >= 36) + (lv >= 42) + (lv >= 50) + (lv >= 60);
+const relicSlots = lv => 2 + (lv >= 12) + (lv >= 17) + (lv >= 24) + (lv >= 30) + (lv >= 36) + (lv >= 42) + (lv >= 50) + (lv >= 60) + (lv >= 72) + (lv >= 81);
 /* 宝术熟练度: uses → 小成 / 大成 */
 const PROF = [{ n: '', s: '', at: 0, b: 0 }, { n: '入门', s: '入', at: 12, b: 0.04 }, { n: '小成', s: '小', at: 30, b: 0.1 }, { n: '精通', s: '精', at: 60, b: 0.15 }, { n: '大成', s: '大', at: 100, b: 0.2 }, { n: '圆满', s: '圆', at: 160, b: 0.26 }]; // 圆满 opens 宝术合成
 /* elements: a few beasts take more from one kind of attack */
@@ -818,10 +818,12 @@ const SKILLS = {
   wudi: { name: '无敌拳', icon: '👊', got: 'sk_wudi', mp: 36, cd: 4, tgt: 'enemy', dmg: 4.4, pierce: 1, el: 'blunt', st: [{ k: 'brk', t: 2, v: 0.3, p: 1 }], desc: '齐道临教的无敌道：这一拳只往前，不回头。4.4 倍伤害，无视防御，破甲。' },
   liushen: { name: '柳神法', icon: '🌿', got: 'sk_liushen', mp: 40, cd: 4, tgt: 'enemies', dmg: 2.4, mag: 1, pierce: 1, st: [{ k: 'bound', t: 1, p: 0.4 }], self: [{ k: 'shield', t: 2, v: 0.8 }], desc: '燃尽至尊血换来的柳神法：万千柳枝抽下来，全体 2.4 倍伤害，无视防御，可能缠住；自己得到一层厚护盾。' },
   daluo: { name: '大罗剑胎', icon: '🗡️', got: 'sk_daluo', mp: 42, cd: 4, tgt: 'enemy', dmg: 5.2, pierce: 1, el: 'blunt', st: [{ k: 'bleed', t: 3, v: 0.5, p: 1 }], desc: '一枚还没开锋的剑胎，斩出去却比任何剑都快：5.2 倍伤害，无视防御，重创流血。' },
+  tahua: { name: '他化自在', icon: '👥', got: 'sk_tahua', mp: 46, cd: 4, tgt: 'enemies', dmg: 1.2, hits: 3, mag: 1, pierce: 1, st: [{ k: 'weak', t: 2, v: 0.3, p: 0.6 }], desc: '他化自在大法：化出好几个你，一起打。全体连打三下，共 3.6 倍伤害，无视防御，虚弱。' },
+  duduan: { name: '独断万古', icon: '⚔️', got: 'sk_duduan', mp: 60, cd: 5, tgt: 'enemies', dmg: 4.2, pierce: 1, el: 'blunt', st: [{ k: 'stun', t: 1, p: 0.6 }], self: [{ k: 'shield', t: 2, v: 1 }], desc: '一剑斩断时光长河。全体 4.2 倍伤害，无视防御，大概率眩晕，自己得到一层厚护盾。' },
   lunhui: { name: '轮回', icon: '☯️', got: 'sk_lunhui', mp: 40, cd: 5, tgt: 'enemies', dmg: 2.6, mag: 1, pierce: 1, st: [{ k: 'stun', t: 1, p: 0.5 }], desc: '死过一回才看见的东西：全体 2.6 倍伤害，无视防御，一半概率眩晕。连神也挡不住。' },
   ta: { name: '小塔', icon: '🗼', got: 'sk_ta', mp: 22, cd: 5, tgt: 'allies', shield: 1.6, desc: '那座只有四层的小塔垂下光幕，全队获得 1.6 倍攻击的护盾。' },
 };
-const SKILL_ORDER = ['qly', 'sn', 'gw', 'lei', 'dsh', 'jian', 'ta', 'zhuque', 'zhizun', 'lunhui', 'wudi', 'liushen', 'daluo'];
+const SKILL_ORDER = ['qly', 'sn', 'gw', 'lei', 'dsh', 'jian', 'ta', 'zhuque', 'zhizun', 'lunhui', 'wudi', 'liushen', 'daluo', 'tahua', 'duduan'];
 const STATUS = { burst: { n: '绝境', c: '#ffe08a' }, stun: { n: '眩晕', c: '#ffd34a' }, bleed: { n: '流血', c: '#ff6a6a' }, burn: { n: '灼烧', c: '#ff8a3a' }, poison: { n: '中毒', c: '#9ad84a' }, def: { n: '坚守', c: '#ffd28a' }, taunt: { n: '嘲讽', c: '#ffb36a' }, atk: { n: '凶性', c: '#ff9a6a' }, dodge: { n: '灵动', c: '#9ad8ff' }, sure: { n: '必暴', c: '#ffe46a' }, shield: { n: '护盾', c: '#9ae8b0' }, guard: { n: '防御', c: '#c8c0b0' }, weak: { n: '虚弱', c: '#b0a0ff' }, bound: { n: '锁链', c: '#d8b070' }, brk: { n: '破甲', c: '#e0a070' }, mark: { n: '印记', c: '#c08aff' }, freeze: { n: '冰封', c: '#9ad8ff' }, rage: { n: '狂怒', c: '#ff4a2a' } };
 
 /* ---------- 功法 / 修炼所得 (passive) ---------- */
@@ -839,6 +841,12 @@ const GONGFA = {
   xiangu: { name: '仙古淬体', icon: '🏛️', desc: '仙古遗地的古殿洗过你的筋骨。防御 +10%，气血 +8%。', b: { defP: 0.1, hpP: 0.08 } },
   qiwang: { name: '七王之血', icon: '🩸', desc: '原来“罪血”，是守帝关的七王留下的血。攻击 +12%，暴击 +4%。', b: { atkP: 0.12, crit: 0.04 } },
   chongzhi: { name: '重回至尊', icon: '👑', desc: '在下界蛰伏多年，一步一步重新走回至尊。气血 +10%，攻击 +10%，防御 +8%。', b: { hpP: 0.1, atkP: 0.1, defP: 0.08 } },
+  daoze: { name: '道则补全', icon: '📜', desc: '异域天牢里一百年，蛄祖替你补全了道则。气血 +10%，符力 +12%。', b: { hpP: 0.1, mpP: 0.12 } },
+  yuanshi: { name: '原始帝城', icon: '🏯', desc: '在仙域的原始帝城里，你看见了“罪血”最早的样子。攻击 +10%，防御 +8%。', b: { atkP: 0.1, defP: 0.08 } },
+  zhenxian: { name: '真仙', icon: '✨', desc: '走出造化之门，成了真仙。气血 +12%，攻击 +10%。', b: { hpP: 0.12, atkP: 0.1 } },
+  baxi: { name: '逆活八世', icon: '♾️', desc: '在帝落时代逆着时光活了八世。全属性 +8%。', b: { hpP: 0.08, atkP: 0.08, defP: 0.08, mpP: 0.08 } },
+  zhunxiandi: { name: '准仙帝', icon: '👑', desc: '在仙域的大战里破境准仙帝。攻击 +12%，暴击 +5%。', b: { atkP: 0.12, crit: 0.05 } },
+  xiandi: { name: '荒天帝', icon: '🌌', desc: '死在界海深处，又以他化自在大法证道仙帝。气血 +15%，攻击 +15%，防御 +10%。', b: { hpP: 0.15, atkP: 0.15, defP: 0.1 } },
   lingshen: { name: '四道灵身', icon: '👥', desc: '一身化四，各领一军。攻击 +8%，身法 +4。', b: { atkP: 0.08, spd: 4 } },
   xixue: { name: '双头火犀宝血', icon: '🔥', desc: '炼化了双头火犀的宝血精华。攻击 +6%。', b: { atkP: 0.06 } },
   yaoding: { name: '药鼎洗礼', icon: '🏺', desc: '泡在族长熬的大药鼎里，脱胎换骨。气血 +6%，防御 +6%。', b: { hpP: 0.06, defP: 0.06 } },
@@ -943,6 +951,36 @@ const MOBS = {
   r_rhino: { name: '独角兕', boss: 1, roam: 1, weak: { blunt: 1 }, mul: { hp: 6, atk: 1.25, def: 1.6, spd: 0.8 }, sk: [{ n: '践踏', dmg: 0.9, aoe: 1, w: 3 }, { n: '撼地冲锋', dmg: 2.3, w: 1, charge: 1 }], loot: [['baoyao', 1], ['meat', 1]], p2: '独角兕的独角开始发光，脚下的地面寸寸龟裂！', d: '到处游荡的凶兽首领，一身甲壳刀枪不入，只怕重砸。' },
   r_snake: { name: '赤鳞巨蟒', boss: 1, roam: 1, mul: { hp: 5.5, atk: 1.3, def: 1.3 }, sk: [{ n: '毒雾', dmg: 0.7, aoe: 1, st: { k: 'poison', t: 3, v: 0.3, p: 0.7 }, w: 2 }, { n: '绞杀', dmg: 1.2, w: 3 }, { n: '吞噬', dmg: 2.3, w: 1, charge: 1 }], loot: [['baoyao', 1], ['lingyao', 1]], p2: '赤鳞巨蟒蜕下一层旧皮，鳞片红得像烧透的铁！', d: '到处游荡的凶兽首领，喷出来的雾能毒倒一片林子。' },
   r_bird: { name: '雷翅雕', boss: 1, roam: 1, mul: { hp: 5, atk: 1.35, def: 1.2, spd: 1.6 }, sk: [{ n: '雷翅', dmg: 1, aoe: 1, mag: 1, w: 3 }, { n: '雷池', dmg: 2.1, aoe: 1, mag: 1, w: 1, charge: 1 }], loot: [['baoyao', 1], ['lingyao', 1]], p2: '雷翅雕双翅一振，乌云在它头顶聚成了雷池！', d: '到处游荡的凶兽首领，翅膀扇一下就是一道雷。' },
+  // 第九卷 · 异域 / 第十卷 · 仙域
+  yuzu9: { name: '黑水狱卒', lv: 60, mul: { hp: 2.3, atk: 1.5, def: 1.6 }, sk: [{ n: '锁魂鞭', dmg: 1.25, w: 3 }, { n: '黑水泼', dmg: 0.85, aoe: 1, w: 1 }], loot: [['bone', 0.6], ['lingyao', 0.4]], d: '黑水天牢的狱卒，鞭子上沾着黑水，抽一下，皮肉就烂一块。' },
+  yytj: { name: '异域天骄', lv: 61, mul: { hp: 2.3, atk: 1.55, def: 1.5 }, sk: [{ n: '帝族秘术', dmg: 1.25, w: 3 }, { n: '天骄威压', dmg: 0.85, aoe: 1, w: 1 }], loot: [['bone', 0.6], ['lingyao', 0.4]], d: '异域各族的年轻天才，被带来拿你“磨刀”。' },
+  chiwanghy: { name: '赤王后裔', lv: 61, boss: 1, mul: { hp: 7.2, atk: 1.7, def: 1.7 }, sk: [{ n: '赤王血焰', dmg: 1.05, aoe: 1, w: 2 }, { n: '赤王拳', dmg: 1.45, w: 3 }, { n: '赤血焚天', dmg: 2.3, w: 1, charge: 1 }], loot: [['baoyao', 4]], p2: '他身上的血烧成了赤色——赤王的血，醒了！', d: '异域仙王赤王的后人，异域年轻一代里最傲的那一个。' },
+  chashu: { name: '异域帝子', lv: 62, boss: 1, mul: { hp: 7.4, atk: 1.7, def: 1.8 }, sk: [{ n: '悟道茶香', dmg: 1.05, aoe: 1, w: 2 }, { n: '帝子掌', dmg: 1.45, w: 3 }, { n: '茶树之争', dmg: 2.3, w: 1, charge: 1 }], loot: [['baoyao', 4]], p2: '帝子摘下一片茶叶含在嘴里，道则一下子清楚了十倍！', d: '悟道茶树下，异域帝族最有希望的帝子。他想要那棵茶树，也想要你的命。' },
+  haipu: { name: '海瀑追兵', lv: 62, mul: { hp: 2.3, atk: 1.5, def: 1.5 }, sk: [{ n: '追魂矛', dmg: 1.25, w: 3 }, { n: '截杀', dmg: 0.85, aoe: 1, w: 1 }], loot: [['bone', 0.6], ['lingyao', 0.4]], d: '界海海瀑边上追你的异域兵。' },
+  jhsheng: { name: '界海生灵', lv: 63, weak: { lei: 1 }, mul: { hp: 2.5, atk: 1.55, def: 1.6 }, sk: [{ n: '界海浪', dmg: 1.25, w: 3 }, { n: '吞噬', dmg: 0.85, aoe: 1, w: 1 }], loot: [['bone', 0.6], ['lingyao', 0.4]], d: '界海里游荡的生灵，长得什么样都有。' },
+  ysmo: { name: '帝城残魂', lv: 64, weak: { bone: 1 }, mul: { hp: 2.3, atk: 1.55, def: 1.5 }, sk: [{ n: '守城枪', dmg: 1.25, w: 3 }, { n: '帝城战歌', dmg: 0.85, aoe: 1, w: 1 }], loot: [['bone', 0.6], ['lingyao', 0.4]], d: '原始帝城里的残魂，死了很多很多年，还在守城。' },
+  ysjiang: { name: '帝城守将残念', lv: 65, boss: 1, weak: { bone: 1 }, mul: { hp: 7.6, atk: 1.65, def: 1.8 }, sk: [{ n: '原始战阵', dmg: 1.05, aoe: 1, w: 2 }, { n: '守将一枪', dmg: 1.45, w: 3 }, { n: '帝城不破', dmg: 2.1, w: 1, charge: 1 }], loot: [['baoyao', 4]], p2: '残念身后，整座原始帝城的城墙都亮了！', d: '原始帝城最后一个守将留下的念头。它在等一个能回答它问题的人。' },
+  // 第十二卷 · 天庭 / 第十三卷 · 帝落
+  canxiantu: { name: '残仙信徒', lv: 72, mul: { hp: 2.5, atk: 1.6, def: 1.6 }, sk: [{ n: '残仙之力', dmg: 1.25, w: 3 }, { n: '狂信', dmg: 0.85, aoe: 1, w: 1 }], loot: [['bone', 0.6], ['lingyao', 0.4]], d: '给残仙卖命的九天修士，眼睛里一点光都没有。' },
+  canxian: { name: '残仙', lv: 74, boss: 1, weak: { lei: 1 }, mul: { hp: 7.8, atk: 1.7, def: 1.9 }, sk: [{ n: '残仙道则', dmg: 1.05, aoe: 1, w: 2 }, { n: '仙骨掌', dmg: 1.45, w: 3 }, { n: '以九天为食', dmg: 2.1, w: 1, charge: 1 }], loot: [['baoyao', 4]], p2: '残仙张开嘴，九天的灵气全往它嘴里灌！', d: '一个残缺的仙，躲在九天底下，靠吃九天活了很多年。' },
+  jieling: { name: '界海黑暗生灵', lv: 73, weak: { lei: 1 }, mul: { hp: 2.6, atk: 1.6, def: 1.6 }, sk: [{ n: '黑暗浪潮', dmg: 1.25, w: 3 }, { n: '堤坝冲击', dmg: 0.85, aoe: 1, w: 1 }], loot: [['bone', 0.6], ['lingyao', 0.4]], d: '从界海往堤坝上爬的黑暗生灵。' },
+  xwhy: { name: '仙王后裔', lv: 75, boss: 1, mul: { hp: 7.8, atk: 1.75, def: 1.9 }, sk: [{ n: '仙王血脉', dmg: 1.05, aoe: 1, w: 2 }, { n: '仙王之子的一拳', dmg: 1.45, w: 3 }, { n: '仙王法相', dmg: 2.1, w: 1, charge: 1 }], loot: [['baoyao', 4]], p2: '他身后浮出了他父亲的法相——一位仙王的影子！', d: '仙域某位仙王的后人，从生下来就没输过。' },
+  zaohua: { name: '造化之门守灵', lv: 75, boss: 1, mul: { hp: 8, atk: 1.7, def: 2 }, sk: [{ n: '造化之光', dmg: 1.05, aoe: 1, w: 2 }, { n: '门之重压', dmg: 1.45, w: 3 }, { n: '造化弄人', dmg: 2.1, w: 1, charge: 1 }], loot: [['baoyao', 4]], p2: '门里伸出了无数只手，要把你拖进去！', d: '造化之门的守灵。过了它，就是真仙。' },
+  shiguang: { name: '时光残影', lv: 77, weak: { bone: 1 }, mul: { hp: 2.6, atk: 1.65, def: 1.6 }, sk: [{ n: '逆流', dmg: 1.25, w: 3 }, { n: '光阴刃', dmg: 0.85, aoe: 1, w: 1 }], loot: [['bone', 0.6], ['lingyao', 0.4]], d: '时光长河里漂着的残影，打你一下，你会忘记一点事情。' },
+  diluobing: { name: '帝落古兵', lv: 78, mul: { hp: 2.7, atk: 1.65, def: 1.7 }, sk: [{ n: '古战矛', dmg: 1.25, w: 3 }, { n: '帝落战阵', dmg: 0.85, aoe: 1, w: 1 }], loot: [['bone', 0.6], ['lingyao', 0.4]], d: '帝落时代的兵，盔甲上刻着已经没人认得的字。' },
+  qianshi: { name: '前世之敌', lv: 79, boss: 1, weak: { bone: 1 }, mul: { hp: 8, atk: 1.75, def: 1.9 }, sk: [{ n: '宿命', dmg: 1.05, aoe: 1, w: 2 }, { n: '前世一剑', dmg: 1.45, w: 3 }, { n: '因果循环', dmg: 2.1, w: 1, charge: 1 }], loot: [['baoyao', 4]], p2: '它说：“上一世，我杀过你一次。”', d: '逆活八世里，每一世都会遇见的那个人。' },
+  wangujie: { name: '万古之劫', lv: 80, boss: 1, mul: { hp: 8.2, atk: 1.9, def: 2 }, sk: [{ n: '万古长夜', dmg: 1.05, aoe: 1, w: 2 }, { n: '劫灭', dmg: 1.45, w: 3 }, { n: '时光坍塌', dmg: 2.3, w: 1, charge: 1 }], loot: [['baoyao', 4]], p2: '时光长河在你脚下倒流——它要把你冲回第一世！', d: '帝落时代压在所有人头顶的劫。' },
+  // 第十四卷 · 异域之战 / 第十五卷 · 独断万古
+  yyxwb: { name: '异域仙兵', lv: 81, mul: { hp: 2.7, atk: 1.7, def: 1.7 }, sk: [{ n: '仙兵战矛', dmg: 1.25, w: 3 }, { n: '仙阵', dmg: 0.85, aoe: 1, w: 1 }], loot: [['bone', 0.6], ['lingyao', 0.4]], d: '异域仙王麾下的兵，每一个都比九天的至尊还强。' },
+  zbx: { name: '准不朽之王', lv: 82, boss: 1, mul: { hp: 8, atk: 1.8, def: 2 }, sk: [{ n: '不朽光', dmg: 1.05, aoe: 1, w: 2 }, { n: '王之一击', dmg: 1.45, w: 3 }, { n: '不朽镇压', dmg: 2.1, w: 1, charge: 1 }], loot: [['baoyao', 4]], p2: '他身上亮起了不朽的光——就差一步，他就是不朽之王！', d: '异域的准不朽之王，看守着一座封印。封印里，是一个你很熟悉的人。' },
+  sanxw: { name: '伏击的仙王', lv: 95, boss: 1, nocodex: 1, mul: { hp: 30, atk: 4, def: 4 }, sk: [{ n: '仙王之光', dmg: 1.25, w: 3 }, { n: '仙王一击', dmg: 0.85, aoe: 1, w: 1 }], loot: [], d: '异域的三位仙王，联手伏击。' },
+  chiwang: { name: '赤王', lv: 83, boss: 1, mul: { hp: 8.4, atk: 1.95, def: 2 }, sk: [{ n: '赤王焚天', dmg: 1.05, aoe: 1, w: 2 }, { n: '赤王拳', dmg: 1.45, w: 3 }, { n: '八王围杀', dmg: 2.3, w: 1, charge: 1 }], loot: [['baoyao', 4]], p2: '又有仙王赶来了——八个，十个，越来越多！', d: '异域仙王赤王。他的后人死在你手里，他亲自来了。' },
+  daowang: { name: '刀王', lv: 84, boss: 1, mul: { hp: 8.2, atk: 1.95, def: 1.9 }, sk: [{ n: '刀王之域', dmg: 1.05, aoe: 1, w: 2 }, { n: '断天一刀', dmg: 1.45, w: 3 }, { n: '万刀归一', dmg: 2.3, w: 1, charge: 1 }], loot: [['baoyao', 4]], p2: '刀王的刀光把仙域的天劈成了两半！', d: '界海来的巨头，一把刀斩过很多仙王。' },
+  pumo: { name: '蒲魔王', lv: 84, boss: 1, mul: { hp: 8.2, atk: 1.9, def: 2 }, sk: [{ n: '魔焰', dmg: 1.05, aoe: 1, w: 2 }, { n: '蒲魔掌', dmg: 1.45, w: 3 }, { n: '魔王降世', dmg: 2.3, w: 1, charge: 1 }], loot: [['baoyao', 4]], p2: '蒲魔王身后升起一片魔海！', d: '异域巨头蒲魔王。' },
+  kundi: { name: '鲲帝', lv: 84, boss: 1, mul: { hp: 8.8, atk: 2, def: 2.1 }, sk: [{ n: '鲲鹏吞天', dmg: 1.05, aoe: 1, w: 2 }, { n: '帝拳', dmg: 1.45, w: 3 }, { n: '原始古器', dmg: 2.3, w: 1, charge: 1 }], loot: [['baoyao', 4]], p2: '鲲帝祭出了原始古器，黑色的物质从器里涌了出来！', d: '异域真正的主人，自称异域第一。' },
+  heiandi: { name: '黑暗之帝', lv: 85, boss: 1, weak: { lei: 1 }, mul: { hp: 9, atk: 2, def: 2.1 }, sk: [{ n: '永夜', dmg: 1.05, aoe: 1, w: 2 }, { n: '帝之黑手', dmg: 1.45, w: 3 }, { n: '黑暗吞帝', dmg: 2.3, w: 1, charge: 1 }], loot: [['baoyao', 4]], p2: '黑暗之帝张开了界海——整片海都是它的身子！', d: '界海里的黑暗四帝之一。' },
+  shihai0: { name: '尸骸仙帝', lv: 120, boss: 1, nocodex: 1, mul: { hp: 60, atk: 8, def: 8 }, sk: [{ n: '尸骸之光', dmg: 1.25, w: 3 }, { n: '仙帝一指', dmg: 0.85, aoe: 1, w: 1 }], loot: [], d: '黑暗的源头，界海最深处的仙帝。' },
+  shihai: { name: '尸骸仙帝', lv: 85, boss: 1, weak: { lei: 1 }, mul: { hp: 10, atk: 2.05, def: 2.2 }, sk: [{ n: '黑暗源头', dmg: 1.05, aoe: 1, w: 2 }, { n: '仙帝一指', dmg: 1.45, w: 3 }, { n: '万古成灰', dmg: 2.3, w: 1, charge: 1 }], loot: [['baoyao', 4]], p2: '尸骸仙帝把整个界海的黑暗都收了回来，压在你一个人身上！', d: '黑暗的源头。他杀过你一次。' },
   // 第六卷 · 争霸
   tianjiao6: { name: '三千州天骄', lv: 45, mul: { hp: 1.7, atk: 1.4, def: 1.4 }, sk: [{ n: '道统秘术', dmg: 1.2, w: 3 }, { n: '天骄威压', dmg: 0.8, aoe: 1, w: 1 }], loot: [['lingyao', 0.4]], d: '三千州各大道统的天才，每一个在自己家里都是“百年一遇”。' },
   yinmoshou: { name: '银磨山石兽', lv: 45, weak: { blunt: 1 }, mul: { hp: 2.2, atk: 1.3, def: 1.8, spd: 0.8 }, sk: [{ n: '银石砸', dmg: 1.2, w: 3 }, { n: '石皮', buff: { k: 'def', t: 2, v: 0.3 }, w: 1 }], loot: [['bone', 0.6]], d: '银磨山上的石兽，一身银灰色的石皮，磨刀都嫌硬。' },
@@ -1041,6 +1079,10 @@ const AREAS = {
   baiduan: { name: '百断山', sub: '禁地', tone: ['#2e2420', '#5a4434', '#c0a080'] },
   shiguo: { name: '石国', sub: '皇都', tone: ['#2a1c1a', '#6a3a2e', '#d8b890'] },
   huoguo: { name: '火国', sub: '朱雀之地', tone: ['#2e1a12', '#7a3a1e', '#e8a870'] },
+  yiyu: { name: '异域', sub: '边荒那一边', tone: ['#120c14', '#3a1e36', '#e0c0d8'] },
+  xianyu: { name: '仙域', sub: '界海之滨', tone: ['#10161e', '#2a4458', '#d8eaf4'] },
+  diluo: { name: '帝落时代', sub: '时光长河的上游', tone: ['#14120e', '#4a4030', '#ece0c4'] },
+  jiehai: { name: '界海', sub: '诸天之外的海', tone: ['#080c14', '#1a2a44', '#c8d8f0'] },
   sanqian: { name: '三千州', sub: '争霸之地', tone: ['#1e1a26', '#4a3e62', '#e0d4f0'] },
   xiangu: { name: '仙古遗地', sub: '仙古纪元的残骸', tone: ['#121c18', '#2e4a3a', '#cfe4d4'] },
   diguan: { name: '帝关', sub: '九天十地的最后一道门', tone: ['#1e1010', '#5a2a22', '#f0c8b8'] },
@@ -1194,6 +1236,71 @@ const PLACES = {
   hg_nirvana: { name: '祖地 · 涅槃池', area: 'huoguo', x: 2, y: 1, lv: [25, 27], need: F0('v3'), exits: { w: 'hg_city' },
     night: '涅槃池的火在夜里变成了白色，安静得像一池水。',
     desc: '火国的祖地，一池烧了不知道多少年的火。火族的人说，朱雀就是在这里死了又活过来的。' },
+  // 第九卷 · 异域
+  yy_jail: { name: '黑水天牢', area: 'yiyu', x: 1, y: 2, lv: [59, 61], need: F0('yiyu0'), exits: { n: 'yy_gate', e: 'yy_guzu' }, mobs: [['yuzu9', 2]],
+    night: '天牢里没有夜。只有黑水，一滴一滴地往下落。',
+    desc: '异域的天牢。地上是黑水，泡久了，脚会烂。你的修为被封住了。' },
+  yy_gate: { name: '异域城门', area: 'yiyu', x: 1, y: 1, lv: [60, 62], need: F0('yiyu0'), exits: { s: 'yy_jail', n: 'yy_arena', w: 'yy_tree', e: 'yy_seal' }, mobs: [['yytj', 1], ['yuzu9', 1]],
+    night: '城门上挂过你。风吹过来的时候，你还记得那根绳子勒在手腕上的感觉。',
+    desc: '异域大城的城门，又高又黑。城门上挂着的，都是九天十地的人。' },
+  yy_arena: { name: '磨刀场', area: 'yiyu', x: 1, y: 0, lv: [60, 62], need: F0('yyHung'), exits: { s: 'yy_gate' }, mobs: [['yytj', 2]],
+    night: '磨刀场夜里也有人。异域的天骄排着队，等着拿“九天十地最强的那个”磨刀。',
+    desc: '异域拿你当磨刀石的地方。每天都有新的天骄上来。每天都有天骄被抬下去。' },
+  yy_tree: { name: '悟道茶树', area: 'yiyu', x: 0, y: 1, lv: [61, 62], need: F0('yyArena'), exits: { e: 'yy_gate', s: 'yy_falls' }, mobs: [['yytj', 2]],
+    night: '茶树夜里会发光，叶子上的纹路像在写字。',
+    desc: '一棵很老很老的茶树，站在树下，人会突然想明白很多事。异域各族为它打了无数次。' },
+  yy_guzu: { name: '蛄祖洞', area: 'yiyu', x: 2, y: 2, need: F0('yyTree'), exits: { w: 'yy_jail', e: 'dg_yiyu' }, npcs: ['guzu'],
+    night: '洞里有一盏灯，灯下坐着一个很老的影子。',
+    desc: '天牢最深处的一个洞。洞里住着一个很老很老的存在——蛄祖。' },
+  yy_falls: { name: '海瀑', area: 'yiyu', x: 0, y: 2, lv: [61, 63], need: F0('daoze'), exits: { n: 'yy_tree', w: 'xy_shore' }, mobs: [['haipu', 2]],
+    night: '海瀑的声音大得能把心跳盖住。',
+    desc: '界海的一条支流从异域的边上倒灌下去，成了一道看不到底的瀑布。从这里跳下去，就是界海。' },
+  // 第十卷 · 仙域
+  xy_shore: { name: '界海之滨', area: 'xianyu', x: 0, y: 1, lv: [62, 64], need: F0('yyEnd'), exits: { e: 'xy_city', n: 'xy_yuanshi', w: 'jh_dam', s: 'yy_falls' }, mobs: [['jhsheng', 2]],
+    night: '海面上漂着星星。你分不清哪些是天上的，哪些是海里的。',
+    desc: '界海的岸边。海是黑的，没有边。岸上，是仙域。' },
+  xy_city: { name: '仙域古城', area: 'xianyu', x: 1, y: 1, town: 1, need: F0('yyEnd'), shop: ['herb', 'meat', 'lingyao', 'baoyao'], shopBy: '仙域的商铺', exits: { w: 'xy_shore', n: 'xy_gate', e: 'dg_city' },
+    night: '仙域古城的夜，安静得像一个很老的人在睡觉。',
+    desc: '仙域的一座古城。这里的人说话很慢，好像时间对他们来说，不太值钱。' },
+  xy_yuanshi: { name: '原始帝城', area: 'xianyu', x: 0, y: 0, lv: [63, 65], need: F0('yyEnd'), exits: { s: 'xy_shore', e: 'xy_gate' }, mobs: [['ysmo', 2]],
+    night: '帝城的城墙夜里会自己亮起来，一块砖一个名字。',
+    desc: '一座比帝关还老的城，城墙是白的——白得像骨头。城门上刻着七个名字。' },
+  xy_gate: { name: '造化之门', area: 'xianyu', x: 1, y: 0, lv: [73, 75], need: F0('xwhyDone'), exits: { s: 'xy_city', w: 'xy_yuanshi', n: 'dl_river' }, mobs: [['jhsheng', 1]],
+    night: '门缝里漏出来的光，夜里比太阳还亮。',
+    desc: '仙域深处的一扇门。走进去的人，出来就是真仙——或者，出不来。' },
+  // 第十三卷 · 帝落时代
+  dl_river: { name: '时光长河', area: 'diluo', x: 1, y: 1, lv: [76, 78], need: F0('v12end'), exits: { s: 'xy_gate', n: 'dl_age', e: 'dl_lives' }, mobs: [['shiguang', 2]],
+    night: '长河里没有日夜。只有一盏一盏的灯，那是别人的一辈子。',
+    desc: '一条看不见源头的河，流的不是水，是时间。你站在河里，河水往回流。' },
+  dl_age: { name: '帝落古战场', area: 'diluo', x: 1, y: 0, lv: [77, 79], need: F0('v12end'), exits: { s: 'dl_river', e: 'dl_end' }, mobs: [['diluobing', 2], ['shiguang', 1]],
+    night: '帝落时代的星星，比现在的大。',
+    desc: '帝落时代的战场。帝落——帝都落了。这里的天上，没有一颗星是完整的。' },
+  dl_lives: { name: '八世轮回', area: 'diluo', x: 2, y: 1, lv: [78, 80], need: F0('dlAge'), exits: { w: 'dl_river', n: 'dl_end' }, mobs: [['shiguang', 2], ['diluobing', 1]],
+    night: '每一世的你，都在某个地方看着你。',
+    desc: '你在这里，一世一世地活。每一世都不一样，每一世都很长。' },
+  dl_end: { name: '长河尽头', area: 'diluo', x: 2, y: 0, lv: [79, 80], need: F0('baxi'), exits: { w: 'dl_age', s: 'dl_lives' }, mobs: [['shiguang', 2]],
+    night: '尽头有一盏很亮的灯——那是你出发的地方。',
+    desc: '时光长河的这一头。从这里跳下去，就回到了你出发的那个时代。' },
+  // 第十五卷 · 界海
+  jh_dam: { name: '堤坝', area: 'jiehai', x: 1, y: 1, lv: [72, 75], need: F0('tiantingDone'), exits: { e: 'xy_shore', n: 'jh_sea' }, mobs: [['jieling', 2]],
+    night: '堤坝上的人，夜里不睡觉。他们说，界海里的东西，夜里最想上岸。',
+    desc: '诸天外面的一道坝，挡着界海。坝上站着很多很多守坝的人。坝外面，是黑。' },
+  jh_sea: { name: '界海', area: 'jiehai', x: 1, y: 0, lv: [82, 84], need: F0('v13end'), exits: { s: 'jh_dam', e: 'jh_deep' }, mobs: [['jieling', 2], ['yyxwb', 1]],
+    night: '界海上没有星星。只有远处，偶尔亮一下的帝光。',
+    desc: '诸天万界之外的海。海上漂着死掉的世界，像一片片枯叶。' },
+  jh_deep: { name: '界海深处', area: 'jiehai', x: 2, y: 0, lv: [84, 85], need: F0('heiandiDone'), exits: { w: 'jh_sea', s: 'jh_top' }, mobs: [['jieling', 3]],
+    night: '这里的黑，是有重量的。',
+    desc: '界海最深的地方。黑暗是从这里涌出来的。' },
+  jh_top: { name: '上苍之上', area: 'jiehai', x: 2, y: 1, need: F0('v15end'), exits: { n: 'jh_deep' },
+    night: '这里没有夜。也没有白天。只有你，和你带上来的那些人。',
+    desc: '一切的尽头，也是另一个开始。' },
+  // 第十四卷 · 异域之战（异域深处）
+  yy_seal: { name: '异域封印地', area: 'yiyu', x: 2, y: 1, lv: [81, 83], need: F0('v13end'), exits: { w: 'yy_gate', n: 'yy_capital' }, mobs: [['yyxwb', 2]],
+    night: '封印里有一点火光。很小，很倔。',
+    desc: '异域深处的一座封印，准不朽之王守着。封印里，关着一个很久以前被抓走的人。' },
+  yy_capital: { name: '鲲帝城', area: 'yiyu', x: 2, y: 0, lv: [83, 84], need: F0('kundiWar'), exits: { s: 'yy_seal' }, mobs: [['yyxwb', 3]],
+    night: '鲲帝城的城墙，是用一条鲲的骨头搭的。',
+    desc: '异域真正的心脏，鲲帝的城。' },
   // 第六卷 · 三千州争霸
   sq_town: { name: '争霸城', area: 'sanqian', x: 1, y: 2, town: 1, need: F0('v6'), shop: ['herb', 'meat', 'lingyao', 'baoyao'], shopBy: '争霸城的商铺', exits: { n: 'sq_arena', w: 'sq_valley', e: 'sq_wild', s: 'sj_wild' }, npcs: ['qidaolin'],
     night: '争霸城夜里比白天还吵。每一家酒楼里，都有人在吹自己白天赢了几场。',
@@ -1236,7 +1343,7 @@ const PLACES = {
     night: '仙古深处没有夜，也没有白天。只有一片很安静的灰。',
     desc: '仙古遗地最深的地方。再往里走，就是出口——通往一个你没去过的地方。' },
   // 第八卷 · 帝关
-  dg_city: { name: '帝关城', area: 'diguan', x: 1, y: 2, town: 1, need: F0('v7end'), shop: ['herb', 'meat', 'lingyao', 'baoyao'], shopBy: '帝关的军需官', exits: { n: 'dg_wall', w: 'dg_qiwang', s: 'xg_gate' }, npcs: ['mengtz'],
+  dg_city: { name: '帝关城', area: 'diguan', x: 1, y: 2, town: 1, need: F0('v7end'), shop: ['herb', 'meat', 'lingyao', 'baoyao'], shopBy: '帝关的军需官', exits: { n: 'dg_wall', w: 'dg_qiwang', s: 'xg_gate', e: 'xy_city' }, npcs: ['mengtz'],
     night: '帝关的夜里没有歌声。只有城头上一排一排的火把，和磨刀的声音。',
     desc: '九天十地最边上的一座城。城墙是黑的，被血泡了不知道多少年。城里的人，都是来守关的。' },
   dg_qiwang: { name: '七王祠', area: 'diguan', x: 0, y: 2, need: F0('v7end'), exits: { e: 'dg_city' }, npcs: ['qiwanghou'],
@@ -1248,17 +1355,17 @@ const PLACES = {
   dg_field: { name: '边荒战场', area: 'diguan', x: 1, y: 0, lv: [56, 58], need: F0('wangDone'), exits: { s: 'dg_wall', w: 'dg_yiyu', e: 'dg_deep' }, mobs: [['yiyubing', 2], ['yiyuqi', 2], ['bhhun', 1]], gather: [['bone', 0.5]],
     night: '战场上的尸体，夜里会被边荒的风吹成沙。',
     desc: '帝关外的战场。九天十地的年轻一代和异域的年轻一代，每天都在这里杀。' },
-  dg_yiyu: { name: '异域前营', area: 'diguan', x: 0, y: 0, lv: [57, 59], need: F0('wangDone'), exits: { e: 'dg_field' }, mobs: [['yiyubing', 2], ['yiyuqi', 1]],
+  dg_yiyu: { name: '异域前营', area: 'diguan', x: 0, y: 0, lv: [57, 59], need: F0('wangDone'), exits: { e: 'dg_field', w: 'yy_guzu' }, mobs: [['yiyubing', 2], ['yiyuqi', 1]],
     night: '异域的营火是黑色的，烧起来没有一点光。',
     desc: '异域大军扎在边荒里的前营，黑色的帐篷连成一片，看不到边。' },
   dg_ancient: { name: '边荒古阵', area: 'diguan', x: 2, y: 1, lv: [58, 60], need: F0('dizuDone'), exits: { w: 'dg_wall', n: 'dg_deep' }, dungeon: 'bianhuang', mobs: [['bhhun', 2]],
     night: '古阵的阵纹夜里会亮，亮成七种颜色。',
     desc: '七王当年在边荒布下的古阵。阵还在，布阵的人都不在了。' },
-  dg_deep: { name: '边荒深处', area: 'diguan', x: 2, y: 0, lv: [59, 62], need: F0('anlan'), exits: { w: 'dg_field', s: 'dg_ancient' }, mobs: [['bhhun', 2], ['yiyuqi', 1]],
+  dg_deep: { name: '边荒深处', area: 'diguan', x: 2, y: 0, lv: [59, 62], need: F0('bianhuang'), exits: { w: 'dg_field', s: 'dg_ancient' }, mobs: [['bhhun', 2], ['yiyuqi', 1]],
     night: '边荒深处，连星星都没有。',
     desc: '边荒最深的地方，一片灰白的废墟。废墟里埋着一只烂木盒子。' },
   // 第九卷 · 九天
-  jt_gate: { name: '九天 · 天门', area: 'jiutian', x: 1, y: 2, town: 1, need: F0('v8end'), shop: ['herb', 'meat', 'lingyao', 'baoyao'], shopBy: '天门下的商铺', exits: { n: 'jt_sect', w: 'sq_wild' }, mobs: [],
+  jt_gate: { name: '九天 · 天门', area: 'jiutian', x: 1, y: 2, town: 1, need: F0('v8end'), shop: ['herb', 'meat', 'lingyao', 'baoyao'], shopBy: '天门下的商铺', exits: { n: 'jt_sect', w: 'sq_wild', e: 'jt_court' }, mobs: [],
     night: '天门上挂着九盏灯，一盏代表一重天。',
     desc: '九天的大门。门后面，住着三千州最古老、最有钱、也最怕死的那些人家——长生世家。' },
   jt_wang: { name: '王家', area: 'jiutian', x: 0, y: 1, lv: [63, 65], need: F0('envoy'), exits: { e: 'jt_sect' }, mobs: [['jtguard', 2]],
@@ -1273,7 +1380,13 @@ const PLACES = {
   jt_feng: { name: '风族', area: 'jiutian', x: 2, y: 0, lv: [67, 69], need: F0('purge'), exits: { s: 'jt_jin', w: 'jt_peak' }, mobs: [['heian', 2]],
     night: '风族的山上，风夜里是往回吹的。',
     desc: '长生世家风族的山。山顶的风很冷，冷得不像风。' },
-  jt_peak: { name: '九天之巅', area: 'jiutian', x: 1, y: 0, lv: [68, 71], need: F0('jinfeng'), exits: { s: 'jt_sect', e: 'jt_feng' }, mobs: [['heian', 3]],
+  jt_canxian: { name: '残仙墓', area: 'jiutian', x: 0, y: 0, lv: [72, 74], need: F0('v9end'), exits: { e: 'jt_peak' }, mobs: [['canxiantu', 2]],
+    night: '墓里有呼吸声。很慢，很深，像一座山在喘气。',
+    desc: '九天最底下的一座墓。墓里躲着一个残缺的仙，靠吃九天活着。' },
+  jt_court: { name: '天庭', area: 'jiutian', x: 2, y: 2, town: 1, need: F0('canxian'), shop: ['herb', 'meat', 'lingyao', 'baoyao'], shopBy: '天庭的库房', exits: { w: 'jt_gate' }, npcs: ['qidaolin', 'qiwanghou'],
+    night: '天庭的灯，是九天十地第一次为了同一件事点起来的。',
+    desc: '你亲手立起来的天庭。不是为了管谁——是为了下一次黑暗来的时候，九天十地站在一起。' },
+  jt_peak: { name: '九天之巅', area: 'jiutian', x: 1, y: 0, lv: [68, 71], need: F0('jinfeng'), exits: { s: 'jt_sect', e: 'jt_feng', w: 'jt_canxian' }, mobs: [['heian', 3]],
     night: '站在九天之巅，往下看，是整个九天十地的灯火。',
     desc: '九天最高的地方。从这里能看见黑暗是从哪儿漏进来的。' },
   // 第四卷 · 下界边陲
@@ -1347,6 +1460,7 @@ const NPCS = {
   leiting: { name: '雷霆', title: '雷族使者', icon: '⚡' , fac: 'other' },
   huohuang: { name: '火皇', title: '火国之主', icon: '👑' , fac: 'other' },
   bzlao: { name: '老兵', title: '百族营地', icon: '🪖' , fac: 'other' },
+  guzu: { name: '蛄祖', title: '异域 · 天牢深处', icon: '🕯️' , fac: 'other' },
   mengtz: { name: '孟天正', title: '补天道 · 守关人', icon: '🗡️' , fac: 'other' },
   qiwanghou: { name: '小七', title: '七王之后', icon: '🕯️' , fac: 'other' },
   yunlao: { name: '云族长老', title: '云族遗地', icon: '☁️' , fac: 'other' },
@@ -1432,6 +1546,12 @@ const RELICS = {
   r_qingluan: { n: '青鸾翎', from: 'qingluan', i: '🪶', d: '身法 +5，暴击 +3%。', b: { spd: 5, crit: 0.03 } },
   r_shichong: { n: '傀儡皇冠', from: 'shichong', i: '👑', d: '符力 +15%。', b: { mpP: 0.15 } },
   r_shenhuo: { n: '神火余烬', from: 'shenming2', i: '🔥', d: '攻击 +10%，暴击 +4%。', b: { atkP: 0.1, crit: 0.04 } },
+  r_chiwang: { n: '赤王血', from: 'chiwanghy', i: '🩸', d: '攻击 +10%，暴击 +4%。', b: { atkP: 0.1, crit: 0.04 } },
+  r_chashu: { n: '悟道茶叶', from: 'chashu', i: '🍃', d: '符力 +15%，气血 +6%。', b: { mpP: 0.15, hpP: 0.06 } },
+  r_canxian: { n: '残仙骨', from: 'canxian', i: '🦴', d: '气血 +12%，攻击 +8%。', b: { hpP: 0.12, atkP: 0.08 } },
+  r_xwhy: { n: '仙王血晶', from: 'xwhy', i: '💎', d: '全属性 +6%。', b: { hpP: 0.06, atkP: 0.06, defP: 0.06, mpP: 0.06 } },
+  r_kundi: { n: '鲲帝之鳞', from: 'kundi', i: '🐋', d: '防御 +14%，气血 +10%。', b: { defP: 0.14, hpP: 0.1 } },
+  r_shihai: { n: '尸骸仙帝的灰', from: 'shihai', i: '⚱️', d: '全属性 +10%。', b: { hpP: 0.1, atkP: 0.1, defP: 0.1, mpP: 0.1 } },
   r_baishi: { n: '白狮鬃', from: 'baishi', i: '🦁', d: '攻击 +8%，防御 +6%。', b: { atkP: 0.08, defP: 0.06 } },
   r_ningchuan: { n: '麒麟血晶', from: 'ningchuan', i: '🩸', d: '气血 +10%，攻击 +8%。', b: { hpP: 0.1, atkP: 0.08 } },
   r_dichong: { n: '帝冲战甲片', from: 'dichong', i: '🛡️', d: '防御 +12%，气血 +6%。', b: { defP: 0.12, hpP: 0.06 } },
@@ -1463,6 +1583,7 @@ const TRADES = [
   { npc: 'qidaolin', t: '宝药 ×2 → 一门宝术熟练度 +30（无敌道的练法，“学费”）', need: [['baoyao', 2]], prof: 30 },
   { npc: 'mengtz', t: '兽骨 ×12 → 宝药 ×4（帝关的军需）', need: [['bone', 12]], give: () => addItem('baoyao', 4) },
   { npc: 'qiwanghou', t: '凶兽肉 ×4 → 一门宝术熟练度 +25（七王祠里的旧拳谱）', need: [['meat', 4]], prof: 25 },
+  { npc: 'guzu', t: '灵药 ×6 → 一门宝术熟练度 +40（蛄祖替你理一遍道则）', need: [['lingyao', 6]], prof: 40 },
 ];
 
 /* ---------- daily bounties: one small job per person per day ---------- */
@@ -1495,6 +1616,11 @@ const ACH = [
   { id: 'zhengba', n: '三千州第一', d: '赢下三千州天才争霸', ok: () => !!C.story.f.v6end },
   { id: 'shuangshi', n: '双石同心', d: '和石毅并肩，打退宁川', ok: () => !!C.story.f.xgNing },
   { id: 'qiwang', n: '七王之后', d: '知道了“罪血”这两个字真正的意思', ok: () => !!C.story.f.qiwangDone },
+  { id: 'heishui', n: '黑水一百年', d: '在异域的黑水天牢里熬过一百年，从海瀑跳了出去', ok: () => !!C.story.f.yyEnd },
+  { id: 'tianting', n: '天庭', d: '立起天庭，让九天十地第一次站在一起', ok: () => !!C.story.f.tiantingDone },
+  { id: 'baxi', n: '逆活八世', d: '在时光长河里活了八辈子，又回来了', ok: () => !!C.story.f.baxi },
+  { id: 'huangtiandi', n: '荒天帝', d: '死在界海深处，又从记得你的人心里化了回来', ok: () => !!C.story.f.xiandi },
+  { id: 'duduan', n: '独断万古', d: '一剑斩断时光长河', ok: () => !!C.story.f.v15end },
   { id: 'taiping', n: '万年太平', d: '带着石村八百兵，替九天十地挣来一万年太平', ok: () => !!C.story.f.v9end },
   { id: 'pets3', n: '一猴两鸟', d: '凑齐三个伙伴', ok: () => Object.keys(C.pets).length >= 3 },
   { id: 'evo', n: '血脉觉醒', d: '让一个伙伴觉醒', ok: () => Object.values(C.pets).some(p => p.evo) },
@@ -1570,7 +1696,13 @@ function gainExp(n, quiet) {
     if (C.lv === 44 && !C.story.f.v5end) { C.exp = BAL.expNext(C.lv); break; }
     if (C.lv === 49 && !C.story.f.v6end) { C.exp = BAL.expNext(C.lv); break; }
     if (C.lv === 54 && !C.story.f.v7end) { C.exp = BAL.expNext(C.lv); break; }
-    if (C.lv === 62 && !C.story.f.v8end) { C.exp = BAL.expNext(C.lv); break; }
+    if (C.lv === 59 && !C.story.f.yiyu0) { C.exp = BAL.expNext(C.lv); break; }
+    if (C.lv === 62 && !C.story.f.yyEnd) { C.exp = BAL.expNext(C.lv); break; }
+    if (C.lv === 65 && !C.story.f.v8end) { C.exp = BAL.expNext(C.lv); break; }
+    if (C.lv === 71 && !C.story.f.v9end) { C.exp = BAL.expNext(C.lv); break; }
+    if (C.lv === 75 && !C.story.f.v12end) { C.exp = BAL.expNext(C.lv); break; }
+    if (C.lv === 80 && !C.story.f.v13end) { C.exp = BAL.expNext(C.lv); break; }
+    if (C.lv === 84 && !C.story.f.xiandi) { C.exp = BAL.expNext(C.lv); break; }
     if (C.lv === 68 && !C.story.f.zhizun) { C.exp = BAL.expNext(C.lv); break; }
     C.exp -= BAL.expNext(C.lv); C.lv++; fullHeal(); sfx('level');
     logLine(`<b class="lvup">境界精进！</b> ${realmOf(C.lv).name} · 第 ${C.lv} 层。气血、符力已回满。`, 'sys'); bigFlash(`境界精进 · ${realmOf(C.lv).name}第 ${C.lv} 层`, 'lv');
@@ -1627,6 +1759,8 @@ const ALLY_NPC = {
   a_shiyi: { name: '石毅', icon: '👁️', mul: { hp: 2.4, atk: 1.6, def: 1.4 }, sk: [{ n: '重瞳', dmg: 1.2, mag: 1, st: { k: 'weak', t: 2, v: 0.2, p: 0.5 }, w: 3 }, { n: '重瞳神光', dmg: 0.75, aoe: 1, mag: 1, w: 2 }] },
   a_meng: { name: '孟天正', icon: '🗡️', mul: { hp: 3, atk: 1.8, def: 1.6 }, sk: [{ n: '一剑', dmg: 1.4, w: 3 }, { n: '剑幕', dmg: 0.8, aoe: 1, w: 2 }, { n: '护着你', taunt: 2, guard: 1, w: 1 }] },
   a_shicun: { name: '石村八百兵', icon: '🏹', mul: { hp: 2.6, atk: 1.2, def: 1.5 }, sk: [{ n: '齐射', dmg: 0.7, aoe: 1, w: 2 }, { n: '石村长矛', dmg: 1.1, w: 3 }, { n: '护着小不点', taunt: 2, guard: 1, w: 1 }] },
+  a_sanzang: { name: '三藏', icon: '🧘', mul: { hp: 2.4, atk: 1.5, def: 1.5 }, sk: [{ n: '佛光', dmg: 0.75, aoe: 1, w: 2 }, { n: '金刚拳', dmg: 1.2, w: 3 }] },
+  a_liushen: { name: '柳神', icon: '🌳', mul: { hp: 3.2, atk: 1.9, def: 1.8 }, sk: [{ n: '万千柳枝', dmg: 0.9, aoe: 1, w: 2 }, { n: '柳枝一抽', dmg: 1.5, w: 3 }, { n: '护着你', taunt: 2, guard: 1, w: 1 }] },
   a_jun: { name: '石国禁军', icon: '⚔️', mul: { hp: 2, atk: 1, def: 1.3 }, sk: [{ n: '结阵', dmg: 0.6, aoe: 1, w: 2 }, { n: '长戈', dmg: 1.05, w: 3 }] },
   a_eagle: { name: '青鳞小鹰', icon: '🦅', mul: { hp: 1.1, atk: 1.1, def: 0.9, spd: 1.6 }, sk: [{ n: '鳞爪', dmg: 1.05, w: 3 }, { n: '鳞羽', dmg: 0.6, aoe: 1, w: 1 }] },
   a_yunxi: { name: '云曦', icon: '🌙', mul: { hp: 1.3, atk: 1, def: 1 }, sk: [{ n: '月华', dmg: 1, mag: 1, w: 3 }, { n: '清辉', healAlly: 0.18, w: 1 }] },
@@ -1869,7 +2003,7 @@ async function autoWalk(to) {
 }
 /* ---------- explore ---------- */
 let exploreT = 0;
-const NIGHT_MOBS = { dahuang: 'owl', butian: 'owl', baiduan: 'wisp', shiguo: 'yinbing', huoguo: 'yanque', baizu: 'yinhun', shangjie: 'yeyao', sanqian: 'tianjiao6', xiangu: 'xgling', diguan: 'bhhun', jiutian: 'heian' };
+const NIGHT_MOBS = { dahuang: 'owl', butian: 'owl', baiduan: 'wisp', shiguo: 'yinbing', huoguo: 'yanque', baizu: 'yinhun', shangjie: 'yeyao', sanqian: 'tianjiao6', xiangu: 'xgling', diguan: 'bhhun', jiutian: 'heian', yiyu: 'yytj', xianyu: 'jhsheng', diluo: 'shiguang', jiehai: 'jieling' };
 const FLAVOR_N = ['黑暗里亮起几点绿光——', '月亮被云遮住的一瞬间，', '夜风里夹着一股腥气，', '你踩断了一根枯枝，四周猛地安静下来——'];
 const FLAVOR = ['草丛里窸窸窣窣地响了一阵——', '你拨开一丛灌木，', '一阵腥风扑面而来，', '脚下的落叶突然动了一下，', '远处一声低吼，越来越近，'];
 async function explore() {
@@ -2492,7 +2626,7 @@ async function S_return() {
   F().qfIn = 1;
   F().end = 1; gainExp(1);
   await cine('<div class="cc"><small>第一卷</small><b>石村少年</b><i>完</i></div>', 'card');
-  await nar('石村的小不点走出了大荒，在补天阁站稳了脚跟，在百断山里闯出了名字。<br>你胸口的那道疤还在，爹娘还没有消息，那块被挖走的骨头还在别人身上。<br>路还很长。<br><br>（第二卷之后再写。大荒、补天阁、百断山都还开着，虚神界和凶兽首领也是。）');
+  await nar('石村的小不点走出了大荒，在补天阁站稳了脚跟，在百断山里闯出了名字。<br>你胸口的那道疤还在，爹娘还没有消息，那块被挖走的骨头还在别人身上。<br>路还很长。');
 }
 
 async function S_yunxiBack() {
@@ -2628,18 +2762,46 @@ const MAIN = [
   { id: 'q_qiwang', ch: 18, title: '七王祠', goal: '去帝关城西边的七王祠', type: 'enter', loc: 'dg_qiwang', scene: S_qiwang },
   { id: 'q_wangjia', ch: 18, title: '城头', goal: '上帝关城头', type: 'enter', loc: 'dg_wall', scene: S_wangjia, rec: 56 },
   { id: 'q_dizu', ch: 18, title: '边荒战场', goal: '去城头北边的边荒战场', type: 'enter', loc: 'dg_field', scene: S_dizu, rec: 58 },
-  { id: 'q_bianhuang', ch: 19, title: '边荒古阵', goal: '闯过城头东边的边荒古阵', type: 'dungeon', dungeon: 'bianhuang', loc: 'dg_ancient', npc: null, scene: S_bhDone, rec: 60 },
-  { id: 'q_anlan', ch: 19, title: '安澜', goal: '……', type: 'auto', scene: S_anlan },
-  { id: 'q_box', ch: 19, title: '烂木盒子', goal: '去边荒战场东边的边荒深处', type: 'enter', loc: 'dg_deep', scene: S_box, rec: 62, lvNeed: 60 },
-  { id: 'q_v9', ch: 20, title: '第九卷 · 清算', goal: '……', type: 'auto', scene: S_v9start },
-  { id: 'q_envoy', ch: 20, title: '仙域使者', goal: '带着留影晶石，去九天的天门', type: 'enter', loc: 'jt_gate', scene: S_envoy, rec: 63 },
-  { id: 'q_train', ch: 20, title: '从头练', goal: '回石村找族长', type: 'talk', npc: 'chief', scene: S_train },
-  { id: 'q_army', ch: 21, title: '石村八百兵', goal: '去村前空地找大壮', type: 'talk', npc: 'dazhuang', scene: S_army },
-  { id: 'q_purge', ch: 21, title: '七大道统', goal: '带着石村八百兵，去九天的七大道统', type: 'enter', loc: 'jt_sect', scene: S_purge, rec: 68 },
-  { id: 'q_jin', ch: 21, title: '金家', goal: '去七大道统东边的金家', type: 'enter', loc: 'jt_jin', scene: S_jin, rec: 69 },
-  { id: 'q_feng', ch: 21, title: '风族', goal: '去金家北边的风族', type: 'enter', loc: 'jt_feng', scene: S_feng, rec: 70 },
-  { id: 'q_peace', ch: 21, title: '九天之巅', goal: '上风族西边的九天之巅', type: 'enter', loc: 'jt_peak', scene: S_peace, rec: 71 },
-  { id: 'q_v9end', ch: 21, title: '第九卷 · 完', goal: '之后还有：异域、仙域。现在可以在下界、上界、九天十地各处历练，挑战虚神界和凶兽首领。', type: 'none' },
+  { id: 'q_bianhuang', ch: 19, title: '边荒古阵', goal: '闯过城头东边的边荒古阵', type: 'dungeon', dungeon: 'bianhuang', loc: 'dg_ancient', npc: null, scene: S_bhDone, rec: 58 },
+  { id: 'q_box', ch: 19, title: '烂木盒子', goal: '去边荒战场东边的边荒深处', type: 'enter', loc: 'dg_deep', scene: S_box, rec: 59 },
+  { id: 'q_betray', ch: 19, title: '五百年', goal: '……', type: 'auto', scene: S_betray },
+  { id: 'q_yy', ch: 20, title: '第九卷 · 异域', goal: '……', type: 'auto', scene: S_yyStart },
+  { id: 'q_yyarena', ch: 20, title: '磨刀场', goal: '去异域城门北边的磨刀场', type: 'enter', loc: 'yy_arena', scene: S_yyArena, rec: 61 },
+  { id: 'q_yytree', ch: 20, title: '悟道茶树', goal: '去城门西边的悟道茶树', type: 'enter', loc: 'yy_tree', scene: S_yyTree, rec: 62 },
+  { id: 'q_guzu', ch: 20, title: '蛄祖', goal: '去天牢东边的蛄祖洞', type: 'enter', loc: 'yy_guzu', scene: S_guzu },
+  { id: 'q_yyfalls', ch: 21, title: '海瀑', goal: '去茶树南边的海瀑', type: 'enter', loc: 'yy_falls', scene: S_yyFalls, rec: 62 },
+  { id: 'q_xy', ch: 22, title: '第十卷 · 仙域', goal: '……', type: 'auto', scene: S_xyStart },
+  { id: 'q_yuanshi', ch: 22, title: '原始帝城', goal: '去界海之滨北边的原始帝城', type: 'enter', loc: 'xy_yuanshi', scene: S_yuanshi, rec: 65 },
+  { id: 'q_back', ch: 22, title: '回帝关', goal: '从仙域古城往东，回帝关城', type: 'enter', loc: 'dg_city', scene: S_back },
+  { id: 'q_anlan', ch: 23, title: '安澜', goal: '上帝关城头', type: 'enter', loc: 'dg_wall', scene: S_anlan },
+  { id: 'q_v9', ch: 24, title: '第十一卷 · 清算', goal: '……', type: 'auto', scene: S_v9start },
+  { id: 'q_envoy', ch: 24, title: '仙域使者', goal: '带着留影晶石，去九天的天门', type: 'enter', loc: 'jt_gate', scene: S_envoy, rec: 66 },
+  { id: 'q_train', ch: 24, title: '从头练', goal: '回石村找族长', type: 'talk', npc: 'chief', scene: S_train },
+  { id: 'q_army', ch: 25, title: '石村八百兵', goal: '去村前空地找大壮', type: 'talk', npc: 'dazhuang', scene: S_army },
+  { id: 'q_purge', ch: 25, title: '七大道统', goal: '带着石村八百兵，去九天的七大道统', type: 'enter', loc: 'jt_sect', scene: S_purge, rec: 68 },
+  { id: 'q_jin', ch: 25, title: '金家', goal: '去七大道统东边的金家', type: 'enter', loc: 'jt_jin', scene: S_jin, rec: 69 },
+  { id: 'q_feng', ch: 25, title: '风族', goal: '去金家北边的风族', type: 'enter', loc: 'jt_feng', scene: S_feng, rec: 70 },
+  { id: 'q_peace', ch: 25, title: '九天之巅', goal: '上风族西边的九天之巅', type: 'enter', loc: 'jt_peak', scene: S_peace, rec: 71 },
+  { id: 'q_v9end', ch: 26, title: '第十二卷 · 天庭', goal: '回石村找族长', type: 'talk', npc: 'chief', scene: S_v12start },
+  { id: 'q_canxian', ch: 26, title: '残仙', goal: '去九天之巅西边的残仙墓', type: 'enter', loc: 'jt_canxian', scene: S_canxian, rec: 74 },
+  { id: 'q_tianting', ch: 26, title: '立天庭', goal: '去天门东边，立天庭', type: 'enter', loc: 'jt_court', scene: S_tianting },
+  { id: 'q_dam', ch: 26, title: '堤坝', goal: '从仙域的界海之滨往西，上堤坝', type: 'enter', loc: 'jh_dam', scene: S_dam, rec: 74 },
+  { id: 'q_xwhy', ch: 27, title: '仙王后裔', goal: '去仙域古城', type: 'enter', loc: 'xy_city', scene: S_xwhy, rec: 75 },
+  { id: 'q_zaohua', ch: 27, title: '造化之门', goal: '去仙域古城北边的造化之门', type: 'enter', loc: 'xy_gate', scene: S_zaohua, rec: 75 },
+  { id: 'q_v13', ch: 28, title: '第十三卷 · 帝落', goal: '从造化之门往北，走进时光长河', type: 'enter', loc: 'dl_river', scene: S_v13start, rec: 76 },
+  { id: 'q_dlage', ch: 28, title: '帝落古战场', goal: '去长河北边的帝落古战场', type: 'enter', loc: 'dl_age', scene: S_dlAge, rec: 78 },
+  { id: 'q_lives', ch: 29, title: '八世', goal: '去长河东边的八世轮回', type: 'enter', loc: 'dl_lives', scene: S_lives, rec: 79 },
+  { id: 'q_dlend', ch: 29, title: '长河尽头', goal: '去长河尽头', type: 'enter', loc: 'dl_end', scene: S_dlEnd, rec: 80 },
+  { id: 'q_v14', ch: 30, title: '第十四卷 · 异域之战', goal: '从帝关一路往西，去异域封印地', type: 'enter', loc: 'yy_seal', scene: S_v14start, rec: 82 },
+  { id: 'q_liushen2', ch: 30, title: '黑柳', goal: '从堤坝往北，进界海', type: 'enter', loc: 'jh_sea', scene: S_liushenBack, rec: 82 },
+  { id: 'q_chiwang', ch: 31, title: '赤王', goal: '去异域城门', type: 'enter', loc: 'yy_gate', scene: S_chiwang, rec: 83 },
+  { id: 'q_kundi', ch: 31, title: '鲲帝', goal: '……', type: 'auto', scene: S_kundiChase },
+  { id: 'q_xianwar', ch: 31, title: '仙域之战', goal: '回仙域古城', type: 'enter', loc: 'xy_city', scene: S_xianwar, rec: 84 },
+  { id: 'q_kundi2', ch: 31, title: '鲲帝城', goal: '去异域封印地北边的鲲帝城', type: 'enter', loc: 'yy_capital', scene: S_kundiEnd, rec: 84 },
+  { id: 'q_v15', ch: 32, title: '第十五卷 · 独断万古', goal: '……', type: 'auto', scene: S_v15start },
+  { id: 'q_shihai', ch: 33, title: '尸骸仙帝', goal: '去界海深处', type: 'enter', loc: 'jh_deep', scene: S_shihai, rec: 84 },
+  { id: 'q_duduan', ch: 33, title: '独断万古', goal: '……', type: 'auto', scene: S_duduan },
+  { id: 'q_fin', ch: 33, title: '全书完', goal: '石昊的故事讲完了。你可以在各处走走，挑战虚神界，把宝术练到圆满。', type: 'none' },
 ];
 const SIDE = {
   sq_milk: { npc: 'ermeng', title: '二猛的兽骨', minQ: 'q_egg0', need: [['bone', 3]], ask: '小不点，给我弄三块兽骨呗？我想刻个骨牌，跟你那样认骨文。', done: '嘿嘿，够了够了！这罐兽奶给你，我从家里顺的。', reward: () => { give('milk', 4); gainExp(60); } },
@@ -3300,7 +3462,6 @@ async function S_wild() {
   give('baoyao', 3); give('lingyao', 5);
   await cine('花蕾悬在无人区的上空，慢慢地转。<br>三千州的天才，都抬起了头。<br><b>争霸，开始了。</b>');
   await cine('<div class="cc"><small>第五卷</small><b>上界</b><i>完</i></div>', 'card');
-  await nar('之后还有：三千州天才争霸、帝关、边荒……之后再写。现在，你可以在上界和下界之间来回走走，挑战虚神界，把宝术练到圆满，合成更强的宝术。');
   F().v5end = 1;
 }
 
@@ -3584,8 +3745,39 @@ async function S_bhDone() {
   await cine('阵眼里浮出七道影子。<br>他们穿着破烂的甲，看不清脸，可你知道他们是谁。<br>他们冲你点了点头。<br>其中一个，伸手拍了拍你的肩膀——<b>像族长那样</b>。', 'mem');
   gainExp(BAL.expNext(C.lv) * 0.4); F().bianhuang = 1;
 }
+async function S_box() {
+  await nar('异域的人在边荒里追了你三天三夜。你从葬士的古坟里钻过去，从天兽的林子里滚过去，一直逃到了边荒最深的那片废墟。');
+  if (!await fightRetry({ mobs: [['bhhun', slv(58)], ['yiyuqi', slv(58)], ['yiyubing', slv(58)]], title: '边荒深处 · 追兵' })) return false;
+  await nar('废墟最深处，埋着一只烂木盒子。很旧，很轻，上面一个字都没有。可你一碰到它，整片边荒都安静了——连追你的异域兵，都停下了脚步。');
+  await say('异域追兵', '……那只盒子！不朽之王点名要的东西！抢过来！');
+  const ms = await miniGame('mash', { title: '逃', desc: '抱着盒子跑！别回头——跑回帝关！', time: 7000, rate: 7 });
+  if (!ms.ok) await nar('你摔倒了三次。第四次，你是抱着盒子爬回城门的。');
+  await nar('帝关的城门在你身后关上。你靠着城墙坐下，看着怀里的盒子。你不知道里面是什么。你只知道，异域的人，很想要它。');
+  F().box = 1; gainExp(BAL.expNext(C.lv) * 0.4);
+}
+async function S_betray() {
+  await nar('三天以后，异域的大军压到了帝关城下。黑色的旗子，从边荒的这头，排到那头。');
+  await nar('一个异域帝族的至尊走到城下，声音不大，整座帝关都听得见：');
+  await say('异域帝族至尊', '把那个叫荒的罪血交出来，连同他抢走的盒子。交出来，异域五百年不犯帝关。');
+  await nar('城头上，一片死寂。孟天正在至尊大战里受了重伤，正在闭关——他不知道。');
+  await say('金太君', '（金家的老太君拄着金杖站了出来）诸位，五百年太平。用一个罪血换，划算。');
+  await say('qiwanghou', '（小七冲到了她面前，额头上那个“罪”字涨得通红）他是帝关的人！他替我们守过城！');
+  await say('金太君', '罪血也配说“帝关的人”？（她看都没看小七）谁反对，谁就去替他。');
+  await nar('有人说话了，有人没说话。说话的声音，一个一个地低了下去。');
+  await nar('你站起来，把那只烂木盒子塞进了小七怀里。');
+  await me('……帮我收着。别给他们。');
+  await say('qiwanghou', '你、你要干嘛？！');
+  const c = await choose(['（自己走下城头）', '……孟老醒了，替我跟他说一声。我吃过饭了。']);
+  if (c === 1) await nar('小七抱着盒子，哭得一个字都说不出来。');
+  await cine('你自己走下了城头，走出了城门。<br>一个至尊给你戴上了锁链，把你推进了一辆囚车。<br>囚车往边荒深处走去。<br>你回头看了一眼帝关——<b>城头上，小七抱着盒子，一直站着</b>。');
+  F().yiyu0 = 1;
+  await cine('<div class="cc"><small>第八卷</small><b>帝关</b><i>完</i></div>', 'card');
+  go('yy_jail', false, true);
+}
+/* ---------------- 第十卷 · 仙域（结尾）: 安澜 ---------------- */
 async function S_anlan() {
-  await nar('那天早上，边荒的天，忽然暗了下来。');
+  await chapterCard('第二十三章', '安澜', '那一剑');
+  await nar('你回到帝关的第七天早上，边荒的天，忽然暗了下来。');
   await cine('一个人从异域那边走过来。<br>他走得不快，可他每走一步，边荒的沙就退一里。<br>帝关城头上，所有的兵，同时握紧了兵器——手在抖。<br>有人小声说了一个名字：<b>安澜</b>。不朽之王。');
   await say('mengtz', '（孟天正把你拉到身后）……你打不过他。帝关所有人加起来，也打不过他。');
   await me('那也得打。');
@@ -3601,26 +3793,19 @@ async function S_anlan() {
   await nar('七王祠的孩子们，冲上了城头。他们没有喊口号，没有哭，一个一个地站在了孟天正站过的地方。小七站在最前面。');
   await cine('那一天，七王的后人，又死了很多。<br>帝关，没有破。<br>活下来的，只有几个孩子。小七是其中一个。');
   F().anlan = 1; gainExp(BAL.expNext(C.lv) * 0.5);
-  await say('qiwanghou', '（小七浑身是血，把你从城墙下面拖出来）……孟老说过，你要是活着，就让你去边荒深处。那里有一样东西，他想让你带走。');
-  tip('<b>边荒深处</b>在边荒战场东边。');
-}
-async function S_box() {
-  await nar('边荒深处是一片灰白的废墟。你一瘸一拐地走进去，废墟里到处是异域的眼睛。');
-  if (!await fightRetry({ mobs: [['bhhun', slv(61)], ['yiyuqi', slv(61)], ['yiyubing', slv(61)]], title: '边荒深处' })) return false;
-  await nar('废墟最深处，埋着一只烂木盒子。很旧，很轻，上面一个字都没有。你不知道里面是什么。你只知道孟天正想让你带走它。');
-  await nar('你把盒子揣进怀里，转身往回跑。身后，整个边荒的黑暗都追了上来。');
+  await say('qiwanghou', '（小七浑身是血，把你从城墙下面拖出来，把那只烂木盒子塞进你怀里）……孟老说过，你要是活着，就带着它回家。走！');
   const ms = await miniGame('mash', { title: '逃', desc: '跑！别回头——往下界跑！', time: 7000, rate: 7 });
   if (!ms.ok) await nar('你摔倒了三次。第四次，你是爬着过去的。');
   await cine('你穿过了帝关，穿过了九天十地，穿过了登天路——<br>一路往下掉，往下掉。<br>最后掉进了一片你闭着眼睛都认得出来的林子里。<br>你闻到了兽奶的味道。');
   F().v8end = 1; gainExp(BAL.expNext(C.lv) * 0.4);
-  await cine('<div class="cc"><small>第八卷</small><b>帝关</b><i>完</i></div>', 'card');
+  await cine('<div class="cc"><small>第十卷</small><b>仙域</b><i>完</i></div>', 'card');
   go('sc_willow', false, true);
 }
 
-/* ---------------- 第九卷 · 清算 ---------------- */
+/* ---------------- 第十一卷 · 清算 ---------------- */
 async function S_v9start() {
-  await cine('<div class="cc"><small>第九卷</small><b>清算</b><i>账，一笔一笔地算</i></div>', 'card');
-  await chapterCard('第二十章', '蛰伏', '回家');
+  await cine('<div class="cc"><small>第十一卷</small><b>清算</b><i>账，一笔一笔地算</i></div>', 'card');
+  await chapterCard('第二十四章', '蛰伏', '回家');
   await nar('你醒过来的时候，躺在族长家的小木床上。床太小了，你的脚伸在外面。');
   await say('你娘', '（她坐在床边，眼睛肿得像桃子）……醒了？醒了就好。醒了就好。');
   await say('chief', '（族长拄着拐杖站在门口）你掉在柳神的树桩旁边，浑身是血，怀里死死抱着一个烂木盒子。谁拿都拿不走。');
@@ -3663,7 +3848,7 @@ async function S_train() {
   tip('村前空地上，大壮好像有话要跟你说。');
 }
 async function S_army() {
-  await chapterCard('第二十一章', '清算', '石村八百兵');
+  await chapterCard('第二十五章', '清算', '石村八百兵');
   await nar('村前空地上，站满了人。不是几个，是<b>八百个</b>。');
   await say('dazhuang', '（大壮——现在是大壮爷爷了——站在最前面，胡子都白了）小不点。这些年，你在练，我们也在练。');
   await say('dazhuang', '石村的娃娃，从会走路起就举石锁。现在……能打的，都在这儿了。');
@@ -3716,13 +3901,384 @@ async function S_peace() {
   await nar('你回到石村的时候，是一个傍晚。柳神留下的那截树桩旁边，那只烂木盒子安安静静地放着。你一直没有打开它。');
   await nar('树桩上，冒出了一片很小很小的新叶。');
   F().v9end = 1; gainExp(BAL.expNext(C.lv) * 0.6);
-  await cine('<div class="cc"><small>第九卷</small><b>清算</b><i>完</i></div>', 'card');
-  await nar('之后还有：异域、仙域……之后再写。现在，你可以在下界、上界、九天十地各处走走，挑战虚神界，把宝术练到圆满，合成更强的宝术。');
+  await cine('<div class="cc"><small>第十一卷</small><b>清算</b><i>完</i></div>', 'card');
+}
+
+/* ================= 石昊's story, volume 9 (异域) and volume 10 (仙域) =================
+   Beats follow the novel: handed over to 异域 for "500 years of peace", he is chained in the 黑水天牢 (the black water eats at
+   his feet, his cultivation sealed), hung at the city gate and mocked, then let out to be the whetstone for 异域's young
+   geniuses — he beats the 赤王后裔 and fights for the 悟道茶树; over a hundred years his 道基 is completed, all his arts merge
+   into one, and 蛄祖 helps fill in his 道则. He escapes through the 海瀑 (a branch of the 界海), catches a 始祖鱼苗 and rides it
+   past 异域's strongmen with 三藏 and 神冥, reaches 仙域, finds the 原始帝城 and the truth about 罪血, and goes back to 帝关 at
+   late 斩我境 — where 孟天正, out of seclusion, had already gone after 金家 and 王长生 for him. Prose written fresh. */
+
+/* ---------------- 第九卷 · 异域 ---------------- */
+async function S_yyStart() {
+  await cine('<div class="cc"><small>第九卷</small><b>异域</b><i>他们拿你，换了五百年</i></div>', 'card');
+  await chapterCard('第二十章', '黑水', '一百年');
+  await nar('黑水天牢的水是黑的，冰的，一碰到皮肉，就往骨头里钻。你的脚泡在里面，三天就烂了。你的修为被一道一道的锁封住，一点都用不出来。');
+  await say('黑水狱卒', '九天十地最强的那个？（他用鞭子挑起你的下巴）就这？');
+  await nar('你没说话。你在数。数黑水一滴一滴落下来的声音。');
+  await cine('第十天，他们把你拖出天牢，用绳子吊在了异域大城的城门上。<br>城门下面，异域的人一个一个走过去，冲你吐口水，扔石头，笑。<br>你挂在上面，看着边荒的方向。<br>帝关在那边。小七在那边。<b>你答应过回去的</b>。');
+  await nar('有一天夜里，城门下来了一群人，十几个，个个是异域的强者。他们想趁你被封着修为，把你的道基挖出来。');
+  await nar('你被吊着，修为被封着，脚是烂的。你用牙咬断了绳子，掉下来，用头撞，用肘砸，用烂掉的脚踢。天亮的时候，城门下面躺了一地。');
+  await say('异域的长老', '（他看着满地的人，又看着你，眼神变了）……留着他。这么好的磨刀石，杀了可惜。');
+  F().yyHung = 1;
+  tip('城门北边是<b>磨刀场</b>。从今天起，异域的天骄，都要拿你磨刀。');
+}
+async function S_yyArena() {
+  await nar('磨刀场上，异域的天骄排着队。他们暂时解开了你一道封印——刚好够你打，不够你逃。');
+  await say('异域天骄', '九天十地最强的？我第一个来！');
+  if (!await fightRetry({ mobs: [['yytj', slv(60)], ['yytj', slv(60)], ['yuzu9', slv(60)]], title: '磨刀场' })) return false;
+  await cine('第一年，你被抬下去三十次。<br>第五年，你被抬下去三次。<br>第十年，抬下去的，都是他们。');
+  await say('赤王后裔', '（一个浑身赤红的少年走上场，台下所有人都站了起来）……我祖上是赤王。你，配给我磨刀吗？');
+  if (!await fightRetry({ mobs: [['chiwanghy', slv(61, -1, 1)]], title: '磨刀场 · 赤王后裔', epic: { name: '赤王后裔', sub: '异域仙王赤王的后人', seal: '赤王', intro: ['异域年轻一代里最傲的那一个。', '你身上，还锁着三道封印。'], phase: '他身上的血烧成了赤色——赤王的血，醒了！', low: { who: '小七', t: '“我们守城，从来不回头看。”<br>（小七。我还没回去。所以，我还不能倒。）' }, end: ['赤王后裔跪在了磨刀场上。', '台下，几万个异域人，没有一个出声。'] } })) return false;
+  await nar('那天以后，磨刀场上的规矩变了：异域的天骄想跟你打，要排三个月的队。');
+  F().yyArena = 1; gainExp(BAL.expNext(C.lv) * 0.4);
+  tip('城门西边有一棵<b>悟道茶树</b>，异域各族都想要它。今年，他们要你也去争。');
+}
+async function S_yyTree() {
+  await nar('悟道茶树很老，叶子上的纹路像在写字。树下站着异域各族的天骄，最前面是一个穿金袍的年轻人——异域帝族的帝子。');
+  await say('异域帝子', '这棵树，异域打了几十万年。今年是我的。（他看了你一眼）你只是被带来凑数的。');
+  await me('我在天牢里待了好多年。好久没看见这么绿的东西了。');
+  if (!await fightRetry({ mobs: [['chashu', slv(62, -1, 1)]], title: '悟道茶树 · 帝子', epic: { name: '异域帝子', sub: '异域帝族最有希望的帝子', seal: '茶树', intro: ['他想要那棵茶树。', '也想要你的命。'], phase: '帝子摘下一片茶叶含在嘴里，道则一下子清楚了十倍！', end: ['帝子倒在了茶树下。', '一片茶叶落下来，落在你的手心。'] } })) return false;
+  await nar('你在茶树下坐了一夜。茶叶在你手心里化开，你脑子里那些乱七八糟的宝术——狻猊、鲲鹏、雷帝、柳神——一样一样地，排好了队。');
+  await cine('它们本来就是一样东西。<br>你以前不知道。<br><b>现在你知道了。</b>');
+  F().yyTree = 1; gainExp(BAL.expNext(C.lv) * 0.4);
+  tip('天牢最深处有个洞，听说住着一个很老的存在。狱卒都不敢靠近——<b>蛄祖洞</b>在天牢东边。');
+}
+async function S_guzu() {
+  await nar('洞里有一盏灯。灯下坐着一个很老的影子，老得看不出是人是兽，像一块会喘气的石头。');
+  await say('guzu', '……九天十地的孩子。（它的声音很慢，像从地底下传上来）他们说你是磨刀石。');
+  await me('你是谁？');
+  await say('guzu', '一个活得太久的东西。（它笑了，或者是在咳嗽）我看着异域打了很多很多年。打来打去，都是一样的。');
+  await say('guzu', '你的道，有洞。不是你的错——你从下界一路爬上来，每一步都是抢来的，补来的。（它伸出一根像树根一样的手指）我替你补上。');
+  const c = await choose(['……为什么帮我？', '（伸出手）']);
+  if (c === 0) await say('guzu', '因为我想看看，一个不一样的结局。');
+  await cine('那根手指点在你的眉心。<br>你看见了道则——不是一条一条的，是一张网。<br>网上有很多洞，蛄祖一个一个地补。补了很久。<br><b>道基，圆满了。</b>');
+  learnGongfa('daoze'); F().daoze = 1; gainExp(BAL.expNext(C.lv) * 0.4);
+  await say('guzu', '去吧。茶树南边，是海瀑。从那里跳下去，就是界海。……能不能活，看你的命。');
+}
+async function S_yyFalls() {
+  await chapterCard('第二十一章', '海瀑', '跳下去');
+  await nar('海瀑的声音大得把心跳都盖住了。界海的一条支流从异域的边上倒灌下去，成了一道看不到底的瀑布。');
+  await nar('瀑布边上蹲着两个人，也是被关了很多年的九天十地的人。一个光头，一个瘦得像竹竿。');
+  await say('三藏', '（光头冲你挤了挤眼睛）听说你要跑？带上我们。我叫三藏，他叫神冥。我们俩在天牢里商量了五十年，就是没胆子跳。');
+  await say('海瀑追兵', '在那儿！别让他们跳！');
+  if (!await fightRetry({ mobs: [['haipu', slv(62)], ['haipu', slv(62)], ['haipu', slv(62)]], allies: ['a_sanzang'], title: '海瀑 · 追兵' })) return false;
+  await nar('瀑布底下的黑水里，游过一条小小的、发着光的鱼——始祖鱼苗。你想都没想，一把抓住了它的尾巴。');
+  await me('跳！');
+  const ms = await miniGame('mash', { title: '海瀑', desc: '抓紧鱼尾巴！别松手！', time: 7000, rate: 7 });
+  if (!ms.ok) await nar('你松了三次手，又抓回来三次。三藏在后面拽着你的脚，神冥拽着三藏的脚。');
+  await cine('始祖鱼苗拖着你们三个，冲进了界海。<br>身后，异域的强者追了上来——一个，两个，三个。<br>你用尽了最后一点仙术，三藏念了一路的经，神冥一直在哭。<br>死了好几回。<br><b>没死成。</b>');
+  F().yyEnd = 1; gainExp(BAL.expNext(C.lv) * 0.5);
+  await cine('<div class="cc"><small>第九卷</small><b>异域</b><i>完</i></div>', 'card');
+  go('xy_shore', false, true);
+}
+
+/* ---------------- 第十卷 · 仙域 ---------------- */
+async function S_xyStart() {
+  await cine('<div class="cc"><small>第十卷</small><b>仙域</b><i>罪血，是什么血</i></div>', 'card');
+  await chapterCard('第二十二章', '仙域', '一座比帝关还老的城');
+  await nar('始祖鱼苗把你们扔在了一片黑色的海岸上。岸上是仙域——传说里，九天十地所有人都想进去的地方。');
+  await say('三藏', '（他趴在沙滩上，把一嘴的海水吐出来）……活着！神冥，我们活着！');
+  await nar('神冥抱着三藏哭得更厉害了。你站起来，往岸上看。远处，有一座白色的城——白得像骨头。');
+  F().xy = 1;
+  tip('往北，那座白色的城——<b>原始帝城</b>。');
+}
+async function S_yuanshi() {
+  await nar('原始帝城的城墙是白的，每一块砖上都刻着一个名字。城门上，刻着七个很大的名字。你认得其中一个——你在帝关的七王祠里，见过它的牌位。');
+  await nar('城里到处是残魂。它们还穿着甲，还拿着枪，还在城墙上走来走去。');
+  if (!await fightRetry({ mobs: [['ysmo', slv(63)], ['ysmo', slv(63)], ['ysmo', slv(64)]], title: '原始帝城 · 残魂' })) return false;
+  await say('帝城守将残念', '（城门下站起来一个比城门还高的影子）……你身上，有七王的血。（它的枪尖对准了你）回答我：帝关，还在吗？');
+  if (!await fightRetry({ mobs: [['ysjiang', slv(65, -1, 1)]], title: '原始帝城 · 守将', epic: { name: '帝城守将残念', sub: '原始帝城最后一个守将', seal: '帝城', intro: ['它只想知道一件事：帝关还在不在。'], phase: '残念身后，整座原始帝城的城墙都亮了！', end: ['你一拳打在它的枪杆上。', '你说：“还在。小七守着呢。”'] } })) return false;
+  await say('帝城守将残念', '（它放下了枪，很久没说话）……还在。还在就好。');
+  await cine('原始帝城，是很久很久以前，九天十地所有人的城。<br>后来黑暗来了。城守不住了。<br>七王带着一群人，退到了城外一道关——帝关——继续守。<br><b>城里的人跑了。七王没跑。</b>', 'mem');
+  await cine('跑掉的人活了下来，成了长生世家，成了道统，成了九天十地的主人。<br>没跑的人，死了。<br>他们的孩子被叫做——<b>罪血</b>。<br>因为只有说他们是罪人，跑掉的人，才不是逃兵。', 'mem');
+  await nar('你站在原始帝城的城门下，很久没有动。三藏在你身后，第一次没有念经。');
+  await me('……我要回帝关。');
+  learnGongfa('yuanshi'); F().yuanshiDone = 1; gainExp(BAL.expNext(C.lv) * 0.5);
+  tip('仙域古城往东，有一条回帝关的路。');
+}
+async function S_back() {
+  await nar('你回到帝关的时候，没人认得你了。你瘦得像一根柴火棍，脚上全是黑水泡烂的疤，身上的修为——斩我境后期。比你走的时候，高了一大截。');
+  await say('qiwanghou', '（小七在七王祠门口添灯油，抬头看见你，灯油壶“哐当”一声掉在了地上）……你、你……');
+  await me('我吃过饭了。');
+  await nar('小七冲过来，一头撞进你怀里，哭得像个孩子——他本来就是个孩子。他怀里，还抱着那只烂木盒子。一百年了，他一直抱着。');
+  await say('mengtz', '（孟天正从城头上走下来，背上的旧剑一晃一晃。他走到你面前，看了你很久）……瘦了。');
+  await nar('你后来才知道：孟天正出关那天，听说你被交了出去，一句话没说，提着剑就去了金家。金家的长老倒了一地。然后他去了王家，跟王长生打了一架，打得王家下了一道令——谁也不许再动你。');
+  await me('……孟老。');
+  await say('mengtz', '叫师父。（他别过脸去）……你在异域那一百年，我天天在城头上看。看边荒那一边，看你会不会回来。');
+  const c = await choose(['……师父。', '我回来了。', '师父，帝关的饭还是那么难吃吗？']);
+  if (c === 2) await say('mengtz', '（他愣了一下，然后笑出了眼泪）……还是那么难吃。走，吃饭去。');
+  else await say('mengtz', '（他拍了拍你的肩膀，拍得很重）……好。好。');
+  F().back = 1; gainExp(BAL.expNext(C.lv) * 0.3);
+  tip('孟天正说，最近边荒那边太安静了。安静得不对劲。上<b>城头</b>看看。');
+}
+
+/* ================= 石昊's story, volume 12 (天庭) and volume 13 (帝落) =================
+   Beats follow the novel's later stages as summarised by readers: at the peak of 至尊 he rules 九天, destroys the 残仙 hiding
+   beneath it and founds the 天庭; he goes to the 堤坝 and looks out over the 界海; in 仙域 he reaches the combat power of a
+   true immortal, beats the heirs of the 仙王 and goes through the 造化之门; then the 帝落时代 — he goes up the river of time,
+   lives eight lives backwards, and comes back. The novel tells these stages briefly and at a great scale; the game keeps to
+   that outline, and the scenes in between are written fresh. */
+
+/* ---------------- 第十二卷 · 天庭 ---------------- */
+async function S_v12start() {
+  await cine('<div class="cc"><small>第十二卷</small><b>天庭</b><i>下一次黑暗来的时候</i></div>', 'card');
+  await chapterCard('第二十六章', '天庭', '站在一起');
+  await say('chief', '（族长坐在柳神的树桩旁边，晒着太阳）……九天太平了？');
+  await me('太平了一阵子。');
+  await say('chief', '一阵子？（他眯着眼睛看你）你这孩子，打完了架，还皱着眉。');
+  await me('九天底下，还有东西在吃九天。帝关外面，还有界海。黑暗不会只来一次。');
+  await say('chief', '那你打算怎么办？一个人，一次一次地去挡？');
+  await nar('你没说话。你想起了帝关，想起了原始帝城——城里的人跑了，七王没跑。');
+  await me('……不能再一个人挡了。得有个地方，让九天十地站在一起。');
+  await say('chief', '（他笑了，皱纹挤成一团）那就去立一个。吃饱了再去。');
+  F().v12 = 1;
+  tip('九天之巅西边，有一座<b>残仙墓</b>。先把那个吃九天的东西清掉。');
+}
+async function S_canxian() {
+  await nar('残仙墓里有呼吸声，很慢，很深。墓底下躺着一个东西——它曾经是仙，现在只剩一半。另一半，是它从九天吸来的灵气、寿元、和人。');
+  await say('残仙', '……又一个至尊。（它睁开一只眼睛）九天的至尊，我吃过十七个。你是第十八个。');
+  if (!await fightRetry({ mobs: [['canxiantu', slv(72)], ['canxiantu', slv(72)]], title: '残仙墓 · 信徒' })) return false;
+  if (!await fightRetry({ mobs: [['canxian', slv(74, -1, 1)]], title: '残仙墓 · 残仙', epic: { name: '残仙', sub: '靠吃九天活着的仙', seal: '残仙', intro: ['它吃过十七个至尊。', '你是第十八个——它是这么想的。'], phase: '残仙张开嘴，九天的灵气全往它嘴里灌！', low: { who: '孟天正', t: '“……这辈子，没成仙啊。”<br>（师父。仙要是长这样，不成也罢。）' }, end: ['残仙散了。', '九天的灵气，第一次没有往地底下流。'] } })) return false;
+  F().canxian = 1; gainExp(BAL.expNext(C.lv) * 0.5);
+  tip('天门东边，那片空地——在那里立<b>天庭</b>。');
+}
+async function S_tianting() {
+  await nar('你在天门东边那片空地上，立了一根柱子。就一根。');
+  await say('qidaolin', '（齐道临挤过来，胡子都白了）徒弟，这……这就是天庭？');
+  await me('嗯。不收钱，不分家，谁来都行。黑暗来的时候，站到这根柱子下面来。');
+  await nar('第一天，没人来。第二天，小七带着帝关活下来的那几个孩子来了，站到了柱子下面。第三天，三藏和神冥来了。第四天，石毅来了，什么都没说，站在了你旁边。');
+  await nar('第十天，柱子下面站满了人。有九天的，有十地的，有下界的。大壮带着石村八百兵，扛着石锁，挤在最后面。');
+  await say('qidaolin', '（他抹了一把眼睛）……为师这辈子，就盼着至尊道场能热闹起来。没想到，热闹成这样。');
+  await cine('那一天，九天十地，<b>第一次站在了一起</b>。<br>没有人叫它“罪血的天庭”。<br>他们叫它——<b>天庭</b>。');
+  F().tiantingDone = 1; gainExp(BAL.expNext(C.lv) * 0.3);
+  tip('仙域的界海之滨往西，是<b>堤坝</b>。去看看界海。');
+}
+async function S_dam() {
+  await nar('堤坝很长很长，长得看不到头。坝上站着守坝的人，一个隔一个，都朝着外面。');
+  await nar('外面是界海。海是黑的，没有边，海上漂着一片一片的东西——你走近了才看清，那是死掉的世界，像枯叶一样。');
+  await say('守坝的老人', '新来的？（他头也不回）别往海里看太久。看久了，你会觉得，我们这一片，也不过是一片叶子。');
+  if (!await fightRetry({ mobs: [['jieling', slv(73)], ['jieling', slv(73)], ['jieling', slv(73)]], title: '堤坝 · 黑暗生灵' })) return false;
+  await nar('黑暗生灵退回了海里。你站在坝上，看着那片黑，看了很久。');
+  await me('……那边，有什么？');
+  await say('守坝的老人', '有很多帝。有很多死了的帝。还有一个，最黑的。（他终于转过头来，看了你一眼）你会去的。迟早。');
+  F().dam = 1; gainExp(BAL.expNext(C.lv) * 0.3);
+  tip('去<b>仙域古城</b>。仙王的后人们，听说了一个从下界爬上来的人。');
+}
+async function S_xwhy() {
+  await chapterCard('第二十七章', '造化', '真仙');
+  await nar('仙域古城里，来了一群年轻人。他们走路的样子，跟你在上界见过的所有人都不一样——他们的爹，都是仙王。');
+  await say('仙王后裔', '你就是那个下界来的？罪血？（他笑了，笑得很好看）仙域不收罪血。你走吧，我不跟你打。');
+  await me('不打？');
+  await say('仙王后裔', '跟你打，赢了没面子，输了……（他想了想）我不会输。');
+  if (!await fightRetry({ mobs: [['xwhy', slv(75, -1, 1)]], title: '仙域古城 · 仙王后裔', epic: { name: '仙王后裔', sub: '他的父亲，是一位仙王', seal: '仙王', intro: ['他从生下来就没输过。'], phase: '他身后浮出了他父亲的法相——一位仙王的影子！', low: { who: '族长', t: '“吃饱了再打！”' }, end: ['他输了。', '他坐在地上，看着自己的手，很久没说话。然后他笑了：“……原来，输是这种感觉。”'] } })) return false;
+  F().xwhyDone = 1; gainExp(BAL.expNext(C.lv) * 0.4);
+  tip('仙域古城北边，是<b>造化之门</b>。');
+}
+async function S_zaohua() {
+  await nar('造化之门很高，门缝里漏出来的光比太阳还亮。门前躺着很多骨头——没走出来的人。');
+  if (!await fightRetry({ mobs: [['zaohua', slv(75, -1, 1)]], title: '造化之门 · 守灵', epic: { name: '造化之门守灵', sub: '过了它，就是真仙', seal: '造化', intro: ['门前那些骨头，都是想过去的人。'], phase: '门里伸出了无数只手，要把你拖进去！', end: ['守灵让开了。', '门，开了一道缝。'] } })) return false;
+  await cine('你走进了造化之门。<br>门里没有路，只有光。<br>光把你拆开，又拼起来。拆了九次，拼了九次。<br>你走出来的时候，第一次觉得——<b>天，没那么高了</b>。');
+  learnGongfa('zhenxian'); F().v12end = 1; gainExp(BAL.expNext(C.lv) * 0.5);
+  await cine('<div class="cc"><small>第十二卷</small><b>天庭</b><i>完</i></div>', 'card');
+  tip('造化之门北边，有一条看不见源头的河——<b>时光长河</b>。境界可以突破到<b>仙王境</b>了。');
+}
+
+/* ---------------- 第十三卷 · 帝落 ---------------- */
+async function S_v13start() {
+  await cine('<div class="cc"><small>第十三卷</small><b>帝落</b><i>往上游走，活八辈子</i></div>', 'card');
+  await chapterCard('第二十八章', '帝落', '时光长河的上游');
+  await nar('时光长河里流的不是水，是时间。你踩进去，河水往回流——你看见了昨天，看见了去年，看见了石村那棵还没被雷劈的柳树。');
+  await nar('你往上游走。走了很久很久。河两边的天，一点一点地暗下去。');
+  await cine('你走到了一个时代。<br>那个时代的天上，所有的帝星，都在往下掉。<br>人们管它叫——<b>帝落时代</b>。');
+  F().v13 = 1;
+  tip('往北，<b>帝落古战场</b>。');
+}
+async function S_dlAge() {
+  await nar('帝落古战场上的兵，盔甲上刻着你不认得的字。他们看见你，愣了一下，然后举起了矛——在这个时代，你是一个不该出现的人。');
+  if (!await fightRetry({ mobs: [['diluobing', slv(77)], ['diluobing', slv(77)], ['shiguang', slv(77)]], title: '帝落古战场' })) return false;
+  await nar('一个老兵倒在你面前，看着你的脸，忽然笑了：“……你长得，像我们那个时代的一个传说。”');
+  await me('什么传说？');
+  await say('帝落古兵', '一个从下面爬上来的孩子。（他闭上了眼睛）……他们说，他会回来的。');
+  F().dlAge = 1; gainExp(BAL.expNext(C.lv) * 0.4);
+  tip('长河东边，<b>八世轮回</b>。');
+}
+async function S_lives() {
+  await chapterCard('第二十九章', '八世', '一世一世地活回去');
+  await cine('第一世，你是一个铁匠。打了一辈子刀，没打过一架。<br>第二世，你是一个将军。守了一辈子城，城没破。<br>第三世，你是一个乞丐，在一座很大的城门下，看着一个被吊着的人。', 'mem');
+  await cine('第四世，你是一棵树。<br>第五世，你是一个母亲，抱着孩子在一个池子边跪了三天。<br>第六世，你是一个守坝的人，一辈子没回过头。', 'mem');
+  await cine('第七世，你是一个老人，坐在一个小村子的树桩边，等一个孩子回家。<br>……<br>第八世——<b>它来了</b>。', 'mem');
+  await say('前世之敌', '每一世，我都会找到你。（一个看不清脸的影子站在你面前）上一世，我杀过你一次。这一世——');
+  if (!await fightRetry({ mobs: [['qianshi', slv(79, -1, 1)]], title: '八世轮回 · 前世之敌', epic: { name: '前世之敌', sub: '每一世都会遇见的那个人', seal: '宿命', intro: ['它说，上一世，它杀过你一次。'], phase: '它说：“上一世，我杀过你一次。”', low: { who: '你娘', t: '“昊儿，活下去。”<br>（那是第五世的你，跪在池子边上，说给自己听的话。）' }, end: ['宿命，断了。', '八世的你，同时睁开了眼睛。'] } })) return false;
+  learnGongfa('baxi'); F().baxi = 1; gainExp(BAL.expNext(C.lv) * 0.5);
+  tip('<b>长河尽头</b>在北边。该回去了。');
+}
+async function S_dlEnd() {
+  await nar('长河尽头有一盏很亮的灯——那是你出发的地方。可在灯和你之间，压着一片很大很大的黑。');
+  await say('万古之劫', '……活了八世的人。（那片黑说话了）你回不去的。你会被冲回第一世，永远在河里打转。');
+  if (!await fightRetry({ mobs: [['wangujie', slv(80, -1, 1)]], title: '长河尽头 · 万古之劫', epic: { name: '万古之劫', sub: '帝落时代压在所有人头顶的劫', seal: '万古', intro: ['八世的你，都站在你身后。'], phase: '时光长河在你脚下倒流——它要把你冲回第一世！', low: { who: '族长', t: '（第七世的你，坐在树桩边，等一个孩子回家。<br>那个孩子，得回去。）' }, end: ['劫，散了。', '你跳进了那盏灯里。'] } }, '长河把你冲了回去。你站起来——第九次。')) return false;
+  await cine('你回来的时候，九天十地，已经过去了很久很久。<br>天庭还在。那根柱子，被人摸得发亮。<br>石村还在。村口的石头上，刻满了一代一代孩子的名字。<br><b>你回来了。</b>');
+  F().v13end = 1; gainExp(BAL.expNext(C.lv) * 0.6);
+  await cine('<div class="cc"><small>第十三卷</small><b>帝落</b><i>完</i></div>', 'card');
+  tip('有人从异域那边带回来一个消息——关于一个很久以前被抓走的人。境界可以突破到<b>准仙帝</b>了。');
+}
+
+/* ================= 石昊's story, volume 14 (异域之战) and volume 15 (独断万古) =================
+   Beats follow the novel's final stages as summarised by readers: he goes into 异域, frees 火灵儿 (taken long ago; her spirit
+   sleeps), kills a 准不朽之王, and three 仙王 ambush him and his body falls — 他化自在大法 carries him through; he brings the
+   dark 柳神 back out of the 界海; he kills 赤王 in the 界海 / 异域 while more than a dozen 仙王 close in, uses 他化自在 bodies
+   and blows up the pair's weapons to get away; he beats 鲲帝, chases him into 异域 and is wounded by the 原始古器's dark
+   matter; at the great battle in 仙域 he breaks through to 准仙帝 and kills 刀王, 蒲魔王, 九头魔, 无殇, then goes into 异域 and
+   kills 鲲帝 and 屈冲 — 异域 is pacified. In the 界海 he fights three emperors, holds down the four dark emperors, is killed in
+   its depths by the 尸骸仙帝, becomes 仙帝 through 他化自在大法 and kills him; he wakes 火灵儿; with one stroke he cuts the
+   river of time — 独断万古 — and keeps the darkness of 上苍之上 away from home. Prose is written fresh for the game. */
+
+/* ---------------- 第十四卷 · 异域之战 ---------------- */
+async function S_v14start() {
+  await cine('<div class="cc"><small>第十四卷</small><b>异域之战</b><i>这一次，是你打过去</i></div>', 'card');
+  await chapterCard('第三十章', '火灵儿', '封印里的一点火');
+  await nar('消息是三藏带回来的。他说，异域深处有一座封印，准不朽之王守着。封印里关着一个人——很久以前，从下界的火国被抓走的。');
+  await nar('你在帝关城头上站了一夜。第二天早上，你一个人，走进了异域。');
+  await nar('封印里有一点火光。很小，很倔。你走近了，看见了一张很熟悉的脸——红衣服，眼睛闭着，像睡着了。');
+  await me('……火灵儿。');
+  await say('准不朽之王', '（封印前站起来一个人，身上亮着不朽的光）九天十地的仙王？来救她？她的魂早就睡死了。你救回去的，只是一具身子。');
+  if (!await fightRetry({ mobs: [['zbx', slv(82, -1, 1)]], title: '异域封印地 · 准不朽之王', epic: { name: '准不朽之王', sub: '守着封印 · 就差一步不朽', seal: '不朽', intro: ['封印里，有一点火光。', '很小，很倔。'], phase: '他身上亮起了不朽的光——就差一步，他就是不朽之王！', low: { who: '火灵儿', t: '“喂！你答应过请我吃烤肉的！”<br>（那是很多很多年以前，百断山里的声音。）' }, end: ['准不朽之王倒下了。', '封印碎了。'] } })) return false;
+  await nar('你把火灵儿从封印里抱出来。她很轻，很凉。你把她背在背上，往回走。');
+  await nar('走到一半，天上亮起了三道光。三位异域仙王，同时出手——');
+  await fight({ mobs: [['sanxw', 95], ['sanxw', 95], ['sanxw', 95]], title: '异域 · 三仙王伏击', noLose: true, noPet: true, epic: { name: '三位仙王', sub: '他们等了你很久', seal: '伏击', intro: ['三道光，从三个方向。'], phase: '你护着背上的人，只能硬接。' } });
+  await cine('你的身子，碎了。<br>可在碎掉的那一刻，你想起了一门很老的法——<b>他化自在</b>。<br>一个你倒下去，就有另一个你站起来。<br>你从三位仙王的眼皮底下，背着火灵儿，<b>走了出来</b>。');
+  learnSkill('tahua'); F().huoling = 1; gainExp(BAL.expNext(C.lv) * 0.5);
+  tip('你把火灵儿安顿在天庭。她的魂还睡着。……还有一个人，在<b>界海</b>里等你。');
+}
+async function S_liushenBack() {
+  await nar('界海上漂着死掉的世界。在一片最大的枯叶上，长着一棵柳树——黑色的，枝条垂进海里。');
+  await nar('你一眼就认出了它。');
+  await me('……柳神。');
+  await nar('黑柳的枝条动了动，慢慢地抬起来，像小时候那样，在你额头上点了一下。很凉。');
+  await say('willow', '（柳神的声音很轻，像风吹过枯叶）……长大了。');
+  await cine('你小时候爬它的树掏鸟窝，摔下来，它接住你。<br>它被雷劈焦了，只剩一根绿枝，护了整个石村。<br>七神下界那天，它走了，去挡更大的东西。<br>它在界海里，挡了很久很久。<b>挡黑了</b>。');
+  const c = await choose(['跟我回家。', '……这些年，你一个人？']);
+  if (c === 1) await say('willow', '……不是一个人。（黑色的柳枝指了指界海深处）还有很多守坝的人。只是他们，都没回去。');
+  await say('willow', '（柳枝缠住了你的手腕）……走吧。');
+  F().liushenBack = 1; gainExp(BAL.expNext(C.lv) * 0.4);
+  tip('赤王听说你杀了他的后人，又闯了异域。他在<b>异域城门</b>等你——你被吊过的那座城门。');
+}
+async function S_chiwang() {
+  await chapterCard('第三十一章', '仙王', '三场仙王之战');
+  await nar('异域城门上，还留着那根勒过你的绳子。城门下站着赤王，一身赤红，像一团烧了几十万年的火。');
+  await say('赤王', '我的后人，在你手里跪过。（他看着你）那座城门，你还记得吗？');
+  await me('记得。我还记得，是谁在下面笑。');
+  if (!await fightRetry({ mobs: [['chiwang', slv(83, -1, 1)]], allies: ['a_liushen'], title: '异域城门 · 赤王', epic: { name: '赤王', sub: '异域仙王 · 他的后人在你手里跪过', seal: '赤王', intro: ['城门上那根绳子，还在风里晃。'], phase: '又有仙王赶来了——八个，十个，越来越多！', low: { who: '小七', t: '“我们守城，从来不回头看。”' }, end: ['你斩下了赤王的头。', '十几位异域仙王，围了上来。'] } })) return false;
+  await cine('他化自在。<br>一个你，两个你，十个你——每一个，都是仙王。<br>你引爆了赤王的兵器，把他的尸身朝追兵砸了过去。<br>然后，你转身，<b>回了仙域</b>。');
+  F().chiwangDone = 1; gainExp(BAL.expNext(C.lv) * 0.4);
+}
+async function S_kundiChase() {
+  await nar('鲲帝来了。异域真正的主人，自称异域第一。他在界海上拦住你，身后跟着异域所有的仙王。');
+  await say('鲲帝', '赤王死在你手里。……你知道异域死一个仙王，要多少年才能补回来吗？');
+  await me('帝关死了多少人，你知道吗？');
+  await fight({ mobs: [['kundi', 84]], title: '界海 · 鲲帝', noLose: true, epic: { name: '鲲帝', sub: '异域第一 · 这一次，你追着他打', seal: '鲲帝', intro: ['你追着他，从界海打进了异域。'], phase: '鲲帝祭出了原始古器，黑色的物质从器里涌了出来！' } });
+  await cine('你打得鲲帝节节后退，一路追进了异域。<br>大罗剑胎斩下去的那一刻，原始古器里涌出了黑色的物质——<br>它咬在你身上，像界海里的黑一样，往骨头里钻。<br>你退了。<b>十几位仙域的仙王</b>冲进界海，把你接了回去。');
+  F().kundiWar = 1; gainExp(BAL.expNext(C.lv) * 0.4);
+  tip('伤还没好，界海和异域的巨头就打到了<b>仙域古城</b>下。');
+}
+async function S_xianwar() {
+  await nar('仙域古城下，界海来的巨头和异域的巨头站成了一片：刀王、屈冲、九头魔、无殇、蒲魔王，还有鲲帝和异域所有的仙王。');
+  await nar('仙域这边，能跟他们正面打的巨头，只有寥寥几个：你，还有……一棵黑色的柳树。二十几位仙域仙王，很快就倒了一大半。');
+  await say('willow', '（黑柳的枝条挡在你身前，一根一根地断）……昊儿。你不是一直想看看，自己能走多远吗？');
+  if (!await fightRetry({ mobs: [['daowang', slv(84, -1, 1)]], allies: ['a_liushen'], title: '仙域 · 刀王', epic: { name: '刀王', sub: '界海来的巨头', seal: '刀王', intro: ['他的刀，斩过很多仙王。'], phase: '刀王的刀光把仙域的天劈成了两半！', low: { who: '柳神', t: '“……昊儿。你不是一直想看看，自己能走多远吗？”<br>（你骨头里那根柳枝，长成了一棵树。<b>准仙帝</b>。）' } } })) return false;
+  learnGongfa('zhunxiandi');
+  if (!await fightRetry({ mobs: [['pumo', slv(84, -1, 1)]], allies: ['a_liushen'], title: '仙域 · 蒲魔王', epic: { name: '蒲魔王', sub: '异域巨头', seal: '魔王', intro: ['刀王已经倒下了。'], phase: '蒲魔王身后升起一片魔海！' } })) return false;
+  await cine('刀王倒了。蒲魔王倒了。<br>九头魔想跑，被你一把扯了回来。<br>无殇，也倒了。<br>仙域的天，被你一个人，撑住了。');
+  F().xianwar = 1; gainExp(BAL.expNext(C.lv) * 0.5);
+  tip('鲲帝逃回了异域。<b>鲲帝城</b>在异域封印地北边。这一次，你打过去。');
+}
+async function S_kundiEnd() {
+  await nar('鲲帝城的城墙，是用一条鲲的骨头搭的。城门开着。鲲帝站在城中间，身边只剩下屈冲。');
+  await say('鲲帝', '……你赢不了的。异域的根，你拔不干净。');
+  await me('我不拔根。我只是要你们，别再往帝关那边看。');
+  if (!await fightRetry({ mobs: [['kundi', slv(84, -1, 1)]], allies: ['a_liushen'], title: '鲲帝城 · 鲲帝', epic: { name: '鲲帝', sub: '异域第一 · 最后一次', seal: '鲲帝', intro: ['他身边，只剩下屈冲。'], phase: '鲲帝祭出了原始古器——这一次，你没有退！', low: { who: '孟天正', t: '“帝关……还在。”<br>（师父，异域，从今天起，再也不会往那边看了。）' }, end: ['鲲帝倒下了。屈冲也倒下了。', '异域剩下的仙王，跪了一地。'] } })) return false;
+  await cine('那一天以后，异域平了。<br>天下没有人，再敢跟你动手。<br>帝关的城头上，小七——现在是一个白胡子老人了——把七王祠的门匾，又擦了一遍。');
+  F().v14end = 1; gainExp(BAL.expNext(C.lv) * 0.6);
+  await cine('<div class="cc"><small>第十四卷</small><b>异域之战</b><i>完</i></div>', 'card');
+}
+
+/* ---------------- 第十五卷 · 独断万古 ---------------- */
+async function S_v15start() {
+  await cine('<div class="cc"><small>第十五卷</small><b>独断万古</b><i>最后一剑</i></div>', 'card');
+  await chapterCard('第三十二章', '界海', '最黑的那一个');
+  await nar('异域平了，可黑暗没有停。它从界海深处来，一波一波，比异域更深，更冷。');
+  await nar('你站在堤坝上，回头看了一眼。天庭的柱子下面站满了人；火灵儿睡在天庭最高的那间屋子里，她的魂还没回来；柳神的黑枝条缠在你的手腕上。');
+  await say('willow', '……去吧。我替你看着家。');
+  await nar('你跳进了界海。');
+  await cine('你在界海里，和三位帝打了三万年。<br>三万年，你没有回过一次头。<br>黑暗四帝从界海的四个方向压过来——你把它们，一个一个，按回了海底。');
+  if (!await fightRetry({ mobs: [['heiandi', slv(84, -1, 1)]], allies: ['a_liushen'], title: '界海 · 黑暗之帝', epic: { name: '黑暗之帝', sub: '黑暗四帝之一', seal: '黑暗', intro: ['三万年。', '你还站着。'], phase: '黑暗之帝张开了界海——整片海都是它的身子！', low: { who: '族长', t: '“吃饱了再打！”<br>（族长，三万年了。我还记得。）' }, end: ['最后一位黑暗之帝，沉进了海底。'] } })) return false;
+  F().heiandiDone = 1; gainExp(BAL.expNext(C.lv) * 0.5);
+  tip('黑暗的源头，在<b>界海深处</b>。');
+}
+async function S_shihai() {
+  await chapterCard('第三十三章', '独断万古', '一剑');
+  await nar('界海深处的黑，是有重量的。黑的最中间，坐着一个人——不，一具尸骸。它是仙帝。它是所有黑暗的源头。');
+  await say('尸骸仙帝', '……准仙帝。（它的声音像是从很多很多个时代同时传过来）你走得很远了。可惜，到这里为止。');
+  await fight({ mobs: [['shihai0', 120]], title: '界海深处 · 尸骸仙帝', noLose: true, noPet: true, epic: { name: '尸骸仙帝', sub: '黑暗的源头', seal: '仙帝', intro: ['它抬起了一根手指。'], phase: '那一根手指，压下来的是整个界海。' } });
+  await cine('你死了。<br>这一次，是真的死了。<br>身子碎了，元神碎了，连名字，都快要被黑暗吞掉了。');
+  await cine('很远很远的地方，有一棵黑色的柳树，枝条在风里响。<br>天庭的柱子下面，有很多人在喊一个字。<br>石村的村口，有一块石头，刻着“小不点”。<br>天庭最高的那间屋子里，一个睡了很多年的姑娘，手指动了一下。', 'mem');
+  await cine('他化自在。<br>你从每一个记得你的人心里，<b>化了回来</b>。<br>一个你，两个你，千千万万个你——<br>合成了一个。<br><b>仙帝。</b>');
+  learnGongfa('xiandi'); F().xiandi = 1; gainExp(BAL.expNext(C.lv) * 0.6);
+  await say('尸骸仙帝', '……不可能。我杀了你。');
+  await me('你杀了一个。可记得我的人，太多了。');
+  if (!await fightRetry({ mobs: [['shihai', slv(85, -1, 0)]], allies: ['a_liushen'], title: '界海深处 · 尸骸仙帝', epic: { name: '尸骸仙帝', sub: '黑暗的源头 · 他杀过你一次', seal: '仙帝', intro: ['它杀过你一次。', '这一次，你是仙帝。'], phase: '尸骸仙帝把整个界海的黑暗都收了回来，压在你一个人身上！', low: { who: '火灵儿', t: '“……喂。你答应过请我吃烤肉的。”<br>（这一次，不是回忆。是她的声音。她醒了。）' }, end: ['尸骸仙帝，碎成了灰。', '界海的黑，第一次，淡了。'] } }, '黑暗把你压回了海底。你又站了起来——你已经死过一次了，不怕第二次。')) return false;
+  F().shihaiDone = 1;
+}
+async function S_duduan() {
+  await nar('你从界海里走出来的时候，堤坝上站满了人。火灵儿站在最前面，红衣服在风里响。她瘦了很多，眼睛却还是那么亮。');
+  await say('huolinger', '……你答应过请我吃烤肉的。欠了多少年了？');
+  await me('（从怀里掏出一块烤肉）一直揣着。');
+  await nar('她看着那块烤肉，“噗”地笑了，眼泪一下子掉了下来。');
+  await say('huolinger', '……凉了。');
+  await nar('可你知道，事情还没完。尸骸仙帝只是黑暗在这一边的根。界海的更上面——上苍之上——还有更大的黑，迟早会顺着时光长河流下来，流到九天十地，流到下界，流到石村。');
+  await say('willow', '（柳神的黑枝条轻轻缠住了你的手腕）……你想好了？');
+  await me('想好了。');
+  const c = await choose(['（拔出剑）', '（最后看一眼石村的方向）']);
+  if (c === 1) await cine('你最后看了一眼石村的方向。<br>村口的石头上，刻着一代一代孩子的名字。<br>最上面那个，是“小不点”。');
+  await cine('你一剑斩下去。<br>斩的不是人，不是帝，<br>是时光长河。<br><b>独断万古。</b>');
+  await cine('长河断成了两截。<br>这一边，是九天十地，是下界八域，是石村。<br>那一边，是上苍之上，是所有的黑。<br>只要你站在断口上，<b>黑就流不过来</b>。');
+  learnSkill('duduan');
+  await nar('你要去那一边了。去上苍之上，守着那道断口。');
+  await nar('跟你一起走的，有一棵黑色的柳树，一个穿红衣服的姑娘，一只烂木盒子——你一直没打开它，你觉得，等到了那边，就是打开它的时候了。');
+  await say('dazhuang', '（大壮的孙子的孙子的孙子，站在石村村口，冲着天大喊）小不点——！吃饱了再走——！');
+  await me('（你笑了）……吃饱了。');
+  F().v15end = 1; gainExp(BAL.expNext(C.lv) * 0.6);
+  go('jh_top', false, true);
+  await cine('很多很多年以后，石村的孩子们，还在村口举石锁。<br>举不动的时候，大人就会指着天上说：<br><b>“很久以前，有个小不点，也举不动。”</b>');
+  await cine('<div class="cc"><small>完美世界 · 石昊篇</small><b>全书完</b><i>谢谢你陪他走完这一路</i></div>', 'card');
+  await nar('主线到这里就结束了。你还可以回到下界、上界、九天十地、仙域和界海的任何地方走走，挑战虚神界，把宝术都练到圆满，合成更强的宝术。');
 }
 
 /* ================= the wild: events while exploring (some open as your realm grows, some only at night),
    and the 骨文 memory game used when 石昊 reads a 宝术 off its runes ================= */
 const WILD = [
+  { id: 'yy_stone', once: 1, title: '城门下的饼', when: P => P.area === 'yiyu' && C.story.q >= qi('q_yyarena') && C.story.q < qi('q_yyfalls'), scene: async () => {
+    await nar('夜里，一个异域的小孩偷偷溜到城门下，往上扔了一块饼。饼砸在你的额头上，掉了下去。');
+    await nar('他又扔了一块。这回你张嘴接住了。');
+    await say('异域小孩', '（他小声说）我娘说你是坏人。……可坏人为什么不哭？');
+    const c = await choose(['因为哭了，饼就掉了。', '……谢谢你的饼。']);
+    if (c === 0) await nar('小孩“噗”地笑了，捂着嘴跑了。');
+    else await nar('小孩愣了一下，跑远了。第二天夜里，他又来了。');
+    gainExp(BAL.expNext(C.lv) * 0.1); } },
+  { id: 'dl_lamp', once: 1, title: '长河里的灯', when: P => P.area === 'diluo', scene: async () => {
+    await nar('时光长河里漂过来一盏灯。灯里有一个小小的村子，村口有一群孩子在举石锁。其中最小的那个，举不动，在哭。');
+    await nar('你伸手想去摸那盏灯。灯从你指缝里漂走了。');
+    await me('……别哭。以后会举起来的。');
+    gainExp(BAL.expNext(C.lv) * 0.1); give('baoyao', 2); } },
+  { id: 'jh_leaf', once: 1, title: '一片叶子', when: P => P.area === 'jiehai' && C.story.q >= qi('q_kundi2'), scene: async () => {
+    await nar('界海上漂过来一片很小的枯叶——一个死掉的世界。叶子上，还有一棵很小很小的树，树上，还有一点绿。');
+    const c = await choose(['（把它推回岸边）', '（把它捧起来，带回天庭）']);
+    if (c === 1) { await nar('你把它捧回了天庭，放在那根柱子下面。第二天，那一点绿，长大了一点。'); F().leaf = 1; }
+    else await nar('你把它推回了岸边。它在岸边停住了，没有再往黑里漂。');
+    gainExp(BAL.expNext(C.lv) * 0.1); give('baoyao', 2); } },
   { id: 'sq_qilin', once: 1, title: '八珍麒', when: P => P.area === 'sanqian' && C.story.q >= qi('q_arena'), scene: async () => {
     await nar('一头小小的麒麟从草丛里钻出来，浑身的毛是八种颜色。它蹭了蹭你的腿，然后叼走了你手里的干饼。');
     await me('……喂！');
@@ -3735,7 +4291,7 @@ const WILD = [
     await nar('画的旁边刻着一行小字。你认不全，只认出了几个：“……留给……下一个纪元……的孩子……”');
     await me('……那就是我们。');
     await nar('你在那面墙前面站了一会儿，把手按在了画上。墙是热的。'); gainExp(BAL.expNext(C.lv) * 0.12); } },
-  { id: 'dg_letter', once: 1, title: '没寄出去的信', when: P => P.area === 'diguan' && C.story.q >= qi('q_bianhuang'), scene: async () => {
+  { id: 'dg_letter', once: 1, title: '没寄出去的信', when: P => P.area === 'diguan' && C.story.q >= qi('q_bianhuang') && C.story.q < qi('q_betray'), scene: async () => {
     await nar('城头的一块砖缝里，塞着一封信。信封上写着：“给娘”。没有寄出去。');
     await nar('你认得那个字迹——是那个说打完这一仗就回家成亲的少年。');
     const c = await choose(['（收好，等太平了替他寄回去）', '（放回砖缝里）']);
@@ -3935,7 +4491,7 @@ function achCheck() { if (!C || NETROLE === 'guest') return; C.ach = C.ach || {}
 function setTitle(id) { C.title = C.title === id ? '' : id; sfx('click'); save(); refresh(); }
 
 /* ---------- 传送 (阁主's jade token, after joining 补天阁) ---------- */
-const TP = [{ id: 'sc_street', n: '石村' }, { id: 'bt_court', n: '补天阁内院' }, { id: 'bd_gate', n: '百断山口' }, { id: 'sg_market', n: '石国皇都' }, { id: 'sg_hou', n: '荒天侯府' }, { id: 'hg_city', n: '火国皇城' }, { id: 'bz_camp', n: '百族营地' }, { id: 'sj_town', n: '上界 · 天仙城' }, { id: 'sq_town', n: '三千州 · 争霸城' }, { id: 'dg_city', n: '帝关城' }, { id: 'jt_gate', n: '九天 · 天门' }, { id: 'xs_hall', n: '虚神界（神魂过去）' }];
+const TP = [{ id: 'sc_street', n: '石村' }, { id: 'bt_court', n: '补天阁内院' }, { id: 'bd_gate', n: '百断山口' }, { id: 'sg_market', n: '石国皇都' }, { id: 'sg_hou', n: '荒天侯府' }, { id: 'hg_city', n: '火国皇城' }, { id: 'bz_camp', n: '百族营地' }, { id: 'sj_town', n: '上界 · 天仙城' }, { id: 'sq_town', n: '三千州 · 争霸城' }, { id: 'dg_city', n: '帝关城' }, { id: 'jt_gate', n: '九天 · 天门' }, { id: 'xy_city', n: '仙域古城' }, { id: 'jt_court', n: '天庭' }, { id: 'xs_hall', n: '虚神界（神魂过去）' }];
 const canTeleport = () => !!C.story.f.joined && (PLACES[C.loc].town || C.loc === 'bd_gate');
 async function teleport() { if (!canTeleport() || STATE.scene || STATE.battle || STATE.dungeon) return; const L = TP.filter(t => t.id !== C.loc && placeOpen(t.id)); if (!L.length) return; let to = null;
   await runScene(async () => { const c = await dlgChoose([...L.map(t => ({ t: '🌀 ' + t.n })), { t: '算了' }], '玉符在掌心微微发烫。去哪儿？'); if (c < L.length) to = L[c].id; });
@@ -4277,134 +4833,162 @@ const CHATTER = [
   { at: '*', pet: 'ertuzi', who: '二秃子', t: '（二秃子在你手心里睡着了，打着很小很小的呼噜。）' },
   { at: '*', pet: 'ertuzi', who: '二秃子', t: '（二秃子背上好像冒出了一根很细很细的绒毛。你们一起盯着它看了很久。）' },
   // 石国 · 皇都
-  { at: 'sg_gate', from: 'q_sgmarket', to: 'q_v3end', who: '守门的兵', t: '……荒、荒天侯？（他把长枪往身后一藏）小的眼拙，上回那三块灵石，您千万别往心里去。' },
-  { at: 'sg_gate', from: 'q_sgmarket', to: 'q_v3end', who: '进城的商队', t: '城外那头九个脑袋的狮子，是谁家的？它冲我们的骆驼笑了一下，骆驼当场跪了。' },
+  { at: 'sg_gate', from: 'q_sgmarket', to: 'q_fin', who: '守门的兵', t: '……荒、荒天侯？（他把长枪往身后一藏）小的眼拙，上回那三块灵石，您千万别往心里去。' },
+  { at: 'sg_gate', from: 'q_sgmarket', to: 'q_fin', who: '进城的商队', t: '城外那头九个脑袋的狮子，是谁家的？它冲我们的骆驼笑了一下，骆驼当场跪了。' },
   { at: 'sg_gate', from: 'q_sgmarket', to: 'q_jiaojun', who: '守门的兵', t: '城门这块石头是从太古神山上搬下来的，刀砍不留印。（你看着它，舔了舔嘴唇）……您不会是想啃吧？' },
-  { at: 'sg_wild', from: 'q_sgarrive', to: 'q_v3end', who: '九头狮', t: '大哥，城外这片林子我巡过了。铁背狼认我当老大了——呃，认您当老大的老大。' },
-  { at: 'sg_wild', from: 'q_sgarrive', to: 'q_v3end', who: '九头狮', t: '我第三个脑袋说想吃城里的糖葫芦。我第七个脑袋说它也想。……大哥，能带九串吗？' },
-  { at: 'sg_wild', from: 'q_sgarrive', to: 'q_v3end', who: '赶路的书生', t: '皇都外的官道修了三百年，每年都修，每年都坑。听说修路的钱，都修进了某几家王府的后院。' },
-  { at: 'sg_market', from: 'q_yuwang', to: 'q_v3end', who: '卖糖人的老头', t: '小兄弟，糖人要什么样的？……九头狮子？那得九根签子。' },
-  { at: 'sg_market', from: 'q_yuwang', to: 'q_v3end', who: '烤肉摊的胖掌柜', t: '你又来了！我这摊子开了二十年，没见过一个人能吃空三个烤架的。……今天给你留了第四个。' },
-  { at: 'sg_market', from: 'q_yuwang', to: 'q_v3end', who: '说书先生', t: '上回书说到，那大荒来的孩子一口咬下雨神法旨——（台下有人喊：“他在这儿呢！”）……今天先讲到这儿。' },
+  { at: 'sg_wild', from: 'q_sgarrive', to: 'q_fin', who: '九头狮', t: '大哥，城外这片林子我巡过了。铁背狼认我当老大了——呃，认您当老大的老大。' },
+  { at: 'sg_wild', from: 'q_sgarrive', to: 'q_fin', who: '九头狮', t: '我第三个脑袋说想吃城里的糖葫芦。我第七个脑袋说它也想。……大哥，能带九串吗？' },
+  { at: 'sg_wild', from: 'q_sgarrive', to: 'q_fin', who: '赶路的书生', t: '皇都外的官道修了三百年，每年都修，每年都坑。听说修路的钱，都修进了某几家王府的后院。' },
+  { at: 'sg_market', from: 'q_yuwang', to: 'q_fin', who: '卖糖人的老头', t: '小兄弟，糖人要什么样的？……九头狮子？那得九根签子。' },
+  { at: 'sg_market', from: 'q_yuwang', to: 'q_fin', who: '烤肉摊的胖掌柜', t: '你又来了！我这摊子开了二十年，没见过一个人能吃空三个烤架的。……今天给你留了第四个。' },
+  { at: 'sg_market', from: 'q_yuwang', to: 'q_fin', who: '说书先生', t: '上回书说到，那大荒来的孩子一口咬下雨神法旨——（台下有人喊：“他在这儿呢！”）……今天先讲到这儿。' },
   { at: 'sg_market', from: 'q_yuwang', to: 'q_zhong', who: '茶楼伙计', t: '雨王府最近在招人看门，工钱给得高。听说上一批看门的，是被一个孩子吓跑的。' },
-  { at: 'sg_market', from: 'q_wuwang', to: 'q_v3end', who: '卖符纸的道人', t: '雨神法旨可不是凡物，吃了是要闹肚子的！……你没闹？那你这肚子，比法旨还硬。' },
-  { at: 'sg_market', from: 'q_invite', to: 'q_v3end', who: '茶楼伙计', t: '武王府的大门换了三回了。第一回被大魔神砸的，第二回被你砸的，第三回……是他们自己吵架砸的。' },
+  { at: 'sg_market', from: 'q_wuwang', to: 'q_fin', who: '卖符纸的道人', t: '雨神法旨可不是凡物，吃了是要闹肚子的！……你没闹？那你这肚子，比法旨还硬。' },
+  { at: 'sg_market', from: 'q_invite', to: 'q_fin', who: '茶楼伙计', t: '武王府的大门换了三回了。第一回被大魔神砸的，第二回被你砸的，第三回……是他们自己吵架砸的。' },
   { at: 'sg_market', from: 'q_invite', to: 'q_shouyan', who: 'leiting', t: '寿宴上坐哪儿是有讲究的。你……算了，你坐哪儿都一样，反正你会往菜最多的那桌挪。' },
-  { at: 'sg_market', from: 'q_jiaojun', to: 'q_v3end', who: '说书先生', t: '各位看官！今日讲“荒天侯大战两尊者”！——那孩子脖子上的小塔一亮，好家伙，天都矮了三尺！' },
-  { at: 'sg_market', from: 'q_jiaojun', to: 'q_v3end', who: '烤肉摊的胖掌柜', t: '我这摊子现在挂了块牌子：“荒天侯吃过”。生意好了三倍。你下回来，记得在门口多站一会儿。' },
-  { at: 'sg_market', from: 'q_houfu', to: 'q_v3end', who: 'leiting', t: '雷族的长老问我，为什么跟一个大荒来的野孩子混在一起。我说：因为他请客。' },
-  { at: 'sg_market', from: 'q_v3', to: 'q_v3end', who: 'leiting', t: '火国那边来信了，说他们的公主最近天天站在城楼上往西看。……你脸红什么？' },
+  { at: 'sg_market', from: 'q_jiaojun', to: 'q_fin', who: '说书先生', t: '各位看官！今日讲“荒天侯大战两尊者”！——那孩子脖子上的小塔一亮，好家伙，天都矮了三尺！' },
+  { at: 'sg_market', from: 'q_jiaojun', to: 'q_fin', who: '烤肉摊的胖掌柜', t: '我这摊子现在挂了块牌子：“荒天侯吃过”。生意好了三倍。你下回来，记得在门口多站一会儿。' },
+  { at: 'sg_market', from: 'q_houfu', to: 'q_fin', who: 'leiting', t: '雷族的长老问我，为什么跟一个大荒来的野孩子混在一起。我说：因为他请客。' },
+  { at: 'sg_market', from: 'q_v3', to: 'q_fin', who: 'leiting', t: '火国那边来信了，说他们的公主最近天天站在城楼上往西看。……你脸红什么？' },
   { at: 'sg_market', from: 'q_dajie', to: 'q_tiangong', who: '茶楼伙计', t: '（压低声音）天上掉下来那帮人，走路都不看地的。昨天有个在我们店里喝茶，喝完说“下界的茶，也就这样”——然后没给钱。' },
-  { at: 'sg_market', from: 'q_qishen', to: 'q_v3end', who: '说书先生', t: '今日不收钱！讲“石皇登基”！……那孩子坐上龙椅说的第一句话是：“给我拿个垫子来。”' },
-  { at: 'sg_market', from: 'q_shengdi', to: 'q_v3end', who: '卖糖人的老头', t: '那天天裂开的时候，我把摊子收了，跪在地上等死。后来天又合上了……老汉我活了七十年，头一回觉得这天，是有人在扛着的。' },
-  { at: 'sg_yuwang', from: 'q_wuwang', to: 'q_v3end', who: '雨王府的门房', t: '（他看见你，转身就把门关上了。门缝里传出一句：“法旨库里没有了！真没有了！”）' },
-  { at: 'sg_yuwang', from: 'q_wuwang', to: 'q_v3end', who: '雨族少年', t: '我们族长把剩下的雨神法旨都锁进了铁箱子，箱子外面又刻了一圈符文，符文外面写着：“石昊勿近”。' },
-  { at: 'sg_wuwang', from: 'q_invite', to: 'q_v3end', who: '武王府的老仆', t: '子腾老爷那天以后，一直坐在祠堂里，不说话，也不吃饭。……小少爷，你别去看他。也别不去。' },
-  { at: 'sg_wuwang', from: 'q_invite', to: 'q_v3end', who: '武王府的小丫鬟', t: '你就是那个石昊？……你比他们说的好看。（她红着脸跑开了，跑了两步又回头）石毅少爷其实……也没那么坏。' },
-  { at: 'sg_wuwang', from: 'q_houfu', to: 'q_v3end', who: '武王府的护卫', t: '府里一半的人跟着你走了。剩下的一半，晚上睡觉都睁着一只眼——怕你半夜回来再砸一回门。' },
-  { at: 'sg_palace', from: 'q_jiaojun', to: 'q_v3end', who: '皇宫侍卫', t: '寿宴那天的烤架，到现在还没洗干净。御膳房说上面那股蛛腿味，怎么都去不掉。' },
+  { at: 'sg_market', from: 'q_qishen', to: 'q_fin', who: '说书先生', t: '今日不收钱！讲“石皇登基”！……那孩子坐上龙椅说的第一句话是：“给我拿个垫子来。”' },
+  { at: 'sg_market', from: 'q_shengdi', to: 'q_fin', who: '卖糖人的老头', t: '那天天裂开的时候，我把摊子收了，跪在地上等死。后来天又合上了……老汉我活了七十年，头一回觉得这天，是有人在扛着的。' },
+  { at: 'sg_yuwang', from: 'q_wuwang', to: 'q_fin', who: '雨王府的门房', t: '（他看见你，转身就把门关上了。门缝里传出一句：“法旨库里没有了！真没有了！”）' },
+  { at: 'sg_yuwang', from: 'q_wuwang', to: 'q_fin', who: '雨族少年', t: '我们族长把剩下的雨神法旨都锁进了铁箱子，箱子外面又刻了一圈符文，符文外面写着：“石昊勿近”。' },
+  { at: 'sg_wuwang', from: 'q_invite', to: 'q_fin', who: '武王府的老仆', t: '子腾老爷那天以后，一直坐在祠堂里，不说话，也不吃饭。……小少爷，你别去看他。也别不去。' },
+  { at: 'sg_wuwang', from: 'q_invite', to: 'q_fin', who: '武王府的小丫鬟', t: '你就是那个石昊？……你比他们说的好看。（她红着脸跑开了，跑了两步又回头）石毅少爷其实……也没那么坏。' },
+  { at: 'sg_wuwang', from: 'q_houfu', to: 'q_fin', who: '武王府的护卫', t: '府里一半的人跟着你走了。剩下的一半，晚上睡觉都睁着一只眼——怕你半夜回来再砸一回门。' },
+  { at: 'sg_palace', from: 'q_jiaojun', to: 'q_fin', who: '皇宫侍卫', t: '寿宴那天的烤架，到现在还没洗干净。御膳房说上面那股蛛腿味，怎么都去不掉。' },
   { at: 'sg_palace', from: 'q_jiaojun', to: 'q_dajie', who: 'huolinger', t: '我、我是来给人皇送寿礼的！顺路！……你别笑！' },
-  { at: 'sg_palace', from: 'q_houfu', to: 'q_v3end', who: '皇宫侍卫', t: '荒天侯，人皇说了，您进宫不用通报。……还说了，您进宫的时候，御膳房要多备二十个人的饭。' },
-  { at: 'sg_field', from: 'q_houfu', to: 'q_v3end', who: '校军场的教头', t: '那天两位尊者砸出来的坑，到现在还在。我们干脆不填了，立了块碑：“荒天侯在此打过架”。' },
-  { at: 'sg_field', from: 'q_houfu', to: 'q_v3end', who: '新兵', t: '教头说，练到能接你一拳，就能当百夫长。我练了三个月……能接你一根手指了。' },
-  { at: 'sg_hou', from: 'q_leiting', to: 'q_v3end', who: 'laozhong', t: '侯爷，库房里的宝药老奴都给您清点好了。……您别一顿吃完啊！' },
-  { at: 'sg_hou', from: 'q_leiting', to: 'q_v3end', who: 'laozhong', t: '老太爷要是知道您现在这样，一定会在门口笑出声来。他笑起来，半条街都听得见。' },
-  { at: 'sg_hou', from: 'q_leiting', to: 'q_v3end', who: '侯府的厨子', t: '侯爷，今天想吃什么？……全要？好嘞。（他转身冲后厨喊）把那头整牛架上！' },
+  { at: 'sg_palace', from: 'q_houfu', to: 'q_fin', who: '皇宫侍卫', t: '荒天侯，人皇说了，您进宫不用通报。……还说了，您进宫的时候，御膳房要多备二十个人的饭。' },
+  { at: 'sg_field', from: 'q_houfu', to: 'q_fin', who: '校军场的教头', t: '那天两位尊者砸出来的坑，到现在还在。我们干脆不填了，立了块碑：“荒天侯在此打过架”。' },
+  { at: 'sg_field', from: 'q_houfu', to: 'q_fin', who: '新兵', t: '教头说，练到能接你一拳，就能当百夫长。我练了三个月……能接你一根手指了。' },
+  { at: 'sg_hou', from: 'q_leiting', to: 'q_fin', who: 'laozhong', t: '侯爷，库房里的宝药老奴都给您清点好了。……您别一顿吃完啊！' },
+  { at: 'sg_hou', from: 'q_leiting', to: 'q_fin', who: 'laozhong', t: '老太爷要是知道您现在这样，一定会在门口笑出声来。他笑起来，半条街都听得见。' },
+  { at: 'sg_hou', from: 'q_leiting', to: 'q_fin', who: '侯府的厨子', t: '侯爷，今天想吃什么？……全要？好嘞。（他转身冲后厨喊）把那头整牛架上！' },
   { at: 'sg_hou', from: 'q_v3', to: 'q_dajie', who: 'laozhong', t: '侯爷走的那晚，老奴在门口站了一夜。您下回要走，跟老奴说一声。老奴不拦，就是想……送送。' },
-  { at: 'sg_hou', from: 'q_shengdi', to: 'q_v3end', who: 'laozhong', t: '陛下。（他行了个礼，又忍不住笑了）……老奴还是叫您小少爷吧。叫陛下，舌头打结。' },
-  { at: 'sg_inner', from: 'q_qishen', to: 'q_v3end', who: '老侍卫', t: '那道诏令，人皇写好以后，压在御案上整整一年。他说：“那孩子会来的。他要是不来，就是还没吃饱。”' },
-  { at: 'sg_inner', from: 'q_qishen', to: 'q_v3end', who: '禁军统领', t: '陛下，石崇……他求见。他说他什么都不要，只想去您那个石村，种地。' },
-  { at: 'sg_sky', from: 'q_dajie', to: 'q_v3end', who: '守台的老兵', t: '天空战场上那道裂缝，是劫光劈的。下雨的时候，雨水落进去，就再也不出来了。' },
-  { at: 'sg_altar', from: 'q_farewell', to: 'q_v3end', who: '收拾残局的禁军', t: '三大圣地的人跑得太急，丢下了一地的法器。……陛下，这根金子做的拐杖，您要不要？' },
-  { at: 'shiguo', from: 'q_houfu', to: 'q_v3end', night: 1, who: '打更的老汉', t: '天干物燥，小心火烛——（看见你）荒天侯夜里还出来逛？……那这条街，今晚就不用打更了。' },
+  { at: 'sg_hou', from: 'q_shengdi', to: 'q_fin', who: 'laozhong', t: '陛下。（他行了个礼，又忍不住笑了）……老奴还是叫您小少爷吧。叫陛下，舌头打结。' },
+  { at: 'sg_inner', from: 'q_qishen', to: 'q_fin', who: '老侍卫', t: '那道诏令，人皇写好以后，压在御案上整整一年。他说：“那孩子会来的。他要是不来，就是还没吃饱。”' },
+  { at: 'sg_inner', from: 'q_qishen', to: 'q_fin', who: '禁军统领', t: '陛下，石崇……他求见。他说他什么都不要，只想去您那个石村，种地。' },
+  { at: 'sg_sky', from: 'q_dajie', to: 'q_fin', who: '守台的老兵', t: '天空战场上那道裂缝，是劫光劈的。下雨的时候，雨水落进去，就再也不出来了。' },
+  { at: 'sg_altar', from: 'q_farewell', to: 'q_fin', who: '收拾残局的禁军', t: '三大圣地的人跑得太急，丢下了一地的法器。……陛下，这根金子做的拐杖，您要不要？' },
+  { at: 'shiguo', from: 'q_houfu', to: 'q_fin', night: 1, who: '打更的老汉', t: '天干物燥，小心火烛——（看见你）荒天侯夜里还出来逛？……那这条街，今晚就不用打更了。' },
   // 火国
-  { at: 'hg_border', from: 'q_huohuang', to: 'q_v3end', who: '火国守将', t: '公主殿下吩咐过：荒天侯进出火国，不查、不问、不收钱。……还有，不让碰她的火鸟。' },
-  { at: 'hg_border', from: 'q_huohuang', to: 'q_v3end', who: '火国守将', t: '边关的风一年四季都是热的。我们这儿的人，冬天穿单衣，夏天……夏天也穿单衣，不然没得脱了。' },
-  { at: 'hg_city', from: 'q_niepan', to: 'q_v3end', who: 'huolinger', t: '我的火鸟最近不太理我，天天往你那只大红鸟边上飞。……都怪你！' },
-  { at: 'hg_city', from: 'q_niepan', to: 'q_v3end', who: 'huolinger', t: '父皇说，你在百断山偷圣药那天，他其实是故意放你走的。……他才不会承认呢。' },
-  { at: 'hg_city', from: 'q_letter', to: 'q_v3end', who: 'huolinger', t: '你从涅槃池出来那天，瘦得只剩一把骨头。我让御膳房做了三天的饭，你吃了三天。……你到底是人还是饕餮？' },
-  { at: 'hg_city', from: 'q_niepan', to: 'q_v3end', who: 'huohuang', t: '涅槃池边上那行字，朕守了十几年。今天总算等到了该看它的人。' },
-  { at: 'hg_city', from: 'q_letter', to: 'q_v3end', who: 'huohuang', t: '灵儿这丫头，以前一年都不往西边看一眼。……你小子，好自为之。' },
-  { at: 'hg_city', from: 'q_huohuang', to: 'q_v3end', who: '皇城卖火晶的小贩', t: '火晶糖！咬一口，嘴里冒火星子！……你吃了五块？你、你嘴里怎么还没冒？' },
-  { at: 'hg_volcano', from: 'q_huohuang', to: 'q_v3end', who: '采火晶的矿工', t: '火山口里住着一头熔岩龟王，背上的壳比我们的矿还值钱。没人敢去敲。' },
-  { at: 'hg_nirvana', from: 'q_letter', to: 'q_v3end', who: '守池的老祭司', t: '涅槃池几百年没让外人进过。上一个外人，是你娘。……你们娘儿俩，都挺能扛。' },
-  { at: 'huoguo', from: 'q_huohuang', to: 'q_v3end', night: 1, who: '巡夜的火国兵', t: '夜里火山的光能照到边关。我们火国人说，那是祖宗在点灯。' },
+  { at: 'hg_border', from: 'q_huohuang', to: 'q_fin', who: '火国守将', t: '公主殿下吩咐过：荒天侯进出火国，不查、不问、不收钱。……还有，不让碰她的火鸟。' },
+  { at: 'hg_border', from: 'q_huohuang', to: 'q_fin', who: '火国守将', t: '边关的风一年四季都是热的。我们这儿的人，冬天穿单衣，夏天……夏天也穿单衣，不然没得脱了。' },
+  { at: 'hg_city', from: 'q_niepan', to: 'q_fin', who: 'huolinger', t: '我的火鸟最近不太理我，天天往你那只大红鸟边上飞。……都怪你！' },
+  { at: 'hg_city', from: 'q_niepan', to: 'q_fin', who: 'huolinger', t: '父皇说，你在百断山偷圣药那天，他其实是故意放你走的。……他才不会承认呢。' },
+  { at: 'hg_city', from: 'q_letter', to: 'q_fin', who: 'huolinger', t: '你从涅槃池出来那天，瘦得只剩一把骨头。我让御膳房做了三天的饭，你吃了三天。……你到底是人还是饕餮？' },
+  { at: 'hg_city', from: 'q_niepan', to: 'q_fin', who: 'huohuang', t: '涅槃池边上那行字，朕守了十几年。今天总算等到了该看它的人。' },
+  { at: 'hg_city', from: 'q_letter', to: 'q_fin', who: 'huohuang', t: '灵儿这丫头，以前一年都不往西边看一眼。……你小子，好自为之。' },
+  { at: 'hg_city', from: 'q_huohuang', to: 'q_fin', who: '皇城卖火晶的小贩', t: '火晶糖！咬一口，嘴里冒火星子！……你吃了五块？你、你嘴里怎么还没冒？' },
+  { at: 'hg_volcano', from: 'q_huohuang', to: 'q_fin', who: '采火晶的矿工', t: '火山口里住着一头熔岩龟王，背上的壳比我们的矿还值钱。没人敢去敲。' },
+  { at: 'hg_nirvana', from: 'q_letter', to: 'q_fin', who: '守池的老祭司', t: '涅槃池几百年没让外人进过。上一个外人，是你娘。……你们娘儿俩，都挺能扛。' },
+  { at: 'huoguo', from: 'q_huohuang', to: 'q_fin', night: 1, who: '巡夜的火国兵', t: '夜里火山的光能照到边关。我们火国人说，那是祖宗在点灯。' },
   // 第四卷 · 下界边陲
-  { at: 'bz_camp', from: 'q_baojie', to: 'q_v5end', who: 'bzlao', t: '我这条腿，是四十年前在战场尽头丢的。那会儿我也觉得自己能走过去。' },
-  { at: 'bz_camp', from: 'q_baojie', to: 'q_v5end', who: '营地的货郎', t: '金乌族的人买东西从来不还价，天角蚁族的人从来不给钱，狰族的人……直接把我的摊子当饭吃。' },
+  { at: 'bz_camp', from: 'q_baojie', to: 'q_fin', who: 'bzlao', t: '我这条腿，是四十年前在战场尽头丢的。那会儿我也觉得自己能走过去。' },
+  { at: 'bz_camp', from: 'q_baojie', to: 'q_fin', who: '营地的货郎', t: '金乌族的人买东西从来不还价，天角蚁族的人从来不给钱，狰族的人……直接把我的摊子当饭吃。' },
   { at: 'bz_camp', from: 'q_baojie', to: 'q_bzcore', who: '天角蚁族少年', t: '你就是那个“荒”？（他把你从头看到脚）……也没多高嘛。' },
-  { at: 'bz_camp', from: 'q_bzcore', to: 'q_v5end', who: '天角蚁族少年', t: '（他看见你，往旁边让了让）……荒哥。我刚才什么都没说。' },
-  { at: 'bz_camp', from: 'q_bzcore', to: 'q_v5end', who: '金乌族少年', t: '我那三个族兄回去以后，族长问他们是谁打的。他们说：“荒。”族长问荒是谁，他们说：“……一个特别能吃的。”' },
-  { at: 'bz_camp', from: 'q_bzcore', to: 'q_v5end', who: '狰族少年', t: '我们狰族不服人。……可你那一拳，我服。' },
-  { at: 'bz_camp', from: 'q_yunzu', to: 'q_v5end', who: 'bzlao', t: '祭坛碎的那天，我在营地里坐了一夜。我那个兄弟……总算能歇着了。' },
-  { at: 'bz_camp', from: 'q_bzcamp', to: 'q_v5end', night: 1, who: '守夜的狰族战士', t: '夜里别往战场里走。那里面的喊杀声，是死人在喊。' },
-  { at: 'bz_field', from: 'q_bzfield', to: 'q_v5end', who: '捡兵器的少年', t: '这片地上插着的兵器，有一半是金乌族的，一半是天角蚁族的，还有一半……（他想了想）反正很多。' },
-  { at: 'bz_field', from: 'q_bzcore', to: 'q_v5end', who: '金乌族战士', t: '你别过来！……我是说，你过来可以，别打我。' },
-  { at: 'bz_core', from: 'q_altar', to: 'q_v5end', who: '守墙的百族老兵', t: '墙开了一道缝以后，好多人想从缝里挤过去。挤过去的，都去了祭坛。' },
-  { at: 'bz_altar', from: 'q_yunzu', to: 'q_v5end', who: '收拾祭坛的云族人', t: '祭坛底下挖出来好多锁链，一根一根的，都写着名字。我们把名字都刻在了崖上。' },
-  { at: 'bz_yun', from: 'q_huobye', to: 'q_v5end', who: 'yunlao', t: '族里的小娃娃天天趴在云边上往上看。他们说，大哥哥答应了，会回来讲上面的故事。' },
-  { at: 'bz_yun', from: 'q_huobye', to: 'q_v5end', who: '云族的小娃娃', t: '大哥哥，你上去了吗？……你怎么又下来了？上面不好玩吗？' },
-  { at: 'bz_yun', from: 'q_yunzu', to: 'q_v5end', who: '云族的老婆婆', t: '我们云族的人，走路是不出声的。你走路……（她听了听）像一头熊。' },
-  { at: 'bz_road', from: 'q_v5', to: 'q_v5end', who: '在登天路下徘徊的少年', t: '听说有人从这条路走上去了。……我也想试试。（他看了看满台阶的雷）明年吧。' },
+  { at: 'bz_camp', from: 'q_bzcore', to: 'q_fin', who: '天角蚁族少年', t: '（他看见你，往旁边让了让）……荒哥。我刚才什么都没说。' },
+  { at: 'bz_camp', from: 'q_bzcore', to: 'q_fin', who: '金乌族少年', t: '我那三个族兄回去以后，族长问他们是谁打的。他们说：“荒。”族长问荒是谁，他们说：“……一个特别能吃的。”' },
+  { at: 'bz_camp', from: 'q_bzcore', to: 'q_fin', who: '狰族少年', t: '我们狰族不服人。……可你那一拳，我服。' },
+  { at: 'bz_camp', from: 'q_yunzu', to: 'q_fin', who: 'bzlao', t: '祭坛碎的那天，我在营地里坐了一夜。我那个兄弟……总算能歇着了。' },
+  { at: 'bz_camp', from: 'q_bzcamp', to: 'q_fin', night: 1, who: '守夜的狰族战士', t: '夜里别往战场里走。那里面的喊杀声，是死人在喊。' },
+  { at: 'bz_field', from: 'q_bzfield', to: 'q_fin', who: '捡兵器的少年', t: '这片地上插着的兵器，有一半是金乌族的，一半是天角蚁族的，还有一半……（他想了想）反正很多。' },
+  { at: 'bz_field', from: 'q_bzcore', to: 'q_fin', who: '金乌族战士', t: '你别过来！……我是说，你过来可以，别打我。' },
+  { at: 'bz_core', from: 'q_altar', to: 'q_fin', who: '守墙的百族老兵', t: '墙开了一道缝以后，好多人想从缝里挤过去。挤过去的，都去了祭坛。' },
+  { at: 'bz_altar', from: 'q_yunzu', to: 'q_fin', who: '收拾祭坛的云族人', t: '祭坛底下挖出来好多锁链，一根一根的，都写着名字。我们把名字都刻在了崖上。' },
+  { at: 'bz_yun', from: 'q_huobye', to: 'q_fin', who: 'yunlao', t: '族里的小娃娃天天趴在云边上往上看。他们说，大哥哥答应了，会回来讲上面的故事。' },
+  { at: 'bz_yun', from: 'q_huobye', to: 'q_fin', who: '云族的小娃娃', t: '大哥哥，你上去了吗？……你怎么又下来了？上面不好玩吗？' },
+  { at: 'bz_yun', from: 'q_yunzu', to: 'q_fin', who: '云族的老婆婆', t: '我们云族的人，走路是不出声的。你走路……（她听了听）像一头熊。' },
+  { at: 'bz_road', from: 'q_v5', to: 'q_fin', who: '在登天路下徘徊的少年', t: '听说有人从这条路走上去了。……我也想试试。（他看了看满台阶的雷）明年吧。' },
   // 第五卷 · 上界
-  { at: 'sj_gate', from: 'q_ladder', to: 'q_v5end', who: '路边歇脚的修士', t: '（他看见你，往旁边挪了挪）……罪州来的。别靠太近。' },
-  { at: 'sj_gate', from: 'q_tianshen', to: 'q_v5end', who: '路边歇脚的修士', t: '（他看见你，站了起来）荒、荒兄！我刚才不是在说你！' },
-  { at: 'sj_town', from: 'q_ladder', to: 'q_v5end', who: '天仙城的掌柜', t: '下界来的？（他把价钱翻了一倍）……罪州来的，加收一成“晦气钱”。' },
-  { at: 'sj_town', from: 'q_tianshen', to: 'q_v5end', who: '天仙城的掌柜', t: '荒爷！（他把价钱减了一半）您随便拿，随便拿！晦气钱？什么晦气钱？没听说过！' },
-  { at: 'sj_town', from: 'q_dojo', to: 'q_v5end', who: 'qidaolin', t: '徒弟，为师跟你说，三千州的饭馆，哪家最便宜，哪家能赊账，为师门儿清。' },
-  { at: 'sj_town', from: 'q_dojo', to: 'q_v5end', who: 'qidaolin', t: '为师年轻的时候，也是一表人才。（他摸了摸乱糟糟的胡子）……真的。' },
-  { at: 'sj_town', from: 'q_kuang', to: 'q_v5end', who: 'qidaolin', t: '天人族那个护道者又来找为师了。为师跟他说：“你打我徒弟一下，我就去你家矿里再挖一车。”他就走了。' },
-  { at: 'sj_town', from: 'q_qidao', to: 'q_v5end', who: '天仙城的说书人', t: '至尊道场？（台下哄笑）那是三千州最大的道场——因为它只有一个人，地方够大！' },
-  { at: 'sj_town', from: 'q_tianshen', to: 'q_v5end', who: '天仙城的说书人', t: '今天不讲笑话了。今天讲：一个罪血，在至尊古台上，斩了一位天神。' },
-  { at: 'sj_academy', from: 'q_qidao', to: 'q_v5end', who: '书院执事', t: '天梯八级全过……被齐道临那个老骗子拐跑了。院长知道了，摔了三个茶杯。' },
-  { at: 'sj_academy', from: 'q_dojo', to: 'q_v5end', who: '天仙书院的师姐', t: '你就是那个把我师弟们打跑的“大师兄”？……（她笑了）他们回来以后，一个月没敢出门。' },
-  { at: 'sj_ladder', from: 'q_qidao', to: 'q_v5end', who: '在天梯下发呆的少年', t: '第七级问“何为道”，我答了三天，都没过。听说有人踢翻了那盏灯就过了？……我怎么没想到！' },
-  { at: 'sj_desert', from: 'q_tianren', to: 'q_v5end', who: 'qidaolin', t: '这根柱子，是为师小时候刻过字的。（他指着一个歪歪扭扭的“齐”字）至尊道场，以前人很多的。' },
-  { at: 'sj_tianren', from: 'q_kuang', to: 'q_v5end', who: '天人城的守卫', t: '（他握紧了枪，又松开了）……荒，城里的接风宴，以后不敢摆了。' },
-  { at: 'sj_gutai', from: 'q_tianshen', to: 'q_v5end', who: '古台下的天才', t: '天碑上那个“罪”字，有人想把它抹掉。抹了三天，抹不掉。' },
-  { at: 'sj_gutai', from: 'q_tianshen', to: 'q_v5end', who: '古台下的天才', t: '我在第三层下面转了三个月。你上去的那天……我决定，明天再试一次。' },
-  { at: 'sj_wild', from: 'q_v5end', to: 'q_v5end', who: '葛潜', t: '花蕾还没开。等它开的那天，我们再打一场。……你别再舔龙涎了，那东西是用来炼药的！' },
-  { at: 'shangjie', from: 'q_ladder', to: 'q_v5end', night: 1, who: '上界的守夜人', t: '上界的夜里，星星离得很近。你伸手，好像就能摘下来一颗。' },
+  { at: 'sj_gate', from: 'q_ladder', to: 'q_fin', who: '路边歇脚的修士', t: '（他看见你，往旁边挪了挪）……罪州来的。别靠太近。' },
+  { at: 'sj_gate', from: 'q_tianshen', to: 'q_fin', who: '路边歇脚的修士', t: '（他看见你，站了起来）荒、荒兄！我刚才不是在说你！' },
+  { at: 'sj_town', from: 'q_ladder', to: 'q_fin', who: '天仙城的掌柜', t: '下界来的？（他把价钱翻了一倍）……罪州来的，加收一成“晦气钱”。' },
+  { at: 'sj_town', from: 'q_tianshen', to: 'q_fin', who: '天仙城的掌柜', t: '荒爷！（他把价钱减了一半）您随便拿，随便拿！晦气钱？什么晦气钱？没听说过！' },
+  { at: 'sj_town', from: 'q_dojo', to: 'q_fin', who: 'qidaolin', t: '徒弟，为师跟你说，三千州的饭馆，哪家最便宜，哪家能赊账，为师门儿清。' },
+  { at: 'sj_town', from: 'q_dojo', to: 'q_fin', who: 'qidaolin', t: '为师年轻的时候，也是一表人才。（他摸了摸乱糟糟的胡子）……真的。' },
+  { at: 'sj_town', from: 'q_kuang', to: 'q_fin', who: 'qidaolin', t: '天人族那个护道者又来找为师了。为师跟他说：“你打我徒弟一下，我就去你家矿里再挖一车。”他就走了。' },
+  { at: 'sj_town', from: 'q_qidao', to: 'q_fin', who: '天仙城的说书人', t: '至尊道场？（台下哄笑）那是三千州最大的道场——因为它只有一个人，地方够大！' },
+  { at: 'sj_town', from: 'q_tianshen', to: 'q_fin', who: '天仙城的说书人', t: '今天不讲笑话了。今天讲：一个罪血，在至尊古台上，斩了一位天神。' },
+  { at: 'sj_academy', from: 'q_qidao', to: 'q_fin', who: '书院执事', t: '天梯八级全过……被齐道临那个老骗子拐跑了。院长知道了，摔了三个茶杯。' },
+  { at: 'sj_academy', from: 'q_dojo', to: 'q_fin', who: '天仙书院的师姐', t: '你就是那个把我师弟们打跑的“大师兄”？……（她笑了）他们回来以后，一个月没敢出门。' },
+  { at: 'sj_ladder', from: 'q_qidao', to: 'q_fin', who: '在天梯下发呆的少年', t: '第七级问“何为道”，我答了三天，都没过。听说有人踢翻了那盏灯就过了？……我怎么没想到！' },
+  { at: 'sj_desert', from: 'q_tianren', to: 'q_fin', who: 'qidaolin', t: '这根柱子，是为师小时候刻过字的。（他指着一个歪歪扭扭的“齐”字）至尊道场，以前人很多的。' },
+  { at: 'sj_tianren', from: 'q_kuang', to: 'q_fin', who: '天人城的守卫', t: '（他握紧了枪，又松开了）……荒，城里的接风宴，以后不敢摆了。' },
+  { at: 'sj_gutai', from: 'q_tianshen', to: 'q_fin', who: '古台下的天才', t: '天碑上那个“罪”字，有人想把它抹掉。抹了三天，抹不掉。' },
+  { at: 'sj_gutai', from: 'q_tianshen', to: 'q_fin', who: '古台下的天才', t: '我在第三层下面转了三个月。你上去的那天……我决定，明天再试一次。' },
+  { at: 'sj_wild', from: 'q_v5end', to: 'q_fin', who: '葛潜', t: '花蕾还没开。等它开的那天，我们再打一场。……你别再舔龙涎了，那东西是用来炼药的！' },
+  { at: 'shangjie', from: 'q_ladder', to: 'q_fin', night: 1, who: '上界的守夜人', t: '上界的夜里，星星离得很近。你伸手，好像就能摘下来一颗。' },
   // 第六卷 · 三千州
-  { at: 'sq_town', from: 'q_yinmo', to: 'q_v9end', who: 'qidaolin', t: '徒弟，争霸城的馆子为师都打听好了。最便宜的那家，老板是为师的老相识——他欠为师钱。' },
+  { at: 'sq_town', from: 'q_yinmo', to: 'q_fin', who: 'qidaolin', t: '徒弟，争霸城的馆子为师都打听好了。最便宜的那家，老板是为师的老相识——他欠为师钱。' },
   { at: 'sq_town', from: 'q_yinmo', to: 'q_arena', who: '争霸城的说书人', t: '八个神火境围一个人！那蓝一尘，怕是要把麒麟交出来了。' },
-  { at: 'sq_town', from: 'q_arena', to: 'q_v9end', who: '争霸城的说书人', t: '银磨山八个天骄，一个都没下山！诸位，三千州要变天了！' },
-  { at: 'sq_town', from: 'q_arena', to: 'q_v9end', who: '蓝一尘', t: '八珍麒天天往争霸台那边跑，拦都拦不住。它说……（他顿了顿）它想看你打架。' },
+  { at: 'sq_town', from: 'q_arena', to: 'q_fin', who: '争霸城的说书人', t: '银磨山八个天骄，一个都没下山！诸位，三千州要变天了！' },
+  { at: 'sq_town', from: 'q_arena', to: 'q_fin', who: '蓝一尘', t: '八珍麒天天往争霸台那边跑，拦都拦不住。它说……（他顿了顿）它想看你打架。' },
   { at: 'sq_town', from: 'q_kuliu', to: 'q_arena2', who: '酒楼里的天骄', t: '那个罪血跑了！五百八十八场，最后还是跑了！哈哈——（旁边有人小声说：“他是走下去的，不是跑。”）' },
-  { at: 'sq_town', from: 'q_v7', to: 'q_v9end', who: '酒楼里的天骄', t: '……（他看见你，把手里的酒杯放下，站了起来）荒兄。上回在台下，我也喊了。我给你赔个不是。' },
-  { at: 'sq_town', from: 'q_v7', to: 'q_v9end', who: 'qidaolin', t: '至尊道场门口现在排着长队，全是来拜师的！为师……为师一个都没收。（他挺起胸）至尊道场，一代只传一个。' },
+  { at: 'sq_town', from: 'q_v7', to: 'q_fin', who: '酒楼里的天骄', t: '……（他看见你，把手里的酒杯放下，站了起来）荒兄。上回在台下，我也喊了。我给你赔个不是。' },
+  { at: 'sq_town', from: 'q_v7', to: 'q_fin', who: 'qidaolin', t: '至尊道场门口现在排着长队，全是来拜师的！为师……为师一个都没收。（他挺起胸）至尊道场，一代只传一个。' },
   { at: 'sq_arena', from: 'q_kuliu', to: 'q_arena2', who: '孤剑云', t: '（他抱着剑坐在台边）……你还会回来的。我等着。' },
-  { at: 'sq_arena', from: 'q_v7', to: 'q_v9end', who: '争霸台的裁判', t: '台上那些坑，现在有人专门来看。指着最大的那个说：“荒打的。”' },
-  { at: 'sq_cliff', from: 'q_arena2', to: 'q_v9end', who: '', t: '（枯柳根上的那点绿，又长大了一点。你蹲下来，看了它很久。）' },
-  { at: 'sq_valley', from: 'q_arena', to: 'q_v9end', who: '蓝一尘', t: '八珍麒吃的八种草，我给你包了一包。……你别自己吃啊，那是给麒麟的。' },
-  { at: 'sq_wild', from: 'q_sqtown', to: 'q_v9end', who: '磨刀的天骄', t: '我在这儿磨了三个月的刀。等我磨好了……（他看见你，刀掉了）……再磨三个月。' },
+  { at: 'sq_arena', from: 'q_v7', to: 'q_fin', who: '争霸台的裁判', t: '台上那些坑，现在有人专门来看。指着最大的那个说：“荒打的。”' },
+  { at: 'sq_cliff', from: 'q_arena2', to: 'q_fin', who: '', t: '（枯柳根上的那点绿，又长大了一点。你蹲下来，看了它很久。）' },
+  { at: 'sq_valley', from: 'q_arena', to: 'q_fin', who: '蓝一尘', t: '八珍麒吃的八种草，我给你包了一包。……你别自己吃啊，那是给麒麟的。' },
+  { at: 'sq_wild', from: 'q_sqtown', to: 'q_fin', who: '磨刀的天骄', t: '我在这儿磨了三个月的刀。等我磨好了……（他看见你，刀掉了）……再磨三个月。' },
   // 第七卷 · 仙古
-  { at: 'xg_gate', from: 'q_xgruins', to: 'q_v9end', who: '守门的老人', t: '仙古的门开一回，要死很多人。门关的时候，里面的人，有一半出不来。' },
-  { at: 'xg_ruins', from: 'q_xglake', to: 'q_v9end', who: '石毅', t: '这里的柱子上刻着字。我用重瞳看了很久，看懂了一句：“我们不是最后一个纪元。”' },
-  { at: 'xg_forest', from: 'q_xgruins', to: 'q_v9end', who: '', t: '（一棵比山还高的树，低下头来，好像在看你。你冲它挥了挥手。它的叶子，哗啦啦地响了一阵。）' },
-  { at: 'xg_lake', from: 'q_xgdian', to: 'q_v9end', who: '石毅', t: '小时候的事，我记不太清了。可我记得有一个比我小的孩子，总是跟在我后面跑。……是你吧？' },
-  { at: 'xg_peak', from: 'q_xgend', to: 'q_v9end', who: '', t: '（峰顶那个“帝”字，被人在下面添了一行小字：“刻得太大了”。字迹很像帝冲的。）' },
+  { at: 'xg_gate', from: 'q_xgruins', to: 'q_fin', who: '守门的老人', t: '仙古的门开一回，要死很多人。门关的时候，里面的人，有一半出不来。' },
+  { at: 'xg_ruins', from: 'q_xglake', to: 'q_fin', who: '石毅', t: '这里的柱子上刻着字。我用重瞳看了很久，看懂了一句：“我们不是最后一个纪元。”' },
+  { at: 'xg_forest', from: 'q_xgruins', to: 'q_fin', who: '', t: '（一棵比山还高的树，低下头来，好像在看你。你冲它挥了挥手。它的叶子，哗啦啦地响了一阵。）' },
+  { at: 'xg_lake', from: 'q_xgdian', to: 'q_fin', who: '石毅', t: '小时候的事，我记不太清了。可我记得有一个比我小的孩子，总是跟在我后面跑。……是你吧？' },
+  { at: 'xg_peak', from: 'q_xgend', to: 'q_fin', who: '', t: '（峰顶那个“帝”字，被人在下面添了一行小字：“刻得太大了”。字迹很像帝冲的。）' },
   // 第八卷 · 帝关
   { at: 'dg_city', from: 'q_qiwang', to: 'q_anlan', who: 'mengtz', t: '帝关的饭难吃吧？（他笑了）我吃了几万年，还是难吃。' },
   { at: 'dg_city', from: 'q_qiwang', to: 'q_anlan', who: 'mengtz', t: '你问我为什么守在这儿？……几万年前，有个人替我挡过一刀。他是七王的后人。' },
-  { at: 'dg_city', from: 'q_qiwang', to: 'q_v9end', who: '帝关的老兵', t: '新来的？（他看了看你）能活过第一场仗，再来跟我说话。' },
-  { at: 'dg_city', from: 'q_box', to: 'q_v9end', who: '帝关的老兵', t: '孟老那一剑，我看见了。（他擦了擦眼睛）我在帝关守了八千年，没见过那么好看的一剑。' },
-  { at: 'dg_city', from: 'q_dizu', to: 'q_v9end', who: '帝关的伙夫', t: '今天的饭少做了三十份。……不是没米了。是吃饭的人，少了三十个。' },
-  { at: 'dg_qiwang', from: 'q_wangjia', to: 'q_v9end', who: 'qiwanghou', t: '我每天都给七王添灯油。添着添着，就觉得他们在看着我。……你也觉得吗？' },
-  { at: 'dg_qiwang', from: 'q_box', to: 'q_v9end', who: 'qiwanghou', t: '孟老的牌位，我也放进来了。第八个。（他低着头添灯油）他不是七王的后人。可他也守了。' },
-  { at: 'dg_qiwang', from: 'q_v9end', to: 'q_v9end', who: 'qiwanghou', t: '门匾换了。（他摸了摸额头上那个淡下去的字）……有人跟我说，这个字，以后会有人替我们洗掉。他说话算话。' },
-  { at: 'dg_wall', from: 'q_dizu', to: 'q_v9end', who: '城头的守兵', t: '往外看，别往里看。往里看，会想家。' },
-  { at: 'dg_field', from: 'q_bianhuang', to: 'q_v9end', who: '', t: '（战场上插着很多断掉的兵器。有一把是胖子的刀，你认得。你把它扶正了。）' },
-  { at: 'diguan', from: 'q_qiwang', to: 'q_v9end', night: 1, who: '守夜的兵', t: '边荒的夜里，异域那边会有人唱歌。很好听。……听久了，会想打开城门。别听。' },
+  { at: 'dg_city', from: 'q_qiwang', to: 'q_fin', who: '帝关的老兵', t: '新来的？（他看了看你）能活过第一场仗，再来跟我说话。' },
+  { at: 'dg_city', from: 'q_v9', to: 'q_fin', who: '帝关的老兵', t: '孟老那一剑，我看见了。（他擦了擦眼睛）我在帝关守了八千年，没见过那么好看的一剑。' },
+  { at: 'dg_city', from: 'q_dizu', to: 'q_fin', who: '帝关的伙夫', t: '今天的饭少做了三十份。……不是没米了。是吃饭的人，少了三十个。' },
+  { at: 'dg_qiwang', from: 'q_wangjia', to: 'q_fin', who: 'qiwanghou', t: '我每天都给七王添灯油。添着添着，就觉得他们在看着我。……你也觉得吗？' },
+  { at: 'dg_qiwang', from: 'q_v9', to: 'q_fin', who: 'qiwanghou', t: '孟老的牌位，我也放进来了。第八个。（他低着头添灯油）他不是七王的后人。可他也守了。' },
+  { at: 'dg_qiwang', from: 'q_v9end', to: 'q_fin', who: 'qiwanghou', t: '门匾换了。（他摸了摸额头上那个淡下去的字）……有人跟我说，这个字，以后会有人替我们洗掉。他说话算话。' },
+  { at: 'dg_wall', from: 'q_dizu', to: 'q_fin', who: '城头的守兵', t: '往外看，别往里看。往里看，会想家。' },
+  { at: 'dg_field', from: 'q_bianhuang', to: 'q_fin', who: '', t: '（战场上插着很多断掉的兵器。有一把是胖子的刀，你认得。你把它扶正了。）' },
+  { at: 'diguan', from: 'q_qiwang', to: 'q_fin', night: 1, who: '守夜的兵', t: '边荒的夜里，异域那边会有人唱歌。很好听。……听久了，会想打开城门。别听。' },
   // 第九卷 · 九天 / 石村
-  { at: 'sc_street', from: 'q_train', to: 'q_v9end', who: '大壮的孙子', t: '爷爷说，你小时候举不动石锁，哭着回家。……真的假的？' },
+  { at: 'sc_street', from: 'q_train', to: 'q_fin', who: '大壮的孙子', t: '爷爷说，你小时候举不动石锁，哭着回家。……真的假的？' },
   { at: 'sc_street', from: 'q_train', to: 'q_army', who: 'dazhuang', t: '你练你的，我们练我们的。（他把一块石锁扛上了肩）……老了，扛不动以前那块了。' },
-  { at: 'sc_willow', from: 'q_envoy', to: 'q_v9end', who: '', t: '（烂木盒子放在树桩旁边。你一直没有打开它。你觉得，还不到时候。）' },
-  { at: 'jt_gate', from: 'q_train', to: 'q_v9end', who: '天门下的商人', t: '王家进仙域了。……听说王长生亲手处置了六个儿子。啧，长生世家，长生长生，长的是他一个人。' },
-  { at: 'jt_wang', from: 'q_train', to: 'q_v9end', who: '王家的门房', t: '（他看见你，立刻把门关上了。门缝里传来一句：“家主去仙域了！不在！”）' },
-  { at: 'jt_sect', from: 'q_jin', to: 'q_v9end', who: '道统的老杂役', t: '七座山门都倒了。我在这儿扫了一辈子地，头一回觉得……地干净了。' },
-  { at: 'jt_peak', from: 'q_v9end', to: 'q_v9end', who: 'dazhuang', t: '小不点，你看，九天的灯，跟石村的灯，长得一样。' },
-  { at: 'jiutian', from: 'q_envoy', to: 'q_v9end', night: 1, who: '九天的守夜人', t: '九天的夜里，长生世家的宅子都亮着灯。他们睡不着——活得太久，就怕死。' },
+  { at: 'sc_willow', from: 'q_envoy', to: 'q_fin', who: '', t: '（烂木盒子放在树桩旁边。你一直没有打开它。你觉得，还不到时候。）' },
+  { at: 'jt_gate', from: 'q_train', to: 'q_fin', who: '天门下的商人', t: '王家进仙域了。……听说王长生亲手处置了六个儿子。啧，长生世家，长生长生，长的是他一个人。' },
+  { at: 'jt_wang', from: 'q_train', to: 'q_fin', who: '王家的门房', t: '（他看见你，立刻把门关上了。门缝里传来一句：“家主去仙域了！不在！”）' },
+  { at: 'jt_sect', from: 'q_jin', to: 'q_fin', who: '道统的老杂役', t: '七座山门都倒了。我在这儿扫了一辈子地，头一回觉得……地干净了。' },
+  { at: 'jt_peak', from: 'q_v9end', to: 'q_fin', who: 'dazhuang', t: '小不点，你看，九天的灯，跟石村的灯，长得一样。' },
+  { at: 'jiutian', from: 'q_envoy', to: 'q_fin', night: 1, who: '九天的守夜人', t: '九天的夜里，长生世家的宅子都亮着灯。他们睡不着——活得太久，就怕死。' },
+  // 第九卷 · 异域 / 第十卷 · 仙域
+  { at: 'yy_jail', from: 'q_yyarena', to: 'q_yyfalls', who: '黑水狱卒', t: '……今天的黑水，给你换成温的了。（他压低声音）别跟别人说。' },
+  { at: 'yy_jail', from: 'q_yyarena', to: 'q_fin', who: '', t: '（你在墙上刻了一道。墙上已经有很多道了。每一道，是一年。）' },
+  { at: 'yy_gate', from: 'q_yyarena', to: 'q_yyfalls', who: '城门下的异域小孩', t: '（他朝你扔了一块石头，又偷偷捡回来一块饼，扔了上来。）' },
+  { at: 'yy_arena', from: 'q_yytree', to: 'q_fin', who: '排队的异域天骄', t: '排了三个月！轮到我了！……（他看了你一眼）我能不能再排三个月？' },
+  { at: 'yy_tree', from: 'q_guzu', to: 'q_fin', who: '', t: '（茶树的一片叶子落在你头上。你没有拿下来。）' },
+  { at: 'yy_guzu', from: 'q_yyfalls', to: 'q_fin', who: 'guzu', t: '……又回来了？（灯下的影子好像笑了）一个不一样的结局。我还在看。' },
+  { at: 'xy_shore', from: 'q_yuanshi', to: 'q_fin', who: '三藏', t: '我在这儿给始祖鱼苗搭了个窝。（他挠了挠光头）它救了我们三个，得供着。' },
+  { at: 'xy_city', from: 'q_yuanshi', to: 'q_fin', who: '仙域的老人', t: '下界来的？（他慢慢地眨了眨眼）上一个从下界来的，是很多很多年前了。' },
+  { at: 'xy_yuanshi', from: 'q_back', to: 'q_fin', who: '帝城的残魂', t: '……帝关还在吗？（你点点头。它也点点头，接着在城墙上走。）' },
+  { at: 'dg_city', from: 'q_anlan', to: 'q_anlan', who: 'mengtz', t: '回来就好。（他看着边荒，很久没说话）……这几天，太安静了。' },
+  // 第十二卷 · 天庭 / 第十三卷 · 帝落
+  { at: 'jt_court', from: 'q_dam', to: 'q_fin', who: 'qidaolin', t: '天庭的第一顿饭，为师请！……徒弟，你先帮为师垫上。' },
+  { at: 'jt_court', from: 'q_dam', to: 'q_fin', who: 'qiwanghou', t: '天庭的柱子底下，我添了一盏灯。七王祠的灯，分过来的。' },
+  { at: 'jt_court', from: 'q_dam', to: 'q_fin', who: '石毅', t: '……我来了，就不走了。（他看着那根柱子）这回，我们站同一边。' },
+  { at: 'jt_canxian', from: 'q_tianting', to: 'q_fin', who: '', t: '（墓底下没有呼吸声了。只有九天的风，吹进来，又吹出去。）' },
+  { at: 'jh_dam', from: 'q_xwhy', to: 'q_fin', who: '守坝的老人', t: '别往海里看太久。……你又在看。' },
+  { at: 'xy_city', from: 'q_zaohua', to: 'q_fin', who: '仙王后裔', t: '我爹说，他年轻的时候也输过一次。他说，输过的人，才走得远。……你走慢点。' },
+  { at: 'dl_age', from: 'q_lives', to: 'q_v14', who: '帝落古兵', t: '那个传说里的孩子……你见过他吗？' },
+  { at: 'dl_river', from: 'q_dlage', to: 'q_fin', who: '', t: '（河里漂过一盏灯。你认出来了——是石村的灯。）' },
+  // 第十四卷 · 第十五卷
+  { at: 'jt_court', from: 'q_liushen2', to: 'q_v15', who: '天庭的侍女', t: '火灵儿姑娘还在睡。……她睡着的时候，嘴角是翘着的。' },
+  { at: 'jt_court', from: 'q_fin', to: 'q_fin', who: 'huolinger', t: '你走了以后，我天天在天庭门口站着。……才没有在等你。' },
+  { at: 'yy_gate', from: 'q_kundi', to: 'q_fin', who: '异域的老兵', t: '城门上那根绳子，我们摘了。……不敢不摘。' },
+  { at: 'yy_capital', from: 'q_v15', to: 'q_fin', who: '异域的孩子', t: '大人们说，以后不打帝关了。……帝关是什么？' },
+  { at: 'jh_sea', from: 'q_kundi2', to: 'q_fin', who: '', t: '（一片枯叶一样的世界漂过去。你伸手，把它推回了岸边。）' },
+  { at: 'jh_top', from: 'q_fin', to: 'q_fin', who: 'willow', t: '（黑色的柳枝在断口边上轻轻摇。它说：“这里，也挺好。”）' },
+  { at: 'sc_street', from: 'q_fin', to: 'q_fin', who: '石村的孩子', t: '娘说，天上有个小不点，在替我们看着门。……他吃饱了吗？' },
 ];
 let chatT = 0, lastChat = {};
 function chatterFor(loc) { const P = PLACES[loc], q = C.story.q;
@@ -4417,10 +5001,10 @@ function npcSay(c) { lastChat[CHATTER.indexOf(c)] = now(); (C.chatHeard = C.chat
 function npcOnArrive(loc) { if (!C || NETROLE === 'guest' || STATE.scene) return; const L = chatterFor(loc).filter(c => !lastChat[CHATTER.indexOf(c)] || now() - lastChat[CHATTER.indexOf(c)] > 300000); if (L.length && chance(0.55)) setTimeout(() => { if (!STATE.scene && !STATE.battle) npcSay(chatPick(L)); }, 700); chatT = now() + rint(40000, 70000); }
 function npcTick() { if (!C || STATE.mode !== 'play' || NETROLE === 'guest' || STATE.scene || STATE.battle || STATE.dungeon || now() < chatT) return; chatT = now() + rint(45000, 80000);
   const L = chatterFor(C.loc).filter(c => !lastChat[CHATTER.indexOf(c)] || now() - lastChat[CHATTER.indexOf(c)] > 300000); if (L.length) npcSay(chatPick(L)); }
-function npcRumor(text) { const P = PLACES[C.loc]; const who = P.area === 'shicun' ? NPCS.linhu : P.area === 'butian' ? NPCS.gezhu : P.area === 'baiduan' ? NPCS.huolinger : P.area === 'shiguo' ? NPCS.leiting : P.area === 'huoguo' ? NPCS.huolinger : P.area === 'baizu' ? NPCS.bzlao : P.area === 'shangjie' || P.area === 'sanqian' || P.area === 'xiangu' ? NPCS.qidaolin : P.area === 'diguan' ? (C.story.f.anlan ? NPCS.qiwanghou : NPCS.mengtz) : P.area === 'jiutian' ? NPCS.qidaolin : null; logLine(who ? `<span class="who">${who.name}</span>${text}` : '【传闻】' + text, 'npc'); }
+function npcRumor(text) { const P = PLACES[C.loc]; const who = P.area === 'shicun' ? NPCS.linhu : P.area === 'butian' ? NPCS.gezhu : P.area === 'baiduan' ? NPCS.huolinger : P.area === 'shiguo' ? NPCS.leiting : P.area === 'huoguo' ? NPCS.huolinger : P.area === 'baizu' ? NPCS.bzlao : P.area === 'shangjie' || P.area === 'sanqian' || P.area === 'xiangu' ? NPCS.qidaolin : P.area === 'diguan' ? (C.story.f.anlan ? NPCS.qiwanghou : NPCS.mengtz) : P.area === 'jiutian' ? NPCS.qidaolin : P.area === 'yiyu' && C.story.f.yyTree ? NPCS.guzu : null; logLine(who ? `<span class="who">${who.name}</span>${text}` : '【传闻】' + text, 'npc'); }
 function npcTalk(id) { // clicking a person: their quest or side errand, otherwise a line that fits right now
   if (STATE.scene || STATE.battle) return; const opts = talkOptions(id); const lines = chatterFor(C.loc).filter(c => c.who === id);
-  const fallback = { chief: '去玩吧，别跑太远。', willow: '（柳枝静静垂着。）', linhu: '弓要常擦，箭要常磨。', dazhuang: '小不点，下回进山带上我！', ermeng: '嘿嘿。', pihou: '你看你看，我又能多翻一个跟头了！', qingfeng: C.story.f.qfIn ? '内门的饭比外门的好吃。……你别告诉别人我说的。' : '……嗯。', guiye: '……', gezhu: '好好修行。', libelder: '书别弄脏了。', huolinger: C.story.f.huohuang ? '你又来了？……我没在等你。' : '看什么看？', xiaotian: '烤鸡还有半只，你要不要？', laozhong: '侯爷吃了吗？老奴给您热着饭呢。', leiting: '有事说事，没事请客。', huohuang: '灵儿在后院。……朕什么都没说。', bzlao: '火边坐吧，别站着。', yunlao: '（老人冲你点了点头，胡子在云里飘。）', qidaolin: '徒弟！……有钱吗？借为师一点。', mengtz: '能吃，是好事。多吃点。', qiwanghou: '（小七在添灯油，冲你点了点头。）' }[id] || '……';
+  const fallback = { chief: '去玩吧，别跑太远。', willow: '（柳枝静静垂着。）', linhu: '弓要常擦，箭要常磨。', dazhuang: '小不点，下回进山带上我！', ermeng: '嘿嘿。', pihou: '你看你看，我又能多翻一个跟头了！', qingfeng: C.story.f.qfIn ? '内门的饭比外门的好吃。……你别告诉别人我说的。' : '……嗯。', guiye: '……', gezhu: '好好修行。', libelder: '书别弄脏了。', huolinger: C.story.f.huohuang ? '你又来了？……我没在等你。' : '看什么看？', xiaotian: '烤鸡还有半只，你要不要？', laozhong: '侯爷吃了吗？老奴给您热着饭呢。', leiting: '有事说事，没事请客。', huohuang: '灵儿在后院。……朕什么都没说。', bzlao: '火边坐吧，别站着。', yunlao: '（老人冲你点了点头，胡子在云里飘。）', qidaolin: '徒弟！……有钱吗？借为师一点。', mengtz: '能吃，是好事。多吃点。', qiwanghou: '（小七在添灯油，冲你点了点头。）', guzu: '……（灯下的影子，好像笑了。）' }[id] || '……';
   runScene(async () => { const ln = lines.length ? chatPick(lines) : null; if (ln) (C.chatHeard = C.chatHeard || {})[chatKey(ln)] = 1; await say(id, ln ? ln.t : fallback); if (opts.length) { const c = await choose([...opts.map(o => ({ t: o.t, dis: !!o.dis })), { t: '没事了' }]); if (c < opts.length) setTimeout(() => opts[c].f(), 0); } });
 }
 function talkOptions(id) { return [...questTalkOptions(id), ...bountyOptions(id), ...tradeOptions(id), ...(id === 'willow' && C.dt.length ? [{ t: '🔄 重开一座洞天（灵药 ×1）', dis: !itemN('lingyao'), f: dongtianRedo }] : []), ...(talkNext(id) ? [{ t: '💬 闲聊', f: () => talkPlay(id) }] : [])]; }
@@ -4579,6 +5163,33 @@ const RIVAL_SAY = {
   jiangu: { open: ['剑谷万剑，只斩一人。'], low: ['我的剑……在抖？'], die: ['……剑练得再好，有什么用。'] },
   heianzz: { open: ['……光。好多光。吃掉。'], low: ['不……这个人的光……吃不下……'], die: ['（它散了。宅子里的灯，一盏一盏地亮了。）'] },
   heianwang: { open: ['九天十地，迟早是永夜。'], low: ['你……你背后那些凡人……是什么光……'], die: ['永夜……还会再来……'] },
+  yuzu9: { open: ['九天十地最强的？就这？'], die: ['……别、别告诉长老……'] },
+  yytj: { open: ['排了三个月，轮到我了！', '拿你磨刀，是你的荣幸。'], die: ['……我再去排三个月。'] },
+  chiwanghy: { open: ['我祖上是赤王。你，配给我磨刀吗？'], low: ['赤王的血……怎么会压不住你？'], die: ['……祖父……'] },
+  chashu: { open: ['这棵树，今年是我的。', '你只是被带来凑数的。'], low: ['茶叶……对你也有用？'], die: ['……原来悟道，不是靠茶。'] },
+  haipu: { open: ['别让他们跳！'], die: ['（他掉进了海瀑里。）'] },
+  jhsheng: { open: ['（界海里的东西，长得什么样都有。这一个，长得像你小时候做过的噩梦。）'], die: ['（它沉回了海里。）'] },
+  ysmo: { open: ['……守城……'], die: ['（残魂冲你点了点头，接着在城墙上走。）'] },
+  ysjiang: { open: ['你身上，有七王的血。', '回答我：帝关，还在吗？'], die: ['……还在。还在就好。'] },
+  canxiantu: { open: ['残仙大人会赐我们长生！'], die: ['……长生……'] },
+  canxian: { open: ['九天的至尊，我吃过十七个。', '你是第十八个。'], low: ['不……我还没吃够……'], die: ['……九天……真好吃啊……'] },
+  jieling: { open: ['（黑暗生灵从坝下面往上爬。）'], die: ['（它掉回了界海。）'] },
+  xwhy: { open: ['仙域不收罪血。', '我不会输。'], low: ['……这就是输的感觉？'], die: ['原来，输是这种感觉。'] },
+  zaohua: { open: ['……过了我，就是真仙。', '没过的人，都在门前躺着。'], die: ['（门，开了一道缝。）'] },
+  shiguang: { open: ['（残影打了你一下。你忘了今天早上吃的是什么。）'], die: ['（它碎成了一片光，漂走了。）'] },
+  diluobing: { open: ['你……不属于这个时代！'], die: ['……他们说，那个孩子会回来的……'] },
+  qianshi: { open: ['每一世，我都会找到你。', '上一世，我杀过你一次。'], low: ['不对……这一世的你……'], die: ['……宿命，断了。'] },
+  wangujie: { open: ['你回不去的。'], low: ['八世……八世的你，都站在那儿……'], die: ['（劫，散了。）'] },
+  yyxwb: { open: ['九天十地的仙王？异域的仙兵，不怕！'], die: ['……怕了。'] },
+  zbx: { open: ['她的魂早就睡死了。', '你救回去的，只是一具身子。'], low: ['不朽……就差一步……'], die: ['……那点火，还在烧……'] },
+  sanxw: { open: ['等你很久了。'], die: ['……'] },
+  chiwang: { open: ['我的后人，在你手里跪过。', '那座城门，你还记得吗？'], low: ['来人！都来！'], die: ['……异域……'] },
+  daowang: { open: ['我的刀，斩过很多仙王。'], low: ['准仙帝？！'], die: ['……刀，断了。'] },
+  pumo: { open: ['魔王降世，仙域当灭！'], die: ['魔海……退了……'] },
+  kundi: { open: ['异域第一，是我。', '你赢不了的。'], low: ['原始古器……也压不住你？'], die: ['……异域的根……拔不干净的……'] },
+  heiandi: { open: ['三万年了。你还不倒？'], low: ['四帝……只剩我了？'], die: ['（它沉进了海底。）'] },
+  shihai0: { open: ['……到这里为止。'], die: ['……'] },
+  shihai: { open: ['……不可能。我杀了你。', '你杀了一个。可记得我的人，太多了。'], low: ['他化自在……从每一个记得你的人心里……'], die: ['……原来，被记得，是这种力量。'] },
   rival: { open: ['大荒来的？听都没听过。', '让你三招。', '光幕上的名字，可不是凭运气挂上去的。'], low: ['……有两下子。', '不可能！'], die: ['我记住你了。', '下回，可没这么便宜。'] },
   shiyi: { open: ['……你的眼睛里，有不服。', '来吧。让我看看，大荒能长出什么。'], low: ['……有意思。'], die: ['……第一，你先拿着。'] },
 };
@@ -4703,10 +5314,10 @@ const RUMORS = [
   { from: 'q_qishen', to: 'q_shengdi', who: '石国的百姓', t: '石皇是个孩子？……孩子怎么了？那孩子打赢了两个尊者，还吃了雨神法旨。你行吗？' },
   { from: 'q_shengdi', to: 'q_farewell', who: '活下来的祭司', t: '天裂开的那天，所有人都跪下了。只有一个孩子站着。后来他倒了，再后来……他又站起来了。' },
   { from: 'q_shengdi', to: 'q_farewell', who: '跑江湖的', t: '七神下界，被一个孩子打下来一个。剩下六个，回天上去了。……这话说出去，谁信啊？' },
-  { from: 'q_farewell', to: 'q_v3end', who: '皇都的酒客', t: '三大圣地的血祭台塌了。补天教、不老山、凝金门，三家加起来，跑得比兔子还快。' },
-  { from: 'q_farewell', to: 'q_v3end', who: '大荒的猎户', t: '听说石国的新皇，是从大荒一个叫石村的地方出来的。……石村？那不就是举大鼎那个娃娃的村子吗？' },
-  { from: 'q_v3end', to: 'q_v3end', who: '远方来的行商', t: '百族战场又开了。各族的年轻人都在往那边去——听说那里打赢了，就有机会走上登天路。' },
-  { from: 'q_v3end', to: 'q_v3end', who: '石村的二猛', t: '族长说要给石皇进贡。我们村能贡什么？……兽奶。我偷的那种。' },
+  { from: 'q_farewell', to: 'q_fin', who: '皇都的酒客', t: '三大圣地的血祭台塌了。补天教、不老山、凝金门，三家加起来，跑得比兔子还快。' },
+  { from: 'q_farewell', to: 'q_fin', who: '大荒的猎户', t: '听说石国的新皇，是从大荒一个叫石村的地方出来的。……石村？那不就是举大鼎那个娃娃的村子吗？' },
+  { from: 'q_v3end', to: 'q_fin', who: '远方来的行商', t: '百族战场又开了。各族的年轻人都在往那边去——听说那里打赢了，就有机会走上登天路。' },
+  { from: 'q_v3end', to: 'q_fin', who: '石村的二猛', t: '族长说要给石皇进贡。我们村能贡什么？……兽奶。我偷的那种。' },
   { from: 'q_bzcamp', to: 'q_bzfield', who: '石国的信使', t: '石皇出远门了，去下界边陲。走之前只交代了一句：“钟伯管家，御膳房别停。”' },
   { from: 'q_bzfield', to: 'q_bzcore', who: '营地的货郎', t: '太古宝界的地火液海平静下来了。有人说，看见一个孩子从海里爬了出来。' },
   { from: 'q_bzcore', to: 'q_altar', who: '金乌族的长老', t: '我族三个最能打的后生，一天之内全败了。败给一个叫“荒”的。……荒？大荒的荒？' },
@@ -4721,8 +5332,8 @@ const RUMORS = [
   { from: 'q_kuang', to: 'q_gutai', who: '天人城的商人', t: '天人族那个融了天命石的长子，被人废了。在自家的接风宴上。' },
   { from: 'q_gutai', to: 'q_tianshen', who: '天人族的矿工', t: '矿脉被搬空了一半！石傀王的肚子都被掏空了！听说那人背着石头出来，嘴里还叼着一块。' },
   { from: 'q_tianshen', to: 'q_wild', who: '至尊古台下的天才', t: '有人登上了第九层，在天碑上刻了一个“罪”字。三千州的天才，一个都没说出话来。' },
-  { from: 'q_wild', to: 'q_v5end', who: '天仙城的掌柜', t: '妖龙道门的天神死了。死在一个罪血手里。……这上界，要变天了。' },
-  { from: 'q_v5end', to: 'q_v5end', who: '无人区的散修', t: '仙道花蕾挂在天上，三千州的天才都在等它开。最近大家都在议论一个名字：荒。' },
+  { from: 'q_wild', to: 'q_fin', who: '天仙城的掌柜', t: '妖龙道门的天神死了。死在一个罪血手里。……这上界，要变天了。' },
+  { from: 'q_v5end', to: 'q_fin', who: '无人区的散修', t: '仙道花蕾挂在天上，三千州的天才都在等它开。最近大家都在议论一个名字：荒。' },
   { from: 'q_sqtown', to: 'q_yinmo', who: '无人区的散修', t: '争霸城建好了！三千州的天骄，一夜之间全住了进去。' },
   { from: 'q_arena', to: 'q_kuliu', who: '争霸城的酒客', t: '银磨山八个天骄全死了！杀他们的，就是那个在天碑上刻“罪”的！' },
   { from: 'q_arena', to: 'q_kuliu', who: '古族的仆从', t: '沉睡的古代天骄都醒了。龙宫的龙女，一出来就问：“那个罪血在哪？”' },
@@ -4735,16 +5346,34 @@ const RUMORS = [
   { from: 'q_v8', to: 'q_qiwang', who: '补天道的弟子', t: '孟长老亲自去仙古接人了。他几万年没离开过帝关。' },
   { from: 'q_wangjia', to: 'q_dizu', who: '帝关的兵', t: '七王祠里那几个孩子，那天晚上，第一次在祠堂里笑出了声。' },
   { from: 'q_dizu', to: 'q_bianhuang', who: '帝关的兵', t: '王家那个天骄从城头上摔下去了。谁推的？……反正帝关没人追究。' },
-  { from: 'q_bianhuang', to: 'q_anlan', who: '帝关的伙夫', t: '异域的年轻一代退了。帝族的天骄跪在沙子里，是被一个罪血打跪的。' },
-  { from: 'q_box', to: 'q_v9', who: '帝关的老兵', t: '安澜来了。孟老……孟老一剑斩断了自己的成仙路。' },
+  { from: 'q_bianhuang', to: 'q_box', who: '帝关的伙夫', t: '异域的年轻一代退了。帝族的天骄跪在沙子里，是被一个罪血打跪的。' },
+  { from: 'q_v9', to: 'q_train', who: '帝关的老兵', t: '安澜来了。孟老……孟老一剑斩断了自己的成仙路。' },
   { from: 'q_envoy', to: 'q_train', who: '下界的猎户', t: '有人从天上掉下来，掉在石村的柳树桩旁边。浑身是血，怀里抱着一个烂盒子。' },
   { from: 'q_train', to: 'q_army', who: '九天的商人', t: '王长生当着仙域使者的面，亲手处置了六个儿子。王家进了仙域。金家和风族，没进去。' },
   { from: 'q_army', to: 'q_purge', who: '大荒的猎户', t: '石村那个小不点，站在村口伸了个懒腰。整个大荒的凶兽，全趴下了。' },
   { from: 'q_purge', to: 'q_jin', who: '登天路下的少年', t: '八百个人！石村八百个人，扛着石锁，走上了登天路！' },
   { from: 'q_jin', to: 'q_peace', who: '九天的散修', t: '七大道统，一天之内，全倒了。仙殿、天国、剑谷……一座都没剩。' },
-  { from: 'q_peace', to: 'q_v9end', who: '九天的商人', t: '金家的金子，一夜之间全变黑了。风族山上的风，第一次往前吹了。' },
-  { from: 'q_v9end', to: 'q_v9end', who: '帝关的老兵', t: '七王祠的门匾换了。新的那块写着：“七王之后，镇守帝关”。' },
-  { from: 'q_v9end', to: 'q_v9end', who: '石村的二猛', t: '九天太平了。族长说，以后要给九天进贡。……还是兽奶。' },
+  { from: 'q_peace', to: 'q_fin', who: '九天的商人', t: '金家的金子，一夜之间全变黑了。风族山上的风，第一次往前吹了。' },
+  { from: 'q_v9end', to: 'q_fin', who: '帝关的老兵', t: '七王祠的门匾换了。新的那块写着：“七王之后，镇守帝关”。' },
+  { from: 'q_v9end', to: 'q_fin', who: '石村的二猛', t: '九天太平了。族长说，以后要给九天进贡。……还是兽奶。' },
+  { from: 'q_yyarena', to: 'q_yyfalls', who: '帝关的守兵', t: '荒被交出去了。……金家的老太君说，五百年太平。（他吐了一口唾沫）' },
+  { from: 'q_yyarena', to: 'q_back', who: '九天的商人', t: '孟长老出关了，提着剑去了金家。金家的长老倒了一地。然后他又去了王家。' },
+  { from: 'q_yytree', to: 'q_yyfalls', who: '异域的城卫', t: '城门上吊着的那个九天人，昨晚一个人打翻了十几个强者。用牙咬断的绳子。' },
+  { from: 'q_guzu', to: 'q_yyfalls', who: '异域的天骄', t: '磨刀场的规矩改了：想跟那个九天人打，要排三个月的队。' },
+  { from: 'q_yuanshi', to: 'q_back', who: '异域的城卫', t: '海瀑那边跑了三个人！抓着一条始祖鱼苗！' },
+  { from: 'q_back', to: 'q_anlan', who: '仙域的老人', t: '原始帝城的守将残念，几万年没说过话。昨天它说了一句：“还在就好。”' },
+  { from: 'q_anlan', to: 'q_v9', who: '帝关的伙夫', t: '荒回来了！瘦得只剩骨头，可那身修为——斩我境后期！' },
+  { from: 'q_tianting', to: 'q_dam', who: '九天的散修', t: '残仙墓空了。九天的灵气，第一次没往地底下流。' },
+  { from: 'q_dam', to: 'q_xwhy', who: '十地的猎户', t: '天门东边立了一根柱子，叫天庭。不收钱，谁去都行。' },
+  { from: 'q_zaohua', to: 'q_v13', who: '仙域的老人', t: '仙王的儿子输了。输给一个下界来的。他坐在地上笑了半天。' },
+  { from: 'q_v13', to: 'q_dlage', who: '天庭的守卫', t: '荒走进了造化之门，出来……就是真仙了。' },
+  { from: 'q_v14', to: 'q_liushen2', who: '天庭的守卫', t: '荒失踪了很久很久。有人说他去了时光长河的上游。……他回来了。' },
+  { from: 'q_liushen2', to: 'q_chiwang', who: '帝关的老人', t: '荒去了异域，背回来一个红衣服的姑娘。路上，他碎过一次，又站起来了。' },
+  { from: 'q_chiwang', to: 'q_kundi', who: '界海的守坝人', t: '界海里那棵黑柳树，被人接回去了。' },
+  { from: 'q_xianwar', to: 'q_kundi2', who: '仙域的守卫', t: '赤王死了。十几位仙王追他，被他炸了一路。' },
+  { from: 'q_kundi2', to: 'q_v15', who: '仙域的守卫', t: '刀王、蒲魔王、九头魔、无殇……仙域城下，一天之内，全倒了。' },
+  { from: 'q_shihai', to: 'q_duduan', who: '天庭的守卫', t: '异域平了。鲲帝死在了他自己的城里。' },
+  { from: 'q_fin', to: 'q_fin', who: '石村的老人', t: '天上那道断口，有人守着。是我们村的小不点。' },
 ];
 /* heard rumours are kept in the save (C.rumorLog) so they can be reread under 📜 记录 → 江湖传闻; co-op guests see the host's */
 function rumorTick() {
@@ -4859,7 +5488,7 @@ RIVAL_SAY.rival.die.push('……回去我就闭关。', '光幕前那么多人�
 RIVAL_SAY.shiyi.open.push('你的名字，我在光幕上见过很多次了。', '……你很像一个人。');
 RIVAL_SAY.shiyi.hit = ['……看清楚了。', '你的宝术，我看过一遍就够了。'];
 
-const FOE_KIND = id => ['lingyi', 'fengyin', 'beihunter', 'fengbei', 'lielao', 'bandit', 'senior', 'yuzu', 'yuchief', 'yuwangling', 'shiziteng', 'yuwai', 'wanghou', 'shichong', 'butianjiao', 'bulaoshan', 'ningjin', 'shenming', 'shenming2', 'mozhu', 'qingluan', 'jinwu', 'tianjiao', 'zhengzu', 'wuji', 'jitanshi', 'txdizi', 'tianrenzu', 'tianming', 'yaolong', 'tianjiao6', 'tiaozhan', 'sanyan', 'mingtu', 'yinkun', 'lunhuizi', 'ningchuan', 'dichongz', 'dichong', 'yiyubing', 'wangjia', 'dizu', 'anlan', 'jtguard', 'daotong', 'xiandian', 'jiangu'].includes(id) ? 'human' : ['jiling', 'wisp', 'suanni', 'bonewraith', 'boneking', 'tombguard', 'puppet', 'yinbing', 'yinhun', 'zhanhun', 'gutaihun', 'gutaiwang', 'baoling', 'xgling', 'bhhun', 'bhguard', 'heian', 'heianzz', 'heianwang'].includes(id) ? 'ghost' : 'beast';
+const FOE_KIND = id => ['lingyi', 'fengyin', 'beihunter', 'fengbei', 'lielao', 'bandit', 'senior', 'yuzu', 'yuchief', 'yuwangling', 'shiziteng', 'yuwai', 'wanghou', 'shichong', 'butianjiao', 'bulaoshan', 'ningjin', 'shenming', 'shenming2', 'mozhu', 'qingluan', 'jinwu', 'tianjiao', 'zhengzu', 'wuji', 'jitanshi', 'txdizi', 'tianrenzu', 'tianming', 'yaolong', 'tianjiao6', 'tiaozhan', 'sanyan', 'mingtu', 'yinkun', 'lunhuizi', 'ningchuan', 'dichongz', 'dichong', 'yiyubing', 'wangjia', 'dizu', 'anlan', 'jtguard', 'daotong', 'xiandian', 'jiangu', 'yuzu9', 'yytj', 'chiwanghy', 'chashu', 'haipu', 'canxiantu', 'xwhy', 'yyxwb', 'zbx', 'sanxw', 'chiwang', 'daowang', 'pumo', 'kundi', 'shihai0', 'shihai'].includes(id) ? 'human' : ['jiling', 'wisp', 'suanni', 'bonewraith', 'boneking', 'tombguard', 'puppet', 'yinbing', 'yinhun', 'zhanhun', 'gutaihun', 'gutaiwang', 'baoling', 'xgling', 'bhhun', 'bhguard', 'heian', 'heianzz', 'heianwang', 'jhsheng', 'ysmo', 'ysjiang', 'canxian', 'jieling', 'zaohua', 'shiguang', 'diluobing', 'qianshi', 'wangujie', 'heiandi'].includes(id) ? 'ghost' : 'beast';
 const HERO_SAY = {
   open: { beast: ['……这么大一只，够全村吃三天。', '你是清蒸，还是红烧？', '别跑啊，我还没想好怎么烤你。', '大壮说过，长得越凶的，肉越香。'], human: ['你话真多。', '打完再说。', '我饿了，快点。', '族长说，话多的都打不过我。', '你们是一起上，还是排队？'], ghost: ['……这个不能吃吧？', '你没有肉，我打你有什么好处？', '柳神说过，你们这种东西，怕打。'], rival: ['大荒来的，怎么了？', '让我三招？那你可别后悔。', '赢了你，晚上加个鸡腿。'] },
   crit: ['这一下，是替我们村的老母鸡打的！', '舒坦！', '族长！你看见没！', '嘿，正中！', '这一拳，我在空地上练了三百遍。'],
@@ -4966,24 +5595,29 @@ const TALKS = [
   { id: 'tk_hl4', npc: 'huolinger', from: 'q_spring', to: 'q_end', s: [['huolinger', '你跟云曦……很熟吗？'], ['me', '不熟。她帮我打了一只鸟。'], ['huolinger', '哼。她那个人，冷冰冰的，跟谁都不说话。'], ['me', '她跟我说了。她说“站起来”。'], ['huolinger', '……就这三个字？'], ['me', '对。'], ['huolinger', '（她的嘴角不知道为什么翘了起来）那你们果然不熟。']] },
   // 石国
   { id: 'tk_leiting1', npc: 'leiting', from: 'q_shouyan', to: 'q_jiaojun', s: [['leiting', '你知道寿宴上最危险的是什么吗？'], ['ch', ['尊者？', '菜不够吃？'], [[['leiting', '不，是坐在你旁边的人。他们会对着你笑，然后在你酒里下毒。']], [['leiting', '……（他沉默了一会儿）跟你说话，我总觉得是我想多了。']]]], ['me', '下毒我也不怕。我小时候喝过雨族的毒，跟兽奶差不多。'], ['leiting', '那叫毒？那叫……算了，你赢了。']] },
-  { id: 'tk_leiting2', npc: 'leiting', from: 'q_houfu', to: 'q_v3end', s: [['leiting', '我们雷族世代守着雷池。你去过补天阁的雷池？'], ['me', '去过。挨劈挨了二十多回。'], ['leiting', '二十多回？！我们族里的少年，劈三回就得躺半个月。'], ['me', '我躺了半天。……主要是饿醒的。'], ['nar', '雷霆盯着你看了很久，最后伸出手，跟你碰了碰拳头。']] },
-  { id: 'tk_zhong1', npc: 'laozhong', from: 'q_leiting', to: 'q_v3end', s: [['laozhong', '侯爷，老奴给您讲讲老太爷年轻时候的事吧？'], ['ch', ['好。', '讲讲我爹。'], [[['laozhong', '老太爷年轻的时候，一个人打穿了三座王府。为什么？因为人家说他吃饭吧唧嘴。'], ['me', '……我吃饭也吧唧嘴。'], ['laozhong', '（钟伯笑出了眼泪）那是家传的。']], [['laozhong', '你爹……话不多。可你一生下来，他抱着你在院子里站了一整夜，谁要都不给。'], ['laozhong', '那天晚上的月亮，老奴到现在都记得。']]]]] },
-  { id: 'tk_zhong2', npc: 'laozhong', from: 'q_qishen', to: 'q_v3end', s: [['laozhong', '陛下……'], ['me', '叫我小不点。'], ['laozhong', '这、这不合规矩。'], ['me', '我是石皇，规矩我定的。'], ['laozhong', '（他张了张嘴，眼圈红了）……小不点。'], ['nar', '他说完这三个字，背过身去，肩膀一直在抖。']] },
+  { id: 'tk_leiting2', npc: 'leiting', from: 'q_houfu', to: 'q_fin', s: [['leiting', '我们雷族世代守着雷池。你去过补天阁的雷池？'], ['me', '去过。挨劈挨了二十多回。'], ['leiting', '二十多回？！我们族里的少年，劈三回就得躺半个月。'], ['me', '我躺了半天。……主要是饿醒的。'], ['nar', '雷霆盯着你看了很久，最后伸出手，跟你碰了碰拳头。']] },
+  { id: 'tk_zhong1', npc: 'laozhong', from: 'q_leiting', to: 'q_fin', s: [['laozhong', '侯爷，老奴给您讲讲老太爷年轻时候的事吧？'], ['ch', ['好。', '讲讲我爹。'], [[['laozhong', '老太爷年轻的时候，一个人打穿了三座王府。为什么？因为人家说他吃饭吧唧嘴。'], ['me', '……我吃饭也吧唧嘴。'], ['laozhong', '（钟伯笑出了眼泪）那是家传的。']], [['laozhong', '你爹……话不多。可你一生下来，他抱着你在院子里站了一整夜，谁要都不给。'], ['laozhong', '那天晚上的月亮，老奴到现在都记得。']]]]] },
+  { id: 'tk_zhong2', npc: 'laozhong', from: 'q_qishen', to: 'q_fin', s: [['laozhong', '陛下……'], ['me', '叫我小不点。'], ['laozhong', '这、这不合规矩。'], ['me', '我是石皇，规矩我定的。'], ['laozhong', '（他张了张嘴，眼圈红了）……小不点。'], ['nar', '他说完这三个字，背过身去，肩膀一直在抖。']] },
   // 火国
-  { id: 'tk_huo1', npc: 'huolinger', from: 'q_niepan', to: 'q_v3end', s: [['huolinger', '喂，你在百断山的时候，说过要请我吃烤肉。'], ['me', '说过。'], ['huolinger', '那你什么时候请？'], ['ch', ['现在。', '等我打赢石毅。'], [[['nar', '你从怀里掏出一大块烤得金黄的兽腿。火灵儿瞪着它看了半天：“……你一直揣在怀里？”'], ['me', '揣了一路。还热乎。']], [['huolinger', '……（她别过脸去）那你得赢。不赢不许回来见我。']]]]] },
-  { id: 'tk_huo2', npc: 'huolinger', from: 'q_dajie', to: 'q_v3end', s: [['huolinger', '你跟石毅打的那天，我在云上看着。'], ['me', '你哭了吗？'], ['huolinger', '谁、谁哭了！是风大！天空战场上的风很大！'], ['me', '哦。'], ['huolinger', '……你被劫光吞进去的那一下，我差点跳下去。（她小声说）以后别这样了。']] },
-  { id: 'tk_huohuang1', npc: 'huohuang', from: 'q_niepan', to: 'q_v3end', s: [['huohuang', '百断山里，朕那一掌，你可记恨？'], ['ch', ['记着呢。', '不记恨，挺暖和的。'], [[['huohuang', '（火皇大笑）好！记着好！记着，才有力气往上爬。']], [['huohuang', '……暖和？（他愣了一下，又笑了）你这孩子，跟你娘一个样，说话能把人噎死。']]]]] },
-  { id: 'tk_huohuang2', npc: 'huohuang', from: 'q_letter', to: 'q_v3end', s: [['huohuang', '你娘走的时候，跟朕说过一句话。'], ['me', '什么话？'], ['huohuang', '她说：“如果有一天，一个胸口有疤的孩子来找涅槃池，请让他进去。不要问他是谁。”'], ['nar', '火皇看着你，很久没说话。'], ['huohuang', '朕没问。朕知道。']] },
+  { id: 'tk_huo1', npc: 'huolinger', from: 'q_niepan', to: 'q_fin', s: [['huolinger', '喂，你在百断山的时候，说过要请我吃烤肉。'], ['me', '说过。'], ['huolinger', '那你什么时候请？'], ['ch', ['现在。', '等我打赢石毅。'], [[['nar', '你从怀里掏出一大块烤得金黄的兽腿。火灵儿瞪着它看了半天：“……你一直揣在怀里？”'], ['me', '揣了一路。还热乎。']], [['huolinger', '……（她别过脸去）那你得赢。不赢不许回来见我。']]]]] },
+  { id: 'tk_huo2', npc: 'huolinger', from: 'q_dajie', to: 'q_fin', s: [['huolinger', '你跟石毅打的那天，我在云上看着。'], ['me', '你哭了吗？'], ['huolinger', '谁、谁哭了！是风大！天空战场上的风很大！'], ['me', '哦。'], ['huolinger', '……你被劫光吞进去的那一下，我差点跳下去。（她小声说）以后别这样了。']] },
+  { id: 'tk_huohuang1', npc: 'huohuang', from: 'q_niepan', to: 'q_fin', s: [['huohuang', '百断山里，朕那一掌，你可记恨？'], ['ch', ['记着呢。', '不记恨，挺暖和的。'], [[['huohuang', '（火皇大笑）好！记着好！记着，才有力气往上爬。']], [['huohuang', '……暖和？（他愣了一下，又笑了）你这孩子，跟你娘一个样，说话能把人噎死。']]]]] },
+  { id: 'tk_huohuang2', npc: 'huohuang', from: 'q_letter', to: 'q_fin', s: [['huohuang', '你娘走的时候，跟朕说过一句话。'], ['me', '什么话？'], ['huohuang', '她说：“如果有一天，一个胸口有疤的孩子来找涅槃池，请让他进去。不要问他是谁。”'], ['nar', '火皇看着你，很久没说话。'], ['huohuang', '朕没问。朕知道。']] },
   // 第四卷 · 第五卷
-  { id: 'tk_bzlao1', npc: 'bzlao', from: 'q_baojie', to: 'q_v5end', s: [['bzlao', '小子，你知道为什么百族营地里，每一族都只围着自己的火吗？'], ['ch', ['因为谁也看不起谁？', '因为火不够用？'], [[['bzlao', '对了一半。还因为——今天坐在一堆火边上的人，明天可能就在战场上碰见。']], [['bzlao', '（老兵愣了一下，笑得直咳嗽）……你这小子。']]]], ['bzlao', '我年轻的时候，跟一个金乌族的人坐过一堆火。后来在战场上碰见了。'], ['me', '谁赢了？'], ['bzlao', '（他拍了拍那条瘸腿）你说呢。……他请我喝过一碗酒。我到现在都记得那个味儿。']] },
-  { id: 'tk_yunlao1', npc: 'yunlao', from: 'q_huobye', to: 'q_v5end', s: [['yunlao', '你知道云族为什么叫云族吗？'], ['me', '因为住在云里？'], ['yunlao', '因为我们的祖先，是踩着云从上面下来的。他们说，下来看看就回去。'], ['yunlao', '……然后就没回去。路断了。一断就是几千年。'], ['nar', '老人看着天，很久没说话。']] },
-  { id: 'tk_qi1', npc: 'qidaolin', from: 'q_dojo', to: 'q_v5end', s: [['qidaolin', '徒弟，你是不是觉得为师是个骗子？'], ['ch', ['是。', '有一点。', '不是。'], [[['qidaolin', '（他一口茶喷了出来）……你倒是实诚！']], [['qidaolin', '一点？好，比为师想的少。']], [['qidaolin', '……（他盯着你看了很久）你这孩子，说谎都不会。']]]], ['qidaolin', '为师骗过很多人。可至尊道场是真的，无敌道是真的。'], ['qidaolin', '为师就想……在为师死之前，看一眼至尊道场再热闹起来。哪怕就两个人。'], ['me', '现在不就是两个人吗？'], ['nar', '齐道临别过脸去，半天没说话。']] },
-  { id: 'tk_qi2', npc: 'qidaolin', from: 'q_tianshen', to: 'q_v5end', s: [['qidaolin', '徒弟，你在天碑上写那个字的时候，为师在台下。'], ['qidaolin', '为师这辈子，被人指着鼻子骂过骗子、骂过疯子。可从来没想过——有人敢指着整个上界的鼻子，说它错了。'], ['me', '它本来就错了。'], ['qidaolin', '（他笑了，笑着笑着，眼睛就红了）……对。它本来就错了。']] },
+  { id: 'tk_bzlao1', npc: 'bzlao', from: 'q_baojie', to: 'q_fin', s: [['bzlao', '小子，你知道为什么百族营地里，每一族都只围着自己的火吗？'], ['ch', ['因为谁也看不起谁？', '因为火不够用？'], [[['bzlao', '对了一半。还因为——今天坐在一堆火边上的人，明天可能就在战场上碰见。']], [['bzlao', '（老兵愣了一下，笑得直咳嗽）……你这小子。']]]], ['bzlao', '我年轻的时候，跟一个金乌族的人坐过一堆火。后来在战场上碰见了。'], ['me', '谁赢了？'], ['bzlao', '（他拍了拍那条瘸腿）你说呢。……他请我喝过一碗酒。我到现在都记得那个味儿。']] },
+  { id: 'tk_yunlao1', npc: 'yunlao', from: 'q_huobye', to: 'q_fin', s: [['yunlao', '你知道云族为什么叫云族吗？'], ['me', '因为住在云里？'], ['yunlao', '因为我们的祖先，是踩着云从上面下来的。他们说，下来看看就回去。'], ['yunlao', '……然后就没回去。路断了。一断就是几千年。'], ['nar', '老人看着天，很久没说话。']] },
+  { id: 'tk_qi1', npc: 'qidaolin', from: 'q_dojo', to: 'q_fin', s: [['qidaolin', '徒弟，你是不是觉得为师是个骗子？'], ['ch', ['是。', '有一点。', '不是。'], [[['qidaolin', '（他一口茶喷了出来）……你倒是实诚！']], [['qidaolin', '一点？好，比为师想的少。']], [['qidaolin', '……（他盯着你看了很久）你这孩子，说谎都不会。']]]], ['qidaolin', '为师骗过很多人。可至尊道场是真的，无敌道是真的。'], ['qidaolin', '为师就想……在为师死之前，看一眼至尊道场再热闹起来。哪怕就两个人。'], ['me', '现在不就是两个人吗？'], ['nar', '齐道临别过脸去，半天没说话。']] },
+  { id: 'tk_qi2', npc: 'qidaolin', from: 'q_tianshen', to: 'q_fin', s: [['qidaolin', '徒弟，你在天碑上写那个字的时候，为师在台下。'], ['qidaolin', '为师这辈子，被人指着鼻子骂过骗子、骂过疯子。可从来没想过——有人敢指着整个上界的鼻子，说它错了。'], ['me', '它本来就错了。'], ['qidaolin', '（他笑了，笑着笑着，眼睛就红了）……对。它本来就错了。']] },
   // 第六～九卷
-  { id: 'tk_qi3', npc: 'qidaolin', from: 'q_v7', to: 'q_v9end', s: [['qidaolin', '徒弟，争霸台上那一招，为师看见了。'], ['me', '哪一招？'], ['qidaolin', '你从台上走下去的那一招。（他难得认真）往前不回头，不是不能退。是退了，还会回来。'], ['ch', ['师父，你这句话是刚想的吧？', '……谢谢师父。'], [[['qidaolin', '（他咳嗽了一声）……昨天想的。想了一晚上。']], [['qidaolin', '（他别过脸去）谢什么谢！吃饭去！你请！']]]]] },
+  { id: 'tk_qi3', npc: 'qidaolin', from: 'q_v7', to: 'q_fin', s: [['qidaolin', '徒弟，争霸台上那一招，为师看见了。'], ['me', '哪一招？'], ['qidaolin', '你从台上走下去的那一招。（他难得认真）往前不回头，不是不能退。是退了，还会回来。'], ['ch', ['师父，你这句话是刚想的吧？', '……谢谢师父。'], [[['qidaolin', '（他咳嗽了一声）……昨天想的。想了一晚上。']], [['qidaolin', '（他别过脸去）谢什么谢！吃饭去！你请！']]]]] },
   { id: 'tk_meng1', npc: 'mengtz', from: 'q_qiwang', to: 'q_anlan', s: [['mengtz', '孩子，你想成仙吗？'], ['ch', ['想。', '不知道。成了仙，还能吃烤肉吗？'], [[['mengtz', '我也想。想了几万年。（他看着城外）……可每次快到了，城外就有人来。']], [['mengtz', '（他愣了一下，哈哈大笑）能！我替你问过了——问的是个死了的仙人，他没回答。']]]], ['mengtz', '成仙那条路，我就差一步了。'], ['mengtz', '……可我总觉得，这一步，跟守城比，没那么要紧。']] },
-  { id: 'tk_qi7', npc: 'qiwanghou', from: 'q_wangjia', to: 'q_v9end', s: [['qiwanghou', '你说，七王当年怕不怕？'], ['me', '怕吧。'], ['qiwanghou', '那他们为什么不跑？'], ['ch', ['因为后面有人。', '因为跑了，就回不了家了。'], [[['qiwanghou', '（他想了想）……后面的人跑了，他们还是没跑。']], [['qiwanghou', '（他低下头）我们这一支，从来没见过家。']]]], ['nar', '小七添完灯油，冲七个牌位磕了三个头。他磕得很认真。']] },
-  { id: 'tk_army1', npc: 'dazhuang', from: 'q_purge', to: 'q_v9end', s: [['dazhuang', '小不点，你还记得你小时候被我笑举不动石锁吗？'], ['me', '记得。笑了一个月。'], ['dazhuang', '（他挠了挠头）我那时候其实也举不动。我是踮着脚，用肩膀扛起来的。'], ['me', '……你骗了我几十年？'], ['dazhuang', '（他哈哈大笑，笑得胡子直抖）现在说出来，舒服多了！']] },
+  { id: 'tk_qi7', npc: 'qiwanghou', from: 'q_wangjia', to: 'q_fin', s: [['qiwanghou', '你说，七王当年怕不怕？'], ['me', '怕吧。'], ['qiwanghou', '那他们为什么不跑？'], ['ch', ['因为后面有人。', '因为跑了，就回不了家了。'], [[['qiwanghou', '（他想了想）……后面的人跑了，他们还是没跑。']], [['qiwanghou', '（他低下头）我们这一支，从来没见过家。']]]], ['nar', '小七添完灯油，冲七个牌位磕了三个头。他磕得很认真。']] },
+  { id: 'tk_army1', npc: 'dazhuang', from: 'q_purge', to: 'q_fin', s: [['dazhuang', '小不点，你还记得你小时候被我笑举不动石锁吗？'], ['me', '记得。笑了一个月。'], ['dazhuang', '（他挠了挠头）我那时候其实也举不动。我是踮着脚，用肩膀扛起来的。'], ['me', '……你骗了我几十年？'], ['dazhuang', '（他哈哈大笑，笑得胡子直抖）现在说出来，舒服多了！']] },
+  // 第九～十五卷
+  { id: 'tk_guzu1', npc: 'guzu', from: 'q_yyfalls', to: 'q_fin', s: [['guzu', '你知道异域为什么一直往帝关打吗？'], ['ch', ['为了抢地盘？', '为了那只盒子？'], [[['guzu', '那是他们自己以为的。']], [['guzu', '……盒子只是一个借口。']]]], ['guzu', '因为界海那边的黑，在往这边推。异域在前面，被推着走。帝关在后面，挡着。'], ['guzu', '打来打去，都是被推着的。（它看着灯）你要是能往上走……就去看看，是谁在推。']] },
+  { id: 'tk_meng2', npc: 'mengtz', from: 'q_anlan', to: 'q_anlan', s: [['mengtz', '你在异域那一百年，我把你的那份饭，每天都留着。'], ['me', '……一百年的饭？'], ['mengtz', '（他笑了）都喂了城头的乌鸦。帝关的乌鸦，现在比人都胖。']] },
+  { id: 'tk_huo3', npc: 'huolinger', from: 'q_fin', to: 'q_fin', s: [['huolinger', '我睡了好久好久。睡着的时候，一直梦见百断山。'], ['me', '梦见什么？'], ['huolinger', '梦见你偷神猴王的圣药，被我父皇一掌拍飞。（她笑了）你飞出去的样子，特别傻。'], ['ch', ['……你就记得这个？', '（递给她一块烤肉）'], [[['huolinger', '还记得你说要请我吃烤肉。欠了好多好多年。']], [['huolinger', '（她接过去，咬了一大口）……这回是热的。']]]]] },
+  { id: 'tk_willow9', npc: 'willow', from: 'q_fin', to: 'q_fin', s: [['willow', '（柳枝在你额头上点了一下）……还记得你小时候，第一次爬我的树吗？'], ['me', '记得。摔下来了，你接住了我。'], ['willow', '……你现在，也接住了很多人。']] },
 ];
 const talkNext = id => TALKS.find(T => T.npc === id && !(C.talked || {})[T.id] && C.story.q >= qi(T.from) && C.story.q <= qi(T.to));
 async function talkSteps(steps) { for (const st of steps) { const [w, t, r] = st;
@@ -5071,7 +5705,7 @@ addEventListener('keydown', e => { if (STATE.mode !== 'play' || e.target.tagName
 let refT = 0;
 function refresh() { if (refT) return; refT = requestAnimationFrame(() => { refT = 0; if (STATE.mode !== 'play' || !C) return; applyMode(); musicMode(); atmoUpdate(); renderTop();
   if (curMode() === 'explore') { renderBanner(); renderDesc(); renderFeed(); renderActs(); renderRumor(); } if (STATE.battle) renderBattle(true); renderSide(); if (UI.modal) openModal(UI.modal, true); }); }
-const CH_NAMES = ['', '第一章 · 石村', '第二章 · 出村', '第三章 · 补天阁', '第四章 · 百断山', '第五章 · 皇都', '第六章 · 寿宴', '第七章 · 双石', '第八章 · 石皇', '第九章 · 七神', '第十章 · 宝界', '第十一章 · 登天', '第十二章 · 上界', '第十三章 · 至尊古台', '第十四章 · 银磨山', '第十五章 · 争霸', '第十六章 · 仙古', '第十七章 · 帝冲', '第十八章 · 帝关', '第十九章 · 边荒', '第二十章 · 蛰伏', '第二十一章 · 清算'];
+const CH_NAMES = ['', '第一章 · 石村', '第二章 · 出村', '第三章 · 补天阁', '第四章 · 百断山', '第五章 · 皇都', '第六章 · 寿宴', '第七章 · 双石', '第八章 · 石皇', '第九章 · 七神', '第十章 · 宝界', '第十一章 · 登天', '第十二章 · 上界', '第十三章 · 至尊古台', '第十四章 · 银磨山', '第十五章 · 争霸', '第十六章 · 仙古', '第十七章 · 帝冲', '第十八章 · 帝关', '第十九章 · 边荒', '第二十章 · 黑水', '第二十一章 · 海瀑', '第二十二章 · 仙域', '第二十三章 · 安澜', '第二十四章 · 蛰伏', '第二十五章 · 清算', '第二十六章 · 天庭', '第二十七章 · 造化', '第二十八章 · 帝落', '第二十九章 · 八世', '第三十章 · 火灵儿', '第三十一章 · 仙王', '第三十二章 · 界海', '第三十三章 · 独断万古'];
 function renderTop() {
   const s = charStats(), R = realmOf(C.lv); const co = NETROLE ? `<button class="tb net" onclick="openModal('coop')">🔗 ${myControl() ? '你在操作' : '队友操作中'}</button>` : `<button class="tb" onclick="openModal('coop')" title="联机">🔗</button>`;
   $('top').innerHTML = `<div class="who">石昊</div><div class="lv">${R.name} ${C.lv}层</div><div class="bars3"><div class="bar" title="气血 ${Math.ceil(C.hp)}/${s.hpMax}"><i style="width:${C.hp / s.hpMax * 100}%"></i></div><div class="bar mp" title="符力"><i style="width:${C.mp / s.mpMax * 100}%"></i></div><div class="bar exp" title="经验"><i style="width:${Math.min(100, C.exp / BAL.expNext(C.lv) * 100)}%"></i></div></div>
@@ -5371,7 +6005,7 @@ function paintScene(g, W, H, id, night, big, noSun) {
     if (id === 'bt_bdgate') { spire(g, W * 0.62, H, W * 0.3, H * 0.62, mid, id + 's', 0.95, 0.5); g.fillStyle = night ? '#6aa0ff' : '#efe6cc'; g.fillRect(W * 0.5, H * 0.39, W * 0.24, 1.5); }
   } else if (a === 'shiguo' || a === 'huoguo') { paintKingdom(g, W, H, id, night, { paper, ink, far, mid, near, r, T });
   } else if (a === 'baizu' || a === 'shangjie') { paintBeyond(g, W, H, id, night, { paper, ink, far, mid, near, r, T });
-  } else if (a === 'sanqian' || a === 'xiangu' || a === 'diguan' || a === 'jiutian') { paintLate(g, W, H, id, a, night, { paper, ink, far, mid, near, r, T });
+  } else if (['sanqian', 'xiangu', 'diguan', 'jiutian', 'yiyu', 'xianyu', 'diluo', 'jiehai'].includes(a)) { paintLate(g, W, H, id, a, night, { paper, ink, far, mid, near, r, T });
   } else {
     // three ranges of hills washed back to front, mist between
     const peaks = a === 'baiduan' ? 0 : 2; const c1 = crest(id + 'a', W, H * 0.52, H * 0.34, 0.55, peaks); washHill(g, W, H, c1, far, 0.6, 0, H * 0.72, 0.18, id + 'a'); mistBand(g, W, H * 0.6, H * 0.08, paper, 0.6, id + 'm1');
@@ -5532,7 +6166,7 @@ function paintBeyond(g, W, H, id, night, k) { const { paper, ink, far, mid, near
 function glowAt(g, x, y, rad, col, a) { const gl = g.createRadialGradient(x, y, 0, x, y, rad); gl.addColorStop(0, rgbA(col, a)); gl.addColorStop(1, rgbA(col, 0)); g.fillStyle = gl; g.fillRect(x - rad, y - rad, rad * 2, rad * 2); }
 function pillar(g, x, gy, w, h, col, broken, r) { g.fillStyle = col; g.beginPath(); g.moveTo(x - w / 2, gy); g.lineTo(x - w / 2, gy - h); if (broken) { for (let i = 0; i <= 4; i++) g.lineTo(x - w / 2 + w * i / 4, gy - h - (r() - 0.3) * w * 0.8); } else { g.lineTo(x - w * 0.7, gy - h); g.lineTo(x - w * 0.7, gy - h - w * 0.35); g.lineTo(x + w * 0.7, gy - h - w * 0.35); g.lineTo(x + w * 0.7, gy - h); } g.lineTo(x + w / 2, gy - h); g.lineTo(x + w / 2, gy); g.closePath(); g.fill(); g.fillStyle = 'rgba(255,255,255,.07)'; g.fillRect(x - w / 2, gy - h, w * 0.22, h); }
 function paintLate(g, W, H, id, a, night, k) { const { paper, ink, far, mid, near, r } = k, gy = H * 0.86, light = night ? '#9ab0d8' : '#f4ecd8';
-  const tint = { sanqian: night ? 'rgba(60,40,110,.25)' : 'rgba(170,150,230,.25)', xiangu: night ? 'rgba(20,60,40,.3)' : 'rgba(120,180,140,.25)', diguan: night ? 'rgba(90,20,10,.35)' : 'rgba(220,110,70,.3)', jiutian: night ? 'rgba(90,70,20,.3)' : 'rgba(250,210,120,.3)' }[a];
+  const tint = { sanqian: night ? 'rgba(60,40,110,.25)' : 'rgba(170,150,230,.25)', xiangu: night ? 'rgba(20,60,40,.3)' : 'rgba(120,180,140,.25)', diguan: night ? 'rgba(90,20,10,.35)' : 'rgba(220,110,70,.3)', jiutian: night ? 'rgba(90,70,20,.3)' : 'rgba(250,210,120,.3)', yiyu: night ? 'rgba(60,10,50,.4)' : 'rgba(150,70,120,.35)', xianyu: night ? 'rgba(20,50,80,.3)' : 'rgba(150,200,240,.3)', diluo: night ? 'rgba(70,60,30,.35)' : 'rgba(230,200,140,.35)', jiehai: night ? 'rgba(5,10,30,.55)' : 'rgba(30,50,90,.5)' }[a];
   const sk = g.createLinearGradient(0, 0, 0, H); sk.addColorStop(0, tint); sk.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = sk; g.fillRect(0, 0, W, H);
   const c1 = crest(id + 'a', W, H * (a === 'diguan' ? 0.62 : 0.52), H * 0.24, 0.5, 2); washHill(g, W, H, c1, far, 0.5, 0, H * 0.72, 0.15, id + 'a'); mistBand(g, W, H * 0.64, H * 0.08, paper, night ? 0.3 : 0.55, id + 'm1');
   const ground = (top, col = mid, al = 0.85) => { const c2 = crest(id + 'g', W, top, H * 0.05, 0.45); washHill(g, W, H, c2, col, al, 0.6, H, 0.15, id + 'g'); };
@@ -5574,6 +6208,32 @@ function paintLate(g, W, H, id, a, night, k) { const { paper, ink, far, mid, nea
   else if (id === 'jt_sect') { cloudSea(g, W, H * 0.86, cs, night ? 0.35 : 0.8, r); for (let i = 0; i < 7; i++) { const x = W * (0.07 + i * 0.143), h = H * (0.3 + (i % 3) * 0.08); spire(g, x, H * 0.92, W * 0.1, h, i % 2 ? near : mid, id + i, 0.9, 0.5); hall(g, x, H * 0.92 - h * 0.92, W * 0.06, near, paper, 1, night); if (C && C.story.f.purge) { g.fillStyle = 'rgba(0,0,0,.35)'; g.fillRect(x - W * 0.05, H * 0.92 - h * 1.05, W * 0.1, h * 0.25); } } }
   else if (id === 'jt_jin') { ground(H * 0.8); const cx = W * 0.5; glowAt(g, cx, H * 0.75, W * 0.3, '#ffd870', night ? 0.35 : 0.55); hall(g, cx, H * 0.9, Math.min(W * 0.4, H * 0.85), (C && C.story.f.jin) ? '#1a1a1a' : (night ? '#6a5a2a' : '#c8a040'), paper, 2, night); }
   else if (id === 'jt_feng') { spire(g, W * 0.5, H, W * 0.6, H * 0.6, near, id + 'f', 0.9, 0.5); g.strokeStyle = rgbA(light, 0.35); g.lineWidth = 1.2; for (let i = 0; i < 14; i++) { const y = H * (0.2 + r() * 0.6), x = r() * W * 0.6; g.beginPath(); g.moveTo(x, y); g.quadraticCurveTo(x + W * 0.15, y - 8, x + W * 0.3, y + 4); g.stroke(); } }
+  else if (id === 'yy_jail') { g.fillStyle = 'rgba(10,0,10,.55)'; g.fillRect(0, 0, W, H); g.fillStyle = '#0a0608'; for (let i = 0; i < 9; i++) g.fillRect(W * (0.08 + i * 0.105), 0, W * 0.012, H * 0.86); g.fillRect(0, H * 0.12, W, H * 0.015); g.fillStyle = '#05030a'; g.fillRect(0, H * 0.86, W, H * 0.14); g.strokeStyle = 'rgba(140,120,160,.25)'; for (let i = 0; i < 5; i++) { g.beginPath(); g.ellipse(W * (0.2 + i * 0.15), H * 0.92, W * 0.04, H * 0.008, 0, 0, TAU); g.stroke(); } }
+  else if (id === 'yy_gate' || id === 'yy_capital') { ground(H * 0.82, near, 0.9); const cx = W * 0.5, gw = Math.min(W * 0.55, H * 1.1), gh = H * 0.7, col = '#120a12'; g.fillStyle = col; g.fillRect(0, H * 0.92 - gh * 0.75, W, gh * 0.75); for (let x = 0; x < W; x += W / 16) g.fillRect(x, H * 0.92 - gh * 0.75 - H * 0.04, W / 32, H * 0.04);
+    g.fillStyle = '#05020a'; g.beginPath(); g.moveTo(cx - gw * 0.12, H); g.lineTo(cx - gw * 0.12, H * 0.62); g.quadraticCurveTo(cx, H * 0.52, cx + gw * 0.12, H * 0.62); g.lineTo(cx + gw * 0.12, H); g.fill(); if (id === 'yy_capital') { g.strokeStyle = 'rgba(230,220,200,.5)'; g.lineWidth = 3; g.beginPath(); for (let i = 0; i < 12; i++) { const x = W * (0.05 + i * 0.08); g.moveTo(x, H * 0.92 - gh * 0.75); g.quadraticCurveTo(x + W * 0.04, H * 0.92 - gh * 0.95, x + W * 0.08, H * 0.92 - gh * 0.75); } g.stroke(); }
+    else if (!(C && C.story.f.chiwangDone)) { g.strokeStyle = 'rgba(200,180,160,.6)'; g.lineWidth = 1.5; g.beginPath(); g.moveTo(cx + gw * 0.3, H * 0.92 - gh * 0.75); g.lineTo(cx + gw * 0.3, H * 0.5); g.stroke(); } }
+  else if (id === 'yy_arena') { ground(H * 0.8, near, 0.9); const cx = W * 0.5, cy = H * 0.88; g.fillStyle = '#2a1424'; g.beginPath(); g.ellipse(cx, cy, W * 0.36, H * 0.07, 0, 0, TAU); g.fill(); g.fillStyle = rgbA('#000000', 0.7); for (let i = 0; i < 80; i++) { const t = r(), x = W * t, y = H * (0.66 + Math.abs(t - 0.5) * 0.16) - r() * H * 0.05, s2 = H * 0.011; g.beginPath(); g.arc(x, y, s2, 0, TAU); g.fill(); } }
+  else if (id === 'yy_tree') { ground(H * 0.8); const tx = W * 0.5; g.fillStyle = near; g.beginPath(); g.moveTo(tx - W * 0.03, H * 0.9); g.lineTo(tx - W * 0.015, H * 0.45); g.lineTo(tx + W * 0.015, H * 0.45); g.lineTo(tx + W * 0.03, H * 0.9); g.fill(); for (let i = 0; i < 26; i++) { const a2 = r() * TAU, d2 = r() * H * 0.22; g.fillStyle = rgbA(i % 3 ? '#4a7a4a' : '#7ab07a', 0.85); g.beginPath(); g.ellipse(tx + Math.cos(a2) * d2 * 1.4, H * 0.36 + Math.sin(a2) * d2 * 0.6, H * 0.06, H * 0.035, a2, 0, TAU); g.fill(); } glowAt(g, tx, H * 0.38, H * 0.3, '#d8ffd0', night ? 0.35 : 0.2); }
+  else if (id === 'yy_guzu') { g.fillStyle = 'rgba(0,0,0,.7)'; g.fillRect(0, 0, W, H); g.fillStyle = '#0a060a'; g.beginPath(); g.ellipse(W * 0.5, H * 1.05, W * 0.6, H * 0.85, 0, Math.PI, TAU); g.fill(); glowAt(g, W * 0.5, H * 0.72, H * 0.25, '#ffd28a', 0.7); g.fillStyle = '#ffe8b0'; g.beginPath(); g.arc(W * 0.5, H * 0.72, 3, 0, TAU); g.fill(); g.fillStyle = '#140c10'; g.beginPath(); g.ellipse(W * 0.44, H * 0.8, W * 0.05, H * 0.1, 0, 0, TAU); g.fill(); }
+  else if (id === 'yy_falls' || id === 'yy_seal') { ground(H * 0.7, mid, 0.85); if (id === 'yy_falls') { const fx = W * 0.3, fw = W * 0.25; const fg = g.createLinearGradient(0, H * 0.3, 0, H); fg.addColorStop(0, rgbA('#a0b0d0', 0.9)); fg.addColorStop(1, rgbA('#101828', 0.95)); g.fillStyle = fg; g.fillRect(fx, H * 0.3, fw, H * 0.7); g.strokeStyle = 'rgba(255,255,255,.35)'; for (let i = 0; i < 20; i++) { const x = fx + r() * fw; g.beginPath(); g.moveTo(x, H * 0.3 + r() * H * 0.2); g.lineTo(x, H); g.stroke(); } mistBand(g, W, H * 0.9, H * 0.08, '#ffffff', 0.4, id + 'mf'); }
+    else { const cx = W * 0.5; g.strokeStyle = rgbA('#f0a8d8', 0.6); g.lineWidth = 2; for (let i = 0; i < 4; i++) { g.beginPath(); g.ellipse(cx, H * 0.78, W * (0.08 + i * 0.05), H * (0.08 + i * 0.05), 0, 0, TAU); g.stroke(); } glowAt(g, cx, H * 0.78, H * 0.06, '#ff8a4a', 0.95); } }
+  else if (id === 'xy_shore' || id === 'jh_dam' || id === 'jh_sea') { const sea = id === 'xy_shore' ? H * 0.72 : id === 'jh_dam' ? H * 0.6 : H * 0.45; g.fillStyle = night ? '#04060c' : '#0e1424'; g.fillRect(0, sea, W, H - sea); for (let i = 0; i < (id === 'jh_sea' ? 12 : 5); i++) { const x = r() * W, y = sea + r() * (H - sea) * 0.8, w2 = W * (0.03 + r() * 0.06); g.fillStyle = rgbA('#5a4a3a', 0.6); g.beginPath(); g.ellipse(x, y, w2, w2 * 0.3, r() - 0.5, 0, TAU); g.fill(); }
+    if (id === 'xy_shore') { g.fillStyle = mid; g.beginPath(); g.moveTo(0, H); g.lineTo(0, H * 0.8); g.quadraticCurveTo(W * 0.4, H * 0.74, W * 0.7, H * 0.9); g.lineTo(W * 0.7, H); g.fill(); g.fillStyle = night ? '#d8d0c0' : '#f0ece4'; g.fillRect(W * 0.12, H * 0.52, W * 0.18, H * 0.2); for (let i = 0; i < 5; i++) g.fillRect(W * (0.12 + i * 0.04), H * 0.49, W * 0.02, H * 0.03); }
+    if (id === 'jh_dam') { g.fillStyle = night ? '#3a4058' : near; g.fillRect(0, H * 0.82, W, H * 0.18); g.fillRect(0, H * 0.78, W, H * 0.05); g.fillStyle = 'rgba(200,210,240,.35)'; g.fillRect(0, H * 0.78, W, 1.5); for (let i = 0; i < 6; i++) fire(g, W * (0.1 + i * 0.16), H * 0.78, H * 0.01, night); g.fillStyle = rgbA(ink, 0.9); for (let i = 0; i < 12; i++) { const x = W * (0.04 + i * 0.08), s2 = H * 0.025; g.beginPath(); g.arc(x, H * 0.74, s2 * 0.45, 0, TAU); g.fill(); g.fillRect(x - s2 * 0.4, H * 0.74, s2 * 0.8, s2 * 1.6); } }
+    if (id === 'jh_sea') for (let i = 0; i < 3; i++) glowAt(g, W * (0.2 + i * 0.3), H * (0.15 + r() * 0.15), H * 0.05, '#f0e0b0', 0.5); }
+  else if (id === 'xy_city') { ground(H * 0.82); for (let i = 0; i < 4; i++) hall(g, W * (0.14 + i * 0.24), H * 0.9, Math.min(W * 0.16, H * 0.4), i % 2 ? near : mid, paper, 2, night); }
+  else if (id === 'xy_yuanshi') { ground(H * 0.84); const wc = night ? '#c8c4b8' : '#ece8de'; g.fillStyle = wc; g.fillRect(0, H * 0.4, W, H * 0.48); for (let x = 0; x < W; x += W / 14) g.fillRect(x, H * 0.36, W / 28, H * 0.04); g.fillStyle = rgbA('#000000', 0.08); for (let i = 0; i < 12; i++) g.fillRect(0, H * 0.4 + i * H * 0.04, W, 1); for (let i = 0; i < 40; i++) g.fillRect(r() * W, H * 0.4 + r() * H * 0.46, W * 0.02, 1.5);
+    g.fillStyle = '#2a2622'; g.beginPath(); g.moveTo(W * 0.44, H * 0.88); g.lineTo(W * 0.44, H * 0.62); g.quadraticCurveTo(W * 0.5, H * 0.54, W * 0.56, H * 0.62); g.lineTo(W * 0.56, H * 0.88); g.fill(); g.fillStyle = night ? 'rgba(255,214,140,.8)' : 'rgba(120,90,50,.8)'; for (let i = 0; i < 7; i++) g.fillRect(W * (0.4 + i * 0.03), H * 0.47, W * 0.018, H * 0.03); }
+  else if (id === 'xy_gate') { ground(H * 0.84); const cx = W * 0.5, gw = Math.min(W * 0.3, H * 0.6); g.fillStyle = near; g.fillRect(cx - gw / 2, H * 0.18, gw * 0.12, H * 0.72); g.fillRect(cx + gw / 2 - gw * 0.12, H * 0.18, gw * 0.12, H * 0.72); glowAt(g, cx, H * 0.55, gw, '#ffffff', 0.9); g.fillStyle = 'rgba(255,255,250,.85)'; g.fillRect(cx - gw * 0.38, H * 0.2, gw * 0.76, H * 0.7); }
+  else if (a === 'diluo') { const hz = H * 0.5; for (let i = 0; i < 30; i++) { const x = r() * W, y = r() * hz, rr = 1 + r() * 3; g.fillStyle = rgbA('#fff0c0', 0.5 + r() * 0.4); g.beginPath(); g.arc(x, y, rr, 0, TAU); g.fill(); if (r() < 0.3) { g.strokeStyle = 'rgba(255,230,180,.4)'; g.beginPath(); g.moveTo(x, y); g.lineTo(x - 30, y - 18); g.stroke(); } }
+    if (id === 'dl_river' || id === 'dl_end') { const rg = g.createLinearGradient(0, H * 0.6, 0, H); rg.addColorStop(0, night ? 'rgba(120,110,80,.5)' : 'rgba(150,120,70,.45)'); rg.addColorStop(1, night ? 'rgba(200,170,110,.8)' : 'rgba(110,85,45,.85)'); g.fillStyle = rg; g.beginPath(); g.moveTo(W * 0.45, H * 0.6); g.lineTo(W * 0.55, H * 0.6); g.lineTo(W * 0.95, H); g.lineTo(W * 0.05, H); g.fill(); for (let i = 0; i < 9; i++) glowAt(g, W * (0.3 + r() * 0.4), H * (0.7 + r() * 0.25), 6, '#ffd27a', 0.9); if (id === 'dl_end') glowAt(g, W * 0.5, H * 0.6, H * 0.15, '#ffffff', 0.9); }
+    else if (id === 'dl_age') { ground(H * 0.8); for (let i = 0; i < 6; i++) pillar(g, W * (0.08 + i * 0.17), H * 0.92, W * 0.03, H * (0.15 + r() * 0.3), near, 1, r); }
+    else { ground(H * 0.82); for (let i = 0; i < 8; i++) { const x = W * (0.06 + i * 0.125), s2 = H * (0.05 + i * 0.008); g.fillStyle = rgbA(ink, 0.3 + i * 0.08); g.beginPath(); g.arc(x, H * 0.9 - s2 * 2.2, s2 * 0.45, 0, TAU); g.fill(); g.beginPath(); g.moveTo(x, H * 0.9 - s2 * 1.8); g.lineTo(x - s2 * 0.8, H * 0.9); g.lineTo(x + s2 * 0.8, H * 0.9); g.fill(); } } }
+  else if (id === 'jh_deep') { g.fillStyle = 'rgba(0,0,0,.75)'; g.fillRect(0, 0, W, H); if (C && C.story.f.shihaiDone) glowAt(g, W * 0.5, H * 0.5, H * 0.4, '#c8d8ff', 0.4); else { g.fillStyle = '#000'; g.beginPath(); g.ellipse(W * 0.5, H * 0.6, W * 0.06, H * 0.14, 0, 0, TAU); g.fill(); g.strokeStyle = 'rgba(160,180,220,.35)'; g.beginPath(); g.ellipse(W * 0.5, H * 0.6, W * 0.07, H * 0.15, 0, 0, TAU); g.stroke(); } }
+  else if (id === 'jh_top') { g.fillStyle = rgbA('#ffffff', night ? 0.1 : 0.3); g.fillRect(0, 0, W, H); g.strokeStyle = 'rgba(255,240,200,.8)'; g.lineWidth = 3; g.beginPath(); g.moveTo(W * 0.5, 0); g.lineTo(W * 0.5, H); g.stroke(); glowAt(g, W * 0.5, H * 0.5, H * 0.5, '#fff4d8', 0.5);
+    g.fillStyle = '#1a1a1a'; g.fillRect(W * 0.62, H * 0.6, W * 0.012, H * 0.3); for (let i = 0; i < 9; i++) { g.strokeStyle = '#1a1a1a'; g.lineWidth = 1.5; g.beginPath(); g.moveTo(W * 0.626, H * 0.6); g.quadraticCurveTo(W * (0.6 + i * 0.012), H * 0.65, W * (0.58 + i * 0.015), H * (0.75 + r() * 0.1)); g.stroke(); } }
+  else if (id === 'jt_canxian') { ground(H * 0.8); g.fillStyle = '#0a0806'; g.beginPath(); g.ellipse(W * 0.5, H * 0.9, W * 0.2, H * 0.14, 0, Math.PI, TAU); g.fill(); if (!(C && C.story.f.canxian)) glowAt(g, W * 0.5, H * 0.84, H * 0.08, '#8a6aff', 0.6); }
+  else if (id === 'jt_court') { cloudSea(g, W, H * 0.86, night ? '#8090b0' : '#ffffff', night ? 0.35 : 0.8, r); const cx = W * 0.5; g.fillStyle = night ? '#d8c890' : '#f0e0b0'; g.fillRect(cx - W * 0.015, H * 0.2, W * 0.03, H * 0.7); glowAt(g, cx, H * 0.2, H * 0.06, '#ffd27a', 0.9); g.fillStyle = rgbA(ink, 0.85); for (let i = 0; i < 60; i++) { const x = cx + (r() - 0.5) * W * 0.8, y = H * (0.86 + r() * 0.06), s2 = H * 0.012; g.beginPath(); g.arc(x, y, s2, 0, TAU); g.fill(); g.fillRect(x - s2, y, s2 * 2, s2 * 2); } }
   else if (id === 'jt_peak') { cloudSea(g, W, H * 0.7, cs, night ? 0.3 : 0.6, r); for (let i = 0; i < 40; i++) glowAt(g, r() * W, H * (0.8 + r() * 0.16), 3 + r() * 3, '#ffd27a', night ? 0.95 : 0.5); spire(g, W * 0.5, H, W * 0.3, H * 0.22, near, id + 'p', 0.95, 0.6);
     if (!(C && C.story.f.v9end)) { g.strokeStyle = 'rgba(0,0,0,.75)'; g.lineWidth = 4; g.beginPath(); g.moveTo(W * 0.62, 0); g.lineTo(W * 0.66, H * 0.12); g.lineTo(W * 0.63, H * 0.24); g.lineTo(W * 0.68, H * 0.36); g.stroke(); } }
   else ground(H * 0.8);
@@ -5614,6 +6274,10 @@ const ATMO = {
   baiduan: { c0: '#170f0a', c1: '#40291a', lab: '#c4a07a', b1: '#3b291a', b2: '#291c11', bd: '#704f33', bh: '#e0b888', tx: '#efdfc8', fl: '#c08a5a66', p: 'sand', pn: 'sand' },
   xushen: { c0: '#0e0c1c', c1: '#2c2856', lab: '#a4a4dc', b1: '#28244a', b2: '#1a1734', bd: '#4c4884', bh: '#c0c0ff', tx: '#e4e2f6', fl: '#8a88d866', p: 'mote', pn: 'mote' },
   shiguo: { c0: '#1a1012', c1: '#3e1e1c', lab: '#d8a878', b1: '#3a1e1a', b2: '#281412', bd: '#7a3e2a', bh: '#e8b878', tx: '#f0e2cc', fl: '#d0805a66', p: 'lantern', pn: 'lantern' },
+  yiyu: { c0: '#100a10', c1: '#2e1a2c', lab: '#e0a8d0', b1: '#241420', b2: '#180c16', bd: '#6a3a5e', bh: '#f0c0e0', tx: '#f0e0ec', fl: '#c080b066', p: 'ember', pn: 'mote' },
+  xianyu: { c0: '#0c1218', c1: '#1e3444', lab: '#a8d0e8', b1: '#182a38', b2: '#101c26', bd: '#3a6a8a', bh: '#c0e4ff', tx: '#e4f0f8', fl: '#80b8e066', p: 'mote', pn: 'firefly' },
+  diluo: { c0: '#12100c', c1: '#342c1e', lab: '#e8d0a0', b1: '#2a2418', b2: '#1a160e', bd: '#6a5a3a', bh: '#ffe8b8', tx: '#f4ecdc', fl: '#d0b07066', p: 'mote', pn: 'mote' },
+  jiehai: { c0: '#060a12', c1: '#142034', lab: '#a0b8e8', b1: '#101a2c', b2: '#0a101c', bd: '#2e4a7a', bh: '#b8d0ff', tx: '#e0e8f8', fl: '#7090d066', p: 'firefly', pn: 'firefly' },
   sanqian: { c0: '#14101c', c1: '#30264a', lab: '#c8b8f0', b1: '#262040', b2: '#18142a', bd: '#5a4a8a', bh: '#d8c8ff', tx: '#ece4f8', fl: '#a090e066', p: 'mote', pn: 'firefly' },
   xiangu: { c0: '#0c1410', c1: '#1e3428', lab: '#a8d8b8', b1: '#18281e', b2: '#101a14', bd: '#3a6a4e', bh: '#b8f0c8', tx: '#e0f0e4', fl: '#80c09066', p: 'leaf', pn: 'firefly' },
   diguan: { c0: '#160a0a', c1: '#3a1a16', lab: '#f0a890', b1: '#2e1412', b2: '#1e0c0c', bd: '#7a3a2e', bh: '#ffc0a8', tx: '#f4e4dc', fl: '#e0806066', p: 'ember', pn: 'ember' },
@@ -5910,8 +6574,16 @@ const JUMPS = [
     relics: ['r_baishi', 'r_ningchuan'], f: { v6: 1, yinmo: 1, shiyi3: 1, wounded: 1, liushen: 1, v6end: 1 }, bag: { herb: 24, meat: 18, lingyao: 22, baoyao: 20, bone: 36 }, money: 10000, dt: 9, arena: 1 },
   { q: 'q_v8', n: '第八卷 · 帝关', lv: 54, exp: 0.1, loc: 'xg_gate', gf: ['xiangu'], sk: { qly: 220, sn: 215, lei: 210, gw: 205, jian: 205, dsh: 200, ta: 195, zhuque: 190, zhizun: 185, lunhui: 170, wudi: 150, liushen: 90, daluo: 70 }, pets: { maoqiu: [100, 46], dahong: [100, 46], ertuzi: [100, 46] },
     relics: ['r_dichong'], dun: ['xiangudian'], f: { v7: 1, xgAvatar: 1, xgNing: 1, xgDian: 1, dichong: 1, v7end: 1 }, bag: { herb: 26, meat: 20, lingyao: 24, baoyao: 22, bone: 38 }, money: 12000, dt: 9, arena: 1 },
-  { q: 'q_v9', n: '第九卷 · 清算', lv: 62, exp: 0.1, loc: 'sc_willow', gf: ['qiwang'], sk: { qly: 230, sn: 225, lei: 220, gw: 215, jian: 215, dsh: 210, ta: 205, zhuque: 200, zhizun: 200, lunhui: 190, wudi: 180, liushen: 150, daluo: 130 }, pets: { maoqiu: [100, 46], dahong: [100, 46], ertuzi: [100, 46] },
-    relics: ['r_dizu'], dun: ['bianhuang'], f: { v8: 1, qiwangDone: 1, wangDone: 1, crystal: 1, dizuDone: 1, bianhuang: 1, anlan: 1, v8end: 1 }, bag: { herb: 28, meat: 22, lingyao: 26, baoyao: 24, bone: 40 }, money: 15000, dt: 9, arena: 1 },
+  { q: 'q_yy', n: '第九卷 · 异域', lv: 59, exp: 0.1, loc: 'yy_jail', gf: ['qiwang'], sk: { qly: 230, sn: 225, lei: 220, gw: 215, jian: 215, dsh: 210, ta: 205, zhuque: 200, zhizun: 200, lunhui: 190, wudi: 180, liushen: 150, daluo: 130 }, pets: { maoqiu: [100, 46], dahong: [100, 46], ertuzi: [100, 46] },
+    relics: ['r_dizu'], dun: ['bianhuang'], f: { v8: 1, qiwangDone: 1, wangDone: 1, crystal: 1, dizuDone: 1, bianhuang: 1, box: 1, yiyu0: 1 }, bag: { herb: 28, meat: 22, lingyao: 26, baoyao: 24, bone: 40 }, money: 15000, dt: 9, arena: 1 },
+  { q: 'q_xy', n: '第十卷 · 仙域', lv: 62, exp: 0.1, loc: 'xy_shore', gf: ['daoze'], sk: { qly: 240, sn: 235, lei: 230, gw: 225, jian: 225, dsh: 220, ta: 215, zhuque: 210, zhizun: 210, lunhui: 200, wudi: 195, liushen: 170, daluo: 150 }, relics: ['r_chiwang', 'r_chashu'],
+    f: { yyHung: 1, yyArena: 1, yyTree: 1, daoze: 1, yyEnd: 1 }, bag: { herb: 30, meat: 24, lingyao: 28, baoyao: 26, bone: 42 }, money: 16000, dt: 9, arena: 1 },
+  { q: 'q_v9', n: '第十一卷 · 清算', lv: 65, exp: 0.1, loc: 'sc_willow', gf: ['yuanshi'], f: { xy: 1, yuanshiDone: 1, back: 1, anlan: 1, v8end: 1 }, bag: { herb: 30, meat: 24, lingyao: 28, baoyao: 26, bone: 42 }, money: 18000, dt: 9, arena: 1 },
+  { q: 'q_v9end', n: '第十二卷 · 天庭', lv: 71, exp: 0.1, loc: 'sc_willow', gf: ['chongzhi'], sk: { qly: 250, sn: 245, lei: 240, gw: 235, jian: 235, dsh: 230, ta: 225, zhuque: 225, zhizun: 225, lunhui: 220, wudi: 215, liushen: 200, daluo: 190 }, relics: ['r_heian'],
+    f: { v9: 1, envoy0: 1, envoy: 1, zhizun: 1, army: 1, purge: 1, jin: 1, jinfeng: 1, v9end: 1 }, bag: { herb: 32, meat: 26, lingyao: 30, baoyao: 30, bone: 44 }, money: 22000, dt: 9, arena: 1 },
+  { q: 'q_v13', n: '第十三卷 · 帝落', lv: 75, exp: 0.1, loc: 'xy_gate', gf: ['zhenxian'], relics: ['r_canxian', 'r_xwhy'], f: { v12: 1, canxian: 1, tiantingDone: 1, dam: 1, xwhyDone: 1, v12end: 1 }, bag: { herb: 34, meat: 28, lingyao: 32, baoyao: 32, bone: 46 }, money: 26000, dt: 9, arena: 1 },
+  { q: 'q_v14', n: '第十四卷 · 异域之战', lv: 80, exp: 0.1, loc: 'dg_city', gf: ['baxi'], sk: { qly: 260, sn: 255, lei: 250, gw: 245, jian: 245, dsh: 240, ta: 240, zhuque: 240, zhizun: 240, lunhui: 235, wudi: 230, liushen: 225, daluo: 220 }, f: { v13: 1, dlAge: 1, baxi: 1, v13end: 1 }, bag: { herb: 36, meat: 30, lingyao: 34, baoyao: 34, bone: 48 }, money: 30000, dt: 9, arena: 1 },
+  { q: 'q_v15', n: '第十五卷 · 独断万古', lv: 84, exp: 0.1, loc: 'jh_dam', gf: ['zhunxiandi'], sk: { tahua: 60 }, relics: ['r_kundi'], f: { huoling: 1, liushenBack: 1, chiwangDone: 1, kundiWar: 1, xianwar: 1, v14end: 1 }, bag: { herb: 40, meat: 32, lingyao: 36, baoyao: 36, bone: 50 }, money: 35000, dt: 9, arena: 1 },
 ];
 function dropRunning() { // a story scene, dialogue, mini-game or fight in progress is simply abandoned: its promise never resolves
   const B = STATE.battle; if (B) { B.over = B.done = B.aborted = true; STATE.battle = null; STATE.battleRes = null; STATE.busy = false; UI.selFoe = null; }

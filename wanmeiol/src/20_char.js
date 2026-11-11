@@ -60,7 +60,13 @@ function gainExp(n, quiet) {
     if (C.lv === 44 && !C.story.f.v5end) { C.exp = BAL.expNext(C.lv); break; }
     if (C.lv === 49 && !C.story.f.v6end) { C.exp = BAL.expNext(C.lv); break; }
     if (C.lv === 54 && !C.story.f.v7end) { C.exp = BAL.expNext(C.lv); break; }
-    if (C.lv === 62 && !C.story.f.v8end) { C.exp = BAL.expNext(C.lv); break; }
+    if (C.lv === 59 && !C.story.f.yiyu0) { C.exp = BAL.expNext(C.lv); break; }
+    if (C.lv === 62 && !C.story.f.yyEnd) { C.exp = BAL.expNext(C.lv); break; }
+    if (C.lv === 65 && !C.story.f.v8end) { C.exp = BAL.expNext(C.lv); break; }
+    if (C.lv === 71 && !C.story.f.v9end) { C.exp = BAL.expNext(C.lv); break; }
+    if (C.lv === 75 && !C.story.f.v12end) { C.exp = BAL.expNext(C.lv); break; }
+    if (C.lv === 80 && !C.story.f.v13end) { C.exp = BAL.expNext(C.lv); break; }
+    if (C.lv === 84 && !C.story.f.xiandi) { C.exp = BAL.expNext(C.lv); break; }
     if (C.lv === 68 && !C.story.f.zhizun) { C.exp = BAL.expNext(C.lv); break; }
     C.exp -= BAL.expNext(C.lv); C.lv++; fullHeal(); sfx('level');
     logLine(`<b class="lvup">境界精进！</b> ${realmOf(C.lv).name} · 第 ${C.lv} 层。气血、符力已回满。`, 'sys'); bigFlash(`境界精进 · ${realmOf(C.lv).name}第 ${C.lv} 层`, 'lv');

@@ -11,6 +11,8 @@ const ALLY_NPC = {
   a_shiyi: { name: '石毅', icon: '👁️', mul: { hp: 2.4, atk: 1.6, def: 1.4 }, sk: [{ n: '重瞳', dmg: 1.2, mag: 1, st: { k: 'weak', t: 2, v: 0.2, p: 0.5 }, w: 3 }, { n: '重瞳神光', dmg: 0.75, aoe: 1, mag: 1, w: 2 }] },
   a_meng: { name: '孟天正', icon: '🗡️', mul: { hp: 3, atk: 1.8, def: 1.6 }, sk: [{ n: '一剑', dmg: 1.4, w: 3 }, { n: '剑幕', dmg: 0.8, aoe: 1, w: 2 }, { n: '护着你', taunt: 2, guard: 1, w: 1 }] },
   a_shicun: { name: '石村八百兵', icon: '🏹', mul: { hp: 2.6, atk: 1.2, def: 1.5 }, sk: [{ n: '齐射', dmg: 0.7, aoe: 1, w: 2 }, { n: '石村长矛', dmg: 1.1, w: 3 }, { n: '护着小不点', taunt: 2, guard: 1, w: 1 }] },
+  a_sanzang: { name: '三藏', icon: '🧘', mul: { hp: 2.4, atk: 1.5, def: 1.5 }, sk: [{ n: '佛光', dmg: 0.75, aoe: 1, w: 2 }, { n: '金刚拳', dmg: 1.2, w: 3 }] },
+  a_liushen: { name: '柳神', icon: '🌳', mul: { hp: 3.2, atk: 1.9, def: 1.8 }, sk: [{ n: '万千柳枝', dmg: 0.9, aoe: 1, w: 2 }, { n: '柳枝一抽', dmg: 1.5, w: 3 }, { n: '护着你', taunt: 2, guard: 1, w: 1 }] },
   a_jun: { name: '石国禁军', icon: '⚔️', mul: { hp: 2, atk: 1, def: 1.3 }, sk: [{ n: '结阵', dmg: 0.6, aoe: 1, w: 2 }, { n: '长戈', dmg: 1.05, w: 3 }] },
   a_eagle: { name: '青鳞小鹰', icon: '🦅', mul: { hp: 1.1, atk: 1.1, def: 0.9, spd: 1.6 }, sk: [{ n: '鳞爪', dmg: 1.05, w: 3 }, { n: '鳞羽', dmg: 0.6, aoe: 1, w: 1 }] },
   a_yunxi: { name: '云曦', icon: '🌙', mul: { hp: 1.3, atk: 1, def: 1 }, sk: [{ n: '月华', dmg: 1, mag: 1, w: 3 }, { n: '清辉', healAlly: 0.18, w: 1 }] },
