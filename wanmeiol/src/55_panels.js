@@ -68,19 +68,18 @@ function pBag() {
     return `<div class="li"><span class="ic">${it.icon}</span><div class="t">${it.name} ×${C.bag[id]}<small>${it.desc}</small></div><div class="acts">${a}</div></div>`; }).join('') + '</div>';
 }
 function pMap() {
-  const area = UI.mapArea && Object.values(PLACES).some(p => p.area === UI.mapArea && placeOpen(p.id)) ? UI.mapArea : PLACES[C.loc].area, ps = Object.values(PLACES).filter(p => p.area === area && placeOpen(p.id)), qw = questWhere();
+  const area = UI.mapArea && Object.values(PLACES).some(p => p.area === UI.mapArea && placeOpen(p.id)) ? UI.mapArea : PLACES[C.loc].area, ps = Object.values(PLACES).filter(p => p.area === area && placeOpen(p.id)), qw = taskWhere();
   const xs = ps.map(p => p.x), ys = ps.map(p => p.y), x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys);
   const W = 300, H = Math.max(120, (y1 - y0 + 1) * 66), px = p => 50 + (x1 > x0 ? (p.x - x0) / (x1 - x0) * (W - 100) : (W - 100) / 2), py = p => 24 + (y1 > y0 ? (p.y - y0) / (y1 - y0) * (H - 48) : (H - 48) / 2);
   let lines = ''; for (const p of ps) for (const t of Object.values(exitsOf(p.id))) { const q = PLACES[t]; if (q.area === area && p.id < t) lines += `<line x1="${px(p)}" y1="${py(p)}" x2="${px(q)}" y2="${py(q)}" stroke="#5a4a34" stroke-width="2"/>`; }
   const nodes = ps.map(p => `<div class="mn ${p.id === C.loc ? 'cur' : ''} ${p.id === qw ? 'q' : ''} ${ROAM && !ROAM.dead && ROAM.loc === p.id && now() < ROAM.end ? 'wb' : ''}" style="left:${px(p)}px;top:${py(p)}px" onclick="${p.id === C.loc ? '' : `navTo('adv');autoWalk('${p.id}')`}">${p.name}${p.lv && exCount(p.id).done ? ' ✓' : ''}${p.lv ? `<small>${p.lv[0]}-${p.lv[1]}层${exCount(p.id).n && !exCount(p.id).done ? ` · ${exCount(p.id).have}/${exCount(p.id).n}` : ''}</small>` : ''}</div>`).join('');
   const areas = Object.entries(AREAS).filter(([k]) => Object.values(PLACES).some(p => p.area === k && placeOpen(p.id)));
   const q = curQ();
-  return `<div class="card"><h3>${CH_NAMES[q.ch].split(' · ')[1] || ''} · ${q.title}</h3><div style="font-size:.93rem">${questGoalText()}</div>${qw && qw !== C.loc ? `<button class="sb pri" style="margin-top:6px" onclick="navTo('adv');autoWalk('${qw}')">▶ 去${PLACES[qw].name}</button>` : ''}
-    ${Object.entries(SIDE).filter(([id]) => C.side?.[id] === 'on').map(([id, S]) => `<div class="dim" style="font-size:.87rem;margin-top:4px">支线 · ${S.title}：${S.need.map(([k, n]) => `${ITEMS[k].name} ${Math.min(itemN(k), n)}/${n}`).join('、')} → ${NPCS[S.npc].name}</div>`).join('')}</div>
+  const T = tasks(), cur = curTask();
+  return `<div class="card"><h3>任务 <span class="dim" style="font-size:.8rem;font-family:var(--ff)">选一个追踪，探索页的提示和 ▶ 去 就跟着它走</span></h3><div class="list">${T.map(t => `<div class="li ${t.key === cur.key ? 'on' : ''}"><div class="t"><span class="pill ${t.key === 'main' ? 'gold' : ''}">${t.kind}</span><b>${esc(t.title)}</b><small>${t.goal}</small></div><div class="acts">${t.key === cur.key ? '<span class="chk">★</span>' : `<button class="sb" onclick="trackTask('${t.key}')">追踪</button>`}${t.where && t.where !== C.loc ? `<button class="sb pri" onclick="trackTask('${t.key}');navTo('adv');autoWalk('${t.where}')">▶ 去</button>` : ''}</div></div>`).join('')}</div></div>
     ${areas.length > 1 ? `<div class="row" style="flex-wrap:wrap;gap:4px">${areas.map(([k, A]) => `<button class="sb ${k === area ? 'pri' : ''}" style="min-height:30px" onclick="UI.mapArea='${k}';renderSide()">${A.name}</button>`).join('')}</div>` : ''}
-    ${bountyToday().length ? `<div class="card"><h4 style="margin-top:0">今日悬赏</h4>${bountyToday().map(b => `<div style="font-size:.87rem">${b.st === 'done' ? '✔' : b.st === 'on' ? (bountyReady(b) ? '❗' : '·') : '○'} ${NPCS[b.npc].name}：${bountyText(b)}${b.st === 'new' ? ' <span class="dim">（去找他接）</span>' : ''}</div>`).join('')}</div>` : ''}
     <div class="map" style="width:${W}px;height:${H}px"><svg width="${W}" height="${H}" style="position:absolute;inset:0">${lines}</svg>${nodes}</div>
-    ${ROAM && !ROAM.dead && now() < ROAM.end && now() >= ROAM.start ? `<div class="dim" style="font-size:.87rem">⚔ 凶兽首领 <b class="warn">${MOBS[ROAM.id].name}</b> 在 ${PLACES[ROAM.loc].name}</div>` : ''}<div class="dim" style="font-size:.8rem">点地点自动走过去 · ★ 主线目标 · ✓ 探索完成（数字 = 打过的凶兽种类 + 采到的东西）${isNight() ? ' · 现在是夜里，野外会有夜行的凶兽' : ''}</div>`;
+    ${ROAM && !ROAM.dead && now() < ROAM.end && now() >= ROAM.start ? `<div class="dim" style="font-size:.87rem">⚔ 凶兽首领 <b class="warn">${MOBS[ROAM.id].name}</b> 在 ${PLACES[ROAM.loc].name}</div>` : ''}<div class="dim" style="font-size:.8rem">点地点自动走过去 · ★ 正在追踪的任务 · ✓ 探索完成（数字 = 打过的凶兽种类 + 采到的东西）${isNight() ? ' · 现在是夜里，野外会有夜行的凶兽' : ''}</div>`;
 }
 
 /* ---------- small windows ---------- */

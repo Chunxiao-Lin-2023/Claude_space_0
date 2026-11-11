@@ -43,6 +43,10 @@ const { chromium } = require('playwright');
     D.go('bt_leichi', true, true); ok('leichiOpen', placeOpen('bt_leichi')); c.lv = 20; for (let k = 0; k < 3 && !c.dungeons.leichi; k++) { fullHeal(); await D.enterDungeon('leichi'); await idle(); } ok('leichi', !!c.dungeons.leichi);
     // 石毅 at #1
     const s1 = rivalAt(1); ok('shiyiRival', !!s1.shiyi);
+    // 任务列表: side errands and bounties can be tracked, the target follows
+    c.side = {}; const T0 = tasks(); ok('taskListHasSide', T0.some(t => t.key.startsWith('side:')) && T0.some(t => t.key.startsWith('bounty:')));
+    c.side.sq_milk = 'on'; c.bag.bone = 0; trackTask('side:sq_milk'); ok('trackSide', curTask().key === 'side:sq_milk' && !!taskWhere() && PLACES[taskWhere()].gather.some(g => g[0] === 'bone') || PLACES[taskWhere()].mobs.some(m => (MOBS[m[0]].loot || []).some(l => l[0] === 'bone')));
+    D.addItem('bone', 3, true); ok('trackSideReady', taskWhere() === 'sc_yard'); c.side.sq_milk = 'done'; ok('trackFallsBack', curTask().key === 'main');
     // difficulty
     c.diff = 2; const u2 = mobUnit('wolf', 10); c.diff = 0; const u0 = mobUnit('wolf', 10); c.diff = 1; ok('difficulty', u2.hpMax > u0.hpMax);
     return out; });

@@ -61,6 +61,12 @@ body.m-explore #vExplore,body.m-battle #vBattle,body.m-talk #vTalk{display:flex;
 @keyframes fade{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:none}}
 #bq{display:block;width:100%;text-align:left;background:#1a2a1eee;border:1px solid #c9a44a66;border-radius:10px;padding:7px 11px;font-size:.9rem;line-height:1.45;color:#f2e6c8;margin-bottom:8px}
 #bq b{color:var(--gold)}
+.qrow{display:flex;gap:6px;margin-bottom:8px}
+.qrow #bq{flex:1;margin:0;min-width:0}
+#bq .qk{font-size:.72rem;color:#9fd4ff;border:1px solid #9fd4ff55;border-radius:6px;padding:0 4px;margin-right:5px}
+#bqs{flex:none;width:52px;background:#1a2a1eee;border:1px solid #c9a44a66;border-radius:10px;color:#cfe0c8;font-size:.72rem;line-height:1.3;position:relative}
+#bqs b{font-size:1rem;color:var(--gold)}
+#bqs.dot2::after{content:'';position:absolute;top:4px;right:4px;width:8px;height:8px;border-radius:50%;background:var(--red)}
 #bq .go{color:#8fd0ff;margin-left:6px;white-space:nowrap}
 .grp{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:6px}
 .grp:last-child{margin-bottom:0}
@@ -111,11 +117,23 @@ body.m-explore #vExplore,body.m-battle #vBattle,body.m-talk #vTalk{display:flex;
 .rune .nd circle{fill:#fff8e8;stroke:#8a6a3a;stroke-width:2}
 .rune .nd{transform-box:fill-box}
 .rune .nd path{stroke:#5a4024;stroke-width:2.6;fill:none;stroke-linecap:round}
-.rune .nd.lit circle{fill:#ffd88a;stroke:#b3342a}
-.rune .nd.flash circle{animation:rflash .5s both;animation-delay:var(--d)}
-@keyframes rflash{0%,100%{fill:#fff8e8}40%{fill:#ffcf5a;stroke:#b3342a}}
-.rune .lnk{stroke:#b3342a;stroke-width:3;stroke-linecap:round;opacity:.8}
+.rune .nd.lit>circle{fill:#ffd88a;stroke:#b3342a;stroke-width:3}
+.rune .nd.lit>path{stroke:#7a2a10}
+.rune .nd.pop>circle{animation:rpop .45s cubic-bezier(.3,1.6,.5,1)}
+@keyframes rpop{from{r:30;fill:#fff3b0}}
+.rune .nd.next>circle{stroke:#b3342a;stroke-width:3;stroke-dasharray:5 4;animation:rspin 1.6s linear infinite}
+@keyframes rspin{to{stroke-dashoffset:-36}}
+.rune .nd.bad>circle{fill:#f2b0a0;stroke:#b3342a}
+.rune .num circle{fill:#b3342a;stroke:#fbf2df;stroke-width:1.5}
+.rune .num text{fill:#fff;font-size:11px;font-weight:700;text-anchor:middle;font-family:sans-serif}
+.rune .lnk{stroke:#b3342a;stroke-width:3;stroke-linecap:round;opacity:.85}
+.rune .lnk.demo{stroke-dasharray:6 5;opacity:.6}
 .rune .msg{text-align:center;font-size:.92rem;color:var(--ink2);margin:4px 0}
+.rune .msg .bad{color:#b3342a}
+.rtime{height:5px;background:#d8c8a8;border-radius:3px;overflow:hidden;margin:4px 12px 0}
+.rtime i{display:block;height:100%;width:100%;background:#b3342a;animation:rtime linear both;transform-origin:left}
+@keyframes rtime{to{transform:scaleX(0)}}
+body.noanim .rtime{display:none}
 /* battle */
 #vBattle{flex-direction:column;padding:8px 10px 0}
 #bhead{flex:none;text-align:center;font-family:var(--fh);font-size:1.3rem;color:#ffcfb8;line-height:1.2;padding:2px 0 6px}
@@ -405,7 +423,7 @@ body.m-talk #dlg{animation:paperin .4s cubic-bezier(.2,1.2,.4,1) both}
 #dlg.still .line .seal,#dlg.still .line .tx{animation:none}
 .chb{animation:txin .3s both}.chb:nth-child(2){animation-delay:.05s}.chb:nth-child(3){animation-delay:.1s}.chb:nth-child(4){animation-delay:.15s}
 #dlg.still .chb{animation:none}
-.rune .lnk{stroke-dasharray:300;animation:draw .4s both}
+.rune .lnk:not(.demo){stroke-dasharray:300;animation:draw .4s both}
 @keyframes draw{from{stroke-dashoffset:300}to{stroke-dashoffset:0}}
 #banner.swap canvas{animation:bswap .8s both}
 #banner.swap .nm{animation:nmin .6s .15s both}
@@ -436,7 +454,7 @@ body.noanim #bfeed .ln.pend{visibility:visible}
   <div id="stage">
     <section id="vExplore" class="view">
       <div class="ex-l"><div id="banner"><canvas id="bcv"></canvas><div class="ar" id="bar"></div><div class="nm" id="bnm"></div></div><div id="desc"></div><div id="feed"></div></div>
-      <div class="ex-r"><button id="bq"></button><div id="acts"></div></div>
+      <div class="ex-r"><div class="qrow"><button id="bq"></button><button id="bqs" onclick="navTo('map')"></button></div><div id="acts"></div></div>
     </section>
     <section id="vTalk" class="view"><canvas id="tbg"></canvas><div id="dlg"></div></section>
     <section id="vBattle" class="view"><div id="bfx"></div><div id="bhead"></div><div id="foes" class="side"></div><div id="bfeed"></div><div id="party" class="side"></div><div id="bacts"></div></section>

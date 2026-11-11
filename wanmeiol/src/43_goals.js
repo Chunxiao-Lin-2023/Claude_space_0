@@ -29,7 +29,7 @@ function bountyToday() { // one per person per day; someone who becomes availabl
   const d = today(); if (!C.bounty || C.bounty.day !== d) C.bounty = { day: d, list: [] }; const list = C.bounty.list;
   for (const B of BOUNTY_FROM) { if (!B.open() || list.some(b => b.npc === B.npc)) continue; const r = srng('bounty' + d + C.created + B.npc);
     const ps = Object.values(PLACES).filter(p => B.areas.includes(p.area) && placeOpen(p.id) && p.mobs && p.lv && p.lv[0] <= C.lv + 2);
-    if (ps.length && r() < 0.7) { const P = ps[Math.floor(r() * ps.length)], m = P.mobs[Math.floor(r() * P.mobs.length)][0]; list.push({ npc: B.npc, kind: 'kill', id: m, n: 4 + Math.floor(r() * 3), got: 0, st: 'new', where: P.name }); }
+    if (ps.length && r() < 0.7) { const P = ps[Math.floor(r() * ps.length)], m = P.mobs[Math.floor(r() * P.mobs.length)][0]; list.push({ npc: B.npc, kind: 'kill', id: m, n: 4 + Math.floor(r() * 3), got: 0, st: 'new', where: P.name, loc: P.id }); }
     else { const it = ['bone', 'herb', 'meat', 'lingyao'][Math.floor(r() * 4)]; list.push({ npc: B.npc, kind: 'item', id: it, n: it === 'lingyao' ? 2 : 3 + Math.floor(r() * 2), got: 0, st: 'new' }); } }
   return list; }
 const bountyText = b => b.kind === 'kill' ? `打 ${b.n} 头${MOBS[b.id].name}（${b.where}，${Math.min(b.got, b.n)}/${b.n}）` : `带 ${b.n} 个${ITEMS[b.id].name}（${Math.min(itemN(b.id), b.n)}/${b.n}）`;
@@ -74,3 +74,23 @@ async function dongtianRedo() { if (!C.dt.length || !itemN('lingyao')) return;
 
 /* ---------- 困难秘境 ---------- */
 function enterDungeonHard(id) { if (!C.dungeons[id]) return; enterDungeon(id, true); }
+
+/* ---------- 任务列表: main line, side errands and bounties side by side; pick which one to follow ---------- */
+const npcLocNow = n => { const P = Object.values(PLACES).find(p => placeOpen(p.id) && npcsHere(p.id).includes(n)); return P ? P.id : null; };
+function itemWhere(id) { // the open wild place closest to your level where it can be gathered, or else where a beast drops it
+  const open = Object.values(PLACES).filter(p => placeOpen(p.id) && p.lv && route(C.loc, p.id)), by = L => L.sort((a, b) => Math.abs(a.lv[0] - C.lv) - Math.abs(b.lv[0] - C.lv))[0];
+  const g = open.filter(p => (p.gather || []).some(x => x[0] === id)), m = open.filter(p => (p.mobs || []).some(x => (MOBS[x[0]].loot || []).some(l => l[0] === id)));
+  const P = by(g.length ? g : m); return P ? P.id : null; }
+function tasks() {
+  const q = curQ(), out = [{ key: 'main', kind: '主线', title: `${CH_NAMES[q.ch].split(' · ')[1] || ''} · ${q.title}`, goal: questGoalText(), where: questWhere() }];
+  for (const [id, S] of Object.entries(SIDE)) { const st = C.side && C.side[id]; if (st === 'done' || C.story.q < qi(S.minQ)) continue; const N = NPCS[S.npc];
+    if (!st) { out.push({ key: 'side:' + id, kind: '支线 · 可接', title: S.title, goal: `去找${N.name}`, where: npcLocNow(S.npc) }); continue; }
+    const miss = S.need.find(([k, n]) => itemN(k) < n), prog = S.need.map(([k, n]) => `${ITEMS[k].name} ${Math.min(itemN(k), n)}/${n}`).join('、');
+    out.push({ key: 'side:' + id, kind: '支线', title: S.title, goal: miss ? `${prog}（${PLACES[itemWhere(miss[0])]?.name || '野外'}能找到）` : `${prog} → 交给${N.name}`, where: miss ? itemWhere(miss[0]) : npcLocNow(S.npc) }); }
+  for (const b of bountyToday()) { if (b.st === 'done') continue; const N = NPCS[b.npc], ready = b.st === 'on' && bountyReady(b);
+    const loc = b.st === 'new' || ready ? npcLocNow(b.npc) : b.kind === 'kill' ? (b.loc || Object.values(PLACES).find(p => p.name === b.where)?.id) : itemWhere(b.id);
+    out.push({ key: 'bounty:' + b.npc, kind: b.st === 'new' ? '悬赏 · 可接' : '悬赏', title: `${N.name}的悬赏`, goal: bountyText(b) + (b.st === 'new' ? ` · 去找${N.name}接` : ready ? ` → 交给${N.name}` : ''), where: loc }); }
+  return out; }
+function curTask() { const T = tasks(); return T.find(t => t.key === C.track) || T[0]; }
+const taskWhere = () => curTask().where;
+function trackTask(key) { C.track = key; sfx('click'); save(); refresh(); }

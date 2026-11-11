@@ -63,6 +63,12 @@ body.m-explore #vExplore,body.m-battle #vBattle,body.m-talk #vTalk{display:flex;
 @keyframes fade{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:none}}
 #bq{display:block;width:100%;text-align:left;background:#1a2a1eee;border:1px solid #c9a44a66;border-radius:10px;padding:7px 11px;font-size:.9rem;line-height:1.45;color:#f2e6c8;margin-bottom:8px}
 #bq b{color:var(--gold)}
+.qrow{display:flex;gap:6px;margin-bottom:8px}
+.qrow #bq{flex:1;margin:0;min-width:0}
+#bq .qk{font-size:.72rem;color:#9fd4ff;border:1px solid #9fd4ff55;border-radius:6px;padding:0 4px;margin-right:5px}
+#bqs{flex:none;width:52px;background:#1a2a1eee;border:1px solid #c9a44a66;border-radius:10px;color:#cfe0c8;font-size:.72rem;line-height:1.3;position:relative}
+#bqs b{font-size:1rem;color:var(--gold)}
+#bqs.dot2::after{content:'';position:absolute;top:4px;right:4px;width:8px;height:8px;border-radius:50%;background:var(--red)}
 #bq .go{color:#8fd0ff;margin-left:6px;white-space:nowrap}
 .grp{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:6px}
 .grp:last-child{margin-bottom:0}
@@ -113,11 +119,23 @@ body.m-explore #vExplore,body.m-battle #vBattle,body.m-talk #vTalk{display:flex;
 .rune .nd circle{fill:#fff8e8;stroke:#8a6a3a;stroke-width:2}
 .rune .nd{transform-box:fill-box}
 .rune .nd path{stroke:#5a4024;stroke-width:2.6;fill:none;stroke-linecap:round}
-.rune .nd.lit circle{fill:#ffd88a;stroke:#b3342a}
-.rune .nd.flash circle{animation:rflash .5s both;animation-delay:var(--d)}
-@keyframes rflash{0%,100%{fill:#fff8e8}40%{fill:#ffcf5a;stroke:#b3342a}}
-.rune .lnk{stroke:#b3342a;stroke-width:3;stroke-linecap:round;opacity:.8}
+.rune .nd.lit>circle{fill:#ffd88a;stroke:#b3342a;stroke-width:3}
+.rune .nd.lit>path{stroke:#7a2a10}
+.rune .nd.pop>circle{animation:rpop .45s cubic-bezier(.3,1.6,.5,1)}
+@keyframes rpop{from{r:30;fill:#fff3b0}}
+.rune .nd.next>circle{stroke:#b3342a;stroke-width:3;stroke-dasharray:5 4;animation:rspin 1.6s linear infinite}
+@keyframes rspin{to{stroke-dashoffset:-36}}
+.rune .nd.bad>circle{fill:#f2b0a0;stroke:#b3342a}
+.rune .num circle{fill:#b3342a;stroke:#fbf2df;stroke-width:1.5}
+.rune .num text{fill:#fff;font-size:11px;font-weight:700;text-anchor:middle;font-family:sans-serif}
+.rune .lnk{stroke:#b3342a;stroke-width:3;stroke-linecap:round;opacity:.85}
+.rune .lnk.demo{stroke-dasharray:6 5;opacity:.6}
 .rune .msg{text-align:center;font-size:.92rem;color:var(--ink2);margin:4px 0}
+.rune .msg .bad{color:#b3342a}
+.rtime{height:5px;background:#d8c8a8;border-radius:3px;overflow:hidden;margin:4px 12px 0}
+.rtime i{display:block;height:100%;width:100%;background:#b3342a;animation:rtime linear both;transform-origin:left}
+@keyframes rtime{to{transform:scaleX(0)}}
+body.noanim .rtime{display:none}
 /* battle */
 #vBattle{flex-direction:column;padding:8px 10px 0}
 #bhead{flex:none;text-align:center;font-family:var(--fh);font-size:1.3rem;color:#ffcfb8;line-height:1.2;padding:2px 0 6px}
@@ -407,7 +425,7 @@ body.m-talk #dlg{animation:paperin .4s cubic-bezier(.2,1.2,.4,1) both}
 #dlg.still .line .seal,#dlg.still .line .tx{animation:none}
 .chb{animation:txin .3s both}.chb:nth-child(2){animation-delay:.05s}.chb:nth-child(3){animation-delay:.1s}.chb:nth-child(4){animation-delay:.15s}
 #dlg.still .chb{animation:none}
-.rune .lnk{stroke-dasharray:300;animation:draw .4s both}
+.rune .lnk:not(.demo){stroke-dasharray:300;animation:draw .4s both}
 @keyframes draw{from{stroke-dashoffset:300}to{stroke-dashoffset:0}}
 #banner.swap canvas{animation:bswap .8s both}
 #banner.swap .nm{animation:nmin .6s .15s both}
@@ -439,7 +457,7 @@ body.noanim #bfeed .ln.pend{visibility:visible}
   <div id="stage">
     <section id="vExplore" class="view">
       <div class="ex-l"><div id="banner"><canvas id="bcv"></canvas><div class="ar" id="bar"></div><div class="nm" id="bnm"></div></div><div id="desc"></div><div id="feed"></div></div>
-      <div class="ex-r"><button id="bq"></button><div id="acts"></div></div>
+      <div class="ex-r"><div class="qrow"><button id="bq"></button><button id="bqs" onclick="navTo('map')"></button></div><div id="acts"></div></div>
     </section>
     <section id="vTalk" class="view"><canvas id="tbg"></canvas><div id="dlg"></div></section>
     <section id="vBattle" class="view"><div id="bfx"></div><div id="bhead"></div><div id="foes" class="side"></div><div id="bfeed"></div><div id="party" class="side"></div><div id="bacts"></div></section>
@@ -1893,31 +1911,39 @@ function wildEventFor(P) {
 }
 async function runWild(e) { if (e.once) C.story.f['wd_' + e.id] = 1; if (e.scene) await runScene(e.scene, { title: e.title }); else await e.run(); save(); refresh(); }
 
-/* ---------- 骨文 memory game: watch the runes light up, then tap them in the same order ---------- */
+/* ---------- 骨文 game: the runes light up one by one (numbered), then you connect them 1 → n.
+   Nothing to memorise — the numbers stay. Finishing in time without a wrong tap gives the 宝术 a head start.
+   The lighting is game state (R.shown), not a CSS animation, so it works with animations off and is mirrored in co-op. */
 function runeGame(id) {
   if (window.__dbg && __dbg.auto) return Promise.resolve(!__dbg.runeFail);
   const n = { qly: 4, sn: 5, lei: 6, gw: 6 }[id] || 5, nodes = [];
-  for (let t = 0; nodes.length < n && t < 400; t++) { const x = 34 + Math.random() * 252, y = 30 + Math.random() * 130; if (nodes.every(o => Math.hypot(o.x - x, o.y - y) > 64)) nodes.push({ x: Math.round(x), y: Math.round(y), g: runeGlyph() }); }
+  for (let t = 0; nodes.length < n && t < 400; t++) { const x = 34 + Math.random() * 252, y = 34 + Math.random() * 124; if (nodes.every(o => Math.hypot(o.x - x, o.y - y) > 66)) nodes.push({ x: Math.round(x), y: Math.round(y), g: runeGlyph() }); }
   const seq = shuffle(nodes.map((_, i) => i));
-  return new Promise(res => { DLG = { rune: { id, name: SKILLS[id].name, nodes, seq, got: [], phase: 'show', fails: 0, k: uid() }, res }; renderDlg(); netSync(); runeShowThen(); });
+  return new Promise(res => { DLG = { rune: { id, name: SKILLS[id].name, nodes, seq, got: [], phase: 'show', shown: 0, fails: 0, bad: -1, dur: n * 1400 + 2000, t0: 0, k: uid() }, res }; renderDlg(); netSync(); runeShowStep(); });
 }
 function runeGlyph() { // a few strokes inside a circle — an abstract rune, different every time
-  const P = () => [Math.round((Math.random() - 0.5) * 26), Math.round((Math.random() - 0.5) * 26)]; let d = '';
+  const P = () => [Math.round((Math.random() - 0.5) * 24), Math.round((Math.random() - 0.5) * 24)]; let d = '';
   for (let i = 0; i < 2 + rint(0, 1); i++) { const a = P(), b = P(), c = P(); d += i % 2 ? `M${a[0]} ${a[1]}Q${c[0]} ${c[1]} ${b[0]} ${b[1]}` : `M${a[0]} ${a[1]}L${b[0]} ${b[1]}`; } return d;
 }
-function runeShowThen() { const R = DLG && DLG.rune; if (!R) return; const k = R.k; setTimeout(() => { if (DLG && DLG.rune && DLG.rune.k === k && DLG.rune.phase === 'show') { DLG.rune.phase = 'input'; renderDlg(); netSync(); } }, R.seq.length * 600 + 500); }
-function runeTap(i) { const R = DLG && DLG.rune; if (!R || R.phase !== 'input' || NETROLE === 'guest') return;
-  if (R.seq[R.got.length] === i) { R.got.push(i); sfx('click'); if (R.got.length === R.seq.length) { R.phase = 'done'; sfx('epic'); renderDlg(); netSync(); setTimeout(() => runeEnd(R.fails === 0), 800); return; } }
-  else { R.fails++; R.got = []; R.phase = 'show'; R.k = uid(); sfx('fail'); }
-  renderDlg(); netSync(); if (R.phase === 'show') runeShowThen(); }
+function runeShowStep() { const R = DLG && DLG.rune; if (!R || R.phase !== 'show') return; const k = R.k;
+  setTimeout(() => { const Q = DLG && DLG.rune; if (!Q || Q.k !== k || Q.phase !== 'show') return;
+    if (Q.shown < Q.seq.length) { Q.shown++; sfx('click'); renderDlg(); netSync(); runeShowStep(); }
+    else { Q.phase = 'input'; Q.t0 = now(); renderDlg(); netSync(); } }, R.shown === 0 ? 500 : R.shown < R.seq.length ? 520 : 800); }
+function runeTap(i) { const R = DLG && DLG.rune; if (!R || R.phase !== 'input' || NETROLE === 'guest' || R.got.includes(i)) return;
+  if (R.seq[R.got.length] === i) { R.got.push(i); R.bad = -1; sfx('click'); if (R.got.length === R.seq.length) { R.phase = 'done'; R.ok = R.fails === 0 && now() - R.t0 <= R.dur; sfx('epic'); renderDlg(); netSync(); setTimeout(() => runeEnd(R.ok), 900); return; } }
+  else { R.fails++; R.bad = i; sfx('fail'); }
+  renderDlg(); netSync(); }
 function runeSkip() { if (DLG && DLG.rune && NETROLE !== 'guest') runeEnd(false); }
-function runeEnd(ok) { const D_ = DLG; if (!D_ || !D_.rune) return; DLG = null; logLine(ok ? '骨文的走向，你一次就看清了。' : '骨文你没全看懂，只能先硬记下来，往后慢慢磨。', 'dim'); renderDlg(); netSync(); D_.res(ok); }
+function runeEnd(ok) { const D_ = DLG; if (!D_ || !D_.rune) return; DLG = null; logLine(ok ? '骨文一气呵成地连了起来，你一下子就看透了它的走向。' : '骨文连上了，可还不够顺，往后得慢慢磨。', 'dim'); renderDlg(); netSync(); D_.res(ok); }
 function runeHtml(R) {
-  const order = {}; R.seq.forEach((n, j) => order[n] = j); const links = R.got.slice(1).map((n, j) => { const a = R.nodes[R.got[j]], b = R.nodes[n]; return `<line class="lnk" x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}"/>`; }).join('');
-  const nodes = R.nodes.map((o, i) => `<g class="nd ${R.got.includes(i) || R.phase === 'done' ? 'lit' : ''} ${R.phase === 'show' ? 'flash' : ''}" style="--d:${order[i] * 0.6}s" onclick="runeTap(${i})" transform="translate(${o.x} ${o.y})"><circle r="21"/><path d="${o.g}"/></g>`).join('');
-  const msg = R.phase === 'show' ? (R.fails ? '顺序错了。再看一遍——' : '看清骨文亮起的顺序……') : R.phase === 'input' ? `照着刚才的顺序点亮骨文（${R.got.length}/${R.seq.length}）` : '成了！';
-  return `<div class="line"><div>${sealHtml({ n: R.name, c: '#7a4a1a' })}</div><div class="tx nar">${R.phase === 'done' ? '骨文连成了一体，在你眼前亮了一下，钻进了你的骨头里。' : '骨文在你眼前一道道亮起来。'}</div></div>
-    <div class="rune"><svg viewBox="0 0 320 190">${links}${nodes}</svg><div class="msg">${msg}</div></div>${R.phase !== 'done' ? `<div class="ch"><button class="chb" onclick="runeSkip()">看不懂，先硬记下来（跳过）</button></div>` : ''}`;
+  const order = {}; R.seq.forEach((n, j) => order[n] = j); const path = R.phase === 'show' ? R.seq.slice(0, R.shown) : R.phase === 'done' ? R.seq : R.got;
+  const links = path.slice(1).map((n, j) => { const a = R.nodes[path[j]], b = R.nodes[n]; return `<line class="lnk ${R.phase === 'show' ? 'demo' : ''}" x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}"/>`; }).join('');
+  const numOn = i => R.phase !== 'show' || order[i] < R.shown, lit = i => R.phase === 'show' ? order[i] < R.shown : R.phase === 'done' || R.got.includes(i);
+  const nodes = R.nodes.map((o, i) => `<g class="nd ${lit(i) ? 'lit' : ''} ${R.phase === 'show' && order[i] === R.shown - 1 ? 'pop' : ''} ${R.phase === 'input' && R.seq[R.got.length] === i ? 'next' : ''} ${R.bad === i ? 'bad' : ''}" onclick="runeTap(${i})" transform="translate(${o.x} ${o.y})"><circle r="22"/><path d="${o.g}"/>${numOn(i) ? `<g class="num" transform="translate(16 -16)"><circle r="9"/><text y="4">${order[i] + 1}</text></g>` : ''}</g>`).join('');
+  const left = R.phase === 'input' ? Math.max(0, R.dur - (now() - R.t0)) : R.dur;
+  const msg = R.phase === 'show' ? `看骨文一道道亮起来……（${R.shown}/${R.seq.length}）` : R.phase === 'input' ? `按 1 → ${R.seq.length} 的顺序点，把骨文连起来（${R.got.length}/${R.seq.length}）${R.fails ? `　<span class="bad">点错 ${R.fails} 次</span>` : ''}` : R.ok ? '一气呵成！熟练度起步更高。' : '连上了。';
+  return `<div class="line"><div>${sealHtml({ n: R.name, c: '#7a4a1a' })}</div><div class="tx nar">${R.phase === 'done' ? '骨文连成了一体，在你眼前亮了一下，钻进了你的骨头里。' : R.phase === 'show' ? '骨文在你眼前一道接一道地亮起来，串成一条路。' : '照着它的路，自己走一遍。不用记——数字都在。'}</div></div>
+    <div class="rune"><svg viewBox="0 0 320 190">${links}${nodes}</svg>${R.phase === 'input' ? `<div class="rtime" title="又快又不点错，熟练度起步更高"><i style="animation-duration:${R.dur}ms;animation-delay:-${R.dur - left}ms"></i></div>` : ''}<div class="msg">${msg}</div></div>${R.phase !== 'done' ? `<div class="ch"><button class="chb" onclick="runeSkip()">先不连了，直接学（跳过）</button></div>` : ''}`;
 }
 
 /* ================= long-term goals and conveniences =================
@@ -1951,7 +1977,7 @@ function bountyToday() { // one per person per day; someone who becomes availabl
   const d = today(); if (!C.bounty || C.bounty.day !== d) C.bounty = { day: d, list: [] }; const list = C.bounty.list;
   for (const B of BOUNTY_FROM) { if (!B.open() || list.some(b => b.npc === B.npc)) continue; const r = srng('bounty' + d + C.created + B.npc);
     const ps = Object.values(PLACES).filter(p => B.areas.includes(p.area) && placeOpen(p.id) && p.mobs && p.lv && p.lv[0] <= C.lv + 2);
-    if (ps.length && r() < 0.7) { const P = ps[Math.floor(r() * ps.length)], m = P.mobs[Math.floor(r() * P.mobs.length)][0]; list.push({ npc: B.npc, kind: 'kill', id: m, n: 4 + Math.floor(r() * 3), got: 0, st: 'new', where: P.name }); }
+    if (ps.length && r() < 0.7) { const P = ps[Math.floor(r() * ps.length)], m = P.mobs[Math.floor(r() * P.mobs.length)][0]; list.push({ npc: B.npc, kind: 'kill', id: m, n: 4 + Math.floor(r() * 3), got: 0, st: 'new', where: P.name, loc: P.id }); }
     else { const it = ['bone', 'herb', 'meat', 'lingyao'][Math.floor(r() * 4)]; list.push({ npc: B.npc, kind: 'item', id: it, n: it === 'lingyao' ? 2 : 3 + Math.floor(r() * 2), got: 0, st: 'new' }); } }
   return list; }
 const bountyText = b => b.kind === 'kill' ? `打 ${b.n} 头${MOBS[b.id].name}（${b.where}，${Math.min(b.got, b.n)}/${b.n}）` : `带 ${b.n} 个${ITEMS[b.id].name}（${Math.min(itemN(b.id), b.n)}/${b.n}）`;
@@ -1996,6 +2022,26 @@ async function dongtianRedo() { if (!C.dt.length || !itemN('lingyao')) return;
 
 /* ---------- 困难秘境 ---------- */
 function enterDungeonHard(id) { if (!C.dungeons[id]) return; enterDungeon(id, true); }
+
+/* ---------- 任务列表: main line, side errands and bounties side by side; pick which one to follow ---------- */
+const npcLocNow = n => { const P = Object.values(PLACES).find(p => placeOpen(p.id) && npcsHere(p.id).includes(n)); return P ? P.id : null; };
+function itemWhere(id) { // the open wild place closest to your level where it can be gathered, or else where a beast drops it
+  const open = Object.values(PLACES).filter(p => placeOpen(p.id) && p.lv && route(C.loc, p.id)), by = L => L.sort((a, b) => Math.abs(a.lv[0] - C.lv) - Math.abs(b.lv[0] - C.lv))[0];
+  const g = open.filter(p => (p.gather || []).some(x => x[0] === id)), m = open.filter(p => (p.mobs || []).some(x => (MOBS[x[0]].loot || []).some(l => l[0] === id)));
+  const P = by(g.length ? g : m); return P ? P.id : null; }
+function tasks() {
+  const q = curQ(), out = [{ key: 'main', kind: '主线', title: `${CH_NAMES[q.ch].split(' · ')[1] || ''} · ${q.title}`, goal: questGoalText(), where: questWhere() }];
+  for (const [id, S] of Object.entries(SIDE)) { const st = C.side && C.side[id]; if (st === 'done' || C.story.q < qi(S.minQ)) continue; const N = NPCS[S.npc];
+    if (!st) { out.push({ key: 'side:' + id, kind: '支线 · 可接', title: S.title, goal: `去找${N.name}`, where: npcLocNow(S.npc) }); continue; }
+    const miss = S.need.find(([k, n]) => itemN(k) < n), prog = S.need.map(([k, n]) => `${ITEMS[k].name} ${Math.min(itemN(k), n)}/${n}`).join('、');
+    out.push({ key: 'side:' + id, kind: '支线', title: S.title, goal: miss ? `${prog}（${PLACES[itemWhere(miss[0])]?.name || '野外'}能找到）` : `${prog} → 交给${N.name}`, where: miss ? itemWhere(miss[0]) : npcLocNow(S.npc) }); }
+  for (const b of bountyToday()) { if (b.st === 'done') continue; const N = NPCS[b.npc], ready = b.st === 'on' && bountyReady(b);
+    const loc = b.st === 'new' || ready ? npcLocNow(b.npc) : b.kind === 'kill' ? (b.loc || Object.values(PLACES).find(p => p.name === b.where)?.id) : itemWhere(b.id);
+    out.push({ key: 'bounty:' + b.npc, kind: b.st === 'new' ? '悬赏 · 可接' : '悬赏', title: `${N.name}的悬赏`, goal: bountyText(b) + (b.st === 'new' ? ` · 去找${N.name}接` : ready ? ` → 交给${N.name}` : ''), where: loc }); }
+  return out; }
+function curTask() { const T = tasks(); return T.find(t => t.key === C.track) || T[0]; }
+const taskWhere = () => curTask().where;
+function trackTask(key) { C.track = key; sfx('click'); save(); refresh(); }
 
 /* ================= the living village: NPC chatter tied to where you are and how far the story has gone,
    rumours about roaming beasts, and the 虚神界 ladder ================= */
@@ -2209,18 +2255,19 @@ function renderBanner() {
   const P = PLACES[C.loc], A = AREAS[P.area]; $('bnm').textContent = STATE.dungeon ? DUNGEONS[STATE.dungeon.id].name : P.name;
   const exc = P.lv && !STATE.dungeon ? exCount(C.loc) : null;
   $('bar').innerHTML = STATE.dungeon ? `第 ${STATE.dungeon.room + 1}/${DUNGEONS[STATE.dungeon.id].rooms.length} 关` : `${A.name}${P.lv ? ' · ' + P.lv[0] + '-' + P.lv[1] + ' 层' : ''}${isNight() ? ' · 夜' : ''}${exc && exc.n ? ` · <span title="探索度：这里的凶兽种类和能采的东西">${exc.done ? '✓ 探索完成' : `探索 ${exc.have}/${exc.n}`}</span>` : ''}`;
-  const q = curQ(), w = questWhere(); $('bq').innerHTML = `<b>${CH_NAMES[q.ch].split(' · ')[1] || ''} · ${q.title}</b>　${questGoalText()}${w && w !== C.loc && route(C.loc, w) ? '<span class="go">▶ 去</span>' : ''}${q.rec && C.lv < q.rec ? `　<span class="warn">建议 ${q.rec} 层</span>` : ''}`;
+  const q = curQ(), T = curTask(), w = T.where, nT = tasks().length; $('bq').innerHTML = `<span class="qk">${T.kind}</span><b>${esc(T.title)}</b>　${T.goal}${w && w !== C.loc && route(C.loc, w) ? '<span class="go">▶ 去</span>' : ''}${T.key === 'main' && q.rec && C.lv < q.rec ? `　<span class="warn">建议 ${q.rec} 层</span>` : ''}`;
+  $('bqs').innerHTML = `任务<br><b>${nT}</b>`; $('bqs').classList.toggle('dot2', tasks().some(t => /可接/.test(t.kind) || / → 交给/.test(t.goal)));
   $('bq').setAttribute('onclick', 'questGo()');
   const key = C.loc + (STATE.dungeon ? STATE.dungeon.id + STATE.dungeon.room : ''); if (UI.bKey !== key) { const first = !UI.bKey; UI.bKey = key; if (!first && animOn()) for (const e of [$('banner'), $('desc'), $('acts')]) { e.classList.remove('swap'); void e.offsetWidth; e.classList.add('swap'); clearTimeout(e._t); e._t = setTimeout(() => e.classList.remove('swap'), 900); } }
 }
 function renderDesc() { const P = PLACES[C.loc]; if (STATE.dungeon) { const D = DUNGEONS[STATE.dungeon.id], R = D.rooms[STATE.dungeon.room]; $('desc').innerHTML = `<b>【${R.name}】</b>${R.text}`; return; } $('desc').innerHTML = isNight() && P.night ? `<span class="night">${P.night}</span>` : pdesc(P); }
-function questGo() { const w = questWhere(); if (w && w !== C.loc) autoWalk(w); else navTo('map'); }
+function questGo() { const w = taskWhere(); if (w && w !== C.loc) autoWalk(w); else navTo('map'); }
 /* ---------- actions ---------- */
 function renderActs() {
   const A = $('acts'); if (STATE.battle) return;
   if (STATE.dungeon) { A.innerHTML = `<div class="wait">${DUNGEONS[STATE.dungeon.id].name} · 第 ${STATE.dungeon.room + 1} 关……</div>`; return; }
   if (STATE.scene || STATE.busy) { A.innerHTML = '<div class="wait">……</div>'; return; }
-  const P = PLACES[C.loc], ex = exitsOf(C.loc), qw = questWhere(); const g = (l, xs) => xs.length ? `<div class="grp"><span class="gl">${l}</span>${xs.join('')}</div>` : '';
+  const P = PLACES[C.loc], ex = exitsOf(C.loc), qw = taskWhere(); const g = (l, xs) => xs.length ? `<div class="grp"><span class="gl">${l}</span>${xs.join('')}</div>` : '';
   const dirs = Object.entries(ex).map(([d, id]) => { const T = PLACES[id], ec = T.lv ? exCount(id) : null; return `<button class="ab dir ${qw === id ? 'q' : ''}" onclick="go('${id}')">${DIRS[d]} · ${T.name}${qw === id ? ' ★' : ''}${ec && ec.done ? ' ✓' : ''}${T.lv ? `<small>${T.lv[0]}-${T.lv[1]}层</small>` : ''}</button>`; });
   const acts = []; const sh = storyHere(); if (sh) acts.push(`<button class="ab q" onclick="storyHereRun()">▶ ${sh}</button>`);
   if (P.mobs) acts.push(`<button class="ab main" onclick="explore()">🔍 探索</button>`);
@@ -2511,19 +2558,18 @@ function pBag() {
     return `<div class="li"><span class="ic">${it.icon}</span><div class="t">${it.name} ×${C.bag[id]}<small>${it.desc}</small></div><div class="acts">${a}</div></div>`; }).join('') + '</div>';
 }
 function pMap() {
-  const area = UI.mapArea && Object.values(PLACES).some(p => p.area === UI.mapArea && placeOpen(p.id)) ? UI.mapArea : PLACES[C.loc].area, ps = Object.values(PLACES).filter(p => p.area === area && placeOpen(p.id)), qw = questWhere();
+  const area = UI.mapArea && Object.values(PLACES).some(p => p.area === UI.mapArea && placeOpen(p.id)) ? UI.mapArea : PLACES[C.loc].area, ps = Object.values(PLACES).filter(p => p.area === area && placeOpen(p.id)), qw = taskWhere();
   const xs = ps.map(p => p.x), ys = ps.map(p => p.y), x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys);
   const W = 300, H = Math.max(120, (y1 - y0 + 1) * 66), px = p => 50 + (x1 > x0 ? (p.x - x0) / (x1 - x0) * (W - 100) : (W - 100) / 2), py = p => 24 + (y1 > y0 ? (p.y - y0) / (y1 - y0) * (H - 48) : (H - 48) / 2);
   let lines = ''; for (const p of ps) for (const t of Object.values(exitsOf(p.id))) { const q = PLACES[t]; if (q.area === area && p.id < t) lines += `<line x1="${px(p)}" y1="${py(p)}" x2="${px(q)}" y2="${py(q)}" stroke="#5a4a34" stroke-width="2"/>`; }
   const nodes = ps.map(p => `<div class="mn ${p.id === C.loc ? 'cur' : ''} ${p.id === qw ? 'q' : ''} ${ROAM && !ROAM.dead && ROAM.loc === p.id && now() < ROAM.end ? 'wb' : ''}" style="left:${px(p)}px;top:${py(p)}px" onclick="${p.id === C.loc ? '' : `navTo('adv');autoWalk('${p.id}')`}">${p.name}${p.lv && exCount(p.id).done ? ' ✓' : ''}${p.lv ? `<small>${p.lv[0]}-${p.lv[1]}层${exCount(p.id).n && !exCount(p.id).done ? ` · ${exCount(p.id).have}/${exCount(p.id).n}` : ''}</small>` : ''}</div>`).join('');
   const areas = Object.entries(AREAS).filter(([k]) => Object.values(PLACES).some(p => p.area === k && placeOpen(p.id)));
   const q = curQ();
-  return `<div class="card"><h3>${CH_NAMES[q.ch].split(' · ')[1] || ''} · ${q.title}</h3><div style="font-size:.93rem">${questGoalText()}</div>${qw && qw !== C.loc ? `<button class="sb pri" style="margin-top:6px" onclick="navTo('adv');autoWalk('${qw}')">▶ 去${PLACES[qw].name}</button>` : ''}
-    ${Object.entries(SIDE).filter(([id]) => C.side?.[id] === 'on').map(([id, S]) => `<div class="dim" style="font-size:.87rem;margin-top:4px">支线 · ${S.title}：${S.need.map(([k, n]) => `${ITEMS[k].name} ${Math.min(itemN(k), n)}/${n}`).join('、')} → ${NPCS[S.npc].name}</div>`).join('')}</div>
+  const T = tasks(), cur = curTask();
+  return `<div class="card"><h3>任务 <span class="dim" style="font-size:.8rem;font-family:var(--ff)">选一个追踪，探索页的提示和 ▶ 去 就跟着它走</span></h3><div class="list">${T.map(t => `<div class="li ${t.key === cur.key ? 'on' : ''}"><div class="t"><span class="pill ${t.key === 'main' ? 'gold' : ''}">${t.kind}</span><b>${esc(t.title)}</b><small>${t.goal}</small></div><div class="acts">${t.key === cur.key ? '<span class="chk">★</span>' : `<button class="sb" onclick="trackTask('${t.key}')">追踪</button>`}${t.where && t.where !== C.loc ? `<button class="sb pri" onclick="trackTask('${t.key}');navTo('adv');autoWalk('${t.where}')">▶ 去</button>` : ''}</div></div>`).join('')}</div></div>
     ${areas.length > 1 ? `<div class="row" style="flex-wrap:wrap;gap:4px">${areas.map(([k, A]) => `<button class="sb ${k === area ? 'pri' : ''}" style="min-height:30px" onclick="UI.mapArea='${k}';renderSide()">${A.name}</button>`).join('')}</div>` : ''}
-    ${bountyToday().length ? `<div class="card"><h4 style="margin-top:0">今日悬赏</h4>${bountyToday().map(b => `<div style="font-size:.87rem">${b.st === 'done' ? '✔' : b.st === 'on' ? (bountyReady(b) ? '❗' : '·') : '○'} ${NPCS[b.npc].name}：${bountyText(b)}${b.st === 'new' ? ' <span class="dim">（去找他接）</span>' : ''}</div>`).join('')}</div>` : ''}
     <div class="map" style="width:${W}px;height:${H}px"><svg width="${W}" height="${H}" style="position:absolute;inset:0">${lines}</svg>${nodes}</div>
-    ${ROAM && !ROAM.dead && now() < ROAM.end && now() >= ROAM.start ? `<div class="dim" style="font-size:.87rem">⚔ 凶兽首领 <b class="warn">${MOBS[ROAM.id].name}</b> 在 ${PLACES[ROAM.loc].name}</div>` : ''}<div class="dim" style="font-size:.8rem">点地点自动走过去 · ★ 主线目标 · ✓ 探索完成（数字 = 打过的凶兽种类 + 采到的东西）${isNight() ? ' · 现在是夜里，野外会有夜行的凶兽' : ''}</div>`;
+    ${ROAM && !ROAM.dead && now() < ROAM.end && now() >= ROAM.start ? `<div class="dim" style="font-size:.87rem">⚔ 凶兽首领 <b class="warn">${MOBS[ROAM.id].name}</b> 在 ${PLACES[ROAM.loc].name}</div>` : ''}<div class="dim" style="font-size:.8rem">点地点自动走过去 · ★ 正在追踪的任务 · ✓ 探索完成（数字 = 打过的凶兽种类 + 采到的东西）${isNight() ? ' · 现在是夜里，野外会有夜行的凶兽' : ''}</div>`;
 }
 
 /* ---------- small windows ---------- */
@@ -2588,7 +2634,7 @@ function netSync() { if (NETROLE !== 'host' || !NET.conns.size || !C) return; cl
 function snapshot() { return { t: 'st', C, st: { battle: STATE.battle, dungeon: STATE.dungeon, scene: !!STATE.scene, busy: STATE.busy, dtPending: !!STATE.dtPending }, dlg: DLG ? Object.assign(DLG.rune ? { rune: DLG.rune } : DLG.choice ? { choice: DLG.choice.map(o => ({ t: o.t, dis: !!o.dis })) } : { o: DLG.o }, { ctx: dlgCtx() }) : null, roam: ROAM, ctrl: NET.ctrl, peers: NET.conns.size }; }
 function takeControl() { if (NETROLE === 'host') { NET.ctrl = 'host'; netBroadcast({ t: 'ctrl', ctrl: 'host' }); } else netSend({ t: 'take' }); toast('你来操作'); refresh(); if (UI.modal === 'coop') openModal('coop', 1); }
 /* commands a guest (or a host who handed over control) may trigger by clicking */
-const CMD_NAMES = ['go', 'explore', 'rest', 'train', 'enterDungeon', 'fightRoam', 'autoWalk', 'npcTalk', 'battleAct', 'toggleAuto', 'useItem', 'feedPet', 'setPet', 'toggleBar', 'arenaFight', 'storyHereRun', 'runeTap', 'runeSkip', 'arenaClaim', 'battleUndo', 'equipRelic', 'teleport', 'tradeDo', 'bountyTake', 'enterDungeonHard', 'setTitle'];
+const CMD_NAMES = ['go', 'explore', 'rest', 'train', 'enterDungeon', 'fightRoam', 'autoWalk', 'npcTalk', 'battleAct', 'toggleAuto', 'useItem', 'feedPet', 'setPet', 'toggleBar', 'arenaFight', 'storyHereRun', 'runeTap', 'runeSkip', 'arenaClaim', 'battleUndo', 'equipRelic', 'teleport', 'tradeDo', 'bountyTake', 'enterDungeonHard', 'setTitle', 'trackTask'];
 const CMDS = {};
 UI.inClick = false; const markClick = () => { UI.inClick = true; setTimeout(() => { UI.inClick = false; }, 0); };
 document.addEventListener('click', markClick, true); document.addEventListener('keydown', markClick, true);

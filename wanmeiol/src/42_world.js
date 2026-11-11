@@ -47,29 +47,37 @@ function wildEventFor(P) {
 }
 async function runWild(e) { if (e.once) C.story.f['wd_' + e.id] = 1; if (e.scene) await runScene(e.scene, { title: e.title }); else await e.run(); save(); refresh(); }
 
-/* ---------- 骨文 memory game: watch the runes light up, then tap them in the same order ---------- */
+/* ---------- 骨文 game: the runes light up one by one (numbered), then you connect them 1 → n.
+   Nothing to memorise — the numbers stay. Finishing in time without a wrong tap gives the 宝术 a head start.
+   The lighting is game state (R.shown), not a CSS animation, so it works with animations off and is mirrored in co-op. */
 function runeGame(id) {
   if (window.__dbg && __dbg.auto) return Promise.resolve(!__dbg.runeFail);
   const n = { qly: 4, sn: 5, lei: 6, gw: 6 }[id] || 5, nodes = [];
-  for (let t = 0; nodes.length < n && t < 400; t++) { const x = 34 + Math.random() * 252, y = 30 + Math.random() * 130; if (nodes.every(o => Math.hypot(o.x - x, o.y - y) > 64)) nodes.push({ x: Math.round(x), y: Math.round(y), g: runeGlyph() }); }
+  for (let t = 0; nodes.length < n && t < 400; t++) { const x = 34 + Math.random() * 252, y = 34 + Math.random() * 124; if (nodes.every(o => Math.hypot(o.x - x, o.y - y) > 66)) nodes.push({ x: Math.round(x), y: Math.round(y), g: runeGlyph() }); }
   const seq = shuffle(nodes.map((_, i) => i));
-  return new Promise(res => { DLG = { rune: { id, name: SKILLS[id].name, nodes, seq, got: [], phase: 'show', fails: 0, k: uid() }, res }; renderDlg(); netSync(); runeShowThen(); });
+  return new Promise(res => { DLG = { rune: { id, name: SKILLS[id].name, nodes, seq, got: [], phase: 'show', shown: 0, fails: 0, bad: -1, dur: n * 1400 + 2000, t0: 0, k: uid() }, res }; renderDlg(); netSync(); runeShowStep(); });
 }
 function runeGlyph() { // a few strokes inside a circle — an abstract rune, different every time
-  const P = () => [Math.round((Math.random() - 0.5) * 26), Math.round((Math.random() - 0.5) * 26)]; let d = '';
+  const P = () => [Math.round((Math.random() - 0.5) * 24), Math.round((Math.random() - 0.5) * 24)]; let d = '';
   for (let i = 0; i < 2 + rint(0, 1); i++) { const a = P(), b = P(), c = P(); d += i % 2 ? `M${a[0]} ${a[1]}Q${c[0]} ${c[1]} ${b[0]} ${b[1]}` : `M${a[0]} ${a[1]}L${b[0]} ${b[1]}`; } return d;
 }
-function runeShowThen() { const R = DLG && DLG.rune; if (!R) return; const k = R.k; setTimeout(() => { if (DLG && DLG.rune && DLG.rune.k === k && DLG.rune.phase === 'show') { DLG.rune.phase = 'input'; renderDlg(); netSync(); } }, R.seq.length * 600 + 500); }
-function runeTap(i) { const R = DLG && DLG.rune; if (!R || R.phase !== 'input' || NETROLE === 'guest') return;
-  if (R.seq[R.got.length] === i) { R.got.push(i); sfx('click'); if (R.got.length === R.seq.length) { R.phase = 'done'; sfx('epic'); renderDlg(); netSync(); setTimeout(() => runeEnd(R.fails === 0), 800); return; } }
-  else { R.fails++; R.got = []; R.phase = 'show'; R.k = uid(); sfx('fail'); }
-  renderDlg(); netSync(); if (R.phase === 'show') runeShowThen(); }
+function runeShowStep() { const R = DLG && DLG.rune; if (!R || R.phase !== 'show') return; const k = R.k;
+  setTimeout(() => { const Q = DLG && DLG.rune; if (!Q || Q.k !== k || Q.phase !== 'show') return;
+    if (Q.shown < Q.seq.length) { Q.shown++; sfx('click'); renderDlg(); netSync(); runeShowStep(); }
+    else { Q.phase = 'input'; Q.t0 = now(); renderDlg(); netSync(); } }, R.shown === 0 ? 500 : R.shown < R.seq.length ? 520 : 800); }
+function runeTap(i) { const R = DLG && DLG.rune; if (!R || R.phase !== 'input' || NETROLE === 'guest' || R.got.includes(i)) return;
+  if (R.seq[R.got.length] === i) { R.got.push(i); R.bad = -1; sfx('click'); if (R.got.length === R.seq.length) { R.phase = 'done'; R.ok = R.fails === 0 && now() - R.t0 <= R.dur; sfx('epic'); renderDlg(); netSync(); setTimeout(() => runeEnd(R.ok), 900); return; } }
+  else { R.fails++; R.bad = i; sfx('fail'); }
+  renderDlg(); netSync(); }
 function runeSkip() { if (DLG && DLG.rune && NETROLE !== 'guest') runeEnd(false); }
-function runeEnd(ok) { const D_ = DLG; if (!D_ || !D_.rune) return; DLG = null; logLine(ok ? '骨文的走向，你一次就看清了。' : '骨文你没全看懂，只能先硬记下来，往后慢慢磨。', 'dim'); renderDlg(); netSync(); D_.res(ok); }
+function runeEnd(ok) { const D_ = DLG; if (!D_ || !D_.rune) return; DLG = null; logLine(ok ? '骨文一气呵成地连了起来，你一下子就看透了它的走向。' : '骨文连上了，可还不够顺，往后得慢慢磨。', 'dim'); renderDlg(); netSync(); D_.res(ok); }
 function runeHtml(R) {
-  const order = {}; R.seq.forEach((n, j) => order[n] = j); const links = R.got.slice(1).map((n, j) => { const a = R.nodes[R.got[j]], b = R.nodes[n]; return `<line class="lnk" x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}"/>`; }).join('');
-  const nodes = R.nodes.map((o, i) => `<g class="nd ${R.got.includes(i) || R.phase === 'done' ? 'lit' : ''} ${R.phase === 'show' ? 'flash' : ''}" style="--d:${order[i] * 0.6}s" onclick="runeTap(${i})" transform="translate(${o.x} ${o.y})"><circle r="21"/><path d="${o.g}"/></g>`).join('');
-  const msg = R.phase === 'show' ? (R.fails ? '顺序错了。再看一遍——' : '看清骨文亮起的顺序……') : R.phase === 'input' ? `照着刚才的顺序点亮骨文（${R.got.length}/${R.seq.length}）` : '成了！';
-  return `<div class="line"><div>${sealHtml({ n: R.name, c: '#7a4a1a' })}</div><div class="tx nar">${R.phase === 'done' ? '骨文连成了一体，在你眼前亮了一下，钻进了你的骨头里。' : '骨文在你眼前一道道亮起来。'}</div></div>
-    <div class="rune"><svg viewBox="0 0 320 190">${links}${nodes}</svg><div class="msg">${msg}</div></div>${R.phase !== 'done' ? `<div class="ch"><button class="chb" onclick="runeSkip()">看不懂，先硬记下来（跳过）</button></div>` : ''}`;
+  const order = {}; R.seq.forEach((n, j) => order[n] = j); const path = R.phase === 'show' ? R.seq.slice(0, R.shown) : R.phase === 'done' ? R.seq : R.got;
+  const links = path.slice(1).map((n, j) => { const a = R.nodes[path[j]], b = R.nodes[n]; return `<line class="lnk ${R.phase === 'show' ? 'demo' : ''}" x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}"/>`; }).join('');
+  const numOn = i => R.phase !== 'show' || order[i] < R.shown, lit = i => R.phase === 'show' ? order[i] < R.shown : R.phase === 'done' || R.got.includes(i);
+  const nodes = R.nodes.map((o, i) => `<g class="nd ${lit(i) ? 'lit' : ''} ${R.phase === 'show' && order[i] === R.shown - 1 ? 'pop' : ''} ${R.phase === 'input' && R.seq[R.got.length] === i ? 'next' : ''} ${R.bad === i ? 'bad' : ''}" onclick="runeTap(${i})" transform="translate(${o.x} ${o.y})"><circle r="22"/><path d="${o.g}"/>${numOn(i) ? `<g class="num" transform="translate(16 -16)"><circle r="9"/><text y="4">${order[i] + 1}</text></g>` : ''}</g>`).join('');
+  const left = R.phase === 'input' ? Math.max(0, R.dur - (now() - R.t0)) : R.dur;
+  const msg = R.phase === 'show' ? `看骨文一道道亮起来……（${R.shown}/${R.seq.length}）` : R.phase === 'input' ? `按 1 → ${R.seq.length} 的顺序点，把骨文连起来（${R.got.length}/${R.seq.length}）${R.fails ? `　<span class="bad">点错 ${R.fails} 次</span>` : ''}` : R.ok ? '一气呵成！熟练度起步更高。' : '连上了。';
+  return `<div class="line"><div>${sealHtml({ n: R.name, c: '#7a4a1a' })}</div><div class="tx nar">${R.phase === 'done' ? '骨文连成了一体，在你眼前亮了一下，钻进了你的骨头里。' : R.phase === 'show' ? '骨文在你眼前一道接一道地亮起来，串成一条路。' : '照着它的路，自己走一遍。不用记——数字都在。'}</div></div>
+    <div class="rune"><svg viewBox="0 0 320 190">${links}${nodes}</svg>${R.phase === 'input' ? `<div class="rtime" title="又快又不点错，熟练度起步更高"><i style="animation-duration:${R.dur}ms;animation-delay:-${R.dur - left}ms"></i></div>` : ''}<div class="msg">${msg}</div></div>${R.phase !== 'done' ? `<div class="ch"><button class="chb" onclick="runeSkip()">先不连了，直接学（跳过）</button></div>` : ''}`;
 }
