@@ -19,7 +19,12 @@ const BAL = {
   storyExp: 2,                                        // story fights give double exp
   phaseAtk: 0.25,                                     // a boss at half health gets angry: +25% attack
   weakMul: 1.5,                                       // hitting a weakness
+  // enemies get tougher as you climb (2026-11): unchanged up to 11 层, gently at first, reaching 气血 ×1.6 / 攻击 ×1.25 at 18 层 — the same stretch where 宝术 / 宝骨 slots and partner moves open up
+  foeRamp: lv => Math.pow(clamp((lv - 11) / 7, 0, 1), 1.5), foeHp: lv => 1 + 0.6 * BAL.foeRamp(lv), foeAtk: lv => 1 + 0.25 * BAL.foeRamp(lv),
 };
+/* slots grow with the realm: 宝术 you can take into battle, 宝骨 you can wear */
+const barSlots = lv => 4 + (lv >= 10) + (lv >= 14) + (lv >= 18);
+const relicSlots = lv => 2 + (lv >= 12) + (lv >= 17);
 /* 宝术熟练度: uses → 小成 / 大成 */
 const PROF = [{ n: '', s: '', at: 0, b: 0 }, { n: '小成', s: '小', at: 30, b: 0.1 }, { n: '大成', s: '大', at: 100, b: 0.2 }];
 /* elements: a few beasts take more from one kind of attack */
@@ -40,7 +45,7 @@ const SKILLS = {
   ta: { name: '小塔', icon: '🗼', got: 'sk_ta', mp: 22, cd: 5, tgt: 'allies', shield: 1.6, desc: '那座只有四层的小塔垂下光幕，全队获得 1.6 倍攻击的护盾。' },
 };
 const SKILL_ORDER = ['qly', 'sn', 'gw', 'lei', 'dsh', 'jian', 'ta'];
-const STATUS = { stun: { n: '眩晕', c: '#ffd34a' }, bleed: { n: '流血', c: '#ff6a6a' }, burn: { n: '灼烧', c: '#ff8a3a' }, poison: { n: '中毒', c: '#9ad84a' }, def: { n: '坚守', c: '#ffd28a' }, taunt: { n: '嘲讽', c: '#ffb36a' }, atk: { n: '凶性', c: '#ff9a6a' }, dodge: { n: '灵动', c: '#9ad8ff' }, sure: { n: '必暴', c: '#ffe46a' }, shield: { n: '护盾', c: '#9ae8b0' }, guard: { n: '防御', c: '#c8c0b0' }, weak: { n: '虚弱', c: '#b0a0ff' }, bound: { n: '锁链', c: '#d8b070' }, freeze: { n: '冰封', c: '#9ad8ff' }, rage: { n: '狂怒', c: '#ff4a2a' } };
+const STATUS = { stun: { n: '眩晕', c: '#ffd34a' }, bleed: { n: '流血', c: '#ff6a6a' }, burn: { n: '灼烧', c: '#ff8a3a' }, poison: { n: '中毒', c: '#9ad84a' }, def: { n: '坚守', c: '#ffd28a' }, taunt: { n: '嘲讽', c: '#ffb36a' }, atk: { n: '凶性', c: '#ff9a6a' }, dodge: { n: '灵动', c: '#9ad8ff' }, sure: { n: '必暴', c: '#ffe46a' }, shield: { n: '护盾', c: '#9ae8b0' }, guard: { n: '防御', c: '#c8c0b0' }, weak: { n: '虚弱', c: '#b0a0ff' }, bound: { n: '锁链', c: '#d8b070' }, brk: { n: '破甲', c: '#e0a070' }, mark: { n: '印记', c: '#c08aff' }, freeze: { n: '冰封', c: '#9ad8ff' }, rage: { n: '狂怒', c: '#ff4a2a' } };
 
 /* ---------- 功法 / 修炼所得 (passive) ---------- */
 const GONGFA = {
@@ -59,13 +64,31 @@ const DONGTIAN = [
   { k: 'shou', n: '守之洞天', d: '防御 +7%', b: { defP: 0.07 } }, { k: 'su', n: '速之洞天', d: '身法 +2', b: { spd: 2 } }, { k: 'feng', n: '锋之洞天', d: '暴击 +3%', b: { crit: 0.03 } }];
 
 /* ---------- pets (from the novel) ----------  stats are multiples of 石昊's at the same level */
+/* each 灵兽伙伴 has four kinds of move — 攻击 / 增益 (on 石昊) / 减益 (on enemies) / 防守 — unlocked with affection (亲近);
+   most of them set 石昊 up: 破甲 and 印记 make his 宝术 land harder, 战吼 and 加持 boost him, 嘲讽 draws the hits away from him */
+const PET_CAT = { atk: { n: '攻击', c: '#e07a5a' }, buff: { n: '增益', c: '#d4ad62' }, debuff: { n: '减益', c: '#a08ae0' }, def: { n: '防守', c: '#6fbf7a' } };
 const PETS = {
-  maoqiu: { name: '毛球', race: '朱厌幼崽', role: '输出', icon: '🐒', desc: '在旧村废墟里捡到的金毛小猴，伤好了以后赖着不走。它其实是争夺山宝的四大至尊之一——朱厌。', mul: { hp: 0.75, atk: 0.8, def: 0.8, spd: 1.15 },
-    sk: [{ n: '金爪', dmg: 1.15, w: 3 }, { n: '连环爪', dmg: 1.6, w: 2, aff: 40 }, { n: '撼山', dmg: 2.3, el: 'blunt', w: 1, aff: 80 }, { n: '朱厌之怒', dmg: 1.3, aoe: 1, st: { k: 'weak', t: 2, v: 0.2, p: 0.7 }, w: 2, evo: 1 }] },
-  dahong: { name: '大红', race: '大红鸟', role: '群攻', icon: '🐦', desc: '百断山里一只脾气暴躁的大红鸟。你想吃它，它想啄你，打了好几架以后，它认了你当老大。', mul: { hp: 0.7, atk: 0.8, def: 0.7, spd: 1.4 },
-    sk: [{ n: '啄击', dmg: 0.95, w: 2 }, { n: '火羽', dmg: 0.7, aoe: 1, el: 'fire', st: { k: 'burn', t: 2, v: 0.25, p: 0.5 }, w: 3 }, { n: '烈焰俯冲', dmg: 1.2, aoe: 1, el: 'fire', w: 1, aff: 60 }, { n: '赤焰风暴', dmg: 1.4, aoe: 1, el: 'fire', st: { k: 'burn', t: 3, v: 0.3, p: 0.8 }, w: 2, evo: 1 }] },
-  ertuzi: { name: '二秃子', race: '孔雀一族', role: '控制 · 治疗', icon: '🐣', desc: '百断山捡到的一颗蛋孵出来的小鸟，一根毛都没有。别看它秃，它是孔雀一族。', mul: { hp: 0.55, atk: 0.65, def: 0.6, spd: 1.2 },
-    sk: [{ n: '啄', dmg: 0.85, w: 2 }, { n: '五色神光', dmg: 1, mag: 1, st: { k: 'stun', t: 1, p: 0.4 }, w: 2 }, { n: '五色护体', healAlly: 0.2, w: 2 }, { n: '五色屏障', shieldAll: 0.9, w: 1, aff: 60 }, { n: '五色神光·满', dmg: 0.8, mag: 1, aoe: 1, st: { k: 'stun', t: 1, p: 0.3 }, w: 2, evo: 1 }] },
+  maoqiu: { name: '毛球', race: '朱厌幼崽', role: '近战 · 破甲', icon: '🐒', desc: '在旧村废墟里捡到的金毛小猴，伤好了以后赖着不走。它其实是争夺山宝的四大至尊之一——朱厌。', mul: { hp: 0.8, atk: 0.8, def: 0.85, spd: 1.15 },
+    sk: [{ n: '金爪', cat: 'atk', dmg: 1.15, w: 3, d: '一爪子挠过去。' },
+      { n: '挡在身前', cat: 'def', taunt: 2, guard: 1, w: 1, d: '跳到石昊前面龇牙，两回合内敌人都冲它来，这回合它受伤减半。' },
+      { n: '朱厌战吼', cat: 'buff', buffHero: { k: 'atk', t: 2, v: 0.25 }, w: 1, aff: 25, d: '一声吼，石昊两回合内攻击 +25%。' },
+      { n: '撼地', cat: 'debuff', dmg: 0.5, aoe: 1, el: 'blunt', st: { k: 'brk', t: 2, v: 0.35, p: 1 }, w: 1, aff: 50, d: '砸地面震翻全体，破甲：防御 -35%，石昊的宝术打得更痛。' },
+      { n: '撼山', cat: 'atk', dmg: 2.3, el: 'blunt', w: 1, aff: 75, d: '抡起一块大石头砸下去，单体重击。' },
+      { n: '朱厌之怒', cat: 'atk', dmg: 1.3, aoe: 1, st: { k: 'weak', t: 2, v: 0.2, p: 0.7 }, w: 2, evo: 1, d: '觉醒后：金毛炸起，全体重击并虚弱。' }] },
+  dahong: { name: '大红', race: '大红鸟', role: '群攻 · 护身', icon: '🐦', desc: '百断山里一只脾气暴躁的大红鸟。你想吃它，它想啄你，打了好几架以后，它认了你当老大。', mul: { hp: 0.7, atk: 0.8, def: 0.7, spd: 1.4 },
+    sk: [{ n: '火羽', cat: 'atk', dmg: 0.7, aoe: 1, el: 'fire', st: { k: 'burn', t: 2, v: 0.25, p: 0.5 }, w: 3, d: '甩出一片火羽，全体伤害，可能灼烧。' },
+      { n: '火羽护身', cat: 'def', shieldHero: 1.2, w: 1, d: '把火羽围在石昊身边，给他一层护盾。' },
+      { n: '鼓翼', cat: 'buff', buffHero: { k: 'dodge', t: 2, v: 0.25 }, w: 1, aff: 25, d: '在石昊头顶扇风，两回合内他更难被打中（闪避 +25%）。' },
+      { n: '灼目', cat: 'debuff', dmg: 0.6, el: 'fire', st: { k: 'weak', t: 2, v: 0.3, p: 1 }, w: 1, aff: 50, d: '一口火喷在敌人脸上，它两回合内攻击 -30%。' },
+      { n: '烈焰俯冲', cat: 'atk', dmg: 1.2, aoe: 1, el: 'fire', w: 1, aff: 75, d: '带着火从天上扎下来，全体伤害。' },
+      { n: '赤焰风暴', cat: 'atk', dmg: 1.4, aoe: 1, el: 'fire', st: { k: 'burn', t: 3, v: 0.3, p: 0.8 }, w: 2, evo: 1, d: '觉醒后：火焰风暴，全体重伤并灼烧。' }] },
+  ertuzi: { name: '二秃子', race: '孔雀一族', role: '控制 · 治疗', icon: '🐣', desc: '百断山捡到的一颗蛋孵出来的小鸟，一根毛都没有。别看它秃，它是孔雀一族。', mul: { hp: 0.6, atk: 0.7, def: 0.65, spd: 1.2 },
+    sk: [{ n: '五色神光', cat: 'atk', dmg: 1, mag: 1, st: { k: 'stun', t: 1, p: 0.4 }, w: 3, d: '一道五色光，可能把敌人照晕（晕住的敌人挨石昊、伙伴的打都更痛）。' },
+      { n: '五色护体', cat: 'def', healAlly: 0.22, w: 1, d: '给伤得最重的同伴回 22% 气血。' },
+      { n: '五色加持', cat: 'buff', buffHero: { k: 'sure', t: 2, v: 0 }, w: 1, aff: 25, d: '五色光落在石昊身上，他的下一击必定暴击。' },
+      { n: '摄魂', cat: 'debuff', dmg: 0.3, mag: 1, st: { k: 'mark', t: 3, v: 0.3, p: 1 }, w: 1, aff: 50, d: '在敌人身上留下印记，三回合内石昊打它伤害 +30%。' },
+      { n: '五色屏障', cat: 'def', shieldAll: 0.9, w: 1, aff: 75, d: '全队一层护盾。' },
+      { n: '五色神光·满', cat: 'atk', dmg: 0.8, mag: 1, aoe: 1, st: { k: 'stun', t: 1, p: 0.3 }, w: 2, evo: 1, d: '觉醒后：全体五色神光，可能照晕。' }] },
 };
 
 /* ---------- items ---------- */

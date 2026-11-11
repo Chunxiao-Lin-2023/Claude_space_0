@@ -4,7 +4,7 @@ const isNight = () => { if (window.__dbg && __dbg.night != null) return __dbg.ni
 const pdesc = P => C.story.f.moved && P.moved ? P.moved : P.desc;
 function go(loc, silent, force) {
   if (!PLACES[loc] || !placeOpen(loc)) return; if (!force && (STATE.battle || STATE.scene || STATE.dungeon)) { toast(STATE.battle ? '打着呢，走不开' : '先把眼前的事办完'); return; }
-  C.loc = loc; C.seen[loc] = 1; const P = PLACES[loc]; if (P.town && P.area !== 'xushen') C.home = loc === 'sc_willow' || loc === 'sc_chief' ? 'sc_street' : loc;
+  C.loc = loc; C.seen[loc] = 1; C.seenN = (C.seenN || 0) + 1; const P = PLACES[loc]; if (P.town && P.area !== 'xushen') C.home = loc === 'sc_willow' || loc === 'sc_chief' ? 'sc_street' : loc;
   sfx('step'); if (!silent) describe(); save(); refresh(); bannerDraw(); npcOnArrive(loc);
   if (!force) setTimeout(() => storyArrive(loc), 120);
 }
@@ -53,11 +53,15 @@ function startBattle(spec) {
 }
 function battleAct(act, who = 'hero') { // 石昊 and the 灵兽伙伴 each choose; once everyone has, the round plays out in speed order
   const B = STATE.battle; if (!B || B.over || animBusy()) return; const u = B.units.find(x => x.id === who); if (!u || !u.alive || B.acts[who] || !needInput(B).includes(u)) return;
-  if (act.item && !useItem(act.item, true)) return; B.acts[who] = act;
+  if (act.item) { // using an item is quick: it doesn't take 石昊's turn, but only one per round
+    if (who !== 'hero') return; if (B.itemRound === B.round) { toast('这回合已经吃过一次药了'); return; } if (!useItem(act.item, true)) return; const it = ITEMS[act.item];
+    B.itemRound = B.round; B.ev = []; B.lc0 = B.lc; const hp0 = u.hp; if (it.heal) u.hp = Math.min(u.hpMax, u.hp + u.hpMax * it.heal); if (it.mp) u.mp = Math.min(u.mpMax, u.mp + u.mpMax * it.mp);
+    fxe(B, { k: 'heal', t: u.id, v: Math.round(u.hp - hp0), hp: hpr(u) }); blog(B, `${uName(u)} 飞快地吃了 ${it.icon}${it.name}${it.heal ? ` <span class="heal">+${Math.round(u.hp - hp0)}</span>` : ''}（不占回合）`); B.seq++; sfx('heal'); renderBattle(true); netSync(); return; }
+  B.acts[who] = act;
   if (needInput(B).length) { renderBattle(true); netSync(); return; }
   battleResolve(B); renderBattle(); netSync(); if (B.over) battleFinish(B);
 }
-function battleUndo() { const B = STATE.battle; if (!B || B.over || !B.acts.hero || B.acts.hero.item) return; delete B.acts.hero; renderBattle(true); netSync(); }
+function battleUndo() { const B = STATE.battle; if (!B || B.over || !B.acts.hero) return; delete B.acts.hero; renderBattle(true); netSync(); }
 function battleFinish(B) { if (B.done) return; B.done = true; const r = Object.assign({ win: B.win, fled: !!B.fled, kills: B.kills, noLose: B.noLose }, B.win ? battleRewards(B) : {});
   const hero = B.units.find(u => u.kind === 'pc'); r.hp = hero.hp; r.mp = hero.mp; r.boss = B.room != null && B.dungeon && DUNGEONS[B.dungeon].rooms[B.room]?.boss ? B.dungeon : null;
   setTimeout(() => battleApply(r, B), window.__dbg && __dbg.instant ? 0 : animLeft() + (SET.motion === false ? 500 : 1100)); }
@@ -67,7 +71,7 @@ function battleApply(r, B) {
     if (C.pet && C.pets[C.pet]) { const p = C.pets[C.pet]; if (p.aff < 100 && chance(0.35)) { p.aff = Math.min(100, p.aff + 1); petEvoCheck(C.pet); } }
     relicFromKills(r.kills); for (const [id] of r.kills || []) exNote(C.loc, 'm', id);
     if (C.pets.ertuzi && C.pets.ertuzi.hatch < 0) { /* reserved */ }
-    if (r.exp) gainExp(r.exp); for (const it of r.items || []) addItem(it, 1); if (r.boss) storyDungeon(r.boss); if (C.hp <= 0) C.hp = 1; }
+    if (r.exp) gainExp(r.exp); if (r.money) gainMoney(r.money, '捡到'); for (const it of r.items || []) addItem(it, 1); if (r.boss) storyDungeon(r.boss); if (C.hp <= 0) C.hp = 1; }
   else if (r.fled) logLine('你逃了出来。', 'dim');
   else { sfx('lose'); C.stats.deaths++;
     if (r.noLose) C.hp = Math.max(C.hp, Math.round(s.hpMax * 0.3));

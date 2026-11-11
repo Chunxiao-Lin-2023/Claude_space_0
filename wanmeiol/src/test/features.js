@@ -43,6 +43,17 @@ const { chromium } = require('playwright');
     D.go('bt_leichi', true, true); ok('leichiOpen', placeOpen('bt_leichi')); c.lv = 20; for (let k = 0; k < 3 && !c.dungeons.leichi; k++) { fullHeal(); await D.enterDungeon('leichi'); await idle(); } ok('leichi', !!c.dungeons.leichi);
     // 石毅 at #1
     const s1 = rivalAt(1); ok('shiyiRival', !!s1.shiyi);
+    // items in battle don't take the turn; once per round
+    c.auto = false; c.pet = 'maoqiu'; fullHeal(); D.go('dh_forest', true, true); D.startBattle({ mobs: [['wolf', 18]], title: 't' }); await w8(30); const B5 = S().battle; const hero5 = B5.units.find(u => u.kind === 'pc'); hero5.hp = 10; D.addItem('herb', 2, true);
+    D.battleAct({ item: 'herb' }); ok('itemNoTurn', hero5.hp > 10 && B5.round === 1 && needInput(B5).some(u => u.kind === 'pc')); const h1 = hero5.hp; D.battleAct({ item: 'herb' }); ok('itemOncePerRound', hero5.hp === h1); S().battle = null; S().busy = false;
+    // partner kinds: buff on hero, debuff on enemy, taunt
+    c.pets.maoqiu.aff = 60; D.startBattle({ mobs: [['bear', 18]], title: 't' }); await w8(30); const B6 = S().battle; const mv = petMoves(B6.units.find(u => u.pet)).map(x => x.s.cat); ok('partnerKinds', ['atk', 'buff', 'debuff', 'def'].every(k => mv.includes(k)));
+    D.battleAct({ sk: 'atk' }); D.battleAct({ psk: PETS.maoqiu.sk.findIndex(x => x.cat === 'debuff') }, 'pet'); ok('breakArmor', !!B6.units.find(u => u.side).st.find(x => x.k === 'brk') || B6.over); S().battle = null; S().busy = false;
+    // slots grow with realm
+    ok('slots', barSlots(9) === 4 && barSlots(18) === 7 && relicSlots(11) === 2 && relicSlots(17) === 4);
+    // 歇脚 and trading
+    c.auto = true; c.hp = 1; c.seenN = 99; UI.campAt = null; D.go('dh_forest', true, true); await camp(); await idle(); ok('camp', c.hp > 1);
+    D.go('sc_street', true, true); c.money = 100; c.bag.bone = 0; D.addItem('bone', 4, true); sellItem('bone', 1); ok('sell', c.money === 100 + 4 * sellPrice('bone') && !itemN('bone')); const m0 = c.money, b0 = itemN('herb'); buyItem('herb'); ok('buy', c.money === m0 - PRICE.herb && itemN('herb') === b0 + 1);
     // 任务列表: side errands and bounties can be tracked, the target follows
     c.side = {}; const T0 = tasks(); ok('taskListHasSide', T0.some(t => t.key.startsWith('side:')) && T0.some(t => t.key.startsWith('bounty:')));
     c.side.sq_milk = 'on'; c.bag.bone = 0; trackTask('side:sq_milk'); ok('trackSide', curTask().key === 'side:sq_milk' && !!taskWhere() && PLACES[taskWhere()].gather.some(g => g[0] === 'bone') || PLACES[taskWhere()].mobs.some(m => (MOBS[m[0]].loot || []).some(l => l[0] === 'bone')));

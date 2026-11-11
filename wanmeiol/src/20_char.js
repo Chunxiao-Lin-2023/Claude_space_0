@@ -4,7 +4,7 @@ const SAVE_V = 2;
 function newChar() {
   return { v: SAVE_V, name: '石昊', lv: 1, exp: 0, hp: 1, mp: 1, loc: 'sc_chief', home: 'sc_street', bag: { milk: 2 },
     sk: [], bar: [], gf: ['yingxia'], dt: [], pets: {}, pet: null, story: { q: 0, n: 0, f: {} }, kills: {}, stats: { kills: 0, deaths: 0, bosses: 0 },
-    arena: { rank: 0, wins: 0, tries: BAL.arenaTries, day: '', best: 999, got: {}, claimed: '' }, dungeons: {}, auto: false, seen: {}, prof: {}, codex: {}, relics: {}, eq: [], diff: 1, ex: {}, ach: {}, title: '', created: now() };
+    arena: { rank: 0, wins: 0, tries: BAL.arenaTries, day: '', best: 999, got: {}, claimed: '' }, dungeons: {}, auto: false, seen: {}, prof: {}, codex: {}, relics: {}, eq: [], diff: 1, money: 20, ex: {}, ach: {}, title: '', created: now() };
 }
 function charStats(c = C) {
   const L = c.lv - 1, s = { hpMax: HERO.base.hp + HERO.grow.hp * L, mpMax: HERO.base.mp + HERO.grow.mp * L, atk: HERO.base.atk + HERO.grow.atk * L, def: HERO.base.def + HERO.grow.def * L, spd: HERO.base.spd + HERO.grow.spd * L, crit: HERO.base.crit + HERO.grow.crit * L, leech: 0, regen: 0 };
@@ -18,12 +18,12 @@ function charStats(c = C) {
 function fixHp() { const s = charStats(); C.hp = clamp(C.hp, 0, s.hpMax); C.mp = clamp(C.mp, 0, s.mpMax); }
 function fullHeal() { const s = charStats(); C.hp = s.hpMax; C.mp = s.mpMax; }
 function skillsOf(c = C) { return ['atk', ...c.bar.filter(id => c.sk.includes(id)), 'guard']; }
-function learnSkill(id) { if (C.sk.includes(id)) return; C.sk.push(id); if (C.bar.length < 4) C.bar.push(id); const S = SKILLS[id]; logLine(`<b class="lvup">领悟宝术</b>：${S.icon}<b>${S.name}</b>——${S.desc}`, 'sys'); sfx('epic'); }
+function learnSkill(id) { if (C.sk.includes(id)) return; C.sk.push(id); if (C.bar.length < barSlots(C.lv)) C.bar.push(id); const S = SKILLS[id]; logLine(`<b class="lvup">领悟宝术</b>：${S.icon}<b>${S.name}</b>——${S.desc}`, 'sys'); sfx('epic'); }
 /* 宝术熟练度 */
 const profLevel = (id, c = C) => { const n = (c.prof && c.prof[id]) || 0; return n >= PROF[2].at ? 2 : n >= PROF[1].at ? 1 : 0; };
 function profUse(id) { C.prof = C.prof || {}; const before = profLevel(id); C.prof[id] = (C.prof[id] || 0) + 1; const after = profLevel(id); if (after > before) setTimeout(() => { logLine(`${SKILLS[id].icon}<b>${SKILLS[id].name}</b> 用得越来越顺手——<b class="lvup">${PROF[after].n}</b>（威力 +${PROF[after].b * 100}%）`, 'sys'); sfx('epic'); }, 50); }
 const knownWeak = mob => { const M = MOBS[mob]; if (!M || !M.weak) return []; const w = (C.codex && C.codex[mob] && C.codex[mob].wk) || []; return Object.keys(M.weak).filter(e => w.includes(e)); };
-function toggleBar(id) { const i = C.bar.indexOf(id); if (i >= 0) C.bar.splice(i, 1); else { if (C.bar.length >= 4) { toast('最多带 4 门宝术进战斗'); return; } C.bar.push(id); } C.bar.sort((a, b) => SKILL_ORDER.indexOf(a) - SKILL_ORDER.indexOf(b)); save(); refresh(); }
+function toggleBar(id) { const i = C.bar.indexOf(id); if (i >= 0) C.bar.splice(i, 1); else { if (C.bar.length >= barSlots(C.lv)) { toast(`现在最多带 ${barSlots(C.lv)} 门宝术进战斗（境界越高越多）`); return; } C.bar.push(id); } C.bar.sort((a, b) => SKILL_ORDER.indexOf(a) - SKILL_ORDER.indexOf(b)); save(); refresh(); }
 function learnGongfa(id) { if (C.gf.includes(id)) return; C.gf.push(id); const G = GONGFA[id]; fixHp(); logLine(`<b class="lvup">修炼有成</b>：${G.icon}<b>${G.name}</b>——${G.desc}`, 'sys'); sfx('epic'); }
 
 /* ---------- pets ---------- */
@@ -56,6 +56,8 @@ function gainExp(n, quiet) {
     C.exp -= BAL.expNext(C.lv); C.lv++; fullHeal(); sfx('level');
     logLine(`<b class="lvup">境界精进！</b> ${realmOf(C.lv).name} · 第 ${C.lv} 层。气血、符力已回满。`, 'sys'); bigFlash(`境界精进 · ${realmOf(C.lv).name}第 ${C.lv} 层`, 'lv');
     if (C.lv >= 10 && C.lv <= 18 && C.dt.length < C.lv - 9) STATE.dtPending = true;
+    if (barSlots(C.lv) > barSlots(C.lv - 1)) { logLine(`<b class="lvup">宝术栏 +1</b>：现在能带 ${barSlots(C.lv)} 门宝术进战斗。`, 'sys'); for (const id of SKILL_ORDER) if (C.sk.includes(id) && !C.bar.includes(id) && C.bar.length < barSlots(C.lv)) C.bar.push(id); }
+    if (relicSlots(C.lv) > relicSlots(C.lv - 1)) { logLine(`<b class="lvup">宝骨栏 +1</b>：现在能戴 ${relicSlots(C.lv)} 件宝骨。`, 'sys'); C.eq = C.eq || []; for (const id of Object.keys(C.relics || {})) if (!C.eq.includes(id) && C.eq.length < relicSlots(C.lv)) C.eq.push(id); }
   }
   if (C.lv >= BAL.lvCap) C.exp = Math.min(C.exp, BAL.expNext(C.lv));
   netPub(); if (STATE.dtPending) setTimeout(dongtianPick, 400);
@@ -74,7 +76,7 @@ function save(now_) { if (!C || NETROLE === 'guest') return; clearTimeout(saveT)
 // v2 saves stored only the step index; the step list has grown since, so map old indices through the old order
 const OLD_V2 = ['q_wake', 'q_yard', 'q_wolf0', 'q_wolf', 'q_egg0', 'q_egg', 'q_tomb0', 'q_tomb', 'q_bei', 'q_yaoding', 'q_shanbao', 'q_ruin', 'q_jijing', 'q_memory', 'q_qingfeng', 'q_bandit0', 'q_bandit', 'q_xushen0', 'q_xushen', 'q_leave', 'q_gate', 'q_lotus', 'q_join', 'q_lei', 'q_lib', 'q_baiduan', 'q_bdgate', 'q_lion', 'q_yu', 'q_cliff', 'q_spring', 'q_tiangu', 'q_mount', 'q_return', 'q_end'];
 function fixSave(c) { if (!c || c.v !== SAVE_V) return null; const d = newChar(); for (const k in d) if (c[k] === undefined) c[k] = d[k]; for (const k in d.arena) if (c.arena[k] === undefined) c.arena[k] = d.arena[k];
-  for (const [id, R] of Object.entries(RELICS)) if ((c.kills || {})[R.from] && !c.relics[id]) { c.relics[id] = 1; if (c.eq.length < 2) c.eq.push(id); } // bosses beaten before 宝骨 existed
+  for (const [id, R] of Object.entries(RELICS)) if ((c.kills || {})[R.from] && !c.relics[id]) { c.relics[id] = 1; if (c.eq.length < relicSlots(c.lv)) c.eq.push(id); } // bosses beaten before 宝骨 existed
   const qid = c.story.qid || OLD_V2[c.story.q]; const i = qi(qid); if (i >= 0) c.story.q = i; c.story.q = clamp(c.story.q, 0, MAIN.length - 1); if (!PLACES[c.loc]) c.loc = 'sc_street'; return c; }
 function loadSave() { return fixSave(store.get('save2', null)); }
 /* ---------- 回忆录 (story journal) — kept apart from the save so co-op snapshots stay small ---------- */

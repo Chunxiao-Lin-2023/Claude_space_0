@@ -42,8 +42,8 @@ function pHero() {
   return `<div class="card"><div class="me-hd"><div style="flex:1;min-width:0"><div class="nm">石昊 <span class="dim" style="font-size:.85rem">小不点</span>${C.title && ACH.find(a => a.id === C.title) ? ` <span class="pill gold">${ACH.find(a => a.id === C.title).n}</span>` : ''}</div><div class="sub">${R.name} · 第 ${C.lv} 层${C.dt.length ? ` · ${C.dt.length} 座洞天` : ''}</div></div><div class="pw" title="战力">${fmt(s.power)}</div></div>
     <div class="bars" style="margin-top:8px">气血 ${Math.ceil(C.hp)}/${s.hpMax}<div class="bar"><i style="width:${C.hp / s.hpMax * 100}%"></i></div>符力 ${Math.floor(C.mp)}/${s.mpMax}<div class="bar mp"><i style="width:${C.mp / s.mpMax * 100}%"></i></div>经验 ${fmt(C.exp)}/${fmt(BAL.expNext(C.lv))}<div class="bar exp"><i style="width:${Math.min(100, C.exp / BAL.expNext(C.lv) * 100)}%"></i></div></div>
     <div class="kv"><div><span>攻击</span> ${s.atk}</div><div><span>防御</span> ${s.def}</div><div><span>身法</span> ${s.spd}</div><div><span>暴击</span> ${(s.crit * 100).toFixed(0)}%</div></div>${dt}</div>
-    <div class="card"><h3>宝术 <span class="dim" style="font-size:.8rem;font-family:var(--ff)">点选带进战斗（${C.bar.length}/4）· 越用越熟</span></h3><div class="list">${sk}</div></div>
-    <div class="card"><h3>宝骨 <span class="dim" style="font-size:.8rem;font-family:var(--ff)">打倒首领得到，戴两件（${(C.eq || []).length}/2）</span></h3>${relics || '<div class="dim" style="font-size:.87rem">还没有。第一次打倒一个首领，它会留下点东西。</div>'}</div>
+    <div class="card"><h3>宝术 <span class="dim" style="font-size:.8rem;font-family:var(--ff)">点选带进战斗（${C.bar.length}/${barSlots(C.lv)}，境界越高能带越多）· 越用越熟</span></h3><div class="list">${sk}</div></div>
+    <div class="card"><h3>宝骨 <span class="dim" style="font-size:.8rem;font-family:var(--ff)">打倒首领得到（${(C.eq || []).length}/${relicSlots(C.lv)}，境界越高能戴越多）</span></h3>${relics || '<div class="dim" style="font-size:.87rem">还没有。第一次打倒一个首领，它会留下点东西。</div>'}</div>
     <div class="card"><h3>修炼</h3><div class="list">${gf}</div></div>
     <div class="card"><h3>称号 <span class="dim" style="font-size:.8rem;font-family:var(--ff)">${Object.keys(C.ach || {}).length}/${ACH.length} · 点一个戴上</span></h3><div class="dts">${ACH.map(A => (C.ach || {})[A.id] ? `<button class="sb ${C.title === A.id ? 'pri' : ''}" style="min-height:30px" title="${A.d}" onclick="setTitle('${A.id}')">${A.n}</button>` : `<span class="pill" title="${A.d}">？ ${A.d}</span>`).join('')}</div></div>`;
 }
@@ -55,16 +55,23 @@ function pPet() {
     h += `<div class="card"><div class="row"><span style="font-size:1.9rem">${P.icon}</span><div style="flex:1"><h3 style="margin:0">${P.name} <span class="pill gold">${P.role}</span></h3><div class="dim" style="font-size:.8rem">${P.race}</div></div><button class="sb ${on ? 'pri' : ''}" onclick="setPet('${id}')">${on ? '跟着你' : '让它跟着'}</button></div>
       <div class="dim" style="font-size:.87rem;margin:6px 0">${P.desc}</div>
       <div class="bars">亲近 ${p.aff}/100${p.evo ? ' · <b>已觉醒</b>（全属性 +15%）' : ' · 满 100 会觉醒'}<div class="bar exp"><i style="width:${p.aff}%"></i></div></div>
-      <div style="font-size:.87rem">${P.sk.map(s => `<span class="pill" style="${open.includes(s) ? 'color:#f0d79a;border-color:#a8843e' : ''}">${s.n}${s.aoe ? '·群' : ''}${s.healAlly ? '·治疗' : ''}${s.shieldAll ? '·护盾' : ''}${s.st && s.st.k === 'stun' ? '·晕' : ''}${s.el ? EL[s.el].i : ''}${s.aff && p.aff < s.aff ? ` · 亲近${s.aff}` : ''}</span>`).join('')}</div>
+      <div class="list" style="margin-top:4px">${P.sk.map(s => { const ok = open.includes(s); return `<div class="li ${ok ? '' : 'unk'}" style="padding:5px 8px"><span class="pill" style="color:${PET_CAT[s.cat].c};border-color:${PET_CAT[s.cat].c}">${PET_CAT[s.cat].n}</span><div class="t"><b>${s.n}</b>${ok ? '' : s.evo ? ' <span class="dim">（觉醒后）</span>' : ` <span class="dim">（亲近 ${s.aff}）</span>`}<small>${s.d || ''}</small></div></div>`; }).join('')}</div>
       ${foods.length ? `<div class="row" style="flex-wrap:wrap;margin-top:6px">${foods.map(f => `<button class="sb" onclick="feedPet('${id}','${f}')">喂${ITEMS[f].icon}${ITEMS[f].name}×${itemN(f)}</button>`).join('')}</div>` : '<div class="dim" style="font-size:.8rem;margin-top:4px">没有能喂的东西（兽奶、凶兽肉、灵药、兽骨……）</div>'}</div>`; }
   if (itemN('peaegg') && ids.length) h += `<div class="card"><div class="dim">🥚 怀里的蛋还没孵出来（${C.story.f.eggWins || 0}/8 场胜仗）。</div></div>`;
-  if (ids.length) h = '<div class="card dim" style="font-size:.85rem">灵兽伙伴跟着你打仗，每回合石昊出完招就轮到它，由你给它选招。战斗里可以点 ⇄ 换另一个上场。</div>' + h;
+  if (ids.length) h = '<div class="card dim" style="font-size:.85rem">灵兽伙伴跟着你打仗，每回合石昊出完招就轮到它，由你给它选招。它的招分四种：<b>攻击</b>、给石昊的<b>增益</b>、给敌人的<b>减益</b>、<b>防守</b>——破甲、印记、战吼都能让石昊的宝术打得更狠；石昊把敌人打晕，伙伴打它也更痛。亲近越高会的越多。战斗里可以点 ⇄ 换另一个上场。</div>' + h;
   return h || '<div class="dim">还没有灵兽伙伴。</div>';
 }
+const BAG_TABS = [['use', '药品'], ['mat', '材料'], ['gf', '修炼'], ['key', '要物'], ['shop', '买卖']];
 function pBag() {
-  const ids = Object.keys(C.bag).sort((a, b) => ['use', 'gf', 'mat', 'key'].indexOf(ITEMS[a].type) - ['use', 'gf', 'mat', 'key'].indexOf(ITEMS[b].type));
-  if (!ids.length) return '<div class="dim">空空如也。</div>';
-  return '<div class="list">' + ids.map(id => { const it = ITEMS[id]; const a = it.type === 'use' ? `<button class="sb" onclick="useItem('${id}')">用</button>` : it.type === 'gf' ? `<button class="sb pri" onclick="useItem('${id}')">炼化</button>` : '';
+  const P = PLACES[C.loc], tab = BAG_TABS.some(t => t[0] === UI.bagTab) ? UI.bagTab : 'use', trade = canTrade();
+  const head = `<div class="card"><div class="row"><div>灵石 <span class="pw">💎${fmt(C.money || 0)}</span></div><span class="sp"></span><span class="dim" style="font-size:.8rem">${trade ? (P.shop ? `${P.shopBy}：能买能卖` : '这里能卖东西') : '到村子、补天阁才能买卖'}</span></div></div>
+    <div class="seg" style="margin-bottom:8px">${BAG_TABS.map(([k, n]) => `<button class="sb ${tab === k ? 'on' : ''}" onclick="UI.bagTab='${k}';renderSide()">${n}${k !== 'shop' ? ` ${Object.keys(C.bag).filter(id => ITEMS[id].type === k).length}` : ''}</button>`).join('')}</div>`;
+  if (tab === 'shop') { const sell = Object.keys(C.bag).filter(id => PRICE[id]);
+    return head + (P.shop ? `<div class="card"><h4 style="margin-top:0">${P.shopBy} · 买</h4><div class="list">${P.shop.map(id => `<div class="li"><span class="ic">${ITEMS[id].icon}</span><div class="t">${ITEMS[id].name} <span class="dim">（有 ${itemN(id)}）</span><small>${ITEMS[id].desc}</small></div><div class="acts"><button class="sb pri" ${(C.money || 0) < PRICE[id] ? 'disabled' : ''} onclick="buyItem('${id}')">💎${PRICE[id]}</button></div></div>`).join('')}</div></div>` : `<div class="card dim" style="font-size:.87rem">这里没有卖东西的摊子。村中有货郎，补天阁山门外有外门坊市。</div>`)
+      + `<div class="card"><h4 style="margin-top:0">卖${trade ? '' : '（到城镇才能卖）'}</h4>${sell.length ? `<div class="list">${sell.map(id => `<div class="li"><span class="ic">${ITEMS[id].icon}</span><div class="t">${ITEMS[id].name} ×${C.bag[id]}<small>一个卖 💎${sellPrice(id)}</small></div><div class="acts"><button class="sb" ${trade ? '' : 'disabled'} onclick="sellItem('${id}')">卖 1</button><button class="sb" ${trade ? '' : 'disabled'} onclick="sellItem('${id}',1)">全卖</button></div></div>`).join('')}</div>` : '<div class="dim">没有能卖的东西。</div>'}</div>`; }
+  const ids = Object.keys(C.bag).filter(id => ITEMS[id].type === tab);
+  if (!ids.length) return head + '<div class="dim">这一栏是空的。</div>';
+  return head + '<div class="list">' + ids.map(id => { const it = ITEMS[id]; const a = (it.type === 'use' ? `<button class="sb" onclick="useItem('${id}')">用</button>` : it.type === 'gf' ? `<button class="sb pri" onclick="useItem('${id}')">炼化</button>` : '') + (trade && PRICE[id] ? `<button class="sb" onclick="sellItem('${id}')">卖 💎${sellPrice(id)}</button>` : '');
     return `<div class="li"><span class="ic">${it.icon}</span><div class="t">${it.name} ×${C.bag[id]}<small>${it.desc}</small></div><div class="acts">${a}</div></div>`; }).join('') + '</div>';
 }
 function pMap() {

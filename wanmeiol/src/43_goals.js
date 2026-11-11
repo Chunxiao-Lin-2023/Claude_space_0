@@ -2,10 +2,10 @@
    宝骨 · 灵兽觉醒 · 材料兑换 · 每日悬赏 · 地点探索度 · 称号 · 传送 · 睡到天黑/天亮 · 洞天重开 · 困难秘境 · 战斗教学 */
 
 /* ---------- 宝骨 ---------- */
-function gainRelic(id, quiet) { C.relics = C.relics || {}; if (C.relics[id]) return; C.relics[id] = 1; const R = RELICS[id]; C.eq = C.eq || []; if (C.eq.length < 2) C.eq.push(id);
+function gainRelic(id, quiet) { C.relics = C.relics || {}; if (C.relics[id]) return; C.relics[id] = 1; const R = RELICS[id]; C.eq = C.eq || []; if (C.eq.length < relicSlots(C.lv)) C.eq.push(id);
   if (!quiet) { logLine(`<b class="lvup">得到宝骨</b>：${R.i}<b>${R.n}</b>——${R.d}${C.eq.includes(id) ? '（已经戴上了）' : '（在“石昊”页里换着戴）'}`, 'sys'); sfx('epic'); bigFlash(R.n, 'relic'); } fixHp(); }
 function relicFromKills(kills) { for (const [mob, , boss] of kills || []) if (boss) for (const [id, R] of Object.entries(RELICS)) if (R.from === mob) gainRelic(id); }
-function equipRelic(id) { if (!C.relics || !C.relics[id]) return; C.eq = C.eq || []; const i = C.eq.indexOf(id); if (i >= 0) C.eq.splice(i, 1); else { if (C.eq.length >= 2) C.eq.shift(); C.eq.push(id); } fixHp(); sfx('click'); save(); refresh(); }
+function equipRelic(id) { if (!C.relics || !C.relics[id]) return; C.eq = C.eq || []; const i = C.eq.indexOf(id); if (i >= 0) C.eq.splice(i, 1); else { if (C.eq.length >= relicSlots(C.lv)) { toast('宝骨栏满了（' + relicSlots(C.lv) + ' 件），先摘下一件'); return; } C.eq.push(id); } fixHp(); sfx('click'); save(); refresh(); }
 
 /* ---------- 灵兽觉醒 at full affection ---------- */
 const EVO_TEXT = {
@@ -39,7 +39,7 @@ function bountyOptions(npc) { const out = []; bountyToday().forEach((b, i) => { 
 function bountyTake(i) { const b = bountyToday()[i]; if (!b || b.st === 'done') return;
   if (b.st === 'new') { b.st = 'on'; logLine(`【悬赏】${NPCS[b.npc].name}：${bountyText(b)}`, 'quest'); save(); refresh(); return; }
   if (!bountyReady(b)) return; if (b.kind === 'item') takeItem(b.id, b.n); b.st = 'done'; C.stats.bounty = (C.stats.bounty || 0) + 1;
-  logLine(`【悬赏完成】${NPCS[b.npc].name}很满意。`, 'quest'); addItem('baoyao'); addItem('lingyao'); gainExp(BAL.expNext(C.lv) * 0.3); const sk = C.bar.length ? pick(C.bar) : null; if (sk) { for (let k = 0; k < 5; k++) profUse(sk); logLine(`${SKILLS[sk].name} 熟练度 +5`, 'dim'); } sfx('loot'); save(); refresh(); }
+  logLine(`【悬赏完成】${NPCS[b.npc].name}很满意。`, 'quest'); gainMoney(20 + C.lv * 4, '赏钱'); addItem('baoyao'); addItem('lingyao'); gainExp(BAL.expNext(C.lv) * 0.3); const sk = C.bar.length ? pick(C.bar) : null; if (sk) { for (let k = 0; k < 5; k++) profUse(sk); logLine(`${SKILLS[sk].name} 熟练度 +5`, 'dim'); } sfx('loot'); save(); refresh(); }
 function bountyKill(mob) { if (!C.bounty || C.bounty.day !== today()) return; for (const b of C.bounty.list) if (b.st === 'on' && b.kind === 'kill' && b.id === mob && b.got < b.n) { b.got++; if (b.got === b.n) logLine(`【悬赏】${MOBS[mob].name} 够数了，回去找${NPCS[b.npc].name}。`, 'quest'); } }
 
 /* ---------- 地点探索度: every kind of beast here beaten + everything here gathered ---------- */
@@ -47,7 +47,7 @@ function exTargets(P) { const m = [...new Set((P.mobs || []).map(x => x[0]))], g
 function exState(loc) { C.ex = C.ex || {}; return C.ex[loc] || (C.ex[loc] = { m: {}, g: {} }); }
 function exCount(loc) { const P = PLACES[loc], T = exTargets(P), E = (C.ex && C.ex[loc]) || { m: {}, g: {} }; return { have: T.m.filter(x => E.m[x]).length + T.g.filter(x => E.g[x]).length, n: T.n, done: !!E.done }; }
 function exNote(loc, k, id) { const P = PLACES[loc]; if (!P || !P.lv) return; const T = exTargets(P); if (!T[k].includes(id)) return; const E = exState(loc); if (E[k][id]) return; E[k][id] = 1;
-  const c = exCount(loc); if (c.have >= c.n && !E.done) { E.done = 1; logLine(`<b class="lvup">${P.name} 探索完成</b>：这里的凶兽都交过手，能采的东西也都找到了。`, 'sys'); addItem('baoyao'); addItem('lingyao'); gainExp(BAL.expNext(C.lv) * 0.3); sfx('epic'); bigFlash(P.name + ' · 探索完成', 'relic'); } }
+  const c = exCount(loc); if (c.have >= c.n && !E.done) { E.done = 1; logLine(`<b class="lvup">${P.name} 探索完成</b>：这里的凶兽都交过手，能采的东西也都找到了。`, 'sys'); addItem('baoyao'); addItem('lingyao'); gainMoney(30 + C.lv * 5, '还翻出了'); gainExp(BAL.expNext(C.lv) * 0.3); sfx('epic'); bigFlash(P.name + ' · 探索完成', 'relic'); } }
 
 /* ---------- 称号 ---------- */
 function achCheck() { if (!C || NETROLE === 'guest') return; C.ach = C.ach || {}; for (const A of ACH) if (!C.ach[A.id]) { let ok = false; try { ok = A.ok(); } catch (e) { } if (ok) { C.ach[A.id] = now(); logLine(`<b class="lvup">获得称号「${A.n}」</b>——${A.d}`, 'sys'); toast('称号：' + A.n); sfx('level'); } } }
@@ -94,3 +94,17 @@ function tasks() {
 function curTask() { const T = tasks(); return T.find(t => t.key === C.track) || T[0]; }
 const taskWhere = () => curTask().where;
 function trackTask(key) { C.track = key; sfx('click'); save(); refresh(); }
+
+/* ---------- 歇脚 in the wild: once per visit, 40% back, and something may come sniffing ---------- */
+async function camp() { const P = PLACES[C.loc]; if (STATE.scene || STATE.battle || STATE.dungeon || !P.mobs || P.town) return; const key = C.loc + C.seenN; if (UI.campAt === key) { toast('刚歇过了，换个地方再歇'); return; } UI.campAt = key;
+  if (chance(0.25)) { logLine('你刚找了块石头坐下，草丛里就有东西扑了过来——', 'enc'); const id = wpick(P.mobs, x => x[1])[0]; const r = await startBattle({ mobs: [[id, clamp(rint(P.lv[0], P.lv[1]), 1, 30)]], title: `${P.name} · 歇脚被打断`, flee: true }); if (!r || !r.win) return; }
+  const s = charStats(); C.hp = Math.min(s.hpMax, C.hp + s.hpMax * 0.4); C.mp = Math.min(s.mpMax, C.mp + s.mpMax * 0.4); sfx('heal');
+  logLine(isNight() ? '你拢了一小堆火，靠着火歇了一会儿。气血、符力回了四成。' : '你找了块背风的石头靠着歇了一会儿。气血、符力回了四成。', 'dim'); save(); refresh(); }
+
+/* ---------- 灵石 and trading: sell in any town, buy where there is a stall ---------- */
+const PRICE = { milk: 6, herb: 8, meat: 10, lingyao: 30, baoyao: 90, bone: 6 }; // buying price; selling gets half
+const sellPrice = id => Math.max(1, Math.floor((PRICE[id] || 0) / 2));
+const canTrade = () => !!(PLACES[C.loc].town && PLACES[C.loc].area !== 'xushen');
+function sellItem(id, all) { const it = ITEMS[id]; if (!canTrade() || !it || !PRICE[id] || !itemN(id)) return; const n = all ? itemN(id) : 1; takeItem(id, n); C.money = (C.money || 0) + sellPrice(id) * n; logLine(`卖掉 ${it.icon}${it.name} ×${n}，得到 💎${sellPrice(id) * n} 灵石。`, 'loot'); sfx('gold'); save(); refresh(); }
+function buyItem(id) { const P = PLACES[C.loc]; if (!P.shop || !P.shop.includes(id)) return; if ((C.money || 0) < PRICE[id]) { toast('灵石不够'); return; } C.money -= PRICE[id]; addItem(id, 1, true); logLine(`买了 ${ITEMS[id].icon}${ITEMS[id].name}，花了 💎${PRICE[id]}。`, 'loot'); sfx('gold'); save(); refresh(); }
+function gainMoney(n, why) { n = Math.round(n); if (n <= 0) return; C.money = (C.money || 0) + n; if (why) logLine(`${why} 💎${n} 灵石`, 'loot'); }

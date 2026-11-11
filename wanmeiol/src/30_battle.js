@@ -13,7 +13,7 @@ const ALLY_NPC = {
 const unitDef = id => MOBS[id] || ALLY_NPC[id] || PETS[id];
 let BID = 1;
 function mobUnit(id, lv, side = 1) {
-  const M = unitDef(id); lv = lv || M.lv || 1; const E = BAL.enemy(lv), m = M.mul || {}, D = side ? diffOf() : { hp: 1, atk: 1 };
+  const M = unitDef(id); lv = lv || M.lv || 1; const E = BAL.enemy(lv), m = M.mul || {}, D = side ? { hp: diffOf().hp * BAL.foeHp(lv), atk: diffOf().atk * BAL.foeAtk(lv) } : { hp: 1, atk: 1 };
   return { id: 'u' + (BID++), side, kind: side ? 'mob' : 'npc', mob: id, name: M.name, icon: M.icon || (M.boss ? '👹' : '🐾'), lv, boss: !!M.boss,
     hpMax: Math.round(E.hp * (m.hp || 1) * D.hp), atk: Math.round(E.atk * (m.atk || 1) * D.atk), def: Math.round(E.def * (m.def || 1)), spd: E.spd * (m.spd || 1), crit: M.boss ? 0.08 : 0.05, leech: 0, mpMax: 0, mp: 0, sk: [], cd: {}, st: [], alive: true, plan: null, intent: '' };
 }
@@ -36,7 +36,7 @@ function battleCreate(spec) {
   if (C.pet && C.pets[C.pet] && !spec.noPet) { const p = petUnit(C.pet); p.hp = p.hpMax; B.units.push(p); }
   for (const id of spec.allies || []) { const u = mobUnit(id, C.lv, 0); u.hp = u.hpMax; B.units.push(u); }
   for (const r of spec.rivals || []) B.units.push(rivalUnit(r));
-  for (const [id, lv] of spec.mobs || []) { const u = mobUnit(id, lv, 1); u.hp = u.hpMax; if (spec.roam) { u.hpMax = Math.round(spec.roam.hpMax * diffOf().hp); u.hp = Math.round(spec.roam.hp * diffOf().hp); } B.units.push(u); }
+  for (const [id, lv] of spec.mobs || []) { const u = mobUnit(id, lv, 1); u.hp = u.hpMax; if (spec.roam) { u.hpMax = Math.round(spec.roam.hpMax * diffOf().hp * BAL.foeHp(lv)); u.hp = Math.round(spec.roam.hp * diffOf().hp * BAL.foeHp(lv)); } B.units.push(u); }
   for (const u of B.units) if (u.kind === 'mob' || u.kind === 'npc') planMob(B, u);
   for (const [id] of spec.mobs || []) if (!MOBS[id].nocodex) { C.codex = C.codex || {}; C.codex[id] = C.codex[id] || { wk: [] }; }
   blog(B, `<span class="bt">⚔ ${spec.title || '战斗开始'}</span>`);
@@ -53,11 +53,20 @@ const hpr = u => Math.max(0, u.hp / u.hpMax);
 const uName = u => `<span class="${u.side ? 'foe' : u.kind === 'pc' ? 'pc' : 'ally'}">${esc(u.name)}</span>`;
 /* who still has to choose this round: 石昊, then the 灵兽伙伴 (unless auto-battle, or 石昊 is calling a different 伙伴 in) */
 const needInput = B => B.units.filter(u => u.alive && !B.acts[u.id] && (u.kind === 'pc' || (u.pet && !C.auto && !(B.acts.hero && (B.acts.hero.swap || B.acts.hero.crush || B.acts.hero.flee)))));
+function petPick(B, u) { // the partner's own judgement (auto-battle, or the default before you choose)
+  const mv = petMoves(u), h = B.units.find(x => x.kind === 'pc'), foes = alive(B, 1), has = c => mv.filter(x => x.s.cat === c), pw = L => wpick(L, x => x.s.w || 1).i;
+  const atk = has('atk'); if (!h || !foes.length) return pw(atk);
+  const hurt = alive(B, 0).find(a => a.hp < a.hpMax * 0.45), defs = has('def');
+  if (hurt) { const L = defs.filter(x => x.s.healAlly || x.s.shieldAll || x.s.shieldHero); if (L.length && chance(0.75)) return pw(L); }
+  if (foes.some(f => f.releasing || f.plan === 'charge')) { const L = defs.filter(x => x.s.taunt || x.s.shieldHero || x.s.shieldAll); if (L.length && u.hp > u.hpMax * 0.5 && chance(0.7)) return pw(L); }
+  const buffs = has('buff'); if (buffs.length && h.alive && !h.st.some(x => ['atk', 'sure', 'dodge'].includes(x.k)) && chance(0.4)) return pw(buffs);
+  const deb = has('debuff'), tgt = foes.find(f => f.boss) || (foes.length >= 2 ? foes[0] : null); if (deb.length && tgt && !tgt.st.some(x => ['brk', 'mark', 'weak'].includes(x.k)) && chance(0.55)) return pw(deb);
+  const aoe = atk.filter(x => x.s.aoe), one = atk.filter(x => !x.s.aoe); return pw(foes.length >= 2 && aoe.length ? aoe : one.length ? one : atk); }
 const petMoves = u => PETS[u.mob].sk.map((s, i) => ({ s, i })).filter(x => !(x.s.aff && (u.aff || 0) < x.s.aff) && !(x.s.evo && !u.evo));
 
 /* ---------- AI ---------- */
 function planMob(B, u) {
-  const M = unitDef(u.mob); if (!M) return; u.releasing = false;
+  const M = unitDef(u.mob); if (!M) return; u.releasing = false; if (u.pet) { u.plan = petPick(B, u); u.intent = ''; return; }
   if (u.charging != null) { const s = M.sk[u.charging]; u.plan = u.charging; u.charging = null; u.releasing = true; u.intent = '⚠ ' + s.n; return; }
   const cands = M.sk.map((s, i) => ({ s, i, w: s.w || 1 })).filter(x => !(x.s.aff && (u.aff || 0) < x.s.aff) && !(x.s.evo && !u.evo) && !(x.s.healAlly && !alive(B, u.side).some(v => v.hp < v.hpMax * 0.7)) && !(x.s.summon && alive(B, u.side).filter(v => v.mob === x.s.summon).length >= (x.s.max || 2)));
   const c = wpick(cands); if (c.s.charge) { u.charging = c.i; u.plan = 'charge'; u.intent = '⏳ 蓄力：' + c.s.n; } else { u.plan = c.i; u.intent = c.s.aoe ? '◎ ' + c.s.n : c.s.buff || c.s.healAlly || c.s.shieldAll ? '✦ ' + c.s.n : '→ ' + c.s.n; }
@@ -68,7 +77,7 @@ function botAct(B, u) { // auto-battle for 石昊 and the AI for 虚神界 rival
   const allies = alive(B, u.side), foes = alive(B, 1 - u.side); if (!foes.length) return { sk: 'atk' };
   const can = id => u.sk.includes(id) && !(u.cd[id] > 0) && u.mp >= SKILLS[id].mp; const boss = foes.find(f => f.boss), main = boss || foes.slice().sort((a, b) => a.hp - b.hp)[0];
   const pc = u.kind === 'pc', known = f => pc && f.mob ? knownWeak(f.mob) : [];
-  if (pc && u.hp < u.hpMax * 0.35) { const it = (u.hp < u.hpMax * 0.2 ? HEALS : HEALS.slice(1).concat('baoyao')).find(i => itemN(i)); if (it) return { item: it }; }
+  if (pc && u.hp < u.hpMax * 0.35 && B.itemRound !== B.round) { const it = (u.hp < u.hpMax * 0.2 ? HEALS : HEALS.slice(1).concat('baoyao')).find(i => itemN(i)); if (it) return { item: it }; }
   const big = foes.find(f => f.releasing || f.plan === 'charge');
   if (big) { for (const id of ['dsh', 'jian', 'qly']) if (can(id) && SKILLS[id].el && known(big).includes(SKILLS[id].el)) return { sk: id, tgt: big.id };
     if (big.releasing && can('sn') && !big.boss) return { sk: 'sn', tgt: big.id }; if (big.releasing && pc && u.hp < u.hpMax * 0.75) return { sk: 'guard' }; }
@@ -84,7 +93,7 @@ function botAct(B, u) { // auto-battle for 石昊 and the AI for 虚神界 rival
 const weakOf = (d, el) => el && d.mob && MOBS[d.mob] && MOBS[d.mob].weak && MOBS[d.mob].weak[el] || 0;
 function hitCalc(a, d, mul, mag, opts = {}) {
   const dodge = 0.03 + Math.max(0, d.spd - a.spd) * 0.008 + stV(d, 'dodge'); if (!opts.sure && Math.random() < Math.min(0.5, dodge)) return { miss: true, dmg: 0 };
-  const atk = a.atk * (1 + stV(a, 'atk') + stV(a, 'rage')) * (1 - stV(a, 'weak')); const wk = weakOf(d, opts.el); if (wk) mul *= wk; let def = d.def * (1 + stV(d, 'def')); if (mag) def *= 0.5; if (opts.pierce) def = 0;
+  const atk = a.atk * (1 + stV(a, 'atk') + stV(a, 'rage')) * (1 - stV(a, 'weak')); const wk = weakOf(d, opts.el); if (wk) mul *= wk; let def = d.def * (1 + stV(d, 'def')) * (1 - stV(d, 'brk')); if (mag) def *= 0.5; if (opts.pierce) def = 0;
   let bound = false; if (!mag && stOf(d, 'bound')) { mul *= 1.3; bound = true; d.st = d.st.filter(s => s.k !== 'bound'); } // 骨文锁链 → the next physical hit lands harder
   const K = BAL.defK + a.lv * 7; let dmg = atk * mul * K / (K + def) * rnd(0.9, 1.1);
   const crit = !!stOf(a, 'sure') || Math.random() < a.crit; if (crit) dmg *= BAL.critMul; if (stOf(d, 'guard')) dmg *= 0.5;
@@ -127,7 +136,7 @@ function perform(B, u, act, L) {
   fxe(B, { k: 'act', a: u.id, fx: SK_FX[id] || 'slash', tg: tg.map(t => t.id), side: u.side });
   if (S.dmg) { const parts = [];
     for (const t of tg) { if (!t.alive) continue; const hits = S.hits || 1; let tot = 0, crit = false, miss = 0, died = false;
-      const [cm, ct] = comboOf(id, t), seen = t.shiyi && u.kind === 'pc' && id !== 'atk' && id === u.lastSk ? 0.5 : 1;
+      const [cm0, ct0] = comboOf(id, t), seen = t.shiyi && u.kind === 'pc' && id !== 'atk' && id === u.lastSk ? 0.5 : 1, mk = u.kind === 'pc' && stOf(t, 'mark') ? 1 + stV(t, 'mark') : 1, cm = cm0 * mk, ct = [ct0, mk > 1 ? '印记' : '', u.kind === 'pc' && stOf(t, 'brk') && S.dmg ? '破甲' : ''].filter(Boolean).join('·');
       let weak = false, bound = false; for (let h = 0; h < hits && t.alive; h++) { const r = hitCalc(u, t, S.dmg * pb * cm * seen / hits, S.mag, { sure: !!stOf(u, 'sure'), pierce: S.pierce, el: S.el }); if (r.miss) { miss++; fxe(B, { k: 'miss', t: t.id }); continue; } tot += r.dmg; crit = crit || r.crit; weak = weak || r.weak; bound = bound || r.bound; if (applyDmg(B, u, t, r.dmg, { crit: r.crit, weak: r.weak })) died = true; }
       if (weak && u.side === 0) noteWeak(t, S.el);
       if (miss === hits) parts.push(`${uName(t)} <span class="miss">躲开了</span>`);
@@ -147,13 +156,17 @@ function mobAct(B, u, L) {
   if (u.plan === 'broken') { L(`${uName(u)} 踉跄了一下，蓄好的力全散了`); return; }
   const pa = u.pet && B.acts[u.id]; if (pa) { if (pa.guard) { addSt(u, { k: 'guard', t: 1, v: 0.5 }); fxe(B, { k: 'act', a: u.id, fx: 'guard', tg: [u.id], side: 0 }); L(`${uName(u)} 缩成一团，护住要害`); return; } if (petMoves(u).some(x => x.i === pa.psk)) u.plan = pa.psk; }
   const s = M.sk[u.plan ?? 0] || M.sk[0]; const foes = alive(B, 1 - u.side); if (!foes.length) return; u.releasing = false;
+  if (s.taunt || s.buffHero || s.shieldHero) { const h = B.units.find(x => x.kind === 'pc' && x.alive) || u;
+    if (s.taunt) { addSt(u, { k: 'taunt', t: s.taunt }); if (s.guard) addSt(u, { k: 'guard', t: 1, v: 0.5 }); fxe(B, { k: 'act', a: u.id, fx: 'guard', tg: [u.id], side: u.side }); L(`${uName(u)} <span class="sk">${s.n}</span>，敌人的目光全被它引了过去`); return; }
+    if (s.buffHero) { addSt(h, s.buffHero); fxe(B, { k: 'act', a: u.id, fx: 'buff', tg: [h.id], side: u.side }); L(`${uName(u)} <span class="sk">${s.n}</span>，${uName(h)} <span style="color:${STATUS[s.buffHero.k].c}">${s.buffHero.k === 'sure' ? '下一击必暴' : STATUS[s.buffHero.k].n + (s.buffHero.v ? ' +' + Math.round(s.buffHero.v * 100) + '%' : '')}</span>`); return; }
+    if (s.shieldHero) { const v = Math.round(u.atk * s.shieldHero); addSt(h, { k: 'shield', t: 3, v }); fxe(B, { k: 'act', a: u.id, fx: 'shield', tg: [h.id], side: u.side }); fxe(B, { k: 'shield', t: h.id, v }); L(`${uName(u)} <span class="sk">${s.n}</span>，${uName(h)} 获得 <span class="heal">${v}</span> 点护盾`); B.fx = 'heal'; return; } }
   if (s.buff) { addSt(u, s.buff); fxe(B, { k: 'act', a: u.id, fx: 'buff', tg: [u.id], side: u.side }); L(`${uName(u)} <span class="sk">${s.n}</span>，<span style="color:${STATUS[s.buff.k].c}">${STATUS[s.buff.k].n}</span>`); return; }
   if (s.shieldAll) { const v = Math.round(u.atk * s.shieldAll); fxe(B, { k: 'act', a: u.id, fx: 'shield', tg: alive(B, u.side).map(t => t.id), side: u.side }); for (const t of alive(B, u.side)) { addSt(t, { k: 'shield', t: 3, v }); fxe(B, { k: 'shield', t: t.id, v }); } L(`${uName(u)} <span class="sk">${s.n}</span>，全队获得 <span class="heal">${v}</span> 点护盾`); B.fx = 'heal'; return; }
   if (s.healAlly) { const t = alive(B, u.side).sort((a, b) => a.hp / a.hpMax - b.hp / b.hpMax)[0]; const v = Math.round(t.hpMax * s.healAlly); t.hp = Math.min(t.hpMax, t.hp + v); fxe(B, { k: 'act', a: u.id, fx: 'heal', tg: [t.id], side: u.side }); fxe(B, { k: 'heal', t: t.id, v, hp: hpr(t) }); L(`${uName(u)} <span class="sk">${s.n}</span>，${uName(t)} <span class="heal">+${v}</span>`); B.fx = 'heal'; return; }
-  const tg = s.aoe ? foes : [(pa && pa.tgt && foes.find(f => f.id === pa.tgt)) || pickFoe(B, u)]; const parts = []; fxe(B, { k: 'act', a: u.id, fx: mobFx(s), tg: tg.map(t => t.id), side: u.side, big: !!s.charge });
-  for (const t of tg) { if (!t.alive) continue; const r = hitCalc(u, t, s.dmg || 1, s.mag, { el: s.el }); if (r.miss) { fxe(B, { k: 'miss', t: t.id }); parts.push(`${uName(t)} <span class="miss">躲开了</span>`); continue; }
+  const tg = s.aoe ? foes : [(pa && pa.tgt && foes.find(f => f.id === pa.tgt)) || (u.pet && s.cat === 'debuff' && (foes.find(f => f.boss) || foes.slice().sort((a, b) => b.hp - a.hp)[0])) || pickFoe(B, u)]; const parts = []; fxe(B, { k: 'act', a: u.id, fx: mobFx(s), tg: tg.map(t => t.id), side: u.side, big: !!s.charge });
+  for (const t of tg) { if (!t.alive) continue; const opp = u.pet && (stOf(t, 'stun') || stOf(t, 'freeze')); const r = hitCalc(u, t, (s.dmg || 1) * (opp ? 1.3 : 1), s.mag, { el: s.el }); if (r.miss) { fxe(B, { k: 'miss', t: t.id }); parts.push(`${uName(t)} <span class="miss">躲开了</span>`); continue; }
     const died = applyDmg(B, u, t, r.dmg, { crit: r.crit, weak: r.weak }); if (s.leech) u.hp = Math.min(u.hpMax, u.hp + r.dmg * s.leech); if (r.weak && u.side === 0) noteWeak(t, s.el);
-    parts.push(`${uName(t)} <span class="${r.crit ? 'crit' : 'dmg'}">-${r.dmg}${r.crit ? ' 暴击!' : ''}</span>${r.weak ? ' <span class="weak">正中要害</span>' : ''}${died ? ' <b class="die">倒下</b>' : ''}`);
+    parts.push(`${uName(t)} <span class="${r.crit ? 'crit' : 'dmg'}">-${r.dmg}${r.crit ? ' 暴击!' : ''}</span>${r.weak ? ' <span class="weak">正中要害</span>' : ''}${opp ? ' <span class="weak">趁它动不了</span>' : ''}${died ? ' <b class="die">倒下</b>' : ''}`);
     let stunned = false; if (t.alive && s.st && Math.random() < (s.st.p ?? 1)) { addSt(t, { k: s.st.k, t: s.st.t, v: s.st.v ? Math.round(u.atk * s.st.v) : 0 }); if (s.st.k === 'stun') stunned = true; parts.push(`<span class="st" style="color:${STATUS[s.st.k].c}">${STATUS[s.st.k].n}</span>`); }
     if (u.side === 0 && (stunned || r.weak) && tryInterrupt(B, t)) parts.push('<span class="weak">打断了它的蓄力！</span>'); }
   L(`${uName(u)} <span class="sk">${s.n}</span>：${parts.join('，')}`); B.fx = 'hit';
@@ -181,8 +194,8 @@ function battleCheckEnd(B) {
   return false;
 }
 function battleRewards(B) {
-  const p = B.units.find(u => u.kind === 'pc'); let exp = 0; const items = [];
+  const p = B.units.find(u => u.kind === 'pc'); let exp = 0, money = 0; const items = [];
   for (const [id, lv, boss] of B.kills) { const M = MOBS[id], E = BAL.enemy(lv); const diff = p.lv - lv; const mod = diff > 4 ? Math.max(0.1, 1 - (diff - 4) * 0.18) : diff < -3 ? 1.25 : 1;
-    exp += E.exp * (boss ? 4 : 1) * mod * BAL.expMul(lv) * (B.story ? BAL.storyExp : 1) * diffOf().exp; for (const [it, pr] of M.loot || []) if (Math.random() < pr) items.push(it); }
-  return { exp: Math.round(exp), items };
+    exp += E.exp * (boss ? 4 : 1) * mod * BAL.expMul(lv) * (B.story ? BAL.storyExp : 1) * diffOf().exp; money += (2 + lv * 0.8) * (boss ? 6 : 1) * (diff > 4 ? 0.3 : 1); for (const [it, pr] of M.loot || []) if (Math.random() < pr) items.push(it); }
+  return { exp: Math.round(exp), items, money: Math.round(money * rnd(0.8, 1.2)) };
 }

@@ -343,6 +343,9 @@ body.short #dlg .hist{display:none}
 .uc .tk{float:right;font-size:.75rem;font-weight:700;color:#ff8a6a;background:#00000055;border-radius:6px;padding:0 5px;margin-left:4px}
 .uc.ally .tk{color:#ffb0a0}
 .skb.pet{background:linear-gradient(#21301f,#162214);border-color:#4a6a3a}
+.skb.pet .c{color:#cfe0c8}
+.skb.c-atk{border-color:#a0503a}.skb.c-buff{border-color:#b08a3a}.skb.c-debuff{border-color:#7a5ab0}.skb.c-def{border-color:#4a8a5a}
+.skb.c-atk .c{color:#ffb09a}.skb.c-buff .c{color:#ffd88a}.skb.c-debuff .c{color:#c8b0ff}.skb.c-def .c{color:#9fe0a0}
 .uc.turn{box-shadow:0 0 0 2px #8fd0ff,0 0 14px #8fd0ff66}
 .uc.warnc{box-shadow:0 0 0 1px #ff6a4a,0 0 14px #ff4a2a88;animation:warnp 1s infinite}
 @keyframes warnp{50%{box-shadow:0 0 0 1px #ff6a4a,0 0 22px #ff4a2acc}}
@@ -607,7 +610,12 @@ const BAL = {
   storyExp: 2,                                        // story fights give double exp
   phaseAtk: 0.25,                                     // a boss at half health gets angry: +25% attack
   weakMul: 1.5,                                       // hitting a weakness
+  // enemies get tougher as you climb (2026-11): unchanged up to 11 层, gently at first, reaching 气血 ×1.6 / 攻击 ×1.25 at 18 层 — the same stretch where 宝术 / 宝骨 slots and partner moves open up
+  foeRamp: lv => Math.pow(clamp((lv - 11) / 7, 0, 1), 1.5), foeHp: lv => 1 + 0.6 * BAL.foeRamp(lv), foeAtk: lv => 1 + 0.25 * BAL.foeRamp(lv),
 };
+/* slots grow with the realm: 宝术 you can take into battle, 宝骨 you can wear */
+const barSlots = lv => 4 + (lv >= 10) + (lv >= 14) + (lv >= 18);
+const relicSlots = lv => 2 + (lv >= 12) + (lv >= 17);
 /* 宝术熟练度: uses → 小成 / 大成 */
 const PROF = [{ n: '', s: '', at: 0, b: 0 }, { n: '小成', s: '小', at: 30, b: 0.1 }, { n: '大成', s: '大', at: 100, b: 0.2 }];
 /* elements: a few beasts take more from one kind of attack */
@@ -628,7 +636,7 @@ const SKILLS = {
   ta: { name: '小塔', icon: '🗼', got: 'sk_ta', mp: 22, cd: 5, tgt: 'allies', shield: 1.6, desc: '那座只有四层的小塔垂下光幕，全队获得 1.6 倍攻击的护盾。' },
 };
 const SKILL_ORDER = ['qly', 'sn', 'gw', 'lei', 'dsh', 'jian', 'ta'];
-const STATUS = { stun: { n: '眩晕', c: '#ffd34a' }, bleed: { n: '流血', c: '#ff6a6a' }, burn: { n: '灼烧', c: '#ff8a3a' }, poison: { n: '中毒', c: '#9ad84a' }, def: { n: '坚守', c: '#ffd28a' }, taunt: { n: '嘲讽', c: '#ffb36a' }, atk: { n: '凶性', c: '#ff9a6a' }, dodge: { n: '灵动', c: '#9ad8ff' }, sure: { n: '必暴', c: '#ffe46a' }, shield: { n: '护盾', c: '#9ae8b0' }, guard: { n: '防御', c: '#c8c0b0' }, weak: { n: '虚弱', c: '#b0a0ff' }, bound: { n: '锁链', c: '#d8b070' }, freeze: { n: '冰封', c: '#9ad8ff' }, rage: { n: '狂怒', c: '#ff4a2a' } };
+const STATUS = { stun: { n: '眩晕', c: '#ffd34a' }, bleed: { n: '流血', c: '#ff6a6a' }, burn: { n: '灼烧', c: '#ff8a3a' }, poison: { n: '中毒', c: '#9ad84a' }, def: { n: '坚守', c: '#ffd28a' }, taunt: { n: '嘲讽', c: '#ffb36a' }, atk: { n: '凶性', c: '#ff9a6a' }, dodge: { n: '灵动', c: '#9ad8ff' }, sure: { n: '必暴', c: '#ffe46a' }, shield: { n: '护盾', c: '#9ae8b0' }, guard: { n: '防御', c: '#c8c0b0' }, weak: { n: '虚弱', c: '#b0a0ff' }, bound: { n: '锁链', c: '#d8b070' }, brk: { n: '破甲', c: '#e0a070' }, mark: { n: '印记', c: '#c08aff' }, freeze: { n: '冰封', c: '#9ad8ff' }, rage: { n: '狂怒', c: '#ff4a2a' } };
 
 /* ---------- 功法 / 修炼所得 (passive) ---------- */
 const GONGFA = {
@@ -647,13 +655,31 @@ const DONGTIAN = [
   { k: 'shou', n: '守之洞天', d: '防御 +7%', b: { defP: 0.07 } }, { k: 'su', n: '速之洞天', d: '身法 +2', b: { spd: 2 } }, { k: 'feng', n: '锋之洞天', d: '暴击 +3%', b: { crit: 0.03 } }];
 
 /* ---------- pets (from the novel) ----------  stats are multiples of 石昊's at the same level */
+/* each 灵兽伙伴 has four kinds of move — 攻击 / 增益 (on 石昊) / 减益 (on enemies) / 防守 — unlocked with affection (亲近);
+   most of them set 石昊 up: 破甲 and 印记 make his 宝术 land harder, 战吼 and 加持 boost him, 嘲讽 draws the hits away from him */
+const PET_CAT = { atk: { n: '攻击', c: '#e07a5a' }, buff: { n: '增益', c: '#d4ad62' }, debuff: { n: '减益', c: '#a08ae0' }, def: { n: '防守', c: '#6fbf7a' } };
 const PETS = {
-  maoqiu: { name: '毛球', race: '朱厌幼崽', role: '输出', icon: '🐒', desc: '在旧村废墟里捡到的金毛小猴，伤好了以后赖着不走。它其实是争夺山宝的四大至尊之一——朱厌。', mul: { hp: 0.75, atk: 0.8, def: 0.8, spd: 1.15 },
-    sk: [{ n: '金爪', dmg: 1.15, w: 3 }, { n: '连环爪', dmg: 1.6, w: 2, aff: 40 }, { n: '撼山', dmg: 2.3, el: 'blunt', w: 1, aff: 80 }, { n: '朱厌之怒', dmg: 1.3, aoe: 1, st: { k: 'weak', t: 2, v: 0.2, p: 0.7 }, w: 2, evo: 1 }] },
-  dahong: { name: '大红', race: '大红鸟', role: '群攻', icon: '🐦', desc: '百断山里一只脾气暴躁的大红鸟。你想吃它，它想啄你，打了好几架以后，它认了你当老大。', mul: { hp: 0.7, atk: 0.8, def: 0.7, spd: 1.4 },
-    sk: [{ n: '啄击', dmg: 0.95, w: 2 }, { n: '火羽', dmg: 0.7, aoe: 1, el: 'fire', st: { k: 'burn', t: 2, v: 0.25, p: 0.5 }, w: 3 }, { n: '烈焰俯冲', dmg: 1.2, aoe: 1, el: 'fire', w: 1, aff: 60 }, { n: '赤焰风暴', dmg: 1.4, aoe: 1, el: 'fire', st: { k: 'burn', t: 3, v: 0.3, p: 0.8 }, w: 2, evo: 1 }] },
-  ertuzi: { name: '二秃子', race: '孔雀一族', role: '控制 · 治疗', icon: '🐣', desc: '百断山捡到的一颗蛋孵出来的小鸟，一根毛都没有。别看它秃，它是孔雀一族。', mul: { hp: 0.55, atk: 0.65, def: 0.6, spd: 1.2 },
-    sk: [{ n: '啄', dmg: 0.85, w: 2 }, { n: '五色神光', dmg: 1, mag: 1, st: { k: 'stun', t: 1, p: 0.4 }, w: 2 }, { n: '五色护体', healAlly: 0.2, w: 2 }, { n: '五色屏障', shieldAll: 0.9, w: 1, aff: 60 }, { n: '五色神光·满', dmg: 0.8, mag: 1, aoe: 1, st: { k: 'stun', t: 1, p: 0.3 }, w: 2, evo: 1 }] },
+  maoqiu: { name: '毛球', race: '朱厌幼崽', role: '近战 · 破甲', icon: '🐒', desc: '在旧村废墟里捡到的金毛小猴，伤好了以后赖着不走。它其实是争夺山宝的四大至尊之一——朱厌。', mul: { hp: 0.8, atk: 0.8, def: 0.85, spd: 1.15 },
+    sk: [{ n: '金爪', cat: 'atk', dmg: 1.15, w: 3, d: '一爪子挠过去。' },
+      { n: '挡在身前', cat: 'def', taunt: 2, guard: 1, w: 1, d: '跳到石昊前面龇牙，两回合内敌人都冲它来，这回合它受伤减半。' },
+      { n: '朱厌战吼', cat: 'buff', buffHero: { k: 'atk', t: 2, v: 0.25 }, w: 1, aff: 25, d: '一声吼，石昊两回合内攻击 +25%。' },
+      { n: '撼地', cat: 'debuff', dmg: 0.5, aoe: 1, el: 'blunt', st: { k: 'brk', t: 2, v: 0.35, p: 1 }, w: 1, aff: 50, d: '砸地面震翻全体，破甲：防御 -35%，石昊的宝术打得更痛。' },
+      { n: '撼山', cat: 'atk', dmg: 2.3, el: 'blunt', w: 1, aff: 75, d: '抡起一块大石头砸下去，单体重击。' },
+      { n: '朱厌之怒', cat: 'atk', dmg: 1.3, aoe: 1, st: { k: 'weak', t: 2, v: 0.2, p: 0.7 }, w: 2, evo: 1, d: '觉醒后：金毛炸起，全体重击并虚弱。' }] },
+  dahong: { name: '大红', race: '大红鸟', role: '群攻 · 护身', icon: '🐦', desc: '百断山里一只脾气暴躁的大红鸟。你想吃它，它想啄你，打了好几架以后，它认了你当老大。', mul: { hp: 0.7, atk: 0.8, def: 0.7, spd: 1.4 },
+    sk: [{ n: '火羽', cat: 'atk', dmg: 0.7, aoe: 1, el: 'fire', st: { k: 'burn', t: 2, v: 0.25, p: 0.5 }, w: 3, d: '甩出一片火羽，全体伤害，可能灼烧。' },
+      { n: '火羽护身', cat: 'def', shieldHero: 1.2, w: 1, d: '把火羽围在石昊身边，给他一层护盾。' },
+      { n: '鼓翼', cat: 'buff', buffHero: { k: 'dodge', t: 2, v: 0.25 }, w: 1, aff: 25, d: '在石昊头顶扇风，两回合内他更难被打中（闪避 +25%）。' },
+      { n: '灼目', cat: 'debuff', dmg: 0.6, el: 'fire', st: { k: 'weak', t: 2, v: 0.3, p: 1 }, w: 1, aff: 50, d: '一口火喷在敌人脸上，它两回合内攻击 -30%。' },
+      { n: '烈焰俯冲', cat: 'atk', dmg: 1.2, aoe: 1, el: 'fire', w: 1, aff: 75, d: '带着火从天上扎下来，全体伤害。' },
+      { n: '赤焰风暴', cat: 'atk', dmg: 1.4, aoe: 1, el: 'fire', st: { k: 'burn', t: 3, v: 0.3, p: 0.8 }, w: 2, evo: 1, d: '觉醒后：火焰风暴，全体重伤并灼烧。' }] },
+  ertuzi: { name: '二秃子', race: '孔雀一族', role: '控制 · 治疗', icon: '🐣', desc: '百断山捡到的一颗蛋孵出来的小鸟，一根毛都没有。别看它秃，它是孔雀一族。', mul: { hp: 0.6, atk: 0.7, def: 0.65, spd: 1.2 },
+    sk: [{ n: '五色神光', cat: 'atk', dmg: 1, mag: 1, st: { k: 'stun', t: 1, p: 0.4 }, w: 3, d: '一道五色光，可能把敌人照晕（晕住的敌人挨石昊、伙伴的打都更痛）。' },
+      { n: '五色护体', cat: 'def', healAlly: 0.22, w: 1, d: '给伤得最重的同伴回 22% 气血。' },
+      { n: '五色加持', cat: 'buff', buffHero: { k: 'sure', t: 2, v: 0 }, w: 1, aff: 25, d: '五色光落在石昊身上，他的下一击必定暴击。' },
+      { n: '摄魂', cat: 'debuff', dmg: 0.3, mag: 1, st: { k: 'mark', t: 3, v: 0.3, p: 1 }, w: 1, aff: 50, d: '在敌人身上留下印记，三回合内石昊打它伤害 +30%。' },
+      { n: '五色屏障', cat: 'def', shieldAll: 0.9, w: 1, aff: 75, d: '全队一层护盾。' },
+      { n: '五色神光·满', cat: 'atk', dmg: 0.8, mag: 1, aoe: 1, st: { k: 'stun', t: 1, p: 0.3 }, w: 2, evo: 1, d: '觉醒后：全体五色神光，可能照晕。' }] },
 };
 
 /* ---------- items ---------- */
@@ -732,7 +758,7 @@ const DIRS = { n: '北', s: '南', e: '东', w: '西', u: '入', d: '出' };
 const F0 = k => () => !!(C && C.story.f[k]);
 const PLACES = {
   /* ---- 石村 (after the move the same nodes describe the new village) ---- */
-  sc_street: { name: '村中', area: 'shicun', x: 1, y: 1, town: 1, exits: { n: 'sc_gate', w: 'sc_willow', e: 'sc_chief', s: 'sc_yard' }, npcs: ['dazhuang'],
+  sc_street: { name: '村中', area: 'shicun', x: 1, y: 1, town: 1, shop: ['milk', 'herb', 'meat'], shopBy: '货郎', exits: { n: 'sc_gate', w: 'sc_willow', e: 'sc_chief', s: 'sc_yard' }, npcs: ['dazhuang'],
     night: '夜里的石村静悄悄的，只有几户人家的窗缝里还漏出一点火光。屋檐下的兽肉在风里轻轻打转，远处偶尔一声兽吼，狗就跟着叫两声。',
     desc: '青石铺成的小路从村子当中穿过，屋檐下挂着风干的兽肉。几个光屁股的娃娃追着一只绒毛小兽跑过去，笑声一直洒到村口。',
     moved: '新的石村建在一片山清水秀的谷地里，溪水绕着村子流过。石屋是新垒的，墙缝里的泥还没干透，可屋檐下照旧挂满了兽肉。' },
@@ -776,7 +802,7 @@ const PLACES = {
   xs_hall: { name: '虚神界', area: 'xushen', x: 0, y: 0, town: 1, need: F0('xushen'), exits: { d: 'sc_willow' }, acts: ['arena'],
     desc: '柳神把你的神魂送进了一片灰白的虚空。脚下是一块块悬浮的石台，各地的少年天才在这里交手，伤在神魂，不伤肉身。半空悬着一面光幕，上面流转着名字和排名。' },
   /* ---- 补天阁 ---- */
-  bt_gate: { name: '补天阁山门', area: 'butian', x: 1, y: 2, town: 1, need: F0('butian'), exits: { s: 'dh_road', n: 'bt_court', w: 'bt_wild' }, npcs: ['qingfeng'],
+  bt_gate: { name: '补天阁山门', area: 'butian', x: 1, y: 2, town: 1, shop: ['herb', 'meat', 'lingyao', 'baoyao'], shopBy: '外门坊市', need: F0('butian'), exits: { s: 'dh_road', n: 'bt_court', w: 'bt_wild' }, npcs: ['qingfeng'],
     night: '夜里的山门点着两盏长明灯，九座山峰只剩下黑影，铁索在风里轻轻作响。外门的院子里，还有人在练拳。',
     desc: '云雾里露出九座山峰，峰与峰之间以铁索相连。山门是两根擎天的石柱，柱上刻着“补天”二字，看久了眼睛发痛。' },
   bt_wild: { name: '阁外山林', area: 'butian', x: 0, y: 2, lv: [11, 13], need: F0('butian'), exits: { e: 'bt_gate', n: 'bt_tiger' }, mobs: [['tiger', 3], ['ape', 3]], gather: [['lingyao', 0.3], ['herb', 0.3]],
@@ -926,7 +952,7 @@ const SAVE_V = 2;
 function newChar() {
   return { v: SAVE_V, name: '石昊', lv: 1, exp: 0, hp: 1, mp: 1, loc: 'sc_chief', home: 'sc_street', bag: { milk: 2 },
     sk: [], bar: [], gf: ['yingxia'], dt: [], pets: {}, pet: null, story: { q: 0, n: 0, f: {} }, kills: {}, stats: { kills: 0, deaths: 0, bosses: 0 },
-    arena: { rank: 0, wins: 0, tries: BAL.arenaTries, day: '', best: 999, got: {}, claimed: '' }, dungeons: {}, auto: false, seen: {}, prof: {}, codex: {}, relics: {}, eq: [], diff: 1, ex: {}, ach: {}, title: '', created: now() };
+    arena: { rank: 0, wins: 0, tries: BAL.arenaTries, day: '', best: 999, got: {}, claimed: '' }, dungeons: {}, auto: false, seen: {}, prof: {}, codex: {}, relics: {}, eq: [], diff: 1, money: 20, ex: {}, ach: {}, title: '', created: now() };
 }
 function charStats(c = C) {
   const L = c.lv - 1, s = { hpMax: HERO.base.hp + HERO.grow.hp * L, mpMax: HERO.base.mp + HERO.grow.mp * L, atk: HERO.base.atk + HERO.grow.atk * L, def: HERO.base.def + HERO.grow.def * L, spd: HERO.base.spd + HERO.grow.spd * L, crit: HERO.base.crit + HERO.grow.crit * L, leech: 0, regen: 0 };
@@ -940,12 +966,12 @@ function charStats(c = C) {
 function fixHp() { const s = charStats(); C.hp = clamp(C.hp, 0, s.hpMax); C.mp = clamp(C.mp, 0, s.mpMax); }
 function fullHeal() { const s = charStats(); C.hp = s.hpMax; C.mp = s.mpMax; }
 function skillsOf(c = C) { return ['atk', ...c.bar.filter(id => c.sk.includes(id)), 'guard']; }
-function learnSkill(id) { if (C.sk.includes(id)) return; C.sk.push(id); if (C.bar.length < 4) C.bar.push(id); const S = SKILLS[id]; logLine(`<b class="lvup">领悟宝术</b>：${S.icon}<b>${S.name}</b>——${S.desc}`, 'sys'); sfx('epic'); }
+function learnSkill(id) { if (C.sk.includes(id)) return; C.sk.push(id); if (C.bar.length < barSlots(C.lv)) C.bar.push(id); const S = SKILLS[id]; logLine(`<b class="lvup">领悟宝术</b>：${S.icon}<b>${S.name}</b>——${S.desc}`, 'sys'); sfx('epic'); }
 /* 宝术熟练度 */
 const profLevel = (id, c = C) => { const n = (c.prof && c.prof[id]) || 0; return n >= PROF[2].at ? 2 : n >= PROF[1].at ? 1 : 0; };
 function profUse(id) { C.prof = C.prof || {}; const before = profLevel(id); C.prof[id] = (C.prof[id] || 0) + 1; const after = profLevel(id); if (after > before) setTimeout(() => { logLine(`${SKILLS[id].icon}<b>${SKILLS[id].name}</b> 用得越来越顺手——<b class="lvup">${PROF[after].n}</b>（威力 +${PROF[after].b * 100}%）`, 'sys'); sfx('epic'); }, 50); }
 const knownWeak = mob => { const M = MOBS[mob]; if (!M || !M.weak) return []; const w = (C.codex && C.codex[mob] && C.codex[mob].wk) || []; return Object.keys(M.weak).filter(e => w.includes(e)); };
-function toggleBar(id) { const i = C.bar.indexOf(id); if (i >= 0) C.bar.splice(i, 1); else { if (C.bar.length >= 4) { toast('最多带 4 门宝术进战斗'); return; } C.bar.push(id); } C.bar.sort((a, b) => SKILL_ORDER.indexOf(a) - SKILL_ORDER.indexOf(b)); save(); refresh(); }
+function toggleBar(id) { const i = C.bar.indexOf(id); if (i >= 0) C.bar.splice(i, 1); else { if (C.bar.length >= barSlots(C.lv)) { toast(`现在最多带 ${barSlots(C.lv)} 门宝术进战斗（境界越高越多）`); return; } C.bar.push(id); } C.bar.sort((a, b) => SKILL_ORDER.indexOf(a) - SKILL_ORDER.indexOf(b)); save(); refresh(); }
 function learnGongfa(id) { if (C.gf.includes(id)) return; C.gf.push(id); const G = GONGFA[id]; fixHp(); logLine(`<b class="lvup">修炼有成</b>：${G.icon}<b>${G.name}</b>——${G.desc}`, 'sys'); sfx('epic'); }
 
 /* ---------- pets ---------- */
@@ -978,6 +1004,8 @@ function gainExp(n, quiet) {
     C.exp -= BAL.expNext(C.lv); C.lv++; fullHeal(); sfx('level');
     logLine(`<b class="lvup">境界精进！</b> ${realmOf(C.lv).name} · 第 ${C.lv} 层。气血、符力已回满。`, 'sys'); bigFlash(`境界精进 · ${realmOf(C.lv).name}第 ${C.lv} 层`, 'lv');
     if (C.lv >= 10 && C.lv <= 18 && C.dt.length < C.lv - 9) STATE.dtPending = true;
+    if (barSlots(C.lv) > barSlots(C.lv - 1)) { logLine(`<b class="lvup">宝术栏 +1</b>：现在能带 ${barSlots(C.lv)} 门宝术进战斗。`, 'sys'); for (const id of SKILL_ORDER) if (C.sk.includes(id) && !C.bar.includes(id) && C.bar.length < barSlots(C.lv)) C.bar.push(id); }
+    if (relicSlots(C.lv) > relicSlots(C.lv - 1)) { logLine(`<b class="lvup">宝骨栏 +1</b>：现在能戴 ${relicSlots(C.lv)} 件宝骨。`, 'sys'); C.eq = C.eq || []; for (const id of Object.keys(C.relics || {})) if (!C.eq.includes(id) && C.eq.length < relicSlots(C.lv)) C.eq.push(id); }
   }
   if (C.lv >= BAL.lvCap) C.exp = Math.min(C.exp, BAL.expNext(C.lv));
   netPub(); if (STATE.dtPending) setTimeout(dongtianPick, 400);
@@ -996,7 +1024,7 @@ function save(now_) { if (!C || NETROLE === 'guest') return; clearTimeout(saveT)
 // v2 saves stored only the step index; the step list has grown since, so map old indices through the old order
 const OLD_V2 = ['q_wake', 'q_yard', 'q_wolf0', 'q_wolf', 'q_egg0', 'q_egg', 'q_tomb0', 'q_tomb', 'q_bei', 'q_yaoding', 'q_shanbao', 'q_ruin', 'q_jijing', 'q_memory', 'q_qingfeng', 'q_bandit0', 'q_bandit', 'q_xushen0', 'q_xushen', 'q_leave', 'q_gate', 'q_lotus', 'q_join', 'q_lei', 'q_lib', 'q_baiduan', 'q_bdgate', 'q_lion', 'q_yu', 'q_cliff', 'q_spring', 'q_tiangu', 'q_mount', 'q_return', 'q_end'];
 function fixSave(c) { if (!c || c.v !== SAVE_V) return null; const d = newChar(); for (const k in d) if (c[k] === undefined) c[k] = d[k]; for (const k in d.arena) if (c.arena[k] === undefined) c.arena[k] = d.arena[k];
-  for (const [id, R] of Object.entries(RELICS)) if ((c.kills || {})[R.from] && !c.relics[id]) { c.relics[id] = 1; if (c.eq.length < 2) c.eq.push(id); } // bosses beaten before 宝骨 existed
+  for (const [id, R] of Object.entries(RELICS)) if ((c.kills || {})[R.from] && !c.relics[id]) { c.relics[id] = 1; if (c.eq.length < relicSlots(c.lv)) c.eq.push(id); } // bosses beaten before 宝骨 existed
   const qid = c.story.qid || OLD_V2[c.story.q]; const i = qi(qid); if (i >= 0) c.story.q = i; c.story.q = clamp(c.story.q, 0, MAIN.length - 1); if (!PLACES[c.loc]) c.loc = 'sc_street'; return c; }
 function loadSave() { return fixSave(store.get('save2', null)); }
 /* ---------- 回忆录 (story journal) — kept apart from the save so co-op snapshots stay small ---------- */
@@ -1026,7 +1054,7 @@ const ALLY_NPC = {
 const unitDef = id => MOBS[id] || ALLY_NPC[id] || PETS[id];
 let BID = 1;
 function mobUnit(id, lv, side = 1) {
-  const M = unitDef(id); lv = lv || M.lv || 1; const E = BAL.enemy(lv), m = M.mul || {}, D = side ? diffOf() : { hp: 1, atk: 1 };
+  const M = unitDef(id); lv = lv || M.lv || 1; const E = BAL.enemy(lv), m = M.mul || {}, D = side ? { hp: diffOf().hp * BAL.foeHp(lv), atk: diffOf().atk * BAL.foeAtk(lv) } : { hp: 1, atk: 1 };
   return { id: 'u' + (BID++), side, kind: side ? 'mob' : 'npc', mob: id, name: M.name, icon: M.icon || (M.boss ? '👹' : '🐾'), lv, boss: !!M.boss,
     hpMax: Math.round(E.hp * (m.hp || 1) * D.hp), atk: Math.round(E.atk * (m.atk || 1) * D.atk), def: Math.round(E.def * (m.def || 1)), spd: E.spd * (m.spd || 1), crit: M.boss ? 0.08 : 0.05, leech: 0, mpMax: 0, mp: 0, sk: [], cd: {}, st: [], alive: true, plan: null, intent: '' };
 }
@@ -1049,7 +1077,7 @@ function battleCreate(spec) {
   if (C.pet && C.pets[C.pet] && !spec.noPet) { const p = petUnit(C.pet); p.hp = p.hpMax; B.units.push(p); }
   for (const id of spec.allies || []) { const u = mobUnit(id, C.lv, 0); u.hp = u.hpMax; B.units.push(u); }
   for (const r of spec.rivals || []) B.units.push(rivalUnit(r));
-  for (const [id, lv] of spec.mobs || []) { const u = mobUnit(id, lv, 1); u.hp = u.hpMax; if (spec.roam) { u.hpMax = Math.round(spec.roam.hpMax * diffOf().hp); u.hp = Math.round(spec.roam.hp * diffOf().hp); } B.units.push(u); }
+  for (const [id, lv] of spec.mobs || []) { const u = mobUnit(id, lv, 1); u.hp = u.hpMax; if (spec.roam) { u.hpMax = Math.round(spec.roam.hpMax * diffOf().hp * BAL.foeHp(lv)); u.hp = Math.round(spec.roam.hp * diffOf().hp * BAL.foeHp(lv)); } B.units.push(u); }
   for (const u of B.units) if (u.kind === 'mob' || u.kind === 'npc') planMob(B, u);
   for (const [id] of spec.mobs || []) if (!MOBS[id].nocodex) { C.codex = C.codex || {}; C.codex[id] = C.codex[id] || { wk: [] }; }
   blog(B, `<span class="bt">⚔ ${spec.title || '战斗开始'}</span>`);
@@ -1066,11 +1094,20 @@ const hpr = u => Math.max(0, u.hp / u.hpMax);
 const uName = u => `<span class="${u.side ? 'foe' : u.kind === 'pc' ? 'pc' : 'ally'}">${esc(u.name)}</span>`;
 /* who still has to choose this round: 石昊, then the 灵兽伙伴 (unless auto-battle, or 石昊 is calling a different 伙伴 in) */
 const needInput = B => B.units.filter(u => u.alive && !B.acts[u.id] && (u.kind === 'pc' || (u.pet && !C.auto && !(B.acts.hero && (B.acts.hero.swap || B.acts.hero.crush || B.acts.hero.flee)))));
+function petPick(B, u) { // the partner's own judgement (auto-battle, or the default before you choose)
+  const mv = petMoves(u), h = B.units.find(x => x.kind === 'pc'), foes = alive(B, 1), has = c => mv.filter(x => x.s.cat === c), pw = L => wpick(L, x => x.s.w || 1).i;
+  const atk = has('atk'); if (!h || !foes.length) return pw(atk);
+  const hurt = alive(B, 0).find(a => a.hp < a.hpMax * 0.45), defs = has('def');
+  if (hurt) { const L = defs.filter(x => x.s.healAlly || x.s.shieldAll || x.s.shieldHero); if (L.length && chance(0.75)) return pw(L); }
+  if (foes.some(f => f.releasing || f.plan === 'charge')) { const L = defs.filter(x => x.s.taunt || x.s.shieldHero || x.s.shieldAll); if (L.length && u.hp > u.hpMax * 0.5 && chance(0.7)) return pw(L); }
+  const buffs = has('buff'); if (buffs.length && h.alive && !h.st.some(x => ['atk', 'sure', 'dodge'].includes(x.k)) && chance(0.4)) return pw(buffs);
+  const deb = has('debuff'), tgt = foes.find(f => f.boss) || (foes.length >= 2 ? foes[0] : null); if (deb.length && tgt && !tgt.st.some(x => ['brk', 'mark', 'weak'].includes(x.k)) && chance(0.55)) return pw(deb);
+  const aoe = atk.filter(x => x.s.aoe), one = atk.filter(x => !x.s.aoe); return pw(foes.length >= 2 && aoe.length ? aoe : one.length ? one : atk); }
 const petMoves = u => PETS[u.mob].sk.map((s, i) => ({ s, i })).filter(x => !(x.s.aff && (u.aff || 0) < x.s.aff) && !(x.s.evo && !u.evo));
 
 /* ---------- AI ---------- */
 function planMob(B, u) {
-  const M = unitDef(u.mob); if (!M) return; u.releasing = false;
+  const M = unitDef(u.mob); if (!M) return; u.releasing = false; if (u.pet) { u.plan = petPick(B, u); u.intent = ''; return; }
   if (u.charging != null) { const s = M.sk[u.charging]; u.plan = u.charging; u.charging = null; u.releasing = true; u.intent = '⚠ ' + s.n; return; }
   const cands = M.sk.map((s, i) => ({ s, i, w: s.w || 1 })).filter(x => !(x.s.aff && (u.aff || 0) < x.s.aff) && !(x.s.evo && !u.evo) && !(x.s.healAlly && !alive(B, u.side).some(v => v.hp < v.hpMax * 0.7)) && !(x.s.summon && alive(B, u.side).filter(v => v.mob === x.s.summon).length >= (x.s.max || 2)));
   const c = wpick(cands); if (c.s.charge) { u.charging = c.i; u.plan = 'charge'; u.intent = '⏳ 蓄力：' + c.s.n; } else { u.plan = c.i; u.intent = c.s.aoe ? '◎ ' + c.s.n : c.s.buff || c.s.healAlly || c.s.shieldAll ? '✦ ' + c.s.n : '→ ' + c.s.n; }
@@ -1081,7 +1118,7 @@ function botAct(B, u) { // auto-battle for 石昊 and the AI for 虚神界 rival
   const allies = alive(B, u.side), foes = alive(B, 1 - u.side); if (!foes.length) return { sk: 'atk' };
   const can = id => u.sk.includes(id) && !(u.cd[id] > 0) && u.mp >= SKILLS[id].mp; const boss = foes.find(f => f.boss), main = boss || foes.slice().sort((a, b) => a.hp - b.hp)[0];
   const pc = u.kind === 'pc', known = f => pc && f.mob ? knownWeak(f.mob) : [];
-  if (pc && u.hp < u.hpMax * 0.35) { const it = (u.hp < u.hpMax * 0.2 ? HEALS : HEALS.slice(1).concat('baoyao')).find(i => itemN(i)); if (it) return { item: it }; }
+  if (pc && u.hp < u.hpMax * 0.35 && B.itemRound !== B.round) { const it = (u.hp < u.hpMax * 0.2 ? HEALS : HEALS.slice(1).concat('baoyao')).find(i => itemN(i)); if (it) return { item: it }; }
   const big = foes.find(f => f.releasing || f.plan === 'charge');
   if (big) { for (const id of ['dsh', 'jian', 'qly']) if (can(id) && SKILLS[id].el && known(big).includes(SKILLS[id].el)) return { sk: id, tgt: big.id };
     if (big.releasing && can('sn') && !big.boss) return { sk: 'sn', tgt: big.id }; if (big.releasing && pc && u.hp < u.hpMax * 0.75) return { sk: 'guard' }; }
@@ -1097,7 +1134,7 @@ function botAct(B, u) { // auto-battle for 石昊 and the AI for 虚神界 rival
 const weakOf = (d, el) => el && d.mob && MOBS[d.mob] && MOBS[d.mob].weak && MOBS[d.mob].weak[el] || 0;
 function hitCalc(a, d, mul, mag, opts = {}) {
   const dodge = 0.03 + Math.max(0, d.spd - a.spd) * 0.008 + stV(d, 'dodge'); if (!opts.sure && Math.random() < Math.min(0.5, dodge)) return { miss: true, dmg: 0 };
-  const atk = a.atk * (1 + stV(a, 'atk') + stV(a, 'rage')) * (1 - stV(a, 'weak')); const wk = weakOf(d, opts.el); if (wk) mul *= wk; let def = d.def * (1 + stV(d, 'def')); if (mag) def *= 0.5; if (opts.pierce) def = 0;
+  const atk = a.atk * (1 + stV(a, 'atk') + stV(a, 'rage')) * (1 - stV(a, 'weak')); const wk = weakOf(d, opts.el); if (wk) mul *= wk; let def = d.def * (1 + stV(d, 'def')) * (1 - stV(d, 'brk')); if (mag) def *= 0.5; if (opts.pierce) def = 0;
   let bound = false; if (!mag && stOf(d, 'bound')) { mul *= 1.3; bound = true; d.st = d.st.filter(s => s.k !== 'bound'); } // 骨文锁链 → the next physical hit lands harder
   const K = BAL.defK + a.lv * 7; let dmg = atk * mul * K / (K + def) * rnd(0.9, 1.1);
   const crit = !!stOf(a, 'sure') || Math.random() < a.crit; if (crit) dmg *= BAL.critMul; if (stOf(d, 'guard')) dmg *= 0.5;
@@ -1140,7 +1177,7 @@ function perform(B, u, act, L) {
   fxe(B, { k: 'act', a: u.id, fx: SK_FX[id] || 'slash', tg: tg.map(t => t.id), side: u.side });
   if (S.dmg) { const parts = [];
     for (const t of tg) { if (!t.alive) continue; const hits = S.hits || 1; let tot = 0, crit = false, miss = 0, died = false;
-      const [cm, ct] = comboOf(id, t), seen = t.shiyi && u.kind === 'pc' && id !== 'atk' && id === u.lastSk ? 0.5 : 1;
+      const [cm0, ct0] = comboOf(id, t), seen = t.shiyi && u.kind === 'pc' && id !== 'atk' && id === u.lastSk ? 0.5 : 1, mk = u.kind === 'pc' && stOf(t, 'mark') ? 1 + stV(t, 'mark') : 1, cm = cm0 * mk, ct = [ct0, mk > 1 ? '印记' : '', u.kind === 'pc' && stOf(t, 'brk') && S.dmg ? '破甲' : ''].filter(Boolean).join('·');
       let weak = false, bound = false; for (let h = 0; h < hits && t.alive; h++) { const r = hitCalc(u, t, S.dmg * pb * cm * seen / hits, S.mag, { sure: !!stOf(u, 'sure'), pierce: S.pierce, el: S.el }); if (r.miss) { miss++; fxe(B, { k: 'miss', t: t.id }); continue; } tot += r.dmg; crit = crit || r.crit; weak = weak || r.weak; bound = bound || r.bound; if (applyDmg(B, u, t, r.dmg, { crit: r.crit, weak: r.weak })) died = true; }
       if (weak && u.side === 0) noteWeak(t, S.el);
       if (miss === hits) parts.push(`${uName(t)} <span class="miss">躲开了</span>`);
@@ -1160,13 +1197,17 @@ function mobAct(B, u, L) {
   if (u.plan === 'broken') { L(`${uName(u)} 踉跄了一下，蓄好的力全散了`); return; }
   const pa = u.pet && B.acts[u.id]; if (pa) { if (pa.guard) { addSt(u, { k: 'guard', t: 1, v: 0.5 }); fxe(B, { k: 'act', a: u.id, fx: 'guard', tg: [u.id], side: 0 }); L(`${uName(u)} 缩成一团，护住要害`); return; } if (petMoves(u).some(x => x.i === pa.psk)) u.plan = pa.psk; }
   const s = M.sk[u.plan ?? 0] || M.sk[0]; const foes = alive(B, 1 - u.side); if (!foes.length) return; u.releasing = false;
+  if (s.taunt || s.buffHero || s.shieldHero) { const h = B.units.find(x => x.kind === 'pc' && x.alive) || u;
+    if (s.taunt) { addSt(u, { k: 'taunt', t: s.taunt }); if (s.guard) addSt(u, { k: 'guard', t: 1, v: 0.5 }); fxe(B, { k: 'act', a: u.id, fx: 'guard', tg: [u.id], side: u.side }); L(`${uName(u)} <span class="sk">${s.n}</span>，敌人的目光全被它引了过去`); return; }
+    if (s.buffHero) { addSt(h, s.buffHero); fxe(B, { k: 'act', a: u.id, fx: 'buff', tg: [h.id], side: u.side }); L(`${uName(u)} <span class="sk">${s.n}</span>，${uName(h)} <span style="color:${STATUS[s.buffHero.k].c}">${s.buffHero.k === 'sure' ? '下一击必暴' : STATUS[s.buffHero.k].n + (s.buffHero.v ? ' +' + Math.round(s.buffHero.v * 100) + '%' : '')}</span>`); return; }
+    if (s.shieldHero) { const v = Math.round(u.atk * s.shieldHero); addSt(h, { k: 'shield', t: 3, v }); fxe(B, { k: 'act', a: u.id, fx: 'shield', tg: [h.id], side: u.side }); fxe(B, { k: 'shield', t: h.id, v }); L(`${uName(u)} <span class="sk">${s.n}</span>，${uName(h)} 获得 <span class="heal">${v}</span> 点护盾`); B.fx = 'heal'; return; } }
   if (s.buff) { addSt(u, s.buff); fxe(B, { k: 'act', a: u.id, fx: 'buff', tg: [u.id], side: u.side }); L(`${uName(u)} <span class="sk">${s.n}</span>，<span style="color:${STATUS[s.buff.k].c}">${STATUS[s.buff.k].n}</span>`); return; }
   if (s.shieldAll) { const v = Math.round(u.atk * s.shieldAll); fxe(B, { k: 'act', a: u.id, fx: 'shield', tg: alive(B, u.side).map(t => t.id), side: u.side }); for (const t of alive(B, u.side)) { addSt(t, { k: 'shield', t: 3, v }); fxe(B, { k: 'shield', t: t.id, v }); } L(`${uName(u)} <span class="sk">${s.n}</span>，全队获得 <span class="heal">${v}</span> 点护盾`); B.fx = 'heal'; return; }
   if (s.healAlly) { const t = alive(B, u.side).sort((a, b) => a.hp / a.hpMax - b.hp / b.hpMax)[0]; const v = Math.round(t.hpMax * s.healAlly); t.hp = Math.min(t.hpMax, t.hp + v); fxe(B, { k: 'act', a: u.id, fx: 'heal', tg: [t.id], side: u.side }); fxe(B, { k: 'heal', t: t.id, v, hp: hpr(t) }); L(`${uName(u)} <span class="sk">${s.n}</span>，${uName(t)} <span class="heal">+${v}</span>`); B.fx = 'heal'; return; }
-  const tg = s.aoe ? foes : [(pa && pa.tgt && foes.find(f => f.id === pa.tgt)) || pickFoe(B, u)]; const parts = []; fxe(B, { k: 'act', a: u.id, fx: mobFx(s), tg: tg.map(t => t.id), side: u.side, big: !!s.charge });
-  for (const t of tg) { if (!t.alive) continue; const r = hitCalc(u, t, s.dmg || 1, s.mag, { el: s.el }); if (r.miss) { fxe(B, { k: 'miss', t: t.id }); parts.push(`${uName(t)} <span class="miss">躲开了</span>`); continue; }
+  const tg = s.aoe ? foes : [(pa && pa.tgt && foes.find(f => f.id === pa.tgt)) || (u.pet && s.cat === 'debuff' && (foes.find(f => f.boss) || foes.slice().sort((a, b) => b.hp - a.hp)[0])) || pickFoe(B, u)]; const parts = []; fxe(B, { k: 'act', a: u.id, fx: mobFx(s), tg: tg.map(t => t.id), side: u.side, big: !!s.charge });
+  for (const t of tg) { if (!t.alive) continue; const opp = u.pet && (stOf(t, 'stun') || stOf(t, 'freeze')); const r = hitCalc(u, t, (s.dmg || 1) * (opp ? 1.3 : 1), s.mag, { el: s.el }); if (r.miss) { fxe(B, { k: 'miss', t: t.id }); parts.push(`${uName(t)} <span class="miss">躲开了</span>`); continue; }
     const died = applyDmg(B, u, t, r.dmg, { crit: r.crit, weak: r.weak }); if (s.leech) u.hp = Math.min(u.hpMax, u.hp + r.dmg * s.leech); if (r.weak && u.side === 0) noteWeak(t, s.el);
-    parts.push(`${uName(t)} <span class="${r.crit ? 'crit' : 'dmg'}">-${r.dmg}${r.crit ? ' 暴击!' : ''}</span>${r.weak ? ' <span class="weak">正中要害</span>' : ''}${died ? ' <b class="die">倒下</b>' : ''}`);
+    parts.push(`${uName(t)} <span class="${r.crit ? 'crit' : 'dmg'}">-${r.dmg}${r.crit ? ' 暴击!' : ''}</span>${r.weak ? ' <span class="weak">正中要害</span>' : ''}${opp ? ' <span class="weak">趁它动不了</span>' : ''}${died ? ' <b class="die">倒下</b>' : ''}`);
     let stunned = false; if (t.alive && s.st && Math.random() < (s.st.p ?? 1)) { addSt(t, { k: s.st.k, t: s.st.t, v: s.st.v ? Math.round(u.atk * s.st.v) : 0 }); if (s.st.k === 'stun') stunned = true; parts.push(`<span class="st" style="color:${STATUS[s.st.k].c}">${STATUS[s.st.k].n}</span>`); }
     if (u.side === 0 && (stunned || r.weak) && tryInterrupt(B, t)) parts.push('<span class="weak">打断了它的蓄力！</span>'); }
   L(`${uName(u)} <span class="sk">${s.n}</span>：${parts.join('，')}`); B.fx = 'hit';
@@ -1194,10 +1235,10 @@ function battleCheckEnd(B) {
   return false;
 }
 function battleRewards(B) {
-  const p = B.units.find(u => u.kind === 'pc'); let exp = 0; const items = [];
+  const p = B.units.find(u => u.kind === 'pc'); let exp = 0, money = 0; const items = [];
   for (const [id, lv, boss] of B.kills) { const M = MOBS[id], E = BAL.enemy(lv); const diff = p.lv - lv; const mod = diff > 4 ? Math.max(0.1, 1 - (diff - 4) * 0.18) : diff < -3 ? 1.25 : 1;
-    exp += E.exp * (boss ? 4 : 1) * mod * BAL.expMul(lv) * (B.story ? BAL.storyExp : 1) * diffOf().exp; for (const [it, pr] of M.loot || []) if (Math.random() < pr) items.push(it); }
-  return { exp: Math.round(exp), items };
+    exp += E.exp * (boss ? 4 : 1) * mod * BAL.expMul(lv) * (B.story ? BAL.storyExp : 1) * diffOf().exp; money += (2 + lv * 0.8) * (boss ? 6 : 1) * (diff > 4 ? 0.3 : 1); for (const [it, pr] of M.loot || []) if (Math.random() < pr) items.push(it); }
+  return { exp: Math.round(exp), items, money: Math.round(money * rnd(0.8, 1.2)) };
 }
 
 /* ================= moving, exploring, battles, dungeons, roaming 凶兽首领 ================= */
@@ -1206,7 +1247,7 @@ const isNight = () => { if (window.__dbg && __dbg.night != null) return __dbg.ni
 const pdesc = P => C.story.f.moved && P.moved ? P.moved : P.desc;
 function go(loc, silent, force) {
   if (!PLACES[loc] || !placeOpen(loc)) return; if (!force && (STATE.battle || STATE.scene || STATE.dungeon)) { toast(STATE.battle ? '打着呢，走不开' : '先把眼前的事办完'); return; }
-  C.loc = loc; C.seen[loc] = 1; const P = PLACES[loc]; if (P.town && P.area !== 'xushen') C.home = loc === 'sc_willow' || loc === 'sc_chief' ? 'sc_street' : loc;
+  C.loc = loc; C.seen[loc] = 1; C.seenN = (C.seenN || 0) + 1; const P = PLACES[loc]; if (P.town && P.area !== 'xushen') C.home = loc === 'sc_willow' || loc === 'sc_chief' ? 'sc_street' : loc;
   sfx('step'); if (!silent) describe(); save(); refresh(); bannerDraw(); npcOnArrive(loc);
   if (!force) setTimeout(() => storyArrive(loc), 120);
 }
@@ -1255,11 +1296,15 @@ function startBattle(spec) {
 }
 function battleAct(act, who = 'hero') { // 石昊 and the 灵兽伙伴 each choose; once everyone has, the round plays out in speed order
   const B = STATE.battle; if (!B || B.over || animBusy()) return; const u = B.units.find(x => x.id === who); if (!u || !u.alive || B.acts[who] || !needInput(B).includes(u)) return;
-  if (act.item && !useItem(act.item, true)) return; B.acts[who] = act;
+  if (act.item) { // using an item is quick: it doesn't take 石昊's turn, but only one per round
+    if (who !== 'hero') return; if (B.itemRound === B.round) { toast('这回合已经吃过一次药了'); return; } if (!useItem(act.item, true)) return; const it = ITEMS[act.item];
+    B.itemRound = B.round; B.ev = []; B.lc0 = B.lc; const hp0 = u.hp; if (it.heal) u.hp = Math.min(u.hpMax, u.hp + u.hpMax * it.heal); if (it.mp) u.mp = Math.min(u.mpMax, u.mp + u.mpMax * it.mp);
+    fxe(B, { k: 'heal', t: u.id, v: Math.round(u.hp - hp0), hp: hpr(u) }); blog(B, `${uName(u)} 飞快地吃了 ${it.icon}${it.name}${it.heal ? ` <span class="heal">+${Math.round(u.hp - hp0)}</span>` : ''}（不占回合）`); B.seq++; sfx('heal'); renderBattle(true); netSync(); return; }
+  B.acts[who] = act;
   if (needInput(B).length) { renderBattle(true); netSync(); return; }
   battleResolve(B); renderBattle(); netSync(); if (B.over) battleFinish(B);
 }
-function battleUndo() { const B = STATE.battle; if (!B || B.over || !B.acts.hero || B.acts.hero.item) return; delete B.acts.hero; renderBattle(true); netSync(); }
+function battleUndo() { const B = STATE.battle; if (!B || B.over || !B.acts.hero) return; delete B.acts.hero; renderBattle(true); netSync(); }
 function battleFinish(B) { if (B.done) return; B.done = true; const r = Object.assign({ win: B.win, fled: !!B.fled, kills: B.kills, noLose: B.noLose }, B.win ? battleRewards(B) : {});
   const hero = B.units.find(u => u.kind === 'pc'); r.hp = hero.hp; r.mp = hero.mp; r.boss = B.room != null && B.dungeon && DUNGEONS[B.dungeon].rooms[B.room]?.boss ? B.dungeon : null;
   setTimeout(() => battleApply(r, B), window.__dbg && __dbg.instant ? 0 : animLeft() + (SET.motion === false ? 500 : 1100)); }
@@ -1269,7 +1314,7 @@ function battleApply(r, B) {
     if (C.pet && C.pets[C.pet]) { const p = C.pets[C.pet]; if (p.aff < 100 && chance(0.35)) { p.aff = Math.min(100, p.aff + 1); petEvoCheck(C.pet); } }
     relicFromKills(r.kills); for (const [id] of r.kills || []) exNote(C.loc, 'm', id);
     if (C.pets.ertuzi && C.pets.ertuzi.hatch < 0) { /* reserved */ }
-    if (r.exp) gainExp(r.exp); for (const it of r.items || []) addItem(it, 1); if (r.boss) storyDungeon(r.boss); if (C.hp <= 0) C.hp = 1; }
+    if (r.exp) gainExp(r.exp); if (r.money) gainMoney(r.money, '捡到'); for (const it of r.items || []) addItem(it, 1); if (r.boss) storyDungeon(r.boss); if (C.hp <= 0) C.hp = 1; }
   else if (r.fled) logLine('你逃了出来。', 'dim');
   else { sfx('lose'); C.stats.deaths++;
     if (r.noLose) C.hp = Math.max(C.hp, Math.round(s.hpMax * 0.3));
@@ -1955,10 +2000,10 @@ function runeHtml(R) {
    宝骨 · 灵兽觉醒 · 材料兑换 · 每日悬赏 · 地点探索度 · 称号 · 传送 · 睡到天黑/天亮 · 洞天重开 · 困难秘境 · 战斗教学 */
 
 /* ---------- 宝骨 ---------- */
-function gainRelic(id, quiet) { C.relics = C.relics || {}; if (C.relics[id]) return; C.relics[id] = 1; const R = RELICS[id]; C.eq = C.eq || []; if (C.eq.length < 2) C.eq.push(id);
+function gainRelic(id, quiet) { C.relics = C.relics || {}; if (C.relics[id]) return; C.relics[id] = 1; const R = RELICS[id]; C.eq = C.eq || []; if (C.eq.length < relicSlots(C.lv)) C.eq.push(id);
   if (!quiet) { logLine(`<b class="lvup">得到宝骨</b>：${R.i}<b>${R.n}</b>——${R.d}${C.eq.includes(id) ? '（已经戴上了）' : '（在“石昊”页里换着戴）'}`, 'sys'); sfx('epic'); bigFlash(R.n, 'relic'); } fixHp(); }
 function relicFromKills(kills) { for (const [mob, , boss] of kills || []) if (boss) for (const [id, R] of Object.entries(RELICS)) if (R.from === mob) gainRelic(id); }
-function equipRelic(id) { if (!C.relics || !C.relics[id]) return; C.eq = C.eq || []; const i = C.eq.indexOf(id); if (i >= 0) C.eq.splice(i, 1); else { if (C.eq.length >= 2) C.eq.shift(); C.eq.push(id); } fixHp(); sfx('click'); save(); refresh(); }
+function equipRelic(id) { if (!C.relics || !C.relics[id]) return; C.eq = C.eq || []; const i = C.eq.indexOf(id); if (i >= 0) C.eq.splice(i, 1); else { if (C.eq.length >= relicSlots(C.lv)) { toast('宝骨栏满了（' + relicSlots(C.lv) + ' 件），先摘下一件'); return; } C.eq.push(id); } fixHp(); sfx('click'); save(); refresh(); }
 
 /* ---------- 灵兽觉醒 at full affection ---------- */
 const EVO_TEXT = {
@@ -1992,7 +2037,7 @@ function bountyOptions(npc) { const out = []; bountyToday().forEach((b, i) => { 
 function bountyTake(i) { const b = bountyToday()[i]; if (!b || b.st === 'done') return;
   if (b.st === 'new') { b.st = 'on'; logLine(`【悬赏】${NPCS[b.npc].name}：${bountyText(b)}`, 'quest'); save(); refresh(); return; }
   if (!bountyReady(b)) return; if (b.kind === 'item') takeItem(b.id, b.n); b.st = 'done'; C.stats.bounty = (C.stats.bounty || 0) + 1;
-  logLine(`【悬赏完成】${NPCS[b.npc].name}很满意。`, 'quest'); addItem('baoyao'); addItem('lingyao'); gainExp(BAL.expNext(C.lv) * 0.3); const sk = C.bar.length ? pick(C.bar) : null; if (sk) { for (let k = 0; k < 5; k++) profUse(sk); logLine(`${SKILLS[sk].name} 熟练度 +5`, 'dim'); } sfx('loot'); save(); refresh(); }
+  logLine(`【悬赏完成】${NPCS[b.npc].name}很满意。`, 'quest'); gainMoney(20 + C.lv * 4, '赏钱'); addItem('baoyao'); addItem('lingyao'); gainExp(BAL.expNext(C.lv) * 0.3); const sk = C.bar.length ? pick(C.bar) : null; if (sk) { for (let k = 0; k < 5; k++) profUse(sk); logLine(`${SKILLS[sk].name} 熟练度 +5`, 'dim'); } sfx('loot'); save(); refresh(); }
 function bountyKill(mob) { if (!C.bounty || C.bounty.day !== today()) return; for (const b of C.bounty.list) if (b.st === 'on' && b.kind === 'kill' && b.id === mob && b.got < b.n) { b.got++; if (b.got === b.n) logLine(`【悬赏】${MOBS[mob].name} 够数了，回去找${NPCS[b.npc].name}。`, 'quest'); } }
 
 /* ---------- 地点探索度: every kind of beast here beaten + everything here gathered ---------- */
@@ -2000,7 +2045,7 @@ function exTargets(P) { const m = [...new Set((P.mobs || []).map(x => x[0]))], g
 function exState(loc) { C.ex = C.ex || {}; return C.ex[loc] || (C.ex[loc] = { m: {}, g: {} }); }
 function exCount(loc) { const P = PLACES[loc], T = exTargets(P), E = (C.ex && C.ex[loc]) || { m: {}, g: {} }; return { have: T.m.filter(x => E.m[x]).length + T.g.filter(x => E.g[x]).length, n: T.n, done: !!E.done }; }
 function exNote(loc, k, id) { const P = PLACES[loc]; if (!P || !P.lv) return; const T = exTargets(P); if (!T[k].includes(id)) return; const E = exState(loc); if (E[k][id]) return; E[k][id] = 1;
-  const c = exCount(loc); if (c.have >= c.n && !E.done) { E.done = 1; logLine(`<b class="lvup">${P.name} 探索完成</b>：这里的凶兽都交过手，能采的东西也都找到了。`, 'sys'); addItem('baoyao'); addItem('lingyao'); gainExp(BAL.expNext(C.lv) * 0.3); sfx('epic'); bigFlash(P.name + ' · 探索完成', 'relic'); } }
+  const c = exCount(loc); if (c.have >= c.n && !E.done) { E.done = 1; logLine(`<b class="lvup">${P.name} 探索完成</b>：这里的凶兽都交过手，能采的东西也都找到了。`, 'sys'); addItem('baoyao'); addItem('lingyao'); gainMoney(30 + C.lv * 5, '还翻出了'); gainExp(BAL.expNext(C.lv) * 0.3); sfx('epic'); bigFlash(P.name + ' · 探索完成', 'relic'); } }
 
 /* ---------- 称号 ---------- */
 function achCheck() { if (!C || NETROLE === 'guest') return; C.ach = C.ach || {}; for (const A of ACH) if (!C.ach[A.id]) { let ok = false; try { ok = A.ok(); } catch (e) { } if (ok) { C.ach[A.id] = now(); logLine(`<b class="lvup">获得称号「${A.n}」</b>——${A.d}`, 'sys'); toast('称号：' + A.n); sfx('level'); } } }
@@ -2047,6 +2092,20 @@ function tasks() {
 function curTask() { const T = tasks(); return T.find(t => t.key === C.track) || T[0]; }
 const taskWhere = () => curTask().where;
 function trackTask(key) { C.track = key; sfx('click'); save(); refresh(); }
+
+/* ---------- 歇脚 in the wild: once per visit, 40% back, and something may come sniffing ---------- */
+async function camp() { const P = PLACES[C.loc]; if (STATE.scene || STATE.battle || STATE.dungeon || !P.mobs || P.town) return; const key = C.loc + C.seenN; if (UI.campAt === key) { toast('刚歇过了，换个地方再歇'); return; } UI.campAt = key;
+  if (chance(0.25)) { logLine('你刚找了块石头坐下，草丛里就有东西扑了过来——', 'enc'); const id = wpick(P.mobs, x => x[1])[0]; const r = await startBattle({ mobs: [[id, clamp(rint(P.lv[0], P.lv[1]), 1, 30)]], title: `${P.name} · 歇脚被打断`, flee: true }); if (!r || !r.win) return; }
+  const s = charStats(); C.hp = Math.min(s.hpMax, C.hp + s.hpMax * 0.4); C.mp = Math.min(s.mpMax, C.mp + s.mpMax * 0.4); sfx('heal');
+  logLine(isNight() ? '你拢了一小堆火，靠着火歇了一会儿。气血、符力回了四成。' : '你找了块背风的石头靠着歇了一会儿。气血、符力回了四成。', 'dim'); save(); refresh(); }
+
+/* ---------- 灵石 and trading: sell in any town, buy where there is a stall ---------- */
+const PRICE = { milk: 6, herb: 8, meat: 10, lingyao: 30, baoyao: 90, bone: 6 }; // buying price; selling gets half
+const sellPrice = id => Math.max(1, Math.floor((PRICE[id] || 0) / 2));
+const canTrade = () => !!(PLACES[C.loc].town && PLACES[C.loc].area !== 'xushen');
+function sellItem(id, all) { const it = ITEMS[id]; if (!canTrade() || !it || !PRICE[id] || !itemN(id)) return; const n = all ? itemN(id) : 1; takeItem(id, n); C.money = (C.money || 0) + sellPrice(id) * n; logLine(`卖掉 ${it.icon}${it.name} ×${n}，得到 💎${sellPrice(id) * n} 灵石。`, 'loot'); sfx('gold'); save(); refresh(); }
+function buyItem(id) { const P = PLACES[C.loc]; if (!P.shop || !P.shop.includes(id)) return; if ((C.money || 0) < PRICE[id]) { toast('灵石不够'); return; } C.money -= PRICE[id]; addItem(id, 1, true); logLine(`买了 ${ITEMS[id].icon}${ITEMS[id].name}，花了 💎${PRICE[id]}。`, 'loot'); sfx('gold'); save(); refresh(); }
+function gainMoney(n, why) { n = Math.round(n); if (n <= 0) return; C.money = (C.money || 0) + n; if (why) logLine(`${why} 💎${n} 灵石`, 'loot'); }
 
 /* ================= the living village: NPC chatter tied to where you are and how far the story has gone,
    rumours about roaming beasts, and the 虚神界 ladder ================= */
@@ -2278,7 +2337,8 @@ function renderActs() {
   if (P.mobs) acts.push(`<button class="ab main" onclick="explore()">🔍 探索</button>`);
   if (ROAM && !ROAM.dead && ROAM.loc === C.loc && now() >= ROAM.start && now() < ROAM.end) acts.push(`<button class="ab wb" onclick="fightRoam()">⚔ ${MOBS[ROAM.id].name}</button>`);
   if (P.dungeon) { acts.push(`<button class="ab main" onclick="enterDungeon('${P.dungeon}')">🏯 闯${DUNGEONS[P.dungeon].name}</button>`); if (C.dungeons[P.dungeon]) acts.push(`<button class="ab" onclick="enterDungeonHard('${P.dungeon}')">🏯 困难</button>`); }
-  const pa = P.acts || []; if (P.town && P.area !== 'xushen' && (C.loc === 'sc_willow' || C.loc === 'sc_street' || pa.includes('rest'))) acts.push(`<button class="ab" onclick="rest()">🛏 休息</button>`);
+  const pa = P.acts || []; if (P.town && P.area !== 'xushen') acts.push(`<button class="ab" onclick="rest()">🛏 休息</button>`); else if (P.mobs && !P.dungeon) acts.push(`<button class="ab" ${UI.campAt === C.loc + C.seenN ? 'disabled' : ''} onclick="camp()">🔥 歇脚</button>`);
+  if (P.shop || P.town && P.area !== 'xushen') acts.push(`<button class="ab" onclick="UI.bagTab='shop';navTo('bag')">${P.shop ? '🛒 买卖' : '💰 卖东西'}</button>`);
   if (pa.includes('train')) acts.push(`<button class="ab" onclick="train()">${C.loc === 'bt_train' ? '⚡ 挨雷劈' : '🪨 举石锁'}</button>`);
   if (pa.includes('arena')) acts.push(`<button class="ab main" onclick="openModal('arena')">🪞 挑战（${(arenaDaily(), C.arena.tries)}次）</button>`);
   if (canTeleport()) acts.push(`<button class="ab" onclick="teleport()">🌀 传送</button>`);
@@ -2319,11 +2379,12 @@ function renderBattleActs(cur) {
   if (B.over) { A.innerHTML = `<div class="wait" style="color:#ffcfb8">${B.win ? '赢了！' : B.fled ? '跑掉了' : '……'}</div>`; return; }
   if (!cur) { A.innerHTML = `<div class="wait">${C.auto ? '🤖 自动战斗中…… <button class="ab sm q" onclick="toggleAuto()">停下</button>' : '……'}</div>`; return; }
   if (cur.pet) { const mv = petMoves(cur); const ha = B.acts.hero; if (ha && !C.seen.tutPet && NETROLE !== 'guest') { C.seen.tutPet = 1; toast('石昊的招选好了——再给伙伴选一招，这回合才开打'); }
-    A.innerHTML = `${ha ? `<div class="who-turn ok">🧒 石昊已选好：<b>${actText(B, ha)}</b></div>` : ''}<div class="who-turn">${PETS[cur.mob].icon} 现在轮到 <b>${esc(cur.name)}</b> <span class="dim">· 给它选一招，选完这回合就开打${UI.selFoe ? '' : '（单体招先点敌人选目标）'}</span></div><div class="arow">${mv.map(({ s, i }) => `<button class="skb pet" onclick="battleAct({psk:${i},tgt:UI.selFoe},'pet')"><span class="i">${s.healAlly ? '💚' : s.shieldAll ? '🛡️' : s.aoe ? '💥' : s.st && s.st.k === 'stun' ? '💫' : '🐾'}</span>${s.n}<span class="c">${s.aoe ? '群体' : s.healAlly ? '治疗' : s.shieldAll ? '护盾' : '单体'}${s.el ? EL[s.el].i : ''}</span></button>`).join('')}<button class="skb pet" onclick="battleAct({guard:1},'pet')"><span class="i">🛡️</span>防御<span class="c">伤害减半</span></button></div>
+    A.innerHTML = `${ha ? `<div class="who-turn ok">🧒 石昊已选好：<b>${actText(B, ha)}</b></div>` : ''}<div class="who-turn">${PETS[cur.mob].icon} 现在轮到 <b>${esc(cur.name)}</b> <span class="dim">· 给它选一招，选完这回合就开打${UI.selFoe ? '' : '（单体招先点敌人选目标）'}</span></div><div class="arow">${PETS[cur.mob].sk.map((s, i) => { const ok = mv.some(x => x.i === i); if (!ok && s.evo) return ''; const tag = s.aoe ? '全体' : s.healAlly ? '治疗' : s.shieldAll ? '全队盾' : s.shieldHero ? '给石昊盾' : s.buffHero ? '给石昊' : s.taunt ? '嘲讽' : '单体';
+      return `<button class="skb pet c-${s.cat}" ${ok ? '' : 'disabled'} title="${esc(s.d || '')}" onclick="battleAct({psk:${i},tgt:UI.selFoe},'pet')"><span class="i">${{ atk: '🐾', buff: '✨', debuff: '🌀', def: '🛡️' }[s.cat]}</span>${s.n}<span class="c">${ok ? PET_CAT[s.cat].n + '·' + tag + (s.el ? EL[s.el].i : '') : '亲近' + s.aff}</span></button>`; }).join('')}</div>
       <div class="arow"><button class="ab sm" onclick="battleUndo()">‹ 重选石昊</button><button class="ab sm ${C.auto ? 'q' : ''}" onclick="toggleAuto()">🤖 自动</button></div>`; return; }
   const sk = u.sk.map(id => { const S = SKILLS[id], cd = u.cd[id] || 0, no = u.mp < S.mp, pl = profLevel(id); return `<button class="skb" ${cd || no ? 'disabled' : ''} onclick="pickSkill('${id}')" title="${esc(S.desc)}"><span class="i">${S.icon}</span>${S.name}${S.mp ? `<span class="c">${S.mp}</span>` : ''}${pl ? `<span class="pf">${PROF[pl].s}</span>` : ''}${cd ? `<span class="cd">${cd}</span>` : ''}</button>`; }).join('');
   const heal = ['milk', 'herb', 'meat', 'lingyao', 'baoyao'].filter(i => itemN(i)); const swaps = B.noPet ? [] : Object.keys(C.pets).filter(id => id !== C.pet);
-  A.innerHTML = `<div class="who-turn">🧒 <b>石昊</b> 的回合</div><div class="arow">${sk}</div><div class="arow">${canCrush(B) ? `<button class="ab sm q" onclick="battleAct({crush:1})">👊 一拳解决</button>` : ''}${heal.map(i => `<button class="ab sm" onclick="battleAct({item:'${i}'})">${ITEMS[i].icon}${itemN(i)}</button>`).join('')}
+  A.innerHTML = `<div class="who-turn">🧒 <b>石昊</b> 的回合</div><div class="arow">${sk}</div><div class="arow">${canCrush(B) ? `<button class="ab sm q" onclick="battleAct({crush:1})">👊 一拳解决</button>` : ''}${heal.map(i => `<button class="ab sm" ${B.itemRound === B.round ? 'disabled' : ''} title="${ITEMS[i].name}：不占回合，每回合能吃一次" onclick="battleAct({item:'${i}'})">${ITEMS[i].icon}${itemN(i)}</button>`).join('')}
     ${swaps.map(id => `<button class="ab sm" onclick="battleAct({swap:'${id}'})" title="换${PETS[id].name}上场">⇄${PETS[id].icon}</button>`).join('')}<button class="ab sm" onclick="battleAct({flee:1})" ${B.flee ? '' : 'disabled'}>🏃 跑</button><button class="ab sm ${C.auto ? 'q' : ''}" onclick="toggleAuto()">🤖 ${C.auto ? '自动中' : '自动'}</button></div>`;
 }
 function pickSkill(id) { battleAct({ sk: id, tgt: SKILLS[id].tgt === 'enemy' ? UI.selFoe : null }); }
@@ -2544,8 +2605,8 @@ function pHero() {
   return `<div class="card"><div class="me-hd"><div style="flex:1;min-width:0"><div class="nm">石昊 <span class="dim" style="font-size:.85rem">小不点</span>${C.title && ACH.find(a => a.id === C.title) ? ` <span class="pill gold">${ACH.find(a => a.id === C.title).n}</span>` : ''}</div><div class="sub">${R.name} · 第 ${C.lv} 层${C.dt.length ? ` · ${C.dt.length} 座洞天` : ''}</div></div><div class="pw" title="战力">${fmt(s.power)}</div></div>
     <div class="bars" style="margin-top:8px">气血 ${Math.ceil(C.hp)}/${s.hpMax}<div class="bar"><i style="width:${C.hp / s.hpMax * 100}%"></i></div>符力 ${Math.floor(C.mp)}/${s.mpMax}<div class="bar mp"><i style="width:${C.mp / s.mpMax * 100}%"></i></div>经验 ${fmt(C.exp)}/${fmt(BAL.expNext(C.lv))}<div class="bar exp"><i style="width:${Math.min(100, C.exp / BAL.expNext(C.lv) * 100)}%"></i></div></div>
     <div class="kv"><div><span>攻击</span> ${s.atk}</div><div><span>防御</span> ${s.def}</div><div><span>身法</span> ${s.spd}</div><div><span>暴击</span> ${(s.crit * 100).toFixed(0)}%</div></div>${dt}</div>
-    <div class="card"><h3>宝术 <span class="dim" style="font-size:.8rem;font-family:var(--ff)">点选带进战斗（${C.bar.length}/4）· 越用越熟</span></h3><div class="list">${sk}</div></div>
-    <div class="card"><h3>宝骨 <span class="dim" style="font-size:.8rem;font-family:var(--ff)">打倒首领得到，戴两件（${(C.eq || []).length}/2）</span></h3>${relics || '<div class="dim" style="font-size:.87rem">还没有。第一次打倒一个首领，它会留下点东西。</div>'}</div>
+    <div class="card"><h3>宝术 <span class="dim" style="font-size:.8rem;font-family:var(--ff)">点选带进战斗（${C.bar.length}/${barSlots(C.lv)}，境界越高能带越多）· 越用越熟</span></h3><div class="list">${sk}</div></div>
+    <div class="card"><h3>宝骨 <span class="dim" style="font-size:.8rem;font-family:var(--ff)">打倒首领得到（${(C.eq || []).length}/${relicSlots(C.lv)}，境界越高能戴越多）</span></h3>${relics || '<div class="dim" style="font-size:.87rem">还没有。第一次打倒一个首领，它会留下点东西。</div>'}</div>
     <div class="card"><h3>修炼</h3><div class="list">${gf}</div></div>
     <div class="card"><h3>称号 <span class="dim" style="font-size:.8rem;font-family:var(--ff)">${Object.keys(C.ach || {}).length}/${ACH.length} · 点一个戴上</span></h3><div class="dts">${ACH.map(A => (C.ach || {})[A.id] ? `<button class="sb ${C.title === A.id ? 'pri' : ''}" style="min-height:30px" title="${A.d}" onclick="setTitle('${A.id}')">${A.n}</button>` : `<span class="pill" title="${A.d}">？ ${A.d}</span>`).join('')}</div></div>`;
 }
@@ -2557,16 +2618,23 @@ function pPet() {
     h += `<div class="card"><div class="row"><span style="font-size:1.9rem">${P.icon}</span><div style="flex:1"><h3 style="margin:0">${P.name} <span class="pill gold">${P.role}</span></h3><div class="dim" style="font-size:.8rem">${P.race}</div></div><button class="sb ${on ? 'pri' : ''}" onclick="setPet('${id}')">${on ? '跟着你' : '让它跟着'}</button></div>
       <div class="dim" style="font-size:.87rem;margin:6px 0">${P.desc}</div>
       <div class="bars">亲近 ${p.aff}/100${p.evo ? ' · <b>已觉醒</b>（全属性 +15%）' : ' · 满 100 会觉醒'}<div class="bar exp"><i style="width:${p.aff}%"></i></div></div>
-      <div style="font-size:.87rem">${P.sk.map(s => `<span class="pill" style="${open.includes(s) ? 'color:#f0d79a;border-color:#a8843e' : ''}">${s.n}${s.aoe ? '·群' : ''}${s.healAlly ? '·治疗' : ''}${s.shieldAll ? '·护盾' : ''}${s.st && s.st.k === 'stun' ? '·晕' : ''}${s.el ? EL[s.el].i : ''}${s.aff && p.aff < s.aff ? ` · 亲近${s.aff}` : ''}</span>`).join('')}</div>
+      <div class="list" style="margin-top:4px">${P.sk.map(s => { const ok = open.includes(s); return `<div class="li ${ok ? '' : 'unk'}" style="padding:5px 8px"><span class="pill" style="color:${PET_CAT[s.cat].c};border-color:${PET_CAT[s.cat].c}">${PET_CAT[s.cat].n}</span><div class="t"><b>${s.n}</b>${ok ? '' : s.evo ? ' <span class="dim">（觉醒后）</span>' : ` <span class="dim">（亲近 ${s.aff}）</span>`}<small>${s.d || ''}</small></div></div>`; }).join('')}</div>
       ${foods.length ? `<div class="row" style="flex-wrap:wrap;margin-top:6px">${foods.map(f => `<button class="sb" onclick="feedPet('${id}','${f}')">喂${ITEMS[f].icon}${ITEMS[f].name}×${itemN(f)}</button>`).join('')}</div>` : '<div class="dim" style="font-size:.8rem;margin-top:4px">没有能喂的东西（兽奶、凶兽肉、灵药、兽骨……）</div>'}</div>`; }
   if (itemN('peaegg') && ids.length) h += `<div class="card"><div class="dim">🥚 怀里的蛋还没孵出来（${C.story.f.eggWins || 0}/8 场胜仗）。</div></div>`;
-  if (ids.length) h = '<div class="card dim" style="font-size:.85rem">灵兽伙伴跟着你打仗，每回合石昊出完招就轮到它，由你给它选招。战斗里可以点 ⇄ 换另一个上场。</div>' + h;
+  if (ids.length) h = '<div class="card dim" style="font-size:.85rem">灵兽伙伴跟着你打仗，每回合石昊出完招就轮到它，由你给它选招。它的招分四种：<b>攻击</b>、给石昊的<b>增益</b>、给敌人的<b>减益</b>、<b>防守</b>——破甲、印记、战吼都能让石昊的宝术打得更狠；石昊把敌人打晕，伙伴打它也更痛。亲近越高会的越多。战斗里可以点 ⇄ 换另一个上场。</div>' + h;
   return h || '<div class="dim">还没有灵兽伙伴。</div>';
 }
+const BAG_TABS = [['use', '药品'], ['mat', '材料'], ['gf', '修炼'], ['key', '要物'], ['shop', '买卖']];
 function pBag() {
-  const ids = Object.keys(C.bag).sort((a, b) => ['use', 'gf', 'mat', 'key'].indexOf(ITEMS[a].type) - ['use', 'gf', 'mat', 'key'].indexOf(ITEMS[b].type));
-  if (!ids.length) return '<div class="dim">空空如也。</div>';
-  return '<div class="list">' + ids.map(id => { const it = ITEMS[id]; const a = it.type === 'use' ? `<button class="sb" onclick="useItem('${id}')">用</button>` : it.type === 'gf' ? `<button class="sb pri" onclick="useItem('${id}')">炼化</button>` : '';
+  const P = PLACES[C.loc], tab = BAG_TABS.some(t => t[0] === UI.bagTab) ? UI.bagTab : 'use', trade = canTrade();
+  const head = `<div class="card"><div class="row"><div>灵石 <span class="pw">💎${fmt(C.money || 0)}</span></div><span class="sp"></span><span class="dim" style="font-size:.8rem">${trade ? (P.shop ? `${P.shopBy}：能买能卖` : '这里能卖东西') : '到村子、补天阁才能买卖'}</span></div></div>
+    <div class="seg" style="margin-bottom:8px">${BAG_TABS.map(([k, n]) => `<button class="sb ${tab === k ? 'on' : ''}" onclick="UI.bagTab='${k}';renderSide()">${n}${k !== 'shop' ? ` ${Object.keys(C.bag).filter(id => ITEMS[id].type === k).length}` : ''}</button>`).join('')}</div>`;
+  if (tab === 'shop') { const sell = Object.keys(C.bag).filter(id => PRICE[id]);
+    return head + (P.shop ? `<div class="card"><h4 style="margin-top:0">${P.shopBy} · 买</h4><div class="list">${P.shop.map(id => `<div class="li"><span class="ic">${ITEMS[id].icon}</span><div class="t">${ITEMS[id].name} <span class="dim">（有 ${itemN(id)}）</span><small>${ITEMS[id].desc}</small></div><div class="acts"><button class="sb pri" ${(C.money || 0) < PRICE[id] ? 'disabled' : ''} onclick="buyItem('${id}')">💎${PRICE[id]}</button></div></div>`).join('')}</div></div>` : `<div class="card dim" style="font-size:.87rem">这里没有卖东西的摊子。村中有货郎，补天阁山门外有外门坊市。</div>`)
+      + `<div class="card"><h4 style="margin-top:0">卖${trade ? '' : '（到城镇才能卖）'}</h4>${sell.length ? `<div class="list">${sell.map(id => `<div class="li"><span class="ic">${ITEMS[id].icon}</span><div class="t">${ITEMS[id].name} ×${C.bag[id]}<small>一个卖 💎${sellPrice(id)}</small></div><div class="acts"><button class="sb" ${trade ? '' : 'disabled'} onclick="sellItem('${id}')">卖 1</button><button class="sb" ${trade ? '' : 'disabled'} onclick="sellItem('${id}',1)">全卖</button></div></div>`).join('')}</div>` : '<div class="dim">没有能卖的东西。</div>'}</div>`; }
+  const ids = Object.keys(C.bag).filter(id => ITEMS[id].type === tab);
+  if (!ids.length) return head + '<div class="dim">这一栏是空的。</div>';
+  return head + '<div class="list">' + ids.map(id => { const it = ITEMS[id]; const a = (it.type === 'use' ? `<button class="sb" onclick="useItem('${id}')">用</button>` : it.type === 'gf' ? `<button class="sb pri" onclick="useItem('${id}')">炼化</button>` : '') + (trade && PRICE[id] ? `<button class="sb" onclick="sellItem('${id}')">卖 💎${sellPrice(id)}</button>` : '');
     return `<div class="li"><span class="ic">${it.icon}</span><div class="t">${it.name} ×${C.bag[id]}<small>${it.desc}</small></div><div class="acts">${a}</div></div>`; }).join('') + '</div>';
 }
 function pMap() {
@@ -2646,7 +2714,7 @@ function netSync() { if (NETROLE !== 'host' || !NET.conns.size || !C) return; cl
 function snapshot() { return { t: 'st', C, st: { battle: STATE.battle, dungeon: STATE.dungeon, scene: !!STATE.scene, busy: STATE.busy, dtPending: !!STATE.dtPending }, dlg: DLG ? Object.assign(DLG.rune ? { rune: DLG.rune } : DLG.choice ? { choice: DLG.choice.map(o => ({ t: o.t, dis: !!o.dis })) } : { o: DLG.o }, { ctx: dlgCtx() }) : null, roam: ROAM, ctrl: NET.ctrl, peers: NET.conns.size }; }
 function takeControl() { if (NETROLE === 'host') { NET.ctrl = 'host'; netBroadcast({ t: 'ctrl', ctrl: 'host' }); } else netSend({ t: 'take' }); toast('你来操作'); refresh(); if (UI.modal === 'coop') openModal('coop', 1); }
 /* commands a guest (or a host who handed over control) may trigger by clicking */
-const CMD_NAMES = ['go', 'explore', 'rest', 'train', 'enterDungeon', 'fightRoam', 'autoWalk', 'npcTalk', 'battleAct', 'toggleAuto', 'useItem', 'feedPet', 'setPet', 'toggleBar', 'arenaFight', 'storyHereRun', 'runeTap', 'runeSkip', 'arenaClaim', 'battleUndo', 'equipRelic', 'teleport', 'tradeDo', 'bountyTake', 'enterDungeonHard', 'setTitle', 'trackTask'];
+const CMD_NAMES = ['go', 'explore', 'rest', 'train', 'enterDungeon', 'fightRoam', 'autoWalk', 'npcTalk', 'battleAct', 'toggleAuto', 'useItem', 'feedPet', 'setPet', 'toggleBar', 'arenaFight', 'storyHereRun', 'runeTap', 'runeSkip', 'arenaClaim', 'battleUndo', 'equipRelic', 'teleport', 'tradeDo', 'bountyTake', 'enterDungeonHard', 'setTitle', 'trackTask', 'camp', 'sellItem', 'buyItem'];
 const CMDS = {};
 UI.inClick = false; const markClick = () => { UI.inClick = true; setTimeout(() => { UI.inClick = false; }, 0); };
 document.addEventListener('click', markClick, true); document.addEventListener('keydown', markClick, true);

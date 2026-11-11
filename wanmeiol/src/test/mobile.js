@@ -16,6 +16,7 @@ const UA = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/6
     await pg.evaluate(() => { __dbg.battleAct({ sk: 'lei' }); }); await shot('5battle2');
     await pg.evaluate(() => { __dbg.STATE.battle = null; __dbg.STATE.busy = false; __dbg.refresh(); });
     for (const tab of ['hero', 'pet', 'bag', 'map']) { await pg.evaluate(t => __dbg.navTo(t), tab); await shot('6' + tab); }
+    await pg.evaluate(() => { __dbg.go('sc_street', true, true); __dbg.C.money = 120; UI.bagTab = 'shop'; __dbg.navTo('bag'); }); await shot('6shop'); await pg.evaluate(() => { UI.bagTab = 'use'; });
     await pg.evaluate(() => { __dbg.navTo('log'); }); await shot('7log'); await pg.evaluate(() => { UI.logTab = 'memo'; renderSide(); }); await shot('7memo'); await pg.evaluate(() => { UI.memo = 0; renderSide(); }); await shot('7memo2'); await pg.evaluate(() => { UI.logTab = 'codex'; renderSide(); }); await shot('7codex');
     await pg.evaluate(() => { __dbg.navTo('adv'); __dbg.C.story.f.xushen = 1; __dbg.go('xs_hall', true, true); __dbg.openModal('arena'); }); await shot('8arena');
     await pg.evaluate(() => { __dbg.openModal('set'); }); await shot('8set'); await pg.evaluate(() => __dbg.closeModal());

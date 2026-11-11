@@ -10,7 +10,7 @@ const DIRS = { n: '北', s: '南', e: '东', w: '西', u: '入', d: '出' };
 const F0 = k => () => !!(C && C.story.f[k]);
 const PLACES = {
   /* ---- 石村 (after the move the same nodes describe the new village) ---- */
-  sc_street: { name: '村中', area: 'shicun', x: 1, y: 1, town: 1, exits: { n: 'sc_gate', w: 'sc_willow', e: 'sc_chief', s: 'sc_yard' }, npcs: ['dazhuang'],
+  sc_street: { name: '村中', area: 'shicun', x: 1, y: 1, town: 1, shop: ['milk', 'herb', 'meat'], shopBy: '货郎', exits: { n: 'sc_gate', w: 'sc_willow', e: 'sc_chief', s: 'sc_yard' }, npcs: ['dazhuang'],
     night: '夜里的石村静悄悄的，只有几户人家的窗缝里还漏出一点火光。屋檐下的兽肉在风里轻轻打转，远处偶尔一声兽吼，狗就跟着叫两声。',
     desc: '青石铺成的小路从村子当中穿过，屋檐下挂着风干的兽肉。几个光屁股的娃娃追着一只绒毛小兽跑过去，笑声一直洒到村口。',
     moved: '新的石村建在一片山清水秀的谷地里，溪水绕着村子流过。石屋是新垒的，墙缝里的泥还没干透，可屋檐下照旧挂满了兽肉。' },
@@ -54,7 +54,7 @@ const PLACES = {
   xs_hall: { name: '虚神界', area: 'xushen', x: 0, y: 0, town: 1, need: F0('xushen'), exits: { d: 'sc_willow' }, acts: ['arena'],
     desc: '柳神把你的神魂送进了一片灰白的虚空。脚下是一块块悬浮的石台，各地的少年天才在这里交手，伤在神魂，不伤肉身。半空悬着一面光幕，上面流转着名字和排名。' },
   /* ---- 补天阁 ---- */
-  bt_gate: { name: '补天阁山门', area: 'butian', x: 1, y: 2, town: 1, need: F0('butian'), exits: { s: 'dh_road', n: 'bt_court', w: 'bt_wild' }, npcs: ['qingfeng'],
+  bt_gate: { name: '补天阁山门', area: 'butian', x: 1, y: 2, town: 1, shop: ['herb', 'meat', 'lingyao', 'baoyao'], shopBy: '外门坊市', need: F0('butian'), exits: { s: 'dh_road', n: 'bt_court', w: 'bt_wild' }, npcs: ['qingfeng'],
     night: '夜里的山门点着两盏长明灯，九座山峰只剩下黑影，铁索在风里轻轻作响。外门的院子里，还有人在练拳。',
     desc: '云雾里露出九座山峰，峰与峰之间以铁索相连。山门是两根擎天的石柱，柱上刻着“补天”二字，看久了眼睛发痛。' },
   bt_wild: { name: '阁外山林', area: 'butian', x: 0, y: 2, lv: [11, 13], need: F0('butian'), exits: { e: 'bt_gate', n: 'bt_tiger' }, mobs: [['tiger', 3], ['ape', 3]], gather: [['lingyao', 0.3], ['herb', 0.3]],
