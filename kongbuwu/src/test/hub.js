@@ -1,0 +1,9 @@
+// 仓库根目录 python3 -m http.server 8790 后：node test/hub.js — 大厅卡片能打开游戏；标题和设置里都能回大厅
+const { chromium } = require('playwright');
+(async () => { const b = await chromium.launch({ args: ['--disable-gpu'] }); const pg = await b.newPage({ viewport: { width: 393, height: 852 } }); const errs = []; pg.on('pageerror', e => errs.push(e.message)); const ok = (n, c) => { console.log((c ? 'ok   ' : 'FAIL ') + n); if (!c) errs.push(n); };
+  await pg.goto('http://localhost:8790/'); await pg.waitForTimeout(600); const href = await pg.evaluate(() => { const a = [...document.querySelectorAll('a,[data-url],[onclick]')].find(e => (e.getAttribute('href') || e.dataset.url || e.getAttribute('onclick') || '').includes('kongbuwu/')); return a ? (a.getAttribute('href') || a.dataset.url || 'onclick') : (document.body.innerHTML.includes('kongbuwu') ? 'text' : ''); }); ok('大厅里有恐怖屋的卡片', !!href);
+  const cov = await pg.evaluate(async () => (await fetch('covers/kongbuwu.webp')).status); ok('封面存在', cov === 200);
+  await pg.goto('http://localhost:8790/kongbuwu/'); await pg.waitForTimeout(500); ok('标题画面有「‹ 游戏厅」', await pg.evaluate(() => document.querySelector('#tbtns').textContent.includes('游戏厅')));
+  await pg.click('#tstart'); await pg.waitForTimeout(400); await pg.evaluate(() => { dropRunning(); refresh(); openModal('set'); }); await pg.waitForTimeout(200); ok('设置里有「返回游戏厅」', !!(await pg.$('#hubb'))); await pg.click('#hubb'); ok('第一次点只是确认', (await pg.textContent('#hubb')).includes('再点一次') && pg.url().includes('kongbuwu')); await pg.click('#hubb'); await pg.waitForTimeout(600); ok('第二次点回到大厅', !pg.url().includes('kongbuwu'));
+  await pg.goto('http://localhost:8790/kongbuwu/'); await pg.waitForTimeout(400); ok('回来后可以「继续」', !!(await pg.$('#tcont')));
+  console.log('errors', errs); await b.close(); process.exit(errs.length ? 1 : 0); })();

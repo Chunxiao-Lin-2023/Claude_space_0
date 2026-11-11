@@ -1,0 +1,53 @@
+/* 非战斗的互动用小游戏（RULES：能跳过；失败先问「再试一次 / 跳过」；提示清楚，不靠硬记） */
+const MINI = {
+  /* timing：看准时机 n 次；hold：按住到刻度再松开；resist：忍住别点（keep=还要按节奏念名字，final=最后那一下要点）；mash：连点；stealth：趁它没看着迈步 */
+  sew: { type: 'timing', t: '缝合人偶', tip: '针走到<b>亮的那一段</b>时点「下针」。一共 3 针。', n: 3, btn: '下针' }, makeup: { type: 'timing', t: '殓容 · 配色', tip: '樱桃红加木槿紫。颜色过渡到<b>亮的那一段</b>时点「落笔」。3 笔。', n: 3, btn: '落笔', fast: 1.2 },
+  lock: { type: 'timing', t: '砸锁', tip: '锤头荡到<b>亮的那一段</b>时点「砸」。2 下。', n: 2, btn: '砸' }, doll24: { type: 'timing', t: '活偶 · 二十四个名字', tip: '每一刀都要落在<b>亮的那一段</b>。4 刀。', n: 4, btn: '下刀', fast: 1.25 },
+  pen: { type: 'timing', t: '笔仙', tip: '笔在自己动。等它转到<b>亮的那一段</b>再问。3 个问题。', n: 3, btn: '问', fast: 1.1 },
+  mirror: { type: 'resist', t: '镜子游戏', tip: '闭着眼。按节奏点<b>「陈歌」</b>念自己的名字，别让上面的条空掉。<b>其它任何东西都不要点。</b>', dur: 14, keep: 1, decoy: ['睁开眼看看', '镜子裂了！', '谁在摸你的脸？', '回头', '蜡烛灭了', '它在往外撞'] },
+  silent: { type: 'resist', t: '看谁先开口说话', tip: '<b>什么都不要点。</b>不管屏幕上出现什么，撑到条走完。', dur: 10, decoy: ['点击继续 ▼', '“你输了。”', '说句话', '求饶', '喊张雅', '▶ 跳过'] },
+  guest: { type: 'resist', t: '看不见的客人', tip: '你躺在床下。<b>什么都不要点</b>——直到出现<b>「看它的脸」</b>，那一下必须点。', dur: 9, final: '看它的脸', decoy: ['翻身', '咳嗽', '那双拖鞋停在了床边', '看一眼', '屏住呼吸'] },
+  water: { type: 'hold', t: '深水', tip: '<b>按住</b>「屏住呼吸」不放，直到条走进<b>亮的那一段</b>再松手。中途不管发生什么都别松。', dur: 9 },
+  door: { type: 'mash', t: '顶住门', tip: '连点「顶住」，别让条掉到底。撑到时间走完。', dur: 8, btn: '顶住' }, run: { type: 'mash', t: '跑', tip: '连点「跑」，把条顶满。', dur: 9, btn: '跑', fill: 1 }, hair: { type: 'mash', t: '挣脱', tip: '连点「挣」，把条顶满。', dur: 9, btn: '挣', fill: 1 },
+  sneak: { type: 'stealth', t: '别被看见', tip: '眼睛<b>闭着</b>的时候点「迈步」，<b>睁开</b>的时候别动。走 6 步，被看见 2 次就失败。', steps: 6 }, peek: { type: 'stealth', t: '门缝', tip: '他们<b>背过身</b>（眼睛闭着）的时候点「凑近」。6 次，被看见 2 次就失败。', steps: 6, btn: '凑近' }
+};
+let MG = null;
+function miniGame(id, o) { o = o || {}; const def = Object.assign({}, MINI[id], o); if (window.__dbg && (__dbg.auto || __dbg.mini != null)) return Promise.resolve(__dbg.mini != null ? !!__dbg.mini : true);
+  return new Promise(res => { MG = { id, def, res, tries: 0 }; miniNew(); }); }
+function miniNew() { const g = MG, d = g.def; g.tries++; g.over = 0; g.t0 = performance.now(); g.hit = 0; g.strikes = 0; g.pos = 0; g.meter = d.type === 'mash' ? (d.fill ? .15 : .7) : .85; g.ready = d.type === 'timing' || d.type === 'hold'; g.holding = false; g.decoys = []; g.nextDecoy = 900; g.watch = false; g.nextFlip = 900; g.zone = [.38, .62]; g.msg = ''; g.final = 0;
+  if (d.type === 'timing') miniZone(); STATE.mini = g; applyMode(); miniHtml(); cancelAnimationFrame(g.raf); g.last = performance.now(); g.raf = requestAnimationFrame(miniLoop); musicMode('phone'); }
+function miniZone() { const g = MG, w = Math.max(.12, .26 - g.hit * .035); const a = .1 + rnd() * (.8 - w); g.zone = [a, a + w]; }
+function miniLoop(now) { const g = MG; if (!g || g.over) return; const d = g.def, dt = Math.min(.05, (now - g.last) / 1000); g.last = now; if (!g.ready) { g.t0 = now; g.raf = requestAnimationFrame(miniLoop); return; } const el = (now - g.t0) / 1000; const sp = (window.__dbg && __dbg.miniSlow) ? .4 : 1;
+  if (d.type === 'timing') { const per = 1.5 / (d.fast || 1) / (1 + g.hit * .12); g.pos = .5 - .5 * Math.cos(el / per * Math.PI * sp); }
+  else if (d.type === 'hold') { if (g.holding) { g.pos = Math.min(1.08, g.pos + dt / d.dur); if (g.pos > .45 && !g.e1) { g.e1 = 1; g.msg = '有一只手按在了你的后脑上。'; sfx('heart'); shake(); } if (g.pos > .7 && !g.e2) { g.e2 = 1; g.msg = '它在往下按。别松。'; sfx('heart'); shake(); } if (g.pos >= 1.07) return miniEnd(false, '你呛了一大口水。'); } else if (g.pos > 0 && g.started) return miniEnd(g.pos >= .86, g.pos >= .86 ? '' : '你提前抬了头。'); }
+  else if (d.type === 'resist') { g.pos = el / d.dur; if (d.keep) { g.meter -= dt * .23; if (g.meter <= 0) return miniEnd(false, '你停下了。它替你念完了那个名字。'); }
+    if (el * 1000 > g.nextDecoy && g.pos < .93) { g.nextDecoy = el * 1000 + 1100 + rnd() * 900; g.decoys.push({ t: pickFresh('dc_' + g.id, d.decoy), x: 4 + rnd() * 36, y: 6 + rnd() * 62, born: el }); if (g.decoys.length > 3) g.decoys.shift(); sfx(pick(['drip', 'knock', 'static', 'heart'])); miniHtml(); }
+    if (d.final && g.pos >= 1 && !g.final) { g.final = el; g.decoys = []; sfx('door'); miniHtml(); } if (d.final ? (g.final && el - g.final > 1.8) : g.pos >= 1) return miniEnd(!d.final, d.final ? '你没敢看。' : ''); }
+  else if (d.type === 'mash') { g.meter -= dt * (d.fill ? .2 : .3) * (1 + el / d.dur * .6); if (d.fill) { if (g.meter >= 1) return miniEnd(true); if (el > d.dur || g.meter <= 0) return miniEnd(false, '慢了一步。'); } else { if (g.meter <= 0) return miniEnd(false, '门被撞开了一条缝。'); if (el > d.dur) return miniEnd(true); } g.pos = el / d.dur; }
+  else if (d.type === 'stealth') { if (el * 1000 > g.nextFlip) { g.watch = !g.watch; g.nextFlip = el * 1000 + (g.watch ? 700 + rnd() * 700 : 900 + rnd() * 1100); if (!g.watch) g.warn = 0; sfx(g.watch ? 'door' : 'drip'); miniHtml(); } else if (!g.watch && !g.warn && g.nextFlip - el * 1000 < 380) { g.warn = 1; miniHtml(); } }
+  miniPaint(); g.raf = requestAnimationFrame(miniLoop); }
+function miniPaint() { const g = MG, d = g.def, bar = $('#mgbar'), cur = $('#mgcur'), mt = $('#mgmeter'), ms = $('#mgmsg'); if (!bar) return;
+  if (cur) cur.style[cur.classList.contains('fill') ? 'width' : 'left'] = (clamp(g.pos, 0, 1) * 100) + '%'; if (mt) mt.style.width = (clamp(g.meter, 0, 1) * 100) + '%'; if (ms && ms.textContent !== g.msg) ms.textContent = g.msg; }
+function miniTap(a, i) { const g = MG; if (!g || g.over) return; const d = g.def;
+  if (a === 'skip') return miniEnd(false, '', 1); if (a === 'start') { g.ready = true; g.t0 = performance.now(); sfx('tap'); miniHtml(); return; } if (!g.ready) return;
+  if (d.type === 'timing') { if (g.pos >= g.zone[0] && g.pos <= g.zone[1]) { g.hit++; sfx('ok'); g.msg = '稳。（' + g.hit + '/' + d.n + '）'; if (g.hit >= d.n) return miniEnd(true); g.t0 = performance.now(); miniZone(); miniHtml(); } else { g.strikes++; sfx('bad'); shake(); g.msg = '偏了。（还能错 ' + (2 - g.strikes) + ' 次）'; if (g.strikes > 2) return miniEnd(false, '手抖了。'); } }
+  else if (d.type === 'hold') { if (a === 'down') { g.holding = true; g.started = 1; g.msg = '……'; } else if (a === 'up') g.holding = false; }
+  else if (d.type === 'resist') { if (a === 'keep') { g.meter = Math.min(1, g.meter + .2); sfx('tap'); } else if (a === 'final') { if (g.final) return miniEnd(true); } else return miniEnd(false, d.keep ? '你睁开了眼睛。' : (d.final ? '你动了。那双拖鞋转了过来。' : '你先开了口。')); }
+  else if (d.type === 'mash') { g.meter = Math.min(1.02, g.meter + (d.fill ? .075 : .085)); sfx('hit'); }
+  else if (d.type === 'stealth') { if (g.watch) { g.strikes++; sfx('bad'); shake(); g.msg = '被看见了！（' + g.strikes + '/2）'; if (g.strikes >= 2) return miniEnd(false, '他朝你走过来了。'); } else { g.hit++; sfx('tap'); g.msg = '（' + g.hit + '/' + d.steps + '）'; if (g.hit >= d.steps) return miniEnd(true); } miniHtml(); } }
+function miniEnd(ok, why, skipped) { const g = MG; if (!g) return; g.over = 1; cancelAnimationFrame(g.raf); if (ok) { sfx('big'); STATE.mini = null; MG = null; applyMode(); musicMode(moodNow()); return g.res(true); }
+  if (skipped) { STATE.mini = null; MG = null; applyMode(); musicMode(moodNow()); return g.res(false); }
+  sfx('bad'); if (SET.scare && g.def.type !== 'timing') scareFlash(); g.failWhy = why || '没成。'; miniHtml(); }
+function miniRetry() { if (MG && MG.over) miniNew(); }
+function miniGiveUp() { const g = MG; if (!g) return; STATE.mini = null; MG = null; applyMode(); musicMode(moodNow()); g.res(false); }
+function miniHtml() { const g = MG, d = g.def, box = $('#mini'); if (!box) return; let h = '<div class="mg-t">' + d.t + '</div>';
+  if (g.over) { h += '<div class="mg-fail">' + esc(g.failWhy) + '</div><div class="mg-row"><button class="btn pri" onclick="miniRetry()">再试一次</button><button class="btn" onclick="miniGiveUp()">跳过，接着往下</button></div>'; box.innerHTML = h; return; }
+  h += '<div class="mg-tip">' + d.tip + '</div>'; if (!g.ready) { box.innerHTML = h + '<div class="mg-row" style="margin-top:40px"><button class="btn pri big" id="mgstart" onclick="miniTap(\'start\')">准备好了</button></div><button class="mg-skip" onclick="miniTap(\'skip\')">跳过</button>'; return; }
+  if (d.type === 'timing') h += '<div class="mg-bar" id="mgbar"><i class="zone" style="left:' + g.zone[0] * 100 + '%;width:' + (g.zone[1] - g.zone[0]) * 100 + '%"></i><i class="cur" id="mgcur"></i></div><div class="mg-msg" id="mgmsg"></div><div class="mg-row"><button class="btn pri big" onpointerdown="miniTap(\'go\')">' + d.btn + '</button></div>';
+  else if (d.type === 'hold') h += '<div class="mg-bar" id="mgbar"><i class="zone" style="left:86%;width:14%"></i><i class="fill" id="mgcur" style="left:0"></i></div><div class="mg-msg" id="mgmsg"></div><div class="mg-row"><button class="btn pri big" onpointerdown="miniTap(\'down\')" onpointerup="miniTap(\'up\')" onpointerleave="miniTap(\'up\')" onpointercancel="miniTap(\'up\')">屏住呼吸（按住）</button></div>';
+  else if (d.type === 'resist') { h += '<div class="mg-bar thin" id="mgbar"><i class="fill" id="mgcur" style="left:0"></i></div>' + (d.keep ? '<div class="mg-bar meter"><i class="m" id="mgmeter"></i></div>' : '') + '<div class="mg-dark" id="mgdark">';
+    g.decoys.forEach((c, i) => { h += '<button class="decoy' + (c.fake ? ' fake' : '') + '" style="left:' + c.x + '%;top:' + c.y + '%" onpointerdown="miniTap(\'decoy\',' + i + ')">' + esc(c.t) + '</button>'; });
+    if (g.final) h += '<button class="btn pri big final" onpointerdown="miniTap(\'final\')">' + d.final + '</button>'; h += '</div>' + (d.keep ? '<div class="mg-row"><button class="btn pri big" onpointerdown="miniTap(\'keep\')">陈歌</button></div>' : ''); }
+  else if (d.type === 'mash') h += '<div class="mg-bar thin" id="mgbar"><i class="fill" id="mgcur" style="left:0"></i></div><div class="mg-bar meter"><i class="m" id="mgmeter"></i></div><div class="mg-row"><button class="btn pri big" onpointerdown="miniTap(\'go\')">' + d.btn + '</button></div>';
+  else if (d.type === 'stealth') h += '<div class="mg-eye ' + (g.watch ? 'open' : (g.warn ? 'warn' : '')) + '" id="mgbar">' + (g.watch ? '👁' : (g.warn ? '◔' : '—')) + '</div><div class="mg-steps">' + '●'.repeat(g.hit) + '○'.repeat(d.steps - g.hit) + '</div><div class="mg-msg" id="mgmsg">' + esc(g.msg) + '</div><div class="mg-row"><button class="btn pri big" onpointerdown="miniTap(\'go\')">' + (d.btn || '迈步') + '</button></div>';
+  h += '<button class="mg-skip" onclick="miniTap(\'skip\')">跳过</button>'; box.innerHTML = h; miniPaint(); }
