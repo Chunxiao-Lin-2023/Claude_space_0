@@ -132,7 +132,7 @@ const { chromium } = require('playwright');
         ok('partyUnits', pets.length === 3 && pets[0].id === 'pet' && pets[0].lead && !pets[1].lead && new Set(pets.map(u => u.id)).size === 3 && needInput(B).filter(u => u.pet).length === (B.auto ? 0 : 3));
         const k0 = mobUnit('kundi', 84, 1).hpMax, kb = B.units.find(u => u.mob === 'kundi'); ok('partyFoeBoost', Math.abs(kb.hpMax / k0 - 2) < 0.02);
         const t3 = pets[0], h = B.units[0]; const r1 = hitCalc(kb, t3, 1, 0, {}), r2 = hitCalc(kb, h, 1, 0, {}); ok('traitSanhei', partyDmgMul(kb, t3) === 0.85);
-        kb.plan = 'charge'; kb.charging = 2; const ds = pets[1]; ds.plan = 0; const L = []; mobAct(B, ds, x => L.push(x)); ok('traitDashen', kb.plan === 'broken' || !kb.alive);
+        kb.plan = 'charge'; kb.charging = 2; const ds = pets[1]; ds.plan = 0; const L = [], rnd0 = Math.random; Math.random = () => 0.3; mobAct(B, ds, x => L.push(x)); Math.random = rnd0; ok('traitDashen', kb.plan === 'broken' || !kb.alive); /* 0.3: the hit lands, and the 50% break comes up */
         const wo = B.units.find(u => u.mob === 'kundi'); applyDmg(B, h, wo, wo.hp + 10, {}); ok('traitWuwei', stV(h, 'atk') >= 0.08 - 1e-9);
         B = battleCreate(Object.assign({ _party: ['jinmao'] }, wild)); const wf = B.units.find(u => u.side === 1); ok('traitJinmao', !!wf.awed && partyDmgMul(wf, B.units[0]) < 1);
         ok('partyAdvice', partyAdvice({ mobs: [['canxian', 74]] }).order[0] === 'dahong' && partyAdvice({ mobs: [['wolf', 80], ['wolf', 80], ['wolf', 80]] }).order.slice(0, 2).sort().join() === 'dahong,wuwei');
