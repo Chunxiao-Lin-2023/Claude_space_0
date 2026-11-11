@@ -20,7 +20,7 @@ function fullHeal() { const s = charStats(); C.hp = s.hpMax; C.mp = s.mpMax; }
 function skillsOf(c = C) { return ['atk', ...c.bar.filter(id => c.sk.includes(id)), 'guard']; }
 function learnSkill(id) { if (C.sk.includes(id)) return; C.sk.push(id); if (C.bar.length < barSlots(C.lv)) C.bar.push(id); const S = SKILLS[id]; logLine(`<b class="lvup">领悟宝术</b>：${S.icon}<b>${S.name}</b>——${S.desc}`, 'sys'); sfx('epic'); }
 /* 宝术熟练度 */
-const profLevel = (id, c = C) => { const n = (c.prof && c.prof[id]) || 0; return n >= PROF[2].at ? 2 : n >= PROF[1].at ? 1 : 0; };
+const profLevel = (id, c = C) => { const n = (c.prof && c.prof[id]) || 0; let l = 0; for (let i = 1; i < PROF.length; i++) if (n >= PROF[i].at) l = i; return l; };
 function profUse(id) { C.prof = C.prof || {}; const before = profLevel(id); C.prof[id] = (C.prof[id] || 0) + 1; const after = profLevel(id); if (after > before) setTimeout(() => { logLine(`${SKILLS[id].icon}<b>${SKILLS[id].name}</b> 用得越来越顺手——<b class="lvup">${PROF[after].n}</b>（威力 +${PROF[after].b * 100}%）`, 'sys'); sfx('epic'); }, 50); }
 const knownWeak = mob => { const M = MOBS[mob]; if (!M || !M.weak) return []; const w = (C.codex && C.codex[mob] && C.codex[mob].wk) || []; return Object.keys(M.weak).filter(e => w.includes(e)); };
 function toggleBar(id) { const i = C.bar.indexOf(id); if (i >= 0) C.bar.splice(i, 1); else { if (C.bar.length >= barSlots(C.lv)) { const old = C.bar.slice().sort((a, b) => SKILL_ORDER.indexOf(a) - SKILL_ORDER.indexOf(b))[0]; C.bar.splice(C.bar.indexOf(old), 1); toast(`宝术栏满了（${barSlots(C.lv)} 门），换下了最低阶的「${SKILLS[old].name}」`); } C.bar.push(id); } C.bar.sort((a, b) => SKILL_ORDER.indexOf(a) - SKILL_ORDER.indexOf(b)); save(); refresh(); }

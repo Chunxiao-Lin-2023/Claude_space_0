@@ -93,5 +93,13 @@ const { chromium } = require('playwright');
       miniRetry(); ok('miniRetry', DLG && DLG.mini && !DLG.mini.done && DLG.mini.tries === 1); await w8(1300); ok('miniRetryFailsAgain', DLG.mini.ask); miniGiveUp(); const res = await pr; ok('miniGiveUp', res.ok === false && res.gaveUp && !DLG); __dbg.auto = au; }
     // difficulty
     c.diff = 2; const u2 = mobUnit('wolf', 10); c.diff = 0; const u0 = mobUnit('wolf', 10); c.diff = 1; ok('difficulty', u2.hpMax > u0.hpMax);
+    // mastery tiers, 宝术合成
+    ok('profTiers', [0, 12, 30, 60, 100, 160].every((n, i) => { c.prof.qly = n; return profLevel('qly') === i; }));
+    c.sk = [...new Set([...c.sk, 'qly', 'lei'])]; c.prof.qly = 160; c.prof.lei = 160; c.bag.baoyao = 3; c.sk = c.sk.filter(x => x !== 'f_leiying'); ok('fuseReady', fuseReady('f_leiying'));
+    await fuseSkill('f_leiying'); await idle(); ok('fused', c.sk.includes('f_leiying') && c.bag.baoyao === 1 && /雷鹰裂空/.test(fuseHtml()));
+    // 跳章: start of 第三章 with the right kit, and the story carries on from there
+    jumpTo(1); const J = D.C; ok('jumpState', J.lv === 12 && J.story.q === qi('q_gate') && J.sk.includes('sn') && J.pets.maoqiu && J.dt.length === 3 && J.story.f.butian === 1 && placeOpen('bt_gate'));
+    go('bt_gate'); await w8(500); await idle(); for (let i = 0; i < 80 && (S().scene || S().battle); i++) await w8(50); ok('jumpStory', D.C.story.q > qi('q_gate'));
+    jumpTo(3); ok('jumpEnd', !!(D.C.lv === 20 && D.C.story.f.end === 1 && D.C.sk.includes('ta') && D.C.pets.dahong && D.C.relics.r_pumo));
     return out; });
   const bad = Object.entries(r).filter(([k, v]) => !v); console.log(JSON.stringify(r)); console.log('failed', bad.map(x => x[0]), 'errors', errs.slice(0, 6)); await b.close(); process.exit(bad.length || errs.length ? 1 : 0); })();

@@ -25,7 +25,7 @@ const BAL = {
 const barSlots = lv => 4 + (lv >= 10) + (lv >= 14) + (lv >= 18);
 const relicSlots = lv => 2 + (lv >= 12) + (lv >= 17);
 /* 宝术熟练度: uses → 小成 / 大成 */
-const PROF = [{ n: '', s: '', at: 0, b: 0 }, { n: '小成', s: '小', at: 30, b: 0.1 }, { n: '大成', s: '大', at: 100, b: 0.2 }];
+const PROF = [{ n: '', s: '', at: 0, b: 0 }, { n: '入门', s: '入', at: 12, b: 0.04 }, { n: '小成', s: '小', at: 30, b: 0.1 }, { n: '精通', s: '精', at: 60, b: 0.15 }, { n: '大成', s: '大', at: 100, b: 0.2 }, { n: '圆满', s: '圆', at: 160, b: 0.26 }]; // 圆满 opens 宝术合成
 /* elements: a few beasts take more from one kind of attack */
 const EL = { lei: { n: '雷', i: '⚡' }, fire: { n: '火', i: '🔥' }, blunt: { n: '钝击', i: '🪨' }, bone: { n: '骨文', i: '📿' } };
 const realmOf = lv => BAL.realms.find(r => lv >= r.from && lv <= r.to) || BAL.realms[0];
