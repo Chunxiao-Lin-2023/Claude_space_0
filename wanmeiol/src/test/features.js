@@ -15,7 +15,7 @@ const { chromium } = require('playwright');
     D.battleAct({ psk: 0 }, 'pet'); ok('roundAfterBoth', B.round === 2 || B.over); ok('boundCombo', B.log.join('').includes('锁链') || true);
     S().battle.over = true; S().battle = null; S().busy = false;
     // interrupt: force a releasing enemy weak to blunt and hit it with 打神石
-    D.startBattle({ mobs: [['scorpion', 18]], title: 't' }); await w8(30); const B2 = S().battle; const sc = B2.units.find(u => u.side); sc.charging = null; sc.plan = 0; sc.releasing = true; sc.intent = '⚠ 尾针';
+    D.startBattle({ mobs: [['scorpion', 18]], title: 't' }); await w8(30); const B2 = S().battle; const sc = B2.units.find(u => u.side); sc.charging = null; sc.plan = 0; sc.releasing = true; sc.spd = 1; sc.intent = '⚠ 尾针';
     B2.acts.pet = { guard: 1 }; B2.units.find(u => u.kind === 'pc').st.push({ k: 'sure', t: 2, v: 0 }); D.battleAct({ sk: 'dsh', tgt: sc.id }); ok('interrupt', B2.log.join('').includes('打断') && B2.log.join('').includes('正中要害')); S().battle = null; S().busy = false;
     // crush
     D.startBattle({ mobs: [['boar', 3], ['wolf', 4]], title: 't' }); await w8(30); const B3 = S().battle; ok('canCrush', canCrush(B3)); D.battleAct({ crush: 1 }); await idle(); ok('crushWin', B3.win === true);
@@ -26,7 +26,7 @@ const { chromium } = require('playwright');
     // 觉醒
     C().pet = 'maoqiu'; D.addItem('meat', 2, true); D.feedPet('maoqiu', 'meat'); await w8(700); await idle(); ok('evo', !!C().pets.maoqiu.evo);
     // trades
-    D.addItem('bone', 5, true); const bp0 = itemN('baoyao'); await tradeDo(0); ok('trade', itemN('baoyao') === bp0 + 1 && itemN('bone') === 0);
+    c.bag.bone = 0; D.addItem('bone', 5, true); const bp0 = itemN('baoyao'); await tradeDo(0); ok('trade', itemN('baoyao') === bp0 + 1 && itemN('bone') === 0);
     // bounty
     const bl = bountyToday(); ok('bounties', bl.length >= 2); const kb = bl.findIndex(x => x.kind === 'kill'); if (kb >= 0) { bountyTake(kb); for (let i = 0; i < 8; i++) bountyKill(bl[kb].id); const n0 = C().stats.bounty || 0; bountyTake(kb); ok('bountyDone', (C().stats.bounty || 0) === n0 + 1); }
     // exploration
