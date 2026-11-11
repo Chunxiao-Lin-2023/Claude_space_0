@@ -52,12 +52,14 @@ function dlgPick(i) { // advance (i = -1) or choose option i
 }
 function dlgCtx() { return { cur: UI.cur, hist: UI.hist.slice(-2) }; }
 function renderDlg() {
-  const D = $('dlg'); applyMode(); if (!DLG) { D.onclick = null; refresh(); return; }
+  const D = $('dlg'); applyMode(); if (!DLG) { D.onclick = null; $('vTalk').classList.remove('cine', 'mem', 'card'); refresh(); return; }
   const ctx = DLG.ctx || dlgCtx(), P = C && PLACES[C.loc], q = C && curQ();
   const head = `<div class="tplace">${P ? (STATE.dungeon ? DUNGEONS[STATE.dungeon.id].name : P.name) : ''}<span>${q ? CH_NAMES[q.ch] : ''}</span></div>`;
   const histH = h => h.length ? `<div class="hist">${h.map(x => `<div>${x.who ? `<span class="hw">${esc(x.who)}</span>` : ''}${x.text}</div>`).join('')}</div>` : '';
   const lineH = o => { const s = sealOf(o), nw = (o.who || '') !== UI.lastWho; UI.lastWho = o.who || ''; return `<div class="line ${nw ? 'newspk' : ''}">${s ? `<div>${sealHtml(s, o.mine ? 'me' : '')}${s.t ? `<div class="ttl">${esc(s.t)}</div>` : ''}</div>` : ''}<div class="tx ${o.who ? '' : 'nar'} ${o.mine ? 'mine' : ''}">${o.text}</div></div>`; };
-  if (DLG.mini) { D.innerHTML = head + miniHtml(DLG.mini); D.onclick = null; }
+  const cv = DLG.o && DLG.o.cine && !DLG.choice && !DLG.mini && !DLG.rune ? DLG.o.cine : ''; $('vTalk').classList.toggle('cine', !!cv); $('vTalk').classList.toggle('mem', cv === 'mem'); $('vTalk').classList.toggle('card', cv === 'card');
+  if (cv) { D.innerHTML = `<div class="cine-t">${DLG.o.text}</div><div class="nx">▼</div>`; D.onclick = () => dlgPick(-1); }
+  else if (DLG.mini) { D.innerHTML = head + miniHtml(DLG.mini); D.onclick = null; }
   else if (DLG.rune) D.innerHTML = head + runeHtml(DLG.rune);
   else if (DLG.choice) { D.innerHTML = head + histH(ctx.hist.slice(-1)) + (ctx.cur ? lineH(ctx.cur) : '') + `<div class="ch">${DLG.choice.map((o, i) => `<button class="chb" ${o.dis ? 'disabled' : ''} data-i="${i}">${o.t}</button>`).join('')}</div>`; D.onclick = null; D.querySelectorAll('.chb').forEach(b => b.onclick = e => { e.stopPropagation(); dlgPick(+b.dataset.i); }); }
   else { D.innerHTML = head + histH(ctx.hist) + lineH(DLG.o) + '<div class="nx">点击继续 ▼</div>'; D.onclick = () => dlgPick(-1); }
@@ -117,7 +119,8 @@ function storyHere() { const q = curQ(); if (q.type === 'enter' && q.loc === C.l
 function storyHereRun() { const q = curQ(); if (q.type === 'enter') return questComplete(q); }
 /* ---------- battle screen ---------- */
 function renderBattle(quiet) {
-  const B = STATE.battle; if (!B) return; applyMode(); const play = fxPrepare(B); if (UI.enter) { $('bfx').innerHTML = ''; const intro = (B.ev || []).filter(e => e.k === 'say'); intro.forEach((e, i) => setTimeout(() => fxSay(e.t, e.text), 550 + i * 900)); if (intro.length && animOn()) { UI.animEnd = now() + 550 + intro.length * 900; setTimeout(() => { if (STATE.battle && STATE.battle.id === B.id) { UI.animEnd = 0; renderBattle(true); } }, 600 + intro.length * 900); } }
+  const B = STATE.battle; if (!B) return; applyMode(); const play = fxPrepare(B); if (UI.enter) { $('bfx').innerHTML = ''; const card = B.epic && animOn() ? fxBossCard(B) : 0, t0 = card ? card + 300 : 550, intro = (B.ev || []).filter(e => e.k === 'say'); intro.forEach((e, i) => setTimeout(() => { if (STATE.battle && STATE.battle.id === B.id) fxSay(e.t, e.text); }, t0 + i * 1500));
+    const hold = card || intro.length ? t0 + Math.max(0, intro.length - 1) * 1500 + 300 : 0; if (hold && animOn()) { UI.animEnd = now() + hold; setTimeout(() => { if (STATE.battle && STATE.battle.id === B.id && UI.animEnd <= now() + 50) { UI.animEnd = 0; renderBattle(true); } }, hold + 40); } }
   const me_ = B.units.find(u => u.kind === 'pc'); if (UI.selFoe && !B.units.some(u => u.id === UI.selFoe && u.alive)) UI.selFoe = null;
   const cur = !B.over && !play && animLeft() === 0 ? needInput(B)[0] : null;
   const settled = !play && animLeft() === 0, taken = {}; if (settled) for (const e of B.ev || []) if ((e.k === 'hit' || e.k === 'dot') && e.v) taken[e.t] = (taken[e.t] || 0) + e.v;

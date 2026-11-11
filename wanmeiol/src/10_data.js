@@ -44,7 +44,7 @@ const SKILLS = {
   ta: { name: '小塔', icon: '🗼', got: 'sk_ta', mp: 22, cd: 5, tgt: 'allies', shield: 1.6, desc: '那座只有四层的小塔垂下光幕，全队获得 1.6 倍攻击的护盾。' },
 };
 const SKILL_ORDER = ['qly', 'sn', 'gw', 'lei', 'dsh', 'jian', 'ta'];
-const STATUS = { stun: { n: '眩晕', c: '#ffd34a' }, bleed: { n: '流血', c: '#ff6a6a' }, burn: { n: '灼烧', c: '#ff8a3a' }, poison: { n: '中毒', c: '#9ad84a' }, def: { n: '坚守', c: '#ffd28a' }, taunt: { n: '嘲讽', c: '#ffb36a' }, atk: { n: '凶性', c: '#ff9a6a' }, dodge: { n: '灵动', c: '#9ad8ff' }, sure: { n: '必暴', c: '#ffe46a' }, shield: { n: '护盾', c: '#9ae8b0' }, guard: { n: '防御', c: '#c8c0b0' }, weak: { n: '虚弱', c: '#b0a0ff' }, bound: { n: '锁链', c: '#d8b070' }, brk: { n: '破甲', c: '#e0a070' }, mark: { n: '印记', c: '#c08aff' }, freeze: { n: '冰封', c: '#9ad8ff' }, rage: { n: '狂怒', c: '#ff4a2a' } };
+const STATUS = { burst: { n: '绝境', c: '#ffe08a' }, stun: { n: '眩晕', c: '#ffd34a' }, bleed: { n: '流血', c: '#ff6a6a' }, burn: { n: '灼烧', c: '#ff8a3a' }, poison: { n: '中毒', c: '#9ad84a' }, def: { n: '坚守', c: '#ffd28a' }, taunt: { n: '嘲讽', c: '#ffb36a' }, atk: { n: '凶性', c: '#ff9a6a' }, dodge: { n: '灵动', c: '#9ad8ff' }, sure: { n: '必暴', c: '#ffe46a' }, shield: { n: '护盾', c: '#9ae8b0' }, guard: { n: '防御', c: '#c8c0b0' }, weak: { n: '虚弱', c: '#b0a0ff' }, bound: { n: '锁链', c: '#d8b070' }, brk: { n: '破甲', c: '#e0a070' }, mark: { n: '印记', c: '#c08aff' }, freeze: { n: '冰封', c: '#9ad8ff' }, rage: { n: '狂怒', c: '#ff4a2a' } };
 
 /* ---------- 功法 / 修炼所得 (passive) ---------- */
 const GONGFA = {

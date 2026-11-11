@@ -79,6 +79,11 @@ const { chromium } = require('playwright');
     ok('rumorWide', document.body.classList.contains('cols') ? re.classList.contains('multi') && re.querySelectorAll('.rl').length === 3 : re.classList.contains('on'));
     re.click(); await w8(20); ok('rumorHistory', UI.nav === 'log' && UI.logTab === 'rumor' && document.getElementById('sbody').textContent.includes(c.rumorLog[0].t.replace(/<[^>]+>/g, '').slice(0, 6)));
     re.click(); ok('rumorHistoryStays', UI.nav === 'log'); UI.nav = null; UI.logTab = 'log'; renderSide(); refresh();
+    // climaxes: boss fights with epic staging; 绝境 once per fight; story cine lines
+    { c.auto = false; D.startBattle({ mobs: [['wolf', 30]], title: 't', epic: { name: '测试', intro: ['a'], phase: 'p', low: { who: 'x', t: 'y' }, end: ['e'] } }); await w8(30); const B8 = S().battle, h8 = B8.units.find(u => u.kind === 'pc');
+      ok('epicFlag', !!B8.epic && musicWanted() !== 'battle'); h8.hp = 1; applyDmg(B8, B8.units.find(u => u.side === 1), h8, 50, {}); ok('epicBurst', h8.alive && h8.hp > 1 && B8.burst === 1 && !!h8.st.find(s => s.k === 'burst') && B8.ev.some(e => e.k === 'cine' && e.cls === 'burst'));
+      const hp1 = h8.hp; h8.hp = 1; applyDmg(B8, B8.units.find(u => u.side === 1), h8, 50, {}); ok('epicBurstOnce', !h8.alive); S().battle = null; STATE.busy = false;
+      const pc = cine('测试一行', 'mem'); ok('storyCine', true); }
     // a failed mini-game asks: 再试一次 or 跳过 (never ends by itself)
     { const au = __dbg.auto; __dbg.auto = false; const pr = miniGame('mash', { time: 250 }); await w8(1300); const M1 = DLG && DLG.mini; ok('miniFailAsks', !!(M1 && M1.ask)); await w8(1500); ok('miniFailWaits', DLG && DLG.mini === M1);
       miniRetry(); ok('miniRetry', DLG && DLG.mini && !DLG.mini.done && DLG.mini.tries === 1); await w8(1300); ok('miniRetryFailsAgain', DLG.mini.ask); miniGiveUp(); const res = await pr; ok('miniGiveUp', res.ok === false && res.gaveUp && !DLG); __dbg.auto = au; }

@@ -42,7 +42,7 @@ function battleCreate(spec) {
   blog(B, `<span class="bt">⚔ ${spec.title || '战斗开始'}</span>`);
   const foes = B.units.filter(u => u.side === 1), talker = foes.find(u => u.boss || u.kind === 'rival') || foes[0];
   if (talker && battleSay(B, talker, 'open') && chance(0.35)) { const h = B.units[0], t = pick(RETORT); fxe(B, { k: 'say', t: h.id, text: t }); blog(B, `<span class="taunt"><span class="pc">石昊</span>：「${t}」</span>`); }
-  B.sayQ = [];
+  B.sayQ = []; B.epic = spec.epic || null;
   return B;
 }
 const alive = (B, side) => B.units.filter(u => u.alive && (side === undefined || u.side === side));
@@ -97,7 +97,7 @@ function botAct(B, u) { // auto-battle for 石昊 and the AI for 虚神界 rival
 const weakOf = (d, el) => el && d.mob && MOBS[d.mob] && MOBS[d.mob].weak && MOBS[d.mob].weak[el] || 0;
 function hitCalc(a, d, mul, mag, opts = {}) {
   const dodge = 0.03 + Math.max(0, d.spd - a.spd) * 0.008 + stV(d, 'dodge'); if (!opts.sure && Math.random() < Math.min(0.5, dodge)) return { miss: true, dmg: 0 };
-  const atk = a.atk * (1 + stV(a, 'atk') + stV(a, 'rage')) * (1 - stV(a, 'weak')); const wk = weakOf(d, opts.el); if (wk) mul *= wk; let def = d.def * (1 + stV(d, 'def')) * (1 - stV(d, 'brk')); if (mag) def *= 0.5; if (opts.pierce) def = 0;
+  const atk = a.atk * (1 + stV(a, 'atk') + stV(a, 'rage') + stV(a, 'burst')) * (1 - stV(a, 'weak')); const wk = weakOf(d, opts.el); if (wk) mul *= wk; let def = d.def * (1 + stV(d, 'def')) * (1 - stV(d, 'brk')); if (mag) def *= 0.5; if (opts.pierce) def = 0;
   let bound = false; if (!mag && stOf(d, 'bound')) { mul *= 1.3; bound = true; d.st = d.st.filter(s => s.k !== 'bound'); } // 骨文锁链 → the next physical hit lands harder
   const K = BAL.defK + a.lv * 7; let dmg = atk * mul * K / (K + def) * rnd(0.9, 1.1);
   const crit = !!stOf(a, 'sure') || Math.random() < a.crit; if (crit) dmg *= BAL.critMul; if (stOf(d, 'guard')) dmg *= 0.5;
@@ -111,11 +111,11 @@ function applyDmg(B, a, d, dmg, info = {}) {
   const sh = stOf(d, 'shield'); let absorbed = 0; if (sh) { absorbed = Math.min(sh.v, dmg); sh.v -= absorbed; dmg -= absorbed; if (sh.v <= 0) d.st.splice(d.st.indexOf(sh), 1); }
   if (B.roam && d.side === 1 && dmg > 0) B.roamDmg = (B.roamDmg || 0) + Math.min(dmg, d.hp);
   d.hp -= dmg; if (a && a.leech && dmg > 0) a.hp = Math.min(a.hpMax, a.hp + dmg * a.leech);
-  fxe(B, { k: info.dot ? 'dot' : 'hit', t: d.id, v: dmg + absorbed, crit: !!info.crit, weak: !!info.weak, hp: hpr(d), st: info.dot });
+  fxe(B, { k: info.dot ? 'dot' : 'hit', t: d.id, v: dmg + absorbed, crit: !!info.crit, weak: !!info.weak, hp: hpr(d), st: info.dot }); if (d.kind === 'pc' && B.epic) epicLow(B, d);
   if (d.side === 1 && B.sayQ) { if (d.hp <= 0) B.sayQ.push([d, 'die']); else if (!d.saidLow && d.hp < d.hpMax * 0.25) { d.saidLow = 1; B.sayQ.push([d, 'low']); } }
-  if (d.hp <= 0) { d.hp = 0; d.alive = false; d.st = []; fxe(B, { k: 'die', t: d.id }); if (d.side === 1 && d.kind === 'mob') B.kills.push([d.mob, d.lv, d.boss]); return true; }
+  if (d.hp <= 0) { d.hp = 0; d.alive = false; d.st = []; fxe(B, { k: 'die', t: d.id }); epicKill(B, d); if (d.side === 1 && d.kind === 'mob') B.kills.push([d.mob, d.lv, d.boss]); return true; }
   if (d.boss && d.side === 1 && !d.raged && d.hp <= d.hpMax / 2 && d.mob && MOBS[d.mob]) { d.raged = true; addSt(d, { k: 'rage', t: 99, v: BAL.phaseAtk }); B.phase = 1;
-    blog(B, `<span class="phase">${MOBS[d.mob].p2 || esc(d.name) + '被激怒了！'}（攻击提升）</span>`); fxe(B, { k: 'phase', t: d.id }); }
+    blog(B, `<span class="phase">${MOBS[d.mob].p2 || esc(d.name) + '被激怒了！'}（攻击提升）</span>`); fxe(B, { k: 'phase', t: d.id }); epicPhase(B, d); }
   return false;
 }
 const SK_FX = { atk: 'slash', qly: 'claw', sn: 'roar', gw: 'bone', lei: 'lei', dsh: 'rock', jian: 'blade', ta: 'tower', guard: 'guard' };
@@ -201,7 +201,7 @@ function battleResolve(B) {
 function flushSay(B) { const Q = B.sayQ || []; B.sayQ = []; for (const [u, k] of Q) if (chance(k === 'die' ? 0.8 : 1)) battleSay(B, u, k); }
 function battleCheckEnd(B) {
   if (B.over) return true;
-  if (!alive(B, 1).length) { B.over = true; B.win = true; blog(B, '<span class="bt win">★ 胜利 ★</span>'); return true; }
+  if (!alive(B, 1).length) { B.over = true; B.win = true; epicEnd(B); blog(B, '<span class="bt win">★ 胜利 ★</span>'); return true; }
   if (!B.units.find(u => u.kind === 'pc').alive) { B.over = true; B.win = false; blog(B, '<span class="bt lose">✖ 你倒下了</span>'); return true; }
   return false;
 }

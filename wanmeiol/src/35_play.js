@@ -96,7 +96,7 @@ async function enterDungeon(id, hard) {
   STATE.dungeon = { id, room: 0 }; logLine(`<div class="lochead">${D.name}</div>`, 'loc'); refresh(); bannerDraw();
   for (let i = 0; i < D.rooms.length; i++) {
     const R = D.rooms[i]; STATE.dungeon.room = i; refresh(); logLine(`<b>【${R.name}】</b>${R.text}`, 'enc'); await sleep(window.__dbg && __dbg.instant ? 0 : 400);
-    if (R.mobs) { const r = await startBattle({ mobs: R.mobs.map(m => [m, R.boss ? lvB : Math.max(1, lvB - 1)]), title: `${hard ? '困难 · ' : ''}${D.name} · ${R.name}`, flee: !R.boss, dungeon: id, room: i });
+    if (R.mobs) { const r = await startBattle({ mobs: R.mobs.map(m => [m, R.boss ? lvB : Math.max(1, lvB - 1)]), title: `${hard ? '困难 · ' : ''}${D.name} · ${R.name}`, flee: !R.boss, dungeon: id, room: i, epic: R.boss && R.epic ? R.epic : null });
       if (!r || !r.win) { STATE.dungeon = null; refresh(); bannerDraw(); return; } }
     else if (R.event) await dungeonEvent(R.event, D);
     if (i < D.rooms.length - 1) { const c = await dlgChoose([{ t: '原地调息，再往里走（恢复 40% 气血和符力）' }, { t: '直接往里走' }, { t: '先退出去' }], `「${R.name}」过了。前面还有 ${D.rooms.length - 1 - i} 关。`);

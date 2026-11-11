@@ -20,8 +20,10 @@ function fxPrepare(B) { // returns true when this render should animate the last
   for (const u of B.units) if (UI.hpShown[u.id] == null) UI.hpShown[u.id] = u.hp / u.hpMax; UI.reveal = B.lc0 + 1; return true;
 }
 function fxPlay(B) {
-  const st = STEP(), lc0 = B.lc0, n = B.lc - lc0, total = Math.max(1, n - 1) * st; UI.animEnd = now() + total + 120; const bid = B.id, seq = B.seq;
-  const at = gl => Math.max(0, gl - lc0 - 1) * st;
+  const st = STEP(), lc0 = B.lc0, n = B.lc - lc0, pause = {}; for (const ev of B.ev) if (ev.k === 'cine' || ev.k === 'finish') pause[ev.li] = (pause[ev.li] || 0) + cineMs(ev); // big moments hold the playback
+  const offs = {}; let acc = 0; for (let gl = lc0; gl <= B.lc; gl++) { offs[gl] = Math.max(0, gl - lc0 - 1) * st + acc; acc += pause[gl] || 0; }
+  const total = Math.max(1, n - 1) * st + acc; UI.animEnd = now() + total + 120; const bid = B.id, seq = B.seq;
+  const at = gl => offs[gl] ?? Math.max(0, gl - lc0 - 1) * st + acc;
   for (let gl = lc0 + 1; gl < B.lc; gl++) setTimeout(() => { if (UI.fxBid !== bid || UI.fxSeq !== seq) return; UI.reveal = gl + 1; const e = document.querySelector(`#bfeed .ln[data-g="${gl}"]`); if (e) e.classList.remove('pend'); $('bfeed').scrollTop = $('bfeed').scrollHeight; }, at(gl));
   for (const ev of B.ev) setTimeout(() => { if (UI.fxBid === bid && UI.fxSeq === seq) fxEvent(B, ev); }, at(ev.li) + (ev.k === 'act' ? 0 : st * 0.35));
   setTimeout(() => { if (UI.fxBid !== bid || UI.fxSeq !== seq) return; for (const u of B.units) { UI.hpShown[u.id] = u.hp / u.hpMax; if (!u.alive) UI.deadShown[u.id] = 1; } UI.reveal = 1e9; UI.animEnd = 0; renderBattle(true); if (B.over) fxStamp(B); }, total + 60);
@@ -50,13 +52,17 @@ function fxEvent(B, ev) {
   if (ev.k === 'int') { fxFloat(ev.t, '打断！', 'weak'); fxClass(ev.t, 'hit', 420); return; }
   if (ev.k === 'phase') { fxClass(ev.t, 'enrage', 1200); $('vBattle').classList.remove('quake'); void $('vBattle').offsetWidth; $('vBattle').classList.add('quake'); fxSpawn('fx-redflash', { x: 0, y: 0, w: 0 }, '', 900); sfx('fail'); return; }
   if (ev.k === 'say') { fxSay(ev.t, ev.text); return; }
+  if (ev.k === 'cine') { fxCine(ev); return; }
+  if (ev.k === 'finish') { fxFinish(ev); return; }
   if (ev.k === 'swap') { fxClass('pet', 'enter-u', 600); return; }
 }
 const FX_HTML = {
   lei: '<svg viewBox="0 0 40 120"><path d="M24 0 L10 52 L22 52 L8 120 L34 44 L21 44 L32 0 Z"/></svg>',
   claw: '<i></i><i></i><i></i>', bless: '<b></b><b></b>', curse: '<b></b>', slash: '<i></i><i></i>', blade: '<i></i>', bone: '<b></b>', rock: '<b></b>', fire: '<b></b>', roar: '<b></b>', magic: '<b></b>', wave: '<b></b>', heal: '<b>✚</b>', tower: '<b></b>', shield: '<b></b>', crush: '<b>拳</b>',
 };
-function fxSay(id, text) { const c = cardOf(id); if (!c || !animOn()) return; const p = fxAt(c); p.y -= p.h / 2 + 6; const d = fxSpawn('bubble ' + (id === 'hero' ? 'me' : ''), p, esc(text.replace(/^（|）$/g, '')), 2300); if (text.startsWith('（')) d.classList.add('act'); }
+function fxSay(id, text) { const c = cardOf(id); if (!c || !animOn()) return; $('bfx').querySelectorAll(`.bubble[data-u="${id}"]`).forEach(e => e.remove()); // one bubble per speaker; it stays long enough to read
+  const life = Math.round(Math.min(7500, Math.max(3600, 2400 + plainLen(text) * 160)) * (SET.fast ? 0.75 : 1)); const p = fxAt(c); p.y -= p.h / 2 + 6;
+  const d = fxSpawn('bubble ' + (id === 'hero' ? 'me' : ''), p, esc(text.replace(/^（|）$/g, '')), life); d.dataset.u = id; d.style.setProperty('--life', life + 'ms'); if (text.startsWith('（')) d.classList.add('act'); }
 function fxStamp(B) { if (!animOn() || $('bfx').querySelector('.stamp')) return; const t = B.win ? '胜' : B.fled ? '逃' : '败'; const d = el('div', 'fx stamp ' + (B.win ? 'win' : 'lose'), t); $('bfx').appendChild(d); sfx(B.win ? 'win' : 'lose'); }
 
 /* ---------- screen transitions & big moments ---------- */

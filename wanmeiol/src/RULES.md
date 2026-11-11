@@ -53,4 +53,5 @@
 10. 氛围跟着地点走：区域配色用 CSS 变量（由 `ATMO` 设置），探索/战斗背后画地点、加飘动粒子和淡纹理；新区域要在 `ATMO` 里配一套。粒子受“动画”开关控制。
 11. 地点画（`52_art.js`）用山水笔法：`crest` 分形山脊 + `washHill` 墨色渐变和皴笔、`mistBand` 雾带、`pine`/`fir`/`leafTree`/`cottage`/`hall`/`spire` 等笔刷、`grain` 纸纹；不要用简单几何形直接拼，每处一个标志物，避免堆满。
 12. 小游戏失败不自动结束：问「再试一次 / 跳过」（`miniRetry` / `miniGiveUp`，骨文 `runeRetry` / `runeAccept`），跳过时剧情走失败那一支，绝不卡关。
-13. 每条都要有自动测试（`features.js` 逐项检查），联机测试（`coop.js`）、整条剧情（`flow.js`）、屏幕（`mobile.js`）每次都跑。
+14. 高潮演出（`47_epic.js`）：每个小章节的高潮战传 `epic`（name/sub/seal/intro/phase/low/end），关键剧情用 `cine()`（回忆用 `mem`），章节开头 `chapterCard()`；`low` 写成某个人说过的话，要能戳到人；战斗气泡按字数停留。
+15. 每条都要有自动测试（`features.js` 逐项检查），联机测试（`coop.js`）、整条剧情（`flow.js`）、屏幕（`mobile.js`）每次都跑。

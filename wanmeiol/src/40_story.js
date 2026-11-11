@@ -17,7 +17,9 @@ async function fightRetry(spec, loseText) {
 const slv = (base, lo = -1, hi = 2) => clamp(C.lv, base + lo, base + hi);
 
 /* ---------------- 第一章 · 石村 ---------------- */
+const E_TIGER = { name: '黑纹虎', sub: '虎穴之主', intro: ['腥风扑面。它比你见过的任何一头老虎都大。'], phase: '黑纹虎伏低身子，背上的黑纹一道道亮起来，像烧红的铁。', low: { who: '清风', t: '（你想起清风攥着补天石，在山门外等你的样子。）……还有人在等这朵莲花。' } };
 async function S_wake() {
+  await chapterCard('第一章', '石村', '大荒深处，一株烧焦的柳树下');
   await nar('天刚蒙蒙亮，大荒深处传来几声兽吼，震得石屋顶上的灰簌簌往下掉。');
   await nar('你叫石昊，可全村没人这么叫你——大家都叫你<b>小不点</b>。你是被人送到石村来的，那时候还在襁褓里，是族长一口兽奶一口米汤把你喂大的。');
   await say('chief', '小不点！太阳都要出来了，还赖着？去村前空地，迎霞锻体。');
@@ -70,7 +72,9 @@ async function S_cliff() {
   const c = await choose(['（冲另一个方向大喊）“喂！蛋在我这儿！”', '大家一起跑，往村子跑！']);
   if (c === 0) { F().lure = 1; await nar('那只鹰拐了个弯，冲着你扑了下来。你抱着一枚蛋往反方向狂奔，身后的大树一棵接一棵地被它撞断。'); }
   else await nar('鹰一路追着你们撞断了半片林子。眼看就要追上大壮了，你一咬牙，回身冲它扔了一块石头——它盯上了你。');
-  const win = await fight({ mobs: [['eagle', 5]], title: '石林 · 青鳞鹰', noLose: true, flee: false, noPet: true, allies: c === 0 ? [] : ['a_kids'] });
+  const win = await fight({ mobs: [['eagle', 5]], title: '石林 · 青鳞鹰', noLose: true, flee: false, noPet: true, allies: c === 0 ? [] : ['a_kids'],
+    epic: { name: '青鳞鹰', sub: '太古魔禽的后裔 · 石林之主', intro: ['它的翅膀遮住了半边天。', '你怀里还抱着那枚蛋。'], phase: '青鳞鹰一声厉啸，翅上的骨文全亮了——每一片鳞都成了刀！',
+      low: c === 0 ? { who: '你自己', t: '不能倒。我倒了，它就去追大壮他们了。' } : { who: '大壮', t: '“小不点——！你撑住啊！我们都在呢！”' } } });
   await nar(win ? '你一拳砸在鹰爪上，它吃痛松开了你，可它比你大太多了，又一次扑了下来——' : '你被一爪子拍飞，滚出去老远。它张开爪子扑了下来——');
   await nar('就在这时，村子方向亮起一道柔和的绿光。一根柳枝从天边伸过来，轻轻一拂，青鳞鹰像撞上了一堵看不见的墙，翻滚着退开了。');
   await nar('你怀里那枚蛋在逃跑时裂开了，里面的小鹰早产出壳，湿漉漉的，眼看就要不行了。柳枝的绿光落在它身上，它慢慢睁开了眼睛。');
@@ -99,7 +103,7 @@ async function S_bei() {
   await me('那是狻猊自己给我的。你要，自己去墓里问它啊。');
   if (!await fightRetry({ mobs: [['beihunter', slv(6)], ['beihunter', slv(6)]], title: '狈村伏击' })) return false;
   await say('风狈', '废物！（他一把推开倒在地上的猎手，身上卷起一阵狂风）');
-  if (!await fightRetry({ mobs: [['fengbei', slv(7, -1, 1)]], title: '风狈' })) return false;
+  if (!await fightRetry({ mobs: [['fengbei', slv(7, -1, 1)]], title: '风狈', epic: { name: '风狈', sub: '狈村百年才出一个的天才', intro: ['狂风卷着落叶，在他身后聚成一头狈的虚影。', '他比你大好几岁，看你的眼神，像在看一块肉。'], phase: '风狈额头的狈祖图腾渗出了血——他把祖灵请到了自己身上！', low: { who: '族长', t: '（耳边忽然响起族长的声音）“石村的孩子，挨了打，要站着还回去。”' }, end: ['风停了。'] } })) return false;
   await nar('你双手结出青鳞鹰的骨文，一爪掏在风狈胸口。他倒下的时候，眼睛还瞪得大大的，不敢相信自己输给了一个小娃娃。');
   await nar('林子深处传来一声暴喝。一个干瘦的老头踏着树梢冲了过来，身后跟着一团黑乎乎的影子——那是狈村供奉的祭灵。');
   await say('烈老', '小畜生，杀我狈村天才，拿命来！');
@@ -130,14 +134,14 @@ async function S_shanbao() {
   if (c2 === 1) { F().ding = 1; const ms = await miniGame('mash', { title: '扛鼎', desc: '药鼎几百斤重，岩浆已经漫到了村口。', time: 6500, rate: 8 }); if (!ms.ok) await nar('鼎太沉，你一个趔趄差点跪下。咬着牙，到底还是把它扛上了肩。'); }
   if (c2 === 1) await nar('你一个人扛起那口几百斤的药鼎，从岩浆边上冲了过去，把它扔进光门。族长回头看见，眼眶都红了。');
   else await nar('你来来回回跑了十几趟，把走不动的老人一个个背进了光门。最后一趟，岩浆已经漫到了村口。');
-  await nar('光门合上的那一刻，旧石村被岩浆吞没了。');
+  await cine('光门合上的那一刻，你回头看了一眼。<br>你出生……不，你长大的那个石村，<br>被岩浆一寸一寸地吞了下去。');
   await nar('再睁眼时，眼前是一片山清水秀的谷地。溪水从身边流过，鸟在叫。柳神的树桩扎在新的土里，那根柳枝轻轻晃着，像是累坏了。');
   F().moved = 1; give('baoyao', 1);
   await say('chief', '……石村，还在。（老人跪下来，冲柳神磕了三个头）');
   tip('石村搬家了。旧村的废墟在<b>大荒深处的东边</b>。');
 }
 async function S_ruin() {
-  await nar('旧村只剩一片黑石，岩浆把一切都烧成了灰。你蹲在一块还算完整的大石头前，用指甲一笔一画地刻：“石村迁往……”');
+  await cine('旧村只剩一片黑石。<br>你蹲在一块还算完整的大石头前，用指甲一笔一画地刻：<br><b>“石村迁往……”</b>');
   await me('要是爹娘哪天回来找我，至少知道该去哪儿。');
   await nar('石头后面传来细细的哼哼声。你绕过去一看，一只金毛小猴缩在石缝里，浑身是伤，一条腿被压在石头底下，冲你龇着牙。');
   const c = await choose(['把石头搬开，给它敷药', '（它好像挺好吃的……）', '扔给它一块兽肉，看它吃不吃']);
@@ -152,16 +156,19 @@ async function S_ruin() {
 async function S_jijing() {
   await say('willow', '（柳枝垂下来，轻轻点在你的额头上。）');
   await nar('一股清凉的光从额头灌下去，流遍全身。你体内那层撞了很久的壁，“咔”地裂开了一条缝——不是破开，是被撑开。');
-  await nar('你看见搬血境的尽头，还有一段别人没走过的路。你一步一步走了上去。');
+  await cine('你看见搬血境的尽头，还有一段路。<br>路上没有脚印——几百年来，没有人走过。<br>你一步一步，走了上去。');
   learnGongfa('jijing'); F().jijing = 1;
   await nar('远处的山梁上，一个穿红衣服的小姑娘骑在一只火红的大鸟背上，正好往这边看了一眼。她眨了眨眼睛，大鸟一振翅，飞远了。');
   await say('chief', '搬血极境……几百年来，大荒里能走到这一步的，我只听说过。（他沉默了很久）小不点，晚上来我屋里。有些事，该告诉你了。');
 }
 /* ---------------- 第二章 · 出村 ---------------- */
 async function S_memory() {
+  await chapterCard('第二章', '出村', '胸口那道疤，是有来历的');
   await say('chief', '你不是石村生的。你被人送来那年，胸口有一道很长的疤，刚刚长好。');
   await nar('族长的话像一块石头扔进了水里。你脑子里“嗡”的一声，那些很久很久以前的画面，一下子全浮了上来——');
-  await nar('一个高大的老人背着你去猎貔貅，你骑在他脖子上笑；一个女人的手按住你的胸口，冰凉的刀锋……她挖走了你胸口的一块骨头，那块骨头会发光；你的爹娘红着眼睛，冲进一座大宅子，和一群人打了起来……');
+  await cine('一个高大的老人背着你去猎貔貅，你骑在他脖子上咯咯地笑。', 'mem');
+  await cine('一只女人的手按住你的胸口。刀锋很凉。<br>她从你胸口取走了一块骨头——那块骨头，在发光。', 'mem');
+  await cine('一男一女红着眼睛冲进一座大宅子。<br>他们把你护在身后，和一屋子的人打了起来。<br>……那是你爹，你娘。', 'mem');
   await me('……那是我的骨头。她把我的骨头拿走了，给了别人。');
   await say('chief', '你爹娘为了你，跟整个石族翻了脸。后来他们把你送到这里，就再也没有消息。');
   const c = await choose(['我要去找他们。', '我要把我的骨头拿回来。', '（什么也没说，攥紧了拳头）']);
@@ -192,9 +199,9 @@ async function S_banditFight() {
   if (!await fightRetry({ mobs: [['bandit', slv(10)], ['bandit', slv(10)], ['bandit', slv(10)]], title: '山贼营地' })) return false;
   await nar('山贼头子一把扯开胸前的兽皮，露出一块刻满符文的骨牌。阴风四起，一团扭曲的黑影从骨牌里钻了出来——是他们供奉的祭灵。');
   await nar('黑影压下来的那一刻，你体内有什么东西轰地炸开了——一座、两座、三座，三片小小的天地在你体内开辟出来，神光从里面涌出。');
-  await nar('<b>洞天境</b>。你一口气开了三座洞天。');
+  await cine('一座、两座、三座。<br>三片小小的天地在你体内撑开，神光从里面涌出来。<br><b>洞天境</b>——你一口气开了三座洞天。');
   if (C.lv < 10) { C.lv = 10; C.exp = 0; fullHeal(); logLine('<b class="lvup">踏入洞天境！</b>', 'sys'); }
-  if (!await fightRetry({ mobs: [['jiling', slv(11, -1, 1)]], title: '山贼的祭灵' })) return false;
+  if (!await fightRetry({ mobs: [['jiling', slv(11, -1, 1)]], title: '山贼的祭灵', epic: { name: '祭灵', sub: '山贼供了三代的邪物 · 吃过七个村子的香火', seal: '邪祟', intro: ['族长被绑在木桩上，冲你拼命摇头。', '你没有看他。你看着那团黑影。'], phase: '祭灵张开了一张不存在的嘴——营地里所有的火把同时熄灭了。', low: { who: '族长', t: '“小不点，跑啊——！”<br>……你没有跑。是这个老人，一口兽奶一口米汤，把你喂大的。' }, end: ['黑影在你拳下碎成了一千片。', '你回过头。族长在哭。'] } })) return false;
   await nar('祭灵散成了一缕黑烟。山贼们哭爹喊娘地跑了。你把族长从木桩上解下来，族长一把抱住你，半天说不出话。');
   F().saved = 1; F().xushen = 1;
   await say('chief', '……三座洞天。好，好。柳神说得对，你是要走出大荒的人。');
@@ -221,13 +228,14 @@ async function S_leave() {
   await say('pihou', '在外面要是有人欺负你，就回来，我们一起揍他！');
   await say('ermeng', '……给你。（塞过来一罐兽奶）我偷的。');
   give('milk', 5); give('baoyao', 2);
-  await nar('你走到村口，回头看了一眼。柳神的那根柳枝在风里摇着，像是在挥手。');
+  await cine('你走到村口，回头看了一眼。<br>大壮在哭，皮猴在跳着挥手，二猛背过了身去。<br>柳神的那根柳枝在风里摇着——像是在说，去吧。');
   F().butian = 1;
-  await nar('<b>【第一章 · 石村　完】</b>');
+  await cine('<div class="cc"><small>第一章</small><b>石村</b><i>完</i></div>', 'card');
   tip('沿着出山古道一直往北，就是<b>补天阁</b>。');
 }
 /* ---------------- 第三章 · 补天阁 ---------------- */
 async function S_gate() {
+  await chapterCard('第三章', '补天阁', '大荒之外，还有更大的天');
   await nar('补天阁的山门比你想的还要高。门口排着长长的队伍，都是来拜师的少年，每个人手里都捧着一块发光的石头——补天石，补天阁收徒的信物。');
   await say('qingfeng', '我们的补天石，族长给的，在你包袱里。');
   await nar('你一摸包袱，空了。人群里一个瘦高个正挤出去，冲你挤了挤眼睛，转眼就没影了。');
@@ -240,9 +248,9 @@ async function S_lotus() {
   await nar('洞壁的阴影里，还趴着另一头，呼噜打得震天响。你屏住呼吸——');
   const sn = await miniGame('sneak', { title: '潜行', desc: '一步一步挪过去。老虎呼气的时候，正是你迈步的时候。', steps: 6 });
   if (sn.ok) { await nar('你挪到了水边，手指碰到了黑莲的花瓣——'); await nar('“咕——噜噜噜噜——”'); await nar('你的肚子叫了。叫得整个山洞都在回响。离你最近的那头黑纹虎猛地睁开了眼睛。另一头翻了个身，接着睡。'); await me('……我早上就喝了一口兽奶。');
-    if (!await fightRetry({ mobs: [['tiger', slv(12)]], title: '虎穴 · 黑纹虎' })) return false; }
+    if (!await fightRetry({ mobs: [['tiger', slv(12)]], title: '虎穴 · 黑纹虎', epic: E_TIGER })) return false; }
   else { await nar('脚下“咔嚓”一声，你踩断了一根骨头。两头黑纹虎同时睁开了眼睛。'); await me('……我就说这洞里骨头太多了。');
-    if (!await fightRetry({ mobs: [['tiger', slv(12)], ['tiger', slv(11)]], title: '虎穴 · 黑纹虎' })) return false; }
+    if (!await fightRetry({ mobs: [['tiger', slv(12)], ['tiger', slv(11)]], title: '虎穴 · 黑纹虎', epic: E_TIGER })) return false; }
   give('heilian'); await nar('你把黑莲揣进怀里，顺手把虎肉也扛了回去。');
 }
 async function S_join() {
@@ -333,6 +341,7 @@ async function S_lib() {
 }
 /* ---------------- 第四章 · 百断山 ---------------- */
 async function S_baiduan() {
+  await chapterCard('第四章', '百断山', '活着出来，是唯一的规矩');
   await say('gezhu', '百断山要开了。各族的少年天才都会进去抢机缘——宝药、宝骨、上古留下来的兵器。补天阁要派人去，我想让你去。');
   await say('gezhu', '里面的规矩只有一条：活着出来。');
   await say('guiye', '……（诡爷突然开口了，声音沙哑得像两块石头在磨）分宝崖上……有一柄锈剑。');
@@ -353,7 +362,7 @@ async function S_bdgate() {
 async function S_lion() {
   await nar('狮岭顶上的洞里，九道吼声同时响起。一头生着九个脑袋的金色巨狮从洞里走了出来，每个脑袋都比你整个人还大。');
   await say('huolinger', '（追了上来）黄金九头狮！一个人打不过的——一起上！');
-  if (!await fightRetry({ mobs: [['lion', slv(14, -1, 1)]], allies: ['a_huo'], title: '黄金九头狮' })) return false;
+  if (!await fightRetry({ mobs: [['lion', slv(14, -1, 1)]], allies: ['a_huo'], title: '黄金九头狮', epic: { name: '黄金九头狮', sub: '狮岭之王 · 九首九吼', intro: ['九个脑袋同时低了下来。九双金色的眼睛，都在看你。', '火灵儿的大鸟在你头顶盘旋，羽毛都炸开了。'], phase: '九个脑袋一齐仰天长吼，金鬃炸开——狮岭上的石头像下雨一样滚落！', low: { who: '火灵儿', t: '“喂！小不点！你要是死在这儿，我回去跟谁比啊！”' }, end: ['最后一个脑袋垂了下去。', '整座狮岭安静得只剩下风声。'] } })) return false;
   await say('huolinger', '……你这人，看着小，下手倒是真狠。');
   await nar('那只大红鸟又飞来了，这回没抢东西，蹲在不远处的树上，歪着头看你。');
 }
@@ -361,7 +370,7 @@ async function S_yu() {
   await nar('荒漠里，风沙忽然停了。一群披着冰甲的人从四面围了上来，身后跟着几头比马还大的白狼。');
   await say('雨族高手', '补天阁的小子？听说你在虚神界很威风。雨族办事，你就当自己倒霉吧。');
   if (!await fightRetry({ mobs: [['yuzu', slv(14)], ['bigwolf', slv(14)], ['bigwolf', slv(14)]], title: '雨族截杀' })) return false;
-  if (!await fightRetry({ mobs: [['yuchief', slv(15, -1, 1)]], title: '雨族高手' })) return false;
+  if (!await fightRetry({ mobs: [['yuchief', slv(15, -1, 1)]], title: '雨族高手', epic: { name: '雨族高手', sub: '雨族截杀队的头领', intro: ['冰甲上结着霜。他每走一步，脚下的沙子就冻成一片。', '他没把你当人看——你只是一件要办完的差事。'], phase: '他摘下了面罩。寒气倒灌出来，整片荒漠下起了冰雨。', low: { who: '柳神', t: '（胸口那片柳叶做的护符微微一热，像有人在你耳边说：别睡。）' } } })) return false;
   await nar('雨族高手临死前捏碎了一块玉符，一股寒气瞬间把你冻成了一座冰雕。你动不了，只能眼睁睁看着剩下的雨族战士围上来——');
   await nar('一团红影从天上砸了下来，一爪子把冰雕抓了起来——是那只大红鸟！它驮着你，跌跌撞撞地飞出了荒漠。');
   await nar('冰化开以后，你躺在一片沙丘上，那只大红鸟蹲在旁边，用嘴梳着被冻掉的羽毛。');
@@ -388,9 +397,9 @@ async function S_fenbao() {
 async function S_spring() {
   await nar('不老泉边围着三头凶兽。一头白虎守着泉眼，一头半边身子泛着金光的大鹏盘旋在天上，一个白衣少女静静站在泉边，看着它们。');
   await say('云曦', '你也是来取泉水的？……那就先过了白虎这一关。');
-  if (!await fightRetry({ mobs: [['whitetiger', slv(16, -1, 1)]], title: '不老泉 · 白虎' })) return false;
+  if (!await fightRetry({ mobs: [['whitetiger', slv(16, -1, 1)]], title: '不老泉 · 白虎', epic: { name: '白虎', sub: '不老泉的守泉兽', intro: ['它守着这眼泉，守了不知道多少年。'], phase: '白虎周身腾起白色的煞气，泉水都跟着沸了。' } })) return false;
   await nar('白虎倒下，天上的金鹏发出一声暴怒的长啸，收起翅膀直扑下来。');
-  if (!await fightRetry({ mobs: [['jinpeng', slv(17, -1, 1)]], allies: ['a_yunxi'], title: '半血金鹏' })) return false;
+  if (!await fightRetry({ mobs: [['jinpeng', slv(17, -1, 1)]], allies: ['a_yunxi'], title: '半血金鹏', epic: { name: '半血金鹏', sub: '身上流着一半金翅大鹏的血', intro: ['它收起翅膀扑下来，整片天都暗了。', '云曦第一次拔出了剑，站到了你旁边。'], phase: '金鹏半边身子燃起了金火——那是它体内金翅大鹏的血，在烧。', low: { who: '云曦', t: '“……站起来。你不是要泉水吗？”' }, end: ['金色的羽毛落了一地，像下了一场雨。'] } })) return false;
   await nar('你提着锈剑站在泉边，满身是血，金鹏的羽毛落了一地。云曦看了你很久，取了一瓢泉水，转身走了。');
   give('bulao'); F().spring = 1;
   await nar('你装了一瓶泉水，又打了一壶带走——补天阁的神藤快枯死了，阁主说过，它需要好水。');
@@ -402,16 +411,16 @@ async function S_tianguDone() {
 async function S_mount() {
   await nar('花果山上的果树一棵挨着一棵，可林子正中的那棵大树长得怪极了——树皮像人脸，枝条像手臂，结着一颗颗毛茸茸的种子。');
   await nar('种子一碰就炸开，满天都是花粉。你眼前一花，看见了爹娘……不对，是幻象！');
-  if (!await fightRetry({ mobs: [['pumo', slv(18, -1, 1)]], title: '蒲魔树' })) return false;
+  if (!await fightRetry({ mobs: [['pumo', slv(18, -1, 1)]], title: '蒲魔树', epic: { name: '蒲魔树', sub: '会造梦的妖树', seal: '妖', intro: ['花粉里，你看见了爹娘。他们冲你伸出了手。', '……是假的。你知道是假的。'], phase: '蒲魔树把根扎进了你的影子里——你听见娘在叫你的小名。', low: { who: '你自己', t: '（你咬破了舌尖）……他们还没见过长大的我。我不能死在一个梦里。' }, end: ['幻象碎了。', '你在原地站了很久，才想起擦一擦脸。'] } })) return false;
   await nar('蒲魔树倒下，你饿了一路，顺手挖了一截树根啃——居然是甜的。啃着啃着，你看见树后面的崖上，长着两个红得发亮的桃子。');
   const c = await choose(['摘！', '这么好的桃子，肯定有主人……（但是摘！）']);
   give('xiantao');
   await nar('你刚把桃子揣进怀里，整座山就晃了一下。山顶上，那个比山还沉的身影站了起来——<b>神猴王</b>。');
   await nar('它抓起半座山当锤子，砸了下来。湖水冲天而起，结成一座大阵，把你、云曦，还有好几个来偷桃的少年全困在了里面。');
-  const w = await fight({ mobs: [['monkeyking', 22]], title: '神猴王 · 灵湖阵', noLose: true, flee: false });
+  const w = await fight({ mobs: [['monkeyking', 22]], title: '神猴王 · 灵湖阵', noLose: true, flee: false, epic: { name: '神猴王', sub: '花果山之主 · 百断山里最古老的凶物', seal: '太古', intro: ['它站起来的时候，山矮了一截。', '灵湖阵的水墙从四面合拢——没有退路了。'], phase: '水墙里映出了一百个神猴王的影子，一百只拳头一起砸了下来！', low: { who: '小塔', t: '（挂在你脖子上的那个小坠子，第一次发烫了。）' } } });
   await nar(w ? '你竟然把神猴王的一只手打得缩了回去！可灵湖阵越收越紧——' : '你被一锤砸进了湖底，大阵越收越紧，水压得你喘不过气——');
   await nar('就在这时，你挂在脖子上当装饰的那个小东西亮了。那是一座只有四层的小塔，你一直以为它就是个好看的坠子。');
-  await nar('小塔垂下一道光幕，“咔嚓”一声，灵湖阵裂开了一道缝。');
+  await cine('那是一座只有四层的小塔。<br>它垂下一道光幕，轻轻一磕——<br>“咔嚓”。灵湖阵裂开了一道缝。');
   learnSkill('ta');
   const c2 = await choose(['从裂缝里钻出去，赶紧跑！', '回头把云曦也拉出来']);
   if (c2 === 1) { F().yunxi = 1; await nar('你一头扎回阵里，抓住云曦的手腕，把她拖了出来。她看着你，第一次露出了一点笑。'); }
@@ -433,7 +442,8 @@ async function S_return() {
   await me('我就知道！（伸手）烤肉，我欠你一顿。');
   F().qfIn = 1;
   F().end = 1; gainExp(1);
-  await nar('<b>【第一卷 · 完】</b><br>石村的小不点走出了大荒，在补天阁站稳了脚跟，在百断山里闯出了名字。<br>你胸口的那道疤还在，爹娘还没有消息，那块被挖走的骨头还在别人身上。<br>路还很长。<br><br>（第二卷之后再写。大荒、补天阁、百断山都还开着，虚神界和凶兽首领也是。）');
+  await cine('<div class="cc"><small>第一卷</small><b>石村少年</b><i>完</i></div>', 'card');
+  await nar('石村的小不点走出了大荒，在补天阁站稳了脚跟，在百断山里闯出了名字。<br>你胸口的那道疤还在，爹娘还没有消息，那块被挖走的骨头还在别人身上。<br>路还很长。<br><br>（第二卷之后再写。大荒、补天阁、百断山都还开着，虚神界和凶兽首领也是。）');
 }
 
 async function S_yunxiBack() {

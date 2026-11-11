@@ -163,11 +163,11 @@ body.cols #banner .ar{max-width:38%}
 @keyframes rumor{0%{opacity:0;transform:translateY(-4px)}8%,88%{opacity:1;transform:none}100%{opacity:0}}
 #rumor .rw{color:var(--gold);margin-right:6px;font-size:.72rem}
 body.noanim #rumor.on{opacity:1;transform:none}
-.bubble{max-width:200px;font-size:.82rem;line-height:1.4;color:#2a2118;background:#fbf2df;border-radius:10px;padding:5px 9px;box-shadow:0 3px 10px #0008;transform:translate(-50%,-100%)!important;animation:bubble 2.3s ease both;z-index:7;text-align:left}
+.bubble{max-width:200px;font-size:.82rem;line-height:1.4;color:#2a2118;background:#fbf2df;border-radius:10px;padding:5px 9px;box-shadow:0 3px 10px #0008;transform:translate(-50%,-100%)!important;animation:bubble var(--life,3.6s) ease both;z-index:7;text-align:left}
 .bubble::after{content:'';position:absolute;left:50%;bottom:-6px;margin-left:-6px;border:6px solid transparent;border-bottom:0;border-top-color:#fbf2df}
 .bubble.act{font-style:italic;color:#5a4a34;background:#e8dcc0}.bubble.act::after{border-top-color:#e8dcc0}
 .bubble.me{background:#ffe9b0}.bubble.me::after{border-top-color:#ffe9b0}
-@keyframes bubble{0%{opacity:0;margin-top:8px}10%,85%{opacity:1;margin-top:0}100%{opacity:0}}
+@keyframes bubble{0%{opacity:0;margin-top:8px}6%,90%{opacity:1;margin-top:0}100%{opacity:0}}
 #bfeed .taunt,.logv .taunt{color:#e8c8a8;font-style:italic}
 /* small games */
 .mhint{font-size:.85rem;color:var(--ink2);text-indent:0;margin-top:4px}
@@ -478,6 +478,49 @@ body.short #bhead .order{display:none}
 .fx-lei svg{width:100%;height:100%;fill:#e8f4ff;filter:drop-shadow(0 0 6px #8fd0ff) drop-shadow(0 0 14px #4a8aff);animation:bolt .45s both}
 @keyframes bolt{0%{opacity:0;transform:translateY(-40px)}20%{opacity:1;transform:none}40%{opacity:.3}55%{opacity:1}100%{opacity:0}}
 .fx-flash{position:absolute;inset:0;transform:none;background:#cfe6ff;animation:flash .35s both}
+.fx-whiteflash{position:absolute;inset:0;transform:none;background:#fffaf0;animation:flash .9s both;z-index:9}
+.fx-burstflash{position:absolute;inset:0;transform:none;background:radial-gradient(circle at 50% 75%,#ffe9a8cc,#ffd06a33 45%,transparent 70%);animation:flash 1.4s both;z-index:8}
+.fx-inkburst{width:var(--w);height:var(--w);z-index:8}.fx-inkburst b{position:absolute;left:50%;top:50%;width:160%;height:160%;border-radius:50%;transform:translate(-50%,-50%) scale(.2);background:radial-gradient(circle,#0a0806ee 30%,#0a080600 70%);animation:inkb 1.1s ease-out both}
+.fx-inkburst b:nth-child(2){animation-delay:.08s;width:120%;height:220%;transform:translate(-50%,-50%) rotate(40deg) scale(.2)}.fx-inkburst b:nth-child(3){animation-delay:.14s;width:220%;height:90%}
+@keyframes inkb{0%{opacity:0}20%{opacity:.9}100%{opacity:0;transform:translate(-50%,-50%) scale(1.4)}}
+.uc.bursting{animation:bursting 1.6s ease both}@keyframes bursting{0%,100%{box-shadow:none}30%{box-shadow:0 0 0 3px #ffe08a,0 0 30px #ffd06a}}
+/* boss card & cinematic bands */
+.bosscard{position:absolute;inset:0;transform:none;pointer-events:auto;z-index:20;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;background:radial-gradient(ellipse at 50% 45%,#2a0c0aee,#070404f8 70%);animation:bcin .5s ease both;cursor:pointer;overflow:hidden;text-align:center;padding:0 16px}
+.bosscard.out{animation:bcout .4s ease both}@keyframes bcin{from{opacity:0}}@keyframes bcout{to{opacity:0}}
+.bc-ink{position:absolute;left:50%;top:44%;width:min(120%,900px);height:180px;transform:translate(-50%,-50%) skewY(-4deg);background:radial-gradient(ellipse at center,#000c 0%,#0008 50%,transparent 72%);filter:blur(6px);animation:bcink 1s ease both}
+@keyframes bcink{from{transform:translate(-50%,-50%) skewY(-4deg) scaleX(.1);opacity:0}}
+.bc-sub{position:relative;font-size:.85rem;letter-spacing:4px;color:#d8b07a;animation:bcfade .6s .25s ease both}
+.bc-name{position:relative;font-family:var(--fh);font-size:clamp(2.6rem,9vw,4.6rem);line-height:1.1;letter-spacing:.18em;color:#f6ead0;text-shadow:0 0 18px #ff3a1a88,0 4px 0 #000;animation:bcname .9s cubic-bezier(.2,1.4,.4,1) both}
+@keyframes bcname{0%{opacity:0;transform:scale(1.8);filter:blur(6px)}100%{opacity:1;transform:none;filter:none}}
+.bc-seal{position:relative;font-family:var(--fh);font-size:.95rem;color:#fbe9d0;background:#b3261c;border-radius:4px;padding:2px 8px;transform:rotate(-6deg);box-shadow:inset 0 0 0 2px #fbe9d066;animation:bcseal .4s .7s cubic-bezier(.3,1.8,.5,1) both}
+@keyframes bcseal{from{opacity:0;transform:rotate(-6deg) scale(2.4)}}
+.bc-lines{position:relative;margin-top:14px;max-width:560px}
+.bc-line{font-size:1rem;line-height:1.8;color:#e8dcc4;opacity:0;animation:bcfade .8s ease both}
+@keyframes bcfade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.bc-skip{position:absolute;bottom:12px;right:14px;font-size:.72rem;color:#ffffff55}
+.cineband{position:absolute;left:0;right:0;top:42%;transform:translateY(-50%);z-index:12;text-align:center;padding:16px 22px;background:linear-gradient(90deg,transparent,#0b0806e6 12%,#0b0806e6 88%,transparent);animation:cband var(--dur,3s) ease both}
+.cineband small{display:block;font-size:.78rem;letter-spacing:3px;color:#d8b07a;margin-bottom:4px}
+.cineband span{font-family:var(--fh);font-size:clamp(1.05rem,3.6vw,1.45rem);line-height:1.6;color:#f6ead0;text-shadow:0 2px 6px #000}
+.cineband.phase{background:linear-gradient(90deg,transparent,#3a0a06ee 12%,#3a0a06ee 88%,transparent)}.cineband.phase span{color:#ffd0b8}
+.cineband.burst{background:linear-gradient(90deg,transparent,#2a1e06ee 12%,#2a1e06ee 88%,transparent);box-shadow:0 0 40px #ffd06a44}.cineband.burst span{color:#fff1c8}.cineband.burst small{color:#ffe08a}
+.cineband.end span{font-size:clamp(1rem,3.2vw,1.3rem)}
+@keyframes cband{0%{opacity:0;clip-path:inset(0 50% 0 50%)}12%{opacity:1;clip-path:inset(0 0 0 0)}85%{opacity:1}100%{opacity:0}}
+#bfeed .cine{display:block;color:#f3dcb0;font-family:var(--fh)}#bfeed .cine.red{color:#ffb8a0}
+/* story cinematics: full-screen lines over the painting */
+#vTalk.cine #tbg{opacity:1;filter:brightness(.42) saturate(.85);height:100%!important;transition:filter .6s}
+#vTalk.cine::before{background:radial-gradient(ellipse at center,transparent 30%,#000a 100%)}
+#vTalk.mem #tbg{filter:sepia(.75) brightness(.55) blur(1.5px)}
+#vTalk.cine{align-items:center}
+#vTalk.cine #dlg{background:none;box-shadow:none;color:#f4ead2;text-align:center;max-width:680px;padding:20px 22px;overflow:visible}
+#vTalk.cine #dlg .nx{text-align:center;color:#f4ead277}
+.cine-t{font-family:var(--fh);font-size:clamp(1.15rem,3.6vw,1.55rem);line-height:1.9;text-shadow:0 2px 10px #000;animation:cinein 1.2s ease both}
+.cine-t b{color:#ffd77a}
+#vTalk.mem .cine-t{font-style:italic;color:#f0dcb4}
+@keyframes cinein{from{opacity:0;filter:blur(6px);letter-spacing:.2em}to{opacity:1;filter:none}}
+.cc{display:flex;flex-direction:column;align-items:center;gap:6px}
+.cc small{font-size:.95rem;letter-spacing:8px;color:#d8b07a}
+.cc b{font-size:clamp(2.6rem,10vw,4.4rem);letter-spacing:.3em;color:#f6ead0!important;padding-left:.3em;animation:bcname 1.1s cubic-bezier(.2,1.3,.4,1) both}
+.cc i{font-style:normal;font-size:1rem;color:#e8dcc4;letter-spacing:2px;animation:bcfade .8s .8s ease both}
 .fx-redflash{position:absolute;inset:0;transform:none;background:radial-gradient(transparent 30%,#ff200088);animation:flash .9s both}
 @keyframes flash{0%{opacity:0}20%{opacity:.3}100%{opacity:0}}
 .fx b{display:block;border-radius:50%}
@@ -659,6 +702,7 @@ const MOODS = {
   wild: { bpm: 58, root: 57, scale: [0, 3, 5, 7, 10], prog: [0, -2, 3, -4], lead: 'sine', lp: 1800, dens: 0.28, drone: 1, pad: 0.025 },
   battle: { bpm: 136, root: 52, scale: [0, 3, 5, 7, 10], prog: [0, 0, 3, -2], lead: 'sawtooth', lp: 1500, dens: 0.6, bass: 2, drums: 1 },
   butian: { bpm: 66, root: 60, scale: [0, 2, 5, 7, 9], prog: [0, 5, 2, 7], lead: 'sine', lp: 3200, dens: 0.35, bell: 1, pad: 0.03 },
+  boss: { bpm: 148, root: 50, scale: [0, 1, 5, 7, 8], prog: [0, -4, 1, -2], lead: 'sawtooth', lp: 2000, dens: 0.72, bass: 2, drums: 1, pad: 0.03 },
   xushen: { bpm: 52, root: 64, scale: [0, 2, 4, 7, 11], prog: [0, 4, -3, 2], lead: 'sine', lp: 4000, dens: 0.3, bell: 1, pad: 0.035 },
 };
 const mfreq = m => 440 * Math.pow(2, (m - 69) / 12);
@@ -668,13 +712,13 @@ function mvoice(type, m, t, dur, vol, lp = 0, att = 0.01) {
   let n = o; if (lp) { const f = X.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = lp; o.connect(f); n = f; } n.connect(g); g.connect(MUS.bus); o.start(t); o.stop(t + dur + 0.05);
 }
 function mnoise(t, dur, vol, type, f) { const X = AU.ctx, s = X.createBufferSource(), fl = X.createBiquadFilter(), g = X.createGain(); s.buffer = AU.noise; fl.type = type; fl.frequency.value = f; g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0001, t + dur); s.connect(fl); fl.connect(g); g.connect(MUS.bus); s.start(t, Math.random() * 0.5); s.stop(t + dur + 0.05); }
-function musicWanted() { if (!SET.music || SET.mute || STATE.mode !== 'play' || !C || !AU.ctx) return null; if (STATE.battle) return 'battle'; const a = PLACES[C.loc].area; return { shicun: 'village', dahuang: 'wild', baiduan: 'wild', butian: 'butian', xushen: 'xushen' }[a] || 'wild'; }
+function musicWanted() { if (!SET.music || SET.mute || STATE.mode !== 'play' || !C || !AU.ctx) return null; if (STATE.battle) return STATE.battle.epic ? 'boss' : 'battle'; const a = PLACES[C.loc].area; return { shicun: 'village', dahuang: 'wild', baiduan: 'wild', butian: 'butian', xushen: 'xushen' }[a] || 'wild'; }
 function musicMode() {
   const want = musicWanted(); if (want === MUS.cur) return; const X = AU.ctx; if (!X) return;
   if (!MUS.bus) { MUS.bus = X.createGain(); MUS.bus.gain.value = 0; MUS.bus.connect(AU.master); }
   const g = MUS.bus.gain, t = X.currentTime; g.cancelScheduledValues(t); g.setValueAtTime(g.value, t); g.linearRampToValueAtTime(0, t + 0.4);
   MUS.cur = want; clearInterval(MUS.timer); MUS.timer = 0; if (!want) return;
-  setTimeout(() => { if (MUS.cur !== want) return; MUS.t = X.currentTime + 0.05; MUS.step = 0; MUS.last = 2; const t2 = X.currentTime; g.cancelScheduledValues(t2); g.setValueAtTime(0, t2); g.linearRampToValueAtTime(want === 'battle' ? 0.3 : 0.26, t2 + 1.2); MUS.timer = setInterval(musicTick, 90); }, 450);
+  setTimeout(() => { if (MUS.cur !== want) return; MUS.t = X.currentTime + 0.05; MUS.step = 0; MUS.last = 2; const t2 = X.currentTime; g.cancelScheduledValues(t2); g.setValueAtTime(0, t2); g.linearRampToValueAtTime(want === 'battle' || want === 'boss' ? 0.3 : 0.26, t2 + 1.2); MUS.timer = setInterval(musicTick, 90); }, 450);
 }
 function musicTick() {
   const X = AU.ctx, M = MOODS[MUS.cur]; if (!X || !M) return; const sd = 60 / M.bpm / 2;
@@ -734,7 +778,7 @@ const SKILLS = {
   ta: { name: '小塔', icon: '🗼', got: 'sk_ta', mp: 22, cd: 5, tgt: 'allies', shield: 1.6, desc: '那座只有四层的小塔垂下光幕，全队获得 1.6 倍攻击的护盾。' },
 };
 const SKILL_ORDER = ['qly', 'sn', 'gw', 'lei', 'dsh', 'jian', 'ta'];
-const STATUS = { stun: { n: '眩晕', c: '#ffd34a' }, bleed: { n: '流血', c: '#ff6a6a' }, burn: { n: '灼烧', c: '#ff8a3a' }, poison: { n: '中毒', c: '#9ad84a' }, def: { n: '坚守', c: '#ffd28a' }, taunt: { n: '嘲讽', c: '#ffb36a' }, atk: { n: '凶性', c: '#ff9a6a' }, dodge: { n: '灵动', c: '#9ad8ff' }, sure: { n: '必暴', c: '#ffe46a' }, shield: { n: '护盾', c: '#9ae8b0' }, guard: { n: '防御', c: '#c8c0b0' }, weak: { n: '虚弱', c: '#b0a0ff' }, bound: { n: '锁链', c: '#d8b070' }, brk: { n: '破甲', c: '#e0a070' }, mark: { n: '印记', c: '#c08aff' }, freeze: { n: '冰封', c: '#9ad8ff' }, rage: { n: '狂怒', c: '#ff4a2a' } };
+const STATUS = { burst: { n: '绝境', c: '#ffe08a' }, stun: { n: '眩晕', c: '#ffd34a' }, bleed: { n: '流血', c: '#ff6a6a' }, burn: { n: '灼烧', c: '#ff8a3a' }, poison: { n: '中毒', c: '#9ad84a' }, def: { n: '坚守', c: '#ffd28a' }, taunt: { n: '嘲讽', c: '#ffb36a' }, atk: { n: '凶性', c: '#ff9a6a' }, dodge: { n: '灵动', c: '#9ad8ff' }, sure: { n: '必暴', c: '#ffe46a' }, shield: { n: '护盾', c: '#9ae8b0' }, guard: { n: '防御', c: '#c8c0b0' }, weak: { n: '虚弱', c: '#b0a0ff' }, bound: { n: '锁链', c: '#d8b070' }, brk: { n: '破甲', c: '#e0a070' }, mark: { n: '印记', c: '#c08aff' }, freeze: { n: '冰封', c: '#9ad8ff' }, rage: { n: '狂怒', c: '#ff4a2a' } };
 
 /* ---------- 功法 / 修炼所得 (passive) ---------- */
 const GONGFA = {
@@ -967,17 +1011,17 @@ const DUNGEONS = {
     rooms: [
       { name: '墓道', text: '墓道两侧蹲着一排石兽，你刚走过，最近的两只就扭过了脖子。', mobs: ['tombguard', 'tombbat'] },
       { name: '殉葬坑', text: '一个深坑里堆满了凶兽的骨头，坑边散落着几个陶罐，罐口还封着兽皮。', event: 'jars' },
-      { name: '主墓室', text: '墓室正中卧着一头狻猊。它的肉身早已干枯，可那双眼睛缓缓睁开了——它在等，等一个能继承它宝术的人，或者一顿饭。', mobs: ['suanni'], boss: 1 }] },
+      { name: '主墓室', text: '墓室正中卧着一头狻猊。它的肉身早已干枯，可那双眼睛缓缓睁开了——它在等，等一个能继承它宝术的人，或者一顿饭。', mobs: ['suanni'], boss: 1, epic: { name: '狻猊', sub: '葬在石林下的太古凶兽 · 一缕残魂', seal: '太古', intro: ['它的肉身早就干了，可那双眼睛还是活的。', '它在看你——够不够格。'], phase: '狻猊仰天一吼，整座墓室的骨头都跟着吼了起来！', low: { who: '族长', t: '“打不过就跑。”……可是爷爷，它在看着我。' }, end: ['狻猊低下头，用鼻尖碰了碰你的额头。'] } }] },
   tiangu: { name: '天骨禁区', lv: 17, loc: 'bd_bone',
     rooms: [
       { name: '白骨道', text: '脚下全是骨头，踩上去咯吱作响。骨缝里飘出几道残魂。', mobs: ['bonewraith', 'bonewraith'] },
       { name: '骨山', text: '一副山一样大的骨架挡在前面，肋骨之间结着一张发光的符文网。', event: 'runes' },
-      { name: '天骨之心', text: '骨山深处，那副山一样大的骨架慢慢动了。一团残魂从骨缝里聚起来，还记得自己活着时有多凶。', mobs: ['boneking'], boss: 1 }] },
+      { name: '天骨之心', text: '骨山深处，那副山一样大的骨架慢慢动了。一团残魂从骨缝里聚起来，还记得自己活着时有多凶。', mobs: ['boneking'], boss: 1, epic: { name: '天骨残魂', sub: '山一样大的骨架里，最后一点凶性', seal: '太古', intro: ['骨山在动。', '它早就忘了自己是谁，只记得自己有多凶。'], phase: '残魂把整座骨山都拉进了自己的身体！', low: { who: '诡爷', t: '“……锈剑认你。”你握紧了剑柄。' } } }] },
   leichi: { name: '雷池深处', lv: 20, loc: 'bt_leichi',
     rooms: [
       { name: '焦土', text: '坑壁上嵌着几具铜傀儡，被雷劈了不知多少年，阵纹还在一闪一闪。你一落地，它们就动了。', mobs: ['puppet', 'ape'] },
       { name: '雷眼', text: '一道紫色的雷光从地底直冲上来，粗得像一棵古树。站在它旁边，你浑身的汗毛都竖起来了。', event: 'thunder' },
-      { name: '雷兽巢', text: '雷光的尽头趴着一头浑身鳞甲的古兽，每一次呼吸，鳞缝里都迸出电光。它睁开了眼睛。', mobs: ['leishou'], boss: 1 }] },
+      { name: '雷兽巢', text: '雷光的尽头趴着一头浑身鳞甲的古兽，每一次呼吸，鳞缝里都迸出电光。它睁开了眼睛。', mobs: ['leishou'], boss: 1, epic: { name: '雷兽', sub: '雷池最深处的古兽', intro: ['它每呼吸一次，鳞缝里都迸出一串电光。'], phase: '雷兽张口一吞，把整片雷池的雷都吞进了肚子里！' } }] },
 };
 
 /* ================= growth & long-term goals: 宝骨 (relics), difficulty, trades, daily bounties, titles, 雷池深处 ================= */
@@ -1181,7 +1225,7 @@ function battleCreate(spec) {
   blog(B, `<span class="bt">⚔ ${spec.title || '战斗开始'}</span>`);
   const foes = B.units.filter(u => u.side === 1), talker = foes.find(u => u.boss || u.kind === 'rival') || foes[0];
   if (talker && battleSay(B, talker, 'open') && chance(0.35)) { const h = B.units[0], t = pick(RETORT); fxe(B, { k: 'say', t: h.id, text: t }); blog(B, `<span class="taunt"><span class="pc">石昊</span>：「${t}」</span>`); }
-  B.sayQ = [];
+  B.sayQ = []; B.epic = spec.epic || null;
   return B;
 }
 const alive = (B, side) => B.units.filter(u => u.alive && (side === undefined || u.side === side));
@@ -1236,7 +1280,7 @@ function botAct(B, u) { // auto-battle for 石昊 and the AI for 虚神界 rival
 const weakOf = (d, el) => el && d.mob && MOBS[d.mob] && MOBS[d.mob].weak && MOBS[d.mob].weak[el] || 0;
 function hitCalc(a, d, mul, mag, opts = {}) {
   const dodge = 0.03 + Math.max(0, d.spd - a.spd) * 0.008 + stV(d, 'dodge'); if (!opts.sure && Math.random() < Math.min(0.5, dodge)) return { miss: true, dmg: 0 };
-  const atk = a.atk * (1 + stV(a, 'atk') + stV(a, 'rage')) * (1 - stV(a, 'weak')); const wk = weakOf(d, opts.el); if (wk) mul *= wk; let def = d.def * (1 + stV(d, 'def')) * (1 - stV(d, 'brk')); if (mag) def *= 0.5; if (opts.pierce) def = 0;
+  const atk = a.atk * (1 + stV(a, 'atk') + stV(a, 'rage') + stV(a, 'burst')) * (1 - stV(a, 'weak')); const wk = weakOf(d, opts.el); if (wk) mul *= wk; let def = d.def * (1 + stV(d, 'def')) * (1 - stV(d, 'brk')); if (mag) def *= 0.5; if (opts.pierce) def = 0;
   let bound = false; if (!mag && stOf(d, 'bound')) { mul *= 1.3; bound = true; d.st = d.st.filter(s => s.k !== 'bound'); } // 骨文锁链 → the next physical hit lands harder
   const K = BAL.defK + a.lv * 7; let dmg = atk * mul * K / (K + def) * rnd(0.9, 1.1);
   const crit = !!stOf(a, 'sure') || Math.random() < a.crit; if (crit) dmg *= BAL.critMul; if (stOf(d, 'guard')) dmg *= 0.5;
@@ -1250,11 +1294,11 @@ function applyDmg(B, a, d, dmg, info = {}) {
   const sh = stOf(d, 'shield'); let absorbed = 0; if (sh) { absorbed = Math.min(sh.v, dmg); sh.v -= absorbed; dmg -= absorbed; if (sh.v <= 0) d.st.splice(d.st.indexOf(sh), 1); }
   if (B.roam && d.side === 1 && dmg > 0) B.roamDmg = (B.roamDmg || 0) + Math.min(dmg, d.hp);
   d.hp -= dmg; if (a && a.leech && dmg > 0) a.hp = Math.min(a.hpMax, a.hp + dmg * a.leech);
-  fxe(B, { k: info.dot ? 'dot' : 'hit', t: d.id, v: dmg + absorbed, crit: !!info.crit, weak: !!info.weak, hp: hpr(d), st: info.dot });
+  fxe(B, { k: info.dot ? 'dot' : 'hit', t: d.id, v: dmg + absorbed, crit: !!info.crit, weak: !!info.weak, hp: hpr(d), st: info.dot }); if (d.kind === 'pc' && B.epic) epicLow(B, d);
   if (d.side === 1 && B.sayQ) { if (d.hp <= 0) B.sayQ.push([d, 'die']); else if (!d.saidLow && d.hp < d.hpMax * 0.25) { d.saidLow = 1; B.sayQ.push([d, 'low']); } }
-  if (d.hp <= 0) { d.hp = 0; d.alive = false; d.st = []; fxe(B, { k: 'die', t: d.id }); if (d.side === 1 && d.kind === 'mob') B.kills.push([d.mob, d.lv, d.boss]); return true; }
+  if (d.hp <= 0) { d.hp = 0; d.alive = false; d.st = []; fxe(B, { k: 'die', t: d.id }); epicKill(B, d); if (d.side === 1 && d.kind === 'mob') B.kills.push([d.mob, d.lv, d.boss]); return true; }
   if (d.boss && d.side === 1 && !d.raged && d.hp <= d.hpMax / 2 && d.mob && MOBS[d.mob]) { d.raged = true; addSt(d, { k: 'rage', t: 99, v: BAL.phaseAtk }); B.phase = 1;
-    blog(B, `<span class="phase">${MOBS[d.mob].p2 || esc(d.name) + '被激怒了！'}（攻击提升）</span>`); fxe(B, { k: 'phase', t: d.id }); }
+    blog(B, `<span class="phase">${MOBS[d.mob].p2 || esc(d.name) + '被激怒了！'}（攻击提升）</span>`); fxe(B, { k: 'phase', t: d.id }); epicPhase(B, d); }
   return false;
 }
 const SK_FX = { atk: 'slash', qly: 'claw', sn: 'roar', gw: 'bone', lei: 'lei', dsh: 'rock', jian: 'blade', ta: 'tower', guard: 'guard' };
@@ -1340,7 +1384,7 @@ function battleResolve(B) {
 function flushSay(B) { const Q = B.sayQ || []; B.sayQ = []; for (const [u, k] of Q) if (chance(k === 'die' ? 0.8 : 1)) battleSay(B, u, k); }
 function battleCheckEnd(B) {
   if (B.over) return true;
-  if (!alive(B, 1).length) { B.over = true; B.win = true; blog(B, '<span class="bt win">★ 胜利 ★</span>'); return true; }
+  if (!alive(B, 1).length) { B.over = true; B.win = true; epicEnd(B); blog(B, '<span class="bt win">★ 胜利 ★</span>'); return true; }
   if (!B.units.find(u => u.kind === 'pc').alive) { B.over = true; B.win = false; blog(B, '<span class="bt lose">✖ 你倒下了</span>'); return true; }
   return false;
 }
@@ -1449,7 +1493,7 @@ async function enterDungeon(id, hard) {
   STATE.dungeon = { id, room: 0 }; logLine(`<div class="lochead">${D.name}</div>`, 'loc'); refresh(); bannerDraw();
   for (let i = 0; i < D.rooms.length; i++) {
     const R = D.rooms[i]; STATE.dungeon.room = i; refresh(); logLine(`<b>【${R.name}】</b>${R.text}`, 'enc'); await sleep(window.__dbg && __dbg.instant ? 0 : 400);
-    if (R.mobs) { const r = await startBattle({ mobs: R.mobs.map(m => [m, R.boss ? lvB : Math.max(1, lvB - 1)]), title: `${hard ? '困难 · ' : ''}${D.name} · ${R.name}`, flee: !R.boss, dungeon: id, room: i });
+    if (R.mobs) { const r = await startBattle({ mobs: R.mobs.map(m => [m, R.boss ? lvB : Math.max(1, lvB - 1)]), title: `${hard ? '困难 · ' : ''}${D.name} · ${R.name}`, flee: !R.boss, dungeon: id, room: i, epic: R.boss && R.epic ? R.epic : null });
       if (!r || !r.win) { STATE.dungeon = null; refresh(); bannerDraw(); return; } }
     else if (R.event) await dungeonEvent(R.event, D);
     if (i < D.rooms.length - 1) { const c = await dlgChoose([{ t: '原地调息，再往里走（恢复 40% 气血和符力）' }, { t: '直接往里走' }, { t: '先退出去' }], `「${R.name}」过了。前面还有 ${D.rooms.length - 1 - i} 关。`);
@@ -1501,7 +1545,9 @@ async function fightRetry(spec, loseText) {
 const slv = (base, lo = -1, hi = 2) => clamp(C.lv, base + lo, base + hi);
 
 /* ---------------- 第一章 · 石村 ---------------- */
+const E_TIGER = { name: '黑纹虎', sub: '虎穴之主', intro: ['腥风扑面。它比你见过的任何一头老虎都大。'], phase: '黑纹虎伏低身子，背上的黑纹一道道亮起来，像烧红的铁。', low: { who: '清风', t: '（你想起清风攥着补天石，在山门外等你的样子。）……还有人在等这朵莲花。' } };
 async function S_wake() {
+  await chapterCard('第一章', '石村', '大荒深处，一株烧焦的柳树下');
   await nar('天刚蒙蒙亮，大荒深处传来几声兽吼，震得石屋顶上的灰簌簌往下掉。');
   await nar('你叫石昊，可全村没人这么叫你——大家都叫你<b>小不点</b>。你是被人送到石村来的，那时候还在襁褓里，是族长一口兽奶一口米汤把你喂大的。');
   await say('chief', '小不点！太阳都要出来了，还赖着？去村前空地，迎霞锻体。');
@@ -1554,7 +1600,9 @@ async function S_cliff() {
   const c = await choose(['（冲另一个方向大喊）“喂！蛋在我这儿！”', '大家一起跑，往村子跑！']);
   if (c === 0) { F().lure = 1; await nar('那只鹰拐了个弯，冲着你扑了下来。你抱着一枚蛋往反方向狂奔，身后的大树一棵接一棵地被它撞断。'); }
   else await nar('鹰一路追着你们撞断了半片林子。眼看就要追上大壮了，你一咬牙，回身冲它扔了一块石头——它盯上了你。');
-  const win = await fight({ mobs: [['eagle', 5]], title: '石林 · 青鳞鹰', noLose: true, flee: false, noPet: true, allies: c === 0 ? [] : ['a_kids'] });
+  const win = await fight({ mobs: [['eagle', 5]], title: '石林 · 青鳞鹰', noLose: true, flee: false, noPet: true, allies: c === 0 ? [] : ['a_kids'],
+    epic: { name: '青鳞鹰', sub: '太古魔禽的后裔 · 石林之主', intro: ['它的翅膀遮住了半边天。', '你怀里还抱着那枚蛋。'], phase: '青鳞鹰一声厉啸，翅上的骨文全亮了——每一片鳞都成了刀！',
+      low: c === 0 ? { who: '你自己', t: '不能倒。我倒了，它就去追大壮他们了。' } : { who: '大壮', t: '“小不点——！你撑住啊！我们都在呢！”' } } });
   await nar(win ? '你一拳砸在鹰爪上，它吃痛松开了你，可它比你大太多了，又一次扑了下来——' : '你被一爪子拍飞，滚出去老远。它张开爪子扑了下来——');
   await nar('就在这时，村子方向亮起一道柔和的绿光。一根柳枝从天边伸过来，轻轻一拂，青鳞鹰像撞上了一堵看不见的墙，翻滚着退开了。');
   await nar('你怀里那枚蛋在逃跑时裂开了，里面的小鹰早产出壳，湿漉漉的，眼看就要不行了。柳枝的绿光落在它身上，它慢慢睁开了眼睛。');
@@ -1583,7 +1631,7 @@ async function S_bei() {
   await me('那是狻猊自己给我的。你要，自己去墓里问它啊。');
   if (!await fightRetry({ mobs: [['beihunter', slv(6)], ['beihunter', slv(6)]], title: '狈村伏击' })) return false;
   await say('风狈', '废物！（他一把推开倒在地上的猎手，身上卷起一阵狂风）');
-  if (!await fightRetry({ mobs: [['fengbei', slv(7, -1, 1)]], title: '风狈' })) return false;
+  if (!await fightRetry({ mobs: [['fengbei', slv(7, -1, 1)]], title: '风狈', epic: { name: '风狈', sub: '狈村百年才出一个的天才', intro: ['狂风卷着落叶，在他身后聚成一头狈的虚影。', '他比你大好几岁，看你的眼神，像在看一块肉。'], phase: '风狈额头的狈祖图腾渗出了血——他把祖灵请到了自己身上！', low: { who: '族长', t: '（耳边忽然响起族长的声音）“石村的孩子，挨了打，要站着还回去。”' }, end: ['风停了。'] } })) return false;
   await nar('你双手结出青鳞鹰的骨文，一爪掏在风狈胸口。他倒下的时候，眼睛还瞪得大大的，不敢相信自己输给了一个小娃娃。');
   await nar('林子深处传来一声暴喝。一个干瘦的老头踏着树梢冲了过来，身后跟着一团黑乎乎的影子——那是狈村供奉的祭灵。');
   await say('烈老', '小畜生，杀我狈村天才，拿命来！');
@@ -1614,14 +1662,14 @@ async function S_shanbao() {
   if (c2 === 1) { F().ding = 1; const ms = await miniGame('mash', { title: '扛鼎', desc: '药鼎几百斤重，岩浆已经漫到了村口。', time: 6500, rate: 8 }); if (!ms.ok) await nar('鼎太沉，你一个趔趄差点跪下。咬着牙，到底还是把它扛上了肩。'); }
   if (c2 === 1) await nar('你一个人扛起那口几百斤的药鼎，从岩浆边上冲了过去，把它扔进光门。族长回头看见，眼眶都红了。');
   else await nar('你来来回回跑了十几趟，把走不动的老人一个个背进了光门。最后一趟，岩浆已经漫到了村口。');
-  await nar('光门合上的那一刻，旧石村被岩浆吞没了。');
+  await cine('光门合上的那一刻，你回头看了一眼。<br>你出生……不，你长大的那个石村，<br>被岩浆一寸一寸地吞了下去。');
   await nar('再睁眼时，眼前是一片山清水秀的谷地。溪水从身边流过，鸟在叫。柳神的树桩扎在新的土里，那根柳枝轻轻晃着，像是累坏了。');
   F().moved = 1; give('baoyao', 1);
   await say('chief', '……石村，还在。（老人跪下来，冲柳神磕了三个头）');
   tip('石村搬家了。旧村的废墟在<b>大荒深处的东边</b>。');
 }
 async function S_ruin() {
-  await nar('旧村只剩一片黑石，岩浆把一切都烧成了灰。你蹲在一块还算完整的大石头前，用指甲一笔一画地刻：“石村迁往……”');
+  await cine('旧村只剩一片黑石。<br>你蹲在一块还算完整的大石头前，用指甲一笔一画地刻：<br><b>“石村迁往……”</b>');
   await me('要是爹娘哪天回来找我，至少知道该去哪儿。');
   await nar('石头后面传来细细的哼哼声。你绕过去一看，一只金毛小猴缩在石缝里，浑身是伤，一条腿被压在石头底下，冲你龇着牙。');
   const c = await choose(['把石头搬开，给它敷药', '（它好像挺好吃的……）', '扔给它一块兽肉，看它吃不吃']);
@@ -1636,16 +1684,19 @@ async function S_ruin() {
 async function S_jijing() {
   await say('willow', '（柳枝垂下来，轻轻点在你的额头上。）');
   await nar('一股清凉的光从额头灌下去，流遍全身。你体内那层撞了很久的壁，“咔”地裂开了一条缝——不是破开，是被撑开。');
-  await nar('你看见搬血境的尽头，还有一段别人没走过的路。你一步一步走了上去。');
+  await cine('你看见搬血境的尽头，还有一段路。<br>路上没有脚印——几百年来，没有人走过。<br>你一步一步，走了上去。');
   learnGongfa('jijing'); F().jijing = 1;
   await nar('远处的山梁上，一个穿红衣服的小姑娘骑在一只火红的大鸟背上，正好往这边看了一眼。她眨了眨眼睛，大鸟一振翅，飞远了。');
   await say('chief', '搬血极境……几百年来，大荒里能走到这一步的，我只听说过。（他沉默了很久）小不点，晚上来我屋里。有些事，该告诉你了。');
 }
 /* ---------------- 第二章 · 出村 ---------------- */
 async function S_memory() {
+  await chapterCard('第二章', '出村', '胸口那道疤，是有来历的');
   await say('chief', '你不是石村生的。你被人送来那年，胸口有一道很长的疤，刚刚长好。');
   await nar('族长的话像一块石头扔进了水里。你脑子里“嗡”的一声，那些很久很久以前的画面，一下子全浮了上来——');
-  await nar('一个高大的老人背着你去猎貔貅，你骑在他脖子上笑；一个女人的手按住你的胸口，冰凉的刀锋……她挖走了你胸口的一块骨头，那块骨头会发光；你的爹娘红着眼睛，冲进一座大宅子，和一群人打了起来……');
+  await cine('一个高大的老人背着你去猎貔貅，你骑在他脖子上咯咯地笑。', 'mem');
+  await cine('一只女人的手按住你的胸口。刀锋很凉。<br>她从你胸口取走了一块骨头——那块骨头，在发光。', 'mem');
+  await cine('一男一女红着眼睛冲进一座大宅子。<br>他们把你护在身后，和一屋子的人打了起来。<br>……那是你爹，你娘。', 'mem');
   await me('……那是我的骨头。她把我的骨头拿走了，给了别人。');
   await say('chief', '你爹娘为了你，跟整个石族翻了脸。后来他们把你送到这里，就再也没有消息。');
   const c = await choose(['我要去找他们。', '我要把我的骨头拿回来。', '（什么也没说，攥紧了拳头）']);
@@ -1676,9 +1727,9 @@ async function S_banditFight() {
   if (!await fightRetry({ mobs: [['bandit', slv(10)], ['bandit', slv(10)], ['bandit', slv(10)]], title: '山贼营地' })) return false;
   await nar('山贼头子一把扯开胸前的兽皮，露出一块刻满符文的骨牌。阴风四起，一团扭曲的黑影从骨牌里钻了出来——是他们供奉的祭灵。');
   await nar('黑影压下来的那一刻，你体内有什么东西轰地炸开了——一座、两座、三座，三片小小的天地在你体内开辟出来，神光从里面涌出。');
-  await nar('<b>洞天境</b>。你一口气开了三座洞天。');
+  await cine('一座、两座、三座。<br>三片小小的天地在你体内撑开，神光从里面涌出来。<br><b>洞天境</b>——你一口气开了三座洞天。');
   if (C.lv < 10) { C.lv = 10; C.exp = 0; fullHeal(); logLine('<b class="lvup">踏入洞天境！</b>', 'sys'); }
-  if (!await fightRetry({ mobs: [['jiling', slv(11, -1, 1)]], title: '山贼的祭灵' })) return false;
+  if (!await fightRetry({ mobs: [['jiling', slv(11, -1, 1)]], title: '山贼的祭灵', epic: { name: '祭灵', sub: '山贼供了三代的邪物 · 吃过七个村子的香火', seal: '邪祟', intro: ['族长被绑在木桩上，冲你拼命摇头。', '你没有看他。你看着那团黑影。'], phase: '祭灵张开了一张不存在的嘴——营地里所有的火把同时熄灭了。', low: { who: '族长', t: '“小不点，跑啊——！”<br>……你没有跑。是这个老人，一口兽奶一口米汤，把你喂大的。' }, end: ['黑影在你拳下碎成了一千片。', '你回过头。族长在哭。'] } })) return false;
   await nar('祭灵散成了一缕黑烟。山贼们哭爹喊娘地跑了。你把族长从木桩上解下来，族长一把抱住你，半天说不出话。');
   F().saved = 1; F().xushen = 1;
   await say('chief', '……三座洞天。好，好。柳神说得对，你是要走出大荒的人。');
@@ -1705,13 +1756,14 @@ async function S_leave() {
   await say('pihou', '在外面要是有人欺负你，就回来，我们一起揍他！');
   await say('ermeng', '……给你。（塞过来一罐兽奶）我偷的。');
   give('milk', 5); give('baoyao', 2);
-  await nar('你走到村口，回头看了一眼。柳神的那根柳枝在风里摇着，像是在挥手。');
+  await cine('你走到村口，回头看了一眼。<br>大壮在哭，皮猴在跳着挥手，二猛背过了身去。<br>柳神的那根柳枝在风里摇着——像是在说，去吧。');
   F().butian = 1;
-  await nar('<b>【第一章 · 石村　完】</b>');
+  await cine('<div class="cc"><small>第一章</small><b>石村</b><i>完</i></div>', 'card');
   tip('沿着出山古道一直往北，就是<b>补天阁</b>。');
 }
 /* ---------------- 第三章 · 补天阁 ---------------- */
 async function S_gate() {
+  await chapterCard('第三章', '补天阁', '大荒之外，还有更大的天');
   await nar('补天阁的山门比你想的还要高。门口排着长长的队伍，都是来拜师的少年，每个人手里都捧着一块发光的石头——补天石，补天阁收徒的信物。');
   await say('qingfeng', '我们的补天石，族长给的，在你包袱里。');
   await nar('你一摸包袱，空了。人群里一个瘦高个正挤出去，冲你挤了挤眼睛，转眼就没影了。');
@@ -1724,9 +1776,9 @@ async function S_lotus() {
   await nar('洞壁的阴影里，还趴着另一头，呼噜打得震天响。你屏住呼吸——');
   const sn = await miniGame('sneak', { title: '潜行', desc: '一步一步挪过去。老虎呼气的时候，正是你迈步的时候。', steps: 6 });
   if (sn.ok) { await nar('你挪到了水边，手指碰到了黑莲的花瓣——'); await nar('“咕——噜噜噜噜——”'); await nar('你的肚子叫了。叫得整个山洞都在回响。离你最近的那头黑纹虎猛地睁开了眼睛。另一头翻了个身，接着睡。'); await me('……我早上就喝了一口兽奶。');
-    if (!await fightRetry({ mobs: [['tiger', slv(12)]], title: '虎穴 · 黑纹虎' })) return false; }
+    if (!await fightRetry({ mobs: [['tiger', slv(12)]], title: '虎穴 · 黑纹虎', epic: E_TIGER })) return false; }
   else { await nar('脚下“咔嚓”一声，你踩断了一根骨头。两头黑纹虎同时睁开了眼睛。'); await me('……我就说这洞里骨头太多了。');
-    if (!await fightRetry({ mobs: [['tiger', slv(12)], ['tiger', slv(11)]], title: '虎穴 · 黑纹虎' })) return false; }
+    if (!await fightRetry({ mobs: [['tiger', slv(12)], ['tiger', slv(11)]], title: '虎穴 · 黑纹虎', epic: E_TIGER })) return false; }
   give('heilian'); await nar('你把黑莲揣进怀里，顺手把虎肉也扛了回去。');
 }
 async function S_join() {
@@ -1817,6 +1869,7 @@ async function S_lib() {
 }
 /* ---------------- 第四章 · 百断山 ---------------- */
 async function S_baiduan() {
+  await chapterCard('第四章', '百断山', '活着出来，是唯一的规矩');
   await say('gezhu', '百断山要开了。各族的少年天才都会进去抢机缘——宝药、宝骨、上古留下来的兵器。补天阁要派人去，我想让你去。');
   await say('gezhu', '里面的规矩只有一条：活着出来。');
   await say('guiye', '……（诡爷突然开口了，声音沙哑得像两块石头在磨）分宝崖上……有一柄锈剑。');
@@ -1837,7 +1890,7 @@ async function S_bdgate() {
 async function S_lion() {
   await nar('狮岭顶上的洞里，九道吼声同时响起。一头生着九个脑袋的金色巨狮从洞里走了出来，每个脑袋都比你整个人还大。');
   await say('huolinger', '（追了上来）黄金九头狮！一个人打不过的——一起上！');
-  if (!await fightRetry({ mobs: [['lion', slv(14, -1, 1)]], allies: ['a_huo'], title: '黄金九头狮' })) return false;
+  if (!await fightRetry({ mobs: [['lion', slv(14, -1, 1)]], allies: ['a_huo'], title: '黄金九头狮', epic: { name: '黄金九头狮', sub: '狮岭之王 · 九首九吼', intro: ['九个脑袋同时低了下来。九双金色的眼睛，都在看你。', '火灵儿的大鸟在你头顶盘旋，羽毛都炸开了。'], phase: '九个脑袋一齐仰天长吼，金鬃炸开——狮岭上的石头像下雨一样滚落！', low: { who: '火灵儿', t: '“喂！小不点！你要是死在这儿，我回去跟谁比啊！”' }, end: ['最后一个脑袋垂了下去。', '整座狮岭安静得只剩下风声。'] } })) return false;
   await say('huolinger', '……你这人，看着小，下手倒是真狠。');
   await nar('那只大红鸟又飞来了，这回没抢东西，蹲在不远处的树上，歪着头看你。');
 }
@@ -1845,7 +1898,7 @@ async function S_yu() {
   await nar('荒漠里，风沙忽然停了。一群披着冰甲的人从四面围了上来，身后跟着几头比马还大的白狼。');
   await say('雨族高手', '补天阁的小子？听说你在虚神界很威风。雨族办事，你就当自己倒霉吧。');
   if (!await fightRetry({ mobs: [['yuzu', slv(14)], ['bigwolf', slv(14)], ['bigwolf', slv(14)]], title: '雨族截杀' })) return false;
-  if (!await fightRetry({ mobs: [['yuchief', slv(15, -1, 1)]], title: '雨族高手' })) return false;
+  if (!await fightRetry({ mobs: [['yuchief', slv(15, -1, 1)]], title: '雨族高手', epic: { name: '雨族高手', sub: '雨族截杀队的头领', intro: ['冰甲上结着霜。他每走一步，脚下的沙子就冻成一片。', '他没把你当人看——你只是一件要办完的差事。'], phase: '他摘下了面罩。寒气倒灌出来，整片荒漠下起了冰雨。', low: { who: '柳神', t: '（胸口那片柳叶做的护符微微一热，像有人在你耳边说：别睡。）' } } })) return false;
   await nar('雨族高手临死前捏碎了一块玉符，一股寒气瞬间把你冻成了一座冰雕。你动不了，只能眼睁睁看着剩下的雨族战士围上来——');
   await nar('一团红影从天上砸了下来，一爪子把冰雕抓了起来——是那只大红鸟！它驮着你，跌跌撞撞地飞出了荒漠。');
   await nar('冰化开以后，你躺在一片沙丘上，那只大红鸟蹲在旁边，用嘴梳着被冻掉的羽毛。');
@@ -1872,9 +1925,9 @@ async function S_fenbao() {
 async function S_spring() {
   await nar('不老泉边围着三头凶兽。一头白虎守着泉眼，一头半边身子泛着金光的大鹏盘旋在天上，一个白衣少女静静站在泉边，看着它们。');
   await say('云曦', '你也是来取泉水的？……那就先过了白虎这一关。');
-  if (!await fightRetry({ mobs: [['whitetiger', slv(16, -1, 1)]], title: '不老泉 · 白虎' })) return false;
+  if (!await fightRetry({ mobs: [['whitetiger', slv(16, -1, 1)]], title: '不老泉 · 白虎', epic: { name: '白虎', sub: '不老泉的守泉兽', intro: ['它守着这眼泉，守了不知道多少年。'], phase: '白虎周身腾起白色的煞气，泉水都跟着沸了。' } })) return false;
   await nar('白虎倒下，天上的金鹏发出一声暴怒的长啸，收起翅膀直扑下来。');
-  if (!await fightRetry({ mobs: [['jinpeng', slv(17, -1, 1)]], allies: ['a_yunxi'], title: '半血金鹏' })) return false;
+  if (!await fightRetry({ mobs: [['jinpeng', slv(17, -1, 1)]], allies: ['a_yunxi'], title: '半血金鹏', epic: { name: '半血金鹏', sub: '身上流着一半金翅大鹏的血', intro: ['它收起翅膀扑下来，整片天都暗了。', '云曦第一次拔出了剑，站到了你旁边。'], phase: '金鹏半边身子燃起了金火——那是它体内金翅大鹏的血，在烧。', low: { who: '云曦', t: '“……站起来。你不是要泉水吗？”' }, end: ['金色的羽毛落了一地，像下了一场雨。'] } })) return false;
   await nar('你提着锈剑站在泉边，满身是血，金鹏的羽毛落了一地。云曦看了你很久，取了一瓢泉水，转身走了。');
   give('bulao'); F().spring = 1;
   await nar('你装了一瓶泉水，又打了一壶带走——补天阁的神藤快枯死了，阁主说过，它需要好水。');
@@ -1886,16 +1939,16 @@ async function S_tianguDone() {
 async function S_mount() {
   await nar('花果山上的果树一棵挨着一棵，可林子正中的那棵大树长得怪极了——树皮像人脸，枝条像手臂，结着一颗颗毛茸茸的种子。');
   await nar('种子一碰就炸开，满天都是花粉。你眼前一花，看见了爹娘……不对，是幻象！');
-  if (!await fightRetry({ mobs: [['pumo', slv(18, -1, 1)]], title: '蒲魔树' })) return false;
+  if (!await fightRetry({ mobs: [['pumo', slv(18, -1, 1)]], title: '蒲魔树', epic: { name: '蒲魔树', sub: '会造梦的妖树', seal: '妖', intro: ['花粉里，你看见了爹娘。他们冲你伸出了手。', '……是假的。你知道是假的。'], phase: '蒲魔树把根扎进了你的影子里——你听见娘在叫你的小名。', low: { who: '你自己', t: '（你咬破了舌尖）……他们还没见过长大的我。我不能死在一个梦里。' }, end: ['幻象碎了。', '你在原地站了很久，才想起擦一擦脸。'] } })) return false;
   await nar('蒲魔树倒下，你饿了一路，顺手挖了一截树根啃——居然是甜的。啃着啃着，你看见树后面的崖上，长着两个红得发亮的桃子。');
   const c = await choose(['摘！', '这么好的桃子，肯定有主人……（但是摘！）']);
   give('xiantao');
   await nar('你刚把桃子揣进怀里，整座山就晃了一下。山顶上，那个比山还沉的身影站了起来——<b>神猴王</b>。');
   await nar('它抓起半座山当锤子，砸了下来。湖水冲天而起，结成一座大阵，把你、云曦，还有好几个来偷桃的少年全困在了里面。');
-  const w = await fight({ mobs: [['monkeyking', 22]], title: '神猴王 · 灵湖阵', noLose: true, flee: false });
+  const w = await fight({ mobs: [['monkeyking', 22]], title: '神猴王 · 灵湖阵', noLose: true, flee: false, epic: { name: '神猴王', sub: '花果山之主 · 百断山里最古老的凶物', seal: '太古', intro: ['它站起来的时候，山矮了一截。', '灵湖阵的水墙从四面合拢——没有退路了。'], phase: '水墙里映出了一百个神猴王的影子，一百只拳头一起砸了下来！', low: { who: '小塔', t: '（挂在你脖子上的那个小坠子，第一次发烫了。）' } } });
   await nar(w ? '你竟然把神猴王的一只手打得缩了回去！可灵湖阵越收越紧——' : '你被一锤砸进了湖底，大阵越收越紧，水压得你喘不过气——');
   await nar('就在这时，你挂在脖子上当装饰的那个小东西亮了。那是一座只有四层的小塔，你一直以为它就是个好看的坠子。');
-  await nar('小塔垂下一道光幕，“咔嚓”一声，灵湖阵裂开了一道缝。');
+  await cine('那是一座只有四层的小塔。<br>它垂下一道光幕，轻轻一磕——<br>“咔嚓”。灵湖阵裂开了一道缝。');
   learnSkill('ta');
   const c2 = await choose(['从裂缝里钻出去，赶紧跑！', '回头把云曦也拉出来']);
   if (c2 === 1) { F().yunxi = 1; await nar('你一头扎回阵里，抓住云曦的手腕，把她拖了出来。她看着你，第一次露出了一点笑。'); }
@@ -1917,7 +1970,8 @@ async function S_return() {
   await me('我就知道！（伸手）烤肉，我欠你一顿。');
   F().qfIn = 1;
   F().end = 1; gainExp(1);
-  await nar('<b>【第一卷 · 完】</b><br>石村的小不点走出了大荒，在补天阁站稳了脚跟，在百断山里闯出了名字。<br>你胸口的那道疤还在，爹娘还没有消息，那块被挖走的骨头还在别人身上。<br>路还很长。<br><br>（第二卷之后再写。大荒、补天阁、百断山都还开着，虚神界和凶兽首领也是。）');
+  await cine('<div class="cc"><small>第一卷</small><b>石村少年</b><i>完</i></div>', 'card');
+  await nar('石村的小不点走出了大荒，在补天阁站稳了脚跟，在百断山里闯出了名字。<br>你胸口的那道疤还在，爹娘还没有消息，那块被挖走的骨头还在别人身上。<br>路还很长。<br><br>（第二卷之后再写。大荒、补天阁、百断山都还开着，虚神界和凶兽首领也是。）');
 }
 
 async function S_yunxiBack() {
@@ -2573,6 +2627,47 @@ function renderRumor() { // wide screens: the last three, always there; phones: 
   e.innerHTML = `<span class="rw">${esc(last.who)}</span>${last.t}<span class="rmore"> ›</span>`; e.className = ''; void e.offsetWidth; e.className = 'one on'; clearTimeout(UI.rumorT); UI.rumorT = setTimeout(() => e.classList.remove('on'), 9000); }
 function openRumors() { UI.logTab = 'rumor'; if (UI.nav === 'log') { sfx('click'); renderSide(); } else navTo('log'); }
 
+/* ================= climaxes: making the big moments feel big =================
+   Story side
+     cine(text, kind)   a full-screen line over the location painting (no paper box). kind: '' (night ink), 'mem' (a memory, sepia), 'card' (chapter title)
+     chapterCard(no, title, sub)
+   Battle side — pass `epic` in a fight spec (or a dungeon boss room):
+     { name, sub, seal, intro:[lines], phase:'line at half health', low:{who, t}, end:[lines] }
+     · a boss card (huge name, epithet, a few lines) before the first turn, with the boss music
+     · at half health the boss's line crosses the screen
+     · 绝境: the first time 石昊 drops under 30% (or would fall) someone's words come back to him — he recovers 25% 气血,
+       shakes off bad effects and hits 30% harder for 3 rounds. Once per fight.
+     · the killing blow flashes white, then the closing lines.
+   Battle overlays are recorded as events (k:'cine' / 'finish'), so a co-op partner sees them too, and the playback waits for them. */
+const cine = (text, kind = '') => dlgShow({ who: '', text, cine: kind || 'ink' });
+const chapterCard = (no, title, sub = '') => cine(`<div class="cc"><small>${no}</small><b>${title}</b>${sub ? `<i>${sub}</i>` : ''}</div>`, 'card');
+const plainLen = t => String(t || '').replace(/<[^>]+>/g, '').length;
+const cineMs = ev => ev.k === 'finish' ? 900 : Math.min(4600, 2000 + plainLen(ev.text) * 75) * (SET.fast ? 0.7 : 1);
+const EPIC_BAD = ['stun', 'bleed', 'burn', 'poison', 'weak', 'bound', 'brk', 'mark'];
+
+/* ---------- battle hooks (called from the engine) ---------- */
+function epicLow(B, d) { // 绝境
+  const E = B.epic; if (!E || !E.low || B.burst || d.kind !== 'pc' || d.hp >= d.hpMax * 0.3) return; B.burst = 1; if (d.hp <= 0) d.hp = 1;
+  const h = Math.round(d.hpMax * 0.25); d.hp = Math.min(d.hpMax, d.hp + h); d.st = d.st.filter(s => !EPIC_BAD.includes(s.k)); addSt(d, { k: 'burst', t: 3, v: 0.3 });
+  fxe(B, { k: 'cine', cls: 'burst', who: E.low.who || '', text: E.low.t }); blog(B, `<span class="cine">${E.low.who ? `<b>${esc(E.low.who)}</b>　` : ''}${E.low.t}</span>`);
+  fxe(B, { k: 'heal', t: d.id, v: h, hp: hpr(d) }); blog(B, `<span class="phase">绝境！${uName(d)} 气血回复 ${h}，身上的伤病一扫而空，接下来 3 回合攻击 +30%</span>`); }
+function epicPhase(B, d) { const E = B.epic; if (!E || !E.phase) return; fxe(B, { k: 'cine', cls: 'phase', who: d.name, text: E.phase }); blog(B, `<span class="cine red">${E.phase}</span>`); }
+function epicKill(B, d) { if (B.epic && d.side === 1 && (d.boss || alive(B, 1).length === 0)) fxe(B, { k: 'finish', t: d.id }); }
+function epicEnd(B) { const E = B.epic; if (!E || !E.end || !E.end.length) return; const t = E.end.join('<br>'); fxe(B, { k: 'cine', cls: 'end', text: t }); blog(B, `<span class="cine">${t}</span>`); }
+
+/* ---------- battle overlays ---------- */
+function fxBossCard(B) { const E = B.epic, intro = E.intro || [], dur = Math.round((2600 + intro.length * 1000) * (SET.fast ? 0.75 : 1));
+  const d = el('div', 'fx bosscard', `<div class="bc-ink"></div><div class="bc-sub">${esc(E.sub || '')}</div><div class="bc-name">${esc(E.name)}</div><div class="bc-seal">${esc(E.seal || '首领')}</div><div class="bc-lines">${intro.map((t, i) => `<div class="bc-line" style="animation-delay:${0.9 + i * 0.95}s">${t}</div>`).join('')}</div><div class="bc-skip">点击跳过</div>`);
+  d.style.setProperty('--dur', dur + 'ms'); $('bfx').appendChild(d); sfx('epic'); $('vBattle').classList.remove('quake'); void $('vBattle').offsetWidth; $('vBattle').classList.add('quake');
+  const end = () => { if (!d.parentNode) return; d.classList.add('out'); setTimeout(() => d.remove(), 400); }; d.onclick = e => { e.stopPropagation(); end(); UI.animEnd = Math.min(UI.animEnd, now() + 200); setTimeout(() => { if (STATE.battle && STATE.battle.id === B.id) renderBattle(true); }, 260); };
+  setTimeout(end, dur); return dur; }
+function fxCine(ev) { $('bfx').querySelectorAll('.cineband').forEach(e => e.remove()); const ms = cineMs(ev);
+  const d = el('div', 'fx cineband ' + (ev.cls || ''), `${ev.who ? `<small>${esc(ev.who)}</small>` : ''}<span>${ev.text}</span>`); d.style.setProperty('--dur', ms + 'ms'); $('bfx').appendChild(d); setTimeout(() => d.remove(), ms);
+  if (ev.cls === 'burst') { fxSpawn('fx-burstflash', { x: 0, y: 0, w: 0 }, '', 1400); fxClass('hero', 'bursting', 1600); sfx('level'); }
+  else if (ev.cls === 'phase') sfx('fail'); else sfx('magic'); }
+function fxFinish(ev) { const c = cardOf(ev.t); fxSpawn('fx-whiteflash', { x: 0, y: 0, w: 0 }, '', 900); if (c) fxSpawn('fx-inkburst', fxAt(c), '<b></b><b></b><b></b>', 1100);
+  $('vBattle').classList.remove('quake'); void $('vBattle').offsetWidth; $('vBattle').classList.add('quake'); sfx('crit'); }
+
 /* ================= UI: one screen at a time =================
    探索 (dark green): location, what just happened, the quest line and what you can do here.
    对话 (paper): who is speaking (a seal with their name), the line, ▼ to continue or the choices.
@@ -2627,12 +2722,14 @@ function dlgPick(i) { // advance (i = -1) or choose option i
 }
 function dlgCtx() { return { cur: UI.cur, hist: UI.hist.slice(-2) }; }
 function renderDlg() {
-  const D = $('dlg'); applyMode(); if (!DLG) { D.onclick = null; refresh(); return; }
+  const D = $('dlg'); applyMode(); if (!DLG) { D.onclick = null; $('vTalk').classList.remove('cine', 'mem', 'card'); refresh(); return; }
   const ctx = DLG.ctx || dlgCtx(), P = C && PLACES[C.loc], q = C && curQ();
   const head = `<div class="tplace">${P ? (STATE.dungeon ? DUNGEONS[STATE.dungeon.id].name : P.name) : ''}<span>${q ? CH_NAMES[q.ch] : ''}</span></div>`;
   const histH = h => h.length ? `<div class="hist">${h.map(x => `<div>${x.who ? `<span class="hw">${esc(x.who)}</span>` : ''}${x.text}</div>`).join('')}</div>` : '';
   const lineH = o => { const s = sealOf(o), nw = (o.who || '') !== UI.lastWho; UI.lastWho = o.who || ''; return `<div class="line ${nw ? 'newspk' : ''}">${s ? `<div>${sealHtml(s, o.mine ? 'me' : '')}${s.t ? `<div class="ttl">${esc(s.t)}</div>` : ''}</div>` : ''}<div class="tx ${o.who ? '' : 'nar'} ${o.mine ? 'mine' : ''}">${o.text}</div></div>`; };
-  if (DLG.mini) { D.innerHTML = head + miniHtml(DLG.mini); D.onclick = null; }
+  const cv = DLG.o && DLG.o.cine && !DLG.choice && !DLG.mini && !DLG.rune ? DLG.o.cine : ''; $('vTalk').classList.toggle('cine', !!cv); $('vTalk').classList.toggle('mem', cv === 'mem'); $('vTalk').classList.toggle('card', cv === 'card');
+  if (cv) { D.innerHTML = `<div class="cine-t">${DLG.o.text}</div><div class="nx">▼</div>`; D.onclick = () => dlgPick(-1); }
+  else if (DLG.mini) { D.innerHTML = head + miniHtml(DLG.mini); D.onclick = null; }
   else if (DLG.rune) D.innerHTML = head + runeHtml(DLG.rune);
   else if (DLG.choice) { D.innerHTML = head + histH(ctx.hist.slice(-1)) + (ctx.cur ? lineH(ctx.cur) : '') + `<div class="ch">${DLG.choice.map((o, i) => `<button class="chb" ${o.dis ? 'disabled' : ''} data-i="${i}">${o.t}</button>`).join('')}</div>`; D.onclick = null; D.querySelectorAll('.chb').forEach(b => b.onclick = e => { e.stopPropagation(); dlgPick(+b.dataset.i); }); }
   else { D.innerHTML = head + histH(ctx.hist) + lineH(DLG.o) + '<div class="nx">点击继续 ▼</div>'; D.onclick = () => dlgPick(-1); }
@@ -2692,7 +2789,8 @@ function storyHere() { const q = curQ(); if (q.type === 'enter' && q.loc === C.l
 function storyHereRun() { const q = curQ(); if (q.type === 'enter') return questComplete(q); }
 /* ---------- battle screen ---------- */
 function renderBattle(quiet) {
-  const B = STATE.battle; if (!B) return; applyMode(); const play = fxPrepare(B); if (UI.enter) { $('bfx').innerHTML = ''; const intro = (B.ev || []).filter(e => e.k === 'say'); intro.forEach((e, i) => setTimeout(() => fxSay(e.t, e.text), 550 + i * 900)); if (intro.length && animOn()) { UI.animEnd = now() + 550 + intro.length * 900; setTimeout(() => { if (STATE.battle && STATE.battle.id === B.id) { UI.animEnd = 0; renderBattle(true); } }, 600 + intro.length * 900); } }
+  const B = STATE.battle; if (!B) return; applyMode(); const play = fxPrepare(B); if (UI.enter) { $('bfx').innerHTML = ''; const card = B.epic && animOn() ? fxBossCard(B) : 0, t0 = card ? card + 300 : 550, intro = (B.ev || []).filter(e => e.k === 'say'); intro.forEach((e, i) => setTimeout(() => { if (STATE.battle && STATE.battle.id === B.id) fxSay(e.t, e.text); }, t0 + i * 1500));
+    const hold = card || intro.length ? t0 + Math.max(0, intro.length - 1) * 1500 + 300 : 0; if (hold && animOn()) { UI.animEnd = now() + hold; setTimeout(() => { if (STATE.battle && STATE.battle.id === B.id && UI.animEnd <= now() + 50) { UI.animEnd = 0; renderBattle(true); } }, hold + 40); } }
   const me_ = B.units.find(u => u.kind === 'pc'); if (UI.selFoe && !B.units.some(u => u.id === UI.selFoe && u.alive)) UI.selFoe = null;
   const cur = !B.over && !play && animLeft() === 0 ? needInput(B)[0] : null;
   const settled = !play && animLeft() === 0, taken = {}; if (settled) for (const e of B.ev || []) if ((e.k === 'hit' || e.k === 'dot') && e.v) taken[e.t] = (taken[e.t] || 0) + e.v;
@@ -2757,8 +2855,10 @@ function fxPrepare(B) { // returns true when this render should animate the last
   for (const u of B.units) if (UI.hpShown[u.id] == null) UI.hpShown[u.id] = u.hp / u.hpMax; UI.reveal = B.lc0 + 1; return true;
 }
 function fxPlay(B) {
-  const st = STEP(), lc0 = B.lc0, n = B.lc - lc0, total = Math.max(1, n - 1) * st; UI.animEnd = now() + total + 120; const bid = B.id, seq = B.seq;
-  const at = gl => Math.max(0, gl - lc0 - 1) * st;
+  const st = STEP(), lc0 = B.lc0, n = B.lc - lc0, pause = {}; for (const ev of B.ev) if (ev.k === 'cine' || ev.k === 'finish') pause[ev.li] = (pause[ev.li] || 0) + cineMs(ev); // big moments hold the playback
+  const offs = {}; let acc = 0; for (let gl = lc0; gl <= B.lc; gl++) { offs[gl] = Math.max(0, gl - lc0 - 1) * st + acc; acc += pause[gl] || 0; }
+  const total = Math.max(1, n - 1) * st + acc; UI.animEnd = now() + total + 120; const bid = B.id, seq = B.seq;
+  const at = gl => offs[gl] ?? Math.max(0, gl - lc0 - 1) * st + acc;
   for (let gl = lc0 + 1; gl < B.lc; gl++) setTimeout(() => { if (UI.fxBid !== bid || UI.fxSeq !== seq) return; UI.reveal = gl + 1; const e = document.querySelector(`#bfeed .ln[data-g="${gl}"]`); if (e) e.classList.remove('pend'); $('bfeed').scrollTop = $('bfeed').scrollHeight; }, at(gl));
   for (const ev of B.ev) setTimeout(() => { if (UI.fxBid === bid && UI.fxSeq === seq) fxEvent(B, ev); }, at(ev.li) + (ev.k === 'act' ? 0 : st * 0.35));
   setTimeout(() => { if (UI.fxBid !== bid || UI.fxSeq !== seq) return; for (const u of B.units) { UI.hpShown[u.id] = u.hp / u.hpMax; if (!u.alive) UI.deadShown[u.id] = 1; } UI.reveal = 1e9; UI.animEnd = 0; renderBattle(true); if (B.over) fxStamp(B); }, total + 60);
@@ -2787,13 +2887,17 @@ function fxEvent(B, ev) {
   if (ev.k === 'int') { fxFloat(ev.t, '打断！', 'weak'); fxClass(ev.t, 'hit', 420); return; }
   if (ev.k === 'phase') { fxClass(ev.t, 'enrage', 1200); $('vBattle').classList.remove('quake'); void $('vBattle').offsetWidth; $('vBattle').classList.add('quake'); fxSpawn('fx-redflash', { x: 0, y: 0, w: 0 }, '', 900); sfx('fail'); return; }
   if (ev.k === 'say') { fxSay(ev.t, ev.text); return; }
+  if (ev.k === 'cine') { fxCine(ev); return; }
+  if (ev.k === 'finish') { fxFinish(ev); return; }
   if (ev.k === 'swap') { fxClass('pet', 'enter-u', 600); return; }
 }
 const FX_HTML = {
   lei: '<svg viewBox="0 0 40 120"><path d="M24 0 L10 52 L22 52 L8 120 L34 44 L21 44 L32 0 Z"/></svg>',
   claw: '<i></i><i></i><i></i>', bless: '<b></b><b></b>', curse: '<b></b>', slash: '<i></i><i></i>', blade: '<i></i>', bone: '<b></b>', rock: '<b></b>', fire: '<b></b>', roar: '<b></b>', magic: '<b></b>', wave: '<b></b>', heal: '<b>✚</b>', tower: '<b></b>', shield: '<b></b>', crush: '<b>拳</b>',
 };
-function fxSay(id, text) { const c = cardOf(id); if (!c || !animOn()) return; const p = fxAt(c); p.y -= p.h / 2 + 6; const d = fxSpawn('bubble ' + (id === 'hero' ? 'me' : ''), p, esc(text.replace(/^（|）$/g, '')), 2300); if (text.startsWith('（')) d.classList.add('act'); }
+function fxSay(id, text) { const c = cardOf(id); if (!c || !animOn()) return; $('bfx').querySelectorAll(`.bubble[data-u="${id}"]`).forEach(e => e.remove()); // one bubble per speaker; it stays long enough to read
+  const life = Math.round(Math.min(7500, Math.max(3600, 2400 + plainLen(text) * 160)) * (SET.fast ? 0.75 : 1)); const p = fxAt(c); p.y -= p.h / 2 + 6;
+  const d = fxSpawn('bubble ' + (id === 'hero' ? 'me' : ''), p, esc(text.replace(/^（|）$/g, '')), life); d.dataset.u = id; d.style.setProperty('--life', life + 'ms'); if (text.startsWith('（')) d.classList.add('act'); }
 function fxStamp(B) { if (!animOn() || $('bfx').querySelector('.stamp')) return; const t = B.win ? '胜' : B.fled ? '逃' : '败'; const d = el('div', 'fx stamp ' + (B.win ? 'win' : 'lose'), t); $('bfx').appendChild(d); sfx(B.win ? 'win' : 'lose'); }
 
 /* ---------- screen transitions & big moments ---------- */
