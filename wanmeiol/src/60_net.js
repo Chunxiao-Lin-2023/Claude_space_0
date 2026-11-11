@@ -17,10 +17,10 @@ function netBroadcast(o) { if (NETROLE === 'host') for (const c of NET.conns.val
 function netPub() { netSync(); }
 function netLog(html, cls) { if (NET.conns.size) netBroadcast({ t: 'log', html, cls }); }
 function netSync() { if (NETROLE !== 'host' || !NET.conns.size || !C) return; clearTimeout(NET.syncT); NET.syncT = setTimeout(() => netBroadcast(snapshot()), 60); }
-function snapshot() { return { t: 'st', C, st: { battle: STATE.battle, dungeon: STATE.dungeon, scene: !!STATE.scene, busy: STATE.busy, dtPending: !!STATE.dtPending }, dlg: DLG ? (DLG.choice ? { choice: DLG.choice.map(o => ({ t: o.t, dis: !!o.dis })) } : { o: DLG.o }) : null, roam: ROAM, ctrl: NET.ctrl, peers: NET.conns.size }; }
+function snapshot() { return { t: 'st', C, st: { battle: STATE.battle, dungeon: STATE.dungeon, scene: !!STATE.scene, busy: STATE.busy, dtPending: !!STATE.dtPending }, dlg: DLG ? Object.assign(DLG.rune ? { rune: DLG.rune } : DLG.choice ? { choice: DLG.choice.map(o => ({ t: o.t, dis: !!o.dis })) } : { o: DLG.o }, { ctx: dlgCtx() }) : null, roam: ROAM, ctrl: NET.ctrl, peers: NET.conns.size }; }
 function takeControl() { if (NETROLE === 'host') { NET.ctrl = 'host'; netBroadcast({ t: 'ctrl', ctrl: 'host' }); } else netSend({ t: 'take' }); toast('你来操作'); refresh(); if (UI.modal === 'coop') openModal('coop', 1); }
 /* commands a guest (or a host who handed over control) may trigger by clicking */
-const CMD_NAMES = ['go', 'explore', 'rest', 'train', 'enterDungeon', 'fightRoam', 'autoWalk', 'npcTalk', 'battleAct', 'toggleAuto', 'useItem', 'feedPet', 'setPet', 'toggleBar', 'arenaFight', 'questGo', 'storyHereRun'];
+const CMD_NAMES = ['go', 'explore', 'rest', 'train', 'enterDungeon', 'fightRoam', 'autoWalk', 'npcTalk', 'battleAct', 'toggleAuto', 'useItem', 'feedPet', 'setPet', 'toggleBar', 'arenaFight', 'storyHereRun', 'runeTap', 'runeSkip', 'arenaClaim'];
 const CMDS = {};
 UI.inClick = false; const markClick = () => { UI.inClick = true; setTimeout(() => { UI.inClick = false; }, 0); };
 document.addEventListener('click', markClick, true); document.addEventListener('keydown', markClick, true);
@@ -42,7 +42,7 @@ async function netHost() {
     peer.on('disconnected', () => { if (NET.peer === peer && !peer.destroyed) try { peer.reconnect(); } catch (e) { } });
     peer.on('connection', conn => {
       if (NET.conns.size >= 3) { conn.on('open', () => { raw(conn, { t: 'full' }); setTimeout(() => conn.close(), 300); }); return; }
-      conn.on('open', () => { NET.conns.set(conn.peer, conn); NET.peers = NET.conns.size; const L = [...$('log').children].slice(-80).map(d => [d.innerHTML, d.className.replace(/^ln\s*/, '')]);
+      conn.on('open', () => { NET.conns.set(conn.peer, conn); NET.peers = NET.conns.size; const L = [...$('log').children].slice(-120).map(d => [d.innerHTML, d.className.replace(/^ln\s*/, '')]);
         raw(conn, { t: 'hello', log: L, code: NET.code }); raw(conn, snapshot()); logLine('有人加入了房间，正在和你看同一个画面。', 'sys'); sfx('level'); refresh(); });
       conn.on('data', d => { try { hostRecv(conn.peer, JSON.parse(d)); } catch (e) { console.error(e); } });
       conn.on('close', () => { if (NET.conns.get(conn.peer) === conn) { NET.conns.delete(conn.peer); NET.peers = NET.conns.size; if (NET.ctrl === conn.peer) { NET.ctrl = 'host'; toast('队友离开了，你接回了操作'); } logLine('队友离开了房间。', 'dim'); netSync(); refresh(); } });
@@ -69,11 +69,11 @@ async function netJoin(code) {
 }
 function guestRecv(m) {
   if (m.t === 'full') { NET.status = '房间满了'; netLeave(); titleStatus(NET.status); return; }
-  if (m.t === 'hello') { STATE.mode = 'play'; $('title').style.display = 'none'; closeModal(); $('log').innerHTML = ''; for (const [h, c] of m.log || []) $('log').appendChild(el('div', 'ln ' + c, h)); NET.status = ''; layout(); return; }
+  if (m.t === 'hello') { STATE.mode = 'play'; $('title').style.display = 'none'; closeModal(); $('log').innerHTML = ''; for (const [h, c] of m.log || []) $('log').appendChild(el('div', 'ln ' + c, h)); NET.status = ''; UI.nav = null; layout(); return; }
   if (m.t === 'log') { logLine(m.html, m.cls); return; }
   if (m.t === 'ctrl') { NET.ctrl = m.ctrl; refresh(); if (UI.modal === 'coop') openModal('coop', 1); return; }
   if (m.t === 'st') { const first = !C; C = m.C; STATE.battle = m.st.battle; STATE.dungeon = m.st.dungeon; STATE.scene = m.st.scene ? 'remote' : null; STATE.busy = m.st.busy; ROAM = m.roam; NET.ctrl = m.ctrl; NET.peers = m.peers;
     if (STATE.battle) { STATE.shown = STATE.battle.log.length; STATE.shownFor = STATE.battle.id; }
-    DLG = m.dlg ? Object.assign({ res: () => { } }, m.dlg) : null; renderDlg(); refresh(); if (first) bannerDraw(); else bannerDraw(); return; }
+    DLG = m.dlg ? Object.assign({ res: () => { } }, m.dlg) : null; renderDlg(); refresh(); bannerDraw(); return; }
   if (m.t === 'bye') { toast('房主关闭了房间'); netLeave(); }
 }

@@ -4,7 +4,7 @@ const SAVE_V = 2;
 function newChar() {
   return { v: SAVE_V, name: '石昊', lv: 1, exp: 0, hp: 1, mp: 1, loc: 'sc_chief', home: 'sc_street', bag: { milk: 2 },
     sk: [], bar: [], gf: ['yingxia'], dt: [], pets: {}, pet: null, story: { q: 0, n: 0, f: {} }, kills: {}, stats: { kills: 0, deaths: 0, bosses: 0 },
-    arena: { rank: 0, wins: 0, tries: BAL.arenaTries, day: '' }, dungeons: {}, auto: false, seen: {}, created: now() };
+    arena: { rank: 0, wins: 0, tries: BAL.arenaTries, day: '', best: 999, got: {}, claimed: '' }, dungeons: {}, auto: false, seen: {}, prof: {}, codex: {}, created: now() };
 }
 function charStats(c = C) {
   const L = c.lv - 1, s = { hpMax: HERO.base.hp + HERO.grow.hp * L, mpMax: HERO.base.mp + HERO.grow.mp * L, atk: HERO.base.atk + HERO.grow.atk * L, def: HERO.base.def + HERO.grow.def * L, spd: HERO.base.spd + HERO.grow.spd * L, crit: HERO.base.crit + HERO.grow.crit * L, leech: 0, regen: 0 };
@@ -19,6 +19,10 @@ function fixHp() { const s = charStats(); C.hp = clamp(C.hp, 0, s.hpMax); C.mp =
 function fullHeal() { const s = charStats(); C.hp = s.hpMax; C.mp = s.mpMax; }
 function skillsOf(c = C) { return ['atk', ...c.bar.filter(id => c.sk.includes(id)), 'guard']; }
 function learnSkill(id) { if (C.sk.includes(id)) return; C.sk.push(id); if (C.bar.length < 4) C.bar.push(id); const S = SKILLS[id]; logLine(`<b class="lvup">领悟宝术</b>：${S.icon}<b>${S.name}</b>——${S.desc}`, 'sys'); sfx('epic'); }
+/* 宝术熟练度 */
+const profLevel = (id, c = C) => { const n = (c.prof && c.prof[id]) || 0; return n >= PROF[2].at ? 2 : n >= PROF[1].at ? 1 : 0; };
+function profUse(id) { C.prof = C.prof || {}; const before = profLevel(id); C.prof[id] = (C.prof[id] || 0) + 1; const after = profLevel(id); if (after > before) setTimeout(() => { logLine(`${SKILLS[id].icon}<b>${SKILLS[id].name}</b> 用得越来越顺手——<b class="lvup">${PROF[after].n}</b>（威力 +${PROF[after].b * 100}%）`, 'sys'); sfx('epic'); }, 50); }
+const knownWeak = mob => { const M = MOBS[mob]; if (!M || !M.weak) return []; const w = (C.codex && C.codex[mob] && C.codex[mob].wk) || []; return Object.keys(M.weak).filter(e => w.includes(e)); };
 function toggleBar(id) { const i = C.bar.indexOf(id); if (i >= 0) C.bar.splice(i, 1); else { if (C.bar.length >= 4) { toast('最多带 4 门宝术进战斗'); return; } C.bar.push(id); } C.bar.sort((a, b) => SKILL_ORDER.indexOf(a) - SKILL_ORDER.indexOf(b)); save(); refresh(); }
 function learnGongfa(id) { if (C.gf.includes(id)) return; C.gf.push(id); const G = GONGFA[id]; fixHp(); logLine(`<b class="lvup">修炼有成</b>：${G.icon}<b>${G.name}</b>——${G.desc}`, 'sys'); sfx('epic'); }
 
@@ -66,6 +70,20 @@ async function dongtianPick() { // open a 洞天: pick one of two blessings
 
 /* ---------- save ---------- */
 let saveT = 0;
-function save(now_) { if (!C || NETROLE === 'guest') return; clearTimeout(saveT); const f = () => { C.savedAt = now(); store.set('save2', C); }; if (now_) f(); else saveT = setTimeout(f, 300); }
-function loadSave() { const c = store.get('save2', null); if (!c || c.v !== SAVE_V) return null; const d = newChar(); for (const k in d) if (c[k] === undefined) c[k] = d[k]; if (!PLACES[c.loc]) c.loc = 'sc_street'; return c; }
+function save(now_) { if (!C || NETROLE === 'guest') return; clearTimeout(saveT); const f = () => { C.savedAt = now(); C.story.qid = MAIN[C.story.q].id; store.set('save2', C); }; if (now_) f(); else saveT = setTimeout(f, 300); }
+// v2 saves stored only the step index; the step list has grown since, so map old indices through the old order
+const OLD_V2 = ['q_wake', 'q_yard', 'q_wolf0', 'q_wolf', 'q_egg0', 'q_egg', 'q_tomb0', 'q_tomb', 'q_bei', 'q_yaoding', 'q_shanbao', 'q_ruin', 'q_jijing', 'q_memory', 'q_qingfeng', 'q_bandit0', 'q_bandit', 'q_xushen0', 'q_xushen', 'q_leave', 'q_gate', 'q_lotus', 'q_join', 'q_lei', 'q_lib', 'q_baiduan', 'q_bdgate', 'q_lion', 'q_yu', 'q_cliff', 'q_spring', 'q_tiangu', 'q_mount', 'q_return', 'q_end'];
+function fixSave(c) { if (!c || c.v !== SAVE_V) return null; const d = newChar(); for (const k in d) if (c[k] === undefined) c[k] = d[k]; for (const k in d.arena) if (c.arena[k] === undefined) c.arena[k] = d.arena[k];
+  const qid = c.story.qid || OLD_V2[c.story.q]; const i = qi(qid); if (i >= 0) c.story.q = i; c.story.q = clamp(c.story.q, 0, MAIN.length - 1); if (!PLACES[c.loc]) c.loc = 'sc_street'; return c; }
+function loadSave() { return fixSave(store.get('save2', null)); }
+/* ---------- 回忆录 (story journal) — kept apart from the save so co-op snapshots stay small ---------- */
+let JOURNAL = store.get('journal2', []);
+const saveJournal = () => store.set('journal2', JOURNAL.slice(-120));
+/* ---------- save code: copy the save to another browser ---------- */
+async function b64z(str, unzip) {
+  const CS = unzip ? window.DecompressionStream : window.CompressionStream;
+  if (!unzip) { const bytes = new TextEncoder().encode(str); let out = bytes, tag = 'R'; if (CS) { out = new Uint8Array(await new Response(new Blob([bytes]).stream().pipeThrough(new CS('deflate'))).arrayBuffer()); tag = 'Z'; } let bin = ''; for (let i = 0; i < out.length; i += 8192) bin += String.fromCharCode.apply(null, out.subarray(i, i + 8192)); return tag + btoa(bin); }
+  const tag = str[0], bin = atob(str.slice(1)), bytes = Uint8Array.from(bin, ch => ch.charCodeAt(0)); if (tag === 'R') return new TextDecoder().decode(bytes); if (!CS) throw new Error('nozip'); return new TextDecoder().decode(await new Response(new Blob([bytes]).stream().pipeThrough(new CS('deflate'))).arrayBuffer()); }
+async function exportCode() { save(true); return 'WMOL1' + await b64z(JSON.stringify({ c: C, j: JOURNAL })); }
+async function importCode(code) { code = (code || '').replace(/\s+/g, ''); if (!code.startsWith('WMOL1')) throw new Error('bad'); const o = JSON.parse(await b64z(code.slice(5), true)); const c = fixSave(o.c); if (!c) throw new Error('bad'); store.set('save2', c); JOURNAL = Array.isArray(o.j) ? o.j : []; saveJournal(); return c; }
 function nearestTown(loc) { const a = PLACES[loc].area; if (PLACES[loc].town) return loc; if ((a === 'butian' || a === 'baiduan') && C.story.f.joined) return 'bt_court'; if (a === 'butian') return 'bt_gate'; return 'sc_street'; }

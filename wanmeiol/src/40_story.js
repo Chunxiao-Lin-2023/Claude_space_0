@@ -4,12 +4,12 @@ const F = () => C.story.f;
 const ME = () => '小不点';
 const sub = s => s;
 const nar = t => dlgShow({ who: '', text: t });
-const me = t => dlgShow({ who: ME(), icon: '🧒', text: t, mine: 1 });
-const say = (npc, t) => { const N = NPCS[npc]; return dlgShow({ who: N ? N.name : npc, icon: N ? N.icon : '', text: t }); };
+const me = t => dlgShow({ who: ME(), text: t, mine: 1 });
+const say = (npc, t) => { const N = NPCS[npc]; return dlgShow({ who: N ? N.name : npc, npc: N ? npc : '', text: t }); };
 const choose = opts => dlgChoose(opts.map(o => typeof o === 'string' ? { t: o } : o));
 const tip = t => logLine('【指引】' + t, 'tip');
 const give = (id, n = 1) => addItem(id, n);
-async function fight(spec) { const r = await startBattle(Object.assign({ flee: false }, spec)); return r && r.win; }
+async function fight(spec) { const r = await startBattle(Object.assign({ flee: false, story: 1 }, spec)); return r && r.win; }
 async function fightRetry(spec, loseText) {
   for (; ;) { if (await fight(Object.assign({ noLose: true }, spec))) return true; await nar(loseText || '你被打翻在地，眼前一黑……再睁眼时，伤口已经被人包好了。');
     fullHeal(); refresh(); const c = await choose(['再来！', '先回去练练']); if (c === 1) return false; }
@@ -67,18 +67,20 @@ async function S_cliff() {
   await nar('你们一人抱着一枚蛋往下爬，刚落地，天一下子暗了——一声尖啸撕开了云层。<b>青鳞鹰</b>回来了。');
   await say('pihou', '快跑啊——！');
   const c = await choose(['（冲另一个方向大喊）“喂！蛋在我这儿！”', '大家一起跑，往村子跑！']);
-  if (c === 1) { F().lure = 1; await nar('那只鹰拐了个弯，冲着你扑了下来。你抱着一枚蛋往反方向狂奔，身后的大树一棵接一棵地被它撞断。'); }
+  if (c === 0) { F().lure = 1; await nar('那只鹰拐了个弯，冲着你扑了下来。你抱着一枚蛋往反方向狂奔，身后的大树一棵接一棵地被它撞断。'); }
   else await nar('鹰一路追着你们撞断了半片林子。眼看就要追上大壮了，你一咬牙，回身冲它扔了一块石头——它盯上了你。');
-  const win = await fight({ mobs: [['eagle', 5]], title: '石林 · 青鳞鹰', noLose: true, flee: false, noPet: true, allies: c === 1 ? [] : ['a_kids'] });
+  const win = await fight({ mobs: [['eagle', 5]], title: '石林 · 青鳞鹰', noLose: true, flee: false, noPet: true, allies: c === 0 ? [] : ['a_kids'] });
   await nar(win ? '你一拳砸在鹰爪上，它吃痛松开了你，可它比你大太多了，又一次扑了下来——' : '你被一爪子拍飞，滚出去老远。它张开爪子扑了下来——');
   await nar('就在这时，村子方向亮起一道柔和的绿光。一根柳枝从天边伸过来，轻轻一拂，青鳞鹰像撞上了一堵看不见的墙，翻滚着退开了。');
   await nar('你怀里那枚蛋在逃跑时裂开了，里面的小鹰早产出壳，湿漉漉的，眼看就要不行了。柳枝的绿光落在它身上，它慢慢睁开了眼睛。');
   await say('willow', '（柳枝轻轻摇了摇。什么都没说，可你觉得它在笑。）');
   await nar('那天晚上，你满脑子都是青鳞鹰扑下来时，翅膀和爪子上流转的骨文。你照着那些纹路，在空地上一遍遍比划……');
-  learnSkill('qly'); F().tomb = 1;
+  await study('qly'); F().tomb = 1;
   await say('chief', '（第二天一早，脸黑得像锅底）你们几个！谁让你们去石林的？！……小不点，你过来。');
 }
 async function S_tombAsk() {
+  if (F().lure) { await say('chief', '大壮都跟我说了。是你冲着老鹰喊，把它引开的？'); await me('……蛋是我先抱的嘛。'); await say('chief', '（他张了张嘴，骂人的话到底没说出来，从柜子里摸出两罐兽奶塞给你）'); give('milk', 2); }
+  else await say('chief', '石林是能随便去的吗？那只鹰要是再快一点，你们四个连骨头都剩不下！（他骂了足足一炷香）');
   await say('chief', '你们这一闹，把石林深处一座古墓惊动了。那里面葬着一头狻猊，死了不知多少年，可它的魂还在。');
   await say('chief', '附近几个村子的人已经往那边去了，都想要狻猊的宝骨。……我知道拦不住你。去吧，别逞强，打不过就跑。');
   tip('<b>狻猊墓</b>在石林北边，是个要一关关闯的地方。建议 5 层以上，多带几口兽奶。');
@@ -109,7 +111,7 @@ async function S_yaoding() {
   await nar('大鼎里的药汤翻滚着，颜色黑得发亮，那颗狻猊宝珠沉在鼎底。你一跳进去，就疼得龇牙咧嘴——像是全身的骨头都被拆开，又一根根重新装上。');
   await say('chief', '忍着！狻猊宝珠里的宝术，得靠你自己去悟！');
   await nar('不知过了多久，你眼前浮现出一头狻猊的影子。它冲你张开了嘴，没有咬下来，而是一声长吼——你的骨头跟着它一起吼了出来。');
-  learnGongfa('yaoding'); learnSkill('sn');
+  learnGongfa('yaoding'); await study('sn');
   await say('chief', '（看着鼎里的药汤一点点变清，长出一口气）狻猊宝术……成了。');
   tip('宝术可以在“石昊”页里选择带哪些进战斗（最多 4 门）。');
 }
@@ -123,6 +125,7 @@ async function S_shanbao() {
   await nar('柳神的那根柳枝突然亮得刺眼。它往地上一扎，一道光门在村子中央打开了。');
   await say('chief', '是柳神！快，都进去！老人孩子先走！');
   const c2 = await choose(['先帮大家搬东西', '扛起族长的药鼎就走']);
+  if (c2 === 1) F().ding = 1;
   if (c2 === 1) await nar('你一个人扛起那口几百斤的药鼎，从岩浆边上冲了过去，把它扔进光门。族长回头看见，眼眶都红了。');
   else await nar('你来来回回跑了十几趟，把走不动的老人一个个背进了光门。最后一趟，岩浆已经漫到了村口。');
   await nar('光门合上的那一刻，旧石村被岩浆吞没了。');
@@ -139,7 +142,7 @@ async function S_ruin() {
   if (c === 1) await nar('你咽了口口水，小猴子“吱”地一声尖叫，拼命往石缝里缩。你叹了口气，还是把石头搬开了。');
   if (c === 2) await nar('小猴子盯着兽肉看了半天，一把抢过去，狼吞虎咽。吃完了，它就盯着你，不叫了。');
   await nar('你把它抱回了新村，给它敷了止血草。它的伤好得出奇地快，三天就能满村乱窜，把好几户人家的兽奶罐子舔了个底朝天。你给它起了个名字，叫<b>毛球</b>。');
-  gainPet('maoqiu');
+  gainPet('maoqiu'); if (c === 2) C.pets.maoqiu.aff = 22; if (c === 1) { C.pets.maoqiu.aff = 4; await nar('毛球记仇。头几天它一看见你就龇牙，还偷偷往你的兽奶里吐口水。'); }
   await nar('你不知道的是，那天在大荒深处争夺山宝的四大至尊里，有一个就是朱厌——浑身金毛的朱厌。');
   tip('毛球会跟着你战斗。在“宠物”页里可以喂它，亲近越高，它会的本事越多。');
 }
@@ -208,7 +211,10 @@ async function S_xushenDone() {
 async function S_leave() {
   await say('chief', '外面有座补天阁，是附近最大的宗门。去那里，学真本事，打听你爹娘的消息。他们要找你，迟早会去古神山——补天阁离那儿不远。');
   await say('chief', '清风那孩子也想去，你们路上做个伴。');
+  if (F().vow === 'bone') await say('chief', '你的骨头……要是在外头碰见了，别急着动手。先看清楚，拿着它的是什么人。');
+  else if (F().vow === 'find') await say('chief', '打听你爹娘的时候，别说你是石村的。外头的人，不都像柳神这么护着你。');
   await say('dazhuang', '（红着眼睛）小不点，你、你别忘了我们啊！');
+  if (F().lure) await say('dazhuang', '那年在石林，你冲着老鹰喊“蛋在我这儿”……我一直没跟你说谢谢。');
   await say('pihou', '在外面要是有人欺负你，就回来，我们一起揍他！');
   await say('ermeng', '……给你。（塞过来一罐兽奶）我偷的。');
   give('milk', 5); give('baoyao', 2);
@@ -246,22 +252,75 @@ async function S_join() {
   await say('guiye', '……');
   await say('gezhu', '那是诡爷。他守着这株神藤，已经很多很多年了。他不爱说话，你别去烦他。');
   F().joined = 1; give('baoyao', 2);
-  await nar('清风也过了考核。可第二天，她被挡在了内门试炼的门外——她的根骨不够。她站在门外，什么都没说，转身去了外门。');
-  tip('补天阁内院可以休息。<b>雷池</b>在内院东边，<b>藏经阁</b>在西边。');
+  await nar('清风也过了入阁的考核。可第二天的内门试炼，她站在试炼石前，石头只亮了一下就灭了——根骨不够。');
+  await say('外门弟子', '外门的，这边走。');
+  await nar('她跟着走了，一次也没回头。你看见她的手在袖子里攥得发白。');
+  tip('补天阁内院可以休息。先回<b>内院</b>认认地方。');
+}
+async function S_bully() {
+  await nar('你扛着铺盖卷走进内院，还没找到住的地方，就被三个穿青袍的师兄堵在了神藤底下。');
+  await say('外门师兄', '新来的？补天阁的规矩懂不懂？头一个月的灵药份例，得孝敬师兄们。');
+  const c = await choose(['什么是“份例”？能吃吗？', '不给。', '（把背上那半扇虎肉往地上一扔）这个给你们，够不够？']);
+  if (c === 0) await say('外门师兄', '（愣了一下）……装傻是吧？');
+  if (c === 1) await say('外门师兄', '嘿，大荒来的野孩子，口气倒不小。');
+  if (c === 2) await say('外门师兄', '谁要你的生肉！（他一脚把虎肉踢开）');
+  if (!await fightRetry({ mobs: [['senior', slv(12)], ['senior', slv(11)]], title: '神藤下 · 师兄的规矩' }, '你被一张定身符贴在了神藤上，挨了好几下。等符力散了，那几个人已经走了。')) return false;
+  await nar('最后一个师兄捂着肚子坐在地上。他刚要喊人——');
+  await say('guiye', '……吵。');
+  await nar('声音沙哑得像两块石头在磨。神藤边上那个老人连眼睛都没睁开。三个师兄脸色一白，爬起来就跑，鞋都跑掉了一只。');
+  await me('（小声）诡爷，你会说话啊？');
+  await nar('他没再理你。可你走出去老远，回头看时，他好像在看你。');
+  F().bully = 1;
+  tip('<b>雷池</b>在内院东边，<b>藏经阁</b>在西边。');
+}
+async function S_qf1() {
+  await nar('傍晚，你溜到山门外找清风。外门的院子里早就没人了，只有她一个人还在打一套最基础的拳，一遍，又一遍。');
+  await nar('她的指节破了，血印在木桩上，一个摞一个。');
+  await say('qingfeng', '……你来干什么？内门的人不用练这个。');
+  const c = await choose(['我陪你练。', '（掏出止血草递过去）手先包上。', '（什么也没说，悄悄走开，不打扰她）']);
+  F().qf = ['spar', 'herb', 'leave'][c];
+  if (c === 0) { await nar('你们对着打了半宿。你力气大，她就绕着你走；你出拳直，她就侧身让。到最后，她居然有两回绕到了你背后。'); await say('qingfeng', '（喘着气，第一次笑出了声）你是不是故意让我的？'); await me('才没有。'); }
+  if (c === 1) { await nar('她瞪了你一眼，还是把手伸了过来。你笨手笨脚地给她缠上，缠得像两个大馒头。'); await say('qingfeng', '……难看死了。（她没拆）'); }
+  if (c === 2) await nar('你在墙角站了一会儿，听着木桩一声一声地响，转身回去了。那天晚上，外门的拳声响到了后半夜。');
+  await say('qingfeng', '根骨不够，就多练几年。总有一天，我会自己走进内门。');
+}
+async function S_qf2() {
+  await nar('外门在比武。圈子中间，清风对着一个比她高一个头的少年，已经被打倒了两次。');
+  await say('外门弟子', '还起来？外门的规矩，输三次就别想参加下个月的内门试炼了。');
+  await nar('清风撑着地站了起来，抹了一把嘴角的血。');
+  if (F().qf === 'spar') await nar('那少年一拳砸过来，清风没有硬接，脚下一错，绕到了他身后——就是那天晚上她绕到你背后的那一步。');
+  else if (F().qf === 'herb') await nar('她手上还缠着你那天包的止血草，丑得像两个馒头。她用缠着草的手接住了那一拳，顺势一拧——');
+  else await nar('她出拳很慢，每一拳都是最基础的那一套，打了不知几千遍的那一套。那少年的拳头快，可每一下都落空了。');
+  await nar('少年摔出了圈子。四周安静了一下，然后有人鼓起了掌。');
+  const c = await choose(['（大喊）清风！好样的！', '（使劲鼓掌）', '（冲那个少年做了个鬼脸）']);
+  if (c === 2) await say('外门弟子', '你、你个内门的小崽子……！');
+  await say('qingfeng', '（看见了你，脸一下子红了）你什么时候来的？……别喊了，丢人。');
+  F().qf2 = 1;
+}
+async function S_qf3() {
+  await say('qingfeng', '听说你要去百断山了。');
+  await me('嗯。阁主说，活着出来就行。');
+  await say('qingfeng', '下个月的内门试炼，我报了名。这次……你别来看。我想自己去。');
+  const c = await choose(['好。等我回来，你得在内门等我。', '你肯定行。', '那我回来请你吃烤肉。']);
+  if (c === 2) await say('qingfeng', '……又是肉。（她扭过头，可你看见她嘴角翘起来了）');
+  else await say('qingfeng', '嗯。');
+  await nar('她把一个小布包塞进你手里。里面是几株灵药，根须都洗干净了。');
+  give('lingyao', 3); F().qf3 = 1;
 }
 async function S_lei() {
   await nar('雷池是一片山顶石台。天上的雷云压得极低，一道道雷光劈下来，砸在石台上，炸得碎石乱飞。几个师兄坐在雷光里，头发根根竖起，冒着青烟。');
   await say('雷池师兄', '新来的？雷道法则得自己挨着劈去悟。坐那儿，什么时候被劈明白了，什么时候算完。');
   await nar('你坐了下去。第一道雷劈下来，你眼前一白，鼻子里全是焦糊味。第二道、第三道……');
   for (let i = 0; i < 3; i++) { if (!await fight({ mobs: [['ape', slv(12)]], title: `雷池 · 第 ${i + 1} 道雷劫幻影`, noLose: true })) { await nar('你被劈晕了过去。醒来接着坐。'); i--; fullHeal(); } }
-  await nar('不知道挨了多少下，你忽然看清了雷光里的纹路——它们和骨文一样，是有规律的。你抬起手，一道细细的电光在你指尖跳了起来。');
-  learnSkill('lei');
+  await nar('不知道挨了多少下，你忽然看清了雷光里的纹路——它们和骨文一样，是有规律的。');
+  await study('lei');
+  await nar('你抬起手，一道细细的电光在你指尖跳了起来。');
   await say('雷池师兄', '（瞪大了眼睛）这才几天？！');
 }
 async function S_lib() {
   await say('libelder', '藏经阁的书，一层比一层难。小娃娃，你能看懂第一层就不错了。');
   await nar('你在第一层翻了两天，第三天偷偷爬上了第五层。那里有一卷残破的骨简，上面全是你认得的骨文——讲的是怎么用骨文结成锁链，困住敌人。');
-  learnSkill('gw');
+  await study('gw');
   await say('libelder', '（第四天早上，看见你从第五层下来）……你怎么上去的？');
 }
 /* ---------------- 第四章 · 百断山 ---------------- */
@@ -301,7 +360,7 @@ async function S_yu() {
   const c = await choose(['（摸摸它的脑袋）谢了，兄弟。', '……你是不是想等我化了再吃？']);
   if (c === 1) await nar('大红鸟“嘎”地叫了一声，一嘴啄在你脑门上。');
   await nar('打了那么多架，它终于低下了头，用脑袋蹭了蹭你的胳膊。从今天起，它跟你了。你给它起名叫<b>大红</b>。');
-  gainPet('dahong');
+  gainPet('dahong'); C.pets.dahong.aff = c === 0 ? 22 : 12;
   await nar('你在沙丘底下摸到了一个小石瓶，瓶底只有一滴水，晶莹得像一颗星星。');
   give('taiyi');
   tip('<b>太一真水</b>在背包里，喝下去就能永久提升。宠物在“宠物”页里换着带。');
@@ -358,9 +417,51 @@ async function S_return() {
   await nar('诡爷站在神藤边上，把那柄锈剑接过去看了很久，又递还给你。');
   await say('guiye', '……它认你。拿着。');
   await say('gezhu', '补天阁欠你一个大人情。小不点——不，以后该叫你石昊了。');
+  await nar('你走出内院的时候，神藤下站着一个穿内门青衫的身影。');
+  await say('qingfeng', '试炼石亮了三下。我自己考进来的。');
+  if (F().qf === 'spar') await say('qingfeng', '最后一关，我绕到了守关师兄背后。……你教的。');
+  else if (F().qf === 'herb') await say('qingfeng', '那天你包的止血草，我留了一根，考试的时候揣在怀里。');
+  else await say('qingfeng', '那天晚上你走开了。我知道你在墙角站了一会儿。……谢谢你没进来。');
+  await me('我就知道！（伸手）烤肉，我欠你一顿。');
+  F().qfIn = 1;
   F().end = 1; gainExp(1);
   await nar('<b>【第一卷 · 完】</b><br>石村的小不点走出了大荒，在补天阁站稳了脚跟，在百断山里闯出了名字。<br>你胸口的那道疤还在，爹娘还没有消息，那块被挖走的骨头还在别人身上。<br>路还很长。<br><br>（第二卷之后再写。大荒、补天阁、百断山都还开着，虚神界和凶兽首领也是。）');
 }
+
+async function S_yunxiBack() {
+  if (F().yunxi) {
+    await nar('不老泉边的白气里，站着一个白衣少女。是云曦。');
+    await say('云曦', '我在等你。灵湖阵里那一下，我欠你的。');
+    await nar('她摊开手，掌心里是三株沾着泉水的灵药。');
+    await say('云曦', '百断山还没关严。以后你在这里撞上凶兽首领，我会来。');
+    give('lingyao', 3); F().yunxiHelp = 1;
+    tip('在<b>百断山</b>里打凶兽首领时，云曦会来帮你。');
+  } else {
+    await nar('泉边空无一人。只有一块石头上，留着一瓢水舀过的湿痕，正在慢慢变干。');
+    await nar('你想起灵湖阵里自己头也不回地钻了出去。……算了，想也没用。');
+  }
+}
+async function S_shiyi() {
+  await nar('虚神界的光幕上，你的名字挤进了前十。四周的石台忽然安静了下来。');
+  await nar('最高的那座石台上，一个少年慢慢转过头来。他的眼睛里，有两个瞳孔。');
+  await say('石毅', '大荒来的？……排名爬得挺快。');
+  await nar('你看着他，胸口那道早就长好的疤，突然一跳一跳地疼了起来。');
+  if (F().vow === 'bone') { await nar('你说不清为什么，可你的眼睛离不开他的胸口。那里好像有什么东西，在和你的疤一起跳。'); await me('……你胸口疼不疼？'); await say('石毅', '（皱了皱眉）莫名其妙。'); }
+  else if (F().vow === 'find') { await me('你知不知道……有一对姓石的夫妻，丢了一个孩子？'); await say('石毅', '石族姓石的人多了。（他顿了一下）丢了孩子的……也不止一家。'); }
+  else { await nar('你们谁也没说话，隔着整片虚空对看了很久。'); }
+  await nar('他转回身去，光幕上他的名字一动不动，挂在最前面。');
+  await say('石毅', '想跟我交手，先爬到第一。');
+  F().shiyi = 1;
+}
+async function study(id) { // learning a 宝术 by reading its 骨文: a short memory game (skippable)
+  await nar('骨文在你眼前流转起来，一道接着一道。看清它们亮起的顺序，跟着走一遍——');
+  const first = await runeGame(id);
+  learnSkill(id);
+  if (first) { C.prof = C.prof || {}; C.prof[id] = Math.max(C.prof[id] || 0, 12); logLine(`一次就看透了骨文的走向——${SKILLS[id].name} 熟练度起步就比别人高（${C.prof[id]}/${PROF[1].at}）。`, 'sys'); }
+}
+const EVENTS = [ // one-time scenes when you arrive somewhere (checked after the main quest's own trigger)
+  { id: 'yunxi', loc: 'bd_spring', title: '不老泉边', when: () => F().mount, scene: S_yunxiBack },
+];
 
 const MAIN = [
   { id: 'q_wake', ch: 1, title: '小不点', goal: '起床', type: 'auto', scene: S_wake },
@@ -386,9 +487,13 @@ const MAIN = [
   { id: 'q_gate', ch: 3, title: '补天阁', goal: '沿出山古道去补天阁', type: 'enter', loc: 'bt_gate', scene: S_gate, rec: 11 },
   { id: 'q_lotus', ch: 3, title: '黑莲', goal: '去阁外山林的虎穴取黑莲', type: 'enter', loc: 'bt_tiger', scene: S_lotus, rec: 12 },
   { id: 'q_join', ch: 3, title: '入阁', goal: '回补天阁山门', type: 'talk', npc: 'qingfeng', scene: S_join },
+  { id: 'q_bully', ch: 3, title: '师兄的规矩', goal: '回内院认认地方', type: 'enter', loc: 'bt_court', scene: S_bully, rec: 12 },
   { id: 'q_lei', ch: 3, title: '雷池', goal: '去雷池参悟雷道', type: 'enter', loc: 'bt_train', scene: S_lei, rec: 12 },
+  { id: 'q_qf1', ch: 3, title: '外门的拳声', goal: '傍晚去山门外看看清风', type: 'talk', npc: 'qingfeng', scene: S_qf1 },
   { id: 'q_lib', ch: 3, title: '藏经阁', goal: '去藏经阁找书看', type: 'talk', npc: 'libelder', scene: S_lib },
+  { id: 'q_qf2', ch: 3, title: '外门小比', goal: '山门外在比武，清风也在', type: 'enter', loc: 'bt_gate', scene: S_qf2 },
   { id: 'q_baiduan', ch: 4, title: '百断山', goal: '去内院见阁主', type: 'talk', npc: 'gezhu', scene: S_baiduan, rec: 13 },
+  { id: 'q_qf3', ch: 4, title: '临行', goal: '走之前，去山门跟清风说一声', type: 'talk', npc: 'qingfeng', scene: S_qf3 },
   { id: 'q_bdgate', ch: 4, title: '百断山', goal: '去百断山口', type: 'enter', loc: 'bd_gate', scene: S_bdgate, rec: 13 },
   { id: 'q_lion', ch: 4, title: '九头狮', goal: '去狮岭', type: 'enter', loc: 'bd_lion', scene: S_lion, rec: 14 },
   { id: 'q_yu', ch: 4, title: '雨族', goal: '去断山荒漠', type: 'enter', loc: 'bd_desert', scene: S_yu, rec: 15 },
@@ -400,25 +505,26 @@ const MAIN = [
   { id: 'q_end', ch: 4, title: '第一卷 · 完', goal: '第二卷之后再写。可以继续在各地历练、挑战虚神界和凶兽首领。', type: 'none' },
 ];
 const SIDE = {
-  sq_milk: { npc: 'ermeng', title: '二猛的兽骨', minQ: 4, need: [['bone', 3]], ask: '小不点，给我弄三块兽骨呗？我想刻个骨牌，跟你那样认骨文。', done: '嘿嘿，够了够了！这罐兽奶给你，我从家里顺的。', reward: () => { give('milk', 4); gainExp(60); } },
-  sq_herb: { npc: 'chief', title: '族长的药鼎', minQ: 9, need: [['lingyao', 3]], ask: '药鼎还得续几味药，大荒深处的灵药，弄三株来。', done: '好。这两颗宝药，你留着防身。', reward: () => { give('baoyao', 2); gainExp(200); } },
-  sq_qf: { npc: 'qingfeng', title: '清风的心事', minQ: 23, need: [['lingyao', 4]], ask: '……我想再试一次内门试炼。听说灵药能洗练根骨，你能帮我找几株吗？', done: '（她攥着灵药，低头笑了一下）谢谢你，小不点。', reward: () => { give('baoyao', 2); gainExp(600); } },
+  sq_milk: { npc: 'ermeng', title: '二猛的兽骨', minQ: 'q_egg0', need: [['bone', 3]], ask: '小不点，给我弄三块兽骨呗？我想刻个骨牌，跟你那样认骨文。', done: '嘿嘿，够了够了！这罐兽奶给你，我从家里顺的。', reward: () => { give('milk', 4); gainExp(60); } },
+  sq_herb: { npc: 'chief', title: '族长的药鼎', minQ: 'q_yaoding', need: [['lingyao', 3]], ask: '药鼎还得续几味药，大荒深处的灵药，弄三株来。', done: '好。这两颗宝药，你留着防身。', reward: () => { give('baoyao', F().ding ? 3 : 2); if (F().ding) logLine('族长多塞了一颗：“那口鼎，是你扛出来的。”', 'dim'); gainExp(200); } },
+  sq_qf: { npc: 'qingfeng', title: '清风的骨牌', minQ: 'q_qf1', need: [['bone', 4]], ask: '外门不教骨文，我想自己学。你能给我弄几块带纹路的兽骨吗？我照着刻。', done: '（她把兽骨一块块摆好，眼睛亮亮的）够我刻一个月了。谢谢你，小不点。', reward: () => { give('baoyao', 2); gainExp(600); } },
 };
 
 /* ---------------- quest engine ---------------- */
 const curQ = () => MAIN[C.story.q];
 function questAdvance() { C.story.q = Math.min(MAIN.length - 1, C.story.q + 1); C.story.n = 0; const q = curQ(); logLine(`<span class="qnew">【主线】${q.title}</span>：${q.goal}`, 'quest'); save(); refresh(); setTimeout(storyPoll, 300); }
-async function runScene(fn) {
-  if (STATE.scene) return false; STATE.scene = fn.name || 'scene'; refresh(); netSync(); let r;
-  try { r = await fn(); } catch (e) { console.error(e); } finally { STATE.scene = null; dlgClose(); save(); refresh(); netSync(); }
+async function runScene(fn, meta) { // meta = { title, ch } → the scene's lines are kept in the 回忆录
+  if (STATE.scene) return false; STATE.scene = fn.name || 'scene'; UI.hist = []; UI.cur = null; if (meta && NETROLE !== 'guest') UI.jEntry = { t: meta.title, ch: meta.ch || curQ().ch, l: [], at: now() }; refresh(); netSync(); let r;
+  try { r = await fn(); } catch (e) { console.error(e); } finally { STATE.scene = null; const J = UI.jEntry; UI.jEntry = null; if (J && J.l.length) { JOURNAL.push(J); saveJournal(); } dlgClose(); save(); refresh(); netSync(); }
   return r !== false;
 }
-async function questComplete(q) { if (q.lvNeed && C.lv < q.lvNeed) { toast(`要先练到第 ${q.lvNeed} 层`); return false; } const ok = await runScene(q.scene); if (ok && curQ() === q) questAdvance(); return ok; }
+async function questComplete(q) { if (q.lvNeed && C.lv < q.lvNeed) { toast(`要先练到第 ${q.lvNeed} 层`); return false; } const ok = await runScene(q.scene, { title: q.title, ch: q.ch }); if (ok && curQ() === q) questAdvance(); return ok; }
+function storyEvents(loc) { for (const E of EVENTS) if (E.loc === loc && !F()['ev_' + E.id] && E.when()) { F()['ev_' + E.id] = 1; runScene(E.scene, { title: E.title }); return true; } return false; }
 function questTalkOptions(npc) {
   const q = curQ(), out = [];
   if (q.type === 'talk' && q.npc === npc) out.push({ t: (q.lvNeed && C.lv < q.lvNeed ? '🔒 ' : '❗ ') + q.title, f: () => questComplete(q) });
   if ((q.type === 'kill' || q.type === 'dungeon') && q.npc === npc && questReady(q)) out.push({ t: '✔ ' + q.title, f: () => questComplete(q) });
-  for (const [id, S] of Object.entries(SIDE)) { if (S.npc !== npc || C.story.q < S.minQ) continue; const st = C.side?.[id]; if (st === 'done') continue;
+  for (const [id, S] of Object.entries(SIDE)) { if (S.npc !== npc || C.story.q < qi(S.minQ)) continue; const st = C.side?.[id]; if (st === 'done') continue;
     if (!st) out.push({ t: '❔ ' + S.title, f: () => sideOffer(id) }); else if (S.need.every(([k, n]) => itemN(k) >= n)) out.push({ t: '✔ ' + S.title, f: () => sideDone(id) }); }
   return out;
 }
@@ -434,7 +540,7 @@ function storyKill(mob) { const q = curQ(); if (q.type === 'kill' && q.mob === m
 function storyArena() { const q = curQ(); if (q.type === 'arena' && C.story.n < q.n) { C.story.n++; if (C.story.n >= q.n) setTimeout(() => questComplete(q), 500); } }
 function storyDungeon(id) { const q = curQ(); if (q.type === 'dungeon' && q.dungeon === id) { C.story.n = 1; if (!q.npc) setTimeout(() => questComplete(q), 600); else logLine(`【主线】回去找<b>${NPCS[q.npc].name}</b>。`, 'quest'); } }
 async function hatchEgg() { if (C.pets.ertuzi || !itemN('peaegg') || STATE.scene || STATE.battle) { if (!C.pets.ertuzi && itemN('peaegg')) setTimeout(hatchEgg, 3000); return; }
-  await runScene(async () => { takeItem('peaegg'); await nar('怀里的蛋“咔”地裂开了。钻出来一只小鸟，浑身光溜溜的，一根毛都没有，冲你“啾”了一声。'); await me('……你怎么是秃的？那就叫你二秃子吧。'); gainPet('ertuzi'); await nar('后来你才知道，二秃子是孔雀一族。只是它的毛，好像一直都长不出来。'); }); }
+  await runScene(async function S_hatch() { takeItem('peaegg'); await nar('怀里的蛋“咔”地裂开了。钻出来一只小鸟，浑身光溜溜的，一根毛都没有，冲你“啾”了一声。'); await me('……你怎么是秃的？那就叫你二秃子吧。'); gainPet('ertuzi'); await nar('后来你才知道，二秃子是孔雀一族。只是它的毛，好像一直都长不出来。'); }, { title: '二秃子' }); }
 async function storyPoll() { if (!C || STATE.scene || STATE.battle || STATE.dungeon || STATE.mode !== 'play' || NETROLE === 'guest') return; const q = curQ(); if (q.type === 'auto') return questComplete(q); if (STATE.dtPending) return dongtianPick(); }
 async function sideOffer(id) { const S = SIDE[id]; C.side = C.side || {}; await runScene(async () => { await say(S.npc, S.ask); const c = await choose(['交给我', '下次吧']); if (c === 0) { C.side[id] = 'on'; logLine(`【支线】${S.title}：${S.need.map(([k, n]) => ITEMS[k].name + '×' + n).join('、')} → ${NPCS[S.npc].name}`, 'quest'); } }); }
 async function sideDone(id) { const S = SIDE[id]; await runScene(async () => { for (const [k, n] of S.need) takeItem(k, n); await say(S.npc, S.done); S.reward(); C.side[id] = 'done'; }); }

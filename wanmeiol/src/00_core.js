@@ -1,5 +1,5 @@
-/* ================= 完美世界OL · 文字版 — core =================
-   single-file text MMO-flavoured RPG.  save keys use the prefix `wanmeiol.` */
+/* ================= 完美世界 · 石昊篇（文字版）— core =================
+   single-file text RPG.  save keys use the prefix `wanmeiol.` */
 'use strict';
 const $ = id => document.getElementById(id);
 const QS = new URLSearchParams(location.search);
@@ -32,7 +32,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 const el = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; };
 
 /* ---------- settings ---------- */
-const SET = Object.assign({ mute: false, vol: 0.6, fast: false, chatWorld: true, autoFollow: true }, store.get('set', {}));
+const SET = Object.assign({ mute: false, vol: 0.6, fast: false, music: true, fs: 0 }, store.get('set', {}));
 const saveSet = () => store.set('set', SET);
 
 /* ---------- synth sfx (Web Audio, no files) ---------- */

@@ -1,6 +1,6 @@
 /* ================= moving, exploring, battles, dungeons, roaming 凶兽首领 ================= */
 const exitsOf = loc => { const ex = {}; for (const [d, id] of Object.entries(PLACES[loc].exits)) if (placeOpen(id)) ex[d] = id; return ex; };
-const isNight = () => { const h = new Date().getHours(); return h >= 19 || h < 6; };
+const isNight = () => { if (window.__dbg && __dbg.night != null) return __dbg.night; const h = new Date().getHours(); return h >= 19 || h < 6; };
 const pdesc = P => C.story.f.moved && P.moved ? P.moved : P.desc;
 function go(loc, silent, force) {
   if (!PLACES[loc] || !placeOpen(loc)) return; if (!force && (STATE.battle || STATE.scene || STATE.dungeon)) { toast(STATE.battle ? '打着呢，走不开' : '先把眼前的事办完'); return; }
@@ -10,12 +10,13 @@ function go(loc, silent, force) {
 }
 function describe() {
   const P = PLACES[C.loc], A = AREAS[P.area];
-  logLine(`<div class="lochead">${P.name}<span>${A.name}${P.lv ? ` · ${P.lv[0]}-${P.lv[1]} 层` : ''}</span></div>${pdesc(P)}`, 'loc');
+  logLine(`<div class="lochead">${P.name}<span>${A.name}${P.lv ? ` · ${P.lv[0]}-${P.lv[1]} 层` : ''}</span></div>${isNight() && P.night ? P.night : pdesc(P)}`, 'loc');
   if (ROAM && !ROAM.dead && ROAM.loc === C.loc && now() < ROAM.end) logLine(`<b class="warn">${MOBS[ROAM.id].name}就在附近！</b>`, 'sys');
 }
 function storyArrive(loc) { if (!C || STATE.scene || STATE.battle || STATE.dungeon || NETROLE === 'guest') return; const q = curQ();
   if (q.type === 'enter' && q.loc === loc) return questComplete(q);
   if (q.onEnter && q.onEnter.loc === loc && !C.story.f['en_' + q.id]) { C.story.f['en_' + q.id] = 1; return runScene(q.onEnter.scene); }
+  storyEvents(loc);
 }
 function route(from, to) { if (from === to) return [from]; const prev = { [from]: null }, Q = [from];
   while (Q.length) { const a = Q.shift(); for (const b of Object.values(exitsOf(a))) { if (b in prev) continue; prev[b] = a; if (b === to) { const p = [b]; let c = a; while (c) { p.unshift(c); c = prev[c]; } return p; } Q.push(b); } } return null; }
@@ -27,13 +28,16 @@ async function autoWalk(to) {
 }
 /* ---------- explore ---------- */
 let exploreT = 0;
+const NIGHT_MOBS = { dahuang: 'owl', butian: 'owl', baiduan: 'wisp' };
+const FLAVOR_N = ['黑暗里亮起几点绿光——', '月亮被云遮住的一瞬间，', '夜风里夹着一股腥气，', '你踩断了一根枯枝，四周猛地安静下来——'];
 const FLAVOR = ['草丛里窸窸窣窣地响了一阵——', '你拨开一丛灌木，', '一阵腥风扑面而来，', '脚下的落叶突然动了一下，', '远处一声低吼，越来越近，'];
 async function explore() {
   if (STATE.battle || STATE.scene || STATE.dungeon || now() < exploreT) return; exploreT = now() + (window.__dbg && __dbg.noCD ? 0 : 700); const P = PLACES[C.loc]; if (!P.mobs) return;
   if (C.hp < charStats().hpMax * 0.15) { toast('气血太低了，先歇一歇'); return; }
-  const r = Math.random();
-  if (r < 0.6) { const n = wpick([{ v: 1, w: 6 }, { v: 2, w: 3 }, { v: 3, w: 1 }]).v; const mobs = []; for (let i = 0; i < n; i++) { const id = wpick(P.mobs, x => x[1])[0]; mobs.push([id, clamp(rint(P.lv[0], P.lv[1]), 1, 30)]); }
-    logLine(pick(FLAVOR) + mobs.map(m => MOBS[m[0]].name).join('、') + '冲了出来！', 'enc'); await startBattle({ mobs, title: `${P.name} · 遭遇`, flee: true }); }
+  const r = Math.random(), night = isNight(), pool = night && NIGHT_MOBS[P.area] ? [...P.mobs, [NIGHT_MOBS[P.area], 3]] : P.mobs;
+  const ev = r >= 0.6 ? wildEventFor(P) : null; if (ev && (ev.once || chance(0.5))) return runWild(ev);
+  if (r < 0.6) { const n = wpick([{ v: 1, w: 6 }, { v: 2, w: 3 }, { v: 3, w: 1 }]).v; const mobs = []; for (let i = 0; i < n; i++) { const id = wpick(pool, x => x[1])[0]; mobs.push([id, clamp(rint(P.lv[0], P.lv[1]), 1, 30)]); }
+    logLine((night ? pick(FLAVOR_N) : pick(FLAVOR)) + mobs.map(m => MOBS[m[0]].name).join('、') + '冲了出来！', 'enc'); const res = await startBattle({ mobs, title: `${P.name} · ${night ? '夜袭' : '遭遇'}`, flee: true }); if (res && res.win) logLine(`打赢了：${mobs.map(m => MOBS[m[0]].name).join('、')}。`, 'dim'); }
   else if (r < 0.88 && P.gather) { let got = false; for (const [id, p] of P.gather) if (Math.random() < p) { addItem(id, 1); got = true; } if (!got) logLine('你四下翻了翻，什么也没找到。', 'dim'); sfx('step'); save(); refresh(); }
   else { const ev = rint(0, 3);
     if (ev === 0 && C.pet) { const Pp = PETS[C.pet]; logLine(`${Pp.icon}${Pp.name}${pick(['从草丛里叼回来一块兽骨，得意地放在你脚边。', '追着一只蝴蝶跑出去老远，又灰头土脸地跑回来。', '蹲在树杈上冲你叫，好像发现了什么。'])}`, 'enc'); if (chance(0.5)) addItem('bone'); }
@@ -79,7 +83,7 @@ async function enterDungeon(id) {
     if (R.mobs) { const r = await startBattle({ mobs: R.mobs.map(m => [m, R.boss ? D.lv : Math.max(1, D.lv - 1)]), title: `${D.name} · ${R.name}`, flee: !R.boss, dungeon: id, room: i });
       if (!r || !r.win) { STATE.dungeon = null; refresh(); bannerDraw(); return; } }
     else if (R.event) await dungeonEvent(R.event, D);
-    if (i < D.rooms.length - 1) { const c = await dlgChoose([{ t: '原地调息，再往里走（恢复 40% 气血和符力）' }, { t: '直接往里走' }, { t: '先退出去' }]);
+    if (i < D.rooms.length - 1) { const c = await dlgChoose([{ t: '原地调息，再往里走（恢复 40% 气血和符力）' }, { t: '直接往里走' }, { t: '先退出去' }], `「${R.name}」过了。前面还有 ${D.rooms.length - 1 - i} 关。`);
       if (c === 0) { const s = charStats(); C.hp = Math.min(s.hpMax, C.hp + s.hpMax * 0.4); C.mp = Math.min(s.mpMax, C.mp + s.mpMax * 0.4); logLine('你靠着石壁调息了一会儿。', 'dim'); refresh(); }
       if (c === 2) { STATE.dungeon = null; refresh(); bannerDraw(); return; } }
   }
@@ -87,8 +91,8 @@ async function enterDungeon(id) {
   STATE.dungeon = null; save(); refresh(); bannerDraw(); setTimeout(storyPoll, 300);
 }
 async function dungeonEvent(k, D) {
-  if (k === 'jars') { const c = await dlgChoose([{ t: '撬开陶罐看看' }, { t: '别碰死人的东西' }]); if (c === 0) { if (chance(0.65)) { logLine('罐子里是封了不知多少年的药，药香还没散。', 'enc'); addItem('baoyao'); addItem('lingyao', 2); } else { logLine('罐子里“嗡”地飞出一群墓穴蝠！', 'enc'); await startBattle({ mobs: [['tombbat', D.lv], ['tombbat', D.lv]], title: '墓穴蝠', flee: false }); } } }
-  if (k === 'runes') { const c = await dlgChoose([{ t: '照着骨文的路子，一点点拆开符文网' }, { t: '硬闯过去' }]); if (c === 0 && C.gf.includes('guwen')) { logLine('族长教的骨文派上了用场，符文网在你手里一根根松开。网后面躺着一株灵药。', 'enc'); addItem('lingyao', 2); addItem('baoyao'); } else { logLine('符文网一亮，打得你浑身发麻。', 'enc'); const s = charStats(); C.hp = Math.max(1, C.hp - s.hpMax * 0.25); refresh(); } }
+  if (k === 'jars') { const c = await dlgChoose([{ t: '撬开陶罐看看' }, { t: '别碰死人的东西' }], '坑边的陶罐封得严严实实。'); if (c === 0) { if (chance(0.65)) { logLine('罐子里是封了不知多少年的药，药香还没散。', 'enc'); addItem('baoyao'); addItem('lingyao', 2); } else { logLine('罐子里“嗡”地飞出一群墓穴蝠！', 'enc'); await startBattle({ mobs: [['tombbat', D.lv], ['tombbat', D.lv]], title: '墓穴蝠', flee: false }); } } }
+  if (k === 'runes') { const c = await dlgChoose([{ t: '照着骨文的路子，一点点拆开符文网' }, { t: '硬闯过去' }], '肋骨之间的符文网一明一暗，像在呼吸。'); if (c === 0 && C.gf.includes('guwen')) { logLine('族长教的骨文派上了用场，符文网在你手里一根根松开。网后面躺着一株灵药。', 'enc'); addItem('lingyao', 2); addItem('baoyao'); } else { logLine('符文网一亮，打得你浑身发麻。', 'enc'); const s = charStats(); C.hp = Math.max(1, C.hp - s.hpMax * 0.25); refresh(); } }
 }
 
 /* ---------- roaming 凶兽首领 (one at a time, in a wild place you can already reach) ---------- */
@@ -101,6 +105,7 @@ function roamTick() {
     if (store.get('roamDead', 0) === slot) ROAM.dead = true; }
   if (!ROAM.told && !ROAM.dead && now() < ROAM.end) { ROAM.told = true; npcRumor(`听说<b>${PLACES[ROAM.loc].name}</b>那边来了一头<b>${MOBS[ROAM.id].name}</b>，凶得很。`); }
 }
-async function fightRoam() { if (!ROAM || ROAM.dead) return; const r = await startBattle({ mobs: [[ROAM.id, ROAM.lv]], title: `凶兽首领 · ${MOBS[ROAM.id].name}`, flee: true, roam: { hpMax: ROAM.hpMax, hp: ROAM.hp } });
+async function fightRoam() { if (!ROAM || ROAM.dead) return; const yx = C.story.f.yunxiHelp && PLACES[ROAM.loc].area === 'baiduan'; if (yx) logLine('一道白影落在你身边——云曦来了。', 'sys');
+  const r = await startBattle({ mobs: [[ROAM.id, ROAM.lv]], allies: yx ? ['a_yunxi'] : [], title: `凶兽首领 · ${MOBS[ROAM.id].name}`, flee: true, roam: { hpMax: ROAM.hpMax, hp: ROAM.hp } });
   if (r && r.win) { ROAM.dead = true; store.set('roamDead', ROAM.slot); logLine(`你打跑了${MOBS[ROAM.id].name}！`, 'sys'); addItem('baoyao'); } refresh(); }
 function roamRound(B) { if (!ROAM) return; ROAM.hp = Math.max(0, ROAM.hpMax - (ROAM.hpMax - ROAM.hp) - (B.roamDmg || 0)); B.roamDmg = 0; const b = B.units.find(u => u.side === 1); if (b) ROAM.hp = Math.max(0, b.hp); }

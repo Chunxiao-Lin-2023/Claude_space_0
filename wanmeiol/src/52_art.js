@@ -84,6 +84,9 @@ function paintScene(g, W, H, id, night, big) {
 let bannerKey = '';
 function bannerDraw() { const cv = $('bcv'); if (!cv || !C) return; const dpr = Math.min(devicePixelRatio || 1, 2), W = cv.clientWidth, H = cv.clientHeight; if (!W || !H) return; const key = C.loc + W + 'x' + H + isNight() + (STATE.dungeon ? 'd' : '') + (C.story.f.moved ? 'm' : ''); if (key === bannerKey) return; bannerKey = key;
   cv.width = W * dpr; cv.height = H * dpr; const g = cv.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0); paintScene(g, W, H, STATE.dungeon ? DUNGEONS[STATE.dungeon.id].loc : C.loc, isNight() || !!STATE.dungeon); }
+let talkBgKey = '';
+function talkBgDraw() { const cv = $('tbg'); if (!cv || !C) return; const dpr = Math.min(devicePixelRatio || 1, 2), W = cv.parentNode.clientWidth, H = Math.min(cv.parentNode.clientHeight, Math.round(W * 0.8)); if (!W || !H) return; cv.style.height = H + 'px'; const loc = STATE.dungeon ? DUNGEONS[STATE.dungeon.id].loc : C.loc, key = loc + W + 'x' + H + isNight() + (C.story.f.moved ? 'm' : ''); if (key === talkBgKey) return; talkBgKey = key;
+  cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr); const g = cv.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0); paintScene(g, W, H, loc, isNight() || !!STATE.dungeon); }
 function titleDraw() { // a dusk ink-wash panorama: floating peaks of 补天阁, layered 大荒 ridges, mist, and the burnt willow with its one green branch
   const cv = $('tcv'); const dpr = Math.min(devicePixelRatio || 1, 2), W = innerWidth, H = innerHeight; cv.width = W * dpr; cv.height = H * dpr; const g = cv.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0); const r = srng('title');
   const sky = g.createLinearGradient(0, 0, 0, H); sky.addColorStop(0, '#1a1420'); sky.addColorStop(0.45, '#4a2e28'); sky.addColorStop(0.7, '#a0603a'); sky.addColorStop(1, '#2a1c14'); g.fillStyle = sky; g.fillRect(0, 0, W, H);

@@ -40,7 +40,14 @@ const CHATTER = [
   { at: 'dh_road', from: 'q_qingfeng', to: 'q_gate', who: '', t: '古道上偶尔能看见几辆兽车的残骸，车辙一直延伸到山外。' },
   // 补天阁
   { at: 'bt_gate', from: 'q_gate', to: 'q_join', who: 'qingfeng', t: '那个偷石头的人，我好像在山门里见过……算了，等你进去了再说。' },
-  { at: 'bt_gate', from: 'q_lei', to: 'q_end', who: 'qingfeng', t: '外门也挺好的。真的。（她把头扭到一边）' },
+  { at: 'bt_gate', from: 'q_bully', to: 'q_qf1', who: 'qingfeng', t: '外门也挺好的。真的。（她把头扭到一边）' },
+  { at: 'bt_gate', from: 'q_qf1', to: 'q_qf3', who: 'qingfeng', t: '今天我把那套拳打了三百遍。……你别那样看我，我不累。' },
+  { at: 'bt_gate', from: 'q_qf2', to: 'q_qf3', who: '外门弟子', t: '那个清风，平时不声不响的，打起架来是真不要命。' },
+  { at: 'bt_court', from: 'q_end', to: 'q_end', who: 'qingfeng', t: '内门的功课好难。……可我一点都不想回去。' },
+  { at: 'bt_court', from: 'q_bully', to: 'q_end', who: '补天阁弟子', t: '听说了吗？新来的小师弟把三个外门师兄打趴下了，诡爷还开口了！诡爷！' },
+  { at: 'bt_train', from: 'q_qf1', to: 'q_end', who: '雷池师兄', t: '雨族的冰甲？挨一道雷就裂。我亲眼见过。' },
+  { at: 'bt_lib', from: 'q_qf2', to: 'q_end', who: 'libelder', t: '残魂没有肉身，刀剑砍不着。可骨文是刻在魂上的，锁得住它们。' },
+  { at: 'bd_desert', from: 'q_yu', to: 'q_end', who: '', t: '沙地上躺着一只被砸碎的蝎壳。看来有人知道该怎么对付它们——硬壳要砸，不要砍。' },
   { at: 'bt_court', from: 'q_lei', to: 'q_baiduan', who: 'guiye', t: '……（诡爷盯着神藤上那几个干瘪的葫芦，一动不动。）' },
   { at: 'bt_court', from: 'q_lei', to: 'q_baiduan', who: 'gezhu', t: '神藤一年不如一年了。补天阁的根，都在它身上。' },
   { at: 'bt_court', from: 'q_join', to: 'q_end', who: '补天阁弟子', t: '那个就是扛着半扇虎肉进山门的小娃娃？' },
@@ -50,6 +57,19 @@ const CHATTER = [
   // 百断山
   { at: 'baiduan', from: 'q_bdgate', to: 'q_yu', who: 'huolinger', t: '雨族的人在找你。他们那一族心眼小，你小心点。' },
   { at: 'baiduan', from: 'q_lion', to: 'q_spring', who: 'huolinger', t: '我那只火鸟最近总往你那只大红鸟边上凑……你管管你的鸟！' },
+  { at: 'baiduan', from: 'q_lion', to: 'q_mount', who: 'huolinger', t: '花果山那棵怪树我远远见过，一身的油。要是我的火鸟在，一口火就能让它叫唤。' },
+  { at: 'shicun', from: 'q_tomb0', to: 'q_tomb', who: 'linhu', t: '墓里的石兽，刀砍上去只冒火星子。对付那种东西，得用砸的。' },
+  // night
+  { at: 'shicun', night: 1, from: 'q_wake', to: 'q_shanbao', who: 'linhu', t: '天黑了别出村。大荒的夜，是凶兽的白天。' },
+  { at: 'shicun', night: 1, from: 'q_ruin', to: 'q_end', who: 'ermeng', t: '（打着哈欠）新村夜里的星星真多啊……小不点你怎么还不睡？' },
+  { at: 'sc_willow', night: 1, from: 'q_wake', to: 'q_end', who: 'willow', t: '（月光下，柳枝上浮着一层极淡的光，一明一暗，像在呼吸。）' },
+  { at: 'sc_chief', night: 1, from: 'q_wake', to: 'q_end', who: 'chief', t: '（族长还没睡，就着油灯一遍遍摸那块刻满骨文的兽骨。）' },
+  { at: 'dahuang', night: 1, from: 'q_wolf', to: 'q_end', who: '', t: '林子里亮起一对对绿莹莹的眼睛，又悄悄熄灭了。' },
+  { at: 'dahuang', night: 1, from: 'q_wolf', to: 'q_end', who: '', t: '头顶有什么东西无声地掠过，带起一阵冷风。是夜枭。' },
+  { at: 'bt_court', night: 1, from: 'q_bully', to: 'q_end', who: 'guiye', t: '（夜深了，诡爷还站在神藤下。月光照着他，他的影子好像比人还老。）' },
+  { at: 'bt_gate', night: 1, from: 'q_qf1', to: 'q_qf3', who: '', t: '外门的院子里，木桩还在一声一声地响。' },
+  { at: 'baiduan', night: 1, from: 'q_bdgate', to: 'q_end', who: '', t: '断山之间飘起一串幽绿的鬼火，排成一行，慢慢往山谷深处去了。' },
+  { at: 'xs_hall', night: 1, from: 'q_xushen', to: 'q_end', who: '', t: '夜里的虚神界人少了些。光幕上的名字一个个暗下去，只有最前面那一个，一直亮着。' },
   { at: 'bd_gate', from: 'q_bdgate', to: 'q_end', who: '', t: '断口平整得像镜子，照出你的影子。据说这里的每一座山，都是被一剑斩断的。' },
   { at: 'bd_cliff', from: 'q_cliff', to: 'q_end', who: '', t: '崖上的古兵器在风里嗡嗡作响，像是在说话。' },
   { at: 'bd_spring', from: 'q_spring', to: 'q_end', who: '', t: '泉眼冒着白气。那头金鹏留下的羽毛，还散落在泉边。' },
@@ -62,15 +82,17 @@ const CHATTER = [
 ];
 let chatT = 0, lastChat = {};
 function chatterFor(loc) { const P = PLACES[loc], q = C.story.q;
-  return CHATTER.filter(c => (c.at === '*' ? c.pet && C.pet === c.pet : c.at === loc || c.at === P.area) && (!c.from || q >= qi(c.from)) && (!c.to || q <= qi(c.to))); }
-function npcSay(c) { lastChat[CHATTER.indexOf(c)] = now(); const N = NPCS[c.who]; logLine(c.who ? `<span class="who">${N ? N.icon + ' ' + N.name : c.who}</span>${c.t}` : c.t, 'npc'); }
+  return CHATTER.filter(c => (c.at === '*' ? c.pet && C.pet === c.pet : c.at === loc || c.at === P.area) && (!c.night || isNight()) && (!c.from || q >= qi(c.from)) && (!c.to || q <= qi(c.to))); }
+/* who is standing here right now (some people move as the story goes on) */
+function npcsHere(loc) { const P = PLACES[loc], f = C.story.f; let L = (P.npcs || []).filter(n => !(n === 'qingfeng' && (!f.qingfeng || f.qfIn)) && !(n === 'huolinger' && C.story.q < qi('q_bdgate'))); if (loc === 'bt_court' && f.qfIn) L = [...L, 'qingfeng']; return L; }
+function npcSay(c) { lastChat[CHATTER.indexOf(c)] = now(); const N = NPCS[c.who]; logLine(c.who ? `<span class="who">${N ? N.name : c.who}</span>${c.t}` : c.t, 'npc'); }
 function npcOnArrive(loc) { if (!C || NETROLE === 'guest' || STATE.scene) return; const L = chatterFor(loc).filter(c => !lastChat[CHATTER.indexOf(c)] || now() - lastChat[CHATTER.indexOf(c)] > 300000); if (L.length && chance(0.55)) setTimeout(() => { if (!STATE.scene && !STATE.battle) npcSay(pick(L)); }, 700); chatT = now() + rint(40000, 70000); }
 function npcTick() { if (!C || STATE.mode !== 'play' || NETROLE === 'guest' || STATE.scene || STATE.battle || STATE.dungeon || now() < chatT) return; chatT = now() + rint(45000, 80000);
   const L = chatterFor(C.loc).filter(c => !lastChat[CHATTER.indexOf(c)] || now() - lastChat[CHATTER.indexOf(c)] > 300000); if (L.length) npcSay(pick(L)); }
-function npcRumor(text) { const P = PLACES[C.loc]; const who = P.area === 'shicun' ? NPCS.linhu : P.area === 'butian' ? NPCS.gezhu : P.area === 'baiduan' ? NPCS.huolinger : null; logLine(who ? `<span class="who">${who.icon} ${who.name}</span>${text}` : '【传闻】' + text, 'npc'); }
+function npcRumor(text) { const P = PLACES[C.loc]; const who = P.area === 'shicun' ? NPCS.linhu : P.area === 'butian' ? NPCS.gezhu : P.area === 'baiduan' ? NPCS.huolinger : null; logLine(who ? `<span class="who">${who.name}</span>${text}` : '【传闻】' + text, 'npc'); }
 function npcTalk(id) { // clicking a person: their quest or side errand, otherwise a line that fits right now
   if (STATE.scene || STATE.battle) return; const opts = questTalkOptions(id); const lines = chatterFor(C.loc).filter(c => c.who === id);
-  const fallback = { chief: '去玩吧，别跑太远。', willow: '（柳枝静静垂着。）', linhu: '弓要常擦，箭要常磨。', dazhuang: '小不点，下回进山带上我！', ermeng: '嘿嘿。', pihou: '你看你看，我又能多翻一个跟头了！', qingfeng: '……嗯。', guiye: '……', gezhu: '好好修行。', libelder: '书别弄脏了。', huolinger: '看什么看？' }[id] || '……';
+  const fallback = { chief: '去玩吧，别跑太远。', willow: '（柳枝静静垂着。）', linhu: '弓要常擦，箭要常磨。', dazhuang: '小不点，下回进山带上我！', ermeng: '嘿嘿。', pihou: '你看你看，我又能多翻一个跟头了！', qingfeng: C.story.f.qfIn ? '内门的饭比外门的好吃。……你别告诉别人我说的。' : '……嗯。', guiye: '……', gezhu: '好好修行。', libelder: '书别弄脏了。', huolinger: '看什么看？' }[id] || '……';
   runScene(async () => { await say(id, lines.length ? pick(lines).t : fallback); if (opts.length) { const c = await choose([...opts.map(o => ({ t: o.t })), { t: '没事了' }]); if (c < opts.length) setTimeout(() => opts[c].f(), 0); } });
 }
 
@@ -86,6 +108,14 @@ function arenaOpponents() { const r = arenaRank(), seed = srng('ao' + today() + 
 async function arenaFight(o) {
   arenaDaily(); if (C.arena.tries <= 0) { toast('今天打累了，明天再来'); return; } C.arena.tries--; fullHeal(); closeModal();
   const r = await startBattle({ rivals: [o], title: `虚神界 · 挑战第 ${o.rank} 名 ${o.name}`, noLose: true, flee: false, arena: 1, noPet: true });
-  fullHeal(); if (r && r.win) { C.arena.wins++; const old = C.arena.rank; if (o.rank < old) C.arena.rank = o.rank; logLine(`虚神界排名 ${old > 100 ? '榜外' : old} → <b>${C.arena.rank}</b>`, 'sys'); storyArena(); }
+  fullHeal(); if (r && r.win) { C.arena.wins++; const old = C.arena.rank; if (o.rank < old) C.arena.rank = o.rank; logLine(`虚神界排名 ${old > 100 ? '榜外' : old} → <b>${C.arena.rank}</b>`, 'sys'); arenaMilestones(); storyArena(); }
   else logLine('输了。光幕上你的名字没动。', 'dim'); save(); refresh();
 }
+
+/* ---------- 虚神界 rewards: one-time when you first reach the top 50 / 10 / 1, and a daily gift by rank ---------- */
+const ARENA_MS = [{ r: 50, t: '光幕上，你的名字第一次镶上了金边。', items: [['baoyao', 2]], exp: 0.3 }, { r: 10, t: '你挤进了虚神界前十。各族的天才开始记住“大荒来的小不点”这个名字。', items: [['baoyao', 3], ['lingyao', 3]], exp: 0.5 }, { r: 1, t: '虚神界第一！光幕上，你的名字压在了所有人的头上。', items: [['baoyao', 5], ['lingyao', 5]], exp: 1 }];
+function arenaMilestones() { const r = C.arena.rank; C.arena.best = Math.min(C.arena.best || 999, r); C.arena.got = C.arena.got || {};
+  for (const M of ARENA_MS) if (r <= M.r && !C.arena.got[M.r]) { C.arena.got[M.r] = 1; logLine(`<b class="lvup">${M.t}</b>`, 'sys'); for (const [k, n] of M.items) addItem(k, n); gainExp(BAL.expNext(C.lv) * M.exp); sfx('epic'); }
+  if (r <= 10 && !C.story.f.shiyi) setTimeout(() => runScene(S_shiyi, { title: '重瞳' }), 700); }
+const arenaGift = r => r <= 10 ? { items: [['baoyao', 2], ['lingyao', 2]], exp: 0.25 } : r <= 50 ? { items: [['baoyao', 1], ['lingyao', 1]], exp: 0.15 } : r <= 100 ? { items: [['lingyao', 1], ['herb', 2]], exp: 0.08 } : { items: [['herb', 2]], exp: 0.04 };
+function arenaClaim() { if (C.arena.claimed === today()) return; C.arena.claimed = today(); const g = arenaGift(arenaRank()); logLine(`虚神界的光幕洒下一片微光——按今天的排名（${arenaRank() > 100 ? '榜外' : '第 ' + arenaRank() + ' 名'}）领到了奖励。`, 'sys'); for (const [k, n] of g.items) addItem(k, n); gainExp(BAL.expNext(C.lv) * g.exp); sfx('loot'); save(); refresh(); }
