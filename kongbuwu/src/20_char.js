@@ -1,7 +1,7 @@
 /* 角色状态、成长、存档（5 个位置）、回忆录 */
 let C = null; const SAVE_V = 1;
 function newChar() { return { v: SAVE_V, lv: 1, exp: 0, hp: 0, mp: 0, money: 35, day: 1, tick: 0, loc: 'hh_door', q: 'q_open', f: {}, sk: ['hammer', 'jump', 'story'], bar: { n: ['hammer'], d: ['jump', 'story'] }, prof: {},
-  pets: {}, pet: { n: '', d: '' }, duo: 0, bag: { bread: 2 }, gear: [], talents: [], titles: [], title: '', hh: { good: 0, bad: 0, today: 4, month: 10, screams: 0, spins: 0, total: 0, scenes: ['zombie', 'mh'], groups: 0 },
+  pets: {}, pet: { n: '', d: '' }, duo: 0, bag: { bread: 2 }, gear: [], talents: [], titles: [], title: '', hh: { good: 0, bad: 0, today: 4, month: 10, screams: 0, spins: 0, total: 0, scenes: ['zombie', 'mh'], groups: 0, batches: 0, up: {} },
   fans: 0, codex: {}, kills: {}, seen: {}, dlog: [], daily: { day: 0, got: '', done: 0 }, ex: {}, track: '', auto: 0, made: Date.now(), bonus: { hp: 0 } }; }
 function charStats(c) { c = c || C; const l = c.lv; let hp = HERO.hp(l) + (c.bonus.hp || 0), mp = HERO.mp(l), atk = HERO.atk(l), def = HERO.def(l), spd = HERO.spd(l), exp = 0, low = 0;
   for (const t of c.titles) { const T = TITLES[t]; if (!T) continue; hp += T.hp || 0; mp += T.mp || 0; atk += T.atk || 0; exp += T.exp || 0; low += T.low || 0; }

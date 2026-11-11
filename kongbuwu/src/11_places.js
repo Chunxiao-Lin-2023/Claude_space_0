@@ -57,7 +57,8 @@ const PLACES = {
   kf_dean: { name: '院长办公室', area: 'kangfu', x: 3, y: 2, art: 'office', exits: { '出去 · 三楼': 'kf_b3' }, d: '里间有一个被警方封起来的衣柜。', dn: '地上散着病例单。抽屉里有四封寄出去、又回到这里的信。' },
   kf_b3_1: { name: '第三病栋 · 一楼', area: 'kangfu', x: 2, y: 3, art: 'doorhall', exits: { '上楼 · 三楼': 'kf_b3', '三号病房的门': 'kf_inside' }, d: '十间病室，九个病人。', dn: '臭味到了刺鼻的地步。十号是特制的铁门。三号病房的门，在渗东西。' },
   kf_b3_4: { name: '第三病栋 · 四楼', area: 'kangfu', x: 2, y: 1, art: 'wardhall', exits: { '下楼 · 三楼': 'kf_b3' }, d: '空的。', dn: '他是有目的地把你往这里引。' },
-  kf_inside: { name: '门后', area: 'kangfu', x: 3, y: 3, art: 'inside', open: 'inside', exits: { '门': 'kf_b3_1' }, d: '——', dn: '血红色的病栋。被褥和假人都不见了，像一直有专人在清扫。这里很安静。千万不要开口说话。' }
+  kf_inside: { name: '门后', area: 'kangfu', x: 3, y: 3, art: 'inside', open: 'inside', exits: { '门': 'kf_b3_1', '三号病房': 'kf_in3' }, d: '——', dn: '血红色的病栋。被褥和假人都不见了，像一直有专人在清扫。这里很安静。千万不要开口说话。' },
+  kf_in3: { name: '门后 · 三号病房', area: 'kangfu', x: 4, y: 3, art: 'inside', open: 'in3', exits: { '回走廊': 'kf_inside' }, d: '——', dn: '一张小床。床上的人在呼吸，很轻，很慢。' }
 };
 function placeOpen(id) { const p = PLACES[id]; if (!p) return false; const a = AREAS[p.area]; return (!p.open || !!C.f[p.open]) && (!a.open || !!C.f[a.open]); }
 

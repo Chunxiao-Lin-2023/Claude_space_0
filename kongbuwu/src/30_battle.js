@@ -7,12 +7,15 @@ function heroUnit(scare) { const s = charStats(); return { side: 'a', key: 'hero
 function petUnit(k) { const P = PETS[k], p = C.pets[k] || { lv: C.lv + 3, aff: 100 }, lv = p.lv; let atk = HERO.atk(lv) * P.atk * (1 + p.aff * .002); for (const g of C.gear) if (ITEMS[g].pet && ITEMS[g].pet[k]) atk *= ITEMS[g].pet[k];
   return { side: 'a', key: 'pet', id: k, n: P.n, lv, mhp: Math.round(HERO.hp(lv) * P.hp), atk, def: HERO.def(lv) * .8, spd: HERO.spd(lv) + 1, st: {}, dmgT: 0, pet: 1 }; }
 function battleCreate(o) { const scare = !!o.scare, B = { id: ++BID, o, scare, turn: 1, log: [], ev: [], phase: 'hero', pick: {}, sel: 0, itemUsed: false, auto: !!(C.auto || (window.__dbg && __dbg.auto)), result: null, lowUsed: false, said: {}, seen: {} };
-  B.foes = o.mobs.map((m, i) => { const u = mobUnit(m[0], m[1], i); if (m[2]) u.n = m[2]; u.hp = u.mhp; return u; }); B.hero = heroUnit(scare);
+  const SP = scare ? scenePas(o.scene) : null; B.foes = o.mobs.map((m, i) => { const u = mobUnit(m[0], m[1], i); if (m[2]) u.n = m[2]; u.trait = MOBS[m[0]].trait || ''; if (SP) u.mhp = Math.round(u.mhp * SP.hp); u.hp = u.mhp; return u; }); B.hero = heroUnit(scare);
   const pk = o.ally || (o.noPet ? '' : C.pet[scare ? 'd' : 'n']); B.pet = pk && PETS[pk] && (o.ally || C.pets[pk]) ? petUnit(pk) : null; if (B.pet) B.pet.hp = B.pet.mhp;
   if (!scare && C.gear.includes('g_mask')) for (const f of B.foes) if (f.k === 'human') f.st.weak = 2;
-  for (const f of B.foes) { const cd = C.codex[f.id] = C.codex[f.id] || { n: 0, wk: [] }; cd.n++; planMob(B, f); } return B; }
+  for (const f of B.foes) { const cd = C.codex[f.id] = C.codex[f.id] || { n: 0, wk: [] }; cd.n++; planMob(B, f); }
+  for (const p of o.pre || []) { const f = B.foes[p[0]]; if (f) f.st[p[1]] = p[2]; }
+  if (scare) { const up = C.hh.up || {}; for (const f of B.foes) { if (up.fog) f.st.vuln = 2; if (o.scene === 'mh' && C.f.jiayi) f.st.fear = 1; if (up.cam) for (const w of f.weak) { const cd = C.codex[f.id]; if (!cd.wk.includes(w)) cd.wk.push(w); } } }
+  return B; }
 const alive = us => us.filter(u => u.hp > 0);
-function addSt(B, u, k, t) { if (u.hp <= 0) return; if (k === 'stun') { if (u.st.steady) return; if (u.boss) u.st.steady = 3; } u.st[k] = Math.max(u.st[k] || 0, t); if (k === 'shield') u.shV = Math.round(B.hero.mhp * .3); if (k === 'slow' && u.charging) { u.charging = null; planMob(B, u, 1); fxe(B, { t: 'txt', who: u.key, txt: '蓄力被打断' }); } fxe(B, { t: 'st', who: u.key, k }); }
+function addSt(B, u, k, t) { if (u.hp <= 0) return; if (u.trait === 'calm' && (k === 'fear' || k === 'vuln')) t = Math.max(1, t - 1); if (k === 'dark' && C.hh.up && C.hh.up.light) t++; if (k === 'stun') { if (u.st.steady) return; if (u.boss) u.st.steady = 3; } u.st[k] = Math.max(u.st[k] || 0, t); if (k === 'shield') u.shV = Math.round(B.hero.mhp * .3); if (k === 'slow' && u.charging) { u.charging = null; planMob(B, u, 1); fxe(B, { t: 'txt', who: u.key, txt: '蓄力被打断' }); } fxe(B, { t: 'st', who: u.key, k }); }
 function blog(B, s, cls) { B.log.push({ s, cls: cls || '', turn: B.turn }); B.lastLine = B.log.length - 1; }
 function fxe(B, e) { e.line = B.log.length - 1; B.ev.push(e); }
 function unitByKey(B, k) { return k === 'hero' ? B.hero : k === 'pet' ? B.pet : B.foes.find(f => f.key === k); }
@@ -29,14 +32,18 @@ function applyDmg(B, src, tgt, raw, o) { o = o || {}; let v = Math.max(1, Math.r
   /* 绝境：故事战里第一次要倒下或跌到三成，想起一句话 */
   if (tgt.key === 'hero' && !B.lowUsed && B.o.story && !B.scare && (tgt.hp - v) <= tgt.mhp * BAL.lowHp) { B.lowUsed = true; tgt.hp = Math.max(1, tgt.hp - v); tgt.dmgT += v; fxe(B, { t: 'hit', who: tgt.key, v, hp: tgt.hp, crit: o.crit, weak: o.weak });
     const heal = Math.round(tgt.mhp * (BAL.lowHeal + charStats().low)); tgt.hp = Math.min(tgt.mhp, tgt.hp + heal); for (const k of ['bleed', 'fear', 'weak', 'slow', 'stun']) delete tgt.st[k]; tgt.st.brave = 3;
-    const ln = epicLow(B); blog(B, '【绝境】' + ln, 'epic'); fxe(B, { t: 'low', txt: ln, hp: tgt.hp }); return v; }
+    const ln = epicLow(B); blog(B, '【绝境】' + ln, 'epic'); fxe(B, { t: 'low', txt: ln, hp: tgt.hp }); yaAssist(B); return v; }
   tgt.hp = Math.max(0, tgt.hp - v); tgt.dmgT += v; fxe(B, { t: 'hit', who: tgt.key, v, hp: tgt.hp, crit: o.crit, weak: o.weak, src: src && src.key });
   if (tgt.hp <= 0) { fxe(B, { t: 'ko', who: tgt.key }); if (tgt.side === 'f') { blog(B, tgt.n + (B.scare ? ' 吓得夺路而逃！' : (tgt.k === 'ghost' ? ' 散了。' : ' 倒下了。')), 'gain'); battleSay(B, tgt, 'die'); C.kills[tgt.id] = (C.kills[tgt.id] || 0) + 1; } }
   else if (tgt.side === 'f' && tgt.boss && !tgt.phased && tgt.hp <= tgt.mhp * .5) { tgt.phased = true; tgt.st.rage = 99; const ln = epicPhase(B, tgt); blog(B, tgt.n + (B.scare ? ' 强撑着不肯认怂' : ' 红了眼') + '（攻击 +25%）' + (ln ? '：“' + ln + '”' : ''), 'warn'); fxe(B, { t: 'phase', who: tgt.key, txt: ln }); }
   return v; }
-function skillMul(k) { let m = 1 + profLevel(k)[2]; for (const g of C.gear) { const G = ITEMS[g]; if (G.sk && G.sk[k]) m *= G.sk[k]; } const S = SKILLS[k]; if (S.m !== 'n' && C.talents.includes('lianrong') && (S.m === 'd' || STATE.battle && STATE.battle.scare)) m *= 1.12; if (C.titles.includes('boss20') && S.m === 'd') m *= 1.05; return m; }
+function skillMul(k) { let m = 1 + profLevel(k)[2]; for (const g of C.gear) { const G = ITEMS[g]; if (G.sk && G.sk[k]) m *= G.sk[k]; } const S = SKILLS[k]; if (S.m !== 'n' && C.talents.includes('lianrong') && (S.m === 'd' || STATE.battle && STATE.battle.scare)) m *= 1.12; if (C.titles.includes('boss20') && S.m === 'd') m *= 1.05;
+  const B = STATE.battle; if (B && B.scare) { const P = scenePas(B.o.scene); if (P.el[S.el]) m *= P.el[S.el]; const up = C.hh.up || {}; if (up.skin && S.el === 'doll') m *= 1.2; if (up.sound && S.el === 'sound') m *= 1.2; if (up.light && (S.el === 'jump' || S.el === 'light')) m *= 1.15; } return m; }
+/* 厉鬼眷顾者：拿到红舞鞋以后，绝境那一刻影子里会伸出黑发（贪心过的话只有一半可能） */
+function yaAssist(B) { if (B.scare || B.o.ally || !C.f.shoes || !C.titles.includes('favored') || B.pet && B.pet.id === 'zhangya') return; if (C.f.greedy && !chance(.5)) { blog(B, '影子动了一下，又静了。她还记得你那个请求。', 'say'); return; }
+  const f = alive(B.foes).sort((a, b) => b.hp - a.hp)[0]; if (!f) return; blog(B, '影子里伸出一缕黑发——厉鬼眷顾者。', 'epic'); fxe(B, { t: 'banner', who: 'hero', txt: '黑发', ic: '🩸' }); applyDmg(B, null, f, Math.round(f.mhp * .2), {}); if (f.hp > 0) addSt(B, f, 'stun', 1); }
 function doHit(B, src, tgt, pow, el, o) { o = o || {}; if (tgt.hp <= 0) return 0; let base = src.atk * pow * (o.mul || 1); if (src.st.weak) base *= .75; if (src.st.rage) base *= BAL.phaseAtk; if (src.st.brave) base *= BAL.lowAtk;
-  if (src.pet && (tgt.st.mark || tgt.st.stun)) base *= 1.3; if (tgt.k === 'human' && el === 'salt') base *= .5; if (tgt.k === 'ghost' && o.plain) base *= .6;
+  if (src.pet && (tgt.st.mark || tgt.st.stun)) base *= 1.3; if (tgt.trait === 'corpse' && (el === 'doll' || el === 'jump')) base *= .75; if (tgt.trait === 'darkfear' && tgt.st.dark) base *= 1.2; if (tgt.k === 'human' && el === 'salt') base *= .5; if (tgt.k === 'ghost' && o.plain) base *= .6;
   const wk = weakOf(tgt, el); if (wk) { base *= BAL.weakMul; noteWeak(B, tgt, el); }
   let crit = false; if (src.key === 'hero') { if (src.st.bless) { crit = true; delete src.st.bless; } else crit = chance((src.crit || 0) + (src.st.see ? .35 : 0)); } if (crit) base *= BAL.critMul;
   const mit = tgt.def * (tgt.st.vuln ? .7 : 1) * .6; const v = applyDmg(B, src, tgt, base * (.92 + rnd() * .16) - mit, { crit, weak: wk }); tgt.acted = tgt.acted;
@@ -56,12 +63,12 @@ function perform(B, u, a) { if (u.hp <= 0 || B.result) return; u.guard = false;
   const mv = a.mv; blog(B, u.n + ' · ' + mv.n + (mv.guard || mv.c === 'buf' ? '' : ' → ' + (mv.all ? '全体' : tgt0.n))); fxe(B, { t: 'banner', who: 'pet', txt: mv.n });
   if (mv.guard) { addSt(B, B.hero, mv.st[0], mv.st[1]); u.st.taunt = 2; return; } if (mv.c === 'buf') { addSt(B, B.hero, mv.st[0], mv.st[1]); if (mv.see) for (const f of alive(B.foes)) for (const w of f.weak) noteWeak(B, f, w); return; }
   for (const t of (mv.all ? alive(B.foes) : [tgt0])) { doHit(B, u, t, mv.pow || .5, mv.el || 'none'); if (t.hp > 0) { if (mv.st) addSt(B, t, mv.st[0], mv.st[1]); if (mv.brk) tryInterrupt(B, t, u.n); if (mv.stun && chance(mv.stun * (t.boss ? .6 : 1))) { addSt(B, t, 'stun', 1); if (t.st.stun) tryInterrupt(B, t, '吓懵'); } } } }
-function mobAct(B, u) { if (u.hp <= 0 || B.result) return; u.acted = true; if (u.st.stun) { blog(B, u.n + (B.scare ? ' 腿软，站在原地。' : ' 还懵着。')); return; }
+function mobAct(B, u) { if (u.hp <= 0 || B.result) return; u.acted = true; if (u.st.stun) { blog(B, u.n + (B.scare ? ' 腿软，站在原地。' : ' 还懵着。')); return; } if (u.trait === 'distract' && !(u.intent && u.intent.exec) && chance(.2)) { blog(B, u.n + ' 低头看手机，没往前走。'); fxe(B, { t: 'txt', who: u.key, txt: '分心' }); return; }
   const it = u.intent || {}; const mv = it.mv; if (!mv) return; if (it.charge) { blog(B, u.n + '：' + (mv.cn || '在蓄力') + '……', 'warn'); fxe(B, { t: 'txt', who: u.key, txt: '⚠ 蓄力' }); return; }
   if (it.exec) { u.charging = null; u.lastBig = B.turn; }
   const tgts = mv.all ? [B.hero].concat(B.pet && B.pet.hp > 0 ? [B.pet] : []) : [(B.pet && B.pet.hp > 0 && (B.pet.st.taunt || chance(.22))) ? B.pet : B.hero];
   blog(B, u.n + ' · ' + mv.n + (it.exec ? '！' : ''), it.exec ? 'warn' : ''); fxe(B, { t: 'banner', who: u.key, txt: mv.n, foe: 1, big: it.exec });
-  for (const t of tgts) { let base = u.atk * mv.p; if (u.st.weak) base *= .75; if (u.st.rage) base *= BAL.phaseAtk; if (u.st.dark) base *= .8; if (B.scare) base *= BAL.scareAtk; const mit = t.def * (t.st.vuln ? .7 : 1) * .6; applyDmg(B, u, t, base * (.92 + rnd() * .16) - mit, {}); if (mv.st && t.hp > 0 && t.key === 'hero' && !t.guard) addSt(B, t, mv.st[0], mv.st[1]); } }
+  for (const t of tgts) { let base = u.atk * mv.p; if (u.st.weak) base *= .75; if (u.st.rage) base *= BAL.phaseAtk; if (u.st.dark) base *= u.trait === 'darkfear' ? .5 : .8; base *= B.scare ? BAL.scareAtk : BAL.nightAtk * (u.boss && !B.pet?.id?.startsWith('zhangya') && alive(B.foes).length === 1 ? BAL.bossAtk : 1); const mit = t.def * (t.st.vuln ? .7 : 1) * .6; applyDmg(B, u, t, base * (.92 + rnd() * .16) - mit, {}); if (mv.st && t.hp > 0 && t.key === 'hero' && !t.guard) addSt(B, t, mv.st[0], mv.st[1]); } }
 function sfxQ(B, n) { fxe(B, { t: 'sfx', n }); }
 function tickSt(B, u) { if (u.hp <= 0) return; const dot = k => { const r = (k === 'bleed' ? .06 : .07) * (u.boss ? .5 : 1); const v = Math.max(1, Math.round(u.mhp * r)); u.hp = Math.max(u.side === 'a' ? 1 : 0, u.hp - v); fxe(B, { t: 'hit', who: u.key, v, hp: u.hp, dot: STATUS[k][0] }); if (u.hp <= 0) { blog(B, u.n + (B.scare ? ' 崩溃了，哭着往外跑！' : ' 倒下了。'), 'gain'); fxe(B, { t: 'ko', who: u.key }); C.kills[u.id] = (C.kills[u.id] || 0) + 1; } };
   if (u.st.bleed) dot('bleed'); if (u.hp > 0 && u.st.fear) dot('fear'); for (const k in u.st) if (u.st[k] < 90 && --u.st[k] <= 0) delete u.st[k]; }
@@ -70,6 +77,7 @@ function battleResolve(B) { B.ev = []; B.phase = 'anim'; for (const u of [B.hero
   for (const k of order) { const u = unitByKey(B, k), a = B.pick[k]; if (u && a) perform(B, u, a); if (!alive(B.foes).length) break; }
   if (alive(B.foes).length) for (const f of B.foes.slice().sort((a, b) => (b.spd - (b.st.slow ? 6 : 0)) - (a.spd - (a.st.slow ? 6 : 0)))) { mobAct(B, f); if (B.hero.hp <= 0) break; }
   for (const u of B.foes.concat([B.hero, B.pet])) if (u) tickSt(B, u);
+  if (B.scare && alive(B.foes).length) sceneTurn(B);
   if (B.pet && B.pet.hp <= 0 && !B.petDown) { B.petDown = true; blog(B, B.pet.n + ' 退到了你身后。', 'warn'); }
   B.hero.guard = false; if (B.pet) B.pet.guard = false; B.pick = {}; B.itemUsed = false; B.firstNew = first;
   if (!alive(B.foes).length) B.result = 'win'; else if (B.hero.hp <= 0) B.result = 'lose'; else { B.turn++; for (const f of alive(B.foes)) planMob(B, f); banterRound(B); } }
@@ -90,7 +98,15 @@ function petPick(B) { const p = B.pet, mv = petMovesB(B), foes = alive(B.foes); 
   const boss = foes.slice().sort((a, b) => b.hp - a.hp)[0]; const deb = mv.find(m => m.c === 'deb' && m.st && !boss.st[m.st[0]]); if (deb && boss.hp > boss.mhp * .35 && chance(.8)) return { t: 'mv', mv: deb, tg: tg(boss) };
   const buf = mv.find(m => m.c === 'buf' && !B.hero.st[m.st[0]]); if (buf && chance(.5)) return { t: 'mv', mv: buf, tg: 0 };
   const atk = mv.filter(m => m.c === 'atk').sort((a, b) => (b.pow || 0) * (b.all ? Math.min(foes.length, 2) : 1) - (a.pow || 0) * (a.all ? Math.min(foes.length, 2) : 1))[0] || mv[0]; return { t: 'mv', mv: atk, tg: tg(foes.slice().sort((a, b) => a.hp - b.hp)[0]) }; }
+/* 每回合结束：场景特色 + 游客特性 */
+function sceneTurn(B) { const fs = alive(B.foes), s = B.o.scene;
+  if (s === 'ws' && C.pets.xiaoxiao && chance(.3)) { const f = pick(fs); addSt(B, f, 'mark', 2); blog(B, f.n + ' 觉得有人拽了一下衣角。', 'say'); }
+  if (s === 'room' && chance(.25)) { const f = pick(fs); addSt(B, f, 'stun', 1); blog(B, f.n + '：“我们进来的时候……是几个人来着？”', 'say'); }
+  if (s === 'ward') for (const f of fs) { const v = Math.max(1, Math.round(f.mhp * .05)); f.hp = Math.max(0, f.hp - v); fxe(B, { t: 'hit', who: f.key, v, hp: f.hp, dot: '三星' }); if (f.hp <= 0) { blog(B, f.n + ' 再也撑不住了！', 'gain'); fxe(B, { t: 'ko', who: f.key }); } }
+  for (const f of alive(B.foes)) { if (f.trait === 'pair' && !f.st.fear && f.hp < f.mhp) { const v = Math.round(f.mhp * .06); f.hp = Math.min(f.mhp, f.hp + v); fxe(B, { t: 'txt', who: f.key, txt: '壮胆 +' + v }); }
+    if (f.trait === 'torch' && fs.some(x => x.st.dark) && chance(.5)) { for (const x of fs) delete x.st.dark; blog(B, f.n + ' 打开了手机电筒。', 'warn'); fxe(B, { t: 'txt', who: f.key, txt: '开灯' }); } }
+  if (!alive(B.foes).length) B.result = 'win'; }
 function battleRewards(B) { const D = DIFF[SET.diff] || DIFF[1]; let exp = 0; for (const f of B.foes) exp += f.lv * 6 * (f.boss ? 3 : 1); exp = Math.round(exp * (B.o.story ? BAL.storyExp : 1) * D.exp * (B.scare ? .7 : 1)); const out = { exp };
-  if (B.scare) { const sc = SCENES[B.o.scene] || { star: .5 }, n = B.foes.length; out.money = Math.round(BAL.ticket * n * (1 + sc.star * .6)); out.screams = Math.round(n * (6 + sc.star * 6) + B.foes.filter(f => f.boss).length * 10); }
+  if (B.scare) { const sc = SCENES[B.o.scene] || { star: .5 }, n = B.foes.length, P = scenePas(B.o.scene); out.money = Math.round(BAL.ticket * (B.o.ppl || n) * P.pay); out.screams = Math.round(n * (6 + sc.star * 6) + B.foes.filter(f => f.boss).length * 10); }
   else if (!B.o.story) out.money = B.foes.filter(f => f.k === 'human' && f.id !== 'dog').length * rint(3, 9);
   return out; }

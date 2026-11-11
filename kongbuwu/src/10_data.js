@@ -3,7 +3,7 @@ const BAL = {
   dayLen: 12, duskAt: 7,            /* 一天 12 格：0–6 白天（乐园营业），7–11 夜里 */
   weakMul: 1.5, critMul: 1.5, guardMul: .5, phaseAtk: 1.25, storyExp: 2,
   lowHp: .3, lowHeal: .25, lowAtk: 1.3, /* 绝境：三成体力以下触发一次 */
-  scareAtk: .62, screamPerSpin: 100, ticket: 20, restCamp: .4, sellRate: .5,
+  scareAtk: .72, nightAtk: 1.8, bossAtk: 1.35, screamPerSpin: 100, ticket: 20, restCamp: .4, sellRate: .5,
   foeHp: l => 1 + Math.max(0, l - 8) * .03, foeAtk: l => 1 + Math.max(0, l - 8) * .012
 };
 const DIFF = [{ n: '简单', hp: .75, atk: .8, exp: 1 }, { n: '标准', hp: 1, atk: 1, exp: 1 }, { n: '困难', hp: 1.25, atk: 1.15, exp: 1.15 }];
@@ -25,8 +25,8 @@ const SKILLS = {
   yintong: { n: '阴瞳', ic: '👁️', m: 'n', el: 'none', cost: 10, self: 1, st: ['see', 3], d: '视之不详，通之地阴。3 回合内暴击 +35%，看得见敌人的弱点。' },
   salt: { n: '撒盐', ic: '🧂', m: 'n', el: 'salt', cost: 8, pow: .9, all: 1, st: ['slow', 2], d: '在地上洒一条线。全体盐伤害，禁锢 2 回合（出手变慢，蓄力被打断）。' },
   pigknife: { n: '杀猪刀', ic: '🗡️', m: 'n', el: 'blade', cost: 9, pow: 1.45, ghost: 1.3, st: ['bleed', 3], d: '沾过无数牲畜血的老刀，煞气重。对鬼怪 ×1.3，流血 3 回合。' },
-  friday: { n: '黑色星期五', ic: '📀', m: 'b', el: 'sound', cost: 12, pow: .45, all: 1, st: ['fear', 3], d: '那首禁忌之曲。全体恐惧 3 回合（每回合掉一截）。' },
-  story: { n: '背景故事', ic: '📖', m: 'd', el: 'story', cost: 5, pow: .4, all: 1, st: ['vuln', 3], d: '“我们脚下，五十年前是九江最大的乱葬岗。”全体心理暗示 3 回合（防线 -30%）。' },
+  friday: { n: '黑色星期五', ic: '📀', m: 'b', el: 'sound', cost: 12, pow: .6, all: 1, st: ['fear', 3], d: '那首禁忌之曲。全体恐惧 3 回合（每回合掉一截）。' },
+  story: { n: '背景故事', ic: '📖', m: 'd', el: 'story', cost: 5, pow: .5, all: 1, st: ['vuln', 3], d: '“我们脚下，五十年前是九江最大的乱葬岗。”全体心理暗示 3 回合（防线 -30%）。' },
   jump: { n: '开门杀', ic: '🚪', m: 'd', el: 'jump', cost: 0, pow: 1, dark: 1.5, d: '最经典的桥段。不耗精神；漆黑里 ×1.5。' },
   lights: { n: '断电', ic: '💡', m: 'd', el: 'light', cost: 6, pow: .3, all: 1, st: ['dark', 2], d: '控制台一拉闸。全体陷入漆黑 2 回合（开门杀更狠，对方拆穿变难）。' },
   paper: { n: '殓容纸人', ic: '🎎', m: 'd', el: 'doll', cost: 9, pow: 1.1, all: 1, d: '上过妆的纸人，死意里透着生机。全体人偶惊吓。' },
@@ -82,7 +82,7 @@ const ITEMS = {
   cd: { n: '《黑色星期五》', ic: '📀', k: 'key', d: '背景曲目。据说听过的人会不由自主想起自己最害怕的东西。' }, letter: { n: '被诅咒的情书', ic: '💌', k: 'key', d: '“自高楼坠落的那一刻起，她便成了校园中的禁忌。”你这辈子收到的第一封情书。' },
   notice: { n: '王琦的寻人启事', ic: '📄', k: 'key', d: '怨念值十一。“我每天都在寻找那个被自己杀死的人。”' }, uniform: { n: '碎颅医生的制服', ic: '🥼', k: 'key', d: '服装道具。配一把四十多厘米长的铁锤，和一张人皮面具。' },
   jiayicd: { n: '《嫁衣》', ic: '💿', k: 'key', d: '背景曲目，和冥婚场景完美契合。' }, pen: { n: '怨念缠绕的圆珠笔', ic: '🖊️', k: 'key', d: '（残破）笔仙并不想搭理你，它朝你翻了个白眼，并把自己藏了起来。' },
-  key: { n: '自知力钥匙', ic: '🗝️', k: 'key', d: '怨念值十三。“当你出现类似的症状时，这把钥匙可以帮你一次。”' }, tape: { n: '哭泣的磁带', ic: '📼', k: 'key', d: '稀有类特殊道具。按下播放键，只有哭声。现在它还不肯理你。' },
+  key: { n: '自知力钥匙', ic: '🗝️', k: 'key', d: '怨念值十三。“当你出现类似的症状时，这把钥匙可以帮你一次。”——小游戏失败时，可以用它把这一次算作成功（只能用一次）。' }, tape: { n: '哭泣的磁带', ic: '📼', k: 'key', d: '稀有类特殊道具。按下播放键，只有哭声。对峙时可以放一次（每天一次）：白天让所有游客恐惧，夜里让鬼怪迟滞、活人动摇。' },
   candy: { n: '白色情人节糖果', ic: '🍬', k: 'key', d: '香甜的味道萦绕在舌尖，当你吃掉糖果时，张雅就会出现。只有一颗。' }, medal: { n: '荣誉奖章', ic: '🎖️', k: 'key', d: '市分局发的。颜队长亲手给你别上的。' },
   ticketbooth: { n: '午夜售票台（残缺）', ic: '🎟️', k: 'key', d: '特殊建筑。有千分之一的概率吸引到特殊的“游客”。' }, shoes: { n: '红舞鞋', ic: '🩰', k: 'key', d: '被血染成黑红色的芭蕾舞鞋。已经交给警方，这是你记在心里的那一双。' },
   /* 佩戴 */
@@ -94,14 +94,14 @@ const ITEMS = {
 /* 对手。hp/atk/def 是倍率；k = human 活人 / ghost 鬼怪 / visitor 游客。moves: p 威力 w 权重 ch 蓄力大招 */
 const MOBS = {
   /* —— 游客（白天） —— */
-  stu: { n: '学生', k: 'visitor', hp: .8, atk: .8, def: .8, spd: 9, weak: ['jump'], mv: [{ n: '“道具太假”', p: .9, w: 3 }, { n: '打游戏分心', p: .5, w: 1 }] },
-  skeptic: { n: '唯物主义者', k: 'visitor', hp: 1.1, atk: 1, def: 1.2, spd: 8, weak: ['sound'], mv: [{ n: '“无所畏惧！”', p: 1, w: 3 }, { n: '现场科普', p: 1.2, w: 1, st: ['weak', 2] }] },
-  couple: { n: '情侣', k: 'visitor', hp: .9, atk: .9, def: .9, spd: 10, weak: ['doll'], mv: [{ n: '搂紧一点', p: .7, w: 2 }, { n: '“有我在”', p: 1, w: 2 }] },
-  med: { n: '医学生', k: 'visitor', hp: 1.2, atk: 1.05, def: 1.3, spd: 9, weak: ['sound', 'story'], mv: [{ n: '“真的尸体我都见过”', p: 1, w: 3 }, { n: '点评道具做工', p: 1.3, w: 1 }] },
-  tough: { n: '壮汉', k: 'visitor', hp: 1.5, atk: 1.2, def: 1, spd: 7, weak: ['chase'], mv: [{ n: '“就这？”', p: 1.1, w: 3 }, { n: '撸袖子', p: 1.6, w: 1, ch: 1, cn: '要去掀道具' }] },
-  vlog: { n: '探店主播', k: 'visitor', hp: 1, atk: 1.2, def: 1, spd: 11, weak: ['light'], mv: [{ n: '怼脸拍机关', p: 1.2, w: 3 }, { n: '“家人们，都是假的”', p: 1.5, w: 1, ch: 1, cn: '要对着镜头拆穿' }] },
-  heshan: { n: '鹤山', k: 'visitor', hp: 1, atk: .7, def: .8, spd: 10, weak: ['jump', 'doll'], mv: [{ n: '躲到学姐身后', p: .5, w: 3 }, { n: '“学姐等等我！”', p: .7, w: 1 }] },
-  gaoru: { n: '高汝雪', k: 'visitor', boss: 1, hp: 2, atk: 1.2, def: 1.5, spd: 11, weak: ['sound'], mv: [{ n: '“吊不死人的高度”', p: 1.1, w: 3 }, { n: '逐条分析你的心理暗示', p: 1.7, w: 1, ch: 1, cn: '要把你的套路全说破' }] },
+  stu: { n: '学生', k: 'visitor', trait: 'distract', hp: .8, atk: .8, def: .8, spd: 9, weak: ['jump'], mv: [{ n: '“道具太假”', p: .9, w: 3 }, { n: '打游戏分心', p: .5, w: 1 }] },
+  skeptic: { n: '唯物主义者', k: 'visitor', trait: 'calm', hp: 1.1, atk: 1, def: 1.2, spd: 8, weak: ['sound'], mv: [{ n: '“无所畏惧！”', p: 1, w: 3 }, { n: '现场科普', p: 1.2, w: 1, st: ['weak', 2] }] },
+  couple: { n: '情侣', k: 'visitor', trait: 'pair', hp: .9, atk: .9, def: .9, spd: 10, weak: ['doll'], mv: [{ n: '搂紧一点', p: .7, w: 2 }, { n: '“有我在”', p: 1, w: 2 }] },
+  med: { n: '医学生', k: 'visitor', trait: 'corpse', hp: 1.2, atk: 1.05, def: 1.3, spd: 9, weak: ['sound', 'story'], mv: [{ n: '“真的尸体我都见过”', p: 1, w: 3 }, { n: '点评道具做工', p: 1.3, w: 1 }] },
+  tough: { n: '壮汉', k: 'visitor', trait: 'darkfear', hp: 1.5, atk: 1.2, def: 1, spd: 7, weak: ['chase'], mv: [{ n: '“就这？”', p: 1.1, w: 3 }, { n: '撸袖子', p: 1.6, w: 1, ch: 1, cn: '要去掀道具' }] },
+  vlog: { n: '探店主播', k: 'visitor', trait: 'torch', hp: 1, atk: 1.2, def: 1, spd: 11, weak: ['light'], mv: [{ n: '怼脸拍机关', p: 1.2, w: 3 }, { n: '“家人们，都是假的”', p: 1.5, w: 1, ch: 1, cn: '要对着镜头拆穿' }] },
+  heshan: { n: '鹤山', k: 'visitor', hp: .8, atk: .7, def: .8, spd: 10, weak: ['jump', 'doll'], mv: [{ n: '躲到学姐身后', p: .5, w: 3 }, { n: '“学姐等等我！”', p: .7, w: 1 }] },
+  gaoru: { n: '高汝雪', k: 'visitor', trait: 'corpse', boss: 1, hp: 1.1, atk: 1.2, def: 1.2, spd: 11, weak: ['sound'], mv: [{ n: '“吊不死人的高度”', p: 1.1, w: 3 }, { n: '逐条分析你的心理暗示', p: 1.7, w: 1, ch: 1, cn: '要把你的套路全说破' }] },
   feiyl: { n: '费友亮', k: 'visitor', boss: 1, hp: 2, atk: 1.3, def: 1.2, spd: 9, weak: ['doll', 'name'], mv: [{ n: '“铁骨铮铮！”', p: 1.2, w: 3 }, { n: '举着摄像头找员工', p: 1.7, w: 1, ch: 1, cn: '要拍下“殴打游客”的证据' }] },
   zhujn: { n: '朱佳宁', k: 'visitor', hp: 1.3, atk: 1, def: 1, spd: 10, weak: ['jump'], mv: [{ n: '给外面打电话', p: 1, w: 2 }, { n: '“友亮你后背有人”', p: .6, w: 1 }] },
   wanghl: { n: '王海龙', k: 'visitor', boss: 1, hp: 2.2, atk: 1.3, def: 1.2, spd: 9, weak: ['doll', 'sound'], mv: [{ n: '“两万块我拿定了”', p: 1.2, w: 3 }, { n: '一把抓向校牌', p: 1.8, w: 1, ch: 1, cn: '要硬闯人偶堆' }] },
@@ -109,11 +109,11 @@ const MOBS = {
   /* —— 活人（夜里） —— */
   tattoo: { n: '纹身男', k: 'human', hp: 1.1, atk: 1, def: .9, spd: 10, weak: ['light'], mv: [{ n: '钢钎横扫', p: 1, w: 3 }, { n: '堵楼梯口', p: .6, w: 1, st: ['slow', 2] }] },
   landlord: { n: '跛脚房东', k: 'human', hp: 1.2, atk: 1.1, def: 1, spd: 7, weak: ['blunt'], mv: [{ n: '菜刀', p: 1.1, w: 3 }, { n: '扔菜刀', p: 1.7, w: 1, ch: 1, cn: '举起了菜刀' }] },
-  wangqi: { n: '王琦', k: 'human', boss: 1, hp: 2.3, atk: 1.15, def: 1, spd: 9, weak: ['name', 'light'], mv: [{ n: '斧头', p: 1, w: 3 }, { n: '“我也不想这样的……”', p: .5, w: 1, st: ['weak', 2] }, { n: '劈砍', p: 2, w: 1, ch: 1, cn: '把斧头举过了头顶' }] },
+  wangqi: { n: '王琦', k: 'human', boss: 1, hp: 1.5, atk: .95, def: 1, spd: 9, weak: ['name', 'light'], mv: [{ n: '斧头', p: 1, w: 3 }, { n: '“我也不想这样的……”', p: .5, w: 1, st: ['weak', 2] }, { n: '劈砍', p: 2, w: 1, ch: 1, cn: '把斧头举过了头顶' }] },
   zhangpeng: { n: '张鹏', k: 'human', boss: 1, hp: 2.2, atk: 1.2, def: 1, spd: 11, weak: ['blunt', 'chase'], mv: [{ n: '尖刀', p: 1, w: 3, st: ['bleed', 2] }, { n: '乱捅', p: 1.9, w: 1, ch: 1, cn: '红着眼冲过来' }] },
-  aunt: { n: '范郁的姑姑', k: 'human', boss: 1, hp: 2, atk: 1.15, def: .9, spd: 10, weak: ['name', 'blunt'], mv: [{ n: '石块', p: 1, w: 3 }, { n: '从背后推', p: 1.9, w: 1, ch: 1, cn: '绕到了你身后' }] },
+  aunt: { n: '范郁的姑姑', k: 'human', boss: 1, hp: 2, atk: 1.3, def: .9, spd: 10, weak: ['name', 'blunt'], mv: [{ n: '石块', p: 1, w: 3 }, { n: '从背后推', p: 1.9, w: 1, ch: 1, cn: '绕到了你身后' }] },
   onearm: { n: '独臂男人', k: 'human', hp: 1.3, atk: 1.1, def: 1, spd: 9, weak: ['blunt'], mv: [{ n: '那只“还在”的手', p: 1, w: 3 }, { n: '锯子', p: 1.5, w: 1, st: ['bleed', 2] }] },
-  xiong: { n: '畸形脸 · 熊青', k: 'human', boss: 1, hp: 2.4, atk: 1.2, def: 1.1, spd: 10, weak: ['blunt', 'light'], mv: [{ n: '掰向一边', p: 1.05, w: 3 }, { n: '“只剩半边才顺眼”', p: 2, w: 1, ch: 1, cn: '歪着头，在比划你的左半边' }, { n: '怪笑', p: .4, w: 1, st: ['weak', 2] }] },
+  xiong: { n: '畸形脸 · 熊青', k: 'human', boss: 1, hp: 1.9, atk: 1.2, def: 1.1, spd: 10, weak: ['blunt', 'light'], mv: [{ n: '掰向一边', p: 1.05, w: 3 }, { n: '“只剩半边才顺眼”', p: 2, w: 1, ch: 1, cn: '歪着头，在比划你的左半边' }, { n: '怪笑', p: .4, w: 1, st: ['weak', 2] }] },
   drunk: { n: '醉汉', k: 'human', hp: .9, atk: .9, def: .8, spd: 6, weak: ['light'], mv: [{ n: '酒瓶', p: 1, w: 2 }, { n: '骂骂咧咧', p: .5, w: 1 }] },
   dog: { n: '野狗', k: 'human', hp: .8, atk: 1, def: .7, spd: 13, weak: ['blunt', 'light'], mv: [{ n: '扑咬', p: 1, w: 3, st: ['bleed', 2] }, { n: '（龇牙，绕着你转）', p: .4, w: 1 }] },
   /* —— 鬼怪 —— */
@@ -121,9 +121,9 @@ const MOBS = {
   chairgirl: { n: '椅子里的女生', k: 'ghost', hp: 1.05, atk: .95, def: .9, spd: 9, weak: ['blunt', 'name'], mv: [{ n: '（按你坐下）', p: 1, w: 3 }, { n: '（哀求变成怨毒）', p: .5, w: 1, st: ['fear', 2] }, { n: '勒住脖颈', p: 1.7, w: 1, ch: 1, cn: '椅子自己转了过来' }] },
   mirror: { n: '镜中怪物', k: 'ghost', boss: 1, hp: 2.4, atk: 1.2, def: 1.1, spd: 11, weak: ['light', 'cat'], mv: [{ n: '（一只手按住你的头）', p: 1.1, w: 3 }, { n: '（切割声）', p: .5, w: 1, st: ['fear', 3] }, { n: '往外撞', p: 2, w: 1, ch: 1, cn: '镜面出现了裂痕' }] },
   redshadow: { n: '红影', k: 'ghost', hp: 1.5, atk: 1, def: 1, spd: 12, weak: ['blunt', 'light'], mv: [{ n: '（探头进隔间）', p: 1, w: 3 }, { n: '（拉门把手）', p: .6, w: 1, st: ['fear', 2] }] },
-  twoface: { n: '两张脸的黑影', k: 'ghost', boss: 1, hp: 2.3, atk: 1.15, def: 1.1, spd: 10, weak: ['cat', 'light', 'name'], mv: [{ n: '（两张脸互相咒骂）', p: .5, w: 1, st: ['weak', 2] }, { n: '（从镜子里伸手）', p: 1.1, w: 3 }, { n: '拽进镜子', p: 2, w: 1, ch: 1, cn: '镜面像水一样晃了一下' }] },
-  nurse: { n: '女护士', k: 'ghost', boss: 1, hp: 2.6, atk: 1.2, def: 1.2, spd: 9, weak: ['blade', 'cat'], mv: [{ n: '（腰部弯折，缠上来）', p: 1.1, w: 3 }, { n: '（发药）', p: .5, w: 1, st: ['slow', 2] }, { n: '“该吃药了”', p: 2, w: 1, ch: 1, cn: '对照着笔记本，念到了你的名字' }] },
-  tallone: { n: '瘦长怪物', k: 'ghost', boss: 1, hp: 2.4, atk: 1.2, def: 1.2, spd: 10, weak: ['blade', 'cat'], mv: [{ n: '（踩上肩膀）', p: 1.2, w: 3 }, { n: '“看谁先开口说话”', p: .5, w: 1, st: ['fear', 3] }, { n: '吞下去', p: 2.2, w: 1, ch: 1, cn: '白布下面露出了几张人脸' }] },
+  twoface: { n: '两张脸的黑影', k: 'ghost', boss: 1, hp: 1.9, atk: 1.15, def: 1.1, spd: 10, weak: ['cat', 'light', 'name'], mv: [{ n: '（两张脸互相咒骂）', p: .5, w: 1, st: ['weak', 2] }, { n: '（从镜子里伸手）', p: 1.1, w: 3 }, { n: '拽进镜子', p: 2, w: 1, ch: 1, cn: '镜面像水一样晃了一下' }] },
+  nurse: { n: '女护士', k: 'ghost', boss: 1, hp: 2, atk: 1.1, def: 1.2, spd: 9, weak: ['blade', 'cat'], mv: [{ n: '（腰部弯折，缠上来）', p: 1.1, w: 3 }, { n: '（发药）', p: .5, w: 1, st: ['slow', 2] }, { n: '“该吃药了”', p: 2, w: 1, ch: 1, cn: '对照着笔记本，念到了你的名字' }] },
+  tallone: { n: '瘦长怪物', k: 'ghost', boss: 1, hp: 2.2, atk: .95, def: 1.2, spd: 10, weak: ['blade', 'cat'], mv: [{ n: '（踩上肩膀）', p: 1.2, w: 3 }, { n: '“看谁先开口说话”', p: .5, w: 1, st: ['fear', 3] }, { n: '吞下去', p: 2.2, w: 1, ch: 1, cn: '白布下面露出了几张人脸' }] },
   dean: { n: '红衣 · 老院长', k: 'ghost', boss: 1, hp: 3.4, atk: 1.3, def: 1.25, spd: 10, weak: ['name', 'blade'], mv: [{ n: '（一步就到了面前）', p: 1.15, w: 3 }, { n: '“送我离开？”', p: .5, w: 1, st: ['weak', 2] }, { n: '红衣翻涌', p: 2.1, w: 1, ch: 1, all: 1, cn: '身上的红衣在往外渗' }] },
   doorhand: { n: '门后的手', k: 'ghost', hp: 1.6, atk: 1.2, def: 1.3, spd: 8, weak: ['blade', 'salt'], mv: [{ n: '（长满毛发的手）', p: 1.1, w: 3 }, { n: '撞门', p: 1.8, w: 1, ch: 1, cn: '门板在往外鼓' }] }
 };
@@ -138,3 +138,24 @@ const SCENES = {
   ward: { n: '第三病栋', star: 3, d: '这座废弃的医院每到深夜都会发出奇怪的声音，你作为报社记者将进入一探究竟。', pool: ['tough', 'vlog', 'med', 'tough', 'vlog'] }
 };
 const starTxt = s => s <= 0 ? '无' : (s === .5 ? '半颗星' : '★'.repeat(Math.floor(s)) + (s % 1 ? '½' : ''));
+
+/* 游客的特性（每类游客不一样，卡片和档案里都能看到） */
+const TRAITS = { distract: '分心：有时在看手机，跳过一回合', calm: '冷静：恐惧和破绽少持续一回合', pair: '互相壮胆：没被吓到时每回合回一点胆量', corpse: '见过尸体：人偶、开门杀对他效果差 25%', darkfear: '怕黑：漆黑里出手减半、更容易被吓', torch: '开手电：有一半可能把“漆黑”照没' };
+/* 场景特色：接待游客时生效（RULES：每个场景要有区别） */
+function scenePas(sid) { const z = C && C.hh.up && C.hh.up.zombie;
+  return ({ zombie: z ? { hp: 1, pay: 1, el: { jump: 1.2 }, t: '重做过了：开门杀 +20%' } : { hp: .7, pay: .5, el: {}, t: '道具太假：游客胆量 ×0.7，收入减半（适合练手）' },
+    mh: { hp: 1, pay: 1, el: { sound: 1.2 }, t: '鬼妻追魂：声音类 +20%' + (C && C.f.jiayi ? '；《嫁衣》让游客开场就恐惧' : '') },
+    ws: { hp: 1, pay: 1.1, el: { chase: 1.3 }, t: '错综楼道：追逐类 +30%；小小一家每回合可能给一个游客留下印记' },
+    room: { hp: 1, pay: 1.1, el: { story: 1.25 }, t: '数不清的人：暗示类 +25%；每回合可能有人数错了人，懵一回合' },
+    my: { hp: 1.15, pay: 1.3, el: { doll: 1.3 }, t: '二十个校牌：人偶类 +30%，游客胆量 ×1.15，收入 ×1.3' },
+    ward: { hp: 1.2, pay: 1.6, el: { chase: 1.15, sound: 1.15 }, t: '三星：每回合全体胆量 -5%，游客胆量 ×1.2，收入 ×1.6' } })[sid] || { hp: 1, pay: 1, el: {}, t: '' }; }
+/* 翻新恐怖屋：在总控制室花钱 */
+const UPGRADES = [
+  { k: 'cam', n: '监控摄像头', price: 180, d: '每批游客进场时，监控就能看出他们怕什么（弱点直接显示）。' },
+  { k: 'skin', n: '新皮料和缝线', price: 120, d: '人偶、纸人类手段 +20%。' },
+  { k: 'light', n: '灯光控制台', price: 160, d: '开门杀、断电 +15%；断电多持续一回合。' },
+  { k: 'sound', n: '环绕音响', price: 220, d: '声音类手段（黑色星期五、嫁衣）+20%。' },
+  { k: 'fog', n: '干冰雾机', price: 280, d: '每批游客开场就带着「破绽」2 回合。' },
+  { k: 'ac', n: '冷气与修缮', price: 350, d: '排队的人更愿意进来：每批多来一些游客。' },
+  { k: 'sign', n: '霓虹招牌', price: 400, d: '每吓退一批游客，涨的关注翻倍。' },
+  { k: 'zombie', n: '重做僵尸复活夜', price: 300, d: '把最糟糕的那个场景重做一遍：尖叫指数升到半颗星，去掉“道具太假”。' } ];

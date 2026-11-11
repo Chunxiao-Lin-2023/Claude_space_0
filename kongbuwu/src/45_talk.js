@@ -26,7 +26,7 @@ function foeKind(B) { return B.scare ? 'visitor' : (alive(B.foes)[0] || B.foes[0
 function banterAct(B, k) { if (chance(.2) && sayOk(B)) sayLine(B, 'hero', pickFresh('hs_' + foeKind(B), HERO_SAY[foeKind(B)])); }
 function banterRound(B) { for (const f of alive(B.foes)) if (!f.saidLow && f.hp < f.mhp * .35) { f.saidLow = 1; battleSay(B, f, 'low'); break; } if (B.pet && B.pet.hp > 0 && PET_SAY[B.pet.id] && chance(.18) && sayOk(B)) sayLine(B, 'pet', pickFresh('ps_' + B.pet.id, PET_SAY[B.pet.id])); }
 function battleWinSay(B) { blog(B, '陈歌：' + pickFresh('ws_' + (B.scare ? 'd' : 'n'), WIN_SAY[B.scare ? 'd' : 'n']), 'say'); }
-async function candyScene(B) { sfx('heart'); await cine(['你把那颗糖放进了嘴里。', '甜的。', '然后是无穷的怨念，和阴冷——像被人从背后抱住。', '黑色的长发如同浪潮拍在墙上。'], 'red'); await scare('red'); }
+async function candyScene(B) { if (C.f.greedy) { await cine(['她还记得。', '你第一次写下的请求，是让她永远听你的话。'], 'red'); if (B) { B.hero.hp = Math.max(1, Math.round(B.hero.hp - B.hero.mhp * .15)); blog(B, '黑发勒得你喘不过气（体力 -15%）。她来了，但没那么温柔。', 'warn'); } } sfx('heart'); await cine(['你把那颗糖放进了嘴里。', '甜的。', '然后是无穷的怨念，和阴冷——像被人从背后抱住。', '黑色的长发如同浪潮拍在墙上。'], 'red'); await scare('red'); }
 
 /* 路过听到的话。at = 地点；from（含）～ to（不含）= 剧情区间；q_end = 一直有效 */
 const CHATTER = [
@@ -67,7 +67,46 @@ const CHATTER = [
   { at: 'xc_dance', from: 'q_parking', to: 'q_end', who: '', t: '镜子前的三把椅子不见了。地上有一颗糖，包装纸上写着字。你没有捡。', night: 1 },
   { at: 'my_last', from: 'q_cat', to: 'q_end', who: '', t: '教室空了。黑板上有人用粉笔写了两个字：谢谢。' },
   { at: 'my_yard', from: 'q_prep', to: 'q_end', who: '', t: '荒地里停着一辆陷进泥里的直播车，车门开着。' },
-  { at: 'kf_gate', from: 'q_inside', to: 'q_end', who: '', t: '封条换了新的。第三栋最里面的那扇窗，没有再亮过。' }
+  { at: 'kf_gate', from: 'q_boy', to: 'q_end', who: '', t: '封条换了新的。第三栋最里面的那扇窗，没有再亮过。' },
+  { at: 'hh_door', from: 'q_firstday', to: 'q_hut', who: '游客', t: '“那个吓哭法医的鬼屋就是这？”“看着挺普通啊。”' },
+  { at: 'hh_door', from: 'q_hut', to: 'q_parking', who: '游客', t: '“早间新闻那个抓凶手的，是不是这家老板？”' },
+  { at: 'hh_door', from: 'q_scene', to: 'q_end', who: '游客', t: '“午夜逃杀里有个小孩跟着我。”“哪有小孩？”“……对啊，哪有小孩。”' },
+  { at: 'hh_door', from: 'q_parking', to: 'q_end', who: '游客', t: '“地下也是他家的了？那以后得排多久。”' },
+  { at: 'hh_door', from: 'q_qinguang', to: 'q_end', who: '游客', t: '“秦广那期视频我看了，两个人瘫在厕所里，笑死。”' },
+  { at: 'hh_door', from: 'q_boy', to: 'q_end', who: '游客', t: '“精神病院那场直播你看了吗？四十万人在线。”“我看到一半关了，不敢看。”' },
+  { at: 'hh_door', from: 'q_parking', to: 'q_end', who: 'xuwan', t: '“老板，售票台那个旧机器，晚上自己会响。我是不是该报修？”' },
+  { at: 'hh_door', from: 'q_boy', to: 'q_end', who: 'xuwan', t: '“老板你那晚到底去哪了？直播一黑，我一整夜没睡。”' },
+  { at: 'pk_gate', from: 'q_mirror', to: 'q_firstday', who: '游客', t: '“昨晚刷到一个镜子视频，吓得我手机都扔了。”' },
+  { at: 'pk_gate', from: 'q_hut', to: 'q_end', who: '游客', t: '旋转木马的小哥：“小陈，你那晚真一个人去了凶宅？”' },
+  { at: 'pk_gate', from: 'q_cat', to: 'q_end', who: '游客', t: '“后门那只白猫，最近不在垃圾桶边上了。”' },
+  { at: 'pk_gate', from: 'q_mennan', to: 'q_end', who: 'heshan', t: '“老大，学姐说她爸最近总在看一个病人的档案，看到半夜。”' },
+  { at: 'pk_gate', from: 'q_boy', to: 'q_end', who: 'heshan', t: '“老大！你上热搜了！……不过是被封的那个热搜。”' },
+  { at: 'pk_office', from: 'q_scene', to: 'q_parking', who: 'xushu', t: '“你上了电视，管理层都知道你了。……水电费还是要交。”' },
+  { at: 'pk_office', from: 'q_cat', to: 'q_end', who: 'xushu', t: '“东郊那边又挖了两个人。你那儿人手够吗？”' },
+  { at: 'pk_office', from: 'q_boy', to: 'q_end', who: 'luo', t: '“小陈，听说你那晚去了城郊的医院。你父母……当年也去过那里。”' },
+  { at: 'pk_shop', from: 'q_scene', to: 'q_end', who: 'shop', t: '“你那个员工小姑娘，每天来买两瓶饮料，一瓶说是给‘小妹妹’的。”' },
+  { at: 'pk_shop', from: 'q_muyang', to: 'q_end', who: 'shop', t: '“雨衣？又要去哪？……算了，别告诉我。”' },
+  { at: 'pk_shop', from: 'q_boy', to: 'q_end', who: 'shop', t: '“直播那晚我一直开着电视等你。没事就好，没事就好。”' },
+  { at: 'hh_hall', from: 'q_water', to: 'q_end', who: '', t: '你路过员工通道。木板钉过的地方有几个新的指甲印。', night: 1 },
+  { at: 'hh_hall', from: 'q_cat', to: 'q_end', who: '', t: '白猫蹲在走廊中间，盯着楼梯口，尾巴一下一下地扫。', night: 1 },
+  { at: 'hh_rest', from: 'q_water', to: 'q_shoes', who: '', t: '墙上那个用笔记下的数字，又小了一个。' },
+  { at: 'hh_rest', from: 'q_wish', to: 'q_end', who: '', t: '桌上的白纸上多了一行歪歪扭扭的字：老板，涨工资。' },
+  { at: 'hh_ctrl', from: 'q_parking', to: 'q_end', who: '', t: '控制台的总闸接到了手边。你拉了一下，整栋楼黑了，监控里有人尖叫。是徐婉。' },
+  { at: 'hh_prop', from: 'q_cat', to: 'q_end', who: '', t: '做人偶剩下的二十四块名牌边角料，你没舍得扔。' },
+  { at: 'hh_wc', from: 'q_mirror', to: 'q_shoes', who: '', t: '镜子是新换的。你还是不太想照。' },
+  { at: 'hh_2f', from: 'q_zhangpeng', to: 'q_end', who: '', t: '《嫁衣》在循环。你把音量调低了一格，还是觉得后背发凉。' },
+  { at: 'hh_park', from: 'q_parking', to: 'q_end', who: '', t: '新扩出来的楼梯往下延伸了一截，尽头是一堵白墙。' },
+  { at: 'pa_208', from: 'q_scene', to: 'q_end', who: '', t: '你住过的 208 门上贴了封条。锁眼里还卡着一根头发。' },
+  { at: 'pa_hut', from: 'q_scene', to: 'q_end', who: '', t: '木屋被搬空了。地上只剩一块干掉的泥印子，像一个人的形状。' },
+  { at: 'xc_gate', from: 'q_shoes', to: 'q_end', who: '', t: '校门的锁链换了一根新的。有人在铁门上挂了一双芭蕾舞鞋的钥匙扣。' },
+  { at: 'xc_office', from: 'q_parking', to: 'q_end', who: '', t: '器材室的床板被拆走了。墙角用粉笔写着一行很小的字：对不起。' },
+  { at: 'my_yard', from: 'q_well', to: 'q_prep', who: '', t: '标牌被人重新立起来了。“危楼，禁止入内”。' },
+  { at: 'my_dorm', from: 'q_wish', to: 'q_end', who: '', t: '四把椅子还在。纸上什么都没写。' },
+  { at: 'my_wc', from: 'q_cat', to: 'q_end', who: '', t: '第六个隔间的隔板换掉了。新的隔板上，没有一只眼睛。' },
+  { at: 'hm_303', from: 'q_cat', to: 'q_end', who: '', t: '303 贴出了招租。房租比别的房间便宜一半。' },
+  { at: 'hm_3f', from: 'q_cat', to: 'q_end', who: '', t: '301 的大叔看见你，把电视声音关小了。“那孩子好点了吗？”' },
+  { at: 'kf_dean', from: 'q_boy', to: 'q_end', who: '', t: '抽屉空了。那四封信你带走了，夹在相册里。' },
+  { at: 'kf_b3_1', from: 'q_boy', to: 'q_end', who: '', t: '三号病房的门是普通的木门。你还是没有伸手去推。' }
 ];
 function qCur() { return C.q === 'q_end' ? MAIN.length : qIdx(C.q); }
 function inRange(o) { const c = qCur(), a = o.from ? qIdx(o.from) : 0, b = !o.to || o.to === 'q_end' ? 1e9 : qIdx(o.to); return c >= a && c < b; }
@@ -94,6 +133,14 @@ const TALKS = [
 我|……那是高医生的微信。`, ch: [['“谢了。请你吃饭。”', '鹤山|顺便带我参观新场景！\n他说完自己打了个哆嗦。'], ['“你学姐还好吗？”', '鹤山|她现在路过解剖室都要开灯了。以前她都是摸黑进去的。']] },
   { id: 'tk_shop1', npc: 'shop', from: 'q_firstday', to: 'q_end', s: `老板娘|小陈，你那鬼屋晚上是不是有人值班？我关门的时候，老看见二楼窗户站着个穿红衣服的。
 我|……您看错了。`, ch: [['“可能是道具。”', '老板娘|道具会招手啊？'], ['“下次看见，别跟她招手。”', '老板娘|你这孩子，吓唬阿姨呢。\n她把卷帘门又往下拉了一截。']] },
+  { id: 'tk_gao1', npc: 'heshan', from: 'q_wish', to: 'q_end', s: `鹤山|老大，学姐让我带句话：她爸说，你上次问的那个叫王欣的女孩，过得挺好的。
+鹤山|学姐还说……谢谢你那天把她吓哭。她说她好久没哭过了。`, ch: [['“替我谢谢高医生。”', '鹤山|好嘞！……那学姐那句呢？'], ['“让她下次再来，门票打折。”', '鹤山|我不敢转达。']] },
+  { id: 'tk_shop2', npc: 'shop', from: 'q_prep', to: 'q_end', s: `老板娘|小陈，盐、鸡、杀猪刀……你这一趟买的东西，我都不敢问。
+老板娘|你爸妈以前也这样。大晚上来买蜡烛和白米。`, ch: [['“他们买那些干什么？”', '老板娘|没说。你妈只说了一句：给“客人”准备的。'], ['“下次给我留几袋盐。”', '老板娘|给你留着。不收钱。']] },
+  { id: 'tk_xu3', npc: 'xushu', from: 'q_boy', to: 'q_end', s: `徐叔|小陈。那晚你在医院里，罗董一直在办公室没走。
+徐叔|他让我跟你说：地下那块地，以后有什么要扩的，直接找他。`, ch: [['“替我谢谢罗董。”', '徐叔|自己去谢。他等着呢。'], ['“徐叔，你也一夜没睡吧。”', '徐叔|……少废话。把水电费交了。']] },
+  { id: 'tk_wan4', npc: 'xuwan', from: 'q_boy', to: 'q_end', s: `徐婉|老板，我想好了。我不走了。
+徐婉|反正……别的鬼屋也不会有这么奇怪的老板。`, ch: [['“那从今天起你是正式员工。”', '徐婉|真的？！那我要五险一金！', 8], ['“你确定？这里真的有鬼。”', '徐婉|我知道。……我早就知道了。', 5]] },
   { id: 'tk_luo1', npc: 'luo', from: 'q_guest', to: 'q_end', s: `罗董|这座乐园，是我女儿出生那年建的。她最喜欢旋转木马。
 他没有往下说。
 你想起了那串塑料手链。`, ch: [['把手链轻轻放在他桌上', '罗董拿起来看了很久。\n罗董|……她还在这里，是不是？\n我|她一直在看着这座乐园。'], ['什么都不说', '有些事，等他自己问。']] }

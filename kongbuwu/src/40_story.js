@@ -7,29 +7,37 @@ function me(t) { return say('陈歌', t); }
 function ph(t) { journalAdd('黑色手机', t); return dlgShow({ kind: 'ph', text: t }); }
 function choose(list, text) { return dlgShow({ choices: list, text: text == null ? null : text, who: '' }); }
 /* 一段台本：每行 “谁|话”。空=旁白，我=陈歌，@=黑色手机，>=弹幕（／分隔），!=惊吓，#=整屏旁白（／分行），~=音效，%=震屏 */
-async function T_(s) { const my = STATE.run; for (let ln of s.split('\n')) { ln = ln.trim(); if (!ln) continue; if (my !== STATE.run) return new Promise(() => {}); const sp = /^(#m|#r|[@#!~>%])\|?/.exec(ln); const i = sp ? -1 : ln.indexOf('|'), who = sp ? sp[1] : i < 0 ? '' : ln.slice(0, i), t = sp ? ln.slice(sp[0].length) : i < 0 ? ln : ln.slice(i + 1);
-    if (who === '>') danmu(t.split('／')); else if (who === '!') await scare(t); else if (who === '#') await cine(t.split('／')); else if (who === '#m') await cine(t.split('／'), 'mem'); else if (who === '#r') await cine(t.split('／'), 'red'); else if (who === '~') sfx(t); else if (who === '%') shake();
+async function T_(s) { const my = STATE.run; for (let ln of s.split('\n')) { ln = ln.trim(); if (!ln) continue; if (my !== STATE.run) return new Promise(() => {}); const sp = /^(#m|#r|[@#!~>%^])\|?/.exec(ln); const i = sp ? -1 : ln.indexOf('|'), who = sp ? sp[1] : i < 0 ? '' : ln.slice(0, i), t = sp ? ln.slice(sp[0].length) : i < 0 ? ln : ln.slice(i + 1);
+    if (who === '^') { if (/^wait /.test(t)) await sleep(+t.slice(5)); else stageCmd(t); } else if (who === '>') danmu(t.split('／')); else if (who === '!') { STG.flash = 1; STG.shake = .5; await scare(t); } else if (who === '#') await cine(t.split('／')); else if (who === '#m') await cine(t.split('／'), 'mem'); else if (who === '#r') await cine(t.split('／'), 'red'); else if (who === '~') sfx(t); else if (who === '%') shake();
     else if (who === '@') await ph(t); else if (who === '我') await me(t); else if (who === '') await nar(t); else await say(who, t); } }
-async function fight(o) { o = Object.assign({ story: 1 }, o); { const s = charStats(); C.hp = Math.max(C.hp, Math.round(s.mhp * .6)); C.mp = Math.max(C.mp, Math.round(s.mmp * .6)); } for (;;) { const res = await startBattle(o); if (res === 'win') return true; const s = charStats(); C.hp = Math.max(C.hp, Math.round(s.mhp * .7)); C.mp = Math.max(C.mp, Math.round(s.mmp * .7));
+async function fight(o) { o = Object.assign({ story: 1 }, o); { const s = charStats(); C.hp = Math.max(C.hp, Math.round(s.mhp * .6)); C.mp = Math.max(C.mp, Math.round(s.mmp * .6)); } for (;;) { const res = await startBattle(o); if (res === 'win') { if (o.scare) { C.hh.good++; C.hh.batches++; } return true; } const s = charStats(); C.hp = Math.max(C.hp, Math.round(s.mhp * .7)); C.mp = Math.max(C.mp, Math.round(s.mmp * .7));
     const c = await choose([['再来一次', '体力和精神回到七成'], ['调低难度再来', '现在：' + DIFF[SET.diff].n], ['咬牙撑过去', '跳过这一场，剧情照常往下走']], o.scare ? '游客打着哈欠往外走。' : '眼前黑了一下。你扶着墙，又站了起来。'); if (c === 1) { SET.diff = Math.max(0, SET.diff - 1); saveSet(); } if (c === 2) return false; if (o.candy && !itemN('candy')) addItem('candy', 1, true); } }
 function curQ() { return C ? MAIN.find(q => q.id === C.q) || null : null; }
 function qIdx(id) { const i = MAIN.findIndex(q => q.id === id); return i < 0 ? 999 : i; }
 function qPast(id) { return qIdx(C.q) > qIdx(id); } /* id 这一步已经做完 */
-function questWhere(q) { return typeof q.at === 'function' ? q.at() : q.at; }
-function questGoal(q) { const need = q.night && !isNight() ? '（要等到天黑）' : q.day && isNight() ? '（要等到天亮）' : ''; return q.goal + need; }
-async function runScene(fn, title) { if (STATE.scene) return; const my = ++STATE.run; STATE.scene = true; const q = curQ(); STATE.jr = { t: title || (q ? q.title : '片段'), ch: q ? q.ch : 0, l: [] }; DLG.prev = ''; DLG.cur = null; UI.lastWho = ''; applyMode();
+function questWhere(q) { if (q.need && q.needAt && q.need()) return q.needAt; return typeof q.at === 'function' ? q.at() : q.at; }
+function questBlocked(q) { return !!(q && q.need && q.need()); }
+function sinceBatch() { return C.hh.batches - (C.qMark || 0); }
+/* 调查：几样东西挨个看，看够 need 样才能往下走（让长段剧情有事可做） */
+async function look(prompt, items, need) { const seen = new Set(); need = need == null ? items.length : need;
+  for (;;) { const left = items.map((it, i) => [it, i]).filter(x => !seen.has(x[1])); if (!left.length) break; const opts = left.map(x => [x[0][0], '看看']); if (seen.size >= need) opts.push(['（够了，继续）', '']);
+    const c = await choose(opts, prompt + (seen.size < need ? '（还要看 ' + (need - seen.size) + ' 样）' : '')); if (c >= left.length) break; seen.add(left[c][1]); const it = left[c][0]; if (typeof it[1] === 'function') await it[1](); else await T_(it[1]); } }
+function questGoal(q) { if (questBlocked(q)) return q.need(); const need = q.night && !isNight() ? '（要等到天黑）' : q.day && isNight() ? '（要等到天亮）' : ''; return q.goal + need; }
+async function runScene(fn, title) { if (STATE.scene) return; const my = ++STATE.run; STATE.scene = true; stageSceneStart(); const q = curQ(); STATE.jr = { t: title || (q ? q.title : '片段'), ch: q ? q.ch : 0, l: [] }; DLG.prev = ''; DLG.cur = null; UI.lastWho = ''; applyMode();
   try { await fn(); } catch (e) { console.error(e); if (window.__dbg) __dbg.err = String(e && e.stack || e); } if (my !== STATE.run) return; if (STATE.jr.l.length > 1) { JOURNAL.push(STATE.jr); saveJournal(); } STATE.jr = null; STATE.scene = false; DLG.cur = null; refresh(); save(); }
-function storyHereRun() { const q = curQ(); if (!q || STATE.scene || STATE.battle || questWhere(q) !== C.loc) return; closeSide();
+function storyHereRun() { const q = curQ(); if (!q || STATE.scene || STATE.battle || questWhere(q) !== C.loc) return; if (questBlocked(q)) { toast(q.need()); return; } closeSide();
   if (q.night && !isNight()) { setNight(); logLine('你一直等到天黑。', 'sys'); } else if (q.day && isNight()) { newDay(); fullHeal(); logLine('你等到了天亮。第 ' + C.day + ' 天。', 'sys'); }
   return runScene(async () => { const ch0 = q.ch; await q.run(); if (C.q === q.id) questAdvance(q); }, q.title); }
-function storyArrive() { const q = curQ(); if (q && q.auto && questWhere(q) === C.loc && !STATE.scene && !STATE.battle) storyHereRun(); }
-function questAdvance(q) { const i = MAIN.indexOf(q), nx = MAIN[i + 1]; C.q = nx ? nx.id : 'q_end'; gainExp(Math.round(HERO.need(C.lv) * .22)); const s = charStats(); C.hp = Math.max(C.hp, Math.round(s.mhp * .5)); C.mp = Math.max(C.mp, Math.round(s.mmp * .5)); logLine('主线推进：' + (nx ? nx.title : '第一卷完'), 'gain'); save(); }
+function storyArrive() { const q = curQ(); if (q && q.auto && questWhere(q) === C.loc && !questBlocked(q) && !(q.day && isNight()) && !STATE.scene && !STATE.battle) storyHereRun(); }
+function questAdvance(q) { const i = MAIN.indexOf(q), nx = MAIN[i + 1]; C.q = nx ? nx.id : 'q_end'; C.qMark = C.hh.batches; gainExp(Math.round(HERO.need(C.lv) * .22)); const s = charStats(); C.hp = Math.max(C.hp, Math.round(s.mhp * .5)); C.mp = Math.max(C.mp, Math.round(s.mmp * .5)); logLine('主线推进：' + (nx ? nx.title : '第一卷完'), 'gain'); save(); }
 
 /* ================= 第一章 ================= */
 async function S_open() { await chapterCard('一', '濒临倒闭的恐怖屋', '九江市西郊 · 新世纪乐园');
   await T_(`游客|这么不吓人的鬼屋，我还是第一次见。
 游客|道具太假。逛了一圈，不仅不害怕，甚至有点想笑。
 游客|唯物主义者无所畏惧！
+^in 游客 13
+^out 游客
 几个学生骑上共享单车走了，头也没回。你手里还攥着一沓没发出去的宣传单。
 吓人是门技术活。可现在的人被各种惊悚片洗过一遍，进鬼屋就跟逛自家后院一样。
 徐婉|老板！
@@ -83,7 +91,8 @@ async function S_daily1() { await T_(`@日常任务每日凌晨刷新，每天�
 @噩梦：独自一人太孤单了吗？来玩个游戏吧，我保证你会终身难忘。`);
   const c = await choose([['一般：修人偶', '稳妥'], ['噩梦：那个“游戏”', '难度越高，奖励越丰厚——但他今晚选了稳妥的']], '先从哪个开始？');
   if (c === 1) await me('万一是个坑……先从一般难度试试水。噩梦的，明晚再说。');
-  await T_(`你提着一桶没用完的人造血浆，一个人把整座恐怖屋的人偶过了一遍。为了省电，连走廊灯都没开，胳膊底下夹着手电。
+  setClock(8, '晚上 11 点'); await T_(`^fx dark
+你提着一桶没用完的人造血浆，一个人把整座恐怖屋的人偶过了一遍。为了省电，连走廊灯都没开，胳膊底下夹着手电。
 换了任何一个别人，这场面足够吓到报警。`);
   const ok = await miniGame('sew'); await nar(ok ? '最后一针收线。你退后两步看了看：比以前自己修的强。原来以前的维护一直不到位。' : '有几个缝得歪歪扭扭，但至少胳膊不会掉了。');
   await T_(`~phone
@@ -94,12 +103,17 @@ async function S_daily1() { await T_(`@日常任务每日凌晨刷新，每天�
 一曲终了，你后背全湿了。幸亏没点循环。
 我|这手机……奖励是真的会出现在现实里。`);
   addItem('cd'); learnSkill('friday'); if (ok) gainExp(20); }
-async function S_mirror() { await T_(`凌晨。日常任务刷新了，噩梦难度那一条，一个字都没变。
+async function S_mirror() { setClock(10, '凌晨 2:44'); await T_(`^fx clear
+凌晨。日常任务刷新了，噩梦难度那一条，一个字都没变。
 @你需要独自一人：凌晨两点四十四分走进浴室，关灯，面对镜子，在自己和镜子之间点一根蜡烛。闭上眼，心里默念自己的名字。
 @黑暗里什么都可能发生。你要做的只是：不要睁眼。半个小时后，任务自动成功。
 你上网搜了一下。有人玩这个游戏疯了，有人说自己被拽进了镜子。
 我|我是开鬼屋的，每天琢磨怎么吓人。这种东西……正好全程录下来，给恐怖屋添个新项目。
 你把自己的手机架在洗手池边，镜头同时对着你、和镜子里的你。
+^to 陈歌 6
+^turn 陈歌 B
+^fx candle 5
+^fx dark
 蜡烛点着了。火苗夹在镜子和现实中间，像一盏引路的灯。
 我|陈歌、陈歌、陈歌……`);
   const ok = await miniGame('mirror');
@@ -123,11 +137,12 @@ async function S_mirror() { await T_(`凌晨。日常任务刷新了，噩梦难
   F().video = c; if (c === 1) { C.fans += 500; await T_(`>前排提示！高能！／这特么是合成的吧／日了狗，大半夜的，手机屏幕摔碎了／镜子为什么会自己裂？！／UP 主头像是西郊一家鬼屋，这是广告
 评论区直接沦陷。你在个人介绍那一栏，附上了恐怖屋的地址，后面加了个括号：一点都不恐怖的恐怖屋。`); } else { C.fans += 180; await T_(`>25分14秒高能！／热胀冷缩吧，房间温度不均匀／镜子属阴，极易招邪，这视频应该叫镜中有鬼／如果不是合成的我实名倒立……／难道就我发现了吗？上传者头像是西郊一家鬼屋
 私信一条接一条。你一概没回，只在个人介绍里附上了恐怖屋的地址。`); }
-  await nar('你靠着墙睡着了。'); newDay(); fullHeal(); go('hh_door', true, true); }
+  await nar('你靠着墙睡着了。'); await dayCard('早上 8:30'); go('hh_door', true, true); }
 async function S_firstday() { await T_(`八点四十五。离乐园开门还有十五分钟。
 徐婉|老板！乐园门口有人在排队，专门来咱们恐怖屋的！咱们有游客了！
 我|有游客不是很正常吗，看你一副没见过世面的样子。
 你偷偷看了一眼手机：关注破了五百，评论区硝烟弥漫。有人留言说昨晚被吓得尿了一床，现在刀已经磨好，正在路上。
+` + (F().video === 1 ? '门口排队的大多是凌晨被那十四秒吓到的路人，揣着一肚子火。' : '门口排队的大多是论坛上的灵异爱好者，带着手电和录音笔，想看看视频里那面镜子。') + `
 我|……好像玩得有点大。小婉，今天的主题是冥婚。你的妆，我亲自来画。
 徐婉|老板你还会化妆？
 你把她按在镜子前。脑子里涌进来很多不属于你的东西：配色、上妆，还有人体骨骼学、死亡学。`);
@@ -172,8 +187,12 @@ async function S_wheel() { await T_(`生死有命，富贵在天。这里有增�
 @首次抽奖抽中厉鬼，解锁稀有称号：厉鬼眷顾者。
 我|千分之三。这是天要亡我？
 你站在西厢房里，手里多了一张信纸。地上，你的影子旁边，多了一道影子。
+^in 张雅 4
+^fx red
 它慢慢靠过来，和你的影子叠在了一起。
-我|……我这辈子收到的第一封情书。`);
+我|……我这辈子收到的第一封情书。
+^out 张雅
+^fx clear`);
   addItem('letter'); gainTitle('favored'); F().zhangya = 1;
   await T_(`@午夜逃杀试炼任务：破旧的公寓楼内住进了一个危险的精神病患者，他手持剪刀和铁锤，正在你的房门外徘徊。
 @是否接受？注意：试炼任务只存在二十四小时，若未接受，本场景将永远无法解锁。地点：平安公寓。要求：在那里住一晚，存活至天亮。`);
@@ -184,41 +203,67 @@ async function S_wheel() { await T_(`生死有命，富贵在天。这里有增�
   learnSkill('knife'); learnSkill('feint'); addItem('drink', 2); toast('地图上多了「平安公寓」：从乐园广场打车去'); }
 
 /* ================= 第二章 ================= */
-async function S_trial() { await chapterCard('二', '午夜逃杀', '平安公寓 · 从前叫富安公寓'); setNight();
-  await T_(`铁门边贴着一张寻人启事。末尾的联系人“王先生”，住址填的就是这栋楼。
-我|有人吗？住一晚多少钱？
-一楼一扇门开了半指宽，又关上了。楼梯上下来一个跛脚的男人，上下打量你，像要把你看穿。
+async function S_trial() { await chapterCard('二', '午夜逃杀', '平安公寓 · 从前叫富安公寓'); setClock(7, '晚上 7 点');
+  await look('长满野草的院子。主楼三层，旁边一个仓库、一个水房。', [
+    ['铁门边的那张纸', `一张寻人启事。照片上是个年轻女人。
+末尾的联系人“王先生”，住址填的就是这栋楼。`],
+    ['大门的锁', `大门很破，锁倒是挺新。最近有人换过。`],
+    ['水房', `水龙头没拧紧。一滴，一滴。地上没有积水——像是每天都有人来擦。`]], 1);
+  await T_(`我|有人吗？住一晚多少钱？
+一楼一扇门开了半指宽，又关上了。
+^in 房东 15
+楼梯上下来一个跛脚的男人，上下打量你，像要把你看穿。
 房东|住一晚？行。身份证我看下，上二楼交钱。
+^in 王琦 12
 楼梯中间站着个瘦削的中年人，抱着一沓寻人启事，眼珠浑浊，像没有焦点。
 房东|王琦！我说过你女朋友不在这里。再死缠烂打，别怪我不客气！
+^down 王琦
+^fx shake
 他被一把推到墙上，启事散了一地。他没还手，蹲下去一张一张捡，像一具会动的空壳。`);
   const c = await choose([['帮他捡起来', '有一张正好落在你脚边'], ['从旁边绕过去', '少惹事']]);
-  if (c === 0) { F().helpWq = 1; await T_(`王琦|……谢谢。
-这是他第一次开口。声音很哑。`); }
-  await T_(`房东|五十一晚。二楼随便挑，一楼三楼不能住。午夜以后别出门。
+  if (c === 0) { F().helpWq = 1; await T_(`^up 王琦
+王琦|……谢谢。
+这是他第一次开口。声音很哑。`); } else await T_(`^up 王琦`);
+  await T_(`^out 王琦
+房东|五十一晚。二楼随便挑，一楼三楼不能住。午夜以后别出门。
 我|三楼为什么……
 房东|你问题怎么那么多？不能住就是不能住！
 他屋里，一个老人背对着门坐在轮椅上。门“嘭”地关了。你的房间是 208，就在他隔壁。`);
   go('pa_208', true, true);
   await T_(`隔壁传来碗摔碎的声音，接着是房东的咒骂，夹着几句外地方言。然后电视音量被调到最大——放的全是广告。
 你拉开门想出去看看。
+^in 房东 3
+^fx flash
 %
 房东就站在你门外。不知道站了多久。
 房东|……给你送暖瓶。
-我|（假如他就是那个“精神病患者”，我今晚要和他做一夜邻居。）
-你去找王琦。他在往没人住的空房间门缝里塞寻人启事。`);
-  await T_(F().helpWq ? `王琦|你人不错，听我一句：别在这过夜。钱重要还是命重要？` : `王琦|……新来的？别在这过夜。`);
-  await T_(`王琦|这楼以前叫富安公寓。五年前一家四口被灭门，凶手到现在都没抓到。出了事才改的名。
+^out 房东
+我|（假如他就是那个“精神病患者”，我今晚要和他做一夜邻居。）`); }
+async function S_wangqi() { setClock(7, '晚上 8 点');
+  await T_(`^in 王琦 15
+王琦在走廊里，往没人住的空房间门缝里塞寻人启事。
+` + (F().helpWq ? `王琦|你人不错，听我一句：别在这过夜。钱重要还是命重要？` : `王琦|……新来的？别在这过夜。`) + `
+王琦|这楼以前叫富安公寓。五年前一家四口被灭门，凶手到现在都没抓到。出了事才改的名。
 王琦|我未婚妻就是在这附近失踪的。每天午夜以后，我都会收到她发来的短信。只有两个字。
+^prop ph phone 14 5
 他把手机递过来。发件时间：昨天凌晨两点。内容：救我。
+^del ph
 王琦|一觉醒来，她的东西还会出现在我床上。我知道你把我当疯子。
-一楼有个邋遢的高瘦男人靠在门口抽烟，冲你抬了抬下巴。他夹烟的左手手背上，纹着一朵牡丹。
+^out 王琦
+^in 纹身男 4
+一楼的高瘦男人靠在楼梯口抽烟，冲你抬了抬下巴。他夹烟的左手手背上，纹着一朵牡丹。
 纹身男|新来的，离那个贴纸的远点。这世上哪有鬼？最多是有人装鬼。回屋去。
-两个人里，肯定有一个在撒谎。
-你回到 208，上网查了那桩旧案：火灾现场有多个起火点；四具尸体；现场有第五个人的痕迹，没找到人。
-老爷子是唯一的亲属，也是火灾后最大的受益人。可他连饭碗都端不稳——那只碗，摔得太是时候了。`);
-  const g = await choose([['房东。他鸠占鹊巢，挟持了老人', '方言、电视、门外偷听'], ['王琦。他的故事太完整了', '短信、失踪、热情得过分'], ['现在下结论太早', '需要证据']], '你觉得，谁最可疑？'); F().guess = g;
-  await T_(`你唯一能求助的“专业人士”，是白天被吓晕的那个医学生。
+^out 纹身男
+两个人里，肯定有一个在撒谎。`);
+  await look('回到 208，你把今晚看到的东西过一遍。', [
+    ['网上那桩旧案', `火灾现场有多个起火点；四具尸体；现场有第五个人的痕迹，没找到人。`],
+    ['轮椅上的老人', `老爷子是唯一的亲属，也是火灾后最大的受益人。可他连饭碗都端不稳——那只碗，摔得太是时候了。`],
+    ['房东的方言', `他骂人的时候夹着外地方言。老人的公寓，为什么让一个外地人管着？`],
+    ['王琦的短信', `每天午夜，同一个号码，同两个字。发件的人，到底在哪里？`]], 3);
+  const g = await choose([['房东。他鸠占鹊巢，挟持了老人', '方言、电视、门外偷听'], ['王琦。他的故事太完整了', '短信、失踪、热情得过分'], ['现在下结论太早', '需要证据']], '你觉得，谁最可疑？'); F().guess = g; }
+async function S_live() { setClock(8, '晚上 10 点');
+  await T_(`^call 鹤山
+你唯一能求助的“专业人士”，是白天被吓晕的那个医学生。
 鹤山|老大！我一直在等你发新视频！……你说你现在在哪？凶宅？隔壁可能住着杀人犯？！报警啊！
 我|一报警，今晚就白来了。不过你提醒了我——我可以开直播。真出了事，直播间里的人能替我报警，录像就是证据。
 你输入标题：夜宿凶宅！亲身探秘！为你掀开这世界不为人知的一幕！`);
@@ -229,29 +274,49 @@ async function S_trial() { await chapterCard('二', '午夜逃杀', '平安公�
 >好好的墙皮被刮坏了，心疼公寓老板一秒／现实版狼人杀啊，有请预言家发言／我怀疑真凶是轮椅上的老人
 我|……你们的关注点能不能别那么刁钻。
 你把水果刀放进口袋，练了几次抽刀。出门的时候，往锁眼里放了一根自己的头发。`); }
-async function S_3f() { await T_(`三楼没翻修过。到处是烧过的痕迹，杂物和垃圾堆到没地方下脚。
+async function S_3f() { setClock(9, '凌晨 1 点');
+  await T_(`^fx dark
+三楼没翻修过。到处是烧过的痕迹，杂物和垃圾堆到没地方下脚。
 你翻了很久，从垃圾里找出四个布偶。出自同一个厂家，五年前的款。房子家具都烧没了，它们是怎么躲过去的？
-拉锁锈死了。你直接撕开。发霉的棉絮里有一张卡片，字里行间全是爱意。第二个、第三个也是。
-第四个没有卡片。棉絮里塞满了撕碎的纸条，每一张上只有三个字：
+^prop d1 doll 8 5 {"col":"#c8b8a0"}
+^prop d2 doll 9 5 {"col":"#b8a890"}
+^prop d3 doll 10 5 {"col":"#d8c8b0"}
+^prop d4 doll 11 5 {"col":"#a89880"}`);
+  await look('拉锁都锈死了。撕开看看？', [
+    ['第一个布偶', `发霉的棉絮里有一张卡片，字里行间全是爱意。`],
+    ['第二个布偶', `也是一张卡片。同样的话，同样的笔迹。`],
+    ['第三个布偶', `第三张卡片。写卡片的人很用心，一笔一画。`],
+    ['第四个布偶', `没有卡片。棉絮里塞满了撕碎的纸条，每一张上只有三个字：
 #去死吧！
->？？？／主播别翻了我害怕／这字迹和卡片不是一个人的
+>？？？／主播别翻了我害怕／这字迹和卡片不是一个人的`]]);
+  await T_(`^fx flash
 楼梯拐角的声控灯，突然亮了。
 你躲进门后，屏住呼吸，从门缝往外看。`);
   const ok = await miniGame('peek');
-  await T_(`房东|必须赶紧把那东西弄出去。最近来的外人越来越多。
+  await T_(`^in 房东 14
+^in 纹身男 15
+^in 女人 17
+^in 胖子 18
+房东|必须赶紧把那东西弄出去。最近来的外人越来越多。
 纹身男|叫上其他人，今夜就给它挖出来，埋到后山去。
 女人|这事大家人人有份，谁也跑不了。干活吧。
 矮胖的那个抓着铁钎，手在抖。他掀开走廊尽头杂物堆后面的布帘——墙是新砌的。
 墙里，是一个人。
 !hand
 你给鹤山发了两个字：报警。`);
-  if (!ok) { await T_(`你往后退的时候，踩到了一个布偶。
-纹身男|谁？！`); await fight({ mobs: [['tattoo', L(-1)]], title: '三楼走廊', intro: '只追上来一个。别让他喊出声。' }); F().seen3f = 1; }
-  await T_(`房东和纹身男抬着麻袋下了楼，说是去“后山老地方”。脚步声远了。
+  if (!ok) { F().seen3f = 1; await T_(`你往后退的时候，踩到了一个布偶。
+纹身男|谁？！`); await fight({ mobs: [['tattoo', L(-1)]], title: '三楼走廊', intro: '只追上来一个。别让他喊出声。' }); }
+  await T_(`^out 房东
+^out 纹身男
+房东和纹身男抬着麻袋下了楼，说是去“后山老地方”。脚步声远了。
+^out 女人
+^out 胖子
 >黑屏了？？／刚才那是尸体吗／已报警，主播撑住
 你摸黑下到一楼。防盗门从里面锁死了。`); }
-async function S_escape() { await T_(`只能回 208，把床单捆在窗框上，从二楼下去。
+async function S_escape() { setClock(10, '凌晨 2 点'); await T_((F().seen3f ? `楼下的脚步声一直没停。刚才那一下，他们一定听见了。
+` : '') + `只能回 208，把床单捆在窗框上，从二楼下去。
 你摸出钥匙，借着屏幕的微光对准锁孔——
+^fx flash
 锁眼里那根头发，被顶进去了。
 #有人进过你的房间。／或者说，现在就在里面。
 你一点声音都没出，一步一步退到走廊最右边。
@@ -267,7 +332,8 @@ async function S_escape() { await T_(`只能回 208，把床单捆在窗框上�
 王琦|……是我看错了？不可能啊。
 他拿着手电在原地转了几圈，走了。
 你分不清方向，地势越走越陡。前面有一间木屋，像护林员住的。门没锁。`); learnTalent('run'); }
-async function S_hut() { await T_(`一股怪味。生活用品堆得像垃圾场。
+async function S_hut() { setClock(10, '凌晨 3 点'); await T_(`^fx dark
+一股怪味。生活用品堆得像垃圾场。
 床底下塞满了衣服——大部分是女人的，从来没洗过。有一件上面的泥还没干透，像这一两天还有人穿过。
 尺码和墙里那个人，对得上。
 口袋里有一些皱巴巴的碎纸条，写着“我爱你”。和五年前布偶里的卡片，是一样的话。
@@ -277,7 +343,10 @@ async function S_hut() { await T_(`一股怪味。生活用品堆得像垃圾场
 我|用死者的手机，每天夜里给自己发短信。然后一觉醒来，什么都不记得。
 我|贴寻人启事的那个人，找的是被他自己砌进墙里的人。
 手机屏幕暗下去。黑色的屏幕上，映出你身后站着一个小女孩，七八岁。她抬手，指了指你的背后。
+^in 小小 4
 !face
+^out 小小
+^in 王琦 16
 你转身。王琦提着一把斧头，堵在门口。
 王琦|毕竟……是我亲手把她砌进墙里的。我不想这样的。你知道吗？我也不想这样的。`);
   if (F().guess === 1) await me('（猜对了。但我宁愿是猜错了。）');
@@ -296,7 +365,7 @@ async function S_hut() { await T_(`一股怪味。生活用品堆得像垃圾场
 我|这也算奖励？怎么看都像诅咒。
 警车把你送回了乐园。早间新闻里，你的脸打了码。
 徐婉|老板，你上电视了！！`);
-  liveOff(); C.fans += 900; C.hh.scenes.push('ws'); addItem('notice'); F().zhangpeng = 1; newDay(); fullHeal(); go('hh_rest', true, true); C.f.lockArea = 0; }
+  liveOff(); C.fans += 900; C.hh.scenes.push('ws'); addItem('notice'); F().zhangpeng = 1; await dayCard('早上 7 点'); go('hh_rest', true, true); C.f.lockArea = 0; }
 async function S_scene() { await T_(`三楼变了。错综的通道，烧焦的屋顶，随处可见疤痕一样的刀痕。新场景占了整个三层，还吃掉了冥婚和僵尸复活夜的一角。
 @注意：恐怖屋内部空间已不足，扩建之后，才能继续解锁全新恐怖场景！
 今天的一般难度任务不难：在引人注目的东西的反方向，设计惊吓点。你用了一个中午。
@@ -322,10 +391,13 @@ async function S_scene() { await T_(`三楼变了。错综的通道，烧焦的�
 最小的那个布偶，往你这边歪了一下。` : `纸烧成灰的时候，四个布偶一动不动。过了很久，最小的那个，往你这边歪了一下。`);
   await T_(`@隐藏任务完成！厉鬼好感度加一，获得平安公寓受害者残念的善意：它们将每天为你清理垃圾，保持午夜逃杀场景原貌。
 我|每一个场景背后都有自己的故事。解锁它们，也算是给无家可归的“它们”，一个住处吧。
+^in 小小 8
 一个小小的影子拽了拽你的衣角。你低头，什么都没有。
+^out 小小
 我|小家伙，别乱跑，小心被人踩到。`);
-  gainPet('xiaoxiao'); if (c === 0) petAff('xiaoxiao', 10); F().xiaoxiao = 1; C.hh.total += 9; C.hh.month += 9; }
-async function S_water() { await T_(`凌晨一点十分。你被一种声音弄醒了。
+  gainPet('xiaoxiao'); petAff('xiaoxiao', 15); if (c === 0) petAff('xiaoxiao', 10); F().xiaoxiao = 1; C.hh.total += 9; C.hh.month += 9; }
+async function S_water() { setClock(9, '凌晨 1:10'); await T_(`^fx dark
+凌晨一点十分。你被一种声音弄醒了。
 三楼。有人在切东西。一下，一下。
 你提着锤子上去，声音就停了。午夜逃杀的浴室里，那面镜子上有一道新的裂痕。
 从镜子游戏那晚开始，就有什么东西跟着你。你用笔在墙上记过一个数字——它每晚都在变小。
@@ -333,8 +405,9 @@ async function S_water() { await T_(`凌晨一点十分。你被一种声音弄�
 @幸运的厉鬼眷顾者，你的勇气让人惊讶。这个游戏叫做深水：把浴缸放满，整个人沉进去，屏住呼吸六十秒。它可以跨越生死，让你见到亡故之人。
 我|只有噩梦任务的奖励能作用在我自己身上。要处理镜子里的东西，没有别的路。
 你溜进乐园员工食堂，提了两把菜刀回来。浴室门反锁，父母留下的布偶放在门后，四个小布偶摆在浴缸四周。
-我|一分钟。熬过这一分钟。`);
-  const ok = await miniGame('water');
+我|一分钟。熬过这一分钟。` + (F().mirrorFail ? `
+我|镜子游戏那晚，我睁过一次眼。它记得我的脸。` : ''));
+  const ok = await miniGame('water', F().mirrorFail ? { dur: 11 } : {});
   await T_(ok ? `水很冷。你最想见的人，没有出现。
 ——这至少说明一件事：爸妈没有死。
 第五十秒，一只手按住了你的后脑。是它逼着你，多撑了那几秒。
@@ -348,7 +421,8 @@ async function S_water() { await T_(`凌晨一点十分。你被一种声音弄�
 你退出那个血红色的页面，感觉空气都清新了许多。
 你找来木板，把通往午夜逃杀的员工通道封死了。镜子里的东西处理掉之前，这个场景先不开放。`);
   learnTalent('yintong'); learnSkill('yintong'); F().aff = 1; F().wsClosed = 1; if (ok) { C.bonus.hp += 10; gainExp(40); } }
-async function S_zhangpeng() { await T_(`李队|小陈，张鹏在你那附近露面了——平安公寓一楼那个纹牡丹的。监控拍到了他的左手。他是冲你来的，你坏了他的事。
+async function S_zhangpeng() { await T_(`^call 李队
+李队|小陈，张鹏在你那附近露面了——平安公寓一楼那个纹牡丹的。监控拍到了他的左手。他是冲你来的，你坏了他的事。
 李队|我们想在乐园布控。你今晚最好别住鬼屋。
 我|我不在，他会看出来的。那么狡猾的人，不会上钩。……我留下。
 凌晨一点。监控里，一个人翻过了护栏。
@@ -358,9 +432,12 @@ async function S_zhangpeng() { await T_(`李队|小陈，张鹏在你那附近�
 他从门口走了过去，没进来。他撬开了员工通道尽头的木板。
 我|……他进了午夜逃杀。
 你跟了进去。在楼道口的门后面等他。
+^in 张鹏 15
+^to 张鹏 8
 ~heavy
 我|不好意思，砸歪了。我本来是准备砸碎你肩胛骨的。`);
-  const win = await fight({ mobs: [['zhangpeng', L(1)]], title: '午夜逃杀 · 凌晨', intro: '你在自己的地盘上。', epic: { name: '张鹏', sub: '在逃嫌犯 · 手背纹着牡丹', seal: '逃', intro: ['赌徒。欠了几十万高利贷。入室盗窃、抢劫。', '“报仇的事以后再说——”', '他不知道，这栋楼里今晚不止两个人。'], phase: '求求你放我走吧！', low: '“我是一个没有感情的杀手。”——你对着面具里的自己说。' } });
+  if (F().notice === 0) await T_(`走廊尽头，四个布偶并排坐在楼道口——那张写着“已经归案”的寻人启事，还贴在它们头顶。张鹏回头看了一眼，脚步乱了。`);
+  const win = await fight({ pre: F().notice === 0 ? [[0, 'slow', 2], [0, 'weak', 2]] : [], mobs: [['zhangpeng', L(1)]], title: '午夜逃杀 · 凌晨', intro: '你在自己的地盘上。', epic: { name: '张鹏', sub: '在逃嫌犯 · 手背纹着牡丹', seal: '逃', intro: ['赌徒。欠了几十万高利贷。入室盗窃、抢劫。', '“报仇的事以后再说——”', '他不知道，这栋楼里今晚不止两个人。'], phase: '求求你放我走吧！', low: '“我是一个没有感情的杀手。”——你对着面具里的自己说。' } });
   await T_(`${win ? '他扔了刀，像没头苍蝇一样乱撞。' : '他撞开你，像没头苍蝇一样乱撞。'}鬼屋里地形复杂，又没开灯，跑出几米他就找不到来时的路了。
 那种切东西的声音又响了。
 !mirror
