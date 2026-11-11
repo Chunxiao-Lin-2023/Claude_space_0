@@ -76,6 +76,7 @@ async function S_cliff() {
   await say('willow', '（柳枝轻轻摇了摇。什么都没说，可你觉得它在笑。）');
   await nar('那天晚上，你满脑子都是青鳞鹰扑下来时，翅膀和爪子上流转的骨文。你照着那些纹路，在空地上一遍遍比划……');
   await study('qly'); F().tomb = 1;
+  await nar('第二天，你在门口捡到一根青色的长羽，硬得像铁片——是那只鹰撞树时掉的。你把它别在了腰上。'); gainRelic('r_eagle');
   await say('chief', '（第二天一早，脸黑得像锅底）你们几个！谁让你们去石林的？！……小不点，你过来。');
 }
 async function S_tombAsk() {
@@ -144,7 +145,7 @@ async function S_ruin() {
   await nar('你把它抱回了新村，给它敷了止血草。它的伤好得出奇地快，三天就能满村乱窜，把好几户人家的兽奶罐子舔了个底朝天。你给它起了个名字，叫<b>毛球</b>。');
   gainPet('maoqiu'); if (c === 2) C.pets.maoqiu.aff = 22; if (c === 1) { C.pets.maoqiu.aff = 4; await nar('毛球记仇。头几天它一看见你就龇牙，还偷偷往你的兽奶里吐口水。'); }
   await nar('你不知道的是，那天在大荒深处争夺山宝的四大至尊里，有一个就是朱厌——浑身金毛的朱厌。');
-  tip('毛球会跟着你战斗。在“宠物”页里可以喂它，亲近越高，它会的本事越多。');
+  tip('毛球是你的<b>灵兽伙伴</b>，会跟着你战斗，每回合由你给它选招。在“灵兽”页里可以喂它，亲近越高，它会的本事越多；亲近满了还会觉醒。');
 }
 async function S_jijing() {
   await say('willow', '（柳枝垂下来，轻轻点在你的额头上。）');
@@ -271,7 +272,8 @@ async function S_bully() {
   await me('（小声）诡爷，你会说话啊？');
   await nar('他没再理你。可你走出去老远，回头看时，他好像在看你。');
   F().bully = 1;
-  tip('<b>雷池</b>在内院东边，<b>藏经阁</b>在西边。');
+  await nar('傍晚，阁主差人送来一块温润的玉符。“入了阁，就是自家人。这东西能带你回村、回阁里。”');
+  tip('<b>雷池</b>在内院东边，<b>藏经阁</b>在西边。玉符：在城镇里点<b>🌀 传送</b>，能在石村、补天阁、百断山口之间直接来回。');
 }
 async function S_qf1() {
   await nar('傍晚，你溜到山门外找清风。外门的院子里早就没人了，只有她一个人还在打一套最基础的拳，一遍，又一遍。');
@@ -363,7 +365,7 @@ async function S_yu() {
   gainPet('dahong'); C.pets.dahong.aff = c === 0 ? 22 : 12;
   await nar('你在沙丘底下摸到了一个小石瓶，瓶底只有一滴水，晶莹得像一颗星星。');
   give('taiyi');
-  tip('<b>太一真水</b>在背包里，喝下去就能永久提升。宠物在“宠物”页里换着带。');
+  tip('<b>太一真水</b>在背包里，喝下去就能永久提升。灵兽伙伴在“灵兽”页里换着带，战斗里也能换上场。');
 }
 async function S_fenbao() {
   await nar('分宝崖上插满了古兵器，锈成了一片红褐色。不少少年在崖前拔了半天，脸都憋紫了，一件也拔不出来。');
@@ -535,7 +537,7 @@ function questGoalText() { const q = curQ(); let t = q.goal;
 function questWhere() { const q = curQ(); const npcLoc = n => Object.values(PLACES).find(p => (p.npcs || []).includes(n));
   if (q.type === 'enter') return q.loc; if (q.type === 'talk') return npcLoc(q.npc)?.id; if (q.type === 'arena') return q.loc;
   if (q.type === 'kill' || q.type === 'dungeon') return questReady(q) && q.npc ? npcLoc(q.npc)?.id : q.loc; return null; }
-function storyKill(mob) { const q = curQ(); if (q.type === 'kill' && q.mob === mob && C.story.n < q.n) { C.story.n++; logLine(`【主线】${MOBS[mob].name} ${C.story.n}/${q.n}`, 'quest'); if (C.story.n >= q.n) logLine(`【主线】回去找<b>${NPCS[q.npc].name}</b>。`, 'quest'); }
+function storyKill(mob) { bountyKill(mob); const q = curQ(); if (q.type === 'kill' && q.mob === mob && C.story.n < q.n) { C.story.n++; logLine(`【主线】${MOBS[mob].name} ${C.story.n}/${q.n}`, 'quest'); if (C.story.n >= q.n) logLine(`【主线】回去找<b>${NPCS[q.npc].name}</b>。`, 'quest'); }
   if (itemN('peaegg') && !C.pets.ertuzi) { F().eggWins = (F().eggWins || 0) + 1; if (F().eggWins >= 8) setTimeout(hatchEgg, 600); } }
 function storyArena() { const q = curQ(); if (q.type === 'arena' && C.story.n < q.n) { C.story.n++; if (C.story.n >= q.n) setTimeout(() => questComplete(q), 500); } }
 function storyDungeon(id) { const q = curQ(); if (q.type === 'dungeon' && q.dungeon === id) { C.story.n = 1; if (!q.npc) setTimeout(() => questComplete(q), 600); else logLine(`【主线】回去找<b>${NPCS[q.npc].name}</b>。`, 'quest'); } }

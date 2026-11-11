@@ -68,9 +68,12 @@ const PLACES = {
   bt_lib: { name: '藏经阁', area: 'butian', x: 0, y: 1, town: 1, need: F0('joined'), exits: { e: 'bt_court' }, npcs: ['libelder'],
     night: '藏经阁里只点着一盏灯，守阁人趴在桌上打盹。书架深处偶尔“咔”地响一声，像是哪卷骨简自己翻了个身。',
     desc: '一座七层木楼，书架上堆满了兽皮、骨简和石板。越往上，书越旧，楼梯也越窄。' },
-  bt_train: { name: '雷池', area: 'butian', x: 2, y: 1, town: 1, need: F0('joined'), exits: { w: 'bt_court' }, acts: ['train'], npcs: [],
+  bt_train: { name: '雷池', area: 'butian', x: 2, y: 1, town: 1, need: F0('joined'), exits: { w: 'bt_court', e: 'bt_leichi' }, acts: ['train'], npcs: [],
     night: '夜里的雷池比白天还亮。雷光一道接一道劈下来，把整片石台照得惨白。',
     desc: '一片被雷光反复劈打的山顶石台，地面焦黑，空气里全是麻酥酥的味道。补天阁的弟子在这里参悟雷道法则，挨劈是家常便饭。' },
+  bt_leichi: { name: '雷池深处', area: 'butian', x: 3, y: 1, lv: [18, 20], need: F0('end'), exits: { w: 'bt_train' }, dungeon: 'leichi', mobs: [['ape', 3], ['puppet', 1]], gather: [['lingyao', 0.3]],
+    night: '雷池深处的夜里，雷光把云层照得透亮，地上的焦痕像一张张蛛网。',
+    desc: '雷池往东，石台塌下去一大片，露出一个往地底下去的深坑。坑底的雷光是紫色的，比上面的更沉、更狠。阁主说，那下面压着一头上古的雷兽。' },
   /* ---- 百断山 ---- */
   bd_gate: { name: '百断山口', area: 'baiduan', x: 1, y: 3, lv: [13, 15], need: F0('baiduan'), exits: { s: 'bt_court', n: 'bd_lion', e: 'bd_desert' }, npcs: ['huolinger'], mobs: [['tiger', 2], ['ape', 2]], gather: [['lingyao', 0.3]],
     night: '断山的切口在月光下亮得像镜子。山口点着各族的篝火，火光一明一暗，谁也不靠近谁。',
@@ -124,4 +127,9 @@ const DUNGEONS = {
       { name: '白骨道', text: '脚下全是骨头，踩上去咯吱作响。骨缝里飘出几道残魂。', mobs: ['bonewraith', 'bonewraith'] },
       { name: '骨山', text: '一副山一样大的骨架挡在前面，肋骨之间结着一张发光的符文网。', event: 'runes' },
       { name: '天骨之心', text: '骨山深处，那副山一样大的骨架慢慢动了。一团残魂从骨缝里聚起来，还记得自己活着时有多凶。', mobs: ['boneking'], boss: 1 }] },
+  leichi: { name: '雷池深处', lv: 20, loc: 'bt_leichi',
+    rooms: [
+      { name: '焦土', text: '坑壁上嵌着几具铜傀儡，被雷劈了不知多少年，阵纹还在一闪一闪。你一落地，它们就动了。', mobs: ['puppet', 'ape'] },
+      { name: '雷眼', text: '一道紫色的雷光从地底直冲上来，粗得像一棵古树。站在它旁边，你浑身的汗毛都竖起来了。', event: 'thunder' },
+      { name: '雷兽巢', text: '雷光的尽头趴着一头浑身鳞甲的古兽，每一次呼吸，鳞缝里都迸出电光。它睁开了眼睛。', mobs: ['leishou'], boss: 1 }] },
 };

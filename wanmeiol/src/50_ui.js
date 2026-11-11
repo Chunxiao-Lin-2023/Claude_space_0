@@ -15,12 +15,13 @@ function toast(t) { const d = el('div', '', esc(t)); $('toast').appendChild(d); 
 function applyFont() { document.documentElement.style.fontSize = [15, 17, 19.5][SET.fs || 0] + 'px'; }
 applyFont();
 const curMode = () => DLG ? 'talk' : STATE.battle ? 'battle' : 'explore';
-function applyMode() { const m = curMode(), b = document.body; for (const k of ['explore', 'talk', 'battle']) b.classList.toggle('m-' + k, m === k); if (m !== UI.lastMode) { UI.lastMode = m; if (m !== 'explore' && UI.nav && UI.nav !== 'log') { UI.nav = null; renderSide(); } musicMode(); if (m === 'explore') setTimeout(bannerDraw, 0); } if (m === 'talk') talkBgDraw(); }
+function applyMode() { const m = curMode(), b = document.body; for (const k of ['explore', 'talk', 'battle']) b.classList.toggle('m-' + k, m === k); if (m !== UI.lastMode) { if (UI.lastMode) stageTransition(m); UI.lastMode = m; if (m !== 'explore' && UI.nav && UI.nav !== 'log') { UI.nav = null; renderSide(); } musicMode(); if (m === 'explore') setTimeout(bannerDraw, 0); } if (m === 'talk') talkBgDraw(); }
 
 /* ---------- log (kept for 📜 记录 and co-op; the explore screen shows the latest few lines) ---------- */
 function logLine(html, cls = '') { const L = $('log'); if (!L) return; L.appendChild(el('div', 'ln ' + cls, html)); while (L.children.length > 300) L.firstChild.remove(); if (NETROLE === 'host') netLog(html, cls); UI.logDirty = 1; if (STATE.mode === 'play') { clearTimeout(UI.feedT); UI.feedT = setTimeout(() => { renderFeed(); if (UI.nav === 'log') renderSide(); }, 30); } }
 function feedLines(max = 5) { const out = []; const kids = $('log').children; for (let i = kids.length - 1; i >= 0 && out.length < max; i--) { const d = kids[i]; if (d.classList.contains('loc')) break; if (d.classList.contains('bat') || d.classList.contains('say')) continue; out.unshift(d); } return out; }
-function renderFeed() { const F_ = $('feed'); if (!F_) return; const L = feedLines(); F_.innerHTML = L.map((d, i) => `<div class="${d.className}${i < L.length - 2 ? ' old' : ''}">${d.innerHTML}</div>`).join(''); }
+function renderFeed() { const F_ = $('feed'); if (!F_) return; const L = feedLines(); F_.innerHTML = L.map((d, i) => { if (!d.dataset.n) d.dataset.n = ++UI.feedN; const nw = +d.dataset.n > (UI.feedSeen || 0); return `<div class="${d.className}${i < L.length - 2 ? ' old' : ''}${nw ? ' new' : ''}">${d.innerHTML}</div>`; }).join(''); UI.feedSeen = UI.feedN; }
+UI.feedN = 0;
 
 /* ---------- dialogue ---------- */
 let DLG = null;
@@ -57,6 +58,7 @@ function renderDlg() {
   else if (DLG.choice) { D.innerHTML = head + histH(ctx.hist.slice(-1)) + (ctx.cur ? lineH(ctx.cur) : '') + `<div class="ch">${DLG.choice.map((o, i) => `<button class="chb" ${o.dis ? 'disabled' : ''} data-i="${i}">${o.t}</button>`).join('')}</div>`; D.onclick = null; D.querySelectorAll('.chb').forEach(b => b.onclick = e => { e.stopPropagation(); dlgPick(+b.dataset.i); }); }
   else { D.innerHTML = head + histH(ctx.hist) + lineH(DLG.o) + '<div class="nx">点击继续 ▼</div>'; D.onclick = () => dlgPick(-1); }
   if (DLG.rune) D.onclick = null; D.scrollTop = D.scrollHeight;
+  const key = DLG.rune ? 'r' + DLG.rune.phase + DLG.rune.got.length + DLG.rune.k : DLG.choice ? 'c' + DLG.choice.map(o => o.t).join() : 'o' + DLG.o.text; D.classList.toggle('still', key === UI.dlgKey); UI.dlgKey = key;
 }
 function dlgClose() { if (DLG && !DLG.choice && !DLG.rune) { const r = DLG.res; DLG = null; r(); } DLG = null; UI.hist = []; UI.cur = null; renderDlg(); }
 addEventListener('keydown', e => { if (STATE.mode !== 'play' || e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
@@ -79,9 +81,11 @@ function renderTop() {
 }
 function renderBanner() {
   const P = PLACES[C.loc], A = AREAS[P.area]; $('bnm').textContent = STATE.dungeon ? DUNGEONS[STATE.dungeon.id].name : P.name;
-  $('bar').textContent = STATE.dungeon ? `第 ${STATE.dungeon.room + 1}/${DUNGEONS[STATE.dungeon.id].rooms.length} 关` : `${A.name}${P.lv ? ' · ' + P.lv[0] + '-' + P.lv[1] + ' 层' : ''}${isNight() ? ' · 夜' : ''}`;
+  const exc = P.lv && !STATE.dungeon ? exCount(C.loc) : null;
+  $('bar').innerHTML = STATE.dungeon ? `第 ${STATE.dungeon.room + 1}/${DUNGEONS[STATE.dungeon.id].rooms.length} 关` : `${A.name}${P.lv ? ' · ' + P.lv[0] + '-' + P.lv[1] + ' 层' : ''}${isNight() ? ' · 夜' : ''}${exc && exc.n ? ` · <span title="探索度：这里的凶兽种类和能采的东西">${exc.done ? '✓ 探索完成' : `探索 ${exc.have}/${exc.n}`}</span>` : ''}`;
   const q = curQ(), w = questWhere(); $('bq').innerHTML = `<b>${CH_NAMES[q.ch].split(' · ')[1] || ''} · ${q.title}</b>　${questGoalText()}${w && w !== C.loc && route(C.loc, w) ? '<span class="go">▶ 去</span>' : ''}${q.rec && C.lv < q.rec ? `　<span class="warn">建议 ${q.rec} 层</span>` : ''}`;
   $('bq').setAttribute('onclick', 'questGo()');
+  const key = C.loc + (STATE.dungeon ? STATE.dungeon.id + STATE.dungeon.room : ''); if (UI.bKey !== key) { const first = !UI.bKey; UI.bKey = key; if (!first && animOn()) for (const e of [$('banner'), $('desc'), $('acts')]) { e.classList.remove('swap'); void e.offsetWidth; e.classList.add('swap'); clearTimeout(e._t); e._t = setTimeout(() => e.classList.remove('swap'), 900); } }
 }
 function renderDesc() { const P = PLACES[C.loc]; if (STATE.dungeon) { const D = DUNGEONS[STATE.dungeon.id], R = D.rooms[STATE.dungeon.room]; $('desc').innerHTML = `<b>【${R.name}】</b>${R.text}`; return; } $('desc').innerHTML = isNight() && P.night ? `<span class="night">${P.night}</span>` : pdesc(P); }
 function questGo() { const w = questWhere(); if (w && w !== C.loc) autoWalk(w); else navTo('map'); }
@@ -91,44 +95,52 @@ function renderActs() {
   if (STATE.dungeon) { A.innerHTML = `<div class="wait">${DUNGEONS[STATE.dungeon.id].name} · 第 ${STATE.dungeon.room + 1} 关……</div>`; return; }
   if (STATE.scene || STATE.busy) { A.innerHTML = '<div class="wait">……</div>'; return; }
   const P = PLACES[C.loc], ex = exitsOf(C.loc), qw = questWhere(); const g = (l, xs) => xs.length ? `<div class="grp"><span class="gl">${l}</span>${xs.join('')}</div>` : '';
-  const dirs = Object.entries(ex).map(([d, id]) => { const T = PLACES[id]; return `<button class="ab dir ${qw === id ? 'q' : ''}" onclick="go('${id}')">${DIRS[d]} · ${T.name}${qw === id ? ' ★' : ''}${T.lv ? `<small>${T.lv[0]}-${T.lv[1]}层</small>` : ''}</button>`; });
+  const dirs = Object.entries(ex).map(([d, id]) => { const T = PLACES[id], ec = T.lv ? exCount(id) : null; return `<button class="ab dir ${qw === id ? 'q' : ''}" onclick="go('${id}')">${DIRS[d]} · ${T.name}${qw === id ? ' ★' : ''}${ec && ec.done ? ' ✓' : ''}${T.lv ? `<small>${T.lv[0]}-${T.lv[1]}层</small>` : ''}</button>`; });
   const acts = []; const sh = storyHere(); if (sh) acts.push(`<button class="ab q" onclick="storyHereRun()">▶ ${sh}</button>`);
   if (P.mobs) acts.push(`<button class="ab main" onclick="explore()">🔍 探索</button>`);
   if (ROAM && !ROAM.dead && ROAM.loc === C.loc && now() >= ROAM.start && now() < ROAM.end) acts.push(`<button class="ab wb" onclick="fightRoam()">⚔ ${MOBS[ROAM.id].name}</button>`);
-  if (P.dungeon) acts.push(`<button class="ab main" onclick="enterDungeon('${P.dungeon}')">🏯 闯${DUNGEONS[P.dungeon].name}</button>`);
+  if (P.dungeon) { acts.push(`<button class="ab main" onclick="enterDungeon('${P.dungeon}')">🏯 闯${DUNGEONS[P.dungeon].name}</button>`); if (C.dungeons[P.dungeon]) acts.push(`<button class="ab" onclick="enterDungeonHard('${P.dungeon}')">🏯 困难</button>`); }
   const pa = P.acts || []; if (P.town && P.area !== 'xushen' && (C.loc === 'sc_willow' || C.loc === 'sc_street' || pa.includes('rest'))) acts.push(`<button class="ab" onclick="rest()">🛏 休息</button>`);
   if (pa.includes('train')) acts.push(`<button class="ab" onclick="train()">${C.loc === 'bt_train' ? '⚡ 挨雷劈' : '🪨 举石锁'}</button>`);
   if (pa.includes('arena')) acts.push(`<button class="ab main" onclick="openModal('arena')">🪞 挑战（${(arenaDaily(), C.arena.tries)}次）</button>`);
-  const people = npcsHere(C.loc).map(n => { const N = NPCS[n], qo = questTalkOptions(n).length; return `<button class="ab npc ${qo ? 'q' : ''}" onclick="npcTalk('${n}')">${N.name}${qo ? ' ❗' : ''}</button>`; });
+  if (canTeleport()) acts.push(`<button class="ab" onclick="teleport()">🌀 传送</button>`);
+  const people = npcsHere(C.loc).map(n => { const N = NPCS[n], mk = npcMark(n); return `<button class="ab npc ${mk ? 'q' : ''}" onclick="npcTalk('${n}')">${N.name}${mk}</button>`; });
   A.innerHTML = g('做事', acts) + g('说话', people) + g('去往', dirs);
 }
 function storyHere() { const q = curQ(); if (q.type === 'enter' && q.loc === C.loc) return q.title; return null; }
 function storyHereRun() { const q = curQ(); if (q.type === 'enter') return questComplete(q); }
 /* ---------- battle screen ---------- */
 function renderBattle(quiet) {
-  const B = STATE.battle; if (!B) return; applyMode();
+  const B = STATE.battle; if (!B) return; applyMode(); const play = fxPrepare(B); if (UI.enter) $('bfx').innerHTML = '';
   const me_ = B.units.find(u => u.kind === 'pc'); if (UI.selFoe && !B.units.some(u => u.id === UI.selFoe && u.alive)) UI.selFoe = null;
-  const card = u => { const st = u.st.filter(s => s.k !== 'rage').map(s => `<span style="color:${STATUS[s.k].c}">${STATUS[s.k].n}${s.k === 'shield' ? s.v : ''}</span>`).join(''); const wk = u.side && u.mob ? knownWeak(u.mob) : [];
-    return `<div class="uc ${u.side ? 'foe' : 'ally'} ${u === me_ ? 'me' : ''} ${u.alive ? '' : 'dead'} ${UI.selFoe === u.id ? 'sel' : ''} ${u.raged ? 'rage' : ''}" data-u="${u.id}" ${u.side ? `onclick="selFoe('${u.id}')"` : ''}><div class="n">${esc(u.name)}<small>${u.boss ? '首领' : u.lv + '层'}</small>${wk.length ? `<span class="wk">弱${wk.map(e => EL[e].i).join('')}</span>` : ''}</div>
-      <div class="bar"><i style="width:${u.hp / u.hpMax * 100}%"></i></div>${u.mpMax ? `<div class="bar mp"><i style="width:${u.mp / u.mpMax * 100}%"></i></div>` : ''}<div class="hpn"><span>${fmt(Math.ceil(u.hp))}/${fmt(u.hpMax)}</span></div>
+  const cur = !B.over && !play && animLeft() === 0 ? needInput(B)[0] : null;
+  const card = (u, i) => { const st = u.st.filter(s => s.k !== 'rage').map(s => `<span style="color:${STATUS[s.k].c}">${STATUS[s.k].n}${s.k === 'shield' ? s.v : ''}</span>`).join(''); const wk = u.side && u.mob ? knownWeak(u.mob) : [];
+    const hr = UI.hpShown[u.id] != null ? UI.hpShown[u.id] : u.hp / u.hpMax, dead = UI.deadShown[u.id] || (!u.alive && !play && !(animLeft() > 0));
+    return `<div class="uc ${u.side ? 'foe' : 'ally'} ${u === me_ ? 'me' : ''} ${dead ? 'dead' : ''} ${UI.selFoe === u.id ? 'sel' : ''} ${u.raged ? 'rage' : ''} ${u.releasing ? 'warnc' : ''} ${cur === u ? 'turn' : ''} ${UI.enter ? (u.side ? 'enter-d' : 'enter-u') : ''}" style="--i:${i}" data-u="${u.id}" ${u.side ? `onclick="selFoe('${u.id}')"` : ''}><div class="n">${esc(u.name)}<small>${u.boss ? '首领' : u.lv + '层'}</small>${wk.length ? `<span class="wk">弱${wk.map(e => EL[e].i).join('')}</span>` : ''}</div>
+      <div class="bar"><i style="width:${Math.max(0, hr * 100)}%"></i></div>${u.mpMax ? `<div class="bar mp"><i style="width:${u.mp / u.mpMax * 100}%"></i></div>` : ''}<div class="hpn"><span>${fmt(Math.ceil(u.hp))}/${fmt(u.hpMax)}</span></div>
       <div class="sts">${st}</div>${u.side && u.alive && u.intent ? `<div class="int ${u.plan === 'charge' || u.intent.startsWith('⚠') ? 'chg' : ''}">${u.intent}</div>` : ''}</div>`; };
-  $('bhead').innerHTML = `${esc(B.title || '战斗')}<small>第 ${B.round} 回合</small>`;
+  const order = B.units.filter(u => u.alive).slice().sort((a, b) => (b.first && B.round === 1 ? 1000 : 0) + b.spd - (a.first && B.round === 1 ? 1000 : 0) - a.spd);
+  $('bhead').innerHTML = `<div>${esc(B.title || '战斗')}<small>第 ${B.round} 回合</small></div><div class="order"><span class="ol">出手顺序</span>${order.map(u => `<span class="to ${u.side ? 'f' : ''} ${cur === u ? 'cur' : ''}" data-to="${u.id}">${esc(u.name.replace(/（.*/, '').slice(0, 4))}</span>`).join('<i>›</i>')}</div>`;
   $('foes').innerHTML = B.units.filter(u => u.side === 1).map(card).join(''); $('party').innerHTML = B.units.filter(u => u.side === 0).map(card).join('');
-  let k = B.log.length - 1; while (k > 0 && !B.log[k].includes('class="rd"')) k--; const start = Math.max(0, B.log.length - 12);
-  $('bfeed').innerHTML = B.log.slice(start).map((h, i) => /class="bt"/.test(h) ? '' : `<div class="ln ${start + i < k ? 'old' : ''}">${h}</div>`).join(''); $('bfeed').scrollTop = $('bfeed').scrollHeight;
+  let k = B.log.length - 1; while (k > 0 && !B.log[k].includes('class="rd"')) k--; const start = Math.max(0, B.log.length - 12), g0 = B.lc - B.log.length;
+  const tut = !C.seen.tut1 && NETROLE !== 'guest' ? `<div class="tut"><b>怎么打</b>：敌人卡片下面写着它<b>下回合要做什么</b>。<br>出现 <b class="warn">⚠</b> 说明它要放大招——点<b>防御</b>能减半；把它<b>打晕</b>或<b>打中弱点</b>能直接打断。<br>先点敌人卡片选目标，再点宝术。石昊出完招，轮到灵兽伙伴。<button class="sb" onclick="C.seen.tut1=1;save();renderBattle(true)">知道了</button></div>` : '';
+  $('bfeed').innerHTML = tut + B.log.slice(start).map((h, i) => /class="bt"/.test(h) ? '' : `<div class="ln ${start + i < k ? 'old' : ''} ${g0 + start + i >= UI.reveal ? 'pend' : ''}" data-g="${g0 + start + i}">${h}</div>`).join(''); $('bfeed').scrollTop = $('bfeed').scrollHeight;
   const fresh = B.log.slice(STATE.shownFor === B.id ? STATE.shown : 0); for (const h of fresh) logLine(h, 'bat'); STATE.shown = B.log.length; STATE.shownFor = B.id;
-  if (fresh.length && B.fx) sfx(B.fx); renderBattleActs();
-  if (C.auto && NETROLE !== 'guest' && me_ && me_.alive && !B.acts[me_.id] && !B.over && !stOf(me_, 'stun')) { clearTimeout(UI.autoT); UI.autoT = setTimeout(() => { if (STATE.battle === B && !B.acts[me_.id] && !B.over) battleAct(botAct(B, me_)); }, window.__dbg && __dbg.instant ? 0 : SET.fast ? 150 : 700); }
+  if (fresh.length && B.fx && !play) sfx(B.fx); if (!C.seen.tut2 && B.units.some(u => u.releasing && u.side) && NETROLE !== 'guest') { C.seen.tut2 = 1; logLine('【指引】敌人头上出现 ⚠：它这回合要放大招。防御能减半；把它打晕、或者打中它的弱点，能直接打断。', 'tip'); toast('⚠ 大招要来了：防御，或者打断它'); }
+  renderBattleActs(cur); if (play) fxPlay(B); else if (B.over && animLeft() === 0) fxStamp(B);
+  if (C.auto && NETROLE !== 'guest' && me_ && me_.alive && !B.acts[me_.id] && !B.over) { clearTimeout(UI.autoT); UI.autoT = setTimeout(function tick() { if (STATE.battle !== B || B.acts[me_.id] || B.over) return; if (animLeft() > 0) { UI.autoT = setTimeout(tick, animLeft() + 30); return; } battleAct(botAct(B, me_)); }, window.__dbg && __dbg.instant ? 0 : Math.max(animLeft() + 200, SET.fast ? 150 : 650)); }
 }
 function selFoe(id) { UI.selFoe = id; sfx('click'); renderBattle(true); }
-function renderBattleActs() {
+function renderBattleActs(cur) {
   const B = STATE.battle, A = $('bacts'); if (!B) return; const u = B.units.find(x => x.kind === 'pc');
   if (B.over) { A.innerHTML = `<div class="wait" style="color:#ffcfb8">${B.win ? '赢了！' : B.fled ? '跑掉了' : '……'}</div>`; return; }
-  if (!u || !u.alive) { A.innerHTML = '<div class="wait">……</div>'; return; }
+  if (!cur) { A.innerHTML = `<div class="wait">${C.auto ? '🤖 自动战斗中…… <button class="ab sm q" onclick="toggleAuto()">停下</button>' : '……'}</div>`; return; }
+  if (cur.pet) { const mv = petMoves(cur); A.innerHTML = `<div class="who-turn">${PETS[cur.mob].icon} <b>${esc(cur.name)}</b> 的回合 <span class="dim">· 选它的本事${UI.selFoe ? '' : '（单体的先点敌人选目标）'}</span></div><div class="arow">${mv.map(({ s, i }) => `<button class="skb pet" onclick="battleAct({psk:${i},tgt:UI.selFoe},'pet')"><span class="i">${s.healAlly ? '💚' : s.shieldAll ? '🛡️' : s.aoe ? '💥' : s.st && s.st.k === 'stun' ? '💫' : '🐾'}</span>${s.n}<span class="c">${s.aoe ? '群体' : s.healAlly ? '治疗' : s.shieldAll ? '护盾' : '单体'}${s.el ? EL[s.el].i : ''}</span></button>`).join('')}<button class="skb pet" onclick="battleAct({guard:1},'pet')"><span class="i">🛡️</span>防御<span class="c">伤害减半</span></button></div>
+      <div class="arow"><button class="ab sm" onclick="battleUndo()">‹ 重选石昊</button><button class="ab sm ${C.auto ? 'q' : ''}" onclick="toggleAuto()">🤖 自动</button></div>`; return; }
   const sk = u.sk.map(id => { const S = SKILLS[id], cd = u.cd[id] || 0, no = u.mp < S.mp, pl = profLevel(id); return `<button class="skb" ${cd || no ? 'disabled' : ''} onclick="pickSkill('${id}')" title="${esc(S.desc)}"><span class="i">${S.icon}</span>${S.name}${S.mp ? `<span class="c">${S.mp}</span>` : ''}${pl ? `<span class="pf">${PROF[pl].s}</span>` : ''}${cd ? `<span class="cd">${cd}</span>` : ''}</button>`; }).join('');
-  const heal = ['milk', 'herb', 'meat', 'lingyao', 'baoyao'].filter(i => itemN(i));
-  A.innerHTML = `<div class="arow">${sk}</div><div class="arow">${heal.map(i => `<button class="ab sm" onclick="battleAct({item:'${i}'})">${ITEMS[i].icon}${itemN(i)}</button>`).join('')}
-    <button class="ab sm" onclick="battleAct({flee:1})" ${B.flee ? '' : 'disabled'}>🏃 跑</button><button class="ab sm ${C.auto ? 'q' : ''}" onclick="toggleAuto()">🤖 ${C.auto ? '自动中' : '自动'}</button></div>`;
+  const heal = ['milk', 'herb', 'meat', 'lingyao', 'baoyao'].filter(i => itemN(i)); const swaps = B.noPet ? [] : Object.keys(C.pets).filter(id => id !== C.pet);
+  A.innerHTML = `<div class="who-turn">🧒 <b>石昊</b> 的回合</div><div class="arow">${sk}</div><div class="arow">${canCrush(B) ? `<button class="ab sm q" onclick="battleAct({crush:1})">👊 一拳解决</button>` : ''}${heal.map(i => `<button class="ab sm" onclick="battleAct({item:'${i}'})">${ITEMS[i].icon}${itemN(i)}</button>`).join('')}
+    ${swaps.map(id => `<button class="ab sm" onclick="battleAct({swap:'${id}'})" title="换${PETS[id].name}上场">⇄${PETS[id].icon}</button>`).join('')}<button class="ab sm" onclick="battleAct({flee:1})" ${B.flee ? '' : 'disabled'}>🏃 跑</button><button class="ab sm ${C.auto ? 'q' : ''}" onclick="toggleAuto()">🤖 ${C.auto ? '自动中' : '自动'}</button></div>`;
 }
 function pickSkill(id) { battleAct({ sk: id, tgt: SKILLS[id].tgt === 'enemy' ? UI.selFoe : null }); }
 function toggleAuto() { C.auto = !C.auto; save(); renderBattle(true); netSync(); }

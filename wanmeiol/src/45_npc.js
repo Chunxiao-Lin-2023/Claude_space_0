@@ -91,23 +91,28 @@ function npcTick() { if (!C || STATE.mode !== 'play' || NETROLE === 'guest' || S
   const L = chatterFor(C.loc).filter(c => !lastChat[CHATTER.indexOf(c)] || now() - lastChat[CHATTER.indexOf(c)] > 300000); if (L.length) npcSay(pick(L)); }
 function npcRumor(text) { const P = PLACES[C.loc]; const who = P.area === 'shicun' ? NPCS.linhu : P.area === 'butian' ? NPCS.gezhu : P.area === 'baiduan' ? NPCS.huolinger : null; logLine(who ? `<span class="who">${who.name}</span>${text}` : '【传闻】' + text, 'npc'); }
 function npcTalk(id) { // clicking a person: their quest or side errand, otherwise a line that fits right now
-  if (STATE.scene || STATE.battle) return; const opts = questTalkOptions(id); const lines = chatterFor(C.loc).filter(c => c.who === id);
+  if (STATE.scene || STATE.battle) return; const opts = talkOptions(id); const lines = chatterFor(C.loc).filter(c => c.who === id);
   const fallback = { chief: '去玩吧，别跑太远。', willow: '（柳枝静静垂着。）', linhu: '弓要常擦，箭要常磨。', dazhuang: '小不点，下回进山带上我！', ermeng: '嘿嘿。', pihou: '你看你看，我又能多翻一个跟头了！', qingfeng: C.story.f.qfIn ? '内门的饭比外门的好吃。……你别告诉别人我说的。' : '……嗯。', guiye: '……', gezhu: '好好修行。', libelder: '书别弄脏了。', huolinger: '看什么看？' }[id] || '……';
-  runScene(async () => { await say(id, lines.length ? pick(lines).t : fallback); if (opts.length) { const c = await choose([...opts.map(o => ({ t: o.t })), { t: '没事了' }]); if (c < opts.length) setTimeout(() => opts[c].f(), 0); } });
+  runScene(async () => { await say(id, lines.length ? pick(lines).t : fallback); if (opts.length) { const c = await choose([...opts.map(o => ({ t: o.t, dis: !!o.dis })), { t: '没事了' }]); if (c < opts.length) setTimeout(() => opts[c].f(), 0); } });
 }
+function talkOptions(id) { return [...questTalkOptions(id), ...bountyOptions(id), ...tradeOptions(id), ...(id === 'willow' && C.dt.length ? [{ t: '🔄 重开一座洞天（灵药 ×1）', dis: !itemN('lingyao'), f: dongtianRedo }] : [])]; }
+const npcMark = id => questTalkOptions(id).length ? ' ❗' : bountyToday().some(b => b.npc === id && (b.st === 'new' || (b.st === 'on' && bountyReady(b)))) ? ' 📋' : '';
 
 /* ---------- 虚神界 ladder: the young geniuses of every clan ---------- */
 const RIVAL_NAMES = ['石毅（重瞳）', '火灵儿', '云曦', '金乌族少年', '雷族少年', '赤龙族少年', '天角蚁族少年', '孔雀族少女', '白虎族少年', '羽族天才', '风族少年', '雨族少年', '战王族少年', '狰族少年', '玄龟族少年', '紫金鼠族少年', '石国皇子', '火国少年', '雷国少年', '风国少女', '青鳞鹰族少年', '狈族少年', '山猿族少年', '蛇族少女', '金翅族少年'];
 function rivalAt(rank) { const r = srng('rv' + rank); const name = rank <= RIVAL_NAMES.length ? RIVAL_NAMES[rank - 1] : RIVAL_NAMES[Math.floor(r() * RIVAL_NAMES.length)].replace(/少年|少女|天才/, '') + '·' + '甲乙丙丁戊己庚辛壬癸'[rank % 10] + '号';
-  const lv = clamp(C.lv + Math.round((60 - rank) / 28), 1, 25); const sks = [['qly'], ['sn'], ['qly', 'sn'], ['lei'], ['sn', 'lei'], ['gw', 'qly'], ['jian', 'lei']][Math.floor(r() * 7)];
-  return { rank, name, lv, gear: 0.85 + Math.max(0, 100 - rank) / 100 * 0.35, sk: sks, icon: ['🧑', '👦', '👧', '🦁', '🐉', '🦅'][Math.floor(r() * 6)] }; }
+  const lv = clamp(C.lv + Math.round((60 - rank) / 28), 1, 25); let sks = [['qly'], ['sn'], ['qly', 'sn'], ['lei'], ['sn', 'lei'], ['gw', 'qly'], ['jian', 'lei']][Math.floor(r() * 7)]; if (rank <= 20) sks = [...new Set([...sks, ...[['jian', 'ta'], ['dsh', 'lei'], ['sn', 'jian']][rank % 3]])];
+  if (rank === 1) return { rank, name, lv: lv + 1, gear: 1.35, sk: ['sn', 'lei', 'jian', 'qly'], icon: '👁️', shiyi: 1 };
+  return { rank, name, lv, gear: 0.85 + Math.max(0, 100 - rank) / 100 * 0.35 + (rank <= 20 ? 0.08 : 0), sk: sks, icon: ['🧑', '👦', '👧', '🦁', '🐉', '🦅'][Math.floor(r() * 6)] }; }
 function arenaDaily() { const d = today(); if (C.arena.day !== d) { C.arena.day = d; C.arena.tries = BAL.arenaTries; } }
 function arenaRank() { if (!C.arena.rank) C.arena.rank = 120; return C.arena.rank; }
 function arenaOpponents() { const r = arenaRank(), seed = srng('ao' + today() + r + C.arena.wins), out = []; const span = Math.max(3, Math.min(30, Math.round(r * 0.3)));
   const ranks = new Set(); while (ranks.size < 3 && ranks.size < r - 1) ranks.add(Math.max(1, r - 1 - Math.floor(seed() * span))); return [...ranks].sort((a, b) => b - a).map(rivalAt); }
 async function arenaFight(o) {
   arenaDaily(); if (C.arena.tries <= 0) { toast('今天打累了，明天再来'); return; } C.arena.tries--; fullHeal(); closeModal();
+  if (o.shiyi) logLine('石毅的两个瞳孔一起转了过来。<b>重瞳</b>：同一门宝术连着对他用，会被他看穿（伤害减半）。', 'tip');
   const r = await startBattle({ rivals: [o], title: `虚神界 · 挑战第 ${o.rank} 名 ${o.name}`, noLose: true, flee: false, arena: 1, noPet: true });
+  if (r && r.win && o.shiyi && !C.story.f.shiyiWin) { C.story.f.shiyiWin = 1; setTimeout(() => runScene(async () => { await nar('光幕上，你的名字压过了那个带着“重瞳”二字的名字。'); await say('石毅', '……第一，你先拿着。'); await nar('他转身走进了光里，没有回头。你胸口的疤，又跳了一下。'); }, { title: '登顶' }), 900); }
   fullHeal(); if (r && r.win) { C.arena.wins++; const old = C.arena.rank; if (o.rank < old) C.arena.rank = o.rank; logLine(`虚神界排名 ${old > 100 ? '榜外' : old} → <b>${C.arena.rank}</b>`, 'sys'); arenaMilestones(); storyArena(); }
   else logLine('输了。光幕上你的名字没动。', 'dim'); save(); refresh();
 }

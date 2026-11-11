@@ -20,7 +20,7 @@ const { chromium } = require('playwright'); const PJ = require('fs').readFileSyn
   // battle mirrored
   await H.evaluate(() => { __dbg.takeControl(); __dbg.go('dh_forest', true, true); __dbg.startBattle({ mobs: [['boar', 1]], title: '联机测试' }); }); await G.waitForFunction(() => !!__dbg.STATE.battle, null, { timeout: 5000 }); console.log('guest sees battle');
   await G.evaluate(() => __dbg.takeControl()); await H.waitForFunction(() => __dbg.NET.ctrl !== 'host'); await G.waitForTimeout(300);
-  for (let i = 0; i < 20; i++) { if (!(await H.evaluate(() => !!__dbg.STATE.battle))) break; await G.evaluate(() => { const b = document.querySelector('#bacts .skb:not([disabled])'); if (b) b.click(); }); await G.waitForTimeout(250); }
+  for (let i = 0; i < 80; i++) { if (!(await H.evaluate(() => !!__dbg.STATE.battle))) break; await G.evaluate(() => { const b = document.querySelector('#bacts .skb:not([disabled])'); if (b) b.click(); }); await G.waitForTimeout(250); }
   console.log('battle finished by guest clicks:', !(await H.evaluate(() => !!__dbg.STATE.battle)));
   const hl = await H.evaluate(() => document.getElementById('log').children.length), gl = await G.evaluate(() => document.getElementById('log').children.length); console.log('log lines host/guest', hl, gl);
   // 骨文 game: host starts it, guest (in control) taps the runes in order on its own screen

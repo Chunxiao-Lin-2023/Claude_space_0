@@ -33,14 +33,14 @@ const SKILLS = {
   guard: { name: '防御', icon: '🛡️', mp: 0, cd: 0, tgt: 'self', self: [{ k: 'guard', t: 1, v: 0.5 }], mpBack: 0.12, desc: '本回合受到伤害减半，回复 12% 符力。' },
   qly: { name: '青鳞鹰宝术', icon: '🦅', got: 'sk_qly', mp: 8, cd: 1, tgt: 'enemy', dmg: 1.8, hits: 2, st: [{ k: 'bleed', t: 2, v: 0.25, p: 0.5 }], desc: '鹰爪符文覆在手上，连抓两下，共 1.8 倍伤害，可能流血。' },
   sn: { name: '狻猊宝术', icon: '🦁', got: 'sk_sn', mp: 14, cd: 3, tgt: 'enemy', dmg: 2.3, st: [{ k: 'stun', t: 1, p: 0.35 }], desc: '狻猊之力灌满全身，一击 2.3 倍伤害，35% 击晕。' },
-  gw: { name: '骨文·缚', icon: '📿', got: 'sk_gw', mp: 10, cd: 3, tgt: 'enemies', dmg: 0.5, mag: 1, el: 'bone', st: [{ k: 'weak', t: 2, v: 0.25, p: 0.8 }], desc: '以骨文结成锁链，全体 0.5 倍伤害，并让他们虚弱（攻击 -25%）。残魂最怕它。' },
-  lei: { name: '雷道', icon: '⚡', got: 'sk_lei', mp: 20, cd: 3, tgt: 'enemies', dmg: 1.4, mag: 1, el: 'lei', st: [{ k: 'stun', t: 1, p: 0.22 }], desc: '在补天阁悟出的雷道法则：雷光四射，全体 1.4 倍伤害，无视一半防御。雨族怕雷。' },
+  gw: { name: '骨文·缚', icon: '📿', got: 'sk_gw', mp: 10, cd: 3, tgt: 'enemies', dmg: 0.5, mag: 1, el: 'bone', st: [{ k: 'weak', t: 2, v: 0.25, p: 0.8 }], desc: '以骨文结成锁链，全体 0.5 倍伤害，让他们虚弱（攻击 -25%）；被锁住的敌人，下一次挨的拳脚、爪击伤害 +30%。残魂最怕它。' },
+  lei: { name: '雷道', icon: '⚡', got: 'sk_lei', mp: 20, cd: 3, tgt: 'enemies', dmg: 1.4, mag: 1, el: 'lei', st: [{ k: 'stun', t: 1, p: 0.22 }], desc: '在补天阁悟出的雷道法则：雷光四射，全体 1.4 倍伤害，无视一半防御；劈在被打晕的敌人身上 ×1.25。雨族怕雷。' },
   dsh: { name: '打神石', icon: '🪨', got: 'sk_dsh', mp: 16, cd: 4, tgt: 'enemy', dmg: 2.6, pierce: 1, el: 'blunt', desc: '从百断山捡来的怪石，砸出去完全无视防御，2.6 倍伤害。专砸硬壳。' },
-  jian: { name: '锈剑', icon: '🗡️', got: 'sk_jian', mp: 18, cd: 3, tgt: 'enemy', dmg: 2.1, mag: 1, st: [{ k: 'bleed', t: 3, v: 0.4, p: 1 }], desc: '诡爷那柄生锈的古剑，剑意犹在：2.1 倍伤害并重创流血。' },
+  jian: { name: '锈剑', icon: '🗡️', got: 'sk_jian', mp: 18, cd: 3, tgt: 'enemy', dmg: 2.1, mag: 1, st: [{ k: 'bleed', t: 3, v: 0.4, p: 1 }], desc: '诡爷那柄生锈的古剑，剑意犹在：2.1 倍伤害并重创流血；砍在已经流血的敌人身上 ×1.35。' },
   ta: { name: '小塔', icon: '🗼', got: 'sk_ta', mp: 22, cd: 5, tgt: 'allies', shield: 1.6, desc: '那座只有四层的小塔垂下光幕，全队获得 1.6 倍攻击的护盾。' },
 };
 const SKILL_ORDER = ['qly', 'sn', 'gw', 'lei', 'dsh', 'jian', 'ta'];
-const STATUS = { stun: { n: '眩晕', c: '#ffd34a' }, bleed: { n: '流血', c: '#ff6a6a' }, burn: { n: '灼烧', c: '#ff8a3a' }, poison: { n: '中毒', c: '#9ad84a' }, def: { n: '坚守', c: '#ffd28a' }, taunt: { n: '嘲讽', c: '#ffb36a' }, atk: { n: '凶性', c: '#ff9a6a' }, dodge: { n: '灵动', c: '#9ad8ff' }, sure: { n: '必暴', c: '#ffe46a' }, shield: { n: '护盾', c: '#9ae8b0' }, guard: { n: '防御', c: '#c8c0b0' }, weak: { n: '虚弱', c: '#b0a0ff' }, freeze: { n: '冰封', c: '#9ad8ff' }, rage: { n: '狂怒', c: '#ff4a2a' } };
+const STATUS = { stun: { n: '眩晕', c: '#ffd34a' }, bleed: { n: '流血', c: '#ff6a6a' }, burn: { n: '灼烧', c: '#ff8a3a' }, poison: { n: '中毒', c: '#9ad84a' }, def: { n: '坚守', c: '#ffd28a' }, taunt: { n: '嘲讽', c: '#ffb36a' }, atk: { n: '凶性', c: '#ff9a6a' }, dodge: { n: '灵动', c: '#9ad8ff' }, sure: { n: '必暴', c: '#ffe46a' }, shield: { n: '护盾', c: '#9ae8b0' }, guard: { n: '防御', c: '#c8c0b0' }, weak: { n: '虚弱', c: '#b0a0ff' }, bound: { n: '锁链', c: '#d8b070' }, freeze: { n: '冰封', c: '#9ad8ff' }, rage: { n: '狂怒', c: '#ff4a2a' } };
 
 /* ---------- 功法 / 修炼所得 (passive) ---------- */
 const GONGFA = {
@@ -61,19 +61,19 @@ const DONGTIAN = [
 /* ---------- pets (from the novel) ----------  stats are multiples of 石昊's at the same level */
 const PETS = {
   maoqiu: { name: '毛球', race: '朱厌幼崽', role: '输出', icon: '🐒', desc: '在旧村废墟里捡到的金毛小猴，伤好了以后赖着不走。它其实是争夺山宝的四大至尊之一——朱厌。', mul: { hp: 0.75, atk: 0.8, def: 0.8, spd: 1.15 },
-    sk: [{ n: '金爪', dmg: 1.15, w: 3 }, { n: '连环爪', dmg: 1.6, w: 2, aff: 40 }, { n: '撼山', dmg: 2.3, el: 'blunt', w: 1, aff: 80 }] },
+    sk: [{ n: '金爪', dmg: 1.15, w: 3 }, { n: '连环爪', dmg: 1.6, w: 2, aff: 40 }, { n: '撼山', dmg: 2.3, el: 'blunt', w: 1, aff: 80 }, { n: '朱厌之怒', dmg: 1.3, aoe: 1, st: { k: 'weak', t: 2, v: 0.2, p: 0.7 }, w: 2, evo: 1 }] },
   dahong: { name: '大红', race: '大红鸟', role: '群攻', icon: '🐦', desc: '百断山里一只脾气暴躁的大红鸟。你想吃它，它想啄你，打了好几架以后，它认了你当老大。', mul: { hp: 0.7, atk: 0.8, def: 0.7, spd: 1.4 },
-    sk: [{ n: '啄击', dmg: 0.95, w: 2 }, { n: '火羽', dmg: 0.7, aoe: 1, el: 'fire', st: { k: 'burn', t: 2, v: 0.25, p: 0.5 }, w: 3 }, { n: '烈焰俯冲', dmg: 1.2, aoe: 1, el: 'fire', w: 1, aff: 60 }] },
+    sk: [{ n: '啄击', dmg: 0.95, w: 2 }, { n: '火羽', dmg: 0.7, aoe: 1, el: 'fire', st: { k: 'burn', t: 2, v: 0.25, p: 0.5 }, w: 3 }, { n: '烈焰俯冲', dmg: 1.2, aoe: 1, el: 'fire', w: 1, aff: 60 }, { n: '赤焰风暴', dmg: 1.4, aoe: 1, el: 'fire', st: { k: 'burn', t: 3, v: 0.3, p: 0.8 }, w: 2, evo: 1 }] },
   ertuzi: { name: '二秃子', race: '孔雀一族', role: '控制 · 治疗', icon: '🐣', desc: '百断山捡到的一颗蛋孵出来的小鸟，一根毛都没有。别看它秃，它是孔雀一族。', mul: { hp: 0.55, atk: 0.65, def: 0.6, spd: 1.2 },
-    sk: [{ n: '啄', dmg: 0.85, w: 2 }, { n: '五色神光', dmg: 1, mag: 1, st: { k: 'stun', t: 1, p: 0.4 }, w: 2 }, { n: '五色护体', healAlly: 0.2, w: 2 }, { n: '五色屏障', shieldAll: 0.9, w: 1, aff: 60 }] },
+    sk: [{ n: '啄', dmg: 0.85, w: 2 }, { n: '五色神光', dmg: 1, mag: 1, st: { k: 'stun', t: 1, p: 0.4 }, w: 2 }, { n: '五色护体', healAlly: 0.2, w: 2 }, { n: '五色屏障', shieldAll: 0.9, w: 1, aff: 60 }, { n: '五色神光·满', dmg: 0.8, mag: 1, aoe: 1, st: { k: 'stun', t: 1, p: 0.3 }, w: 2, evo: 1 }] },
 };
 
 /* ---------- items ---------- */
 const ITEMS = {
   milk: { name: '兽奶', type: 'use', icon: '🥛', heal: 0.2, food: 6, desc: '石村特产。回复 20% 气血。小不点最爱，偷喝的更香。' },
   herb: { name: '止血草', type: 'use', icon: '🌱', heal: 0.3, desc: '嚼碎了敷上。回复 30% 气血。' },
-  meat: { name: '凶兽肉', type: 'use', icon: '🍖', heal: 0.25, mp: 0.1, food: 10, desc: '烤得滋滋冒油。回复 25% 气血、10% 符力，宠物也爱吃。' },
-  lingyao: { name: '灵药', type: 'use', icon: '🌿', mp: 0.45, food: 15, desc: '回复 45% 符力。给宠物吃能长不少亲近。' },
+  meat: { name: '凶兽肉', type: 'use', icon: '🍖', heal: 0.25, mp: 0.1, food: 10, desc: '烤得滋滋冒油。回复 25% 气血、10% 符力，灵兽伙伴也爱吃。' },
+  lingyao: { name: '灵药', type: 'use', icon: '🌿', mp: 0.45, food: 15, desc: '回复 45% 符力。给灵兽伙伴吃能长不少亲近。' },
   baoyao: { name: '宝药', type: 'use', icon: '🔮', heal: 0.7, mp: 0.3, food: 25, desc: '族长珍藏的宝药。回复 70% 气血、30% 符力。' },
   taiyi: { name: '太一真水', type: 'gf', icon: '💧', gf: 'taiyi', desc: '一滴传说中的真水。饮下后永久提升（功法）。' },
   bulao: { name: '不老泉水', type: 'gf', icon: '⛲', gf: 'bulao', desc: '不老泉的泉水。饮下后永久提升（功法）。' },
@@ -81,7 +81,7 @@ const ITEMS = {
   peaegg: { name: '奇怪的蛋', type: 'key', icon: '🥚', desc: '百断山里捡的蛋，揣在怀里暖着。好像快孵出来了。' },
   butianshi: { name: '补天石', type: 'key', icon: '💠', desc: '补天阁收徒的信物。' },
   heilian: { name: '黑莲', type: 'key', icon: '🖤', desc: '从虎穴里偷出来的黑色莲花。' },
-  bone: { name: '兽骨', type: 'mat', icon: '🦴', food: 4, desc: '带着淡淡符文的兽骨，宠物喜欢啃。' },
+  bone: { name: '兽骨', type: 'mat', icon: '🦴', food: 4, desc: '带着淡淡符文的兽骨，灵兽伙伴喜欢啃。' },
 };
 
 /* ---------- beasts & foes ---------- */
@@ -98,7 +98,7 @@ const MOBS = {
   tombbat: { name: '墓穴蝠群', lv: 5, weak: { fire: 1 }, mul: { hp: 0.7, atk: 0.95, spd: 1.6 }, sk: [{ n: '吸血', dmg: 0.9, leech: 0.5, w: 3 }], loot: [], d: '一大群挤在一起的蝙蝠，见了火就乱。' },
   suanni: { name: '狻猊残魂', lv: 6, boss: 1, weak: { bone: 1 }, mul: { hp: 3.8, atk: 1.25, def: 1.3 }, sk: [{ n: '狻猊爪', dmg: 1.1, w: 3 }, { n: '狻猊吼', dmg: 0.7, aoe: 1, st: { k: 'stun', t: 1, p: 0.25 }, w: 2 }, { n: '吞天一口', dmg: 2.3, w: 1, charge: 1 }], loot: [['baoyao', 1]], p2: '狻猊残魂发出一声震动墓穴的长吼，干枯的身体里重新燃起了凶光！', d: '死了不知多少年，魂还守着自己的骨头。它在等一个配得上它宝术的人。' },
   beihunter: { name: '狈村猎手', lv: 6, mul: { hp: 1.1, atk: 1.1 }, sk: [{ n: '骨箭', dmg: 1.05, w: 3 }, { n: '淬毒箭', dmg: 0.85, st: { k: 'poison', t: 3, v: 0.3, p: 0.8 }, w: 1 }], loot: [['herb', 0.3], ['bone', 0.3]], d: '狈村的人，箭上喜欢抹毒。' },
-  fengbei: { name: '风狈', lv: 7, boss: 1, mul: { hp: 3.4, atk: 1.25, def: 1.1, spd: 1.5 }, sk: [{ n: '风刃', dmg: 1.1, mag: 1, w: 3 }, { n: '卷地狂风', dmg: 0.8, aoe: 1, w: 2 }, { n: '狈祖附体', buff: { k: 'atk', t: 3, v: 0.35 }, w: 1 }], loot: [['baoyao', 0.6]], p2: '风狈咬破舌尖，喷出一口血雾——狈祖图腾在他背后亮了起来！', d: '狈村这一代最出挑的少年，脸上涂着狈祖图腾。' },
+  fengbei: { name: '风狈', lv: 7, boss: 1, mul: { hp: 3.4, atk: 1.25, def: 1.1, spd: 1.5 }, sk: [{ n: '风刃', dmg: 1.1, mag: 1, w: 3 }, { n: '卷地狂风', dmg: 0.8, aoe: 1, w: 2 }, { n: '狈祖附体', buff: { k: 'atk', t: 3, v: 0.25 }, w: 1 }], loot: [['baoyao', 0.6]], p2: '风狈咬破舌尖，喷出一口血雾——狈祖图腾在他背后亮了起来！', d: '狈村这一代最出挑的少年，脸上涂着狈祖图腾。' },
   lielao: { name: '狈村·烈老', lv: 10, boss: 1, mul: { hp: 5, atk: 1.6, def: 1.6 }, sk: [{ n: '枯骨掌', dmg: 1.3, w: 3 }, { n: '祭灵之力', dmg: 2.4, w: 1, charge: 1 }], loot: [], nocodex: 1 },
   leopard: { name: '赤豹', lv: 7, mul: { hp: 1, atk: 1.15, spd: 1.5 }, sk: [{ n: '利爪', dmg: 1, st: { k: 'bleed', t: 2, v: 0.25, p: 0.4 }, w: 3 }], loot: [['meat', 0.5]], d: '大荒深处跑得最快的东西之一，爪子一划就是一道血口。' },
   python: { name: '巨蟒', lv: 8, mul: { hp: 1.6, atk: 1 }, sk: [{ n: '缠绕', dmg: 0.8, st: { k: 'stun', t: 1, p: 0.3 }, w: 2 }, { n: '吞噬', dmg: 1.5, w: 1, charge: 1 }], loot: [['meat', 0.5]], d: '水桶粗的蟒蛇，被它缠上就动不了。' },
@@ -122,6 +122,7 @@ const MOBS = {
   boneking: { name: '天骨巨兽残魂', lv: 17, boss: 1, weak: { bone: 1 }, mul: { hp: 4.6, atk: 1.3, def: 1.4 }, sk: [{ n: '骨爪', dmg: 1.15, w: 3 }, { n: '骨刺林', dmg: 0.85, aoe: 1, w: 2 }, { n: '天骨镇压', dmg: 2.4, mag: 1, w: 1, charge: 1 }], loot: [['baoyao', 1], ['bone', 1]], p2: '骨架上的符文一起亮了起来，残魂发出一声不属于这个时代的怒吼！', d: '一副山一样大的骨架里残留的魂，还记得自己活着时有多凶。' },
   pumo: { name: '蒲魔树', lv: 18, boss: 1, weak: { fire: 1 }, mul: { hp: 5, atk: 1.3, def: 1.5, spd: 0.8 }, sk: [{ n: '藤鞭', dmg: 1.1, w: 3 }, { n: '迷幻种子', dmg: 0.6, aoe: 1, st: { k: 'weak', t: 2, v: 0.3, p: 0.7 }, w: 2 }, { n: '吞噬', dmg: 2.2, leech: 0.5, w: 1, charge: 1 }], loot: [], p2: '蒲魔树的树皮裂开，露出一张张扭曲的脸，花粉像雪一样落下！', d: '花果山上会吃人的树，花粉让人看见最想见的人。怕火。根是甜的。' },
   monkeyking: { name: '神猴王', lv: 22, boss: 1, mul: { hp: 9, atk: 1.6, def: 1.8, spd: 1.4 }, sk: [{ n: '以山为锤', dmg: 1.3, aoe: 1, w: 3 }, { n: '灵湖阵', dmg: 0.6, aoe: 1, st: { k: 'stun', t: 1, p: 0.4 }, w: 1 }], loot: [], p2: '神猴王把半座山扛上了肩，灵湖翻涌！', d: '花果山的主人，拿山当锤子。你偷了它的桃。' },
+  leishou: { name: '雷池古兽', lv: 20, boss: 1, weak: { blunt: 1 }, mul: { hp: 5.5, atk: 1.35, def: 1.5, spd: 1.1 }, sk: [{ n: '雷鳞', dmg: 1.1, mag: 1, w: 3 }, { n: '紫雷落地', dmg: 0.9, aoe: 1, mag: 1, st: { k: 'stun', t: 1, p: 0.25 }, w: 2 }, { n: '万雷归一', dmg: 2.5, mag: 1, w: 1, charge: 1 }], loot: [['baoyao', 2]], p2: '雷池古兽仰天一吼，整片雷池的电光都朝它涌了过去！', d: '压在雷池底下的上古雷兽，鳞甲比铜傀儡还硬。补天阁的雷池，就是借它的雷养出来的。' },
   peach: { name: '护桃灵猴', lv: 17, mul: { hp: 1.2, atk: 1.15, spd: 1.5 }, sk: [{ n: '抓挠', dmg: 1, w: 3 }], loot: [['herb', 0.3]], d: '花果山的猴子，见了生人就扑，专挠脸。' },
   // roaming 凶兽首领 (level set when they appear)
   r_rhino: { name: '独角兕', boss: 1, roam: 1, weak: { blunt: 1 }, mul: { hp: 6, atk: 1.25, def: 1.6, spd: 0.8 }, sk: [{ n: '践踏', dmg: 0.9, aoe: 1, w: 3 }, { n: '撼地冲锋', dmg: 2.3, w: 1, charge: 1 }], loot: [['baoyao', 1], ['meat', 1]], p2: '独角兕的独角开始发光，脚下的地面寸寸龟裂！', d: '到处游荡的凶兽首领，一身甲壳刀枪不入，只怕重砸。' },

@@ -4,13 +4,13 @@ const SAVE_V = 2;
 function newChar() {
   return { v: SAVE_V, name: '石昊', lv: 1, exp: 0, hp: 1, mp: 1, loc: 'sc_chief', home: 'sc_street', bag: { milk: 2 },
     sk: [], bar: [], gf: ['yingxia'], dt: [], pets: {}, pet: null, story: { q: 0, n: 0, f: {} }, kills: {}, stats: { kills: 0, deaths: 0, bosses: 0 },
-    arena: { rank: 0, wins: 0, tries: BAL.arenaTries, day: '', best: 999, got: {}, claimed: '' }, dungeons: {}, auto: false, seen: {}, prof: {}, codex: {}, created: now() };
+    arena: { rank: 0, wins: 0, tries: BAL.arenaTries, day: '', best: 999, got: {}, claimed: '' }, dungeons: {}, auto: false, seen: {}, prof: {}, codex: {}, relics: {}, eq: [], diff: 1, ex: {}, ach: {}, title: '', created: now() };
 }
 function charStats(c = C) {
   const L = c.lv - 1, s = { hpMax: HERO.base.hp + HERO.grow.hp * L, mpMax: HERO.base.mp + HERO.grow.mp * L, atk: HERO.base.atk + HERO.grow.atk * L, def: HERO.base.def + HERO.grow.def * L, spd: HERO.base.spd + HERO.grow.spd * L, crit: HERO.base.crit + HERO.grow.crit * L, leech: 0, regen: 0 };
   const P = { hpP: 0, mpP: 0, atkP: 0, defP: 0 };
   const add = b => { for (const k in b) { if (k in P) P[k] += b[k]; else s[k] = (s[k] || 0) + b[k]; } };
-  for (const g of c.gf) if (GONGFA[g]) add(GONGFA[g].b); for (const k of c.dt) { const d = DONGTIAN.find(x => x.k === k); if (d) add(d.b); }
+  for (const g of c.gf) if (GONGFA[g]) add(GONGFA[g].b); for (const r of c.eq || []) if (RELICS[r] && RELICS[r].b) add(RELICS[r].b); for (const k of c.dt) { const d = DONGTIAN.find(x => x.k === k); if (d) add(d.b); }
   s.hpMax = Math.round(s.hpMax * (1 + P.hpP)); s.mpMax = Math.round(s.mpMax * (1 + P.mpP)); s.atk = Math.round(s.atk * (1 + P.atkP)); s.def = Math.round(s.def * (1 + P.defP)); s.spd = Math.round(s.spd * 10) / 10; s.crit = Math.min(0.6, s.crit);
   s.power = Math.round(s.atk * 6 + s.def * 5 + s.hpMax * 0.6 + s.mpMax * 0.3 + s.crit * 1500 + s.spd * 15 + c.lv * 40);
   return s;
@@ -31,8 +31,8 @@ function gainPet(id) { if (C.pets[id]) return; C.pets[id] = { aff: 10, hatch: 0 
 function setPet(id) { if (!C.pets[id]) return; C.pet = C.pet === id ? null : id; sfx('click'); save(); refresh(); }
 function feedPet(id, item) { const p = C.pets[id], it = ITEMS[item]; if (!p || !it || !it.food || !takeItem(item)) return; const before = p.aff; p.aff = Math.min(100, p.aff + it.food); sfx('heal');
   const P = PETS[id]; logLine(`${P.icon}${P.name} 吃了${it.name}，${pick(['尾巴摇个不停', '高兴得在你身边打转', '吃完还想要', '舔了舔你的手'])}。（亲近 ${before} → ${p.aff}）`, 'dim');
-  for (const s of P.sk) if (s.aff && before < s.aff && p.aff >= s.aff) logLine(`${P.icon}${P.name} 学会了 <b>${s.n}</b>！`, 'sys'); save(); refresh(); }
-const petSkillsOpen = id => PETS[id].sk.filter(s => !s.aff || (C.pets[id] && C.pets[id].aff >= s.aff));
+  for (const s of P.sk) if (s.aff && before < s.aff && p.aff >= s.aff) logLine(`${P.icon}${P.name} 学会了 <b>${s.n}</b>！`, 'sys'); petEvoCheck(id); save(); refresh(); }
+const petSkillsOpen = id => PETS[id].sk.filter(s => (!s.aff || (C.pets[id] && C.pets[id].aff >= s.aff)) && (!s.evo || (C.pets[id] && C.pets[id].evo)));
 
 /* ---------- bag ---------- */
 const itemN = id => C.bag[id] || 0;
@@ -54,7 +54,7 @@ function gainExp(n, quiet) {
     if (C.lv === 9 && !C.story.f.jijing) { C.exp = BAL.expNext(C.lv); if (!C.seen.neck9) { C.seen.neck9 = 1; logLine('你体内的气血像江河一样奔涌，却撞上了一层看不见的壁——<b>搬血境走到头了</b>。要怎么往前走，得看机缘（跟着主线走）。', 'sys'); } break; }
     if (C.lv === 19 && !C.story.f.end) { C.exp = BAL.expNext(C.lv); break; }
     C.exp -= BAL.expNext(C.lv); C.lv++; fullHeal(); sfx('level');
-    logLine(`<b class="lvup">境界精进！</b> ${realmOf(C.lv).name} · 第 ${C.lv} 层。气血、符力已回满。`, 'sys');
+    logLine(`<b class="lvup">境界精进！</b> ${realmOf(C.lv).name} · 第 ${C.lv} 层。气血、符力已回满。`, 'sys'); bigFlash(`境界精进 · ${realmOf(C.lv).name}第 ${C.lv} 层`, 'lv');
     if (C.lv >= 10 && C.lv <= 18 && C.dt.length < C.lv - 9) STATE.dtPending = true;
   }
   if (C.lv >= BAL.lvCap) C.exp = Math.min(C.exp, BAL.expNext(C.lv));
@@ -70,10 +70,11 @@ async function dongtianPick() { // open a 洞天: pick one of two blessings
 
 /* ---------- save ---------- */
 let saveT = 0;
-function save(now_) { if (!C || NETROLE === 'guest') return; clearTimeout(saveT); const f = () => { C.savedAt = now(); C.story.qid = MAIN[C.story.q].id; store.set('save2', C); }; if (now_) f(); else saveT = setTimeout(f, 300); }
+function save(now_) { if (!C || NETROLE === 'guest') return; clearTimeout(saveT); const f = () => { if (!C) return; achCheck(); C.savedAt = now(); C.story.qid = MAIN[C.story.q].id; store.set('save2', C); }; if (now_) f(); else saveT = setTimeout(f, 300); }
 // v2 saves stored only the step index; the step list has grown since, so map old indices through the old order
 const OLD_V2 = ['q_wake', 'q_yard', 'q_wolf0', 'q_wolf', 'q_egg0', 'q_egg', 'q_tomb0', 'q_tomb', 'q_bei', 'q_yaoding', 'q_shanbao', 'q_ruin', 'q_jijing', 'q_memory', 'q_qingfeng', 'q_bandit0', 'q_bandit', 'q_xushen0', 'q_xushen', 'q_leave', 'q_gate', 'q_lotus', 'q_join', 'q_lei', 'q_lib', 'q_baiduan', 'q_bdgate', 'q_lion', 'q_yu', 'q_cliff', 'q_spring', 'q_tiangu', 'q_mount', 'q_return', 'q_end'];
 function fixSave(c) { if (!c || c.v !== SAVE_V) return null; const d = newChar(); for (const k in d) if (c[k] === undefined) c[k] = d[k]; for (const k in d.arena) if (c.arena[k] === undefined) c.arena[k] = d.arena[k];
+  for (const [id, R] of Object.entries(RELICS)) if ((c.kills || {})[R.from] && !c.relics[id]) { c.relics[id] = 1; if (c.eq.length < 2) c.eq.push(id); } // bosses beaten before 宝骨 existed
   const qid = c.story.qid || OLD_V2[c.story.q]; const i = qi(qid); if (i >= 0) c.story.q = i; c.story.q = clamp(c.story.q, 0, MAIN.length - 1); if (!PLACES[c.loc]) c.loc = 'sc_street'; return c; }
 function loadSave() { return fixSave(store.get('save2', null)); }
 /* ---------- 回忆录 (story journal) — kept apart from the save so co-op snapshots stay small ---------- */
