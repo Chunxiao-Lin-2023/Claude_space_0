@@ -20,6 +20,7 @@ const RELICS = {
   r_rhino: { n: '兕角', from: 'r_rhino', i: '🦏', d: '防御 +8%，气血 +5%。', b: { defP: 0.08, hpP: 0.05 } },
   r_snake: { n: '赤鳞', from: 'r_snake', i: '🐍', d: '不会中毒。', sp: { noPoison: 1 } },
   r_bird: { n: '雷翅羽', from: 'r_bird', i: '⚡', d: '雷道的伤害 +20%。', sp: { lei: 0.2 } },
+  r_zhuque: { n: '朱雀真羽', from: '', i: '🔥', d: '火灵儿从小带着的羽毛。攻击 +5%，身法 +2。', b: { atkP: 0.05, spd: 2 } },
   r_leishou: { n: '雷兽心核', from: 'leishou', i: '🔷', d: '符力 +12%，暴击 +3%。', b: { mpP: 0.12, crit: 0.03 } },
 };
 const relicSp = (k, c = C) => (c.eq || []).reduce((s, id) => s + ((RELICS[id] && RELICS[id].sp && RELICS[id].sp[k]) || 0), 0);

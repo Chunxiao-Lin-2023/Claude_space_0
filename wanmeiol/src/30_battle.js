@@ -7,6 +7,7 @@ const ALLY_NPC = {
   a_kids: { name: '大壮和二猛', icon: '👦', mul: { hp: 1.3, atk: 0.6, def: 0.8 }, sk: [{ n: '扔石头', dmg: 0.9, w: 3 }, { n: '一起扑上去', dmg: 0.5, aoe: 1, w: 1 }] },
   a_chief: { name: '石云峰', icon: '👴', mul: { hp: 2.2, atk: 1.2, def: 1.4 }, sk: [{ n: '族长一掌', dmg: 1.1, w: 3 }, { n: '骨文护体', healAlly: 0.2, w: 1 }] },
   a_huo: { name: '火灵儿', icon: '👘', mul: { hp: 1.4, atk: 1.15, def: 1, spd: 1.2 }, sk: [{ n: '火凤翎', dmg: 1.05, el: 'fire', w: 3 }, { n: '焚天火海', dmg: 0.75, aoe: 1, el: 'fire', st: { k: 'burn', t: 2, v: 0.3, p: 0.6 }, w: 1 }] },
+  a_lion: { name: '九头狮（小弟）', icon: '🦁', mul: { hp: 2.2, atk: 1.1, def: 1.3 }, sk: [{ n: '九首噬咬', dmg: 0.55, aoe: 1, w: 2 }, { n: '护大哥', taunt: 2, guard: 1, w: 1 }, { n: '金焰', dmg: 1.05, st: { k: 'burn', t: 2, v: 0.25, p: 0.5 }, w: 2 }] },
   a_eagle: { name: '青鳞小鹰', icon: '🦅', mul: { hp: 1.1, atk: 1.1, def: 0.9, spd: 1.6 }, sk: [{ n: '鳞爪', dmg: 1.05, w: 3 }, { n: '鳞羽', dmg: 0.6, aoe: 1, w: 1 }] },
   a_yunxi: { name: '云曦', icon: '🌙', mul: { hp: 1.3, atk: 1, def: 1 }, sk: [{ n: '月华', dmg: 1, mag: 1, w: 3 }, { n: '清辉', healAlly: 0.18, w: 1 }] },
 };

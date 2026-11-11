@@ -10,7 +10,7 @@ const JUMPS = [
   { q: 'q_baiduan', n: '第四章 · 百断山', lv: 14, exp: 0.4, loc: 'bt_court', sk: { qly: 110, sn: 75, lei: 35, gw: 30 }, pets: { maoqiu: [65, 14] },
     f: { joined: 1, bully: 1, qf: 'spar' }, bag: { herb: 8, meat: 5, lingyao: 4, baoyao: 3, bone: 10 }, money: 260, dt: 5, arena: 60 },
   { q: 'q_end', n: '第一卷 完 · 第二卷之前', lv: 20, exp: 0, loc: 'bt_court', sk: { qly: 170, sn: 125, lei: 95, gw: 60, jian: 45, dsh: 35, ta: 20 }, pets: { maoqiu: [90, 21], dahong: [45, 20], ertuzi: [25, 19] },
-    relics: ['r_lion', 'r_yu', 'r_tiger', 'r_peng', 'r_boneking', 'r_pumo'], dun: ['tiangu'], f: { baiduan: 1, cliff: 1, spring: 1, mount: 1, yunxi: 1, qfIn: 1, end: 1, eggWins: 8 },
+    gf: ['taiyi'], relics: ['r_zhuque', 'r_lion', 'r_yu', 'r_tiger', 'r_peng', 'r_boneking', 'r_pumo'], dun: ['tiangu'], f: { baiduan: 1, lion: 1, cave: 1, yuDone: 1, water: 1, guRegrow: 1, cliff: 1, spring: 1, carrySpring: 1, shengyao: 1, mount: 1, yunxi: 1, sawShiyi: 1, qfIn: 1, end: 1, eggWins: 8 },
     bag: { herb: 10, meat: 6, lingyao: 6, baoyao: 5, bone: 14, bulao: 1, xiantao: 1 }, money: 500, dt: 9, arena: 30 },
 ];
 function jumpTo(i) { if (NETROLE === 'guest' || STATE.battle || STATE.scene) return;

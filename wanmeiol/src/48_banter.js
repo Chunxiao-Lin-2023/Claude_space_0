@@ -54,7 +54,7 @@ RIVAL_SAY.rival.die.push('……回去我就闭关。', '光幕前那么多人�
 RIVAL_SAY.shiyi.open.push('你的名字，我在光幕上见过很多次了。', '……你很像一个人。');
 RIVAL_SAY.shiyi.hit = ['……看清楚了。', '你的宝术，我看过一遍就够了。'];
 
-const FOE_KIND = id => ['beihunter', 'fengbei', 'lielao', 'bandit', 'senior', 'yuzu', 'yuchief'].includes(id) ? 'human' : ['jiling', 'wisp', 'suanni', 'bonewraith', 'boneking', 'tombguard', 'puppet'].includes(id) ? 'ghost' : 'beast';
+const FOE_KIND = id => ['lingyi', 'fengyin', 'beihunter', 'fengbei', 'lielao', 'bandit', 'senior', 'yuzu', 'yuchief'].includes(id) ? 'human' : ['jiling', 'wisp', 'suanni', 'bonewraith', 'boneking', 'tombguard', 'puppet'].includes(id) ? 'ghost' : 'beast';
 const HERO_SAY = {
   open: { beast: ['……这么大一只，够全村吃三天。', '你是清蒸，还是红烧？', '别跑啊，我还没想好怎么烤你。', '大壮说过，长得越凶的，肉越香。'], human: ['你话真多。', '打完再说。', '我饿了，快点。', '族长说，话多的都打不过我。', '你们是一起上，还是排队？'], ghost: ['……这个不能吃吧？', '你没有肉，我打你有什么好处？', '柳神说过，你们这种东西，怕打。'], rival: ['大荒来的，怎么了？', '让我三招？那你可别后悔。', '赢了你，晚上加个鸡腿。'] },
   crit: ['这一下，是替我们村的老母鸡打的！', '舒坦！', '族长！你看见没！', '嘿，正中！', '这一拳，我在空地上练了三百遍。'],
@@ -75,6 +75,7 @@ const ALLY_SAY = {
   a_yunxi: { open: ['……小心它的左翼。'], heroCrit: ['……不错。'], heroLow: ['站到我身后。'], win: ['……你流血了。（她递过来一块手帕，又收了回去）算了，你用袖子吧。'] },
   a_linhu: { open: ['小不点，跟紧我！'], heroCrit: ['好小子！'], heroLow: ['退后！我来！'], win: ['回去别跟你族长说我带你打的。'] },
   a_chief: { open: ['让爷爷看看你长进了没有。'], heroCrit: ['好！这一拳有我当年的样子！'], heroLow: ['小不点！'], win: ['……长大了。'] },
+  a_lion: { open: ['大哥！这几个交给我！……您先上，我在后面看着。', '（九个脑袋同时冲敌人龇牙，有一个龇得太用力，咬到了旁边那个。）'], heroCrit: ['大哥威武！九个脑袋给您鼓掌！', '（九个脑袋齐声吼了一嗓子，震得石头直掉。）'], heroLow: ['大哥别怕！我挡着！……您别看我的头，我说的是用身子挡！'], win: ['大哥，这些……能吃吗？我是说，您吃，我看着。'] },
   a_eagle: { open: ['（小鹰冲你叫了一声，飞到了你头顶。）'], heroCrit: ['（小鹰在空中翻了个跟头。）'], win: ['（小鹰落在你肩上，用脑袋蹭了蹭你。）'] },
 };
 
