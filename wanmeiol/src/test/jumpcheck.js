@@ -20,7 +20,7 @@ const { chromium } = require('playwright');
       const q = curQ(); let where = q.type === 'enter' ? q.loc : q.type === 'talk' ? npcLocNow(q.npc) : null;
       if ((q.type === 'enter' || q.type === 'talk') && (!where || !route(c.loc, where))) miss.push(`去不了下一步 ${q.id}（${q.type} ${q.loc || q.npc} → ${where}）`);
       if (c.bar.some(id => !c.sk.includes(id))) miss.push('宝术栏里有没学会的');
-      if (miss.length) bad.push(`${J.n}: ${[...new Set(miss)].join('、')}`);
+      if (miss.length) bad.push(`${jumpName(J)}: ${[...new Set(miss)].join('、')}`);
       // carry on for a few steps
       c.auto = true; const start = c.story.q; for (let n = 0; n < STEPS && c.story.q < MAIN.length - 1; n++) { const q2 = curQ(), before = c.story.q;
         try { if (q2.rec) for (let t = 0; t < 10 && c.lv < q2.rec + 1; t++) gainExp(BAL.expNext(c.lv), true); fullHeal(); D.addItem('baoyao', 3, true);
@@ -29,8 +29,8 @@ const { chromium } = require('playwright');
           else if (q2.type === 'auto' || q2.type === 'none') await storyPoll();
           else if (q2.type === 'dungeon') { go(DUNGEONS[q2.dungeon].loc, true, true); await enterDungeon(q2.dungeon); await w8(900); }
           else if (q2.type === 'kill') { for (let t = 0; t < 30 && c.story.q === before; t++) { go(q2.loc || c.loc, true, true); await explore(); await idle(); } }
-          await w8(50); await idle(); } catch (e) { bad.push(`${J.n}: 往下走时报错 ${q2.id}: ${e.message}`); break; }
-        if (c.story.q === before) { if (q2.type !== 'none') bad.push(`${J.n}: 卡在 ${q2.id}（${q2.type}）`); break; } }
-      info.push(`${J.n}: ${MAIN[start].id} → ${MAIN[c.story.q].id}`); }
+          await w8(50); await idle(); } catch (e) { bad.push(`${jumpName(J)}: 往下走时报错 ${q2.id}: ${e.message}`); break; }
+        if (c.story.q === before) { if (q2.type !== 'none') bad.push(`${jumpName(J)}: 卡在 ${q2.id}（${q2.type}）`); break; } }
+      info.push(`${jumpName(J)}: ${MAIN[start].id} → ${MAIN[c.story.q].id}`); }
     return { bad, info }; }, STEPS);
   console.log(r.info.join('\n')); console.log('BAD\n' + r.bad.join('\n')); console.log('errors', errs.slice(0, 8)); await b.close(); process.exit(r.bad.length || errs.length ? 1 : 0); })();

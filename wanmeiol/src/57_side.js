@@ -409,3 +409,43 @@ function pChars() { const pets = Object.keys(PETS), have = pets.filter(k => C.pe
       <small>${P.desc}</small>${fr ? `<small><b>来历 · ${fr[0]}</b>：${fr[1]}</small>` : ''}</div></div>`; }).join('')}</div>`;
   for (const g of PEOPLE) h += `<div class="chap">${g.k}</div><div class="list">${g.L.map(p => p.ok() ? `<div class="li"><span class="ic">${p.i}</span><div class="t"><b>${p.n}</b> <span class="pill">${p.t}</span><small>${p.d()}</small></div></div>` : `<div class="li unk"><span class="ic">？</span><div class="t">？？？<small>还没遇见</small></div></div>`).join('')}</div>`;
   return h; }
+
+/* ---------- 生死之间: dying is not a cut — two deaths get a stretch you play through ----------
+   七神 (第九章): you sink into a slow black river of lanterns; swim back against it (连点), then gather the pieces of yourself
+   (翻牌). Doing both well makes the 轮回 fight that follows a little easier.
+   界海深处 (第三十三章): the dark eats you from the edges; answer the voices of the people who remember you (one by one, from
+   what you did along the way), then put out the dark marks on your 元神 (破阵) before 他化自在 brings you back. */
+async function dieBack7() {
+  await cine('你在往下沉。<br>下面是一条很宽、很慢的黑河。<br>河面上漂着很多盏灯，每一盏灯里，都坐着一个孩子。', 'mem');
+  await nar('你认出了其中几个——不认识，可他们的样子你认得：跟你一样，下界的孩子，被神“收”走的那些。一代一代，漂了很多年。');
+  await say('灯里的孩子', '（离你最近的那盏灯里，一个梳着冲天辫的小孩冲你招手）新来的？别怕，往下漂就不疼了。下面很安静，没有神。');
+  const c = await choose(['（问他）你们……在这里漂了多久？', '（看着自己的手，它在一点点变淡）', '（不说话，回头往上看）']);
+  if (c === 0) await say('灯里的孩子', '不知道。（他想了想）我来的时候，下界还没有石国。');
+  else if (c === 1) await nar('你的手指已经淡得能看见后面的灯了。你握了握拳——还能握。');
+  else await nar('上面很远很远的地方，有一点光。光里有人在喊，喊的是你的名字，喊得嗓子都破了。');
+  await nar('你想起来了：龙椅才坐了七天。石村的兽奶还没喝够。答应火灵儿的烤肉，还欠着。');
+  await me('……我还没吃饱。');
+  await say('灯里的孩子', '（他愣了一下，然后笑了，笑得很大声）那你回去吧！替我们也吃一口！');
+  const sw = await miniGame('mash', { title: '逆流', desc: '黑河往下流。你往上游——别让它把你带走！', time: 7500, rate: 7 });
+  await nar(sw.ok ? '你一下一下地往上划。河水推你，灯里的孩子们在后面推你。' : '河水把你冲下去三次。第四次，好几盏灯一起撞在你背上——是灯里的孩子，在推你。');
+  await nar('你游到了河的源头。那里散落着很多碎片——都是你。被神火烧碎的，你自己。');
+  const mm = await miniGame('memory', { title: '拼回自己', desc: '一片一片对上：石锁、兽奶、柳枝、毛球、火羽、锈剑、小塔、涅槃池。', faces: ['🪨', '🥛', '🌿', '🐒', '🔥', '🗡️', '🗼', '🌊'], miss: 12 });
+  if (sw.ok && mm.ok) { F().dieBack = 1; await nar('每一片都对上了。你从来没有这么清楚地知道，自己是由什么拼起来的。'); }
+  else await nar(mm.ok ? '碎片拼回来了。有几道裂缝，可你不在乎——裂缝里，能透进光来。' : '有几片怎么也找不着了。你没再找——缺了几块，也还是你。');
+}
+async function dieBackSea() {
+  await cine('黑暗从你的边缘开始吃。<br>先是手指，然后是脚，然后是名字的最后一个字。<br>你快要什么都不是了。', 'mem');
+  const f = C.story.f, V = [['willow', '……昊儿。', '柳神的枝条，在很远很远的地方响。'], ['chief', '吃饱了再打！', '族长的拐杖，在石村的石头上敲了三下。']];
+  if (f.huoling) V.push(['huolinger', '……你答应过请我吃烤肉的。', '天庭最高的那间屋子里，一个睡了很多年的人，嘴唇动了一下。']);
+  if (f.qiwangDone) V.push(['qiwanghou', '我们守城，从来不回头看。', '帝关的城头上，一个白胡子老人把七王祠的灯，又添了一次油。']);
+  if ((f.shiyiQ || 0) >= 2) V.push(['石毅', '……我欠的，还了。', '一盏灯灭了。灭之前，它亮得像一块骨头。']);
+  if ((f.qinhao || 0) >= 2) V.push(['秦昊', '哥——！', '界海里有一个很轻的人，在喊。']);
+  if (f.army) V.push(['dazhuang', '小不点——！', '石村村口，一代一代的孩子，一起在喊。']);
+  await nar('你听见有人在喊你。不止一个人。');
+  const heard = [];
+  for (let k = 0; k < 3 && V.length; k++) { const c = await choose(V.map(v => `（回应：${v[1]}）`), '黑暗里，好几个声音同时在喊你——先回应哪一个？'); const [who, t, line] = V.splice(c, 1)[0];
+    await say(who, t); await nar(line); heard.push(who); }
+  await nar('每回应一个声音，你身上就有一块地方，从黑里亮了回来。可你的元神上，还爬满了黑色的纹。');
+  const lt = await miniGame('lights', { title: '元神', desc: '把元神上的黑纹一道一道按灭。按错了，它会长回来。', presses: 6 });
+  await nar(lt.ok ? '最后一道黑纹灭了。你的元神干干净净，像刚从石村的河里捞出来。' : '还剩几道黑纹没按灭。你不管了——记得你的人太多，黑吃不完。');
+  F().dieBackSea = heard.length; }
