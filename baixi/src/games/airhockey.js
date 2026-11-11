@@ -61,7 +61,7 @@ BX.register({
     function track(e) {
       const isM = e.pointerType === 'mouse';
       let P = isM ? mouse : ptrs.get(e.pointerId);
-      if (!P) { if (!isM && e.type !== 'pointerdown') return; P = {x: 0, y: 0, s: [], id: e.pointerId, fresh: !isM}; if (isM) mouse = P; else ptrs.set(e.pointerId, P); }
+      if (!P) { if (!isM && e.type !== 'pointerdown') return; P = {x: 0, y: 0, s: [], id: e.pointerId, fresh: !isM, t0: performance.now()}; if (isM) mouse = P; else ptrs.set(e.pointerId, P); }
       const v = view();
       for (const q of ctx.points(e, cv.cv)) { const t = inv(q.x, q.y, v); P.s.push({x: t.x, y: t.y, t: q.t}); P.x = t.x; P.y = t.y; }
       if (P.s.length > 32) P.s.splice(0, P.s.length - 32);
@@ -318,7 +318,7 @@ BX.register({
           // guest: send absolute mallet target (finger or locally integrated keys) + measured velocity + timing for latency lead
           const o = guestOwn() || G.own, ts = Math.round(performance.now()), P = ptrs.size ? [...ptrs.values()].pop() : null;
           if (!o) return {ts, lat: Math.round(G.rtt)};
-          const m = st.m[seat]; if (P && P.fresh && Math.hypot(m.x - o.x, m.y - o.y) < 25) P.fresh = false;
+          const m = st.m[seat]; if (P && P.fresh && (Math.hypot(m.x - o.x, m.y - o.y) < 25 || performance.now() - P.t0 > 160)) P.fresh = false;
           return {x: Math.round(o.x), y: Math.round(o.y), vx: Math.round(o.vx), vy: Math.round(o.vy), ts, lat: Math.round(G.rtt), c: P && P.fresh ? 2000 : undefined};
         }
         const k = keyInput(slot, nLocal); if (k) return k;
@@ -326,7 +326,7 @@ BX.register({
         if (!P) return {};
         // a finger put down far from the mallet "picks it up" at a gentler speed instead of sweeping across at full swing speed
         const v = pvel(P), m = st.m[seat], c = clampM(seat, P.x, P.y);
-        if (P.fresh && Math.hypot(m.x - c.x, m.y - c.y) < 25) P.fresh = false;
+        if (P.fresh && (Math.hypot(m.x - c.x, m.y - c.y) < 25 || performance.now() - P.t0 > 160)) P.fresh = false;
         return {x: P.x, y: P.y, vx: v[0], vy: v[1], c: P.fresh ? 2000 : undefined};
       },
       aiInput,
@@ -384,7 +384,7 @@ BX.register({
         for (const q of trail) { const [qx, qy] = T(q.x, q.y, v); g.fillStyle = `rgba(255,226,150,${q.t * 3 * q.k})`; D.circle(g, qx, qy, PR * s * (.35 + q.t * 4)); g.fill(); }
         // impact rings + sparks (table units)
         for (const r of rings) r.t += dt; rings = rings.filter(r => r.t < .28);
-        for (const r of rings) { const [rx, ry] = T(r.x, r.y, v); g.strokeStyle = `rgba(255,240,200,${(1 - r.t / .28) * .8})`; g.lineWidth = (2 + 3 * r.k) * s; D.circle(g, rx, ry, (PR + r.t * 260 * (.5 + r.k)) * s); g.stroke(); }
+        for (const r of rings) { const [rx, ry] = T(r.x, r.y, v); g.strokeStyle = `rgba(255,240,200,${(1 - r.t / .28) * .7})`; g.lineWidth = (1.5 + 2.5 * r.k) * s; D.circle(g, rx, ry, (PR + r.t * 170 * (.4 + r.k)) * s); g.stroke(); }
         for (const q of sparks) { q.t -= dt; q.x += q.vx * dt; q.y += q.vy * dt; q.vx *= .9; q.vy *= .9; }
         sparks = sparks.filter(q => q.t > 0).slice(-80);
         for (const q of sparks) { const [qx, qy] = T(q.x, q.y, v); g.fillStyle = `rgba(255,236,170,${Math.min(1, q.t * 4)})`; D.circle(g, qx, qy, 2.2 * s); g.fill(); }
