@@ -176,6 +176,10 @@ function makeCtx(gen, root) {
     get log() { return S.log; },
     restart() { BX.restart(); },
     pref: k => BX.pref(k),
+    /* realtime: render interpolation factor 0..1 between the last two fixed steps (host/offline). Keep prev positions and draw lerp(prev, cur, ctx.alpha) for smooth motion on 90/120 Hz screens. */
+    alpha: 1,
+    /* all positions of a pointer event incl. coalesced sub-frame samples (smoother drags / swipe velocity) → [{x, y, t}] in canvas CSS px */
+    points(e, cv) { const r = cv.getBoundingClientRect(); const evs = (e.getCoalescedEvents && e.getCoalescedEvents().length) ? e.getCoalescedEvents() : [e]; return evs.map(q => ({x: q.clientX - r.left, y: q.clientY - r.top, t: q.timeStamp})); },
     /* true when a tap should only preview and a second tap on the same target confirms (pref 落子确认: auto = touch only) */
     needConfirm(e) { const c = BX.pref('confirm'); return c === 'on' || (c === 'auto' && !!e && e.pointerType !== 'mouse'); },
     buzz(ms = 12) { if (!ctx.fast && live() && !BX.test && BX.pref('vibrate') && navigator.vibrate) try { navigator.vibrate(ms); } catch (e) {} },
@@ -272,10 +276,11 @@ function frame(t) {
           S.acc += dt; let k = 0;
           while (S.acc >= STEP && k < 4) { inst.step(STEP, ctx.seats.map(seatInput)); S.acc -= STEP; k++; }
           if (k >= 4) S.acc = 0;
+          ctx.alpha = BX.clamp(S.acc / STEP, 0, 1);
         }
-        if (ctx.online && BX.net.up) { S.snT += dt; if (S.snT >= .05) { S.snT = 0; BX.net.fast({t: 'snap', d: inst.snapshot(), g: S.g}); } }
+        if (ctx.online && BX.net.up) { S.snT += dt; if (S.snT >= 1 / (S.def.snapHz || 20)) { S.snT = 0; BX.net.fast({t: 'snap', d: inst.snapshot(), g: S.g}); } }
       } else if (BX.net.up) {
-        S.inT += dt; if (S.inT >= 1 / 30) { S.inT = 0; BX.net.fast({t: 'in', d: inst.input(ctx.me, 0, 1), g: S.g}); }
+        S.inT += dt; if (S.inT >= 1 / (S.def.inputHz || 30)) { S.inT = 0; BX.net.fast({t: 'in', d: inst.input(ctx.me, 0, 1), g: S.g}); }
       }
       inst.draw && inst.draw(dt);
     } else inst.frame && inst.frame(dt);

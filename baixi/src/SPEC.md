@@ -137,3 +137,11 @@ Quick manual peek: `python3 build.py --only <ids> --out /tmp/x.html` then Playwr
 - Online: a guest whose link drops auto-reconnects; meanwhile its seat is played by the AI and handed back on return (turn games resend the
   action log; realtime games get fresh snapshots — so `restore(d)` must rebuild everything visible from one snapshot).
 - Test a dropped link: `bash test/t.sh --games <id> --online --rejoin`.
+
+## v1.2 additions — game feel
+- `ctx.alpha` (realtime, host/offline): fraction 0..1 of the next fixed 60 Hz step already elapsed. Store previous positions in `step` and
+  draw `lerp(prev, cur, ctx.alpha)` so motion is smooth on 90/120 Hz displays (otherwise objects judder at 60 Hz steps).
+- `ctx.points(e, cv.cv)` → all sub-frame samples of a pointer event (`getCoalescedEvents`) as `[{x, y, t}]` — use for drag smoothing and
+  swipe velocity instead of a single sample per frame.
+- Def `snapHz` (default 20, max sensible 30) and `inputHz` (default 30, max 60) — raise for fast twitchy games if the snapshot stays small
+  (< ~2 KB). Guests should still interpolate/extrapolate between snapshots.
