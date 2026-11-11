@@ -84,6 +84,10 @@ const { chromium } = require('playwright');
       ok('epicFlag', !!B8.epic && musicWanted() !== 'battle'); h8.hp = 1; applyDmg(B8, B8.units.find(u => u.side === 1), h8, 50, {}); ok('epicBurst', h8.alive && h8.hp > 1 && B8.burst === 1 && !!h8.st.find(s => s.k === 'burst') && B8.ev.some(e => e.k === 'cine' && e.cls === 'burst'));
       const hp1 = h8.hp; h8.hp = 1; applyDmg(B8, B8.units.find(u => u.side === 1), h8, 50, {}); ok('epicBurstOnce', !h8.alive); S().battle = null; STATE.busy = false;
       const pc = cine('测试一行', 'mem'); ok('storyCine', true); }
+    // rumours: each heard once; banter: fights talk; 闲聊 plays once
+    { const rl = c.rumorLog.map(r => r.t); ok('rumorNoRepeat', new Set(rl).size === rl.length);
+      c.auto = true; let says = 0; for (let i = 0; i < 4; i++) { await D.startBattle({ mobs: [['bandit', 12], ['bandit', 12]], title: 't' }); await idle(); says += S().battle ? 0 : 1; } const lg = document.getElementById('log').innerHTML; ok('banterLines', /taunt/.test(lg));
+      const q0 = c.story.q; c.story.q = qi('q_wake'); c.talked = {}; ok('talkAvail', !!talkNext('dazhuang') && talkOptions('dazhuang').some(o => o.t.includes('闲聊'))); await talkPlay('dazhuang'); await idle(); ok('talkOnce', c.talked.tk_dz1 === 1 && (!talkNext('dazhuang') || talkNext('dazhuang').id !== 'tk_dz1')); c.story.q = q0; c.auto = false; }
     // a failed mini-game asks: 再试一次 or 跳过 (never ends by itself)
     { const au = __dbg.auto; __dbg.auto = false; const pr = miniGame('mash', { time: 250 }); await w8(1300); const M1 = DLG && DLG.mini; ok('miniFailAsks', !!(M1 && M1.ask)); await w8(1500); ok('miniFailWaits', DLG && DLG.mini === M1);
       miniRetry(); ok('miniRetry', DLG && DLG.mini && !DLG.mini.done && DLG.mini.tries === 1); await w8(1300); ok('miniRetryFailsAgain', DLG.mini.ask); miniGiveUp(); const res = await pr; ok('miniGiveUp', res.ok === false && res.gaveUp && !DLG); __dbg.auto = au; }

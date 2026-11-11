@@ -32,6 +32,13 @@ def check_chatter():
     for ln in re.findall(r'^\s*(\{ from:.*\}),?\s*$', rb, re.M):
         fr, to = re.search(r"from: '([^']*)'", ln), re.search(r"to: '([^']*)'", ln)
         if not fr or not to or fr[1] not in order or to[1] not in order or order[fr[1]] > order[to[1]]: errs.append('bad rumour range: ' + ln[:60])
+    seen = set()
+    for t in re.findall(r"t: '([^']*)' \}", rb):
+        if t in seen: errs.append('duplicate rumour: ' + t[:30])
+        seen.add(t)
+    for ln in re.findall(r"^\s*\{ id: 'tk_\w+'.*$", src('49_talks.js'), re.M):
+        npc, fr, to = re.search(r"npc: '(\w+)'", ln), re.search(r"from: '(\w+)'", ln), re.search(r"to: '(\w+)'", ln)
+        if not npc or npc[1] not in npcs or not fr or not to or fr[1] not in order or to[1] not in order or order[fr[1]] > order[to[1]]: errs.append('bad talk: ' + ln[:60])
     n = len(re.findall(r'^\s*\{ at:', body, re.M)) + len(re.findall(r'^\s*\{ from:', rb, re.M))
     if errs: sys.exit('CHATTER check failed:\n  ' + '\n  '.join(errs))
     return n

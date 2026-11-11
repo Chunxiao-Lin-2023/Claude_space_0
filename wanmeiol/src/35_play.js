@@ -65,7 +65,7 @@ function battleAct(act, who = 'hero') { // 石昊 and the 灵兽伙伴 each choo
   if (act.item) { // using an item is quick: it doesn't take 石昊's turn, but only one per round
     if (who !== 'hero') return; if (B.itemRound === B.round) { toast('这回合已经吃过一次药了'); return; } if (!useItem(act.item, true)) return; const it = ITEMS[act.item];
     B.itemRound = B.round; B.ev = []; B.lc0 = B.lc; const hp0 = u.hp; if (it.heal) u.hp = Math.min(u.hpMax, u.hp + u.hpMax * it.heal); if (it.mp) u.mp = Math.min(u.mpMax, u.mp + u.mpMax * it.mp);
-    fxe(B, { k: 'heal', t: u.id, v: Math.round(u.hp - hp0), hp: hpr(u) }); blog(B, `${uName(u)} 飞快地吃了 ${it.icon}${it.name}${it.heal ? ` <span class="heal">+${Math.round(u.hp - hp0)}</span>` : ''}（不占回合）`); B.seq++; sfx('heal'); renderBattle(true); netSync(); return; }
+    fxe(B, { k: 'heal', t: u.id, v: Math.round(u.hp - hp0), hp: hpr(u) }); blog(B, `${uName(u)} 飞快地吃了 ${it.icon}${it.name}${it.heal ? ` <span class="heal">+${Math.round(u.hp - hp0)}</span>` : ''}（不占回合）`); if (chance(0.45)) bSay(B, u, pick(HERO_SAY.item), 'pc'); B.seq++; sfx('heal'); renderBattle(true); netSync(); return; }
   B.acts[who] = act;
   if (needInput(B).length) { renderBattle(true); netSync(); return; }
   battleResolve(B); renderBattle(); netSync(); if (B.over) battleFinish(B);

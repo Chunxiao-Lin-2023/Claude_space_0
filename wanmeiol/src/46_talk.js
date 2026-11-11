@@ -82,14 +82,50 @@ const RUMORS = [
   { from: 'q_end', to: 'q_end', who: '补天阁弟子', t: '神藤的葫芦又鼓起来了，阁主这几天走路都带风。' },
   { from: 'q_end', to: 'q_end', who: '过路的兽车商队', t: '外面的天下大着呢。听说更远的地方，有好些比补天阁大得多的地方。' },
   { from: 'q_end', to: 'q_end', who: '虚神界里的少年', t: '光幕最前面那个带“重瞳”的名字，最近好像很少出现了。' },
+  { from: 'q_wolf0', to: 'q_wolf', who: '邻村的娃娃', t: '石村有个娃娃迎霞锻体，霞光吸多了，打了一早上的嗝。' },
+  { from: 'q_egg0', to: 'q_egg', who: '赶山的老汉', t: '前两天在山里捡了张狼皮，剥得歪歪扭扭的，跟狗啃的一样——这手艺，八成是个娃娃。' },
+  { from: 'q_tomb0', to: 'q_tomb', who: '石林的采药人', t: '石林上空老有一只大鹰在转圈，叫得那叫一个惨，跟被人掏了老窝似的。' },
+  { from: 'q_bei', to: 'q_yaoding', who: '邻村的猎手', t: '狻猊墓里出来个娃娃，比墓门还矮。我们二十几个大人进去，被抬出来十几个。' },
+  { from: 'q_bei', to: 'q_yaoding', who: '走村的货郎', t: '狈村在悬赏一个娃娃，赏金是一头肥羊。……这价开得也太看不起人了。' },
+  { from: 'q_yaoding', to: 'q_shanbao', who: '狈村的小孩', t: '我娘说我再不听话，就把我送去石村，给那个小不点当沙包。' },
+  { from: 'q_shanbao', to: 'q_ruin', who: '隔壁村的大婶', t: '石村那口药鼎熬了三天三夜，药味飘了十里地，我家的鸡到现在都不下蛋。' },
+  { from: 'q_ruin', to: 'q_jijing', who: '逃难的猎户', t: '岩浆冲下来那天，有人说石村的人是从一道光里走掉的。说的人自己都不信。' },
+  { from: 'q_ruin', to: 'q_jijing', who: '林子里的采药人', t: '大荒深处多了一只金毛小猴，偷东西专挑兽奶罐子，抓都抓不住。' },
+  { from: 'q_memory', to: 'q_qingfeng', who: '火国的商队', t: '我们公主前几天骑着火鸟在大荒上转了一圈，回来说看见一个“特别能打的小矮子”。' },
+  { from: 'q_memory', to: 'q_qingfeng', who: '邻村的猎户', t: '“大荒几百年没人走到搬血极境了”——这话是谁传出来的？石村族长喝多了自己说的。' },
+  { from: 'q_qingfeng', to: 'q_bandit0', who: '邻村的猎户', t: '石村族长屋里的灯，那天晚上亮了一整夜。' },
+  { from: 'q_bandit0', to: 'q_bandit', who: '古道边的茶摊老板', t: '那几头黑罴是被一个娃娃打死的？难怪这两天来喝茶的猎户，都把弓藏到桌子底下了。' },
+  { from: 'q_xushen0', to: 'q_leave', who: '山贼的余党', t: '别问了。问就是这辈子不想再看见小孩。' },
+  { from: 'q_leave', to: 'q_lotus', who: '虚神界里的少年', t: '大荒来的那个，打完了会问对面“你们族的人好吃吗”。我们族老让我们离他远点。' },
+  { from: 'q_leave', to: 'q_gate', who: '虚神界里的少女', t: '那个小矮子赢了以后，在石台上蹲了半天找吃的。虚神界里哪有吃的啊！' },
+  { from: 'q_gate', to: 'q_lotus', who: '古道上的车夫', t: '有两个娃娃搭我的车去补天阁，男娃一路问了我十七遍“这牛能吃吗”。那是犀，不是牛。' },
+  { from: 'q_lotus', to: 'q_join', who: '补天阁外门弟子', t: '今年来拜师的有个娃娃，排队的时候把前头那人的干粮吃了一半，还夸人家手艺好。' },
+  { from: 'q_bully', to: 'q_lei', who: '补天阁伙房的厨子', t: '新来的小师弟一顿吃了九碗饭。我掌勺二十年，头一回被吃怕了。' },
+  { from: 'q_lei', to: 'q_qf1', who: '补天阁外门弟子', t: '那几个收份例的师兄，现在走路都绕着内院。听说是被新来的娃娃挨个“讲了讲道理”。' },
+  { from: 'q_qf1', to: 'q_lib', who: '雷池的师兄', t: '雷池边那个小师弟又被劈了，他冲着天喊“再来一个！”。我们都躲远了。' },
+  { from: 'q_qf2', to: 'q_baiduan', who: '藏经阁的扫地弟子', t: '藏经阁里少了三本书，多了一堆啃干净的骨头。守阁人的胡子都气翘了。' },
+  { from: 'q_baiduan', to: 'q_bdgate', who: '补天阁外门弟子', t: '外门小比那天，清风一拳把守关师兄送出了场子。现在外门都管她叫“清风姐”。' },
+  { from: 'q_qf3', to: 'q_bdgate', who: '补天阁弟子', t: '阁主点了小师弟去百断山。诡爷听说以后，只说了一个字：“……吵。”' },
+  { from: 'q_lion', to: 'q_yu', who: '火国侍卫', t: '公主的火鸟被一只大红鸟抢了肉。公主说，要亲手把那只鸟拔成秃子。' },
+  { from: 'q_yu', to: 'q_cliff', who: '断山里的散修', t: '九头狮倒了。动手的是补天阁那娃娃和火国公主——到底谁出力多，两个人吵了一路。' },
+  { from: 'q_cliff', to: 'q_spring', who: '雨族少年', t: '我们的人说，补天阁那小子被冻成冰雕的时候都在笑。……他是不是脑子不太好？' },
+  { from: 'q_spring', to: 'q_tiangu', who: '断山里的散修', t: '分宝崖上那把锈剑被拔走了！拔它的人还嫌它锈，说回去拿沙子磨一磨。' },
+  { from: 'q_tiangu', to: 'q_mount', who: '各族少年', t: '不老泉边，云曦仙子居然出手帮了人。帮的是谁？一个满脸是血、还冲她傻笑的小矮子。' },
+  { from: 'q_mount', to: 'q_return', who: '断山里的散修', t: '天骨禁区那堆骨头塌了。有人说塌之前，里面传出半句“记住……”。记住啥，没说完。' },
+  { from: 'q_return', to: 'q_end', who: '各族少年', t: '神猴王那两个桃到底被谁摘了？现在百断山出来的人，人人都说是自己摘的。' },
+  { from: 'q_end', to: 'q_end', who: '补天阁伙房的厨子', t: '小师弟从百断山回来，第一件事不是去见阁主，是来伙房找吃的。' },
+  { from: 'q_end', to: 'q_end', who: '补天阁弟子', t: '外门的人都在学小师弟那句“这能吃吗”。诡爷听见了，说：“……吵。”' },
+  { from: 'q_end', to: 'q_end', who: '过路的兽车商队', t: '大荒里现在流行一句话：出门遇见背着锈剑的小矮子，先把干粮藏好。' },
+  { from: 'q_end', to: 'q_end', who: '捎话的猎户', t: '石村的大壮让我捎句话：“村里的兽奶罐子没人偷了，二猛说怪没意思的。”' },
+  { from: 'q_end', to: 'q_end', who: '石国来的行商', t: '石国皇都要办天骄会了，各族的少年天才都在往那边赶。你不去凑凑热闹？' },
 ];
 /* heard rumours are kept in the save (C.rumorLog) so they can be reread under 📜 记录 → 江湖传闻; co-op guests see the host's */
 function rumorTick() {
   if (STATE.mode !== 'play' || !C || NETROLE === 'guest' || curMode() !== 'explore' || UI.nav || now() < (UI.rumorNext || 0)) return; UI.rumorNext = now() + rint(35000, 60000);
   const q = C.story.q, A = RUMORS.filter(r => q >= qi(r.from) && q <= qi(r.to)); if (!A.length) return;
-  const recent = new Set((A.length > 1 ? (C.rumorLog || []).slice(-Math.min(3, A.length - 1)) : []).map(r => r.t)); // never the same line twice in a row
-  let L = A.filter(r => !recent.has(r.t) && !(UI.rumorSeen || {})[r.t]); if (!L.length) { UI.rumorSeen = {}; L = A.filter(r => !recent.has(r.t)); } if (!L.length) return;
-  const r = pick(L); (UI.rumorSeen = UI.rumorSeen || {})[r.t] = 1; C.rumorLog = (C.rumorLog || []).concat([{ who: r.who, t: r.t, day: C.day || 1, at: C.loc, nt: isNight() ? 1 : 0, n: (C.rumorN = (C.rumorN || 0) + 1) }]).slice(-80);
+  const heard = new Set((C.rumorLog || []).map(r => r.t)); // each rumour is heard once per save; when they run out, it stays quiet until the story moves on
+  const L = A.filter(r => !heard.has(r.t)); if (!L.length) return;
+  const r = pick(L); C.rumorLog = (C.rumorLog || []).concat([{ who: r.who, t: r.t, day: C.day || 1, at: C.loc, nt: isNight() ? 1 : 0, n: (C.rumorN = (C.rumorN || 0) + 1) }]).slice(-300);
   logLine(`【传闻 · ${esc(r.who)}】${r.t}`, 'rumor dim'); save(); renderRumor(); netSync(); }
 const rumorWide = () => document.body.classList.contains('cols');
 function renderRumor() { // wide screens: the last three, always there; phones: the newest one floats by for a few seconds

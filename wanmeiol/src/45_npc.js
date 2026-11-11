@@ -25,7 +25,7 @@ const CHATTER = [
   { at: 'dh_deep', from: 'q_shanbao', to: 'q_shanbao', who: '', t: '大荒深处安静得反常，连鸟都不叫了。' },
   // after the move
   { at: 'shicun', from: 'q_ruin', to: 'q_memory', who: 'dazhuang', t: '新村子的溪水真甜！就是夜里青蛙太吵了。' },
-  { at: 'shicun', from: 'q_ruin', to: 'q_memory', who: 'ermeng', t: '毛球又把我家的兽奶罐子掀翻了！小不点，你管管它！' },
+  { at: 'shicun', from: 'q_jijing', to: 'q_memory', who: 'ermeng', t: '毛球又把我家的兽奶罐子掀翻了！小不点，你管管它！' },
   { at: 'shicun', from: 'q_ruin', to: 'q_jijing', who: 'linhu', t: '搬了家，打猎的地方远了，可山里的东西也肥了。' },
   { at: 'sc_chief', from: 'q_ruin', to: 'q_jijing', who: 'chief', t: '你最近气血涨得厉害。到了第九层，去柳神那儿坐坐。' },
   { at: 'dh_ruin', from: 'q_ruin', to: 'q_end', who: '', t: '你刻在石头上的字还在。没有人来过。' },
@@ -79,6 +79,44 @@ const CHATTER = [
   { at: '*', pet: 'maoqiu', who: '毛球', t: '（毛球冲远处龇了龇牙。那边的灌木丛里，有什么东西悄悄退走了。）' },
   { at: '*', pet: 'dahong', who: '大红', t: '（大红在你头顶盘旋，嘎嘎叫着，好像在嘲笑谁。）' },
   { at: '*', pet: 'ertuzi', who: '二秃子', t: '（二秃子缩在你衣领里，光溜溜的身子打了个哆嗦。）' },
+  // more voices (2026-11): running jokes, everyone has a personality
+  { at: 'sc_street', from: 'q_wake', to: 'q_egg', who: 'dazhuang', t: '我昨晚梦见一头烤好的野猪自己跑到我嘴边……醒了发现在啃枕头。' },
+  { at: 'sc_street', from: 'q_egg0', to: 'q_tomb', who: 'dazhuang', t: '小不点，你打回来的狼，能不能分我一条腿？……两条也行。' },
+  { at: 'sc_street', from: 'q_ruin', to: 'q_leave', who: 'dazhuang', t: '新村子哪儿都好，就是离山远了，打猎得多走半天。我腿都瘦了。……真的，你摸摸。' },
+  { at: 'sc_gate', from: 'q_wake', to: 'q_egg', who: 'pihou', t: '我今天一口气翻了十个跟头！第十一个……我们不提第十一个。' },
+  { at: 'sc_gate', from: 'q_tomb0', to: 'q_shanbao', who: 'pihou', t: '我跟邻村的娃娃说，我跟你一起掏过青鳞鹰的窝。他们问我是谁，我说我是你大哥。' },
+  { at: 'sc_gate', from: 'q_jijing', to: 'q_leave', who: 'pihou', t: '毛球跟我比爬树，它赢了。它还冲我做鬼脸。我要跟它决斗！……你别告诉它。' },
+  { at: 'sc_yard', from: 'q_wake', to: 'q_bei', who: 'ermeng', t: '……（二猛默默递给你半罐兽奶。你没问是谁家的，他也没说。）' },
+  { at: 'sc_yard', from: 'q_jijing', to: 'q_leave', who: 'ermeng', t: '毛球偷兽奶，比我还熟练。……我有点不服。' },
+  { at: 'sc_yard', from: 'q_egg0', to: 'q_bei', who: 'linhu', t: '你那一拳是怎么打的？下回教教我。……别笑，我是认真的。' },
+  { at: 'sc_yard', from: 'q_shanbao', to: 'q_leave', who: 'linhu', t: '你洗完药鼎那天，我家那张弓自己响了一声。我当了三十年猎人，头一回见。' },
+  { at: 'sc_chief', from: 'q_wake', to: 'q_egg', who: 'chief', t: '兽奶不能当水喝。……你又偷喝了是不是？嘴上那圈白的还在呢！' },
+  { at: 'sc_chief', from: 'q_yaoding', to: 'q_leave', who: 'chief', t: '（族长在磨一根骨针）给你缝衣裳。你一天打三架，袖子就没有一条是全的。' },
+  { at: 'sc_willow', from: 'q_egg0', to: 'q_leave', who: 'willow', t: '（你冲柳神说今天打了三头狼。一片叶子落下来，正好盖在你头上——像是在说“知道了，别显摆”。）' },
+  { at: 'sc_willow', from: 'q_jijing', to: 'q_leave', who: 'willow', t: '（毛球想爬上柳枝去摘叶子。柳枝轻轻一抖，它就顺着树干滑了下来，四脚朝天。）' },
+  { at: 'dh_forest', from: 'q_wolf', to: 'q_end', who: '', t: '一只野兔从你脚边窜过去，跑出老远才回头看了一眼，确认你没追。' },
+  { at: 'dh_stone', from: 'q_tomb0', to: 'q_end', who: '', t: '崖顶上那个空了的鹰窝还在。窝边多了几根新羽毛——它回来看过。' },
+  { at: 'dh_road', from: 'q_xushen0', to: 'q_end', who: '', t: '古道边的老树上，有人用刀刻了一行字：“此路有娃，慎行。”' },
+  { at: 'bt_gate', from: 'q_gate', to: 'q_join', who: 'qingfeng', t: '……你别盯着前面那人的干粮看了。我这儿还有半块饼。' },
+  { at: 'bt_gate', from: 'q_qf1', to: 'q_qf2', who: 'qingfeng', t: '听说你在雷池被劈了七回？……头发都焦了。（她别过脸去，肩膀在抖）我没笑。' },
+  { at: 'bt_gate', from: 'q_qf2', to: 'q_qf3', who: '外门弟子', t: '清风姐让我们每天多打一百拳。谁有意见？……没人有意见。' },
+  { at: 'bt_court', from: 'q_bully', to: 'q_end', who: 'guiye', t: '……（诡爷看了你一眼。你等了半天，他什么都没说。）' },
+  { at: 'bt_court', from: 'q_bully', to: 'q_end', who: 'gezhu', t: '伙房的厨子来找我告状了，说你一顿顶他们一天的米。……多吃点，长个子。' },
+  { at: 'bt_court', from: 'q_qf2', to: 'q_end', who: '补天阁弟子', t: '小师弟，你上回在藏经阁吃的那个……是守阁人养了十年的灵芝。' },
+  { at: 'bt_lib', from: 'q_qf2', to: 'q_end', who: 'libelder', t: '书是拿来看的，不是拿来垫屁股的。……更不是拿来包肉的！' },
+  { at: 'bt_train', from: 'q_qf1', to: 'q_end', who: '雷池师兄', t: '我在雷池坐了五年，雷都不搭理我。你来三天，雷追着你劈。……这世道。' },
+  { at: 'bt_wild', from: 'q_join', to: 'q_end', who: '', t: '林子里的老虎远远看见你，转身就钻回了洞里。洞口还用石头堵上了。' },
+  { at: 'bd_gate', from: 'q_bdgate', to: 'q_lion', who: 'huolinger', t: '我叫火灵儿，火国的公主。……你那是什么表情？公主怎么了？公主也能打你。' },
+  { at: 'bd_gate', from: 'q_yu', to: 'q_end', who: 'huolinger', t: '我回去查了，九头狮的肉是酸的。你别惦记了。……我没偷偷尝！' },
+  { at: 'bd_gate', from: 'q_cliff', to: 'q_end', who: 'huolinger', t: '你那只大红鸟，昨天叼走了我火鸟的一根尾羽，还在它面前晃！你管不管？！' },
+  { at: 'bd_lion', from: 'q_yu', to: 'q_end', who: '', t: '九头狮的洞里空荡荡的，地上有九个排得整整齐齐的、脑袋形状的坑。' },
+  { at: 'bd_desert', from: 'q_cliff', to: 'q_end', who: '', t: '沙丘上有一块人形的湿印子，四周全是大红的爪印。那是你被冻成冰的地方。' },
+  { at: '*', pet: 'maoqiu', who: '毛球', t: '（毛球把一颗不知道从哪儿摘来的果子塞进你手里，然后伸手要你的肉干。这是交易。）' },
+  { at: '*', pet: 'maoqiu', who: '毛球', t: '（毛球学你走路，学得太像了，你都不好意思骂它。）' },
+  { at: '*', pet: 'dahong', who: '大红', t: '（大红落在你头顶，开始用嘴给你梳头。梳完了，你的头发比鸟窝还乱。）' },
+  { at: '*', pet: 'dahong', who: '大红', t: '（远处飞过一只火红的鸟。大红立刻挺起胸膛，嘎了一声，响得震耳朵。）' },
+  { at: '*', pet: 'ertuzi', who: '二秃子', t: '（二秃子盯着别的鸟看了很久，又低头看了看自己光溜溜的身子，叹了口气。鸟也会叹气。）' },
+  { at: '*', pet: 'ertuzi', who: '二秃子', t: '（二秃子又饿了。它刚吃完。）' },
 ];
 let chatT = 0, lastChat = {};
 function chatterFor(loc) { const P = PLACES[loc], q = C.story.q;
@@ -95,8 +133,8 @@ function npcTalk(id) { // clicking a person: their quest or side errand, otherwi
   const fallback = { chief: '去玩吧，别跑太远。', willow: '（柳枝静静垂着。）', linhu: '弓要常擦，箭要常磨。', dazhuang: '小不点，下回进山带上我！', ermeng: '嘿嘿。', pihou: '你看你看，我又能多翻一个跟头了！', qingfeng: C.story.f.qfIn ? '内门的饭比外门的好吃。……你别告诉别人我说的。' : '……嗯。', guiye: '……', gezhu: '好好修行。', libelder: '书别弄脏了。', huolinger: '看什么看？' }[id] || '……';
   runScene(async () => { await say(id, lines.length ? pick(lines).t : fallback); if (opts.length) { const c = await choose([...opts.map(o => ({ t: o.t, dis: !!o.dis })), { t: '没事了' }]); if (c < opts.length) setTimeout(() => opts[c].f(), 0); } });
 }
-function talkOptions(id) { return [...questTalkOptions(id), ...bountyOptions(id), ...tradeOptions(id), ...(id === 'willow' && C.dt.length ? [{ t: '🔄 重开一座洞天（灵药 ×1）', dis: !itemN('lingyao'), f: dongtianRedo }] : [])]; }
-const npcMark = id => questTalkOptions(id).length ? ' ❗' : bountyToday().some(b => b.npc === id && (b.st === 'new' || (b.st === 'on' && bountyReady(b)))) ? ' 📋' : '';
+function talkOptions(id) { return [...questTalkOptions(id), ...bountyOptions(id), ...tradeOptions(id), ...(id === 'willow' && C.dt.length ? [{ t: '🔄 重开一座洞天（灵药 ×1）', dis: !itemN('lingyao'), f: dongtianRedo }] : []), ...(talkNext(id) ? [{ t: '💬 闲聊', f: () => talkPlay(id) }] : [])]; }
+const npcMark = id => questTalkOptions(id).length ? ' ❗' : bountyToday().some(b => b.npc === id && (b.st === 'new' || (b.st === 'on' && bountyReady(b)))) ? ' 📋' : talkNext(id) ? ' 💬' : '';
 
 /* ---------- 虚神界 ladder: the young geniuses of every clan ---------- */
 const RIVAL_NAMES = ['石毅（重瞳）', '火灵儿', '云曦', '金乌族少年', '雷族少年', '赤龙族少年', '天角蚁族少年', '孔雀族少女', '白虎族少年', '羽族天才', '风族少年', '雨族少年', '战王族少年', '狰族少年', '玄龟族少年', '紫金鼠族少年', '石国皇子', '火国少年', '雷国少年', '风国少女', '青鳞鹰族少年', '狈族少年', '山猿族少年', '蛇族少女', '金翅族少年'];
