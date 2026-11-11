@@ -63,6 +63,11 @@ const TALKS = [
   { id: 'tk_huo2', npc: 'huolinger', from: 'q_dajie', to: 'q_v3end', s: [['huolinger', '你跟石毅打的那天，我在云上看着。'], ['me', '你哭了吗？'], ['huolinger', '谁、谁哭了！是风大！天空战场上的风很大！'], ['me', '哦。'], ['huolinger', '……你被劫光吞进去的那一下，我差点跳下去。（她小声说）以后别这样了。']] },
   { id: 'tk_huohuang1', npc: 'huohuang', from: 'q_niepan', to: 'q_v3end', s: [['huohuang', '百断山里，朕那一掌，你可记恨？'], ['ch', ['记着呢。', '不记恨，挺暖和的。'], [[['huohuang', '（火皇大笑）好！记着好！记着，才有力气往上爬。']], [['huohuang', '……暖和？（他愣了一下，又笑了）你这孩子，跟你娘一个样，说话能把人噎死。']]]]] },
   { id: 'tk_huohuang2', npc: 'huohuang', from: 'q_letter', to: 'q_v3end', s: [['huohuang', '你娘走的时候，跟朕说过一句话。'], ['me', '什么话？'], ['huohuang', '她说：“如果有一天，一个胸口有疤的孩子来找涅槃池，请让他进去。不要问他是谁。”'], ['nar', '火皇看着你，很久没说话。'], ['huohuang', '朕没问。朕知道。']] },
+  // 第四卷 · 第五卷
+  { id: 'tk_bzlao1', npc: 'bzlao', from: 'q_baojie', to: 'q_v5end', s: [['bzlao', '小子，你知道为什么百族营地里，每一族都只围着自己的火吗？'], ['ch', ['因为谁也看不起谁？', '因为火不够用？'], [[['bzlao', '对了一半。还因为——今天坐在一堆火边上的人，明天可能就在战场上碰见。']], [['bzlao', '（老兵愣了一下，笑得直咳嗽）……你这小子。']]]], ['bzlao', '我年轻的时候，跟一个金乌族的人坐过一堆火。后来在战场上碰见了。'], ['me', '谁赢了？'], ['bzlao', '（他拍了拍那条瘸腿）你说呢。……他请我喝过一碗酒。我到现在都记得那个味儿。']] },
+  { id: 'tk_yunlao1', npc: 'yunlao', from: 'q_huobye', to: 'q_v5end', s: [['yunlao', '你知道云族为什么叫云族吗？'], ['me', '因为住在云里？'], ['yunlao', '因为我们的祖先，是踩着云从上面下来的。他们说，下来看看就回去。'], ['yunlao', '……然后就没回去。路断了。一断就是几千年。'], ['nar', '老人看着天，很久没说话。']] },
+  { id: 'tk_qi1', npc: 'qidaolin', from: 'q_dojo', to: 'q_v5end', s: [['qidaolin', '徒弟，你是不是觉得为师是个骗子？'], ['ch', ['是。', '有一点。', '不是。'], [[['qidaolin', '（他一口茶喷了出来）……你倒是实诚！']], [['qidaolin', '一点？好，比为师想的少。']], [['qidaolin', '……（他盯着你看了很久）你这孩子，说谎都不会。']]]], ['qidaolin', '为师骗过很多人。可至尊道场是真的，无敌道是真的。'], ['qidaolin', '为师就想……在为师死之前，看一眼至尊道场再热闹起来。哪怕就两个人。'], ['me', '现在不就是两个人吗？'], ['nar', '齐道临别过脸去，半天没说话。']] },
+  { id: 'tk_qi2', npc: 'qidaolin', from: 'q_tianshen', to: 'q_v5end', s: [['qidaolin', '徒弟，你在天碑上写那个字的时候，为师在台下。'], ['qidaolin', '为师这辈子，被人指着鼻子骂过骗子、骂过疯子。可从来没想过——有人敢指着整个上界的鼻子，说它错了。'], ['me', '它本来就错了。'], ['qidaolin', '（他笑了，笑着笑着，眼睛就红了）……对。它本来就错了。']] },
 ];
 const talkNext = id => TALKS.find(T => T.npc === id && !(C.talked || {})[T.id] && C.story.q >= qi(T.from) && C.story.q <= qi(T.to));
 async function talkSteps(steps) { for (const st of steps) { const [w, t, r] = st;

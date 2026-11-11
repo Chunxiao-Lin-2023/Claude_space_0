@@ -1,6 +1,7 @@
 // node test/balance.js [label] — auto-battle win rate / rounds / hp left vs the main story bosses at their suggested level, no items
 const { chromium } = require('playwright');
-const SC = [
+const ONLY = process.argv[3] ? new RegExp(process.argv[3]) : null;
+const SC0 = [
   ['风狈', 7, [['fengbei', 7]], ['qly', 'sn'], null, 0, []],
   ['祭灵', 11, [['jiling', 11]], ['qly', 'sn'], 'maoqiu', 40, []],
   ['虎穴', 12, [['tiger', 12], ['tiger', 11]], ['qly', 'sn'], 'maoqiu', 50, []],
@@ -22,15 +23,27 @@ const SC = [
   ['补天教长老', 31, [['butianjiao', 31]], ['qly', 'sn', 'lei', 'gw', 'dsh', 'jian', 'ta', 'zhuque', 'zhizun', 'lunhui'], 'dahong', 80, ['a_jun']],
   ['不老山主', 32, [['bulaoshan', 32]], ['qly', 'sn', 'lei', 'gw', 'dsh', 'jian', 'ta', 'zhuque', 'zhizun', 'lunhui'], 'dahong', 80, ['a_jun']],
   ['凝金门主', 33, [['ningjin', 33]], ['qly', 'sn', 'lei', 'gw', 'dsh', 'jian', 'ta', 'zhuque', 'zhizun', 'lunhui'], 'dahong', 85, ['a_jun']],
+  ['宝界守灵', 36, [['baoling', 36]], ['qly', 'sn', 'lei', 'gw', 'dsh', 'jian', 'ta', 'zhuque', 'zhizun', 'lunhui'], 'dahong', 85, []],
+  ['战场古灵', 37, [['zhanhun', 37]], ['qly', 'sn', 'lei', 'gw', 'dsh', 'jian', 'ta', 'zhuque', 'zhizun', 'lunhui'], 'dahong', 85, []],
+  ['上界来使', 38, [['jitanshi', 38]], ['qly', 'sn', 'lei', 'gw', 'dsh', 'jian', 'ta', 'zhuque', 'zhizun', 'lunhui'], 'dahong', 90, []],
+  ['登天守关', 39, [['dengtian', 39]], ['qly', 'sn', 'lei', 'gw', 'dsh', 'jian', 'ta', 'zhuque', 'zhizun', 'lunhui'], 'dahong', 90, []],
+  ['书院弟子×3', 40, [['txdizi', 40], ['txdizi', 40], ['txdizi', 40]], ['qly', 'sn', 'lei', 'gw', 'dsh', 'jian', 'ta', 'zhuque', 'zhizun', 'lunhui', 'wudi'], 'dahong', 90, []],
+  ['天人天才', 41, [['tianming', 41]], ['qly', 'sn', 'lei', 'gw', 'dsh', 'jian', 'ta', 'zhuque', 'zhizun', 'lunhui', 'wudi'], 'dahong', 95, []],
+  ['石傀王', 42, [['kuangwang', 42]], ['qly', 'sn', 'lei', 'gw', 'dsh', 'jian', 'ta', 'zhuque', 'zhizun', 'lunhui', 'wudi'], 'dahong', 95, []],
+  ['第九层战魂', 43, [['gutaiwang', 43]], ['qly', 'sn', 'lei', 'gw', 'dsh', 'jian', 'ta', 'zhuque', 'zhizun', 'lunhui', 'wudi'], 'dahong', 100, []],
+  ['妖龙天神', 44, [['yaolong', 44]], ['qly', 'sn', 'lei', 'gw', 'dsh', 'jian', 'ta', 'zhuque', 'zhizun', 'lunhui', 'wudi'], 'dahong', 100, []],
+  ['野外·百族战场', 36, [['jinwu', 36], ['zhengzu', 36]], ['qly', 'sn', 'lei', 'gw', 'dsh', 'jian', 'ta', 'zhuque', 'zhizun', 'lunhui'], 'dahong', 85, []],
+  ['野外·无人区', 43, [['huangshou', 43], ['huangshou', 43]], ['qly', 'sn', 'lei', 'gw', 'dsh', 'jian', 'ta', 'zhuque', 'zhizun', 'lunhui', 'wudi'], 'dahong', 100, []],
   ['野外·皇都外', 21, [['tiebei', 21], ['jinyuan', 21]], ['qly', 'sn', 'lei', 'gw', 'dsh', 'jian', 'ta'], 'dahong', 55, []],
   ['野外·火国', 25, [['huolang', 25], ['yanque', 25]], ['qly', 'sn', 'lei', 'gw', 'dsh', 'jian', 'ta', 'zhuque'], 'dahong', 65, []],
   ['野外·大荒深处', 8, [['bear', 8], ['leopard', 8]], ['qly', 'sn'], 'maoqiu', 30, []],
   ['野外·狮岭', 15, [['yuzu', 15], ['bigwolf', 15]], ['qly', 'sn', 'lei', 'gw'], 'dahong', 30, []],
 ];
+const SC = ONLY ? SC0.filter(s => ONLY.test(s[0])) : SC0;
 (async () => { const b = await chromium.launch(); const pg = await b.newPage(); const errs = []; pg.on('pageerror', e => errs.push(e.message));
   await pg.addInitScript(() => { localStorage.clear(); }); await pg.goto('http://localhost:8770/test.html'); await pg.waitForFunction(() => window.__dbg && __dbg.ready); await pg.click('text=开始'); await pg.waitForTimeout(300);
   const out = await pg.evaluate(async SC => { __dbg.auto = true; __dbg.instant = true; __dbg.dlgPick(-1); await new Promise(r => setTimeout(r, 400)); const c = __dbg.C; c.auto = true; const res = [];
-    const gfAt = lv => ['yingxia', 'xixue', 'guwen', 'yaoding', ...(lv >= 10 ? ['jijing'] : []), ...(lv >= 16 ? ['taiyi'] : []), ...(lv >= 26 ? ['niepan'] : []), ...(lv >= 28 ? ['zhizungu'] : []), ...(lv >= 30 ? ['renhuang'] : [])];
+    const gfAt = lv => ['yingxia', 'xixue', 'guwen', 'yaoding', ...(lv >= 10 ? ['jijing'] : []), ...(lv >= 16 ? ['taiyi'] : []), ...(lv >= 26 ? ['niepan'] : []), ...(lv >= 28 ? ['zhizungu'] : []), ...(lv >= 30 ? ['renhuang'] : []), ...(lv >= 32 ? ['lingshen'] : []), ...(lv >= 36 ? ['shuanggu'] : []), ...(lv >= 38 ? ['yunzu'] : []), ...(lv >= 40 ? ['wudidao'] : []), ...(lv >= 43 ? ['zhizunye'] : [])];
     for (const [name, lv, mobs, sk, pet, aff, allies] of SC) { let w = 0, rounds = 0, hp = 0; const N = 30;
       for (let i = 0; i < N; i++) { c.lv = lv; c.sk = sk.slice(); c.bar = sk.slice(0, typeof barSlots === 'function' ? barSlots(lv) : 4); c.gf = gfAt(lv); c.dt = ['li', 'ti', 'ling', 'shou', 'su', 'feng', 'li', 'ti', 'ling'].slice(0, Math.max(0, lv - 9)); c.bag = {}; c.prof = {}; c.eq = []; c.relics = {};
         c.pets = pet ? { [pet]: { aff } } : {}; c.pet = pet; fullHeal();

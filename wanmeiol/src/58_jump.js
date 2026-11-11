@@ -20,12 +20,18 @@ const JUMPS = [
     bag: { herb: 14, meat: 10, lingyao: 10, baoyao: 9, bone: 22 }, money: 2000, dt: 9, arena: 12 },
   { q: 'q_qishen', n: '第九章 · 七神', lv: 31, exp: 0.1, loc: 'sg_inner', gf: ['renhuang'], sk: { qly: 185, sn: 180, lei: 175, gw: 140, jian: 130, dsh: 115, ta: 100, zhuque: 70, zhizun: 45 }, pets: { maoqiu: [100, 32], dahong: [95, 31], ertuzi: [70, 30] },
     relics: ['r_shichong'], f: { dajie: 1, shihuang: 1 }, bag: { herb: 15, meat: 10, lingyao: 12, baoyao: 10, bone: 24 }, money: 3000, dt: 9, arena: 8 },
+  { q: 'q_v3end', n: '第四卷 · 登天', lv: 34, exp: 0.1, loc: 'sg_hou', gf: ['lingshen'], sk: { qly: 190, sn: 185, lei: 180, gw: 160, jian: 150, dsh: 140, ta: 120, zhuque: 100, zhizun: 80, lunhui: 30 }, pets: { maoqiu: [100, 35], dahong: [100, 34], ertuzi: [80, 33] },
+    relics: ['r_shenhuo', 'r_ziteng'], f: { qishen: 1, shengdi: 1, v3end: 1 }, bag: { herb: 16, meat: 12, lingyao: 14, baoyao: 12, bone: 26 }, money: 4000, dt: 9, arena: 5 },
+  { q: 'q_v5', n: '第五卷 · 上界', lv: 39, exp: 0.1, loc: 'sj_gate', gf: ['shuanggu', 'yunzu'], sk: { qly: 200, sn: 195, lei: 190, gw: 175, jian: 170, dsh: 165, ta: 150, zhuque: 140, zhizun: 120, lunhui: 70 }, pets: { maoqiu: [100, 40], dahong: [100, 39], ertuzi: [90, 38] },
+    relics: ['r_dihuo', 'r_zhanhun', 'r_jitan'], dun: ['baojie'], f: { v4: 1, baojie: 1, bzWin: 1, bzCore: 1, altar: 1, yunzu: 1, huoBye: 2, v4end: 1 }, bag: { herb: 18, meat: 14, lingyao: 16, baoyao: 14, bone: 30 }, money: 5000, dt: 9, arena: 3 },
+  { q: 'q_tianren', n: '第十三章 · 至尊古台', lv: 41, exp: 0.1, loc: 'sj_town', gf: ['wudidao'], sk: { qly: 205, sn: 200, lei: 195, gw: 185, jian: 180, dsh: 175, ta: 165, zhuque: 155, zhizun: 140, lunhui: 95, wudi: 30 }, pets: { maoqiu: [100, 42], dahong: [100, 41], ertuzi: [95, 40] },
+    f: { zuixue: 1, ladder: 1, qidao: 1, dojo: 1 }, bag: { herb: 20, meat: 15, lingyao: 18, baoyao: 16, bone: 32 }, money: 6000, dt: 9, arena: 2 },
 ];
 function dropRunning() { // a story scene, dialogue, mini-game or fight in progress is simply abandoned: its promise never resolves
   const B = STATE.battle; if (B) { B.over = B.done = B.aborted = true; STATE.battle = null; STATE.battleRes = null; STATE.busy = false; UI.selFoe = null; }
   clearInterval(UI.miniT); DLG = null; STATE.scene = null; UI.jEntry = null; UI.hist = []; UI.cur = null; STATE.dtPending = null; renderDlg(); }
 function jumpTo(i) { if (NETROLE === 'guest') { toast('只有房主能跳章'); return; } dropRunning();
-  const c = newChar(); c.diff = C ? C.diff : 1; c.created = C ? C.created : now(); c.auto = C ? !!C.auto : false; const DT = ['li', 'ti', 'shou', 'su', 'feng', 'ling'];
+  const c = newChar(); c.diff = C ? C.diff : 1; c.created = C ? C.created : now(); c.auto = C ? !!C.auto : false; for (const k of ['tut', 'tut1', 'tut2', 'tutPet']) c.seen[k] = 1; /* skipping ahead means skipping the lessons too */ const DT = ['li', 'ti', 'shou', 'su', 'feng', 'ling'];
   for (let k = 0; k <= i; k++) { const J = JUMPS[k];
     c.gf = [...new Set([...c.gf, ...(J.gf || [])])]; for (const [id, n] of Object.entries(J.sk || {})) { if (!c.sk.includes(id)) c.sk.push(id); c.prof[id] = n; }
     for (const [id, [aff, lv]] of Object.entries(J.pets || {})) c.pets[id] = { aff, lv, exp: 0, hatch: 0, evo: aff >= 100 ? 1 : 0 }; for (const r of J.relics || []) c.relics[r] = 1;

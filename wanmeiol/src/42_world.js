@@ -1,6 +1,29 @@
 /* ================= the wild: events while exploring (some open as your realm grows, some only at night),
    and the 骨文 memory game used when 石昊 reads a 宝术 off its runes ================= */
 const WILD = [
+  { id: 'bz_fire', once: 1, title: '别人的火堆', when: P => P.area === 'baizu' && C.story.q >= qi('q_bzcore') && isNight(), scene: async () => {
+    await nar('夜里，你路过一堆金乌族的篝火。火边坐着一个金乌族的少年，是白天被你打败的那三个之一。他看见你，愣了一下。');
+    await say('金乌族少年', '……坐吧。（他往旁边挪了挪）就这一回。');
+    const c = await choose(['（坐下）', '（摆摆手走了）']);
+    if (c === 0) { await nar('你们谁也没说话，就那么烤着火。过了很久，他递过来一块烤得金黄的肉：“金乌族的烤法。尝尝。”'); await me('……比我烤的好吃。'); await say('金乌族少年', '（他笑了，第一次笑）那是当然。'); give('meat', 3); F().jinwuFire = 1; }
+    else await nar('你走出去很远，回头看了一眼。那堆金色的火，还在亮着。'); } },
+  { id: 'bz_name', once: 1, title: '崖上的名字', when: P => P.id === 'bz_yun' && C.story.q >= qi('q_huobye'), scene: async () => {
+    await nar('云族的崖壁上，刻满了名字。那是从飞升祭坛的锁链上抄下来的——每一个“飞升”上去的人。');
+    await nar('你一个一个地看过去。在很靠下的地方，有一个名字旁边，被人用刀刻了一个小小的记号——一条瘸腿。');
+    await me('……是老兵的兄弟。');
+    await nar('你在那个名字旁边站了一会儿，从怀里掏出一块肉干，放在了崖下。'); gainExp(BAL.expNext(C.lv) * 0.1); give('lingyao', 2); } },
+  { id: 'sj_star', once: 1, title: '摘星星', when: P => P.area === 'shangjie' && isNight() && C.story.q >= qi('q_ladder'), scene: async () => {
+    await nar('上界的夜里，星星离得很近。你躺在一块石头上，伸手往天上够了够。');
+    await nar('一颗很小的星星，真的落进了你的手心。凉凉的，一闪一闪。');
+    const c = await choose(['（揣进怀里，带回去给云族的小娃娃）', '（放它回去）']);
+    if (c === 0) { await nar('你把它揣进怀里。它在你怀里亮了一夜，像揣了一盏小灯。'); F().star = 1; give('baoyao'); }
+    else await nar('你松开手。它慢慢地飘了回去，在天上冲你闪了两下。'); } },
+  { id: 'sj_qi', once: 1, title: '师父的酒', when: P => P.area === 'shangjie' && C.story.q >= qi('q_tianren') && !isNight(), scene: async () => {
+    await nar('齐道临蹲在路边，面前摆着一个破酒壶。他看见你，招了招手。');
+    await say('qidaolin', '徒弟，来，陪为师喝一口。今天是为师的师父的忌日。');
+    await say('qidaolin', '为师的师父……也是个骗子。当年就是他，在天仙书院门口把为师骗走的。（他笑了）你说巧不巧。');
+    await nar('他把酒壶递给你。酒很辣，你呛得直咳嗽。他在旁边笑得前仰后合。');
+    gainExp(BAL.expNext(C.lv) * 0.12); } },
   { id: 'sg_candy', once: 1, title: '糖葫芦', when: P => P.area === 'shiguo' && C.story.q >= qi('q_yuwang') && !isNight(), scene: async () => {
     await nar('一个扎着冲天辫的小娃娃拽住了你的衣角，仰着脸看你。他手里攥着一串糖葫芦，糖衣都化了。');
     await say('小娃娃', '大哥哥，你就是那个吃法旨的人吗？……法旨好吃，还是糖葫芦好吃？');

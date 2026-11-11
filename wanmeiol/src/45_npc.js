@@ -226,6 +226,42 @@ const CHATTER = [
   { at: 'hg_volcano', from: 'q_huohuang', to: 'q_v3end', who: '采火晶的矿工', t: '火山口里住着一头熔岩龟王，背上的壳比我们的矿还值钱。没人敢去敲。' },
   { at: 'hg_nirvana', from: 'q_letter', to: 'q_v3end', who: '守池的老祭司', t: '涅槃池几百年没让外人进过。上一个外人，是你娘。……你们娘儿俩，都挺能扛。' },
   { at: 'huoguo', from: 'q_huohuang', to: 'q_v3end', night: 1, who: '巡夜的火国兵', t: '夜里火山的光能照到边关。我们火国人说，那是祖宗在点灯。' },
+  // 第四卷 · 下界边陲
+  { at: 'bz_camp', from: 'q_baojie', to: 'q_v5end', who: 'bzlao', t: '我这条腿，是四十年前在战场尽头丢的。那会儿我也觉得自己能走过去。' },
+  { at: 'bz_camp', from: 'q_baojie', to: 'q_v5end', who: '营地的货郎', t: '金乌族的人买东西从来不还价，天角蚁族的人从来不给钱，狰族的人……直接把我的摊子当饭吃。' },
+  { at: 'bz_camp', from: 'q_baojie', to: 'q_bzcore', who: '天角蚁族少年', t: '你就是那个“荒”？（他把你从头看到脚）……也没多高嘛。' },
+  { at: 'bz_camp', from: 'q_bzcore', to: 'q_v5end', who: '天角蚁族少年', t: '（他看见你，往旁边让了让）……荒哥。我刚才什么都没说。' },
+  { at: 'bz_camp', from: 'q_bzcore', to: 'q_v5end', who: '金乌族少年', t: '我那三个族兄回去以后，族长问他们是谁打的。他们说：“荒。”族长问荒是谁，他们说：“……一个特别能吃的。”' },
+  { at: 'bz_camp', from: 'q_bzcore', to: 'q_v5end', who: '狰族少年', t: '我们狰族不服人。……可你那一拳，我服。' },
+  { at: 'bz_camp', from: 'q_yunzu', to: 'q_v5end', who: 'bzlao', t: '祭坛碎的那天，我在营地里坐了一夜。我那个兄弟……总算能歇着了。' },
+  { at: 'bz_camp', from: 'q_bzcamp', to: 'q_v5end', night: 1, who: '守夜的狰族战士', t: '夜里别往战场里走。那里面的喊杀声，是死人在喊。' },
+  { at: 'bz_field', from: 'q_bzfield', to: 'q_v5end', who: '捡兵器的少年', t: '这片地上插着的兵器，有一半是金乌族的，一半是天角蚁族的，还有一半……（他想了想）反正很多。' },
+  { at: 'bz_field', from: 'q_bzcore', to: 'q_v5end', who: '金乌族战士', t: '你别过来！……我是说，你过来可以，别打我。' },
+  { at: 'bz_core', from: 'q_altar', to: 'q_v5end', who: '守墙的百族老兵', t: '墙开了一道缝以后，好多人想从缝里挤过去。挤过去的，都去了祭坛。' },
+  { at: 'bz_altar', from: 'q_yunzu', to: 'q_v5end', who: '收拾祭坛的云族人', t: '祭坛底下挖出来好多锁链，一根一根的，都写着名字。我们把名字都刻在了崖上。' },
+  { at: 'bz_yun', from: 'q_huobye', to: 'q_v5end', who: 'yunlao', t: '族里的小娃娃天天趴在云边上往上看。他们说，大哥哥答应了，会回来讲上面的故事。' },
+  { at: 'bz_yun', from: 'q_huobye', to: 'q_v5end', who: '云族的小娃娃', t: '大哥哥，你上去了吗？……你怎么又下来了？上面不好玩吗？' },
+  { at: 'bz_yun', from: 'q_yunzu', to: 'q_v5end', who: '云族的老婆婆', t: '我们云族的人，走路是不出声的。你走路……（她听了听）像一头熊。' },
+  { at: 'bz_road', from: 'q_v5', to: 'q_v5end', who: '在登天路下徘徊的少年', t: '听说有人从这条路走上去了。……我也想试试。（他看了看满台阶的雷）明年吧。' },
+  // 第五卷 · 上界
+  { at: 'sj_gate', from: 'q_ladder', to: 'q_v5end', who: '路边歇脚的修士', t: '（他看见你，往旁边挪了挪）……罪州来的。别靠太近。' },
+  { at: 'sj_gate', from: 'q_tianshen', to: 'q_v5end', who: '路边歇脚的修士', t: '（他看见你，站了起来）荒、荒兄！我刚才不是在说你！' },
+  { at: 'sj_town', from: 'q_ladder', to: 'q_v5end', who: '天仙城的掌柜', t: '下界来的？（他把价钱翻了一倍）……罪州来的，加收一成“晦气钱”。' },
+  { at: 'sj_town', from: 'q_tianshen', to: 'q_v5end', who: '天仙城的掌柜', t: '荒爷！（他把价钱减了一半）您随便拿，随便拿！晦气钱？什么晦气钱？没听说过！' },
+  { at: 'sj_town', from: 'q_dojo', to: 'q_v5end', who: 'qidaolin', t: '徒弟，为师跟你说，三千州的饭馆，哪家最便宜，哪家能赊账，为师门儿清。' },
+  { at: 'sj_town', from: 'q_dojo', to: 'q_v5end', who: 'qidaolin', t: '为师年轻的时候，也是一表人才。（他摸了摸乱糟糟的胡子）……真的。' },
+  { at: 'sj_town', from: 'q_kuang', to: 'q_v5end', who: 'qidaolin', t: '天人族那个护道者又来找为师了。为师跟他说：“你打我徒弟一下，我就去你家矿里再挖一车。”他就走了。' },
+  { at: 'sj_town', from: 'q_qidao', to: 'q_v5end', who: '天仙城的说书人', t: '至尊道场？（台下哄笑）那是三千州最大的道场——因为它只有一个人，地方够大！' },
+  { at: 'sj_town', from: 'q_tianshen', to: 'q_v5end', who: '天仙城的说书人', t: '今天不讲笑话了。今天讲：一个罪血，在至尊古台上，斩了一位天神。' },
+  { at: 'sj_academy', from: 'q_qidao', to: 'q_v5end', who: '书院执事', t: '天梯八级全过……被齐道临那个老骗子拐跑了。院长知道了，摔了三个茶杯。' },
+  { at: 'sj_academy', from: 'q_dojo', to: 'q_v5end', who: '天仙书院的师姐', t: '你就是那个把我师弟们打跑的“大师兄”？……（她笑了）他们回来以后，一个月没敢出门。' },
+  { at: 'sj_ladder', from: 'q_qidao', to: 'q_v5end', who: '在天梯下发呆的少年', t: '第七级问“何为道”，我答了三天，都没过。听说有人踢翻了那盏灯就过了？……我怎么没想到！' },
+  { at: 'sj_desert', from: 'q_tianren', to: 'q_v5end', who: 'qidaolin', t: '这根柱子，是为师小时候刻过字的。（他指着一个歪歪扭扭的“齐”字）至尊道场，以前人很多的。' },
+  { at: 'sj_tianren', from: 'q_kuang', to: 'q_v5end', who: '天人城的守卫', t: '（他握紧了枪，又松开了）……荒，城里的接风宴，以后不敢摆了。' },
+  { at: 'sj_gutai', from: 'q_tianshen', to: 'q_v5end', who: '古台下的天才', t: '天碑上那个“罪”字，有人想把它抹掉。抹了三天，抹不掉。' },
+  { at: 'sj_gutai', from: 'q_tianshen', to: 'q_v5end', who: '古台下的天才', t: '我在第三层下面转了三个月。你上去的那天……我决定，明天再试一次。' },
+  { at: 'sj_wild', from: 'q_v5end', to: 'q_v5end', who: '葛潜', t: '花蕾还没开。等它开的那天，我们再打一场。……你别再舔龙涎了，那东西是用来炼药的！' },
+  { at: 'shangjie', from: 'q_ladder', to: 'q_v5end', night: 1, who: '上界的守夜人', t: '上界的夜里，星星离得很近。你伸手，好像就能摘下来一颗。' },
 ];
 let chatT = 0, lastChat = {};
 function chatterFor(loc) { const P = PLACES[loc], q = C.story.q;
@@ -238,10 +274,10 @@ function npcSay(c) { lastChat[CHATTER.indexOf(c)] = now(); (C.chatHeard = C.chat
 function npcOnArrive(loc) { if (!C || NETROLE === 'guest' || STATE.scene) return; const L = chatterFor(loc).filter(c => !lastChat[CHATTER.indexOf(c)] || now() - lastChat[CHATTER.indexOf(c)] > 300000); if (L.length && chance(0.55)) setTimeout(() => { if (!STATE.scene && !STATE.battle) npcSay(chatPick(L)); }, 700); chatT = now() + rint(40000, 70000); }
 function npcTick() { if (!C || STATE.mode !== 'play' || NETROLE === 'guest' || STATE.scene || STATE.battle || STATE.dungeon || now() < chatT) return; chatT = now() + rint(45000, 80000);
   const L = chatterFor(C.loc).filter(c => !lastChat[CHATTER.indexOf(c)] || now() - lastChat[CHATTER.indexOf(c)] > 300000); if (L.length) npcSay(chatPick(L)); }
-function npcRumor(text) { const P = PLACES[C.loc]; const who = P.area === 'shicun' ? NPCS.linhu : P.area === 'butian' ? NPCS.gezhu : P.area === 'baiduan' ? NPCS.huolinger : P.area === 'shiguo' ? NPCS.leiting : P.area === 'huoguo' ? NPCS.huolinger : null; logLine(who ? `<span class="who">${who.name}</span>${text}` : '【传闻】' + text, 'npc'); }
+function npcRumor(text) { const P = PLACES[C.loc]; const who = P.area === 'shicun' ? NPCS.linhu : P.area === 'butian' ? NPCS.gezhu : P.area === 'baiduan' ? NPCS.huolinger : P.area === 'shiguo' ? NPCS.leiting : P.area === 'huoguo' ? NPCS.huolinger : P.area === 'baizu' ? NPCS.bzlao : P.area === 'shangjie' ? NPCS.qidaolin : null; logLine(who ? `<span class="who">${who.name}</span>${text}` : '【传闻】' + text, 'npc'); }
 function npcTalk(id) { // clicking a person: their quest or side errand, otherwise a line that fits right now
   if (STATE.scene || STATE.battle) return; const opts = talkOptions(id); const lines = chatterFor(C.loc).filter(c => c.who === id);
-  const fallback = { chief: '去玩吧，别跑太远。', willow: '（柳枝静静垂着。）', linhu: '弓要常擦，箭要常磨。', dazhuang: '小不点，下回进山带上我！', ermeng: '嘿嘿。', pihou: '你看你看，我又能多翻一个跟头了！', qingfeng: C.story.f.qfIn ? '内门的饭比外门的好吃。……你别告诉别人我说的。' : '……嗯。', guiye: '……', gezhu: '好好修行。', libelder: '书别弄脏了。', huolinger: C.story.f.huohuang ? '你又来了？……我没在等你。' : '看什么看？', xiaotian: '烤鸡还有半只，你要不要？', laozhong: '侯爷吃了吗？老奴给您热着饭呢。', leiting: '有事说事，没事请客。', huohuang: '灵儿在后院。……朕什么都没说。' }[id] || '……';
+  const fallback = { chief: '去玩吧，别跑太远。', willow: '（柳枝静静垂着。）', linhu: '弓要常擦，箭要常磨。', dazhuang: '小不点，下回进山带上我！', ermeng: '嘿嘿。', pihou: '你看你看，我又能多翻一个跟头了！', qingfeng: C.story.f.qfIn ? '内门的饭比外门的好吃。……你别告诉别人我说的。' : '……嗯。', guiye: '……', gezhu: '好好修行。', libelder: '书别弄脏了。', huolinger: C.story.f.huohuang ? '你又来了？……我没在等你。' : '看什么看？', xiaotian: '烤鸡还有半只，你要不要？', laozhong: '侯爷吃了吗？老奴给您热着饭呢。', leiting: '有事说事，没事请客。', huohuang: '灵儿在后院。……朕什么都没说。', bzlao: '火边坐吧，别站着。', yunlao: '（老人冲你点了点头，胡子在云里飘。）', qidaolin: '徒弟！……有钱吗？借为师一点。' }[id] || '……';
   runScene(async () => { const ln = lines.length ? chatPick(lines) : null; if (ln) (C.chatHeard = C.chatHeard || {})[chatKey(ln)] = 1; await say(id, ln ? ln.t : fallback); if (opts.length) { const c = await choose([...opts.map(o => ({ t: o.t, dis: !!o.dis })), { t: '没事了' }]); if (c < opts.length) setTimeout(() => opts[c].f(), 0); } });
 }
 function talkOptions(id) { return [...questTalkOptions(id), ...bountyOptions(id), ...tradeOptions(id), ...(id === 'willow' && C.dt.length ? [{ t: '🔄 重开一座洞天（灵药 ×1）', dis: !itemN('lingyao'), f: dongtianRedo }] : []), ...(talkNext(id) ? [{ t: '💬 闲聊', f: () => talkPlay(id) }] : [])]; }
@@ -250,7 +286,7 @@ const npcMark = id => questTalkOptions(id).length ? ' ❗' : bountyToday().some(
 /* ---------- 虚神界 ladder: the young geniuses of every clan ---------- */
 const RIVAL_NAMES = ['石毅（重瞳）', '火灵儿', '云曦', '金乌族少年', '雷族少年', '赤龙族少年', '天角蚁族少年', '孔雀族少女', '白虎族少年', '羽族天才', '风族少年', '雨族少年', '战王族少年', '狰族少年', '玄龟族少年', '紫金鼠族少年', '石国皇子', '火国少年', '雷国少年', '风国少女', '青鳞鹰族少年', '狈族少年', '山猿族少年', '蛇族少女', '金翅族少年'];
 function rivalAt(rank) { const r = srng('rv' + rank); const name = rank <= RIVAL_NAMES.length ? RIVAL_NAMES[rank - 1] : RIVAL_NAMES[Math.floor(r() * RIVAL_NAMES.length)].replace(/少年|少女|天才/, '') + '·' + '甲乙丙丁戊己庚辛壬癸'[rank % 10] + '号';
-  const lv = clamp(C.lv + Math.round((60 - rank) / 28), 1, 36); let sks = [['qly'], ['sn'], ['qly', 'sn'], ['lei'], ['sn', 'lei'], ['gw', 'qly'], ['jian', 'lei']][Math.floor(r() * 7)]; if (rank <= 20) sks = [...new Set([...sks, ...[['jian', 'ta'], ['dsh', 'lei'], ['sn', 'jian']][rank % 3]])];
+  const lv = clamp(C.lv + Math.round((60 - rank) / 28), 1, 46); let sks = [['qly'], ['sn'], ['qly', 'sn'], ['lei'], ['sn', 'lei'], ['gw', 'qly'], ['jian', 'lei']][Math.floor(r() * 7)]; if (rank <= 20) sks = [...new Set([...sks, ...[['jian', 'ta'], ['dsh', 'lei'], ['sn', 'jian']][rank % 3]])];
   if (rank === 1) return { rank, name, lv: lv + 1, gear: 1.35, sk: ['sn', 'lei', 'jian', 'qly'], icon: '👁️', shiyi: 1 };
   return { rank, name, lv, gear: 0.85 + Math.max(0, 100 - rank) / 100 * 0.35 + (rank <= 20 ? 0.08 : 0), sk: sks, icon: ['🧑', '👦', '👧', '🦁', '🐉', '🦅'][Math.floor(r() * 6)] }; }
 function arenaDaily() { const d = gameDay(); if (C.arena.day !== d) { C.arena.day = d; C.arena.tries = BAL.arenaTries; } }

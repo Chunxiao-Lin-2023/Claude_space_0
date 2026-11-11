@@ -55,6 +55,8 @@ function gainExp(n, quiet) {
     if (C.lv === 19 && !C.story.f.end) { C.exp = BAL.expNext(C.lv); break; }
     if (C.lv === 24 && !C.story.f.v2end) { C.exp = BAL.expNext(C.lv); break; }
     if (C.lv === 29 && !C.story.f.shihuang) { C.exp = BAL.expNext(C.lv); break; }
+    if (C.lv === 34 && !C.story.f.v4) { C.exp = BAL.expNext(C.lv); break; }
+    if (C.lv === 39 && !C.story.f.v4end) { C.exp = BAL.expNext(C.lv); break; }
     C.exp -= BAL.expNext(C.lv); C.lv++; fullHeal(); sfx('level');
     logLine(`<b class="lvup">境界精进！</b> ${realmOf(C.lv).name} · 第 ${C.lv} 层。气血、符力已回满。`, 'sys'); bigFlash(`境界精进 · ${realmOf(C.lv).name}第 ${C.lv} 层`, 'lv');
     if (C.lv >= 10 && C.lv <= 18 && C.dt.length < C.lv - 9) STATE.dtPending = true;

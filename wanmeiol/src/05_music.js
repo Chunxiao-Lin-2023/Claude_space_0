@@ -18,7 +18,7 @@ function mvoice(type, m, t, dur, vol, lp = 0, att = 0.01) {
   let n = o; if (lp) { const f = X.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = lp; o.connect(f); n = f; } n.connect(g); g.connect(MUS.bus); o.start(t); o.stop(t + dur + 0.05);
 }
 function mnoise(t, dur, vol, type, f) { const X = AU.ctx, s = X.createBufferSource(), fl = X.createBiquadFilter(), g = X.createGain(); s.buffer = AU.noise; fl.type = type; fl.frequency.value = f; g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0001, t + dur); s.connect(fl); fl.connect(g); g.connect(MUS.bus); s.start(t, Math.random() * 0.5); s.stop(t + dur + 0.05); }
-function musicWanted() { if (!SET.music || SET.mute || STATE.mode !== 'play' || !C || !AU.ctx) return null; if (STATE.battle) return STATE.battle.epic ? 'boss' : 'battle'; const a = PLACES[C.loc].area; return { shicun: 'village', dahuang: 'wild', baiduan: 'wild', butian: 'butian', xushen: 'xushen', shiguo: 'court', huoguo: 'fire' }[a] || 'wild'; }
+function musicWanted() { if (!SET.music || SET.mute || STATE.mode !== 'play' || !C || !AU.ctx) return null; if (STATE.battle) return STATE.battle.epic ? 'boss' : 'battle'; const a = PLACES[C.loc].area; return { shicun: 'village', dahuang: 'wild', baiduan: 'wild', butian: 'butian', xushen: 'xushen', shiguo: 'court', huoguo: 'fire', baizu: 'battle', shangjie: 'butian' }[a] || 'wild'; }
 function musicMode() {
   const want = musicWanted(); if (want === MUS.cur) return; const X = AU.ctx; if (!X) return;
   if (!MUS.bus) { MUS.bus = X.createGain(); MUS.bus.gain.value = 0; MUS.bus.connect(AU.master); }

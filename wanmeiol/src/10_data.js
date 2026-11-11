@@ -3,8 +3,8 @@
 const BAL = {
   expNext: lv => Math.round(16 * Math.pow(lv, 1.7) + 14),
   realms: [ // crossing 9→10 needs 极境 (story); 19→20 needs the story's last step
-    { name: '搬血境', from: 1, to: 9 }, { name: '洞天境', from: 10, to: 19 }, { name: '化灵境', from: 20, to: 24 }, { name: '铭纹境', from: 25, to: 29 }, { name: '列阵境', from: 30, to: 34 }],
-  lvCap: 34, // 24→25 needs the end of 第二卷, 29→30 needs 石皇 (第三卷)
+    { name: '搬血境', from: 1, to: 9 }, { name: '洞天境', from: 10, to: 19 }, { name: '化灵境', from: 20, to: 24 }, { name: '铭纹境', from: 25, to: 29 }, { name: '列阵境', from: 30, to: 34 }, { name: '尊者境', from: 35, to: 39 }, { name: '神火境', from: 40, to: 44 }],
+  lvCap: 44, // 24→25 needs the end of 第二卷, 29→30 needs 石皇 (第三卷), 34→35 needs 第四卷 begun, 39→40 needs 登天路
   defK: 40,
   critMul: 1.7,
   enemy: lv => ({ hp: 26 + lv * 20, atk: 5 + lv * 2.7, def: 2 + lv * 1.9, spd: 8 + lv * 0.35, exp: 9 + Math.round(lv * 6.5 + lv * lv * 0.35) }),
@@ -22,8 +22,8 @@ const BAL = {
   foeRamp: lv => Math.pow(clamp((lv - 11) / 7, 0, 1), 1.5), foeHp: lv => 1 + 0.6 * BAL.foeRamp(lv) + 0.03 * Math.max(0, lv - 20), foeAtk: lv => 1 + 0.25 * BAL.foeRamp(lv) + 0.01 * Math.max(0, lv - 20), // 第二、三卷: a little more past 20
 };
 /* slots grow with the realm: 宝术 you can take into battle, 宝骨 you can wear */
-const barSlots = lv => 4 + (lv >= 10) + (lv >= 14) + (lv >= 18) + (lv >= 22) + (lv >= 27) + (lv >= 32);
-const relicSlots = lv => 2 + (lv >= 12) + (lv >= 17) + (lv >= 24) + (lv >= 30);
+const barSlots = lv => 4 + (lv >= 10) + (lv >= 14) + (lv >= 18) + (lv >= 22) + (lv >= 27) + (lv >= 32) + (lv >= 37) + (lv >= 42);
+const relicSlots = lv => 2 + (lv >= 12) + (lv >= 17) + (lv >= 24) + (lv >= 30) + (lv >= 36) + (lv >= 42);
 /* 宝术熟练度: uses → 小成 / 大成 */
 const PROF = [{ n: '', s: '', at: 0, b: 0 }, { n: '入门', s: '入', at: 12, b: 0.04 }, { n: '小成', s: '小', at: 30, b: 0.1 }, { n: '精通', s: '精', at: 60, b: 0.15 }, { n: '大成', s: '大', at: 100, b: 0.2 }, { n: '圆满', s: '圆', at: 160, b: 0.26 }]; // 圆满 opens 宝术合成
 /* elements: a few beasts take more from one kind of attack */
@@ -43,10 +43,11 @@ const SKILLS = {
   jian: { name: '锈剑', icon: '🗡️', got: 'sk_jian', mp: 18, cd: 3, tgt: 'enemy', dmg: 2.1, mag: 1, st: [{ k: 'bleed', t: 3, v: 0.4, p: 1 }], desc: '诡爷那柄生锈的古剑，剑意犹在：2.1 倍伤害并重创流血；砍在已经流血的敌人身上 ×1.35。' },
   zhuque: { name: '朱雀宝术', icon: '🔥', got: 'sk_zhuque', mp: 24, cd: 3, tgt: 'enemies', dmg: 1.6, mag: 1, el: 'fire', st: [{ k: 'burn', t: 3, v: 0.35, p: 0.8 }], desc: '朱雀真羽在涅槃池里认了主：火羽漫天，全体 1.6 倍伤害，大概率灼烧三回合。' },
   zhizun: { name: '至尊神光', icon: '🌟', got: 'sk_zhizun', mp: 30, cd: 4, tgt: 'enemy', dmg: 3.4, mag: 1, pierce: 1, self: [{ k: 'shield', t: 2, v: 0.6 }], desc: '重生的至尊骨放出的神光：3.4 倍伤害，无视防御，自己得到一层护盾。' },
+  wudi: { name: '无敌拳', icon: '👊', got: 'sk_wudi', mp: 36, cd: 4, tgt: 'enemy', dmg: 4.4, pierce: 1, el: 'blunt', st: [{ k: 'brk', t: 2, v: 0.3, p: 1 }], desc: '齐道临教的无敌道：这一拳只往前，不回头。4.4 倍伤害，无视防御，破甲。' },
   lunhui: { name: '轮回', icon: '☯️', got: 'sk_lunhui', mp: 40, cd: 5, tgt: 'enemies', dmg: 2.6, mag: 1, pierce: 1, st: [{ k: 'stun', t: 1, p: 0.5 }], desc: '死过一回才看见的东西：全体 2.6 倍伤害，无视防御，一半概率眩晕。连神也挡不住。' },
   ta: { name: '小塔', icon: '🗼', got: 'sk_ta', mp: 22, cd: 5, tgt: 'allies', shield: 1.6, desc: '那座只有四层的小塔垂下光幕，全队获得 1.6 倍攻击的护盾。' },
 };
-const SKILL_ORDER = ['qly', 'sn', 'gw', 'lei', 'dsh', 'jian', 'ta', 'zhuque', 'zhizun', 'lunhui'];
+const SKILL_ORDER = ['qly', 'sn', 'gw', 'lei', 'dsh', 'jian', 'ta', 'zhuque', 'zhizun', 'lunhui', 'wudi'];
 const STATUS = { burst: { n: '绝境', c: '#ffe08a' }, stun: { n: '眩晕', c: '#ffd34a' }, bleed: { n: '流血', c: '#ff6a6a' }, burn: { n: '灼烧', c: '#ff8a3a' }, poison: { n: '中毒', c: '#9ad84a' }, def: { n: '坚守', c: '#ffd28a' }, taunt: { n: '嘲讽', c: '#ffb36a' }, atk: { n: '凶性', c: '#ff9a6a' }, dodge: { n: '灵动', c: '#9ad8ff' }, sure: { n: '必暴', c: '#ffe46a' }, shield: { n: '护盾', c: '#9ae8b0' }, guard: { n: '防御', c: '#c8c0b0' }, weak: { n: '虚弱', c: '#b0a0ff' }, bound: { n: '锁链', c: '#d8b070' }, brk: { n: '破甲', c: '#e0a070' }, mark: { n: '印记', c: '#c08aff' }, freeze: { n: '冰封', c: '#9ad8ff' }, rage: { n: '狂怒', c: '#ff4a2a' } };
 
 /* ---------- 功法 / 修炼所得 (passive) ---------- */
@@ -56,6 +57,10 @@ const GONGFA = {
   niepan: { name: '涅槃', icon: '🔥', desc: '在火国祖地的涅槃池里死过一回又活过来。气血 +12%，每回合回复 2% 气血。', b: { hpP: 0.12, regen: 0.02 } },
   zhizungu: { name: '至尊骨', icon: '🦴', desc: '被挖走的至尊骨重新长了回来，在和石毅的血战里长成。攻击 +10%，暴击 +5%。', b: { atkP: 0.1, crit: 0.05 } },
   renhuang: { name: '人皇印', icon: '🔱', desc: '石国的气运落在你身上。气血、攻击、防御各 +8%。', b: { hpP: 0.08, atkP: 0.08, defP: 0.08 } },
+  shuanggu: { name: '双骨', icon: '🦴', desc: '在太古宝界的地火液海里，第二块至尊骨也长成了。气血 +8%，攻击 +8%，暴击 +4%。', b: { hpP: 0.08, atkP: 0.08, crit: 0.04 } },
+  yunzu: { name: '云族秘传', icon: '☁️', desc: '没落的云族把登天的法子教给了你。身法 +6，符力 +10%。', b: { spd: 6, mpP: 0.1 } },
+  wudidao: { name: '无敌道', icon: '👊', desc: '齐道临从原始之门里带出来的道：只往前，不回头。攻击 +12%，防御 +6%。', b: { atkP: 0.12, defP: 0.06 } },
+  zhizunye: { name: '至尊液', icon: '🏆', desc: '至尊古台第九层的赏赐，洗过一遍骨血。气血 +12%，攻击 +6%，防御 +6%。', b: { hpP: 0.12, atkP: 0.06, defP: 0.06 } },
   lingshen: { name: '四道灵身', icon: '👥', desc: '一身化四，各领一军。攻击 +8%，身法 +4。', b: { atkP: 0.08, spd: 4 } },
   xixue: { name: '双头火犀宝血', icon: '🔥', desc: '炼化了双头火犀的宝血精华。攻击 +6%。', b: { atkP: 0.06 } },
   yaoding: { name: '药鼎洗礼', icon: '🏺', desc: '泡在族长熬的大药鼎里，脱胎换骨。气血 +6%，防御 +6%。', b: { hpP: 0.06, defP: 0.06 } },
@@ -160,6 +165,30 @@ const MOBS = {
   r_rhino: { name: '独角兕', boss: 1, roam: 1, weak: { blunt: 1 }, mul: { hp: 6, atk: 1.25, def: 1.6, spd: 0.8 }, sk: [{ n: '践踏', dmg: 0.9, aoe: 1, w: 3 }, { n: '撼地冲锋', dmg: 2.3, w: 1, charge: 1 }], loot: [['baoyao', 1], ['meat', 1]], p2: '独角兕的独角开始发光，脚下的地面寸寸龟裂！', d: '到处游荡的凶兽首领，一身甲壳刀枪不入，只怕重砸。' },
   r_snake: { name: '赤鳞巨蟒', boss: 1, roam: 1, mul: { hp: 5.5, atk: 1.3, def: 1.3 }, sk: [{ n: '毒雾', dmg: 0.7, aoe: 1, st: { k: 'poison', t: 3, v: 0.3, p: 0.7 }, w: 2 }, { n: '绞杀', dmg: 1.2, w: 3 }, { n: '吞噬', dmg: 2.3, w: 1, charge: 1 }], loot: [['baoyao', 1], ['lingyao', 1]], p2: '赤鳞巨蟒蜕下一层旧皮，鳞片红得像烧透的铁！', d: '到处游荡的凶兽首领，喷出来的雾能毒倒一片林子。' },
   r_bird: { name: '雷翅雕', boss: 1, roam: 1, mul: { hp: 5, atk: 1.35, def: 1.2, spd: 1.6 }, sk: [{ n: '雷翅', dmg: 1, aoe: 1, mag: 1, w: 3 }, { n: '雷池', dmg: 2.1, aoe: 1, mag: 1, w: 1, charge: 1 }], loot: [['baoyao', 1], ['lingyao', 1]], p2: '雷翅雕双翅一振，乌云在它头顶聚成了雷池！', d: '到处游荡的凶兽首领，翅膀扇一下就是一道雷。' },
+  // 第四卷 · 下界边陲
+  dihuoshou: { name: '地火兽', lv: 35, weak: { lei: 1 }, mul: { hp: 1.6, atk: 1.25, def: 1.4 }, sk: [{ n: '地火吐息', dmg: 0.8, aoe: 1, st: { k: 'burn', t: 2, v: 0.3, p: 0.5 }, w: 2 }, { n: '熔爪', dmg: 1.15, w: 3 }], loot: [['bone', 0.5], ['lingyao', 0.25]], d: '太古宝界里喝地火液长大的兽，一身的硫磺味。' },
+  baoling: { name: '宝界守灵', lv: 36, boss: 1, weak: { lei: 1 }, mul: { hp: 6.4, atk: 1.6, def: 1.6 }, sk: [{ n: '地火海潮', dmg: 0.95, aoe: 1, st: { k: 'burn', t: 2, v: 0.35, p: 0.6 }, w: 2 }, { n: '守灵印', dmg: 1.3, w: 3 }, { n: '宝界镇压', dmg: 2.6, w: 1, charge: 1 }], loot: [['baoyao', 2]], p2: '守灵沉进了地火液海，整片海都站了起来！', d: '太古宝界的守灵，守着一片地火液海，不知道守了多少年。' },
+  jinwu: { name: '金乌族战士', lv: 35, weak: { bone: 1 }, mul: { hp: 1.5, atk: 1.35, def: 1.2, spd: 1.2 }, sk: [{ n: '金乌火', dmg: 1.15, el: 'fire', st: { k: 'burn', t: 2, v: 0.3, p: 0.5 }, w: 3 }, { n: '日冕', dmg: 0.8, aoe: 1, w: 1 }], loot: [['meat', 0.4], ['lingyao', 0.3]], d: '金乌族的年轻人，一身金色的火。看谁都像在看一只烤鸡。' },
+  tianjiao: { name: '天角蚁族战士', lv: 35, weak: { blunt: 1 }, mul: { hp: 1.8, atk: 1.2, def: 1.6 }, sk: [{ n: '天角撞', dmg: 1.2, w: 3 }, { n: '蚁甲', buff: { k: 'def', t: 2, v: 0.3 }, w: 1 }], loot: [['bone', 0.5]], d: '个头不大，力气大得吓人。头上那只角，能顶翻一座小山。' },
+  zhengzu: { name: '狰族战士', lv: 36, mul: { hp: 1.6, atk: 1.35, def: 1.3, spd: 1.3 }, sk: [{ n: '狰吼', dmg: 0.75, aoe: 1, st: { k: 'weak', t: 2, v: 0.2, p: 0.4 }, w: 1 }, { n: '五尾鞭', dmg: 1.2, w: 3 }], loot: [['meat', 0.5], ['bone', 0.3]], d: '五条尾巴、一只角的狰族，打起架来不要命。' },
+  yinhun: { name: '战场阴魂', lv: 36, weak: { bone: 1 }, mul: { hp: 1.4, atk: 1.3, def: 1.1 }, sk: [{ n: '阴风', dmg: 1.1, mag: 1, w: 3 }, { n: '战鼓', dmg: 0.7, aoe: 1, w: 1 }], loot: [['bone', 0.5]], d: '百族战场上死了太多人。夜里，他们还在打。' },
+  zhanhun: { name: '战场古灵', lv: 37, boss: 1, weak: { bone: 1 }, mul: { hp: 6.8, atk: 1.7, def: 1.6 }, sk: [{ n: '百族战意', dmg: 1, aoe: 1, w: 2 }, { n: '古灵枪', dmg: 1.35, w: 3 }, { n: '破界一击', dmg: 2.7, w: 1, charge: 1 }], loot: [['baoyao', 2]], p2: '古灵身后站起来了千千万万个影子——百族战场上死过的所有人！', d: '守在百族战场尽头的古灵，没人知道它是哪一族的。它只认一件事：打得过它，才能过去。' },
+  wuji: { name: '祭坛舞者', lv: 37, mul: { hp: 1.3, atk: 1.3, def: 1.1, spd: 1.4 }, sk: [{ n: '迷魂舞', dmg: 0.6, aoe: 1, st: { k: 'stun', t: 1, p: 0.2 }, w: 2 }, { n: '袖里刀', dmg: 1.2, w: 3 }], loot: [['lingyao', 0.4]], d: '飞升祭坛上跳舞的人，笑得很好看。袖子里藏着刀。' },
+  jitanshi: { name: '上界来使', lv: 38, boss: 1, mul: { hp: 6.8, atk: 1.75, def: 1.6 }, sk: [{ n: '锁仙链', dmg: 0.9, aoe: 1, st: { k: 'bound', t: 1, p: 0.45 }, w: 2 }, { n: '上界神通', dmg: 1.35, mag: 1, w: 3 }, { n: '收坐骑', dmg: 2.4, w: 1, charge: 1 }], loot: [['baoyao', 2]], p2: '来使撕开了祭坛底下的大阵：“下界的人，就该当坐骑！”', d: '从上界下来守祭坛的人。祭坛是个陷阱，飞上去的人，会被锁成坐骑。' },
+  leiyun: { name: '雷云兽', lv: 38, weak: { bone: 1 }, mul: { hp: 1.6, atk: 1.35, def: 1.3 }, sk: [{ n: '雷云', dmg: 0.85, aoe: 1, el: 'lei', st: { k: 'stun', t: 1, p: 0.2 }, w: 2 }, { n: '雷爪', dmg: 1.2, w: 3 }], loot: [['bone', 0.5], ['lingyao', 0.3]], d: '登天路上的云里住着的兽，一身的雷。' },
+  dengtian: { name: '登天路守关者', lv: 39, boss: 1, mul: { hp: 7, atk: 1.75, def: 1.7 }, sk: [{ n: '天阶压顶', dmg: 1, aoe: 1, w: 2 }, { n: '断路', dmg: 1.4, w: 3 }, { n: '下界之人，止步', dmg: 2.4, w: 1, charge: 1 }], loot: [['baoyao', 2]], p2: '守关者把整条登天路都压了下来——一步，也不让你走！', d: '登天路上最后一道关。几千年来，下界没有一个人走过去。' },
+  // 第五卷 · 上界
+  shayao: { name: '荒漠沙妖', lv: 40, weak: { lei: 1 }, mul: { hp: 1.7, atk: 1.3, def: 1.4 }, sk: [{ n: '流沙', dmg: 0.8, aoe: 1, st: { k: 'bound', t: 1, p: 0.3 }, w: 2 }, { n: '沙刃', dmg: 1.2, w: 3 }], loot: [['bone', 0.5]], d: '天仙州荒漠里的妖，把自己埋在沙里，只露两只眼睛。' },
+  txdizi: { name: '天仙书院弟子', lv: 40, mul: { hp: 1.5, atk: 1.35, def: 1.3 }, sk: [{ n: '书院剑诀', dmg: 1.2, w: 3 }, { n: '仙光', dmg: 0.8, aoe: 1, mag: 1, w: 1 }], loot: [['lingyao', 0.4]], d: '天仙书院的弟子，下巴抬得比天梯还高。' },
+  tianrenzu: { name: '天人族战士', lv: 41, mul: { hp: 1.7, atk: 1.35, def: 1.4 }, sk: [{ n: '天人一击', dmg: 1.2, w: 3 }, { n: '天人结阵', buff: { k: 'def', t: 2, v: 0.3 }, w: 1 }], loot: [['lingyao', 0.4], ['bone', 0.3]], d: '天人城的战士，身上的甲白得发亮。' },
+  tianming: { name: '天人族天才', lv: 41, boss: 1, mul: { hp: 6.8, atk: 1.7, def: 1.7, spd: 1.2 }, sk: [{ n: '天命光', dmg: 1, aoe: 1, mag: 1, w: 2 }, { n: '天人掌', dmg: 1.35, w: 3 }, { n: '天命所归', dmg: 2.5, w: 1, charge: 1 }], loot: [['baoyao', 2]], p2: '他胸口的天命石亮了——他把整块石头融进了自己的身子！', d: '天人族这一代最出色的少年，融了一块天命石。他笑着跟你称兄道弟，手里却一直攥着刀。' },
+  kuangkui: { name: '矿洞石傀', lv: 42, weak: { blunt: 1 }, mul: { hp: 2, atk: 1.25, def: 1.8, spd: 0.7 }, sk: [{ n: '石拳', dmg: 1.2, w: 3 }, { n: '崩落', dmg: 0.8, aoe: 1, w: 1 }], loot: [['bone', 0.6]], d: '天人族用矿石炼出来守矿的傀儡。不知道疼，也不知道停。' },
+  kuangwang: { name: '石傀王', lv: 42, boss: 1, weak: { blunt: 1 }, mul: { hp: 7.4, atk: 1.75, def: 2 }, sk: [{ n: '矿脉震', dmg: 1, aoe: 1, w: 2 }, { n: '傀王拳', dmg: 1.35, w: 3 }, { n: '天命石炮', dmg: 2.8, w: 1, charge: 1 }], loot: [['baoyao', 2]], p2: '石傀王把矿脉里的天命石全吞了下去，浑身亮得像一座灯塔！', d: '天人族矿脉最深处的傀儡王，肚子里装着一整条天命石的矿。' },
+  gutaihun: { name: '古台战魂', lv: 43, weak: { bone: 1 }, mul: { hp: 2.4, atk: 1.45, def: 1.5 }, sk: [{ n: '古台一拳', dmg: 1.25, w: 3 }, { n: '战魂咆哮', dmg: 0.85, aoe: 1, w: 1 }], loot: [['lingyao', 0.5]], d: '至尊古台上每一层都有战魂守着，是历代登台者留下的影子。' },
+  gutaiwang: { name: '第九层战魂', lv: 43, boss: 1, weak: { bone: 1 }, mul: { hp: 7.2, atk: 1.9, def: 1.7 }, sk: [{ n: '至尊威压', dmg: 1, aoe: 1, w: 2 }, { n: '古台拳', dmg: 1.4, w: 3 }, { n: '九层归一', dmg: 2.5, w: 1, charge: 1 }], loot: [['baoyao', 2]], p2: '战魂身后，八层古台的影子同时亮了！', d: '至尊古台第九层的战魂。上一次有人打赢它，是很多很多年以前。' },
+  yaolong: { name: '妖龙道门天神', lv: 44, boss: 1, mul: { hp: 7.6, atk: 1.8, def: 1.8 }, sk: [{ n: '天神器 · 镇', dmg: 1.05, aoe: 1, w: 2 }, { n: '妖龙爪', dmg: 1.4, w: 3 }, { n: '天神一击', dmg: 2.6, w: 1, charge: 1 }], loot: [['baoyao', 3]], p2: '天神祭出了第三件天神器——前两件，已经被你打碎了！', d: '妖龙道门的天神，听说下界来了个“罪血”喝了至尊液，亲自来杀。' },
+  huangshou: { name: '无人区荒兽', lv: 43, weak: { lei: 1 }, mul: { hp: 2.2, atk: 1.4, def: 1.5 }, sk: [{ n: '荒兽践踏', dmg: 0.9, aoe: 1, w: 2 }, { n: '撕咬', dmg: 1.25, w: 3 }], loot: [['meat', 0.6], ['bone', 0.4]], d: '无人区的荒兽，比大荒的凶兽大十倍，也凶十倍。' },
+  yeyao: { name: '夜游妖', lv: 41, mul: { hp: 1.5, atk: 1.35, def: 1.2, spd: 1.3 }, sk: [{ n: '夜刃', dmg: 1.2, w: 3 }, { n: '摄魂', dmg: 0.8, mag: 1, st: { k: 'weak', t: 2, v: 0.2, p: 0.4 }, w: 1 }], loot: [['lingyao', 0.4]], d: '上界的夜里游荡的妖，专挑落单的人。' },
   tiebei: { name: '铁背狼', lv: 20, mul: { hp: 1.25, atk: 1.15, def: 1.3, spd: 1.3 }, sk: [{ n: '铁背撞', dmg: 1.1, w: 3 }, { n: '群嚎', buff: { k: 'atk', t: 2, v: 0.2 }, w: 1 }], loot: [['meat', 0.6], ['bone', 0.4]], d: '石国皇都外的狼，背上的毛硬得像铁片。' },
   jinyuan: { name: '金眼猿', lv: 21, weak: { blunt: 1 }, mul: { hp: 1.4, atk: 1.2 }, sk: [{ n: '金眼', dmg: 0.9, st: { k: 'weak', t: 2, v: 0.2, p: 0.5 }, w: 2 }, { n: '捶地', dmg: 1.15, w: 3 }], loot: [['lingyao', 0.3]], d: '眼睛是金色的大猿，看你一眼，你就浑身发软。皮厚，得砸。' },
   qingjiao: { name: '青蛟', lv: 22, weak: { lei: 1 }, mul: { hp: 1.5, atk: 1.25, def: 1.2 }, sk: [{ n: '蛟尾', dmg: 1.15, w: 3 }, { n: '吐雾', dmg: 0.7, aoe: 1, st: { k: 'poison', t: 2, v: 0.3, p: 0.5 }, w: 1 }], loot: [['baoyao', 0.15], ['bone', 0.5]], d: '护城河外的老蛟，身上的鳞片是青的。怕雷。' },

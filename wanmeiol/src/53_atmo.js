@@ -10,6 +10,8 @@ const ATMO = {
   baiduan: { c0: '#170f0a', c1: '#40291a', lab: '#c4a07a', b1: '#3b291a', b2: '#291c11', bd: '#704f33', bh: '#e0b888', tx: '#efdfc8', fl: '#c08a5a66', p: 'sand', pn: 'sand' },
   xushen: { c0: '#0e0c1c', c1: '#2c2856', lab: '#a4a4dc', b1: '#28244a', b2: '#1a1734', bd: '#4c4884', bh: '#c0c0ff', tx: '#e4e2f6', fl: '#8a88d866', p: 'mote', pn: 'mote' },
   shiguo: { c0: '#1a1012', c1: '#3e1e1c', lab: '#d8a878', b1: '#3a1e1a', b2: '#281412', bd: '#7a3e2a', bh: '#e8b878', tx: '#f0e2cc', fl: '#d0805a66', p: 'lantern', pn: 'lantern' },
+  baizu: { c0: '#16120e', c1: '#3a2e20', lab: '#d8bc88', b1: '#30261a', b2: '#201a12', bd: '#6a5434', bh: '#e8c890', tx: '#efe4d0', fl: '#b8945a66', p: 'sand', pn: 'mote' },
+  shangjie: { c0: '#0e1220', c1: '#24304e', lab: '#b8c8f0', b1: '#1e2842', b2: '#141a2e', bd: '#4a5a8a', bh: '#c8d8ff', tx: '#e8ecf8', fl: '#8aa0e066', p: 'cloud', pn: 'firefly' },
   huoguo: { c0: '#1c0e08', c1: '#4a2010', lab: '#e8a070', b1: '#3e1c10', b2: '#2a120a', bd: '#8a4020', bh: '#ffb070', tx: '#f6e2cc', fl: '#e0703a66', p: 'ember', pn: 'ember' },
   dungeon: { c0: '#0d0a08', c1: '#2e1c10', lab: '#b0906a', b1: '#2c2620', b2: '#1d1915', bd: '#5c4e40', bh: '#e0a060', tx: '#e8dcc8', fl: '#c0703a66', p: 'ember', pn: 'ember' },
 };

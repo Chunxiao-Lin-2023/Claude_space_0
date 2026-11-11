@@ -54,7 +54,7 @@ function achCheck() { if (!C || NETROLE === 'guest') return; C.ach = C.ach || {}
 function setTitle(id) { C.title = C.title === id ? '' : id; sfx('click'); save(); refresh(); }
 
 /* ---------- 传送 (阁主's jade token, after joining 补天阁) ---------- */
-const TP = [{ id: 'sc_street', n: '石村' }, { id: 'bt_court', n: '补天阁内院' }, { id: 'bd_gate', n: '百断山口' }, { id: 'sg_market', n: '石国皇都' }, { id: 'sg_hou', n: '荒天侯府' }, { id: 'hg_city', n: '火国皇城' }, { id: 'xs_hall', n: '虚神界（神魂过去）' }];
+const TP = [{ id: 'sc_street', n: '石村' }, { id: 'bt_court', n: '补天阁内院' }, { id: 'bd_gate', n: '百断山口' }, { id: 'sg_market', n: '石国皇都' }, { id: 'sg_hou', n: '荒天侯府' }, { id: 'hg_city', n: '火国皇城' }, { id: 'bz_camp', n: '百族营地' }, { id: 'sj_town', n: '上界 · 天仙城' }, { id: 'xs_hall', n: '虚神界（神魂过去）' }];
 const canTeleport = () => !!C.story.f.joined && (PLACES[C.loc].town || C.loc === 'bd_gate');
 async function teleport() { if (!canTeleport() || STATE.scene || STATE.battle || STATE.dungeon) return; const L = TP.filter(t => t.id !== C.loc && placeOpen(t.id)); if (!L.length) return; let to = null;
   await runScene(async () => { const c = await dlgChoose([...L.map(t => ({ t: '🌀 ' + t.n })), { t: '算了' }], '玉符在掌心微微发烫。去哪儿？'); if (c < L.length) to = L[c].id; });
@@ -125,7 +125,7 @@ function togglePetMove(id, i) { const p = C.pets[id]; if (!p || !petOpen(id).inc
 function setDuo(v) { C.duo = v; sfx('click'); save(); if (STATE.battle) renderBattle(true); netSync(); }
 
 /* ---------- partner growth: its own level (to 30, past 石昊's cap), move ranks (材料), and a second awakening (返祖) ---------- */
-const PET_LV_CAP = 40;
+const PET_LV_CAP = 46;
 const petLv = id => { const p = C.pets[id]; return p ? (p.lv || C.lv) : C.lv; };
 const petNeed = lv => Math.round(BAL.expNext(Math.min(lv, 20)) * (lv >= 20 ? 1 + (lv - 19) * 0.35 : 1));
 function petGainExp(id, n) { const p = C.pets[id]; if (!p || n <= 0) return; if (!p.lv) p.lv = C.lv; p.exp = (p.exp || 0) + Math.round(n * (p.lv < C.lv ? 1.6 : 1));

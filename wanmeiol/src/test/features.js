@@ -103,6 +103,8 @@ const { chromium } = require('playwright');
     jumpTo(3); ok('jumpEnd', !!(D.C.lv === 20 && D.C.story.f.end === 1 && D.C.sk.includes('ta') && D.C.pets.dahong && D.C.relics.r_pumo));
     { const a0 = D.auto; D.auto = false; D.C.auto = true; runScene(async () => { await nar('一段还没看完的剧情'); await nar('第二句'); }); await w8(100); const mid = !!(S().scene && DLG);
       jumpTo(0); ok('jumpMidScene', mid && !S().scene && !DLG && D.C.story.qid === 'q_memory' && D.C.auto === true); D.auto = a0; await w8(700); await idle(); }
+    jumpTo(JUMPS.findIndex(J => J.q === 'q_v3end')); await w8(700); await idle(); D.C.story.f.v4 = 1; go('bz_camp', true, true); D.C.story.q = qi('q_bzcamp'); await storyPoll(); await idle(); ok('enterWhereYouStand', D.C.story.q > qi('q_bzcamp'));
+    jumpTo(JUMPS.findIndex(J => J.q === 'q_v5')); ok('jumpVol5', !!(D.C.lv === 39 && D.C.story.f.v4end && D.C.gf.includes('yunzu') && placeOpen('sj_town') && !placeOpen('sj_desert') && barSlots(39) === 11)); await w8(700); await idle();
     jumpTo(JUMPS.findIndex(J => J.q === 'q_qishen')); ok('jumpVol3', !!(D.C.lv === 31 && D.C.story.f.shihuang && D.C.gf.includes('renhuang') && placeOpen('sg_inner') && placeOpen('hg_city') && !placeOpen('sg_altar'))); await w8(700); await idle();
     { let lap = []; for (const a of Object.keys(AREAS)) { UI.mapArea = a; navTo('map'); await w8(30); const R = [...document.querySelectorAll('#sbody .mn')].map(e => [e.textContent, e.getBoundingClientRect()]);
         for (let i = 0; i < R.length; i++) for (let j = i + 1; j < R.length; j++) { const p = R[i][1], q = R[j][1]; if (p.left < q.right && p.right > q.left && p.top < q.bottom && p.bottom > q.top) lap.push(R[i][0] + '/' + R[j][0]); } navTo('adv'); }

@@ -626,7 +626,25 @@ const MAIN = [
   { id: 'q_qishen', ch: 9, title: '七神', goal: '……', type: 'auto', scene: S_qishen },
   { id: 'q_shengdi', ch: 9, title: '血祭台', goal: '去中央天宫西边的血祭台', type: 'enter', loc: 'sg_altar', scene: S_shengdi, rec: 32 },
   { id: 'q_farewell', ch: 9, title: '回家', goal: '回石村找族长', type: 'talk', npc: 'chief', scene: S_farewell },
-  { id: 'q_v3end', ch: 9, title: '第三卷 · 完', goal: '之后还有：百族战场、登天路。现在可以在各地历练、挑战虚神界和凶兽首领。', type: 'none' },
+  { id: 'q_v3end', ch: 10, title: '第四卷 · 登天', goal: '回皇都的荒天侯府，钟伯在找你', type: 'talk', npc: 'laozhong', scene: S_v4start },
+  { id: 'q_bzcamp', ch: 10, title: '百族营地', goal: '从血祭台往西，去下界边陲的百族营地', type: 'enter', loc: 'bz_camp', scene: S_bzCamp, rec: 34 },
+  { id: 'q_baojie', ch: 10, title: '太古宝界', goal: '闯过营地西边的太古宝界，找到地火液海', type: 'dungeon', dungeon: 'baojie', loc: 'bz_baojie', npc: null, scene: S_baojieDone, rec: 35 },
+  { id: 'q_bzfield', ch: 10, title: '百族战场', goal: '在百族战场打倒三个金乌族战士', type: 'kill', mob: 'jinwu', n: 3, loc: 'bz_field', npc: 'bzlao', scene: S_bzField, rec: 36 },
+  { id: 'q_bzcore', ch: 10, title: '战场尽头', goal: '去百族战场北边的战场尽头', type: 'enter', loc: 'bz_core', scene: S_bzCore, rec: 37 },
+  { id: 'q_altar', ch: 10, title: '飞升祭坛', goal: '去百族战场东边的飞升祭坛', type: 'enter', loc: 'bz_altar', scene: S_altar, rec: 38 },
+  { id: 'q_yunzu', ch: 10, title: '云族', goal: '去营地东边的云族遗地', type: 'enter', loc: 'bz_yun', scene: S_yunzu, rec: 38 },
+  { id: 'q_huobye', ch: 11, title: '火灵儿', goal: '去火国皇城找火灵儿', type: 'talk', npc: 'huolinger', scene: S_huoFarewell },
+  { id: 'q_dengtian', ch: 11, title: '登天路', goal: '走上战场尽头东边的登天路', type: 'enter', loc: 'bz_road', scene: S_dengtian, rec: 39, lvNeed: 37 },
+  { id: 'q_v5', ch: 12, title: '第五卷 · 上界', goal: '……', type: 'auto', scene: S_v5start },
+  { id: 'q_ladder', ch: 12, title: '天梯', goal: '去登天路尽头东边的天梯', type: 'enter', loc: 'sj_ladder', scene: S_ladder, rec: 40 },
+  { id: 'q_qidao', ch: 12, title: '齐道临', goal: '……', type: 'auto', scene: S_qidaolin },
+  { id: 'q_dojo', ch: 12, title: '至尊道场', goal: '跟齐道临去天梯南边的荒漠', type: 'enter', loc: 'sj_desert', scene: S_dojo, rec: 40 },
+  { id: 'q_tianren', ch: 13, title: '天人城', goal: '去天仙城西边的天人城', type: 'enter', loc: 'sj_tianren', scene: S_tianren, rec: 41 },
+  { id: 'q_kuang', ch: 13, title: '天人族矿脉', goal: '闯进天人城南边的矿脉', type: 'dungeon', dungeon: 'kuangmai', loc: 'sj_mine', npc: null, scene: S_kuangDone, rec: 42 },
+  { id: 'q_gutai', ch: 13, title: '至尊古台', goal: '登上天人城北边的至尊古台', type: 'enter', loc: 'sj_gutai', scene: S_gutai, rec: 43 },
+  { id: 'q_tianshen', ch: 13, title: '天神', goal: '……', type: 'auto', scene: S_tianshen },
+  { id: 'q_wild', ch: 13, title: '无人区', goal: '去天仙城北边的无人区', type: 'enter', loc: 'sj_wild', scene: S_wild, rec: 44 },
+  { id: 'q_v5end', ch: 13, title: '第五卷 · 完', goal: '之后还有：三千州天才争霸、帝关、边荒。现在可以在上界和下界各处历练、挑战虚神界和凶兽首领。', type: 'none' },
 ];
 const SIDE = {
   sq_milk: { npc: 'ermeng', title: '二猛的兽骨', minQ: 'q_egg0', need: [['bone', 3]], ask: '小不点，给我弄三块兽骨呗？我想刻个骨牌，跟你那样认骨文。', done: '嘿嘿，够了够了！这罐兽奶给你，我从家里顺的。', reward: () => { give('milk', 4); gainExp(60); } },
@@ -665,6 +683,6 @@ function storyArena() { const q = curQ(); if (q.type === 'arena' && C.story.n < 
 function storyDungeon(id) { const q = curQ(); if (q.type === 'dungeon' && q.dungeon === id) { C.story.n = 1; if (!q.npc) setTimeout(() => questComplete(q), 600); else logLine(`【主线】回去找<b>${NPCS[q.npc].name}</b>。`, 'quest'); } }
 async function hatchEgg() { if (C.pets.ertuzi || !itemN('peaegg') || STATE.scene || STATE.battle) { if (!C.pets.ertuzi && itemN('peaegg')) setTimeout(hatchEgg, 3000); return; }
   await runScene(async function S_hatch() { takeItem('peaegg'); await nar('怀里的蛋“咔”地裂开了。钻出来一只小鸟，浑身光溜溜的，一根毛都没有，冲你“啾”了一声。'); await me('……你怎么是秃的？那就叫你二秃子吧。'); gainPet('ertuzi'); await nar('后来你才知道，二秃子是孔雀一族。只是它的毛，好像一直都长不出来。'); }, { title: '二秃子' }); }
-async function storyPoll() { if (!C || STATE.scene || STATE.battle || STATE.dungeon || STATE.mode !== 'play' || NETROLE === 'guest') return; const q = curQ(); if (q.type === 'auto') return questComplete(q); if (STATE.dtPending) return dongtianPick(); }
+async function storyPoll() { if (!C || STATE.scene || STATE.battle || STATE.dungeon || STATE.mode !== 'play' || NETROLE === 'guest') return; const q = curQ(); if (q.type === 'auto') return questComplete(q); if (q.type === 'enter' && q.loc === C.loc && !STATE.dungeon) return questComplete(q); /* already standing there */ if (STATE.dtPending) return dongtianPick(); }
 async function sideOffer(id) { const S = SIDE[id]; C.side = C.side || {}; await runScene(async () => { await say(S.npc, S.ask); const c = await choose(['交给我', '下次吧']); if (c === 0) { C.side[id] = 'on'; logLine(`【支线】${S.title}：${S.need.map(([k, n]) => ITEMS[k].name + '×' + n).join('、')} → ${NPCS[S.npc].name}`, 'quest'); } }); }
 async function sideDone(id) { const S = SIDE[id]; await runScene(async () => { for (const [k, n] of S.need) takeItem(k, n); await say(S.npc, S.done); S.reward(); C.side[id] = 'done'; }); }
