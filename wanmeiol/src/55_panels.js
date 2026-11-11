@@ -11,8 +11,8 @@ function renderSide() {
   if (UI.nav === 'pet' && !navs.some(t => t.k === 'pet')) UI.nav = 'hero';
   $('sht').textContent = SHEET_T[UI.nav];
   const body = $('sbody'), key = UI.nav + (UI.nav === 'log' ? UI.logTab : ''), same = body.dataset.k === key, st = body.scrollTop, atEnd = st + body.clientHeight >= body.scrollHeight - 30;
-  $('stabs').innerHTML = UI.nav === 'log' ? [['log', '刚才'], ['rumor', '江湖传闻'], ['memo', '回忆录'], ['codex', '凶兽图鉴']].map(([k, n]) => `<button class="${UI.logTab === k ? 'on' : ''}" onclick="UI.logTab='${k}';renderSide()">${n}</button>`).join('') : '';
-  body.innerHTML = UI.nav === 'log' ? ({ log: pLog, rumor: pRumor, memo: pMemo, codex: pCodex })[UI.logTab]() : ({ hero: pHero, pet: pPet, bag: pBag, map: pMap })[UI.nav]();
+  $('stabs').innerHTML = UI.nav === 'log' ? [['log', '刚才'], ['rumor', '传闻'], ['memo', '回忆录'], ['chars', '人物'], ['codex', '凶兽']].map(([k, n]) => `<button class="${UI.logTab === k ? 'on' : ''}" onclick="UI.logTab='${k}';renderSide()">${n}</button>`).join('') : '';
+  body.innerHTML = UI.nav === 'log' ? ({ log: pLog, rumor: pRumor, memo: pMemo, chars: pChars, codex: pCodex })[UI.logTab]() : ({ hero: pHero, pet: pPet, bag: pBag, map: pMap })[UI.nav]();
   body.dataset.k = key; if (UI.nav === 'log' && UI.logTab === 'log' && (!same || atEnd)) body.scrollTop = body.scrollHeight; else if (same) body.scrollTop = st; else body.scrollTop = 0;
 }
 /* 江湖传闻 history, drawn as a roadside tavern: patrons' seals and paper bubbles, days as hanging tags, newest on top */

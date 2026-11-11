@@ -56,6 +56,8 @@ def check_map():
         for d, t in ex.items():
             if d in D and t in P and k in P and P[t][0] == P[k][0] and (P[t][1] - P[k][1], P[t][2] - P[k][2]) != D[d]: errs.append(f'{k} exit {d} → {t} does not match the map')
             if t in E and k not in E[t].values(): errs.append(f'{k} exit {d} → {t} is one-way (no way back)')
+    for m in re.finditer(r"^  (\w+): \{ name: '[^']*'(.*?)\n", s, re.M):
+        if 'mobs: [[' in m.group(2) and ' lv: [' not in m.group(2): errs.append(f'{m.group(1)} has beasts but no lv range (exploring there crashes)')
     if errs: sys.exit('MAP check failed:\n  ' + '\n  '.join(errs))
 check_map()
 nchat = check_chatter()

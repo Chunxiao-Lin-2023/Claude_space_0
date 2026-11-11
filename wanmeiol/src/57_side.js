@@ -43,6 +43,7 @@ Object.assign(ALLY_NPC, {
   a_qinhao: { name: '秦昊', icon: '🧒', mul: { hp: 2.2, atk: 1.6, def: 1.3 }, sk: [{ n: '轮回宝术', dmg: 1.2, mag: 1, st: { k: 'stun', t: 1, p: 0.25 }, w: 3 }, { n: '仙骨之光', dmg: 0.8, aoe: 1, mag: 1, w: 2 }] },
 });
 Object.assign(MOBS, {
+  jinmaohou: { name: '金毛犼', lv: 78, boss: 1, mul: { hp: 7.2, atk: 1.75, def: 1.85 }, sk: [{ n: '犼啸', dmg: 1.0, aoe: 1, mag: 1, w: 2 }, { n: '金毛爪', dmg: 1.45, w: 3 }, { n: '陨仙一扑', dmg: 2.2, w: 1, charge: 1 }], loot: [['baoyao', 3]], p2: '金毛犼的金毛全竖了起来——仙王的气息压满了整座岭！', d: '陨仙岭之主，一位仙王。你破仙王境那一夜，它出过手。' },
   wangcs: { name: '王长生', lv: 70, boss: 1, mul: { hp: 7.4, atk: 1.75, def: 1.85 }, sk: [{ n: '平乱诀', dmg: 1.05, aoe: 1, mag: 1, st: { k: 'weak', t: 2, v: 0.25, p: 0.5 }, w: 2 }, { n: '长生掌', dmg: 1.5, w: 3 }, { n: '断子绝孙', dmg: 2.3, w: 1, charge: 1 }], loot: [['baoyao', 4]], p2: '王长生的脸上一点表情都没有：“我连儿子都能杀。你算什么？”', d: '王家家主。为了一家人进仙域，亲手杀了六个儿子。' },
   hsyu: { mech: 'summon', summonId: 'yuzu9', name: '黑水狱主', lv: 63, boss: 1, mul: { hp: 6.0, atk: 1.65, def: 1.7 }, sk: [{ n: '黑水灌顶', dmg: 1.0, aoe: 1, mag: 1, w: 2 }, { n: '狱主之鞭', dmg: 1.45, w: 3 }, { n: '百年刑', dmg: 2.2, w: 1, charge: 1 }], loot: [['baoyao', 3]], p2: '狱主敲响了牢门：“来人！把他给我锁回去！”', d: '黑水天牢最深处的狱主。你在他手底下熬过一百年。' },
   ysying: { name: '帝城旧影', lv: 67, boss: 1, weak: { bone: 1 }, mul: { hp: 6.9, atk: 1.7, def: 1.7 }, sk: [{ n: '守城枪阵', dmg: 1.0, aoe: 1, w: 2 }, { n: '旧日一枪', dmg: 1.5, w: 3 }, { n: '城破之时', dmg: 2.2, w: 1, charge: 1 }], loot: [['baoyao', 3]], p2: '旧影的枪尖上亮起了七种颜色——它认出了七王的血！', d: '原始帝城地宫里，一个守城人留下的影子。城里的人都跑了，它没跑。' },
@@ -200,22 +201,29 @@ EVENTS.push(
     if (c === 0) await cine('剑落下去的时候，王长生闭上了眼睛。<br>他最后说了六个名字。<br>一个都没错。');
     else { await say('王长生', '……（他看了你很久，慢慢地站起来，没有求饶）好。'); await nar('后来有人在九天见过他：一个白头发的老人，每天在六座坟前扫地，扫得很干净。'); }
     C.story.f.wangEnd = c + 1; gainExp(BAL.expNext(C.lv) * 0.4); } },
-  /* partners */
-  { id: 'bazhen2', loc: 'sq_valley', title: '八珍麒', when: () => C.story.f.wd_sq_qilin && !C.pets.bazhen, scene: async () => {
-    await nar('那头八种颜色的小麒麟又从草丛里钻了出来。这一回它没抢你的饼——它叼着一块饼，放在你脚边，然后蹲下，看着你。');
-    await me('……你要跟我走？');
-    await nar('它打了个响鼻，八种颜色的毛一起抖了抖。'); gainPet('bazhen'); } },
-  { id: 'jh_fish', loc: 'jh_dam', title: '枯叶上的水洼', when: () => F_('dam'), scene: async () => {
-    await nar('堤坝下面，界海冲上来一片很小的枯叶。叶子上有一个水洼，水洼里有一条小鱼——只有手指长，在黑水里游来游去，一点都不怕。它发着一点光，长得像当年拖着你冲进界海的那条始祖鱼苗——小了好几号。');
-    const c = await choose(['（把它捧起来）', '（把枯叶推回海里）']);
-    if (c === 0) { await nar('你把它捧起来。它在你掌心里转了一圈，然后吐了一个泡泡，泡泡里映着天庭的柱子。'); gainPet('yumiao'); }
-    else { await nar('你把枯叶推回海里。小鱼跳了起来，跳回了你的掌心——它不走了。'); gainPet('yumiao'); } } },
-  { id: 'jt_lion', loc: 'jt_feng', title: '九个脑袋', when: () => F_('jinfeng'), scene: async () => {
-    await nar('风族的山崖下面，有一窝东西在吵架。你走近一看——是一只小狮子，九个脑袋，八个在睡觉，醒着的那个在冲另外八个吼。');
-    await nar('它看见你，九个脑袋同时醒了，同时冲你吼了一声。然后同时打了个哈欠。');
-    const c = await choose(['（掰一块肉干扔过去）', '（蹲下来，冲它吼回去）']);
-    await nar(c === 0 ? '九个脑袋抢一块肉干，打成了一团。打完，它们一起蹭了过来。' : '你吼得比它们九个加起来还响。它们愣了一下，九个脑袋一起低了下去——认了。');
-    gainPet('jiutou'); } },
+  /* partners from the novel */
+  { id: 'xiaobai', loc: 'sc_gate', title: '小白', when: () => F_('v2') && !C.pets.xiaobai, scene: async () => {
+    await nar('村口的老槐树底下，站着一头独角兽。毛有点脏了，角上缠着草——可你一眼就认出来了。');
+    await me('……小白？');
+    await nar('你六岁那年，在山里跟它打了三天，把它拖回了村里，给它起名叫小白。它驮着你在大荒里跑了一整个夏天。后来你出村了，它就天天在村后的山坳里等。');
+    await say('chief', '（族长拄着拐杖站在后面）它每天傍晚都来村口站一会儿。站了这么多年。');
+    await nar('小白走过来，用脑袋顶了顶你的胸口。顶得你倒退了两步。'); gainPet('xiaobai'); } },
+  { id: 'jinmao', loc: 'jt_yunxian', title: '陨仙岭', when: () => F_('v12end') && !C.pets.jinmao, scene: async () => {
+    await nar('陨仙岭上全是骨头，仙的骨头。岭顶上趴着一头金毛的巨兽，金毛像一片烧着的麦田。');
+    await say('金毛犼', '（它睁开一只眼睛）……是你。你破仙王境那一夜，我出过手。没打散你，算你命大。');
+    await me('我记着呢。今天来，是还你那一下的。');
+    if (!await fightRetry({ mobs: [['jinmaohou', slv(78, -1, 1)]], title: '陨仙岭 · 金毛犼', epic: { name: '金毛犼', sub: '陨仙岭之主 · 一位仙王', seal: '仙王', intro: ['那一夜的那一爪，你记着。'], phase: '金毛犼的金毛全竖了起来——仙王的气息压满了整座岭！', end: ['金毛犼被你按在了岭上。', '它喘着气：“……要杀就杀。”'] } }, '金毛犼把你拍下了岭。它趴回去，又闭上了眼睛：“明天再来。”')) { delete C.story.f.ev_jinmao; return; }
+    const c = await choose(['不杀你。驮我。', '（松开手）你走吧。']);
+    if (c === 0) { await say('金毛犼', '……（它咬着牙）我是仙王！'); await me('我也是。'); await nar('它瞪了你很久。最后，它把背低了下去。'); }
+    else { await nar('你松开手，转身下岭。走到半山腰，身后一阵风——它追上来了。'); await say('金毛犼', '……陨仙岭太冷清了。（它别过脸去）我去你那个天庭看看。只是看看。'); }
+    gainPet('jinmao'); gainExp(BAL.expNext(C.lv) * 0.4); } },
+  { id: 'wuwei', loc: 'dg_field', title: '无畏狮子', when: () => F_('dizuDone') && !C.pets.wuwei, scene: async () => {
+    await nar('边荒战场的尸堆里，站着一头金色的狮子，身上插着三杆断矛。它是异域那边的——可它的眼睛，一直往帝关这边看。');
+    await say('异域的兵', '（远处有人喊）无畏狮子！你祖上从九天十地叛出来，现在又想叛回去？');
+    await nar('狮子冲你扑了过来。你接住了它，把它按在地上，一道契约落在它额头上——主仆契约，一辈子挣不开的那种。');
+    const c = await choose(['我不要坐骑。跟着我，当兄弟。', '（把它身上的断矛一根根拔掉）']);
+    await nar(c === 0 ? '它愣住了。很久以后，它把脑袋放在了你的手心里。' : '你拔完最后一根，它舔了舔伤口，跟在了你身后。没有回头。');
+    gainPet('wuwei'); } },
   /* the late world */
   { id: 'yy_old', loc: 'yy_gate', title: '扔饼的孩子', when: () => F_('v14end') && C.story.f.wd_yy_stone, scene: async () => {
     await nar('异域城门下，一个白头发的老人站在那里，手里拿着一块饼。他看见你，笑了——缺了两颗牙。');
@@ -242,10 +250,20 @@ EVENTS.push(
     await say('守坝的老人', '（他笑了）不是。可守坝的人，都这么说。'); give('baoyao', 2); gainExp(BAL.expNext(C.lv) * 0.15); } },
 );
 WILD.unshift(
+  { id: 'dashen', once: 1, title: '打神石开口了', when: P => P.area === 'baiduan' && C.sk.includes('dsh') && F_('cliff') && !C.pets.dashen, scene: async () => {
+    await nar('你掏出那块灰石头，照着一头凶兽的脑门砸了过去。');
+    await say('打神石', '（凶兽倒了。石头在地上滚了两圈，突然开口）……轻点！你砸了一路了，有没有问过我疼不疼？！');
+    await me('……这能吃吗？');
+    await say('打神石', '吃？！我是打神石！专砸神的！（它自己蹦回你手里）算了。你扔得还挺准，以后我跟你混。往哪儿砸，你指，我来。');
+    gainPet('dashen'); } },
+  { id: 'sanhei', once: 1, title: '寒潭里的老龟', when: P => P.area === 'butian' && F_('v3end') && !C.pets.sanhei, scene: async () => {
+    await nar('补天阁后山的寒潭里，趴着一只老龟，背甲上长满了青苔。你扔了块石头下去——它把石头吞了，接着睡。');
+    await nar('你跳下去，跟它在潭底打了一架。它是尊者境，可它太懒了，打到一半就缩进壳里不出来了。');
+    await me('跟我走。你叫……（大红，二秃子……）三黑。');
+    await say('三黑', '（它从壳里探出半个脑袋，看了你一眼，又看了看天）……认命了。'); gainPet('sanhei'); } },
   { id: 'dl_shard', when: P => P.area === 'diluo' && C.bar.length > 0, run: () => { const id = pick(C.bar); for (let i = 0; i < 4; i++) profUse(id); logLine(`一片时光碎片从长河里漂过来，碎片里是你自己——在很多年以前练${SKILLS[id].name}的样子。${SKILLS[id].icon}${SKILLS[id].name} 熟练度 +4。`, 'enc'); } },
   { id: 'yy_patrol', when: P => P.area === 'yiyu' && F_('yyEnd'), run: async () => { logLine('一队异域巡兵从城门那边走过来，看见你，愣了一下——然后硬着头皮冲了上来。', 'enc'); const lv = Math.max(60, C.lv - 1); await startBattle({ mobs: [['yytj', lv], ['yuzu9', lv]], title: '异域 · 巡兵', flee: true }); } },
 );
-{ const q = WILD.find(e => e.id === 'sq_qilin'), old = q.scene; q.scene = async () => { await old(); await nar('它走出去几步，又回头看了看你。然后它不走了。'); gainPet('bazhen'); }; }
 
 /* ---------- 歇脚: one quiet scene in each later chapter ---------- */
 const BREATH = {
@@ -279,7 +297,7 @@ const BREATH = {
     F().mengTalk = c + 1; await nar('那是你最后一次跟他喝酒。'); },
   24: async () => { await nar('晚饭是你娘做的。她做了一大桌，全是你小时候爱吃的——你小时候其实什么都爱吃。');
     await nar('你爹蹲在门口，一声不吭地给那张小木床接了一截床腿。接完，你躺上去试了试——脚还是伸在外面。');
-    await say('石子凌', '……（他看了看你的脚，又看了看床）明天再接一截。'); },
+    await say('石子陵', '……（他看了看你的脚，又看了看床）明天再接一截。'); },
   25: async () => { await nar('石村八百兵在七大道统的山脚下扎营。夜里篝火一堆一堆的，有人唱歌，有人磨刀，有人在给家里写信——写的全是“吃饱了”。');
     await nar('皮猴在火堆边上翻跟头。第十一个，过去了。第十二个——他摔了个狗啃泥。全营的人都笑醒了。');
     const c = await choose(['（扶他起来）', '（你也翻一个）']);
@@ -338,3 +356,56 @@ ACH.push(
   { id: 'lunhui2', n: '第二世', d: '轮回一次，从石村重新开始', ok: () => (C.ng || 0) >= 1 },
   { id: 'late4', n: '深处', d: '走通黑水天牢深处、原始帝城地宫、帝落帝陵、界海死世界', ok: () => ['heishui', 'yuanshidg', 'diling', 'jhsi'].every(k => (C.dungeons || {})[k]) },
 );
+
+/* ---------- 人物图鉴 (记录 → 人物): partners with where they came from, and the people you have met ---------- */
+const PET_FROM = {
+  maoqiu: ['旧村废墟', '大荒深处争夺山宝的那一夜之后，你在旧村的石缝里捡到了它。浑身是伤，一条腿断了，咬了你一口，然后赖着不走了。'],
+  dahong: ['百断山', '朱雀真羽在它眼前一晃，它就认了你当老大。后来驮着你飞过好几回，嘴上从来不承认自己是坐骑。'],
+  ertuzi: ['百断山 · 分宝崖下的蛋', '分宝崖石缝里滚出来的一颗蛋，你揣在怀里打了好多场仗，它才孵出来。一根毛都没有。'],
+  dashen: ['百断山 · 分宝崖下', '本来只是一块用来砸人的石头。砸了一路以后，它开口骂人了。'],
+  xiaobai: ['石村', '你六岁那年降服的独角兽，出村以后一直在村后的山坳里等你回来。'],
+  sanhei: ['补天阁后山寒潭', '一只又懒又怂的尊者境老龟，打到一半缩进壳里不出来，最后认了命。'],
+  wuwei: ['边荒战场', '异域那边的金色狮子，一直往帝关这边看。主仆契约绑住了它，你把它当兄弟。'],
+  jinmao: ['九天 · 陨仙岭', '陨仙岭之主，一位仙王。它在你破仙王境时出过手；你在岭上把它按住了。'],
+};
+const PET_HINT = { maoqiu: '大荒深处，一场大乱以后', dahong: '百断山里，一只脾气很坏的鸟', ertuzi: '一颗没有窝的蛋', dashen: '你一直拿来砸人的那块石头……', xiaobai: '石村里，有谁一直在等你回来', sanhei: '补天阁后山，有个东西在睡觉', wuwei: '边荒的战场上', jinmao: '九天十地的禁区，一座全是仙骨的岭' };
+const PEOPLE = [
+  { k: '石村', L: [
+    { n: '石云峰', t: '族长', i: '👴', ok: () => true, d: () => '石村的族长，把你从一个婴儿拉扯大。拐杖不离手，口头禅是“吃饱了再打”。' },
+    { n: '柳神', t: '祭灵', i: '🌳', ok: () => true, d: () => '村口那棵被雷劈焦的柳树，只剩一根绿枝，却护了石村很多年。' + (F_('liushenBack') ? '后来它在界海里挡得太久，挡黑了；你把它接了回来。' : '') },
+    { n: '石林虎', t: '林虎叔', i: '🏹', ok: () => true, d: () => '村里最好的猎人，带你第一次进山。' },
+    { n: '大壮 · 二猛 · 皮猴', t: '村里的孩子', i: '👦', ok: () => true, d: () => '一起举石锁、一起偷兽奶长大的伙伴。' + (F_('army') ? '后来，他们带着石村八百兵，跟你上了九天。' : '') },
+    { n: '石子陵 · 秦怡宁', t: '爹娘', i: '👪', ok: () => F_('parents'), d: () => '你被挖骨那年，他们被封进了不老山，关了十六年。你一层一层劈开山，把他们接了出来。' },
+    { n: '秦昊', t: '弟弟', i: '🧒', ok: () => !!C.story.f.qinhao, d: () => '爹娘后来生的孩子，在不老山长大，身上带着一块仙骨。骄傲，嘴硬。' + ((C.story.f.qinhao || 0) >= 2 ? '没了那块骨头以后，他第一次自己举起了石锁，叫了你一声“哥”。' : '') } ] },
+  { k: '一路上的人', L: [
+    { n: '清风', t: '同行的小姑娘', i: '👧', ok: () => F_('qingfeng'), d: () => '和你一起出村去补天阁的小姑娘，后来自己考进了内门。' },
+    { n: '诡爷', t: '补天阁', i: '🧓', ok: () => F_('joined'), d: () => '补天阁里说话最少的老人，第一句话是“……吵。”锈剑是他指给你的。' },
+    { n: '小塔', t: '四层的塔', i: '🗼', ok: () => C.sk.includes('ta'), d: () => '只有四层、不知道从哪来的小塔。危急的时候，它会垂下一层光幕。' },
+    { n: '九头狮子', t: '百断山的霸主', i: '🦁', ok: () => F_('lion'), d: () => '想收你当战仆，结果被你打服了，从此当了你的小弟。雨族追杀的时候，它没跑。' },
+    { n: '火灵儿', t: '火国公主', i: '👘', ok: () => F_('cave'), d: () => '百断山神窟里认识的红衣服姑娘，爱争功，你欠她一辈子烤肉。' + (F_('huoling') ? '很久以后，你从异域的封印里把她背了回来。' : '') + (F_('shihaiDone') ? '她醒了。' : '') },
+    { n: '云曦', t: '白衣少女', i: '🌙', ok: () => F_('spring'), d: () => '灵湖阵里你回头拉了她一把，她在不老泉边还了这个人情。' + ((C.story.f.yunxiQ || 0) >= 2 ? '后来，她替你守着那口泉。' : '') },
+    { n: '石毅', t: '重瞳者', i: '👁️', ok: () => F_('sawShiyi'), d: () => '从你身上挖走的那块至尊骨，长在了他身上。他没选过，也没还过。' + (F_('xgNing') ? '血湖边，你们第一次站在一起。' : '') + ((C.story.f.shiyiQ || 0) >= 2 ? '他说：我的血，你拿去用。' : '') },
+    { n: '火皇', t: '火国之主', i: '👑', ok: () => F_('huohuang'), d: () => '火灵儿的父亲，告诉你你娘在涅槃池边跪了三天三夜。' },
+    { n: '齐道临', t: '至尊道场', i: '🧔', ok: () => F_('qidao'), d: () => '拿一朵渡劫神莲把你骗进至尊道场的师父。道场“在装修”。教你的无敌道只有一条规矩：往前，不回头。' },
+    { n: '孟天正', t: '补天道 · 守关人', i: '🗡️', ok: () => F_('v7end'), d: () => '背着旧剑的老人，带你去了帝关。帝关的饭难吃，管够。' + (F_('anlan') ? '安澜来的那天，他斩断了自己的成仙路。' : '') },
+    { n: '小七', t: '七王之后', i: '🕯️', ok: () => F_('qiwangDone'), d: () => '额头上烙着“罪”字的孩子，七王祠的守灯人。替你收着那只烂木盒子。' },
+    { n: '三藏 · 神冥', t: '一起跳海瀑的人', i: '🧘', ok: () => F_('yyEnd'), d: () => '黑水天牢里关了很多年的两个人，商量了五十年没敢跳。你抓着鱼尾巴，他们抓着你的脚。' },
+    { n: '蛄祖', t: '异域 · 天牢深处', i: '🕯️', ok: () => F_('daoze'), d: () => '活得很久很久的老东西，替你补全了道则。它见过帝关还是木头城墙的时候。' } ] },
+  { k: '对手', L: [
+    { n: '帝冲', t: '仙古最狂的天骄', i: '⚔️', ok: () => F_('dichong'), d: () => '化身见过你，就以为知道你所有的招。' },
+    { n: '宁川', t: '六冠王', i: '🩸', ok: () => F_('v6end'), d: () => '十凶麒麟血，看你的眼神和上界那些人一样。' },
+    { n: '王长生', t: '王家家主', i: '🏯', ok: () => F_('envoy'), d: () => '为了一家人进仙域，亲手杀了六个儿子。' + (C.story.f.wangEnd ? '账，算完了。' : '') },
+    { n: '金太君', t: '金家老太君', i: '🦯', ok: () => F_('yiyu0'), d: () => '说“用一个罪血换五百年太平，划算”的那个人。' },
+    { n: '安澜', t: '不朽之王', i: '🌑', ok: () => F_('anlan'), d: () => '他走一步，边荒的沙就退一里。' },
+    { n: '鲲帝', t: '异域第一', i: '🐋', ok: () => F_('kundiWar'), d: () => '异域真正的主人。' },
+    { n: '尸骸仙帝', t: '黑暗的源头', i: '⚱️', ok: () => F_('xiandi'), d: () => '它杀过你一次。' } ] },
+];
+function pChars() { const pets = Object.keys(PETS), have = pets.filter(k => C.pets[k]);
+  let h = `<div class="card"><div class="row"><div>伙伴 <b>${have.length}</b> / ${pets.length}</div><span class="sp"></span><div class="dim" style="font-size:.8rem">认识的人 ${PEOPLE.reduce((s, g) => s + g.L.filter(p => p.ok()).length, 0)} / ${PEOPLE.reduce((s, g) => s + g.L.length, 0)}</div></div></div>`;
+  h += `<div class="chap">伙伴</div><div class="list">${pets.map(k => { const P = PETS[k], p = C.pets[k], fr = PET_FROM[k];
+    if (!p) return `<div class="li unk"><span class="ic">？</span><div class="t">？？？<small>${PET_HINT[k] || '还没遇见'}</small></div></div>`;
+    const st = p.evo3 ? '真身' : p.evo2 ? '返祖' : p.evo ? '觉醒' : '';
+    return `<div class="li"><span class="ic">${P.icon}</span><div class="t"><b>${P.name}</b> <span class="pill">${P.race}</span><span class="pill gold">${P.role}</span>${st ? `<span class="pill gold">${st}</span>` : ''}<span class="pill">${petLv(k)} 级 · 亲近 ${p.aff}</span>
+      <small>${P.desc}</small>${fr ? `<small><b>来历 · ${fr[0]}</b>：${fr[1]}</small>` : ''}</div></div>`; }).join('')}</div>`;
+  for (const g of PEOPLE) h += `<div class="chap">${g.k}</div><div class="list">${g.L.map(p => p.ok() ? `<div class="li"><span class="ic">${p.i}</span><div class="t"><b>${p.n}</b> <span class="pill">${p.t}</span><small>${p.d()}</small></div></div>` : `<div class="li unk"><span class="ic">？</span><div class="t">？？？<small>还没遇见</small></div></div>`).join('')}</div>`;
+  return h; }

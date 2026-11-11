@@ -72,6 +72,7 @@ const SC0 = [
   ['后期·黑水狱主', 63, [['hsyu', 63]], ['qly', 'sn', 'lei', 'gw', 'dsh', 'jian', 'ta', 'zhuque', 'zhizun', 'lunhui', 'wudi', 'liushen', 'daluo'], 'dahong', 100, []],
   ['后期·帝城旧影', 67, [['ysying', 67]], ['qly', 'sn', 'lei', 'gw', 'dsh', 'jian', 'ta', 'zhuque', 'zhizun', 'lunhui', 'wudi', 'liushen', 'daluo'], 'dahong', 100, []],
   ['后期·王长生', 72, [['wangcs', 72]], ['qly', 'sn', 'lei', 'gw', 'dsh', 'jian', 'ta', 'zhuque', 'zhizun', 'lunhui', 'wudi', 'liushen', 'daluo'], 'dahong', 100, []],
+  ['后期·金毛犼', 78, [['jinmaohou', 78]], ['qly', 'sn', 'lei', 'gw', 'dsh', 'jian', 'ta', 'zhuque', 'zhizun', 'lunhui', 'wudi', 'liushen', 'daluo'], 'dahong', 100, []],
   ['后期·帝陵守墓人', 81, [['dlmu', 81]], ['qly', 'sn', 'lei', 'gw', 'dsh', 'jian', 'ta', 'zhuque', 'zhizun', 'lunhui', 'wudi', 'liushen', 'daluo', 'tahua'], 'dahong', 100, []],
   ['后期·死世界之主', 85, [['jhsizhu', 85]], ['qly', 'sn', 'lei', 'gw', 'dsh', 'jian', 'ta', 'zhuque', 'zhizun', 'lunhui', 'wudi', 'liushen', 'daluo', 'tahua'], 'dahong', 100, []],
   ['野外·异域', 61, [['yytj', 61], ['yuzu9', 61]], ['qly', 'sn', 'lei', 'gw', 'dsh', 'jian', 'ta', 'zhuque', 'zhizun', 'lunhui', 'wudi', 'liushen', 'daluo'], 'dahong', 100, []],
