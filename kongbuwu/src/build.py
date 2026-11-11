@@ -52,9 +52,9 @@ cmds = {'in', 'at', 'out', 'to', 'turn', 'down', 'up', 'fx', 'prop', 'del', 'sta
 fxs = {'dark', 'candle', 'rain', 'red', 'tv', 'flash', 'shake', 'light', 'clear', 'flicker', 'steady', 'glitch'}
 _sf = game[game.find('const SFX'):game.find('function sfx(')]
 sfxs = set(re.findall(r'(?:^  |[{,;] )(\w+)\(\) \{', _sf, re.M))
-for m in re.finditer(r'(?:\n|`)~(\w+)', game):
+for m in re.finditer(r'(?:\n|`|\\n)~(\w+)', game):
     if m.group(1) not in sfxs: errs.append('音效不存在: ~' + m.group(1))
-for m in re.finditer(r'(?:^|\n|`)\^(\w+)([^\n`]*)', game):
+for m in re.finditer(r'(?:^|\n|`|\\n)\^(\w+)((?:(?!\\n)[^\n`])*)', game):
     c, rest = m.group(1), m.group(2).split()
     if c not in cmds: errs.append('小剧场指令不存在: ^' + c + ' ' + ' '.join(rest)); continue
     if c == 'prop' and (len(rest) < 4 or rest[1] not in spr): errs.append('小剧场道具贴图不存在: ^prop ' + ' '.join(rest)[:50])

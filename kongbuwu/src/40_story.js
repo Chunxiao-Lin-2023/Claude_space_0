@@ -10,7 +10,7 @@ function choose(list, text) { return dlgShow({ choices: list, text: text == null
 async function T_(s) { const my = STATE.run; for (let ln of s.split('\n')) { ln = ln.trim(); if (!ln) continue; if (my !== STATE.run) return new Promise(() => {}); const sp = /^(#m|#r|[@#!~>%^])\|?/.exec(ln); const i = sp ? -1 : ln.indexOf('|'), who = sp ? sp[1] : i < 0 ? '' : ln.slice(0, i), t = sp ? ln.slice(sp[0].length) : i < 0 ? ln : ln.slice(i + 1);
     if (who === '^') { if (/^wait /.test(t)) await sleep(+t.slice(5)); else stageCmd(t); } else if (who === '>') danmu(t.split('／')); else if (who === '!') { STG.flash = 1; STG.shake = .5; await scare(t); } else if (who === '#') await cine(t.split('／')); else if (who === '#m') await cine(t.split('／'), 'mem'); else if (who === '#r') await cine(t.split('／'), 'red'); else if (who === '~') sfx(t); else if (who === '%') shake();
     else if (who === '@') await ph(t); else if (who === '我') await me(t); else if (who === '') await nar(t); else await say(who, t); } }
-async function fight(o) { o = Object.assign({ story: 1 }, o); { const s = charStats(); C.hp = Math.max(C.hp, Math.round(s.mhp * .6)); C.mp = Math.max(C.mp, Math.round(s.mmp * .6)); } for (;;) { const res = await startBattle(o); if (res === 'win') { if (o.scare) { C.hh.good++; C.hh.batches++; } return true; } const s = charStats(); C.hp = Math.max(C.hp, Math.round(s.mhp * .7)); C.mp = Math.max(C.mp, Math.round(s.mmp * .7));
+async function fight(o) { o = Object.assign({ story: 1 }, o); { const s = charStats(); C.hp = Math.max(C.hp, Math.round(s.mhp * .6)); C.mp = Math.max(C.mp, Math.round(s.mmp * .6)); } for (;;) { const res = await startBattle(o); if (res === 'win') { if (o.scare) { C.hh.good++; C.hh.batches++; } return true; } chStat('lose'); const s = charStats(); C.hp = Math.max(C.hp, Math.round(s.mhp * .7)); C.mp = Math.max(C.mp, Math.round(s.mmp * .7));
     const c = await choose([['再来一次', '体力和精神回到七成'], ['调低难度再来', '现在：' + DIFF[SET.diff].n], ['咬牙撑过去', '跳过这一场，剧情照常往下走']], o.scare ? '游客打着哈欠往外走。' : '眼前黑了一下。你扶着墙，又站了起来。'); if (c === 1) { SET.diff = Math.max(0, SET.diff - 1); saveSet(); } if (c === 2) return false; if (o.candy && !itemN('candy')) addItem('candy', 1, true); } }
 function curQ() { return C ? MAIN.find(q => q.id === C.q) || null : null; }
 function qIdx(id) { const i = MAIN.findIndex(q => q.id === id); return i < 0 ? 999 : i; }
@@ -20,16 +20,16 @@ function questBlocked(q) { return !!(q && q.need && q.need()); }
 function sinceBatch() { return C.hh.batches - (C.qMark || 0); }
 /* 调查：几样东西挨个看，看够 need 样才能往下走（让长段剧情有事可做） */
 async function look(prompt, items, need) { const seen = new Set(); need = need == null ? items.length : need;
-  for (;;) { const left = items.map((it, i) => [it, i]).filter(x => !seen.has(x[1])); if (!left.length) break; const opts = left.map(x => [x[0][0], '看看']); if (seen.size >= need) opts.push(['（够了，继续）', '']);
+  for (;;) { const left = items.map((it, i) => [it, i]).filter(x => !seen.has(x[1])); if (!left.length) break; const opts = left.map(x => [x[0][0]]); if (seen.size >= need) opts.push(['（够了，继续）', '']);
     const c = await choose(opts, prompt + (seen.size < need ? '（还要看 ' + (need - seen.size) + ' 样）' : '')); if (c >= left.length) break; seen.add(left[c][1]); const it = left[c][0]; if (typeof it[1] === 'function') await it[1](); else await T_(it[1]); } }
 function questGoal(q) { if (questBlocked(q)) return q.need(); const need = q.night && !isNight() ? '（要等到天黑）' : q.day && isNight() ? '（要等到天亮）' : ''; return q.goal + need; }
 async function runScene(fn, title) { if (STATE.scene) return; const my = ++STATE.run; STATE.scene = true; stageSceneStart(); const q = curQ(); STATE.jr = { t: title || (q ? q.title : '片段'), ch: q ? q.ch : 0, l: [] }; DLG.prev = ''; DLG.cur = null; UI.lastWho = ''; applyMode();
-  try { await fn(); } catch (e) { console.error(e); if (window.__dbg) __dbg.err = String(e && e.stack || e); } if (my !== STATE.run) return; if (STATE.jr.l.length > 1) { JOURNAL.push(STATE.jr); saveJournal(); } STATE.jr = null; STATE.scene = false; DLG.cur = null; refresh(); save(); }
+  try { await fn(); if (C.fun && C.fun.gradeQ) { const g = C.fun.gradeQ; C.fun.gradeQ = 0; await gradeCard(g); } } catch (e) { console.error(e); if (window.__dbg) __dbg.err = String(e && e.stack || e); } if (my !== STATE.run) return; if (STATE.jr.l.length > 1) { JOURNAL.push(STATE.jr); saveJournal(); } STATE.jr = null; STATE.scene = false; DLG.cur = null; refresh(); save(); }
 function storyHereRun() { const q = curQ(); if (!q || STATE.scene || STATE.battle || questWhere(q) !== C.loc) return; if (questBlocked(q)) { toast(q.need()); return; } closeSide();
   if (q.night && !isNight()) { setNight(); logLine('你一直等到天黑。', 'sys'); } else if (q.day && isNight()) { newDay(); fullHeal(); logLine('你等到了天亮。第 ' + C.day + ' 天。', 'sys'); }
   return runScene(async () => { const ch0 = q.ch; await q.run(); if (C.q === q.id) questAdvance(q); }, q.title); }
 function storyArrive() { const q = curQ(); if (q && q.auto && questWhere(q) === C.loc && !questBlocked(q) && !(q.day && isNight()) && !STATE.scene && !STATE.battle) storyHereRun(); }
-function questAdvance(q) { const i = MAIN.indexOf(q), nx = MAIN[i + 1]; C.q = nx ? nx.id : 'q_end'; C.qMark = C.hh.batches; gainExp(Math.round(HERO.need(C.lv) * .22)); const s = charStats(); C.hp = Math.max(C.hp, Math.round(s.mhp * .5)); C.mp = Math.max(C.mp, Math.round(s.mmp * .5)); logLine('主线推进：' + (nx ? nx.title : '第一卷完'), 'gain'); save(); }
+function questAdvance(q) { const i = MAIN.indexOf(q), nx = MAIN[i + 1]; if (!nx || nx.ch !== q.ch) { FN().gradeQ = q.ch; if (nx) chStart(nx.ch); } C.q = nx ? nx.id : 'q_end'; C.qMark = C.hh.batches; gainExp(Math.round(HERO.need(C.lv) * .22)); const s = charStats(); C.hp = Math.max(C.hp, Math.round(s.mhp * .5)); C.mp = Math.max(C.mp, Math.round(s.mmp * .5)); logLine('主线推进：' + (nx ? nx.title : '第一卷完'), 'gain'); save(); }
 
 /* ================= 第一章 ================= */
 async function S_open() { await chapterCard('一', '濒临倒闭的恐怖屋', '九江市西郊 · 新世纪乐园');
@@ -50,7 +50,10 @@ async function S_open() { await chapterCard('一', '濒临倒闭的恐怖屋', '
 我|你呢？也要走？`);
   const c = await choose([['“今天七夕，提前下班吧。”', '什么都不问'], ['“你要是也想走，我不拦你。”', '把话说开']]);
   if (c === 0) { F().wan = 'kind'; await T_(`徐婉|那……我先去卸妆了。
-她走出两步，又回头看了你一眼。信封留在了你手里，只有一个。`); } else { F().wan = 'frank'; await T_(`徐婉|我没说要走！我就是……替他送个信。
+^to 徐婉 15
+她走出两步，又回头看了你一眼。信封留在了你手里，只有一个。
+^out 徐婉`); } else { F().wan = 'frank'; await T_(`徐婉|我没说要走！我就是……替他送个信。
+^out 徐婉
 她把信封塞给你，气鼓鼓地去卸妆了。走到拐角，脚步慢了一点。`); }
   await T_(`半年前，你的父母离奇失踪，只留下这座恐怖屋。
 为了不留念想，你辞了玩具公司的工作，全心全意来经营它。

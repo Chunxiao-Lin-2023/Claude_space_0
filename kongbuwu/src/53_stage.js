@@ -9,6 +9,7 @@
 const SW = 320, SH = 112, FEET = 90;
 const P_ = (o) => Object.assign({ skin: '#f0c8a0' }, o);
 const PPL = {
+  雨衣女孩: P_({ child: 1, hair: '#1a1416', hs: 'bob', top: '#e8c020', dress: 1, hat: 'hood', hatC: '#e8c020', ghost: 1 }), 戴口罩的护士: P_({ skin: '#d8d0cc', hair: '#2a2420', hs: 'bun', top: '#e0e0d8', dress: 1, hat: 'veil', hatC: '#e8e8e0', ghost: 1 }), 湿透的男人: P_({ skin: '#c8ccd0', hair: '#141618', hs: 'messy', top: '#3a4a5a', bottom: '#2a3038', ghost: 1 }),
   红影: P_({ sil: '#7a0808', hs: 'long', dress: 1, top: '#900', ghost: 1 }), 黑影: P_({ sil: '#2a2630', hs: 'messy', tall: 1.3, ghost: 1 }), 镜鬼: P_({ sil: '#7a8090', hs: 'long', ghost: 1 }),
   小男孩: P_({ child: 1, skin: '#e6e0dc', hair: '#1a1416', hs: 'short', top: '#5a6a7a', bottom: '#3a4048', ghost: 1 }), 小女孩: P_({ child: 1, skin: '#e6e0dc', hair: '#1a1416', hs: 'bob', top: '#c88a9a', dress: 1, ghost: 1 }),
   学生: P_({ skin: '#ddd6d0', hair: '#141214', hs: 'short', top: '#2e3e5e', top2: '#e8e8e8', bottom: '#2e3e5e', ghost: 1 }), 学生乙: P_({ skin: '#ddd6d0', hair: '#141214', hs: 'bob', top: '#2e3e5e', top2: '#e8e8e8', skirt: 1, bottom: '#2e3e5e', ghost: 1 }), 学生丙: P_({ skin: '#ddd6d0', hair: '#1c1a18', hs: 'messy', top: '#2e3e5e', top2: '#e8e8e8', bottom: '#2e3e5e', ghost: 1 }),

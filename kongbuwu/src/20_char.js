@@ -2,8 +2,8 @@
 let C = null; const SAVE_V = 1;
 function newChar() { return { v: SAVE_V, lv: 1, exp: 0, hp: 0, mp: 0, money: 35, day: 1, tick: 0, loc: 'hh_door', q: 'q_open', f: {}, sk: ['hammer', 'jump', 'story'], bar: { n: ['hammer'], d: ['jump', 'story'] }, prof: {},
   pets: {}, pet: { n: '', d: '' }, duo: 0, bag: { bread: 2 }, gear: [], talents: [], titles: [], title: '', hh: { good: 0, bad: 0, today: 4, month: 10, screams: 0, spins: 0, total: 0, scenes: ['zombie', 'mh'], groups: 0, batches: 0, up: {} },
-  fans: 0, codex: {}, kills: {}, seen: {}, dlog: [], daily: { day: 0, got: '', done: 0 }, ex: {}, track: '', auto: 0, made: Date.now(), bonus: { hp: 0 } }; }
-function charStats(c) { c = c || C; const l = c.lv; let hp = HERO.hp(l) + (c.bonus.hp || 0), mp = HERO.mp(l), atk = HERO.atk(l), def = HERO.def(l), spd = HERO.spd(l), exp = 0, low = 0;
+  fans: 0, codex: {}, kills: {}, seen: {}, dlog: [], daily: { day: 0, got: '', done: 0 }, ex: {}, track: '', auto: 0, made: Date.now(), bonus: { hp: 0 }, fun: { chs: { 1: { lose: 0, fail: 0, d0: 1 } } } }; }
+function charStats(c) { c = c || C; const l = c.lv; let hp = HERO.hp(l) + (c.bonus.hp || 0) + relicBonus(c, 'hp'), mp = HERO.mp(l) + relicBonus(c, 'mp'), atk = HERO.atk(l), def = HERO.def(l), spd = HERO.spd(l), exp = 0, low = 0;
   for (const t of c.titles) { const T = TITLES[t]; if (!T) continue; hp += T.hp || 0; mp += T.mp || 0; atk += T.atk || 0; exp += T.exp || 0; low += T.low || 0; }
   for (const g of c.gear) { const G = ITEMS[g]; if (!G) continue; hp += G.hp || 0; spd += G.spd || 0; exp += G.exp || 0; }
   if (c.talents.includes('run')) spd += 3;
@@ -48,7 +48,7 @@ function gameDay() { return C.day; }
 let SLOT = store.get('slot', 1); const SLOTS = 5;
 const saveKey = n => 'save.' + (n || SLOT), jrKey = n => 'jr.' + (n || SLOT);
 let saveT = 0;
-function save() { if (!C || (window.__dbg && __dbg.nosave)) return; clearTimeout(saveT); saveT = setTimeout(saveNow, 250); }
+function save() { if (C) try { checkAch(); } catch (e) {} if (!C || (window.__dbg && __dbg.nosave)) return; clearTimeout(saveT); saveT = setTimeout(saveNow, 250); }
 function saveNow() { if (!C) return; C.savedAt = Date.now(); store.set(saveKey(), C); }
 function fixSave(c) { const d = newChar(); for (const k in d) if (c[k] === undefined) c[k] = d[k]; for (const k in d.hh) if (c.hh[k] === undefined) c.hh[k] = d.hh[k]; if (!MAIN.some(q => q.id === c.q)) c.q = c.q === 'q_end' ? 'q_end' : MAIN[0].id; if (!PLACES[c.loc]) c.loc = 'hh_door'; c.sk = c.sk.filter(k => SKILLS[k]); for (const m of ['n', 'd']) c.bar[m] = (c.bar[m] || []).filter(k => c.sk.includes(k)); return c; }
 function loadSave(n) { const c = store.get(saveKey(n), null); return c && c.v === SAVE_V ? fixSave(c) : null; }

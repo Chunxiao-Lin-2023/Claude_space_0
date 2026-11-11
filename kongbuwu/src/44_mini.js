@@ -13,7 +13,7 @@ const MINI = {
 };
 let MG = null;
 function miniGame(id, o) { o = o || {}; const def = Object.assign({}, MINI[id], o); if (window.__dbg && (__dbg.auto || __dbg.mini != null)) return Promise.resolve(__dbg.mini != null ? !!__dbg.mini : true);
-  return new Promise(res => { MG = { id, def, res, tries: 0 }; miniNew(); }); }
+  return new Promise(res => { MG = { id, def, res: v => { if (!v) chStat('fail'); res(v); }, tries: 0 }; miniNew(); }); }
 function miniNew() { const g = MG, d = g.def; g.tries++; g.over = 0; g.t0 = performance.now(); g.hit = 0; g.strikes = 0; g.pos = 0; g.meter = d.type === 'mash' ? (d.fill ? .15 : .7) : .85; g.ready = d.type === 'timing' || d.type === 'hold'; g.holding = false; g.decoys = []; g.nextDecoy = 900; g.watch = false; g.nextFlip = 900; g.zone = [.38, .62]; g.msg = ''; g.final = 0;
   if (d.type === 'timing') miniZone(); STATE.mini = g; applyMode(); miniHtml(); cancelAnimationFrame(g.raf); g.last = performance.now(); g.raf = requestAnimationFrame(miniLoop); musicMode('phone'); }
 function miniZone() { const g = MG, w = Math.max(.12, .26 - g.hit * .035); const a = .1 + rnd() * (.8 - w); g.zone = [a, a + w]; }

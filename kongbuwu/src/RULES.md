@@ -24,9 +24,10 @@
 | 16 | **主线有门槛，门槛要说清楚**：步骤可以带 `need()`（如“本月游客 100 人”“好评/差评”“再接待两批”），没达到时任务栏直接写差多少、主线箭头指回恐怖屋门口，到了剧情地点也只 toast 原因，不会开始剧情。门槛只用营业能攒到的东西。 | `test/flow.js`（会自己去营业凑门槛，打印 grind） |
 | 17 | **营业要有选择**：每批游客人数随关注涨；6 个场景各有特色（`scenePas`：胆量/收入倍率 + 某类手段加成 + 每回合效果）；6 类游客各有特性（`TRAITS`，卡片和档案里写明）；总控制室能花钱翻新（`UPGRADES`，8 项，永久）。陪员工（每天一次 +6 好感）、员工值班会涨好感。 | `test/features.js` |
 | 18 | **剧情要看得清**：调查用 `look()`（列出能看的东西，看够了才能继续）；读过的句子记在 `kbw.read`，⏩ 快进只跳读过的；「回看」显示本段已说过的话；剧情里熬夜/天亮要拨钟（`setClock`）和出天数卡（`dayCard`）。夜探有 16 个按进度出现的一次性事件（`NIGHT_EV`）。 | `test/features.js` |
+| 20 | **好玩但不复杂**（`46_fun.js`）：新玩法每条最多多一个按钮，不加要管理的资源。看准时机（开门杀/断电的缩圈，完美 ×1.3）、躲大招（防御时看准时机完全躲开）、换着吓（换招连段 +8%/层，最多 4 层；同一招连用 ×0.88/次）、全场尖叫（一回合吓跑一整批，每人 +15 尖叫）、挑剔的游客（每天一位，吓对了 +120 元）、评论墙、营业一整天、首领软肋（开场提示，用对 ×1.5 + 懵）、场景一击（每场一次，不占回合）、夜探三扇门和弹幕点播、怨念物（4 组×3 件，凑齐有小加成）、特殊游客（8 位）、转盘大奖、陪员工小剧场、东郊倒计时（十天一阶段）、章节评级（S/A/B/C）、30 多个成就、每天第一次回恐怖屋的小惊喜。**自动对峙要会用这些**（比如接待游客时会换招），不然平衡会被拖垮。数值都在 `46_fun.js` 顶部的常量里。 | `test/features.js` 第 16 段 |
 
 测试（在 `src/` 里）：`node test/serve.js out 8771 &` 后
-`node test/flow.js`（整条主线，真实寻路）· `node test/flow.js 1 fail`（小游戏全失败也能通）· `node test/features.js`（108 项）· `node test/storyboard.js [S_x,…]`（第三到五章每句话一帧，拼图看站位）· `node test/balance.js 60`（每场战的胜率）· `node test/mobile.js`（截图到 /tmp/kbw）· 仓库根目录 `python3 -m http.server 8790` 后 `node test/hub.js`。
+`node test/flow.js`（整条主线，真实寻路）· `node test/flow.js 1 fail`（小游戏全失败也能通）· `node test/features.js`（137 项）· `node test/review.js <章> [phoneP/phoneL/desk]`（用真实界面把一章走完，每句话、每步之后的探索画面都截图，自动记录对话框溢出、按钮出屏、文字被截、说话人不在台上）· `node test/storyboard.js [S_x,…]`（第三到五章每句话一帧，拼图看站位）· `node test/balance.js 60`（每场战的胜率）· `node test/mobile.js`（截图到 /tmp/kbw）· 仓库根目录 `python3 -m http.server 8790` 后 `node test/hub.js`。
 需要 `NODE_PATH` 指到 playwright。
 
 ## 第一卷内容（2026-11）

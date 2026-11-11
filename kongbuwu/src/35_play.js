@@ -7,13 +7,13 @@ function clockText() { return C.clk || HOURS[clamp(Math.floor(C.tick), 0, 11)]; 
 function setClock(t, label) { C.tick = t; C.clk = label || ''; renderTop(); }
 function passTime(n) { const wasN = isNight(); C.tick += n; C.clk = ''; if (C.tick >= BAL.dayLen) { newDay(); logLine('熬了一整夜，天亮了。第 ' + C.day + ' 天。', 'sys'); } else if (!wasN && isNight()) { logLine('天黑了。乐园关门，游客散尽。', 'sys'); sfx('wind'); } }
 function setNight(t) { if (C.tick < (t || BAL.duskAt)) C.tick = t || BAL.duskAt; C.clk = ''; }
-function newDay() { C.day++; C.tick = 0; C.clk = ''; C.hh.today = 0; C.hh.groups = 0; C.camp = {}; C.keep = {}; if (C.day % 30 === 1) C.hh.month = 0; }
+function newDay() { C.day++; C.tick = 0; C.clk = ''; C.hh.today = 0; C.hh.groups = 0; C.camp = {}; C.keep = {}; if (C.day % 30 === 1) C.hh.month = 0; eastTick(); }
 /* 剧情里熬到第二天：先给一张小卡片，不要直接跳 */
 async function dayCard(label) { newDay(); fullHeal(); C.clk = label || ''; await showCard('<div class="c1">第 ' + C.day + ' 天</div><div class="c2" style="font-size:1.4em">' + esc(label || '天亮了') + '</div>', 700); renderTop(); }
 function exitsOf(id) { const p = PLACES[id], out = []; for (const lab in p.exits) if (placeOpen(p.exits[lab])) out.push([lab, p.exits[lab]]); return out; }
 function pdesc(id) { const p = PLACES[id]; return (isNight() && p.dn) || p.d; }
 function go(to, quiet, force) { if (!force) { if (STATE.scene || STATE.battle || STATE.busy) return false; if (!exitsOf(C.loc).some(e => e[1] === to)) return false; } if (!PLACES[to]) return false; C.loc = to; C.seen['p_' + to] = 1; if (!quiet) sfx('page');
-  STATE.walkTip = ''; if (!force) { if (isNight() && !PLACES[to].town && chance(.12)) sfx(pick(['drip', 'wind', 'door'])); npcOnArrive(); } refresh(); save(); if (!force) storyArrive(); return true; }
+  STATE.walkTip = ''; if (!force) { if (isNight() && !PLACES[to].town && chance(.12)) sfx(pick(['drip', 'wind', 'door'])); npcOnArrive(); } refresh(); save(); if (!force) { storyArrive(); setTimeout(daySurprise, 450); } return true; }
 function areasOpen() { return Object.keys(AREAS).filter(a => !AREAS[a].open || C.f[AREAS[a].open]); }
 function travel(area) { if (STATE.scene || STATE.battle || STATE.busy) return; const to = ENTRY[area]; if (!to || !areasOpen().includes(area) || PLACES[C.loc].area === area) return;
   if (C.money >= 10) { C.money -= 10; logLine('打车去' + AREAS[area].name + '（-10 元）', 'sys'); } else logLine('没钱打车，扫了辆共享单车去' + AREAS[area].name + '。', 'sys'); if (!isNight()) passTime(1); go(to, false, true); storyArrive(); }
@@ -33,11 +33,14 @@ async function explore() { if (STATE.scene || STATE.battle || STATE.busy) return
   if (!night) { logLine(pickFresh('fl_d', FLAVOR.d)); passTime(.5); refresh(); save(); return; }
   passTime(1); if (!p.town) C.mp = Math.max(0, C.mp - 3); const low = C.mp < charStats().mmp * .25;
   const ev = nightEventFor(C.loc); if (ev && chance(.5)) { await runNightEvent(ev); refresh(); save(); return; }
+  if (!p.town && chance(.16)) { await threeDoors(); refresh(); save(); return; }
+  if (!p.town && C.f.live && chance(.12)) { await danmuAsk(); refresh(); save(); return; }
   if (low && chance(.35)) { await scare(pick(['face', 'eyes', 'hand'])); logLine(pickFresh('fl_low', LOWMP), 'warn'); C.mp = Math.max(0, C.mp - 4); refresh(); save(); return; }
   const r = rnd(); const lv = Math.max(1, C.lv + rint(-1, 1));
   if (r < (low ? .62 : .48)) { const id = pick(NIGHT_MOBS[area] || ['remnant']); const n = chance(low ? .5 : .3) && C.lv >= 4 ? 2 : 1; logLine(pickFresh('fl_n', FLAVOR.n)); const res = await startBattle({ mobs: Array.from({ length: n }, () => [id, lv]), title: p.name }); if (res === 'lose') await knockedOut(); }
   else if (r < .72) { const it = pick(['bread', 'smoke', 'saltbag', 'bandage', 'drink']); addItem(it); logLine('角落里有别人落下的东西。'); }
   else if (r < .82 && C.talents.includes('yintong')) { const m = rint(12, 30); logLine('阴瞳让你看清了黑暗里的东西：一个旧钱包。'); gainMoney(m); }
+  else if (!p.town && relicCan(area) && chance(.3)) relicGain(area);
   else { if (chance(.12)) await scare('face'); logLine(pickFresh('fl_n', FLAVOR.n)); }
   if (C.ex[C.loc] === 5) { logLine('这里你已经摸熟了。', 'gain'); gainExp(20 + C.lv * 6); }
   refresh(); save(); }
@@ -52,9 +55,10 @@ function goodRate() { const t = C.hh.good + C.hh.bad; return t ? Math.round(C.hh
 /* 关注越多，每批进来的人越多（直播和短视频的作用） */
 function crowd() { return 2 + Math.floor(Math.log10(C.fans + 10)) + (C.hh.up.ac ? 2 : 0); }
 async function receive(sid) { if (STATE.scene || STATE.battle || STATE.busy) return; if (isNight()) { toast('乐园关门了，明天再营业'); return; } if (C.loc !== 'hh_door') { toast('去恐怖屋门口接待'); return; } const sc = SCENES[sid]; if (!sc) return;
-  const n = rint(1, C.lv >= 3 ? 3 : 2), lv = Math.max(1, C.lv - 1 + Math.floor(sceneStar(sid))); const mobs = Array.from({ length: n }, () => [pick(sc.pool), lv]); const ppl = n * crowd() + rint(0, 2);
-  logLine(ppl + ' 个游客买了票，进了「' + sc.n + '」。', 'sys'); const res = await startBattle({ scare: 1, scene: sid, mobs, ppl, title: sc.n + ' · 尖叫指数 ' + starTxt(sceneStar(sid)) }); passTime(2); C.hh.groups++; C.hh.batches++;
-  C.hh.today += ppl; C.hh.month += ppl;
+  const n = rint(1, C.lv >= 3 ? 3 : 2), lv = Math.max(1, C.lv - 1 + Math.floor(sceneStar(sid))); const mobs = Array.from({ length: n }, () => [pick(sc.pool), lv]); const ppl = n * crowd() + rint(0, 2); const picky = pickyFor(mobs);
+  logLine(ppl + ' 个游客买了票，进了「' + sc.n + '」。', 'sys'); const res = await startBattle({ scare: 1, scene: sid, mobs, ppl, picky, title: sc.n + ' · 尖叫指数 ' + starTxt(sceneStar(sid)) }); passTime(2); C.hh.groups++; C.hh.batches++;
+  C.hh.today += ppl; C.hh.month += ppl; eastStart(); if (FN().east && FN().east.got < 3) FN().east.ppl += ppl;
+  { const rv = addReview(sid, res === 'win', picky && FN().pickyWin === C.day); logLine('评论：“' + rv + '”', 'say'); if (!STATE.dayRun) toast('“' + rv + '”'); }
   if (res === 'win') { C.hh.good++; C.hh.total += ppl; const fan = Math.round(ppl * (C.hh.up.sign ? 1 : .5) * (1 + sceneStar(sid) * .3)); C.fans += fan; logLine('有人发了视频：关注 +' + fan, 'gain'); const pk = C.pet.d; if (pk) petAff(pk, 4); for (const k in C.pets) if (PETS[k].seal === 'ghost' && k !== pk) petAff(k, 1); dailyProg('groups', 1); }
   else { C.hh.bad++; logLine('“一点都不吓人。”他们在大众点评上给了一星。', 'warn'); }
   refresh(); save(); storyArrive(); }
@@ -64,7 +68,8 @@ function buyUpgrade(k) { const U = UPGRADES.find(u => u.k === k); if (!U) return
 /* —— 陪员工：每天每位一次 —— */
 const KEEP_T = { wan: ['你帮徐婉对了一遍台词。她念到一半自己笑场了。', '徐婉问你怎么画死人妆。你讲得很认真，她听得很认真，然后说想回家。'], xiaoxiao: ['你在床底下放了一个新做的小布偶。第二天它被摆到了枕头上。', '你陪她玩了一会捉迷藏。你一直没找到她。'],
   bixian: ['你给那支圆珠笔换了新胶带。纸上出现一个“哼”。', '你问它明天会不会下雨。它画了一个圈，又画了一把伞。'], baimao: ['你给白猫开了一个罐头。它吃完才看了你一眼。', '它趴在你腿上睡着了。你一个小时没敢动。'], canmian: ['你给二十四个人偶掸了灰，一个一个念了名字。', '你在暮阳中学的黑板上写了“下课”。第二天，粉笔字旁边多了一个笑脸。'] };
-function keepPet(k) { C.keep = C.keep || {}; if (!C.pets[k]) return; if (C.keep[k]) { toast('今天已经陪过它了'); return; } if (PLACES[C.loc].area !== 'park') { toast('回恐怖屋再说'); return; } C.keep[k] = 1; petAff(k, 6); logLine(pickFresh('keep_' + k, KEEP_T[k] || ['你陪它待了一会。']) + '（好感 +6）', 'gain'); passTime(.5); sfx('ok'); save(); renderSide(); renderTop(); }
+async function keepPet(k) { C.keep = C.keep || {}; if (!C.pets[k]) return; if (C.keep[k]) { toast('今天已经陪过它了'); return; } if (PLACES[C.loc].area !== 'park') { toast('回恐怖屋再说'); return; } if (STATE.scene || STATE.battle) return; C.keep[k] = 1; petAff(k, 6); passTime(.5); sfx('ok'); save();
+  const sk = PET_SKIT[k]; if (sk) { closeSide(); await runScene(async () => { await T_(pickFresh('skit_' + k, sk)); }, '陪' + PETS[k].n); } logLine((sk ? '你陪' + PETS[k].n + '待了一会。' : pickFresh('keep_' + k, KEEP_T[k] || ['你陪它待了一会。'])) + '（好感 +6）', 'gain'); save(); renderSide(); renderTop(); }
 
 /* —— 对峙流程 —— */
 let battleDone = null;
@@ -93,7 +98,7 @@ function battleItem(k, quiet) { const B = STATE.battle; if (!B || B.phase !== 'h
 function toggleAuto() { const B = STATE.battle; if (!B) return; B.auto = !B.auto; sfx('tap'); renderBattle(); if (B.auto && B.phase === 'hero') botLoop(B); else if (B.auto && B.phase === 'pet') battleAct(petPick(B)); }
 async function battleFinish() { const B = STATE.battle; if (!B) return; B.phase = 'end'; const res = B.result; let rw = null;
   if (!B.scare) C.hp = res === 'win' || res === 'flee' ? Math.max(1, Math.round(B.hero.hp)) : 1; fixHp();
-  if (res === 'win') { rw = battleRewards(B); if (rw.money) gainMoney(rw.money, B.scare ? '门票' : '捡到'); if (rw.screams) { C.hh.screams += rw.screams; logLine('收集尖叫 +' + rw.screams + '（' + C.hh.screams + '/' + BAL.screamPerSpin + '）', 'gain'); } gainExp(rw.exp);
+  if (res === 'win') { rw = battleRewards(B); if (rw.picky) { FN().pickyWin = C.day; C.fans += 60; logLine('挑剔的游客被吓哭了：赏钱 +' + PICKY_MONEY + '，关注 +60', 'gain'); } if (rw.money) gainMoney(rw.money, B.scare ? '门票' : '捡到'); if (rw.screams) { FN().scr += rw.screams; C.hh.screams += rw.screams; logLine('收集尖叫 +' + rw.screams + '（' + C.hh.screams + '/' + BAL.screamPerSpin + '）', 'gain'); } gainExp(rw.exp);
     if (B.pet && C.pets[B.pet.id]) { petGainExp(B.pet.id, rw.exp); petAff(B.pet.id, B.scare ? 1 : 3); } for (const k in C.pets) if (!B.pet || k !== B.pet.id) petGainExp(k, Math.round(rw.exp * .3)); battleWinSay(B); }
   B.rw = rw; sfx(res === 'win' ? 'big' : 'bad'); await fxStamp(res === 'win' ? (B.scare ? '吓退' : '撑住了') : res === 'flee' ? '脱身' : (B.scare ? '不吓人' : '倒下')); renderBattle();
   if (B.auto || (window.__dbg && __dbg.instant)) battleEnd(); }
@@ -121,11 +126,14 @@ async function dailyTake(which) { if (STATE.scene || STATE.battle) return; daily
   if (which === 'nm') { if (!isNight()) { toast('噩梦任务要等到夜里'); return; } if (PLACES[C.loc].area !== 'park') { toast('回恐怖屋再做'); return; } d.got = 'nm'; closeSide(); await runScene(async () => { await T_(`@确定接受噩梦难度日常任务？接受后，有可能会引发未知情况出现。\n${T.t}`); const ok = await miniGame(T.g, {}); if (ok) { await nar('你撑过去了。手心全是汗。'); dailyFinish(); } else { C.hp = Math.max(1, Math.round(C.hp * .5)); C.mp = Math.round(C.mp * .4); d.done = 2; await nar('你没撑住。醒来的时候天花板在转。今天的噩梦任务失败了。'); } }); return; }
   if (which === 'easy') { if (T.k === 'up') { d.got = 'easy'; d.prog = 0; logLine('【黑色手机】已接受简单难度日常任务：去总控制室添置设备。', 'phone'); sfx('phone'); } else { if (C.money < T.n) { toast('钱不够（' + T.n + ' 元）'); return; } C.money -= T.n; d.got = 'easy'; dailyFinish(); } } else { d.got = 'normal'; d.prog = 0; logLine('【黑色手机】已接受一般难度日常任务。', 'phone'); sfx('phone'); }
   save(); renderSide(); refresh(); }
-const WHEEL = [['drink', 20, 2], ['coffee', 14, 1], ['saltbag', 16, 3], ['bandage', 12, 2], ['$', 22, 0], ['fruit', 8, 1], ['g_torch', 4, 1], ['smoke', 4, 3]];
+const WHEEL = [['drink', 20, 2], ['coffee', 14, 1], ['saltbag', 16, 3], ['bandage', 12, 2], ['$', 22, 0], ['fruit', 8, 1], ['g_torch', 4, 1], ['smoke', 4, 3], ['$$', 3, 0], ['relic', 5, 1]];
 async function spinWheel() { if (STATE.scene || STATE.battle || STATE.busy) return; if (!C.f.wheel) { toast('转盘还没有激活'); return; } if (C.hh.spins > 0) C.hh.spins--; else if (C.hh.screams >= BAL.screamPerSpin) C.hh.screams -= BAL.screamPerSpin; else { toast('尖叫不够（' + C.hh.screams + '/' + BAL.screamPerSpin + '）'); return; }
-  STATE.busy = true; for (let i = 0; i < 14; i++) { sfx('spin'); const e = $('#wheelv'); if (e) e.textContent = pick(['☠', '🍑', '💀', '🕯', '👁', '🩸', '🎭']); await sleep(60 + i * 14); } STATE.busy = false;
-  let pool = WHEEL.filter(w => !(ITEMS[w[0]] && ITEMS[w[0]].k === 'gear' && itemN(w[0]))); let tot = pool.reduce((a, w) => a + w[1], 0), r = rnd() * tot, c = pool[0]; for (const w of pool) { r -= w[1]; if (r <= 0) { c = w; break; } }
-  if (c[0] === '$') { const m = rint(40, 110); gainMoney(m, '转盘'); logLine('【黑色手机】抽奖完成，指针停在一沓纸钱上——是真钱。', 'phone'); } else { addItem(c[0], c[2]); logLine('【黑色手机】抽奖完成！恭喜你获得 ' + ITEMS[c[0]].n + '。', 'phone'); }
+  STATE.busy = true; FN().spins++; for (let i = 0; i < 18; i++) { sfx('spin'); const e = $('#wheelv'); if (e) e.textContent = pick(['☠', '🍑', '💀', '🕯', '👁', '🩸', '🎭', '💰']); await sleep(50 + i * i * 2.2); } STATE.busy = false;
+  let pool = WHEEL.filter(w => !(ITEMS[w[0]] && ITEMS[w[0]].k === 'gear' && itemN(w[0])) && !(w[0] === 'relic' && !relicCan())); let tot = pool.reduce((a, w) => a + w[1], 0), r = rnd() * tot, c = pool[0]; for (const w of pool) { r -= w[1]; if (r <= 0) { c = w; break; } }
+  const ev = $('#wheelv'); if (ev) ev.textContent = c[0] === '$$' ? '💰' : c[0] === 'relic' ? '🕯' : c[0] === '$' ? '💴' : ITEMS[c[0]].ic;
+  if (c[0] === '$$') { const m = rint(300, 500); FN().jack++; gainMoney(m, '转盘大奖'); logLine('【黑色手机】幸运的厉鬼眷顾者！指针停在了金色的那一格：' + m + ' 元！', 'phone'); sfx('stinger'); await showCard('<div class="c1">大奖</div><div class="grade gS">💰</div><div class="c2">' + m + ' 元</div><div class="c3">转盘上从来没人见过的金色格子。</div>', 700); }
+  else if (c[0] === 'relic') { const rr = relicGain(); logLine('【黑色手机】抽奖完成。指针停在一根蜡烛上——' + (rr ? rr[1] : '') + '。', 'phone'); }
+  else if (c[0] === '$') { const m = rint(40, 110); gainMoney(m, '转盘'); logLine('【黑色手机】抽奖完成，指针停在一沓纸钱上——是真钱。', 'phone'); } else { addItem(c[0], c[2]); logLine('【黑色手机】抽奖完成！恭喜你获得 ' + ITEMS[c[0]].n + '。', 'phone'); }
   sfx('big'); save(); renderSide(); renderTop(); }
 
 /* —— 夜探的专属事件：每处几件，每件一个存档只碰到一次。from = 这一步之后才会出现 —— */

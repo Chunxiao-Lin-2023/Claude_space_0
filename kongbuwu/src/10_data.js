@@ -3,7 +3,7 @@ const BAL = {
   dayLen: 12, duskAt: 7,            /* 一天 12 格：0–6 白天（乐园营业），7–11 夜里 */
   weakMul: 1.5, critMul: 1.5, guardMul: .5, phaseAtk: 1.25, storyExp: 2,
   lowHp: .3, lowHeal: .25, lowAtk: 1.3, /* 绝境：三成体力以下触发一次 */
-  scareAtk: .72, nightAtk: 1.8, bossAtk: 1.35, screamPerSpin: 100, ticket: 20, restCamp: .4, sellRate: .5,
+  scareAtk: .72, /* 第四轮：完美时机、全场尖叫、挑剔游客的赏钱 → 46_fun.js 的 PERFECT_MUL / HOUSE_SCREAM / PICKY_MONEY */ nightAtk: 1.8, bossAtk: 1.35, screamPerSpin: 100, ticket: 20, restCamp: .4, sellRate: .5,
   foeHp: l => 1 + Math.max(0, l - 8) * .03, foeAtk: l => 1 + Math.max(0, l - 8) * .012
 };
 const DIFF = [{ n: '简单', hp: .75, atk: .8, exp: 1 }, { n: '标准', hp: 1, atk: 1, exp: 1 }, { n: '困难', hp: 1.25, atk: 1.15, exp: 1.15 }];

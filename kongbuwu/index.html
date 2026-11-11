@@ -13,7 +13,7 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
 #app{position:fixed;inset:0;display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:auto minmax(0,1fr) auto;max-width:1180px;margin:0 auto;background:var(--bg);padding:var(--sat) var(--sar) 0 var(--sal)}
 #top{display:flex;align-items:center;gap:10px;padding:6px 10px;border-bottom:1px solid var(--line);background:#0a0d0f;min-height:42px;z-index:5}
 #tl{flex:1;min-width:0;display:flex;align-items:center;gap:8px;font-size:.78em;color:var(--dim);white-space:nowrap;overflow:hidden}
-#tl b{color:var(--ink);font-weight:500}@media (max-width:600px){.ttl{display:none}#dlg .chn{display:none}}#tl>span{flex:none}#tl>span:last-child{flex:1 1 0;min-width:0;overflow:hidden;text-overflow:ellipsis}@media (max-width:400px){#tl{gap:6px;font-size:.74em}#tl .bars{width:40px!important;flex:none}#top{gap:6px;padding:6px 8px}}.bars{display:flex;flex-direction:column;gap:3px;width:74px;flex:none}.bar{height:5px;background:#1c2427;border-radius:3px;overflow:hidden}.bar i{display:block;height:100%;background:var(--red);transition:width .3s}.bar.mp i{background:#4f7fb8}
+#tl b{color:var(--ink);font-weight:500}@media (max-width:600px){.ttl{display:none}#dlg .chn{display:none}}#tl>span{flex:none}#tl>span:last-child{flex:1 1 0;min-width:0;overflow:hidden;text-overflow:ellipsis}#tl .lw{font-style:normal}@media (max-width:440px){#tl .lw{display:none}#tl .live{flex:none!important;overflow:visible!important}}@media (max-width:400px){#tl{gap:6px;font-size:.74em}#tl .bars{width:40px!important;flex:none}#top{gap:6px;padding:6px 8px}}.bars{display:flex;flex-direction:column;gap:3px;width:74px;flex:none}.bar{height:5px;background:#1c2427;border-radius:3px;overflow:hidden}.bar i{display:block;height:100%;background:var(--red);transition:width .3s}.bar.mp i{background:#4f7fb8}
 .live{color:#ff5a4a;font-weight:600}.live:before{content:"● ";animation:blink 1.2s infinite}@keyframes blink{50%{opacity:.25}}
 .tb{flex:none;white-space:nowrap;font-size:.8em;padding:5px 9px;border:1px solid var(--line);border-radius:6px;background:var(--bg2);min-height:32px}
 #stage{position:relative;overflow:hidden}.view{position:absolute;inset:0;opacity:0;pointer-events:none;transition:opacity .28s ease;display:flex;flex-direction:column;overflow:hidden}
@@ -46,6 +46,8 @@ body.m-ex #vEx,body.m-dlg #vDlg,body.m-bt #vBt{opacity:1;pointer-events:auto}bod
 .s-self{background:#3b4a52}.s-park{background:#a8612a}.s-police{background:#2f5d8c}.s-visitor{background:#4e7a4a}.s-ghost{background:#5b3f86}.s-red{background:#a01818}.s-foe{background:#3a2a2a}.s-med{background:#2c7a78}.s-net{background:#666}.s-phone{background:#000;color:#e02a22;border:1px solid #600}
 .dprev{font-size:.86em;opacity:.42;margin-bottom:6px;max-height:3.4em;overflow:hidden}.dtext{font-size:1.06em;line-height:1.85;flex:1;white-space:pre-wrap;animation:fadein .22s}@keyframes fadein{from{opacity:0}}body.nomo .dtext,body.nomo .seal.in{animation:none}
 .dtext.nar{color:#4a4032}#dlg.ph .dtext{color:#e02a22;text-shadow:0 0 8px rgba(255,0,0,.35)}.dhint{text-align:right;font-size:.72em;color:#9a8a6a;margin-top:6px}
+#ring{position:absolute;inset:0;z-index:9;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.42);touch-action:none;cursor:pointer}#ring .rg-t,#ring .rg-c{position:absolute;width:96px;height:96px;border-radius:50%}#ring .rg-t{border:4px solid #f2e6c8;box-shadow:0 0 16px rgba(242,230,200,.35)}#ring .rg-c{border:4px solid #e33;animation:rgs .9s linear forwards}@keyframes rgs{from{transform:scale(3.2)}to{transform:scale(.72)}}#ring .rg-l{position:absolute;margin-top:170px;color:#f2e6c8;font-size:.9em;text-align:center;padding:0 20px}#ring.ok .rg-t{border-color:#7f7;box-shadow:0 0 40px #7f7}#ring.ok .rg-c{display:none}#ring.no{opacity:.4}
+.cb{color:#f2c46a}.cb.no{color:#d77}.wk.tr.pk{color:#f2c46a;border-color:#a8802a}.fh{color:#f2c46a}.grade{font-size:64px;font-weight:700;margin:4px 0;font-family:serif}.grade.gS{color:#f2c46a;text-shadow:0 0 24px #a80}.grade.gA{color:#cfd8e0}.grade.gB{color:#b08a5a}.grade.gC{color:#777}
 .dch{display:flex;flex-direction:column;gap:8px;margin-top:10px}.dch button{text-align:left;border:1px solid #8a7648;background:rgba(255,255,255,.35);border-radius:6px;padding:9px 12px;min-height:44px;color:#2a2520;font-family:inherit}.dch button:active{background:#d8cba6}.dch small{display:block;color:#7a6a4a;font-size:.8em}
 #dlg.ph .dch button{border-color:#700;background:#150000;color:#f44}
 #mini{display:none;margin:10px;background:#0c0c0e;border:1px solid #333;border-radius:10px;padding:14px;position:relative;min-height:52%}body.m-mini #mini{display:block}body.m-mini #dlg{display:none}
@@ -99,7 +101,7 @@ textarea{width:100%;height:70px;background:#000;color:#9a9;border:1px solid var(
 @media (min-width:860px){#app{grid-template-columns:minmax(0,1fr) 78px;grid-template-rows:auto minmax(0,1fr)}#top{grid-column:1/3}#nav{grid-column:2;grid-row:2;flex-direction:column;justify-content:flex-end;border-top:0;border-left:1px solid var(--line);padding-bottom:12px}#nav button{flex:none;padding:10px 0}
  .ex-wrap{flex-direction:row}.ex-l{flex:1.1;display:flex;flex-direction:column;border-right:1px solid var(--line);min-width:0}.banner{max-height:44vh}.ex-r{flex:1;display:flex;flex-direction:column;justify-content:flex-end}.danmu{display:none}.dmwide{display:block}
  #dlg{margin:14px auto;width:min(720px,92%)}#mini{margin:14px auto;width:min(620px,92%)}.b-log{max-width:820px;width:calc(100% - 20px);margin-left:auto;margin-right:auto}}
-@media (orientation:landscape) and (max-height:480px){.banner{max-height:96px}#vDlg{flex-direction:row}.stgw{flex:1 1 46%;padding:8px 0 8px 10px}#vDlg #dlg,#vDlg #mini{flex:1 1 54%;min-height:0;max-height:none;margin:8px 10px}.ex-wrap{flex-direction:row}.ex-l{flex:1;border-right:1px solid var(--line);overflow:hidden}.ex-r{flex:1}.feed{max-height:2.8em}.b-log{min-height:0;flex:1 1 18px;margin:2px 10px;padding:2px 10px}.b-foes,.b-ally{padding:2px 10px}.card{padding:3px 6px;max-width:200px}.card .wk,.card .sts:empty{display:none}.b-turn{display:none}.b-top{padding:3px 10px}.b-acts{padding:2px 8px;gap:4px}.sk{min-height:34px;min-width:0;flex-direction:row;gap:4px;padding:3px 8px}.sk small{display:none}.sk b{font-size:1em}.b-end{margin:2px 10px;padding:4px}.b-end .mg-row{margin-top:4px}.btn.big{min-height:40px}#mini{min-height:0;padding:8px}.mg-tip{margin:2px 0 4px}.mg-row{margin-top:6px}#nav button{min-height:40px}#nav button b{font-size:1.3em}.mg-dark{height:110px}.mg-eye{height:60px;line-height:60px;font-size:44px}}
+@media (orientation:landscape) and (max-height:480px){.banner{max-height:96px}#vDlg{flex-direction:row}.stgw{flex:1 1 46%;padding:8px 0 8px 10px}#vDlg #dlg,#vDlg #mini{flex:1 1 54%;min-height:0;max-height:none;margin:8px 10px}#dlg .dch{gap:5px;margin-top:6px}#dlg .dch button{min-height:34px;padding:5px 10px}.ex-wrap{flex-direction:row}.ex-l{flex:1;border-right:1px solid var(--line);overflow:hidden}.ex-r{flex:1}.feed{max-height:2.8em}.b-log{min-height:0;flex:1 1 18px;margin:2px 10px;padding:2px 10px}.b-foes,.b-ally{padding:2px 10px}.card{padding:3px 6px;max-width:200px}.card .wk,.card .sts:empty{display:none}.b-turn{display:none}.b-top{padding:3px 10px}.b-acts{padding:2px 8px;gap:4px}.sk{min-height:34px;min-width:0;flex-direction:row;gap:4px;padding:3px 8px}.sk small{display:none}.sk b{font-size:1em}.b-end{margin:2px 10px;padding:4px}.b-end .mg-row{margin-top:4px}.btn.big{min-height:40px}#mini{min-height:0;padding:8px}.mg-tip{margin:2px 0 4px}.mg-row{margin-top:6px}#nav button{min-height:40px}#nav button b{font-size:1.3em}.mg-dark{height:110px}.mg-eye{height:60px;line-height:60px;font-size:44px}}
 </style>
 </head>
 <body class="m-ex">
@@ -189,7 +191,7 @@ const BAL = {
   dayLen: 12, duskAt: 7,            /* 一天 12 格：0–6 白天（乐园营业），7–11 夜里 */
   weakMul: 1.5, critMul: 1.5, guardMul: .5, phaseAtk: 1.25, storyExp: 2,
   lowHp: .3, lowHeal: .25, lowAtk: 1.3, /* 绝境：三成体力以下触发一次 */
-  scareAtk: .72, nightAtk: 1.8, bossAtk: 1.35, screamPerSpin: 100, ticket: 20, restCamp: .4, sellRate: .5,
+  scareAtk: .72, /* 第四轮：完美时机、全场尖叫、挑剔游客的赏钱 → 46_fun.js 的 PERFECT_MUL / HOUSE_SCREAM / PICKY_MONEY */ nightAtk: 1.8, bossAtk: 1.35, screamPerSpin: 100, ticket: 20, restCamp: .4, sellRate: .5,
   foeHp: l => 1 + Math.max(0, l - 8) * .03, foeAtk: l => 1 + Math.max(0, l - 8) * .012
 };
 const DIFF = [{ n: '简单', hp: .75, atk: .8, exp: 1 }, { n: '标准', hp: 1, atk: 1, exp: 1 }, { n: '困难', hp: 1.25, atk: 1.15, exp: 1.15 }];
@@ -427,8 +429,8 @@ Object.assign(SEAL_BY_NAME, { 陈歌: 'self', 黑色手机: 'phone', 水友: 'ne
 let C = null; const SAVE_V = 1;
 function newChar() { return { v: SAVE_V, lv: 1, exp: 0, hp: 0, mp: 0, money: 35, day: 1, tick: 0, loc: 'hh_door', q: 'q_open', f: {}, sk: ['hammer', 'jump', 'story'], bar: { n: ['hammer'], d: ['jump', 'story'] }, prof: {},
   pets: {}, pet: { n: '', d: '' }, duo: 0, bag: { bread: 2 }, gear: [], talents: [], titles: [], title: '', hh: { good: 0, bad: 0, today: 4, month: 10, screams: 0, spins: 0, total: 0, scenes: ['zombie', 'mh'], groups: 0, batches: 0, up: {} },
-  fans: 0, codex: {}, kills: {}, seen: {}, dlog: [], daily: { day: 0, got: '', done: 0 }, ex: {}, track: '', auto: 0, made: Date.now(), bonus: { hp: 0 } }; }
-function charStats(c) { c = c || C; const l = c.lv; let hp = HERO.hp(l) + (c.bonus.hp || 0), mp = HERO.mp(l), atk = HERO.atk(l), def = HERO.def(l), spd = HERO.spd(l), exp = 0, low = 0;
+  fans: 0, codex: {}, kills: {}, seen: {}, dlog: [], daily: { day: 0, got: '', done: 0 }, ex: {}, track: '', auto: 0, made: Date.now(), bonus: { hp: 0 }, fun: { chs: { 1: { lose: 0, fail: 0, d0: 1 } } } }; }
+function charStats(c) { c = c || C; const l = c.lv; let hp = HERO.hp(l) + (c.bonus.hp || 0) + relicBonus(c, 'hp'), mp = HERO.mp(l) + relicBonus(c, 'mp'), atk = HERO.atk(l), def = HERO.def(l), spd = HERO.spd(l), exp = 0, low = 0;
   for (const t of c.titles) { const T = TITLES[t]; if (!T) continue; hp += T.hp || 0; mp += T.mp || 0; atk += T.atk || 0; exp += T.exp || 0; low += T.low || 0; }
   for (const g of c.gear) { const G = ITEMS[g]; if (!G) continue; hp += G.hp || 0; spd += G.spd || 0; exp += G.exp || 0; }
   if (c.talents.includes('run')) spd += 3;
@@ -473,7 +475,7 @@ function gameDay() { return C.day; }
 let SLOT = store.get('slot', 1); const SLOTS = 5;
 const saveKey = n => 'save.' + (n || SLOT), jrKey = n => 'jr.' + (n || SLOT);
 let saveT = 0;
-function save() { if (!C || (window.__dbg && __dbg.nosave)) return; clearTimeout(saveT); saveT = setTimeout(saveNow, 250); }
+function save() { if (C) try { checkAch(); } catch (e) {} if (!C || (window.__dbg && __dbg.nosave)) return; clearTimeout(saveT); saveT = setTimeout(saveNow, 250); }
 function saveNow() { if (!C) return; C.savedAt = Date.now(); store.set(saveKey(), C); }
 function fixSave(c) { const d = newChar(); for (const k in d) if (c[k] === undefined) c[k] = d[k]; for (const k in d.hh) if (c.hh[k] === undefined) c.hh[k] = d.hh[k]; if (!MAIN.some(q => q.id === c.q)) c.q = c.q === 'q_end' ? 'q_end' : MAIN[0].id; if (!PLACES[c.loc]) c.loc = 'hh_door'; c.sk = c.sk.filter(k => SKILLS[k]); for (const m of ['n', 'd']) c.bar[m] = (c.bar[m] || []).filter(k => c.sk.includes(k)); return c; }
 function loadSave(n) { const c = store.get(saveKey(n), null); return c && c.v === SAVE_V ? fixSave(c) : null; }
@@ -497,6 +499,8 @@ function battleCreate(o) { const scare = !!o.scare, B = { id: ++BID, o, scare, t
   if (!scare && C.gear.includes('g_mask')) for (const f of B.foes) if (f.k === 'human') f.st.weak = 2;
   for (const f of B.foes) { const cd = C.codex[f.id] = C.codex[f.id] || { n: 0, wk: [] }; cd.n++; planMob(B, f); }
   for (const p of o.pre || []) { const f = B.foes[p[0]]; if (f) f.st[p[1]] = p[2]; }
+  if (o.picky && B.foes[o.picky.i]) { const u = B.foes[o.picky.i]; u.picky = o.picky.el; u.n = '挑剔的' + u.n; }
+  for (const f of B.foes) if (f.boss && SOFT[f.id]) blog(B, '💡 ' + SOFT[f.id][1], 'sys');
   if (scare) { const up = C.hh.up || {}; for (const f of B.foes) { if (up.fog) f.st.vuln = 2; if (o.scene === 'mh' && C.f.jiayi) f.st.fear = 1; if (up.cam) for (const w of f.weak) { const cd = C.codex[f.id]; if (!cd.wk.includes(w)) cd.wk.push(w); } } }
   return B; }
 const alive = us => us.filter(u => u.hp > 0);
@@ -523,7 +527,7 @@ function applyDmg(B, src, tgt, raw, o) { o = o || {}; let v = Math.max(1, Math.r
   else if (tgt.side === 'f' && tgt.boss && !tgt.phased && tgt.hp <= tgt.mhp * .5) { tgt.phased = true; tgt.st.rage = 99; const ln = epicPhase(B, tgt); blog(B, tgt.n + (B.scare ? ' 强撑着不肯认怂' : ' 红了眼') + '（攻击 +25%）' + (ln ? '：“' + ln + '”' : ''), 'warn'); fxe(B, { t: 'phase', who: tgt.key, txt: ln }); }
   return v; }
 function skillMul(k) { let m = 1 + profLevel(k)[2]; for (const g of C.gear) { const G = ITEMS[g]; if (G.sk && G.sk[k]) m *= G.sk[k]; } const S = SKILLS[k]; if (S.m !== 'n' && C.talents.includes('lianrong') && (S.m === 'd' || STATE.battle && STATE.battle.scare)) m *= 1.12; if (C.titles.includes('boss20') && S.m === 'd') m *= 1.05;
-  const B = STATE.battle; if (B && B.scare) { const P = scenePas(B.o.scene); if (P.el[S.el]) m *= P.el[S.el]; const up = C.hh.up || {}; if (up.skin && S.el === 'doll') m *= 1.2; if (up.sound && S.el === 'sound') m *= 1.2; if (up.light && (S.el === 'jump' || S.el === 'light')) m *= 1.15; } return m; }
+  const B = STATE.battle; if (B && B.scare) { m *= 1 + relicBonus(C, 'scare'); const P = scenePas(B.o.scene); if (P.el[S.el]) m *= P.el[S.el]; const up = C.hh.up || {}; if (up.skin && S.el === 'doll') m *= 1.2; if (up.sound && S.el === 'sound') m *= 1.2; if (up.light && (S.el === 'jump' || S.el === 'light')) m *= 1.15; } return m; }
 /* 厉鬼眷顾者：拿到红舞鞋以后，绝境那一刻影子里会伸出黑发（贪心过的话只有一半可能） */
 function yaAssist(B) { if (B.scare || B.o.ally || !C.f.shoes || !C.titles.includes('favored') || B.pet && B.pet.id === 'zhangya') return; if (C.f.greedy && !chance(.5)) { blog(B, '影子动了一下，又静了。她还记得你那个请求。', 'say'); return; }
   const f = alive(B.foes).sort((a, b) => b.hp - a.hp)[0]; if (!f) return; blog(B, '影子里伸出一缕黑发——厉鬼眷顾者。', 'epic'); fxe(B, { t: 'banner', who: 'hero', txt: '黑发', ic: '🩸' }); applyDmg(B, null, f, Math.round(f.mhp * .2), {}); if (f.hp > 0) addSt(B, f, 'stun', 1); }
@@ -536,35 +540,36 @@ function doHit(B, src, tgt, pow, el, o) { o = o || {}; if (tgt.hp <= 0) return 0
 /* 我方出手 */
 function perform(B, u, a) { if (u.hp <= 0 || B.result) return; u.guard = false;
   if (u.st.stun) { blog(B, u.n + ' 懵着，动不了。', 'warn'); fxe(B, { t: 'txt', who: u.key, txt: '懵' }); return; }
-  if (a.t === 'guard') { u.guard = true; blog(B, u.n + (B.scare ? ' 稳住场面。' : ' 护住要害。')); fxe(B, { t: 'txt', who: u.key, txt: '防御' }); sfxQ(B, 'guard'); return; }
+  if (a.t === 'guard') { u.guard = true; if (a.perfect && u.key === 'hero') { u.dodge = true; blog(B, '陈歌盯着它的动作，等那一下。', 'gain'); } blog(B, u.n + (B.scare ? ' 稳住场面。' : ' 护住要害。')); fxe(B, { t: 'txt', who: u.key, txt: '防御' }); sfxQ(B, 'guard'); return; }
   const tgt0 = B.foes[a.tg] && B.foes[a.tg].hp > 0 ? B.foes[a.tg] : alive(B.foes)[0]; if (!tgt0) return;
-  if (u.key === 'hero') { let k = a.k, S = SKILLS[k]; if (!S || C.mp < S.cost) { k = B.scare ? 'jump' : 'hammer'; S = SKILLS[k]; } C.mp -= S.cost; profUse(k); const mul = skillMul(k);
+  if (u.key === 'hero') { let k = a.k, S = SKILLS[k]; if (!S || C.mp < S.cost) { k = B.scare ? 'jump' : 'hammer'; S = SKILLS[k]; } C.mp -= S.cost; profUse(k); let mul = skillMul(k) * comboMul(B, k); if (a.perfect) { mul *= PERFECT_MUL; FN().perfect++; blog(B, '完美时机！', 'epic'); fxe(B, { t: 'banner', who: 'hero', txt: '完美', ic: '⭕' }); }
     blog(B, '陈歌 · ' + S.ic + S.n + (S.self ? '' : ' → ' + (S.all ? '全体' : tgt0.n))); fxe(B, { t: 'banner', who: 'hero', txt: S.n, ic: S.ic });
     if (S.self) { addSt(B, u, S.st[0], S.st[1]); if (S.st[0] === 'see') for (const f of alive(B.foes)) for (const w of f.weak) noteWeak(B, f, w); return; }
-    for (const t of (S.all ? alive(B.foes) : [tgt0])) { let m = mul; if (S.first && !t.acted) m *= S.first; if (S.dark && t.st.dark) m *= S.dark; if (S.ghost && t.k === 'ghost') m *= S.ghost;
-      doHit(B, u, t, S.pow, S.el, { mul: m, plain: k === 'hammer' }); if (t.hp > 0) { if (S.st) addSt(B, t, S.st[0], S.st[1]); if (S.stun && chance(S.stun * (t.boss ? .6 : 1))) { addSt(B, t, 'stun', 1); if (t.st.stun) { blog(B, t.n + (B.scare ? ' 腿软了！' : ' 被打懵了！'), 'gain'); tryInterrupt(B, t, '打懵'); } } } }
+    for (const t of (S.all ? alive(B.foes) : [tgt0])) { let m = mul; if (S.first && !t.acted) m *= S.first; if (S.dark && t.st.dark) m *= S.dark; if (S.ghost && t.k === 'ghost') m *= S.ghost; const soft = softHit(B, t, S); m *= soft; if (t.picky && t.picky === S.el) t.pickyHit = 1;
+      doHit(B, u, t, S.pow, S.el, { mul: m, plain: k === 'hammer' }); reactLine(B, t); if (soft > 1 && t.hp > 0) { delete t.st.steady; addSt(B, t, 'stun', 1); tryInterrupt(B, t, '软肋'); } if (t.hp > 0) { if (S.st) addSt(B, t, S.st[0], S.st[1]); if (S.stun && chance(S.stun * (t.boss ? .6 : 1))) { addSt(B, t, 'stun', 1); if (t.st.stun) { blog(B, t.n + (B.scare ? ' 腿软了！' : ' 被打懵了！'), 'gain'); tryInterrupt(B, t, '打懵'); } } } }
     banterAct(B, k); return; }
   /* 员工 */
   const mv = a.mv; blog(B, u.n + ' · ' + mv.n + (mv.guard || mv.c === 'buf' ? '' : ' → ' + (mv.all ? '全体' : tgt0.n))); fxe(B, { t: 'banner', who: 'pet', txt: mv.n });
   if (mv.guard) { addSt(B, B.hero, mv.st[0], mv.st[1]); u.st.taunt = 2; return; } if (mv.c === 'buf') { addSt(B, B.hero, mv.st[0], mv.st[1]); if (mv.see) for (const f of alive(B.foes)) for (const w of f.weak) noteWeak(B, f, w); return; }
-  for (const t of (mv.all ? alive(B.foes) : [tgt0])) { doHit(B, u, t, mv.pow || .5, mv.el || 'none'); if (t.hp > 0) { if (mv.st) addSt(B, t, mv.st[0], mv.st[1]); if (mv.brk) tryInterrupt(B, t, u.n); if (mv.stun && chance(mv.stun * (t.boss ? .6 : 1))) { addSt(B, t, 'stun', 1); if (t.st.stun) tryInterrupt(B, t, '吓懵'); } } } }
+  for (const t of (mv.all ? alive(B.foes) : [tgt0])) { doHit(B, u, t, mv.pow || .5, mv.el || 'none'); reactLine(B, t); if (t.hp > 0) { if (mv.st) addSt(B, t, mv.st[0], mv.st[1]); if (mv.brk) tryInterrupt(B, t, u.n); if (mv.stun && chance(mv.stun * (t.boss ? .6 : 1))) { addSt(B, t, 'stun', 1); if (t.st.stun) tryInterrupt(B, t, '吓懵'); } } } }
 function mobAct(B, u) { if (u.hp <= 0 || B.result) return; u.acted = true; if (u.st.stun) { blog(B, u.n + (B.scare ? ' 腿软，站在原地。' : ' 还懵着。')); return; } if (u.trait === 'distract' && !(u.intent && u.intent.exec) && chance(.2)) { blog(B, u.n + ' 低头看手机，没往前走。'); fxe(B, { t: 'txt', who: u.key, txt: '分心' }); return; }
   const it = u.intent || {}; const mv = it.mv; if (!mv) return; if (it.charge) { blog(B, u.n + '：' + (mv.cn || '在蓄力') + '……', 'warn'); fxe(B, { t: 'txt', who: u.key, txt: '⚠ 蓄力' }); return; }
   if (it.exec) { u.charging = null; u.lastBig = B.turn; }
   const tgts = mv.all ? [B.hero].concat(B.pet && B.pet.hp > 0 ? [B.pet] : []) : [(B.pet && B.pet.hp > 0 && (B.pet.st.taunt || chance(.22))) ? B.pet : B.hero];
   blog(B, u.n + ' · ' + mv.n + (it.exec ? '！' : ''), it.exec ? 'warn' : ''); fxe(B, { t: 'banner', who: u.key, txt: mv.n, foe: 1, big: it.exec });
-  for (const t of tgts) { let base = u.atk * mv.p; if (u.st.weak) base *= .75; if (u.st.rage) base *= BAL.phaseAtk; if (u.st.dark) base *= u.trait === 'darkfear' ? .5 : .8; base *= B.scare ? BAL.scareAtk : BAL.nightAtk * (u.boss && !B.pet?.id?.startsWith('zhangya') && alive(B.foes).length === 1 ? BAL.bossAtk : 1); const mit = t.def * (t.st.vuln ? .7 : 1) * .6; applyDmg(B, u, t, base * (.92 + rnd() * .16) - mit, {}); if (mv.st && t.hp > 0 && t.key === 'hero' && !t.guard) addSt(B, t, mv.st[0], mv.st[1]); } }
+  for (const t of tgts) { if (t.dodge && it.exec) { blog(B, t.n + ' 一侧身，闪开了！', 'gain'); fxe(B, { t: 'txt', who: t.key, txt: '闪开' }); FN().dodge++; continue; } let base = u.atk * mv.p; if (u.st.weak) base *= .75; if (u.st.rage) base *= BAL.phaseAtk; if (u.st.dark) base *= u.trait === 'darkfear' ? .5 : .8; base *= B.scare ? BAL.scareAtk : BAL.nightAtk * (u.boss && !B.pet?.id?.startsWith('zhangya') && alive(B.foes).length === 1 ? BAL.bossAtk : 1); const mit = t.def * (t.st.vuln ? .7 : 1) * .6; applyDmg(B, u, t, base * (.92 + rnd() * .16) - mit, {}); if (mv.st && t.hp > 0 && t.key === 'hero' && !t.guard) addSt(B, t, mv.st[0], mv.st[1]); } }
 function sfxQ(B, n) { fxe(B, { t: 'sfx', n }); }
 function tickSt(B, u) { if (u.hp <= 0) return; const dot = k => { const r = (k === 'bleed' ? .06 : .07) * (u.boss ? .5 : 1); const v = Math.max(1, Math.round(u.mhp * r)); u.hp = Math.max(u.side === 'a' ? 1 : 0, u.hp - v); fxe(B, { t: 'hit', who: u.key, v, hp: u.hp, dot: STATUS[k][0] }); if (u.hp <= 0) { blog(B, u.n + (B.scare ? ' 崩溃了，哭着往外跑！' : ' 倒下了。'), 'gain'); fxe(B, { t: 'ko', who: u.key }); C.kills[u.id] = (C.kills[u.id] || 0) + 1; } };
   if (u.st.bleed) dot('bleed'); if (u.hp > 0 && u.st.fear) dot('fear'); for (const k in u.st) if (u.st[k] < 90 && --u.st[k] <= 0) delete u.st[k]; }
-function battleResolve(B) { B.ev = []; B.phase = 'anim'; for (const u of [B.hero, B.pet].concat(B.foes)) if (u) u.dmgT = 0; const first = B.log.length;
+function battleResolve(B) { const n0 = alive(B.foes).length; B.ev = []; B.phase = 'anim'; for (const u of [B.hero, B.pet].concat(B.foes)) if (u) u.dmgT = 0; const first = B.log.length;
   const order = B.pet && B.pet.hp > 0 ? (C.duo ? ['pet', 'hero'] : ['hero', 'pet']) : ['hero'];
   for (const k of order) { const u = unitByKey(B, k), a = B.pick[k]; if (u && a) perform(B, u, a); if (!alive(B.foes).length) break; }
   if (alive(B.foes).length) for (const f of B.foes.slice().sort((a, b) => (b.spd - (b.st.slow ? 6 : 0)) - (a.spd - (a.st.slow ? 6 : 0)))) { mobAct(B, f); if (B.hero.hp <= 0) break; }
   for (const u of B.foes.concat([B.hero, B.pet])) if (u) tickSt(B, u);
   if (B.scare && alive(B.foes).length) sceneTurn(B);
   if (B.pet && B.pet.hp <= 0 && !B.petDown) { B.petDown = true; blog(B, B.pet.n + ' 退到了你身后。', 'warn'); }
-  B.hero.guard = false; if (B.pet) B.pet.guard = false; B.pick = {}; B.itemUsed = false; B.firstNew = first;
+  if (B.scare && n0 >= 2 && !alive(B.foes).length) { B.fullHouse = n0; FN().house++; blog(B, '全场尖叫！' + n0 + ' 个游客一起冲了出去。', 'epic'); fxe(B, { t: 'banner', who: 'hero', txt: '全场尖叫', ic: '😱' }); }
+  B.hero.guard = false; B.hero.dodge = false; if (B.pet) B.pet.guard = false; B.pick = {}; B.itemUsed = false; B.firstNew = first;
   if (!alive(B.foes).length) B.result = 'win'; else if (B.hero.hp <= 0) B.result = 'lose'; else { B.turn++; for (const f of alive(B.foes)) planMob(B, f); banterRound(B); } }
 /* 自动对峙：会吃东西、会防大招、会打弱点 */
 function botAct(B) { const h = B.hero, foes = alive(B.foes), mode = B.scare ? 'd' : 'n', bar = C.bar[mode].filter(k => SKILLS[k] && C.mp >= SKILLS[k].cost);
@@ -572,7 +577,7 @@ function botAct(B) { const h = B.hero, foes = alive(B.foes), mode = B.scare ? 'd
   if (!B.itemUsed && C.mp < charStats().mmp * .25) { const it = ['coffee', 'smoke'].find(k => itemN(k)); if (it) battleItem(it, 1); }
   if (B.o.candy && !B.candyUsed && itemN('candy') && h.hp < h.mhp * .6) return { t: 'candy' };
   const big = foes.find(f => f.intent && f.intent.exec && !f.st.stun); const cd = f => (C.codex[f.id] || { wk: [] }).wk;
-  let best = null, bs = -1; for (const f of foes) for (const k of bar) { const S = SKILLS[k]; if (S.self) continue; let s = (S.pow || 0) * (S.all ? Math.min(foes.length, 2.2) : 1) * (cd(f).includes(S.el) && weakOf(f, S.el) ? 1.5 : 1) * (1 - S.cost * .012) + (S.st && !f.st[S.st[0]] ? .25 : 0) + (S.stun || 0); if (S.first && !f.acted) s *= S.first; if (S.dark && f.st.dark) s *= 1.5; s *= .6 + .4 * (1 - f.hp / f.mhp) + (f === big ? .5 : 0); if (s > bs) { bs = s; best = { t: 'sk', k, tg: B.foes.indexOf(f) }; } }
+  let best = null, bs = -1; for (const f of foes) for (const k of bar) { const S = SKILLS[k]; if (S.self) continue; let s = (S.pow || 0) * (S.all ? Math.min(foes.length, 2.2) : 1) * (cd(f).includes(S.el) && weakOf(f, S.el) ? 1.5 : 1) * (1 - S.cost * .012) + (S.st && !f.st[S.st[0]] ? .25 : 0) + (S.stun || 0); if (S.first && !f.acted) s *= S.first; if (S.dark && f.st.dark) s *= 1.5; if (B.scare && B.lastK) s *= k === B.lastK ? Math.pow(REPEAT_DOWN, Math.min((B.rep || 0) + 1, 3)) : 1 + COMBO_UP * Math.min((B.combo || 0) + 1, COMBO_MAX); s *= .6 + .4 * (1 - f.hp / f.mhp) + (f === big ? .5 : 0); if (s > bs) { bs = s; best = { t: 'sk', k, tg: B.foes.indexOf(f) }; } }
   if (big) { const wkSk = bar.find(k => weakOf(big, SKILLS[k].el) && cd(big).includes(SKILLS[k].el)); if (wkSk) return { t: 'sk', k: wkSk, tg: B.foes.indexOf(big) }; if (!(B.pet && B.pet.hp > 0 && petMovesB(B).some(m => m.brk))) return { t: 'guard' }; }
   if (!B.scare && B.turn === 1 && foes.some(f => f.boss)) { const buff = ['yintong', 'doll'].find(k => bar.includes(k) && !h.st[SKILLS[k].st[0]]); if (buff) return { t: 'sk', k: buff, tg: 0 }; }
   return best || { t: 'sk', k: B.scare ? 'jump' : 'hammer', tg: B.foes.indexOf(foes[0]) }; }
@@ -592,7 +597,7 @@ function sceneTurn(B) { const fs = alive(B.foes), s = B.o.scene;
     if (f.trait === 'torch' && fs.some(x => x.st.dark) && chance(.5)) { for (const x of fs) delete x.st.dark; blog(B, f.n + ' 打开了手机电筒。', 'warn'); fxe(B, { t: 'txt', who: f.key, txt: '开灯' }); } }
   if (!alive(B.foes).length) B.result = 'win'; }
 function battleRewards(B) { const D = DIFF[SET.diff] || DIFF[1]; let exp = 0; for (const f of B.foes) exp += f.lv * 6 * (f.boss ? 3 : 1); exp = Math.round(exp * (B.o.story ? BAL.storyExp : 1) * D.exp * (B.scare ? .7 : 1)); const out = { exp };
-  if (B.scare) { const sc = SCENES[B.o.scene] || { star: .5 }, n = B.foes.length, P = scenePas(B.o.scene); out.money = Math.round(BAL.ticket * (B.o.ppl || n) * P.pay); out.screams = Math.round(n * (6 + sc.star * 6) + B.foes.filter(f => f.boss).length * 10); }
+  if (B.scare) { const sc = SCENES[B.o.scene] || { star: .5 }, n = B.foes.length, P = scenePas(B.o.scene); out.money = Math.round(BAL.ticket * (B.o.ppl || n) * P.pay * (1 + relicBonus(C, 'ticket'))); out.screams = Math.round(n * (6 + sc.star * 6) + B.foes.filter(f => f.boss).length * 10) + (B.fullHouse ? HOUSE_SCREAM * B.fullHouse : 0); if (B.foes.some(f => f.picky && f.pickyHit)) { out.money += PICKY_MONEY; out.picky = 1; } }
   else if (!B.o.story) out.money = B.foes.filter(f => f.k === 'human' && f.id !== 'dog').length * rint(3, 9);
   return out; }
 
@@ -605,13 +610,13 @@ function clockText() { return C.clk || HOURS[clamp(Math.floor(C.tick), 0, 11)]; 
 function setClock(t, label) { C.tick = t; C.clk = label || ''; renderTop(); }
 function passTime(n) { const wasN = isNight(); C.tick += n; C.clk = ''; if (C.tick >= BAL.dayLen) { newDay(); logLine('熬了一整夜，天亮了。第 ' + C.day + ' 天。', 'sys'); } else if (!wasN && isNight()) { logLine('天黑了。乐园关门，游客散尽。', 'sys'); sfx('wind'); } }
 function setNight(t) { if (C.tick < (t || BAL.duskAt)) C.tick = t || BAL.duskAt; C.clk = ''; }
-function newDay() { C.day++; C.tick = 0; C.clk = ''; C.hh.today = 0; C.hh.groups = 0; C.camp = {}; C.keep = {}; if (C.day % 30 === 1) C.hh.month = 0; }
+function newDay() { C.day++; C.tick = 0; C.clk = ''; C.hh.today = 0; C.hh.groups = 0; C.camp = {}; C.keep = {}; if (C.day % 30 === 1) C.hh.month = 0; eastTick(); }
 /* 剧情里熬到第二天：先给一张小卡片，不要直接跳 */
 async function dayCard(label) { newDay(); fullHeal(); C.clk = label || ''; await showCard('<div class="c1">第 ' + C.day + ' 天</div><div class="c2" style="font-size:1.4em">' + esc(label || '天亮了') + '</div>', 700); renderTop(); }
 function exitsOf(id) { const p = PLACES[id], out = []; for (const lab in p.exits) if (placeOpen(p.exits[lab])) out.push([lab, p.exits[lab]]); return out; }
 function pdesc(id) { const p = PLACES[id]; return (isNight() && p.dn) || p.d; }
 function go(to, quiet, force) { if (!force) { if (STATE.scene || STATE.battle || STATE.busy) return false; if (!exitsOf(C.loc).some(e => e[1] === to)) return false; } if (!PLACES[to]) return false; C.loc = to; C.seen['p_' + to] = 1; if (!quiet) sfx('page');
-  STATE.walkTip = ''; if (!force) { if (isNight() && !PLACES[to].town && chance(.12)) sfx(pick(['drip', 'wind', 'door'])); npcOnArrive(); } refresh(); save(); if (!force) storyArrive(); return true; }
+  STATE.walkTip = ''; if (!force) { if (isNight() && !PLACES[to].town && chance(.12)) sfx(pick(['drip', 'wind', 'door'])); npcOnArrive(); } refresh(); save(); if (!force) { storyArrive(); setTimeout(daySurprise, 450); } return true; }
 function areasOpen() { return Object.keys(AREAS).filter(a => !AREAS[a].open || C.f[AREAS[a].open]); }
 function travel(area) { if (STATE.scene || STATE.battle || STATE.busy) return; const to = ENTRY[area]; if (!to || !areasOpen().includes(area) || PLACES[C.loc].area === area) return;
   if (C.money >= 10) { C.money -= 10; logLine('打车去' + AREAS[area].name + '（-10 元）', 'sys'); } else logLine('没钱打车，扫了辆共享单车去' + AREAS[area].name + '。', 'sys'); if (!isNight()) passTime(1); go(to, false, true); storyArrive(); }
@@ -631,11 +636,14 @@ async function explore() { if (STATE.scene || STATE.battle || STATE.busy) return
   if (!night) { logLine(pickFresh('fl_d', FLAVOR.d)); passTime(.5); refresh(); save(); return; }
   passTime(1); if (!p.town) C.mp = Math.max(0, C.mp - 3); const low = C.mp < charStats().mmp * .25;
   const ev = nightEventFor(C.loc); if (ev && chance(.5)) { await runNightEvent(ev); refresh(); save(); return; }
+  if (!p.town && chance(.16)) { await threeDoors(); refresh(); save(); return; }
+  if (!p.town && C.f.live && chance(.12)) { await danmuAsk(); refresh(); save(); return; }
   if (low && chance(.35)) { await scare(pick(['face', 'eyes', 'hand'])); logLine(pickFresh('fl_low', LOWMP), 'warn'); C.mp = Math.max(0, C.mp - 4); refresh(); save(); return; }
   const r = rnd(); const lv = Math.max(1, C.lv + rint(-1, 1));
   if (r < (low ? .62 : .48)) { const id = pick(NIGHT_MOBS[area] || ['remnant']); const n = chance(low ? .5 : .3) && C.lv >= 4 ? 2 : 1; logLine(pickFresh('fl_n', FLAVOR.n)); const res = await startBattle({ mobs: Array.from({ length: n }, () => [id, lv]), title: p.name }); if (res === 'lose') await knockedOut(); }
   else if (r < .72) { const it = pick(['bread', 'smoke', 'saltbag', 'bandage', 'drink']); addItem(it); logLine('角落里有别人落下的东西。'); }
   else if (r < .82 && C.talents.includes('yintong')) { const m = rint(12, 30); logLine('阴瞳让你看清了黑暗里的东西：一个旧钱包。'); gainMoney(m); }
+  else if (!p.town && relicCan(area) && chance(.3)) relicGain(area);
   else { if (chance(.12)) await scare('face'); logLine(pickFresh('fl_n', FLAVOR.n)); }
   if (C.ex[C.loc] === 5) { logLine('这里你已经摸熟了。', 'gain'); gainExp(20 + C.lv * 6); }
   refresh(); save(); }
@@ -650,9 +658,10 @@ function goodRate() { const t = C.hh.good + C.hh.bad; return t ? Math.round(C.hh
 /* 关注越多，每批进来的人越多（直播和短视频的作用） */
 function crowd() { return 2 + Math.floor(Math.log10(C.fans + 10)) + (C.hh.up.ac ? 2 : 0); }
 async function receive(sid) { if (STATE.scene || STATE.battle || STATE.busy) return; if (isNight()) { toast('乐园关门了，明天再营业'); return; } if (C.loc !== 'hh_door') { toast('去恐怖屋门口接待'); return; } const sc = SCENES[sid]; if (!sc) return;
-  const n = rint(1, C.lv >= 3 ? 3 : 2), lv = Math.max(1, C.lv - 1 + Math.floor(sceneStar(sid))); const mobs = Array.from({ length: n }, () => [pick(sc.pool), lv]); const ppl = n * crowd() + rint(0, 2);
-  logLine(ppl + ' 个游客买了票，进了「' + sc.n + '」。', 'sys'); const res = await startBattle({ scare: 1, scene: sid, mobs, ppl, title: sc.n + ' · 尖叫指数 ' + starTxt(sceneStar(sid)) }); passTime(2); C.hh.groups++; C.hh.batches++;
-  C.hh.today += ppl; C.hh.month += ppl;
+  const n = rint(1, C.lv >= 3 ? 3 : 2), lv = Math.max(1, C.lv - 1 + Math.floor(sceneStar(sid))); const mobs = Array.from({ length: n }, () => [pick(sc.pool), lv]); const ppl = n * crowd() + rint(0, 2); const picky = pickyFor(mobs);
+  logLine(ppl + ' 个游客买了票，进了「' + sc.n + '」。', 'sys'); const res = await startBattle({ scare: 1, scene: sid, mobs, ppl, picky, title: sc.n + ' · 尖叫指数 ' + starTxt(sceneStar(sid)) }); passTime(2); C.hh.groups++; C.hh.batches++;
+  C.hh.today += ppl; C.hh.month += ppl; eastStart(); if (FN().east && FN().east.got < 3) FN().east.ppl += ppl;
+  { const rv = addReview(sid, res === 'win', picky && FN().pickyWin === C.day); logLine('评论：“' + rv + '”', 'say'); if (!STATE.dayRun) toast('“' + rv + '”'); }
   if (res === 'win') { C.hh.good++; C.hh.total += ppl; const fan = Math.round(ppl * (C.hh.up.sign ? 1 : .5) * (1 + sceneStar(sid) * .3)); C.fans += fan; logLine('有人发了视频：关注 +' + fan, 'gain'); const pk = C.pet.d; if (pk) petAff(pk, 4); for (const k in C.pets) if (PETS[k].seal === 'ghost' && k !== pk) petAff(k, 1); dailyProg('groups', 1); }
   else { C.hh.bad++; logLine('“一点都不吓人。”他们在大众点评上给了一星。', 'warn'); }
   refresh(); save(); storyArrive(); }
@@ -662,7 +671,8 @@ function buyUpgrade(k) { const U = UPGRADES.find(u => u.k === k); if (!U) return
 /* —— 陪员工：每天每位一次 —— */
 const KEEP_T = { wan: ['你帮徐婉对了一遍台词。她念到一半自己笑场了。', '徐婉问你怎么画死人妆。你讲得很认真，她听得很认真，然后说想回家。'], xiaoxiao: ['你在床底下放了一个新做的小布偶。第二天它被摆到了枕头上。', '你陪她玩了一会捉迷藏。你一直没找到她。'],
   bixian: ['你给那支圆珠笔换了新胶带。纸上出现一个“哼”。', '你问它明天会不会下雨。它画了一个圈，又画了一把伞。'], baimao: ['你给白猫开了一个罐头。它吃完才看了你一眼。', '它趴在你腿上睡着了。你一个小时没敢动。'], canmian: ['你给二十四个人偶掸了灰，一个一个念了名字。', '你在暮阳中学的黑板上写了“下课”。第二天，粉笔字旁边多了一个笑脸。'] };
-function keepPet(k) { C.keep = C.keep || {}; if (!C.pets[k]) return; if (C.keep[k]) { toast('今天已经陪过它了'); return; } if (PLACES[C.loc].area !== 'park') { toast('回恐怖屋再说'); return; } C.keep[k] = 1; petAff(k, 6); logLine(pickFresh('keep_' + k, KEEP_T[k] || ['你陪它待了一会。']) + '（好感 +6）', 'gain'); passTime(.5); sfx('ok'); save(); renderSide(); renderTop(); }
+async function keepPet(k) { C.keep = C.keep || {}; if (!C.pets[k]) return; if (C.keep[k]) { toast('今天已经陪过它了'); return; } if (PLACES[C.loc].area !== 'park') { toast('回恐怖屋再说'); return; } if (STATE.scene || STATE.battle) return; C.keep[k] = 1; petAff(k, 6); passTime(.5); sfx('ok'); save();
+  const sk = PET_SKIT[k]; if (sk) { closeSide(); await runScene(async () => { await T_(pickFresh('skit_' + k, sk)); }, '陪' + PETS[k].n); } logLine((sk ? '你陪' + PETS[k].n + '待了一会。' : pickFresh('keep_' + k, KEEP_T[k] || ['你陪它待了一会。'])) + '（好感 +6）', 'gain'); save(); renderSide(); renderTop(); }
 
 /* —— 对峙流程 —— */
 let battleDone = null;
@@ -691,7 +701,7 @@ function battleItem(k, quiet) { const B = STATE.battle; if (!B || B.phase !== 'h
 function toggleAuto() { const B = STATE.battle; if (!B) return; B.auto = !B.auto; sfx('tap'); renderBattle(); if (B.auto && B.phase === 'hero') botLoop(B); else if (B.auto && B.phase === 'pet') battleAct(petPick(B)); }
 async function battleFinish() { const B = STATE.battle; if (!B) return; B.phase = 'end'; const res = B.result; let rw = null;
   if (!B.scare) C.hp = res === 'win' || res === 'flee' ? Math.max(1, Math.round(B.hero.hp)) : 1; fixHp();
-  if (res === 'win') { rw = battleRewards(B); if (rw.money) gainMoney(rw.money, B.scare ? '门票' : '捡到'); if (rw.screams) { C.hh.screams += rw.screams; logLine('收集尖叫 +' + rw.screams + '（' + C.hh.screams + '/' + BAL.screamPerSpin + '）', 'gain'); } gainExp(rw.exp);
+  if (res === 'win') { rw = battleRewards(B); if (rw.picky) { FN().pickyWin = C.day; C.fans += 60; logLine('挑剔的游客被吓哭了：赏钱 +' + PICKY_MONEY + '，关注 +60', 'gain'); } if (rw.money) gainMoney(rw.money, B.scare ? '门票' : '捡到'); if (rw.screams) { FN().scr += rw.screams; C.hh.screams += rw.screams; logLine('收集尖叫 +' + rw.screams + '（' + C.hh.screams + '/' + BAL.screamPerSpin + '）', 'gain'); } gainExp(rw.exp);
     if (B.pet && C.pets[B.pet.id]) { petGainExp(B.pet.id, rw.exp); petAff(B.pet.id, B.scare ? 1 : 3); } for (const k in C.pets) if (!B.pet || k !== B.pet.id) petGainExp(k, Math.round(rw.exp * .3)); battleWinSay(B); }
   B.rw = rw; sfx(res === 'win' ? 'big' : 'bad'); await fxStamp(res === 'win' ? (B.scare ? '吓退' : '撑住了') : res === 'flee' ? '脱身' : (B.scare ? '不吓人' : '倒下')); renderBattle();
   if (B.auto || (window.__dbg && __dbg.instant)) battleEnd(); }
@@ -719,11 +729,14 @@ async function dailyTake(which) { if (STATE.scene || STATE.battle) return; daily
   if (which === 'nm') { if (!isNight()) { toast('噩梦任务要等到夜里'); return; } if (PLACES[C.loc].area !== 'park') { toast('回恐怖屋再做'); return; } d.got = 'nm'; closeSide(); await runScene(async () => { await T_(`@确定接受噩梦难度日常任务？接受后，有可能会引发未知情况出现。\n${T.t}`); const ok = await miniGame(T.g, {}); if (ok) { await nar('你撑过去了。手心全是汗。'); dailyFinish(); } else { C.hp = Math.max(1, Math.round(C.hp * .5)); C.mp = Math.round(C.mp * .4); d.done = 2; await nar('你没撑住。醒来的时候天花板在转。今天的噩梦任务失败了。'); } }); return; }
   if (which === 'easy') { if (T.k === 'up') { d.got = 'easy'; d.prog = 0; logLine('【黑色手机】已接受简单难度日常任务：去总控制室添置设备。', 'phone'); sfx('phone'); } else { if (C.money < T.n) { toast('钱不够（' + T.n + ' 元）'); return; } C.money -= T.n; d.got = 'easy'; dailyFinish(); } } else { d.got = 'normal'; d.prog = 0; logLine('【黑色手机】已接受一般难度日常任务。', 'phone'); sfx('phone'); }
   save(); renderSide(); refresh(); }
-const WHEEL = [['drink', 20, 2], ['coffee', 14, 1], ['saltbag', 16, 3], ['bandage', 12, 2], ['$', 22, 0], ['fruit', 8, 1], ['g_torch', 4, 1], ['smoke', 4, 3]];
+const WHEEL = [['drink', 20, 2], ['coffee', 14, 1], ['saltbag', 16, 3], ['bandage', 12, 2], ['$', 22, 0], ['fruit', 8, 1], ['g_torch', 4, 1], ['smoke', 4, 3], ['$$', 3, 0], ['relic', 5, 1]];
 async function spinWheel() { if (STATE.scene || STATE.battle || STATE.busy) return; if (!C.f.wheel) { toast('转盘还没有激活'); return; } if (C.hh.spins > 0) C.hh.spins--; else if (C.hh.screams >= BAL.screamPerSpin) C.hh.screams -= BAL.screamPerSpin; else { toast('尖叫不够（' + C.hh.screams + '/' + BAL.screamPerSpin + '）'); return; }
-  STATE.busy = true; for (let i = 0; i < 14; i++) { sfx('spin'); const e = $('#wheelv'); if (e) e.textContent = pick(['☠', '🍑', '💀', '🕯', '👁', '🩸', '🎭']); await sleep(60 + i * 14); } STATE.busy = false;
-  let pool = WHEEL.filter(w => !(ITEMS[w[0]] && ITEMS[w[0]].k === 'gear' && itemN(w[0]))); let tot = pool.reduce((a, w) => a + w[1], 0), r = rnd() * tot, c = pool[0]; for (const w of pool) { r -= w[1]; if (r <= 0) { c = w; break; } }
-  if (c[0] === '$') { const m = rint(40, 110); gainMoney(m, '转盘'); logLine('【黑色手机】抽奖完成，指针停在一沓纸钱上——是真钱。', 'phone'); } else { addItem(c[0], c[2]); logLine('【黑色手机】抽奖完成！恭喜你获得 ' + ITEMS[c[0]].n + '。', 'phone'); }
+  STATE.busy = true; FN().spins++; for (let i = 0; i < 18; i++) { sfx('spin'); const e = $('#wheelv'); if (e) e.textContent = pick(['☠', '🍑', '💀', '🕯', '👁', '🩸', '🎭', '💰']); await sleep(50 + i * i * 2.2); } STATE.busy = false;
+  let pool = WHEEL.filter(w => !(ITEMS[w[0]] && ITEMS[w[0]].k === 'gear' && itemN(w[0])) && !(w[0] === 'relic' && !relicCan())); let tot = pool.reduce((a, w) => a + w[1], 0), r = rnd() * tot, c = pool[0]; for (const w of pool) { r -= w[1]; if (r <= 0) { c = w; break; } }
+  const ev = $('#wheelv'); if (ev) ev.textContent = c[0] === '$$' ? '💰' : c[0] === 'relic' ? '🕯' : c[0] === '$' ? '💴' : ITEMS[c[0]].ic;
+  if (c[0] === '$$') { const m = rint(300, 500); FN().jack++; gainMoney(m, '转盘大奖'); logLine('【黑色手机】幸运的厉鬼眷顾者！指针停在了金色的那一格：' + m + ' 元！', 'phone'); sfx('stinger'); await showCard('<div class="c1">大奖</div><div class="grade gS">💰</div><div class="c2">' + m + ' 元</div><div class="c3">转盘上从来没人见过的金色格子。</div>', 700); }
+  else if (c[0] === 'relic') { const rr = relicGain(); logLine('【黑色手机】抽奖完成。指针停在一根蜡烛上——' + (rr ? rr[1] : '') + '。', 'phone'); }
+  else if (c[0] === '$') { const m = rint(40, 110); gainMoney(m, '转盘'); logLine('【黑色手机】抽奖完成，指针停在一沓纸钱上——是真钱。', 'phone'); } else { addItem(c[0], c[2]); logLine('【黑色手机】抽奖完成！恭喜你获得 ' + ITEMS[c[0]].n + '。', 'phone'); }
   sfx('big'); save(); renderSide(); renderTop(); }
 
 /* —— 夜探的专属事件：每处几件，每件一个存档只碰到一次。from = 这一步之后才会出现 —— */
@@ -826,7 +839,7 @@ function choose(list, text) { return dlgShow({ choices: list, text: text == null
 async function T_(s) { const my = STATE.run; for (let ln of s.split('\n')) { ln = ln.trim(); if (!ln) continue; if (my !== STATE.run) return new Promise(() => {}); const sp = /^(#m|#r|[@#!~>%^])\|?/.exec(ln); const i = sp ? -1 : ln.indexOf('|'), who = sp ? sp[1] : i < 0 ? '' : ln.slice(0, i), t = sp ? ln.slice(sp[0].length) : i < 0 ? ln : ln.slice(i + 1);
     if (who === '^') { if (/^wait /.test(t)) await sleep(+t.slice(5)); else stageCmd(t); } else if (who === '>') danmu(t.split('／')); else if (who === '!') { STG.flash = 1; STG.shake = .5; await scare(t); } else if (who === '#') await cine(t.split('／')); else if (who === '#m') await cine(t.split('／'), 'mem'); else if (who === '#r') await cine(t.split('／'), 'red'); else if (who === '~') sfx(t); else if (who === '%') shake();
     else if (who === '@') await ph(t); else if (who === '我') await me(t); else if (who === '') await nar(t); else await say(who, t); } }
-async function fight(o) { o = Object.assign({ story: 1 }, o); { const s = charStats(); C.hp = Math.max(C.hp, Math.round(s.mhp * .6)); C.mp = Math.max(C.mp, Math.round(s.mmp * .6)); } for (;;) { const res = await startBattle(o); if (res === 'win') { if (o.scare) { C.hh.good++; C.hh.batches++; } return true; } const s = charStats(); C.hp = Math.max(C.hp, Math.round(s.mhp * .7)); C.mp = Math.max(C.mp, Math.round(s.mmp * .7));
+async function fight(o) { o = Object.assign({ story: 1 }, o); { const s = charStats(); C.hp = Math.max(C.hp, Math.round(s.mhp * .6)); C.mp = Math.max(C.mp, Math.round(s.mmp * .6)); } for (;;) { const res = await startBattle(o); if (res === 'win') { if (o.scare) { C.hh.good++; C.hh.batches++; } return true; } chStat('lose'); const s = charStats(); C.hp = Math.max(C.hp, Math.round(s.mhp * .7)); C.mp = Math.max(C.mp, Math.round(s.mmp * .7));
     const c = await choose([['再来一次', '体力和精神回到七成'], ['调低难度再来', '现在：' + DIFF[SET.diff].n], ['咬牙撑过去', '跳过这一场，剧情照常往下走']], o.scare ? '游客打着哈欠往外走。' : '眼前黑了一下。你扶着墙，又站了起来。'); if (c === 1) { SET.diff = Math.max(0, SET.diff - 1); saveSet(); } if (c === 2) return false; if (o.candy && !itemN('candy')) addItem('candy', 1, true); } }
 function curQ() { return C ? MAIN.find(q => q.id === C.q) || null : null; }
 function qIdx(id) { const i = MAIN.findIndex(q => q.id === id); return i < 0 ? 999 : i; }
@@ -836,16 +849,16 @@ function questBlocked(q) { return !!(q && q.need && q.need()); }
 function sinceBatch() { return C.hh.batches - (C.qMark || 0); }
 /* 调查：几样东西挨个看，看够 need 样才能往下走（让长段剧情有事可做） */
 async function look(prompt, items, need) { const seen = new Set(); need = need == null ? items.length : need;
-  for (;;) { const left = items.map((it, i) => [it, i]).filter(x => !seen.has(x[1])); if (!left.length) break; const opts = left.map(x => [x[0][0], '看看']); if (seen.size >= need) opts.push(['（够了，继续）', '']);
+  for (;;) { const left = items.map((it, i) => [it, i]).filter(x => !seen.has(x[1])); if (!left.length) break; const opts = left.map(x => [x[0][0]]); if (seen.size >= need) opts.push(['（够了，继续）', '']);
     const c = await choose(opts, prompt + (seen.size < need ? '（还要看 ' + (need - seen.size) + ' 样）' : '')); if (c >= left.length) break; seen.add(left[c][1]); const it = left[c][0]; if (typeof it[1] === 'function') await it[1](); else await T_(it[1]); } }
 function questGoal(q) { if (questBlocked(q)) return q.need(); const need = q.night && !isNight() ? '（要等到天黑）' : q.day && isNight() ? '（要等到天亮）' : ''; return q.goal + need; }
 async function runScene(fn, title) { if (STATE.scene) return; const my = ++STATE.run; STATE.scene = true; stageSceneStart(); const q = curQ(); STATE.jr = { t: title || (q ? q.title : '片段'), ch: q ? q.ch : 0, l: [] }; DLG.prev = ''; DLG.cur = null; UI.lastWho = ''; applyMode();
-  try { await fn(); } catch (e) { console.error(e); if (window.__dbg) __dbg.err = String(e && e.stack || e); } if (my !== STATE.run) return; if (STATE.jr.l.length > 1) { JOURNAL.push(STATE.jr); saveJournal(); } STATE.jr = null; STATE.scene = false; DLG.cur = null; refresh(); save(); }
+  try { await fn(); if (C.fun && C.fun.gradeQ) { const g = C.fun.gradeQ; C.fun.gradeQ = 0; await gradeCard(g); } } catch (e) { console.error(e); if (window.__dbg) __dbg.err = String(e && e.stack || e); } if (my !== STATE.run) return; if (STATE.jr.l.length > 1) { JOURNAL.push(STATE.jr); saveJournal(); } STATE.jr = null; STATE.scene = false; DLG.cur = null; refresh(); save(); }
 function storyHereRun() { const q = curQ(); if (!q || STATE.scene || STATE.battle || questWhere(q) !== C.loc) return; if (questBlocked(q)) { toast(q.need()); return; } closeSide();
   if (q.night && !isNight()) { setNight(); logLine('你一直等到天黑。', 'sys'); } else if (q.day && isNight()) { newDay(); fullHeal(); logLine('你等到了天亮。第 ' + C.day + ' 天。', 'sys'); }
   return runScene(async () => { const ch0 = q.ch; await q.run(); if (C.q === q.id) questAdvance(q); }, q.title); }
 function storyArrive() { const q = curQ(); if (q && q.auto && questWhere(q) === C.loc && !questBlocked(q) && !(q.day && isNight()) && !STATE.scene && !STATE.battle) storyHereRun(); }
-function questAdvance(q) { const i = MAIN.indexOf(q), nx = MAIN[i + 1]; C.q = nx ? nx.id : 'q_end'; C.qMark = C.hh.batches; gainExp(Math.round(HERO.need(C.lv) * .22)); const s = charStats(); C.hp = Math.max(C.hp, Math.round(s.mhp * .5)); C.mp = Math.max(C.mp, Math.round(s.mmp * .5)); logLine('主线推进：' + (nx ? nx.title : '第一卷完'), 'gain'); save(); }
+function questAdvance(q) { const i = MAIN.indexOf(q), nx = MAIN[i + 1]; if (!nx || nx.ch !== q.ch) { FN().gradeQ = q.ch; if (nx) chStart(nx.ch); } C.q = nx ? nx.id : 'q_end'; C.qMark = C.hh.batches; gainExp(Math.round(HERO.need(C.lv) * .22)); const s = charStats(); C.hp = Math.max(C.hp, Math.round(s.mhp * .5)); C.mp = Math.max(C.mp, Math.round(s.mmp * .5)); logLine('主线推进：' + (nx ? nx.title : '第一卷完'), 'gain'); save(); }
 
 /* ================= 第一章 ================= */
 async function S_open() { await chapterCard('一', '濒临倒闭的恐怖屋', '九江市西郊 · 新世纪乐园');
@@ -866,7 +879,10 @@ async function S_open() { await chapterCard('一', '濒临倒闭的恐怖屋', '
 我|你呢？也要走？`);
   const c = await choose([['“今天七夕，提前下班吧。”', '什么都不问'], ['“你要是也想走，我不拦你。”', '把话说开']]);
   if (c === 0) { F().wan = 'kind'; await T_(`徐婉|那……我先去卸妆了。
-她走出两步，又回头看了你一眼。信封留在了你手里，只有一个。`); } else { F().wan = 'frank'; await T_(`徐婉|我没说要走！我就是……替他送个信。
+^to 徐婉 15
+她走出两步，又回头看了你一眼。信封留在了你手里，只有一个。
+^out 徐婉`); } else { F().wan = 'frank'; await T_(`徐婉|我没说要走！我就是……替他送个信。
+^out 徐婉
 她把信封塞给你，气鼓鼓地去卸妆了。走到拐角，脚步慢了一点。`); }
   await T_(`半年前，你的父母离奇失踪，只留下这座恐怖屋。
 为了不留念想，你辞了玩具公司的工作，全心全意来经营它。
@@ -1719,7 +1735,7 @@ async function S_qinguang() { await T_(`^in 中年人 12
 ${win ? '围观的游客开始排队买票。' : '围观的游客将信将疑，但还是有人买了票。'}
 ~phone
 @幸运的厉鬼眷顾者！恭喜你触发二星恐怖场景暮阳中学隐藏任务——笔仙的心愿！奖励：有一定几率雇佣笔仙，使其成为恐怖屋员工！
-你盯着最后一句话看了很久。鬼怪团队成员那一栏，一直是“无”。`); C.hh.total += 8; }
+你盯着最后一句话看了很久。鬼怪团队成员那一栏，一直是“无”。`); C.hh.total += 8; C.hh.month += 8; }
 async function S_wish() { await T_(`^stage room
 ^prop pp paper 10 5
 圆珠笔在纸上写了一个名字：王欣。
@@ -1885,7 +1901,7 @@ async function S_cat() { await T_(`^stage park
   await T_(`${win ? '龙哥是哭着出来的。' : '龙哥撑到了最后，一个校牌都没拿全。'}
 王海龙|老板……我弟弟王声龙，小时候住过院。出来以后，他说有个“很高的人”一直踩在他肩膀上，跟他玩一个游戏，叫“看谁先开口说话”。
 王海龙|他住的那个地方，叫第三封闭病区。也有人叫它——第三病栋。
-所有的线索，都指向同一个地方。`); C.hh.total += 12; }
+所有的线索，都指向同一个地方。`); C.hh.total += 12; C.hh.month += 12; }
 
 /* ================= 第五章 · 第三病栋 ================= */
 async function S_prep() { await chapterCard('五', '第三病栋', '第三精神疾病康复中心 · 尖叫指数三星');
@@ -2303,7 +2319,7 @@ const MINI = {
 };
 let MG = null;
 function miniGame(id, o) { o = o || {}; const def = Object.assign({}, MINI[id], o); if (window.__dbg && (__dbg.auto || __dbg.mini != null)) return Promise.resolve(__dbg.mini != null ? !!__dbg.mini : true);
-  return new Promise(res => { MG = { id, def, res, tries: 0 }; miniNew(); }); }
+  return new Promise(res => { MG = { id, def, res: v => { if (!v) chStat('fail'); res(v); }, tries: 0 }; miniNew(); }); }
 function miniNew() { const g = MG, d = g.def; g.tries++; g.over = 0; g.t0 = performance.now(); g.hit = 0; g.strikes = 0; g.pos = 0; g.meter = d.type === 'mash' ? (d.fill ? .15 : .7) : .85; g.ready = d.type === 'timing' || d.type === 'hold'; g.holding = false; g.decoys = []; g.nextDecoy = 900; g.watch = false; g.nextFlip = 900; g.zone = [.38, .62]; g.msg = ''; g.final = 0;
   if (d.type === 'timing') miniZone(); STATE.mini = g; applyMode(); miniHtml(); cancelAnimationFrame(g.raf); g.last = performance.now(); g.raf = requestAnimationFrame(miniLoop); musicMode('phone'); }
 function miniZone() { const g = MG, w = Math.max(.12, .26 - g.hit * .035); const a = .1 + rnd() * (.8 - w); g.zone = [a, a + w]; }
@@ -2496,6 +2512,163 @@ function npcTalk(k) { if (STATE.scene || STATE.battle) return; const N = NPCS[k]
   if (tk) return runScene(async () => { C.seen[tk.id] = 1; await T_(tk.s); const i = await choose(tk.ch.map(c => [c[0]])); await T_(tk.ch[i][1]); if (tk.npc === 'xuwan' && tk.ch[i][2]) petAff('wan', tk.ch[i][2]); }, '闲聊 · ' + N.name);
   const ls = chatterFor(C.loc, k); logLine(N.name + '：' + (ls.length ? pickFresh('ct_' + k + C.loc, ls).t : pick(['“嗯？”', '“忙着呢。”', '（点了点头）']))); sfx('page'); }
 
+/* ================= 好玩一点（第四轮 20 条）：操作只多一个按钮，靠反馈、惊喜和收集 ================= */
+/* 存档里的小账本：老存档没有就现建 */
+function FN() { C.fun = C.fun || {}; const f = C.fun; for (const [k, v] of [['ach', {}], ['relic', {}], ['sv', {}], ['soft', {}], ['chs', {}], ['rv', []]]) if (!f[k]) f[k] = v;
+  for (const k of ['perfect', 'house', 'combo4', 'dodge', 'doors', 'danmu', 'spins', 'jack', 'scr', 'sup', 'svDay', 'svRoll']) if (f[k] == null) f[k] = 0; return f; }
+
+/* —— 1 看准时机：开门杀、断电点下去时出现缩圈，正好点中算“完美” —— */
+const RING_EL = ['jump', 'light'], PERFECT_MUL = 1.3, HOUSE_SCREAM = 15, PICKY_MONEY = 120;
+function timingRing(label) { if (window.__dbg && (__dbg.auto || __dbg.instant)) return Promise.resolve(window.__dbg.ring || false); if (!SET.motion) return Promise.resolve(false);
+  return new Promise(res => { const box = el('div', '', '<div class="rg-t"></div><div class="rg-c"></div><div class="rg-l">' + esc(label) + '</div>'); box.id = 'ring'; $('#vBt').appendChild(box); const t0 = performance.now(), D = 900; let done = false;
+    const fin = ok => { if (done) return; done = true; box.classList.add(ok ? 'ok' : 'no'); if (ok) sfx('ok'); setTimeout(() => box.remove(), 360); setTimeout(() => res(ok), ok ? 260 : 0); };
+    box.addEventListener('pointerdown', e => { e.stopPropagation(); e.preventDefault(); const p = (performance.now() - t0) / D; fin(p >= .8 && p <= 1.02); }); setTimeout(() => fin(false), D * 1.12); }); }
+async function pickSkillFx(k) { const B = STATE.battle; if (!B || B.phase !== 'hero' || B.result) return; const S = SKILLS[k]; if (!S) return; if (C.mp < S.cost) { toast('精神不够（需要 ' + S.cost + '）'); return; }
+  let perfect = false; if (B.scare && RING_EL.includes(S.el) && !B.auto) { B.phase = 'ring'; perfect = await timingRing('等红圈和白圈重合时点下去'); if (STATE.battle !== B) return; B.phase = 'hero'; }
+  battleAct({ t: 'sk', k, tg: B.sel, perfect }); }
+/* —— 10 躲开大招：对方蓄好的大招落下前点「防御」，再看准时机点一下就完全躲开 —— */
+async function guardFx() { const B = STATE.battle; if (!B || B.phase !== 'hero' || B.result) return; let perfect = false;
+  if (!B.scare && !B.auto && alive(B.foes).some(f => f.intent && f.intent.exec && !f.st.stun)) { B.phase = 'ring'; perfect = await timingRing('它要扑过来了——看准时机躲开'); if (STATE.battle !== B) return; B.phase = 'hero'; }
+  battleAct({ t: 'guard', perfect }); }
+
+/* —— 2 游客反应：胆量掉到一半、只剩一点时，各说各的 —— */
+const REACT = { stu: ['卧槽卧槽卧槽！', '我手机掉了！谁帮我捡一下……不了不要了！', '妈——！'], couple: ['你别拽我！', '你不是说你不怕吗？！', '我们分手吧，我先跑了！'], skeptic: ['这、这是光学原理……', '我只是……腿麻了。', '科学……科学是什么来着……'],
+  med: ['这个解剖结构不对……它为什么还能动！', '我见过尸体！但没见过会追人的！'], tough: ['谁摸我后脖子？！', '……我出去抽根烟。', '别别别别过来！'], vlog: ['家人们这个是真的！真的！', '直播先暂停一下……', '镜头里多了一个人！'],
+  _: ['啊——！', '让我出去！', '刚才是不是有人叫我名字？'] };
+function reactLine(B, f) { if (!B.scare || f.side !== 'f' || f.hp <= 0) return; const r = f.hp / f.mhp; const lv = r < .2 ? 2 : r < .5 ? 1 : 0; if (lv <= (f.rx || 0)) return; f.rx = lv; const L = REACT[f.id] || REACT._; blog(B, f.n + '：' + L[(lv + f.key.length + B.turn) % L.length], 'say'); fxe(B, { t: 'txt', who: f.key, txt: lv === 2 ? '腿软' : '慌了' }); }
+
+/* —— 4 换着吓：换不同手段连段加成，同一招连用会被习惯 —— */
+const COMBO_UP = .08, COMBO_MAX = 4, REPEAT_DOWN = .88;
+function comboMul(B, k) { if (!B.scare) return 1; const same = B.lastK === k; B.combo = same ? 0 : Math.min(COMBO_MAX, (B.combo || 0) + (B.lastK ? 1 : 0)); B.rep = same ? (B.rep || 0) + 1 : 0; B.lastK = k; if (B.combo >= COMBO_MAX) FN().combo4++;
+  if (B.combo) fxe(B, { t: 'txt', who: 'hero', txt: '连段 ×' + B.combo }); if (B.rep) blog(B, '游客开始习惯这一招了。', 'warn'); return (1 + COMBO_UP * B.combo) * Math.pow(REPEAT_DOWN, Math.min(B.rep, 3)); }
+function comboText(B) { if (!B.scare || !B.lastK) return ''; return B.rep ? ' · <span class="cb no">' + SKILLS[B.lastK].n + '用多了 -' + Math.round((1 - Math.pow(REPEAT_DOWN, Math.min(B.rep, 3))) * 100) + '%</span>' : B.combo ? ' · <span class="cb">连段 ×' + B.combo + '（+' + Math.round(COMBO_UP * B.combo * 100) + '%）换一招继续</span>' : ''; }
+
+/* —— 12 首领的软肋：开场一句提示，用对了手段打出专属一击 —— */
+const SOFT = { wangqi: ['name', '他每天都在找那个女人。念出她的名字。'], aunt: ['name', '她怕的不是你，是她哥哥。念出那个名字。'], mirror: ['light', '镜子里的东西，最怕突然亮起来的光。'], twoface: ['name', '两张脸不是一条心。叫出其中一个的名字。'],
+  nurse: ['blade', '她身上缺掉的那几块，都是被刀划开的。'], tallone: ['blade', '白布底下全是脸。划开白布，它们就散了。'], xiong: ['blunt', '他只盯着你的左半边——右边是空门。'], redshadow: ['light', '它是影子。影子怕光。'], zhangpeng: ['blunt', '他手里有刀，可他从来没挨过打。'],
+  dean: ['name', '那四封信的署名，你念得出来。'], gaoru: ['sound', '她能分析你所有的套路——除了那首歌。'], feiyl: ['doll', '他是来拍“员工”的。可人偶不是员工。'], wanghl: ['doll', '他要的是校牌。校牌挂在人偶脖子上。'] };
+const SOFT_MUL = 1.5;
+function softHit(B, t, S) { const s = SOFT[t.id]; if (!s || !t.boss || t.softHit || s[0] !== S.el) return 1; t.softHit = 1; FN().soft[t.id] = 1; blog(B, '软肋！' + t.n + ' 整个僵住了。', 'epic'); fxe(B, { t: 'banner', who: t.key, txt: '软肋', ic: '💥', foe: 1, big: 1 }); return SOFT_MUL; }
+
+/* —— 11 场景一击：夜里的对峙，每场一个跟地点有关的按钮，只能用一次，不占回合 —— */
+function strikeOf() { const k = stageKey(); if (['doorhall', 'hall', 'corridor', 'wardhall', 'apt'].includes(k)) return ['🚪', '关门', 'door']; if (['dance', 'room', 'wc', 'toilet', 'inside'].includes(k)) return ['🪞', '砸镜子', 'mirror'];
+  if (['classroom', 'dorm', 'school', 'office', 'laundry', 'ward', 'ctrl', 'prop', 'attic', 'shop', 'house'].includes(k)) return ['🪑', '掀翻桌柜', 'table']; if (['woods', 'hut', 'field', 'park', 'parking', 'burnt'].includes(k)) return ['🌑', '关掉手电', 'dark']; return ['🧱', '抄起手边的东西', 'grab']; }
+function sceneStrike() { const B = STATE.battle; if (!B || B.scare || B.phase !== 'hero' || B.result || B.strikeUsed) return; B.strikeUsed = true; B.ev = []; const [ic, n, k] = strikeOf(), fs = alive(B.foes);
+  blog(B, '陈歌 · ' + ic + n + '（不占回合）', 'epic'); fxe(B, { t: 'banner', who: 'hero', txt: n, ic });
+  if (k === 'door') for (const f of fs) { if (f.boss) addSt(B, f, 'slow', 2); else addSt(B, f, 'stun', 1); }
+  else if (k === 'mirror') for (const f of fs) { if (f.k === 'ghost') applyDmg(B, B.hero, f, Math.round(f.mhp * .12), {}); else addSt(B, f, 'weak', 2); }
+  else if (k === 'table') for (const f of fs) { addSt(B, f, 'vuln', 2); applyDmg(B, B.hero, f, Math.round(f.mhp * .06), {}); }
+  else if (k === 'dark') { for (const f of fs) addSt(B, f, 'dark', 2); addSt(B, B.hero, 'shield', 1); }
+  else { const f = B.foes[B.sel] && B.foes[B.sel].hp > 0 ? B.foes[B.sel] : fs[0]; applyDmg(B, B.hero, f, Math.round(f.mhp * .1), {}); if (f.hp > 0) addSt(B, f, 'weak', 2); }
+  sfx('hit'); if (!alive(B.foes).length) { B.result = 'win'; renderBattle(); return battleFinish(); } renderBattle(); }
+
+/* —— 5 挑剔的游客：每天一位，放话说什么都不怕——其实只怕一样 —— */
+function pickyFor(mobs) { const f = FN(); if (f.pickyDay === C.day || !qPast('q_firstday')) return null; f.pickyDay = C.day; const els = [...new Set(C.bar.d.map(k => SKILLS[k] && SKILLS[k].el).filter(e => e && e !== 'none'))]; if (!els.length) return null;
+  const el = els[Math.floor(rnd() * els.length)]; logLine('排队的人里有个人放话：“什么都吓不到我。”——听说他最怕' + EL[el] + '。', 'warn'); toast('今天有位挑剔的游客：最怕' + EL[el]); return { i: 0, el }; }
+/* —— 6 评论墙 —— */
+const RV = { good: ['「{s}」里那个东西是真人扮的吧？反正我不会再进去了。', '进去前男朋友说他不怕。出来的时候，他在我后面。', '五星。扣的那一星是我丢在里面的一只鞋。', '老板人挺好，就是长得有点像里面的鬼。', '带我妈来的。我妈拉着我说：下次还来。我不来了。', '工作人员太敬业了，我在厕所隔间里都被吓到了。', '出来以后才发现，我们进去的时候是四个人，出来是五个。'],
+  bad: ['「{s}」还没有我家楼道吓人。', '道具太假，一星。腮红打得比我还好看。', '进去十分钟，唯一吓到我的是门票价格。', '鬼呢？我等了半天。'], picky: ['我说过什么都吓不到我。我收回。', '别问。我今晚开灯睡。'] };
+function addReview(sid, ok, picky) { const pool = picky ? RV.picky : ok ? RV.good : RV.bad; const s = pick(pool).replace('{s}', SCENES[sid] ? SCENES[sid].n : '恐怖屋'); const f = FN(); f.rv.unshift({ d: C.day, s, ok: ok ? 1 : 0 }); f.rv.length = Math.min(f.rv.length, 12); return s; }
+
+/* —— 7 一键营业一整天 —— */
+async function dayRun() { if (STATE.scene || STATE.battle || STATE.busy) return; if (isNight()) { toast('乐园关门了'); return; } if (C.loc !== 'hh_door') { toast('去恐怖屋门口'); return; }
+  const m0 = C.money, s0 = C.hh.screams, p0 = C.hh.today, g0 = C.hh.good, b0 = C.hh.bad, q0 = C.q, mo = SET.motion, au = C.auto; SET.motion = 0; C.auto = 1; STATE.dayRun = true; let n = 0;
+  try { while (!isNight() && C.loc === 'hh_door' && C.q === q0 && n < 8) { const sid = sceneList().sort((a, b) => scenePas(b).pay * (1 + sceneStar(b)) - scenePas(a).pay * (1 + sceneStar(a)))[0]; await receive(sid); n++; for (let i = 0; i < 400 && (STATE.battle || STATE.scene); i++) await sleep(20); if (STATE.scene) break; } }
+  finally { SET.motion = mo; C.auto = au; STATE.dayRun = false; }
+  const rv = FN().rv.slice(0, 2).map(r => '<div class="c3" style="text-align:left">“' + esc(r.s) + '”</div>').join('');
+  await showCard('<div class="c1">今天收工</div><div class="c2">接待 ' + n + ' 批 · ' + (C.hh.today - p0) + ' 人</div><div class="c3">好评 ' + (C.hh.good - g0) + ' · 差评 ' + (C.hh.bad - b0) + '<br>门票 +' + (C.money - m0) + ' 元 · 尖叫 +' + Math.max(0, C.hh.screams - s0) + '</div>' + rv, 700); refresh(); save(); storyArrive(); }
+
+/* —— 8 三扇门 · 9 弹幕点播：夜探时偶尔出现 —— */
+async function threeDoors() { FN().doors++; await runScene(async () => { await T_(`^fx dark
+^prop d1 door 7 3
+^prop d2 door 10 3
+^prop d3 door 13 3
+走廊尽头并排三扇门。三条门缝里，都透着一点光。`); const c = await choose([['左边的门'], ['中间的门'], ['右边的门']], '开哪一扇？'); const r = rnd(), x = [7, 10, 13][c];
+    if (r < .22) { await T_(`^to 陈歌 ${x}\n^sfx creak\n门开了一条缝。\n^scare 黑影\n门后面站着一个人，脸贴着门缝。\n^fx flicker\n你用力把门撞了回去。`); C.mp = Math.max(0, C.mp - 5); logLine('精神 -5', 'warn'); }
+    else if (r < .5) { const it = pick(['bread', 'drink', 'saltbag', 'bandage', 'coffee']); await T_(`^to 陈歌 ${x}\n^prop it item ${x} 5\n门后是个杂物间。架子上落了一样东西：${ITEMS[it].ic}${ITEMS[it].n}。`); addItem(it); }
+    else if (r < .7) { const m = rint(30, 90); await T_(`^to 陈歌 ${x}\n^prop it coin ${x} 5\n门后什么都没有，只有地上一个旧钱包。${m} 元。`); gainMoney(m); }
+    else if (r < .85 && relicCan()) { await T_(`^to 陈歌 ${x}\n^prop it sparkle ${x} 5\n门后只有一张小桌，桌上放着一样东西，像是专门等你来拿。`); relicGain(); }
+    else { await T_(`^to 陈歌 ${x}\n门后是一面墙。墙上有人用指甲刻了一行字：别回头。\n^sfx whisper\n你没回头。`); gainExp(15 + C.lv * 4); } }, '夜探 · 三扇门'); }
+async function danmuAsk() { await runScene(async () => { liveOn(Math.max(800, Math.round(C.fans * .2))); await T_(`>主播！去开那个柜子！／开！开！开！／别怂啊`);
+    const c = await choose([['照弹幕说的做', '人气会涨，也可能被吓'], ['不理他们', '']], '弹幕在起哄。'); if (c === 0) { FN().danmu++; if (chance(.65)) { const f = rint(40, 120), m = rint(10, 40); await T_(`^prop cb closet 11 4 {"open":1}\n柜子里只有一件旧外套。口袋里有张纸条：谢谢你来看我。\n>有点感人是怎么回事／这主播真敢开／打赏了`); C.fans += f; gainMoney(m, '打赏'); logLine('关注 +' + f, 'gain'); }
+      else { await T_(`^prop cb closet 11 4 {"open":1}\n^scare 镜鬼\n柜门一开，里面有一张脸。\n>卧槽！！！／我手机扔出去了／主播你还好吗`); C.mp = Math.max(0, C.mp - 6); C.fans += 30; logLine('精神 -6，关注 +30（被吓到的样子反而火了）', 'warn'); } }
+    else await T_(`>主播怂了／取关了取关了／……其实我也不敢开`); STATE.live = null; }, '夜探 · 弹幕'); }
+
+/* —— 14 怨念物：夜探时捡到，四组各三件，凑齐一组有个小的永久加成 —— */
+const RELICS = { pingan: [['r_pa1', '生锈的门牌', '208。背面有人用指甲刻了一个日期。'], ['r_pa2', '半张寻人启事', '照片那一半被雨水泡掉了，只剩联系人一栏。'], ['r_pa3', '桃红色手机壳的碎片', '边缘很整齐，像是被人一点点掰下来的。']],
+  xicheng: [['r_xc1', '断掉的舞鞋带', '粉色的。打了一个死结，又被人解开过。'], ['r_xc2', '写着名字的椅子脚', '名字被划掉了，划痕比字还深。'], ['r_xc3', '一张糖纸', '背面写着一句话：生日快乐。没有署名。']],
+  muyang: [['r_my1', '泡过水的校牌', '照片上的人在笑。名字那一栏是空的。'], ['r_my2', '一只笔帽', '咬过的痕迹很深。笔不知道去哪了。'], ['r_my3', '雨衣上的纽扣', '黄色的。比你的雨衣小两号。']],
+  kangfu: [['r_kf1', '空药袋', '写着你的名字。药不在了。'], ['r_kf2', '病号手环', '编号被剪掉了，只剩“病栋三”。'], ['r_kf3', '一张值班表', '每一格都写着同一个字：陈。']] };
+const RELIC_SET = { pingan: ['平安公寓', '精神上限 +10'], xicheng: ['西城私立学院', '门票 +10%'], muyang: ['暮阳中学', '吓人手段 +6%'], kangfu: ['第三病栋', '体力上限 +25'] };
+const RELIC_AREA = { pingan: 'pingan', xicheng: 'xicheng', muyang: 'muyang', haiming: 'muyang', kangfu: 'kangfu', park: null };
+function relicSetDone(s) { return RELICS[s].every(r => FN().relic[r[0]]); }
+function relicBonus(c, k) { if (!c.fun || !c.fun.relic) return 0; const has = s => RELICS[s].every(r => c.fun.relic[r[0]]); return k === 'mp' ? (has('pingan') ? 10 : 0) : k === 'hp' ? (has('kangfu') ? 25 : 0) : k === 'ticket' ? (has('xicheng') ? .1 : 0) : k === 'scare' ? (has('muyang') ? .06 : 0) : 0; }
+function relicCan(area) { const s = area ? RELIC_AREA[area] : null; const L = s ? RELICS[s] : Object.values(RELICS).flat(); return L.some(r => !FN().relic[r[0]]); }
+function relicGain(area) { const s = area ? RELIC_AREA[area] : null; const L = (s ? RELICS[s] : Object.values(RELICS).flat()).filter(r => !FN().relic[r[0]]); if (!L.length) return null; const r = L[Math.floor(rnd() * L.length)]; FN().relic[r[0]] = 1;
+  logLine('🕯 怨念物：' + r[1] + '——' + r[2], 'gain'); toast('怨念物：' + r[1]); sfx('chalk'); const set = Object.keys(RELICS).find(k => RELICS[k].some(x => x[0] === r[0])); if (relicSetDone(set)) { logLine('凑齐了「' + RELIC_SET[set][0] + '」的三件怨念物：' + RELIC_SET[set][1] + '。', 'gain'); toast('凑齐一组：' + RELIC_SET[set][1]); sfx('big'); } return r; }
+
+/* —— 15 午夜售票台的特殊游客 —— */
+const SPECIAL = [
+  { id: 'sv_rain', n: '穿黄雨衣的小女孩', s: `^at 雨衣女孩 13\n大太阳底下，一个穿黄雨衣的小女孩站在售票台前。雨衣是湿的。\n雨衣女孩|叔叔，今天会下雨吗？`, ch: [['把伞借给她', () => { addItem('g_raincoat', 1, 1); return `她接过伞，没打开，抱在怀里走了。\n^out 雨衣女孩\n傍晚的时候，伞被放回了门口。伞面上全是水。伞柄上挂着一件小雨衣——是给你的。`; }], ['告诉她不会', () => { gainExp(20 + C.lv * 4); return `雨衣女孩|哦。\n她点点头，走进了乐园。\n^out 雨衣女孩\n半小时后下了一场雨，只下在恐怖屋门口那一小块地上。`; }]] },
+  { id: 'sv_old', n: '拿着旧票根的老人', s: `^at 老人 13\n一个老人递过来一张票根。纸已经黄了，上面印着二十年前的日期。\n老人|那时候，里面只有一对年轻夫妻，自己扮鬼，自己卖票。我女儿吓哭了，那个男的蹲下来给了她一颗糖。`, ch: [['请他免费进去', () => { C.hh.spins++; return `老人|……不了。我就是想看看，这地方还在不在。\n^out 老人\n他把票根留在了柜台上。黑色手机震了一下：获得一次免费转盘机会。`; }], ['问他记不记得那对夫妻的样子', () => { gainExp(30 + C.lv * 5); return `老人|那个男的，笑起来跟你一模一样。\n^out 老人\n你在柜台后面站了很久。`; }]] },
+  { id: 'sv_food', n: '送外卖的小哥', s: `^in 外卖小哥 13\n外卖小哥|恐怖屋三楼……小小收？备注写着：放床底下就行。\n订单上的付款人一栏，是空的。`, ch: [['签收，拿去三楼', () => { if (C.pets.xiaoxiao) petAff('xiaoxiao', 6); else gainMoney(-15); return `一份儿童套餐。你放到了床底下。\n第二天，盒子空了，里面的玩具被摆在了枕头上。`; }], ['说送错了', () => `外卖小哥|可是导航就停在这里啊……\n^out 外卖小哥\n他走了以后，三楼传来一声很小的叹气。`]] },
+  { id: 'sv_count', n: '一直在数人数的学生', s: `^in 数数的学生 13\n数数的学生|我们一共五个人。一、二、三、四、五……六？\n他又数了一遍。还是六。他的四个同学都在笑他。`, ch: [['让他们进去', () => { C.fans += 120; return `出来的时候，他们五个人脸都白了。\n他们在门口拍了张合照，发到网上：里面那个人到底是谁？——关注 +120。`; }], ['请他再数一遍', () => { gainExp(20 + C.lv * 4); return `数数的学生|一、二、三、四、五。……五。\n他松了一口气。你没告诉他，第六个刚刚站到了你身后。`; }]] },
+  { id: 'sv_wet', n: '浑身湿透的男人', s: `^at 湿透的男人 13\n^sfx drip\n一个男人站在门口，全身都在往下滴水。\n湿透的男人|请问……你们这里的浴缸，现在有人用吗？`, ch: [['说有人', () => { C.mp = charStats().mmp; return `湿透的男人|那我等一会。\n^out 湿透的男人\n他走了。地上那一摊水，过了一下午都没干。你却觉得脑子清醒了很多。（精神回满）`; }], ['问他为什么问这个', () => { gainExp(25 + C.lv * 4); return `湿透的男人|我在里面待了六十秒。出来以后，就一直是湿的。\n^out 湿透的男人\n你想起了深水那一晚。`; }]] },
+  { id: 'sv_nurse', n: '戴口罩的护士', need: 'q_ward', s: `^at 戴口罩的护士 13\n一个护士站在售票台前，口罩遮了半张脸。\n戴口罩的护士|请问……第三病栋怎么走？我好像走错路了。`, ch: [['告诉她病栋封了', () => { addItem('bandage', 2); return `戴口罩的护士|封了？……那我的病人怎么办。\n^out 戴口罩的护士\n她在柜台上留下两卷绷带，走了。走路没有声音。`; }], ['给她指路', () => { C.mp = Math.max(0, C.mp - 5); gainExp(40 + C.lv * 5); return `她听完，朝你鞠了一躬。\n^out 戴口罩的护士\n^fx glitch\n她转身的时候，你看见她的腰，折成了一个不可能的角度。（精神 -5）`; }]] },
+  { id: 'sv_press', n: '拿录音笔的记者', s: `^in 记者 13\n记者|陈老板，我是做城市怪谈专题的。能聊几句吗？你这里……是真的吗？`, ch: [['“都是真的。”', () => { C.fans += 300; return `记者笑了，在本子上写了一行字。\n第二天的报道标题是：西郊鬼屋老板疑似精神失常。——关注 +300。`; }], ['“都是特效。”', () => { gainMoney(150, '采访费'); return `记者|也是。\n他付了采访费，进去转了一圈。出来的时候，录音笔里多了一段不是他录的笑声。`; }]] },
+  { id: 'sv_draw', n: '背画板的孩子', s: `^in 画画的孩子 13\n一个背着画板的孩子坐在恐怖屋对面，画了一下午。\n他把画递给你：恐怖屋的每一扇窗户里，都有一张脸。`, ch: [['把画挂在休息室', () => { for (const k in C.pets) petAff(k, 2); return `你把画挂在了休息室墙上。\n第二天早上，画里窗户上的脸，都换成了笑脸。（员工好感 +2）`; }], ['问他看见了谁', () => { gainExp(20 + C.lv * 4); return `画画的孩子|你身边那个红衣服的姐姐，她一直在看你。\n^out 画画的孩子\n他收起画板，跑了。`; }]] }];
+function svToday() { const f = FN(); if (!C.f.parking || isNight() || C.loc !== 'hh_door') return null; if (f.svDay === C.day) return null; if (f.svRoll !== C.day) { f.svRoll = C.day; f.svHere = srng(C.day * 131 + 7)() < .4 ? 1 : 0; } if (!f.svHere) return null;
+  return SPECIAL.find(v => !f.sv[v.id] && (!v.need || qPast(v.need))) || null; }
+async function svMeet() { const v = svToday(); if (!v || STATE.scene || STATE.battle) return; const f = FN(); f.svDay = C.day; f.sv[v.id] = 1; sfx('phone');
+  await runScene(async () => { await T_(`~phone\n午夜售票台在柜台下面，轻轻响了一声。\n` + v.s); const c = await choose(v.ch.map(x => [x[0]])); await T_(v.ch[c][1]()); }, '特殊游客 · ' + v.n); logLine('特殊游客：' + v.n + '（' + Object.keys(f.sv).length + '/' + SPECIAL.length + '）', 'gain'); refresh(); save(); }
+
+/* —— 13 陪员工的小剧场 —— */
+const PET_SKIT = {
+  wan: [`^in 徐婉 12\n徐婉|老板，你看我这个妆……\n^fx flicker\n徐婉|是不是太吓人了？\n^fx steady\n你看了一眼。是太吓人了。你没说出口。`, `^in 徐婉 12\n徐婉在背台词。“还我命来——”念到一半，她自己笑场了。\n徐婉|老板，鬼笑起来是不是就不吓人了？\n我|看情况。有的笑起来更吓人。`, `^in 徐婉 12\n^prop dr cup 11 5\n徐婉把一瓶饮料推到你面前。\n徐婉|昨晚你又一夜没睡吧。……别看我，我就是顺手买的。`],
+  xiaoxiao: [`^at 小小 13\n^sfx giggle\n你陪小小玩捉迷藏。你数到十，转过身——\n^out 小小\n她不见了。你找了一个小时。最后发现她一直站在你影子里。`, `^prop dl doll 12 5\n你在床底下放了一个新缝的小布偶。\n^at 小小 13\n第二天，布偶被摆到了枕头上，旁边还压着一颗用纸叠的星星。`, `^at 小小 12\n小小拿着蜡笔，在墙上画了一家人。爸爸、妈妈、她。\n她想了想，又在旁边画了一个拿锤子的人。`],
+  bixian: [`^prop pp paper 11 5\n你给那支圆珠笔换了新胶带。\n纸上慢慢出现一个字：哼。\n过了一会儿，又多了一个：谢。`, `^prop pp paper 11 5\n你问它明天会不会下雨。\n它画了一个圈。又在圈旁边，画了一把伞。`, `^prop pp paper 11 5\n你问它，你爸妈在哪。\n笔在纸上停了很久，最后只写了两个字：还在。`],
+  baimao: [`^prop ct cat 11 5\n你给白猫开了一个罐头。它吃完了，才抬头看了你一眼。\n就一眼。`, `^prop ct cat 7 5\n^sfx cat\n白猫趴在你腿上睡着了。\n你一个小时没敢动。`, `^prop ct cat 11 5\n白猫盯着空无一人的墙角，尾巴竖了起来。\n^fx flicker\n墙角，什么都没有。它还是盯着。`],
+  canmian: [`^stage classroom\n^at 学生 9\n^at 学生乙 12\n你在暮阳中学的黑板上写了“下课”。\n^out 学生\n^out 学生乙\n第二天，粉笔字旁边多了一个笑脸。`, `^stage classroom\n你给二十四个人偶掸了灰，一个一个念它们的名字。\n^sfx whisper\n念到最后一个的时候，屋里响起一声很轻的“到”。`, `^stage classroom\n^at 学生丙 11\n有一个人偶的校牌歪了。你帮它扶正。\n它的头，跟着你的手，转了一点点。`] };
+
+/* —— 17 东郊乐园倒计时：租下停车场以后开始，十天一阶段，自动结算 —— */
+const EAST = { target: [150, 250, 350], money: [400, 700, 1000], fans: [500, 1000, 2000] };
+function eastStart() { const f = FN(); if (f.east || !C.f.parking) return; f.east = { d0: C.day, got: 0, ppl: 0, res: [] }; }
+function eastTick() { const f = FN(); eastStart(); const e = f.east; if (!e || e.got >= 3) return; if (C.day - e.d0 < (e.got + 1) * 10) return; const i = e.got, ok = e.ppl >= EAST.target[i];
+  if (ok) { gainMoney(EAST.money[i], '阶段目标'); C.fans += EAST.fans[i]; logLine('【东郊倒计时】第 ' + (i + 1) + ' 阶段达标：' + e.ppl + '/' + EAST.target[i] + ' 人。奖励 ' + EAST.money[i] + ' 元、关注 +' + EAST.fans[i] + '。', 'gain'); }
+  else logLine('【东郊倒计时】第 ' + (i + 1) + ' 阶段没达标：' + e.ppl + '/' + EAST.target[i] + ' 人。', 'warn');
+  e.res.push(ok ? 1 : 0); e.got++; e.ppl = 0; if (e.got >= 3) logLine(e.res.every(x => x) ? '虚拟未来乐园开业了。开业当天，排队最长的，还是西郊那座恐怖屋。' : '虚拟未来乐园开业了。门口的人少了一些——但总有人，专门来找“真的”。', 'gain'); }
+function eastText() { const e = FN().east; if (!e) return ''; if (e.got >= 3) return '虚拟未来乐园已经开业。三个阶段：' + e.res.map(x => x ? '✔' : '✘').join(' '); return '距虚拟未来乐园开业还有 ' + Math.max(0, 30 - (C.day - e.d0)) + ' 天 · 第 ' + (e.got + 1) + ' 阶段游客 ' + e.ppl + '/' + EAST.target[e.got] + '（' + EAST.money[e.got] + ' 元）'; }
+
+/* —— 18 章节评级 —— */
+const GRADE_RW = { S: [300, 1], A: [180, 0], B: [80, 0], C: [0, 0] }, GRADE_PAR = { 1: 3, 2: 3, 3: 2, 4: 3, 5: 2 };
+function chStat(k) { const q = curQ(); if (!q) return; const s = FN().chs[q.ch] = FN().chs[q.ch] || { lose: 0, fail: 0, d0: C.day }; s[k] = (s[k] || 0) + 1; }
+function chStart(ch) { const s = FN().chs; if (!s[ch]) s[ch] = { lose: 0, fail: 0, d0: C.day }; }
+function gradeOf(ch) { const s = FN().chs[ch] || { lose: 0, fail: 0, d0: C.day }; const days = C.day - s.d0, over = Math.max(0, days - (GRADE_PAR[ch] || 3)); const sc = 100 - 15 * (s.lose || 0) - 8 * (s.fail || 0) - 4 * over; return { sc, g: sc >= 90 ? 'S' : sc >= 70 ? 'A' : sc >= 50 ? 'B' : 'C', s, days, over }; }
+async function gradeCard(ch) { const r = gradeOf(ch), rw = GRADE_RW[r.g]; FN().chs[ch].g = r.g; if (rw[0]) gainMoney(rw[0], '章节评级'); if (rw[1]) C.hh.spins += rw[1]; logLine('第 ' + ch + ' 章评级：' + r.g + (rw[0] ? '（' + rw[0] + ' 元' + (rw[1] ? '、一次转盘' : '') + '）' : ''), 'gain');
+  await showCard('<div class="c1">第 ' + ch + ' 章 · 评级</div><div class="grade g' + r.g + '">' + r.g + '</div><div class="c3">倒下 ' + (r.s.lose || 0) + ' 次 · 小游戏失手 ' + (r.s.fail || 0) + ' 次 · 用了 ' + r.days + ' 天' + (r.over ? '（多 ' + r.over + ' 天）' : '') + '</div><div class="c3">' + (rw[0] ? '奖励 ' + rw[0] + ' 元' + (rw[1] ? ' · 一次免费转盘' : '') : '下次可以试试更快、更少倒下') + '</div>', 900); }
+
+/* —— 19 成就 —— */
+const ACH = [
+  ['a_open', '开张大吉', '第一次吓退游客', () => C.hh.good >= 1], ['a_g20', '口碑渐起', '好评 20 次', () => C.hh.good >= 20], ['a_g60', '远近闻名', '好评 60 次', () => C.hh.good >= 60], ['a_scr', '尖叫收集者', '累计收集 500 次尖叫', () => FN().scr >= 500],
+  ['a_f1', '小有名气', '关注过万', () => C.fans >= 10000], ['a_f10', '现象级主播', '关注十万', () => C.fans >= 100000], ['a_rich', '第一次有存款', '手里有 3000 元', () => C.money >= 3000], ['a_spin', '转盘常客', '转盘转了 10 次', () => FN().spins >= 10],
+  ['a_jack', '大奖！', '转盘转出大奖', () => FN().jack >= 1], ['a_sc6', '六个场景', '恐怖屋有六个场景', () => C.hh.scenes.length >= 6], ['a_up', '焕然一新', '翻新全部完成', () => UPGRADES.every(u => C.hh.up[u.k])], ['a_team', '鬼怪团队', '四位鬼怪员工', () => Object.keys(C.pets).filter(k => PETS[k].seal === 'ghost').length >= 4],
+  ['a_aff', '心意相通', '某位员工好感 80', () => Object.values(C.pets).some(p => p.aff >= 80)], ['a_rs', '凑齐一组', '凑齐一组怨念物', () => Object.keys(RELICS).some(relicSetDone)], ['a_ra', '怨念收藏家', '十二件怨念物', () => Object.keys(RELICS).every(relicSetDone)],
+  ['a_sv4', '特殊的客人', '接待 4 位特殊游客', () => Object.keys(FN().sv).length >= 4], ['a_sv8', '午夜售票员', '接待全部特殊游客', () => Object.keys(FN().sv).length >= SPECIAL.length], ['a_pf', '完美时机', '10 次完美时机', () => FN().perfect >= 10], ['a_house', '全场尖叫', '一回合吓跑一整批', () => FN().house >= 1],
+  ['a_combo', '四连段', '吓游客打出四连段', () => FN().combo4 >= 1], ['a_dodge', '闪开了', '躲开一次大招', () => FN().dodge >= 1], ['a_soft', '找到软肋', '三个首领的软肋', () => Object.keys(FN().soft).length >= 3], ['a_s', '满分章节', '某一章评级 S', () => Object.values(FN().chs).some(c => c.g === 'S')],
+  ['a_allS', '全 S', '五章都是 S', () => [1, 2, 3, 4, 5].every(i => FN().chs[i] && FN().chs[i].g === 'S')], ['a_door', '推开十扇门', '夜探开过 10 扇门', () => FN().doors >= 10], ['a_dm', '听话的主播', '照弹幕做了 10 次', () => FN().danmu >= 10],
+  ['a_h1', '没睁眼', '镜子游戏全程没睁眼', () => qPast('q_mirror') && !C.f.mirrorFail, 1], ['a_h2', '一句话没说', '门后一句话都没说', () => C.q === 'q_end' && C.f.spoke === 0, 1], ['a_h3', '猜中了', '一开始就猜中了凶手', () => qPast('q_hut') && C.f.guess === 1, 1],
+  ['a_h4', '好人有好报', '帮王琦捡起了寻人启事', () => qPast('q_hut') && C.f.helpWq, 1], ['a_h5', '我就试试', '向红衣厉鬼提了那个请求', () => !!C.f.greedy, 1]];
+function checkAch() { if (!C) return; const f = FN(); for (const a of ACH) if (!f.ach[a[0]]) { let ok = false; try { ok = a[3](); } catch (e) {} if (ok) { f.ach[a[0]] = C.day; toast('🏆 成就：' + a[1]); logLine('🏆 成就：' + a[1] + '——' + a[2], 'gain'); sfx('big'); } } }
+
+/* —— 20 每天第一次回到恐怖屋的小惊喜 —— */
+const SUP = [
+  () => C.pets.xiaoxiao && [`^at 小小 13\n^prop pp paper 11 5\n床头多了一张蜡笔画：你、她，还有一只没有脸的猫。`, () => petAff('xiaoxiao', 2)], () => C.pets.wan && [`^prop dr cup 11 5\n桌上压着一张便利贴：老板，冰箱里给你放了饮料。——徐婉`, () => addItem('drink')],
+  () => C.pets.bixian && [`^prop pp paper 11 5\n桌上的纸上写着一行字：今天人多。后面画了一个笑脸。`, () => { C.fans += 30; }], () => C.pets.baimao && [`^prop ct cat 12 5\n门口放着一只死老鼠。白猫坐在旁边，等你夸它。`, () => petAff('baimao', 2)],
+  () => [`^prop it coin 11 5\n柜台底下滚出来几枚硬币。不知道是谁的。`, () => gainMoney(rint(20, 60))], () => [`^fx flicker\n^sfx breath\n休息室的镜子上有一行水汽写的字：早上好。\n你没有对着镜子呵过气。`, () => { C.mp = Math.max(0, C.mp - 2); }],
+  () => [`^sfx creak\n^prop dl doll 12 5\n道具间的门开着。一个人偶坐在门口，像是在等你上班。`, () => gainExp(10 + C.lv * 3)]];
+function daySurprise() { if (window.__dbg && !__dbg.surp) return; if (!C || STATE.scene || STATE.battle || STATE.busy || isNight() || !C.f.open || !dailyOpen()) return; if (!['hh_rest', 'hh_door', 'hh_hall'].includes(C.loc)) return; const f = FN(); if (f.sup === C.day) return; f.sup = C.day;
+  const L = SUP.map(g => g()).filter(Boolean), s = L[Math.floor(srng(C.day * 53 + 11)() * L.length)]; runScene(async () => { await T_(s[0]); s[1](); }, '早上'); }
+
 /* 界面：一次只显示一种画面（探索 / 对话 / 对峙），交叉淡化，不许闪（RULES 3） */
 const UI = { tab: '', logTab: 'log', bagTab: 'use', memo: -1, phTab: 'home', mapArea: '', feed: [], pickScene: false, lastWho: '', modeT: 0 };
 const animOn = () => SET.motion && !(window.__dbg && __dbg.instant);
@@ -2537,7 +2710,7 @@ function hotText() { const n = STATE.live ? STATE.live.hot : 0; return n >= 1000
 /* —— 顶栏 / 探索画面 —— */
 let refT = 0;
 function refresh() { if (!C) return; cancelAnimationFrame(refT); refT = requestAnimationFrame(() => { applyMode(); renderTop(); if (STATE.battle) renderBattle(); else { renderBanner(); renderDesc(); renderActs(); renderFeed(); } renderNav(); if (UI.tab) renderSide(); musicMode(STATE.mini ? 'phone' : moodNow()); }); }
-function renderTop() { const s = charStats(), t = $('#tl'); if (!t) return; t.innerHTML = '<div class="bars"><div class="bar"><i style="width:' + C.hp / s.mhp * 100 + '%"></i></div><div class="bar mp"><i style="width:' + C.mp / s.mmp * 100 + '%"></i></div></div><span>第 <b>' + C.day + '</b> 天 · <b>' + clockText() + '</b></span><span>💴 <b>' + C.money + '</b></span>' + (STATE.live ? '<span class="live">直播 ' + hotText() + '</span>' : '<span class="ttl">' + (C.title ? TITLES[C.title].n : rankOf(C.lv)) + '</span>'); }
+function renderTop() { const s = charStats(), t = $('#tl'); if (!t) return; t.innerHTML = '<div class="bars"><div class="bar"><i style="width:' + C.hp / s.mhp * 100 + '%"></i></div><div class="bar mp"><i style="width:' + C.mp / s.mmp * 100 + '%"></i></div></div><span>第 <b>' + C.day + '</b> 天 · <b>' + clockText() + '</b></span><span>💴 <b>' + C.money + '</b></span>' + (STATE.live ? '<span class="live"><i class="lw">直播 </i>' + hotText() + '</span>' : '<span class="ttl">' + (C.title ? TITLES[C.title].n : rankOf(C.lv)) + '</span>'); }
 function renderBanner() { const p = PLACES[C.loc], night = isNight(); $('#pn').textContent = p.name; $('#pa').textContent = AREAS[p.area].name; const key = p.art + (night ? 'N' : 'D') + (C.q === 'q_end' ? '' : '');
   if (UI.bgk !== key) { UI.bgk = key; const c = UI.bgc || (UI.bgc = mk(640, 300)); paintScene(c, p.art, night); for (const id of ['#bgEx', '#bgDlg', '#bgBt']) { const b = $(id); b.getContext('2d').drawImage(c, 0, 0, b.width, b.height); } } stageIdle(); renderDanmuWide(); }
 function renderDesc() { let d = pdesc(C.loc); if (isNight() && C.mp < charStats().mmp * .2) d = glitch(d); $('#desc').textContent = d + (STATE.walkTip ? '' : ''); }
@@ -2550,7 +2723,7 @@ function renderActs() { const a = $('#acts'); if (!a) return; const p = PLACES[C
   if (q) { const at = questWhere(q), here = at === C.loc && !questBlocked(q); h += '<div class="quest"><span class="tag">主线</span><div class="qt">' + esc(q.title) + '<small>' + esc(questGoal(q)) + '</small></div>' + (here ? '<button class="btn pri" id="qgo" onclick="storyHereRun()">▶ ' + esc(q.act || '开始') + '</button>' : (at ? '<button class="btn" id="qgo" onclick="questGo()">▶ 去</button>' : '')) + '</div>'; }
   else h += '<div class="quest"><span class="tag">主线</span><div class="qt">第一卷到这里结束<small>怪谈协会的宣传单已经塞进了门缝。可以继续经营恐怖屋、夜探旧地。</small></div></div>';
   h += '<div class="grp"><label>做事</label>';
-  if (C.loc === 'hh_door' && !night && C.f.open) h += UI.pickScene ? '<div class="mini" style="width:100%">每批约 ' + crowd() + ' 人/位 · 关注越多来的人越多</div>' + sceneList().map(s => '<button class="btn pri sc" onclick="UI.pickScene=false;receive(\'' + s + '\')">🎫 ' + SCENES[s].n + ' <small>' + starTxt(sceneStar(s)) + '</small><small class="pas">' + scenePas(s).t + '</small></button>').join('') + '<button class="btn" onclick="UI.pickScene=false;renderActs()">取消</button>' : '<button class="btn pri" onclick="UI.pickScene=true;renderActs()">🎫 接待游客</button>';
+  if (C.loc === 'hh_door' && !night && C.f.open) h += UI.pickScene ? '<div class="mini" style="width:100%">每批约 ' + crowd() + ' 人/位 · 关注越多来的人越多</div>' + sceneList().map(s => '<button class="btn pri sc" onclick="UI.pickScene=false;receive(\'' + s + '\')">🎫 ' + SCENES[s].n + ' <small>' + starTxt(sceneStar(s)) + '</small><small class="pas">' + scenePas(s).t + '</small></button>').join('') + '<button class="btn" onclick="UI.pickScene=false;renderActs()">取消</button>' : '<button class="btn pri" onclick="UI.pickScene=true;renderActs()">🎫 接待游客</button><button class="btn" id="dayrun" onclick="dayRun()">📅 营业一整天</button>' + (svToday() ? '<button class="btn pri" id="svbtn" onclick="svMeet()">🎫 售票台响了</button>' : '');
   if (C.loc === 'hh_door' && night) h += '<button class="btn" disabled>🎫 乐园关门了</button>';
   h += '<button class="btn" onclick="explore()">' + (night ? '🔦 夜探' : '👀 转转') + '</button><button class="btn" onclick="camp()">🪑 歇一会</button>';
   if (p.bed) h += '<button class="btn" onclick="sleepBed()">🛏 ' + (night ? '睡到天亮' : '睡到天黑') + '</button>'; if (p.shop) h += '<button class="btn" onclick="UI.bagTab=\'shop\';navTo(\'bag\')">🛒 买卖</button>'; if (C.loc === 'hh_ctrl' && C.f.open) h += '<button class="btn pri" id="upbtn" onclick="navTo(\'up\')">🔧 翻新恐怖屋</button>';
@@ -2564,18 +2737,19 @@ function renderActs() { const a = $('#acts'); if (!a) return; const p = PLACES[C
 /* —— 对峙画面 —— */
 function stTags(u) { return Object.keys(u.st).filter(k => STATUS[k] && k !== 'steady').map(k => '<i title="' + STATUS[k][1] + '">' + STATUS[k][0] + '</i>').join(''); }
 function cardHtml(B, u, i, anim) { const hp = anim && B.snap ? B.snap[u.key] : u.hp, foe = u.side === 'f', cd = foe ? (C.codex[u.id] || { wk: [] }) : null; const it = foe ? intentText(B, u) : '';
-  return '<div class="card ' + (foe ? 'foe' : 'ally') + (hp <= 0 ? ' dead' : '') + (foe && B.sel === i && B.phase !== 'end' ? ' sel' : '') + '" id="c_' + u.key + '"' + (foe ? ' onclick="selFoe(' + i + ')"' : '') + '><div class="nm"><span>' + esc(u.n) + (u.boss ? ' ☠' : '') + '</span><small>' + u.lv + '级</small></div><div class="hpb"><i style="width:' + Math.max(0, hp / u.mhp * 100) + '%"></i></div><div class="hp"><span>' + (B.scare ? (foe ? '胆量 ' : (u.pet ? '' : '氛围 ')) : '') + Math.max(0, Math.round(hp)) + '/' + u.mhp + '</span>' + (u.dmgT && !anim ? '<span style="color:#f98">-' + u.dmgT + '</span>' : '') + '</div>' + (foe ? '<div class="it' + (it[0] === '⚠' ? ' w' : '') + '">' + esc(it) + '</div>' + (u.trait ? '<div class="wk tr">' + TRAITS[u.trait].split('：')[0] + '</div>' : '') + (cd.wk.length ? '<div class="wk">怕：' + cd.wk.map(e => EL[e]).join('、') + '</div>' : '') : (u.key === 'hero' ? '<div class="hp"><span>精神 ' + C.mp + '</span></div>' : '')) + '<div class="sts">' + stTags(u) + '</div></div>'; }
+  return '<div class="card ' + (foe ? 'foe' : 'ally') + (hp <= 0 ? ' dead' : '') + (foe && B.sel === i && B.phase !== 'end' ? ' sel' : '') + '" id="c_' + u.key + '"' + (foe ? ' onclick="selFoe(' + i + ')"' : '') + '><div class="nm"><span>' + esc(u.n) + (u.boss ? ' ☠' : '') + '</span><small>' + u.lv + '级</small></div><div class="hpb"><i style="width:' + Math.max(0, hp / u.mhp * 100) + '%"></i></div><div class="hp"><span>' + (B.scare ? (foe ? '胆量 ' : (u.pet ? '' : '氛围 ')) : '') + Math.max(0, Math.round(hp)) + '/' + u.mhp + '</span>' + (u.dmgT && !anim ? '<span style="color:#f98">-' + u.dmgT + '</span>' : '') + '</div>' + (foe ? '<div class="it' + (it[0] === '⚠' ? ' w' : '') + '">' + esc(it) + '</div>' + (u.trait ? '<div class="wk tr">' + TRAITS[u.trait].split('：')[0] + '</div>' : '') + (u.picky ? '<div class="wk tr pk">只怕' + EL[u.picky] + '</div>' : '') + (cd.wk.length ? '<div class="wk">怕：' + cd.wk.map(e => EL[e]).join('、') + '</div>' : '') : (u.key === 'hero' ? '<div class="hp"><span>精神 ' + C.mp + '</span></div>' : '')) + '<div class="sts">' + stTags(u) + '</div></div>'; }
 function selFoe(i) { const B = STATE.battle; if (!B || B.foes[i].hp <= 0 || B.phase === 'anim') return; B.sel = i; sfx('tap'); renderBattle(); }
 function renderBattle(anim) { const B = STATE.battle, box = $('#bt'); if (!B || !box) return; $('#vBt').classList.toggle('scare', B.scare); if (B.foes[B.sel].hp <= 0) { const i = B.foes.findIndex(f => f.hp > 0); if (i >= 0) B.sel = i; }
   const ord = (B.pet && B.pet.hp > 0 ? (C.duo ? [B.pet.n, '陈歌'] : ['陈歌', B.pet.n]) : ['陈歌']).map(n => '<span class="ord me">' + esc(n) + '</span>').join('→') + '→<span class="ord">' + (B.scare ? '游客' : '对方') + '</span>';
   let h = '<div class="b-top"><span class="t">' + esc(B.o.title || '') + ' · 第 ' + B.turn + ' 回合</span>' + ord + '</div><div class="b-foes">' + B.foes.map((f, i) => cardHtml(B, f, i, anim)).join('') + '</div>';
   const from = Math.max(0, B.log.length - 9); h += '<div class="b-log" id="blog">' + B.log.slice(from).map((l, i) => '<div class="' + l.cls + (from + i >= (B.firstNew || 0) ? ' new' : '') + '"' + ' data-i="' + (from + i) + '">' + esc(l.s) + '</div>').join('') + '</div>';
   h += '<div class="b-ally">' + cardHtml(B, B.hero, 0, anim) + (B.pet ? cardHtml(B, B.pet, 0, anim) : '') + '</div>';
-  if (B.phase === 'end') { const r = B.rw; h += '<div class="b-end">' + (B.result === 'win' ? (B.scare ? '游客尖叫着跑了出去。' : '你还站着。') + (r ? '<br>经验 +' + r.exp + (r.money ? ' · ' + r.money + ' 元' : '') + (r.screams ? ' · 尖叫 +' + r.screams : '') : '') : B.result === 'flee' ? '你甩开了它。' : (B.scare ? '他们打着哈欠出来了。' : '眼前一黑。')) + '<div class="mg-row"><button class="btn pri big" id="bcont" onclick="battleEnd()">继续</button></div></div>'; }
-  else if (B.phase === 'hero') { const mode = B.scare ? 'd' : 'n', f = B.foes[B.sel], cd = C.codex[f.id] || { wk: [] }; h += '<div class="b-turn">陈歌的回合' + (B.auto ? '（自动）' : '') + '</div><div class="b-acts">';
-    for (const k of C.bar[mode]) { const S = SKILLS[k]; if (!S) continue; const wk = !S.self && cd.wk.includes(S.el); h += '<button class="sk' + (C.mp < S.cost ? ' no' : '') + (wk ? ' wk' : '') + '" onclick="pickSkill(\'' + k + '\')"><b>' + S.ic + '</b>' + S.n + '<small>' + (S.cost ? S.cost + ' 精神' : '不耗') + (wk ? ' · 弱点' : '') + '</small></button>'; }
-    h += '<button class="sk" onclick="battleAct({t:\'guard\'})"><b>🛡</b>' + (B.scare ? '稳住' : '防御') + '<small>减半</small></button>'; if (B.o.candy && !B.candyUsed && itemN('candy')) h += '<button class="sk wk" id="candy" onclick="battleAct({t:\'candy\'})"><b>🍬</b>糖果<small>最后的底牌</small></button>';
+  if (B.phase === 'end') { const r = B.rw; h += '<div class="b-end">' + (B.result === 'win' ? (B.scare ? '游客尖叫着跑了出去。' : '你还站着。') + (B.fullHouse ? '<br><b class="fh">😱 全场尖叫！</b>' : '') + (r && r.picky ? '<br><b class="fh">挑剔的游客被吓哭了</b>' : '') + (r ? '<br>经验 +' + r.exp + (r.money ? ' · ' + r.money + ' 元' : '') + (r.screams ? ' · 尖叫 +' + r.screams : '') : '') : B.result === 'flee' ? '你甩开了它。' : (B.scare ? '他们打着哈欠出来了。' : '眼前一黑。')) + '<div class="mg-row"><button class="btn pri big" id="bcont" onclick="battleEnd()">继续</button></div></div>'; }
+  else if (B.phase === 'hero') { const mode = B.scare ? 'd' : 'n', f = B.foes[B.sel], cd = C.codex[f.id] || { wk: [] }; const big = !B.scare && alive(B.foes).some(f => f.intent && f.intent.exec && !f.st.stun); h += '<div class="b-turn">陈歌的回合' + (B.auto ? '（自动）' : '') + comboText(B) + '</div><div class="b-acts">';
+    for (const k of C.bar[mode]) { const S = SKILLS[k]; if (!S) continue; const wk = !S.self && cd.wk.includes(S.el); h += '<button class="sk' + (C.mp < S.cost ? ' no' : '') + (wk ? ' wk' : '') + '" onclick="pickSkillFx(\'' + k + '\')"><b>' + S.ic + '</b>' + S.n + '<small>' + (S.cost ? S.cost + ' 精神' : '不耗') + (wk ? ' · 弱点' : '') + '</small></button>'; }
+    h += '<button class="sk' + (big ? ' wk' : '') + '" onclick="guardFx()"><b>🛡</b>' + (B.scare ? '稳住' : big ? '防御/躲' : '防御') + '<small>' + (big ? '看准时机能躲开' : '减半') + '</small></button>'; if (B.o.candy && !B.candyUsed && itemN('candy')) h += '<button class="sk wk" id="candy" onclick="battleAct({t:\'candy\'})"><b>🍬</b>糖果<small>最后的底牌</small></button>';
     h += '</div><div class="b-acts">'; for (const k of ['drink', 'bandage', 'bread', 'coffee', 'smoke', 'saltbag']) if (itemN(k) && !(B.scare && (ITEMS[k].heal || ITEMS[k].battle))) h += '<button class="sk it' + (B.itemUsed ? ' no' : '') + '" onclick="battleItem(\'' + k + '\')">' + ITEMS[k].ic + itemN(k) + '</button>'; if (tapeReady()) h += '<button class="sk it wk' + (B.itemUsed ? ' no' : '') + '" id="tapebtn" onclick="battleItem(\'tape\')">📼 磁带</button>';
+    if (!B.scare && !B.strikeUsed) { const st = strikeOf(); h += '<button class="sk it wk" id="strikebtn" onclick="sceneStrike()">' + st[0] + ' ' + st[1] + '<small>一次</small></button>'; }
     if (!B.o.story && !B.scare) h += '<button class="sk it" onclick="battleAct({t:\'flee\'})">🏃 跑</button>'; h += '<button class="sk it' + (B.auto ? ' wk' : '') + '" onclick="toggleAuto()">🤖 自动</button></div>'; }
   else if (B.phase === 'pet') { h += '<div class="b-turn">' + esc(B.pet.n) + ' 的回合 · 陈歌已选好</div><div class="b-acts">'; petMovesB(B).forEach((m, i) => { h += '<button class="sk" onclick="pickPetMove(' + i + ')"><b>' + ({ atk: '⚔', buf: '✨', deb: '🌀', def: '🧷' })[m.c] + '</b>' + m.n + '<small>' + PET_CAT[m.c] + '</small></button>'; });
     h += '<button class="sk" onclick="battleAct({t:\'guard\'})"><b>🛡</b>防御</button></div><div class="b-acts"><button class="sk it" onclick="battleUndo()">‹ 重选陈歌</button><button class="sk it" onclick="C.duo=C.duo?0:1;renderBattle()">先后：' + (C.duo ? esc(B.pet.n) + '先' : '陈歌先') + '</button></div>'; }
@@ -3110,6 +3284,7 @@ function titleDraw() { const cv = $('#tcv'); if (!cv) return; const x = cv.getCo
 const SW = 320, SH = 112, FEET = 90;
 const P_ = (o) => Object.assign({ skin: '#f0c8a0' }, o);
 const PPL = {
+  雨衣女孩: P_({ child: 1, hair: '#1a1416', hs: 'bob', top: '#e8c020', dress: 1, hat: 'hood', hatC: '#e8c020', ghost: 1 }), 戴口罩的护士: P_({ skin: '#d8d0cc', hair: '#2a2420', hs: 'bun', top: '#e0e0d8', dress: 1, hat: 'veil', hatC: '#e8e8e0', ghost: 1 }), 湿透的男人: P_({ skin: '#c8ccd0', hair: '#141618', hs: 'messy', top: '#3a4a5a', bottom: '#2a3038', ghost: 1 }),
   红影: P_({ sil: '#7a0808', hs: 'long', dress: 1, top: '#900', ghost: 1 }), 黑影: P_({ sil: '#2a2630', hs: 'messy', tall: 1.3, ghost: 1 }), 镜鬼: P_({ sil: '#7a8090', hs: 'long', ghost: 1 }),
   小男孩: P_({ child: 1, skin: '#e6e0dc', hair: '#1a1416', hs: 'short', top: '#5a6a7a', bottom: '#3a4048', ghost: 1 }), 小女孩: P_({ child: 1, skin: '#e6e0dc', hair: '#1a1416', hs: 'bob', top: '#c88a9a', dress: 1, ghost: 1 }),
   学生: P_({ skin: '#ddd6d0', hair: '#141214', hs: 'short', top: '#2e3e5e', top2: '#e8e8e8', bottom: '#2e3e5e', ghost: 1 }), 学生乙: P_({ skin: '#ddd6d0', hair: '#141214', hs: 'bob', top: '#2e3e5e', top2: '#e8e8e8', skirt: 1, bottom: '#2e3e5e', ghost: 1 }), 学生丙: P_({ skin: '#ddd6d0', hair: '#1c1a18', hs: 'messy', top: '#2e3e5e', top2: '#e8e8e8', bottom: '#2e3e5e', ghost: 1 }),
@@ -3321,19 +3496,24 @@ function travelHome() { if (STATE.scene || STATE.battle) return; if (C.money >= 
 function hhStatus() { const t = C.hh.total; return t < 12 ? '濒临倒闭' : t < 60 ? '勉强维持' : t < 160 ? '小有名气' : '一票难求'; }
 function phoneDot() { if (!C.f.phone) return false; return (dailyOpen() && C.daily.day !== C.day) || (C.f.wheel && (C.hh.spins > 0 || C.hh.screams >= BAL.screamPerSpin)); }
 const LOCKED = [['ws', 'q_trial'], ['ward', 'q_ward'], ['my', 'q_muyang'], ['room', 'q_haiming']];
-function pPhone() { const tabs = [['home', '恐怖屋'], ['task', '日常任务'], ['wheel', '转盘']].concat(C.f.aff ? [['aff', '厉鬼好感']] : []); let h = tabsHtml(UI.phTab, tabs, "setTab.bind(null,'phTab')"); const T = UI.phTab;
+function pPhone() { const tabs = [['home', '恐怖屋'], ['task', '日常任务'], ['wheel', '转盘']].concat(C.f.aff ? [['aff', '厉鬼好感']] : []).concat(C.f.open ? [['col', '收集']] : []); let h = tabsHtml(UI.phTab, tabs, "setTab.bind(null,'phTab')"); const T = UI.phTab;
   if (T === 'home') { const gr = goodRate(), team = Object.keys(C.pets).filter(k => PETS[k].seal === 'ghost').map(k => PETS[k].n); h += '<div class="box"><h3>九江市西郊恐怖屋</h3><div class="kv"><div><span>状态：</span>' + hhStatus() + '</div><div><span>好评度：</span>' + (C.hh.good + C.hh.bad ? gr + '%' : '无') + '</div><div><span>今日游览人数：</span>' + C.hh.today + '</div><div><span>当月游览人数：</span>' + C.hh.month + '</div></div><p>我的鬼怪团队成员：' + (team.length ? team.join('、') : '无') + '</p><p>解锁成就：' + (C.titles.length ? C.titles.map(t => TITLES[t].n).join('、') : '无') + '</p><p>直播间关注：' + C.fans + '</p></div>';
     h += '<div class="box"><h3>现有设施场景</h3>' + C.hh.scenes.map(s => '<p><b>' + SCENES[s].n + '</b>（' + SCENES[s].d + '尖叫指数' + starTxt(sceneStar(s)) + '）' + (s === 'ws' && C.f.wsClosed ? ' <i>暂时封锁</i>' : '') + '<br><span class="mini">' + scenePas(s).t + '</span></p>').join('') + '</div>';
     const lk = LOCKED.filter(l => !C.hh.scenes.includes(l[0]) && (l[0] === 'ws' || l[0] === 'ward' || C.f['know_' + l[0]])); if (lk.length) h += '<div class="box"><h3>可解锁恐怖场景</h3>' + lk.map(l => '<p><b>' + SCENES[l[0]].n + '</b>（' + SCENES[l[0]].d + '尖叫指数' + starTxt(SCENES[l[0]].star) + '）</p>').join('') + (C.f.tongling ? '<p style="color:#f33"><b>通灵鬼校</b>（尖叫指数★★★★）——支线任务 1/9</p>' : '') + '</div>';
+    if (FN().east) h += '<div class="box"><h3>东郊 · 虚拟未来乐园</h3><p>' + eastText() + '</p><p class="mini">每十天结算一次：游客够数就有奖励。</p></div>';
+    if (FN().rv.length) h += '<div class="box"><h3>最新评论</h3>' + FN().rv.slice(0, 5).map(r => '<p class="' + (r.ok ? '' : 'mini') + '">' + (r.ok ? '★★★★★' : '★') + ' “' + esc(r.s) + '”</p>').join('') + '</div>';
     const keys = Object.keys(C.bag).filter(k => ITEMS[k] && ITEMS[k].k === 'key'); h += '<div class="box"><h3>我的道具库</h3>' + (keys.length ? keys.map(k => '<p><b>' + ITEMS[k].ic + ' ' + ITEMS[k].n + '</b>　' + ITEMS[k].d + '</p>').join('') : '<p>无</p>') + '</div>';
     h += '<div class="box"><p>鬼屋扩建条件：当月游览人数 ' + C.hh.month + '/100，好评率 ' + goodRate() + '%/60%（扩建三次后，恐怖屋将升级为颤栗迷宫）。' + (C.f.parking ? '已扩建 1 次。' : '') + '</p><p>其他功能：' + (C.f.aff ? '厉鬼好感度。' : '未解锁。') + '</p></div>'; }
   else if (T === 'task') { if (!dailyOpen()) h += '<div class="box"><p>每日任务：完成恐怖屋的每日任务，会给出相应奖励，并解锁更多恐怖场景。</p><p>——先跟着主线走完新手阶段。</p></div>'; else { dailyRoll(); const d = C.daily; h += '<p class="mini">日常任务每日凌晨刷新，每天只能领取一个任务，难度不同，奖励不同。（注意！个别任务极度危险，请慎重选择！）</p>';
       for (const [k, nm] of [['easy', '简单难度'], ['normal', '一般难度'], ['nm', '噩梦难度']]) { const t = d.opts[k], got = d.got === k; h += '<div class="box' + (got ? ' on' : '') + '"><h3>' + nm + ' <span>' + (got ? (d.done === 1 ? '已完成' : d.done === 2 ? '失败' : '进行中' + (t.n && k === 'normal' ? ' ' + d.prog + '/' + t.n : '')) : '') + '</span></h3><p>' + t.t + '</p><p class="mini">奖励：' + t.r + '</p>' + (!d.got ? '<div class="row"><span></span><button class="btn" onclick="dailyTake(\'' + k + '\')">接受</button></div>' : '') + '</div>'; } } }
+  else if (T === 'col') { const f = FN(); h += '<div class="box"><h3>怨念物 ' + Object.keys(f.relic).length + '/12</h3><p class="mini">夜探时偶尔捡到。凑齐一组有一个小的永久加成。</p>' + Object.keys(RELICS).map(s => '<p><b>' + RELIC_SET[s][0] + '</b>' + (relicSetDone(s) ? ' ✔ ' : ' ') + '<span class="mini">' + RELIC_SET[s][1] + '</span><br>' + RELICS[s].map(r => f.relic[r[0]] ? '🕯 ' + r[1] + '<span class="mini">——' + r[2] + '</span>' : '　？？？').join('<br>') + '</p>').join('') + '</div>';
+    h += '<div class="box"><h3>特殊游客 ' + Object.keys(f.sv).length + '/' + SPECIAL.length + '</h3><p class="mini">租下停车场以后，午夜售票台偶尔会响。</p>' + SPECIAL.map(v => '<p>' + (f.sv[v.id] ? '🎫 ' + v.n : '　？？？') + '</p>').join('') + '</div>'; }
   else if (T === 'wheel') h += '<div class="box"><h3>恐怖大转盘</h3><p>生死有命，富贵在天，这里有增加寿命的灵果，亦有满含仇怨的厉鬼！</p><p>游客尖叫声超过七十分贝才可被收集，累积一百次后，获得一次转动转盘机会。</p><div style="text-align:center;font-size:54px;margin:8px" id="wheelv">☠</div><div class="row"><span>尖叫 ' + C.hh.screams + '/' + BAL.screamPerSpin + (C.hh.spins ? ' · 免费 ' + C.hh.spins + ' 次' : '') + '</span><button class="btn" onclick="spinWheel()">转</button></div>' + (C.f.wheel ? '' : '<p>（尚未激活：首次收集到游客尖叫后激活）</p>') + '</div>';
   else { h += '<div class="box"><h3>已拥有厉鬼好感度如下</h3>'; if (C.pets.xiaoxiao || C.f.xiaoxiao) h += '<p>殷小小（厉鬼）：' + (C.pets.xiaoxiao && C.pets.xiaoxiao.aff >= 30 ? '亲近（她把你当成了家里人）' : '略有好感（你引起了她的注意，在她看来，你要比陌生人亲近一点）') + '</p>'; h += '<p style="color:#f33">张雅（红衣厉鬼）：' + (C.f.shoes ? '非你莫属' : '情有独钟（你对她来说与众不同，她喜欢你，不过，喜欢的是死后的你）') + '</p>'; if (C.pets.bixian) h += '<p>笔仙（特殊种类厉鬼）：' + affText(C.pets.bixian.aff) + '</p>'; h += '<p class="mini">让其听到蕴含游客负面情绪的尖叫，赠送携带怨念值的物品，或者完成厉鬼好感任务都可以增加好感度。</p></div>'; }
   return h; }
 /* —— 记录 —— */
-function pLog() { let h = tabsHtml(UI.logTab, [['log', '经过'], ['memo', '回忆录'], ['codex', '档案'], ['danmu', '弹幕']], "setTab.bind(null,'logTab')"); const T = UI.logTab;
+function pLog() { let h = tabsHtml(UI.logTab, [['log', '经过'], ['memo', '回忆录'], ['codex', '档案'], ['danmu', '弹幕'], ['ach', '成就']], "setTab.bind(null,'logTab')"); const T = UI.logTab;
+  if (T === 'ach') { const f = FN(), got = ACH.filter(a => f.ach[a[0]]).length; return h + '<div class="box"><h3>成就 ' + got + '/' + ACH.length + '</h3>' + ACH.map(a => f.ach[a[0]] ? '<p>🏆 <b>' + a[1] + '</b> <span class="mini">' + a[2] + ' · 第 ' + f.ach[a[0]] + ' 天</span></p>' : '<p class="mini">🔒 ' + (a[4] ? '？？？（隐藏）' : a[1] + ' · ' + a[2]) + '</p>').join('') + '</div>'; }
   if (T === 'log') return h + '<div class="box">' + ((C.log || []).slice().reverse().map(l => '<p><span class="mini">第' + l[0] + '天</span> ' + esc(l[1]) + '</p>').join('') || '<p>还没有发生什么。</p>') + '</div>';
   if (T === 'memo') { if (UI.memo >= 0 && JOURNAL[UI.memo]) { const j = JOURNAL[UI.memo]; return h + '<button class="btn" onclick="setTab(\'memo\',-1)">‹ 目录</button><div class="box jl"><h3>' + esc(j.t) + '</h3>' + j.l.map(l => '<p' + (l[0] === '▸' ? ' class="me"' : '') + '>' + (l[0] ? '<b>' + esc(l[0]) + '</b>　' : '') + esc(l[1]) + '</p>').join('') + '</div>'; }
     return h + (JOURNAL.length ? JOURNAL.map((j, i) => '<div class="box" onclick="setTab(\'memo\',' + i + ')"><h3>' + esc(j.t) + ' <span class="mini">' + (CH_NAMES[j.ch] || '') + '</span></h3></div>').reverse().join('') : '<div class="box"><p>看过的剧情会记在这里，随时可以重读。</p></div>'); }
@@ -3362,7 +3542,7 @@ const JUMPS = [
 ];
 function dropRunning() { if (window.STG) { STG.sc = []; STG.fx = {}; } STATE.run++; walking++; STATE.scene = false; STATE.battle = null; STATE.busy = false; STATE.jr = null; STATE.live = null; battleDone = null; DLG.cur = null; DLG.res = null; if (MG) { cancelAnimationFrame(MG.raf); MG = null; } STATE.mini = null; for (const id of ['#cine', '#card']) { const e = $(id); if (e) e.className = ''; } cineRes = null; cardRes = null; closeModal(); }
 function jumpTo(ch) { const J = JUMPS.find(j => j.ch === ch); if (!J) return; dropRunning(); const keep = C ? { auto: C.auto, made: C.made } : {}; const c = C = newChar(); Object.assign(c, keep); c.lv = J.lv; c.q = J.q;
-  for (const j of JUMPS) { if (j.ch > ch) break; const d = j.d; Object.assign(c.f, d.f || {}); for (const k of d.items || []) c.bag[k] = 1; for (const k in d.bag || {}) c.bag[k] = d.bag[k]; for (const k of d.sk || []) learnSkill(k, 1); for (const k of d.talents || []) c.talents.push(k); for (const k of d.titles || []) c.titles.push(k); for (const k of d.scenes || []) c.hh.scenes.push(k); for (const k of d.pets || []) gainPet(k, 1); if (d.total) c.hh.total = d.total; if (d.fans) c.fans = d.fans; if (d.money) c.money = d.money; if (d.day) c.day = d.day; if (d.hp) c.bonus.hp += d.hp; }
+  for (const j of JUMPS) { if (j.ch > ch) break; const d = j.d; Object.assign(c.f, d.f || {}); for (const k of d.items || []) c.bag[k] = 1; for (const k in d.bag || {}) c.bag[k] = d.bag[k]; for (const k of d.sk || []) learnSkill(k, 1); for (const k of d.talents || []) c.talents.push(k); for (const k of d.titles || []) c.titles.push(k); for (const k of d.scenes || []) c.hh.scenes.push(k); for (const k of d.pets || []) gainPet(k, 1); if (d.total) c.hh.total = d.total; if (d.fans) c.fans = d.fans; if (d.money) c.money = d.money; if (d.day) c.day = d.day; if (d.hp) c.bonus.hp += d.hp; } c.fun = { chs: { [ch]: { lose: 0, fail: 0, d0: c.day } } };
   if (c.gear.length === 0) for (const g of ['g_mask', 'g_raincoat', 'g_coat']) if (c.bag[g] && c.gear.length < gearSlots(c.lv)) c.gear.push(g); for (const k in c.pets) { c.pets[k].lv = Math.max(1, J.lv - 1); c.pets[k].aff = 30; } if (ch >= 5) swapSkill('knife', 'pigknife');
   fillBars(); for (const k of c.sk) c.prof[k] = Math.min(60, J.lv * 4); c.title = c.titles[c.titles.length - 1] || ''; c.hh.good = Math.round(c.hh.total / 3); c.hh.month = Math.min(90, c.hh.total); c.seen.tut = 1; c.loc = 'hh_rest'; fullHeal(); JOURNAL = []; saveJournal(); saveNow(); enterGame(); toast('从第 ' + ch + ' 章开始'); }
 function jumpHtml() { return '<div class="box"><h3>跳章</h3><p class="mini">直接从某一章开头开始，等级、手段、员工、道具按上一章结束时的大致水平准备好。<b>会覆盖当前存档位（' + SLOT + ' 号）</b>。</p>' + JUMPS.map(j => '<div class="row"><span>' + CH_NAMES[j.ch] + ' <span class="mini">' + j.lv + ' 级</span></span><button class="btn" onclick="jumpArm(this,' + j.ch + ')">从这里开始</button></div>').join('') + '<div class="row"><button class="btn" onclick="openModal(\'set\')">返回</button></div></div>'; }
