@@ -49,12 +49,14 @@ function fxEvent(B, ev) {
   if (ev.k === 'die') { UI.deadShown[ev.t] = 1; const c = cardOf(ev.t); if (c) c.classList.add('dying', 'dead'); return; }
   if (ev.k === 'int') { fxFloat(ev.t, '打断！', 'weak'); fxClass(ev.t, 'hit', 420); return; }
   if (ev.k === 'phase') { fxClass(ev.t, 'enrage', 1200); $('vBattle').classList.remove('quake'); void $('vBattle').offsetWidth; $('vBattle').classList.add('quake'); fxSpawn('fx-redflash', { x: 0, y: 0, w: 0 }, '', 900); sfx('fail'); return; }
+  if (ev.k === 'say') { fxSay(ev.t, ev.text); return; }
   if (ev.k === 'swap') { fxClass('pet', 'enter-u', 600); return; }
 }
 const FX_HTML = {
   lei: '<svg viewBox="0 0 40 120"><path d="M24 0 L10 52 L22 52 L8 120 L34 44 L21 44 L32 0 Z"/></svg>',
   claw: '<i></i><i></i><i></i>', bless: '<b></b><b></b>', curse: '<b></b>', slash: '<i></i><i></i>', blade: '<i></i>', bone: '<b></b>', rock: '<b></b>', fire: '<b></b>', roar: '<b></b>', magic: '<b></b>', wave: '<b></b>', heal: '<b>✚</b>', tower: '<b></b>', shield: '<b></b>', crush: '<b>拳</b>',
 };
+function fxSay(id, text) { const c = cardOf(id); if (!c || !animOn()) return; const p = fxAt(c); p.y -= p.h / 2 + 6; const d = fxSpawn('bubble ' + (id === 'hero' ? 'me' : ''), p, esc(text.replace(/^（|）$/g, '')), 2300); if (text.startsWith('（')) d.classList.add('act'); }
 function fxStamp(B) { if (!animOn() || $('bfx').querySelector('.stamp')) return; const t = B.win ? '胜' : B.fled ? '逃' : '败'; const d = el('div', 'fx stamp ' + (B.win ? 'win' : 'lose'), t); $('bfx').appendChild(d); sfx(B.win ? 'win' : 'lose'); }
 
 /* ---------- screen transitions & big moments ---------- */

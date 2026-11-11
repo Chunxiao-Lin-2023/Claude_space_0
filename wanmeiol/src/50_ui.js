@@ -22,7 +22,7 @@ function applyMode(force) { const m = curMode(), b = document.body;
 
 /* ---------- log (kept for 📜 记录 and co-op; the explore screen shows the latest few lines) ---------- */
 function logLine(html, cls = '') { const L = $('log'); if (!L) return; L.appendChild(el('div', 'ln ' + cls, html)); while (L.children.length > 300) L.firstChild.remove(); if (NETROLE === 'host') netLog(html, cls); UI.logDirty = 1; if (STATE.mode === 'play') { clearTimeout(UI.feedT); UI.feedT = setTimeout(() => { renderFeed(); if (UI.nav === 'log') renderSide(); }, 30); } }
-function feedLines(max = 5) { const out = []; const kids = $('log').children; for (let i = kids.length - 1; i >= 0 && out.length < max; i--) { const d = kids[i]; if (d.classList.contains('loc')) break; if (d.classList.contains('bat') || d.classList.contains('say')) continue; out.unshift(d); } return out; }
+function feedLines(max = 5) { const out = []; const kids = $('log').children; for (let i = kids.length - 1; i >= 0 && out.length < max; i--) { const d = kids[i]; if (d.classList.contains('loc')) break; if (d.classList.contains('bat') || d.classList.contains('say') || d.classList.contains('rumor')) continue; out.unshift(d); } return out; }
 function renderFeed() { const F_ = $('feed'); if (!F_) return; const L = feedLines(); F_.innerHTML = L.map((d, i) => { if (!d.dataset.n) d.dataset.n = ++UI.feedN; const nw = +d.dataset.n > (UI.feedSeen || 0); return `<div class="${d.className}${i < L.length - 2 ? ' old' : ''}${nw ? ' new' : ''}">${d.innerHTML}</div>`; }).join(''); UI.feedSeen = UI.feedN; }
 UI.feedN = 0;
 
@@ -45,7 +45,7 @@ function dlgChoose(opts, prompt) {
   return new Promise(res => { DLG = { choice: opts, res }; renderDlg(); netSync(); });
 }
 function dlgPick(i) { // advance (i = -1) or choose option i
-  if (!DLG || DLG.rune) return; if (NETROLE === 'guest') { if (!myControl()) { toast('现在是队友在操作'); return; } netSend({ t: 'dlg', i }); return; } if (NETROLE === 'host' && !myControl()) { toast('现在是队友在操作'); return; }
+  if (!DLG || DLG.rune || DLG.mini) return; if (NETROLE === 'guest') { if (!myControl()) { toast('现在是队友在操作'); return; } netSend({ t: 'dlg', i }); return; } if (NETROLE === 'host' && !myControl()) { toast('现在是队友在操作'); return; }
   if (DLG.choice) { if (i < 0 || !DLG.choice[i] || DLG.choice[i].dis) return; const r = DLG.res, t = DLG.choice[i].t; logLine('▸ ' + t, 'say mine'); journalAdd({ choice: t }); DLG = null; sfx('click'); renderDlg(); r(i); }
   else { const r = DLG.res; DLG = null; sfx('click'); renderDlg(); r(); }
   netSync();
@@ -57,13 +57,14 @@ function renderDlg() {
   const head = `<div class="tplace">${P ? (STATE.dungeon ? DUNGEONS[STATE.dungeon.id].name : P.name) : ''}<span>${q ? CH_NAMES[q.ch] : ''}</span></div>`;
   const histH = h => h.length ? `<div class="hist">${h.map(x => `<div>${x.who ? `<span class="hw">${esc(x.who)}</span>` : ''}${x.text}</div>`).join('')}</div>` : '';
   const lineH = o => { const s = sealOf(o), nw = (o.who || '') !== UI.lastWho; UI.lastWho = o.who || ''; return `<div class="line ${nw ? 'newspk' : ''}">${s ? `<div>${sealHtml(s, o.mine ? 'me' : '')}${s.t ? `<div class="ttl">${esc(s.t)}</div>` : ''}</div>` : ''}<div class="tx ${o.who ? '' : 'nar'} ${o.mine ? 'mine' : ''}">${o.text}</div></div>`; };
-  if (DLG.rune) D.innerHTML = head + runeHtml(DLG.rune);
+  if (DLG.mini) { D.innerHTML = head + miniHtml(DLG.mini); D.onclick = null; }
+  else if (DLG.rune) D.innerHTML = head + runeHtml(DLG.rune);
   else if (DLG.choice) { D.innerHTML = head + histH(ctx.hist.slice(-1)) + (ctx.cur ? lineH(ctx.cur) : '') + `<div class="ch">${DLG.choice.map((o, i) => `<button class="chb" ${o.dis ? 'disabled' : ''} data-i="${i}">${o.t}</button>`).join('')}</div>`; D.onclick = null; D.querySelectorAll('.chb').forEach(b => b.onclick = e => { e.stopPropagation(); dlgPick(+b.dataset.i); }); }
   else { D.innerHTML = head + histH(ctx.hist) + lineH(DLG.o) + '<div class="nx">点击继续 ▼</div>'; D.onclick = () => dlgPick(-1); }
   if (DLG.rune) D.onclick = null; D.scrollTop = D.scrollHeight;
-  const key = DLG.rune ? 'r' + DLG.rune.phase + DLG.rune.got.length + DLG.rune.k : DLG.choice ? 'c' + DLG.choice.map(o => o.t).join() : 'o' + DLG.o.text; D.classList.toggle('still', key === UI.dlgKey); UI.dlgKey = key;
+  const key = DLG.mini ? 'm' + DLG.mini.k : DLG.rune ? 'r' + DLG.rune.phase + DLG.rune.got.length + DLG.rune.k : DLG.choice ? 'c' + DLG.choice.map(o => o.t).join() : 'o' + DLG.o.text; D.classList.toggle('still', key === UI.dlgKey); UI.dlgKey = key;
 }
-function dlgClose() { if (DLG && !DLG.choice && !DLG.rune) { const r = DLG.res; DLG = null; r(); } DLG = null; UI.hist = []; UI.cur = null; renderDlg(); }
+function dlgClose() { if (DLG && !DLG.choice && !DLG.rune && !DLG.mini) { const r = DLG.res; DLG = null; r(); } DLG = null; UI.hist = []; UI.cur = null; renderDlg(); }
 addEventListener('keydown', e => { if (STATE.mode !== 'play' || e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
   if (e.key === 'Escape' && UI.nav) { navTo('adv'); return; }
   if (DLG && !DLG.choice && !DLG.rune && (e.key === ' ' || e.key === 'Enter')) { e.preventDefault(); dlgPick(-1); return; }
@@ -116,7 +117,7 @@ function storyHere() { const q = curQ(); if (q.type === 'enter' && q.loc === C.l
 function storyHereRun() { const q = curQ(); if (q.type === 'enter') return questComplete(q); }
 /* ---------- battle screen ---------- */
 function renderBattle(quiet) {
-  const B = STATE.battle; if (!B) return; applyMode(); const play = fxPrepare(B); if (UI.enter) $('bfx').innerHTML = '';
+  const B = STATE.battle; if (!B) return; applyMode(); const play = fxPrepare(B); if (UI.enter) { $('bfx').innerHTML = ''; const intro = (B.ev || []).filter(e => e.k === 'say'); intro.forEach((e, i) => setTimeout(() => fxSay(e.t, e.text), 550 + i * 900)); if (intro.length && animOn()) { UI.animEnd = now() + 550 + intro.length * 900; setTimeout(() => { if (STATE.battle && STATE.battle.id === B.id) { UI.animEnd = 0; renderBattle(true); } }, 600 + intro.length * 900); } }
   const me_ = B.units.find(u => u.kind === 'pc'); if (UI.selFoe && !B.units.some(u => u.id === UI.selFoe && u.alive)) UI.selFoe = null;
   const cur = !B.over && !play && animLeft() === 0 ? needInput(B)[0] : null;
   const settled = !play && animLeft() === 0, taken = {}; if (settled) for (const e of B.ev || []) if ((e.k === 'hit' || e.k === 'dot') && e.v) taken[e.t] = (taken[e.t] || 0) + e.v;

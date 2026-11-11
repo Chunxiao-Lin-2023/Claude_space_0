@@ -16,7 +16,7 @@ function enterGame(fresh) {
   if (fresh) logLine('<div class="lochead">完美世界</div>大荒，八百万里群山，凶兽横行。群山之间，有一个叫石村的小村子。', 'loc'); else { describe(); logLine('欢迎回来，小不点。', 'dim'); }
   refresh(); bannerDraw(); musicMode(); setTimeout(storyPoll, 600);
 }
-setInterval(() => { if (STATE.mode !== 'play' || !C) return; try { roamTick(); npcTick(); } catch (e) { console.error(e); } }, 1000);
+setInterval(() => { if (STATE.mode !== 'play' || !C) return; try { roamTick(); npcTick(); rumorTick(); } catch (e) { console.error(e); } }, 1000);
 setInterval(() => { if (STATE.mode === 'play' && C && !STATE.battle && !DLG) { renderTop(); if (UI.night !== isNight()) { UI.night = isNight(); bannerDraw(); refresh(); } } }, 5000);
 addEventListener('pointerdown', () => { audioInit(); musicMode(); }, { once: true });
 document.addEventListener('visibilitychange', () => { if (document.hidden && C) save(true); });

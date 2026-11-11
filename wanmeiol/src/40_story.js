@@ -30,8 +30,9 @@ async function S_yard() {
   await say('dazhuang', '小不点，又是你最后一个！今天举石锁，输了的人去给族长刷药鼎！');
   await say('ermeng', '我先来！（他憋红了脸，把一只石锁抱到了胸口）');
   await nar('轮到你了。你个头还不到石锁高，几个大孩子都在偷笑。');
-  if (!await fight({ mobs: [['dummy', 1]], title: '迎霞锻体 · 举石锁', noLose: true, noPet: true })) await nar('石锁晃了晃，没起来。大壮笑得在地上打滚。');
-  else await nar('“嘿！”你把石锁举过了头顶，又嫌不过瘾，跑去青铜大鼎那边，双手一抬——几百斤的大鼎离了地。空地上一下子安静了。');
+  const lf = await miniGame('lift', { title: '举石锁', desc: '石锁比你还高。两手抠住把手，等它晃到最稳的那一下——', rounds: 3, need: 2 });
+  if (!lf.ok) await nar('石锁晃了晃，没起来。大壮笑得在地上打滚。你憋着一口气，换了个架势又抓住了把手——');
+  await nar('“嘿！”你把石锁举过了头顶，又嫌不过瘾，跑去青铜大鼎那边，双手一抬——几百斤的大鼎离了地。空地上一下子安静了。');
   await say('linhu', '（扛着弓走过来，看了你半天）这小子……行，以后进山算你一个。');
   await nar('话音没落，村口一阵喧哗。猎手们拖着一头庞然大物回来了——一头<b>双头火犀</b>，两个脑袋还在冒着热气。');
   await say('chief', '是双头火犀！它的宝血是好东西。生火，熬！孩子们都来喝一碗。');
@@ -126,7 +127,7 @@ async function S_shanbao() {
   await nar('柳神的那根柳枝突然亮得刺眼。它往地上一扎，一道光门在村子中央打开了。');
   await say('chief', '是柳神！快，都进去！老人孩子先走！');
   const c2 = await choose(['先帮大家搬东西', '扛起族长的药鼎就走']);
-  if (c2 === 1) F().ding = 1;
+  if (c2 === 1) { F().ding = 1; const ms = await miniGame('mash', { title: '扛鼎', desc: '药鼎几百斤重，岩浆已经漫到了村口。', time: 6500, rate: 8 }); if (!ms.ok) await nar('鼎太沉，你一个趔趄差点跪下。咬着牙，到底还是把它扛上了肩。'); }
   if (c2 === 1) await nar('你一个人扛起那口几百斤的药鼎，从岩浆边上冲了过去，把它扔进光门。族长回头看见，眼眶都红了。');
   else await nar('你来来回回跑了十几趟，把走不动的老人一个个背进了光门。最后一趟，岩浆已经漫到了村口。');
   await nar('光门合上的那一刻，旧石村被岩浆吞没了。');
@@ -140,7 +141,8 @@ async function S_ruin() {
   await me('要是爹娘哪天回来找我，至少知道该去哪儿。');
   await nar('石头后面传来细细的哼哼声。你绕过去一看，一只金毛小猴缩在石缝里，浑身是伤，一条腿被压在石头底下，冲你龇着牙。');
   const c = await choose(['把石头搬开，给它敷药', '（它好像挺好吃的……）', '扔给它一块兽肉，看它吃不吃']);
-  if (c === 1) await nar('你咽了口口水，小猴子“吱”地一声尖叫，拼命往石缝里缩。你叹了口气，还是把石头搬开了。');
+  if (c === 1) await nar('你咽了口口水，小猴子“吱”地一声尖叫，拼命往石缝里缩。你叹了口气，还是决定把石头搬开。');
+  if (c !== 2) { const ms = await miniGame('mash', { title: '搬石', desc: '压着它的是半块烧焦的大磨盘，比你整个人还宽。', time: 7000 }); await nar(ms.ok ? '“起——！”磨盘被你掀到了一边，轰的一声砸进灰里。' : '磨盘纹丝不动。你喘了口气，把肩膀顶在磨盘底下，一寸一寸地往外挪……总算挪开了。'); }
   if (c === 2) await nar('小猴子盯着兽肉看了半天，一把抢过去，狼吞虎咽。吃完了，它就盯着你，不叫了。');
   await nar('你把它抱回了新村，给它敷了止血草。它的伤好得出奇地快，三天就能满村乱窜，把好几户人家的兽奶罐子舔了个底朝天。你给它起了个名字，叫<b>毛球</b>。');
   gainPet('maoqiu'); if (c === 2) C.pets.maoqiu.aff = 22; if (c === 1) { C.pets.maoqiu.aff = 4; await nar('毛球记仇。头几天它一看见你就龇牙，还偷偷往你的兽奶里吐口水。'); }
@@ -235,11 +237,12 @@ async function S_gate() {
 }
 async function S_lotus() {
   await nar('虎穴里腥风扑面。洞底一汪黑水，水面上开着一朵黑色的莲花，花瓣边缘泛着一圈幽光。一头黑纹虎正趴在水边打盹。');
-  await nar('你屏住呼吸，一步一步挪过去。手指离黑莲只差一寸了——');
-  await nar('“咕——噜噜噜噜——”');
-  await nar('你的肚子叫了。叫得整个山洞都在回响。黑纹虎猛地睁开了眼睛。');
-  await me('……我早上就喝了一口兽奶。');
-  if (!await fightRetry({ mobs: [['tiger', slv(12)], ['tiger', slv(11)]], title: '虎穴 · 黑纹虎' })) return false;
+  await nar('洞壁的阴影里，还趴着另一头，呼噜打得震天响。你屏住呼吸——');
+  const sn = await miniGame('sneak', { title: '潜行', desc: '一步一步挪过去。老虎呼气的时候，正是你迈步的时候。', steps: 6 });
+  if (sn.ok) { await nar('你挪到了水边，手指碰到了黑莲的花瓣——'); await nar('“咕——噜噜噜噜——”'); await nar('你的肚子叫了。叫得整个山洞都在回响。离你最近的那头黑纹虎猛地睁开了眼睛。另一头翻了个身，接着睡。'); await me('……我早上就喝了一口兽奶。');
+    if (!await fightRetry({ mobs: [['tiger', slv(12)]], title: '虎穴 · 黑纹虎' })) return false; }
+  else { await nar('脚下“咔嚓”一声，你踩断了一根骨头。两头黑纹虎同时睁开了眼睛。'); await me('……我就说这洞里骨头太多了。');
+    if (!await fightRetry({ mobs: [['tiger', slv(12)], ['tiger', slv(11)]], title: '虎穴 · 黑纹虎' })) return false; }
   give('heilian'); await nar('你把黑莲揣进怀里，顺手把虎肉也扛了回去。');
 }
 async function S_join() {
@@ -248,8 +251,11 @@ async function S_join() {
   await say('gezhu', '（不知什么时候站在了山门上）让他进来。');
   await nar('阁主把你领进了内院。内院中央攀着一株枯了一半的神藤，藤上挂着几个干瘪的葫芦。院子四周刻着一圈阵纹，阵纹里站起了几具铜傀儡。');
   await say('gezhu', '入阁的最后一关：破阵。');
-  if (!await fightRetry({ mobs: [['puppet', slv(12)], ['puppet', slv(12)]], title: '补天阁 · 护阁傀儡' })) return false;
-  await nar('最后一具傀儡倒下，阵纹一阵乱闪，熄灭了。神藤边上，一个一直没动过的老人慢慢转过头来，看了你一眼。');
+  await nar('院子四周的阵纹亮了起来，几具铜傀儡“咔咔”地站直了身子。阵纹一明一暗，像是连在一起的。');
+  const lt = await miniGame('lights', { title: '破阵', desc: '阵纹一道连着一道。按下一道，它旁边的几道也会跟着变。', presses: 4 });
+  if (lt.ok) await nar('你按下最后一道阵纹，满院的光“噗”地一下全灭了。铜傀儡僵在半路，哗啦啦散了一地。');
+  else { await nar('阵纹越按越乱，傀儡已经冲到了跟前——那就打吧！'); if (!await fightRetry({ mobs: [['puppet', slv(12)], ['puppet', slv(12)]], title: '补天阁 · 护阁傀儡' })) return false; }
+  await nar('阵纹熄灭了。神藤边上，一个一直没动过的老人慢慢转过头来，看了你一眼。');
   await say('guiye', '……');
   await say('gezhu', '那是诡爷。他守着这株神藤，已经很多很多年了。他不爱说话，你别去烦他。');
   F().joined = 1; give('baoyao', 2);
@@ -313,7 +319,7 @@ async function S_lei() {
   await nar('雷池是一片山顶石台。天上的雷云压得极低，一道道雷光劈下来，砸在石台上，炸得碎石乱飞。几个师兄坐在雷光里，头发根根竖起，冒着青烟。');
   await say('雷池师兄', '新来的？雷道法则得自己挨着劈去悟。坐那儿，什么时候被劈明白了，什么时候算完。');
   await nar('你坐了下去。第一道雷劈下来，你眼前一白，鼻子里全是焦糊味。第二道、第三道……');
-  for (let i = 0; i < 3; i++) { if (!await fight({ mobs: [['ape', slv(12)]], title: `雷池 · 第 ${i + 1} 道雷劫幻影`, noLose: true })) { await nar('你被劈晕了过去。醒来接着坐。'); i--; fullHeal(); } }
+  for (let k = 0; ; k++) { const th = await miniGame('thunder', { title: '引雷', desc: k ? '再来。这回看准了。' : '一道雷光在云里亮起，朝你直劈下来——', strikes: 5, need: 3 }); if (th.ok || th.skip) break; await nar('你被劈得眼前一黑，头发全竖了起来，鼻子里全是焦糊味。缓过气来，接着坐。'); fullHeal(); }
   await nar('不知道挨了多少下，你忽然看清了雷光里的纹路——它们和骨文一样，是有规律的。');
   await study('lei');
   await nar('你抬起手，一道细细的电光在你指尖跳了起来。');

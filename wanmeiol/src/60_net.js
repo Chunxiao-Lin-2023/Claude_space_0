@@ -17,10 +17,10 @@ function netBroadcast(o) { if (NETROLE === 'host') for (const c of NET.conns.val
 function netPub() { netSync(); }
 function netLog(html, cls) { if (NET.conns.size) netBroadcast({ t: 'log', html, cls }); }
 function netSync() { if (NETROLE !== 'host' || !NET.conns.size || !C) return; clearTimeout(NET.syncT); NET.syncT = setTimeout(() => netBroadcast(snapshot()), 60); }
-function snapshot() { return { t: 'st', C, st: { battle: STATE.battle, dungeon: STATE.dungeon, scene: !!STATE.scene, busy: STATE.busy, dtPending: !!STATE.dtPending }, dlg: DLG ? Object.assign(DLG.rune ? { rune: DLG.rune } : DLG.choice ? { choice: DLG.choice.map(o => ({ t: o.t, dis: !!o.dis })) } : { o: DLG.o }, { ctx: dlgCtx() }) : null, roam: ROAM, ctrl: NET.ctrl, peers: NET.conns.size }; }
+function snapshot() { return { t: 'st', C, st: { battle: STATE.battle, dungeon: STATE.dungeon, scene: !!STATE.scene, busy: STATE.busy, dtPending: !!STATE.dtPending }, dlg: DLG ? Object.assign(DLG.mini ? { mini: Object.assign({}, DLG.mini, { age: now() - DLG.mini.t0 }) } : DLG.rune ? { rune: DLG.rune } : DLG.choice ? { choice: DLG.choice.map(o => ({ t: o.t, dis: !!o.dis })) } : { o: DLG.o }, { ctx: dlgCtx() }) : null, roam: ROAM, ctrl: NET.ctrl, peers: NET.conns.size }; }
 function takeControl() { if (NETROLE === 'host') { NET.ctrl = 'host'; netBroadcast({ t: 'ctrl', ctrl: 'host' }); } else netSend({ t: 'take' }); toast('你来操作'); refresh(); if (UI.modal === 'coop') openModal('coop', 1); }
 /* commands a guest (or a host who handed over control) may trigger by clicking */
-const CMD_NAMES = ['go', 'explore', 'rest', 'train', 'enterDungeon', 'fightRoam', 'autoWalk', 'npcTalk', 'battleAct', 'toggleAuto', 'useItem', 'feedPet', 'setPet', 'toggleBar', 'arenaFight', 'storyHereRun', 'runeTap', 'runeSkip', 'arenaClaim', 'battleUndo', 'equipRelic', 'teleport', 'tradeDo', 'bountyTake', 'enterDungeonHard', 'setTitle', 'trackTask', 'camp', 'sellItem', 'buyItem', 'togglePetMove', 'setDuo', 'petRankUp'];
+const CMD_NAMES = ['go', 'explore', 'rest', 'train', 'enterDungeon', 'fightRoam', 'autoWalk', 'npcTalk', 'battleAct', 'toggleAuto', 'useItem', 'feedPet', 'setPet', 'toggleBar', 'arenaFight', 'storyHereRun', 'runeTap', 'runeSkip', 'arenaClaim', 'battleUndo', 'equipRelic', 'teleport', 'tradeDo', 'bountyTake', 'enterDungeonHard', 'setTitle', 'trackTask', 'camp', 'sellItem', 'buyItem', 'togglePetMove', 'setDuo', 'petRankUp', 'miniTap', 'miniSkip'];
 const CMDS = {};
 UI.inClick = false; const markClick = () => { UI.inClick = true; setTimeout(() => { UI.inClick = false; }, 0); };
 document.addEventListener('click', markClick, true); document.addEventListener('keydown', markClick, true);
@@ -74,6 +74,6 @@ function guestRecv(m) {
   if (m.t === 'ctrl') { NET.ctrl = m.ctrl; refresh(); if (UI.modal === 'coop') openModal('coop', 1); return; }
   if (m.t === 'st') { const first = !C; C = m.C; STATE.battle = m.st.battle; STATE.dungeon = m.st.dungeon; STATE.scene = m.st.scene ? 'remote' : null; STATE.busy = m.st.busy; ROAM = m.roam; NET.ctrl = m.ctrl; NET.peers = m.peers;
     if (STATE.battle) { STATE.shown = STATE.battle.log.length; STATE.shownFor = STATE.battle.id; }
-    DLG = m.dlg ? Object.assign({ res: () => { } }, m.dlg) : null; renderDlg(); refresh(); bannerDraw(); return; }
+    DLG = m.dlg ? Object.assign({ res: () => { } }, m.dlg) : null; if (DLG && DLG.mini) { DLG.mini.t0 = now() - DLG.mini.age; miniLoop(); } renderDlg(); refresh(); bannerDraw(); return; }
   if (m.t === 'bye') { toast('房主关闭了房间'); netLeave(); }
 }

@@ -133,6 +133,46 @@ body.m-explore #vExplore,body.m-battle #vBattle,body.m-talk #vTalk{opacity:1;vis
 .rtime i{display:block;height:100%;width:100%;background:#b3342a;animation:rtime linear both;transform-origin:left}
 @keyframes rtime{to{transform:scaleX(0)}}
 body.noanim .rtime{display:none}
+/* rumours over the location picture, speech bubbles in battle */
+#rumor{position:absolute;left:10px;right:10px;top:8px;z-index:2;font-size:.78rem;line-height:1.45;color:#f2e6c8;background:#0c0a08c0;border:1px solid #d4ad6244;border-radius:8px;padding:4px 9px;opacity:0;pointer-events:none;transform:translateY(-4px);transition:opacity .6s,transform .6s}
+#rumor.on{animation:rumor 9s ease both}
+@keyframes rumor{0%{opacity:0;transform:translateY(-4px)}8%,88%{opacity:1;transform:none}100%{opacity:0}}
+#rumor .rw{color:var(--gold);margin-right:6px;font-size:.72rem}
+body.noanim #rumor.on{opacity:1;transform:none}
+.bubble{max-width:200px;font-size:.82rem;line-height:1.4;color:#2a2118;background:#fbf2df;border-radius:10px;padding:5px 9px;box-shadow:0 3px 10px #0008;transform:translate(-50%,-100%)!important;animation:bubble 2.3s ease both;z-index:7;text-align:left}
+.bubble::after{content:'';position:absolute;left:50%;bottom:-6px;margin-left:-6px;border:6px solid transparent;border-bottom:0;border-top-color:#fbf2df}
+.bubble.act{font-style:italic;color:#5a4a34;background:#e8dcc0}.bubble.act::after{border-top-color:#e8dcc0}
+.bubble.me{background:#ffe9b0}.bubble.me::after{border-top-color:#ffe9b0}
+@keyframes bubble{0%{opacity:0;margin-top:8px}10%,85%{opacity:1;margin-top:0}100%{opacity:0}}
+#bfeed .taunt,.logv .taunt{color:#e8c8a8;font-style:italic}
+/* small games */
+.mhint{font-size:.85rem;color:var(--ink2);text-indent:0;margin-top:4px}
+.mini{position:relative;margin:8px auto 2px;max-width:420px;text-align:center}
+.mready{position:absolute;inset:0;z-index:2;display:flex;align-items:center;justify-content:center;font-family:var(--fh);font-size:1.6rem;color:#8a3a14;background:#f7f0dedd;border-radius:8px}
+.mmsg{font-size:.92rem;color:var(--ink2);margin:6px 0;min-height:1.4em}.mmsg.ok{color:#2f7a3a;font-weight:700}.mmsg .bad{color:#b3342a}
+.mbtn{display:block;margin:4px auto 0;min-width:180px;min-height:52px;font-size:1.1rem;font-weight:700;border-radius:12px;background:linear-gradient(#c84a2a,#9a2a14);color:#fff;border:0;box-shadow:0 3px 0 #6a1a08}
+.mbtn:active{transform:translateY(2px);box-shadow:0 1px 0 #6a1a08}
+.mbtn.huge{min-height:64px;font-size:1.3rem}
+.mre{background:#fffaf0;border:1px solid #b8a37c;border-radius:8px;color:var(--ink);padding:4px 14px;min-height:36px;font-size:.9rem}
+.mstack{font-size:1.4rem;letter-spacing:4px}.mstack span{opacity:.3}.mstack span.ok{opacity:1}.mstack span.no{opacity:.6;filter:grayscale(1)}.mstack small{font-size:.8rem;letter-spacing:0;color:var(--ink2)}
+.mbar{position:relative;height:30px;margin:8px 6px;background:#e8dcc0;border:2px solid #8a6a3a;border-radius:15px;overflow:hidden}
+.mzone{position:absolute;top:0;bottom:0;background:#e0806a;border-left:2px solid #b3342a;border-right:2px solid #b3342a}
+.mmark{position:absolute;top:-2px;bottom:-2px;width:6px;margin-left:-3px;background:#2a2118;border-radius:3px;animation:mmark linear infinite alternate;left:0}
+@keyframes mmark{from{left:0}to{left:100%}}
+.mring{position:relative;width:170px;height:170px;margin:4px auto}
+.mring .hand{position:absolute;left:50%;top:50%;width:64px;height:64px;margin:-32px 0 0 -32px;border:3px dashed #b3342a;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.8rem}
+.mring .ring{position:absolute;left:50%;top:50%;width:64px;height:64px;margin:-32px 0 0 -32px;border:5px solid #4a8aff;border-radius:50%;box-shadow:0 0 14px #8fd0ff;animation:mring linear both}
+@keyframes mring{from{transform:scale(2.6);opacity:.3}72.7%{transform:scale(1);opacity:1}to{transform:scale(.4);opacity:.2}}
+.mring .bolt{position:absolute;left:50%;top:0;width:6px;margin-left:-3px;height:0;background:linear-gradient(#fff,#8fd0ff);box-shadow:0 0 10px #4a8aff;animation:mbolt linear both}
+@keyframes mbolt{0%,60%{height:0}72.7%{height:50%}85%{height:50%;opacity:1}100%{height:50%;opacity:0}}
+.mgrid{display:grid;gap:8px;width:230px;margin:8px auto}
+.mgrid .cell{aspect-ratio:1;border-radius:10px;border:2px solid #8a6a3a;background:#ede2c8;font-family:var(--fh);font-size:1.6rem;color:#fff;transition:background .15s}
+.mgrid .cell.on{background:radial-gradient(#ffe28a,#e0a030);border-color:#b3342a;color:#8a3a14;box-shadow:0 0 12px #e0a030}
+.msneak{display:flex;flex-direction:column;align-items:center;gap:6px}
+.msneak .tiger{font-size:2.6rem;transition:transform .15s}.msneak .tiger.stir{transform:scale(1.15);filter:drop-shadow(0 0 8px #b3342a)}
+.msneak .path{font-size:1.3rem;letter-spacing:6px}.msneak .path span{opacity:.35}.msneak .path span.ok,.msneak .path span:last-child{opacity:1}
+.meter{height:26px;margin:10px 8px;background:#e8dcc0;border:2px solid #8a6a3a;border-radius:13px;overflow:hidden}
+.meter i{display:block;height:100%;width:0;background:linear-gradient(90deg,#e0a030,#c84a2a)}
 /* battle */
 #vBattle{flex-direction:column;padding:8px 10px 0}
 #bhead{flex:none;text-align:center;font-family:var(--fh);font-size:1.3rem;color:#ffcfb8;line-height:1.2;padding:2px 0 6px}
@@ -473,7 +513,7 @@ body.noanim #bfeed .ln.pend{visibility:visible}
   <header id="top"></header>
   <div id="stage">
     <section id="vExplore" class="view">
-      <div class="ex-l"><div id="banner"><canvas id="bcv"></canvas><div class="ar" id="bar"></div><div class="nm" id="bnm"></div></div><div id="desc"></div><div id="feed"></div></div>
+      <div class="ex-l"><div id="banner"><canvas id="bcv"></canvas><div class="ar" id="bar"></div><div class="nm" id="bnm"></div><div id="rumor"></div></div><div id="desc"></div><div id="feed"></div></div>
       <div class="ex-r"><div class="qrow"><button id="bq"></button><button id="bqs" onclick="navTo('map')"></button></div><div id="acts"></div></div>
     </section>
     <section id="vTalk" class="view"><canvas id="tbg"></canvas><div id="dlg"></div></section>

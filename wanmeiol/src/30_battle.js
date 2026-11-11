@@ -40,6 +40,9 @@ function battleCreate(spec) {
   for (const u of B.units) if (u.kind === 'mob' || u.kind === 'npc') planMob(B, u);
   for (const [id] of spec.mobs || []) if (!MOBS[id].nocodex) { C.codex = C.codex || {}; C.codex[id] = C.codex[id] || { wk: [] }; }
   blog(B, `<span class="bt">⚔ ${spec.title || '战斗开始'}</span>`);
+  const foes = B.units.filter(u => u.side === 1), talker = foes.find(u => u.boss || u.kind === 'rival') || foes[0];
+  if (talker && battleSay(B, talker, 'open') && chance(0.35)) { const h = B.units[0], t = pick(RETORT); fxe(B, { k: 'say', t: h.id, text: t }); blog(B, `<span class="taunt"><span class="pc">石昊</span>：「${t}」</span>`); }
+  B.sayQ = [];
   return B;
 }
 const alive = (B, side) => B.units.filter(u => u.alive && (side === undefined || u.side === side));
@@ -109,6 +112,7 @@ function applyDmg(B, a, d, dmg, info = {}) {
   if (B.roam && d.side === 1 && dmg > 0) B.roamDmg = (B.roamDmg || 0) + Math.min(dmg, d.hp);
   d.hp -= dmg; if (a && a.leech && dmg > 0) a.hp = Math.min(a.hpMax, a.hp + dmg * a.leech);
   fxe(B, { k: info.dot ? 'dot' : 'hit', t: d.id, v: dmg + absorbed, crit: !!info.crit, weak: !!info.weak, hp: hpr(d), st: info.dot });
+  if (d.side === 1 && B.sayQ) { if (d.hp <= 0) B.sayQ.push([d, 'die']); else if (!d.saidLow && d.hp < d.hpMax * 0.25) { d.saidLow = 1; B.sayQ.push([d, 'low']); } }
   if (d.hp <= 0) { d.hp = 0; d.alive = false; d.st = []; fxe(B, { k: 'die', t: d.id }); if (d.side === 1 && d.kind === 'mob') B.kills.push([d.mob, d.lv, d.boss]); return true; }
   if (d.boss && d.side === 1 && !d.raged && d.hp <= d.hpMax / 2 && d.mob && MOBS[d.mob]) { d.raged = true; addSt(d, { k: 'rage', t: 99, v: BAL.phaseAtk }); B.phase = 1;
     blog(B, `<span class="phase">${MOBS[d.mob].p2 || esc(d.name) + '被激怒了！'}（攻击提升）</span>`); fxe(B, { k: 'phase', t: d.id }); }
@@ -184,16 +188,17 @@ function battleResolve(B) {
   const order = turnOrder(B, true);
   for (const u of order) { if (!u.alive || B.over || !B.units.includes(u)) continue;
     if (stOf(u, 'stun') || stOf(u, 'freeze')) { L(`${uName(u)} <span class="st" style="color:${stOf(u, 'freeze') ? '#9ad8ff' : '#ffd34a'}">${stOf(u, 'freeze') ? '被冻住了' : '眩晕中'}</span>，动弹不得`); continue; }
-    perform(B, u, u.kind === 'pc' ? B.acts[u.id] : null, L); if (battleCheckEnd(B)) break; }
+    perform(B, u, u.kind === 'pc' ? B.acts[u.id] : null, L); flushSay(B); if (battleCheckEnd(B)) break; }
   if (!B.over) {
     for (const u of B.units) { if (!u.alive) continue;
       for (const k of ['bleed', 'burn', 'poison']) { const s = stOf(u, k); if (s && s.v) { const d = Math.max(1, Math.round(s.v)); L(`${uName(u)} <span style="color:${STATUS[k].c}">${STATUS[k].n}</span> -${d}`); if (applyDmg(B, null, u, d, { dot: k })) L(`${uName(u)} <b class="die">倒下了</b>`); } }
       if (u.regen && u.alive) u.hp = Math.min(u.hpMax, u.hp + u.hpMax * u.regen);
       for (const s of u.st) s.t--; u.st = u.st.filter(s => s.t > 0); for (const k in u.cd) if (u.cd[k] > 0) u.cd[k]--; if (u.mpMax) u.mp = Math.min(u.mpMax, u.mp + u.mpMax * (u.mpRegen || BAL.mpRegen)); }
-    battleCheckEnd(B); if (!B.over) { B.round++; for (const u of B.units) if (u.alive && (u.kind === 'mob' || u.kind === 'npc')) planMob(B, u); }
+    flushSay(B); battleCheckEnd(B); if (!B.over) { B.round++; for (const u of B.units) if (u.alive && (u.kind === 'mob' || u.kind === 'npc')) planMob(B, u); }
   }
   B.acts = {}; B.seq++; if (B.roam) roamRound(B);
 }
+function flushSay(B) { const Q = B.sayQ || []; B.sayQ = []; for (const [u, k] of Q) if (chance(k === 'die' ? 0.8 : 1)) battleSay(B, u, k); }
 function battleCheckEnd(B) {
   if (B.over) return true;
   if (!alive(B, 1).length) { B.over = true; B.win = true; blog(B, '<span class="bt win">★ 胜利 ★</span>'); return true; }

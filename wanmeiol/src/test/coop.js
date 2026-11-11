@@ -22,6 +22,7 @@ const { chromium } = require('playwright'); const PJ = require('fs').readFileSyn
   await G.evaluate(() => __dbg.takeControl()); await H.waitForFunction(() => __dbg.NET.ctrl !== 'host'); await G.waitForTimeout(300);
   for (let i = 0; i < 80; i++) { if (!(await H.evaluate(() => !!__dbg.STATE.battle))) break; await G.evaluate(() => { const b = document.querySelector('#bacts .skb:not([disabled])'); if (b) b.click(); }); await G.waitForTimeout(250); }
   console.log('battle finished by guest clicks:', !(await H.evaluate(() => !!__dbg.STATE.battle)));
+  if (await H.evaluate(() => !!__dbg.STATE.battle)) console.log('debug', await H.evaluate(() => { const B = __dbg.STATE.battle; return { round: B.round, over: B.over, acts: B.acts, need: needInput(B).map(u => u.id), hp: B.units.map(u => u.name + u.hp) }; }), await G.evaluate(() => ({ btns: document.querySelectorAll('#bacts .skb:not([disabled])').length, animLeft: animLeft(), html: document.getElementById('bacts').innerText.slice(0, 80) })));
   const hl = await H.evaluate(() => document.getElementById('log').children.length), gl = await G.evaluate(() => document.getElementById('log').children.length); console.log('log lines host/guest', hl, gl);
   // 骨文 game: host starts it, guest (in control) taps the runes in order on its own screen
   await H.evaluate(() => { window.__rr = null; runeGame('qly').then(r => window.__rr = r); }); await G.waitForFunction(() => __dbg.DLG && __dbg.DLG.rune && __dbg.DLG.rune.phase === 'input', null, { timeout: 8000 });

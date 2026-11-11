@@ -51,7 +51,10 @@ async function explore() {
     else if (ev === 2) { logLine('你发现了一株长得很好的药草。', 'enc'); addItem(chance(0.3) ? 'lingyao' : 'herb'); }
     else logLine('四周很安静，只有风吹过树梢的声音。', 'dim'); save(); refresh(); }
 }
-async function train() { C.stats.train = (C.stats.train || 0) + (C.loc === 'bt_train' ? 1 : 0); await startBattle({ mobs: [['dummy', Math.max(1, C.lv)]], title: C.loc === 'bt_train' ? '雷池 · 挨劈' : '举石锁', noLose: true, flee: true, noPet: true }); }
+async function train() { if (STATE.scene || STATE.battle || STATE.dungeon) return; const lei = C.loc === 'bt_train'; C.stats.train = (C.stats.train || 0) + (lei ? 1 : 0); passTime(1); let r = null;
+  await runScene(async () => { r = await miniGame(lei ? 'thunder' : 'lift', lei ? { title: '挨雷劈', strikes: 5, need: 3 } : { title: '举石锁', rounds: 4, need: 3 }); });
+  if (!r || r.skip) return; const ex = Math.round(BAL.expNext(C.lv) * 0.03 * r.score); if (ex) gainExp(ex); if (lei && C.sk.includes('lei') && r.score) { for (let k = 0; k < r.score; k++) profUse('lei'); logLine(`雷道熟练度 +${r.score}`, 'dim'); }
+  logLine(r.ok ? (lei ? '你接住了好几道雷，浑身麻酥酥的，精神反倒更足了。' : '石锁在你手里上下翻飞，旁边的孩子们看得直拍手。') : (lei ? '你被劈得头发冒烟。' : '石锁砸在地上，震得你手发麻。'), 'dim'); save(); refresh(); }
 
 /* ---------- battle controller (only the host / solo player runs battles; co-op guests just watch the state) ---------- */
 function startBattle(spec) {
@@ -108,7 +111,7 @@ async function dungeonEvent(k, D) {
   if (k === 'thunder') { const c = await dlgChoose([{ t: '伸手去抓那道雷（雷道熟练度 +20，会挨一下狠的）' }, { t: '绕过去' }], '紫色的雷光就在一步之外，嗡嗡作响。');
     if (c === 0) { const s = charStats(); C.hp = Math.max(1, C.hp - s.hpMax * 0.3); if (C.sk.includes('lei')) { for (let i = 0; i < 20; i++) profUse('lei'); logLine('你被劈得浑身焦黑，可雷光里的纹路，你看得更清了。雷道熟练度 +20。', 'enc'); } else { logLine('你被劈得浑身焦黑，什么也没悟出来。', 'enc'); addItem('lingyao'); } refresh(); } }
   if (k === 'jars') { const c = await dlgChoose([{ t: '撬开陶罐看看' }, { t: '别碰死人的东西' }], '坑边的陶罐封得严严实实。'); if (c === 0) { if (chance(0.65)) { logLine('罐子里是封了不知多少年的药，药香还没散。', 'enc'); addItem('baoyao'); addItem('lingyao', 2); } else { logLine('罐子里“嗡”地飞出一群墓穴蝠！', 'enc'); await startBattle({ mobs: [['tombbat', D.lv], ['tombbat', D.lv]], title: '墓穴蝠', flee: false }); } } }
-  if (k === 'runes') { const c = await dlgChoose([{ t: '照着骨文的路子，一点点拆开符文网' }, { t: '硬闯过去' }], '肋骨之间的符文网一明一暗，像在呼吸。'); if (c === 0 && C.gf.includes('guwen')) { logLine('族长教的骨文派上了用场，符文网在你手里一根根松开。网后面躺着一株灵药。', 'enc'); addItem('lingyao', 2); addItem('baoyao'); } else { logLine('符文网一亮，打得你浑身发麻。', 'enc'); const s = charStats(); C.hp = Math.max(1, C.hp - s.hpMax * 0.25); refresh(); } }
+  if (k === 'runes') { const c = await dlgChoose([{ t: '照着骨文的路子，一点点拆开符文网' }, { t: '硬闯过去' }], '肋骨之间的符文网一明一暗，像在呼吸。'); if (c === 0 && C.gf.includes('guwen') && (await miniGame('lights', { title: '拆符文网', desc: '符文网一道连着一道，按灭一道，旁边的也会跟着变。', presses: 5 })).ok) { logLine('族长教的骨文派上了用场，符文网在你手里一根根松开。网后面躺着一株灵药。', 'enc'); addItem('lingyao', 2); addItem('baoyao'); } else { logLine('符文网一亮，打得你浑身发麻。', 'enc'); const s = charStats(); C.hp = Math.max(1, C.hp - s.hpMax * 0.25); refresh(); } }
 }
 
 /* ---------- roaming 凶兽首领 (one at a time, in a wild place you can already reach) ---------- */

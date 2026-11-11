@@ -28,7 +28,11 @@ def check_chatter():
         if fr not in order or to not in order: errs.append('unknown quest step: ' + ln[:60]); continue
         if order[fr] > order[to]: errs.append('from after to: ' + ln[:60])
         if who and re.fullmatch(r'[a-z]\w*', who) and who not in npcs: errs.append('unknown npc ' + who + ': ' + ln[:60])
-    n = len(re.findall(r'^\s*\{ at:', body, re.M))
+    rb = src('46_talk.js'); rb = rb[rb.index('const RUMORS = ['):]; rb = rb[:rb.index('\n];')]
+    for ln in re.findall(r'^\s*(\{ from:.*\}),?\s*$', rb, re.M):
+        fr, to = re.search(r"from: '([^']*)'", ln), re.search(r"to: '([^']*)'", ln)
+        if not fr or not to or fr[1] not in order or to[1] not in order or order[fr[1]] > order[to[1]]: errs.append('bad rumour range: ' + ln[:60])
+    n = len(re.findall(r'^\s*\{ at:', body, re.M)) + len(re.findall(r'^\s*\{ from:', rb, re.M))
     if errs: sys.exit('CHATTER check failed:\n  ' + '\n  '.join(errs))
     return n
 nchat = check_chatter()
