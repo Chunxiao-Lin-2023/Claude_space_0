@@ -7486,9 +7486,9 @@ const JUMPS = [
   { q: 'q_gate', n: '第三章 · 补天阁', lv: 12, exp: 0.4, loc: 'dh_road', sk: { qly: 80, sn: 55 }, pets: { maoqiu: [50, 12] }, relics: ['r_jiling'],
     f: { vow: 'find', out: 1, qingfeng: 1, saved: 1, xushen: 1, butian: 1, stoneName: 1 }, bag: { milk: 6, herb: 6, meat: 4, lingyao: 3, baoyao: 2, bone: 8 }, money: 150, dt: 3, arena: 85 },
   { q: 'q_baiduan', n: '第四章 · 百断山', lv: 14, exp: 0.4, loc: 'bt_court', sk: { qly: 110, sn: 75, lei: 35, gw: 30 }, pets: { maoqiu: [65, 14] },
-    f: { joined: 1, bully: 1, qf: 'spar' }, bag: { herb: 8, meat: 5, lingyao: 4, baoyao: 3, bone: 10 }, money: 260, dt: 5, arena: 60 },
+    f: { joined: 1, bully: 1, qf: 'spar', qf2: 1 }, bag: { herb: 8, meat: 5, lingyao: 4, baoyao: 3, bone: 10 }, money: 260, dt: 5, arena: 60 },
   { q: 'q_end', n: '第二卷 · 石国', lv: 20, exp: 0, loc: 'bt_court', sk: { qly: 170, sn: 125, lei: 95, gw: 60, jian: 45, dsh: 35, ta: 20 }, pets: { maoqiu: [90, 21], dahong: [45, 20], ertuzi: [25, 19] },
-    gf: ['taiyi'], relics: ['r_zhuque', 'r_lion', 'r_yu', 'r_tiger', 'r_peng', 'r_boneking', 'r_pumo'], dun: ['tiangu'], f: { baiduan: 1, lion: 1, cave: 1, yuDone: 1, water: 1, guRegrow: 1, cliff: 1, spring: 1, carrySpring: 1, shengyao: 1, mount: 1, yunxi: 1, sawShiyi: 1, qfIn: 1, end: 1, eggWins: 8 },
+    gf: ['taiyi'], relics: ['r_zhuque', 'r_lion', 'r_yu', 'r_tiger', 'r_peng', 'r_boneking', 'r_pumo'], dun: ['tiangu'], f: { qf3: 1, ev_yunxi: 1, yunxiHelp: 1, baiduan: 1, lion: 1, cave: 1, yuDone: 1, water: 1, guRegrow: 1, cliff: 1, spring: 1, carrySpring: 1, shengyao: 1, mount: 1, yunxi: 1, sawShiyi: 1, qfIn: 1, end: 1, eggWins: 8 },
     bag: { herb: 10, meat: 6, lingyao: 6, baoyao: 5, bone: 14, bulao: 1, xiantao: 1 }, money: 500, dt: 9, arena: 30 },
   { q: 'q_v3', n: '第三卷 · 石皇', lv: 25, exp: 0.2, loc: 'sg_hou', sk: { qly: 175, sn: 165, lei: 130, gw: 90, jian: 80, dsh: 70, ta: 55 }, pets: { maoqiu: [100, 26], dahong: [70, 25], ertuzi: [45, 24] },
     relics: ['r_jinzhu', 'r_mozhu', 'r_qingluan'], dun: ['zhuchao'], f: { v2: 1, yuwang: 1, truth: 1, ziteng: 1, shouyan0: 1, jinzhu: 1, hou: 1, challenge: 1, v2end: 1, v3: 1 },
@@ -7544,6 +7544,7 @@ function jumpLate(c, i) { const J = JUMPS[i], f = c.story.f, since = flag => JUM
   const plv = c.story.f.end ? Math.min(PET_LV_CAP, J.lv) : Math.min(J.lv + 1, PET_LV_CAP); // after volume one a partner keeps up with 石昊
   for (const [id, flag] of JUMP_PETS) if (f[flag] && !c.pets[id]) { const k = since(flag); c.pets[id] = { aff: k >= 0 && k < i ? 100 : 60, lv: Math.max(1, plv - 2), exp: 0, hatch: 0 }; }
   for (const p of Object.values(c.pets)) { if (c.story.f.end) p.lv = Math.max(p.lv || 1, plv - (p.aff >= 100 ? 0 : 2)); p.evo = p.aff >= 100 ? 1 : 0; p.evo2 = p.evo && p.lv >= 25 ? 1 : 0; p.evo3 = p.evo2 && p.lv >= 70 ? 1 : 0; }
+  for (const [id, p] of Object.entries(c.pets)) { const open = PETS[id].sk.map((s, k) => ({ s, k })).filter(x => (!x.s.aff || p.aff >= x.s.aff) && (!x.s.evo || p.evo)).map(x => x.k); p.seen = open.slice(); p.bar = [0, ...open.filter(k => k).reverse()].slice(0, 4 + (p.evo ? 1 : 0)); } /* a ready loadout (the newest moves plus the basic one), so no "learned a move" toasts right after the jump */
   if (J.lv > 44) { const n = Math.floor((J.lv - 44) * 0.9), spent = Math.floor(n / 2); c.daoP = { hp: Math.ceil(spent / 3), atk: Math.ceil(spent / 3), def: Math.floor(spent / 3) }; c.dao = n - c.daoP.hp - c.daoP.atk - c.daoP.def; }
   if (f.tiantingDone) c.tt = { yao: 1, lu: f.v13end ? 1 : 0, wu: 1, qiang: f.v13end ? 1 : 0 }; }
 function jumpHtml() { if (NETROLE === 'guest') return ''; return `<div class="card"><h4>跳章 <span class="dim" style="font-size:.8rem">测试用：直接从某一章开始，属性、宝术、伙伴按上一章结束时的水平（略高）准备好。<b style="color:#ff9a7a">会覆盖当前进度</b>，点两次确认。</span></h4>

@@ -74,3 +74,4 @@
 32. 提交前跑 `test/sweep.js 0 10` 和 `test/sweep.js 10 99`：每个跳章起点走遍地点、探索、翻遍页面，不许有报错或 undefined/NaN。
 33. 新系统、新伙伴、新的剧情选择，都要在跳章里跟上（`JUMPS` 的旗标、`jumpLate` 的伙伴/悟道/天庭）；features.js 的 `jumpLate` 检查最后一档。
 34. 伙伴的出战人数、特性、推荐都在 `33_party.js`；新伙伴要写 `PET_TRAIT`（特性 + 适合的仗）和 `partyAdvice` 里的推荐条件，并用 `PARTY=1 PET=<id> node test/balance.js` 单独测。
+35. 改了剧情、跳章或伙伴，跑 `node test/jumpcheck.js 3`：每个跳章起点要带齐前面剧情给的宝术/功法/伙伴/旗标（只靠某些选项才有的旗标列在 `OPTIONAL_F`），下一步走得到，往后自动走 3 步不卡住。
