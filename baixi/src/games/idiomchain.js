@@ -80,7 +80,7 @@ BX.register({
   },
   create(ctx) {
     const {L, at} = index();
-    const n = ctx.n, homo = ctx.opts.rule === 'sound', LIMIT = +ctx.opts.time || 30;
+    const n = ctx.n, homo = ctx.opts.rule === 'sound', LIMIT = ctx.opts.time != null && ctx.opts.time !== '' ? +ctx.opts.time : 30;   // 0 = 不限时 (was coerced to 30)
     // starting idiom: a common one with plenty of continuations
     const pool = [];
     for (let i = 0; i < Math.min(L.length, 1500); i++) { const k = nexts(i, false).length; if (k >= 6) pool.push(i); }
