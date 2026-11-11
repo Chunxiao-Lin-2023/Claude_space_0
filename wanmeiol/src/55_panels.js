@@ -142,7 +142,8 @@ function openModal(k, again) {
       <h4>声音</h4><label class="row"><input type="checkbox" ${SET.mute ? '' : 'checked'} onchange="SET.mute=!this.checked;saveSet();musicMode()"> 音效</label>
       <label class="row"><input type="checkbox" ${SET.music ? 'checked' : ''} onchange="SET.music=this.checked;saveSet();musicMode()"> 背景音乐</label>
       <label class="row">音量 <input type="range" min="0" max="1" step="0.05" value="${SET.vol}" oninput="SET.vol=+this.value;if(AU.master)AU.master.gain.value=SET.vol;saveSet()"></label>
-      <h4>战斗</h4><label class="row"><input type="checkbox" ${SET.fast ? 'checked' : ''} onchange="SET.fast=this.checked;saveSet()"> 自动战斗加快</label></div>
+      <h4>对话</h4><label class="row"><input type="checkbox" ${SET.textNow ? '' : 'checked'} onchange="SET.textNow=!this.checked;saveSet()"> 文字逐字出现（长的话分段，一次点出一段）</label>
+      <h4>战斗</h4><label class="row"><input type="checkbox" ${SET.fast ? 'checked' : ''} onchange="SET.fast=this.checked;saveSet()"> 自动战斗加快（也让逐字快一点）</label></div>
       ${NETROLE === 'guest' ? '' : `<div class="card"><h4>存档位 <span class="dim" style="font-size:.8rem">现在用的是存档 ${SLOT}（共 ${SLOTS} 个）。切换会先保存这一份。</span></h4><button class="sb" onclick="toTitle();slotsShow()">📂 打开存档列表</button></div>`}
       ${jumpHtml()}
       <div class="card"><h4>存档码</h4><div class="dim" style="font-size:.8rem">存档只在这个浏览器里。想换手机或电脑接着玩：在这里生成存档码，复制过去，在新浏览器的这里粘贴、读取。回忆录也一起带走。</div>

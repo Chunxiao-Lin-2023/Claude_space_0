@@ -37,8 +37,35 @@ function dlgShow(o) {
   logLine(o.who ? `<span class="who">${esc(o.who)}</span>${o.text}` : o.text, 'say ' + (o.who ? '' : 'nar') + (o.mine ? ' mine' : '')); journalAdd(o);
   if (UI.cur) { UI.hist.push(UI.cur); if (UI.hist.length > 3) UI.hist.shift(); } UI.cur = o;
   if (window.__dbg && __dbg.auto) return Promise.resolve();
-  return new Promise(res => { DLG = { o, res }; renderDlg(); netSync(); });
+  return new Promise(res => { DLG = { o, res, pages: dlgPages(o), pg: 0 }; renderDlg(); netSync(); });
 }
+/* long lines come a piece at a time: split at sentence ends (cine: at line breaks) into pages of about PAGE_CH characters;
+   each click shows the next piece under the earlier ones, and the newest piece types itself in (click again to finish it) */
+const PAGE_CH = 46;
+function dlgPages(o) { const t = String(o.text || ''); if (/<div/.test(t)) return [t]; const out = []; let cur = '', curN = 0, depth = 0, i = 0;
+  const flush = () => { if (cur.trim()) out.push(cur); cur = ''; curN = 0; };
+  const units = []; let u = '', un = 0; // sentence units at the top level (never inside a tag pair)
+  while (i < t.length) { if (t[i] === '<') { const j = t.indexOf('>', i); const tag = t.slice(i, j + 1); i = j + 1;
+      if (/^<br\s*\/?>$/i.test(tag) && depth === 0) { units.push([u, un, 1]); u = ''; un = 0; continue; }
+      if (/^<\//.test(tag)) depth--; else if (!/\/>$/.test(tag)) depth++; u += tag; continue; }
+    const ch = t[i++]; u += ch; un++;
+    if (depth === 0 && '。！？'.includes(ch)) { while (i < t.length && '”」）』'.includes(t[i])) u += t[i++]; units.push([u, un, 0]); u = ''; un = 0; }
+    else if (depth === 0 && ch === '…' && t[i] !== '…' && un > 8) { while (i < t.length && '”」）』'.includes(t[i])) u += t[i++]; units.push([u, un, 0]); u = ''; un = 0; } }
+  if (u) units.push([u, un, 0]);
+  const brk = !!o.cine; let total = 0; for (const x of units) total += x[1]; if (!brk && total <= PAGE_CH + 14) return [t];
+  for (const [s, n, br] of units) { if (curN && (curN + n > PAGE_CH || (brk && curN))) flush(); cur += s; curN += n; if (br && brk) flush(); else if (br) cur += '<br>'; }
+  flush(); return out.length ? out : [t]; }
+const dlgPageHtml = D_ => { const P = D_.pages || [D_.o.text], k = Math.min(D_.pg || 0, P.length - 1), sep = D_.o.cine ? '<br>' : '';
+  return P.slice(0, k).join(sep) + (k ? sep : '') + `<span class="pnew" data-k="${k}">${P[k]}</span>`; };
+/* the typewriter: tag-safe, resumes across re-renders, skipped when animations are off or text is set to appear at once */
+function dlgType() { const e = document.querySelector('#dlg .pnew'); clearInterval(UI.twT); if (!e || !DLG || !DLG.o) return;
+  const key = (DLG.o.text || '').length + ':' + e.dataset.k + ':' + (DLG.o.text || '').slice(0, 20); const html = e.innerHTML;
+  if (!animOn() || SET.textNow) { UI.tw = { key, done: 1 }; return; }
+  if (!UI.tw || UI.tw.key !== key) UI.tw = { key, n: 0, done: 0 }; if (UI.tw.done) return;
+  const toks = html.match(/<[^>]+>|&[a-z#0-9]+;|[\s\S]/gi) || [], vis = toks.filter(x => x[0] !== '<').length;
+  const show = n => { let c = 0, s = ''; for (const x of toks) { if (x[0] === '<') { s += x; continue; } if (c >= n) break; s += x; c++; } e.innerHTML = s; };
+  show(UI.tw.n); UI.twT = setInterval(() => { if (!UI.tw || UI.tw.key !== key) return clearInterval(UI.twT); UI.tw.n += SET.fast ? 3 : 2; if (UI.tw.n >= vis) { UI.tw.done = 1; clearInterval(UI.twT); e.innerHTML = html; } else show(UI.tw.n); }, 45); }
+function dlgTyping() { return !!(UI.tw && !UI.tw.done && document.querySelector('#dlg .pnew')); }
 function dlgChoose(opts, prompt) {
   if (prompt) { if (UI.cur) { UI.hist.push(UI.cur); if (UI.hist.length > 3) UI.hist.shift(); } UI.cur = { who: '', text: prompt }; }
   if (window.__dbg && __dbg.auto) { const i = __dbg.pick ? __dbg.pick(opts.map(o => o.t)) : opts.findIndex(o => !o.dis); logLine('▸ ' + opts[i].t, 'say mine'); journalAdd({ choice: opts[i].t }); return Promise.resolve(i); }
@@ -46,25 +73,27 @@ function dlgChoose(opts, prompt) {
 }
 function dlgPick(i) { // advance (i = -1) or choose option i
   if (!DLG || DLG.rune || DLG.mini || DLG.party) return; if (NETROLE === 'guest') { if (!myControl()) { toast('现在是队友在操作'); return; } netSend({ t: 'dlg', i }); return; } if (NETROLE === 'host' && !myControl()) { toast('现在是队友在操作'); return; }
+  if (!DLG.choice && i < 0 && NETROLE !== 'guest' && !(window.__dbg && __dbg.auto)) { if (dlgTyping()) { UI.tw.done = 1; renderDlg(); return; } if (DLG.pages && DLG.pg < DLG.pages.length - 1) { DLG.pg++; sfx('click'); renderDlg(); netSync(); return; } }
   if (DLG.choice) { if (i < 0 || !DLG.choice[i] || DLG.choice[i].dis) return; const r = DLG.res, t = DLG.choice[i].t; logLine('▸ ' + t, 'say mine'); journalAdd({ choice: t }); DLG = null; sfx('click'); renderDlg(); r(i); }
   else { const r = DLG.res; DLG = null; sfx('click'); renderDlg(); r(); }
   netSync();
 }
 function dlgCtx() { return { cur: UI.cur, hist: UI.hist.slice(-2) }; }
 function renderDlg() {
-  const D = $('dlg'); applyMode(); if (!DLG) { D.onclick = null; $('vTalk').classList.remove('cine', 'mem', 'card'); refresh(); return; }
+  const D = $('dlg'); applyMode(); if (!DLG) { clearInterval(UI.twT); UI.tw = null; D.onclick = null; $('vTalk').classList.remove('cine', 'mem', 'card'); refresh(); return; }
   const ctx = DLG.ctx || dlgCtx(), P = C && PLACES[C.loc], q = C && curQ();
   const head = `<div class="tplace">${P ? (STATE.dungeon ? DUNGEONS[STATE.dungeon.id].name : P.name) : ''}<span>${q ? CH_NAMES[q.ch] : ''}</span></div>`;
   const histH = h => h.length ? `<div class="hist">${h.map(x => `<div>${x.who ? `<span class="hw">${esc(x.who)}</span>` : ''}${x.text}</div>`).join('')}</div>` : '';
   const lineH = o => { const s = sealOf(o), nw = (o.who || '') !== UI.lastWho; UI.lastWho = o.who || ''; return `<div class="line ${nw ? 'newspk' : ''}">${s ? `<div>${sealHtml(s, o.mine ? 'me' : '')}${s.t ? `<div class="ttl">${esc(s.t)}</div>` : ''}</div>` : ''}<div class="tx ${o.who ? '' : 'nar'} ${o.mine ? 'mine' : ''}">${o.text}</div></div>`; };
   const cv = DLG.o && DLG.o.cine && !DLG.choice && !DLG.mini && !DLG.rune ? DLG.o.cine : ''; $('vTalk').classList.toggle('cine', !!cv); $('vTalk').classList.toggle('mem', cv === 'mem'); $('vTalk').classList.toggle('card', cv === 'card');
-  if (cv) { D.innerHTML = `<div class="cine-t">${DLG.o.text}</div><div class="nx">▼</div>`; D.onclick = () => dlgPick(-1); }
+  const more = DLG.pages && DLG.pg < DLG.pages.length - 1;
+  if (cv) { D.innerHTML = `<div class="cine-t">${cv === 'card' ? DLG.o.text : dlgPageHtml(DLG)}</div><div class="nx">${more ? '▽' : '▼'}</div>`; D.onclick = () => dlgPick(-1); }
   else if (DLG.party) { D.innerHTML = partyHtml(DLG.party); D.onclick = null; }
   else if (DLG.mini) { D.innerHTML = head + miniHtml(DLG.mini); D.onclick = null; }
   else if (DLG.rune) D.innerHTML = head + runeHtml(DLG.rune);
   else if (DLG.choice) { D.innerHTML = head + histH(ctx.hist.slice(-1)) + (ctx.cur ? lineH(ctx.cur) : '') + `<div class="ch">${DLG.choice.map((o, i) => `<button class="chb" ${o.dis ? 'disabled' : ''} data-i="${i}">${o.t}</button>`).join('')}</div>`; D.onclick = null; D.querySelectorAll('.chb').forEach(b => b.onclick = e => { e.stopPropagation(); dlgPick(+b.dataset.i); }); }
-  else { D.innerHTML = head + histH(ctx.hist) + lineH(DLG.o) + '<div class="nx">点击继续 ▼</div>'; D.onclick = () => dlgPick(-1); }
-  if (DLG.rune) D.onclick = null; D.scrollTop = D.scrollHeight;
+  else { D.innerHTML = head + histH(ctx.hist) + lineH(Object.assign({}, DLG.o, { text: dlgPageHtml(DLG) })) + `<div class="nx">${more ? '点击继续 ▽' : '点击继续 ▼'}</div>`; D.onclick = () => dlgPick(-1); }
+  if (DLG.rune) D.onclick = null; D.scrollTop = D.scrollHeight; if (DLG.o && !DLG.choice && !DLG.mini && !DLG.rune && !DLG.party) dlgType(); else clearInterval(UI.twT);
   const key = DLG.party ? 'p' + DLG.party.sel.join() : DLG.mini ? 'm' + DLG.mini.k : DLG.rune ? 'r' + DLG.rune.phase + DLG.rune.got.length + DLG.rune.k : DLG.choice ? 'c' + DLG.choice.map(o => o.t).join() : 'o' + DLG.o.text; D.classList.toggle('still', key === UI.dlgKey); UI.dlgKey = key;
 }
 function dlgClose() { if (DLG && !DLG.choice && !DLG.rune && !DLG.mini) { const r = DLG.res; DLG = null; r(); } DLG = null; UI.hist = []; UI.cur = null; renderDlg(); }

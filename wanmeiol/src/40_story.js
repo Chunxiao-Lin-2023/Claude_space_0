@@ -722,7 +722,7 @@ async function runScene(fn, meta) { // meta = { title, ch } → the scene's line
   try { r = await fn(); } catch (e) { console.error(e); } finally { STATE.scene = null; const J = UI.jEntry; UI.jEntry = null; if (J && J.l.length) { JOURNAL.push(J); saveJournal(); } dlgClose(); save(); refresh(); netSync(); }
   return r !== false;
 }
-async function questComplete(q) { if (q.lvNeed && C.lv < q.lvNeed) { toast(`要先练到第 ${q.lvNeed} 层`); return false; } const ok = await runScene(q.scene, { title: q.title, ch: q.ch }); if (ok && curQ() === q) questAdvance(); return ok; }
+async function questComplete(q) { if (q.lvNeed && C.lv < q.lvNeed) { toast(`要先练到第 ${q.lvNeed} 层`); return false; } const ok = await runScene(bridgeWrap(q), { title: q.title, ch: q.ch }); if (ok && curQ() === q) questAdvance(); return ok; }
 function storyEvents(loc) { for (const E of EVENTS) if (E.loc === loc && !F()['ev_' + E.id] && E.when()) { F()['ev_' + E.id] = 1; runScene(E.scene, { title: E.title }); return true; } return false; }
 function questTalkOptions(npc) {
   const q = curQ(), out = [];
