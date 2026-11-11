@@ -71,7 +71,7 @@ BX.register({
   kind: 'turn', seats: [2, 4], defSeats: 4, seatColors: [KC[0], KC[2], KC[1], KC[3]], seatNames: ['红方', '蓝方', '黄方', '绿方'], firstLabel: '先掷', aiDelay: 650, anyTimeActs: true,
   options: [{key: 'take', label: '起飞', choices: [[6, '掷 6 起飞'], [5, '5 或 6 起飞']], def: 6},
     {key: 'stack', label: '叠子', choices: [[0, '不阻挡'], [1, '叠子阻挡']], def: 0}],
-  howto: ['轮到你时点<b>骰子</b>（或按空格键）掷骰；打开面板上的「自动掷骰」后会替你自动掷。', '能走的飞机会闪光，并标出落点（圈）与撞子（✕）；点飞机即走，只有一种走法时自动走。电脑上可按 1–4 选飞机。', '两架飞机挨得太近时，第一次点会先选中并画出路线，再点一次确认。', '💡 提示会标出推荐走的飞机；面板里的记录栏显示最近几步发生了什么。'],
+  howto: ['轮到你时点<b>骰子</b>（或按空格键）掷骰；打开面板上的「自动掷骰」后会替你自动掷。', '能走的飞机会闪光；点飞机即走，只有一种走法时自动走。电脑上可按 1–4 选飞机。', '两架飞机挨得太近时，第一次点会先选中，再点一次确认。', '开启辅助模式后，还会标出每架可走飞机的落点（圈）与撞子（✕），选中/悬停时画出路线。', '💡 提示会标出推荐走的飞机；面板里的记录栏显示最近几步发生了什么。'],
   rules: `<p>每人四架飞机停在自己颜色的<b>机场</b>。轮到你时点骰子掷骰：</p>
 <ul><li><b>起飞</b>：掷出 6 点（选项可改为 5 或 6 点）才能让一架飞机从机场飞到<b>起飞点</b>；之后从起飞点出发沿顺时针绕场飞行。</li>
 <li><b>奖励</b>：掷出 6 点可以再掷一次；但<b>连续第三次掷出 6 点</b>，则上一步走动的那架飞机被罚回机场，并结束本回合。</li>
@@ -381,10 +381,10 @@ BX.register({
         const movable = st.phase === 'move' && myTurn() ? options(st.turn, st.die) : [];
         const movSet = new Set();
         for (const i of movable) { if (st.pl[st.turn][i] < 0) st.pl[st.turn].forEach((d, j) => { if (d < 0) movSet.add(j); }); else st.pl[st.turn].forEach((d, j) => { if (d === st.pl[st.turn][i]) movSet.add(j); }); }
-        /* landing previews (pref hints): ring at the landing square, ✕ where it captures; hovered/selected/hinted plane gets its route */
+        /* landing previews (assist mode + pref hints): ring at the landing square, ✕ where it captures; hovered/selected/hinted plane gets its route */
         const showHints = ctx.pref('hints');
         const hintI = hint && hint.t === 'move' && st.phase === 'move' ? hint.p : -1;
-        if (movable.length) for (const i of movable) {
+        if (movable.length && ctx.assist) for (const i of movable) {   /* 辅助模式 only */
           const R = res(st.turn, i, st.die); if (!R) continue;
           const focus = i === hover || i === pick || i === hintI || movable.length === 1;
           if (!showHints && !focus) continue;
@@ -426,6 +426,7 @@ BX.register({
           const hl = !it.moving && it.s === st.turn && movSet.has(it.i);
           const hinted = hl && hintI >= 0 && (it.i === hintI || (d < 0 && st.pl[it.s][hintI] < 0) || (d >= 0 && d === st.pl[it.s][hintI]));
           if (hinted) { const k2 = t - hintT; g.strokeStyle = `rgba(63,200,140,${.6 + .35 * Math.sin(k2 * 7)})`; g.lineWidth = Math.max(3, cs * .14); D.circle(g, x, y, cs * (.82 + .08 * Math.sin(k2 * 7))); g.stroke(); }
+          if (hl && !ctx.assist && it.i === pick) { g.strokeStyle = '#fff'; g.lineWidth = Math.max(2.5, cs * .12); D.circle(g, x, y, cs * .78); g.stroke(); }   // classic: plain selection ring
           if (hl) { const pul = .5 + .5 * Math.sin(t * 6); g.fillStyle = `rgba(255,230,120,${.35 + .35 * pul})`; D.circle(g, x, y, cs * (.62 + .1 * pul)); g.fill(); g.strokeStyle = '#fff3c4'; g.lineWidth = 2; g.stroke(); }
           if (st.last && st.last.s === it.s && st.last.i === it.i && !it.moving && !hl && d >= 0 && d < HOME) { g.strokeStyle = 'rgba(255,255,255,.75)'; g.lineWidth = 1.5; D.circle(g, x, y, cs * .55); g.stroke(); }
           planeShape(g, x, y, sz, ctx.color(it.s), it.ang + Math.PI / 2);

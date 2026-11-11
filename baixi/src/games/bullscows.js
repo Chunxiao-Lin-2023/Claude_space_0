@@ -10,7 +10,7 @@ BX.register({
   desc: '双方各设一个四位不重复的密码，轮流猜对方的数字。系统用 A、B 提示：A 是数字对且位置对，B 是数字对但位置错。先得到 4A 者破译成功！',
   kind: 'turn', seats: 2, hidden: true, seatNames: ['甲方', '乙方'], firstLabel: '先猜',
   options: [{key: 'len', label: '密码位数', choices: [[3, '3 位（入门）'], [4, '4 位（经典）'], [5, '5 位（烧脑）']], def: 4}],
-  howto: ['用数字键盘输入（数字不能重复），点「确定」。设密码时可点「随机」。', '上方一排<b>笔记格</b>：点数字在 空白 → ✓（一定有）→ ✗（一定没有）间切换；键盘对应数字也会变暗 / 变绿。', '开启「提示标记」偏好时，已能推出的数字会自动加细框（绿 = 必有，红 = 必无），并显示「还剩 N 种可能」。', '点自己的历史记录可把那次猜测填回输入框再改；💡 提示会填入一个推荐猜测。键盘可直接输入数字，回车确定。'],
+  howto: ['用数字键盘输入（数字不能重复），点「确定」。设密码时可点「随机」。', '上方一排<b>笔记格</b>：点数字在 空白 → ✓（一定有）→ ✗（一定没有）间切换；键盘对应数字也会变暗 / 变绿。', '开启辅助模式（且「提示标记」偏好开）时，已能推出的数字会自动加细框（绿 = 必有，红 = 必无），并显示「还剩 N 种可能」。', '点自己的历史记录可把那次猜测填回输入框再改；💡 提示会填入一个推荐猜测。键盘可直接输入数字，回车确定。'],
   rules: `<p>开局时双方各自秘密设定一个<b>四位数密码</b>，四个数字<b>互不相同</b>（0 可以放在首位，如 0371）。</p>
 <p>双方轮流猜对方的密码。每猜一次，会得到提示 <b>xAyB</b>：</p>
 <ul><li><b>A</b>：数字正确且位置也正确的个数；</li><li><b>B</b>：数字正确但位置不对的个数。</li></ul>
@@ -62,9 +62,10 @@ BX.register({
       b.onclick = () => { marks[+d] = (marks[+d] + 1) % 3; ctx.sfx('tick'); sync(); }; notes.append(b); return b;
     });
     let candN = -1, autoMk = new Array(10).fill(0), flash = {k: 1, s: -1};
+    const deduceOn = () => ctx.assist && ctx.pref('hints');   // 辅助模式: auto-deduction + candidate count
     function deduce() {   // what the viewer can infer from their own clues (only shown with the hints pref)
       const v = me(), hs = st.hist[v];
-      if (st.ph !== 'play' || !ctx.isLocal(v)) { candN = -1; autoMk.fill(0); return; }
+      if (st.ph !== 'play' || !ctx.isLocal(v) || !deduceOn()) { candN = -1; autoMk.fill(0); return; }
       const cand = ALL.filter(c => hs.every(h => { const [a, b] = score(c, h.g); return a === h.a && b === h.b; }));
       candN = cand.length;
       for (let d = 0; d < 10; d++) { const ch = String(d); let inAll = true, inAny = false; for (const c of cand) { if (c.includes(ch)) inAny = true; else inAll = false; if (inAny && !inAll) break; } autoMk[d] = !inAny ? 2 : inAll ? 1 : 0; }
@@ -84,7 +85,7 @@ BX.register({
     }
     function sync() {
       const ok = canType(), showPad = ctx.isLocal(me()) && !st.over && !BX.bot;
-      deduce(); const hintsOn = ctx.pref('hints');
+      deduce(); const hintsOn = deduceOn();
       pad.style.display = showPad ? 'grid' : 'none';
       notes.style.display = showPad && st.ph === 'play' ? 'grid' : 'none';
       keys.forEach(b => { const d = +b.textContent; const used = entry.includes(b.textContent); b.disabled = !ok || used; const m = marks[d] || (hintsOn ? autoMk[d] : 0); b.style.background = marks[d] === 1 ? 'rgba(63,127,107,.75)' : ''; b.style.opacity = !b.disabled && m === 2 ? '.45' : ''; });
@@ -135,7 +136,7 @@ BX.register({
         return ctx.status('等待对方设定密码…');
       }
       const last = st.solved[0] && !st.solved[1] ? '<b style="color:#e6c57d">最后一次机会！</b> ' : '';
-      if (ctx.canAct(st.turn)) return ctx.status(last + (ctx.hotseat ? ctx.name(st.turn) + ' 猜数' : '轮到你猜') + (candN > 0 && ctx.pref('hints') ? ` · 还剩 <b style="color:#e6c57d">${candN}</b> 种可能` : ''));
+      if (ctx.canAct(st.turn)) return ctx.status(last + (ctx.hotseat ? ctx.name(st.turn) + ' 猜数' : '轮到你猜') + (candN > 0 && deduceOn() ? ` · 还剩 <b style="color:#e6c57d">${candN}</b> 种可能` : ''));
       ctx.status(last + '等待 ' + ctx.name(st.turn) + ' 猜…');
     }
 
@@ -244,8 +245,8 @@ BX.register({
         if (roomy && st.ph === 'play' && showMine && mine) {
           D.text(g, '我的密码：' + mine, ex + ew / 2, cy + 8, {size: 16, color: '#e6c57d'}); cy += 22;
           D.text(g, ctx.name(o) + ' 目前最好 ' + best(st.hist[o]), ex + ew / 2, cy + 8, {size: 12, color: 'rgba(243,226,192,.6)'}); cy += 22;
-          if (candN > 0 && ctx.pref('hints') && cy + 10 < ey + eh) D.text(g, '还剩 ' + candN + ' 种可能', ex + ew / 2, cy + 8, {size: 13, color: '#7fd0b0'});
-        } else if (l.portrait && st.ph === 'play' && candN > 0 && ctx.pref('hints')) D.text(g, '剩 ' + candN + ' 种', ex + 12, ey + eh - 10, {size: 11, color: '#7fd0b0', align: 'left'});
+          if (candN > 0 && deduceOn() && cy + 10 < ey + eh) D.text(g, '还剩 ' + candN + ' 种可能', ex + ew / 2, cy + 8, {size: 13, color: '#7fd0b0'});
+        } else if (l.portrait && st.ph === 'play' && candN > 0 && deduceOn()) D.text(g, '剩 ' + candN + ' 种', ex + 12, ey + eh - 10, {size: 11, color: '#7fd0b0', align: 'left'});
       },
     };
     function best(hs) { let b = '—'; for (const h of hs) if (b === '—' || h.a * 5 + h.b > b[0] * 5 + b[1]) b = [h.a, h.b]; return b === '—' ? b : b[0] + 'A' + b[1] + 'B'; }

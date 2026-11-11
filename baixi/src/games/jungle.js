@@ -133,8 +133,8 @@ BX.register({
   id: 'jungle', title: '斗兽棋', cat: 'heavy', order: 4, sub: '象狮虎豹，鼠能吃象',
   desc: '八种动物各有大小，大吃小、鼠吃象。只有老鼠会游泳，狮虎能跳河，谁先闯进对方兽穴谁就赢。',
   kind: 'turn', seats: 2, seatNames: ['红方', '蓝方'], seatColors: ['#c23a2b', '#2f5d8a'], firstLabel: '执子',
-  howto: ['<b>点选</b>自己的动物再点目标格，或<b>按住拖</b>过去。绿点 = 可走，红圈 = 可吃，<b>橙点</b> = 走过去会被对方吃掉。',
-    '轮到你时，正被对方威胁的动物会出现红色「!」。大小：象8 狮7 虎6 豹5 狼4 狗3 猫2 鼠1，鼠能吃象。',
+  howto: ['<b>点选</b>自己的动物再点目标格，或<b>按住拖</b>过去。绿点 = 可走，红圈 = 可吃。',
+    '开启辅助模式后：<b>橙点</b> = 走过去会被对方吃掉；轮到你时，正被对方威胁的动物会出现红色「!」。大小：象8 狮7 虎6 豹5 狼4 狗3 猫2 鼠1，鼠能吃象。',
     '下方 ◀ ▶ 回看每一步，「谱」看全部走法，⇅ 翻转棋盘；电脑键盘 ← → 回看、F 翻转。',
     '顶栏 ↶ 悔棋，💡 提示一步好棋。'],
   rules: `<p><b>棋盘</b>：7 列 × 9 行。中间有两条<b>小河</b>；双方底线中央是自己的<b>兽穴</b>，兽穴周围三格是<b>陷阱</b>。红方先走。</p>
@@ -146,7 +146,7 @@ BX.register({
 <p><b>陷阱</b>：动物走进<b>对方</b>的陷阱后，对方任何一只动物都可以吃掉它。在自己的陷阱里不受影响。</p>
 <p><b>胜负</b>：任何一只动物走进<b>对方兽穴</b>即获胜；吃光对方所有动物、或对方无子可走时也获胜。</p>
 <p><b>和棋</b>：同一局面重复出现三次，或连续 50 回合（双方共 100 步）无吃子，判和。</p>
-<p><b>操作</b>：点选或拖动自己的动物到目标格。绿点为可走位置，红圈为可吃，橙点表示走过去会立刻被对方吃掉；轮到你时，正被威胁的动物头上会出现红色「!」。</p>`,
+<p><b>操作</b>：点选或拖动自己的动物到目标格。绿点为可走位置，红圈为可吃。开启辅助模式后，橙点表示走过去会立刻被对方吃掉；轮到你时，正被威胁的动物头上会出现红色「!」。</p>`,
   icon(g, w, h) {
     g.fillStyle = '#9cc47a'; g.fillRect(0, 0, w, h);
     const s = h / 4; g.strokeStyle = 'rgba(40,70,30,.35)'; g.lineWidth = 1;
@@ -194,7 +194,7 @@ BX.register({
     function status() {
       for (const s of [0, 1]) ctx.info(s, st.b.filter(p => p && (p >> 4) === s).length + '兽');
       if (st.over) return ctx.status(st.result);
-      const nm = ctx.name(st.turn), th = threat.length && ctx.canAct(st.turn) ? `<b style="color:#ff8a70">（${threat.length} 只动物被威胁）</b>` : '';
+      const nm = ctx.name(st.turn), th = ctx.assist && threat.length && ctx.canAct(st.turn) ? `<b style="color:#ff8a70">（${threat.length} 只动物被威胁）</b>` : '';
       ctx.status((ctx.canAct(st.turn) ? (ctx.hotseat ? nm + '走棋' : '轮到你走棋') : '等待 ' + nm + ' 走棋…') + th);
     }
     const inp = L.pieceInput(ctx, cv, {
@@ -322,7 +322,7 @@ BX.register({
         }
         const hints = ctx.pref('hints');
         // threatened animals ("!") — only for the local player to move
-        if (live && hints && !anim && !st.over && ctx.canAct(st.turn)) for (const q of threat) {
+        if (live && hints && ctx.assist && !anim && !st.over && ctx.canAct(st.turn)) for (const q of threat) {
           if (dr && q === dr.sq) continue;
           const [x, y] = scr(q, G), bx = x - R0 * .78, by = y - R0 * .8, a = .75 + .25 * Math.sin(t * 7);
           g.fillStyle = `rgba(214,48,32,${a})`; D.circle(g, bx, by, R0 * .3); g.fill(); g.strokeStyle = '#fff3e0'; g.lineWidth = Math.max(1.2, R0 * .06); g.stroke();
@@ -331,7 +331,7 @@ BX.register({
         if (sel >= 0 && ctx.canAct(st.turn) && hints) {
           const ht = dr ? hit(dr) : inp.hover;
           for (const to of tgt.get(sel) || []) {
-            const [x, y] = scr(to, G), bad = danger.has(sel * 64 + to), big = to === ht;
+            const [x, y] = scr(to, G), bad = ctx.assist && danger.has(sel * 64 + to), big = to === ht;
             if (st.b[to]) { g.strokeStyle = bad ? 'rgba(235,140,30,.95)' : 'rgba(220,40,30,.9)'; g.lineWidth = Math.max(3, s * (big ? .1 : .07)); D.circle(g, x, y, R0 * 1.15); g.stroke(); }
             else { D.hint(g, x, y, Math.max(6, s * (big ? .2 : .14)), bad ? 'rgba(235,130,20,.92)' : 'rgba(30,120,80,.8)'); g.strokeStyle = 'rgba(255,255,255,.8)'; g.lineWidth = 1.5; g.stroke(); }
           }

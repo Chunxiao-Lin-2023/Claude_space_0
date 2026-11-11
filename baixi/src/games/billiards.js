@@ -249,7 +249,7 @@ BX.register({
   id: 'billiards', title: '桌球·八球', cat: 'arcade', order: 1, sub: '十五球开局，黑八定输赢',
   desc: '经典美式八球：开球后打进一颗球即定全色或花色，清完本方七球再合法打进黑八获胜。真实的碰撞、库边与高低杆，电脑三档难度。',
   kind: 'turn', seats: 2, seatColors: ['#c23a2b', '#2f5d8a'], noTurnChime: false, firstLabel: '开球', aiDelay: 300,
-  howto: ['<b>瞄准</b>：手指在球台上划动转动球杆（划得越慢越精细），轻点某颗球直接对准它；用鼠标时球杆指向光标。侧边<b>微调轮</b>可拖、可甩，按住两端连续细调。', '<b>出杆</b>：拖动<b>力度条</b>，或按住白球沿球杆向后拉，松手出杆；前半段力度更细腻，拖回起点松手即取消。“杆法”小球设高杆 / 低杆。', '瞄准线按真实碰撞（含微小的切球偏移）画出目标球走向，能进袋时袋口亮起绿圈；自由球时直接拖动白球摆放。', '击球中点一下快进，再点一下直接看结果；💡 会对准推荐线路并在力度条上标出建议力度。键盘：←→ 瞄准（Shift 更细，按住加速）、↑↓ 力度、W/S 杆法、空格出杆。'],
+  howto: ['<b>瞄准</b>：手指在球台上划动转动球杆（划得越慢越精细），轻点某颗球直接对准它；用鼠标时球杆指向光标。侧边<b>微调轮</b>可拖、可甩，按住两端连续细调。', '<b>出杆</b>：拖动<b>力度条</b>，或按住白球沿球杆向后拉，松手出杆；前半段力度更细腻，拖回起点松手即取消。“杆法”小球设高杆 / 低杆。', '瞄准线画到白球碰到的第一颗球，并按真实碰撞（含微小的切球偏移）画出目标球与白球去向的一小段；开启辅助模式后目标球走向画得更长，能进袋时袋口亮起绿圈。自由球时直接拖动白球摆放。', '击球中点一下快进，再点一下直接看结果；💡 会对准推荐线路并在力度条上标出建议力度。键盘：←→ 瞄准（Shift 更细，按住加速）、↑↓ 力度、W/S 杆法、空格出杆。'],
   rules: `<p><b>器材</b>：一颗白色主球，十五颗目标球：1–7 号为<b>全色球</b>，9–15 号为<b>花色球</b>，8 号为<b>黑八</b>。开局摆成三角形，黑八居中。</p>
 <p><b>开球</b>：白球放在开球线（球台左侧/下方淡线）后任意位置击打。开球须有球入袋，或至少四颗目标球碰库，否则判犯规。开球打进黑八：黑八放回置球点，开球方继续。开球后球台为<b>开放球局</b>。</p>
 <p><b>定色</b>：开放球局时（开球之后），第一颗被合法打进的球决定该选手的球组（全色或花色），对手为另一组。开放球局可以先碰任意全色或花色球，但不能先碰黑八。</p>
@@ -775,13 +775,14 @@ BX.register({
       if (hit >= 0 && tBest <= tr) {
         let nx = b[hit][0] - gx, ny = b[hit][1] - gy; const nl = Math.hypot(nx, ny); nx /= nl; ny /= nl;
         const cs = dx * nx + dy * ny, ok = st.brk || targetsFor(st, st.turn).includes(hit), th = throwDir(dx, dy, nx, ny);
-        const pk = ok && ctx.pref('hints') ? pocketOf(b, hit, th.ox, th.oy) : null;
+        // classic: short honest stubs (true throw-corrected direction); 辅助模式: full object-ball path + 能进袋 green ring
+        const pk = ctx.assist && ok && ctx.pref('hints') ? pocketOf(b, hit, th.ox, th.oy) : null;
         g.strokeStyle = ok ? 'rgba(255,220,120,.9)' : 'rgba(255,90,70,.9)'; g.lineWidth = 2.2;
-        const len = pk ? pk.t : 40 + 140 * cs;
+        const len = pk ? pk.t : ctx.assist ? 40 + 140 * cs : 26 + 44 * cs;
         g.beginPath(); g.moveTo(b[hit][0], b[hit][1]); g.lineTo(b[hit][0] + th.ox * len, b[hit][1] + th.oy * len); g.stroke();
         if (pk) { const [qx, qy] = POCK[pk.k], k2 = performance.now() / 160; g.strokeStyle = `rgba(90,230,150,${.7 + .25 * Math.sin(k2)})`; g.lineWidth = 3.5; D.circle(g, qx, qy, HOLE + 4); g.stroke(); }
         let tx = th.cx, ty = th.cy; const tl = Math.hypot(tx, ty);
-        if (tl > .05) { tx /= tl; ty /= tl; g.strokeStyle = 'rgba(255,255,255,.35)'; g.lineWidth = 1.4; g.beginPath(); g.moveTo(gx, gy); g.lineTo(gx + tx * 80 * tl, gy + ty * 80 * tl); g.stroke(); }
+        if (tl > .05) { tx /= tl; ty /= tl; g.strokeStyle = 'rgba(255,255,255,.35)'; g.lineWidth = 1.4; g.beginPath(); g.moveTo(gx, gy); g.lineTo(gx + tx * (ctx.assist ? 80 : 36) * tl, gy + ty * (ctx.assist ? 80 : 36) * tl); g.stroke(); }
         if (!ok) { g.strokeStyle = 'rgba(255,90,70,.9)'; g.lineWidth = 2; D.circle(g, b[hit][0], b[hit][1], R + 3); g.stroke(); }
       }
       g.restore();

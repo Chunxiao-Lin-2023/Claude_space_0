@@ -201,7 +201,7 @@ BX.register({
   desc: '世界通行的国际象棋，完整 FIDE 规则：王车易位、吃过路兵、兵升变、将死与逼和、50 步与三次重复。电脑三档难度。',
   kind: 'turn', seats: 2, seatNames: ['白方', '黑方'], seatColors: ['#f1e6cf', '#2a221d'], firstLabel: '执棋',
   howto: ['<b>点选</b>棋子再点目标格，或<b>按住拖</b>到目标格。绿点 = 可走，红圈 = 可吃；兵到底线会弹出升变选择。',
-    '王车易位：把王向车的方向走两格即可。被将军时王格闪红，并圈出将军的棋子。',
+    '王车易位：把王向车的方向走两格即可。被将军时王格闪红；开启辅助模式后还会框出将军的棋子。',
     '下方 ◀ ▶ 回看每一步（标准记谱），「谱」打开完整棋谱，⇅ 翻转棋盘；电脑键盘 ← → 回看、F 翻转、Esc 取消选择。',
     '顶栏 ↶ 悔棋，💡 提示一步好棋。'],
   rules: `<p><b>目标</b>：8×8 棋盘，白先黑后轮流走棋。<b>将死</b>对方的王即获胜。</p>
@@ -374,7 +374,7 @@ BX.register({
         const chkNow = live ? st.chk : view.chk, side = live ? st.turn : (view.side < 0 ? 0 : view.side ^ 1);
         if (chkNow) {
           const kq = B.indexOf(side * 8 + KG); if (kq >= 0) { const [x, y] = scr(kq, G); const a = .5 + .25 * Math.sin(pulse * 6); const gr = g.createRadialGradient(x, y, s * .1, x, y, s * .7); gr.addColorStop(0, `rgba(255,50,30,${a})`); gr.addColorStop(1, 'rgba(255,50,30,0)'); g.fillStyle = gr; g.fillRect(x - s / 2, y - s / 2, s, s);
-            if (live && !anim && !st.over) for (const c of checkers) { const [cx, cy] = scr(c, G); g.strokeStyle = `rgba(220,50,30,${.45 + a * .5})`; g.lineWidth = Math.max(2, s * .06); g.strokeRect(cx - s / 2 + 2, cy - s / 2 + 2, s - 4, s - 4); } }
+            if (live && !anim && !st.over && ctx.assist) for (const c of checkers) { const [cx, cy] = scr(c, G); g.strokeStyle = `rgba(220,50,30,${.45 + a * .5})`; g.lineWidth = Math.max(2, s * .06); g.strokeRect(cx - s / 2 + 2, cy - s / 2 + 2, s - 4, s - 4); } }
         }
         const PS0 = s * .86;
         const hide = new Set(live && anim ? [anim.t, anim.castle ? anim.castle[1] : -1] : []);

@@ -81,7 +81,7 @@ BX.register({
   desc: '在点阵上轮流连线，谁画下一个小方格的第四条边，这一格就归谁，并且还能接着画。格子多者获胜。高级电脑懂得“让二控局”。',
   kind: 'turn', seats: 2, seatNames: ['朱方', '青方'], seatColors: PC, firstLabel: '先手', anyTimeActs: true,
   options: [{key: 'size', label: '棋盘', choices: [[3, '3×3 格（入门）'], [4, '4×4 格'], [5, '5×5 格'], [6, '6×6 格'], [7, '7×7 格']], def: 5}],
-  howto: ['点两个相邻点之间的空白处画线（离线越近越好点）；触屏默认先点一下预览虚线，再点同一条确认。', '预览时会提示：<b>得格</b>（这一笔能围住方格）或 <b>送格</b>（会画出方格的第三条边，让对手白拿）。', '围住方格后会提示「再画一笔」；残局时盘面会标出每条“链”和“环”的格数，帮助你决定先送哪一条。', '💡 提示会标出电脑推荐的一笔。'],
+  howto: ['点两个相邻点之间的空白处画线（离线越近越好点）；触屏默认先点一下预览虚线，再点同一条确认。', '围住方格后会提示「再画一笔」。', '开启辅助模式后：预览时会提示<b>得格</b>（这一笔能围住方格）或<b>送格</b>（会画出方格的第三条边，让对手白拿）；状态栏显示安全线数量；残局时盘面标出每条“链”和“环”的格数。', '💡 提示会标出电脑推荐的一笔。'],
   rules: `<p>棋盘是一片点阵（默认 5×5 个方格，即 6×6 个点）。双方轮流在<b>相邻两点</b>之间（横或竖）画一条线。</p>
 <p>谁画下了某个方格的<b>第四条边</b>，这个方格就归谁（盖上自己的印），并且<b>必须再画一条</b>；一笔同时完成两格则两格都得。没有完成方格则换对方。</p>
 <p>所有线画完后，<b>占格多者获胜</b>（偶数格的棋盘可能平局）。</p>
@@ -128,9 +128,10 @@ BX.register({
       ctx.info(0, st.sc[0] + ' 格'); ctx.info(1, st.sc[1] + ' 格');
       if (st.over) return ctx.status(st.sc[0] === st.sc[1] ? '平分秋色' : '<b>' + ctx.name(st.sc[0] > st.sc[1] ? 0 : 1) + '</b> 占格更多');
       const dot = '<span style="color:' + PC[st.turn] + '">■</span> ';
-      let safeN = 0; if (ctx.pref('hints')) for (let l = 0; l < T.NL; l++) if (!st.L[l] && isSafe(T, st.L, l)) safeN++;
+      const aH = ctx.assist && ctx.pref('hints');
+      let safeN = 0; if (aH) for (let l = 0; l < T.NL; l++) if (!st.L[l] && isSafe(T, st.L, l)) safeN++;
       const left = T.NB - st.sc[0] - st.sc[1];
-      ctx.status(dot + (myTurn() ? (ctx.hotseat ? ctx.name(st.turn) + ' 画线' : '轮到你画线') : '等待 ' + ctx.name(st.turn) + '…') + ' · 剩 ' + left + ' 格' + (ctx.pref('hints') ? (safeN ? ' · 安全线 ' + safeN : ' · <b>无安全线</b>') : ''));
+      ctx.status(dot + (myTurn() ? (ctx.hotseat ? ctx.name(st.turn) + ' 画线' : '轮到你画线') : '等待 ' + ctx.name(st.turn) + '…') + ' · 剩 ' + left + ' 格' + (aH ? (safeN ? ' · 安全线 ' + safeN : ' · <b>无安全线</b>') : ''));
     };
     const inst = {
       st,
@@ -201,7 +202,7 @@ BX.register({
           g.beginPath(); g.moveTo(x1, y1); g.lineTo(x2, y2); g.stroke();
         }
         // preview verdict: completes a box / hands one over (3rd side)
-        if (gh >= 0 && !st.L[gh] && myTurn() && ctx.pref('hints')) {
+        if (gh >= 0 && !st.L[gh] && myTurn() && ctx.assist && ctx.pref('hints')) {   // 辅助模式 only
           let gets = 0, gives = 0;
           for (const b of T.lineBoxes[gh]) { const k = sides(T, st.L, b); if (k === 3) gets++; else if (k === 2) gives++; }
           const q = T.seg(gh), mx = ox + (q.h ? q.c + .5 : q.c) * s, my = oy + (q.h ? q.r : q.r + .5) * s;
@@ -210,7 +211,7 @@ BX.register({
           if (txt) { const fs = Math.max(12, s * .2), w = fs * 2.8; g.fillStyle = gets ? 'rgba(63,127,107,.92)' : 'rgba(178,58,43,.92)'; D.rr(g, mx - w / 2, my - s * .42 - fs * .7, w, fs * 1.4, fs * .5); g.fill(); D.text(g, txt, mx, my - s * .42, {size: fs, color: '#fff6e6', weight: 800}); }
         }
         // endgame: no safe lines left -> label every chain / loop with its length
-        if (!st.over && ctx.pref('hints') && !capturable(T, st.L).length) {
+        if (!st.over && ctx.assist && ctx.pref('hints') && !capturable(T, st.L).length) {   // 辅助模式 only
           let anySafe = false; for (let l = 0; l < T.NL && !anySafe; l++) if (!st.L[l] && isSafe(T, st.L, l)) anySafe = true;
           if (!anySafe) for (const cp of components(T, st.L)) {
             const b = cp.boxes[Math.floor(cp.boxes.length / 2)], r = Math.floor(b / n), c = b % n;

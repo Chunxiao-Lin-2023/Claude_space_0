@@ -10,10 +10,10 @@ BX.register({
   id: 'badminton', title: '羽毛球', cat: 'sports', order: 2, sub: '扣杀吊球，网前斗智',
   desc: '侧视角羽毛球对战：跑位、起跳、挥拍，根据击球时机与位置打出高远球、吊球或跳杀。每球得分制，先到 11 分（可选 21 分）且领先 2 分获胜。',
   kind: 'realtime', seats: 2, noFirst: true, seatColors: ['#c23a2b', '#2f5d8a'], hint: false, snapHz: 30, inputHz: 60,
-  options: [{key: 'to', label: '局分', choices: [[11, '11 分'], [21, '21 分']], def: 11}, {key: 'assist', label: '跑位辅助', choices: [[1, '开'], [0, '关']], def: 1}],
+  options: [{key: 'to', label: '局分', choices: [[11, '11 分'], [21, '21 分']], def: 11}, {key: 'assist', label: '跑位辅助', choices: [[2, '随辅助模式'], [1, '开'], [0, '关']], def: 2}],
   howto: ['<b>点「挥」或直接点球场</b>击球；在球场上<b>向上划</b> = 重扣（球在头顶时自动起跳跳杀），<b>向下划</b> = 吊球/搓网前。',
     '「吊」键打轻球；◀ ▶（竖屏为 ▲ ▼）跑位，「跳」起跳。挥拍可以稍微提前按，球一进拍面就自动击出。',
-    '开着「跑位辅助」时，你不按方向键会自动跑向落点；地上的圆圈是来球的预计落点。',
+    '开启辅助模式后：地上的圆圈是来球的预计落点，挥拍提前或稍晚一点也算击中，并默认打开「跑位辅助」（不按方向键时自动跑向落点；可在开局选项里单独开/关）。',
     '键盘：←→ 移动、↑ 跳、空格 挥拍、↓ 吊球；同屏左方 A/D/W/F/S，右方 ←→↑/回车/↓。'],
   rules: `<p>每球得分制：每个回合胜者得 1 分并获得发球权。先到 <b>11 分</b>（或 21 分）且领先对手 <b>2 分</b>获胜；打到 <b>14:14</b>（21 分制为 29:29）后先得下一分者胜（封顶 15 / 30 分）。</p>
 <p>球落在对方场内、对方击球出界、球未过网或碰网落在本方，即为本方/对方得分。发球：发球方在本方场地后场低手发球，按挥拍键发出。</p>
@@ -42,6 +42,7 @@ BX.register({
     const evSeen = {v: -1}, trail = [];
     let time = 0;
     const swq = [K.tq(), K.tq()], seen = {};
+    const runAs = ctx.opts.assist == null || +ctx.opts.assist === 2 ? (ctx.assist ? 1 : 0) : +ctx.opts.assist ? 1 : 0;   // 跑位辅助: follows 辅助模式 unless set explicitly
     const idle = [9, 9], lastIn = [9, 9];        // host: time since the player last steered (assist waits for it) / since the shuttle was last in reach
     const prev = {p: [{x: 0, y: 0}, {x: 0, y: 0}], b: {x: 0, y: 0}, ok: false};       // host: previous step, for ctx.alpha render interpolation
     const pr = K.predictor(), sm = K.smoother(14), lsw = [0, 0];                    // guest: own-player prediction, smoothing, local swing anim
@@ -89,7 +90,7 @@ BX.register({
       // portrait 2.5D court: ▲▼ buttons move toward / away from the net
       const f = pads.held('f', seat), bk = pads.held('b', seat);
       if (f || bk) mx = ((f ? 1 : 0) - (bk ? 1 : 0)) * (seat ? -1 : 1);
-      const out = {mx, j: j ? 1 : 0, q: swq[seat].list(), as: ctx.opts.assist === 0 ? 0 : 1};
+      const out = {mx, j: j ? 1 : 0, q: swq[seat].list(), as: runAs};
       if (!peek && !ctx.isHost && ctx.online && seat === ctx.me) {          // guest: predict own movement with exactly what we send
         pr.tag(out); if (mx) gMoveT = performance.now();
       }
@@ -160,8 +161,9 @@ BX.register({
       if (st.ph !== 'play') return;
       if (type === 4) { type = 2; if (p.y <= .001 && st.b.y > PH + .6 && st.last !== i) { p.vy = JV; fxEv('jump', i); p.arm = .5; p.armT = 2; return; } }
       if (hitAttempt(i, type)) return;
-      if (lastIn[i] < .075 && hitAttempt(i, type, true)) return;   // a hair late: the shuttle just left the racket zone → still counts
-      p.arm = .25; p.armT = type;                                // early press is buffered for 0.25 s
+      const gen = ctx.assist || !!((st._in && st._in[i]) || {}).ai;   // 辅助模式 (and the AI, whose strength must not change): generous timing
+      if (gen && lastIn[i] < .075 && hitAttempt(i, type, true)) return;   // a hair late: the shuttle just left the racket zone → still counts
+      p.arm = gen ? .25 : .1; p.armT = type;                     // early press is buffered (assist 0.25 s, classic 0.1 s)
     }
     function hitAttempt(i, type, late) {
       if (st.ph !== 'play') return false;
@@ -358,9 +360,9 @@ BX.register({
       ctx.info(0, st.s[0]); ctx.info(1, st.s[1]);
       ctx.status(st.over ? '比赛结束' : st.ph === 'serve' ? ctx.name(st.srv) + ' 发球' + (ctx.isLocal(st.srv) && nLoc() === 1 ? '（点「挥」发球）' : '') : st.ph === 'point' ? (st.why || '得分') : '先到 ' + TO + ' 分 · 领先 2 分');
     }
-    /* predicted landing spot for the local human's incoming shuttle (pref 'hints') */
+    /* predicted landing spot for the local human's incoming shuttle (辅助模式 + pref 'hints') */
     function landMark() {
-      if (st.ph !== 'play' || !ctx.pref('hints') || nLoc() === 0) return null;
+      if (st.ph !== 'play' || !ctx.assist || !ctx.pref('hints') || nLoc() === 0) return null;
       const tgt = 1 - st.last; if (!ctx.isLocal(tgt) || st.b.vy > 4 && st.b.y < 1) return null;
       return predictLand(st.b, tgt).x;
     }

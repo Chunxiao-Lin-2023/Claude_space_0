@@ -132,8 +132,8 @@ BX.register({
 <li><b>总和</b>：4 或 17 1 赔 50；5/16 1 赔 18；6/15 1 赔 14；7/14 1 赔 12；8/13 1 赔 8；9/12 与 10/11 1 赔 6。</li>
 </ul>
 <p>局数可选 8 / 12 / 20 局。全部打完（或所有人输光）后<b>筹码最多者获胜</b>；独自一人对庄时，结束时筹码<b>多于 1000</b> 即算赢。</p>
-<p>操作：底部选筹码面额，点格子加注；「撤销」退回最后一枚，「清空」全部退回，「重复」照上局押法再押一次，「加倍」把本局已押的注全部翻倍；长按（电脑上右键）某格可撤回该格的注。点左上的路单可查看近局统计（大小单双比例、冷热点数）。电脑玩家性格：初级<b>随性</b>、中级<b>稳健</b>、高级<b>算计</b>（领先时保守、落后时冒险追分）。</p>`,
-  howto: ['先在底部选筹码面额，再点台面格子下注（可押多格、同格连点加码）；格子上标着赔率。', '「撤销」退一枚 ·「清空」全退 ·「重复」照上局再押 ·「加倍」本局注翻倍；<b>长按</b>（电脑右键）某格撤回该格的注。', '押好后按「下注完成」，所有人确认后庄家开盅；中奖格会发光。', '点左上路单看统计：大小单双比例、热号（常出）与冷号；💡 提示会标出推荐押法。', '键盘：1–4 选筹码，B/S/O/E 押大/小/单/双，Z 撤销，C 清空，R 重复，X 加倍，回车 完成。'],
+<p>操作：底部选筹码面额，点格子加注；「撤销」退回最后一枚，「清空」全部退回，「重复」照上局押法再押一次，「加倍」把本局已押的注全部翻倍；长按（电脑上右键）某格可撤回该格的注。点左上的路单可查看近局统计（大小单双比例、各点数次数；辅助模式下另标冷热号）。电脑玩家性格：初级<b>随性</b>、中级<b>稳健</b>、高级<b>算计</b>（领先时保守、落后时冒险追分）。</p>`,
+  howto: ['先在底部选筹码面额，再点台面格子下注（可押多格、同格连点加码）；格子上标着赔率。', '「撤销」退一枚 ·「清空」全退 ·「重复」照上局再押 ·「加倍」本局注翻倍；<b>长按</b>（电脑右键）某格撤回该格的注。', '押好后按「下注完成」，所有人确认后庄家开盅；中奖格会发光。', '点左上路单看统计：大小单双比例、近局明细（开启辅助模式后还会标出热号与冷号、注单显示各注胜率）；💡 提示会标出推荐押法。', '键盘：1–4 选筹码，B/S/O/E 押大/小/单/双，Z 撤销，C 清空，R 重复，X 加倍，回车 完成。'],
   icon(g, w, h) {
     D.wood(g, 0, 0, w, h, {base: '#5a2416', dark: '#2a0e08', seed: 5});
     g.fillStyle = '#1f5a43'; D.rr(g, w * .05, h * .58, w * .9, h * .38, 8); g.fill();
@@ -363,7 +363,7 @@ BX.register({
       if (st.phase === 'bet') {
         const s = me();
         if (myTurn()) {
-          const t = sumBets(draft(s)), lp = lastPick && draft(s)[lastPick] ? `${NAME(lastPick)} ${ODDS(lastPick)} 胜率 ${pct(PROB[lastPick].p)} · ` : '';
+          const t = sumBets(draft(s)), lp = lastPick && draft(s)[lastPick] ? `${NAME(lastPick)} ${ODDS(lastPick)}${ctx.assist ? ' 胜率 ' + pct(PROB[lastPick].p) : ''} · ` : '';
           return ctx.status(rd + (ctx.hotseat ? ctx.name(s) + ' ' : '') + (t ? `${lp}共押 <b>${t}</b>，按「下注完成」` : `筹码 ${chipSel}，点格子下注`));
         }
         const wait = st.done.map((d, i) => d ? null : ctx.name(i)).filter(Boolean);
@@ -516,7 +516,7 @@ BX.register({
         ks.slice(0, maxN).forEach((k, i) => {
           const y = slipY + 34 + i * lh, res = st.phase === 'reveal' && vis.shown && st.dice ? pay(k, st.dice) : -1;
           D.text(g, NAME(k), Pl.x + 10, y, {size: 13, color: '#f3e2c0', align: 'left'});
-          D.text(g, ODDS(k) + ' · ' + pct(PROB[k].p), Pl.x + Pl.w * .36, y, {size: 11, color: 'rgba(243,226,192,.5)', align: 'left', maxW: Pl.w * .4});
+          D.text(g, ODDS(k) + (ctx.assist ? ' · ' + pct(PROB[k].p) : ''), Pl.x + Pl.w * .36, y, {size: 11, color: 'rgba(243,226,192,.5)', align: 'left', maxW: Pl.w * .4});
           D.text(g, res < 0 ? String(b[k]) : res ? '+' + b[k] * res : '−' + b[k], Pl.x + Pl.w - 8, y, {size: 13, color: res < 0 ? '#e6c57d' : res ? '#ffe08a' : '#e88a7a', align: 'right', weight: 700});
         });
         if (ks.length > maxN) D.text(g, '…', Pl.x + Pl.w / 2, slipY + 34 + maxN * lh, {size: 13, color: '#f3e2c0'});
@@ -550,7 +550,8 @@ BX.register({
       r.streak = sk; r.sw = sw; r.H = H;
       return r;
     }
-    function hotCold() {
+    function hotCold() {   // 热号/冷号 tags only in 辅助模式
+      if (!ctx.assist) return null;
       const r = statsOf(20); if (r.n < 6) return null;
       let hot = 1, cold = 1; for (let f = 2; f <= 6; f++) { if (r.face[f] > r.face[hot]) hot = f; if (r.face[f] < r.face[cold]) cold = f; }
       return r.face[hot] === r.face[cold] ? null : {hot, cold};

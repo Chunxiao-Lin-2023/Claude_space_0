@@ -85,10 +85,10 @@ BX.register({
   desc: '中国古老的拼板游戏。用两大、一中、两小五块三角形，加一块正方形和一块平行四边形，拼出 35 幅剪影：几何、文字、器物、鸟兽与人物。',
   kind: 'solo',
   options: [{key: 'ol', label: '剪影', choices: [[0, '纯剪影'], [1, '显示分块线（简单）']], def: 0}],
-  howto: ['<b>拖动</b>木板到剪影上；<b>轻点</b>木板顺时针转 45°，<b>双击平行四边形</b>翻面（也可先选中再点底部「旋转」「翻转」）。', '触屏：一指按住木板、<b>另一指绕着转</b>即可随手旋转。拖动时剪影上亮起的位置就是松手后会吸附的地方（角度只差 45° 也会帮你转正）。', '电脑：滚轮或右键旋转（右键逆时针），R / Q 顺 / 逆时针，F 翻转，Z 撤销。', '💡 提示：第一次高亮一块板的去处，第二次直接放好。选项「显示分块线」更适合初学。'],
+  howto: ['<b>拖动</b>木板到剪影上；<b>轻点</b>木板顺时针转 45°，<b>双击平行四边形</b>翻面（也可先选中再点底部「旋转」「翻转」）。', '触屏：一指按住木板、<b>另一指绕着转</b>即可随手旋转。木板靠近正确位置且角度对上时会自动吸附。开启辅助模式后：吸附范围更大，拖动时剪影上亮起的位置就是松手后会吸附的地方，角度只差 45° 也会帮你转正。', '电脑：滚轮或右键旋转（右键逆时针），R / Q 顺 / 逆时针，F 翻转，Z 撤销。', '💡 提示：第一次高亮一块板的去处，第二次直接放好。选项「显示分块线」更适合初学。'],
   rules: `<p>七巧板由 7 块组成：<b>大三角形 2 块、中三角形 1 块、小三角形 2 块、正方形 1 块、平行四边形 1 块</b>。每幅题目都恰好用全部 7 块拼成，块与块不能重叠。</p>
 <p><b>操作</b>：拖动木板移动；<b>轻点</b>一块板使其顺时针旋转 45°；<b>双击平行四边形</b>（或点底部「翻转」）把它翻面。也可以先点选一块，再用底部「旋转」「翻转」按钮。键盘：R 旋转、F 翻转、Z 撤销、H 提示。</p>
-<p>木板靠近正确位置且角度正确（或只差 45°）时会<b>自动吸附</b>到位；当剪影被完整覆盖、没有多出的部分时即告完成（另有拼法也算）。</p>
+<p>木板靠近正确位置且角度正确时会<b>自动吸附</b>到位（开启辅助模式后吸附范围更大，只差 45° 也会吸附并转正）；当剪影被完整覆盖、没有多出的部分时即告完成（另有拼法也算）。</p>
 <p>「提示」会高亮一块板的正确位置，再按一次直接替你放好。「图谱」选择题目，已完成的题目会打勾并记录最快用时。</p>`,
   icon(g, w, h) {
     D.paper(g, 0, 0, w, h, {color: '#efe2c4'});
@@ -126,9 +126,10 @@ BX.register({
     const polyOf = pc => polyAt(pc.p, angOf(pc), pc.f ? -1 : 1, pc.cx, pc.cy);
     function findSnap(i, assist) {
       const pc = pcs[i];
-      const c = [pc.cx, pc.cy], R0 = BX.TOUCH.matches ? .75 : .62;
+      // 辅助模式: larger snap radius and a slot only 45° off also snaps (and turns the piece); 经典: the pre-pass radius, exact angle only
+      const c = [pc.cx, pc.cy], R0 = ctx.assist ? (BX.TOUCH.matches ? .75 : .62) : (BX.TOUCH.matches ? .62 : .55);
       let best = -1, bd = R0, bdl = 0;
-      for (const dl of assist ? [0, 1, -1] : [0]) {   // assist: also accept a slot that is only 45° off
+      for (const dl of assist && ctx.assist ? [0, 1, -1] : [0]) {   // assist: also accept a slot that is only 45° off
         const rel = polyAt(pc.p, (pc.ka + dl) * Math.PI / 4, pc.f ? -1 : 1, 0, 0);
         P.slots.forEach((s, j) => {
           if (s.cls !== CLS[pc.p] || pcs.some((q, qi) => qi !== i && q.snap === j)) return;
@@ -342,7 +343,7 @@ BX.register({
           g.setLineDash([6, 4]); g.lineWidth = 2.5; g.strokeStyle = `rgba(255,236,150,${.6 + .4 * a})`; g.stroke(); g.restore();
         }
         // magnetic preview: the slot the held piece would click into if released now
-        if (drag && drag.moved && drag.preview && !won) {
+        if (ctx.assist && drag && drag.moved && drag.preview && !won) {   // 辅助模式 only
           const s = P.slots[drag.preview.j], a = .55 + .25 * Math.sin(performance.now() / 110);
           g.save(); pathPoly(g, s.v, ox, oy, u); g.fillStyle = D.alpha(PCOL[pcs[drag.i].p], .5); g.fill();
           g.lineJoin = 'round'; g.lineWidth = Math.max(2.5, u * .06); g.strokeStyle = `rgba(255,236,150,${a + .2})`; g.stroke(); g.restore();

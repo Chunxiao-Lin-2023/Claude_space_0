@@ -10,7 +10,7 @@ BX.register({
   desc: '两条蛇同场争食：吃到果子变长，撞墙、撞身体就输掉本回合，迎头相撞同归于尽。偶尔出现加速果和双倍果，三局两胜。',
   kind: 'realtime', seats: 2, seatNames: ['赤蛇', '青蛇'], seatColors: ['#d8442f', '#2f7fb8'], noFirst: true, hint: false, snapHz: 30, inputHz: 60,
   options: [{key: 'speed', label: '速度', choices: [[1, '慢'], [2, '标准'], [3, '快']], def: 2}, {key: 'wrap', label: '边墙', choices: [[0, '撞墙即死'], [1, '穿墙而过']], def: 0}],
-  howto: ['在场地上任意处<b>滑动</b>即可转向（滑一下转一次，可以连续快速滑两下完成掉头），也可以按右下的方向盘。', '键盘：方向键或 WASD；同屏双人左方 WASD、右方方向键。', '连续按键会被记住、按顺序执行，不会丢；蛇头前方有危险时会闪红圈提醒，快撞上时蛇会稍稍停顿，给你最后一刻转向的机会。'],
+  howto: ['在场地上任意处<b>滑动</b>即可转向（滑一下转一次，可以连续快速滑两下完成掉头），也可以按右下的方向盘。', '键盘：方向键或 WASD；同屏双人左方 WASD、右方方向键。', '连续按键会被记住、按顺序执行，不会丢。开启辅助模式后：蛇头前方有危险时会闪红圈提醒，快撞上时蛇会稍稍停顿，给你最后一刻转向的机会。'],
   rules: `<p>两条蛇在 32×20 的格子场地上同时前进（标准速度约每秒 10 格，开局前可选慢 / 快）。用方向键控制蛇头转向，蛇不能直接掉头。</p>
 <p><b>吃果子</b>：普通果子（桃）让蛇长 1 节、得 1 分。场上偶尔出现限时的<b>加速果</b>（闪电，5 秒内移动速度翻倍）和<b>双倍果</b>（金元宝，6 秒内吃到的果子长度和分数都翻倍），过一会儿会消失。</p>
 <p><b>死亡</b>：蛇头撞到场地边墙（选了“穿墙而过”时从对边出来）、自己或对方的身体即死亡。两个蛇头撞到同一格或迎面相撞，<b>双方同时死亡</b>（本回合平局，重赛）。</p>
@@ -331,7 +331,8 @@ BX.register({
           else { st.nextBonus -= dt; if (st.nextBonus <= 0) { const c = freeCell(); if (c) { st.bonus = {x: c[0], y: c[1], k: Math.random() < .5 ? 'speed' : 'dbl', t: 7}; fx('spawn'); } else st.nextBonus = 3; } }
           for (const s of st.s) if (s.alive) s.mv = (s.mv || 0) + rateOf(s) * dt;
           const held = st.s.map((s, i) => {
-            if (!s.alive || s.mv < 1 || s.q.some(nd => validTurn(s, nd)) || !deadlyAhead(i)) { s.hold = 0; return false; }
+            // last-instant grace is a 辅助模式 leniency for human snakes only (classic: crash on the step, AI identical in both modes)
+            if (!ctx.assist || ctx.isAI(i) || !s.alive || s.mv < 1 || s.q.some(nd => validTurn(s, nd)) || !deadlyAhead(i)) { s.hold = 0; return false; }
             if (s.hold >= Math.min(.13, 1.25 / rateOf(s))) return false;
             s.hold += dt; s.mv = 1; return true;
           });
@@ -420,8 +421,8 @@ BX.register({
       // own head marker + danger warning (next cell straight ahead is deadly)
       if (s.alive && ctx.mySeats.includes(i) && !ctx.isAI(i) && st.ph === 'play') {
         const [nx, ny] = nb(s.b[0][0], s.b[0][1], s.d);
-        let bad = nx < 0 || ny < 0 || nx >= GW || ny >= GH;
-        if (!bad) for (const o of st.s) for (let k = 0; k < o.b.length - 1 && !bad; k++) if (o.b[k][0] === nx && o.b[k][1] === ny) bad = true;
+        let bad = ctx.assist && (nx < 0 || ny < 0 || nx >= GW || ny >= GH);   // red danger ring: 辅助模式 only
+        if (ctx.assist && !bad) for (const o of st.s) for (let k = 0; k < o.b.length - 1 && !bad; k++) if (o.b[k][0] === nx && o.b[k][1] === ny) bad = true;
         if (bad) { g.strokeStyle = `rgba(255,70,50,${.55 + .4 * Math.sin(performance.now() / 70)})`; g.lineWidth = Math.max(2, r * .3); D.circle(g, hx, hy, r * 1.75); g.stroke(); }
         else if (nLoc() === 1) { g.strokeStyle = 'rgba(255,255,255,.55)'; g.lineWidth = 1.5; D.circle(g, hx, hy, r * 1.5); g.stroke(); }
       }

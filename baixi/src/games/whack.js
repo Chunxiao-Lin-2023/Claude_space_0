@@ -8,7 +8,7 @@ BX.register({
   options: [{key: 'len', label: '时长', choices: [[30, '30 秒'], [45, '45 秒'], [60, '60 秒']], def: 45},
     {key: 'pace', label: '节奏', choices: [[1, '悠闲'], [2, '标准'], [3, '疯狂']], def: 2},
     {key: 'hel', label: '铁盔鼠', choices: [[0, '无'], [1, '有']], def: 0}],
-  howto: ['直接<b>点地鼠</b>（整格都算），手指放在下方你自己的田里；上方小田是对手的进度。',
+  howto: ['直接<b>点地鼠</b>所在的格子（整格都算；开启辅助模式后，探进上一格的鼠头和田边外一点也算），手指放在下方你自己的田里；上方小田是对手的进度。',
     '金地鼠 +3，炸弹鼠 −3 千万别敲；<b>连击</b>越高每只加分越多，连击条满 10 进入「火力全开」。',
     '敲空、放跑地鼠、敲中炸弹都会断连击。可选「铁盔鼠」：要敲两下，得 2 分。',
     '键盘九宫格：Q W E / A S D / Z X C（同屏右方用小键盘 7–9 或 U I O / J K L / M , .）。'],
@@ -102,11 +102,12 @@ BX.register({
         hit(f.seat, h, p);
       }
     });
-    /* generous hit test: the tapped cell if its mole is up; else the nearest up mole whose drawn body is under the finger
+    /* 辅助模式 generous hit test: the tapped cell if its mole is up; else the nearest up mole whose drawn body is under the finger
        (heads poke into the cell above); else the cell itself (an air swing), with a margin around the field */
     const liveAt = (seat, h, t = st.time) => st.m.find(m => m.h === h && t >= m.t0 && t < m.t0 + m.d && !m.hit[seat] && !pred.has(seat + ':' + m.i));
     function pickHole(seat, G, l) {
       const fx_ = (l.x - G.x) / G.cell, fy = (l.y - G.y) / G.ch;
+      if (!ctx.assist) return fx_ < 0 || fx_ >= 3 || fy < 0 || fy >= 3 ? -1 : Math.floor(fy) * 3 + Math.floor(fx_);   // classic: just the tapped cell (as before)
       if (fx_ < -.3 || fx_ > 3.3 || fy < -.45 || fy > 3.3) return -1;
       const cell = BX.clamp(Math.floor(fy), 0, 2) * 3 + BX.clamp(Math.floor(fx_), 0, 2);
       if (st.ph === 'play' && liveAt(seat, cell)) return cell;

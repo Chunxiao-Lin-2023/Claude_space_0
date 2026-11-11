@@ -58,7 +58,7 @@ BX.register({
   desc: '古老的“播种”棋：抓起一坑的豆子逆时针逐个撒下，落进自己的仓可以再走一次，还能把对面的豆子一口吃掉。经典 Kalah 六坑四子规则。',
   kind: 'turn', seats: 2, seatNames: ['南家', '北家'], seatColors: ['#b23a2b', '#2f5d8a'], firstLabel: '先手',
   options: [{key: 'seeds', label: '每坑豆数', choices: [[3, '3 颗（快）'], [4, '4 颗（经典）'], [5, '5 颗'], [6, '6 颗（长局）']], def: 4}],
-  howto: ['点自己一排（靠近你、有金圈的坑）播种。', '<b>预览</b>：鼠标悬停或触屏第一次点，会标出每个坑会多几颗、最后一颗落在哪（金圈），以及能否「再走一次」或「吃子」；再点一次确认。', '播种动画中点棋盘可直接跳到结果；键盘 1–6 从左到右选坑，回车确认。', '💡 提示会标出推荐的坑；红点标出对手上一步抓起的坑。'],
+  howto: ['点自己一排（靠近你、有金圈的坑）播种。', '鼠标悬停或触屏第一次点选中一个坑，再点一次确认。开启辅助模式后，选中时还会预览每个坑会多几颗、最后一颗落在哪（金圈），以及能否「再走一次」或「吃子」。', '播种动画中点棋盘可直接跳到结果；键盘 1–6 从左到右选坑，回车确认。', '💡 提示会标出推荐的坑；红点标出对手上一步抓起的坑。'],
   rules: `<p>棋盘两排各 6 个小坑，两端各有一个大仓；靠近你的一排和你右手边的大仓属于你。开局每个小坑放 <b>4 颗豆</b>。</p>
 <p><b>播种：</b>轮到你时，从自己一排选一个有豆的坑，把豆全部抓起，<b>逆时针</b>方向依次往后面每个坑各放一颗（经过自己的仓也放一颗，但<b>跳过对手的仓</b>）。</p>
 <p><b>再走一次：</b>最后一颗豆正好落进自己的仓，可以再走一步。</p>
@@ -185,7 +185,7 @@ BX.register({
       if (st.over) return ctx.status(st.b[6] === st.b[13] ? '和棋' : ctx.name(st.b[6] > st.b[13] ? 0 : 1) + ' 获胜');
       const pre = st.extra ? '<b style="color:#e6c57d">落仓再走！</b> ' : st.cap ? '<b style="color:#e6c57d">' + (st.lastBy === st.turn || !ctx.canAct(st.turn) ? '吃 ' : '被吃 ') + st.cap + ' 颗！</b> ' : '';
       const pp = preview >= 0 ? preview : hover;
-      const tail = ctx.canAct(st.turn) && legalPit(pp) ? ' · ' + pvText(pp) + (preview >= 0 ? '（再点确认）' : '') : '';
+      const tail = ctx.canAct(st.turn) && legalPit(pp) ? (ctx.assist ? ' · ' + pvText(pp) : '') + (preview >= 0 ? (ctx.assist ? '' : ' · ') + '（再点确认）' : '') : '';
       ctx.status(pre + (ctx.canAct(st.turn) ? (ctx.hotseat ? ctx.name(st.turn) + ' 播种' : '轮到你播种') : '等待 ' + ctx.name(st.turn) + '…') + tail);
     };
     const inst = {
@@ -289,6 +289,7 @@ BX.register({
         if (canPick && legalPit(pp)) {
           const v = pv(pp), col = ctx.color(st.turn);
           const src = pitPos(pp, l); g.strokeStyle = '#ffd76a'; g.lineWidth = 4; D.circle(g, src.x, src.y, s * .46); g.stroke();
+          if (ctx.assist) {   // 辅助模式: sowing outcome preview
           for (let p = 0; p < 14; p++) {
             if (!v.add[p] || !ctx.pref('hints')) continue;
             const q = pitPos(p, l), bx = q.x + (q.store ? 0 : s * .3), by = q.y + (q.store ? (l.portrait ? 0 : -s * .62) : s * .3);
@@ -300,6 +301,7 @@ BX.register({
           if (v.capFrom >= 0) { const q = pitPos(v.capFrom, l); g.fillStyle = 'rgba(255,90,60,' + (.28 + .12 * Math.sin(tk * 8)) + ')'; D.circle(g, q.x, q.y, s * .44); g.fill(); D.text(g, '吃', q.x, q.y - s * .02, {size: s * .3, color: '#fff', font: 'serif', weight: 900, shadow: 'rgba(0,0,0,.6)'}); }
           const [cx, cy] = T(4, 1.5, l);
           if (v.extra || v.cap) D.text(g, v.extra ? '再走一次' : '吃 ' + v.cap, cx, cy, {size: s * .26, color: '#ffd76a', font: 'deco', weight: 400, stroke: '#3a2010', strokeW: 4});
+          }
         }
         if (call) {
           const [cx, cy] = T(4, 1.5, l), k = call.t;

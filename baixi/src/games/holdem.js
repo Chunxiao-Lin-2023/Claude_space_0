@@ -110,7 +110,7 @@ BX.register({
     {key: 'blind', label: '涨盲', choices: [[5, '每 5 手'], [10, '每 10 手'], [15, '每 15 手']], def: 10},
     {key: 'limit', label: '结束', choices: [[0, '淘汰到底'], [30, '限 30 手'], [60, '限 60 手']], def: 0},
   ],
-  howto: ['轮到你时点 <b>弃牌 / 让牌·跟注 / 加注</b>；加注面板里有 ½池、底池等快捷额度，也可拖动滑杆或点 ± 微调。', '还没轮到你时，可先勾选「让/弃」「跟任何注」等预选操作，轮到时自动执行。', '你的牌下方会显示当前牌型（如「一对 J · 同花听牌」）；左上角「记录」查看本手与上一手的行动。', '键盘：F 弃牌 · C/空格 让牌或跟注 · R 加注 · ↑↓ 调整 · 回车 确认 · Esc 取消。'],
+  howto: ['轮到你时点 <b>弃牌 / 让牌·跟注 / 加注</b>；加注面板里有 ½池、底池等快捷额度，也可拖动滑杆或点 ± 微调。', '还没轮到你时，可先勾选「让/弃」「跟任何注」等预选操作，轮到时自动执行。', '开启辅助模式后，你的牌上方会显示当前牌型（如「一对 J · 同花听牌」），跟注时还显示赔率；左上角「记录」查看本手与上一手的行动。', '键盘：F 弃牌 · C/空格 让牌或跟注 · R 加注 · ↑↓ 调整 · 回车 确认 · Esc 取消。'],
   rules: `<p><b>无限注德州扑克</b>锦标赛。每人 1000 筹码，盲注从 10/20 起按设定手数递增。</p>
 <p><b>座位：</b>庄家按钮每手顺时针移动一位。按钮左侧依次下小盲、大盲；<b>单挑时庄家下小盲</b>，翻牌前先行动、翻牌后后行动。</p>
 <p><b>发牌与下注：</b>每人两张底牌（只有自己能看）。共四轮下注：翻牌前、翻牌（三张公共牌）、转牌（第四张）、河牌（第五张）。轮到你时可以<b>弃牌、让牌</b>（无人下注时）、<b>跟注、加注或全下</b>。</p>
@@ -433,7 +433,7 @@ BX.register({
       let m;
       if (st.over) m = '比赛结束';
       else if (st.ph === 'res') m = resText();
-      else if (L) m = who + (L.check ? '轮到你：让牌或下注' : `轮到你：需跟注 ${L.toCall}（底池 ${potTotal()}，赔率 ${Math.round(L.toCall / (potTotal() + L.toCall) * 100)}%）`);
+      else if (L) m = who + (L.check ? '轮到你：让牌或下注' : `轮到你：需跟注 ${L.toCall}（底池 ${potTotal()}${ctx.assist ? `，赔率 ${Math.round(L.toCall / (potTotal() + L.toCall) * 100)}%` : ''}）`);
       else if (st.ph === 'bet') m = '等待 ' + ctx.name(st.cur) + '…';
       else m = '发牌中…';
       ctx.status(head + m);
@@ -542,8 +542,8 @@ BX.register({
         const side = p.x <= cx + 2 ? 1 : -1, bpx = p.x + side * (p.plW / 2 + 30), bpy = p.y - 8;
         p.bx = bpx; p.by = bpy;
         if (st.bet[s]) { chipStack(g, bpx, bpy + 4, st.bet[s], Math.max(7, cw * .13)); D.text(g, String(st.bet[s]), bpx, bpy + Math.max(14, cw * .3), {size: 12, color: '#fff3d6', weight: 700, stroke: 'rgba(0,0,0,.6)', strokeW: 3}); }
-        // my current hand strength (hidden from others; respects the 提示 preference)
-        if (p.mine && !(st.show && st.ph === 'res') && st.hole[s].length === 2 && !st.fold[s] && ctx.pref('hints') && (!ctx.hotseat || s === ctx.view)) {
+        // my current hand strength — 辅助模式 only (hidden from others; also respects the 提示 preference)
+        if (ctx.assist && p.mine && !(st.show && st.ph === 'res') && st.hole[s].length === 2 && !st.fold[s] && ctx.pref('hints') && (!ctx.hotseat || s === ctx.view)) {
           const txt = handDesc(st.hole[s], st.board);
           const ly = p.y - 18 - cw * p.scale * 1.4 * .72 - 16;
           if (txt) { g.font = '700 13px ' + BX.F.sans; const tw2 = Math.min(W - 16, g.measureText(txt).width + 18); g.fillStyle = 'rgba(20,40,30,.88)'; D.rr(g, p.x - tw2 / 2, ly - 11, tw2, 21, 10); g.fill(); g.strokeStyle = 'rgba(159,211,178,.6)'; g.lineWidth = 1; g.stroke(); D.text(g, txt, p.x, ly, {size: 13, color: '#dff5e6', weight: 700, maxW: tw2 - 10}); }

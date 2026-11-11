@@ -19,7 +19,7 @@ BX.register({
   kind: 'turn', seats: 2, hidden: true, firstLabel: '先罚', seatColors: ['#c23a2b', '#2f5d8a'], aiDelay: 280,
   howto: ['<b>罚球</b>：从球向球门<b>划一下</b>就射门——划进球门就射向那一格，没划到球门则按甩出的惯性往前延伸；划得越快力量越大（轨迹颜色：白=轻推、金=标准、红=大力），向哪边弯着划，球就往哪边拐。也可以先选力度，再点球门区域（触屏点两下确认）。',
     '<b>守门</b>：点球门的左/中/右 × 上/下 区域扑救（触屏点两下确认，或点「扑救！」）。',
-    '面板会显示所选角度的打偏风险；球门里的小数字是对手以往的习惯（可在「⋯」里关闭提示）。',
+    '开启辅助模式后：划动时实时标出会射向哪一格，面板显示所选角度的打偏风险和被猜中仍进的概率，球门里的小数字是对手以往的习惯。',
     '💡 会给出电脑推荐的角度/扑救方向。键盘：方向键或小键盘 1–9 选区域，Q/W/E 选力度，回车确认。'],
   rules: `<p>双方轮流罚点球，<b>各罚 5 球</b>，进球多者胜；若一方已无法追平则提前结束。5 轮后仍平局，进入<b>突然死亡</b>：每轮各罚一球，一方进而另一方不进即分胜负。</p>
 <p>每一脚都是<b>同时暗选</b>：</p>
@@ -427,7 +427,7 @@ BX.register({
       const tk = (now => .55 + .35 * Math.sin(now / 160))(performance.now());
       if (role === 'k' && hint && hint.t === 'kick') { const r = zoneRect(P, hint.z); g.strokeStyle = `rgba(63,200,140,${tk})`; g.lineWidth = 4; g.strokeRect(r.x + 4, r.y + 4, r.w - 8, r.h - 8); D.text(g, '荐 ' + POWN[hint.p], r.x + r.w / 2, r.y + r.h - 10, {size: Math.min(13, r.h * .22), color: '#bfffd8', weight: 800, stroke: 'rgba(0,0,0,.6)'}); }
       if (role === 'g' && hint && hint.t === 'dive') { const r = diveRect(P, hint.z); g.strokeStyle = `rgba(63,200,140,${tk})`; g.lineWidth = 4; g.strokeRect(r.x + 4, r.y + 4, r.w - 8, r.h - 8); D.text(g, '荐', r.x + r.w / 2, r.y + r.h - 12, {size: 13, color: '#bfffd8', weight: 800, stroke: 'rgba(0,0,0,.6)'}); }
-      if (role && ctx.pref('hints')) {   // opponent's habits so far
+      if (role && ctx.assist && ctx.pref('hints')) {   // opponent's habits so far (assist)
         const fs = Math.max(10, Math.min(13, G.h * .08));
         if (role === 'k') { const h = st.hist[keeper() * 2 + 1]; if (h.n) for (let c = 0; c < 3; c++) D.text(g, '扑' + COLN[c] + ' ' + h.c[c], G.x + G.w * (c + .5) / 3, G.y + G.h + fs * .9 + 2, {size: fs, color: 'rgba(255,250,230,.85)', weight: 800, stroke: 'rgba(0,0,0,.5)'}); }
         else { const h = st.hist[shooter() * 2]; if (h.n) for (let z = 0; z < 9; z++) if (h.z[z]) { const r = zoneRect(P, z); D.text(g, '×' + h.z[z], r.x + r.w - 14, r.y + 12, {size: fs, color: '#ffe8b0', weight: 800, stroke: 'rgba(0,0,0,.6)'}); } }
@@ -445,7 +445,7 @@ BX.register({
       if (!behind) drawBall(g, bx, by2, br, brot);
       if (swipe && swipe.pts.length > 1) {          // live preview: the shot this stroke would make if released now
         const r = role === 'k' ? readSwipe(swipe.pts, P, performance.now()) : {ok: false};
-        if (r.ok) {
+        if (r.ok && ctx.assist) {   // target cell / crosshair preview = assist
           const zr = zoneRect(P, r.z); g.fillStyle = 'rgba(255,240,200,.16)'; g.fillRect(zr.x + 2, zr.y + 2, zr.w - 4, zr.h - 4); g.strokeStyle = 'rgba(255,240,200,.7)'; g.lineWidth = 2; g.strokeRect(zr.x + 2, zr.y + 2, zr.w - 4, zr.h - 4);
           g.strokeStyle = 'rgba(255,240,200,.35)'; g.setLineDash([4, 6]); g.beginPath(); g.moveTo(swipe.pts[swipe.pts.length - 1][0], swipe.pts[swipe.pts.length - 1][1]); g.lineTo(r.x, r.y); g.stroke(); g.setLineDash([]);
           const rc = ['#fff6e0', '#ffd664', '#ff6e50'][r.p]; g.strokeStyle = rc; g.lineWidth = 2.5; D.circle(g, r.x, r.y, 9); g.stroke(); g.beginPath(); g.moveTo(r.x - 13, r.y); g.lineTo(r.x + 13, r.y); g.moveTo(r.x, r.y - 13); g.lineTo(r.x, r.y + 13); g.stroke();
@@ -497,7 +497,7 @@ BX.register({
         return;
       }
       let tip = role === 'k' ? '向球门划动射门 · 或选力度后点球门' : '点球门选扑救方向';
-      if (role === 'k' && sel.z >= 0) { const c = sel.z % 3, r = Math.floor(sel.z / 3); tip = ROWN[r] + COLN[c] + ' · ' + POWN[sel.p] + '：打偏 ' + Math.round(missProb(c, r, sel.p) * 100) + '%，被猜中仍进 ' + Math.round((1 - SAVE[sel.p]) * 100) + '%'; }
+      if (role === 'k' && sel.z >= 0) { const c = sel.z % 3, r = Math.floor(sel.z / 3); tip = ROWN[r] + COLN[c] + ' · ' + POWN[sel.p] + (ctx.assist ? '：打偏 ' + Math.round(missProb(c, r, sel.p) * 100) + '%，被猜中仍进 ' + Math.round((1 - SAVE[sel.p]) * 100) + '%' : ''); }
       else if (role === 'g' && sel.d >= 0) tip = '扑' + COLN[sel.d >> 1] + (sel.d & 1 ? '下' : '上') + '：覆盖' + COLN[sel.d >> 1] + '路' + (sel.d & 1 ? '中、低' : '高、中') + '两层';
       D.text(g, tip, R.x + R.w / 2, R.y + 17, {size: sz, color: sel.z >= 0 || sel.d >= 0 ? '#ffe08a' : '#fbe9d0', maxW: R.w - 12});
       for (const b of ctrlButtons(P)) {

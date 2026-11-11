@@ -100,7 +100,7 @@ BX.register({
   id: 'guesswho', title: '猜猜我是谁', cat: 'deduce', order: 1, sub: '问是或否，揪出神秘茶客',
   desc: '双方各自抽到一位神秘茶客。轮流提一个“是或否”的问题，翻下不符合的面孔，最先猜中对方角色的人获胜——可猜错就直接输了！',
   kind: 'turn', seats: 2, hidden: true, seatNames: ['甲方', '乙方'], firstLabel: '先问',
-  howto: ['「提问」打开问题菜单，每个问题旁会显示「是 / 否」各能留下几人，挑最能对半分的问。', '默认<b>自动翻牌</b>：回答后不符合的面孔自动扣下；也可以自己点面孔翻下 / 翻回。翻完点「结束回合」。', '「猜人」后点一位茶客，再点一次确认——猜错直接判负！只剩一人时按钮会闪烁。', '键盘：Q 提问、G 猜人、回车结束回合、Esc 关闭菜单。💡 提示会推荐一个问题。'],
+  howto: ['「提问」打开问题菜单，挑一个最能把剩下的人对半分的问题。开启辅助模式后，每个问题旁会显示「是 / 否」各能留下几人。', '默认<b>自动翻牌</b>：回答后不符合的面孔自动扣下；也可以自己点面孔翻下 / 翻回。翻完点「结束回合」。', '「猜人」后点一位茶客，再点一次确认——猜错直接判负！只剩一人时按钮会闪烁。', '键盘：Q 提问、G 猜人、回车结束回合、Esc 关闭菜单。💡 提示会推荐一个问题。'],
   rules: `<p>桌上有 <b>24 位茶客</b>，每位都有不同的外貌：性别、发色、发型长短、帽子、眼镜、胡子、耳环、腮红、笑容和衣服颜色。</p>
 <p>开局时双方各自<b>秘密抽到一位茶客</b>，对手要猜的就是他。</p>
 <p>轮到你时，可以：</p>
@@ -139,7 +139,7 @@ BX.register({
       if (!ctx.canAct(st.turn) || st.ph !== 'ask') return;
       closePanel(); guessMode = false;
       const askedAns = new Map(st.qa.filter(x => x.by === st.turn).map(x => [x.q, x.ans]));
-      const up = BX.range(24).filter(i => !st.down[st.turn][i]), showSplit = ctx.pref('hints');
+      const up = BX.range(24).filter(i => !st.down[st.turn][i]), showSplit = ctx.assist && ctx.pref('hints');   // 辅助模式: yes/no split per question
       panel = document.createElement('div'); panel.className = 'bx-panel';
       panel.style.cssText = 'position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(520px,94%);max-height:92%;overflow:auto;padding:12px 14px';
       const ttl = document.createElement('div'); ttl.style.cssText = 'font-family:var(--deco);font-size:20px;letter-spacing:2px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center';

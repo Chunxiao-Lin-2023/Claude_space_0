@@ -81,7 +81,7 @@ BX.register({
   kind: 'turn', seats: 2, seatNames: ['红方', '蓝方'], seatColors: ['#c23a2b', '#2f5d8a'], aiDelay: 220,
   options: [{key: 'jump', label: '跳法', choices: [['classic', '经典跳'], ['far', '隔子跳']], def: 'classic'}],
   howto: ['点自己的弹珠选中，亮起的孔都能到达（绿=走一格，金=跳跃）；再点目标孔，或直接把弹珠<b>拖</b>到目标孔。',
-    '选中后指向/按住目标孔会先画出完整的跳跃路线；手机上小棋盘第二次点同一孔才确认。',
+    '手机上小棋盘第二次点同一孔才确认。开启辅助模式后，选中弹珠再指向/按住目标孔会先画出完整的跳跃路线。',
     '金色虚线是上一步的路线，空心圈是它出发的位置。💡 提示会标出推荐的一步。',
     '开局选项「隔子跳」：可以隔着空位跳过一颗棋子，只要两边空位一样多（民间流行玩法）。'],
   rules: `<p><b>棋盘</b>：六角星形棋盘共 121 个孔。两人对局时，双方各占相对的一个三角营，每方 <b>10 颗</b>弹珠。红方先走。</p>
@@ -91,7 +91,7 @@ BX.register({
 <p><b>隔子跳</b>（可选玩法）：跳跃时被跳的棋子不必紧挨着，只要它正好在起点与落点的正中间、且这条线上其余的孔都是空的即可（对称跳）；同样可以连续跳。</p>
 <p>同一回合不能既移一格又跳跃。弹珠进入对面三角营后，只能在营内移动，不能再离开。</p>
 <p><b>胜负</b>：先把 10 颗弹珠全部移入正对面三角营的一方获胜。<b>防堵规则</b>：如果对方有弹珠一直赖在它的出发营（也就是你的目标营）里不走，只要营内其余的孔都已被你的弹珠占满，也算你获胜（双方各走满 30 步后生效）。</p>
-<p><b>操作</b>：点自己的弹珠选中（亮出所有可达位置），再点目标孔即可；跳跃路线会以虚线显示。</p>`,
+<p><b>操作</b>：点自己的弹珠选中（亮出所有可达位置），再点目标孔即可；开启辅助模式后，指向目标孔时跳跃路线会以虚线显示。</p>`,
   icon(g, w, h) {
     D.iconBase(g, w, h, '#7a4a28', '#3a2010');
     const cx = w / 2, cy = h / 2, s = h * .056;
@@ -144,7 +144,7 @@ BX.register({
       if (sel >= 0) {
         const mv = legalFrom(st.b, st.turn, sel);
         if (mv.has(i)) {
-          // small boards (phones): the target shows its path first, tap again to confirm
+          // small boards (phones): tap the target once to preview (path only with assist), tap again to confirm
           if (ctx.needConfirm(e) && L.s < 26 && preview !== i) { preview = i; ctx.sfx('tick'); return; }
           go(i); return;
         }
@@ -299,7 +299,7 @@ BX.register({
             D.hint(g, x, y, R * .55, jump ? 'rgba(200,160,82,.85)' : 'rgba(63,140,110,.8)');
           }
           const pv = preview >= 0 ? preview : hoverT;
-          if (pv >= 0 && tg.has(pv)) { drawPath(g, L, tg.get(pv), C.red, true); const [x, y] = P(pv, L); g.strokeStyle = C.red; g.lineWidth = 2; D.circle(g, x, y, R * .95); g.stroke(); }
+          if (pv >= 0 && tg.has(pv)) { if (ctx.assist) drawPath(g, L, tg.get(pv), C.red, true); const [x, y] = P(pv, L); g.strokeStyle = C.red; g.lineWidth = 2; D.circle(g, x, y, R * .95); g.stroke(); }
         }
         if (hintM && myTurn() && st.b[hintM.f] === st.turn + 1) {
           const k = (performance.now() - hintT) / 1000, al = .55 + .4 * Math.sin(k * 6);

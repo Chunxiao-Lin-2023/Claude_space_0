@@ -62,7 +62,7 @@ BX.register({
   id: 'yacht', title: '快艇骰子', cat: 'dice', order: 1, sub: '五颗骰子，十三格计分',
   desc: '每回合最多掷三次五颗骰子，可以留下想要的骰子再掷，然后填入计分表的一格。十三轮后总分最高者获胜，五颗相同就是“快艇”！',
   kind: 'turn', seats: [1, 4], defSeats: 2, seatColors: PCOL, firstLabel: '先掷', aiDelay: 380, anyTimeActs: true,
-  howto: ['点「掷骰」（或按空格键）掷骰；每回合最多掷 3 次。', '掷过之后<b>点骰子</b>可保留/取消保留（电脑上按 1–5），被保留的骰子抬起并标“留”。', '计分表里绿色数字是这手骰子填进该格能得的分；点自己那一列的格子填分（触屏点两次确认，划 0 分时也会要求再点一次）。', '“奖励 ≥63”一行显示上半区还差多少分，以及相对“每格 3 个”的进度（+/−）。💡 会标出电脑建议保留的骰子或该填的格子。'],
+  howto: ['点「掷骰」（或按空格键）掷骰；每回合最多掷 3 次。', '掷过之后<b>点骰子</b>可保留/取消保留（电脑上按 1–5），被保留的骰子抬起并标“留”。', '计分表里绿色数字是这手骰子填进该格能得的分；点自己那一列的格子填分（触屏点两次确认，划 0 分时也会要求再点一次）。', '“奖励 ≥63”一行显示上半区还差多少分；开启辅助模式后还会显示相对“每格 3 个”的进度（+/−）。💡 会标出电脑建议保留的骰子或该填的格子。'],
   rules: `<p>每位玩家轮流进行回合，共 <b>13 轮</b>。每回合最多掷骰 <b>3 次</b>：第一次掷全部五颗，之后可以点选想<b>保留</b>的骰子，只重掷其余的。</p>
 <p>掷完（或随时停手）后，必须在自己计分表中选<b>一个空格</b>填分，每格整局只能填一次；不符合条件的格子也可以填，记 0 分。</p>
 <ul><li><b>一点～六点</b>：该点数骰子的点数之和。上半区合计 <b>≥ 63</b> 分时奖励 <b>35</b> 分。</li>
@@ -354,7 +354,7 @@ BX.register({
             else if (r === 7) {
               const u = upperSum(card), done6 = card.slice(0, 6).every(x => x != null);
               txt = u >= 63 ? '35' : (done6 ? '0' : '差' + (63 - u)); color = u >= 63 ? C.jade : C.ink2; wgt = u >= 63 ? 800 : 500;
-              if (u < 63 && !done6 && card.slice(0, 6).some(x => x != null) && rh >= 24) {   // pace vs "three of each"
+              if (ctx.assist && u < 63 && !done6 && card.slice(0, 6).some(x => x != null) && rh >= 24) {   // 辅助模式: pace vs "three of each"
                 let par = 0; for (let q = 0; q < 6; q++) if (card[q] != null) par += card[q] - 3 * (q + 1);
                 D.text(g, (par >= 0 ? '+' : '') + par, cx, y + rh - 6, {size: Math.max(8, fs * .55), color: par >= 0 ? C.jade : C.red, weight: 700});
                 txt = '差' + (63 - u); D.text(g, txt, cx, y + rh * .36, {size: fs * .74, color, weight: wgt}); txt = '';

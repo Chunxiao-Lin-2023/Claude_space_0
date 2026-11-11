@@ -212,8 +212,9 @@ BX.register({
     {key: 'auc', label: '无人购买时', choices: [[1, '拍卖'], [0, '不拍卖']], def: 1},
     {key: 'go2', label: '正好停在起点', choices: [[0, '领 ¥200'], [1, '领 ¥400']], def: 0}],
   howto: ['右侧（竖屏在下方）面板是操作区：<b>掷骰 → 购买 / 不买 → 结束回合</b>；空格 / 回车 = 当前主按钮。',
-    '点棋盘任意格子查看地契和<b>此刻要付的租金</b>；点上方玩家条可看该玩家的全部地产与总资产。',
-    '「管理」里集齐同色可<b>一键整组盖房</b>，也能卖房、抵押、赎回；「交易」会显示双方给出的估值和电脑的态度。',
+    '点棋盘任意格子查看地契；点上方玩家条可看该玩家的全部地产与总资产。',
+    '「管理」里集齐同色可<b>一键整组盖房</b>，也能卖房、抵押、赎回。',
+    '开启辅助模式后：地契显示此刻要付的租金与同组归属，玩家地产列表显示每块地的租金，「交易」页显示双方给出的估值和电脑的态度。',
     '面板底部可开启「自动掷骰」「自动结束回合」；动画进行中<b>点一下棋盘</b>即可跳过。💡 提示会给出电脑推荐的操作。'],
   rules: `<p><b>目标</b>：买地、收租、盖房，让其他玩家破产。经典模式下坚持到最后的玩家获胜；「30 回合」模式在第 30 回合结束时，<b>总资产</b>（现金 + 地价（已抵押按一半）+ 房屋造价）最高者获胜。</p>
 <p><b>开局</b>：每人 ¥1500，从「起点」出发。每次<b>经过或停在起点</b>领取 ¥200。</p>
@@ -228,7 +229,7 @@ BX.register({
 <p><b>交易</b>：轮到你时可向任一玩家提议交易，可包含现金、地产（该色组上不能有建筑）与免罪金牌；对方同意即成交。收到已抵押地产须立即付 10% 利息。</p>
 <p><b>破产</b>：欠款付不出时，可卖房、抵押来筹钱；仍不够则宣告破产——欠玩家的，你的现金、地产（保持抵押状态）和金牌全部归债主；欠银行的，地产收归银行重新出售。</p>
 <p><b>可选规则</b>（开局设置里选择，默认均为经典规则）：「15 回合快速局」；起始资金 ¥1000 / ¥2000；「免费停车奖池」——所得税、奢侈税、卡牌罚款、修缮费、保释金都进入奖池，停在免费停车的玩家拿走全部奖池；「不拍卖」——无人购买的地产保持无主；「正好停在起点领 ¥400」。</p>
-<p><b>操作</b>：右侧（竖屏时下方）面板显示按钮：掷骰、购买 / 拍卖、管理（整组盖房 / 建房 / 卖房 / 抵押 / 赎回）、交易、结束回合。点棋盘格子看地契与当前租金，点玩家条看其地产。键盘：空格 / 回车 = 主按钮，M = 管理，T = 交易，Esc = 返回。</p>`,
+<p><b>操作</b>：右侧（竖屏时下方）面板显示按钮：掷骰、购买 / 拍卖、管理（整组盖房 / 建房 / 卖房 / 抵押 / 赎回）、交易、结束回合。点棋盘格子看地契（开启辅助模式后含当前租金），点玩家条看其地产。键盘：空格 / 回车 = 主按钮，M = 管理，T = 交易，Esc = 返回。</p>`,
   icon(g, w, h) {
     D.wood(g, 0, 0, w, h, {seed: 21, base: '#8a5a32', dark: '#4a2a12'});
     const u = 15, x0 = 18, y0 = 14;
@@ -787,7 +788,8 @@ BX.register({
       const ownerTxt = o < 0 ? '无主 · 售价 ¥' + sp.price : '地主：' + name(o) + (st.mort[i] ? '（已抵押）' : '') + (st.hs[i] ? ' · ' + (st.hs[i] === 5 ? '酒楼' : st.hs[i] + ' 栋房') : '');
       const v = uiSeat(), L = GROUPS[sp.g];
       let extra = '';
-      if (o >= 0 && o !== v && !st.mort[i]) extra = '此刻停在这里要付：' + (sp.k === 'ut' ? '骰点 ×' + (GROUPS[9].filter(j => st.own[j] === o).length === 2 ? 10 : 4) : '¥' + rentOf(i, '', 7));
+      if (!ctx.assist) {}   // rent-now / set-progress lines: 辅助模式 only
+      else if (o >= 0 && o !== v && !st.mort[i]) extra = '此刻停在这里要付：' + (sp.k === 'ut' ? '骰点 ×' + (GROUPS[9].filter(j => st.own[j] === o).length === 2 ? 10 : 4) : '¥' + rentOf(i, '', 7));
       else if (o === v && !st.mort[i]) extra = '对手停在这里付你：' + (sp.k === 'ut' ? '骰点 ×' + (GROUPS[9].filter(j => st.own[j] === o).length === 2 ? 10 : 4) : '¥' + rentOf(i, '', 7));
       else if (o < 0 && v >= 0) { const have = L.filter(j => st.own[j] === v).length; extra = '买下后你拥有此组 ' + (have + 1) + ' / ' + L.length + (have + 1 === L.length && sp.k === 'st' ? '（凑齐全套！）' : ''); }
       const owners = L.filter(j => st.own[j] >= 0).map(j => st.own[j]);
@@ -796,7 +798,7 @@ BX.register({
         h('table', {}, rows.map(r => h('tr', {class: r[2] ? 'hi' : ''}, h('td', {text: r[0]}), h('td', {text: typeof r[1] === 'number' ? '¥' + r[1] : r[1]})))),
         h('div', {class: 'ft', style: o >= 0 ? {color: ctx.color(o), fontWeight: 700} : null, text: ownerTxt}),
         extra ? h('div', {class: 'ft', style: {fontWeight: 700, color: '#2b2118', borderTop: 'none', paddingTop: 0}, text: extra}) : null,
-        owners.length && L.length > 1 ? h('div', {class: 'ft', style: {borderTop: 'none', paddingTop: 0, fontSize: '11.5px'}, text: '同组：' + L.map(j => SP[j].n + (st.own[j] >= 0 ? '·' + name(st.own[j]) : '·无主')).join('　')}) : null);
+        ctx.assist && owners.length && L.length > 1 ? h('div', {class: 'ft', style: {borderTop: 'none', paddingTop: 0, fontSize: '11.5px'}, text: '同组：' + L.map(j => SP[j].n + (st.own[j] >= 0 ? '·' + name(st.own[j]) : '·无主')).join('　')}) : null);
     }
     function manageList(s, allowBuild) {
       const box = h('div', {});
@@ -861,9 +863,9 @@ BX.register({
       box.append(sec('你给出', s, 'gp', 'gc', 'gj'), sec(name(d.to) + ' 给出', d.to, 'wp', 'wc', 'wj'));
       const pv = (c, p, j) => c + p.reduce((a2, i) => a2 + (st.mort[i] ? SP[i].price / 2 : SP[i].price), 0) + 50 * j;
       const A = pv(d.gc, d.gp, d.gj), Bv = pv(d.wc, d.wp, d.wj);
-      box.append(h('div', {class: 'mo-val'}, h('div', {}, '你给出（估值）', h('b', {text: '¥' + A})), h('div', {}, '你得到（估值）', h('b', {text: '¥' + Bv, style: {color: Bv >= A ? '#2f6b55' : '#b23a2b'}}))));
+      if (ctx.assist) box.append(h('div', {class: 'mo-val'}, h('div', {}, '你给出（估值）', h('b', {text: '¥' + A})), h('div', {}, '你得到（估值）', h('b', {text: '¥' + Bv, style: {color: Bv >= A ? '#2f6b55' : '#b23a2b'}}))));
       const o = Object.assign({}, d, {t: 'offer'});
-      if (ctx.isAI(d.to) && legal(o, s)) {
+      if (ctx.assist && ctx.isAI(d.to) && legal(o, s)) {   // AI attitude: 辅助模式 only
         const gain = tradeGain(Object.assign({}, d, {from: s}), d.to, Math.max(2, ctx.level(d.to) || 2));
         const [txt, col] = gain > 60 ? ['😀 对方很可能接受', '#2f6b55'] : gain > 0 ? ['🙂 对方可能接受', '#2f6b55'] : gain > -80 ? ['🤔 对方在犹豫，再加点码？', '#b8862b'] : ['😠 对方多半会拒绝', '#b23a2b'];
         box.append(h('div', {class: 'mo-mood', style: {color: col}, text: txt}));
@@ -888,7 +890,7 @@ BX.register({
       if (!props.length) box.append(h('div', {class: 'mo-wait', text: '还没有地产'}));
       for (const i of props) {
         const sp = SP[i], col = sp.k === 'st' ? GC[sp.g] : sp.k === 'rr' ? '#4a3a2a' : '#2f6f8a';
-        const info = (st.mort[i] ? '已抵押' : sp.k === 'st' ? (st.hs[i] === 5 ? '酒楼' : st.hs[i] ? st.hs[i] + ' 栋房' : ownsAll(sp.g, p) ? '全套空地' : '空地') : sp.k === 'rr' ? '驿站' : '公用事业') + (st.mort[i] ? '' : ' · 租 ' + (sp.k === 'ut' ? '骰点×' + (GROUPS[9].filter(j => st.own[j] === p).length === 2 ? 10 : 4) : '¥' + rentOf(i, '', 7)));
+        const info = (st.mort[i] ? '已抵押' : sp.k === 'st' ? (st.hs[i] === 5 ? '酒楼' : st.hs[i] ? st.hs[i] + ' 栋房' : ownsAll(sp.g, p) ? '全套空地' : '空地') : sp.k === 'rr' ? '驿站' : '公用事业') + (st.mort[i] || !ctx.assist ? '' : ' · 租 ' + (sp.k === 'ut' ? '骰点×' + (GROUPS[9].filter(j => st.own[j] === p).length === 2 ? 10 : 4) : '¥' + rentOf(i, '', 7)));
         box.append(h('div', {class: 'mo-row', on: {click: () => { sel = i; uiMode = 'info'; render(); }}}, h('i', {class: 'c', style: {background: col}}), h('div', {class: 'n'}, h('b', {text: sp.n}), h('small', {text: info}))));
       }
       if (jcCount(p)) box.append(h('div', {class: 'mo-log', text: '持有免罪金牌 ×' + jcCount(p)}));

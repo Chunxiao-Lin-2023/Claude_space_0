@@ -76,7 +76,7 @@ BX.register({
     {key: 'tm', label: '计时', choices: [[1, '限时'], [0, '不限时']], def: 1},
     {key: 'md', label: '模式', choices: [['c', '经典'], ['s', '闯关（牌会滑动）']], def: 'c'},
   ],
-  howto: ['依次<b>轻点两张相同的牌</b>，能用不超过两个弯的线连通就会消除；连线可以绕到牌阵外面。', '选中一张牌时，同样的牌会有金色小标记；状态栏显示当前「可消几对」。', '💡 提示一对能消的牌（限时扣 10 秒）；「洗牌」打乱剩下的牌；限时模式可「暂停」。', '「闯关」模式：每关消除后牌会朝不同方向滑动（下、左、上、右、向中间），越往后越难。'],
+  howto: ['依次<b>轻点两张相同的牌</b>，能用不超过两个弯的线连通就会消除；连线可以绕到牌阵外面。', '开启辅助模式后：选中一张牌时，同样的牌会有金色小标记；状态栏显示当前「可消几对」。', '💡 提示一对能消的牌（限时扣 10 秒）；「洗牌」打乱剩下的牌；限时模式可「暂停」。', '「闯关」模式：每关消除后牌会朝不同方向滑动（下、左、上、右、向中间），越往后越难。'],
   rules: `<p>依次点选两张<b>完全相同</b>的牌（同花色同点数，花牌须同一字），如果两张牌之间能用一条<b>最多转两个弯</b>的折线连起来，且线经过的都是空位（可以绕到棋盘外沿），两张牌就会消除。</p>
 <p>消除全部牌即获胜。限时模式下，上方进度条是剩余时间，<b>时间耗尽则失败</b>；每次消除会补回少许时间。</p>
 <p>· <b>连击</b>：3 秒内连续消除可累积连击，得分越来越高。<br>· <b>提示</b>：显示一对可以消除的牌（限时模式扣 10 秒）。<br>· <b>洗牌</b>：把剩下的牌重新打乱，每局 3 次；如果局面无牌可消会自动免费洗牌。<br>· 牌局保证有解。</p>
@@ -306,7 +306,7 @@ BX.register({
           if (sc !== 1) { g.save(); g.translate(x + tw / 2, y + th / 2); g.scale(sc, sc); g.drawImage(c, -tw / 2 - c.pad, -th / 2 - c.pad, c.width / cv.dpr, c.height / cv.dpr); g.restore(); }
           else g.drawImage(c, x - c.pad, y - c.pad, c.width / cv.dpr, c.height / cv.dpr);
           if (isSel) { g.strokeStyle = '#ffd76a'; g.lineWidth = 2.5; D.rr(g, x - 1, y - 1, tw - 2 - tw * .09 + 2, th - 2 - tw * .09 + 2, tw * .14); g.stroke(); }
-          else if (sel >= 0 && grid[sel] === k && ctx.pref('hints')) { g.fillStyle = '#e0a020'; D.circle(g, x + tw * .78, y + th * .12, Math.max(3, tw * .08)); g.fill(); g.strokeStyle = '#fff3d0'; g.lineWidth = 1.2; g.stroke(); }
+          else if (sel >= 0 && grid[sel] === k && ctx.assist && ctx.pref('hints')) {   /* same-tile marks = 辅助模式 */ g.fillStyle = '#e0a020'; D.circle(g, x + tw * .78, y + th * .12, Math.max(3, tw * .08)); g.fill(); g.strokeStyle = '#fff3d0'; g.lineWidth = 1.2; g.stroke(); }
         }
         if (shake.t > 0) shake.t -= dt;
         if (hintPair) { hintPair.t += dt; if (hintPair.t > 4) hintPair = null; }
@@ -334,7 +334,7 @@ BX.register({
         fx.draw(g, dt);
         for (const f of floaters) { f.t += dt; D.text(g, f.s, f.x, f.y - f.t * 50, {size: f.big ? 22 : 16, color: f.c, weight: 900, stroke: 'rgba(60,20,0,.7)', strokeW: 4}); }
         floaters = floaters.filter(f => f.t < 1);
-        if (!over) say((STG ? `第 ${stage} 关·${GRN}` : LV[lvK][3]) + ` · 剩 ${grid.filter(k => k >= 0).length} 张` + (ctx.pref('hints') && avail >= 0 ? ` · 可消 ${avail} 对` : '') + (combo > 1 && time - lastMatch < 3 ? ` · 连击 ${combo}` : ''));
+        if (!over) say((STG ? `第 ${stage} 关·${GRN}` : LV[lvK][3]) + ` · 剩 ${grid.filter(k => k >= 0).length} 张` + (ctx.assist && ctx.pref('hints') && avail >= 0 ? ` · 可消 ${avail} 对` : '') + (combo > 1 && time - lastMatch < 3 ? ` · 连击 ${combo}` : ''));
         bar.dis('shuf', over || shuffles <= 0); bar.dis('pause', over);
       },
       hint: () => hint(),

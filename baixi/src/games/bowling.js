@@ -7,7 +7,7 @@ const SPOT = (() => { const s = [], row = .2639, sp = .3048; for (let r = 0; r <
 // pin numbering 1..10 standard: row0: 1; row1: 2,3; row2: 4,5,6; row3: 7..10 (left to right from bowler's view)
 
 /* deterministic roll. pins: [[x,y]|null]*10; shot {x, dx, dy, v, h}. */
-function simulate(pins, shot, rec) {
+function simulate(pins, shot, rec, soft) {   // soft = 辅助模式 pin friction (pins slide further)
   const P = [];
   for (let i = 0; i < 10; i++) if (pins[i]) P.push({i, x: pins[i][0], y: pins[i][1], vx: 0, vy: 0, down: 0, gone: 0, fx: 0, fy: 1, mv: 0});
   const b = {x: shot.x, y: 0, vx: shot.dx * shot.v, vy: shot.dy * shot.v, gut: 0, gone: 0};
@@ -32,7 +32,7 @@ function simulate(pins, shot, rec) {
     let moving = b.gone ? 0 : 1;
     for (const p of P) {
       if (p.gone || !p.mv) continue;
-      const sp = Math.sqrt(p.vx * p.vx + p.vy * p.vy), dec = (p.down ? 1.9 : 4.2) * DT;   // pins slide a bit further → livelier scatter
+      const sp = Math.sqrt(p.vx * p.vx + p.vy * p.vy), dec = (soft ? (p.down ? 1.9 : 4.2) : (p.down ? 2.4 : 6)) * DT;   // assist: pins slide further → livelier scatter; classic: original friction
       if (sp <= dec) { p.vx = 0; p.vy = 0; p.mv = 0; continue; }
       p.vx -= p.vx / sp * dec; p.vy -= p.vy / sp * dec; p.x += p.vx * DT; p.y += p.vy * DT; moving++;
       if (Math.abs(p.x) > KICK - PR) { p.x = (p.x > 0 ? 1 : -1) * (KICK - PR); p.vx = -p.vx * .55; if (!p.down) { p.down = 1; } }
@@ -112,7 +112,7 @@ BX.register({
   id: 'bowling', title: '保龄球', cat: 'physics', order: 5, sub: '十瓶十局，全中补中',
   desc: '标准十瓶保龄球：选站位、瞄准、决定力度和弧线，一球击倒全部球瓶就是“全中”。十局计分，全中与补中有奖励分。',
   kind: 'turn', seats: [1, 4], defSeats: 2, seatColors: ['#c23a2b', '#2f5d8a', '#3f8f5b', '#d9a12b'], aiDelay: 500,
-  howto: ['<b>向上划</b>出球：松手前最后一瞬划得越快球速越快，划的方向就是出球方向；划到最后<b>往左/右拐</b>就会打出向左/右的弧线球（拐得越多弧线越强）。', '也可以<b>按住向下拉</b>（弹弓式）再松手；下方按钮可微调站位（第几板）、方向、弧线和球速，再点「出球」。', '左上角的瓶位图显示剩余球瓶，小红点是本球预计到达的位置，淡色点是你上一球。', '球滚动时点一下画面可快进；💡 提示给出建议的打法。键盘：←→ 方向、↑↓ 球速、A/D 站位、Q/E 弧线、空格出球。'],
+  howto: ['<b>向上划</b>出球：松手前最后一瞬划得越快球速越快，划的方向就是出球方向；划到最后<b>往左/右拐</b>就会打出向左/右的弧线球（拐得越多弧线越强）。', '也可以<b>按住向下拉</b>（弹弓式）再松手；下方按钮可微调站位（第几板）、方向、弧线和球速，再点「出球」。', '左上角的瓶位图显示剩余球瓶；虚线只画到球道中段，弧线怎么拐要靠自己判断。开启辅助模式后：虚线画到球瓶、瓶位图上标出本球预计到达的位置，淡色点和淡色线是你上一球。', '球滚动时点一下画面可快进；💡 提示给出建议的打法。键盘：←→ 方向、↑↓ 球速、A/D 站位、Q/E 弧线、空格出球。'],
   rules: `<p>标准<b>十瓶保龄球</b>，每人打 <b>10 局</b>（frame），多名玩家按局轮流上场。</p>
 <p><b>每局</b>最多投 2 球：第一球击倒全部 10 个球瓶为<b>全中</b>（X），本局结束；两球合计击倒全部为<b>补中</b>（/）；否则记击倒的瓶数。</p>
 <p><b>计分：</b>全中 = 10 分 + 之后两球的瓶数；补中 = 10 分 + 下一球的瓶数；其他局 = 两球瓶数之和。第 10 局打出全中可再投 2 球、补中可再投 1 球（奖励球只用于计分）。满分 300 分（12 个全中）。</p>
@@ -232,7 +232,7 @@ BX.register({
         if (dy < .99) { dy = .99; dx = (dx < 0 ? -1 : 1) * Math.sqrt(1 - dy * dy); }
         const shot = {x: Math.max(-.45, Math.min(.45, +a.x || 0)), dx, dy, v: Math.max(VMIN, Math.min(VMAX, +a.v || VMIN)), h: Math.max(-1, Math.min(1, +a.h || 0))};
         const snap = {frame: st.frame, turn: who, ball: st.ball, pins: st.pins.slice(), rolls: st.rolls.map(r => r.slice())};
-        const before = nUp(st.pins), r = simulate(st.pins, shot, !ctx.fast);
+        const before = nUp(st.pins), r = simulate(st.pins, shot, !ctx.fast, ctx.assist);
         const after = nUp(r.left), knocked = before - after;
         st.rolls[who].push(knocked);
         st.pins = r.left;
@@ -314,7 +314,7 @@ BX.register({
         if (n > 20 && performance.now() - t0 > budget) break;
         n++;
         // quick reject: ball must reach the pins near the standing ones
-        const r = simulate(st.pins, shotOf(c), false);
+        const r = simulate(st.pins, shotOf(c), false, ctx.assist);
         const kn = up.length - nUp(r.left);
         const v = kn + (nUp(r.left) === 0 ? 3 : 0) + Math.random() * .3;
         if (v > bv) { bv = v; best = c; }
@@ -448,7 +448,7 @@ BX.register({
     }
     function entryOf(sh) { const p = pathOf(sh), e = p[p.length - 1]; return Math.abs(e[0]) > LANE_HW ? null : e[0]; }
     function drawGuide(g) {
-      const lb = lastBall[st.turn];
+      const lb = ctx.assist && lastBall[st.turn];
       if (lb) K.ghost(g, lb.pts.map(q => { const p = P3(q[0], q[1], .01); return [p[0], p[1]]; }), {color: '#fffaf0', alpha: .3, mark: false});
       if (hintA) {
         const hp = pathOf(shotOf(hintA)).filter((_, i) => i % 3 === 0).map(q => { const p = P3(q[0], q[1], .01); return [p[0], p[1]]; });
@@ -457,7 +457,8 @@ BX.register({
         D.text(g, `💡 第${board(hintA.x)}板 · ${hintA.h < 0 ? '↰左弧' : hintA.h > 0 ? '↱右弧' : '直球'} · ${kmh(hintA.p)}公里/时`, V.W / 2, V.bot - 34, {size: 13, color: '#bff0d8', weight: 800, stroke: 'rgba(0,0,0,.7)', strokeW: 4});
       }
       const pp = pathOf(shotOf(aim)), e = pp[pp.length - 1]; entryX = Math.abs(e[0]) > LANE_HW ? null : e[0];
-      K.guide(g, pp.filter((_, i) => i % 3 === 0).map(q => { const p = P3(q[0], q[1], .01); return [p[0], p[1]]; }), {color: '#fffaf0', w: 2.5, alpha: .9, fade: .75, dash: [6, 8]});
+      // classic: only the straight part up to the end of the oil (no hook prediction); assist: full path to the pins
+      K.guide(g, pp.filter((q, i) => i % 3 === 0 && (ctx.assist || q[1] <= OIL)).map(q => { const p = P3(q[0], q[1], .01); return [p[0], p[1]]; }), {color: '#fffaf0', w: 2.5, alpha: .9, fade: .75, dash: [6, 8]});
     }
     function fire(e, x, y) {
       if (e[1] === 'ball') {
@@ -503,7 +504,8 @@ BX.register({
       g.strokeStyle = 'rgba(255,240,210,.25)'; g.lineWidth = 1; g.beginPath(); g.moveTo(lx(-LANE_HW), y0 + s * 1.6); g.lineTo(lx(-LANE_HW), y0 - s * 3.8); g.moveTo(lx(LANE_HW), y0 + s * 1.6); g.lineTo(lx(LANE_HW), y0 - s * 3.8); g.stroke();
       SPOT.forEach(([x, y], i) => { const px = lx(x), py = y0 - (y - HEAD) / .2639 * s; g.fillStyle = pins[i] ? '#fff6e6' : 'rgba(255,255,255,.12)'; D.circle(g, px, py, s * .38); g.fill(); if (pins[i] && s >= 14) D.text(g, String(i + 1), px, py + .5, {size: s * .42, color: '#7a2a1a', weight: 700}); });
       const by = y0 + s * 1.15, mine = myTurn();
-      const lb = lastBall[Z.turn]; if (mine && lb && lb.ex != null) { g.fillStyle = 'rgba(255,246,221,.35)'; D.circle(g, lx(lb.ex), by, s * .32); g.fill(); }
+      const lb = ctx.assist && lastBall[Z.turn]; if (mine && lb && lb.ex != null) { g.fillStyle = 'rgba(255,246,221,.35)'; D.circle(g, lx(lb.ex), by, s * .32); g.fill(); }
+      if (!ctx.assist) return;   // predicted pin-arrival marker = assist
       if (mine && entryX != null && ctx.pref('hints')) { g.fillStyle = ctx.color(Z.turn); D.circle(g, lx(entryX), by, s * .36); g.fill(); g.strokeStyle = '#fff'; g.lineWidth = 1.5; g.stroke(); }
       else if (mine && ctx.pref('hints')) D.text(g, '洗沟', x0, by, {size: 11, color: '#ffb0a0', weight: 700});
     }

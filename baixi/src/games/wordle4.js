@@ -60,7 +60,7 @@ BX.register({
 <p><b>每日一题</b>（可选）：按日期出题，同一天所有人的谜底相同，可以把结果格子复制给朋友比一比。</p>
 <p><b>单人</b>：在规定次数内猜中即过关。<b>双人</b>：两人轮流在同一块板上猜同一个谜底，谁先猜中谁赢；次数用完都没人猜中则平局。</p>
 <p>输入：用输入法打出成语后回车；也可以点下方「字盘」里已经出现过的字快速填入。</p>`,
-  howto: ['在下方输入框打出一个四字成语，回车或点「猜」提交；输入框变绿＝词库里有，变红＝没有或已猜过。', '字盘里列出猜过的字（绿/黄/灰），点一下即可填入，⌫ 删一个字。', '💡 提示会推荐下一步猜什么，并告诉你还剩多少种可能。觉得太难，开局时可把机会改成 8/10 次或打开拼音对照。', '点已经翻开的一行可查看该成语的拼音和释义；结束后可「复制成绩」分享格子。'],
+  howto: ['在下方输入框打出一个四字成语，回车或点「猜」提交；开启辅助模式后输入框会实时变绿（词库里有）/变红（没有或已猜过）。', '字盘里列出猜过的字（绿/黄/灰），点一下即可填入，⌫ 删一个字。', '💡 提示会推荐下一步猜什么（开启辅助模式后还会告诉你还剩多少种可能）。觉得太难，开局时可把机会改成 8/10 次或打开拼音对照。', '点已经翻开的一行可查看该成语的拼音和释义；结束后可「复制成绩」分享格子。'],
   icon(g, w, h) {
     D.paper(g, 0, 0, w, h, {color: '#f2e6cc'});
     const s = h * .2, gap = s * .14, x0 = (w - (4 * s + 3 * gap)) / 2;
@@ -114,7 +114,7 @@ BX.register({
     let rowHits = [], focusN = -1;
     function liveCheck() {
       const w = inp.value.replace(/[\s，。,.]/g, ''), len = [...w].length;
-      inp.className = 'w4-in' + (len < 4 ? '' : err(w) ? ' bad' : ' ok');
+      inp.className = 'w4-in' + (!ctx.assist || len < 4 ? '' : err(w) ? ' bad' : ' ok');   // live 词库 check = 辅助模式
     }
     ctx.on(inp, 'input', liveCheck);
     function shareText() {
@@ -257,10 +257,10 @@ BX.register({
       onTurn: status,
       showHint(a) {
         if (!a || !a.w) return;
-        let c = 0; for (let i = 0; i < (daily ? DAILY_POOL : poolN); i++) if (consistent(L[i][0], st.rows) && !st.rows.some(r => r.w === L[i][0])) c++;
+        let c = 0; if (ctx.assist) for (let i = 0; i < (daily ? DAILY_POOL : poolN); i++) if (consistent(L[i][0], st.rows) && !st.rows.some(r => r.w === L[i][0])) c++;
         hintW = a.w; inp.value = a.w; liveCheck();
         const maybe = consistent(a.w, st.rows);
-        ctx.toast((st.rows.length ? '谜底范围内还有 ' + c + ' 个成语符合所有线索。' : '') + '试试「' + a.w + '」' + (maybe ? (st.rows.length ? '，说不定就是它' : '') : '——它不是答案，但能一次排除很多可能'), 4000);
+        ctx.toast((ctx.assist && st.rows.length ? '谜底范围内还有 ' + c + ' 个成语符合所有线索。' : '') + '试试「' + a.w + '」' + (maybe ? (st.rows.length ? '，说不定就是它' : '') : '——它不是答案，但能一次排除很多可能'), 4000);
       },
       frame(dt) {
         const g = cv.g; cv.clear();

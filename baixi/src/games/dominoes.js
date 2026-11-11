@@ -83,7 +83,7 @@ BX.register({
     {key: 'rule', label: '玩法', choices: [['draw', '摸牌接龙'], ['block', '堵死赛（不摸牌）']], def: 'draw'},
     {key: 'fives', label: '五倍加分', choices: [[0, '关'], [1, '开（两端和为 5 的倍数得分）']], def: 0}],
   howto: ['<b>拖动</b>手中的骨牌到牌列一端的虚线框放下；也可以先点牌、再点虚线框。只有一端能接时，点一下牌即可（触屏默认再点一次确认）。',
-    '能出的牌会浮起并描绿边；右上角「记牌」显示每个点数还剩几张没露面。',
+    '能出的牌会浮起并描绿边；开启辅助模式后，右上角「记牌」显示每个点数还剩几张没露面。',
     '「自动」开启时：没牌可出会自动摸牌 / 过，开局指定牌和唯一出法也自动打出。',
     '💡 提示会标出推荐的骨牌和位置；键盘 1–9 选牌，← / → 接到左 / 右端，空格摸牌或过。'],
   rules: `<p>使用一副<b>双六</b>多米诺骨牌（0–0 到 6–6，共 28 张）。2 人每人摸 <b>7 张</b>，3–4 人每人 <b>5 张</b>，其余背面朝下作为<b>骨堆</b>。</p>
@@ -473,7 +473,7 @@ BX.register({
         for (let k = 0; k < Math.min(st.bone.length, 8); k++) tile(g, bx + (k % 4) * 4, by + Math.floor(k / 4) * 4 - k * .6, bw, bw * 2, null, {shadow: k === 0});
         D.text(g, (st.rule === 'block' ? '暗牌 ' : '骨堆 ') + st.bone.length, bx + bw * .9, by + bw * 2 + 16, {size: 12, color: '#f3e2c0', weight: 700});
       }
-      if (hintsOn && st.ph === 'play') {
+      if (ctx.assist && hintsOn && st.ph === 'play') {   // 记牌器: 辅助模式 only
         const c = unseen(), cw = gm.ph ? 17 : 22, x1 = gm.table.x + gm.table.w - 10, y1 = by + bw * 2 + 34;
         const vert = y1 + 12 + 7 * (cw + 2) < gm.table.y + gm.table.h - 4;
         const chip = (x, y, v) => {

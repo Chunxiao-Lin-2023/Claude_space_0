@@ -893,27 +893,30 @@ L.climb = function (ctx, G) {
     if (st.ph !== 'play' && st.ph !== 'dbl') return;
     const C0 = lay.ctr, vs = ddz ? [17, 16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3] : [15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3];
     const ming = ddz && st.ming && st.lord !== ctx.view;
-    if (!ui.ctrOn && !ming) {
+    // 经典模式没有记牌器（只在辅助模式里出现，可收起）；明牌时地主的手牌属于规则信息，两种模式都显示
+    const rem = ctx.assist && ui.ctrOn;
+    if (!rem && !ming) {
+      if (!ctx.assist) return;
       const pw0 = 76, ph0 = 26, x = C0.cx - pw0 / 2, y = C0.top != null ? C0.top : C0.bottom - ph0;
       g.fillStyle = 'rgba(20,10,4,.5)'; D.rr(g, x, y, pw0, ph0, ph0 / 2); g.fill(); g.strokeStyle = 'rgba(230,197,125,.5)'; g.lineWidth = 1; g.stroke();
       D.text(g, '记牌器 ▸', C0.cx, y + ph0 / 2 + 1, {size: 12, color: '#e6c57d', weight: 700});
       ui.ctrHit = {x: x - 8, y: y - 8, w: pw0 + 16, h: ph0 + 16}; return;
     }
-    const cw = C0.cell, lw = cw * 1.2, n = vs.length, rh = C0.h / 2, rows = ming ? 3 : 2, hh = rh * rows + 4;
+    const cw = C0.cell, lw = cw * 1.2, n = vs.length, rh = C0.h / 2, rows = 1 + (rem ? 1 : 0) + (ming ? 1 : 0), hh = rh * rows + 4, mr = rem ? 2.5 : 1.5;
     const tw = lw + n * cw, x0 = C0.cx - tw / 2, y = C0.top != null ? C0.top : C0.bottom - hh;
     g.fillStyle = 'rgba(20,10,4,.55)'; D.rr(g, x0 - 4, y, tw + 8, hh, 7); g.fill(); g.strokeStyle = 'rgba(230,197,125,.4)'; g.lineWidth = 1; g.stroke();
-    const c = remain(), lc = ming ? countIds(st.hands[st.lord]) : null, fs = Math.min(13, cw * .46);
-    D.text(g, '记牌', x0 + lw / 2, y + 2 + rh * .5, {size: fs * .9, color: '#cdb995', weight: 700});
-    D.text(g, '剩', x0 + lw / 2, y + 2 + rh * 1.5, {size: fs * .9, color: '#cdb995', weight: 700});
-    if (ming) D.text(g, '地主', x0 + lw / 2, y + 2 + rh * 2.5, {size: fs * .8, color: '#ffb08a', weight: 700});
+    const c = rem ? remain() : null, lc = ming ? countIds(st.hands[st.lord]) : null, fs = Math.min(13, cw * .46);
+    D.text(g, rem ? '记牌' : '明牌', x0 + lw / 2, y + 2 + rh * .5, {size: fs * .9, color: '#cdb995', weight: 700});
+    if (rem) D.text(g, '剩', x0 + lw / 2, y + 2 + rh * 1.5, {size: fs * .9, color: '#cdb995', weight: 700});
+    if (ming) D.text(g, '地主', x0 + lw / 2, y + 2 + rh * mr, {size: fs * .8, color: '#ffb08a', weight: 700});
     vs.forEach((v, i) => {
-      const x = x0 + lw + i * cw + cw / 2, k = c[v];
+      const x = x0 + lw + i * cw + cw / 2, k = c ? c[v] : 0;
       if (i % 2 === 0) { g.fillStyle = 'rgba(255,240,210,.05)'; g.fillRect(x - cw / 2, y + 2, cw, hh - 4); }
       D.text(g, v === 17 ? '大' : v === 16 ? '小' : VN[v], x, y + 2 + rh * .5, {size: fs * (v === 10 ? .85 : 1), color: v >= 16 ? '#ff9a7a' : '#e6c57d', weight: 700});
-      D.text(g, k ? String(k) : '·', x, y + 2 + rh * 1.5, {size: fs * 1.08, color: !k ? 'rgba(243,226,192,.3)' : k === 4 ? '#ff7a5a' : '#fff3e0', weight: 900});
-      if (ming) D.text(g, lc[v] ? String(lc[v]) : '·', x, y + 2 + rh * 2.5, {size: fs, color: lc[v] ? '#ffb08a' : 'rgba(243,226,192,.25)', weight: 800});
+      if (rem) D.text(g, k ? String(k) : '·', x, y + 2 + rh * 1.5, {size: fs * 1.08, color: !k ? 'rgba(243,226,192,.3)' : k === 4 ? '#ff7a5a' : '#fff3e0', weight: 900});
+      if (ming) D.text(g, lc[v] ? String(lc[v]) : '·', x, y + 2 + rh * mr, {size: fs, color: lc[v] ? '#ffb08a' : 'rgba(243,226,192,.25)', weight: 800});
     });
-    ui.ctrHit = {x: x0 - 4, y, w: tw + 8, h: hh};
+    ui.ctrHit = ctx.assist ? {x: x0 - 4, y, w: tw + 8, h: hh} : null;
   }
   function drawReveal(g, lay) {
     const {pw, ph} = lay;

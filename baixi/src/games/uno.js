@@ -65,7 +65,7 @@ BX.register({
   options: [{key: 'stack', label: '+2/+4 叠加', choices: [[0, '经典（不叠加）'], [1, '可以叠加']], def: 0}],
   howto: ['能出的牌会微微抬起，不能出的变暗。点一张选中，<b>再点一次</b>或把它<b>往上一划</b>就打出；也可以按「出牌」。',
     '点中间的<b>牌堆</b>或「摸牌」摸一张；手里没有能出的牌时会自动摸牌。',
-    '出黑牌时会弹出选色盘（标出你手里每种颜色的张数，金圈是推荐色）。',
+    '出黑牌时会弹出选色盘（标出你手里每种颜色的张数；开启辅助模式后金圈标出推荐色）。',
     '剩两张时先按「喊一张」再出牌；忘了的话出完后赶紧补按，否则罚摸 2 张。💡 显示高级电脑的建议。',
     '键盘：Enter 出牌 · 空格/D 摸牌 · U 喊一张 · ←→ 选牌 · 选色时按 1~4。'],
   rules: `<p><b>牌组</b>：共 108 张。朱、金、翠、靛四色，每色 0 一张、1～9 各两张，以及功能牌「禁」（跳过）、「转」（反转）、「+2」各两张；另有黑色「变色」4 张、「变色+4」4 张。</p>
@@ -442,12 +442,12 @@ BX.register({
         for (let c = 0; c < 4; c++) {
           const x = ox + (c % 2 ? 1 : -1) * pr * 1.08, y = oy + (c < 2 ? -1 : 1) * pr * 1.08;
           D.disc(g, x, y, pr, COL[c], {ring: 'rgba(255,240,210,.6)'});
-          if (c === best && cnt[c]) { g.strokeStyle = `rgba(255,215,106,${.7 + .3 * Math.sin(ui.t * 6)})`; g.lineWidth = 4; D.circle(g, x, y, pr + 4); g.stroke(); }
+          if (ctx.assist && c === best && cnt[c]) { g.strokeStyle = `rgba(255,215,106,${.7 + .3 * Math.sin(ui.t * 6)})`; g.lineWidth = 4; D.circle(g, x, y, pr + 4); g.stroke(); }
           D.text(g, CN[c], x, y - pr * .1, {size: pr * .7, color: '#fff8ea', font: 'serif', weight: 900});
           D.text(g, (c + 1) + ' · 手里 ' + cnt[c] + ' 张', x, y + pr * .5, {size: Math.max(11, pr * .2), color: 'rgba(255,248,234,.9)', weight: 700});
           ui.petals.push({x, y, r: pr, c});
         }
-        D.text(g, '金圈：手里最多的颜色 · 点空白处取消', ox, oy + pr * 2.45, {size: 13, color: 'rgba(243,226,192,.75)'});
+        D.text(g, ctx.assist ? '金圈：手里最多的颜色 · 点空白处取消' : '点空白处取消', ox, oy + pr * 2.45, {size: 13, color: 'rgba(243,226,192,.75)'});
       }
       g.restore();
     }

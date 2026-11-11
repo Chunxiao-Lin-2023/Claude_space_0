@@ -279,10 +279,10 @@ BX.register({
     {key: 'hcap', label: '让子', choices: [[0, '不让子'], [2, '让2子'], [3, '让3子'], [4, '让4子'], [5, '让5子'], [9, '让9子']], def: 0},
   ],
   howto: ['点交叉点落子。触屏：按住可<b>拖动瞄准</b>（十字线 + 放大镜跟随手指），松手后再点一次同一点或按「落子」确认。',
-    '「形势」显示双方势力范围与目数估计（野狐式形势判断）；「手数」在棋子上显示第几手。',
+    '「手数」在棋子上显示第几手。开启辅助模式后另有「形势」按钮，显示双方势力范围与目数估计（野狐式形势判断）。',
     '「停一手」需点两次确认；双方连续停一手后自动判断死活，点棋块可改死活，双方「确认结果」即数子。',
     '💡 提示会标出电脑推荐的落点；↶ 悔棋。新手建议先选 <b>9路</b> 快棋或在开局选项里「让子」。',
-    '键盘：P 停一手 · E 形势 · N 手数 · Esc 取消预览。'],
+    '键盘：P 停一手 · N 手数 · E 形势（辅助模式）· Esc 取消预览。'],
   rules: `<p><b>棋具</b>：19×19（亦可选 13 路、9 路）棋盘，黑白两色棋子。<b>黑先白后</b>，轮流在交叉点上落一子，落下后不再移动。</p>
 <p><b>气与提子</b>：一块棋（上下左右相连的同色棋子）相邻的空交叉点叫“气”。落子后使对方棋块没有气，就把这些子提走。</p>
 <p><b>禁着点</b>：落子后自己的棋块没有气、且不能提掉对方棋子的位置不能下（禁止自杀）。</p>
@@ -398,7 +398,7 @@ BX.register({
     });
     const bOk = mk('确认结果', 'red', () => { const s = actSeat(); if (s >= 0 && st.ph === 'score' && st.dead) ctx.act({t: 'ok'}, s); });
     const bResume = mk('继续对局', 'ghost', () => { const s = actSeat(); if (s >= 0 && st.ph === 'score' && st.dead) ctx.act({t: 'resume'}, s); });
-    const toggleEst = () => { estOn = !estOn; ctx.sfx('click'); if (estOn) { estimate(); const l = estC.lead; ctx.toast('形势判断：' + (Math.abs(l) < .5 ? '双方接近' : (l > 0 ? '黑' : '白') + '约领先 ' + fmt(Math.abs(l)) + ' 目')); } status(); };
+    const toggleEst = () => { if (!ctx.assist) return; estOn = !estOn; ctx.sfx('click'); if (estOn) { estimate(); const l = estC.lead; ctx.toast('形势判断：' + (Math.abs(l) < .5 ? '双方接近' : (l > 0 ? '黑' : '白') + '约领先 ' + fmt(Math.abs(l)) + ' 目')); } status(); };
     const toggleNum = () => { showNum = !showNum; ctx.save('nums', showNum); ctx.sfx('click'); };
     const bEst = mk('形势', 'ghost', toggleEst, tbox);
     const bNum = mk('手数', 'ghost', toggleNum, tbox);
@@ -409,7 +409,7 @@ BX.register({
       const show = (b, v) => { const d = v ? '' : 'none'; if (b.style.display !== d) b.style.display = d; };
       show(bPass, pl); show(bResign, pl); show(bOk, sc); show(bResume, sc);
       const mine = actSeat() >= 0, myT = pl && ctx.canAct(st.turn);
-      show(bEst, pl); show(bNum, !sc); show(bPlace, myT && preview >= 0 && !st.b[preview]);
+      show(bEst, pl && ctx.assist); show(bNum, !sc); show(bPlace, myT && preview >= 0 && !st.b[preview]);
       tbox.style.display = st.ph === 'over' && !L.port ? 'none' : 'flex';
       bPass.disabled = bResign.disabled = !mine; bOk.disabled = bResume.disabled = !mine || !st.dead;
       const armed = passArm > performance.now();

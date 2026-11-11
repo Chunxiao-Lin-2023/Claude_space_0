@@ -111,7 +111,7 @@ BX.register({
   id: 'connect4', title: '四子棋', cat: 'party', order: 2, sub: '竖盘落子，先连四子',
   desc: '七列六行的竖立棋盘，棋子投下后会落到最底部。横、竖、斜先连成四子者获胜，高级电脑几乎不犯错。',
   kind: 'turn', seats: 2, seatNames: ['朱方', '金方'], seatColors: PCOL, firstLabel: '先手', anyTimeActs: true,
-  howto: ['点某一列投子；触屏上按住会出现预览，左右拖动选列，<b>松手落子</b>（拖出棋盘可取消）。', '半透明的棋子标出它会落到的位置；棋盘下方圈出的格子是“再下一子就连四”的威胁：<b>红圈</b>是对手的，<b>绿圈</b>是你的。', '电脑上可用 ←/→ 或数字键 1–7 选列，回车 / 空格 / ↓ 落子。', '💡 提示会标出推荐的一列。'],
+  howto: ['点某一列投子；触屏上按住会出现预览，左右拖动选列，<b>松手落子</b>（拖出棋盘可取消）。', '半透明的棋子标出它会落到的位置。', '开启辅助模式后，会圈出“再下一子就连四”的格子：<b>红圈</b>是对手的，<b>绿圈</b>是你的。', '电脑上可用 ←/→ 或数字键 1–7 选列，回车 / 空格 / ↓ 落子。', '💡 提示会标出推荐的一列。'],
   rules: `<p>棋盘竖立，共 <b>7 列 6 行</b>。双方轮流选择一列投下一枚棋子，棋子会落到该列最低的空位。</p>
 <p>任一方先在<b>横、竖或斜</b>方向连成<b>四子</b>即获胜；棋盘下满仍无人连四则为和棋。朱方先手。</p>
 <p>操作：电脑上点击某一列即可落子；触屏上按住屏幕会显示预览，左右拖动选列，<b>松手落子</b>（拖出棋盘可取消）。</p>`,
@@ -245,8 +245,8 @@ BX.register({
           }
           D.text(g, '第 ' + (st.moves + (st.over ? 0 : 1)) + ' 子', px + pw / 2, py + ph + 14, {size: 12, color: 'rgba(243,226,192,.55)', weight: 500});
         }
-        // threats (pref hints): empty cells that would complete four for either side
-        if (!st.over && ctx.pref('hints')) {
+        // threats (assist mode + pref hints): empty cells that would complete four for either side
+        if (!st.over && ctx.assist && ctx.pref('hints')) {
           const me = ctx.hotseat ? st.turn : (ctx.mySeats && ctx.mySeats.length ? ctx.mySeats[0] : st.turn);
           const bb = st.b.slice();
           for (let c = 0; c < COLS; c++) { const h0 = height(c); for (let r = h0; r < ROWS; r++) {

@@ -116,7 +116,7 @@ BX.register({
   id: 'hex', title: '六角棋', cat: 'brain', order: 4, sub: '连通两岸，永无和棋',
   desc: '菱形棋盘铺满六角格，红方要连通上下两岸，蓝方要连通左右两岸。规则极简却变化无穷，而且永远不会和棋。可选“交换规则”保证公平。',
   kind: 'turn', seats: 2, seatNames: ['红方', '蓝方'], seatColors: COL, firstLabel: '先手',
-  howto: ['点空格放子；触屏默认先预览、再点同一格确认。红方连上下两条红边，蓝方连左右两条蓝边。', '手机上格子太小时，<b>第一次点击会放大</b>那一块，拖动可平移，右上角「全局」按钮缩回整盘；对手落子在视野外时镜头会自动跟过去。', '名字旁的「还差 N」是连通两岸最少还要几子；交换规则开启时，蓝方第一手可按「交换」取走红方的开局。', '💡 提示会标出电脑推荐的落点。'],
+  howto: ['点空格放子；触屏默认先预览、再点同一格确认。红方连上下两条红边，蓝方连左右两条蓝边。', '手机上格子太小时，<b>第一次点击会放大</b>那一块，拖动可平移，右上角「全局」按钮缩回整盘；对手落子在视野外时镜头会自动跟过去。', '开启辅助模式后，名字旁的「还差 N」是连通两岸最少还要几子；交换规则开启时，蓝方第一手可按「交换」取走红方的开局。', '💡 提示会标出电脑推荐的落点。'],
   options: [
     {key: 'size', label: '棋盘', choices: [[7, '7×7'], [9, '9×9'], [11, '11×11']], def: 11},
     {key: 'swap', label: '交换规则', choices: [[1, '开启'], [0, '关闭']], def: 1},
@@ -228,8 +228,8 @@ BX.register({
       preview = -1; ctx.act({i}, st.turn);
     });
     const status = () => {
-      if (st.over) { ctx.info(0, '上下'); ctx.info(1, '左右'); }
-      else { const b = Int8Array.from(st.b); for (const s of [0, 1]) { const n = needOf(b, N, T.nb, s + 1); ctx.info(s, (s ? '左右' : '上下') + ' · 还差 ' + n); } }
+      if (st.over || !ctx.assist) { ctx.info(0, '上下'); ctx.info(1, '左右'); }
+      else { /* 辅助模式: shortest remaining connection */ const b = Int8Array.from(st.b); for (const s of [0, 1]) { const n = needOf(b, N, T.nb, s + 1); ctx.info(s, (s ? '左右' : '上下') + ' · 还差 ' + n); } }
       swapBtn.style.display = canSwap() && ctx.canAct(1) && !BX.bot ? '' : 'none';
       zoomBtn.style.display = !st.over && (L().R < 24 || view.z > 1) && !BX.bot ? '' : 'none';
       if (st.over) return ctx.status(ctx.name(st.win.seat) + ' 连通两岸');

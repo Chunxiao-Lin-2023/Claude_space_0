@@ -30,7 +30,7 @@ BX.register({
   desc: '每人五颗骰子扣在盅里，只看得到自己的。轮流叫“几个几”，越叫越大，觉得对方在吹牛就喊“开”！输的人丢一颗骰子，最后还有骰子的人获胜。',
   kind: 'turn', seats: [2, 4], defSeats: 2, hidden: true, seatColors: PCOL, firstLabel: '先叫', aiDelay: 650, anyTimeActs: true, undo: false,
   options: [{key: 'wild', label: '1 点', choices: [[1, '1 点百搭'], [0, '不百搭（纯点数）']], def: 1}],
-  howto: ['点一个<b>点数</b>（下方小字是它现在最少要叫几个），用 <b>−/+</b> 调数量，再点绿色的「叫」；不信上家就点红色的「开」。', '按钮上的百分比是根据你自己的骰子估算的“叫数成立”概率，可在「⋯」里关掉提示。', '桌面中间是本轮叫数记录；电脑上可按 1–6 选点数、↑/↓ 调数量、回车叫、O 键开。', '💡 会把电脑建议的叫法填好（或点亮「开」）。'],
+  howto: ['点一个<b>点数</b>，用 <b>−/+</b> 调数量，再点绿色的「叫」；不信上家就点红色的「开」。', '开启辅助模式后：每个点数标出现在最少要叫几个（点一下自动填）；按钮上显示根据你自己的骰子估算的“叫数成立”概率（可在「⋯」里关掉提示）。', '桌面中间是本轮叫数记录；电脑上可按 1–6 选点数、↑/↓ 调数量、回车叫、O 键开。', '💡 会把电脑建议的叫法填好（或点亮「开」）。'],
   rules: `<p>每人 <b>5 颗骰子</b>扣在骰盅里，摇过后只能偷看自己的。</p>
 <p>由一位玩家先<b>叫数</b>，如“4 个 5”，意思是：<b>全场所有骰子</b>里至少有 4 颗是 5。之后按顺序，下一位玩家必须二选一：</p>
 <ul><li><b>加叫</b>：数量更多（点数任意），或数量相同而点数更大；</li>
@@ -65,7 +65,7 @@ BX.register({
     /* chance (from the viewer's own dice) that bid b is true */
     const pBid = (b, seat) => { if (!b) return 0; const mine = st.dice[seat] || [], U = total() - mine.length; return binomTail(U, b.q - cf(mine, b.f), pFace(b.f)); };
     const pct = p => (p >= .995 ? '≈100' : p <= .005 ? '≈0' : Math.round(p * 100)) + '%';
-    const selFace = f => { const prev = st.bid, T = total(); sel.f = f; sel.q = Math.min(T, mq(f, prev)); ctx.sfx('click'); };
+    const selFace = f => { const prev = st.bid, T = total(); sel.f = f; if (ctx.assist || !legal(sel, prev, T)) sel.q = Math.min(T, mq(f, prev)); ctx.sfx('click'); };   // 辅助模式: jump to the minimum; classic: keep the quantity while it stays legal
     const myTurn = () => st.phase === 'bid' && !st.over && ctx.canAct(st.turn);
     function resetSel() {
       const prev = st.bid, T = total(), myD = st.dice[st.turn] || [];
@@ -331,7 +331,7 @@ BX.register({
         g.save(); g.globalAlpha = ok ? 1 : .35;
         if (sel.f === f && can) { g.fillStyle = 'rgba(255,215,106,.35)'; D.rr(g, x - 3, y - 3, fw + 6, fw + 6, 9); g.fill(); }
         D.die(g, x + fw * .1, y + fw * .1, fw * .8, f, {sel: sel.f === f && can ? '#ffd76a' : false});
-        if (can && ok) { const bw2 = Math.max(18, fw * .46), bh2 = 14; g.fillStyle = 'rgba(30,18,8,.85)'; D.rr(g, x + fw - bw2 + 2, y - 5, bw2, bh2, 7); g.fill(); D.text(g, '≥' + q0, x + fw - bw2 / 2 + 2, y + 2, {size: 10, color: C.gold2, weight: 800}); }
+        if (can && ok && ctx.assist) { const bw2 = Math.max(18, fw * .46), bh2 = 14; g.fillStyle = 'rgba(30,18,8,.85)'; D.rr(g, x + fw - bw2 + 2, y - 5, bw2, bh2, 7); g.fill(); D.text(g, '≥' + q0, x + fw - bw2 / 2 + 2, y + 2, {size: 10, color: C.gold2, weight: 800}); }
         g.restore();
         btns.push({x, y, w: fw, h: fw, on: ok, fn: () => selFace(f)});
       }
@@ -346,7 +346,7 @@ BX.register({
       D.text(g, '个', x0 + stepW + 6 + qW / 2, y + bh - 9, {size: 10, color: C.ink2, weight: 600});
       button(g, x0 + stepW + 12 + qW, y, stepW, bh, '+', {on: can && sel.q < T, size: 24, fn: () => { sel.q++; ctx.sfx('tick'); }});
       const bx = x0 + stepW * 2 + 18 + qW, bw = P.x + P.w - pad - bx;
-      const okBid = can && legal(sel, prev, T), showP = can && ctx.pref('hints');
+      const okBid = can && legal(sel, prev, T), showP = can && ctx.assist && ctx.pref('hints');   // 成立概率: 辅助模式 only
       const glow = (x, y, w, h) => { g.strokeStyle = `rgba(90,230,160,${.6 + .35 * Math.sin((t - hintT) * 7)})`; g.lineWidth = 4; D.rr(g, x - 4, y - 4, w + 8, h + 8, 13); g.stroke(); };
       if (hintA && hintA.t === 'bid' && can) glow(bx, y, bw, bh);
       button(g, bx, y, bw, bh, can ? '叫 ' + sel.q + ' 个 ' + sel.f + (sel.f === 1 && wild ? '(斋)' : '') : '叫', {on: okBid, c1: '#5aa08a', c2: '#3f7f6b', sh: '#23503f', fg: '#f0fff8', sub: showP && okBid ? '成立约 ' + pct(pBid(sel, st.turn)) : '', fn: () => ctx.act({t: 'bid', q: sel.q, f: sel.f}, st.turn)});

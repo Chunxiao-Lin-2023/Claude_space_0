@@ -35,8 +35,8 @@ BX.register({
   seatColors: ['#c23a2b', '#2f5d8a', '#3f8f5b'],
   options: [{key: 'hands', label: '局数', choices: [[5, '5 手'], [10, '10 手'], [20, '20 手']], def: 10},
     {key: 'surr', label: '投降', choices: [[0, '不可投降'], [1, '可投降（退一半）']], def: 0},
-    {key: 'coach', label: '策略教练', choices: [[0, '关'], [1, '开（偏离基本策略时提醒）']], def: 0, modes: ['ai', 'local']}],
-  howto: ['点筹码累加注码，再点「下注」；上一手结束后可一键「同上」或「翻倍」。', '轮到你时点 <b>要牌 / 停牌 / 加倍 / 分牌</b>；手牌旁的数字是点数，「7/17」表示含 A 的软点数。', '💡 会按基本策略标出最佳操作；开局选项里可打开「策略教练」练习。', '键盘：1–4 筹码 · 回车 下注/同上 · H 要牌 · S 停牌 · D 加倍 · P 分牌 · R 投降 · Y/N 保险。'],
+    {key: 'coach', label: '策略教练', choices: [[0, '关'], [1, '开（辅助模式下，偏离基本策略时提醒）']], def: 0, modes: ['ai', 'local']}],
+  howto: ['点筹码累加注码，再点「下注」；上一手结束后可一键「同上」或「翻倍」。', '轮到你时点 <b>要牌 / 停牌 / 加倍 / 分牌</b>；手牌旁的数字是点数，「7/17」表示含 A 的软点数。', '💡 会按基本策略标出最佳操作；开启辅助模式后，可在开局选项里打开「策略教练」练习。', '键盘：1–4 筹码 · 回车 下注/同上 · H 要牌 · S 停牌 · D 加倍 · P 分牌 · R 投降 · Y/N 保险。'],
   rules: `<p><b>目标：</b>手牌点数尽量接近 21 点但不超过，并大于庄家。2–10 按面值，J/Q/K 记 10 点，A 记 1 点或 11 点（含 A 且记 11 不爆时称“软”点数）。</p>
 <p><b>牌靴：</b>6 副牌混洗，发到切牌位置后在下一手开始前重新洗牌。</p>
 <p><b>流程：</b>每手开始先下注（10–500）。随后每位玩家和庄家各发两张牌，庄家一张明牌、一张暗牌。</p>
@@ -58,7 +58,7 @@ BX.register({
     D.text(g, '21', w * .82, h * .2, {size: h * .22, color: '#e6c57d', font: 'deco', weight: 400, shadow: true});
   },
   create(ctx) {
-    const SURR = !!+ctx.opts.surr, COACH = !!+ctx.opts.coach && ctx.mode !== 'online';
+    const SURR = !!+ctx.opts.surr, COACH = !!+ctx.opts.coach && ctx.mode !== 'online' && ctx.assist;   // 策略教练 = assist only
     const n = ctx.n, HANDS = BX.test ? Math.min(6, ctx.opts.hands || 10) : (ctx.opts.hands || 10);
     const st = {n, H: HANDS, hno: 0, chips: new Array(n).fill(1000), shoe: [], pos: 0, cut: 0, shuf: 0,
       ph: 'bet', bet: [], pl: [], d: [], hole: true, ins: [], cur: -1, hi: 0, msg: '', last: new Array(n).fill(0), over: false, net: []};

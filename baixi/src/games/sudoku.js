@@ -142,7 +142,7 @@ BX.register({
     {key: 'mis', label: '检错', choices: [[0, '只标冲突'], [1, '即时标错'], [3, '错 3 次结束']], def: 0},
     {key: 'src', label: '题目', choices: [['r', '随机出题'], ['d', '每日一题']], def: 'r'},
   ],
-  howto: ['点选格子，再点下方数字填入；或<b>先点数字</b>（锁定），再连续点空格子填同一个数。', '「笔记」切换填候选数；填正式数字时，同行/列/宫的相关笔记自动清除；「候选」一键填好全部候选数。', '选中格子会高亮所在行列宫和所有相同数字；数字键上的小字是该数还剩几个。', '💡 提示会替你填一格并说明理由。键盘：1–9 填数、方向键移动、退格删除、N 笔记、Z 撤销。'],
+  howto: ['点选格子，再点下方数字填入；或<b>先点数字</b>（锁定），再连续点空格子填同一个数。', '「笔记」切换填候选数；填正式数字时，同行/列/宫的相关笔记自动清除。', '选中格子会高亮所在行列宫和所有相同数字。开启辅助模式后：「候选」一键填好全部候选数，数字键上的小字显示该数还剩几个。', '💡 提示会替你填一格并说明理由。键盘：1–9 填数、方向键移动、退格删除、N 笔记、Z 撤销。'],
   rules: `<p>在 9×9 的盘面中填入数字 1–9，使<b>每一行、每一列、每个 3×3 宫</b>内的数字都不重复。题目给出的数字（深色）不能修改，每道题有且只有一个解。</p>
 <p><b>操作</b>：点选格子，再点下方数字键填入（也可以先选数字再连续点格子）。键盘可用 1–9、方向键、退格删除、N 切换笔记。<br>
 · <b>笔记</b>：打开后填入的是小号候选数，再点一次同一数字可去掉；填入正式数字时，同行同列同宫的相关笔记会自动清除。<br>
@@ -150,7 +150,8 @@ BX.register({
 · <b>提示</b>：替你正确填出一格（优先填选中的格子）。<b>撤销</b>次数不限。</p>
 <p><b>难度</b>：入门/简单只需"唯一候选数"与"排除法"即可解出；中等需要数对、区块等技巧；困难需要三链数、X-Wing 等进阶技巧或更细致的推理。</p>
 <p><b>检错</b>：「只标冲突」只把与同行/列/宫重复的数字标红；「即时标错」与答案不符的数字立即标红；「错 3 次结束」在此基础上记错误数，满 3 次本局失败。</p>
-<p><b>每日一题</b>：每天每个难度一道固定题目，所有人相同。数字键上的小数字表示该数字还剩几个未填。进度自动保存。</p>`,
+<p><b>每日一题</b>：每天每个难度一道固定题目，所有人相同。进度自动保存。</p>
+<p><b>辅助模式</b>：开启后多一个「候选」按钮（一键填好全部候选数），数字键上的小数字表示该数字还剩几个未填。</p>`,
   icon(g, w, h) {
     D.paper(g, 0, 0, w, h, {color: '#f3e9d2'});
     const s = h * .8 / 9, ox = (w - 9 * s) / 2, oy = h * .1;
@@ -176,7 +177,7 @@ BX.register({
       {k: 'undo', ic: '↶', t: '撤销', on: () => undo()},
       {k: 'erase', ic: '⌫', t: '擦除', on: () => erase()},
       {k: 'note', ic: '✎', t: '笔记', on: () => { noteMode = !noteMode; bar.on('note', noteMode); ctx.sfx('tick'); }},
-      {k: 'auto', ic: '⁂', t: '候选', on: () => autoNotes()},
+      ...(ctx.assist ? [{k: 'auto', ic: '⁂', t: '候选', on: () => autoNotes()}] : []),   // auto-candidates = 辅助模式
       {k: 'new', ic: '↻', t: '新题', on: async () => { if (moves && !won && !lost && !(await BX.confirm('放弃这道题，换一道新题？', '新题'))) return; ctx.save(key, null); ctx.restart(); }},
     ]);
     const sv = ctx.load(key, null);
@@ -212,12 +213,13 @@ BX.register({
       }
       ctx.sfx(conflict(i) ? 'error' : 'stone'); if (conflict(i)) ctx.buzz(15);
       // completed units flash
-      for (const u of CELLU[i]) if (UNITS[u].every(k => cur[k] && cur[k] === S[k])) { unitFlash.push({u, t: 0}); }
+      // 经典 + 只标冲突: flash a unit once it is full and duplicate-free (doesn't leak the answer); otherwise when it matches the solution
+      for (const u of CELLU[i]) if (ctx.assist || CHK ? UNITS[u].every(k => cur[k] && cur[k] === S[k]) : UNITS[u].every(k => cur[k]) && new Set(UNITS[u].map(k => cur[k])).size === 9) { unitFlash.push({u, t: 0}); }
       if (cur.every((x, k) => x === S[k])) win();
       save();
     }
     function autoNotes() {
-      if (won || lost) return;
+      if (won || lost || !ctx.assist) return;
       const nn = BX.range(81).map(i => { if (cur[i]) return 0; let m = 511; for (const j of PEERS[i]) if (cur[j]) m &= ~(1 << (cur[j] - 1)); return m; });
       if (nn.every((m, i) => m === notes[i])) { ctx.toast('候选数已是最新'); return; }
       push(); notes = nn; moves++; ctx.sfx('pen'); save(); ctx.toast('已填入全部候选数');
@@ -363,7 +365,7 @@ BX.register({
         D.text(g, `${LVN[lv]}  ·  ${K.fmt(time)}` + (MIS ? `  ·  错误 ${mistakes}/${MIS}` : ''), I.x + (L.keys[0].y > by + bs ? I.w / 2 : I.w / 2), I.y, {size: 16, color: '#f3e2c0', weight: 700, shadow: true});
         // keypad
         L.keys.forEach((k, j) => {
-          const v = j + 1, left = Math.max(0, 9 - countOf(v)), on = numSel === v, pr = keyPress === j;
+          const v = j + 1, left = ctx.assist ? Math.max(0, 9 - countOf(v)) : 1, on = numSel === v, pr = keyPress === j;
           g.save(); if (pr) { g.translate(0, 2); }
           g.shadowColor = 'rgba(0,0,0,.4)'; g.shadowBlur = 6; g.shadowOffsetY = pr ? 1 : 3;
           D.rr(g, k.x, k.y, k.w, k.h, Math.min(k.w, k.h) * .18);
@@ -374,7 +376,7 @@ BX.register({
           g.globalAlpha = left ? 1 : .35;
           const sz = Math.min(k.w, k.h);
           D.text(g, String(v), k.x + k.w / 2, k.y + k.h * .45, {size: sz * .55, color: on ? '#fff3e3' : noteMode ? '#6b5640' : '#2b2118', weight: 800, font: noteMode ? 'sans' : 'serif'});
-          if (left) D.text(g, String(left), k.x + k.w / 2, k.y + k.h * .82, {size: Math.max(9, sz * .2), color: on ? '#ffd9c8' : '#8c7a63', weight: 600});
+          if (!ctx.assist) {} else if (left) D.text(g, String(left), k.x + k.w / 2, k.y + k.h * .82, {size: Math.max(9, sz * .2), color: on ? '#ffd9c8' : '#8c7a63', weight: 600});
           else D.text(g, '✓', k.x + k.w / 2, k.y + k.h * .82, {size: Math.max(9, sz * .22), color: '#3f7f6b', weight: 800});
           g.globalAlpha = 1;
         });

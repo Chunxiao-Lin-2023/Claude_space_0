@@ -103,8 +103,8 @@ BX.register({
   desc: '在可被炸毁的水墨山峦上架炮对轰：看风向、定角度与力度，选用普通弹、散射弹、穿地弹或火药桶，把对手轰下山头。最后存活者胜。',
   kind: 'turn', seats: [2, 4], defSeats: 2, seatColors: ['#c23a2b', '#2f5d8a', '#3f8f5b', '#c8902b'], aiDelay: 450,
   options: [{key: 'hp', label: '血量', choices: [[60, '60'], [100, '100'], [150, '150']], def: 100},
-    {key: 'guide', label: '瞄准线', choices: [[1, '短'], [2, '长'], [3, '完整']], def: 1}],
-  howto: ['在画面任意处<b>按住向后拉</b>：炮管指向拉动的反方向，拉得越长力度越大，松手开炮；拉回按下点附近（红圈内）松手即<b>取消</b>。', '下方 <b>◀ ▶</b> 微调角度、<b>− +</b> 微调力度（按住连续调），再点「开炮」；选弹药在左侧。', '淡色虚线和 ✕ 是<b>你上一炮</b>的轨迹与落点，照着修正即可；风标显示风向和风力。', '炮弹飞行时<b>点一下画面</b>可快进；💡 提示会画出电脑建议的弹道。键盘：←→ 角度、↑↓ 力度（Shift 加速）、1-4 选弹、空格开炮。'],
+    {key: 'guide', label: '瞄准线（辅助模式）', choices: [[1, '短'], [2, '长'], [3, '完整']], def: 1}],
+  howto: ['在画面任意处<b>按住向后拉</b>：炮管指向拉动的反方向，拉得越长力度越大，松手开炮；拉回按下点附近（红圈内）松手即<b>取消</b>。', '下方 <b>◀ ▶</b> 微调角度、<b>− +</b> 微调力度（按住连续调），再点「开炮」；选弹药在左侧。', '风标显示风向和风力；开启辅助模式后，淡色虚线和 ✕ 标出<b>你上一炮</b>的轨迹与落点，瞄准线也可在开局选项中加长。', '炮弹飞行时<b>点一下画面</b>可快进；💡 提示会画出电脑建议的弹道。键盘：←→ 角度、↑↓ 力度（Shift 加速）、1-4 选弹、空格开炮。'],
   rules: `<p>每位玩家在山地上有一门炮，<b>轮流开炮</b>。炮弹受<b>重力</b>和<b>风</b>影响（风向风力每回合都会改变，见上方风标）。</p>
 <p>爆炸会<b>炸毁地形</b>并对范围内的炮造成伤害（越靠近中心伤害越大，也会伤到自己）。脚下的山体被炸空，炮会掉落，落差较大时受到<b>摔落伤害</b>。生命值归零即被淘汰，<b>最后存活的一方获胜</b>；若最后的炮同时被毁则为平局。若回合数达到上限，剩余生命最多者胜。</p>
 <p><b>弹药：</b></p>
@@ -112,7 +112,7 @@ BX.register({
 <li><b>散射弹</b>（每人 3 发）：飞到最高点后一分为三，覆盖面大，单颗威力小。</li>
 <li><b>穿地弹</b>（每人 2 发）：落地后继续钻入山体一段再爆炸，可打穿掩体、挖出深坑。</li>
 <li><b>火药桶</b>（每人 1 发）：超大范围、超高威力。</li></ul>
-<p><b>操作：</b>先在下方选弹药，然后在画面上按住并<b>向后拉</b>：炮管朝拉动的反方向，拉得越长力度越大，松手开炮；也可以用下方的 ◀ ▶ / − + 微调角度和力度，再点「开炮」。虚线为炮弹出膛后的预计轨迹（长度可在开局选项「瞄准线」中选择：短 / 长 / 完整）；淡色虚线与 ✕ 是自己上一炮的落点。键盘：←→ 角度、↑↓ 力度（按住 Shift 每次 5）、1-4 选弹、空格开炮。</p>`,
+<p><b>操作：</b>先在下方选弹药，然后在画面上按住并<b>向后拉</b>：炮管朝拉动的反方向，拉得越长力度越大，松手开炮；也可以用下方的 ◀ ▶ / − + 微调角度和力度，再点「开炮」。虚线为炮弹出膛后的一小段预计轨迹；开启辅助模式后，可在开局选项「瞄准线」中选择短 / 长 / 完整，并用淡色虚线与 ✕ 标出自己上一炮的落点。键盘：←→ 角度、↑↓ 力度（按住 Shift 每次 5）、1-4 选弹、空格开炮。</p>`,
   icon(g, w, h) {
     K.sky(g, 0, 0, w, h, {top: '#efe2c4', bot: '#e3d2ac', sunX: .82, sunY: .22, sunR: .1});
     K.mountains(g, 0, h * .1, w, h * .7, {seed: 6, layers: 2, top: .1, alpha: [.15, .25]});
@@ -136,7 +136,7 @@ BX.register({
     const newWind = () => { st.wind = Math.round((ctx.rng() * 2 - 1) * 70); };
     newWind();
     const cv = ctx.canvas(), pb = K.playback(ctx), fx = K.fx(), cache = K.cache(), skipKey = K.skip(ctx, cv, pb);
-    const guideN = BX.test ? 1 : (ctx.opts.guide || 1), ghosts = {};
+    const guideN = BX.test || !ctx.assist ? 1 : (ctx.opts.guide || 1), ghosts = {};   // classic: short stub only
     let hintA = null, hintT = 0;
     let show = null, Z = st, weapon = 0, aim = {dx: st.aim[0][0], dy: st.aim[0][1], p: .55}, keyT = 0, bgKey = '';
     const aims = BX.range(n).map(i => ({dx: st.aim[i][0], dy: st.aim[i][1], p: .55}));
@@ -430,7 +430,7 @@ BX.register({
       const [x, y] = P(t.x, t.y + 10);
       if (!mine) { if (ctx.isAI(st.turn) || ctx.isRemote(st.turn)) D.text(g, '瞄准中…', x, y - 60 * V.s - 12, {size: 13, color: '#5a3416', font: 'serif', weight: 700}); return; }
       // previous shot of this player
-      const gh = ghosts[st.turn];
+      const gh = ctx.assist && ghosts[st.turn];   // last-shot ghost = assist
       if (gh) K.ghost(g, gh.pts.map(q => P(q[0], q[1])), {color: '#3a2414', alpha: .38, label: gh.hit ? (gh.dmg ? '上一炮 -' + gh.dmg : '上一炮') : '', mark: gh.hit});
       // hint: suggested trajectory
       if (hintA) {

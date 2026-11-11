@@ -85,7 +85,7 @@ BX.register({
   id: 'uttt', title: '超级井字棋', cat: 'brain', order: 2, sub: '九宫套九宫，一步定去向',
   desc: '九个小井字棋组成一个大井字棋。你落子的位置决定对手下一步必须去哪个小棋盘，赢下三个连成一线的小棋盘即获胜。',
   kind: 'turn', seats: 2, seatNames: ['朱方', '墨方'], seatColors: COL, firstLabel: '先手',
-  howto: ['金框小棋盘就是现在能下的地方；点格子落子（触屏默认先预览、再点同一格确认）。', '预览或鼠标悬停时，<b>虚线框</b>标出这一步会把对手送去的小棋盘。', '手机上棋盘下方 / 右侧有<b>放大镜</b>，显示当前小棋盘的大号格子，可以直接在里面点。', '键盘：数字键 1–9 按九宫位置选格（可任选时先选棋盘），再按一次或回车确认。💡 提示会标出推荐落点。'],
+  howto: ['金框小棋盘就是现在能下的地方；点格子落子（触屏默认先预览、再点同一格确认）。', '开启辅助模式后，预览或鼠标悬停时<b>虚线框</b>标出这一步会把对手送去的小棋盘。', '手机上棋盘下方 / 右侧有<b>放大镜</b>，显示当前小棋盘的大号格子，可以直接在里面点。', '键盘：数字键 1–9 按九宫位置选格（可任选时先选棋盘），再按一次或回车确认。💡 提示会标出推荐落点。'],
   rules: `<p>大棋盘由 <b>3×3 个小井字棋盘</b>组成，朱方（×）先行，双方轮流在小格中落子。</p>
 <p><b>落子定去向：</b>你落在小棋盘中的哪个位置，对手下一步就必须在大棋盘<b>对应位置的小棋盘</b>里下。例如你下在某小棋盘的右上角，对手就要去右上角的小棋盘。</p>
 <p>在小棋盘中先连成三子（横、竖、斜）即<b>赢下该小棋盘</b>，盖上你的大印；小棋盘下满无人连线则为平局盘，不属于任何人。</p>
@@ -175,7 +175,7 @@ BX.register({
       if (st.over) return ctx.status(st.win ? ctx.name(st.win.seat) + ' 三盘连线' : '和棋');
       const where = st.act >= 0 && st.big[st.act] === 0 ? ` · 去<b style="color:#e6c57d">${POS[st.act]}</b>棋盘` : ' · <b style="color:#e6c57d">可任选棋盘</b>';
       let tail = '';
-      if (preview >= 0 && myTurn()) { const d = destOf(preview); tail = ' → 对手' + (d >= 0 ? '去' + POS[d] : '可任选'); }
+      if (preview >= 0 && myTurn() && ctx.assist) { const d = destOf(preview); tail = ' → 对手' + (d >= 0 ? '去' + POS[d] : '可任选'); }
       ctx.status((ctx.canAct(st.turn) ? (ctx.hotseat ? ctx.name(st.turn) + '落子' : '轮到你落子') : '等待 ' + ctx.name(st.turn) + '…') + where + tail);
     };
     const inst = {
@@ -261,12 +261,14 @@ BX.register({
         const tk = performance.now() / 1000;
         if (gh >= 0 && myTurn() && live.includes(gh)) {
           const [x, y, c] = cellXY(gh, G); g.globalAlpha = preview >= 0 ? .7 : .35; mark(g, x + c / 2, y + c / 2, c * .3, st.turn, 1); g.globalAlpha = 1;
-          // destination preview: dashed frame in the opponent's colour around the board they'd be sent to
+          // destination preview (辅助模式): dashed frame in the opponent's colour around the board they'd be sent to
+          if (ctx.assist) {
           const d = destOf(gh);
           g.save(); g.setLineDash([G.s * .22, G.s * .14]); g.lineDashOffset = -tk * 20; g.strokeStyle = D.alpha(COL[1 - st.turn], .9); g.lineWidth = Math.max(2, G.s * .07);
           if (d >= 0) { const [bx, by, bc] = boardRect(d, G); D.rr(g, bx - G.s * .1, by - G.s * .1, bc + G.s * .2, bc + G.s * .2, G.s * .2); }
           else D.rr(g, G.ox - G.s * .2, G.oy - G.s * .2, G.s * 9.7, G.s * 9.7, G.s * .3);   // opponent may pick any board
           g.stroke(); g.restore();
+          }
         }
         if (hint >= 0 && !st.b[hint]) { const [x, y, c] = cellXY(hint, G); g.strokeStyle = 'rgba(63,160,120,' + (.55 + .35 * Math.sin(tk * 6)) + ')'; g.lineWidth = Math.max(3, c * .1); D.rr(g, x + 1, y + 1, c - 2, c - 2, c * .2); g.stroke(); }
         if (kbBoard >= 0 && preview < 0) { const [bx, by, bc] = boardRect(kbBoard, G); g.strokeStyle = C.gold2; g.lineWidth = 3; D.rr(g, bx - 3, by - 3, bc + 6, bc + 6, G.s * .2); g.stroke(); }
@@ -291,9 +293,9 @@ BX.register({
         else if (mine && live.includes(m) && ctx.pref('hints')) { g.fillStyle = 'rgba(200,150,50,.18)'; D.rr(g, x + c * .12, y + c * .12, c * .76, c * .76, c * .14); g.fill(); }
         if (m === st.last) { g.strokeStyle = 'rgba(200,150,50,.95)'; g.lineWidth = 3; D.rr(g, x + 4, y + 4, c - 8, c - 8, 8); g.stroke(); }
         if (m === hint && !v) { g.strokeStyle = 'rgba(63,160,120,' + (.55 + .35 * Math.sin(tk * 6)) + ')'; g.lineWidth = 5; D.rr(g, x + 5, y + 5, c - 10, c - 10, 10); g.stroke(); }
-        if (m === preview && !v) { g.globalAlpha = .7; mark(g, x + c / 2, y + c / 2, c * .28, st.turn, 1); g.globalAlpha = 1; const d = destOf(m); D.text(g, '→' + (d >= 0 ? POS[d] : '任选'), x + c / 2, y + c * .9, {size: Math.max(11, c * .13), color: COL[1 - st.turn], weight: 800}); }
+        if (m === preview && !v) { g.globalAlpha = .7; mark(g, x + c / 2, y + c / 2, c * .28, st.turn, 1); g.globalAlpha = 1; if (ctx.assist) { const d = destOf(m); D.text(g, '→' + (d >= 0 ? POS[d] : '任选'), x + c / 2, y + c * .9, {size: Math.max(11, c * .13), color: COL[1 - st.turn], weight: 800}); } }
         // tiny map of where each cell sends the opponent (destination board label)
-        else if (!v && mine && act && ctx.pref('hints') && c > 60) D.text(g, POS[k], x + c / 2, y + c * .86, {size: Math.max(10, c * .1), color: 'rgba(90,70,50,.35)'});
+        else if (!v && mine && act && ctx.assist && ctx.pref('hints') && c > 60) D.text(g, POS[k], x + c / 2, y + c * .86, {size: Math.max(10, c * .1), color: 'rgba(90,70,50,.35)'});
       }
       const v = st.big[bi];
       if (v === 1 || v === 2) { g.save(); g.globalAlpha = .25; mark(g, Z.x + Z.s / 2, Z.y + Z.s / 2, Z.s * .32, v - 1, 1); g.restore(); }

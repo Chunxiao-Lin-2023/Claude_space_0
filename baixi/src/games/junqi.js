@@ -109,7 +109,7 @@ BX.register({
   kind: 'turn', seats: 2, hidden: true, seatNames: ['红方', '绿方'], seatColors: ['#c23a2b', '#3f7f4b'], aiDelay: 260,
   howto: ['<b>布阵</b>：自动载入你上次用的阵型；点（或拖）一枚棋子到另一枚上互换位置，能换的位置会亮起；「换个阵型」轮换 5 套预设，完成后点「布阵完成」。',
     '<b>走棋</b>：点己方棋子选中（绿点是空位，红框是可进攻的敌子），再点目标。上一步会用金色箭头标出。',
-    '<b>标记敌子</b>：点任意敌方棋子，可给它贴上你猜的身份（司/军/师…/炸/雷/旗/？），暗棋必备；交战推断出的信息（如“胜师”“工兵”）会自动标在棋背上。',
+    '<b>标记敌子</b>：点任意敌方棋子，可给它贴上你猜的身份（司/军/师…/炸/雷/旗/？），暗棋必备。开启辅助模式后，交战推断出的信息（如“胜师”“工兵”）会自动标在棋背上，走动过的敌子也会打上小圆点。',
     '「战报」查看全部交战记录和双方损失；💡 提示推荐一步棋（布阵阶段则推荐一套阵型）。'],
   rules: `<p><b>棋盘</b>：5 列 × 12 行，双方各占 6 行，中间隔着“山界”，只有左、中、右三条铁路可以通过。棋盘上有<b>兵站</b>（普通位置）、<b>行营</b>（圆圈，5 个）、<b>大本营</b>（底线两个）以及粗黑白相间的<b>铁路</b>线。</p>
 <p><b>棋子</b>（每方 25 枚，从大到小）：司令 1、军长 1、师长 2、旅长 2、团长 2、营长 2、连长 3、排长 3、工兵 3；另有地雷 3、炸弹 2、军旗 1。</p>
@@ -607,11 +607,11 @@ BX.register({
         if (mk != null) {   // player's own guess
           g.setLineDash([h * .12, h * .08]); g.strokeStyle = 'rgba(255,226,140,.95)'; g.lineWidth = Math.max(1, h * .07); D.rr(g, x - w / 2 + h * .16, y - h / 2 + h * .16, w - h * .32, h - h * .32, h * .1); g.stroke(); g.setLineDash([]);
           D.text(g, mk ? NAME[mk] : '？', x, y + h * .03, {size: h * .46, color: '#ffe9b0', font: 'serif', weight: 900, maxW: w * .8, stroke: 'rgba(0,0,0,.35)', strokeW: 2});
-        } else if (p.eng || p.beat) {   // deduced from battles: dug a mine = 工兵, beat X = bigger than X
+        } else if (ctx.assist && (p.eng || p.beat)) {   // assist: deduced from battles: dug a mine = 工兵, beat X = bigger than X
           D.text(g, p.eng ? '工兵' : '胜' + SHORT[p.beat], x, y + h * .03, {size: h * .38, color: 'rgba(255,236,200,.8)', font: 'serif', weight: 800, maxW: w * .8});
         } else D.text(g, p.o ? '绿' : '红', x, y + h * .03, {size: h * .42, color: 'rgba(255,236,200,.45)', font: 'deco', weight: 400});
       }
-      if (!faceUp && p.mv && !o.nomv) { g.fillStyle = 'rgba(255,236,200,.8)'; D.circle(g, x + w / 2 - h * .2, y - h / 2 + h * .2, h * .07); g.fill(); }
+      if (!faceUp && p.mv && !o.nomv && ctx.assist) { g.fillStyle = 'rgba(255,236,200,.8)'; D.circle(g, x + w / 2 - h * .2, y - h / 2 + h * .2, h * .07); g.fill(); }
       if (o.sel) { g.strokeStyle = '#ffd76a'; g.lineWidth = Math.max(2, h * .1); D.rr(g, x - w / 2 - 2, y - h / 2 - 2, w + 4, h + 4, h * .22); g.stroke(); }
       g.restore();
     }

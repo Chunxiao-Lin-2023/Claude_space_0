@@ -97,7 +97,7 @@ BX.register({
   desc: '古人宴饮时的雅戏：站定后把箭投进远处的铜壶。入壶得一筹，穿过壶耳得两筹，还有“有初”“连中”“骁”等名目。每轮距离与风向都会变化。',
   kind: 'turn', seats: [1, 4], defSeats: 2, seatColors: ['#b23a2b', '#2f5d8a', '#3f8f5b', '#c8902b'], noFirst: false, aiDelay: 500,
   options: [{key: 'rounds', label: '轮数', choices: [[1, '1 轮'], [3, '3 轮'], [5, '5 轮']], def: 3}],
-  howto: ['在画面任意处<b>按住向后拉</b>（像拉弓弦），箭朝反方向飞出，拉得越长力量越大，松手投出；拉回按下点附近松手可取消。', '下方（或右侧）<b>− +</b> 微调仰角和力度（按住连续调），再点「投出」。', '本轮距离和风不变：淡色虚线是你<b>上一箭</b>的轨迹，照着微调最容易连中。', '箭在空中时点一下画面可快进；💡 提示会画出建议的出手。键盘：↑↓ 仰角、←→ 力度、空格投出。'],
+  howto: ['在画面任意处<b>按住向后拉</b>（像拉弓弦），箭朝反方向飞出，拉得越长力量越大，松手投出；拉回按下点附近松手可取消。', '下方（或右侧）<b>− +</b> 微调仰角和力度（按住连续调），再点「投出」。', '虚线是不计风的前一段轨迹；开启辅助模式后虚线画完整条弧线，本轮距离和风不变时还用淡色虚线标出你<b>上一箭</b>的轨迹。', '箭在空中时点一下画面可快进；💡 提示会画出建议的出手。键盘：↑↓ 仰角、←→ 力度、空格投出。'],
   rules: `<p><b>投壶</b>是先秦至明清宴饮时的礼仪游戏。主客依次站在规定距离外，把箭（矢）投向一只细颈铜壶。</p>
 <p><b>流程：</b>共若干轮（默认 3 轮）。每轮开始时重新确定<b>壶的距离</b>（2.4～3.6 米）和<b>风向风力</b>；每位玩家轮流上场，一次投完 <b>4 支箭</b>。</p>
 <p><b>计分（筹）：</b></p>
@@ -110,7 +110,7 @@ BX.register({
 <li><b>骁</b>：箭入壶口时力道过猛、从壶中反弹而出，古人以接住再投为绝技——记 1 筹并<b>奖励一支额外的箭</b>（每轮最多一次）。骁不算“投中”，会中断连中。</li>
 </ul>
 <p>撞到壶身、壶沿会弹开，若落地即为不中。全部轮次结束后，<b>总筹数最多者胜</b>（并列则同胜）。单人时可挑战自己的最高纪录。</p>
-<p><b>操作：</b>在画面任意处按下并<b>向后拉</b>（像拉弓弦一样），出手方向与拉动方向相反，拉得越长力量越大，松手即投出。虚线为不计风时的前段轨迹；右上角显示风向。也可以用下方的 − + 按钮微调仰角与力度后点「投出」。本轮距离和风不变时，淡色虚线显示你上一箭的轨迹。键盘：↑↓ 仰角、←→ 力度，空格投出。</p>`,
+<p><b>操作：</b>在画面任意处按下并<b>向后拉</b>（像拉弓弦一样），出手方向与拉动方向相反，拉得越长力量越大，松手即投出。虚线为不计风时的前段轨迹；右上角显示风向。也可以用下方的 − + 按钮微调仰角与力度后点「投出」。开启辅助模式后，虚线画出不计风的完整弧线，本轮距离和风不变时淡色虚线显示你上一箭的轨迹。键盘：↑↓ 仰角、←→ 力度，空格投出。</p>`,
   icon(g, w, h) {
     const gr = g.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, '#f1e3c2'); gr.addColorStop(1, '#dcc59a'); g.fillStyle = gr; g.fillRect(0, 0, w, h);
     K.mountains(g, 0, h * .1, w, h * .7, {seed: 4, layers: 2, top: .25, alpha: [.15, .25]});
@@ -372,15 +372,15 @@ BX.register({
       const a = mine ? aim : (lastAim[Z.turn] || null);
       if (!a) { drawArrow(g, hx, hy, .7, .7, ARROW_L * V.s, 1, ctx.color(Z.turn)); return; }
       const lt = lastThrow[Z.turn];
-      if (mine && lt && lt.D === Z.D && lt.wind === Z.wind && lt.round === Z.round) K.ghost(g, lt.pts.map(q => T(q[0], q[1])), {color: '#5a3416', alpha: .4, label: '上一箭'});
+      if (mine && ctx.assist && lt && lt.D === Z.D && lt.wind === Z.wind && lt.round === Z.round) K.ghost(g, lt.pts.map(q => T(q[0], q[1])), {color: '#5a3416', alpha: .4, label: '上一箭'});
       if (mine && hintA) {
         const hp = arc(hintA, Z.wind, 1.6, Z.D);
         K.guide(g, hp, {color: K.HINT, w: 3.5, alpha: K.pulse(hintT), fade: .2, dash: [8, 6]});
         D.text(g, `💡 仰角 ${elevOf(hintA)}° · 力度 ${Math.round(hintA.p * 100)}`, hx + 1.1 * V.s, hy - .9 * V.s, {size: 13, color: '#1f6b50', weight: 800, stroke: 'rgba(255,248,232,.9)', strokeW: 3});
       }
-      // guide arc (no wind), first part only — same start point and integrator as the real flight
-      const pts = mine ? arc(a, 0, .7) : [];
-      if (mine) K.guide(g, pts.slice(0, Math.max(6, Math.round(pts.length * .55))), {color: '#5a3416', w: 2.5, alpha: .8});
+      // guide arc (no wind) — same start point and integrator as the real flight. classic: first part only; assist: whole arc to the pot / ground
+      const pts = mine ? (ctx.assist ? arc(a, 0, 1.6, Z.D) : arc(a, 0, .7)) : [];
+      if (mine) K.guide(g, ctx.assist ? pts : pts.slice(0, Math.max(6, Math.round(pts.length * .55))), {color: '#5a3416', w: 2.5, alpha: .8, fade: ctx.assist ? .5 : undefined});
       drawArrow(g, hx, hy, a.dx, a.dy, ARROW_L * V.s, 1, ctx.color(Z.turn));
       if (mine && sling.on && sling.eng) { K.drawPull(g, hx, hy, {dx: a.dx, dy: -a.dy, p: a.p, u: sling.u, over: sling.over, cancel: sling.cancel}, Math.min(cv.w, cv.h) * .22, ctx.color(Z.turn)); K.drawAnchor(g, sling, '#5a3416'); }
       if (mine && (sling.on || keyAim)) K.meter(g, hx - 60, hy - 140 < V.top ? V.top + 30 : hy - 140, 12, 110, a.p, {marks: [[.5, ''], [.75, '']], labels: false});

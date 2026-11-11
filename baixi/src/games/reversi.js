@@ -103,7 +103,7 @@ BX.register({
   id: 'reversi', title: '黑白棋', cat: 'classic', order: 4, sub: '夹住就翻面',
   desc: '在 8×8 棋盘上落子夹住对方棋子并翻转成己方颜色，终局子多者胜。角与边的争夺决定胜负，高级电脑残局会精确计算。',
   kind: 'turn', seats: 2, seatNames: ['黑方', '白方'], seatColors: ['#1c1a18', '#ece8df'], firstLabel: '执子',
-  howto: ['棋盘上的<b>小圆点</b>是你可以落子的位置。电脑上鼠标移过去会预览将被翻转的棋子；触屏默认<b>先点一下预览</b>（显示会翻几子），再点同一处确认（可在「⋯」里改为点一下直接落子）。',
+  howto: ['棋盘上的<b>小圆点</b>是你可以落子的位置。电脑上鼠标移过去会显示落子虚影；触屏默认<b>先点一下预览</b>，再点同一处确认（可在「⋯」里改为点一下直接落子）。开启辅助模式后，预览还会标出将被翻转的棋子并显示能翻几子。',
     '红点标出上一手，没有地方可下时会自动停一手。',
     '下方 ◀ ▶ 回看每一步，「谱」查看全部落子；电脑键盘 ← → 回看。',
     '顶栏 ↶ 悔棋，💡 提示推荐落点。'],
@@ -112,7 +112,7 @@ BX.register({
 <p><b>停手</b>：若一方没有任何合法落点，只能停一手（自动跳过），由对方继续落子；有合法落点时不能放弃。</p>
 <p><b>终局</b>：双方都无法落子（包括棋盘下满）时游戏结束，棋子多的一方获胜，数量相同为和棋。</p>
 <p><b>小提示</b>：四个角永远不会被翻转，非常宝贵；紧挨角的格子（特别是斜对角的「星位」）往往会把角送给对方。</p>
-<p>棋盘上的小点为当前可落子的位置；预览时被翻转的棋子会出现金色标记，并显示能翻几子。</p>`,
+<p>棋盘上的小点为当前可落子的位置；开启辅助模式后，预览时被翻转的棋子会出现金色标记，并显示能翻几子。</p>`,
   icon(g, w, h) {
     D.felt(g, 0, 0, w, h, {color: '#2e6b4c'});
     const s = h / 4.4, x0 = w / 2 - 3 * s, y0 = h / 2 - 2 * s;
@@ -147,7 +147,7 @@ BX.register({
       const [x, y] = count(st.b); ctx.info(0, x); ctx.info(1, y);
       if (st.over) return ctx.status(st.result);
       const nm = ctx.name(st.turn);
-      ctx.status(ctx.canAct(st.turn) ? (ctx.hotseat ? nm + '落子' : '轮到你落子') + '（可落 ' + legal.length + ' 处）' : '等待 ' + nm + ' 落子…');
+      ctx.status(ctx.canAct(st.turn) ? (ctx.hotseat ? nm + '落子' : '轮到你落子') + (ctx.assist ? '（可落 ' + legal.length + ' 处）' : '') : '等待 ' + nm + ' 落子…');
     }
     const canPlay = () => ctx.canAct(st.turn) && !st.over && H.live();
     ctx.on(cv.cv, 'pointermove', e => { if (e.pointerType === 'mouse') { const s = cellAt(cv.pos(e)); hover = canPlay() && legal.includes(s) ? s : -1; } });
@@ -236,7 +236,7 @@ BX.register({
         tb.label(!live ? `<b>回看 ${i0}/${n}</b> · ${i0 ? view.txt : '开局'}` : n ? `第 ${n} 手 · ${view.txt}` : '黑方先下');
         tb.set('p', {disabled: i0 <= 0}); tb.set('n', {disabled: live});
         const R0 = s * .42, fl = new Set(live ? st.flipped : []);
-        const pv = live ? (preview >= 0 ? preview : hover) : -1, pvf = pv >= 0 ? new Set(flips(Int8Array.from(st.b), pv, me()) || []) : null;
+        const pv = live ? (preview >= 0 ? preview : hover) : -1, pvf = pv >= 0 ? new Set(ctx.assist ? flips(Int8Array.from(st.b), pv, me()) || [] : []) : null;
         for (let i = 0; i < 64; i++) {
           const p = B[i]; if (!p) continue;
           const x = G.ox + ((i & 7) + .5) * s, y = G.oy + ((i >> 3) + .5) * s;
@@ -256,7 +256,7 @@ BX.register({
         if (pv >= 0 && pvf) {
           const x = G.ox + ((pv & 7) + .5) * s, y = G.oy + ((pv >> 3) + .5) * s;
           g.globalAlpha = preview >= 0 ? .8 : .55; D.stone(g, x, y, R0, st.turn === 1); g.globalAlpha = 1;
-          D.text(g, '+' + pvf.size, x, y + 1, {size: s * .3, color: st.turn === 1 ? '#3a2410' : '#ffe9b0', weight: 800});
+          if (ctx.assist) D.text(g, '+' + pvf.size, x, y + 1, {size: s * .3, color: st.turn === 1 ? '#3a2410' : '#ffe9b0', weight: 800});
         }
         if (live && hint && !anim0()) { const x = G.ox + ((hint.i & 7) + .5) * s, y = G.oy + ((hint.i >> 3) + .5) * s; L.hintArrow(g, null, null, x, y, R0, hint.t0); }
         if (passMsg) L.callout(g, G.ox + 4 * s, G.oy + 4 * s, Math.min(s * .5, 26), passMsg.t, passMsg.k, '#3a5a4a');

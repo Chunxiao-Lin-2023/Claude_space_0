@@ -27,8 +27,8 @@ const HOLES = [
 /* ---------- deterministic helpers ---------- */
 function inPoly(x, y, p) { let c = false; for (let i = 0, j = p.length - 1; i < p.length; j = i++) { const [xi, yi] = p[i], [xj, yj] = p[j]; if ((yi > y) !== (yj > y) && x < (xj - xi) * (y - yi) / (yj - yi) + xi) c = !c; } return c; }
 function segs(h) { if (h._s) return h._s; const s = []; for (const w of h.walls) for (let i = 1; i < w.length; i++) s.push([w[i - 1][0], w[i - 1][1], w[i][0], w[i][1]]); h._s = s; return s; }
-/* simulate one putt. ball {x,y}; shot {dx,dy,p}. returns {x,y,res:'cup'|'water'|'rest', frames, ev, steps} */
-function simulate(h, bx, by, dx, dy, p, rec) {
+/* simulate one putt (soft = 辅助模式 rolling model, else the classic constant resistance). ball {x,y}; shot {dx,dy,p}. returns {x,y,res:'cup'|'water'|'rest', frames, ev, steps} */
+function simulate(h, bx, by, dx, dy, p, rec, soft) {
   let x = bx, y = by, vx = dx * p * VMAX, vy = dy * p * VMAX, step = 0, res = 'rest', lx = bx, ly = by;
   const S = segs(h), fr = rec ? [[x, y]] : null, ev = [];
   let tunCD = 0;
@@ -37,7 +37,7 @@ function simulate(h, bx, by, dx, dy, p, rec) {
     const sand = h.sand && h.sand.some(q => inPoly(x, y, q));
     let ax = 0, ay = 0;
     if (h.slope) for (const sl of h.slope) if (inPoly(x, y, sl.p)) { ax += sl.g[0]; ay += sl.g[1]; }
-    const fric = sand ? 95 : 11 + .1 * sp;   // rolling resistance + a little speed drag: quick early bleed-off, gentle roll-out
+    const fric = sand ? 95 : soft ? 11 + .1 * sp : 16;   // assist: rolling resistance + speed drag (gentle roll-out); classic: constant 16
     vx += ax * DT; vy += ay * DT;
     if (sp > 0) { const k = Math.max(0, 1 - fric * DT / sp); vx *= k; vy *= k; }
     const nsp = Math.sqrt(vx * vx + vy * vy);
@@ -126,12 +126,12 @@ BX.register({
   desc: '在九个园林小球场上推杆：借边库反弹、绕过沙坑和水池、钻过假山洞。每洞看谁用的杆数少，九洞总杆数最少者胜。',
   kind: 'turn', seats: [1, 4], defSeats: 2, seatColors: ['#c23a2b', '#2f5d8a', '#3f8f5b', '#d9a12b'], aiDelay: 450,
   options: [{key: 'holes', label: '洞数', choices: [[3, '前 3 洞'], [9, '9 洞']], def: 9}],
-  howto: ['在画面任意处<b>按住向后拉</b>（像弹弓），球朝反方向滚出，拉得越长越用力，松手击球。', '球周围的<b>彩色圆环</b>是力度；虚线是按真实物理算出的<b>前一段路线</b>（含坡道、反弹）。拉回按下点附近松手可取消。', '下方 <b>↺ ↻</b> 微调方向、<b>− +</b> 微调力度（按住连续调），再点「击球」。淡色虚线是你上一杆的路线。', '球滚动时点一下画面可快进；💡 提示会画出建议的方向和力度。键盘：←→ 转向、↑↓ 力度（Shift 加速）、空格击球。'],
+  howto: ['在画面任意处<b>按住向后拉</b>（像弹弓），球朝反方向滚出，拉得越长越用力，松手击球。', '球周围的<b>彩色圆环</b>是力度，虚线是击球方向。开启辅助模式后，虚线按真实物理画出<b>前一段路线</b>（含坡道、反弹），淡色虚线是你上一杆的路线。拉回按下点附近松手可取消。', '下方 <b>↺ ↻</b> 微调方向、<b>− +</b> 微调力度（按住连续调），再点「击球」。', '球滚动时点一下画面可快进；💡 提示会画出建议的方向和力度。键盘：←→ 转向、↑↓ 力度（Shift 加速）、空格击球。'],
   rules: `<p>共 <b>9 洞</b>（可选只打前 3 洞）。每洞所有玩家依次上场，<b>每人一直推杆直到球进洞</b>，再轮到下一位。</p>
 <p><b>计杆：</b>每推一次记 1 杆。球落入<b>水池</b>罚 1 杆，球放回击球前的位置。每洞最多 <b>${CAP} 杆</b>，到达上限仍未进洞记 ${CAP} 杆。</p>
 <p><b>场地：</b>木栏可以反弹（打库边借角度）；圆形<b>石墩</b>弹性更强；<b>沙坑</b>阻力很大；<b>坡道</b>会把球往低处推（看地面箭头）；<b>假山洞</b>从一个洞口进、另一个洞口出。球速太快经过洞口会“吃边”滑走，力度要恰到好处。</p>
 <p>每洞有标准杆（<b>标准杆 Par</b>），记分卡上显示与标准杆之差。九洞总杆数<b>最少者胜</b>，并列同胜。单人练习时会记录你的最好成绩。</p>
-<p><b>操作：</b>在画面任意处按住并<b>向后拉</b>（像弹弓），球会朝相反方向击出，拉得越长越用力；球周围的圆环显示力度，虚线显示按真实物理计算的开头一段路线（力度越大显示越长）。下方按钮可微调方向与力度。键盘：←→ 转向、↑↓ 力度、空格击球。</p>`,
+<p><b>操作：</b>在画面任意处按住并<b>向后拉</b>（像弹弓），球会朝相反方向击出，拉得越长越用力；球周围的圆环显示力度，虚线显示击球方向（开启辅助模式后改为按真实物理计算的开头一段路线，含反弹与坡道，力度越大显示越长）。下方按钮可微调方向与力度。键盘：←→ 转向、↑↓ 力度、空格击球。</p>`,
   icon(g, w, h) {
     D.wood(g, 0, 0, w, h, {seed: 9, base: '#6b4426'});
     g.fillStyle = '#3f8f5b'; D.rr(g, 10, 14, w - 20, h - 28, 10); g.fill();
@@ -216,7 +216,7 @@ BX.register({
         let dx = +a.dx || 1, dy = +a.dy || 0; const l = Math.sqrt(dx * dx + dy * dy) || 1; dx /= l; dy /= l;
         const p = Math.max(.02, Math.min(1, +a.p || .1));
         const snap = {hole: st.hole, turn: who, strokes: st.strokes, ball: st.ball.slice(), card: st.card.map(c => c.slice())};
-        const r = simulate(h, st.ball[0], st.ball[1], dx, dy, p, !ctx.fast);
+        const r = simulate(h, st.ball[0], st.ball[1], dx, dy, p, !ctx.fast, ctx.assist);
         st.strokes++;
         let done = false, note = '';
         if (r.res === 'water') { st.strokes++; note = 'water'; }
@@ -284,7 +284,7 @@ BX.register({
       outer: for (const pp of [ps, ps.map(p => p * 1.07), ps.map(p => p * .93)]) for (const a of tries) for (const p of pp) {
         if (n > 12 && performance.now() - t0 > budget) break outer;
         n++;
-        const r = simulate(h, bx, by, Math.cos(a), Math.sin(a), p, false);
+        const r = simulate(h, bx, by, Math.cos(a), Math.sin(a), p, false, ctx.assist);
         const v = score(r) + Math.random() * .1;
         if (v > bv) { bv = v; best = {a, p}; }
       }
@@ -442,7 +442,7 @@ BX.register({
     function truePath(h, a) {
       const key = Z.hole + ':' + Z.ball.join(',') + ':' + a.dx.toFixed(4) + ',' + a.dy.toFixed(4) + ',' + a.p.toFixed(3);
       if (key === tpKey) return tpPts;
-      const r = simulate(h, Z.ball[0], Z.ball[1], a.dx, a.dy, a.p, true), budget = 12 + 32 * a.p, pts = [[Z.ball[0], Z.ball[1]]];
+      const r = simulate(h, Z.ball[0], Z.ball[1], a.dx, a.dy, a.p, true, ctx.assist), budget = 12 + 32 * a.p, pts = [[Z.ball[0], Z.ball[1]]];
       let len = 0;
       for (let i = 1; i < r.frames.length; i++) {
         const q = r.frames[i], o = r.frames[i - 1]; if (q[2]) break;
@@ -461,7 +461,7 @@ BX.register({
     function drawAim(g, x, y) {
       const S = V.s, h = HOLES[Z.hole], sdx = V.port ? aim.dy : aim.dx, sdy = V.port ? -aim.dx : aim.dy;
       const lp = lastPutt[Z.turn];
-      if (lp && lp.hole === Z.hole) K.ghost(g, lp.pts.map(q => T(q[0], q[1])), {color: '#fffaf0', alpha: .35, label: '上一杆'});
+      if (ctx.assist && lp && lp.hole === Z.hole) K.ghost(g, lp.pts.map(q => T(q[0], q[1])), {color: '#fffaf0', alpha: .35, label: '上一杆'});
       if (hintA) {
         const hp = ray(h, Z.ball[0], Z.ball[1], hintA.dx, hintA.dy, 10 + hintA.p * 55, 2).map(q => T(q[0], q[1]));
         K.guide(g, hp, {color: K.HINT, w: 4, alpha: K.pulse(hintT), fade: .2, dash: [8, 6]});
@@ -469,7 +469,8 @@ BX.register({
         D.text(g, '💡 力度 ' + Math.round(hintA.p * 100), x, y + BR * S + 30, {size: 13, color: '#1f6b50', weight: 800, stroke: 'rgba(255,255,255,.9)', strokeW: 3});
       }
       const L = 10 + aim.p * 40;
-      const wp = ctx.pref('hints') ? truePath(h, aim) : [[Z.ball[0], Z.ball[1]], [Z.ball[0] + aim.dx * L, Z.ball[1] + aim.dy * L]];
+      // classic: straight aim line only (no bounce / slope prediction); assist: first stretch of the real simulated roll
+      const wp = ctx.assist && ctx.pref('hints') ? truePath(h, aim) : [[Z.ball[0], Z.ball[1]], [Z.ball[0] + aim.dx * L, Z.ball[1] + aim.dy * L]];
       K.guide(g, wp.map(q => T(q[0], q[1])), {color: '#fffaf0', w: 3, alpha: .95, fade: .6, dash: [5, 7]});
       if (sling.on) K.drawAnchor(g, sling, '#fffaf0');
       powerRing(g, x, y, aim.p);

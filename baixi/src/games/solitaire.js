@@ -138,7 +138,7 @@ BX.register({
   kind: 'solo',
   options: [{key: 'v', label: '玩法', choices: [['k1', '克朗代克·翻一张'], ['k3', '克朗代克·翻三张'], ['s1', '蜘蛛·单色'], ['s2', '蜘蛛·双色'], ['s4', '蜘蛛·四色']], def: 'k1'},
     {key: 'deal', label: '发牌', choices: [['r', '随机发牌'], ['w', '保证有解'], ['d', '每日挑战']], def: 'r'}],
-  howto: ['<b>轻点</b>一张牌（或一串牌）会自动移到最合适的位置；也可以<b>按住拖动</b>，拖动时可放的位置会发光，最亮的就是松手后的去处；朝目标<b>快速一甩</b>也能送过去。', '点左上（蜘蛛为右上）牌库翻牌/发牌；所有暗牌翻开后自动收牌。', '底部：撤销（不限次）、自动收牌/发牌、重来本局、新局；💡 提示可多次点击轮换。', '「发牌」选项：保证有解（克朗代克）或每日挑战（每天一副相同的牌）。键盘 Z 撤销、H 提示、空格翻牌。'],
+  howto: ['<b>轻点</b>一张牌（或一串牌）会自动移到最合适的位置；也可以<b>按住拖动</b>到目标牌上松手。开启辅助模式后：拖动时可放的位置会发光（最亮的就是松手后的去处）、落点更宽容、朝目标<b>快速一甩</b>也能送过去，无路可走时会提醒。', '点左上（蜘蛛为右上）牌库翻牌/发牌；所有暗牌翻开后自动收牌。', '底部：撤销（不限次）、自动收牌/发牌、重来本局、新局；💡 提示可多次点击轮换。', '「发牌」选项：保证有解（克朗代克）或每日挑战（每天一副相同的牌）。键盘 Z 撤销、H 提示、空格翻牌。'],
   rules: `<p><b>克朗代克</b>（一副 52 张）：7 列牌桌，第 n 列发 n 张，只有最上面一张翻开；左上为牌库，右侧为 4 个收牌区。</p>
 <p>· 牌桌上按<b>红黑相间、点数递减</b>叠放（如黑 9 上放红 8），可以整串移动已排好的牌；空列只能放 <b>K</b>（或以 K 开头的牌串）。<br>
 · 收牌区按<b>同花色从 A 到 K</b> 依次收牌，收齐四门即获胜；收牌区顶牌也可拖回牌桌。<br>
@@ -245,7 +245,7 @@ BX.register({
     /* no useful move left? (talon cards that fit nowhere + no tableau hints) → tell the player once */
     function fitsAny(id) { const c = cards[id]; for (const f of founds) { const b = P[f]; if (!SP && ((!b.length && c.r === 1) || (b.length && cards[b[b.length - 1]].s === c.s && cards[b[b.length - 1]].r + 1 === c.r))) return true; } for (const t of tableaus) { const b = P[t]; if (!b.length ? (SP || c.r === 13) : (up[b[b.length - 1]] && cards[b[b.length - 1]].r === c.r + 1 && (SP || isRed(cards[b[b.length - 1]].s) !== isRed(c.s)))) return true; } return false; }
     function checkStuck() {
-      if (won || autoRun || drag) return;
+      if (won || autoRun || drag || !ctx.assist) return;   // "no moves left" detection = 辅助模式
       const hs = computeHints().filter(h => h.pk !== 'stock');
       const stuck = !hs.length && (SP ? !P.stock.length : ![...P.stock, ...P.waste].some(fitsAny));
       const k = snap(); if (!stuck || k === stuckKey) return; stuckKey = k;
@@ -476,11 +476,12 @@ BX.register({
       cand.sort((a, b) => a[1] - b[1]);
       doMove(pk, i, cand[0][0]); return true;
     }
-    /* drop target for a dragged stack whose first card is drawn at (x, y): the valid pile with the largest overlap of a
-       generously padded drop zone; otherwise the nearest valid pile within ~one card (magnetic, forgiving snap) */
+    /* drop target for a dragged stack whose first card is drawn at (x, y): the valid pile with the largest overlap.
+       辅助模式: generously padded drop zone + the nearest valid pile within ~one card (magnetic, forgiving snap);
+       经典: the dragged card must actually overlap the pile (no padding, no magnet) */
     function dropTarget(d, x, y) {
-      const {cw, ch} = L, px = cw * .3, py = ch * .3, cx = x + cw / 2, cy = y + ch / 2;
-      let best = null, bestA = 0, near = null, nd = cw * 1.05;
+      const {cw, ch} = L, A = ctx.assist, px = A ? cw * .3 : 0, py = A ? ch * .3 : 0, cx = x + cw / 2, cy = y + ch / 2;
+      let best = null, bestA = 0, near = null, nd = A ? cw * 1.05 : 0;
       for (const to of [...founds, ...tableaus]) {
         if (!canDrop(d.pk, d.i, to)) continue;
         const s = L.S[to], b = P[to], top = b.length && to[0] === 't' ? tgt[b[b.length - 1]] : s, hh = to[0] === 't' ? Math.max(ch, L.colH[to]) : ch;
@@ -551,7 +552,7 @@ BX.register({
       const v = vis[d.ids[0]], vel = K.vel(d.smp, 90);
       let best = d.best, how = 'drop';
       // a quick throw goes to the pile in that direction (unless the stack is clearly released over a pile)
-      if (vel.sp > .65) { const ft = flingTarget(d, v.x, v.y, vel.vx, vel.vy); if (ft && (!best || ft !== best)) { const s = L.S[best || ft]; const over = best && Math.abs(s.x - v.x) < L.cw * .5; if (!over) { best = ft; how = 'fling'; } } }
+      if (ctx.assist && vel.sp > .65) { const ft = flingTarget(d, v.x, v.y, vel.vx, vel.vy); if (ft && (!best || ft !== best)) { const s = L.S[best || ft]; const over = best && Math.abs(s.x - v.x) < L.cw * .5; if (!over) { best = ft; how = 'fling'; } } }
       if (best) { doMove(d.pk, d.i, best); if (how === 'fling') d.ids.forEach(id => { vis[id].lf = 1; }); ctx.buzz(how === 'fling' ? 10 : 6); }
       else { ctx.sfx('tick'); d.ids.forEach(id => { vis[id].lf = 1; }); }   // glide back home
     };
@@ -696,8 +697,8 @@ BX.register({
           for (const r of runs) { const v0 = vis[r.ids[0]], ax = v0.x + cw / 2, ay = v0.y; runShadow(r.ids, ax, ay); r.ids.forEach(id => drawCard(id, ax, ay)); }
         }
         if (dragSet.size) {
-          if (ctx.pref('hints')) for (const to of [...founds, ...tableaus]) if (canDrop(drag.pk, drag.i, to)) { const b = P[to], q = b.length && to[0] === 't' ? tgt[b[b.length - 1]] : S[to]; if (q) glow(g, q.x, q.y, cw, ch, to === drag.best ? 1 : .35); }
-          if (drag.best && !ctx.pref('hints')) { const b = P[drag.best], q = b.length && drag.best[0] === 't' ? tgt[b[b.length - 1]] : S[drag.best]; if (q) glow(g, q.x, q.y, cw, ch, .8); }
+          if (ctx.assist && ctx.pref('hints')) for (const to of [...founds, ...tableaus]) if (canDrop(drag.pk, drag.i, to)) { const b = P[to], q = b.length && to[0] === 't' ? tgt[b[b.length - 1]] : S[to]; if (q) glow(g, q.x, q.y, cw, ch, to === drag.best ? 1 : .35); }
+          if (ctx.assist && drag.best && !ctx.pref('hints')) { const b = P[drag.best], q = b.length && drag.best[0] === 't' ? tgt[b[b.length - 1]] : S[drag.best]; if (q) glow(g, q.x, q.y, cw, ch, .8); }
           runShadow(drag.ids, drag.px, drag.py);
           drag.ids.forEach(id => drawCard(id, drag.px, drag.py));
         }

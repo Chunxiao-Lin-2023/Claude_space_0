@@ -34,10 +34,10 @@ BX.register({
   desc: '俯视角小赛车，在三条原创赛道上跑三圈。车辆会轻微漂移，出赛道会减速，车与车可以碰撞。最多四人，空位由电脑车手补上。',
   kind: 'realtime', seats: [2, 4], defSeats: 2, noFirst: true, hint: false, snapHz: 30, inputHz: 60,
   options: [{key: 'trk', label: '赛道', choices: [[0, '茶园环线'], [1, '九曲回廊'], [2, '龙脊山道']], def: 0}, {key: 'laps', label: '圈数', choices: [[2, '2 圈'], [3, '3 圈'], [5, '5 圈']], def: 3},
-    {key: 'assist', label: '辅助转向', choices: [[1, '开'], [0, '关']], def: 1}],
+    {key: 'assist', label: '辅助转向', choices: [[2, '随辅助模式'], [1, '开'], [0, '关']], def: 2}],
   howto: ['触屏<b>自动油门</b>：按住 ◀ ▶ 转向，或单人时<b>在赛道画面上按住左右拖动</b>（拖得越远打得越多，松手回正）；按「刹」减速/倒车；键盘 ↑↓←→ 或 WASD。',
     '单人时镜头跟随你的车，右上角小地图显示全场；左上角是名次、本圈用时和最快圈。',
-    '「辅助转向」开启时，不打方向也会被轻轻带回赛道中线；半透明的车是你的<b>最快圈幽灵</b>，追上它！',
+    '开启辅助模式后默认打开「辅助转向」：不打方向也会被轻轻带回赛道中线（也可在开局选项里单独开/关）。半透明的车是你的<b>最快圈幽灵</b>，追上它！',
     '弯前松一点或点刹，比冲出赛道进草地快得多。'],
   rules: `<p>所有赛车在起点线后发车，倒计时「3、2、1、开！」后起跑，<b>先跑完规定圈数（默认 3 圈）者获胜</b>。第一名冲线后，其余车手还有 15 秒冲线时间，之后按跑过的距离排名。</p>
 <ul><li>驶出赛道（草地）会大幅减速；</li><li>高速转弯时车尾会轻微甩动（漂移），松一点油门更好过弯；</li><li>车与车会相互碰撞推挤；</li><li>必须按赛道方向依次跑完整圈，倒着跑不计圈。</li></ul>
@@ -153,6 +153,7 @@ BX.register({
     /* ---------- local input ---------- */
     const nLoc = () => ctx.mySeats.length;
     const KEYS = [['KeyW', 'KeyS', 'KeyA', 'KeyD'], ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'], ['KeyI', 'KeyK', 'KeyJ', 'KeyL'], ['Numpad8', 'Numpad5', 'Numpad4', 'Numpad6']];
+    const steerAs = ctx.opts.assist == null || +ctx.opts.assist === 2 ? ctx.assist : +ctx.opts.assist === 1;   // 辅助转向 follows 辅助模式 unless set explicitly
     function input(seat, slot, nl, peek) {
       const kk = nl === 1 ? [KEYS[0], KEYS[1]] : [KEYS[slot] || KEYS[0]];
       let up = false, dn = false, l = false, r = false;
@@ -162,7 +163,7 @@ BX.register({
       if (pads.touched && !up && !dn) t = tb ? -1 : 1;
       let sv = ((r || tr) ? 1 : 0) - ((l || tl) ? 1 : 0);
       if (!sv && drag && nl === 1) sv = drag.s;                         // analog drag steering
-      if (!sv && ctx.opts.assist !== 0 && st.ph !== 'cd') sv = assistSteer(gc && !ctx.isHost ? gc : st.c[seat]);
+      if (!sv && steerAs && st.ph !== 'cd') sv = assistSteer(gc && !ctx.isHost ? gc : st.c[seat]);
       const out = {s: Math.round(sv * 100) / 100, t};
       if (!peek && !ctx.isHost && ctx.online && seat === ctx.me) pr.tag(out);
       return out;

@@ -132,7 +132,7 @@ BX.register({
   id: 'carrom', title: '康乐球', cat: 'physics', order: 2, sub: '弹击棋子入四角袋',
   desc: '方桌四角有袋，白黑各九子加一枚红后。把击子放在自己的底线上弹出去，打进本方棋子并“盖住”红后，先清完的一方获胜。',
   kind: 'turn', seats: 2, seatNames: ['白方', '黑方'], seatColors: ['#efe6d2', '#2a211b'], firstLabel: '执白先手', aiDelay: 300,
-  howto: ['<b>定位</b>：按住<b>击子滑条</b>左右拖（或直接沿底线拖击子）；拖动时手指往滑条外移开，速度降为 ½ / ¼，方便精细摆位。', '<b>瞄准</b>：在盘面上按住拖动，击子指向手指；<b>微调轮</b>可拖、可甩，按住两端连续细调。瞄准线按真实碰撞画出被撞棋子的走向，能进袋时袋口亮起绿圈。', '<b>出击</b>：拖动<b>力度条</b>松手弹出，或从击子向后拉弓；前半段力度更细腻，拖回起点松手即取消。', '击子运动时点一下快进，再点一下直接看结果；💡 会摆好推荐位置与方向并标出建议力度。键盘：←→ 移动击子、A/D 调方向（Shift 更细，按住加速）、W/S 力度、空格击出。'],
+  howto: ['<b>定位</b>：按住<b>击子滑条</b>左右拖（或直接沿底线拖击子）；拖动时手指往滑条外移开，速度降为 ½ / ¼，方便精细摆位。', '<b>瞄准</b>：在盘面上按住拖动，击子指向手指；<b>微调轮</b>可拖、可甩，按住两端连续细调。瞄准线画到击子碰到的第一颗棋子，并按真实碰撞画出被撞棋子走向的一小段；开启辅助模式后走向画得更长、显示库边反弹，能进袋时袋口亮起绿圈。', '<b>出击</b>：拖动<b>力度条</b>松手弹出，或从击子向后拉弓；前半段力度更细腻，拖回起点松手即取消。', '击子运动时点一下快进，再点一下直接看结果；💡 会摆好推荐位置与方向并标出建议力度。键盘：←→ 移动击子、A/D 调方向（Shift 更细，按住加速）、W/S 力度、空格击出。'],
   rules: `<p><b>器材</b>：方形球盘四角各有一个袋，盘上有 9 枚白子、9 枚黑子和 1 枚<b>红后</b>，开局红后居中，其余子围成两圈花形。每人有一枚较大较重的<b>击子</b>。白方先手。</p>
 <p><b>击球</b>：把击子放在自己一侧的<b>底线</b>上（两端圆圈之间，不能压住棋子），然后弹出击子撞击棋子。只能打进本方颜色的棋子才算得分。</p>
 <p><b>连击</b>：一杆打进本方棋子，可继续击球；没有打进本方棋子则换对方。打进对方棋子算对方的，并不能继续击球。</p>
@@ -615,13 +615,14 @@ BX.register({
       if (hit >= 0 && tB <= tw) {
         let nx = c[hit][0] - gx, ny = c[hit][1] - gy; const nl = Math.hypot(nx, ny); nx /= nl; ny /= nl;
         const cs = dx * nx + dy * ny, own = colorOf(hit) === st.turn || hit === Q;
-        const pk = own && ctx.pref('hints') ? pocketOf(c, hit, nx, ny) : null;
+        // classic: a short true stub; 辅助模式: long coin path + 能进袋 green ring
+        const pk = ctx.assist && own && ctx.pref('hints') ? pocketOf(c, hit, nx, ny) : null;
         g.strokeStyle = own ? 'rgba(40,130,90,.95)' : 'rgba(190,40,30,.9)'; g.lineWidth = 2.6;
-        const len = pk ? pk.t : 40 + 150 * cs;
+        const len = pk ? pk.t : ctx.assist ? 40 + 150 * cs : 28 + 50 * cs;
         g.beginPath(); g.moveTo(c[hit][0], c[hit][1]); g.lineTo(c[hit][0] + nx * len, c[hit][1] + ny * len); g.stroke();
         if (pk) { const [qx, qy] = POCK[pk.k]; g.strokeStyle = `rgba(40,170,100,${.7 + .25 * Math.sin(performance.now() / 160)})`; g.lineWidth = 4; D.circle(g, qx, qy, PR + 6); g.stroke(); }
-      } else if (tw < 1e8) {
-        // one bounce preview
+      } else if (tw < 1e8 && ctx.assist) {
+        // one bounce preview (辅助模式 only)
         let rx = dx, ry = dy; if (Math.abs(gx - SR) < 1 || Math.abs(gx - (S - SR)) < 1) rx = -rx; else ry = -ry;
         g.strokeStyle = 'rgba(60,30,10,.35)'; g.setLineDash([5, 7]); g.beginPath(); g.moveTo(gx, gy); g.lineTo(gx + rx * 110, gy + ry * 110); g.stroke(); g.setLineDash([]);
       }

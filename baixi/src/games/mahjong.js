@@ -218,14 +218,14 @@ BX.register({
   desc: '两人对局的国标风味麻将：只用万子与字牌（可加花牌），吃碰杠俱全，八番起和，和牌后列出番种明细。',
   kind: 'turn', seats: 2, hidden: true, firstLabel: '坐庄', aiDelay: 480, seatColors: ['#c23a2b', '#2f5d8a'],
   options: [{key: 'flower', label: '花牌', choices: [[1, '有花（补花）'], [0, '无花']], def: 1}],
-  howto: ['轮到你时点一张牌选中、再点一次打出（鼠标单击直接打出；可在「⋯」里改成都要确认）。', '牌上的「听」表示打出它就能听牌；选中后上方列出听哪些牌、各剩几张、能否凑够 8 番。', '对手打牌后可吃/碰/杠/和时下方弹出按钮；右上角可开「自动和」「不吃」。', '💡 标出推荐打的牌；键盘：←→ 选牌 · 回车 打出 · H 和 · P 碰 · G 杠 · C 吃 · 空格/Esc 过。'],
+  howto: ['轮到你时点一张牌选中、再点一次打出（鼠标单击直接打出；可在「⋯」里改成都要确认）。', '开启<b>辅助模式</b>后有听牌助手：牌上的「听」表示打出它就能听牌，选中后上方列出听哪些牌、各剩几张、能否凑够 8 番，和牌按钮也会显示番数。', '对手打牌后可吃/碰/杠/和时下方弹出按钮；右上角可开「自动和」「不吃」。', '💡 标出推荐打的牌；键盘：←→ 选牌 · 回车 打出 · H 和 · P 碰 · G 杠 · C 吃 · 空格/Esc 过。'],
   rules: `<p><b>牌：</b>万子一万至九万各 4 张，字牌东南西北中发白各 4 张，共 64 张；选“有花”时另加梅兰竹菊春夏秋冬 8 张花牌。</p>
 <p><b>开局：</b>庄家（东风位）14 张，闲家（西风位）13 张，圈风为东。摸到花牌立即亮出，并从牌墙尾部<b>补花</b>。</p>
 <p><b>行牌：</b>轮流摸牌、打牌。对手打出的牌可以：<br>· <b>吃</b>：与手中两张组成顺子（二人对局中对手的牌都可吃）；<br>· <b>碰</b>：手中有两张相同牌；<br>· <b>明杠</b>：手中有三张相同牌。<br>自己摸牌后可<b>暗杠</b>（四张相同）或<b>补杠</b>（加到已碰的刻子上，对手可<b>抢杠和</b>）。杠后从牌墙尾部补一张牌。</p>
 <p><b>和牌：</b>四组面子（顺子/刻子/杠）加一对将，或七个对子（七对）。自摸或和对手打出的牌均可。<b>必须达到 8 番才能和牌</b>（花牌每张 1 番，不计入起和番数）。</p>
 <p><b>常用番种：</b>大四喜 88、大三元 88、九莲宝灯 88、四杠 88、小四喜 64、小三元 64、字一色 64、四暗刻 64、混幺九 32、清一色 24、七对 24、一色三同顺 24、清龙 16、三暗刻 16、三风刻 12、妙手回春 8、海底捞月 8、杠上开花 8、抢杠和 8、碰碰和 6、混一色 6、双箭刻 6、全带幺 4、不求人 4、箭刻 2、圈风刻 2、门风刻 2、门前清 2、平和 2、四归一 2、双暗刻 2、暗杠 2、断幺 2、一般高 1、连六 1、老少副 1、幺九刻 1、明杠 1、边张/坎张/单钓将 1、自摸 1、无字 1 等。番种按国标“不重复计番”原则计算，取最高组合。</p>
 <p><b>荒庄：</b>牌墙摸完仍无人和牌则流局。一局定胜负。</p>
-<p>操作：轮到你时点选一张牌，再点一次打出（电脑上可直接单击）；可吃碰杠和时下方会弹出按钮。选中一张牌会显示打出后听哪些牌、剩余张数与番数。</p>`,
+<p>操作：轮到你时点选一张牌，再点一次打出（电脑上可直接单击）；可吃碰杠和时下方会弹出按钮。开启辅助模式后，选中一张牌会显示打出后听哪些牌、剩余张数与番数。</p>`,
   icon(g, w, h) {
     const gr = g.createRadialGradient(w / 2, h / 2, 10, w / 2, h / 2, w * .7); gr.addColorStop(0, '#2f7a56'); gr.addColorStop(1, '#173d2b'); g.fillStyle = gr; g.fillRect(0, 0, w, h);
     const tw = w * .14, th = tw * 1.38;
@@ -434,7 +434,7 @@ BX.register({
       const B = (txt, cls, a) => h('button', {class: 'bx-btn ' + (cls || '') + (hk(a) ? ' mj-hint' : ''), text: txt, on: {click: () => { ctx.sfx('click'); sel = -1; ctx.act(a, s); }}});
       if (st.ph === 'claim') {
         const L = claims(s), t = tyOf(st.last.id);
-        if (L.hu) bar.append(B('和 · ' + huFan(s, t, false) + '番', 'red', {t: 'hu'}));
+        if (L.hu) bar.append(B(ctx.assist ? '和 · ' + huFan(s, t, false) + '番' : '和', 'red', {t: 'hu'}));
         if (L.gang) bar.append(B('杠', 'jade', {t: 'gang'}));
         if (L.peng) bar.append(B('碰', 'jade', {t: 'peng'}));
         for (const lo of L.chi) bar.append(B('吃 ' + [lo, lo + 1, lo + 2].map(x => NUM[x]).join(''), '', {t: 'chi', lo}));
@@ -446,7 +446,7 @@ BX.register({
         if (auto.hu) scheduleAuto({t: 'hu'});
       } else if (st.ph === 'discard') {
         const O = turnOpts(s);
-        if (O.zimo) bar.append(B('自摸 · ' + huFan(s, null, true) + '番', 'red', {t: 'zimo'}));
+        if (O.zimo) bar.append(B(ctx.assist ? '自摸 · ' + huFan(s, null, true) + '番' : '自摸', 'red', {t: 'zimo'}));
         for (const t of O.an) bar.append(B('暗杠 ' + tName(t), 'jade', {t: 'an', tt: t}));
         for (const t of O.bu) bar.append(B('补杠 ' + tName(t), 'jade', {t: 'bu', tt: t}));
         if (O.zimo && auto.hu) scheduleAuto({t: 'zimo'});
@@ -530,7 +530,7 @@ BX.register({
       const canDis = ctx.canAct(s) && st.ph === 'discard';
       if (!canDis) sel = -1;
       order = sorted;
-      const showH = ctx.pref('hints'), tingT = new Set();
+      const showH = ctx.assist && ctx.pref('hints'), tingT = new Set();   // 听牌助手 = 辅助模式 only
       if (canDis && showH && st.hands[s].length % 3 === 2) for (const t of new Set(sorted.filter(id => id < 64).map(tyOf))) if (waitInfo(s, t).length) tingT.add(t);
       const hintId = hintA && hintA.t === 'dis' ? hintA.id : -1;
       sorted.forEach((id, i) => {
@@ -574,7 +574,7 @@ BX.register({
       st.river[s].forEach((id, i) => { const r = Math.floor(i / rCols), c = i % rCols; T.push({id, x: rx0 + c * rw, y: midY + 22 + r * rh, w: rw, h: rh, face: true, last: st.last && st.last.id === id}); });
       void rRows;
       // center info (+ persistent 听牌 display when waiting)
-      const myW = !st.over && st.hands[s].length % 3 === 1 ? waitInfo(s, -1).slice(0, Math.max(1, Math.floor((W - 200) / 42))) : [];
+      const myW = ctx.assist && !st.over && st.hands[s].length % 3 === 1 ? waitInfo(s, -1).slice(0, Math.max(1, Math.floor((W - 200) / 42))) : [];
       const mini = 20, pillW = 150 + (myW.length ? 26 + myW.length * (mini + 22) : 0), px0 = W / 2 - pillW / 2;
       g.fillStyle = 'rgba(15,35,25,.62)'; D.rr(g, px0, midY - 17, pillW, 34, 17); g.fill();
       g.strokeStyle = 'rgba(230,197,125,.45)'; g.lineWidth = 1; g.stroke();

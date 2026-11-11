@@ -42,7 +42,7 @@ const PAL = ['#c23a2b', '#2f7f9a'];
 const DASH_T = .18, DASH_CD = .5, DASH_BUF = .16, FLY_V = 9, FLY_T = .55, FLOOR_MAX = 6;
 /* feel: walk speed (tiles/s) and exponential approach rates (1/s) for speeding up, braking and reversing (Overcooked-like snappy start, short stop) */
 const SP = 4.4, ACC = 24, DEC = 40, TURN = 42, WET = 4.5;
-const REACH = .85, CONE = .74, IBUF = .15, CATCH_R = .62, AIM_COS = .9;
+const REACH = .85, CONE = .74, CONE_C = .9, IBUF = .15, CATCH_R = .62, AIM_COS = .9;
 const JOY_DZ = .16, JOY_SAT = .8, JOY_POW = 1.25, JOY_SNAP = .19;
 /* throw arc (visual height in tiles): leaves the hands at H0, apex FLY_APEX, touches the floor exactly at FLY_T */
 const FLY_H0 = .02, FLY_APEX = .55;
@@ -187,10 +187,10 @@ BX.register({
   kind: 'realtime', seats: 2, coop: true, noFirst: true, seatNames: ['红围裙', '蓝围裙'], seatColors: PAL, snapHz: 30, inputHz: 60,
   options: [{key: 'lv', label: '关卡', choices: [[0, '教学 · 新手厨房'], [1, '一 · 茶馆后厨'], [2, '二 · 点心铺'], [3, '三 · 年夜大席']], def: 1},
     {key: 'assist', label: '难度', choices: [[0, '标准'], [1, '宽松（订单更耐等、不会起火）']], def: 0}],
-  howto: ['<b>移动</b>：WASD / 方向键，或触屏左侧摇杆。脚下虚线框 = 你正对着的台子，框上的小字告诉你按键会做什么。',
-    '<b>拿/放</b>：空格 / E（触屏「拿/放」）。<b>使用</b>：按住 Q / Shift 切菜、洗碗、灭火；手里拿着食材时轻按「使用」= <b>扔出去</b>，队友空手就能接住；大致朝着队友或锅扔会自动对准（虚线弧提示）。',
+  howto: ['<b>移动</b>：WASD / 方向键，或触屏左侧摇杆。脚下虚线框 = 你正对着的台子（开启辅助模式后，框上的小字会告诉你按键会做什么，判定范围也更宽、按早了会自动补上）。',
+    '<b>拿/放</b>：空格 / E（触屏「拿/放」）。<b>使用</b>：按住 Q / Shift 切菜、洗碗、灭火；手里拿着食材时轻按「使用」= <b>扔出去</b>，队友空手就能接住；开启辅助模式后，大致朝着队友或锅扔会自动对准（虚线弧提示）。',
     '<b>冲刺</b>：R / C（触屏「冲刺」）向前冲一小段。同屏双人右边：方向键 + <b>.</b> 拿放 + <b>/</b> 使用 + <b>,</b> 冲刺。',
-    '上方订单票写着菜名、原料和用哪口锅；手里的菜对得上的订单会发金光。第一次玩建议先选「教学」关卡。',
+    '上方订单票写着菜名、原料和用哪口锅；开启辅助模式后，手里的菜对得上的订单会发金光。第一次玩建议先选「教学」关卡。',
     '人机模式可用「伙伴」按钮指挥电脑：备料 / 洗碗 / 上菜 / 自由；卡住时点 💡 会用箭头指出下一步。'],
   rules: `<p><b>目标：</b>两位厨师合作，在 <b>3 分钟</b>营业时间内按订单做菜送出窗口赚金币。达到 1 星即过关，金币越多星越多（最多 3 星）。</p>
 <p><b>菜谱：</b></p>
@@ -205,7 +205,7 @@ BX.register({
 <p><b>订单：</b>上方的订单票会倒计时，越快送出小费越多；超时会扣 10 金币。</p>
 <p><b>起火：</b>菜做好后要尽快装盘，锅边出现红色「！」说明快糊了，放太久会<b>起火</b>。拿起红色灭火器，对着着火的锅按住「使用」扑灭。</p>
 <p><b>洗碗：</b>送出的菜过一会儿会在回收口变成脏盘子，把它放进水槽，按住「使用」洗干净，盘子会回到盘架。</p>
-<p><b>扔食材：</b>手里拿着食材时轻按「使用」把它扔向面前，能直接扔进锅里、扔到空柜台上或扔给空手的队友；落在地上的食材走过去按「拿/放」捡起。大致朝着空手的队友或要这样食材的锅扔，会自动对准（地上有虚线弧提示）。<b>冲刺</b>可以快速穿过厨房。</p>
+<p><b>扔食材：</b>手里拿着食材时轻按「使用」把它扔向面前，能直接扔进锅里、扔到空柜台上或扔给空手的队友；落在地上的食材走过去按「拿/放」捡起。开启辅助模式后，大致朝着空手的队友或要这样食材的锅扔会自动对准（地上有虚线弧提示）。<b>冲刺</b>可以快速穿过厨房。</p>
 <p><b>宽松模式：</b>订单等待时间 ×1.5，做好的菜放多久都不会起火，适合新手和小朋友。</p>
 <p><b>关卡：</b>教学 · 新手厨房（只做青菜汤，有箭头指引）；一 · 茶馆后厨（三道菜）；二 · 点心铺（厨房被长案隔开，可以隔案递食材）；三 · 年夜大席（五道菜、火候更急、地上有水渍会打滑）。</p>
 <p><b>操作：</b>任何柜台都能放一样东西。<br>键盘单人：WASD / 方向键移动，<b>空格 / E</b> 拿起·放下，<b>Q / Shift</b> 使用（切菜、洗碗、灭火，需按住；拿着食材时 = 扔），<b>R / C</b> 冲刺。<br>同屏双人：左边 WASD + <b>E</b> 拿放 + <b>Q</b> 使用 + <b>R</b> 冲刺；右边 方向键 + <b>.</b> 拿放 + <b>/</b> 使用 + <b>,</b> 冲刺。<br>触屏：左侧摇杆移动，右侧「拿/放」「使用」「冲刺」按钮（按钮上的字会随当前能做的动作变化）；同屏双人时两人各用自己那半边的摇杆和按钮。</p>`,
@@ -249,7 +249,8 @@ BX.register({
     const faceV = p => { const l = Math.hypot(p.fx, p.fy) || 1; return [p.fx / l, p.fy / l]; };
     /* the station you face: nearest solid tile within reach inside a ~60° cone (forgiving at tile edges and diagonals),
        small bonus for tiles where the button would actually do something, hysteresis against flicker */
-    function pickFront(p, prev) {
+    /* classic (辅助模式 off) for human chefs: narrower ~26° cone and no "useful tile" pull; bots always use the wide cone so AI is unchanged */
+    function pickFront(p, prev, wide = ctx.assist) {
       const [ux, uy] = faceV(p), c0 = Math.floor(p.x), r0 = Math.floor(p.y);
       let best = -1, bs = Infinity;
       for (let r = r0 - 1; r <= r0 + 1; r++) for (let c = c0 - 1; c <= c0 + 1; c++) {
@@ -257,9 +258,9 @@ BX.register({
         const dist = Math.hypot(BX.clamp(p.x, c, c + 1) - p.x, BX.clamp(p.y, r, r + 1) - p.y);
         if (dist > REACH) continue;
         const cx = c + .5 - p.x, cy = r + .5 - p.y, cos = (cx * ux + cy * uy) / (Math.hypot(cx, cy) || 1);
-        if (cos < CONE) continue;
+        if (cos < (wide ? CONE : CONE_C)) continue;
         const i = r * GW + c; let sc = dist + (1 - cos) * 1.2;
-        if (useful(p.h, i)) sc -= .3;
+        if (wide && useful(p.h, i)) sc -= .3;
         if (i === prev) sc -= .1;
         if (sc < bs) { bs = sc; best = i; }
       }
@@ -412,6 +413,7 @@ BX.register({
     }
     function throwAim(p, k) {
       const [dx, dy] = faceV(p), H = p.h; let best = null, bc = AIM_COS;
+      if (!ctx.assist) return {dx, dy, kind: ''};   // classic: the throw flies straight along the facing, no magnetism
       const tryT = (tx, ty, kind, tile) => {
         const vx = tx - p.x, vy = ty - p.y, d = Math.hypot(vx, vy); if (d < .7 || d > FLY_V * FLY_T * .95) return;
         const cos = (vx * dx + vy * dy) / d; if (cos > bc && clearPath(p.x, p.y, tx, ty, tile)) { bc = cos; best = {dx: vx / d, dy: vy / d, kind, tile, x: tx, y: ty}; }
@@ -475,9 +477,10 @@ BX.register({
         p.px = p.x; p.py = p.y;
         const dc = inp.d | 0, dEdge = dc !== lastD[k]; lastD[k] = dc;
         moveP(p, inp, dt, st.ph === 'play', dEdge);
-        p.tg = pickFront(p, p.tg);
+        const lenient = ctx.assist || ctx.isBot(k);   // early-press buffer + wide cone: 辅助模式 leniency (bots unchanged)
+        p.tg = pickFront(p, p.tg, lenient);
         const a = inp.a | 0;
-        if (a !== lastA[k]) { lastA[k] = a; if (st.ph === 'play') { p.ib = interact(k) === false ? IBUF : 0; } }
+        if (a !== lastA[k]) { lastA[k] = a; if (st.ph === 'play') { p.ib = interact(k) === false && lenient ? IBUF : 0; } }
         else if (p.ib > 0) { p.ib = Math.max(0, p.ib - dt); if (st.ph === 'play' && (p.tg >= 0 || (!p.h && floorNear(p) >= 0))) { p.ib = 0; interact(k); } }   // pressed a moment too early: do it when the station comes into reach
         const u = !!inp.u, uEdge = u && !lastU[k]; lastU[k] = u;
         if (uEdge && st.ph === 'play' && p.h && p.h.k === 'i') { throwIt(k); p.act = ''; }
@@ -1135,7 +1138,7 @@ BX.register({
         const x = L.ox + (f % GW) * ts, y = L.oy + Math.floor(f / GW) * ts, act = pv.a || pv.u;
         g.fillStyle = D.alpha(PAL[k], act ? .16 : .06); D.rr(g, x + 2, y + 2, ts - 4, ts * .8 - 2, ts * .12); g.fill();
         g.strokeStyle = D.alpha(PAL[k], (act ? .7 : .4) + .25 * Math.sin(tAll * 6)); g.lineWidth = Math.max(2, ts * (act ? .07 : .045)); g.setLineDash([ts * .15, ts * .1]); D.rr(g, x + 2, y + 2, ts - 4, ts * .8 - 2, ts * .12); g.stroke(); g.setLineDash([]);
-        if (act && ctx.pref('hints') && !BX.bot) tags.push({x: x + ts / 2, y: y + ts * .86, s: [pv.a, pv.u].filter(Boolean).join(' · '), col: PAL[k]});
+        if (act && ctx.assist && ctx.pref('hints') && !BX.bot) tags.push({x: x + ts / 2, y: y + ts * .86, s: [pv.a, pv.u].filter(Boolean).join(' · '), col: PAL[k]});
       });
       // things lying on the floor
       for (const o of st.fl) { const x = L.ox + o.x * ts, y = L.oy + o.y * ts; g.fillStyle = 'rgba(0,0,0,.18)'; g.beginPath(); g.ellipse(x, y + ts * .14, ts * .24, ts * .08, 0, 0, 7); g.fill(); drawItem(g, x, y, ts * .62, o.it); }
@@ -1204,7 +1207,7 @@ BX.register({
       const tkX = j => tk.x + (j % n) * (tw + 6), tkY = j => tk.y + Math.floor(j / n) * (th + 6);
       const now = tAll;
       const held = new Set(); st.P.forEach((p, k) => { if (ctx.isLocal(k) && p.h && p.h.k === 'p' && p.h.d) held.add(p.h.d); });
-      const glowId = {}; for (const r of held) { let b = null; for (const o of st.orders) if (o.r === r && (!b || o.p < b.p)) b = o; if (b) glowId[b.id] = 1; }
+      const glowId = {}; if (ctx.assist) for (const r of held) { let b = null; for (const o of st.orders) if (o.r === r && (!b || o.p < b.p)) b = o; if (b) glowId[b.id] = 1; }
       st.orders.forEach((o, j) => {
         if (!tkSeen.has(o.id)) tkSeen.set(o.id, now);
         const age = now - tkSeen.get(o.id), k = age < .45 ? BX.ease.back(Math.min(1, age / .45)) : 1;

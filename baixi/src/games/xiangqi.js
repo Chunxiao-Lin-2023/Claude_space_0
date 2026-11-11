@@ -206,7 +206,7 @@ BX.register({
   desc: '最经典的中国棋戏。红先黑后，蹩马腿、塞象眼、炮隔子吃、将帅不照面，一应俱全。电脑三档难度，高级能和你认真拼杀。',
   kind: 'turn', seats: 2, seatNames: ['红方', '黑方'], seatColors: ['#c23a2b', '#2a2420'], firstLabel: '执子',
   howto: ['<b>点选</b>自己的棋子，再点目标；也可以直接<b>按住拖</b>到目标。绿点 = 可走，红圈 = 可吃。',
-    '被将军时将帅会闪红光，并圈出正在将军的棋子。',
+    '被将军时将帅会闪红光；开启辅助模式后还会圈出正在将军的棋子并连线。',
     '下方 ◀ ▶ 可回看每一步（中文记谱），「谱」打开完整棋谱，⇅ 翻转棋盘；电脑键盘可用 ← → 回看、F 翻转。',
     '顶栏 ↶ 悔棋，💡 提示一步好棋。'],
   rules: `<p><b>棋盘与目标</b>：9 路 × 10 线，中间为「楚河汉界」。红先黑后，轮流走一步。把对方的将（帅）<b>将死</b>即获胜；轮到某方走棋却<b>无子可动（困毙）</b>，该方判负。</p>
@@ -417,7 +417,7 @@ BX.register({
           const kq = st.b.indexOf(st.turn * 8 + K);
           if (kq >= 0) {
             const [kx, ky] = scr(kq, G); const a = .45 + .25 * Math.sin(pulse * 6); const gr = g.createRadialGradient(kx, ky, R0 * .5, kx, ky, R0 * 1.7); gr.addColorStop(0, `rgba(255,60,30,${a})`); gr.addColorStop(1, 'rgba(255,60,30,0)'); g.fillStyle = gr; D.circle(g, kx, ky, R0 * 1.7); g.fill();
-            if (!anim) for (const c of checkers) { const [cx, cy] = scr(c, G); g.strokeStyle = `rgba(230,50,30,${.5 + a * .5})`; g.lineWidth = Math.max(2, s * .07); D.circle(g, cx, cy, R0 * 1.14); g.stroke(); g.save(); g.setLineDash([s * .12, s * .1]); g.lineWidth = Math.max(1.5, s * .04); g.beginPath(); g.moveTo(cx, cy); g.lineTo(kx, ky); g.stroke(); g.restore(); }
+            if (!anim && ctx.assist) for (const c of checkers) { const [cx, cy] = scr(c, G); g.strokeStyle = `rgba(230,50,30,${.5 + a * .5})`; g.lineWidth = Math.max(2, s * .07); D.circle(g, cx, cy, R0 * 1.14); g.stroke(); g.save(); g.setLineDash([s * .12, s * .1]); g.lineWidth = Math.max(1.5, s * .04); g.beginPath(); g.moveTo(cx, cy); g.lineTo(kx, ky); g.stroke(); g.restore(); }
           }
         }
         // pieces
