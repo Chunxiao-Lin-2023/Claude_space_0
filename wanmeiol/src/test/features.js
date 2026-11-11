@@ -117,7 +117,7 @@ const { chromium } = require('playwright');
     jumpTo(JUMPS.findIndex(J => J.q === 'q_qishen')); ok('jumpVol3', !!(D.C.lv === 31 && D.C.story.f.shihuang && D.C.gf.includes('renhuang') && placeOpen('sg_inner') && placeOpen('hg_city') && !placeOpen('sg_altar'))); await w8(700); await idle();
     { jumpTo(JUMPS.length - 1); await w8(700); await idle(); const c = D.C; c.auto = true;
       c.lv = 85; c.exp = 0; c.dao = 0; c.daoX = 0; gainExp(BAL.expNext(85) * 1.6, true); ok('daoGain', c.dao >= 2 && c.exp === BAL.expNext(85));
-      const h0 = charStats().hpMax; daoSpend('hp'); ok('daoSpend', charStats().hpMax > h0 && c.daoP.hp === 1);
+      const h0 = charStats().hpMax, p0 = (c.daoP || {}).hp || 0; daoSpend('hp'); ok('daoSpend', charStats().hpMax > h0 && c.daoP.hp === p0 + 1); ok('jumpLate', c.pets.jinmao && c.pets.jinmao.evo3 && c.pets.wuwei && c.tt && c.tt.yao >= 1);
       c.story.f.v6end = 1; c.relics.r_xwhy = 1; c.eq = ['r_xwhy']; c.money = 1e6; c.bag.bone = 60; const a0 = charStats().atk; await forgeRelic('r_xwhy'); ok('forge', forgeLv('r_xwhy') === 1 && charStats().atk > a0);
       ok('lateFused', !!FUSED.f_daolei && SKILL_ORDER.includes('f_daolei') && !!SKILLS.f_wuluo);
       c.pets.jinmao = { aff: 100, evo: 1, evo2: 1, lv: 69, exp: 0, hatch: 0 }; petGainExp('jinmao', petNeed(69) + 1); await w8(1000); await idle(); ok('petEvo3', c.pets.jinmao.lv === 70 && !!c.pets.jinmao.evo3 && petUnit('jinmao').name.includes('真身'));
