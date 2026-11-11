@@ -384,6 +384,30 @@ body.cols .ex-l{border-right:1px solid var(--line)}
 body.cols .ex-r{max-height:none;border-top:0;background:var(--panel2);padding:12px 14px calc(12px + var(--sb))}
 body.cols #banner{height:200px}
 body.cols .gl{writing-mode:horizontal-tb;width:100%;min-height:0;text-align:left;margin:2px 0 -2px}
+/* computer / tablet: the menu is a narrow rail on the right, its buttons low where the thumb rests */
+body.cols #app{grid-template-columns:minmax(0,1fr) 78px;grid-template-rows:auto minmax(0,1fr)}
+body.cols #top{grid-column:1 / 3}
+body.cols #stage{grid-column:1;grid-row:2}
+body.cols #bnav{grid-column:2;grid-row:2;flex-direction:column;justify-content:flex-end;align-items:stretch;gap:2px;border-top:0;border-left:1px solid #ffffff14;padding:10px 0 calc(12px + var(--sb)) 0}
+body.cols #bnav button{flex:none;max-width:none;min-height:66px;font-size:.8rem;border-radius:10px;margin:0 6px}
+body.cols #bnav button .i{font-size:1.45rem;margin-bottom:2px}
+body.cols #bnav button.on{background:#ffffff0d}
+body.cols #bnav button .dot{left:auto;right:12px;top:8px}
+body.cols.m-talk #bnav,body.cols.m-battle #bnav{display:flex;visibility:hidden}
+body.short.cols #app{grid-template-columns:minmax(0,1fr) 64px}
+body.short.cols #bnav button{min-height:46px;font-size:.68rem;margin:0 4px}
+body.short.cols #bnav button .i{display:block;font-size:1.1rem;margin:0}
+/* …and 主线 + what you can do sit together at the bottom, across the whole width */
+body.dock #vExplore{display:flex;flex-direction:column}
+body.dock .ex-l{border-right:0}
+body.dock .ex-r{flex:none;max-height:46%;border-top:1px solid var(--line);background:var(--panel);display:grid;grid-template-columns:minmax(230px,300px) minmax(0,1fr);gap:10px 18px;align-items:start;padding:12px 16px calc(12px + var(--sb))}
+body.dock .qrow{margin:0;flex-direction:column;align-items:stretch}
+body.dock .qrow #bqs{width:auto;min-height:36px;display:flex;align-items:center;justify-content:center;gap:6px}
+body.dock .qrow #bqs b{font-size:.95rem}
+body.dock #acts{display:flex;flex-wrap:wrap;align-content:flex-start;gap:8px 22px}
+body.dock #acts .grp{margin:0;max-width:100%}
+body.dock #acts .wait{flex:1}
+body.dock #desc,body.dock #feed{max-width:1000px}
 body.narrow #top .who{display:none}
 body.narrow #banner{height:112px}
 body.narrow #banner .nm{font-size:1.8rem;left:12px}

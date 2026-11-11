@@ -6,7 +6,7 @@
 const UI = { layout: '', tab: 'hero', nav: null, selFoe: null, hist: [], cur: null, logTab: 'log' };
 function layout() {
   const w = innerWidth, h = innerHeight, short = h <= 500, narrow = w < 700 && !short, cols = (w >= 760 && !short) || (short && w >= 600);
-  const b = document.body; b.classList.toggle('narrow', narrow); b.classList.toggle('short', short); b.classList.toggle('cols', cols); b.classList.toggle('touch', IS_TOUCH);
+  const b = document.body; b.classList.toggle('narrow', narrow); b.classList.toggle('short', short); b.classList.toggle('cols', cols); b.classList.toggle('dock', cols && !short); b.classList.toggle('touch', IS_TOUCH);
   const L = (narrow ? 'n' : '') + (short ? 's' : '') + (cols ? 'c' : ''); if (UI.layout !== L) { UI.layout = L; refresh(); } bannerDraw();
 }
 addEventListener('resize', () => { clearTimeout(UI.rsT); UI.rsT = setTimeout(() => { layout(); if (STATE.mode === 'title') titleDraw(); }, 80); });
