@@ -368,6 +368,13 @@ textarea.code{width:100%;min-height:80px;background:#0c0a08;border:1px solid var
 #toast div{background:#000000dd;border:1px solid var(--line2);color:#f3e8cc;padding:7px 14px;border-radius:20px;font-size:.93rem;animation:fade .25s both;max-width:86vw}
 /* title */
 #title{position:fixed;inset:0;z-index:40;display:flex;align-items:safe center;justify-content:center;overflow:auto;padding:calc(16px + var(--st)) 16px calc(16px + var(--sb))}
+#title .slots{display:flex;flex-direction:column;gap:8px;width:min(520px,100%);margin:10px 0}
+#title .slot{display:flex;align-items:center;gap:10px;background:#120f0cdd;border:1px solid var(--line2);border-radius:12px;padding:8px 10px;text-align:left}
+#title .slot.cur{border-color:var(--gold)}
+#title .slot .sn{font-family:var(--fh);font-size:1.6rem;color:var(--gold);width:28px;text-align:center;flex:none}
+#title .slot .si{flex:1;min-width:0}#title .slot .si b{display:block;font-weight:400;color:var(--tx);font-size:.95rem}#title .slot .si small{display:block;color:var(--dim);font-size:.78rem}
+#title .slot .sa{display:flex;gap:6px;flex:none;flex-wrap:wrap;justify-content:flex-end}
+#title .slot .sb.del{color:#ff9a8a}
 #title canvas{position:fixed;inset:0;width:100%;height:100%;z-index:-1}
 #title .tbx{width:min(560px,100%);text-align:center;margin:auto}
 #title h1{font-family:var(--fh);font-weight:400;font-size:84px;line-height:1;margin:0;color:#f6e6bc;text-shadow:0 4px 18px #000,0 0 30px #d4ad6244;letter-spacing:10px}
@@ -1191,23 +1198,27 @@ async function dongtianPick() { // open a 洞天: pick one of two blessings
 
 /* ---------- save ---------- */
 let saveT = 0;
-function save(now_) { if (!C || NETROLE === 'guest') return; clearTimeout(saveT); const f = () => { if (!C) return; achCheck(); C.savedAt = now(); C.story.qid = MAIN[C.story.q].id; store.set('save2', C); }; if (now_) f(); else saveT = setTimeout(f, 300); }
+function save(now_) { if (!C || NETROLE === 'guest') return; clearTimeout(saveT); const f = () => { if (!C) return; achCheck(); C.savedAt = now(); C.story.qid = MAIN[C.story.q].id; store.set(saveKey(SLOT), C); }; if (now_) f(); else saveT = setTimeout(f, 300); }
 // v2 saves stored only the step index; the step list has grown since, so map old indices through the old order
 const OLD_V2 = ['q_wake', 'q_yard', 'q_wolf0', 'q_wolf', 'q_egg0', 'q_egg', 'q_tomb0', 'q_tomb', 'q_bei', 'q_yaoding', 'q_shanbao', 'q_ruin', 'q_jijing', 'q_memory', 'q_qingfeng', 'q_bandit0', 'q_bandit', 'q_xushen0', 'q_xushen', 'q_leave', 'q_gate', 'q_lotus', 'q_join', 'q_lei', 'q_lib', 'q_baiduan', 'q_bdgate', 'q_lion', 'q_yu', 'q_cliff', 'q_spring', 'q_tiangu', 'q_mount', 'q_return', 'q_end'];
 function fixSave(c) { if (!c || c.v !== SAVE_V) return null; if (c.rumorLog) { const seen = new Set(); c.rumorLog = c.rumorLog.filter(r => !seen.has(r.t) && seen.add(r.t)); } // old saves heard some rumours more than once const d = newChar(); for (const k in d) if (c[k] === undefined) c[k] = d[k]; for (const k in d.arena) if (c.arena[k] === undefined) c.arena[k] = d.arena[k];
   for (const [id, R] of Object.entries(RELICS)) if ((c.kills || {})[R.from] && !c.relics[id]) { c.relics[id] = 1; if (c.eq.length < relicSlots(c.lv)) c.eq.push(id); } // bosses beaten before 宝骨 existed
   const qid = c.story.qid || OLD_V2[c.story.q]; const i = qi(qid); if (i >= 0) c.story.q = i; c.story.q = clamp(c.story.q, 0, MAIN.length - 1); if (!PLACES[c.loc]) c.loc = 'sc_street'; return c; }
-function loadSave() { return fixSave(store.get('save2', null)); }
+/* save slots: slot 1 keeps the old keys (save2 / journal2), slots 2–5 add _s2 … _s5; the open slot is remembered */
+const SLOTS = 5; let SLOT = clamp(store.get('slot', 1) | 0, 1, SLOTS);
+const saveKey = s => s === 1 ? 'save2' : 'save2_s' + s, jKey = s => s === 1 ? 'journal2' : 'journal2_s' + s;
+function loadSave(s = SLOT) { return fixSave(store.get(saveKey(s), null)); }
+function useSlot(s) { if (C && NETROLE !== 'guest') save(true); SLOT = s; store.set('slot', s); JOURNAL = store.get(jKey(s), []); }
 /* ---------- 回忆录 (story journal) — kept apart from the save so co-op snapshots stay small ---------- */
-let JOURNAL = store.get('journal2', []);
-const saveJournal = () => store.set('journal2', JOURNAL.slice(-120));
+let JOURNAL = store.get(jKey(SLOT), []);
+const saveJournal = () => store.set(jKey(SLOT), JOURNAL.slice(-120));
 /* ---------- save code: copy the save to another browser ---------- */
 async function b64z(str, unzip) {
   const CS = unzip ? window.DecompressionStream : window.CompressionStream;
   if (!unzip) { const bytes = new TextEncoder().encode(str); let out = bytes, tag = 'R'; if (CS) { out = new Uint8Array(await new Response(new Blob([bytes]).stream().pipeThrough(new CS('deflate'))).arrayBuffer()); tag = 'Z'; } let bin = ''; for (let i = 0; i < out.length; i += 8192) bin += String.fromCharCode.apply(null, out.subarray(i, i + 8192)); return tag + btoa(bin); }
   const tag = str[0], bin = atob(str.slice(1)), bytes = Uint8Array.from(bin, ch => ch.charCodeAt(0)); if (tag === 'R') return new TextDecoder().decode(bytes); if (!CS) throw new Error('nozip'); return new TextDecoder().decode(await new Response(new Blob([bytes]).stream().pipeThrough(new CS('deflate'))).arrayBuffer()); }
 async function exportCode() { save(true); return 'WMOL1' + await b64z(JSON.stringify({ c: C, j: JOURNAL })); }
-async function importCode(code) { code = (code || '').replace(/\s+/g, ''); if (!code.startsWith('WMOL1')) throw new Error('bad'); const o = JSON.parse(await b64z(code.slice(5), true)); const c = fixSave(o.c); if (!c) throw new Error('bad'); store.set('save2', c); JOURNAL = Array.isArray(o.j) ? o.j : []; saveJournal(); return c; }
+async function importCode(code) { code = (code || '').replace(/\s+/g, ''); if (!code.startsWith('WMOL1')) throw new Error('bad'); const o = JSON.parse(await b64z(code.slice(5), true)); const c = fixSave(o.c); if (!c) throw new Error('bad'); store.set(saveKey(SLOT), c); JOURNAL = Array.isArray(o.j) ? o.j : []; saveJournal(); return c; }
 function nearestTown(loc) { const a = PLACES[loc].area; if (PLACES[loc].town) return loc; if ((a === 'butian' || a === 'baiduan') && C.story.f.joined) return 'bt_court'; if (a === 'butian') return 'bt_gate'; return 'sc_street'; }
 
 /* ================= turn-based battle =================
@@ -3728,6 +3739,7 @@ function openModal(k, again) {
       <label class="row"><input type="checkbox" ${SET.music ? 'checked' : ''} onchange="SET.music=this.checked;saveSet();musicMode()"> 背景音乐</label>
       <label class="row">音量 <input type="range" min="0" max="1" step="0.05" value="${SET.vol}" oninput="SET.vol=+this.value;if(AU.master)AU.master.gain.value=SET.vol;saveSet()"></label>
       <h4>战斗</h4><label class="row"><input type="checkbox" ${SET.fast ? 'checked' : ''} onchange="SET.fast=this.checked;saveSet()"> 自动战斗加快</label></div>
+      ${NETROLE === 'guest' ? '' : `<div class="card"><h4>存档位 <span class="dim" style="font-size:.8rem">现在用的是存档 ${SLOT}（共 ${SLOTS} 个）。切换会先保存这一份。</span></h4><button class="sb" onclick="toTitle();slotsShow()">📂 打开存档列表</button></div>`}
       ${jumpHtml()}
       <div class="card"><h4>存档码</h4><div class="dim" style="font-size:.8rem">存档只在这个浏览器里。想换手机或电脑接着玩：在这里生成存档码，复制过去，在新浏览器的这里粘贴、读取。回忆录也一起带走。</div>
       <div class="row" style="margin:6px 0;flex-wrap:wrap">${NETROLE === 'guest' ? '<span class="dim">联机加入时不能导出房主的存档</span>' : `<button class="sb" onclick="doExport()">生成存档码</button>`}<button class="sb" onclick="doImport()">读取存档码</button></div><textarea id="scode" class="code" placeholder="存档码会出现在这里；要读取，把存档码粘贴进来再点“读取”"></textarea><div id="scmsg" class="dim" style="font-size:.8rem"></div></div>
@@ -3741,7 +3753,7 @@ async function doExport() { try { $('scode').value = await exportCode(); $('scod
 async function doImport() { const v = $('scode').value.trim(); if (!v) { $('scmsg').textContent = '先把存档码粘贴进上面的框里。'; return; }
   try { if (NETROLE) netLeave(); const c = await importCode(v); C = c; closeModal(); toast('存档已读取'); enterGame(); } catch (e) { $('scmsg').textContent = '这个存档码读不出来，检查一下有没有复制完整。'; } }
 function hubBack(b) { if (!UI.hubArm) { UI.hubArm = 1; b.textContent = '再点一次确认'; return; } save(true); location.href = '../'; }
-function delChar(b) { if (!UI.delArm) { UI.delArm = 1; b.textContent = '再点一次，从头开始'; return; } store.del('save2'); store.del('journal2'); JOURNAL = []; netLeave(); C = null; closeModal(); toTitle(); }
+function delChar(b) { if (!UI.delArm) { UI.delArm = 1; b.textContent = '再点一次，从头开始'; return; } store.del(saveKey(SLOT)); store.del(jKey(SLOT)); JOURNAL = []; netLeave(); C = null; closeModal(); toTitle(); }
 
 /* ================= 跳章 (for testing, or just to skip ahead) =================
    设置 → 跳章: start at the beginning of a chapter with what an average player would have by then — a little more,
@@ -3860,13 +3872,20 @@ function toTitle() {
   if (C && NETROLE !== 'guest') save(true); STATE.mode = 'title'; closeModal(); UI.nav = null; $('title').style.display = 'flex'; titleDraw(); musicMode();
   const sv = loadSave(); const hub = HUB ? `<button class="hub" onclick="hubBack2(this)">‹ 游戏厅</button>` : '';
   $('tbx').innerHTML = `${hub}<h1>完美世界</h1><div class="sub">石昊篇 · 文字版</div>
-    <div class="btns">${sv ? `<button class="big" onclick="enterGame()">继续<br><span style="font-size:13px;font-weight:400">${realmOf(sv.lv).name} · 第 ${sv.lv} 层 · ${esc(MAIN[sv.story.q].title)}</span></button><button class="big sec" onclick="newGame(this)">从头开始</button>` : `<button class="big" onclick="newGame()">开始</button>`}
+    <div class="btns">${sv ? `<button class="big" onclick="enterGame()">继续<br><span style="font-size:13px;font-weight:400">存档 ${SLOT} · ${realmOf(sv.lv).name} · 第 ${sv.lv} 层 · ${esc(MAIN[sv.story.q].title)}</span></button>` : `<button class="big" onclick="newGame()">开始${SLOT > 1 ? `<br><span style="font-size:13px;font-weight:400">存档 ${SLOT}</span>` : ''}</button>`}<button class="big sec" onclick="slotsShow()">📂 存档（${SLOTS} 个位置）</button>
     <div class="join"><input id="tjoin" class="namein" maxlength="4" placeholder="朋友的房间码"><button class="big sec" style="min-width:0" onclick="netJoin($('tjoin').value)">加入</button></div><div id="tstat" class="warn" style="font-size:13px"></div></div>
     <div class="note">你是石村的小不点。<br>根据辰东《完美世界》改编：石村 → 出村 → 补天阁 → 百断山。<br>朋友有存档码？开始后在 ⚙️ 设置里读取。</div>`;
 }
+function slotInfo(s) { const v = loadSave(s); if (!v) return null; const q = MAIN[v.story.q] || MAIN[0], P = PLACES[v.loc]; return { v, t: `${realmOf(v.lv).name} 第 ${v.lv} 层 · ${CH_NAMES[q.ch] || ''} · ${q.title}`, s: `第 ${v.day || 1} 天 · ${P ? P.name : ''}${v.savedAt ? ' · ' + new Date(v.savedAt).toLocaleString('zh-CN', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : ''}` }; }
+function slotsShow() { UI.slotArm = null; const L = Array.from({ length: SLOTS }, (_, i) => i + 1).map(s => { const I = slotInfo(s), cur = s === SLOT;
+    return `<div class="slot ${cur ? 'cur' : ''}"><div class="sn">${s}</div><div class="si">${I ? `<b>${esc(I.t)}</b><small>${esc(I.s)}</small>` : '<span class="dim">空</span>'}</div><div class="sa">${I ? `<button class="sb" onclick="slotPlay(${s})">${cur ? '继续' : '读取'}</button><button class="sb del" onclick="slotDel(${s},this)">删除</button>` : `<button class="sb" onclick="slotNew(${s})">在这里开新档</button>`}</div></div>`; }).join('');
+  $('tbx').innerHTML = `<h1 style="font-size:44px">存档</h1><div class="sub">每个位置是一段独立的人生，回忆录也分开记</div><div class="slots">${L}</div><div class="btns"><button class="big sec" onclick="toTitle()">‹ 返回</button></div>`; }
+function slotPlay(s) { useSlot(s); C = null; enterGame(); }
+function slotNew(s) { useSlot(s); audioInit(); C = newChar(); fullHeal(); JOURNAL = []; saveJournal(); save(true); enterGame(true); }
+function slotDel(s, b) { if (UI.slotArm !== s) { UI.slotArm = s; b.textContent = '再点一次删除'; b.style.color = '#ff8a7a'; return; } store.del(saveKey(s)); store.del(jKey(s)); if (s === SLOT) { JOURNAL = []; C = null; } slotsShow(); }
 function titleStatus(t) { const e = document.getElementById('tstat'); if (e) e.textContent = t || ''; }
 function hubBack2(b) { if (!b.dataset.arm) { b.dataset.arm = 1; b.textContent = '再点一次确认'; setTimeout(() => { b.dataset.arm = ''; b.textContent = '‹ 游戏厅'; }, 3000); return; } location.href = '../'; }
-function newGame(b) { if (b && !b.dataset.arm) { b.dataset.arm = 1; b.textContent = '再点一次（会清掉现在的存档）'; return; } audioInit(); C = newChar(); fullHeal(); JOURNAL = []; saveJournal(); save(true); enterGame(true); }
+function newGame(b) { if (b && !b.dataset.arm) { b.dataset.arm = 1; b.textContent = `再点一次（会清掉存档 ${SLOT}）`; return; } audioInit(); C = newChar(); fullHeal(); JOURNAL = []; saveJournal(); save(true); enterGame(true); }
 function enterGame(fresh) {
   audioInit(); if (!fresh) C = loadSave(); if (!C) return newGame(); fixHp(); arenaDaily();
   STATE.mode = 'play'; $('title').style.display = 'none'; $('log').innerHTML = ''; UI.nav = null; UI.memo = null; bannerKey = ''; layout();

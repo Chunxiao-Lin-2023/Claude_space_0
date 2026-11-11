@@ -142,6 +142,7 @@ function openModal(k, again) {
       <label class="row"><input type="checkbox" ${SET.music ? 'checked' : ''} onchange="SET.music=this.checked;saveSet();musicMode()"> 背景音乐</label>
       <label class="row">音量 <input type="range" min="0" max="1" step="0.05" value="${SET.vol}" oninput="SET.vol=+this.value;if(AU.master)AU.master.gain.value=SET.vol;saveSet()"></label>
       <h4>战斗</h4><label class="row"><input type="checkbox" ${SET.fast ? 'checked' : ''} onchange="SET.fast=this.checked;saveSet()"> 自动战斗加快</label></div>
+      ${NETROLE === 'guest' ? '' : `<div class="card"><h4>存档位 <span class="dim" style="font-size:.8rem">现在用的是存档 ${SLOT}（共 ${SLOTS} 个）。切换会先保存这一份。</span></h4><button class="sb" onclick="toTitle();slotsShow()">📂 打开存档列表</button></div>`}
       ${jumpHtml()}
       <div class="card"><h4>存档码</h4><div class="dim" style="font-size:.8rem">存档只在这个浏览器里。想换手机或电脑接着玩：在这里生成存档码，复制过去，在新浏览器的这里粘贴、读取。回忆录也一起带走。</div>
       <div class="row" style="margin:6px 0;flex-wrap:wrap">${NETROLE === 'guest' ? '<span class="dim">联机加入时不能导出房主的存档</span>' : `<button class="sb" onclick="doExport()">生成存档码</button>`}<button class="sb" onclick="doImport()">读取存档码</button></div><textarea id="scode" class="code" placeholder="存档码会出现在这里；要读取，把存档码粘贴进来再点“读取”"></textarea><div id="scmsg" class="dim" style="font-size:.8rem"></div></div>
@@ -155,4 +156,4 @@ async function doExport() { try { $('scode').value = await exportCode(); $('scod
 async function doImport() { const v = $('scode').value.trim(); if (!v) { $('scmsg').textContent = '先把存档码粘贴进上面的框里。'; return; }
   try { if (NETROLE) netLeave(); const c = await importCode(v); C = c; closeModal(); toast('存档已读取'); enterGame(); } catch (e) { $('scmsg').textContent = '这个存档码读不出来，检查一下有没有复制完整。'; } }
 function hubBack(b) { if (!UI.hubArm) { UI.hubArm = 1; b.textContent = '再点一次确认'; return; } save(true); location.href = '../'; }
-function delChar(b) { if (!UI.delArm) { UI.delArm = 1; b.textContent = '再点一次，从头开始'; return; } store.del('save2'); store.del('journal2'); JOURNAL = []; netLeave(); C = null; closeModal(); toTitle(); }
+function delChar(b) { if (!UI.delArm) { UI.delArm = 1; b.textContent = '再点一次，从头开始'; return; } store.del(saveKey(SLOT)); store.del(jKey(SLOT)); JOURNAL = []; netLeave(); C = null; closeModal(); toTitle(); }

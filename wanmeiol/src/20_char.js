@@ -72,21 +72,25 @@ async function dongtianPick() { // open a 洞天: pick one of two blessings
 
 /* ---------- save ---------- */
 let saveT = 0;
-function save(now_) { if (!C || NETROLE === 'guest') return; clearTimeout(saveT); const f = () => { if (!C) return; achCheck(); C.savedAt = now(); C.story.qid = MAIN[C.story.q].id; store.set('save2', C); }; if (now_) f(); else saveT = setTimeout(f, 300); }
+function save(now_) { if (!C || NETROLE === 'guest') return; clearTimeout(saveT); const f = () => { if (!C) return; achCheck(); C.savedAt = now(); C.story.qid = MAIN[C.story.q].id; store.set(saveKey(SLOT), C); }; if (now_) f(); else saveT = setTimeout(f, 300); }
 // v2 saves stored only the step index; the step list has grown since, so map old indices through the old order
 const OLD_V2 = ['q_wake', 'q_yard', 'q_wolf0', 'q_wolf', 'q_egg0', 'q_egg', 'q_tomb0', 'q_tomb', 'q_bei', 'q_yaoding', 'q_shanbao', 'q_ruin', 'q_jijing', 'q_memory', 'q_qingfeng', 'q_bandit0', 'q_bandit', 'q_xushen0', 'q_xushen', 'q_leave', 'q_gate', 'q_lotus', 'q_join', 'q_lei', 'q_lib', 'q_baiduan', 'q_bdgate', 'q_lion', 'q_yu', 'q_cliff', 'q_spring', 'q_tiangu', 'q_mount', 'q_return', 'q_end'];
 function fixSave(c) { if (!c || c.v !== SAVE_V) return null; if (c.rumorLog) { const seen = new Set(); c.rumorLog = c.rumorLog.filter(r => !seen.has(r.t) && seen.add(r.t)); } // old saves heard some rumours more than once const d = newChar(); for (const k in d) if (c[k] === undefined) c[k] = d[k]; for (const k in d.arena) if (c.arena[k] === undefined) c.arena[k] = d.arena[k];
   for (const [id, R] of Object.entries(RELICS)) if ((c.kills || {})[R.from] && !c.relics[id]) { c.relics[id] = 1; if (c.eq.length < relicSlots(c.lv)) c.eq.push(id); } // bosses beaten before 宝骨 existed
   const qid = c.story.qid || OLD_V2[c.story.q]; const i = qi(qid); if (i >= 0) c.story.q = i; c.story.q = clamp(c.story.q, 0, MAIN.length - 1); if (!PLACES[c.loc]) c.loc = 'sc_street'; return c; }
-function loadSave() { return fixSave(store.get('save2', null)); }
+/* save slots: slot 1 keeps the old keys (save2 / journal2), slots 2–5 add _s2 … _s5; the open slot is remembered */
+const SLOTS = 5; let SLOT = clamp(store.get('slot', 1) | 0, 1, SLOTS);
+const saveKey = s => s === 1 ? 'save2' : 'save2_s' + s, jKey = s => s === 1 ? 'journal2' : 'journal2_s' + s;
+function loadSave(s = SLOT) { return fixSave(store.get(saveKey(s), null)); }
+function useSlot(s) { if (C && NETROLE !== 'guest') save(true); SLOT = s; store.set('slot', s); JOURNAL = store.get(jKey(s), []); }
 /* ---------- 回忆录 (story journal) — kept apart from the save so co-op snapshots stay small ---------- */
-let JOURNAL = store.get('journal2', []);
-const saveJournal = () => store.set('journal2', JOURNAL.slice(-120));
+let JOURNAL = store.get(jKey(SLOT), []);
+const saveJournal = () => store.set(jKey(SLOT), JOURNAL.slice(-120));
 /* ---------- save code: copy the save to another browser ---------- */
 async function b64z(str, unzip) {
   const CS = unzip ? window.DecompressionStream : window.CompressionStream;
   if (!unzip) { const bytes = new TextEncoder().encode(str); let out = bytes, tag = 'R'; if (CS) { out = new Uint8Array(await new Response(new Blob([bytes]).stream().pipeThrough(new CS('deflate'))).arrayBuffer()); tag = 'Z'; } let bin = ''; for (let i = 0; i < out.length; i += 8192) bin += String.fromCharCode.apply(null, out.subarray(i, i + 8192)); return tag + btoa(bin); }
   const tag = str[0], bin = atob(str.slice(1)), bytes = Uint8Array.from(bin, ch => ch.charCodeAt(0)); if (tag === 'R') return new TextDecoder().decode(bytes); if (!CS) throw new Error('nozip'); return new TextDecoder().decode(await new Response(new Blob([bytes]).stream().pipeThrough(new CS('deflate'))).arrayBuffer()); }
 async function exportCode() { save(true); return 'WMOL1' + await b64z(JSON.stringify({ c: C, j: JOURNAL })); }
-async function importCode(code) { code = (code || '').replace(/\s+/g, ''); if (!code.startsWith('WMOL1')) throw new Error('bad'); const o = JSON.parse(await b64z(code.slice(5), true)); const c = fixSave(o.c); if (!c) throw new Error('bad'); store.set('save2', c); JOURNAL = Array.isArray(o.j) ? o.j : []; saveJournal(); return c; }
+async function importCode(code) { code = (code || '').replace(/\s+/g, ''); if (!code.startsWith('WMOL1')) throw new Error('bad'); const o = JSON.parse(await b64z(code.slice(5), true)); const c = fixSave(o.c); if (!c) throw new Error('bad'); store.set(saveKey(SLOT), c); JOURNAL = Array.isArray(o.j) ? o.j : []; saveJournal(); return c; }
 function nearestTown(loc) { const a = PLACES[loc].area; if (PLACES[loc].town) return loc; if ((a === 'butian' || a === 'baiduan') && C.story.f.joined) return 'bt_court'; if (a === 'butian') return 'bt_gate'; return 'sc_street'; }

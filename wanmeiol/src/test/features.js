@@ -82,7 +82,7 @@ const { chromium } = require('playwright');
     // climaxes: boss fights with epic staging; 绝境 once per fight; story cine lines
     { c.auto = false; D.startBattle({ mobs: [['wolf', 30]], title: 't', epic: { name: '测试', intro: ['a'], phase: 'p', low: { who: 'x', t: 'y' }, end: ['e'] } }); await w8(30); const B8 = S().battle, h8 = B8.units.find(u => u.kind === 'pc');
       ok('epicFlag', !!B8.epic && musicWanted() !== 'battle'); h8.hp = 1; applyDmg(B8, B8.units.find(u => u.side === 1), h8, 50, {}); ok('epicBurst', h8.alive && h8.hp > 1 && B8.burst === 1 && !!h8.st.find(s => s.k === 'burst') && B8.ev.some(e => e.k === 'cine' && e.cls === 'burst'));
-      const hp1 = h8.hp; h8.hp = 1; applyDmg(B8, B8.units.find(u => u.side === 1), h8, 50, {}); ok('epicBurstOnce', !h8.alive); S().battle = null; STATE.busy = false;
+      const hp1 = h8.hp; h8.hp = 1; h8.st = []; applyDmg(B8, B8.units.find(u => u.side === 1), h8, 99999, {}); ok('epicBurstOnce', !h8.alive); S().battle = null; STATE.busy = false;
       const pc = cine('测试一行', 'mem'); ok('storyCine', true); }
     // rumours: each heard once; banter: fights talk; 闲聊 plays once
     { const rl = c.rumorLog.map(r => r.t); ok('rumorNoRepeat', new Set(rl).size === rl.length);
@@ -101,5 +101,9 @@ const { chromium } = require('playwright');
     jumpTo(1); const J = D.C; ok('jumpState', J.lv === 12 && J.story.q === qi('q_gate') && J.sk.includes('sn') && J.pets.maoqiu && J.dt.length === 3 && J.story.f.butian === 1 && placeOpen('bt_gate'));
     go('bt_gate'); await w8(500); await idle(); for (let i = 0; i < 80 && (S().scene || S().battle); i++) await w8(50); ok('jumpStory', D.C.story.q > qi('q_gate'));
     jumpTo(3); ok('jumpEnd', !!(D.C.lv === 20 && D.C.story.f.end === 1 && D.C.sk.includes('ta') && D.C.pets.dahong && D.C.relics.r_pumo));
+    // save slots: a second save lives beside the first one
+    { save(true); const lv1 = D.C.lv; slotNew(2); await w8(50); const c2 = D.C; ok('slotNew', SLOT === 2 && c2.lv === 1 && slotInfo(1) && slotInfo(1).v.lv === lv1); c2.lv = 3; save(true);
+      slotPlay(1); await w8(50); ok('slotSwitch', SLOT === 1 && D.C.lv === lv1 && slotInfo(2).v.lv === 3); toTitle(); slotsShow(); ok('slotList', document.querySelectorAll('#title .slot').length === 5);
+      const b = document.querySelectorAll('#title .slot')[1].querySelector('.del'); slotDel(2, b); slotDel(2, b); ok('slotDel', !slotInfo(2) && !!slotInfo(1)); slotPlay(1); await w8(50); }
     return out; });
   const bad = Object.entries(r).filter(([k, v]) => !v); console.log(JSON.stringify(r)); console.log('failed', bad.map(x => x[0]), 'errors', errs.slice(0, 6)); await b.close(); process.exit(bad.length || errs.length ? 1 : 0); })();

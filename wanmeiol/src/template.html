@@ -366,6 +366,13 @@ textarea.code{width:100%;min-height:80px;background:#0c0a08;border:1px solid var
 #toast div{background:#000000dd;border:1px solid var(--line2);color:#f3e8cc;padding:7px 14px;border-radius:20px;font-size:.93rem;animation:fade .25s both;max-width:86vw}
 /* title */
 #title{position:fixed;inset:0;z-index:40;display:flex;align-items:safe center;justify-content:center;overflow:auto;padding:calc(16px + var(--st)) 16px calc(16px + var(--sb))}
+#title .slots{display:flex;flex-direction:column;gap:8px;width:min(520px,100%);margin:10px 0}
+#title .slot{display:flex;align-items:center;gap:10px;background:#120f0cdd;border:1px solid var(--line2);border-radius:12px;padding:8px 10px;text-align:left}
+#title .slot.cur{border-color:var(--gold)}
+#title .slot .sn{font-family:var(--fh);font-size:1.6rem;color:var(--gold);width:28px;text-align:center;flex:none}
+#title .slot .si{flex:1;min-width:0}#title .slot .si b{display:block;font-weight:400;color:var(--tx);font-size:.95rem}#title .slot .si small{display:block;color:var(--dim);font-size:.78rem}
+#title .slot .sa{display:flex;gap:6px;flex:none;flex-wrap:wrap;justify-content:flex-end}
+#title .slot .sb.del{color:#ff9a8a}
 #title canvas{position:fixed;inset:0;width:100%;height:100%;z-index:-1}
 #title .tbx{width:min(560px,100%);text-align:center;margin:auto}
 #title h1{font-family:var(--fh);font-weight:400;font-size:84px;line-height:1;margin:0;color:#f6e6bc;text-shadow:0 4px 18px #000,0 0 30px #d4ad6244;letter-spacing:10px}
