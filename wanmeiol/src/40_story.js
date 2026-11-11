@@ -625,7 +625,8 @@ const MAIN = [
   { id: 'q_tiangong', ch: 8, title: '中央天宫', goal: '闯进皇宫北边的中央天宫', type: 'enter', loc: 'sg_inner', scene: S_tiangong, rec: 29 },
   { id: 'q_qishen', ch: 9, title: '七神', goal: '……', type: 'auto', scene: S_qishen },
   { id: 'q_shengdi', ch: 9, title: '血祭台', goal: '去中央天宫西边的血祭台', type: 'enter', loc: 'sg_altar', scene: S_shengdi, rec: 32 },
-  { id: 'q_farewell', ch: 9, title: '回家', goal: '回石村找族长', type: 'talk', npc: 'chief', scene: S_farewell },
+  { id: 'q_parents', ch: 9, title: '封印', goal: '……', type: 'auto', scene: S_parents },
+  { id: 'q_farewell', ch: 9, title: '回家', goal: '带爹娘回石村找族长', type: 'talk', npc: 'chief', scene: S_farewell },
   { id: 'q_v3end', ch: 10, title: '第四卷 · 登天', goal: '回皇都的荒天侯府，钟伯在找你', type: 'talk', npc: 'laozhong', scene: S_v4start },
   { id: 'q_bzcamp', ch: 10, title: '百族营地', goal: '从血祭台往西，去下界边陲的百族营地', type: 'enter', loc: 'bz_camp', scene: S_bzCamp, rec: 34 },
   { id: 'q_baojie', ch: 10, title: '太古宝界', goal: '闯过营地西边的太古宝界，找到地火液海', type: 'dungeon', dungeon: 'baojie', loc: 'bz_baojie', npc: null, scene: S_baojieDone, rec: 35 },
@@ -644,7 +645,35 @@ const MAIN = [
   { id: 'q_gutai', ch: 13, title: '至尊古台', goal: '登上天人城北边的至尊古台', type: 'enter', loc: 'sj_gutai', scene: S_gutai, rec: 43 },
   { id: 'q_tianshen', ch: 13, title: '天神', goal: '……', type: 'auto', scene: S_tianshen },
   { id: 'q_wild', ch: 13, title: '无人区', goal: '去天仙城北边的无人区', type: 'enter', loc: 'sj_wild', scene: S_wild, rec: 44 },
-  { id: 'q_v5end', ch: 13, title: '第五卷 · 完', goal: '之后还有：三千州天才争霸、帝关、边荒。现在可以在上界和下界各处历练、挑战虚神界和凶兽首领。', type: 'none' },
+  { id: 'q_v5end', ch: 14, title: '第六卷 · 争霸', goal: '回天仙城找齐道临', type: 'talk', npc: 'qidaolin', scene: S_v6start },
+  { id: 'q_sqtown', ch: 14, title: '争霸城', goal: '从无人区往北，去三千州的争霸城', type: 'enter', loc: 'sq_town', scene: S_sqTown, rec: 45 },
+  { id: 'q_yinmo', ch: 14, title: '银磨山', goal: '从八珍谷往北上银磨山', type: 'enter', loc: 'sq_yinmo', scene: S_yinmo, rec: 47 },
+  { id: 'q_shiyi3', ch: 14, title: '石毅', goal: '……', type: 'auto', scene: S_shiyiBack },
+  { id: 'q_arena', ch: 15, title: '争霸台', goal: '去争霸城北边的争霸台，守擂', type: 'enter', loc: 'sq_arena', scene: S_arena1, rec: 47 },
+  { id: 'q_kuliu', ch: 15, title: '枯柳崖', goal: '去争霸台东边的枯柳崖', type: 'enter', loc: 'sq_cliff', scene: S_liushen },
+  { id: 'q_arena2', ch: 15, title: '回到台上', goal: '回争霸台', type: 'enter', loc: 'sq_arena', scene: S_arena2, rec: 49, lvNeed: 47 },
+  { id: 'q_v7', ch: 16, title: '第七卷 · 仙古', goal: '从争霸台往北，进仙古遗地', type: 'enter', loc: 'xg_gate', scene: S_v7start, rec: 50 },
+  { id: 'q_xgruins', ch: 16, title: '帝冲化身', goal: '去仙古遗迹', type: 'enter', loc: 'xg_ruins', scene: S_xgAvatar, rec: 51 },
+  { id: 'q_xglake', ch: 16, title: '血湖', goal: '去遗迹东边的血湖', type: 'enter', loc: 'xg_lake', scene: S_xgLake, rec: 52 },
+  { id: 'q_xgdian', ch: 16, title: '仙古古殿', goal: '闯过古林北边的仙古古殿', type: 'dungeon', dungeon: 'xiangudian', loc: 'xg_palace', npc: null, scene: S_xgDian, rec: 53 },
+  { id: 'q_dichong', ch: 17, title: '帝冲', goal: '上古殿东边的帝冲峰', type: 'enter', loc: 'xg_peak', scene: S_dichong, rec: 54 },
+  { id: 'q_xgend', ch: 17, title: '仙古深处', goal: '去帝冲峰东边的仙古深处', type: 'enter', loc: 'xg_core', scene: S_xgEnd },
+  { id: 'q_v8', ch: 18, title: '第八卷 · 帝关', goal: '从仙古入口往东，去帝关城', type: 'enter', loc: 'dg_city', scene: S_v8start, rec: 55 },
+  { id: 'q_qiwang', ch: 18, title: '七王祠', goal: '去帝关城西边的七王祠', type: 'enter', loc: 'dg_qiwang', scene: S_qiwang },
+  { id: 'q_wangjia', ch: 18, title: '城头', goal: '上帝关城头', type: 'enter', loc: 'dg_wall', scene: S_wangjia, rec: 56 },
+  { id: 'q_dizu', ch: 18, title: '边荒战场', goal: '去城头北边的边荒战场', type: 'enter', loc: 'dg_field', scene: S_dizu, rec: 58 },
+  { id: 'q_bianhuang', ch: 19, title: '边荒古阵', goal: '闯过城头东边的边荒古阵', type: 'dungeon', dungeon: 'bianhuang', loc: 'dg_ancient', npc: null, scene: S_bhDone, rec: 60 },
+  { id: 'q_anlan', ch: 19, title: '安澜', goal: '……', type: 'auto', scene: S_anlan },
+  { id: 'q_box', ch: 19, title: '烂木盒子', goal: '去边荒战场东边的边荒深处', type: 'enter', loc: 'dg_deep', scene: S_box, rec: 62, lvNeed: 60 },
+  { id: 'q_v9', ch: 20, title: '第九卷 · 清算', goal: '……', type: 'auto', scene: S_v9start },
+  { id: 'q_envoy', ch: 20, title: '仙域使者', goal: '带着留影晶石，去九天的天门', type: 'enter', loc: 'jt_gate', scene: S_envoy, rec: 63 },
+  { id: 'q_train', ch: 20, title: '从头练', goal: '回石村找族长', type: 'talk', npc: 'chief', scene: S_train },
+  { id: 'q_army', ch: 21, title: '石村八百兵', goal: '去村前空地找大壮', type: 'talk', npc: 'dazhuang', scene: S_army },
+  { id: 'q_purge', ch: 21, title: '七大道统', goal: '带着石村八百兵，去九天的七大道统', type: 'enter', loc: 'jt_sect', scene: S_purge, rec: 68 },
+  { id: 'q_jin', ch: 21, title: '金家', goal: '去七大道统东边的金家', type: 'enter', loc: 'jt_jin', scene: S_jin, rec: 69 },
+  { id: 'q_feng', ch: 21, title: '风族', goal: '去金家北边的风族', type: 'enter', loc: 'jt_feng', scene: S_feng, rec: 70 },
+  { id: 'q_peace', ch: 21, title: '九天之巅', goal: '上风族西边的九天之巅', type: 'enter', loc: 'jt_peak', scene: S_peace, rec: 71 },
+  { id: 'q_v9end', ch: 21, title: '第九卷 · 完', goal: '之后还有：异域、仙域。现在可以在下界、上界、九天十地各处历练，挑战虚神界和凶兽首领。', type: 'none' },
 ];
 const SIDE = {
   sq_milk: { npc: 'ermeng', title: '二猛的兽骨', minQ: 'q_egg0', need: [['bone', 3]], ask: '小不点，给我弄三块兽骨呗？我想刻个骨牌，跟你那样认骨文。', done: '嘿嘿，够了够了！这罐兽奶给你，我从家里顺的。', reward: () => { give('milk', 4); gainExp(60); } },
@@ -674,7 +703,7 @@ function questReady(q) { if (q.type === 'kill' || q.type === 'arena') return C.s
 function questGoalText() { const q = curQ(); let t = q.goal;
   if (q.type === 'kill' || q.type === 'arena') t += `（${Math.min(C.story.n, q.n)}/${q.n}）` + (questReady(q) && q.npc ? ` → 回去找${NPCS[q.npc].name}` : '');
   if (q.type === 'dungeon' && questReady(q) && q.npc) t += ` → 回去找${NPCS[q.npc].name}`; if (q.lvNeed && C.lv < q.lvNeed) t += `（现在第 ${C.lv} 层）`; return t; }
-function questWhere() { const q = curQ(); const npcLoc = n => Object.values(PLACES).find(p => (p.npcs || []).includes(n));
+function questWhere() { const q = curQ(); const npcLoc = n => PLACES[npcLocNow(n)] || Object.values(PLACES).find(p => (p.npcs || []).includes(n)); // an NPC found in several places: the one you can reach now
   if (q.type === 'enter') return q.loc; if (q.type === 'talk') return npcLoc(q.npc)?.id; if (q.type === 'arena') return q.loc;
   if (q.type === 'kill' || q.type === 'dungeon') return questReady(q) && q.npc ? npcLoc(q.npc)?.id : q.loc; return null; }
 function storyKill(mob) { bountyKill(mob); const q = curQ(); if (q.type === 'kill' && q.mob === mob && C.story.n < q.n) { C.story.n++; logLine(`【主线】${MOBS[mob].name} ${C.story.n}/${q.n}`, 'quest'); if (C.story.n >= q.n) logLine(`【主线】回去找<b>${NPCS[q.npc].name}</b>。`, 'quest'); }

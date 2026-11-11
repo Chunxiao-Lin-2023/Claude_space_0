@@ -7,12 +7,12 @@ const { chromium } = require('playwright');
   const res = await pg.evaluate(async () => { try {
     const D = __dbg, S = () => D.STATE, C = () => D.C; C().auto = true; const w8 = ms => new Promise(r => setTimeout(r, ms));
     const idle = async (ms = 60000) => { const t0 = Date.now(); await w8(30); while (S().scene || S().battle || S().dungeon || S().busy) { if (Date.now() - t0 > ms) throw new Error('stuck ' + JSON.stringify({ q: D.curQ().id, scene: S().scene, b: !!S().battle, d: S().dungeon })); await w8(30); } };
-    const npcLoc = n => Object.values(D.PLACES).find(p => (p.npcs || []).includes(n)).id;
+    const npcLoc = n => npcLocNow(n) || Object.values(D.PLACES).find(p => (p.npcs || []).includes(n)).id;
     const walk = async to => { if (C().loc === to) return; D.autoWalk(to); for (let i = 0; i < 400 && C().loc !== to; i++) await w8(20); if (C().loc !== to) throw new Error('cannot walk to ' + to + ' from ' + C().loc + ' route=' + JSON.stringify(route(C().loc, to)) + ' st=' + JSON.stringify({ sc: S().scene, b: !!S().battle, d: S().dungeon, f: C().story.f })); await w8(150); await idle(); };
     const lvTo = n => { for (let k = 0; k < 40 && C().lv < n; k++) { const l0 = C().lv; D.gainExp(BAL.expNext(C().lv), true); if (C().lv === l0) break; } };
     const talk = async n => { await walk(npcLoc(n)); await idle(); const o = D.questTalkOptions(n).filter(x => x.t.startsWith('❗') || x.t.startsWith('✔') || x.t.startsWith('🔒')); if (!o.length) throw new Error('no talk option ' + n + ' at ' + D.curQ().id); await o[0].f(); await idle(); };
     const log = []; let guard = 0;
-    while (D.curQ().id !== 'q_v5end' && guard++ < 160) {
+    while (D.curQ().id !== 'q_v9end' && guard++ < 220) {
       const q = D.curQ(); log.push(q.id); console.log('FLOW', q.id, 'lv', C().lv); if (q.rec) lvTo(q.rec + 1); if (q.lvNeed) lvTo(q.lvNeed); D.addItem('baoyao', 2, true); D.addItem('meat', 2, true); await idle();
       if (q.type === 'auto') { await D.storyPoll(); await idle(); }
       else if (q.type === 'enter') { if (C().loc === q.loc) await D.questComplete(q); else await walk(q.loc); await idle(); if (D.curQ() === q) await D.questComplete(q); await idle(); }

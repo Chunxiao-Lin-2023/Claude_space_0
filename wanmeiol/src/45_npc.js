@@ -262,22 +262,62 @@ const CHATTER = [
   { at: 'sj_gutai', from: 'q_tianshen', to: 'q_v5end', who: '古台下的天才', t: '我在第三层下面转了三个月。你上去的那天……我决定，明天再试一次。' },
   { at: 'sj_wild', from: 'q_v5end', to: 'q_v5end', who: '葛潜', t: '花蕾还没开。等它开的那天，我们再打一场。……你别再舔龙涎了，那东西是用来炼药的！' },
   { at: 'shangjie', from: 'q_ladder', to: 'q_v5end', night: 1, who: '上界的守夜人', t: '上界的夜里，星星离得很近。你伸手，好像就能摘下来一颗。' },
+  // 第六卷 · 三千州
+  { at: 'sq_town', from: 'q_yinmo', to: 'q_v9end', who: 'qidaolin', t: '徒弟，争霸城的馆子为师都打听好了。最便宜的那家，老板是为师的老相识——他欠为师钱。' },
+  { at: 'sq_town', from: 'q_yinmo', to: 'q_arena', who: '争霸城的说书人', t: '八个神火境围一个人！那蓝一尘，怕是要把麒麟交出来了。' },
+  { at: 'sq_town', from: 'q_arena', to: 'q_v9end', who: '争霸城的说书人', t: '银磨山八个天骄，一个都没下山！诸位，三千州要变天了！' },
+  { at: 'sq_town', from: 'q_arena', to: 'q_v9end', who: '蓝一尘', t: '八珍麒天天往争霸台那边跑，拦都拦不住。它说……（他顿了顿）它想看你打架。' },
+  { at: 'sq_town', from: 'q_kuliu', to: 'q_arena2', who: '酒楼里的天骄', t: '那个罪血跑了！五百八十八场，最后还是跑了！哈哈——（旁边有人小声说：“他是走下去的，不是跑。”）' },
+  { at: 'sq_town', from: 'q_v7', to: 'q_v9end', who: '酒楼里的天骄', t: '……（他看见你，把手里的酒杯放下，站了起来）荒兄。上回在台下，我也喊了。我给你赔个不是。' },
+  { at: 'sq_town', from: 'q_v7', to: 'q_v9end', who: 'qidaolin', t: '至尊道场门口现在排着长队，全是来拜师的！为师……为师一个都没收。（他挺起胸）至尊道场，一代只传一个。' },
+  { at: 'sq_arena', from: 'q_kuliu', to: 'q_arena2', who: '孤剑云', t: '（他抱着剑坐在台边）……你还会回来的。我等着。' },
+  { at: 'sq_arena', from: 'q_v7', to: 'q_v9end', who: '争霸台的裁判', t: '台上那些坑，现在有人专门来看。指着最大的那个说：“荒打的。”' },
+  { at: 'sq_cliff', from: 'q_arena2', to: 'q_v9end', who: '', t: '（枯柳根上的那点绿，又长大了一点。你蹲下来，看了它很久。）' },
+  { at: 'sq_valley', from: 'q_arena', to: 'q_v9end', who: '蓝一尘', t: '八珍麒吃的八种草，我给你包了一包。……你别自己吃啊，那是给麒麟的。' },
+  { at: 'sq_wild', from: 'q_sqtown', to: 'q_v9end', who: '磨刀的天骄', t: '我在这儿磨了三个月的刀。等我磨好了……（他看见你，刀掉了）……再磨三个月。' },
+  // 第七卷 · 仙古
+  { at: 'xg_gate', from: 'q_xgruins', to: 'q_v9end', who: '守门的老人', t: '仙古的门开一回，要死很多人。门关的时候，里面的人，有一半出不来。' },
+  { at: 'xg_ruins', from: 'q_xglake', to: 'q_v9end', who: '石毅', t: '这里的柱子上刻着字。我用重瞳看了很久，看懂了一句：“我们不是最后一个纪元。”' },
+  { at: 'xg_forest', from: 'q_xgruins', to: 'q_v9end', who: '', t: '（一棵比山还高的树，低下头来，好像在看你。你冲它挥了挥手。它的叶子，哗啦啦地响了一阵。）' },
+  { at: 'xg_lake', from: 'q_xgdian', to: 'q_v9end', who: '石毅', t: '小时候的事，我记不太清了。可我记得有一个比我小的孩子，总是跟在我后面跑。……是你吧？' },
+  { at: 'xg_peak', from: 'q_xgend', to: 'q_v9end', who: '', t: '（峰顶那个“帝”字，被人在下面添了一行小字：“刻得太大了”。字迹很像帝冲的。）' },
+  // 第八卷 · 帝关
+  { at: 'dg_city', from: 'q_qiwang', to: 'q_anlan', who: 'mengtz', t: '帝关的饭难吃吧？（他笑了）我吃了几万年，还是难吃。' },
+  { at: 'dg_city', from: 'q_qiwang', to: 'q_anlan', who: 'mengtz', t: '你问我为什么守在这儿？……几万年前，有个人替我挡过一刀。他是七王的后人。' },
+  { at: 'dg_city', from: 'q_qiwang', to: 'q_v9end', who: '帝关的老兵', t: '新来的？（他看了看你）能活过第一场仗，再来跟我说话。' },
+  { at: 'dg_city', from: 'q_box', to: 'q_v9end', who: '帝关的老兵', t: '孟老那一剑，我看见了。（他擦了擦眼睛）我在帝关守了八千年，没见过那么好看的一剑。' },
+  { at: 'dg_city', from: 'q_dizu', to: 'q_v9end', who: '帝关的伙夫', t: '今天的饭少做了三十份。……不是没米了。是吃饭的人，少了三十个。' },
+  { at: 'dg_qiwang', from: 'q_wangjia', to: 'q_v9end', who: 'qiwanghou', t: '我每天都给七王添灯油。添着添着，就觉得他们在看着我。……你也觉得吗？' },
+  { at: 'dg_qiwang', from: 'q_box', to: 'q_v9end', who: 'qiwanghou', t: '孟老的牌位，我也放进来了。第八个。（他低着头添灯油）他不是七王的后人。可他也守了。' },
+  { at: 'dg_qiwang', from: 'q_v9end', to: 'q_v9end', who: 'qiwanghou', t: '门匾换了。（他摸了摸额头上那个淡下去的字）……有人跟我说，这个字，以后会有人替我们洗掉。他说话算话。' },
+  { at: 'dg_wall', from: 'q_dizu', to: 'q_v9end', who: '城头的守兵', t: '往外看，别往里看。往里看，会想家。' },
+  { at: 'dg_field', from: 'q_bianhuang', to: 'q_v9end', who: '', t: '（战场上插着很多断掉的兵器。有一把是胖子的刀，你认得。你把它扶正了。）' },
+  { at: 'diguan', from: 'q_qiwang', to: 'q_v9end', night: 1, who: '守夜的兵', t: '边荒的夜里，异域那边会有人唱歌。很好听。……听久了，会想打开城门。别听。' },
+  // 第九卷 · 九天 / 石村
+  { at: 'sc_street', from: 'q_train', to: 'q_v9end', who: '大壮的孙子', t: '爷爷说，你小时候举不动石锁，哭着回家。……真的假的？' },
+  { at: 'sc_street', from: 'q_train', to: 'q_army', who: 'dazhuang', t: '你练你的，我们练我们的。（他把一块石锁扛上了肩）……老了，扛不动以前那块了。' },
+  { at: 'sc_willow', from: 'q_envoy', to: 'q_v9end', who: '', t: '（烂木盒子放在树桩旁边。你一直没有打开它。你觉得，还不到时候。）' },
+  { at: 'jt_gate', from: 'q_train', to: 'q_v9end', who: '天门下的商人', t: '王家进仙域了。……听说王长生亲手处置了六个儿子。啧，长生世家，长生长生，长的是他一个人。' },
+  { at: 'jt_wang', from: 'q_train', to: 'q_v9end', who: '王家的门房', t: '（他看见你，立刻把门关上了。门缝里传来一句：“家主去仙域了！不在！”）' },
+  { at: 'jt_sect', from: 'q_jin', to: 'q_v9end', who: '道统的老杂役', t: '七座山门都倒了。我在这儿扫了一辈子地，头一回觉得……地干净了。' },
+  { at: 'jt_peak', from: 'q_v9end', to: 'q_v9end', who: 'dazhuang', t: '小不点，你看，九天的灯，跟石村的灯，长得一样。' },
+  { at: 'jiutian', from: 'q_envoy', to: 'q_v9end', night: 1, who: '九天的守夜人', t: '九天的夜里，长生世家的宅子都亮着灯。他们睡不着——活得太久，就怕死。' },
 ];
 let chatT = 0, lastChat = {};
 function chatterFor(loc) { const P = PLACES[loc], q = C.story.q;
   return CHATTER.filter(c => (c.at === '*' ? c.pet && C.pet === c.pet : c.at === loc || c.at === P.area) && (!c.night || isNight()) && (!c.from || q >= qi(c.from)) && (!c.to || q <= qi(c.to))); }
 /* who is standing here right now (some people move as the story goes on) */
-function npcsHere(loc) { const P = PLACES[loc], f = C.story.f; let L = (P.npcs || []).filter(n => !(n === 'qingfeng' && (!f.qingfeng || f.qfIn)) && !(n === 'huolinger' && C.story.q < qi('q_bdgate'))); if (loc === 'bt_court' && f.qfIn) L = [...L, 'qingfeng']; return L; }
+function npcsHere(loc) { const P = PLACES[loc], f = C.story.f; let L = (P.npcs || []).filter(n => !(n === 'qingfeng' && (!f.qingfeng || f.qfIn)) && !(n === 'huolinger' && C.story.q < qi('q_bdgate')) && !(n === 'mengtz' && f.anlan)); if (loc === 'bt_court' && f.qfIn) L = [...L, 'qingfeng']; return L; }
 const chatKey = c => (c.who || '') + c.t.slice(0, 14);
 const chatPick = L => { const H = C.chatHeard || {}, fresh = L.filter(c => !H[chatKey(c)]); return pick(fresh.length ? fresh : L); };
 function npcSay(c) { lastChat[CHATTER.indexOf(c)] = now(); (C.chatHeard = C.chatHeard || {})[chatKey(c)] = 1; const N = NPCS[c.who]; logLine(c.who ? `<span class="who">${N ? N.name : c.who}</span>${c.t}` : c.t, 'npc'); }
 function npcOnArrive(loc) { if (!C || NETROLE === 'guest' || STATE.scene) return; const L = chatterFor(loc).filter(c => !lastChat[CHATTER.indexOf(c)] || now() - lastChat[CHATTER.indexOf(c)] > 300000); if (L.length && chance(0.55)) setTimeout(() => { if (!STATE.scene && !STATE.battle) npcSay(chatPick(L)); }, 700); chatT = now() + rint(40000, 70000); }
 function npcTick() { if (!C || STATE.mode !== 'play' || NETROLE === 'guest' || STATE.scene || STATE.battle || STATE.dungeon || now() < chatT) return; chatT = now() + rint(45000, 80000);
   const L = chatterFor(C.loc).filter(c => !lastChat[CHATTER.indexOf(c)] || now() - lastChat[CHATTER.indexOf(c)] > 300000); if (L.length) npcSay(chatPick(L)); }
-function npcRumor(text) { const P = PLACES[C.loc]; const who = P.area === 'shicun' ? NPCS.linhu : P.area === 'butian' ? NPCS.gezhu : P.area === 'baiduan' ? NPCS.huolinger : P.area === 'shiguo' ? NPCS.leiting : P.area === 'huoguo' ? NPCS.huolinger : P.area === 'baizu' ? NPCS.bzlao : P.area === 'shangjie' ? NPCS.qidaolin : null; logLine(who ? `<span class="who">${who.name}</span>${text}` : '【传闻】' + text, 'npc'); }
+function npcRumor(text) { const P = PLACES[C.loc]; const who = P.area === 'shicun' ? NPCS.linhu : P.area === 'butian' ? NPCS.gezhu : P.area === 'baiduan' ? NPCS.huolinger : P.area === 'shiguo' ? NPCS.leiting : P.area === 'huoguo' ? NPCS.huolinger : P.area === 'baizu' ? NPCS.bzlao : P.area === 'shangjie' || P.area === 'sanqian' || P.area === 'xiangu' ? NPCS.qidaolin : P.area === 'diguan' ? (C.story.f.anlan ? NPCS.qiwanghou : NPCS.mengtz) : P.area === 'jiutian' ? NPCS.qidaolin : null; logLine(who ? `<span class="who">${who.name}</span>${text}` : '【传闻】' + text, 'npc'); }
 function npcTalk(id) { // clicking a person: their quest or side errand, otherwise a line that fits right now
   if (STATE.scene || STATE.battle) return; const opts = talkOptions(id); const lines = chatterFor(C.loc).filter(c => c.who === id);
-  const fallback = { chief: '去玩吧，别跑太远。', willow: '（柳枝静静垂着。）', linhu: '弓要常擦，箭要常磨。', dazhuang: '小不点，下回进山带上我！', ermeng: '嘿嘿。', pihou: '你看你看，我又能多翻一个跟头了！', qingfeng: C.story.f.qfIn ? '内门的饭比外门的好吃。……你别告诉别人我说的。' : '……嗯。', guiye: '……', gezhu: '好好修行。', libelder: '书别弄脏了。', huolinger: C.story.f.huohuang ? '你又来了？……我没在等你。' : '看什么看？', xiaotian: '烤鸡还有半只，你要不要？', laozhong: '侯爷吃了吗？老奴给您热着饭呢。', leiting: '有事说事，没事请客。', huohuang: '灵儿在后院。……朕什么都没说。', bzlao: '火边坐吧，别站着。', yunlao: '（老人冲你点了点头，胡子在云里飘。）', qidaolin: '徒弟！……有钱吗？借为师一点。' }[id] || '……';
+  const fallback = { chief: '去玩吧，别跑太远。', willow: '（柳枝静静垂着。）', linhu: '弓要常擦，箭要常磨。', dazhuang: '小不点，下回进山带上我！', ermeng: '嘿嘿。', pihou: '你看你看，我又能多翻一个跟头了！', qingfeng: C.story.f.qfIn ? '内门的饭比外门的好吃。……你别告诉别人我说的。' : '……嗯。', guiye: '……', gezhu: '好好修行。', libelder: '书别弄脏了。', huolinger: C.story.f.huohuang ? '你又来了？……我没在等你。' : '看什么看？', xiaotian: '烤鸡还有半只，你要不要？', laozhong: '侯爷吃了吗？老奴给您热着饭呢。', leiting: '有事说事，没事请客。', huohuang: '灵儿在后院。……朕什么都没说。', bzlao: '火边坐吧，别站着。', yunlao: '（老人冲你点了点头，胡子在云里飘。）', qidaolin: '徒弟！……有钱吗？借为师一点。', mengtz: '能吃，是好事。多吃点。', qiwanghou: '（小七在添灯油，冲你点了点头。）' }[id] || '……';
   runScene(async () => { const ln = lines.length ? chatPick(lines) : null; if (ln) (C.chatHeard = C.chatHeard || {})[chatKey(ln)] = 1; await say(id, ln ? ln.t : fallback); if (opts.length) { const c = await choose([...opts.map(o => ({ t: o.t, dis: !!o.dis })), { t: '没事了' }]); if (c < opts.length) setTimeout(() => opts[c].f(), 0); } });
 }
 function talkOptions(id) { return [...questTalkOptions(id), ...bountyOptions(id), ...tradeOptions(id), ...(id === 'willow' && C.dt.length ? [{ t: '🔄 重开一座洞天（灵药 ×1）', dis: !itemN('lingyao'), f: dongtianRedo }] : []), ...(talkNext(id) ? [{ t: '💬 闲聊', f: () => talkPlay(id) }] : [])]; }

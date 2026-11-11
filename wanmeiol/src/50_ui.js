@@ -79,7 +79,7 @@ addEventListener('keydown', e => { if (STATE.mode !== 'play' || e.target.tagName
 let refT = 0;
 function refresh() { if (refT) return; refT = requestAnimationFrame(() => { refT = 0; if (STATE.mode !== 'play' || !C) return; applyMode(); musicMode(); atmoUpdate(); renderTop();
   if (curMode() === 'explore') { renderBanner(); renderDesc(); renderFeed(); renderActs(); renderRumor(); } if (STATE.battle) renderBattle(true); renderSide(); if (UI.modal) openModal(UI.modal, true); }); }
-const CH_NAMES = ['', '第一章 · 石村', '第二章 · 出村', '第三章 · 补天阁', '第四章 · 百断山', '第五章 · 皇都', '第六章 · 寿宴', '第七章 · 双石', '第八章 · 石皇', '第九章 · 七神', '第十章 · 宝界', '第十一章 · 登天', '第十二章 · 上界', '第十三章 · 至尊古台'];
+const CH_NAMES = ['', '第一章 · 石村', '第二章 · 出村', '第三章 · 补天阁', '第四章 · 百断山', '第五章 · 皇都', '第六章 · 寿宴', '第七章 · 双石', '第八章 · 石皇', '第九章 · 七神', '第十章 · 宝界', '第十一章 · 登天', '第十二章 · 上界', '第十三章 · 至尊古台', '第十四章 · 银磨山', '第十五章 · 争霸', '第十六章 · 仙古', '第十七章 · 帝冲', '第十八章 · 帝关', '第十九章 · 边荒', '第二十章 · 蛰伏', '第二十一章 · 清算'];
 function renderTop() {
   const s = charStats(), R = realmOf(C.lv); const co = NETROLE ? `<button class="tb net" onclick="openModal('coop')">🔗 ${myControl() ? '你在操作' : '队友操作中'}</button>` : `<button class="tb" onclick="openModal('coop')" title="联机">🔗</button>`;
   $('top').innerHTML = `<div class="who">石昊</div><div class="lv">${R.name} ${C.lv}层</div><div class="bars3"><div class="bar" title="气血 ${Math.ceil(C.hp)}/${s.hpMax}"><i style="width:${C.hp / s.hpMax * 100}%"></i></div><div class="bar mp" title="符力"><i style="width:${C.mp / s.mpMax * 100}%"></i></div><div class="bar exp" title="经验"><i style="width:${Math.min(100, C.exp / BAL.expNext(C.lv) * 100)}%"></i></div></div>

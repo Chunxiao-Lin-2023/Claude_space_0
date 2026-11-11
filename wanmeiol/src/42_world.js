@@ -1,6 +1,29 @@
 /* ================= the wild: events while exploring (some open as your realm grows, some only at night),
    and the 骨文 memory game used when 石昊 reads a 宝术 off its runes ================= */
 const WILD = [
+  { id: 'sq_qilin', once: 1, title: '八珍麒', when: P => P.area === 'sanqian' && C.story.q >= qi('q_arena'), scene: async () => {
+    await nar('一头小小的麒麟从草丛里钻出来，浑身的毛是八种颜色。它蹭了蹭你的腿，然后叼走了你手里的干饼。');
+    await me('……喂！');
+    await nar('它跑出去几步，又回头看了看你，把干饼放在地上，用鼻子推回来一半。');
+    const c = await choose(['（接过那一半）', '（把另一半也推给它）']);
+    if (c === 1) { await nar('它愣了一下，然后高高兴兴地吃了。吃完，它在你脚边放下一株八种颜色的灵草，跑掉了。'); give('baoyao', 2); }
+    else { await nar('你们一人一半，坐在草丛里吃完了那块硬得能砸死人的干饼。'); give('lingyao', 3); } } },
+  { id: 'xg_mural', once: 1, title: '最后一幅画', when: P => P.area === 'xiangu' && C.story.q >= qi('q_xgdian'), scene: async () => {
+    await nar('遗迹的一面断墙上，画着一个仙古纪元的孩子。他手里拿着一块骨头，冲着画外面笑。');
+    await nar('画的旁边刻着一行小字。你认不全，只认出了几个：“……留给……下一个纪元……的孩子……”');
+    await me('……那就是我们。');
+    await nar('你在那面墙前面站了一会儿，把手按在了画上。墙是热的。'); gainExp(BAL.expNext(C.lv) * 0.12); } },
+  { id: 'dg_letter', once: 1, title: '没寄出去的信', when: P => P.area === 'diguan' && C.story.q >= qi('q_bianhuang'), scene: async () => {
+    await nar('城头的一块砖缝里，塞着一封信。信封上写着：“给娘”。没有寄出去。');
+    await nar('你认得那个字迹——是那个说打完这一仗就回家成亲的少年。');
+    const c = await choose(['（收好，等太平了替他寄回去）', '（放回砖缝里）']);
+    if (c === 0) { await nar('你把信小心地折好，放进了怀里，和那只烂木盒子放在一起。'); F().letter = 1; }
+    else await nar('你把信放回了砖缝里。帝关的砖，会替他记着。');
+    gainExp(BAL.expNext(C.lv) * 0.1); } },
+  { id: 'jt_light', once: 1, title: '九天的灯', when: P => P.area === 'jiutian' && isNight() && C.story.q >= qi('q_peace'), scene: async () => {
+    await nar('夜里，你站在天门上往下看。九天的灯一盏一盏地亮着，十地的灯也一盏一盏地亮着。再往下，很远很远的地方，有一盏很小的灯——石村。');
+    await me('……孟老，你看。都还在。');
+    await nar('风从帝关那边吹过来。你好像听见有人在笑。'); gainExp(BAL.expNext(C.lv) * 0.1); give('baoyao'); } },
   { id: 'bz_fire', once: 1, title: '别人的火堆', when: P => P.area === 'baizu' && C.story.q >= qi('q_bzcore') && isNight(), scene: async () => {
     await nar('夜里，你路过一堆金乌族的篝火。火边坐着一个金乌族的少年，是白天被你打败的那三个之一。他看见你，愣了一下。');
     await say('金乌族少年', '……坐吧。（他往旁边挪了挪）就这一回。');

@@ -68,6 +68,11 @@ const TALKS = [
   { id: 'tk_yunlao1', npc: 'yunlao', from: 'q_huobye', to: 'q_v5end', s: [['yunlao', '你知道云族为什么叫云族吗？'], ['me', '因为住在云里？'], ['yunlao', '因为我们的祖先，是踩着云从上面下来的。他们说，下来看看就回去。'], ['yunlao', '……然后就没回去。路断了。一断就是几千年。'], ['nar', '老人看着天，很久没说话。']] },
   { id: 'tk_qi1', npc: 'qidaolin', from: 'q_dojo', to: 'q_v5end', s: [['qidaolin', '徒弟，你是不是觉得为师是个骗子？'], ['ch', ['是。', '有一点。', '不是。'], [[['qidaolin', '（他一口茶喷了出来）……你倒是实诚！']], [['qidaolin', '一点？好，比为师想的少。']], [['qidaolin', '……（他盯着你看了很久）你这孩子，说谎都不会。']]]], ['qidaolin', '为师骗过很多人。可至尊道场是真的，无敌道是真的。'], ['qidaolin', '为师就想……在为师死之前，看一眼至尊道场再热闹起来。哪怕就两个人。'], ['me', '现在不就是两个人吗？'], ['nar', '齐道临别过脸去，半天没说话。']] },
   { id: 'tk_qi2', npc: 'qidaolin', from: 'q_tianshen', to: 'q_v5end', s: [['qidaolin', '徒弟，你在天碑上写那个字的时候，为师在台下。'], ['qidaolin', '为师这辈子，被人指着鼻子骂过骗子、骂过疯子。可从来没想过——有人敢指着整个上界的鼻子，说它错了。'], ['me', '它本来就错了。'], ['qidaolin', '（他笑了，笑着笑着，眼睛就红了）……对。它本来就错了。']] },
+  // 第六～九卷
+  { id: 'tk_qi3', npc: 'qidaolin', from: 'q_v7', to: 'q_v9end', s: [['qidaolin', '徒弟，争霸台上那一招，为师看见了。'], ['me', '哪一招？'], ['qidaolin', '你从台上走下去的那一招。（他难得认真）往前不回头，不是不能退。是退了，还会回来。'], ['ch', ['师父，你这句话是刚想的吧？', '……谢谢师父。'], [[['qidaolin', '（他咳嗽了一声）……昨天想的。想了一晚上。']], [['qidaolin', '（他别过脸去）谢什么谢！吃饭去！你请！']]]]] },
+  { id: 'tk_meng1', npc: 'mengtz', from: 'q_qiwang', to: 'q_anlan', s: [['mengtz', '孩子，你想成仙吗？'], ['ch', ['想。', '不知道。成了仙，还能吃烤肉吗？'], [[['mengtz', '我也想。想了几万年。（他看着城外）……可每次快到了，城外就有人来。']], [['mengtz', '（他愣了一下，哈哈大笑）能！我替你问过了——问的是个死了的仙人，他没回答。']]]], ['mengtz', '成仙那条路，我就差一步了。'], ['mengtz', '……可我总觉得，这一步，跟守城比，没那么要紧。']] },
+  { id: 'tk_qi7', npc: 'qiwanghou', from: 'q_wangjia', to: 'q_v9end', s: [['qiwanghou', '你说，七王当年怕不怕？'], ['me', '怕吧。'], ['qiwanghou', '那他们为什么不跑？'], ['ch', ['因为后面有人。', '因为跑了，就回不了家了。'], [[['qiwanghou', '（他想了想）……后面的人跑了，他们还是没跑。']], [['qiwanghou', '（他低下头）我们这一支，从来没见过家。']]]], ['nar', '小七添完灯油，冲七个牌位磕了三个头。他磕得很认真。']] },
+  { id: 'tk_army1', npc: 'dazhuang', from: 'q_purge', to: 'q_v9end', s: [['dazhuang', '小不点，你还记得你小时候被我笑举不动石锁吗？'], ['me', '记得。笑了一个月。'], ['dazhuang', '（他挠了挠头）我那时候其实也举不动。我是踮着脚，用肩膀扛起来的。'], ['me', '……你骗了我几十年？'], ['dazhuang', '（他哈哈大笑，笑得胡子直抖）现在说出来，舒服多了！']] },
 ];
 const talkNext = id => TALKS.find(T => T.npc === id && !(C.talked || {})[T.id] && C.story.q >= qi(T.from) && C.story.q <= qi(T.to));
 async function talkSteps(steps) { for (const st of steps) { const [w, t, r] = st;

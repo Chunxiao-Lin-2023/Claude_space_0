@@ -54,7 +54,7 @@ function achCheck() { if (!C || NETROLE === 'guest') return; C.ach = C.ach || {}
 function setTitle(id) { C.title = C.title === id ? '' : id; sfx('click'); save(); refresh(); }
 
 /* ---------- 传送 (阁主's jade token, after joining 补天阁) ---------- */
-const TP = [{ id: 'sc_street', n: '石村' }, { id: 'bt_court', n: '补天阁内院' }, { id: 'bd_gate', n: '百断山口' }, { id: 'sg_market', n: '石国皇都' }, { id: 'sg_hou', n: '荒天侯府' }, { id: 'hg_city', n: '火国皇城' }, { id: 'bz_camp', n: '百族营地' }, { id: 'sj_town', n: '上界 · 天仙城' }, { id: 'xs_hall', n: '虚神界（神魂过去）' }];
+const TP = [{ id: 'sc_street', n: '石村' }, { id: 'bt_court', n: '补天阁内院' }, { id: 'bd_gate', n: '百断山口' }, { id: 'sg_market', n: '石国皇都' }, { id: 'sg_hou', n: '荒天侯府' }, { id: 'hg_city', n: '火国皇城' }, { id: 'bz_camp', n: '百族营地' }, { id: 'sj_town', n: '上界 · 天仙城' }, { id: 'sq_town', n: '三千州 · 争霸城' }, { id: 'dg_city', n: '帝关城' }, { id: 'jt_gate', n: '九天 · 天门' }, { id: 'xs_hall', n: '虚神界（神魂过去）' }];
 const canTeleport = () => !!C.story.f.joined && (PLACES[C.loc].town || C.loc === 'bd_gate');
 async function teleport() { if (!canTeleport() || STATE.scene || STATE.battle || STATE.dungeon) return; const L = TP.filter(t => t.id !== C.loc && placeOpen(t.id)); if (!L.length) return; let to = null;
   await runScene(async () => { const c = await dlgChoose([...L.map(t => ({ t: '🌀 ' + t.n })), { t: '算了' }], '玉符在掌心微微发烫。去哪儿？'); if (c < L.length) to = L[c].id; });

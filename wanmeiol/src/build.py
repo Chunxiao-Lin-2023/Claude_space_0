@@ -15,6 +15,8 @@ if dup: sys.exit('duplicate top-level functions (the later one silently wins): '
 def check_chatter():
     places = set(re.findall(r'^  (\w+): \{ name:', src('11_places.js'), re.M)); areas = set(re.findall(r'^  (\w+): \{ name: .*sub:', src('11_places.js'), re.M))
     npcs = set(re.findall(r"^  (\w+): \{ name: '[^']+', title:", src('11_places.js'), re.M)); steps = re.findall(r"\{ id: '(q_\w+)', ch:", src('40_story.js')); order = {q: i for i, q in enumerate(steps)}
+    dup = sorted({q for q in steps if steps.count(q) > 1})
+    if dup: sys.exit('duplicate story step ids: ' + ', '.join(dup))
     body = src('45_npc.js'); body = body[body.index('const CHATTER = ['):]; body = body[:body.index('\n];')]
     errs = []
     for ln in re.findall(r'^\s*(\{ at:.*\}),?\s*$', body, re.M):

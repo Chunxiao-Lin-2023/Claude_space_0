@@ -34,7 +34,7 @@ async function autoWalk(to) {
 }
 /* ---------- explore ---------- */
 let exploreT = 0;
-const NIGHT_MOBS = { dahuang: 'owl', butian: 'owl', baiduan: 'wisp', shiguo: 'yinbing', huoguo: 'yanque', baizu: 'yinhun', shangjie: 'yeyao' };
+const NIGHT_MOBS = { dahuang: 'owl', butian: 'owl', baiduan: 'wisp', shiguo: 'yinbing', huoguo: 'yanque', baizu: 'yinhun', shangjie: 'yeyao', sanqian: 'tianjiao6', xiangu: 'xgling', diguan: 'bhhun', jiutian: 'heian' };
 const FLAVOR_N = ['黑暗里亮起几点绿光——', '月亮被云遮住的一瞬间，', '夜风里夹着一股腥气，', '你踩断了一根枯枝，四周猛地安静下来——'];
 const FLAVOR = ['草丛里窸窸窣窣地响了一阵——', '你拨开一丛灌木，', '一阵腥风扑面而来，', '脚下的落叶突然动了一下，', '远处一声低吼，越来越近，'];
 async function explore() {

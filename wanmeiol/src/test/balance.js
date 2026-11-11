@@ -34,6 +34,26 @@ const SC0 = [
   ['妖龙天神', 44, [['yaolong', 44]], ['qly', 'sn', 'lei', 'gw', 'dsh', 'jian', 'ta', 'zhuque', 'zhizun', 'lunhui', 'wudi'], 'dahong', 100, []],
   ['野外·百族战场', 36, [['jinwu', 36], ['zhengzu', 36]], ['qly', 'sn', 'lei', 'gw', 'dsh', 'jian', 'ta', 'zhuque', 'zhizun', 'lunhui'], 'dahong', 85, []],
   ['野外·无人区', 43, [['huangshou', 43], ['huangshou', 43]], ['qly', 'sn', 'lei', 'gw', 'dsh', 'jian', 'ta', 'zhuque', 'zhizun', 'lunhui', 'wudi'], 'dahong', 100, []],
+  ['莽牛+紫金鹄', 46, [['manniu', 46], ['zijinhu', 46]], ['qly', 'sn', 'lei', 'gw', 'dsh', 'jian', 'ta', 'zhuque', 'zhizun', 'lunhui', 'wudi'], 'dahong', 100, []],
+  ['火蝎三眼冥土', 46, [['huoxie', 46], ['sanyan', 46], ['mingtu', 47]], ['qly', 'sn', 'lei', 'gw', 'dsh', 'jian', 'ta', 'zhuque', 'zhizun', 'lunhui', 'wudi'], 'dahong', 100, []],
+  ['白狮初代', 48, [['baishi', 48]], ['qly', 'sn', 'lei', 'gw', 'dsh', 'jian', 'ta', 'zhuque', 'zhizun', 'lunhui', 'wudi'], 'dahong', 100, []],
+  ['车轮战', 47, [['tiaozhan', 47], ['tiaozhan', 47], ['tiaozhan', 47]], ['qly', 'sn', 'lei', 'gw', 'dsh', 'jian', 'ta', 'zhuque', 'zhizun', 'lunhui', 'wudi'], 'dahong', 100, []],
+  ['银坤', 48, [['yinkun', 48]], ['qly', 'sn', 'lei', 'gw', 'dsh', 'jian', 'ta', 'zhuque', 'zhizun', 'lunhui', 'wudi', 'liushen', 'daluo'], 'dahong', 100, []],
+  ['轮回+石毅', 49, [['lunhuizi', 49]], ['qly', 'sn', 'lei', 'gw', 'dsh', 'jian', 'ta', 'zhuque', 'zhizun', 'lunhui', 'wudi', 'liushen', 'daluo'], 'dahong', 100, ['a_shiyi']],
+  ['宁川', 49, [['ningchuan', 49]], ['qly', 'sn', 'lei', 'gw', 'dsh', 'jian', 'ta', 'zhuque', 'zhizun', 'lunhui', 'wudi', 'liushen', 'daluo'], 'dahong', 100, []],
+  ['帝冲化身', 51, [['dichongz', 51]], ['qly', 'sn', 'lei', 'gw', 'dsh', 'jian', 'ta', 'zhuque', 'zhizun', 'lunhui', 'wudi', 'liushen', 'daluo'], 'dahong', 100, []],
+  ['双石对宁川', 52, [['ningchuan', 52]], ['qly', 'sn', 'lei', 'gw', 'dsh', 'jian', 'ta', 'zhuque', 'zhizun', 'lunhui', 'wudi', 'liushen', 'daluo'], 'dahong', 100, ['a_shiyi']],
+  ['守殿傀', 53, [['xgguard', 53]], ['qly', 'sn', 'lei', 'gw', 'dsh', 'jian', 'ta', 'zhuque', 'zhizun', 'lunhui', 'wudi', 'liushen', 'daluo'], 'dahong', 100, []],
+  ['帝冲', 54, [['dichong', 54]], ['qly', 'sn', 'lei', 'gw', 'dsh', 'jian', 'ta', 'zhuque', 'zhizun', 'lunhui', 'wudi', 'liushen', 'daluo'], 'dahong', 100, []],
+  ['王家天骄', 56, [['wangjia', 56]], ['qly', 'sn', 'lei', 'gw', 'dsh', 'jian', 'ta', 'zhuque', 'zhizun', 'lunhui', 'wudi', 'liushen', 'daluo'], 'dahong', 100, []],
+  ['帝族天骄', 58, [['dizu', 58]], ['qly', 'sn', 'lei', 'gw', 'dsh', 'jian', 'ta', 'zhuque', 'zhizun', 'lunhui', 'wudi', 'liushen', 'daluo'], 'dahong', 100, ['a_meng']],
+  ['边荒古阵灵', 60, [['bhguard', 60]], ['qly', 'sn', 'lei', 'gw', 'dsh', 'jian', 'ta', 'zhuque', 'zhizun', 'lunhui', 'wudi', 'liushen', 'daluo'], 'dahong', 100, []],
+  ['仙殿长老', 67, [['xiandian', 67]], ['qly', 'sn', 'lei', 'gw', 'dsh', 'jian', 'ta', 'zhuque', 'zhizun', 'lunhui', 'wudi', 'liushen', 'daluo'], 'dahong', 100, ['a_shicun']],
+  ['剑谷剑主', 68, [['jiangu', 68]], ['qly', 'sn', 'lei', 'gw', 'dsh', 'jian', 'ta', 'zhuque', 'zhizun', 'lunhui', 'wudi', 'liushen', 'daluo'], 'dahong', 100, ['a_shicun']],
+  ['黑暗至尊', 70, [['heianzz', 70]], ['qly', 'sn', 'lei', 'gw', 'dsh', 'jian', 'ta', 'zhuque', 'zhizun', 'lunhui', 'wudi', 'liushen', 'daluo'], 'dahong', 100, ['a_shicun']],
+  ['黑暗之首', 71, [['heianwang', 71]], ['qly', 'sn', 'lei', 'gw', 'dsh', 'jian', 'ta', 'zhuque', 'zhizun', 'lunhui', 'wudi', 'liushen', 'daluo'], 'dahong', 100, ['a_shicun']],
+  ['野外·帝关', 57, [['yiyubing', 57], ['yiyuqi', 57]], ['qly', 'sn', 'lei', 'gw', 'dsh', 'jian', 'ta', 'zhuque', 'zhizun', 'lunhui', 'wudi', 'liushen', 'daluo'], 'dahong', 100, []],
+  ['野外·九天', 66, [['heian', 66], ['daotong', 66]], ['qly', 'sn', 'lei', 'gw', 'dsh', 'jian', 'ta', 'zhuque', 'zhizun', 'lunhui', 'wudi', 'liushen', 'daluo'], 'dahong', 100, []],
   ['野外·皇都外', 21, [['tiebei', 21], ['jinyuan', 21]], ['qly', 'sn', 'lei', 'gw', 'dsh', 'jian', 'ta'], 'dahong', 55, []],
   ['野外·火国', 25, [['huolang', 25], ['yanque', 25]], ['qly', 'sn', 'lei', 'gw', 'dsh', 'jian', 'ta', 'zhuque'], 'dahong', 65, []],
   ['野外·大荒深处', 8, [['bear', 8], ['leopard', 8]], ['qly', 'sn'], 'maoqiu', 30, []],
@@ -43,7 +63,7 @@ const SC = ONLY ? SC0.filter(s => ONLY.test(s[0])) : SC0;
 (async () => { const b = await chromium.launch(); const pg = await b.newPage(); const errs = []; pg.on('pageerror', e => errs.push(e.message));
   await pg.addInitScript(() => { localStorage.clear(); }); await pg.goto('http://localhost:8770/test.html'); await pg.waitForFunction(() => window.__dbg && __dbg.ready); await pg.click('text=开始'); await pg.waitForTimeout(300);
   const out = await pg.evaluate(async SC => { __dbg.auto = true; __dbg.instant = true; __dbg.dlgPick(-1); await new Promise(r => setTimeout(r, 400)); const c = __dbg.C; c.auto = true; const res = [];
-    const gfAt = lv => ['yingxia', 'xixue', 'guwen', 'yaoding', ...(lv >= 10 ? ['jijing'] : []), ...(lv >= 16 ? ['taiyi'] : []), ...(lv >= 26 ? ['niepan'] : []), ...(lv >= 28 ? ['zhizungu'] : []), ...(lv >= 30 ? ['renhuang'] : []), ...(lv >= 32 ? ['lingshen'] : []), ...(lv >= 36 ? ['shuanggu'] : []), ...(lv >= 38 ? ['yunzu'] : []), ...(lv >= 40 ? ['wudidao'] : []), ...(lv >= 43 ? ['zhizunye'] : [])];
+    const gfAt = lv => ['yingxia', 'xixue', 'guwen', 'yaoding', ...(lv >= 10 ? ['jijing'] : []), ...(lv >= 16 ? ['taiyi'] : []), ...(lv >= 26 ? ['niepan'] : []), ...(lv >= 28 ? ['zhizungu'] : []), ...(lv >= 30 ? ['renhuang'] : []), ...(lv >= 32 ? ['lingshen'] : []), ...(lv >= 36 ? ['shuanggu'] : []), ...(lv >= 38 ? ['yunzu'] : []), ...(lv >= 40 ? ['wudidao'] : []), ...(lv >= 43 ? ['zhizunye'] : []), ...(lv >= 49 ? ['niepanyuan'] : []), ...(lv >= 53 ? ['xiangu'] : []), ...(lv >= 56 ? ['qiwang'] : []), ...(lv >= 69 ? ['chongzhi'] : [])];
     for (const [name, lv, mobs, sk, pet, aff, allies] of SC) { let w = 0, rounds = 0, hp = 0; const N = 30;
       for (let i = 0; i < N; i++) { c.lv = lv; c.sk = sk.slice(); c.bar = sk.slice(0, typeof barSlots === 'function' ? barSlots(lv) : 4); c.gf = gfAt(lv); c.dt = ['li', 'ti', 'ling', 'shou', 'su', 'feng', 'li', 'ti', 'ling'].slice(0, Math.max(0, lv - 9)); c.bag = {}; c.prof = {}; c.eq = []; c.relics = {};
         c.pets = pet ? { [pet]: { aff } } : {}; c.pet = pet; fullHeal();

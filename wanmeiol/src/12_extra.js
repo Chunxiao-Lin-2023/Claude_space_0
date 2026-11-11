@@ -27,6 +27,11 @@ const RELICS = {
   r_qingluan: { n: '青鸾翎', from: 'qingluan', i: '🪶', d: '身法 +5，暴击 +3%。', b: { spd: 5, crit: 0.03 } },
   r_shichong: { n: '傀儡皇冠', from: 'shichong', i: '👑', d: '符力 +15%。', b: { mpP: 0.15 } },
   r_shenhuo: { n: '神火余烬', from: 'shenming2', i: '🔥', d: '攻击 +10%，暴击 +4%。', b: { atkP: 0.1, crit: 0.04 } },
+  r_baishi: { n: '白狮鬃', from: 'baishi', i: '🦁', d: '攻击 +8%，防御 +6%。', b: { atkP: 0.08, defP: 0.06 } },
+  r_ningchuan: { n: '麒麟血晶', from: 'ningchuan', i: '🩸', d: '气血 +10%，攻击 +8%。', b: { hpP: 0.1, atkP: 0.08 } },
+  r_dichong: { n: '帝冲战甲片', from: 'dichong', i: '🛡️', d: '防御 +12%，气血 +6%。', b: { defP: 0.12, hpP: 0.06 } },
+  r_dizu: { n: '帝族血玉', from: 'dizu', i: '🔴', d: '攻击 +10%，暴击 +4%。', b: { atkP: 0.1, crit: 0.04 } },
+  r_heian: { n: '黑暗至尊之核', from: 'heianzz', i: '⚫', d: '全属性 +7%。', b: { hpP: 0.07, atkP: 0.07, defP: 0.07, mpP: 0.07 } },
   r_dihuo: { n: '地火液晶', from: 'baoling', i: '🔶', d: '攻击 +8%，气血 +6%。', b: { atkP: 0.08, hpP: 0.06 } },
   r_zhanhun: { n: '古灵战旗', from: 'zhanhun', i: '🚩', d: '攻击 +6%，暴击 +4%。', b: { atkP: 0.06, crit: 0.04 } },
   r_jitan: { n: '锁仙链', from: 'jitanshi', i: '⛓️', d: '防御 +8%，符力 +8%。', b: { defP: 0.08, mpP: 0.08 } },
@@ -51,6 +56,8 @@ const TRADES = [
   { npc: 'bzlao', t: '兽骨 ×10 → 宝药 ×3（战场上捡来的）', need: [['bone', 10]], give: () => addItem('baoyao', 3) },
   { npc: 'yunlao', t: '灵药 ×5 → 一门宝术熟练度 +20（云族的心法）', need: [['lingyao', 5]], prof: 20 },
   { npc: 'qidaolin', t: '宝药 ×2 → 一门宝术熟练度 +30（无敌道的练法，“学费”）', need: [['baoyao', 2]], prof: 30 },
+  { npc: 'mengtz', t: '兽骨 ×12 → 宝药 ×4（帝关的军需）', need: [['bone', 12]], give: () => addItem('baoyao', 4) },
+  { npc: 'qiwanghou', t: '凶兽肉 ×4 → 一门宝术熟练度 +25（七王祠里的旧拳谱）', need: [['meat', 4]], prof: 25 },
 ];
 
 /* ---------- daily bounties: one small job per person per day ---------- */
@@ -61,7 +68,8 @@ const BOUNTY_FROM = [
   { npc: 'leiting', open: () => C.story.q >= qi('q_shouyan'), areas: ['shiguo'] },
   { npc: 'huohuang', open: () => !!C.story.f.huohuang, areas: ['huoguo'] },
   { npc: 'bzlao', open: () => C.story.q >= qi('q_baojie'), areas: ['baizu'] },
-  { npc: 'qidaolin', open: () => !!C.story.f.dojo, areas: ['shangjie'] },
+  { npc: 'qidaolin', open: () => !!C.story.f.dojo, areas: ['shangjie', 'sanqian', 'xiangu'] },
+  { npc: 'mengtz', open: () => !!C.story.f.v8, areas: ['diguan'] },
 ];
 
 /* ---------- titles (achievements) ---------- */
@@ -79,6 +87,10 @@ const ACH = [
   { id: 'zhanshen', n: '斩神', d: '死过一回，再站起来，斩下一位神明', ok: () => !!C.story.f.qishen },
   { id: 'dengtian', n: '登天者', d: '走完几千年没人走完的登天路', ok: () => !!C.story.f.v4end },
   { id: 'zui', n: '罪血登顶', d: '在至尊古台第九层的天碑上，刻下一个“罪”字', ok: () => !!C.story.f.gutai },
+  { id: 'zhengba', n: '三千州第一', d: '赢下三千州天才争霸', ok: () => !!C.story.f.v6end },
+  { id: 'shuangshi', n: '双石同心', d: '和石毅并肩，打退宁川', ok: () => !!C.story.f.xgNing },
+  { id: 'qiwang', n: '七王之后', d: '知道了“罪血”这两个字真正的意思', ok: () => !!C.story.f.qiwangDone },
+  { id: 'taiping', n: '万年太平', d: '带着石村八百兵，替九天十地挣来一万年太平', ok: () => !!C.story.f.v9end },
   { id: 'pets3', n: '一猴两鸟', d: '凑齐三个伙伴', ok: () => Object.keys(C.pets).length >= 3 },
   { id: 'evo', n: '血脉觉醒', d: '让一个伙伴觉醒', ok: () => Object.values(C.pets).some(p => p.evo) },
   { id: 'codex', n: '博闻', d: '凶兽图鉴见过 30 种', ok: () => Object.keys(C.codex || {}).length >= 30 },
