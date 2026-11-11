@@ -319,7 +319,7 @@ async function S_lei() {
   await nar('雷池是一片山顶石台。天上的雷云压得极低，一道道雷光劈下来，砸在石台上，炸得碎石乱飞。几个师兄坐在雷光里，头发根根竖起，冒着青烟。');
   await say('雷池师兄', '新来的？雷道法则得自己挨着劈去悟。坐那儿，什么时候被劈明白了，什么时候算完。');
   await nar('你坐了下去。第一道雷劈下来，你眼前一白，鼻子里全是焦糊味。第二道、第三道……');
-  for (let k = 0; ; k++) { const th = await miniGame('thunder', { title: '引雷', desc: k ? '再来。这回看准了。' : '一道雷光在云里亮起，朝你直劈下来——', strikes: 5, need: 3 }); if (th.ok || th.skip) break; await nar('你被劈得眼前一黑，头发全竖了起来，鼻子里全是焦糊味。缓过气来，接着坐。'); fullHeal(); }
+  for (let k = 0; ; k++) { const th = await miniGame('thunder', { title: '引雷', desc: k ? '再来。这回看准了。' : '一道雷光在云里亮起，朝你直劈下来——', strikes: 5, need: 3 }); if (th.ok || th.skip || th.gaveUp) break; await nar('你被劈得眼前一黑，头发全竖了起来，鼻子里全是焦糊味。缓过气来，接着坐。'); fullHeal(); }
   await nar('不知道挨了多少下，你忽然看清了雷光里的纹路——它们和骨文一样，是有规律的。');
   await study('lei');
   await nar('你抬起手，一道细细的电光在你指尖跳了起来。');

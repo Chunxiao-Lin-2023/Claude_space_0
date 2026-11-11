@@ -66,9 +66,11 @@ function runeShowStep() { const R = DLG && DLG.rune; if (!R || R.phase !== 'show
     if (Q.shown < Q.seq.length) { Q.shown++; sfx('click'); renderDlg(); netSync(); runeShowStep(); }
     else { Q.phase = 'input'; Q.t0 = now(); renderDlg(); netSync(); } }, R.shown === 0 ? 500 : R.shown < R.seq.length ? 520 : 800); }
 function runeTap(i) { const R = DLG && DLG.rune; if (!R || R.phase !== 'input' || NETROLE === 'guest' || R.got.includes(i)) return;
-  if (R.seq[R.got.length] === i) { R.got.push(i); R.bad = -1; sfx('click'); if (R.got.length === R.seq.length) { R.phase = 'done'; R.ok = R.fails === 0 && now() - R.t0 <= R.dur; sfx('epic'); renderDlg(); netSync(); setTimeout(() => runeEnd(R.ok), 900); return; } }
+  if (R.seq[R.got.length] === i) { R.got.push(i); R.bad = -1; sfx('click'); if (R.got.length === R.seq.length) { R.phase = 'done'; R.ok = R.fails === 0 && now() - R.t0 <= R.dur; sfx(R.ok ? 'epic' : 'click'); renderDlg(); netSync(); if (R.ok) setTimeout(() => runeEnd(true), 900); return; } }
   else { R.fails++; R.bad = i; sfx('fail'); }
   renderDlg(); netSync(); }
+function runeRetry() { const R = DLG && DLG.rune; if (!R || R.phase !== 'done' || R.ok || NETROLE === 'guest') return; Object.assign(R, { seq: shuffle(R.seq.slice()), got: [], phase: 'show', shown: 0, fails: 0, bad: -1, t0: 0, tries: (R.tries || 0) + 1, k: uid() }); sfx('click'); renderDlg(); netSync(); runeShowStep(); }
+function runeAccept() { const R = DLG && DLG.rune; if (R && R.phase === 'done' && !R.ok && NETROLE !== 'guest') runeEnd(false); }
 function runeSkip() { if (DLG && DLG.rune && NETROLE !== 'guest') runeEnd(false); }
 function runeEnd(ok) { const D_ = DLG; if (!D_ || !D_.rune) return; DLG = null; logLine(ok ? '骨文一气呵成地连了起来，你一下子就看透了它的走向。' : '骨文连上了，可还不够顺，往后得慢慢磨。', 'dim'); renderDlg(); netSync(); D_.res(ok); }
 function runeHtml(R) {
@@ -77,7 +79,7 @@ function runeHtml(R) {
   const numOn = i => R.phase !== 'show' || order[i] < R.shown, lit = i => R.phase === 'show' ? order[i] < R.shown : R.phase === 'done' || R.got.includes(i);
   const nodes = R.nodes.map((o, i) => `<g class="nd ${lit(i) ? 'lit' : ''} ${R.phase === 'show' && order[i] === R.shown - 1 ? 'pop' : ''} ${R.phase === 'input' && R.seq[R.got.length] === i ? 'next' : ''} ${R.bad === i ? 'bad' : ''}" onclick="runeTap(${i})" transform="translate(${o.x} ${o.y})"><circle r="22"/><path d="${o.g}"/>${numOn(i) ? `<g class="num" transform="translate(16 -16)"><circle r="9"/><text y="4">${order[i] + 1}</text></g>` : ''}</g>`).join('');
   const left = R.phase === 'input' ? Math.max(0, R.dur - (now() - R.t0)) : R.dur;
-  const msg = R.phase === 'show' ? `看骨文一道道亮起来……（${R.shown}/${R.seq.length}）` : R.phase === 'input' ? `按 1 → ${R.seq.length} 的顺序点，把骨文连起来（${R.got.length}/${R.seq.length}）${R.fails ? `　<span class="bad">点错 ${R.fails} 次</span>` : ''}` : R.ok ? '一气呵成！熟练度起步更高。' : '连上了。';
+  const msg = R.phase === 'show' ? `看骨文一道道亮起来……（${R.shown}/${R.seq.length}）` : R.phase === 'input' ? `按 1 → ${R.seq.length} 的顺序点，把骨文连起来（${R.got.length}/${R.seq.length}）${R.fails ? `　<span class="bad">点错 ${R.fails} 次</span>` : ''}` : R.ok ? '一气呵成！熟练度起步更高。' : `连上了，不过${R.fails ? `点错了 ${R.fails} 次` : '慢了一点'}。一气呵成的话，熟练度起步更高。`;
   return `<div class="line"><div>${sealHtml({ n: R.name, c: '#7a4a1a' })}</div><div class="tx nar">${R.phase === 'done' ? '骨文连成了一体，在你眼前亮了一下，钻进了你的骨头里。' : R.phase === 'show' ? '骨文在你眼前一道接一道地亮起来，串成一条路。' : '照着它的路，自己走一遍。不用记——数字都在。'}</div></div>
-    <div class="rune"><svg viewBox="0 0 320 190">${links}${nodes}</svg>${R.phase === 'input' ? `<div class="rtime" title="又快又不点错，熟练度起步更高"><i style="animation-duration:${R.dur}ms;animation-delay:-${R.dur - left}ms"></i></div>` : ''}<div class="msg">${msg}</div></div>${R.phase !== 'done' ? `<div class="ch"><button class="chb" onclick="runeSkip()">先不连了，直接学（跳过）</button></div>` : ''}`;
+    <div class="rune"><svg viewBox="0 0 320 190">${links}${nodes}</svg>${R.phase === 'input' ? `<div class="rtime" title="又快又不点错，熟练度起步更高"><i style="animation-duration:${R.dur}ms;animation-delay:-${R.dur - left}ms"></i></div>` : ''}<div class="msg">${msg}</div></div>${R.phase !== 'done' ? `<div class="ch"><button class="chb" onclick="runeSkip()">先不连了，直接学（跳过）</button></div>` : R.ok ? '' : `<div class="ch"><button class="chb" onclick="runeRetry()">↻ 再连一次</button><button class="chb" onclick="runeAccept()">就这样，学下来</button></div>`}`;
 }

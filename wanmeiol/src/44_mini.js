@@ -2,7 +2,8 @@
    举石锁 (timing bar) · 引雷 (shrinking ring) · 破阵 (lights-out) · 潜行 (step while the beast sleeps) · 搬石 (tap fast)
    They run in the 对话 screen like the 骨文 game. State lives in DLG.mini on the host; a co-op partner's taps arrive through
    miniTap (in CMD_NAMES). Moving parts are drawn from M.t0 (shifted to the guest's clock on arrival), so both screens agree.
-   Every game can be skipped; story scenes treat a skip as passing without the bonus. */
+   Every game can be skipped; story scenes treat a skip as passing without the bonus. A failed round never ends on its own:
+   the player chooses 再试一次 (same game, fresh start) or 跳过 (the scene goes on with its failure text). */
 const MINI = {
   lift: { title: '举石锁', hint: '石锁在晃。指针走到<b>红色区域</b>时点“发力”。',
     init: o => ({ rounds: o.rounds || 3, need: o.need || 2, r: 0, hits: 0, T: [1300, 1050, 860, 760], Z: [[38, 62], [43, 60], [46, 57], [48, 56]] }),
@@ -47,9 +48,9 @@ const MINI = {
 };
 function miniGame(kind, o = {}) {
   if (window.__dbg && __dbg.auto) return Promise.resolve({ ok: !__dbg.miniFail, score: __dbg.miniFail ? 0 : 3 });
-  const G = MINI[kind], M = Object.assign({ kind, k: uid(), t0: now() + 600, title: o.title || G.title, desc: o.desc || '' }, G.init.call(G, o));
-  return new Promise(res => { DLG = { mini: M, res }; renderDlg(); netSync(); miniLoop(); });
+  return new Promise(res => { DLG = { mini: miniNew(kind, o), res }; renderDlg(); netSync(); miniLoop(); });
 }
+function miniNew(kind, o, tries = 0) { const G = MINI[kind]; return Object.assign({ kind, o, tries, k: uid(), t0: now() + 600, title: o.title || G.title, desc: o.desc || '' }, G.init.call(G, o)); }
 function miniLoop() { clearInterval(UI.miniT); UI.miniT = setInterval(() => { const M = DLG && DLG.mini; if (!M) { clearInterval(UI.miniT); return; } if (M.done) return; const G = MINI[M.kind];
   if (G.check && NETROLE !== 'guest' && now() > M.t0) { const r = G.check.call(G, M); if (r && r.end !== undefined) return miniEnd(r.end, r.score); if (r !== undefined || M._dirty) { M._dirty = 0; renderDlg(); netSync(); } }
   if (!M.started && now() >= M.t0) { M.started = 1; renderDlg(); }
@@ -57,10 +58,13 @@ function miniLoop() { clearInterval(UI.miniT); UI.miniT = setInterval(() => { co
 function miniTap(a) { const M = DLG && DLG.mini; if (!M || M.done || NETROLE === 'guest' || now() < M.t0) return; const G = MINI[M.kind], r = G.tap.call(G, M, a);
   if (r && r.end !== undefined) return miniEnd(r.end, r.score); renderDlg(); netSync(); }
 function miniSkip() { const M = DLG && DLG.mini; if (!M || M.done || NETROLE === 'guest') return; miniEnd(false, 0, true); }
-function miniEnd(ok, score, skip) { const M = DLG.mini; M.done = true; M.ok = ok; M.skip = !!skip; sfx(ok ? 'epic' : skip ? 'click' : 'fail'); renderDlg(); netSync();
+function miniEnd(ok, score, skip) { const M = DLG.mini; M.done = true; M.ok = ok; M.skip = !!skip; M.score = score || 0; sfx(ok ? 'epic' : skip ? 'click' : 'fail'); if (!ok && !skip) { M.ask = true; renderDlg(); netSync(); return; } renderDlg(); netSync();
   setTimeout(() => { const D_ = DLG; if (!D_ || D_.mini !== M) return; DLG = null; clearInterval(UI.miniT); renderDlg(); netSync(); D_.res({ ok, score: score || 0, skip: !!skip }); }, skip ? 50 : 1100); }
+function miniRetry() { const M = DLG && DLG.mini; if (!M || !M.ask || NETROLE === 'guest') return; sfx('click'); DLG.mini = miniNew(M.kind, M.o, (M.tries || 0) + 1); renderDlg(); netSync(); miniLoop(); }
+function miniGiveUp() { const D_ = DLG, M = D_ && D_.mini; if (!M || !M.ask || NETROLE === 'guest') return; sfx('click'); DLG = null; clearInterval(UI.miniT); renderDlg(); netSync(); D_.res({ ok: false, score: M.score || 0, skip: false, gaveUp: true }); }
 function miniHtml(M) { const G = MINI[M.kind];
-  if (M.done) return `<div class="line"><div>${sealHtml({ n: M.title, c: '#7a4a1a' })}</div><div class="tx nar">${M.skip ? '先不玩了。' : M.ok ? '<b>成了！</b>' : '没成……'}</div></div>`;
+  if (M.ask) return `<div class="line"><div>${sealHtml({ n: M.title, c: '#7a4a1a' })}</div><div class="tx nar">没成……${M.tries ? `（已经试了 ${M.tries + 1} 回）` : ''}要再来一次吗？</div></div><div class="ch"><button class="chb" onclick="miniRetry()">↻ 再试一次</button><button class="chb" onclick="miniGiveUp()">跳过，接着往下</button></div>`;
+  if (M.done) return `<div class="line"><div>${sealHtml({ n: M.title, c: '#7a4a1a' })}</div><div class="tx nar">${M.skip ? '先不玩了。' : '<b>成了！</b>'}</div></div>`;
   return `<div class="line"><div>${sealHtml({ n: M.title, c: '#7a4a1a' })}</div><div class="tx nar">${M.desc || ''}<div class="mhint">${G.hint}</div></div></div>
     <div class="mini m-${M.kind}">${now() < M.t0 ? '<div class="mready">准备……</div>' : ''}${G.html.call(G, M)}</div><div class="ch"><button class="chb" onclick="miniSkip()">先不玩了（跳过）</button></div>`; }
 addEventListener('keydown', e => { if (DLG && DLG.mini && !DLG.mini.done && (e.key === ' ' || e.key === 'Enter') && DLG.mini.kind !== 'lights') { e.preventDefault(); miniTap(); } }, true);

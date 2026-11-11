@@ -79,6 +79,9 @@ const { chromium } = require('playwright');
     ok('rumorWide', document.body.classList.contains('cols') ? re.classList.contains('multi') && re.querySelectorAll('.rl').length === 3 : re.classList.contains('on'));
     re.click(); await w8(20); ok('rumorHistory', UI.nav === 'log' && UI.logTab === 'rumor' && document.getElementById('sbody').textContent.includes(c.rumorLog[0].t.replace(/<[^>]+>/g, '').slice(0, 6)));
     re.click(); ok('rumorHistoryStays', UI.nav === 'log'); UI.nav = null; UI.logTab = 'log'; renderSide(); refresh();
+    // a failed mini-game asks: 再试一次 or 跳过 (never ends by itself)
+    { const au = __dbg.auto; __dbg.auto = false; const pr = miniGame('mash', { time: 250 }); await w8(1300); const M1 = DLG && DLG.mini; ok('miniFailAsks', !!(M1 && M1.ask)); await w8(1500); ok('miniFailWaits', DLG && DLG.mini === M1);
+      miniRetry(); ok('miniRetry', DLG && DLG.mini && !DLG.mini.done && DLG.mini.tries === 1); await w8(1300); ok('miniRetryFailsAgain', DLG.mini.ask); miniGiveUp(); const res = await pr; ok('miniGiveUp', res.ok === false && res.gaveUp && !DLG); __dbg.auto = au; }
     // difficulty
     c.diff = 2; const u2 = mobUnit('wolf', 10); c.diff = 0; const u0 = mobUnit('wolf', 10); c.diff = 1; ok('difficulty', u2.hpMax > u0.hpMax);
     return out; });

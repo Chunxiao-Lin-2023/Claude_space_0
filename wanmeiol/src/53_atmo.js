@@ -29,7 +29,8 @@ function atmoUpdate() { if (!C || STATE.mode !== 'play') return; const P = atmoP
 function atmoPaint(id, kk, P, battle) { const cv = $(id); if (!cv) return; const W = cv.parentNode.clientWidth, H = cv.parentNode.clientHeight; if (!W || !H) return;
   const loc = atmoLoc(), nt = isNight() || !!STATE.dungeon, key = loc + W + 'x' + H + nt + P.k + (C.story.f.moved ? 'm' : ''); if (UI[kk] === key) return; UI[kk] = key;
   const dpr = Math.min(devicePixelRatio || 1, 1.5); cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr); const g = cv.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0);
-  paintScene(g, W, H, loc, nt, true, !battle);
+  const H2 = Math.min(H, Math.round(W * 0.78)), oy = H - H2; g.save(); g.translate(0, oy); paintScene(g, W, H2, loc, nt, true, !battle); g.restore(); // tall screens: the painting sits at the bottom, its sky stretched up
+  if (oy > 0) g.drawImage(cv, 0, Math.ceil(oy * dpr) + 1, cv.width, 1, 0, 0, W, oy + 1);
   if (battle) { const r = g.createRadialGradient(W / 2, 0, 0, W / 2, 0, Math.max(W, H)); r.addColorStop(0, 'rgba(58,21,18,.62)'); r.addColorStop(0.75, 'rgba(22,9,9,.9)'); r.addColorStop(1, 'rgba(14,6,6,.95)'); g.fillStyle = r; g.fillRect(0, 0, W, H); return; }
   const l = g.createLinearGradient(0, 0, 0, H); l.addColorStop(0, rgba(P.c1, 0.45)); l.addColorStop(0.35, rgba(P.c0, 0.78)); l.addColorStop(1, rgba(P.c0, 0.93)); g.fillStyle = l; g.fillRect(0, 0, W, H);
   const v = g.createRadialGradient(W * 0.3, 0, 0, W * 0.3, 0, W * 0.9); v.addColorStop(0, rgba(P.c1, 0.35)); v.addColorStop(1, rgba(P.c1, 0)); g.fillStyle = v; g.fillRect(0, 0, W, H); }
