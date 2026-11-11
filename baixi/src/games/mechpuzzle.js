@@ -1,7 +1,10 @@
 /* 双影机关 — co-op two-character grid puzzle (realtime, 2 seats, host authoritative). */
 const D = BX.draw, C = BX.C;
 const TEST = !!BX.test;
-const MOVE_T = TEST ? .09 : .17;
+const MOVE_T = TEST ? .09 : .16;
+/* feel: hold-to-repeat starts after HOLD_DELAY (a slightly long tap is still ONE step); a crate push takes PUSH_K× longer (weight);
+   up to QMAX taps are buffered while a step is still playing (Baba Is You style) */
+const HOLD_DELAY = TEST ? .12 : .22, PUSH_K = 1.35, QMAX = 2, BUMP_T = .15;
 const CH = [{n: '阿木', col: '#b5652e', col2: '#7a3f18', ab: '力气大，能推动木箱'}, {n: '小灵', col: '#2f9aa0', col2: '#1d6468', ab: '身子轻，能走裂地、钻窄缝'}];
 const DIRS = {U: [0, -1], R: [1, 0], D: [0, 1], L: [-1, 0]};
 const PCOL = {a: '#d0533f', b: '#e0a020', c: '#3f8fd0'};
@@ -327,12 +330,12 @@ BX.register({
     const seatOf = ch => ch ^ st.role;
     let unlocked = TEST ? 1 : ctx.load('unlocked', 1);
     const startLv = TEST ? 0 : BX.clamp(ctx.load('cur', 0), 0, LEVELS.length - 1);
-    const st = {lv: startLv, S: null, ph: 'play', t: 0, gen: 0, face: ['D', 'D'], cd: [0, 0], cleared: 0, moves: 0, ev: [], evId: 0, over: false, unl: unlocked, role: ctx.mode === 'ai' ? (+ctx.opts.role || 0) : 0};
+    const st = {lv: startLv, S: null, ph: 'play', t: 0, gen: 0, face: ['D', 'D'], cd: [0, 0], cleared: 0, moves: 0, ev: [], evId: 0, over: false, unl: unlocked, role: ctx.mode === 'ai' ? (+ctx.opts.role || 0) : 0, ga: [0, 0], gl: [-1, -1]};
     let L = null;
     const hist = [];   // host-only undo stack
     function load(lv) {
       st.lv = lv; const P = parse(LEVELS[lv]); L = P.L; st.S = P.S; st.ph = 'intro'; st.t = TEST ? .3 : 1.4; st.gen++; st.face = ['D', 'D']; st.cd = [0, 0]; st.moves = 0;
-      hist.length = 0; aiReset();
+      hist.length = 0; aiReset(); clearQ();
     }
     const fx = (k, o) => { st.ev.push(Object.assign({k, id: ++st.evId}, o || {})); if (st.ev.length > 14) st.ev.shift(); };
 
@@ -420,6 +423,26 @@ BX.register({
 
     /* ---------------- host simulation ---------------- */
     const lastU = [0, 0], lastCmd = [{r: 0, s: 0, z: 0, w: 0}, {r: 0, s: 0, z: 0, w: 0}];
+    /* per-seat host input state: buffered taps, hold-to-repeat timer, tap-to-walk goal */
+    const HQ = [[], []], lastTap = [0, 0], holdD = ['', ''], holdT = [0, 0], holdBump = [false, false], lastGn = [0, 0];
+    function clearQ() { for (let k = 0; k < 2; k++) { HQ[k].length = 0; holdT[k] = 0; } st.gl = [-1, -1]; }
+    /* next step towards a tapped cell (plain walking BFS; a final push into an adjacent crate is allowed) → {d} | {why} */
+    function walkTo(ch, cell) {
+      const S = st.S, from = S.p[ch];
+      if (from === cell) return {done: 1};
+      const prev = new Map([[from, null]]), q = [from];
+      for (let h = 0; h < q.length && !prev.has(cell); h++) {
+        const u = q[h];
+        for (const d of Object.keys(DIRS)) {
+          const n = nb(L, u, d); if (n < 0 || prev.has(n)) continue;
+          if (charAt(S, n) >= 0 || S.cr.includes(n) || !walkable(L, S, ch, n)) continue;
+          prev.set(n, [u, d]); q.push(n);
+        }
+      }
+      if (prev.has(cell)) { let c = cell; while (prev.get(c) && prev.get(c)[0] !== from) c = prev.get(c)[0]; return {d: prev.get(c)[1], last: prev.get(cell)[0] === from}; }
+      for (const d of Object.keys(DIRS)) if (nb(L, from, d) === cell) return tryMove(L, S, ch, d) ? {d, last: 1} : {why: bumpWhy(S, ch, d) || 'far'};
+      return {why: 'far'};
+    }
     function bumpWhy(S, who, d) {
       const n = nb(L, S.p[who], d); if (n < 0) return '';
       if (charAt(S, n) >= 0) return 'mate';
@@ -439,8 +462,8 @@ BX.register({
       for (let si = 0; si < inputs.length; si++) {
         const inp = inputs[si], lc = lastCmd[si]; if (!inp || !lc) continue;
         if (inp.rc != null && inp.rc > lc.r) { lc.r = inp.rc; if (st.ph !== 'clear') { fx('reset'); load(st.lv); } }
-        if (inp.zc != null && inp.zc > lc.z) { lc.z = inp.zc; if (st.ph === 'play') { if (hist.length) { const h = hist.pop(); st.S = h.S; st.face = h.face; st.moves = Math.max(0, st.moves - 1); fx('undo'); aiSync(); } else fx('noundo'); } }
-        if (inp.wc != null && inp.wc > lc.w) { lc.w = inp.wc; if (ctx.mode === 'ai' && st.ph !== 'done') { st.role ^= 1; aiSync(); fx('swap', {c: chOf(si)}); } }
+        if (inp.zc != null && inp.zc > lc.z) { lc.z = inp.zc; clearQ(); if (st.ph === 'play') { if (hist.length) { const h = hist.pop(); st.S = h.S; st.face = h.face; st.moves = Math.max(0, st.moves - 1); st.cd = [0, 0]; fx('undo'); aiSync(); } else fx('noundo'); } }
+        if (inp.wc != null && inp.wc > lc.w) { lc.w = inp.wc; clearQ(); if (ctx.mode === 'ai' && st.ph !== 'done') { st.role ^= 1; aiSync(); fx('swap', {c: chOf(si)}); } }
         if (inp.sc != null && inp.sc > lc.s) { lc.s = inp.sc; if (inp.sl >= 0 && inp.sl < Math.max(st.unl, 1) + 0 && inp.sl < LEVELS.length) { fx('reset'); load(inp.sl); } }
       }
       if (st.ph === 'intro') { st.t -= dt; if (st.t <= 0) st.ph = 'play'; }
@@ -454,10 +477,17 @@ BX.register({
         }
         return;
       }
+      for (let seat = 0; seat < 2; seat++) {   // taps / goals arriving outside play are consumed (not replayed later)
+        const inp = inputs[seat] || {};
+        if (inp.tp) for (const [n, d] of inp.tp) if (n > lastTap[seat]) { lastTap[seat] = n; if (st.ph === 'play' && DIRS[d]) { if (HQ[seat].length >= QMAX) HQ[seat].pop(); HQ[seat].push(d); st.gl[chOf(seat)] = -1; } }
+        if (inp.gn != null && inp.gn !== lastGn[seat]) { lastGn[seat] = inp.gn; st.ga[seat] = inp.gn; if (st.ph === 'play') { st.gl[chOf(seat)] = inp.gc >= 0 ? inp.gc : -1; if (inp.gc >= 0) HQ[seat].length = 0; } }
+      }
       if (st.ph !== 'play') return;
       for (let seat = 0; seat < 2; seat++) {
         const inp = inputs[seat] || {}, ch = chOf(seat);
         st.cd[ch] = Math.max(0, st.cd[ch] - dt);
+        const hd = DIRS[inp.d] && inp.q == null ? inp.d : '';
+        if (hd !== holdD[seat]) { holdD[seat] = hd; holdT[seat] = 0; holdBump[seat] = false; } else if (hd) holdT[seat] += dt;
         const u = inp.uc != null ? inp.uc : 0;
         if (u !== lastU[seat]) {
           lastU[seat] = u;
@@ -466,17 +496,30 @@ BX.register({
           else if (r) { hist.push({S: cloneS(st.S), face: st.face.slice()}); if (hist.length > 300) hist.shift(); st.S = r.S; fx('lever', {c: ch}); if (inp.q != null && inp.pg === planGen) ai[seat].ptr = inp.q + 1; }
           else if (inp.q == null) fx('nolever', {c: ch});
         }
-        if (inp.d && DIRS[inp.d] && st.cd[ch] <= 0) {
-          st.face[ch] = inp.d;
-          const r = tryMove(L, st.S, ch, inp.d);
-          if (r) {
-            hist.push({S: cloneS(st.S), face: st.face.slice()}); if (hist.length > 300) hist.shift();
-            st.S = r.S; st.cd[ch] = MOVE_T; st.moves++; visited[ch].add(r.to);
-            fx('mv', {c: ch, f: r.from, t: r.to});
-            if (r.push) fx(r.fill ? 'fill' : 'push', {c: ch, f: r.crFrom, t: r.crTo});
-            if (r.key) fx('key', {c: ch, t: r.to}); if (r.lock) fx('lock', {t: r.to});
-            if (inp.q != null && inp.pg === planGen) ai[seat].ptr = inp.q + 1;
-          } else { st.cd[ch] = MOVE_T * .6; if (inp.q == null) fx('bump', {c: ch, w: bumpWhy(st.S, ch, inp.d)}); }
+        if (st.cd[ch] > 0) continue;
+        // which step now: AI plan step → buffered tap → tap-to-walk goal → held key/stick (after the repeat delay)
+        let d = '', src = '', cont = 0;
+        if (inp.q != null) { d = DIRS[inp.d] ? inp.d : ''; src = 'ai'; cont = 1; }
+        else if (HQ[seat].length) { d = HQ[seat].shift(); src = 'tap'; cont = HQ[seat].length || (hd === d && holdT[seat] >= HOLD_DELAY - MOVE_T) ? 1 : 0; }
+        else if (st.gl[ch] >= 0) { const w = walkTo(ch, st.gl[ch]); if (w.d) { d = w.d; src = 'goal'; cont = w.last ? 0 : 1; if (w.last) st.gl[ch] = -1; } else { if (w.why) fx('bump', {c: ch, w: w.why, n: -1}); st.gl[ch] = -1; } }
+        else if (hd && holdT[seat] >= HOLD_DELAY) { d = hd; src = 'hold'; cont = 1; }
+        if (!d) continue;
+        st.face[ch] = d;
+        const r = tryMove(L, st.S, ch, d);
+        if (r) {
+          hist.push({S: cloneS(st.S), face: st.face.slice()}); if (hist.length > 300) hist.shift();
+          const dur = MOVE_T * (r.push ? PUSH_K : 1);
+          st.S = r.S; st.cd[ch] = dur; st.moves++; visited[ch].add(r.to); holdBump[seat] = false;
+          fx('mv', {c: ch, f: r.from, t: r.to, p: r.push ? 1 : 0, n: cont});
+          if (r.push) fx(r.fill ? 'fill' : 'push', {c: ch, f: r.crFrom, t: r.crTo});
+          if (r.key) fx('key', {c: ch, t: r.to}); if (r.lock) fx('lock', {t: r.to});
+          if (inp.q != null && inp.pg === planGen) ai[seat].ptr = inp.q + 1;
+        } else {
+          st.cd[ch] = MOVE_T * .5;
+          if (src === 'goal') st.gl[ch] = -1;
+          // one bump per key press (holding against a wall doesn't spam sound / bubbles)
+          if (src !== 'ai' && !(src === 'hold' && holdBump[seat])) fx('bump', {c: ch, w: bumpWhy(st.S, ch, d), i: nb(L, st.S.p[ch], d), d});
+          if (src === 'hold' || (src === 'tap' && hd === d)) holdBump[seat] = true;
         }
       }
       if (isWin(L, st.S)) {

@@ -32,10 +32,10 @@ const angDiff = (a, b) => { let d = a - b; while (d > Math.PI) d -= Math.PI * 2;
 BX.register({
   id: 'racing', title: '飞驰赛车', cat: 'sports', order: 3, sub: '漂移过弯，三圈定胜负',
   desc: '俯视角小赛车，在三条原创赛道上跑三圈。车辆会轻微漂移，出赛道会减速，车与车可以碰撞。最多四人，空位由电脑车手补上。',
-  kind: 'realtime', seats: [2, 4], defSeats: 2, noFirst: true, hint: false,
+  kind: 'realtime', seats: [2, 4], defSeats: 2, noFirst: true, hint: false, snapHz: 30, inputHz: 60,
   options: [{key: 'trk', label: '赛道', choices: [[0, '茶园环线'], [1, '九曲回廊'], [2, '龙脊山道']], def: 0}, {key: 'laps', label: '圈数', choices: [[2, '2 圈'], [3, '3 圈'], [5, '5 圈']], def: 3},
     {key: 'assist', label: '辅助转向', choices: [[1, '开'], [0, '关']], def: 1}],
-  howto: ['触屏<b>自动油门</b>：按住 ◀ ▶ 转向，按「刹」减速/倒车；键盘 ↑↓←→ 或 WASD。',
+  howto: ['触屏<b>自动油门</b>：按住 ◀ ▶ 转向，或单人时<b>在赛道画面上按住左右拖动</b>（拖得越远打得越多，松手回正）；按「刹」减速/倒车；键盘 ↑↓←→ 或 WASD。',
     '单人时镜头跟随你的车，右上角小地图显示全场；左上角是名次、本圈用时和最快圈。',
     '「辅助转向」开启时，不打方向也会被轻轻带回赛道中线；半透明的车是你的<b>最快圈幽灵</b>，追上它！',
     '弯前松一点或点刹，比冲出赛道进草地快得多。'],
@@ -61,7 +61,7 @@ BX.register({
     for (let i = 0; i < n; i++) {
       const row = Math.floor(i / 2), lane = i % 2 ? 1 : -1, ci = (N - 3 - row * 5) % N, p = TR.pts[ci], a = TR.dir[ci];
       const nx = -Math.sin(a), ny = Math.cos(a);
-      st.c.push({x: p[0] + nx * lane * TW * .22, y: p[1] + ny * lane * TW * .22, a, vx: 0, vy: 0, lap: -1, ci, fin: 0, off: 0, best: 0});
+      st.c.push({x: p[0] + nx * lane * TW * .22, y: p[1] + ny * lane * TW * .22, a, vx: 0, vy: 0, lap: -1, ci, fin: 0, off: 0, best: 0, sv: 0});
     }
     const cv = ctx.canvas(), fx = K.fx(), pads = K.pads(ctx, cv);
     const evSeen = {v: -1}, skids = [];
@@ -81,10 +81,15 @@ BX.register({
       if (best < old - N / 2) c.lap++; else if (best > old + N / 2) c.lap--;
     }
     const prog = c => c.fin ? 1e9 - c.fin : c.lap * N + c.ci;
-    function stepCar(i, inp, dt) {
-      const c = st.c[i], go = st.ph === 'race' || (st.ph === 'fin' && !c.fin);
-      let steer = BX.clamp(+inp.s || 0, -1, 1), thr = BX.clamp(+inp.t || 0, -1, 1);
-      if (!go) { thr = c.fin ? 0 : 0; if (c.fin) steer = 0; }
+    /* handling: steering builds up over ~0.14 s (snaps back / reverses faster), yaw rate falls off with speed, and at speed a
+       hard turn trades rear grip for a controllable slide.  sim = guest prediction on a copy (no events, no race bookkeeping). */
+    function stepCar(i, inp, dt, sim) {
+      const c = sim || st.c[i], go = st.ph === 'race' || (st.ph === 'fin' && !c.fin);
+      let sIn = BX.clamp(+inp.s || 0, -1, 1), thr = BX.clamp(+inp.t || 0, -1, 1);
+      if (!go) { thr = c.fin ? 0 : 0; if (c.fin) sIn = 0; }
+      const sv = c.sv || 0, rate = Math.abs(sIn) > Math.abs(sv) && sIn * sv >= 0 ? 7 : 13;
+      c.sv = sv + BX.clamp(sIn - sv, -rate * dt, rate * dt);
+      const steer = c.sv;
       const fx_ = Math.cos(c.a), fy = Math.sin(c.a);
       let vf = c.vx * fx_ + c.vy * fy, vl = -c.vx * fy + c.vy * fx_;
       const off = c.off, maxV = off ? 135 : 330;
@@ -92,19 +97,19 @@ BX.register({
       else if (thr < 0) vf += thr * (vf > 0 ? 420 : 140) * dt;
       vf -= vf * (off ? 1.6 : .35) * dt; if (vf < -90) vf = -90;
       if (vf > maxV) vf -= (vf - maxV) * 3 * dt;
-      const turn = steer * 2.75 * Math.min(1, Math.abs(vf) / 70) * Math.sign(vf || 1) * (1 - Math.min(.3, Math.abs(vf) / 1400));
+      const spK = Math.min(1, Math.abs(vf) / 330), turn = steer * (2.95 - .8 * spK) * Math.min(1, Math.abs(vf) / 60) * Math.sign(vf || 1);
       c.a += turn * dt;
-      vl *= Math.exp(-(off ? 4 : 5.2) * dt);
+      const slide = off ? 0 : Math.abs(steer) * BX.clamp((vf - 190) / 120, 0, 1);
+      vl *= Math.exp(-(off ? 4 : 5.8 - 2.6 * slide) * dt);
       if (c.fin) { vf *= Math.exp(-1.2 * dt); }
       const nfx = Math.cos(c.a), nfy = Math.sin(c.a);
       // keep momentum partly in old heading → light drift
       c.vx = nfx * vf - nfy * vl; c.vy = nfy * vf + nfx * vl;
-      const drift = Math.abs(steer) * Math.max(0, vf - 180) * .55 * dt * 6;
-      c.vx += -nfy * drift * -Math.sign(steer) * .5; c.vy += nfx * drift * -Math.sign(steer) * .5;
       c.x += c.vx * dt; c.y += c.vy * dt;
       if (c.x < CR) { c.x = CR; c.vx = Math.abs(c.vx) * .4; } if (c.x > WW - CR) { c.x = WW - CR; c.vx = -Math.abs(c.vx) * .4; }
       if (c.y < CR) { c.y = CR; c.vy = Math.abs(c.vy) * .4; } if (c.y > WH - CR) { c.y = WH - CR; c.vy = -Math.abs(c.vy) * .4; }
       const before = c.lap; track(c);
+      if (sim) return;
       if (c.lap > before && c.lap >= 1 && !c.fin) K.ev(st, 'lap', i, c.lap);
       if (!c.fin && c.lap >= LAPS) { st.order.push(i); c.fin = st.order.length; K.ev(st, 'fin', i, c.fin); if (st.ph === 'race') { st.ph = 'fin'; st.t = BX.test ? 3 : 15; } }
     }
@@ -114,7 +119,12 @@ BX.register({
         if (d < CR * 2 && d > 0) {
           const nx = dx / d, ny = dy / d, ov = CR * 2 - d; a.x -= nx * ov / 2; a.y -= ny * ov / 2; b.x += nx * ov / 2; b.y += ny * ov / 2;
           const rv = (b.vx - a.vx) * nx + (b.vy - a.vy) * ny;
-          if (rv < 0) { const imp = -rv * .8; a.vx -= nx * imp; a.vy -= ny * imp; b.vx += nx * imp; b.vy += ny * imp; if (imp > 40) K.ev(st, 'bump', Math.round((a.x + b.x) / 2), Math.round((a.y + b.y) / 2), Math.round(imp)); }
+          if (rv < 0) {
+            const imp = -rv * .8; a.vx -= nx * imp; a.vy -= ny * imp; b.vx += nx * imp; b.vy += ny * imp;
+            const tx = -ny, ty = nx, tv = ((b.vx - a.vx) * tx + (b.vy - a.vy) * ty), yaw = BX.clamp(tv * .0016 + (imp > 60 ? .04 : 0), -.18, .18);   // glancing hits twist the cars a little
+            a.a -= yaw; b.a += yaw;
+            if (imp > 40) K.ev(st, 'bump', Math.round((a.x + b.x) / 2), Math.round((a.y + b.y) / 2), Math.round(imp), i, j);
+          }
         }
       }
     }
