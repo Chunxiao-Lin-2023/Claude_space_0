@@ -26,7 +26,7 @@ BX.register({
     };
     /* feel constants (table units, seconds). Real air hockey: near-frictionless puck, lively but not perfectly elastic rails,
        hand-held mallet ≈ infinite mass so hit speed comes from how fast the mallet is swung. */
-    const MV = 4200, PMAX = 1550, WALL_E = .86, WALL_T = .985, MAL_E = .86, DRAG = .88, DECEL = 10;
+    const MV = 4200, PMAX = 1700, SOFT = 900, WALL_E = .86, WALL_T = .985, MAL_E = .86, DRAG = .88, DECEL = 10;
     const cv = ctx.canvas();
     const WINS = +ctx.opts.win || WIN;
     let seenEv = 0, trail = [], goalTxt = null, flash = 0, shake = 0, sparks = [], rings = [];
@@ -143,7 +143,13 @@ BX.register({
           const nx = d > 0 ? dx / d : (i === 0 ? 1 : -1), ny = d > 0 ? dy / d : 0;
           p.x = mx + nx * md; p.y = my + ny * md;
           const vn = (p.vx - m.vx) * nx + (p.vy - m.vy) * ny;
-          if (vn < 0) { p.vx -= (1 + MAL_E) * vn * nx; p.vy -= (1 + MAL_E) * vn * ny; cb('hit', -vn, mx + nx * MR, my + ny * MR, i); }
+          if (vn < 0) {
+            p.vx -= (1 + MAL_E) * vn * nx; p.vy -= (1 + MAL_E) * vn * ny;
+            // soft saturation: a medium swing gives a medium shot, only a really fast flick approaches top speed
+            const s2 = Math.hypot(p.vx, p.vy);
+            if (s2 > SOFT) { const ns = SOFT + (PMAX - SOFT) * (1 - Math.exp(-(s2 - SOFT) / 1800)); p.vx *= ns / s2; p.vy *= ns / s2; }
+            cb('hit', -vn, mx + nx * MR, my + ny * MR, i);
+          }
           const sp = Math.hypot(p.vx, p.vy); if (sp > PMAX) { p.vx *= PMAX / sp; p.vy *= PMAX / sp; }
         });
         // a puck pinned against the rail by a mallet is squeezed back onto the table
@@ -160,7 +166,7 @@ BX.register({
       if (kind === 'hit') {
         if (hitCd[mi] > 0 && s < 250) return; hitCd[mi] = .08;
         fx('hit', {v: Math.round(s), x: Math.round(x), y: Math.round(y), m: mi});
-        if (s > 1050 && !st.hs) st.hs = 3;   // hit-stop on smashes (3 frames, puck only)
+        if (s > 1300 && !st.hs) st.hs = 3;   // hit-stop on smashes (3 frames, puck only)
       } else if (s > 60) fx('wall', {v: Math.round(s), x: Math.round(x), y: Math.round(y)});
     }
     function physics(dt, paths) {
@@ -202,7 +208,7 @@ BX.register({
     const mineSeat = i => ctx.mySeats.includes(i) && !ctx.isAI(i);
     function impactFx(kind, s, x, y, mi) {
       if (ctx.fast) return;
-      const k = BX.clamp(s / 1300, 0, 1);
+      const k = BX.clamp(s / 1700, 0, 1);
       if (kind === 'hit') {
         BX.sfx.noise(.05 + k * .05, .18 + k * .5, 'lowpass', 900 + k * 2200, 300, 1);
         BX.sfx.tone('sine', 110 + k * 120, 70, .08 + k * .05, .12 + k * .3);
@@ -337,6 +343,7 @@ BX.register({
         return {x: P.x, y: P.y, vx: v[0], vy: v[1], c: P.fresh ? 2000 : undefined};
       },
       aiInput,
+      get _dbg() { return {G, localHitT}; },   // diagnostics for probes
       /* step(dt, inputs): host only, fixed 1/60 s */
       step(dt, inputs) {
         if (st.over) return;

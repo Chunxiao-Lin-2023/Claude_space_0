@@ -46,7 +46,7 @@ BX.register({
     function mkSnake(i) {
       const y = i ? GH / 2 - 1 : GH / 2, x0 = i ? GW - 6 : 5, d = i ? 3 : 1, body = [];
       for (let k = 0; k < 4; k++) body.push([x0 - DIRS[d][0] * k, y]);
-      return {b: body, d, q: [], grow: 0, alive: true, boost: 0, dbl: 0, score: 0, lastIn: -1, mv: 0, pt: null, hold: 0, mvd: 0};
+      return {b: body, d, q: [], grow: 0, alive: true, boost: 0, dbl: 0, score: 0, lastIn: -1, mv: 0, pt: null, hold: 0, mvd: 0, mc: 0};
     }
     const fx = (k, a, b) => { st.ev.push({k, a, b, id: ++st.evId}); if (st.ev.length > 10) st.ev.shift(); };
     const occ = () => { const o = new Set(); for (const s of st.s) for (const c of s.b) o.add(c[0] + c[1] * GW); return o; };
@@ -104,7 +104,7 @@ BX.register({
       st.s.forEach((s, i) => {
         if (!heads[i]) return;
         if (dead[i]) { if (popped[i]) s.b.push(popped[i]); return; }
-        s.b.unshift(heads[i]); s.pt = popped[i]; s.mvd = 1; s.hold = 0;
+        s.b.unshift(heads[i]); s.pt = popped[i]; s.mvd = 1; s.hold = 0; s.mc = (s.mc + 1) % 1000;
         const h = heads[i];
         const fi = st.food.findIndex(f => f[0] === h[0] && f[1] === h[1]);
         if (fi >= 0) { st.food.splice(fi, 1); const m = s.dbl > 0 ? 2 : 1; s.grow += m; s.score += m; fx('eat', i, m); const c = freeCell(); if (c) st.food.push(c); }
@@ -349,17 +349,19 @@ BX.register({
         playEv(); info(); status();
       },
       snapshot() {
-        return {s: st.s.map(s => [s.b.map(c => c[0] + c[1] * GW), s.d, s.alive ? 1 : 0, +s.boost.toFixed(1), +s.dbl.toFixed(1), s.score, +Math.min(1, s.mv || 0).toFixed(2), s.pt ? s.pt[0] + s.pt[1] * GW : -1, s.mvd ? 1 : 0]), f: st.food.map(f => f[0] + f[1] * GW),
+        return {s: st.s.map(s => [s.b.map(c => c[0] + c[1] * GW), s.d, s.alive ? 1 : 0, +s.boost.toFixed(1), +s.dbl.toFixed(1), s.score, +Math.min(1, s.mv || 0).toFixed(2), s.pt ? s.pt[0] + s.pt[1] * GW : -1, s.mvd ? 1 : 0, s.mc]), f: st.food.map(f => f[0] + f[1] * GW),
           bo: st.bonus ? [st.bonus.x, st.bonus.y, st.bonus.k, +st.bonus.t.toFixed(1)] : null, w: st.wins, tt: st.tot, r: st.round, ph: st.ph, t: +st.t.toFixed(2), rt: +st.rt.toFixed(1), m: st.msg, ev: st.ev, o: st.over};
       },
       restore(d) {
-        st.s = d.s.map(a => ({b: a[0].map(i => [i % GW, Math.floor(i / GW)]), d: a[1], alive: !!a[2], boost: a[3], dbl: a[4], score: a[5], q: [], mv: a[6] || 0, pt: a[7] >= 0 ? [a[7] % GW, Math.floor(a[7] / GW)] : null, mvd: a[8] || 0}));
-        st.s.forEach((s, i) => { const hk = s.b.length ? s.b[0][0] + ',' + s.b[0][1] : ''; gk[i] = hk !== gHead[i] ? s.mv : Math.max(gk[i], s.mv); gHead[i] = hk; });
+        st.s = d.s.map(a => ({b: a[0].map(i => [i % GW, Math.floor(i / GW)]), d: a[1], alive: !!a[2], boost: a[3], dbl: a[4], score: a[5], q: [], mv: a[6] || 0, pt: a[7] >= 0 ? [a[7] % GW, Math.floor(a[7] / GW)] : null, mvd: a[8] || 0, mc: a[9] | 0}));
+        // keep the drawn progress continuous: it may run up to ~0.7 cell past the newest known cell while the next snapshot is in flight
+        st.s.forEach((s, i) => { const dm = (s.mc - gMv[i] + 1000) % 1000; gMv[i] = s.mc; gk[i] = dm > 3 ? s.mv : BX.clamp(gk[i] - dm, s.mv, s.mv + .5); });
         st.food = d.f.map(i => [i % GW, Math.floor(i / GW)]); st.bonus = d.bo ? {x: d.bo[0], y: d.bo[1], k: d.bo[2], t: d.bo[3]} : null;
         st.wins = d.w; st.tot = d.tt; st.round = d.r; st.ph = d.ph; st.t = d.t; st.rt = d.rt; st.msg = d.m; st.ev = d.ev; st.over = d.o;
         playEv(); info(); status();
       },
       key: onKey,
+      get _dbg() { return {gk: gk.slice()}; },   // diagnostics for probes
       resize() { V = lay(); },
       draw(dt) { draw(dt); },
     };
@@ -389,7 +391,10 @@ BX.register({
       const n = s.b.length, cells = s.b.map(c => [c[0], c[1]]), brk = [];
       if (k < 1 && n > 1) cells[0] = lerpC(s.b[0], s.b[1], k);
       if (k < 1 && s.pt && n > 1) cells[n - 1] = lerpC(s.b[n - 1], s.pt, k);
-      for (let j = 1; j < n; j++) brk[j] = !adjC(s.b[j], s.b[j - 1]);
+      if (k > 1 && n > 1) {   // guest only: head already partly into the next cell along its heading
+        const e = k - 1, h = s.b[0]; cells.unshift([h[0] + DIRS[s.d][0] * e, h[1] + DIRS[s.d][1] * e]); cells[n] = lerpC(s.b[n - 2], s.b[n - 1], e);
+      }
+      for (let j = 1; j < cells.length; j++) brk[j] = Math.abs(cells[j][0] - cells[j - 1][0]) + Math.abs(cells[j][1] - cells[j - 1][1]) > 1.01;
       const pts = cells.map(c => T(c[0], c[1]));
       const alpha = s.alive ? 1 : .45;
       g.save(); g.globalAlpha = alpha; g.lineCap = 'round'; g.lineJoin = 'round';
@@ -471,7 +476,10 @@ BX.register({
         const s = st.s[i]; let k = 1;
         if (st.ph === 'play' && s.alive && s.mvd) {
           if (ctx.isHost) k = Math.min(1, (s.mv || 0) + rateOf(s) * ctx.alpha / 60);
-          else { gk[i] = Math.min(1, gk[i] + rateOf(s) * dt); k = gk[i]; }
+          else {
+            const [nx, ny] = nb(s.b[0][0], s.b[0][1], s.d), open = nx >= 0 && ny >= 0 && nx < GW && ny < GH && Math.abs(nx - s.b[0][0]) + Math.abs(ny - s.b[0][1]) === 1;
+            gk[i] = Math.min(open ? 1.7 : 1, gk[i] + rateOf(s) * dt); k = gk[i];
+          }
         }
         drawSnake(g, i, s, k);
       }

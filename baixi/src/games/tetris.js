@@ -693,6 +693,7 @@ BX.register({
         playEv(); info(); status();
       },
       key,
+      get _dbg() { return {pred, qack: qack[0], qlen: qlog[0].length}; },   // diagnostics for probes
       resize() { V = null; },
       draw,
     };
