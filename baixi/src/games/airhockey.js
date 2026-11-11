@@ -197,7 +197,10 @@ BX.register({
         const ax = p.x - tx, ay = p.y - ty, l = Math.hypot(ax, ay) || 1;
         const behind = {x: p.x + ax / l * (PR + MR - 6), y: p.y + ay / l * (PR + MR - 6)};
         const close = Math.hypot(m.x - behind.x, m.y - behind.y) < 18;
-        const tgt = close ? {x: p.x - ax / l * 30, y: p.y - ay / l * 30} : behind;
+        // never cut through the puck from the wrong side (that is how own goals happen): go round it via a side point
+        const along = ((m.x - p.x) * -ax + (m.y - p.y) * -ay) / l, side = ((m.x - p.x) * -ay + (m.y - p.y) * ax) >= 0 ? 1 : -1;
+        let tgt = close && st.ph === 'play' ? {x: p.x - ax / l * 30, y: p.y - ay / l * 30} : behind;
+        if (along > -(PR + MR) * .5) tgt = {x: behind.x - ay / l * (PR + MR + 10) * side, y: behind.y + ax / l * (PR + MR + 10) * side};
         return {x: BX.lerp(m.x, tgt.x, react), y: BX.lerp(m.y, tgt.y, react), c};
       }
       // defend: stand between puck and own goal
@@ -352,7 +355,10 @@ BX.register({
         hitCd[0] = Math.max(0, hitCd[0] - dt); hitCd[1] = Math.max(0, hitCd[1] - dt);
         for (const i of [0, 1]) { const I = inputs[i]; if (I && I.ts) ack[i] = I.ts; }
         const paths = [moveMallet(0, inputs[0], dt), moveMallet(1, inputs[1], dt)];
-        if (st.ph === 'serve') { st.t -= dt; if (st.t <= 0) st.ph = 'play'; }
+        if (st.ph === 'serve') {
+          st.t -= dt; if (st.t <= 0) st.ph = 'play';
+          for (const m of st.m) { const dx = m.x - st.p.x, dy = m.y - st.p.y, d = Math.hypot(dx, dy), md = PR + MR; if (d < md) { const nx = d > 0 ? dx / d : (m === st.m[0] ? -1 : 1), ny = d > 0 ? dy / d : 0; m.x = st.p.x + nx * md; m.y = st.p.y + ny * md; m.vx = m.vy = 0; } }
+        }
         else { physics(dt, paths); if (Math.abs(st.p.x - W / 2) < 2 && Math.hypot(st.p.vx, st.p.vy) < 5) st.p.vx += (st.p.vx >= 0 ? 30 : -30); }
         playEv(); info();
       },

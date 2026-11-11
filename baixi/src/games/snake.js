@@ -390,7 +390,7 @@ BX.register({
       const lerpC = (a, c, t) => adjC(a, c) ? [c[0] + (a[0] - c[0]) * t, c[1] + (a[1] - c[1]) * t] : (t >= .5 ? a : c);
       const n = s.b.length, cells = s.b.map(c => [c[0], c[1]]), brk = [];
       if (k < 1 && n > 1) cells[0] = lerpC(s.b[0], s.b[1], k);
-      if (k < 1 && s.pt && n > 1) cells[n - 1] = lerpC(s.b[n - 1], s.pt, k);
+      if (k < 1 && s.pt && n > 1 && adjC(s.b[n - 1], s.pt)) cells.push(lerpC(s.b[n - 1], s.pt, k));   // tail end still on its way out of the old cell
       if (k > 1 && n > 1) {   // guest only: head already partly into the next cell along its heading
         const e = k - 1, h = s.b[0]; cells.unshift([h[0] + DIRS[s.d][0] * e, h[1] + DIRS[s.d][1] * e]); cells[n] = lerpC(s.b[n - 2], s.b[n - 1], e);
       }
