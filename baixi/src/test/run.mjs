@@ -29,6 +29,7 @@ async function page(vpName, q = '?test&bot', touch) {
   pg.on('pageerror', e => pg.errs.push(e.message + ' @ ' + (e.stack || '').split('\n').slice(1, 3).join(' | ')));
   pg.on('console', m => { if (m.type() === 'error' && !/favicon|ERR_|net::|Failed to load resource/.test(m.text())) pg.errs.push('console: ' + m.text()); });
   await pg.goto(BASE + q); await pg.waitForFunction(() => window.BX && BX.lobby && document.querySelector('.tile'), null, {timeout: 20000});
+  if (arg('assist')) await pg.evaluate(() => BX.setPref('assist', true));   // --assist: run with 辅助模式 on
   pg.ctxObj = c; return pg;
 }
 const shot = async (pg, id, name) => { fs.mkdirSync(OUTDIR + '/' + id, {recursive: true}); await pg.screenshot({path: `${OUTDIR}/${id}/${name}.png`}); };

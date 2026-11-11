@@ -145,3 +145,17 @@ Quick manual peek: `python3 build.py --only <ids> --out /tmp/x.html` then Playwr
   swipe velocity instead of a single sample per frame.
 - Def `snapHz` (default 20, max sensible 30) and `inputHz` (default 30, max 60) — raise for fast twitchy games if the snapshot stays small
   (< ~2 KB). Guests should still interpolate/extrapolate between snapshots.
+
+## v1.3 — 辅助模式 (assist mode), default OFF = 经典
+- `ctx.assist` (boolean) — fixed for the whole match (taken from the player's pref at launch; online: the host's choice, sent to the guest;
+  stored in resume). It is replay-safe, so it may be used inside `apply` / `step` (e.g. hitbox sizes, grace windows).
+- **Classic (assist off)** = the game as a seasoned player expects it: correct rules, good controls and feel, honest but minimal guidance.
+  **Assist on** = extra help. Gate behind `ctx.assist`:
+  analysis overlays (threat / "next move wins" markers, capture-risk %, outcome previews like mancala landing or dots 得格/送格,
+  "能进袋" rings), probabilities and odds helpers, card counters / 记牌器 / remaining-tile counts, 听牌 helper, candidate counts,
+  extended aim/trajectory predictions (object-ball path, rebound preview, long trajectory lines), generous hitboxes, grace windows,
+  auto-aim / magnetism, hand-strength labels, strategy coaches.
+- Always on (not assist): legal-move markers (governed separately by `ctx.pref('hints')`), last-move highlight, selection feedback,
+  drag/tap/keyboard controls, animations, juice, bug fixes, accurate (true) aim lines of normal length, rules text, the 💡 button
+  (player asks explicitly), and explicit game `options` like 宽松 difficulty.
+- Test with assist on: `bash test/t.sh --games <ids> --assist`.

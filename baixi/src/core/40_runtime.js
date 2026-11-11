@@ -7,7 +7,7 @@ BX.CATS = [
 ];
 BX.LEVELS = ['', '初级', '中级', '高级'];
 /* player preferences (global, shared by all games). Games read them with ctx.pref(key). */
-BX.PREF_DEF = {speed: 1, confirm: 'auto', hints: true, vibrate: true};
+BX.PREF_DEF = {speed: 1, confirm: 'auto', hints: true, vibrate: true, assist: false};
 BX.pref = k => { const v = BX.store.get('pref.' + k, null); return v == null ? BX.PREF_DEF[k] : v; };
 BX.setPref = (k, v) => { BX.store.set('pref.' + k, v); document.dispatchEvent(new CustomEvent('bx-pref', {detail: {k, v}})); };
 BX.AI_NAMES = ['掌柜', '说书先生', '账房先生', '茶博士', '琴师', '跑堂小二'];
@@ -61,6 +61,7 @@ function rethrow(e, where) {
 
 /* cfg: {mode, opts, seed, seats:[{name, ctrl:'local'|'ai'|'remote', level}], isHost, log?, g?} */
 BX.launch = function (def, cfg) {
+  if (cfg.assist == null) cfg.assist = !!BX.pref('assist');   // 辅助模式 is fixed per match (host decides online; replay-safe)
   BX.closeModals(); teardown();
   $id('lobby').hidden = true; $id('game').hidden = false;
   S = {def, cfg, log: [], gen: 0, alive: true, ended: null, anims: [], timers: new Set(), cleanups: [], aiTok: {}, sysTok: -1, reqPending: false,
@@ -177,6 +178,8 @@ function makeCtx(gen, root) {
     get log() { return S.log; },
     restart() { BX.restart(); },
     pref: k => BX.pref(k),
+    /* 辅助模式 (default off = 经典). Fixed for the whole match; may be used in apply/step. */
+    assist: !!cfg.assist,
     /* realtime: render interpolation factor 0..1 between the last two fixed steps (host/offline). Keep prev positions and draw lerp(prev, cur, ctx.alpha) for smooth motion on 90/120 Hz screens. */
     alpha: 1,
     /* all positions of a pointer event incl. coalesced sub-frame samples (smoother drags / swipe velocity) → [{x, y, t}] in canvas CSS px */
@@ -357,9 +360,9 @@ BX.rematch = function () {
   if (cfg.mode === 'online') { if (BX.net.isHost) BX.startOnline(def, cfg.opts, cfg.hostSeats); return; }
   let seats = cfg.seats;
   if (cfg.sel && cfg.sel.first === 'rand') seats = BX.makeSeats(def, cfg.sel);
-  BX.launch(def, Object.assign({}, cfg, {seed: BX.newSeed(), log: [], seats}));
+  BX.launch(def, Object.assign({}, cfg, {seed: BX.newSeed(), log: [], seats, assist: !!BX.pref('assist')}));
 };
-BX.restart = function () { if (!S) return; if (S.cfg.mode === 'online') { BX.rematch(); return; } BX.launch(S.def, Object.assign({}, S.cfg, {seed: BX.newSeed(), log: []})); };
+BX.restart = function () { if (!S) return; if (S.cfg.mode === 'online') { BX.rematch(); return; } BX.launch(S.def, Object.assign({}, S.cfg, {seed: BX.newSeed(), log: [], assist: !!BX.pref('assist')})); };
 
 /* ---------------- hint ---------------- */
 /* A game supports hints with either inst.hint() (does everything itself, e.g. solo puzzles)
@@ -398,7 +401,7 @@ BX.undo = function () {
 let resumeT = 0;
 function saveResume() {
   if (!S || S.def.kind !== 'turn' || S.cfg.mode === 'online' || S.def.resume === false || BX.test || S.ended) return;
-  clearTimeout(resumeT); const snap = {mode: S.cfg.mode, opts: S.cfg.opts, seed: S.cfg.seed, seats: S.cfg.seats, sel: S.cfg.sel, log: S.log, t: Date.now(), h: S.def.codeHash}, id = S.def.id;
+  clearTimeout(resumeT); const snap = {mode: S.cfg.mode, opts: S.cfg.opts, seed: S.cfg.seed, seats: S.cfg.seats, sel: S.cfg.sel, log: S.log, t: Date.now(), h: S.def.codeHash, assist: !!S.cfg.assist}, id = S.def.id;
   resumeT = setTimeout(() => BX.store.set('resume.' + id, snap), 250);
 }
 function clearResume() { clearTimeout(resumeT); if (S) BX.store.del('resume.' + S.def.id); }
@@ -460,6 +463,7 @@ BX.prefRows = function () {
     row('声音', 'snd', [[false, '开'], [true, '关']], () => BX.sfx.muted, v => BX.sfx.setMuted(v)),
     pr('动画速度', 'speed', [[1, '正常'], [2, '快速']]),
     pr('落子确认', 'confirm', [['auto', '触屏点两下'], ['on', '总是'], ['off', '点一下']]),
+    row('辅助模式', 'assist', [[false, '关·经典'], [true, '开']], () => BX.pref('assist'), v => { BX.setPref('assist', v); if (S && !S.ended && !!S.cfg.assist !== v) BX.toast('辅助模式从下一局开始' + (v ? '开启' : '关闭')); }),
     pr('走法提示', 'hints', [[true, '显示'], [false, '隐藏']]),
     pr('震动反馈', 'vibrate', [[true, '开'], [false, '关']]),
   ];
@@ -513,13 +517,14 @@ BX.startOnline = function (def, opts, sel) {
   if (!BX.net.isHost) return;
   const seats = BX.makeSeats(def, Object.assign({}, sel, {mode: 'online'}));
   const seed = BX.newSeed(), g = (BX._g = (BX._g || 0) + 1);
-  BX.net.send({t: 'start', id: def.id, opts, seed, seats, g});
-  BX.launch(def, {mode: 'online', opts, seed, isHost: true, g, hostSeats: sel, seats: seats.map(s => ({name: s.name, level: s.level, ctrl: s.owner === 'host' ? 'local' : s.owner === 'guest' ? 'remote' : 'ai'}))});
+  const assist = !!BX.pref('assist');
+  BX.net.send({t: 'start', id: def.id, opts, seed, seats, g, assist});
+  BX.launch(def, {mode: 'online', opts, seed, isHost: true, g, hostSeats: sel, assist, seats: seats.map(s => ({name: s.name, level: s.level, ctrl: s.owner === 'host' ? 'local' : s.owner === 'guest' ? 'remote' : 'ai'}))});
 };
 BX.onNet = function (m) {
   if (m.t === 'start') {
     const def = BX.games[m.id]; if (!def) { BX.toast('版本不一致：对方的游戏这里没有'); return; }
-    BX.launch(def, {mode: 'online', opts: m.opts, seed: m.seed, isHost: false, g: m.g, log: m.log || [], seats: m.seats.map(s => ({name: s.name, level: s.level, ctrl: s.owner === 'guest' ? 'local' : s.owner === 'host' ? 'remote' : 'ai'}))});
+    BX.launch(def, {mode: 'online', opts: m.opts, seed: m.seed, isHost: false, g: m.g, log: m.log || [], assist: !!m.assist, seats: m.seats.map(s => ({name: s.name, level: s.level, ctrl: s.owner === 'guest' ? 'local' : s.owner === 'host' ? 'remote' : 'ai'}))});
     if (m.log && m.log.length) BX.toast('已回到对局');
     return;
   }
@@ -569,7 +574,7 @@ BX.onRejoin = function () {
   back.forEach(s => { s.ctrl = 'remote'; s.name = (BX.net.other || {}).name || s.origName; delete s.wasRemote; });
   S.remoteIn = {};
   const seats = ctx.seats.map(s => ({name: s.name, level: s.level, owner: s.ctrl === 'local' ? 'host' : s.ctrl === 'remote' ? 'guest' : 'ai'}));
-  BX.net.send({t: 'start', id: S.def.id, opts: S.cfg.opts, seed: S.cfg.seed, seats, g: S.g, log: S.def.kind === 'turn' ? S.log : []});
+  BX.net.send({t: 'start', id: S.def.id, opts: S.cfg.opts, seed: S.cfg.seed, seats, g: S.g, assist: !!S.cfg.assist, log: S.def.kind === 'turn' ? S.log : []});
   S.aiTok = {}; refreshSeats(); BX.toast('对方回来了，继续对局'); check();
 };
 function remoteGone(msg) {

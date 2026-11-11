@@ -123,6 +123,7 @@ BX.lobby = (function () {
         else body.append(h('div', {class: 'note', html: `与 <b>${BX.esc(net.other.name)}</b> 联机对战。`}));
       }
       if (sel.mode === 'local' && def.hidden) body.append(h('div', {class: 'note', html: '同屏对战时有隐藏信息，轮到谁时会提示把设备交给谁。'}));
+      if (sel.mode !== 'online' || BX.net.isHost) body.append(seg('辅助模式（局面提示、概率、更宽松的判定等）', [[false, '关·经典'], [true, '开']], !!BX.pref('assist'), v => BX.setPref('assist', v), 'fAssist'));
       body.append(h('details', {class: 'rd'}, h('summary', {text: '玩法规则'}), h('div', {class: 'rules', html: def.rules || '暂无说明'})));
       const st = BX.store.get('stats', {})[def.id];
       if (st && st.n) body.append(h('div', {class: 'stats', text: def.kind === 'solo' ? `已玩 ${st.n} 局` : `已玩 ${st.n} 局 · 胜 ${st.w} · 负 ${st.l}` + (st.d ? ` · 和 ${st.d}` : '')}));
@@ -133,7 +134,7 @@ BX.lobby = (function () {
         else if (net.isGuest) foot.append(h('button', {class: 'bx-btn jade', id: 'bSuggest', text: '提议房主开这局', on: {click: () => { net.send({t: 'suggest', id: def.id}); BX.toast('已告诉房主'); }}}));
         else foot.append(h('button', {class: 'bx-btn red', id: 'bStart', text: '开局', on: {click: () => { remember(); close(); BX.startOnline(def, sel.opts, {n: sel.n, first: sel.first, level: sel.level}); }}}));
       } else {
-        if (res && res.log && res.log.length && res.mode !== 'online') foot.append(h('button', {class: 'bx-btn jade', id: 'bResume', text: '继续上局', on: {click: () => { close(); BX.launch(def, {mode: res.mode, opts: res.opts, seed: res.seed, seats: res.seats, sel: res.sel, log: res.log}); }}}));
+        if (res && res.log && res.log.length && res.mode !== 'online') foot.append(h('button', {class: 'bx-btn jade', id: 'bResume', text: '继续上局', on: {click: () => { close(); BX.launch(def, {mode: res.mode, opts: res.opts, seed: res.seed, seats: res.seats, sel: res.sel, log: res.log, assist: !!res.assist}); }}}));
         foot.append(h('button', {class: 'bx-btn red', id: 'bStart', text: res && res.log && res.log.length ? '新开一局' : BX.MODE_NAMES[sel.mode] === '开始游戏' ? '开始游戏' : '开始', on: {click: () => {
           remember(); close();
           const s2 = {mode: sel.mode, n: sel.n, humans: sel.humans, first: sel.first, level: sel.level};
