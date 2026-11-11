@@ -7,7 +7,7 @@ __IOSMETA__
 <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Noto+Serif+SC:wght@400;700&display=swap" rel="stylesheet">
 <style>
 /* one screen at a time: 探索 (dark green) · 对话 (paper) · 战斗 (dark red).  Panels open as a sheet over the screen. */
-:root{--bg:#0f0d0a;--bg2:#17130f;--pan:#1d1813;--pan2:#251f18;--line:#3a3024;--line2:#4e4130;--gold:#d4ad62;--gold2:#f0d79a;--tx:#e8dfcc;--dim:#9b907c;--dim2:#6f6656;--red:#e0604f;--hp:#d0483c;--mp:#3f8fd8;--exp:#c9a442;--grn:#7fd36f;
+:root{--c0:#0b140e;--c1:#1d3326;--lab:#8fae8a;--b1:#1f3326;--b2:#16261b;--bd:#3f5e47;--bh:#a8c88a;--tx2:#dfe6d6;--fl:#6f9a6a66;--panel:#0a130dcc;--panel2:#0a130d99;--bqb:#1a2a1eee;--bg:#0f0d0a;--bg2:#17130f;--pan:#1d1813;--pan2:#251f18;--line:#3a3024;--line2:#4e4130;--gold:#d4ad62;--gold2:#f0d79a;--tx:#e8dfcc;--dim:#9b907c;--dim2:#6f6656;--red:#e0604f;--hp:#d0483c;--mp:#3f8fd8;--exp:#c9a442;--grn:#7fd36f;
   --sa:env(safe-area-inset-left,0px);--sr:env(safe-area-inset-right,0px);--st:env(safe-area-inset-top,0px);--sb:env(safe-area-inset-bottom,0px);--ff:'Noto Serif SC','Songti SC','STSong','SimSun',serif;--fh:'Ma Shan Zheng','STKaiti','KaiTi',serif;
   --paper:#efe5cd;--paper2:#f7f0de;--ink:#2a2118;--ink2:#6b5c48;--seal:#b3342a}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -34,23 +34,36 @@ b{color:var(--gold2)}
 /* ---------- stage & views ---------- */
 #stage{position:relative;min-height:0;overflow:hidden;background:#100d0a}
 .view{position:absolute;inset:0;display:flex;opacity:0;visibility:hidden;pointer-events:none;transition:opacity .24s ease,visibility 0s linear .24s}
-#vExplore{background:radial-gradient(ellipse at 30% 0%,#1d3326 0%,#0d1711 70%)}
-#vBattle{background:radial-gradient(ellipse at 50% 0%,#3a1512 0%,#160909 72%)}
+#vExplore{background:radial-gradient(ellipse at 30% 0%,var(--c1) 0%,var(--c0) 70%);isolation:isolate;transition:opacity .24s ease,visibility 0s linear .24s,background-color .6s}
+#vBattle{background:radial-gradient(ellipse at 50% 0%,#3a1512 0%,#160909 72%);isolation:isolate}
+/* atmosphere (53_atmo.js): painted backdrop, drifting particles, a faint regional texture */
+.vbg{position:absolute;inset:0;width:100%;height:100%;z-index:-2;pointer-events:none}
+#exbg{filter:blur(1.5px)}
+#amb{position:absolute;inset:0;width:100%;height:100%;z-index:-1;pointer-events:none}
+#vTalk #amb{z-index:auto;opacity:.8}
+#vExplore::after{content:'';position:absolute;inset:0;z-index:-1;pointer-events:none;opacity:.07;background-repeat:repeat}
+body.night #vExplore::after{opacity:.045}
+body[data-area=shicun] #vExplore::after{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='90' height='60'%3E%3Cg fill='none' stroke='%23e8c890' stroke-width='1.2' stroke-linecap='round'%3E%3Cpath d='M4 10l10 -6M20 14l10 -6M40 8l10 -6M60 16l10 -6M8 38l10 -6M30 42l10 -6M52 36l10 -6M72 44l10 -6M0 59h90M0 29h90' opacity='.8'/%3E%3C/g%3E%3C/svg%3E")}
+body[data-area=dahuang] #vExplore::after{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cg fill='none' stroke='%23a8d090' stroke-width='1.2' stroke-linecap='round'%3E%3Cpath d='M20 30q10-14 22-4q-10 12-22 4zM20 30l22-4M80 70q12-12 22-2q-12 10-22 2zM80 70l22-2M50 100q8-12 18-4q-8 10-18 4zM98 18q6-10 14-2q-6 8-14 2z'/%3E%3C/g%3E%3C/svg%3E")}
+body[data-area=butian] #vExplore::after{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='90'%3E%3Cg fill='none' stroke='%23c0d4f0' stroke-width='1.2' stroke-linecap='round'%3E%3Cpath d='M10 50q0-14 14-14q12 0 12 10q0 8-8 8q-6 0-6-6M36 46q8-10 20-6q10 4 18 0M80 22q0-12 12-12q10 0 10 8q0 6-6 6q-5 0-5-4M102 18q8-8 18-4q8 3 16-1M60 80q0-10 10-10q8 0 8 7q0 5-5 5'/%3E%3C/g%3E%3C/svg%3E")}
+body[data-area=baiduan] #vExplore::after{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='130' height='130'%3E%3Cg fill='none' stroke='%23e8c098' stroke-width='1.2' stroke-linecap='round'%3E%3Cpath d='M10 20l14 10l-4 14l16 10l6 18M70 0l-6 16l12 10l-8 16M100 60l14 6l4 16l-10 12l4 20M40 90l-12 14l6 16'/%3E%3C/g%3E%3C/svg%3E")}
+body[data-area=xushen] #vExplore::after{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80'%3E%3Cg fill='none' stroke='%23d0d0ff' stroke-width='1.2' stroke-linecap='round'%3E%3Cpath d='M10 12h.1M50 30h.1M30 62h.1M70 70h.1M66 8h.1' stroke-width='2.2'/%3E%3Cpath d='M38 20l2 4l4 2l-4 2l-2 4l-2-4l-4-2l4-2z' fill='%23d0d0ff' stroke='none'/%3E%3C/g%3E%3C/svg%3E")}
+body[data-area=dungeon] #vExplore::after{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='48'%3E%3Cg fill='none' stroke='%23d8b890' stroke-width='1.2' stroke-linecap='round'%3E%3Cpath d='M0 0h80M0 24h80M20 0v24M60 0v24M0 24v24M40 24v24' opacity='.9'/%3E%3C/g%3E%3C/svg%3E")}
 body.m-explore #vExplore,body.m-battle #vBattle,body.m-talk #vTalk{opacity:1;visibility:visible;pointer-events:auto;transition:opacity .24s ease}
 @keyframes vin{from{opacity:0}to{opacity:1}}
 /* explore */
 #vExplore{flex-direction:column}
 .ex-l{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:6px}
-.ex-r{flex:none;max-height:56%;overflow-y:auto;padding:8px 12px calc(10px + var(--sb));border-top:1px solid #8fbf8a22;background:#0a130dcc}
+.ex-r{flex:none;max-height:56%;overflow-y:auto;padding:8px 12px calc(10px + var(--sb));border-top:1px solid var(--line);background:var(--panel)}
 #banner{position:relative;height:150px;overflow:hidden}
 #banner canvas{position:absolute;inset:0;width:100%;height:100%}
-#banner::after{content:'';position:absolute;inset:auto 0 0 0;height:50%;background:linear-gradient(transparent,#0d1711)}
+#banner::after{content:'';position:absolute;inset:auto 0 0 0;height:50%;background:linear-gradient(transparent,var(--c0))}
 #banner .nm{position:absolute;left:16px;bottom:10px;z-index:1;font-family:var(--fh);font-size:2.2rem;color:#f4ead2;text-shadow:0 2px 8px #000;line-height:1}
 #banner .ar{position:absolute;left:18px;top:9px;z-index:1;font-size:.8rem;color:#efe4c8;text-shadow:0 1px 3px #000;letter-spacing:1px;background:#00000055;border-radius:6px;padding:0 6px}
-#desc{padding:8px 16px 4px;font-size:1.03rem;line-height:1.8;color:#dfe6d6}
+#desc{padding:8px 16px 4px;font-size:1.03rem;line-height:1.8;color:var(--tx2);text-shadow:0 1px 2px #0008}
 #desc .night{color:#a9b9d8}
 #feed{padding:2px 16px 8px}
-#feed .ln{font-size:.93rem;margin:5px 0;color:#c9d3c0;border-left:2px solid #6f9a6a55;padding-left:9px;animation:fade .35s both}
+#feed .ln{font-size:.93rem;margin:5px 0;color:var(--tx2);border-left:2px solid var(--fl);text-shadow:0 1px 2px #0008;padding-left:9px;animation:fade .35s both}
 #feed .ln.old{opacity:.55}
 #feed .ln.sys{border-left-color:var(--gold);color:var(--gold2)}
 #feed .ln.tip{border-left-color:#4a8ad0;color:#9fd4ff}
@@ -58,31 +71,31 @@ body.m-explore #vExplore,body.m-battle #vBattle,body.m-talk #vTalk{opacity:1;vis
 #feed .ln.loot{color:#c9e8b8}
 #feed .ln.npc .who,#feed .ln .who{color:#d9bd72;font-weight:700;margin-right:6px}
 @keyframes fade{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:none}}
-#bq{display:block;width:100%;text-align:left;background:#1a2a1eee;border:1px solid #c9a44a66;border-radius:10px;padding:7px 11px;font-size:.9rem;line-height:1.45;color:#f2e6c8;margin-bottom:8px}
+#bq{display:block;width:100%;text-align:left;background:var(--bqb);border:1px solid #c9a44a66;border-radius:10px;padding:7px 11px;font-size:.9rem;line-height:1.45;color:#f2e6c8;margin-bottom:8px}
 #bq b{color:var(--gold)}
 .qrow{display:flex;gap:6px;margin-bottom:8px}
 .qrow #bq{flex:1;margin:0;min-width:0}
 #bq .qk{font-size:.72rem;color:#9fd4ff;border:1px solid #9fd4ff55;border-radius:6px;padding:0 4px;margin-right:5px}
-#bqs{flex:none;width:52px;background:#1a2a1eee;border:1px solid #c9a44a66;border-radius:10px;color:#cfe0c8;font-size:.72rem;line-height:1.3;position:relative}
+#bqs{flex:none;width:52px;background:var(--bqb);border:1px solid #c9a44a66;border-radius:10px;color:#cfe0c8;font-size:.72rem;line-height:1.3;position:relative}
 #bqs b{font-size:1rem;color:var(--gold)}
 #bqs.dot2::after{content:'';position:absolute;top:4px;right:4px;width:8px;height:8px;border-radius:50%;background:var(--red)}
 #bq .go{color:#8fd0ff;margin-left:6px;white-space:nowrap}
 .grp{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:6px}
 .grp:last-child{margin-bottom:0}
-.gl{font-size:.72rem;color:#8fae8a;letter-spacing:2px;writing-mode:vertical-rl;min-height:36px;text-align:center;flex:none;width:14px}
-.ab{background:linear-gradient(#1f3326,#16261b);border:1px solid #3f5e47;border-radius:9px;padding:6px 12px;font-size:.95rem;min-height:42px;min-width:44px;line-height:1.25;color:#e6eedc}
-.ab:hover{border-color:#a8c88a}
+.gl{font-size:.72rem;color:var(--lab);letter-spacing:2px;writing-mode:vertical-rl;min-height:36px;text-align:center;flex:none;width:14px}
+.ab{background:linear-gradient(var(--b1),var(--b2));border:1px solid var(--bd);box-shadow:0 2px 0 #0006;border-radius:9px;padding:6px 12px;font-size:.95rem;min-height:42px;min-width:44px;line-height:1.25;color:#e6eedc}
+.ab:hover{border-color:var(--bh)}
 .ab.main{background:linear-gradient(#5a4a20,#3e3317);border-color:#a8903e;color:#ffeab8;font-weight:700}
 .ab.q{border-color:#d6a640;color:#ffd77a}
-.ab.dir small{margin-left:6px;font-size:.72rem;color:#9fb79a}
+.ab.dir small{margin-left:6px;font-size:.72rem;color:var(--lab)}
 .ab.npc{color:#efe2c0}
 .ab.wb{border-color:#e05a3a;color:#ffb08a;animation:pulse 1.6s infinite}
 @keyframes pulse{50%{box-shadow:0 0 12px #e05a3a88}}
 .ab:disabled{opacity:.38;cursor:not-allowed}
 .ab.sm{min-height:40px;padding:5px 10px;font-size:.9rem}
-.wait{text-align:center;color:#8fae8a;font-size:.9rem;padding:8px}
+.wait{text-align:center;color:var(--lab);font-size:.9rem;padding:8px}
 /* talk (paper) */
-#vTalk{align-items:flex-end;justify-content:center;padding:12px 12px calc(12px + var(--sb));background:#1a1510}
+#vTalk{align-items:flex-end;justify-content:center;padding:12px 12px calc(12px + var(--sb));background:var(--c0)}
 #tbg{position:absolute;left:0;top:0;width:100%;height:100%;opacity:.6}
 #vTalk::before{content:'';position:absolute;inset:0;background:linear-gradient(#0000 30%,#140f0bdd 85%)}
 #dlg{z-index:1}
@@ -367,8 +380,8 @@ textarea.code{width:100%;min-height:80px;background:#0c0a08;border:1px solid var
 .join .big{white-space:nowrap;flex:none;min-width:72px;padding:8px 14px}
 /* ---------- wide / short layouts (classes set by JS) ---------- */
 body.cols #vExplore{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(300px,1fr)}
-body.cols .ex-l{border-right:1px solid #8fbf8a22}
-body.cols .ex-r{max-height:none;border-top:0;background:#0a130d99;padding:12px 14px calc(12px + var(--sb))}
+body.cols .ex-l{border-right:1px solid var(--line)}
+body.cols .ex-r{max-height:none;border-top:0;background:var(--panel2);padding:12px 14px calc(12px + var(--sb))}
 body.cols #banner{height:200px}
 body.cols .gl{writing-mode:horizontal-tb;width:100%;min-height:0;text-align:left;margin:2px 0 -2px}
 body.narrow #top .who{display:none}
@@ -546,12 +559,12 @@ body.noanim #bfeed .ln.pend{visibility:visible}
 <div id="app">
   <header id="top"></header>
   <div id="stage">
-    <section id="vExplore" class="view">
+    <section id="vExplore" class="view"><canvas id="exbg" class="vbg"></canvas><canvas id="amb"></canvas>
       <div class="ex-l"><div id="banner"><canvas id="bcv"></canvas><div class="ar" id="bar"></div><div class="nm" id="bnm"></div><div id="rumor" onclick="openRumors()"></div></div><div id="desc"></div><div id="feed"></div></div>
       <div class="ex-r"><div class="qrow"><button id="bq"></button><button id="bqs" onclick="navTo('map')"></button></div><div id="acts"></div></div>
     </section>
     <section id="vTalk" class="view"><canvas id="tbg"></canvas><div id="dlg"></div></section>
-    <section id="vBattle" class="view"><div id="bfx"></div><div id="bhead"></div><div id="foes" class="side"></div><div id="bfeed"></div><div id="party" class="side"></div><div id="bacts"></div></section>
+    <section id="vBattle" class="view"><canvas id="btbg" class="vbg"></canvas><div id="bfx"></div><div id="bhead"></div><div id="foes" class="side"></div><div id="bfeed"></div><div id="party" class="side"></div><div id="bacts"></div></section>
     <div id="sheet"><div class="shd"><h2 id="sht"></h2><div class="tabs" id="stabs"></div><button class="x" onclick="navTo('adv')">×</button></div><div class="pbody" id="sbody"></div></div>
   </div>
   <nav id="bnav"></nav>

@@ -11,13 +11,13 @@ function pine(g, x, y, h, col) { g.fillStyle = col; g.fillRect(x - h * 0.03, y -
 function bushTree(g, x, y, h, col) { g.fillStyle = col; g.fillRect(x - h * 0.04, y - h * 0.5, h * 0.08, h * 0.5); for (let i = 0; i < 5; i++) { g.beginPath(); g.arc(x + (i - 2) * h * 0.12, y - h * 0.6 - Math.abs(i - 2) * -h * 0.05, h * 0.2, 0, TAU); g.fill(); } }
 function hut(g, x, y, w, col, roof) { g.fillStyle = col; g.fillRect(x, y - w * 0.45, w, w * 0.45); g.fillStyle = roof; g.beginPath(); g.moveTo(x - w * 0.12, y - w * 0.42); g.lineTo(x + w * 0.5, y - w * 0.85); g.lineTo(x + w * 1.12, y - w * 0.42); g.closePath(); g.fill(); g.fillStyle = '#ffcf7a'; if (isNight()) g.fillRect(x + w * 0.62, y - w * 0.3, w * 0.14, w * 0.12); }
 const TAU = Math.PI * 2;
-function paintScene(g, W, H, id, night, big) {
+function paintScene(g, W, H, id, night, big, noSun) {
   const P = PLACES[id] || { area: 'shicun' }, A = AREAS[P.area] || AREAS.shicun, T = A.tone, r = srng('bn' + id);
   // sky
   const sky = g.createLinearGradient(0, 0, 0, H); if (night) { sky.addColorStop(0, '#070912'); sky.addColorStop(1, mixC('#121a2a', T[1], 0.25)); } else { sky.addColorStop(0, mixC('#d8c8a0', T[2], 0.35)); sky.addColorStop(0.7, mixC('#efe2c2', T[2], 0.2)); sky.addColorStop(1, mixC('#d8c8a8', T[1], 0.3)); }
   g.fillStyle = sky; g.fillRect(0, 0, W, H);
-  if (night) { for (let i = 0; i < 70; i++) { g.fillStyle = `rgba(255,255,240,${0.2 + r() * 0.6})`; g.fillRect(r() * W, r() * H * 0.6, 1.4, 1.4); } g.fillStyle = '#f2ead0'; g.beginPath(); g.arc(W * 0.82, H * 0.24, H * 0.09, 0, TAU); g.fill(); g.fillStyle = 'rgba(242,234,208,.12)'; g.beginPath(); g.arc(W * 0.82, H * 0.24, H * 0.2, 0, TAU); g.fill(); }
-  else { g.fillStyle = 'rgba(190,60,40,.75)'; g.beginPath(); g.arc(W * 0.8, H * 0.26, H * 0.08, 0, TAU); g.fill(); }
+  if (night) { for (let i = 0; i < 70; i++) { g.fillStyle = `rgba(255,255,240,${0.2 + r() * 0.6})`; g.fillRect(r() * W, r() * H * 0.6, 1.4, 1.4); } if (!noSun) { g.fillStyle = '#f2ead0'; g.beginPath(); g.arc(W * 0.82, H * 0.24, H * 0.09, 0, TAU); g.fill(); g.fillStyle = 'rgba(242,234,208,.12)'; g.beginPath(); g.arc(W * 0.82, H * 0.24, H * 0.2, 0, TAU); g.fill(); } }
+  else if (!noSun) { g.fillStyle = 'rgba(190,60,40,.75)'; g.beginPath(); g.arc(W * 0.8, H * 0.26, H * 0.08, 0, TAU); g.fill(); }
   const ink = night ? '#06070b' : '#1a1712', far = night ? mixC('#1a2234', T[0], 0.3) : mixC('#b8b09a', T[1], 0.35), mid = night ? mixC('#10151f', T[0], 0.4) : mixC('#7a7462', T[0], 0.4), near = night ? '#0a0c10' : mixC('#3a352a', T[0], 0.5);
   const a = P.area, sky2 = night ? 'rgb(18,24,38)' : 'rgb(232,222,196)';
   if (a === 'xushen') { // grey void, floating stone platforms, the ranking light-screen
@@ -82,7 +82,7 @@ function paintScene(g, W, H, id, night, big) {
   const gr = g.createLinearGradient(0, H * 0.5, 0, H); gr.addColorStop(0, 'rgba(0,0,0,0)'); gr.addColorStop(1, 'rgba(10,8,6,.75)'); g.fillStyle = gr; g.fillRect(0, H * 0.5, W, H * 0.5);
 }
 let bannerKey = '';
-function bannerDraw() { const cv = $('bcv'); if (!cv || !C) return; const dpr = Math.min(devicePixelRatio || 1, 2), W = cv.clientWidth, H = cv.clientHeight; if (!W || !H) return; const key = C.loc + W + 'x' + H + isNight() + (STATE.dungeon ? 'd' : '') + (C.story.f.moved ? 'm' : ''); if (key === bannerKey) return; bannerKey = key;
+function bannerDraw() { const cv = $('bcv'); if (!cv || !C) return; atmoUpdate(); const dpr = Math.min(devicePixelRatio || 1, 2), W = cv.clientWidth, H = cv.clientHeight; if (!W || !H) return; const key = C.loc + W + 'x' + H + isNight() + (STATE.dungeon ? 'd' : '') + (C.story.f.moved ? 'm' : ''); if (key === bannerKey) return; bannerKey = key;
   cv.width = W * dpr; cv.height = H * dpr; const g = cv.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0); paintScene(g, W, H, STATE.dungeon ? DUNGEONS[STATE.dungeon.id].loc : C.loc, isNight() || !!STATE.dungeon); }
 let talkBgKey = '';
 function talkBgDraw() { const cv = $('tbg'); if (!cv || !C) return; const dpr = Math.min(devicePixelRatio || 1, 2), W = cv.parentNode.clientWidth, H = Math.min(cv.parentNode.clientHeight, Math.round(W * 0.8)); if (!W || !H) return; cv.style.height = H + 'px'; const loc = STATE.dungeon ? DUNGEONS[STATE.dungeon.id].loc : C.loc, key = loc + W + 'x' + H + isNight() + (C.story.f.moved ? 'm' : ''); if (key === talkBgKey) return; talkBgKey = key;

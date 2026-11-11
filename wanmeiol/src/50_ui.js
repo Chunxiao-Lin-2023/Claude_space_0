@@ -18,7 +18,7 @@ const curMode = () => DLG ? 'talk' : STATE.battle ? 'battle' : 'explore';
 function applyMode(force) { const m = curMode(), b = document.body;
   // leaving a conversation: wait a moment — the next line usually follows at once, and flipping screens in between makes everything blink
   if (UI.lastMode === 'talk' && m !== 'talk' && !force) { if (!UI.leaveT) UI.leaveT = setTimeout(() => { UI.leaveT = 0; applyMode(true); if (STATE.mode === 'play' && C) refresh(); }, 140); return; }
-  if (UI.leaveT) { clearTimeout(UI.leaveT); UI.leaveT = 0; } for (const k of ['explore', 'talk', 'battle']) b.classList.toggle('m-' + k, m === k); if (m !== UI.lastMode) { if (UI.lastMode && m === 'battle') stageTransition(m); UI.lastMode = m; if (m !== 'explore' && UI.nav && UI.nav !== 'log') { UI.nav = null; renderSide(); } musicMode(); if (m === 'explore') setTimeout(bannerDraw, 0); } if (m === 'talk') talkBgDraw(); }
+  if (UI.leaveT) { clearTimeout(UI.leaveT); UI.leaveT = 0; } for (const k of ['explore', 'talk', 'battle']) b.classList.toggle('m-' + k, m === k); if (m !== UI.lastMode) { if (UI.lastMode && m === 'battle') stageTransition(m); UI.lastMode = m; atmoUpdate(); if (m !== 'explore' && UI.nav && UI.nav !== 'log') { UI.nav = null; renderSide(); } musicMode(); if (m === 'explore') setTimeout(bannerDraw, 0); } if (m === 'talk') talkBgDraw(); }
 
 /* ---------- log (kept for 📜 记录 and co-op; the explore screen shows the latest few lines) ---------- */
 function logLine(html, cls = '') { const L = $('log'); if (!L) return; L.appendChild(el('div', 'ln ' + cls, html)); while (L.children.length > 300) L.firstChild.remove(); if (NETROLE === 'host') netLog(html, cls); UI.logDirty = 1; if (STATE.mode === 'play') { clearTimeout(UI.feedT); UI.feedT = setTimeout(() => { renderFeed(); if (UI.nav === 'log') renderSide(); }, 30); } }
@@ -75,7 +75,7 @@ addEventListener('keydown', e => { if (STATE.mode !== 'play' || e.target.tagName
 
 /* ---------- refresh (batched) ---------- */
 let refT = 0;
-function refresh() { if (refT) return; refT = requestAnimationFrame(() => { refT = 0; if (STATE.mode !== 'play' || !C) return; applyMode(); musicMode(); renderTop();
+function refresh() { if (refT) return; refT = requestAnimationFrame(() => { refT = 0; if (STATE.mode !== 'play' || !C) return; applyMode(); musicMode(); atmoUpdate(); renderTop();
   if (curMode() === 'explore') { renderBanner(); renderDesc(); renderFeed(); renderActs(); renderRumor(); } if (STATE.battle) renderBattle(true); renderSide(); if (UI.modal) openModal(UI.modal, true); }); }
 const CH_NAMES = ['', '第一章 · 石村', '第二章 · 出村', '第三章 · 补天阁', '第四章 · 百断山'];
 function renderTop() {
