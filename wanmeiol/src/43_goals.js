@@ -26,7 +26,7 @@ async function tradeDo(i) { const T = TRADES[i]; if (!T || !T.need.every(([k, n]
 
 /* ---------- daily bounties ---------- */
 function bountyToday() { // one per person per day; someone who becomes available later in the day gets theirs then
-  const d = today(); if (!C.bounty || C.bounty.day !== d) C.bounty = { day: d, list: [] }; const list = C.bounty.list;
+  const d = gameDay(); if (!C.bounty || C.bounty.day !== d) C.bounty = { day: d, list: [] }; const list = C.bounty.list;
   for (const B of BOUNTY_FROM) { if (!B.open() || list.some(b => b.npc === B.npc)) continue; const r = srng('bounty' + d + C.created + B.npc);
     const ps = Object.values(PLACES).filter(p => B.areas.includes(p.area) && placeOpen(p.id) && p.mobs && p.lv && p.lv[0] <= C.lv + 2);
     if (ps.length && r() < 0.7) { const P = ps[Math.floor(r() * ps.length)], m = P.mobs[Math.floor(r() * P.mobs.length)][0]; list.push({ npc: B.npc, kind: 'kill', id: m, n: 4 + Math.floor(r() * 3), got: 0, st: 'new', where: P.name, loc: P.id }); }
@@ -40,7 +40,7 @@ function bountyTake(i) { const b = bountyToday()[i]; if (!b || b.st === 'done') 
   if (b.st === 'new') { b.st = 'on'; logLine(`【悬赏】${NPCS[b.npc].name}：${bountyText(b)}`, 'quest'); save(); refresh(); return; }
   if (!bountyReady(b)) return; if (b.kind === 'item') takeItem(b.id, b.n); b.st = 'done'; C.stats.bounty = (C.stats.bounty || 0) + 1;
   logLine(`【悬赏完成】${NPCS[b.npc].name}很满意。`, 'quest'); gainMoney(20 + C.lv * 4, '赏钱'); addItem('baoyao'); addItem('lingyao'); gainExp(BAL.expNext(C.lv) * 0.3); const sk = C.bar.length ? pick(C.bar) : null; if (sk) { for (let k = 0; k < 5; k++) profUse(sk); logLine(`${SKILLS[sk].name} 熟练度 +5`, 'dim'); } sfx('loot'); save(); refresh(); }
-function bountyKill(mob) { if (!C.bounty || C.bounty.day !== today()) return; for (const b of C.bounty.list) if (b.st === 'on' && b.kind === 'kill' && b.id === mob && b.got < b.n) { b.got++; if (b.got === b.n) logLine(`【悬赏】${MOBS[mob].name} 够数了，回去找${NPCS[b.npc].name}。`, 'quest'); } }
+function bountyKill(mob) { if (!C.bounty || C.bounty.day !== gameDay()) return; for (const b of C.bounty.list) if (b.st === 'on' && b.kind === 'kill' && b.id === mob && b.got < b.n) { b.got++; if (b.got === b.n) logLine(`【悬赏】${MOBS[mob].name} 够数了，回去找${NPCS[b.npc].name}。`, 'quest'); } }
 
 /* ---------- 地点探索度: every kind of beast here beaten + everything here gathered ---------- */
 function exTargets(P) { const m = [...new Set((P.mobs || []).map(x => x[0]))], g = [...new Set((P.gather || []).map(x => x[0]))]; return { m, g, n: m.length + g.length }; }
@@ -62,8 +62,8 @@ async function teleport() { if (!canTeleport() || STATE.scene || STATE.battle ||
 
 /* ---------- 休息：歇一会儿 / 睡到天黑 / 睡到天亮 ---------- */
 async function rest() { if (STATE.scene || STATE.battle) return; let c = 0;
-  await runScene(async () => { c = await dlgChoose([{ t: '🛏 歇一会儿（气血符力回满）' }, { t: '🌙 一觉睡到天黑' }, { t: '🌅 一觉睡到天亮' }, { t: '算了' }], C.loc === 'sc_willow' ? '柳枝在头顶轻轻晃着。' : C.loc === 'bt_court' ? '神藤下很安静。' : '石屋里铺着兽皮，暖烘烘的。'); });
-  if (c === 3) return; fullHeal(); sfx('heal'); if (c > 0) { C.tod = { night: c === 1, until: now() + 40 * 60000 }; bannerKey = ''; }
+  await runScene(async () => { c = await dlgChoose([{ t: '🛏 歇一会儿（气血符力回满）' }, { t: '🌙 一觉睡到天黑', dis: isNight() }, { t: `🌅 一觉睡到天亮（第 ${(C.day || 1) + 1} 天：虚神界、悬赏换新）` }, { t: '算了' }], C.loc === 'sc_willow' ? '柳枝在头顶轻轻晃着。' : C.loc === 'bt_court' ? '神藤下很安静。' : '石屋里铺着兽皮，暖烘烘的。'); });
+  if (c === 3) return; fullHeal(); sfx('heal'); if (c === 1) { C.tick = BAL.duskAt; bannerKey = ''; } if (c === 2) newDay();
   logLine(c === 1 ? '你一觉睡到了天黑。窗外的大荒换了一副样子，夜行的东西都出来了。' : c === 2 ? '你一觉睡到了天亮，伸了个懒腰，浑身是劲。' : C.loc === 'sc_willow' ? '你在柳树下坐了一会儿，一缕神光拂过，身上的伤都不疼了。' : C.loc === 'bt_court' ? '你在神藤下打坐了一个时辰，气血、符力都回满了。' : '你美美地睡了一觉，气血、符力都回满了。', 'dim'); save(); refresh(); bannerDraw(); }
 
 /* ---------- 洞天重开 at 柳神 ---------- */
@@ -97,7 +97,7 @@ function trackTask(key) { C.track = key; sfx('click'); save(); refresh(); }
 
 /* ---------- 歇脚 in the wild: once per visit, 40% back, and something may come sniffing ---------- */
 async function camp() { const P = PLACES[C.loc]; if (STATE.scene || STATE.battle || STATE.dungeon || !P.mobs || P.town) return; const key = C.loc + C.seenN; if (UI.campAt === key) { toast('刚歇过了，换个地方再歇'); return; } UI.campAt = key;
-  if (chance(0.25)) { logLine('你刚找了块石头坐下，草丛里就有东西扑了过来——', 'enc'); const id = wpick(P.mobs, x => x[1])[0]; const r = await startBattle({ mobs: [[id, clamp(rint(P.lv[0], P.lv[1]), 1, 30)]], title: `${P.name} · 歇脚被打断`, flee: true }); if (!r || !r.win) return; }
+  passTime(1); if (chance(0.25)) { logLine('你刚找了块石头坐下，草丛里就有东西扑了过来——', 'enc'); const id = wpick(P.mobs, x => x[1])[0]; const r = await startBattle({ mobs: [[id, clamp(rint(P.lv[0], P.lv[1]), 1, 30)]], title: `${P.name} · 歇脚被打断`, flee: true }); if (!r || !r.win) return; }
   const s = charStats(); C.hp = Math.min(s.hpMax, C.hp + s.hpMax * 0.4); C.mp = Math.min(s.mpMax, C.mp + s.mpMax * 0.4); sfx('heal');
   logLine(isNight() ? '你拢了一小堆火，靠着火歇了一会儿。气血、符力回了四成。' : '你找了块背风的石头靠着歇了一会儿。气血、符力回了四成。', 'dim'); save(); refresh(); }
 

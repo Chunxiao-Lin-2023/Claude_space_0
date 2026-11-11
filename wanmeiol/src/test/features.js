@@ -65,6 +65,10 @@ const { chromium } = require('playwright');
     ok('petLevelsPastHero', c.pets.dahong.lv >= 25 && petUnit('dahong').atk > atk20); ok('evo2', !!c.pets.dahong.evo2);
     c.bag.bone = 20; c.bag.lingyao = 5; c.bag.baoyao = 2; petRankUp('dahong', 0); petRankUp('dahong', 0); ok('rankUp', petRank('dahong', 0) === 3); ok('rankEffect', rankedMove(PETS.dahong.sk[0], 3).dmg > PETS.dahong.sk[0].dmg && rankedMove(PETS.dahong.sk[0], 3).st.t === PETS.dahong.sk[0].st.t + 1);
     const lv0 = c.pets.maoqiu.lv || c.lv, ex0 = c.pets.maoqiu.exp || 0; c.auto = true; await D.startBattle({ mobs: [['boar', 20]], title: 't' }); await idle(); ok('benchExp', (c.pets.maoqiu.exp || 0) > ex0 || (c.pets.maoqiu.lv || 0) > lv0);
+    // in-game days: no wall clock
+    D.night = null; c.tick = 0; const d0 = c.day || 1; c.arena.tries = 0; c.arena.day = gameDay(); D.go('sc_street', true, true); D.pick = ts => ts.findIndex(t => t.includes('天亮')); await rest(); D.pick = null;
+    arenaDaily(); ok('sleepNewDay', c.day === d0 + 1 && c.arena.tries === BAL.arenaTries && !isNight()); roamTick(); ok('roamPerDay', D.ROAM && D.ROAM.slot === c.day && D.ROAM.end === Infinity);
+    D.go('dh_forest', true, true); for (let i = 0; i < 12 && !isNight(); i++) passTime(1); ok('nightByActions', isNight()); passTime(BAL.dayLen); ok('dawnAfterNight', !isNight() && c.day === d0 + 2);
     // 任务列表: side errands and bounties can be tracked, the target follows
     c.side = {}; const T0 = tasks(); ok('taskListHasSide', T0.some(t => t.key.startsWith('side:')) && T0.some(t => t.key.startsWith('bounty:')));
     c.side.sq_milk = 'on'; c.bag.bone = 0; trackTask('side:sq_milk'); ok('trackSide', curTask().key === 'side:sq_milk' && !!taskWhere() && PLACES[taskWhere()].gather.some(g => g[0] === 'bone') || PLACES[taskWhere()].mobs.some(m => (MOBS[m[0]].loot || []).some(l => l[0] === 'bone')));

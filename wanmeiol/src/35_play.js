@@ -1,11 +1,17 @@
 /* ================= moving, exploring, battles, dungeons, roaming 凶兽首领 ================= */
 const exitsOf = loc => { const ex = {}; for (const [d, id] of Object.entries(PLACES[loc].exits)) if (placeOpen(id)) ex[d] = id; return ex; };
-const isNight = () => { if (window.__dbg && __dbg.night != null) return __dbg.night; if (C && C.tod && C.tod.until > now()) return C.tod.night; const h = new Date().getHours(); return h >= 19 || h < 6; };
+/* ---------- in-game time: no wall clock anywhere. A day is BAL.dayLen ticks; sleeping in town starts the next day ---------- */
+const isNight = () => { if (window.__dbg && __dbg.night != null) return __dbg.night; return !!C && (C.tick || 0) >= BAL.duskAt; };
+const gameDay = () => 'd' + ((C && C.day) || 1);
+function passTime(t) { if (!C || NETROLE === 'guest') return; const was = isNight(); C.tick = (C.tick || 0) + t;
+  if (C.tick >= BAL.dayLen) newDay('你在野外熬过了一整夜，天边泛白了。');
+  else if (!was && isNight()) { logLine('天色暗了下来。夜里，大荒是凶兽的。', 'dim'); bannerKey = ''; bannerDraw(); refresh(); } }
+function newDay(why) { C.day = (C.day || 1) + 1; C.tick = 0; bannerKey = ''; logLine(`${why ? why + ' ' : ''}<b>第 ${C.day} 天</b>。虚神界的挑战次数、各处的悬赏都换新了。`, 'sys'); roamTick(); bannerDraw(); refresh(); }
 const pdesc = P => C.story.f.moved && P.moved ? P.moved : P.desc;
 function go(loc, silent, force) {
   if (!PLACES[loc] || !placeOpen(loc)) return; if (!force && (STATE.battle || STATE.scene || STATE.dungeon)) { toast(STATE.battle ? '打着呢，走不开' : '先把眼前的事办完'); return; }
   C.loc = loc; C.seen[loc] = 1; C.seenN = (C.seenN || 0) + 1; const P = PLACES[loc]; if (P.town && P.area !== 'xushen') C.home = loc === 'sc_willow' || loc === 'sc_chief' ? 'sc_street' : loc;
-  sfx('step'); if (!silent) describe(); save(); refresh(); bannerDraw(); npcOnArrive(loc);
+  sfx('step'); if (!force) passTime(0.25); if (!silent) describe(); save(); refresh(); bannerDraw(); npcOnArrive(loc);
   if (!force) setTimeout(() => storyArrive(loc), 120);
 }
 function describe() {
@@ -33,7 +39,7 @@ const FLAVOR_N = ['黑暗里亮起几点绿光——', '月亮被云遮住的一
 const FLAVOR = ['草丛里窸窸窣窣地响了一阵——', '你拨开一丛灌木，', '一阵腥风扑面而来，', '脚下的落叶突然动了一下，', '远处一声低吼，越来越近，'];
 async function explore() {
   if (STATE.battle || STATE.scene || STATE.dungeon || now() < exploreT) return; exploreT = now() + (window.__dbg && __dbg.noCD ? 0 : 700); const P = PLACES[C.loc]; if (!P.mobs) return;
-  if (C.hp < charStats().hpMax * 0.15) { toast('气血太低了，先歇一歇'); return; }
+  if (C.hp < charStats().hpMax * 0.15) { toast('气血太低了，先歇一歇'); return; } passTime(1);
   const r = Math.random(), night = isNight(), pool = night && NIGHT_MOBS[P.area] ? [...P.mobs, [NIGHT_MOBS[P.area], 3]] : P.mobs;
   const ev = r >= 0.6 ? wildEventFor(P) : null; if (ev && (ev.once || chance(0.5))) return runWild(ev);
   if (r < 0.6) { const n = wpick([{ v: 1, w: 6 }, { v: 2, w: 3 }, { v: 3, w: 1 }]).v; const mobs = []; for (let i = 0; i < n; i++) { const id = wpick(pool, x => x[1])[0]; mobs.push([id, clamp(rint(P.lv[0], P.lv[1]), 1, 30)]); }
@@ -94,7 +100,7 @@ async function enterDungeon(id, hard) {
       if (c === 0) { const s = charStats(); C.hp = Math.min(s.hpMax, C.hp + s.hpMax * 0.4); C.mp = Math.min(s.mpMax, C.mp + s.mpMax * 0.4); logLine('你靠着石壁调息了一会儿。', 'dim'); refresh(); }
       if (c === 2) { STATE.dungeon = null; refresh(); bannerDraw(); return; } }
   }
-  const key = hard ? id + '_hard' : id, firstHard = hard && !C.dungeons[key]; C.dungeons[key] = (C.dungeons[key] || 0) + 1; logLine(`<b class="lvup">「${hard ? '困难 · ' : ''}${D.name}」走通了！</b>`, 'sys'); bigFlash((hard ? '困难 · ' : '') + D.name + ' · 通关', 'relic');
+  const key = hard ? id + '_hard' : id, firstHard = hard && !C.dungeons[key]; passTime(2); C.dungeons[key] = (C.dungeons[key] || 0) + 1; logLine(`<b class="lvup">「${hard ? '困难 · ' : ''}${D.name}」走通了！</b>`, 'sys'); bigFlash((hard ? '困难 · ' : '') + D.name + ' · 通关', 'relic');
   if (hard) { addItem('baoyao', 3); addItem('lingyao', 3); gainExp(BAL.expNext(C.lv) * 0.6); if (firstHard) { const left = Object.keys(RELICS).filter(k => !(C.relics || {})[k]); if (left.length) gainRelic(pick(left)); } }
   STATE.dungeon = null; save(); refresh(); bannerDraw(); setTimeout(storyPoll, 300);
 }
@@ -108,14 +114,14 @@ async function dungeonEvent(k, D) {
 /* ---------- roaming 凶兽首领 (one at a time, in a wild place you can already reach) ---------- */
 let ROAM = null;
 function roamTick() {
-  if (!C || NETROLE === 'guest') return; const slot = Math.floor(now() / (BAL.bossEvery * 60000));
+  if (!C || NETROLE === 'guest') return; const slot = C.day || 1; // one roaming 凶兽首领 a day; it stays until you beat it or the day ends
   if (!ROAM || ROAM.slot !== slot) { const wild = Object.values(PLACES).filter(p => p.mobs && p.lv && placeOpen(p.id) && !p.dungeon); if (!wild.length) return; const r = srng('roam' + slot), P = wild[Math.floor(r() * wild.length)], id = ROAMERS[slot % ROAMERS.length];
-    const lv = clamp(Math.max(P.lv[1] + 2, C.lv), 3, 22), E = BAL.enemy(lv), hp = Math.round(E.hp * MOBS[id].mul.hp); const start = slot * BAL.bossEvery * 60000;
-    ROAM = { id, loc: P.id, lv, slot, hpMax: hp, hp, start, end: start + BAL.bossOpen * 60000, dead: false, told: false };
-    if (store.get('roamDead', 0) === slot) ROAM.dead = true; }
+    const lv = clamp(Math.max(P.lv[1] + 2, C.lv), 3, 22), E = BAL.enemy(lv), hp = Math.round(E.hp * MOBS[id].mul.hp); const start = 0;
+    ROAM = { id, loc: P.id, lv, slot, hpMax: hp, hp, start, end: Infinity, dead: false, told: false };
+    if (C.roamDead === slot) ROAM.dead = true; }
   if (!ROAM.told && !ROAM.dead && now() < ROAM.end) { ROAM.told = true; npcRumor(`听说<b>${PLACES[ROAM.loc].name}</b>那边来了一头<b>${MOBS[ROAM.id].name}</b>，凶得很。`); }
 }
 async function fightRoam() { if (!ROAM || ROAM.dead) return; const yx = C.story.f.yunxiHelp && PLACES[ROAM.loc].area === 'baiduan'; if (yx) logLine('一道白影落在你身边——云曦来了。', 'sys');
   const r = await startBattle({ mobs: [[ROAM.id, ROAM.lv]], allies: yx ? ['a_yunxi'] : [], title: `凶兽首领 · ${MOBS[ROAM.id].name}`, flee: true, roam: { hpMax: ROAM.hpMax, hp: ROAM.hp } });
-  if (r && r.win) { ROAM.dead = true; store.set('roamDead', ROAM.slot); logLine(`你打跑了${MOBS[ROAM.id].name}！`, 'sys'); addItem('baoyao'); } refresh(); }
+  if (r && r.win) { ROAM.dead = true; C.roamDead = ROAM.slot; logLine(`你打跑了${MOBS[ROAM.id].name}！`, 'sys'); addItem('baoyao'); } refresh(); }
 function roamRound(B) { if (!ROAM) return; ROAM.hp = Math.max(0, ROAM.hpMax - (ROAM.hpMax - ROAM.hp) - (B.roamDmg || 0)); B.roamDmg = 0; const b = B.units.find(u => u.side === 1); if (b) ROAM.hp = Math.max(0, b.hp); }

@@ -104,9 +104,9 @@ function rivalAt(rank) { const r = srng('rv' + rank); const name = rank <= RIVAL
   const lv = clamp(C.lv + Math.round((60 - rank) / 28), 1, 25); let sks = [['qly'], ['sn'], ['qly', 'sn'], ['lei'], ['sn', 'lei'], ['gw', 'qly'], ['jian', 'lei']][Math.floor(r() * 7)]; if (rank <= 20) sks = [...new Set([...sks, ...[['jian', 'ta'], ['dsh', 'lei'], ['sn', 'jian']][rank % 3]])];
   if (rank === 1) return { rank, name, lv: lv + 1, gear: 1.35, sk: ['sn', 'lei', 'jian', 'qly'], icon: '👁️', shiyi: 1 };
   return { rank, name, lv, gear: 0.85 + Math.max(0, 100 - rank) / 100 * 0.35 + (rank <= 20 ? 0.08 : 0), sk: sks, icon: ['🧑', '👦', '👧', '🦁', '🐉', '🦅'][Math.floor(r() * 6)] }; }
-function arenaDaily() { const d = today(); if (C.arena.day !== d) { C.arena.day = d; C.arena.tries = BAL.arenaTries; } }
+function arenaDaily() { const d = gameDay(); if (C.arena.day !== d) { C.arena.day = d; C.arena.tries = BAL.arenaTries; } }
 function arenaRank() { if (!C.arena.rank) C.arena.rank = 120; return C.arena.rank; }
-function arenaOpponents() { const r = arenaRank(), seed = srng('ao' + today() + r + C.arena.wins), out = []; const span = Math.max(3, Math.min(30, Math.round(r * 0.3)));
+function arenaOpponents() { const r = arenaRank(), seed = srng('ao' + gameDay() + r + C.arena.wins), out = []; const span = Math.max(3, Math.min(30, Math.round(r * 0.3)));
   const ranks = new Set(); while (ranks.size < 3 && ranks.size < r - 1) ranks.add(Math.max(1, r - 1 - Math.floor(seed() * span))); return [...ranks].sort((a, b) => b - a).map(rivalAt); }
 async function arenaFight(o) {
   arenaDaily(); if (C.arena.tries <= 0) { toast('今天打累了，明天再来'); return; } C.arena.tries--; fullHeal(); closeModal();
@@ -123,4 +123,4 @@ function arenaMilestones() { const r = C.arena.rank; C.arena.best = Math.min(C.a
   for (const M of ARENA_MS) if (r <= M.r && !C.arena.got[M.r]) { C.arena.got[M.r] = 1; logLine(`<b class="lvup">${M.t}</b>`, 'sys'); for (const [k, n] of M.items) addItem(k, n); gainExp(BAL.expNext(C.lv) * M.exp); sfx('epic'); }
   if (r <= 10 && !C.story.f.shiyi) setTimeout(() => runScene(S_shiyi, { title: '重瞳' }), 700); }
 const arenaGift = r => r <= 10 ? { items: [['baoyao', 2], ['lingyao', 2]], exp: 0.25 } : r <= 50 ? { items: [['baoyao', 1], ['lingyao', 1]], exp: 0.15 } : r <= 100 ? { items: [['lingyao', 1], ['herb', 2]], exp: 0.08 } : { items: [['herb', 2]], exp: 0.04 };
-function arenaClaim() { if (C.arena.claimed === today()) return; C.arena.claimed = today(); const g = arenaGift(arenaRank()); logLine(`虚神界的光幕洒下一片微光——按今天的排名（${arenaRank() > 100 ? '榜外' : '第 ' + arenaRank() + ' 名'}）领到了奖励。`, 'sys'); for (const [k, n] of g.items) addItem(k, n); gainExp(BAL.expNext(C.lv) * g.exp); sfx('loot'); save(); refresh(); }
+function arenaClaim() { if (C.arena.claimed === gameDay()) return; C.arena.claimed = gameDay(); const g = arenaGift(arenaRank()); logLine(`虚神界的光幕洒下一片微光——按今天的排名（${arenaRank() > 100 ? '榜外' : '第 ' + arenaRank() + ' 名'}）领到了奖励。`, 'sys'); for (const [k, n] of g.items) addItem(k, n); gainExp(BAL.expNext(C.lv) * g.exp); sfx('loot'); save(); refresh(); }

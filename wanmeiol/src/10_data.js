@@ -11,8 +11,7 @@ const BAL = {
   flee: 0.65,
   deathExpLoss: 0.12,
   mpRegen: 0.07,
-  bossEvery: 20,  // minutes between roaming 凶兽首领 (wall clock)
-  bossOpen: 8,
+  dayLen: 16, duskAt: 11,   // in-game time: actions move the clock (探索 1, 走一步 ¼, 歇脚 1, 秘境 2); from 11 it is night; past 16 a new day dawns
   arenaTries: 5,
   // later levels need many more fights per story step; these two shorten the grind (approved: suggestion 14)
   expMul: lv => lv >= 10 ? 1 + (lv - 9) * 0.06 : 1,   // ×1.06 at 10 … ×1.54 at 18

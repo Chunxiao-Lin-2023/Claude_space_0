@@ -85,7 +85,7 @@ function renderTop() {
 function renderBanner() {
   const P = PLACES[C.loc], A = AREAS[P.area]; $('bnm').textContent = STATE.dungeon ? DUNGEONS[STATE.dungeon.id].name : P.name;
   const exc = P.lv && !STATE.dungeon ? exCount(C.loc) : null;
-  $('bar').innerHTML = STATE.dungeon ? `第 ${STATE.dungeon.room + 1}/${DUNGEONS[STATE.dungeon.id].rooms.length} 关` : `${A.name}${P.lv ? ' · ' + P.lv[0] + '-' + P.lv[1] + ' 层' : ''}${isNight() ? ' · 夜' : ''}${exc && exc.n ? ` · <span title="探索度：这里的凶兽种类和能采的东西">${exc.done ? '✓ 探索完成' : `探索 ${exc.have}/${exc.n}`}</span>` : ''}`;
+  $('bar').innerHTML = STATE.dungeon ? `第 ${STATE.dungeon.room + 1}/${DUNGEONS[STATE.dungeon.id].rooms.length} 关` : `${A.name}${P.lv ? ' · ' + P.lv[0] + '-' + P.lv[1] + ' 层' : ''}${` · 第 ${C.day || 1} 天${isNight() ? ' · 夜' : (C.tick || 0) >= BAL.duskAt - 2 ? ' · 黄昏' : ''}`}${exc && exc.n ? ` · <span title="探索度：这里的凶兽种类和能采的东西">${exc.done ? '✓ 探索完成' : `探索 ${exc.have}/${exc.n}`}</span>` : ''}`;
   const q = curQ(), T = curTask(), w = T.where, nT = tasks().length; $('bq').innerHTML = `<span class="qk">${T.kind}</span><b>${esc(T.title)}</b>　${T.goal}${w && w !== C.loc && route(C.loc, w) ? '<span class="go">▶ 去</span>' : ''}${T.key === 'main' && q.rec && C.lv < q.rec ? `　<span class="warn">建议 ${q.rec} 层</span>` : ''}`;
   $('bqs').innerHTML = `任务<br><b>${nT}</b>`; $('bqs').classList.toggle('dot2', tasks().some(t => /可接/.test(t.kind) || / → 交给/.test(t.goal)));
   $('bq').setAttribute('onclick', 'questGo()');

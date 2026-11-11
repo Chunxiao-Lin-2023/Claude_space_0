@@ -614,8 +614,7 @@ const BAL = {
   flee: 0.65,
   deathExpLoss: 0.12,
   mpRegen: 0.07,
-  bossEvery: 20,  // minutes between roaming 凶兽首领 (wall clock)
-  bossOpen: 8,
+  dayLen: 16, duskAt: 11,   // in-game time: actions move the clock (探索 1, 走一步 ¼, 歇脚 1, 秘境 2); from 11 it is night; past 16 a new day dawns
   arenaTries: 5,
   // later levels need many more fights per story step; these two shorten the grind (approved: suggestion 14)
   expMul: lv => lv >= 10 ? 1 + (lv - 9) * 0.06 : 1,   // ×1.06 at 10 … ×1.54 at 18
@@ -964,7 +963,7 @@ const SAVE_V = 2;
 function newChar() {
   return { v: SAVE_V, name: '石昊', lv: 1, exp: 0, hp: 1, mp: 1, loc: 'sc_chief', home: 'sc_street', bag: { milk: 2 },
     sk: [], bar: [], gf: ['yingxia'], dt: [], pets: {}, pet: null, story: { q: 0, n: 0, f: {} }, kills: {}, stats: { kills: 0, deaths: 0, bosses: 0 },
-    arena: { rank: 0, wins: 0, tries: BAL.arenaTries, day: '', best: 999, got: {}, claimed: '' }, dungeons: {}, auto: false, seen: {}, prof: {}, codex: {}, relics: {}, eq: [], diff: 1, money: 20, ex: {}, ach: {}, title: '', created: now() };
+    arena: { rank: 0, wins: 0, tries: BAL.arenaTries, day: '', best: 999, got: {}, claimed: '' }, dungeons: {}, auto: false, seen: {}, prof: {}, codex: {}, relics: {}, eq: [], diff: 1, money: 20, day: 1, tick: 0, ex: {}, ach: {}, title: '', created: now() };
 }
 function charStats(c = C) {
   const L = c.lv - 1, s = { hpMax: HERO.base.hp + HERO.grow.hp * L, mpMax: HERO.base.mp + HERO.grow.mp * L, atk: HERO.base.atk + HERO.grow.atk * L, def: HERO.base.def + HERO.grow.def * L, spd: HERO.base.spd + HERO.grow.spd * L, crit: HERO.base.crit + HERO.grow.crit * L, leech: 0, regen: 0 };
@@ -1262,12 +1261,18 @@ function battleRewards(B) {
 
 /* ================= moving, exploring, battles, dungeons, roaming 凶兽首领 ================= */
 const exitsOf = loc => { const ex = {}; for (const [d, id] of Object.entries(PLACES[loc].exits)) if (placeOpen(id)) ex[d] = id; return ex; };
-const isNight = () => { if (window.__dbg && __dbg.night != null) return __dbg.night; if (C && C.tod && C.tod.until > now()) return C.tod.night; const h = new Date().getHours(); return h >= 19 || h < 6; };
+/* ---------- in-game time: no wall clock anywhere. A day is BAL.dayLen ticks; sleeping in town starts the next day ---------- */
+const isNight = () => { if (window.__dbg && __dbg.night != null) return __dbg.night; return !!C && (C.tick || 0) >= BAL.duskAt; };
+const gameDay = () => 'd' + ((C && C.day) || 1);
+function passTime(t) { if (!C || NETROLE === 'guest') return; const was = isNight(); C.tick = (C.tick || 0) + t;
+  if (C.tick >= BAL.dayLen) newDay('你在野外熬过了一整夜，天边泛白了。');
+  else if (!was && isNight()) { logLine('天色暗了下来。夜里，大荒是凶兽的。', 'dim'); bannerKey = ''; bannerDraw(); refresh(); } }
+function newDay(why) { C.day = (C.day || 1) + 1; C.tick = 0; bannerKey = ''; logLine(`${why ? why + ' ' : ''}<b>第 ${C.day} 天</b>。虚神界的挑战次数、各处的悬赏都换新了。`, 'sys'); roamTick(); bannerDraw(); refresh(); }
 const pdesc = P => C.story.f.moved && P.moved ? P.moved : P.desc;
 function go(loc, silent, force) {
   if (!PLACES[loc] || !placeOpen(loc)) return; if (!force && (STATE.battle || STATE.scene || STATE.dungeon)) { toast(STATE.battle ? '打着呢，走不开' : '先把眼前的事办完'); return; }
   C.loc = loc; C.seen[loc] = 1; C.seenN = (C.seenN || 0) + 1; const P = PLACES[loc]; if (P.town && P.area !== 'xushen') C.home = loc === 'sc_willow' || loc === 'sc_chief' ? 'sc_street' : loc;
-  sfx('step'); if (!silent) describe(); save(); refresh(); bannerDraw(); npcOnArrive(loc);
+  sfx('step'); if (!force) passTime(0.25); if (!silent) describe(); save(); refresh(); bannerDraw(); npcOnArrive(loc);
   if (!force) setTimeout(() => storyArrive(loc), 120);
 }
 function describe() {
@@ -1295,7 +1300,7 @@ const FLAVOR_N = ['黑暗里亮起几点绿光——', '月亮被云遮住的一
 const FLAVOR = ['草丛里窸窸窣窣地响了一阵——', '你拨开一丛灌木，', '一阵腥风扑面而来，', '脚下的落叶突然动了一下，', '远处一声低吼，越来越近，'];
 async function explore() {
   if (STATE.battle || STATE.scene || STATE.dungeon || now() < exploreT) return; exploreT = now() + (window.__dbg && __dbg.noCD ? 0 : 700); const P = PLACES[C.loc]; if (!P.mobs) return;
-  if (C.hp < charStats().hpMax * 0.15) { toast('气血太低了，先歇一歇'); return; }
+  if (C.hp < charStats().hpMax * 0.15) { toast('气血太低了，先歇一歇'); return; } passTime(1);
   const r = Math.random(), night = isNight(), pool = night && NIGHT_MOBS[P.area] ? [...P.mobs, [NIGHT_MOBS[P.area], 3]] : P.mobs;
   const ev = r >= 0.6 ? wildEventFor(P) : null; if (ev && (ev.once || chance(0.5))) return runWild(ev);
   if (r < 0.6) { const n = wpick([{ v: 1, w: 6 }, { v: 2, w: 3 }, { v: 3, w: 1 }]).v; const mobs = []; for (let i = 0; i < n; i++) { const id = wpick(pool, x => x[1])[0]; mobs.push([id, clamp(rint(P.lv[0], P.lv[1]), 1, 30)]); }
@@ -1356,7 +1361,7 @@ async function enterDungeon(id, hard) {
       if (c === 0) { const s = charStats(); C.hp = Math.min(s.hpMax, C.hp + s.hpMax * 0.4); C.mp = Math.min(s.mpMax, C.mp + s.mpMax * 0.4); logLine('你靠着石壁调息了一会儿。', 'dim'); refresh(); }
       if (c === 2) { STATE.dungeon = null; refresh(); bannerDraw(); return; } }
   }
-  const key = hard ? id + '_hard' : id, firstHard = hard && !C.dungeons[key]; C.dungeons[key] = (C.dungeons[key] || 0) + 1; logLine(`<b class="lvup">「${hard ? '困难 · ' : ''}${D.name}」走通了！</b>`, 'sys'); bigFlash((hard ? '困难 · ' : '') + D.name + ' · 通关', 'relic');
+  const key = hard ? id + '_hard' : id, firstHard = hard && !C.dungeons[key]; passTime(2); C.dungeons[key] = (C.dungeons[key] || 0) + 1; logLine(`<b class="lvup">「${hard ? '困难 · ' : ''}${D.name}」走通了！</b>`, 'sys'); bigFlash((hard ? '困难 · ' : '') + D.name + ' · 通关', 'relic');
   if (hard) { addItem('baoyao', 3); addItem('lingyao', 3); gainExp(BAL.expNext(C.lv) * 0.6); if (firstHard) { const left = Object.keys(RELICS).filter(k => !(C.relics || {})[k]); if (left.length) gainRelic(pick(left)); } }
   STATE.dungeon = null; save(); refresh(); bannerDraw(); setTimeout(storyPoll, 300);
 }
@@ -1370,16 +1375,16 @@ async function dungeonEvent(k, D) {
 /* ---------- roaming 凶兽首领 (one at a time, in a wild place you can already reach) ---------- */
 let ROAM = null;
 function roamTick() {
-  if (!C || NETROLE === 'guest') return; const slot = Math.floor(now() / (BAL.bossEvery * 60000));
+  if (!C || NETROLE === 'guest') return; const slot = C.day || 1; // one roaming 凶兽首领 a day; it stays until you beat it or the day ends
   if (!ROAM || ROAM.slot !== slot) { const wild = Object.values(PLACES).filter(p => p.mobs && p.lv && placeOpen(p.id) && !p.dungeon); if (!wild.length) return; const r = srng('roam' + slot), P = wild[Math.floor(r() * wild.length)], id = ROAMERS[slot % ROAMERS.length];
-    const lv = clamp(Math.max(P.lv[1] + 2, C.lv), 3, 22), E = BAL.enemy(lv), hp = Math.round(E.hp * MOBS[id].mul.hp); const start = slot * BAL.bossEvery * 60000;
-    ROAM = { id, loc: P.id, lv, slot, hpMax: hp, hp, start, end: start + BAL.bossOpen * 60000, dead: false, told: false };
-    if (store.get('roamDead', 0) === slot) ROAM.dead = true; }
+    const lv = clamp(Math.max(P.lv[1] + 2, C.lv), 3, 22), E = BAL.enemy(lv), hp = Math.round(E.hp * MOBS[id].mul.hp); const start = 0;
+    ROAM = { id, loc: P.id, lv, slot, hpMax: hp, hp, start, end: Infinity, dead: false, told: false };
+    if (C.roamDead === slot) ROAM.dead = true; }
   if (!ROAM.told && !ROAM.dead && now() < ROAM.end) { ROAM.told = true; npcRumor(`听说<b>${PLACES[ROAM.loc].name}</b>那边来了一头<b>${MOBS[ROAM.id].name}</b>，凶得很。`); }
 }
 async function fightRoam() { if (!ROAM || ROAM.dead) return; const yx = C.story.f.yunxiHelp && PLACES[ROAM.loc].area === 'baiduan'; if (yx) logLine('一道白影落在你身边——云曦来了。', 'sys');
   const r = await startBattle({ mobs: [[ROAM.id, ROAM.lv]], allies: yx ? ['a_yunxi'] : [], title: `凶兽首领 · ${MOBS[ROAM.id].name}`, flee: true, roam: { hpMax: ROAM.hpMax, hp: ROAM.hp } });
-  if (r && r.win) { ROAM.dead = true; store.set('roamDead', ROAM.slot); logLine(`你打跑了${MOBS[ROAM.id].name}！`, 'sys'); addItem('baoyao'); } refresh(); }
+  if (r && r.win) { ROAM.dead = true; C.roamDead = ROAM.slot; logLine(`你打跑了${MOBS[ROAM.id].name}！`, 'sys'); addItem('baoyao'); } refresh(); }
 function roamRound(B) { if (!ROAM) return; ROAM.hp = Math.max(0, ROAM.hpMax - (ROAM.hpMax - ROAM.hp) - (B.roamDmg || 0)); B.roamDmg = 0; const b = B.units.find(u => u.side === 1); if (b) ROAM.hp = Math.max(0, b.hp); }
 
 /* ================= 石昊's story, volume 1: 石村 → 出村 → 补天阁 → 百断山 =================
@@ -2043,7 +2048,7 @@ async function tradeDo(i) { const T = TRADES[i]; if (!T || !T.need.every(([k, n]
 
 /* ---------- daily bounties ---------- */
 function bountyToday() { // one per person per day; someone who becomes available later in the day gets theirs then
-  const d = today(); if (!C.bounty || C.bounty.day !== d) C.bounty = { day: d, list: [] }; const list = C.bounty.list;
+  const d = gameDay(); if (!C.bounty || C.bounty.day !== d) C.bounty = { day: d, list: [] }; const list = C.bounty.list;
   for (const B of BOUNTY_FROM) { if (!B.open() || list.some(b => b.npc === B.npc)) continue; const r = srng('bounty' + d + C.created + B.npc);
     const ps = Object.values(PLACES).filter(p => B.areas.includes(p.area) && placeOpen(p.id) && p.mobs && p.lv && p.lv[0] <= C.lv + 2);
     if (ps.length && r() < 0.7) { const P = ps[Math.floor(r() * ps.length)], m = P.mobs[Math.floor(r() * P.mobs.length)][0]; list.push({ npc: B.npc, kind: 'kill', id: m, n: 4 + Math.floor(r() * 3), got: 0, st: 'new', where: P.name, loc: P.id }); }
@@ -2057,7 +2062,7 @@ function bountyTake(i) { const b = bountyToday()[i]; if (!b || b.st === 'done') 
   if (b.st === 'new') { b.st = 'on'; logLine(`【悬赏】${NPCS[b.npc].name}：${bountyText(b)}`, 'quest'); save(); refresh(); return; }
   if (!bountyReady(b)) return; if (b.kind === 'item') takeItem(b.id, b.n); b.st = 'done'; C.stats.bounty = (C.stats.bounty || 0) + 1;
   logLine(`【悬赏完成】${NPCS[b.npc].name}很满意。`, 'quest'); gainMoney(20 + C.lv * 4, '赏钱'); addItem('baoyao'); addItem('lingyao'); gainExp(BAL.expNext(C.lv) * 0.3); const sk = C.bar.length ? pick(C.bar) : null; if (sk) { for (let k = 0; k < 5; k++) profUse(sk); logLine(`${SKILLS[sk].name} 熟练度 +5`, 'dim'); } sfx('loot'); save(); refresh(); }
-function bountyKill(mob) { if (!C.bounty || C.bounty.day !== today()) return; for (const b of C.bounty.list) if (b.st === 'on' && b.kind === 'kill' && b.id === mob && b.got < b.n) { b.got++; if (b.got === b.n) logLine(`【悬赏】${MOBS[mob].name} 够数了，回去找${NPCS[b.npc].name}。`, 'quest'); } }
+function bountyKill(mob) { if (!C.bounty || C.bounty.day !== gameDay()) return; for (const b of C.bounty.list) if (b.st === 'on' && b.kind === 'kill' && b.id === mob && b.got < b.n) { b.got++; if (b.got === b.n) logLine(`【悬赏】${MOBS[mob].name} 够数了，回去找${NPCS[b.npc].name}。`, 'quest'); } }
 
 /* ---------- 地点探索度: every kind of beast here beaten + everything here gathered ---------- */
 function exTargets(P) { const m = [...new Set((P.mobs || []).map(x => x[0]))], g = [...new Set((P.gather || []).map(x => x[0]))]; return { m, g, n: m.length + g.length }; }
@@ -2079,8 +2084,8 @@ async function teleport() { if (!canTeleport() || STATE.scene || STATE.battle ||
 
 /* ---------- 休息：歇一会儿 / 睡到天黑 / 睡到天亮 ---------- */
 async function rest() { if (STATE.scene || STATE.battle) return; let c = 0;
-  await runScene(async () => { c = await dlgChoose([{ t: '🛏 歇一会儿（气血符力回满）' }, { t: '🌙 一觉睡到天黑' }, { t: '🌅 一觉睡到天亮' }, { t: '算了' }], C.loc === 'sc_willow' ? '柳枝在头顶轻轻晃着。' : C.loc === 'bt_court' ? '神藤下很安静。' : '石屋里铺着兽皮，暖烘烘的。'); });
-  if (c === 3) return; fullHeal(); sfx('heal'); if (c > 0) { C.tod = { night: c === 1, until: now() + 40 * 60000 }; bannerKey = ''; }
+  await runScene(async () => { c = await dlgChoose([{ t: '🛏 歇一会儿（气血符力回满）' }, { t: '🌙 一觉睡到天黑', dis: isNight() }, { t: `🌅 一觉睡到天亮（第 ${(C.day || 1) + 1} 天：虚神界、悬赏换新）` }, { t: '算了' }], C.loc === 'sc_willow' ? '柳枝在头顶轻轻晃着。' : C.loc === 'bt_court' ? '神藤下很安静。' : '石屋里铺着兽皮，暖烘烘的。'); });
+  if (c === 3) return; fullHeal(); sfx('heal'); if (c === 1) { C.tick = BAL.duskAt; bannerKey = ''; } if (c === 2) newDay();
   logLine(c === 1 ? '你一觉睡到了天黑。窗外的大荒换了一副样子，夜行的东西都出来了。' : c === 2 ? '你一觉睡到了天亮，伸了个懒腰，浑身是劲。' : C.loc === 'sc_willow' ? '你在柳树下坐了一会儿，一缕神光拂过，身上的伤都不疼了。' : C.loc === 'bt_court' ? '你在神藤下打坐了一个时辰，气血、符力都回满了。' : '你美美地睡了一觉，气血、符力都回满了。', 'dim'); save(); refresh(); bannerDraw(); }
 
 /* ---------- 洞天重开 at 柳神 ---------- */
@@ -2114,7 +2119,7 @@ function trackTask(key) { C.track = key; sfx('click'); save(); refresh(); }
 
 /* ---------- 歇脚 in the wild: once per visit, 40% back, and something may come sniffing ---------- */
 async function camp() { const P = PLACES[C.loc]; if (STATE.scene || STATE.battle || STATE.dungeon || !P.mobs || P.town) return; const key = C.loc + C.seenN; if (UI.campAt === key) { toast('刚歇过了，换个地方再歇'); return; } UI.campAt = key;
-  if (chance(0.25)) { logLine('你刚找了块石头坐下，草丛里就有东西扑了过来——', 'enc'); const id = wpick(P.mobs, x => x[1])[0]; const r = await startBattle({ mobs: [[id, clamp(rint(P.lv[0], P.lv[1]), 1, 30)]], title: `${P.name} · 歇脚被打断`, flee: true }); if (!r || !r.win) return; }
+  passTime(1); if (chance(0.25)) { logLine('你刚找了块石头坐下，草丛里就有东西扑了过来——', 'enc'); const id = wpick(P.mobs, x => x[1])[0]; const r = await startBattle({ mobs: [[id, clamp(rint(P.lv[0], P.lv[1]), 1, 30)]], title: `${P.name} · 歇脚被打断`, flee: true }); if (!r || !r.win) return; }
   const s = charStats(); C.hp = Math.min(s.hpMax, C.hp + s.hpMax * 0.4); C.mp = Math.min(s.mpMax, C.mp + s.mpMax * 0.4); sfx('heal');
   logLine(isNight() ? '你拢了一小堆火，靠着火歇了一会儿。气血、符力回了四成。' : '你找了块背风的石头靠着歇了一会儿。气血、符力回了四成。', 'dim'); save(); refresh(); }
 
@@ -2272,9 +2277,9 @@ function rivalAt(rank) { const r = srng('rv' + rank); const name = rank <= RIVAL
   const lv = clamp(C.lv + Math.round((60 - rank) / 28), 1, 25); let sks = [['qly'], ['sn'], ['qly', 'sn'], ['lei'], ['sn', 'lei'], ['gw', 'qly'], ['jian', 'lei']][Math.floor(r() * 7)]; if (rank <= 20) sks = [...new Set([...sks, ...[['jian', 'ta'], ['dsh', 'lei'], ['sn', 'jian']][rank % 3]])];
   if (rank === 1) return { rank, name, lv: lv + 1, gear: 1.35, sk: ['sn', 'lei', 'jian', 'qly'], icon: '👁️', shiyi: 1 };
   return { rank, name, lv, gear: 0.85 + Math.max(0, 100 - rank) / 100 * 0.35 + (rank <= 20 ? 0.08 : 0), sk: sks, icon: ['🧑', '👦', '👧', '🦁', '🐉', '🦅'][Math.floor(r() * 6)] }; }
-function arenaDaily() { const d = today(); if (C.arena.day !== d) { C.arena.day = d; C.arena.tries = BAL.arenaTries; } }
+function arenaDaily() { const d = gameDay(); if (C.arena.day !== d) { C.arena.day = d; C.arena.tries = BAL.arenaTries; } }
 function arenaRank() { if (!C.arena.rank) C.arena.rank = 120; return C.arena.rank; }
-function arenaOpponents() { const r = arenaRank(), seed = srng('ao' + today() + r + C.arena.wins), out = []; const span = Math.max(3, Math.min(30, Math.round(r * 0.3)));
+function arenaOpponents() { const r = arenaRank(), seed = srng('ao' + gameDay() + r + C.arena.wins), out = []; const span = Math.max(3, Math.min(30, Math.round(r * 0.3)));
   const ranks = new Set(); while (ranks.size < 3 && ranks.size < r - 1) ranks.add(Math.max(1, r - 1 - Math.floor(seed() * span))); return [...ranks].sort((a, b) => b - a).map(rivalAt); }
 async function arenaFight(o) {
   arenaDaily(); if (C.arena.tries <= 0) { toast('今天打累了，明天再来'); return; } C.arena.tries--; fullHeal(); closeModal();
@@ -2291,7 +2296,7 @@ function arenaMilestones() { const r = C.arena.rank; C.arena.best = Math.min(C.a
   for (const M of ARENA_MS) if (r <= M.r && !C.arena.got[M.r]) { C.arena.got[M.r] = 1; logLine(`<b class="lvup">${M.t}</b>`, 'sys'); for (const [k, n] of M.items) addItem(k, n); gainExp(BAL.expNext(C.lv) * M.exp); sfx('epic'); }
   if (r <= 10 && !C.story.f.shiyi) setTimeout(() => runScene(S_shiyi, { title: '重瞳' }), 700); }
 const arenaGift = r => r <= 10 ? { items: [['baoyao', 2], ['lingyao', 2]], exp: 0.25 } : r <= 50 ? { items: [['baoyao', 1], ['lingyao', 1]], exp: 0.15 } : r <= 100 ? { items: [['lingyao', 1], ['herb', 2]], exp: 0.08 } : { items: [['herb', 2]], exp: 0.04 };
-function arenaClaim() { if (C.arena.claimed === today()) return; C.arena.claimed = today(); const g = arenaGift(arenaRank()); logLine(`虚神界的光幕洒下一片微光——按今天的排名（${arenaRank() > 100 ? '榜外' : '第 ' + arenaRank() + ' 名'}）领到了奖励。`, 'sys'); for (const [k, n] of g.items) addItem(k, n); gainExp(BAL.expNext(C.lv) * g.exp); sfx('loot'); save(); refresh(); }
+function arenaClaim() { if (C.arena.claimed === gameDay()) return; C.arena.claimed = gameDay(); const g = arenaGift(arenaRank()); logLine(`虚神界的光幕洒下一片微光——按今天的排名（${arenaRank() > 100 ? '榜外' : '第 ' + arenaRank() + ' 名'}）领到了奖励。`, 'sys'); for (const [k, n] of g.items) addItem(k, n); gainExp(BAL.expNext(C.lv) * g.exp); sfx('loot'); save(); refresh(); }
 
 /* ================= UI: one screen at a time =================
    探索 (dark green): location, what just happened, the quest line and what you can do here.
@@ -2380,7 +2385,7 @@ function renderTop() {
 function renderBanner() {
   const P = PLACES[C.loc], A = AREAS[P.area]; $('bnm').textContent = STATE.dungeon ? DUNGEONS[STATE.dungeon.id].name : P.name;
   const exc = P.lv && !STATE.dungeon ? exCount(C.loc) : null;
-  $('bar').innerHTML = STATE.dungeon ? `第 ${STATE.dungeon.room + 1}/${DUNGEONS[STATE.dungeon.id].rooms.length} 关` : `${A.name}${P.lv ? ' · ' + P.lv[0] + '-' + P.lv[1] + ' 层' : ''}${isNight() ? ' · 夜' : ''}${exc && exc.n ? ` · <span title="探索度：这里的凶兽种类和能采的东西">${exc.done ? '✓ 探索完成' : `探索 ${exc.have}/${exc.n}`}</span>` : ''}`;
+  $('bar').innerHTML = STATE.dungeon ? `第 ${STATE.dungeon.room + 1}/${DUNGEONS[STATE.dungeon.id].rooms.length} 关` : `${A.name}${P.lv ? ' · ' + P.lv[0] + '-' + P.lv[1] + ' 层' : ''}${` · 第 ${C.day || 1} 天${isNight() ? ' · 夜' : (C.tick || 0) >= BAL.duskAt - 2 ? ' · 黄昏' : ''}`}${exc && exc.n ? ` · <span title="探索度：这里的凶兽种类和能采的东西">${exc.done ? '✓ 探索完成' : `探索 ${exc.have}/${exc.n}`}</span>` : ''}`;
   const q = curQ(), T = curTask(), w = T.where, nT = tasks().length; $('bq').innerHTML = `<span class="qk">${T.kind}</span><b>${esc(T.title)}</b>　${T.goal}${w && w !== C.loc && route(C.loc, w) ? '<span class="go">▶ 去</span>' : ''}${T.key === 'main' && q.rec && C.lv < q.rec ? `　<span class="warn">建议 ${q.rec} 层</span>` : ''}`;
   $('bqs').innerHTML = `任务<br><b>${nT}</b>`; $('bqs').classList.toggle('dot2', tasks().some(t => /可接/.test(t.kind) || / → 交给/.test(t.goal)));
   $('bq').setAttribute('onclick', 'questGo()');
@@ -2725,7 +2730,7 @@ function closeModal() { $('modal').classList.remove('on'); UI.modal = null; UI.h
 $('modal').addEventListener('click', e => { if (e.target.id === 'modal') closeModal(); });
 function openModal(k, again) {
   if (!again) sfx('click'); UI.modal = k; const box = $('mb'), st = again ? box.scrollTop : 0; let t = '', h = '';
-  if (k === 'arena') { t = '虚神界'; arenaDaily(); const os = arenaOpponents(); UI.ao = os; const r = arenaRank(), g = arenaGift(r), claimed = C.arena.claimed === today();
+  if (k === 'arena') { t = '虚神界'; arenaDaily(); const os = arenaOpponents(); UI.ao = os; const r = arenaRank(), g = arenaGift(r), claimed = C.arena.claimed === gameDay();
     h = `<div class="card"><div class="row"><div>我的排名 <span class="pw">${r > 100 ? '榜外' : r}</span></div><span class="sp"></span><div>今天还能打 <b>${C.arena.tries}</b> 次</div></div><div class="dim" style="font-size:.8rem">赢了排名比你高的人，就换到他的名次。只伤神魂，不伤肉身。</div>
       <div class="row" style="margin-top:8px;flex-wrap:wrap"><button class="sb pri" ${claimed ? 'disabled' : ''} onclick="arenaClaim()">${claimed ? '今天的奖励领过了' : '领今日奖励'}</button><span class="dim" style="font-size:.8rem">按排名：${g.items.map(([k, n]) => ITEMS[k].name + '×' + n).join('、')} + 经验</span></div>
       <div class="dim" style="font-size:.8rem;margin-top:6px">首次进前 50 / 前 10 / 第 1：${ARENA_MS.map(M => (C.arena.got && C.arena.got[M.r] ? '✔' : '·') + ' 前' + M.r).join('　')}</div></div>

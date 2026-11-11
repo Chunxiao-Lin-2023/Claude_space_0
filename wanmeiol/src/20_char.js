@@ -4,7 +4,7 @@ const SAVE_V = 2;
 function newChar() {
   return { v: SAVE_V, name: '石昊', lv: 1, exp: 0, hp: 1, mp: 1, loc: 'sc_chief', home: 'sc_street', bag: { milk: 2 },
     sk: [], bar: [], gf: ['yingxia'], dt: [], pets: {}, pet: null, story: { q: 0, n: 0, f: {} }, kills: {}, stats: { kills: 0, deaths: 0, bosses: 0 },
-    arena: { rank: 0, wins: 0, tries: BAL.arenaTries, day: '', best: 999, got: {}, claimed: '' }, dungeons: {}, auto: false, seen: {}, prof: {}, codex: {}, relics: {}, eq: [], diff: 1, money: 20, ex: {}, ach: {}, title: '', created: now() };
+    arena: { rank: 0, wins: 0, tries: BAL.arenaTries, day: '', best: 999, got: {}, claimed: '' }, dungeons: {}, auto: false, seen: {}, prof: {}, codex: {}, relics: {}, eq: [], diff: 1, money: 20, day: 1, tick: 0, ex: {}, ach: {}, title: '', created: now() };
 }
 function charStats(c = C) {
   const L = c.lv - 1, s = { hpMax: HERO.base.hp + HERO.grow.hp * L, mpMax: HERO.base.mp + HERO.grow.mp * L, atk: HERO.base.atk + HERO.grow.atk * L, def: HERO.base.def + HERO.grow.def * L, spd: HERO.base.spd + HERO.grow.spd * L, crit: HERO.base.crit + HERO.grow.crit * L, leech: 0, regen: 0 };

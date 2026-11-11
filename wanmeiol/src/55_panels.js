@@ -98,7 +98,7 @@ function closeModal() { $('modal').classList.remove('on'); UI.modal = null; UI.h
 $('modal').addEventListener('click', e => { if (e.target.id === 'modal') closeModal(); });
 function openModal(k, again) {
   if (!again) sfx('click'); UI.modal = k; const box = $('mb'), st = again ? box.scrollTop : 0; let t = '', h = '';
-  if (k === 'arena') { t = '虚神界'; arenaDaily(); const os = arenaOpponents(); UI.ao = os; const r = arenaRank(), g = arenaGift(r), claimed = C.arena.claimed === today();
+  if (k === 'arena') { t = '虚神界'; arenaDaily(); const os = arenaOpponents(); UI.ao = os; const r = arenaRank(), g = arenaGift(r), claimed = C.arena.claimed === gameDay();
     h = `<div class="card"><div class="row"><div>我的排名 <span class="pw">${r > 100 ? '榜外' : r}</span></div><span class="sp"></span><div>今天还能打 <b>${C.arena.tries}</b> 次</div></div><div class="dim" style="font-size:.8rem">赢了排名比你高的人，就换到他的名次。只伤神魂，不伤肉身。</div>
       <div class="row" style="margin-top:8px;flex-wrap:wrap"><button class="sb pri" ${claimed ? 'disabled' : ''} onclick="arenaClaim()">${claimed ? '今天的奖励领过了' : '领今日奖励'}</button><span class="dim" style="font-size:.8rem">按排名：${g.items.map(([k, n]) => ITEMS[k].name + '×' + n).join('、')} + 经验</span></div>
       <div class="dim" style="font-size:.8rem;margin-top:6px">首次进前 50 / 前 10 / 第 1：${ARENA_MS.map(M => (C.arena.got && C.arena.got[M.r] ? '✔' : '·') + ' 前' + M.r).join('　')}</div></div>
