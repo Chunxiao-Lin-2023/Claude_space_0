@@ -89,7 +89,7 @@ function rumorTick() {
   const q = C.story.q, A = RUMORS.filter(r => q >= qi(r.from) && q <= qi(r.to)); if (!A.length) return;
   const recent = new Set((A.length > 1 ? (C.rumorLog || []).slice(-Math.min(3, A.length - 1)) : []).map(r => r.t)); // never the same line twice in a row
   let L = A.filter(r => !recent.has(r.t) && !(UI.rumorSeen || {})[r.t]); if (!L.length) { UI.rumorSeen = {}; L = A.filter(r => !recent.has(r.t)); } if (!L.length) return;
-  const r = pick(L); (UI.rumorSeen = UI.rumorSeen || {})[r.t] = 1; C.rumorLog = (C.rumorLog || []).concat([{ who: r.who, t: r.t, day: C.day || 1, n: (C.rumorN = (C.rumorN || 0) + 1) }]).slice(-80);
+  const r = pick(L); (UI.rumorSeen = UI.rumorSeen || {})[r.t] = 1; C.rumorLog = (C.rumorLog || []).concat([{ who: r.who, t: r.t, day: C.day || 1, at: C.loc, nt: isNight() ? 1 : 0, n: (C.rumorN = (C.rumorN || 0) + 1) }]).slice(-80);
   logLine(`【传闻 · ${esc(r.who)}】${r.t}`, 'rumor dim'); save(); renderRumor(); netSync(); }
 const rumorWide = () => document.body.classList.contains('cols');
 function renderRumor() { // wide screens: the last three, always there; phones: the newest one floats by for a few seconds

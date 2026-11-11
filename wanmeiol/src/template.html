@@ -273,6 +273,30 @@ body.m-talk #bnav,body.m-battle #bnav{display:none}
 .memo .mc{color:#8a5a2a}
 .chap{font-family:var(--fh);font-size:1.3rem;color:var(--gold);margin:10px 0 4px}
 .pbody>.chap{margin:10px auto 4px}
+/* 江湖传闻: the tavern */
+.tavern{background:repeating-linear-gradient(90deg,#00000000 0 58px,#0000002a 58px 60px),linear-gradient(#3a2416,#2a190e);border:1px solid #6b4a2a;border-radius:12px;overflow:hidden;box-shadow:inset 0 0 40px #000a;padding-bottom:12px;color:#2a1a0e}
+.tv-top{position:relative;height:150px;border-bottom:3px solid #140b05}
+.tv-scene{position:absolute;inset:0;width:100%;height:100%}
+.tv-lan{transform-box:fill-box;transform-origin:50% 0;animation:tvsw 3.6s ease-in-out infinite}.tv-lan.b{animation-duration:4.4s;animation-direction:reverse}
+@keyframes tvsw{0%,100%{transform:rotate(-4deg)}50%{transform:rotate(4deg)}}
+.tv-flag{transform-box:fill-box;transform-origin:0 0;animation:tvfl 3s ease-in-out infinite}@keyframes tvfl{0%,100%{transform:skewY(0)}50%{transform:skewY(3deg)}}
+.tv-plaque{position:absolute;left:50%;top:14px;transform:translateX(-50%);font-family:var(--fh);font-size:1.45rem;letter-spacing:6px;color:#f3c860;background:linear-gradient(#2a160b,#1a0d06);border:2px solid #b08a3e;outline:3px solid #1a0d06;border-radius:4px;padding:2px 14px 2px 20px;text-shadow:0 0 8px #f3c86066;white-space:nowrap}
+.tv-intro{margin:10px 14px 2px;font-size:.82rem;line-height:1.6;color:#d9c09a}
+.tv-day{display:flex;align-items:center;gap:10px;margin:14px 14px 6px;color:#e6c27a;font-family:var(--fh);font-size:1.05rem}
+.tv-day::before,.tv-day::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,#e6c27a00,#e6c27a88,#e6c27a00)}
+.tv-day span{background:#5a3519;border:1px solid #b08a3e;border-radius:4px;padding:1px 10px;box-shadow:0 2px 0 #140b05}
+.tv-r{display:flex;align-items:flex-start;gap:10px;margin:8px 14px}
+.tv-r.r{flex-direction:row-reverse}
+.tv-r .seal{font-size:.92rem;min-width:1.9rem;transform:rotate(-3deg)}.tv-r.r .seal{transform:rotate(3deg)}
+.tv-b{position:relative;max-width:min(82%,560px);background:linear-gradient(#f3e6c8,#e6d3ab);border-radius:10px;padding:8px 12px 7px;font-size:.92rem;line-height:1.65;color:#2a1a0e;box-shadow:0 2px 0 #00000055,inset 0 0 0 1px #c7a96f}
+.tv-b::before{content:'';position:absolute;top:12px;left:-7px;border:7px solid transparent;border-left:0;border-right-color:#f0e1c0}
+.tv-r.r .tv-b::before{left:auto;right:-7px;border-right:0;border-left:7px solid #f0e1c0}
+.tv-b.act{font-style:italic;color:#5a4630}
+.tv-b b{color:#8a2a1a}
+.tv-at{margin-top:3px;font-size:.72rem;color:#8a6d48;font-style:normal}
+.tv-new{float:right;margin:0 0 2px 8px;font-family:var(--fh);font-size:.75rem;color:#fff3dc;background:#a8261e;border-radius:3px;padding:0 4px;transform:rotate(6deg)}
+.tv-xiao{margin:14px 14px 0;text-align:center;font-size:.82rem;color:#c9a979;font-style:italic}
+body.narrow .tv-plaque{font-size:1.2rem;letter-spacing:4px}
 /* panels */
 .card{background:var(--pan);border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:10px}
 .card h3{margin:0 0 6px;font-family:var(--fh);font-weight:400;font-size:1.3rem;color:var(--gold)}

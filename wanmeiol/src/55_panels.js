@@ -15,10 +15,29 @@ function renderSide() {
   body.innerHTML = UI.nav === 'log' ? ({ log: pLog, rumor: pRumor, memo: pMemo, codex: pCodex })[UI.logTab]() : ({ hero: pHero, pet: pPet, bag: pBag, map: pMap })[UI.nav]();
   body.dataset.k = key; if (UI.nav === 'log' && UI.logTab === 'log' && (!same || atEnd)) body.scrollTop = body.scrollHeight; else if (same) body.scrollTop = st; else body.scrollTop = 0;
 }
-function pRumor() { const L = (C.rumorLog || []).slice().reverse(); if (!L.length) return '<div class="card dim">还没听到什么传闻。在野外和城镇里多走走，别人说的话会飘到你耳朵里。</div>';
+/* 江湖传闻 history, drawn as a roadside tavern: patrons' seals and paper bubbles, days as hanging tags, newest on top */
+const TAVERN_SVG = `<svg class="tv-scene" viewBox="0 0 600 150" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
+  <defs><linearGradient id="tvw" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#21140b"/><stop offset="1" stop-color="#3d2615"/></linearGradient>
+  <radialGradient id="tvg"><stop offset="0" stop-color="#ffb35a" stop-opacity=".55"/><stop offset="1" stop-color="#ffb35a" stop-opacity="0"/></radialGradient></defs>
+  <rect width="600" height="150" fill="url(#tvw)"/>
+  <g stroke="#120a05" stroke-width="2" fill="#2c1c10" opacity=".9"><rect x="250" y="36" width="100" height="62" fill="#5a3a1c"/><path d="M275 36v62M300 36v62M325 36v62M250 57h100M250 78h100" fill="none"/></g>
+  <rect x="250" y="36" width="100" height="62" fill="#ffcf7a" opacity=".12"/>
+  <rect y="0" width="600" height="14" fill="#140b05"/><rect x="34" y="0" width="12" height="150" fill="#1a0f07"/><rect x="554" y="0" width="12" height="150" fill="#1a0f07"/>
+  <g class="tv-lan"><circle cx="120" cy="52" r="34" fill="url(#tvg)"/><line x1="120" y1="14" x2="120" y2="30" stroke="#0c0703" stroke-width="2"/><rect x="111" y="29" width="18" height="5" rx="1" fill="#c99a3a"/><ellipse cx="120" cy="52" rx="15" ry="19" fill="#b8322a"/><path d="M110 40q10 12 0 24M130 40q-10 12 0 24M120 33v38" stroke="#7a1d18" fill="none"/><rect x="111" y="70" width="18" height="5" rx="1" fill="#c99a3a"/><path d="M116 75v10M120 75v12M124 75v10" stroke="#d6a640"/></g>
+  <g class="tv-lan b"><circle cx="200" cy="48" r="28" fill="url(#tvg)"/><line x1="200" y1="14" x2="200" y2="28" stroke="#0c0703" stroke-width="2"/><rect x="192" y="27" width="16" height="4" rx="1" fill="#c99a3a"/><ellipse cx="200" cy="47" rx="12" ry="16" fill="#b8322a"/><path d="M200 31v32" stroke="#7a1d18"/><rect x="192" y="62" width="16" height="4" rx="1" fill="#c99a3a"/></g>
+  <line x1="470" y1="14" x2="470" y2="122" stroke="#120a05" stroke-width="5"/>
+  <g class="tv-flag"><path d="M472 20h52v74l-8-6-9 7-8-6-9 7-9-6-9 6z" fill="#ead9b4" stroke="#9b2a22" stroke-width="3"/><text x="498" y="66" text-anchor="middle" font-size="30" fill="#a8261e" font-family="serif" font-weight="700">酒</text></g>
+  <g fill="#140b05"><rect x="60" y="112" width="130" height="8" rx="2"/><rect x="72" y="120" width="7" height="30"/><rect x="171" y="120" width="7" height="30"/><path d="M95 112q8-11 16 0zM140 112q6-9 12 0z"/><rect x="232" y="120" width="140" height="30"/><rect x="226" y="113" width="152" height="8" rx="2"/><path d="M270 113q10-12 20 0z"/><rect x="400" y="116" width="120" height="7" rx="2"/><rect x="410" y="123" width="6" height="27"/><rect x="503" y="123" width="6" height="27"/><path d="M440 116v-12h14v12zM480 116q7-10 14 0z"/></g>
+  <g fill="#2b1a0d"><ellipse cx="112" cy="104" rx="11" ry="13"/><rect x="100" y="112" width="24" height="38" rx="8"/><ellipse cx="160" cy="106" rx="10" ry="12"/><rect x="149" y="113" width="22" height="37" rx="8"/><ellipse cx="300" cy="103" rx="11" ry="13"/><rect x="288" y="111" width="24" height="39" rx="8"/><ellipse cx="462" cy="104" rx="10" ry="12"/><rect x="451" y="111" width="22" height="39" rx="8"/></g>
+</svg>`;
+function pRumor() { const L = (C.rumorLog || []).slice().reverse(), tav = b => `<div class="tavern"><div class="tv-top">${TAVERN_SVG}<div class="tv-plaque">闲话酒肆</div></div>${b}</div>`;
+  if (!L.length) return tav('<div class="tv-xiao">店小二擦着桌子：「客官来得早，今儿还没什么新鲜事。到外头多走走，回来再听。」</div>');
   const by = []; for (const r of L) { if (!by.length || by[by.length - 1][0] !== r.day) by.push([r.day, []]); by[by.length - 1][1].push(r); }
-  return '<div class="card dim" style="font-size:.82rem">别人眼里的你，和一些还没发生的事的风声。共听到 ' + L.length + ' 条（最多记 80 条）。</div>'
-    + by.map(([d, rs]) => `<div class="chap">第 ${d} 天</div><div class="list">${rs.map(r => `<div class="li"><span class="ic">💬</span><div class="t"><b>${esc(r.who)}</b><small>${r.t}</small></div></div>`).join('')}</div>`).join(''); }
+  let k = 0; const row = r => { const s = sealOf({ who: r.who }), act = /^（/.test(r.t), side = k++ % 2 ? 'r' : '', pl = r.at && PLACES[r.at] ? PLACES[r.at].name : '';
+    return `<div class="tv-r ${side}">${sealHtml(s)}<div class="tv-b ${act ? 'act' : ''}">${k === 1 ? '<span class="tv-new">新</span>' : ''}${r.t}${pl || r.nt != null ? `<div class="tv-at">${pl ? '在' + esc(pl) : ''}${r.nt != null ? (r.nt ? ' · 夜里' : ' · 白天') : ''}听来</div>` : ''}</div></div>`; };
+  return tav(`<div class="tv-intro">南来北往的客人，嘴里没一句闲着的——有说你的，也有说还没发生的事。共听到 ${L.length} 条。</div>`
+    + by.map(([d, rs]) => `<div class="tv-day"><span>第 ${d} 天</span></div>${rs.map(row).join('')}`).join('')
+    + '<div class="tv-xiao">店小二拎着铜壶走过：「客官，再添一壶？」</div>'); }
 function pLog() { return `<div class="logv">${$('log').innerHTML}</div>`; }
 function pMemo() {
   if (NETROLE === 'guest') return '<div class="card dim">回忆录记在房主的浏览器里，联机加入时看不到。</div>';
