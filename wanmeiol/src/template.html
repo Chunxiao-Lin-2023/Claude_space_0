@@ -32,12 +32,11 @@ b{color:var(--gold2)}
 .tb.net{color:#8fd0ff;border-color:#8fd0ff55}
 .tb .dot,.dot{position:absolute;top:3px;right:3px;width:8px;height:8px;border-radius:50%;background:var(--red)}
 /* ---------- stage & views ---------- */
-#stage{position:relative;min-height:0;overflow:hidden;transition:background .35s}
-.view{position:absolute;inset:0;display:none}
-body.m-explore #stage{background:radial-gradient(ellipse at 30% 0%,#1d3326 0%,#0d1711 70%)}
-body.m-battle #stage{background:radial-gradient(ellipse at 50% 0%,#3a1512 0%,#160909 72%)}
-body.m-talk #stage{background:#1a1510}
-body.m-explore #vExplore,body.m-battle #vBattle,body.m-talk #vTalk{display:flex;animation:vin .25s both}
+#stage{position:relative;min-height:0;overflow:hidden;background:#100d0a}
+.view{position:absolute;inset:0;display:flex;opacity:0;visibility:hidden;pointer-events:none;transition:opacity .24s ease,visibility 0s linear .24s}
+#vExplore{background:radial-gradient(ellipse at 30% 0%,#1d3326 0%,#0d1711 70%)}
+#vBattle{background:radial-gradient(ellipse at 50% 0%,#3a1512 0%,#160909 72%)}
+body.m-explore #vExplore,body.m-battle #vBattle,body.m-talk #vTalk{opacity:1;visibility:visible;pointer-events:auto;transition:opacity .24s ease}
 @keyframes vin{from{opacity:0}to{opacity:1}}
 /* explore */
 #vExplore{flex-direction:column}
@@ -293,8 +292,7 @@ textarea.code{width:100%;min-height:80px;background:#0c0a08;border:1px solid var
 .join .namein{font-size:17px;letter-spacing:4px;text-transform:uppercase;padding:8px;flex:1;min-width:0}
 .join .big{white-space:nowrap;flex:none;min-width:72px;padding:8px 14px}
 /* ---------- wide / short layouts (classes set by JS) ---------- */
-body.cols #vExplore{display:none}
-body.cols.m-explore #vExplore{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(300px,1fr)}
+body.cols #vExplore{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(300px,1fr)}
 body.cols .ex-l{border-right:1px solid #8fbf8a22}
 body.cols .ex-r{max-height:none;border-top:0;background:#0a130d99;padding:12px 14px calc(12px + var(--sb))}
 body.cols #banner{height:200px}
@@ -404,6 +402,19 @@ body.short #bhead .order{display:none}
 .fx-heal b{color:#7fe08a;font-size:2rem;font-style:normal;background:none;animation:rise .8s ease-out both}
 .fx-crush b{font-family:var(--fh);font-size:3rem;color:#ffd34a;background:none;text-shadow:0 0 12px #ff8a3a;animation:boom .6s ease-out both}
 .fx-guard{font-size:2rem;animation:boom .8s ease-out both}
+.fx-bless b{position:absolute;left:50%;top:50%;width:110px;height:110px;margin:-55px 0 0 -55px;border:3px solid #ffd88a;box-shadow:0 0 18px #ffd88a;animation:blessr .8s ease-out both}
+.fx-bless b+b{animation-delay:.15s}
+@keyframes blessr{0%{transform:scale(1.4);opacity:0}40%{opacity:1}100%{transform:scale(.5) translateY(-20px);opacity:0}}
+.fx-curse b{width:100px;height:100px;background:conic-gradient(from 0deg,#7a4ae0aa,transparent 30%,#b08aff99 50%,transparent 80%,#7a4ae0aa);animation:curse .75s ease-out both}
+@keyframes curse{0%{transform:scale(.3) rotate(0);opacity:0}40%{opacity:1}100%{transform:scale(1.3) rotate(240deg);opacity:0}}
+.fx-taunt b{font-family:var(--fh);font-size:2.4rem;color:#ff6a4a;background:none;text-shadow:0 0 10px #ff2a1a;animation:boom .8s ease-out both;margin-top:-40px}
+.cutin{left:0!important;right:0;top:36%!important;transform:none;text-align:center;font-family:var(--fh);font-size:1.5rem;letter-spacing:2px;color:#fff;padding:4px 0;pointer-events:none;z-index:8;animation:cutin .9s cubic-bezier(.2,1,.3,1) both}
+.cutin .cw{font-family:var(--ff);font-size:.75rem;letter-spacing:0;opacity:.85;margin-right:10px;vertical-align:middle}
+.cutin.hero{background:linear-gradient(90deg,transparent,#c8902aee 25%,#c8902aee 75%,transparent);text-shadow:0 2px 4px #5a3a00}
+.cutin.pet{background:linear-gradient(90deg,transparent,#3a8a4aee 25%,#3a8a4aee 75%,transparent);text-shadow:0 2px 4px #0a3a10}
+.cutin.boss,.cutin.foe{background:linear-gradient(90deg,transparent,#9a2a1aee 25%,#9a2a1aee 75%,transparent);text-shadow:0 2px 4px #3a0000}
+@keyframes cutin{0%{opacity:0;transform:translateX(-40px)}20%{opacity:1;transform:none}75%{opacity:1}100%{opacity:0;transform:translateX(30px)}}
+.arow.duo{align-items:center;font-size:.8rem}
 .fx-buff{width:110px;height:60px;background:radial-gradient(ellipse at bottom,#ff4a2a88,transparent 70%);animation:rise .8s ease-out both}
 @keyframes boom{0%{transform:scale(.2);opacity:0}30%{transform:scale(1.1);opacity:1}100%{transform:scale(1.4);opacity:0}}
 @keyframes ring{0%{transform:scale(.2);opacity:1}100%{transform:scale(1.8);opacity:0}}
@@ -414,19 +425,20 @@ body.short #bhead .order{display:none}
 .stamp.lose{background:#3a3a44}
 @keyframes stamp{0%{transform:translate(-50%,-50%) scale(2.6) rotate(-14deg);opacity:0}100%{transform:translate(-50%,-50%) scale(1) rotate(-6deg);opacity:.95}}
 /* screen transitions */
-#stage.tr-battle::after,#stage.tr-talk::after,#stage.tr-explore::after{content:'';position:absolute;inset:0;z-index:30;pointer-events:none}
+#stage.tr-battle::after{content:'';position:absolute;inset:0;z-index:30;pointer-events:none}
 #stage.tr-battle::after{background:linear-gradient(115deg,transparent 40%,#ff3a1a 48%,#fff2 50%,#8a0a00 52%,transparent 60%);background-size:300% 100%;animation:sweep .6s ease-in both}
 @keyframes sweep{from{background-position:100% 0}to{background-position:0 0}}
-#stage.tr-talk::after{background:#efe5cd;animation:fadeo .45s both}
-#stage.tr-explore::after{background:#0d1711;animation:fadeo .5s both}
 @keyframes fadeo{from{opacity:.6}to{opacity:0}}
-body.m-battle #vBattle{animation:bin .45s both}
+#vBattle{transform:scale(1.04);transition:opacity .24s ease,visibility 0s linear .24s,transform .4s ease}
+body.m-battle #vBattle{transform:none;transition:opacity .24s ease,transform .4s ease}
 @keyframes bin{from{opacity:0;transform:scale(1.06)}}
-body.m-talk #dlg{animation:paperin .4s cubic-bezier(.2,1.2,.4,1) both}
+#dlg{transform:translateY(26px);transition:transform .35s cubic-bezier(.2,1.2,.4,1)}
+body.m-talk #dlg{transform:none}
 @keyframes paperin{from{opacity:0;transform:translateY(40px) rotate(-1deg)}}
-#dlg .line .seal{animation:sealin .38s cubic-bezier(.3,1.6,.5,1) both}
+#dlg .line.newspk .seal{animation:sealin .38s cubic-bezier(.3,1.6,.5,1) both}
 @keyframes sealin{from{transform:scale(1.8) rotate(-18deg);opacity:0}}
-#dlg .line .tx{animation:txin .35s .08s both}
+#dlg .line .tx{animation:txfade .2s both}
+@keyframes txfade{from{opacity:.25}}
 @keyframes txin{from{opacity:0;transform:translateY(5px)}}
 #dlg.still .line .seal,#dlg.still .line .tx{animation:none}
 .chb{animation:txin .3s both}.chb:nth-child(2){animation-delay:.05s}.chb:nth-child(3){animation-delay:.1s}.chb:nth-child(4){animation-delay:.15s}

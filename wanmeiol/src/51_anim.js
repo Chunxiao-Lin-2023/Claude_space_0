@@ -34,9 +34,10 @@ function fxClass(id, cls, ms = 450) { const c = cardOf(id); if (!c) return; cons
 function fxBar(id, r) { UI.hpShown[id] = r; const c = cardOf(id); if (c) { const i = c.querySelector('.bar i'); if (i) i.style.width = Math.max(0, r * 100) + '%'; } }
 function fxEvent(B, ev) {
   if (ev.k === 'act') { const a = cardOf(ev.a); document.querySelectorAll('#bhead .to').forEach(t => t.classList.toggle('now', t.dataset.to === ev.a));
+    if (ev.n && (ev.who === 'hero' || ev.who === 'pet' || ev.who === 'boss' || ev.big)) { $('bfx').querySelectorAll('.cutin').forEach(e => e.remove()); const u = (STATE.battle && STATE.battle.units.find(x => x.id === ev.a)) || {}; fxSpawn('cutin ' + ev.who, { x: 0, y: 0, w: 0 }, `<span class="cw">${esc(u.name || '')}</span>${ev.ic ? ev.ic + ' ' : ''}${esc(ev.n)}`, Math.max(700, STEP() * 1.6)); }
     if (ev.fx === 'charge') { fxClass(ev.a, 'charging', 700); return; }
-    if (a && !['guard', 'tower', 'heal', 'shield', 'buff'].includes(ev.fx)) fxClass(ev.a, ev.side ? 'lunge-d' : 'lunge-u', 420);
-    if (ev.fx === 'guard' || ev.fx === 'buff') { if (a) fxSpawn('fx-' + ev.fx, fxAt(a), ev.fx === 'guard' ? '🛡️' : '', 800); return; }
+    if (a && !['guard', 'tower', 'heal', 'shield', 'buff', 'bless', 'taunt'].includes(ev.fx)) fxClass(ev.a, ev.side ? 'lunge-d' : 'lunge-u', 420);
+    if (ev.fx === 'guard' || ev.fx === 'buff' || ev.fx === 'taunt') { if (a) fxSpawn('fx-' + ev.fx, fxAt(a), ev.fx === 'guard' ? '🛡️' : ev.fx === 'taunt' ? '<b>！</b>' : '', 800); sfx(ev.fx === 'taunt' ? 'hit' : 'magic'); return; }
     const tg = (ev.tg || []).map(cardOf).filter(Boolean); for (const c of tg) fxSpawn('fx-' + ev.fx, fxAt(c), FX_HTML[ev.fx] || '', 900);
     if (ev.fx === 'lei' || ev.fx === 'crush' || ev.big) { $('vBattle').classList.remove('quake'); void $('vBattle').offsetWidth; $('vBattle').classList.add('quake'); }
     if (ev.fx === 'lei') fxSpawn('fx-flash', { x: 0, y: 0, w: 0 }, '', 400);
@@ -52,7 +53,7 @@ function fxEvent(B, ev) {
 }
 const FX_HTML = {
   lei: '<svg viewBox="0 0 40 120"><path d="M24 0 L10 52 L22 52 L8 120 L34 44 L21 44 L32 0 Z"/></svg>',
-  claw: '<i></i><i></i><i></i>', slash: '<i></i><i></i>', blade: '<i></i>', bone: '<b></b>', rock: '<b></b>', fire: '<b></b>', roar: '<b></b>', magic: '<b></b>', wave: '<b></b>', heal: '<b>✚</b>', tower: '<b></b>', shield: '<b></b>', crush: '<b>拳</b>',
+  claw: '<i></i><i></i><i></i>', bless: '<b></b><b></b>', curse: '<b></b>', slash: '<i></i><i></i>', blade: '<i></i>', bone: '<b></b>', rock: '<b></b>', fire: '<b></b>', roar: '<b></b>', magic: '<b></b>', wave: '<b></b>', heal: '<b>✚</b>', tower: '<b></b>', shield: '<b></b>', crush: '<b>拳</b>',
 };
 function fxStamp(B) { if (!animOn() || $('bfx').querySelector('.stamp')) return; const t = B.win ? '胜' : B.fled ? '逃' : '败'; const d = el('div', 'fx stamp ' + (B.win ? 'win' : 'lose'), t); $('bfx').appendChild(d); sfx(B.win ? 'win' : 'lose'); }
 

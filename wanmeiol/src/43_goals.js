@@ -108,3 +108,18 @@ const canTrade = () => !!(PLACES[C.loc].town && PLACES[C.loc].area !== 'xushen')
 function sellItem(id, all) { const it = ITEMS[id]; if (!canTrade() || !it || !PRICE[id] || !itemN(id)) return; const n = all ? itemN(id) : 1; takeItem(id, n); C.money = (C.money || 0) + sellPrice(id) * n; logLine(`卖掉 ${it.icon}${it.name} ×${n}，得到 💎${sellPrice(id) * n} 灵石。`, 'loot'); sfx('gold'); save(); refresh(); }
 function buyItem(id) { const P = PLACES[C.loc]; if (!P.shop || !P.shop.includes(id)) return; if ((C.money || 0) < PRICE[id]) { toast('灵石不够'); return; } C.money -= PRICE[id]; addItem(id, 1, true); logLine(`买了 ${ITEMS[id].icon}${ITEMS[id].name}，花了 💎${PRICE[id]}。`, 'loot'); sfx('gold'); save(); refresh(); }
 function gainMoney(n, why) { n = Math.round(n); if (n <= 0) return; C.money = (C.money || 0) + n; if (why) logLine(`${why} 💎${n} 灵石`, 'loot'); }
+
+/* ---------- partner loadout: 4 moves in battle (5 once awakened); a new move replaces the lowest-tier one of its kind ---------- */
+const petSlots = id => 4 + (C.pets[id] && C.pets[id].evo ? 1 : 0);
+const petOpen = id => PETS[id].sk.map((s, i) => ({ s, i })).filter(x => (!x.s.aff || C.pets[id].aff >= x.s.aff) && (!x.s.evo || C.pets[id].evo)).map(x => x.i);
+function petBar(id) { const p = C.pets[id]; if (!p) return []; const open = petOpen(id), n = petSlots(id);
+  if (!p.bar) p.bar = open.slice(0, n);
+  for (const i of open) if (!p.bar.includes(i) && !(p.seen || []).includes(i)) { p.seen = [...(p.seen || []), i]; // newly learned: take a free slot, or replace the lowest-tier move of the same kind
+    if (p.bar.length < n) p.bar.push(i); else { const cat = PETS[id].sk[i].cat, old = p.bar.filter(k => PETS[id].sk[k].cat === cat)[0]; if (old != null) { p.bar[p.bar.indexOf(old)] = i; if (STATE.mode === 'play') toast(`${PETS[id].name} 学会「${PETS[id].sk[i].n}」，换下了「${PETS[id].sk[old].n}」`); } } }
+  p.seen = [...new Set([...(p.seen || []), ...open])]; p.bar = p.bar.filter(i => open.includes(i)).slice(0, n); return p.bar; }
+function togglePetMove(id, i) { const p = C.pets[id]; if (!p || !petOpen(id).includes(i)) return; const bar = petBar(id), n = petSlots(id);
+  if (bar.includes(i)) { if (bar.length <= 1) { toast('至少留一招'); return; } p.bar = bar.filter(k => k !== i); }
+  else if (bar.length < n) p.bar = [...bar, i];
+  else { const cat = PETS[id].sk[i].cat, same = bar.filter(k => PETS[id].sk[k].cat === cat), old = same.length ? same[0] : bar[0]; p.bar = bar.map(k => k === old ? i : k); toast(`换下了「${PETS[id].sk[old].n}」`); }
+  sfx('click'); save(); refresh(); }
+function setDuo(v) { C.duo = v; sfx('click'); save(); if (STATE.battle) renderBattle(true); netSync(); }

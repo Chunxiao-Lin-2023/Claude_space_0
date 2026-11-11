@@ -15,7 +15,10 @@ function toast(t) { const d = el('div', '', esc(t)); $('toast').appendChild(d); 
 function applyFont() { document.documentElement.style.fontSize = [15, 17, 19.5][SET.fs || 0] + 'px'; }
 applyFont();
 const curMode = () => DLG ? 'talk' : STATE.battle ? 'battle' : 'explore';
-function applyMode() { const m = curMode(), b = document.body; for (const k of ['explore', 'talk', 'battle']) b.classList.toggle('m-' + k, m === k); if (m !== UI.lastMode) { if (UI.lastMode) stageTransition(m); UI.lastMode = m; if (m !== 'explore' && UI.nav && UI.nav !== 'log') { UI.nav = null; renderSide(); } musicMode(); if (m === 'explore') setTimeout(bannerDraw, 0); } if (m === 'talk') talkBgDraw(); }
+function applyMode(force) { const m = curMode(), b = document.body;
+  // leaving a conversation: wait a moment — the next line usually follows at once, and flipping screens in between makes everything blink
+  if (UI.lastMode === 'talk' && m !== 'talk' && !force) { if (!UI.leaveT) UI.leaveT = setTimeout(() => { UI.leaveT = 0; applyMode(true); if (STATE.mode === 'play' && C) refresh(); }, 140); return; }
+  if (UI.leaveT) { clearTimeout(UI.leaveT); UI.leaveT = 0; } for (const k of ['explore', 'talk', 'battle']) b.classList.toggle('m-' + k, m === k); if (m !== UI.lastMode) { if (UI.lastMode && m === 'battle') stageTransition(m); UI.lastMode = m; if (m !== 'explore' && UI.nav && UI.nav !== 'log') { UI.nav = null; renderSide(); } musicMode(); if (m === 'explore') setTimeout(bannerDraw, 0); } if (m === 'talk') talkBgDraw(); }
 
 /* ---------- log (kept for 📜 记录 and co-op; the explore screen shows the latest few lines) ---------- */
 function logLine(html, cls = '') { const L = $('log'); if (!L) return; L.appendChild(el('div', 'ln ' + cls, html)); while (L.children.length > 300) L.firstChild.remove(); if (NETROLE === 'host') netLog(html, cls); UI.logDirty = 1; if (STATE.mode === 'play') { clearTimeout(UI.feedT); UI.feedT = setTimeout(() => { renderFeed(); if (UI.nav === 'log') renderSide(); }, 30); } }
@@ -49,11 +52,11 @@ function dlgPick(i) { // advance (i = -1) or choose option i
 }
 function dlgCtx() { return { cur: UI.cur, hist: UI.hist.slice(-2) }; }
 function renderDlg() {
-  const D = $('dlg'); applyMode(); if (!DLG) { D.innerHTML = ''; refresh(); return; }
+  const D = $('dlg'); applyMode(); if (!DLG) { D.onclick = null; refresh(); return; }
   const ctx = DLG.ctx || dlgCtx(), P = C && PLACES[C.loc], q = C && curQ();
   const head = `<div class="tplace">${P ? (STATE.dungeon ? DUNGEONS[STATE.dungeon.id].name : P.name) : ''}<span>${q ? CH_NAMES[q.ch] : ''}</span></div>`;
   const histH = h => h.length ? `<div class="hist">${h.map(x => `<div>${x.who ? `<span class="hw">${esc(x.who)}</span>` : ''}${x.text}</div>`).join('')}</div>` : '';
-  const lineH = o => { const s = sealOf(o); return `<div class="line">${s ? `<div>${sealHtml(s, o.mine ? 'me' : '')}${s.t ? `<div class="ttl">${esc(s.t)}</div>` : ''}</div>` : ''}<div class="tx ${o.who ? '' : 'nar'} ${o.mine ? 'mine' : ''}">${o.text}</div></div>`; };
+  const lineH = o => { const s = sealOf(o), nw = (o.who || '') !== UI.lastWho; UI.lastWho = o.who || ''; return `<div class="line ${nw ? 'newspk' : ''}">${s ? `<div>${sealHtml(s, o.mine ? 'me' : '')}${s.t ? `<div class="ttl">${esc(s.t)}</div>` : ''}</div>` : ''}<div class="tx ${o.who ? '' : 'nar'} ${o.mine ? 'mine' : ''}">${o.text}</div></div>`; };
   if (DLG.rune) D.innerHTML = head + runeHtml(DLG.rune);
   else if (DLG.choice) { D.innerHTML = head + histH(ctx.hist.slice(-1)) + (ctx.cur ? lineH(ctx.cur) : '') + `<div class="ch">${DLG.choice.map((o, i) => `<button class="chb" ${o.dis ? 'disabled' : ''} data-i="${i}">${o.t}</button>`).join('')}</div>`; D.onclick = null; D.querySelectorAll('.chb').forEach(b => b.onclick = e => { e.stopPropagation(); dlgPick(+b.dataset.i); }); }
   else { D.innerHTML = head + histH(ctx.hist) + lineH(DLG.o) + '<div class="nx">点击继续 ▼</div>'; D.onclick = () => dlgPick(-1); }
@@ -124,7 +127,7 @@ function renderBattle(quiet) {
     return `<div class="uc ${u.side ? 'foe' : 'ally'} ${u === me_ ? 'me' : ''} ${dead ? 'dead' : ''} ${UI.selFoe === u.id ? 'sel' : ''} ${u.raged ? 'rage' : ''} ${u.releasing ? 'warnc' : ''} ${cur === u ? 'turn' : ''} ${UI.enter ? (u.side ? 'enter-d' : 'enter-u') : ''} ${u.side && u.alive && (aim === '*' || aim === u.id) ? 'aim' : ''}" style="--i:${i}" data-u="${u.id}" ${u.side ? `onclick="selFoe('${u.id}')"` : ''}><div class="n">${esc(u.name)}<small>${u.boss ? '首领' : u.lv + '层'}</small>${wk.length ? `<span class="wk">弱${wk.map(e => EL[e].i).join('')}</span>` : ''}${taken[u.id] ? `<span class="tk" title="这回合受到的伤害">-${taken[u.id]}</span>` : ''}</div>
       <div class="bar"><i style="width:${Math.max(0, hr * 100)}%"></i></div>${u.mpMax ? `<div class="bar mp"><i style="width:${u.mp / u.mpMax * 100}%"></i></div>` : ''}<div class="hpn"><span>${fmt(Math.ceil(u.hp))}/${fmt(u.hpMax)}</span></div>
       <div class="sts">${st}</div>${u.kind === 'pc' && ha && !B.over ? `<div class="int ready">✓ ${actTxt(ha)}</div>` : ''}${u.side && u.alive && u.intent ? `<div class="int ${u.plan === 'charge' || u.intent.startsWith('⚠') ? 'chg' : ''}">${u.intent}</div>` : ''}</div>`; };
-  const order = B.units.filter(u => u.alive).slice().sort((a, b) => (b.first && B.round === 1 ? 1000 : 0) + b.spd - (a.first && B.round === 1 ? 1000 : 0) - a.spd);
+  const order = turnOrder(B, false);
   $('bhead').innerHTML = `<div>${esc(B.title || '战斗')}<small>第 ${B.round} 回合</small></div><div class="order"><span class="ol">出手顺序</span>${order.map(u => `<span class="to ${u.side ? 'f' : ''} ${cur === u ? 'cur' : ''}" data-to="${u.id}">${esc(u.name.replace(/（.*/, '').slice(0, 4))}</span>`).join('<i>›</i>')}</div>`;
   $('foes').innerHTML = B.units.filter(u => u.side === 1).map(card).join(''); $('party').innerHTML = B.units.filter(u => u.side === 0).map(card).join('');
   let k = B.log.length - 1; while (k > 0 && !B.log[k].includes('class="rd"')) k--; const start = Math.max(0, B.log.length - 12), g0 = B.lc - B.log.length;
@@ -143,8 +146,9 @@ function renderBattleActs(cur) {
   if (B.over) { A.innerHTML = `<div class="wait" style="color:#ffcfb8">${B.win ? '赢了！' : B.fled ? '跑掉了' : '……'}</div>`; return; }
   if (!cur) { A.innerHTML = `<div class="wait">${C.auto ? '🤖 自动战斗中…… <button class="ab sm q" onclick="toggleAuto()">停下</button>' : '……'}</div>`; return; }
   if (cur.pet) { const mv = petMoves(cur); const ha = B.acts.hero; if (ha && !C.seen.tutPet && NETROLE !== 'guest') { C.seen.tutPet = 1; toast('石昊的招选好了——再给伙伴选一招，这回合才开打'); }
-    A.innerHTML = `${ha ? `<div class="who-turn ok">🧒 石昊已选好：<b>${actText(B, ha)}</b></div>` : ''}<div class="who-turn">${PETS[cur.mob].icon} 现在轮到 <b>${esc(cur.name)}</b> <span class="dim">· 给它选一招，选完这回合就开打${UI.selFoe ? '' : '（单体招先点敌人选目标）'}</span></div><div class="arow">${PETS[cur.mob].sk.map((s, i) => { const ok = mv.some(x => x.i === i); if (!ok && s.evo) return ''; const tag = s.aoe ? '全体' : s.healAlly ? '治疗' : s.shieldAll ? '全队盾' : s.shieldHero ? '给石昊盾' : s.buffHero ? '给石昊' : s.taunt ? '嘲讽' : '单体';
+    A.innerHTML = `${ha ? `<div class="who-turn ok">🧒 石昊已选好：<b>${actText(B, ha)}</b></div>` : ''}<div class="who-turn">${PETS[cur.mob].icon} 现在轮到 <b>${esc(cur.name)}</b> <span class="dim">· 给它选一招，选完这回合就开打${UI.selFoe ? '' : '（单体招先点敌人选目标）'}</span></div><div class="arow">${PETS[cur.mob].sk.map((s, i) => { const ok = mv.some(x => x.i === i); if (!ok) return ''; const tag = s.aoe ? '全体' : s.healAlly ? '治疗' : s.shieldAll ? '全队盾' : s.shieldHero ? '给石昊盾' : s.buffHero ? '给石昊' : s.taunt ? '嘲讽' : '单体';
       return `<button class="skb pet c-${s.cat}" ${ok ? '' : 'disabled'} title="${esc(s.d || '')}" onclick="battleAct({psk:${i},tgt:UI.selFoe},'pet')"><span class="i">${{ atk: '🐾', buff: '✨', debuff: '🌀', def: '🛡️' }[s.cat]}</span>${s.n}<span class="c">${ok ? PET_CAT[s.cat].n + '·' + tag + (s.el ? EL[s.el].i : '') : '亲近' + s.aff}</span></button>`; }).join('')}</div>
+      <div class="arow duo"><span class="dim">这回合</span><button class="ab sm ${(C.duo || 'hero') === 'hero' ? 'q' : ''}" onclick="setDuo('hero')">🧒 石昊先出手</button><button class="ab sm ${C.duo === 'pet' ? 'q' : ''}" onclick="setDuo('pet')">${PETS[cur.mob].icon} 伙伴先出手</button></div>
       <div class="arow"><button class="ab sm" onclick="battleUndo()">‹ 重选石昊</button><button class="ab sm ${C.auto ? 'q' : ''}" onclick="toggleAuto()">🤖 自动</button></div>`; return; }
   const sk = u.sk.map(id => { const S = SKILLS[id], cd = u.cd[id] || 0, no = u.mp < S.mp, pl = profLevel(id); return `<button class="skb" ${cd || no ? 'disabled' : ''} onclick="pickSkill('${id}')" title="${esc(S.desc)}"><span class="i">${S.icon}</span>${S.name}${S.mp ? `<span class="c">${S.mp}</span>` : ''}${pl ? `<span class="pf">${PROF[pl].s}</span>` : ''}${cd ? `<span class="cd">${cd}</span>` : ''}</button>`; }).join('');
   const heal = ['milk', 'herb', 'meat', 'lingyao', 'baoyao'].filter(i => itemN(i)); const swaps = B.noPet ? [] : Object.keys(C.pets).filter(id => id !== C.pet);

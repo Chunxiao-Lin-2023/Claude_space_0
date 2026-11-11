@@ -54,6 +54,12 @@ const { chromium } = require('playwright');
     // 歇脚 and trading
     c.auto = true; c.hp = 1; c.seenN = 99; UI.campAt = null; D.go('dh_forest', true, true); await camp(); await idle(); ok('camp', c.hp > 1);
     D.go('sc_street', true, true); c.money = 100; c.bag.bone = 0; D.addItem('bone', 4, true); sellItem('bone', 1); ok('sell', c.money === 100 + 4 * sellPrice('bone') && !itemN('bone')); const m0 = c.money, b0 = itemN('herb'); buyItem('herb'); ok('buy', c.money === m0 - PRICE.herb && itemN('herb') === b0 + 1);
+    // 出手顺序: 石昊 and the partner act back to back in the chosen order
+    c.auto = false; D.startBattle({ mobs: [['wolf', 18], ['boar', 18]], title: 't' }); await w8(30); const B7 = S().battle; c.duo = 'pet'; const o1 = turnOrder(B7, false).filter(u => u.side === 0).map(u => u.id).join(); c.duo = 'hero'; const o2 = turnOrder(B7, false).filter(u => u.side === 0).map(u => u.id).join();
+    const tl = turnOrder(B7, false), hi = tl.findIndex(u => u.kind === 'pc'), pi = tl.findIndex(u => u.pet); ok('duoOrder', o1 === 'pet,hero' && o2 === 'hero,pet' && Math.abs(hi - pi) === 1); S().battle = null; S().busy = false;
+    // loadouts: partner bar limited, new pick replaces the lowest-tier move of its kind; hero bar replaces lowest tier when full
+    c.pets.maoqiu = { aff: 100, evo: 0 }; const pb = petBar('maoqiu'); ok('petBarSize', pb.length === 4); const missing = petOpen('maoqiu').find(i => !pb.includes(i)); togglePetMove('maoqiu', missing); ok('petReplace', petBar('maoqiu').includes(missing) && petBar('maoqiu').length === 4);
+    c.lv = 9; c.bar = ['qly', 'sn', 'gw', 'lei']; toggleBar('jian'); ok('heroReplaceLow', c.bar.includes('jian') && !c.bar.includes('qly') && c.bar.length === 4); c.lv = 18;
     // 任务列表: side errands and bounties can be tracked, the target follows
     c.side = {}; const T0 = tasks(); ok('taskListHasSide', T0.some(t => t.key.startsWith('side:')) && T0.some(t => t.key.startsWith('bounty:')));
     c.side.sq_milk = 'on'; c.bag.bone = 0; trackTask('side:sq_milk'); ok('trackSide', curTask().key === 'side:sq_milk' && !!taskWhere() && PLACES[taskWhere()].gather.some(g => g[0] === 'bone') || PLACES[taskWhere()].mobs.some(m => (MOBS[m[0]].loot || []).some(l => l[0] === 'bone')));
