@@ -83,14 +83,14 @@ BX.register({
   kind: 'turn', seats: 2, seatNames: ['赤队', '金队'], seatColors: ['#c23a2b', '#d9a12b'], firstLabel: '先掷', aiDelay: 500,
   options: [{key: 'ends', label: '局数', choices: [[2, '2 局'], [4, '4 局'], [8, '8 局']], def: 4},
     {key: 'fgz', label: '自由防守区', choices: [[1, '开'], [0, '关']], def: 1}],
-  howto: ['先在下方选<b>旋转</b>（↻ 右弯 / ↺ 左弯）和<b>擦冰</b>（擦得越多滑得越远、弯得越少）。', '在冰面上<b>按住向后拉</b>：左右偏移决定瞄准点（营垒里的十字），拉得越长越有力，松手掷出；拉回按下点附近松手可取消。也可以用「左 / 右」「− +」微调（按住越调越快）后点「掷出」。', '虚线是出手后一小段的走向，力度要靠自己判断。开启辅助模式后：力度旁写出大概会停在哪（防守壶 / 进营 / 击打）、虚线画到停点（半透明壶，不计碰撞）、淡色 ✕ 标出上一壶的瞄准点，营垒里还会实时标出<b>目前得分的壶</b>和领先分数。', '壶在滑行时点一下画面可快进。键盘：←→ 瞄准、↑↓ 力度、Q/E 旋转、空格掷出。'],
+  howto: ['先在下方选<b>旋转</b>（↻ 右弯 / ↺ 左弯）和<b>擦冰</b>（擦得越多滑得越远、弯得越少）。', '在冰面上<b>按住向后拉</b>：左右偏移决定瞄准点（营垒里的十字），拉得越长越有力，松手掷出；拉回按下点附近松手可取消。也可以用「左 / 右」「− +」微调（按住越调越快）后点「掷出」。', '经典模式下，虚线是从起掷点指向瞄准十字的出手方向，十字旁的箭头是弯向，会停在哪、弯多少、力度够不够要靠自己判断。开启辅助模式后：力度旁写出大概会停在哪（防守壶 / 进营 / 击打）、虚线画到停点（半透明壶，不计碰撞）、淡色 ✕ 标出上一壶的瞄准点，营垒里还会实时标出<b>目前得分的壶</b>和领先分数。', '壶在滑行时点一下画面可快进。键盘：←→ 瞄准、↑↓ 力度、Q/E 旋转、空格掷出。'],
   rules: `<p><b>冰壶</b>：两队在冰道上轮流把冰壶推向远端的<b>营垒</b>（同心圆）。每局每队各掷 <b>8 壶</b>，双方交替出手。</p>
 <p><b>计分：</b>一局 16 壶全部掷完后，只有离营垒圆心（<b>T 点</b>）最近的一方得分：该方每有一只壶比对方最近的壶更靠近圆心，就得 1 分。只计算营垒内（外圈半径 1.83 米以内、壶身接触圆圈即算）的壶。双方都没有壶在营垒内则本局 0:0（空局）。</p>
 <p><b>后手（最后一壶）：</b>首局由先掷方的对手持后手；此后由<b>本局未得分的一方</b>获得下一局后手（空局则后手不变）。后手方每局最后出手，优势很大。</p>
 <p><b>出界：</b>壶完全越过<b>底线</b>或碰到两侧边线即被移出；掷出的壶必须完全越过远端<b>前掷线</b>（粗红线），除非它碰到了场上其他壶，否则同样移出。</p>
 <p><b>自由防守区（可选，五壶规则）：</b>前掷线与 T 线之间、营垒以外的区域。每局前 4 壶掷出期间，不得把对方停在该区域内的壶击出界；违例时掷出的壶被移出，其余壶恢复原位。</p>
 <p>全部局数打完后总分高者胜；平分则加赛一局（最多三局，仍平则为和局）。</p>
-<p><b>操作：</b>先在下方选好<b>旋转</b>（顺旋向右弯、逆旋向左弯）和<b>擦冰</b>力度（擦得越多，滑得越远、弯得越少）。然后在画面上按住并<b>向后拉</b>：左右偏移决定瞄准点（营垒中的十字），拉得越长力度越大；虚线是出手后一小段的走向（开启辅助模式后画出不考虑碰撞的完整预计路线和停点），松手掷出。冰面有细微不平，实际落点会有少许偏差。键盘：←→ 瞄准、↑↓ 力度、空格掷出。</p>`,
+<p><b>操作：</b>先在下方选好<b>旋转</b>（顺旋向右弯、逆旋向左弯）和<b>擦冰</b>力度（擦得越多，滑得越远、弯得越少）。然后在画面上按住并<b>向后拉</b>：左右偏移决定瞄准点（营垒中的十字），拉得越长力度越大；虚线是出手方向（起掷点指向瞄准十字，十字旁箭头表示弯向；开启辅助模式后改为不考虑碰撞的完整预计路线和停点），松手掷出。冰面有细微不平，实际落点会有少许偏差。键盘：←→ 瞄准、↑↓ 力度、空格掷出。</p>`,
   icon(g, w, h) {
     const gr = g.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, '#eef5f7'); gr.addColorStop(1, '#cfe0e6'); g.fillStyle = gr; g.fillRect(0, 0, w, h);
     const cx = w * .55, cy = h * .5, s = h * .26;
@@ -457,11 +457,28 @@ BX.register({
           const lab = `💡 瞄${xaTxt(hintA.xa)} · ${hintA.s > 0 ? '↻右弯' : '↺左弯'} · ${weightName(hintA.p, hintA.w)} · ${['不擦', '轻擦', '中擦', '重擦'][hintA.w]}`;
           D.text(g, lab, V.W / 2, V.port ? V.topH + 66 : V.cross - 46, {size: 13, color: '#1f6b50', weight: 800, stroke: 'rgba(255,255,255,.9)', strokeW: 4});
         }
-        // classic: only the first ~9 m of the delivery (honest line, no stop point); assist: full path to rest
-        const sp = (ctx.assist ? pts : pts.filter(p => p[1] < START_Y + 9)).map(p => T(p[0], p[1]));
+        // assist: full path to rest (classic draws the delivery line + curl side below instead)
+        const sp = ctx.assist ? pts.map(p => T(p[0], p[1])) : [];
         K.guide(g, sp, {color: D.alpha(ctx.color(st.turn), 1), w: 3, alpha: .85, fade: .2, dash: [4, 8]});
         const end = pts[pts.length - 1];
         if (end && ctx.assist && ctx.pref('hints')) { const [ex, ey] = T(end[0], end[1]); g.globalAlpha = .45; drawStone(g, ex, ey, R * V.s, ctx.color(st.turn), 0); g.globalAlpha = 1; }
+        // classic: the camera sits at the house, so show the delivery line (hack → broom, the line the skip holds) and the curl side
+        // where the player is looking — direction only, no curl amount and no stopping point
+        if (!ctx.assist) {
+          const [hx0, hy0] = T(0, START_Y), [tx0, ty0] = T(aim.xa, TEE_Y), col = D.alpha(ctx.color(st.turn), 1);
+          g.save(); g.strokeStyle = col; g.globalAlpha = .75; g.lineWidth = 2.5; g.setLineDash([4, 8]); g.lineCap = 'round';
+          g.beginPath(); g.moveTo(hx0, hy0); g.lineTo(tx0, ty0); g.stroke(); g.setLineDash([]);
+          // curl-side arrow beside the broom: ↻ (right) / ↺ (left)
+          const ar = 15, sd = aim.s > 0 ? 1 : -1, cx0 = tx0 + (V.port ? sd * 26 : 0), cy0 = ty0 + (V.port ? 0 : sd * 26);
+          g.globalAlpha = .95; g.lineWidth = 3; g.beginPath();
+          const a0 = -Math.PI * .85, a1 = Math.PI * .35;
+          if (sd > 0) g.arc(cx0, cy0, ar, a0, a1); else g.arc(cx0, cy0, ar, Math.PI - a0, Math.PI - a1, true);
+          g.stroke();
+          const ea = sd > 0 ? a1 : Math.PI - a1, ex2 = cx0 + Math.cos(ea) * ar, ey2 = cy0 + Math.sin(ea) * ar, tg = ea + sd * Math.PI / 2;
+          g.fillStyle = col; g.beginPath(); g.moveTo(ex2 + Math.cos(tg) * 7, ey2 + Math.sin(tg) * 7); g.lineTo(ex2 + Math.cos(tg + 2.5) * 7, ey2 + Math.sin(tg + 2.5) * 7); g.lineTo(ex2 + Math.cos(tg - 2.5) * 7, ey2 + Math.sin(tg - 2.5) * 7); g.fill();
+          D.text(g, sd > 0 ? '右弯' : '左弯', cx0, cy0 + ar + 11, {size: 11, color: '#2b2118', weight: 800, stroke: 'rgba(255,255,255,.85)', strokeW: 3});
+          g.restore();
+        }
         // broom target
         const [bx, by] = T(aim.xa, TEE_Y);
         g.strokeStyle = '#1b1510'; g.lineWidth = 2.5; g.beginPath(); g.moveTo(bx - 10, by); g.lineTo(bx + 10, by); g.moveTo(bx, by - 10); g.lineTo(bx, by + 10); g.stroke();

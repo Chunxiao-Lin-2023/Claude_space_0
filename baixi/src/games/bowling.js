@@ -112,7 +112,7 @@ BX.register({
   id: 'bowling', title: '保龄球', cat: 'physics', order: 5, sub: '十瓶十局，全中补中',
   desc: '标准十瓶保龄球：选站位、瞄准、决定力度和弧线，一球击倒全部球瓶就是“全中”。十局计分，全中与补中有奖励分。',
   kind: 'turn', seats: [1, 4], defSeats: 2, seatColors: ['#c23a2b', '#2f5d8a', '#3f8f5b', '#d9a12b'], aiDelay: 500,
-  howto: ['<b>向上划</b>出球：松手前最后一瞬划得越快球速越快，划的方向就是出球方向；划到最后<b>往左/右拐</b>就会打出向左/右的弧线球（拐得越多弧线越强）。', '也可以<b>按住向下拉</b>（弹弓式）再松手；下方按钮可微调站位（第几板）、方向、弧线和球速，再点「出球」。', '左上角的瓶位图显示剩余球瓶；虚线只画到球道中段，弧线怎么拐要靠自己判断。开启辅助模式后：虚线画到球瓶、瓶位图上标出本球预计到达的位置，淡色点和淡色线是你上一球。', '球滚动时点一下画面可快进；💡 提示给出建议的打法。键盘：←→ 方向、↑↓ 球速、A/D 站位、Q/E 弧线、空格出球。'],
+  howto: ['<b>向上划</b>出球：松手前最后一瞬划得越快球速越快，划的方向就是出球方向；划到最后<b>往左/右拐</b>就会打出向左/右的弧线球（拐得越多弧线越强）。', '也可以<b>按住向下拉</b>（弹弓式）再松手；下方按钮可微调站位（第几板）、方向、弧线和球速，再点「出球」。', '左上角的瓶位图显示剩余球瓶，虚线是本球的走向（含弧线）。开启辅助模式后，瓶位图上还会标出本球预计到达的位置，淡色点和淡色线是你上一球。', '球滚动时点一下画面可快进；💡 提示给出建议的打法。键盘：←→ 方向、↑↓ 球速、A/D 站位、Q/E 弧线、空格出球。'],
   rules: `<p>标准<b>十瓶保龄球</b>，每人打 <b>10 局</b>（frame），多名玩家按局轮流上场。</p>
 <p><b>每局</b>最多投 2 球：第一球击倒全部 10 个球瓶为<b>全中</b>（X），本局结束；两球合计击倒全部为<b>补中</b>（/）；否则记击倒的瓶数。</p>
 <p><b>计分：</b>全中 = 10 分 + 之后两球的瓶数；补中 = 10 分 + 下一球的瓶数；其他局 = 两球瓶数之和。第 10 局打出全中可再投 2 球、补中可再投 1 球（奖励球只用于计分）。满分 300 分（12 个全中）。</p>
@@ -457,8 +457,7 @@ BX.register({
         D.text(g, `💡 第${board(hintA.x)}板 · ${hintA.h < 0 ? '↰左弧' : hintA.h > 0 ? '↱右弧' : '直球'} · ${kmh(hintA.p)}公里/时`, V.W / 2, V.bot - 34, {size: 13, color: '#bff0d8', weight: 800, stroke: 'rgba(0,0,0,.7)', strokeW: 4});
       }
       const pp = pathOf(shotOf(aim)), e = pp[pp.length - 1]; entryX = Math.abs(e[0]) > LANE_HW ? null : e[0];
-      // classic: only the straight part up to the end of the oil (no hook prediction); assist: full path to the pins
-      K.guide(g, pp.filter((q, i) => i % 3 === 0 && (ctx.assist || q[1] <= OIL)).map(q => { const p = P3(q[0], q[1], .01); return [p[0], p[1]]; }), {color: '#fffaf0', w: 2.5, alpha: .9, fade: .75, dash: [6, 8]});
+      K.guide(g, pp.filter((_, i) => i % 3 === 0).map(q => { const p = P3(q[0], q[1], .01); return [p[0], p[1]]; }), {color: '#fffaf0', w: 2.5, alpha: .9, fade: .75, dash: [6, 8]});
     }
     function fire(e, x, y) {
       if (e[1] === 'ball') {
