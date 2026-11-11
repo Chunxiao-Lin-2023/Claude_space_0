@@ -161,9 +161,24 @@ BX.register({
       let t = up ? 1 : dn ? -1 : 0;
       if (pads.touched && !up && !dn) t = tb ? -1 : 1;
       let sv = ((r || tr) ? 1 : 0) - ((l || tl) ? 1 : 0);
-      if (!sv && ctx.opts.assist !== 0 && st.ph !== 'cd') sv = assistSteer(st.c[seat]);
-      return {s: sv, t};
+      if (!sv && drag && nl === 1) sv = drag.s;                         // analog drag steering
+      if (!sv && ctx.opts.assist !== 0 && st.ph !== 'cd') sv = assistSteer(gc && !ctx.isHost ? gc : st.c[seat]);
+      const out = {s: Math.round(sv * 100) / 100, t};
+      if (!ctx.isHost && ctx.online && seat === ctx.me) { pr.tag(out); if (gc) pr.advance(gc, out, (q, inp, dt) => stepCar(seat, inp, dt, q)); }
+      return out;
     }
+    /* drag steering (single local driver, touch): press anywhere on the track view and slide sideways — 10 px dead zone,
+       full lock at 70 px, released = straight.  Gives analog, fine control that buttons can't. */
+    let drag = null;
+    pads.onDown((p, e) => {
+      if (nLoc() !== 1 || drag || e.pointerType === 'mouse') return; const v = view();
+      for (const b of ctrlBtns(v)) if (K.inR(p, b)) return;
+      if (v.ctrlH && p.y > v.H - v.ctrlH) return;
+      drag = {id: e.pointerId, x0: p.x, y0: p.y, x: p.x, s: 0};
+    });
+    ctx.on(cv.cv, 'pointermove', e => { if (!drag || drag.id !== e.pointerId) return; const pts = ctx.points(e, cv.cv), q = pts[pts.length - 1]; drag.x = q.x; const d = drag.x - drag.x0, m = Math.max(0, Math.abs(d) - 10); drag.s = Math.sign(d) * Math.min(1, Math.pow(m / 60, 1.25)); if (Math.abs(d) > 110) drag.x0 = drag.x - Math.sign(d) * 110; });
+    const dragEnd = e => { if (drag && drag.id === e.pointerId) drag = null; };
+    ctx.on(cv.cv, 'pointerup', dragEnd); ctx.on(cv.cv, 'pointercancel', dragEnd);
     /* gentle pull toward the centre line ahead (like kart games' smart steering) — only while the player isn't steering */
     function assistSteer(c) {
       const sp = Math.hypot(c.vx, c.vy); if (sp < 20) return 0;
@@ -175,6 +190,9 @@ BX.register({
     const touchUI = () => BX.TOUCH.matches || pads.touched;
     /* single local driver → chase camera (zoomed, follows your car); several local drivers / spectator → whole track */
     const cam = {x: null, y: null};
+    // host: previous step for ctx.alpha interpolation.  guest: predicted own car (gc), extrapolated others, visual smoothing
+    const prev = st.c.map(c => ({x: c.x, y: c.y, a: c.a})), pr = K.predictor(60), sm = K.smoother(10);
+    let gc = null, gx = null, ack = BX.range(n).map(() => 0), rc = st.c.map(c => ({x: c.x, y: c.y, a: c.a}));
     function view() {
       const W = cv.w, H = cv.h, hasLocal = nLoc() > 0 && touchUI();
       const side = hasLocal && W > H * 1.3 && nLoc() <= 2, sideW = side ? Math.min(W * .19, 170) : 0;
@@ -194,7 +212,7 @@ BX.register({
     }
     function moveCam(dt) {
       if (nLoc() !== 1) { cam.x = null; return; }
-      const c = st.c[ctx.mySeats[0]]; if (!c) return;
+      const me = ctx.mySeats[0], c0 = st.c[me]; if (!c0) return; const c = {x: rc[me].x, y: rc[me].y, vx: c0.vx, vy: c0.vy};
       const tx = c.x + c.vx * .32, ty = c.y + c.vy * .32;
       if (cam.x == null) { cam.x = tx; cam.y = ty; return; }
       const k = 1 - Math.exp(-dt * 4.5); cam.x += (tx - cam.x) * k; cam.y += (ty - cam.y) * k;
@@ -245,7 +263,7 @@ BX.register({
           if (ctx.isLocal(e[2]) || nLoc() === 0) { ctx.sfx('bell'); const c = st.c[e[2]], [x, y] = T(v, c.x, c.y); fx.text(x, y - 26, (e[3] >= LAPS - 1 ? '最后一圈！' : '第 ' + (e[3] + 1) + ' 圈') + (me ? '  ' + fmt(lt) : ''), {size: 22, color: '#ffe08a'}); }
         }
         else if (e[0] === 'fin') { ctx.sfx(e[3] === 1 ? 'win' : 'score'); const c = st.c[e[2]], [x, y] = T(v, c.x, c.y); fx.burst(x, y, {n: 40, color: ['#ffd76a', '#fff', ctx.color(e[2]), '#c23a2b'], sp: 300, square: true, up: 100}); fx.text(x, y - 30, '第 ' + e[3] + ' 名', {size: 28, color: '#ffe08a', life: 1.6}); if (e[3] === 1) fx.flash(.8); }
-        else if (e[0] === 'bump') { ctx.sfx('hit'); const [x, y] = T(v, e[2], e[3]); fx.burst(x, y, {n: 10, color: ['#ffd76a', '#fff'], sp: 160, size: 3, grav: 0}); fx.shake(Math.min(6, e[4] / 30)); }
+        else if (e[0] === 'bump') { const mine = (e[5] != null && ctx.isLocal(e[5])) || (e[6] != null && ctx.isLocal(e[6])); ctx.sfx(e[4] > 110 ? 'crash' : 'hit'); const [x, y] = T(v, e[2], e[3]); fx.burst(x, y, {n: Math.round(6 + Math.min(14, e[4] / 12)), color: ['#ffd76a', '#fff'], sp: 100 + Math.min(160, e[4]), size: 3, grav: 0}); if (mine || nLoc() !== 1) fx.shake(Math.min(mine ? 7 : 4, e[4] / 28)); if (mine && e[4] > 80) ctx.buzz(Math.min(30, e[4] / 6)); }
         else if (e[0] === 'end') ctx.sfx('bell');
       });
     }
@@ -269,6 +287,7 @@ BX.register({
       st, input, aiInput,
       step(dt, inputs) {
         if (st.over) return;
+        for (let i = 0; i < n; i++) { const c = st.c[i]; prev[i].x = c.x; prev[i].y = c.y; prev[i].a = c.a; const q = inputs[i]; if (q && q.n) ack[i] = q.n; }
         if (st.ph === 'cd') { st.t -= dt; const c = Math.ceil(st.t); if (c < lastCd && c <= 3 && c > 0) { lastCd = c; K.ev(st, 'cd'); } if (st.t <= 0) { st.ph = 'race'; K.ev(st, 'go'); } }
         for (let i = 0; i < n; i++) stepCar(i, inputs[i] || {}, dt);
         collide();
@@ -277,15 +296,26 @@ BX.register({
       },
       snapshot() {
         const r = v => Math.round(v * 10) / 10;
-        return {c: st.c.map(c => [r(c.x), r(c.y), Math.round(c.a * 1000) / 1000, r(c.vx), r(c.vy), c.lap, c.ci, c.fin, c.off]), ph: st.ph, t: r(st.t), order: st.order, ev: st.ev, over: st.over};
+        return {c: st.c.map(c => [r(c.x), r(c.y), Math.round(c.a * 1000) / 1000, r(c.vx), r(c.vy), c.lap, c.ci, c.fin, c.off, Math.round((c.sv || 0) * 100) / 100]), ph: st.ph, t: r(st.t), order: st.order, ev: st.ev, over: st.over, ack};
       },
       restore(d) {
-        d.c.forEach((a, i) => Object.assign(st.c[i], {x: a[0], y: a[1], a: a[2], vx: a[3], vy: a[4], lap: a[5], ci: a[6], fin: a[7], off: a[8]}));
-        Object.assign(st, {ph: d.ph, t: d.t, order: d.order, ev: d.ev, over: d.over}); playEv(); info();
+        d.c.forEach((a, i) => Object.assign(st.c[i], {x: a[0], y: a[1], a: a[2], vx: a[3], vy: a[4], lap: a[5], ci: a[6], fin: a[7], off: a[8], sv: a[9] || 0}));
+        Object.assign(st, {ph: d.ph, t: d.t, order: d.order, ev: d.ev, over: d.over});
+        // guest render model: own car = authoritative + replayed unacknowledged inputs; others extrapolate from the snapshot
+        const me = ctx.me, old = gx ? rc.map(q => ({x: q.x, y: q.y})) : null;
+        gx = st.c.map(c => ({x: c.x, y: c.y, a: c.a, vx: c.vx, vy: c.vy}));
+        if (ctx.online && me != null && me >= 0 && st.c[me]) { gc = Object.assign({}, st.c[me]); pr.reconcile(gc, d.ack ? d.ack[me] || 0 : 0, (q, inp, dt) => stepCar(me, inp, dt, q)); gx[me] = gc; }
+        if (old) gx.forEach((q, i) => sm.jump('c' + i, old[i].x - q.x, old[i].y - q.y, 40));
+        playEv(); info();
       },
       draw(dt) {
         time += dt; fx.update(dt);
-        if (!ctx.isHost) for (const c of st.c) { c.x += c.vx * dt * .5; c.y += c.vy * dt * .5; }
+        // render positions: host lerps the last two 60 Hz steps; guest draws prediction / extrapolation with smoothed corrections
+        if (ctx.isHost) { const a = ctx.alpha; st.c.forEach((c, i) => { rc[i].x = BX.lerp(prev[i].x, c.x, a); rc[i].y = BX.lerp(prev[i].y, c.y, a); rc[i].a = prev[i].a + angDiff(c.a, prev[i].a) * a; }); }
+        else if (gx) {
+          sm.decay(dt);
+          gx.forEach((q, i) => { if (q !== gc) { const k = Math.exp(-dt * .8); q.x += q.vx * dt; q.y += q.vy * dt; q.vx *= k; q.vy *= k; } const o = sm.get('c' + i); rc[i].x = q.x + o.x; rc[i].y = q.y + o.y; rc[i].a = q.a; });
+        } else st.c.forEach((c, i) => { rc[i].x = c.x; rc[i].y = c.y; rc[i].a = c.a; });
         moveCam(dt);
         pads.begin(); const v = view(); for (const b of ctrlBtns(v)) pads.add(b);
         const g = cv.g; cv.clear('#2a190d');
@@ -315,9 +345,9 @@ BX.register({
         } else wrongT = 0;
         // skid marks
         for (let i = 0; i < n; i++) {
-          const c = st.c[i], fxx = Math.cos(c.a), fy = Math.sin(c.a), vl = Math.abs(-c.vx * fy + c.vy * fxx), sp = Math.hypot(c.vx, c.vy);
-          if ((vl > 45 && sp > 120) || (c.off && sp > 60)) skids.push({x: c.x - fxx * 8, y: c.y - fy * 8, a: c.a, t: 0, off: c.off});
-          if (c.off && sp > 60 && Math.random() < .3) { const [x, y] = T(v, c.x - fxx * 10, c.y - fy * 10); fx.burst(x, y, {n: 1, color: '#c8a070', sp: 30, size: 3 * v.s * 2, grav: 0, life: .5}); }
+          const c = st.c[i], R = rc[i], fxx = Math.cos(R.a), fy = Math.sin(R.a), vl = Math.abs(-c.vx * fy + c.vy * fxx), sp = Math.hypot(c.vx, c.vy);
+          if ((vl > 45 && sp > 120) || (c.off && sp > 60)) skids.push({x: R.x - fxx * 8, y: R.y - fy * 8, a: R.a, t: 0, off: c.off});
+          if (c.off && sp > 60 && Math.random() < .3) { const [x, y] = T(v, R.x - fxx * 10, R.y - fy * 10); fx.burst(x, y, {n: 1, color: '#c8a070', sp: 30, size: 3 * v.s * 2, grav: 0, life: .5}); }
         }
         while (skids.length > 500) skids.shift();
         for (const s of skids) {
@@ -328,15 +358,21 @@ BX.register({
         // cars (shadow + body)
         const sc = Math.max(1, v.s * 1.15);
         for (let i = 0; i < n; i++) {
-          const c = st.c[i], [x, y] = T(v, c.x, c.y), mine = ctx.isLocal(i);
+          const c = st.c[i], R = rc[i], [x, y] = T(v, R.x, R.y), mine = ctx.isLocal(i);
           if (mine && nLoc() > 0) { g.strokeStyle = D.alpha(ctx.color(i), .7); g.lineWidth = 2; D.circle(g, x, y, 17 * sc); g.stroke(); }
-          car(g, x, y, c.a + (v.port ? Math.PI / 2 : 0), sc, ctx.color(i), i + 1, Math.hypot(c.vx, c.vy) > 250 && st.ph !== 'cd');
+          car(g, x, y, R.a + (v.port ? Math.PI / 2 : 0), sc, ctx.color(i), i + 1, Math.hypot(c.vx, c.vy) > 250 && st.ph !== 'cd');
           if (mine && n > 1 && (nLoc() > 1 || true)) D.text(g, nLoc() > 1 ? ctx.name(i) : '你', x, y - 20 * sc, {size: 11, color: '#fff', weight: 800, stroke: 'rgba(0,0,0,.6)'});
         }
         g.restore();
         fx.draw(g);
         drawHUD(g, v);
         drawCtrl(g, v);
+        if (drag) {                                                   // drag-steer indicator: dead-zone pill + knob
+          const kx = drag.x0 + BX.clamp(drag.x - drag.x0, -80, 80), y = drag.y0;
+          g.fillStyle = 'rgba(20,10,4,.35)'; D.rr(g, drag.x0 - 86, y - 16, 172, 32, 16); g.fill();
+          g.fillStyle = 'rgba(255,240,200,.25)'; D.rr(g, drag.x0 - 10, y - 16, 20, 32, 8); g.fill();
+          g.fillStyle = Math.abs(drag.s) > .98 ? 'rgba(255,170,90,.9)' : 'rgba(255,240,200,.85)'; D.circle(g, kx, y, 14); g.fill();
+        }
         fx.drawFlash(g, v.W, v.H);
       },
     };

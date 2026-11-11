@@ -270,6 +270,7 @@ BX.register({
     function press(slot, a) {
       const c = CODE[a]; if (!c) return;
       if (c === 5 && !ctx.isHost) guestHdFx(slot);
+      if (c === 1 || c === 2) dasS[slot].kt = performance.now();   // DAS is timed from the key press itself, not the next frame
       act(slot, c);
       if (c === 3 || c === 4) ctx.sfx('tick'); else if (c === 1 || c === 2) ctx.sfx('click');
     }
@@ -299,7 +300,7 @@ BX.register({
       const H = dasS[slot], hs = heldState(slot, nLocal), now = performance.now(), [, DAS, ARR] = HANDLING[hand];
       if (hs.l && !H.pl) H.last = -1; if (hs.r && !H.pr) H.last = 1; H.pl = hs.l; H.pr = hs.r;
       const dir = hs.l && hs.r ? H.last : hs.l ? -1 : hs.r ? 1 : 0;
-      if (dir !== H.dir) { H.dir = dir; H.t0 = now; H.n = 0; H.wk = ''; return; }
+      if (dir !== H.dir) { H.dir = dir; H.t0 = now - (H.kt || 0) < 60 ? H.kt : now; H.n = 0; H.wk = ''; }
       if (!dir || st.over) return;
       const el = now - H.t0 - DAS; if (el < 0) return;
       const play = st.ph === 'play';

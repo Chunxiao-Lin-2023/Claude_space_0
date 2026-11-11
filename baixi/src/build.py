@@ -7,7 +7,7 @@ Usage:
 Every game file is syntax-checked with node and wrapped in its own function scope + try/catch,
 so one broken game cannot take down the lobby.
 """
-import os, re, sys, glob, subprocess, argparse
+import os, re, sys, glob, subprocess, argparse, hashlib
 R = os.path.dirname(os.path.abspath(__file__))
 CORE = ['00_util.js', '10_sfx.js', '20_draw.js', '30_net.js', '40_runtime.js', '50_lobby.js', '60_ai.js']
 ap = argparse.ArgumentParser(); ap.add_argument('--only'); ap.add_argument('--out'); ap.add_argument('--nocheck', action='store_true')
@@ -28,10 +28,13 @@ if A.only:
 js = []
 for f in CORE:
     p = os.path.join(R, 'core', f); check(p); js.append('/* ---- core/%s ---- */\n' % f + open(p, encoding='utf-8').read())
+# code hash per game (its file + all shared _ helpers): saved "继续上局" games are dropped when the game's code changed
+shared = ''.join(open(f, encoding='utf-8').read() for f in files if os.path.basename(f).startswith('_'))
 for p in files:
     check(p); name = os.path.basename(p)[:-3]
     body = open(p, encoding='utf-8').read()
-    js.append('/* ---- games/%s ---- */\ntry{(function(){\n%s\n})();}catch(e){console.error("game load failed: %s",e);(BX.loadErrors=BX.loadErrors||[]).push("%s: "+e.message);}' % (name, body, name, name))
+    hsh = hashlib.sha1((body + shared).encode('utf-8')).hexdigest()[:10]
+    js.append('/* ---- games/%s ---- */\nBX._codeHash=%r;try{(function(){\n%s\n})();}catch(e){console.error("game load failed: %s",e);(BX.loadErrors=BX.loadErrors||[]).push("%s: "+e.message);}' % (name, hsh, body, name, name))
 p = os.path.join(R, 'core', '99_boot.js'); check(p); js.append(open(p, encoding='utf-8').read())
 JS = '\n'.join(js)
 assert '</script' not in JS.lower(), 'a source file contains </script'

@@ -883,7 +883,8 @@ BX.register({
         g.restore();
       }
       for (let n = 15; n >= 0; n--) { const q = pos[n]; if (!q[2]) continue; ball(g, q[0], q[1], n, q[2] < 1 ? .55 + .45 * q[2] : 1, phase[n], rdir[n]); }
-      // cue stick
+      // cue stick (clipped so a full draw-back never paints over the control panel)
+      g.save(); screenXf(g); g.beginPath(); if (V.panel.horiz) g.rect(0, 0, V.w, V.panel.y); else g.rect(0, 0, V.panel.x, V.h); g.clip(); tableXf(g, sx, sy);
       if (stickA) cueStick(g, stickA[0], stickA[1], stickA[2], stickA[3], stickA[4], stickA[5]);
       else if (pend && !play) {   // own shot sent, waiting for the host: the strike already happened locally
         const kk = Math.min(1, (performance.now() - pend.t0) / pend.ms), a = pend.a;
@@ -897,6 +898,7 @@ BX.register({
         if (!remoteShow) remoteShow = a.slice(); else for (let q = 0; q < 5; q++) remoteShow[q] += (a[q] - remoteShow[q]) * k;
         const r = remoteShow, l = Math.hypot(r[0], r[1]) || 1; cueStick(g, r[3], r[4], r[0] / l, r[1] / l, 6 + r[2] * 90, .55);
       } else remoteShow = null;
+      g.restore();
       // particles
       for (let i = parts.length - 1; i >= 0; i--) {
         const p = parts[i]; p.t -= dt; if (p.t <= 0) { parts.splice(i, 1); continue; }

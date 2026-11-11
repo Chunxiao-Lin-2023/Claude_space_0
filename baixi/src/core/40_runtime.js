@@ -15,6 +15,7 @@ BX.MODE_NAMES = {ai: '人机对战', local: '同屏对战', online: '联机对�
 
 BX.register = function (def) {
   def.kind = def.kind || 'turn';
+  def.codeHash = BX._codeHash || '';
   if (def.kind === 'solo') { def.seats = [1, 1]; def.modes = ['solo']; }
   if (typeof def.seats === 'number') def.seats = [def.seats, def.seats];
   def.seats = def.seats || [2, 2];
@@ -397,11 +398,11 @@ BX.undo = function () {
 let resumeT = 0;
 function saveResume() {
   if (!S || S.def.kind !== 'turn' || S.cfg.mode === 'online' || S.def.resume === false || BX.test || S.ended) return;
-  clearTimeout(resumeT); const snap = {mode: S.cfg.mode, opts: S.cfg.opts, seed: S.cfg.seed, seats: S.cfg.seats, sel: S.cfg.sel, log: S.log, t: Date.now()}, id = S.def.id;
+  clearTimeout(resumeT); const snap = {mode: S.cfg.mode, opts: S.cfg.opts, seed: S.cfg.seed, seats: S.cfg.seats, sel: S.cfg.sel, log: S.log, t: Date.now(), h: S.def.codeHash}, id = S.def.id;
   resumeT = setTimeout(() => BX.store.set('resume.' + id, snap), 250);
 }
 function clearResume() { clearTimeout(resumeT); if (S) BX.store.del('resume.' + S.def.id); }
-BX.getResume = id => BX.store.get('resume.' + id, null);
+BX.getResume = id => { const r = BX.store.get('resume.' + id, null), d = BX.games[id]; if (r && d && (r.h || '') !== d.codeHash) { BX.store.del('resume.' + id); return null; } return r; };
 
 /* ---------------- pause (offline realtime) ---------------- */
 function setPaused(p) {
