@@ -57,7 +57,10 @@ async function train() { if (STATE.scene || STATE.battle || STATE.dungeon) retur
   logLine(r.ok ? (lei ? '你接住了好几道雷，浑身麻酥酥的，精神反倒更足了。' : '石锁在你手里上下翻飞，旁边的孩子们看得直拍手。') : (lei ? '你被劈得头发冒烟。' : '石锁砸在地上，震得你手发麻。'), 'dim'); save(); refresh(); }
 
 /* ---------- battle controller (only the host / solo player runs battles; co-op guests just watch the state) ---------- */
-function startBattle(spec) {
+function startBattle(spec) { const n = partySlots(spec); /* a fight that comes back (再来一次) asks again: the spec itself is never changed */
+  if (!spec._party && partyNeedsPick(spec, n)) return partyPick(spec, n).then(L => startBattle0(Object.assign({}, spec, { _party: L })));
+  return startBattle0(spec); }
+function startBattle0(spec) {
   return new Promise(res => { const B = battleCreate(spec); STATE.battle = B; STATE.battleRes = res; STATE.busy = true; renderBattle(); netSync(); });
 }
 function battleAct(act, who = 'hero') { // 石昊 and the 灵兽伙伴 each choose; once everyone has, the round plays out in speed order
@@ -70,18 +73,19 @@ function battleAct(act, who = 'hero') { // 石昊 and the 灵兽伙伴 each choo
   if (needInput(B).length) { renderBattle(true); netSync(); return; }
   battleResolve(B); renderBattle(); netSync(); if (B.over) battleFinish(B);
 }
-function battleUndo() { const B = STATE.battle; if (!B || B.over || !B.acts.hero) return; delete B.acts.hero; renderBattle(true); netSync(); }
+function battleUndo() { const B = STATE.battle; if (!B || B.over || !B.acts.hero) return; for (const k of Object.keys(B.acts)) if (k === 'hero' || k.startsWith('pet')) delete B.acts[k]; renderBattle(true); netSync(); }
+function partyAutoRest() { const B = STATE.battle; if (!B || B.over) return; for (const u of needInput(B).filter(x => x.pet)) { const i = petPick(B, u); battleAct({ psk: i }, u.id); if (STATE.battle !== B || B.over) break; } }
 function battleFinish(B) { if (B.done) return; B.done = true; const r = Object.assign({ win: B.win, fled: !!B.fled, kills: B.kills, noLose: B.noLose, survived: !!B.survived, protectOk: !!B.protectOk, answered: !!B.answered, wave: B.waveN || 0, streak: B.endless ? B.endless.n : 0 }, B.win ? battleRewards(B) : {});
   const hero = B.units.find(u => u.kind === 'pc'); r.hp = hero.hp; r.mp = hero.mp; r.boss = B.room != null && B.dungeon && DUNGEONS[B.dungeon].rooms[B.room]?.boss ? B.dungeon : null;
   setTimeout(() => battleApply(r, B), window.__dbg && __dbg.instant ? 0 : animLeft() + (SET.motion === false ? 500 : 1100)); }
 function battleApply(r, B) { if (B && B.aborted) return; // the fight was dropped (跳章)
   const s = charStats(); C.hp = clamp(Math.round(r.hp), 0, s.hpMax); C.mp = clamp(Math.round(r.mp), 0, s.mpMax);
   if (r.win) { sfx('win'); for (const [id, , boss] of r.kills || []) { C.kills[id] = (C.kills[id] || 0) + 1; C.stats.kills++; if (boss) C.stats.bosses++; storyKill(id); }
-    if (C.pet && C.pets[C.pet]) { const p = C.pets[C.pet]; if (p.aff < 100 && chance(0.35)) { p.aff = Math.min(100, p.aff + 1); petEvoCheck(C.pet); } }
+    for (const id of partyFielded(B)) { const p = C.pets[id]; if (p && p.aff < 100 && chance(0.35)) { p.aff = Math.min(100, p.aff + 1); petEvoCheck(id); } }
     relicFromKills(r.kills); for (const [id] of r.kills || []) exNote(C.loc, 'm', id);
     if (C.pets.ertuzi && C.pets.ertuzi.hatch < 0) { /* reserved */ }
     if (r.bonus) logLine(`<span class="weak">亲手打出来的</span>：打断蓄力 ${(B && B.ints) || 0} 次、命中弱点 ${(B && B.weakHits) || 0} 次，奖励 +${r.bonus * 15}%${r.bonus >= 3 ? '，额外一颗宝药' : ''}`, 'sys');
-    if (r.exp) { gainExp(r.exp); if (!(B && B.noPet)) petBattleExp(r.exp); } if (r.money) gainMoney(r.money, '捡到'); for (const it of r.items || []) addItem(it, 1); if (r.boss) storyDungeon(r.boss); if (C.hp <= 0) C.hp = 1; }
+    if (r.exp) { gainExp(r.exp); if (!(B && B.noPet)) petBattleExp(r.exp, partyFielded(B)); } if (r.money) gainMoney(r.money, '捡到'); for (const it of r.items || []) addItem(it, 1); if (r.boss) storyDungeon(r.boss); if (C.hp <= 0) C.hp = 1; }
   else if (r.fled) logLine('你逃了出来。', 'dim');
   else if (r.survived) { sfx('win'); logLine('<span class="weak">你撑住了。</span>', 'sys'); gainExp(Math.round(BAL.expNext(C.lv) * 0.25)); C.hp = Math.max(C.hp, Math.round(s.hpMax * 0.3)); }
   else { sfx('lose'); C.stats.deaths++;

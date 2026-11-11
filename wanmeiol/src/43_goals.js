@@ -15,7 +15,7 @@ const EVO_TEXT = {
 };
 function petEvoCheck(id) { const p = C.pets[id]; if (!p || p.evo || p.aff < 100 || NETROLE === 'guest') return; p.evo = 1;
   setTimeout(() => runScene(async () => { for (const t of EVO_TEXT[id]) await nar(t); if (id === 'ertuzi') await me('……恭喜你。'); const P = PETS[id], sk = P.sk.find(s => s.evo);
-    logLine(`<b class="lvup">灵兽觉醒</b>：${P.icon}<b>${P.name}</b> 全身属性 +15%，学会了 <b>${sk.n}</b>。`, 'sys'); sfx('epic'); bigFlash(P.name + ' · 觉醒', 'relic'); }, { title: PETS[id].name + '觉醒' }), 500); }
+    logLine(`<b class="lvup">灵兽觉醒</b>：${P.icon}<b>${P.name}</b> 全身属性 +8%，学会了 <b>${sk.n}</b>。`, 'sys'); sfx('epic'); bigFlash(P.name + ' · 觉醒', 'relic'); }, { title: PETS[id].name + '觉醒' }), 500); }
 
 /* ---------- trading surplus materials ---------- */
 function tradeOptions(npc) { return TRADES.map((T, i) => [T, i]).filter(([T]) => T.npc === npc).map(([T, i]) => ({ t: `🔁 ${T.t}`, dis: !T.need.every(([k, n]) => itemN(k) >= n), f: () => tradeDo(i) })); }
@@ -133,7 +133,7 @@ function petGainExp(id, n) { const p = C.pets[id]; if (!p || n <= 0) return; if 
   const cap = C.story.f.end ? PET_LV_CAP : Math.min(PET_LV_CAP, C.lv + 2); // before the end of volume one: at most 2 above 石昊
   while (p.lv < cap && p.exp >= petNeed(p.lv)) { p.exp -= petNeed(p.lv); p.lv++; logLine(`${PETS[id].icon}<b>${PETS[id].name}</b> 长到了 <b>${p.lv} 级</b>${p.lv > C.lv ? '（比石昊还高，属性 +' + Math.round((p.lv - C.lv) * 3) + '%）' : ''}。`, 'sys'); if (id === C.pet) bigFlash(PETS[id].name + ' · ' + p.lv + ' 级', 'lv'); }
   if (p.lv >= cap) p.exp = Math.min(p.exp, petNeed(p.lv)); petEvo2Check(id); petEvo3Check(id); }
-function petBattleExp(exp) { for (const id of Object.keys(C.pets)) petGainExp(id, exp * (id === C.pet ? 1 : 0.3)); }
+function petBattleExp(exp, fielded) { const F_ = fielded && fielded.length ? fielded : [C.pet]; for (const id of Object.keys(C.pets)) petGainExp(id, exp * (F_.includes(id) ? 1 : 0.3)); }
 /* move ranks: 1 → 2 → 3, each +20% (rank 3 also lasts a round longer) */
 const RANK_COST = { 2: { need: [['bone', 4], ['lingyao', 2]], lv: 1 }, 3: { need: [['bone', 8], ['baoyao', 1]], lv: 15 } };
 const petRank = (id, i) => (C.pets[id] && C.pets[id].rk && C.pets[id].rk[i]) || 1;
@@ -148,4 +148,4 @@ function petRankUp(id, i) { const p = C.pets[id]; if (!p || !petOpen(id).include
 /* 返祖: full affection, already awakened, and 25 级 */
 const EVO2_TEXT = { maoqiu: '毛球站在山梁上，冲着大荒深处长啸了一声。那一瞬间，四野的凶兽全都伏低了身子——它们闻到了一股很古老的气息。', dahong: '大红在云里翻了个身，身后拖出一条长长的火尾，烧得半边天都红了。它落下来，得意地啄了啄你的脑门。', ertuzi: '二秃子身上的五色光一圈圈收拢，最后凝在它光溜溜的脑袋上，像戴了一顶小小的冠。……毛还是只有那一根。' };
 function petEvo2Check(id) { const p = C.pets[id]; if (!p || p.evo2 || !p.evo || p.aff < 100 || petLv(id) < 25 || NETROLE === 'guest') return; p.evo2 = 1;
-  setTimeout(() => runScene(async () => { await nar(EVO2_TEXT[id]); logLine(`<b class="lvup">血脉返祖</b>：${PETS[id].icon}<b>${PETS[id].name}</b> 全身属性再 +15%。`, 'sys'); sfx('epic'); bigFlash(PETS[id].name + ' · 返祖', 'relic'); }, { title: PETS[id].name + '返祖' }), 600); }
+  setTimeout(() => runScene(async () => { await nar(EVO2_TEXT[id]); logLine(`<b class="lvup">血脉返祖</b>：${PETS[id].icon}<b>${PETS[id].name}</b> 全身属性再 +8%。`, 'sys'); sfx('epic'); bigFlash(PETS[id].name + ' · 返祖', 'relic'); }, { title: PETS[id].name + '返祖' }), 600); }

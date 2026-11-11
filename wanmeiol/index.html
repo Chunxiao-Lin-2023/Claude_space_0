@@ -182,6 +182,10 @@ body.noanim #rumor.on{opacity:1;transform:none}
 .mre{background:#fffaf0;border:1px solid #b8a37c;border-radius:8px;color:var(--ink);padding:4px 14px;min-height:36px;font-size:.9rem}
 .mstack{font-size:1.4rem;letter-spacing:4px}.mstack span{opacity:.3}.mstack span.ok{opacity:1}.mstack span.no{opacity:.6;filter:grayscale(1)}.mstack small{font-size:.8rem;letter-spacing:0;color:var(--ink2)}
 .mbar{position:relative;height:30px;margin:8px 6px;background:#e8dcc0;border:2px solid #8a6a3a;border-radius:15px;overflow:hidden}
+.party-h{font-size:.9rem;margin:6px 2px 8px;line-height:1.6}.party{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:8px;max-height:52vh;overflow:auto;padding:2px}
+.pcard{border:2px solid #b89a6a;border-radius:10px;padding:7px 9px;background:#f3e9d2;cursor:pointer;font-size:.82rem;line-height:1.45;color:#3a2a18}.pcard.on{border-color:#b3342a;background:#fbe9c8;box-shadow:0 0 0 2px #e0a03055}
+.pcard .pill{background:#e9dcc0;color:#5a3a14;border:1px solid #b89a6a}.pcard .pill.gold{background:#b3342a;color:#fff3d8;border-color:#7a2010}
+.pc-h{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:.95rem}.pc-i{font-size:1.4rem}.pc-r{color:#8a5a10;margin:2px 0}.pc-t b{color:#7a3a14}.pc-w{color:#2f7a2a;margin-top:2px}.pcard .sb{margin-top:4px;min-height:28px;background:#7a4a1a;color:#fff7e0;border:1px solid #5a3410;padding:2px 10px;border-radius:6px}
 .rnote{position:absolute;top:5px;width:14px;height:16px;margin-left:-7px;background:#e0a030;border-radius:4px;box-shadow:0 0 6px #e0a030}.rnote.ok{background:#7fd36f;box-shadow:0 0 6px #7fd36f}.rmark{position:absolute;top:0;bottom:0;width:4px;margin-left:-2px;background:#b3342a}
 .mzone{position:absolute;top:0;bottom:0;background:#e0806a;border-left:2px solid #b3342a;border-right:2px solid #b3342a}
 .mmark{position:absolute;top:-2px;bottom:-2px;width:6px;margin-left:-3px;background:#2a2118;border-radius:3px;animation:mmark linear infinite alternate;left:0}
@@ -866,7 +870,7 @@ const DONGTIAN = [
    most of them set 石昊 up: 破甲 and 印记 make his 宝术 land harder, 战吼 and 加持 boost him, 嘲讽 draws the hits away from him */
 const PET_CAT = { atk: { n: '攻击', c: '#e07a5a' }, buff: { n: '增益', c: '#d4ad62' }, debuff: { n: '减益', c: '#a08ae0' }, def: { n: '防守', c: '#6fbf7a' } };
 const PETS = {
-  maoqiu: { name: '毛球', race: '朱厌幼崽', role: '近战 · 破甲', icon: '🐒', desc: '在旧村废墟里捡到的金毛小猴，伤好了以后赖着不走。它其实是争夺山宝的四大至尊之一——朱厌。', mul: { hp: 0.8, atk: 0.8, def: 0.85, spd: 1.15 },
+  maoqiu: { name: '毛球', race: '朱厌幼崽', role: '近战 · 破甲', icon: '🐒', desc: '在旧村废墟里捡到的金毛小猴，伤好了以后赖着不走。它其实是争夺山宝的四大至尊之一——朱厌。', mul: { hp: 0.95, atk: 0.95, def: 0.85, spd: 1.15 },
     sk: [{ n: '金爪', cat: 'atk', dmg: 1.15, w: 3, d: '一爪子挠过去。' },
       { n: '挡在身前', cat: 'def', taunt: 2, guard: 1, w: 1, d: '跳到石昊前面龇牙，两回合内敌人都冲它来，这回合它受伤减半。' },
       { n: '朱厌战吼', cat: 'buff', buffHero: { k: 'atk', t: 2, v: 0.25 }, w: 1, aff: 25, d: '一声吼，石昊两回合内攻击 +25%。' },
@@ -1782,9 +1786,9 @@ function mobUnit(id, lv, side = 1) {
 function heroUnit() { const s = charStats(); const u = { id: 'hero', side: 0, kind: 'pc', name: '石昊', icon: '🧒', lv: C.lv, hpMax: s.hpMax, hp: Math.max(1, Math.round(C.hp)), mpMax: s.mpMax, mp: Math.round(C.mp), atk: s.atk, def: s.def, spd: s.spd, crit: s.crit, leech: s.leech || 0, regen: s.regen || 0, sk: skillsOf(), cd: {}, st: [], alive: true,
     prof: Object.fromEntries(C.sk.map(id => [id, PROF[profLevel(id)].b + (id === 'lei' ? relicSp('lei') : 0)])), mpRegen: BAL.mpRegen + relicSp('mp'), noPoison: !!relicSp('noPoison'), first: relicSp('first') };
   const sh = relicSp('shieldStart'); if (sh) u.st.push({ k: 'shield', t: 3, v: Math.round(s.hpMax * sh) }); if (u.first) u.st.push({ k: 'atk', t: 1, v: u.first }); return u; }
-function petUnit(id) { // the partner scales with 石昊; affection up to +15%, 觉醒 +15%, 返祖 +15%, and ±3% per level it is above / below him
-  const s = charStats(), P = PETS[id], pd = C.pets[id], aff = pd.aff, plv = petLv(id), k = (1 + aff / 100 * 0.15) * (pd.evo ? 1.15 : 1) * (pd.evo2 ? 1.15 : 1) * (pd.evo3 ? 1.15 : 1) * clamp(1 + 0.03 * (plv - C.lv), 0.7, 1.5), m = P.mul;
-  return { id: 'pet', side: 0, kind: 'npc', mob: id, pet: 1, evo: !!pd.evo, name: P.name + (pd.evo3 ? '·真身' : pd.evo2 ? '·返祖' : pd.evo ? '·觉醒' : ''), icon: P.icon, lv: plv, hpMax: Math.round(s.hpMax * m.hp * k), atk: Math.round(s.atk * m.atk * k), def: Math.round(s.def * m.def * k), spd: s.spd * m.spd, crit: 0.08, leech: 0, mpMax: 0, mp: 0, sk: [], cd: {}, st: [], alive: true, plan: null, intent: '', aff, hp: 0 };
+function petUnit(id, slot = 0) { // the partner scales with 石昊; affection up to +15%, 觉醒 +8%, 返祖 +8%, 真身 +5%, and ±3% per level it is above / below him
+  const s = charStats(), P = PETS[id], pd = C.pets[id], aff = pd.aff, plv = petLv(id), k = (1 + aff / 100 * 0.15) * (pd.evo ? 1.08 : 1) * (pd.evo2 ? 1.08 : 1) * (pd.evo3 ? 1.05 : 1) * clamp(1 + 0.03 * (plv - C.lv), 0.7, 1.5), m = P.mul;
+  return { id: slot ? 'pet' + (slot + 1) : 'pet', lead: !slot, trait: id, side: 0, kind: 'npc', mob: id, pet: 1, evo: !!pd.evo, name: P.name + (pd.evo3 ? '·真身' : pd.evo2 ? '·返祖' : pd.evo ? '·觉醒' : ''), icon: P.icon, lv: plv, hpMax: Math.round(s.hpMax * m.hp * k), atk: Math.round(s.atk * m.atk * k), def: Math.round(s.def * m.def * k), spd: s.spd * m.spd, crit: 0.08, leech: 0, mpMax: 0, mp: 0, sk: [], cd: {}, st: [], alive: true, plan: null, intent: '', aff, hp: 0 };
 }
 function rivalUnit(r) { // 虚神界 rivals fight with 宝术 like you do
   const L = r.lv - 1, g = r.gear || 1, D = diffOf(); const u = { id: 'u' + (BID++), side: 1, kind: 'rival', name: r.name, icon: r.icon || '🧑', lv: r.lv, boss: !!r.boss, shiyi: !!r.shiyi, hpMax: Math.round((HERO.base.hp + HERO.grow.hp * L) * g * 1.25 * D.hp * (r.shiyi ? 1.3 : 1)), atk: Math.round((HERO.base.atk + HERO.grow.atk * L) * g * D.atk), def: Math.round((HERO.base.def + HERO.grow.def * L) * g), spd: HERO.base.spd + HERO.grow.spd * L + (r.shiyi ? 3 : 0), crit: 0.12, leech: 0,
@@ -1795,10 +1799,11 @@ function rivalUnit(r) { // 虚神界 rivals fight with 宝术 like you do
 function battleCreate(spec) {
   const B = { id: 'b' + (BID++), story: !!spec.story, tag: spec.tag || '', title: spec.title || '', round: 1, units: [], log: [], lc: 0, ev: [], over: false, win: null, flee: spec.flee !== false, acts: {}, kills: [], dungeon: spec.dungeon || null, room: spec.room ?? null, noLose: !!spec.noLose, arena: spec.arena || null, roam: spec.roam || null, seq: 0, petHp: {}, noPet: !!spec.noPet };
   B.units.push(heroUnit());
-  if (C.pet && C.pets[C.pet] && !spec.noPet) { const p = petUnit(C.pet); p.hp = p.hpMax; B.units.push(p); }
+  const party = spec._party || partyFor(partySlots(spec)); B.partyN = party.length; party.forEach((id, i) => { if (!C.pets[id]) return; const p = petUnit(id, i); partyPet(B, p); p.hp = p.hpMax; B.units.push(p); });
   for (const id of spec.allies || []) { const u = mobUnit(id, C.lv, 0); u.hp = u.hpMax; B.units.push(u); }
   for (const r of spec.rivals || []) B.units.push(rivalUnit(r));
   for (const [id, lv] of spec.mobs || []) { const u = mobUnit(id, lv, 1); u.hp = u.hpMax; if (spec.roam) { u.hpMax = Math.round(spec.roam.hpMax * diffOf().hp * BAL.foeHp(lv)); u.hp = Math.round(spec.roam.hp * diffOf().hp * BAL.foeHp(lv)); } B.units.push(u); }
+  for (const u of B.units) partyFoe(B, u);
   for (const u of B.units) if (u.kind === 'mob' || u.kind === 'npc') planMob(B, u);
   for (const [id] of spec.mobs || []) if (!MOBS[id].nocodex) { C.codex = C.codex || {}; C.codex[id] = C.codex[id] || { wk: [] }; }
   blog(B, `<span class="bt">⚔ ${spec.title || '战斗开始'}</span>`);
@@ -1864,7 +1869,7 @@ function hitCalc(a, d, mul, mag, opts = {}) {
   const atk = a.atk * (1 + stV(a, 'atk') + stV(a, 'rage') + stV(a, 'burst')) * (1 - stV(a, 'weak')); const wk = weakOf(d, opts.el); if (wk) mul *= wk; let def = d.def * (1 + stV(d, 'def')) * (1 - stV(d, 'brk')); if (mag) def *= 0.5; if (opts.pierce) def = 0;
   let bound = false; if (!mag && stOf(d, 'bound')) { mul *= 1.3; bound = true; d.st = d.st.filter(s => s.k !== 'bound'); } // 骨文锁链 → the next physical hit lands harder
   const K = BAL.defK + a.lv * 7; let dmg = atk * mul * K / (K + def) * rnd(0.9, 1.1);
-  const crit = !!stOf(a, 'sure') || Math.random() < a.crit; if (crit) dmg *= BAL.critMul; if (stOf(d, 'guard')) dmg *= 0.5; dmg *= mechDmgMul(a, d);
+  const crit = !!stOf(a, 'sure') || Math.random() < a.crit; if (crit) dmg *= BAL.critMul; if (stOf(d, 'guard')) dmg *= 0.5; dmg *= mechDmgMul(a, d) * partyDmgMul(a, d);
   return { dmg: Math.max(1, Math.round(dmg)), crit, weak: !!wk, bound };
 }
 function noteWeak(d, el) { if (!d.mob || !C.codex || !C.codex[d.mob]) return; const w = C.codex[d.mob].wk || (C.codex[d.mob].wk = []); if (!w.includes(el)) w.push(el); }
@@ -1874,11 +1879,11 @@ function tryInterrupt(B, t) { // a stun or a hit on its weak spot breaks a gathe
 function applyDmg(B, a, d, dmg, info = {}) {
   const sh = stOf(d, 'shield'); let absorbed = 0; if (sh) { absorbed = Math.min(sh.v, dmg); sh.v -= absorbed; dmg -= absorbed; if (sh.v <= 0) d.st.splice(d.st.indexOf(sh), 1); }
   if (B.roam && d.side === 1 && dmg > 0) B.roamDmg = (B.roamDmg || 0) + Math.min(dmg, d.hp);
-  d.hp -= dmg; if (a && a.leech && dmg > 0) a.hp = Math.min(a.hpMax, a.hp + dmg * a.leech);
+  d.hp -= dmg; partyHurt(B, d, dmg); if (a && a.leech && dmg > 0) a.hp = Math.min(a.hpMax, a.hp + dmg * a.leech);
   fxe(B, { k: info.dot ? 'dot' : 'hit', t: d.id, v: dmg + absorbed, crit: !!info.crit, weak: !!info.weak, hp: hpr(d), st: info.dot }); if (d.kind === 'pc' && B.epic) epicLow(B, d); banterHit(B, a, d, info); mechHit(B, a, d, dmg + absorbed, Object.assign({ ate: absorbed }, info));
   if (d.side === 1 && B.sayQ) { if (d.hp <= 0) B.sayQ.push([d, 'die']); else if (!d.saidLow && d.hp < d.hpMax * 0.25) { d.saidLow = 1; B.sayQ.push([d, 'low']); } }
   if (d.hp <= 0 && mechDie(B, d)) return false;
-  if (d.hp <= 0) { d.hp = 0; d.alive = false; d.st = []; fxe(B, { k: 'die', t: d.id }); epicKill(B, d); if (d.side === 1 && B.sayQ) B.sayQ.push([a, 'killq', d]); if (d.side === 1 && d.kind === 'mob') B.kills.push([d.mob, d.lv, d.boss]); return true; }
+  if (d.hp <= 0) { d.hp = 0; d.alive = false; d.st = []; fxe(B, { k: 'die', t: d.id }); epicKill(B, d); partyKill(B, a, d); if (d.side === 1 && B.sayQ) B.sayQ.push([a, 'killq', d]); if (d.side === 1 && d.kind === 'mob') B.kills.push([d.mob, d.lv, d.boss]); return true; }
   if (d.boss && d.side === 1 && !d.raged && d.hp <= d.hpMax / 2 && d.mob && MOBS[d.mob]) { d.raged = true; addSt(d, { k: 'rage', t: 99, v: BAL.phaseAtk }); B.phase = 1;
     blog(B, `<span class="phase">${MOBS[d.mob].p2 || esc(d.name) + '被激怒了！'}（攻击提升）</span>`); fxe(B, { k: 'phase', t: d.id }); epicPhase(B, d); mechPhase(B, d); }
   return false;
@@ -1897,8 +1902,8 @@ function perform(B, u, act, L) {
   if (act.flee) { if (!B.flee || alive(B, 1).some(f => f.boss)) { L(`${uName(u)} 想跑，可对方死死盯着你！`); return; } if (Math.random() < BAL.flee) { L(`${uName(u)} <b>撒腿就跑，逃掉了</b>`); B.over = true; B.win = null; B.fled = true; return; } L(`${uName(u)} 没跑掉！`); return; }
   if (act.crush && canCrush(B)) { fxe(B, { k: 'act', a: u.id, fx: 'crush', tg: alive(B, 1).map(f => f.id) }); for (const f of alive(B, 1)) applyDmg(B, u, f, f.hp, {}); L(`${uName(u)} 一拳一个，干净利落`); return; }
   if (act.item) { const it = ITEMS[act.item]; if (it) { if (it.heal) u.hp = Math.min(u.hpMax, u.hp + u.hpMax * it.heal); if (it.mp) u.mp = Math.min(u.mpMax, u.mp + u.mpMax * it.mp); fxe(B, { k: 'heal', t: u.id, v: Math.round(u.hpMax * (it.heal || 0)), hp: hpr(u) }); L(`${uName(u)} 用了 ${it.icon}${it.name}`); B.fx = 'heal'; } return; }
-  if (act.swap && C.pets[act.swap]) { const old = B.units.find(x => x.pet); if (old) { B.petHp[old.mob] = old.alive ? hpr(old) : 0; B.units = B.units.filter(x => x !== old); }
-    const p = petUnit(act.swap); p.hp = Math.round(p.hpMax * (B.petHp[act.swap] ?? 1)); p.alive = p.hp > 0; planMob(B, p); B.units.splice(1, 0, p); if (NETROLE !== 'guest') C.pet = act.swap; fxe(B, { k: 'swap', t: 'pet' }); L(`${uName(u)} 一声口哨，换 ${uName(p)} 上场`); return; }
+  if (act.swap && C.pets[act.swap] && !B.units.some(x => x.pet && !x.lead && x.mob === act.swap)) { const old = B.units.find(x => x.pet && x.lead); if (old) { B.petHp[old.mob] = old.alive ? hpr(old) : 0; B.units = B.units.filter(x => x !== old); }
+    const p = petUnit(act.swap); partyPet(B, p); p.hp = Math.round(p.hpMax * (B.petHp[act.swap] ?? 1)); p.alive = p.hp > 0; planMob(B, p); B.units.splice(1, 0, p); if (NETROLE !== 'guest') C.pet = act.swap; fxe(B, { k: 'swap', t: 'pet' }); L(`${uName(u)} 一声口哨，换 ${uName(p)} 上场`); return; }
   let id = act.sk || 'atk', S = SKILLS[id]; if (!S || !u.sk.includes(id) || u.cd[id] > 0 || u.mp < S.mp) { id = 'atk'; S = SKILLS.atk; }
   u.mp -= S.mp; if (S.cd) u.cd[id] = S.cd + 1; if (u.kind === 'pc' && id !== 'atk' && id !== 'guard' && NETROLE !== 'guest') profUse(id); const pb = 1 + ((u.prof && u.prof[id]) || 0); const foes = alive(B, 1 - u.side), allies = alive(B, u.side);
   let tg = []; if (S.tgt === 'enemy') { const t = foes.find(x => x.id === act.tgt) || foes.slice().sort((a, b) => a.hp - b.hp)[0]; if (t) tg = [t]; } else if (S.tgt === 'enemies') tg = foes; else if (S.tgt === 'allies') tg = allies; else tg = [u];
@@ -1930,26 +1935,26 @@ function mobAct(B, u, L) {
   if (s.taunt || s.buffHero || s.shieldHero) { const h = B.units.find(x => x.kind === 'pc' && x.alive) || u;
     if (s.taunt) { addSt(u, { k: 'taunt', t: s.taunt }); if (s.guard) addSt(u, { k: 'guard', t: 1, v: 0.5 }); fxe(B, { k: 'act', a: u.id, fx: 'taunt', tg: [u.id], side: u.side, n: s.n, who: mobWho(u) }); L(`${uName(u)} <span class="sk">${s.n}</span>，敌人的目光全被它引了过去`); return; }
     if (s.buffHero) { addSt(h, s.buffHero); fxe(B, { k: 'act', a: u.id, fx: 'bless', tg: [h.id], side: u.side, n: s.n, who: mobWho(u) }); L(`${uName(u)} <span class="sk">${s.n}</span>，${uName(h)} <span style="color:${STATUS[s.buffHero.k].c}">${s.buffHero.k === 'sure' ? '下一击必暴' : STATUS[s.buffHero.k].n + (s.buffHero.v ? ' +' + Math.round(s.buffHero.v * 100) + '%' : '')}</span>`); return; }
-    if (s.shieldHero) { const v = Math.round(u.atk * s.shieldHero); addSt(h, { k: 'shield', t: 3, v }); fxe(B, { k: 'act', a: u.id, fx: 'shield', tg: [h.id], side: u.side, n: s.n, who: mobWho(u) }); fxe(B, { k: 'shield', t: h.id, v }); L(`${uName(u)} <span class="sk">${s.n}</span>，${uName(h)} 获得 <span class="heal">${v}</span> 点护盾`); B.fx = 'heal'; return; } }
+    if (s.shieldHero) { const v = Math.round(u.atk * s.shieldHero * (u.pet ? (u.trait === 'ertuzi' ? 0.75 : 0.55) : 1)); addSt(h, { k: 'shield', t: 3, v }); fxe(B, { k: 'act', a: u.id, fx: 'shield', tg: [h.id], side: u.side, n: s.n, who: mobWho(u) }); fxe(B, { k: 'shield', t: h.id, v }); L(`${uName(u)} <span class="sk">${s.n}</span>，${uName(h)} 获得 <span class="heal">${v}</span> 点护盾`); B.fx = 'heal'; return; } }
   if (s.buff) { addSt(u, s.buff); fxe(B, { k: 'act', a: u.id, fx: 'buff', tg: [u.id], side: u.side }); L(`${uName(u)} <span class="sk">${s.n}</span>，<span style="color:${STATUS[s.buff.k].c}">${STATUS[s.buff.k].n}</span>`); return; }
-  if (s.shieldAll) { const v = Math.round(u.atk * s.shieldAll); fxe(B, { k: 'act', a: u.id, fx: 'shield', tg: alive(B, u.side).map(t => t.id), side: u.side, n: s.n, who: mobWho(u) }); for (const t of alive(B, u.side)) { addSt(t, { k: 'shield', t: 3, v }); fxe(B, { k: 'shield', t: t.id, v }); } L(`${uName(u)} <span class="sk">${s.n}</span>，全队获得 <span class="heal">${v}</span> 点护盾`); B.fx = 'heal'; return; }
-  if (s.healAlly) { const t = alive(B, u.side).sort((a, b) => a.hp / a.hpMax - b.hp / b.hpMax)[0]; const v = Math.round(t.hpMax * s.healAlly); t.hp = Math.min(t.hpMax, t.hp + v); fxe(B, { k: 'act', a: u.id, fx: 'heal', tg: [t.id], side: u.side, n: s.n, who: mobWho(u) }); fxe(B, { k: 'heal', t: t.id, v, hp: hpr(t) }); L(`${uName(u)} <span class="sk">${s.n}</span>，${uName(t)} <span class="heal">+${v}</span>`); B.fx = 'heal'; return; }
+  if (s.shieldAll) { const v = Math.round(u.atk * s.shieldAll * (u.pet ? (u.trait === 'ertuzi' ? 0.75 : 0.55) : 1)); fxe(B, { k: 'act', a: u.id, fx: 'shield', tg: alive(B, u.side).map(t => t.id), side: u.side, n: s.n, who: mobWho(u) }); for (const t of alive(B, u.side)) { addSt(t, { k: 'shield', t: 3, v }); fxe(B, { k: 'shield', t: t.id, v }); } L(`${uName(u)} <span class="sk">${s.n}</span>，全队获得 <span class="heal">${v}</span> 点护盾`); B.fx = 'heal'; return; }
+  if (s.healAlly) { const t = alive(B, u.side).sort((a, b) => a.hp / a.hpMax - b.hp / b.hpMax)[0]; const v = Math.round(t.hpMax * s.healAlly * (u.pet ? (u.trait === 'ertuzi' ? 0.75 : 0.55) : 1)); t.hp = Math.min(t.hpMax, t.hp + v); fxe(B, { k: 'act', a: u.id, fx: 'heal', tg: [t.id], side: u.side, n: s.n, who: mobWho(u) }); fxe(B, { k: 'heal', t: t.id, v, hp: hpr(t) }); L(`${uName(u)} <span class="sk">${s.n}</span>，${uName(t)} <span class="heal">+${v}</span>`); B.fx = 'heal'; return; }
   const tg = s.aoe ? foes : [(pa && pa.tgt && foes.find(f => f.id === pa.tgt)) || (u.pet && s.cat === 'debuff' && (foes.find(f => f.boss) || foes.slice().sort((a, b) => b.hp - a.hp)[0])) || pickFoe(B, u)]; const parts = []; fxe(B, { k: 'act', a: u.id, fx: mobFx(s), tg: tg.map(t => t.id), side: u.side, big: !!s.charge, n: s.n, who: mobWho(u) });
-  for (const t of tg) { if (!t.alive) continue; const opp = u.pet && (stOf(t, 'stun') || stOf(t, 'freeze')); const r = hitCalc(u, t, (s.dmg || 1) * (opp ? 1.3 : 1), s.mag, { el: s.el }); if (r.miss) { banterMiss(B, u, t); fxe(B, { k: 'miss', t: t.id }); parts.push(`${uName(t)} <span class="miss">躲开了</span>`); continue; }
-    const died = applyDmg(B, u, t, r.dmg, { crit: r.crit, weak: r.weak }); if (s.leech) u.hp = Math.min(u.hpMax, u.hp + r.dmg * s.leech); if (r.weak && u.side === 0) noteWeak(t, s.el);
+  for (const t of tg) { if (!t.alive) continue; const opp = u.pet && (stOf(t, 'stun') || stOf(t, 'freeze')); const r = hitCalc(u, t, (s.dmg || 1) * (opp ? 1.3 : 1) * (u.trait === 'dahong' && s.aoe ? 1.15 : 1), s.mag, { el: s.el, sure: u.trait === 'dashen' }); if (r.miss) { banterMiss(B, u, t); fxe(B, { k: 'miss', t: t.id }); parts.push(`${uName(t)} <span class="miss">躲开了</span>`); continue; }
+    const died = applyDmg(B, u, t, r.dmg, { crit: r.crit, weak: r.weak }); if (u.trait === 'maoqiu') u.hp = Math.min(u.hpMax, u.hp + Math.round(r.dmg * 0.15)); if (s.leech) u.hp = Math.min(u.hpMax, u.hp + r.dmg * s.leech); if (r.weak && u.side === 0) noteWeak(t, s.el);
     parts.push(`${uName(t)} <span class="${r.crit ? 'crit' : 'dmg'}">-${r.dmg}${r.crit ? ' 暴击!' : ''}</span>${r.weak ? ' <span class="weak">正中要害</span>' : ''}${opp ? ' <span class="weak">趁它动不了</span>' : ''}${died ? ' <b class="die">倒下</b>' : ''}`);
-    let stunned = false; if (t.alive && s.st && Math.random() < (s.st.p ?? 1)) { addSt(t, { k: s.st.k, t: s.st.t, v: s.st.v ? Math.round(u.atk * s.st.v) : 0 }); if (s.st.k === 'stun') stunned = true; parts.push(`<span class="st" style="color:${STATUS[s.st.k].c}">${STATUS[s.st.k].n}</span>`); }
-    if (u.side === 0 && (stunned || r.weak) && tryInterrupt(B, t)) parts.push('<span class="weak">打断了它的蓄力！</span>'); }
+    let stunned = false; if (t.alive && s.st && Math.random() < (s.st.p ?? 1) * (u.pet && t.boss && s.st.k === 'stun' ? 0.5 : 1) + (u.trait === 'dahong' && s.st.k === 'burn' ? 0.2 : 0)) { addSt(t, { k: s.st.k, t: s.st.t, v: s.st.v ? Math.round(u.atk * s.st.v) : 0 }); if (s.st.k === 'stun') stunned = true; parts.push(`<span class="st" style="color:${STATUS[s.st.k].c}">${STATUS[s.st.k].n}</span>`); }
+    if (u.side === 0 && (stunned || r.weak || (u.trait === 'dashen' && chance(0.5))) && tryInterrupt(B, t)) parts.push('<span class="weak">打断了它的蓄力！</span>'); }
   L(`${uName(u)} <span class="sk">${s.n}</span>：${parts.join('，')}`); B.fx = 'hit';
 }
 /* who acts when: by speed, but 石昊 and the partner act back to back (at the earlier of their two places), in the order you picked */
 function turnOrder(B, jitter) {
-  const L = B.units.filter(u => u.alive).map(u => ({ u, k: u.spd * (jitter ? rnd(0.85, 1.15) : 1) + (B.acts[u.id] && B.acts[u.id].swap ? 100 : 0) + (u.first && B.round === 1 ? 1000 : 0) })).sort((a, b) => b.k - a.k).map(x => x.u);
-  const h = L.find(u => u.kind === 'pc'), p = L.find(u => u.pet); if (!h || !p) return L;
+  const L = B.units.filter(u => u.alive).map(u => ({ u, k: u.spd * (jitter ? rnd(0.85, 1.15) : 1) + (B.acts[u.id] && B.acts[u.id].swap ? 100 : 0) + (u.first && B.round === 1 ? 1000 : 0) + (u.trait === 'xiaobai' ? 500 : 0) })).sort((a, b) => b.k - a.k).map(x => x.u);
+  const h = L.find(u => u.kind === 'pc'), p = L.find(u => u.pet && u.lead); if (!h || !p) return L;
   const i = Math.min(L.indexOf(h), L.indexOf(p)), rest = L.filter(u => u !== h && u !== p); rest.splice(i, 0, ...((C.duo || 'hero') === 'pet' ? [p, h] : [h, p])); return rest; }
 function battleResolve(B) {
   if (B.over) return; const L = h => blog(B, h); B.fx = ''; B.ev = []; B.lc0 = B.lc;
-  blog(B, `<span class="rd">— 第 ${B.round} 回合 —</span>`); mechRound(B, 'start');
+  blog(B, `<span class="rd">— 第 ${B.round} 回合 —</span>`); mechRound(B, 'start'); partyRound(B, 'start');
   const order = turnOrder(B, true);
   for (const u of order) { if (!u.alive || B.over || !B.units.includes(u)) continue;
     if (stOf(u, 'stun') || stOf(u, 'freeze')) { L(`${uName(u)} <span class="st" style="color:${stOf(u, 'freeze') ? '#9ad8ff' : '#ffd34a'}">${stOf(u, 'freeze') ? '被冻住了' : '眩晕中'}</span>，动弹不得`); continue; }
@@ -1959,7 +1964,7 @@ function battleResolve(B) {
       for (const k of ['bleed', 'burn', 'poison', 'dark']) { const s = stOf(u, k); if (s && s.v) { const d = Math.max(1, Math.round(s.v)); L(`${uName(u)} <span style="color:${STATUS[k].c}">${STATUS[k].n}</span> -${d}`); if (applyDmg(B, null, u, d, { dot: k })) L(`${uName(u)} <b class="die">倒下了</b>`); } }
       if (u.regen && u.alive) u.hp = Math.min(u.hpMax, u.hp + u.hpMax * u.regen);
       for (const s of u.st) s.t--; u.st = u.st.filter(s => s.t > 0); for (const k in u.cd) if (u.cd[k] > 0) u.cd[k]--; if (u.mpMax) u.mp = Math.min(u.mpMax, u.mp + u.mpMax * (u.mpRegen || BAL.mpRegen)); }
-    mechRound(B, 'end'); flushSay(B); battleCheckEnd(B); if (!B.over) { B.round++; for (const u of B.units) if (u.alive && (u.kind === 'mob' || u.kind === 'npc')) planMob(B, u); }
+    mechRound(B, 'end'); partyRound(B, 'end'); flushSay(B); battleCheckEnd(B); if (!B.over) { B.round++; for (const u of B.units) if (u.alive && (u.kind === 'mob' || u.kind === 'npc')) planMob(B, u); }
   }
   B.acts = {}; B.seq++; if (B.roam) roamRound(B);
 }
@@ -2023,7 +2028,7 @@ function mechRound(B, when) {
     else if (left > 0) B.title = `${B.baseTitle}（还要撑 ${left} 回合）`; } }
 function mechPlan(B, u) { if (u.mech && MECH_PLAN[u.mech]) MECH_PLAN[u.mech](B, u); }
 function mechPhase(B, d) { const M = MOBS[d.mob]; if (!d.mech) return;
-  if (d.mech === 'summon') { const add = M.summonId || 'yyxwb'; for (let i = 0; i < 2; i++) { const s = mobUnit(add, Math.max(1, d.lv - 3), 1); s.hp = Math.round(s.hpMax * 0.6); s.alive = true; planMob(B, s); B.units.push(s); } blog(B, `<span class="warn">又来了两个 ${esc(MOBS[add].name)}！</span>　<span class="dim">（一路赶来，带着伤）</span>`); fxe(B, { k: 'phase', t: d.id }); }
+  if (d.mech === 'summon') { const add = M.summonId || 'yyxwb'; for (let i = 0; i < 2; i++) { const s = mobUnit(add, Math.max(1, d.lv - 3), 1); s.hp = Math.round(s.hpMax * 0.6); s.alive = true; partyFoe(B, s); planMob(B, s); B.units.push(s); } blog(B, `<span class="warn">又来了两个 ${esc(MOBS[add].name)}！</span>　<span class="dim">（一路赶来，带着伤）</span>`); fxe(B, { k: 'phase', t: d.id }); }
   if (d.mech === 'qilin') { const v = Math.round(d.hpMax * 0.3); addSt(d, { k: 'shield', t: 4, v }); fxe(B, { k: 'shield', t: d.id, v }); blog(B, `<span class="warn">麒麟的影子裹住了 ${uName(d)}（护盾 ${v}，4 回合）</span>`); }
   if (d.mech === 'question') { B.asked = B.round; blog(B, `<span class="cine">${uName(d)} 停下了枪：“……帝关，还在吗？”</span>　<span class="dim">（下回合选「防御」，就是你的回答）</span>`); fxe(B, { k: 'cine', cls: 'phase', who: d.name, text: '“……帝关，还在吗？”' }); } }
 function mechDie(B, d) { // true = it does not fall
@@ -2049,7 +2054,7 @@ function mechBonus(B) { if (B.auto || !(B.story || B.units.some(u => u.boss))) r
    Leave whenever you like (逃跑) or fall — nothing is lost. The best streak is kept, with rewards per 10 wins. */
 const STANCES = [{ id: 'gate', t: '守城门 · 全队防御 +30%' }, { id: 'wall', t: '守城头 · 全队攻击 +20%' }, { id: 'supply', t: '守粮道 · 每波打完回 20% 气血' }];
 function stanceApply(B) { const s = B.stance; if (!s) return; for (const u of alive(B, 0)) { if (s === 'gate') addSt(u, { k: 'def', t: 99, v: 0.3 }); if (s === 'wall') addSt(u, { k: 'atk', t: 99, v: 0.2 }); } }
-function spawnFoes(B, list) { for (const [id, lv] of list) { const u = mobUnit(id, lv, 1); u.hp = u.hpMax; u.alive = true; B.units.push(u); planMob(B, u); if (!MOBS[id].nocodex) { C.codex = C.codex || {}; C.codex[id] = C.codex[id] || { wk: [] }; } } }
+function spawnFoes(B, list) { for (const [id, lv] of list) { const u = mobUnit(id, lv, 1); u.hp = u.hpMax; u.alive = true; partyFoe(B, u); B.units.push(u); planMob(B, u); if (!MOBS[id].nocodex) { C.codex = C.codex || {}; C.codex[id] = C.codex[id] || { wk: [] }; } } }
 function mechWave(B) { // called when every foe is down: true = the fight goes on
   if (B.waves && B.waves.length) { const next = B.waves.shift(); B.waveN = (B.waveN || 1) + 1; if (B.stance === 'supply') for (const u of alive(B, 0)) { const v = Math.round(u.hpMax * 0.2); u.hp = Math.min(u.hpMax, u.hp + v); fxe(B, { k: 'heal', t: u.id, v, hp: hpr(u) }); }
     B.units = B.units.filter(u => u.side === 0 || u.alive); spawnFoes(B, next); blog(B, `<span class="phase">第 ${B.waveN} 波！${B.waves.length ? '' : '（最后一波）'}</span>`); fxe(B, { k: 'phase', t: B.units.find(u => u.side === 1).id }); B.title = `${B.baseTitle}（第 ${B.waveN}/${B.waveN + B.waves.length} 波）`; return true; }
@@ -2083,6 +2088,80 @@ async function leitaiStart() { if (NETROLE === 'guest' || STATE.scene || STATE.b
     const n = (r && r.streak) || 0, best = C.records.leitai || 0; if (n > best) C.records.leitai = n;
     if (n) { gainMoney(Math.round(n * C.lv * 3), '守擂'); gainExp(Math.round(BAL.expNext(C.lv) * 0.04 * n)); const bags = Math.floor(n / 10); if (bags) addItem('baoyao', bags); }
     await nar(`守了 <b>${n}</b> 场。${n > best ? '比上一回多——台下有人记下了这个数。' : '台下的人散了，明天还会来。'}`); }, { title: '争霸台守擂' }); refresh(); }
+
+/* ================= 伙伴组队: several partners in one fight, chosen before it starts =================
+   How many partners may fight depends on the occasion, the difficulty and how far along you are:
+     野外遭遇 1 · 剧情战 / 秘境 / 守城 / 守擂 2 · 首领战 3 ；困难难度 +1 ；石昊 15 层前最多 1、30 层前最多 2 ；最多 3。
+   Every partner past the first makes the foes sturdier (气血 +50%, 攻击 +15% each) and each partner is a little weaker (×0.7 with two, ×0.55 with three), so a bigger team means a longer, richer fight,
+   not a free win. You choose a move for every partner each round (or let the rest act on their own); the first one (领头) acts right
+   next to 石昊 and is the one ⇄ swaps out.
+   Before a boss / 秘境 / 守城 fight (when you own more partners than may come) a picker opens: it recommends partners for
+   this fight from what the foes do — every partner has one trait of its own (PET_TRAIT) and a kind of fight it is good in.
+   C.party keeps the last team, lead first (C.pet is always the lead). */
+const PET_TRAIT = {
+  maoqiu: { n: '越战越勇', d: '每挨一下打，攻击 +5%（最多 +30%）；打出去的伤害有 15% 回到自己身上。', use: '硬碰硬的长仗，站在前面挨打的那一个。' },
+  dahong: { n: '火羽', d: '群攻伤害 +15%，灼烧更容易点上。', use: '敌人成群、守城一波一波来的时候；能让残仙这种会回血的吃不下。' },
+  ertuzi: { n: '五色护体', d: '它的回血和护盾比别的伙伴多三成多；照晕正在蓄力的敌人，就能打断它。', use: '要撑很久的仗——它是最好的奶妈；也能打断蓄大招的首领。' },
+  dashen: { n: '指哪打哪', d: '从不打空；砸中正在蓄力的敌人，一半机会能打断。', use: '专治蓄力大招和硬壳——哪个首领爱憋大招，就带它。' },
+  xiaobai: { n: '快', d: '每回合最先出手；每回合结束，给气血最低的同伴回 2%。', use: '拖得很长的仗，或者敌人每回合都在掉你血（黑暗潮汐）的时候。' },
+  sanhei: { n: '玄甲', d: '受到的伤害 -15%；石昊气血低于四成时，自己挡到前面去。', use: '首领一下打得特别疼的时候。' },
+  wuwei: { n: '无畏', d: '每倒下一个敌人，全队攻击 +8%（最多 +24%）。', use: '敌人越多越好——守城、守擂、成群的野外。' },
+  jinmao: { n: '仙王威压', d: '它在场时，敌人攻击 -10%；打首领伤害 +10%。', use: '首领战，什么首领都行。' },
+};
+const PARTY_MAX = 3; /* every partner's stun lands half as often on a 首领 */
+const partyOwned = () => Object.keys(C.pets || {});
+function partyIsBig(spec) { return !!(spec.epic || (spec.mobs || []).some(([id]) => MOBS[id] && MOBS[id].boss) || (spec.rivals || []).some(r => r.boss)); }
+function partySlots(spec) { if (!C || spec.noPet) return 0; const own = partyOwned().length; if (!own) return 0;
+  const occ = partyIsBig(spec) ? 3 : (spec.story || spec.dungeon || spec.waves || spec.endless || spec.siegeMode) ? 2 : 1, hard = (C.diff ?? 1) >= 2 ? 1 : 0, cap = C.lv < 15 ? 1 : C.lv < 30 ? 2 : 3;
+  return Math.max(1, Math.min(occ + hard, cap, own, PARTY_MAX)); }
+const slotWhy = spec => `${partyIsBig(spec) ? '首领战 3' : (spec.story || spec.dungeon || spec.waves || spec.endless || spec.siegeMode) ? '剧情战/秘境/守城 2' : '野外 1'}${(C.diff ?? 1) >= 2 ? '，困难 +1' : ''}${C.lv < 30 ? `，${C.lv < 15 ? 15 : 30} 层前最多 ${C.lv < 15 ? 1 : 2}` : ''}`;
+function partyList() { const own = partyOwned(); let L = (C.party || []).filter(id => C.pets[id]); if (C.pet && C.pets[C.pet]) L = [C.pet, ...L.filter(x => x !== C.pet)];
+  for (const id of own.slice().sort((a, b) => petLv(b) - petLv(a) || (C.pets[b].aff - C.pets[a].aff))) if (!L.includes(id)) L.push(id); return L; }
+const partyFor = n => n > 0 ? partyList().slice(0, n) : [];
+/* which partners suit this fight, and why */
+function partyAdvice(spec) { const foes = (spec.mobs || []).map(([id]) => MOBS[id]).filter(Boolean), boss = foes.filter(M => M.boss), many = foes.length >= 3 || spec.waves || spec.endless, sc = {}, why = {};
+  const add = (id, v, t) => { sc[id] = (sc[id] || 0) + v; (why[id] = why[id] || []).includes(t) || why[id].push(t); };
+  if (boss.some(M => M.sk.some(s => s.charge)) || (spec.rivals || []).some(r => r.boss)) { add('dashen', 3, '能打断大招'); add('ertuzi', 2, '能打断大招'); }
+  if (boss.length || partyIsBig(spec)) { add('jinmao', 3, '首领战'); add('maoqiu', 1, '破甲'); }
+  if (many) { add('dahong', 3, '敌人多'); add('wuwei', 3, '敌人多'); }
+  if (boss.some(M => (M.mul.atk || 1) >= 1.8) || boss.some(M => M.mech === 'dark' || M.mech === 'swallow')) { add('sanhei', 3, '首领打得疼'); add('xiaobai', 1, '回血'); }
+  if (boss.some(M => M.mech === 'tide') || boss.some(M => (M.mul.hp || 1) >= 7)) { add('xiaobai', 2, '仗长、掉血'); add('sanhei', 1, '扛得住'); }
+  if (boss.some(M => M.mech === 'devour') || foes.some(M => M.weak && M.weak.fire)) add('dahong', 3, foes.some(M => M.mech === 'devour') ? '让它吃不下' : '怕火');
+  if (foes.some(M => M.weak && M.weak.blunt)) { add('dashen', 2, '怕钝击'); add('maoqiu', 1, '怕钝击'); }
+  if (boss.some(M => M.mech === 'mimic')) { add('wuwei', 1, '招式多'); add('dahong', 1, '招式多'); }
+  const own = partyOwned(); return { order: own.slice().sort((a, b) => (sc[b] || 0) - (sc[a] || 0) || petLv(b) - petLv(a)), why }; }
+function partyNeedsPick(spec, n) { if (!n || NETROLE) return false; /* co-op: the host's saved team, no picker */ if (window.__dbg && __dbg.auto) return false; if (C.auto || UI.forceAuto) return false;
+  const own = partyOwned().length; if (own <= 1) return false; return partyIsBig(spec) || !!spec.dungeon || !!spec.waves || !!spec.endless; }
+function partyPick(spec, n) { const adv = partyAdvice(spec), cur = partyFor(n), sel = partyIsBig(spec) || spec.waves || spec.endless ? adv.order.slice(0, n) : cur;
+  return new Promise(res => { DLG = { party: { n, sel: sel.length ? sel : cur, adv, why: slotWhy(spec), title: spec.title || '战斗' }, res }; renderDlg(); }); }
+function partyToggle(id) { const P = DLG && DLG.party; if (!P) return; const i = P.sel.indexOf(id); if (i >= 0) P.sel.splice(i, 1); else { if (P.sel.length >= P.n) P.sel.pop(); P.sel.push(id); } sfx('click'); renderDlg(); }
+function partyLead(id) { const P = DLG && DLG.party; if (!P || !P.sel.includes(id)) return; P.sel = [id, ...P.sel.filter(x => x !== id)]; sfx('click'); renderDlg(); }
+function partyRecommend() { const P = DLG && DLG.party; if (!P) return; P.sel = P.adv.order.slice(0, P.n); sfx('click'); renderDlg(); }
+function partyGo() { const D_ = DLG, P = D_ && D_.party; if (!P) return; if (!P.sel.length) P.sel = partyFor(1); C.party = P.sel.concat(partyList().filter(x => !P.sel.includes(x))); C.pet = P.sel[0]; DLG = null; renderDlg(); sfx('click'); D_.res(P.sel.slice()); }
+function partyHtml(P) { const own = partyOwned();
+  return `<div class="tplace">出战伙伴<span>${esc(P.title)}</span></div><div class="party-h">这一仗能带 <b>${P.n}</b> 个伙伴 <span class="dim">（${P.why}）</span>。<br><span class="dim">每个伙伴的招都由你来选（也可以点「剩下的伙伴自己打」）；<b>领头</b>的那个和石昊连着出手，⇄ 换人也是换它。每多带一个，敌人气血 +50%、攻击 +15%；伙伴越多，每个伙伴分到的力气越少（两个 ×0.7，三个 ×0.55）。</span></div>
+    <div class="party">${own.map(id => { const Pt = PETS[id], p = C.pets[id], T = PET_TRAIT[id] || {}, k = P.sel.indexOf(id), w = P.adv.why[id] || [];
+      return `<div class="pcard ${k >= 0 ? 'on' : ''}" onclick="partyToggle('${id}')"><div class="pc-h"><span class="pc-i">${Pt.icon}</span><b>${Pt.name}</b>${k === 0 ? '<span class="pill gold">领头</span>' : k > 0 ? `<span class="pill">第 ${k + 1}</span>` : ''}<span class="dim">${petLv(id)} 级${p.evo3 ? '·真身' : p.evo2 ? '·返祖' : p.evo ? '·觉醒' : ''}</span></div>
+        <div class="pc-r">${Pt.role}</div><div class="pc-t"><b>${T.n || ''}</b>：${T.d || ''}</div>${w.length ? `<div class="pc-w">👍 ${w.join('、')}</div>` : ''}${k > 0 ? `<button class="sb" onclick="event.stopPropagation();partyLead('${id}')">设为领头</button>` : ''}</div>`; }).join('')}</div>
+    <div class="ch"><button class="chb" onclick="partyRecommend()">👍 按推荐</button><button class="chb pri" onclick="partyGo()">⚔ 开战（${P.sel.length}/${P.n}）</button></div>`; }
+
+/* ---------- traits in battle ---------- */
+function partyDmgMul(a, d) { let m = 1; if (a && a.awed && a.side === 1) m *= 0.9; if (a && a.trait === 'jinmao' && d.boss) m *= 1.1; if (d.trait === 'sanhei') m *= 0.85; return m; }
+const PARTY_FOE = { hp: 0.5, atk: 0.15 }; // per partner past the first
+const PARTY_PET = [1, 1, 0.7, 0.55]; // a bigger team: each partner a little weaker (they share the fight)
+function partyPet(B, p) { const k = PARTY_PET[B.partyN || 1] || 1; if (k < 1) { p.hpMax = Math.round(p.hpMax * k); p.atk = Math.round(p.atk * k); p.def = Math.round(p.def * k); } }
+function partyFoe(B, u) { if (u.side !== 1) return; const x = Math.max(0, (B.partyN || 1) - 1), k = 1 + PARTY_FOE.hp * x; if (k > 1) { u.hpMax = Math.round(u.hpMax * k); u.hp = Math.round(u.hp * k); u.atk = Math.round(u.atk * (1 + PARTY_FOE.atk * x)); } if (B.units.some(x => x.trait === 'jinmao' && x.alive)) u.awed = 1; }
+function partyHurt(B, d, dmg) { if (d.trait === 'maoqiu' && dmg > 0 && d.alive) { const v = Math.min(0.3, stV(d, 'atk') + 0.05); d.st = d.st.filter(s => s.k !== 'atk'); d.st.push({ k: 'atk', t: 99, v }); } }
+function partyKill(B, a, d) { if (d.side === 1 && B.units.some(x => x.trait === 'wuwei' && x.alive)) { B.wuweiN = Math.min(3, (B.wuweiN || 0) + 1); for (const u of alive(B, 0)) { const v = Math.max(stV(u, 'atk'), 0.08 * B.wuweiN); u.st = u.st.filter(s => s.k !== 'atk'); u.st.push({ k: 'atk', t: 99, v }); } blog(B, `<span class="weak">无畏：全队攻击 +${8 * B.wuweiN}%</span>`); }
+  if (d.trait === 'jinmao') for (const u of B.units) if (u.side === 1) u.awed = 0; }
+function partyRound(B, when) { if (when === 'start') { const h = B.units.find(u => u.kind === 'pc'), t = B.units.find(u => u.trait === 'sanhei' && u.alive); if (h && t && h.alive && h.hp < h.hpMax * 0.4 && !stOf(t, 'taunt')) { addSt(t, { k: 'taunt', t: 1 }); blog(B, `${uName(t)} 慢吞吞地爬到了石昊前面——<span class="weak">玄甲：敌人这回合冲它来</span>`); } return; }
+  const w = B.units.find(u => u.trait === 'xiaobai' && u.alive); if (w) { const t = alive(B, 0).sort((a, b) => a.hp / a.hpMax - b.hp / b.hpMax)[0]; if (t && t.hp < t.hpMax) { const v = Math.round(t.hpMax * 0.02); t.hp = Math.min(t.hpMax, t.hp + v); fxe(B, { k: 'heal', t: t.id, v, hp: hpr(t) }); } } }
+function partyFielded(B) { return B ? B.units.filter(u => u.pet).map(u => u.mob) : []; }
+/* the 灵兽 page: the standing team order (used when no picker opens) */
+function partyUp(id) { const L = partyList(), i = L.indexOf(id); if (i <= 0) return; L.splice(i, 1); L.splice(i - 1, 0, id); C.party = L; C.pet = L[0]; sfx('click'); save(); refresh(); }
+function partyCardHtml() { const L = partyList(); if (L.length < 2) return '';
+  return `<div class="card"><h3>出战顺序 <span class="dim" style="font-size:.8rem;font-family:var(--ff)">排在前面的先上：野外 1 个 · 剧情战/秘境/守城 2 个 · 首领战 3 个（困难 +1；15 层前最多 1、30 层前最多 2）。首领战、秘境、守城前还能临时挑。</span></h3>
+    <div class="list">${L.map((id, i) => { const P = PETS[id], T = PET_TRAIT[id] || {}; return `<div class="li ${i === 0 ? 'on' : ''}"><span class="ic">${P.icon}</span><div class="t"><b>${i + 1}. ${P.name}</b>${i === 0 ? ' <span class="pill gold">领头</span>' : ''} <span class="pill">${T.n || ''}</span><small>${T.d || ''}</small><small class="dim">适合：${T.use || ''}</small></div>${i ? `<button class="sb" onclick="partyUp('${id}')">↑</button>` : ''}</div>`; }).join('')}</div></div>`; }
 
 /* ================= moving, exploring, battles, dungeons, roaming 凶兽首领 ================= */
 const exitsOf = loc => { const ex = {}; for (const [d, id] of Object.entries(PLACES[loc].exits)) if (placeOpen(id)) ex[d] = id; return ex; };
@@ -2143,7 +2222,10 @@ async function train() { if (STATE.scene || STATE.battle || STATE.dungeon) retur
   logLine(r.ok ? (lei ? '你接住了好几道雷，浑身麻酥酥的，精神反倒更足了。' : '石锁在你手里上下翻飞，旁边的孩子们看得直拍手。') : (lei ? '你被劈得头发冒烟。' : '石锁砸在地上，震得你手发麻。'), 'dim'); save(); refresh(); }
 
 /* ---------- battle controller (only the host / solo player runs battles; co-op guests just watch the state) ---------- */
-function startBattle(spec) {
+function startBattle(spec) { const n = partySlots(spec); /* a fight that comes back (再来一次) asks again: the spec itself is never changed */
+  if (!spec._party && partyNeedsPick(spec, n)) return partyPick(spec, n).then(L => startBattle0(Object.assign({}, spec, { _party: L })));
+  return startBattle0(spec); }
+function startBattle0(spec) {
   return new Promise(res => { const B = battleCreate(spec); STATE.battle = B; STATE.battleRes = res; STATE.busy = true; renderBattle(); netSync(); });
 }
 function battleAct(act, who = 'hero') { // 石昊 and the 灵兽伙伴 each choose; once everyone has, the round plays out in speed order
@@ -2156,18 +2238,19 @@ function battleAct(act, who = 'hero') { // 石昊 and the 灵兽伙伴 each choo
   if (needInput(B).length) { renderBattle(true); netSync(); return; }
   battleResolve(B); renderBattle(); netSync(); if (B.over) battleFinish(B);
 }
-function battleUndo() { const B = STATE.battle; if (!B || B.over || !B.acts.hero) return; delete B.acts.hero; renderBattle(true); netSync(); }
+function battleUndo() { const B = STATE.battle; if (!B || B.over || !B.acts.hero) return; for (const k of Object.keys(B.acts)) if (k === 'hero' || k.startsWith('pet')) delete B.acts[k]; renderBattle(true); netSync(); }
+function partyAutoRest() { const B = STATE.battle; if (!B || B.over) return; for (const u of needInput(B).filter(x => x.pet)) { const i = petPick(B, u); battleAct({ psk: i }, u.id); if (STATE.battle !== B || B.over) break; } }
 function battleFinish(B) { if (B.done) return; B.done = true; const r = Object.assign({ win: B.win, fled: !!B.fled, kills: B.kills, noLose: B.noLose, survived: !!B.survived, protectOk: !!B.protectOk, answered: !!B.answered, wave: B.waveN || 0, streak: B.endless ? B.endless.n : 0 }, B.win ? battleRewards(B) : {});
   const hero = B.units.find(u => u.kind === 'pc'); r.hp = hero.hp; r.mp = hero.mp; r.boss = B.room != null && B.dungeon && DUNGEONS[B.dungeon].rooms[B.room]?.boss ? B.dungeon : null;
   setTimeout(() => battleApply(r, B), window.__dbg && __dbg.instant ? 0 : animLeft() + (SET.motion === false ? 500 : 1100)); }
 function battleApply(r, B) { if (B && B.aborted) return; // the fight was dropped (跳章)
   const s = charStats(); C.hp = clamp(Math.round(r.hp), 0, s.hpMax); C.mp = clamp(Math.round(r.mp), 0, s.mpMax);
   if (r.win) { sfx('win'); for (const [id, , boss] of r.kills || []) { C.kills[id] = (C.kills[id] || 0) + 1; C.stats.kills++; if (boss) C.stats.bosses++; storyKill(id); }
-    if (C.pet && C.pets[C.pet]) { const p = C.pets[C.pet]; if (p.aff < 100 && chance(0.35)) { p.aff = Math.min(100, p.aff + 1); petEvoCheck(C.pet); } }
+    for (const id of partyFielded(B)) { const p = C.pets[id]; if (p && p.aff < 100 && chance(0.35)) { p.aff = Math.min(100, p.aff + 1); petEvoCheck(id); } }
     relicFromKills(r.kills); for (const [id] of r.kills || []) exNote(C.loc, 'm', id);
     if (C.pets.ertuzi && C.pets.ertuzi.hatch < 0) { /* reserved */ }
     if (r.bonus) logLine(`<span class="weak">亲手打出来的</span>：打断蓄力 ${(B && B.ints) || 0} 次、命中弱点 ${(B && B.weakHits) || 0} 次，奖励 +${r.bonus * 15}%${r.bonus >= 3 ? '，额外一颗宝药' : ''}`, 'sys');
-    if (r.exp) { gainExp(r.exp); if (!(B && B.noPet)) petBattleExp(r.exp); } if (r.money) gainMoney(r.money, '捡到'); for (const it of r.items || []) addItem(it, 1); if (r.boss) storyDungeon(r.boss); if (C.hp <= 0) C.hp = 1; }
+    if (r.exp) { gainExp(r.exp); if (!(B && B.noPet)) petBattleExp(r.exp, partyFielded(B)); } if (r.money) gainMoney(r.money, '捡到'); for (const it of r.items || []) addItem(it, 1); if (r.boss) storyDungeon(r.boss); if (C.hp <= 0) C.hp = 1; }
   else if (r.fled) logLine('你逃了出来。', 'dim');
   else if (r.survived) { sfx('win'); logLine('<span class="weak">你撑住了。</span>', 'sys'); gainExp(Math.round(BAL.expNext(C.lv) * 0.25)); C.hp = Math.max(C.hp, Math.round(s.hpMax * 0.3)); }
   else { sfx('lose'); C.stats.deaths++;
@@ -4640,7 +4723,7 @@ const EVO_TEXT = {
 };
 function petEvoCheck(id) { const p = C.pets[id]; if (!p || p.evo || p.aff < 100 || NETROLE === 'guest') return; p.evo = 1;
   setTimeout(() => runScene(async () => { for (const t of EVO_TEXT[id]) await nar(t); if (id === 'ertuzi') await me('……恭喜你。'); const P = PETS[id], sk = P.sk.find(s => s.evo);
-    logLine(`<b class="lvup">灵兽觉醒</b>：${P.icon}<b>${P.name}</b> 全身属性 +15%，学会了 <b>${sk.n}</b>。`, 'sys'); sfx('epic'); bigFlash(P.name + ' · 觉醒', 'relic'); }, { title: PETS[id].name + '觉醒' }), 500); }
+    logLine(`<b class="lvup">灵兽觉醒</b>：${P.icon}<b>${P.name}</b> 全身属性 +8%，学会了 <b>${sk.n}</b>。`, 'sys'); sfx('epic'); bigFlash(P.name + ' · 觉醒', 'relic'); }, { title: PETS[id].name + '觉醒' }), 500); }
 
 /* ---------- trading surplus materials ---------- */
 function tradeOptions(npc) { return TRADES.map((T, i) => [T, i]).filter(([T]) => T.npc === npc).map(([T, i]) => ({ t: `🔁 ${T.t}`, dis: !T.need.every(([k, n]) => itemN(k) >= n), f: () => tradeDo(i) })); }
@@ -4758,7 +4841,7 @@ function petGainExp(id, n) { const p = C.pets[id]; if (!p || n <= 0) return; if 
   const cap = C.story.f.end ? PET_LV_CAP : Math.min(PET_LV_CAP, C.lv + 2); // before the end of volume one: at most 2 above 石昊
   while (p.lv < cap && p.exp >= petNeed(p.lv)) { p.exp -= petNeed(p.lv); p.lv++; logLine(`${PETS[id].icon}<b>${PETS[id].name}</b> 长到了 <b>${p.lv} 级</b>${p.lv > C.lv ? '（比石昊还高，属性 +' + Math.round((p.lv - C.lv) * 3) + '%）' : ''}。`, 'sys'); if (id === C.pet) bigFlash(PETS[id].name + ' · ' + p.lv + ' 级', 'lv'); }
   if (p.lv >= cap) p.exp = Math.min(p.exp, petNeed(p.lv)); petEvo2Check(id); petEvo3Check(id); }
-function petBattleExp(exp) { for (const id of Object.keys(C.pets)) petGainExp(id, exp * (id === C.pet ? 1 : 0.3)); }
+function petBattleExp(exp, fielded) { const F_ = fielded && fielded.length ? fielded : [C.pet]; for (const id of Object.keys(C.pets)) petGainExp(id, exp * (F_.includes(id) ? 1 : 0.3)); }
 /* move ranks: 1 → 2 → 3, each +20% (rank 3 also lasts a round longer) */
 const RANK_COST = { 2: { need: [['bone', 4], ['lingyao', 2]], lv: 1 }, 3: { need: [['bone', 8], ['baoyao', 1]], lv: 15 } };
 const petRank = (id, i) => (C.pets[id] && C.pets[id].rk && C.pets[id].rk[i]) || 1;
@@ -4773,7 +4856,7 @@ function petRankUp(id, i) { const p = C.pets[id]; if (!p || !petOpen(id).include
 /* 返祖: full affection, already awakened, and 25 级 */
 const EVO2_TEXT = { maoqiu: '毛球站在山梁上，冲着大荒深处长啸了一声。那一瞬间，四野的凶兽全都伏低了身子——它们闻到了一股很古老的气息。', dahong: '大红在云里翻了个身，身后拖出一条长长的火尾，烧得半边天都红了。它落下来，得意地啄了啄你的脑门。', ertuzi: '二秃子身上的五色光一圈圈收拢，最后凝在它光溜溜的脑袋上，像戴了一顶小小的冠。……毛还是只有那一根。' };
 function petEvo2Check(id) { const p = C.pets[id]; if (!p || p.evo2 || !p.evo || p.aff < 100 || petLv(id) < 25 || NETROLE === 'guest') return; p.evo2 = 1;
-  setTimeout(() => runScene(async () => { await nar(EVO2_TEXT[id]); logLine(`<b class="lvup">血脉返祖</b>：${PETS[id].icon}<b>${PETS[id].name}</b> 全身属性再 +15%。`, 'sys'); sfx('epic'); bigFlash(PETS[id].name + ' · 返祖', 'relic'); }, { title: PETS[id].name + '返祖' }), 600); }
+  setTimeout(() => runScene(async () => { await nar(EVO2_TEXT[id]); logLine(`<b class="lvup">血脉返祖</b>：${PETS[id].icon}<b>${PETS[id].name}</b> 全身属性再 +8%。`, 'sys'); sfx('epic'); bigFlash(PETS[id].name + ' · 返祖', 'relic'); }, { title: PETS[id].name + '返祖' }), 600); }
 
 /* ================= small games for things that are not fights =================
    举石锁 (timing bar) · 引雷 (shrinking ring) · 破阵 (lights-out) · 潜行 (step while the beast sleeps) · 搬石 (tap fast)
@@ -5860,7 +5943,7 @@ function dlgChoose(opts, prompt) {
   return new Promise(res => { DLG = { choice: opts, res }; renderDlg(); netSync(); });
 }
 function dlgPick(i) { // advance (i = -1) or choose option i
-  if (!DLG || DLG.rune || DLG.mini) return; if (NETROLE === 'guest') { if (!myControl()) { toast('现在是队友在操作'); return; } netSend({ t: 'dlg', i }); return; } if (NETROLE === 'host' && !myControl()) { toast('现在是队友在操作'); return; }
+  if (!DLG || DLG.rune || DLG.mini || DLG.party) return; if (NETROLE === 'guest') { if (!myControl()) { toast('现在是队友在操作'); return; } netSend({ t: 'dlg', i }); return; } if (NETROLE === 'host' && !myControl()) { toast('现在是队友在操作'); return; }
   if (DLG.choice) { if (i < 0 || !DLG.choice[i] || DLG.choice[i].dis) return; const r = DLG.res, t = DLG.choice[i].t; logLine('▸ ' + t, 'say mine'); journalAdd({ choice: t }); DLG = null; sfx('click'); renderDlg(); r(i); }
   else { const r = DLG.res; DLG = null; sfx('click'); renderDlg(); r(); }
   netSync();
@@ -5874,12 +5957,13 @@ function renderDlg() {
   const lineH = o => { const s = sealOf(o), nw = (o.who || '') !== UI.lastWho; UI.lastWho = o.who || ''; return `<div class="line ${nw ? 'newspk' : ''}">${s ? `<div>${sealHtml(s, o.mine ? 'me' : '')}${s.t ? `<div class="ttl">${esc(s.t)}</div>` : ''}</div>` : ''}<div class="tx ${o.who ? '' : 'nar'} ${o.mine ? 'mine' : ''}">${o.text}</div></div>`; };
   const cv = DLG.o && DLG.o.cine && !DLG.choice && !DLG.mini && !DLG.rune ? DLG.o.cine : ''; $('vTalk').classList.toggle('cine', !!cv); $('vTalk').classList.toggle('mem', cv === 'mem'); $('vTalk').classList.toggle('card', cv === 'card');
   if (cv) { D.innerHTML = `<div class="cine-t">${DLG.o.text}</div><div class="nx">▼</div>`; D.onclick = () => dlgPick(-1); }
+  else if (DLG.party) { D.innerHTML = partyHtml(DLG.party); D.onclick = null; }
   else if (DLG.mini) { D.innerHTML = head + miniHtml(DLG.mini); D.onclick = null; }
   else if (DLG.rune) D.innerHTML = head + runeHtml(DLG.rune);
   else if (DLG.choice) { D.innerHTML = head + histH(ctx.hist.slice(-1)) + (ctx.cur ? lineH(ctx.cur) : '') + `<div class="ch">${DLG.choice.map((o, i) => `<button class="chb" ${o.dis ? 'disabled' : ''} data-i="${i}">${o.t}</button>`).join('')}</div>`; D.onclick = null; D.querySelectorAll('.chb').forEach(b => b.onclick = e => { e.stopPropagation(); dlgPick(+b.dataset.i); }); }
   else { D.innerHTML = head + histH(ctx.hist) + lineH(DLG.o) + '<div class="nx">点击继续 ▼</div>'; D.onclick = () => dlgPick(-1); }
   if (DLG.rune) D.onclick = null; D.scrollTop = D.scrollHeight;
-  const key = DLG.mini ? 'm' + DLG.mini.k : DLG.rune ? 'r' + DLG.rune.phase + DLG.rune.got.length + DLG.rune.k : DLG.choice ? 'c' + DLG.choice.map(o => o.t).join() : 'o' + DLG.o.text; D.classList.toggle('still', key === UI.dlgKey); UI.dlgKey = key;
+  const key = DLG.party ? 'p' + DLG.party.sel.join() : DLG.mini ? 'm' + DLG.mini.k : DLG.rune ? 'r' + DLG.rune.phase + DLG.rune.got.length + DLG.rune.k : DLG.choice ? 'c' + DLG.choice.map(o => o.t).join() : 'o' + DLG.o.text; D.classList.toggle('still', key === UI.dlgKey); UI.dlgKey = key;
 }
 function dlgClose() { if (DLG && !DLG.choice && !DLG.rune && !DLG.mini) { const r = DLG.res; DLG = null; r(); } DLG = null; UI.hist = []; UI.cur = null; renderDlg(); }
 addEventListener('keydown', e => { if (STATE.mode !== 'play' || e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
@@ -5969,13 +6053,13 @@ function renderBattleActs(cur) {
   const B = STATE.battle, A = $('bacts'); if (!B) return; const u = B.units.find(x => x.kind === 'pc');
   if (B.over) { A.innerHTML = `<div class="wait" style="color:#ffcfb8">${B.win ? '赢了！' : B.fled ? '跑掉了' : '……'}</div>`; return; }
   if (!cur) { A.innerHTML = `<div class="wait">${B.auto ? '🤖 自动战斗中…… <button class="ab sm q" onclick="toggleAuto()">停下</button>' : '……'}</div>`; return; }
-  if (cur.pet) { const mv = petMoves(cur); const ha = B.acts.hero; if (ha && !C.seen.tutPet && NETROLE !== 'guest') { C.seen.tutPet = 1; toast('石昊的招选好了——再给伙伴选一招，这回合才开打'); }
-    A.innerHTML = `${ha ? `<div class="who-turn ok">🧒 石昊已选好：<b>${actText(B, ha)}</b></div>` : ''}<div class="who-turn">${PETS[cur.mob].icon} 现在轮到 <b>${esc(cur.name)}</b> <span class="dim">· 给它选一招，选完这回合就开打${UI.selFoe ? '' : '（单体招先点敌人选目标）'}</span></div><div class="arow">${PETS[cur.mob].sk.map((s, i) => { const ok = mv.some(x => x.i === i); if (!ok) return ''; const tag = s.aoe ? '全体' : s.healAlly ? '治疗' : s.shieldAll ? '全队盾' : s.shieldHero ? '给石昊盾' : s.buffHero ? '给石昊' : s.taunt ? '嘲讽' : '单体';
-      return `<button class="skb pet c-${s.cat}" ${ok ? '' : 'disabled'} title="${esc(s.d || '')}" onclick="battleAct({psk:${i},tgt:UI.selFoe},'pet')"><span class="i">${{ atk: '🐾', buff: '✨', debuff: '🌀', def: '🛡️' }[s.cat]}</span>${s.n}<span class="c">${ok ? PET_CAT[s.cat].n + '·' + tag + (s.el ? EL[s.el].i : '') : '亲近' + s.aff}</span></button>`; }).join('')}</div>
-      <div class="arow duo"><span class="dim">这回合</span><button class="ab sm ${(C.duo || 'hero') === 'hero' ? 'q' : ''}" onclick="setDuo('hero')">🧒 石昊先出手</button><button class="ab sm ${C.duo === 'pet' ? 'q' : ''}" onclick="setDuo('pet')">${PETS[cur.mob].icon} 伙伴先出手</button></div>
-      <div class="arow"><button class="ab sm" onclick="battleUndo()">‹ 重选石昊</button><button class="ab sm ${B.auto ? 'q' : ''}" onclick="toggleAuto()">🤖 自动</button></div>`; return; }
+  if (cur.pet) { const mv = petMoves(cur); const ha = B.acts.hero, pets = B.units.filter(x => x.pet && x.alive), done = pets.filter(x => B.acts[x.id]), np = pets.length; if (ha && !C.seen.tutPet && NETROLE !== 'guest') { C.seen.tutPet = 1; toast('石昊的招选好了——再给伙伴选一招，这回合才开打'); }
+    A.innerHTML = `${ha ? `<div class="who-turn ok">🧒 石昊已选好：<b>${actText(B, ha)}</b>${done.map(x => ` · ${PETS[x.mob].icon}${B.acts[x.id].guard ? '防御' : (PETS[x.mob].sk[B.acts[x.id].psk] || {}).n || ''}`).join('')}</div>` : ''}<div class="who-turn">${PETS[cur.mob].icon} 现在轮到 <b>${esc(cur.name)}</b>${np > 1 ? ` <span class="pill">伙伴 ${done.length + 1}/${np}${cur.lead ? ' · 领头' : ''}</span>` : ''} <span class="dim">· 给它选一招${done.length + 1 >= np ? '，选完这回合就开打' : '，再轮到下一个伙伴'}${UI.selFoe ? '' : '（单体招先点敌人选目标）'}</span></div><div class="arow">${PETS[cur.mob].sk.map((s, i) => { const ok = mv.some(x => x.i === i); if (!ok) return ''; const tag = s.aoe ? '全体' : s.healAlly ? '治疗' : s.shieldAll ? '全队盾' : s.shieldHero ? '给石昊盾' : s.buffHero ? '给石昊' : s.taunt ? '嘲讽' : '单体';
+      return `<button class="skb pet c-${s.cat}" ${ok ? '' : 'disabled'} title="${esc(s.d || '')}" onclick="battleAct({psk:${i},tgt:UI.selFoe},'${cur.id}')"><span class="i">${{ atk: '🐾', buff: '✨', debuff: '🌀', def: '🛡️' }[s.cat]}</span>${s.n}<span class="c">${ok ? PET_CAT[s.cat].n + '·' + tag + (s.el ? EL[s.el].i : '') : '亲近' + s.aff}</span></button>`; }).join('')}</div>
+      ${cur.lead ? '' : '<!--'}<div class="arow duo"><span class="dim">这回合</span><button class="ab sm ${(C.duo || 'hero') === 'hero' ? 'q' : ''}" onclick="setDuo('hero')">🧒 石昊先出手</button><button class="ab sm ${C.duo === 'pet' ? 'q' : ''}" onclick="setDuo('pet')">${PETS[cur.mob].icon} 伙伴先出手</button></div>${cur.lead ? '' : '-->'}
+      <div class="arow"><button class="ab sm" onclick="battleUndo()">‹ 重选</button>${np - done.length > 1 ? `<button class="ab sm" onclick="partyAutoRest()">🐾 剩下的伙伴自己打</button>` : ''}<button class="ab sm ${B.auto ? 'q' : ''}" onclick="toggleAuto()">🤖 自动</button></div>`; return; }
   const sk = u.sk.map(id => { const S = SKILLS[id], cd = u.cd[id] || 0, no = u.mp < S.mp, pl = profLevel(id); return `<button class="skb" ${cd || no ? 'disabled' : ''} onclick="pickSkill('${id}')" title="${esc(S.desc)}"><span class="i">${S.icon}</span>${S.name}${S.mp ? `<span class="c">${S.mp}</span>` : ''}${pl ? `<span class="pf">${PROF[pl].s}</span>` : ''}${cd ? `<span class="cd">${cd}</span>` : ''}</button>`; }).join('');
-  const heal = ['milk', 'herb', 'meat', 'lingyao', 'baoyao'].filter(i => itemN(i)); const swaps = B.noPet ? [] : Object.keys(C.pets).filter(id => id !== C.pet);
+  const heal = ['milk', 'herb', 'meat', 'lingyao', 'baoyao'].filter(i => itemN(i)); const swaps = B.noPet ? [] : Object.keys(C.pets).filter(id => !B.units.some(u => u.pet && u.mob === id));
   A.innerHTML = `<div class="who-turn">🧒 <b>石昊</b> 的回合</div><div class="arow">${sk}</div><div class="arow">${canCrush(B) ? `<button class="ab sm q" onclick="battleAct({crush:1})">👊 一拳解决</button>` : ''}${heal.map(i => `<button class="ab sm" ${B.itemRound === B.round ? 'disabled' : ''} title="${ITEMS[i].name}：不占回合，每回合能吃一次" onclick="battleAct({item:'${i}'})">${ITEMS[i].icon}${itemN(i)}</button>`).join('')}
     ${swaps.map(id => `<button class="ab sm" onclick="battleAct({swap:'${id}'})" title="换${PETS[id].name}上场">⇄${PETS[id].icon}</button>`).join('')}<button class="ab sm" onclick="battleAct({flee:1})" ${B.flee ? '' : 'disabled'}>🏃 跑</button><button class="ab sm ${C.auto ? 'q' : ''}" onclick="toggleAuto()">🤖 ${C.auto ? '自动中' : '自动'}</button></div>`;
 }
@@ -6056,9 +6140,10 @@ function fxSay(id, text) { const c = cardOf(id); if (!c || !animOn()) return; $(
   const life = Math.round(Math.min(7500, Math.max(3600, 2400 + plainLen(text) * 160)) * (SET.fast ? 0.75 : 1)); const p = fxAt(c);
   const d = fxSpawn('bubble ' + (id === 'hero' ? 'me' : ''), p, esc(text.replace(/^（|）$/g, '')), life); d.dataset.u = id; d.style.setProperty('--life', life + 'ms'); if (text.startsWith('（')) d.classList.add('act'); bubblePlace(d, c); }
 function bubblePlace(d, c) { // keep every bubble whole on screen: inside the battle view, clear of the other bubbles, flipped under the card when there's no room above
+  d.style.left = '0px'; d.style.top = '0px'; /* measure at the left edge: near the right edge an absolutely placed bubble wraps narrower than it ends up */
   const V = $('bfx').getBoundingClientRect(), R = c.getBoundingClientRect(), w = d.offsetWidth, h = d.offsetHeight, cx = R.left - V.left + R.width / 2;
   let left = Math.max(4, Math.min(V.width - w - 4, cx - w / 2)), top = R.top - V.top - h - 8, below = false; if (top < 4) { top = R.bottom - V.top + 8; below = true; }
-  const others = [...$('bfx').querySelectorAll('.bubble')].filter(e => e !== d && e.dataset.t).map(e => ({ l: +e.dataset.l, t: +e.dataset.t, r: +e.dataset.l + e.offsetWidth, b: +e.dataset.t + e.offsetHeight })); // placed spots, not mid-animation ones
+  const others = [...$('bfx').querySelectorAll('.bubble')].filter(e => e !== d && e.dataset.t).map(e => { const q = e.getBoundingClientRect(), l = +e.dataset.l, t = +e.dataset.t; return { l, t, r: l + Math.max(e.offsetWidth, q.width), b: t + Math.max(e.offsetHeight, q.height) }; }); // placed spots, not mid-animation ones
   const free = (l, t) => t >= 4 && t + h <= V.height - 4 && !others.some(o => l < o.r + 3 && l + w > o.l - 3 && t < o.b + 3 && t + h > o.t - 3);
   const up = R.top - V.top - h - 8, dn = R.bottom - V.top + 8, cands = []; for (let n = 0; n < 5; n++) for (const [t, bl] of [[up - n * (h + 4), false], [dn + n * (h + 4), true]]) { for (const dx of [0, -w * 0.6, w * 0.6, -w * 1.2, w * 1.2]) cands.push([Math.max(4, Math.min(V.width - w - 4, left + dx)), t, bl, n]); for (let x = 4; x <= V.width - w - 4; x += Math.max(24, w / 2)) cands.push([x, t, bl, n + 1]); }
   const lap = (l, t) => others.reduce((a, o) => a + Math.max(0, Math.min(l + w, o.r + 3) - Math.max(l, o.l - 3)) * Math.max(0, Math.min(t + h, o.b + 3) - Math.max(t, o.t - 3)), 0) + (t < 4 || t + h > V.height - 4 ? 1e6 : 0);
@@ -6649,16 +6734,16 @@ function pPet() {
   const foods = Object.keys(C.bag).filter(k => ITEMS[k].food);
   for (const id of ids) { const P = PETS[id], p = C.pets[id], on = C.pet === id, open = petSkillsOpen(id);
     h += `<div class="card"><div class="row"><span style="font-size:1.9rem">${P.icon}</span><div style="flex:1"><h3 style="margin:0">${P.name} <span class="pill gold">${P.role}</span></h3><div class="dim" style="font-size:.8rem">${P.race}</div></div><button class="sb ${on ? 'pri' : ''}" onclick="setPet('${id}')">${on ? '跟着你' : '让它跟着'}</button></div>
-      <div class="dim" style="font-size:.87rem;margin:6px 0">${P.desc}</div>
+      <div class="dim" style="font-size:.87rem;margin:6px 0">${P.desc}</div>${PET_TRAIT[id] ? `<div style="font-size:.85rem;margin:-2px 0 6px"><span class="pill gold">特性 · ${PET_TRAIT[id].n}</span> ${PET_TRAIT[id].d} <span class="dim">适合：${PET_TRAIT[id].use}</span></div>` : ''}
       <div class="bars">等级 <b>${petLv(id)}</b>${petLv(id) >= PET_LV_CAP ? '（满级）' : !C.story.f.end && petLv(id) >= C.lv + 2 ? '（第一卷里最多比石昊高 2 级）' : ` · 经验 ${fmt(p.exp || 0)}/${fmt(petNeed(petLv(id)))}`}${petLv(id) > C.lv ? ` · <b>比石昊高 ${petLv(id) - C.lv} 级，属性 +${(petLv(id) - C.lv) * 3}%</b>` : petLv(id) < C.lv ? ' · 比石昊低，经验 ×1.6 追得快' : ''}<div class="bar"><i style="width:${petLv(id) >= PET_LV_CAP ? 100 : Math.min(100, (p.exp || 0) / petNeed(petLv(id)) * 100)}%;background:#7fd36f"></i></div>
-      亲近 ${p.aff}/100${p.evo3 ? ' · <b>真身</b>（再 +15%）' : p.evo2 ? ' · <b>已返祖</b>（再 +15%）· 70 级时显出真身' : p.evo ? ' · <b>已觉醒</b>（+15%）· 25 级时返祖' : ' · 满 100 觉醒'}<div class="bar exp"><i style="width:${p.aff}%"></i></div></div>
+      亲近 ${p.aff}/100${p.evo3 ? ' · <b>真身</b>（再 +5%）' : p.evo2 ? ' · <b>已返祖</b>（再 +8%）· 70 级时显出真身' : p.evo ? ' · <b>已觉醒</b>（+8%）· 25 级时返祖' : ' · 满 100 觉醒'}<div class="bar exp"><i style="width:${p.aff}%"></i></div></div>
       ${(() => { const u = petUnit(id); return `<div class="kv" style="margin-bottom:4px"><div><span>气血</span> ${u.hpMax}</div><div><span>攻击</span> ${u.atk}</div><div><span>防御</span> ${u.def}</div><div><span>身法</span> ${u.spd.toFixed(1)}</div></div>`; })()}
       <h4 style="margin:8px 0 2px">招式栏 <span class="dim" style="font-size:.8rem;font-weight:400">点选带进战斗（${petBar(id).length}/${petSlots(id)}，觉醒后 +1）；栏满了再选，会换下同类里最低阶的</span></h4>
       <div class="list" style="margin-top:4px">${P.sk.map((s, i) => { const ok = open.includes(s), on = ok && petBar(id).includes(i); return `<div class="li ${ok ? '' : 'unk'} ${on ? 'on' : ''}" style="padding:5px 8px" ${ok ? `onclick="togglePetMove('${id}',${i})"` : ''}><span class="pill" style="color:${PET_CAT[s.cat].c};border-color:${PET_CAT[s.cat].c}">${PET_CAT[s.cat].n}</span><div class="t"><b>${s.n}</b>${ok ? '' : s.evo ? ' <span class="dim">（觉醒后）</span>' : ` <span class="dim">（亲近 ${s.aff}）</span>`}<small>${s.d || ''}</small></div>${ok ? (() => { const r = petRank(id, i), R = RANK_COST[r + 1]; return `<span class="pill gold">${r} 阶</span>${R ? `<button class="sb" style="min-height:30px" title="${R.need.map(([k, n]) => ITEMS[k].name + '×' + n).join('、')}${R.lv > 1 ? '，伙伴 ' + R.lv + ' 级' : ''}" onclick="event.stopPropagation();petRankUp('${id}',${i})" ${R.need.every(([k, n]) => itemN(k) >= n) && petLv(id) >= R.lv ? '' : 'disabled'}>升阶</button>` : ''}`; })() : ''}<span class="chk">${on ? '✔' : ''}</span></div>`; }).join('')}</div>
       <div class="dim" style="font-size:.78rem;margin-top:4px">升阶：2 阶要 兽骨×4、灵药×2；3 阶要 兽骨×8、宝药×1，伙伴 15 级。每阶效果 +20%，3 阶持续多一回合。</div>
       ${foods.length ? `<div class="row" style="flex-wrap:wrap;margin-top:6px">${foods.map(f => `<button class="sb" onclick="feedPet('${id}','${f}')">喂${ITEMS[f].icon}${ITEMS[f].name}×${itemN(f)}</button>`).join('')}</div>` : '<div class="dim" style="font-size:.8rem;margin-top:4px">没有能喂的东西（兽奶、凶兽肉、灵药、兽骨……）</div>'}</div>`; }
   if (itemN('peaegg') && ids.length) h += `<div class="card"><div class="dim">🥚 怀里的蛋还没孵出来（${C.story.f.eggWins || 0}/8 场胜仗）。</div></div>`;
-  if (ids.length) h = '<div class="card dim" style="font-size:.85rem">灵兽伙伴跟着你打仗，每回合石昊出完招就轮到它，由你给它选招。它自己也会升级（最高 30 级，比石昊还能多练十级），招式能用材料升阶。它的招分四种：<b>攻击</b>、给石昊的<b>增益</b>、给敌人的<b>减益</b>、<b>防守</b>——破甲、印记、战吼都能让石昊的宝术打得更狠；石昊把敌人打晕，伙伴打它也更痛。亲近越高会的越多。战斗里可以点 ⇄ 换另一个上场。</div>' + h;
+  if (ids.length) h = '<div class="card dim" style="font-size:.85rem">灵兽伙伴跟着你打仗，每回合石昊出完招就轮到它，由你给它选招。它自己也会升级（最高 85 级），招式能用材料升阶。伙伴多了以后，剧情战、秘境、首领战能一起带好几个上场：每个伙伴的招都由你来选，<b>领头</b>的那个和石昊连着出手；每个伙伴有自己的<b>特性</b>，适合不同的仗。它的招分四种：<b>攻击</b>、给石昊的<b>增益</b>、给敌人的<b>减益</b>、<b>防守</b>——破甲、印记、战吼都能让石昊的宝术打得更狠；石昊把敌人打晕，伙伴打它也更痛。亲近越高会的越多。战斗里可以点 ⇄ 换另一个上场。</div>' + partyCardHtml() + h;
   return h || '<div class="dim">还没有灵兽伙伴。</div>';
 }
 const BAG_TABS = [['use', '药品'], ['mat', '材料'], ['gf', '修炼'], ['key', '要物'], ['shop', '买卖']];
@@ -6740,7 +6825,7 @@ function delChar(b) { if (!UI.delArm) { UI.delArm = 1; b.textContent = '再点�
          Costs 灵石 and 兽骨; +4 and +5 can fail (the 灵石 are gone, the 兽骨 are not). 天庭's 炼器坊 makes it cheaper and surer.
    隐世天骄  after 第六卷, six people who never stood on the 虚神界 list can be challenged (once a day each); the first win
          gives a 宝骨 of their own. All six → the title 隐世无双.
-   真身  a partner that has 返祖 and is 70 级 with full affection takes its true form: +15% again. Partners now grow to 85.
+   真身  a partner that has 返祖 and is 70 级 with full affection takes its true form: +5% again. Partners now grow to 85.
    天庭  after it is founded: 药园 / 炼器坊 / 演武场 / 城墙, three levels each.
    轮回  after the end, at 上苍之上: start again from 石村 with your titles, 图鉴, records, 悟道, 宝骨 (and their forging);
          foes are stronger each time (气血 +30%, 攻击 +20% per life), experience +25% per life. */
@@ -6812,35 +6897,35 @@ Object.assign(RELICS, {
    金狮    a 无畏狮子 subdued in the 边荒 war, bound by a master-servant pact; you treat it as a brother (边荒战场)
    金毛犼  lord of 陨仙岭, a 仙王; it struck at you while you broke into 仙王境 — beat it and it carries you (陨仙岭) */
 Object.assign(PETS, {
-  dashen: { name: '打神石', race: '会说话的石头', role: '重击 · 破甲 · 嘴碎', icon: '🪨', desc: '分宝崖下捡的那块灰石头。你一直拿它砸人，直到有一天它开口骂你“轻点”。它说它叫打神石，专砸神，指哪打哪。', mul: { hp: 0.95, atk: 0.9, def: 1.3, spd: 0.9 },
+  dashen: { name: '打神石', race: '会说话的石头', role: '重击 · 破甲 · 嘴碎', icon: '🪨', desc: '分宝崖下捡的那块灰石头。你一直拿它砸人，直到有一天它开口骂你“轻点”。它说它叫打神石，专砸神，指哪打哪。', mul: { hp: 0.85, atk: 0.95, def: 1.1, spd: 0.9 },
     sk: [{ n: '砸', cat: 'atk', dmg: 1.2, el: 'blunt', w: 3, d: '自己飞过去砸一下，砸完再飞回来。' },
       { n: '挡一下', cat: 'def', taunt: 2, guard: 1, w: 1, d: '横在石昊身前：“砸我！我硬！”两回合内敌人都冲它来，这回合它受伤减半。' },
       { n: '指哪打哪', cat: 'buff', buffHero: { k: 'sure', t: 2, v: 0 }, w: 1, aff: 25, d: '它在石昊耳边报准了位置，他的下一击必定暴击。' },
       { n: '砸碎甲', cat: 'debuff', dmg: 0.7, el: 'blunt', st: { k: 'brk', t: 2, v: 0.4, p: 1 }, w: 1, aff: 50, d: '专砸硬壳：破甲，防御 -40%。' },
       { n: '打神', cat: 'atk', dmg: 2.6, el: 'blunt', st: { k: 'stun', t: 1, p: 0.35 }, w: 1, aff: 75, d: '照着脑门砸下去：单体重击，可能砸晕。' },
       { n: '天外飞石', cat: 'atk', dmg: 1.4, aoe: 1, el: 'blunt', st: { k: 'stun', t: 1, p: 0.3 }, w: 2, evo: 1, d: '觉醒后：一块变成一片，从天上砸下来，全体重击，可能砸晕。' }] },
-  xiaobai: { name: '小白', race: '独角兽', role: '冲锋 · 护身', icon: '🦄', desc: '你六岁那年在山里降服的独角兽，带回村里，驮着你在大荒里跑了一整个夏天。你出村这些年，它一直在村后的山坳里等你。', mul: { hp: 0.9, atk: 0.85, def: 0.85, spd: 1.35 },
+  xiaobai: { name: '小白', race: '独角兽', role: '冲锋 · 护身', icon: '🦄', desc: '你六岁那年在山里降服的独角兽，带回村里，驮着你在大荒里跑了一整个夏天。你出村这些年，它一直在村后的山坳里等你。', mul: { hp: 0.75, atk: 0.75, def: 0.75, spd: 1.35 },
     sk: [{ n: '角冲', cat: 'atk', dmg: 1.1, w: 3, d: '低头一冲。' },
-      { n: '角光', cat: 'def', healAlly: 0.2, w: 1, d: '独角上亮起一点白光，给伤得最重的同伴回 20% 气血。' },
+      { n: '角光', cat: 'def', healAlly: 0.16, w: 1, d: '独角上亮起一点白光，给伤得最重的同伴回一些气血。' },
       { n: '驮着跑', cat: 'buff', buffHero: { k: 'dodge', t: 2, v: 0.25 }, w: 1, aff: 25, d: '把石昊驮起来绕着敌人跑，两回合内他更难被打中。' },
       { n: '圣角', cat: 'debuff', dmg: 0.6, mag: 1, st: { k: 'weak', t: 2, v: 0.3, p: 1 }, w: 1, aff: 50, d: '角尖顶在敌人身上：两回合内攻击 -30%。' },
       { n: '踏云冲锋', cat: 'atk', dmg: 1.1, aoe: 1, w: 1, aff: 75, d: '踩着云冲过敌阵，全体伤害。' },
       { n: '天马行空', cat: 'atk', dmg: 1.45, aoe: 1, st: { k: 'stun', t: 1, p: 0.25 }, w: 2, evo: 1, d: '觉醒后：展开翅膀从天上冲下来，全体重伤，可能撞晕。' }] },
-  sanhei: { name: '三黑', race: '玄龟', role: '坦克 · 护盾', icon: '🐢', desc: '补天阁后山寒潭里趴了不知多少年的老龟，尊者境，又懒又怂。你打服了它，想了半天名字——大红、二秃子都有了，那就叫三黑。它认命了。', mul: { hp: 1.4, atk: 0.6, def: 1.6, spd: 0.6 },
+  sanhei: { name: '三黑', race: '玄龟', role: '坦克 · 护盾', icon: '🐢', desc: '补天阁后山寒潭里趴了不知多少年的老龟，尊者境，又懒又怂。你打服了它，想了半天名字——大红、二秃子都有了，那就叫三黑。它认命了。', mul: { hp: 1.0, atk: 0.55, def: 1.0, spd: 0.6 },
     sk: [{ n: '咬一口', cat: 'atk', dmg: 1, w: 3, d: '慢吞吞地咬一口。咬住了就不松。' },
       { n: '缩头', cat: 'def', taunt: 2, guard: 1, w: 1, d: '往石昊前面一趴，脑袋一缩：两回合内敌人都冲它来，这回合它受伤减半。' },
       { n: '龟甲', cat: 'buff', shieldHero: 1.4, w: 1, aff: 25, d: '把龟甲上的玄纹拓到石昊身上，一层厚护盾。' },
       { n: '玄水', cat: 'debuff', dmg: 0.5, mag: 1, st: { k: 'weak', t: 2, v: 0.3, p: 1 }, w: 1, aff: 50, d: '吐一口寒潭的水：两回合内敌人攻击 -30%。' },
       { n: '玄甲阵', cat: 'def', shieldAll: 1.2, w: 1, aff: 75, d: '龟甲放大，罩住全队，一层护盾。' },
       { n: '玄武镇', cat: 'atk', dmg: 1.2, aoe: 1, el: 'blunt', st: { k: 'stun', t: 1, p: 0.3 }, w: 2, evo: 1, d: '觉醒后：它站了起来——像一座山压下去，全体重击，可能压晕。' }] },
-  wuwei: { name: '金狮', race: '无畏狮子', role: '群攻 · 威慑', icon: '🦁', desc: '边荒大战里降伏的一头金色狮子，出身从九天十地叛去异域的无畏狮子一族，被主仆契约绑着。它不肯当坐骑——你也从没把它当坐骑。', mul: { hp: 1.05, atk: 1, def: 1, spd: 1 },
+  wuwei: { name: '金狮', race: '无畏狮子', role: '群攻 · 威慑', icon: '🦁', desc: '边荒大战里降伏的一头金色狮子，出身从九天十地叛去异域的无畏狮子一族，被主仆契约绑着。它不肯当坐骑——你也从没把它当坐骑。', mul: { hp: 0.85, atk: 0.95, def: 0.85, spd: 1 },
     sk: [{ n: '狮爪', cat: 'atk', dmg: 1.2, w: 3, d: '一爪拍过去。' },
       { n: '狮吼', cat: 'def', taunt: 2, guard: 1, w: 1, d: '冲敌人吼：两回合内敌人都冲它来，这回合它受伤减半。' },
       { n: '无畏战意', cat: 'buff', buffHero: { k: 'atk', t: 2, v: 0.25 }, w: 1, aff: 25, d: '鬃毛一竖，石昊两回合内攻击 +25%。' },
       { n: '震魂吼', cat: 'debuff', dmg: 0.5, aoe: 1, st: { k: 'weak', t: 2, v: 0.25, p: 0.9 }, w: 1, aff: 50, d: '一声把全体吼得发虚：攻击 -25%。' },
       { n: '扑杀', cat: 'atk', dmg: 2.5, w: 1, aff: 75, d: '扑上去，单体重击。' },
       { n: '无畏', cat: 'atk', dmg: 1.45, aoe: 1, st: { k: 'brk', t: 2, v: 0.3, p: 0.8 }, w: 2, evo: 1, d: '觉醒后：它往前冲，从不回头——全体重伤并破甲。' }] },
-  jinmao: { name: '金毛犼', race: '陨仙岭之主 · 仙王', role: '全能 · 仙王', icon: '🐕', desc: '九天十地禁区陨仙岭的主人，一位仙王。你破仙王境那一夜，它从陨仙岭里出过手。后来你把它按在了岭上——它驮着你，嘴上一直不服。', mul: { hp: 1.3, atk: 1.25, def: 1.2, spd: 1.2 },
+  jinmao: { name: '金毛犼', race: '陨仙岭之主 · 仙王', role: '全能 · 仙王', icon: '🐕', desc: '九天十地禁区陨仙岭的主人，一位仙王。你破仙王境那一夜，它从陨仙岭里出过手。后来你把它按在了岭上——它驮着你，嘴上一直不服。', mul: { hp: 0.9, atk: 0.85, def: 0.9, spd: 1.15 },
     sk: [{ n: '犼爪', cat: 'atk', dmg: 1.3, w: 3, d: '一爪下去，地上一道沟。' },
       { n: '金毛护主', cat: 'def', shieldHero: 1.5, w: 1, d: '金毛炸开，把石昊裹在里面（护盾）。嘴上说：“我是怕你死了，没人给我解契约。”' },
       { n: '仙王之吼', cat: 'buff', buffHero: { k: 'atk', t: 2, v: 0.3 }, w: 1, aff: 25, d: '一声吼，石昊两回合内攻击 +30%。' },
@@ -6867,7 +6952,7 @@ Object.assign(PET_SAY, {
 const PET_GONE = ['yumiao', 'bazhen', 'jiutou']; // partners that were replaced by ones from the novel
 function petGoneFix(c) { if (!c || !c.pets) return; for (const k of PET_GONE) if (c.pets[k]) { delete c.pets[k]; if (c.pet === k) c.pet = Object.keys(c.pets)[0] || null; } }
 function petEvo3Check(id) { const p = C.pets[id]; if (!p || p.evo3 || !p.evo2 || p.aff < 100 || petLv(id) < 70 || NETROLE === 'guest') return; p.evo3 = 1;
-  setTimeout(() => runScene(async () => { await nar(EVO3_TEXT[id] || `${PETS[id].name}身上的血脉，醒到了最深处。`); logLine(`<b class="lvup">真身</b>：${PETS[id].icon}<b>${PETS[id].name}</b> 全身属性再 +15%。`, 'sys'); sfx('epic'); bigFlash(PETS[id].name + ' · 真身', 'relic'); }, { title: PETS[id].name + '真身' }), 700); }
+  setTimeout(() => runScene(async () => { await nar(EVO3_TEXT[id] || `${PETS[id].name}身上的血脉，醒到了最深处。`); logLine(`<b class="lvup">真身</b>：${PETS[id].icon}<b>${PETS[id].name}</b> 全身属性再 +5%。`, 'sys'); sfx('epic'); bigFlash(PETS[id].name + ' · 真身', 'relic'); }, { title: PETS[id].name + '真身' }), 700); }
 
 /* ---------- late fused 宝术 ---------- */
 const FUSED2 = {

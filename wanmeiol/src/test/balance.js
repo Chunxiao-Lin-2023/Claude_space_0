@@ -85,12 +85,12 @@ const SC0 = [
 const SC = ONLY ? SC0.filter(s => ONLY.test(s[0])) : SC0;
 (async () => { const b = await chromium.launch(); const pg = await b.newPage(); const errs = []; pg.on('pageerror', e => errs.push(e.message));
   await pg.addInitScript(() => { localStorage.clear(); }); await pg.goto('http://localhost:8770/test.html'); await pg.waitForFunction(() => window.__dbg && __dbg.ready); await pg.click('text=开始'); await pg.waitForTimeout(300);
-  const out = await pg.evaluate(async SC => { __dbg.auto = true; __dbg.instant = true; __dbg.dlgPick(-1); await new Promise(r => setTimeout(r, 400)); const c = __dbg.C; c.auto = true; const res = [];
+  const out = await pg.evaluate(async ([SC, PARTY, PET]) => { __dbg.auto = true; __dbg.instant = true; __dbg.dlgPick(-1); await new Promise(r => setTimeout(r, 400)); const c = __dbg.C; c.auto = true; const res = [];
     const gfAt = lv => ['yingxia', 'xixue', 'guwen', 'yaoding', ...(lv >= 10 ? ['jijing'] : []), ...(lv >= 16 ? ['taiyi'] : []), ...(lv >= 26 ? ['niepan'] : []), ...(lv >= 28 ? ['zhizungu'] : []), ...(lv >= 30 ? ['renhuang'] : []), ...(lv >= 32 ? ['lingshen'] : []), ...(lv >= 36 ? ['shuanggu'] : []), ...(lv >= 38 ? ['yunzu'] : []), ...(lv >= 40 ? ['wudidao'] : []), ...(lv >= 43 ? ['zhizunye'] : []), ...(lv >= 49 ? ['niepanyuan'] : []), ...(lv >= 53 ? ['xiangu'] : []), ...(lv >= 56 ? ['qiwang'] : []), ...(lv >= 62 ? ['daoze'] : []), ...(lv >= 65 ? ['yuanshi'] : []), ...(lv >= 69 ? ['chongzhi'] : []), ...(lv >= 75 ? ['zhenxian'] : []), ...(lv >= 80 ? ['baxi'] : []), ...(lv >= 84 ? ['zhunxiandi'] : []), ...(lv >= 85 ? ['xiandi'] : [])];
     for (const [name, lv, mobs, sk, pet, aff, allies] of SC) { let w = 0, rounds = 0, hp = 0; const N = 30;
       for (let i = 0; i < N; i++) { c.lv = lv; c.sk = sk.slice(); c.bar = sk.slice(0, typeof barSlots === 'function' ? barSlots(lv) : 4); c.gf = gfAt(lv); c.dt = ['li', 'ti', 'ling', 'shou', 'su', 'feng', 'li', 'ti', 'ling'].slice(0, Math.max(0, lv - 9)); c.bag = {}; c.prof = {}; c.eq = []; c.relics = {};
-        c.pets = pet ? { [pet]: { aff } } : {}; c.pet = pet; fullHeal();
-        const r = await new Promise(res => __dbg.startBattle({ mobs, allies, title: name, noLose: true, story: 1, flee: false }).then(res)); const B = __dbg.STATE.battle; if (r.win) { w++; hp += r.hp / charStats().hpMax; } rounds += (r.rounds || 0); }
+        c.pets = pet ? { [pet]: { aff } } : {}; c.pet = pet; if (PARTY && lv >= 30) { for (const id of ['maoqiu', 'dahong', 'ertuzi', 'dashen', 'xiaobai', 'sanhei', 'wuwei', 'jinmao']) c.pets[id] = { aff: 100, evo: 1, evo2: lv >= 25 ? 1 : 0, evo3: lv >= 70 ? 1 : 0, lv }; } fullHeal();
+        const r = await new Promise(res => __dbg.startBattle({ mobs, allies, title: name, noLose: true, story: 1, flee: false, _party: PARTY && lv >= 30 ? (PET ? PET.split(",") : partyAdvice({ mobs }).order.slice(0, PARTY)) : undefined }).then(res)); const B = __dbg.STATE.battle; if (r.win) { w++; hp += r.hp / charStats().hpMax; } rounds += (r.rounds || 0); }
       res.push([name, lv, Math.round(w / N * 100) + '%', w ? Math.round(hp / w * 100) + '%' : '-']); }
-    return res; }, SC);
+    return res; }, [SC, +(process.env.PARTY || 0), process.env.PET || ""]);
   console.log((process.argv[2] || '') + '\n' + out.map(r => r.join('\t')).join('\n'), errs); await b.close(); })();

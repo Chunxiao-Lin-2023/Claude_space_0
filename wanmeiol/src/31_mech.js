@@ -42,7 +42,7 @@ function mechRound(B, when) {
     else if (left > 0) B.title = `${B.baseTitle}（还要撑 ${left} 回合）`; } }
 function mechPlan(B, u) { if (u.mech && MECH_PLAN[u.mech]) MECH_PLAN[u.mech](B, u); }
 function mechPhase(B, d) { const M = MOBS[d.mob]; if (!d.mech) return;
-  if (d.mech === 'summon') { const add = M.summonId || 'yyxwb'; for (let i = 0; i < 2; i++) { const s = mobUnit(add, Math.max(1, d.lv - 3), 1); s.hp = Math.round(s.hpMax * 0.6); s.alive = true; planMob(B, s); B.units.push(s); } blog(B, `<span class="warn">又来了两个 ${esc(MOBS[add].name)}！</span>　<span class="dim">（一路赶来，带着伤）</span>`); fxe(B, { k: 'phase', t: d.id }); }
+  if (d.mech === 'summon') { const add = M.summonId || 'yyxwb'; for (let i = 0; i < 2; i++) { const s = mobUnit(add, Math.max(1, d.lv - 3), 1); s.hp = Math.round(s.hpMax * 0.6); s.alive = true; partyFoe(B, s); planMob(B, s); B.units.push(s); } blog(B, `<span class="warn">又来了两个 ${esc(MOBS[add].name)}！</span>　<span class="dim">（一路赶来，带着伤）</span>`); fxe(B, { k: 'phase', t: d.id }); }
   if (d.mech === 'qilin') { const v = Math.round(d.hpMax * 0.3); addSt(d, { k: 'shield', t: 4, v }); fxe(B, { k: 'shield', t: d.id, v }); blog(B, `<span class="warn">麒麟的影子裹住了 ${uName(d)}（护盾 ${v}，4 回合）</span>`); }
   if (d.mech === 'question') { B.asked = B.round; blog(B, `<span class="cine">${uName(d)} 停下了枪：“……帝关，还在吗？”</span>　<span class="dim">（下回合选「防御」，就是你的回答）</span>`); fxe(B, { k: 'cine', cls: 'phase', who: d.name, text: '“……帝关，还在吗？”' }); } }
 function mechDie(B, d) { // true = it does not fall

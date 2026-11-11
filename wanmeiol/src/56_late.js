@@ -6,7 +6,7 @@
          Costs 灵石 and 兽骨; +4 and +5 can fail (the 灵石 are gone, the 兽骨 are not). 天庭's 炼器坊 makes it cheaper and surer.
    隐世天骄  after 第六卷, six people who never stood on the 虚神界 list can be challenged (once a day each); the first win
          gives a 宝骨 of their own. All six → the title 隐世无双.
-   真身  a partner that has 返祖 and is 70 级 with full affection takes its true form: +15% again. Partners now grow to 85.
+   真身  a partner that has 返祖 and is 70 级 with full affection takes its true form: +5% again. Partners now grow to 85.
    天庭  after it is founded: 药园 / 炼器坊 / 演武场 / 城墙, three levels each.
    轮回  after the end, at 上苍之上: start again from 石村 with your titles, 图鉴, records, 悟道, 宝骨 (and their forging);
          foes are stronger each time (气血 +30%, 攻击 +20% per life), experience +25% per life. */
@@ -78,35 +78,35 @@ Object.assign(RELICS, {
    金狮    a 无畏狮子 subdued in the 边荒 war, bound by a master-servant pact; you treat it as a brother (边荒战场)
    金毛犼  lord of 陨仙岭, a 仙王; it struck at you while you broke into 仙王境 — beat it and it carries you (陨仙岭) */
 Object.assign(PETS, {
-  dashen: { name: '打神石', race: '会说话的石头', role: '重击 · 破甲 · 嘴碎', icon: '🪨', desc: '分宝崖下捡的那块灰石头。你一直拿它砸人，直到有一天它开口骂你“轻点”。它说它叫打神石，专砸神，指哪打哪。', mul: { hp: 0.95, atk: 0.9, def: 1.3, spd: 0.9 },
+  dashen: { name: '打神石', race: '会说话的石头', role: '重击 · 破甲 · 嘴碎', icon: '🪨', desc: '分宝崖下捡的那块灰石头。你一直拿它砸人，直到有一天它开口骂你“轻点”。它说它叫打神石，专砸神，指哪打哪。', mul: { hp: 0.85, atk: 0.95, def: 1.1, spd: 0.9 },
     sk: [{ n: '砸', cat: 'atk', dmg: 1.2, el: 'blunt', w: 3, d: '自己飞过去砸一下，砸完再飞回来。' },
       { n: '挡一下', cat: 'def', taunt: 2, guard: 1, w: 1, d: '横在石昊身前：“砸我！我硬！”两回合内敌人都冲它来，这回合它受伤减半。' },
       { n: '指哪打哪', cat: 'buff', buffHero: { k: 'sure', t: 2, v: 0 }, w: 1, aff: 25, d: '它在石昊耳边报准了位置，他的下一击必定暴击。' },
       { n: '砸碎甲', cat: 'debuff', dmg: 0.7, el: 'blunt', st: { k: 'brk', t: 2, v: 0.4, p: 1 }, w: 1, aff: 50, d: '专砸硬壳：破甲，防御 -40%。' },
       { n: '打神', cat: 'atk', dmg: 2.6, el: 'blunt', st: { k: 'stun', t: 1, p: 0.35 }, w: 1, aff: 75, d: '照着脑门砸下去：单体重击，可能砸晕。' },
       { n: '天外飞石', cat: 'atk', dmg: 1.4, aoe: 1, el: 'blunt', st: { k: 'stun', t: 1, p: 0.3 }, w: 2, evo: 1, d: '觉醒后：一块变成一片，从天上砸下来，全体重击，可能砸晕。' }] },
-  xiaobai: { name: '小白', race: '独角兽', role: '冲锋 · 护身', icon: '🦄', desc: '你六岁那年在山里降服的独角兽，带回村里，驮着你在大荒里跑了一整个夏天。你出村这些年，它一直在村后的山坳里等你。', mul: { hp: 0.9, atk: 0.85, def: 0.85, spd: 1.35 },
+  xiaobai: { name: '小白', race: '独角兽', role: '冲锋 · 护身', icon: '🦄', desc: '你六岁那年在山里降服的独角兽，带回村里，驮着你在大荒里跑了一整个夏天。你出村这些年，它一直在村后的山坳里等你。', mul: { hp: 0.75, atk: 0.75, def: 0.75, spd: 1.35 },
     sk: [{ n: '角冲', cat: 'atk', dmg: 1.1, w: 3, d: '低头一冲。' },
-      { n: '角光', cat: 'def', healAlly: 0.2, w: 1, d: '独角上亮起一点白光，给伤得最重的同伴回 20% 气血。' },
+      { n: '角光', cat: 'def', healAlly: 0.16, w: 1, d: '独角上亮起一点白光，给伤得最重的同伴回一些气血。' },
       { n: '驮着跑', cat: 'buff', buffHero: { k: 'dodge', t: 2, v: 0.25 }, w: 1, aff: 25, d: '把石昊驮起来绕着敌人跑，两回合内他更难被打中。' },
       { n: '圣角', cat: 'debuff', dmg: 0.6, mag: 1, st: { k: 'weak', t: 2, v: 0.3, p: 1 }, w: 1, aff: 50, d: '角尖顶在敌人身上：两回合内攻击 -30%。' },
       { n: '踏云冲锋', cat: 'atk', dmg: 1.1, aoe: 1, w: 1, aff: 75, d: '踩着云冲过敌阵，全体伤害。' },
       { n: '天马行空', cat: 'atk', dmg: 1.45, aoe: 1, st: { k: 'stun', t: 1, p: 0.25 }, w: 2, evo: 1, d: '觉醒后：展开翅膀从天上冲下来，全体重伤，可能撞晕。' }] },
-  sanhei: { name: '三黑', race: '玄龟', role: '坦克 · 护盾', icon: '🐢', desc: '补天阁后山寒潭里趴了不知多少年的老龟，尊者境，又懒又怂。你打服了它，想了半天名字——大红、二秃子都有了，那就叫三黑。它认命了。', mul: { hp: 1.4, atk: 0.6, def: 1.6, spd: 0.6 },
+  sanhei: { name: '三黑', race: '玄龟', role: '坦克 · 护盾', icon: '🐢', desc: '补天阁后山寒潭里趴了不知多少年的老龟，尊者境，又懒又怂。你打服了它，想了半天名字——大红、二秃子都有了，那就叫三黑。它认命了。', mul: { hp: 1.0, atk: 0.55, def: 1.0, spd: 0.6 },
     sk: [{ n: '咬一口', cat: 'atk', dmg: 1, w: 3, d: '慢吞吞地咬一口。咬住了就不松。' },
       { n: '缩头', cat: 'def', taunt: 2, guard: 1, w: 1, d: '往石昊前面一趴，脑袋一缩：两回合内敌人都冲它来，这回合它受伤减半。' },
       { n: '龟甲', cat: 'buff', shieldHero: 1.4, w: 1, aff: 25, d: '把龟甲上的玄纹拓到石昊身上，一层厚护盾。' },
       { n: '玄水', cat: 'debuff', dmg: 0.5, mag: 1, st: { k: 'weak', t: 2, v: 0.3, p: 1 }, w: 1, aff: 50, d: '吐一口寒潭的水：两回合内敌人攻击 -30%。' },
       { n: '玄甲阵', cat: 'def', shieldAll: 1.2, w: 1, aff: 75, d: '龟甲放大，罩住全队，一层护盾。' },
       { n: '玄武镇', cat: 'atk', dmg: 1.2, aoe: 1, el: 'blunt', st: { k: 'stun', t: 1, p: 0.3 }, w: 2, evo: 1, d: '觉醒后：它站了起来——像一座山压下去，全体重击，可能压晕。' }] },
-  wuwei: { name: '金狮', race: '无畏狮子', role: '群攻 · 威慑', icon: '🦁', desc: '边荒大战里降伏的一头金色狮子，出身从九天十地叛去异域的无畏狮子一族，被主仆契约绑着。它不肯当坐骑——你也从没把它当坐骑。', mul: { hp: 1.05, atk: 1, def: 1, spd: 1 },
+  wuwei: { name: '金狮', race: '无畏狮子', role: '群攻 · 威慑', icon: '🦁', desc: '边荒大战里降伏的一头金色狮子，出身从九天十地叛去异域的无畏狮子一族，被主仆契约绑着。它不肯当坐骑——你也从没把它当坐骑。', mul: { hp: 0.85, atk: 0.95, def: 0.85, spd: 1 },
     sk: [{ n: '狮爪', cat: 'atk', dmg: 1.2, w: 3, d: '一爪拍过去。' },
       { n: '狮吼', cat: 'def', taunt: 2, guard: 1, w: 1, d: '冲敌人吼：两回合内敌人都冲它来，这回合它受伤减半。' },
       { n: '无畏战意', cat: 'buff', buffHero: { k: 'atk', t: 2, v: 0.25 }, w: 1, aff: 25, d: '鬃毛一竖，石昊两回合内攻击 +25%。' },
       { n: '震魂吼', cat: 'debuff', dmg: 0.5, aoe: 1, st: { k: 'weak', t: 2, v: 0.25, p: 0.9 }, w: 1, aff: 50, d: '一声把全体吼得发虚：攻击 -25%。' },
       { n: '扑杀', cat: 'atk', dmg: 2.5, w: 1, aff: 75, d: '扑上去，单体重击。' },
       { n: '无畏', cat: 'atk', dmg: 1.45, aoe: 1, st: { k: 'brk', t: 2, v: 0.3, p: 0.8 }, w: 2, evo: 1, d: '觉醒后：它往前冲，从不回头——全体重伤并破甲。' }] },
-  jinmao: { name: '金毛犼', race: '陨仙岭之主 · 仙王', role: '全能 · 仙王', icon: '🐕', desc: '九天十地禁区陨仙岭的主人，一位仙王。你破仙王境那一夜，它从陨仙岭里出过手。后来你把它按在了岭上——它驮着你，嘴上一直不服。', mul: { hp: 1.3, atk: 1.25, def: 1.2, spd: 1.2 },
+  jinmao: { name: '金毛犼', race: '陨仙岭之主 · 仙王', role: '全能 · 仙王', icon: '🐕', desc: '九天十地禁区陨仙岭的主人，一位仙王。你破仙王境那一夜，它从陨仙岭里出过手。后来你把它按在了岭上——它驮着你，嘴上一直不服。', mul: { hp: 0.9, atk: 0.85, def: 0.9, spd: 1.15 },
     sk: [{ n: '犼爪', cat: 'atk', dmg: 1.3, w: 3, d: '一爪下去，地上一道沟。' },
       { n: '金毛护主', cat: 'def', shieldHero: 1.5, w: 1, d: '金毛炸开，把石昊裹在里面（护盾）。嘴上说：“我是怕你死了，没人给我解契约。”' },
       { n: '仙王之吼', cat: 'buff', buffHero: { k: 'atk', t: 2, v: 0.3 }, w: 1, aff: 25, d: '一声吼，石昊两回合内攻击 +30%。' },
@@ -133,7 +133,7 @@ Object.assign(PET_SAY, {
 const PET_GONE = ['yumiao', 'bazhen', 'jiutou']; // partners that were replaced by ones from the novel
 function petGoneFix(c) { if (!c || !c.pets) return; for (const k of PET_GONE) if (c.pets[k]) { delete c.pets[k]; if (c.pet === k) c.pet = Object.keys(c.pets)[0] || null; } }
 function petEvo3Check(id) { const p = C.pets[id]; if (!p || p.evo3 || !p.evo2 || p.aff < 100 || petLv(id) < 70 || NETROLE === 'guest') return; p.evo3 = 1;
-  setTimeout(() => runScene(async () => { await nar(EVO3_TEXT[id] || `${PETS[id].name}身上的血脉，醒到了最深处。`); logLine(`<b class="lvup">真身</b>：${PETS[id].icon}<b>${PETS[id].name}</b> 全身属性再 +15%。`, 'sys'); sfx('epic'); bigFlash(PETS[id].name + ' · 真身', 'relic'); }, { title: PETS[id].name + '真身' }), 700); }
+  setTimeout(() => runScene(async () => { await nar(EVO3_TEXT[id] || `${PETS[id].name}身上的血脉，醒到了最深处。`); logLine(`<b class="lvup">真身</b>：${PETS[id].icon}<b>${PETS[id].name}</b> 全身属性再 +5%。`, 'sys'); sfx('epic'); bigFlash(PETS[id].name + ' · 真身', 'relic'); }, { title: PETS[id].name + '真身' }), 700); }
 
 /* ---------- late fused 宝术 ---------- */
 const FUSED2 = {
