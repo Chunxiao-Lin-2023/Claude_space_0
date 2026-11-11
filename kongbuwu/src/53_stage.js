@@ -9,6 +9,12 @@
 const SW = 320, SH = 112, FEET = 90;
 const P_ = (o) => Object.assign({ skin: '#f0c8a0' }, o);
 const PPL = {
+  红影: P_({ sil: '#7a0808', hs: 'long', dress: 1, top: '#900', ghost: 1 }), 黑影: P_({ sil: '#2a2630', hs: 'messy', tall: 1.3, ghost: 1 }), 镜鬼: P_({ sil: '#7a8090', hs: 'long', ghost: 1 }),
+  小男孩: P_({ child: 1, skin: '#e6e0dc', hair: '#1a1416', hs: 'short', top: '#5a6a7a', bottom: '#3a4048', ghost: 1 }), 小女孩: P_({ child: 1, skin: '#e6e0dc', hair: '#1a1416', hs: 'bob', top: '#c88a9a', dress: 1, ghost: 1 }),
+  学生: P_({ skin: '#ddd6d0', hair: '#141214', hs: 'short', top: '#2e3e5e', top2: '#e8e8e8', bottom: '#2e3e5e', ghost: 1 }), 学生乙: P_({ skin: '#ddd6d0', hair: '#141214', hs: 'bob', top: '#2e3e5e', top2: '#e8e8e8', skirt: 1, bottom: '#2e3e5e', ghost: 1 }), 学生丙: P_({ skin: '#ddd6d0', hair: '#1c1a18', hs: 'messy', top: '#2e3e5e', top2: '#e8e8e8', bottom: '#2e3e5e', ghost: 1 }),
+  舞蹈室的女孩: P_({ skin: '#e2dad6', hair: '#141214', hs: 'bun', top: '#e8d8dc', dress: 1, ghost: 1 }),
+  瘦长怪物: P_({ skin: '#cfc8c0', hair: '#141214', hs: 'long', cover: 1, robe: 1, top: '#d8d4c8', tall: 2.1, ghost: 1 }), 瘦长怪物乙: P_({ skin: '#cfc8c0', hair: '#141214', hs: 'long', cover: 1, robe: 1, top: '#ccc8bc', tall: 1.9, ghost: 1 }), 独眼的瘦长怪物: P_({ skin: '#cfc8c0', hair: '#141214', hs: 'long', cover: 1, redEye: 1, robe: 1, top: '#c8c0b0', tall: 2.2, ghost: 1 }),
+  独臂: P_({ skin: '#d8c0a8', hair: '#2a2420', hs: 'short', top: '#9ab0c0', bottom: '#9ab0c0' }), 老人: P_({ skin: '#d8c0a8', hair: '#c8c8c4', hs: 'short', top: '#9ab0c0', bottom: '#9ab0c0' }),
   陈歌: P_({ hair: '#1c1a1e', hs: 'short', top: '#2d333d', top2: '#d8dadc', bottom: '#26262c', shoes: '#141414' }),
   徐婉: P_({ hair: '#3a2420', hs: 'bob', top: '#e8e4e0', top2: '#c84040', skirt: 1, bottom: '#e8e4e0' }), 徐叔: P_({ hair: '#8a8a88', hs: 'short', top: '#4a5a3e', bottom: '#2e3428' }),
   鹤山: P_({ hair: '#201a18', hs: 'short', top: '#3a5a8a', bottom: '#2a3048' }), 高汝雪: P_({ hair: '#141218', hs: 'long', top: '#eeeeea', dress: 1, hat: 'straw', hatC: '#e8dcc0' }),
@@ -101,50 +107,80 @@ function stActor(name, x, o) { return Object.assign({ name, P: pplOf(name), x, t
 function stFind(name) { return STG.sc.find(a => a.name === name); }
 const SLOTS_X = [176, 216, 256, 136, 288];
 function stFreeX() { for (const x of SLOTS_X) if (!STG.sc.some(a => Math.abs(a.tx - x) < 20)) return x; return 200 + rint(-20, 20); }
-function stEnter(name, x, quick) { if (!pplOf(name)) return null; let a = stFind(name); if (a) { if (x != null) a.tx = x; a.ta = 1; return a; } if (STG.sc.length >= 5) { const old = STG.sc.find(b => b.name !== '陈歌' && !b.talk); if (old) STG.sc.splice(STG.sc.indexOf(old), 1); }
+function stEnter(name, x, quick) { if (!pplOf(name)) return null; let a = stFind(name); if (a) { if (x != null) a.tx = x; a.ta = 1; return a; } if (STG.sc.length >= 6) { const old = STG.sc.find(b => b.name !== '陈歌' && !b.talk); if (old) STG.sc.splice(STG.sc.indexOf(old), 1); }
   const tx = x != null ? x : stFreeX(); const ghost = (pplOf(name) || {}).ghost; a = stActor(name, ghost || quick || !SET.motion ? tx : stEdge(tx), { tx, alpha: ghost ? 0 : 1, ta: 1 }); STG.sc.push(a); return a; }
 /* 从镜头边缘走进来，不让人对着空台子说话 */
 function stEdge(tx) { const L = STG.cam == null ? 56 : STG.cam, R = L + 208; return tx > (L + R) / 2 ? Math.min(SW + 12, R + 10) : Math.max(-12, L - 10); }
-function stageSceneStart() { STG.remote = new Set(); STG.cam = null; STG.over = ''; STG.fx = {}; STG.props = {}; STG.sc = [stActor('陈歌', 96)]; const s = STG.ex.filter(a => a.name !== '陈歌'); for (const a of s) STG.sc.push(stActor(a.name, a.x)); STG.lastKey = stageKey(); }
+/* 剪影：红影、黑影只画轮廓 */
+const ST_TINT = new Map();
+function stTint(spr, col) { if (!col) return spr; let m = ST_TINT.get(col); if (!m) ST_TINT.set(col, m = new WeakMap()); let c = m.get(spr); if (c) return c; c = mk(spr.width, spr.height); const g = c.getContext('2d'); g.drawImage(spr, 0, 0); g.globalCompositeOperation = 'source-atop'; g.fillStyle = col; g.fillRect(0, 0, c.width, c.height); m.set(spr, c); return c; }
+/* 白猫（第四、五章跟着陈歌） */
+SPR.cage = function (g, e, t, R) { const c = '#6e6e74'; R(-1, -14, 18, 2, c); R(-1, 14, 18, 2, c); for (let i = 0; i < 6; i++) R(-1 + i * 3.4, -12, 1, 26, c); };
+SPR.cat = function (g, e, t, R) { const w = '#eeeae4', b = Math.floor(t * 2) % 7 === 0; R(3, 9, 9, 5, w); R(10, 6, 5, 5, w); R(10, 5, 1, 2, w); R(14, 5, 1, 2, w); R(2, 7, 1, 4, w); R(1, 6, 2, 1, w); R(4, 14, 1, 1, '#b8b2aa'); R(10, 14, 1, 1, '#b8b2aa'); if (!b) { R(11, 8, 1, 1, '#4a8ad8'); R(13, 8, 1, 1, '#d8b830'); } };
+/* —— 恐怖演出 —— */
+/* 手电接触不良：按时间算出一段一段的“灭”（同一时刻所有画面一致） */
+function stFlickOff() { if (!STG.fx.flicker) return false; const t = STG.t, k = Math.floor(t * 3.2), h = hash(k, 77); return h < .32 ? (t * 3.2 - k) < .55 + h : h > .9; }
+/* 贴脸：某个人突然出现在镜头正前方，放大，一闪而过（关掉惊吓画面时只闪红光+心跳） */
+function stScare(name) { if (window.__dbg && (__dbg.auto || __dbg.instant)) return; if (!SET.scare || !SET.motion) { scareFlash(); return; } STG.jump = { P: pplOf(name), t: .75 }; STG.flash = 1; STG.shake = .5; sfx('stinger'); }
+/* 黑暗里的环境声，和“有东西离你很近”时的心跳 */
+function stAmbient(dt, list) { if (!STATE.scene || !(STG.fx.dark || STG.fx.red)) { STG.amb = 4; return; } STG.amb = (STG.amb || 6) - dt; const hero = list.find(a => a.name === '陈歌');
+  const near = hero && list.some(a => a !== hero && a.ghost && a.alpha > .3 && Math.abs(a.x - hero.x) < 44); if (near) { STG.hb = (STG.hb || 0) - dt; if (STG.hb <= 0) { STG.hb = 1.1; sfx('heart'); } }
+  if (STG.amb <= 0) { STG.amb = 7 + Math.random() * 8; sfx(['drip', 'whisper', 'steps', 'creak', 'breath', 'wind'][Math.floor(Math.random() * 6)]); } }
+function stageSceneStart() { stageIdle(); STG.jump = null; STG.glitch = 0; STG.remote = new Set(); STG.cam = null; STG.over = ''; STG.fx = {}; STG.props = {}; STG.sc = [stActor('陈歌', 96)]; const s = STG.ex.filter(a => a.name !== '陈歌'); for (const a of s) STG.sc.push(stActor(a.name, a.x)); STG.lastKey = stageKey(); }
 function stageIdle() { if (!C) return; const ns = npcsHere().slice(0, 3); STG.ex = [stActor('陈歌', 120)]; ns.forEach((k, i) => STG.ex.push(stActor(NPCS[k].name, 196 + i * 36, { dir: 1 }))); }
-function stageSpeak(o) { if (!STATE.scene) return; let who = o.kind === 'ph' ? '陈歌' : o.who; for (const a of STG.sc) { a.talk = 0; a.phone = 0; } if (!who) return; const remote = STG.remote.has(who) || who === '手机里的声音'; if (remote) who = '陈歌'; const a = who === '陈歌' ? stFind('陈歌') : stEnter(who); if (!a) return; a.talk = 1; a.phone = o.kind === 'ph' || remote;
+/* 换了地点或 ^stage：立刻换景（清掉别人、效果、道具），免得下一帧把刚加上的东西又清掉 */
+function stSync() { if (!STATE.scene || !C) return; const k = stageKey(); if (k !== STG.lastKey) { STG.lastKey = k; STG.sc = STG.sc.filter(a => a.name === '陈歌'); STG.fx = {}; STG.props = {}; } }
+function stageSpeak(o) { if (!STATE.scene) return; stSync(); let who = o.kind === 'ph' ? '陈歌' : o.who; for (const a of STG.sc) { a.talk = 0; a.phone = 0; } if (!who) return; const remote = STG.remote.has(who) || who === '手机里的声音'; if (remote) who = '陈歌'; const a = who === '陈歌' ? stFind('陈歌') : stEnter(who); if (!a) return; a.talk = 1; a.phone = o.kind === 'ph' || remote;
   const hero = stFind('陈歌'); if (hero && a !== hero) { a.face = hero.x < a.tx ? 1 : 2; hero.face = hero.x < a.tx ? 2 : 1; } }
-function stageCmd(s) { const p = s.trim().split(/\s+/), c = p[0], n = p[1]; const T = v => v == null || v === '' ? null : Math.round(+v * 16 + 8);
-  if (c === 'in') stEnter(n, T(p[2])); else if (c === 'out') { const a = stFind(n); if (a) { if (a.ghost || !SET.motion) a.ta = 0; else a.tx = a.x > 160 ? SW + 20 : -20; a.leaving = 1; } }
+function stageCmd(s) { const p = s.trim().split(/\s+/), c = p[0], n = p[1]; if (c !== 'stage') stSync(); const T = v => v == null || v === '' ? null : Math.round(+v * 16 + 8);
+  if (c === 'in' || c === 'at') STG.remote.delete(n);
+  if (c === 'in') stEnter(n, T(p[2])); else if (c === 'at') { const a = stEnter(n, T(p[2]), 1); if (a) a.x = a.tx; } else if (c === 'out') { const a = stFind(n); if (a) { if (a.ghost || !SET.motion) a.ta = 0; else a.tx = a.x > 160 ? SW + 20 : -20; a.leaving = 1; } }
   else if (c === 'to') { const a = stFind(n) || stEnter(n); if (a) a.tx = T(p[2]); } else if (c === 'turn') { const a = stFind(n); if (a) a.face = { L: 1, R: 2, F: 0, B: 3 }[p[2]] ?? 0; }
   else if (c === 'down' || c === 'up') { const a = stFind(n); if (a) a.down = c === 'down' ? 1 : 0; }
-  else if (c === 'fx') { if (n === 'clear') STG.fx = {}; else if (n === 'flash') STG.flash = 1; else if (n === 'shake') STG.shake = .4; else if (n === 'candle') STG.fx.candle = T(p[2] || 9); else if (n === 'light') { delete STG.fx.dark; } else STG.fx[n] = 1; }
+  else if (c === 'fx') { if (n === 'clear') STG.fx = {}; else if (n === 'flash') STG.flash = 1; else if (n === 'shake') STG.shake = .4; else if (n === 'candle') STG.fx.candle = T(p[2] || 9); else if (n === 'light') { delete STG.fx.dark; delete STG.fx.flicker; } else if (n === 'steady') delete STG.fx.flicker; else if (n === 'glitch') { STG.glitch = .7; if (p[2] === 'on') STG.fx.glitch = 1; else if (p[2] === 'off') delete STG.fx.glitch; sfx('static'); } else STG.fx[n] = 1; }
+  else if (c === 'scare') stScare(n);
+  else if (c === 'creep') { const a = stFind(n) || stEnter(n, T(p[2]), 1); if (a) { a.tx = T(p[2]); a.creep = 1; } }
+  else if (c === 'sfx') sfx(n);
   else if (c === 'prop') { let o = {}; try { o = p[5] ? JSON.parse(p.slice(5).join(' ')) : {}; } catch (e) {} STG.props[n] = [p[2], +p[3], +p[4], o]; } else if (c === 'del') delete STG.props[n];
-  else if (c === 'stage') STG.over = n === 'clear' ? '' : n; else if (c === 'call') { STG.remote.add(n); const a = stFind(n); if (a) STG.sc.splice(STG.sc.indexOf(a), 1); } else if (c === 'hang') STG.remote.delete(n); }
+  else if (c === 'stage') { STG.over = n === 'clear' ? '' : n; stSync(); } else if (c === 'call') { STG.remote.add(n); const a = stFind(n); if (a) STG.sc.splice(STG.sc.indexOf(a), 1); } else if (c === 'hang') STG.remote.delete(n); }
 /* —— 每帧 —— */
-function stageTick(dt, list) { STG.t += dt; for (const a of list) { const d = a.tx - a.x, sp = (Math.abs(d) > 40 ? 96 : 64) * dt; if (Math.abs(d) > .5) { a.x += Math.sign(d) * Math.min(Math.abs(d), sp); a.ft += dt; a.fr = [0, 1, 0, 3][Math.floor(a.ft / .13) % 4]; a.dir = d < 0 ? 1 : 2; a.moving = 1; } else { a.x = a.tx; a.fr = 0; a.moving = 0; a.dir = a.face != null ? a.face : 0; }
+function stageTick(dt, list) { STG.t += dt; stAmbient(dt, list); const off = stFlickOff(); if (STG.jump && (STG.jump.t -= dt) <= 0) STG.jump = null; STG.glitch = Math.max(0, (STG.glitch || 0) - dt); if (STG.fx.glitch && Math.random() < dt * .4) STG.glitch = .25;
+  for (const a of list) { if (a.creep) { if (!off) continue; a.x += Math.sign(a.tx - a.x) * Math.min(Math.abs(a.tx - a.x), 260 * dt); if (Math.abs(a.tx - a.x) < .5) a.creep = 0; a.dir = 0; continue; }
+    const d = a.tx - a.x, sp = (Math.abs(d) > 40 ? 96 : 64) * dt; if (Math.abs(d) > .5) { a.x += Math.sign(d) * Math.min(Math.abs(d), sp); a.ft += dt; a.fr = [0, 1, 0, 3][Math.floor(a.ft / .13) % 4]; a.dir = d < 0 ? 1 : 2; a.moving = 1; } else { a.x = a.tx; a.fr = 0; a.moving = 0; a.dir = a.face != null ? a.face : 0; }
     a.alpha += (a.ta - a.alpha) * Math.min(1, dt * 4); }
   for (let i = list.length - 1; i >= 0; i--) { const a = list[i]; if (a.leaving && (a.alpha < .03 || a.x < -16 || a.x > SW + 16)) list.splice(i, 1); }
   STG.flash = Math.max(0, STG.flash - dt * 2.5); STG.shake = Math.max(0, STG.shake - dt); }
 function stageDraw(cv, list, scene) { const full = cv.width < SW ? (STG.full || (STG.full = mk(SW, SH))) : cv; const g = full.getContext('2d'), night = isNight(), key = stageKey(); g.imageSmoothingEnabled = false; if (key !== STG.lastKey && scene) { STG.lastKey = key; STG.sc = STG.sc.filter(a => a.name === '陈歌'); STG.fx = {}; STG.props = {}; } g.save();
   if (STG.shake > 0) g.translate(Math.round((Math.random() - .5) * 6), Math.round((Math.random() - .5) * 4));
   g.drawImage(stageBg(key, night), 0, 0);
-  for (const id in STG.props) { const p = STG.props[id]; if (SPR[p[0]]) SPR[p[0]](g, Object.assign({ x: p[1], y: p[2] }, p[3]), STG.t, (x, y, w, h, c) => { if (!c) return; g.fillStyle = c; g.fillRect(p[1] * 16 + Math.floor(x), p[2] * 16 + Math.floor(y), Math.ceil(w), Math.ceil(h)); }); }
+  const drawProp = p => { if (SPR[p[0]]) SPR[p[0]](g, Object.assign({ x: p[1], y: p[2] }, p[3]), STG.t, (x, y, w, h, c) => { if (!c) return; g.fillStyle = c; g.fillRect(p[1] * 16 + Math.floor(x), p[2] * 16 + Math.floor(y), Math.ceil(w), Math.ceil(h)); }); };
+  for (const id in STG.props) if (!STG.props[id][3].front) drawProp(STG.props[id]);
   const hero = list.find(a => a.name === '陈歌');
   for (const a of list.slice().sort((p, q) => p.down - q.down)) { if (!a.P || a.alpha < .02) continue; const flick = a.ghost && STG.fx.dark ? (Math.sin(STG.t * 13 + a.x) > .6 ? .4 : 1) : 1; g.globalAlpha = clamp(a.alpha * flick, 0, 1);
-    const spr = personSprite(a.P, a.dir, a.fr), bob = a.talk && Math.floor(STG.t * 4) % 2 ? -1 : 0, x = Math.round(a.x - 8), y = FEET - 24 + bob + (a.moving && a.fr ? -1 : 0);
-    if (a.down) { g.save(); g.translate(x + 20, FEET - 2); g.rotate(-Math.PI / 2); g.drawImage(spr, -8, -16); g.restore(); } else g.drawImage(spr, x, y);
+    const spr = stTint(personSprite(a.P, a.dir, a.fr), a.P.sil), th = Math.round(24 * (a.P.tall || 1)), bob = a.talk && Math.floor(STG.t * 4) % 2 ? -1 : 0, x = Math.round(a.x - 8), y = FEET - th + bob + (a.moving && a.fr ? -1 : 0);
+    if (a.down) { g.save(); g.translate(x + 20, FEET - 2); g.rotate(-Math.PI / 2); g.drawImage(spr, -8, -16); g.restore(); } else g.drawImage(spr, x, y, 16, th);
     if (a.phone) { g.fillStyle = '#e02a22'; g.fillRect(x + 11, y + 13, 2, 3); }
     if (a.talk && !a.down) { g.fillStyle = a.phone ? '#e02a22' : '#f2eee2'; g.fillRect(x + 6, y - 6, 4, 3); g.fillRect(x + 7, y - 3, 2, 1); } }
+  g.globalAlpha = 1; for (const id in STG.props) if (STG.props[id][3].front) drawProp(STG.props[id]);
   g.globalAlpha = 1;
   /* 灯光：夜里非乐园的地方，或者剧本关了灯，只剩陈歌的手电 */
-  const S = STAGES[key] || {}, dark = STG.fx.dark ? .93 : night ? (PLACES[C.loc].town ? (PLACES[C.loc].area === 'park' && PLACES[C.loc].art !== 'house' && PLACES[C.loc].art !== 'park' ? .5 : .32) : .76) : 0;
+  const S = STAGES[key] || {}, flickOff = stFlickOff(), dark = flickOff ? .985 : STG.fx.dark ? .93 : night ? (PLACES[C.loc].town ? (PLACES[C.loc].area === 'park' && PLACES[C.loc].art !== 'house' && PLACES[C.loc].art !== 'park' ? .5 : .32) : .76) : 0;
   if (dark) { const L = STG.lit || (STG.lit = mk(SW, SH)), lg = L.getContext('2d'); lg.globalCompositeOperation = 'source-over'; lg.clearRect(0, 0, SW, SH); lg.fillStyle = 'rgba(2,3,6,' + dark + ')'; lg.fillRect(0, 0, SW, SH); lg.globalCompositeOperation = 'destination-out';
     const hole = (x, y, r, a) => { const gr = lg.createRadialGradient(x, y, 2, x, y, r); gr.addColorStop(0, 'rgba(0,0,0,' + a + ')'); gr.addColorStop(1, 'rgba(0,0,0,0)'); lg.fillStyle = gr; lg.fillRect(x - r, y - r, r * 2, r * 2); };
-    if (hero && !PLACES[C.loc].town || STG.fx.dark) { const hx = hero ? hero.x : 96, dirR = hero && hero.dir !== 1; hole(hx + (dirR ? 26 : -26), FEET - 14, STG.fx.dark ? 40 : 58, 1); hole(hx, FEET - 12, 18, .8); }
+    if (!flickOff && (hero && !PLACES[C.loc].town || STG.fx.dark)) { const hx = hero ? hero.x : 96, dirR = hero && hero.dir !== 1; hole(hx + (dirR ? 26 : -26), FEET - 14, STG.fx.dark ? 40 : 58, 1); hole(hx, FEET - 12, 18, .8); }
+    /* 黑暗里的其他人：留一圈很淡的轮廓光，说话的人亮一点（不然站在门口说话的人整个看不见） */
+    if (!flickOff) for (const a of list) if (a !== hero && a.alpha > .1 && !a.leaving) hole(a.x, FEET - 12, a.talk ? 20 : 15, a.talk ? .8 : .45);
     if (STG.fx.candle) { const fl = .85 + Math.sin(STG.t * 17) * .08; hole(STG.fx.candle, FEET - 16, 34 * fl, 1); }
     if (STG.fx.tv) hole(150, 60, 50, .7); g.drawImage(L, 0, 0); }
   if (STG.fx.candle) { g.fillStyle = '#e8e2cc'; g.fillRect(STG.fx.candle - 1, FEET - 8, 3, 7); g.fillStyle = Math.sin(STG.t * 21) > 0 ? '#ffd27a' : '#ffb34a'; g.fillRect(STG.fx.candle - 1, FEET - 11, 3, 3); }
   if (STG.fx.rain || (night && PLACES[C.loc].area === 'muyang' && S.out)) { g.fillStyle = 'rgba(180,200,220,.35)'; for (let i = 0; i < 60; i++) { const x = (hash(i, 1) * SW + STG.t * 40) % SW, y = (hash(i, 2) * SH + STG.t * 260 * (.7 + hash(i, 3) * .5)) % SH; g.fillRect(x | 0, y | 0, 1, 5); } }
   if (STG.fx.red || S.red) { g.fillStyle = 'rgba(140,0,0,.22)'; g.fillRect(0, 0, SW, SH); }
+  if (STG.glitch > 0) { const T = STG.gl || (STG.gl = mk(SW, SH)), tg = T.getContext('2d'); tg.clearRect(0, 0, SW, SH); tg.drawImage(g.canvas, 0, 0); for (let i = 0; i < 7; i++) { const y = Math.floor(Math.random() * SH), hh = 2 + Math.floor(Math.random() * 9), dx = Math.round((Math.random() - .5) * 26); g.drawImage(T, 0, y, SW, hh, dx, y, SW, hh); } g.fillStyle = 'rgba(255,0,40,.08)'; g.fillRect(0, Math.floor(Math.random() * SH), SW, 2); }
   if (STG.flash > 0) { g.fillStyle = 'rgba(255,255,255,' + STG.flash * .8 + ')'; g.fillRect(0, 0, SW, SH); }
+  /* 贴脸：只画头部特写，越来越近 */
+  if (STG.jump) { const jx = full !== cv ? (STG.cam || 0) + cv.width / 2 : SW / 2, k = 6.2 + (.75 - STG.jump.t) * 2.4, w = Math.round(16 * k), h = Math.round(13 * k); g.globalAlpha = 1; const bg = g.createRadialGradient(jx, SH / 2, 10, jx, SH / 2, 150); bg.addColorStop(0, '#7a1a16'); bg.addColorStop(1, '#0a0202'); g.fillStyle = bg; g.fillRect(0, 0, SW, SH); g.drawImage(personSprite(STG.jump.P, 0, 0), 0, 0, 16, 13, Math.round(jx - w / 2 + (Math.random() - .5) * 5), Math.round(SH / 2 - h * .52 + (Math.random() - .5) * 3), w, h); }
   g.restore();
-  if (full !== cv) { /* 镜头：对着说话的人和陈歌的中间，慢慢跟过去 */ const vis = list.filter(a => a.alpha > .3 && a.x > -10 && a.x < SW + 10), tk = vis.filter(a => a.talk || a.name === '陈歌'); const xs = (tk.length ? tk : vis).map(a => a.tx); const mid = xs.length ? (Math.min(...xs) + Math.max(...xs)) / 2 : SW / 2;
+  if (full !== cv) { /* 镜头：对着说话的人和陈歌的中间，慢慢跟过去 */ const vis = list.filter(a => a.alpha > .3 && a.x > -10 && a.x < SW + 10), tk = vis.filter(a => a.talk || a.name === '陈歌'), ax = vis.map(a => a.tx); /* 所有人放得下就都拍进去，放不下才只拍说话的人和陈歌 */ const xs = ax.length && Math.max(...ax) - Math.min(...ax) <= cv.width - 28 ? ax : (tk.length ? tk : vis).map(a => a.tx); const mid = xs.length ? (Math.min(...xs) + Math.max(...xs)) / 2 : SW / 2;
     const want = clamp(mid - cv.width / 2, 0, SW - cv.width); STG.cam = STG.cam == null ? want : STG.cam + (want - STG.cam) * .12; const cx = cv.getContext('2d'); cx.imageSmoothingEnabled = false; cx.drawImage(full, Math.round(STG.cam), 0, cv.width, SH, 0, 0, cv.width, SH); } }
 let stLast = 0;
 function stageLoop(ts) { requestAnimationFrame(stageLoop); if (!C || document.hidden) return; if (ts - stLast < 33) return; const dt = Math.min(.1, (ts - stLast) / 1000); stLast = ts;

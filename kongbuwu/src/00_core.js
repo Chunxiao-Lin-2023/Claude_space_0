@@ -36,7 +36,15 @@ const SFX = {
   heart() { tone('sine', 62, 40, .12, .35); tone('sine', 55, 36, .14, .28, .2); }, door() { tone('sawtooth', 70, 110, .5, .06, 0, 300); noise(.5, .05, 'bandpass', 300, 500, 6); }, knock() { for (let i = 0; i < 3; i++) { noise(.05, .3, 'lowpass', 300, 120, 1, i * .28); tone('sine', 110, 60, .08, .2, i * .28); } },
   drip() { tone('sine', 1500, 600, .07, .06); }, wind() { noise(1.6, .05, 'bandpass', 300, 700, 2); }, cat() { tone('sawtooth', 620, 900, .16, .07, 0, 2400); tone('sawtooth', 900, 520, .3, .07, .15, 2400); },
   stinger() { noise(.5, .5, 'bandpass', 2600, 500, .7); tone('sawtooth', 66, 49, .7, .32); tone('square', 1400, 240, .32, .12, 0, 2600); tone('sawtooth', 933, 880, .6, .08, .02); },
-  static() { noise(.4, .08, 'highpass', 4000, 6000); }, spin() { tone('square', 500, 500, .03, .05); }, big() { tone('triangle', 392, 392, .3, .1); tone('triangle', 523, 523, .3, .1, .12); tone('triangle', 784, 784, .5, .12, .24); }, chalk() { noise(.25, .04, 'bandpass', 2400, 3200, 8); }
+  static() { noise(.4, .08, 'highpass', 4000, 6000); },
+  /* 恐怖氛围用的小声音 */
+  whisper() { for (let i = 0; i < 5; i++) noise(.22, .045, 'bandpass', 1800 + Math.random() * 1600, 900 + Math.random() * 900, 6, i * .19); },
+  steps() { for (let i = 0; i < 3; i++) { noise(.07, .14, 'lowpass', 320, 90, 1, i * .46); tone('sine', 70, 45, .08, .09, i * .46); } },
+  creak() { tone('sawtooth', 95, 150, .9, .035, 0, 420); tone('sawtooth', 150, 82, .5, .025, .8, 380); },
+  breath() { noise(.9, .05, 'bandpass', 500, 260, 1.2); noise(1.1, .04, 'bandpass', 380, 620, 1.2, 1.1); },
+  giggle() { [880, 990, 880, 1046, 830].forEach((f, i) => tone('triangle', f, f * .94, .08, .035, i * .09, 2600)); },
+  scrape() { noise(.7, .07, 'bandpass', 2400, 900, 9); tone('sawtooth', 2100, 1700, .6, .012, 0, 3000); },
+  hum() { [392, 370, 349, 330, 311].forEach((f, i) => tone('sine', f, f * .985, .42, .03, i * .4)); }, spin() { tone('square', 500, 500, .03, .05); }, big() { tone('triangle', 392, 392, .3, .1); tone('triangle', 523, 523, .3, .1, .12); tone('triangle', 784, 784, .5, .12, .24); }, chalk() { noise(.25, .04, 'bandpass', 2400, 3200, 8); }
 };
 function sfx(n) { const now = performance.now(); if (now - (AU.last[n] || 0) < 45) return; AU.last[n] = now; audioInit(); try { SFX[n] && SFX[n](); } catch (e) {} }
 

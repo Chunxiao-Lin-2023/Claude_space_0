@@ -68,6 +68,16 @@ const { chromium } = require('playwright');
     C.q = 'q_wish'; C.tick = 9; D.go('hh_2f', true, true); delete C.seen.ne_pk1; const ev = nightEventFor('hh_2f'); ok('夜探专属事件按进度出现', ev && ev.id === 'ne_pk1'); D.auto = true; await runNightEvent(ev); ok('专属事件只碰到一次', C.seen.ne_pk1 && nightEventFor('hh_2f') == null || (nightEventFor('hh_2f') || {}).id !== 'ne_pk1');
     C.keep = {}; C.pets.wan.aff = 10; keepPet('wan'); keepPet('wan'); ok('陪员工：每天一次，好感 +6', C.pets.wan.aff === 16 && C.keep.wan);
     C.f.shoes = 1; if (!C.titles.includes('favored')) C.titles.push('favored'); C.f.greedy = 0; let By = D.battleCreate({ story: 1, mobs: [['wangqi', 6]] }); By.pet = null; D.STATE.battle = By; By.hero.hp = Math.round(By.hero.mhp * .32); By.foes[0].intent = { mv: { n: '斧头', p: 1, w: 1 } }; By.pick.hero = { t: 'guard' }; const fh = By.foes[0].hp; D.battleResolve(By); ok('厉鬼眷顾者：绝境时影子里伸出黑发', By.log.some(l => l.s.includes('黑发')) && By.foes[0].hp < fh, By.log.slice(-5).map(l => l.s)); D.STATE.battle = null;
+    /* 15 后续章节的小剧场和恐怖演出 */
+    await wait(() => !D.STATE.scene); D.auto = false; D.instant = false; SET.motion = 1; fin = 0; D.go('hh_door', true, true); D.runScene(async () => { await D.T_('^at 门楠 12\n^call 李队\n第一句\n^stage corridor\n^in 李队 14\n^fx dark\n^in 女护士 16\n第二句\n^at 瘦长怪物 17\n^fx flicker\n^creep 瘦长怪物 6\n第三句'); fin = 1; }); await tick(60);
+    ok('^at：人直接出现在指定位置', (stFind('门楠') || {}).x === 12 * 16 + 8); await tick(140); dlgTap(); await tick(60);
+    ok('打过电话的人亲自来了，就上台', !!stFind('李队') && !STG.remote.has('李队')); ok('^stage 立刻换景：清掉上一个地方的人，之后加的效果和人都留着', !stFind('门楠') && STG.fx.dark && !!stFind('女护士'), STG.sc.map(a => a.name));
+    await tick(140); dlgTap(); await tick(40); const cr = stFind('瘦长怪物'), cx0 = cr.x; let moved = false, still = true; for (let i = 0; i < 120; i++) { const x0 = cr.x; stageTick(.05, STG.sc); const off = stFlickOff(); if (cr.x !== x0) { moved = true; if (!off) still = false; } }
+    ok('手电闪烁时：只有灯灭的那一下，东西才往前挪', moved && still && cr.x < cx0, [cx0, cr.x]);
+    SET.scare = 1; D.instant = false; const au = D.auto; D.auto = false; STG.jump = null; stScare('红影'); ok('^scare：贴脸出现', !!STG.jump); SET.scare = 0; STG.jump = null; stScare('红影'); ok('关掉惊吓画面：不贴脸', !STG.jump); SET.scare = 1; D.auto = au;
+    STG.sc = [stActor('陈歌', 40), stActor('李队', 200)]; STG.cam = null; const cv2 = document.createElement('canvas'); cv2.width = 208; cv2.height = 112; for (let i = 0; i < 40; i++) stageDraw(cv2, STG.sc, true); ok('镜头：放得下就把所有人都拍进去', STG.cam <= 40 - 8 + 1 && STG.cam + 208 >= 200 + 8, STG.cam);
+    await tick(140); dlgTap(); await wait(() => fin); D.instant = true;
+    D.go('kf_b3_4', true, true); D.runScene(async () => { await D.T_('测试'); }); await tick(30); ok('剧情开场只带上当前地点的人', STG.sc.every(a => a.name === '陈歌' || npcsHere().some(k => NPCS[k].name === a.name)), STG.sc.map(a => a.name)); D.STATE.run++; D.STATE.scene = false; DLG.res = null;
     D.navTo('phone'); await tick(20); ok('手机面板里有我的道具库', document.querySelector('#sbody').textContent.includes('我的道具库')); closeSide();
     return R.concat(window.__unh || []); });
   for (const l of res) console.log(l); console.log('errors', errs); const bad = res.filter(l => !l.startsWith('ok')).length; console.log(res.length - bad + ' / ' + res.length + ' 通过'); await b.close(); process.exit(errs.length || bad ? 1 : 0); })();

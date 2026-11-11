@@ -159,6 +159,54 @@ const NIGHT_EV = [
 洗衣间的三个铁笼都空了。笼门开着，锁头被人拿走了。`, ch: [['把笼门全关上', () => { gainExp(30 + C.lv * 5); return `你一个一个关上了。最后一个关上的时候，楼上传来一声很轻的“谢谢”。`; }], ['掉头离开', () => `你没碰它们。下楼的时候，身后响起了笼门晃动的声音。`]] },
   { id: 'ne_kf2', at: ['kf_b3'], from: 'q_inside', s: `^fx dark
 护士站的柜台上放着一袋新配的药。纸袋上写着名字：陈歌。`, mini: 'silent', ok: () => { addItem('bandage', 2); return `你没碰那袋药，也没出声。过了很久，纸袋上的名字自己褪掉了。柜台下面多了两卷绷带。`; }, bad: () => { C.mp = Math.max(0, C.mp - 10); return `你念出了纸袋上的名字。走廊里所有的被褥同时动了一下。（精神 -10）`; } },
+  { id: 'ne_hp1', at: ['hh_park'], from: 'q_parking', s: `^fx dark
+^prop st stairsdown 12 5
+地下停车场。售票台那截残缺的楼梯上，坐着一个很矮的人影。你往前一步，它就往下挪一级。`, ch: [['在楼梯口放一张门票', () => { gainExp(20 + C.lv * 4); return `^prop tk paper 11 5
+你撕了一张门票，压在楼梯口。
+^del tk
+天快亮的时候再来看，门票不见了。楼梯好像又往下多了一级。`; }], ['不打扰它', () => `你退了出去。身后很轻地响了一声，像是有人在数台阶。`]] },
+  { id: 'ne_xc3', at: ['xc_field', 'xc_gate'], from: 'q_shoes', s: `^fx dark
+^prop sh shoes 12 5 {"col":"#a01818"}
+操场跑道正中间放着一双红色的舞鞋，鞋尖朝着艺术生活动中心。你记得那双鞋现在在恐怖屋里。`, ch: [['把它摆正，鞋尖朝外', () => { if (C.f.shoes) C.mp = Math.min(charStats().mmp, C.mp + 20); return `^del sh
+你把鞋转了个方向。再回头，跑道上什么也没有了。
+你的影子比平时深了一点，像有人陪着你往外走。（精神 +20）`; }], ['绕开走', () => `你绕开了。走出校门以后，身后有人踮着脚尖跟了你一段。`]] },
+  { id: 'ne_my4', at: ['my_wc'], from: 'q_wc', s: `^fx dark
+^prop s5 stall 10 4
+^at 小男孩 9
+^at 小女孩 10
+第五个隔间的门开着。那两个孩子还在里面，手拉着手，看着你手里的锤子。`, ch: [['把锤子收起来，蹲下', () => { gainExp(25 + C.lv * 4); return `^to 陈歌 7
+^down 陈歌
+你把锤子别回腰后，蹲到和他们一样高。
+女孩伸出一根手指，在你手背上画了一个圈。然后两个人一起不见了。
+^out 小男孩
+^out 小女孩
+^up 陈歌`; }], ['轻轻带上门', () => `^del s5
+你把门带上了。门那边传来很小的一声：“爸爸？”`]] },
+  { id: 'ne_my5', at: ['my_office', 'my_yard'], from: 'q_last', s: `^fx rain
+^prop bk book 11 5 {"col":"#3a4a7a"}
+数学组的桌上又放着那本卡通画册。翻开的那一页，黑房子里的两个红色小人不见了。`, mini: 'peek', ok: () => { gainExp(30 + C.lv * 5); return `^at 小男孩 14
+^at 小女孩 15
+窗外，两个小小的影子站在雨里，朝后山走去。
+^out 小男孩
+^out 小女孩
+你没有追。画册的最后一页，多了一个举着锤子的小人。`; }, bad: () => { C.mp = Math.max(0, C.mp - 8); return `你一抬头，窗玻璃上全是小小的手印。（精神 -8）`; } },
+  { id: 'ne_hm3', at: ['hm_door', 'hm_3f'], from: 'q_haiming', s: `^fx dark
+^prop wn window 11 3 {"lit":1}
+海明公寓 303 的灯亮着。那间屋子早就没人住了。`, fight: [['remnant', 0], ['remnant', -1]] },
+  { id: 'ne_kf4', at: ['kf_gate'], from: 'q_ward', s: `^fx dark
+^prop tn crate 13 5
+刘刀的帐篷拉链开着，里面没人。睡袋还是温的。手电照到地上，有一串光脚的脚印，朝第三病栋去了。
+^prop fp footprints 11 5`, mini: 'peek', ok: () => { gainExp(30 + C.lv * 5); return `^in 刘刀 15
+你在连廊口等。十分钟后，刘刀自己走了回来，眼睛是闭着的。
+你把他领回帐篷。第二天他什么也不记得。
+^out 刘刀`; }, bad: () => { C.hp = Math.max(1, C.hp - Math.round(charStats().mhp * .1)); return `你追过去的时候脚印断了。黑暗里有什么东西撞了你一下。（体力 -10%）`; } },
+  { id: 'ne_kf5', at: ['kf_dean'], from: 'q_dean', s: `^fx dark
+^prop wd wardrobe 14 4
+院长办公室里，那个贴着封条的衣柜，封条断了。`, ch: [['打开衣柜', () => { addItem('saltbag', 2); return `^prop wd wardrobe 14 4 {"open":1}
+衣柜里挂着一件白大褂，胸牌上的名字被刮掉了。口袋里有两袋盐——有人比你更早想到了这一招。`; }], ['重新贴上', () => { gainExp(25 + C.lv * 4); return `你用胶带把封条贴了回去。衣柜里，有人轻轻敲了两下，像是在说谢谢。`; }]] },
+  { id: 'ne_kf6', at: ['kf_b3_4'], from: 'q_inside', s: `^fx dark
+四楼走廊的地上，那场“黑色的雪”还没扫干净。踩上去是软的。
+雪堆里伸出了一只长满毛发的手。`, fight: [['doorhand', -1]] },
   { id: 'ne_kf3', at: ['kf_b3_1'], from: 'q_inside', s: `^fx dark
 十号病房的铁门后面有人在敲。三下，停一停，又三下。`, ch: [['也敲三下', () => { C.f.knock10 = 1; return `敲门声停了。很久以后，门缝里塞出来一张纸，上面只有一个数字：10。`; }], ['不回应', () => `你没有回应。敲门声跟着你，一直跟到楼梯口。`]] }
 ];

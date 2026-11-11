@@ -1,0 +1,14 @@
+// node test/storyboard.js [S_dance,S_wc,…] — 自动跑剧情，每句话截一帧小剧场，拼图到 /tmp/kbw/sb_*.png（检查站位、道具、效果）
+const { chromium } = require('playwright'); const fs = require('fs'); const D0 = '/tmp/kbw'; fs.mkdirSync(D0, { recursive: true });
+const ALL = 'S_date,S_dance,S_shoes,S_parking,S_fanyu,S_muyang,S_pen,S_wc,S_office,S_last,S_well,S_qinguang,S_wish,S_guest,S_mennan,S_haiming,S_cat,S_prep,S_ward,S_laundry,S_b3,S_dean,S_door,S_candy,S_inside,S_boy';
+(async () => { const b = await chromium.launch({ args: ['--disable-gpu'] }); const pg = await b.newPage({ viewport: { width: 393, height: 852 } }); const errs = []; pg.on('pageerror', e => errs.push(e.message));
+  await pg.addInitScript(() => localStorage.clear()); await pg.goto('http://localhost:8771/test.html'); await pg.waitForFunction(() => window.__dbg && __dbg.ready);
+  const want = (process.argv[2] || ALL).split(',');
+  const out = await pg.evaluate(async (want) => { const D = __dbg, res = {}; D.instant = true; D.nosave = true; D.slotNew(1); const idle = async () => { for (let i = 0; i < 400 && (STATE.scene || STATE.battle || MG); i++) await new Promise(r => setTimeout(r, 10)); }; await idle(); D.jumpTo(3); D.auto = true; await idle(); SET.motion = 1; let mine = -1;
+    const cv = document.createElement('canvas'); cv.width = 208; cv.height = 112; let cur = null;
+    const orig = dlgShow; window.dlgShow = o => { const p = orig(o); if (cur && STATE.scene && STATE.run === mine && !o.choices) { for (let i = 0; i < 30; i++) { stageTick(.05, STG.sc); stageDraw(cv, STG.sc, true); } cur.push([cv.toDataURL(), (o.who ? o.who + '|' : '') + String(o.text || '').slice(0, 24), STG.sc.map(a => a.name).join(',')]); } return p; };
+    for (const fn of want) { const q = MAIN.find(s => s.run && s.run.name === fn); if (!q) { res[fn] = 'no step'; continue; } C.q = q.id; C.hh.month = 999; C.hh.good = 99; C.qMark = -9; C.hh.batches = 99; C.pets.bixian = C.pets.bixian || { lv: 5, aff: 30, exp: 0 }; if (C.f.fanyu == null) C.f.fanyu = 0; C.f.vow = 1; C.f.bixian = 1; C.bag.candy = 1;
+      await idle(); D.go(questWhere(q) || C.loc, true, true); await idle(); cur = []; res[fn] = cur; await new Promise(r => D.runScene(async () => { mine = STATE.run; try { await q.run(); } catch (e) { cur.push(['', 'ERR ' + e.message, '']); } r(); })); await new Promise(r => setTimeout(r, 20)); STATE.battle = null; }
+    window.dlgShow = orig; return res; }, want);
+  for (const k in out) { if (typeof out[k] === 'string') { console.log(k, out[k]); continue; } const fr = out[k]; console.log(k, fr.length, 'lines'); fr.forEach((f, i) => { if (f[1].startsWith('ERR')) errs.push(k + ' ' + f[1]); if (f[0]) fs.writeFileSync(`${D0}/sb_${k}_${String(i).padStart(2, '0')}.png`, Buffer.from(f[0].split(',')[1], 'base64')); }); fs.writeFileSync(`${D0}/sb_${k}.txt`, fr.map((f, i) => i + ' ' + f[1] + '  [' + f[2] + ']').join('\n')); }
+  console.log('errors', errs); await b.close(); process.exit(errs.length ? 1 : 0); })();
