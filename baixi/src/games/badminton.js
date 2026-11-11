@@ -44,7 +44,7 @@ BX.register({
     const swq = [K.tq(), K.tq()], seen = {};
     const idle = [9, 9], lastIn = [9, 9];        // host: time since the player last steered (assist waits for it) / since the shuttle was last in reach
     const prev = {p: [{x: 0, y: 0}, {x: 0, y: 0}], b: {x: 0, y: 0}, ok: false};       // host: previous step, for ctx.alpha render interpolation
-    const pr = K.predictor(60), sm = K.smoother(14), lsw = [0, 0];                    // guest: own-player prediction, smoothing, local swing anim
+    const pr = K.predictor(), sm = K.smoother(14), lsw = [0, 0];                    // guest: own-player prediction, smoothing, local swing anim
     let gp = null, gb = null, ack = [0, 0];
     function resetServe() {
       const s = st.srv; st.p[0] = mkP(0); st.p[1] = mkP(1);
@@ -75,27 +75,29 @@ BX.register({
     });
     const screenDir = seat => { const v = view(); return v.vert ? (seat ? -1 : 1) : v.flip ? -1 : 1; };
     const lastSw = [false, false], lastDr = [false, false];
-    function input(seat, slot, n) {
+    function input(seat, slot, n, peek) {
       const ks = keyState(slot, n), dir = screenDir(seat);
       let l = ks.l || pads.held('l', seat), r = ks.r || pads.held('r', seat), j = ks.j || pads.held('j', seat);
-      if (pads.pressed({k: 'w', seat}) && !lastSw[seat]) { swq[seat].push(1); if (!ctx.isHost) lsw[seat] = .3; }
-      lastSw[seat] = pads.held('w', seat);
-      if (pads.pressed({k: 'd', seat}) && !lastDr[seat]) { swq[seat].push(3); if (!ctx.isHost) lsw[seat] = .3; }
-      lastDr[seat] = pads.held('d', seat);
+      if (!peek) {
+        if (pads.pressed({k: 'w', seat}) && !lastSw[seat]) { swq[seat].push(1); if (!ctx.isHost) lsw[seat] = .3; }
+        lastSw[seat] = pads.held('w', seat);
+        if (pads.pressed({k: 'd', seat}) && !lastDr[seat]) { swq[seat].push(3); if (!ctx.isHost) lsw[seat] = .3; }
+        lastDr[seat] = pads.held('d', seat);
+      }
       let mx = (r ? 1 : 0) - (l ? 1 : 0);
       if (n === 2 && !view().vert) mx = (r ? 1 : 0) - (l ? 1 : 0); else mx *= dir;
       // portrait 2.5D court: ▲▼ buttons move toward / away from the net
       const f = pads.held('f', seat), bk = pads.held('b', seat);
       if (f || bk) mx = ((f ? 1 : 0) - (bk ? 1 : 0)) * (seat ? -1 : 1);
       const out = {mx, j: j ? 1 : 0, q: swq[seat].list(), as: ctx.opts.assist === 0 ? 0 : 1};
-      if (!ctx.isHost && ctx.online && seat === ctx.me) {          // guest: predict own movement with exactly what we send
-        pr.tag(out);
-        if (gp && gp[seat]) { gIdle = mx ? 0 : gIdle + 1 / 60; const o = gp[seat]; pr.advance(o, out, (q, inp, dt) => move(q, guestMx(seat, inp, q), inp.j, dt, seat)); }
+      if (!peek && !ctx.isHost && ctx.online && seat === ctx.me) {          // guest: predict own movement with exactly what we send
+        pr.tag(out); if (mx) gMoveT = performance.now();
       }
       return out;
     }
-    let gIdle = 9;
-    const guestMx = (seat, inp, q) => inp.mx || !inp.as ? inp.mx : assistMx(seat, q) * BX.clamp((gIdle - .18) / .25, 0, 1);
+    let gMoveT = 0;
+    const guestMx = (seat, inp, q) => inp.mx || !inp.as ? inp.mx : assistMx(seat, q) * BX.clamp(((performance.now() - gMoveT) / 1000 - .18) / .25, 0, 1);
+    const gStep = seat => (q, inp, dt) => move(q, guestMx(seat, inp, q), inp.j, dt, seat);
     /* swipe / tap on the court (single local player): tap = auto shot, swipe up = smash (jumps for a high ball), swipe down = drop */
     const gest = new Map();
     pads.onDown((p, e) => {
@@ -388,14 +390,14 @@ BX.register({
         return {p: st.p.map(p => [r(p.x), r(p.y), r(p.vx), r(p.vy), r(p.sw), p.f, r(p.hitT)]), b: [r(st.b.x), r(st.b.y), r(st.b.vx), r(st.b.vy)], s: st.s, srv: st.srv, ph: st.ph, t: r(st.t), last: st.last, ev: st.ev, over: st.over, why: st.why, rally: st.rally, ack, hs: st.hs > 0 ? 1 : 0};
       },
       restore(d) {
-        const was = gp ? gp.map(q => ({x: q.x + sm.get('p' + q.i).x, y: q.y + sm.get('p' + q.i).y})) : null, wasB = gb ? {x: gb.x + sm.get('b').x, y: gb.y + sm.get('b').y} : null, ph0 = st.ph;
+        const was = gp ? gp.map(q => ({x: q.x, y: q.y})) : null, wasB = gb ? {x: gb.x, y: gb.y} : null, ph0 = st.ph;   // pre-offset values (the smoother keeps its own offset)
         d.p.forEach((a, i) => Object.assign(st.p[i], {x: a[0], y: a[1], vx: a[2], vy: a[3], sw: a[4], f: a[5], hitT: a[6]}));
         Object.assign(st.b, {x: d.b[0], y: d.b[1], vx: d.b[2], vy: d.b[3], a: Math.atan2(d.b[3], d.b[2])});
         Object.assign(st, {s: d.s, srv: d.srv, ph: d.ph, t: d.t, last: d.last, ev: d.ev, over: d.over, why: d.why, rally: d.rally, hs: d.hs ? .05 : 0});
         // guest render model: own player = authoritative + replay of unacknowledged inputs; others extrapolate; shuttle is simulated locally
         const me = ctx.me, myAck = d.ack ? d.ack[me] || 0 : 0;
         gp = st.p.map((q, i) => ({i, x: q.x, y: q.y, vx: q.vx, vy: q.vy, f: q.f, cd: 0}));
-        if (ctx.online && me != null && me >= 0) pr.reconcile(gp[me], myAck, (q, inp, dt) => move(q, guestMx(me, inp, q), inp.j, dt, me));
+        if (ctx.online && me != null && me >= 0) pr.reconcile(gp[me], myAck, gStep(me));
         gb = {x: st.b.x, y: st.b.y, vx: st.b.vx, vy: st.b.vy};
         if (was && ph0 === st.ph) gp.forEach((q, i) => sm.jump('p' + i, was[i].x - q.x, was[i].y - q.y, 1.2));
         if (wasB && ph0 === 'play' && st.ph === 'play') sm.jump('b', wasB.x - gb.x, wasB.y - gb.y, .9);
@@ -409,6 +411,7 @@ BX.register({
         else if (!ctx.isHost && gp) {
           sm.decay(dt);
           const me = ctx.me;
+          if (gp[me]) pr.advance(gp[me], gStep(me), input(me, 0, 1, true));
           gp.forEach((q, i) => { if (i !== me) { q.x += q.vx * dt; if (q.y > 0 || q.vy > 0) { q.vy -= (q.vy > 0 ? GUP : GDN) * dt; q.y = Math.max(0, q.y + q.vy * dt); } q.x = BX.clamp(q.x, i ? CW / 2 + .35 : .3, i ? CW - .3 : CW / 2 - .35); } const o = sm.get('p' + i); rp[i].x = q.x + o.x; rp[i].y = Math.max(0, q.y + o.y); rp[i].vx = q.vx; if (i === me) rp[i].f = q.f; rp[i].sw = Math.max(rp[i].sw, lsw[i]); });
           if (st.ph === 'play' && gb && !st.hs) { let tt = dt; while (tt > 1e-4) { const h = Math.min(1 / 120, tt); tt -= h; const sp = Math.hypot(gb.vx, gb.vy); gb.vx -= DRAG * sp * gb.vx * h; gb.vy -= (G + DRAG * sp * gb.vy) * h; gb.x += gb.vx * h; gb.y = Math.max(0, gb.y + gb.vy * h); } }
           if (gb && st.ph === 'play') { const o = sm.get('b'); rb.x = gb.x + o.x; rb.y = Math.max(0, gb.y + o.y); rb.vx = gb.vx; rb.vy = gb.vy; rb.a = Math.atan2(gb.vy, gb.vx); }

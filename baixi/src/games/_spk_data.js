@@ -111,23 +111,30 @@ BX.data.spk = (function () {
   };
   K.keyAny = (ctx, codes) => codes.some(c => ctx.keys.has(c));
 
-  /* online guest: client-side prediction of the guest's own avatar.  tag(inp) numbers every input the guest sends; the host
-     echoes the last number it applied (ack) in its snapshots; reconcile(base, ack) replays the not-yet-acknowledged inputs on
-     top of the authoritative state.  stepFn(state, inp, dt) must be the same movement code the host runs (60 Hz). */
-  K.predictor = function (hz) {
-    let seq = 0; const hist = [], per = Math.max(1, Math.round(60 / hz));
+  /* online guest: client-side prediction of the guest's own avatar.  tag(inp) numbers + timestamps every input the guest
+     sends; the host echoes the last number it has received (ack) in its snapshots; reconcile(base, ack, stepFn) replays the
+     newer inputs on top of the authoritative state, each for as long as it was the guest's current input (the host keeps
+     applying the latest input it has every step, and inputs are sent at an uneven rate); advance(state, stepFn) keeps the
+     prediction running in real time between snapshots.  stepFn(state, inp, dt) = the host's own movement code (60 Hz). */
+  K.predictor = function () {
+    let seq = 0; const hist = [], H = 1 / 60;
+    const run = (st, inp, sec, stepFn) => { st._acc = (st._acc || 0) + sec; let k = 0; while (st._acc >= H && k < 30) { stepFn(st, inp, H); st._acc -= H; k++; } if (k >= 30) st._acc = 0; };
     return {
-      tag(inp) { inp.n = ++seq; hist.push({n: seq, inp: Object.assign({}, inp)}); if (hist.length > 120) hist.shift(); return inp; },
+      tag(inp) { inp.n = ++seq; hist.push({n: seq, inp: Object.assign({}, inp), t: performance.now()}); if (hist.length > 240) hist.shift(); return inp; },
       reconcile(base, ack, stepFn) {
-        while (hist.length && hist[0].n <= ack) hist.shift();
-        for (const h of hist) for (let k = 0; k < per; k++) stepFn(base, h.inp, 1 / 60);
-        return base;
+        while (hist.length > 1 && hist[0].n < ack) hist.shift();
+        const now = performance.now(); base._acc = 0;
+        for (let k = 0; k < hist.length; k++) { if (hist[k].n <= ack) continue; const t1 = k + 1 < hist.length ? hist[k + 1].t : now; run(base, hist[k].inp, Math.min(.5, (t1 - hist[k].t) / 1000), stepFn); }
+        base._t = now; return base;
       },
-      advance(state, inp, stepFn) { for (let k = 0; k < per; k++) stepFn(state, inp, 1 / 60); },
+      advance(state, stepFn, live) {             // live: the controls as they are right now (not yet sent) — zero added latency
+        const now = performance.now(), last = live || (hist.length && hist[hist.length - 1].inp); if (!last || state._t == null) { state._t = now; return; }
+        run(state, last, Math.min(.1, (now - state._t) / 1000), stepFn); state._t = now;
+      },
     };
   };
   /* visual error smoothing: when the authoritative / predicted position jumps, keep drawing from where we were and bleed
-     the difference away (k ≈ 1/time-constant). */
+     the difference away (k ≈ 1/time-constant).  jump(key, oldModel - newModel): pass the model values, not the drawn ones. */
   K.smoother = function (k = 12) {
     const off = {};
     return {

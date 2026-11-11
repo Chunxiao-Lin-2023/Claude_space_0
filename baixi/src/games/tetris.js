@@ -438,7 +438,7 @@ BX.register({
     function hdFx(s, x, y0, y1, t, r) {
       ctx.sfx('hit'); const dist = Math.max(0, y1 - y0);
       thump[s] = Math.min(.32, .1 + dist * .012);
-      streaks.push({s, cells: pieceCells(x, y0, t, r), d: dist, c: PCOL[t], t: .2});
+      streaks.push({s, cells: pieceCells(x, y0, t, r), d: dist, c: PCOL[t], t: .16});
       lockFl.push({s, cells: pieceCells(x, y1, t, r), t: .14});
       for (const [cx, cy] of pieceCells(x, y1, t, r)) for (let k = 0; k < 2; k++) parts.push({s, x: cx + Math.random(), y: cy - HID + 1, vx: (Math.random() - .5) * 6, vy: -Math.random() * 5 - 2, t: .35, c: '#f3e2c0'});
     }
@@ -517,8 +517,8 @@ BX.register({
       const sl = !mini && slides[i], se = sl ? 1 - BX.ease.out(Math.min(1, sl.t / .1)) : 0;
       for (let Y = HID; Y < BH; Y++) { const oy = se ? sl.sh[Y] * se : 0; for (let X = 0; X < BW; X++) { const v = p.b[Y * BW + X]; if (v) blk(g, wx + X * cs, wy + (Y - HID - oy) * cs, cs, v - 1); } }
       if (!mini) for (const q of streaks) if (q.s === i) {
-        const a = q.t / .2;
-        for (const [X, Y] of q.cells) { const top = wy + (Y - HID) * cs, h2 = q.d * cs + cs; const gr2 = g.createLinearGradient(0, top, 0, top + h2); gr2.addColorStop(0, D.alpha(q.c, 0)); gr2.addColorStop(1, D.alpha(q.c, .45 * a)); g.fillStyle = gr2; g.fillRect(wx + X * cs + cs * .15, top, cs * .7, h2); }
+        const a = q.t / .16;
+        for (const [X, Y] of q.cells) { const top = wy + (Y - HID) * cs, h2 = q.d * cs + cs; const gr2 = g.createLinearGradient(0, top, 0, top + h2); gr2.addColorStop(0, D.alpha(q.c, 0)); gr2.addColorStop(1, D.alpha(q.c, .34 * a)); g.fillStyle = gr2; g.fillRect(wx + X * cs + cs * .15, top, cs * .7, h2); }
       }
       if (p.alive && st.ph !== 'ready') {
         const gy = dropY(p.b, p.t, p.r, p.x, p.y), col = PCOL[p.t];

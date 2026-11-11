@@ -173,8 +173,11 @@ BX.register({
       }
     }
     // ---------- AI ----------
+    /* the AI reacts to where the puck WAS a moment ago (human-like reaction time per level), so hard angled shots can beat it */
+    const seen = [];
     function aiInput(seat, level) {
-      const m = st.m[seat], p = st.p, dir = seat === 0 ? 1 : -1, goalX = seat === 0 ? 0 : W;
+      const lag = [0, 13, 8, 4][level] || 0, p = seen[Math.max(0, seen.length - 1 - lag)] || st.p;
+      const m = st.m[seat], dir = seat === 0 ? 1 : -1, goalX = seat === 0 ? 0 : W;
       const mine = seat === 0 ? p.x < W / 2 : p.x > W / 2;
       const coming = (p.vx * dir) < 40;
       const react = [0, .35, .65, 1][level], c = [0, 1100, 1700, 2300][level];
@@ -333,6 +336,7 @@ BX.register({
       /* step(dt, inputs): host only, fixed 1/60 s */
       step(dt, inputs) {
         if (st.over) return;
+        seen.push({x: st.p.x, y: st.p.y, vx: st.p.vx, vy: st.p.vy}); if (seen.length > 20) seen.shift();
         prev.p.x = st.p.x; prev.p.y = st.p.y; st.m.forEach((m, i) => { prev.m[i].x = m.x; prev.m[i].y = m.y; });
         hitCd[0] = Math.max(0, hitCd[0] - dt); hitCd[1] = Math.max(0, hitCd[1] - dt);
         for (const i of [0, 1]) { const I = inputs[i]; if (I && I.ts) ack[i] = I.ts; }

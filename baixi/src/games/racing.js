@@ -153,7 +153,7 @@ BX.register({
     /* ---------- local input ---------- */
     const nLoc = () => ctx.mySeats.length;
     const KEYS = [['KeyW', 'KeyS', 'KeyA', 'KeyD'], ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'], ['KeyI', 'KeyK', 'KeyJ', 'KeyL'], ['Numpad8', 'Numpad5', 'Numpad4', 'Numpad6']];
-    function input(seat, slot, nl) {
+    function input(seat, slot, nl, peek) {
       const kk = nl === 1 ? [KEYS[0], KEYS[1]] : [KEYS[slot] || KEYS[0]];
       let up = false, dn = false, l = false, r = false;
       for (const k of kk) { up = up || ctx.keys.has(k[0]); dn = dn || ctx.keys.has(k[1]); l = l || ctx.keys.has(k[2]); r = r || ctx.keys.has(k[3]); }
@@ -164,7 +164,7 @@ BX.register({
       if (!sv && drag && nl === 1) sv = drag.s;                         // analog drag steering
       if (!sv && ctx.opts.assist !== 0 && st.ph !== 'cd') sv = assistSteer(gc && !ctx.isHost ? gc : st.c[seat]);
       const out = {s: Math.round(sv * 100) / 100, t};
-      if (!ctx.isHost && ctx.online && seat === ctx.me) { pr.tag(out); if (gc) pr.advance(gc, out, (q, inp, dt) => stepCar(seat, inp, dt, q)); }
+      if (!peek && !ctx.isHost && ctx.online && seat === ctx.me) pr.tag(out);
       return out;
     }
     /* drag steering (single local driver, touch): press anywhere on the track view and slide sideways — 10 px dead zone,
@@ -191,7 +191,7 @@ BX.register({
     /* single local driver → chase camera (zoomed, follows your car); several local drivers / spectator → whole track */
     const cam = {x: null, y: null};
     // host: previous step for ctx.alpha interpolation.  guest: predicted own car (gc), extrapolated others, visual smoothing
-    const prev = st.c.map(c => ({x: c.x, y: c.y, a: c.a})), pr = K.predictor(60), sm = K.smoother(10);
+    const prev = st.c.map(c => ({x: c.x, y: c.y, a: c.a})), pr = K.predictor(), sm = K.smoother(10);
     let gc = null, gx = null, ack = BX.range(n).map(() => 0), rc = st.c.map(c => ({x: c.x, y: c.y, a: c.a}));
     function view() {
       const W = cv.w, H = cv.h, hasLocal = nLoc() > 0 && touchUI();
@@ -302,7 +302,7 @@ BX.register({
         d.c.forEach((a, i) => Object.assign(st.c[i], {x: a[0], y: a[1], a: a[2], vx: a[3], vy: a[4], lap: a[5], ci: a[6], fin: a[7], off: a[8], sv: a[9] || 0}));
         Object.assign(st, {ph: d.ph, t: d.t, order: d.order, ev: d.ev, over: d.over});
         // guest render model: own car = authoritative + replayed unacknowledged inputs; others extrapolate from the snapshot
-        const me = ctx.me, old = gx ? rc.map(q => ({x: q.x, y: q.y})) : null;
+        const me = ctx.me, old = gx ? gx.map(q => ({x: q.x, y: q.y})) : null;
         gx = st.c.map(c => ({x: c.x, y: c.y, a: c.a, vx: c.vx, vy: c.vy}));
         if (ctx.online && me != null && me >= 0 && st.c[me]) { gc = Object.assign({}, st.c[me]); pr.reconcile(gc, d.ack ? d.ack[me] || 0 : 0, (q, inp, dt) => stepCar(me, inp, dt, q)); gx[me] = gc; }
         if (old) gx.forEach((q, i) => sm.jump('c' + i, old[i].x - q.x, old[i].y - q.y, 40));
@@ -314,6 +314,7 @@ BX.register({
         if (ctx.isHost) { const a = ctx.alpha; st.c.forEach((c, i) => { rc[i].x = BX.lerp(prev[i].x, c.x, a); rc[i].y = BX.lerp(prev[i].y, c.y, a); rc[i].a = prev[i].a + angDiff(c.a, prev[i].a) * a; }); }
         else if (gx) {
           sm.decay(dt);
+          if (gc) pr.advance(gc, (q, inp, dt) => stepCar(ctx.me, inp, dt, q), input(ctx.me, 0, 1, true));
           gx.forEach((q, i) => { if (q !== gc) { const k = Math.exp(-dt * .8); q.x += q.vx * dt; q.y += q.vy * dt; q.vx *= k; q.vy *= k; } const o = sm.get('c' + i); rc[i].x = q.x + o.x; rc[i].y = q.y + o.y; rc[i].a = q.a; });
         } else st.c.forEach((c, i) => { rc[i].x = c.x; rc[i].y = c.y; rc[i].a = c.a; });
         moveCam(dt);
