@@ -99,9 +99,9 @@ body.shake #app{animation:shk2 .35s}@keyframes shk2{20%{transform:translate(-7px
 textarea{width:100%;height:70px;background:#000;color:#9a9;border:1px solid var(--line);border-radius:6px;font-size:.7em;-webkit-user-select:text;user-select:text}
 /* 宽屏：左右两栏，菜单在右侧窄栏靠下 */
 @media (min-width:860px){#app{grid-template-columns:minmax(0,1fr) 78px;grid-template-rows:auto minmax(0,1fr)}#top{grid-column:1/3}#nav{grid-column:2;grid-row:2;flex-direction:column;justify-content:flex-end;border-top:0;border-left:1px solid var(--line);padding-bottom:12px}#nav button{flex:none;padding:10px 0}
- .ex-wrap{flex-direction:row}.ex-l{flex:1.1;display:flex;flex-direction:column;border-right:1px solid var(--line);min-width:0}.banner{max-height:44vh}.ex-r{flex:1;display:flex;flex-direction:column;justify-content:flex-end}.danmu{display:none}.dmwide{display:block}
+ .ex-wrap{align-items:center}.ex-l{flex:none;width:min(760px,100%);display:flex;flex-direction:column}.banner{max-height:40vh}.ex-r{flex:1;width:min(760px,100%)}.danmu{display:none}.dmwide{display:block}
  #dlg{margin:14px auto;width:min(720px,92%)}#mini{margin:14px auto;width:min(620px,92%)}.b-log{max-width:820px;width:calc(100% - 20px);margin-left:auto;margin-right:auto}}
-@media (orientation:landscape) and (max-height:480px){.banner{max-height:96px}#vDlg{flex-direction:row}.stgw{flex:1 1 46%;padding:8px 0 8px 10px}#vDlg #dlg,#vDlg #mini{flex:1 1 54%;min-height:0;max-height:none;margin:8px 10px}#dlg .dch{gap:5px;margin-top:6px}#dlg .dch button{min-height:34px;padding:5px 10px}.ex-wrap{flex-direction:row}.ex-l{flex:1;border-right:1px solid var(--line);overflow:hidden}.ex-r{flex:1}.feed{max-height:2.8em}.b-log{min-height:0;flex:1 1 18px;margin:2px 10px;padding:2px 10px}.b-foes,.b-ally{padding:2px 10px}.card{padding:3px 6px;max-width:200px}.card .wk,.card .sts:empty{display:none}.b-turn{display:none}.b-top{padding:3px 10px}.b-acts{padding:2px 8px;gap:4px}.sk{min-height:34px;min-width:0;flex-direction:row;gap:4px;padding:3px 8px}.sk small{display:none}.sk b{font-size:1em}.b-end{margin:2px 10px;padding:4px}.b-end .mg-row{margin-top:4px}.btn.big{min-height:40px}#mini{min-height:0;padding:8px}.mg-tip{margin:2px 0 4px}.mg-row{margin-top:6px}#nav button{min-height:40px}#nav button b{font-size:1.3em}.mg-dark{height:110px}.mg-eye{height:60px;line-height:60px;font-size:44px}}
+@media (orientation:landscape) and (max-height:480px){.banner{max-height:96px}.stgw{flex:0 0 36%;padding:4px 10px 0}#vDlg #dlg,#vDlg #mini{flex:1 1 auto;min-height:0;max-height:none;margin:4px auto 6px;width:min(720px,94%)}#dlg .dch{gap:5px;margin-top:6px}#dlg .dch button{min-height:34px;padding:5px 10px}.ex-wrap{align-items:center}.ex-l{flex:none;width:min(720px,100%);display:flex;flex-direction:column;align-items:center}.ex-l>*{align-self:stretch}.ex-l .banner{align-self:center}.ex-r{flex:1;width:min(720px,100%)}body.m-mini .stgw{display:none}.feed{display:none}.desc{padding:6px 14px 2px}.b-log{min-height:0;flex:1 1 18px;margin:2px 10px;padding:2px 10px}.b-foes,.b-ally{padding:2px 10px}.card{padding:3px 6px;max-width:200px}.card .wk,.card .sts:empty{display:none}.b-turn{display:none}.b-top{padding:3px 10px}.b-acts{padding:2px 8px;gap:4px}.sk{min-height:34px;min-width:0;flex-direction:row;gap:4px;padding:3px 8px}.sk small{display:none}.sk b{font-size:1em}.b-end{margin:2px 10px;padding:4px}.b-end .mg-row{margin-top:4px}.btn.big{min-height:40px}#mini{min-height:0;padding:8px}.mg-tip{margin:2px 0 4px}.mg-row{margin-top:6px}#nav button{min-height:40px}#nav button b{font-size:1.3em}.mg-dark{height:110px}.mg-eye{height:60px;line-height:60px;font-size:44px}}
 </style>
 </head>
 <body class="m-ex">
@@ -861,7 +861,8 @@ function storyArrive() { const q = curQ(); if (q && q.auto && questWhere(q) === 
 function questAdvance(q) { const i = MAIN.indexOf(q), nx = MAIN[i + 1]; if (!nx || nx.ch !== q.ch) { FN().gradeQ = q.ch; if (nx) chStart(nx.ch); } C.q = nx ? nx.id : 'q_end'; C.qMark = C.hh.batches; gainExp(Math.round(HERO.need(C.lv) * .22)); const s = charStats(); C.hp = Math.max(C.hp, Math.round(s.mhp * .5)); C.mp = Math.max(C.mp, Math.round(s.mmp * .5)); logLine('主线推进：' + (nx ? nx.title : '第一卷完'), 'gain'); save(); }
 
 /* ================= 第一章 ================= */
-async function S_open() { await chapterCard('一', '濒临倒闭的恐怖屋', '九江市西郊 · 新世纪乐园');
+async function S_open() { await cine(['半年前。凌晨两点四十四分。', '城郊一所废弃医院的走廊里，一部黑色手机的屏幕，亮了一下。', '屏幕上只有一行字：', '“你是否相信，这个世界上有鬼？”', '没有人回答。', '走廊尽头那扇门，自己关上了。'], 'red');
+  await chapterCard('一', '濒临倒闭的恐怖屋', '九江市西郊 · 新世纪乐园');
   await T_(`游客|这么不吓人的鬼屋，我还是第一次见。
 游客|道具太假。逛了一圈，不仅不害怕，甚至有点想笑。
 游客|唯物主义者无所畏惧！
@@ -896,15 +897,23 @@ async function S_open() { await chapterCard('一', '濒临倒闭的恐怖屋', '
   if (d === 1 && C.money >= 20) { C.money -= 20; F().xushu = 'paid'; await say('徐叔', '……行吧。你这孩子，跟你爸一个脾气。我再帮你拖几天。'); } else { F().xushu = 'promise'; await say('徐叔', '一个月。到时候还是这样，这地方就要转让了。你年纪轻轻，干点什么不好，何必在这耗着？'); }
   await T_(`我|这座鬼屋对我来说不一样。它是我爸妈留给我的唯一念想。
 徐叔叹了口气，没再说什么。
-血浆用完了。你记得三楼的杂物间里，好像还有以前剩下的。`); }
+血浆用完了。你记得三楼的杂物间里，好像还有以前剩下的。
+^sfx scrape
+三楼的灯坏了很久，一直没修。
+你走到楼梯口的时候，楼上传来很轻的一声——像有人把一个箱子，往门口推了推。`); }
 async function S_attic() { await T_(`推开落灰的木门。三楼堆满了被淘汰的道具，大半是父母经营时留下的。
 你从小就在这些东西中间长大。别的孩子玩字母拼图的时候，你已经在拆人头模型了。
 最里面有一个木箱。里面是父母失踪前留下的东西：一个针脚粗糙的布偶，和一部黑色的手机。
 布偶是你小时候做的第一个玩具。手机，没有印象。
 它们是警方在郊区一所废弃医院里找到的。至于爸妈为什么深夜去那里，没人知道。
 我|再撑不下去，就真要停业转让了。
+^fx dark
 ~phone
 话音刚落，那部从来没亮过的黑色手机，屏幕一闪。
+它没有电池，也没有卡。
+^fx glitch
+屏幕亮起来的那一瞬间，黑色的边框里映出了你身后——站着一个人。
+你回头。是一排挂起来的旧戏服，领口空空的。
 @你是否相信，这个世界上有鬼？`);
   const c = await choose(['相信', '不相信', '……应该有吧']); F().believe = c;
   await T_(`^prop rd doll 10 5 {"col":"#b8a080"}
@@ -998,6 +1007,8 @@ async function S_firstday() { await T_(`八点四十五。离乐园开门还有�
 你把她按在镜子前。脑子里涌进来很多不属于你的东西：配色、上妆，还有人体骨骼学、死亡学。`);
   const ok = await miniGame('makeup');
   await T_(ok ? `镜子里的人像从旧画里走出来的。徐婉看呆了，过了一会，打了个冷颤。
+^fx glitch
+镜子里的她眨了一下眼。镜子外面的她，没有眨。
 徐婉|老板……我从来没有这么美过。可是我怎么觉得，像在看一个死人？
 你这才想起来：殓容，本来就不是给活人准备的。` : `妆有点花，但灯一暗没人看得清。
 徐婉|老板，我觉得你没必要对自己那么严格……`);
@@ -1017,6 +1028,10 @@ async function S_firstday() { await T_(`八点四十五。离乐园开门还有�
   go('hh_ctrl', true, true); F().open = 1;
   const win = await fight({ scare: 1, scene: 'mh', mobs: [['gaoru', L(1)], ['heshan', L(0)]], title: '冥婚 · 法医学院', intro: '总控制室。监控里，两个人走进了四合院。把《黑色星期五》和你的手段都用上。', epic: { name: '高汝雪', sub: '九江医科大学 · 法医学院', seal: '砸场', intro: ['解剖过的男人，比你牵过手的女人都多。', '“鬼屋吓人的方法，翻来覆去就那么几种。”'], phase: '我到底在害怕什么？' } });
   if (win) { await T_(`鹤山被抬出来的时候还在喊“纸人睁眼了”。
+你回放了监控。四合院里的纸人，眼睛都是画上去的。
+^fx tv
+可回放里，有一个纸人的头，跟着鹤山，慢慢转了半圈。
+^fx clear
 高汝雪是自己走出来的。走到太阳底下，蹲在地上哭了。
 游客|……医学生被吓哭了？
 游客|我、我也买一张。
@@ -1110,6 +1125,10 @@ async function S_wangqi() { setClock(7, '晚上 8 点');
     ['轮椅上的老人', `老爷子是唯一的亲属，也是火灾后最大的受益人。可他连饭碗都端不稳——那只碗，摔得太是时候了。`],
     ['房东的方言', `他骂人的时候夹着外地方言。老人的公寓，为什么让一个外地人管着？`],
     ['王琦的短信', `每天午夜，同一个号码，同两个字。发件的人，到底在哪里？`]], 3);
+  await T_(`^fx dark
+^sfx scrape
+你关了灯。楼上传来拖东西的声音，一下，一下，从走廊这头拖到那头。
+三楼不让住人。`);
   const g = await choose([['房东。他鸠占鹊巢，挟持了老人', '方言、电视、门外偷听'], ['王琦。他的故事太完整了', '短信、失踪、热情得过分'], ['现在下结论太早', '需要证据']], '你觉得，谁最可疑？'); F().guess = g; }
 async function S_live() { setClock(8, '晚上 10 点');
   await T_(`^call 鹤山
@@ -1123,7 +1142,14 @@ async function S_live() { setClock(8, '晚上 10 点');
 你用工具锤刮掉一层墙皮，露出下面熏黑的砖。
 >好好的墙皮被刮坏了，心疼公寓老板一秒／现实版狼人杀啊，有请预言家发言／我怀疑真凶是轮椅上的老人
 我|……你们的关注点能不能别那么刁钻。
-你把水果刀放进口袋，练了几次抽刀。出门的时候，往锁眼里放了一根自己的头发。`); }
+你把水果刀放进口袋，练了几次抽刀。
+>主播你身后！！！／门缝下面！／我截图了你们看
+^fx flicker
+弹幕突然刷成一片。直播画面里，你身后那扇门的门缝下面，有一道影子，停住了。
+^sfx steps
+你回头。门缝下面什么都没有。走廊里的脚步声，往楼上去了。
+^fx steady
+出门的时候，你往锁眼里放了一根自己的头发。`); }
 async function S_3f() { setClock(9, '凌晨 1 点');
   await T_(`^fx dark
 三楼没翻修过。到处是烧过的痕迹，杂物和垃圾堆到没地方下脚。
@@ -1265,7 +1291,13 @@ async function S_water() { setClock(9, '凌晨 1:10'); await T_(`^fx dark
 我|一分钟。熬过这一分钟。` + (F().mirrorFail ? `
 我|镜子游戏那晚，我睁过一次眼。它记得我的脸。` : ''));
   const ok = await miniGame('water', F().mirrorFail ? { dur: 11 } : {});
-  await T_(ok ? `水很冷。你最想见的人，没有出现。
+  await T_(ok ? `^fx dark
+^sfx breath
+水很冷。耳朵里只剩下自己的心跳。
+第三十秒，你在水底睁开了眼。
+^fx glitch
+浴缸底不是白瓷。是一条很长的走廊，两边全是门。最远的那一扇，开着一条缝。
+你最想见的人，没有出现。
 ——这至少说明一件事：爸妈没有死。
 第五十秒，一只手按住了你的后脑。是它逼着你，多撑了那几秒。
 ~phone
@@ -1421,6 +1453,7 @@ async function S_shoes() { setClock(11, '凌晨 4 点'); await T_(`^call 李队
 ^in 警察 15
 体育器材室，门上贴着封条。柜子后面有一张单人床。
 ^prop bd bed 10 4
+床单上有一个人形的凹陷。李队伸手按了一下，皱起了眉——是温的。
 ^prop s1 shoes 9 5 {"col":"#d8d0c8"}
 ^prop s2 shoes 10 5 {"col":"#c8b8d8"}
 ^prop s3 shoes 11 5 {"col":"#4a0606"}
@@ -1491,7 +1524,11 @@ async function S_parking() { await T_(`^in 颜队长 13
 @一般难度任务完成：一次免费恐怖转盘机会。
 ^prop st stairsdown 12 5
 ^fx flash
-我|扩建就扩建出一截楼梯？……不过整个地下都是我的了。
+我|扩建就扩建出一截楼梯？
+你用手电往下照。台阶一级一级往下，照到第七级，光就没了——不是被挡住，是被吃掉了。
+^sfx steps
+楼梯底下，有人往上走了一步。
+你关掉手电，退了出来。……不过整个地下都是我的了。
 我|三个月。在东郊建成之前，尽可能多地解锁场景。
 你顺手把控制台的总闸也接到了手边。`); addItem('ticketbooth'); C.hh.spins++; learnSkill('lights'); learnSkill('paper'); }
 async function S_fanyu() { await T_(`^in 姑姑 13
@@ -1528,7 +1565,12 @@ async function S_fanyu() { await T_(`^in 姑姑 13
   const c = await choose([['蹲下来，问他愿不愿意画给你看', ''], ['不打扰他，让他在井边多待一会', '']]); F().fanyu = c;
   await T_(c === 0 ? `他画了一栋黑色的房子。房子里，有很多红色的小人。还有两个黑色的。
 他把画送给了你。` : `他趴在井边，很安静。走的时候，他把一张画塞进了你手里：黑色的房子，红色的小人。`);
-  await T_(`我|（越是阴森的地方他越兴奋。他不是不害怕——他是喜欢和“它们”待在一起。）
+  await T_(`范郁走之前，扯了扯你的衣角。
+范郁|你后面那个姐姐，为什么一直不说话？
+^fx red
+你没有回头。
+^fx clear
+我|（越是阴森的地方他越兴奋。他不是不害怕——他是喜欢和“它们”待在一起。）
 ~phone
 @不同的选择，结果会全然不同。第一位特殊游客已经离开，你做出了最正确的选择。解锁隐藏试炼任务——暮阳中学！
 @该场景为四星恐怖场景通灵鬼校分支场景。暮阳中学试炼任务（尖叫指数二星）：该场景内有四条分支任务，全部体验后仍旧存活，场景解锁成功。
@@ -1545,7 +1587,12 @@ async function S_muyang() { await chapterCard('四', '暮阳中学', '雨夜 · 
 几块标牌被推倒了，字被雨泡得发白：“危楼，禁止入内”。`],
     ['围栏', `木头围栏有一段被人掰开过，断口还是新的。最近有人进去过。`],
     ['远处的楼', `教学楼、两层的宿舍楼、两层的办公楼。所有的窗都是黑的——只有一扇，好像动了一下。`]], 2);
-  await T_(`^call 鹤山
+  await T_(`^sfx steps
+你停下来系鞋带。身后的脚步声，多走了一步，才停。
+^fx flicker
+你回头。雨里只有你自己的脚印。
+^fx steady
+^call 鹤山
 鹤山|老大！你快去平台首页看看，有人抢你饭碗！那个秦广，六十万粉的大主播，说下一期也要“夜探凶宅”！
 我|他播的都是我玩剩下的。
 你开了直播。信号很差，弹幕半天刷不出一条，然后突然涌出一大片。`); liveOn(80);
@@ -1643,6 +1690,10 @@ async function S_office() { setClock(8, '晚上 10:30');
   await T_(`范郁的父亲，范老师，因为“酒后误事”被学校开除。
 我|躲在第六个隔间里偷看的人，是范郁的父亲。
 我|留着纸条，是想比对字迹找出这三个学生——可这三个人，在学校里根本找不到。
+^sfx creak
+你把纸条放回去。转身的时候，桌上那本画册自己翻到了新的一页。
+^fx glitch
+一个拿着锤子的小人，站在第五个隔间门口。画上的蜡笔，还没干。
 >卧槽／所以那两个小孩是……／主播快跑吧十点半了`); if (F().fanyu === 0) gainExp(20); }
 async function S_last() { setClock(9, '晚上 11:40'); await T_(`^fx dark
 教学楼尽头。传说，有个班出去郊游，大巴出了车祸。那个班的学生，总是还回来上课。
@@ -1699,6 +1750,10 @@ async function S_well() { setClock(10, '凌晨 3 点'); await T_(`^fx rain
 她只记得一个大致的范围。警察挖了整整一夜。
 ^prop wl well 11 5
 凌晨三点多，暮阳中学后山的深井，找到了。
+井盖撬开的那一刻，雨停了。
+^sfx knock
+井底传上来三下敲击声。很慢。像有人在下面，敲井壁。
+所有拿着铁锹的人都停了手。没有人说话。
 ~phone
 @玩家成功体验四条支线任务，并存活至天亮，暮阳中学试炼任务完成！
 @试炼任务完成度超过百分之九十，获得隐藏道具——怨念缠绕的圆珠笔（残破）：笔仙并不想搭理你，它朝你翻了个白眼，并把自己藏了起来。
@@ -1732,6 +1787,10 @@ async function S_qinguang() { await T_(`^in 中年人 12
 中年人|你们敢在鬼屋里袭击游客！
 我|你可以去做指纹鉴定。没有人碰过他们双手以外的任何地方。摄像头是你们自己带的，放出来看看？
 视频放了五六分钟。全是两个人自己在大呼小叫，连个鬼影都没有。
+^fx tv
+只有一帧：费友亮的肩膀上，蹲着一个很小的影子，正低头看着镜头。
+^fx clear
+你按了暂停，把那一帧删了。
 ${win ? '围观的游客开始排队买票。' : '围观的游客将信将疑，但还是有人买了票。'}
 ~phone
 @幸运的厉鬼眷顾者！恭喜你触发二星恐怖场景暮阳中学隐藏任务——笔仙的心愿！奖励：有一定几率雇佣笔仙，使其成为恐怖屋员工！
@@ -1810,7 +1869,9 @@ async function S_mennan() { await T_(`^in 门楠 13
 午夜售票台又响了。
 门口站着一个年轻人，头发是湿的。他说话的时候，总忍不住去摸自己的后脑。
 门楠|我不是来玩的。我……一直做同一个梦。梦里有个人，离我越来越近。昨晚，他已经站到我床边了。
-门楠|我每天要洗很多次头。总觉得头发上有东西。` + (C.pets.bixian ? `
+门楠|我每天要洗很多次头。总觉得头发上有东西。
+^fx glitch
+他说话的时候，你看了一眼柜台的玻璃。玻璃里的门楠，嘴型和他说的话，对不上。` + (C.pets.bixian ? `
 ^prop pp paper 10 5
 口袋里的圆珠笔动了一下。你摸出来，它在你掌心的纸上写了两个字：` + (F().bixian === 1 ? `有。加班吗？` : `有的。`) + `
 ^del pp` : '') + `
@@ -1881,7 +1942,14 @@ async function S_cat() { await T_(`^stage park
 ^prop d2 doll 10 5 {"col":"#3e4e6e"}
 ^prop d3 doll 11 5 {"col":"#3e4e6e"}
 ^prop d4 doll 12 5 {"col":"#3e4e6e"}
-你用了两个晚上，做了二十四个人偶。每一个的胸口，都缝着一个名字。`);
+你用了两个晚上，做了二十四个人偶。每一个的胸口，都缝着一个名字。
+^fx flicker
+做到第二十个的时候，你停下来数了数桌上的人偶。
+^prop d5 doll 13 5 {"col":"#3e4e6e"}
+二十一个。
+^fx steady
+^del d5
+你又数了一遍。二十个。你没敢再数。`);
   const ok = await miniGame('doll24');
   await T_(`~phone
 @暮阳中学隐藏任务——为二十四个名字制作躯体完成！奖励：回归者的信任，你可以通过手机简单操控它们。
@@ -1912,7 +1980,11 @@ async function S_prep() { await chapterCard('五', '第三病栋', '第三精神
     ['一号到三号', `高医生|一号，王声龙，天使症候群，年纪最小。二号，一个女人，名字被涂掉了，过分关注自己的容貌。三号是空房间。`],
     ['四号到六号', `高医生|四号，失去一条手臂，幻肢症。五号，许童，认为身边所有人都是同一个人伪装的。六号，韩宝儿，午夜秀场主播——主治医师在病历末尾写：上帝究竟是多想毁掉一个人，才会赋予她这样的美丽。`],
     ['七号到九号', `高医生|七号，认为自己已经死了。八号加固了铁门：熊青，曾是这里的医生，三十岁患上偏侧空间失调症——他觉得完整的人不顺眼。九号，吴非，到封停都没确诊。`],
-    ['十号', `高医生|最危险的是十号。没有名字，只有编号。`]]);
+    ['十号', `高医生|最危险的是十号。没有名字，只有编号。
+高医生|……奇怪。十号的病历上，照片那一栏是空的。可夹照片的回形针上，缠着一根很长的头发。
+^sfx breath
+电话那头安静了几秒。
+高医生|我刚才把它拿起来的时候，它是湿的。`]]);
   await T_(`我|九个病人，十间病房。为什么偏偏空着三号？
 千纸鹤上写的，就是第三个房间。
 ` + (F().penQ === 0 ? `笔仙在纸上画了一扇门。门上是一个“三”。——上次你问它爸妈在哪，它答不上来。这一次，它像是在补那道题。` : `笔仙在纸上写了一个“徐”，又涂掉了。然后画了一扇门。`) + (F().bixian === 1 ? `\n它在门旁边写了两个字：加班。` : '') + ``);
@@ -1972,6 +2044,8 @@ async function S_ward() { setClock(8, '晚上 11 点'); await T_(`^in 刘刀 14
 async function S_laundry() { setClock(9, '午夜 0:30'); await T_(`^fx dark
 ^prop ct cat 3 5
 越靠近第三病栋，那股臭味越浓。
+^sfx scrape
+楼上有一台洗衣机自己转了起来。滚筒撞在铁皮上，一下，一下。转了很久才停。
 ^prop ln linen 17 4
 第二病栋三楼，洗衣间。霉味。墙边一床被子，盖着什么东西。
 ^prop ln linen 17 4 {"open":1}
@@ -2074,7 +2148,9 @@ async function S_dean() { setClock(10, '凌晨 2 点'); await T_(`^fx dark
     ['第二封', `#m第二封。孩子在病栋里长到三岁。他学什么都快得吓人。／他把吃了药的病人叫作“玩具”。／有一天，他念出了一个名字：何亚军——建楼时出意外死去的工人。没有人告诉过他。`],
     ['第三封', `#m第三封。“陈医生，我第一次见到这样的孩子。”／母亲病愈出院。那一天，孩子的支柱倒了。／午夜，三号房的门变成了血红色。`],
     ['第四封', `#m第四封。“门后面有东西在走动。还有咀嚼的声音。”／“方法只有一个：让那个孩子自己进去，把门关上。”`]]);
-  await T_(`我|姓陈的医生……？
+  await T_(`^sfx creak
+里间那个衣柜的封条，从里面被顶起了一点，又落了回去。
+我|姓陈的医生……？
 ^prop ph photo 9 4
 信封里夹着一张合影。没有化妆的女人，和一个孩子。孩子的脸，是小时候的门楠。
 我|他的第三个人格。最年幼的那一个。
@@ -2658,7 +2734,7 @@ const ACH = [
   ['a_allS', '全 S', '五章都是 S', () => [1, 2, 3, 4, 5].every(i => FN().chs[i] && FN().chs[i].g === 'S')], ['a_door', '推开十扇门', '夜探开过 10 扇门', () => FN().doors >= 10], ['a_dm', '听话的主播', '照弹幕做了 10 次', () => FN().danmu >= 10],
   ['a_h1', '没睁眼', '镜子游戏全程没睁眼', () => qPast('q_mirror') && !C.f.mirrorFail, 1], ['a_h2', '一句话没说', '门后一句话都没说', () => C.q === 'q_end' && C.f.spoke === 0, 1], ['a_h3', '猜中了', '一开始就猜中了凶手', () => qPast('q_hut') && C.f.guess === 1, 1],
   ['a_h4', '好人有好报', '帮王琦捡起了寻人启事', () => qPast('q_hut') && C.f.helpWq, 1], ['a_h5', '我就试试', '向红衣厉鬼提了那个请求', () => !!C.f.greedy, 1]];
-function checkAch() { if (!C) return; const f = FN(); for (const a of ACH) if (!f.ach[a[0]]) { let ok = false; try { ok = a[3](); } catch (e) {} if (ok) { f.ach[a[0]] = C.day; toast('🏆 成就：' + a[1]); logLine('🏆 成就：' + a[1] + '——' + a[2], 'gain'); sfx('big'); } } }
+function checkAch(silent) { if (!C) return; const f = FN(); if (f.quietAch) { silent = 1; f.quietAch = 0; } for (const a of ACH) if (!f.ach[a[0]]) { let ok = false; try { ok = a[3](); } catch (e) {} if (ok && silent) f.ach[a[0]] = C.day; else if (ok) { f.ach[a[0]] = C.day; toast('🏆 成就：' + a[1]); logLine('🏆 成就：' + a[1] + '——' + a[2], 'gain'); sfx('big'); } } }
 
 /* —— 20 每天第一次回到恐怖屋的小惊喜 —— */
 const SUP = [
@@ -3542,7 +3618,7 @@ const JUMPS = [
 ];
 function dropRunning() { if (window.STG) { STG.sc = []; STG.fx = {}; } STATE.run++; walking++; STATE.scene = false; STATE.battle = null; STATE.busy = false; STATE.jr = null; STATE.live = null; battleDone = null; DLG.cur = null; DLG.res = null; if (MG) { cancelAnimationFrame(MG.raf); MG = null; } STATE.mini = null; for (const id of ['#cine', '#card']) { const e = $(id); if (e) e.className = ''; } cineRes = null; cardRes = null; closeModal(); }
 function jumpTo(ch) { const J = JUMPS.find(j => j.ch === ch); if (!J) return; dropRunning(); const keep = C ? { auto: C.auto, made: C.made } : {}; const c = C = newChar(); Object.assign(c, keep); c.lv = J.lv; c.q = J.q;
-  for (const j of JUMPS) { if (j.ch > ch) break; const d = j.d; Object.assign(c.f, d.f || {}); for (const k of d.items || []) c.bag[k] = 1; for (const k in d.bag || {}) c.bag[k] = d.bag[k]; for (const k of d.sk || []) learnSkill(k, 1); for (const k of d.talents || []) c.talents.push(k); for (const k of d.titles || []) c.titles.push(k); for (const k of d.scenes || []) c.hh.scenes.push(k); for (const k of d.pets || []) gainPet(k, 1); if (d.total) c.hh.total = d.total; if (d.fans) c.fans = d.fans; if (d.money) c.money = d.money; if (d.day) c.day = d.day; if (d.hp) c.bonus.hp += d.hp; } c.fun = { chs: { [ch]: { lose: 0, fail: 0, d0: c.day } } };
+  for (const j of JUMPS) { if (j.ch > ch) break; const d = j.d; Object.assign(c.f, d.f || {}); for (const k of d.items || []) c.bag[k] = 1; for (const k in d.bag || {}) c.bag[k] = d.bag[k]; for (const k of d.sk || []) learnSkill(k, 1); for (const k of d.talents || []) c.talents.push(k); for (const k of d.titles || []) c.titles.push(k); for (const k of d.scenes || []) c.hh.scenes.push(k); for (const k of d.pets || []) gainPet(k, 1); if (d.total) c.hh.total = d.total; if (d.fans) c.fans = d.fans; if (d.money) c.money = d.money; if (d.day) c.day = d.day; if (d.hp) c.bonus.hp += d.hp; } c.fun = { chs: { [ch]: { lose: 0, fail: 0, d0: c.day } }, quietAch: 1 };
   if (c.gear.length === 0) for (const g of ['g_mask', 'g_raincoat', 'g_coat']) if (c.bag[g] && c.gear.length < gearSlots(c.lv)) c.gear.push(g); for (const k in c.pets) { c.pets[k].lv = Math.max(1, J.lv - 1); c.pets[k].aff = 30; } if (ch >= 5) swapSkill('knife', 'pigknife');
   fillBars(); for (const k of c.sk) c.prof[k] = Math.min(60, J.lv * 4); c.title = c.titles[c.titles.length - 1] || ''; c.hh.good = Math.round(c.hh.total / 3); c.hh.month = Math.min(90, c.hh.total); c.seen.tut = 1; c.loc = 'hh_rest'; fullHeal(); JOURNAL = []; saveJournal(); saveNow(); enterGame(); toast('从第 ' + ch + ' 章开始'); }
 function jumpHtml() { return '<div class="box"><h3>跳章</h3><p class="mini">直接从某一章开头开始，等级、手段、员工、道具按上一章结束时的大致水平准备好。<b>会覆盖当前存档位（' + SLOT + ' 号）</b>。</p>' + JUMPS.map(j => '<div class="row"><span>' + CH_NAMES[j.ch] + ' <span class="mini">' + j.lv + ' 级</span></span><button class="btn" onclick="jumpArm(this,' + j.ch + ')">从这里开始</button></div>').join('') + '<div class="row"><button class="btn" onclick="openModal(\'set\')">返回</button></div></div>'; }

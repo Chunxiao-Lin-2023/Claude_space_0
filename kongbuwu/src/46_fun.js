@@ -144,7 +144,7 @@ const ACH = [
   ['a_allS', '全 S', '五章都是 S', () => [1, 2, 3, 4, 5].every(i => FN().chs[i] && FN().chs[i].g === 'S')], ['a_door', '推开十扇门', '夜探开过 10 扇门', () => FN().doors >= 10], ['a_dm', '听话的主播', '照弹幕做了 10 次', () => FN().danmu >= 10],
   ['a_h1', '没睁眼', '镜子游戏全程没睁眼', () => qPast('q_mirror') && !C.f.mirrorFail, 1], ['a_h2', '一句话没说', '门后一句话都没说', () => C.q === 'q_end' && C.f.spoke === 0, 1], ['a_h3', '猜中了', '一开始就猜中了凶手', () => qPast('q_hut') && C.f.guess === 1, 1],
   ['a_h4', '好人有好报', '帮王琦捡起了寻人启事', () => qPast('q_hut') && C.f.helpWq, 1], ['a_h5', '我就试试', '向红衣厉鬼提了那个请求', () => !!C.f.greedy, 1]];
-function checkAch() { if (!C) return; const f = FN(); for (const a of ACH) if (!f.ach[a[0]]) { let ok = false; try { ok = a[3](); } catch (e) {} if (ok) { f.ach[a[0]] = C.day; toast('🏆 成就：' + a[1]); logLine('🏆 成就：' + a[1] + '——' + a[2], 'gain'); sfx('big'); } } }
+function checkAch(silent) { if (!C) return; const f = FN(); if (f.quietAch) { silent = 1; f.quietAch = 0; } for (const a of ACH) if (!f.ach[a[0]]) { let ok = false; try { ok = a[3](); } catch (e) {} if (ok && silent) f.ach[a[0]] = C.day; else if (ok) { f.ach[a[0]] = C.day; toast('🏆 成就：' + a[1]); logLine('🏆 成就：' + a[1] + '——' + a[2], 'gain'); sfx('big'); } } }
 
 /* —— 20 每天第一次回到恐怖屋的小惊喜 —— */
 const SUP = [

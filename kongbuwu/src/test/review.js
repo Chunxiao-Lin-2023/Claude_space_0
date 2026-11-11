@@ -14,7 +14,7 @@ const NEXT = { 1: 'q_trial', 2: 'q_date', 3: 'q_muyang', 4: 'q_prep', 5: 'q_end'
       document.querySelectorAll('.card .n, .card h4, .b-turn, #tl span, .btn').forEach(e => { if (e.offsetParent && e.scrollWidth > e.clientWidth + 2 && getComputedStyle(e).overflow !== 'visible') out.push('文字被截:' + e.textContent.trim().slice(0, 12)); });
       if (out.length) note(tag + ' → ' + [...new Set(out)].join('；')); };
     /* 对话：每句停下来截图 */
-    const W = window.dlgShow; window.dlgShow = async o => { if (!D.STATE.scene) return W(o); D.auto = false; const p = W(o); await sleep(o.choices ? 250 : 420);
+    const W = window.dlgShow; window.dlgShow = async o => { if (!D.STATE.scene) return W(o); D.auto = false; const p = W(o), mine = DLG.res; await sleep(o.choices ? 250 : 420); if (DLG.res !== mine) { D.auto = true; return p; }
       const who = o.who || '', tag = (who ? who + '：' : '') + String(o.text || (o.choices ? '选择' : '')).slice(0, 18);
       if (who && who !== '陈歌' && who !== '我' && o.kind !== 'ph' && !STG.remote.has(who) && who !== '手机里的声音' && !stFind(who)) note(tag + ' → 说话人不在小剧场上');
       check(tag); await snap(tag); const r = DLG.res; DLG.res = null; D.auto = true; if (r) { if (o.choices) r(D.pick(o)); else r(); } return p; };
