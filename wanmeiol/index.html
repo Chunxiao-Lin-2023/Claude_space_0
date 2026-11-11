@@ -1262,7 +1262,7 @@ function battleAct(act, who = 'hero') { // 石昊 and the 灵兽伙伴 each choo
 function battleUndo() { const B = STATE.battle; if (!B || B.over || !B.acts.hero || B.acts.hero.item) return; delete B.acts.hero; renderBattle(true); netSync(); }
 function battleFinish(B) { if (B.done) return; B.done = true; const r = Object.assign({ win: B.win, fled: !!B.fled, kills: B.kills, noLose: B.noLose }, B.win ? battleRewards(B) : {});
   const hero = B.units.find(u => u.kind === 'pc'); r.hp = hero.hp; r.mp = hero.mp; r.boss = B.room != null && B.dungeon && DUNGEONS[B.dungeon].rooms[B.room]?.boss ? B.dungeon : null;
-  setTimeout(() => battleApply(r, B), window.__dbg && __dbg.instant ? 0 : animLeft() + (SET.anim === false ? 500 : 1100)); }
+  setTimeout(() => battleApply(r, B), window.__dbg && __dbg.instant ? 0 : animLeft() + (SET.motion === false ? 500 : 1100)); }
 function battleApply(r, B) {
   const s = charStats(); C.hp = clamp(Math.round(r.hp), 0, s.hpMax); C.mp = clamp(Math.round(r.mp), 0, s.mpMax);
   if (r.win) { sfx('win'); for (const [id, , boss] of r.kills || []) { C.kills[id] = (C.kills[id] || 0) + 1; C.stats.kills++; if (boss) C.stats.bosses++; storyKill(id); }
@@ -2333,14 +2333,15 @@ function battleEndUI() { UI.selFoe = null; refresh(); }
 /* ================= animation: battle playback, skill effects, floating numbers, screen transitions, big flashes =================
    The battle engine resolves a round at once and records what happened in B.ev (each tied to its log line).
    Here that record is played back one line at a time: the attacker lunges, the effect lands on the target, the number floats up,
-   the health bar drops, the line appears in the feed. Set SET.anim = false (设置 → 动画) to skip all of it. */
-const animOn = () => SET.anim !== false && !(window.__dbg && __dbg.instant);
+   the health bar drops, the line appears in the feed. Set SET.motion = false (设置 → 动画) to skip all of it. Animations are on by default, even with the system's reduce-motion setting
+   (the player asked for them); the old auto-off value `anim` is ignored. */
+const animOn = () => SET.motion !== false && !(window.__dbg && __dbg.instant);
 const STEP = () => !animOn() ? 0 : SET.fast ? 200 : 460;
 UI.animEnd = 0; UI.hpShown = {}; UI.deadShown = {}; UI.reveal = 1e9; UI.fxSeq = -1; UI.fxBid = '';
 const animLeft = () => Math.max(0, UI.animEnd - now());
 const animBusy = () => UI.inClick && now() < UI.animEnd;
-function applyAnimPref() { document.body.classList.toggle('noanim', SET.anim === false); }
-if (SET.anim === undefined && matchMedia('(prefers-reduced-motion: reduce)').matches) SET.anim = false;
+function applyAnimPref() { document.body.classList.toggle('noanim', SET.motion === false); }
+delete SET.anim;
 applyAnimPref();
 
 /* ---------- battle playback ---------- */
@@ -2604,7 +2605,7 @@ function openModal(k, again) {
   if (k === 'set') { t = '设置'; const seg = (key, opts) => `<div class="seg">${opts.map(([v, n]) => `<button class="sb ${SET[key] === v ? 'on' : ''}" onclick="setOpt('${key}',${JSON.stringify(v)})">${n}</button>`).join('')}</div>`;
     h = `<div class="card"><h4>难度 <span class="dim" style="font-size:.8rem">随时可以换，只影响敌人的气血和攻击</span></h4>${NETROLE === 'guest' ? '<div class="dim">房主决定</div>' : `<div class="seg">${DIFF.map((d, i) => `<button class="sb ${(C.diff ?? 1) === i ? 'on' : ''}" onclick="setDiff(${i})">${d.n}</button>`).join('')}</div>`}
       <h4>字号</h4>${seg('fs', [[0, '标准'], [1, '大'], [2, '特大']])}
-      <h4>动画</h4><label class="row"><input type="checkbox" ${SET.anim === false ? '' : 'checked'} onchange="SET.anim=this.checked;saveSet();applyAnimPref()"> 战斗动画、画面切换动画</label>
+      <h4>动画</h4><label class="row"><input type="checkbox" ${SET.motion === false ? '' : 'checked'} onchange="SET.motion=this.checked;saveSet();applyAnimPref()"> 战斗动画、画面切换动画</label>
       <h4>声音</h4><label class="row"><input type="checkbox" ${SET.mute ? '' : 'checked'} onchange="SET.mute=!this.checked;saveSet();musicMode()"> 音效</label>
       <label class="row"><input type="checkbox" ${SET.music ? 'checked' : ''} onchange="SET.music=this.checked;saveSet();musicMode()"> 背景音乐</label>
       <label class="row">音量 <input type="range" min="0" max="1" step="0.05" value="${SET.vol}" oninput="SET.vol=+this.value;if(AU.master)AU.master.gain.value=SET.vol;saveSet()"></label>

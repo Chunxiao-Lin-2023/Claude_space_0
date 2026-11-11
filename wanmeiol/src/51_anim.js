@@ -1,14 +1,15 @@
 /* ================= animation: battle playback, skill effects, floating numbers, screen transitions, big flashes =================
    The battle engine resolves a round at once and records what happened in B.ev (each tied to its log line).
    Here that record is played back one line at a time: the attacker lunges, the effect lands on the target, the number floats up,
-   the health bar drops, the line appears in the feed. Set SET.anim = false (设置 → 动画) to skip all of it. */
-const animOn = () => SET.anim !== false && !(window.__dbg && __dbg.instant);
+   the health bar drops, the line appears in the feed. Set SET.motion = false (设置 → 动画) to skip all of it. Animations are on by default, even with the system's reduce-motion setting
+   (the player asked for them); the old auto-off value `anim` is ignored. */
+const animOn = () => SET.motion !== false && !(window.__dbg && __dbg.instant);
 const STEP = () => !animOn() ? 0 : SET.fast ? 200 : 460;
 UI.animEnd = 0; UI.hpShown = {}; UI.deadShown = {}; UI.reveal = 1e9; UI.fxSeq = -1; UI.fxBid = '';
 const animLeft = () => Math.max(0, UI.animEnd - now());
 const animBusy = () => UI.inClick && now() < UI.animEnd;
-function applyAnimPref() { document.body.classList.toggle('noanim', SET.anim === false); }
-if (SET.anim === undefined && matchMedia('(prefers-reduced-motion: reduce)').matches) SET.anim = false;
+function applyAnimPref() { document.body.classList.toggle('noanim', SET.motion === false); }
+delete SET.anim;
 applyAnimPref();
 
 /* ---------- battle playback ---------- */

@@ -103,7 +103,7 @@ function openModal(k, again) {
   if (k === 'set') { t = '设置'; const seg = (key, opts) => `<div class="seg">${opts.map(([v, n]) => `<button class="sb ${SET[key] === v ? 'on' : ''}" onclick="setOpt('${key}',${JSON.stringify(v)})">${n}</button>`).join('')}</div>`;
     h = `<div class="card"><h4>难度 <span class="dim" style="font-size:.8rem">随时可以换，只影响敌人的气血和攻击</span></h4>${NETROLE === 'guest' ? '<div class="dim">房主决定</div>' : `<div class="seg">${DIFF.map((d, i) => `<button class="sb ${(C.diff ?? 1) === i ? 'on' : ''}" onclick="setDiff(${i})">${d.n}</button>`).join('')}</div>`}
       <h4>字号</h4>${seg('fs', [[0, '标准'], [1, '大'], [2, '特大']])}
-      <h4>动画</h4><label class="row"><input type="checkbox" ${SET.anim === false ? '' : 'checked'} onchange="SET.anim=this.checked;saveSet();applyAnimPref()"> 战斗动画、画面切换动画</label>
+      <h4>动画</h4><label class="row"><input type="checkbox" ${SET.motion === false ? '' : 'checked'} onchange="SET.motion=this.checked;saveSet();applyAnimPref()"> 战斗动画、画面切换动画</label>
       <h4>声音</h4><label class="row"><input type="checkbox" ${SET.mute ? '' : 'checked'} onchange="SET.mute=!this.checked;saveSet();musicMode()"> 音效</label>
       <label class="row"><input type="checkbox" ${SET.music ? 'checked' : ''} onchange="SET.music=this.checked;saveSet();musicMode()"> 背景音乐</label>
       <label class="row">音量 <input type="range" min="0" max="1" step="0.05" value="${SET.vol}" oninput="SET.vol=+this.value;if(AU.master)AU.master.gain.value=SET.vol;saveSet()"></label>
