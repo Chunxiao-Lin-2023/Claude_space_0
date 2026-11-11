@@ -10,13 +10,27 @@ const SC = [
   ['白虎', 16, [['whitetiger', 16]], ['qly', 'sn', 'lei', 'gw', 'dsh', 'jian'], 'dahong', 40, []],
   ['金鹏', 17, [['jinpeng', 17]], ['qly', 'sn', 'lei', 'gw', 'dsh', 'jian'], 'dahong', 45, ['a_yunxi']],
   ['蒲魔树', 18, [['pumo', 18]], ['qly', 'sn', 'lei', 'gw', 'dsh', 'jian', 'ta'], 'dahong', 50, []],
+  ['雨王府统领', 21, [['yuwangling', 21]], ['qly', 'sn', 'lei', 'gw', 'dsh', 'jian', 'ta'], 'dahong', 55, []],
+  ['石子腾', 22, [['shiziteng', 22]], ['qly', 'sn', 'lei', 'gw', 'dsh', 'jian', 'ta'], 'dahong', 60, []],
+  ['大金蛛', 23, [['jinzhu', 23]], ['qly', 'sn', 'lei', 'gw', 'dsh', 'jian', 'ta'], 'dahong', 60, []],
+  ['两尊者', 25, [['mozhu', 25], ['qingluan', 25]], ['qly', 'sn', 'lei', 'gw', 'dsh', 'jian', 'ta'], 'dahong', 65, ['a_lion']],
+  ['熔岩王', 26, [['rongwang', 26]], ['qly', 'sn', 'lei', 'gw', 'dsh', 'jian', 'ta', 'zhuque'], 'dahong', 70, []],
+  ['域外×3', 29, [['yuwai', 29], ['yuwai', 29], ['yuwai', 28]], ['qly', 'sn', 'lei', 'gw', 'dsh', 'jian', 'ta', 'zhuque', 'zhizun'], 'dahong', 75, ['a_jun']],
+  ['叛王', 29, [['wanghou', 29]], ['qly', 'sn', 'lei', 'gw', 'dsh', 'jian', 'ta', 'zhuque', 'zhizun'], 'dahong', 75, ['a_jun']],
+  ['石崇', 30, [['shichong', 30]], ['qly', 'sn', 'lei', 'gw', 'dsh', 'jian', 'ta', 'zhuque', 'zhizun'], 'dahong', 75, []],
+  ['神明·轮回', 32, [['shenming2', 32]], ['qly', 'sn', 'lei', 'gw', 'dsh', 'jian', 'ta', 'zhuque', 'zhizun', 'lunhui'], 'dahong', 80, []],
+  ['补天教长老', 31, [['butianjiao', 31]], ['qly', 'sn', 'lei', 'gw', 'dsh', 'jian', 'ta', 'zhuque', 'zhizun', 'lunhui'], 'dahong', 80, ['a_jun']],
+  ['不老山主', 32, [['bulaoshan', 32]], ['qly', 'sn', 'lei', 'gw', 'dsh', 'jian', 'ta', 'zhuque', 'zhizun', 'lunhui'], 'dahong', 80, ['a_jun']],
+  ['凝金门主', 33, [['ningjin', 33]], ['qly', 'sn', 'lei', 'gw', 'dsh', 'jian', 'ta', 'zhuque', 'zhizun', 'lunhui'], 'dahong', 85, ['a_jun']],
+  ['野外·皇都外', 21, [['tiebei', 21], ['jinyuan', 21]], ['qly', 'sn', 'lei', 'gw', 'dsh', 'jian', 'ta'], 'dahong', 55, []],
+  ['野外·火国', 25, [['huolang', 25], ['yanque', 25]], ['qly', 'sn', 'lei', 'gw', 'dsh', 'jian', 'ta', 'zhuque'], 'dahong', 65, []],
   ['野外·大荒深处', 8, [['bear', 8], ['leopard', 8]], ['qly', 'sn'], 'maoqiu', 30, []],
   ['野外·狮岭', 15, [['yuzu', 15], ['bigwolf', 15]], ['qly', 'sn', 'lei', 'gw'], 'dahong', 30, []],
 ];
 (async () => { const b = await chromium.launch(); const pg = await b.newPage(); const errs = []; pg.on('pageerror', e => errs.push(e.message));
   await pg.addInitScript(() => { localStorage.clear(); }); await pg.goto('http://localhost:8770/test.html'); await pg.waitForFunction(() => window.__dbg && __dbg.ready); await pg.click('text=开始'); await pg.waitForTimeout(300);
   const out = await pg.evaluate(async SC => { __dbg.auto = true; __dbg.instant = true; __dbg.dlgPick(-1); await new Promise(r => setTimeout(r, 400)); const c = __dbg.C; c.auto = true; const res = [];
-    const gfAt = lv => ['yingxia', 'xixue', 'guwen', 'yaoding', ...(lv >= 10 ? ['jijing'] : []), ...(lv >= 16 ? ['taiyi'] : [])];
+    const gfAt = lv => ['yingxia', 'xixue', 'guwen', 'yaoding', ...(lv >= 10 ? ['jijing'] : []), ...(lv >= 16 ? ['taiyi'] : []), ...(lv >= 26 ? ['niepan'] : []), ...(lv >= 28 ? ['zhizungu'] : []), ...(lv >= 30 ? ['renhuang'] : [])];
     for (const [name, lv, mobs, sk, pet, aff, allies] of SC) { let w = 0, rounds = 0, hp = 0; const N = 30;
       for (let i = 0; i < N; i++) { c.lv = lv; c.sk = sk.slice(); c.bar = sk.slice(0, typeof barSlots === 'function' ? barSlots(lv) : 4); c.gf = gfAt(lv); c.dt = ['li', 'ti', 'ling', 'shou', 'su', 'feng', 'li', 'ti', 'ling'].slice(0, Math.max(0, lv - 9)); c.bag = {}; c.prof = {}; c.eq = []; c.relics = {};
         c.pets = pet ? { [pet]: { aff } } : {}; c.pet = pet; fullHeal();

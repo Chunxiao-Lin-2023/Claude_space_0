@@ -53,6 +53,16 @@ const TALKS = [
   { id: 'tk_lib3', npc: 'libelder', from: 'q_return', to: 'q_end', s: [['libelder', '听说你在百断山里碰到了天骨。'], ['me', '它跟我说“记住”。我记住了它的样子，可上面的字一个都不认识。'], ['libelder', '（守阁人的眼睛亮了）画给我看。'], ['nar', '你在地上画了半天。守阁人看了半天。'], ['libelder', '……你画的这是只鸡？'], ['me', '是骨头！']] },
   { id: 'tk_hl3', npc: 'huolinger', from: 'q_bdgate', to: 'q_lion', s: [['huolinger', '你真的是从大荒里出来的？'], ['me', '嗯。'], ['huolinger', '大荒里的人都像你这样……这么能吃？'], ['me', '不。他们比我还能吃。'], ['huolinger', '（她想了想那个画面，打了个寒战）……那你们村的粮食够吗？'], ['me', '不够就去山里打。山里的凶兽，都挺好吃的。'], ['huolinger', '……你离我的火鸟远一点。']] },
   { id: 'tk_hl4', npc: 'huolinger', from: 'q_spring', to: 'q_end', s: [['huolinger', '你跟云曦……很熟吗？'], ['me', '不熟。她帮我打了一只鸟。'], ['huolinger', '哼。她那个人，冷冰冰的，跟谁都不说话。'], ['me', '她跟我说了。她说“站起来”。'], ['huolinger', '……就这三个字？'], ['me', '对。'], ['huolinger', '（她的嘴角不知道为什么翘了起来）那你们果然不熟。']] },
+  // 石国
+  { id: 'tk_leiting1', npc: 'leiting', from: 'q_shouyan', to: 'q_jiaojun', s: [['leiting', '你知道寿宴上最危险的是什么吗？'], ['ch', ['尊者？', '菜不够吃？'], [[['leiting', '不，是坐在你旁边的人。他们会对着你笑，然后在你酒里下毒。']], [['leiting', '……（他沉默了一会儿）跟你说话，我总觉得是我想多了。']]]], ['me', '下毒我也不怕。我小时候喝过雨族的毒，跟兽奶差不多。'], ['leiting', '那叫毒？那叫……算了，你赢了。']] },
+  { id: 'tk_leiting2', npc: 'leiting', from: 'q_houfu', to: 'q_v3end', s: [['leiting', '我们雷族世代守着雷池。你去过补天阁的雷池？'], ['me', '去过。挨劈挨了二十多回。'], ['leiting', '二十多回？！我们族里的少年，劈三回就得躺半个月。'], ['me', '我躺了半天。……主要是饿醒的。'], ['nar', '雷霆盯着你看了很久，最后伸出手，跟你碰了碰拳头。']] },
+  { id: 'tk_zhong1', npc: 'laozhong', from: 'q_leiting', to: 'q_v3end', s: [['laozhong', '侯爷，老奴给您讲讲老太爷年轻时候的事吧？'], ['ch', ['好。', '讲讲我爹。'], [[['laozhong', '老太爷年轻的时候，一个人打穿了三座王府。为什么？因为人家说他吃饭吧唧嘴。'], ['me', '……我吃饭也吧唧嘴。'], ['laozhong', '（钟伯笑出了眼泪）那是家传的。']], [['laozhong', '你爹……话不多。可你一生下来，他抱着你在院子里站了一整夜，谁要都不给。'], ['laozhong', '那天晚上的月亮，老奴到现在都记得。']]]]] },
+  { id: 'tk_zhong2', npc: 'laozhong', from: 'q_qishen', to: 'q_v3end', s: [['laozhong', '陛下……'], ['me', '叫我小不点。'], ['laozhong', '这、这不合规矩。'], ['me', '我是石皇，规矩我定的。'], ['laozhong', '（他张了张嘴，眼圈红了）……小不点。'], ['nar', '他说完这三个字，背过身去，肩膀一直在抖。']] },
+  // 火国
+  { id: 'tk_huo1', npc: 'huolinger', from: 'q_niepan', to: 'q_v3end', s: [['huolinger', '喂，你在百断山的时候，说过要请我吃烤肉。'], ['me', '说过。'], ['huolinger', '那你什么时候请？'], ['ch', ['现在。', '等我打赢石毅。'], [[['nar', '你从怀里掏出一大块烤得金黄的兽腿。火灵儿瞪着它看了半天：“……你一直揣在怀里？”'], ['me', '揣了一路。还热乎。']], [['huolinger', '……（她别过脸去）那你得赢。不赢不许回来见我。']]]]] },
+  { id: 'tk_huo2', npc: 'huolinger', from: 'q_dajie', to: 'q_v3end', s: [['huolinger', '你跟石毅打的那天，我在云上看着。'], ['me', '你哭了吗？'], ['huolinger', '谁、谁哭了！是风大！天空战场上的风很大！'], ['me', '哦。'], ['huolinger', '……你被劫光吞进去的那一下，我差点跳下去。（她小声说）以后别这样了。']] },
+  { id: 'tk_huohuang1', npc: 'huohuang', from: 'q_niepan', to: 'q_v3end', s: [['huohuang', '百断山里，朕那一掌，你可记恨？'], ['ch', ['记着呢。', '不记恨，挺暖和的。'], [[['huohuang', '（火皇大笑）好！记着好！记着，才有力气往上爬。']], [['huohuang', '……暖和？（他愣了一下，又笑了）你这孩子，跟你娘一个样，说话能把人噎死。']]]]] },
+  { id: 'tk_huohuang2', npc: 'huohuang', from: 'q_letter', to: 'q_v3end', s: [['huohuang', '你娘走的时候，跟朕说过一句话。'], ['me', '什么话？'], ['huohuang', '她说：“如果有一天，一个胸口有疤的孩子来找涅槃池，请让他进去。不要问他是谁。”'], ['nar', '火皇看着你，很久没说话。'], ['huohuang', '朕没问。朕知道。']] },
 ];
 const talkNext = id => TALKS.find(T => T.npc === id && !(C.talked || {})[T.id] && C.story.q >= qi(T.from) && C.story.q <= qi(T.to));
 async function talkSteps(steps) { for (const st of steps) { const [w, t, r] = st;

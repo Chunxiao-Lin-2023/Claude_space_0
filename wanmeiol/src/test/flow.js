@@ -12,7 +12,7 @@ const { chromium } = require('playwright');
     const lvTo = n => { for (let k = 0; k < 40 && C().lv < n; k++) { const l0 = C().lv; D.gainExp(BAL.expNext(C().lv), true); if (C().lv === l0) break; } };
     const talk = async n => { await walk(npcLoc(n)); await idle(); const o = D.questTalkOptions(n).filter(x => x.t.startsWith('❗') || x.t.startsWith('✔') || x.t.startsWith('🔒')); if (!o.length) throw new Error('no talk option ' + n + ' at ' + D.curQ().id); await o[0].f(); await idle(); };
     const log = []; let guard = 0;
-    while (D.curQ().id !== 'q_end' && guard++ < 80) {
+    while (D.curQ().id !== 'q_v3end' && guard++ < 120) {
       const q = D.curQ(); log.push(q.id); console.log('FLOW', q.id, 'lv', C().lv); if (q.rec) lvTo(q.rec + 1); if (q.lvNeed) lvTo(q.lvNeed); D.addItem('baoyao', 2, true); D.addItem('meat', 2, true); await idle();
       if (q.type === 'auto') { await D.storyPoll(); await idle(); }
       else if (q.type === 'enter') { if (C().loc === q.loc) await D.questComplete(q); else await walk(q.loc); await idle(); if (D.curQ() === q) await D.questComplete(q); await idle(); }

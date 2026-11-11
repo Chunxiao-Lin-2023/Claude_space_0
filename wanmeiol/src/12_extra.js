@@ -21,6 +21,13 @@ const RELICS = {
   r_snake: { n: '赤鳞', from: 'r_snake', i: '🐍', d: '不会中毒。', sp: { noPoison: 1 } },
   r_bird: { n: '雷翅羽', from: 'r_bird', i: '⚡', d: '雷道的伤害 +20%。', sp: { lei: 0.2 } },
   r_zhuque: { n: '朱雀真羽', from: '', i: '🔥', d: '火灵儿从小带着的羽毛。攻击 +5%，身法 +2。', b: { atkP: 0.05, spd: 2 } },
+  r_ziteng: { n: '石子腾的战戟碎片', from: 'shiziteng', i: '🔱', d: '攻击 +8%。', b: { atkP: 0.08 } },
+  r_jinzhu: { n: '金蛛腿甲', from: 'jinzhu', i: '🕷️', d: '防御 +10%。', b: { defP: 0.1 } },
+  r_mozhu: { n: '魔蛛毒囊', from: 'mozhu', i: '🧪', d: '攻击 +6%，不会中毒。', b: { atkP: 0.06 }, sp: { noPoison: 1 } },
+  r_qingluan: { n: '青鸾翎', from: 'qingluan', i: '🪶', d: '身法 +5，暴击 +3%。', b: { spd: 5, crit: 0.03 } },
+  r_shichong: { n: '傀儡皇冠', from: 'shichong', i: '👑', d: '符力 +15%。', b: { mpP: 0.15 } },
+  r_shenhuo: { n: '神火余烬', from: 'shenming2', i: '🔥', d: '攻击 +10%，暴击 +4%。', b: { atkP: 0.1, crit: 0.04 } },
+  r_rongyan: { n: '熔岩龟甲', from: 'rongwang', i: '🐢', d: '气血 +10%，防御 +6%。', b: { hpP: 0.1, defP: 0.06 } },
   r_leishou: { n: '雷兽心核', from: 'leishou', i: '🔷', d: '符力 +12%，暴击 +3%。', b: { mpP: 0.12, crit: 0.03 } },
 };
 const relicSp = (k, c = C) => (c.eq || []).reduce((s, id) => s + ((RELICS[id] && RELICS[id].sp && RELICS[id].sp[k]) || 0), 0);
@@ -32,6 +39,9 @@ const TRADES = [
   { npc: 'libelder', t: '灵药 ×3 → 一门宝术熟练度 +8', need: [['lingyao', 3]], prof: 8 },
   { npc: 'libelder', t: '兽骨 ×6 → 一门宝术熟练度 +10', need: [['bone', 6]], prof: 10 },
   { npc: 'huolinger', t: '凶兽肉 ×3 → 灵药 ×2（她的火鸟爱吃）', need: [['meat', 3]], give: () => addItem('lingyao', 2) },
+  { npc: 'laozhong', t: '兽骨 ×8 → 宝药 ×2（侯府库房里换的）', need: [['bone', 8]], give: () => addItem('baoyao', 2) },
+  { npc: 'leiting', t: '灵药 ×4 → 一门宝术熟练度 +15（雷族的炼体法）', need: [['lingyao', 4]], prof: 15 },
+  { npc: 'huohuang', t: '凶兽肉 ×5 → 一门宝术熟练度 +15（在祖地边上练）', need: [['meat', 5]], prof: 15 },
 ];
 
 /* ---------- daily bounties: one small job per person per day ---------- */
@@ -39,6 +49,8 @@ const BOUNTY_FROM = [
   { npc: 'linhu', open: () => C.story.q >= qi('q_tomb0'), areas: ['dahuang'] },
   { npc: 'libelder', open: () => !!C.story.f.joined, areas: ['butian', 'dahuang'] },
   { npc: 'huolinger', open: () => C.story.q >= qi('q_lion'), areas: ['baiduan'] },
+  { npc: 'leiting', open: () => C.story.q >= qi('q_shouyan'), areas: ['shiguo'] },
+  { npc: 'huohuang', open: () => !!C.story.f.huohuang, areas: ['huoguo'] },
 ];
 
 /* ---------- titles (achievements) ---------- */

@@ -6,6 +6,8 @@ const MOODS = {
   wild: { bpm: 58, root: 57, scale: [0, 3, 5, 7, 10], prog: [0, -2, 3, -4], lead: 'sine', lp: 1800, dens: 0.28, drone: 1, pad: 0.025 },
   battle: { bpm: 136, root: 52, scale: [0, 3, 5, 7, 10], prog: [0, 0, 3, -2], lead: 'sawtooth', lp: 1500, dens: 0.6, bass: 2, drums: 1 },
   butian: { bpm: 66, root: 60, scale: [0, 2, 5, 7, 9], prog: [0, 5, 2, 7], lead: 'sine', lp: 3200, dens: 0.35, bell: 1, pad: 0.03 },
+  court: { bpm: 72, root: 57, scale: [0, 2, 4, 7, 9], prog: [0, 7, 5, 2], lead: 'triangle', lp: 2800, dens: 0.4, bell: 1, pad: 0.03 },
+  fire: { bpm: 84, root: 55, scale: [0, 3, 5, 7, 10], prog: [0, 5, 3, 7], lead: 'triangle', lp: 2200, dens: 0.45, drone: 1, pad: 0.03 },
   boss: { bpm: 148, root: 50, scale: [0, 1, 5, 7, 8], prog: [0, -4, 1, -2], lead: 'sawtooth', lp: 2000, dens: 0.72, bass: 2, drums: 1, pad: 0.03 },
   xushen: { bpm: 52, root: 64, scale: [0, 2, 4, 7, 11], prog: [0, 4, -3, 2], lead: 'sine', lp: 4000, dens: 0.3, bell: 1, pad: 0.035 },
 };
@@ -16,7 +18,7 @@ function mvoice(type, m, t, dur, vol, lp = 0, att = 0.01) {
   let n = o; if (lp) { const f = X.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = lp; o.connect(f); n = f; } n.connect(g); g.connect(MUS.bus); o.start(t); o.stop(t + dur + 0.05);
 }
 function mnoise(t, dur, vol, type, f) { const X = AU.ctx, s = X.createBufferSource(), fl = X.createBiquadFilter(), g = X.createGain(); s.buffer = AU.noise; fl.type = type; fl.frequency.value = f; g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0001, t + dur); s.connect(fl); fl.connect(g); g.connect(MUS.bus); s.start(t, Math.random() * 0.5); s.stop(t + dur + 0.05); }
-function musicWanted() { if (!SET.music || SET.mute || STATE.mode !== 'play' || !C || !AU.ctx) return null; if (STATE.battle) return STATE.battle.epic ? 'boss' : 'battle'; const a = PLACES[C.loc].area; return { shicun: 'village', dahuang: 'wild', baiduan: 'wild', butian: 'butian', xushen: 'xushen' }[a] || 'wild'; }
+function musicWanted() { if (!SET.music || SET.mute || STATE.mode !== 'play' || !C || !AU.ctx) return null; if (STATE.battle) return STATE.battle.epic ? 'boss' : 'battle'; const a = PLACES[C.loc].area; return { shicun: 'village', dahuang: 'wild', baiduan: 'wild', butian: 'butian', xushen: 'xushen', shiguo: 'court', huoguo: 'fire' }[a] || 'wild'; }
 function musicMode() {
   const want = musicWanted(); if (want === MUS.cur) return; const X = AU.ctx; if (!X) return;
   if (!MUS.bus) { MUS.bus = X.createGain(); MUS.bus.gain.value = 0; MUS.bus.connect(AU.master); }

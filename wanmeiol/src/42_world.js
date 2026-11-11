@@ -1,6 +1,33 @@
 /* ================= the wild: events while exploring (some open as your realm grows, some only at night),
    and the 骨文 memory game used when 石昊 reads a 宝术 off its runes ================= */
 const WILD = [
+  { id: 'sg_candy', once: 1, title: '糖葫芦', when: P => P.area === 'shiguo' && C.story.q >= qi('q_yuwang') && !isNight(), scene: async () => {
+    await nar('一个扎着冲天辫的小娃娃拽住了你的衣角，仰着脸看你。他手里攥着一串糖葫芦，糖衣都化了。');
+    await say('小娃娃', '大哥哥，你就是那个吃法旨的人吗？……法旨好吃，还是糖葫芦好吃？');
+    const c = await choose(['糖葫芦。', '法旨。脆。']);
+    if (c === 0) { await say('小娃娃', '我就知道！（他把糖葫芦塞进你手里）给你！我娘说，好东西要分给好人。'); give('meat'); }
+    else await say('小娃娃', '……（他看了看手里的糖葫芦，又看了看你，把糖葫芦往身后藏了藏）那、那这个你别吃。');
+    await nar('他跑远了。跑到街角，又回头冲你挥了挥手。'); give('lingyao'); } },
+  { id: 'sg_ghost', once: 1, title: '城墙下的阴兵', when: P => P.id === 'sg_wild' && isNight() && C.story.q >= qi('q_wuwang'), scene: async () => {
+    await nar('夜里的城墙下，一队阴兵排成一列，慢慢地走。它们的甲片里没有身子，只有一团冷风。');
+    await nar('走在最后面的那个，停了下来，转过头来“看”你。它手里那杆锈枪上，刻着一个字——“石”。');
+    await me('……你也是石家的人？');
+    await nar('阴兵没有回答。它冲你点了点头，把锈枪插在你脚边，跟上了队伍。枪杆一碰到地，就化成了一堆带着骨文的碎骨。');
+    give('bone', 4); F().sgGhost = 1; } },
+  { id: 'hg_egg', once: 1, title: '火山口的鸟蛋', when: P => P.area === 'huoguo' && C.story.q >= qi('q_niepan'), scene: async () => {
+    await nar('火山口边上的石缝里，躺着一颗烧得通红的蛋。蛋壳上有一道裂缝，里面有什么东西在动。');
+    await say('大红鸟', '（大红一把把你推开，自己凑上去，用嘴把蛋往外拱了拱。）');
+    await nar('蛋“咔”地一声碎了，钻出来一只浑身是火的小雀。它看了看大红，“啾”了一声，就钻进了大红的翅膀底下。');
+    await me('……你这是要当娘？');
+    await say('大红鸟', '（大红骄傲地挺起了胸脯。）');
+    await nar('小雀在大红翅膀下睡了一晚，第二天飞走了，临走前叼来一颗火晶，放在你脚边。'); give('baoyao'); } },
+  { id: 'hg_old', once: 1, title: '涅槃池边的老人', when: P => P.id === 'hg_nirvana' && C.story.q >= qi('q_letter'), scene: async () => {
+    await nar('涅槃池边坐着一个白头发的老祭司，正往池子里撒一把灰。');
+    await say('守池的老祭司', '这是火国历代祭司的骨灰。我们死了，都回到这池子里。……它烧过你，你身上就有我们的一点火了。');
+    const c = await choose(['谢谢你们。', '那我以后会烫手吗？']);
+    if (c === 1) await say('守池的老祭司', '（老人笑得直咳嗽）会。打别人的时候。');
+    else await say('守池的老祭司', '不用谢。替我们……多看看这天底下。');
+    gainExp(BAL.expNext(C.lv) * 0.15); } },
   { id: 'chick', once: 1, title: '青鳞小鹰', when: P => P.area === 'dahuang' && C.story.q >= qi('q_ruin') && !isNight(), scene: async () => {
     await nar('头顶传来一声鹰啸，又尖又亮，你觉得耳熟。一只青色的鹰收拢翅膀，落在你面前的石头上——它站起来已经比你还高了。');
     await nar('它歪着脑袋看你，用弯弯的喙蹭了蹭你的手背。是那年柳神救活的那只小鹰。');
