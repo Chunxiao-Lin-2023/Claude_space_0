@@ -47,7 +47,7 @@ const RIVAL_SAY = {
 };
 const RETORT = ['……你话真多。', '打完再说。', '我饿了，快点。', '你说完了？', '族长说，话多的都打不过我。'];
 const sayOf = u => u.kind === 'rival' ? RIVAL_SAY[u.shiyi ? 'shiyi' : 'rival'] : SAY[u.mob];
-function battleSay(B, u, kind) { const S = sayOf(u); if (!S || !S[kind] || !S[kind].length) return null; const t = pick(S[kind]); fxe(B, { k: 'say', t: u.id, text: t }); blog(B, `<span class="taunt"><span class="foe">${esc(u.name)}</span>：${t.startsWith('（') ? t : '「' + t + '」'}</span>`); return t; }
+function battleSay(B, u, kind) { const S = sayOf(u); if (!S || !S[kind] || !S[kind].length) return null; const t = pickFresh(S[kind]); fxe(B, { k: 'say', t: u.id, text: t }); blog(B, `<span class="taunt"><span class="foe">${esc(u.name)}</span>：${t.startsWith('（') ? t : '「' + t + '」'}</span>`); return t; }
 
 /* ---------- 江湖传闻 ---------- */
 const RUMORS = [
@@ -118,6 +118,31 @@ const RUMORS = [
   { from: 'q_end', to: 'q_end', who: '过路的兽车商队', t: '大荒里现在流行一句话：出门遇见背着锈剑的小矮子，先把干粮藏好。' },
   { from: 'q_end', to: 'q_end', who: '捎话的猎户', t: '石村的大壮让我捎句话：“村里的兽奶罐子没人偷了，二猛说怪没意思的。”' },
   { from: 'q_end', to: 'q_end', who: '石国来的行商', t: '石国皇都要办天骄会了，各族的少年天才都在往那边赶。你不去凑凑热闹？' },
+  { from: 'q_wolf0', to: 'q_egg', who: '邻村的猎户', t: '石村的族长最近总往空地跑，说是去看娃娃练功。我看他是去看那个娃娃有没有偷懒。' },
+  { from: 'q_egg0', to: 'q_tomb', who: '邻村的大娘', t: '石村几个娃娃被罚扫村口，扫帚比人还高。那个最小的，扫得最干净。' },
+  { from: 'q_tomb0', to: 'q_bei', who: '走村的货郎', t: '石林里的鹰叫声停了。有人说，那只鹰在石村的柳树上蹲了一宿，又飞走了。' },
+  { from: 'q_bei', to: 'q_shanbao', who: '狈村的猎手', t: '那小娃娃打风狈那一下，我在树上看得清清楚楚——他身后有一只鹰的影子。' },
+  { from: 'q_yaoding', to: 'q_ruin', who: '大荒里的老猎人', t: '我在大荒打了六十年猎，第一次见到四头至尊一起打架。这辈子值了。……也差点没了。' },
+  { from: 'q_ruin', to: 'q_memory', who: '新村附近的樵夫', t: '新来的那个村子，晚上能听见小孩的笑声，还有……猴子叫？' },
+  { from: 'q_jijing', to: 'q_bandit0', who: '火国的商队', t: '公主回来以后，天天让火鸟往大荒那边飞。说是巡视边境。……大荒是我们的边境吗？' },
+  { from: 'q_memory', to: 'q_bandit', who: '古道边的茶摊老板', t: '这几天有个大荒来的小娃娃常往古道跑，每次都在我这儿蹭一碗凉茶，喝完了说“下回给钱”。' },
+  { from: 'q_bandit', to: 'q_leave', who: '邻村的猎户', t: '石村的族长被山贼绑了，是他孙子一个人去救回来的。他孙子多大？你猜。……不对，再小点。' },
+  { from: 'q_xushen0', to: 'q_gate', who: '虚神界里的少年', t: '虚神界里新来了个娃娃，第一天就问“这儿有没有吃的”。' },
+  { from: 'q_gate', to: 'q_bully', who: '补天阁外门弟子', t: '今年的新弟子里有个姑娘，排队的时候一直攥着补天石，攥得指节都白了。' },
+  { from: 'q_lotus', to: 'q_bully', who: '阁外山林的猎户', t: '虎穴里那两头黑纹虎，有一头被打得现在见了光就躲。另一头……听说被扛走了一半。' },
+  { from: 'q_bully', to: 'q_qf1', who: '补天阁伙房的厨子', t: '小师弟来帮厨三天，第一天把灶烧塌了，第二天把锅吃穿了，第三天阁主求我放他走。' },
+  { from: 'q_qf1', to: 'q_qf2', who: '补天阁外门弟子', t: '小师弟天天傍晚去山门外蹲着，嘴里叼根草，看清风练拳。看完了还点评：“出拳慢了。”' },
+  { from: 'q_qf3', to: 'q_lion', who: '补天阁弟子', t: '小师弟走的那天，清风师姐在山门口站了很久。我问她站着干嘛，她说“看风景”。' },
+  { from: 'q_bdgate', to: 'q_yu', who: '断山里的散修', t: '百断山口那只大红鸟，抢了七八个少年的干粮。唯一没抢成的，是被它抢了以后追着它打了三座山的那个。' },
+  { from: 'q_lion', to: 'q_cliff', who: '火国侍卫', t: '公主说九头狮是她打的。我们都点头。……可她晚上一个人在帐篷里画那个小娃娃的画像，画了又撕。' },
+  { from: 'q_yu', to: 'q_spring', who: '各族少年', t: '你们看见没有？那只大红鸟现在跟着补天阁那小子了。上回还见它俩打得满天毛。' },
+  { from: 'q_cliff', to: 'q_mount', who: '各族少年', t: '分宝崖底下那颗没主的蛋，被补天阁那小子揣走了。他说要孵出来——孵出来干嘛？他没说，但我们都猜到了。' },
+  { from: 'q_spring', to: 'q_return', who: '各族少年', t: '云曦仙子从不老泉回来以后，有人看见她对着泉水笑了一下。就一下。' },
+  { from: 'q_tiangu', to: 'q_return', who: '断山里的散修', t: '天骨禁区里出来的人都说听见了一句话，可每个人听见的都不一样。' },
+  { from: 'q_return', to: 'q_end', who: '补天阁弟子', t: '神藤活过来以后，补天阁后山的灵草长得特别好。伙房说，今年能多做好几道菜了。' },
+  { from: 'q_end', to: 'q_end', who: '大荒里的老猎人', t: '我年轻那会儿，大荒里最凶的是凶兽。现在大荒里最凶的……是个娃娃。' },
+  { from: 'q_end', to: 'q_end', who: '火国侍卫', t: '公主最近在学烤肉。烤糊了九回，第十回她说：“哼，反正不是给某人吃的。”' },
+  { from: 'q_end', to: 'q_end', who: '虚神界里的少女', t: '光幕上那个叫“小不点”的名字，每天都在往上爬。有人专门去看它今天爬到哪儿了。' },
 ];
 /* heard rumours are kept in the save (C.rumorLog) so they can be reread under 📜 记录 → 江湖传闻; co-op guests see the host's */
 function rumorTick() {

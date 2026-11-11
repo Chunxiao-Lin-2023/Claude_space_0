@@ -16,6 +16,8 @@ const lerp = (a, b, t) => a + (b - a) * t;
 const rnd = (a = 1, b) => b === undefined ? Math.random() * a : a + Math.random() * (b - a);
 const rint = (a, b) => Math.floor(rnd(a, b + 1));
 const pick = a => a[Math.floor(Math.random() * a.length)];
+const BAGS = new WeakMap(); // pickFresh: go through a whole list of lines (in random order) before repeating one
+const pickFresh = a => { if (!a || !a.length) return undefined; let b = BAGS.get(a); if (!b || !b.length) { const last = b && b.last; b = a.map((_, i) => i).sort(() => Math.random() - 0.5); if (b.length > 1 && b[b.length - 1] === last) b.unshift(b.pop()); BAGS.set(a, b); } const i = b.pop(); b.last = i; return a[i]; };
 const chance = p => Math.random() < p;
 const wpick = (list, wf = x => x.w || 1) => { let s = 0; for (const x of list) s += wf(x); let r = Math.random() * s; for (const x of list) { r -= wf(x); if (r <= 0) return x; } return list[list.length - 1]; };
 const shuffle = a => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };

@@ -109,6 +109,8 @@ function renderActs() {
   if (P.dungeon) { acts.push(`<button class="ab main" onclick="enterDungeon('${P.dungeon}')">🏯 闯${DUNGEONS[P.dungeon].name}</button>`); if (C.dungeons[P.dungeon]) acts.push(`<button class="ab" onclick="enterDungeonHard('${P.dungeon}')">🏯 困难</button>`); }
   const pa = P.acts || []; if (P.town && P.area !== 'xushen') acts.push(`<button class="ab" onclick="rest()">🛏 休息</button>`); else if (P.mobs && !P.dungeon) acts.push(`<button class="ab" ${UI.campAt === C.loc + C.seenN ? 'disabled' : ''} onclick="camp()">🔥 歇脚</button>`);
   if (P.shop || P.town && P.area !== 'xushen') acts.push(`<button class="ab" onclick="UI.bagTab='shop';navTo('bag')">${P.shop ? '🛒 买卖' : '💰 卖东西'}</button>`);
+  if (P.mobs && !P.dungeon) acts.push(`<button class="ab ${UI.autoEx ? 'q' : ''}" onclick="autoExplore()">🔁 ${UI.autoEx ? `停止自动探索（${UI.autoExN || 0}）` : '自动探索'}</button>`);
+  acts.push(`<button class="ab ${C.auto ? 'q' : ''}" onclick="toggleAutoFight()" title="之后的战斗都自动打，战斗里随时能停">🤖 自动对战：${C.auto ? '开' : '关'}</button>`);
   if (pa.includes('train')) acts.push(`<button class="ab" onclick="train()">${C.loc === 'bt_train' ? '⚡ 挨雷劈' : '🪨 举石锁'}</button>`);
   if (pa.includes('arena')) acts.push(`<button class="ab main" onclick="openModal('arena')">🪞 挑战（${(arenaDaily(), C.arena.tries)}次）</button>`);
   if (canTeleport()) acts.push(`<button class="ab" onclick="teleport()">🌀 传送</button>`);
@@ -140,7 +142,7 @@ function renderBattle(quiet) {
   const fresh = B.log.slice(STATE.shownFor === B.id ? STATE.shown : 0); for (const h of fresh) logLine(h, 'bat'); STATE.shown = B.log.length; STATE.shownFor = B.id;
   if (fresh.length && B.fx && !play) sfx(B.fx); if (!C.seen.tut2 && B.units.some(u => u.releasing && u.side) && NETROLE !== 'guest') { C.seen.tut2 = 1; logLine('【指引】敌人头上出现 ⚠：它这回合要放大招。防御能减半；把它打晕、或者打中它的弱点，能直接打断。', 'tip'); toast('⚠ 大招要来了：防御，或者打断它'); }
   renderBattleActs(cur); if (play) fxPlay(B); else if (B.over && animLeft() === 0) fxStamp(B);
-  if (C.auto && NETROLE !== 'guest' && me_ && me_.alive && !B.acts[me_.id] && !B.over) { clearTimeout(UI.autoT); UI.autoT = setTimeout(function tick() { if (STATE.battle !== B || B.acts[me_.id] || B.over) return; if (animLeft() > 0) { UI.autoT = setTimeout(tick, animLeft() + 30); return; } battleAct(botAct(B, me_)); }, window.__dbg && __dbg.instant ? 0 : Math.max(animLeft() + 200, SET.fast ? 150 : 650)); }
+  if (B.auto && NETROLE !== 'guest' && me_ && me_.alive && !B.acts[me_.id] && !B.over) { clearTimeout(UI.autoT); UI.autoT = setTimeout(function tick() { if (STATE.battle !== B || B.acts[me_.id] || B.over) return; if (animLeft() > 0) { UI.autoT = setTimeout(tick, animLeft() + 30); return; } battleAct(botAct(B, me_)); }, window.__dbg && __dbg.instant ? 0 : Math.max(animLeft() + 200, SET.fast ? 150 : 650)); }
 }
 function actText(B, a) { if (!a) return ''; const T = a.tgt && B.units.find(x => x.id === a.tgt);
   return a.crush ? '👊 一拳解决' : a.item ? ITEMS[a.item].icon + ITEMS[a.item].name : a.swap ? '⇄ 换伙伴' : a.flee ? '🏃 跑' : a.sk ? SKILLS[a.sk].icon + SKILLS[a.sk].name + (T ? ' → ' + T.name : SKILLS[a.sk].tgt === 'enemies' ? ' → 全体' : SKILLS[a.sk].tgt === 'enemy' ? ' → 血最少的' : '') : ''; }
@@ -148,17 +150,24 @@ function selFoe(id) { UI.selFoe = id; sfx('click'); renderBattle(true); }
 function renderBattleActs(cur) {
   const B = STATE.battle, A = $('bacts'); if (!B) return; const u = B.units.find(x => x.kind === 'pc');
   if (B.over) { A.innerHTML = `<div class="wait" style="color:#ffcfb8">${B.win ? '赢了！' : B.fled ? '跑掉了' : '……'}</div>`; return; }
-  if (!cur) { A.innerHTML = `<div class="wait">${C.auto ? '🤖 自动战斗中…… <button class="ab sm q" onclick="toggleAuto()">停下</button>' : '……'}</div>`; return; }
+  if (!cur) { A.innerHTML = `<div class="wait">${B.auto ? '🤖 自动战斗中…… <button class="ab sm q" onclick="toggleAuto()">停下</button>' : '……'}</div>`; return; }
   if (cur.pet) { const mv = petMoves(cur); const ha = B.acts.hero; if (ha && !C.seen.tutPet && NETROLE !== 'guest') { C.seen.tutPet = 1; toast('石昊的招选好了——再给伙伴选一招，这回合才开打'); }
     A.innerHTML = `${ha ? `<div class="who-turn ok">🧒 石昊已选好：<b>${actText(B, ha)}</b></div>` : ''}<div class="who-turn">${PETS[cur.mob].icon} 现在轮到 <b>${esc(cur.name)}</b> <span class="dim">· 给它选一招，选完这回合就开打${UI.selFoe ? '' : '（单体招先点敌人选目标）'}</span></div><div class="arow">${PETS[cur.mob].sk.map((s, i) => { const ok = mv.some(x => x.i === i); if (!ok) return ''; const tag = s.aoe ? '全体' : s.healAlly ? '治疗' : s.shieldAll ? '全队盾' : s.shieldHero ? '给石昊盾' : s.buffHero ? '给石昊' : s.taunt ? '嘲讽' : '单体';
       return `<button class="skb pet c-${s.cat}" ${ok ? '' : 'disabled'} title="${esc(s.d || '')}" onclick="battleAct({psk:${i},tgt:UI.selFoe},'pet')"><span class="i">${{ atk: '🐾', buff: '✨', debuff: '🌀', def: '🛡️' }[s.cat]}</span>${s.n}<span class="c">${ok ? PET_CAT[s.cat].n + '·' + tag + (s.el ? EL[s.el].i : '') : '亲近' + s.aff}</span></button>`; }).join('')}</div>
       <div class="arow duo"><span class="dim">这回合</span><button class="ab sm ${(C.duo || 'hero') === 'hero' ? 'q' : ''}" onclick="setDuo('hero')">🧒 石昊先出手</button><button class="ab sm ${C.duo === 'pet' ? 'q' : ''}" onclick="setDuo('pet')">${PETS[cur.mob].icon} 伙伴先出手</button></div>
-      <div class="arow"><button class="ab sm" onclick="battleUndo()">‹ 重选石昊</button><button class="ab sm ${C.auto ? 'q' : ''}" onclick="toggleAuto()">🤖 自动</button></div>`; return; }
+      <div class="arow"><button class="ab sm" onclick="battleUndo()">‹ 重选石昊</button><button class="ab sm ${B.auto ? 'q' : ''}" onclick="toggleAuto()">🤖 自动</button></div>`; return; }
   const sk = u.sk.map(id => { const S = SKILLS[id], cd = u.cd[id] || 0, no = u.mp < S.mp, pl = profLevel(id); return `<button class="skb" ${cd || no ? 'disabled' : ''} onclick="pickSkill('${id}')" title="${esc(S.desc)}"><span class="i">${S.icon}</span>${S.name}${S.mp ? `<span class="c">${S.mp}</span>` : ''}${pl ? `<span class="pf">${PROF[pl].s}</span>` : ''}${cd ? `<span class="cd">${cd}</span>` : ''}</button>`; }).join('');
   const heal = ['milk', 'herb', 'meat', 'lingyao', 'baoyao'].filter(i => itemN(i)); const swaps = B.noPet ? [] : Object.keys(C.pets).filter(id => id !== C.pet);
   A.innerHTML = `<div class="who-turn">🧒 <b>石昊</b> 的回合</div><div class="arow">${sk}</div><div class="arow">${canCrush(B) ? `<button class="ab sm q" onclick="battleAct({crush:1})">👊 一拳解决</button>` : ''}${heal.map(i => `<button class="ab sm" ${B.itemRound === B.round ? 'disabled' : ''} title="${ITEMS[i].name}：不占回合，每回合能吃一次" onclick="battleAct({item:'${i}'})">${ITEMS[i].icon}${itemN(i)}</button>`).join('')}
     ${swaps.map(id => `<button class="ab sm" onclick="battleAct({swap:'${id}'})" title="换${PETS[id].name}上场">⇄${PETS[id].icon}</button>`).join('')}<button class="ab sm" onclick="battleAct({flee:1})" ${B.flee ? '' : 'disabled'}>🏃 跑</button><button class="ab sm ${C.auto ? 'q' : ''}" onclick="toggleAuto()">🤖 ${C.auto ? '自动中' : '自动'}</button></div>`;
 }
 function pickSkill(id) { battleAct({ sk: id, tgt: SKILLS[id].tgt === 'enemy' ? UI.selFoe : null }); }
-function toggleAuto() { C.auto = !C.auto; save(); renderBattle(true); netSync(); }
+function toggleAuto() { const B = STATE.battle; if (!B) return; B.auto = !B.auto; renderBattle(true); netSync(); }
+function toggleAutoFight() { C.auto = !C.auto; save(); toast(C.auto ? '自动对战：开（之后的战斗都自动打，战斗里随时能停）' : '自动对战：关'); refresh(); netSync(); }
+async function autoExplore() { // explore here again and again, fights on auto, until told to stop, hurt, or the story needs you
+  if (NETROLE === 'guest') return; if (UI.autoEx) { UI.autoEx = false; refresh(); return; } const P = PLACES[C.loc]; if (!P.mobs) return; UI.autoEx = true; UI.autoExN = 0; refresh();
+  while (UI.autoEx && STATE.mode === 'play') { if (STATE.scene || DLG || STATE.dungeon || STATE.battle || !PLACES[C.loc].mobs) break;
+    if (C.hp < charStats().hpMax * 0.35) { toast('气血不多了，自动探索先停下'); logLine('自动探索停下了：气血不多了。歇一歇再走。', 'sys'); break; }
+    UI.autoExN++; UI.forceAuto = true; try { await explore(); } finally { UI.forceAuto = false; } refresh(); await sleep(window.__dbg && __dbg.instant ? 0 : 900); }
+  UI.autoEx = false; refresh(); }
 function battleEndUI() { UI.selFoe = null; refresh(); }

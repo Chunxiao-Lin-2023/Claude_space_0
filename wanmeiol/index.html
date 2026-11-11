@@ -151,6 +151,7 @@ body.noanim .rtime{display:none}
 /* rumours over the location picture, speech bubbles in battle */
 #rumor{position:absolute;left:10px;right:10px;top:8px;z-index:2;cursor:pointer;font-size:.78rem;line-height:1.45;color:#f2e6c8;background:#0c0a08c0;border:1px solid #d4ad6244;border-radius:8px;padding:4px 9px;opacity:0;pointer-events:none;transform:translateY(-4px);transition:opacity .6s,transform .6s}
 #rumor.on{animation:rumor 9s ease both;pointer-events:auto}
+#rumor.one{top:34px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #rumor .rmore{color:#d4ad62aa;font-size:.7rem;margin-left:4px}
 #rumor.multi{left:auto;right:12px;top:10px;width:min(58%,460px);opacity:1;transform:none;pointer-events:auto;background:#0c0a08b0;padding:6px 10px 4px;transition:background .2s}
 #rumor.multi:hover{background:#0c0a08e0}
@@ -163,11 +164,12 @@ body.cols #banner .ar{max-width:38%}
 @keyframes rumor{0%{opacity:0;transform:translateY(-4px)}8%,88%{opacity:1;transform:none}100%{opacity:0}}
 #rumor .rw{color:var(--gold);margin-right:6px;font-size:.72rem}
 body.noanim #rumor.on{opacity:1;transform:none}
-.bubble{max-width:200px;font-size:.82rem;line-height:1.4;color:#2a2118;background:#fbf2df;border-radius:10px;padding:5px 9px;box-shadow:0 3px 10px #0008;transform:translate(-50%,-100%)!important;animation:bubble var(--life,3.6s) ease both;z-index:7;text-align:left}
-.bubble::after{content:'';position:absolute;left:50%;bottom:-6px;margin-left:-6px;border:6px solid transparent;border-bottom:0;border-top-color:#fbf2df}
+.bubble{max-width:min(220px,60vw);font-size:.82rem;line-height:1.4;color:#2a2118;background:#fbf2df;border-radius:10px;padding:5px 9px;box-shadow:0 3px 10px #0008;transform:none!important;animation:bubble var(--life,3.6s) ease both;z-index:7;text-align:left}
+.bubble::after{content:'';position:absolute;left:var(--tx,50%);bottom:-6px;margin-left:-6px;border:6px solid transparent;border-bottom:0;border-top-color:#fbf2df}
+.bubble.below::after{bottom:auto;top:-6px;border:6px solid transparent;border-top:0;border-bottom-color:#fbf2df}.bubble.act.below::after{border-bottom-color:#e8dcc0}.bubble.me.below::after{border-bottom-color:#ffe9b0}
 .bubble.act{font-style:italic;color:#5a4a34;background:#e8dcc0}.bubble.act::after{border-top-color:#e8dcc0}
 .bubble.me{background:#ffe9b0}.bubble.me::after{border-top-color:#ffe9b0}
-@keyframes bubble{0%{opacity:0;margin-top:8px}6%,90%{opacity:1;margin-top:0}100%{opacity:0}}
+@keyframes bubble{0%{opacity:0;translate:0 8px}6%,90%{opacity:1;translate:0 0}100%{opacity:0}}
 #bfeed .taunt,.logv .taunt{color:#e8c8a8;font-style:italic}
 /* small games */
 .mhint{font-size:.85rem;color:var(--ink2);text-indent:0;margin-top:4px}
@@ -395,7 +397,7 @@ body.cols #bnav button{flex:none;max-width:none;min-height:66px;font-size:.8rem;
 body.cols #bnav button .i{font-size:1.45rem;margin-bottom:2px}
 body.cols #bnav button.on{background:#ffffff0d}
 body.cols #bnav button .dot{left:auto;right:12px;top:8px}
-body.cols.m-talk #bnav,body.cols.m-battle #bnav{display:flex;visibility:hidden}
+body.cols.m-talk #bnav,body.cols.m-battle #bnav{display:flex}body.cols.m-talk #bnav button,body.cols.m-battle #bnav button{opacity:.3;pointer-events:none}
 body.short.cols #app{grid-template-columns:minmax(0,1fr) 64px}
 body.short.cols #bnav button{min-height:46px;font-size:.68rem;margin:0 4px}
 body.short.cols #bnav button .i{display:block;font-size:1.1rem;margin:0}
@@ -529,6 +531,7 @@ body.short #bhead .order{display:none}
 .cineband.burst{background:linear-gradient(90deg,transparent,#2a1e06ee 12%,#2a1e06ee 88%,transparent);box-shadow:0 0 40px #ffd06a44}.cineband.burst span{color:#fff1c8}.cineband.burst small{color:#ffe08a}
 .cineband.end span{font-size:clamp(1rem,3.2vw,1.3rem)}
 @keyframes cband{0%{opacity:0;clip-path:inset(0 50% 0 50%)}12%{opacity:1;clip-path:inset(0 0 0 0)}85%{opacity:1}100%{opacity:0}}
+#bfx.cining .bubble{opacity:0!important;transition:opacity .3s}
 #bfeed .cine{display:block;color:#f3dcb0;font-family:var(--fh)}#bfeed .cine.red{color:#ffb8a0}
 /* story cinematics: full-screen lines over the painting */
 #vTalk.cine #tbg{opacity:1;filter:brightness(.42) saturate(.85);height:100%!important;transition:filter .6s}
@@ -663,6 +666,8 @@ const lerp = (a, b, t) => a + (b - a) * t;
 const rnd = (a = 1, b) => b === undefined ? Math.random() * a : a + Math.random() * (b - a);
 const rint = (a, b) => Math.floor(rnd(a, b + 1));
 const pick = a => a[Math.floor(Math.random() * a.length)];
+const BAGS = new WeakMap(); // pickFresh: go through a whole list of lines (in random order) before repeating one
+const pickFresh = a => { if (!a || !a.length) return undefined; let b = BAGS.get(a); if (!b || !b.length) { const last = b && b.last; b = a.map((_, i) => i).sort(() => Math.random() - 0.5); if (b.length > 1 && b[b.length - 1] === last) b.unshift(b.pop()); BAGS.set(a, b); } const i = b.pop(); b.last = i; return a[i]; };
 const chance = p => Math.random() < p;
 const wpick = (list, wf = x => x.w || 1) => { let s = 0; for (const x of list) s += wf(x); let r = Math.random() * s; for (const x of list) { r -= wf(x); if (r <= 0) return x; } return list[list.length - 1]; };
 const shuffle = a => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
@@ -1249,7 +1254,7 @@ function battleCreate(spec) {
   blog(B, `<span class="bt">⚔ ${spec.title || '战斗开始'}</span>`);
   const foes = B.units.filter(u => u.side === 1), talker = foes.find(u => u.boss || u.kind === 'rival') || foes[0];
   if (talker) battleSay(B, talker, 'open'); banterOpen(B);
-  B.sayQ = []; B.epic = spec.epic || null;
+  B.sayQ = []; B.epic = spec.epic || null; B.auto = spec.auto ?? !!(C.auto || UI.forceAuto); // 🤖 in a fight only lasts for that fight
   return B;
 }
 const alive = (B, side) => B.units.filter(u => u.alive && (side === undefined || u.side === side));
@@ -1262,7 +1267,7 @@ const fxe = (B, o) => { o.li = B.lc; B.ev.push(o); };
 const hpr = u => Math.max(0, u.hp / u.hpMax);
 const uName = u => `<span class="${u.side ? 'foe' : u.kind === 'pc' ? 'pc' : 'ally'}">${esc(u.name)}</span>`;
 /* who still has to choose this round: 石昊, then the 灵兽伙伴 (unless auto-battle, or 石昊 is calling a different 伙伴 in) */
-const needInput = B => B.units.filter(u => u.alive && !B.acts[u.id] && (u.kind === 'pc' || (u.pet && !C.auto && !(B.acts.hero && (B.acts.hero.swap || B.acts.hero.crush || B.acts.hero.flee)))));
+const needInput = B => B.units.filter(u => u.alive && !B.acts[u.id] && (u.kind === 'pc' || (u.pet && !B.auto && !(B.acts.hero && (B.acts.hero.swap || B.acts.hero.crush || B.acts.hero.flee)))));
 function petPick(B, u) { // the partner's own judgement (auto-battle, or the default before you choose)
   const mv = petMoves(u), h = B.units.find(x => x.kind === 'pc'), foes = alive(B, 1), has = c => mv.filter(x => x.s.cat === c), pw = L => wpick(L, x => x.s.w || 1).i;
   const atk = has('atk'); if (!h || !foes.length) return pw(atk);
@@ -2542,21 +2547,79 @@ const CHATTER = [
   { at: '*', pet: 'dahong', who: '大红', t: '（远处飞过一只火红的鸟。大红立刻挺起胸膛，嘎了一声，响得震耳朵。）' },
   { at: '*', pet: 'ertuzi', who: '二秃子', t: '（二秃子盯着别的鸟看了很久，又低头看了看自己光溜溜的身子，叹了口气。鸟也会叹气。）' },
   { at: '*', pet: 'ertuzi', who: '二秃子', t: '（二秃子又饿了。它刚吃完。）' },
+  // ---- round 2 ----
+  { at: 'sc_street', from: 'q_wake', to: 'q_wolf', who: '石村的大婶', t: '小不点！昨天是不是你把我晾的肉干摘了？……算了算了，长身体呢。' },
+  { at: 'sc_street', from: 'q_egg0', to: 'q_shanbao', who: '石村的大婶', t: '大壮他娘说，大壮那天回来，抱着鹰蛋哭了一晚上，说是舍不得吃。' },
+  { at: 'sc_street', from: 'q_bei', to: 'q_shanbao', who: 'dazhuang', t: '狈村的人都怕你了！我今天去河边，他们看见我是石村的，扭头就走。我威风了一整天！' },
+  { at: 'sc_street', from: 'q_jijing', to: 'q_leave', who: 'dazhuang', t: '毛球昨天偷了我一块肉，我追了它三圈，它爬到柳神身上冲我做鬼脸。我不敢上去。' },
+  { at: 'sc_street', from: 'q_gate', to: 'q_end', who: 'dazhuang', t: '你不在，没人陪我进山了。我自己去了一回，被一只野猪追回来了。……别告诉皮猴。' },
+  { at: 'sc_street', from: 'q_gate', to: 'q_end', who: '石村的大婶', t: '小不点回来啦！快快快，家里还有半只烤羊腿！……哎你别全拿走啊！' },
+  { at: 'sc_gate', from: 'q_egg0', to: 'q_tomb', who: 'pihou', t: '族长罚我们几个扫三天村口。大壮扫了一天就说腰疼。他哪儿有腰？' },
+  { at: 'sc_gate', from: 'q_bandit', to: 'q_leave', who: 'pihou', t: '你把族长救回来的时候，我在村口哭了。……那是沙子迷了眼！' },
+  { at: 'sc_gate', from: 'q_gate', to: 'q_end', who: 'pihou', t: '我现在能翻十二个跟头了！第十一个和第十二个……我们一起不提。' },
+  { at: 'sc_yard', from: 'q_egg0', to: 'q_tomb', who: 'ermeng', t: '那颗鹰蛋……要是孵不出来，能不能炒了？我就问问。' },
+  { at: 'sc_yard', from: 'q_bandit', to: 'q_leave', who: 'linhu', t: '你开洞天那会儿，我离着二里地都看见光了。我还以为天要塌了。' },
+  { at: 'sc_yard', from: 'q_gate', to: 'q_end', who: 'linhu', t: '村里的娃娃现在都学你，天不亮就爬起来迎霞锻体。可惜没一个学会的，全在空地上打瞌睡。' },
+  { at: 'sc_yard', from: 'q_gate', to: 'q_end', who: 'ermeng', t: '……（二猛冲你点了点头，又从怀里摸出一罐兽奶。这是他打招呼的方式。）' },
+  { at: 'sc_chief', from: 'q_egg0', to: 'q_tomb', who: 'chief', t: '那几只小鹰？柳神留下了一只。剩下的两枚蛋……（族长咳了一声）……补身子了。' },
+  { at: 'sc_chief', from: 'q_bandit', to: 'q_leave', who: 'chief', t: '（族长的手腕上还有绳子勒出的印子）不碍事。比起当年猎貔貅，这算什么。' },
+  { at: 'sc_chief', from: 'q_gate', to: 'q_end', who: 'chief', t: '你那张床我没让人动。被子晒过了，还是你走的时候那床。' },
+  { at: 'sc_willow', from: 'q_bandit', to: 'q_leave', who: 'willow', t: '（柳枝上多了一片新叶。你数了数，比上个月多了三片。）' },
+  { at: 'sc_willow', from: 'q_gate', to: 'q_end', who: 'willow', t: '（你回来的时候，柳枝垂得比平时低一点，碰了碰你的肩膀。）' },
+  { at: 'dh_forest', from: 'q_egg0', to: 'q_end', who: '', t: '林子里有棵树上刻着几道歪歪扭扭的印子，是大壮比身高留下的。最下面一道，是你的。' },
+  { at: 'dh_deep', from: 'q_ruin', to: 'q_end', who: '', t: '那四位至尊打出来的裂谷还在，深不见底。裂谷边上长出了一圈嫩草。' },
+  { at: 'dh_tomb', from: 'q_bei', to: 'q_end', who: '', t: '狻猊墓的石门上，多了一道小小的手印——比你的手还小一点。是你自己按的，你忘了。' },
+  { at: 'dh_bei', from: 'q_bei', to: 'q_end', who: '狈村的小孩', t: '（一个狈村的小孩远远看着你，壮着胆子喊了一声：“你、你能教我打拳吗？”然后被他娘拽走了。）' },
+  { at: 'dh_road', from: 'q_qingfeng', to: 'q_end', who: '', t: '那辆翻倒的兽车已经被人拖走了。路边多了一个小小的土堆，土堆前插着一把断刀。' },
+  { at: 'dh_road', from: 'q_gate', to: 'q_end', who: '过路的猎户', t: '小兄弟，前面那段路……哦，是你啊。那没事了，你走吧，该担心的是山里的东西。' },
+  { at: 'xs_hall', from: 'q_xushen', to: 'q_end', who: '虚神界的少年', t: '你就是那个大荒来的？……能不能别用那种眼神看我？我们羽族不好吃！' },
+  { at: 'xs_hall', from: 'q_xushen', to: 'q_end', who: '虚神界的少女', t: '光幕上又多了一个纪录。纪录后面的名字，写的是“小不点”。……这名字也太敷衍了吧。' },
+  { at: 'xs_hall', from: 'q_xushen', to: 'q_end', who: '虚神界的少年', t: '我族长老说，跟大荒来的打架，先把干粮藏好。我以为他开玩笑，结果……我的干粮呢？' },
+  { at: 'bt_gate', from: 'q_join', to: 'q_qf1', who: '外门弟子', t: '那个就是扛着虎肉拜师的？……我们外门三百年来，头一回有人带着“见面礼”进门。' },
+  { at: 'bt_gate', from: 'q_qf1', to: 'q_qf2', who: 'qingfeng', t: '你别老来看我练拳……你在旁边吃东西，我饿。' },
+  { at: 'bt_gate', from: 'q_qf3', to: 'q_end', who: '外门弟子', t: '清风师姐去了内门，外门的木桩终于不用每个月换了。' },
+  { at: 'bt_court', from: 'q_bully', to: 'q_lei', who: '补天阁弟子', t: '那几个收份例的师兄被你打了以后，主动把份例全退了，还附赠了一句“小师弟好”。' },
+  { at: 'bt_court', from: 'q_qf1', to: 'q_end', who: 'gezhu', t: '你在雷池那几天，雷池的雷少了三成。……雷池管事来找我诉苦了。' },
+  { at: 'bt_court', from: 'q_qf2', to: 'q_end', who: 'guiye', t: '……（诡爷递给你一个干瘪的小葫芦。里面什么都没有，可你拿着它，心里莫名地静。）' },
+  { at: 'bt_court', from: 'q_return', to: 'q_end', who: '补天阁弟子', t: '神藤上的葫芦今天又鼓了一个！阁主数了三遍，笑了三遍。' },
+  { at: 'bt_lib', from: 'q_qf2', to: 'q_end', who: '藏经阁的扫地弟子', t: '守阁人这几天在第五层的锁上又加了一把锁。你说加了有用吗？……反正我是不敢说没用。' },
+  { at: 'bt_train', from: 'q_qf1', to: 'q_end', who: '雷池师兄', t: '我们给雷池边那块焦黑的石头起了名字，叫“小师弟坐过的”。现在大家都抢着坐，图个吉利。' },
+  { at: 'bt_wild', from: 'q_join', to: 'q_end', who: '补天阁弟子', t: '阁外山林的老虎最近都很乖，见了穿补天阁衣裳的人就绕道。……全是托你的福。' },
+  { at: 'bt_tiger', from: 'q_join', to: 'q_end', who: '', t: '虎穴里那汪黑水还在，水面上空荡荡的。洞口多了一行字：“莲已摘，勿扰。”' },
+  { at: 'bd_gate', from: 'q_bdgate', to: 'q_lion', who: '各族少年', t: '那个就是在虚神界刷纪录的？……他手里拿的是什么？烤肉？进百断山还带烤肉？' },
+  { at: 'bd_gate', from: 'q_lion', to: 'q_end', who: '各族少年', t: '我们族的长辈说，进了百断山，先活着，再抢机缘。你那个火国公主朋友，好像只听了后半句。' },
+  { at: 'bd_gate', from: 'q_cliff', to: 'q_end', who: 'huolinger', t: '你背上那把锈剑……看着跟烧火棍似的，可我的火鸟离它三丈远就不肯过去了。' },
+  { at: 'bd_lion', from: 'q_bdgate', to: 'q_lion', who: '', t: '狮岭上的石头缝里，到处都是金色的长毛。山顶的洞里，传出很沉的呼吸声——九道。' },
+  { at: 'bd_desert', from: 'q_lion', to: 'q_yu', who: '', t: '荒漠上一点风都没有。太安静了，像是有人在等你。' },
+  { at: 'bd_cliff', from: 'q_cliff', to: 'q_end', who: '各族少年', t: '那块灰石头……就是你拿去砸碎石柱的？我拿起来试了试——我的手腕到现在还疼。' },
+  { at: 'bd_spring', from: 'q_cliff', to: 'q_spring', who: '', t: '泉眼边上一点声音都没有。白虎趴着，金鹏盘着，一个白衣少女站着——三个都在等。' },
+  { at: 'bd_bone', from: 'q_tiangu', to: 'q_end', who: '', t: '骨山塌了一半。风从骨头缝里吹过去，呜呜地响，不像哭，像是在哼一首很老的歌。' },
+  { at: 'bd_mount', from: 'q_spring', to: 'q_mount', who: '', t: '满山的果子香得人发晕。你吞了好几口口水，毛球已经在流哈喇子了。' },
+  { at: '*', pet: 'maoqiu', who: '毛球', t: '（毛球蹲在你头顶，用你的头发编了一根小辫子。你摸到的时候，它假装在看风景。）' },
+  { at: '*', pet: 'maoqiu', who: '毛球', t: '（路过一棵果树，毛球“嗖”地上去了。下来的时候，嘴里两个，手里两个，尾巴上还卷着一个。）' },
+  { at: '*', pet: 'maoqiu', who: '毛球', t: '（毛球冲一只路过的山雀龇牙。山雀没理它。毛球很受伤。）' },
+  { at: '*', pet: 'dahong', who: '大红', t: '（大红叼来一只死老鼠放在你脚边，一脸“不用谢”。）' },
+  { at: '*', pet: 'dahong', who: '大红', t: '（大红又在跟毛球抢一块肉。两个打成一团，最后肉掉进了草丛，谁也没吃着。）' },
+  { at: '*', pet: 'dahong', who: '大红', t: '（大红站在高处，挺着胸，等你夸它。你不夸，它就一直站着。）' },
+  { at: '*', pet: 'ertuzi', who: '二秃子', t: '（二秃子在你手心里睡着了，打着很小很小的呼噜。）' },
+  { at: '*', pet: 'ertuzi', who: '二秃子', t: '（二秃子背上好像冒出了一根很细很细的绒毛。你们一起盯着它看了很久。）' },
 ];
 let chatT = 0, lastChat = {};
 function chatterFor(loc) { const P = PLACES[loc], q = C.story.q;
   return CHATTER.filter(c => (c.at === '*' ? c.pet && C.pet === c.pet : c.at === loc || c.at === P.area) && (!c.night || isNight()) && (!c.from || q >= qi(c.from)) && (!c.to || q <= qi(c.to))); }
 /* who is standing here right now (some people move as the story goes on) */
 function npcsHere(loc) { const P = PLACES[loc], f = C.story.f; let L = (P.npcs || []).filter(n => !(n === 'qingfeng' && (!f.qingfeng || f.qfIn)) && !(n === 'huolinger' && C.story.q < qi('q_bdgate'))); if (loc === 'bt_court' && f.qfIn) L = [...L, 'qingfeng']; return L; }
-function npcSay(c) { lastChat[CHATTER.indexOf(c)] = now(); const N = NPCS[c.who]; logLine(c.who ? `<span class="who">${N ? N.name : c.who}</span>${c.t}` : c.t, 'npc'); }
-function npcOnArrive(loc) { if (!C || NETROLE === 'guest' || STATE.scene) return; const L = chatterFor(loc).filter(c => !lastChat[CHATTER.indexOf(c)] || now() - lastChat[CHATTER.indexOf(c)] > 300000); if (L.length && chance(0.55)) setTimeout(() => { if (!STATE.scene && !STATE.battle) npcSay(pick(L)); }, 700); chatT = now() + rint(40000, 70000); }
+const chatKey = c => (c.who || '') + c.t.slice(0, 14);
+const chatPick = L => { const H = C.chatHeard || {}, fresh = L.filter(c => !H[chatKey(c)]); return pick(fresh.length ? fresh : L); };
+function npcSay(c) { lastChat[CHATTER.indexOf(c)] = now(); (C.chatHeard = C.chatHeard || {})[chatKey(c)] = 1; const N = NPCS[c.who]; logLine(c.who ? `<span class="who">${N ? N.name : c.who}</span>${c.t}` : c.t, 'npc'); }
+function npcOnArrive(loc) { if (!C || NETROLE === 'guest' || STATE.scene) return; const L = chatterFor(loc).filter(c => !lastChat[CHATTER.indexOf(c)] || now() - lastChat[CHATTER.indexOf(c)] > 300000); if (L.length && chance(0.55)) setTimeout(() => { if (!STATE.scene && !STATE.battle) npcSay(chatPick(L)); }, 700); chatT = now() + rint(40000, 70000); }
 function npcTick() { if (!C || STATE.mode !== 'play' || NETROLE === 'guest' || STATE.scene || STATE.battle || STATE.dungeon || now() < chatT) return; chatT = now() + rint(45000, 80000);
-  const L = chatterFor(C.loc).filter(c => !lastChat[CHATTER.indexOf(c)] || now() - lastChat[CHATTER.indexOf(c)] > 300000); if (L.length) npcSay(pick(L)); }
+  const L = chatterFor(C.loc).filter(c => !lastChat[CHATTER.indexOf(c)] || now() - lastChat[CHATTER.indexOf(c)] > 300000); if (L.length) npcSay(chatPick(L)); }
 function npcRumor(text) { const P = PLACES[C.loc]; const who = P.area === 'shicun' ? NPCS.linhu : P.area === 'butian' ? NPCS.gezhu : P.area === 'baiduan' ? NPCS.huolinger : null; logLine(who ? `<span class="who">${who.name}</span>${text}` : '【传闻】' + text, 'npc'); }
 function npcTalk(id) { // clicking a person: their quest or side errand, otherwise a line that fits right now
   if (STATE.scene || STATE.battle) return; const opts = talkOptions(id); const lines = chatterFor(C.loc).filter(c => c.who === id);
   const fallback = { chief: '去玩吧，别跑太远。', willow: '（柳枝静静垂着。）', linhu: '弓要常擦，箭要常磨。', dazhuang: '小不点，下回进山带上我！', ermeng: '嘿嘿。', pihou: '你看你看，我又能多翻一个跟头了！', qingfeng: C.story.f.qfIn ? '内门的饭比外门的好吃。……你别告诉别人我说的。' : '……嗯。', guiye: '……', gezhu: '好好修行。', libelder: '书别弄脏了。', huolinger: '看什么看？' }[id] || '……';
-  runScene(async () => { await say(id, lines.length ? pick(lines).t : fallback); if (opts.length) { const c = await choose([...opts.map(o => ({ t: o.t, dis: !!o.dis })), { t: '没事了' }]); if (c < opts.length) setTimeout(() => opts[c].f(), 0); } });
+  runScene(async () => { const ln = lines.length ? chatPick(lines) : null; if (ln) (C.chatHeard = C.chatHeard || {})[chatKey(ln)] = 1; await say(id, ln ? ln.t : fallback); if (opts.length) { const c = await choose([...opts.map(o => ({ t: o.t, dis: !!o.dis })), { t: '没事了' }]); if (c < opts.length) setTimeout(() => opts[c].f(), 0); } });
 }
 function talkOptions(id) { return [...questTalkOptions(id), ...bountyOptions(id), ...tradeOptions(id), ...(id === 'willow' && C.dt.length ? [{ t: '🔄 重开一座洞天（灵药 ×1）', dis: !itemN('lingyao'), f: dongtianRedo }] : []), ...(talkNext(id) ? [{ t: '💬 闲聊', f: () => talkPlay(id) }] : [])]; }
 const npcMark = id => questTalkOptions(id).length ? ' ❗' : bountyToday().some(b => b.npc === id && (b.st === 'new' || (b.st === 'on' && bountyReady(b)))) ? ' 📋' : talkNext(id) ? ' 💬' : '';
@@ -2637,7 +2700,7 @@ const RIVAL_SAY = {
 };
 const RETORT = ['……你话真多。', '打完再说。', '我饿了，快点。', '你说完了？', '族长说，话多的都打不过我。'];
 const sayOf = u => u.kind === 'rival' ? RIVAL_SAY[u.shiyi ? 'shiyi' : 'rival'] : SAY[u.mob];
-function battleSay(B, u, kind) { const S = sayOf(u); if (!S || !S[kind] || !S[kind].length) return null; const t = pick(S[kind]); fxe(B, { k: 'say', t: u.id, text: t }); blog(B, `<span class="taunt"><span class="foe">${esc(u.name)}</span>：${t.startsWith('（') ? t : '「' + t + '」'}</span>`); return t; }
+function battleSay(B, u, kind) { const S = sayOf(u); if (!S || !S[kind] || !S[kind].length) return null; const t = pickFresh(S[kind]); fxe(B, { k: 'say', t: u.id, text: t }); blog(B, `<span class="taunt"><span class="foe">${esc(u.name)}</span>：${t.startsWith('（') ? t : '「' + t + '」'}</span>`); return t; }
 
 /* ---------- 江湖传闻 ---------- */
 const RUMORS = [
@@ -2708,6 +2771,31 @@ const RUMORS = [
   { from: 'q_end', to: 'q_end', who: '过路的兽车商队', t: '大荒里现在流行一句话：出门遇见背着锈剑的小矮子，先把干粮藏好。' },
   { from: 'q_end', to: 'q_end', who: '捎话的猎户', t: '石村的大壮让我捎句话：“村里的兽奶罐子没人偷了，二猛说怪没意思的。”' },
   { from: 'q_end', to: 'q_end', who: '石国来的行商', t: '石国皇都要办天骄会了，各族的少年天才都在往那边赶。你不去凑凑热闹？' },
+  { from: 'q_wolf0', to: 'q_egg', who: '邻村的猎户', t: '石村的族长最近总往空地跑，说是去看娃娃练功。我看他是去看那个娃娃有没有偷懒。' },
+  { from: 'q_egg0', to: 'q_tomb', who: '邻村的大娘', t: '石村几个娃娃被罚扫村口，扫帚比人还高。那个最小的，扫得最干净。' },
+  { from: 'q_tomb0', to: 'q_bei', who: '走村的货郎', t: '石林里的鹰叫声停了。有人说，那只鹰在石村的柳树上蹲了一宿，又飞走了。' },
+  { from: 'q_bei', to: 'q_shanbao', who: '狈村的猎手', t: '那小娃娃打风狈那一下，我在树上看得清清楚楚——他身后有一只鹰的影子。' },
+  { from: 'q_yaoding', to: 'q_ruin', who: '大荒里的老猎人', t: '我在大荒打了六十年猎，第一次见到四头至尊一起打架。这辈子值了。……也差点没了。' },
+  { from: 'q_ruin', to: 'q_memory', who: '新村附近的樵夫', t: '新来的那个村子，晚上能听见小孩的笑声，还有……猴子叫？' },
+  { from: 'q_jijing', to: 'q_bandit0', who: '火国的商队', t: '公主回来以后，天天让火鸟往大荒那边飞。说是巡视边境。……大荒是我们的边境吗？' },
+  { from: 'q_memory', to: 'q_bandit', who: '古道边的茶摊老板', t: '这几天有个大荒来的小娃娃常往古道跑，每次都在我这儿蹭一碗凉茶，喝完了说“下回给钱”。' },
+  { from: 'q_bandit', to: 'q_leave', who: '邻村的猎户', t: '石村的族长被山贼绑了，是他孙子一个人去救回来的。他孙子多大？你猜。……不对，再小点。' },
+  { from: 'q_xushen0', to: 'q_gate', who: '虚神界里的少年', t: '虚神界里新来了个娃娃，第一天就问“这儿有没有吃的”。' },
+  { from: 'q_gate', to: 'q_bully', who: '补天阁外门弟子', t: '今年的新弟子里有个姑娘，排队的时候一直攥着补天石，攥得指节都白了。' },
+  { from: 'q_lotus', to: 'q_bully', who: '阁外山林的猎户', t: '虎穴里那两头黑纹虎，有一头被打得现在见了光就躲。另一头……听说被扛走了一半。' },
+  { from: 'q_bully', to: 'q_qf1', who: '补天阁伙房的厨子', t: '小师弟来帮厨三天，第一天把灶烧塌了，第二天把锅吃穿了，第三天阁主求我放他走。' },
+  { from: 'q_qf1', to: 'q_qf2', who: '补天阁外门弟子', t: '小师弟天天傍晚去山门外蹲着，嘴里叼根草，看清风练拳。看完了还点评：“出拳慢了。”' },
+  { from: 'q_qf3', to: 'q_lion', who: '补天阁弟子', t: '小师弟走的那天，清风师姐在山门口站了很久。我问她站着干嘛，她说“看风景”。' },
+  { from: 'q_bdgate', to: 'q_yu', who: '断山里的散修', t: '百断山口那只大红鸟，抢了七八个少年的干粮。唯一没抢成的，是被它抢了以后追着它打了三座山的那个。' },
+  { from: 'q_lion', to: 'q_cliff', who: '火国侍卫', t: '公主说九头狮是她打的。我们都点头。……可她晚上一个人在帐篷里画那个小娃娃的画像，画了又撕。' },
+  { from: 'q_yu', to: 'q_spring', who: '各族少年', t: '你们看见没有？那只大红鸟现在跟着补天阁那小子了。上回还见它俩打得满天毛。' },
+  { from: 'q_cliff', to: 'q_mount', who: '各族少年', t: '分宝崖底下那颗没主的蛋，被补天阁那小子揣走了。他说要孵出来——孵出来干嘛？他没说，但我们都猜到了。' },
+  { from: 'q_spring', to: 'q_return', who: '各族少年', t: '云曦仙子从不老泉回来以后，有人看见她对着泉水笑了一下。就一下。' },
+  { from: 'q_tiangu', to: 'q_return', who: '断山里的散修', t: '天骨禁区里出来的人都说听见了一句话，可每个人听见的都不一样。' },
+  { from: 'q_return', to: 'q_end', who: '补天阁弟子', t: '神藤活过来以后，补天阁后山的灵草长得特别好。伙房说，今年能多做好几道菜了。' },
+  { from: 'q_end', to: 'q_end', who: '大荒里的老猎人', t: '我年轻那会儿，大荒里最凶的是凶兽。现在大荒里最凶的……是个娃娃。' },
+  { from: 'q_end', to: 'q_end', who: '火国侍卫', t: '公主最近在学烤肉。烤糊了九回，第十回她说：“哼，反正不是给某人吃的。”' },
+  { from: 'q_end', to: 'q_end', who: '虚神界里的少女', t: '光幕上那个叫“小不点”的名字，每天都在往上爬。有人专门去看它今天爬到哪儿了。' },
 ];
 /* heard rumours are kept in the save (C.rumorLog) so they can be reread under 📜 记录 → 江湖传闻; co-op guests see the host's */
 function rumorTick() {
@@ -2760,7 +2848,7 @@ function fxBossCard(B) { const E = B.epic, intro = E.intro || [], dur = Math.rou
   const end = () => { if (!d.parentNode) return; d.classList.add('out'); setTimeout(() => d.remove(), 400); }; d.onclick = e => { e.stopPropagation(); end(); UI.animEnd = Math.min(UI.animEnd, now() + 200); setTimeout(() => { if (STATE.battle && STATE.battle.id === B.id) renderBattle(true); }, 260); };
   setTimeout(end, dur); return dur; }
 function fxCine(ev) { $('bfx').querySelectorAll('.cineband').forEach(e => e.remove()); const ms = cineMs(ev);
-  const d = el('div', 'fx cineband ' + (ev.cls || ''), `${ev.who ? `<small>${esc(ev.who)}</small>` : ''}<span>${ev.text}</span>`); d.style.setProperty('--dur', ms + 'ms'); $('bfx').appendChild(d); setTimeout(() => d.remove(), ms);
+  const d = el('div', 'fx cineband ' + (ev.cls || ''), `${ev.who ? `<small>${esc(ev.who)}</small>` : ''}<span>${ev.text}</span>`); d.style.setProperty('--dur', ms + 'ms'); $('bfx').appendChild(d); $('bfx').classList.add('cining'); clearTimeout(UI.cineT); UI.cineT = setTimeout(() => { d.remove(); $('bfx').classList.remove('cining'); }, ms); // speech bubbles step aside while the band is up
   if (ev.cls === 'burst') { fxSpawn('fx-burstflash', { x: 0, y: 0, w: 0 }, '', 1400); fxClass('hero', 'bursting', 1600); sfx('level'); }
   else if (ev.cls === 'phase') sfx('fail'); else sfx('magic'); }
 function fxFinish(ev) { const c = cardOf(ev.t); fxSpawn('fx-whiteflash', { x: 0, y: 0, w: 0 }, '', 900); if (c) fxSpawn('fx-inkburst', fxAt(c), '<b></b><b></b><b></b>', 1100);
@@ -2853,23 +2941,23 @@ const heroOf = B => B.units.find(u => u.kind === 'pc');
 const partnerOf = B => B.units.find(u => u.pet && u.alive);
 const alliesOf = B => B.units.filter(u => u.side === 0 && u.kind === 'npc' && !u.pet && u.alive && ALLY_SAY[u.mob]);
 function foeKindOf(B) { const f = B.units.find(u => u.side === 1); return !f ? 'beast' : f.kind === 'rival' ? 'rival' : FOE_KIND(f.mob); }
-function banterOpen(B) { const h = heroOf(B), al = alliesOf(B); if (al.length && chance(0.7)) { const a = al[0], L = ALLY_SAY[a.mob].open; if (L) bSay(B, a, pick(L), 'pc'); }
-  if (chance(0.45)) bSay(B, h, pick(HERO_SAY.open[foeKindOf(B)]), 'pc'); B.bqN = 0; }
+function banterOpen(B) { const h = heroOf(B), al = alliesOf(B); if (al.length && chance(0.7)) { const a = al[0], L = ALLY_SAY[a.mob].open; if (L) bSay(B, a, pickFresh(L), 'pc'); }
+  if (chance(0.45)) bSay(B, h, pickFresh(HERO_SAY.open[foeKindOf(B)]), 'pc'); B.bqN = 0; }
 function banterHit(B, a, d, info) { if (!a || !d || info.dot || B.over) return;
   if (a.kind === 'pc' && info.crit && d.side === 1 && bq(B)) { const p = partnerOf(B), al = alliesOf(B); const r = Math.random();
-    if (r < 0.3) bSay(B, a, pick(HERO_SAY.crit), 'pc'); else if (r < 0.55 && p && PET_SAY[p.mob]) bSay(B, p, pick(PET_SAY[p.mob].heroCrit), 'pc'); else if (r < 0.75 && al.length && ALLY_SAY[al[0].mob].heroCrit) bSay(B, al[0], pick(ALLY_SAY[al[0].mob].heroCrit), 'pc'); return; }
+    if (r < 0.3) bSay(B, a, pickFresh(HERO_SAY.crit), 'pc'); else if (r < 0.55 && p && PET_SAY[p.mob]) bSay(B, p, pickFresh(PET_SAY[p.mob].heroCrit), 'pc'); else if (r < 0.75 && al.length && ALLY_SAY[al[0].mob].heroCrit) bSay(B, al[0], pickFresh(ALLY_SAY[al[0].mob].heroCrit), 'pc'); return; }
   if (d.kind === 'pc' && a.side === 1 && d.hp > 0 && bq(B)) { const S = sayOf(a);
-    if (info.crit && S && S.hit && chance(0.5)) return bSay(B, a, pick(S.hit));
+    if (info.crit && S && S.hit && chance(0.5)) return bSay(B, a, pickFresh(S.hit));
     if (!B.lowSaid && d.hp < d.hpMax * 0.4 && !B.epic) { B.lowSaid = 1; const p = partnerOf(B), al = alliesOf(B);
-      if (al.length && ALLY_SAY[al[0].mob].heroLow && chance(0.6)) return bSay(B, al[0], pick(ALLY_SAY[al[0].mob].heroLow), 'pc');
-      if (p && PET_SAY[p.mob] && chance(0.7)) return bSay(B, p, pick(PET_SAY[p.mob].heroLow), 'pc'); if (chance(0.5)) bSay(B, d, pick(HERO_SAY.low), 'pc'); } } }
-function banterMiss(B, a, d) { if (!a || !d || B.over || !bq(B)) return; if (a.side === 1 && d.kind === 'pc' && chance(0.3)) { const S = sayOf(a); if (S && S.miss && chance(0.6)) bSay(B, a, pick(S.miss)); else bSay(B, d, pick(HERO_SAY.dodge), 'pc'); } }
+      if (al.length && ALLY_SAY[al[0].mob].heroLow && chance(0.6)) return bSay(B, al[0], pickFresh(ALLY_SAY[al[0].mob].heroLow), 'pc');
+      if (p && PET_SAY[p.mob] && chance(0.7)) return bSay(B, p, pickFresh(PET_SAY[p.mob].heroLow), 'pc'); if (chance(0.5)) bSay(B, d, pickFresh(HERO_SAY.low), 'pc'); } } }
+function banterMiss(B, a, d) { if (!a || !d || B.over || !bq(B)) return; if (a.side === 1 && d.kind === 'pc' && chance(0.3)) { const S = sayOf(a); if (S && S.miss && chance(0.6)) bSay(B, a, pickFresh(S.miss)); else bSay(B, d, pickFresh(HERO_SAY.dodge), 'pc'); } }
 function banterKill(B, a, d) { if (!d || d.side !== 1 || !a || !bq(B)) return; const last = !alive(B, 1).length;
-  if (a.kind === 'pc' && chance(last ? 0.5 : 0.25)) bSay(B, a, pick(HERO_SAY.kill[d.kind === 'rival' ? 'rival' : FOE_KIND(d.mob)]), 'pc');
-  else if (a.pet && PET_SAY[a.mob] && chance(0.4)) bSay(B, a, pick(PET_SAY[a.mob].kill), 'pc'); }
-function banterAct(B, u) { if (u.pet && PET_SAY[u.mob] && chance(0.12) && bq(B)) bSay(B, u, pick(PET_SAY[u.mob].act), 'pc'); }
+  if (a.kind === 'pc' && chance(last ? 0.5 : 0.25)) bSay(B, a, pickFresh(HERO_SAY.kill[d.kind === 'rival' ? 'rival' : FOE_KIND(d.mob)]), 'pc');
+  else if (a.pet && PET_SAY[a.mob] && chance(0.4)) bSay(B, a, pickFresh(PET_SAY[a.mob].kill), 'pc'); }
+function banterAct(B, u) { if (u.pet && PET_SAY[u.mob] && chance(0.12) && bq(B)) bSay(B, u, pickFresh(PET_SAY[u.mob].act), 'pc'); }
 function banterWin(B) { if (!B.win || B.epic) return; const h = heroOf(B), p = partnerOf(B), al = alliesOf(B), r = Math.random();
-  if (al.length && ALLY_SAY[al[0].mob].win && r < 0.5) bSay(B, al[0], pick(ALLY_SAY[al[0].mob].win), 'pc'); else if (p && PET_SAY[p.mob] && r < 0.65) bSay(B, p, pick(PET_SAY[p.mob].win), 'pc'); else if (h.alive && r < 0.85) bSay(B, h, pick(HERO_SAY.win), 'pc'); }
+  if (al.length && ALLY_SAY[al[0].mob].win && r < 0.5) bSay(B, al[0], pickFresh(ALLY_SAY[al[0].mob].win), 'pc'); else if (p && PET_SAY[p.mob] && r < 0.65) bSay(B, p, pickFresh(PET_SAY[p.mob].win), 'pc'); else if (h.alive && r < 0.85) bSay(B, h, pickFresh(HERO_SAY.win), 'pc'); }
 
 /* ================= 闲聊: short conversations you can start with people =================
    Clicking someone shows 💬 闲聊 while they have something new to say at this point of the story. Each talk plays once.
@@ -2901,6 +2989,31 @@ const TALKS = [
   // 百断山
   { id: 'tk_hl1', npc: 'huolinger', from: 'q_lion', to: 'q_end', s: [['huolinger', '喂，小不点，打九头狮那次，是我出力多。'], ['me', '是我。'], ['huolinger', '是我！我放的火！'], ['me', '火是你放的，狮子是我打倒的。'], ['huolinger', '狮子是被火烧倒的！'], ['ch', ['好好好，你出力多', '那下次比比？'], [[['huolinger', '（她愣了一下）……你让我？我才不要你让！'], ['nar', '她气鼓鼓地走了。走了没两步，又回头冲你做了个鬼脸。']], [['huolinger', '比就比！谁输了谁请吃烤肉！'], ['me', '那我输了也有烤肉吃？'], ['huolinger', '……你脑子里除了吃还有什么？！']]]]] },
   { id: 'tk_hl2', npc: 'huolinger', from: 'q_cliff', to: 'q_end', s: [['huolinger', '你那只大红鸟，到底是什么来头？'], ['me', '它？它是我的鸟。'], ['huolinger', '我是问它是什么血脉！'], ['me', '（想了想）……很能吃的血脉。'], ['huolinger', '我的火鸟最近茶饭不思，老往它那儿看。'], ['me', '那它俩……'], ['huolinger', '不许说！']] },
+  // ---- more (2026-11, round 2) ----
+  { id: 'tk_chief4', npc: 'chief', from: 'q_egg0', to: 'q_tomb', s: [['chief', '昨天林虎说，你一个人在空地上对着石头比划了一下午。'], ['me', '我在练青鳞鹰的骨文。'], ['chief', '石头练会了没有？'], ['me', '石头没会，我会了。'], ['chief', '（族长嘴角动了一下）……嗯。石头碎了几块？'], ['me', '……七块。'], ['chief', '那是村口的界石！']] },
+  { id: 'tk_chief5', npc: 'chief', from: 'q_ruin', to: 'q_leave', s: [['chief', '新村子的水甜，地也肥。就是……'], ['me', '就是什么？'], ['chief', '就是旧村那棵老枣树没带过来。你小时候最爱爬那棵树。'], ['me', '我现在也爱爬。'], ['chief', '你现在爬柳神。……下来！说了多少遍了，那是柳神！']] },
+  { id: 'tk_chief6', npc: 'chief', from: 'q_gate', to: 'q_end', s: [['chief', '（族长看见你，愣了好一会儿）……回来了？'], ['me', '回来看看。'], ['chief', '瘦了。不对，壮了。……在外面有没有好好吃饭？'], ['me', '补天阁的伙房，现在看见我就关门。'], ['chief', '（族长终于笑出了声）好，好。那就是吃上了。']] },
+  { id: 'tk_chief7', npc: 'chief', from: 'q_bdgate', to: 'q_end', s: [['chief', '你胸口那道疤……最近疼不疼？'], ['me', '不疼。有时候夜里会热一下。'], ['chief', '（族长沉默了一阵）热是好事。骨头没了，可它在那儿待过。'], ['ch', ['爷爷，我会把它拿回来的', '没了就没了，我自己长'], [[['chief', '……先把自己活明白了，再说拿不拿。']], [['chief', '（他把手放在你头顶，很久都没拿开）……好孩子。']]]]] },
+  { id: 'tk_linhu3', npc: 'linhu', from: 'q_shanbao', to: 'q_leave', s: [['linhu', '搬家那天，你看见我扛的那捆箭没有？'], ['me', '看见了，你扛着箭，婶子扛着你。'], ['linhu', '……我那是腿被岩浆燎了一下！'], ['me', '婶子说你是吓软的。'], ['linhu', '（林虎叔的脸涨得通红）你婶子的话，信一半就行。']] },
+  { id: 'tk_linhu4', npc: 'linhu', from: 'q_gate', to: 'q_end', s: [['linhu', '小不点，外头的凶兽，比咱们这儿的厉害吗？'], ['me', '有一头狮子长了九个脑袋。'], ['linhu', '九个？！那得多少张嘴吃饭……'], ['me', '它现在不用吃饭了。'], ['linhu', '……你打的？'], ['me', '还有一个火国的公主。她说是她打的。'], ['linhu', '公主？！你、你认识公主了？！（他转身就跑）我去告诉你婶子！']] },
+  { id: 'tk_dz3', npc: 'dazhuang', from: 'q_egg0', to: 'q_tomb', s: [['dazhuang', '小不点……那天在石林，我是不是挺怂的？'], ['ch', ['你脚都流血了还抱着蛋', '有一点'], [[['dazhuang', '（他愣了愣，挺起了胸）……对哦！我抱着蛋呢！我是不是挺厉害的？'], ['me', '挺厉害的。'], ['dazhuang', '那下回掏窝还叫上我！']], [['dazhuang', '（他低下头）……嗯。下回我不怂了。'], ['me', '下回你在前面。'], ['dazhuang', '……那还是你在前面吧。']]]]] },
+  { id: 'tk_dz4', npc: 'dazhuang', from: 'q_gate', to: 'q_end', s: [['dazhuang', '小不点！补天阁的饭好吃吗？'], ['me', '好吃。一顿九碗。'], ['dazhuang', '九碗！（他掰着手指头算）那我去了能吃十碗！'], ['me', '你得先考进去。'], ['dazhuang', '考什么？'], ['me', '考打架，考认字，考骨文。'], ['dazhuang', '……那我在村里吃两碗也挺好的。']] },
+  { id: 'tk_dz5', npc: 'dazhuang', from: 'q_xushen', to: 'q_leave', s: [['dazhuang', '虚神界里，是不是能打架打到天亮，第二天起来一点都不疼？'], ['me', '对。'], ['dazhuang', '那吃东西呢？在里面吃东西，出来会饱吗？'], ['me', '……不会。'], ['dazhuang', '（他一脸失望）那还有什么意思。']] },
+  { id: 'tk_ph3', npc: 'pihou', from: 'q_egg0', to: 'q_tomb', s: [['pihou', '那天要不是我喊“快跑啊”，你们都得被鹰叼走！'], ['me', '你喊完就自己先跑了。'], ['pihou', '那叫……那叫探路！'], ['me', '你跑到村口才回头。'], ['pihou', '……路比较长。']] },
+  { id: 'tk_ph4', npc: 'pihou', from: 'q_gate', to: 'q_end', s: [['pihou', '小不点，你在外面有没有说你有个大哥叫皮猴？'], ['me', '说了。'], ['pihou', '真的？！他们怎么说？'], ['me', '他们问：“皮猴是什么猴？”'], ['pihou', '……那你怎么答的？'], ['me', '我说是一种会翻跟头、翻到第十一个就摔的猴。'], ['pihou', '我都说了不提第十一个！']] },
+  { id: 'tk_em3', npc: 'ermeng', from: 'q_bandit', to: 'q_leave', s: [['ermeng', '……山贼来的那天，我躲在兽奶缸里。'], ['me', '那你没事吧？'], ['ermeng', '没事。就是出来的时候，缸空了。'], ['me', '……你在里面喝完了？'], ['ermeng', '躲了一下午，饿。']] },
+  { id: 'tk_em4', npc: 'ermeng', from: 'q_gate', to: 'q_end', s: [['ermeng', '你走了以后，村里的兽奶多了。'], ['me', '因为我不偷了？'], ['ermeng', '因为我一个人偷不完。'], ['nar', '他从怀里掏出一罐，塞给你。'], ['ermeng', '……攒的。等你回来。']] },
+  { id: 'tk_willow3', npc: 'willow', from: 'q_jijing', to: 'q_leave', s: [['me', '柳神，极境的那条路，你走过吗？'], ['nar', '柳枝沙沙地响了一阵，像是很久很久以前的风。'], ['me', '你走过。对不对？'], ['nar', '一片叶子落在你手心。叶子上的脉络，弯弯曲曲，像一条没有尽头的路。']] },
+  { id: 'tk_willow4', npc: 'willow', from: 'q_return', to: 'q_end', s: [['me', '柳神，我脖子上这个小塔，是你给我的吗？'], ['nar', '柳枝静了一下。'], ['me', '它在灵湖阵里救了我。'], ['nar', '柳枝慢慢垂下来，碰了碰那座小塔。小塔轻轻亮了一下，又暗了。'], ['me', '……你们认识？'], ['nar', '风吹过来，柳枝摇了摇。你分不清那是点头，还是摇头。']] },
+  { id: 'tk_qf3', npc: 'qingfeng', from: 'q_gate', to: 'q_join', s: [['qingfeng', '小不点……我要是考不进补天阁怎么办？'], ['ch', ['那就明年再考', '那我也不进了'], [[['qingfeng', '（她攥紧了补天石）……嗯。明年，后年，我都考。']], [['qingfeng', '（她瞪了你一眼）别说傻话。你进去，然后……等我。'], ['me', '好。我在伙房门口等你。'], ['qingfeng', '……为什么是伙房？']]]]] },
+  { id: 'tk_qf4', npc: 'qingfeng', from: 'q_lib', to: 'q_qf3', s: [['qingfeng', '你最近在藏经阁看什么书？'], ['me', '《大荒异兽食谱》。'], ['qingfeng', '……藏经阁里有这种书？'], ['me', '没有。我在看《大荒异兽图录》，看哪些能吃，自己记。'], ['qingfeng', '（她叹了口气）你能不能有一回，看书是为了变强？'], ['me', '吃饱了才能变强。']] },
+  { id: 'tk_qf5', npc: 'qingfeng', from: 'q_return', to: 'q_end', s: [['qingfeng', '百断山里……是不是很危险？'], ['me', '还好。就是被冻成过冰雕，被猴子砸进过湖里，被树做了个梦。'], ['qingfeng', '……这叫还好？'], ['me', '我回来了嘛。'], ['qingfeng', '（她低头看着自己的手）下次去这种地方，带上我。我已经是内门弟子了。']] },
+  { id: 'tk_gy3', npc: 'guiye', from: 'q_return', to: 'q_end', s: [['me', '诡爷，锈剑我带回来了。你要不要拿着看看？'], ['nar', '诡爷伸手，在剑身上弹了一下。“嗡”的一声，剑鸣了很久。'], ['guiye', '……它想砍东西。'], ['me', '砍什么？'], ['guiye', '……天。'], ['nar', '他说完这个字，就闭上了眼睛，再也不理你了。']] },
+  { id: 'tk_gz3', npc: 'gezhu', from: 'q_return', to: 'q_end', s: [['gezhu', '石昊，神藤这一回，补天阁欠你的。'], ['me', '那能不能把伙房的门……'], ['gezhu', '（阁主扶着额头）……开。从今天起，伙房给你单独开一口灶。'], ['me', '！！！'], ['gezhu', '别高兴太早。厨子说了，那口灶，你自己烧。']] },
+  { id: 'tk_lib2', npc: 'libelder', from: 'q_qf2', to: 'q_end', s: [['libelder', '你知道藏经阁第五层为什么要上锁吗？'], ['me', '因为里面有好东西。'], ['libelder', '因为里面有危险的东西。'], ['me', '危险的东西一般都是好东西。'], ['libelder', '（守阁人愣了一下）……这话谁教你的？'], ['me', '我们族长。他说毒蘑菇都长得好看。'], ['libelder', '……你们族长说得对。']] },
+  { id: 'tk_lib3', npc: 'libelder', from: 'q_return', to: 'q_end', s: [['libelder', '听说你在百断山里碰到了天骨。'], ['me', '它跟我说“记住”。我记住了它的样子，可上面的字一个都不认识。'], ['libelder', '（守阁人的眼睛亮了）画给我看。'], ['nar', '你在地上画了半天。守阁人看了半天。'], ['libelder', '……你画的这是只鸡？'], ['me', '是骨头！']] },
+  { id: 'tk_hl3', npc: 'huolinger', from: 'q_bdgate', to: 'q_lion', s: [['huolinger', '你真的是从大荒里出来的？'], ['me', '嗯。'], ['huolinger', '大荒里的人都像你这样……这么能吃？'], ['me', '不。他们比我还能吃。'], ['huolinger', '（她想了想那个画面，打了个寒战）……那你们村的粮食够吗？'], ['me', '不够就去山里打。山里的凶兽，都挺好吃的。'], ['huolinger', '……你离我的火鸟远一点。']] },
+  { id: 'tk_hl4', npc: 'huolinger', from: 'q_spring', to: 'q_end', s: [['huolinger', '你跟云曦……很熟吗？'], ['me', '不熟。她帮我打了一只鸟。'], ['huolinger', '哼。她那个人，冷冰冰的，跟谁都不说话。'], ['me', '她跟我说了。她说“站起来”。'], ['huolinger', '……就这三个字？'], ['me', '对。'], ['huolinger', '（她的嘴角不知道为什么翘了起来）那你们果然不熟。']] },
 ];
 const talkNext = id => TALKS.find(T => T.npc === id && !(C.talked || {})[T.id] && C.story.q >= qi(T.from) && C.story.q <= qi(T.to));
 async function talkSteps(steps) { for (const st of steps) { const [w, t, r] = st;
@@ -3018,6 +3131,8 @@ function renderActs() {
   if (P.dungeon) { acts.push(`<button class="ab main" onclick="enterDungeon('${P.dungeon}')">🏯 闯${DUNGEONS[P.dungeon].name}</button>`); if (C.dungeons[P.dungeon]) acts.push(`<button class="ab" onclick="enterDungeonHard('${P.dungeon}')">🏯 困难</button>`); }
   const pa = P.acts || []; if (P.town && P.area !== 'xushen') acts.push(`<button class="ab" onclick="rest()">🛏 休息</button>`); else if (P.mobs && !P.dungeon) acts.push(`<button class="ab" ${UI.campAt === C.loc + C.seenN ? 'disabled' : ''} onclick="camp()">🔥 歇脚</button>`);
   if (P.shop || P.town && P.area !== 'xushen') acts.push(`<button class="ab" onclick="UI.bagTab='shop';navTo('bag')">${P.shop ? '🛒 买卖' : '💰 卖东西'}</button>`);
+  if (P.mobs && !P.dungeon) acts.push(`<button class="ab ${UI.autoEx ? 'q' : ''}" onclick="autoExplore()">🔁 ${UI.autoEx ? `停止自动探索（${UI.autoExN || 0}）` : '自动探索'}</button>`);
+  acts.push(`<button class="ab ${C.auto ? 'q' : ''}" onclick="toggleAutoFight()" title="之后的战斗都自动打，战斗里随时能停">🤖 自动对战：${C.auto ? '开' : '关'}</button>`);
   if (pa.includes('train')) acts.push(`<button class="ab" onclick="train()">${C.loc === 'bt_train' ? '⚡ 挨雷劈' : '🪨 举石锁'}</button>`);
   if (pa.includes('arena')) acts.push(`<button class="ab main" onclick="openModal('arena')">🪞 挑战（${(arenaDaily(), C.arena.tries)}次）</button>`);
   if (canTeleport()) acts.push(`<button class="ab" onclick="teleport()">🌀 传送</button>`);
@@ -3049,7 +3164,7 @@ function renderBattle(quiet) {
   const fresh = B.log.slice(STATE.shownFor === B.id ? STATE.shown : 0); for (const h of fresh) logLine(h, 'bat'); STATE.shown = B.log.length; STATE.shownFor = B.id;
   if (fresh.length && B.fx && !play) sfx(B.fx); if (!C.seen.tut2 && B.units.some(u => u.releasing && u.side) && NETROLE !== 'guest') { C.seen.tut2 = 1; logLine('【指引】敌人头上出现 ⚠：它这回合要放大招。防御能减半；把它打晕、或者打中它的弱点，能直接打断。', 'tip'); toast('⚠ 大招要来了：防御，或者打断它'); }
   renderBattleActs(cur); if (play) fxPlay(B); else if (B.over && animLeft() === 0) fxStamp(B);
-  if (C.auto && NETROLE !== 'guest' && me_ && me_.alive && !B.acts[me_.id] && !B.over) { clearTimeout(UI.autoT); UI.autoT = setTimeout(function tick() { if (STATE.battle !== B || B.acts[me_.id] || B.over) return; if (animLeft() > 0) { UI.autoT = setTimeout(tick, animLeft() + 30); return; } battleAct(botAct(B, me_)); }, window.__dbg && __dbg.instant ? 0 : Math.max(animLeft() + 200, SET.fast ? 150 : 650)); }
+  if (B.auto && NETROLE !== 'guest' && me_ && me_.alive && !B.acts[me_.id] && !B.over) { clearTimeout(UI.autoT); UI.autoT = setTimeout(function tick() { if (STATE.battle !== B || B.acts[me_.id] || B.over) return; if (animLeft() > 0) { UI.autoT = setTimeout(tick, animLeft() + 30); return; } battleAct(botAct(B, me_)); }, window.__dbg && __dbg.instant ? 0 : Math.max(animLeft() + 200, SET.fast ? 150 : 650)); }
 }
 function actText(B, a) { if (!a) return ''; const T = a.tgt && B.units.find(x => x.id === a.tgt);
   return a.crush ? '👊 一拳解决' : a.item ? ITEMS[a.item].icon + ITEMS[a.item].name : a.swap ? '⇄ 换伙伴' : a.flee ? '🏃 跑' : a.sk ? SKILLS[a.sk].icon + SKILLS[a.sk].name + (T ? ' → ' + T.name : SKILLS[a.sk].tgt === 'enemies' ? ' → 全体' : SKILLS[a.sk].tgt === 'enemy' ? ' → 血最少的' : '') : ''; }
@@ -3057,19 +3172,26 @@ function selFoe(id) { UI.selFoe = id; sfx('click'); renderBattle(true); }
 function renderBattleActs(cur) {
   const B = STATE.battle, A = $('bacts'); if (!B) return; const u = B.units.find(x => x.kind === 'pc');
   if (B.over) { A.innerHTML = `<div class="wait" style="color:#ffcfb8">${B.win ? '赢了！' : B.fled ? '跑掉了' : '……'}</div>`; return; }
-  if (!cur) { A.innerHTML = `<div class="wait">${C.auto ? '🤖 自动战斗中…… <button class="ab sm q" onclick="toggleAuto()">停下</button>' : '……'}</div>`; return; }
+  if (!cur) { A.innerHTML = `<div class="wait">${B.auto ? '🤖 自动战斗中…… <button class="ab sm q" onclick="toggleAuto()">停下</button>' : '……'}</div>`; return; }
   if (cur.pet) { const mv = petMoves(cur); const ha = B.acts.hero; if (ha && !C.seen.tutPet && NETROLE !== 'guest') { C.seen.tutPet = 1; toast('石昊的招选好了——再给伙伴选一招，这回合才开打'); }
     A.innerHTML = `${ha ? `<div class="who-turn ok">🧒 石昊已选好：<b>${actText(B, ha)}</b></div>` : ''}<div class="who-turn">${PETS[cur.mob].icon} 现在轮到 <b>${esc(cur.name)}</b> <span class="dim">· 给它选一招，选完这回合就开打${UI.selFoe ? '' : '（单体招先点敌人选目标）'}</span></div><div class="arow">${PETS[cur.mob].sk.map((s, i) => { const ok = mv.some(x => x.i === i); if (!ok) return ''; const tag = s.aoe ? '全体' : s.healAlly ? '治疗' : s.shieldAll ? '全队盾' : s.shieldHero ? '给石昊盾' : s.buffHero ? '给石昊' : s.taunt ? '嘲讽' : '单体';
       return `<button class="skb pet c-${s.cat}" ${ok ? '' : 'disabled'} title="${esc(s.d || '')}" onclick="battleAct({psk:${i},tgt:UI.selFoe},'pet')"><span class="i">${{ atk: '🐾', buff: '✨', debuff: '🌀', def: '🛡️' }[s.cat]}</span>${s.n}<span class="c">${ok ? PET_CAT[s.cat].n + '·' + tag + (s.el ? EL[s.el].i : '') : '亲近' + s.aff}</span></button>`; }).join('')}</div>
       <div class="arow duo"><span class="dim">这回合</span><button class="ab sm ${(C.duo || 'hero') === 'hero' ? 'q' : ''}" onclick="setDuo('hero')">🧒 石昊先出手</button><button class="ab sm ${C.duo === 'pet' ? 'q' : ''}" onclick="setDuo('pet')">${PETS[cur.mob].icon} 伙伴先出手</button></div>
-      <div class="arow"><button class="ab sm" onclick="battleUndo()">‹ 重选石昊</button><button class="ab sm ${C.auto ? 'q' : ''}" onclick="toggleAuto()">🤖 自动</button></div>`; return; }
+      <div class="arow"><button class="ab sm" onclick="battleUndo()">‹ 重选石昊</button><button class="ab sm ${B.auto ? 'q' : ''}" onclick="toggleAuto()">🤖 自动</button></div>`; return; }
   const sk = u.sk.map(id => { const S = SKILLS[id], cd = u.cd[id] || 0, no = u.mp < S.mp, pl = profLevel(id); return `<button class="skb" ${cd || no ? 'disabled' : ''} onclick="pickSkill('${id}')" title="${esc(S.desc)}"><span class="i">${S.icon}</span>${S.name}${S.mp ? `<span class="c">${S.mp}</span>` : ''}${pl ? `<span class="pf">${PROF[pl].s}</span>` : ''}${cd ? `<span class="cd">${cd}</span>` : ''}</button>`; }).join('');
   const heal = ['milk', 'herb', 'meat', 'lingyao', 'baoyao'].filter(i => itemN(i)); const swaps = B.noPet ? [] : Object.keys(C.pets).filter(id => id !== C.pet);
   A.innerHTML = `<div class="who-turn">🧒 <b>石昊</b> 的回合</div><div class="arow">${sk}</div><div class="arow">${canCrush(B) ? `<button class="ab sm q" onclick="battleAct({crush:1})">👊 一拳解决</button>` : ''}${heal.map(i => `<button class="ab sm" ${B.itemRound === B.round ? 'disabled' : ''} title="${ITEMS[i].name}：不占回合，每回合能吃一次" onclick="battleAct({item:'${i}'})">${ITEMS[i].icon}${itemN(i)}</button>`).join('')}
     ${swaps.map(id => `<button class="ab sm" onclick="battleAct({swap:'${id}'})" title="换${PETS[id].name}上场">⇄${PETS[id].icon}</button>`).join('')}<button class="ab sm" onclick="battleAct({flee:1})" ${B.flee ? '' : 'disabled'}>🏃 跑</button><button class="ab sm ${C.auto ? 'q' : ''}" onclick="toggleAuto()">🤖 ${C.auto ? '自动中' : '自动'}</button></div>`;
 }
 function pickSkill(id) { battleAct({ sk: id, tgt: SKILLS[id].tgt === 'enemy' ? UI.selFoe : null }); }
-function toggleAuto() { C.auto = !C.auto; save(); renderBattle(true); netSync(); }
+function toggleAuto() { const B = STATE.battle; if (!B) return; B.auto = !B.auto; renderBattle(true); netSync(); }
+function toggleAutoFight() { C.auto = !C.auto; save(); toast(C.auto ? '自动对战：开（之后的战斗都自动打，战斗里随时能停）' : '自动对战：关'); refresh(); netSync(); }
+async function autoExplore() { // explore here again and again, fights on auto, until told to stop, hurt, or the story needs you
+  if (NETROLE === 'guest') return; if (UI.autoEx) { UI.autoEx = false; refresh(); return; } const P = PLACES[C.loc]; if (!P.mobs) return; UI.autoEx = true; UI.autoExN = 0; refresh();
+  while (UI.autoEx && STATE.mode === 'play') { if (STATE.scene || DLG || STATE.dungeon || STATE.battle || !PLACES[C.loc].mobs) break;
+    if (C.hp < charStats().hpMax * 0.35) { toast('气血不多了，自动探索先停下'); logLine('自动探索停下了：气血不多了。歇一歇再走。', 'sys'); break; }
+    UI.autoExN++; UI.forceAuto = true; try { await explore(); } finally { UI.forceAuto = false; } refresh(); await sleep(window.__dbg && __dbg.instant ? 0 : 900); }
+  UI.autoEx = false; refresh(); }
 function battleEndUI() { UI.selFoe = null; refresh(); }
 
 /* ================= animation: battle playback, skill effects, floating numbers, screen transitions, big flashes =================
@@ -3135,8 +3257,15 @@ const FX_HTML = {
   claw: '<i></i><i></i><i></i>', bless: '<b></b><b></b>', curse: '<b></b>', slash: '<i></i><i></i>', blade: '<i></i>', bone: '<b></b>', rock: '<b></b>', fire: '<b></b>', roar: '<b></b>', magic: '<b></b>', wave: '<b></b>', heal: '<b>✚</b>', tower: '<b></b>', shield: '<b></b>', crush: '<b>拳</b>',
 };
 function fxSay(id, text) { const c = cardOf(id); if (!c || !animOn()) return; $('bfx').querySelectorAll(`.bubble[data-u="${id}"]`).forEach(e => e.remove()); // one bubble per speaker; it stays long enough to read
-  const life = Math.round(Math.min(7500, Math.max(3600, 2400 + plainLen(text) * 160)) * (SET.fast ? 0.75 : 1)); const p = fxAt(c); p.y -= p.h / 2 + 6;
-  const d = fxSpawn('bubble ' + (id === 'hero' ? 'me' : ''), p, esc(text.replace(/^（|）$/g, '')), life); d.dataset.u = id; d.style.setProperty('--life', life + 'ms'); if (text.startsWith('（')) d.classList.add('act'); }
+  const life = Math.round(Math.min(7500, Math.max(3600, 2400 + plainLen(text) * 160)) * (SET.fast ? 0.75 : 1)); const p = fxAt(c);
+  const d = fxSpawn('bubble ' + (id === 'hero' ? 'me' : ''), p, esc(text.replace(/^（|）$/g, '')), life); d.dataset.u = id; d.style.setProperty('--life', life + 'ms'); if (text.startsWith('（')) d.classList.add('act'); bubblePlace(d, c); }
+function bubblePlace(d, c) { // keep every bubble whole on screen: inside the battle view, clear of the other bubbles, flipped under the card when there's no room above
+  const V = $('bfx').getBoundingClientRect(), R = c.getBoundingClientRect(), w = d.offsetWidth, h = d.offsetHeight, cx = R.left - V.left + R.width / 2;
+  let left = Math.max(4, Math.min(V.width - w - 4, cx - w / 2)), top = R.top - V.top - h - 8, below = false; if (top < 4) { top = R.bottom - V.top + 8; below = true; }
+  const others = [...$('bfx').querySelectorAll('.bubble')].filter(e => e !== d && e.dataset.t).map(e => ({ l: +e.dataset.l, t: +e.dataset.t, r: +e.dataset.l + e.offsetWidth, b: +e.dataset.t + e.offsetHeight })); // placed spots, not mid-animation ones
+  const free = (l, t) => t >= 4 && t + h <= V.height - 4 && !others.some(o => l < o.r + 3 && l + w > o.l - 3 && t < o.b + 3 && t + h > o.t - 3);
+  const up = R.top - V.top - h - 8, dn = R.bottom - V.top + 8, cands = []; for (let n = 0; n < 4; n++) for (const [t, bl] of [[up - n * (h + 4), false], [dn + n * (h + 4), true]]) for (const dx of [0, -w * 0.6, w * 0.6]) cands.push([Math.max(4, Math.min(V.width - w - 4, left + dx)), t, bl]);
+  const pickC = cands.find(([l, t]) => free(l, t)); if (pickC) [left, top, below] = pickC; top = Math.max(4, Math.min(V.height - h - 4, top)); d.style.left = left + 'px'; d.style.top = top + 'px'; d.dataset.l = left; d.dataset.t = top; d.classList.toggle('below', below); d.style.setProperty('--tx', Math.max(10, Math.min(w - 10, cx - left)) + 'px'); }
 function fxStamp(B) { if (!animOn() || $('bfx').querySelector('.stamp')) return; const t = B.win ? '胜' : B.fled ? '逃' : '败'; const d = el('div', 'fx stamp ' + (B.win ? 'win' : 'lose'), t); $('bfx').appendChild(d); sfx(B.win ? 'win' : 'lose'); }
 
 /* ---------- screen transitions & big moments ---------- */
@@ -3601,7 +3730,7 @@ function netSync() { if (NETROLE !== 'host' || !NET.conns.size || !C) return; cl
 function snapshot() { return { t: 'st', C, st: { battle: STATE.battle, dungeon: STATE.dungeon, scene: !!STATE.scene, busy: STATE.busy, dtPending: !!STATE.dtPending }, dlg: DLG ? Object.assign(DLG.mini ? { mini: Object.assign({}, DLG.mini, { age: now() - DLG.mini.t0 }) } : DLG.rune ? { rune: DLG.rune } : DLG.choice ? { choice: DLG.choice.map(o => ({ t: o.t, dis: !!o.dis })) } : { o: DLG.o }, { ctx: dlgCtx() }) : null, roam: ROAM, ctrl: NET.ctrl, peers: NET.conns.size }; }
 function takeControl() { if (NETROLE === 'host') { NET.ctrl = 'host'; netBroadcast({ t: 'ctrl', ctrl: 'host' }); } else netSend({ t: 'take' }); toast('你来操作'); refresh(); if (UI.modal === 'coop') openModal('coop', 1); }
 /* commands a guest (or a host who handed over control) may trigger by clicking */
-const CMD_NAMES = ['go', 'explore', 'rest', 'train', 'enterDungeon', 'fightRoam', 'autoWalk', 'npcTalk', 'battleAct', 'toggleAuto', 'useItem', 'feedPet', 'setPet', 'toggleBar', 'arenaFight', 'storyHereRun', 'runeTap', 'runeSkip', 'arenaClaim', 'battleUndo', 'equipRelic', 'teleport', 'tradeDo', 'bountyTake', 'enterDungeonHard', 'setTitle', 'trackTask', 'camp', 'sellItem', 'buyItem', 'togglePetMove', 'setDuo', 'petRankUp', 'miniTap', 'miniSkip', 'miniRetry', 'miniGiveUp', 'runeRetry', 'runeAccept'];
+const CMD_NAMES = ['go', 'explore', 'rest', 'train', 'enterDungeon', 'fightRoam', 'autoWalk', 'npcTalk', 'battleAct', 'toggleAuto', 'useItem', 'feedPet', 'setPet', 'toggleBar', 'arenaFight', 'storyHereRun', 'runeTap', 'runeSkip', 'arenaClaim', 'battleUndo', 'equipRelic', 'teleport', 'tradeDo', 'bountyTake', 'enterDungeonHard', 'setTitle', 'trackTask', 'camp', 'sellItem', 'buyItem', 'togglePetMove', 'setDuo', 'petRankUp', 'miniTap', 'miniSkip', 'autoExplore', 'toggleAutoFight', 'miniRetry', 'miniGiveUp', 'runeRetry', 'runeAccept'];
 const CMDS = {};
 UI.inClick = false; const markClick = () => { UI.inClick = true; setTimeout(() => { UI.inClick = false; }, 0); };
 document.addEventListener('click', markClick, true); document.addEventListener('keydown', markClick, true);

@@ -61,8 +61,15 @@ const FX_HTML = {
   claw: '<i></i><i></i><i></i>', bless: '<b></b><b></b>', curse: '<b></b>', slash: '<i></i><i></i>', blade: '<i></i>', bone: '<b></b>', rock: '<b></b>', fire: '<b></b>', roar: '<b></b>', magic: '<b></b>', wave: '<b></b>', heal: '<b>✚</b>', tower: '<b></b>', shield: '<b></b>', crush: '<b>拳</b>',
 };
 function fxSay(id, text) { const c = cardOf(id); if (!c || !animOn()) return; $('bfx').querySelectorAll(`.bubble[data-u="${id}"]`).forEach(e => e.remove()); // one bubble per speaker; it stays long enough to read
-  const life = Math.round(Math.min(7500, Math.max(3600, 2400 + plainLen(text) * 160)) * (SET.fast ? 0.75 : 1)); const p = fxAt(c); p.y -= p.h / 2 + 6;
-  const d = fxSpawn('bubble ' + (id === 'hero' ? 'me' : ''), p, esc(text.replace(/^（|）$/g, '')), life); d.dataset.u = id; d.style.setProperty('--life', life + 'ms'); if (text.startsWith('（')) d.classList.add('act'); }
+  const life = Math.round(Math.min(7500, Math.max(3600, 2400 + plainLen(text) * 160)) * (SET.fast ? 0.75 : 1)); const p = fxAt(c);
+  const d = fxSpawn('bubble ' + (id === 'hero' ? 'me' : ''), p, esc(text.replace(/^（|）$/g, '')), life); d.dataset.u = id; d.style.setProperty('--life', life + 'ms'); if (text.startsWith('（')) d.classList.add('act'); bubblePlace(d, c); }
+function bubblePlace(d, c) { // keep every bubble whole on screen: inside the battle view, clear of the other bubbles, flipped under the card when there's no room above
+  const V = $('bfx').getBoundingClientRect(), R = c.getBoundingClientRect(), w = d.offsetWidth, h = d.offsetHeight, cx = R.left - V.left + R.width / 2;
+  let left = Math.max(4, Math.min(V.width - w - 4, cx - w / 2)), top = R.top - V.top - h - 8, below = false; if (top < 4) { top = R.bottom - V.top + 8; below = true; }
+  const others = [...$('bfx').querySelectorAll('.bubble')].filter(e => e !== d && e.dataset.t).map(e => ({ l: +e.dataset.l, t: +e.dataset.t, r: +e.dataset.l + e.offsetWidth, b: +e.dataset.t + e.offsetHeight })); // placed spots, not mid-animation ones
+  const free = (l, t) => t >= 4 && t + h <= V.height - 4 && !others.some(o => l < o.r + 3 && l + w > o.l - 3 && t < o.b + 3 && t + h > o.t - 3);
+  const up = R.top - V.top - h - 8, dn = R.bottom - V.top + 8, cands = []; for (let n = 0; n < 4; n++) for (const [t, bl] of [[up - n * (h + 4), false], [dn + n * (h + 4), true]]) for (const dx of [0, -w * 0.6, w * 0.6]) cands.push([Math.max(4, Math.min(V.width - w - 4, left + dx)), t, bl]);
+  const pickC = cands.find(([l, t]) => free(l, t)); if (pickC) [left, top, below] = pickC; top = Math.max(4, Math.min(V.height - h - 4, top)); d.style.left = left + 'px'; d.style.top = top + 'px'; d.dataset.l = left; d.dataset.t = top; d.classList.toggle('below', below); d.style.setProperty('--tx', Math.max(10, Math.min(w - 10, cx - left)) + 'px'); }
 function fxStamp(B) { if (!animOn() || $('bfx').querySelector('.stamp')) return; const t = B.win ? '胜' : B.fled ? '逃' : '败'; const d = el('div', 'fx stamp ' + (B.win ? 'win' : 'lose'), t); $('bfx').appendChild(d); sfx(B.win ? 'win' : 'lose'); }
 
 /* ---------- screen transitions & big moments ---------- */

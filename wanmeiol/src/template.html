@@ -149,6 +149,7 @@ body.noanim .rtime{display:none}
 /* rumours over the location picture, speech bubbles in battle */
 #rumor{position:absolute;left:10px;right:10px;top:8px;z-index:2;cursor:pointer;font-size:.78rem;line-height:1.45;color:#f2e6c8;background:#0c0a08c0;border:1px solid #d4ad6244;border-radius:8px;padding:4px 9px;opacity:0;pointer-events:none;transform:translateY(-4px);transition:opacity .6s,transform .6s}
 #rumor.on{animation:rumor 9s ease both;pointer-events:auto}
+#rumor.one{top:34px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #rumor .rmore{color:#d4ad62aa;font-size:.7rem;margin-left:4px}
 #rumor.multi{left:auto;right:12px;top:10px;width:min(58%,460px);opacity:1;transform:none;pointer-events:auto;background:#0c0a08b0;padding:6px 10px 4px;transition:background .2s}
 #rumor.multi:hover{background:#0c0a08e0}
@@ -161,11 +162,12 @@ body.cols #banner .ar{max-width:38%}
 @keyframes rumor{0%{opacity:0;transform:translateY(-4px)}8%,88%{opacity:1;transform:none}100%{opacity:0}}
 #rumor .rw{color:var(--gold);margin-right:6px;font-size:.72rem}
 body.noanim #rumor.on{opacity:1;transform:none}
-.bubble{max-width:200px;font-size:.82rem;line-height:1.4;color:#2a2118;background:#fbf2df;border-radius:10px;padding:5px 9px;box-shadow:0 3px 10px #0008;transform:translate(-50%,-100%)!important;animation:bubble var(--life,3.6s) ease both;z-index:7;text-align:left}
-.bubble::after{content:'';position:absolute;left:50%;bottom:-6px;margin-left:-6px;border:6px solid transparent;border-bottom:0;border-top-color:#fbf2df}
+.bubble{max-width:min(220px,60vw);font-size:.82rem;line-height:1.4;color:#2a2118;background:#fbf2df;border-radius:10px;padding:5px 9px;box-shadow:0 3px 10px #0008;transform:none!important;animation:bubble var(--life,3.6s) ease both;z-index:7;text-align:left}
+.bubble::after{content:'';position:absolute;left:var(--tx,50%);bottom:-6px;margin-left:-6px;border:6px solid transparent;border-bottom:0;border-top-color:#fbf2df}
+.bubble.below::after{bottom:auto;top:-6px;border:6px solid transparent;border-top:0;border-bottom-color:#fbf2df}.bubble.act.below::after{border-bottom-color:#e8dcc0}.bubble.me.below::after{border-bottom-color:#ffe9b0}
 .bubble.act{font-style:italic;color:#5a4a34;background:#e8dcc0}.bubble.act::after{border-top-color:#e8dcc0}
 .bubble.me{background:#ffe9b0}.bubble.me::after{border-top-color:#ffe9b0}
-@keyframes bubble{0%{opacity:0;margin-top:8px}6%,90%{opacity:1;margin-top:0}100%{opacity:0}}
+@keyframes bubble{0%{opacity:0;translate:0 8px}6%,90%{opacity:1;translate:0 0}100%{opacity:0}}
 #bfeed .taunt,.logv .taunt{color:#e8c8a8;font-style:italic}
 /* small games */
 .mhint{font-size:.85rem;color:var(--ink2);text-indent:0;margin-top:4px}
@@ -393,7 +395,7 @@ body.cols #bnav button{flex:none;max-width:none;min-height:66px;font-size:.8rem;
 body.cols #bnav button .i{font-size:1.45rem;margin-bottom:2px}
 body.cols #bnav button.on{background:#ffffff0d}
 body.cols #bnav button .dot{left:auto;right:12px;top:8px}
-body.cols.m-talk #bnav,body.cols.m-battle #bnav{display:flex;visibility:hidden}
+body.cols.m-talk #bnav,body.cols.m-battle #bnav{display:flex}body.cols.m-talk #bnav button,body.cols.m-battle #bnav button{opacity:.3;pointer-events:none}
 body.short.cols #app{grid-template-columns:minmax(0,1fr) 64px}
 body.short.cols #bnav button{min-height:46px;font-size:.68rem;margin:0 4px}
 body.short.cols #bnav button .i{display:block;font-size:1.1rem;margin:0}
@@ -527,6 +529,7 @@ body.short #bhead .order{display:none}
 .cineband.burst{background:linear-gradient(90deg,transparent,#2a1e06ee 12%,#2a1e06ee 88%,transparent);box-shadow:0 0 40px #ffd06a44}.cineband.burst span{color:#fff1c8}.cineband.burst small{color:#ffe08a}
 .cineband.end span{font-size:clamp(1rem,3.2vw,1.3rem)}
 @keyframes cband{0%{opacity:0;clip-path:inset(0 50% 0 50%)}12%{opacity:1;clip-path:inset(0 0 0 0)}85%{opacity:1}100%{opacity:0}}
+#bfx.cining .bubble{opacity:0!important;transition:opacity .3s}
 #bfeed .cine{display:block;color:#f3dcb0;font-family:var(--fh)}#bfeed .cine.red{color:#ffb8a0}
 /* story cinematics: full-screen lines over the painting */
 #vTalk.cine #tbg{opacity:1;filter:brightness(.42) saturate(.85);height:100%!important;transition:filter .6s}

@@ -42,7 +42,7 @@ function battleCreate(spec) {
   blog(B, `<span class="bt">⚔ ${spec.title || '战斗开始'}</span>`);
   const foes = B.units.filter(u => u.side === 1), talker = foes.find(u => u.boss || u.kind === 'rival') || foes[0];
   if (talker) battleSay(B, talker, 'open'); banterOpen(B);
-  B.sayQ = []; B.epic = spec.epic || null;
+  B.sayQ = []; B.epic = spec.epic || null; B.auto = spec.auto ?? !!(C.auto || UI.forceAuto); // 🤖 in a fight only lasts for that fight
   return B;
 }
 const alive = (B, side) => B.units.filter(u => u.alive && (side === undefined || u.side === side));
@@ -55,7 +55,7 @@ const fxe = (B, o) => { o.li = B.lc; B.ev.push(o); };
 const hpr = u => Math.max(0, u.hp / u.hpMax);
 const uName = u => `<span class="${u.side ? 'foe' : u.kind === 'pc' ? 'pc' : 'ally'}">${esc(u.name)}</span>`;
 /* who still has to choose this round: 石昊, then the 灵兽伙伴 (unless auto-battle, or 石昊 is calling a different 伙伴 in) */
-const needInput = B => B.units.filter(u => u.alive && !B.acts[u.id] && (u.kind === 'pc' || (u.pet && !C.auto && !(B.acts.hero && (B.acts.hero.swap || B.acts.hero.crush || B.acts.hero.flee)))));
+const needInput = B => B.units.filter(u => u.alive && !B.acts[u.id] && (u.kind === 'pc' || (u.pet && !B.auto && !(B.acts.hero && (B.acts.hero.swap || B.acts.hero.crush || B.acts.hero.flee)))));
 function petPick(B, u) { // the partner's own judgement (auto-battle, or the default before you choose)
   const mv = petMoves(u), h = B.units.find(x => x.kind === 'pc'), foes = alive(B, 1), has = c => mv.filter(x => x.s.cat === c), pw = L => wpick(L, x => x.s.w || 1).i;
   const atk = has('atk'); if (!h || !foes.length) return pw(atk);

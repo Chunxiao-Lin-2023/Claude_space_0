@@ -117,21 +117,79 @@ const CHATTER = [
   { at: '*', pet: 'dahong', who: '大红', t: '（远处飞过一只火红的鸟。大红立刻挺起胸膛，嘎了一声，响得震耳朵。）' },
   { at: '*', pet: 'ertuzi', who: '二秃子', t: '（二秃子盯着别的鸟看了很久，又低头看了看自己光溜溜的身子，叹了口气。鸟也会叹气。）' },
   { at: '*', pet: 'ertuzi', who: '二秃子', t: '（二秃子又饿了。它刚吃完。）' },
+  // ---- round 2 ----
+  { at: 'sc_street', from: 'q_wake', to: 'q_wolf', who: '石村的大婶', t: '小不点！昨天是不是你把我晾的肉干摘了？……算了算了，长身体呢。' },
+  { at: 'sc_street', from: 'q_egg0', to: 'q_shanbao', who: '石村的大婶', t: '大壮他娘说，大壮那天回来，抱着鹰蛋哭了一晚上，说是舍不得吃。' },
+  { at: 'sc_street', from: 'q_bei', to: 'q_shanbao', who: 'dazhuang', t: '狈村的人都怕你了！我今天去河边，他们看见我是石村的，扭头就走。我威风了一整天！' },
+  { at: 'sc_street', from: 'q_jijing', to: 'q_leave', who: 'dazhuang', t: '毛球昨天偷了我一块肉，我追了它三圈，它爬到柳神身上冲我做鬼脸。我不敢上去。' },
+  { at: 'sc_street', from: 'q_gate', to: 'q_end', who: 'dazhuang', t: '你不在，没人陪我进山了。我自己去了一回，被一只野猪追回来了。……别告诉皮猴。' },
+  { at: 'sc_street', from: 'q_gate', to: 'q_end', who: '石村的大婶', t: '小不点回来啦！快快快，家里还有半只烤羊腿！……哎你别全拿走啊！' },
+  { at: 'sc_gate', from: 'q_egg0', to: 'q_tomb', who: 'pihou', t: '族长罚我们几个扫三天村口。大壮扫了一天就说腰疼。他哪儿有腰？' },
+  { at: 'sc_gate', from: 'q_bandit', to: 'q_leave', who: 'pihou', t: '你把族长救回来的时候，我在村口哭了。……那是沙子迷了眼！' },
+  { at: 'sc_gate', from: 'q_gate', to: 'q_end', who: 'pihou', t: '我现在能翻十二个跟头了！第十一个和第十二个……我们一起不提。' },
+  { at: 'sc_yard', from: 'q_egg0', to: 'q_tomb', who: 'ermeng', t: '那颗鹰蛋……要是孵不出来，能不能炒了？我就问问。' },
+  { at: 'sc_yard', from: 'q_bandit', to: 'q_leave', who: 'linhu', t: '你开洞天那会儿，我离着二里地都看见光了。我还以为天要塌了。' },
+  { at: 'sc_yard', from: 'q_gate', to: 'q_end', who: 'linhu', t: '村里的娃娃现在都学你，天不亮就爬起来迎霞锻体。可惜没一个学会的，全在空地上打瞌睡。' },
+  { at: 'sc_yard', from: 'q_gate', to: 'q_end', who: 'ermeng', t: '……（二猛冲你点了点头，又从怀里摸出一罐兽奶。这是他打招呼的方式。）' },
+  { at: 'sc_chief', from: 'q_egg0', to: 'q_tomb', who: 'chief', t: '那几只小鹰？柳神留下了一只。剩下的两枚蛋……（族长咳了一声）……补身子了。' },
+  { at: 'sc_chief', from: 'q_bandit', to: 'q_leave', who: 'chief', t: '（族长的手腕上还有绳子勒出的印子）不碍事。比起当年猎貔貅，这算什么。' },
+  { at: 'sc_chief', from: 'q_gate', to: 'q_end', who: 'chief', t: '你那张床我没让人动。被子晒过了，还是你走的时候那床。' },
+  { at: 'sc_willow', from: 'q_bandit', to: 'q_leave', who: 'willow', t: '（柳枝上多了一片新叶。你数了数，比上个月多了三片。）' },
+  { at: 'sc_willow', from: 'q_gate', to: 'q_end', who: 'willow', t: '（你回来的时候，柳枝垂得比平时低一点，碰了碰你的肩膀。）' },
+  { at: 'dh_forest', from: 'q_egg0', to: 'q_end', who: '', t: '林子里有棵树上刻着几道歪歪扭扭的印子，是大壮比身高留下的。最下面一道，是你的。' },
+  { at: 'dh_deep', from: 'q_ruin', to: 'q_end', who: '', t: '那四位至尊打出来的裂谷还在，深不见底。裂谷边上长出了一圈嫩草。' },
+  { at: 'dh_tomb', from: 'q_bei', to: 'q_end', who: '', t: '狻猊墓的石门上，多了一道小小的手印——比你的手还小一点。是你自己按的，你忘了。' },
+  { at: 'dh_bei', from: 'q_bei', to: 'q_end', who: '狈村的小孩', t: '（一个狈村的小孩远远看着你，壮着胆子喊了一声：“你、你能教我打拳吗？”然后被他娘拽走了。）' },
+  { at: 'dh_road', from: 'q_qingfeng', to: 'q_end', who: '', t: '那辆翻倒的兽车已经被人拖走了。路边多了一个小小的土堆，土堆前插着一把断刀。' },
+  { at: 'dh_road', from: 'q_gate', to: 'q_end', who: '过路的猎户', t: '小兄弟，前面那段路……哦，是你啊。那没事了，你走吧，该担心的是山里的东西。' },
+  { at: 'xs_hall', from: 'q_xushen', to: 'q_end', who: '虚神界的少年', t: '你就是那个大荒来的？……能不能别用那种眼神看我？我们羽族不好吃！' },
+  { at: 'xs_hall', from: 'q_xushen', to: 'q_end', who: '虚神界的少女', t: '光幕上又多了一个纪录。纪录后面的名字，写的是“小不点”。……这名字也太敷衍了吧。' },
+  { at: 'xs_hall', from: 'q_xushen', to: 'q_end', who: '虚神界的少年', t: '我族长老说，跟大荒来的打架，先把干粮藏好。我以为他开玩笑，结果……我的干粮呢？' },
+  { at: 'bt_gate', from: 'q_join', to: 'q_qf1', who: '外门弟子', t: '那个就是扛着虎肉拜师的？……我们外门三百年来，头一回有人带着“见面礼”进门。' },
+  { at: 'bt_gate', from: 'q_qf1', to: 'q_qf2', who: 'qingfeng', t: '你别老来看我练拳……你在旁边吃东西，我饿。' },
+  { at: 'bt_gate', from: 'q_qf3', to: 'q_end', who: '外门弟子', t: '清风师姐去了内门，外门的木桩终于不用每个月换了。' },
+  { at: 'bt_court', from: 'q_bully', to: 'q_lei', who: '补天阁弟子', t: '那几个收份例的师兄被你打了以后，主动把份例全退了，还附赠了一句“小师弟好”。' },
+  { at: 'bt_court', from: 'q_qf1', to: 'q_end', who: 'gezhu', t: '你在雷池那几天，雷池的雷少了三成。……雷池管事来找我诉苦了。' },
+  { at: 'bt_court', from: 'q_qf2', to: 'q_end', who: 'guiye', t: '……（诡爷递给你一个干瘪的小葫芦。里面什么都没有，可你拿着它，心里莫名地静。）' },
+  { at: 'bt_court', from: 'q_return', to: 'q_end', who: '补天阁弟子', t: '神藤上的葫芦今天又鼓了一个！阁主数了三遍，笑了三遍。' },
+  { at: 'bt_lib', from: 'q_qf2', to: 'q_end', who: '藏经阁的扫地弟子', t: '守阁人这几天在第五层的锁上又加了一把锁。你说加了有用吗？……反正我是不敢说没用。' },
+  { at: 'bt_train', from: 'q_qf1', to: 'q_end', who: '雷池师兄', t: '我们给雷池边那块焦黑的石头起了名字，叫“小师弟坐过的”。现在大家都抢着坐，图个吉利。' },
+  { at: 'bt_wild', from: 'q_join', to: 'q_end', who: '补天阁弟子', t: '阁外山林的老虎最近都很乖，见了穿补天阁衣裳的人就绕道。……全是托你的福。' },
+  { at: 'bt_tiger', from: 'q_join', to: 'q_end', who: '', t: '虎穴里那汪黑水还在，水面上空荡荡的。洞口多了一行字：“莲已摘，勿扰。”' },
+  { at: 'bd_gate', from: 'q_bdgate', to: 'q_lion', who: '各族少年', t: '那个就是在虚神界刷纪录的？……他手里拿的是什么？烤肉？进百断山还带烤肉？' },
+  { at: 'bd_gate', from: 'q_lion', to: 'q_end', who: '各族少年', t: '我们族的长辈说，进了百断山，先活着，再抢机缘。你那个火国公主朋友，好像只听了后半句。' },
+  { at: 'bd_gate', from: 'q_cliff', to: 'q_end', who: 'huolinger', t: '你背上那把锈剑……看着跟烧火棍似的，可我的火鸟离它三丈远就不肯过去了。' },
+  { at: 'bd_lion', from: 'q_bdgate', to: 'q_lion', who: '', t: '狮岭上的石头缝里，到处都是金色的长毛。山顶的洞里，传出很沉的呼吸声——九道。' },
+  { at: 'bd_desert', from: 'q_lion', to: 'q_yu', who: '', t: '荒漠上一点风都没有。太安静了，像是有人在等你。' },
+  { at: 'bd_cliff', from: 'q_cliff', to: 'q_end', who: '各族少年', t: '那块灰石头……就是你拿去砸碎石柱的？我拿起来试了试——我的手腕到现在还疼。' },
+  { at: 'bd_spring', from: 'q_cliff', to: 'q_spring', who: '', t: '泉眼边上一点声音都没有。白虎趴着，金鹏盘着，一个白衣少女站着——三个都在等。' },
+  { at: 'bd_bone', from: 'q_tiangu', to: 'q_end', who: '', t: '骨山塌了一半。风从骨头缝里吹过去，呜呜地响，不像哭，像是在哼一首很老的歌。' },
+  { at: 'bd_mount', from: 'q_spring', to: 'q_mount', who: '', t: '满山的果子香得人发晕。你吞了好几口口水，毛球已经在流哈喇子了。' },
+  { at: '*', pet: 'maoqiu', who: '毛球', t: '（毛球蹲在你头顶，用你的头发编了一根小辫子。你摸到的时候，它假装在看风景。）' },
+  { at: '*', pet: 'maoqiu', who: '毛球', t: '（路过一棵果树，毛球“嗖”地上去了。下来的时候，嘴里两个，手里两个，尾巴上还卷着一个。）' },
+  { at: '*', pet: 'maoqiu', who: '毛球', t: '（毛球冲一只路过的山雀龇牙。山雀没理它。毛球很受伤。）' },
+  { at: '*', pet: 'dahong', who: '大红', t: '（大红叼来一只死老鼠放在你脚边，一脸“不用谢”。）' },
+  { at: '*', pet: 'dahong', who: '大红', t: '（大红又在跟毛球抢一块肉。两个打成一团，最后肉掉进了草丛，谁也没吃着。）' },
+  { at: '*', pet: 'dahong', who: '大红', t: '（大红站在高处，挺着胸，等你夸它。你不夸，它就一直站着。）' },
+  { at: '*', pet: 'ertuzi', who: '二秃子', t: '（二秃子在你手心里睡着了，打着很小很小的呼噜。）' },
+  { at: '*', pet: 'ertuzi', who: '二秃子', t: '（二秃子背上好像冒出了一根很细很细的绒毛。你们一起盯着它看了很久。）' },
 ];
 let chatT = 0, lastChat = {};
 function chatterFor(loc) { const P = PLACES[loc], q = C.story.q;
   return CHATTER.filter(c => (c.at === '*' ? c.pet && C.pet === c.pet : c.at === loc || c.at === P.area) && (!c.night || isNight()) && (!c.from || q >= qi(c.from)) && (!c.to || q <= qi(c.to))); }
 /* who is standing here right now (some people move as the story goes on) */
 function npcsHere(loc) { const P = PLACES[loc], f = C.story.f; let L = (P.npcs || []).filter(n => !(n === 'qingfeng' && (!f.qingfeng || f.qfIn)) && !(n === 'huolinger' && C.story.q < qi('q_bdgate'))); if (loc === 'bt_court' && f.qfIn) L = [...L, 'qingfeng']; return L; }
-function npcSay(c) { lastChat[CHATTER.indexOf(c)] = now(); const N = NPCS[c.who]; logLine(c.who ? `<span class="who">${N ? N.name : c.who}</span>${c.t}` : c.t, 'npc'); }
-function npcOnArrive(loc) { if (!C || NETROLE === 'guest' || STATE.scene) return; const L = chatterFor(loc).filter(c => !lastChat[CHATTER.indexOf(c)] || now() - lastChat[CHATTER.indexOf(c)] > 300000); if (L.length && chance(0.55)) setTimeout(() => { if (!STATE.scene && !STATE.battle) npcSay(pick(L)); }, 700); chatT = now() + rint(40000, 70000); }
+const chatKey = c => (c.who || '') + c.t.slice(0, 14);
+const chatPick = L => { const H = C.chatHeard || {}, fresh = L.filter(c => !H[chatKey(c)]); return pick(fresh.length ? fresh : L); };
+function npcSay(c) { lastChat[CHATTER.indexOf(c)] = now(); (C.chatHeard = C.chatHeard || {})[chatKey(c)] = 1; const N = NPCS[c.who]; logLine(c.who ? `<span class="who">${N ? N.name : c.who}</span>${c.t}` : c.t, 'npc'); }
+function npcOnArrive(loc) { if (!C || NETROLE === 'guest' || STATE.scene) return; const L = chatterFor(loc).filter(c => !lastChat[CHATTER.indexOf(c)] || now() - lastChat[CHATTER.indexOf(c)] > 300000); if (L.length && chance(0.55)) setTimeout(() => { if (!STATE.scene && !STATE.battle) npcSay(chatPick(L)); }, 700); chatT = now() + rint(40000, 70000); }
 function npcTick() { if (!C || STATE.mode !== 'play' || NETROLE === 'guest' || STATE.scene || STATE.battle || STATE.dungeon || now() < chatT) return; chatT = now() + rint(45000, 80000);
-  const L = chatterFor(C.loc).filter(c => !lastChat[CHATTER.indexOf(c)] || now() - lastChat[CHATTER.indexOf(c)] > 300000); if (L.length) npcSay(pick(L)); }
+  const L = chatterFor(C.loc).filter(c => !lastChat[CHATTER.indexOf(c)] || now() - lastChat[CHATTER.indexOf(c)] > 300000); if (L.length) npcSay(chatPick(L)); }
 function npcRumor(text) { const P = PLACES[C.loc]; const who = P.area === 'shicun' ? NPCS.linhu : P.area === 'butian' ? NPCS.gezhu : P.area === 'baiduan' ? NPCS.huolinger : null; logLine(who ? `<span class="who">${who.name}</span>${text}` : '【传闻】' + text, 'npc'); }
 function npcTalk(id) { // clicking a person: their quest or side errand, otherwise a line that fits right now
   if (STATE.scene || STATE.battle) return; const opts = talkOptions(id); const lines = chatterFor(C.loc).filter(c => c.who === id);
   const fallback = { chief: '去玩吧，别跑太远。', willow: '（柳枝静静垂着。）', linhu: '弓要常擦，箭要常磨。', dazhuang: '小不点，下回进山带上我！', ermeng: '嘿嘿。', pihou: '你看你看，我又能多翻一个跟头了！', qingfeng: C.story.f.qfIn ? '内门的饭比外门的好吃。……你别告诉别人我说的。' : '……嗯。', guiye: '……', gezhu: '好好修行。', libelder: '书别弄脏了。', huolinger: '看什么看？' }[id] || '……';
-  runScene(async () => { await say(id, lines.length ? pick(lines).t : fallback); if (opts.length) { const c = await choose([...opts.map(o => ({ t: o.t, dis: !!o.dis })), { t: '没事了' }]); if (c < opts.length) setTimeout(() => opts[c].f(), 0); } });
+  runScene(async () => { const ln = lines.length ? chatPick(lines) : null; if (ln) (C.chatHeard = C.chatHeard || {})[chatKey(ln)] = 1; await say(id, ln ? ln.t : fallback); if (opts.length) { const c = await choose([...opts.map(o => ({ t: o.t, dis: !!o.dis })), { t: '没事了' }]); if (c < opts.length) setTimeout(() => opts[c].f(), 0); } });
 }
 function talkOptions(id) { return [...questTalkOptions(id), ...bountyOptions(id), ...tradeOptions(id), ...(id === 'willow' && C.dt.length ? [{ t: '🔄 重开一座洞天（灵药 ×1）', dis: !itemN('lingyao'), f: dongtianRedo }] : []), ...(talkNext(id) ? [{ t: '💬 闲聊', f: () => talkPlay(id) }] : [])]; }
 const npcMark = id => questTalkOptions(id).length ? ' ❗' : bountyToday().some(b => b.npc === id && (b.st === 'new' || (b.st === 'on' && bountyReady(b)))) ? ' 📋' : talkNext(id) ? ' 💬' : '';

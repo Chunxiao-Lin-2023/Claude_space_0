@@ -85,20 +85,20 @@ const heroOf = B => B.units.find(u => u.kind === 'pc');
 const partnerOf = B => B.units.find(u => u.pet && u.alive);
 const alliesOf = B => B.units.filter(u => u.side === 0 && u.kind === 'npc' && !u.pet && u.alive && ALLY_SAY[u.mob]);
 function foeKindOf(B) { const f = B.units.find(u => u.side === 1); return !f ? 'beast' : f.kind === 'rival' ? 'rival' : FOE_KIND(f.mob); }
-function banterOpen(B) { const h = heroOf(B), al = alliesOf(B); if (al.length && chance(0.7)) { const a = al[0], L = ALLY_SAY[a.mob].open; if (L) bSay(B, a, pick(L), 'pc'); }
-  if (chance(0.45)) bSay(B, h, pick(HERO_SAY.open[foeKindOf(B)]), 'pc'); B.bqN = 0; }
+function banterOpen(B) { const h = heroOf(B), al = alliesOf(B); if (al.length && chance(0.7)) { const a = al[0], L = ALLY_SAY[a.mob].open; if (L) bSay(B, a, pickFresh(L), 'pc'); }
+  if (chance(0.45)) bSay(B, h, pickFresh(HERO_SAY.open[foeKindOf(B)]), 'pc'); B.bqN = 0; }
 function banterHit(B, a, d, info) { if (!a || !d || info.dot || B.over) return;
   if (a.kind === 'pc' && info.crit && d.side === 1 && bq(B)) { const p = partnerOf(B), al = alliesOf(B); const r = Math.random();
-    if (r < 0.3) bSay(B, a, pick(HERO_SAY.crit), 'pc'); else if (r < 0.55 && p && PET_SAY[p.mob]) bSay(B, p, pick(PET_SAY[p.mob].heroCrit), 'pc'); else if (r < 0.75 && al.length && ALLY_SAY[al[0].mob].heroCrit) bSay(B, al[0], pick(ALLY_SAY[al[0].mob].heroCrit), 'pc'); return; }
+    if (r < 0.3) bSay(B, a, pickFresh(HERO_SAY.crit), 'pc'); else if (r < 0.55 && p && PET_SAY[p.mob]) bSay(B, p, pickFresh(PET_SAY[p.mob].heroCrit), 'pc'); else if (r < 0.75 && al.length && ALLY_SAY[al[0].mob].heroCrit) bSay(B, al[0], pickFresh(ALLY_SAY[al[0].mob].heroCrit), 'pc'); return; }
   if (d.kind === 'pc' && a.side === 1 && d.hp > 0 && bq(B)) { const S = sayOf(a);
-    if (info.crit && S && S.hit && chance(0.5)) return bSay(B, a, pick(S.hit));
+    if (info.crit && S && S.hit && chance(0.5)) return bSay(B, a, pickFresh(S.hit));
     if (!B.lowSaid && d.hp < d.hpMax * 0.4 && !B.epic) { B.lowSaid = 1; const p = partnerOf(B), al = alliesOf(B);
-      if (al.length && ALLY_SAY[al[0].mob].heroLow && chance(0.6)) return bSay(B, al[0], pick(ALLY_SAY[al[0].mob].heroLow), 'pc');
-      if (p && PET_SAY[p.mob] && chance(0.7)) return bSay(B, p, pick(PET_SAY[p.mob].heroLow), 'pc'); if (chance(0.5)) bSay(B, d, pick(HERO_SAY.low), 'pc'); } } }
-function banterMiss(B, a, d) { if (!a || !d || B.over || !bq(B)) return; if (a.side === 1 && d.kind === 'pc' && chance(0.3)) { const S = sayOf(a); if (S && S.miss && chance(0.6)) bSay(B, a, pick(S.miss)); else bSay(B, d, pick(HERO_SAY.dodge), 'pc'); } }
+      if (al.length && ALLY_SAY[al[0].mob].heroLow && chance(0.6)) return bSay(B, al[0], pickFresh(ALLY_SAY[al[0].mob].heroLow), 'pc');
+      if (p && PET_SAY[p.mob] && chance(0.7)) return bSay(B, p, pickFresh(PET_SAY[p.mob].heroLow), 'pc'); if (chance(0.5)) bSay(B, d, pickFresh(HERO_SAY.low), 'pc'); } } }
+function banterMiss(B, a, d) { if (!a || !d || B.over || !bq(B)) return; if (a.side === 1 && d.kind === 'pc' && chance(0.3)) { const S = sayOf(a); if (S && S.miss && chance(0.6)) bSay(B, a, pickFresh(S.miss)); else bSay(B, d, pickFresh(HERO_SAY.dodge), 'pc'); } }
 function banterKill(B, a, d) { if (!d || d.side !== 1 || !a || !bq(B)) return; const last = !alive(B, 1).length;
-  if (a.kind === 'pc' && chance(last ? 0.5 : 0.25)) bSay(B, a, pick(HERO_SAY.kill[d.kind === 'rival' ? 'rival' : FOE_KIND(d.mob)]), 'pc');
-  else if (a.pet && PET_SAY[a.mob] && chance(0.4)) bSay(B, a, pick(PET_SAY[a.mob].kill), 'pc'); }
-function banterAct(B, u) { if (u.pet && PET_SAY[u.mob] && chance(0.12) && bq(B)) bSay(B, u, pick(PET_SAY[u.mob].act), 'pc'); }
+  if (a.kind === 'pc' && chance(last ? 0.5 : 0.25)) bSay(B, a, pickFresh(HERO_SAY.kill[d.kind === 'rival' ? 'rival' : FOE_KIND(d.mob)]), 'pc');
+  else if (a.pet && PET_SAY[a.mob] && chance(0.4)) bSay(B, a, pickFresh(PET_SAY[a.mob].kill), 'pc'); }
+function banterAct(B, u) { if (u.pet && PET_SAY[u.mob] && chance(0.12) && bq(B)) bSay(B, u, pickFresh(PET_SAY[u.mob].act), 'pc'); }
 function banterWin(B) { if (!B.win || B.epic) return; const h = heroOf(B), p = partnerOf(B), al = alliesOf(B), r = Math.random();
-  if (al.length && ALLY_SAY[al[0].mob].win && r < 0.5) bSay(B, al[0], pick(ALLY_SAY[al[0].mob].win), 'pc'); else if (p && PET_SAY[p.mob] && r < 0.65) bSay(B, p, pick(PET_SAY[p.mob].win), 'pc'); else if (h.alive && r < 0.85) bSay(B, h, pick(HERO_SAY.win), 'pc'); }
+  if (al.length && ALLY_SAY[al[0].mob].win && r < 0.5) bSay(B, al[0], pickFresh(ALLY_SAY[al[0].mob].win), 'pc'); else if (p && PET_SAY[p.mob] && r < 0.65) bSay(B, p, pickFresh(PET_SAY[p.mob].win), 'pc'); else if (h.alive && r < 0.85) bSay(B, h, pickFresh(HERO_SAY.win), 'pc'); }

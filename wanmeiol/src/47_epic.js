@@ -33,7 +33,7 @@ function fxBossCard(B) { const E = B.epic, intro = E.intro || [], dur = Math.rou
   const end = () => { if (!d.parentNode) return; d.classList.add('out'); setTimeout(() => d.remove(), 400); }; d.onclick = e => { e.stopPropagation(); end(); UI.animEnd = Math.min(UI.animEnd, now() + 200); setTimeout(() => { if (STATE.battle && STATE.battle.id === B.id) renderBattle(true); }, 260); };
   setTimeout(end, dur); return dur; }
 function fxCine(ev) { $('bfx').querySelectorAll('.cineband').forEach(e => e.remove()); const ms = cineMs(ev);
-  const d = el('div', 'fx cineband ' + (ev.cls || ''), `${ev.who ? `<small>${esc(ev.who)}</small>` : ''}<span>${ev.text}</span>`); d.style.setProperty('--dur', ms + 'ms'); $('bfx').appendChild(d); setTimeout(() => d.remove(), ms);
+  const d = el('div', 'fx cineband ' + (ev.cls || ''), `${ev.who ? `<small>${esc(ev.who)}</small>` : ''}<span>${ev.text}</span>`); d.style.setProperty('--dur', ms + 'ms'); $('bfx').appendChild(d); $('bfx').classList.add('cining'); clearTimeout(UI.cineT); UI.cineT = setTimeout(() => { d.remove(); $('bfx').classList.remove('cining'); }, ms); // speech bubbles step aside while the band is up
   if (ev.cls === 'burst') { fxSpawn('fx-burstflash', { x: 0, y: 0, w: 0 }, '', 1400); fxClass('hero', 'bursting', 1600); sfx('level'); }
   else if (ev.cls === 'phase') sfx('fail'); else sfx('magic'); }
 function fxFinish(ev) { const c = cardOf(ev.t); fxSpawn('fx-whiteflash', { x: 0, y: 0, w: 0 }, '', 900); if (c) fxSpawn('fx-inkburst', fxAt(c), '<b></b><b></b><b></b>', 1100);
