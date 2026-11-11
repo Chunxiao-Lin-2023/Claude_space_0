@@ -103,9 +103,36 @@ const { chromium } = require('playwright');
     jumpTo(3); ok('jumpEnd', !!(D.C.lv === 20 && D.C.story.f.end === 1 && D.C.sk.includes('ta') && D.C.pets.dahong && D.C.relics.r_pumo));
     { const a0 = D.auto; D.auto = false; D.C.auto = true; runScene(async () => { await nar('一段还没看完的剧情'); await nar('第二句'); }); await w8(100); const mid = !!(S().scene && DLG);
       jumpTo(0); ok('jumpMidScene', mid && !S().scene && !DLG && D.C.story.qid === 'q_memory' && D.C.auto === true); D.auto = a0; await w8(700); await idle(); }
+    { D.C.lv = 80; fullHeal(); const mk = m => battleCreate({ mobs: [[m, 80]], story: 1, title: 't' });
+      let B = mk('ysjiang'), q = B.units.find(u => u.mob === 'ysjiang'); applyDmg(B, B.units[0], q, Math.round(q.hpMax * 0.55)); B.round = B.asked + 1; mechHeroAct(B, B.units[0], { sk: 'guard' }); ok('mechQuestion', !q.alive && !!B.answered);
+      B = mk('shihai'); const sh = B.units.find(u => u.mob === 'shihai'); applyDmg(B, B.units[0], sh, sh.hp + 9); const rv = sh.alive; applyDmg(B, B.units[0], sh, sh.hp + 9); ok('mechRevive', rv && !sh.alive);
+      B = mk('canxian'); const cx = B.units.find(u => u.mob === 'canxian'); cx.hp = cx.hpMax / 2; addSt(cx, { k: 'bleed', t: 3, v: 1 }); const h1 = cx.hp; mechRound(B, 'end'); ok('mechDevourBlocked', cx.hp === h1);
+      B = mk('wangujie'); const w = B.units.find(u => u.mob === 'wangujie'); let charged = false; for (let r = 0; r < 7 && !charged; r++) { B.units[0].hp = B.units[0].hpMax; B.acts = { hero: { sk: 'guard' } }; const p = B.units.find(u => u.pet); if (p) B.acts[p.id] = { psk: 0 }; battleResolve(B); charged = /时光倒流/.test(w.intent || ''); } ok('mechRewind', charged);
+      B = battleCreate({ mobs: [['dummy', 1]], story: 1, survive: 1, allies: ['a_xiaoqi'], protect: 'a_xiaoqi' }); B.units.find(u => u.mob === 'dummy').hp = 1e9; B.units.find(u => u.mob === 'dummy').hpMax = 1e9; B.acts = { hero: { sk: 'guard' } }; const p2 = B.units.find(u => u.pet); if (p2) B.acts[p2.id] = { psk: 0 }; battleResolve(B); ok('surviveFight', B.over && B.survived && B.protectOk); }
+    { let B = battleCreate({ mobs: [['dummy', 1]], waves: [[['dummy', 1], ['dummy', 1]]], stance: 'supply', story: 1, title: 'w' }); B.units.filter(u => u.side === 1).forEach(u => { u.hp = 0; u.alive = false; }); const goOn = !battleCheckEnd(B); ok('siegeWave', goOn && B.waveN === 2 && B.units.filter(u => u.side === 1 && u.alive).length === 2 && !B.over);
+      B = battleCreate({ mobs: [['dummy', 1]], stance: 'gate', story: 1 }); ok('siegeStance', !!stOf(B.units[0], 'def'));
+      B = battleCreate({ mobs: leitaiFoes(0, 50), endless: 1, title: 'l' }); B.units.filter(u => u.side === 1).forEach(u => { u.hp = 0; u.alive = false; }); battleCheckEnd(B); ok('leitaiNext', B.endless.n === 1 && !B.over && B.units.some(u => u.side === 1 && u.alive)); }
     jumpTo(JUMPS.findIndex(J => J.q === 'q_v3end')); await w8(700); await idle(); D.C.story.f.v4 = 1; go('bz_camp', true, true); D.C.story.q = qi('q_bzcamp'); await storyPoll(); await idle(); ok('enterWhereYouStand', D.C.story.q > qi('q_bzcamp'));
     jumpTo(JUMPS.findIndex(J => J.q === 'q_v5')); ok('jumpVol5', !!(D.C.lv === 39 && D.C.story.f.v4end && D.C.gf.includes('yunzu') && placeOpen('sj_town') && !placeOpen('sj_desert') && barSlots(39) === 11)); await w8(700); await idle();
     jumpTo(JUMPS.findIndex(J => J.q === 'q_qishen')); ok('jumpVol3', !!(D.C.lv === 31 && D.C.story.f.shihuang && D.C.gf.includes('renhuang') && placeOpen('sg_inner') && placeOpen('hg_city') && !placeOpen('sg_altar'))); await w8(700); await idle();
+    { jumpTo(JUMPS.length - 1); await w8(700); await idle(); const c = D.C; c.auto = true;
+      c.lv = 85; c.exp = 0; c.dao = 0; c.daoX = 0; gainExp(BAL.expNext(85) * 1.6, true); ok('daoGain', c.dao >= 2 && c.exp === BAL.expNext(85));
+      const h0 = charStats().hpMax; daoSpend('hp'); ok('daoSpend', charStats().hpMax > h0 && c.daoP.hp === 1);
+      c.story.f.v6end = 1; c.relics.r_xwhy = 1; c.eq = ['r_xwhy']; c.money = 1e6; c.bag.bone = 60; const a0 = charStats().atk; await forgeRelic('r_xwhy'); ok('forge', forgeLv('r_xwhy') === 1 && charStats().atk > a0);
+      ok('lateFused', !!FUSED.f_daolei && SKILL_ORDER.includes('f_daolei') && !!SKILLS.f_wuluo);
+      c.pets.bazhen = { aff: 100, evo: 1, evo2: 1, lv: 69, exp: 0, hatch: 0 }; petGainExp('bazhen', petNeed(69) + 1); await w8(1000); await idle(); ok('petEvo3', c.pets.bazhen.lv === 70 && !!c.pets.bazhen.evo3 && petUnit('bazhen').name.includes('真身'));
+      c.hidden = {}; await hiddenFight('gujian'); await idle(); ok('hiddenFight', !!c.hidden.gujian && c.hidden.gujian.day === gameDay());
+      c.story.f.tiantingDone = 1; c.tt = {}; const d0 = charStats().def; await ttVisit(); await idle(); ok('tianting', ttLv('yao') === 3 && charStats().def >= d0 && lateExpMul() >= 1);
+      c.tt.qiang = 2; c.tt.wu = 2; ok('tiantingEffect', charStats().def > d0 && Math.abs(lateExpMul() - 1.1) < 1e-9);
+      ok('lateDungeon', PLACES.jh_deep.dungeon === 'jhsi' && DUNGEONS.heishui.rooms.length === 3);
+      fullHeal(); await enterDungeon('heishui'); await idle(); ok('lateDungeonClear', !!c.dungeons.heishui);
+      c.story.f.qinhao = 0; delete c.story.f.ev_qh1; go('jt_gate', true); await w8(200); await idle(); go('jt_court', true); await w8(300); await idle(); ok('sideEvent', (c.story.f.qinhao || 0) >= 1 || (c.story.f.boxQ || 0) >= 1);
+      ok('sideTask', tasks().some(t => t.key.startsWith('sideq:')));
+      ok('minis', ['memory', 'clones', 'rhythm'].every(k => MINI[k] && MINI[k].init({}))); ok('breath', Object.keys(BREATH).length >= 16 && finaleEchoes().length >= 0);
+      await volRecap('十'); await recapShow(true); await idle(); ok('recap', true);
+      c.story.f.v15end = 1; go('jh_top', true, true); ok('lateActs', lateActs(PLACES.jh_top).length === 2); await boxOpen(); await idle(); ok('boxOpen', !!c.story.f.boxOpened);
+      const nAch = Object.keys(c.ach).length; await lunhuiStart(); await w8(200); await idle(); ok('lunhui', D.C !== c && D.C.ng === 1 && D.C.lv === 1 && Object.keys(D.C.ach).length >= nAch && !!D.C.relics.r_xwhy && forgeLv('r_xwhy') === 1 && mobUnit('wolf', 5).hpMax > 0);
+      D.dlgPick(-1); await w8(300); await idle(); }
     { let lap = []; for (const a of Object.keys(AREAS)) { UI.mapArea = a; navTo('map'); await w8(30); const R = [...document.querySelectorAll('#sbody .mn')].map(e => [e.textContent, e.getBoundingClientRect()]);
         for (let i = 0; i < R.length; i++) for (let j = i + 1; j < R.length; j++) { const p = R[i][1], q = R[j][1]; if (p.left < q.right && p.right > q.left && p.top < q.bottom && p.bottom > q.top) lap.push(R[i][0] + '/' + R[j][0]); } navTo('adv'); }
       ok('mapNoOverlap', !lap.length); if (lap.length) out.mapLap = lap.join(','); }

@@ -71,7 +71,7 @@ function battleAct(act, who = 'hero') { // 石昊 and the 灵兽伙伴 each choo
   battleResolve(B); renderBattle(); netSync(); if (B.over) battleFinish(B);
 }
 function battleUndo() { const B = STATE.battle; if (!B || B.over || !B.acts.hero) return; delete B.acts.hero; renderBattle(true); netSync(); }
-function battleFinish(B) { if (B.done) return; B.done = true; const r = Object.assign({ win: B.win, fled: !!B.fled, kills: B.kills, noLose: B.noLose }, B.win ? battleRewards(B) : {});
+function battleFinish(B) { if (B.done) return; B.done = true; const r = Object.assign({ win: B.win, fled: !!B.fled, kills: B.kills, noLose: B.noLose, survived: !!B.survived, protectOk: !!B.protectOk, answered: !!B.answered, wave: B.waveN || 0, streak: B.endless ? B.endless.n : 0 }, B.win ? battleRewards(B) : {});
   const hero = B.units.find(u => u.kind === 'pc'); r.hp = hero.hp; r.mp = hero.mp; r.boss = B.room != null && B.dungeon && DUNGEONS[B.dungeon].rooms[B.room]?.boss ? B.dungeon : null;
   setTimeout(() => battleApply(r, B), window.__dbg && __dbg.instant ? 0 : animLeft() + (SET.motion === false ? 500 : 1100)); }
 function battleApply(r, B) { if (B && B.aborted) return; // the fight was dropped (跳章)
@@ -80,10 +80,12 @@ function battleApply(r, B) { if (B && B.aborted) return; // the fight was droppe
     if (C.pet && C.pets[C.pet]) { const p = C.pets[C.pet]; if (p.aff < 100 && chance(0.35)) { p.aff = Math.min(100, p.aff + 1); petEvoCheck(C.pet); } }
     relicFromKills(r.kills); for (const [id] of r.kills || []) exNote(C.loc, 'm', id);
     if (C.pets.ertuzi && C.pets.ertuzi.hatch < 0) { /* reserved */ }
+    if (r.bonus) logLine(`<span class="weak">亲手打出来的</span>：打断蓄力 ${(B && B.ints) || 0} 次、命中弱点 ${(B && B.weakHits) || 0} 次，奖励 +${r.bonus * 15}%${r.bonus >= 3 ? '，额外一颗宝药' : ''}`, 'sys');
     if (r.exp) { gainExp(r.exp); if (!(B && B.noPet)) petBattleExp(r.exp); } if (r.money) gainMoney(r.money, '捡到'); for (const it of r.items || []) addItem(it, 1); if (r.boss) storyDungeon(r.boss); if (C.hp <= 0) C.hp = 1; }
   else if (r.fled) logLine('你逃了出来。', 'dim');
+  else if (r.survived) { sfx('win'); logLine('<span class="weak">你撑住了。</span>', 'sys'); gainExp(Math.round(BAL.expNext(C.lv) * 0.25)); C.hp = Math.max(C.hp, Math.round(s.hpMax * 0.3)); }
   else { sfx('lose'); C.stats.deaths++;
-    if (r.noLose) C.hp = Math.max(C.hp, Math.round(s.hpMax * 0.3));
+    if (r.noLose || r.survived) C.hp = Math.max(C.hp, Math.round(s.hpMax * 0.3));
     else { const loss = Math.round(BAL.expNext(C.lv) * BAL.deathExpLoss); C.exp = Math.max(0, C.exp - loss); C.hp = Math.round(s.hpMax * 0.3); C.mp = Math.round(s.mpMax * 0.3);
       logLine(`你被打晕了过去……醒来时已经回到了${PLACES[C.home].name}。<span class="dim">（损失 ${loss} 经验）</span>`, 'sys'); if (STATE.dungeon) STATE.dungeon.failed = true; setTimeout(() => go(C.home, false, true), 300); } }
   STATE.battle = null; STATE.busy = false; save(); battleEndUI(r); netSync();
@@ -108,6 +110,7 @@ async function enterDungeon(id, hard) {
   STATE.dungeon = null; save(); refresh(); bannerDraw(); setTimeout(storyPoll, 300);
 }
 async function dungeonEvent(k, D) {
+  if (DG_EV2[k]) return DG_EV2[k](D);
   if (k === 'thunder') { const c = await dlgChoose([{ t: '伸手去抓那道雷（雷道熟练度 +20，会挨一下狠的）' }, { t: '绕过去' }], '紫色的雷光就在一步之外，嗡嗡作响。');
     if (c === 0) { const s = charStats(); C.hp = Math.max(1, C.hp - s.hpMax * 0.3); if (C.sk.includes('lei')) { for (let i = 0; i < 20; i++) profUse('lei'); logLine('你被劈得浑身焦黑，可雷光里的纹路，你看得更清了。雷道熟练度 +20。', 'enc'); } else { logLine('你被劈得浑身焦黑，什么也没悟出来。', 'enc'); addItem('lingyao'); } refresh(); } }
   if (k === 'jars') { const c = await dlgChoose([{ t: '撬开陶罐看看' }, { t: '别碰死人的东西' }], '坑边的陶罐封得严严实实。'); if (c === 0) { if (chance(0.65)) { logLine('罐子里是封了不知多少年的药，药香还没散。', 'enc'); addItem('baoyao'); addItem('lingyao', 2); } else { logLine('罐子里“嗡”地飞出一群墓穴蝠！', 'enc'); await startBattle({ mobs: [['tombbat', D.lv], ['tombbat', D.lv]], title: '墓穴蝠', flee: false }); } } }

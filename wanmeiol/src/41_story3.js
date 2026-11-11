@@ -125,7 +125,7 @@ async function S_dengtian() {
   await cine('你回头看了一眼。<br>下界在云底下，像一盏很远很远的灯。<br>石村、柳神的树桩、族长的小木床、火国的城楼……<br>都在那盏灯里。');
   await nar('你转过身，迈上了最后一级台阶。');
   F().v4end = 1; gainExp(BAL.expNext(C.lv) * 0.5);
-  await cine('<div class="cc"><small>第四卷</small><b>登天</b><i>完</i></div>', 'card');
+  await cine('<div class="cc"><small>第四卷</small><b>登天</b><i>完</i></div>', 'card'); await volRecap('四');
   go('sj_gate', false, true);
 }
 
@@ -284,6 +284,6 @@ async function S_wild() {
   await nar('你已经舔了一口。');
   give('baoyao', 3); give('lingyao', 5);
   await cine('花蕾悬在无人区的上空，慢慢地转。<br>三千州的天才，都抬起了头。<br><b>争霸，开始了。</b>');
-  await cine('<div class="cc"><small>第五卷</small><b>上界</b><i>完</i></div>', 'card');
+  await cine('<div class="cc"><small>第五卷</small><b>上界</b><i>完</i></div>', 'card'); await volRecap('五');
   F().v5end = 1;
 }

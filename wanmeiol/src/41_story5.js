@@ -41,6 +41,7 @@ async function S_qiwang() {
   else if (c === 1) await say('qiwanghou', '（他愣了很久，然后用袖子使劲擦了擦眼睛）……谁？');
   else await say('qiwanghou', '（他把手里的灯油放下，冲你磕了一个头）……谢谢。');
   await cine('那天夜里，你在七王的牌位前坐了一整夜。<br>你身上的血，在发烫。<br>那不是至尊骨的血——是更老的东西，在你身体里醒过来了。');
+  await breath(18);
   learnGongfa('qiwang'); F().qiwangDone = 1; gainExp(BAL.expNext(C.lv) * 0.4);
   tip('明天上<b>城头</b>。孟天正说，城头上，最近不太平——不只是外面。');
 }
@@ -64,7 +65,7 @@ async function S_wangjia() {
 async function S_dizu() {
   await nar('边荒战场上，九天十地的年轻一代和异域的年轻一代，面对面站着。你站在最前面。');
   await say('异域帝族天骄', '九天十地，就剩你们这些了？（他笑了）一群罪血，和一群被家里赶出来送死的。');
-  if (!await fightRetry({ mobs: [['yiyubing', slv(56)], ['yiyubing', slv(56)], ['yiyuqi', slv(57)]], allies: ['a_meng'], title: '边荒战场 · 前锋' })) return false;
+  if (!await siegeRetry({ waves: [[['yiyubing', slv(56)], ['yiyubing', slv(56)]], [['yiyuqi', slv(56)], ['yiyubing', slv(56)]], [['bhhun', slv(57)], ['yiyuqi', slv(57)], ['yiyubing', slv(57)]]], allies: ['a_meng'], title: '边荒战场 · 守' }, '异域的前锋一波一波压上来。孟天正问你：“你站在哪儿？”')) return false;
   await cine('那一仗打了三天。<br>你身边的人，一个一个地倒下去。<br>有个总跟你抢饭吃的胖子，有个只会说“我不怕”的姑娘，有个说打完这一仗就回家成亲的少年。');
   if (!await fightRetry({ mobs: [['dizu', slv(58, -1, 1)]], allies: ['a_meng'], title: '边荒战场 · 帝族', epic: { name: '异域帝族天骄', sub: '异域最尊贵的血 · 看不起九天十地', seal: '异域', intro: ['他身后，是整个异域的年轻一代。', '你身后，越来越少。'], phase: '帝族天骄身上的血光烧了起来：“九天十地，不过是我们的牧场！”', low: { who: '小七', t: '“我们守城，从来不回头看。”<br>（你也不回头。你身后那些倒下去的人，替你看着呢。）' }, end: ['帝族天骄跪在了边荒的沙子里。', '异域的年轻一代，退了。'] } })) return false;
   await nar('异域退了。可你回头看的时候，战场上站着的人，比来的时候，少了一大半。');
@@ -86,6 +87,7 @@ async function S_box() {
   const ms = await miniGame('mash', { title: '逃', desc: '抱着盒子跑！别回头——跑回帝关！', time: 7000, rate: 7 });
   if (!ms.ok) await nar('你摔倒了三次。第四次，你是抱着盒子爬回城门的。');
   await nar('帝关的城门在你身后关上。你靠着城墙坐下，看着怀里的盒子。你不知道里面是什么。你只知道，异域的人，很想要它。');
+  await breath(19);
   F().box = 1; gainExp(BAL.expNext(C.lv) * 0.4);
 }
 async function S_betray() {
@@ -104,17 +106,19 @@ async function S_betray() {
   if (c === 1) await nar('小七抱着盒子，哭得一个字都说不出来。');
   await cine('你自己走下了城头，走出了城门。<br>一个至尊给你戴上了锁链，把你推进了一辆囚车。<br>囚车往边荒深处走去。<br>你回头看了一眼帝关——<b>城头上，小七抱着盒子，一直站着</b>。');
   F().yiyu0 = 1;
-  await cine('<div class="cc"><small>第八卷</small><b>帝关</b><i>完</i></div>', 'card');
+  await cine('<div class="cc"><small>第八卷</small><b>帝关</b><i>完</i></div>', 'card'); await volRecap('八');
   go('yy_jail', false, true);
 }
 /* ---------------- 第十卷 · 仙域（结尾）: 安澜 ---------------- */
 async function S_anlan() {
   await chapterCard('第二十三章', '安澜', '那一剑');
+  await breath(23);
   await nar('你回到帝关的第七天早上，边荒的天，忽然暗了下来。');
   await cine('一个人从异域那边走过来。<br>他走得不快，可他每走一步，边荒的沙就退一里。<br>帝关城头上，所有的兵，同时握紧了兵器——手在抖。<br>有人小声说了一个名字：<b>安澜</b>。不朽之王。');
   await say('mengtz', '（孟天正把你拉到身后）……你打不过他。帝关所有人加起来，也打不过他。');
   await me('那也得打。');
-  await fight({ mobs: [['anlan', 90]], title: '帝关 · 安澜', noLose: true, noPet: true, allies: ['a_meng'], epic: { name: '安澜', sub: '异域的不朽之王', seal: '不朽', intro: ['他抬了抬手。', '天，塌了一块。'], phase: '安澜看了你一眼——就一眼，你的骨头响了三声。' } });
+  const hA = await holdOut({ mobs: [['anlan', 90]], title: '帝关 · 安澜', noPet: true, allies: ['a_meng', 'a_xiaoqi'], protect: 'a_xiaoqi', epic: { name: '安澜', sub: '异域的不朽之王', seal: '不朽', intro: ['他抬了抬手。', '天，塌了一块。'], phase: '安澜看了你一眼——就一眼，你的骨头响了三声。' } }, 3);
+  if (hA.survived && hA.protectOk) { F().xiaoqiSafe = 1; await nar('你撑住了三个回合，一直挡在小七前面。安澜看了你一眼，又看了看你身后那个额头烙着“罪”字的孩子，没有再往前走。'); } else if (hA.survived) await nar('你撑住了三个回合。可小七为了替你挡那一下，倒在了城墙下——他还有气。');
   await nar('你倒在城墙下面，动不了。你看见孟天正站在城头上，背着那把旧剑，一个人。');
   await say('mengtz', '（他回头看了你一眼，笑了）孩子。我这辈子就想成仙。修了几万年，就差一步了。');
   await say('mengtz', '……不成了。');
@@ -131,7 +135,7 @@ async function S_anlan() {
   if (!ms.ok) await nar('你摔倒了三次。第四次，你是爬着过去的。');
   await cine('你穿过了帝关，穿过了九天十地，穿过了登天路——<br>一路往下掉，往下掉。<br>最后掉进了一片你闭着眼睛都认得出来的林子里。<br>你闻到了兽奶的味道。');
   F().v8end = 1; gainExp(BAL.expNext(C.lv) * 0.4);
-  await cine('<div class="cc"><small>第十卷</small><b>仙域</b><i>完</i></div>', 'card');
+  await cine('<div class="cc"><small>第十卷</small><b>仙域</b><i>完</i></div>', 'card'); await volRecap('十');
   go('sc_willow', false, true);
 }
 
@@ -147,6 +151,7 @@ async function S_v9start() {
   await say('石子凌', '（你爹站在窗边，背对着你）……那些人。在帝关后面算账的那些人。');
   await me('我记下来了。（你从怀里摸出三块留影晶石）王家，金家，风族。');
   await say('chief', '（族长看着那三块晶石，眼睛眯了起来）……听说，仙域的使者，要下到九天来了。要挑谁家能进仙域。');
+  await breath(24);
   F().v9 = 1; F().envoy0 = 1;
   tip('<b>九天 · 天门</b>在争霸场外往东。（传送玉符能直接过去）');
 }
@@ -164,6 +169,13 @@ async function S_envoy() {
   await say('仙域使者', '金家、风族，不得入仙域。族中核心，自行处置。');
   await nar('你站在天门下面，看着王长生的背影。你赢了。可你一点都不觉得高兴。');
   await me('（小声）……这个人，比他们都可怕。');
+  const wc = await choose(['（现在就动手）', '（把这笔账记下来，以后再算）']);
+  if (wc === 0) { F().wang = 'now'; await nar('你冲了上去。你的伤还没好——可你不想等。');
+    const hW = await holdOut({ mobs: [['wangcs', slv(70, 1, 3)]], title: '天门 · 王长生', noPet: true, epic: { name: '王长生', sub: '刚刚杀了六个儿子', seal: '王家', intro: ['他的手上，还有血。'], phase: '王长生连眼皮都没抬：“伤成这样，也敢来？”' } }, 3);
+    if (hW.survived) await nar('你撑了三个回合，在他胸口留下了一道伤。仙域使者抬了抬手，一道光把你们隔开了。王长生按着伤口，第一次正眼看你。');
+    else await nar('你被他一掌打下了天门。仙域使者看都没看一眼。');
+    await nar('王长生跟着仙域使者走了。他走之前，回头看了你一眼——那一眼，像在记一个名字。'); }
+  else { F().wang = 'later'; await nar('你握紧了拳头，又松开了。你在心里，把王长生的名字刻了下来。'); }
   await nar('你的伤还没好。你知道，现在的你，还对付不了他们。你转身，回了下界。');
   F().envoy = 1; gainExp(BAL.expNext(C.lv) * 0.4);
   tip('回<b>石村</b>找族长。该养伤了——也该重新练了。');
@@ -199,7 +211,10 @@ async function S_purge() {
   await say('道统弟子', '下、下界的罪血打上来了！还带着……一群举石锁的？！');
   await me('帝关血战的时候，你们在哪儿？');
   await nar('没有人回答。');
-  if (!await fightRetry({ mobs: [['daotong', slv(66)], ['daotong', slv(66)], ['jtguard', slv(66)]], allies: ['a_shicun'], title: '七大道统 · 山门' })) return false;
+  if (F().yinkun === 'spare') { await nar('山门后面走出来一个人，穿着道统的灰袍，脸上多了一道疤。是银坤——争霸台上，你没斩的那个。');
+    await say('银坤', '（他看着你，又看了看你身后八百个扛石锁的人）……那一回，你放了我。（他转身，一刀砍断了山门的门闩）这一回，我还你。');
+    await nar('山门开了。守门的道统弟子愣在原地，没有一个人动手。'); F().yinkunGate = 1; }
+  else if (!await fightRetry({ mobs: [['daotong', slv(66)], ['daotong', slv(66)], ['jtguard', slv(66)]], allies: ['a_shicun'], title: '七大道统 · 山门' })) return false;
   if (!await fightRetry({ mobs: [['xiandian', slv(67, -1, 1)]], allies: ['a_shicun'], title: '七大道统 · 仙殿', epic: { name: '仙殿长老', sub: '帝关血战的时候，仙殿在后面算账', seal: '仙殿', intro: ['他说：“一个下界的罪血，也敢打上仙殿？”'], phase: '长老祭出了仙殿的镇殿之宝：“一个下界的罪血，也敢打上仙殿？”', low: { who: '二猛', t: '“小不点！兽奶！接着！”<br>（一罐兽奶从人堆里飞过来，正砸在你脑袋上。……还挺甜。）' } } })) return false;
   if (!await fightRetry({ mobs: [['jiangu', slv(68, -1, 1)]], allies: ['a_shicun'], title: '七大道统 · 剑谷', epic: { name: '剑谷剑主', sub: '剑练得很好，心歪了', seal: '剑谷', intro: ['满谷的剑都在抖。'], phase: '剑谷满谷的剑同时出鞘，剑尖全对准了你！', low: { who: '孟天正', t: '（你想起了那把很旧的剑。<br>想起了那一剑——斩断自己成仙路的那一剑。<br>你的剑胎，在手里，发烫。）' } } })) return false;
   await cine('仙殿塌了。天国塌了。剑谷的剑断了。<br>妖龙道门、罗浮真谷、冥土、火云洞——<br>七座山门，一座一座地，倒了下去。<br>石村八百兵站在废墟上，没有一个人欢呼。他们只是把石锁，放在了地上。');
@@ -212,6 +227,13 @@ async function S_jin() {
   await me('你们宅子底下，藏着什么？');
   await nar('大殿的地板裂开了。一团看不清脸的黑影，从地底下慢慢地升了上来——<b>黑暗至尊</b>。');
   if (!await fightRetry({ mobs: [['heianzz', slv(69, -1, 1)]], allies: ['a_shicun'], title: '金家 · 黑暗至尊', epic: { name: '黑暗至尊', sub: '藏在金家地底', seal: '黑暗', intro: ['金家用它换了万年富贵。'], phase: '黑暗至尊张开了嘴——整座宅子的光，都被它吞了下去！', low: { who: '小七', t: '“我们守城，从来不回头看。”<br>（小七，你看，帝关后面的账，我在替你们算。）' }, end: ['黑暗至尊散了。', '金家的金子，一夜之间，全变成了黑色。'] } })) return false;
+  await nar('大殿的角落里，缩着一个拄金杖的老太太。是金太君——帝关城头上，说“用一个罪血换，划算”的那个。');
+  await say('金太君', '（她的金杖在发抖，声音却还是硬的）……要杀就杀。金家的人，不求饶。');
+  const jc = await choose(['（把她交给帝关，交给小七）', '（废了她的修为）往后，你就做个普通老人吧。', '（让她走）']);
+  F().jinFate = jc + 1;
+  if (jc === 0) { await nar('你把她带回了帝关。七王祠前，小七看了她很久。'); await say('qiwanghou', '（他没有骂，也没有哭）……你在城头上说，罪血也配说“帝关的人”。（他指了指七王的牌位）你跪在这里，每天添一次灯油。添到你明白为止。'); }
+  else if (jc === 1) await nar('她的修为散了。金杖“当”的一声掉在地上。她弯下腰去捡，捡了三次才捡起来——她第一次知道，一个普通的老人，捡一根杖有多难。');
+  else await nar('她走了，走得很慢。走到大殿门口，她回头看了一眼你，什么都没说。后来有人说，她一个人去了帝关，在城墙下面站了一整天。');
   F().jin = 1; gainExp(BAL.expNext(C.lv) * 0.4);
   tip('<b>风族</b>在金家北边。那里还有一个。');
 }
@@ -221,6 +243,7 @@ async function S_feng() {
   await me('帝关的人，也没打算活过这一纪元。可他们没跟它做买卖。');
   if (!await fightRetry({ mobs: [['heianzz', slv(70, -1, 1)]], allies: ['a_shicun'], title: '风族 · 黑暗至尊', epic: { name: '黑暗至尊', sub: '藏在风族山上', seal: '黑暗', intro: ['风往回吹，是因为它在吸。'], phase: '黑暗至尊张开了嘴——整座山的风，都被它吞了下去！', low: { who: '你娘', t: '“……这回，记得回家。”' } } })) return false;
   await cine('第二团黑影散了。<br>风族山上的风，第一次，往前吹了。');
+  await breath(25);
   F().jinfeng = 1; gainExp(BAL.expNext(C.lv) * 0.4);
   tip('九天十地里还有黑暗生灵在往里漏。去<b>九天之巅</b>，看看它们是从哪儿进来的。');
 }
@@ -228,11 +251,11 @@ async function S_peace() {
   await nar('九天之巅上，能看见整个九天十地的灯火——也能看见那道裂缝。黑暗生灵正从裂缝里，一团一团地往外爬。');
   await say('dazhuang', '（大壮带着石村的人，站在你身后）……小不点，这回打完，能回家了吧？');
   await me('能。');
-  if (!await fightRetry({ mobs: [['heian', slv(70)], ['heian', slv(70)], ['heian', slv(70)]], allies: ['a_shicun'], title: '九天之巅 · 黑暗生灵' })) return false;
+  if (!await siegeRetry({ waves: [[['heian', slv(70)], ['heian', slv(70)]], [['heian', slv(70)], ['heian', slv(70)], ['jtguard', slv(70)]], [['heian', slv(71)], ['heian', slv(71)], ['heian', slv(71)]]], allies: ['a_shicun'], title: '九天之巅 · 守' }, '黑暗生灵一团一团地往外爬。大壮问：“小不点，我们站哪儿？”')) return false;
   if (!await fightRetry({ mobs: [['heianwang', slv(71, -1, 1)]], allies: ['a_shicun'], title: '九天之巅 · 黑暗生灵之首', epic: { name: '黑暗生灵之首', sub: '从裂缝里爬出来的最大的那一个', seal: '永夜', intro: ['它身后，是一整个永夜。', '你身后，是九天十地的灯火，和石村八百个人。'], phase: '它身后的黑暗裂开了一道口子，更多的黑暗生灵正在往外爬！', low: { who: '孟天正', t: '“……这辈子，没成仙啊。也好。帝关……还在。”<br>（师父。九天十地，也还在。）' }, end: ['你一拳把它打回了裂缝里。', '然后，你亲手把裂缝合上了。'] } }, '黑暗把你推了回去。大壮把你扶起来：“吃饱了再打！”')) return false;
   await cine('那一天以后，九天十地，<b>太平了一万年</b>。<br>没有人再提“罪血”两个字。<br>帝关的城门口，七王祠的门匾，被人换了一块新的——<br>上面写着：<b>“七王之后，镇守帝关”</b>。');
   await nar('你回到石村的时候，是一个傍晚。柳神留下的那截树桩旁边，那只烂木盒子安安静静地放着。你一直没有打开它。');
   await nar('树桩上，冒出了一片很小很小的新叶。');
   F().v9end = 1; gainExp(BAL.expNext(C.lv) * 0.6);
-  await cine('<div class="cc"><small>第十一卷</small><b>清算</b><i>完</i></div>', 'card');
+  await cine('<div class="cc"><small>第十一卷</small><b>清算</b><i>完</i></div>', 'card'); await volRecap('十一');
 }

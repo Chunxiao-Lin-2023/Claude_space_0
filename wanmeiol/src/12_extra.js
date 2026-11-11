@@ -47,7 +47,7 @@ const RELICS = {
   r_rongyan: { n: '熔岩龟甲', from: 'rongwang', i: '🐢', d: '气血 +10%，防御 +6%。', b: { hpP: 0.1, defP: 0.06 } },
   r_leishou: { n: '雷兽心核', from: 'leishou', i: '🔷', d: '符力 +12%，暴击 +3%。', b: { mpP: 0.12, crit: 0.03 } },
 };
-const relicSp = (k, c = C) => (c.eq || []).reduce((s, id) => s + ((RELICS[id] && RELICS[id].sp && RELICS[id].sp[k]) || 0), 0);
+const relicSp = (k, c = C) => (c.eq || []).reduce((s, id) => s + ((RELICS[id] && RELICS[id].sp && RELICS[id].sp[k]) || 0) * (1 + 0.1 * forgeLv(id, c)), 0);
 
 /* ---------- trading surplus materials ---------- */
 const TRADES = [

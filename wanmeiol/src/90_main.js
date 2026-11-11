@@ -18,7 +18,7 @@ function titleStatus(t) { const e = document.getElementById('tstat'); if (e) e.t
 function hubBack2(b) { if (!b.dataset.arm) { b.dataset.arm = 1; b.textContent = '再点一次确认'; setTimeout(() => { b.dataset.arm = ''; b.textContent = '‹ 游戏厅'; }, 3000); return; } location.href = '../'; }
 function newGame(b) { if (b && !b.dataset.arm) { b.dataset.arm = 1; b.textContent = `再点一次（会清掉存档 ${SLOT}）`; return; } audioInit(); C = newChar(); fullHeal(); JOURNAL = []; saveJournal(); save(true); enterGame(true); }
 function enterGame(fresh) {
-  audioInit(); if (!fresh) C = loadSave(); if (!C) return newGame(); fixHp(); arenaDaily();
+  audioInit(); if (!fresh) C = loadSave(); if (!C) return newGame(); if (!fresh) recapOnLoad(); fixHp(); arenaDaily();
   STATE.mode = 'play'; $('title').style.display = 'none'; $('log').innerHTML = ''; UI.nav = null; UI.memo = null; bannerKey = ''; layout();
   if (fresh) logLine('<div class="lochead">完美世界</div>大荒，八百万里群山，凶兽横行。群山之间，有一个叫石村的小村子。', 'loc'); else { describe(); logLine('欢迎回来，小不点。', 'dim'); }
   refresh(); bannerDraw(); musicMode(); setTimeout(storyPoll, 600);

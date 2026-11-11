@@ -150,7 +150,7 @@ async function S_leiting() {
   await say('leiting', '去火国看看吧。火国的公主，好像跟你很熟？（他冲你挤了挤眼睛）');
   await nar('那天夜里，你谁也没告诉，一个人悄悄离开了皇都。钟伯在侯府门口站了一整夜，手里的灯笼一直没灭。');
   F().v2end = 1; F().v3 = 1;
-  await cine('<div class="cc"><small>第二卷</small><b>石国</b><i>完</i></div>', 'card');
+  await cine('<div class="cc"><small>第二卷</small><b>石国</b><i>完</i></div>', 'card'); await volRecap('二');
   tip('<b>火国边关</b>在皇都外的东边。境界可以突破到<b>铭纹境</b>了。');
 }
 
@@ -260,7 +260,8 @@ async function S_qishen() {
   await say('willow', '（远在石村的柳神，所有的柳枝同时指向了天。然后，柳神也不见了。）');
   await nar('你明白了：它们去挡更大的东西了。这里，只剩你。');
   await say('下界的神', '一个刚坐上龙椅的孩子？……有意思。跪下，你可以做本神的坐骑。');
-  await fight({ mobs: [['shenming', 36]], title: '七神下界', noLose: true, noPet: true, epic: { name: '七神', sub: '从上面下来的神 · 神火境', seal: '神', intro: ['祂们看你的眼神，像在看一棵麦子。'], phase: '神火铺天盖地——这根本不是能打的东西！' } });
+  const h7 = await holdOut({ mobs: [['shenming', 36]], title: '七神下界', noPet: true, epic: { name: '七神', sub: '从上面下来的神 · 神火境', seal: '神', intro: ['祂们看你的眼神，像在看一棵麦子。'], phase: '神火铺天盖地——这根本不是能打的东西！' } }, 4);
+  if (h7.survived) { F().held7 = 1; await nar('你撑了四个回合。四个回合以后，那位神第一次正眼看了你一眼：“……麦子，也会扎手。”'); }
   await cine('你倒了下去。<br>你听见钟伯在哭，火灵儿在喊你的名字，九头狮九个脑袋一起在吼。<br>然后，什么都听不见了。');
   await cine('……很黑。很冷。<br>你好像飘了很久，飘过了石村，飘过了那棵烧焦的柳树，飘过了族长的小木床。<br>你娘在石头上刻的那行字，在黑暗里亮了一下——<b>“活下去。”</b>', 'mem');
   await cine('一只五色的小鸟，落在了你的胸口。<br>它啄了一下。<br>你的心，跳了一下。<br><b>你看见了生，也看见了死——看见了一个圆。</b>');
@@ -325,6 +326,6 @@ async function S_farewell() {
   await say('chief', '上去的路，断了几千年了。');
   await me('那我就再找一条。');
   await say('chief', '（族长笑了，眼角的褶子挤在一起）……好。吃饱了再走。');
-  await cine('<div class="cc"><small>第三卷</small><b>石皇</b><i>完</i></div>', 'card');
+  await cine('<div class="cc"><small>第三卷</small><b>石皇</b><i>完</i></div>', 'card'); await volRecap('三');
   F().v3end = 1;
 }

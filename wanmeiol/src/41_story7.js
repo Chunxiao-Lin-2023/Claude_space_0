@@ -35,8 +35,13 @@ async function S_tianting() {
   await nar('第一天，没人来。第二天，小七带着帝关活下来的那几个孩子来了，站到了柱子下面。第三天，三藏和神冥来了。第四天，石毅来了，什么都没说，站在了你旁边。');
   await nar('第十天，柱子下面站满了人。有九天的，有十地的，有下界的。大壮带着石村八百兵，扛着石锁，挤在最后面。');
   await say('qidaolin', '（他抹了一把眼睛）……为师这辈子，就盼着至尊道场能热闹起来。没想到，热闹成这样。');
+  await say('qidaolin', '徒弟，立了天庭，总得有条规矩吧？写在柱子上的那种。');
+  const tr = await choose(['谁来都行。', '罪血，也能站在这里。', '吃饱了再打。']);
+  F().ttRule = tr + 1;
+  await nar(['你在柱子上刻了四个字：<b>谁来都行</b>。', '你在柱子上刻了一行字：<b>罪血，也能站在这里</b>。小七站在柱子下面，看了很久，伸手摸了摸自己额头上的字。', '你在柱子上刻了五个字：<b>吃饱了再打</b>。齐道临看了半天：“……这算什么规矩？”大壮在后面喊：“这是最好的规矩！”'][tr]);
   await cine('那一天，九天十地，<b>第一次站在了一起</b>。<br>没有人叫它“罪血的天庭”。<br>他们叫它——<b>天庭</b>。');
   F().tiantingDone = 1; gainExp(BAL.expNext(C.lv) * 0.3);
+  tip('天庭可以一点一点修起来了：药园、炼器坊、演武场、城墙（在<b>天庭</b>点「🏛 天庭」）。');
   tip('仙域的界海之滨往西，是<b>堤坝</b>。去看看界海。');
 }
 async function S_dam() {
@@ -47,6 +52,7 @@ async function S_dam() {
   await nar('黑暗生灵退回了海里。你站在坝上，看着那片黑，看了很久。');
   await me('……那边，有什么？');
   await say('守坝的老人', '有很多帝。有很多死了的帝。还有一个，最黑的。（他终于转过头来，看了你一眼）你会去的。迟早。');
+  await breath(26);
   F().dam = 1; gainExp(BAL.expNext(C.lv) * 0.3);
   tip('去<b>仙域古城</b>。仙王的后人们，听说了一个从下界爬上来的人。');
 }
@@ -63,9 +69,10 @@ async function S_xwhy() {
 async function S_zaohua() {
   await nar('造化之门很高，门缝里漏出来的光比太阳还亮。门前躺着很多骨头——没走出来的人。');
   if (!await fightRetry({ mobs: [['zaohua', slv(75, -1, 1)]], title: '造化之门 · 守灵', epic: { name: '造化之门守灵', sub: '过了它，就是真仙', seal: '造化', intro: ['门前那些骨头，都是想过去的人。'], phase: '门里伸出了无数只手，要把你拖进去！', end: ['守灵让开了。', '门，开了一道缝。'] } })) return false;
+  await breath(27);
   await cine('你走进了造化之门。<br>门里没有路，只有光。<br>光把你拆开，又拼起来。拆了九次，拼了九次。<br>你走出来的时候，第一次觉得——<b>天，没那么高了</b>。');
   learnGongfa('zhenxian'); F().v12end = 1; gainExp(BAL.expNext(C.lv) * 0.5);
-  await cine('<div class="cc"><small>第十二卷</small><b>天庭</b><i>完</i></div>', 'card');
+  await cine('<div class="cc"><small>第十二卷</small><b>天庭</b><i>完</i></div>', 'card'); await volRecap('十二');
   tip('造化之门北边，有一条看不见源头的河——<b>时光长河</b>。境界可以突破到<b>仙王境</b>了。');
 }
 
@@ -85,6 +92,7 @@ async function S_dlAge() {
   await nar('一个老兵倒在你面前，看着你的脸，忽然笑了：“……你长得，像我们那个时代的一个传说。”');
   await me('什么传说？');
   await say('帝落古兵', '一个从下面爬上来的孩子。（他闭上了眼睛）……他们说，他会回来的。');
+  await breath(28);
   F().dlAge = 1; gainExp(BAL.expNext(C.lv) * 0.4);
   tip('长河东边，<b>八世轮回</b>。');
 }
@@ -93,8 +101,11 @@ async function S_lives() {
   await cine('第一世，你是一个铁匠。打了一辈子刀，没打过一架。<br>第二世，你是一个将军。守了一辈子城，城没破。<br>第三世，你是一个乞丐，在一座很大的城门下，看着一个被吊着的人。', 'mem');
   await cine('第四世，你是一棵树。<br>第五世，你是一个母亲，抱着孩子在一个池子边跪了三天。<br>第六世，你是一个守坝的人，一辈子没回过头。', 'mem');
   await cine('第七世，你是一个老人，坐在一个小村子的树桩边，等一个孩子回家。<br>……<br>第八世——<b>它来了</b>。', 'mem');
+  const mm = await miniGame('memory', { title: '逆活八世', desc: '八辈子的事，一件一件地对上——铁匠的锤，将军的盾，乞丐的碗，一棵树，一个母亲，一道坝，一把椅子，一柄剑。' });
+  if (mm.ok) { F().baxiMem = 1; await nar('八世的你，一个一个对上了。你忽然看清了每一世里那个影子——它出手之前，总是先往左边看一眼。'); }
+  else await nar('有几世，你怎么也想不起来了。它们像河里的光，一晃就过去了。');
   await say('前世之敌', '每一世，我都会找到你。（一个看不清脸的影子站在你面前）上一世，我杀过你一次。这一世——');
-  if (!await fightRetry({ mobs: [['qianshi', slv(79, -1, 1)]], title: '八世轮回 · 前世之敌', epic: { name: '前世之敌', sub: '每一世都会遇见的那个人', seal: '宿命', intro: ['它说，上一世，它杀过你一次。'], phase: '它说：“上一世，我杀过你一次。”', low: { who: '你娘', t: '“昊儿，活下去。”<br>（那是第五世的你，跪在池子边上，说给自己听的话。）' }, end: ['宿命，断了。', '八世的你，同时睁开了眼睛。'] } })) return false;
+  if (!await fightRetry({ mobs: [['qianshi', F().baxiMem ? slv(79, -2, 0) : slv(79, -1, 1)]], title: '八世轮回 · 前世之敌', epic: { name: '前世之敌', sub: '每一世都会遇见的那个人', seal: '宿命', intro: ['它说，上一世，它杀过你一次。'], phase: '它说：“上一世，我杀过你一次。”', low: { who: '你娘', t: '“昊儿，活下去。”<br>（那是第五世的你，跪在池子边上，说给自己听的话。）' }, end: ['宿命，断了。', '八世的你，同时睁开了眼睛。'] } })) return false;
   learnGongfa('baxi'); F().baxi = 1; gainExp(BAL.expNext(C.lv) * 0.5);
   tip('<b>长河尽头</b>在北边。该回去了。');
 }
@@ -103,7 +114,8 @@ async function S_dlEnd() {
   await say('万古之劫', '……活了八世的人。（那片黑说话了）你回不去的。你会被冲回第一世，永远在河里打转。');
   if (!await fightRetry({ mobs: [['wangujie', slv(80, -1, 1)]], title: '长河尽头 · 万古之劫', epic: { name: '万古之劫', sub: '帝落时代压在所有人头顶的劫', seal: '万古', intro: ['八世的你，都站在你身后。'], phase: '时光长河在你脚下倒流——它要把你冲回第一世！', low: { who: '族长', t: '（第七世的你，坐在树桩边，等一个孩子回家。<br>那个孩子，得回去。）' }, end: ['劫，散了。', '你跳进了那盏灯里。'] } }, '长河把你冲了回去。你站起来——第九次。')) return false;
   await cine('你回来的时候，九天十地，已经过去了很久很久。<br>天庭还在。那根柱子，被人摸得发亮。<br>石村还在。村口的石头上，刻满了一代一代孩子的名字。<br><b>你回来了。</b>');
+  await breath(29);
   F().v13end = 1; gainExp(BAL.expNext(C.lv) * 0.6);
-  await cine('<div class="cc"><small>第十三卷</small><b>帝落</b><i>完</i></div>', 'card');
+  await cine('<div class="cc"><small>第十三卷</small><b>帝落</b><i>完</i></div>', 'card'); await volRecap('十三');
   tip('有人从异域那边带回来一个消息——关于一个很久以前被抓走的人。境界可以突破到<b>准仙帝</b>了。');
 }

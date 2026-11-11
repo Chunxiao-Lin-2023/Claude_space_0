@@ -14,7 +14,7 @@ const cine = (text, kind = '') => dlgShow({ who: '', text, cine: kind || 'ink' }
 const chapterCard = (no, title, sub = '') => cine(`<div class="cc"><small>${no}</small><b>${title}</b>${sub ? `<i>${sub}</i>` : ''}</div>`, 'card');
 const plainLen = t => String(t || '').replace(/<[^>]+>/g, '').length;
 const cineMs = ev => ev.k === 'finish' ? 900 : Math.min(4600, 2000 + plainLen(ev.text) * 75) * (SET.fast ? 0.7 : 1);
-const EPIC_BAD = ['stun', 'bleed', 'burn', 'poison', 'weak', 'bound', 'brk', 'mark'];
+const EPIC_BAD = ['stun', 'bleed', 'burn', 'poison', 'weak', 'bound', 'brk', 'mark', 'dark'];
 
 /* ---------- battle hooks (called from the engine) ---------- */
 function epicLow(B, d) { // 绝境

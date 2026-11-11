@@ -6,7 +6,7 @@ const sub = s => s;
 const nar = t => dlgShow({ who: '', text: t });
 const me = t => dlgShow({ who: ME(), text: t, mine: 1 });
 const say = (npc, t) => { const N = NPCS[npc]; return dlgShow({ who: N ? N.name : npc, npc: N ? npc : '', text: t }); };
-const choose = opts => dlgChoose(opts.map(o => typeof o === 'string' ? { t: o } : o));
+const choose = (opts, prompt) => dlgChoose(opts.map(o => typeof o === 'string' ? { t: o } : o), prompt);
 const tip = t => logLine('【指引】' + t, 'tip');
 const give = (id, n = 1) => addItem(id, n);
 async function fight(spec) { const r = await startBattle(Object.assign({ flee: false, story: 1 }, spec)); return r && r.win; }
@@ -14,6 +14,7 @@ async function fightRetry(spec, loseText) {
   for (; ;) { if (await fight(Object.assign({ noLose: true }, spec))) return true; await nar(loseText || '你被打翻在地，眼前一黑……再睁眼时，伤口已经被人包好了。');
     fullHeal(); refresh(); const c = await choose(['再来！', '先回去练练']); if (c === 1) return false; }
 }
+async function holdOut(spec, n) { const r = await startBattle(Object.assign({ flee: false, story: 1, noLose: true, survive: n }, spec)); return r || {}; } // the fights you cannot win: stand for n rounds
 const slv = (base, lo = -1, hi = 2) => clamp(C.lv, base + lo, base + hi);
 
 /* ---------------- 第一章 · 石村 ---------------- */
@@ -228,6 +229,10 @@ async function S_leave() {
   await say('pihou', '在外面要是有人欺负你，就回来，我们一起揍他！');
   await say('ermeng', '……给你。（塞过来一罐兽奶）我偷的。');
   give('milk', 5); give('baoyao', 2);
+  await nar('村口有一块大石头，上面刻着村里每一个孩子的名字——刻名字的规矩是：出远门的那天，自己刻。');
+  const st = await choose(['（刻下“小不点”）', '（刻下“石昊”）', '（不刻）等我回来再刻。']);
+  F().stoneName = st + 1;
+  await nar(['你刻得歪歪扭扭，刻完了，大壮在旁边说：“……小不点，你的字跟你的个子一样。”', '你一笔一画地刻下了“石昊”。族长在旁边看着，点了点头。', '族长看了你一眼，没说话。他从怀里摸出一把小刀，塞进你手里：“那就带着。回来刻。”'][st]);
   await cine('你走到村口，回头看了一眼。<br>大壮在哭，皮猴在跳着挥手，二猛背过了身去。<br>柳神的那根柳枝在风里摇着——像是在说，去吧。');
   F().butian = 1;
   await cine('<div class="cc"><small>第一章</small><b>石村</b><i>完</i></div>', 'card');
@@ -525,7 +530,7 @@ async function S_return() {
   await me('我就知道！（伸手）烤肉，我欠你一顿。');
   F().qfIn = 1;
   F().end = 1; gainExp(1);
-  await cine('<div class="cc"><small>第一卷</small><b>石村少年</b><i>完</i></div>', 'card');
+  await cine('<div class="cc"><small>第一卷</small><b>石村少年</b><i>完</i></div>', 'card'); await volRecap('一');
   await nar('石村的小不点走出了大荒，在补天阁站稳了脚跟，在百断山里闯出了名字。<br>你胸口的那道疤还在，爹娘还没有消息，那块被挖走的骨头还在别人身上。<br>路还很长。');
 }
 
@@ -701,7 +706,7 @@ const MAIN = [
   { id: 'q_v15', ch: 32, title: '第十五卷 · 独断万古', goal: '……', type: 'auto', scene: S_v15start },
   { id: 'q_shihai', ch: 33, title: '尸骸仙帝', goal: '去界海深处', type: 'enter', loc: 'jh_deep', scene: S_shihai, rec: 84 },
   { id: 'q_duduan', ch: 33, title: '独断万古', goal: '……', type: 'auto', scene: S_duduan },
-  { id: 'q_fin', ch: 33, title: '全书完', goal: '石昊的故事讲完了。你可以在各处走走，挑战虚神界，把宝术练到圆满。', type: 'none' },
+  { id: 'q_fin', ch: 33, title: '全书完', goal: '石昊的故事讲完了。还可以：打开烂木盒子、轮回再活一世、修天庭、挑战隐世天骄、守城守擂、闯后期秘境、把支线走完。', type: 'none' },
 ];
 const SIDE = {
   sq_milk: { npc: 'ermeng', title: '二猛的兽骨', minQ: 'q_egg0', need: [['bone', 3]], ask: '小不点，给我弄三块兽骨呗？我想刻个骨牌，跟你那样认骨文。', done: '嘿嘿，够了够了！这罐兽奶给你，我从家里顺的。', reward: () => { give('milk', 4); gainExp(60); } },

@@ -106,7 +106,10 @@ async function S_arena2() {
   await nar('你从怀里摸出那枚贴身带了很久、一直没舍得用的东西——一枚还没开锋的剑胎。<b>大罗剑胎</b>。');
   learnSkill('daluo');
   if (!await fightRetry({ mobs: [['yinkun', slv(48, -1, 1)]], title: '争霸台 · 银坤', epic: { name: '银坤', sub: '喊“一起上”的那个人', seal: '小人', intro: ['他白天喊得最大声。', '现在，台上只有他一个人。'], phase: '银坤冲台下大喊：“他快不行了！一起上！”——这回，台下没有一个人动。' } })) return false;
-  await cine('大罗剑胎斩下去的时候，没有声音。<br>银坤低头看着自己的胸口，好像不明白发生了什么。<br>他倒下去的时候，台下几千人，一个出声的都没有。');
+  await nar('银坤跪在台上，剑胎悬在他头顶。他抬头看你，嘴唇在抖：“……饶、饶命。”');
+  const yk = await choose(['（斩）', '（收剑）滚下台去。', '（收剑）下回喊“一起上”之前，先想想今天。']);
+  if (yk === 0) { F().yinkun = 'kill'; await cine('大罗剑胎斩下去的时候，没有声音。<br>银坤低头看着自己的胸口，好像不明白发生了什么。<br>他倒下去的时候，台下几千人，一个出声的都没有。'); }
+  else { F().yinkun = 'spare'; await cine('剑胎停在他额头前一寸。<br>你把剑收了回去。<br>银坤是爬下台的。台下几千人让开了一条路，一个出声的都没有。'); if (yk === 2) await nar('他爬到台边，回头看了你一眼。那一眼里，没有恨。'); }
   await cine('孤剑云抱着剑上了台，守了两百场。<br>然后，一个人从天边走了过来——<b>宁川</b>，六冠王。<br>他守了四百场，台下的人，连呼吸都放轻了。');
   await cine('谪仙来了。十冠王来了。天子来了。长弓衍来了。<br>石毅也来了。<br>还有一个人，手里托着一面盘子——<b>轮回</b>。');
   await say('轮回', '（他把盘子对准了你和石毅）你们两个，同一块骨头，同一个罪。一起进轮回吧。');
@@ -121,7 +124,7 @@ async function S_arena2() {
   await nar('台下静了很久。然后，有人喊了一声“荒”，接着是第二声，第三声。和至尊古台下那天一样，可这一次，喊的人更多。');
   await say('qidaolin', '（齐道临挤在人堆里，眼睛通红，扯着嗓子喊）那是我徒弟！至尊道场的！至尊道场！');
   F().v6end = 1; gainExp(BAL.expNext(C.lv) * 0.6);
-  await cine('<div class="cc"><small>第六卷</small><b>争霸</b><i>完</i></div>', 'card');
+  await cine('<div class="cc"><small>第六卷</small><b>争霸</b><i>完</i></div>', 'card'); await volRecap('六');
   tip('争霸台北边，一座石门开了——<b>仙古遗地</b>。境界可以突破到<b>圣祭境</b>了。');
 }
 
@@ -178,6 +181,7 @@ async function S_dichong() {
   await me('它话太多。');
   await say('帝冲', '（他张开手，化身的碎片从四面八方飞回来，钻进了他的身子）化身见过你，我就等于见过你。你的招，我都知道了。');
   if (!await fightRetry({ mobs: [['dichong', slv(54, -1, 1)]], title: '帝冲峰 · 帝冲', epic: { name: '帝冲', sub: '仙古里最狂的天骄 · 本体', seal: '帝', intro: ['他身上，有化身的影子。', '他知道你所有的招。'], phase: '帝冲把化身的残骸吞了回去——本体和化身合在一起，气势翻了一倍！', low: { who: '齐道临', t: '“这条路只有一个规矩：往前，不回头。”<br>（他知道你所有的招——可他不知道，你下一招是什么。因为你自己也不知道。）' }, end: ['帝冲倒在了那个“帝”字下面。', '他最后看了一眼那个字，说：“……刻得太大了。”'] } }, '帝冲把你打下了峰顶。他说：“你的招，我都知道了。”——那就换新招。')) return false;
+  await breath(17);
   F().dichong = 1; gainExp(BAL.expNext(C.lv) * 0.5);
   tip('<b>仙古深处</b>在帝冲峰东边。出口就在那里。');
 }
@@ -194,6 +198,6 @@ async function S_xgEnd() {
   if (c === 1) await say('mengtz', '（他愣了一下，然后哈哈大笑）管！帝关的饭难吃，可管够！');
   else await say('mengtz', '（他点了点头，没再说话，转身往灰里走去）');
   F().v7end = 1;
-  await cine('<div class="cc"><small>第七卷</small><b>仙古</b><i>完</i></div>', 'card');
+  await cine('<div class="cc"><small>第七卷</small><b>仙古</b><i>完</i></div>', 'card'); await volRecap('七');
   tip('出口通向<b>帝关城</b>（仙古入口往东）。境界可以突破到<b>天神境</b>了。');
 }

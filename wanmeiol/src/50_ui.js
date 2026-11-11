@@ -112,6 +112,9 @@ function renderActs() {
   if (P.mobs && !P.dungeon) acts.push(`<button class="ab ${UI.autoEx ? 'q' : ''}" onclick="autoExplore()">🔁 ${UI.autoEx ? `停止自动探索（${UI.autoExN || 0}）` : '自动探索'}</button>`);
   acts.push(`<button class="ab ${C.auto ? 'q' : ''}" onclick="toggleAutoFight()" title="之后的战斗都自动打，战斗里随时能停">🤖 自动对战：${C.auto ? '开' : '关'}</button>`);
   if (pa.includes('train')) acts.push(`<button class="ab" onclick="train()">${C.loc === 'bt_train' ? '⚡ 挨雷劈' : '🪨 举石锁'}</button>`);
+  if (pa.includes('siege') && siegeOpen()) acts.push(`<button class="ab main" onclick="siegeStart()">🏯 守城（最多 ${(C.records && C.records.siege) || 0} 波）</button>`);
+  if (pa.includes('leitai') && leitaiOpen()) acts.push(`<button class="ab main" onclick="leitaiStart()">🥊 守擂（最高 ${(C.records && C.records.leitai) || 0} 连胜）</button>`);
+  acts.push(...lateActs(P));
   if (pa.includes('arena')) acts.push(`<button class="ab main" onclick="openModal('arena')">🪞 挑战（${(arenaDaily(), C.arena.tries)}次）</button>`);
   if (canTeleport()) acts.push(`<button class="ab" onclick="teleport()">🌀 传送</button>`);
   const people = npcsHere(C.loc).map(n => { const N = NPCS[n], mk = npcMark(n); return `<button class="ab npc ${mk ? 'q' : ''}" onclick="npcTalk('${n}')">${N.name}${mk}</button>`; });

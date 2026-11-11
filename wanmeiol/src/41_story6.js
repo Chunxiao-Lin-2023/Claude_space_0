@@ -28,6 +28,7 @@ async function S_yyArena() {
   await say('赤王后裔', '（一个浑身赤红的少年走上场，台下所有人都站了起来）……我祖上是赤王。你，配给我磨刀吗？');
   if (!await fightRetry({ mobs: [['chiwanghy', slv(61, -1, 1)]], title: '磨刀场 · 赤王后裔', epic: { name: '赤王后裔', sub: '异域仙王赤王的后人', seal: '赤王', intro: ['异域年轻一代里最傲的那一个。', '你身上，还锁着三道封印。'], phase: '他身上的血烧成了赤色——赤王的血，醒了！', low: { who: '小七', t: '“我们守城，从来不回头看。”<br>（小七。我还没回去。所以，我还不能倒。）' }, end: ['赤王后裔跪在了磨刀场上。', '台下，几万个异域人，没有一个出声。'] } })) return false;
   await nar('那天以后，磨刀场上的规矩变了：异域的天骄想跟你打，要排三个月的队。');
+  await breath(20);
   F().yyArena = 1; gainExp(BAL.expNext(C.lv) * 0.4);
   tip('城门西边有一棵<b>悟道茶树</b>，异域各族都想要它。今年，他们要你也去争。');
 }
@@ -60,13 +61,14 @@ async function S_yyFalls() {
   await say('三藏', '（光头冲你挤了挤眼睛）听说你要跑？带上我们。我叫三藏，他叫神冥。我们俩在天牢里商量了五十年，就是没胆子跳。');
   await say('海瀑追兵', '在那儿！别让他们跳！');
   if (!await fightRetry({ mobs: [['haipu', slv(62)], ['haipu', slv(62)], ['haipu', slv(62)]], allies: ['a_sanzang'], title: '海瀑 · 追兵' })) return false;
+  await breath(21);
   await nar('瀑布底下的黑水里，游过一条小小的、发着光的鱼——始祖鱼苗。你想都没想，一把抓住了它的尾巴。');
   await me('跳！');
   const ms = await miniGame('mash', { title: '海瀑', desc: '抓紧鱼尾巴！别松手！', time: 7000, rate: 7 });
   if (!ms.ok) await nar('你松了三次手，又抓回来三次。三藏在后面拽着你的脚，神冥拽着三藏的脚。');
   await cine('始祖鱼苗拖着你们三个，冲进了界海。<br>身后，异域的强者追了上来——一个，两个，三个。<br>你用尽了最后一点仙术，三藏念了一路的经，神冥一直在哭。<br>死了好几回。<br><b>没死成。</b>');
   F().yyEnd = 1; gainExp(BAL.expNext(C.lv) * 0.5);
-  await cine('<div class="cc"><small>第九卷</small><b>异域</b><i>完</i></div>', 'card');
+  await cine('<div class="cc"><small>第九卷</small><b>异域</b><i>完</i></div>', 'card'); await volRecap('九');
   go('xy_shore', false, true);
 }
 
@@ -91,6 +93,7 @@ async function S_yuanshi() {
   await cine('跑掉的人活了下来，成了长生世家，成了道统，成了九天十地的主人。<br>没跑的人，死了。<br>他们的孩子被叫做——<b>罪血</b>。<br>因为只有说他们是罪人，跑掉的人，才不是逃兵。', 'mem');
   await nar('你站在原始帝城的城门下，很久没有动。三藏在你身后，第一次没有念经。');
   await me('……我要回帝关。');
+  await breath(22);
   learnGongfa('yuanshi'); F().yuanshiDone = 1; gainExp(BAL.expNext(C.lv) * 0.5);
   tip('仙域古城往东，有一条回帝关的路。');
 }

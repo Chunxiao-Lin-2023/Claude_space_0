@@ -10,7 +10,8 @@ function charStats(c = C) {
   const L = c.lv - 1, s = { hpMax: HERO.base.hp + HERO.grow.hp * L, mpMax: HERO.base.mp + HERO.grow.mp * L, atk: HERO.base.atk + HERO.grow.atk * L, def: HERO.base.def + HERO.grow.def * L, spd: HERO.base.spd + HERO.grow.spd * L, crit: HERO.base.crit + HERO.grow.crit * L, leech: 0, regen: 0 };
   const P = { hpP: 0, mpP: 0, atkP: 0, defP: 0 };
   const add = b => { for (const k in b) { if (k in P) P[k] += b[k]; else s[k] = (s[k] || 0) + b[k]; } };
-  for (const g of c.gf) if (GONGFA[g]) add(GONGFA[g].b); for (const r of c.eq || []) if (RELICS[r] && RELICS[r].b) add(RELICS[r].b); for (const k of c.dt) { const d = DONGTIAN.find(x => x.k === k); if (d) add(d.b); }
+  for (const g of c.gf) if (GONGFA[g]) add(GONGFA[g].b); for (const r of c.eq || []) if (RELICS[r] && RELICS[r].b) add(relicB(r, c)); for (const k of c.dt) { const d = DONGTIAN.find(x => x.k === k); if (d) add(d.b); }
+  if (c.daoP) { P.hpP += (c.daoP.hp || 0) * 0.01; P.atkP += (c.daoP.atk || 0) * 0.01; P.defP += (c.daoP.def || 0) * 0.01; } P.defP += 0.03 * ttLv('qiang', c);
   s.hpMax = Math.round(s.hpMax * (1 + P.hpP)); s.mpMax = Math.round(s.mpMax * (1 + P.mpP)); s.atk = Math.round(s.atk * (1 + P.atkP)); s.def = Math.round(s.def * (1 + P.defP)); s.spd = Math.round(s.spd * 10) / 10; s.crit = Math.min(0.6, s.crit);
   s.power = Math.round(s.atk * 6 + s.def * 5 + s.hpMax * 0.6 + s.mpMax * 0.3 + s.crit * 1500 + s.spd * 15 + c.lv * 40);
   return s;
@@ -52,29 +53,29 @@ function gainExp(n, quiet) {
   if (n <= 0) return; C.exp += Math.round(n); if (!quiet) logLine(`获得 <span class="exp">${fmt(n)} 经验</span>`, 'loot');
   while (C.exp >= BAL.expNext(C.lv) && C.lv < BAL.lvCap) {
     if (C.lv === 9 && !C.story.f.jijing) { C.exp = BAL.expNext(C.lv); if (!C.seen.neck9) { C.seen.neck9 = 1; logLine('你体内的气血像江河一样奔涌，却撞上了一层看不见的壁——<b>搬血境走到头了</b>。要怎么往前走，得看机缘（跟着主线走）。', 'sys'); } break; }
-    if (C.lv === 19 && !C.story.f.end) { C.exp = BAL.expNext(C.lv); break; }
-    if (C.lv === 24 && !C.story.f.v2end) { C.exp = BAL.expNext(C.lv); break; }
-    if (C.lv === 29 && !C.story.f.shihuang) { C.exp = BAL.expNext(C.lv); break; }
-    if (C.lv === 34 && !C.story.f.v4) { C.exp = BAL.expNext(C.lv); break; }
-    if (C.lv === 39 && !C.story.f.v4end) { C.exp = BAL.expNext(C.lv); break; }
-    if (C.lv === 44 && !C.story.f.v5end) { C.exp = BAL.expNext(C.lv); break; }
-    if (C.lv === 49 && !C.story.f.v6end) { C.exp = BAL.expNext(C.lv); break; }
-    if (C.lv === 54 && !C.story.f.v7end) { C.exp = BAL.expNext(C.lv); break; }
-    if (C.lv === 59 && !C.story.f.yiyu0) { C.exp = BAL.expNext(C.lv); break; }
-    if (C.lv === 62 && !C.story.f.yyEnd) { C.exp = BAL.expNext(C.lv); break; }
-    if (C.lv === 65 && !C.story.f.v8end) { C.exp = BAL.expNext(C.lv); break; }
-    if (C.lv === 71 && !C.story.f.v9end) { C.exp = BAL.expNext(C.lv); break; }
-    if (C.lv === 75 && !C.story.f.v12end) { C.exp = BAL.expNext(C.lv); break; }
-    if (C.lv === 80 && !C.story.f.v13end) { C.exp = BAL.expNext(C.lv); break; }
-    if (C.lv === 84 && !C.story.f.xiandi) { C.exp = BAL.expNext(C.lv); break; }
-    if (C.lv === 68 && !C.story.f.zhizun) { C.exp = BAL.expNext(C.lv); break; }
+    if (C.lv === 19 && !C.story.f.end) { capExp(); break; }
+    if (C.lv === 24 && !C.story.f.v2end) { capExp(); break; }
+    if (C.lv === 29 && !C.story.f.shihuang) { capExp(); break; }
+    if (C.lv === 34 && !C.story.f.v4) { capExp(); break; }
+    if (C.lv === 39 && !C.story.f.v4end) { capExp(); break; }
+    if (C.lv === 44 && !C.story.f.v5end) { capExp(); break; }
+    if (C.lv === 49 && !C.story.f.v6end) { capExp(); break; }
+    if (C.lv === 54 && !C.story.f.v7end) { capExp(); break; }
+    if (C.lv === 59 && !C.story.f.yiyu0) { capExp(); break; }
+    if (C.lv === 62 && !C.story.f.yyEnd) { capExp(); break; }
+    if (C.lv === 65 && !C.story.f.v8end) { capExp(); break; }
+    if (C.lv === 71 && !C.story.f.v9end) { capExp(); break; }
+    if (C.lv === 75 && !C.story.f.v12end) { capExp(); break; }
+    if (C.lv === 80 && !C.story.f.v13end) { capExp(); break; }
+    if (C.lv === 84 && !C.story.f.xiandi) { capExp(); break; }
+    if (C.lv === 68 && !C.story.f.zhizun) { capExp(); break; }
     C.exp -= BAL.expNext(C.lv); C.lv++; fullHeal(); sfx('level');
     logLine(`<b class="lvup">境界精进！</b> ${realmOf(C.lv).name} · 第 ${C.lv} 层。气血、符力已回满。`, 'sys'); bigFlash(`境界精进 · ${realmOf(C.lv).name}第 ${C.lv} 层`, 'lv');
     if (C.lv >= 10 && C.lv <= 18 && C.dt.length < C.lv - 9) STATE.dtPending = true;
     if (barSlots(C.lv) > barSlots(C.lv - 1)) { logLine(`<b class="lvup">宝术栏 +1</b>：现在能带 ${barSlots(C.lv)} 门宝术进战斗。`, 'sys'); for (const id of SKILL_ORDER) if (C.sk.includes(id) && !C.bar.includes(id) && C.bar.length < barSlots(C.lv)) C.bar.push(id); }
     if (relicSlots(C.lv) > relicSlots(C.lv - 1)) { logLine(`<b class="lvup">宝骨栏 +1</b>：现在能戴 ${relicSlots(C.lv)} 件宝骨。`, 'sys'); C.eq = C.eq || []; for (const id of Object.keys(C.relics || {})) if (!C.eq.includes(id) && C.eq.length < relicSlots(C.lv)) C.eq.push(id); }
   }
-  if (C.lv >= BAL.lvCap) C.exp = Math.min(C.exp, BAL.expNext(C.lv));
+  if (C.lv >= BAL.lvCap && C.exp > BAL.expNext(C.lv)) capExp();
   netPub(); if (STATE.dtPending) setTimeout(dongtianPick, 400);
   setTimeout(storyPoll, 200);
 }
