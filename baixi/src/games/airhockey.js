@@ -174,16 +174,20 @@ BX.register({
     }
     // ---------- AI ----------
     /* the AI reacts to where the puck WAS a moment ago (human-like reaction time per level), so hard angled shots can beat it */
-    const seen = [];
+    const seen = [], aim = [{on: false, y: 0}, {on: false, y: 0}];
     function aiInput(seat, level) {
       const lag = [0, 13, 8, 4][level] || 0, p = seen[Math.max(0, seen.length - 1 - lag)] || st.p;
       const m = st.m[seat], dir = seat === 0 ? 1 : -1, goalX = seat === 0 ? 0 : W;
       const mine = seat === 0 ? p.x < W / 2 : p.x > W / 2;
       const coming = (p.vx * dir) < 40;
       const react = [0, .35, .65, 1][level], c = [0, 1100, 1700, 2300][level];
+      // pick an aim point each time the puck comes over: L3 shoots for the side the opponent leaves open, others vary at random
+      const am = aim[seat];
+      if (mine && !am.on) { am.on = true; const o = st.m[1 - seat]; am.y = level >= 3 ? (o.y > H / 2 ? -1 : 1) * 50 : (Math.random() < .5 ? -1 : 1) * (15 + Math.random() * 40); }
+      if (!mine) am.on = false;
       if (mine && (coming || Math.abs(p.vx) < 120)) {
         // strike: aim behind the puck toward the opponent goal
-        const tx = W - goalX, ty = H / 2 + (level === 3 ? (p.y < H / 2 ? 50 : -50) : 0);
+        const tx = W - goalX, ty = H / 2 + am.y;
         const ax = p.x - tx, ay = p.y - ty, l = Math.hypot(ax, ay) || 1;
         const behind = {x: p.x + ax / l * (PR + MR - 6), y: p.y + ay / l * (PR + MR - 6)};
         const close = Math.hypot(m.x - behind.x, m.y - behind.y) < 18;
