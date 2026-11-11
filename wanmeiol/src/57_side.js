@@ -342,6 +342,8 @@ function finaleEchoes() { const f = C.story.f, L = [];
   if (f.jinFate === 1) L.push('帝关城下，小七亲手审了金太君。'); if (f.wangEnd === 2) L.push('九天的六座坟前，有一个白头发的老人在扫地。');
   if (f.yunxiQ >= 2) L.push('不老泉的水，一直养着天庭的药园。'); if (f.huoGuard) L.push('三位仙王伏击的时候，没有一道光落在她身上。');
   if (f.carveHuang) L.push('帝冲峰下，那个很小很小的“荒”字。');
+  if (f.mengGourd === 1) L.push('孟天正那只酒葫芦，一直揣在你怀里。'); else if (f.mengGourd === 3) L.push('七王祠的供桌上，那只酒葫芦。');
+  if (f.burnt === 1) L.push('枯柳崖上，你把被挖骨那一夜的恨烧掉了。');
   if (f.stoneName === 3) L.unshift('族长塞给你的那把小刀，你一直带着。村口那块石头上，还空着一个位置。'); else if (f.stoneName) L.unshift('村口那块石头上，你自己刻的那个名字，被一代一代的孩子摸得发亮。');
   return L; }
 
@@ -449,3 +451,62 @@ async function dieBackSea() {
   const lt = await miniGame('lights', { title: '元神', desc: '把元神上的黑纹一道一道按灭。按错了，它会长回来。', presses: 6 });
   await nar(lt.ok ? '最后一道黑纹灭了。你的元神干干净净，像刚从石村的河里捞出来。' : '还剩几道黑纹没按灭。你不管了——记得你的人太多，黑吃不完。');
   F().dieBackSea = heard.length; }
+
+/* ---------- 转折不能一笔带过: the turning points that used to pass in a line or two ---------- */
+// 第七章 · 天空战场之后: the 尊者 fall on you while you can barely stand; then the two bones' essence settles in your chest
+async function tzShiyi() {
+  const h = await holdOut({ mobs: [['qingluan', slv(30, 1, 3)], ['mozhu', slv(30, 1, 3)]], title: '天空战场 · 尊者围杀', noPet: true, epic: { name: '尊者', sub: '他们看你，像看一块刚长成的宝骨', seal: '围杀', intro: ['你已经站不太稳了。'], phase: '尊者的手已经伸到了你胸口——' } }, 2);
+  await nar(h.survived ? '你咬着牙撑了两个回合。第三个回合，你的膝盖一软——' : '你只撑了一下，膝盖就软了——');
+  F().held2 = h.survived ? 1 : 0; }
+async function tzBone() {
+  await nar('魔女走了。你一个人坐在那块石头上，胸口烫得像揣了一块炭。');
+  await nar('打的时候，石毅身上那块骨头一次次撞在你的骨头上。每撞一次，就有一点东西从那边流过来——那块骨头在他身上长了十三年，长出来的那一点精华，认得你。');
+  const r = await miniGame('lights', { title: '骨文归位', desc: '胸口的骨文乱成一团。一道一道按灭乱窜的光，让它们回到该在的地方。', presses: 5 });
+  await nar(r.ok ? '最后一道骨文落了下去。你听见胸口“咔”的一声，像一扇关了很多年的门，合上了。' : '骨文还在乱窜，可它们慢慢地自己找到了位置。你坐了一整夜，等它们安静下来。');
+  const c = await choose(['（摸摸胸口）……回来了。', '（想起石毅最后那个笑）……他也不好受吧。']);
+  if (c === 1) { F().boneThink = 1; await nar('你望着重瞳女带走他的方向，很久没有动。'); } }
+// 第十五章 · 枯柳崖: burning the 至尊 blood is a choice of what to burn, and a fire you have to sit through
+async function tzKuliu() {
+  await nar('至尊血一烧，就回不来了。你知道烧掉的不只是血。');
+  const c = await choose(['（把被挖骨那一夜的恨，一起烧掉）', '（把“至尊骨”这三个字的骄傲，一起烧掉）', '（把怕——怕再被人挖一次——一起烧掉）'], '要烧掉的旧东西里，你先扔进火里的是——');
+  F().burnt = c + 1;
+  await nar(['那一夜的疼，那一夜的冷，那把挖你骨头的刀——都扔进去了。火一下子窜得老高。', '“至尊骨”。这三个字你听了一辈子：被夸，被抢，被挖，被羡慕。你把它扔进了火里。火烧得很安静。', '你一直没跟人说过：你怕。你把这个“怕”字扔进了火里。火烧得噼啪响，像在笑你。'][c]);
+  const r = await miniGame('lift', { title: '烧血', desc: '血在烧。火最旺的那一下，稳住呼吸，别让它把你烧散。', rounds: 3, need: 2 });
+  await nar(r.ok ? '三次火头，你三次都稳住了。' : '你被火冲散了一回，又自己一点一点地把自己拢了回来。'); }
+// 第二十三章 · 安澜之后: before you run, you find what is left of 孟天正
+async function tzMeng() {
+  await nar('你从城墙下面爬起来，爬到了孟天正站过的地方。城头上什么都没有了——只有一只酒葫芦，滚在墙根下，里面还剩一口酒。');
+  const c = await choose(['（把酒葫芦揣进怀里）', '（把那口酒喝了，把葫芦立在城头上）', '（把葫芦交给小七）']);
+  F().mengGourd = c + 1;
+  await nar(['你把葫芦揣进怀里，跟那只烂木盒子放在一起。它还是温的。', '酒很烈，烈得你眼泪直流。你把空葫芦立在城头最高的那块砖上，口朝着边荒。', '小七接过葫芦，抱在怀里，一句话都没说。后来，七王祠的供桌上，多了一只酒葫芦。'][c]); }
+// 第二十四章 · 重回至尊: years of training are three things you do, not one line
+async function tzTrain2() {
+  await nar('第三年。你站在村前空地上，等雷。大壮的儿子坐在石头上看着你，嘴里嚼着草：“小不点叔，雷又不听你的。”');
+  const r = await miniGame('thunder', { title: '再引一次雷', desc: '像在补天阁的时候一样。圈收到指尖那一刻，伸手。', strikes: 5, need: 3 });
+  await nar(r.ok ? '第三道雷落下来的时候，钻进了你的手心。大壮的儿子嘴里的草掉了。' : '雷劈了你七回。第八回，它终于顺着你的手指钻了进去。大壮的儿子在旁边数着，数到最后，不笑了。');
+  await nar('第五年。你娘每天中午送一碗饭到柳神的树桩旁边。你坐在那里，一坐就是一天。');
+  await say('你娘', '（她把碗放下，没走，坐在你旁边）……你小时候，坐不住一盏茶。');
+  const r2 = await miniGame('lights', { title: '打通经脉', desc: '帝关那一战断掉的经脉，一条一条接回去。', presses: 5 });
+  await nar(r2.ok ? '最后一条经脉接上的时候，你听见那截树桩里，有东西轻轻动了一下。' : '有几条经脉怎么也接不上。你不急了——柳神也是一点一点长回来的。'); }
+// 第二十七章 · 造化之门: the light takes you apart nine times; three times it asks what you want to keep
+async function tzZaohua() {
+  await nar('门里没有路，只有光。光把你拆开的时候，问了你三次同一个问题：<b>拼回去的时候，要留下什么？</b>');
+  const keep = [];
+  for (const opts of [['石村的名字', '至尊骨的骄傲'], ['胸口那道疤', '一身干干净净的皮肉'], ['所有的疼', '所有的人']]) { const c = await choose(opts.map(o => `（留下：${o}）`), '光在等你回答。'); keep.push(opts[c]); }
+  F().zaohuaKeep = keep.join('、');
+  await nar(`你留下了：${keep.join('、')}。别的，都还给了光。`);
+  const r = await miniGame('lights', { title: '九拆九拼', desc: '光把你拆开了。照着留下的东西，一块一块拼回去。', presses: 6 });
+  await nar(r.ok ? '第九次拼回去的时候，你比进门之前，轻了很多。' : '拼到第七次的时候你差点散了。是你留下的那些东西，把你拽了回来。'); }
+// 第三十一章 · 准仙帝: the breakthrough is a 劫 you take, while 柳神's branches break one by one
+async function tzZhun() {
+  await nar('刀王倒下的时候，黑柳挡在你身前的最后一根枝条，也断了。');
+  await say('willow', '（柳神的声音很轻）……昊儿。往上走。我在下面接着你。');
+  await nar('天上开了一道口子。不是敌人——是劫。准仙帝的劫。');
+  const r = await miniGame('thunder', { title: '仙劫', desc: '劫雷一道比一道快。接住它们——让它们把你的骨头再锻一遍。', strikes: 6, need: 4 });
+  await nar(r.ok ? '六道劫雷，你接住了五道。最后一道落在你头顶，你没躲——它进了你的骨头，成了你的一部分。' : '劫雷劈得你单膝跪地。你撑着地站起来，一道一道地，把剩下的都接住了。');
+  await cine('你骨头里那根柳枝，长成了一棵树。<br><b>准仙帝。</b>'); }
+// 第三十一章 · 原始古器: you don't just get pulled back — you tear yourself out of the black matter first
+async function tzKundi() {
+  await nar('黑色的物质顺着你的伤口往里钻，像界海的水往骨头缝里灌。你的手开始不听使唤了。');
+  const r = await miniGame('mash', { title: '挣脱', desc: '黑色的东西在把你往原始古器里拽。挣出来！', time: 7000, rate: 7 });
+  await nar(r.ok ? '你硬生生地把自己从那团黑里扯了出来，扯掉了一层皮。' : '你挣了三次，都没挣开。第四次，有好几只手从你身后伸了过来——'); }

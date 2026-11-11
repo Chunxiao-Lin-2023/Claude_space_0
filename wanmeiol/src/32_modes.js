@@ -18,7 +18,7 @@ async function siege(spec, stancePrompt) {
   const waves = spec.waves.slice(); const first = waves.shift();
   const r = await startBattle(Object.assign({ flee: false, story: 1, noLose: true }, spec, { mobs: first, waves, stance: STANCES[c].id, title: spec.title }));
   return r && r.win; }
-async function siegeRetry(spec, prompt) { for (; ;) { if (await siege(spec, prompt)) return true; await nar('城头上的人把你拖了下来。伤口包好了，城还在。'); fullHeal(); refresh(); const c = await choose(['再守一次！', '先回去练练']); if (c === 1) return false; } }
+async function siegeRetry(spec, prompt, lose) { for (; ;) { if (await siege(spec, prompt)) return true; await nar(lose || '城头上的人把你拖了下来。伤口包好了，城还在。'); fullHeal(); refresh(); const c = await choose(['再守一次！', '先回去练练']); if (c === 1) return false; } }
 /* 帝关城头: the siege you can play again */
 const SIEGE_POOL = [['yiyubing', 'yiyuqi', 'bhhun'], ['yiyubing', 'yiyubing', 'yiyuqi'], ['bhhun', 'yiyuqi', 'yiyuqi'], ['yiyubing', 'bhhun', 'bhhun'], ['dizu']];
 function siegeOpen() { return C.story.q > qi('q_dizu'); }

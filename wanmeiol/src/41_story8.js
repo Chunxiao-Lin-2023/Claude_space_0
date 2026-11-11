@@ -58,7 +58,9 @@ async function S_kundiChase() {
   await say('鲲帝', '赤王死在你手里。……你知道异域死一个仙王，要多少年才能补回来吗？');
   await me('帝关死了多少人，你知道吗？');
   await fight({ mobs: [['kundi', 84]], title: '界海 · 鲲帝', noLose: true, epic: { name: '鲲帝', sub: '异域第一 · 这一次，你追着他打', seal: '鲲帝', intro: ['你追着他，从界海打进了异域。'], phase: '鲲帝祭出了原始古器，黑色的物质从器里涌了出来！' } });
-  await cine('你打得鲲帝节节后退，一路追进了异域。<br>大罗剑胎斩下去的那一刻，原始古器里涌出了黑色的物质——<br>它咬在你身上，像界海里的黑一样，往骨头里钻。<br>你退了。<b>十几位仙域的仙王</b>冲进界海，把你接了回去。');
+  await cine('你打得鲲帝节节后退，一路追进了异域。<br>大罗剑胎斩下去的那一刻，原始古器里涌出了黑色的物质——<br>它咬在你身上，像界海里的黑一样，往骨头里钻。');
+  await tzKundi();
+  await cine('<b>十几位仙域的仙王</b>冲进界海，把你接了回去。');
   await breath(31);
   F().kundiWar = 1; gainExp(BAL.expNext(C.lv) * 0.4);
   tip('伤还没好，界海和异域的巨头就打到了<b>仙域古城</b>下。');
@@ -68,7 +70,8 @@ async function S_xianwar() {
   await nar('仙域这边，能跟他们正面打的巨头，只有寥寥几个：你，还有……一棵黑色的柳树。二十几位仙域仙王，很快就倒了一大半。');
   await say('willow', '（黑柳的枝条挡在你身前，一根一根地断）……昊儿。你不是一直想看看，自己能走多远吗？');
   if (!await siegeRetry({ waves: [[['yyxwb', slv(83)], ['yyxwb', slv(83)]], [['yyxwb', slv(84)], ['yyxwb', slv(84)], ['jieling', slv(84)]]], allies: ['a_liushen'], title: '仙域城下 · 守' }, '巨头们的兵先压了上来。柳神的枝条在你身边一根一根地竖起来——你站在哪儿？')) return false;
-  if (!await fightRetry({ mobs: [['daowang', slv(84, -1, 1)]], allies: ['a_liushen'], title: '仙域 · 刀王', epic: { name: '刀王', sub: '界海来的巨头', seal: '刀王', intro: ['他的刀，斩过很多仙王。'], phase: '刀王的刀光把仙域的天劈成了两半！', low: { who: '柳神', t: '“……昊儿。你不是一直想看看，自己能走多远吗？”<br>（你骨头里那根柳枝，长成了一棵树。<b>准仙帝</b>。）' } } })) return false;
+  if (!await fightRetry({ mobs: [['daowang', slv(84, -1, 1)]], allies: ['a_liushen'], title: '仙域 · 刀王', epic: { name: '刀王', sub: '界海来的巨头', seal: '刀王', intro: ['他的刀，斩过很多仙王。'], phase: '刀王的刀光把仙域的天劈成了两半！', low: { who: '柳神', t: '“……昊儿。你不是一直想看看，自己能走多远吗？”<br>（你骨头里那根柳枝，动了一下。）' } } })) return false;
+  await tzZhun();
   learnGongfa('zhunxiandi');
   if (!await fightRetry({ mobs: [['pumo', slv(84, -1, 1)]], allies: ['a_liushen'], title: '仙域 · 蒲魔王', epic: { name: '蒲魔王', sub: '异域巨头', seal: '魔王', intro: ['刀王已经倒下了。'], phase: '蒲魔王身后升起一片魔海！' } })) return false;
   await cine('刀王倒了。蒲魔王倒了。<br>九头魔想跑，被你一把扯了回来。<br>无殇，也倒了。<br>仙域的天，被你一个人，撑住了。');
@@ -98,7 +101,9 @@ async function S_v15start() {
   if ((F().qinhao || 0) >= 2) { await nar('跳下去之前，有人拽住了你的袖子。是秦昊。他胸口没有骨头了，可他身上的血，烫得像火。');
     await say('秦昊', '哥。（他笑了，笑得跟你小时候一模一样）他们说我是为你生的。我以前不信。……现在我信了。');
     await nar('他跟着你跳了下去。'); }
-  await cine('你在界海里，和三位帝打了三万年。<br>三万年，你没有回过一次头。<br>黑暗四帝从界海的四个方向压过来——你把它们，一个一个，按回了海底。');
+  await cine('界海里没有白天，也没有年。<br>只有黑，一波一波地压过来。');
+  if (!await siegeRetry({ waves: [[['jieling', slv(84)], ['jieling', slv(84)]], [['jieling', slv(84)], ['yyxwb', slv(84)], ['jieling', slv(84)]], [['yyxwb', slv(85)], ['yyxwb', slv(85)], ['jieling', slv(85)]]], allies: ['a_liushen'], title: '界海 · 三万年' }, '第一万年。黑从四面八方涌过来，你背后是堤坝，堤坝后面是家——你站在哪儿？', '黑把你推回了堤坝上。柳神的枝条缠住了你的手腕：“……歇一口气，再去。”')) return false;
+  await cine('第一万年，你的剑卷了刃。<br>第二万年，你忘了自己上一次睡觉是什么时候。<br>第三万年，你还站着。<br>黑暗四帝从界海的四个方向压过来——你把它们，一个一个，按回了海底。<br>只剩最后一个。');
   if ((F().qinhao || 0) >= 2) await cine('三万年里，有一年，三位帝里最狠的那一个，一掌拍向你的后心。<br>秦昊挡在了你身后。<br>他把一辈子的血，一次烧完了。<br>你接住他的时候，他很轻。<br>“……哥，到了那边，记得把我捞回来。”<br><b>你答应了。</b>', 'mem');
   if (!await fightRetry({ mobs: [['heiandi', slv(84, -1, 1)]], allies: ['a_liushen'], title: '界海 · 黑暗之帝', epic: { name: '黑暗之帝', sub: '黑暗四帝之一', seal: '黑暗', intro: ['三万年。', '你还站着。'], phase: '黑暗之帝张开了界海——整片海都是它的身子！', low: { who: '族长', t: '“吃饱了再打！”<br>（族长，三万年了。我还记得。）' }, end: ['最后一位黑暗之帝，沉进了海底。'] } })) return false;
   F().heiandiDone = 1; gainExp(BAL.expNext(C.lv) * 0.5);

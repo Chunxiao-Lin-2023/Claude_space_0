@@ -70,7 +70,9 @@ async function S_zaohua() {
   await nar('造化之门很高，门缝里漏出来的光比太阳还亮。门前躺着很多骨头——没走出来的人。');
   if (!await fightRetry({ mobs: [['zaohua', slv(75, -1, 1)]], title: '造化之门 · 守灵', epic: { name: '造化之门守灵', sub: '过了它，就是真仙', seal: '造化', intro: ['门前那些骨头，都是想过去的人。'], phase: '门里伸出了无数只手，要把你拖进去！', end: ['守灵让开了。', '门，开了一道缝。'] } })) return false;
   await breath(27);
-  await cine('你走进了造化之门。<br>门里没有路，只有光。<br>光把你拆开，又拼起来。拆了九次，拼了九次。<br>你走出来的时候，第一次觉得——<b>天，没那么高了</b>。');
+  await nar('你走进了造化之门。');
+  await tzZaohua();
+  await cine('你走出来的时候，第一次觉得——<b>天，没那么高了</b>。');
   learnGongfa('zhenxian'); F().v12end = 1; gainExp(BAL.expNext(C.lv) * 0.5);
   await cine('<div class="cc"><small>第十二卷</small><b>天庭</b><i>完</i></div>', 'card'); await volRecap('十二');
   tip('造化之门北边，有一条看不见源头的河——<b>时光长河</b>。境界可以突破到<b>仙王境</b>了。');

@@ -130,6 +130,7 @@ async function S_anlan() {
   await nar('七王祠的孩子们，冲上了城头。他们没有喊口号，没有哭，一个一个地站在了孟天正站过的地方。小七站在最前面。');
   await cine('那一天，七王的后人，又死了很多。<br>帝关，没有破。<br>活下来的，只有几个孩子。小七是其中一个。');
   F().anlan = 1; gainExp(BAL.expNext(C.lv) * 0.5);
+  await tzMeng();
   await say('qiwanghou', '（小七浑身是血，把你从城墙下面拖出来，把那只烂木盒子塞进你怀里）……孟老说过，你要是活着，就带着它回家。走！');
   const ms = await miniGame('mash', { title: '逃', desc: '跑！别回头——往下界跑！', time: 7000, rate: 7 });
   if (!ms.ok) await nar('你摔倒了三次。第四次，你是爬着过去的。');
@@ -185,9 +186,10 @@ async function S_train() {
   await me('从头练？');
   await say('chief', '你小时候，举不动石锁，被大壮笑了一个月。（他笑了）那时候你怎么办的？');
   await me('……天天举。');
-  await cine('第一年，你天天在村前空地上举石锁。<br>大壮的儿子在旁边看着，笑你举得歪。<br>第三年，你又能引雷了。<br>第五年，你坐在柳神的树桩旁边，第一次听见那根枯根里，有东西在动。');
+  await nar('第一年，你天天在村前空地上举石锁。大壮的儿子在旁边看着，笑你举得歪。');
   const ms = await miniGame('lift', { title: '从头练', desc: '跟小时候一样。一下一下地举。', rounds: 3, need: 2 });
   if (!ms.ok) await nar('你举了一千次，失败了九百次。第一千零一次，你举起来了。');
+  await tzTrain2();
   await cine('很多年以后的一个早上，你站在村口，<br>伸了个懒腰。<br>整个大荒的凶兽，<b>同时趴了下去</b>。<br>——重回至尊。');
   learnGongfa('chongzhi'); F().zhizun = 1; gainExp(BAL.expNext(C.lv) * 0.5);
   tip('村前空地上，大壮好像有话要跟你说。');

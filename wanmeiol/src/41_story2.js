@@ -216,9 +216,11 @@ async function S_shiyiDuel() {
   await cine('一道看不清的影子从云里落下来。<br>那是一个女人，眼睛里，也有两个瞳孔。<br>她抱起石毅，看了你一眼，<b>走了</b>。', 'mem');
   await nar('你还没来得及喘口气，四面八方的云上，站起来了好几个人——尊者。他们看你的眼神，跟看一块刚长成的宝骨一模一样。');
   await say('尊者', '至尊骨……两块至尊骨的精华，全在这孩子身上了！');
-  await nar('他们一起扑了下来。你已经站不起来了——');
+  await nar('他们一起扑了下来。');
+  await tzShiyi();
   await nar('一阵黑色的风卷过战场。风里有一个女人的笑声，懒洋洋的，好听得像在唱歌。等风散了，那几个尊者倒了一地，你被人拎着后领子，已经在百里之外了。');
   await say('魔女', '（一个穿黑裙的女人把你放在一块石头上，捏了捏你的脸）小家伙，你欠我一次。……我会来讨的。');
+  await tzBone();
   learnGongfa('zhizungu'); learnSkill('zhizun'); F().shiyiWin2 = 1; gainExp(BAL.expNext(C.lv) * 0.6);
   await cine('你胸口那块骨头，安安静静地待在它该在的地方。<br>它是你的。<br>从一开始，就是你的。');
 }

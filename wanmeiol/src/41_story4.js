@@ -92,7 +92,7 @@ async function S_liushen() {
   await cine('你看见了石村。<br>那棵烧焦的柳树，只剩一根柳枝是绿的。<br>你小时候爬上去掏鸟窝，摔下来，那根柳枝接住了你。<br>你那时候不知道，它是在护着你。', 'mem');
   await cine('柳神说过一句话。<br>那时候你太小，没听懂。<br><b>“烧掉旧的，才长得出新的。”</b>', 'mem');
   await me('……烧掉旧的。');
-  const c = await choose(['（燃烧至尊血）', '（深吸一口气，燃烧至尊血）']);
+  await tzKuliu();
   await cine('你体内那两块至尊骨里流着的血，一滴一滴地烧了起来。<br>很疼。<br>比涅槃池疼，比地火液海疼，比被挖骨的那一夜还疼。<br>烧完了，你的骨头里，长出了一根很细很细的<b>柳枝</b>。');
   await nar('你睁开眼睛。崖上那截枯柳根，冒出了一点绿。');
   learnSkill('liushen'); F().liushen = 1; gainExp(BAL.expNext(C.lv) * 0.4);
