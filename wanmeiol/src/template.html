@@ -134,8 +134,17 @@ body.m-explore #vExplore,body.m-battle #vBattle,body.m-talk #vTalk{opacity:1;vis
 @keyframes rtime{to{transform:scaleX(0)}}
 body.noanim .rtime{display:none}
 /* rumours over the location picture, speech bubbles in battle */
-#rumor{position:absolute;left:10px;right:10px;top:8px;z-index:2;font-size:.78rem;line-height:1.45;color:#f2e6c8;background:#0c0a08c0;border:1px solid #d4ad6244;border-radius:8px;padding:4px 9px;opacity:0;pointer-events:none;transform:translateY(-4px);transition:opacity .6s,transform .6s}
-#rumor.on{animation:rumor 9s ease both}
+#rumor{position:absolute;left:10px;right:10px;top:8px;z-index:2;cursor:pointer;font-size:.78rem;line-height:1.45;color:#f2e6c8;background:#0c0a08c0;border:1px solid #d4ad6244;border-radius:8px;padding:4px 9px;opacity:0;pointer-events:none;transform:translateY(-4px);transition:opacity .6s,transform .6s}
+#rumor.on{animation:rumor 9s ease both;pointer-events:auto}
+#rumor .rmore{color:#d4ad62aa;font-size:.7rem;margin-left:4px}
+#rumor.multi{left:auto;right:12px;top:10px;width:min(58%,460px);opacity:1;transform:none;pointer-events:auto;background:#0c0a08b0;padding:6px 10px 4px;transition:background .2s}
+#rumor.multi:hover{background:#0c0a08e0}
+#rumor.multi .rl{padding:2px 0;border-bottom:1px dashed #d4ad6222;opacity:.6;overflow:hidden;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical}
+#rumor.multi .rl:first-child{opacity:1;-webkit-line-clamp:2}
+#rumor.multi .rl.new{animation:rlin .7s ease both}
+@keyframes rlin{from{opacity:0;transform:translateY(-6px)}}
+#rumor.multi .rmore{display:block;text-align:right;margin:2px 0 0}
+body.cols #banner .ar{max-width:38%}
 @keyframes rumor{0%{opacity:0;transform:translateY(-4px)}8%,88%{opacity:1;transform:none}100%{opacity:0}}
 #rumor .rw{color:var(--gold);margin-right:6px;font-size:.72rem}
 body.noanim #rumor.on{opacity:1;transform:none}
@@ -263,6 +272,7 @@ body.m-talk #bnav,body.m-battle #bnav{display:none}
 .memo .mw{font-weight:700;color:#7a2a1a;margin-right:6px}
 .memo .mc{color:#8a5a2a}
 .chap{font-family:var(--fh);font-size:1.3rem;color:var(--gold);margin:10px 0 4px}
+.pbody>.chap{margin:10px auto 4px}
 /* panels */
 .card{background:var(--pan);border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:10px}
 .card h3{margin:0 0 6px;font-family:var(--fh);font-weight:400;font-size:1.3rem;color:var(--gold)}
@@ -513,7 +523,7 @@ body.noanim #bfeed .ln.pend{visibility:visible}
   <header id="top"></header>
   <div id="stage">
     <section id="vExplore" class="view">
-      <div class="ex-l"><div id="banner"><canvas id="bcv"></canvas><div class="ar" id="bar"></div><div class="nm" id="bnm"></div><div id="rumor"></div></div><div id="desc"></div><div id="feed"></div></div>
+      <div class="ex-l"><div id="banner"><canvas id="bcv"></canvas><div class="ar" id="bar"></div><div class="nm" id="bnm"></div><div id="rumor" onclick="openRumors()"></div></div><div id="desc"></div><div id="feed"></div></div>
       <div class="ex-r"><div class="qrow"><button id="bq"></button><button id="bqs" onclick="navTo('map')"></button></div><div id="acts"></div></div>
     </section>
     <section id="vTalk" class="view"><canvas id="tbg"></canvas><div id="dlg"></div></section>

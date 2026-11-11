@@ -136,8 +136,17 @@ body.m-explore #vExplore,body.m-battle #vBattle,body.m-talk #vTalk{opacity:1;vis
 @keyframes rtime{to{transform:scaleX(0)}}
 body.noanim .rtime{display:none}
 /* rumours over the location picture, speech bubbles in battle */
-#rumor{position:absolute;left:10px;right:10px;top:8px;z-index:2;font-size:.78rem;line-height:1.45;color:#f2e6c8;background:#0c0a08c0;border:1px solid #d4ad6244;border-radius:8px;padding:4px 9px;opacity:0;pointer-events:none;transform:translateY(-4px);transition:opacity .6s,transform .6s}
-#rumor.on{animation:rumor 9s ease both}
+#rumor{position:absolute;left:10px;right:10px;top:8px;z-index:2;cursor:pointer;font-size:.78rem;line-height:1.45;color:#f2e6c8;background:#0c0a08c0;border:1px solid #d4ad6244;border-radius:8px;padding:4px 9px;opacity:0;pointer-events:none;transform:translateY(-4px);transition:opacity .6s,transform .6s}
+#rumor.on{animation:rumor 9s ease both;pointer-events:auto}
+#rumor .rmore{color:#d4ad62aa;font-size:.7rem;margin-left:4px}
+#rumor.multi{left:auto;right:12px;top:10px;width:min(58%,460px);opacity:1;transform:none;pointer-events:auto;background:#0c0a08b0;padding:6px 10px 4px;transition:background .2s}
+#rumor.multi:hover{background:#0c0a08e0}
+#rumor.multi .rl{padding:2px 0;border-bottom:1px dashed #d4ad6222;opacity:.6;overflow:hidden;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical}
+#rumor.multi .rl:first-child{opacity:1;-webkit-line-clamp:2}
+#rumor.multi .rl.new{animation:rlin .7s ease both}
+@keyframes rlin{from{opacity:0;transform:translateY(-6px)}}
+#rumor.multi .rmore{display:block;text-align:right;margin:2px 0 0}
+body.cols #banner .ar{max-width:38%}
 @keyframes rumor{0%{opacity:0;transform:translateY(-4px)}8%,88%{opacity:1;transform:none}100%{opacity:0}}
 #rumor .rw{color:var(--gold);margin-right:6px;font-size:.72rem}
 body.noanim #rumor.on{opacity:1;transform:none}
@@ -265,6 +274,7 @@ body.m-talk #bnav,body.m-battle #bnav{display:none}
 .memo .mw{font-weight:700;color:#7a2a1a;margin-right:6px}
 .memo .mc{color:#8a5a2a}
 .chap{font-family:var(--fh);font-size:1.3rem;color:var(--gold);margin:10px 0 4px}
+.pbody>.chap{margin:10px auto 4px}
 /* panels */
 .card{background:var(--pan);border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:10px}
 .card h3{margin:0 0 6px;font-family:var(--fh);font-weight:400;font-size:1.3rem;color:var(--gold)}
@@ -516,7 +526,7 @@ body.noanim #bfeed .ln.pend{visibility:visible}
   <header id="top"></header>
   <div id="stage">
     <section id="vExplore" class="view">
-      <div class="ex-l"><div id="banner"><canvas id="bcv"></canvas><div class="ar" id="bar"></div><div class="nm" id="bnm"></div><div id="rumor"></div></div><div id="desc"></div><div id="feed"></div></div>
+      <div class="ex-l"><div id="banner"><canvas id="bcv"></canvas><div class="ar" id="bar"></div><div class="nm" id="bnm"></div><div id="rumor" onclick="openRumors()"></div></div><div id="desc"></div><div id="feed"></div></div>
       <div class="ex-r"><div class="qrow"><button id="bq"></button><button id="bqs" onclick="navTo('map')"></button></div><div id="acts"></div></div>
     </section>
     <section id="vTalk" class="view"><canvas id="tbg"></canvas><div id="dlg"></div></section>
@@ -2504,11 +2514,21 @@ const RUMORS = [
   { from: 'q_end', to: 'q_end', who: '过路的兽车商队', t: '外面的天下大着呢。听说更远的地方，有好些比补天阁大得多的地方。' },
   { from: 'q_end', to: 'q_end', who: '虚神界里的少年', t: '光幕最前面那个带“重瞳”的名字，最近好像很少出现了。' },
 ];
+/* heard rumours are kept in the save (C.rumorLog) so they can be reread under 📜 记录 → 江湖传闻; co-op guests see the host's */
 function rumorTick() {
-  if (STATE.mode !== 'play' || !C || curMode() !== 'explore' || UI.nav || now() < (UI.rumorNext || 0)) return; UI.rumorNext = now() + rint(35000, 60000);
-  const q = C.story.q, L = RUMORS.filter(r => q >= qi(r.from) && q <= qi(r.to) && !(UI.rumorSeen || {})[r.t]); if (!L.length) { UI.rumorSeen = {}; return; }
-  const r = pick(L); (UI.rumorSeen = UI.rumorSeen || {})[r.t] = 1; const e = $('rumor'); if (!e) return;
-  e.innerHTML = `<span class="rw">${esc(r.who)}</span>${r.t}`; e.classList.remove('on'); void e.offsetWidth; e.classList.add('on'); logLine(`【传闻 · ${esc(r.who)}】${r.t}`, 'rumor dim'); }
+  if (STATE.mode !== 'play' || !C || NETROLE === 'guest' || curMode() !== 'explore' || UI.nav || now() < (UI.rumorNext || 0)) return; UI.rumorNext = now() + rint(35000, 60000);
+  const q = C.story.q, A = RUMORS.filter(r => q >= qi(r.from) && q <= qi(r.to)); if (!A.length) return;
+  const recent = new Set((A.length > 1 ? (C.rumorLog || []).slice(-Math.min(3, A.length - 1)) : []).map(r => r.t)); // never the same line twice in a row
+  let L = A.filter(r => !recent.has(r.t) && !(UI.rumorSeen || {})[r.t]); if (!L.length) { UI.rumorSeen = {}; L = A.filter(r => !recent.has(r.t)); } if (!L.length) return;
+  const r = pick(L); (UI.rumorSeen = UI.rumorSeen || {})[r.t] = 1; C.rumorLog = (C.rumorLog || []).concat([{ who: r.who, t: r.t, day: C.day || 1, n: (C.rumorN = (C.rumorN || 0) + 1) }]).slice(-80);
+  logLine(`【传闻 · ${esc(r.who)}】${r.t}`, 'rumor dim'); save(); renderRumor(); netSync(); }
+const rumorWide = () => document.body.classList.contains('cols');
+function renderRumor() { // wide screens: the last three, always there; phones: the newest one floats by for a few seconds
+  const e = $('rumor'); if (!e || !C) return; const L = C.rumorLog || []; if (!L.length) { e.className = ''; e.innerHTML = ''; return; } const last = L[L.length - 1];
+  if (rumorWide()) { e.className = 'multi'; e.innerHTML = L.slice(-3).reverse().map((r, i) => `<div class="rl ${i === 0 && UI.rumorKey !== last.n ? 'new' : ''}"><span class="rw">${esc(r.who)}</span>${r.t}</div>`).join('') + `<div class="rmore">江湖传闻 · 共 ${L.length} 条 ›</div>`; UI.rumorKey = last.n; return; }
+  if (UI.rumorKey === last.n && e.classList.contains('one')) return; const fresh = UI.rumorKey !== last.n; UI.rumorKey = last.n; if (!fresh) { e.className = ''; return; }
+  e.innerHTML = `<span class="rw">${esc(last.who)}</span>${last.t}<span class="rmore"> ›</span>`; e.className = ''; void e.offsetWidth; e.className = 'one on'; clearTimeout(UI.rumorT); UI.rumorT = setTimeout(() => e.classList.remove('on'), 9000); }
+function openRumors() { UI.logTab = 'rumor'; if (UI.nav === 'log') { sfx('click'); renderSide(); } else navTo('log'); }
 
 /* ================= UI: one screen at a time =================
    探索 (dark green): location, what just happened, the quest line and what you can do here.
@@ -2588,7 +2608,7 @@ addEventListener('keydown', e => { if (STATE.mode !== 'play' || e.target.tagName
 /* ---------- refresh (batched) ---------- */
 let refT = 0;
 function refresh() { if (refT) return; refT = requestAnimationFrame(() => { refT = 0; if (STATE.mode !== 'play' || !C) return; applyMode(); musicMode(); renderTop();
-  if (curMode() === 'explore') { renderBanner(); renderDesc(); renderFeed(); renderActs(); } if (STATE.battle) renderBattle(true); renderSide(); if (UI.modal) openModal(UI.modal, true); }); }
+  if (curMode() === 'explore') { renderBanner(); renderDesc(); renderFeed(); renderActs(); renderRumor(); } if (STATE.battle) renderBattle(true); renderSide(); if (UI.modal) openModal(UI.modal, true); }); }
 const CH_NAMES = ['', '第一章 · 石村', '第二章 · 出村', '第三章 · 补天阁', '第四章 · 百断山'];
 function renderTop() {
   const s = charStats(), R = realmOf(C.lv); const co = NETROLE ? `<button class="tb net" onclick="openModal('coop')">🔗 ${myControl() ? '你在操作' : '队友操作中'}</button>` : `<button class="tb" onclick="openModal('coop')" title="联机">🔗</button>`;
@@ -2858,10 +2878,14 @@ function renderSide() {
   if (UI.nav === 'pet' && !navs.some(t => t.k === 'pet')) UI.nav = 'hero';
   $('sht').textContent = SHEET_T[UI.nav];
   const body = $('sbody'), key = UI.nav + (UI.nav === 'log' ? UI.logTab : ''), same = body.dataset.k === key, st = body.scrollTop, atEnd = st + body.clientHeight >= body.scrollHeight - 30;
-  $('stabs').innerHTML = UI.nav === 'log' ? [['log', '刚才'], ['memo', '回忆录'], ['codex', '凶兽图鉴']].map(([k, n]) => `<button class="${UI.logTab === k ? 'on' : ''}" onclick="UI.logTab='${k}';renderSide()">${n}</button>`).join('') : '';
-  body.innerHTML = UI.nav === 'log' ? ({ log: pLog, memo: pMemo, codex: pCodex })[UI.logTab]() : ({ hero: pHero, pet: pPet, bag: pBag, map: pMap })[UI.nav]();
+  $('stabs').innerHTML = UI.nav === 'log' ? [['log', '刚才'], ['rumor', '江湖传闻'], ['memo', '回忆录'], ['codex', '凶兽图鉴']].map(([k, n]) => `<button class="${UI.logTab === k ? 'on' : ''}" onclick="UI.logTab='${k}';renderSide()">${n}</button>`).join('') : '';
+  body.innerHTML = UI.nav === 'log' ? ({ log: pLog, rumor: pRumor, memo: pMemo, codex: pCodex })[UI.logTab]() : ({ hero: pHero, pet: pPet, bag: pBag, map: pMap })[UI.nav]();
   body.dataset.k = key; if (UI.nav === 'log' && UI.logTab === 'log' && (!same || atEnd)) body.scrollTop = body.scrollHeight; else if (same) body.scrollTop = st; else body.scrollTop = 0;
 }
+function pRumor() { const L = (C.rumorLog || []).slice().reverse(); if (!L.length) return '<div class="card dim">还没听到什么传闻。在野外和城镇里多走走，别人说的话会飘到你耳朵里。</div>';
+  const by = []; for (const r of L) { if (!by.length || by[by.length - 1][0] !== r.day) by.push([r.day, []]); by[by.length - 1][1].push(r); }
+  return '<div class="card dim" style="font-size:.82rem">别人眼里的你，和一些还没发生的事的风声。共听到 ' + L.length + ' 条（最多记 80 条）。</div>'
+    + by.map(([d, rs]) => `<div class="chap">第 ${d} 天</div><div class="list">${rs.map(r => `<div class="li"><span class="ic">💬</span><div class="t"><b>${esc(r.who)}</b><small>${r.t}</small></div></div>`).join('')}</div>`).join(''); }
 function pLog() { return `<div class="logv">${$('log').innerHTML}</div>`; }
 function pMemo() {
   if (NETROLE === 'guest') return '<div class="card dim">回忆录记在房主的浏览器里，联机加入时看不到。</div>';

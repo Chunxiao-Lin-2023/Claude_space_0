@@ -73,6 +73,12 @@ const { chromium } = require('playwright');
     c.side = {}; const T0 = tasks(); ok('taskListHasSide', T0.some(t => t.key.startsWith('side:')) && T0.some(t => t.key.startsWith('bounty:')));
     c.side.sq_milk = 'on'; c.bag.bone = 0; trackTask('side:sq_milk'); ok('trackSide', curTask().key === 'side:sq_milk' && !!taskWhere() && PLACES[taskWhere()].gather.some(g => g[0] === 'bone') || PLACES[taskWhere()].mobs.some(m => (MOBS[m[0]].loot || []).some(l => l[0] === 'bone')));
     D.addItem('bone', 3, true); ok('trackSideReady', taskWhere() === 'sc_yard'); c.side.sq_milk = 'done'; ok('trackFallsBack', curTask().key === 'main');
+    // 江湖传闻: kept in the save, several lines on wide screens, click opens the history
+    D.go('sc_street', true, true); await idle(); UI.nav = null; c.rumorLog = []; UI.rumorSeen = {}; for (let i = 0; i < 8; i++) { UI.rumorNext = 0; rumorTick(); }
+    const re = document.getElementById('rumor'); const rn = c.rumorLog.length; ok('rumorLog', rn >= 3 && c.rumorLog[rn - 1].day === (c.day || 1));
+    ok('rumorWide', document.body.classList.contains('cols') ? re.classList.contains('multi') && re.querySelectorAll('.rl').length === 3 : re.classList.contains('on'));
+    re.click(); await w8(20); ok('rumorHistory', UI.nav === 'log' && UI.logTab === 'rumor' && document.getElementById('sbody').textContent.includes(c.rumorLog[0].t.replace(/<[^>]+>/g, '').slice(0, 6)));
+    re.click(); ok('rumorHistoryStays', UI.nav === 'log'); UI.nav = null; UI.logTab = 'log'; renderSide(); refresh();
     // difficulty
     c.diff = 2; const u2 = mobUnit('wolf', 10); c.diff = 0; const u0 = mobUnit('wolf', 10); c.diff = 1; ok('difficulty', u2.hpMax > u0.hpMax);
     return out; });

@@ -83,8 +83,18 @@ const RUMORS = [
   { from: 'q_end', to: 'q_end', who: '过路的兽车商队', t: '外面的天下大着呢。听说更远的地方，有好些比补天阁大得多的地方。' },
   { from: 'q_end', to: 'q_end', who: '虚神界里的少年', t: '光幕最前面那个带“重瞳”的名字，最近好像很少出现了。' },
 ];
+/* heard rumours are kept in the save (C.rumorLog) so they can be reread under 📜 记录 → 江湖传闻; co-op guests see the host's */
 function rumorTick() {
-  if (STATE.mode !== 'play' || !C || curMode() !== 'explore' || UI.nav || now() < (UI.rumorNext || 0)) return; UI.rumorNext = now() + rint(35000, 60000);
-  const q = C.story.q, L = RUMORS.filter(r => q >= qi(r.from) && q <= qi(r.to) && !(UI.rumorSeen || {})[r.t]); if (!L.length) { UI.rumorSeen = {}; return; }
-  const r = pick(L); (UI.rumorSeen = UI.rumorSeen || {})[r.t] = 1; const e = $('rumor'); if (!e) return;
-  e.innerHTML = `<span class="rw">${esc(r.who)}</span>${r.t}`; e.classList.remove('on'); void e.offsetWidth; e.classList.add('on'); logLine(`【传闻 · ${esc(r.who)}】${r.t}`, 'rumor dim'); }
+  if (STATE.mode !== 'play' || !C || NETROLE === 'guest' || curMode() !== 'explore' || UI.nav || now() < (UI.rumorNext || 0)) return; UI.rumorNext = now() + rint(35000, 60000);
+  const q = C.story.q, A = RUMORS.filter(r => q >= qi(r.from) && q <= qi(r.to)); if (!A.length) return;
+  const recent = new Set((A.length > 1 ? (C.rumorLog || []).slice(-Math.min(3, A.length - 1)) : []).map(r => r.t)); // never the same line twice in a row
+  let L = A.filter(r => !recent.has(r.t) && !(UI.rumorSeen || {})[r.t]); if (!L.length) { UI.rumorSeen = {}; L = A.filter(r => !recent.has(r.t)); } if (!L.length) return;
+  const r = pick(L); (UI.rumorSeen = UI.rumorSeen || {})[r.t] = 1; C.rumorLog = (C.rumorLog || []).concat([{ who: r.who, t: r.t, day: C.day || 1, n: (C.rumorN = (C.rumorN || 0) + 1) }]).slice(-80);
+  logLine(`【传闻 · ${esc(r.who)}】${r.t}`, 'rumor dim'); save(); renderRumor(); netSync(); }
+const rumorWide = () => document.body.classList.contains('cols');
+function renderRumor() { // wide screens: the last three, always there; phones: the newest one floats by for a few seconds
+  const e = $('rumor'); if (!e || !C) return; const L = C.rumorLog || []; if (!L.length) { e.className = ''; e.innerHTML = ''; return; } const last = L[L.length - 1];
+  if (rumorWide()) { e.className = 'multi'; e.innerHTML = L.slice(-3).reverse().map((r, i) => `<div class="rl ${i === 0 && UI.rumorKey !== last.n ? 'new' : ''}"><span class="rw">${esc(r.who)}</span>${r.t}</div>`).join('') + `<div class="rmore">江湖传闻 · 共 ${L.length} 条 ›</div>`; UI.rumorKey = last.n; return; }
+  if (UI.rumorKey === last.n && e.classList.contains('one')) return; const fresh = UI.rumorKey !== last.n; UI.rumorKey = last.n; if (!fresh) { e.className = ''; return; }
+  e.innerHTML = `<span class="rw">${esc(last.who)}</span>${last.t}<span class="rmore"> ›</span>`; e.className = ''; void e.offsetWidth; e.className = 'one on'; clearTimeout(UI.rumorT); UI.rumorT = setTimeout(() => e.classList.remove('on'), 9000); }
+function openRumors() { UI.logTab = 'rumor'; if (UI.nav === 'log') { sfx('click'); renderSide(); } else navTo('log'); }

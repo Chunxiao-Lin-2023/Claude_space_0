@@ -11,10 +11,14 @@ function renderSide() {
   if (UI.nav === 'pet' && !navs.some(t => t.k === 'pet')) UI.nav = 'hero';
   $('sht').textContent = SHEET_T[UI.nav];
   const body = $('sbody'), key = UI.nav + (UI.nav === 'log' ? UI.logTab : ''), same = body.dataset.k === key, st = body.scrollTop, atEnd = st + body.clientHeight >= body.scrollHeight - 30;
-  $('stabs').innerHTML = UI.nav === 'log' ? [['log', '刚才'], ['memo', '回忆录'], ['codex', '凶兽图鉴']].map(([k, n]) => `<button class="${UI.logTab === k ? 'on' : ''}" onclick="UI.logTab='${k}';renderSide()">${n}</button>`).join('') : '';
-  body.innerHTML = UI.nav === 'log' ? ({ log: pLog, memo: pMemo, codex: pCodex })[UI.logTab]() : ({ hero: pHero, pet: pPet, bag: pBag, map: pMap })[UI.nav]();
+  $('stabs').innerHTML = UI.nav === 'log' ? [['log', '刚才'], ['rumor', '江湖传闻'], ['memo', '回忆录'], ['codex', '凶兽图鉴']].map(([k, n]) => `<button class="${UI.logTab === k ? 'on' : ''}" onclick="UI.logTab='${k}';renderSide()">${n}</button>`).join('') : '';
+  body.innerHTML = UI.nav === 'log' ? ({ log: pLog, rumor: pRumor, memo: pMemo, codex: pCodex })[UI.logTab]() : ({ hero: pHero, pet: pPet, bag: pBag, map: pMap })[UI.nav]();
   body.dataset.k = key; if (UI.nav === 'log' && UI.logTab === 'log' && (!same || atEnd)) body.scrollTop = body.scrollHeight; else if (same) body.scrollTop = st; else body.scrollTop = 0;
 }
+function pRumor() { const L = (C.rumorLog || []).slice().reverse(); if (!L.length) return '<div class="card dim">还没听到什么传闻。在野外和城镇里多走走，别人说的话会飘到你耳朵里。</div>';
+  const by = []; for (const r of L) { if (!by.length || by[by.length - 1][0] !== r.day) by.push([r.day, []]); by[by.length - 1][1].push(r); }
+  return '<div class="card dim" style="font-size:.82rem">别人眼里的你，和一些还没发生的事的风声。共听到 ' + L.length + ' 条（最多记 80 条）。</div>'
+    + by.map(([d, rs]) => `<div class="chap">第 ${d} 天</div><div class="list">${rs.map(r => `<div class="li"><span class="ic">💬</span><div class="t"><b>${esc(r.who)}</b><small>${r.t}</small></div></div>`).join('')}</div>`).join(''); }
 function pLog() { return `<div class="logv">${$('log').innerHTML}</div>`; }
 function pMemo() {
   if (NETROLE === 'guest') return '<div class="card dim">回忆录记在房主的浏览器里，联机加入时看不到。</div>';
