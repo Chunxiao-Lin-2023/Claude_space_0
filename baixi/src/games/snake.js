@@ -8,9 +8,9 @@ const COLS = [['#d8442f', '#f6b26b', '#7a1a10'], ['#2f7fb8', '#9fd3f0', '#123a5a
 BX.register({
   id: 'snake', title: '贪吃蛇对战', cat: 'arcade', order: 3, sub: '抢食长身，逼对方撞墙',
   desc: '两条蛇同场争食：吃到果子变长，撞墙、撞身体就输掉本回合，迎头相撞同归于尽。偶尔出现加速果和双倍果，三局两胜。',
-  kind: 'realtime', seats: 2, seatNames: ['赤蛇', '青蛇'], seatColors: ['#d8442f', '#2f7fb8'], noFirst: true, hint: false,
+  kind: 'realtime', seats: 2, seatNames: ['赤蛇', '青蛇'], seatColors: ['#d8442f', '#2f7fb8'], noFirst: true, hint: false, snapHz: 30, inputHz: 60,
   options: [{key: 'speed', label: '速度', choices: [[1, '慢'], [2, '标准'], [3, '快']], def: 2}, {key: 'wrap', label: '边墙', choices: [[0, '撞墙即死'], [1, '穿墙而过']], def: 0}],
-  howto: ['在场地上任意处<b>滑动</b>即可转向（滑一下转一次，可以连续快速滑两下完成掉头），也可以按右下的方向盘。', '键盘：方向键或 WASD；同屏双人左方 WASD、右方方向键。', '连续按键会被记住、按顺序执行，不会丢；蛇头前方有危险时会闪红圈提醒。'],
+  howto: ['在场地上任意处<b>滑动</b>即可转向（滑一下转一次，可以连续快速滑两下完成掉头），也可以按右下的方向盘。', '键盘：方向键或 WASD；同屏双人左方 WASD、右方方向键。', '连续按键会被记住、按顺序执行，不会丢；蛇头前方有危险时会闪红圈提醒，快撞上时蛇会稍稍停顿，给你最后一刻转向的机会。'],
   rules: `<p>两条蛇在 32×20 的格子场地上同时前进（标准速度约每秒 10 格，开局前可选慢 / 快）。用方向键控制蛇头转向，蛇不能直接掉头。</p>
 <p><b>吃果子</b>：普通果子（桃）让蛇长 1 节、得 1 分。场上偶尔出现限时的<b>加速果</b>（闪电，5 秒内移动速度翻倍）和<b>双倍果</b>（金元宝，6 秒内吃到的果子长度和分数都翻倍），过一会儿会消失。</p>
 <p><b>死亡</b>：蛇头撞到场地边墙（选了“穿墙而过”时从对边出来）、自己或对方的身体即死亡。两个蛇头撞到同一格或迎面相撞，<b>双方同时死亡</b>（本回合平局，重赛）。</p>
@@ -46,7 +46,7 @@ BX.register({
     function mkSnake(i) {
       const y = i ? GH / 2 - 1 : GH / 2, x0 = i ? GW - 6 : 5, d = i ? 3 : 1, body = [];
       for (let k = 0; k < 4; k++) body.push([x0 - DIRS[d][0] * k, y]);
-      return {b: body, d, q: [], grow: 0, alive: true, boost: 0, dbl: 0, score: 0, lastIn: -1, mv: 0};
+      return {b: body, d, q: [], grow: 0, alive: true, boost: 0, dbl: 0, score: 0, lastIn: -1, mv: 0, pt: null, hold: 0, mvd: 0};
     }
     const fx = (k, a, b) => { st.ev.push({k, a, b, id: ++st.evId}); if (st.ev.length > 10) st.ev.shift(); };
     const occ = () => { const o = new Set(); for (const s of st.s) for (const c of s.b) o.add(c[0] + c[1] * GW); return o; };
@@ -75,6 +75,14 @@ BX.register({
         ctx.end({winner: a === b ? -1 : a > b ? 0 : 1, text: '赛满 ' + MAXR + ' 回合 · 回合 ' + st.wins[0] + ' : ' + st.wins[1] + ' · 累计果子 ' + st.tot[0] + ' : ' + st.tot[1]});
       }
     }
+    /* grace: a snake about to crash with no turn queued waits up to GRACE s at the cell centre for a last-instant turn */
+    const validTurn = (s, nd) => nd !== s.d && (nd + 2) % 4 !== s.d;
+    function deadlyAhead(i) {
+      const s = st.s[i], [x, y] = nb(s.b[0][0], s.b[0][1], s.d);
+      if (x < 0 || y < 0 || x >= GW || y >= GH) return true;
+      for (const o of st.s) for (let k = 0; k < o.b.length - (o.grow > 0 ? 0 : 1); k++) if (o.b[k][0] === x && o.b[k][1] === y) return true;
+      return false;
+    }
     function moveSnakes(movers) {
       const heads = st.s.map((s, i) => {
         if (!movers[i]) return null;
@@ -96,7 +104,7 @@ BX.register({
       st.s.forEach((s, i) => {
         if (!heads[i]) return;
         if (dead[i]) { if (popped[i]) s.b.push(popped[i]); return; }
-        s.b.unshift(heads[i]);
+        s.b.unshift(heads[i]); s.pt = popped[i]; s.mvd = 1; s.hold = 0;
         const h = heads[i];
         const fi = st.food.findIndex(f => f[0] === h[0] && f[1] === h[1]);
         if (fi >= 0) { st.food.splice(fi, 1); const m = s.dbl > 0 ? 2 : 1; s.grow += m; s.score += m; fx('eat', i, m); const c = freeCell(); if (c) st.food.push(c); }
@@ -146,9 +154,11 @@ BX.register({
       return sd;
     }
     /* ---------- input ---------- */
-    const pend = [[], []];            // per local slot queued screen dirs (+ counter so host sees every press)
-    const cnt = [0, 0], held = [[], []];
-    const push = (slot, sd) => { const q = pend[slot]; if (q.length && q[q.length - 1] === sd) return; q.push(sd); if (q.length > 3) q.shift(); };
+    const pend = [[], []];            // per local slot queued screen dirs
+    // every press gets a sequence number; input() always resends the last few so a lost packet never drops a turn
+    const hist = [[], []], seq0 = Math.floor(performance.now()) * 4, seq = [seq0, seq0];
+    const intent = [null, null];
+    const push = (slot, sd) => { const q = pend[slot]; if (q.length && q[q.length - 1] === sd) return; q.push(sd); if (q.length > 3) q.shift(); intent[slot] = {sd, t: .3}; };
     const KM = [{KeyW: 0, KeyD: 1, KeyS: 2, KeyA: 3}, {ArrowUp: 0, ArrowRight: 1, ArrowDown: 2, ArrowLeft: 3}];
     const sw = new Map();
     const slotOfPoint = p => {
@@ -166,20 +176,53 @@ BX.register({
       return null;
     }
     let padFlash = [];
+    const padP = new Map();
+    const swTh = () => BX.clamp(V.s * .7, 11, 22);           // swipe distance threshold ≈ 0.7 cell
+    function padDir(pd, p) {
+      const dx = p.x - pd.x, dy = p.y - pd.y;
+      if (Math.hypot(dx, dy) < pd.s * .11) return -1;
+      return Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 1 : 3) : (dy > 0 ? 2 : 0);
+    }
     ctx.on(cv.cv, 'pointerdown', e => {
       const p = cv.pos(e); const ph = padHit(p);
-      if (ph) { push(ph.slot, ph.sd); padFlash.push({pd: ph.pd, sd: ph.sd, t: .18}); ctx.buzz(8); return; }
-      sw.set(e.pointerId, {x: p.x, y: p.y, slot: slotOfPoint(p)});
+      if (ph) {
+        push(ph.slot, ph.sd); padFlash.push({pd: ph.pd, sd: ph.sd, t: .18}); ctx.buzz(8);
+        padP.set(e.pointerId, {pd: ph.pd, slot: ph.slot, sd: ph.sd});   // thumb can roll to another arrow without lifting
+        try { cv.cv.setPointerCapture(e.pointerId); } catch (er) {}
+        return;
+      }
+      sw.set(e.pointerId, {x: p.x, y: p.y, slot: slotOfPoint(p), smp: [{x: p.x, y: p.y, t: e.timeStamp}], last: -1});
       try { cv.cv.setPointerCapture(e.pointerId); } catch (er) {}
     });
     ctx.on(cv.cv, 'pointermove', e => {
-      const s = sw.get(e.pointerId); if (!s) return; const p = cv.pos(e);
-      const dx = p.x - s.x, dy = p.y - s.y, th = 18;
-      if (Math.abs(dx) < th && Math.abs(dy) < th) return;
-      push(s.slot, Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 1 : 3) : (dy > 0 ? 2 : 0));
-      s.x = p.x; s.y = p.y;
+      const pp = padP.get(e.pointerId);
+      if (pp) {
+        const p = cv.pos(e), sd = padDir(pp.pd, p);
+        if (sd >= 0 && sd !== pp.sd) { pp.sd = sd; push(pp.slot, sd); padFlash.push({pd: pp.pd, sd, t: .18}); ctx.buzz(6); }
+        return;
+      }
+      const s = sw.get(e.pointerId); if (!s) return;
+      const th = swTh();
+      for (const p of ctx.points(e, cv.cv)) {
+        s.smp.push(p); if (s.smp.length > 16) s.smp.shift();
+        const dx = p.x - s.x, dy = p.y - s.y, ax = Math.abs(dx), ay = Math.abs(dy);
+        if (Math.max(ax, ay) < th) continue;
+        if (Math.max(ax, ay) < th * 1.8 && Math.max(ax, ay) < Math.min(ax, ay) * 1.3) continue;   // too diagonal to judge yet
+        const sd = ax > ay ? (dx > 0 ? 1 : 3) : (dy > 0 ? 2 : 0);
+        if (sd !== s.last) push(s.slot, sd);
+        s.last = sd; s.x = p.x; s.y = p.y;
+      }
     });
-    const up = e => sw.delete(e.pointerId);
+    const up = e => {
+      padP.delete(e.pointerId);
+      const s = sw.get(e.pointerId); sw.delete(e.pointerId);
+      if (!s || e.type === 'pointercancel' || s.last >= 0) return;
+      // short quick flick that never reached the distance threshold: judge it by velocity over the last ~80 ms
+      const a = s.smp[s.smp.length - 1]; let b0 = s.smp[0];
+      for (let i = s.smp.length - 2; i >= 0; i--) { b0 = s.smp[i]; if (a.t - b0.t >= 80) break; }
+      const dx = a.x - b0.x, dy = a.y - b0.y, d = Math.hypot(dx, dy), dt = Math.max(1, a.t - b0.t);
+      if (d >= 7 && d / dt >= .3) push(s.slot, Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 1 : 3) : (dy > 0 ? 2 : 0));
+    };
     ctx.on(cv.cv, 'pointerup', up); ctx.on(cv.cv, 'pointercancel', up);
     function onKey(e) {
       if (e.repeat) return;
@@ -235,8 +278,8 @@ BX.register({
       return m.out;
     }
     /* ---------- events / effects ---------- */
-    const curB = [null, null];
-    let seenEv = 0, parts = [], shake = 0, flash = 0, lastHead = [null, null], moveT = [1, 1], prevB = [null, null], banner = null;
+    let seenEv = 0, parts = [], shake = 0, flash = 0, banner = null;
+    const gk = [1, 1], gHead = ['', ''], gMv = [0, 0];   // guest: progress toward the next cell, extrapolated between snapshots
     function playEv() {
       for (const e of st.ev) if (e.id > seenEv) {
         seenEv = e.id;
@@ -259,14 +302,14 @@ BX.register({
       else { const left = Math.max(0, Math.ceil(roundLen - st.rt)); s = '第 ' + st.round + ' 回合 · 剩余 ' + left + ' 秒 · 三局两胜'; }
       if (s !== lastStatus) { lastStatus = s; ctx.status(s); }
     }
-    const lastN = [{}, {}];
+    const lastN = [{}, {}], lastSeq = [0, 0];
     const inst = {
       st,
       input(seat, slot, nLocal) {
-        const q = pend[slot]; if (!q.length) return held[slot].length ? held[slot] : {};
-        const sd = q.shift(); cnt[slot]++;
-        held[slot] = {g: s2g(sd), n: cnt[slot] + seat * 1e6};
-        return held[slot];
+        const q = pend[slot], h = hist[slot];
+        while (q.length) h.push([++seq[slot], s2g(q.shift())]);
+        if (h.length > 4) h.splice(0, h.length - 4);
+        return h.length ? {h} : {};
       },
       aiInput,
       step(dt, inputs) {
@@ -274,6 +317,10 @@ BX.register({
         for (let i = 0; i < 2; i++) {
           const inp = inputs[i] || {};
           if (inp.g != null && inp.n != null && inp.n !== lastN[i].n) { lastN[i] = inp; const s = st.s[i]; if (s.q.length < 3) s.q.push(inp.g | 0); }
+          if (Array.isArray(inp.h)) for (const e of inp.h) {
+            const n = +e[0]; if (!(n > lastSeq[i] || n < lastSeq[i] - 1e5)) continue;   // new press (or the device restarted its counter)
+            lastSeq[i] = n; const s = st.s[i]; if (s.q.length < 3) s.q.push(e[1] & 3);
+          }
         }
         if (st.ph === 'ready') { const c0 = Math.ceil(st.t - .2); st.t -= dt; const c1 = Math.ceil(st.t - .2); if (c1 !== c0 && c1 > 0) fx('cd'); if (st.t <= 0) { st.ph = 'play'; fx('go'); } }
         else if (st.ph === 'between') { st.t -= dt; if (st.t <= 0) { st.round++; newRound(); } }
@@ -283,8 +330,13 @@ BX.register({
           if (st.bonus) { st.bonus.t -= dt; if (st.bonus.t <= 0) { st.bonus = null; st.nextBonus = 6 + Math.random() * 6; } }
           else { st.nextBonus -= dt; if (st.nextBonus <= 0) { const c = freeCell(); if (c) { st.bonus = {x: c[0], y: c[1], k: Math.random() < .5 ? 'speed' : 'dbl', t: 7}; fx('spawn'); } else st.nextBonus = 3; } }
           for (const s of st.s) if (s.alive) s.mv = (s.mv || 0) + rateOf(s) * dt;
+          const held = st.s.map((s, i) => {
+            if (!s.alive || s.mv < 1 || s.q.some(nd => validTurn(s, nd)) || !deadlyAhead(i)) { s.hold = 0; return false; }
+            if (s.hold >= Math.min(.13, 1.25 / rateOf(s))) return false;
+            s.hold += dt; s.mv = 1; return true;
+          });
           for (let k = 0; k < 3 && st.ph === 'play'; k++) {
-            const movers = st.s.map(s => s.alive && s.mv >= 1);
+            const movers = st.s.map((s, i) => s.alive && s.mv >= 1 && !held[i]);
             if (!movers[0] && !movers[1]) break;
             st.tick++; st.s.forEach((s, i) => { if (movers[i]) s.mv -= 1; });
             moveSnakes(movers);
@@ -297,11 +349,12 @@ BX.register({
         playEv(); info(); status();
       },
       snapshot() {
-        return {s: st.s.map(s => [s.b.map(c => c[0] + c[1] * GW), s.d, s.alive ? 1 : 0, +s.boost.toFixed(1), +s.dbl.toFixed(1), s.score]), f: st.food.map(f => f[0] + f[1] * GW),
+        return {s: st.s.map(s => [s.b.map(c => c[0] + c[1] * GW), s.d, s.alive ? 1 : 0, +s.boost.toFixed(1), +s.dbl.toFixed(1), s.score, +Math.min(1, s.mv || 0).toFixed(2), s.pt ? s.pt[0] + s.pt[1] * GW : -1, s.mvd ? 1 : 0]), f: st.food.map(f => f[0] + f[1] * GW),
           bo: st.bonus ? [st.bonus.x, st.bonus.y, st.bonus.k, +st.bonus.t.toFixed(1)] : null, w: st.wins, tt: st.tot, r: st.round, ph: st.ph, t: +st.t.toFixed(2), rt: +st.rt.toFixed(1), m: st.msg, ev: st.ev, o: st.over};
       },
       restore(d) {
-        st.s = d.s.map(a => ({b: a[0].map(i => [i % GW, Math.floor(i / GW)]), d: a[1], alive: !!a[2], boost: a[3], dbl: a[4], score: a[5], q: []}));
+        st.s = d.s.map(a => ({b: a[0].map(i => [i % GW, Math.floor(i / GW)]), d: a[1], alive: !!a[2], boost: a[3], dbl: a[4], score: a[5], q: [], mv: a[6] || 0, pt: a[7] >= 0 ? [a[7] % GW, Math.floor(a[7] / GW)] : null, mvd: a[8] || 0}));
+        st.s.forEach((s, i) => { const hk = s.b.length ? s.b[0][0] + ',' + s.b[0][1] : ''; gk[i] = hk !== gHead[i] ? s.mv : Math.max(gk[i], s.mv); gHead[i] = hk; });
         st.food = d.f.map(i => [i % GW, Math.floor(i / GW)]); st.bonus = d.bo ? {x: d.bo[0], y: d.bo[1], k: d.bo[2], t: d.bo[3]} : null;
         st.wins = d.w; st.tot = d.tt; st.round = d.r; st.ph = d.ph; st.t = d.t; st.rt = d.rt; st.msg = d.m; st.ev = d.ev; st.over = d.o;
         playEv(); info(); status();
@@ -329,19 +382,18 @@ BX.register({
     function drawSnake(g, i, s, k) {
       if (!s.b.length) return;
       const col = COLS[i], r = V.s * .42;
-      const pts = s.b.map(c => T(c[0], c[1]));
-      // interpolate head & tail for smooth motion
-      const pb = prevB[i];
-      if (pb && k < 1 && s.alive) {
-        const ph = pb[0], h = s.b[0];
-        if (Math.abs(ph[0] - h[0]) + Math.abs(ph[1] - h[1]) === 1) { const [ax, ay] = T(ph[0], ph[1]); pts[0] = [ax + (pts[0][0] - ax) * k, ay + (pts[0][1] - ay) * k]; }
-        const pt = pb[pb.length - 1], t = s.b[s.b.length - 1];
-        if (pb.length === s.b.length && Math.abs(pt[0] - t[0]) + Math.abs(pt[1] - t[1]) === 1) { const [ax, ay] = T(pt[0], pt[1]); pts[pts.length - 1] = [ax + (pts[pts.length - 1][0] - ax) * k, ay + (pts[pts.length - 1][1] - ay) * k]; }
-      }
+      /* smooth movement: the body is the head's trail, so the snake at progress k (0..1 toward the cell it just entered) is the
+         chain b[0..] with the head slid back toward b[1] and the tail slid back toward the cell it just left (s.pt) */
+      const adjC = (a, c) => Math.abs(a[0] - c[0]) + Math.abs(a[1] - c[1]) === 1;
+      const lerpC = (a, c, t) => adjC(a, c) ? [c[0] + (a[0] - c[0]) * t, c[1] + (a[1] - c[1]) * t] : (t >= .5 ? a : c);
+      const n = s.b.length, cells = s.b.map(c => [c[0], c[1]]), brk = [];
+      if (k < 1 && n > 1) cells[0] = lerpC(s.b[0], s.b[1], k);
+      if (k < 1 && s.pt && n > 1) cells[n - 1] = lerpC(s.b[n - 1], s.pt, k);
+      for (let j = 1; j < n; j++) brk[j] = !adjC(s.b[j], s.b[j - 1]);
+      const pts = cells.map(c => T(c[0], c[1]));
       const alpha = s.alive ? 1 : .45;
       g.save(); g.globalAlpha = alpha; g.lineCap = 'round'; g.lineJoin = 'round';
-      const adj = j => Math.abs(s.b[j][0] - s.b[j - 1][0]) + Math.abs(s.b[j][1] - s.b[j - 1][1]) === 1;
-      const path = (ox, oy) => { g.beginPath(); pts.forEach(([x, y], j) => j && adj(j) ? g.lineTo(x + ox, y + oy) : (g.moveTo(x + ox, y + oy), g.lineTo(x + ox + .1, y + oy))); };
+      const path = (ox, oy) => { g.beginPath(); pts.forEach(([x, y], j) => j && !brk[j] ? g.lineTo(x + ox, y + oy) : (g.moveTo(x + ox, y + oy), g.lineTo(x + ox + .1, y + oy))); };
       g.strokeStyle = 'rgba(0,0,0,.28)'; g.lineWidth = r * 2; path(r * .18, r * .3); g.stroke();
       if (s.boost > 0) { g.strokeStyle = 'rgba(160,230,255,.35)'; g.lineWidth = r * 2.9; path(0, 0); g.stroke(); }
       if (s.dbl > 0) { g.strokeStyle = 'rgba(255,215,106,.4)'; g.lineWidth = r * 2.7; path(0, 0); g.stroke(); }
@@ -414,13 +466,26 @@ BX.register({
       // food
       for (const f of st.food) { const [x, y] = T(f[0], f[1]); drawPeach(g, x, y + Math.sin(performance.now() / 300 + f[0]) * V.s * .04, V.s * .38); }
       if (st.bonus) drawBonus(g, st.bonus);
-      // movement interpolation
+      // movement interpolation: progress since the last grid step (host: exact, incl. the sub-step ctx.alpha; guest: extrapolated)
       for (let i = 0; i < 2; i++) {
-        const s = st.s[i], hk = s.b.length ? s.b[0][0] + ',' + s.b[0][1] : '';
-        if (lastHead[i] !== hk) { if (lastHead[i] != null) moveT[i] = 0; lastHead[i] = hk; prevB[i] = curB[i]; curB[i] = s.b.map(c => c.slice()); }
-        moveT[i] = Math.min(1, moveT[i] + dt * rateOf(s));
+        const s = st.s[i]; let k = 1;
+        if (st.ph === 'play' && s.alive && s.mvd) {
+          if (ctx.isHost) k = Math.min(1, (s.mv || 0) + rateOf(s) * ctx.alpha / 60);
+          else { gk[i] = Math.min(1, gk[i] + rateOf(s) * dt); k = gk[i]; }
+        }
+        drawSnake(g, i, s, k);
       }
-      for (let i = 0; i < 2; i++) drawSnake(g, i, st.s[i], moveT[i]);
+      // turn intent: an arrow at your own head the moment you swipe / press (shows the turn that will happen at the next cell)
+      for (let sl = 0; sl < 2; sl++) {
+        const it = intent[sl]; if (!it) continue; it.t -= dt; if (it.t <= 0) { intent[sl] = null; continue; }
+        const seat = nLoc() < 2 ? viewSeat() : sl, s = st.s[seat]; if (!s || !s.alive || st.ph !== 'play' || !ctx.mySeats.includes(seat)) continue;
+        const gd = s2g(it.sd); if ((gd + 2) % 4 === s.d) continue;
+        const [hx, hy] = T(s.b[0][0], s.b[0][1]), [ex, ey] = T(s.b[0][0] + DIRS[gd][0], s.b[0][1] + DIRS[gd][1]);
+        const ux = (ex - hx) / V.s, uy = (ey - hy) / V.s, cx2 = hx + ux * V.s * .95, cy2 = hy + uy * V.s * .95, a = V.s * .32;
+        g.globalAlpha = Math.min(1, it.t * 5) * .9; g.fillStyle = '#fff6d8'; g.beginPath();
+        g.moveTo(cx2 + ux * a, cy2 + uy * a); g.lineTo(cx2 - ux * a * .6 - uy * a, cy2 - uy * a * .6 + ux * a); g.lineTo(cx2 - ux * a * .6 + uy * a, cy2 - uy * a * .6 - ux * a); g.closePath(); g.fill();
+        g.globalAlpha = 1;
+      }
       // particles (grid units)
       for (let i = parts.length - 1; i >= 0; i--) {
         const p = parts[i]; p.t -= dt; if (p.t <= 0) { parts.splice(i, 1); continue; }

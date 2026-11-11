@@ -668,7 +668,7 @@ BX.register({
       bridge: '吊桥收着，先去拉一下拉杆', far: '走不到那里', nolever: '这里没有拉杆'};
     function bubble(ch, w) { const s2 = WHY[w]; if (!s2) return; if (bubbles[ch] && bubbles[ch].s === s2 && bubbles[ch].t < 1.2) { bubbles[ch].t = Math.min(bubbles[ch].t, .3); return; } bubbles[ch] = {s: s2, t: 0}; }
     const anim = [{f: -1, t: -1, k: 1, ph: 0, sq: 0}, {f: -1, t: -1, k: 1, ph: 0, sq: 0}], crAnim = [], parts = [];
-    let lastR = null;
+    let lastR = null; const drawnH = [[0, 0], [0, 0]];
     const cellXY = (i, R) => [R.ox + (i % L.w + .5) * R.ts, R.oy + (Math.floor(i / L.w) + .5) * R.ts];
     function burst(x, y, n, col, sp, life, kind) { for (let k = 0; k < n; k++) { const a = Math.random() * 6.28, v = sp * (.3 + Math.random()); parts.push({x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v - sp * .3, life: life * (.6 + Math.random() * .5), max: life, col, kind: kind || 'dot', r: 2 + Math.random() * 3}); } }
     function playEv() {
@@ -878,7 +878,7 @@ BX.register({
         const a = anim[ch]; a.k = Math.min(1, a.k + dt / MOVE_T); a.ph += dt * (a.k < 1 ? 16 : 4); a.sq *= Math.pow(.02, dt);
         let [x, y] = cellXY(S.p[ch], R);
         if (a.k < 1 && a.t === S.p[ch] && a.f >= 0) { const [fx0, fy0] = cellXY(a.f, R), k = BX.ease.out(a.k); x = BX.lerp(fx0, x, k); y = BX.lerp(fy0, y, k); }
-        const win = st.ph === 'clear';
+        const win = st.ph === 'clear'; drawnH[ch] = [x, y];
         const mine = ctx.mySeats.includes(seatOf(ch)) && !BX.bot;
         if (mine) { g.strokeStyle = D.alpha(CH[ch].col, .6); g.lineWidth = 2; g.beginPath(); g.ellipse(x, y + ts * .3, ts * .36, ts * .13, 0, 0, 7); g.stroke(); }
         drawHero(g, x, y + ts * .32, ts * (ch ? .95 : 1.05), ch, st.face[ch], a.ph, a.k < 1, a.sq + (a.k < 1 ? Math.sin(a.k * Math.PI) * .08 : 0), win);
@@ -958,6 +958,7 @@ BX.register({
       snapshot() { return {lv: st.lv, S: st.S, ph: st.ph, t: Math.round(st.t * 100) / 100, gen: st.gen, face: st.face, cleared: st.cleared, moves: st.moves, ev: st.ev, evId: st.evId, over: st.over, unl: st.unl, role: st.role}; },
       restore(d) { Object.assign(st, d); if (!L || L.__lv !== st.lv) { L = parse(LEVELS[st.lv]).L; L.__lv = st.lv; } },
       draw,
+      _feel: () => ({goal, h: drawnH.map(a => a.slice()), p: st.S.p.slice(), moves: st.moves, ph: st.ph, ts: lastR && lastR.ts, ox: lastR && lastR.ox, oy: lastR && lastR.oy, w: L.w}),
       _dbg: () => ({lv: st.lv, ph: st.ph, p: st.S.p, ptr: ai.map(a => a.ptr), n: plan && plan.mv.length, cleared: st.cleared, onPlan: plan && plan.keys.indexOf(skey(st.S)), next: plan && ai.map((a, s2) => { const i = nextOwn(chOf(s2), a.ptr); return i === Infinity ? null : [i, plan.mv[i], plan.pos[i]]; }), ai: ai.map(a => [a.waiting, a.wt, a.div])}),
     };
   },

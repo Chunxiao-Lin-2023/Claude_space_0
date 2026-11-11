@@ -39,7 +39,15 @@ const READY = TEST ? .6 : 2.6;
 const CHOP_T = TEST ? .45 : 1.5, WASH_T = TEST ? .4 : 1.3, EXT_T = TEST ? .4 : 1, RET_T = TEST ? 2 : 6;
 const cookT = r => TEST ? 2.4 : REC[r].t;
 const PAL = ['#c23a2b', '#2f7f9a'];
-const DASH_T = .16, DASH_CD = .65, FLY_V = 9, FLY_T = .55, FLOOR_MAX = 6;
+const DASH_T = .18, DASH_CD = .5, DASH_BUF = .16, FLY_V = 9, FLY_T = .55, FLOOR_MAX = 6;
+/* feel: walk speed (tiles/s) and exponential approach rates (1/s) for speeding up, braking and reversing (Overcooked-like snappy start, short stop) */
+const SP = 4.4, ACC = 24, DEC = 40, TURN = 42, WET = 4.5;
+const REACH = .85, CONE = .74, IBUF = .15, CATCH_R = .62, AIM_COS = .9;
+const JOY_DZ = .16, JOY_SAT = .8, JOY_POW = 1.25, JOY_SNAP = .19;
+/* throw arc (visual height in tiles): leaves the hands at H0, apex FLY_APEX, touches the floor exactly at FLY_T */
+const FLY_H0 = .02, FLY_APEX = .55;
+const FLY_VZ = (() => { const a = (FLY_APEX - FLY_H0) * 2, T = FLY_T, A = T * T / (2 * a); return (T + Math.sqrt(T * T + 4 * A * FLY_H0)) / (2 * A); })(), FLY_G = FLY_VZ * FLY_VZ / (2 * (FLY_APEX - FLY_H0));
+const flyH = t => Math.max(0, FLY_H0 + FLY_VZ * t - FLY_G * t * t / 2);
 const A_KEYS = [['KeyE', 'Space', 'KeyJ'], ['Period', 'Enter', 'NumpadEnter', 'Numpad0']], U_KEYS = [['KeyQ', 'KeyF', 'ShiftLeft', 'KeyK'], ['Slash', 'ShiftRight', 'NumpadDecimal']];
 const D_KEYS = [['KeyR', 'KeyC', 'KeyL'], ['Comma', 'Numpad1']];
 const CMDS = [['', '自由'], ['prep', '备料'], ['wash', '洗碗'], ['serve', '上菜']];
@@ -176,7 +184,7 @@ function drawChef(g, x, y, s, col, fx, fy, phase, moving, pop, held, num) {
 BX.register({
   id: 'kitchen', title: '双人厨房', cat: 'coop', order: 1, sub: '切菜下锅，合作出餐',
   desc: '茶馆后厨忙翻天！两位厨师分工备料、切菜、蒸煮炒、装盘上菜和洗碗，在订单超时前把点心送出窗口。三个关卡，越来越忙。',
-  kind: 'realtime', seats: 2, coop: true, noFirst: true, seatNames: ['红围裙', '蓝围裙'], seatColors: PAL,
+  kind: 'realtime', seats: 2, coop: true, noFirst: true, seatNames: ['红围裙', '蓝围裙'], seatColors: PAL, snapHz: 30, inputHz: 60,
   options: [{key: 'lv', label: '关卡', choices: [[0, '教学 · 新手厨房'], [1, '一 · 茶馆后厨'], [2, '二 · 点心铺'], [3, '三 · 年夜大席']], def: 1},
     {key: 'assist', label: '难度', choices: [[0, '标准'], [1, '宽松（订单更耐等、不会起火）']], def: 0}],
   howto: ['<b>移动</b>：WASD / 方向键，或触屏左侧摇杆。脚下虚线框 = 你正对着的台子，框上的小字告诉你按键会做什么。',
@@ -231,41 +239,89 @@ BX.register({
     const st = {lv, ph: 'ready', t: READY, left: LV_TIME, coins: 0, served: 0, failed: 0, orders: [], oid: 0, nextO: 1.2, P: [], it: {}, stn: {}, rack: LV.plates, dret: 0, sink: {n: 0, p: 0}, pend: [], ev: [], evId: 0, over: false, star: 0, fly: [], fl: []};
     for (const i of tilesOf('E')) st.it[i] = {k: 'e'};
     for (const i of tilesOf('TWP')) st.stn[i] = {c: [], s: 0, p: 0, r: null, e: 0};
-    LV.spawn.forEach(([c, r], k) => st.P.push({x: c + .5, y: r + .5, vx: 0, vy: 0, fx: 0, fy: 1, h: null, mv: 0, act: '', i: k, ds: 0, dcd: 0}));
+    LV.spawn.forEach(([c, r], k) => st.P.push({x: c + .5, y: r + .5, vx: 0, vy: 0, fx: 0, fy: 1, h: null, mv: 0, act: '', i: k, ds: 0, dcd: 0, dq: 0, tg: -1, ib: 0}));
     const hatch = tilesOf('H')[0], rackT = tilesOf('L')[0], dretT = tilesOf('D')[0], sinkT = tilesOf('K')[0];
-    const lastA = [0, 0], lastU = [false, false], lastD = [0, 0];
+    const lastA = [0, 0], lastU = [false, false], lastD = [0, 0], goodIn = [null, null];
 
     /* ================= simulation (host) ================= */
     const fx = (k, o) => { st.ev.push(Object.assign({k, id: ++st.evId}, o || {})); if (st.ev.length > 12) st.ev.shift(); };
     const tileOf = p => Math.floor(p.y) * GW + Math.floor(p.x);
-    function front(p) {
-      const ax = Math.abs(p.fx) >= Math.abs(p.fy), dx = ax ? Math.sign(p.fx) : 0, dy = ax ? 0 : Math.sign(p.fy);
-      const c = Math.floor(p.x) + dx, r = Math.floor(p.y) + dy;
-      return c < 0 || r < 0 || c >= GW || r >= GH ? -1 : r * GW + c;
-    }
-    function collide(p) {
-      const c0 = Math.floor(p.x), r0 = Math.floor(p.y);
+    const faceV = p => { const l = Math.hypot(p.fx, p.fy) || 1; return [p.fx / l, p.fy / l]; };
+    /* the station you face: nearest solid tile within reach inside a ~60° cone (forgiving at tile edges and diagonals),
+       small bonus for tiles where the button would actually do something, hysteresis against flicker */
+    function pickFront(p, prev) {
+      const [ux, uy] = faceV(p), c0 = Math.floor(p.x), r0 = Math.floor(p.y);
+      let best = -1, bs = Infinity;
       for (let r = r0 - 1; r <= r0 + 1; r++) for (let c = c0 - 1; c <= c0 + 1; c++) {
-        if (!solidT(c, r)) continue;
-        const cx = BX.clamp(p.x, c, c + 1), cy = BX.clamp(p.y, r, r + 1), dx = p.x - cx, dy = p.y - cy, d = Math.hypot(dx, dy);
-        if (d < PR) {
-          if (d > 1e-6) { p.x = cx + dx / d * PR; p.y = cy + dy / d * PR; const vn = p.vx * dx / d + p.vy * dy / d; if (vn < 0) { p.vx -= vn * dx / d; p.vy -= vn * dy / d; } }
-          else { p.y = r - PR; }
+        if ((c === c0 && r === r0) || c < 0 || r < 0 || c >= GW || r >= GH || !solidT(c, r)) continue;
+        const dist = Math.hypot(BX.clamp(p.x, c, c + 1) - p.x, BX.clamp(p.y, r, r + 1) - p.y);
+        if (dist > REACH) continue;
+        const cx = c + .5 - p.x, cy = r + .5 - p.y, cos = (cx * ux + cy * uy) / (Math.hypot(cx, cy) || 1);
+        if (cos < CONE) continue;
+        const i = r * GW + c; let sc = dist + (1 - cos) * 1.2;
+        if (useful(p.h, i)) sc -= .3;
+        if (i === prev) sc -= .1;
+        if (sc < bs) { bs = sc; best = i; }
+      }
+      return best;
+    }
+    const front = p => p.tg != null && p.tg >= -1 ? p.tg : pickFront(p, -1);
+    function collide(p) {
+      let hit = 0;
+      for (let pass = 0; pass < 2; pass++) {
+        const c0 = Math.floor(p.x), r0 = Math.floor(p.y);
+        for (let r = r0 - 1; r <= r0 + 1; r++) for (let c = c0 - 1; c <= c0 + 1; c++) {
+          if (!solidT(c, r)) continue;
+          const cx = BX.clamp(p.x, c, c + 1), cy = BX.clamp(p.y, r, r + 1), dx = p.x - cx, dy = p.y - cy, d = Math.hypot(dx, dy);
+          if (d < PR) {
+            if (d > 1e-6) { p.x = cx + dx / d * PR; p.y = cy + dy / d * PR; const vn = p.vx * dx / d + p.vy * dy / d; if (vn < 0) { p.vx -= vn * dx / d; p.vy -= vn * dy / d; hit = Math.max(hit, -vn); } }
+            else { p.y = r - PR; }
+          }
         }
       }
       p.x = BX.clamp(p.x, PR, GW - PR); p.y = BX.clamp(p.y, PR, GH - PR);
+      return hit;
     }
-    function moveP(p, inp, dt) {
-      let mx = +inp.mx || 0, my = +inp.my || 0; const l = Math.hypot(mx, my); if (l > 1) { mx /= l; my /= l; }
-      const wet = MAP[tileOf(p)] === '~', sp = 4.4, acc = wet ? 4.5 : 22;
-      p.dcd = Math.max(0, (p.dcd || 0) - dt);
-      if (p.ds > 0) {   // dash: burst along the facing / stick direction
+    /* corner assist: pushing straight along an axis but clipping a counter corner (or blocked with an opening just beside you)
+       → slide sideways into the gap instead of sticking (forward speed is converted into sideways speed) */
+    function cornerAssist(p, mx, my, dt, spd) {
+      const ax = Math.abs(mx), ay = Math.abs(my); let alongX, s;
+      if (ax > ay * 2) { alongX = true; s = Math.sign(mx); } else if (ay > ax * 2) { alongX = false; s = Math.sign(my); } else return;
+      const u = alongX ? p.x : p.y, w = alongX ? p.y : p.x, cu = Math.floor(u), cw = Math.floor(w);
+      if ((s > 0 ? cu + 1 - u : u - cu) > PR + .12) return;
+      const sol = (a, b) => alongX ? solidT(a, b) : solidT(b, a), ahead = cu + s, fw = w - cw;
+      let tgt = null;
+      if (!sol(ahead, cw)) { if ((fw < PR && sol(ahead, cw - 1)) || (fw > 1 - PR && sol(ahead, cw + 1))) tgt = cw + .5; }
+      else if (fw < .4 && !sol(ahead, cw - 1) && !sol(cu, cw - 1)) tgt = cw - .5;
+      else if (fw > .6 && !sol(ahead, cw + 1) && !sol(cu, cw + 1)) tgt = cw + 1.5;
+      if (tgt == null) return;
+      const m = spd * dt, d = BX.clamp(tgt - w, -m, m);
+      if (alongX) p.y += d; else p.x += d;
+    }
+    function startDash(p) { p.ds = DASH_T; p.dcd = DASH_CD; p.dq = 0; const [dx, dy] = faceV(p); p.vx = dx * SP * 3; p.vy = dy * SP * 3; }
+    /* one 60 Hz movement tick for a chef (host simulation and the guest's local prediction share this) */
+    function moveP(p, inp, dt, live, dEdge) {
+      let mx = +inp.mx || 0, my = +inp.my || 0; const l0 = Math.hypot(mx, my); if (l0 > 1) { mx /= l0; my /= l0; }
+      const ml = Math.min(1, l0);
+      if (ml > .2) { p.fx = Math.round(mx / ml * 100) / 100; p.fy = Math.round(my / ml * 100) / 100; }
+      p.dcd = Math.max(0, (p.dcd || 0) - dt); p.dq = Math.max(0, (p.dq || 0) - dt);
+      if (live && (dEdge || p.dq > 0)) { if (p.dcd <= 0) { startDash(p); if (p === st.P[p.i]) fx('dash', {s: p.i}); } else if (dEdge && p.dcd < DASH_BUF) p.dq = DASH_BUF; }
+      const wet = MAP[tileOf(p)] === '~';
+      if (p.ds > 0) {   // dash: instant burst along the facing, easing from 3× to 1.25× walk speed
         p.ds = Math.max(0, p.ds - dt);
-        const dl = Math.hypot(p.fx, p.fy) || 1; mx = p.fx / dl; my = p.fy / dl;
-        p.vx += (mx * sp * 2.6 - p.vx) * Math.min(1, 30 * dt); p.vy += (my * sp * 2.6 - p.vy) * Math.min(1, 30 * dt);
-      } else { p.vx += (mx * sp - p.vx) * Math.min(1, acc * dt); p.vy += (my * sp - p.vy) * Math.min(1, acc * dt); }
-      if (l > .25) { p.fx = Math.round(mx / Math.max(l, 1e-6) * 100) / 100; p.fy = Math.round(my / Math.max(l, 1e-6) * 100) / 100; }
-      p.x += p.vx * dt; p.y += p.vy * dt; collide(p);
+        const [dx, dy] = faceV(p), v = SP * (1.25 + 1.75 * p.ds / DASH_T);
+        p.vx = dx * v; p.vy = dy * v;
+        cornerAssist(p, dx, dy, dt, v);
+      } else {
+        const tx = mx * SP, ty = my * SP;
+        const rate = wet ? WET : ml < .05 ? DEC : (p.vx * tx + p.vy * ty < 0 ? TURN : ACC);
+        const k = 1 - Math.exp(-rate * dt);
+        p.vx += (tx - p.vx) * k; p.vy += (ty - p.vy) * k;
+        if (ml > .05) cornerAssist(p, mx, my, dt, SP * ml);
+      }
+      p.x += p.vx * dt; p.y += p.vy * dt;
+      const hit = collide(p);
+      if (p.ds > 0 && hit > SP * 1.2) { p.ds = 0; if (live && p === st.P[p.i]) fx('bonk', {s: p.i, v: Math.round(hit)}); }
       p.mv = Math.hypot(p.vx, p.vy) > .5 ? 1 : 0;
     }
     function accepts(i, t) {
@@ -274,7 +330,6 @@ BX.register({
       return LV.rec.some(r => REC[r].st === tp && subMulti(nc, REC[r].ing));
     }
     function completeRec(i) { const s = st.stn[i], tp = STN[typ(i)]; return LV.rec.find(r => REC[r].st === tp && s.c.length === REC[r].ing.length && subMulti(s.c, REC[r].ing)) || null; }
-    const faceV = p => { const l = Math.hypot(p.fx, p.fy) || 1; return [p.fx / l, p.fy / l]; };
     function floorNear(p) {
       const [dx, dy] = faceV(p), qx = p.x + dx * .55, qy = p.y + dy * .55;
       let best = -1, bd = .62;
@@ -284,7 +339,7 @@ BX.register({
     function interact(k) {
       const p = st.P[k];
       if (!p.h) { const j = floorNear(p); if (j >= 0) { p.h = st.fl[j].it; st.fl.splice(j, 1); fx('pick', {s: k}); return; } }
-      const f = front(p); if (f < 0) return;
+      const f = front(p); if (f < 0) return false;
       const ch = typ(f), H = p.h, at = {s: k, i: f};
       const err = () => fx('err', at);
       if (CRATE[ch]) {
@@ -348,9 +403,27 @@ BX.register({
       else if (ch === 'K' && st.sink.n > 0) { p.act = 'wash'; st.sink.p += dt / WASH_T; if (st.sink.p >= 1) { st.sink.p = 0; st.sink.n--; st.rack++; fx('washed', {s: k, i: f}); } }
     }
     /* ---- throwing ingredients (Overcooked 2 style) ---- */
+    /* gentle aim assist (Overcooked 2 style): within ~25° of the facing, snap the throw onto a team-mate with free hands
+       or a pot that wants this ingredient, if nothing solid is in between */
+    function clearPath(x0, y0, x1, y1, tile) {
+      const n = Math.ceil(Math.hypot(x1 - x0, y1 - y0) / .15);
+      for (let j = 1; j <= n; j++) { const x = x0 + (x1 - x0) * j / n, y = y0 + (y1 - y0) * j / n, c = Math.floor(x), r = Math.floor(y); if (r * GW + c === tile) return true; if (solidT(c, r)) return false; }
+      return true;
+    }
+    function throwAim(p, k) {
+      const [dx, dy] = faceV(p), H = p.h; let best = null, bc = AIM_COS;
+      const tryT = (tx, ty, kind, tile) => {
+        const vx = tx - p.x, vy = ty - p.y, d = Math.hypot(vx, vy); if (d < .7 || d > FLY_V * FLY_T * .95) return;
+        const cos = (vx * dx + vy * dy) / d; if (cos > bc && clearPath(p.x, p.y, tx, ty, tile)) { bc = cos; best = {dx: vx / d, dy: vy / d, kind, tile, x: tx, y: ty}; }
+      };
+      st.P.forEach((q, j) => { if (j !== k && !q.h) tryT(q.x, q.y, 'mate', -1); });
+      if (H && H.k === 'i' && prepared(H)) for (const i in st.stn) if (accepts(+i, H.t)) tryT(+i % GW + .5, Math.floor(+i / GW) + .5, 'pot', +i);
+      return best || {dx, dy, kind: ''};
+    }
     function throwIt(k) {
-      const p = st.P[k], [dx, dy] = faceV(p);
-      st.fly.push({x: p.x + dx * .3, y: p.y + dy * .3, vx: dx * FLY_V, vy: dy * FLY_V, it: p.h, by: k, t: 0});
+      const p = st.P[k], a = throwAim(p, k);
+      if (a.kind) { p.fx = Math.round(a.dx * 100) / 100; p.fy = Math.round(a.dy * 100) / 100; }
+      st.fly.push({x: p.x + a.dx * .3, y: p.y + a.dy * .3, vx: a.dx * FLY_V, vy: a.dy * FLY_V, it: p.h, by: k, t: 0});
       p.h = null; fx('throw', {s: k});
     }
     function landOn(i, it) {
@@ -368,7 +441,7 @@ BX.register({
         for (let n = 0; n < 3 && !done; n++) {
           const px = o.x, py = o.y; o.x += o.vx * dt / 3; o.y += o.vy * dt / 3;
           // a partner with free hands catches it
-          for (let q = 0; q < st.P.length; q++) { const P = st.P[q]; if (P.h || (q === o.by && o.t < .3)) continue; if (Math.hypot(P.x - o.x, P.y - o.y) < .5) { P.h = o.it; fx('catch', {s: q}); done = true; break; } }
+          for (let q = 0; q < st.P.length; q++) { const P = st.P[q]; if (P.h || (q === o.by && o.t < .3)) continue; if (Math.hypot(P.x - o.x, P.y - o.y) < CATCH_R) { P.h = o.it; fx('catch', {s: q}); done = true; break; } }
           if (done) break;
           const c = Math.floor(o.x), r = Math.floor(o.y);
           if (solidT(c, r)) { const i = c >= 0 && r >= 0 && c < GW && r < GH ? r * GW + c : -1; if (!(i >= 0 && landOn(i, o.it))) toFloor(o, px, py); done = true; }
@@ -396,12 +469,16 @@ BX.register({
     function step(dt, inputs) {
       if (st.over) return;
       st.P.forEach((p, k) => {
-        const inp = inputs[k] || {};
-        moveP(p, inp, dt);
+        let inp = inputs[k] || {};
+        // unreliable channel: ignore an out-of-order (older) guest input packet
+        if (inp.sq != null) { const gi = goodIn[k]; if (gi && gi.sq != null && inp.sq < gi.sq) inp = gi; else goodIn[k] = inp; if (inp.sq !== p.sq) { p.sq = inp.sq; p.sn = 0; } p.sn = (p.sn || 0) + 1; }
+        p.px = p.x; p.py = p.y;
+        const dc = inp.d | 0, dEdge = dc !== lastD[k]; lastD[k] = dc;
+        moveP(p, inp, dt, st.ph === 'play', dEdge);
+        p.tg = pickFront(p, p.tg);
         const a = inp.a | 0;
-        if (a !== lastA[k]) { lastA[k] = a; if (st.ph === 'play') interact(k); }
-        const dc = inp.d | 0;
-        if (dc !== lastD[k]) { lastD[k] = dc; if (st.ph === 'play' && p.dcd <= 0) { p.ds = DASH_T; p.dcd = DASH_CD; fx('dash', {s: k}); } }
+        if (a !== lastA[k]) { lastA[k] = a; if (st.ph === 'play') { p.ib = interact(k) === false ? IBUF : 0; } }
+        else if (p.ib > 0) { p.ib = Math.max(0, p.ib - dt); if (st.ph === 'play' && (p.tg >= 0 || (!p.h && floorNear(p) >= 0))) { p.ib = 0; interact(k); } }   // pressed a moment too early: do it when the station comes into reach
         const u = !!inp.u, uEdge = u && !lastU[k]; lastU[k] = u;
         if (uEdge && st.ph === 'play' && p.h && p.h.k === 'i') { throwIt(k); p.act = ''; }
         else if (u && st.ph === 'play') use(k, dt); else p.act = '';
@@ -634,7 +711,16 @@ BX.register({
       return L;
     }
     /* ---------- input ---------- */
-    const aCount = [0, 0], dCount = [0, 0], joy = [{x: 0, y: 0}, {x: 0, y: 0}], ptrs = new Map(), press = [0, 0, 0, 0, 0, 0];
+    const aCount = [0, 0], dCount = [0, 0], joy = [{x: 0, y: 0}, {x: 0, y: 0}], joyRaw = [{x: 0, y: 0}, {x: 0, y: 0}], ptrs = new Map(), press = [0, 0, 0, 0, 0, 0];
+    /* stick shaping: radial dead zone, full speed at 80 % throw (no need to reach the rim), gentle curve for fine moves,
+       and a ±11° snap to the four axes so walking along a counter stays straight */
+    function shapeJoy(dx, dy) {
+      const m = Math.min(1, Math.hypot(dx, dy)); if (m < JOY_DZ) return {x: 0, y: 0};
+      const mm = Math.pow(Math.min(1, (m - JOY_DZ) / (JOY_SAT - JOY_DZ)), JOY_POW);
+      let a = Math.atan2(dy, dx); const q = Math.round(a / (Math.PI / 2)) * (Math.PI / 2); if (Math.abs(a - q) < JOY_SNAP) a = q;
+      return {x: Math.cos(a) * mm, y: Math.sin(a) * mm};
+    }
+    const localPop = slot => { const s2 = ctx.mySeats[slot]; if (s2 != null && !ctx.isHost) pop[s2] = Math.max(pop[s2], .45); };
     function hitCtrl(pt) {
       const L = layout();
       for (const f of [1, 1.3]) for (const c of L.ctrls) for (const [b, type] of [[c.Dh, 'D'], [c.A, 'A'], [c.U, 'U']]) {
@@ -649,22 +735,22 @@ BX.register({
       const pt = cv.pos(e), hit = hitCtrl(pt); if (!hit) return;
       try { cv.cv.setPointerCapture(e.pointerId); } catch (er) {}
       hit.x = pt.x; hit.y = pt.y; ptrs.set(e.pointerId, hit);
-      if (hit.type === 'A') { aCount[hit.slot]++; press[hit.slot * 2] = 1; }
+      if (hit.type === 'A') { aCount[hit.slot]++; press[hit.slot * 2] = 1; localPop(hit.slot); }
       if (hit.type === 'U') press[hit.slot * 2 + 1] = 1;
       if (hit.type === 'D') { dCount[hit.slot]++; press[4 + hit.slot] = 1; }
-      if (hit.type === 'J') joy[hit.slot] = {x: 0, y: 0};
+      if (hit.type === 'J') { joy[hit.slot] = {x: 0, y: 0}; joyRaw[hit.slot] = {x: 0, y: 0}; }
     });
     ctx.on(cv.cv, 'pointermove', e => {
       const t = ptrs.get(e.pointerId); if (!t || t.type !== 'J') return;
       const pt = cv.pos(e); t.x = pt.x; t.y = pt.y;
       let dx = (pt.x - t.ox) / t.R, dy = (pt.y - t.oy) / t.R; const l = Math.hypot(dx, dy);
-      if (l > 1) { t.ox = pt.x - dx / l * t.R * 1; t.oy = pt.y - dy / l * t.R * 1; dx /= l; dy /= l; }
-      joy[t.slot] = {x: Math.abs(dx) < .15 && Math.abs(dy) < .15 ? 0 : dx, y: Math.abs(dx) < .15 && Math.abs(dy) < .15 ? 0 : dy};
+      if (l > 1) { t.ox = pt.x - dx / l * t.R; t.oy = pt.y - dy / l * t.R; dx /= l; dy /= l; }   // floating base follows the thumb
+      joyRaw[t.slot] = {x: dx, y: dy}; joy[t.slot] = shapeJoy(dx, dy);
     });
-    const up = e => { const t = ptrs.get(e.pointerId); if (t && t.type === 'J') joy[t.slot] = {x: 0, y: 0}; ptrs.delete(e.pointerId); };
+    const up = e => { const t = ptrs.get(e.pointerId); if (t && t.type === 'J') { joy[t.slot] = {x: 0, y: 0}; joyRaw[t.slot] = {x: 0, y: 0}; } ptrs.delete(e.pointerId); };
     ctx.on(cv.cv, 'pointerup', up); ctx.on(cv.cv, 'pointercancel', up);
     const K = (a, b, c, d) => { const k = ctx.keys; return {x: (k.has(d) ? 1 : 0) - (k.has(c) ? 1 : 0), y: (k.has(b) ? 1 : 0) - (k.has(a) ? 1 : 0)}; };
-    function input(seat, slot, nLocal) {
+    function input(seat, slot, nLocal, peek) {
       const wasd = K('KeyW', 'KeyS', 'KeyA', 'KeyD'), arr = K('ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight');
       const kk = nLocal >= 2 ? (slot ? arr : wasd) : {x: wasd.x || arr.x, y: wasd.y || arr.y};
       const sl = nLocal >= 2 ? slot : 0;
@@ -672,21 +758,57 @@ BX.register({
       const uk = nLocal >= 2 ? U_KEYS[slot] : U_KEYS[0].concat(U_KEYS[1]);
       let u = uk.some(c => ctx.keys.has(c));
       for (const t of ptrs.values()) if (t.type === 'U' && t.slot === sl) u = true;
-      return {mx: Math.round(mx * 100) / 100, my: Math.round(my * 100) / 100, a: aCount[sl], u, d: dCount[sl]};
+      const o = {mx: Math.round(mx * 100) / 100, my: Math.round(my * 100) / 100, a: aCount[sl], u, d: dCount[sl]};
+      if (!ctx.isHost && !peek) { o.sq = ++sentSeq; lastSent = o; sqTick.set(o.sq, predTick); if (sqTick.size > 240) sqTick.delete(sqTick.keys().next().value); }
+      return o;
     }
     function key(e) {
       if (e.repeat) return;
       const n = ctx.mySeats.length;
       if (n >= 2) { for (const s of [0, 1]) { if (A_KEYS[s].includes(e.code)) aCount[s]++; if (D_KEYS[s].includes(e.code)) dCount[s]++; } }
-      else { if (A_KEYS[0].includes(e.code) || A_KEYS[1].includes(e.code)) aCount[0]++; if (D_KEYS[0].includes(e.code) || D_KEYS[1].includes(e.code)) dCount[0]++; }
+      else { if (A_KEYS[0].includes(e.code) || A_KEYS[1].includes(e.code)) { aCount[0]++; localPop(0); } if (D_KEYS[0].includes(e.code) || D_KEYS[1].includes(e.code)) dCount[0]++; }
+    }
+    /* ---------- online guest: move my own chef locally (prediction) and reconcile with the host's snapshots ---------- */
+    let sentSeq = 0, lastSent = null, predTick = 0, pred = null, predAcc = 0, predLastD = 0, snapT = 0;
+    const sqTick = new Map(), predHist = [], visOff = {x: 0, y: 0};
+    const predOn = () => ctx.online && !ctx.isHost && ctx.mySeats.length === 1 && !st.over;
+    function predStep(dt) {
+      const me = ctx.me, hp = st.P[me]; if (!hp) return;
+      if (!pred) { pred = {x: hp.x, y: hp.y, vx: hp.vx || 0, vy: hp.vy || 0, fx: hp.fx, fy: hp.fy, ds: 0, dcd: 0, dq: 0, i: me, h: hp.h, tg: -1, mv: 0}; predLastD = lastSent ? lastSent.d | 0 : 0; }
+      pred.h = hp.h;
+      predAcc += dt; let n = 0;
+      while (predAcc >= 1 / 60 && n < 4) {
+        predAcc -= 1 / 60; n++;
+        pred.px = pred.x; pred.py = pred.y;
+        const inp = input(me, 0, 1, true), dc = inp.d | 0, dEdge = dc !== predLastD; predLastD = dc;   // freshest local input (the host gets the same one on the next send)
+        const wasDash = pred.ds;
+        moveP(pred, inp, 1 / 60, st.ph === 'play', dEdge);
+        if (!wasDash && pred.ds > 0) { ctx.sfx('swish'); predDashFx = 1; }
+        predTick++; predHist.push([predTick, pred.x, pred.y]); if (predHist.length > 120) predHist.shift();
+      }
+      if (n >= 4) predAcc = 0;
+      pred.tg = pickFront(pred, pred.tg);
+    }
+    let predDashFx = 0;
+    function reconcile() {
+      const hp = st.P[ctx.me]; if (!pred || !hp) return;
+      const t0 = hp.sq != null ? sqTick.get(hp.sq) : null;
+      let h = null;
+      if (t0 != null) { const tk = t0 + (hp.sn || 0); h = tk >= predTick ? [predTick, pred.x, pred.y] : predHist.find(q => q[0] === tk); }
+      const ex = h ? hp.x - h[1] : hp.x - pred.x, ey = h ? hp.y - h[2] : hp.y - pred.y, e = Math.hypot(ex, ey);
+      if (!h && e < .6) return;                    // no matching input yet (e.g. AI stood in during a reconnect): only fix big errors
+      const k = e > 1.2 || !h ? 1 : e > .05 ? .4 : 0; if (!k) return;
+      pred.x += ex * k; pred.y += ey * k; pred.px += ex * k; pred.py += ey * k;
+      if (e < 1.2) { visOff.x -= ex * k; visOff.y -= ey * k; } else { visOff.x = visOff.y = 0; pred.vx = hp.vx || 0; pred.vy = hp.vy || 0; }
+      for (const q of predHist) { q[1] += ex * k; q[2] += ey * k; }
     }
 
     /* ================= action preview, guide arrow, partner commands ================= */
-    function preview(k) {
-      const p = st.P[k], H = p.h; let a = '', u = '';
-      if (!H && floorNear(p) >= 0) a = '捡起';
-      const f = front(p), ch = f >= 0 ? typ(f) : '.';
-      if (!a && f >= 0) {
+    /* what 拿/放 (a) and 使用 (u) would do at tile f while holding H */
+    function labelsAt(H, f) {
+      let a = '', u = '';
+      const ch = f >= 0 ? typ(f) : '.';
+      if (f >= 0) {
         if (CRATE[ch]) a = !H ? '拿' + ING[CRATE[ch]].n : H.k === 'i' && H.t === CRATE[ch] && !H.c ? '放回' : '';
         else if (STN[ch]) { const s2 = st.stn[f]; if (H && H.k === 'i' && prepared(H) && accepts(f, H.t)) a = '下锅'; else if (H && H.k === 'p' && !H.x && !H.d && s2.s === 2) a = '装盘'; }
         else if (ch === 'L') a = !H && st.rack > 0 ? '拿盘子' : H && H.k === 'p' && !H.x && !H.d ? '放回' : '';
@@ -699,7 +821,18 @@ BX.register({
       if (H && H.k === 'e') u = '灭火'; else if (H && H.k === 'i') u = '扔出';
       else if (!H && ch === 'C') { const it = st.it[f]; if (it && it.k === 'i' && ING[it.t].chop && !it.c) u = '切菜'; }
       else if (!H && ch === 'K' && st.sink.n > 0) u = '洗碗';
-      return {a, u, f};
+      return {a, u};
+    }
+    function useful(H, f) {
+      const l = labelsAt(H, f);
+      return !!l.a || l.u === '切菜' || l.u === '洗碗' || (l.u === '灭火' && st.stn[f] && st.stn[f].s === 3);
+    }
+    function preview(k, p) {
+      p = p || st.P[k]; const H = p.h, f = front(p), l = labelsAt(H, f);
+      let aim = null;
+      if (!H && floorNear(p) >= 0) l.a = '捡起';
+      if (H && H.k === 'i') { aim = throwAim(p, k); if (aim.kind === 'mate') l.u = '扔给队友'; else if (aim.kind === 'pot') l.u = '扔进锅'; }
+      return {a: l.a, u: l.u, f, aim};
     }
     function guideText(k, g) {
       const p = st.P[k], H = p.h, ch = typ(g.i), act = g.act, it = st.it[g.i];
@@ -759,7 +892,7 @@ BX.register({
 
     /* ================= effects / audio (local) ================= */
     let seenEv = 0, chopSnd = 0, sprSnd = 0, tAll = 0;
-    const parts = [], floats = [], tkSeen = new Map(), tkGone = [], pop = [0, 0], disp = st.P.map(p => ({x: p.x, y: p.y, ph: 0}));
+    const parts = [], floats = [], tkSeen = new Map(), tkGone = [], pop = [0, 0], disp = st.P.map(p => ({x: p.x, y: p.y, ph: 0, fx: p.fx, fy: p.fy}));
     let lastL = null, banner = null; const prevs = [null, null];
     const tilePx = (i, L) => [L.ox + (i % GW + .5) * L.ts, L.oy + (Math.floor(i / GW) + .45) * L.ts];
     function burst(x, y, n, col, sp, life, kind) { for (let k = 0; k < n; k++) { const a = Math.random() * 6.28, v = sp * (.4 + Math.random()); parts.push({x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v - sp * .3, life: life * (.6 + Math.random() * .6), max: life, col, kind: kind || 'dot', r: 2 + Math.random() * 3}); } }
@@ -785,7 +918,8 @@ BX.register({
           case 'throw': ctx.sfx('whoosh'); break;
           case 'catch': ctx.sfx('pop'); if (L) { const p = st.P[e.s]; burst(L.ox + p.x * L.ts, L.oy + (p.y - .4) * L.ts, 8, '#ffe08a', 70, .5, 'star'); } break;
           case 'flop': ctx.sfx('hit'); break;
-          case 'dash': ctx.sfx('swish'); if (L) { const p = st.P[e.s]; burst(L.ox + p.x * L.ts, L.oy + (p.y + .2) * L.ts, 7, 'rgba(230,210,170,.8)', 50, .45); } break;
+          case 'bonk': ctx.sfx('hit'); pop[e.s] = .8; if (ctx.isLocal(e.s)) ctx.buzz(Math.min(25, 6 + e.v * 1.5)); if (L) { const p = st.P[e.s]; burst(L.ox + p.x * L.ts, L.oy + (p.y - .1) * L.ts, 6, 'rgba(255,240,210,.9)', 70, .35, 'star'); } break;
+          case 'dash': if (predOn() && e.s === ctx.me) break; ctx.sfx('swish'); if (L) { const p = st.P[e.s]; burst(L.ox + p.x * L.ts, L.oy + (p.y + .2) * L.ts, 7, 'rgba(230,210,170,.8)', 50, .45); } break;
           case 'out': ctx.sfx('swish'); if (at) burst(at[0], at[1], 18, '#f4f4f4', 90, .9); break;
           case 'order': ctx.sfx('flip'); break;
           case 'dirty': ctx.sfx('tick'); break;
@@ -893,7 +1027,7 @@ BX.register({
         let jt = null; for (const t of ptrs.values()) if (t.type === 'J' && t.slot === c.slot) jt = t;
         const bx = jt ? jt.ox : c.bx, by = jt ? jt.oy : c.by;
         g.fillStyle = 'rgba(40,24,10,.28)'; D.circle(g, bx, by, c.R); g.fill(); g.strokeStyle = 'rgba(255,240,210,.45)'; g.lineWidth = 2; g.stroke();
-        const kx = bx + joy[c.slot].x * c.R * .9, ky = by + joy[c.slot].y * c.R * .9;
+        const kx = bx + joyRaw[c.slot].x * c.R * .9, ky = by + joyRaw[c.slot].y * c.R * .9;
         D.disc(g, kx, ky, c.R * .42, col, {ring: 'rgba(255,255,255,.5)'});
         const seat = ctx.mySeats[c.slot], pv = (seat != null && prevs[seat]) || {};
         const uHold = pv.u === '切菜' || pv.u === '洗碗' || pv.u === '灭火';
@@ -914,8 +1048,24 @@ BX.register({
       press.fill(0);
     }
 
+    /* the position/state used to DRAW chef k: host → interpolated between 60 Hz steps; guest → own chef predicted, partner extrapolated */
+    const viewS = [{}, {}];
+    function viewP(k) { return viewS[k].p || st.P[k]; }
+    function updView(dt) {
+      const ex = 1 - Math.exp(-22 * dt);
+      st.P.forEach((p, k) => {
+        const d = disp[k]; let x, y, vp = p;
+        if (ctx.isHost) { const a = ctx.alpha; x = BX.lerp(p.px != null ? p.px : p.x, p.x, a); y = BX.lerp(p.py != null ? p.py : p.y, p.y, a); }
+        else if (predOn() && k === ctx.me && pred) { const a = BX.clamp(predAcc * 60, 0, 1); x = BX.lerp(pred.px, pred.x, a) + visOff.x; y = BX.lerp(pred.py, pred.y, a) + visOff.y; vp = pred; }
+        else { const lag = Math.min(.12, tAll - snapT), tx = p.x + (p.vx || 0) * lag, ty = p.y + (p.vy || 0) * lag; x = d.x + (tx - d.x) * ex; y = d.y + (ty - d.y) * ex; if (Math.hypot(tx - x, ty - y) > 2) { x = tx; y = ty; } }
+        d.x = x; d.y = y; viewS[k].p = vp;
+      });
+      const dec = Math.exp(-12 * dt); visOff.x *= dec; visOff.y *= dec;
+    }
     function draw(dt) {
       tAll += dt;
+      if (predOn()) predStep(dt); else pred = null;
+      updView(dt);
       const g = cv.g; cv.clear();
       const L = layout(); lastL = L;
       playEv();
@@ -971,9 +1121,16 @@ BX.register({
       }
       // facing highlight for local players
       const tags = [];
-      st.P.forEach((p, k) => {
+      st.P.forEach((p0, k) => {
         if (!ctx.isLocal(k)) return;
-        const pv = preview(k); prevs[k] = pv;
+        const p = viewP(k), pv = preview(k, p); prevs[k] = pv;
+        // truthful throw preview: dotted arc onto the assisted target (team-mate / pot)
+        if (pv.aim && pv.aim.kind && !BX.bot) {
+          const a = pv.aim, x0 = L.ox + p.x * ts, y0 = L.oy + p.y * ts, x1 = L.ox + a.x * ts, y1 = L.oy + a.y * ts, dd = Math.hypot(a.x - p.x, a.y - p.y), T = dd / FLY_V;
+          g.fillStyle = D.alpha(PAL[k], .75);
+          for (let j = 1; j < 9; j++) { const q = j / 9, ph = (q + tAll * .8) % 1, x = x0 + (x1 - x0) * ph, y = y0 + (y1 - y0) * ph - flyH(ph * T) * ts; D.circle(g, x, y, Math.max(1.5, ts * .045)); g.fill(); }
+          g.strokeStyle = D.alpha(PAL[k], .8); g.lineWidth = 2; g.beginPath(); g.ellipse(x1, y1 + ts * .1, ts * .28, ts * .12, 0, 0, 7); g.stroke();
+        }
         const f = front(p); if (f < 0 || MAP[f] === '.' || MAP[f] === '~') return;
         const x = L.ox + (f % GW) * ts, y = L.oy + Math.floor(f / GW) * ts, act = pv.a || pv.u;
         g.fillStyle = D.alpha(PAL[k], act ? .16 : .06); D.rr(g, x + 2, y + 2, ts - 4, ts * .8 - 2, ts * .12); g.fill();
@@ -985,27 +1142,36 @@ BX.register({
       // chefs (sorted by depth)
       const order = st.P.map((p, k) => k).sort((a, b) => st.P[a].y - st.P[b].y);
       for (const k of order) {
-        const p = st.P[k], d = disp[k];
-        const lk = Math.min(1, dt * (ctx.isHost ? 30 : 14)); d.x += (p.x - d.x) * lk; d.y += (p.y - d.y) * lk;
-        if (Math.hypot(p.x - d.x, p.y - d.y) > 2) { d.x = p.x; d.y = p.y; }
-        d.ph += dt * (p.mv ? 14 : 3);
-        pop[k] = Math.max(0, pop[k] - dt * 5);
+        const p = st.P[k], d = disp[k], vp = viewP(k);
+        // smooth facing (the held item swings round instead of popping side to side)
+        { const kf = 1 - Math.exp(-28 * dt); d.fx += (vp.fx - d.fx) * kf; d.fy += (vp.fy - d.fy) * kf; const fl = Math.hypot(d.fx, d.fy); if (fl < .3) { d.fx = vp.fx; d.fy = vp.fy; } }
+        d.ph += dt * (vp.mv ? 14 : 3);
+        pop[k] = Math.max(0, pop[k] - dt * 5); d.st = Math.max(0, (d.st || 0) - dt * 6);
+        const dashing = vp.ds > 0;
+        if (dashing && !d.wasDash) d.st = 1;
+        d.wasDash = dashing;
+        if (dashing || (d.trail && d.trail.length)) { d.trail = d.trail || []; if (dashing) d.trail.push([d.x, d.y, tAll]); while (d.trail.length && (tAll - d.trail[0][2] > .14 || d.trail.length > 6)) d.trail.shift(); }
+        if (d.trail) d.trail.forEach(([tx, ty, tt], j) => { if (j % 2) return; g.globalAlpha = .22 * (1 - (tAll - tt) / .14); drawChef(g, L.ox + tx * ts, L.oy + (ty + .28) * ts, ts * 1.05, PAL[k], d.fx, d.fy, d.ph, true, -.25, null, ''); g.globalAlpha = 1; });
         const sx = L.ox + d.x * ts, sy = L.oy + (d.y + .28) * ts;
-        drawChef(g, sx, sy, ts * 1.05, PAL[k], p.fx, p.fy, d.ph, !!p.mv, pop[k] + (p.act === 'chop' ? Math.abs(Math.sin(tAll * 18)) * .4 : 0), p.h, String(k + 1));
+        drawChef(g, sx, sy, ts * 1.05, PAL[k], d.fx, d.fy, d.ph, !!vp.mv, pop[k] - d.st * .35 + (p.act === 'chop' ? Math.abs(Math.sin(tAll * 18)) * .4 : 0), p.h, String(k + 1));
         if (p.act === 'ext') {
           const ax = Math.abs(p.fx) >= Math.abs(p.fy), dx = ax ? Math.sign(p.fx) : 0, dy = ax ? 0 : Math.sign(p.fy);
           for (let n = 0; n < 2; n++) parts.push({x: sx + dx * ts * .3, y: sy - ts * .3 + dy * ts * .2, vx: dx * ts * 3 + (Math.random() - .5) * ts, vy: dy * ts * 3 + (Math.random() - .5) * ts, life: .35, max: .35, col: '#f4f8ff', kind: 'dot', r: ts * .08});
           if ((sprSnd -= dt) <= 0) { sprSnd = .3; ctx.sfx('swish'); }
         }
-        if (p.ds > 0 && Math.random() < .7) parts.push({x: sx + (Math.random() - .5) * ts * .3, y: sy - ts * .05, vx: -p.fx * ts * 2, vy: -p.fy * ts * 2 - 10, life: .35, max: .35, col: 'rgba(240,225,190,.75)', kind: 'steam', r: ts * .08});
+        if (dashing && Math.random() < .7) parts.push({x: sx + (Math.random() - .5) * ts * .3, y: sy - ts * .05, vx: -vp.fx * ts * 2, vy: -vp.fy * ts * 2 - 10, life: .35, max: .35, col: 'rgba(240,225,190,.75)', kind: 'steam', r: ts * .08});
         if (p.act === 'chop') { if ((chopSnd -= dt) <= 0) { chopSnd = .18; ctx.sfx('tick'); const f = front(p); if (f >= 0) { const [fx0, fy0] = tilePx(f, L); burst(fx0, fy0, 2, '#b7e07a', 50, .35); } } }
         if (p.act === 'wash' && Math.random() < dt * 12) { const [fx0, fy0] = tilePx(sinkT, L); parts.push({x: fx0 + (Math.random() - .5) * ts * .5, y: fy0, vx: (Math.random() - .5) * 30, vy: -40 - Math.random() * 30, life: .6, max: .6, col: 'rgba(220,240,255,.9)', kind: 'bub', r: ts * .06}); }
       }
       for (const o of st.fly) {
-        const k = BX.clamp((o.t || 0) / FLY_T, 0, 1), lift = Math.sin(Math.PI * Math.min(1, k * 1.3)) * ts * .45 + ts * .35;
-        const x = L.ox + o.x * ts, y = L.oy + o.y * ts;
-        g.fillStyle = 'rgba(0,0,0,.2)'; g.beginPath(); g.ellipse(x, y + ts * .1, ts * .18, ts * .06, 0, 0, 7); g.fill();
-        g.save(); g.translate(x, y - lift); g.rotate(tAll * 12); drawItem(g, 0, 0, ts * .62, o.it); g.restore();
+        // host: back-interpolate inside the 60 Hz step; guest: extrapolate from the last snapshot
+        const lag = ctx.isHost ? (ctx.alpha - 1) / 60 : Math.min(.1, tAll - snapT), ot = BX.clamp((o.t || 0) + lag, 0, FLY_T);
+        const ox = o.x + (o.vx || 0) * lag, oy = o.y + (o.vy || 0) * lag, k = ot / FLY_T, lift = flyH(ot) * ts;
+        const x = L.ox + ox * ts, y = L.oy + oy * ts;
+        // fast-object trail
+        g.strokeStyle = 'rgba(255,245,220,.35)'; g.lineWidth = ts * .1; g.lineCap = 'round'; g.beginPath(); g.moveTo(x, y - lift); g.lineTo(x - (o.vx || 0) * ts * .045, y - flyH(Math.max(0, ot - .045)) * ts - (o.vy || 0) * ts * .045); g.stroke();
+        g.fillStyle = `rgba(0,0,0,${.12 + .1 * k})`; g.beginPath(); g.ellipse(x, y + ts * (.14 + .14 * (1 - k)), ts * (.13 + .05 * k), ts * (.045 + .015 * k), 0, 0, 7); g.fill();
+        g.save(); g.translate(x, y - lift); g.rotate(ot * 14); drawItem(g, 0, 0, ts * .62, o.it); g.restore();
       }
       for (const t of tags) {
         const fs = Math.max(11, Math.min(15, ts * .3)); g.font = `800 ${fs}px ${BX.F ? BX.F.sans || 'sans-serif' : 'sans-serif'}`;
@@ -1111,16 +1277,17 @@ BX.register({
     status();
     return {
       st, input, aiInput, key,
+      _feel: () => ({d: disp.map(d => [d.x, d.y]), P: st.P.map(p => [p.x, p.y]), ph: st.ph, tg: st.P.map(p => front(p)), pred: pred && [pred.x, pred.y], vo: Math.hypot(visOff.x, visOff.y)}),
       dbg: () => JSON.stringify({t: Math.round(st.left), c: st.coins, sv: st.served, f: st.failed, o: st.orders.map(o => o.r), P: st.P.map((p, k) => [p.x.toFixed(1), p.y.toFixed(1), p.h && (p.h.k + (p.h.t || p.h.d || '') + (p.h.c ? 'c' : '') + (p.h.x ? 'x' : '')), aiM[k].job, aiM[k].goal && aiM[k].goal.i]), stn: Object.values(st.stn).map(x => x.s + ':' + x.c.join('+')), rack: st.rack, sink: st.sink.n, dret: st.dret}),
       step(dt, inputs) { step(dt, inputs); },
       snapshot() {
         const r2 = v => Math.round(v * 100) / 100;
         return {lv: st.lv, ph: st.ph, t: r2(st.t), left: r2(st.left), coins: st.coins, served: st.served, failed: st.failed, orders: st.orders.map(o => ({id: o.id, r: o.r, p: r2(o.p), pm: o.pm})),
-          P: st.P.map(p => ({x: r2(p.x), y: r2(p.y), vx: 0, vy: 0, fx: p.fx, fy: p.fy, h: p.h, mv: p.mv, act: p.act, i: p.i, ds: r2(p.ds), dcd: r2(p.dcd)})),
-          fly: st.fly.map(o => ({x: r2(o.x), y: r2(o.y), vx: 0, vy: 0, it: o.it, by: o.by, t: r2(o.t)})), fl: st.fl.map(o => ({x: r2(o.x), y: r2(o.y), it: o.it})),
+          P: st.P.map(p => ({x: r2(p.x), y: r2(p.y), vx: r2(p.vx), vy: r2(p.vy), fx: p.fx, fy: p.fy, h: p.h, mv: p.mv, act: p.act, i: p.i, ds: r2(p.ds), dcd: r2(p.dcd), tg: p.tg, sq: p.sq, sn: p.sn})),
+          fly: st.fly.map(o => ({x: r2(o.x), y: r2(o.y), vx: r2(o.vx), vy: r2(o.vy), it: o.it, by: o.by, t: r2(o.t)})), fl: st.fl.map(o => ({x: r2(o.x), y: r2(o.y), it: o.it})),
           it: st.it, stn: st.stn, rack: st.rack, dret: st.dret, sink: {n: st.sink.n, p: r2(st.sink.p)}, ev: st.ev, evId: st.evId, over: st.over, star: st.star};
       },
-      restore(d) { Object.assign(st, d); },
+      restore(d) { Object.assign(st, d); snapT = tAll; reconcile(); },
       hint() { if (st.ph !== 'play') { ctx.toast('开工后再来看提示'); return; } guideUntil = tAll + 8; guideCalcT = 0; calcGuides(); if (guides[0]) ctx.toast(guides[0].txt); },
       draw,
       destroy() { parts.length = 0; },

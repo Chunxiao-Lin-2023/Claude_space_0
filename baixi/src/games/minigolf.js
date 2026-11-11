@@ -37,7 +37,7 @@ function simulate(h, bx, by, dx, dy, p, rec) {
     const sand = h.sand && h.sand.some(q => inPoly(x, y, q));
     let ax = 0, ay = 0;
     if (h.slope) for (const sl of h.slope) if (inPoly(x, y, sl.p)) { ax += sl.g[0]; ay += sl.g[1]; }
-    const fric = sand ? 95 : 16;
+    const fric = sand ? 95 : 11 + .1 * sp;   // rolling resistance + a little speed drag: quick early bleed-off, gentle roll-out
     vx += ax * DT; vy += ay * DT;
     if (sp > 0) { const k = Math.max(0, 1 - fric * DT / sp); vx *= k; vy *= k; }
     const nsp = Math.sqrt(vx * vx + vy * vy);
@@ -126,12 +126,12 @@ BX.register({
   desc: '在九个园林小球场上推杆：借边库反弹、绕过沙坑和水池、钻过假山洞。每洞看谁用的杆数少，九洞总杆数最少者胜。',
   kind: 'turn', seats: [1, 4], defSeats: 2, seatColors: ['#c23a2b', '#2f5d8a', '#3f8f5b', '#d9a12b'], aiDelay: 450,
   options: [{key: 'holes', label: '洞数', choices: [[3, '前 3 洞'], [9, '9 洞']], def: 9}],
-  howto: ['在画面任意处<b>按住向后拉</b>（像弹弓），球朝反方向滚出，拉得越长越用力，松手击球。', '球周围的<b>彩色圆环</b>是力度；虚线会显示第一次碰库后的反弹方向。', '下方 <b>↺ ↻</b> 微调方向、<b>− +</b> 微调力度（按住连续调），再点「击球」。淡色虚线是你上一杆的路线。', '球滚动时点一下画面可快进；💡 提示会画出建议的方向和力度。键盘：←→ 转向、↑↓ 力度（Shift 加速）、空格击球。'],
+  howto: ['在画面任意处<b>按住向后拉</b>（像弹弓），球朝反方向滚出，拉得越长越用力，松手击球。', '球周围的<b>彩色圆环</b>是力度；虚线是按真实物理算出的<b>前一段路线</b>（含坡道、反弹）。拉回按下点附近松手可取消。', '下方 <b>↺ ↻</b> 微调方向、<b>− +</b> 微调力度（按住连续调），再点「击球」。淡色虚线是你上一杆的路线。', '球滚动时点一下画面可快进；💡 提示会画出建议的方向和力度。键盘：←→ 转向、↑↓ 力度（Shift 加速）、空格击球。'],
   rules: `<p>共 <b>9 洞</b>（可选只打前 3 洞）。每洞所有玩家依次上场，<b>每人一直推杆直到球进洞</b>，再轮到下一位。</p>
 <p><b>计杆：</b>每推一次记 1 杆。球落入<b>水池</b>罚 1 杆，球放回击球前的位置。每洞最多 <b>${CAP} 杆</b>，到达上限仍未进洞记 ${CAP} 杆。</p>
 <p><b>场地：</b>木栏可以反弹（打库边借角度）；圆形<b>石墩</b>弹性更强；<b>沙坑</b>阻力很大；<b>坡道</b>会把球往低处推（看地面箭头）；<b>假山洞</b>从一个洞口进、另一个洞口出。球速太快经过洞口会“吃边”滑走，力度要恰到好处。</p>
 <p>每洞有标准杆（<b>标准杆 Par</b>），记分卡上显示与标准杆之差。九洞总杆数<b>最少者胜</b>，并列同胜。单人练习时会记录你的最好成绩。</p>
-<p><b>操作：</b>在画面任意处按住并<b>向后拉</b>（像弹弓），球会朝相反方向击出，拉得越长越用力；球周围的圆环显示力度，虚线显示开头一段路线和第一次反弹。下方按钮可微调方向与力度。键盘：←→ 转向、↑↓ 力度、空格击球。</p>`,
+<p><b>操作：</b>在画面任意处按住并<b>向后拉</b>（像弹弓），球会朝相反方向击出，拉得越长越用力；球周围的圆环显示力度，虚线显示按真实物理计算的开头一段路线（力度越大显示越长）。下方按钮可微调方向与力度。键盘：←→ 转向、↑↓ 力度、空格击球。</p>`,
   icon(g, w, h) {
     D.wood(g, 0, 0, w, h, {seed: 9, base: '#6b4426'});
     g.fillStyle = '#3f8f5b'; D.rr(g, 10, 14, w - 20, h - 28, 10); g.fill();
@@ -154,8 +154,8 @@ BX.register({
     const ui = ctx.ui(''), bar = BX.h('div', {class: 'pk-bar'}); ui.append(bar);
     function rot(deg) { const a = Math.atan2(aim.dy, aim.dx) + deg * Math.PI / 180; aim = {dx: Math.cos(a), dy: Math.sin(a), p: aim.p}; keyT = performance.now(); }
     function pw(d) { aim = Object.assign({}, aim, {p: BX.clamp(Math.round(aim.p * 100 + d) / 100, .02, 1)}); keyT = performance.now(); }
-    const adjA = K.adj(bar, '方向', () => { const d = Math.round(((Math.atan2(aim.dy, aim.dx) * 180 / Math.PI) % 360 + 360) % 360 * 2) / 2; return d + '°'; }, (d, k) => rot(d * (k > 12 ? 2 : .5)), {minus: '↺', plus: '↻'});
-    const adjP = K.adj(bar, '力度', () => String(Math.round(aim.p * 100)), (d, k) => pw(d * (k > 12 ? 3 : 1)));
+    const adjA = K.adj(bar, '方向', () => { const d = Math.round(((Math.atan2(aim.dy, aim.dx) * 180 / Math.PI) % 360 + 360) % 360 * 2) / 2; return d + '°'; }, (d, k) => rot(d * [0, .5, 1.5, 3][K.acc(k)]), {minus: '↺', plus: '↻'});
+    const adjP = K.adj(bar, '力度', () => String(Math.round(aim.p * 100)), (d, k) => pw(d * K.acc(k)));
     K.go(bar, '击球', () => putt());
 
     /* ---------- view ---------- */
@@ -180,17 +180,21 @@ BX.register({
     /* world → screen. portrait is rotated so that world +x points up (tee at the bottom) */
     const T = (x, y) => V.port ? [V.ox + (y - V.y0) * V.s, V.oy + (V.x1 - x) * V.s] : [V.ox + (x - V.x0) * V.s, V.oy + (y - V.y0) * V.s];
     const myTurn = () => !st.over && !pb.on && ctx.canAct(st.turn);
+    let aimSave = null;
     const sling = K.sling(ctx, cv, {
-      enabled: myTurn, max: () => Math.min(cv.w, cv.h) * .36, min: .03,
+      enabled: myTurn, max: () => Math.min(cv.w, cv.h) * .36,
+      engage: () => { aimSave = aim; intro = 0; },
+      cancel: () => { if (aimSave) aim = aimSave; aimSave = null; },
       change: s => { let dx, dy; if (V.port) { dx = -s.dy; dy = s.dx; } else { dx = s.dx; dy = s.dy; } aim = {dx, dy, p: s.p}; },
       release: () => putt(),
     });
-    function putt() { if (!myTurn()) return; ctx.sfx('hit'); ctx.act({dx: +aim.dx.toFixed(6), dy: +aim.dy.toFixed(6), p: +aim.p.toFixed(4)}, st.turn); }
+    function putt() { if (!myTurn()) return; K.impact('clack', .15 + .55 * aim.p); ctx.buzz(8 + Math.round(aim.p * 12)); ctx.act({dx: +aim.dx.toFixed(6), dy: +aim.dy.toFixed(6), p: +aim.p.toFixed(4)}, st.turn); }
     function key(e) {
       if (skipKey(e)) return;
       if (!myTurn()) return;
-      const m = e.shiftKey ? 5 : 1;
-      if (e.code === 'ArrowLeft' || e.code === 'ArrowRight') rot((e.code === 'ArrowRight' ? 1.5 : -1.5) * m);
+      if (e.code === 'Escape' && sling.on) { sling.abort(); return; }
+      const m = K.keyMul(e);
+      if (e.code === 'ArrowLeft' || e.code === 'ArrowRight') rot((e.code === 'ArrowRight' ? 1 : -1) * m);
       if (e.code === 'ArrowUp' || e.code === 'ArrowDown') pw((e.code === 'ArrowUp' ? 1 : -1) * m);
       if (e.code === 'Space' || e.code === 'Enter') putt();
     }
@@ -232,9 +236,10 @@ BX.register({
         hintA = null;
         if (!ctx.fast) {
           lastPutt[who] = {hole: snap.hole, pts: r.frames.filter((f, i) => i % 3 === 0 && !f[2]).map(f => [f[0], f[1]])};
-          show = {r, snap, note, sc, who, par: h.par, done: false, ei: 0, newHole};
+          show = {r, snap, note, sc, who, par: h.par, done: false, ei: 0, newHole, dx, dy, p, sink: 0};
+          if (!(ctx.isLocal(who) && !ctx.isAI(who))) K.impact('clack', .15 + .55 * p);
           const simT = r.steps * DT;
-          pb.start(simT + (done ? 1.6 : .5), () => { show = null; if (newHole) intro = 1; status(); }, []);
+          pb.start(simT + (done ? 1.6 : .5) + .075, () => { show = null; if (newHole) intro = 1; status(); }, []);
         }
         if (st.over) finish(show ? (r.steps * DT + 2) * 1000 : 600);
         status();
@@ -377,20 +382,30 @@ BX.register({
       // other players' resting balls? (only current player's ball is in play)
       let bx = Z.ball[0], by = Z.ball[1], hidden = false;
       if (show) {
-        const fr = show.r.frames, k = Math.min(fr.length - 1, Math.floor(pb.t / (DT * 2)));
-        bx = fr[k][0]; by = fr[k][1];
+        const fr = show.r.frames, tf = Math.max(0, pb.t - .075) / (DT * 2), L = K.lerpFrame(fr, tf, 900, 6), k = L.k;
+        bx = L.f[0]; by = L.f[1];
         // trail
         g.save(); g.lineCap = 'round';
-        for (let i = Math.max(1, k - 30); i <= k; i++) { if (fr[i][2]) continue; const [x1, y1] = T(fr[i - 1][0], fr[i - 1][1]), [x2, y2] = T(fr[i][0], fr[i][1]); g.strokeStyle = `rgba(255,250,235,${.5 * (1 - (k - i) / 30)})`; g.lineWidth = BR * S * 1.4 * (1 - (k - i) / 30); g.beginPath(); g.moveTo(x1, y1); g.lineTo(x2, y2); g.stroke(); }
+        for (let i = Math.max(1, k - 30); i <= k + 1; i++) { const b = i > k ? L.f : fr[i]; if (b[2]) continue; const [x1, y1] = T(fr[i - 1][0], fr[i - 1][1]), [x2, y2] = T(b[0], b[1]); g.strokeStyle = `rgba(255,250,235,${.5 * (1 - (k - i) / 30)})`; g.lineWidth = BR * S * 1.4 * (1 - (k - i) / 30); g.beginPath(); g.moveTo(x1, y1); g.lineTo(x2, y2); g.stroke(); }
         g.restore();
         while (show.ei < show.r.ev.length && show.r.ev[show.ei][0] <= k * 2 + 1) fireEv(show.r.ev[show.ei++], bx, by);
-        if (pb.t >= show.r.steps * DT && !show.done) { show.done = true; atRest(); }
-        if (show.done && (show.note === 'cup' || show.note === 'water')) hidden = true;
+        if (pb.t - .075 >= show.r.steps * DT && !show.done) { show.done = true; atRest(); }
+        if (show.done && show.note === 'cup') show.sink = Math.min(1, show.sink + dt / .22);
+        if (show.done && (show.note === 'water' || show.sink >= 1)) hidden = true;
+        // putter follow-through during the first instant of the playback
+        if (pb.t < .12) {
+          const [x0, y0] = T(show.snap.ball[0], show.snap.ball[1]), sdx = V.port ? show.dy : show.dx, sdy = V.port ? -show.dx : show.dy;
+          const u = pb.t / .12, back = (BR * S * 2 + show.p * S * 6) * (1 - u * 1.6), a = 1 - u;
+          const px = x0 - sdx * back, py = y0 - sdy * back;
+          g.save(); g.globalAlpha = a; g.strokeStyle = '#2b2118'; g.lineWidth = S * 1.1; g.lineCap = 'round'; g.beginPath(); g.moveTo(px - sdy * S * 2.4, py + sdx * S * 2.4); g.lineTo(px + sdy * S * 2.4, py - sdx * S * 2.4); g.stroke(); g.strokeStyle = C.gold; g.lineWidth = S * .5; g.stroke(); g.restore();
+        }
       }
       if (!hidden) {
         const [x, y] = T(bx, by);
         if (!show && myTurn()) drawAim(g, x, y);
-        D.disc(g, x, y, BR * S * 1.15, ctx.color(Z.turn), {ring: '#fffaf0'});
+        const sk = show ? show.sink : 0;
+        if (sk > 0) { const [cx2, cy2] = T(h.cup[0], h.cup[1]); g.globalAlpha = 1 - sk * .6; D.disc(g, x + (cx2 - x) * sk, y + (cy2 - y) * sk + sk * S * .6, BR * S * 1.15 * (1 - sk * .45), ctx.color(Z.turn), {ring: '#fffaf0'}); g.globalAlpha = 1; }
+        else D.disc(g, x, y, BR * S * 1.15, ctx.color(Z.turn), {ring: '#fffaf0'});
       }
       fx.draw(g, T, 1);
       g.restore();
@@ -422,6 +437,21 @@ BX.register({
       }
       pts.push([x, y]); return pts;
     }
+    /* the first stretch of the REAL simulated roll (same physics as apply: slopes, sand, rails, drums), length grows with power */
+    let tpKey = '', tpPts = null;
+    function truePath(h, a) {
+      const key = Z.hole + ':' + Z.ball.join(',') + ':' + a.dx.toFixed(4) + ',' + a.dy.toFixed(4) + ',' + a.p.toFixed(3);
+      if (key === tpKey) return tpPts;
+      const r = simulate(h, Z.ball[0], Z.ball[1], a.dx, a.dy, a.p, true), budget = 12 + 32 * a.p, pts = [[Z.ball[0], Z.ball[1]]];
+      let len = 0;
+      for (let i = 1; i < r.frames.length; i++) {
+        const q = r.frames[i], o = r.frames[i - 1]; if (q[2]) break;
+        const d = Math.hypot(q[0] - o[0], q[1] - o[1]);
+        if (len + d > budget) { const t = (budget - len) / (d || 1); pts.push([o[0] + (q[0] - o[0]) * t, o[1] + (q[1] - o[1]) * t]); break; }
+        len += d; if (i % 2 === 0 || i === r.frames.length - 1) pts.push([q[0], q[1]]);
+      }
+      tpKey = key; tpPts = pts; return pts;
+    }
     function powerRing(g, x, y, p, col, a = 1) {
       const r = BR * V.s * 1.15 + 9; g.save(); g.globalAlpha = a; g.lineCap = 'round';
       g.strokeStyle = 'rgba(20,12,6,.45)'; g.lineWidth = 6; D.circle(g, x, y, r); g.stroke();
@@ -439,8 +469,9 @@ BX.register({
         D.text(g, '💡 力度 ' + Math.round(hintA.p * 100), x, y + BR * S + 30, {size: 13, color: '#1f6b50', weight: 800, stroke: 'rgba(255,255,255,.9)', strokeW: 3});
       }
       const L = 10 + aim.p * 40;
-      const wp = ctx.pref('hints') ? ray(h, Z.ball[0], Z.ball[1], aim.dx, aim.dy, L, 1) : [[Z.ball[0], Z.ball[1]], [Z.ball[0] + aim.dx * L, Z.ball[1] + aim.dy * L]];
+      const wp = ctx.pref('hints') ? truePath(h, aim) : [[Z.ball[0], Z.ball[1]], [Z.ball[0] + aim.dx * L, Z.ball[1] + aim.dy * L]];
       K.guide(g, wp.map(q => T(q[0], q[1])), {color: '#fffaf0', w: 3, alpha: .95, fade: .6, dash: [5, 7]});
+      if (sling.on) K.drawAnchor(g, sling, '#fffaf0');
       powerRing(g, x, y, aim.p);
       // putter
       const px = x - sdx * (BR * S * 2 + aim.p * S * 6), py = y - sdy * (BR * S * 2 + aim.p * S * 6);
@@ -450,8 +481,8 @@ BX.register({
       if (Z.hole === 0 && Z.strokes === 0 && !sling.on && performance.now() - keyT > 3000) D.text(g, '按住画面向后拉，松手击球', V.port ? V.W / 2 : (V.W - V.cardW) / 2, V.H - V.barH - 8, {size: 15, color: '#2b2118', font: 'serif', weight: 700, stroke: 'rgba(255,250,235,.8)', strokeW: 4});
     }
     function fireEv(e, x, y) {
-      if (e[1] === 'wall') { ctx.sfx('bounce'); fx.burst(x, y, {n: 5, sp: 20, color: '#f3e2c0', life: .3, size: 2}); }
-      else if (e[1] === 'bump') { ctx.sfx('hit'); fx.shake(4); fx.burst(x, y, {n: 10, sp: 40, color: ['#fff', '#e6c57d'], life: .4, kind: 'spark'}); }
+      if (e[1] === 'wall') { const kk = Math.min(1, e[2] / 70); K.impact('wood', kk); if (kk > .5) fx.shake(1 + 3 * kk); fx.burst(x, y, {n: 3 + Math.round(6 * kk), sp: 12 + 25 * kk, color: '#f3e2c0', life: .3, size: 2}); }
+      else if (e[1] === 'bump') { const kk = Math.min(1, e[2] / 70); K.impact('stone', kk); fx.shake(2 + 5 * kk); if (kk > .6) pb.hit(.04); fx.burst(x, y, {n: 6 + Math.round(10 * kk), sp: 25 + 30 * kk, color: ['#fff', '#e6c57d'], life: .4, kind: 'spark'}); }
       else if (e[1] === 'tun') { ctx.sfx('whoosh'); fx.burst(x, y, {n: 14, sp: 25, color: '120,110,100', kind: 'smoke', life: .7, size: 5}); }
       else if (e[1] === 'lip') ctx.sfx('tick');
     }
@@ -459,7 +490,7 @@ BX.register({
       const h = HOLES[show.snap.hole], n = show.note, [cx, cy] = h.cup;
       if (n === 'cup') {
         const d = show.sc - show.par, name = show.sc === 1 ? '一杆进洞！' : d <= -2 ? '老鹰！' : d === -1 ? '小鸟！' : d === 0 ? '标准杆' : d === 1 ? '柏忌' : '+' + d;
-        ctx.sfx(show.sc === 1 || d < 0 ? 'win' : 'score'); fx.flashOn(show.sc === 1 ? 1 : .5);
+        K.impact('cup'); ctx.sfx(show.sc === 1 || d < 0 ? 'win' : 'score'); fx.flashOn(show.sc === 1 ? 1 : .5);
         fx.burst(cx, cy, {n: show.sc === 1 ? 60 : 28, sp: 60, color: ['#ffe28a', '#d0533f', '#fff6dd', '#5aa08a'], life: 1.1, g: 30});
         if (show.sc === 1 || d < 0) { fx.shake(8); if (ctx.isLocal(show.who)) ctx.buzz(40); }
         fx.text(cx, cy - 4, name, {size: show.sc === 1 ? 34 : 26, life: 1.8});

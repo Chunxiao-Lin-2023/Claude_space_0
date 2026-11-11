@@ -71,9 +71,9 @@ function candidates(b, t, y0) {
 BX.register({
   id: 'tetris', title: '方块对战', cat: 'arcade', order: 4, sub: '消行攻击，把对手顶出局',
   desc: '经典下落方块的双人对战：七种方块随机成包，可暂存、可硬降；一次消多行就会给对手送去带缺口的垃圾行，先被顶到顶的一方输。',
-  kind: 'realtime', seats: 2, seatColors: ['#c8402c', '#2f5d9a'], noFirst: true,
+  kind: 'realtime', seats: 2, seatColors: ['#c8402c', '#2f5d9a'], noFirst: true, snapHz: 30, inputHz: 60,
   options: [{key: 'lvl', label: '起始速度', choices: [[1, '1 级'], [4, '4 级'], [8, '8 级']], def: 1}],
-  howto: ['触屏手势：在井上<b>左右拖</b>一格一格移动，<b>点一下</b>顺时针转，<b>快速下划</b>硬降，慢慢下拖软降，<b>上划</b>暂存；也可以用下方按钮。', '键盘：← → 移动（按住自动连移），↓ 软降，↑ / X 顺转，Z 逆转，空格硬降，C 暂存。', '左上角 ⚙ 可调手感（自动连移的延迟 DAS / 速度 ARR、软降速度）；💡 会用虚线框标出推荐落点。'],
+  howto: ['触屏手势：在井上<b>左右拖</b>，方块跟着手指一格一格走；<b>点一下</b>顺时针转，<b>快速下甩</b>硬降，按住慢慢下拖软降，<b>上甩</b>暂存；也可以用下方按钮。', '键盘：← → 移动（按住自动连移，后按的方向优先），↓ 软降，↑ / X 顺转，Z 逆转，空格硬降，C 暂存；开局倒数时按住旋转 / 暂存键，第一块会直接转好 / 暂存。', '左上角 ⚙ 可调手感（自动连移的延迟 DAS / 速度 ARR、软降倍速）；💡 会用虚线框标出推荐落点。'],
   rules: `<p>每人一个 10 列 × 20 行的井，七种方块（I、O、T、S、Z、J、L）以“<b>七个一包</b>”的方式随机出现，每一包里七种各一块，双方方块顺序相同。</p>
 <p>移动、旋转（带墙踢）让方块落下拼满整行即可<b>消行</b>。方块触底后约半秒锁定，期间移动或旋转可以延长（最多 15 次）。可以<b>暂存</b>一块方块（每块只能换一次）；屏幕上显示后面 5 块与落点虚影。</p>
 <p><b>攻击</b>：一次消 2 行送对方 1 行垃圾，3 行送 2 行，4 行送 4 行；连续消行（连击）每次额外 +1，连续两次四消（背靠背）再 +1。垃圾行从底部升起，每行有一个缺口。自己有待收的垃圾时，消行会先抵消它们；放下一块却没有消行时，待收垃圾就会升上来（井边红条显示待收数量）。</p>
@@ -97,8 +97,9 @@ BX.register({
     function mkP() { return {b: new Array(BW * BH).fill(0), t: 0, r: 0, x: 3, y: 0, hold: -1, hu: false, qi: 0, g: 0, lk: 0, lr: 0, low: 0, pend: [], combo: -1, b2b: false, lines: 0, sent: 0, alive: true, pid: 0, nx: [], das: 0, dasT: 0}; }
     const PRESS = BX.test ? 10 : 120, PRESSI = BX.test ? 1.5 : 10, LV0 = +ctx.opts.lvl || 1;
     st.lvl = LV0;
-    /* handling presets (per device): DAS / ARR in ms, soft drop 1 = ×20, 2 = instant */
-    const HANDLING = [['标准', 170, 50, 1], ['灵敏', 120, 25, 1], ['极速', 90, 0, 2]];
+    /* handling presets (per device), modelled on modern guideline clients (TETR.IO / Jstris defaults → competitive):
+       DAS / ARR in ms, soft-drop factor (×gravity; 99 = instant 'sonic' drop without locking) */
+    const HANDLING = [['标准', 167, 33, 20], ['灵敏', 117, 17, 40], ['极速', 83, 0, 99]];
     let hand = BX.clamp(+ctx.load('hand', 0) || 0, 0, 2);
     let hintPl = null;
     const fx = (k, s, a, b) => { st.ev.push({k, s, a, b, id: ++st.evId}); if (st.ev.length > 14) st.ev.shift(); };
@@ -108,7 +109,12 @@ BX.register({
       if (t == null) { refill(); t = st.seq[p.qi++]; refill(); }
       p.t = t; p.r = 0; p.x = 3; p.y = 0; p.g = 0; p.lk = 0; p.lr = 0; p.pid++;
       p.nx = st.seq.slice(p.qi, p.qi + 5);
-      if (!fits(p.b, t, 0, 3, 0)) { lose(i, '新方块无法出现'); return; }
+      if (!fits(p.b, t, 0, 3, 0)) {
+        // IRS rescue: a rotation key held at spawn may let the piece appear rotated where the flat spawn is blocked
+        const ir = (curIn[i] && curIn[i].ir) | 0, r2 = ir > 0 ? 1 : ir < 0 ? 3 : -1;
+        if (r2 > 0 && t !== 3 && fits(p.b, t, r2, 3, 0)) { p.r = r2; p.low = p.y; return; }
+        lose(i, '新方块无法出现'); return;
+      }
       if (fits(p.b, t, 0, 3, 1)) p.y = 1;
       p.low = p.y;
     }
@@ -117,6 +123,7 @@ BX.register({
       p.alive = false; st.over = true; st.winner = 1 - i; st.ph = 'over'; fx('ko', i);
       ctx.end({winner: 1 - i, text: ctx.name(i) + ' ' + why + ' · 消行 ' + st.p[0].lines + ' : ' + st.p[1].lines});
     }
+    const curIn = [{}, {}];
     for (const i of [0, 1]) spawn(i);
     /* ---------- core moves (host) ---------- */
     function onGround(p) { return !fits(p.b, p.t, p.r, p.x, p.y + 1); }
@@ -151,7 +158,7 @@ BX.register({
         if (atk > 0) { const o = st.p[1 - i], last = o.pend.length ? o.pend[o.pend.length - 1].h : o.lastHole; o.pend.push({n: atk, h: last != null && Math.random() < .7 ? last : Math.floor(Math.random() * BW)}); o.lastHole = o.pend[o.pend.length - 1].h; p.sent += atk; fx('atk', i, atk); }
       } else {
         p.combo = -1;
-        fx('lock', i);
+        fx('lock', i, 0, [p.x, p.y, p.t, p.r]);
         if (above) { lose(i, '方块锁定在井口之外'); return; }
         // receive garbage
         let budget = 8, got = 0;
@@ -171,18 +178,38 @@ BX.register({
     /* ---------- host input processing ---------- */
     const lastIn = [{lc: 0, rc: 0, cw: 0, ccw: 0, hd: 0, ho: 0}, {lc: 0, rc: 0, cw: 0, ccw: 0, hd: 0, ho: 0}];
     const delta = (I, L, k) => { const v = I[k] | 0, d = v - (L[k] | 0); L[k] = v; return d > 0 && d < 64 ? Math.min(d, 12) : 0; };
+    /* human devices send a chronological action log [[seq, code], …] (resent until acknowledged, so lost packets never drop a
+       key and order is kept: rotate-then-move ≠ move-then-rotate next to a wall). Codes: 1 ← 2 → 3 ↻ 4 ↺ 5 hard drop 6 hold 7 ⇤ 8 ⇥ */
+    const lastQ = [0, 0];
+    function doAct(i, c) {
+      const p = st.p[i];
+      if (c === 1 || c === 2) move(p, c === 1 ? -1 : 1);
+      else if (c === 7 || c === 8) { while (move(p, c === 7 ? -1 : 1)); }
+      else if (c === 3 || c === 4) rotate(p, c === 3 ? 1 : -1);
+      else if (c === 6) hold(i);
+      else if (c === 5) { const y = dropY(p.b, p.t, p.r, p.x, p.y); fx('hd', i, y - p.y, [p.x, p.y, p.t, p.r]); p.y = y; lock(i); return true; }
+      return false;
+    }
+    const newQ = (i, n) => n > lastQ[i] || n < lastQ[i] - 1e6;
     function stepPlayer(i, I, dt) {
       const p = st.p[i], L = lastIn[i];
       if (!p.alive) return;
-      for (let k = delta(I, L, 'ho'); k > 0; k--) hold(i);
-      for (let k = delta(I, L, 'ccw'); k > 0; k--) rotate(p, -1);
-      for (let k = delta(I, L, 'cw'); k > 0; k--) rotate(p, 1);
-      for (let k = delta(I, L, 'lc'); k > 0; k--) move(p, -1);
-      for (let k = delta(I, L, 'rc'); k > 0; k--) move(p, 1);
-      // auto-repeat (DAS/ARR) is done on the player's own device and arrives as extra lc/rc counts
-      if (delta(I, L, 'hd') > 0) { const y = dropY(p.b, p.t, p.r, p.x, p.y); fx('hd', i, y - p.y, p.x); p.y = y; lock(i); return; }
-      if (I.d >= 2) { const y = dropY(p.b, p.t, p.r, p.x, p.y); if (y > p.y) { p.y = y; if (p.y > p.low) { p.low = p.y; p.lr = 0; } } }
-      const G = SPEED[st.lvl] * (I.d ? 20 : 1) + (I.d ? 18 : 0);
+      curIn[i] = I;
+      let dropped = false;
+      if (Array.isArray(I.q)) {
+        for (const e of I.q) { if (!newQ(i, +e[0])) continue; lastQ[i] = +e[0]; if (doAct(i, e[1] | 0)) dropped = true; if (st.over || !p.alive) return; }
+      } else {
+        for (let k = delta(I, L, 'ho'); k > 0; k--) hold(i);
+        for (let k = delta(I, L, 'ccw'); k > 0; k--) rotate(p, -1);
+        for (let k = delta(I, L, 'cw'); k > 0; k--) rotate(p, 1);
+        for (let k = delta(I, L, 'lc'); k > 0; k--) move(p, -1);
+        for (let k = delta(I, L, 'rc'); k > 0; k--) move(p, 1);
+        if (delta(I, L, 'hd') > 0) { doAct(i, 5); return; }
+      }
+      if (dropped || st.over) return;
+      const sdf = I.d === 1 ? 20 : (I.d | 0);
+      if (sdf >= 99) { const y = dropY(p.b, p.t, p.r, p.x, p.y); if (y > p.y) { p.y = y; if (p.y > p.low) { p.low = p.y; p.lr = 0; } } }
+      const G = sdf ? Math.max(SPEED[st.lvl] * sdf, sdf * 1.5) : SPEED[st.lvl];
       p.g += G * dt;
       while (p.g >= 1) { p.g -= 1; if (fits(p.b, p.t, p.r, p.x, p.y + 1)) { p.y++; if (p.y > p.low) { p.low = p.y; p.lr = 0; } } else { p.g = 0; break; } }
       if (onGround(p)) { p.lk += dt; if (p.lk >= .5) lock(i); } else p.lk = 0;
@@ -230,22 +257,79 @@ BX.register({
       c.hd++; m.wait = 30; return c;
     }
     /* ---------- local input ---------- */
-    const cnt = [{lc: 0, rc: 0, cw: 0, ccw: 0, hd: 0, ho: 0}, {lc: 0, rc: 0, cw: 0, ccw: 0, hd: 0, ho: 0}];
-    const dasS = [{dir: 0, t0: 0, n: 0}, {dir: 0, t0: 0, n: 0}];
+    const CODE = {lc: 1, rc: 2, cw: 3, ccw: 4, hd: 5, ho: 6};
+    const qbase = Math.floor(performance.now()) * 8, qlog = [[], []], qseq = [qbase, qbase], qack = [0, 0];
+    const dasS = [{dir: 0, t0: 0, n: 0, last: 0, pl: false, pr: false, wk: ''}, {dir: 0, t0: 0, n: 0, last: 0, pl: false, pr: false, wk: ''}];
     const tHeld = [{l: new Set(), r: new Set(), d: new Set()}, {l: new Set(), r: new Set(), d: new Set()}];
     const nLoc = () => ctx.mySeats.length;
     const KEY1 = {ArrowLeft: 'lc', KeyA: 'lc', ArrowRight: 'rc', KeyD: 'rc', ArrowUp: 'cw', KeyX: 'cw', KeyW: 'cw', KeyZ: 'ccw', KeyQ: 'ccw', ControlLeft: 'ccw', Space: 'hd', Enter: 'hd', KeyE: 'hd', KeyC: 'ho', ShiftLeft: 'ho', ShiftRight: 'ho', KeyR: 'ho'};
     const KEY2 = [{KeyA: 'lc', KeyD: 'rc', KeyW: 'cw', KeyQ: 'ccw', KeyE: 'hd', KeyR: 'ho'}, {ArrowLeft: 'lc', ArrowRight: 'rc', ArrowUp: 'cw', Comma: 'ccw', Period: 'hd', Enter: 'hd', Slash: 'ho'}];
+    const kh = (...codes) => codes.some(c => ctx.keys.has(c));
+    let localHdT = -1e9;
+    function act(slot, c) { const L = qlog[slot]; L.push([++qseq[slot], c]); if (L.length > 48) L.splice(0, L.length - 48); }
     function press(slot, a) {
-      cnt[slot][a]++;
-      if (a === 'cw' || a === 'ccw') ctx.sfx('tick'); else if (a === 'lc' || a === 'rc') ctx.sfx('click');
+      const c = CODE[a]; if (!c) return;
+      if (c === 5 && !ctx.isHost) guestHdFx(slot);
+      act(slot, c);
+      if (c === 3 || c === 4) ctx.sfx('tick'); else if (c === 1 || c === 2) ctx.sfx('click');
     }
     function key(e) {
       if (e.repeat || st.over) return;
       if (nLoc() >= 2) { for (let s = 0; s < 2; s++) if (KEY2[s][e.code]) { press(s, KEY2[s][e.code]); e.preventDefault && e.preventDefault(); } }
       else if (KEY1[e.code]) { press(0, KEY1[e.code]); }
     }
-    const kh = (...codes) => codes.some(c => ctx.keys.has(c));
+    function heldState(slot, nLocal) {
+      let l, r, d;
+      if (nLocal >= 2) { const k = slot === 0 ? ['KeyA', 'KeyD', 'KeyS'] : ['ArrowLeft', 'ArrowRight', 'ArrowDown']; l = kh(k[0]); r = kh(k[1]); d = kh(k[2]); }
+      else { l = kh('ArrowLeft', 'KeyA'); r = kh('ArrowRight', 'KeyD'); d = kh('ArrowDown', 'KeyS'); }
+      const th = tHeld[slot];
+      return {l: l || th.l.size > 0, r: r || th.r.size > 0, d: d || th.d.size > 0};
+    }
+    function rotHeld(slot, nLocal) {
+      const two = nLocal >= 2;
+      const cw = two ? kh(slot ? 'ArrowUp' : 'KeyW') : kh('ArrowUp', 'KeyX', 'KeyW'), ccw = two ? kh(slot ? 'Comma' : 'KeyQ') : kh('KeyZ', 'KeyQ', 'ControlLeft');
+      const ho = two ? kh(slot ? 'Slash' : 'KeyR') : kh('KeyC', 'ShiftLeft', 'ShiftRight', 'KeyR');
+      return {ir: cw ? 1 : ccw ? -1 : 0, ih: ho ? 1 : 0};
+    }
+    const seatOfSlot = slot => nLoc() >= 2 ? slot : viewSeat();
+    function pieceKey(slot) { const s = seatOfSlot(slot), q = (!ctx.isHost && pred && s === viewSeat()) ? pred : st.p[s]; return st.ph + q.pid + ',' + q.r + ',' + q.y + ',' + q.t; }
+    /* DAS / ARR on this device (so it is exact even for an online guest): the most recently pressed direction wins, the charge
+       carries over to the next piece, ARR 0 = shift to the wall (re-applied whenever the piece spawns / turns / drops a row). */
+    function tickDas(slot, nLocal) {
+      const H = dasS[slot], hs = heldState(slot, nLocal), now = performance.now(), [, DAS, ARR] = HANDLING[hand];
+      if (hs.l && !H.pl) H.last = -1; if (hs.r && !H.pr) H.last = 1; H.pl = hs.l; H.pr = hs.r;
+      const dir = hs.l && hs.r ? H.last : hs.l ? -1 : hs.r ? 1 : 0;
+      if (dir !== H.dir) { H.dir = dir; H.t0 = now; H.n = 0; H.wk = ''; return; }
+      if (!dir || st.over) return;
+      const el = now - H.t0 - DAS; if (el < 0) return;
+      const play = st.ph === 'play';
+      if (ARR <= 0) { const k = pieceKey(slot); if (k !== H.wk) { H.wk = k; if (play) act(slot, dir < 0 ? 7 : 8); } }
+      else { const want = 1 + Math.floor(el / ARR); if (!play) { H.n = want; return; } while (H.n < want) { act(slot, dir < 0 ? 1 : 2); H.n++; } }
+    }
+    /* ---------- online guest: predict our own piece locally (host truth + our not-yet-acknowledged actions) ---------- */
+    let pred = null;
+    function pspawn(p, t) { p.t = t; p.r = 0; p.x = 3; p.y = 0; p.pid++; if (!fits(p.b, t, 0, 3, 0)) return false; if (fits(p.b, t, 0, 3, 1)) p.y = 1; return true; }
+    function plock(p) {
+      for (const [cx, cy] of ROT[p.t][p.r]) { const Y = p.y + cy; if (Y >= 0) p.b[Y * BW + p.x + cx] = p.t + 1; }
+      for (let Y = 0; Y < BH; Y++) { let f = true; for (let X = 0; X < BW; X++) if (!p.b[Y * BW + X]) { f = false; break; } if (f) { p.b.splice(Y * BW, BW); p.b.unshift(...new Array(BW).fill(0)); } }
+    }
+    const unacked = e => e[0] > qack[0] || qack[0] - e[0] > 1e5;
+    function predict() {
+      pred = null;
+      if (ctx.isHost || nLoc() !== 1 || st.ph !== 'play' || st.over) return;
+      const h = st.p[viewSeat()]; if (!h.alive) return;
+      const L = qlog[0].filter(unacked); if (!L.length) return;
+      const p = {b: h.b.slice(), t: h.t, r: h.r, x: h.x, y: h.y, hold: h.hold, hu: h.hu, nx: (h.nx || []).slice(), pid: h.pid, lr: 99, low: h.y, lk: h.lk};
+      for (const [, c] of L) {
+        if (c === 1 || c === 2) move(p, c === 1 ? -1 : 1);
+        else if (c === 7 || c === 8) { while (move(p, c === 7 ? -1 : 1)); }
+        else if (c === 3 || c === 4) rotate(p, c === 3 ? 1 : -1);
+        else if (c === 6) { if (!p.hu) { const cur = p.t, nt = p.hold >= 0 ? p.hold : p.nx.shift(); if (nt == null) break; p.hold = cur; pspawn(p, nt); p.hu = true; p.lk = 0; } }
+        else if (c === 5) { p.y = dropY(p.b, p.t, p.r, p.x, p.y); plock(p); const nt = p.nx.shift(); if (nt == null || !pspawn(p, nt)) return; p.hu = false; p.lk = 0; }
+      }
+      pred = p;
+    }
+    const PP = i => (pred && i === viewSeat()) ? Object.assign({}, st.p[i], pred) : st.p[i];
     /* ---------- layout ---------- */
     const cv = ctx.canvas();
     const viewSeat = () => nLoc() === 1 ? ctx.mySeats[0] : 0;
@@ -294,7 +378,7 @@ BX.register({
     async function config() {
       cfgOpen = true;   // offline games freeze while the dialog is open
       const i = await BX.choose('操作手感', HANDLING.map(q => q[0] + (q[0] === HANDLING[hand][0] ? ' ✓' : '')),
-        '自动连移：按住 ← → 后等待 DAS 毫秒开始连续移动，每 ARR 毫秒移一格。<br>标准 DAS 170 / ARR 50 · 灵敏 120 / 25 · 极速 90 / 0（瞬间到边）且软降直接到底。');
+        '自动连移：按住 ← → 后等待 DAS 毫秒开始连续移动，每 ARR 毫秒移一格；软降按重力的倍数加速。<br>标准 DAS 167 / ARR 33 / 软降 ×20（主流默认）· 灵敏 117 / 17 / ×40 · 极速 83 / 0（瞬间到边）/ 软降直接到底。');
       cfgOpen = false;
       if (i != null && i >= 0) { hand = i; ctx.save('hand', i); ctx.toast('手感：' + HANDLING[i][0]); }
     }
@@ -310,45 +394,70 @@ BX.register({
         ctx.buzz(6);
         return;
       }
-      // gestures on the play area (touch / pen only): drag = move by cells, tap = rotate, flick down = hard drop, flick up = hold
+      // gestures on the play area (touch / pen only): the piece follows the finger column by column (step = one cell width),
+      // tap = rotate, fast flick down = hard drop (fires mid-flick, no wait for lift-off), slow drag down = soft drop, flick up = hold
       if (e.pointerType === 'mouse' || !nLoc() || st.over) return;
       const slot = nLoc() >= 2 ? (p.x < V.w / 2 ? 0 : 1) : 0;
       const P = V.panels.find(q => q.seat === (nLoc() >= 2 ? slot : viewSeat())) || V.panels[0];
-      gest.set(e.pointerId, {slot, x0: p.x, y0: p.y, ax: p.x, t0: performance.now(), moved: false, sd: false, ly: p.y, lt: performance.now(), vy: 0, cell: Math.max(16, P.cs * .95)});
+      gest.set(e.pointerId, {slot, x0: p.x, y0: p.y, n: 0, t0: e.timeStamp, smp: [{x: p.x, y: p.y, t: e.timeStamp}], moved: false, sd: false, done: false, cell: BX.clamp(P.cs * .95, 18, 44)});
       try { cv.cv.setPointerCapture(e.pointerId); } catch (er) {}
     });
+    const gvel = G => { const s = G.smp, a = s[s.length - 1]; let b0 = s[0]; for (let i = s.length - 2; i >= 0; i--) { b0 = s[i]; if (a.t - b0.t >= 70) break; } const dt = Math.max(8, a.t - b0.t); return [(a.x - b0.x) / dt, (a.y - b0.y) / dt]; };
     ctx.on(cv.cv, 'pointermove', e => {
-      const G = gest.get(e.pointerId); if (!G) return; const p = cv.pos(e), now = performance.now();
-      if (now > G.lt) { G.vy = G.vy * .4 + .6 * (p.y - G.ly) / (now - G.lt); G.ly = p.y; G.lt = now; }
-      let dx = p.x - G.ax;
-      while (dx >= G.cell) { press(G.slot, 'rc'); G.ax += G.cell; dx -= G.cell; G.moved = true; }
-      while (dx <= -G.cell) { press(G.slot, 'lc'); G.ax -= G.cell; dx += G.cell; G.moved = true; }
-      const dy = p.y - G.y0;
-      if (!G.sd && dy > G.cell * 1.6 && dy > Math.abs(p.x - G.x0) * 1.3 && G.vy < 1) { G.sd = true; G.moved = true; tHeld[G.slot].d.add(e.pointerId); ptr.set(e.pointerId, [G.slot, 'd']); }
+      const G = gest.get(e.pointerId); if (!G || G.done) return;
+      for (const p of ctx.points(e, cv.cv)) {
+        G.smp.push(p); if (G.smp.length > 24) G.smp.shift();
+        const f = (p.x - G.x0) / G.cell;
+        while (f > G.n + .55) { press(G.slot, 'rc'); G.n++; G.moved = true; }
+        while (f < G.n - .55) { press(G.slot, 'lc'); G.n--; G.moved = true; }
+        const dy = p.y - G.y0, adx = Math.abs(p.x - G.x0), [, vy] = gvel(G);
+        if (dy > G.cell * 1.3 && vy > .9 && dy > adx * 1.2) { press(G.slot, 'hd'); G.done = true; stopSd(G, e.pointerId); return; }
+        if (-dy > G.cell * 1.5 && vy < -.9 && -dy > adx * 1.2) { press(G.slot, 'ho'); G.done = true; stopSd(G, e.pointerId); return; }
+        if (!G.sd && dy > G.cell * 1.1 && vy < .7 && dy > adx * 1.3) { G.sd = true; G.moved = true; tHeld[G.slot].d.add(e.pointerId); ptr.set(e.pointerId, [G.slot, 'd']); }
+        if (G.sd && dy < G.cell * .5) stopSd(G, e.pointerId);
+      }
     });
+    function stopSd(G, id) { if (!G.sd) return; G.sd = false; tHeld[G.slot].d.delete(id); ptr.delete(id); }
     const up = e => {
       const q = ptr.get(e.pointerId); if (q) { tHeld[q[0]][q[1]].delete(e.pointerId); ptr.delete(e.pointerId); }
-      const G = gest.get(e.pointerId); if (!G || e.type === 'pointercancel') { gest.delete(e.pointerId); return; }
-      gest.delete(e.pointerId);
-      const p = cv.pos(e), dt2 = performance.now() - G.t0, dx = p.x - G.x0, dy = p.y - G.y0;
+      const G = gest.get(e.pointerId); gest.delete(e.pointerId);
+      if (!G || G.done || e.type === 'pointercancel') return;
+      const p = cv.pos(e), dt2 = e.timeStamp - G.t0, dx = p.x - G.x0, dy = p.y - G.y0, [, vy] = gvel(G);
       if (!G.moved && Math.abs(dx) < 14 && Math.abs(dy) < 14 && dt2 < 350) press(G.slot, 'cw');
-      else if (dy > 46 && G.vy > .7 && Math.abs(dx) < dy) press(G.slot, 'hd');
-      else if (-dy > 46 && G.vy < -.7 && Math.abs(dx) < -dy) press(G.slot, 'ho');
+      else if (dy > G.cell * 1.3 && vy > .6 && Math.abs(dx) < dy) press(G.slot, 'hd');
+      else if (-dy > G.cell * 1.3 && vy < -.6 && Math.abs(dx) < -dy) press(G.slot, 'ho');
     };
     ctx.on(cv.cv, 'pointerup', up); ctx.on(cv.cv, 'pointercancel', up);
     /* ---------- effects ---------- */
     let seenEv = 0, parts = [], pops = [], flashes = [], shakeP = [0, 0], koT = 0;
+    let streaks = [], lockFl = [], slides = [null, null];
+    const thump = [0, 0];                       // downward well kick on hard drop (directional, not random shake)
     const mineHuman = s => ctx.mySeats.includes(s) && !ctx.isAI(s);
+    const pieceCells = (x, y, t, r) => ROT[t][r].map(([cx, cy]) => [x + cx, y + cy]);
+    function hdFx(s, x, y0, y1, t, r) {
+      ctx.sfx('hit'); const dist = Math.max(0, y1 - y0);
+      thump[s] = Math.min(.32, .1 + dist * .012);
+      streaks.push({s, cells: pieceCells(x, y0, t, r), d: dist, c: PCOL[t], t: .2});
+      lockFl.push({s, cells: pieceCells(x, y1, t, r), t: .14});
+      for (const [cx, cy] of pieceCells(x, y1, t, r)) for (let k = 0; k < 2; k++) parts.push({s, x: cx + Math.random(), y: cy - HID + 1, vx: (Math.random() - .5) * 6, vy: -Math.random() * 5 - 2, t: .35, c: '#f3e2c0'});
+    }
+    function guestHdFx(slot) {
+      const s = seatOfSlot(slot), q = PP(s); if (!q.alive || st.ph !== 'play') return;
+      hdFx(s, q.x, q.y, dropY(q.b, q.t, q.r, q.x, q.y), q.t, q.r); localHdT = performance.now();
+    }
     function playEv() {
       for (const e of st.ev) if (e.id > seenEv) {
         seenEv = e.id;
-        if (e.k === 'lock') ctx.sfx('place');
-        else if (e.k === 'hd') { ctx.sfx('hit'); shakeP[e.s] = Math.max(shakeP[e.s], 3); }
+        const ownPred = !ctx.isHost && e.s === viewSeat() && nLoc() === 1;
+        if (e.k === 'lock') { ctx.sfx('place'); if (Array.isArray(e.b) && !ownPred) lockFl.push({s: e.s, cells: pieceCells(...e.b), t: .12}); }
+        else if (e.k === 'hd') { if (!(ownPred && performance.now() - localHdT < 900)) { const q = Array.isArray(e.b) ? e.b : [e.b, 0, 0, 0]; hdFx(e.s, q[0], q[1], q[1] + e.a, q[2], q[3]); } }
         else if (e.k === 'hold') ctx.sfx('swish');
         else if (e.k === 'clr') {
           const n = Math.floor(e.a / 100), combo = e.a % 100;
           ctx.sfx(n >= 4 ? 'boom' : n >= 2 ? 'score' : 'pop');
           flashes.push({s: e.s, rows: e.b, t: .35});
+          // rows above the cleared lines slide down (~0.1 s) instead of teleporting; the next piece is already in play
+          if (!ownPred) { const clr = new Set(e.b.map(y => y + HID)), sh = new Int8Array(BH); let post = BH - 1; for (let o = BH - 1; o >= 0; o--) { if (clr.has(o)) continue; sh[post] = post - o; post--; } for (; post >= 0; post--) sh[post] = clr.size; slides[e.s] = {sh, t: 0}; }
           for (const y of e.b) for (let k = 0; k < 10; k++) parts.push({s: e.s, x: Math.random() * BW, y: y + .5, vx: (Math.random() - .5) * 14, vy: -Math.random() * 10, t: .7, c: k % 2 ? '#ffe39a' : '#fff'});
           const txt = ['', '', '双消', '三消', '四消！'][n] + (combo >= 1 ? (n >= 2 ? ' · ' : '') + '连击 ' + combo : '');
           if (txt) pops.push({s: e.s, txt, t: 1.2});
@@ -390,7 +499,7 @@ BX.register({
       if (dim) g.globalAlpha = .4; for (const [x, y] of cells) blk(g, ox + x * s, oy + y * s, s, t); g.globalAlpha = 1;
     }
     function drawWell(g, i, wx, wy, cs, mini) {
-      const p = st.p[i], ww = BW * cs, wh = (BH - HID) * cs;
+      const p = PP(i), ww = BW * cs, wh = (BH - HID) * cs;
       D.wood(g, wx - cs * .45, wy - cs * .45, ww + cs * .9, wh + cs * .9, {r: cs * .35, base: '#6e2a16', dark: '#250a03', seed: 13 + i, vertical: true});
       g.strokeStyle = 'rgba(230,197,125,.7)'; g.lineWidth = Math.max(1, cs * .08); D.rr(g, wx - cs * .22, wy - cs * .22, ww + cs * .44, wh + cs * .44, cs * .2); g.stroke();
       const bgG = g.createLinearGradient(0, wy, 0, wy + wh); bgG.addColorStop(0, '#1d140d'); bgG.addColorStop(1, '#120b06'); g.fillStyle = bgG; g.fillRect(wx, wy, ww, wh);
@@ -404,7 +513,12 @@ BX.register({
         g.stroke();
       }
       g.save(); g.beginPath(); g.rect(wx, wy, ww, wh); g.clip();
-      for (let Y = HID; Y < BH; Y++) for (let X = 0; X < BW; X++) { const v = p.b[Y * BW + X]; if (v) blk(g, wx + X * cs, wy + (Y - HID) * cs, cs, v - 1); }
+      const sl = !mini && slides[i], se = sl ? 1 - BX.ease.out(Math.min(1, sl.t / .1)) : 0;
+      for (let Y = HID; Y < BH; Y++) { const oy = se ? sl.sh[Y] * se : 0; for (let X = 0; X < BW; X++) { const v = p.b[Y * BW + X]; if (v) blk(g, wx + X * cs, wy + (Y - HID - oy) * cs, cs, v - 1); } }
+      if (!mini) for (const q of streaks) if (q.s === i) {
+        const a = q.t / .2;
+        for (const [X, Y] of q.cells) { const top = wy + (Y - HID) * cs, h2 = q.d * cs + cs; const gr2 = g.createLinearGradient(0, top, 0, top + h2); gr2.addColorStop(0, D.alpha(q.c, 0)); gr2.addColorStop(1, D.alpha(q.c, .45 * a)); g.fillStyle = gr2; g.fillRect(wx + X * cs + cs * .15, top, cs * .7, h2); }
+      }
       if (p.alive && st.ph !== 'ready') {
         const gy = dropY(p.b, p.t, p.r, p.x, p.y), col = PCOL[p.t];
         if (!mini) for (const [cx, cy] of ROT[p.t][p.r]) {
@@ -425,6 +539,7 @@ BX.register({
         for (const [cx, cy] of ROT[p.t][p.r]) blk(g, wx + (p.x + cx) * cs, wy + (p.y + cy - HID) * cs, cs, p.t);
         if (lockGlow && !mini) { g.fillStyle = `rgba(255,255,255,${lockGlow * .25})`; for (const [cx, cy] of ROT[p.t][p.r]) g.fillRect(wx + (p.x + cx) * cs, wy + (p.y + cy - HID) * cs, cs, cs); }
       }
+      for (const q of lockFl) if (q.s === i) { g.fillStyle = `rgba(255,250,230,${q.t / .14 * .55})`; for (const [X, Y] of q.cells) if (Y >= HID) g.fillRect(wx + X * cs, wy + (Y - HID) * cs, cs, cs); }
       // line clear flashes
       for (const f of flashes) if (f.s === i) { g.fillStyle = `rgba(255,245,210,${f.t / .35 * .85})`; for (const y of f.rows) g.fillRect(wx, wy + y * cs - cs * (1 - f.t / .35) * .3, ww, cs * (1 + (1 - f.t / .35) * .6)); }
       for (const q of parts) if (q.s === i) { g.globalAlpha = Math.min(1, q.t * 2); g.fillStyle = q.c; g.fillRect(wx + q.x * cs, wy + q.y * cs, cs * .18, cs * .18); }
@@ -442,8 +557,9 @@ BX.register({
       else if (st.over && st.winner === i) D.text(g, '胜', wx + ww / 2, wy + wh / 2, {size: cs * 4, color: '#ffe39a', font: 'deco', weight: 400, stroke: 'rgba(80,30,5,.7)', strokeW: 5});
     }
     function drawPanel(g, P) {
-      const i = P.seat, p = st.p[i], cs = P.cs, sh = shakeP[i];
+      const i = P.seat, p = PP(i), cs = P.cs, sh = shakeP[i];
       g.save(); if (sh > .3) g.translate((Math.random() - .5) * sh, (Math.random() - .5) * sh);
+      if (thump[i] > .005) g.translate(0, thump[i] * cs * Math.min(1, thump[i] * 8));
       const nameS = Math.max(12, Math.min(18, cs * .75));
       if (P.kind === 'narrow') {
         const wx = P.x + .6 * cs, wy = P.y + 4.8 * cs;
@@ -508,6 +624,10 @@ BX.register({
       for (const f of flashes) f.t -= dt; flashes = flashes.filter(f => f.t > 0);
       for (const q of pops) q.t -= dt; pops = pops.filter(q => q.t > 0);
       for (const q of parts) { q.t -= dt; q.x += q.vx * dt; q.y += q.vy * dt; q.vy += 30 * dt; } parts = parts.filter(q => q.t > 0);
+      for (const q of streaks) q.t -= dt; streaks = streaks.filter(q => q.t > 0);
+      for (const q of lockFl) q.t -= dt; lockFl = lockFl.filter(q => q.t > 0);
+      for (const s of [0, 1]) { thump[s] *= Math.exp(-dt / .045); if (slides[s]) { slides[s].t += dt; if (slides[s].t > .1) slides[s] = null; } }
+      if (!ctx.isHost) { for (let sl = 0; sl < (nLoc() >= 2 ? 2 : 1); sl++) tickDas(sl, nLoc()); predict(); }
       for (const f of flashB) f.t -= dt; flashB = flashB.filter(f => f.t > 0);
       for (const P of V.panels) drawPanel(g, P);
       drawBtns(g);
@@ -526,19 +646,10 @@ BX.register({
     return {
       st,
       input(seat, slot, nLocal) {
-        const c = cnt[slot], th = tHeld[slot];
-        let l, r, d;
-        if (nLocal >= 2) { const k = slot === 0 ? ['KeyA', 'KeyD', 'KeyS'] : ['ArrowLeft', 'ArrowRight', 'ArrowDown']; l = kh(k[0]); r = kh(k[1]); d = kh(k[2]); }
-        else { l = kh('ArrowLeft', 'KeyA'); r = kh('ArrowRight', 'KeyD'); d = kh('ArrowDown', 'KeyS'); }
-        l = l || th.l.size > 0; r = r || th.r.size > 0; d = d || th.d.size > 0;
-        // DAS / ARR on this device: after DAS ms of holding, one extra step every ARR ms (ARR 0 = straight to the wall)
-        const H = dasS[slot], dir = l && !r ? -1 : r && !l ? 1 : 0, now = performance.now(), [, DAS, ARR] = HANDLING[hand];
-        if (dir !== H.dir) { H.dir = dir; H.t0 = now; H.n = 0; }
-        else if (dir && st.ph === 'play') {
-          const el = now - H.t0 - DAS;
-          if (el >= 0) { const want = ARR <= 0 ? 10 : Math.min(10, 1 + Math.floor(el / ARR)); while (H.n < want) { c[dir < 0 ? 'lc' : 'rc']++; H.n++; } if (ARR > 0 && H.n >= 10) { H.t0 = now - DAS; H.n = 0; } }
-        }
-        return {l: l ? 1 : 0, r: r ? 1 : 0, d: d ? HANDLING[hand][3] : 0, lc: c.lc, rc: c.rc, cw: c.cw, ccw: c.ccw, hd: c.hd, ho: c.ho};
+        tickDas(slot, nLocal);
+        const hs = heldState(slot, nLocal), rh = rotHeld(slot, nLocal), ack = ctx.isHost ? lastQ[seat] : qack[slot], L = qlog[slot];
+        while (L.length && L[0][0] <= ack && ack - L[0][0] < 1e5) L.shift();
+        return {l: hs.l ? 1 : 0, r: hs.r ? 1 : 0, d: hs.d ? HANDLING[hand][3] : 0, q: L.slice(-32), ir: rh.ir, ih: rh.ih};
       },
       hint() {
         const me = viewSeat(), p = st.p[me];
@@ -549,7 +660,15 @@ BX.register({
       aiInput,
       step(dt, inputs) {
         if (st.over || (cfgOpen && !ctx.online)) return;
-        if (st.ph === 'ready') { const c0 = Math.ceil(st.t - .2); st.t -= dt; const c1 = Math.ceil(st.t - .2); if (c1 !== c0 && c1 > 0) fx('cd'); if (st.t <= 0) { st.ph = 'play'; fx('go'); for (let i = 0; i < 2; i++) { const I = inputs[i] || {}; for (const k in lastIn[i]) lastIn[i][k] = I[k] | 0; } } }
+        if (st.ph === 'ready') { const c0 = Math.ceil(st.t - .2); st.t -= dt; const c1 = Math.ceil(st.t - .2); if (c1 !== c0 && c1 > 0) fx('cd'); if (st.t <= 0) {
+            st.ph = 'play'; fx('go');
+            for (let i = 0; i < 2; i++) {
+              const I = inputs[i] || {}; for (const k in lastIn[i]) lastIn[i][k] = I[k] | 0;
+              if (Array.isArray(I.q)) for (const e of I.q) if (newQ(i, +e[0])) lastQ[i] = +e[0];
+              // IRS / IHS: rotation or hold key held through the countdown applies to the first piece
+              if (I.ih) hold(i); if (I.ir) rotate(st.p[i], I.ir > 0 ? 1 : -1);
+            }
+          } }
         else {
           st.time += dt; st.lvl = Math.min(15, LV0 + Math.floor(st.time / (BX.test ? 3 : 30)));
           const order = Math.random() < .5 ? [0, 1] : [1, 0];
@@ -563,11 +682,12 @@ BX.register({
         playEv(); info(); status();
       },
       snapshot() {
-        return {p: st.p.map(p => [p.b.join(''), p.t, p.r, p.x, p.y, p.hold, p.hu ? 1 : 0, p.nx.join(''), p.pend.reduce((s, q) => s + q.n, 0), p.lines, p.sent, p.alive ? 1 : 0, +p.lk.toFixed(2)]),
-          ph: st.ph, t: +st.t.toFixed(2), lv: st.lvl, ev: st.ev, o: st.over, w: st.winner};
+        return {p: st.p.map(p => [p.b.join(''), p.t, p.r, p.x, p.y, p.hold, p.hu ? 1 : 0, p.nx.join(''), p.pend.reduce((s, q) => s + q.n, 0), p.lines, p.sent, p.alive ? 1 : 0, +p.lk.toFixed(2), p.pid]),
+          ph: st.ph, t: +st.t.toFixed(2), lv: st.lvl, ev: st.ev, o: st.over, w: st.winner, ak: lastQ.slice()};
       },
       restore(d) {
-        d.p.forEach((a, i) => { const p = st.p[i]; p.b = [...a[0]].map(Number); p.t = a[1]; p.r = a[2]; p.x = a[3]; p.y = a[4]; p.hold = a[5]; p.hu = !!a[6]; p.nx = [...a[7]].map(Number); p.pendN = a[8]; p.lines = a[9]; p.sent = a[10]; p.alive = !!a[11]; p.lk = a[12]; });
+        d.p.forEach((a, i) => { const p = st.p[i]; p.b = [...a[0]].map(Number); p.t = a[1]; p.r = a[2]; p.x = a[3]; p.y = a[4]; p.hold = a[5]; p.hu = !!a[6]; p.nx = [...a[7]].map(Number); p.pendN = a[8]; p.lines = a[9]; p.sent = a[10]; p.alive = !!a[11]; p.lk = a[12]; p.pid = a[13] | 0; });
+        if (d.ak) { const me = viewSeat(); qack[0] = d.ak[me] || 0; }
         st.ph = d.ph; st.t = d.t; st.lvl = d.lv; st.ev = d.ev; st.over = d.o; st.winner = d.w;
         playEv(); info(); status();
       },

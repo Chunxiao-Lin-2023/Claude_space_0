@@ -2,7 +2,7 @@
 BX.data.spk = (function () {
   const D = BX.draw;
   const K = {};
-  const inR = (p, b) => p.x >= b.x && p.x <= b.x + b.w && p.y >= b.y && p.y <= b.y + b.h;
+  const inR = (p, b, m = 0) => p.x >= b.x - m && p.x <= b.x + b.w + m && p.y >= b.y - m && p.y <= b.y + b.h + m;
   K.inR = inR;
 
   /* pointer tracker + per-frame canvas buttons {k, seat, x, y, w, h}. A short tap is latched for 140 ms so the
@@ -110,6 +110,32 @@ BX.data.spk = (function () {
     for (const e of st.ev) if (e[1] > seen.v) { seen.v = e[1]; fn(e); }
   };
   K.keyAny = (ctx, codes) => codes.some(c => ctx.keys.has(c));
+
+  /* online guest: client-side prediction of the guest's own avatar.  tag(inp) numbers every input the guest sends; the host
+     echoes the last number it applied (ack) in its snapshots; reconcile(base, ack) replays the not-yet-acknowledged inputs on
+     top of the authoritative state.  stepFn(state, inp, dt) must be the same movement code the host runs (60 Hz). */
+  K.predictor = function (hz) {
+    let seq = 0; const hist = [], per = Math.max(1, Math.round(60 / hz));
+    return {
+      tag(inp) { inp.n = ++seq; hist.push({n: seq, inp: Object.assign({}, inp)}); if (hist.length > 120) hist.shift(); return inp; },
+      reconcile(base, ack, stepFn) {
+        while (hist.length && hist[0].n <= ack) hist.shift();
+        for (const h of hist) for (let k = 0; k < per; k++) stepFn(base, h.inp, 1 / 60);
+        return base;
+      },
+      advance(state, inp, stepFn) { for (let k = 0; k < per; k++) stepFn(state, inp, 1 / 60); },
+    };
+  };
+  /* visual error smoothing: when the authoritative / predicted position jumps, keep drawing from where we were and bleed
+     the difference away (k ≈ 1/time-constant). */
+  K.smoother = function (k = 12) {
+    const off = {};
+    return {
+      jump(key, dx, dy = 0, snap = 3) { const o = off[key] || (off[key] = {x: 0, y: 0}); if (Math.abs(dx) > snap || Math.abs(dy) > snap) { o.x = 0; o.y = 0; return; } o.x += dx; o.y += dy; },
+      decay(dt) { const f = Math.exp(-dt * k); for (const key in off) { off[key].x *= f; off[key].y *= f; } },
+      get(key) { return off[key] || {x: 0, y: 0}; },
+    };
+  };
 
   /* popping banner text */
   K.banner = function (g, s, x, y, size, k, o = {}) {

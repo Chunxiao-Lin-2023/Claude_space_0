@@ -4,7 +4,7 @@ const D = BX.draw, C = BX.C, K = BX.data.spk;
 BX.register({
   id: 'whack', title: '打地鼠', cat: 'speed', order: 2, sub: '同一批地鼠，看谁敲得多',
   desc: '两人各有一块九宫格地鼠田，冒出来的地鼠完全相同，比谁手快。金地鼠加 3 分，炸弹鼠扣 3 分千万别敲，连击还有额外奖励。',
-  kind: 'realtime', seats: 2, noFirst: true, seatColors: ['#c23a2b', '#2f5d8a'], hint: false,
+  kind: 'realtime', seats: 2, noFirst: true, seatColors: ['#c23a2b', '#2f5d8a'], hint: false, snapHz: 30, inputHz: 60,
   options: [{key: 'len', label: '时长', choices: [[30, '30 秒'], [45, '45 秒'], [60, '60 秒']], def: 45},
     {key: 'pace', label: '节奏', choices: [[1, '悠闲'], [2, '标准'], [3, '疯狂']], def: 2},
     {key: 'hel', label: '铁盔鼠', choices: [[0, '无'], [1, '有']], def: 0}],
@@ -34,7 +34,10 @@ BX.register({
     const cv = ctx.canvas(), fx = K.fx(), pads = K.pads(ctx, cv);
     const queues = [K.tq(), K.tq()], seen = {}, evSeen = {v: -1};
     const hamm = [];       // local visual hammer swings {x,y,t}
-    let time = 0, lastCd = 4, lastTick = 99;
+    const pred = new Map();   // local prediction: 'seat:moleId' → {t, k} — the mole reacts on the tap frame, the host confirms later
+    const pops = new Map();   // 'seat:moleId' → local time of the (confirmed or predicted) hit, for the squash-pop animation
+    let freeze = 0;
+    let time = 0, lastCd = 4, lastTick = 99, rT = 0, vt = 0;   // vt: visual clock that stops during hit-stop
     const aiSeen = [{}, {}];
 
     function spawnStep(dt) {
@@ -94,14 +97,35 @@ BX.register({
       if (st.ph !== 'play') return;
       for (const f of fields()) {
         if (!f.act || !K.inR(p, f) || !ctx.isLocal(f.seat)) continue;
-        const l = toLocal(f, p), G = grid(f);
-        const cx = Math.floor((l.x - G.x) / G.cell), cy = Math.floor((l.y - G.y) / G.ch);
-        if (cx < 0 || cx > 2 || cy < 0 || cy > 2) continue;
-        hit(f.seat, cy * 3 + cx, p);
+        const l = toLocal(f, p), G = grid(f), h = pickHole(f.seat, G, l);
+        if (h < 0) continue;
+        hit(f.seat, h, p);
       }
     });
+    /* generous hit test: the tapped cell if its mole is up; else the nearest up mole whose drawn body is under the finger
+       (heads poke into the cell above); else the cell itself (an air swing), with a margin around the field */
+    const liveAt = (seat, h, t = st.time) => st.m.find(m => m.h === h && t >= m.t0 && t < m.t0 + m.d && !m.hit[seat] && !pred.has(seat + ':' + m.i));
+    function pickHole(seat, G, l) {
+      const fx_ = (l.x - G.x) / G.cell, fy = (l.y - G.y) / G.ch;
+      if (fx_ < -.3 || fx_ > 3.3 || fy < -.45 || fy > 3.3) return -1;
+      const cell = BX.clamp(Math.floor(fy), 0, 2) * 3 + BX.clamp(Math.floor(fx_), 0, 2);
+      if (st.ph === 'play' && liveAt(seat, cell)) return cell;
+      let best = -1, bd = 1e9;
+      for (let h = 0; h < 9; h++) {
+        if (!liveAt(seat, h)) continue;
+        const c = holeC(G, h), mx = c.x, my = c.y - G.ch * .42, dx = (l.x - mx) / (G.cell * .5), dy = (l.y - my) / (G.ch * .72), d = dx * dx + dy * dy;
+        if (d < 1 && d < bd) { bd = d; best = h; }
+      }
+      return best >= 0 ? best : cell;
+    }
     function hit(seat, h, scr) {
       queues[seat].push(h); ctx.sfx('swish');
+      const m = st.ph === 'play' && liveAt(seat, h);
+      if (m) {                                  // predict the outcome locally (certain for this seat's own field)
+        const key = seat + ':' + m.i, f = fields().find(f => f.seat === seat && !f.mini);
+        if (m.k === 'h' && !(m.dent && m.dent[seat]) && !pred.has(key + 'd')) { pred.set(key + 'd', {t: time}); impact(seat, h, 'clang', f); }
+        else { pred.set(key, {t: time, k: m.k}); pops.set(key, vt); impact(seat, h, m.k === 'b' ? 'bomb' : m.k, f); }
+      }
       if (!scr) { const f = fields().find(f => f.seat === seat); if (f) { const G = grid(f); scr = toScreen(f, holeC(G, h)); scr.y -= G.ch * .25; } }
       if (scr) hamm.push({x: scr.x, y: scr.y, t: 0, rot: fields().find(f => f.seat === seat && f.rot) ? Math.PI : 0});
     }
@@ -126,6 +150,19 @@ BX.register({
       if (st.ph === 'play' && left <= 5 && left !== lastTick) { lastTick = left; if (left > 0) ctx.sfx('tick'); }
       ctx.status(st.ph === 'intro' ? '准备…' : st.over ? '时间到' : '剩余 ' + left + ' 秒');
     }
+    /* immediate impact feedback (sound + burst + hit-stop), shared by prediction and confirmed remote hits */
+    function impact(s, h, kind, f) {
+      if (!f) return; const G = grid(f), up = toScreen(f, {x: holeC(G, h).x, y: holeC(G, h).y - G.ch * .35}), sc = f.mini ? .5 : 1;
+      if (kind === 'b') kind = 'bomb';
+      if (kind === 'bomb') { ctx.sfx('boom'); if (!f.mini) { fx.shake(12); fx.flash(.9, '255,90,60'); freeze = .07; if (ctx.isLocal(s)) ctx.buzz(60); } fx.burst(up.x, up.y, {n: 34, color: ['#ff6a3a', '#ffd76a', '#333', '#888'], sp: 300 * sc, size: 6 * sc, grav: 120}); }
+      else if (kind === 'clang') { ctx.sfx('bounce'); fx.burst(up.x, up.y - G.ch * .2, {n: 10, color: ['#ddd', '#fff', '#999'], sp: 180 * sc, size: 3 * sc}); fx.text(up.x, up.y - 12 * sc, '当！', {size: 22 * sc, color: '#e8eef5'}); if (!f.mini) fx.shake(2); }
+      else {
+        const gold = kind === 'g';
+        ctx.sfx(gold ? 'coin' : 'hit'); if (!f.mini) { fx.shake(gold ? 6 : 2.5); if (gold) { freeze = .06; ctx.buzz(14); } }
+        fx.burst(up.x, up.y, {n: gold ? 26 : 12, color: gold ? ['#ffd76a', '#fff3b0', '#e6a020'] : ['#ffd76a', '#fff'], sp: 220 * sc, size: 4 * sc, up: 60});
+        if (ctx.isLocal(s) && !f.mini && gold) fx.flash(.4, '255,220,120');
+      }
+    }
     function playEv() {
       K.evPlay(st, evSeen, e => {
         const k = e[0];
@@ -134,18 +171,20 @@ BX.register({
         else {
           const s = e[2], h = e[3], f = fields().find(f => f.seat === s); if (!f) return;
           const G = grid(f), p = toScreen(f, holeC(G, h)), up = toScreen(f, {x: holeC(G, h).x, y: holeC(G, h).y - G.ch * .35}), sc = f.mini ? .5 : 1;
+          const m = st.m.find(m => m.h === h && m.hit[s]) || null, key = m ? s + ':' + m.i : '', was = m && pred.has(key);
           if (k === 'hit') {
-            ctx.sfx(e[4] === 'g' ? 'coin' : 'hit'); if (!f.mini) fx.shake(e[4] === 'g' ? 6 : 3);
-            fx.burst(up.x, up.y, {n: e[4] === 'g' ? 26 : 12, color: e[4] === 'g' ? ['#ffd76a', '#fff3b0', '#e6a020'] : ['#ffd76a', '#fff'], sp: 220 * sc, size: 4 * sc, up: 60});
-            fx.text(up.x, up.y - 10 * sc, '+' + e[5], {size: (e[4] === 'g' ? 34 : 26) * sc, color: e[4] === 'g' ? '#ffd76a' : '#fff'});
+            if (m && !pops.has(key)) pops.set(key, vt);
+            if (!was) impact(s, h, e[4], f);
+            fx.text(up.x, up.y - 10 * sc, '+' + e[5] + (e[6] >= 3 && !f.mini ? '' : ''), {size: (e[4] === 'g' ? 34 : 26) * sc, color: e[4] === 'g' ? '#ffd76a' : '#fff'});
+            if (e[6] >= 3 && !f.mini) fx.text(up.x + G.cell * .32, up.y - 34 * sc, '×' + e[6], {size: 16 + Math.min(10, e[6]), color: e[6] >= 10 ? '#ff7a4a' : e[6] >= 5 ? '#ff9a5a' : '#ffe08a', life: .6, vy: -70});
             if (e[6] >= 5 && e[6] % 5 === 0 && !f.mini) { ctx.sfx('score'); fx.text(p.x, toScreen(f, {x: 0, y: G.y + G.ch * .2}).y, e[6] + ' 连击！', {size: 30, color: '#ff9a5a', life: 1.2}); }
-            if (ctx.isLocal(s) && !f.mini && e[4] === 'g') fx.flash(.4, '255,220,120');
           } else if (k === 'bomb') {
-            ctx.sfx('boom'); if (!f.mini) { fx.shake(14); fx.flash(.9, '255,90,60'); if (ctx.isLocal(s)) ctx.buzz(60); }
-            fx.burst(up.x, up.y, {n: 34, color: ['#ff6a3a', '#ffd76a', '#333', '#888'], sp: 300 * sc, size: 6 * sc, grav: 120});
+            if (m && !pops.has(key)) pops.set(key, vt);
+            if (!was) impact(s, h, 'bomb', f);
             fx.text(up.x, up.y, '−3', {size: 34 * sc, color: '#ff6a5a'});
-          } else if (k === 'clang') { ctx.sfx('bounce'); fx.burst(up.x, up.y - G.ch * .2, {n: 10, color: ['#ddd', '#fff', '#999'], sp: 180 * sc, size: 3 * sc}); fx.text(up.x, up.y - 12 * sc, '当！', {size: 22 * sc, color: '#e8eef5'}); }
-          else if (k === 'air' && ctx.isLocal(s) && !f.mini) { ctx.sfx('move'); fx.burst(p.x, p.y - G.ch * .1, {n: 6, color: '#8a5a2a', sp: 90, size: 3}); if (e[4] >= 3) { fx.text(p.x, p.y - G.ch * .3, '连击中断', {size: 18, color: '#e6c57d'}); ctx.buzz(10); } }
+          } else if (k === 'clang') { const m2 = st.m.find(m => m.h === h && m.dent && m.dent[s]); if (!(m2 && pred.has(s + ':' + m2.i + 'd'))) impact(s, h, 'clang', f); }
+          else if (k === 'air') for (const m3 of st.m) if (m3.h === h) { pred.delete(s + ':' + m3.i); pops.delete(s + ':' + m3.i); }   // mis-prediction → undo
+          if (k === 'air' && ctx.isLocal(s) && !f.mini) { ctx.sfx('move'); fx.burst(p.x, p.y - G.ch * .1, {n: 6, color: '#8a5a2a', sp: 90, size: 3}); if (e[4] >= 3) { fx.text(p.x, p.y - G.ch * .3, '连击中断', {size: 18, color: '#e6c57d'}); ctx.buzz(10); } }
           else if (k === 'esc' && !f.mini && ctx.isLocal(s)) fx.text(p.x, p.y - G.ch * .2, '溜了', {size: 18, color: '#e6c57d'});
         }
       });
@@ -175,7 +214,8 @@ BX.register({
       },
       snapshot() { return {ph: st.ph, t: Math.round(st.t * 100) / 100, time: Math.round(st.time * 100) / 100, m: st.m.map(m => [m.i, m.h, m.k, m.t0, m.d, m.hit[0], m.hit[1], m.dent[0], m.dent[1]]), s: st.s, cb: st.cb, best: st.best, ev: st.ev, over: st.over}; },
       restore(d) {
-        Object.assign(st, {ph: d.ph, t: d.t, time: d.time, s: d.s, cb: d.cb, best: d.best || st.best, ev: d.ev, over: d.over});
+        const drift = d.time - st.time, keep = st.ph === 'play' && d.ph === 'play' && Math.abs(drift) < .2;
+        Object.assign(st, {ph: d.ph, t: d.t, time: keep ? st.time + drift * .35 : d.time, s: d.s, cb: d.cb, best: d.best || st.best, ev: d.ev, over: d.over});   // ease the guest clock, no jumps
         st.m = d.m.map(a => ({i: a[0], h: a[1], k: a[2], t0: a[3], d: a[4], hit: [a[5], a[6]], dent: [a[7] || 0, a[8] || 0]}));
         playEv(); info();
       },
@@ -186,21 +226,24 @@ BX.register({
         else if (e.code in K.NUMPAD || e.code in K.UIO) hit(ms.length > 1 ? ms[1] : ms[0], e.code in K.NUMPAD ? K.NUMPAD[e.code] : K.UIO[e.code]);
       },
       draw(dt) {
-        time += dt; fx.update(dt);
+        time += dt; fx.update(dt); if (freeze > 0) freeze -= dt; else vt += dt;
         if (!ctx.isHost && st.ph === 'play') st.time += dt;
+        // render clock: host interpolates within the fixed 60 Hz step (smooth rise on 90/120 Hz screens)
+        if (freeze <= 0) rT = ctx.isHost && st.ph === 'play' ? Math.max(0, st.time - (1 - ctx.alpha) / 60) : st.time;
+        if (pred.size || pops.size) { const ids = new Set(st.m.map(m => m.i)); for (const k of [...pred.keys()]) if (!ids.has(+k.split(':')[1].replace('d', ''))) pred.delete(k); for (const k of [...pops.keys()]) if (!ids.has(+k.split(':')[1])) pops.delete(k); }
         const g = cv.g; cv.clear('#2a190d');
         const [ox, oy] = fx.offset(); g.save(); g.translate(ox, oy);
         for (const f of fields()) drawField(g, f);
         g.restore();
         if (nLoc() === 2) { g.fillStyle = '#e6c57d'; if (cv.w >= cv.h) g.fillRect(cv.w / 2 - 1.5, 0, 3, cv.h); else g.fillRect(0, cv.h / 2 - 1.5, cv.w, 3); }
         // hammers
-        for (let i = hamm.length - 1; i >= 0; i--) { const hm = hamm[i]; hm.t += dt; if (hm.t > .22) { hamm.splice(i, 1); continue; } drawHammer(g, hm); }
+        for (let i = hamm.length - 1; i >= 0; i--) { const hm = hamm[i]; if (freeze <= 0) hm.t += dt; if (hm.t > .2) { hamm.splice(i, 1); continue; } drawHammer(g, hm); }
         fx.draw(g);
         fx.drawFlash(g, cv.w, cv.h);
       },
     };
     function drawHammer(g, hm) {
-      const k = hm.t / .22, ang = k < .45 ? -1.1 + k / .45 * 1.3 : .2 - (k - .45) * .4;
+      const k = hm.t / .2, ang = k < .12 ? -.55 + k / .12 * .75 : .2 - Math.min(1, (k - .12) / .5) * .75;   // lands within ~1 frame of the tap
       g.save(); g.translate(hm.x, hm.y); if (hm.rot) g.rotate(Math.PI); g.translate(34, 40); g.rotate(ang);
       D.wood(g, -4, -70, 8, 78, {base: '#a8723d', seed: 3});
       g.fillStyle = '#b23a2b'; D.rr(g, -26, -92, 52, 30, 8); g.fill(); g.fillStyle = '#e6c57d'; g.fillRect(-26, -80, 52, 5); g.fillRect(-20, -92, 5, 30); g.fillRect(15, -92, 5, 30);
@@ -237,14 +280,20 @@ BX.register({
         const c = holeC(G, h), rw = G.cell * .36, rh = G.ch * .13;
         g.fillStyle = '#6b4426'; g.beginPath(); g.ellipse(c.x, c.y + rh * .3, rw * 1.18, rh * 1.5, 0, 0, Math.PI * 2); g.fill();
         g.fillStyle = '#24150a'; g.beginPath(); g.ellipse(c.x, c.y, rw, rh, 0, 0, Math.PI * 2); g.fill();
-        const m = st.m.find(m => m.h === h && st.time >= m.t0 && st.time < m.t0 + m.d + .35);
+        const T = rT, m = st.m.find(m => m.h === h && T >= m.t0 && T < m.t0 + m.d + .35);
         if (m) {
-          const age = st.time - m.t0, left = m.t0 + m.d - st.time, hs = m.hit[s];
-          let up = Math.min(1, age / .1, Math.max(0, left) / .12);
-          if (hs) up = Math.max(0, Math.min(1, (left + .35) / .35)) * .9;
+          const key = s + ':' + m.i, pr = pred.get(key), hs = m.hit[s] || (pr ? (pr.k === 'b' ? 2 : 1) : 0), age = T - m.t0, left = m.t0 + m.d - T;
+          let up = BX.ease.out(BX.clamp(Math.min(age / .09, Math.max(0, left) / .12), 0, 1));
+          let sq = 1;
+          if (hs) {                                                          // squash-pop: hold briefly, then sink
+            const ht = pops.has(key) ? vt - pops.get(key) : 1, k = BX.clamp(ht / .16, 0, 1);
+            sq = ht < .16 ? .62 + .3 * BX.ease.back(k) : .9;
+            up = ht < .2 ? 1 : Math.max(0, 1 - (ht - .2) / .22) * .9;
+            if (!pops.has(key)) up = Math.max(0, Math.min(1, (left + .35) / .35)) * .9;
+          }
           if (up > 0) {
             g.save(); g.beginPath(); g.rect(c.x - G.cell / 2, c.y - G.ch * 1.2, G.cell, G.ch * 1.2); g.clip();
-            mole(g, c.x, c.y + (1 - up) * G.ch * .55, rw * .9, m.k, 1, time, hs, f.mini, m.dent && m.dent[s]);
+            mole(g, c.x, c.y + (1 - up) * G.ch * .55, rw * .9, m.k, 1, time, hs, f.mini, (m.dent && m.dent[s]) || pred.has(key + 'd'), sq);
             g.restore();
           }
         }
@@ -271,9 +320,9 @@ BX.register({
 });
 
 /* mole sprite: x,y = base point at hole centre, r = body radius; k: n/g/b; hs: 1 whacked, 2 bomb-hit */
-function mole(g, x, y, r, k, a, time, hs, mini, dent) {
+function mole(g, x, y, r, k, a, time, hs, mini, dent, squash) {
   g.save(); g.globalAlpha = a;
-  const sq = hs ? .78 : 1;
+  const sq = squash != null ? squash : hs ? .78 : 1;
   g.translate(x, y); g.scale(1 / Math.sqrt(sq), sq);
   if (k === 'b') {
     const gr = g.createRadialGradient(-r * .3, -r * 1.3, r * .1, 0, -r, r * 1.1); gr.addColorStop(0, '#666'); gr.addColorStop(1, '#151515');

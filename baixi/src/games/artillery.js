@@ -104,7 +104,7 @@ BX.register({
   kind: 'turn', seats: [2, 4], defSeats: 2, seatColors: ['#c23a2b', '#2f5d8a', '#3f8f5b', '#c8902b'], aiDelay: 450,
   options: [{key: 'hp', label: '血量', choices: [[60, '60'], [100, '100'], [150, '150']], def: 100},
     {key: 'guide', label: '瞄准线', choices: [[1, '短'], [2, '长'], [3, '完整']], def: 1}],
-  howto: ['在画面任意处<b>按住向后拉</b>：炮管指向拉动的反方向，拉得越长力度越大，松手开炮。', '下方 <b>◀ ▶</b> 微调角度、<b>− +</b> 微调力度（按住连续调），再点「开炮」；选弹药在左侧。', '淡色虚线和 ✕ 是<b>你上一炮</b>的轨迹与落点，照着修正即可；风标显示风向和风力。', '炮弹飞行时<b>点一下画面</b>可快进；💡 提示会画出电脑建议的弹道。键盘：←→ 角度、↑↓ 力度（Shift 加速）、1-4 选弹、空格开炮。'],
+  howto: ['在画面任意处<b>按住向后拉</b>：炮管指向拉动的反方向，拉得越长力度越大，松手开炮；拉回按下点附近（红圈内）松手即<b>取消</b>。', '下方 <b>◀ ▶</b> 微调角度、<b>− +</b> 微调力度（按住连续调），再点「开炮」；选弹药在左侧。', '淡色虚线和 ✕ 是<b>你上一炮</b>的轨迹与落点，照着修正即可；风标显示风向和风力。', '炮弹飞行时<b>点一下画面</b>可快进；💡 提示会画出电脑建议的弹道。键盘：←→ 角度、↑↓ 力度（Shift 加速）、1-4 选弹、空格开炮。'],
   rules: `<p>每位玩家在山地上有一门炮，<b>轮流开炮</b>。炮弹受<b>重力</b>和<b>风</b>影响（风向风力每回合都会改变，见上方风标）。</p>
 <p>爆炸会<b>炸毁地形</b>并对范围内的炮造成伤害（越靠近中心伤害越大，也会伤到自己）。脚下的山体被炸空，炮会掉落，落差较大时受到<b>摔落伤害</b>。生命值归零即被淘汰，<b>最后存活的一方获胜</b>；若最后的炮同时被毁则为平局。若回合数达到上限，剩余生命最多者胜。</p>
 <p><b>弹药：</b></p>
@@ -149,8 +149,8 @@ BX.register({
       a = BX.clamp(a, -11, 191) * Math.PI / 180; aim.dx = Math.cos(a); aim.dy = Math.sin(a); keyT = performance.now();
     }
     function powAim(d) { aim.p = BX.clamp(Math.round(aim.p * 100 + d) / 100, .02, 1); keyT = performance.now(); }
-    const adjA = K.adj(bar, '角度', () => degTxt(aim), (d, k) => rotAim(d * (k > 14 ? 3 : 1)), {minus: '◀', plus: '▶'});
-    const adjP = K.adj(bar, '力度', () => String(Math.round(aim.p * 100)), (d, k) => powAim(d * (k > 14 ? 3 : 1)));
+    const adjA = K.adj(bar, '角度', () => degTxt(aim), (d, k) => rotAim(d * K.acc(k)), {minus: '◀', plus: '▶'});
+    const adjP = K.adj(bar, '力度', () => String(Math.round(aim.p * 100)), (d, k) => powAim(d * K.acc(k)));
     K.go(bar, '开炮', () => fire());
     function refreshAmmo() {
       const s = st.turn, am = st.ammo[s];
@@ -170,21 +170,25 @@ BX.register({
     const P = (x, y) => [V.ox + x * V.s, V.oy - y * V.s];
     /* ---------- input ---------- */
     const myTurn = () => !st.over && !pb.on && ctx.canAct(st.turn);
+    let aimSave = null;
     const sling = K.sling(ctx, cv, {
-      enabled: myTurn, max: () => Math.min(cv.w, cv.h) * .36, min: .05,
-      change: s => { aim.dx = s.dx; aim.dy = Math.max(-.2, -s.dy); const l = Math.hypot(aim.dx, aim.dy); aim.dx /= l; aim.dy /= l; aim.p = s.p; },
+      enabled: myTurn, max: () => Math.min(cv.w, cv.h) * .36,
+      engage: () => { aimSave = Object.assign({}, aim); },
+      change: s => { aim.dx = s.dx; aim.dy = Math.max(-.2, -s.dy); const l = Math.hypot(aim.dx, aim.dy); aim.dx /= l; aim.dy /= l; aim.p = Math.max(.02, s.p); },
       release: () => fire(),
+      cancel: () => { if (aimSave) aim = aimSave; aimSave = null; },
     });
     function fire() {
       if (!myTurn()) return;
       Object.assign(aims[st.turn], aim);
-      ctx.sfx('boom');
+      K.impact('boom', .3 + .4 * aim.p); ctx.buzz(10 + Math.round(aim.p * 14));
       ctx.act({dx: +aim.dx.toFixed(6), dy: +aim.dy.toFixed(6), p: +aim.p.toFixed(4), w: weapon}, st.turn);
     }
     function key(e) {
       if (skipKey(e)) return;
       if (!myTurn()) return;
-      const m = e.shiftKey ? 5 : 1;
+      if (e.code === 'Escape' && sling.on) { sling.abort(); return; }
+      const m = K.keyMul(e);
       if (e.code === 'ArrowLeft' || e.code === 'ArrowRight') { rotAim((e.code === 'ArrowLeft' ? 1 : -1) * m); e.preventDefault && e.preventDefault(); }
       if (e.code === 'ArrowUp' || e.code === 'ArrowDown') { powAim((e.code === 'ArrowUp' ? 1 : -1) * m); e.preventDefault && e.preventDefault(); }
       if (/^Digit[1-4]$/.test(e.code)) { const w = +e.code.slice(5) - 1; if (st.ammo[st.turn][w] !== 0) { weapon = w; wseg.refresh(); } }
@@ -232,6 +236,12 @@ BX.register({
           show = {r, snap, w, me, done: false, ei: 0, T: snap.T.slice(), hp: snap.tanks.map(t => t.hp), fallT: 0};
           const simT = r.steps * DT, lastBoom = r.ev.filter(e => e[1] === 'boom').map(e => e[0] * DT).pop() || simT;
           pb.start(simT + 1.2, () => { show = null; status(); refreshAmmo(); }, [[lastBoom - .28, lastBoom + .1, .3]]);
+          // muzzle blast + recoil, scaled by the charge
+          const t0 = snap.tanks[me], mx = t0.x + dx * (BARREL + 6), my = t0.y + 14 + dy * (BARREL + 6);
+          if (!(ctx.isLocal(me) && !ctx.isAI(me))) K.impact('boom', .3 + .4 * p);
+          fx.burst(mx, my, {n: 8 + Math.round(10 * p), sp: 90 + 160 * p, color: ['#ffd76a', '#ff9a3c', '#fff1c0'], life: .25, kind: 'spark', size: 2.5, a0: Math.atan2(-dy, dx), spread: .9});
+          fx.burst(mx, my, {n: 6 + Math.round(6 * p), sp: 30 + 50 * p, color: '90,80,70', kind: 'smoke', life: 1, size: 5, grow: 2.2, a0: Math.atan2(-dy, dx), spread: 1.4});
+          fx.shake(2 + 4 * p);
         } else refreshAmmo();
         if (st.over) {
           const al = alive();
@@ -341,13 +351,13 @@ BX.register({
       let tanks = Z.tanks.map((t, i) => ({x: t.x, y: t.y, hp: show ? show.hp[i] : t.hp, alive: show ? show.hp[i] > 0 || Z.tanks[i].alive : t.alive}));
       let shells = null;
       if (show) {
-        const fr = show.r.frames, k = Math.min(fr.length - 1, Math.floor(pb.t / (DT * 2)));
+        const fr = show.r.frames, L = fr.length ? K.lerpFrame(fr, pb.t / (DT * 2) - 1, 9000, 60) : {f: [], k: 0}, k = L.k;
         while (show.ei < show.r.ev.length && show.r.ev[show.ei][0] <= (k + 1) * 2) fireEv(show.r.ev[show.ei++]);
-        shells = fr.length ? fr[Math.max(0, k)] : [];
+        shells = L.f;
         // trails
         for (let j = 0; j < shells.length; j += 2) {
           g.save(); g.lineCap = 'round';
-          for (let i = Math.max(1, k - 24); i <= k; i++) { const a = fr[i - 1], b = fr[i]; if (!a || a[j] > 9000 || b[j] > 9000 || a[j] == null) continue; const [x1, y1] = P(a[j], a[j + 1]), [x2, y2] = P(b[j], b[j + 1]); g.strokeStyle = `rgba(40,28,18,${.45 * (1 - (k - i) / 24)})`; g.lineWidth = (1 + 4 * (1 - (k - i) / 24)) * Math.max(.6, V.s); g.beginPath(); g.moveTo(x1, y1); g.lineTo(x2, y2); g.stroke(); }
+          for (let i = Math.max(1, k - 24); i <= k + 1; i++) { const a = fr[i - 1], b = i > k ? shells : fr[i]; if (!a || !b || a[j] > 9000 || b[j] > 9000 || a[j] == null) continue; const [x1, y1] = P(a[j], a[j + 1]), [x2, y2] = P(b[j], b[j + 1]); g.strokeStyle = `rgba(40,28,18,${.45 * (1 - (k - i) / 24)})`; g.lineWidth = (1 + 4 * (1 - Math.max(0, k - i) / 24)) * Math.max(.6, V.s); g.beginPath(); g.moveTo(x1, y1); g.lineTo(x2, y2); g.stroke(); }
           g.restore();
           if (shells[j] < 9000 && Math.random() < .6) fx.burst(shells[j], shells[j + 1], {n: 1, sp: 8, color: '90,80,70', kind: 'smoke', life: .8, size: 3, grow: 2});
         }
@@ -368,7 +378,8 @@ BX.register({
         if (!show && i === st.turn && (myTurn() || sling.on)) ad = [aim.dx, aim.dy];
         else if (!show && i === st.turn) ad = [aims[i].dx, aims[i].dy];
         if (isTurn && !show) { g.fillStyle = D.alpha(ctx.color(i), .18 + .08 * Math.sin(performance.now() / 200)); D.circle(g, x, y - 10 * cs, 26 * cs); g.fill(); }
-        drawCannon(g, x, y, cs, ctx.color(i), Math.atan2(-ad[1], ad[0]), t.alive ? 1 : 0);
+        const recoil = show && i === show.me ? Math.max(0, 1 - pb.t / .3) : 0;
+        drawCannon(g, x, y, cs, ctx.color(i), Math.atan2(-ad[1], ad[0]), t.alive ? 1 : 0, recoil * recoil);
         // hp bar
         const bw = Math.max(40, 46 * V.s), bh = Math.max(4, 5 * V.s), by = y - 34 * cs - 6;
         if (t.alive) {
@@ -391,6 +402,7 @@ BX.register({
       g.restore();
       fx.drawFlash(g, V.W, V.H);
       if (V.port) drawCards(g);
+      if (sling.on && myTurn()) K.drawAnchor(g, sling, '#3a2414');
       // HUD: wind + turn
       const wx = V.W / 2, wy = V.port ? 34 : 26;
       K.wind(g, wx, wy, BX.clamp(Z.wind / 70, -1, 1), 1, '风', Z.wind ? Math.abs(Z.wind) : null);
@@ -429,7 +441,7 @@ BX.register({
       const pts = flight(t, aim, guideN);
       K.guide(g, pts, {color: '#3a2414', w: 2.5, alpha: .85, fade: guideN === 3 ? .4 : .85});
       if (guideN === 3 && pts.length) { const [ex, ey] = pts[pts.length - 1]; g.strokeStyle = '#b23a2b'; g.lineWidth = 2; D.circle(g, ex, ey, 6); g.stroke(); }
-      if (sling.on) K.drawPull(g, x, y, {dx: aim.dx, dy: -aim.dy, p: aim.p}, Math.min(cv.w, cv.h) * .2, ctx.color(st.turn));
+      if (sling.on && sling.eng) K.drawPull(g, x, y, {dx: aim.dx, dy: -aim.dy, p: aim.p, u: sling.u, over: sling.over, cancel: sling.cancel}, Math.min(cv.w, cv.h) * .2, ctx.color(st.turn));
       if (sling.on || performance.now() - keyT < 1500) {
         K.meter(g, V.W - 26, V.port ? 90 : 60, 14, Math.min(150, V.H * .3), aim.p, {});
         const deg = Math.round(Math.atan2(aim.dy, Math.abs(aim.dx)) * 180 / Math.PI);
@@ -452,16 +464,17 @@ BX.register({
       if (e[1] === 'boom') {
         const [, , x, y, r, hits] = e;
         carve(show.T, x, y, r);
-        const big = r > 50;
-        ctx.sfx(big ? 'crash' : 'boom'); fx.shake(big ? 18 : 9); fx.flashOn(big ? 1 : .55, '255,210,140');
+        const big = r > 50, dsum = hits.reduce((q, h) => q + h[1], 0), kk = Math.min(1, r / 64 * .6 + dsum / 60 * .4);
+        K.impact('boom', kk); if (big) ctx.sfx('crash'); fx.shake(5 + 12 * kk); fx.flashOn(.35 + .65 * kk, '255,210,140');
+        if (big || dsum >= 30 || hits.some(([i, dm]) => show.hp[i] > 0 && show.hp[i] - dm <= 0)) pb.hit(big ? .08 : .05);
         fx.burst(x, y, {n: big ? 60 : 30, sp: r * 4, color: ['#ffd76a', '#ff9a3c', '#d0533f', '#fff1c0'], life: .55, kind: 'spark', size: 3});
         fx.burst(x, y, {n: big ? 24 : 12, sp: r * 1.6, color: '60,48,38', kind: 'smoke', life: 1.4, size: r * .25, grow: 2.5, g: 0});
         fx.burst(x, y, {n: big ? 30 : 14, sp: r * 4, color: ['#3a2e22', '#5e4b38'], life: 1, g: -500, size: 2.5, a0: Math.PI / 2, spread: 2.6});
-        for (const [i, dm] of hits) { if (ctx.isLocal(i) && dm) ctx.buzz(dm > 30 ? 40 : 20); show.hp[i] = Math.max(0, show.hp[i] - dm); const t = show.snap.tanks[i]; fx.text(t.x, t.y + 30, '-' + dm, {size: 22, color: '#ffd0c0', life: 1.4, rise: 40}); }
+        for (const [i, dm] of hits) { if (ctx.isLocal(i) && dm) ctx.buzz(Math.min(60, 12 + dm)); show.hp[i] = Math.max(0, show.hp[i] - dm); const t = show.snap.tanks[i]; fx.text(t.x, t.y + 30, '-' + dm, {size: 22, color: '#ffd0c0', life: 1.4, rise: 40}); }
         const kills = hits.filter(([i]) => show.hp[i] <= 0);
         for (const [i] of kills) { const t = show.snap.tanks[i]; fx.text(t.x, t.y + 70, '击毁！', {size: 30, color: '#ffe28a', life: 2, rise: 30}); fx.burst(t.x, t.y + 10, {n: 40, sp: 260, color: ['#ffd76a', '#d0533f', '#2b2118'], life: 1, g: -400, a0: Math.PI / 2, spread: 2}); }
       } else if (e[1] === 'split') { ctx.sfx('pop'); fx.burst(e[2], e[3], {n: 12, sp: 120, color: ['#e6c57d', '#fff'], life: .4, kind: 'spark'}); }
-      else if (e[1] === 'drill') { ctx.sfx('crash'); fx.shake(4); }
+      else if (e[1] === 'drill') { K.impact('thud', .6); fx.shake(4); fx.burst(e[2], e[3], {n: 10, sp: 120, color: ['#3a2e22', '#8c7556'], life: .6, g: -400, a0: Math.PI / 2, spread: 1.6}); }
       else if (e[1] === 'dig') { if (Math.random() < .5) fx.burst(e[2], e[3], {n: 3, sp: 60, color: ['#3a2e22', '#8c7556'], life: .5, g: -300}); }
       else if (e[1] === 'lost') { /* flew off the map */ }
     }
@@ -478,11 +491,11 @@ BX.register({
 });
 
 /* wooden-carriage bronze cannon; (x,y) = ground contact; ang = barrel angle in screen radians (0 = right, −π/2 = up) */
-function drawCannon(g, x, y, s, col, ang, alive) {
+function drawCannon(g, x, y, s, col, ang, alive, recoil = 0) {
   g.save(); g.translate(x, y); g.scale(s, s);
   if (!alive) { g.globalAlpha = .75; g.fillStyle = '#2b2118'; g.beginPath(); g.ellipse(0, -4, 18, 7, 0, 0, Math.PI * 2); g.fill(); g.fillStyle = 'rgba(80,70,60,.5)'; D.circle(g, -4, -14, 7); g.fill(); D.circle(g, 5, -20, 5); g.fill(); g.restore(); return; }
   // barrel (behind the carriage front)
-  g.save(); g.translate(0, -14); g.rotate(ang);
+  g.save(); g.translate(0, -14); g.rotate(ang); if (recoil) g.translate(-7 * recoil, 0);
   const bg = g.createLinearGradient(0, -5, 0, 5); bg.addColorStop(0, '#d9bb6a'); bg.addColorStop(.5, '#a7843e'); bg.addColorStop(1, '#5d4a22');
   g.fillStyle = bg; D.rr(g, -4, -5, 28, 10, 4); g.fill();
   g.fillStyle = '#4a3a1a'; g.fillRect(20, -6, 4, 12); g.fillRect(6, -5.5, 2.5, 11);

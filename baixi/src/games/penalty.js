@@ -16,8 +16,8 @@ const missProb = (c, r, p) => MISS[p][r] + (c !== 1 ? SIDE[p] : 0);
 BX.register({
   id: 'penalty', title: '点球大战', cat: 'sports', order: 1, sub: '五轮点球，斗智斗勇',
   desc: '每一脚点球都是一次心理博弈：罚球者暗中选择角度与力度，守门员暗中选择扑救方向，同时揭晓。五轮定胜负，平局进入突然死亡。',
-  kind: 'turn', seats: 2, hidden: true, firstLabel: '先罚', seatColors: ['#c23a2b', '#2f5d8a'], aiDelay: 650,
-  howto: ['<b>罚球</b>：从球向球门<b>划一下</b>就射门——划到哪就射哪，划得越快力量越大，弧线划法会踢出弧线球。也可以先选力度，再点球门区域（触屏点两下确认）。',
+  kind: 'turn', seats: 2, hidden: true, firstLabel: '先罚', seatColors: ['#c23a2b', '#2f5d8a'], aiDelay: 280,
+  howto: ['<b>罚球</b>：从球向球门<b>划一下</b>就射门——划进球门就射向那一格，没划到球门则按甩出的惯性往前延伸；划得越快力量越大（轨迹颜色：白=轻推、金=标准、红=大力），向哪边弯着划，球就往哪边拐。也可以先选力度，再点球门区域（触屏点两下确认）。',
     '<b>守门</b>：点球门的左/中/右 × 上/下 区域扑救（触屏点两下确认，或点「扑救！」）。',
     '面板会显示所选角度的打偏风险；球门里的小数字是对手以往的习惯（可在「⋯」里关闭提示）。',
     '💡 会给出电脑推荐的角度/扑救方向。键盘：方向键或小键盘 1–9 选区域，Q/W/E 选力度，回车确认。'],
@@ -43,7 +43,7 @@ BX.register({
     const cv = ctx.canvas(), fx = K.fx();
     const shooter = () => (st.k % 2 === 0) ? st.first : 1 - st.first;
     const keeper = () => 1 - shooter();
-    let sel = {z: -1, p: 1, d: -1}, hint = null, preview = -1, swipe = null;
+    let sel = {z: -1, p: 1, d: -1}, hint = null, preview = -1, swipe = null, lock = null;
     let rv = null;          // reveal animation {t, last}
     let crowd = null;
 
@@ -76,19 +76,26 @@ BX.register({
       sel = {z: -1, p: 1, d: -1};
       if (ctx.fast) { rv = null; return; }
       fx.clear();
-      rv = {t: 0, last: st.last, jx: (Math.random() - .5) * .06, jy: (Math.random() - .5) * .06, done: false};
-      const L = st.last;
+      const L = st.last, FL = [.42, .33, .25][L.p];
+      // timeline (s): run-up → contact at RU → ball arrives at IM (flight time by power) → keeper lands → done
+      rv = {t: 0, s: 0, last: L, jx: (Math.random() - .5) * .06, jy: (Math.random() - .5) * .06, RU: .36, FL, IM: .36 + FL, END: .36 + FL + 1.05, hs: 0, kicked: false, hit: false, landed: false};
       ctx.sfx('whoosh');
-      ctx.after(1130, () => { const kl = ctx.isLocal(L.sh), gl = ctx.isLocal(1 - L.sh); if (kl !== gl && ((L.res === 'goal') === gl)) ctx.buzz(30); });
-      ctx.anim(1900, (k, raw) => { rv.t = raw; }, null, t => t);
-      ctx.after(560, () => ctx.sfx('hit'));
-      ctx.after(1130, () => {
+    }
+    function revealEvents() {   // fired from the clock in draw() so hit-stop keeps sound + picture in sync
+      const L = rv.last;
+      if (!rv.kicked && rv.s >= rv.RU) { rv.kicked = true; ctx.sfx('hit'); if (L.p === 2) fx.shake(2); }
+      if (!rv.hit && rv.s >= rv.IM) {
+        rv.hit = true;
+        const kl = ctx.isLocal(L.sh), gl = ctx.isLocal(1 - L.sh); if (kl !== gl && ((L.res === 'goal') === gl)) ctx.buzz(18 + L.p * 10);
+        if (L.res === 'save' || L.res === 'post') rv.hs = .075;     // short hit-stop on the big contact
         const P = layout(), gp = goalPt(P, L);
-        if (L.res === 'goal') { ctx.sfx('score'); ctx.sfx('splash'); fx.flash(1); fx.shake(8); fx.burst(gp.x, gp.y, {n: 40, color: ['#ffd76a', '#ff8a5a', '#fff', '#5aa08a'], sp: 320, up: 120, square: true, grav: 260, life: 1.2}); fx.text(P.S.x + P.S.w / 2, P.goal.y + P.goal.h * .45, '球进了！', {size: BX.clamp(P.goal.h * .26, 28, 54), color: '#ffe08a', life: 1.4, vy: -20}); }
-        else if (L.res === 'save') { ctx.sfx('hit'); ctx.sfx('crash'); fx.shake(6); fx.burst(gp.x, gp.y, {n: 18, color: ['#fff', '#cfe0ff'], sp: 220}); fx.text(P.S.x + P.S.w / 2, P.goal.y + P.goal.h * .45, '扑出！', {size: BX.clamp(P.goal.h * .26, 28, 54), color: '#cfe0ff', life: 1.4, vy: -20}); }
+        if (L.res === 'goal') { ctx.sfx('score'); ctx.sfx('splash'); fx.flash(1); fx.shake(4 + L.p * 2.5); fx.burst(gp.x, gp.y, {n: 40, color: ['#ffd76a', '#ff8a5a', '#fff', '#5aa08a'], sp: 320, up: 120, square: true, grav: 260, life: 1.2}); fx.text(P.S.x + P.S.w / 2, P.goal.y + P.goal.h * .45, '球进了！', {size: BX.clamp(P.goal.h * .26, 28, 54), color: '#ffe08a', life: 1.4, vy: -20}); }
+        else if (L.res === 'save') { ctx.sfx('hit'); ctx.sfx('crash'); fx.shake(4 + L.p * 2); fx.burst(gp.x, gp.y, {n: 18, color: ['#fff', '#cfe0ff'], sp: 220}); fx.text(P.S.x + P.S.w / 2, P.goal.y + P.goal.h * .45, '扑出！', {size: BX.clamp(P.goal.h * .26, 28, 54), color: '#cfe0ff', life: 1.4, vy: -20}); }
         else if (L.res === 'post') { ctx.sfx('bell'); fx.shake(5); fx.burst(gp.x, gp.y, {n: 12, color: '#fff', sp: 160}); fx.text(P.S.x + P.S.w / 2, P.goal.y + P.goal.h * .45, '中柱！', {size: BX.clamp(P.goal.h * .24, 26, 50), color: '#ffd0a0', life: 1.4, vy: -20}); }
         else { ctx.sfx('lose'); fx.text(P.S.x + P.S.w / 2, P.goal.y + P.goal.h * .45, L.res === 'over' ? '打飞了！' : '偏出了！', {size: BX.clamp(P.goal.h * .24, 26, 50), color: '#ffd0a0', life: 1.4, vy: -20}); }
-      });
+      }
+      const kc = L.d >> 1;
+      if (!rv.landed && kc !== 1 && rv.s >= rv.IM + .3) { rv.landed = true; ctx.sfx('roll'); const P = layout(); fx.burst(P.goal.x + COLU[kc] * P.goal.w, P.goal.y + P.goal.h, {n: 10, color: ['#c8b08a', '#e8dcc0'], sp: 90, up: 40, size: 3, grav: 200, life: .5}); }
     }
 
     const inst = {
@@ -236,33 +243,55 @@ BX.register({
         preview = -1; confirm(role); return;
       }
       // kicker: swipe from the ball toward the goal
-      if (role === 'k' && p.y > G.y + G.h && p.x >= P.S.x && p.x <= P.S.x + P.S.w && p.y <= P.S.y + P.S.h) { swipe = {id: e.pointerId, pts: [[p.x, p.y, performance.now()]]}; try { cv.cv.setPointerCapture(e.pointerId); } catch (er) {} }
+      if (role === 'k' && p.y > G.y + G.h && p.x >= P.S.x && p.x <= P.S.x + P.S.w && p.y <= P.S.y + P.S.h) { swipe = {id: e.pointerId, pts: [[p.x, p.y, e.timeStamp]]}; lock = null; try { cv.cv.setPointerCapture(e.pointerId); } catch (er) {} }
     });
-    ctx.on(cv.cv, 'pointermove', e => { if (swipe && swipe.id === e.pointerId) { const p = cv.pos(e); swipe.pts.push([p.x, p.y, performance.now()]); if (swipe.pts.length > 60) swipe.pts.splice(1, 1); } });
+    ctx.on(cv.cv, 'pointermove', e => {
+      if (!swipe || swipe.id !== e.pointerId) return;
+      const r = cv.cv.getBoundingClientRect(), sx = cv.w / (r.width || cv.w), sy = cv.h / (r.height || cv.h);
+      for (const q of ctx.points(e, cv.cv)) { const l = swipe.pts[swipe.pts.length - 1]; if (q.t >= l[2] && (q.x * sx !== l[0] || q.y * sy !== l[1])) swipe.pts.push([q.x * sx, q.y * sy, q.t]); }
+      if (swipe.pts.length > 160) swipe.pts.splice(1, swipe.pts.length - 120);
+    });
     ctx.on(cv.cv, 'pointercancel', () => swipe = null);
     ctx.on(cv.cv, 'pointerup', e => {
       if (!swipe || swipe.id !== e.pointerId) return;
       const sw = swipe; swipe = null; const role = myRole(); if (role !== 'k') return;
-      const P = layout(), G = P.goal, a = sw.pts[0], b = sw.pts[sw.pts.length - 1], dx = b[0] - a[0], dy = b[1] - a[1], len = Math.hypot(dx, dy);
-      if (len < 36 || dy > -20) return;
-      let z;
-      if (inGoal(G, {x: b[0], y: b[1]}, 0)) z = BX.clamp(Math.floor((b[1] - G.y) / G.h * 3), 0, 2) * 3 + BX.clamp(Math.floor((b[0] - G.x) / G.w * 3), 0, 2);
-      else {
-        const dist = Math.max(40, P.spot.y - (G.y + G.h / 2)), f = len / dist, row = f > 1 ? 0 : f > .55 ? 1 : 2;
-        const ty = G.y + G.h * (row + .5) / 3, ax = a[0] + dx * (a[1] - ty) / Math.max(1, -dy);
-        if (ax < G.x - G.w * .25 || ax > G.x + G.w * 1.25) { ctx.toast('往球门方向划'); return; }
-        z = row * 3 + BX.clamp(Math.floor((ax - G.x) / G.w * 3), 0, 2);
-      }
-      // speed → power (px per ms over the last part of the swipe), sideways bulge → curve (visual)
-      const tail = sw.pts.filter(q => q[2] >= b[2] - 120), t0 = tail[0], spd = Math.hypot(b[0] - t0[0], b[1] - t0[1]) / Math.max(16, b[2] - t0[2]) / (P.S.h / 500);
-      const pw = spd < .55 ? 0 : spd < 1.5 ? 1 : 2;
-      let bulge = 0; for (const q of sw.pts) { const cr = ((q[0] - a[0]) * dy - (q[1] - a[1]) * dx) / len; if (Math.abs(cr) > Math.abs(bulge)) bulge = cr; }
-      const cu = Math.round(BX.clamp(bulge / Math.max(30, len * .25), -1, 1) * 100) / 100;
-      sel.z = z; sel.p = pw; preview = -1;
-      const act = {t: 'kick', z, p: pw}; if (Math.abs(cu) > .15) act.cu = cu;
-      if (!ctx.hotseat) ctx.toast(ROWN[Math.floor(z / 3)] + COLN[z % 3] + ' · ' + POWN[pw] + (act.cu ? ' · 弧线' : ''));
+      const p = cv.pos(e), l = sw.pts[sw.pts.length - 1]; if (Math.hypot(p.x - l[0], p.y - l[1]) > 2) sw.pts.push([p.x, p.y, Math.max(l[2], e.timeStamp)]);
+      const r = readSwipe(sw.pts, layout(), e.timeStamp);
+      if (!r.ok) { if (r.why) { ctx.toast(r.why); ctx.sfx('error'); } return; }
+      sel.z = r.z; sel.p = r.p; preview = -1;
+      const act = {t: 'kick', z: r.z, p: r.p}; if (Math.abs(r.cu) > .15) act.cu = r.cu;
+      lock = {x: r.x, y: r.y, z: r.z, p: r.p, t: 0};
+      if (!ctx.hotseat) ctx.toast(ROWN[Math.floor(r.z / 3)] + COLN[r.z % 3] + ' · ' + POWN[r.p] + (act.cu ? ' · 弧线' : ''));
       sel = {z: -1, p: 1, d: -1}; ctx.act(act, shooter());
     });
+    /* swipe → shot.  Aim: the end of the stroke, carried on along its chord by the flick's momentum (speed above a slow-drag
+       threshold × 160 ms, at most 1.2× the stroke) — a slow drag lands exactly where the finger stops, a fast flick flies on.  Power: peak speed over short
+       windows of the last 160 ms (a flick that slows at the very end still counts), normalised by screen size.
+       Curve: signed sideways bulge of the stroke (bow right → ball bends right). */
+    function readSwipe(pts, P, tEnd) {
+      const G = P.goal, a = pts[0], b = pts[pts.length - 1], dx = b[0] - a[0], dy = b[1] - a[1], len = Math.hypot(dx, dy);
+      if (len < 28) return {ok: false};
+      if (dy > -16) return {ok: false, why: '往球门方向划'};
+      let spd = 0;
+      for (let i = pts.length - 1; i > 0 && pts[i][2] >= tEnd - 160; i--) {
+        let j = i - 1; while (j > 0 && pts[i][2] - pts[j][2] < 45) j--;       // windows ≥ 45 ms (timer jitter)
+        const v = Math.hypot(pts[i][0] - pts[j][0], pts[i][1] - pts[j][1]) / Math.max(10, pts[i][2] - pts[j][2]); if (v > spd) spd = v;
+      }
+      const hold = tEnd - b[2]; if (hold > 70) spd *= Math.max(.25, 1 - (hold - 70) / 220);      // finger rested before lifting
+      const sc = Math.min(P.W, P.H) / 400, norm = spd / sc, pw = norm < .6 ? 0 : norm < 1.25 ? 1 : 2;   // finger speed in phone-sized units
+      const ux = dx / len, uy = dy / len;
+      let tx = b[0], ty = b[1];
+      const carry = Math.min(Math.max(0, norm - .55) * sc * 160, len * 1.2);   // slow, placed drags carry nothing
+      tx += ux * carry; ty += uy * carry;
+      let row;
+      if (ty > G.y + G.h) row = 2; else if (ty < G.y) row = 0; else row = BX.clamp(Math.floor((ty - G.y) / G.h * 3), 0, 2);
+      if (ty > G.y + G.h || ty < G.y) { const yy = G.y + G.h * (row + .5) / 3; tx = a[0] + dx * (a[1] - yy) / Math.max(1, -dy); ty = yy; }
+      if (tx < G.x - G.w * .3 || tx > G.x + G.w * 1.3) return {ok: false, why: '往球门方向划', x: tx, y: ty};
+      const col = BX.clamp(Math.floor((tx - G.x) / G.w * 3), 0, 2);
+      let bulge = 0; for (const q of pts) { const cr = ((q[0] - a[0]) * dy - (q[1] - a[1]) * dx) / len; if (Math.abs(cr) > Math.abs(bulge)) bulge = cr; }
+      const cu = Math.round(BX.clamp(-bulge / Math.max(26, len * .2), -1, 1) * 100) / 100;
+      return {ok: true, z: row * 3 + col, p: pw, cu, x: BX.clamp(tx, G.x - 8, G.x + G.w + 8), y: ty, norm};
+    }
 
     /* ---------------- drawing ---------------- */
     function person(g, x, y, s, col, o = {}) {
@@ -292,6 +321,22 @@ BX.register({
       for (let i = 0; i < 5; i++) { const a = i / 5 * Math.PI * 2 + Math.PI / 2; g.beginPath(); g.arc(Math.cos(a) * r * .92, Math.sin(a) * r * .92, r * .25, 0, Math.PI * 2); g.fill(); }
       g.restore();
     }
+    /* ball position during the reveal at clock time t (after contact) */
+    function ballAt(P, L, t) {
+      const G = P.goal, ground = G.y + G.h, bs = Math.max(8, G.w * .045), tp = goalPt(P, L);
+      const k2 = BX.clamp((t - rv.RU) / rv.FL, 0, 1), e = 1 - Math.pow(1 - k2, 1.45), arc = Math.sin(k2 * Math.PI) * G.h * [.33, .22, .1][L.p];
+      const bend = (L.cu || 0) * G.w * .28;
+      let x = BX.lerp(P.spot.x, tp.x, e) + Math.sin(e * Math.PI) * bend, y = BX.lerp(P.spot.y - bs * .8, tp.y, e) - arc, r = BX.lerp(bs, bs * .55, e), rot = k2 * 12;
+      if (t > rv.IM) {
+        const k3 = BX.clamp((t - rv.IM) / .75, 0, 1);
+        if (L.res === 'save') { const dir = (L.d >> 1) === 0 ? -1 : (L.d >> 1) === 2 ? 1 : (L.n % 2 ? 1 : -1); x = tp.x + dir * k3 * G.w * .35; y = tp.y - Math.sin(k3 * Math.PI) * G.h * .4 + k3 * G.h * .9; r = bs * .55 + k3 * bs * .2; }
+        else if (L.res === 'post') { const dir = (L.z % 3) === 0 ? -1 : 1; x = tp.x + dir * k3 * G.w * .25; y = tp.y + k3 * G.h * .9 - Math.sin(k3 * Math.PI) * G.h * .3; }
+        else if (L.res === 'over') { y = tp.y - k3 * G.h * .5; r = bs * .5 * (1 - k3 * .3); }
+        else if (L.res === 'goal') { const k4 = Math.min(1, k3 * 1.6); y = Math.min(ground - r, tp.y + k4 * k4 * G.h); }
+        rot = 12 + k3 * 6;
+      }
+      return {x, y, r, rot};
+    }
     function initCrowd() { const r = BX.rng(77); crowd = BX.range(90).map(() => ({u: r(), v: r(), c: ['#c23a2b', '#2f5d8a', '#e6c57d', '#3f8f5b', '#f3e2c0', '#d9822b'][Math.floor(r() * 6)], ph: r() * 6})); }
     function drawScene(g, P, time) {
       const S = P.S, G = P.goal, ground = G.y + G.h;
@@ -302,7 +347,7 @@ BX.register({
       const ch = G.y - S.y + G.h * .5;
       for (const p of crowd) {
         const x = S.x + p.u * S.w, y = S.y + 8 + p.v * ch * .8, r = Math.max(3, S.w * .011);
-        const bob = (rv && rv.last.res === 'goal' && rv.t > .6) ? Math.abs(Math.sin(time * 12 + p.ph)) * r * 1.2 : Math.sin(time * 2 + p.ph) * r * .15;
+        const bob = (rv && rv.last.res === 'goal' && rv.s > rv.IM) ? Math.abs(Math.sin(time * 12 + p.ph)) * r * 1.2 : Math.sin(time * 2 + p.ph) * r * .15;
         g.fillStyle = p.c; D.rr(g, x - r, y - bob + r * .9, r * 2, r * 2, r * .6); g.fill();
         g.fillStyle = '#f0c89a'; D.circle(g, x, y - bob, r * .8); g.fill();
       }
@@ -325,7 +370,7 @@ BX.register({
       g.beginPath(); g.moveTo(G.x - G.w * .18, ground); g.lineTo(G.x - G.w * .32, by); g.lineTo(G.x + G.w * 1.32, by); g.lineTo(G.x + G.w * 1.18, ground); g.stroke();
       g.fillStyle = '#fff'; g.beginPath(); g.ellipse(cx, P.spot.y + 4, 5, 2.4, 0, 0, Math.PI * 2); g.fill();
       // net
-      const L = rv && rv.last, rip = L && L.res === 'goal' && rv.t > .58 ? Math.max(0, 1 - (rv.t - .58) * 2.2) : 0;
+      const L = rv && rv.last, rip = L && L.res === 'goal' && rv.s > rv.IM ? Math.max(0, 1 - (rv.s - rv.IM) / .85) : 0;
       const gp = L ? goalPt(P, L) : null;
       g.fillStyle = 'rgba(25,40,25,.5)'; g.fillRect(G.x, G.y, G.w, G.h);
       g.strokeStyle = 'rgba(255,255,255,.45)'; g.lineWidth = 1;
@@ -340,39 +385,42 @@ BX.register({
       // keeper
       const ks = G.h * .64, kcol = ctx.color(L ? 1 - L.sh : keeper());
       let kx = G.x + G.w / 2, ky = ground - ks * .5, krot = 0, arms = .3 + Math.sin(time * 4) * .08, legs = .2;
+      let kGround = true;
       if (L && rv) {
-        const kc = L.d >> 1, kh = L.d & 1, k = BX.clamp((rv.t - .3) / .3, 0, 1), e = BX.ease.out(k);
-        const tx = G.x + COLU[kc] * G.w, ty = ground - G.h * (kh === 0 ? (kc === 1 ? .62 : .66) : (kc === 1 ? .5 : .2));
-        kx = BX.lerp(kx, tx, e); ky = BX.lerp(ky, ty, e) - Math.sin(e * Math.PI) * G.h * .1;
-        krot = (kc === 0 ? -1 : kc === 2 ? 1 : 0) * e * (kh === 0 ? 1.15 : 1.45); arms = .3 + e * 1.0; legs = e * .6;
-        if (kc === 1) { krot = 0; arms = .3 + e * (kh === 0 ? 1.2 : .7); legs = kh ? e * 1.1 : e * .3; if (kh) ky = BX.lerp(ground - ks * .5, ground - ks * .42, e); }
+        const t = rv.s, kc = L.d >> 1, kh = L.d & 1, side = kc === 0 ? -1 : kc === 2 ? 1 : 0;
+        const pre = BX.clamp((t - (rv.RU - .17)) / .17, 0, 1);                 // split-step hop as the kicker strikes
+        ky -= Math.sin(pre * Math.PI) * G.h * .045; legs = .2 + pre * .3; arms = .3 + pre * .25;
+        const t0 = rv.RU - .03, DV = Math.min(.34, rv.FL + .07), k = BX.clamp((t - t0) / DV, 0, 1), e = 1 - Math.pow(1 - k, 2.2);
+        let tx = G.x + COLU[kc] * G.w, ty = ground - G.h * (kh === 0 ? (kc === 1 ? .62 : .66) : (kc === 1 ? .5 : .2));
+        if (L.res === 'save' && kc !== 1) { const bp = goalPt(P, L); tx = BX.lerp(tx, bp.x - side * ks * .32, .6); ty = BX.lerp(ty, bp.y + ks * .12, .5); }
+        if (k > 0) {
+          kGround = false;
+          kx = BX.lerp(kx, tx, e); ky = BX.lerp(ground - ks * .5, ty, e) - Math.sin(e * Math.PI) * G.h * .1;
+          const r0 = kh === 0 ? 1.15 : 1.45; krot = side * e * r0; arms = .55 + e * .8; legs = .5 + e * .3;
+          if (kc === 1) { kGround = true; krot = 0; arms = .3 + e * (kh === 0 ? 1.2 : .7); legs = kh ? e * 1.1 : e * .3; ky = kh ? BX.lerp(ground - ks * .5, ground - ks * .42, e) : BX.lerp(ground - ks * .5, ty, e) - Math.sin(e * Math.PI) * G.h * .06; }
+          else if (t > t0 + DV) {                                           // gravity: drop onto the turf, small bounce, settle
+            const ft = t - t0 - DV, FALL = .26, f = BX.clamp(ft / FALL, 0, 1), lieY = ground - ks * .16;
+            ky = BX.lerp(ty, lieY, f * f); krot = side * BX.lerp(r0, 1.52, f);
+            if (f >= 1) { const bt = ft - FALL; ky = lieY - Math.abs(Math.sin(bt * 16)) * ks * .05 * Math.max(0, 1 - bt * 4); kGround = true; }
+          }
+        }
       }
-      if (!(L && rv && rv.t > .3)) { g.fillStyle = 'rgba(0,0,0,.25)'; g.beginPath(); g.ellipse(kx, ground, ks * .28, ks * .06, 0, 0, Math.PI * 2); g.fill(); }
+      if (kGround && !(L && rv && (L.d >> 1) !== 1 && rv.s > rv.RU)) { g.fillStyle = 'rgba(0,0,0,.25)'; g.beginPath(); g.ellipse(kx, ground, ks * .28, ks * .06, 0, 0, Math.PI * 2); g.fill(); }
+      else if (L && rv) { g.fillStyle = 'rgba(0,0,0,.18)'; g.beginPath(); g.ellipse(kx, ground, ks * .34, ks * .05, 0, 0, Math.PI * 2); g.fill(); }
       person(g, kx, ky, ks, kcol, {rot: krot, arms, legs, gloves: true, num: '1', noShadow: true, pivot: true});
       // kicker + ball
       const bs = Math.max(8, G.w * .045), shCol = ctx.color(L ? L.sh : shooter());
       let bx = P.spot.x, by2 = P.spot.y - bs * .8, br = bs, brot = 0;
       let px = P.spot.x - S.h * .18, py = P.spot.y + S.h * .08, plegs = 0;
       if (L && rv) {
-        const k1 = BX.clamp(rv.t / .3, 0, 1); px = BX.lerp(P.spot.x - S.h * .18, P.spot.x - bs * 1.4, BX.ease.inOut(k1)); py = BX.lerp(P.spot.y + S.h * .08, P.spot.y + bs * .4, k1); plegs = Math.sin(k1 * 14) * .5;
-        if (rv.t > .3) plegs = .9;
-        const k2 = BX.clamp((rv.t - .3) / .3, 0, 1);
-        if (k2 > 0) {
-          let tp = gp;
-          const e = BX.ease.out(k2), arc = Math.sin(k2 * Math.PI) * G.h * (L.p === 2 ? .1 : .35);
-          const bend = (L.cu || 0) * G.w * .28;
-          bx = BX.lerp(P.spot.x, tp.x, e) + Math.sin(e * Math.PI) * bend; by2 = BX.lerp(P.spot.y - bs * .8, tp.y, e) - arc; br = BX.lerp(bs, bs * .55, e); brot = k2 * 12;
-          if (rv.t > .6) {
-            const k3 = BX.clamp((rv.t - .6) / .4, 0, 1);
-            if (L.res === 'save') { const dir = (L.d >> 1) === 0 ? -1 : (L.d >> 1) === 2 ? 1 : (L.n % 2 ? 1 : -1); bx = tp.x + dir * k3 * G.w * .35; by2 = tp.y - Math.sin(k3 * Math.PI) * G.h * .4 + k3 * G.h * .9; br = bs * .55 + k3 * bs * .2; }
-            else if (L.res === 'post') { const dir = (L.z % 3) === 0 ? -1 : 1; bx = tp.x + dir * k3 * G.w * .25; by2 = tp.y + k3 * G.h * .9 - Math.sin(k3 * Math.PI) * G.h * .3; }
-            else if (L.res === 'over') { by2 = tp.y - k3 * G.h * .5; br = bs * .5 * (1 - k3 * .3); }
-            else if (L.res === 'goal') { by2 = Math.min(ground - br, tp.y + k3 * k3 * G.h); }
-            brot = 12 + k3 * 6;
+        const k1 = BX.clamp(rv.s / rv.RU, 0, 1); px = BX.lerp(P.spot.x - S.h * .18, P.spot.x - bs * 1.4, BX.ease.inOut(k1)); py = BX.lerp(P.spot.y + S.h * .08, P.spot.y + bs * .4, k1); plegs = Math.sin(k1 * 11) * .5;
+        if (rv.s > rv.RU) plegs = .9 - Math.min(.5, (rv.s - rv.RU) * 1.2);
+        if (rv.s > rv.RU) {
+          const b0 = ballAt(P, L, rv.s); bx = b0.x; by2 = b0.y; br = b0.r; brot = b0.rot;
+          if (rv.s < rv.IM + .25) {                                           // motion trail: sampled past positions
+            g.lineCap = 'round';
+            for (let j = 1; j <= 6; j++) { const t1 = rv.s - j * .018; if (t1 < rv.RU) break; const q = ballAt(P, L, t1), q0 = ballAt(P, L, rv.s - (j - 1) * .018); g.strokeStyle = `rgba(255,255,255,${.32 * (1 - j / 7)})`; g.lineWidth = q.r * 1.5 * (1 - j / 8); g.beginPath(); g.moveTo(q0.x, q0.y); g.lineTo(q.x, q.y); g.stroke(); }
           }
-          // trail
-          g.strokeStyle = 'rgba(255,255,255,.25)'; g.lineWidth = br * .9; g.lineCap = 'round';
-          if (k2 < 1) { g.beginPath(); g.moveTo(BX.lerp(P.spot.x, tp.x, Math.max(0, e - .2)) + Math.sin(Math.max(0, e - .2) * Math.PI) * bend, BX.lerp(P.spot.y - bs * .8, tp.y, Math.max(0, e - .2)) - Math.sin(Math.max(0, k2 - .15) * Math.PI) * G.h * (L.p === 2 ? .1 : .35)); g.lineTo(bx, by2); g.stroke(); }
         }
       }
       const role = myRole();
@@ -391,11 +439,22 @@ BX.register({
       } else if (role === 'g') {
         for (let d = 0; d < 6; d++) { const r = diveRect(P, d); g.strokeStyle = 'rgba(200,225,255,.4)'; g.setLineDash([5, 5]); g.strokeRect(r.x + 2, r.y + 2, r.w - 4, r.h - 4); g.setLineDash([]); if (d === sel.d) { g.fillStyle = 'rgba(120,170,230,.45)'; g.fillRect(r.x + 2, r.y + 2, r.w - 4, r.h - 4); D.text(g, '扑', r.x + r.w / 2, r.y + r.h / 2, {size: Math.min(r.h * .45, 32), color: '#fff', font: 'deco', weight: 400, stroke: '#1d3a5a'}); } }
       }
-      const behind = L && rv && rv.t > .62 && L.res === 'goal';
+      const behind = L && rv && rv.s > rv.IM + .02 && L.res === 'goal';
       if (behind) drawBall(g, bx, by2, br, brot);
       person(g, px, py, Math.max(40, S.h * .3), shCol, {back: true, legs: plegs, arms: .2, num: String((L ? L.n : st.k) % 9 + 2)});
       if (!behind) drawBall(g, bx, by2, br, brot);
-      if (swipe && swipe.pts.length > 1) { g.strokeStyle = 'rgba(255,240,180,.75)'; g.lineWidth = 5; g.lineCap = 'round'; g.beginPath(); swipe.pts.forEach((q, i) => i ? g.lineTo(q[0], q[1]) : g.moveTo(q[0], q[1])); g.stroke(); }
+      if (swipe && swipe.pts.length > 1) {          // live preview: the shot this stroke would make if released now
+        const r = role === 'k' ? readSwipe(swipe.pts, P, performance.now()) : {ok: false};
+        if (r.ok) {
+          const zr = zoneRect(P, r.z); g.fillStyle = 'rgba(255,240,200,.16)'; g.fillRect(zr.x + 2, zr.y + 2, zr.w - 4, zr.h - 4); g.strokeStyle = 'rgba(255,240,200,.7)'; g.lineWidth = 2; g.strokeRect(zr.x + 2, zr.y + 2, zr.w - 4, zr.h - 4);
+          g.strokeStyle = 'rgba(255,240,200,.35)'; g.setLineDash([4, 6]); g.beginPath(); g.moveTo(swipe.pts[swipe.pts.length - 1][0], swipe.pts[swipe.pts.length - 1][1]); g.lineTo(r.x, r.y); g.stroke(); g.setLineDash([]);
+          const rc = ['#fff6e0', '#ffd664', '#ff6e50'][r.p]; g.strokeStyle = rc; g.lineWidth = 2.5; D.circle(g, r.x, r.y, 9); g.stroke(); g.beginPath(); g.moveTo(r.x - 13, r.y); g.lineTo(r.x + 13, r.y); g.moveTo(r.x, r.y - 13); g.lineTo(r.x, r.y + 13); g.stroke();
+          D.text(g, POWN[r.p] + (Math.abs(r.cu) > .15 ? (r.cu > 0 ? ' ↷' : ' ↶') : ''), r.x, r.y + 22, {size: 13, color: rc, weight: 800, stroke: 'rgba(0,0,0,.6)'});
+        }
+        g.strokeStyle = r.ok ? ['rgba(255,250,235,.85)', 'rgba(255,214,100,.92)', 'rgba(255,110,80,.95)'][r.p] : 'rgba(255,240,180,.55)'; g.lineWidth = r.ok ? 4 + r.p * 1.5 : 4; g.lineCap = 'round'; g.lineJoin = 'round';
+        g.beginPath(); swipe.pts.forEach((q, i) => i ? g.lineTo(q[0], q[1]) : g.moveTo(q[0], q[1])); g.stroke();
+      }
+      if (lock && !rv && !ctx.hotseat && lock.t < 1.4) { const a = 1 - lock.t / 1.4, rr = 10 + Math.min(1, lock.t * 6) * 8; g.strokeStyle = `rgba(255,224,138,${a})`; g.lineWidth = 3; D.circle(g, lock.x, lock.y, rr); g.stroke(); D.text(g, '已锁定', lock.x, lock.y - rr - 10, {size: 12, color: `rgba(255,236,170,${a})`, weight: 800, stroke: 'rgba(0,0,0,.5)'}); }
       else if (role === 'k' && sel.z < 0 && !st.pk && !rv) { const k = (performance.now() / 900) % 1; g.globalAlpha = 1 - k; g.strokeStyle = '#fff6dc'; g.lineWidth = 3; g.setLineDash([4, 6]); g.beginPath(); g.moveTo(P.spot.x, P.spot.y - bs * 1.4); g.lineTo(P.spot.x, P.spot.y - bs * 1.4 - (P.spot.y - G.y - G.h) * .5 * k); g.stroke(); g.setLineDash([]); g.globalAlpha = 1; }
       // aim line preview for kicker
       if (role === 'k' && sel.z >= 0) {
@@ -416,12 +475,12 @@ BX.register({
         D.text(g, ctx.name(s), 20, y, {size: Math.min(15, rowH * .48), color: '#fbe9d0', align: 'left', maxW: nameW - 24});
         for (let i = 0; i < total; i++) {
           const x = nameW + dr * 1.4 + i * (dotsW / total), v = st.res[s][i];
-          const live = rv && rv.last && rv.last.sh === s && i === st.res[s].length - 1 && rv.t < .62;
+          const live = rv && rv.last && rv.last.sh === s && i === st.res[s].length - 1 && rv.s < rv.IM + .02;
           if (v == null || live) { g.strokeStyle = cur && i === st.res[s].length ? '#ffd76a' : 'rgba(251,233,208,.4)'; g.lineWidth = cur && i === st.res[s].length ? 2.5 : 1.5; D.circle(g, x, y, dr); g.stroke(); if (i >= 5) { g.fillStyle = 'rgba(251,233,208,.12)'; g.fill(); } }
           else if (v) { D.disc(g, x, y, dr, '#4fae7a', {shadow: false}); g.strokeStyle = '#fff'; g.lineWidth = 2; g.beginPath(); g.moveTo(x - dr * .45, y); g.lineTo(x - dr * .1, y + dr * .35); g.lineTo(x + dr * .5, y - dr * .35); g.stroke(); }
           else { D.disc(g, x, y, dr, '#c23a2b', {shadow: false}); g.strokeStyle = '#fff'; g.lineWidth = 2; g.beginPath(); g.moveTo(x - dr * .38, y - dr * .38); g.lineTo(x + dr * .38, y + dr * .38); g.moveTo(x + dr * .38, y - dr * .38); g.lineTo(x - dr * .38, y + dr * .38); g.stroke(); }
         }
-        const shown = st.res[s].reduce((a, b, i) => a + (rv && rv.last && rv.last.sh === s && i === st.res[s].length - 1 && rv.t < .62 ? 0 : b), 0);
+        const shown = st.res[s].reduce((a, b, i) => a + (rv && rv.last && rv.last.sh === s && i === st.res[s].length - 1 && rv.s < rv.IM + .02 ? 0 : b), 0);
         D.text(g, String(shown), W - 22, y, {size: rowH * .7, color: '#ffe08a', font: 'deco', weight: 400});
       }
     }
@@ -454,6 +513,8 @@ BX.register({
     let time = 0;
     function draw(dt) {
       time += dt; fx.update(dt);
+      if (rv) { if (rv.hs > 0) rv.hs -= dt; else rv.s += dt * (ctx.pref('speed') === 2 ? 1.8 : 1); revealEvents(); rv.t = rv.s / rv.END; }
+      if (lock) { lock.t += dt; if (rv) lock = null; }
       const g = cv.g; cv.clear('#2a190d'); const P = layout();
       const [ox, oy] = fx.offset();
       g.save(); g.translate(ox, oy); drawScene(g, P, time); g.restore();
@@ -463,7 +524,7 @@ BX.register({
         const sd = st.k >= 10;
         if (sd && st.k % 2 === 0) D.text(g, '突然死亡', P.S.x + P.S.w / 2, P.goal.y - 14, {size: 18, color: '#ffd76a', font: 'deco', weight: 400, stroke: '#3a1e0a'});
       }
-      if (rv && rv.t >= 1) rv = st.ph === 'reveal' ? rv : null;
+      if (rv && rv.s >= rv.END && st.ph !== 'reveal') rv = null;
       fx.drawFlash(g, P.W, P.H);
     }
     return inst;

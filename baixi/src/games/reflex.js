@@ -127,7 +127,7 @@ function drawScene(g, sc, x, y, w, B, seed) {
 BX.register({
   id: 'reflex', title: '反应力大比拼', cat: 'speed', order: 3, sub: '找不同·抢灯·颜色字',
   desc: '五局三胜的反应力对决，轮流进行三种小游戏：在两幅茶馆画中找不同、灯笼变绿瞬间抢拍、无视字义只认墨色。考眼力、手速与专注力。',
-  kind: 'realtime', seats: 2, noFirst: true, seatColors: ['#c23a2b', '#2f5d8a'],
+  kind: 'realtime', seats: 2, noFirst: true, seatColors: ['#c23a2b', '#2f5d8a'], inputHz: 60,
   options: [{key: 'spot', label: '找不同难度', choices: [[1, '简单'], [2, '标准'], [3, '困难']], def: 2}],
   howto: ['五局三胜，轮流玩三种小游戏；每局开始前的卡片会说明玩法。',
     '<b>找不同</b>：在任一幅画上点不同处（会有变色、变大、镜像、挪位、消失……）；点错罚停 1 秒。💡 可短暂圈出一处（仅人机/同屏）。',
@@ -155,6 +155,10 @@ BX.register({
     const cv = ctx.canvas(), fx = K.fx(), pads = K.pads(ctx, cv);
     const queues = [K.tq(), K.tq()], seen = {}, evSeen = {v: -1};
     let scene = null, sceneSeed = -1, greenAt = {}, time = 0, wrong = [], lastCd = 0;
+    /* fair reaction timing: the stimulus counts from the frame AFTER the one that first drew it (≈ when it hit the screen),
+       the response from the input event's own timestamp (not when our handler ran). Each client measures itself. */
+    const greenDraw = {}, myRt = {}, qVis = {}, WIN = ctx.online ? .2 : 0;
+    let qDrawn = '', qDrawT = 0;
     const aiP = [{}, {}];
     const SL = ctx.opts.spot || 2;
     const getScene = () => { if (sceneSeed !== st.seed) { sceneSeed = st.seed; scene = makeScene(st.seed, SL); } return scene; };
@@ -173,7 +177,7 @@ BX.register({
       st.qn++; const w = Math.floor(Math.random() * 6); let i; do i = Math.floor(Math.random() * 6); while (i === w);
       const others = BX.shuffle(BX.range(6).filter(x => x !== w && x !== i)).slice(0, 2);
       const opts = BX.shuffle([i, w, ...others]).map(c => { let ink; do ink = Math.floor(Math.random() * 6); while (ink === c); return [c, ink]; });
-      st.Q = {w, i, opts, a: opts.findIndex(o => o[0] === i)}; st.ans = [-1, -1]; st.lock = [0, 0]; st.qw = -1; st.qt = 8;
+      st.Q = {w, i, opts, a: opts.findIndex(o => o[0] === i)}; st.ans = [-1, -1]; st.lock = [0, 0]; st.qw = -1; st.qt = 8; st.sc = null;
     }
     function endRound(w) {
       st.rwin = w; st.ph = 'res'; st.t = 2 * T;
@@ -208,6 +212,8 @@ BX.register({
       } else if (it[0] === 's' && st.gm === 2) {
         if (it[2] !== st.qn || st.qw >= 0 || st.lock[s] || st.ans[s] >= 0) return;
         st.ans[s] = it[3];
+        const el = it.length > 5 && it[4] > 0 ? it[4] : 99;
+        if (it[3] === st.Q.a && WIN > 0) { if (!st.sc) st.sc = {s, el, w: WIN}; else if (el < st.sc.el) st.sc = {s, el, w: st.sc.w}; return; }
         if (it[3] === st.Q.a) { st.pt[s]++; st.qw = s; st.qt = 1.1 * T; K.ev(st, 'ok', s, it[3]); }
         else { st.lock[s] = 1; K.ev(st, 'bad', s, it[3]); if (st.lock[0] && st.lock[1]) { st.qw = 2; st.qt = 1.1 * T; } }
       }
@@ -226,6 +232,7 @@ BX.register({
         }
       } else {
         st.qt -= dt;
+        if (st.sc && st.qw < 0) { st.sc.w -= dt; if (st.sc.w <= 0 || (st.ans[0] >= 0 || st.lock[0]) && (st.ans[1] >= 0 || st.lock[1])) { const c = st.sc; st.sc = null; st.pt[c.s]++; st.qw = c.s; st.qt = 1.1 * T; K.ev(st, 'ok', c.s, st.Q.a); } return; }
         if (st.qw >= 0 || st.qt <= 0) {
           if (st.qw < 0) { st.qw = 2; st.qt = 1 * T; K.ev(st, 'to'); }
           else if (st.qt <= 0) { if (st.pt[0] >= 3 || st.pt[1] >= 3) endRound(st.pt[0] >= 3 ? 0 : 1); else if (st.qn >= 12) endRound(st.pt[0] === st.pt[1] ? -1 : st.pt[0] > st.pt[1] ? 0 : 1); else newQ(); }
@@ -287,7 +294,7 @@ BX.register({
     }
     const toLocal = (p, pt) => p.rot ? {x: p.x + p.w - pt.x, y: p.y + p.h - pt.y} : {x: pt.x - p.x, y: pt.y - p.y};
     const toScreen = (p, pt) => p.rot ? {x: p.x + p.w - pt.x, y: p.y + p.h - pt.y} : {x: p.x + pt.x, y: p.y + pt.y};
-    pads.onDown(pt => {
+    pads.onDown((pt, e) => {
       if (st.ph !== 'play') return;
       for (const p of panels()) {
         if (!K.inR(pt, p) || !ctx.isLocal(p.seat)) continue;
@@ -297,21 +304,25 @@ BX.register({
             if (st.lk[s] > 0) { ctx.sfx('error'); return; }
             queues[s].push('d', st.r, (l.x - sc.x) / sc.w, (l.y - sc.y) / sc.w); ctx.sfx('click');
           }
-        } else if (st.gm === 1) lampTap(s);
-        else for (const b of stroopL(p).btns) if (K.inR(l, b)) stroopTap(s, b.i);
+        } else if (st.gm === 1) lampTap(s, e.timeStamp);
+        else for (const b of stroopL(p).btns) if (K.inR(l, b, 4)) { stroopTap(s, b.i, e.timeStamp); break; }
       }
     });
-    function lampTap(s) {
+    function lampTap(s, ts) {
       if (st.ph !== 'play' || st.gm !== 1 || (aiP[s].tapped === st.r)) return;
       aiP[s].tapped = st.r;
-      const ga = greenAt[st.r];
-      queues[s].push('l', st.r, ga != null ? Math.round((performance.now() - ga) / 1000 * 1000) / 1000 : -1);
+      const ga = greenAt[st.r] != null ? greenAt[st.r] : greenDraw[st.r] != null ? greenDraw[st.r] + 16 : null, t = ts != null ? ts : performance.now();
+      const rt = ga != null ? Math.max(.001, Math.round(t - ga) / 1000) : -1;
+      queues[s].push('l', st.r, rt);
+      if (rt > 0) myRt[st.r + ':' + s] = Math.round(rt * 1000);          // show the player's own time at once
       ctx.sfx('hit');
     }
-    function stroopTap(s, i) {
+    function stroopTap(s, i, ts) {
       if (st.gm !== 2 || st.qw >= 0 || st.lock[s] || st.ans[s] >= 0 || (aiP[s].sq === st.qn && aiP[s].sr === st.r)) return;
-      aiP[s].sq = st.qn; aiP[s].sr = st.r; aiP[s].si = i;
-      queues[s].push('s', st.r, st.qn, i); ctx.sfx('click');
+      aiP[s].sq = st.qn; aiP[s].sr = st.r; aiP[s].si = i; aiP[s].sT = time;
+      const v = qVis[st.r + ':' + st.qn], el = v != null ? Math.max(.05, Math.round((ts != null ? ts : performance.now()) - v) / 1000) : -1;
+      queues[s].push('s', st.r, st.qn, i, el); ctx.sfx('click');
+      if (st.Q && i !== st.Q.a) { aiP[s].pb = st.r + ':' + st.qn; ctx.sfx('buzz'); fx.shake(3); ctx.buzz(20); }   // certain → immediate
     }
     function playEv() {
       K.evPlay(st, evSeen, e => {
@@ -330,7 +341,7 @@ BX.register({
           if (ctx.isLocal(e[2])) { ctx.sfx('error'); fx.shake(4); }
           wrong.push({s: e[2], x: e[3], y: e[4], t: 0});
         } else if (k === 'ok') { ctx.sfx('score'); fx.flash(.5); for (const p of panels()) { const b = stroopL(p).btns[e[3]], c = toScreen(p, {x: b.x + b.w / 2, y: b.y + b.h / 2}); fx.burst(c.x, c.y, {n: 18, color: ['#ffd76a', ctx.color(e[2])], sp: 220, square: true}); } }
-        else if (k === 'bad') { if (ctx.isLocal(e[2])) { ctx.sfx('buzz'); fx.shake(4); ctx.buzz(20); } else ctx.sfx('error'); }
+        else if (k === 'bad') { if (ctx.isLocal(e[2])) { if (aiP[e[2]].pb !== st.r + ':' + st.qn) { ctx.sfx('buzz'); fx.shake(4); ctx.buzz(20); } } else ctx.sfx('error'); }
         else if (k === 'to') ctx.sfx('draw');
         else if (k === 'rw') { ctx.sfx(e[2] >= 0 ? 'gong' : 'draw'); fx.flash(.6); }
         else if (k === 'end') ctx.sfx('bell');
@@ -360,21 +371,23 @@ BX.register({
       snapshot() {
         const r3 = v => Math.round(v * 100) / 100;
         return {r: st.r, gm: st.gm, ph: st.ph, t: r3(st.t), rw: st.rw, pt: st.pt, rwin: st.rwin, ev: st.ev, over: st.over, seed: st.seed, cl: st.cl, lk: st.lk.map(r3),
-          lamp: {ph: st.lamp.ph, foul: st.lamp.foul, cand: st.lamp.cand, tt: st.lamp.tt}, Q: st.Q, qn: st.qn, ans: st.ans, lock: st.lock, qw: st.qw, qt: r3(st.qt), rt: st.rt};
+          lamp: {ph: st.lamp.ph, foul: st.lamp.foul, cand: st.lamp.cand, tt: st.lamp.tt}, sc: st.sc ? 1 : null, Q: st.Q, qn: st.qn, ans: st.ans, lock: st.lock, qw: st.qw, qt: r3(st.qt), rt: st.rt};
       },
       restore(d) { Object.assign(st, d); playEv(); info(); },
       key(e) {
         if (e.repeat) return; const ms = ctx.mySeats; if (!ms.length) return;
         const s2 = ms.length > 1 ? ms[1] : ms[0];
-        if (st.gm === 1 && st.ph === 'play') { if (['Space', 'KeyS'].includes(e.code)) lampTap(ms[0]); else if (['Enter', 'ArrowDown', 'NumpadEnter'].includes(e.code)) lampTap(s2); }
+        if (st.gm === 1 && st.ph === 'play') { if (['Space', 'KeyS'].includes(e.code)) lampTap(ms[0], e.timeStamp); else if (['Enter', 'ArrowDown', 'NumpadEnter'].includes(e.code)) lampTap(s2, e.timeStamp); }
         if (st.gm === 2 && st.ph === 'play') {
           const m = {Digit1: 0, Digit2: 1, Digit3: 2, Digit4: 3}, m2 = {Digit7: 0, Digit8: 1, Digit9: 2, Digit0: 3};
-          if (e.code in m) stroopTap(ms[0], m[e.code]); else if (e.code in m2) stroopTap(s2, m2[e.code]);
+          if (e.code in m) stroopTap(ms[0], m[e.code], e.timeStamp); else if (e.code in m2) stroopTap(s2, m2[e.code], e.timeStamp);
         }
       },
       draw(dt) {
         time += dt; fx.update(dt);
-        if (st.ph === 'play' && st.gm === 1 && st.lamp.ph !== 'wait' && greenAt[st.r] == null) greenAt[st.r] = performance.now();
+        // stimulus timing: first frame that draws green / the question → its successor frame ≈ when it reached the screen
+        if (st.ph === 'play' && st.gm === 1 && st.lamp.ph !== 'wait' && st.lamp.foul < 0 && greenAt[st.r] == null) { if (greenDraw[st.r] == null) greenDraw[st.r] = performance.now(); else greenAt[st.r] = Math.min(performance.now(), greenDraw[st.r] + 34); }
+        if (st.ph === 'play' && st.gm === 2 && st.Q) { const k = st.r + ':' + st.qn; if (qVis[k] == null) { if (qDrawn !== k) { qDrawn = k; qDrawT = performance.now(); } else qVis[k] = Math.min(performance.now(), qDrawT + 34); } }
         if (!ctx.isHost) { if (st.ph === 'play' && st.gm === 0) st.t -= dt; }
         const g = cv.g; cv.clear('#2a190d');
         const [ox, oy] = fx.offset(); g.save(); g.translate(ox, oy);
@@ -462,8 +475,8 @@ BX.register({
       K.lantern(g, cx, cy, r, col, green ? 1 : .1);
       D.text(g, green ? '拍' : '等', cx, cy, {size: r * .8, color: green ? '#fff' : 'rgba(255,220,200,.5)', font: 'deco', weight: 400});
       g.restore();
-      const tapped = aiP[s].tapped === st.r;
-      const msg = L.foul >= 0 ? '' : L.ph === 'wait' ? (tapped ? '已出手…' : '屏住呼吸，等灯变绿…') : L.ph === 'green' ? (tapped ? '已拍！' : '快拍！') : '';
+      const tapped = aiP[s].tapped === st.r, mine0 = myRt[st.r + ':' + s];
+      const msg = L.foul >= 0 ? '' : L.ph === 'wait' ? (tapped ? '已出手…' : '屏住呼吸，等灯变绿…') : L.ph === 'green' ? (tapped ? (mine0 ? '已拍！' + mine0 + ' 毫秒' : '已拍！') : '快拍！') : '';
       D.text(g, msg, cx, B.y + B.h * .78, {size: Math.min(26, B.w * .07), color: green ? '#bfffd0' : '#fbe9d0', font: 'deco', weight: 400, stroke: 'rgba(0,0,0,.5)'});
       if (ctx.isLocal(s)) D.text(g, nLoc() === 2 ? '点这半边屏幕' : '点任意位置' + (BX.TOUCH.matches ? '' : ' / 空格'), cx, B.y + B.h * .9, {size: 12, color: 'rgba(251,233,208,.7)'});
       const tt = L.tt || [-1, -1];
@@ -486,11 +499,14 @@ BX.register({
       D.text(g, COLS[Q.w][0], c.x + c.w / 2, c.y + c.h * .56, {size: Math.min(c.h * .62, c.w * .55) * pulse, color: COLS[Q.i][1], font: 'serif', weight: 900});
       D.text(g, `${st.pt[s]} : ${st.pt[o]}   先得 3 分`, c.x + c.w / 2, c.y + c.h - 12, {size: 11, color: C.ink2});
       for (const b of Lt.btns) {
-        const [cc, ink] = Q.opts[b.i], mine = st.ans[s] === b.i, rev = st.qw >= 0;
+        const [cc, ink] = Q.opts[b.i], pm = aiP[s].sq === st.qn && aiP[s].sr === st.r && aiP[s].si === b.i, mine = st.ans[s] === b.i || (pm && b.i !== Q.a), rev = st.qw >= 0;
         let alpha = 1, sel = null;
         if (st.lock[s] && !mine && !rev) alpha = .45;
         if (rev) { if (b.i === Q.a) sel = '#ffd76a'; else alpha = .45; }
-        K.btn(g, b, '', {color: '#efe2c4', alpha, sel, pressed: mine || (aiP[s].sq === st.qn && aiP[s].sr === st.r && aiP[s].si === b.i)});
+        const pk = pm && !rev ? BX.clamp((time - (aiP[s].sT || 0)) / .12, 0, 1) : 1, scl = pm && !rev && b.i === Q.a ? .94 + .06 * BX.ease.back(pk) : 1;
+        if (scl !== 1) { g.save(); g.translate(b.x + b.w / 2, b.y + b.h / 2); g.scale(scl, scl); g.translate(-(b.x + b.w / 2), -(b.y + b.h / 2)); }
+        K.btn(g, b, '', {color: '#efe2c4', alpha, sel, pressed: mine || pm});
+        if (scl !== 1) g.restore();
         g.globalAlpha = alpha; D.text(g, COLS[cc][0], b.x + b.w / 2, b.y + b.h * .45, {size: Math.min(b.h * .5, b.w * .4), color: COLS[ink][1], font: 'serif', weight: 900}); g.globalAlpha = 1;
         if (mine && b.i !== Q.a) D.text(g, '✕', b.x + b.w - 14, b.y + 14, {size: 18, color: '#d0302a', weight: 900});
         if (rev && st.ans[o] === b.i) { g.fillStyle = ctx.color(o); D.circle(g, b.x + b.w - 12, b.y + b.h - 16, 6); g.fill(); }

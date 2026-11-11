@@ -37,7 +37,7 @@ function genQ(lv, R) {
 BX.register({
   id: 'mathduel', title: '速算对战', cat: 'speed', order: 1, sub: '抢答算术题，手快脑更快',
   desc: '两人看同一道算术题，各自从四个答案中抢答：先答对者得分，答错本题即被锁定。十题定胜负，同屏两人各占半边屏幕。',
-  kind: 'realtime', seats: 2, noFirst: true, seatColors: ['#c23a2b', '#2f5d8a'], hint: false,
+  kind: 'realtime', seats: 2, noFirst: true, seatColors: ['#c23a2b', '#2f5d8a'], hint: false, inputHz: 60,
   options: [{key: 'lv', label: '难度', choices: [[1, '口算'], [2, '两位数'], [3, '混合四则']], def: 1}, {key: 'nq', label: '题数', choices: [[10, '10 题'], [15, '15 题'], [20, '20 题']], def: 10}],
   howto: ['看题后<b>点四个大按钮之一</b>抢答：先答对得 1 分；答错本题锁定，只能看对手答。',
     '顶部圆点是每道题的归属，旁边显示双方「连对」；答对时会显示你的用时。',
@@ -64,16 +64,31 @@ BX.register({
     const queues = [K.tq(), K.tq()], seen = {}, evSeen = {v: -1};
     const aiPlan = {};
     let pend = [-1, -1], time = 0, qShow = 0, lastQ = -1;
+    /* fair timing: each client measures its own answer time from the frame its question became visible (the frame after the
+       first draw ≈ when it reached the screen) to the tap's event timestamp. Online, the host waits a short window after the
+       first correct answer so a guest who was faster but whose message is still in flight still wins. */
+    const WIN = ctx.online ? .2 : 0, qVis = {};
+    let qDrawn = -1, qDrawT = 0;
+    const qTime = (q, ts) => { const v = qVis[q]; return v == null ? null : Math.max(.05, Math.round((ts - v) / 100) / 10); };
 
     function newQ() {
       st.q++; st.Q = genQ(lv, Math.random); st.lock = [0, 0]; st.ans = [-1, -1]; st.win = -1;
-      st.ph = 'q'; st.t = QT * (BX.test ? .4 : 1); K.ev(st, 'new');
+      st.ph = 'q'; st.t = QT * (BX.test ? .4 : 1); st.cand = null; K.ev(st, 'new');
     }
-    function answer(s, qn, ch) {
+    function answer(s, qn, ch, cel) {
       if (st.ph !== 'q' || qn !== st.q || st.lock[s] || st.ans[s] >= 0) return;
-      st.ans[s] = ch;
+      const hostEl = Math.round((QT * (BX.test ? .4 : 1) - st.t) * 10) / 10;
+      const el = typeof cel === 'number' && cel > 0 && cel <= hostEl + .05 ? cel : hostEl;
+      if (ch === st.Q.a && WIN > 0) {                               // hold the win open briefly for a faster answer in flight
+        st.ans[s] = ch;
+        if (!st.cand) st.cand = {s, el, w: WIN}; else if (el < st.cand.el) st.cand = {s, el, w: st.cand.w};
+        return;
+      }
+      award(s, ch, el);
+    }
+    function award(s, ch, el) {
+      st.ans[s] = ch; st.cand = null;
       if (ch === st.Q.a) {
-        const el = Math.round((QT * (BX.test ? .4 : 1) - st.t) * 10) / 10;
         st.s[s]++; st.win = s; st.ph = 'rev'; st.t = 1.5 * T; st.stk[s]++; st.stk[1 - s] = 0; st.bstk[s] = Math.max(st.bstk[s], st.stk[s]); st.tsum[s] += el; if (!st.fast[s] || el < st.fast[s]) st.fast[s] = el;
         st.hist.push(s); if (st.hist.length > 40) st.hist.shift(); K.ev(st, 'ok', s, ch, el);
       }
@@ -113,16 +128,20 @@ BX.register({
       return {head, qBox, btns, pad};
     }
     const toLocal = (p, pt) => p.rot ? {x: p.x + p.w - pt.x, y: p.y + p.h - pt.y} : {x: pt.x - p.x, y: pt.y - p.y};
-    pads.onDown(pt => {
+    pads.onDown((pt, e) => {
       for (const p of panels()) {
         if (!K.inR(pt, p) || !ctx.isLocal(p.seat)) continue;
         const l = toLocal(p, pt), L = pLayout(p);
-        for (const b of L.btns) if (K.inR(l, b)) tap(p.seat, b.i);
+        for (const b of L.btns) if (K.inR(l, b, 4)) { tap(p.seat, b.i, e.timeStamp); break; }
       }
     });
-    function tap(seat, i) {
+    const predBad = [-1, -1], pressT = [-9, -9];
+    function tap(seat, i, ts) {
       if (st.ph !== 'q' || st.lock[seat] || st.ans[seat] >= 0 || pend[seat] >= 0) return;
-      pend[seat] = i; queues[seat].push(st.q, i); ctx.sfx('click');
+      pend[seat] = i; const el = qTime(st.q, ts != null ? ts : performance.now());
+      queues[seat].push(st.q, i, el != null ? el : -1); ctx.sfx('click');
+      if (st.Q && i !== st.Q.a) { predBad[seat] = st.q; ctx.sfx('buzz'); fx.shake(3); ctx.buzz(25); }   // wrong is certain → say so now
+      else pressT[seat] = time;
     }
     /* ---------- AI ---------- */
     function aiInput(seat, level) {
@@ -146,7 +165,7 @@ BX.register({
           ctx.sfx('score'); fx.flash(.8); fx.shake(5);
           for (const p of P) { const L = pLayout(p), b = L.btns[e[3]]; const c = center(p, b); fx.burst(c.x, c.y, {n: 26, color: ['#ffd76a', '#fff', ctx.color(e[2])], sp: 260, square: true}); fx.text(c.x, c.y - 20, p.seat === e[2] ? '+1  ' + (e[4] != null ? e[4] + ' 秒' : '') : ctx.name(e[2]) + ' 抢到', {size: p.seat === e[2] ? 30 : 18, color: '#ffe08a'}); }
         } else if (e[0] === 'bad') {
-          if (ctx.isLocal(e[2])) { ctx.sfx('buzz'); fx.shake(4); ctx.buzz(25); } else ctx.sfx('error');
+          if (ctx.isLocal(e[2])) { if (predBad[e[2]] !== st.q) { ctx.sfx('buzz'); fx.shake(4); ctx.buzz(25); } } else ctx.sfx('error');
           for (const p of P) if (p.seat === e[2]) { const L = pLayout(p), c = center(p, L.btns[e[3]]); fx.text(c.x, c.y, '错！', {size: 28, color: '#ff8a7a'}); }
         } else if (e[0] === 'none' || e[0] === 'to') ctx.sfx('draw');
         else if (e[0] === 'go') ctx.sfx('start');
@@ -165,24 +184,26 @@ BX.register({
       aiInput,
       step(dt, inputs) {
         if (st.over) return;
-        for (let s = 0; s < 2; s++) K.take(inputs[s] && inputs[s].q, seen, s, it => answer(s, it[0], it[1]));
+        for (let s = 0; s < 2; s++) K.take(inputs[s] && inputs[s].q, seen, s, it => answer(s, it[0], it[1], it.length > 3 ? it[2] : null));
         st.t -= dt;
+        if (st.cand && st.ph === 'q') { st.cand.w -= dt; if (st.cand.w <= 0 || (st.ans[0] >= 0 || st.lock[0]) && (st.ans[1] >= 0 || st.lock[1])) award(st.cand.s, st.Q.a, st.cand.el); }
         if (st.ph === 'intro') { const c = Math.ceil(st.t); if (c < lastCd && c > 0) { lastCd = c; K.ev(st, 'cd'); } if (st.t <= 0) { K.ev(st, 'go'); newQ(); } }
-        else if (st.ph === 'q' && st.t <= 0) { st.ph = 'rev'; st.t = 1.3 * T; st.hist.push(-1); K.ev(st, 'to'); }
+        else if (st.ph === 'q' && st.t <= 0 && !st.cand) { st.ph = 'rev'; st.t = 1.3 * T; st.hist.push(-1); K.ev(st, 'to'); }
         else if (st.ph === 'rev' && st.t <= 0) after();
         playEv(); info();
       },
-      snapshot() { return {q: st.q, Q: st.Q, ph: st.ph, t: Math.round(st.t * 10) / 10, s: st.s, lock: st.lock, ans: st.ans, win: st.win, ot: st.ot, ev: st.ev, over: st.over, hist: st.hist.slice(-20), stk: st.stk}; },
-      restore(d) { Object.assign(st, d); playEv(); info(); },
+      snapshot() { return {cand: st.cand ? 1 : null, q: st.q, Q: st.Q, ph: st.ph, t: Math.round(st.t * 10) / 10, s: st.s, lock: st.lock, ans: st.ans, win: st.win, ot: st.ot, ev: st.ev, over: st.over, hist: st.hist.slice(-20), stk: st.stk}; },
+      restore(d) { if (!('cand' in d)) d.cand = null; Object.assign(st, d); playEv(); info(); },
       key(e) {
         if (e.repeat) return;
         const m = {Digit1: 0, Digit2: 1, Digit3: 2, Digit4: 3, Numpad1: 0, Numpad2: 1, Numpad3: 2, Numpad4: 3}, m2 = {Digit7: 0, Digit8: 1, Digit9: 2, Digit0: 3};
         const ms = ctx.mySeats; if (!ms.length) return;
-        if (e.code in m) tap(ms[0], m[e.code]);
-        else if (e.code in m2) tap(ms.length > 1 ? ms[1] : ms[0], m2[e.code]);
+        if (e.code in m) tap(ms[0], m[e.code], e.timeStamp);
+        else if (e.code in m2) tap(ms.length > 1 ? ms[1] : ms[0], m2[e.code], e.timeStamp);
       },
       draw(dt) {
-        time += dt; fx.update(dt); qShow = Math.min(1, qShow + dt * 4);
+        time += dt; fx.update(dt); qShow = Math.min(1, qShow + dt * 7);
+        if (st.ph === 'q' && st.Q && qVis[st.q] == null) { if (qDrawn !== st.q) { qDrawn = st.q; qDrawT = performance.now(); } else qVis[st.q] = Math.min(performance.now(), qDrawT + 34); }
         if (!ctx.isHost) st.t -= dt;
         for (let s = 0; s < 2; s++) if (st.ans[s] >= 0 || st.lock[s] || st.ph !== 'q') pend[s] = st.ph === 'q' ? pend[s] : -1;
         const g = cv.g; cv.clear('#2a190d');
@@ -247,17 +268,20 @@ BX.register({
         if (!Q || st.ph === 'intro') alpha = .5;
         if (locked && !mine) alpha = .4;
         if (st.ph !== 'q' && Q) { if (i === Q.a) sel = '#ffd76a'; else alpha = .45; }
-        if (mine && Q && i !== Q.a) col = '#555';
+        const pBad = pend[s] === i && Q && i !== Q.a && st.ph === 'q';
+        if ((mine || pBad) && Q && i !== Q.a) col = '#555';
+        if (pBad && !mine && !st.lock[s]) alpha = 1;
         const pressed = pend[s] === i || mine;
-        const wob = st.ph !== 'q' && Q && i === Q.a ? 1 + Math.sin(time * 10) * .03 : 1;
+        const pk = pend[s] === i && st.ph === 'q' ? BX.clamp((time - pressT[s]) / .12, 0, 1) : 1;
+        const wob = st.ph !== 'q' && Q && i === Q.a ? 1 + Math.sin(time * 10) * .03 : pend[s] === i && st.ph === 'q' && i === Q.a ? .94 + .06 * BX.ease.back(pk) : 1;
         g.save(); g.translate(b.x + b.w / 2, b.y + b.h / 2); g.scale(wob, wob); g.translate(-(b.x + b.w / 2), -(b.y + b.h / 2));
         K.btn(g, b, Q && st.ph !== 'intro' ? String(Q.opts[i]) : '?', {color: col, fg: '#fff', alpha, sel, pressed, font: 'serif', size: Math.min(b.h * .42, b.w * .3)});
         if (!BX.TOUCH.matches || !pads.touched) D.text(g, keys[i], b.x + 12, b.y + 13, {size: 11, color: 'rgba(255,255,255,.7)'});
-        if (mine && Q && i !== Q.a) D.text(g, '✕', b.x + b.w - 16, b.y + 16, {size: 18, color: '#ff8a7a', weight: 900});
+        if ((mine || pBad) && Q && i !== Q.a) D.text(g, '✕', b.x + b.w - 16, b.y + 16, {size: 18, color: '#ff8a7a', weight: 900});
         if (theirs && st.ph !== 'q') { g.fillStyle = ctx.color(o); D.circle(g, b.x + b.w - 14, b.y + b.h - 18, 7); g.fill(); g.strokeStyle = '#fff'; g.lineWidth = 2; g.stroke(); }
         g.restore();
       }
-      if (st.lock[s] && st.ph === 'q') {
+      if ((st.lock[s] || (pend[s] >= 0 && st.Q && pend[s] !== st.Q.a)) && st.ph === 'q') {
         const y = L.btns[0].y - L.pad / 2;
         D.text(g, '答错了，本题锁定', p.w / 2, Math.max(L.qBox.y + L.qBox.h + 2, y), {size: 14, color: '#ff9a8a', weight: 800, stroke: 'rgba(0,0,0,.6)'});
       }

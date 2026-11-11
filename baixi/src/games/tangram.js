@@ -124,9 +124,9 @@ BX.register({
     /* ---------- geometry of pieces ---------- */
     const angOf = pc => pc.ka * Math.PI / 4;
     const polyOf = pc => polyAt(pc.p, angOf(pc), pc.f ? -1 : 1, pc.cx, pc.cy);
-    function trySnap(i, assist) {
-      const pc = pcs[i]; pc.snap = -1;
-      const c = [pc.cx, pc.cy], R0 = BX.TOUCH.matches ? .62 : .55;
+    function findSnap(i, assist) {
+      const pc = pcs[i];
+      const c = [pc.cx, pc.cy], R0 = BX.TOUCH.matches ? .75 : .62;
       let best = -1, bd = R0, bdl = 0;
       for (const dl of assist ? [0, 1, -1] : [0]) {   // assist: also accept a slot that is only 45° off
         const rel = polyAt(pc.p, (pc.ka + dl) * Math.PI / 4, pc.f ? -1 : 1, 0, 0);
@@ -138,7 +138,12 @@ BX.register({
         });
         if (best >= 0) break;
       }
-      if (best >= 0) { if (bdl) { pc.ka += bdl; pc.k = ((pc.k + bdl) % 8 + 8) % 8; } pc.cx = P.slots[best].c[0]; pc.cy = P.slots[best].c[1]; pc.snap = best; pc.home = false; ctx.sfx('place'); return true; }
+      return best >= 0 ? {j: best, dl: bdl} : null;
+    }
+    function trySnap(i, assist) {
+      const pc = pcs[i]; pc.snap = -1;
+      const f = findSnap(i, assist), best = f ? f.j : -1, bdl = f ? f.dl : 0;
+      if (best >= 0) { pc.pulse = 1; if (bdl) { pc.ka += bdl; pc.k = ((pc.k + bdl) % 8 + 8) % 8; } pc.cx = P.slots[best].c[0]; pc.cy = P.slots[best].c[1]; pc.snap = best; pc.home = false; ctx.sfx('place'); return true; }
       return false;
     }
     const snapState = () => JSON.stringify(pcs.map(q => [q.k, q.ka, q.f, q.cx, q.cy, q.home, q.snap]));
@@ -148,7 +153,8 @@ BX.register({
       JSON.parse(undoS.pop()).forEach((a, i) => { const q = pcs[i]; [q.k, q.ka, q.f, q.cx, q.cy, q.home, q.snap] = a; });
       ctx.sfx('whoosh'); hintSt = null;
     }
-    function rotate(i, dir = 1) { const pc = pcs[i]; pc.k = ((pc.k + dir) % 8 + 8) % 8; pc.ka += dir; if (!pc.home) trySnap(i); ctx.sfx(pc.snap >= 0 ? 'place' : 'tick'); if (pc.home) { pc.home = false; pc.hx = pc.cx; } }
+    function rotate(i, dir = 1, noSnap) { const pc = pcs[i]; pc.k = ((pc.k + dir) % 8 + 8) % 8; pc.ka += dir; if (!pc.home && !noSnap) trySnap(i); ctx.sfx(pc.snap >= 0 && !noSnap ? 'place' : 'tick'); if (pc.home) { pc.home = false; pc.hx = pc.cx; } }
+    const restore = st => JSON.parse(st).forEach((a, i) => { const q = pcs[i]; [q.k, q.ka, q.f, q.cx, q.cy, q.home, q.snap] = a; });
     function flip(i) { const pc = pcs[i]; pc.f ^= 1; ctx.sfx('flip'); if (pc.home) pc.home = false; trySnap(i); }
     function afterAct() { hintSt = hintSt && pcs[hintSt.i].snap === hintSt.s ? null : hintSt; checkWin(); }
     /* coverage test with an offscreen raster */
@@ -236,38 +242,72 @@ BX.register({
       const now = performance.now(); if (now - (L.wheelT || 0) < 140) return; L.wheelT = now;
       bring(i); sel = i; act(() => rotate(i, e.deltaY < 0 ? -1 : 1));
     }, {passive: false});
+    /* touch: a second finger while one finger holds a piece = two-finger rotate (the piece turns live with the fingers and
+       clicks into 45° steps); the piece follows the midpoint of the two fingers */
+    const ang2 = (a, b) => Math.atan2(b.y - a.y, b.x - a.x);
+    function rotStart(e, p) {
+      const pc = pcs[drag.i], a = {x: drag.px, y: drag.py}, m = toW({x: (a.x + p.x) / 2, y: (a.y + p.y) / 2});
+      drag.rot = {pid: e.pointerId, p2: p, a: ang2(a, p), acc: 0, n: 0, mx: pc.cx - m[0], my: pc.cy - m[1]};
+      if (!drag.moved) { drag.moved = true; pc.snap = -1; pc.home = false; }
+      try { cv.cv.setPointerCapture(e.pointerId); } catch (_) {}
+    }
+    function rotMove() {
+      const r = drag.rot, pc = pcs[drag.i], a = {x: drag.px, y: drag.py}, na = ang2(a, r.p2);
+      let d = na - r.a; while (d > Math.PI) d -= 2 * Math.PI; while (d < -Math.PI) d += 2 * Math.PI;
+      r.a = na; r.acc += d;
+      const want = Math.round(r.acc / (Math.PI / 4));
+      while (r.n < want) { rotate(drag.i, 1, true); r.n++; ctx.buzz(4); }
+      while (r.n > want) { rotate(drag.i, -1, true); r.n--; ctx.buzz(4); }
+      const m = toW({x: (a.x + r.p2.x) / 2, y: (a.y + r.p2.y) / 2}); pc.cx = m[0] + r.mx; pc.cy = m[1] + r.my; pc.v.cx = pc.cx; pc.v.cy = pc.cy;
+      drag.preview = findSnap(drag.i, true);
+    }
     ctx.on(cv.cv, 'pointerdown', e => {
-      if (won || !L || drag) return;
-      const p = cv.pos(e), i = pieceAt(p);
+      if (won || !L) return;
+      const p = cv.pos(e);
+      if (drag) { if (e.pointerType !== 'mouse' && e.pointerId !== drag.pid && !drag.rot) rotStart(e, p); return; }
+      const i = pieceAt(p);
       if (i < 0) { sel = -1; return; }
       if (e.button === 2) { bring(i); sel = i; act(() => rotate(i, -1)); return; }
       const w = toW(p); bring(i); sel = i;
-      drag = {i, sx: p.x, sy: p.y, dx: w[0] - pcs[i].cx, dy: w[1] - pcs[i].cy, moved: false, pid: e.pointerId, before: snapState(), mouse: e.pointerType === 'mouse'};
+      drag = {i, sx: p.x, sy: p.y, px: p.x, py: p.y, dx: w[0] - pcs[i].cx, dy: w[1] - pcs[i].cy, moved: false, pid: e.pointerId, before: snapState(), mouse: e.pointerType === 'mouse', t0: performance.now(), preview: null};
       try { cv.cv.setPointerCapture(e.pointerId); } catch (_) {}
     });
     ctx.on(cv.cv, 'pointermove', e => {
-      if (!drag || e.pointerId !== drag.pid) return;
-      const p = cv.pos(e);
+      if (!drag) return;
+      const pts = ctx.points(e, cv.cv), p = pts[pts.length - 1];
+      if (drag.rot && e.pointerId === drag.rot.pid) { drag.rot.p2 = p; rotMove(); return; }
+      if (e.pointerId !== drag.pid) return;
+      drag.px = p.x; drag.py = p.y;
+      if (drag.rot) { rotMove(); return; }
       if (!drag.moved && Math.hypot(p.x - drag.sx, p.y - drag.sy) > (drag.mouse ? 4 : 8)) { drag.moved = true; const pc = pcs[drag.i]; pc.snap = -1; pc.home = false; }
       if (!drag.moved) return;
       const w = toW(p), pc = pcs[drag.i]; pc.cx = w[0] - drag.dx; pc.cy = w[1] - drag.dy; pc.v.cx = pc.cx; pc.v.cy = pc.cy;
+      drag.preview = findSnap(drag.i, true);   // where it would click in if released now
     });
     const up = e => {
-      if (!drag || e.pointerId !== drag.pid) return;
+      if (!drag) return;
+      if (drag.rot && e.pointerId === drag.rot.pid) {   // second finger lifted: keep dragging with the first, from where the piece is now
+        const pc = pcs[drag.i], w = toW({x: drag.px, y: drag.py}); drag.dx = w[0] - pc.cx; drag.dy = w[1] - pc.cy; drag.rot = null; return;
+      }
+      if (e.pointerId !== drag.pid) return;
       const d = drag; drag = null;
       if (won) return;
       if (d.moved) {
-        undoS.push(d.before); moves++; started = true;
+        if (d.before !== snapState()) { undoS.push(d.before); moves++; started = true; }
         if (!trySnap(d.i, true)) ctx.sfx('tick');
         afterAct(); return;
       }
-      // tap: rotate, or double tap on the parallelogram: flip
-      if (d.i === 6) {
-        if (pendTap && performance.now() - pendTap.t < 300) { ctx.cancel(pendTap.tm); pendTap = null; act(() => flip(6)); return; }
-        pendTap = {t: performance.now(), tm: ctx.after(290, () => { pendTap = null; act(() => rotate(6)); })};
-        return;
+      if (e.type === 'pointercancel') return;
+      // tap: rotate at once; a quick second tap on the parallelogram turns that rotation into a flip
+      const now = performance.now();
+      if (d.i === 6 && pendTap && now - pendTap.t < 320) {
+        const pt = pendTap; pendTap = null;
+        if (undoS[undoS.length - 1] === pt.before) { undoS.pop(); moves--; restore(pt.before); }
+        act(() => flip(6)); return;
       }
+      const before = snapState();
       act(() => rotate(d.i));
+      pendTap = d.i === 6 ? {t: now, before} : null;
     };
     ctx.on(cv.cv, 'pointerup', up); ctx.on(cv.cv, 'pointercancel', up);
 
@@ -301,16 +341,27 @@ BX.register({
           g.save(); pathPoly(g, s.v, ox, oy, u); g.fillStyle = D.alpha(PCOL[pcs[hintSt.i].p], .35 + .3 * a); g.fill();
           g.setLineDash([6, 4]); g.lineWidth = 2.5; g.strokeStyle = `rgba(255,236,150,${.6 + .4 * a})`; g.stroke(); g.restore();
         }
+        // magnetic preview: the slot the held piece would click into if released now
+        if (drag && drag.moved && drag.preview && !won) {
+          const s = P.slots[drag.preview.j], a = .55 + .25 * Math.sin(performance.now() / 110);
+          g.save(); pathPoly(g, s.v, ox, oy, u); g.fillStyle = D.alpha(PCOL[pcs[drag.i].p], .28); g.fill();
+          g.lineJoin = 'round'; g.lineWidth = Math.max(2, u * .05); g.strokeStyle = `rgba(255,236,150,${a})`; g.stroke(); g.restore();
+        }
         // pieces
-        const kk = 1 - Math.exp(-dt * 16);
+        const kk = 1 - Math.exp(-dt * 16), kl = 1 - Math.exp(-dt * 26);
         for (const i of order) {
-          const pc = pcs[i], v = pc.v;
+          const pc = pcs[i], v = pc.v, held = drag && drag.i === i && drag.moved, r = held && drag.rot;
           if (v.cx == null) { v.cx = (A.x + A.w / 2 - ox) / u; v.cy = (A.y + A.h / 2 - oy) / u; }
-          if (!(drag && drag.i === i && drag.moved)) { v.cx += (pc.cx - v.cx) * kk; v.cy += (pc.cy - v.cy) * kk; }
-          v.ang += (angOf(pc) - v.ang) * Math.min(1, kk * 1.3); v.fx += ((pc.f ? -1 : 1) - v.fx) * Math.min(1, kk * 1.2);
-          const pp = polyAt(pc.p, v.ang, Math.abs(v.fx) < .05 ? .05 : v.fx, 0, 0).map(([a, b]) => [ox + (v.cx + a) * u, oy + (v.cy + b) * u]);
-          const lift = drag && drag.i === i && drag.moved;
-          drawPieceShape(g, pp, PCOL[pc.p], u, {lift, sel: sel === i && !won && !lift, glow: hintSt && hintSt.i === i ? .5 + .5 * Math.sin(hintSt.t * 7) : won ? Math.max(0, 1 - winT) : 0});
+          if (!held) { v.cx += (pc.cx - v.cx) * kk; v.cy += (pc.cy - v.cy) * kk; }
+          // two-finger rotate: the piece turns continuously with the fingers between the 45° clicks
+          const ta = angOf(pc) + (r ? BX.clamp(r.acc - r.n * Math.PI / 4, -Math.PI / 8, Math.PI / 8) : 0);
+          v.ang += (ta - v.ang) * Math.min(1, r ? kl * 1.5 : kk * 1.3); v.fx += ((pc.f ? -1 : 1) - v.fx) * Math.min(1, kk * 1.2);
+          v.lf = (v.lf || 0) + ((held ? 1 : drag && drag.i === i ? .4 : 0) - (v.lf || 0)) * kl;
+          if (pc.pulse > 0) pc.pulse = Math.max(0, pc.pulse - dt * 2.6);
+          const sc = 1 + .05 * v.lf;
+          const pp = polyAt(pc.p, v.ang, Math.abs(v.fx) < .05 ? .05 : v.fx, 0, 0).map(([a, b]) => [ox + (v.cx + a * sc) * u, oy + (v.cy + b * sc) * u]);
+          const gl = hintSt && hintSt.i === i ? .5 + .5 * Math.sin(hintSt.t * 7) : won ? Math.max(0, 1 - winT) : pc.pulse > 0 ? pc.pulse * pc.pulse : 0;
+          drawPieceShape(g, pp, PCOL[pc.p], u, {lift: v.lf > .5, sel: sel === i && !won && !held, glow: gl});
         }
         fx.draw(g, dt);
         if (!won) say(pcs.every(q => q.home) ? '拖动木板到剪影上 · 轻点旋转' : `已就位 ${pcs.filter(q => q.snap >= 0).length}/7 · 轻点旋转，双击平行四边形翻面`);

@@ -197,7 +197,7 @@ BX.register({
       return order;
     }
     function resetVis(order) {
-      vis = cards.map(() => ({x: null, y: null, vup: false, ft: 1, from: false, wait: 0, sh: 0}));
+      vis = cards.map(() => ({x: null, y: null, vup: false, ft: 1, from: false, wait: 0, sh: 0, lf: 0, press: 0}));
       order.forEach((id, k) => vis[id].wait = .25 + k * (SP ? .026 : .045));
     }
     resetVis(newDeal());
@@ -443,13 +443,21 @@ BX.register({
         L.colH[t] = y + ch - s.y;
       }
     }
-    function hit(p) {
-      const {S, cw, ch} = L, inR = (x, y) => p.x >= x && p.x <= x + cw && p.y >= y && p.y <= y + ch;
-      for (const t of tableaus) { const a = P[t]; for (let k = a.length - 1; k >= 0; k--) { const q = tgt[a[k]]; if (q && inR(q.x, q.y)) return {pk: t, i: k}; } }
+    function hit(p, slop) {
+      const {S, cw, ch, g} = L, e = slop == null ? 0 : slop, inR = (x, y, m = e) => p.x >= x - m && p.x <= x + cw + m && p.y >= y - m && p.y <= y + ch + m;
+      for (const t of tableaus) { const a = P[t]; for (let k = a.length - 1; k >= 0; k--) { const q = tgt[a[k]]; if (q && inR(q.x, q.y, 0)) return {pk: t, i: k}; } }
       if (!SP && P.waste.length) { const q = tgt[topId('waste')]; if (inR(q.x, q.y)) return {pk: 'waste', i: P.waste.length - 1}; }
       if (!SP) for (const f of founds) if (P[f].length && inR(S[f].x, S[f].y)) return {pk: f, i: P[f].length - 1};
-      if (SP) { const ng = Math.ceil(P.stock.length / 10); if (ng && p.x >= S.stock.x + S.stock.sdx * (ng - 1) - 2 && p.x <= S.stock.x + cw + 2 && p.y >= S.stock.y - 2 && p.y <= S.stock.y + ch + S.stock.sdy * (ng - 1) + 2) return {pk: 'stock', i: -1}; }
+      if (SP) { const ng = Math.ceil(P.stock.length / 10); if (ng && p.x >= S.stock.x + S.stock.sdx * (ng - 1) - 2 - e && p.x <= S.stock.x + cw + 2 + e && p.y >= S.stock.y - 2 - e && p.y <= S.stock.y + ch + S.stock.sdy * (ng - 1) + 2 + e) return {pk: 'stock', i: -1}; }
       else if (inR(S.stock.x, S.stock.y)) return {pk: 'stock', i: -1};
+      if (e) {   // forgiving touch: the gutter between columns and a strip just below a column's last card count as that column's top card
+        const gx = g / 2 + 1;
+        for (const t of tableaus) { const a = P[t]; for (let k = a.length - 1; k >= 0; k--) { const q = tgt[a[k]]; if (q && p.x >= q.x - gx && p.x <= q.x + cw + gx && p.y >= q.y && p.y <= q.y + ch) return {pk: t, i: k}; } }
+        for (const t of tableaus) {
+          const a = P[t]; if (!a.length) continue; const q = tgt[a[a.length - 1]];
+          if (q && p.x >= q.x - g / 2 - 1 && p.x <= q.x + cw + g / 2 + 1 && p.y >= q.y - e && p.y <= q.y + ch + Math.max(e, ch * .3)) return {pk: t, i: a.length - 1};
+        }
+      }
       return null;
     }
 
@@ -468,39 +476,84 @@ BX.register({
       cand.sort((a, b) => a[1] - b[1]);
       doMove(pk, i, cand[0][0]); return true;
     }
+    /* drop target for a dragged stack whose first card is drawn at (x, y): the valid pile with the largest overlap of a
+       generously padded drop zone; otherwise the nearest valid pile within ~one card (magnetic, forgiving snap) */
+    function dropTarget(d, x, y) {
+      const {cw, ch} = L, px = cw * .3, py = ch * .3, cx = x + cw / 2, cy = y + ch / 2;
+      let best = null, bestA = 0, near = null, nd = cw * 1.05;
+      for (const to of [...founds, ...tableaus]) {
+        if (!canDrop(d.pk, d.i, to)) continue;
+        const s = L.S[to], b = P[to], top = b.length && to[0] === 't' ? tgt[b[b.length - 1]] : s, hh = to[0] === 't' ? Math.max(ch, L.colH[to]) : ch;
+        const ox = Math.min(x + cw, s.x + cw + px) - Math.max(x, s.x - px), oy = Math.min(y + ch, s.y + hh + py) - Math.max(y, s.y - py);
+        if (ox > 0 && oy > 0) {
+          const a = ox * oy * (to[0] === 'f' ? 1.15 : 1);   // a tie between foundation and tableau → foundation
+          if (a > bestA) { bestA = a; best = to; }
+        }
+        if (top) { const dd = Math.hypot(top.x + cw / 2 - cx, top.y + ch / 2 - cy); if (dd < nd) { nd = dd; near = to; } }
+      }
+      return best || near;
+    }
+    /* fling: the valid pile that lies closest to the throw direction (within ~35°) */
+    function flingTarget(d, x, y, vx, vy) {
+      const {cw, ch} = L, sp = Math.hypot(vx, vy), cx = x + cw / 2, cy = y + ch / 2;
+      let best = null, bs = -9;
+      for (const to of [...founds, ...tableaus]) {
+        if (to === d.pk || !canDrop(d.pk, d.i, to)) continue;
+        const s = L.S[to], b = P[to], top = b.length && to[0] === 't' ? tgt[b[b.length - 1]] : s;
+        const dx = top.x + cw / 2 - cx, dy = top.y + ch / 2 - cy, dl = Math.hypot(dx, dy) || 1, cs = (dx * vx + dy * vy) / (dl * sp);
+        const sc = cs - dl / (cw * 40);   // prefer nearer piles when equally aligned
+        if (cs > .82 && sc > bs) { bs = sc; best = to; }
+      }
+      return best;
+    }
+    const tapSlop = e => e.pointerType === 'mouse' ? 2 : 8;
     ctx.on(cv.cv, 'pointerdown', e => {
       if (e.button > 0) return;
       if (casc) { casc.q.length = 0; casc.bodies.length = 0; return; }
       if (won || autoRun || drag || !L) return;
-      const p = cv.pos(e), h = hit(p);
+      const p = cv.pos(e), h = hit(p, tapSlop(e));
       if (!h) return;
       if (h.pk === 'stock') { SP ? dealRow() : drawK(); return; }
       const now = performance.now();
-      if (now - lastTap.t < 320 && Math.hypot(p.x - lastTap.x, p.y - lastTap.y) < 30) return;   // swallow the 2nd click of a double-click
+      // swallow only the 2nd click of a fast double-click on the same spot (desktop habit) — never a deliberate new tap
+      if (now - lastTap.t < (e.pointerType === 'mouse' ? 260 : 200) && Math.hypot(p.x - lastTap.x, p.y - lastTap.y) < 16 && e.pointerType === lastTap.pt) return;
       if (!movable(h.pk, h.i)) { shake(P[h.pk][h.i]); return; }
       const ids = P[h.pk].slice(h.i), q0 = tgt[ids[0]];
-      drag = {pk: h.pk, i: h.i, ids, sx: p.x, sy: p.y, ox: p.x - q0.x, oy: p.y - q0.y, rel: ids.map(id => [tgt[id].x - q0.x, tgt[id].y - q0.y]), moved: false, pid: e.pointerId, mouse: e.pointerType === 'mouse'};
+      drag = {pk: h.pk, i: h.i, ids, sx: p.x, sy: p.y, px: p.x, py: p.y, ox: p.x - q0.x, oy: p.y - q0.y, rel: ids.map(id => [tgt[id].x - q0.x, tgt[id].y - q0.y]), moved: false, pid: e.pointerId, mouse: e.pointerType === 'mouse', t0: now, smp: [{x: p.x, y: p.y, t: e.timeStamp}], best: null};
+      ids.forEach(id => { vis[id].press = 1; });   // same-frame feedback: the touched stack rises a little
       try { cv.cv.setPointerCapture(e.pointerId); } catch (_) {}
     });
+    function dragTo(p) {
+      const d = drag;
+      d.px = p.x; d.py = p.y;
+      d.ids.forEach((id, k) => { vis[id].x = p.x - d.ox + d.rel[k][0]; vis[id].y = p.y - d.oy + d.rel[k][1]; vis[id].wait = 0; });
+      d.best = dropTarget(d, p.x - d.ox, p.y - d.oy);
+    }
     ctx.on(cv.cv, 'pointermove', e => {
       if (!drag || e.pointerId !== drag.pid) return;
-      const p = cv.pos(e);
-      if (!drag.moved && Math.hypot(p.x - drag.sx, p.y - drag.sy) > (drag.mouse ? 4 : 9)) { drag.moved = true; hint = null; }
-      if (drag.moved) drag.ids.forEach((id, k) => { vis[id].x = p.x - drag.ox + drag.rel[k][0]; vis[id].y = p.y - drag.oy + drag.rel[k][1]; vis[id].wait = 0; });
+      const pts = ctx.points(e, cv.cv); K.track(drag.smp, pts);
+      const p = pts[pts.length - 1];
+      if (!drag.moved && Math.hypot(p.x - drag.sx, p.y - drag.sy) > (drag.mouse ? 4 : 8)) { drag.moved = true; hint = null; }
+      if (drag.moved) dragTo(p);
     });
     const endDrag = e => {
       if (!drag || e.pointerId !== drag.pid) return;
       const d = drag; drag = null;
+      d.ids.forEach(id => { vis[id].press = 0; });
       if (won) return;
-      if (!d.moved) { const p = cv.pos(e); if (autoTap(d.pk, d.i)) lastTap = {t: performance.now(), x: p.x, y: p.y}; return; }
-      const v = vis[d.ids[0]], {cw, ch} = L; let best = null, bestA = 0;
-      for (const to of [...founds, ...tableaus]) {
-        if (!canDrop(d.pk, d.i, to)) continue;
-        const s = L.S[to], hh = to[0] === 't' ? Math.max(ch, L.colH[to]) : ch;
-        const ox = Math.min(v.x + cw, s.x + cw) - Math.max(v.x, s.x), oy = Math.min(v.y + ch, s.y + hh) - Math.max(v.y, s.y);
-        if (ox > 0 && oy > 0 && ox * oy > bestA) { bestA = ox * oy; best = to; }
+      const p = cv.pos(e);
+      if (!d.moved) {
+        if (e.type === 'pointercancel' || performance.now() - d.t0 > 650) return;   // long press without moving = changed my mind
+        if (autoTap(d.pk, d.i)) lastTap = {t: performance.now(), x: p.x, y: p.y, pt: e.pointerType};
+        return;
       }
-      if (best) doMove(d.pk, d.i, best); else ctx.sfx('tick');
+      if (e.type !== 'pointercancel') { K.lift(d.smp, p, e.timeStamp); drag = d; dragTo(p); drag = null; }
+      const v = vis[d.ids[0]], vel = K.vel(d.smp, 90);
+      let best = d.best, how = 'drop';
+      // a quick throw goes to the pile in that direction (unless the stack is clearly released over a pile)
+      if (vel.sp > .65) { const ft = flingTarget(d, v.x, v.y, vel.vx, vel.vy); if (ft && (!best || ft !== best)) { const s = L.S[best || ft]; const over = best && Math.abs(s.x - v.x) < L.cw * .5; if (!over) { best = ft; how = 'fling'; } } }
+      if (best) { doMove(d.pk, d.i, best); if (how === 'fling') d.ids.forEach(id => { vis[id].lf = 1; }); ctx.buzz(how === 'fling' ? 10 : 6); }
+      else { ctx.sfx('tick'); d.ids.forEach(id => { vis[id].lf = 1; }); }   // glide back home
     };
     ctx.on(cv.cv, 'pointerup', endDrag);
     ctx.on(cv.cv, 'pointercancel', endDrag);
@@ -599,35 +652,54 @@ BX.register({
         const {cw, ch, S} = L, dragSet = new Set(drag && drag.moved ? drag.ids : []);
         const k = 1 - Math.exp(-dt * 15);
         const order = [];
-        for (const pk of ['stock', 'waste', ...founds, ...tableaus]) if (P[pk]) for (const id of P[pk]) order.push(id);
-        const flying = [], still = [];
+        const pkOf = {}, pileOf = id => pkOf[id];
+        for (const pk of ['stock', 'waste', ...founds, ...tableaus]) if (P[pk]) for (const id of P[pk]) { order.push(id); pkOf[id] = pk; }
+        const flying = [], still = [], lifted = [];
+        const kUp = 1 - Math.exp(-dt * 30), kDn = 1 - Math.exp(-dt * 16);
         for (const id of order) {
           const v = vis[id], t = tgt[id];
           if (casc && casc.gone.has(id)) continue;
           if (v.x == null) { v.x = S.stock.x; v.y = S.stock.y; }
-          if (!dragSet.has(id)) {
+          const dr = dragSet.has(id);
+          if (!dr) {
             if (v.wait > 0) v.wait -= dt;
             else { v.x += (t.x - v.x) * k; v.y += (t.y - v.y) * k; if (Math.abs(t.x - v.x) < .3 && Math.abs(t.y - v.y) < .3) { v.x = t.x; v.y = t.y; } }
           }
-          if (v.ft >= 1 && v.vup !== up[id] && Math.abs(v.x - t.x) + Math.abs(v.y - t.y) < ch * .7) { v.from = v.vup; v.vup = up[id]; v.ft = 0; if (v.vup && !ctx.fast && !casc) ctx.sfx('flip'); }
+          const far = Math.abs(v.x - t.x) + Math.abs(v.y - t.y);
+          // lift: picked up → 1, pressed → small rise, released → stays up while gliding, settles as it lands
+          const lt = dr ? 1 : v.press ? .45 : far > ch * .25 ? v.lf : 0;
+          v.lf += (lt - v.lf) * (lt > v.lf ? kUp : kDn); if (v.lf < .01) v.lf = 0;
+          if (v.ft >= 1 && v.vup !== up[id] && far < ch * .7) { v.from = v.vup; v.vup = up[id]; v.ft = 0; if (v.vup && !ctx.fast && !casc) ctx.sfx('flip'); }
           if (v.ft < 1) v.ft = Math.min(1, v.ft + dt * 7);
           if (v.sh > 0) v.sh = Math.max(0, v.sh - dt);
-          if (dragSet.has(id)) continue;
-          (Math.abs(v.x - t.x) + Math.abs(v.y - t.y) > 1.5 ? flying : still).push(id);
+          if (dr) continue;
+          (v.lf > 0 ? lifted : far > 1.5 ? flying : still).push(id);
         }
-        const drawCard = id => {
+        const drawCard = (id, ax, ay) => {
           const v = vis[id], face = v.ft < .5 ? v.from : v.vup, sx = v.ft < 1 ? Math.abs(Math.cos(v.ft * Math.PI)) : 1;
           const ox = v.sh > 0 ? Math.sin(v.sh * 60) * cw * .07 * (v.sh / .35) : 0;
-          blit(g, id, face, v.x + ox, v.y, sx);
+          if (v.lf > 0) {
+            const s = 1 + .07 * v.lf; if (ax == null) { ax = v.x + cw / 2; ay = v.y + ch / 2; }
+            g.save(); g.translate(ax, ay); g.scale(s, s); g.translate(-ax, -ay); blit(g, id, face, v.x + ox, v.y, sx); g.restore();
+          } else blit(g, id, face, v.x + ox, v.y, sx);
         };
-        still.forEach(drawCard); flying.forEach(drawCard);
-        if (dragSet.size && ctx.pref('hints')) {   // where can this go?
-          for (const to of [...founds, ...tableaus]) if (canDrop(drag.pk, drag.i, to)) { const b = P[to], q = b.length && to[0] === 't' ? tgt[b[b.length - 1]] : S[to]; if (q) glow(g, q.x, q.y, cw, ch, .45); }
+        /* one soft shadow under a whole lifted run (grows with the lift) */
+        const runShadow = (ids, ax, ay) => {
+          const v0 = vis[ids[0]], vl = vis[ids[ids.length - 1]], lf = v0.lf, s = 1 + .07 * lf;
+          g.save(); g.translate(ax, ay); g.scale(s, s); g.translate(-ax, -ay);
+          g.fillStyle = `rgba(0,0,0,${.12 + .14 * lf})`; D.rr(g, v0.x + cw * .1 * lf, v0.y + ch * .12 * lf, cw, vl.y - v0.y + ch, cw * .08); g.fill(); g.restore();
+        };
+        still.forEach(id => drawCard(id)); flying.forEach(id => drawCard(id));
+        if (lifted.length) {   // released runs gliding home / to their new pile
+          const runs = []; let cur = null;
+          for (const id of lifted) { const pk = pileOf(id); if (cur && cur.pk === pk) cur.ids.push(id); else runs.push(cur = {pk, ids: [id]}); }
+          for (const r of runs) { const v0 = vis[r.ids[0]], ax = v0.x + cw / 2, ay = v0.y; runShadow(r.ids, ax, ay); r.ids.forEach(id => drawCard(id, ax, ay)); }
         }
         if (dragSet.size) {
-          const v0 = vis[drag.ids[0]];
-          g.fillStyle = 'rgba(0,0,0,.22)'; D.rr(g, v0.x + cw * .08, v0.y + ch * .1, cw, (vis[drag.ids[drag.ids.length - 1]].y - v0.y) + ch, cw * .08); g.fill();
-          drag.ids.forEach(drawCard);
+          if (ctx.pref('hints')) for (const to of [...founds, ...tableaus]) if (canDrop(drag.pk, drag.i, to)) { const b = P[to], q = b.length && to[0] === 't' ? tgt[b[b.length - 1]] : S[to]; if (q) glow(g, q.x, q.y, cw, ch, to === drag.best ? 1 : .35); }
+          if (drag.best && !ctx.pref('hints')) { const b = P[drag.best], q = b.length && drag.best[0] === 't' ? tgt[b[b.length - 1]] : S[drag.best]; if (q) glow(g, q.x, q.y, cw, ch, .8); }
+          runShadow(drag.ids, drag.px, drag.py);
+          drag.ids.forEach(id => drawCard(id, drag.px, drag.py));
         }
         if (SP) { const nd = founds.filter(f => P[f].length).length; if (nd) { const b = S.doneBox; D.text(g, nd + '/8', b.x + b.w - 4, b.y + b.h - 4, {size: Math.max(11, cw * .2), color: '#f0d590', align: 'right', base: 'bottom', stroke: 'rgba(0,0,0,.55)', strokeW: 3}); } }
         if (hint) {
@@ -652,7 +724,7 @@ BX.register({
       destroy() { hideBanner(); },
       debug: {
         get P() { return P; }, get cards() { return cards; }, get up() { return up; }, get won() { return won; }, get moves() { return moves; },
-        get L() { return L; }, tgt: () => tgt,
+        get L() { return L; }, get vis() { return vis; }, tgt: () => tgt,
         nearWin(noAuto) {
           autoOff = !!noAuto; hideBanner();
           for (const pk in P) P[pk] = [];

@@ -32,7 +32,7 @@ function simulate(pins, shot, rec) {
     let moving = b.gone ? 0 : 1;
     for (const p of P) {
       if (p.gone || !p.mv) continue;
-      const sp = Math.sqrt(p.vx * p.vx + p.vy * p.vy), dec = (p.down ? 2.4 : 6) * DT;
+      const sp = Math.sqrt(p.vx * p.vx + p.vy * p.vy), dec = (p.down ? 1.9 : 4.2) * DT;   // pins slide a bit further → livelier scatter
       if (sp <= dec) { p.vx = 0; p.vy = 0; p.mv = 0; continue; }
       p.vx -= p.vx / sp * dec; p.vy -= p.vy / sp * dec; p.x += p.vx * DT; p.y += p.vy * DT; moving++;
       if (Math.abs(p.x) > KICK - PR) { p.x = (p.x > 0 ? 1 : -1) * (KICK - PR); p.vx = -p.vx * .55; if (!p.down) { p.down = 1; } }
@@ -112,7 +112,7 @@ BX.register({
   id: 'bowling', title: '保龄球', cat: 'physics', order: 5, sub: '十瓶十局，全中补中',
   desc: '标准十瓶保龄球：选站位、瞄准、决定力度和弧线，一球击倒全部球瓶就是“全中”。十局计分，全中与补中有奖励分。',
   kind: 'turn', seats: [1, 4], defSeats: 2, seatColors: ['#c23a2b', '#2f5d8a', '#3f8f5b', '#d9a12b'], aiDelay: 500,
-  howto: ['<b>向上划</b>出球：划得越快球速越快，划的方向就是出球方向；划到最后<b>往左/右拐</b>就会打出向左/右的弧线球。', '也可以<b>按住向下拉</b>（弹弓式）再松手；下方按钮可微调站位（第几板）、方向、弧线和球速，再点「出球」。', '左上角的瓶位图显示剩余球瓶，小红点是本球预计到达的位置，淡色点是你上一球。', '球滚动时点一下画面可快进；💡 提示给出建议的打法。键盘：←→ 方向、↑↓ 球速、A/D 站位、Q/E 弧线、空格出球。'],
+  howto: ['<b>向上划</b>出球：松手前最后一瞬划得越快球速越快，划的方向就是出球方向；划到最后<b>往左/右拐</b>就会打出向左/右的弧线球（拐得越多弧线越强）。', '也可以<b>按住向下拉</b>（弹弓式）再松手；下方按钮可微调站位（第几板）、方向、弧线和球速，再点「出球」。', '左上角的瓶位图显示剩余球瓶，小红点是本球预计到达的位置，淡色点是你上一球。', '球滚动时点一下画面可快进；💡 提示给出建议的打法。键盘：←→ 方向、↑↓ 球速、A/D 站位、Q/E 弧线、空格出球。'],
   rules: `<p>标准<b>十瓶保龄球</b>，每人打 <b>10 局</b>（frame），多名玩家按局轮流上场。</p>
 <p><b>每局</b>最多投 2 球：第一球击倒全部 10 个球瓶为<b>全中</b>（X），本局结束；两球合计击倒全部为<b>补中</b>（/）；否则记击倒的瓶数。</p>
 <p><b>计分：</b>全中 = 10 分 + 之后两球的瓶数；补中 = 10 分 + 下一球的瓶数；其他局 = 两球瓶数之和。第 10 局打出全中可再投 2 球、补中可再投 1 球（奖励球只用于计分）。满分 300 分（12 个全中）。</p>
@@ -137,11 +137,11 @@ BX.register({
     const skipKey = K.skip(ctx, cv, pb);
     const ui = ctx.ui(''); const bar = BX.h('div', {class: 'pk-bar'}); ui.append(bar);
     const board = x => Math.round((LANE_HW - x) / (2 * LANE_HW) * 39 + .5);
-    const adjX = K.adj(bar, '站位', () => '第' + board(aim.x) + '板', d => { aim.x = BX.clamp(Math.round((aim.x + d * .0269) * 1e4) / 1e4, -.42, .42); keyT = performance.now(); }, {minus: '◀', plus: '▶'});
-    const adjA = K.adj(bar, '方向', () => { const a = Math.round(Math.atan(aim.ang) * 1800 / Math.PI) / 10; return (a < 0 ? '↖' : a > 0 ? '↗' : '↑') + Math.abs(a).toFixed(1) + '°'; }, d => { aim.ang = BX.clamp(Math.round((aim.ang + d * .0015) * 1e4) / 1e4, -.06, .06); keyT = performance.now(); }, {minus: '◀', plus: '▶'});
-    const hookSeg = K.seg(bar, '弧线', [[-1, '↰强'], [-.5, '↰'], [0, '直'], [.5, '↱'], [1, '↱强']], () => aim.h, v => aim.h = v);
+    const adjX = K.adj(bar, '站位', () => '第' + board(aim.x) + '板', (d, k) => { d *= K.acc(k); aim.x = BX.clamp(Math.round((aim.x + d * .0269) * 1e4) / 1e4, -.42, .42); keyT = performance.now(); }, {minus: '◀', plus: '▶'});
+    const adjA = K.adj(bar, '方向', () => { const a = Math.round(Math.atan(aim.ang) * 1800 / Math.PI) / 10; return (a < 0 ? '↖' : a > 0 ? '↗' : '↑') + Math.abs(a).toFixed(1) + '°'; }, (d, k) => { d *= K.acc(k); aim.ang = BX.clamp(Math.round((aim.ang + d * .0015) * 1e4) / 1e4, -.06, .06); keyT = performance.now(); }, {minus: '◀', plus: '▶'});
+    const hookSeg = K.seg(bar, '弧线', [[-1, '↰强'], [-.5, '↰'], [0, '直'], [.5, '↱'], [1, '↱强']], () => Math.round(aim.h * 2) / 2, v => aim.h = v);
     const kmh = p => Math.round((VMIN + p * (VMAX - VMIN)) * 3.6);
-    const adjP = K.adj(bar, '球速', () => kmh(aim.p) + '<small>公里/时</small>', (d, k) => { aim.p = BX.clamp(Math.round((aim.p + d * (k > 10 ? .04 : .02)) * 100) / 100, 0, 1); keyT = performance.now(); });
+    const adjP = K.adj(bar, '球速', () => kmh(aim.p) + '<small>公里/时</small>', (d, k) => { aim.p = BX.clamp(Math.round((aim.p + d * .02 * K.acc(k)) * 100) / 100, 0, 1); keyT = performance.now(); });
     K.go(bar, '出球', () => roll());
     /* ---------- projection ---------- */
     function layout() {
@@ -159,40 +159,58 @@ BX.register({
     const P3 = (x, y, z = 0) => { const d = Math.max(.25, y - cam.y); return [V.cx + x * V.F / d, V.hy + (V.hc - z) * V.F / d, V.F / d]; };
     /* ---------- input ---------- */
     const myTurn = () => !st.over && !pb.on && ctx.canAct(st.turn);
-    /* two gestures: pull DOWN and release (slingshot)  or  swipe UP (speed = swipe speed, curve at the end = hook) */
-    let path = [];
-    ctx.on(cv.cv, 'pointerdown', e => { if (myTurn()) { const p = cv.pos(e); path = [[p.x, p.y, performance.now()]]; } });
-    ctx.on(cv.cv, 'pointermove', e => { if (path.length && sling.on) { const p = cv.pos(e); path.push([p.x, p.y, performance.now()]); if (path.length > 200) path.splice(1, 1); } });
+    /* two gestures: pull DOWN and release (slingshot)  or  swipe UP. The swipe uses every coalesced sample:
+       speed + final heading from a least-squares fit over the last ~80 ms, aim from the body of the swipe, hook = how much
+       the final heading turns away from the body (soft dead zone so a straight swipe is straight). */
+    let path = [], pathId = null, swipeMsg = -1e9;
+    ctx.on(cv.cv, 'pointerdown', e => { if (myTurn() && pathId == null) { const p = cv.pos(e); path = [{x: p.x, y: p.y, t: e.timeStamp}]; pathId = e.pointerId; } });
+    ctx.on(cv.cv, 'pointermove', e => { if (pathId === e.pointerId && path.length) { for (const q of ctx.points(e, cv.cv)) path.push(q); const t = path[path.length - 1].t; while (path.length > 3 && t - path[1].t > 1500) path.shift(); } });
+    const endPath = e => { if (e.pointerId === pathId) pathId = null; };
+    ctx.on(cv.cv, 'pointerup', endPath); ctx.on(cv.cv, 'pointercancel', endPath);
     const isSwipe = s => s.y < s.y0 - 12;
+    let aimSave = null;
     const sling = K.sling(ctx, cv, {
-      enabled: myTurn, max: () => Math.min(cv.w, cv.h) * .38, min: .05,
+      enabled: myTurn, max: () => Math.min(cv.w, cv.h) * .38,
+      engage: () => { aimSave = Object.assign({}, aim); },
+      cancel: () => { if (aimSave) Object.assign(aim, aimSave); aimSave = null; },
       change: s => { if (isSwipe(s)) return; const fwd = Math.max(.25, -s.dy); aim.ang = BX.clamp(s.dx / fwd * .05, -.06, .06); aim.p = s.p; },
       release: s => { if (isSwipe(s)) swipe(s); else roll(); },
     });
+    function fitVel(P, w) {   // least-squares velocity (px/ms) over the samples of the last w ms
+      const tEnd = P[P.length - 1].t; let i0 = P.length - 1; while (i0 > 0 && tEnd - P[i0 - 1].t <= w) i0--;
+      const S = P.slice(i0); if (S.length < 2) return null;
+      let tm = 0, xm = 0, ym = 0; for (const q of S) { tm += q.t; xm += q.x; ym += q.y; } tm /= S.length; xm /= S.length; ym /= S.length;
+      let stt = 0, stx = 0, sty = 0; for (const q of S) { const dt2 = q.t - tm; stt += dt2 * dt2; stx += dt2 * (q.x - xm); sty += dt2 * (q.y - ym); }
+      if (stt < 1) return null;
+      return {vx: stx / stt, vy: sty / stt, i0};
+    }
     function swipe(s) {
-      const now = performance.now(); path.push([s.x, s.y, now]);
-      let i0 = 0; for (let i = path.length - 1; i >= 0; i--) { if (now - path[i][2] > 320) break; i0 = i; }
-      const seg = path.slice(i0); if (seg.length < 2) seg.unshift(path[0]);
-      const a = seg[0], b = seg[seg.length - 1], dist = Math.hypot(b[0] - a[0], b[1] - a[1]), dtm = Math.max(30, b[2] - a[2]);
-      if (b[1] > a[1] - 25) return;   // too short / not upward
-      const v = dist / dtm;   // px per ms
-      const full = path, c0 = full[0], c1 = full[full.length - 1], cl = Math.hypot(c1[0] - c0[0], c1[1] - c0[1]) || 1, ux = (c1[0] - c0[0]) / cl, uy = (c1[1] - c0[1]) / cl;
-      const mid = full[Math.floor(full.length / 2)];
-      const d1 = [mid[0] - c0[0], mid[1] - c0[1]], d2 = [c1[0] - mid[0], c1[1] - mid[1]], l1 = Math.hypot(...d1) || 1, l2 = Math.hypot(...d2) || 1;
-      const turn = (d1[0] * d2[1] - d1[1] * d2[0]) / l1 / l2;
-      aim.ang = BX.clamp(Math.round(ux / Math.max(.3, -uy) * .05 * 1e4) / 1e4, -.06, .06);
-      aim.p = BX.clamp(Math.round((v - .35) / 1.6 * 100) / 100, 0, 1);
-      aim.h = BX.clamp(Math.round(turn / .25 * 2) / 2, -1, 1);
+      const P = path.length ? path : [{x: s.x0, y: s.y0, t: 0}, {x: s.x, y: s.y, t: 100}];
+      let fv = null; for (const w of [80, 110, 150, 220]) { fv = fitVel(P, w); if (fv && P.length - fv.i0 >= 3) break; }
+      const A = P[0], B = P[P.length - 1];
+      const v = fv ? Math.hypot(fv.vx, fv.vy) : 0;
+      if (!fv || A.y - B.y < 30 || v < .3 || fv.vy > -.1) { swipeMsg = performance.now(); ctx.buzz(15); return; }
+      // body of the swipe: start → where the final 80 ms window begins (or the whole swipe if that part is short)
+      let M = P[fv.i0]; if (Math.hypot(M.x - A.x, M.y - A.y) < 24) M = B;
+      const bl = Math.hypot(M.x - A.x, M.y - A.y) || 1, bx = (M.x - A.x) / bl, by = (M.y - A.y) / bl;
+      const ex = fv.vx / v, ey = fv.vy / v;
+      let th = Math.atan2(bx, -by); th = Math.sign(th) * Math.max(0, Math.abs(th) - .015);   // ±0.9° soft dead zone
+      aim.ang = BX.clamp(Math.round(Math.tan(th) * .12 * 1e4) / 1e4, -.06, .06);
+      const turn = Math.atan2(bx * ey - by * ex, bx * ex + by * ey);
+      aim.h = BX.clamp(Math.round(Math.sign(turn) * Math.max(0, Math.abs(turn) - .1) / .45 * 20) / 20, -1, 1);
+      aim.p = BX.clamp(Math.round(Math.pow(BX.clamp((v - .55) / 2.6, 0, 1), .9) * 100) / 100, 0, 1);
       hookSeg.refresh(); roll();
     }
     function shotOf(a) { const dy = 1 / Math.sqrt(1 + a.ang * a.ang); return {x: +a.x.toFixed(4), dx: +(a.ang * dy).toFixed(6), dy: +dy.toFixed(6), v: +(VMIN + a.p * (VMAX - VMIN)).toFixed(4), h: a.h}; }
-    function roll() { if (!myTurn()) return; ctx.sfx('roll'); ctx.act(shotOf(aim), st.turn); }
+    function roll() { if (!myTurn()) return; K.impact('thud', .2 + .3 * aim.p); ctx.buzz(10); ctx.act(shotOf(aim), st.turn); }
     function key(e) {
       if (skipKey(e)) return;
       if (!myTurn()) return;
+      if (e.code === 'Escape' && sling.on) { sling.abort(); return; }
+      const m = /^Arrow/.test(e.code) ? Math.min(3, K.keyMul(e)) : 1;
       if (e.code === 'KeyQ' || e.code === 'KeyE') { aim.h = BX.clamp(aim.h + (e.code === 'KeyE' ? .5 : -.5), -1, 1); hookSeg.refresh(); }
-      if (e.code === 'ArrowLeft' || e.code === 'ArrowRight') { aim.ang = BX.clamp(aim.ang + (e.code === 'ArrowRight' ? .002 : -.002), -.06, .06); keyT = performance.now(); }
-      if (e.code === 'ArrowUp' || e.code === 'ArrowDown') { aim.p = BX.clamp(aim.p + (e.code === 'ArrowUp' ? .02 : -.02), 0, 1); keyT = performance.now(); }
+      if (e.code === 'ArrowLeft' || e.code === 'ArrowRight') { aim.ang = BX.clamp(Math.round((aim.ang + (e.code === 'ArrowRight' ? .0015 : -.0015) * m) * 1e4) / 1e4, -.06, .06); keyT = performance.now(); }
+      if (e.code === 'ArrowUp' || e.code === 'ArrowDown') { aim.p = BX.clamp(Math.round((aim.p + (e.code === 'ArrowUp' ? .02 : -.02) * m) * 100) / 100, 0, 1); keyT = performance.now(); }
       if (e.code === 'KeyA' || e.code === 'KeyD') aim.x = BX.clamp(aim.x + (e.code === 'KeyD' ? .0269 : -.0269), -.42, .42);
       if (e.code === 'Space' || e.code === 'Enter') roll();
     }
@@ -251,7 +269,8 @@ BX.register({
         hintA = null;
         if (!ctx.fast) {
           lastBall[who] = {pts: r.frames.filter((f, i) => i % 4 === 0 && f[1] < HEAD + .3).map(f => [f[0], f[1]]), ex: entryOf(shot)};
-          show = {r, snap, knocked, label, who, done: false, ei: 0, shot};
+          show = {r, snap, knocked, label, who, done: false, ei: 0, shot, fd: {}, rmb: 0, hit1: false};
+          if (!(ctx.isLocal(who) && !ctx.isAI(who))) K.impact('thud', .2 + .3 * (shot.v - VMIN) / (VMAX - VMIN));
           const simT = r.steps * DT;
           pb.start(simT + 1.3, () => { show = null; status(); }, [[r.tPins - .05, r.tPins + .7, .3]]);
           cam.y = -3.2;
@@ -356,14 +375,21 @@ BX.register({
       // camera
       let bx = 0, by = 0, pins = Z.pins.map((p, i) => p ? {x: p[0], y: p[1], down: 0, i} : null), ballOn = true;
       if (show) {
-        const fr = show.r.frames, k = Math.min(fr.length - 1, Math.floor(pb.t / (DT * 2))), f = fr[k];
+        const fr = show.r.frames, L = K.lerpFrame(fr, pb.t / (DT * 2), 90, .3), k = L.k, f = L.f, f0 = fr[k], f1 = fr[Math.min(fr.length - 1, k + 1)];
         bx = f[0]; by = f[1]; ballOn = by < PIT - .1;
-        pins = []; for (let i = 0; i < 10; i++) { const o = 2 + i * 3; if (f[o] < 50) pins.push({x: f[o], y: f[o + 1], down: f[o + 2], i}); }
+        pins = []; for (let i = 0; i < 10; i++) {
+          const o = 2 + i * 3; if (f[o] >= 50) continue;
+          const down = f0[o + 2];
+          if (down && show.fd[i] == null) show.fd[i] = pb.t;
+          const sp = f1[o] < 50 ? Math.hypot(f1[o] - f0[o], f1[o + 1] - f0[o + 1]) / (DT * 2) : 0;
+          pins.push({x: f[o], y: f[o + 1], down, i, tilt: down ? Math.min(1, (pb.t - show.fd[i]) / .17) : 0, wob: !down && sp > .02 ? Math.min(.22, sp * .25) : 0, wx: f1[o] - f0[o], wy: f1[o + 1] - f0[o + 1]});
+        }
+        if (ballOn && !show.r.gutter && (show.rmb -= dt) <= 0) { show.rmb = .38; K.impact('rumble', Math.min(1, Math.hypot(f1[0] - f0[0], f1[1] - f0[1]) / (DT * 2) / 10)); }
         cam.tgt = Math.min(by - 3.2, HEAD - 3);
         while (show.ei < show.r.ev.length && show.r.ev[show.ei][0] <= k * 2 + 1) fire(show.r.ev[show.ei++], bx, by);
         if (pb.t >= show.r.steps * DT && !show.done) { show.done = true; atRest(); }
       } else { bx = aims[Z.turn].x; cam.tgt = -3.2; }
-      cam.y += (cam.tgt - cam.y) * Math.min(1, dt * (show ? 9 : 4));
+      cam.y += (cam.tgt - cam.y) * (1 - Math.exp(-dt * (show ? 7 : 4)));
       const [ox, oy] = fx.off(); g.save(); g.translate(ox, oy);
       scene(g);
       // objects sorted far → near
@@ -379,20 +405,26 @@ BX.register({
       drawRack(g, show ? null : Z.pins);
       K.skipLabel(g, V.W / 2, V.bot - 12, pb);
       if (myTurn() && (sling.on || performance.now() - keyT < 1500)) K.meter(g, V.W - 28, V.top + 50, 14, Math.min(150, (V.bot - V.top) * .45), aim.p, {});
+      if (myTurn() && sling.on && sling.eng && path.length > 1 && isSwipe(sling)) {
+        const t1 = path[path.length - 1].t; g.save(); g.lineCap = 'round'; g.lineJoin = 'round';
+        for (let i = 1; i < path.length; i++) { const a2 = path[i - 1], b2 = path[i], age = (t1 - b2.t) / 260; if (age > 1) continue; g.strokeStyle = `rgba(255,236,190,${.75 * (1 - age)})`; g.lineWidth = 3 + 9 * (1 - age); g.beginPath(); g.moveTo(a2.x, a2.y); g.lineTo(b2.x, b2.y); g.stroke(); }
+        g.restore();
+      } else if (myTurn() && sling.on) K.drawAnchor(g, sling, '#fff6dd');
+      if (myTurn() && performance.now() - swipeMsg < 1400) D.text(g, '划得再快、再长一点 ↑', V.W / 2, V.bot - 40, {size: 16, color: '#ffe9b8', weight: 800, stroke: 'rgba(0,0,0,.7)', strokeW: 4});
       if (myTurn() && Z.frame === 0 && Z.ball === 0 && !sling.on && !hintA && performance.now() - keyT > 3000) D.text(g, '向上划出球（末段拐弯＝弧线球），或向下拉后松手', V.W / 2, V.bot - 14, {size: 14, color: '#fff3d6', font: 'serif', stroke: 'rgba(0,0,0,.6)', strokeW: 4});
     }
     function drawPinAt(g, p) {
-      const [x, y, s] = P3(p.x, p.y);
+      const [x, y, sc] = P3(p.x, p.y);
       if (y < V.top - 20 || y > V.H + 40) return;
-      if (!p.down) { drawPin(g, x, y, PIN_H * s, false); return; }
-      // lying pin: from base along fall dir
-      const fl = show && show.r.fall[p.i] ? show.r.fall[p.i] : [0, 1];
-      const [x2, y2] = P3(p.x + fl[0] * PIN_H * .8, p.y + fl[1] * PIN_H * .8);
-      g.save(); g.lineCap = 'round';
-      g.strokeStyle = 'rgba(0,0,0,.3)'; g.lineWidth = .1 * s; g.beginPath(); g.moveTo(x, y + 2); g.lineTo(x2, y2 + 2); g.stroke();
-      g.strokeStyle = '#f6efe2'; g.lineWidth = .075 * s; g.beginPath(); g.moveTo(x, y); g.lineTo(x2, y2); g.stroke();
-      g.strokeStyle = C.red; g.lineWidth = .075 * s; g.beginPath(); const mx = x + (x2 - x) * .62, my = y + (y2 - y) * .62; g.moveTo(mx, my); g.lineTo(mx + (x2 - x) * .08, my + (y2 - y) * .08); g.stroke();
-      g.restore();
+      let tilt = 0, fx2 = 0, fy2 = 1;
+      if (p.down) { tilt = p.tilt != null ? p.tilt : 1; const fl = show && show.r.fall[p.i] ? show.r.fall[p.i] : [0, 1]; fx2 = fl[0]; fy2 = fl[1]; tilt = tilt * tilt * (3 - 2 * tilt); }
+      else if (p.wob) { const l = Math.hypot(p.wx, p.wy) || 1; fx2 = p.wx / l; fy2 = p.wy / l; tilt = p.wob; }
+      if (!tilt) { drawPin(g, x, y, PIN_H * sc, false); return; }
+      // tip the pin over its base along the fall direction (projected), keeping its girth
+      const th = tilt * Math.PI / 2 * .96, sn = Math.sin(th), [tx, ty] = P3(p.x + fx2 * PIN_H * sn, p.y + fy2 * PIN_H * sn, PIN_H * Math.cos(th));
+      const len = Math.hypot(tx - x, ty - y), ang = Math.atan2(tx - x, -(ty - y));
+      if (p.down && tilt > .6) { g.strokeStyle = 'rgba(0,0,0,.28)'; g.lineWidth = .1 * sc; g.lineCap = 'round'; g.beginPath(); g.moveTo(x, y + 2); g.lineTo(tx, ty + 2); g.stroke(); }
+      g.save(); g.translate(x, y); g.rotate(ang); drawPin(g, 0, 0, Math.max(2, len), false, PIN_H * sc * .3 * (1 - .25 * tilt)); g.restore();
     }
     function drawBall(g, x, y) {
       const [sx, sy, s] = P3(x, y, BR), r = BR * s;
@@ -428,9 +460,13 @@ BX.register({
       K.guide(g, pp.filter((_, i) => i % 3 === 0).map(q => { const p = P3(q[0], q[1], .01); return [p[0], p[1]]; }), {color: '#fffaf0', w: 2.5, alpha: .9, fade: .75, dash: [6, 8]});
     }
     function fire(e, x, y) {
-      if (e[1] === 'ball') { ctx.sfx('crash'); fx.shake(Math.min(12, 4 + e[2] * 1.2)); fx.burst(x, y + .15, {n: 16, sp: 120, color: ['#fff', '#ffe28a', '#e6c57d'], life: .5, kind: 'spark'}); }
-      else if (e[1] === 'pin') { if (Math.random() < .5) ctx.sfx('hit'); }
-      else if (e[1] === 'gutter') ctx.sfx('roll');
+      if (e[1] === 'ball') {
+        const kk = Math.min(1, e[2] / 7);
+        K.impact('thud', kk); if (!show.hit1) { show.hit1 = true; if (kk > .3) ctx.sfx('crash'); if (e[2] > 2.5) pb.hit(.05); }
+        fx.shake(2 + 9 * kk); fx.burst(x, y + .15, {n: 6 + Math.round(14 * kk), sp: 60 + 100 * kk, color: ['#fff', '#ffe28a', '#e6c57d'], life: .5, kind: 'spark'});
+      }
+      else if (e[1] === 'pin') K.impact('pin', Math.min(1, e[2] / 3.5));
+      else if (e[1] === 'gutter') { K.impact('thud', .3); ctx.sfx('roll'); }
     }
     function atRest() {
       const L = show.label, strike = L === '全中！', spare = L === '补中！';
@@ -475,9 +511,9 @@ BX.register({
     return inst;
   },
 });
-function drawPin(g, x, y, hgt, down) {
-  // x,y = base on the floor; hgt = pin height in px
-  const w = hgt * .3;
+function drawPin(g, x, y, hgt, down, wid) {
+  // x,y = base on the floor; hgt = pin height in px; wid = girth override (tilted pins)
+  const w = wid || hgt * .3;
   g.save();
   g.fillStyle = 'rgba(0,0,0,.25)'; g.beginPath(); g.ellipse(x, y, w * .55, w * .18, 0, 0, Math.PI * 2); g.fill();
   const gr = g.createLinearGradient(x - w * .5, 0, x + w * .5, 0); gr.addColorStop(0, '#d9d2c4'); gr.addColorStop(.4, '#ffffff'); gr.addColorStop(1, '#bdb5a6');
@@ -488,6 +524,6 @@ function drawPin(g, x, y, hgt, down) {
   g.bezierCurveTo(x + w * .32, y - hgt * .9, x + w * .1, y - hgt * .7, x + w * .2, y - hgt * .62);
   g.bezierCurveTo(x + w * .5, y - hgt * .45, x + w * .62, y - hgt * .25, x + w * .28, y);
   g.closePath(); g.fill();
-  if (hgt > 10) { g.fillStyle = '#b23a2b'; g.fillRect(x - w * .19, y - hgt * .72, w * .38, hgt * .035); g.fillRect(x - w * .17, y - hgt * .67, w * .34, hgt * .03); }
+  if (hgt > 10 || (wid && wid > 3)) { g.fillStyle = '#b23a2b'; g.fillRect(x - w * .19, y - hgt * .72, w * .38, hgt * .035); g.fillRect(x - w * .17, y - hgt * .67, w * .34, hgt * .03); }
   g.restore();
 }

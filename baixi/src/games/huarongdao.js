@@ -85,7 +85,8 @@ function drawPiece(g, x, y, w, h, p, o = {}) {
   const r = Math.min(w, h) * .12, m = Math.min(w, h) * .045;
   x += m; y += m; w -= 2 * m; h -= 2 * m;
   g.save();
-  g.shadowColor = 'rgba(0,0,0,.5)'; g.shadowBlur = Math.min(w, h) * .12; g.shadowOffsetY = Math.min(w, h) * .06;
+  const lf = o.lift || 0;
+  g.shadowColor = `rgba(0,0,0,${.5 + .1 * lf})`; g.shadowBlur = Math.min(w, h) * (.12 + .14 * lf); g.shadowOffsetY = Math.min(w, h) * (.06 + .07 * lf);
   D.rr(g, x, y, w, h, r);
   let c1, c2, ink, rim;
   if (p.t === 'C') { c1 = '#c4402c'; c2 = '#7c1c12'; ink = '#f7d98a'; rim = '#e6c57d'; }
@@ -252,41 +253,87 @@ BX.register({
       const cs = Math.min((A.w - 30) / 4.7, (A.h - top - 20) / 5.75, 120);
       L = {cs, x: A.x + (A.w - 4 * cs) / 2, y: top + (A.h - top - 5.65 * cs) / 2 + cs * .3, A, top};
     }
+    /* forgiving touch: nearest block within `m` px of the finger (taps on the dark seams between blocks) */
+    const pieceNear = (p, m) => { let best = -1, bd = m; for (let i = 0; i < pcs.length; i++) { const q = pcs[i], x = L.x + pos[i * 2] * L.cs, y = L.y + pos[i * 2 + 1] * L.cs, dx = Math.max(x - p.x, 0, p.x - x - q.w * L.cs), dy = Math.max(y - p.y, 0, p.y - y - q.h * L.cs), dd = Math.hypot(dx, dy); if (dd < bd) { bd = dd; best = i; } } return best; };
     const pieceAt = p => { for (let i = 0; i < pcs.length; i++) { const q = pcs[i], x = L.x + pos[i * 2] * L.cs, y = L.y + pos[i * 2 + 1] * L.cs; if (p.x >= x && p.x <= x + q.w * L.cs && p.y >= y && p.y <= y + q.h * L.cs) return i; } return -1; };
+    /* drag: the block tracks the finger exactly along one axis, commits a cell whenever it passes the half-way line (so one
+       gesture can slide several cells and turn corners), and pushes against walls/blocks with a short rubber-band give. */
+    const rubber = d => Math.sign(d) * .09 * (1 - Math.exp(-Math.abs(d) * 4));
+    function dragTo(p) {
+      const d = drag, i = d.i, tx = (p.x - d.gx) / L.cs, ty = (p.y - d.gy) / L.cs;
+      for (let k = 0; k < 12; k++) {
+        const dx = tx - pos[i * 2], dy = ty - pos[i * 2 + 1];
+        const ax = Math.abs(dx) >= .5, ay = Math.abs(dy) >= .5; if (!ax && !ay) break;
+        const first = d.axis || (Math.abs(dx) >= Math.abs(dy) ? 'x' : 'y');
+        let ok = false;
+        for (const a of first === 'x' ? ['x', 'y'] : ['y', 'x']) { if (a === 'x' && ax && stepPiece(i, Math.sign(dx), 0)) { ok = true; break; } if (a === 'y' && ay && stepPiece(i, 0, Math.sign(dy))) { ok = true; break; } }
+        if (!ok) break;
+        d.bump = 0;
+      }
+      const dx = tx - pos[i * 2], dy = ty - pos[i * 2 + 1], adx = Math.abs(dx), ady = Math.abs(dy);
+      // axis lock with hysteresis (no flicker between axes on diagonal drags); free again near the cell centre
+      if (adx < .08 && ady < .08) d.axis = null;
+      else if (!d.axis || (d.axis === 'x' ? ady > adx + .15 : adx > ady + .15)) d.axis = adx >= ady ? 'x' : 'y';
+      const freeX = dx && occFree(i, pos[i * 2] + Math.sign(dx), pos[i * 2 + 1]), freeY = dy && occFree(i, pos[i * 2], pos[i * 2 + 1] + Math.sign(dy));
+      let fxv = 0, fyv = 0;
+      if (d.axis === 'x') fxv = freeX ? BX.clamp(dx, -.5, .5) : rubber(dx);
+      else if (d.axis === 'y') fyv = freeY ? BX.clamp(dy, -.5, .5) : rubber(dy);
+      // first contact with a wall: a soft knock (once per push)
+      const pushing = (d.axis === 'x' && !freeX && adx > .12) || (d.axis === 'y' && !freeY && ady > .12);
+      if (pushing && !d.bump) { d.bump = 1; ctx.sfx('tick'); }
+      else if (!pushing && (adx < .05 && ady < .05)) d.bump = 0;
+      d.fx = fxv; d.fy = fyv;
+    }
     ctx.on(cv.cv, 'pointerdown', e => {
       if (demo) { stopDemo(); return; }
-      if (won || !L) return; const p = cv.pos(e), i = pieceAt(p);
+      if (won || !L || (drag && drag.pid !== e.pointerId)) return;
+      const p = cv.pos(e); let i = pieceAt(p);
+      if (i < 0) i = pieceNear(p, e.pointerType === 'mouse' ? 4 : 10);
       if (i < 0) { sel = -1; return; }
-      drag = {i, sx: p.x, sy: p.y, gx: p.x - pos[i * 2] * L.cs, gy: p.y - pos[i * 2 + 1] * L.cs, moved: false, pid: e.pointerId, t0: performance.now(), x0: pos[i * 2], y0: pos[i * 2 + 1]};
+      drag = {i, sx: p.x, sy: p.y, gx: p.x - pos[i * 2] * L.cs, gy: p.y - pos[i * 2 + 1] * L.cs, moved: false, pid: e.pointerId, t0: performance.now(), x0: pos[i * 2], y0: pos[i * 2 + 1], smp: [{x: p.x, y: p.y, t: e.timeStamp}], fx: 0, fy: 0, axis: null, bump: 0, mouse: e.pointerType === 'mouse'};
       sel = i;
       try { cv.cv.setPointerCapture(e.pointerId); } catch (_) {}
     });
     ctx.on(cv.cv, 'pointermove', e => {
       if (!drag || e.pointerId !== drag.pid) return;
-      const p = cv.pos(e); if (Math.hypot(p.x - drag.sx, p.y - drag.sy) > 6) drag.moved = true;
-      if (!drag.moved) return;
-      const i = drag.i, tx = (p.x - drag.gx) / L.cs, ty = (p.y - drag.gy) / L.cs;
-      for (let k = 0; k < 10; k++) {
-        const dx = tx - pos[i * 2], dy = ty - pos[i * 2 + 1];
-        const ax = Math.abs(dx) >= .5, ay = Math.abs(dy) >= .5; if (!ax && !ay) break;
-        const first = Math.abs(dx) >= Math.abs(dy) ? 'x' : 'y';
-        let ok = false;
-        for (const a of first === 'x' ? ['x', 'y'] : ['y', 'x']) { if (a === 'x' && ax && stepPiece(i, Math.sign(dx), 0)) { ok = true; break; } if (a === 'y' && ay && stepPiece(i, 0, Math.sign(dy))) { ok = true; break; } }
-        if (!ok) break;
+      const pts = ctx.points(e, cv.cv); K.track(drag.smp, pts);
+      const p = pts[pts.length - 1];
+      if (!drag.moved && Math.hypot(p.x - drag.sx, p.y - drag.sy) > (drag.mouse ? 4 : 7)) {
+        drag.moved = true;
+        // grab offset re-based so the block starts moving from where it is (no jump of the threshold distance)
+        const dx = p.x - drag.sx, dy = p.y - drag.sy;
+        drag.gx += Math.abs(dx) >= Math.abs(dy) ? 0 : dx; drag.gy += Math.abs(dx) >= Math.abs(dy) ? dy : 0;
       }
-      // fractional offset preview
-      const dx = tx - pos[i * 2], dy = ty - pos[i * 2 + 1];
-      drag.fx = Math.abs(dx) >= Math.abs(dy) && occFree(i, pos[i * 2] + Math.sign(dx), pos[i * 2 + 1]) ? BX.clamp(dx, -.45, .45) : 0;
-      drag.fy = Math.abs(dy) > Math.abs(dx) && occFree(i, pos[i * 2], pos[i * 2 + 1] + Math.sign(dy)) ? BX.clamp(dy, -.45, .45) : 0;
+      if (!drag.moved) return;
+      dragTo(p);
     });
     const end = e => {
       if (!drag || e.pointerId !== drag.pid) return;
-      const d = drag; drag = null;
+      const d = drag;
       const p = cv.pos(e), dt = performance.now() - d.t0;
-      if (d.moved && d.x0 === pos[d.i * 2] && d.y0 === pos[d.i * 2 + 1]) {   // short swipe: move one cell in swipe direction
-        const dx = p.x - d.sx, dy = p.y - d.sy;
-        if (dt < 350 && Math.hypot(dx, dy) > L.cs * .15) { const ok = Math.abs(dx) > Math.abs(dy) ? stepPiece(d.i, Math.sign(dx), 0) : stepPiece(d.i, 0, Math.sign(dy)); if (!ok) ctx.sfx('error'); }
-      } else if (!d.moved) {
+      if (d.moved && e.type !== 'pointercancel') { K.lift(d.smp, p, e.timeStamp); dragTo(p); }
+      drag = null;
+      if (d.moved) {
+        const vel = K.vel(d.smp, 80), vx = vel.vx * 1000 / L.cs, vy = vel.vy * 1000 / L.cs;   // cells per second
+        const movedCells = d.x0 !== pos[d.i * 2] || d.y0 !== pos[d.i * 2 + 1];
+        // flick: keep going in the throw direction (a short quick swipe moves one cell; a hard flick slides to the end)
+        const ax = d.axis || (Math.abs(vx) >= Math.abs(vy) ? 'x' : 'y'), v = ax === 'x' ? vx : vy, off = ax === 'x' ? d.fx : d.fy;
+        const sx = ax === 'x' ? Math.sign(v) : 0, sy = ax === 'y' ? Math.sign(v) : 0;
+        const dist = Math.hypot(p.x - d.sx, p.y - d.sy);
+        const hard = Math.abs(v) > 9 && off * Math.sign(v) > -.3;   // hard flick: slide on to the end of the free run
+        const flick = hard || (!movedCells ? Math.abs(v) > 2.5 && dist > L.cs * .12 && (off === 0 || Math.sign(off) === Math.sign(v))
+          : Math.abs(v) > 6 && off * Math.sign(v) > .18);
+        if (flick) {
+          let n = 0; const max = hard ? 3 : 1;
+          while (n < max && stepPiece(d.i, sx, sy)) n++;
+          if (!n && !movedCells) { ctx.sfx('error'); ctx.buzz(10); }
+        } else if (!movedCells && dt < 300 && dist > L.cs * .15) {   // short swipe that stayed under half a cell
+          const dx = p.x - d.sx, dy = p.y - d.sy;
+          const ok = Math.abs(dx) > Math.abs(dy) ? stepPiece(d.i, Math.sign(dx), 0) : stepPiece(d.i, 0, Math.sign(dy)); if (!ok) { ctx.sfx('error'); ctx.buzz(10); }
+        }
+        // release: the block springs from where the finger left it to the nearest cell (the frame loop eases it in)
+      } else {
+        if (e.type === 'pointercancel') return;
         const mv = reach(pos, pcs, d.i).filter(([x, y]) => Math.abs(x - pos[d.i * 2]) + Math.abs(y - pos[d.i * 2 + 1]) === 1);
         if (hintMv && hintMv[0] === d.i) applyMove(d.i, hintMv[1], hintMv[2]);
         else if (mv.length === 1) stepPiece(d.i, mv[0][0] - pos[d.i * 2], mv[0][1] - pos[d.i * 2 + 1]);
@@ -314,15 +361,22 @@ BX.register({
         const mn = minOf(li), R = recs();
         D.text(g, `「${LAYS[li][0]}」  步数 ${steps}` + (mn != null ? ` / 最少 ${mn}` : '') + (R[li] != null ? ` · 最佳 ${R[li]}` : ''), L.A.x + L.A.w / 2, 22, {size: L.A.w < 380 ? 15 : 17, color: '#f3e2c0', font: 'serif', weight: 800, shadow: true});
         g.save(); g.beginPath(); g.rect(x - 2, y - 2, 4 * cs + 4, 5 * cs + 4 + (exitAnim ? cs * 3 : 0)); g.clip();
-        const k = 1 - Math.exp(-dt * 18);
+        const k = 1 - Math.exp(-dt * 20), lifted = [];
         pcs.forEach((p, i) => {
           const v = vis[i]; let tx = pos[i * 2], ty = pos[i * 2 + 1];
-          if (drag && drag.i === i && drag.moved) { tx += drag.fx || 0; ty += drag.fy || 0; }
+          const held = drag && drag.i === i && drag.moved;
+          if (held) { tx += drag.fx || 0; ty += drag.fy || 0; }
           if (exitAnim && p.t === 'C') { exitAnim.t += dt; ty += Math.max(0, exitAnim.t - .2) * Math.max(0, exitAnim.t - .2) * 6; }
-          if (v.d > 0) v.d -= dt; else { v.x += (tx - v.x) * k; v.y += (ty - v.y) * k; }
+          if (v.d > 0) v.d -= dt;
+          else if (held) { v.x = tx; v.y = ty; }   // under the finger: exact, no smoothing lag
+          else { v.x += (tx - v.x) * k; v.y += (ty - v.y) * k; if (Math.abs(tx - v.x) + Math.abs(ty - v.y) < .002) { v.x = tx; v.y = ty; } }
+          const lt = held ? 1 : drag && drag.i === i ? .4 : 0; v.lf = (v.lf || 0) + (lt - (v.lf || 0)) * (1 - Math.exp(-dt * (lt > (v.lf || 0) ? 30 : 14)));
           let glow = 0; if (hintMv && hintMv[0] === i) glow = .55 + .45 * Math.sin(performance.now() / 120);
-          drawPiece(g, x + v.x * cs, y + v.y * cs, p.w * cs, p.h * cs, p, {sel: sel === i && !won && (!drag || !drag.moved), glow});
+          const px = x + v.x * cs, py = y + v.y * cs, pw = p.w * cs, ph = p.h * cs;
+          if (v.lf > .01) { const sc = 1 + .035 * v.lf; lifted.push(() => { g.save(); g.translate(px + pw / 2, py + ph / 2); g.scale(sc, sc); g.translate(-px - pw / 2, -py - ph / 2); drawPiece(g, px, py, pw, ph, p, {sel: sel === i && !won && !held, glow, lift: v.lf}); g.restore(); }); }
+          else drawPiece(g, px, py, pw, ph, p, {sel: sel === i && !won && (!drag || !drag.moved), glow});
         });
+        lifted.forEach(f => f());
         if (sel >= 0 && !won && !demo && !(drag && drag.moved) && ctx.pref('hints')) {   // where the selected piece can go (one step)
           const q = pcs[sel]; g.save(); g.setLineDash([4, 5]); g.strokeStyle = 'rgba(255,215,106,.55)'; g.lineWidth = 2;
           for (const [mx, my] of reach(pos, pcs, sel)) if (Math.abs(mx - pos[sel * 2]) + Math.abs(my - pos[sel * 2 + 1]) === 1) { D.rr(g, x + mx * cs + 6, y + my * cs + 6, q.w * cs - 12, q.h * cs - 12, cs * .1); g.stroke(); }
@@ -348,7 +402,7 @@ BX.register({
       },
       destroy() { stopDemo(); },
       debug: {
-        get pos() { return pos; }, get pcs() { return pcs; }, get hintMv() { return hintMv; }, get steps() { return steps; }, get L() { return L; }, applyMove, load, solve: () => solve(pos.slice(), pcs), mins: () => minCache,
+        get vis() { return vis; }, get pos() { return pos; }, get pcs() { return pcs; }, get hintMv() { return hintMv; }, get steps() { return steps; }, get L() { return L; }, applyMove, load, solve: () => solve(pos.slice(), pcs), mins: () => minCache,
       },
     };
   },

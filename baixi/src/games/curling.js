@@ -83,7 +83,7 @@ BX.register({
   kind: 'turn', seats: 2, seatNames: ['赤队', '金队'], seatColors: ['#c23a2b', '#d9a12b'], firstLabel: '先掷', aiDelay: 500,
   options: [{key: 'ends', label: '局数', choices: [[2, '2 局'], [4, '4 局'], [8, '8 局']], def: 4},
     {key: 'fgz', label: '自由防守区', choices: [[1, '开'], [0, '关']], def: 1}],
-  howto: ['先在下方选<b>旋转</b>（↻ 右弯 / ↺ 左弯）和<b>擦冰</b>（擦得越多滑得越远、弯得越少）。', '在冰面上<b>按住向后拉</b>：左右偏移决定瞄准点（营垒里的十字），拉得越长越有力，松手掷出；也可以用「左 / 右」「− +」微调后点「掷出」。', '力度旁的字告诉你大概会停在哪：防守壶 / 进营 / 击打。半透明壶是不计碰撞的预计停点，淡色 ✕ 是你上一壶的瞄准点。', '营垒里发光的壶是<b>目前得分的壶</b>；壶在滑行时点一下画面可快进。键盘：←→ 瞄准、↑↓ 力度、Q/E 旋转、空格掷出。'],
+  howto: ['先在下方选<b>旋转</b>（↻ 右弯 / ↺ 左弯）和<b>擦冰</b>（擦得越多滑得越远、弯得越少）。', '在冰面上<b>按住向后拉</b>：左右偏移决定瞄准点（营垒里的十字），拉得越长越有力，松手掷出；拉回按下点附近松手可取消。也可以用「左 / 右」「− +」微调（按住越调越快）后点「掷出」。', '力度旁的字告诉你大概会停在哪：防守壶 / 进营 / 击打。半透明壶是不计碰撞的预计停点，淡色 ✕ 是你上一壶的瞄准点。', '营垒里发光的壶是<b>目前得分的壶</b>；壶在滑行时点一下画面可快进。键盘：←→ 瞄准、↑↓ 力度、Q/E 旋转、空格掷出。'],
   rules: `<p><b>冰壶</b>：两队在冰道上轮流把冰壶推向远端的<b>营垒</b>（同心圆）。每局每队各掷 <b>8 壶</b>，双方交替出手。</p>
 <p><b>计分：</b>一局 16 壶全部掷完后，只有离营垒圆心（<b>T 点</b>）最近的一方得分：该方每有一只壶比对方最近的壶更靠近圆心，就得 1 分。只计算营垒内（外圈半径 1.83 米以内、壶身接触圆圈即算）的壶。双方都没有壶在营垒内则本局 0:0（空局）。</p>
 <p><b>后手（最后一壶）：</b>首局由先掷方的对手持后手；此后由<b>本局未得分的一方</b>获得下一局后手（空局则后手不变）。后手方每局最后出手，优势很大。</p>
@@ -114,8 +114,8 @@ BX.register({
     const segSpin = K.seg(bar, '旋转', [[1, '↻<small>右弯</small>'], [-1, '↺<small>左弯</small>']], () => aim.s, v => { aim.s = v; pvKey = ''; });
     const segSw = K.seg(bar, '擦冰', [[0, '不擦'], [1, '轻'], [2, '中'], [3, '重']], () => aim.w, v => aim.w = v);
     const xaTxt = x => Math.abs(x) < .025 ? '中线' : (x < 0 ? '左 ' : '右 ') + Math.abs(x).toFixed(2);
-    const adjX = K.adj(bar, '瞄准', () => xaTxt(aim.xa) + '<small>米</small>', (d, k) => { aim.xa = BX.clamp(Math.round((aim.xa + d * (k > 12 ? .1 : .05)) * 100) / 100, -HALF + .1, HALF - .1); keyT = performance.now(); }, {minus: '左', plus: '右'});
-    const adjP = K.adj(bar, '力度', () => Math.round(aim.p * 100) + '<small>' + weightName(aim.p, aim.w) + '</small>', (d, k) => { aim.p = BX.clamp(Math.round(aim.p * 100 + d * (k > 12 ? 3 : 1)) / 100, 0, 1); keyT = performance.now(); });
+    const adjX = K.adj(bar, '瞄准', () => xaTxt(aim.xa) + '<small>米</small>', (d, k) => { aim.xa = BX.clamp(Math.round((aim.xa + d * .02 * [0, 1, 2.5, 5][K.acc(k)]) * 100) / 100, -HALF + .1, HALF - .1); keyT = performance.now(); }, {minus: '左', plus: '右'});
+    const adjP = K.adj(bar, '力度', () => Math.round(aim.p * 100) + '<small>' + weightName(aim.p, aim.w) + '</small>', (d, k) => { aim.p = BX.clamp(Math.round(aim.p * 100 + d * K.acc(k)) / 100, 0, 1); keyT = performance.now(); });
     K.go(bar, '掷出', () => throwIt());
     function marks(w) { return [d2p((HOG - START_Y + .4) * SWF(w)), d2p((TEE_Y - START_Y - 1.2) * SWF(w)), d2p((BACK - START_Y + .3) * SWF(w))]; }
     function weightName(p, w) { const m = marks(w); return p < m[0] - .02 ? '过不了线' : p < m[1] ? '防守壶' : p < m[2] ? '进营' : '击打'; }
@@ -136,8 +136,11 @@ BX.register({
     /* ---------- input ---------- */
     const myTurn = () => !st.over && !pb.on && ctx.canAct(st.turn);
     let base = null;
+    let aimSave = null;
     const sling = K.sling(ctx, cv, {
-      enabled: myTurn, max: () => Math.min(cv.w, cv.h) * .4, min: .04,
+      enabled: myTurn, max: () => Math.min(cv.w, cv.h) * .4,
+      engage: () => { aimSave = {xa: aim.xa, p: aim.p}; },
+      cancel: () => { if (aimSave) Object.assign(aim, aimSave); aimSave = null; },
       change: s => {
         // s.dx,s.dy: screen unit vector opposite the pull; convert to sheet frame
         let fwd, lat; if (V.port) { fwd = -s.dy; lat = s.dx; } else { fwd = s.dx; lat = s.dy; }
@@ -158,8 +161,10 @@ BX.register({
     function key(e) {
       if (skipKey(e)) return;
       if (!myTurn()) return;
-      if (e.code === 'ArrowLeft' || e.code === 'ArrowRight') { aim.xa = BX.clamp(aim.xa + (e.code === 'ArrowRight' ? .05 : -.05), -HALF, HALF); keyT = performance.now(); }
-      if (e.code === 'ArrowUp' || e.code === 'ArrowDown') { aim.p = BX.clamp(aim.p + (e.code === 'ArrowUp' ? .01 : -.01), 0, 1); keyT = performance.now(); }
+      if (e.code === 'Escape' && sling.on) { sling.abort(); return; }
+      const m = /^Arrow/.test(e.code) ? K.keyMul(e) : 1;
+      if (e.code === 'ArrowLeft' || e.code === 'ArrowRight') { aim.xa = BX.clamp(Math.round((aim.xa + (e.code === 'ArrowRight' ? .02 : -.02) * m) * 100) / 100, -HALF + .1, HALF - .1); keyT = performance.now(); }
+      if (e.code === 'ArrowUp' || e.code === 'ArrowDown') { aim.p = BX.clamp(Math.round(aim.p * 100 + (e.code === 'ArrowUp' ? 1 : -1) * m) / 100, 0, 1); keyT = performance.now(); }
       if (e.code === 'KeyQ' || e.code === 'KeyE') { aim.s = e.code === 'KeyE' ? 1 : -1; segSpin.refresh(); }
       if (/^Digit[0-3]$/.test(e.code)) { aim.w = +e.code.slice(5); segSw.refresh(); }
       if (e.code === 'Space' || e.code === 'Enter') throwIt();
@@ -231,7 +236,7 @@ BX.register({
         if (!ctx.fast) {
           const me2 = r.frames[0].length / 2 - 1;
           lastShot[t] = {xa: Math.round(dx / dy * (TEE_Y - START_Y) * 100) / 100, pts: r.frames.filter((f, i) => i % 3 === 0 && f[me2 * 2 + 1] < 50).map(f => [f[me2 * 2], f[me2 * 2 + 1]])};
-          show = {r, snap, foul, endInfo, t, w, s, done: false, ei: 0, spin: 0};
+          show = {r, snap, foul, endInfo, t, w, s, done: false, ei: 0, spin: 0, lt: 0, rmb: 0, brT: 0};
           const simT = r.steps * DT, th = r.tHouse;
           const slow = [[0, Math.max(0, th), 7], [Math.max(0, th), simT + 5, 2.2]];
           for (const ev of r.ev) if (ev[0] === 'x') continue; else if (ev[1] === 'hit' && ev[4] > .6) slow.push([ev[0] * DT - .05, ev[0] * DT + .35, .45]);
@@ -351,20 +356,24 @@ BX.register({
       let target = houseCam();
       let liveStones = null, thrownPos = null;
       if (show) {
-        const fr = show.r.frames, k = Math.min(fr.length - 1, Math.floor(pb.t / (DT * 2)));
-        const f = fr[k]; liveStones = [];
+        const fr = show.r.frames, L = K.lerpFrame(fr, pb.t / (DT * 2), 90, 1), k = L.k, f = L.f; liveStones = [];
         for (let i = 0; i < f.length / 2; i++) liveStones.push({x: f[i * 2], y: f[i * 2 + 1], t: i < show.snap.stones.length ? show.snap.stones[i].t : show.t, me: i === f.length / 2 - 1});
         thrownPos = liveStones[liveStones.length - 1];
         if (thrownPos.y < 50) target = Math.min(houseCam(), Math.max(SHEET_Y0 + V.L / 2, thrownPos.y + V.L * .22));
         while (show.ei < show.r.ev.length && show.r.ev[show.ei][0] <= k * 2 + 1) fire(show.r.ev[show.ei++], f);
-        show.spin += dt * pb.rate * 1.6 * show.s;
+        // stone rotation and slide rumble follow the stone's actual speed
+        const me2 = f.length / 2 - 1, nx = fr[Math.min(fr.length - 1, k + 1)], sp = nx[me2 * 2 + 1] > 50 || f[me2 * 2 + 1] > 50 ? 0 : Math.hypot(nx[me2 * 2] - fr[k][me2 * 2], nx[me2 * 2 + 1] - fr[k][me2 * 2 + 1]) / (DT * 2);
+        show.spin += Math.max(0, pb.t - show.lt) * (.25 + sp * .7) * show.s; show.lt = pb.t;
+        if (sp > .25 && (show.rmb -= dt) <= 0) { show.rmb = .4; K.impact('rumble', Math.min(1, sp / 2.6)); }
+        if (show.w > 0 && sp > .25 && (show.brT -= dt) <= 0) { show.brT = .23; K.impact('brush', show.w / 3); }
+        show.sp = sp;
         if (pb.t >= show.r.steps * DT && !show.done) { show.done = true; atRest(); }
       }
-      cam.c += (target - cam.c) * Math.min(1, dt * (show ? 6 : 3));
+      cam.c += (target - cam.c) * (1 - Math.exp(-dt * (show ? 5 : 3)));
       if (!isFinite(cam.c)) cam.c = target;
       const [ox, oy] = fx.off(); g.save(); g.translate(ox, oy);
       // boards & arena
-      D.wood(g, 0, 0, V.W, V.H, {seed: 5, base: '#5a3a20', dark: '#2a190d', vertical: V.port, grain: .25});
+      g.drawImage(cache('wood' + (V.port ? 'p' : 'l'), V.W, V.H, cv.dpr, c => D.wood(c, 0, 0, V.W, V.H, {seed: 5, base: '#5a3a20', dark: '#2a190d', vertical: V.port, grain: .25})), 0, 0, V.W, V.H);
       const sb = sheetBG(g), [sx0, sy0] = V.port ? T(-HALF, SHEET_Y1) : T(-HALF, SHEET_Y0);
       g.fillStyle = 'rgba(0,0,0,.4)'; g.fillRect(sx0 - 6, sy0 - 6, (V.port ? HALF * 2 * V.s : (SHEET_Y1 - SHEET_Y0) * V.s) + 12, (V.port ? (SHEET_Y1 - SHEET_Y0) * V.s : HALF * 2 * V.s) + 12);
       g.drawImage(sb, sx0, sy0, V.port ? HALF * 2 * V.s : (SHEET_Y1 - SHEET_Y0) * V.s, V.port ? (SHEET_Y1 - SHEET_Y0) * V.s : HALF * 2 * V.s);
@@ -376,7 +385,7 @@ BX.register({
       if (show) {
         const fr = show.r.frames, k = Math.min(fr.length - 1, Math.floor(pb.t / (DT * 2))), me = fr[0].length / 2 - 1;
         g.save(); g.lineCap = 'round';
-        for (let i = Math.max(1, k - 60); i <= k; i++) { const a = fr[i - 1], b = fr[i]; if (b[me * 2 + 1] > 50) break; const [x1, y1] = T(a[me * 2], a[me * 2 + 1]), [x2, y2] = T(b[me * 2], b[me * 2 + 1]); g.strokeStyle = D.alpha(ctx.color(show.t), .35 * (1 - (k - i) / 60)); g.lineWidth = R * V.s * 1.3 * (1 - (k - i) / 60); g.beginPath(); g.moveTo(x1, y1); g.lineTo(x2, y2); g.stroke(); }
+        for (let i = Math.max(1, k - 60); i <= k + 1; i++) { const a = fr[i - 1], b = i > k ? liveStones.flatMap(o => [o.x, o.y]) : fr[i]; if (!a || b[me * 2 + 1] > 50 || a[me * 2 + 1] > 50) break; const [x1, y1] = T(a[me * 2], a[me * 2 + 1]), [x2, y2] = T(b[me * 2], b[me * 2 + 1]); g.strokeStyle = D.alpha(ctx.color(show.t), .35 * (1 - (k - i) / 60)); g.lineWidth = R * V.s * 1.3 * (1 - (k - i) / 60); g.beginPath(); g.moveTo(x1, y1); g.lineTo(x2, y2); g.stroke(); }
         g.restore();
       }
       stones.forEach((s, i) => {
@@ -412,9 +421,11 @@ BX.register({
       if (e[1] === 'hit') {
         const i = e[2], j = e[3], x = (f[i * 2] + f[j * 2]) / 2, y = (f[i * 2 + 1] + f[j * 2 + 1]) / 2;
         if (y > 50) return;
-        ctx.sfx('hit'); fx.shake(Math.min(10, 3 + e[4] * 4));
-        fx.burst(x, y, {n: 14, sp: 2.5 * V.s, color: ['#ffffff', '#cfe8f0', '#e6c57d'], life: .45, kind: 'spark'});
-      } else if (e[1] === 'out') ctx.sfx('whoosh');
+        const kk = Math.min(1, e[4] / 2.2);
+        K.impact('clack', kk); fx.shake(1.5 + 8 * kk); if (e[4] > 1.2) pb.hit(.05);
+        fx.burst(x, y, {n: 5 + Math.round(14 * kk), sp: (1 + 2.5 * kk) * V.s, color: ['#ffffff', '#cfe8f0', '#e6c57d'], life: .45, kind: 'spark'});
+        if (kk > .3) fx.burst(x, y, {n: 8, sp: 1.2 * V.s, color: '235,245,250', kind: 'smoke', life: .6, size: 3, grow: 2});
+      } else if (e[1] === 'out') { ctx.sfx('whoosh'); K.impact('thud', .25); }
     }
     function atRest() {
       const f = show.foul;
@@ -454,6 +465,7 @@ BX.register({
         const [bx, by] = T(aim.xa, TEE_Y);
         g.strokeStyle = '#1b1510'; g.lineWidth = 2.5; g.beginPath(); g.moveTo(bx - 10, by); g.lineTo(bx + 10, by); g.moveTo(bx, by - 10); g.lineTo(bx, by + 10); g.stroke();
         D.circle(g, bx, by, 6); g.stroke();
+        if (sling.on) K.drawAnchor(g, sling, '#2b2118');
         // power meter
         const mh = Math.min(170, V.H * .35), mx = V.port ? V.W - 26 : V.W - 30, my = V.port ? V.topH + 70 : 40;
         const mk = marks(aim.w);

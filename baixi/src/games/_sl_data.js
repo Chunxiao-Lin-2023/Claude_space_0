@@ -76,6 +76,18 @@ BX.data.slkit = (function () {
       line(s) { s = s || get(); return s.played ? `胜率 ${Math.round(100 * s.wins / s.played)}%（${s.wins}/${s.played}）` + (s.streak > 1 ? ` · 连胜 ${s.streak}` : '') : ''; },
     };
   };
+  /* pointer sample tracking for drags: K.track(buf, pts) appends ctx.points() samples, keeps ~160 ms;
+     K.vel(buf, win) → release velocity {vx, vy, sp} in px/ms measured over the last `win` ms (not one noisy sample) */
+  K.track = function (buf, pts) { for (const p of pts) buf.push(p); const t = buf.length ? buf[buf.length - 1].t : 0; while (buf.length > 2 && t - buf[0].t > 160) buf.shift(); return buf; };
+  /* finger lifted at p: if it had paused (> 40 ms since the last move) the throw is over → record a resting sample */
+  K.lift = function (buf, p, t) { const l = buf[buf.length - 1]; if (!l || t - l.t > 40) buf.push({x: p.x, y: p.y, t}); else if (l.x !== p.x || l.y !== p.y) buf.push({x: p.x, y: p.y, t: Math.max(t, l.t + 1)}); return buf; };
+  K.vel = function (buf, win = 90) {
+    const n = buf.length; if (n < 2) return {vx: 0, vy: 0, sp: 0};
+    const b = buf[n - 1]; let a = buf[n - 2];
+    for (let i = n - 2; i >= 0; i--) { if (b.t - buf[i].t > win) break; a = buf[i]; }   // oldest sample inside the window
+    const dt = Math.max(8, b.t - a.t), vx = (b.x - a.x) / dt, vy = (b.y - a.y) / dt;
+    return {vx, vy, sp: Math.hypot(vx, vy)};
+  };
   K.status = ctx => { let last = null; return s => { if (s !== last) { last = s; ctx.status(s); } }; };
   /* modal-ish chooser grid inside the game. items: [{label, sub, done, cur, draw(g,w,h)}] → onPick(i) */
   K.picker = function (ctx, title, items, onPick, onClose) {
