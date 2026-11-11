@@ -27,7 +27,7 @@ function toggleBar(id) { const i = C.bar.indexOf(id); if (i >= 0) C.bar.splice(i
 function learnGongfa(id) { if (C.gf.includes(id)) return; C.gf.push(id); const G = GONGFA[id]; fixHp(); logLine(`<b class="lvup">修炼有成</b>：${G.icon}<b>${G.name}</b>——${G.desc}`, 'sys'); sfx('epic'); }
 
 /* ---------- pets ---------- */
-function gainPet(id) { if (C.pets[id]) return; C.pets[id] = { aff: 10, hatch: 0 }; if (!C.pet) C.pet = id; const P = PETS[id]; logLine(`<b class="lvup">新伙伴</b>：${P.icon}<b>${P.name}</b>（${P.race}）——${P.desc}`, 'sys'); sfx('epic'); save(); refresh(); }
+function gainPet(id) { if (C.pets[id]) return; C.pets[id] = { aff: 10, hatch: 0, lv: Math.max(1, C.lv - 1), exp: 0 }; if (!C.pet) C.pet = id; const P = PETS[id]; logLine(`<b class="lvup">新伙伴</b>：${P.icon}<b>${P.name}</b>（${P.race}）——${P.desc}`, 'sys'); sfx('epic'); save(); refresh(); }
 function setPet(id) { if (!C.pets[id]) return; C.pet = C.pet === id ? null : id; sfx('click'); save(); refresh(); }
 function feedPet(id, item) { const p = C.pets[id], it = ITEMS[item]; if (!p || !it || !it.food || !takeItem(item)) return; const before = p.aff; p.aff = Math.min(100, p.aff + it.food); sfx('heal');
   const P = PETS[id]; logLine(`${P.icon}${P.name} 吃了${it.name}，${pick(['尾巴摇个不停', '高兴得在你身边打转', '吃完还想要', '舔了舔你的手'])}。（亲近 ${before} → ${p.aff}）`, 'dim');

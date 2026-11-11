@@ -71,7 +71,7 @@ function battleApply(r, B) {
     if (C.pet && C.pets[C.pet]) { const p = C.pets[C.pet]; if (p.aff < 100 && chance(0.35)) { p.aff = Math.min(100, p.aff + 1); petEvoCheck(C.pet); } }
     relicFromKills(r.kills); for (const [id] of r.kills || []) exNote(C.loc, 'm', id);
     if (C.pets.ertuzi && C.pets.ertuzi.hatch < 0) { /* reserved */ }
-    if (r.exp) gainExp(r.exp); if (r.money) gainMoney(r.money, '捡到'); for (const it of r.items || []) addItem(it, 1); if (r.boss) storyDungeon(r.boss); if (C.hp <= 0) C.hp = 1; }
+    if (r.exp) { gainExp(r.exp); if (!(B && B.noPet)) petBattleExp(r.exp); } if (r.money) gainMoney(r.money, '捡到'); for (const it of r.items || []) addItem(it, 1); if (r.boss) storyDungeon(r.boss); if (C.hp <= 0) C.hp = 1; }
   else if (r.fled) logLine('你逃了出来。', 'dim');
   else { sfx('lose'); C.stats.deaths++;
     if (r.noLose) C.hp = Math.max(C.hp, Math.round(s.hpMax * 0.3));

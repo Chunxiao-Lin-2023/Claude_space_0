@@ -987,7 +987,7 @@ function toggleBar(id) { const i = C.bar.indexOf(id); if (i >= 0) C.bar.splice(i
 function learnGongfa(id) { if (C.gf.includes(id)) return; C.gf.push(id); const G = GONGFA[id]; fixHp(); logLine(`<b class="lvup">修炼有成</b>：${G.icon}<b>${G.name}</b>——${G.desc}`, 'sys'); sfx('epic'); }
 
 /* ---------- pets ---------- */
-function gainPet(id) { if (C.pets[id]) return; C.pets[id] = { aff: 10, hatch: 0 }; if (!C.pet) C.pet = id; const P = PETS[id]; logLine(`<b class="lvup">新伙伴</b>：${P.icon}<b>${P.name}</b>（${P.race}）——${P.desc}`, 'sys'); sfx('epic'); save(); refresh(); }
+function gainPet(id) { if (C.pets[id]) return; C.pets[id] = { aff: 10, hatch: 0, lv: Math.max(1, C.lv - 1), exp: 0 }; if (!C.pet) C.pet = id; const P = PETS[id]; logLine(`<b class="lvup">新伙伴</b>：${P.icon}<b>${P.name}</b>（${P.race}）——${P.desc}`, 'sys'); sfx('epic'); save(); refresh(); }
 function setPet(id) { if (!C.pets[id]) return; C.pet = C.pet === id ? null : id; sfx('click'); save(); refresh(); }
 function feedPet(id, item) { const p = C.pets[id], it = ITEMS[item]; if (!p || !it || !it.food || !takeItem(item)) return; const before = p.aff; p.aff = Math.min(100, p.aff + it.food); sfx('heal');
   const P = PETS[id]; logLine(`${P.icon}${P.name} 吃了${it.name}，${pick(['尾巴摇个不停', '高兴得在你身边打转', '吃完还想要', '舔了舔你的手'])}。（亲近 ${before} → ${p.aff}）`, 'dim');
@@ -1073,9 +1073,9 @@ function mobUnit(id, lv, side = 1) {
 function heroUnit() { const s = charStats(); const u = { id: 'hero', side: 0, kind: 'pc', name: '石昊', icon: '🧒', lv: C.lv, hpMax: s.hpMax, hp: Math.max(1, Math.round(C.hp)), mpMax: s.mpMax, mp: Math.round(C.mp), atk: s.atk, def: s.def, spd: s.spd, crit: s.crit, leech: s.leech || 0, regen: s.regen || 0, sk: skillsOf(), cd: {}, st: [], alive: true,
     prof: Object.fromEntries(C.sk.map(id => [id, PROF[profLevel(id)].b + (id === 'lei' ? relicSp('lei') : 0)])), mpRegen: BAL.mpRegen + relicSp('mp'), noPoison: !!relicSp('noPoison'), first: relicSp('first') };
   const sh = relicSp('shieldStart'); if (sh) u.st.push({ k: 'shield', t: 3, v: Math.round(s.hpMax * sh) }); if (u.first) u.st.push({ k: 'atk', t: 1, v: u.first }); return u; }
-function petUnit(id) { // the pet scales with 石昊; affection gives up to +15%, an awakened pet another +15%
-  const s = charStats(), P = PETS[id], pd = C.pets[id], aff = pd.aff, k = (1 + aff / 100 * 0.15) * (pd.evo ? 1.15 : 1), m = P.mul;
-  return { id: 'pet', side: 0, kind: 'npc', mob: id, pet: 1, evo: !!pd.evo, name: P.name + (pd.evo ? '·觉醒' : ''), icon: P.icon, lv: C.lv, hpMax: Math.round(s.hpMax * m.hp * k), atk: Math.round(s.atk * m.atk * k), def: Math.round(s.def * m.def * k), spd: s.spd * m.spd, crit: 0.08, leech: 0, mpMax: 0, mp: 0, sk: [], cd: {}, st: [], alive: true, plan: null, intent: '', aff, hp: 0 };
+function petUnit(id) { // the partner scales with 石昊; affection up to +15%, 觉醒 +15%, 返祖 +15%, and ±3% per level it is above / below him
+  const s = charStats(), P = PETS[id], pd = C.pets[id], aff = pd.aff, plv = petLv(id), k = (1 + aff / 100 * 0.15) * (pd.evo ? 1.15 : 1) * (pd.evo2 ? 1.15 : 1) * clamp(1 + 0.03 * (plv - C.lv), 0.7, 1.5), m = P.mul;
+  return { id: 'pet', side: 0, kind: 'npc', mob: id, pet: 1, evo: !!pd.evo, name: P.name + (pd.evo2 ? '·返祖' : pd.evo ? '·觉醒' : ''), icon: P.icon, lv: plv, hpMax: Math.round(s.hpMax * m.hp * k), atk: Math.round(s.atk * m.atk * k), def: Math.round(s.def * m.def * k), spd: s.spd * m.spd, crit: 0.08, leech: 0, mpMax: 0, mp: 0, sk: [], cd: {}, st: [], alive: true, plan: null, intent: '', aff, hp: 0 };
 }
 function rivalUnit(r) { // 虚神界 rivals fight with 宝术 like you do
   const L = r.lv - 1, g = r.gear || 1, D = diffOf(); const u = { id: 'u' + (BID++), side: 1, kind: 'rival', name: r.name, icon: r.icon || '🧑', lv: r.lv, boss: !!r.boss, shiyi: !!r.shiyi, hpMax: Math.round((HERO.base.hp + HERO.grow.hp * L) * g * 1.25 * D.hp * (r.shiyi ? 1.3 : 1)), atk: Math.round((HERO.base.atk + HERO.grow.atk * L) * g * D.atk), def: Math.round((HERO.base.def + HERO.grow.def * L) * g), spd: HERO.base.spd + HERO.grow.spd * L + (r.shiyi ? 3 : 0), crit: 0.12, leech: 0,
@@ -1210,7 +1210,7 @@ function mobAct(B, u, L) {
   const M = unitDef(u.mob); if (u.plan === 'charge') { fxe(B, { k: 'act', a: u.id, fx: 'charge', tg: [], side: u.side }); L(`${uName(u)} 正在<span class="warn">蓄力</span>……`); return; }
   if (u.plan === 'broken') { L(`${uName(u)} 踉跄了一下，蓄好的力全散了`); return; }
   const pa = u.pet && B.acts[u.id]; if (pa) { if (pa.guard) { addSt(u, { k: 'guard', t: 1, v: 0.5 }); fxe(B, { k: 'act', a: u.id, fx: 'guard', tg: [u.id], side: 0 }); L(`${uName(u)} 缩成一团，护住要害`); return; } if (petMoves(u).some(x => x.i === pa.psk)) u.plan = pa.psk; }
-  const s = M.sk[u.plan ?? 0] || M.sk[0]; const foes = alive(B, 1 - u.side); if (!foes.length) return; u.releasing = false;
+  let s = M.sk[u.plan ?? 0] || M.sk[0]; if (u.pet) s = rankedMove(s, petRank(u.mob, M.sk.indexOf(s))); const foes = alive(B, 1 - u.side); if (!foes.length) return; u.releasing = false;
   if (s.taunt || s.buffHero || s.shieldHero) { const h = B.units.find(x => x.kind === 'pc' && x.alive) || u;
     if (s.taunt) { addSt(u, { k: 'taunt', t: s.taunt }); if (s.guard) addSt(u, { k: 'guard', t: 1, v: 0.5 }); fxe(B, { k: 'act', a: u.id, fx: 'taunt', tg: [u.id], side: u.side, n: s.n, who: mobWho(u) }); L(`${uName(u)} <span class="sk">${s.n}</span>，敌人的目光全被它引了过去`); return; }
     if (s.buffHero) { addSt(h, s.buffHero); fxe(B, { k: 'act', a: u.id, fx: 'bless', tg: [h.id], side: u.side, n: s.n, who: mobWho(u) }); L(`${uName(u)} <span class="sk">${s.n}</span>，${uName(h)} <span style="color:${STATUS[s.buffHero.k].c}">${s.buffHero.k === 'sure' ? '下一击必暴' : STATUS[s.buffHero.k].n + (s.buffHero.v ? ' +' + Math.round(s.buffHero.v * 100) + '%' : '')}</span>`); return; }
@@ -1333,7 +1333,7 @@ function battleApply(r, B) {
     if (C.pet && C.pets[C.pet]) { const p = C.pets[C.pet]; if (p.aff < 100 && chance(0.35)) { p.aff = Math.min(100, p.aff + 1); petEvoCheck(C.pet); } }
     relicFromKills(r.kills); for (const [id] of r.kills || []) exNote(C.loc, 'm', id);
     if (C.pets.ertuzi && C.pets.ertuzi.hatch < 0) { /* reserved */ }
-    if (r.exp) gainExp(r.exp); if (r.money) gainMoney(r.money, '捡到'); for (const it of r.items || []) addItem(it, 1); if (r.boss) storyDungeon(r.boss); if (C.hp <= 0) C.hp = 1; }
+    if (r.exp) { gainExp(r.exp); if (!(B && B.noPet)) petBattleExp(r.exp); } if (r.money) gainMoney(r.money, '捡到'); for (const it of r.items || []) addItem(it, 1); if (r.boss) storyDungeon(r.boss); if (C.hp <= 0) C.hp = 1; }
   else if (r.fled) logLine('你逃了出来。', 'dim');
   else { sfx('lose'); C.stats.deaths++;
     if (r.noLose) C.hp = Math.max(C.hp, Math.round(s.hpMax * 0.3));
@@ -2141,6 +2141,31 @@ function togglePetMove(id, i) { const p = C.pets[id]; if (!p || !petOpen(id).inc
   sfx('click'); save(); refresh(); }
 function setDuo(v) { C.duo = v; sfx('click'); save(); if (STATE.battle) renderBattle(true); netSync(); }
 
+/* ---------- partner growth: its own level (to 30, past 石昊's cap), move ranks (材料), and a second awakening (返祖) ---------- */
+const PET_LV_CAP = 30;
+const petLv = id => { const p = C.pets[id]; return p ? (p.lv || C.lv) : C.lv; };
+const petNeed = lv => Math.round(BAL.expNext(Math.min(lv, 20)) * (lv >= 20 ? 1 + (lv - 19) * 0.35 : 1));
+function petGainExp(id, n) { const p = C.pets[id]; if (!p || n <= 0) return; if (!p.lv) p.lv = C.lv; p.exp = (p.exp || 0) + Math.round(n * (p.lv < C.lv ? 1.6 : 1));
+  const cap = C.story.f.end ? PET_LV_CAP : Math.min(PET_LV_CAP, C.lv + 2); // before the end of volume one: at most 2 above 石昊
+  while (p.lv < cap && p.exp >= petNeed(p.lv)) { p.exp -= petNeed(p.lv); p.lv++; logLine(`${PETS[id].icon}<b>${PETS[id].name}</b> 长到了 <b>${p.lv} 级</b>${p.lv > C.lv ? '（比石昊还高，属性 +' + Math.round((p.lv - C.lv) * 3) + '%）' : ''}。`, 'sys'); if (id === C.pet) bigFlash(PETS[id].name + ' · ' + p.lv + ' 级', 'lv'); }
+  if (p.lv >= cap) p.exp = Math.min(p.exp, petNeed(p.lv)); petEvo2Check(id); }
+function petBattleExp(exp) { for (const id of Object.keys(C.pets)) petGainExp(id, exp * (id === C.pet ? 1 : 0.3)); }
+/* move ranks: 1 → 2 → 3, each +20% (rank 3 also lasts a round longer) */
+const RANK_COST = { 2: { need: [['bone', 4], ['lingyao', 2]], lv: 1 }, 3: { need: [['bone', 8], ['baoyao', 1]], lv: 15 } };
+const petRank = (id, i) => (C.pets[id] && C.pets[id].rk && C.pets[id].rk[i]) || 1;
+function rankedMove(s, rk) { if (rk <= 1) return s; const m = 1 + 0.2 * (rk - 1), o = Object.assign({}, s);
+  for (const k of ['dmg', 'healAlly', 'shieldAll', 'shieldHero']) if (o[k]) o[k] = o[k] * m;
+  if (o.buffHero) o.buffHero = Object.assign({}, o.buffHero, { v: o.buffHero.v * m, t: o.buffHero.t + (rk >= 3 ? 1 : 0) });
+  if (o.st) o.st = Object.assign({}, o.st, { v: o.st.k === 'brk' ? Math.min(0.6, (o.st.v || 0) * m) : (o.st.v || 0) * m, t: o.st.t + (rk >= 3 ? 1 : 0), p: Math.min(1, (o.st.p ?? 1) * m) });
+  if (o.taunt) o.taunt = o.taunt + (rk >= 3 ? 1 : 0); return o; }
+function petRankUp(id, i) { const p = C.pets[id]; if (!p || !petOpen(id).includes(i)) return; const r = petRank(id, i); if (r >= 3) return; const R = RANK_COST[r + 1];
+  if (petLv(id) < R.lv) { toast(`${PETS[id].name} 要 ${R.lv} 级才能练到 3 阶`); return; } if (!R.need.every(([k, n]) => itemN(k) >= n)) { toast('材料不够：' + R.need.map(([k, n]) => ITEMS[k].name + '×' + n).join('、')); return; }
+  for (const [k, n] of R.need) takeItem(k, n); p.rk = p.rk || {}; p.rk[i] = r + 1; const mv = PETS[id].sk[i]; logLine(`${PETS[id].icon}${PETS[id].name} 的「${mv.n}」练到了 <b>${r + 1} 阶</b>（效果 +${r * 20}%${r + 1 >= 3 ? '，持续多一回合' : ''}）。`, 'sys'); sfx('epic'); save(); refresh(); }
+/* 返祖: full affection, already awakened, and 25 级 */
+const EVO2_TEXT = { maoqiu: '毛球站在山梁上，冲着大荒深处长啸了一声。那一瞬间，四野的凶兽全都伏低了身子——它们闻到了一股很古老的气息。', dahong: '大红在云里翻了个身，身后拖出一条长长的火尾，烧得半边天都红了。它落下来，得意地啄了啄你的脑门。', ertuzi: '二秃子身上的五色光一圈圈收拢，最后凝在它光溜溜的脑袋上，像戴了一顶小小的冠。……毛还是只有那一根。' };
+function petEvo2Check(id) { const p = C.pets[id]; if (!p || p.evo2 || !p.evo || p.aff < 100 || petLv(id) < 25 || NETROLE === 'guest') return; p.evo2 = 1;
+  setTimeout(() => runScene(async () => { await nar(EVO2_TEXT[id]); logLine(`<b class="lvup">血脉返祖</b>：${PETS[id].icon}<b>${PETS[id].name}</b> 全身属性再 +15%。`, 'sys'); sfx('epic'); bigFlash(PETS[id].name + ' · 返祖', 'relic'); }, { title: PETS[id].name + '返祖' }), 600); }
+
 /* ================= the living village: NPC chatter tied to where you are and how far the story has gone,
    rumours about roaming beasts, and the 虚神界 ladder ================= */
 const qi = id => MAIN.findIndex(q => q.id === id);
@@ -2656,12 +2681,15 @@ function pPet() {
   for (const id of ids) { const P = PETS[id], p = C.pets[id], on = C.pet === id, open = petSkillsOpen(id);
     h += `<div class="card"><div class="row"><span style="font-size:1.9rem">${P.icon}</span><div style="flex:1"><h3 style="margin:0">${P.name} <span class="pill gold">${P.role}</span></h3><div class="dim" style="font-size:.8rem">${P.race}</div></div><button class="sb ${on ? 'pri' : ''}" onclick="setPet('${id}')">${on ? '跟着你' : '让它跟着'}</button></div>
       <div class="dim" style="font-size:.87rem;margin:6px 0">${P.desc}</div>
-      <div class="bars">亲近 ${p.aff}/100${p.evo ? ' · <b>已觉醒</b>（全属性 +15%）' : ' · 满 100 会觉醒'}<div class="bar exp"><i style="width:${p.aff}%"></i></div></div>
+      <div class="bars">等级 <b>${petLv(id)}</b>${petLv(id) >= PET_LV_CAP ? '（满级）' : !C.story.f.end && petLv(id) >= C.lv + 2 ? '（第一卷里最多比石昊高 2 级）' : ` · 经验 ${fmt(p.exp || 0)}/${fmt(petNeed(petLv(id)))}`}${petLv(id) > C.lv ? ` · <b>比石昊高 ${petLv(id) - C.lv} 级，属性 +${(petLv(id) - C.lv) * 3}%</b>` : petLv(id) < C.lv ? ' · 比石昊低，经验 ×1.6 追得快' : ''}<div class="bar"><i style="width:${petLv(id) >= PET_LV_CAP ? 100 : Math.min(100, (p.exp || 0) / petNeed(petLv(id)) * 100)}%;background:#7fd36f"></i></div>
+      亲近 ${p.aff}/100${p.evo2 ? ' · <b>已返祖</b>（再 +15%）' : p.evo ? ' · <b>已觉醒</b>（+15%）· 25 级时返祖' : ' · 满 100 觉醒'}<div class="bar exp"><i style="width:${p.aff}%"></i></div></div>
+      ${(() => { const u = petUnit(id); return `<div class="kv" style="margin-bottom:4px"><div><span>气血</span> ${u.hpMax}</div><div><span>攻击</span> ${u.atk}</div><div><span>防御</span> ${u.def}</div><div><span>身法</span> ${u.spd.toFixed(1)}</div></div>`; })()}
       <h4 style="margin:8px 0 2px">招式栏 <span class="dim" style="font-size:.8rem;font-weight:400">点选带进战斗（${petBar(id).length}/${petSlots(id)}，觉醒后 +1）；栏满了再选，会换下同类里最低阶的</span></h4>
-      <div class="list" style="margin-top:4px">${P.sk.map((s, i) => { const ok = open.includes(s), on = ok && petBar(id).includes(i); return `<div class="li ${ok ? '' : 'unk'} ${on ? 'on' : ''}" style="padding:5px 8px" ${ok ? `onclick="togglePetMove('${id}',${i})"` : ''}><span class="pill" style="color:${PET_CAT[s.cat].c};border-color:${PET_CAT[s.cat].c}">${PET_CAT[s.cat].n}</span><div class="t"><b>${s.n}</b>${ok ? '' : s.evo ? ' <span class="dim">（觉醒后）</span>' : ` <span class="dim">（亲近 ${s.aff}）</span>`}<small>${s.d || ''}</small></div><span class="chk">${on ? '✔' : ''}</span></div>`; }).join('')}</div>
+      <div class="list" style="margin-top:4px">${P.sk.map((s, i) => { const ok = open.includes(s), on = ok && petBar(id).includes(i); return `<div class="li ${ok ? '' : 'unk'} ${on ? 'on' : ''}" style="padding:5px 8px" ${ok ? `onclick="togglePetMove('${id}',${i})"` : ''}><span class="pill" style="color:${PET_CAT[s.cat].c};border-color:${PET_CAT[s.cat].c}">${PET_CAT[s.cat].n}</span><div class="t"><b>${s.n}</b>${ok ? '' : s.evo ? ' <span class="dim">（觉醒后）</span>' : ` <span class="dim">（亲近 ${s.aff}）</span>`}<small>${s.d || ''}</small></div>${ok ? (() => { const r = petRank(id, i), R = RANK_COST[r + 1]; return `<span class="pill gold">${r} 阶</span>${R ? `<button class="sb" style="min-height:30px" title="${R.need.map(([k, n]) => ITEMS[k].name + '×' + n).join('、')}${R.lv > 1 ? '，伙伴 ' + R.lv + ' 级' : ''}" onclick="event.stopPropagation();petRankUp('${id}',${i})" ${R.need.every(([k, n]) => itemN(k) >= n) && petLv(id) >= R.lv ? '' : 'disabled'}>升阶</button>` : ''}`; })() : ''}<span class="chk">${on ? '✔' : ''}</span></div>`; }).join('')}</div>
+      <div class="dim" style="font-size:.78rem;margin-top:4px">升阶：2 阶要 兽骨×4、灵药×2；3 阶要 兽骨×8、宝药×1，伙伴 15 级。每阶效果 +20%，3 阶持续多一回合。</div>
       ${foods.length ? `<div class="row" style="flex-wrap:wrap;margin-top:6px">${foods.map(f => `<button class="sb" onclick="feedPet('${id}','${f}')">喂${ITEMS[f].icon}${ITEMS[f].name}×${itemN(f)}</button>`).join('')}</div>` : '<div class="dim" style="font-size:.8rem;margin-top:4px">没有能喂的东西（兽奶、凶兽肉、灵药、兽骨……）</div>'}</div>`; }
   if (itemN('peaegg') && ids.length) h += `<div class="card"><div class="dim">🥚 怀里的蛋还没孵出来（${C.story.f.eggWins || 0}/8 场胜仗）。</div></div>`;
-  if (ids.length) h = '<div class="card dim" style="font-size:.85rem">灵兽伙伴跟着你打仗，每回合石昊出完招就轮到它，由你给它选招。它的招分四种：<b>攻击</b>、给石昊的<b>增益</b>、给敌人的<b>减益</b>、<b>防守</b>——破甲、印记、战吼都能让石昊的宝术打得更狠；石昊把敌人打晕，伙伴打它也更痛。亲近越高会的越多。战斗里可以点 ⇄ 换另一个上场。</div>' + h;
+  if (ids.length) h = '<div class="card dim" style="font-size:.85rem">灵兽伙伴跟着你打仗，每回合石昊出完招就轮到它，由你给它选招。它自己也会升级（最高 30 级，比石昊还能多练十级），招式能用材料升阶。它的招分四种：<b>攻击</b>、给石昊的<b>增益</b>、给敌人的<b>减益</b>、<b>防守</b>——破甲、印记、战吼都能让石昊的宝术打得更狠；石昊把敌人打晕，伙伴打它也更痛。亲近越高会的越多。战斗里可以点 ⇄ 换另一个上场。</div>' + h;
   return h || '<div class="dim">还没有灵兽伙伴。</div>';
 }
 const BAG_TABS = [['use', '药品'], ['mat', '材料'], ['gf', '修炼'], ['key', '要物'], ['shop', '买卖']];
@@ -2754,7 +2782,7 @@ function netSync() { if (NETROLE !== 'host' || !NET.conns.size || !C) return; cl
 function snapshot() { return { t: 'st', C, st: { battle: STATE.battle, dungeon: STATE.dungeon, scene: !!STATE.scene, busy: STATE.busy, dtPending: !!STATE.dtPending }, dlg: DLG ? Object.assign(DLG.rune ? { rune: DLG.rune } : DLG.choice ? { choice: DLG.choice.map(o => ({ t: o.t, dis: !!o.dis })) } : { o: DLG.o }, { ctx: dlgCtx() }) : null, roam: ROAM, ctrl: NET.ctrl, peers: NET.conns.size }; }
 function takeControl() { if (NETROLE === 'host') { NET.ctrl = 'host'; netBroadcast({ t: 'ctrl', ctrl: 'host' }); } else netSend({ t: 'take' }); toast('你来操作'); refresh(); if (UI.modal === 'coop') openModal('coop', 1); }
 /* commands a guest (or a host who handed over control) may trigger by clicking */
-const CMD_NAMES = ['go', 'explore', 'rest', 'train', 'enterDungeon', 'fightRoam', 'autoWalk', 'npcTalk', 'battleAct', 'toggleAuto', 'useItem', 'feedPet', 'setPet', 'toggleBar', 'arenaFight', 'storyHereRun', 'runeTap', 'runeSkip', 'arenaClaim', 'battleUndo', 'equipRelic', 'teleport', 'tradeDo', 'bountyTake', 'enterDungeonHard', 'setTitle', 'trackTask', 'camp', 'sellItem', 'buyItem', 'togglePetMove', 'setDuo'];
+const CMD_NAMES = ['go', 'explore', 'rest', 'train', 'enterDungeon', 'fightRoam', 'autoWalk', 'npcTalk', 'battleAct', 'toggleAuto', 'useItem', 'feedPet', 'setPet', 'toggleBar', 'arenaFight', 'storyHereRun', 'runeTap', 'runeSkip', 'arenaClaim', 'battleUndo', 'equipRelic', 'teleport', 'tradeDo', 'bountyTake', 'enterDungeonHard', 'setTitle', 'trackTask', 'camp', 'sellItem', 'buyItem', 'togglePetMove', 'setDuo', 'petRankUp'];
 const CMDS = {};
 UI.inClick = false; const markClick = () => { UI.inClick = true; setTimeout(() => { UI.inClick = false; }, 0); };
 document.addEventListener('click', markClick, true); document.addEventListener('keydown', markClick, true);

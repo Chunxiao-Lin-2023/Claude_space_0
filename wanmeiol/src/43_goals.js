@@ -123,3 +123,28 @@ function togglePetMove(id, i) { const p = C.pets[id]; if (!p || !petOpen(id).inc
   else { const cat = PETS[id].sk[i].cat, same = bar.filter(k => PETS[id].sk[k].cat === cat), old = same.length ? same[0] : bar[0]; p.bar = bar.map(k => k === old ? i : k); toast(`换下了「${PETS[id].sk[old].n}」`); }
   sfx('click'); save(); refresh(); }
 function setDuo(v) { C.duo = v; sfx('click'); save(); if (STATE.battle) renderBattle(true); netSync(); }
+
+/* ---------- partner growth: its own level (to 30, past 石昊's cap), move ranks (材料), and a second awakening (返祖) ---------- */
+const PET_LV_CAP = 30;
+const petLv = id => { const p = C.pets[id]; return p ? (p.lv || C.lv) : C.lv; };
+const petNeed = lv => Math.round(BAL.expNext(Math.min(lv, 20)) * (lv >= 20 ? 1 + (lv - 19) * 0.35 : 1));
+function petGainExp(id, n) { const p = C.pets[id]; if (!p || n <= 0) return; if (!p.lv) p.lv = C.lv; p.exp = (p.exp || 0) + Math.round(n * (p.lv < C.lv ? 1.6 : 1));
+  const cap = C.story.f.end ? PET_LV_CAP : Math.min(PET_LV_CAP, C.lv + 2); // before the end of volume one: at most 2 above 石昊
+  while (p.lv < cap && p.exp >= petNeed(p.lv)) { p.exp -= petNeed(p.lv); p.lv++; logLine(`${PETS[id].icon}<b>${PETS[id].name}</b> 长到了 <b>${p.lv} 级</b>${p.lv > C.lv ? '（比石昊还高，属性 +' + Math.round((p.lv - C.lv) * 3) + '%）' : ''}。`, 'sys'); if (id === C.pet) bigFlash(PETS[id].name + ' · ' + p.lv + ' 级', 'lv'); }
+  if (p.lv >= cap) p.exp = Math.min(p.exp, petNeed(p.lv)); petEvo2Check(id); }
+function petBattleExp(exp) { for (const id of Object.keys(C.pets)) petGainExp(id, exp * (id === C.pet ? 1 : 0.3)); }
+/* move ranks: 1 → 2 → 3, each +20% (rank 3 also lasts a round longer) */
+const RANK_COST = { 2: { need: [['bone', 4], ['lingyao', 2]], lv: 1 }, 3: { need: [['bone', 8], ['baoyao', 1]], lv: 15 } };
+const petRank = (id, i) => (C.pets[id] && C.pets[id].rk && C.pets[id].rk[i]) || 1;
+function rankedMove(s, rk) { if (rk <= 1) return s; const m = 1 + 0.2 * (rk - 1), o = Object.assign({}, s);
+  for (const k of ['dmg', 'healAlly', 'shieldAll', 'shieldHero']) if (o[k]) o[k] = o[k] * m;
+  if (o.buffHero) o.buffHero = Object.assign({}, o.buffHero, { v: o.buffHero.v * m, t: o.buffHero.t + (rk >= 3 ? 1 : 0) });
+  if (o.st) o.st = Object.assign({}, o.st, { v: o.st.k === 'brk' ? Math.min(0.6, (o.st.v || 0) * m) : (o.st.v || 0) * m, t: o.st.t + (rk >= 3 ? 1 : 0), p: Math.min(1, (o.st.p ?? 1) * m) });
+  if (o.taunt) o.taunt = o.taunt + (rk >= 3 ? 1 : 0); return o; }
+function petRankUp(id, i) { const p = C.pets[id]; if (!p || !petOpen(id).includes(i)) return; const r = petRank(id, i); if (r >= 3) return; const R = RANK_COST[r + 1];
+  if (petLv(id) < R.lv) { toast(`${PETS[id].name} 要 ${R.lv} 级才能练到 3 阶`); return; } if (!R.need.every(([k, n]) => itemN(k) >= n)) { toast('材料不够：' + R.need.map(([k, n]) => ITEMS[k].name + '×' + n).join('、')); return; }
+  for (const [k, n] of R.need) takeItem(k, n); p.rk = p.rk || {}; p.rk[i] = r + 1; const mv = PETS[id].sk[i]; logLine(`${PETS[id].icon}${PETS[id].name} 的「${mv.n}」练到了 <b>${r + 1} 阶</b>（效果 +${r * 20}%${r + 1 >= 3 ? '，持续多一回合' : ''}）。`, 'sys'); sfx('epic'); save(); refresh(); }
+/* 返祖: full affection, already awakened, and 25 级 */
+const EVO2_TEXT = { maoqiu: '毛球站在山梁上，冲着大荒深处长啸了一声。那一瞬间，四野的凶兽全都伏低了身子——它们闻到了一股很古老的气息。', dahong: '大红在云里翻了个身，身后拖出一条长长的火尾，烧得半边天都红了。它落下来，得意地啄了啄你的脑门。', ertuzi: '二秃子身上的五色光一圈圈收拢，最后凝在它光溜溜的脑袋上，像戴了一顶小小的冠。……毛还是只有那一根。' };
+function petEvo2Check(id) { const p = C.pets[id]; if (!p || p.evo2 || !p.evo || p.aff < 100 || petLv(id) < 25 || NETROLE === 'guest') return; p.evo2 = 1;
+  setTimeout(() => runScene(async () => { await nar(EVO2_TEXT[id]); logLine(`<b class="lvup">血脉返祖</b>：${PETS[id].icon}<b>${PETS[id].name}</b> 全身属性再 +15%。`, 'sys'); sfx('epic'); bigFlash(PETS[id].name + ' · 返祖', 'relic'); }, { title: PETS[id].name + '返祖' }), 600); }

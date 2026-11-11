@@ -60,6 +60,11 @@ const { chromium } = require('playwright');
     // loadouts: partner bar limited, new pick replaces the lowest-tier move of its kind; hero bar replaces lowest tier when full
     c.pets.maoqiu = { aff: 100, evo: 0 }; const pb = petBar('maoqiu'); ok('petBarSize', pb.length === 4); const missing = petOpen('maoqiu').find(i => !pb.includes(i)); togglePetMove('maoqiu', missing); ok('petReplace', petBar('maoqiu').includes(missing) && petBar('maoqiu').length === 4);
     c.lv = 9; c.bar = ['qly', 'sn', 'gw', 'lei']; toggleBar('jian'); ok('heroReplaceLow', c.bar.includes('jian') && !c.bar.includes('qly') && c.bar.length === 4); c.lv = 18;
+    // partner growth: levels past 石昊, move ranks, 返祖
+    c.lv = 20; c.pets.dahong = { aff: 100, evo: 1, lv: 20, exp: 0 }; c.pet = 'dahong'; const atk20 = petUnit('dahong').atk; for (let i = 0; i < 60 && c.pets.dahong.lv < 25; i++) petGainExp('dahong', 5000); await w8(900); await idle();
+    ok('petLevelsPastHero', c.pets.dahong.lv >= 25 && petUnit('dahong').atk > atk20); ok('evo2', !!c.pets.dahong.evo2);
+    c.bag.bone = 20; c.bag.lingyao = 5; c.bag.baoyao = 2; petRankUp('dahong', 0); petRankUp('dahong', 0); ok('rankUp', petRank('dahong', 0) === 3); ok('rankEffect', rankedMove(PETS.dahong.sk[0], 3).dmg > PETS.dahong.sk[0].dmg && rankedMove(PETS.dahong.sk[0], 3).st.t === PETS.dahong.sk[0].st.t + 1);
+    const lv0 = c.pets.maoqiu.lv || c.lv, ex0 = c.pets.maoqiu.exp || 0; c.auto = true; await D.startBattle({ mobs: [['boar', 20]], title: 't' }); await idle(); ok('benchExp', (c.pets.maoqiu.exp || 0) > ex0 || (c.pets.maoqiu.lv || 0) > lv0);
     // 任务列表: side errands and bounties can be tracked, the target follows
     c.side = {}; const T0 = tasks(); ok('taskListHasSide', T0.some(t => t.key.startsWith('side:')) && T0.some(t => t.key.startsWith('bounty:')));
     c.side.sq_milk = 'on'; c.bag.bone = 0; trackTask('side:sq_milk'); ok('trackSide', curTask().key === 'side:sq_milk' && !!taskWhere() && PLACES[taskWhere()].gather.some(g => g[0] === 'bone') || PLACES[taskWhere()].mobs.some(m => (MOBS[m[0]].loot || []).some(l => l[0] === 'bone')));

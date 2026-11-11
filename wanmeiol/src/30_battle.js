@@ -20,9 +20,9 @@ function mobUnit(id, lv, side = 1) {
 function heroUnit() { const s = charStats(); const u = { id: 'hero', side: 0, kind: 'pc', name: '石昊', icon: '🧒', lv: C.lv, hpMax: s.hpMax, hp: Math.max(1, Math.round(C.hp)), mpMax: s.mpMax, mp: Math.round(C.mp), atk: s.atk, def: s.def, spd: s.spd, crit: s.crit, leech: s.leech || 0, regen: s.regen || 0, sk: skillsOf(), cd: {}, st: [], alive: true,
     prof: Object.fromEntries(C.sk.map(id => [id, PROF[profLevel(id)].b + (id === 'lei' ? relicSp('lei') : 0)])), mpRegen: BAL.mpRegen + relicSp('mp'), noPoison: !!relicSp('noPoison'), first: relicSp('first') };
   const sh = relicSp('shieldStart'); if (sh) u.st.push({ k: 'shield', t: 3, v: Math.round(s.hpMax * sh) }); if (u.first) u.st.push({ k: 'atk', t: 1, v: u.first }); return u; }
-function petUnit(id) { // the pet scales with 石昊; affection gives up to +15%, an awakened pet another +15%
-  const s = charStats(), P = PETS[id], pd = C.pets[id], aff = pd.aff, k = (1 + aff / 100 * 0.15) * (pd.evo ? 1.15 : 1), m = P.mul;
-  return { id: 'pet', side: 0, kind: 'npc', mob: id, pet: 1, evo: !!pd.evo, name: P.name + (pd.evo ? '·觉醒' : ''), icon: P.icon, lv: C.lv, hpMax: Math.round(s.hpMax * m.hp * k), atk: Math.round(s.atk * m.atk * k), def: Math.round(s.def * m.def * k), spd: s.spd * m.spd, crit: 0.08, leech: 0, mpMax: 0, mp: 0, sk: [], cd: {}, st: [], alive: true, plan: null, intent: '', aff, hp: 0 };
+function petUnit(id) { // the partner scales with 石昊; affection up to +15%, 觉醒 +15%, 返祖 +15%, and ±3% per level it is above / below him
+  const s = charStats(), P = PETS[id], pd = C.pets[id], aff = pd.aff, plv = petLv(id), k = (1 + aff / 100 * 0.15) * (pd.evo ? 1.15 : 1) * (pd.evo2 ? 1.15 : 1) * clamp(1 + 0.03 * (plv - C.lv), 0.7, 1.5), m = P.mul;
+  return { id: 'pet', side: 0, kind: 'npc', mob: id, pet: 1, evo: !!pd.evo, name: P.name + (pd.evo2 ? '·返祖' : pd.evo ? '·觉醒' : ''), icon: P.icon, lv: plv, hpMax: Math.round(s.hpMax * m.hp * k), atk: Math.round(s.atk * m.atk * k), def: Math.round(s.def * m.def * k), spd: s.spd * m.spd, crit: 0.08, leech: 0, mpMax: 0, mp: 0, sk: [], cd: {}, st: [], alive: true, plan: null, intent: '', aff, hp: 0 };
 }
 function rivalUnit(r) { // 虚神界 rivals fight with 宝术 like you do
   const L = r.lv - 1, g = r.gear || 1, D = diffOf(); const u = { id: 'u' + (BID++), side: 1, kind: 'rival', name: r.name, icon: r.icon || '🧑', lv: r.lv, boss: !!r.boss, shiyi: !!r.shiyi, hpMax: Math.round((HERO.base.hp + HERO.grow.hp * L) * g * 1.25 * D.hp * (r.shiyi ? 1.3 : 1)), atk: Math.round((HERO.base.atk + HERO.grow.atk * L) * g * D.atk), def: Math.round((HERO.base.def + HERO.grow.def * L) * g), spd: HERO.base.spd + HERO.grow.spd * L + (r.shiyi ? 3 : 0), crit: 0.12, leech: 0,
@@ -157,7 +157,7 @@ function mobAct(B, u, L) {
   const M = unitDef(u.mob); if (u.plan === 'charge') { fxe(B, { k: 'act', a: u.id, fx: 'charge', tg: [], side: u.side }); L(`${uName(u)} 正在<span class="warn">蓄力</span>……`); return; }
   if (u.plan === 'broken') { L(`${uName(u)} 踉跄了一下，蓄好的力全散了`); return; }
   const pa = u.pet && B.acts[u.id]; if (pa) { if (pa.guard) { addSt(u, { k: 'guard', t: 1, v: 0.5 }); fxe(B, { k: 'act', a: u.id, fx: 'guard', tg: [u.id], side: 0 }); L(`${uName(u)} 缩成一团，护住要害`); return; } if (petMoves(u).some(x => x.i === pa.psk)) u.plan = pa.psk; }
-  const s = M.sk[u.plan ?? 0] || M.sk[0]; const foes = alive(B, 1 - u.side); if (!foes.length) return; u.releasing = false;
+  let s = M.sk[u.plan ?? 0] || M.sk[0]; if (u.pet) s = rankedMove(s, petRank(u.mob, M.sk.indexOf(s))); const foes = alive(B, 1 - u.side); if (!foes.length) return; u.releasing = false;
   if (s.taunt || s.buffHero || s.shieldHero) { const h = B.units.find(x => x.kind === 'pc' && x.alive) || u;
     if (s.taunt) { addSt(u, { k: 'taunt', t: s.taunt }); if (s.guard) addSt(u, { k: 'guard', t: 1, v: 0.5 }); fxe(B, { k: 'act', a: u.id, fx: 'taunt', tg: [u.id], side: u.side, n: s.n, who: mobWho(u) }); L(`${uName(u)} <span class="sk">${s.n}</span>，敌人的目光全被它引了过去`); return; }
     if (s.buffHero) { addSt(h, s.buffHero); fxe(B, { k: 'act', a: u.id, fx: 'bless', tg: [h.id], side: u.side, n: s.n, who: mobWho(u) }); L(`${uName(u)} <span class="sk">${s.n}</span>，${uName(h)} <span style="color:${STATUS[s.buffHero.k].c}">${s.buffHero.k === 'sure' ? '下一击必暴' : STATUS[s.buffHero.k].n + (s.buffHero.v ? ' +' + Math.round(s.buffHero.v * 100) + '%' : '')}</span>`); return; }
