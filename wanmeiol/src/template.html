@@ -167,7 +167,7 @@ body.noanim #rumor.on{opacity:1;transform:none}
 .bubble.below::after{bottom:auto;top:-6px;border:6px solid transparent;border-top:0;border-bottom-color:#fbf2df}.bubble.act.below::after{border-bottom-color:#e8dcc0}.bubble.me.below::after{border-bottom-color:#ffe9b0}
 .bubble.act{font-style:italic;color:#5a4a34;background:#e8dcc0}.bubble.act::after{border-top-color:#e8dcc0}
 .bubble.me{background:#ffe9b0}.bubble.me::after{border-top-color:#ffe9b0}
-@keyframes bubble{0%{opacity:0;translate:0 8px}6%,90%{opacity:1;translate:0 0}100%{opacity:0}}
+@keyframes bubble{0%{opacity:0;scale:.94}6%,90%{opacity:1;scale:1}100%{opacity:0}} /* grows in place: a slide-in would poke into the bubble below it */
 #bfeed .taunt,.logv .taunt{color:#e8c8a8;font-style:italic}
 /* small games */
 .mhint{font-size:.85rem;color:var(--ink2);text-indent:0;margin-top:4px}

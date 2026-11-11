@@ -34,8 +34,12 @@ const LONG = '这是一句很长很长的话，用来看看气泡会不会被别
     await pg.evaluate(() => dlgPick(0)); await pg.waitForTimeout(300);
     // battle: everyone talks at once, tutorial showing
     await pg.evaluate(() => { __dbg.go('dh_road', true, true); __dbg.startBattle({ mobs: [['bandit', 12], ['bandit', 12], ['bandit', 12]], allies: ['a_huo'], title: '古道 · 山贼' }); }); await pg.waitForTimeout(2600);
-    await pg.evaluate(L => { const B = __dbg.STATE.battle; const sp = [B.units.find(u => u.side === 1), B.units.find(u => u.kind === 'pc'), B.units.find(u => u.pet || u.kind === 'npc')]; sp.forEach((u, i) => fxSay(u.id, L.slice(0, 12 + i * 10))); }, LONG); // a busy round: a foe, 石昊 and a partner; await pg.waitForTimeout(400);
+    await pg.evaluate(L => { const B = __dbg.STATE.battle; const sp = [B.units.find(u => u.side === 1), B.units.find(u => u.kind === 'pc'), B.units.find(u => u.pet || u.kind === 'npc')]; sp.forEach((u, i) => fxSay(u.id, L.slice(0, 12 + i * 10))); }, LONG); // a busy round: a foe, 石昊 and a partner
+    bad.push(...await check('battle-now')); await pg.waitForTimeout(400);
     bad.push(...await check('battle')); await pg.screenshot({ path: `${D}/oc_${k}_battle.png` });
+    await pg.evaluate(L => { const B = __dbg.STATE.battle; B.units.forEach((u, i) => fxSay(u.id, L.slice(0, 8 + (i * 7) % 30))); B.units.forEach((u, i) => fxSay(u.id, L.slice(3, 20 + (i * 5) % 20))); }, LONG); // everyone at once, twice
+    bad.push(...await check('crowd')); await pg.waitForTimeout(300); bad.push(...await check('crowd+'));
+    await pg.setViewportSize({ width: Math.round(w * 0.85), height: h }); await pg.waitForTimeout(500); bad.push(...await check('resized')); await pg.setViewportSize({ width: w, height: h }); await pg.waitForTimeout(400);
     await pg.evaluate(L => fxCine({ k: 'cine', cls: 'burst', who: '族长', text: L + L }), LONG); await pg.waitForTimeout(500); bad.push(...await check('cine')); await pg.screenshot({ path: `${D}/oc_${k}_cine.png` });
     await ctx.close(); }
   await b.close(); const uniq = [...new Set(bad)]; console.log(uniq.join('\n') || 'no problems'); process.exit(uniq.length ? 1 : 0); })();
