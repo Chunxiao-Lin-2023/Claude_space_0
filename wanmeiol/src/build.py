@@ -42,6 +42,19 @@ def check_chatter():
     n = len(re.findall(r'^\s*\{ at:', body, re.M)) + len(re.findall(r'^\s*\{ from:', rb, re.M))
     if errs: sys.exit('CHATTER check failed:\n  ' + '\n  '.join(errs))
     return n
+# maps: no two places of one area on the same square, and every exit points the way it says (n/s/e/w)
+def check_map():
+    s = src('11_places.js'); P = {m[0]: (m[1], int(m[2]), int(m[3])) for m in re.findall(r"^  (\w+): \{ name: '[^']*', area: '(\w+)', x: (-?\d+), y: (-?\d+)", s, re.M)}
+    E = {m[0]: dict(re.findall(r"(\w): '(\w+)'", m[1])) for m in re.findall(r"^  (\w+): \{ name:.*?exits: \{([^}]*)\}", s, re.M)}
+    errs, seen, D = [], {}, {'n': (0, -1), 's': (0, 1), 'e': (1, 0), 'w': (-1, 0)}
+    for k, (a, x, y) in P.items():
+        if (a, x, y) in seen: errs.append(f'{k} and {seen[(a, x, y)]} share a square on the map')
+        seen[(a, x, y)] = k
+    for k, ex in E.items():
+        for d, t in ex.items():
+            if d in D and t in P and k in P and P[t][0] == P[k][0] and (P[t][1] - P[k][1], P[t][2] - P[k][2]) != D[d]: errs.append(f'{k} exit {d} → {t} does not match the map')
+    if errs: sys.exit('MAP check failed:\n  ' + '\n  '.join(errs))
+check_map()
 nchat = check_chatter()
 tpl = src('template.html')
 IOS = '<meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="完美世界OL"><meta name="theme-color" content="#100d0a">'

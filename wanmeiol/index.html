@@ -351,7 +351,7 @@ body.narrow .tv-plaque{font-size:1.2rem;letter-spacing:4px}
 .seg .sb.on{border-color:var(--gold);color:var(--gold2)}
 textarea.code{width:100%;min-height:80px;background:#0c0a08;border:1px solid var(--line2);border-radius:8px;color:var(--tx);font-family:monospace;font-size:12px;padding:8px;word-break:break-all}
 /* map */
-.map{position:relative;margin:4px auto 6px}
+.mapsc{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:4px 0 6px}.map{position:relative;margin:0 auto;flex:none}
 .mn{position:absolute;transform:translate(-50%,-50%);background:#2a2219;border:1px solid var(--line2);border-radius:8px;padding:3px 6px;font-size:.8rem;white-space:nowrap;cursor:pointer;line-height:1.25;text-align:center}
 .mn.cur{background:#5a4220;border-color:var(--gold);color:#fff;font-weight:700}
 .mn.q::after{content:'★';color:#ffd05a;position:absolute;right:-8px;top:-9px;font-size:.87rem}
@@ -980,24 +980,24 @@ const PLACES = {
   xs_hall: { name: '虚神界', area: 'xushen', x: 0, y: 0, town: 1, need: F0('xushen'), exits: { d: 'sc_willow' }, acts: ['arena'],
     desc: '柳神把你的神魂送进了一片灰白的虚空。脚下是一块块悬浮的石台，各地的少年天才在这里交手，伤在神魂，不伤肉身。半空悬着一面光幕，上面流转着名字和排名。' },
   /* ---- 补天阁 ---- */
-  bt_gate: { name: '补天阁山门', area: 'butian', x: 1, y: 2, town: 1, shop: ['herb', 'meat', 'lingyao', 'baoyao'], shopBy: '外门坊市', need: F0('butian'), exits: { s: 'dh_road', n: 'bt_court', w: 'bt_wild' }, npcs: ['qingfeng'],
+  bt_gate: { name: '补天阁山门', area: 'butian', x: 2, y: 2, town: 1, shop: ['herb', 'meat', 'lingyao', 'baoyao'], shopBy: '外门坊市', need: F0('butian'), exits: { s: 'dh_road', n: 'bt_court', w: 'bt_wild' }, npcs: ['qingfeng'],
     night: '夜里的山门点着两盏长明灯，九座山峰只剩下黑影，铁索在风里轻轻作响。外门的院子里，还有人在练拳。',
     desc: '云雾里露出九座山峰，峰与峰之间以铁索相连。山门是两根擎天的石柱，柱上刻着“补天”二字，看久了眼睛发痛。' },
-  bt_wild: { name: '阁外山林', area: 'butian', x: 0, y: 2, lv: [11, 13], need: F0('butian'), exits: { e: 'bt_gate', n: 'bt_tiger' }, mobs: [['tiger', 3], ['ape', 3]], gather: [['lingyao', 0.3], ['herb', 0.3]],
+  bt_wild: { name: '阁外山林', area: 'butian', x: 1, y: 2, lv: [11, 13], need: F0('butian'), exits: { e: 'bt_gate', w: 'bt_tiger' }, mobs: [['tiger', 3], ['ape', 3]], gather: [['lingyao', 0.3], ['herb', 0.3]],
     night: '阁外山林的夜里，药草的香气更浓了。林子深处，虎穴里传出一阵阵沉闷的呼噜声。',
     desc: '补天阁外的老林子，灵气比大荒浓得多，长出来的药草都带着一股清香。林子深处有一个虎穴，听说里面长着一株黑色的莲花。' },
-  bt_tiger: { name: '虎穴', area: 'butian', x: 0, y: 1, lv: [12, 13], need: F0('butian'), exits: { s: 'bt_wild' }, mobs: [['tiger', 1]],
+  bt_tiger: { name: '虎穴', area: 'butian', x: 0, y: 2, lv: [12, 13], need: F0('butian'), exits: { e: 'bt_wild' }, mobs: [['tiger', 1]],
     desc: '一个腥风扑面的山洞，洞口的骨头堆成了小山。洞里有一汪黑水，水面上开着一朵黑色的莲花。' },
-  bt_court: { name: '补天阁内院', area: 'butian', x: 1, y: 1, town: 1, need: F0('joined'), exits: { s: 'bt_gate', w: 'bt_lib', e: 'bt_train', n: 'bd_gate' }, npcs: ['guiye', 'gezhu'], acts: ['rest'],
+  bt_court: { name: '补天阁内院', area: 'butian', x: 2, y: 1, town: 1, need: F0('joined'), exits: { s: 'bt_gate', w: 'bt_lib', e: 'bt_train', n: 'bd_gate' }, npcs: ['guiye', 'gezhu'], acts: ['rest'],
     night: '月光穿过神藤的叶子，在地上筛出一片碎影。诡爷还站在藤边，像一截没有影子的老树根。',
     desc: '内院中央攀着一株古老的神藤，藤上挂着几个干瘪的葫芦。神藤边上总站着一个一言不发的老人——补天阁的人都叫他诡爷。' },
-  bt_lib: { name: '藏经阁', area: 'butian', x: 0, y: 1, town: 1, need: F0('joined'), exits: { e: 'bt_court' }, npcs: ['libelder'],
+  bt_lib: { name: '藏经阁', area: 'butian', x: 1, y: 1, town: 1, need: F0('joined'), exits: { e: 'bt_court' }, npcs: ['libelder'],
     night: '藏经阁里只点着一盏灯，守阁人趴在桌上打盹。书架深处偶尔“咔”地响一声，像是哪卷骨简自己翻了个身。',
     desc: '一座七层木楼，书架上堆满了兽皮、骨简和石板。越往上，书越旧，楼梯也越窄。' },
-  bt_train: { name: '雷池', area: 'butian', x: 2, y: 1, town: 1, need: F0('joined'), exits: { w: 'bt_court', e: 'bt_leichi' }, acts: ['train'], npcs: [],
+  bt_train: { name: '雷池', area: 'butian', x: 3, y: 1, town: 1, need: F0('joined'), exits: { w: 'bt_court', e: 'bt_leichi' }, acts: ['train'], npcs: [],
     night: '夜里的雷池比白天还亮。雷光一道接一道劈下来，把整片石台照得惨白。',
     desc: '一片被雷光反复劈打的山顶石台，地面焦黑，空气里全是麻酥酥的味道。补天阁的弟子在这里参悟雷道法则，挨劈是家常便饭。' },
-  bt_leichi: { name: '雷池深处', area: 'butian', x: 3, y: 1, lv: [18, 20], need: F0('end'), exits: { w: 'bt_train' }, dungeon: 'leichi', mobs: [['ape', 3], ['puppet', 1]], gather: [['lingyao', 0.3]],
+  bt_leichi: { name: '雷池深处', area: 'butian', x: 4, y: 1, lv: [18, 20], need: F0('end'), exits: { w: 'bt_train' }, dungeon: 'leichi', mobs: [['ape', 3], ['puppet', 1]], gather: [['lingyao', 0.3]],
     night: '雷池深处的夜里，雷光把云层照得透亮，地上的焦痕像一张张蛛网。',
     desc: '雷池往东，石台塌下去一大片，露出一个往地底下去的深坑。坑底的雷光是紫色的，比上面的更沉、更狠。阁主说，那下面压着一头上古的雷兽。' },
   /* ---- 百断山 ---- */
@@ -1809,7 +1809,7 @@ async function S_gate() {
   await nar('你一摸包袱，空了。人群里一个瘦高个正挤出去，冲你挤了挤眼睛，转眼就没影了。');
   await me('……我的石头！');
   await say('守门弟子', '没有补天石？那就按老规矩：去阁外山林的虎穴里，把那朵黑莲带回来。带得回来，就算你过了。带不回来……（他笑了笑）也就不用回来了。');
-  tip('<b>虎穴</b>在阁外山林的北边。');
+  tip('<b>虎穴</b>在阁外山林的西边。');
 }
 async function S_lotus() {
   await nar('虎穴里腥风扑面。洞底一汪黑水，水面上开着一朵黑色的莲花，花瓣边缘泛着一圈幽光。一头黑纹虎正趴在水边打盹。');
@@ -3701,15 +3701,16 @@ function pBag() {
 function pMap() {
   const area = UI.mapArea && Object.values(PLACES).some(p => p.area === UI.mapArea && placeOpen(p.id)) ? UI.mapArea : PLACES[C.loc].area, ps = Object.values(PLACES).filter(p => p.area === area && placeOpen(p.id)), qw = taskWhere();
   const xs = ps.map(p => p.x), ys = ps.map(p => p.y), x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys);
-  const W = 300, H = Math.max(120, (y1 - y0 + 1) * 66), px = p => 50 + (x1 > x0 ? (p.x - x0) / (x1 - x0) * (W - 100) : (W - 100) / 2), py = p => 24 + (y1 > y0 ? (p.y - y0) / (y1 - y0) * (H - 48) : (H - 48) / 2);
+  const GX = 108, GY = 72, W = Math.max(300, (x1 - x0) * GX + 130), H = Math.max(120, (y1 - y0) * GY + 64), px = p => x1 > x0 ? 65 + (p.x - x0) * GX + (W - 130 - (x1 - x0) * GX) / 2 : W / 2, py = p => 32 + (p.y - y0) * GY; // fixed spacing wide enough for the longest name; scrolls sideways on a narrow screen
   let lines = ''; for (const p of ps) for (const t of Object.values(exitsOf(p.id))) { const q = PLACES[t]; if (q.area === area && p.id < t) lines += `<line x1="${px(p)}" y1="${py(p)}" x2="${px(q)}" y2="${py(q)}" stroke="#5a4a34" stroke-width="2"/>`; }
   const nodes = ps.map(p => `<div class="mn ${p.id === C.loc ? 'cur' : ''} ${p.id === qw ? 'q' : ''} ${ROAM && !ROAM.dead && ROAM.loc === p.id && now() < ROAM.end ? 'wb' : ''}" style="left:${px(p)}px;top:${py(p)}px" onclick="${p.id === C.loc ? '' : `navTo('adv');autoWalk('${p.id}')`}">${p.name}${p.lv && exCount(p.id).done ? ' ✓' : ''}${p.lv ? `<small>${p.lv[0]}-${p.lv[1]}层${exCount(p.id).n && !exCount(p.id).done ? ` · ${exCount(p.id).have}/${exCount(p.id).n}` : ''}</small>` : ''}</div>`).join('');
+  setTimeout(() => { const sc = document.querySelector('.mapsc'), c = sc && sc.querySelector('.mn.cur'); if (sc && c && sc.scrollWidth > sc.clientWidth) sc.scrollLeft = c.offsetLeft - sc.clientWidth / 2; }, 0); // narrow screens: start with where you are in view
   const areas = Object.entries(AREAS).filter(([k]) => Object.values(PLACES).some(p => p.area === k && placeOpen(p.id)));
   const q = curQ();
   const T = tasks(), cur = curTask();
   return `<div class="card"><h3>任务 <span class="dim" style="font-size:.8rem;font-family:var(--ff)">选一个追踪，探索页的提示和 ▶ 去 就跟着它走</span></h3><div class="list">${T.map(t => `<div class="li ${t.key === cur.key ? 'on' : ''}"><div class="t"><span class="pill ${t.key === 'main' ? 'gold' : ''}">${t.kind}</span><b>${esc(t.title)}</b><small>${t.goal}</small></div><div class="acts">${t.key === cur.key ? '<span class="chk">★</span>' : `<button class="sb" onclick="trackTask('${t.key}')">追踪</button>`}${t.where && t.where !== C.loc ? `<button class="sb pri" onclick="trackTask('${t.key}');navTo('adv');autoWalk('${t.where}')">▶ 去</button>` : ''}</div></div>`).join('')}</div></div>
     ${areas.length > 1 ? `<div class="row" style="flex-wrap:wrap;gap:4px">${areas.map(([k, A]) => `<button class="sb ${k === area ? 'pri' : ''}" style="min-height:30px" onclick="UI.mapArea='${k}';renderSide()">${A.name}</button>`).join('')}</div>` : ''}
-    <div class="map" style="width:${W}px;height:${H}px"><svg width="${W}" height="${H}" style="position:absolute;inset:0">${lines}</svg>${nodes}</div>
+    <div class="mapsc"><div class="map" style="width:${W}px;height:${H}px"><svg width="${W}" height="${H}" style="position:absolute;inset:0">${lines}</svg>${nodes}</div></div>
     ${ROAM && !ROAM.dead && now() < ROAM.end && now() >= ROAM.start ? `<div class="dim" style="font-size:.87rem">⚔ 凶兽首领 <b class="warn">${MOBS[ROAM.id].name}</b> 在 ${PLACES[ROAM.loc].name}</div>` : ''}<div class="dim" style="font-size:.8rem">点地点自动走过去 · ★ 正在追踪的任务 · ✓ 探索完成（数字 = 打过的凶兽种类 + 采到的东西）${isNight() ? ' · 现在是夜里，野外会有夜行的凶兽' : ''}</div>`;
 }
 

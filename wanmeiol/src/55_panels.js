@@ -104,15 +104,16 @@ function pBag() {
 function pMap() {
   const area = UI.mapArea && Object.values(PLACES).some(p => p.area === UI.mapArea && placeOpen(p.id)) ? UI.mapArea : PLACES[C.loc].area, ps = Object.values(PLACES).filter(p => p.area === area && placeOpen(p.id)), qw = taskWhere();
   const xs = ps.map(p => p.x), ys = ps.map(p => p.y), x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys);
-  const W = 300, H = Math.max(120, (y1 - y0 + 1) * 66), px = p => 50 + (x1 > x0 ? (p.x - x0) / (x1 - x0) * (W - 100) : (W - 100) / 2), py = p => 24 + (y1 > y0 ? (p.y - y0) / (y1 - y0) * (H - 48) : (H - 48) / 2);
+  const GX = 108, GY = 72, W = Math.max(300, (x1 - x0) * GX + 130), H = Math.max(120, (y1 - y0) * GY + 64), px = p => x1 > x0 ? 65 + (p.x - x0) * GX + (W - 130 - (x1 - x0) * GX) / 2 : W / 2, py = p => 32 + (p.y - y0) * GY; // fixed spacing wide enough for the longest name; scrolls sideways on a narrow screen
   let lines = ''; for (const p of ps) for (const t of Object.values(exitsOf(p.id))) { const q = PLACES[t]; if (q.area === area && p.id < t) lines += `<line x1="${px(p)}" y1="${py(p)}" x2="${px(q)}" y2="${py(q)}" stroke="#5a4a34" stroke-width="2"/>`; }
   const nodes = ps.map(p => `<div class="mn ${p.id === C.loc ? 'cur' : ''} ${p.id === qw ? 'q' : ''} ${ROAM && !ROAM.dead && ROAM.loc === p.id && now() < ROAM.end ? 'wb' : ''}" style="left:${px(p)}px;top:${py(p)}px" onclick="${p.id === C.loc ? '' : `navTo('adv');autoWalk('${p.id}')`}">${p.name}${p.lv && exCount(p.id).done ? ' ✓' : ''}${p.lv ? `<small>${p.lv[0]}-${p.lv[1]}层${exCount(p.id).n && !exCount(p.id).done ? ` · ${exCount(p.id).have}/${exCount(p.id).n}` : ''}</small>` : ''}</div>`).join('');
+  setTimeout(() => { const sc = document.querySelector('.mapsc'), c = sc && sc.querySelector('.mn.cur'); if (sc && c && sc.scrollWidth > sc.clientWidth) sc.scrollLeft = c.offsetLeft - sc.clientWidth / 2; }, 0); // narrow screens: start with where you are in view
   const areas = Object.entries(AREAS).filter(([k]) => Object.values(PLACES).some(p => p.area === k && placeOpen(p.id)));
   const q = curQ();
   const T = tasks(), cur = curTask();
   return `<div class="card"><h3>任务 <span class="dim" style="font-size:.8rem;font-family:var(--ff)">选一个追踪，探索页的提示和 ▶ 去 就跟着它走</span></h3><div class="list">${T.map(t => `<div class="li ${t.key === cur.key ? 'on' : ''}"><div class="t"><span class="pill ${t.key === 'main' ? 'gold' : ''}">${t.kind}</span><b>${esc(t.title)}</b><small>${t.goal}</small></div><div class="acts">${t.key === cur.key ? '<span class="chk">★</span>' : `<button class="sb" onclick="trackTask('${t.key}')">追踪</button>`}${t.where && t.where !== C.loc ? `<button class="sb pri" onclick="trackTask('${t.key}');navTo('adv');autoWalk('${t.where}')">▶ 去</button>` : ''}</div></div>`).join('')}</div></div>
     ${areas.length > 1 ? `<div class="row" style="flex-wrap:wrap;gap:4px">${areas.map(([k, A]) => `<button class="sb ${k === area ? 'pri' : ''}" style="min-height:30px" onclick="UI.mapArea='${k}';renderSide()">${A.name}</button>`).join('')}</div>` : ''}
-    <div class="map" style="width:${W}px;height:${H}px"><svg width="${W}" height="${H}" style="position:absolute;inset:0">${lines}</svg>${nodes}</div>
+    <div class="mapsc"><div class="map" style="width:${W}px;height:${H}px"><svg width="${W}" height="${H}" style="position:absolute;inset:0">${lines}</svg>${nodes}</div></div>
     ${ROAM && !ROAM.dead && now() < ROAM.end && now() >= ROAM.start ? `<div class="dim" style="font-size:.87rem">⚔ 凶兽首领 <b class="warn">${MOBS[ROAM.id].name}</b> 在 ${PLACES[ROAM.loc].name}</div>` : ''}<div class="dim" style="font-size:.8rem">点地点自动走过去 · ★ 正在追踪的任务 · ✓ 探索完成（数字 = 打过的凶兽种类 + 采到的东西）${isNight() ? ' · 现在是夜里，野外会有夜行的凶兽' : ''}</div>`;
 }
 

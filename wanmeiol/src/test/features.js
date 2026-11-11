@@ -101,6 +101,9 @@ const { chromium } = require('playwright');
     jumpTo(1); const J = D.C; ok('jumpState', J.lv === 12 && J.story.q === qi('q_gate') && J.sk.includes('sn') && J.pets.maoqiu && J.dt.length === 3 && J.story.f.butian === 1 && placeOpen('bt_gate'));
     go('bt_gate'); await w8(500); await idle(); for (let i = 0; i < 80 && (S().scene || S().battle); i++) await w8(50); ok('jumpStory', D.C.story.q > qi('q_gate'));
     jumpTo(3); ok('jumpEnd', !!(D.C.lv === 20 && D.C.story.f.end === 1 && D.C.sk.includes('ta') && D.C.pets.dahong && D.C.relics.r_pumo));
+    { let lap = []; for (const a of Object.keys(AREAS)) { UI.mapArea = a; navTo('map'); await w8(30); const R = [...document.querySelectorAll('#sbody .mn')].map(e => [e.textContent, e.getBoundingClientRect()]);
+        for (let i = 0; i < R.length; i++) for (let j = i + 1; j < R.length; j++) { const p = R[i][1], q = R[j][1]; if (p.left < q.right && p.right > q.left && p.top < q.bottom && p.bottom > q.top) lap.push(R[i][0] + '/' + R[j][0]); } navTo('adv'); }
+      ok('mapNoOverlap', !lap.length); if (lap.length) out.mapLap = lap.join(','); }
     // save slots: a second save lives beside the first one
     { save(true); const lv1 = D.C.lv; slotNew(2); await w8(50); const c2 = D.C; ok('slotNew', SLOT === 2 && c2.lv === 1 && slotInfo(1) && slotInfo(1).v.lv === lv1); c2.lv = 3; save(true);
       slotPlay(1); await w8(50); ok('slotSwitch', SLOT === 1 && D.C.lv === lv1 && slotInfo(2).v.lv === 3); toTitle(); slotsShow(); ok('slotList', document.querySelectorAll('#title .slot').length === 5);
