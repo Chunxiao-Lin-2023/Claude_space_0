@@ -22,7 +22,7 @@ function netPub() { netSync(); }
 function netLog(html, cls) { if (NET.conns.size) netBroadcast({ t: 'log', html, cls }); }
 function netSync() { if (NETROLE !== 'host' || !NET.conns.size || !C) return; clearTimeout(NET.syncT); NET.syncT = setTimeout(() => netBroadcast(snapshot()), 60); }
 function snapshot() { return { t: 'st', C, st: { battle: STATE.battle, dungeon: STATE.dungeon, scene: !!STATE.scene, busy: STATE.busy, dtPending: !!STATE.dtPending }, dlg: DLG ? Object.assign(DLG.mini ? { mini: Object.assign({}, DLG.mini, { age: now() - DLG.mini.t0 }) } : DLG.rune ? { rune: DLG.rune } : DLG.choice ? { choice: DLG.choice.map(o => ({ t: o.t, dis: !!o.dis })) } : { o: DLG.o }, { ctx: dlgCtx() }) : null, roam: ROAM, ctrl: NET.ctrl, peers: NET.conns.size }; }
-function takeControl() { if (NETROLE === 'host') { NET.ctrl = 'host'; netBroadcast({ t: 'ctrl', ctrl: 'host' }); } else netSend({ t: 'take' }); toast('你来操作'); refresh(); if (UI.modal === 'coop') openModal('coop', 1); }
+function takeControl() { setTimeout(() => { UI.viewSent = null; viewSoon(); }, 200); if (NETROLE === 'host') { NET.ctrl = 'host'; netBroadcast({ t: 'ctrl', ctrl: 'host' }); } else netSend({ t: 'take' }); toast('你来操作'); refresh(); if (UI.modal === 'coop') openModal('coop', 1); }
 /* commands a guest (or a host who handed over control) may trigger by clicking */
 const CMD_NAMES = ['siegeStart', 'leitaiStart', 'go', 'explore', 'rest', 'train', 'enterDungeon', 'fightRoam', 'autoWalk', 'npcTalk', 'battleAct', 'toggleAuto', 'useItem', 'feedPet', 'setPet', 'toggleBar', 'arenaFight', 'storyHereRun', 'runeTap', 'runeSkip', 'arenaClaim', 'battleUndo', 'equipRelic', 'teleport', 'tradeDo', 'bountyTake', 'enterDungeonHard', 'setTitle', 'trackTask', 'camp', 'sellItem', 'buyItem', 'togglePetMove', 'setDuo', 'petRankUp', 'miniTap', 'miniSkip', 'fuseSkill', 'autoExplore', 'toggleAutoFight', 'miniRetry', 'miniGiveUp', 'runeRetry', 'runeAccept', 'bsPreset'];
 const CMDS = {};
@@ -81,7 +81,7 @@ async function netHost() {
       conn.on('error', e => logLine('加入的连接出错了（' + (e && e.type || e) + '）。', 'dim')); conn.on('iceStateChanged', st => { if (st === 'failed') logLine('<span class="warn">和朋友之间的网络打不通（' + st + '）。换个网络或关掉 VPN 再试。</span>', 'sys'); });
       if (NET.conns.size >= 3) { conn.on('open', () => { raw(conn, { t: 'full' }); setTimeout(() => conn.close(), 300); }); return; }
       conn.on('open', () => { clearTimeout(t0); NET.conns.set(conn.peer, conn); NET.peers = NET.conns.size; const L = [...$('log').children].slice(-120).map(d => [d.innerHTML, d.className.replace(/^ln\s*/, '')]);
-        raw(conn, { t: 'hello', log: L, code: NET.code }); raw(conn, snapshot()); logLine('有人加入了房间，正在和你看同一个画面。', 'sys'); sfx('level'); refresh(); });
+        raw(conn, { t: 'hello', log: L, code: NET.code }); raw(conn, snapshot()); UI.viewSent = null; setTimeout(viewSend, 300); /* the newcomer starts on the controller's page */ logLine('有人加入了房间，正在和你看同一个画面。', 'sys'); sfx('level'); refresh(); });
       conn.on('data', d => { try { hostRecv(conn.peer, JSON.parse(d)); } catch (e) { console.error(e); } });
       conn.on('close', () => { if (NET.conns.get(conn.peer) === conn) { NET.conns.delete(conn.peer); NET.peers = NET.conns.size; if (NET.ctrl === conn.peer) { NET.ctrl = 'host'; toast('队友离开了，你接回了操作'); } logLine('队友离开了房间。', 'dim'); netSync(); refresh(); } });
     }); };
@@ -99,6 +99,7 @@ document.addEventListener('visibilitychange', () => { if (document.visibilitySta
 function hostRecv(pid, m) {
   if (m.t === 'take') { NET.ctrl = pid; netBroadcast({ t: 'ctrl', ctrl: pid }); toast('队友接手了操作'); refresh(); netSync(); return; }
   if (NET.ctrl !== pid) return;
+  if (m.t === 'view') { if (NET.ctrl !== pid) return; NET.lastView = m.v; viewApply(m.v); const o = { t: 'view', v: m.v, from: pid }; for (const [id, c] of NET.conns) if (id !== pid) raw(c, o); return; } /* the guest in control leads everyone's view */
   if ((m.t === 'cmd' || m.t === 'dlg') && m.tap) { const t = { t: 'tap', who: 'guest', from: pid, tap: m.tap }; showTap(t); netBroadcast(t); } /* show the host (and the other guests) what the guest pressed, before it changes the screen */
   if (m.t === 'cmd' && CMDS[m.fn]) { const go = () => { try { CMDS[m.fn](...(m.a || [])); } catch (e) { console.error(e); } netSync(); }; if (m.tap) setTimeout(go, NET_PICK_MS); else go(); return; }
   if (m.t === 'dlg' && DLG && m.tap) { const D0 = DLG; setTimeout(() => { if (DLG === D0) hostRecv(pid, Object.assign({}, m, { tap: null })); }, NET_PICK_MS); return; }
@@ -131,12 +132,35 @@ function guestRecv(m) {
   if (m.t === 'full') { NET.status = '房间满了'; netLeave(); titleStatus(NET.status); return; }
   if (m.t === 'hello') { STATE.mode = 'play'; $('title').style.display = 'none'; closeModal(); $('log').innerHTML = ''; for (const [h, c] of m.log || []) $('log').appendChild(el('div', 'ln ' + c, h)); NET.status = ''; UI.nav = null; layout(); return; }
   if (m.t === 'log') { logLine(m.html, m.cls); return; }
-  if (m.t === 'ctrl') { NET.ctrl = m.ctrl; refresh(); if (UI.modal === 'coop') openModal('coop', 1); return; }
+  if (m.t === 'ctrl') { NET.ctrl = m.ctrl; if (myControl()) { UI.viewSent = null; viewSoon(); } refresh(); if (UI.modal === 'coop') openModal('coop', 1); return; }
   if (m.t === 'st') { const first = !C; C = m.C; STATE.battle = m.st.battle; STATE.dungeon = m.st.dungeon; STATE.scene = m.st.scene ? 'remote' : null; STATE.busy = m.st.busy; ROAM = m.roam; NET.ctrl = m.ctrl; NET.peers = m.peers;
     if (STATE.battle) { STATE.shown = STATE.battle.log.length; STATE.shownFor = STATE.battle.id; }
     DLG = m.dlg ? Object.assign({ res: () => { } }, m.dlg) : null; if (DLG && DLG.mini) { DLG.mini.t0 = now() - DLG.mini.age; miniLoop(); } renderDlg(); refresh(); bannerDraw(); return; }
   if (m.t === 'tap') { showTap(m); return; }
+  if (m.t === 'view') { if (m.from !== MYID) { NET.lastView = m.v; viewApply(m.v); } return; }
   if (m.t === 'bye') { toast('房主关闭了房间'); netLeave(); }
 }
 function netCopyCode() { const t = NET.code; try { navigator.clipboard.writeText(t).then(() => toast('房间码 ' + t + ' 已复制'), () => toast('房间码：' + t)); } catch (e) { toast('房间码：' + t); } }
 function netShareCode() { const url = location.href.split('#')[0].split('?')[0]; try { navigator.share({ title: '完美世界 · 一起玩', text: `来我的房间一起玩！房间码 ${NET.code}（打开游戏，在标题画面“加入”里输入）`, url }).catch(() => { }); } catch (e) { netCopyCode(); } }
+
+/* ================= 跟随画面: the pages (石昊/背包/地图/记录), their tabs, pop-ups and scroll follow whoever is in control =================
+   The game screen was always shared; now the rest is too. The 联机 and 设置 pop-ups stay personal. A watcher can switch following off. */
+const VIEW_SKIP = ['coop', 'set', 'slots'];
+function viewNow() { const sb = $('sbody'), mb = $('mb'); return { nav: UI.nav || null, tab: UI.tab || null, bag: UI.bagTab || null, log: UI.logTab || null, area: UI.mapArea || null, bs: !!UI.bsOpen, memo: UI.memo || null,
+  modal: UI.modal && !VIEW_SKIP.includes(UI.modal) ? UI.modal : null, sy: sb && sb.scrollHeight > sb.clientHeight ? Math.round(sb.scrollTop / (sb.scrollHeight - sb.clientHeight) * 1000) / 1000 : 0, my: mb && mb.scrollHeight > mb.clientHeight ? Math.round(mb.scrollTop / (mb.scrollHeight - mb.clientHeight) * 1000) / 1000 : 0 }; }
+function viewSend() { if (!NETROLE || !myControl() || UI.viewApplying) return; const v = viewNow(), k = JSON.stringify(v); if (k === UI.viewSent) return; UI.viewSent = k;
+  if (NETROLE === 'host') netBroadcast({ t: 'view', v, from: MYID }); else netSend({ t: 'view', v }); }
+const viewSoon = () => { clearTimeout(UI.viewT); UI.viewT = setTimeout(viewSend, 120); };
+function viewApply(v) { if (!v || SET.follow === false || myControl()) return; UI.viewApplying = 1;
+  try { const navCh = (UI.nav || null) !== v.nav || UI.tab !== v.tab || UI.bagTab !== v.bag || UI.logTab !== v.log || UI.mapArea !== v.area || !!UI.bsOpen !== v.bs || (UI.memo || null) !== v.memo;
+    UI.tab = v.tab; UI.bagTab = v.bag; UI.logTab = v.log; UI.mapArea = v.area; UI.bsOpen = v.bs; UI.memo = v.memo; UI.nav = v.nav;
+    if (navCh) { refresh(); renderSide(); }
+    const mine = UI.modal && VIEW_SKIP.includes(UI.modal); /* don't yank someone out of their own settings */
+    if (!mine) { if (v.modal && (UI.modal !== v.modal)) openModal(v.modal, 1); else if (!v.modal && UI.modal) closeModal(); }
+    setTimeout(() => { const sb = $('sbody'), mb = $('mb'); if (sb && v.sy != null) sb.scrollTop = v.sy * (sb.scrollHeight - sb.clientHeight); if (mb && UI.modal === v.modal && v.my != null) mb.scrollTop = v.my * (mb.scrollHeight - mb.clientHeight); UI.viewApplying = 0; }, 60);
+  } catch (e) { UI.viewApplying = 0; console.error(e); } }
+/* the controller's view goes out whenever it changes: page switches, tabs, pop-ups, scrolling */
+for (const fn of ['navTo', 'openModal', 'closeModal', 'renderSide']) { const o = window[fn]; window[fn] = function (...a) { const r = o.apply(this, a); if (NETROLE) viewSoon(); return r; }; }
+document.addEventListener('scroll', e => { if (NETROLE && e.target && (e.target.id === 'sbody' || e.target.id === 'mb')) viewSoon(); }, true);
+document.addEventListener('toggle', () => { if (NETROLE) viewSoon(); }, true);
+function toggleFollow() { SET.follow = SET.follow === false; saveSet(); toast(SET.follow ? '跟随队友的画面' : '不跟随了，你可以自己翻页面'); if (SET.follow && NET.lastView) viewApply(NET.lastView); if (UI.modal === 'coop') openModal('coop', 1); }
