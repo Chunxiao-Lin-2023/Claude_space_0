@@ -9,7 +9,9 @@ const PEER_OPTS = QS.get('peerhost') ? { host: QS.get('peerhost'), port: +(QS.ge
 const CODE_CH = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 const genCode = () => Array.from({ length: 4 }, () => CODE_CH[Math.floor(Math.random() * CODE_CH.length)]).join('');
 const NET = { peer: null, code: '', conn: null, conns: new Map(), ctrl: 'host', status: '', peers: 0, syncT: 0 };
-function loadPeer() { return new Promise((res, rej) => { if (window.Peer) return res(); let i = 0; const next = () => { if (i >= PEER_SRC.length) return rej(new Error('load')); const sc = document.createElement('script'); sc.src = PEER_SRC[i++]; sc.onload = () => res(); sc.onerror = next; document.head.appendChild(sc); }; next(); }); }
+function loadPeer() { return new Promise((res, rej) => { if (window.Peer) return res(); let i = 0; const next = () => { if (window.Peer) return res(); if (i >= PEER_SRC.length) return rej(new Error('load')); const sc = document.createElement('script'); let done = false; const fail = () => { if (done) return; done = true; sc.remove(); next(); }; sc.src = PEER_SRC[i++]; sc.onload = () => { if (done) return; done = true; window.Peer ? res() : next(); }; sc.onerror = fail; setTimeout(fail, 9000); /* a CDN that hangs counts as down: try the next one */ document.head.appendChild(sc); }; next(); }); }
+const NET_WAIT = 12000; /* the public PeerJS server sometimes takes minutes to answer: give up on a socket after this long and open a fresh one */
+function netErrText(type, host) { return ({ 'browser-incompatible': '这个浏览器不支持联机，换 Chrome / Safari / Edge 试试。', 'peer-unavailable': '没找到这个房间：检查房间码，或者让房主重新开房间。', 'unavailable-id': '房间码撞车了，再点一次。', timeout: '联机服务器一直没回应（公共服务器偶尔很慢）。过一会儿再点一次；开着 VPN 或广告拦截的话，关掉或换个网络试试。', load: '联机组件下载不下来：检查网络，或者关掉广告拦截再试。' })[type] || `联机服务器连不上（${type}）。过一会儿再点一次${host ? '“开房间”' : '“加入”'}；开着 VPN 或广告拦截的话，关掉或换个网络试试。`; }
 const raw = (c, o) => { try { if (c && c.open) c.send(JSON.stringify(o)); } catch (e) { } };
 const myControl = () => !NETROLE || (NETROLE === 'host' ? NET.ctrl === 'host' : NET.ctrl === MYID);
 function netSend(o) { if (NETROLE === 'guest') raw(NET.conn, o); }
@@ -29,16 +31,22 @@ for (const fn of CMD_NAMES) { const orig = window[fn]; CMDS[fn] = orig; window[f
   return orig.apply(this, a); }; }
 function netLeave() {
   const wasGuest = NETROLE === 'guest'; try { if (wasGuest) raw(NET.conn, { t: 'bye' }); netBroadcast({ t: 'bye' }); } catch (e) { } try { NET.peer && NET.peer.destroy(); } catch (e) { }
+  NET.tok = (NET.tok || 0) + 1; /* anything still connecting is now stale */
   NET.peer = null; NET.conn = null; NET.conns.clear(); NET.code = ''; NET.ctrl = 'host'; NET.peers = 0; NETROLE = null; MYID = 'local';
   if (wasGuest) { C = null; STATE.battle = null; STATE.dungeon = null; STATE.scene = null; DLG = null; toTitle(); } else refresh();
 }
 /* ---------- host ---------- */
 async function netHost() {
-  netLeave(); NET.status = '正在开房间…'; openModal('coop', 1);
-  try { await loadPeer(); } catch (e) { NET.status = '联机组件加载失败，请检查网络'; openModal('coop', 1); return; }
-  const open = tries => { const code = genCode(), peer = new Peer('wmol-' + code, PEER_OPTS); NET.peer = peer; NET.code = code;
-    peer.on('open', id => { NETROLE = 'host'; MYID = id; NET.status = ''; NET.ctrl = 'host'; refresh(); openModal('coop', 1); logLine(`房间已开好，房间码 <b>${code}</b>。把它发给朋友。`, 'sys'); });
-    peer.on('error', err => { if (err.type === 'unavailable-id' && tries < 4) { try { peer.destroy(); } catch (e) { } open(tries + 1); } else { NET.status = '房间出错（' + err.type + '）'; openModal('coop', 1); } });
+  netLeave(); const tok = NET.tok = (NET.tok || 0) + 1; NET.status = '正在加载联机组件…'; openModal('coop', 1);
+  try { await loadPeer(); } catch (e) { if (NET.tok === tok) { NET.status = netErrText('load', 1); openModal('coop', 1); } return; } if (NET.tok !== tok) return;
+  const fail = type => { if (NET.tok !== tok) return; try { NET.peer && NET.peer.destroy(); } catch (e) { } NET.peer = null; NET.code = ''; NETROLE = null; MYID = 'local'; NET.status = netErrText(type, 1); if (UI.modal === 'coop' || STATE.mode === 'play') openModal('coop', 1); };
+  const open = tries => { if (NET.tok !== tok) return; const code = genCode(), peer = new Peer('wmol-' + code, PEER_OPTS); NET.peer = peer; NET.code = code;
+    NET.status = tries ? `联机服务器有点慢，换一条线再试（第 ${tries + 1} 次）…` : '正在连接联机服务器…'; if (UI.modal === 'coop') openModal('coop', 1);
+    const retry = type => { clearTimeout(to); if (NET.peer !== peer || NET.tok !== tok) return; try { peer.destroy(); } catch (e) { } if (tries < 2) setTimeout(() => open(tries + 1), type === 'timeout' ? 0 : 1500); else fail(type); }; /* a quick refusal is often a blip: wait a moment before the next try */
+    const to = setTimeout(() => { if (!NETROLE) retry('timeout'); }, NET_WAIT);
+    peer.on('open', id => { clearTimeout(to); if (NET.peer !== peer || NET.tok !== tok) return; NETROLE = 'host'; MYID = id; NET.status = ''; NET.ctrl = 'host'; refresh(); openModal('coop', 1); logLine(`房间已开好，房间码 <b>${code}</b>。把它发给朋友。`, 'sys'); });
+    peer.on('error', err => { if (NET.peer !== peer) return; if (NETROLE === 'host') { if (err.type !== 'peer-unavailable') logLine('联机连接抖了一下（' + err.type + '），正在重连……', 'dim'); return; } /* an open room rides out hiccups through reconnect */
+      if (err.type === 'unavailable-id' && tries < 4) { clearTimeout(to); try { peer.destroy(); } catch (e) { } open(tries + 1); } else if (err.type === 'browser-incompatible') { clearTimeout(to); fail(err.type); } else retry(err.type); });
     peer.on('disconnected', () => { if (NET.peer === peer && !peer.destroyed) try { peer.reconnect(); } catch (e) { } });
     peer.on('connection', conn => {
       if (NET.conns.size >= 3) { conn.on('open', () => { raw(conn, { t: 'full' }); setTimeout(() => conn.close(), 300); }); return; }
@@ -58,14 +66,14 @@ function hostRecv(pid, m) {
 /* ---------- guest ---------- */
 async function netJoin(code) {
   code = (code || '').toUpperCase().trim(); if (code.length !== 4) { toast('房间码是 4 位'); return; }
-  if (C && NETROLE !== 'guest') save(true); netLeave(); NET.status = '正在连接 ' + code + '…'; if (STATE.mode === 'play') openModal('coop', 1); else titleStatus(NET.status);
-  try { await loadPeer(); } catch (e) { NET.status = '联机组件加载失败'; titleStatus(NET.status); return; }
-  const peer = new Peer(PEER_OPTS); NET.peer = peer;
-  peer.on('open', id => { MYID = id; const c = peer.connect('wmol-' + code, { reliable: true, serialization: 'raw', label: 'ctl' }); NET.conn = c;
-    c.on('open', () => { NETROLE = 'guest'; NET.code = code; });
+  if (C && NETROLE !== 'guest') save(true); netLeave(); const tok = NET.tok = (NET.tok || 0) + 1; const say = s => { NET.status = s; if (STATE.mode === 'play') openModal('coop', 1); else titleStatus(s); }; say('正在连接 ' + code + '…');
+  try { await loadPeer(); } catch (e) { if (NET.tok === tok) say(netErrText('load')); return; } if (NET.tok !== tok) return;
+  const peer = new Peer(PEER_OPTS); NET.peer = peer; const to = setTimeout(() => { if (NET.tok !== tok || NETROLE) return; try { peer.destroy(); } catch (e) { } NET.peer = null; MYID = 'local'; say(netErrText(NET.conn ? 'peer-unavailable' : 'timeout')); }, NET_WAIT + 6000); /* no answer at all: say so instead of hanging on 正在连接 */
+  peer.on('open', id => { if (NET.tok !== tok) return; MYID = id; say('已连上联机服务器，正在找房间 ' + code + '…'); const c = peer.connect('wmol-' + code, { reliable: true, serialization: 'raw', label: 'ctl' }); NET.conn = c;
+    c.on('open', () => { clearTimeout(to); NETROLE = 'guest'; NET.code = code; });
     c.on('data', d => { try { guestRecv(JSON.parse(d)); } catch (e) { console.error(e); } });
     c.on('close', () => { if (NETROLE === 'guest') { toast('房主离开了'); netLeave(); } }); });
-  peer.on('error', err => { NET.status = '连接失败（' + err.type + '）。检查房间码，或者让房主重新开房间。'; NETROLE = null; MYID = 'local'; titleStatus(NET.status); });
+  peer.on('error', err => { if (NET.tok !== tok || NET.peer !== peer) return; if (NETROLE === 'guest') return; clearTimeout(to); try { peer.destroy(); } catch (e) { } NET.peer = null; NET.conn = null; NETROLE = null; MYID = 'local'; say(netErrText(err.type)); });
 }
 function guestRecv(m) {
   if (m.t === 'full') { NET.status = '房间满了'; netLeave(); titleStatus(NET.status); return; }

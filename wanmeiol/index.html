@@ -6843,7 +6843,7 @@ function openModal(k, again) {
     else if (NETROLE) h = `<div class="card"><h3>房间 ${NET.code}</h3><div style="font-size:.93rem">两个人看的是同一个画面。谁点“我来操作”，就由谁来控制石昊。</div>
         <div style="margin:8px 0;font-size:1rem">现在：<b>${myControl() ? '你在操作' : '队友在操作'}</b>${NET.peers ? '' : '<br><span class="warn">还没有人加入</span>'}</div>
         <div class="row"><button class="sb pri" ${myControl() ? 'disabled' : ''} onclick="takeControl()">🎮 我来操作</button><button class="sb" onclick="netLeave();openModal('coop',1)">离开房间</button></div></div>`;
-    else h = `<div class="card"><h3>开房间</h3><div class="dim" style="font-size:.87rem">用你的存档开一个房间，朋友加入后和你看同一个画面，可以随时交换操作。</div><button class="sb pri" style="margin-top:6px" onclick="netHost()">开房间</button></div>
+    else h = `<div class="card"><h3>开房间</h3><div class="dim" style="font-size:.87rem">用你现在的存档${C ? `（存档 ${SLOT} · ${realmOf(C.lv).name} 第 ${C.lv} 层 · ${esc((MAIN[C.story.q] || MAIN[0]).title)}）` : ''}开一个房间。朋友在标题画面或这里输入房间码，就接着你的进度一起玩：看同一个画面，可以随时交换操作；进度都记在你的存档里，朋友自己的存档不受影响。</div><button class="sb pri" style="margin-top:6px" onclick="netHost()">开房间</button></div>
         <div class="card"><h3>加入</h3><div class="row"><input id="jcode" class="namein" style="font-size:20px;letter-spacing:6px;text-transform:uppercase" maxlength="4" placeholder="房间码"><button class="sb pri" onclick="netJoin($('jcode').value)">加入</button></div></div>${NET.status ? `<div class="warn">${esc(NET.status)}</div>` : ''}`; }
   if (k === 'set') { t = '设置'; const seg = (key, opts) => `<div class="seg">${opts.map(([v, n]) => `<button class="sb ${SET[key] === v ? 'on' : ''}" onclick="setOpt('${key}',${JSON.stringify(v)})">${n}</button>`).join('')}</div>`;
     h = `<div class="card"><h4>难度 <span class="dim" style="font-size:.8rem">随时可以换，只影响敌人的气血和攻击</span></h4>${NETROLE === 'guest' ? '<div class="dim">房主决定</div>' : `<div class="seg">${DIFF.map((d, i) => `<button class="sb ${(C.diff ?? 1) === i ? 'on' : ''}" onclick="setDiff(${i})">${d.n}</button>`).join('')}</div>`}
@@ -7791,7 +7791,9 @@ const PEER_OPTS = QS.get('peerhost') ? { host: QS.get('peerhost'), port: +(QS.ge
 const CODE_CH = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 const genCode = () => Array.from({ length: 4 }, () => CODE_CH[Math.floor(Math.random() * CODE_CH.length)]).join('');
 const NET = { peer: null, code: '', conn: null, conns: new Map(), ctrl: 'host', status: '', peers: 0, syncT: 0 };
-function loadPeer() { return new Promise((res, rej) => { if (window.Peer) return res(); let i = 0; const next = () => { if (i >= PEER_SRC.length) return rej(new Error('load')); const sc = document.createElement('script'); sc.src = PEER_SRC[i++]; sc.onload = () => res(); sc.onerror = next; document.head.appendChild(sc); }; next(); }); }
+function loadPeer() { return new Promise((res, rej) => { if (window.Peer) return res(); let i = 0; const next = () => { if (window.Peer) return res(); if (i >= PEER_SRC.length) return rej(new Error('load')); const sc = document.createElement('script'); let done = false; const fail = () => { if (done) return; done = true; sc.remove(); next(); }; sc.src = PEER_SRC[i++]; sc.onload = () => { if (done) return; done = true; window.Peer ? res() : next(); }; sc.onerror = fail; setTimeout(fail, 9000); /* a CDN that hangs counts as down: try the next one */ document.head.appendChild(sc); }; next(); }); }
+const NET_WAIT = 12000; /* the public PeerJS server sometimes takes minutes to answer: give up on a socket after this long and open a fresh one */
+function netErrText(type, host) { return ({ 'browser-incompatible': '这个浏览器不支持联机，换 Chrome / Safari / Edge 试试。', 'peer-unavailable': '没找到这个房间：检查房间码，或者让房主重新开房间。', 'unavailable-id': '房间码撞车了，再点一次。', timeout: '联机服务器一直没回应（公共服务器偶尔很慢）。过一会儿再点一次；开着 VPN 或广告拦截的话，关掉或换个网络试试。', load: '联机组件下载不下来：检查网络，或者关掉广告拦截再试。' })[type] || `联机服务器连不上（${type}）。过一会儿再点一次${host ? '“开房间”' : '“加入”'}；开着 VPN 或广告拦截的话，关掉或换个网络试试。`; }
 const raw = (c, o) => { try { if (c && c.open) c.send(JSON.stringify(o)); } catch (e) { } };
 const myControl = () => !NETROLE || (NETROLE === 'host' ? NET.ctrl === 'host' : NET.ctrl === MYID);
 function netSend(o) { if (NETROLE === 'guest') raw(NET.conn, o); }
@@ -7811,16 +7813,22 @@ for (const fn of CMD_NAMES) { const orig = window[fn]; CMDS[fn] = orig; window[f
   return orig.apply(this, a); }; }
 function netLeave() {
   const wasGuest = NETROLE === 'guest'; try { if (wasGuest) raw(NET.conn, { t: 'bye' }); netBroadcast({ t: 'bye' }); } catch (e) { } try { NET.peer && NET.peer.destroy(); } catch (e) { }
+  NET.tok = (NET.tok || 0) + 1; /* anything still connecting is now stale */
   NET.peer = null; NET.conn = null; NET.conns.clear(); NET.code = ''; NET.ctrl = 'host'; NET.peers = 0; NETROLE = null; MYID = 'local';
   if (wasGuest) { C = null; STATE.battle = null; STATE.dungeon = null; STATE.scene = null; DLG = null; toTitle(); } else refresh();
 }
 /* ---------- host ---------- */
 async function netHost() {
-  netLeave(); NET.status = '正在开房间…'; openModal('coop', 1);
-  try { await loadPeer(); } catch (e) { NET.status = '联机组件加载失败，请检查网络'; openModal('coop', 1); return; }
-  const open = tries => { const code = genCode(), peer = new Peer('wmol-' + code, PEER_OPTS); NET.peer = peer; NET.code = code;
-    peer.on('open', id => { NETROLE = 'host'; MYID = id; NET.status = ''; NET.ctrl = 'host'; refresh(); openModal('coop', 1); logLine(`房间已开好，房间码 <b>${code}</b>。把它发给朋友。`, 'sys'); });
-    peer.on('error', err => { if (err.type === 'unavailable-id' && tries < 4) { try { peer.destroy(); } catch (e) { } open(tries + 1); } else { NET.status = '房间出错（' + err.type + '）'; openModal('coop', 1); } });
+  netLeave(); const tok = NET.tok = (NET.tok || 0) + 1; NET.status = '正在加载联机组件…'; openModal('coop', 1);
+  try { await loadPeer(); } catch (e) { if (NET.tok === tok) { NET.status = netErrText('load', 1); openModal('coop', 1); } return; } if (NET.tok !== tok) return;
+  const fail = type => { if (NET.tok !== tok) return; try { NET.peer && NET.peer.destroy(); } catch (e) { } NET.peer = null; NET.code = ''; NETROLE = null; MYID = 'local'; NET.status = netErrText(type, 1); if (UI.modal === 'coop' || STATE.mode === 'play') openModal('coop', 1); };
+  const open = tries => { if (NET.tok !== tok) return; const code = genCode(), peer = new Peer('wmol-' + code, PEER_OPTS); NET.peer = peer; NET.code = code;
+    NET.status = tries ? `联机服务器有点慢，换一条线再试（第 ${tries + 1} 次）…` : '正在连接联机服务器…'; if (UI.modal === 'coop') openModal('coop', 1);
+    const retry = type => { clearTimeout(to); if (NET.peer !== peer || NET.tok !== tok) return; try { peer.destroy(); } catch (e) { } if (tries < 2) setTimeout(() => open(tries + 1), type === 'timeout' ? 0 : 1500); else fail(type); }; /* a quick refusal is often a blip: wait a moment before the next try */
+    const to = setTimeout(() => { if (!NETROLE) retry('timeout'); }, NET_WAIT);
+    peer.on('open', id => { clearTimeout(to); if (NET.peer !== peer || NET.tok !== tok) return; NETROLE = 'host'; MYID = id; NET.status = ''; NET.ctrl = 'host'; refresh(); openModal('coop', 1); logLine(`房间已开好，房间码 <b>${code}</b>。把它发给朋友。`, 'sys'); });
+    peer.on('error', err => { if (NET.peer !== peer) return; if (NETROLE === 'host') { if (err.type !== 'peer-unavailable') logLine('联机连接抖了一下（' + err.type + '），正在重连……', 'dim'); return; } /* an open room rides out hiccups through reconnect */
+      if (err.type === 'unavailable-id' && tries < 4) { clearTimeout(to); try { peer.destroy(); } catch (e) { } open(tries + 1); } else if (err.type === 'browser-incompatible') { clearTimeout(to); fail(err.type); } else retry(err.type); });
     peer.on('disconnected', () => { if (NET.peer === peer && !peer.destroyed) try { peer.reconnect(); } catch (e) { } });
     peer.on('connection', conn => {
       if (NET.conns.size >= 3) { conn.on('open', () => { raw(conn, { t: 'full' }); setTimeout(() => conn.close(), 300); }); return; }
@@ -7840,14 +7848,14 @@ function hostRecv(pid, m) {
 /* ---------- guest ---------- */
 async function netJoin(code) {
   code = (code || '').toUpperCase().trim(); if (code.length !== 4) { toast('房间码是 4 位'); return; }
-  if (C && NETROLE !== 'guest') save(true); netLeave(); NET.status = '正在连接 ' + code + '…'; if (STATE.mode === 'play') openModal('coop', 1); else titleStatus(NET.status);
-  try { await loadPeer(); } catch (e) { NET.status = '联机组件加载失败'; titleStatus(NET.status); return; }
-  const peer = new Peer(PEER_OPTS); NET.peer = peer;
-  peer.on('open', id => { MYID = id; const c = peer.connect('wmol-' + code, { reliable: true, serialization: 'raw', label: 'ctl' }); NET.conn = c;
-    c.on('open', () => { NETROLE = 'guest'; NET.code = code; });
+  if (C && NETROLE !== 'guest') save(true); netLeave(); const tok = NET.tok = (NET.tok || 0) + 1; const say = s => { NET.status = s; if (STATE.mode === 'play') openModal('coop', 1); else titleStatus(s); }; say('正在连接 ' + code + '…');
+  try { await loadPeer(); } catch (e) { if (NET.tok === tok) say(netErrText('load')); return; } if (NET.tok !== tok) return;
+  const peer = new Peer(PEER_OPTS); NET.peer = peer; const to = setTimeout(() => { if (NET.tok !== tok || NETROLE) return; try { peer.destroy(); } catch (e) { } NET.peer = null; MYID = 'local'; say(netErrText(NET.conn ? 'peer-unavailable' : 'timeout')); }, NET_WAIT + 6000); /* no answer at all: say so instead of hanging on 正在连接 */
+  peer.on('open', id => { if (NET.tok !== tok) return; MYID = id; say('已连上联机服务器，正在找房间 ' + code + '…'); const c = peer.connect('wmol-' + code, { reliable: true, serialization: 'raw', label: 'ctl' }); NET.conn = c;
+    c.on('open', () => { clearTimeout(to); NETROLE = 'guest'; NET.code = code; });
     c.on('data', d => { try { guestRecv(JSON.parse(d)); } catch (e) { console.error(e); } });
     c.on('close', () => { if (NETROLE === 'guest') { toast('房主离开了'); netLeave(); } }); });
-  peer.on('error', err => { NET.status = '连接失败（' + err.type + '）。检查房间码，或者让房主重新开房间。'; NETROLE = null; MYID = 'local'; titleStatus(NET.status); });
+  peer.on('error', err => { if (NET.tok !== tok || NET.peer !== peer) return; if (NETROLE === 'guest') return; clearTimeout(to); try { peer.destroy(); } catch (e) { } NET.peer = null; NET.conn = null; NETROLE = null; MYID = 'local'; say(netErrText(err.type)); });
 }
 function guestRecv(m) {
   if (m.t === 'full') { NET.status = '房间满了'; netLeave(); titleStatus(NET.status); return; }
@@ -7865,15 +7873,16 @@ function toTitle() {
   if (C && NETROLE !== 'guest') save(true); STATE.mode = 'title'; closeModal(); UI.nav = null; $('title').style.display = 'flex'; titleDraw(); musicMode();
   const sv = loadSave(); const hub = HUB ? `<button class="hub" onclick="hubBack2(this)">‹ 游戏厅</button>` : '';
   $('tbx').innerHTML = `${hub}<h1>完美世界</h1><div class="sub">石昊篇 · 文字版</div>
-    <div class="btns">${sv ? `<button class="big" onclick="enterGame()">继续<br><span style="font-size:13px;font-weight:400">存档 ${SLOT} · ${realmOf(sv.lv).name} · 第 ${sv.lv} 层 · ${esc(MAIN[sv.story.q].title)}</span></button>` : `<button class="big" onclick="newGame()">开始${SLOT > 1 ? `<br><span style="font-size:13px;font-weight:400">存档 ${SLOT}</span>` : ''}</button>`}<button class="big sec" onclick="slotsShow()">📂 存档（${SLOTS} 个位置）</button>
+    <div class="btns">${sv ? `<button class="big" onclick="enterGame()">继续<br><span style="font-size:13px;font-weight:400">存档 ${SLOT} · ${realmOf(sv.lv).name} · 第 ${sv.lv} 层 · ${esc(MAIN[sv.story.q].title)}</span></button>${inArtifact() ? '' : `<button class="big sec" onclick="slotHost()">🔗 用这个存档开房间<br><span style="font-size:13px;font-weight:400">朋友输入房间码，接着你的进度一起玩</span></button>`}` : `<button class="big" onclick="newGame()">开始${SLOT > 1 ? `<br><span style="font-size:13px;font-weight:400">存档 ${SLOT}</span>` : ''}</button>`}<button class="big sec" onclick="slotsShow()">📂 存档（${SLOTS} 个位置）</button>
     <div class="join"><input id="tjoin" class="namein" maxlength="4" placeholder="朋友的房间码"><button class="big sec" style="min-width:0" onclick="netJoin($('tjoin').value)">加入</button></div><div id="tstat" class="warn" style="font-size:13px"></div></div>
     <div class="note">你是石村的小不点。<br>根据辰东《完美世界》改编：石村 → 出村 → 补天阁 → 百断山。<br>朋友有存档码？开始后在 ⚙️ 设置里读取。</div>`;
 }
 function slotInfo(s) { const v = loadSave(s); if (!v) return null; const q = MAIN[v.story.q] || MAIN[0], P = PLACES[v.loc]; return { v, t: `${realmOf(v.lv).name} 第 ${v.lv} 层 · ${CH_NAMES[q.ch] || ''} · ${q.title}`, s: `第 ${v.day || 1} 天 · ${P ? P.name : ''}${v.savedAt ? ' · ' + new Date(v.savedAt).toLocaleString('zh-CN', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : ''}` }; }
 function slotsShow() { UI.slotArm = null; const L = Array.from({ length: SLOTS }, (_, i) => i + 1).map(s => { const I = slotInfo(s), cur = s === SLOT;
-    return `<div class="slot ${cur ? 'cur' : ''}"><div class="sn">${s}</div><div class="si">${I ? `<b>${esc(I.t)}</b><small>${esc(I.s)}</small>` : '<span class="dim">空</span>'}</div><div class="sa">${I ? `<button class="sb" onclick="slotPlay(${s})">${cur ? '继续' : '读取'}</button><button class="sb del" onclick="slotDel(${s},this)">删除</button>` : `<button class="sb" onclick="slotNew(${s})">在这里开新档</button>`}</div></div>`; }).join('');
+    return `<div class="slot ${cur ? 'cur' : ''}"><div class="sn">${s}</div><div class="si">${I ? `<b>${esc(I.t)}</b><small>${esc(I.s)}</small>` : '<span class="dim">空</span>'}</div><div class="sa">${I ? `<button class="sb" onclick="slotPlay(${s})">${cur ? '继续' : '读取'}</button>${inArtifact() ? '' : `<button class="sb" onclick="slotHost(${s})" title="用这个存档开联机房间">🔗 开房间</button>`}<button class="sb del" onclick="slotDel(${s},this)">删除</button>` : `<button class="sb" onclick="slotNew(${s})">在这里开新档</button>`}</div></div>`; }).join('');
   $('tbx').innerHTML = `<h1 style="font-size:44px">存档</h1><div class="sub">每个位置是一段独立的人生，回忆录也分开记</div><div class="slots">${L}</div><div class="btns"><button class="big sec" onclick="toTitle()">‹ 返回</button></div>`; }
 function slotPlay(s) { useSlot(s); C = null; enterGame(); }
+function slotHost(s) { if (s) useSlot(s); C = null; enterGame(); if (STATE.mode === 'play' && C) netHost(); } /* straight into a room on this save: friends join and carry on from here with you */
 function slotNew(s) { useSlot(s); audioInit(); C = newChar(); fullHeal(); JOURNAL = []; saveJournal(); save(true); enterGame(true); }
 function slotDel(s, b) { if (UI.slotArm !== s) { UI.slotArm = s; b.textContent = '再点一次删除'; b.style.color = '#ff8a7a'; return; } store.del(saveKey(s)); store.del(jKey(s)); if (s === SLOT) { JOURNAL = []; C = null; } slotsShow(); }
 function titleStatus(t) { const e = document.getElementById('tstat'); if (e) e.textContent = t || ''; }
