@@ -83,3 +83,4 @@
 41. 宝术谱（`34_baoshu.js` 数据和特色、`57_bsq.js` 机缘剧情）：新宝术写进 `BS_NEW`（进化的写 `line` 指向根宝术），进化关系写进 `EVO`，机缘写进 `BSQ`（带 `by` 跳章时间点）和 `57_bsq.js`；任何按宝术 id 判断的地方（合成、配合、宝骨加成、自动战斗）都要用 `skLine` / `skOwn` / `skRes` 认进化；敌人用宝术写进 `MOB_BS` 或对手的 `sk`。改完跑 features 的 bs* 检查和 jumpcheck。
 42. 难度：改敌人强度、宝术、伙伴之后跑 `node test/stage.js`（中上）和 `PLAIN=1 node test/stage.js`（普通），中上首领战要八九成胜、10～15 回合、最低气血两到五成（嫌拖就降气血加攻击，不要只加血）；`flow.js`（只走主线、全程自动）必须能打到结局。新加的状态效果：持续伤害写进 `DOT_ST`，其余的 v 是比例。剧情战用 `fightRetry` / `siegeRetry`，自带连输放水。
 43. 联机改动后跑 `coop.js`（正常流程）和 `coop2.js`（掉线、晚开房、错码）。房主的连接随时可能被系统暂停：恢复流程只能有一个（`NET.reviving`），房间码不能变。
+44. 联机里新加的可点命令放进 `CMD_NAMES`（自动转发、自动给别人显示“点了什么”）；对话选项走 `dlgPick`。改完跑 `cooptap.js`。

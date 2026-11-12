@@ -28,8 +28,25 @@ const CMD_NAMES = ['siegeStart', 'leitaiStart', 'go', 'explore', 'rest', 'train'
 const CMDS = {};
 UI.inClick = false; const markClick = () => { UI.inClick = true; setTimeout(() => { UI.inClick = false; }, 0); };
 document.addEventListener('click', markClick, true); document.addEventListener('keydown', markClick, true);
+/* 看得见队友点了什么: remember what was pressed, so the others can see the same button light up */
+document.addEventListener('pointerdown', e => { UI.tapEl = e.target.closest && e.target.closest('button,[onclick],.li'); UI.tapAt = Date.now(); }, true);
+document.addEventListener('keydown', () => { UI.tapEl = null; }, true);
+function tapInfo(fn) { const e = Date.now() - (UI.tapAt || 0) < 1500 ? UI.tapEl : null, label = e ? (e.innerText || e.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 16) : ''; return { oc: e ? e.getAttribute('onclick') || '' : '', label: label || TAP_NAME[fn] || '' }; }
+const TAP_NAME = { explore: '探索', rest: '休息', train: '修炼', camp: '歇脚', autoExplore: '自动探索', toggleAuto: '自动战斗', battleUndo: '撤回', arenaFight: '挑战', go: '去往' };
+function showTap(m) { if (!m || !m.tap || m.from === MYID) return; const who = m.who === 'host' ? '房主' : '队友', t = m.tap, msg = `${who}点了「${t.label || '…'}」`;
+  const vis = x => x.offsetParent && x.getBoundingClientRect().width > 0;
+  let e = t.oc ? [...document.querySelectorAll('[onclick]')].find(x => x.getAttribute('onclick') === t.oc && vis(x)) : null;
+  if (!e && t.label) e = [...document.querySelectorAll('button,.li')].find(x => vis(x) && (x.innerText || '').replace(/\s+/g, ' ').trim().startsWith(t.label));
+  const r0 = e && e.getBoundingClientRect(), hit = r0 && document.elementFromPoint(r0.left + r0.width / 2, r0.top + r0.height / 2); if (e && !(hit && (e === hit || e.contains(hit)))) e = null; /* covered by a dialog that just opened: don't ring the wrong spot */
+  if (!e) { const tag = el('div', 'taptag top', '👆 ' + esc(msg)); document.body.append(tag); const tb = $('top') ? $('top').getBoundingClientRect().bottom : 0; tag.style.left = Math.max(6, innerWidth / 2 - tag.offsetWidth / 2) + 'px'; tag.style.top = tb + 8 + 'px'; setTimeout(() => tag.remove(), 2200); return; }
+  const r = e.getBoundingClientRect(), ring = el('div', 'tapring'), tag = el('div', 'taptag', '👆 ' + esc(msg));
+  Object.assign(ring.style, { left: r.left - 3 + 'px', top: r.top - 3 + 'px', width: r.width + 6 + 'px', height: r.height + 6 + 'px' }); document.body.append(ring, tag);
+  const tw = tag.offsetWidth, th = tag.offsetHeight; tag.style.left = Math.max(6, Math.min(innerWidth - tw - 6, r.left + r.width / 2 - tw / 2)) + 'px'; tag.style.top = (r.top - th - 8 > 6 ? r.top - th - 8 : r.bottom + 8) + 'px';
+  const moveUp = () => { ring.remove(); const tb = $('top') ? $('top').getBoundingClientRect().bottom : 0; tag.classList.add('top'); tag.style.left = Math.max(6, innerWidth / 2 - tag.offsetWidth / 2) + 'px'; tag.style.top = tb + 8 + 'px'; };
+  const watch = setInterval(() => { if (!ring.isConnected) return; const q = e.getBoundingClientRect(), h2 = e.isConnected && document.elementFromPoint(q.left + q.width / 2, q.top + q.height / 2); if (!e.isConnected || !q.width || !(h2 && (e === h2 || e.contains(h2)))) moveUp(); }, 80); /* the screen changed under it (a dialog opened, the panel re-rendered): the note moves up instead of pointing at the wrong thing */
+  setTimeout(() => { clearInterval(watch); ring.remove(); tag.remove(); }, 1900); }
 for (const fn of CMD_NAMES) { const orig = window[fn]; CMDS[fn] = orig; window[fn] = function (...a) {
-  if (UI.inClick && NETROLE) { if (!myControl()) { toast('现在是队友在操作（点上面的 🔗 可以接手）'); return; } if (NETROLE === 'guest') { netSend({ t: 'cmd', fn, a: JSON.parse(JSON.stringify(a)) }); return; } }
+  if (UI.inClick && NETROLE) { if (!myControl()) { toast('现在是队友在操作（点上面的 🔗 可以接手）'); return; } const tap = tapInfo(fn); if (NETROLE === 'guest') { netSend({ t: 'cmd', fn, a: JSON.parse(JSON.stringify(a)), tap }); return; } netBroadcast({ t: 'tap', who: 'host', from: MYID, tap }); }
   return orig.apply(this, a); }; }
 function netLeave() {
   const wasGuest = NETROLE === 'guest'; try { if (wasGuest) raw(NET.conn, { t: 'bye' }); netBroadcast({ t: 'bye' }); } catch (e) { } try { NET.peer && NET.peer.destroy(); } catch (e) { }
@@ -72,6 +89,7 @@ document.addEventListener('visibilitychange', () => { if (document.visibilitySta
 function hostRecv(pid, m) {
   if (m.t === 'take') { NET.ctrl = pid; netBroadcast({ t: 'ctrl', ctrl: pid }); toast('队友接手了操作'); refresh(); netSync(); return; }
   if (NET.ctrl !== pid) return;
+  if ((m.t === 'cmd' || m.t === 'dlg') && m.tap) { const t = { t: 'tap', who: 'guest', from: pid, tap: m.tap }; showTap(t); netBroadcast(t); } /* show the host (and the other guests) what the guest pressed, before it changes the screen */
   if (m.t === 'cmd' && CMDS[m.fn]) { try { CMDS[m.fn](...(m.a || [])); } catch (e) { console.error(e); } netSync(); }
   if (m.t === 'dlg' && DLG) { if (DLG.choice) { const i = m.i; if (DLG.choice[i] && !DLG.choice[i].dis) { const r = DLG.res; logLine('▸ ' + DLG.choice[i].t, 'say mine'); DLG = null; renderDlg(); r(i); } } else { const r = DLG.res; DLG = null; renderDlg(); r(); } netSync(); }
 }
@@ -106,6 +124,7 @@ function guestRecv(m) {
   if (m.t === 'st') { const first = !C; C = m.C; STATE.battle = m.st.battle; STATE.dungeon = m.st.dungeon; STATE.scene = m.st.scene ? 'remote' : null; STATE.busy = m.st.busy; ROAM = m.roam; NET.ctrl = m.ctrl; NET.peers = m.peers;
     if (STATE.battle) { STATE.shown = STATE.battle.log.length; STATE.shownFor = STATE.battle.id; }
     DLG = m.dlg ? Object.assign({ res: () => { } }, m.dlg) : null; if (DLG && DLG.mini) { DLG.mini.t0 = now() - DLG.mini.age; miniLoop(); } renderDlg(); refresh(); bannerDraw(); return; }
+  if (m.t === 'tap') { showTap(m); return; }
   if (m.t === 'bye') { toast('房主关闭了房间'); netLeave(); }
 }
 function netCopyCode() { const t = NET.code; try { navigator.clipboard.writeText(t).then(() => toast('房间码 ' + t + ' 已复制'), () => toast('房间码：' + t)); } catch (e) { toast('房间码：' + t); } }

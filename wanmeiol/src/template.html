@@ -392,6 +392,11 @@ textarea.code{width:100%;min-height:80px;background:#0c0a08;border:1px solid var
 .namein{width:100%;background:#120f0cdd;border:1px solid var(--line2);color:var(--tx);border-radius:10px;padding:10px 12px;font-size:18px;font-family:inherit;text-align:center}
 .join{display:flex;gap:6px;margin-top:6px;width:min(320px,100%)}
 .join .namein{font-size:17px;letter-spacing:4px;text-transform:uppercase;padding:8px;flex:1;min-width:0}
+/* co-op: what the other player just pressed */
+.tapring{position:fixed;z-index:80;border:2px solid #ffd76a;border-radius:10px;pointer-events:none;box-shadow:0 0 14px #ffd76a99;animation:tapr 1.4s ease-out forwards}
+@keyframes tapr{0%{opacity:1;transform:scale(.94)}60%{opacity:.9;transform:scale(1.04)}100%{opacity:0;transform:scale(1.1)}}
+.taptag{position:fixed;z-index:81;max-width:80vw;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;background:#2a1f10f0;color:#ffe7a8;border:1px solid #c9a24a;border-radius:8px;padding:2px 10px;font-size:.88rem;pointer-events:none;animation:tapt 1.9s ease forwards}
+@keyframes tapt{0%{opacity:0;translate:0 4px}12%,75%{opacity:1;translate:0 0}100%{opacity:0}}
 /* room codes: plain monospace, never the brush font — every letter has to be readable at a glance */
 .rcode,.rc,.codein,.codein::placeholder{font-family:ui-monospace,'SF Mono',Menlo,Consolas,'Roboto Mono','Courier New',monospace}
 .rcode{font-size:2.3rem;font-weight:700;letter-spacing:.35em;padding:6px 0 6px .35em;margin:2px 0 8px;text-align:center;color:#ffe7a8;background:#120f0cdd;border:1px solid var(--line2);border-radius:10px;line-height:1.2;user-select:all}
