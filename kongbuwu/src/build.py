@@ -47,7 +47,7 @@ for m in re.finditer(r"(\w+): \{ name: '[^']+', title: '[^']*', seal: '\w+', at:
 if re.search(r'[^:]//[^\n]*\n', game) and re.search(r'^\s*//', game, re.M) is None: pass
 # 小剧场指令：命令名、道具贴图、场景名都要存在（拼错了不会报错，只会什么都不演）
 spr = set(re.findall(r'^  (\w+)\(g, e, t, R\)', game, re.M)) | set(re.findall(r'SPR\.(\w+) = function', game))
-stg = set(re.findall(r'^  (\w+): \{', game[game.find('const STAGES'):game.find('const STAGES') + 60000], re.M))
+stg = set(re.findall(r'^  (\w+): \{', game[game.find('const STAGES'):game.find('const STAGES') + 400000], re.M))
 cmds = {'in', 'at', 'out', 'to', 'turn', 'down', 'up', 'fx', 'prop', 'del', 'stage', 'call', 'hang', 'wait', 'scare', 'creep', 'sfx', 'mirror', 'mus', 'zoom'}
 mirs = {'follow', 'lag', 'stare', 'smile', 'close', 'empty', 'other', 'hand', 'crack', 'out', 'off'}
 moods = set(re.findall(r'^  (\w+): \{ root', game, re.M))
