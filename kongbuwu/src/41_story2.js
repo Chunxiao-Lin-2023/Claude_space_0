@@ -141,7 +141,7 @@ async function S_shoes() { setClock(11, '凌晨 4 点'); await T_(`^call 李队
 ^mirror hand
 ^at 镜鬼 17`);
   go('hh_hall', true, true);
-  const win = await fight({ mobs: [['mirror', L(2)], ['zhangpeng', L(0)]], ally: 'zhangya', title: '恐怖屋 · 走廊', intro: '你的影子，站了起来。', epic: { name: '镜中怪物', sub: '从镜子游戏那晚，一直跟到今天', seal: '镜', intro: ['墙上的数字归零了。', '它等的就是这一晚。', '——可它没算到，你的影子里也住着东西。'], phase: '（镜面一块接一块地碎）', low: '背后很冷。但这一次，冷是站在你这边的。' } });
+  const win = await fight({ chase: HCHASE.mirror, mobs: [['mirror', L(2)], ['zhangpeng', L(0)]], ally: 'zhangya', title: '恐怖屋 · 走廊', intro: '你的影子，站了起来。', epic: { name: '镜中怪物', sub: '从镜子游戏那晚，一直跟到今天', seal: '镜', intro: ['墙上的数字归零了。', '它等的就是这一晚。', '——可它没算到，你的影子里也住着东西。'], phase: '（镜面一块接一块地碎）', low: '背后很冷。但这一次，冷是站在你这边的。' } });
   await T_(`^fx dark
 ^at 张鹏 15
 ^at 镜鬼 17
@@ -330,7 +330,7 @@ async function S_wc() { setClock(8, '晚上 10 点'); await T_(`^fx dark
 它停在了第六个门口。
 ^scare 红影
 门缝里，一只充血的眼睛，正对着你的眼睛。`);
-  await fight({ mobs: [['redshadow', L(0)]], title: '厕所的第五个隔间', intro: ok ? '门板还没完全打开，你的锤子已经出去了。' : '它已经看见你了。' });
+  await fight({ chase: HCHASE.redshadow, mobs: [['redshadow', L(0)]], title: '厕所的第五个隔间', intro: ok ? '门板还没完全打开，你的锤子已经出去了。' : '它已经看见你了。' });
   await T_(`^at 小男孩 9
 ^at 小女孩 10
 ^at 红影 14
@@ -393,7 +393,7 @@ async function S_last() { setClock(9, '晚上 11:40'); await T_(`^mus door
 我|好。
 ^turn 陈歌 L
 你转过身，把后背留给了她。`);
-  const win = await fight({ mobs: [['aunt', L(1)]], title: '最后一间教室门外', intro: '早就知道你有问题。', epic: { name: '范郁的姑姑', sub: '深井 · 最后一条支线', seal: '井', intro: ['“我哥已经疯了。”', '“从他拿着那张合照回家开始。”', '那天晚上，她九点多到的学校。'], phase: '我从没想过杀人！你根本不知道那天发生了什么！', low: '走廊尽头的教室里，二十四个人都在往门外看。' } });
+  const win = await fight({ chase: HCHASE.aunt, mobs: [['aunt', L(1)]], title: '最后一间教室门外', intro: '早就知道你有问题。', epic: { name: '范郁的姑姑', sub: '深井 · 最后一条支线', seal: '井', intro: ['“我哥已经疯了。”', '“从他拿着那张合照回家开始。”', '那天晚上，她九点多到的学校。'], phase: '我从没想过杀人！你根本不知道那天发生了什么！', low: '走廊尽头的教室里，二十四个人都在往门外看。' } });
   await T_(`姑姑|……我哥有那种癖好。被发现以后，他说有东西缠上了他，要报复他。嫂子要报警。
 姑姑|那天下着这么大的雨。我到的时候，他已经把嫂子塞进了井里。我把他也推了下去。他在井里骂了我一夜。
 我|你说过，你自己的丈夫孩子出事以后，是范郁画了弟弟妹妹来哄你。他是真心的。${F().fanyu === 0 ? `
@@ -578,7 +578,7 @@ async function S_haiming() { setClock(8, '晚上 11 点'); await T_(`^in 大叔 
 ^scare 黑影
 卧室门框后面，立着一道高瘦的黑影。它长着两张不同的脸。
 !mirror`);
-  const win = await fight({ mobs: [['twoface', L(1)]], title: '303 房', intro: '两张脸在互相咒骂。它们并不是一条心。', epic: { name: '两张脸的黑影', sub: '三个人的房间', seal: '镜', intro: ['王海明从“那个地方”带出来的东西。', '它一直躲在镜子里，等门楠睡着。', '——它也在怕着什么。'], phase: '（其中一张脸在喊：别把红衣引来！）', low: '钥匙在你口袋里发烫。生了锈的那一把。' } });
+  const win = await fight({ chase: HCHASE.twoface, mobs: [['twoface', L(1)]], title: '303 房', intro: '两张脸在互相咒骂。它们并不是一条心。', epic: { name: '两张脸的黑影', sub: '三个人的房间', seal: '镜', intro: ['王海明从“那个地方”带出来的东西。', '它一直躲在镜子里，等门楠睡着。', '——它也在怕着什么。'], phase: '（其中一张脸在喊：别把红衣引来！）', low: '钥匙在你口袋里发烫。生了锈的那一把。' } });
   await T_(`^fx dark
 ^out 黑影
 ${win ? '它缩回了镜子里，镜面晃了几下，平了。' : '它没有追出来。它不敢离开镜子太远。'}

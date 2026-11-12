@@ -1,4 +1,5 @@
 // node test/balance.js — 每一场剧情战用自动对峙打 N 次：胜率、平均回合、赢的时候剩多少体力。目标：标准难度 70–95%
+// 标着（吓）的是白天接待：走鬼屋地图（自动扮鬼），记胜率、用时、剩多少氛围
 const { chromium } = require('playwright');
 const FIGHTS = [ // [章, 等级, 名字, opts]
   [1, 2, '高汝雪+鹤山(吓)', { scare: 1, scene: 'mh', mobs: [['gaoru', 1], ['heshan', 0]] }], [2, 4, '纹身男', { mobs: [['tattoo', -1]] }], [2, 5, '王琦', { mobs: [['wangqi', 1]], story: 1 }],
@@ -9,11 +10,13 @@ const FIGHTS = [ // [章, 等级, 名字, opts]
   [5, 14, '普通游客×3(吓)', { scare: 1, scene: 'my', mobs: [['tough', 1], ['vlog', 1], ['med', 1]] }], [5, 14, '夜探残念×2', { mobs: [['remnant', 0], ['remnant', 1]] }] ];
 (async () => { const b = await chromium.launch({ args: ['--disable-gpu'] }); const pg = await b.newPage(); const errs = []; pg.on('pageerror', e => errs.push(e.message)); await pg.addInitScript(() => localStorage.clear()); await pg.goto('http://localhost:8771/test.html'); await pg.waitForFunction(() => window.__dbg && __dbg.ready);
   const N = +(process.argv[2] || 60), diff = +(process.argv[3] || 1);
-  const rows = await pg.evaluate(([FIGHTS, N, diff]) => { const D = __dbg; D.instant = true; D.nosave = true; D.auto = true; D.SET.diff = diff; D.SET.snd = 0; D.SET.mus = 0; const out = [];
+  const rows = await pg.evaluate(async ([FIGHTS, N, diff]) => { const D = __dbg; D.instant = true; D.nosave = true; D.auto = true; D.SET.diff = diff; D.SET.snd = 0; D.SET.mus = 0; const out = [];
     for (const [ch, lv, name, o, early] of FIGHTS) { let win = 0, turns = 0, hp = 0;
       for (let i = 0; i < N; i++) { D.slotNew(1); D.STATE.run++; D.STATE.scene = false; D.jumpToQuiet(ch); const C = D.C; C.lv = lv; for (const k in C.pets) C.pets[k].lv = lv - 1; if (early) { C.sk = C.sk.filter(k => !['jiayi'].includes(k)); } if (ch === 1) { D.learnSkill('friday', 1); D.gainPet('wan', 1); C.pets.wan.lv = lv; } D.fullHeal(); C.bag.candy = o.candy ? 1 : 0;
-        const oo = Object.assign({}, o, { mobs: o.mobs.map(m => [m[0], Math.max(1, lv + m[1])]) }); const B = D.battleCreate(oo); D.STATE.battle = B; let n = 0;
+        const oo = Object.assign({}, o, { mobs: o.mobs.map(m => [m[0], Math.max(1, lv + m[1])]) });
+        if (o.scare) { C.tick = 0; const r = await D.startBattle(Object.assign({ story: 1 }, oo)); const L = D.HS_LAST; if (r === 'win') { win++; hp += L.atm / 100; } turns += L.t; continue; }
+        const B = D.battleCreate(oo); D.STATE.battle = B; let n = 0;
         while (!B.result && n++ < 80) { B.phase = 'hero'; let a = D.botAct(B); if (a.t === 'candy') { B.candyUsed = true; C.bag.candy = 0; B.pet = D.petUnit('zhangya'); B.pet.hp = B.pet.mhp; a = D.botAct(B); } B.pick.hero = a; if (B.pet && B.pet.hp > 0) B.pick.pet = D.petPick(B); D.battleResolve(B); }
         D.STATE.battle = null; if (B.result === 'win') { win++; hp += B.hero.hp / B.hero.mhp; } turns += B.turn; }
-      out.push([name, 'Lv' + lv, Math.round(win / N * 100) + '%', (turns / N).toFixed(1) + '回合', win ? Math.round(hp / win * 100) + '%体力' : '-']); } return out; }, [FIGHTS, N, diff]);
+      out.push([name, 'Lv' + lv, Math.round(win / N * 100) + '%', o.scare ? Math.round(turns / N) + '秒' : (turns / N).toFixed(1) + '回合', win ? Math.round(hp / win * 100) + (o.scare ? '%氛围' : '%体力') : '-']); } return out; }, [FIGHTS, N, diff]);
   for (const r of rows) console.log(r.join('\t')); console.log('errors', errs); await b.close(); })();

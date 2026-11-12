@@ -106,7 +106,7 @@ async function S_laundry() { setClock(9, '午夜 0:30'); await T_(`^fx dark
 ^in 畸形脸 2
 ^in 独臂 4
 洗衣机被撞倒了。`);
-  const win = await fight({ mobs: [['xiong', L(1)], ['onearm', L(0)]], title: '第二病栋 · 洗衣间', intro: '他们没想到，门后面的这个更凶。', epic: { name: '畸形脸 · 熊青', sub: '八号病室 · 曾经的医生', seal: '八', intro: ['偏侧空间失调症。', '在他眼里，完整的人是“错的”。', '“只剩半边，才顺眼。”'], phase: '你、你到底是病人还是我是病人？！', low: '直播间里有人在刷：主播别死。你笑了一下。' } });
+  const win = await fight({ chase: HCHASE.xiong, mobs: [['xiong', L(1)], ['onearm', L(0)]], title: '第二病栋 · 洗衣间', intro: '他们没想到，门后面的这个更凶。', epic: { name: '畸形脸 · 熊青', sub: '八号病室 · 曾经的医生', seal: '八', intro: ['偏侧空间失调症。', '在他眼里，完整的人是“错的”。', '“只剩半边，才顺眼。”'], phase: '你、你到底是病人还是我是病人？！', low: '直播间里有人在刷：主播别死。你笑了一下。' } });
   await T_(`^fx dark
 ^at 畸形脸 3
 ^at 独臂 5
@@ -264,7 +264,7 @@ async function S_candy() { setClock(10, '凌晨 3 点'); await T_(`^mus door
 >完了完了完了／主播快跑啊／这不是演的吧……
 你靠着墙，从贴身的口袋里取出了那颗糖。
 我|这是我的最后一张底牌。`);
-  const win = await fight({ mobs: [['tallone', L(1)], ['tallone', L(1)], ['tallone', L(0), '独眼的瘦长怪物']], candy: 1, title: '第三病栋 · 四楼', intro: '🍬 撑不住的时候，吃掉那颗糖。', epic: { name: '瘦长怪物', sub: '从门后跑出来的东西 · 三只', seal: '门', intro: ['它们踩着人的肩膀长高。', '每一张脸，都曾经是一个活人。', '“看谁先开口说话。”'], phase: '（白布下面的脸，一起张开了嘴）', low: '舌尖是甜的。背后是冷的。有人从后面抱住了你。' } });
+  const win = await fight({ chase: HCHASE.tallone, mobs: [['tallone', L(1)], ['tallone', L(1)], ['tallone', L(0), '独眼的瘦长怪物']], candy: 1, title: '第三病栋 · 四楼', intro: '🍬 撑不住的时候，吃掉那颗糖。', epic: { name: '瘦长怪物', sub: '从门后跑出来的东西 · 三只', seal: '门', intro: ['它们踩着人的肩膀长高。', '每一张脸，都曾经是一个活人。', '“看谁先开口说话。”'], phase: '（白布下面的脸，一起张开了嘴）', low: '舌尖是甜的。背后是冷的。有人从后面抱住了你。' } });
   if (itemN('candy')) { takeItem('candy'); await candyScene(null); }
   await T_(`^fx dark
 ^at 张雅 11
@@ -321,7 +321,7 @@ async function S_boy() { await T_(`^fx red
 你的脑子里只有两个字：红衣。
 老院长|活人？……很多年没有活人进来过了。把那个孩子交给我。
 他不是失踪。四年前，他自己走进了这扇门。`);
-  const win = await fight({ mobs: [['dean', L(2)]], ally: 'zhangya', title: '门后 · 三号病房', intro: '你第一次直面红衣。但你不是一个人。', epic: { name: '红衣 · 老院长', sub: '四年前走进门里的人', seal: '红衣', intro: ['他写过那四封信。', '他也曾是想救人的人。', '后来他病了，想活下去，推开了这扇门。'], phase: '你把魔鬼吵醒了！', low: '床上的孩子睁开了眼睛。' } });
+  const win = await fight({ chase: HCHASE.dean, mobs: [['dean', L(2)]], ally: 'zhangya', title: '门后 · 三号病房', intro: '你第一次直面红衣。但你不是一个人。', epic: { name: '红衣 · 老院长', sub: '四年前走进门里的人', seal: '红衣', intro: ['他写过那四封信。', '他也曾是想救人的人。', '后来他病了，想活下去，推开了这扇门。'], phase: '你把魔鬼吵醒了！', low: '床上的孩子睁开了眼睛。' } });
   await T_(`${win ? '' : '你被摔在血红色的地面上。'}床上的男孩坐了起来。
 ^in 男孩 14
 ^in 张雅 8

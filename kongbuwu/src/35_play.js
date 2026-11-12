@@ -54,12 +54,12 @@ function sceneStar(s) { return s === 'mh' && C.f.jiayi ? 1 : s === 'zombie' && C
 function goodRate() { const t = C.hh.good + C.hh.bad; return t ? Math.round(C.hh.good / t * 100) : 0; }
 /* 关注越多，每批进来的人越多（直播和短视频的作用） */
 function crowd() { return 2 + Math.floor(Math.log10(C.fans + 10)) + (C.hh.up.ac ? 2 : 0); }
-async function receive(sid) { if (STATE.scene || STATE.battle || STATE.busy) return; if (isNight()) { toast('乐园关门了，明天再营业'); return; } if (C.loc !== 'hh_door') { toast('去恐怖屋门口接待'); return; } const sc = SCENES[sid]; if (!sc) return;
+async function receive(sid) { if (STATE.scene || STATE.battle || STATE.house || STATE.busy) return; if (isNight()) { toast('乐园关门了，明天再营业'); return; } if (C.loc !== 'hh_door') { toast('去恐怖屋门口接待'); return; } const sc = SCENES[sid]; if (!sc) return;
   const n = rint(1, C.lv >= 3 ? 3 : 2), lv = Math.max(1, C.lv - 1 + Math.floor(sceneStar(sid))); const mobs = Array.from({ length: n }, () => [pick(sc.pool), lv]); const ppl = n * crowd() + rint(0, 2); const picky = pickyFor(mobs);
   logLine(ppl + ' 个游客买了票，进了「' + sc.n + '」。', 'sys'); const res = await startBattle({ scare: 1, scene: sid, mobs, ppl, picky, title: sc.n + ' · 尖叫指数 ' + starTxt(sceneStar(sid)) }); passTime(2); C.hh.groups++; C.hh.batches++;
   C.hh.today += ppl; C.hh.month += ppl; eastStart(); if (FN().east && FN().east.got < 3) FN().east.ppl += ppl;
   { const rv = addReview(sid, res === 'win', picky && FN().pickyWin === C.day); logLine('评论：“' + rv + '”', 'say'); if (!STATE.dayRun) toast('“' + rv + '”'); }
-  if (res === 'win') { C.hh.good++; C.hh.total += ppl; const fan = Math.round(ppl * (C.hh.up.sign ? 1 : .5) * (1 + sceneStar(sid) * .3)); C.fans += fan; logLine('有人发了视频：关注 +' + fan, 'gain'); const pk = C.pet.d; if (pk) petAff(pk, 4); for (const k in C.pets) if (PETS[k].seal === 'ghost' && k !== pk) petAff(k, 1); dailyProg('groups', 1); }
+  if (res === 'win') { C.hh.good++; C.hh.total += ppl; const fan = Math.round(ppl * (C.hh.up.sign ? 1 : .5) * (1 + sceneStar(sid) * .3)); C.fans += fan; logLine('有人发了视频：关注 +' + fan, 'gain'); const onDuty = Object.values(((C.hh.lay || {})[sid] || {}).staff || {}).filter(k => C.pets[k]); for (const k of onDuty) petAff(k, 3); for (const k in C.pets) if (PETS[k].seal === 'ghost' && !onDuty.includes(k)) petAff(k, 1); dailyProg('groups', 1); }
   else { C.hh.bad++; logLine('“一点都不吓人。”他们在大众点评上给了一星。', 'warn'); }
   refresh(); save(); storyArrive(); }
 /* —— 翻新恐怖屋 —— */
@@ -75,7 +75,7 @@ async function keepPet(k) { C.keep = C.keep || {}; if (!C.pets[k]) return; if (C
 let battleDone = null;
 const TUT = { n: '<div class="c1">怎么对峙</div><div class="c3" style="text-align:left">对方卡片上写着它<b>这回合要做什么</b>。<br>出现 <b style="color:#f66">⚠</b> 是大招：下回合才落下——可以「防御」减半，也可以把它打懵、打中弱点来打断。<br>先点对方卡片选目标，再点手段；陈歌选完轮到员工选，先后可以换。<br>吃喝不占回合，每回合一次。撑不住就开「🤖 自动」。</div><div class="c3">点任意处开始</div>',
   d: '<div class="c1">怎么接待游客</div><div class="c3" style="text-align:left">把每个游客的<b>胆量</b>吓到零，他们就尖叫着跑出去——门票、尖叫和关注都在这里来。<br>游客也会“拆穿”你：你的<b>氛围</b>被拆到零，就是一星差评。<br>每个场景擅长的手段不一样，每类游客也有自己的毛病（卡片下面的小字）。</div><div class="c3">点任意处开始</div>' };
-async function startBattle(o) { if (STATE.battle) return 'lose'; const B = battleCreate(o); STATE.battle = B; STATE.busy = false; musicMode(B.scare ? 'scare' : (o.epic ? 'door' : 'fight')); applyMode(); if (o.epic) await fxBossCard(o.epic); else await stageTransition(B.scare ? '游客进场' : '对峙');
+async function startBattle(o) { if (STATE.battle || STATE.house) return 'lose'; if (o.scare && !o.turn) return houseRun(o); const B = battleCreate(o); STATE.battle = B; STATE.busy = false; musicMode(B.scare ? 'scare' : (o.epic ? 'door' : 'fight')); applyMode(); if (o.epic) await fxBossCard(o.epic); else await stageTransition(B.scare ? '游客进场' : '对峙');
   const tk = B.scare ? 'tutd' : 'tut'; if (!C.seen[tk]) { C.seen[tk] = 1; await showCard(TUT[B.scare ? 'd' : 'n'], 900); }
   if (o.intro) blog(B, o.intro); battleOpenSay(B); renderBattle(); const p = new Promise(r => { battleDone = r; }); if (B.auto) botLoop(B); return p; }
 function botLoop(B) { setTimeout(() => { if (STATE.battle !== B || B.result || B.phase !== 'hero' || !B.auto) return; battleAct(botAct(B)); }, (window.__dbg && __dbg.instant) ? 0 : 420); }
@@ -103,7 +103,7 @@ async function battleFinish() { const B = STATE.battle; if (!B) return; B.phase 
   B.rw = rw; sfx(res === 'win' ? 'big' : 'bad'); await fxStamp(res === 'win' ? (B.scare ? '吓退' : '撑住了') : res === 'flee' ? '脱身' : (B.scare ? '不吓人' : '倒下')); renderBattle();
   if (B.auto || (window.__dbg && __dbg.instant)) battleEnd(); }
 function battleEnd() { const B = STATE.battle; if (!B || B.phase !== 'end') return; STATE.battle = null; applyMode(); musicMode(moodNow()); refresh(); save(); const r = battleDone; battleDone = null; if (r) r(B.result); }
-function moodNow() { if (STATE.scene && STATE.musOv && !STATE.battle) return STATE.musOv; if (STATE.battle) return STATE.battle.scare ? 'scare' : 'fight'; if (PLACES[C.loc].art === 'inside') return 'door'; return isNight() ? (PLACES[C.loc].area === 'park' ? 'house' : 'night') : 'day'; }
+function moodNow() { if (STATE.house) return STATE.house.mode === 'house' ? 'scare' : 'door'; if (STATE.scene && STATE.musOv && !STATE.battle) return STATE.musOv; if (STATE.battle) return STATE.battle.scare ? 'scare' : 'fight'; if (PLACES[C.loc].art === 'inside') return 'door'; return isNight() ? (PLACES[C.loc].area === 'park' ? 'house' : 'night') : 'day'; }
 
 /* —— 买卖 —— */
 const SHOP = ['bread', 'drink', 'bandage', 'smoke', 'coffee', 'saltbag', 'g_raincoat', 'g_torch', 'g_shoes'];

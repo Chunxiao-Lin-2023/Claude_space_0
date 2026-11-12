@@ -24,7 +24,7 @@ function profUse(k) { const b = profLevel(k); C.prof[k] = (C.prof[k] || 0) + 1; 
 function learnTalent(k) { if (C.talents.includes(k)) return; C.talents.push(k); logLine('获得天赋：' + TALENTS[k].n, 'gain'); }
 function gainTitle(k) { if (C.titles.includes(k)) return; C.titles.push(k); if (!C.title) C.title = k; logLine('获得称号：' + TITLES[k].n, 'gain'); toast('称号 · ' + TITLES[k].n); fixHp(); }
 function gainPet(k, quiet) { if (C.pets[k]) return; C.pets[k] = { aff: 0, lv: Math.max(1, C.lv - 1), exp: 0 }; const P = PETS[k]; for (const m of (P.m === 'b' ? ['n', 'd'] : [P.m])) if (!C.pet[m]) C.pet[m] = k; if (!quiet) { logLine(P.n + ' 成为恐怖屋的员工', 'gain'); toast('新员工 · ' + P.n); sfx('big'); } }
-function setPet(k) { const P = PETS[k]; if (!P || !C.pets[k]) return; for (const m of (P.m === 'b' ? ['n', 'd'] : [P.m])) C.pet[m] = C.pet[m] === k ? '' : k; sfx('tap'); save(); renderSide(); }
+function setPet(k) { const P = PETS[k]; if (!P || !C.pets[k]) return; if (P.m === 'd') { toast('白天的员工在接待游客的布置画面里安排站岗'); return; } C.pet.n = C.pet.n === k ? '' : k; sfx('tap'); save(); renderSide(); }
 function petAff(k, n) { const p = C.pets[k]; if (!p) return; const b = p.aff; p.aff = clamp(p.aff + n, 0, 100); for (const m of PETS[k].moves) if (m.need && b < m.need && p.aff >= m.need) { logLine(PETS[k].n + ' 肯多做一件事了：' + m.n, 'gain'); toast(PETS[k].n + ' · ' + m.n); } }
 function petMoves(k) { const p = C.pets[k] || { aff: 100 }; return PETS[k].moves.filter(m => !m.need || p.aff >= m.need); }
 function petCap() { return Math.min(HERO.cap + 2, C.lv + 2); }

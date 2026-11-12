@@ -10,7 +10,11 @@ function choose(list, text) { return dlgShow({ choices: list, text: text == null
 async function T_(s) { const my = STATE.run; for (let ln of s.split('\n')) { ln = ln.trim(); if (!ln) continue; if (my !== STATE.run) return new Promise(() => {}); const sp = /^(#m|#r|[@#!~>%^])\|?/.exec(ln); const i = sp ? -1 : ln.indexOf('|'), who = sp ? sp[1] : i < 0 ? '' : ln.slice(0, i), t = sp ? ln.slice(sp[0].length) : i < 0 ? ln : ln.slice(i + 1);
     if (who === '^') { if (/^wait /.test(t)) await sleep(+t.slice(5)); else stageCmd(t); } else if (who === '>') danmu(t.split('／')); else if (who === '!') { STG.flash = 1; STG.shake = .5; await scare(t); } else if (who === '#') await cine(t.split('／')); else if (who === '#m') await cine(t.split('／'), 'mem'); else if (who === '#r') await cine(t.split('／'), 'red'); else if (who === '~') sfx(t); else if (who === '%') shake();
     else if (who === '@') await ph(t); else if (who === '我') await me(t); else if (who === '') await nar(t); else await say(who, t); } }
-async function fight(o) { o = Object.assign({ story: 1 }, o); { const s = charStats(); C.hp = Math.max(C.hp, Math.round(s.mhp * .6)); C.mp = Math.max(C.mp, Math.round(s.mmp * .6)); } for (;;) { const res = await startBattle(o); if (res === 'win') { if (o.scare) { C.hh.good++; C.hh.batches++; } return true; } chStat('lose'); const s = charStats(); C.hp = Math.max(C.hp, Math.round(s.mhp * .7)); C.mp = Math.max(C.mp, Math.round(s.mmp * .7));
+/* 夜里大战前：先被追、躲藏，拿到东西或者等员工准备好再打（RULES 23） */
+async function chasePhase(o) { const c = o.chase; o.chase = null; const s = charStats(); C.hp = Math.max(C.hp, Math.round(s.mhp * .6)); const r = await chaseRun(c); const n = o.mobs.length; o.pre = (o.pre || []).slice();
+  if (r === 'ok') { for (let i = 0; i < n; i++) o.pre.push([i, 'vuln', 2]); o.pre.push([0, 'stun', 1]); o.intro = (c.ok || c.ready || '你回过头。') + '（先手：对方破绽 + 发懵）' + (o.intro ? ' ' + o.intro : ''); logLine('甩开了：' + (c.ok || c.ready || ''), 'gain'); }
+  else { C.hp = Math.max(1, C.hp - Math.round(s.mhp * .25)); o.pre.push([0, 'rage', 2]); o.intro = (c.caught || '你被追上了。') + '（体力 -25%，对方暴怒）' + (o.intro ? ' ' + o.intro : ''); logLine('被追上了：' + (c.caught || ''), 'warn'); chStat('fail'); } }
+async function fight(o) { o = Object.assign({ story: 1 }, o); if (o.chase) await chasePhase(o); { const s = charStats(); C.hp = Math.max(C.hp, Math.round(s.mhp * .6)); C.mp = Math.max(C.mp, Math.round(s.mmp * .6)); } for (;;) { const res = await startBattle(o); if (res === 'win') { if (o.scare) { C.hh.good++; C.hh.batches++; } return true; } chStat('lose'); const s = charStats(); C.hp = Math.max(C.hp, Math.round(s.mhp * .7)); C.mp = Math.max(C.mp, Math.round(s.mmp * .7));
     const c = await choose([['再来一次', '体力和精神回到七成'], ['调低难度再来', '现在：' + DIFF[SET.diff].n], ['咬牙撑过去', '跳过这一场，剧情照常往下走']], o.scare ? '游客打着哈欠往外走。' : '眼前黑了一下。你扶着墙，又站了起来。'); if (c === 1) { SET.diff = Math.max(0, SET.diff - 1); saveSet(); } if (c === 2) return false; if (o.candy && !itemN('candy')) addItem('candy', 1, true); } }
 function curQ() { return C ? MAIN.find(q => q.id === C.q) || null : null; }
 function qIdx(id) { const i = MAIN.findIndex(q => q.id === id); return i < 0 ? 999 : i; }
@@ -447,7 +451,7 @@ async function S_hut() { setClock(10, '凌晨 3 点'); await T_(`^mus door
 你转身。王琦提着一把斧头，堵在门口。
 王琦|毕竟……是我亲手把她砌进墙里的。我不想这样的。你知道吗？我也不想这样的。`);
   if (F().guess === 1) await me('（猜对了。但我宁愿是猜错了。）');
-  const win = await fight({ mobs: [['wangqi', L(1)]], title: '后山木屋', candy: 0, epic: { name: '王琦', sub: '午夜逃杀 · 试炼任务', seal: '凶', intro: ['五年前，富安公寓一家四口。', '五年后，墙里又多了一个人。', '“我每天都在寻找那个被自己杀死的人。”'], phase: '她为什么总能找到我？！', low: '屏幕里那个小女孩又指了一次。她在替你看着背后。' } });
+  const win = await fight({ chase: HCHASE.wangqi, mobs: [['wangqi', L(1)]], title: '后山木屋', candy: 0, epic: { name: '王琦', sub: '午夜逃杀 · 试炼任务', seal: '凶', intro: ['五年前，富安公寓一家四口。', '五年后，墙里又多了一个人。', '“我每天都在寻找那个被自己杀死的人。”'], phase: '她为什么总能找到我？！', low: '屏幕里那个小女孩又指了一次。她在替你看着背后。' } });
   await T_((win ? `工具锤砸下去，手腕上一热。你又补了一脚，夺门而出。` : `你撞开他，夺门而出。斧头砍在门框上。`) + `
 一刻没停，一直跑到看见水泥路。警灯。
 我|是我报的警！我抓住了五年前灭门案的凶手！
@@ -548,7 +552,7 @@ async function S_zhangpeng() { await T_(`^call 李队
 ~heavy
 我|不好意思，砸歪了。我本来是准备砸碎你肩胛骨的。`);
   if (F().notice === 0) await T_(`走廊尽头，四个布偶并排坐在楼道口——那张写着“已经归案”的寻人启事，还贴在它们头顶。张鹏回头看了一眼，脚步乱了。`);
-  const win = await fight({ pre: F().notice === 0 ? [[0, 'slow', 2], [0, 'weak', 2]] : [], mobs: [['zhangpeng', L(1)]], title: '午夜逃杀 · 凌晨', intro: '你在自己的地盘上。', epic: { name: '张鹏', sub: '在逃嫌犯 · 手背纹着牡丹', seal: '逃', intro: ['赌徒。欠了几十万高利贷。入室盗窃、抢劫。', '“报仇的事以后再说——”', '他不知道，这栋楼里今晚不止两个人。'], phase: '求求你放我走吧！', low: '“我是一个没有感情的杀手。”——你对着面具里的自己说。' } });
+  const win = await fight({ chase: HCHASE.zhangpeng, pre: F().notice === 0 ? [[0, 'slow', 2], [0, 'weak', 2]] : [], mobs: [['zhangpeng', L(1)]], title: '午夜逃杀 · 凌晨', intro: '你在自己的地盘上。', epic: { name: '张鹏', sub: '在逃嫌犯 · 手背纹着牡丹', seal: '逃', intro: ['赌徒。欠了几十万高利贷。入室盗窃、抢劫。', '“报仇的事以后再说——”', '他不知道，这栋楼里今晚不止两个人。'], phase: '求求你放我走吧！', low: '“我是一个没有感情的杀手。”——你对着面具里的自己说。' } });
   await T_(`${win ? '他扔了刀，像没头苍蝇一样乱撞。' : '他撞开你，像没头苍蝇一样乱撞。'}鬼屋里地形复杂，又没开灯，跑出几米他就找不到来时的路了。
 那种切东西的声音又响了。
 !mirror
