@@ -1,6 +1,6 @@
 # 房产大亨 Real Estate Mogul
 
-> 现在收在 **百戏茶馆** 里（`baixi/src/games/housemogul.js` 注册卡片，类别「派对社交」，排在地产大亨后面），游戏厅里没有单独的卡片。茶馆开局时用 iframe 嵌入 `housemogul/?embed=1`：嵌入时隐藏自己的「返回」按钮，茶馆顶栏的暂停通过 postMessage 传进来。直接打开 `housemogul/` 也能玩，返回按钮通往百戏茶馆。
+> 现在收在 **百戏茶馆** 里（`baixi/src/games/housemogul.js` 注册卡片，类别「联机社交」，排在地产大亨后面），游戏厅里没有单独的卡片。茶馆开局时用 iframe 嵌入 `housemogul/?embed=1`：嵌入时隐藏自己的「返回」按钮，茶馆顶栏的暂停通过 postMessage 传进来。直接打开 `housemogul/` 也能玩，返回按钮通往百戏茶馆。
 
 2.5D 等距小城里的**实时**炒房游戏，灵感来自老 Flash 小游戏 Mansion Impossible：房价连续涨跌，房源随时挂牌、倒计时到了就撤，低价买进、高价卖出，攒够现金**全款买下山顶豪宅**就赢。一局限时 15 分钟。
 
