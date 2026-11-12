@@ -265,7 +265,7 @@ async function S_join() {
   await nar('阁主把你领进了内院。内院中央攀着一株枯了一半的神藤，藤上挂着几个干瘪的葫芦。院子四周刻着一圈阵纹，阵纹里站起了几具铜傀儡。');
   await say('gezhu', '入阁的最后一关：破阵。');
   await nar('院子四周的阵纹亮了起来，几具铜傀儡“咔咔”地站直了身子。阵纹一明一暗，像是连在一起的。');
-  const lt = await miniGame('lights', { title: '破阵', desc: '阵纹一道连着一道。按下一道，它旁边的几道也会跟着变。', presses: 4 });
+  const lt = await miniGame('lights', { title: '破阵', desc: '阵纹一道一道亮起来。趁它亮着按下去，一道一道按灭。', presses: 4 });
   if (lt.ok) await nar('你按下最后一道阵纹，满院的光“噗”地一下全灭了。铜傀儡僵在半路，哗啦啦散了一地。');
   else { await nar('阵纹越按越乱，傀儡已经冲到了跟前——那就打吧！'); if (!await fightRetry({ mobs: [['puppet', slv(12)], ['puppet', slv(12)]], title: '补天阁 · 护阁傀儡' })) return false; }
   await nar('阵纹熄灭了。神藤边上，一个一直没动过的老人慢慢转过头来，看了你一眼。');

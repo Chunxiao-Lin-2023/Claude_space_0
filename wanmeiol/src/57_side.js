@@ -452,7 +452,7 @@ async function dieBackSea() {
   for (let k = 0; k < 3 && V.length; k++) { const c = await choose(V.map(v => `（回应：${v[1]}）`), '黑暗里，好几个声音同时在喊你——先回应哪一个？'); const [who, t, line] = V.splice(c, 1)[0];
     await say(who, t); await nar(line); heard.push(who); }
   await nar('每回应一个声音，你身上就有一块地方，从黑里亮了回来。可你的元神上，还爬满了黑色的纹。');
-  const lt = await miniGame('lights', { title: '元神', desc: '把元神上的黑纹一道一道按灭。按错了，它会长回来。', presses: 6 });
+  const lt = await miniGame('lights', { title: '元神', desc: '元神上的黑纹一道一道冒出来，冒一道按灭一道。慢了，它会缩回去换个地方再长。', presses: 6 });
   await nar(lt.ok ? '最后一道黑纹灭了。你的元神干干净净，像刚从石村的河里捞出来。' : '还剩几道黑纹没按灭。你不管了——记得你的人太多，黑吃不完。');
   F().dieBackSea = heard.length; }
 

@@ -24,12 +24,16 @@ const MINI = {
       return `<div class="mstack">${Array.from({ length: M.n }, (_, i) => `<span class="${i < M.i ? 'ok' : ''}">${i < M.i ? '⚡' : '·'}</span>`).join('')}<small> 接住 ${M.hits}/${M.need}</small></div>
         <div class="mring"><div class="hand">☝️</div><div class="ring" style="animation-duration:${T}ms;animation-delay:-${Math.max(0, age)}ms"></div><div class="bolt" style="animation-duration:${T}ms;animation-delay:-${Math.max(0, age)}ms"></div></div>
         <div class="mmsg ${M.lastOk ? 'ok' : ''}">${M.last || '屏住呼吸……'}</div><button class="mbtn" onclick="miniTap()">⚡ 引雷！</button>`; } },
-  lights: { title: '破阵', hint: '点一个阵纹，它和上下左右的阵纹都会亮灭翻转。<b>把所有阵纹都按灭</b>，阵就破了。',
-    init(o) { const n = 3, c = Array(n * n).fill(0), pressed = shuffle([...Array(n * n).keys()]).slice(0, o.presses || 4); for (const i of pressed) this.flip(c, n, i); return { n, c, start: c.slice(), moves: 0, par: pressed.length }; },
-    flip(c, n, i) { const x = i % n, y = Math.floor(i / n); for (const [dx, dy] of [[0, 0], [1, 0], [-1, 0], [0, 1], [0, -1]]) { const X = x + dx, Y = y + dy; if (X >= 0 && Y >= 0 && X < n && Y < n) c[Y * n + X] ^= 1; } },
-    tap(M, a) { if (a === 'reset') { M.c = M.start.slice(); M.moves = 0; return; } this.flip(M.c, M.n, a); M.moves++; sfx('click'); if (M.c.every(v => !v)) return { end: true, score: M.moves <= M.par ? 3 : M.moves <= M.par * 2 ? 2 : 1 }; },
-    html(M) { return `<div class="mgrid" style="grid-template-columns:repeat(${M.n},1fr)">${M.c.map((v, i) => `<button class="cell ${v ? 'on' : ''}" onclick="miniTap(${i})">${v ? '符' : ''}</button>`).join('')}</div>
-        <div class="mmsg">还亮着 ${M.c.filter(Boolean).length} 道 · 用了 ${M.moves} 步（${M.par} 步就够）</div><button class="mre" onclick="miniTap('reset')">↺ 重来</button>`; } },
+  /* 追光 (was lights-out, where a press also flipped its neighbours — too hard): one rune lights up at a time; tap it before it fades. Only that one changes. */
+  lights: { title: '破阵', hint: '阵纹一道一道亮起来，<b>趁它还亮着点它</b>，就按灭了。按灭够数，阵就破了；漏掉几道也没关系。',
+    init(o) { const n = 3; return { n, need: (o.presses || 4) + 3, hits: 0, miss: 0, lim: o.miss || 3, lit: rint(0, n * n - 1), T: o.T || 2200, bad: -1 }; },
+    next(M) { let k; do k = rint(0, M.n * M.n - 1); while (k === M.lit); M.lit = k; M.t0 = now(); M.bad = -1; M._dirty = 1; },
+    over(M) { if (M.hits >= M.need) return { end: true, score: M.miss === 0 ? 3 : M.miss <= 1 ? 2 : 1 }; if (M.miss > M.lim) return { end: false }; },
+    tap(M, a) { if (typeof a !== 'number') return; if (a === M.lit) { M.hits++; M.last = '灭了'; M.lastOk = true; sfx('hit'); this.next(M); } else { M.miss++; M.bad = a; M.last = '不是那一道'; M.lastOk = false; sfx('miss'); M._dirty = 1; } return this.over(M); },
+    check(M) { const T = M.T * Math.max(0.7, 1 - M.hits * 0.03); if (now() - M.t0 > T) { M.miss++; M.last = '那一道熄回去了'; M.lastOk = false; sfx('miss'); this.next(M); return this.over(M); } },
+    tick(M, D) { const e = D.querySelector('.cell.on'); if (e) e.style.opacity = String(Math.max(0.45, 1 - (now() - M.t0) / (M.T * 1.4))); },
+    html(M) { return `<div class="mgrid" style="grid-template-columns:repeat(${M.n},1fr)">${Array.from({ length: M.n * M.n }, (_, i) => `<button class="cell ${i === M.lit ? 'on' : ''} ${i === M.bad ? 'bad' : ''}" onclick="miniTap(${i})">${i === M.lit ? '符' : ''}</button>`).join('')}</div>
+        <div class="mmsg ${M.lastOk ? 'ok' : ''}">${M.last || ''}　按灭 ${M.hits}/${M.need} · 漏掉 <span class="${M.miss >= M.lim ? 'bad' : ''}">${M.miss}/${M.lim}</span></div>`; } },
   sneak: { title: '潜行', hint: '老虎<b>睡熟（😴）</b>的时候点“迈一步”；它<b>眼皮在动（👀）</b>时千万别动。走 6 步就到了。',
     init(o) { const seg = []; let t = 0; for (let i = 0; i < 40; i++) { const s = i % 2 === 0 ? rint(1100, 1900) : rint(650, 1000); seg.push([t, i % 2 === 0 ? 'sleep' : 'stir']); t += s; } return { seg, need: o.steps || 6, steps: 0, alert: 0 }; },
     st(M) { const t = now() - M.t0; let s = 'sleep'; for (const [a, k] of M.seg) { if (a <= t) s = k; else break; } return s; },

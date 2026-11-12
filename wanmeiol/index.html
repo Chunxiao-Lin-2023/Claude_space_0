@@ -2441,7 +2441,7 @@ async function dungeonEvent(k, D) {
   if (k === 'thunder') { const c = await dlgChoose([{ t: '伸手去抓那道雷（雷道熟练度 +20，会挨一下狠的）' }, { t: '绕过去' }], '紫色的雷光就在一步之外，嗡嗡作响。');
     if (c === 0) { const s = charStats(); C.hp = Math.max(1, C.hp - s.hpMax * 0.3); if (C.sk.includes('lei')) { for (let i = 0; i < 20; i++) profUse('lei'); logLine('你被劈得浑身焦黑，可雷光里的纹路，你看得更清了。雷道熟练度 +20。', 'enc'); } else { logLine('你被劈得浑身焦黑，什么也没悟出来。', 'enc'); addItem('lingyao'); } refresh(); } }
   if (k === 'jars') { const c = await dlgChoose([{ t: '撬开陶罐看看' }, { t: '别碰死人的东西' }], '坑边的陶罐封得严严实实。'); if (c === 0) { if (chance(0.65)) { logLine('罐子里是封了不知多少年的药，药香还没散。', 'enc'); addItem('baoyao'); addItem('lingyao', 2); } else { logLine('罐子里“嗡”地飞出一群墓穴蝠！', 'enc'); await startBattle({ mobs: [['tombbat', D.lv], ['tombbat', D.lv]], title: '墓穴蝠', flee: false }); } } }
-  if (k === 'runes') { const c = await dlgChoose([{ t: '照着骨文的路子，一点点拆开符文网' }, { t: '硬闯过去' }], '肋骨之间的符文网一明一暗，像在呼吸。'); if (c === 0 && C.gf.includes('guwen') && (await miniGame('lights', { title: '拆符文网', desc: '符文网一道连着一道，按灭一道，旁边的也会跟着变。', presses: 5 })).ok) { logLine('族长教的骨文派上了用场，符文网在你手里一根根松开。网后面躺着一株灵药。', 'enc'); addItem('lingyao', 2); addItem('baoyao'); } else { logLine('符文网一亮，打得你浑身发麻。', 'enc'); const s = charStats(); C.hp = Math.max(1, C.hp - s.hpMax * 0.25); refresh(); } }
+  if (k === 'runes') { const c = await dlgChoose([{ t: '照着骨文的路子，一点点拆开符文网' }, { t: '硬闯过去' }], '肋骨之间的符文网一明一暗，像在呼吸。'); if (c === 0 && C.gf.includes('guwen') && (await miniGame('lights', { title: '拆符文网', desc: '符文网上的光一道一道亮起来，趁亮着把它按灭。', presses: 5 })).ok) { logLine('族长教的骨文派上了用场，符文网在你手里一根根松开。网后面躺着一株灵药。', 'enc'); addItem('lingyao', 2); addItem('baoyao'); } else { logLine('符文网一亮，打得你浑身发麻。', 'enc'); const s = charStats(); C.hp = Math.max(1, C.hp - s.hpMax * 0.25); refresh(); } }
 }
 
 /* ---------- roaming 凶兽首领 (one at a time, in a wild place you can already reach) ---------- */
@@ -2726,7 +2726,7 @@ async function S_join() {
   await nar('阁主把你领进了内院。内院中央攀着一株枯了一半的神藤，藤上挂着几个干瘪的葫芦。院子四周刻着一圈阵纹，阵纹里站起了几具铜傀儡。');
   await say('gezhu', '入阁的最后一关：破阵。');
   await nar('院子四周的阵纹亮了起来，几具铜傀儡“咔咔”地站直了身子。阵纹一明一暗，像是连在一起的。');
-  const lt = await miniGame('lights', { title: '破阵', desc: '阵纹一道连着一道。按下一道，它旁边的几道也会跟着变。', presses: 4 });
+  const lt = await miniGame('lights', { title: '破阵', desc: '阵纹一道一道亮起来。趁它亮着按下去，一道一道按灭。', presses: 4 });
   if (lt.ok) await nar('你按下最后一道阵纹，满院的光“噗”地一下全灭了。铜傀儡僵在半路，哗啦啦散了一地。');
   else { await nar('阵纹越按越乱，傀儡已经冲到了跟前——那就打吧！'); if (!await fightRetry({ mobs: [['puppet', slv(12)], ['puppet', slv(12)]], title: '补天阁 · 护阁傀儡' })) return false; }
   await nar('阵纹熄灭了。神藤边上，一个一直没动过的老人慢慢转过头来，看了你一眼。');
@@ -5055,12 +5055,16 @@ const MINI = {
       return `<div class="mstack">${Array.from({ length: M.n }, (_, i) => `<span class="${i < M.i ? 'ok' : ''}">${i < M.i ? '⚡' : '·'}</span>`).join('')}<small> 接住 ${M.hits}/${M.need}</small></div>
         <div class="mring"><div class="hand">☝️</div><div class="ring" style="animation-duration:${T}ms;animation-delay:-${Math.max(0, age)}ms"></div><div class="bolt" style="animation-duration:${T}ms;animation-delay:-${Math.max(0, age)}ms"></div></div>
         <div class="mmsg ${M.lastOk ? 'ok' : ''}">${M.last || '屏住呼吸……'}</div><button class="mbtn" onclick="miniTap()">⚡ 引雷！</button>`; } },
-  lights: { title: '破阵', hint: '点一个阵纹，它和上下左右的阵纹都会亮灭翻转。<b>把所有阵纹都按灭</b>，阵就破了。',
-    init(o) { const n = 3, c = Array(n * n).fill(0), pressed = shuffle([...Array(n * n).keys()]).slice(0, o.presses || 4); for (const i of pressed) this.flip(c, n, i); return { n, c, start: c.slice(), moves: 0, par: pressed.length }; },
-    flip(c, n, i) { const x = i % n, y = Math.floor(i / n); for (const [dx, dy] of [[0, 0], [1, 0], [-1, 0], [0, 1], [0, -1]]) { const X = x + dx, Y = y + dy; if (X >= 0 && Y >= 0 && X < n && Y < n) c[Y * n + X] ^= 1; } },
-    tap(M, a) { if (a === 'reset') { M.c = M.start.slice(); M.moves = 0; return; } this.flip(M.c, M.n, a); M.moves++; sfx('click'); if (M.c.every(v => !v)) return { end: true, score: M.moves <= M.par ? 3 : M.moves <= M.par * 2 ? 2 : 1 }; },
-    html(M) { return `<div class="mgrid" style="grid-template-columns:repeat(${M.n},1fr)">${M.c.map((v, i) => `<button class="cell ${v ? 'on' : ''}" onclick="miniTap(${i})">${v ? '符' : ''}</button>`).join('')}</div>
-        <div class="mmsg">还亮着 ${M.c.filter(Boolean).length} 道 · 用了 ${M.moves} 步（${M.par} 步就够）</div><button class="mre" onclick="miniTap('reset')">↺ 重来</button>`; } },
+  /* 追光 (was lights-out, where a press also flipped its neighbours — too hard): one rune lights up at a time; tap it before it fades. Only that one changes. */
+  lights: { title: '破阵', hint: '阵纹一道一道亮起来，<b>趁它还亮着点它</b>，就按灭了。按灭够数，阵就破了；漏掉几道也没关系。',
+    init(o) { const n = 3; return { n, need: (o.presses || 4) + 3, hits: 0, miss: 0, lim: o.miss || 3, lit: rint(0, n * n - 1), T: o.T || 2200, bad: -1 }; },
+    next(M) { let k; do k = rint(0, M.n * M.n - 1); while (k === M.lit); M.lit = k; M.t0 = now(); M.bad = -1; M._dirty = 1; },
+    over(M) { if (M.hits >= M.need) return { end: true, score: M.miss === 0 ? 3 : M.miss <= 1 ? 2 : 1 }; if (M.miss > M.lim) return { end: false }; },
+    tap(M, a) { if (typeof a !== 'number') return; if (a === M.lit) { M.hits++; M.last = '灭了'; M.lastOk = true; sfx('hit'); this.next(M); } else { M.miss++; M.bad = a; M.last = '不是那一道'; M.lastOk = false; sfx('miss'); M._dirty = 1; } return this.over(M); },
+    check(M) { const T = M.T * Math.max(0.7, 1 - M.hits * 0.03); if (now() - M.t0 > T) { M.miss++; M.last = '那一道熄回去了'; M.lastOk = false; sfx('miss'); this.next(M); return this.over(M); } },
+    tick(M, D) { const e = D.querySelector('.cell.on'); if (e) e.style.opacity = String(Math.max(0.45, 1 - (now() - M.t0) / (M.T * 1.4))); },
+    html(M) { return `<div class="mgrid" style="grid-template-columns:repeat(${M.n},1fr)">${Array.from({ length: M.n * M.n }, (_, i) => `<button class="cell ${i === M.lit ? 'on' : ''} ${i === M.bad ? 'bad' : ''}" onclick="miniTap(${i})">${i === M.lit ? '符' : ''}</button>`).join('')}</div>
+        <div class="mmsg ${M.lastOk ? 'ok' : ''}">${M.last || ''}　按灭 ${M.hits}/${M.need} · 漏掉 <span class="${M.miss >= M.lim ? 'bad' : ''}">${M.miss}/${M.lim}</span></div>`; } },
   sneak: { title: '潜行', hint: '老虎<b>睡熟（😴）</b>的时候点“迈一步”；它<b>眼皮在动（👀）</b>时千万别动。走 6 步就到了。',
     init(o) { const seg = []; let t = 0; for (let i = 0; i < 40; i++) { const s = i % 2 === 0 ? rint(1100, 1900) : rint(650, 1000); seg.push([t, i % 2 === 0 ? 'sleep' : 'stir']); t += s; } return { seg, need: o.steps || 6, steps: 0, alert: 0 }; },
     st(M) { const t = now() - M.t0; let s = 'sleep'; for (const [a, k] of M.seg) { if (a <= t) s = k; else break; } return s; },
@@ -7822,7 +7826,7 @@ async function dieBackSea() {
   for (let k = 0; k < 3 && V.length; k++) { const c = await choose(V.map(v => `（回应：${v[1]}）`), '黑暗里，好几个声音同时在喊你——先回应哪一个？'); const [who, t, line] = V.splice(c, 1)[0];
     await say(who, t); await nar(line); heard.push(who); }
   await nar('每回应一个声音，你身上就有一块地方，从黑里亮了回来。可你的元神上，还爬满了黑色的纹。');
-  const lt = await miniGame('lights', { title: '元神', desc: '把元神上的黑纹一道一道按灭。按错了，它会长回来。', presses: 6 });
+  const lt = await miniGame('lights', { title: '元神', desc: '元神上的黑纹一道一道冒出来，冒一道按灭一道。慢了，它会缩回去换个地方再长。', presses: 6 });
   await nar(lt.ok ? '最后一道黑纹灭了。你的元神干干净净，像刚从石村的河里捞出来。' : '还剩几道黑纹没按灭。你不管了——记得你的人太多，黑吃不完。');
   F().dieBackSea = heard.length; }
 
