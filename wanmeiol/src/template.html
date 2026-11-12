@@ -392,6 +392,12 @@ textarea.code{width:100%;min-height:80px;background:#0c0a08;border:1px solid var
 .namein{width:100%;background:#120f0cdd;border:1px solid var(--line2);color:var(--tx);border-radius:10px;padding:10px 12px;font-size:18px;font-family:inherit;text-align:center}
 .join{display:flex;gap:6px;margin-top:6px;width:min(320px,100%)}
 .join .namein{font-size:17px;letter-spacing:4px;text-transform:uppercase;padding:8px;flex:1;min-width:0}
+/* room codes: plain monospace, never the brush font — every letter has to be readable at a glance */
+.rcode,.rc,.codein,.codein::placeholder{font-family:ui-monospace,'SF Mono',Menlo,Consolas,'Roboto Mono','Courier New',monospace}
+.rcode{font-size:2.3rem;font-weight:700;letter-spacing:.35em;padding:6px 0 6px .35em;margin:2px 0 8px;text-align:center;color:#ffe7a8;background:#120f0cdd;border:1px solid var(--line2);border-radius:10px;line-height:1.2;user-select:all}
+.rc{font-weight:700;letter-spacing:.12em;color:#ffe7a8}
+.codein{font-size:22px!important;font-weight:700;letter-spacing:.3em!important;text-transform:uppercase}
+.codein::placeholder{font-size:15px;font-weight:400;letter-spacing:.1em;text-transform:none}
 .join .big{white-space:nowrap;flex:none;min-width:72px;padding:8px 14px}
 /* ---------- wide / short layouts (classes set by JS) ---------- */
 body.cols #vExplore{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(300px,1fr)}
