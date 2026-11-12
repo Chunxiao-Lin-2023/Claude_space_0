@@ -397,6 +397,10 @@ textarea.code{width:100%;min-height:80px;background:#0c0a08;border:1px solid var
 @keyframes tapr{0%{opacity:1;transform:scale(.94)}60%{opacity:.9;transform:scale(1.04)}100%{opacity:0;transform:scale(1.1)}}
 .taptag{position:fixed;z-index:81;max-width:80vw;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;background:#2a1f10f0;color:#ffe7a8;border:1px solid #c9a24a;border-radius:8px;padding:2px 10px;font-size:.88rem;pointer-events:none;animation:tapt 1.9s ease forwards}
 @keyframes tapt{0%{opacity:0;translate:0 4px}12%,75%{opacity:1;translate:0 0}100%{opacity:0}}
+/* the chosen button holds for a moment in co-op, so everyone sees what was picked */
+.picked{outline:3px solid #ffd76a!important;outline-offset:1px;box-shadow:0 0 16px #ffd76aaa!important;filter:brightness(1.15);transform:scale(1.03);transition:transform .12s,box-shadow .12s}
+.chb.picked{background:#fff1c4!important;border-color:#c9a24a!important}
+.chb.picked::before{content:'✓ ';color:#a8261e;font-weight:700}
 /* room codes: plain monospace, never the brush font — every letter has to be readable at a glance */
 .rcode,.rc,.codein,.codein::placeholder{font-family:ui-monospace,'SF Mono',Menlo,Consolas,'Roboto Mono','Courier New',monospace}
 .rcode{font-size:2.3rem;font-weight:700;letter-spacing:.35em;padding:6px 0 6px .35em;margin:2px 0 8px;text-align:center;color:#ffe7a8;background:#120f0cdd;border:1px solid var(--line2);border-radius:10px;line-height:1.2;user-select:all}

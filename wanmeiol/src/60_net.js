@@ -33,21 +33,31 @@ document.addEventListener('pointerdown', e => { UI.tapEl = e.target.closest && e
 document.addEventListener('keydown', () => { UI.tapEl = null; }, true);
 function tapInfo(fn) { const e = Date.now() - (UI.tapAt || 0) < 1500 ? UI.tapEl : null, label = e ? (e.innerText || e.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 16) : ''; return { oc: e ? e.getAttribute('onclick') || '' : '', label: label || TAP_NAME[fn] || '' }; }
 const TAP_NAME = { explore: '探索', rest: '休息', train: '修炼', camp: '歇脚', autoExplore: '自动探索', toggleAuto: '自动战斗', battleUndo: '撤回', arenaFight: '挑战', go: '去往' };
-function showTap(m) { if (!m || !m.tap || m.from === MYID) return; const who = m.who === 'host' ? '房主' : '队友', t = m.tap, msg = `${who}点了「${t.label || '…'}」`;
-  const vis = x => x.offsetParent && x.getBoundingClientRect().width > 0;
-  let e = t.oc ? [...document.querySelectorAll('[onclick]')].find(x => x.getAttribute('onclick') === t.oc && vis(x)) : null;
-  if (!e && t.label) e = [...document.querySelectorAll('button,.li')].find(x => vis(x) && (x.innerText || '').replace(/\s+/g, ' ').trim().startsWith(t.label));
-  const r0 = e && e.getBoundingClientRect(), hit = r0 && document.elementFromPoint(r0.left + r0.width / 2, r0.top + r0.height / 2); if (e && !(hit && (e === hit || e.contains(hit)))) e = null; /* covered by a dialog that just opened: don't ring the wrong spot */
-  if (!e) { const tag = el('div', 'taptag top', '👆 ' + esc(msg)); document.body.append(tag); const tb = $('top') ? $('top').getBoundingClientRect().bottom : 0; tag.style.left = Math.max(6, innerWidth / 2 - tag.offsetWidth / 2) + 'px'; tag.style.top = tb + 8 + 'px'; setTimeout(() => tag.remove(), 2200); return; }
-  const r = e.getBoundingClientRect(), ring = el('div', 'tapring'), tag = el('div', 'taptag', '👆 ' + esc(msg));
-  Object.assign(ring.style, { left: r.left - 3 + 'px', top: r.top - 3 + 'px', width: r.width + 6 + 'px', height: r.height + 6 + 'px' }); document.body.append(ring, tag);
-  const tw = tag.offsetWidth, th = tag.offsetHeight; tag.style.left = Math.max(6, Math.min(innerWidth - tw - 6, r.left + r.width / 2 - tw / 2)) + 'px'; tag.style.top = (r.top - th - 8 > 6 ? r.top - th - 8 : r.bottom + 8) + 'px';
-  const moveUp = () => { ring.remove(); const tb = $('top') ? $('top').getBoundingClientRect().bottom : 0; tag.classList.add('top'); tag.style.left = Math.max(6, innerWidth / 2 - tag.offsetWidth / 2) + 'px'; tag.style.top = tb + 8 + 'px'; };
-  const watch = setInterval(() => { if (!ring.isConnected) return; const q = e.getBoundingClientRect(), h2 = e.isConnected && document.elementFromPoint(q.left + q.width / 2, q.top + q.height / 2); if (!e.isConnected || !q.width || !(h2 && (e === h2 || e.contains(h2)))) moveUp(); }, 80); /* the screen changed under it (a dialog opened, the panel re-rendered): the note moves up instead of pointing at the wrong thing */
-  setTimeout(() => { clearInterval(watch); ring.remove(); tag.remove(); }, 1900); }
+/* the current pick (who pressed what): kept as state, so a re-render can't wipe it — every render puts the mark back on the same button */
+UI.pick = null;
+const pickVis = x => x.offsetParent && x.getBoundingClientRect().width > 0;
+function pickFind(p) { let e = p.oc ? [...document.querySelectorAll('[onclick]')].find(x => x.getAttribute('onclick') === p.oc && pickVis(x)) : null;
+  if (!e && p.label) e = [...document.querySelectorAll('button,.li')].find(x => pickVis(x) && (x.innerText || x.textContent || '').replace(/\s+/g, ' ').trim().startsWith(p.label)); if (!e) return null;
+  const r = e.getBoundingClientRect(), hit = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2); return hit && (e === hit || e.contains(hit)) ? e : null; } /* covered by a dialog that just opened: not there any more */
+function applyPick() { for (const x of document.querySelectorAll('.picked')) x.classList.remove('picked'); const p = UI.pick; if (!p) return null; if (Date.now() > p.until) { UI.pick = null; return null; } const e = pickFind(p); if (e) e.classList.add('picked'); return e; }
+function setPick(t, who, ms) { UI.pick = { oc: t.oc || '', label: t.label || '', who, until: Date.now() + ms }; return applyPick(); }
+function showTap(m) { if (!m || !m.tap || m.from === MYID) return; const who = m.who === 'host' ? '房主' : '队友', msg = `${who}点了「${m.tap.label || '…'}」`;
+  for (const x of document.querySelectorAll('.tapring,.taptag')) x.remove();
+  const ring = el('div', 'tapring'), tag = el('div', 'taptag', '👆 ' + esc(msg)); document.body.append(ring, tag); setPick(m.tap, m.who, NET_PICK_MS + 1200);
+  const place = () => { const e = applyPick(); if (e) { const r = e.getBoundingClientRect(); ring.style.display = ''; Object.assign(ring.style, { left: r.left - 3 + 'px', top: r.top - 3 + 'px', width: r.width + 6 + 'px', height: r.height + 6 + 'px' }); tag.classList.remove('top'); const tw = tag.offsetWidth, th = tag.offsetHeight; tag.style.left = Math.max(6, Math.min(innerWidth - tw - 6, r.left + r.width / 2 - tw / 2)) + 'px'; tag.style.top = (r.top - th - 8 > 6 ? r.top - th - 8 : r.bottom + 8) + 'px'; }
+    else { ring.style.display = 'none'; tag.classList.add('top'); const tb = $('top') ? $('top').getBoundingClientRect().bottom : 0; tag.style.left = Math.max(6, innerWidth / 2 - tag.offsetWidth / 2) + 'px'; tag.style.top = tb + 8 + 'px'; } };
+  place(); const watch = setInterval(place, 60); /* the screen may change under it (a sync re-render, a dialog opening): follow the button, or move the note under the top bar */
+  setTimeout(() => { clearInterval(watch); ring.remove(); tag.remove(); applyPick(); }, NET_PICK_MS + 1300); }
 for (const fn of CMD_NAMES) { const orig = window[fn]; CMDS[fn] = orig; window[fn] = function (...a) {
-  if (UI.inClick && NETROLE) { if (!myControl()) { toast('现在是队友在操作（点上面的 🔗 可以接手）'); return; } const tap = tapInfo(fn); if (NETROLE === 'guest') { netSend({ t: 'cmd', fn, a: JSON.parse(JSON.stringify(a)), tap }); return; } netBroadcast({ t: 'tap', who: 'host', from: MYID, tap }); }
+  if (UI.inClick && NETROLE) { if (!myControl()) { toast('现在是队友在操作（点上面的 🔗 可以接手）'); return; } if (UI.picking) return; const tap = tapInfo(fn);
+    if (NO_HOLD.includes(fn)) { if (NETROLE === 'guest') { netSend({ t: 'cmd', fn, a: JSON.parse(JSON.stringify(a)) }); return; } return orig.apply(this, a); } /* quick inputs (minigames, undo) never wait */
+    if (NETROLE === 'guest') { pickHold(UI.tapEl); netSend({ t: 'cmd', fn, a: JSON.parse(JSON.stringify(a)), tap }); return; }
+    if (netWatched()) { netBroadcast({ t: 'tap', who: 'host', from: MYID, tap }); pickHold(UI.tapEl, () => orig.apply(this, a)); return; } } /* everyone sees the pick for a moment before the screen moves on */
   return orig.apply(this, a); }; }
+/* 联机选中停顿: the pressed button turns "chosen" on every screen for NET_PICK_MS, then the action runs (solo play never waits) */
+const NET_PICK_MS = 600, NO_HOLD = ['runeTap', 'runeSkip', 'runeRetry', 'runeAccept', 'miniTap', 'miniSkip', 'miniRetry', 'miniGiveUp', 'battleUndo', 'toggleAuto'];
+const netWatched = () => NETROLE === 'guest' || (NETROLE === 'host' && NET.conns.size > 0);
+function pickHold(e, then) { if (e && e.getAttribute) setPick({ oc: e.getAttribute('onclick') || '', label: (e.innerText || e.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 16) }, 'me', NET_PICK_MS + 200); UI.picking = true; const keep = setInterval(applyPick, 60); setTimeout(() => clearInterval(keep), NET_PICK_MS + 250); setTimeout(() => { UI.picking = false; if (then) { try { then(); } catch (err) { console.error(err); } netSync(); } }, NET_PICK_MS); }
 function netLeave() {
   const wasGuest = NETROLE === 'guest'; try { if (wasGuest) raw(NET.conn, { t: 'bye' }); netBroadcast({ t: 'bye' }); } catch (e) { } try { NET.peer && NET.peer.destroy(); } catch (e) { }
   NET.tok = (NET.tok || 0) + 1; /* anything still connecting is now stale */
@@ -90,7 +100,8 @@ function hostRecv(pid, m) {
   if (m.t === 'take') { NET.ctrl = pid; netBroadcast({ t: 'ctrl', ctrl: pid }); toast('队友接手了操作'); refresh(); netSync(); return; }
   if (NET.ctrl !== pid) return;
   if ((m.t === 'cmd' || m.t === 'dlg') && m.tap) { const t = { t: 'tap', who: 'guest', from: pid, tap: m.tap }; showTap(t); netBroadcast(t); } /* show the host (and the other guests) what the guest pressed, before it changes the screen */
-  if (m.t === 'cmd' && CMDS[m.fn]) { try { CMDS[m.fn](...(m.a || [])); } catch (e) { console.error(e); } netSync(); }
+  if (m.t === 'cmd' && CMDS[m.fn]) { const go = () => { try { CMDS[m.fn](...(m.a || [])); } catch (e) { console.error(e); } netSync(); }; if (m.tap) setTimeout(go, NET_PICK_MS); else go(); return; }
+  if (m.t === 'dlg' && DLG && m.tap) { const D0 = DLG; setTimeout(() => { if (DLG === D0) hostRecv(pid, Object.assign({}, m, { tap: null })); }, NET_PICK_MS); return; }
   if (m.t === 'dlg' && DLG) { if (DLG.choice) { const i = m.i; if (DLG.choice[i] && !DLG.choice[i].dis) { const r = DLG.res; logLine('▸ ' + DLG.choice[i].t, 'say mine'); DLG = null; renderDlg(); r(i); } } else { const r = DLG.res; DLG = null; renderDlg(); r(); } netSync(); }
 }
 /* ---------- guest ---------- */
