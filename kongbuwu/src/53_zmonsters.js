@@ -137,6 +137,8 @@ const GHOST_OF = { 张雅: ['redwoman'], 红影: ['redwoman', { hair: '#2a0404',
   镜鬼: ['mirrorghost'], 黑影: ['twoface'], 畸形脸: ['deformed'], 独臂: ['onearm'], 瘦长怪物: ['slender'], 瘦长怪物乙: ['slender', { col: '#c8c2b6' }], 独眼的瘦长怪物: ['slender', { oneEye: 1, col: '#bfb8ae' }],
   女护士: ['nurse'], 戴口罩的护士: ['nurse'], 老院长: ['dean'], 王琦: ['axeman'], 张鹏: ['knifeman'], 男孩: ['deadchild'], 小男孩: ['deadchild', { col: '#5a6a7a' }], 小女孩: ['deadchild', { col: '#c88a9a' }],
   湿透的男人: ['drowned'], 雨衣女孩: ['drowned', { col: '#c8a818' }], 学生: ['student'], 学生乙: ['student', { tilt: -3 }], 学生丙: ['student', { tilt: 5 }] };
+/* 王琦在木屋里提起斧头之前，只是个贴寻人启事的普通人（不能提前剧透） */
+delete GHOST_OF.王琦; Object.defineProperty(GHOST_OF, '王琦', { get() { return C && C.f && C.f.wqAxe ? ['axeman'] : undefined; }, enumerable: true, configurable: true });
 /* 发光的颜色：红鬼泛红光，别的泛冷白光 */
 function ghAura(name) { const k = (GHOST_OF[name] || [])[0]; return k === 'redwoman' || k === 'dean' || k === 'deadchild' ? 'rgba(170,10,10,' : k === 'axeman' || k === 'knifeman' || k === 'deformed' ? 'rgba(120,20,10,' : 'rgba(160,190,210,'; }
 /* 画一个怪物；pass = 'body' | 'glow' */

@@ -165,13 +165,24 @@ async function S_b3() { setClock(9, '凌晨 1 点'); await T_(`^mus door
 我|“门”太久没有关上。门后的世界，和这里叠在了一起。就像我鬼屋厕所里的那个隔间。
 笔记的最后一页：
 #“三号房的那个孩子又开始发疯了。他是第一个看见‘门’的人。”`); F().sneakNurse = ok ? 1 : 0; }
-async function S_dean() { setClock(10, '凌晨 2 点'); await T_(`^fx dark
-^prop ds desk 9 5
+async function S_dean() { setClock(10, '凌晨 2 点'); await T_(`^stage deanroom
+^fx dark
+^fx candle 10
+^prop ds desk 10 5
 ^prop p1 paper 6 5
 ^prop p2 paper 12 5
-^prop wd wardrobe 15 4
-院长办公室。地上散着病例单。里间有一个被警方封条封住的衣柜。
-抽屉里有四封信。寄出去过，又回到了这里。`);
+^prop p3 paper 7 6
+^prop bk book 11 5
+^prop wd wardrobe 12 3
+^prop sp stain 13 5
+院长办公室。台灯还亮着——这里断电好几年了。地上散着病例单。
+^zoom wd 2
+^sfx creak
+里间有一个被警方封条封住的衣柜。
+^zoom off
+^fx eyes
+抽屉里有四封信。寄出去过，又回到了这里。
+^fx eyes off`);
   await look('四封信，信封上的日期一封比一封晚。', [
     ['第一封', `^recall past 第一封信
 ^stage oldward
@@ -230,7 +241,11 @@ async function S_dean() { setClock(10, '凌晨 2 点'); await T_(`^fx dark
 ^sfx door
 ^recall off`]]);
   await T_(`^sfx creak
+^fx flicker
+^zoom wd 2.4
 里间那个衣柜的封条，从里面被顶起了一点，又落了回去。
+^zoom off
+^fx steady
 我|姓陈的医生……？
 ^prop ph photo 9 4
 信封里夹着一张合影。没有化妆的女人，和一个孩子。孩子的脸，是小时候的门楠。

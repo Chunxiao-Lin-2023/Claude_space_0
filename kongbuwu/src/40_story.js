@@ -74,8 +74,12 @@ async function S_open() { await cine(['半年前。凌晨两点四十四分。',
 徐叔叹了口气，没再说什么。
 血浆用完了。你记得三楼的杂物间里，好像还有以前剩下的。
 ^sfx scrape
+^prop w3 window 9 0 {"face":1}
 三楼的灯坏了很久，一直没修。
-你走到楼梯口的时候，楼上传来很轻的一声——像有人把一个箱子，往门口推了推。`); }
+^zoom w3 2.6
+^sfx creak
+你走到楼梯口的时候，楼上传来很轻的一声——像有人把一个箱子，往门口推了推。
+^zoom off`); }
 async function S_attic() { await T_(`推开落灰的木门。三楼堆满了被淘汰的道具，大半是父母经营时留下的。
 ^prop bk phone 9 3
 你从小就在这些东西中间长大。别的孩子玩字母拼图的时候，你已经在拆人头模型了。
@@ -324,10 +328,23 @@ async function S_wheel() { await T_(`生死有命，富贵在天。这里有增�
 /* ================= 第二章 ================= */
 async function S_trial() { await chapterCard('二', '午夜逃杀', '平安公寓 · 从前叫富安公寓'); setClock(7, '晚上 7 点');
   await look('长满野草的院子。主楼三层，旁边一个仓库、一个水房。', [
-    ['铁门边的那张纸', `一张寻人启事。照片上是个年轻女人。
-末尾的联系人“王先生”，住址填的就是这栋楼。`],
-    ['大门的锁', `大门很破，锁倒是挺新。最近有人换过。`],
-    ['水房', `水龙头没拧紧。一滴，一滴。地上没有积水——像是每天都有人来擦。`]], 1);
+    ['铁门边的那张纸', `^prop ps poster 6 3 {"col":"#d8d0c0"}
+^zoom ps 2.4
+一张寻人启事。照片上是个年轻女人。
+末尾的联系人“王先生”，住址填的就是这栋楼。
+^zoom off`],
+    ['大门的锁', `^prop gl door 10 2 {"col":"#3a3a3a"}
+^sfx metal
+^zoom gl 2.2
+大门很破，锁倒是挺新。最近有人换过。
+^zoom off`],
+    ['水房', `^prop sk sink 15 3
+^zoom sk 2.2
+^sfx drip
+水龙头没拧紧。一滴，一滴。地上没有积水——像是每天都有人来擦。
+^fx eyes
+^zoom off
+^fx eyes off`]], 1);
   await T_(`我|有人吗？住一晚多少钱？
 一楼一扇门开了半指宽，又关上了。
 ^in 房东 15
@@ -347,6 +364,10 @@ async function S_trial() { await chapterCard('二', '午夜逃杀', '平安公�
 房东|五十一晚。二楼随便挑，一楼三楼不能住。午夜以后别出门。
 我|三楼为什么……
 房东|你问题怎么那么多？不能住就是不能住！
+^prop whc wheelchair 10 4
+^at 老爷子 10
+^turn 老爷子 B
+^sfx door
 他屋里，一个老人背对着门坐在轮椅上。门“嘭”地关了。你的房间是 208，就在他隔壁。`);
   go('pa_208', true, true);
   await T_(`隔壁传来碗摔碎的声音，接着是房东的咒骂，夹着几句外地方言。然后电视音量被调到最大——放的全是广告。
@@ -476,6 +497,8 @@ async function S_3f() { setClock(9, '凌晨 1 点');
 你摸黑下到一楼。防盗门从里面锁死了。`); }
 async function S_escape() { setClock(10, '凌晨 2 点'); await T_((F().seen3f ? `楼下的脚步声一直没停。刚才那一下，他们一定听见了。
 ` : '') + `只能回 208，把床单捆在窗框上，从二楼下去。
+^prop kd door 6 2
+^zoom kd 2.6
 你摸出钥匙，借着屏幕的微光对准锁孔——
 ^fx flash
 ^fx pulse
@@ -483,18 +506,38 @@ async function S_escape() { setClock(10, '凌晨 2 点'); await T_((F().seen3f ?
 #有人进过你的房间。／或者说，现在就在里面。
 ^sfx breath
 门板那一边，有人也屏住了呼吸。
+^zoom off
+^to 陈歌 15
 你一点声音都没出，一步一步退到走廊最右边。
 ~door
+^fx pulse off
+^fx red
+^in 房东 6
+^in 纹身男 7
+^fx shake
 208 的门被推开。房东和纹身男提着钢钎和菜刀冲了出来。`);
   const ok = await miniGame('run');
-  if (ok) await T_(`你撞开最近的一扇门，翻出窗户，踩着一楼的防盗网往下跳。一把菜刀擦着你的肩膀飞过去，钉在地上。
+  if (ok) await T_(`^stage apt
+^fx dark
+^at 陈歌 8
+^prop kf knife 9 5
+你撞开最近的一扇门，翻出窗户，踩着一楼的防盗网往下跳。一把菜刀擦着你的肩膀飞过去，钉在地上。
+^in 胖子 5
+^in 女人 6
+^to 陈歌 13
 胖子和那个女人举着修灌木的铁剪从楼门口冲出来。你一头扎进了树林。`); else { await T_(`你被纹身男堵在了楼梯口。`); await fight({ mobs: [['tattoo', L(-1)], ['landlord', L(-1)]], title: '二楼走廊', intro: '打出一条路，然后跳窗。' }); await nar('你翻出窗户，一头扎进了树林。'); }
   go('pa_woods', true, true);
   await T_(`衣服被树杈挂烂了。跑了十五分钟，身后的手电光才消失。
 直播还开着。黑屏了一个多小时，满屏都在刷问号。
+^fx dark
+^at 王琦 15
+^fx candle 15
 有一束很浅的光扫过来。你握紧了工具锤。
 王琦|……是我看错了？不可能啊。
+^turn 王琦 L
 他拿着手电在原地转了几圈，走了。
+^out 王琦
+^fx candle off
 你分不清方向，地势越走越陡。前面有一间木屋，像护林员住的。门没锁。`); learnTalent('run'); }
 async function S_hut() { setClock(10, '凌晨 3 点'); await T_(`^mus door
 ^fx dark
@@ -512,8 +555,7 @@ async function S_hut() { setClock(10, '凌晨 3 点'); await T_(`^mus door
 手机屏幕暗下去。黑色的屏幕上，映出你身后站着一个小女孩，七八岁。她抬手，指了指你的背后。
 ^in 小小 4
 !face
-^out 小小
-^in 王琦 16
+^out 小小`); F().wqAxe = 1; await T_(`^in 王琦 16
 ^fx blood off
 ^fx pulse
 你转身。王琦提着一把斧头，堵在门口。
