@@ -797,7 +797,15 @@ const BAL = {
   phaseAtk: 0.25,                                     // a boss at half health gets angry: +25% attack
   weakMul: 1.5,                                       // hitting a weakness
   // enemies get tougher as you climb (2026-11): unchanged up to 11 层, gently at first, reaching 气血 ×1.6 / 攻击 ×1.25 at 18 层 — the same stretch where 宝术 / 宝骨 slots and partner moves open up
-  foeRamp: lv => Math.pow(clamp((lv - 11) / 7, 0, 1), 1.5), foeHp: lv => 1 + 0.6 * BAL.foeRamp(lv) + 0.03 * Math.max(0, lv - 20), foeAtk: lv => 1 + 0.25 * BAL.foeRamp(lv) + 0.01 * Math.max(0, lv - 20), // 第二、三卷: a little more past 20
+  foeRamp: lv => Math.pow(clamp((lv - 11) / 7, 0, 1), 1.5), foeHp: (lv, boss) => (1 + 0.6 * BAL.foeRamp(lv) + 0.03 * Math.max(0, lv - 20)) * BAL.toughHp(lv, boss), foeAtk: (lv, boss) => (1 + 0.25 * BAL.foeRamp(lv) + 0.01 * Math.max(0, lv - 20)) * BAL.toughAtk(lv, boss),
+  /* 有来有回: 宝骨/熟练度/伙伴/悟道/天庭 pile up as the book goes on, so the foes grow with the stage too (tuned with test/stage.js: a 中上 player wins ~80% with a third of their 气血 left) */
+  tough: [[38, 1, 1], [45, 1, 1.2], [55, 1, 1.33], [70, 1, 1.45], [85, 1, 1.5]], // [level, 气血 ×, 攻击 ×] — before 38 nothing changes; fights are long enough already, so only 攻击 grows
+  assist: 0.15, assistMax: 3, // 连输放水: each loss in a row of the same story fight takes 15% off the foes' 气血 and 攻击 next try, up to 3 times
+  capOver: 3, // 剧情等级上限 = this step's recommended level + capOver
+  toughAt: (lv, k) => { const T = BAL.tough; if (lv <= T[0][0]) return 1; for (let i = 1; i < T.length; i++) if (lv <= T[i][0]) { const [l0, ...a] = T[i - 1], [l1, ...b] = T[i], f = (lv - l0) / (l1 - l0); return a[k] + (b[k] - a[k]) * f; } return T[T.length - 1][k + 1]; },
+  hitCap: 0.4,
+  toughMob: 0.5, // ordinary foes (not 首领, not rivals) get only this share of the extra
+  toughHp: (lv, boss = 1) => 1 + (BAL.toughAt(lv, 0) - 1) * (boss ? 1 : BAL.toughMob), toughAtk: (lv, boss = 1) => 1 + (BAL.toughAt(lv, 1) - 1) * (boss ? 1 : BAL.toughMob), // 第二、三卷: a little more past 20
 };
 /* slots grow with the realm: 宝术 you can take into battle, 宝骨 you can wear */
 const barSlots = lv => 4 + (lv >= 10) + (lv >= 14) + (lv >= 18) + (lv >= 22) + (lv >= 27) + (lv >= 32) + (lv >= 37) + (lv >= 42);
@@ -1664,7 +1672,8 @@ function charStats(c = C) {
 function fixHp() { const s = charStats(); C.hp = clamp(C.hp, 0, s.hpMax); C.mp = clamp(C.mp, 0, s.mpMax); }
 function fullHeal() { const s = charStats(); C.hp = s.hpMax; C.mp = s.mpMax; }
 function skillsOf(c = C) { return ['atk', ...c.bar.filter(id => c.sk.includes(id)), 'guard']; }
-function learnSkill(id) { if (C.sk.includes(id) || (typeof evoAfter === 'function' && evoAfter(id).some(x => C.sk.includes(x)))) return; /* already grown into something higher */ C.sk.push(id); if (C.bar.length < barSlots(C.lv)) C.bar.push(id); const S = SKILLS[id]; logLine(`<b class="lvup">领悟宝术</b>：${S.icon}<b>${S.name}</b>——${S.desc}`, 'sys'); sfx('epic'); }
+function learnSkill(id) { if (C.sk.includes(id) || (typeof evoAfter === 'function' && evoAfter(id).some(x => C.sk.includes(x)))) return; /* already grown into something higher */ C.sk.push(id); const S = SKILLS[id]; let out = ''; if (C.bar.length < barSlots(C.lv)) C.bar.push(id); else { const low = C.bar.slice().sort((a, b) => SKILL_ORDER.indexOf(a) - SKILL_ORDER.indexOf(b))[0]; if (low && SKILL_ORDER.indexOf(low) < SKILL_ORDER.indexOf(id)) { C.bar[C.bar.indexOf(low)] = id; out = `（宝术栏满了，换下了最低阶的「${SKILLS[low].name}」，想换回来去「石昊」页）`; } } /* a new 宝术 is worth carrying: the full bar makes room */
+  logLine(`<b class="lvup">领悟宝术</b>：${S.icon}<b>${S.name}</b>——${S.desc}${out}`, 'sys'); sfx('epic'); }
 /* 宝术熟练度 */
 const profLevel = (id, c = C) => { const n = (c.prof && c.prof[id]) || 0; let l = 0; for (let i = 1; i < PROF.length; i++) if (n >= PROF[i].at) l = i; return l; };
 function profUse(id) { C.prof = C.prof || {}; const before = profLevel(id); C.prof[id] = (C.prof[id] || 0) + 1; const after = profLevel(id); if (after > before) setTimeout(() => { logLine(`${SKILLS[id].icon}<b>${SKILLS[id].name}</b> 用得越来越顺手——<b class="lvup">${PROF[after].n}</b>（威力 +${PROF[after].b * 100}%）`, 'sys'); sfx('epic'); }, 50); }
@@ -1696,11 +1705,17 @@ function useItem(id, inBattle) {
 /* ---------- levels & realms ---------- */
 const LV_GATES = [[9, 'jijing'], [19, 'end'], [24, 'v2end'], [29, 'shihuang'], [34, 'v4'], [39, 'v4end'], [44, 'v5end'], [49, 'v6end'], [54, 'v7end'], [59, 'yiyu0'], [62, 'yyEnd'], [65, 'v8end'], [71, 'v9end'], [75, 'v12end'], [80, 'v13end'], [84, 'xiandi']]; /* a realm's last level: the story has to open the next one (9 → 机缘 is handled on its own) */
 const lvGated = c => LV_GATES.some(([l, f]) => c.lv === l && !c.story.f[f]);
+/* 剧情等级上限: each step of the story has a ceiling (its recommended level + BAL.capOver), so 石昊 can't grind past the fights it sets.
+   Exp past the ceiling is kept (C.expBank) and handed back when the story moves on; from 40 on it becomes 悟道 instead. */
+const recOf = i => { for (let k = Math.min(i, MAIN.length - 1); k >= 0; k--) if (MAIN[k].rec) return MAIN[k].rec; return 3; };
+const lvStoryCap = (c = C) => Math.min(BAL.lvCap, recOf(c.story.q) + BAL.capOver);
+function expRelease() { const b = C.expBank || 0; if (!b || C.lv >= lvStoryCap()) return; C.expBank = 0; logLine(`剧情往前走了，攒下的 <span class="exp">${fmt(b)} 经验</span> 回到了身上。`, 'loot'); gainExp(b, true); }
 function gainExp(n, quiet) {
   if (n <= 0) return; C.exp += Math.round(n); if (!quiet) logLine(`获得 <span class="exp">${fmt(n)} 经验</span>`, 'loot');
   while (C.exp >= BAL.expNext(C.lv) && C.lv < BAL.lvCap) {
     if (C.lv === 9 && !C.story.f.jijing) { C.exp = BAL.expNext(C.lv); if (!C.seen.neck9) { C.seen.neck9 = 1; logLine('你体内的气血像江河一样奔涌，却撞上了一层看不见的壁——<b>搬血境走到头了</b>。要怎么往前走，得看机缘（跟着主线走）。', 'sys'); } break; }
     if (lvGated(C)) { capExp(); break; }
+    if (C.lv >= lvStoryCap()) { capExp(); if (C.capSaid !== C.story.q) { C.capSaid = C.story.q; logLine(`<b>已到这段剧情的等级上限（第 ${C.lv} 层）</b>：再打的经验先攒着${C.lv >= 40 ? '，化成悟道点' : ''}，等主线往前走了再长。`, 'sys'); } break; }
     if (C.lv === 68 && !C.story.f.zhizun) { capExp(); break; }
     C.exp -= BAL.expNext(C.lv); C.lv++; fullHeal(); sfx('level');
     logLine(`<b class="lvup">境界精进！</b> ${realmOf(C.lv).name} · 第 ${C.lv} 层。气血、符力已回满。`, 'sys'); bigFlash(`境界精进 · ${realmOf(C.lv).name}第 ${C.lv} 层`, 'lv');
@@ -1768,7 +1783,7 @@ const ALLY_NPC = {
 const unitDef = id => MOBS[id] || ALLY_NPC[id] || PETS[id];
 let BID = 1;
 function mobUnit(id, lv, side = 1) {
-  const M = unitDef(id); lv = lv || M.lv || 1; const E = BAL.enemy(lv), m = M.mul || {}, D = side ? { hp: diffOf().hp * BAL.foeHp(lv) * ngFoe(), atk: diffOf().atk * BAL.foeAtk(lv) * ngFoeAtk() } : { hp: 1, atk: 1 };
+  const M = unitDef(id); lv = lv || M.lv || 1; const E = BAL.enemy(lv), m = M.mul || {}, D = side ? { hp: diffOf().hp * BAL.foeHp(lv, !!M.boss) * ngFoe(), atk: diffOf().atk * BAL.foeAtk(lv, !!M.boss) * ngFoeAtk() } : { hp: 1, atk: 1 };
   return { id: 'u' + (BID++), side, kind: side ? 'mob' : 'npc', mob: id, name: M.name, icon: M.icon || (M.boss ? '👹' : '🐾'), lv, boss: !!M.boss,
     hpMax: Math.round(E.hp * (m.hp || 1) * D.hp), atk: Math.round(E.atk * (m.atk || 1) * D.atk), def: Math.round(E.def * (m.def || 1)), spd: E.spd * (m.spd || 1), crit: M.boss ? 0.08 : 0.05, leech: 0, mpMax: 0, mp: 0, sk: [], cd: {}, st: [], alive: true, plan: null, intent: '' };
 }
@@ -1780,7 +1795,7 @@ function petUnit(id, slot = 0) { // the partner scales with 石昊; affection up
   return { id: slot ? 'pet' + (slot + 1) : 'pet', lead: !slot, trait: id, side: 0, kind: 'npc', mob: id, pet: 1, evo: !!pd.evo, name: P.name + (pd.evo3 ? '·真身' : pd.evo2 ? '·返祖' : pd.evo ? '·觉醒' : ''), icon: P.icon, lv: plv, hpMax: Math.round(s.hpMax * m.hp * k), atk: Math.round(s.atk * m.atk * k), def: Math.round(s.def * m.def * k), spd: s.spd * m.spd, crit: 0.08, leech: 0, mpMax: 0, mp: 0, sk: [], cd: {}, st: [], alive: true, plan: null, intent: '', aff, hp: 0 };
 }
 function rivalUnit(r) { // 虚神界 rivals fight with 宝术 like you do
-  const L = r.lv - 1, g = r.gear || 1, D = diffOf(); const u = { id: 'u' + (BID++), side: 1, kind: 'rival', name: r.name, icon: r.icon || '🧑', lv: r.lv, boss: !!r.boss, shiyi: !!r.shiyi, hpMax: Math.round((HERO.base.hp + HERO.grow.hp * L) * g * 1.25 * D.hp * (r.shiyi ? 1.3 : 1)), atk: Math.round((HERO.base.atk + HERO.grow.atk * L) * g * D.atk), def: Math.round((HERO.base.def + HERO.grow.def * L) * g), spd: HERO.base.spd + HERO.grow.spd * L + (r.shiyi ? 3 : 0), crit: 0.12, leech: 0,
+  const L = r.lv - 1, g = r.gear || 1, D = diffOf(); const u = { id: 'u' + (BID++), side: 1, kind: 'rival', name: r.name, icon: r.icon || '🧑', lv: r.lv, boss: !!r.boss, shiyi: !!r.shiyi, hpMax: Math.round((HERO.base.hp + HERO.grow.hp * L) * g * 1.25 * D.hp * (r.shiyi ? 1.3 : 1) * BAL.toughHp(r.lv)), atk: Math.round((HERO.base.atk + HERO.grow.atk * L) * g * D.atk * BAL.toughAtk(r.lv)), def: Math.round((HERO.base.def + HERO.grow.def * L) * g), spd: HERO.base.spd + HERO.grow.spd * L + (r.shiyi ? 3 : 0), crit: 0.12, leech: 0,
     mpMax: Math.round(HERO.base.mp + HERO.grow.mp * L), sk: ['atk', ...(r.sk || ['qly', 'sn'])], cd: {}, st: [], alive: true };
   u.hp = u.hpMax; u.mp = u.mpMax; return u;
 }
@@ -1792,6 +1807,7 @@ function battleCreate(spec) {
   for (const id of spec.allies || []) { const u = mobUnit(id, C.lv, 0); u.hp = u.hpMax; B.units.push(u); }
   for (const r of spec.rivals || []) B.units.push(rivalUnit(r));
   for (const [id, lv] of spec.mobs || []) { const u = mobUnit(id, lv, 1); u.hp = u.hpMax; if (spec.roam) { u.hpMax = Math.round(spec.roam.hpMax * diffOf().hp * BAL.foeHp(lv)); u.hp = Math.round(spec.roam.hp * diffOf().hp * BAL.foeHp(lv)); } B.units.push(u); }
+  const ast = spec.assist ?? (spec.story || spec.siege ? STATE.assist || 0 : 0); if (ast) { const k = 1 - BAL.assist * ast; for (const u of B.units) if (u.side === 1) { u.hpMax = Math.round(u.hpMax * k); u.hp = Math.min(u.hp, u.hpMax); u.atk = Math.round(u.atk * k); } B.assist = ast; } /* 连输放水 */
   for (const u of B.units) partyFoe(B, u);
   for (const u of B.units) if (u.kind === 'mob' || u.kind === 'npc') planMob(B, u);
   for (const [id] of spec.mobs || []) if (!MOBS[id].nocodex) { C.codex = C.codex || {}; C.codex[id] = C.codex[id] || { wk: [] }; }
@@ -1804,6 +1820,8 @@ function battleCreate(spec) {
 }
 const alive = (B, side) => B.units.filter(u => u.alive && (side === undefined || u.side === side));
 const stOf = (u, k) => u.st.find(s => s.k === k);
+const DOT_ST = ['bleed', 'burn', 'poison', 'dark']; /* only damage over time scales with the attacker's 攻击; 虚弱/破甲/印记… are fractions */
+const stVal = (u, s) => !s.v ? 0 : DOT_ST.includes(s.k) ? Math.round(u.atk * s.v) : s.v;
 const stV = (u, k) => { let v = 0; for (const s of u.st) if (s.k === k) v += s.v || 0; return v; };
 function addSt(u, s) { if (s.k === 'poison' && u.noPoison) return; const ex = u.st.find(x => x.k === s.k); if (ex) { ex.t = Math.max(ex.t, s.t); if (s.k === 'shield') ex.v = (ex.v || 0) + (s.v || 0); else ex.v = Math.max(ex.v || 0, s.v || 0); } else u.st.push({ k: s.k, t: s.t, v: s.v || 0 }); }
 function blog(B, html) { B.log.push(html); B.lc++; if (B.log.length > 150) B.log.splice(0, B.log.length - 150); }
@@ -1860,6 +1878,7 @@ function hitCalc(a, d, mul, mag, opts = {}) {
   let bound = false; if (!mag && stOf(d, 'bound')) { mul *= 1.3; bound = true; d.st = d.st.filter(s => s.k !== 'bound'); } // 骨文锁链 → the next physical hit lands harder
   const K = BAL.defK + a.lv * 7; let dmg = atk * mul * K / (K + def) * rnd(0.9, 1.1);
   const crit = !!stOf(a, 'sure') || Math.random() < a.crit; if (crit) dmg *= BAL.critMul; if (stOf(d, 'guard')) dmg *= 0.5; dmg *= mechDmgMul(a, d) * partyDmgMul(a, d);
+  if (d.kind === 'pc' && a.side === 1 && BAL.hitCap) dmg = Math.min(dmg, d.hpMax * BAL.hitCap); /* hard fights, not one-shots: one blow takes at most this much of 石昊's 气血 */
   return { dmg: Math.max(1, Math.round(dmg)), crit, weak: !!wk, bound };
 }
 function noteWeak(d, el) { if (!d.mob || !C.codex || !C.codex[d.mob]) return; const w = C.codex[d.mob].wk || (C.codex[d.mob].wk = []); if (!w.includes(el)) w.push(el); }
@@ -1910,7 +1929,7 @@ function perform(B, u, act, L) {
       if (weak && u.side === 0) { noteWeak(t, S.el); B.weakHits = (B.weakHits || 0) + 1; }
       if (miss === hits) parts.push(`${uName(t)} <span class="miss">躲开了</span>`);
       else { parts.push(`${uName(t)} <span class="${crit ? 'crit' : 'dmg'}">-${tot}${crit ? ' 暴击!' : ''}</span>${weak ? ' <span class="weak">正中要害</span>' : ''}${ct ? ` <span class="weak">${ct}</span>` : ''}${bound ? ' <span class="weak">借着骨文锁链</span>' : ''}${seen < 1 ? ' <span class="miss">重瞳看穿了这一招</span>' : ''}${cloned ? ' <span class="weak">分身补了一下</span>' : ''}${dispelled2 ? ' <span class="weak">护体全被啃掉了</span>' : ''}${died ? ' <b class="die">倒下</b>' : ''}`); B.fx = crit ? 'crit' : 'hit';
-        let stunned = false; if (t.alive && S.st) for (const s of S.st) if (Math.random() < (s.p ?? 1) && !(s.k === 'stun' && t.boss && Math.random() < 0.5)) { addSt(t, { k: s.k, t: s.t, v: s.v ? Math.round(u.atk * s.v) : 0 }); if (s.k === 'stun') stunned = true; parts.push(`<span class="st" style="color:${STATUS[s.k].c}">${STATUS[s.k].n}</span>`); }
+        let stunned = false; if (t.alive && S.st) for (const s of S.st) if (Math.random() < (s.p ?? 1) && !(s.k === 'stun' && t.boss && Math.random() < 0.5)) { addSt(t, { k: s.k, t: s.t, v: stVal(u, s) }); if (s.k === 'stun') stunned = true; parts.push(`<span class="st" style="color:${STATUS[s.k].c}">${STATUS[s.k].n}</span>`); }
         if (t.alive && id === 'gw') addSt(t, { k: 'bound', t: 2 });
         if (u.side === 0 && (stunned || weak) && tryInterrupt(B, t)) parts.push('<span class="weak">打断了它的蓄力！</span>'); } }
     L(head + '：' + parts.join('，'));
@@ -1938,7 +1957,7 @@ function mobAct(B, u, L) {
   for (const t of tg) { if (!t.alive) continue; const opp = u.pet && (stOf(t, 'stun') || stOf(t, 'freeze')); const r = hitCalc(u, t, (s.dmg || 1) * (opp ? 1.3 : 1) * (u.trait === 'dahong' && s.aoe ? 1.15 : 1), s.mag, { el: s.el, sure: u.trait === 'dashen' }); if (r.miss) { banterMiss(B, u, t); fxe(B, { k: 'miss', t: t.id }); parts.push(`${uName(t)} <span class="miss">躲开了</span>`); continue; }
     const died = applyDmg(B, u, t, r.dmg, { crit: r.crit, weak: r.weak }); if (u.trait === 'maoqiu') u.hp = Math.min(u.hpMax, u.hp + Math.round(r.dmg * 0.15)); if (s.leech) u.hp = Math.min(u.hpMax, u.hp + r.dmg * s.leech); if (r.weak && u.side === 0) noteWeak(t, s.el);
     parts.push(`${uName(t)} <span class="${r.crit ? 'crit' : 'dmg'}">-${r.dmg}${r.crit ? ' 暴击!' : ''}</span>${r.weak ? ' <span class="weak">正中要害</span>' : ''}${opp ? ' <span class="weak">趁它动不了</span>' : ''}${died ? ' <b class="die">倒下</b>' : ''}`);
-    let stunned = false; if (t.alive && s.st && Math.random() < (s.st.p ?? 1) * (u.pet && t.boss && s.st.k === 'stun' ? 0.5 : 1) + (u.trait === 'dahong' && s.st.k === 'burn' ? 0.2 : 0)) { addSt(t, { k: s.st.k, t: s.st.t, v: s.st.v ? Math.round(u.atk * s.st.v) : 0 }); if (s.st.k === 'stun') stunned = true; parts.push(`<span class="st" style="color:${STATUS[s.st.k].c}">${STATUS[s.st.k].n}</span>`); }
+    let stunned = false; if (t.alive && s.st && Math.random() < (s.st.p ?? 1) * (u.pet && t.boss && s.st.k === 'stun' ? 0.5 : 1) + (u.trait === 'dahong' && s.st.k === 'burn' ? 0.2 : 0)) { addSt(t, { k: s.st.k, t: s.st.t, v: stVal(u, s.st) }); if (s.st.k === 'stun') stunned = true; parts.push(`<span class="st" style="color:${STATUS[s.st.k].c}">${STATUS[s.st.k].n}</span>`); }
     if (u.side === 0 && (stunned || r.weak || (u.trait === 'dashen' && chance(0.5))) && tryInterrupt(B, t)) parts.push('<span class="weak">打断了它的蓄力！</span>'); }
   L(`${uName(u)} <span class="sk">${s.n}</span>：${parts.join('，')}`); B.fx = 'hit';
 }
@@ -2049,7 +2068,7 @@ function mechBonus(B) { if (B.auto || !(B.story || B.units.some(u => u.boss))) r
    Leave whenever you like (逃跑) or fall — nothing is lost. The best streak is kept, with rewards per 10 wins. */
 const STANCES = [{ id: 'gate', t: '守城门 · 全队防御 +30%' }, { id: 'wall', t: '守城头 · 全队攻击 +20%' }, { id: 'supply', t: '守粮道 · 每波打完回 20% 气血' }];
 function stanceApply(B) { const s = B.stance; if (!s) return; for (const u of alive(B, 0)) { if (s === 'gate') addSt(u, { k: 'def', t: 99, v: 0.3 }); if (s === 'wall') addSt(u, { k: 'atk', t: 99, v: 0.2 }); } }
-function spawnFoes(B, list) { for (const [id, lv] of list) { const u = mobUnit(id, lv, 1); u.hp = u.hpMax; u.alive = true; partyFoe(B, u); B.units.push(u); planMob(B, u); if (!MOBS[id].nocodex) { C.codex = C.codex || {}; C.codex[id] = C.codex[id] || { wk: [] }; } } }
+function spawnFoes(B, list) { for (const [id, lv] of list) { const u = mobUnit(id, lv, 1); if (B.assist) { const k = 1 - BAL.assist * B.assist; u.hpMax = Math.round(u.hpMax * k); u.atk = Math.round(u.atk * k); } u.hp = u.hpMax; u.alive = true; partyFoe(B, u); B.units.push(u); planMob(B, u); if (!MOBS[id].nocodex) { C.codex = C.codex || {}; C.codex[id] = C.codex[id] || { wk: [] }; } } }
 function mechWave(B) { // called when every foe is down: true = the fight goes on
   if (B.waves && B.waves.length) { const next = B.waves.shift(); B.waveN = (B.waveN || 1) + 1; if (B.stance === 'supply') for (const u of alive(B, 0)) { const v = Math.round(u.hpMax * 0.2); u.hp = Math.min(u.hpMax, u.hp + v); fxe(B, { k: 'heal', t: u.id, v, hp: hpr(u) }); }
     B.units = B.units.filter(u => u.side === 0 || u.alive); spawnFoes(B, next); blog(B, `<span class="phase">第 ${B.waveN} 波！${B.waves.length ? '' : '（最后一波）'}</span>`); fxe(B, { k: 'phase', t: B.units.find(u => u.side === 1).id }); B.title = `${B.baseTitle}（第 ${B.waveN}/${B.waveN + B.waves.length} 波）`; return true; }
@@ -2061,7 +2080,7 @@ async function siege(spec, stancePrompt) {
   const waves = spec.waves.slice(); const first = waves.shift();
   const r = await startBattle(Object.assign({ flee: false, story: 1, noLose: true }, spec, { mobs: first, waves, stance: STANCES[c].id, title: spec.title }));
   return r && r.win; }
-async function siegeRetry(spec, prompt, lose) { for (; ;) { if (await siege(spec, prompt)) return true; await nar(lose || '城头上的人把你拖了下来。伤口包好了，城还在。'); fullHeal(); refresh(); const c = await choose(['再守一次！', '先回去练练']); if (c === 1) return false; } }
+async function siegeRetry(spec, prompt, lose) { let n = 0; try { for (; ;) { STATE.assist = n; if (await siege(spec, prompt)) return true; await nar(lose || '城头上的人把你拖了下来。伤口包好了，城还在。'); n = Math.min(BAL.assistMax, n + 1); fullHeal(); refresh(); const c = await choose([`再守一次！（敌人弱 ${Math.round(BAL.assist * n * 100)}%）`, '先回去练练']); if (c === 1) return false; } } finally { STATE.assist = 0; } }
 /* 帝关城头: the siege you can play again */
 const SIEGE_POOL = [['yiyubing', 'yiyuqi', 'bhhun'], ['yiyubing', 'yiyubing', 'yiyuqi'], ['bhhun', 'yiyuqi', 'yiyuqi'], ['yiyubing', 'bhhun', 'bhhun'], ['dizu']];
 function siegeOpen() { return C.story.q > qi('q_dizu'); }
@@ -2386,14 +2405,14 @@ async function enterDungeon(id, hard) {
   STATE.dungeon = { id, room: 0 }; logLine(`<div class="lochead">${D.name}</div>`, 'loc'); refresh(); bannerDraw();
   for (let i = 0; i < D.rooms.length; i++) {
     const R = D.rooms[i]; STATE.dungeon.room = i; refresh(); logLine(`<b>【${R.name}】</b>${R.text}`, 'enc'); await sleep(window.__dbg && __dbg.instant ? 0 : 400);
-    if (R.mobs) { const r = await startBattle({ mobs: R.mobs.map(m => [m, R.boss ? lvB : Math.max(1, lvB - 1)]), title: `${hard ? '困难 · ' : ''}${D.name} · ${R.name}`, flee: !R.boss, dungeon: id, room: i, epic: R.boss && R.epic ? R.epic : null });
-      if (!r || !r.win) { STATE.dungeon = null; refresh(); bannerDraw(); return; } }
+    if (R.mobs) { const r = await startBattle({ mobs: R.mobs.map(m => [m, R.boss ? lvB : Math.max(1, lvB - 1)]), title: `${hard ? '困难 · ' : ''}${D.name} · ${R.name}`, flee: !R.boss, dungeon: id, room: i, epic: R.boss && R.epic ? R.epic : null, assist: hard ? 0 : Math.min(BAL.assistMax, (C.dgFail || {})[id] || 0) });
+      if (!r || !r.win) { if (!hard && !(r && r.fled)) { C.dgFail = C.dgFail || {}; C.dgFail[id] = Math.min(BAL.assistMax, (C.dgFail[id] || 0) + 1); logLine(`<span class="dim">下回再进「${D.name}」，里面的东西会弱 ${Math.round(BAL.assist * C.dgFail[id] * 100)}%。</span>`, 'sys'); } STATE.dungeon = null; refresh(); bannerDraw(); return; } }
     else if (R.event) await dungeonEvent(R.event, D);
     if (i < D.rooms.length - 1) { const c = await dlgChoose([{ t: '原地调息，再往里走（恢复 40% 气血和符力）' }, { t: '直接往里走' }, { t: '先退出去' }], `「${R.name}」过了。前面还有 ${D.rooms.length - 1 - i} 关。`);
       if (c === 0) { const s = charStats(); C.hp = Math.min(s.hpMax, C.hp + s.hpMax * 0.4); C.mp = Math.min(s.mpMax, C.mp + s.mpMax * 0.4); logLine('你靠着石壁调息了一会儿。', 'dim'); refresh(); }
       if (c === 2) { STATE.dungeon = null; refresh(); bannerDraw(); return; } }
   }
-  const key = hard ? id + '_hard' : id, firstHard = hard && !C.dungeons[key]; passTime(2); C.dungeons[key] = (C.dungeons[key] || 0) + 1; logLine(`<b class="lvup">「${hard ? '困难 · ' : ''}${D.name}」走通了！</b>`, 'sys'); bigFlash((hard ? '困难 · ' : '') + D.name + ' · 通关', 'relic');
+  if (C.dgFail) delete C.dgFail[id]; const key = hard ? id + '_hard' : id, firstHard = hard && !C.dungeons[key]; passTime(2); C.dungeons[key] = (C.dungeons[key] || 0) + 1; logLine(`<b class="lvup">「${hard ? '困难 · ' : ''}${D.name}」走通了！</b>`, 'sys'); bigFlash((hard ? '困难 · ' : '') + D.name + ' · 通关', 'relic');
   if (hard) { addItem('baoyao', 3); addItem('lingyao', 3); gainExp(BAL.expNext(C.lv) * 0.6); if (firstHard) { const left = Object.keys(RELICS).filter(k => !(C.relics || {})[k]); if (left.length) gainRelic(pick(left)); } }
   STATE.dungeon = null; save(); refresh(); bannerDraw(); setTimeout(storyPoll, 300);
 }
@@ -2432,9 +2451,9 @@ const choose = (opts, prompt) => dlgChoose(opts.map(o => typeof o === 'string' ?
 const tip = t => logLine('【指引】' + t, 'tip');
 const give = (id, n = 1) => addItem(id, n);
 async function fight(spec) { const r = await startBattle(Object.assign({ flee: false, story: 1 }, spec)); return r && r.win; }
-async function fightRetry(spec, loseText) {
-  for (; ;) { if (await fight(Object.assign({ noLose: true }, spec))) return true; await nar(loseText || '你被打翻在地，眼前一黑……再睁眼时，伤口已经被人包好了。');
-    fullHeal(); refresh(); const c = await choose(['再来！', '先回去练练']); if (c === 1) return false; }
+async function fightRetry(spec, loseText) { let n = 0; /* each loss in a row makes the next try a little easier (BAL.assist each, up to BAL.assistMax): hard, never a wall */
+  try { for (; ;) { STATE.assist = n; if (await fight(Object.assign({ noLose: true }, spec))) return true; await nar(loseText || '你被打翻在地，眼前一黑……再睁眼时，伤口已经被人包好了。');
+    n = Math.min(BAL.assistMax, n + 1); fullHeal(); refresh(); const c = await choose([`再来！（对手弱 ${Math.round(BAL.assist * n * 100)}%）`, '先回去练练']); if (c === 1) return false; } } finally { STATE.assist = 0; }
 }
 async function holdOut(spec, n) { const r = await startBattle(Object.assign({ flee: false, story: 1, noLose: true, survive: n }, spec)); return r || {}; } // the fights you cannot win: stand for n rounds
 const slv = (base, lo = -1, hi = 2) => clamp(C.lv, base + lo, base + hi);
@@ -3138,7 +3157,7 @@ const SIDE = {
 
 /* ---------------- quest engine ---------------- */
 const curQ = () => MAIN[C.story.q];
-function questAdvance() { C.story.q = Math.min(MAIN.length - 1, C.story.q + 1); C.story.n = 0; const q = curQ(); logLine(`<span class="qnew">【主线】${q.title}</span>：${q.goal}`, 'quest'); save(); refresh(); setTimeout(storyPoll, 300); }
+function questAdvance() { C.story.q = Math.min(MAIN.length - 1, C.story.q + 1); C.story.n = 0; setTimeout(expRelease, 300); const q = curQ(); logLine(`<span class="qnew">【主线】${q.title}</span>：${q.goal}`, 'quest'); save(); refresh(); setTimeout(storyPoll, 300); }
 async function runScene(fn, meta) { // meta = { title, ch } → the scene's lines are kept in the 回忆录
   if (STATE.scene) return false; STATE.scene = fn.name || 'scene'; UI.hist = []; UI.cur = null; if (meta && NETROLE !== 'guest') UI.jEntry = { t: meta.title, ch: meta.ch || curQ().ch, l: [], at: now() }; refresh(); netSync(); let r;
   try { r = await fn(); } catch (e) { console.error(e); } finally { STATE.scene = null; const J = UI.jEntry; UI.jEntry = null; if (J && J.l.length) { JOURNAL.push(J); saveJournal(); } dlgClose(); save(); refresh(); netSync(); }
@@ -4841,8 +4860,8 @@ function runeHtml(R) {
    宝骨 · 灵兽觉醒 · 材料兑换 · 每日悬赏 · 地点探索度 · 称号 · 传送 · 睡到天黑/天亮 · 洞天重开 · 困难秘境 · 战斗教学 */
 
 /* ---------- 宝骨 ---------- */
-function gainRelic(id, quiet) { C.relics = C.relics || {}; if (C.relics[id]) return; C.relics[id] = 1; const R = RELICS[id]; C.eq = C.eq || []; if (C.eq.length < relicSlots(C.lv)) C.eq.push(id);
-  if (!quiet) { logLine(`<b class="lvup">得到宝骨</b>：${R.i}<b>${R.n}</b>——${R.d}${C.eq.includes(id) ? '（已经戴上了）' : '（在“石昊”页里换着戴）'}`, 'sys'); sfx('epic'); bigFlash(R.n, 'relic'); } fixHp(); }
+function gainRelic(id, quiet) { C.relics = C.relics || {}; if (C.relics[id]) return; C.relics[id] = 1; const R = RELICS[id]; C.eq = C.eq || []; let off = null; if (C.eq.length < relicSlots(C.lv)) C.eq.push(id); else { const own = Object.keys(C.relics); off = C.eq.filter(r => !forgeLv(r)).sort((a, b) => own.indexOf(a) - own.indexOf(b))[0]; if (off) C.eq[C.eq.indexOf(off)] = id; } /* a full 宝骨栏 swaps out the oldest unforged one */
+  if (!quiet) { logLine(`<b class="lvup">得到宝骨</b>：${R.i}<b>${R.n}</b>——${R.d}${C.eq.includes(id) ? (off ? `（栏满了，换下了最早的「${RELICS[off].n}」，想换回来去「石昊」页）` : '（已经戴上了）') : '（在“石昊”页里换着戴）'}`, 'sys'); sfx('epic'); bigFlash(R.n, 'relic'); } fixHp(); }
 function relicFromKills(kills) { for (const [mob, , boss] of kills || []) if (boss) for (const [id, R] of Object.entries(RELICS)) if (R.from === mob) gainRelic(id); }
 function equipRelic(id) { if (!C.relics || !C.relics[id]) return; C.eq = C.eq || []; const i = C.eq.indexOf(id); if (i >= 0) C.eq.splice(i, 1); else { if (C.eq.length >= relicSlots(C.lv)) { toast('宝骨栏满了（' + relicSlots(C.lv) + ' 件），先摘下一件'); return; } C.eq.push(id); } fixHp(); sfx('click'); save(); refresh(); }
 
@@ -4970,7 +4989,7 @@ const PET_LV_CAP = 85;
 const petLv = id => { const p = C.pets[id]; return p ? (p.lv || C.lv) : C.lv; };
 const petNeed = lv => Math.round(BAL.expNext(Math.min(lv, 20)) * (lv >= 20 ? 1 + (lv - 19) * 0.35 : 1));
 function petGainExp(id, n) { const p = C.pets[id]; if (!p || n <= 0) return; if (!p.lv) p.lv = C.lv; p.exp = (p.exp || 0) + Math.round(n * (p.lv < C.lv ? 1.6 : 1));
-  const cap = C.story.f.end ? PET_LV_CAP : Math.min(PET_LV_CAP, C.lv + 2); // before the end of volume one: at most 2 above 石昊
+  const cap = Math.min(PET_LV_CAP, C.lv + 2); // never more than 2 above 石昊 (so the story's level ceilings hold for partners too)
   while (p.lv < cap && p.exp >= petNeed(p.lv)) { p.exp -= petNeed(p.lv); p.lv++; logLine(`${PETS[id].icon}<b>${PETS[id].name}</b> 长到了 <b>${p.lv} 级</b>${p.lv > C.lv ? '（比石昊还高，属性 +' + Math.round((p.lv - C.lv) * 3) + '%）' : ''}。`, 'sys'); if (id === C.pet) bigFlash(PETS[id].name + ' · ' + p.lv + ' 级', 'lv'); }
   if (p.lv >= cap) p.exp = Math.min(p.exp, petNeed(p.lv)); petEvo2Check(id); petEvo3Check(id); }
 function petBattleExp(exp, fielded) { const F_ = fielded && fielded.length ? fielded : [C.pet]; for (const id of Object.keys(C.pets)) petGainExp(id, exp * (F_.includes(id) ? 1 : 0.3)); }
@@ -6892,7 +6911,7 @@ function pHero() {
   const relics = Object.keys(C.relics || {}).length ? `<div class="list">${Object.keys(C.relics).map(id => { const R = RELICS[id], on = (C.eq || []).includes(id); return `<div class="li ${on ? 'on' : ''}" onclick="equipRelic('${id}')"><span class="ic">${R.i}</span><div class="t"><b>${R.n}</b>${forgeLv(id) ? ` <span class="pill gold">+${forgeLv(id)}</span>` : ''}<small>${R.d}${forgeLv(id) ? `（炼器后 ×${(1 + 0.2 * forgeLv(id)).toFixed(1)}）` : ''}</small></div>${forgeBtn(id)}<span class="chk">${on ? '✔' : ''}</span></div>`; }).join('')}</div>` : '';
   const dt = C.dt.length ? `<div class="dts">${C.dt.map(k => { const d = DONGTIAN.find(x => x.k === k); return `<span class="pill" title="${d.d}">${d.n}</span>`; }).join('')}</div>` : '';
   return `<div class="card"><div class="me-hd"><div style="flex:1;min-width:0"><div class="nm">石昊 <span class="dim" style="font-size:.85rem">小不点</span>${C.title && ACH.find(a => a.id === C.title) ? ` <span class="pill gold">${ACH.find(a => a.id === C.title).n}</span>` : ''}</div><div class="sub">${R.name} · 第 ${C.lv} 层${C.dt.length ? ` · ${C.dt.length} 座洞天` : ''}</div></div><div class="pw" title="战力">${fmt(s.power)}</div></div>
-    <div class="bars" style="margin-top:8px">气血 ${Math.ceil(C.hp)}/${s.hpMax}<div class="bar"><i style="width:${C.hp / s.hpMax * 100}%"></i></div>符力 ${Math.floor(C.mp)}/${s.mpMax}<div class="bar mp"><i style="width:${C.mp / s.mpMax * 100}%"></i></div>经验 ${fmt(C.exp)}/${fmt(BAL.expNext(C.lv))}<div class="bar exp"><i style="width:${Math.min(100, C.exp / BAL.expNext(C.lv) * 100)}%"></i></div></div>
+    <div class="bars" style="margin-top:8px">气血 ${Math.ceil(C.hp)}/${s.hpMax}<div class="bar"><i style="width:${C.hp / s.hpMax * 100}%"></i></div>符力 ${Math.floor(C.mp)}/${s.mpMax}<div class="bar mp"><i style="width:${C.mp / s.mpMax * 100}%"></i></div>经验 ${fmt(C.exp)}/${fmt(BAL.expNext(C.lv))} <span class="dim" style="font-size:.8rem">· 这段剧情最高 ${lvStoryCap()} 层${C.expBank ? ` · 攒着 ${fmt(C.expBank)}` : ''}</span><div class="bar exp"><i style="width:${Math.min(100, C.exp / BAL.expNext(C.lv) * 100)}%"></i></div></div>
     <div class="kv"><div><span>攻击</span> ${s.atk}</div><div><span>防御</span> ${s.def}</div><div><span>身法</span> ${s.spd}</div><div><span>暴击</span> ${(s.crit * 100).toFixed(0)}%</div></div>${dt}</div>
     <div class="card"><h3>宝术 <span class="dim" style="font-size:.8rem;font-family:var(--ff)">点选带进战斗（${C.bar.length}/${barSlots(C.lv)}，境界越高能带越多）· 越用越熟</span></h3><div class="list">${sk}</div></div>${bsHtml()}${fuseHtml()}
     <div class="card"><h3>宝骨 <span class="dim" style="font-size:.8rem;font-family:var(--ff)">打倒首领得到（${(C.eq || []).length}/${relicSlots(C.lv)}，境界越高能戴越多）</span></h3>${forgeOpen() ? '<div class="dim" style="font-size:.78rem;margin-bottom:4px">🔥炼：每炼一级效果 +20%（特殊效果 +10%），最多 +5；+4、+5 可能失败</div>' : ''}${relics || '<div class="dim" style="font-size:.87rem">还没有。第一次打倒一个首领，它会留下点东西。</div>'}</div>${daoHtml()}
@@ -7007,7 +7026,7 @@ const DAO_MAX = 20;
 const DAO_OPTS = [{ k: 'hp', n: '气血', i: '❤️' }, { k: 'atk', n: '攻击', i: '⚔️' }, { k: 'def', n: '防御', i: '🛡️' }];
 function daoGain(over) { if (!C || over <= 0 || C.lv < 40) return; C.daoX = (C.daoX || 0) + over; const per = Math.max(1, Math.round(BAL.expNext(C.lv) * 0.25)); let n = 0; while (C.daoX >= per) { C.daoX -= per; n++; }
   if (n) { C.dao = (C.dao || 0) + n; logLine(`用不上的经验化成了<b class="lvup">悟道点 +${n}</b>（现有 ${C.dao}）——在「石昊」页的「悟道」里用。`, 'sys'); } }
-function capExp() { const need = BAL.expNext(C.lv); if (C.exp > need) daoGain(C.exp - need); C.exp = need; }
+function capExp() { const need = BAL.expNext(C.lv); if (C.exp > need) { if (C.lv >= 40) daoGain(C.exp - need); else C.expBank = (C.expBank || 0) + C.exp - need; } C.exp = need; } /* before 40 nothing is thrown away: it waits in C.expBank */
 function daoSpend(k) { if (NETROLE === 'guest' || STATE.battle) return; if (!(C.dao > 0)) { toast('没有悟道点'); return; } C.daoP = C.daoP || {};
   if (k === 'prof') { const L = C.bar.filter(id => profLevel(id) < PROF_MAX).sort((a, b) => ((C.prof || {})[a] || 0) - ((C.prof || {})[b] || 0)); if (!L.length) { toast('带着的宝术都圆满了'); return; } const id = L[0]; for (let i = 0; i < 20; i++) profUse(id); logLine(`悟道：${SKILLS[id].icon}${SKILLS[id].name} 熟练度 +20`, 'sys'); }
   else { if ((C.daoP[k] || 0) >= DAO_MAX) { toast('这一项已经悟到头了'); return; } C.daoP[k] = (C.daoP[k] || 0) + 1; }
@@ -7975,9 +7994,9 @@ function jumpLate(c, i) { const J = JUMPS[i], f = c.story.f, since = flag => JUM
    宝术 ×1.3, partners closer and stronger, a fuller purse and bag, a better 虚神界 rank */
 const JUMP_UP = { lv: 3, prof: 1.3, aff: 15, petLv: 3, money: 1.5, bag: 1.5, arena: 0.6 };
 function jumpBoost(c, i) { const J = JUMPS[i], U = JUMP_UP;
-  for (let k = 0; k < U.lv && c.lv < BAL.lvCap && !lvGated(c); k++) c.lv++; if (c.lv > J.lv) c.exp = 0; else if (lvGated(c)) c.exp = Math.round(BAL.expNext(c.lv) * 0.6);
+  for (let k = 0; k < U.lv && c.lv < BAL.lvCap && !lvGated(c) && c.lv < lvStoryCap(c); k++) c.lv++; if (c.lv > J.lv) c.exp = 0; else if (lvGated(c)) c.exp = Math.round(BAL.expNext(c.lv) * 0.6);
   for (const id of Object.keys(c.prof)) c.prof[id] = Math.round(c.prof[id] * U.prof);
-  for (const p of Object.values(c.pets)) { p.aff = Math.min(100, (p.aff || 0) + U.aff); p.lv = Math.min(PET_LV_CAP, c.story.f.end ? (p.lv || 1) + U.petLv : c.lv + 2, (p.lv || 1) + U.petLv); }
+  for (const p of Object.values(c.pets)) { p.aff = Math.min(100, (p.aff || 0) + U.aff); p.lv = Math.min(PET_LV_CAP, c.lv + 2, (p.lv || 1) + U.petLv); }
   c.money = Math.round((c.money || 0) * U.money); for (const k of Object.keys(c.bag || {})) c.bag[k] = Math.round(c.bag[k] * U.bag);
   c.bar = c.sk.slice().sort((a, b) => SKILL_ORDER.indexOf(b) - SKILL_ORDER.indexOf(a)).slice(0, barSlots(c.lv)); c.eq = Object.keys(c.relics).slice(-relicSlots(c.lv)); }
 /* whatever the scenes before the jump point hand out — 宝术, 功法, 伙伴, story marks, the 宝骨 of the bosses fought, the 秘境 cleared — the jump hands out too,

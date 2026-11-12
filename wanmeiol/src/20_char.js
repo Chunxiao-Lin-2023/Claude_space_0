@@ -19,7 +19,8 @@ function charStats(c = C) {
 function fixHp() { const s = charStats(); C.hp = clamp(C.hp, 0, s.hpMax); C.mp = clamp(C.mp, 0, s.mpMax); }
 function fullHeal() { const s = charStats(); C.hp = s.hpMax; C.mp = s.mpMax; }
 function skillsOf(c = C) { return ['atk', ...c.bar.filter(id => c.sk.includes(id)), 'guard']; }
-function learnSkill(id) { if (C.sk.includes(id) || (typeof evoAfter === 'function' && evoAfter(id).some(x => C.sk.includes(x)))) return; /* already grown into something higher */ C.sk.push(id); if (C.bar.length < barSlots(C.lv)) C.bar.push(id); const S = SKILLS[id]; logLine(`<b class="lvup">领悟宝术</b>：${S.icon}<b>${S.name}</b>——${S.desc}`, 'sys'); sfx('epic'); }
+function learnSkill(id) { if (C.sk.includes(id) || (typeof evoAfter === 'function' && evoAfter(id).some(x => C.sk.includes(x)))) return; /* already grown into something higher */ C.sk.push(id); const S = SKILLS[id]; let out = ''; if (C.bar.length < barSlots(C.lv)) C.bar.push(id); else { const low = C.bar.slice().sort((a, b) => SKILL_ORDER.indexOf(a) - SKILL_ORDER.indexOf(b))[0]; if (low && SKILL_ORDER.indexOf(low) < SKILL_ORDER.indexOf(id)) { C.bar[C.bar.indexOf(low)] = id; out = `（宝术栏满了，换下了最低阶的「${SKILLS[low].name}」，想换回来去「石昊」页）`; } } /* a new 宝术 is worth carrying: the full bar makes room */
+  logLine(`<b class="lvup">领悟宝术</b>：${S.icon}<b>${S.name}</b>——${S.desc}${out}`, 'sys'); sfx('epic'); }
 /* 宝术熟练度 */
 const profLevel = (id, c = C) => { const n = (c.prof && c.prof[id]) || 0; let l = 0; for (let i = 1; i < PROF.length; i++) if (n >= PROF[i].at) l = i; return l; };
 function profUse(id) { C.prof = C.prof || {}; const before = profLevel(id); C.prof[id] = (C.prof[id] || 0) + 1; const after = profLevel(id); if (after > before) setTimeout(() => { logLine(`${SKILLS[id].icon}<b>${SKILLS[id].name}</b> 用得越来越顺手——<b class="lvup">${PROF[after].n}</b>（威力 +${PROF[after].b * 100}%）`, 'sys'); sfx('epic'); }, 50); }
@@ -51,11 +52,17 @@ function useItem(id, inBattle) {
 /* ---------- levels & realms ---------- */
 const LV_GATES = [[9, 'jijing'], [19, 'end'], [24, 'v2end'], [29, 'shihuang'], [34, 'v4'], [39, 'v4end'], [44, 'v5end'], [49, 'v6end'], [54, 'v7end'], [59, 'yiyu0'], [62, 'yyEnd'], [65, 'v8end'], [71, 'v9end'], [75, 'v12end'], [80, 'v13end'], [84, 'xiandi']]; /* a realm's last level: the story has to open the next one (9 → 机缘 is handled on its own) */
 const lvGated = c => LV_GATES.some(([l, f]) => c.lv === l && !c.story.f[f]);
+/* 剧情等级上限: each step of the story has a ceiling (its recommended level + BAL.capOver), so 石昊 can't grind past the fights it sets.
+   Exp past the ceiling is kept (C.expBank) and handed back when the story moves on; from 40 on it becomes 悟道 instead. */
+const recOf = i => { for (let k = Math.min(i, MAIN.length - 1); k >= 0; k--) if (MAIN[k].rec) return MAIN[k].rec; return 3; };
+const lvStoryCap = (c = C) => Math.min(BAL.lvCap, recOf(c.story.q) + BAL.capOver);
+function expRelease() { const b = C.expBank || 0; if (!b || C.lv >= lvStoryCap()) return; C.expBank = 0; logLine(`剧情往前走了，攒下的 <span class="exp">${fmt(b)} 经验</span> 回到了身上。`, 'loot'); gainExp(b, true); }
 function gainExp(n, quiet) {
   if (n <= 0) return; C.exp += Math.round(n); if (!quiet) logLine(`获得 <span class="exp">${fmt(n)} 经验</span>`, 'loot');
   while (C.exp >= BAL.expNext(C.lv) && C.lv < BAL.lvCap) {
     if (C.lv === 9 && !C.story.f.jijing) { C.exp = BAL.expNext(C.lv); if (!C.seen.neck9) { C.seen.neck9 = 1; logLine('你体内的气血像江河一样奔涌，却撞上了一层看不见的壁——<b>搬血境走到头了</b>。要怎么往前走，得看机缘（跟着主线走）。', 'sys'); } break; }
     if (lvGated(C)) { capExp(); break; }
+    if (C.lv >= lvStoryCap()) { capExp(); if (C.capSaid !== C.story.q) { C.capSaid = C.story.q; logLine(`<b>已到这段剧情的等级上限（第 ${C.lv} 层）</b>：再打的经验先攒着${C.lv >= 40 ? '，化成悟道点' : ''}，等主线往前走了再长。`, 'sys'); } break; }
     if (C.lv === 68 && !C.story.f.zhizun) { capExp(); break; }
     C.exp -= BAL.expNext(C.lv); C.lv++; fullHeal(); sfx('level');
     logLine(`<b class="lvup">境界精进！</b> ${realmOf(C.lv).name} · 第 ${C.lv} 层。气血、符力已回满。`, 'sys'); bigFlash(`境界精进 · ${realmOf(C.lv).name}第 ${C.lv} 层`, 'lv');

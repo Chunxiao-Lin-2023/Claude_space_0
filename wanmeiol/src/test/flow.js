@@ -6,7 +6,7 @@ const { chromium } = require('playwright');
   await pg.evaluate(() => { __dbg.auto = true; __dbg.noCD = true; __dbg.instant = true; SET.fast = true; __dbg.pick = ts => { const i = ts.findIndex(t => /云曦|蛋在我这儿|我陪你练|我要把我的骨头/.test(t)); return i >= 0 ? i : 0; }; }); await pg.click('text=开始');
   const res = await pg.evaluate(async () => { try {
     const D = __dbg, S = () => D.STATE, C = () => D.C; C().auto = true; const w8 = ms => new Promise(r => setTimeout(r, ms));
-    const idle = async (ms = 60000) => { const t0 = Date.now(); await w8(30); while (S().scene || S().battle || S().dungeon || S().busy) { if (Date.now() - t0 > ms) throw new Error('stuck ' + JSON.stringify({ q: D.curQ().id, scene: S().scene, b: !!S().battle, d: S().dungeon })); await w8(30); } };
+    const idle = async (ms = 180000) => { const t0 = Date.now(); await w8(30); while (S().scene || S().battle || S().dungeon || S().busy) { if (Date.now() - t0 > ms) throw new Error('stuck ' + JSON.stringify({ q: D.curQ().id, scene: S().scene, b: !!S().battle, d: S().dungeon })); await w8(30); } };
     const npcLoc = n => npcLocNow(n) || Object.values(D.PLACES).find(p => (p.npcs || []).includes(n)).id;
     const walk = async to => { if (C().loc === to) return; for (let t = 0; t < 4 && C().loc !== to; t++) { await idle(); D.autoWalk(to); for (let i = 0; i < 600 && C().loc !== to; i++) await w8(20); } /* arrival scenes on the way can stop the walk: start again */ if (C().loc !== to) throw new Error('cannot walk to ' + to + ' from ' + C().loc + ' route=' + JSON.stringify(route(C().loc, to)) + ' st=' + JSON.stringify({ sc: S().scene, b: !!S().battle, d: S().dungeon, f: C().story.f })); await w8(150); await idle(); };
     const lvTo = n => { for (let k = 0; k < 40 && C().lv < n; k++) { const l0 = C().lv; D.gainExp(BAL.expNext(C().lv), true); if (C().lv === l0) break; } };
@@ -18,7 +18,7 @@ const { chromium } = require('playwright');
       else if (q.type === 'enter') { if (C().loc === q.loc) await D.questComplete(q); else await walk(q.loc); await idle(); if (D.curQ() === q) await D.questComplete(q); await idle(); }
       else if (q.type === 'talk') await talk(q.npc);
       else if (q.type === 'kill') { await walk(q.loc); for (let i = 0; i < 400 && C().story.n < q.n; i++) { if (C().hp < charStats().hpMax * 0.5) fullHeal(); await D.explore(); await idle(); if (C().loc !== q.loc) await walk(q.loc); } await talk(q.npc); }
-      else if (q.type === 'dungeon') { await walk(q.loc); for (let k = 0; k < 4 && C().story.n < 1; k++) { fullHeal(); await D.enterDungeon(q.dungeon); await idle(); if (C().loc !== q.loc) await walk(q.loc); } await idle(); if (q.npc) await talk(q.npc); else for (let i = 0; i < 50 && D.curQ() === q; i++) await w8(50); }
+      else if (q.type === 'dungeon') { await walk(q.loc); for (let k = 0; k < 6 && C().story.n < 1; k++) { fullHeal(); await D.enterDungeon(q.dungeon); await idle(); if (C().loc !== q.loc) await walk(q.loc); } await idle(); if (q.npc) await talk(q.npc); else for (let i = 0; i < 50 && D.curQ() === q; i++) await w8(50); }
       else if (q.type === 'arena') { await walk(q.loc); for (let i = 0; i < 12 && D.curQ() === q; i++) { C().arena.tries = 5; await D.arenaFight(D.arenaOpponents()[0]); await idle(); } await w8(800); await idle(); }
       await idle(); if (D.curQ() === q) throw new Error('did not advance ' + q.id + ' ' + JSON.stringify({ n: C().story.n, loc: C().loc, lv: C().lv }));
     }

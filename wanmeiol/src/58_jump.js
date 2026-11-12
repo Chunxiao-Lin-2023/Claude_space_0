@@ -87,9 +87,9 @@ function jumpLate(c, i) { const J = JUMPS[i], f = c.story.f, since = flag => JUM
    宝术 ×1.3, partners closer and stronger, a fuller purse and bag, a better 虚神界 rank */
 const JUMP_UP = { lv: 3, prof: 1.3, aff: 15, petLv: 3, money: 1.5, bag: 1.5, arena: 0.6 };
 function jumpBoost(c, i) { const J = JUMPS[i], U = JUMP_UP;
-  for (let k = 0; k < U.lv && c.lv < BAL.lvCap && !lvGated(c); k++) c.lv++; if (c.lv > J.lv) c.exp = 0; else if (lvGated(c)) c.exp = Math.round(BAL.expNext(c.lv) * 0.6);
+  for (let k = 0; k < U.lv && c.lv < BAL.lvCap && !lvGated(c) && c.lv < lvStoryCap(c); k++) c.lv++; if (c.lv > J.lv) c.exp = 0; else if (lvGated(c)) c.exp = Math.round(BAL.expNext(c.lv) * 0.6);
   for (const id of Object.keys(c.prof)) c.prof[id] = Math.round(c.prof[id] * U.prof);
-  for (const p of Object.values(c.pets)) { p.aff = Math.min(100, (p.aff || 0) + U.aff); p.lv = Math.min(PET_LV_CAP, c.story.f.end ? (p.lv || 1) + U.petLv : c.lv + 2, (p.lv || 1) + U.petLv); }
+  for (const p of Object.values(c.pets)) { p.aff = Math.min(100, (p.aff || 0) + U.aff); p.lv = Math.min(PET_LV_CAP, c.lv + 2, (p.lv || 1) + U.petLv); }
   c.money = Math.round((c.money || 0) * U.money); for (const k of Object.keys(c.bag || {})) c.bag[k] = Math.round(c.bag[k] * U.bag);
   c.bar = c.sk.slice().sort((a, b) => SKILL_ORDER.indexOf(b) - SKILL_ORDER.indexOf(a)).slice(0, barSlots(c.lv)); c.eq = Object.keys(c.relics).slice(-relicSlots(c.lv)); }
 /* whatever the scenes before the jump point hand out — 宝术, 功法, 伙伴, story marks, the 宝骨 of the bosses fought, the 秘境 cleared — the jump hands out too,

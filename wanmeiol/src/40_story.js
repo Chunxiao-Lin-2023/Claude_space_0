@@ -10,9 +10,9 @@ const choose = (opts, prompt) => dlgChoose(opts.map(o => typeof o === 'string' ?
 const tip = t => logLine('【指引】' + t, 'tip');
 const give = (id, n = 1) => addItem(id, n);
 async function fight(spec) { const r = await startBattle(Object.assign({ flee: false, story: 1 }, spec)); return r && r.win; }
-async function fightRetry(spec, loseText) {
-  for (; ;) { if (await fight(Object.assign({ noLose: true }, spec))) return true; await nar(loseText || '你被打翻在地，眼前一黑……再睁眼时，伤口已经被人包好了。');
-    fullHeal(); refresh(); const c = await choose(['再来！', '先回去练练']); if (c === 1) return false; }
+async function fightRetry(spec, loseText) { let n = 0; /* each loss in a row makes the next try a little easier (BAL.assist each, up to BAL.assistMax): hard, never a wall */
+  try { for (; ;) { STATE.assist = n; if (await fight(Object.assign({ noLose: true }, spec))) return true; await nar(loseText || '你被打翻在地，眼前一黑……再睁眼时，伤口已经被人包好了。');
+    n = Math.min(BAL.assistMax, n + 1); fullHeal(); refresh(); const c = await choose([`再来！（对手弱 ${Math.round(BAL.assist * n * 100)}%）`, '先回去练练']); if (c === 1) return false; } } finally { STATE.assist = 0; }
 }
 async function holdOut(spec, n) { const r = await startBattle(Object.assign({ flee: false, story: 1, noLose: true, survive: n }, spec)); return r || {}; } // the fights you cannot win: stand for n rounds
 const slv = (base, lo = -1, hi = 2) => clamp(C.lv, base + lo, base + hi);
@@ -716,7 +716,7 @@ const SIDE = {
 
 /* ---------------- quest engine ---------------- */
 const curQ = () => MAIN[C.story.q];
-function questAdvance() { C.story.q = Math.min(MAIN.length - 1, C.story.q + 1); C.story.n = 0; const q = curQ(); logLine(`<span class="qnew">【主线】${q.title}</span>：${q.goal}`, 'quest'); save(); refresh(); setTimeout(storyPoll, 300); }
+function questAdvance() { C.story.q = Math.min(MAIN.length - 1, C.story.q + 1); C.story.n = 0; setTimeout(expRelease, 300); const q = curQ(); logLine(`<span class="qnew">【主线】${q.title}</span>：${q.goal}`, 'quest'); save(); refresh(); setTimeout(storyPoll, 300); }
 async function runScene(fn, meta) { // meta = { title, ch } → the scene's lines are kept in the 回忆录
   if (STATE.scene) return false; STATE.scene = fn.name || 'scene'; UI.hist = []; UI.cur = null; if (meta && NETROLE !== 'guest') UI.jEntry = { t: meta.title, ch: meta.ch || curQ().ch, l: [], at: now() }; refresh(); netSync(); let r;
   try { r = await fn(); } catch (e) { console.error(e); } finally { STATE.scene = null; const J = UI.jEntry; UI.jEntry = null; if (J && J.l.length) { JOURNAL.push(J); saveJournal(); } dlgClose(); save(); refresh(); netSync(); }

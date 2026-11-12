@@ -19,7 +19,15 @@ const BAL = {
   phaseAtk: 0.25,                                     // a boss at half health gets angry: +25% attack
   weakMul: 1.5,                                       // hitting a weakness
   // enemies get tougher as you climb (2026-11): unchanged up to 11 层, gently at first, reaching 气血 ×1.6 / 攻击 ×1.25 at 18 层 — the same stretch where 宝术 / 宝骨 slots and partner moves open up
-  foeRamp: lv => Math.pow(clamp((lv - 11) / 7, 0, 1), 1.5), foeHp: lv => 1 + 0.6 * BAL.foeRamp(lv) + 0.03 * Math.max(0, lv - 20), foeAtk: lv => 1 + 0.25 * BAL.foeRamp(lv) + 0.01 * Math.max(0, lv - 20), // 第二、三卷: a little more past 20
+  foeRamp: lv => Math.pow(clamp((lv - 11) / 7, 0, 1), 1.5), foeHp: (lv, boss) => (1 + 0.6 * BAL.foeRamp(lv) + 0.03 * Math.max(0, lv - 20)) * BAL.toughHp(lv, boss), foeAtk: (lv, boss) => (1 + 0.25 * BAL.foeRamp(lv) + 0.01 * Math.max(0, lv - 20)) * BAL.toughAtk(lv, boss),
+  /* 有来有回: 宝骨/熟练度/伙伴/悟道/天庭 pile up as the book goes on, so the foes grow with the stage too (tuned with test/stage.js: a 中上 player wins ~80% with a third of their 气血 left) */
+  tough: [[38, 1, 1], [45, 1, 1.2], [55, 1, 1.33], [70, 1, 1.45], [85, 1, 1.5]], // [level, 气血 ×, 攻击 ×] — before 38 nothing changes; fights are long enough already, so only 攻击 grows
+  assist: 0.15, assistMax: 3, // 连输放水: each loss in a row of the same story fight takes 15% off the foes' 气血 and 攻击 next try, up to 3 times
+  capOver: 3, // 剧情等级上限 = this step's recommended level + capOver
+  toughAt: (lv, k) => { const T = BAL.tough; if (lv <= T[0][0]) return 1; for (let i = 1; i < T.length; i++) if (lv <= T[i][0]) { const [l0, ...a] = T[i - 1], [l1, ...b] = T[i], f = (lv - l0) / (l1 - l0); return a[k] + (b[k] - a[k]) * f; } return T[T.length - 1][k + 1]; },
+  hitCap: 0.4,
+  toughMob: 0.5, // ordinary foes (not 首领, not rivals) get only this share of the extra
+  toughHp: (lv, boss = 1) => 1 + (BAL.toughAt(lv, 0) - 1) * (boss ? 1 : BAL.toughMob), toughAtk: (lv, boss = 1) => 1 + (BAL.toughAt(lv, 1) - 1) * (boss ? 1 : BAL.toughMob), // 第二、三卷: a little more past 20
 };
 /* slots grow with the realm: 宝术 you can take into battle, 宝骨 you can wear */
 const barSlots = lv => 4 + (lv >= 10) + (lv >= 14) + (lv >= 18) + (lv >= 22) + (lv >= 27) + (lv >= 32) + (lv >= 37) + (lv >= 42);

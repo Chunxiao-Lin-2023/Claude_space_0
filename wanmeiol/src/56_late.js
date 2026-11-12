@@ -16,7 +16,7 @@ const DAO_MAX = 20;
 const DAO_OPTS = [{ k: 'hp', n: '气血', i: '❤️' }, { k: 'atk', n: '攻击', i: '⚔️' }, { k: 'def', n: '防御', i: '🛡️' }];
 function daoGain(over) { if (!C || over <= 0 || C.lv < 40) return; C.daoX = (C.daoX || 0) + over; const per = Math.max(1, Math.round(BAL.expNext(C.lv) * 0.25)); let n = 0; while (C.daoX >= per) { C.daoX -= per; n++; }
   if (n) { C.dao = (C.dao || 0) + n; logLine(`用不上的经验化成了<b class="lvup">悟道点 +${n}</b>（现有 ${C.dao}）——在「石昊」页的「悟道」里用。`, 'sys'); } }
-function capExp() { const need = BAL.expNext(C.lv); if (C.exp > need) daoGain(C.exp - need); C.exp = need; }
+function capExp() { const need = BAL.expNext(C.lv); if (C.exp > need) { if (C.lv >= 40) daoGain(C.exp - need); else C.expBank = (C.expBank || 0) + C.exp - need; } C.exp = need; } /* before 40 nothing is thrown away: it waits in C.expBank */
 function daoSpend(k) { if (NETROLE === 'guest' || STATE.battle) return; if (!(C.dao > 0)) { toast('没有悟道点'); return; } C.daoP = C.daoP || {};
   if (k === 'prof') { const L = C.bar.filter(id => profLevel(id) < PROF_MAX).sort((a, b) => ((C.prof || {})[a] || 0) - ((C.prof || {})[b] || 0)); if (!L.length) { toast('带着的宝术都圆满了'); return; } const id = L[0]; for (let i = 0; i < 20; i++) profUse(id); logLine(`悟道：${SKILLS[id].icon}${SKILLS[id].name} 熟练度 +20`, 'sys'); }
   else { if ((C.daoP[k] || 0) >= DAO_MAX) { toast('这一项已经悟到头了'); return; } C.daoP[k] = (C.daoP[k] || 0) + 1; }

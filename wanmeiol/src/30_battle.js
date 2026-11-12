@@ -22,7 +22,7 @@ const ALLY_NPC = {
 const unitDef = id => MOBS[id] || ALLY_NPC[id] || PETS[id];
 let BID = 1;
 function mobUnit(id, lv, side = 1) {
-  const M = unitDef(id); lv = lv || M.lv || 1; const E = BAL.enemy(lv), m = M.mul || {}, D = side ? { hp: diffOf().hp * BAL.foeHp(lv) * ngFoe(), atk: diffOf().atk * BAL.foeAtk(lv) * ngFoeAtk() } : { hp: 1, atk: 1 };
+  const M = unitDef(id); lv = lv || M.lv || 1; const E = BAL.enemy(lv), m = M.mul || {}, D = side ? { hp: diffOf().hp * BAL.foeHp(lv, !!M.boss) * ngFoe(), atk: diffOf().atk * BAL.foeAtk(lv, !!M.boss) * ngFoeAtk() } : { hp: 1, atk: 1 };
   return { id: 'u' + (BID++), side, kind: side ? 'mob' : 'npc', mob: id, name: M.name, icon: M.icon || (M.boss ? '👹' : '🐾'), lv, boss: !!M.boss,
     hpMax: Math.round(E.hp * (m.hp || 1) * D.hp), atk: Math.round(E.atk * (m.atk || 1) * D.atk), def: Math.round(E.def * (m.def || 1)), spd: E.spd * (m.spd || 1), crit: M.boss ? 0.08 : 0.05, leech: 0, mpMax: 0, mp: 0, sk: [], cd: {}, st: [], alive: true, plan: null, intent: '' };
 }
@@ -34,7 +34,7 @@ function petUnit(id, slot = 0) { // the partner scales with 石昊; affection up
   return { id: slot ? 'pet' + (slot + 1) : 'pet', lead: !slot, trait: id, side: 0, kind: 'npc', mob: id, pet: 1, evo: !!pd.evo, name: P.name + (pd.evo3 ? '·真身' : pd.evo2 ? '·返祖' : pd.evo ? '·觉醒' : ''), icon: P.icon, lv: plv, hpMax: Math.round(s.hpMax * m.hp * k), atk: Math.round(s.atk * m.atk * k), def: Math.round(s.def * m.def * k), spd: s.spd * m.spd, crit: 0.08, leech: 0, mpMax: 0, mp: 0, sk: [], cd: {}, st: [], alive: true, plan: null, intent: '', aff, hp: 0 };
 }
 function rivalUnit(r) { // 虚神界 rivals fight with 宝术 like you do
-  const L = r.lv - 1, g = r.gear || 1, D = diffOf(); const u = { id: 'u' + (BID++), side: 1, kind: 'rival', name: r.name, icon: r.icon || '🧑', lv: r.lv, boss: !!r.boss, shiyi: !!r.shiyi, hpMax: Math.round((HERO.base.hp + HERO.grow.hp * L) * g * 1.25 * D.hp * (r.shiyi ? 1.3 : 1)), atk: Math.round((HERO.base.atk + HERO.grow.atk * L) * g * D.atk), def: Math.round((HERO.base.def + HERO.grow.def * L) * g), spd: HERO.base.spd + HERO.grow.spd * L + (r.shiyi ? 3 : 0), crit: 0.12, leech: 0,
+  const L = r.lv - 1, g = r.gear || 1, D = diffOf(); const u = { id: 'u' + (BID++), side: 1, kind: 'rival', name: r.name, icon: r.icon || '🧑', lv: r.lv, boss: !!r.boss, shiyi: !!r.shiyi, hpMax: Math.round((HERO.base.hp + HERO.grow.hp * L) * g * 1.25 * D.hp * (r.shiyi ? 1.3 : 1) * BAL.toughHp(r.lv)), atk: Math.round((HERO.base.atk + HERO.grow.atk * L) * g * D.atk * BAL.toughAtk(r.lv)), def: Math.round((HERO.base.def + HERO.grow.def * L) * g), spd: HERO.base.spd + HERO.grow.spd * L + (r.shiyi ? 3 : 0), crit: 0.12, leech: 0,
     mpMax: Math.round(HERO.base.mp + HERO.grow.mp * L), sk: ['atk', ...(r.sk || ['qly', 'sn'])], cd: {}, st: [], alive: true };
   u.hp = u.hpMax; u.mp = u.mpMax; return u;
 }
@@ -46,6 +46,7 @@ function battleCreate(spec) {
   for (const id of spec.allies || []) { const u = mobUnit(id, C.lv, 0); u.hp = u.hpMax; B.units.push(u); }
   for (const r of spec.rivals || []) B.units.push(rivalUnit(r));
   for (const [id, lv] of spec.mobs || []) { const u = mobUnit(id, lv, 1); u.hp = u.hpMax; if (spec.roam) { u.hpMax = Math.round(spec.roam.hpMax * diffOf().hp * BAL.foeHp(lv)); u.hp = Math.round(spec.roam.hp * diffOf().hp * BAL.foeHp(lv)); } B.units.push(u); }
+  const ast = spec.assist ?? (spec.story || spec.siege ? STATE.assist || 0 : 0); if (ast) { const k = 1 - BAL.assist * ast; for (const u of B.units) if (u.side === 1) { u.hpMax = Math.round(u.hpMax * k); u.hp = Math.min(u.hp, u.hpMax); u.atk = Math.round(u.atk * k); } B.assist = ast; } /* 连输放水 */
   for (const u of B.units) partyFoe(B, u);
   for (const u of B.units) if (u.kind === 'mob' || u.kind === 'npc') planMob(B, u);
   for (const [id] of spec.mobs || []) if (!MOBS[id].nocodex) { C.codex = C.codex || {}; C.codex[id] = C.codex[id] || { wk: [] }; }
@@ -58,6 +59,8 @@ function battleCreate(spec) {
 }
 const alive = (B, side) => B.units.filter(u => u.alive && (side === undefined || u.side === side));
 const stOf = (u, k) => u.st.find(s => s.k === k);
+const DOT_ST = ['bleed', 'burn', 'poison', 'dark']; /* only damage over time scales with the attacker's 攻击; 虚弱/破甲/印记… are fractions */
+const stVal = (u, s) => !s.v ? 0 : DOT_ST.includes(s.k) ? Math.round(u.atk * s.v) : s.v;
 const stV = (u, k) => { let v = 0; for (const s of u.st) if (s.k === k) v += s.v || 0; return v; };
 function addSt(u, s) { if (s.k === 'poison' && u.noPoison) return; const ex = u.st.find(x => x.k === s.k); if (ex) { ex.t = Math.max(ex.t, s.t); if (s.k === 'shield') ex.v = (ex.v || 0) + (s.v || 0); else ex.v = Math.max(ex.v || 0, s.v || 0); } else u.st.push({ k: s.k, t: s.t, v: s.v || 0 }); }
 function blog(B, html) { B.log.push(html); B.lc++; if (B.log.length > 150) B.log.splice(0, B.log.length - 150); }
@@ -114,6 +117,7 @@ function hitCalc(a, d, mul, mag, opts = {}) {
   let bound = false; if (!mag && stOf(d, 'bound')) { mul *= 1.3; bound = true; d.st = d.st.filter(s => s.k !== 'bound'); } // 骨文锁链 → the next physical hit lands harder
   const K = BAL.defK + a.lv * 7; let dmg = atk * mul * K / (K + def) * rnd(0.9, 1.1);
   const crit = !!stOf(a, 'sure') || Math.random() < a.crit; if (crit) dmg *= BAL.critMul; if (stOf(d, 'guard')) dmg *= 0.5; dmg *= mechDmgMul(a, d) * partyDmgMul(a, d);
+  if (d.kind === 'pc' && a.side === 1 && BAL.hitCap) dmg = Math.min(dmg, d.hpMax * BAL.hitCap); /* hard fights, not one-shots: one blow takes at most this much of 石昊's 气血 */
   return { dmg: Math.max(1, Math.round(dmg)), crit, weak: !!wk, bound };
 }
 function noteWeak(d, el) { if (!d.mob || !C.codex || !C.codex[d.mob]) return; const w = C.codex[d.mob].wk || (C.codex[d.mob].wk = []); if (!w.includes(el)) w.push(el); }
@@ -164,7 +168,7 @@ function perform(B, u, act, L) {
       if (weak && u.side === 0) { noteWeak(t, S.el); B.weakHits = (B.weakHits || 0) + 1; }
       if (miss === hits) parts.push(`${uName(t)} <span class="miss">躲开了</span>`);
       else { parts.push(`${uName(t)} <span class="${crit ? 'crit' : 'dmg'}">-${tot}${crit ? ' 暴击!' : ''}</span>${weak ? ' <span class="weak">正中要害</span>' : ''}${ct ? ` <span class="weak">${ct}</span>` : ''}${bound ? ' <span class="weak">借着骨文锁链</span>' : ''}${seen < 1 ? ' <span class="miss">重瞳看穿了这一招</span>' : ''}${cloned ? ' <span class="weak">分身补了一下</span>' : ''}${dispelled2 ? ' <span class="weak">护体全被啃掉了</span>' : ''}${died ? ' <b class="die">倒下</b>' : ''}`); B.fx = crit ? 'crit' : 'hit';
-        let stunned = false; if (t.alive && S.st) for (const s of S.st) if (Math.random() < (s.p ?? 1) && !(s.k === 'stun' && t.boss && Math.random() < 0.5)) { addSt(t, { k: s.k, t: s.t, v: s.v ? Math.round(u.atk * s.v) : 0 }); if (s.k === 'stun') stunned = true; parts.push(`<span class="st" style="color:${STATUS[s.k].c}">${STATUS[s.k].n}</span>`); }
+        let stunned = false; if (t.alive && S.st) for (const s of S.st) if (Math.random() < (s.p ?? 1) && !(s.k === 'stun' && t.boss && Math.random() < 0.5)) { addSt(t, { k: s.k, t: s.t, v: stVal(u, s) }); if (s.k === 'stun') stunned = true; parts.push(`<span class="st" style="color:${STATUS[s.k].c}">${STATUS[s.k].n}</span>`); }
         if (t.alive && id === 'gw') addSt(t, { k: 'bound', t: 2 });
         if (u.side === 0 && (stunned || weak) && tryInterrupt(B, t)) parts.push('<span class="weak">打断了它的蓄力！</span>'); } }
     L(head + '：' + parts.join('，'));
@@ -192,7 +196,7 @@ function mobAct(B, u, L) {
   for (const t of tg) { if (!t.alive) continue; const opp = u.pet && (stOf(t, 'stun') || stOf(t, 'freeze')); const r = hitCalc(u, t, (s.dmg || 1) * (opp ? 1.3 : 1) * (u.trait === 'dahong' && s.aoe ? 1.15 : 1), s.mag, { el: s.el, sure: u.trait === 'dashen' }); if (r.miss) { banterMiss(B, u, t); fxe(B, { k: 'miss', t: t.id }); parts.push(`${uName(t)} <span class="miss">躲开了</span>`); continue; }
     const died = applyDmg(B, u, t, r.dmg, { crit: r.crit, weak: r.weak }); if (u.trait === 'maoqiu') u.hp = Math.min(u.hpMax, u.hp + Math.round(r.dmg * 0.15)); if (s.leech) u.hp = Math.min(u.hpMax, u.hp + r.dmg * s.leech); if (r.weak && u.side === 0) noteWeak(t, s.el);
     parts.push(`${uName(t)} <span class="${r.crit ? 'crit' : 'dmg'}">-${r.dmg}${r.crit ? ' 暴击!' : ''}</span>${r.weak ? ' <span class="weak">正中要害</span>' : ''}${opp ? ' <span class="weak">趁它动不了</span>' : ''}${died ? ' <b class="die">倒下</b>' : ''}`);
-    let stunned = false; if (t.alive && s.st && Math.random() < (s.st.p ?? 1) * (u.pet && t.boss && s.st.k === 'stun' ? 0.5 : 1) + (u.trait === 'dahong' && s.st.k === 'burn' ? 0.2 : 0)) { addSt(t, { k: s.st.k, t: s.st.t, v: s.st.v ? Math.round(u.atk * s.st.v) : 0 }); if (s.st.k === 'stun') stunned = true; parts.push(`<span class="st" style="color:${STATUS[s.st.k].c}">${STATUS[s.st.k].n}</span>`); }
+    let stunned = false; if (t.alive && s.st && Math.random() < (s.st.p ?? 1) * (u.pet && t.boss && s.st.k === 'stun' ? 0.5 : 1) + (u.trait === 'dahong' && s.st.k === 'burn' ? 0.2 : 0)) { addSt(t, { k: s.st.k, t: s.st.t, v: stVal(u, s.st) }); if (s.st.k === 'stun') stunned = true; parts.push(`<span class="st" style="color:${STATUS[s.st.k].c}">${STATUS[s.st.k].n}</span>`); }
     if (u.side === 0 && (stunned || r.weak || (u.trait === 'dashen' && chance(0.5))) && tryInterrupt(B, t)) parts.push('<span class="weak">打断了它的蓄力！</span>'); }
   L(`${uName(u)} <span class="sk">${s.n}</span>：${parts.join('，')}`); B.fx = 'hit';
 }

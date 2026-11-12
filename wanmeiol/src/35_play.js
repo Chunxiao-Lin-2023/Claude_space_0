@@ -102,14 +102,14 @@ async function enterDungeon(id, hard) {
   STATE.dungeon = { id, room: 0 }; logLine(`<div class="lochead">${D.name}</div>`, 'loc'); refresh(); bannerDraw();
   for (let i = 0; i < D.rooms.length; i++) {
     const R = D.rooms[i]; STATE.dungeon.room = i; refresh(); logLine(`<b>【${R.name}】</b>${R.text}`, 'enc'); await sleep(window.__dbg && __dbg.instant ? 0 : 400);
-    if (R.mobs) { const r = await startBattle({ mobs: R.mobs.map(m => [m, R.boss ? lvB : Math.max(1, lvB - 1)]), title: `${hard ? '困难 · ' : ''}${D.name} · ${R.name}`, flee: !R.boss, dungeon: id, room: i, epic: R.boss && R.epic ? R.epic : null });
-      if (!r || !r.win) { STATE.dungeon = null; refresh(); bannerDraw(); return; } }
+    if (R.mobs) { const r = await startBattle({ mobs: R.mobs.map(m => [m, R.boss ? lvB : Math.max(1, lvB - 1)]), title: `${hard ? '困难 · ' : ''}${D.name} · ${R.name}`, flee: !R.boss, dungeon: id, room: i, epic: R.boss && R.epic ? R.epic : null, assist: hard ? 0 : Math.min(BAL.assistMax, (C.dgFail || {})[id] || 0) });
+      if (!r || !r.win) { if (!hard && !(r && r.fled)) { C.dgFail = C.dgFail || {}; C.dgFail[id] = Math.min(BAL.assistMax, (C.dgFail[id] || 0) + 1); logLine(`<span class="dim">下回再进「${D.name}」，里面的东西会弱 ${Math.round(BAL.assist * C.dgFail[id] * 100)}%。</span>`, 'sys'); } STATE.dungeon = null; refresh(); bannerDraw(); return; } }
     else if (R.event) await dungeonEvent(R.event, D);
     if (i < D.rooms.length - 1) { const c = await dlgChoose([{ t: '原地调息，再往里走（恢复 40% 气血和符力）' }, { t: '直接往里走' }, { t: '先退出去' }], `「${R.name}」过了。前面还有 ${D.rooms.length - 1 - i} 关。`);
       if (c === 0) { const s = charStats(); C.hp = Math.min(s.hpMax, C.hp + s.hpMax * 0.4); C.mp = Math.min(s.mpMax, C.mp + s.mpMax * 0.4); logLine('你靠着石壁调息了一会儿。', 'dim'); refresh(); }
       if (c === 2) { STATE.dungeon = null; refresh(); bannerDraw(); return; } }
   }
-  const key = hard ? id + '_hard' : id, firstHard = hard && !C.dungeons[key]; passTime(2); C.dungeons[key] = (C.dungeons[key] || 0) + 1; logLine(`<b class="lvup">「${hard ? '困难 · ' : ''}${D.name}」走通了！</b>`, 'sys'); bigFlash((hard ? '困难 · ' : '') + D.name + ' · 通关', 'relic');
+  if (C.dgFail) delete C.dgFail[id]; const key = hard ? id + '_hard' : id, firstHard = hard && !C.dungeons[key]; passTime(2); C.dungeons[key] = (C.dungeons[key] || 0) + 1; logLine(`<b class="lvup">「${hard ? '困难 · ' : ''}${D.name}」走通了！</b>`, 'sys'); bigFlash((hard ? '困难 · ' : '') + D.name + ' · 通关', 'relic');
   if (hard) { addItem('baoyao', 3); addItem('lingyao', 3); gainExp(BAL.expNext(C.lv) * 0.6); if (firstHard) { const left = Object.keys(RELICS).filter(k => !(C.relics || {})[k]); if (left.length) gainRelic(pick(left)); } }
   STATE.dungeon = null; save(); refresh(); bannerDraw(); setTimeout(storyPoll, 300);
 }

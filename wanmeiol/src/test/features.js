@@ -61,8 +61,8 @@ const { chromium } = require('playwright');
     c.pets.maoqiu = { aff: 100, evo: 0 }; const pb = petBar('maoqiu'); ok('petBarSize', pb.length === 4); const missing = petOpen('maoqiu').find(i => !pb.includes(i)); togglePetMove('maoqiu', missing); ok('petReplace', petBar('maoqiu').includes(missing) && petBar('maoqiu').length === 4);
     c.lv = 9; c.bar = ['qly', 'sn', 'gw', 'lei']; toggleBar('jian'); ok('heroReplaceLow', c.bar.includes('jian') && !c.bar.includes('qly') && c.bar.length === 4); c.lv = 18;
     // partner growth: levels past 石昊, move ranks, 返祖
-    c.lv = 20; c.pets.dahong = { aff: 100, evo: 1, lv: 20, exp: 0 }; c.pet = 'dahong'; const atk20 = petUnit('dahong').atk; for (let i = 0; i < 60 && c.pets.dahong.lv < 25; i++) petGainExp('dahong', 5000); await w8(900); await idle();
-    ok('petLevelsPastHero', c.pets.dahong.lv >= 25 && petUnit('dahong').atk > atk20); ok('evo2', !!c.pets.dahong.evo2);
+    c.lv = 24; c.pets.dahong = { aff: 100, evo: 1, lv: 20, exp: 0 }; c.pet = 'dahong'; const atk20 = petUnit('dahong').atk; for (let i = 0; i < 60 && c.pets.dahong.lv < 25; i++) petGainExp('dahong', 5000); await w8(900); await idle();
+    ok('petLevelsPastHero', c.pets.dahong.lv >= 25 && c.pets.dahong.lv <= c.lv + 2 && petUnit('dahong').atk > atk20); ok('evo2', !!c.pets.dahong.evo2);
     c.bag.bone = 20; c.bag.lingyao = 5; c.bag.baoyao = 2; petRankUp('dahong', 0); petRankUp('dahong', 0); ok('rankUp', petRank('dahong', 0) === 3); ok('rankEffect', rankedMove(PETS.dahong.sk[0], 3).dmg > PETS.dahong.sk[0].dmg && rankedMove(PETS.dahong.sk[0], 3).st.t === PETS.dahong.sk[0].st.t + 1);
     const lv0 = c.pets.maoqiu.lv || c.lv, ex0 = c.pets.maoqiu.exp || 0; c.auto = true; await D.startBattle({ mobs: [['boar', 20]], title: 't' }); await idle(); ok('benchExp', (c.pets.maoqiu.exp || 0) > ex0 || (c.pets.maoqiu.lv || 0) > lv0);
     // in-game days: no wall clock
@@ -98,7 +98,7 @@ const { chromium } = require('playwright');
     c.sk = [...new Set([...c.sk, 'qly', 'lei'])]; c.prof.qly = 160; c.prof.lei = 160; c.bag.baoyao = 3; c.sk = c.sk.filter(x => x !== 'f_leiying'); ok('fuseReady', fuseReady('f_leiying'));
     await fuseSkill('f_leiying'); await idle(); ok('fused', c.sk.includes('f_leiying') && c.bag.baoyao === 1 && /雷鹰裂空/.test(fuseHtml()));
     // 跳章: start of 第三章 with the right kit, and the story carries on from there
-    jumpTo(1); const J = D.C; ok('jumpState', J.lv === 15 && J.prof.qly === 104 && J.pets.maoqiu.aff === 65 && J.story.q === qi('q_gate') && J.sk.includes('sn') && J.pets.maoqiu && J.dt.length === 3 && J.story.f.butian === 1 && placeOpen('bt_gate'));
+    jumpTo(1); const J = D.C; ok('jumpState', J.lv === lvStoryCap(J) && J.lv > JUMPS[1].lv && J.prof.qly === 104 && J.pets.maoqiu.aff === 65 && J.story.q === qi('q_gate') && J.sk.includes('sn') && J.pets.maoqiu && J.dt.length === 3 && J.story.f.butian === 1 && placeOpen('bt_gate'));
     go('bt_gate'); await w8(500); await idle(); for (let i = 0; i < 80 && (S().scene || S().battle); i++) await w8(50); ok('jumpStory', D.C.story.q > qi('q_gate'));
     jumpTo(3); ok('jumpEnd', !!(D.C.lv >= 20 && D.C.story.f.end === 1 && D.C.sk.includes('ta') && D.C.pets.dahong && D.C.relics.r_pumo));
     { const a0 = D.auto; D.auto = false; D.C.auto = true; runScene(async () => { await nar('一段还没看完的剧情'); await nar('第二句'); }); await w8(100); const mid = !!(S().scene && DLG);
@@ -171,6 +171,12 @@ const { chromium } = require('playwright');
       ok('bsFoes', MOBS.ningchuan.sk.some(s => s.bs === 'qilin') && MOBS.kundi.sk.some(s => s.bs === 'kunpeng') && HIDDEN.find(h => h.id === 'longnv').sk.includes('zhenlong'));
       c.bar = ['zhenhuang']; D.startBattle({ mobs: [['kundi', 84]], title: 'p', noLose: true }); await w8(10); const B2 = S().battle, h2 = B2.units.find(u => u.kind === 'pc'); h2.hp = 1; applyDmg(B2, B2.units.find(u => u.side === 1), h2, 50); ok('bsPhoenix', h2.alive && h2.hp > 1); await idle();
       navTo('hero'); await w8(20); ok('bsPanel', document.body.innerHTML.includes('宝术谱') && document.body.innerHTML.includes('原著搭配')); navTo('adv'); }
+    // difficulty: story level cap holds exp back and gives it back; a loss makes the retry easier; 虚弱 is a fraction, not 攻击 × v
+    { jumpTo(2); dropRunning(); const c = D.C; c.lv = lvStoryCap(); c.exp = 0; gainExp(BAL.expNext(c.lv) * 3, true); const lv0 = c.lv, bank = c.expBank || 0; ok('lvCap', lv0 === lvStoryCap() && bank > 0);
+      for (let k = 0; k < 6; k++) questAdvance(); await w8(500); ok('lvCapRelease', c.lv > lv0); dropRunning();
+      STATE.assist = 2; D.startBattle({ mobs: [['wolf', 10]], title: 'a', story: 1, noLose: true }); const B1 = S().battle, w1 = B1.units.find(u => u.side === 1); STATE.assist = 0; const w0 = mobUnit('wolf', 10); ok('assist', B1.assist === 2 && w1.hpMax < w0.hpMax * 0.75); B1.auto = true; renderBattle(true); await idle();
+      ok('weakFraction', stVal({ atk: 500 }, { k: 'weak', v: 0.3 }) === 0.3 && stVal({ atk: 500 }, { k: 'bleed', v: 0.3 }) === 150);
+      ok('toughCurve', BAL.toughAtk(30) === 1 && BAL.toughAtk(85) > 1.3 && BAL.toughAtk(85, 0) < BAL.toughAtk(85)); }
     // save slots: a second save lives beside the first one
     { save(true); const lv1 = D.C.lv; slotNew(2); await w8(50); const c2 = D.C; ok('slotNew', SLOT === 2 && c2.lv === 1 && slotInfo(1) && slotInfo(1).v.lv === lv1); c2.lv = 3; save(true);
       slotPlay(1); await w8(50); ok('slotSwitch', SLOT === 1 && D.C.lv === lv1 && slotInfo(2).v.lv === 3); toTitle(); slotsShow(); ok('slotList', document.querySelectorAll('#title .slot').length === 5);

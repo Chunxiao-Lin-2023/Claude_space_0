@@ -2,8 +2,8 @@
    宝骨 · 灵兽觉醒 · 材料兑换 · 每日悬赏 · 地点探索度 · 称号 · 传送 · 睡到天黑/天亮 · 洞天重开 · 困难秘境 · 战斗教学 */
 
 /* ---------- 宝骨 ---------- */
-function gainRelic(id, quiet) { C.relics = C.relics || {}; if (C.relics[id]) return; C.relics[id] = 1; const R = RELICS[id]; C.eq = C.eq || []; if (C.eq.length < relicSlots(C.lv)) C.eq.push(id);
-  if (!quiet) { logLine(`<b class="lvup">得到宝骨</b>：${R.i}<b>${R.n}</b>——${R.d}${C.eq.includes(id) ? '（已经戴上了）' : '（在“石昊”页里换着戴）'}`, 'sys'); sfx('epic'); bigFlash(R.n, 'relic'); } fixHp(); }
+function gainRelic(id, quiet) { C.relics = C.relics || {}; if (C.relics[id]) return; C.relics[id] = 1; const R = RELICS[id]; C.eq = C.eq || []; let off = null; if (C.eq.length < relicSlots(C.lv)) C.eq.push(id); else { const own = Object.keys(C.relics); off = C.eq.filter(r => !forgeLv(r)).sort((a, b) => own.indexOf(a) - own.indexOf(b))[0]; if (off) C.eq[C.eq.indexOf(off)] = id; } /* a full 宝骨栏 swaps out the oldest unforged one */
+  if (!quiet) { logLine(`<b class="lvup">得到宝骨</b>：${R.i}<b>${R.n}</b>——${R.d}${C.eq.includes(id) ? (off ? `（栏满了，换下了最早的「${RELICS[off].n}」，想换回来去「石昊」页）` : '（已经戴上了）') : '（在“石昊”页里换着戴）'}`, 'sys'); sfx('epic'); bigFlash(R.n, 'relic'); } fixHp(); }
 function relicFromKills(kills) { for (const [mob, , boss] of kills || []) if (boss) for (const [id, R] of Object.entries(RELICS)) if (R.from === mob) gainRelic(id); }
 function equipRelic(id) { if (!C.relics || !C.relics[id]) return; C.eq = C.eq || []; const i = C.eq.indexOf(id); if (i >= 0) C.eq.splice(i, 1); else { if (C.eq.length >= relicSlots(C.lv)) { toast('宝骨栏满了（' + relicSlots(C.lv) + ' 件），先摘下一件'); return; } C.eq.push(id); } fixHp(); sfx('click'); save(); refresh(); }
 
@@ -131,7 +131,7 @@ const PET_LV_CAP = 85;
 const petLv = id => { const p = C.pets[id]; return p ? (p.lv || C.lv) : C.lv; };
 const petNeed = lv => Math.round(BAL.expNext(Math.min(lv, 20)) * (lv >= 20 ? 1 + (lv - 19) * 0.35 : 1));
 function petGainExp(id, n) { const p = C.pets[id]; if (!p || n <= 0) return; if (!p.lv) p.lv = C.lv; p.exp = (p.exp || 0) + Math.round(n * (p.lv < C.lv ? 1.6 : 1));
-  const cap = C.story.f.end ? PET_LV_CAP : Math.min(PET_LV_CAP, C.lv + 2); // before the end of volume one: at most 2 above 石昊
+  const cap = Math.min(PET_LV_CAP, C.lv + 2); // never more than 2 above 石昊 (so the story's level ceilings hold for partners too)
   while (p.lv < cap && p.exp >= petNeed(p.lv)) { p.exp -= petNeed(p.lv); p.lv++; logLine(`${PETS[id].icon}<b>${PETS[id].name}</b> 长到了 <b>${p.lv} 级</b>${p.lv > C.lv ? '（比石昊还高，属性 +' + Math.round((p.lv - C.lv) * 3) + '%）' : ''}。`, 'sys'); if (id === C.pet) bigFlash(PETS[id].name + ' · ' + p.lv + ' 级', 'lv'); }
   if (p.lv >= cap) p.exp = Math.min(p.exp, petNeed(p.lv)); petEvo2Check(id); petEvo3Check(id); }
 function petBattleExp(exp, fielded) { const F_ = fielded && fielded.length ? fielded : [C.pet]; for (const id of Object.keys(C.pets)) petGainExp(id, exp * (F_.includes(id) ? 1 : 0.3)); }
