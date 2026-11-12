@@ -36,6 +36,8 @@ button{font:inherit;color:inherit;cursor:pointer;touch-action:manipulation}
 #chgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px;width:min(1100px,100%);padding-bottom:18px}
 .card{position:relative;background:#120c10;border:1px solid var(--edge);display:flex;flex-direction:column;cursor:pointer;transition:transform .15s,border-color .15s;min-height:0}
 .card:hover,.card.sel{border-color:var(--red);transform:translateY(-2px)}
+.card.jump{border-color:var(--red);box-shadow:0 0 0 2px var(--red),0 0 22px rgba(179,38,43,.55);animation:jumpGlow 1.4s ease-in-out 3}
+@keyframes jumpGlow{50%{box-shadow:0 0 0 2px var(--red2),0 0 34px rgba(179,38,43,.85)}}
 .card canvas{width:100%;aspect-ratio:16/9;image-rendering:pixelated;display:block;background:#000}
 .card .meta{padding:8px 10px 10px}
 .card .no{font-family:var(--serif);color:var(--red2);font-size:12px;letter-spacing:2px}
@@ -193,7 +195,7 @@ body.dlgup #bA{bottom:calc(var(--sb) + 180px)}
   <button class="btn" id="tJoin">加入房间</button>
   <button class="btn" id="tArch">怪谈档案</button>
   <button class="btn" id="tHelp">操作说明</button>
-  <button class="btn hidden" id="tHub">‹ 游戏厅</button>
+  <button class="btn hidden" id="tHub">‹ 百物语目录</button>
  </div>
  <div class="foot" id="tfoot">像素恐怖探索合集 · 建议戴耳机、关灯游玩<br>剧情含惊吓与死亡描写</div>
 </div>
@@ -218,7 +220,7 @@ body.dlgup #bA{bottom:calc(var(--sb) + 180px)}
  <div class="row"><button class="btn small" id="hpX">知道了</button></div></div></div>
 <div id="menu" class="ov hidden"><div class="panel" style="max-width:380px"><h2 style="text-align:center">暂停</h2><div class="menu" style="margin:10px auto" id="mList">
  <button class="btn" id="mRes">继续</button><button class="btn" id="mInv">物品</button><button class="btn" id="mJour">笔记</button><button class="btn" id="mHelp">操作说明</button>
- <button class="btn" id="mRetry">从检查点重来</button><button class="btn" id="mQuit">返回章节选择</button><button class="btn hidden" id="mHub">返回游戏厅</button></div>
+ <button class="btn" id="mRetry">从检查点重来</button><button class="btn" id="mQuit">返回章节选择</button><button class="btn hidden" id="mHub">返回百物语目录</button></div>
  <div class="status" id="mNote"></div></div></div>
 <div id="inv" class="ov hidden"><div class="panel" style="max-width:460px"><h2>随身物品</h2><div class="list" id="invL"></div><div class="row" style="margin-top:12px"><button class="btn small" id="invX">合上</button></div></div></div>
 <div id="journal" class="ov hidden"><div class="panel" style="max-width:520px"><h2>笔记</h2><div class="list" id="jrL"></div><div class="row" style="margin-top:12px"><button class="btn small" id="jrX">合上</button></div></div></div>

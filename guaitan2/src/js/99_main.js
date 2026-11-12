@@ -21,7 +21,13 @@ function frame() {
   requestAnimationFrame(frame);
 }
 bindUI();
-UI.show('title');
+/* 深链接 #ch=<章节id>：从百物语目录点进来，直接打开章节列表并定位到这一夜（返回标题即可改为联机） */
+(function deepLink() {
+  const m = /(?:^#|&)ch=([a-z0-9]+)/.exec(location.hash), ch = m && CHAPTERS.find(c => c.id === m[1]);
+  if (!ch) { UI.show('title'); return; }
+  UI._jump = ch.id; UI.show('select');
+  setTimeout(() => { const c = document.querySelector('#chgrid .card.jump'); if (c) { c.scrollIntoView({ block: 'center' }); c.focus({ preventScroll: true }); } }, 60);
+})();
 if (!NET_OK) { $('tHost').classList.add('dim'); $('tJoin').classList.add('dim'); if (window.__ARTIFACT__) $('tfoot').innerHTML += '<br>这个预览版只能单人游玩；双人联机请打开游戏厅网址'; }
 requestAnimationFrame(frame);
 /* 测试钩子（仅 ?debug=1） */

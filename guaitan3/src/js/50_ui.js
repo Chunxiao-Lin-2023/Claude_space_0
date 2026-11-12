@@ -51,7 +51,7 @@ const UI = {
   open(id) {
     this.closeModal(); this.modal = id; $(id).classList.remove('hidden');
     if (id === 'inv') this.buildInv(); if (id === 'journal') this.buildJournal();
-    if (id === 'menu') { $('mHub').classList.toggle('hidden', !HUB); $('mNote').textContent = NET.role !== 'solo' && NET.up ? '双人模式下游戏不会暂停' : ''; this._hubArm = false; $('mHub').textContent = '返回游戏厅'; $('mQuit').textContent = NET.role === 'guest' ? '离开房间' : '返回章节选择'; $('mRetry').classList.toggle('hidden', !W || !W.cp); }
+    if (id === 'menu') { $('mHub').classList.toggle('hidden', !HUB); $('mNote').textContent = NET.role !== 'solo' && NET.up ? '双人模式下游戏不会暂停' : ''; this._hubArm = false; $('mHub').textContent = '返回百物语目录'; $('mQuit').textContent = NET.role === 'guest' ? '离开房间' : '返回章节选择'; $('mRetry').classList.toggle('hidden', !W || !W.cp); }
     if (W && NET.role === 'solo') W.paused = true;
     setTimeout(() => this.focusFirst(), 30);
   },
@@ -86,10 +86,12 @@ const UI = {
       if (done.includes(ch.id)) { const b = document.createElement('div'); b.className = 'badge done'; b.textContent = '已通关'; c.appendChild(b); }
       else if (hasCp) { const b = document.createElement('div'); b.className = 'badge cp'; b.textContent = '有存档'; c.appendChild(b); }
       c.onclick = () => this.pickChapter(ch);
+      if (ch.id === UI._jump) c.classList.add('jump');   // 从百物语目录点进来的那一夜
       G.appendChild(c);
     });
   },
   pickChapter(ch) {
+    UI._jump = null;
     if (NET.role === 'guest') { this.toast('由房主选择章节'); return; }
     const hasCp = !!store.get('cp.' + ch.id, null);
     if (!hasCp) { startChapter(ch.id, false); return; }
@@ -251,7 +253,7 @@ function bindMenu() {
   $('mHelp').onclick = () => UI.open('help');
   $('mRetry').onclick = () => { UI.closeModal(); if (NET.role === 'guest') netSend({ t: 'act', a: 'mretry' }); else if (W && W.cp) retryFromCP(); };
   $('mQuit').onclick = () => { UI.closeModal(); if (NET.role === 'guest') { netClose(); quitChapter(); UI.show('title'); } else goSelect(); };
-  $('mHub').onclick = () => { if (!UI._hubArm) { UI._hubArm = true; $('mHub').textContent = '再点一次确认（进度会保存到检查点）'; return; } location.href = '../'; };
+  $('mHub').onclick = () => { if (!UI._hubArm) { UI._hubArm = true; $('mHub').textContent = '再点一次确认（进度会保存到检查点）'; return; } location.href = '../baiwuyu/'; };
 }
 function bindUI() {
   bindMenu();
@@ -283,7 +285,7 @@ function bindUI() {
   $('tArch').onclick = () => UI.show('archive');
   $('tHelp').onclick = () => UI.open('help');
   $('hpX').onclick = () => UI.closeModal(); $('hpX').dataset.back = 1;
-  $('tHub').classList.toggle('hidden', !HUB); $('tHub').onclick = () => { location.href = '../'; };
+  $('tHub').classList.toggle('hidden', !HUB); $('tHub').onclick = () => { location.href = '../baiwuyu/'; };
   $('sBack').onclick = () => { if (NET.role !== 'solo') netClose(); UI.show('title'); }; $('sBack').dataset.back = 1;
   $('sArch').onclick = () => { UI._archBack = 'select'; UI.show('archive'); };
   $('arX').onclick = () => { UI.show(UI._archBack || 'title'); UI._archBack = null; }; $('arX').dataset.back = 1;

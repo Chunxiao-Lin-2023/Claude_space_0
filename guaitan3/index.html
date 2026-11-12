@@ -41,6 +41,8 @@ button{font:inherit;color:inherit;cursor:pointer;touch-action:manipulation}
 #chgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px;width:min(1100px,100%);padding-bottom:18px}
 .card{position:relative;background:#120c10;border:1px solid var(--edge);display:flex;flex-direction:column;cursor:pointer;transition:transform .15s,border-color .15s;min-height:0}
 .card:hover,.card.sel{border-color:var(--red);transform:translateY(-2px)}
+.card.jump{border-color:var(--red);box-shadow:0 0 0 2px var(--red),0 0 22px rgba(179,38,43,.55);animation:jumpGlow 1.4s ease-in-out 3}
+@keyframes jumpGlow{50%{box-shadow:0 0 0 2px var(--red2),0 0 34px rgba(179,38,43,.85)}}
 .card canvas{width:100%;aspect-ratio:16/9;image-rendering:pixelated;display:block;background:#000}
 .card .meta{padding:8px 10px 10px}
 .card .no{font-family:var(--serif);color:var(--red2);font-size:12px;letter-spacing:2px}
@@ -198,7 +200,7 @@ body.dlgup #bA{bottom:calc(var(--sb) + 180px)}
   <button class="btn" id="tJoin">加入房间</button>
   <button class="btn" id="tArch">怪谈档案</button>
   <button class="btn" id="tHelp">操作说明</button>
-  <button class="btn hidden" id="tHub">‹ 游戏厅</button>
+  <button class="btn hidden" id="tHub">‹ 百物语目录</button>
  </div>
  <div class="foot" id="tfoot">像素恐怖探索合集 · 建议戴耳机、关灯游玩<br>剧情含惊吓与死亡描写</div>
 </div>
@@ -223,7 +225,7 @@ body.dlgup #bA{bottom:calc(var(--sb) + 180px)}
  <div class="row"><button class="btn small" id="hpX">知道了</button></div></div></div>
 <div id="menu" class="ov hidden"><div class="panel" style="max-width:380px"><h2 style="text-align:center">暂停</h2><div class="menu" style="margin:10px auto" id="mList">
  <button class="btn" id="mRes">继续</button><button class="btn" id="mInv">物品</button><button class="btn" id="mJour">笔记</button><button class="btn" id="mHelp">操作说明</button>
- <button class="btn" id="mRetry">从检查点重来</button><button class="btn" id="mQuit">返回章节选择</button><button class="btn hidden" id="mHub">返回游戏厅</button></div>
+ <button class="btn" id="mRetry">从检查点重来</button><button class="btn" id="mQuit">返回章节选择</button><button class="btn hidden" id="mHub">返回百物语目录</button></div>
  <div class="status" id="mNote"></div></div></div>
 <div id="inv" class="ov hidden"><div class="panel" style="max-width:460px"><h2>随身物品</h2><div class="list" id="invL"></div><div class="row" style="margin-top:12px"><button class="btn small" id="invX">合上</button></div></div></div>
 <div id="journal" class="ov hidden"><div class="panel" style="max-width:520px"><h2>笔记</h2><div class="list" id="jrL"></div><div class="row" style="margin-top:12px"><button class="btn small" id="jrX">合上</button></div></div></div>
@@ -1795,7 +1797,7 @@ const UI = {
   open(id) {
     this.closeModal(); this.modal = id; $(id).classList.remove('hidden');
     if (id === 'inv') this.buildInv(); if (id === 'journal') this.buildJournal();
-    if (id === 'menu') { $('mHub').classList.toggle('hidden', !HUB); $('mNote').textContent = NET.role !== 'solo' && NET.up ? '双人模式下游戏不会暂停' : ''; this._hubArm = false; $('mHub').textContent = '返回游戏厅'; $('mQuit').textContent = NET.role === 'guest' ? '离开房间' : '返回章节选择'; $('mRetry').classList.toggle('hidden', !W || !W.cp); }
+    if (id === 'menu') { $('mHub').classList.toggle('hidden', !HUB); $('mNote').textContent = NET.role !== 'solo' && NET.up ? '双人模式下游戏不会暂停' : ''; this._hubArm = false; $('mHub').textContent = '返回百物语目录'; $('mQuit').textContent = NET.role === 'guest' ? '离开房间' : '返回章节选择'; $('mRetry').classList.toggle('hidden', !W || !W.cp); }
     if (W && NET.role === 'solo') W.paused = true;
     setTimeout(() => this.focusFirst(), 30);
   },
@@ -1830,10 +1832,12 @@ const UI = {
       if (done.includes(ch.id)) { const b = document.createElement('div'); b.className = 'badge done'; b.textContent = '已通关'; c.appendChild(b); }
       else if (hasCp) { const b = document.createElement('div'); b.className = 'badge cp'; b.textContent = '有存档'; c.appendChild(b); }
       c.onclick = () => this.pickChapter(ch);
+      if (ch.id === UI._jump) c.classList.add('jump');   // 从百物语目录点进来的那一夜
       G.appendChild(c);
     });
   },
   pickChapter(ch) {
+    UI._jump = null;
     if (NET.role === 'guest') { this.toast('由房主选择章节'); return; }
     const hasCp = !!store.get('cp.' + ch.id, null);
     if (!hasCp) { startChapter(ch.id, false); return; }
@@ -1995,7 +1999,7 @@ function bindMenu() {
   $('mHelp').onclick = () => UI.open('help');
   $('mRetry').onclick = () => { UI.closeModal(); if (NET.role === 'guest') netSend({ t: 'act', a: 'mretry' }); else if (W && W.cp) retryFromCP(); };
   $('mQuit').onclick = () => { UI.closeModal(); if (NET.role === 'guest') { netClose(); quitChapter(); UI.show('title'); } else goSelect(); };
-  $('mHub').onclick = () => { if (!UI._hubArm) { UI._hubArm = true; $('mHub').textContent = '再点一次确认（进度会保存到检查点）'; return; } location.href = '../'; };
+  $('mHub').onclick = () => { if (!UI._hubArm) { UI._hubArm = true; $('mHub').textContent = '再点一次确认（进度会保存到检查点）'; return; } location.href = '../baiwuyu/'; };
 }
 function bindUI() {
   bindMenu();
@@ -2027,7 +2031,7 @@ function bindUI() {
   $('tArch').onclick = () => UI.show('archive');
   $('tHelp').onclick = () => UI.open('help');
   $('hpX').onclick = () => UI.closeModal(); $('hpX').dataset.back = 1;
-  $('tHub').classList.toggle('hidden', !HUB); $('tHub').onclick = () => { location.href = '../'; };
+  $('tHub').classList.toggle('hidden', !HUB); $('tHub').onclick = () => { location.href = '../baiwuyu/'; };
   $('sBack').onclick = () => { if (NET.role !== 'solo') netClose(); UI.show('title'); }; $('sBack').dataset.back = 1;
   $('sArch').onclick = () => { UI._archBack = 'select'; UI.show('archive'); };
   $('arX').onclick = () => { UI.show(UI._archBack || 'title'); UI._archBack = null; }; $('arX').dataset.back = 1;
@@ -32943,7 +32947,13 @@ function frame() {
   requestAnimationFrame(frame);
 }
 bindUI();
-UI.show('title');
+/* 深链接 #ch=<章节id>：从百物语目录点进来，直接打开章节列表并定位到这一夜（返回标题即可改为联机） */
+(function deepLink() {
+  const m = /(?:^#|&)ch=([a-z0-9]+)/.exec(location.hash), ch = m && CHAPTERS.find(c => c.id === m[1]);
+  if (!ch) { UI.show('title'); return; }
+  UI._jump = ch.id; UI.show('select');
+  setTimeout(() => { const c = document.querySelector('#chgrid .card.jump'); if (c) { c.scrollIntoView({ block: 'center' }); c.focus({ preventScroll: true }); } }, 60);
+})();
 if (!NET_OK) { $('tHost').classList.add('dim'); $('tJoin').classList.add('dim'); if (window.__ARTIFACT__) $('tfoot').innerHTML += '<br>这个预览版只能单人游玩；双人联机请打开游戏厅网址'; }
 requestAnimationFrame(frame);
 /* 测试钩子（仅 ?debug=1） */

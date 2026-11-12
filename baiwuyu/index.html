@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="百物语">
+<meta name="theme-color" content="#08070b">
+<title>百物语</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%2308070b'/%3E%3Crect x='28' y='26' width='8' height='26' rx='2' fill='%23d8cfc0'/%3E%3Cpath d='M32 10c5 7 6 11 0 15c-6-4-5-8 0-15z' fill='%23c8282e'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@500;700;900&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#08070b; --bg2:#100c11; --card:#130e13; --line:#2a2026; --line2:#3a2d34;
+  --ink:#e4dccf; --ink2:#a99e92; --ink3:#6f655d;
+  --red:#b3262b; --red2:#d8474c; --gold:#d9b46a; --ok:#8fc98a; --cp:#d9b46a;
+  --serif:"Noto Serif SC","Songti SC",serif; --r:12px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);overscroll-behavior:none}
+body{font-family:"Noto Sans SC",system-ui,-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;-webkit-font-smoothing:antialiased;
+  background:radial-gradient(900px 520px at 50% -12%,rgba(179,38,43,.20),transparent 65%),var(--bg);-webkit-tap-highlight-color:transparent}
+a{color:inherit}
+.wrap{max-width:1120px;margin:0 auto;padding:max(18px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) max(40px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left))}
+.back{display:inline-flex;align-items:center;gap:6px;color:var(--ink2);text-decoration:none;font-size:14px;padding:8px 2px}
+.back:hover{color:var(--ink)}
+header{text-align:center;margin:10px 0 28px}
+.eyebrow{font-size:12px;letter-spacing:.4em;color:var(--red2);opacity:.9}
+h1{font-family:var(--serif);font-weight:900;font-size:clamp(46px,9vw,76px);letter-spacing:.14em;margin:6px 0 0;line-height:1.1;
+  text-shadow:0 0 28px rgba(179,38,43,.55)}
+.lede{color:var(--ink2);font-size:14px;line-height:1.8;margin:12px auto 0;max-width:36em}
+.vols{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.vol{display:flex;flex-direction:column;text-decoration:none;background:var(--card);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;
+  transition:transform .18s,border-color .18s,box-shadow .18s;outline:none}
+.vol:hover,.vol:focus-visible{transform:translateY(-3px);border-color:var(--red);box-shadow:0 12px 30px rgba(0,0,0,.5),0 0 0 1px var(--red) inset}
+.vol img{width:100%;aspect-ratio:16/9;object-fit:cover;display:block;background:var(--bg2)}
+.vol .vb{padding:12px 14px 14px;display:flex;flex-direction:column;gap:6px;flex:1}
+.vol h2{font-family:var(--serif);font-size:22px;letter-spacing:.08em;margin:0}
+.vol h2 b{color:var(--red2);font-weight:900}
+.vol .vs{color:var(--ink2);font-size:13px;line-height:1.6;margin:0}
+.vol .vf{display:flex;justify-content:space-between;align-items:center;margin-top:auto;padding-top:6px;font-size:13px}
+.prog{color:var(--ink3)} .prog b{color:var(--ok);font-weight:700}
+.go{color:var(--red2);font-weight:700}
+.list{margin-top:34px}
+.lh{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap;border-bottom:1px solid var(--line);padding-bottom:10px}
+.lh h3{font-family:var(--serif);font-size:24px;letter-spacing:.1em;margin:0}
+.lh .cnt{color:var(--ink3);font-size:13px}
+.tools{position:sticky;top:0;z-index:5;background:var(--bg);padding:12px 0 10px;display:flex;flex-direction:column;gap:10px;border-bottom:1px solid var(--line);box-shadow:0 10px 18px -12px rgba(0,0,0,.8)}
+.search{position:relative}
+.search input{width:100%;font:inherit;font-size:16px;color:var(--ink);background:var(--bg2);border:1px solid var(--line2);border-radius:10px;padding:12px 40px 12px 40px;outline:none}
+.search input:focus{border-color:var(--red)}
+.search svg{position:absolute;left:13px;top:50%;transform:translateY(-50%);width:17px;height:17px;stroke:var(--ink3);fill:none;stroke-width:2}
+.search .clr{position:absolute;right:6px;top:50%;transform:translateY(-50%);border:0;background:none;color:var(--ink3);font-size:20px;width:34px;height:34px;cursor:pointer;display:none}
+.search.has .clr{display:block}
+.chips{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.chips .lbl{color:var(--ink3);font-size:12px;margin-right:2px;min-width:2.5em}
+.chip{appearance:none;border:1px solid var(--line2);background:transparent;color:var(--ink2);font:inherit;font-size:13px;padding:6px 12px;border-radius:999px;cursor:pointer;touch-action:manipulation}
+.chip:hover{color:var(--ink);border-color:var(--ink3)}
+.chip[aria-pressed="true"]{background:var(--red);border-color:var(--red);color:#fff;font-weight:700}
+.chip .n{opacity:.6;margin-left:4px;font-size:11px}
+.grp{font-family:var(--serif);color:var(--red2);letter-spacing:.25em;font-size:14px;margin:18px 0 6px;padding-bottom:6px;border-bottom:1px dashed var(--line)}
+.row{display:grid;grid-template-columns:4.2em 1fr auto;gap:4px 14px;align-items:center;text-decoration:none;padding:10px 10px;border-radius:8px;outline:none;border:1px solid transparent}
+.row:hover,.row:focus-visible{background:var(--bg2);border-color:var(--line2)}
+.row:focus-visible{border-color:var(--red)}
+.no{font-family:var(--serif);color:var(--ink3);font-size:13px;letter-spacing:.05em;white-space:nowrap}
+.no b{color:var(--red2);font-weight:900;margin-right:2px}
+.mid{min-width:0}
+.tt{font-family:var(--serif);font-size:17px;font-weight:700;letter-spacing:.04em}
+.aka{color:var(--ink3);font-size:12.5px;margin-left:8px;font-style:italic}
+.og{color:var(--gold);font-size:12px;margin-top:2px}
+.sb{color:var(--ink2);font-size:13px;margin-top:2px;line-height:1.55;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical}
+.st{font-size:11px;padding:2px 8px;border-radius:999px;border:1px solid currentColor;white-space:nowrap}
+.st.done{color:var(--ok)} .st.cp{color:var(--cp)}
+mark{background:rgba(179,38,43,.45);color:inherit;border-radius:2px;padding:0 1px}
+.empty{color:var(--ink3);text-align:center;padding:48px 0}
+footer{margin-top:36px;padding-top:16px;border-top:1px solid var(--line);color:var(--ink3);font-size:12px;line-height:1.8;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+kbd{font-family:inherit;font-size:11px;border:1px solid var(--line2);border-bottom-width:2px;border-radius:5px;padding:0 5px;color:var(--ink2)}
+@media (max-width:760px){.vols{grid-template-columns:1fr;gap:12px}.vol{flex-direction:row}.vol img{width:42%;aspect-ratio:auto;min-height:100%}.vol .vs{display:none}}
+@media (max-width:760px){.tools{display:contents}.search{display:block;position:sticky;top:0;z-index:5;background:var(--bg);padding:10px 0 8px;margin-top:4px;box-shadow:0 10px 14px -12px rgba(0,0,0,.9)}.chips{margin-top:8px}#out{margin-top:6px}
+  .chips{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;padding-bottom:2px}.chips::-webkit-scrollbar{display:none}.chip{flex:none}.chips .lbl{flex:none}}
+@media (max-width:520px){.row{grid-template-columns:3.6em 1fr;padding:9px 6px}.row .st{grid-column:2;justify-self:start}.sb{-webkit-line-clamp:2}.aka{display:block;margin-left:0}}
+@media (pointer:coarse){.chip{padding:9px 14px;min-height:38px}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="../">‹ 游戏厅</a>
+  <header>
+    <div class="eyebrow">HYAKU MONOGATARI</div>
+    <h1>百物语</h1>
+    <p class="lede">旧时讲鬼故事的规矩：夜里点一百支蜡烛，每讲完一个，就吹灭一支。<br>这里是三部、九十则流传已久的怪谈——每一则都是一章像素俯视角探索解谜，单人或两人联机轮流操作。</p>
+  </header>
+
+  <section class="vols" id="vols" aria-label="三部"></section>
+
+  <section class="list" aria-label="怪谈清单">
+    <div class="lh"><h3>怪谈清单</h3><span class="cnt" id="cnt"></span></div>
+    <div class="tools">
+      <label class="search" id="sw">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>
+        <input id="q" type="search" placeholder="搜索标题、原名、出处、关键词… 如：裂口女 / Mothman / 聊斋 / 1959 / 电梯" autocomplete="off" enterkeyhint="go" aria-label="搜索怪谈">
+        <button class="clr" id="clr" type="button" aria-label="清除">×</button>
+      </label>
+      <div class="chips" id="cV"></div>
+      <div class="chips" id="cR"></div>
+      <div class="chips" id="cS"></div>
+    </div>
+    <div id="out" aria-live="polite"></div>
+  </section>
+
+  <footer>
+    <span>点击任一则，直接打开那一部的章节列表并定位到这一夜。进度读取本机浏览器里的存档。</span>
+    <span>键盘：<kbd>/</kbd> 搜索 · <kbd>Enter</kbd> 打开第一条 · <kbd>Esc</kbd> 清空</span>
+  </footer>
+</div>
+<script src="list.js"></script>
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const ROWS = window.BWY || [], VOLS = window.BWY_VOLS || [], REG = window.BWY_REGIONS || [];
+  const CN = '〇一二三四五六七八九十';
+  const cnum = n => n <= 10 ? CN[n] : n < 20 ? '十' + CN[n - 10] : CN[n / 10 | 0] + '十' + (n % 10 ? CN[n % 10] : '');
+  const META = [
+    { sub: '三十则 · 血腥玛丽、裂口女、如月车站、八尺大人、湘西赶尸、贝尔女巫……' },
+    { sub: '又三十则 · 子取箱、犬鸣村、雪女、聂小倩、冥婚、香港奶奶、托克洛希……' },
+    { sub: '终卷三十则 · 亲爱的大卫、天蛾人、芭芭雅嘎、迪亚特洛夫、热沃当、弗兰南灯塔……' },
+  ];
+  /* 本机存档：各部的 localStorage 前缀就是文件夹名（nighttales. / guaitan2. / guaitan3.） */
+  const ls = (k, d) => { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } };
+  const PROG = VOLS.map(v => ({ done: new Set(ls(v.game + '.done', [])), has: id => { try { return localStorage.getItem(v.game + '.cp.' + id) != null; } catch (e) { return false; } } }));
+  const status = r => PROG[r.v].done.has(r.id) ? 'done' : PROG[r.v].has(r.id) ? 'cp' : 'new';
+  for (const r of ROWS) { r.st = status(r); r.hay = [r.t, r.a, r.o, r.s, r.id, r.k].join('\n').toLowerCase(); r.href = '../' + VOLS[r.v].game + '/#ch=' + r.id; }
+
+  /* 三部卡片 */
+  $('vols').innerHTML = VOLS.map((v, i) => {
+    const d = ROWS.filter(r => r.v === i && r.st === 'done').length, n = ROWS.filter(r => r.v === i).length;
+    return `<a class="vol" href="../${v.game}/"><img src="../covers/${v.game}.webp" alt="" loading="lazy"><div class="vb">
+      <h2>百物语·<b>${v.vol}</b></h2><p class="vs">${esc(META[i].sub)}</p>
+      <div class="vf"><span class="prog">${d ? `已通关 <b>${d}</b> / ${n}` : `${n} 夜`}</span><span class="go">进入 ›</span></div></div></a>`;
+  }).join('');
+
+  /* 筛选状态（记在本机，失败也无妨） */
+  const KEY = 'baiwuyu.filter';
+  let F = Object.assign({ v: -1, r: -1, s: 'all', q: '' }, ls(KEY, {}));
+  const save = () => { try { localStorage.setItem(KEY, JSON.stringify(F)); } catch (e) { } };
+
+  const chipRow = (el, label, items, cur, key) => {
+    el.innerHTML = `<span class="lbl">${label}</span>` + items.map(([val, txt, n]) =>
+      `<button class="chip" type="button" data-k="${key}" data-v="${val}" aria-pressed="${String(val) === String(cur)}">${esc(txt)}${n != null ? `<span class="n">${n}</span>` : ''}</button>`).join('');
+  };
+  const drawChips = () => {
+    chipRow($('cV'), '部', [[-1, '全部', ROWS.length]].concat(VOLS.map((v, i) => [i, '百物语·' + v.vol, ROWS.filter(r => r.v === i).length])), F.v, 'v');
+    chipRow($('cR'), '地区', [[-1, '全部']].concat(REG.map((g, i) => [i, g, ROWS.filter(r => r.r.includes(i)).length])), F.r, 'r');
+    const c = s => ROWS.filter(r => r.st === s).length;
+    chipRow($('cS'), '进度', [['all', '全部'], ['new', '没玩过', c('new')], ['cp', '有存档', c('cp')], ['done', '已通关', c('done')]], F.s, 's');
+  };
+  document.querySelector('.tools').addEventListener('click', e => {
+    const b = e.target.closest('.chip'); if (!b) return;
+    const k = b.dataset.k; F[k] = k === 's' ? b.dataset.v : +b.dataset.v; save(); drawChips(); draw();
+  });
+
+  const hl = (s, terms) => {
+    let h = esc(s); if (!terms.length) return h;
+    for (const t of terms) { const e = esc(t).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); h = h.replace(new RegExp(e, 'gi'), m => `<mark>${m}</mark>`); }
+    return h;
+  };
+  const NUMQ = /^(?:第)?([一二三四五六七八九十]+|\d{1,2})夜?$/;
+  const parseCn = s => { if (/^\d+$/.test(s)) return +s; let n = 0; if (s.includes('十')) { const [a, b] = s.split('十'); n = (a ? CN.indexOf(a) : 1) * 10 + (b ? CN.indexOf(b) : 0); } else n = CN.indexOf(s); return n; };
+
+  let shown = [];
+  function draw() {
+    const q = F.q.trim().toLowerCase(), terms = q ? q.split(/\s+/).filter(Boolean) : [];
+    shown = ROWS.filter(r => (F.v < 0 || r.v === F.v) && (F.r < 0 || r.r.includes(F.r)) && (F.s === 'all' || r.st === F.s) &&
+      terms.every(t => { const m = NUMQ.exec(t); return m ? r.n === parseCn(m[1]) : r.hay.includes(t); }));
+    $('cnt').textContent = shown.length === ROWS.length ? `共 ${ROWS.length} 则` : `${shown.length} / ${ROWS.length} 则`;
+    $('sw').classList.toggle('has', !!F.q);
+    if (!shown.length) { $('out').innerHTML = '<div class="empty">没有找到。换个词试试——中文名、原名、国家、年份都可以搜。</div>'; return; }
+    const vis = terms.filter(t => !NUMQ.test(t));
+    let html = '', last = '';
+    for (const r of shown) {
+      const vi = (r.n - 1) / 10 | 0, g = `百物语·${VOLS[r.v].vol}　卷${'一二三'[vi]}`;
+      if (g !== last) { html += `<div class="grp">${g}　第${cnum(vi * 10 + 1)}夜 — 第${cnum(vi * 10 + 10)}夜</div>`; last = g; }
+      const st = r.st === 'done' ? '<span class="st done">已通关</span>' : r.st === 'cp' ? '<span class="st cp">有存档</span>' : '<span></span>';
+      html += `<a class="row" href="${r.href}"><span class="no"><b>${VOLS[r.v].vol}</b>第${cnum(r.n)}夜</span>
+        <span class="mid"><span class="tt">${hl(r.t, vis)}</span>${r.a ? `<span class="aka">${hl(r.a, vis)}</span>` : ''}
+        <div class="og">${hl(r.o, vis)}</div><div class="sb">${hl(r.s, vis)}</div></span>${st}</a>`;
+    }
+    $('out').innerHTML = html;
+  }
+
+  const qi = $('q'); qi.value = F.q;
+  if (matchMedia('(max-width:520px)').matches) qi.placeholder = '搜索：标题 / 原名 / 出处 / 年份';
+  qi.addEventListener('input', () => { F.q = qi.value; save(); draw(); });
+  qi.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && shown.length) location.href = shown[0].href;
+    if (e.key === 'Escape') { qi.value = F.q = ''; save(); draw(); }
+  });
+  $('clr').onclick = () => { qi.value = F.q = ''; save(); draw(); qi.focus(); };
+  addEventListener('keydown', e => { if (e.key === '/' && document.activeElement !== qi) { e.preventDefault(); qi.focus(); qi.select(); } });
+  /* 从游戏返回时（bfcache）刷新进度 */
+  addEventListener('pageshow', e => { if (e.persisted) location.reload(); });
+
+  drawChips(); draw();
+})();
+</script>
+</body>
+</html>
