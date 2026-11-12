@@ -73,12 +73,16 @@ async function S_dance() { setClock(10, '凌晨 2 点'); await T_(`^stage corrid
 #m很多年前的一个假期。六个女孩在这里练舞。／她带了一盒自己包的糖，想分给室友。只有一个人伸手，又被拦了回去。／老师走后，进来一个男人。他把她叫进了办公室。／另外五个人都看见了。没有一个人站起来。／后来，她从楼上掉了下去。
 #m男人站在五个女孩面前，一个一个地威胁。／其中一个女孩，在笑。
 ^fx red
+^fx pulse
+^zoom 张雅 2
 黑发勒紧了。她想把你的每一部分，都塞进自己的身体里。`);
   const ok = await miniGame('hair');
   const c = await choose([['“我会报警。让他被绳之以法。”', '你快喘不上气了'], ['“我看见了。我替你记着。”', '']]); F().vow = c;
   await T_(`${ok ? '你挣出一只手。' : '你挣不动。'}但那句话说出口之后，黑发不再往里收了。
 ^fx clear
 ^fx dark
+^zoom off
+^fx pulse off
 舞蹈室重归寂静。十几秒后——
 ^in 张鹏 16
 门口出现了一个人。左手手背，一朵牡丹。
@@ -104,11 +108,13 @@ async function S_shoes() { setClock(11, '凌晨 4 点'); await T_(`^call 李队
 你一转身。
 !red
 ^in 张雅 3
+^zoom 张雅 1.8
 张雅就站在你身后。她抬起手，指了指办公楼。
+^zoom off
 ^out 张雅
 我|……我只是觉得舞蹈室里太闷，出来透个气。
 十五分钟后，两辆警车。液压钳剪开了校门。
-^stage office
+^stage storage
 ^in 李队 13
 ^in 警察 15
 体育器材室，门上贴着封条。柜子后面有一张单人床。
@@ -191,7 +197,10 @@ async function S_parking() { await T_(`^in 颜队长 13
 我|扩建就扩建出一截楼梯？
 你用手电往下照。台阶一级一级往下，照到第七级，光就没了——不是被挡住，是被吃掉了。
 ^sfx steps
+^at 影子 12
+^fx eyes
 楼梯底下，有人往上走了一步。
+^out 影子
 你关掉手电，退了出来。……不过整个地下都是我的了。
 我|三个月。在东郊建成之前，尽可能多地解锁场景。
 你顺手把控制台的总闸也接到了手边。`); addItem('ticketbooth'); C.hh.spins++; learnSkill('lights'); learnSkill('paper'); }
@@ -230,9 +239,12 @@ async function S_fanyu() { await T_(`^in 姑姑 13
   await T_(c === 0 ? `他画了一栋黑色的房子。房子里，有很多红色的小人。还有两个黑色的。
 他把画送给了你。` : `他趴在井边，很安静。走的时候，他把一张画塞进了你手里：黑色的房子，红色的小人。`);
   await T_(`范郁走之前，扯了扯你的衣角。
+^at 张雅 1
+^turn 张雅 R
 范郁|你后面那个姐姐，为什么一直不说话？
 ^fx red
 你没有回头。
+^out 张雅
 ^fx clear
 我|（越是阴森的地方他越兴奋。他不是不害怕——他是喜欢和“它们”待在一起。）
 ~phone
@@ -252,8 +264,10 @@ async function S_muyang() { await chapterCard('四', '暮阳中学', '雨夜 · 
     ['围栏', `木头围栏有一段被人掰开过，断口还是新的。最近有人进去过。`],
     ['远处的楼', `教学楼、两层的宿舍楼、两层的办公楼。所有的窗都是黑的——只有一扇，好像动了一下。`]], 2);
   await T_(`^sfx steps
+^at 影子 2
 你停下来系鞋带。身后的脚步声，多走了一步，才停。
 ^fx flicker
+^out 影子
 你回头。雨里只有你自己的脚印。
 ^fx steady
 ^call 鹤山
@@ -278,6 +292,7 @@ async function S_pen() { setClock(8, '晚上 9:30'); await T_(`^mus night
 我|笔仙笔仙，我是你的今生，如果要与我续缘，请在纸上画圈。
 手背上多了一股力气，冰凉。^fx flash
 有一瞬间，你看见握着这支笔的手，不止一只。
+^fx hands
 #是三只。
 ^fx shake`);
   const ok = await miniGame('pen');
@@ -291,6 +306,8 @@ async function S_pen() { setClock(8, '晚上 9:30'); await T_(`^mus night
   await T_(`我|笔仙笔仙，请离开。
 没有回应。它不走。
 ^sfx giggle
+^fx hands off
+^fx eyes
 床底下，有人很小声地笑了一下。
 ^fx shake
 你把笔往纸上一拍。
@@ -309,6 +326,7 @@ async function S_wc() { setClock(8, '晚上 10 点'); await T_(`^fx dark
 ^turn 陈歌 B
 你用锤头顶开了第五个隔间的门。
 !eyes
+^fx eyes
 隔板上，墙上，全是眼睛。画上去的。
 只有第六个隔间的隔板上有画，墙上没有。你凑近看：所有的眼睛，都是为了藏住隔板中间的一个小孔。
 我|不是有东西在第五个隔间里偷看。是有人躲在第六个隔间里，往第五个看。
@@ -327,6 +345,7 @@ async function S_wc() { setClock(8, '晚上 10 点'); await T_(`^fx dark
 第五个。
 ^to 红影 13
 ^turn 红影 L
+^fx pulse
 它停在了第六个门口。
 ^scare 红影
 门缝里，一只充血的眼睛，正对着你的眼睛。`);
@@ -376,6 +395,7 @@ async function S_last() { setClock(9, '晚上 11:40'); await T_(`^mus door
 ^turn 学生 B
 ^turn 学生乙 B
 ^turn 学生丙 B
+^fx pulse
 教室里坐满了人。二十四个，穿着校服，低着头。
 ^fx flicker
 ^sfx whisper
@@ -383,11 +403,14 @@ async function S_last() { setClock(9, '晚上 11:40'); await T_(`^mus door
 ^turn 学生乙 F
 ^turn 学生丙 F
 手电闪了一下。再亮起来的时候，二十四张脸，全都转向了你。
+^zoom 学生 2.2
 ^fx steady
 ^stage corridor
 ^fx dark
 ^prop fp footprints 12 5 {"col":"rgba(90,110,130,.6)"}
 ^prop fq footprints 14 5 {"col":"rgba(90,110,130,.6)"}
+^zoom off
+^fx pulse off
 你退出去，带上了门。走廊的地上，有一串不属于你的湿鞋印。
 姑姑|没想到你真的跑到这地方来了。我是来救你的。这学校有一口死过很多人的井，井里的东西快出来了，你已经被盯上——快走。
 我|好。
@@ -416,11 +439,15 @@ async function S_well() { setClock(10, '凌晨 3 点'); await T_(`^fx rain
 我|另一个凶手已经死了。在井里。
 她只记得一个大致的范围。警察挖了整整一夜。
 ^prop wl well 11 5
+^stage wellyard
+^fx fog
 凌晨三点多，暮阳中学后山的深井，找到了。
 井盖撬开的那一刻，雨停了。
 ^sfx knock
 井底传上来三下敲击声。很慢。像有人在下面，敲井壁。
+^fx hands
 所有拿着铁锹的人都停了手。没有人说话。
+^fx hands off
 ~phone
 @玩家成功体验四条支线任务，并存活至天亮，暮阳中学试炼任务完成！
 @试炼任务完成度超过百分之九十，获得隐藏道具——怨念缠绕的圆珠笔（残破）：笔仙并不想搭理你，它朝你翻了个白眼，并把自己藏了起来。
@@ -560,7 +587,7 @@ async function S_haiming() { setClock(8, '晚上 11 点'); await T_(`^in 大叔 
 年轻人|303 以前住的人叫王海明。我听见过他屋里两个声音吵架。其中一个说，要不是怕被“红衣”发现，宁死也不跟一个垃圾共存。
 我|红衣？
 你打开好感度页面。小小的名字后面写着“厉鬼”。张雅后面，是“红衣厉鬼”。
-^stage room
+^stage apt303
 ^mus mirror
 ^mirror 8
 303。卫生间的镜子，正对着卧室。卧室没有门。
@@ -576,11 +603,15 @@ async function S_haiming() { setClock(8, '晚上 11 点'); await T_(`^in 大叔 
 再看镜子。它离镜面近了一点。玻璃上，从里面按上来一只手印。
 ^at 黑影 13
 ^scare 黑影
+^fx pulse
+^zoom 黑影 1.9
 卧室门框后面，立着一道高瘦的黑影。它长着两张不同的脸。
 !mirror`);
   const win = await fight({ chase: HCHASE.twoface, mobs: [['twoface', L(1)]], title: '303 房', intro: '两张脸在互相咒骂。它们并不是一条心。', epic: { name: '两张脸的黑影', sub: '三个人的房间', seal: '镜', intro: ['王海明从“那个地方”带出来的东西。', '它一直躲在镜子里，等门楠睡着。', '——它也在怕着什么。'], phase: '（其中一张脸在喊：别把红衣引来！）', low: '钥匙在你口袋里发烫。生了锈的那一把。' } });
   await T_(`^fx dark
 ^out 黑影
+^zoom off
+^fx pulse off
 ${win ? '它缩回了镜子里，镜面晃了几下，平了。' : '它没有追出来。它不敢离开镜子太远。'}
 ^prop ky key 12 5
 地上留下一把生锈的钥匙。

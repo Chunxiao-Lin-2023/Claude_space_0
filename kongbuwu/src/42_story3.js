@@ -103,6 +103,7 @@ async function S_laundry() { setClock(9, '午夜 0:30'); await T_(`^fx dark
 手机屏幕里，门外站着两个人。一个只有一条手臂。另一个的脸……
 ^del wm
 ^fx shake
+^fx pulse
 ^in 畸形脸 2
 ^in 独臂 4
 洗衣机被撞倒了。`);
@@ -223,7 +224,9 @@ async function S_door() { setClock(10, '凌晨 2:30'); await T_(`^mus door
 高医生|我这就开车去找他。二十分钟。不要挂电话。
 八号病房传来锁链滑动的声音。
 ^in 畸形脸 17
+^fx pulse
 畸形脸回来了。他的嘴越裂越大，后背上，浮出了第二个人头。
+^zoom 畸形脸 2
 ^at 瘦长怪物 18
 那东西一开始可能并不高。它跳到一个又一个人的肩膀上，一个一个吃掉，才长成现在这样。白布的缺口里，露出好几张人脸。
 畸形脸|我们来玩个游戏吧。你赢了，我就放过你。你输了，就把身体给我。
@@ -241,12 +244,15 @@ async function S_door() { setClock(10, '凌晨 2:30'); await T_(`^mus door
 ^out 瘦长怪物
 你往楼上跑。跑出十几米，低头看了一眼手机。
 !eyes
+^zoom off
+^fx hands
 在自己的直播间里，你看到了自己的后背。——有“人”捡起了你掉在地上的那个镜头。
 他是故意把你往四楼引的。`); go('kf_b3_4', true, true); }
 async function S_candy() { setClock(10, '凌晨 3 点'); await T_(`^mus door
 ^fx dark
 ^to 陈歌 9
 四楼走廊中央。
+^fx fog
 ^in 瘦长怪物 14
 前面一个。
 ^at 瘦长怪物乙 3
@@ -275,6 +281,8 @@ async function S_candy() { setClock(10, '凌晨 3 点'); await T_(`^mus door
 ^out 瘦长怪物
 ^out 独眼的瘦长怪物
 ^fx flash
+^fx ash
+^fx blood
 怪物被撕碎，长廊里像下起了黑色的雪。张雅站在雪里，黑发吞吸着它们的怨念。她身上的红衣，越来越鲜艳了。
 我|（她一个二星、三星场景出来的厉鬼，在这里虐杀三星的怪物。只能说明——这栋楼里，还有更可怕的。）
 ^at 张雅 11
@@ -299,6 +307,8 @@ async function S_inside() { setClock(11, '凌晨 3:30'); await T_(`^fx red
   const c = await choose([['一句话也不说，往里走', '千万不要开口说话'], ['小声喊：“张雅？”', '']]); F().spoke = c;
   if (c === 1) { await T_(`你的声音传出去很远。
 ^fx shake
+^fx eyes
+^fx hands
 走廊两边所有的门，同时响了一下。
 %
 你闭上了嘴。可已经有东西醒了。`); C.mp = Math.round(C.mp * .7); }
@@ -318,6 +328,8 @@ async function S_boy() { await T_(`^fx red
 ^at 老院长 4
 ^scare 老院长
 门口站着一个老人。穿着红色的衣服。
+^fx pulse
+^zoom 老院长 1.8
 你的脑子里只有两个字：红衣。
 老院长|活人？……很多年没有活人进来过了。把那个孩子交给我。
 他不是失踪。四年前，他自己走进了这扇门。`);
@@ -327,6 +339,8 @@ async function S_boy() { await T_(`^fx red
 ^in 张雅 8
 他只做了一个动作。老院长重重砸在地上，身上的红衣一下子暗了下去。
 ^down 老院长
+^zoom off
+^fx pulse off
 老院长|魔……魔鬼……
 张雅的黑发裹住了他缺失的身体。几秒钟后，他不见了。
 ^out 老院长

@@ -144,7 +144,7 @@ const { chromium } = require('playwright');
       const st = H.staff[0]; if (st) { st.cd = 0; st.pop = 0; v.st = 'walk'; v.x = v.tx = st.home[0]; v.y = v.ty = st.home[1] + 2; ok('点员工让他冲出去', hStaffGo(H, st) && st.force === v); }
       H.staff.forEach(q => { q.force = null; q.cd = 99; }); v.st = 'walk'; v.backT = 0; v.mv = null; v.u.st = {}; v.lure = null; v.u.hp = v.u.mhp; D.hStep(H, .05); ok('游客会突然回头（先冒问号）', v.st === 'back' && v.bub && v.bub.s === '？');
       const v2 = H.vis[1] || H.vis[0]; if (v2 !== v) { v2.st = 'walk'; v2.x = v2.tx = v.tx; v2.y = v2.ty = v.ty; v2.u.hp = v2.u.mhp; const h2 = v2.u.hp; v.u.hp = 0; hFlush(H); ok('恐慌会传染', v2.u.hp < h2); }
-      hsPause(true); const t0 = H.t; await tick(150); ok('暂停时游戏不走', H.t === t0 && !!document.querySelector('#hspause')); hsPause(false); await tick(60); ok('继续', H.t > t0 || H.done);
+      hsPause(true); const t0 = H.t; await tick(150); ok('暂停时游戏不走', H.t === t0 && !!document.querySelector('#hspause')); hsPause(false); await wait(() => H.t > t0 || H.done, 3000); ok('继续', H.t > t0 || H.done);
       hsQuit(); await wait(() => !!document.querySelector('.hs-end'), 3000); ok('提前收工：结算为没吓到', H.res === 'lose' && /提前收工/.test(document.querySelector('.hs-end').textContent)); D.hsClose(); await pr;
       const pr2 = D.receive('mh'); await wait(() => D.HS && !!document.querySelector('#hsset .hs-sb'), 4000); const g0 = C.hh.good + C.hh.bad; hsCancel(); await pr2; ok('布置时可以不接了（不算好评差评）', C.hh.good + C.hh.bad === g0 && !D.STATE.house); }
     { D.instant = true; C = await fresh(3); D.auto = true; C.tick = 0; D.go('hh_door', true, true); await D.receive('ws'); const L = D.HS_LAST; ok('每场有评级和最狠的一下', ['S', 'A', 'B', 'C'].includes(L.grade) && (L.res === 'lose' || !!L.best), L); }

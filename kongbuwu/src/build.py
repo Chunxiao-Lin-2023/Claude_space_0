@@ -48,10 +48,10 @@ if re.search(r'[^:]//[^\n]*\n', game) and re.search(r'^\s*//', game, re.M) is No
 # 小剧场指令：命令名、道具贴图、场景名都要存在（拼错了不会报错，只会什么都不演）
 spr = set(re.findall(r'^  (\w+)\(g, e, t, R\)', game, re.M)) | set(re.findall(r'SPR\.(\w+) = function', game))
 stg = set(re.findall(r'^  (\w+): \{', game[game.find('const STAGES'):game.find('const STAGES') + 60000], re.M))
-cmds = {'in', 'at', 'out', 'to', 'turn', 'down', 'up', 'fx', 'prop', 'del', 'stage', 'call', 'hang', 'wait', 'scare', 'creep', 'sfx', 'mirror', 'mus'}
+cmds = {'in', 'at', 'out', 'to', 'turn', 'down', 'up', 'fx', 'prop', 'del', 'stage', 'call', 'hang', 'wait', 'scare', 'creep', 'sfx', 'mirror', 'mus', 'zoom'}
 mirs = {'follow', 'lag', 'stare', 'smile', 'close', 'empty', 'other', 'hand', 'crack', 'out', 'off'}
 moods = set(re.findall(r'^  (\w+): \{ root', game, re.M))
-fxs = {'dark', 'candle', 'rain', 'red', 'tv', 'flash', 'shake', 'light', 'clear', 'flicker', 'steady', 'glitch'}
+fxs = {'dark', 'candle', 'rain', 'red', 'tv', 'flash', 'shake', 'light', 'clear', 'flicker', 'steady', 'glitch', 'blood', 'fog', 'eyes', 'hands', 'crack', 'ash', 'pulse', 'chroma', 'lightning', 'water'}
 _sf = game[game.find('const SFX'):game.find('function sfx(')]
 sfxs = set(re.findall(r'(?:^  |[{,;] )(\w+)\(\) \{', _sf, re.M))
 for m in re.finditer(r'(?:\n|`|\\n)~(\w+)', game):
