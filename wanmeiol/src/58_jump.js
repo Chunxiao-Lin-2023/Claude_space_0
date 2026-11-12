@@ -66,27 +66,37 @@ function jumpTo(i) { if (NETROLE === 'guest') { toast('只有房主能跳章'); 
     for (const d of J.dun || []) c.dungeons[d] = 1; Object.assign(c.story.f, J.f || {}); if (J.bag) c.bag = { ...J.bag }; if (J.money) c.money = J.money; if (J.dt != null) c.dtN = J.dt; if (J.arena) c.arenaR = J.arena; }
   const J = JUMPS[i]; jumpScan(c, qi(J.q)); c.lv = J.lv; c.exp = Math.round(BAL.expNext(J.lv) * (J.exp || 0)); c.dt = DT.concat(DT).slice(0, Math.min(c.dtN || 0, Math.max(0, J.lv - 9))); const AR = c.arenaR; delete c.dtN; delete c.arenaR; c.pet = 'maoqiu'; c.story.q = qi(J.q); c.story.qid = J.q; c.loc = J.loc; c.home = PLACES[J.loc].town ? J.loc : 'sc_street';
   c.bar = c.sk.slice().sort((a, b) => SKILL_ORDER.indexOf(b) - SKILL_ORDER.indexOf(a)).slice(0, barSlots(J.lv)); c.eq = Object.keys(c.relics).slice(-relicSlots(J.lv));
-  if (AR) Object.assign(c.arena, { rank: AR, best: AR, wins: Math.round((120 - AR) / 4) });
-  jumpLate(c, i);
+  if (AR) { const r = Math.max(1, Math.round(AR * JUMP_UP.arena)); Object.assign(c.arena, { rank: r, best: r, wins: Math.round((120 - r) / 4) }); }
+  jumpBoost(c, i); jumpLate(c, i);
   C = c; for (const id of Object.keys(PLACES)) if (placeOpen(id)) { C.seen[id] = 1; for (const [m] of PLACES[id].mobs || []) C.codex[m] = C.codex[m] || { wk: [] }; }
   C.ach = {}; for (const A of ACH) { try { if (A.ok()) C.ach[A.id] = now(); } catch (e) { } } // titles already earned by then: no pile of toasts
   fullHeal(); DLG = null; STATE.dungeon = null; UI.nav = null; closeModal(); $('log').innerHTML = ''; logLine(`<div class="lochead">${jumpName(J)}</div>`, 'loc');
-  logLine(`<b class="lvup">跳章</b>：从「${jumpName(J)}」开始。等级、宝术、伙伴、宝骨和物品都按这时候应有的水平（略高一点）准备好了。`, 'sys'); save(true); refresh(); bannerDraw(); netSync(); setTimeout(storyPoll, 600); }
+  logLine(`<b class="lvup">跳章</b>：从「${jumpName(J)}」开始。等级、宝术、伙伴、宝骨和物品都按一路玩得不错的水平（中上）准备好了。`, 'sys'); save(true); refresh(); bannerDraw(); netSync(); setTimeout(storyPoll, 600); }
 /* the later systems follow the jump too: partners met by then (with levels, affection, 觉醒/返祖/真身), 悟道 points, 天庭 */
 const JUMP_PETS = [['dashen', 'cliff'], ['xiaobai', 'v2'], ['sanhei', 'v3end'], ['wuwei', 'dizuDone'], ['jinmao', 'v12end']];
 function jumpLate(c, i) { const J = JUMPS[i], f = c.story.f, since = flag => JUMPS.findIndex(x => x.f && x.f[flag]);
-  const plv = c.story.f.end ? Math.min(PET_LV_CAP, J.lv) : Math.min(J.lv + 1, PET_LV_CAP); // after volume one a partner keeps up with 石昊
-  for (const [id, flag] of JUMP_PETS) if (f[flag] && !c.pets[id]) { const k = since(flag); c.pets[id] = { aff: k >= 0 && k < i ? 100 : 60, lv: Math.max(1, plv - 2), exp: 0, hatch: 0 }; }
+  const plv = c.story.f.end ? Math.min(PET_LV_CAP, c.lv) : Math.min(c.lv + 1, PET_LV_CAP); // after volume one a partner keeps up with 石昊
+  for (const [id, flag] of JUMP_PETS) if (f[flag] && !c.pets[id]) { const k = since(flag); c.pets[id] = { aff: k >= 0 && k < i ? 100 : 75, lv: Math.max(1, plv - 1), exp: 0, hatch: 0 }; }
   for (const p of Object.values(c.pets)) { if (c.story.f.end) p.lv = Math.max(p.lv || 1, plv - (p.aff >= 100 ? 0 : 2)); p.evo = p.aff >= 100 ? 1 : 0; p.evo2 = p.evo && p.lv >= 25 ? 1 : 0; p.evo3 = p.evo2 && p.lv >= 70 ? 1 : 0; }
   for (const [id, p] of Object.entries(c.pets)) { const open = PETS[id].sk.map((s, k) => ({ s, k })).filter(x => (!x.s.aff || p.aff >= x.s.aff) && (!x.s.evo || p.evo)).map(x => x.k); p.seen = open.slice(); p.bar = [0, ...open.filter(k => k).reverse()].slice(0, 4 + (p.evo ? 1 : 0)); } /* a ready loadout (the newest moves plus the basic one), so no "learned a move" toasts right after the jump */
-  if (J.lv > 44) { const n = Math.floor((J.lv - 44) * 0.9), spent = Math.floor(n / 2); c.daoP = { hp: Math.ceil(spent / 3), atk: Math.ceil(spent / 3), def: Math.floor(spent / 3) }; c.dao = n - c.daoP.hp - c.daoP.atk - c.daoP.def; }
-  if (f.tiantingDone) c.tt = { yao: 1, lu: f.v13end ? 1 : 0, wu: 1, qiang: f.v13end ? 1 : 0 }; }
+  if (c.lv > 44) { const n = Math.floor((c.lv - 44) * 1.2), spent = Math.floor(n / 2); c.daoP = { hp: Math.ceil(spent / 3), atk: Math.ceil(spent / 3), def: Math.floor(spent / 3) }; c.dao = n - c.daoP.hp - c.daoP.atk - c.daoP.def; }
+  if (f.tiantingDone) c.tt = { yao: 2, lu: f.v13end ? 2 : 1, wu: 2, qiang: f.v13end ? 2 : 1 };
+  const fl = c.lv >= 75 ? 3 : c.lv >= 59 ? 2 : c.lv >= 47 ? 1 : 0; if (fl) { c.forge = {}; for (const r of c.eq) c.forge[r] = fl; } } /* 炼器 opens with volume six: the worn 宝骨 come already worked */
+/* 跳章 = a player who played well (中上水平), not an average one: a few levels over the preset (never past a realm gate the story hasn't opened),
+   宝术 ×1.3, partners closer and stronger, a fuller purse and bag, a better 虚神界 rank */
+const JUMP_UP = { lv: 3, prof: 1.3, aff: 15, petLv: 3, money: 1.5, bag: 1.5, arena: 0.6 };
+function jumpBoost(c, i) { const J = JUMPS[i], U = JUMP_UP;
+  for (let k = 0; k < U.lv && c.lv < BAL.lvCap && !lvGated(c); k++) c.lv++; if (c.lv > J.lv) c.exp = 0; else if (lvGated(c)) c.exp = Math.round(BAL.expNext(c.lv) * 0.6);
+  for (const id of Object.keys(c.prof)) c.prof[id] = Math.round(c.prof[id] * U.prof);
+  for (const p of Object.values(c.pets)) { p.aff = Math.min(100, (p.aff || 0) + U.aff); p.lv = Math.min(PET_LV_CAP, c.story.f.end ? (p.lv || 1) + U.petLv : c.lv + 2, (p.lv || 1) + U.petLv); }
+  c.money = Math.round((c.money || 0) * U.money); for (const k of Object.keys(c.bag || {})) c.bag[k] = Math.round(c.bag[k] * U.bag);
+  c.bar = c.sk.slice().sort((a, b) => SKILL_ORDER.indexOf(b) - SKILL_ORDER.indexOf(a)).slice(0, barSlots(c.lv)); c.eq = Object.keys(c.relics).slice(-relicSlots(c.lv)); }
 /* whatever the scenes before the jump point hand out — 宝术, 功法, 伙伴, story marks, the 宝骨 of the bosses fought, the 秘境 cleared — the jump hands out too,
    so a new chapter start needs only its level and place. Marks that only some choices (or a held-out fight) give are left out. */
 const JUMP_OPTIONAL = ['ding', 'lure', 'held7', 'xiaoqiSafe', 'yinkunGate', 'huoGuard', 'heldShihai', 'baxiMem', 'tahuaOk', 'carveHuang', 'wallName', 'zaohuaLetter', 'huoNight', 'qhAdvice', 'stoneLate', 'yunxi', 'dieBack'];
 function jumpSrc(q) { const seen = new Set(); let s = ''; const add = f => { if (!f || seen.has(f)) return; seen.add(f); const t = f.toString(); s += '\n' + t; for (const m of t.matchAll(/\b(S_\w+)\(/g)) { let g = null; try { g = eval(m[1]); } catch (e) { } if (typeof g === 'function') add(g); } };
   add(q.scene); if (q.onEnter) add(q.onEnter.scene); return s; }
-function jumpScan(c, qn) { const avg = Math.round(Object.values(c.prof).reduce((a, b) => a + b, 0) / Math.max(1, Object.keys(c.prof).length) * 0.4);
+function jumpScan(c, qn) { const avg = Math.round(Object.values(c.prof).reduce((a, b) => a + b, 0) / Math.max(1, Object.keys(c.prof).length) * 0.7);
   for (let k = 0; k < qn; k++) { const q = MAIN[k], s = jumpSrc(q);
     for (const m of s.matchAll(/learnSkill\('(\w+)'\)/g)) if (!c.sk.includes(m[1])) { c.sk.push(m[1]); c.prof[m[1]] = c.prof[m[1]] || avg; }
     for (const m of s.matchAll(/learnGongfa\('(\w+)'\)/g)) if (!c.gf.includes(m[1])) c.gf.push(m[1]);
@@ -97,6 +107,6 @@ const VOL_CN = ['', '一', '二', '三', '四', '五', '六', '七', '八', '九
 const jumpCh = J => MAIN[qi(J.q)].ch;
 const jumpName = J => CH_NAMES[jumpCh(J)] || J.q;
 function jumpHtml() { if (NETROLE === 'guest') return ''; const by = {}; JUMPS.forEach((J, i) => { const v = CH_VOL[jumpCh(J)]; (by[v] = by[v] || []).push(i); });
-  return `<div class="card"><h4>跳章 <span class="dim" style="font-size:.8rem">直接从某一章的开头开始：等级、宝术、功法、伙伴、宝骨、物品和之前的剧情都按“一路玩到这里”准备好（略高一点）。<b style="color:#ff9a7a">会覆盖当前进度</b>，点两次确认。第一章就是新开一局。</span></h4>
+  return `<div class="card"><h4>跳章 <span class="dim" style="font-size:.8rem">直接从某一章的开头开始：等级、宝术、功法、伙伴、宝骨、物品和之前的剧情都按“一路玩到这里”准备好（按玩得不错的中上水平）。<b style="color:#ff9a7a">会覆盖当前进度</b>，点两次确认。第一章就是新开一局。</span></h4>
   ${Object.keys(by).sort((a, b) => a - b).map(v => `<div class="jvol"><b>第${VOL_CN[v]}卷 · ${VOL_NAMES[v]}</b><div class="row" style="flex-wrap:wrap;gap:6px">${by[v].map(i => `<button class="sb" onclick="jumpArm(this,${i})">${UI.jumpArm === i ? '再点一次确认' : CH_NAMES[jumpCh(JUMPS[i])].replace(' · ', ' ')}</button>`).join('')}</div></div>`).join('')}</div>`; }
 function jumpArm(b, i) { if (UI.jumpArm === i) { UI.jumpArm = null; jumpTo(i); return; } UI.jumpArm = i; b.textContent = '再点一次确认'; b.style.color = '#ff9a7a'; clearTimeout(UI.jumpT); UI.jumpT = setTimeout(() => { UI.jumpArm = null; if (UI.modal === 'set') openModal('set', 1); }, 4000); }

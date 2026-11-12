@@ -98,9 +98,9 @@ const { chromium } = require('playwright');
     c.sk = [...new Set([...c.sk, 'qly', 'lei'])]; c.prof.qly = 160; c.prof.lei = 160; c.bag.baoyao = 3; c.sk = c.sk.filter(x => x !== 'f_leiying'); ok('fuseReady', fuseReady('f_leiying'));
     await fuseSkill('f_leiying'); await idle(); ok('fused', c.sk.includes('f_leiying') && c.bag.baoyao === 1 && /雷鹰裂空/.test(fuseHtml()));
     // 跳章: start of 第三章 with the right kit, and the story carries on from there
-    jumpTo(1); const J = D.C; ok('jumpState', J.lv === 12 && J.story.q === qi('q_gate') && J.sk.includes('sn') && J.pets.maoqiu && J.dt.length === 3 && J.story.f.butian === 1 && placeOpen('bt_gate'));
+    jumpTo(1); const J = D.C; ok('jumpState', J.lv === 15 && J.prof.qly === 104 && J.pets.maoqiu.aff === 65 && J.story.q === qi('q_gate') && J.sk.includes('sn') && J.pets.maoqiu && J.dt.length === 3 && J.story.f.butian === 1 && placeOpen('bt_gate'));
     go('bt_gate'); await w8(500); await idle(); for (let i = 0; i < 80 && (S().scene || S().battle); i++) await w8(50); ok('jumpStory', D.C.story.q > qi('q_gate'));
-    jumpTo(3); ok('jumpEnd', !!(D.C.lv === 20 && D.C.story.f.end === 1 && D.C.sk.includes('ta') && D.C.pets.dahong && D.C.relics.r_pumo));
+    jumpTo(3); ok('jumpEnd', !!(D.C.lv >= 20 && D.C.story.f.end === 1 && D.C.sk.includes('ta') && D.C.pets.dahong && D.C.relics.r_pumo));
     { const a0 = D.auto; D.auto = false; D.C.auto = true; runScene(async () => { await nar('一段还没看完的剧情'); await nar('第二句'); }); await w8(100); const mid = !!(S().scene && DLG);
       jumpTo(0); ok('jumpMidScene', mid && !S().scene && !DLG && D.C.story.qid === 'q_memory' && D.C.auto === true); D.auto = a0; await w8(700); await idle(); }
     { D.C.lv = 80; fullHeal(); const mk = m => battleCreate({ mobs: [[m, 80]], story: 1, title: 't' });
@@ -113,12 +113,12 @@ const { chromium } = require('playwright');
       B = battleCreate({ mobs: [['dummy', 1]], stance: 'gate', story: 1 }); ok('siegeStance', !!stOf(B.units[0], 'def'));
       B = battleCreate({ mobs: leitaiFoes(0, 50), endless: 1, title: 'l' }); B.units.filter(u => u.side === 1).forEach(u => { u.hp = 0; u.alive = false; }); battleCheckEnd(B); ok('leitaiNext', B.endless.n === 1 && !B.over && B.units.some(u => u.side === 1 && u.alive)); }
     jumpTo(JUMPS.findIndex(J => J.q === 'q_v3end')); await w8(700); await idle(); D.C.story.f.v4 = 1; go('bz_camp', true, true); D.C.story.q = qi('q_bzcamp'); await storyPoll(); await idle(); ok('enterWhereYouStand', D.C.story.q > qi('q_bzcamp'));
-    jumpTo(JUMPS.findIndex(J => J.q === 'q_v5')); ok('jumpVol5', !!(D.C.lv === 39 && D.C.story.f.v4end && D.C.gf.includes('yunzu') && placeOpen('sj_town') && !placeOpen('sj_desert') && barSlots(39) === 11)); await w8(700); await idle();
-    jumpTo(JUMPS.findIndex(J => J.q === 'q_qishen')); ok('jumpVol3', !!(D.C.lv === 31 && D.C.story.f.shihuang && D.C.gf.includes('renhuang') && placeOpen('sg_inner') && placeOpen('hg_city') && !placeOpen('sg_altar'))); await w8(700); await idle();
+    jumpTo(JUMPS.findIndex(J => J.q === 'q_v5')); ok('jumpVol5', !!(D.C.lv >= 39 && D.C.story.f.v4end && D.C.gf.includes('yunzu') && placeOpen('sj_town') && !placeOpen('sj_desert') && barSlots(39) === 11)); await w8(700); await idle();
+    jumpTo(JUMPS.findIndex(J => J.q === 'q_qishen')); ok('jumpVol3', !!(D.C.lv >= 31 && D.C.story.f.shihuang && D.C.gf.includes('renhuang') && placeOpen('sg_inner') && placeOpen('hg_city') && !placeOpen('sg_altar'))); await w8(700); await idle();
     { jumpTo(JUMPS.length - 1); await w8(700); await idle(); const c = D.C; c.auto = true;
       c.lv = 85; c.exp = 0; c.dao = 0; c.daoX = 0; gainExp(BAL.expNext(85) * 1.6, true); ok('daoGain', c.dao >= 2 && c.exp === BAL.expNext(85));
       const h0 = charStats().hpMax, p0 = (c.daoP || {}).hp || 0; daoSpend('hp'); ok('daoSpend', charStats().hpMax > h0 && c.daoP.hp === p0 + 1); ok('jumpLate', c.pets.jinmao && c.pets.jinmao.evo3 && c.pets.wuwei && c.tt && c.tt.yao >= 1);
-      c.story.f.v6end = 1; c.relics.r_xwhy = 1; c.eq = ['r_xwhy']; c.money = 1e6; c.bag.bone = 60; const a0 = charStats().atk; await forgeRelic('r_xwhy'); ok('forge', forgeLv('r_xwhy') === 1 && charStats().atk > a0);
+      c.story.f.v6end = 1; c.relics.r_xwhy = 1; c.eq = ['r_xwhy']; c.forge = {}; c.money = 1e6; c.bag.bone = 60; const a0 = charStats().atk; await forgeRelic('r_xwhy'); ok('forge', forgeLv('r_xwhy') === 1 && charStats().atk > a0);
       ok('lateFused', !!FUSED.f_daolei && SKILL_ORDER.includes('f_daolei') && !!SKILLS.f_wuluo);
       c.pets.jinmao = { aff: 100, evo: 1, evo2: 1, lv: 69, exp: 0, hatch: 0 }; petGainExp('jinmao', petNeed(69) + 1); await w8(1000); await idle(); ok('petEvo3', c.pets.jinmao.lv === 70 && !!c.pets.jinmao.evo3 && petUnit('jinmao').name.includes('真身'));
       c.pets.bazhen = { aff: 5 }; c.pet = 'bazhen'; petGoneFix(c); UI.logTab = 'chars'; navTo('log'); await w8(50); ok('charsTab', document.querySelector('#sbody').textContent.includes('伙伴') && !document.querySelector('#sbody').textContent.includes('undefined')); navTo('adv'); ok('petGone', !c.pets.bazhen && c.pet !== 'bazhen' && ['dashen', 'xiaobai', 'sanhei', 'wuwei', 'jinmao'].every(k => PETS[k]));

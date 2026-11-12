@@ -49,25 +49,13 @@ function useItem(id, inBattle) {
 }
 
 /* ---------- levels & realms ---------- */
+const LV_GATES = [[9, 'jijing'], [19, 'end'], [24, 'v2end'], [29, 'shihuang'], [34, 'v4'], [39, 'v4end'], [44, 'v5end'], [49, 'v6end'], [54, 'v7end'], [59, 'yiyu0'], [62, 'yyEnd'], [65, 'v8end'], [71, 'v9end'], [75, 'v12end'], [80, 'v13end'], [84, 'xiandi']]; /* a realm's last level: the story has to open the next one (9 → 机缘 is handled on its own) */
+const lvGated = c => LV_GATES.some(([l, f]) => c.lv === l && !c.story.f[f]);
 function gainExp(n, quiet) {
   if (n <= 0) return; C.exp += Math.round(n); if (!quiet) logLine(`获得 <span class="exp">${fmt(n)} 经验</span>`, 'loot');
   while (C.exp >= BAL.expNext(C.lv) && C.lv < BAL.lvCap) {
     if (C.lv === 9 && !C.story.f.jijing) { C.exp = BAL.expNext(C.lv); if (!C.seen.neck9) { C.seen.neck9 = 1; logLine('你体内的气血像江河一样奔涌，却撞上了一层看不见的壁——<b>搬血境走到头了</b>。要怎么往前走，得看机缘（跟着主线走）。', 'sys'); } break; }
-    if (C.lv === 19 && !C.story.f.end) { capExp(); break; }
-    if (C.lv === 24 && !C.story.f.v2end) { capExp(); break; }
-    if (C.lv === 29 && !C.story.f.shihuang) { capExp(); break; }
-    if (C.lv === 34 && !C.story.f.v4) { capExp(); break; }
-    if (C.lv === 39 && !C.story.f.v4end) { capExp(); break; }
-    if (C.lv === 44 && !C.story.f.v5end) { capExp(); break; }
-    if (C.lv === 49 && !C.story.f.v6end) { capExp(); break; }
-    if (C.lv === 54 && !C.story.f.v7end) { capExp(); break; }
-    if (C.lv === 59 && !C.story.f.yiyu0) { capExp(); break; }
-    if (C.lv === 62 && !C.story.f.yyEnd) { capExp(); break; }
-    if (C.lv === 65 && !C.story.f.v8end) { capExp(); break; }
-    if (C.lv === 71 && !C.story.f.v9end) { capExp(); break; }
-    if (C.lv === 75 && !C.story.f.v12end) { capExp(); break; }
-    if (C.lv === 80 && !C.story.f.v13end) { capExp(); break; }
-    if (C.lv === 84 && !C.story.f.xiandi) { capExp(); break; }
+    if (lvGated(C)) { capExp(); break; }
     if (C.lv === 68 && !C.story.f.zhizun) { capExp(); break; }
     C.exp -= BAL.expNext(C.lv); C.lv++; fullHeal(); sfx('level');
     logLine(`<b class="lvup">境界精进！</b> ${realmOf(C.lv).name} · 第 ${C.lv} 层。气血、符力已回满。`, 'sys'); bigFlash(`境界精进 · ${realmOf(C.lv).name}第 ${C.lv} 层`, 'lv');
