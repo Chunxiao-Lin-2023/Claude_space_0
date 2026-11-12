@@ -153,6 +153,12 @@ const { chromium } = require('playwright');
     { let lap = []; for (const a of Object.keys(AREAS)) { UI.mapArea = a; navTo('map'); await w8(30); const R = [...document.querySelectorAll('#sbody .mn')].map(e => [e.textContent, e.getBoundingClientRect()]);
         for (let i = 0; i < R.length; i++) for (let j = i + 1; j < R.length; j++) { const p = R[i][1], q = R[j][1]; if (p.left < q.right && p.right > q.left && p.top < q.bottom && p.bottom > q.top) lap.push(R[i][0] + '/' + R[j][0]); } navTo('adv'); }
       ok('mapNoOverlap', !lap.length); if (lap.length) out.mapLap = lap.join(','); }
+    // 自动探索: can be stopped from inside a fight, by taking the fight over, and with Esc; a countdown between rounds
+    { fullHeal(); D.go('dh_forest', true, true); D.noCD = true; const rnd = Math.random; Math.random = () => 0.1; const n0 = UI.bN || 0; const p = autoExplore(); let inB = false, btn = false;
+      for (let i = 0; i < 200 && !S().battle; i++) await w8(2); if (S().battle) { inB = S().battle.auto; renderBattleActs(null); btn = [...document.querySelectorAll('#bacts button')].some(b => b.textContent.includes('停止自动探索')); }
+      stopAutoEx(); Math.random = rnd; await p; await idle(); await w8(30); ok('autoExStopInFight', inB && btn && !UI.autoEx && (UI.bN || 0) === n0 + 1); if (!(inB && btn)) out.autoEx = [inB, btn, UI.bN - n0].join();
+      fullHeal(); Math.random = () => 0.1; const p2 = autoExplore(); for (let i = 0; i < 200 && !S().battle; i++) await w8(2); if (S().battle) toggleAuto(); ok('autoExTakeOver', !UI.autoEx); Math.random = rnd; const B2 = S().battle; if (B2) { B2.auto = true; renderBattle(true); } await p2; await idle();
+      UI.autoEx = true; UI.autoExN = 2; UI.autoExAt = Date.now() + 2500; ok('autoExCountdown', /[23] 秒后继续/.test(autoExLabel())); dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' })); ok('autoExEsc', !UI.autoEx); D.noCD = false; refresh(); }
     // save slots: a second save lives beside the first one
     { save(true); const lv1 = D.C.lv; slotNew(2); await w8(50); const c2 = D.C; ok('slotNew', SLOT === 2 && c2.lv === 1 && slotInfo(1) && slotInfo(1).v.lv === lv1); c2.lv = 3; save(true);
       slotPlay(1); await w8(50); ok('slotSwitch', SLOT === 1 && D.C.lv === lv1 && slotInfo(2).v.lv === 3); toTitle(); slotsShow(); ok('slotList', document.querySelectorAll('#title .slot').length === 5);

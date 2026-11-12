@@ -57,7 +57,7 @@ async function train() { if (STATE.scene || STATE.battle || STATE.dungeon) retur
   logLine(r.ok ? (lei ? '你接住了好几道雷，浑身麻酥酥的，精神反倒更足了。' : '石锁在你手里上下翻飞，旁边的孩子们看得直拍手。') : (lei ? '你被劈得头发冒烟。' : '石锁砸在地上，震得你手发麻。'), 'dim'); save(); refresh(); }
 
 /* ---------- battle controller (only the host / solo player runs battles; co-op guests just watch the state) ---------- */
-function startBattle(spec) { const n = partySlots(spec); /* a fight that comes back (再来一次) asks again: the spec itself is never changed */
+function startBattle(spec) { UI.bN = (UI.bN || 0) + 1; const n = partySlots(spec); /* a fight that comes back (再来一次) asks again: the spec itself is never changed */
   if (!spec._party && partyNeedsPick(spec, n)) return partyPick(spec, n).then(L => startBattle0(Object.assign({}, spec, { _party: L })));
   return startBattle0(spec); }
 function startBattle0(spec) {

@@ -98,6 +98,7 @@ function renderDlg() {
 }
 function dlgClose() { if (DLG && !DLG.choice && !DLG.rune && !DLG.mini) { const r = DLG.res; DLG = null; r(); } DLG = null; UI.hist = []; UI.cur = null; renderDlg(); }
 addEventListener('keydown', e => { if (STATE.mode !== 'play' || e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+  if (e.key === 'Escape' && UI.autoEx) { stopAutoEx(); return; } /* Esc stops 自动探索 anywhere: in a fight, or in the pause between two */
   if (e.key === 'Escape' && UI.nav) { navTo('adv'); return; }
   if (DLG && !DLG.choice && !DLG.rune && (e.key === ' ' || e.key === 'Enter')) { e.preventDefault(); dlgPick(-1); return; }
   if (DLG && DLG.choice && /^[1-9]$/.test(e.key)) { dlgPick(+e.key - 1); return; }
@@ -139,7 +140,7 @@ function renderActs() {
   if (P.dungeon) { acts.push(`<button class="ab main" onclick="enterDungeon('${P.dungeon}')">🏯 闯${DUNGEONS[P.dungeon].name}</button>`); if (C.dungeons[P.dungeon]) acts.push(`<button class="ab" onclick="enterDungeonHard('${P.dungeon}')">🏯 困难</button>`); }
   const pa = P.acts || []; if (P.town && P.area !== 'xushen') acts.push(`<button class="ab" onclick="rest()">🛏 休息</button>`); else if (P.mobs && !P.dungeon) acts.push(`<button class="ab" ${UI.campAt === C.loc + C.seenN ? 'disabled' : ''} onclick="camp()">🔥 歇脚</button>`);
   if (P.shop || P.town && P.area !== 'xushen') acts.push(`<button class="ab" onclick="UI.bagTab='shop';navTo('bag')">${P.shop ? '🛒 买卖' : '💰 卖东西'}</button>`);
-  if (P.mobs && !P.dungeon) acts.push(`<button class="ab ${UI.autoEx ? 'q' : ''}" onclick="autoExplore()">🔁 ${UI.autoEx ? `停止自动探索（${UI.autoExN || 0}）` : '自动探索'}</button>`);
+  if (P.mobs && !P.dungeon) acts.push(`<button class="ab ${UI.autoEx ? 'q' : ''}" id="autoExBtn" onclick="autoExplore()">${autoExLabel()}</button>`);
   acts.push(`<button class="ab ${C.auto ? 'q' : ''}" onclick="toggleAutoFight()" title="之后的战斗都自动打，战斗里随时能停">🤖 自动对战：${C.auto ? '开' : '关'}</button>`);
   if (pa.includes('train')) acts.push(`<button class="ab" onclick="train()">${C.loc === 'bt_train' ? '⚡ 挨雷劈' : '🪨 举石锁'}</button>`);
   if (pa.includes('siege') && siegeOpen()) acts.push(`<button class="ab main" onclick="siegeStart()">🏯 守城（最多 ${(C.records && C.records.siege) || 0} 波）</button>`);
@@ -183,7 +184,7 @@ function selFoe(id) { UI.selFoe = id; sfx('click'); renderBattle(true); }
 function renderBattleActs(cur) {
   const B = STATE.battle, A = $('bacts'); if (!B) return; const u = B.units.find(x => x.kind === 'pc');
   if (B.over) { A.innerHTML = `<div class="wait" style="color:#ffcfb8">${B.win ? '赢了！' : B.fled ? '跑掉了' : '……'}</div>`; return; }
-  if (!cur) { A.innerHTML = `<div class="wait">${B.auto ? '🤖 自动战斗中…… <button class="ab sm q" onclick="toggleAuto()">停下</button>' : '……'}</div>`; return; }
+  if (!cur) { A.innerHTML = `<div class="wait">${B.auto ? `🤖 自动战斗中…… <button class="ab sm q" onclick="toggleAuto()">停下</button>${UI.autoEx ? ' <button class="ab sm" onclick="stopAutoEx()">⏹ 打完这场停止自动探索</button>' : ''}` : '……'}</div>`; return; }
   if (cur.pet) { const mv = petMoves(cur); const ha = B.acts.hero, pets = B.units.filter(x => x.pet && x.alive), done = pets.filter(x => B.acts[x.id]), np = pets.length; if (ha && !C.seen.tutPet && NETROLE !== 'guest') { C.seen.tutPet = 1; toast('石昊的招选好了——再给伙伴选一招，这回合才开打'); }
     A.innerHTML = `${ha ? `<div class="who-turn ok">🧒 石昊已选好：<b>${actText(B, ha)}</b>${done.map(x => ` · ${PETS[x.mob].icon}${B.acts[x.id].guard ? '防御' : (PETS[x.mob].sk[B.acts[x.id].psk] || {}).n || ''}`).join('')}</div>` : ''}<div class="who-turn">${PETS[cur.mob].icon} 现在轮到 <b>${esc(cur.name)}</b>${np > 1 ? ` <span class="pill">伙伴 ${done.length + 1}/${np}${cur.lead ? ' · 领头' : ''}</span>` : ''} <span class="dim">· 给它选一招${done.length + 1 >= np ? '，选完这回合就开打' : '，再轮到下一个伙伴'}${UI.selFoe ? '' : '（单体招先点敌人选目标）'}</span></div><div class="arow">${PETS[cur.mob].sk.map((s, i) => { const ok = mv.some(x => x.i === i); if (!ok) return ''; const tag = s.aoe ? '全体' : s.healAlly ? '治疗' : s.shieldAll ? '全队盾' : s.shieldHero ? '给石昊盾' : s.buffHero ? '给石昊' : s.taunt ? '嘲讽' : '单体';
       return `<button class="skb pet c-${s.cat}" ${ok ? '' : 'disabled'} title="${esc(s.d || '')}" onclick="battleAct({psk:${i},tgt:UI.selFoe},'${cur.id}')"><span class="i">${{ atk: '🐾', buff: '✨', debuff: '🌀', def: '🛡️' }[s.cat]}</span>${s.n}<span class="c">${ok ? PET_CAT[s.cat].n + '·' + tag + (s.el ? EL[s.el].i : '') : '亲近' + s.aff}</span></button>`; }).join('')}</div>
@@ -195,12 +196,16 @@ function renderBattleActs(cur) {
     ${swaps.map(id => `<button class="ab sm" onclick="battleAct({swap:'${id}'})" title="换${PETS[id].name}上场">⇄${PETS[id].icon}</button>`).join('')}<button class="ab sm" onclick="battleAct({flee:1})" ${B.flee ? '' : 'disabled'}>🏃 跑</button><button class="ab sm ${C.auto ? 'q' : ''}" onclick="toggleAuto()">🤖 ${C.auto ? '自动中' : '自动'}</button></div>`;
 }
 function pickSkill(id) { battleAct({ sk: id, tgt: SKILLS[id].tgt === 'enemy' ? UI.selFoe : null }); }
-function toggleAuto() { const B = STATE.battle; if (!B) return; B.auto = !B.auto; renderBattle(true); netSync(); }
+function toggleAuto() { const B = STATE.battle; if (!B) return; B.auto = !B.auto; if (!B.auto && UI.autoEx) stopAutoEx('自动探索停了，这一场你自己打'); renderBattle(true); netSync(); } /* taking the fight over means you want the wheel back */
 function toggleAutoFight() { C.auto = !C.auto; save(); toast(C.auto ? '自动对战：开（之后的战斗都自动打，战斗里随时能停）' : '自动对战：关'); refresh(); netSync(); }
 async function autoExplore() { // explore here again and again, fights on auto, until told to stop, hurt, or the story needs you
   if (NETROLE === 'guest') return; if (UI.autoEx) { UI.autoEx = false; refresh(); return; } const P = PLACES[C.loc]; if (!P.mobs) return; UI.autoEx = true; UI.autoExN = 0; refresh();
   while (UI.autoEx && STATE.mode === 'play') { if (STATE.scene || DLG || STATE.dungeon || STATE.battle || !PLACES[C.loc].mobs) break;
     if (C.hp < charStats().hpMax * 0.35) { toast('气血不多了，自动探索先停下'); logLine('自动探索停下了：气血不多了。歇一歇再走。', 'sys'); break; }
-    UI.autoExN++; UI.forceAuto = true; try { await explore(); } finally { UI.forceAuto = false; } refresh(); await sleep(window.__dbg && __dbg.instant ? 0 : 900); }
-  UI.autoEx = false; refresh(); }
+    const b0 = UI.bN || 0; UI.autoExN++; UI.forceAuto = true; try { await explore(); } finally { UI.forceAuto = false; } refresh();
+    const ms = window.__dbg && __dbg.instant ? 0 : (UI.bN || 0) > b0 ? 3000 : 1200; UI.autoExAt = Date.now() + ms; /* after a fight, a real pause with a countdown on the button: room to press 停止 */
+    while (UI.autoEx && Date.now() < UI.autoExAt) { const b = $('autoExBtn'); if (b) b.textContent = autoExLabel(); await sleep(100); } UI.autoExAt = 0; }
+  UI.autoEx = false; UI.autoExAt = 0; refresh(); }
+function autoExLabel() { if (!UI.autoEx) return '🔁 自动探索'; const s = UI.autoExAt ? Math.ceil((UI.autoExAt - Date.now()) / 1000) : 0; return `⏹ 停止自动探索（第 ${UI.autoExN || 0} 次${s > 0 ? ` · ${s} 秒后继续` : ''}）`; }
+function stopAutoEx(why) { if (!UI.autoEx) return; UI.autoEx = false; UI.autoExAt = 0; toast(why || (STATE.battle ? '自动探索：打完这一场就停' : '自动探索停了')); if (STATE.battle) renderBattle(true); else refresh(); }
 function battleEndUI() { UI.selFoe = null; refresh(); }
