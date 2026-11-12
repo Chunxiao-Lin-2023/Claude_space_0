@@ -19,7 +19,7 @@ function charStats(c = C) {
 function fixHp() { const s = charStats(); C.hp = clamp(C.hp, 0, s.hpMax); C.mp = clamp(C.mp, 0, s.mpMax); }
 function fullHeal() { const s = charStats(); C.hp = s.hpMax; C.mp = s.mpMax; }
 function skillsOf(c = C) { return ['atk', ...c.bar.filter(id => c.sk.includes(id)), 'guard']; }
-function learnSkill(id) { if (C.sk.includes(id)) return; C.sk.push(id); if (C.bar.length < barSlots(C.lv)) C.bar.push(id); const S = SKILLS[id]; logLine(`<b class="lvup">领悟宝术</b>：${S.icon}<b>${S.name}</b>——${S.desc}`, 'sys'); sfx('epic'); }
+function learnSkill(id) { if (C.sk.includes(id) || (typeof evoAfter === 'function' && evoAfter(id).some(x => C.sk.includes(x)))) return; /* already grown into something higher */ C.sk.push(id); if (C.bar.length < barSlots(C.lv)) C.bar.push(id); const S = SKILLS[id]; logLine(`<b class="lvup">领悟宝术</b>：${S.icon}<b>${S.name}</b>——${S.desc}`, 'sys'); sfx('epic'); }
 /* 宝术熟练度 */
 const profLevel = (id, c = C) => { const n = (c.prof && c.prof[id]) || 0; let l = 0; for (let i = 1; i < PROF.length; i++) if (n >= PROF[i].at) l = i; return l; };
 function profUse(id) { C.prof = C.prof || {}; const before = profLevel(id); C.prof[id] = (C.prof[id] || 0) + 1; const after = profLevel(id); if (after > before) setTimeout(() => { logLine(`${SKILLS[id].icon}<b>${SKILLS[id].name}</b> 用得越来越顺手——<b class="lvup">${PROF[after].n}</b>（威力 +${PROF[after].b * 100}%）`, 'sys'); sfx('epic'); }, 50); }

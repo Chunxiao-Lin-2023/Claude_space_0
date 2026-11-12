@@ -81,6 +81,7 @@ function jumpLate(c, i) { const J = JUMPS[i], f = c.story.f, since = flag => JUM
   for (const [id, p] of Object.entries(c.pets)) { const open = PETS[id].sk.map((s, k) => ({ s, k })).filter(x => (!x.s.aff || p.aff >= x.s.aff) && (!x.s.evo || p.evo)).map(x => x.k); p.seen = open.slice(); p.bar = [0, ...open.filter(k => k).reverse()].slice(0, 4 + (p.evo ? 1 : 0)); } /* a ready loadout (the newest moves plus the basic one), so no "learned a move" toasts right after the jump */
   if (c.lv > 44) { const n = Math.floor((c.lv - 44) * 1.2), spent = Math.floor(n / 2); c.daoP = { hp: Math.ceil(spent / 3), atk: Math.ceil(spent / 3), def: Math.floor(spent / 3) }; c.dao = n - c.daoP.hp - c.daoP.atk - c.daoP.def; }
   if (f.tiantingDone) c.tt = { yao: 2, lu: f.v13end ? 2 : 1, wu: 2, qiang: f.v13end ? 2 : 1 };
+  bsJump(c); c.bar = c.sk.slice().sort((a, b) => SKILL_ORDER.indexOf(b) - SKILL_ORDER.indexOf(a)).slice(0, barSlots(c.lv)); /* 宝术谱: the 机缘 a good player had taken by now */
   const fl = c.lv >= 75 ? 3 : c.lv >= 59 ? 2 : c.lv >= 47 ? 1 : 0; if (fl) { c.forge = {}; for (const r of c.eq) c.forge[r] = fl; } } /* 炼器 opens with volume six: the worn 宝骨 come already worked */
 /* 跳章 = a player who played well (中上水平), not an average one: a few levels over the preset (never past a realm gate the story hasn't opened),
    宝术 ×1.3, partners closer and stronger, a fuller purse and bag, a better 虚神界 rank */

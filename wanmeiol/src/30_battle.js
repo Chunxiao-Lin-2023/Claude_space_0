@@ -27,8 +27,8 @@ function mobUnit(id, lv, side = 1) {
     hpMax: Math.round(E.hp * (m.hp || 1) * D.hp), atk: Math.round(E.atk * (m.atk || 1) * D.atk), def: Math.round(E.def * (m.def || 1)), spd: E.spd * (m.spd || 1), crit: M.boss ? 0.08 : 0.05, leech: 0, mpMax: 0, mp: 0, sk: [], cd: {}, st: [], alive: true, plan: null, intent: '' };
 }
 function heroUnit() { const s = charStats(); const u = { id: 'hero', side: 0, kind: 'pc', name: '石昊', icon: '🧒', lv: C.lv, hpMax: s.hpMax, hp: Math.max(1, Math.round(C.hp)), mpMax: s.mpMax, mp: Math.round(C.mp), atk: s.atk, def: s.def, spd: s.spd, crit: s.crit, leech: s.leech || 0, regen: s.regen || 0, sk: skillsOf(), cd: {}, st: [], alive: true,
-    prof: Object.fromEntries(C.sk.map(id => [id, PROF[profLevel(id)].b + (id === 'lei' ? relicSp('lei') : 0)])), mpRegen: BAL.mpRegen + relicSp('mp'), noPoison: !!relicSp('noPoison'), first: relicSp('first') };
-  const sh = relicSp('shieldStart'); if (sh) u.st.push({ k: 'shield', t: 3, v: Math.round(s.hpMax * sh) }); if (u.first) u.st.push({ k: 'atk', t: 1, v: u.first }); return u; }
+    prof: Object.fromEntries(C.sk.map(id => [id, PROF[profLevel(id)].b + (skLine(id) === 'lei' ? relicSp('lei') : 0)])), mpRegen: BAL.mpRegen + relicSp('mp'), noPoison: !!relicSp('noPoison'), first: relicSp('first') };
+  const sh = relicSp('shieldStart'); if (sh) u.st.push({ k: 'shield', t: 3, v: Math.round(s.hpMax * sh) }); if (u.first) u.st.push({ k: 'atk', t: 1, v: u.first }); u.phoenix = C.bar.includes('zhenhuang') ? 1 : 0; return u; }
 function petUnit(id, slot = 0) { // the partner scales with 石昊; affection up to +15%, 觉醒 +8%, 返祖 +8%, 真身 +5%, and ±3% per level it is above / below him
   const s = charStats(), P = PETS[id], pd = C.pets[id], aff = pd.aff, plv = petLv(id), k = (1 + aff / 100 * 0.15) * (pd.evo ? 1.08 : 1) * (pd.evo2 ? 1.08 : 1) * (pd.evo3 ? 1.05 : 1) * clamp(1 + 0.03 * (plv - C.lv), 0.7, 1.5), m = P.mul;
   return { id: slot ? 'pet' + (slot + 1) : 'pet', lead: !slot, trait: id, side: 0, kind: 'npc', mob: id, pet: 1, evo: !!pd.evo, name: P.name + (pd.evo3 ? '·真身' : pd.evo2 ? '·返祖' : pd.evo ? '·觉醒' : ''), icon: P.icon, lv: plv, hpMax: Math.round(s.hpMax * m.hp * k), atk: Math.round(s.atk * m.atk * k), def: Math.round(s.def * m.def * k), spd: s.spd * m.spd, crit: 0.08, leech: 0, mpMax: 0, mp: 0, sk: [], cd: {}, st: [], alive: true, plan: null, intent: '', aff, hp: 0 };
@@ -89,9 +89,10 @@ function planMob(B, u) {
 }
 function pickFoe(B, u) { const foes = alive(B, 1 - u.side); if (!foes.length) return null; const t = foes.filter(f => stOf(f, 'taunt')); if (t.length) return pick(t); return wpick(foes, f => (f.kind === 'pc' ? 1.5 : 1)); }
 const HEALS = ['baoyao', 'meat', 'herb', 'milk'];
-function botAct(B, u) { // auto-battle for 石昊 and the AI for 虚神界 rivals
+function botAct(B, u) { const a = botAct0(B, u); if (a.sk) a.sk = skRes(u, a.sk); return bsBot(B, u, a); }
+function botAct0(B, u) { // auto-battle for 石昊 and the AI for 虚神界 rivals (it thinks in root 宝术; botAct maps them to what u really has)
   const allies = alive(B, u.side), foes = alive(B, 1 - u.side); if (!foes.length) return { sk: 'atk' };
-  const can = id => u.sk.includes(id) && !(u.cd[id] > 0) && u.mp >= SKILLS[id].mp; const boss = foes.find(f => f.boss), main = boss || foes.slice().sort((a, b) => a.hp - b.hp)[0];
+  const can = id => { id = skRes(u, id); return u.sk.includes(id) && !(u.cd[id] > 0) && u.mp >= SKILLS[id].mp; }; const boss = foes.find(f => f.boss), main = boss || foes.slice().sort((a, b) => a.hp - b.hp)[0];
   const pc = u.kind === 'pc', known = f => pc && f.mob ? knownWeak(f.mob) : [];
   if (pc && u.hp < u.hpMax * 0.35 && B.itemRound !== B.round) { const it = (u.hp < u.hpMax * 0.2 ? HEALS : HEALS.slice(1).concat('baoyao')).find(i => itemN(i)); if (it) return { item: it }; }
   const big = foes.find(f => f.releasing || f.plan === 'charge');
@@ -125,6 +126,7 @@ function applyDmg(B, a, d, dmg, info = {}) {
   d.hp -= dmg; partyHurt(B, d, dmg); if (a && a.leech && dmg > 0) a.hp = Math.min(a.hpMax, a.hp + dmg * a.leech);
   fxe(B, { k: info.dot ? 'dot' : 'hit', t: d.id, v: dmg + absorbed, crit: !!info.crit, weak: !!info.weak, hp: hpr(d), st: info.dot }); if (d.kind === 'pc' && B.epic) epicLow(B, d); banterHit(B, a, d, info); mechHit(B, a, d, dmg + absorbed, Object.assign({ ate: absorbed }, info));
   if (d.side === 1 && B.sayQ) { if (d.hp <= 0) B.sayQ.push([d, 'die']); else if (!d.saidLow && d.hp < d.hpMax * 0.25) { d.saidLow = 1; B.sayQ.push([d, 'low']); } }
+  if (d.hp <= 0 && d.phoenix && !d.phoenixUsed) { d.phoenixUsed = 1; d.hp = Math.round(d.hpMax * 0.3); d.st = d.st.filter(s => ['shield', 'def', 'atk', 'clone', 'swift'].includes(s.k)); blog(B, '<span class="phase">🐦‍🔥 真凰浴火——石昊从火里站了起来！</span>'); fxe(B, { k: 'heal', t: d.id, v: d.hp, hp: hpr(d) }); return false; }
   if (d.hp <= 0 && mechDie(B, d)) return false;
   if (d.hp <= 0) { d.hp = 0; d.alive = false; d.st = []; fxe(B, { k: 'die', t: d.id }); epicKill(B, d); partyKill(B, a, d); if (d.side === 1 && B.sayQ) B.sayQ.push([a, 'killq', d]); if (d.side === 1 && d.kind === 'mob') B.kills.push([d.mob, d.lv, d.boss]); return true; }
   if (d.boss && d.side === 1 && !d.raged && d.hp <= d.hpMax / 2 && d.mob && MOBS[d.mob]) { d.raged = true; addSt(d, { k: 'rage', t: 99, v: BAL.phaseAtk }); B.phase = 1;
@@ -132,7 +134,8 @@ function applyDmg(B, a, d, dmg, info = {}) {
   return false;
 }
 const SK_FX = { atk: 'slash', qly: 'claw', sn: 'roar', gw: 'bone', lei: 'lei', dsh: 'rock', jian: 'blade', ta: 'tower', guard: 'guard' };
-function comboOf(id, t) { // 宝术 that work together
+function comboOf(id, t) { // 宝术 that work together (an evolved 宝术 keeps its root's combos)
+  id = skLine(id);
   if (id === 'jian' && stOf(t, 'bleed')) return [1.35, '伤口崩裂'];
   if (id === 'lei' && (stOf(t, 'stun') || stOf(t, 'freeze'))) return [1.25, '雷落在动弹不得的身上'];
   if (id === 'sn' && t.raged) return [1.2, '狻猊对上狂怒的凶兽，吼得更响'];
@@ -151,20 +154,23 @@ function perform(B, u, act, L) {
   u.mp -= S.mp; if (S.cd) u.cd[id] = S.cd + 1; if (u.kind === 'pc' && id !== 'atk' && id !== 'guard' && NETROLE !== 'guest') profUse(id); const pb = 1 + ((u.prof && u.prof[id]) || 0); const foes = alive(B, 1 - u.side), allies = alive(B, u.side);
   let tg = []; if (S.tgt === 'enemy') { const t = foes.find(x => x.id === act.tgt) || foes.slice().sort((a, b) => a.hp - b.hp)[0]; if (t) tg = [t]; } else if (S.tgt === 'enemies') tg = foes; else if (S.tgt === 'allies') tg = allies; else tg = [u];
   const head = id === 'atk' ? `${uName(u)} 出手` : id === 'guard' ? `${uName(u)} 护住要害` : `${uName(u)} 施展 <span class="sk">${S.icon}${S.name}</span>`;
-  fxe(B, { k: 'act', a: u.id, fx: SK_FX[id] || 'slash', tg: tg.map(t => t.id), side: u.side, n: id === 'atk' ? '' : S.name, ic: S.icon, who: u.kind === 'pc' ? 'hero' : 'foe' });
-  if (S.dmg) { const parts = [];
+  fxe(B, { k: 'act', a: u.id, fx: SK_FX[id] || SK_FX[skLine(id)] || BS_FX[id] || 'slash', tg: tg.map(t => t.id), side: u.side, n: id === 'atk' ? '' : S.name, ic: S.icon, who: u.kind === 'pc' ? 'hero' : 'foe' });
+  if (S.dmg) { const parts = []; let dispelled = false;
     for (const t of tg) { if (!t.alive) continue; const hits = S.hits || 1; let tot = 0, crit = false, miss = 0, died = false;
-      const [cm0, ct0] = comboOf(id, t), seen = t.shiyi && u.kind === 'pc' && id !== 'atk' && id === u.lastSk ? 0.5 : 1, mk = u.kind === 'pc' && stOf(t, 'mark') ? 1 + stV(t, 'mark') : 1, cm = cm0 * mk, ct = [ct0, mk > 1 ? '印记' : '', u.kind === 'pc' && stOf(t, 'brk') && S.dmg ? '破甲' : ''].filter(Boolean).join('·');
-      let weak = false, bound = false; for (let h = 0; h < hits && t.alive; h++) { const r = hitCalc(u, t, S.dmg * pb * cm * seen / hits, S.mag, { sure: !!stOf(u, 'sure'), pierce: S.pierce, el: S.el }); if (r.miss) { miss++; fxe(B, { k: 'miss', t: t.id }); continue; } tot += r.dmg; crit = crit || r.crit; weak = weak || r.weak; bound = bound || r.bound; if (applyDmg(B, u, t, r.dmg, { crit: r.crit, weak: r.weak })) died = true; }
+      const [cm0, ct0] = comboOf(id, t), seen = t.shiyi && u.kind === 'pc' && id !== 'atk' && id !== 'kunpeng' && id === u.lastSk ? 0.5 : 1, mk = u.kind === 'pc' && stOf(t, 'mark') ? 1 + stV(t, 'mark') : 1, cm = cm0 * mk, ct = [ct0, mk > 1 ? '印记' : '', u.kind === 'pc' && stOf(t, 'brk') && S.dmg ? '破甲' : ''].filter(Boolean).join('·');
+      if (S.dispel && t.alive) { const n0 = t.st.length; t.st = t.st.filter(s => !['shield', 'atk', 'rage', 'def', 'dodge', 'guard'].includes(s.k)); if (t.st.length < n0) dispelled = true; }
+      let weak = false, bound = false, cloned = false, dispelled2 = dispelled; dispelled = false; for (let h = 0; h < hits && t.alive; h++) { const r = hitCalc(u, t, S.dmg * pb * cm * seen / hits, S.mag, { sure: !!stOf(u, 'sure'), pierce: S.pierce, el: S.el }); if (r.miss) { miss++; fxe(B, { k: 'miss', t: t.id }); continue; } tot += r.dmg; crit = crit || r.crit; weak = weak || r.weak; bound = bound || r.bound; if (applyDmg(B, u, t, r.dmg, { crit: r.crit, weak: r.weak })) died = true; }
+      if (t.alive && u.kind === 'pc' && S.tgt === 'enemy' && id !== 'atk' && stOf(u, 'clone')) { const r2 = hitCalc(u, t, S.dmg * pb * cm * 0.4, S.mag, { pierce: S.pierce, el: S.el }); if (!r2.miss) { tot += r2.dmg; cloned = true; if (applyDmg(B, u, t, r2.dmg, {})) died = true; } }
       if (weak && u.side === 0) { noteWeak(t, S.el); B.weakHits = (B.weakHits || 0) + 1; }
       if (miss === hits) parts.push(`${uName(t)} <span class="miss">躲开了</span>`);
-      else { parts.push(`${uName(t)} <span class="${crit ? 'crit' : 'dmg'}">-${tot}${crit ? ' 暴击!' : ''}</span>${weak ? ' <span class="weak">正中要害</span>' : ''}${ct ? ` <span class="weak">${ct}</span>` : ''}${bound ? ' <span class="weak">借着骨文锁链</span>' : ''}${seen < 1 ? ' <span class="miss">重瞳看穿了这一招</span>' : ''}${died ? ' <b class="die">倒下</b>' : ''}`); B.fx = crit ? 'crit' : 'hit';
+      else { parts.push(`${uName(t)} <span class="${crit ? 'crit' : 'dmg'}">-${tot}${crit ? ' 暴击!' : ''}</span>${weak ? ' <span class="weak">正中要害</span>' : ''}${ct ? ` <span class="weak">${ct}</span>` : ''}${bound ? ' <span class="weak">借着骨文锁链</span>' : ''}${seen < 1 ? ' <span class="miss">重瞳看穿了这一招</span>' : ''}${cloned ? ' <span class="weak">分身补了一下</span>' : ''}${dispelled2 ? ' <span class="weak">护体全被啃掉了</span>' : ''}${died ? ' <b class="die">倒下</b>' : ''}`); B.fx = crit ? 'crit' : 'hit';
         let stunned = false; if (t.alive && S.st) for (const s of S.st) if (Math.random() < (s.p ?? 1) && !(s.k === 'stun' && t.boss && Math.random() < 0.5)) { addSt(t, { k: s.k, t: s.t, v: s.v ? Math.round(u.atk * s.v) : 0 }); if (s.k === 'stun') stunned = true; parts.push(`<span class="st" style="color:${STATUS[s.k].c}">${STATUS[s.k].n}</span>`); }
         if (t.alive && id === 'gw') addSt(t, { k: 'bound', t: 2 });
         if (u.side === 0 && (stunned || weak) && tryInterrupt(B, t)) parts.push('<span class="weak">打断了它的蓄力！</span>'); } }
     L(head + '：' + parts.join('，'));
   } else if (S.shield) { const v = Math.round(u.atk * S.shield * pb); for (const t of tg) { addSt(t, { k: 'shield', t: 3, v }); fxe(B, { k: 'shield', t: t.id, v }); } L(`${head}，全队获得 <span class="heal">${v}</span> 点护盾`); B.fx = 'heal'; }
   else L(head);
+  bsAfter(B, u, S, foes, allies, L);
   if (S.self) for (const s of S.self) addSt(u, s); if (S.mpBack) u.mp = Math.min(u.mpMax, u.mp + u.mpMax * S.mpBack);
   if (stOf(u, 'sure') && S.dmg) u.st = u.st.filter(s => s.k !== 'sure'); u.lastSk = id; if (u.kind === 'pc') mechHeroAct(B, u, Object.assign({}, act, { sk: id }));
 }
@@ -192,7 +198,7 @@ function mobAct(B, u, L) {
 }
 /* who acts when: by speed, but 石昊 and the partner act back to back (at the earlier of their two places), in the order you picked */
 function turnOrder(B, jitter) {
-  const L = B.units.filter(u => u.alive).map(u => ({ u, k: u.spd * (jitter ? rnd(0.85, 1.15) : 1) + (B.acts[u.id] && B.acts[u.id].swap ? 100 : 0) + (u.first && B.round === 1 ? 1000 : 0) + (u.trait === 'xiaobai' ? 500 : 0) })).sort((a, b) => b.k - a.k).map(x => x.u);
+  const L = B.units.filter(u => u.alive).map(u => ({ u, k: u.spd * (jitter ? rnd(0.85, 1.15) : 1) + (B.acts[u.id] && B.acts[u.id].swap ? 100 : 0) + (u.first && B.round === 1 ? 1000 : 0) + (u.trait === 'xiaobai' ? 500 : 0) + (stOf(u, 'swift') ? 300 : 0) })).sort((a, b) => b.k - a.k).map(x => x.u);
   const h = L.find(u => u.kind === 'pc'), p = L.find(u => u.pet && u.lead); if (!h || !p) return L;
   const i = Math.min(L.indexOf(h), L.indexOf(p)), rest = L.filter(u => u !== h && u !== p); rest.splice(i, 0, ...((C.duo || 'hero') === 'pet' ? [p, h] : [h, p])); return rest; }
 function battleResolve(B) {

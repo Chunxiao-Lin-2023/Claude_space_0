@@ -366,7 +366,7 @@ async function arenaFight(o) {
   if (o.shiyi) logLine('石毅的两个瞳孔一起转了过来。<b>重瞳</b>：同一门宝术连着对他用，会被他看穿（伤害减半）。', 'tip');
   const r = await startBattle({ rivals: [o], title: `虚神界 · 挑战第 ${o.rank} 名 ${o.name}`, noLose: true, flee: false, arena: 1, noPet: true });
   if (r && r.win && o.shiyi && !C.story.f.shiyiWin) { C.story.f.shiyiWin = 1; setTimeout(() => runScene(async () => { await nar('光幕上，你的名字压过了那个带着“重瞳”二字的名字。'); await say('石毅', '……第一，你先拿着。'); await nar('他转身走进了光里，没有回头。你胸口的疤，又跳了一下。'); }, { title: '登顶' }), 900); }
-  fullHeal(); if (r && r.win) { C.arena.wins++; const old = C.arena.rank; if (o.rank < old) C.arena.rank = o.rank; logLine(`虚神界排名 ${old > 100 ? '榜外' : old} → <b>${C.arena.rank}</b>`, 'sys'); arenaMilestones(); storyArena(); }
+  fullHeal(); if (r && r.win) { C.arena.wins++; const old = C.arena.rank; if (o.rank < old) C.arena.rank = o.rank; logLine(`虚神界排名 ${old > 100 ? '榜外' : old} → <b>${C.arena.rank}</b>`, 'sys'); arenaMilestones(); storyArena(); bsArenaWin(1); }
   else logLine('输了。光幕上你的名字没动。', 'dim'); save(); refresh();
 }
 

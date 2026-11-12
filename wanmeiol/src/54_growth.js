@@ -13,8 +13,8 @@ const FUSED = {
 };
 Object.assign(SKILLS, FUSED); SKILL_ORDER.push(...Object.keys(FUSED));
 const PROF_MAX = PROF.length - 1, FUSE_COST = [['baoyao', 2]];
-const fuseReady = id => { const F_ = FUSED[id]; return F_.fuse.every(s => C.sk.includes(s) && profLevel(s) >= PROF_MAX); };
-const fuseKnown = id => FUSED[id].fuse.every(s => C.sk.includes(s));
+const fuseReady = id => { const F_ = FUSED[id]; return F_.fuse.every(s => skOwn(C, s) && profLevel(skOwn(C, s)) >= PROF_MAX); }; /* an evolved 宝术 still counts as its root */
+const fuseKnown = id => FUSED[id].fuse.every(s => skOwn(C, s));
 async function fuseSkill(id) {
   if (NETROLE === 'guest' || STATE.scene || STATE.battle || !FUSED[id] || C.sk.includes(id)) return; const F_ = FUSED[id];
   if (!fuseReady(id)) { toast('两门宝术都要练到圆满才行'); return; } if (FUSE_COST.some(([k, n]) => itemN(k) < n)) { toast('需要 宝药 ×2'); return; }

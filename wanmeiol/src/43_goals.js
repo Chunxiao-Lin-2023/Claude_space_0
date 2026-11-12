@@ -88,6 +88,7 @@ function tasks() {
     const miss = S.need.find(([k, n]) => itemN(k) < n), prog = S.need.map(([k, n]) => `${ITEMS[k].name} ${Math.min(itemN(k), n)}/${n}`).join('、');
     out.push({ key: 'side:' + id, kind: '支线', title: S.title, goal: miss ? `${prog}（${PLACES[itemWhere(miss[0])]?.name || '野外'}能找到）` : `${prog} → 交给${N.name}`, where: miss ? itemWhere(miss[0]) : npcLocNow(S.npc) }); }
   for (const q of SIDEQ) { if (!q.open()) continue; const s = q.st(); if (s >= q.max) continue; out.push({ key: 'sideq:' + q.id, kind: '支线', title: q.n, goal: q.hint(s), where: q.loc(s) }); }
+  for (const q of BSQ) { if (!q.open()) continue; const s = bsSt(q.id); if (s >= q.max) continue; out.push({ key: 'bsq:' + q.id, kind: '机缘', title: '宝术 · ' + q.n, goal: q.hint(s), where: q.loc(s) }); } /* 宝术谱 tasks */
   for (const b of bountyToday()) { if (b.st === 'done') continue; const N = NPCS[b.npc], ready = b.st === 'on' && bountyReady(b);
     const loc = b.st === 'new' || ready ? npcLocNow(b.npc) : b.kind === 'kill' ? (b.loc || Object.values(PLACES).find(p => p.name === b.where)?.id) : itemWhere(b.id);
     out.push({ key: 'bounty:' + b.npc, kind: b.st === 'new' ? '悬赏 · 可接' : '悬赏', title: `${N.name}的悬赏`, goal: bountyText(b) + (b.st === 'new' ? ` · 去找${N.name}接` : ready ? ` → 交给${N.name}` : ''), where: loc }); }

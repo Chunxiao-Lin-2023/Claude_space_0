@@ -13,7 +13,7 @@ const { chromium } = require('playwright');
     const grab = (s, re) => [...s.matchAll(re)].map(m => m[1]);
     for (let j = 0; j < JUMPS.length; j++) { const J = JUMPS[j]; jumpTo(j); await w8(300); const c = D.C, qi0 = c.story.q, miss = [];
       for (let k = 0; k < qi0; k++) { const q = MAIN[k], s = src(q);
-        for (const id of grab(s, /learnSkill\('(\w+)'\)/g)) if (!c.sk.includes(id)) miss.push(`宝术 ${id}（${q.id}）`);
+        for (const id of grab(s, /learnSkill\('(\w+)'\)/g)) if (!c.sk.includes(id) && !evoAfter(id).some(x => c.sk.includes(x))) miss.push(`宝术 ${id}（${q.id}）`);
         for (const id of grab(s, /learnGongfa\('(\w+)'\)/g)) if (!c.gf.includes(id)) miss.push(`功法 ${id}（${q.id}）`);
         for (const id of grab(s, /gainPet\('(\w+)'\)/g)) if (!c.pets[id]) miss.push(`伙伴 ${id}（${q.id}）`);
         for (const id of grab(s, /F\(\)\.(\w+) = 1/g)) if (!c.story.f[id] && !OPTIONAL_F.includes(id)) miss.push(`旗标 ${id}（${q.id}）`); }

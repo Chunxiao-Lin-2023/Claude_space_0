@@ -1664,7 +1664,7 @@ function charStats(c = C) {
 function fixHp() { const s = charStats(); C.hp = clamp(C.hp, 0, s.hpMax); C.mp = clamp(C.mp, 0, s.mpMax); }
 function fullHeal() { const s = charStats(); C.hp = s.hpMax; C.mp = s.mpMax; }
 function skillsOf(c = C) { return ['atk', ...c.bar.filter(id => c.sk.includes(id)), 'guard']; }
-function learnSkill(id) { if (C.sk.includes(id)) return; C.sk.push(id); if (C.bar.length < barSlots(C.lv)) C.bar.push(id); const S = SKILLS[id]; logLine(`<b class="lvup">领悟宝术</b>：${S.icon}<b>${S.name}</b>——${S.desc}`, 'sys'); sfx('epic'); }
+function learnSkill(id) { if (C.sk.includes(id) || (typeof evoAfter === 'function' && evoAfter(id).some(x => C.sk.includes(x)))) return; /* already grown into something higher */ C.sk.push(id); if (C.bar.length < barSlots(C.lv)) C.bar.push(id); const S = SKILLS[id]; logLine(`<b class="lvup">领悟宝术</b>：${S.icon}<b>${S.name}</b>——${S.desc}`, 'sys'); sfx('epic'); }
 /* 宝术熟练度 */
 const profLevel = (id, c = C) => { const n = (c.prof && c.prof[id]) || 0; let l = 0; for (let i = 1; i < PROF.length; i++) if (n >= PROF[i].at) l = i; return l; };
 function profUse(id) { C.prof = C.prof || {}; const before = profLevel(id); C.prof[id] = (C.prof[id] || 0) + 1; const after = profLevel(id); if (after > before) setTimeout(() => { logLine(`${SKILLS[id].icon}<b>${SKILLS[id].name}</b> 用得越来越顺手——<b class="lvup">${PROF[after].n}</b>（威力 +${PROF[after].b * 100}%）`, 'sys'); sfx('epic'); }, 50); }
@@ -1773,8 +1773,8 @@ function mobUnit(id, lv, side = 1) {
     hpMax: Math.round(E.hp * (m.hp || 1) * D.hp), atk: Math.round(E.atk * (m.atk || 1) * D.atk), def: Math.round(E.def * (m.def || 1)), spd: E.spd * (m.spd || 1), crit: M.boss ? 0.08 : 0.05, leech: 0, mpMax: 0, mp: 0, sk: [], cd: {}, st: [], alive: true, plan: null, intent: '' };
 }
 function heroUnit() { const s = charStats(); const u = { id: 'hero', side: 0, kind: 'pc', name: '石昊', icon: '🧒', lv: C.lv, hpMax: s.hpMax, hp: Math.max(1, Math.round(C.hp)), mpMax: s.mpMax, mp: Math.round(C.mp), atk: s.atk, def: s.def, spd: s.spd, crit: s.crit, leech: s.leech || 0, regen: s.regen || 0, sk: skillsOf(), cd: {}, st: [], alive: true,
-    prof: Object.fromEntries(C.sk.map(id => [id, PROF[profLevel(id)].b + (id === 'lei' ? relicSp('lei') : 0)])), mpRegen: BAL.mpRegen + relicSp('mp'), noPoison: !!relicSp('noPoison'), first: relicSp('first') };
-  const sh = relicSp('shieldStart'); if (sh) u.st.push({ k: 'shield', t: 3, v: Math.round(s.hpMax * sh) }); if (u.first) u.st.push({ k: 'atk', t: 1, v: u.first }); return u; }
+    prof: Object.fromEntries(C.sk.map(id => [id, PROF[profLevel(id)].b + (skLine(id) === 'lei' ? relicSp('lei') : 0)])), mpRegen: BAL.mpRegen + relicSp('mp'), noPoison: !!relicSp('noPoison'), first: relicSp('first') };
+  const sh = relicSp('shieldStart'); if (sh) u.st.push({ k: 'shield', t: 3, v: Math.round(s.hpMax * sh) }); if (u.first) u.st.push({ k: 'atk', t: 1, v: u.first }); u.phoenix = C.bar.includes('zhenhuang') ? 1 : 0; return u; }
 function petUnit(id, slot = 0) { // the partner scales with 石昊; affection up to +15%, 觉醒 +8%, 返祖 +8%, 真身 +5%, and ±3% per level it is above / below him
   const s = charStats(), P = PETS[id], pd = C.pets[id], aff = pd.aff, plv = petLv(id), k = (1 + aff / 100 * 0.15) * (pd.evo ? 1.08 : 1) * (pd.evo2 ? 1.08 : 1) * (pd.evo3 ? 1.05 : 1) * clamp(1 + 0.03 * (plv - C.lv), 0.7, 1.5), m = P.mul;
   return { id: slot ? 'pet' + (slot + 1) : 'pet', lead: !slot, trait: id, side: 0, kind: 'npc', mob: id, pet: 1, evo: !!pd.evo, name: P.name + (pd.evo3 ? '·真身' : pd.evo2 ? '·返祖' : pd.evo ? '·觉醒' : ''), icon: P.icon, lv: plv, hpMax: Math.round(s.hpMax * m.hp * k), atk: Math.round(s.atk * m.atk * k), def: Math.round(s.def * m.def * k), spd: s.spd * m.spd, crit: 0.08, leech: 0, mpMax: 0, mp: 0, sk: [], cd: {}, st: [], alive: true, plan: null, intent: '', aff, hp: 0 };
@@ -1835,9 +1835,10 @@ function planMob(B, u) {
 }
 function pickFoe(B, u) { const foes = alive(B, 1 - u.side); if (!foes.length) return null; const t = foes.filter(f => stOf(f, 'taunt')); if (t.length) return pick(t); return wpick(foes, f => (f.kind === 'pc' ? 1.5 : 1)); }
 const HEALS = ['baoyao', 'meat', 'herb', 'milk'];
-function botAct(B, u) { // auto-battle for 石昊 and the AI for 虚神界 rivals
+function botAct(B, u) { const a = botAct0(B, u); if (a.sk) a.sk = skRes(u, a.sk); return bsBot(B, u, a); }
+function botAct0(B, u) { // auto-battle for 石昊 and the AI for 虚神界 rivals (it thinks in root 宝术; botAct maps them to what u really has)
   const allies = alive(B, u.side), foes = alive(B, 1 - u.side); if (!foes.length) return { sk: 'atk' };
-  const can = id => u.sk.includes(id) && !(u.cd[id] > 0) && u.mp >= SKILLS[id].mp; const boss = foes.find(f => f.boss), main = boss || foes.slice().sort((a, b) => a.hp - b.hp)[0];
+  const can = id => { id = skRes(u, id); return u.sk.includes(id) && !(u.cd[id] > 0) && u.mp >= SKILLS[id].mp; }; const boss = foes.find(f => f.boss), main = boss || foes.slice().sort((a, b) => a.hp - b.hp)[0];
   const pc = u.kind === 'pc', known = f => pc && f.mob ? knownWeak(f.mob) : [];
   if (pc && u.hp < u.hpMax * 0.35 && B.itemRound !== B.round) { const it = (u.hp < u.hpMax * 0.2 ? HEALS : HEALS.slice(1).concat('baoyao')).find(i => itemN(i)); if (it) return { item: it }; }
   const big = foes.find(f => f.releasing || f.plan === 'charge');
@@ -1871,6 +1872,7 @@ function applyDmg(B, a, d, dmg, info = {}) {
   d.hp -= dmg; partyHurt(B, d, dmg); if (a && a.leech && dmg > 0) a.hp = Math.min(a.hpMax, a.hp + dmg * a.leech);
   fxe(B, { k: info.dot ? 'dot' : 'hit', t: d.id, v: dmg + absorbed, crit: !!info.crit, weak: !!info.weak, hp: hpr(d), st: info.dot }); if (d.kind === 'pc' && B.epic) epicLow(B, d); banterHit(B, a, d, info); mechHit(B, a, d, dmg + absorbed, Object.assign({ ate: absorbed }, info));
   if (d.side === 1 && B.sayQ) { if (d.hp <= 0) B.sayQ.push([d, 'die']); else if (!d.saidLow && d.hp < d.hpMax * 0.25) { d.saidLow = 1; B.sayQ.push([d, 'low']); } }
+  if (d.hp <= 0 && d.phoenix && !d.phoenixUsed) { d.phoenixUsed = 1; d.hp = Math.round(d.hpMax * 0.3); d.st = d.st.filter(s => ['shield', 'def', 'atk', 'clone', 'swift'].includes(s.k)); blog(B, '<span class="phase">🐦‍🔥 真凰浴火——石昊从火里站了起来！</span>'); fxe(B, { k: 'heal', t: d.id, v: d.hp, hp: hpr(d) }); return false; }
   if (d.hp <= 0 && mechDie(B, d)) return false;
   if (d.hp <= 0) { d.hp = 0; d.alive = false; d.st = []; fxe(B, { k: 'die', t: d.id }); epicKill(B, d); partyKill(B, a, d); if (d.side === 1 && B.sayQ) B.sayQ.push([a, 'killq', d]); if (d.side === 1 && d.kind === 'mob') B.kills.push([d.mob, d.lv, d.boss]); return true; }
   if (d.boss && d.side === 1 && !d.raged && d.hp <= d.hpMax / 2 && d.mob && MOBS[d.mob]) { d.raged = true; addSt(d, { k: 'rage', t: 99, v: BAL.phaseAtk }); B.phase = 1;
@@ -1878,7 +1880,8 @@ function applyDmg(B, a, d, dmg, info = {}) {
   return false;
 }
 const SK_FX = { atk: 'slash', qly: 'claw', sn: 'roar', gw: 'bone', lei: 'lei', dsh: 'rock', jian: 'blade', ta: 'tower', guard: 'guard' };
-function comboOf(id, t) { // 宝术 that work together
+function comboOf(id, t) { // 宝术 that work together (an evolved 宝术 keeps its root's combos)
+  id = skLine(id);
   if (id === 'jian' && stOf(t, 'bleed')) return [1.35, '伤口崩裂'];
   if (id === 'lei' && (stOf(t, 'stun') || stOf(t, 'freeze'))) return [1.25, '雷落在动弹不得的身上'];
   if (id === 'sn' && t.raged) return [1.2, '狻猊对上狂怒的凶兽，吼得更响'];
@@ -1897,20 +1900,23 @@ function perform(B, u, act, L) {
   u.mp -= S.mp; if (S.cd) u.cd[id] = S.cd + 1; if (u.kind === 'pc' && id !== 'atk' && id !== 'guard' && NETROLE !== 'guest') profUse(id); const pb = 1 + ((u.prof && u.prof[id]) || 0); const foes = alive(B, 1 - u.side), allies = alive(B, u.side);
   let tg = []; if (S.tgt === 'enemy') { const t = foes.find(x => x.id === act.tgt) || foes.slice().sort((a, b) => a.hp - b.hp)[0]; if (t) tg = [t]; } else if (S.tgt === 'enemies') tg = foes; else if (S.tgt === 'allies') tg = allies; else tg = [u];
   const head = id === 'atk' ? `${uName(u)} 出手` : id === 'guard' ? `${uName(u)} 护住要害` : `${uName(u)} 施展 <span class="sk">${S.icon}${S.name}</span>`;
-  fxe(B, { k: 'act', a: u.id, fx: SK_FX[id] || 'slash', tg: tg.map(t => t.id), side: u.side, n: id === 'atk' ? '' : S.name, ic: S.icon, who: u.kind === 'pc' ? 'hero' : 'foe' });
-  if (S.dmg) { const parts = [];
+  fxe(B, { k: 'act', a: u.id, fx: SK_FX[id] || SK_FX[skLine(id)] || BS_FX[id] || 'slash', tg: tg.map(t => t.id), side: u.side, n: id === 'atk' ? '' : S.name, ic: S.icon, who: u.kind === 'pc' ? 'hero' : 'foe' });
+  if (S.dmg) { const parts = []; let dispelled = false;
     for (const t of tg) { if (!t.alive) continue; const hits = S.hits || 1; let tot = 0, crit = false, miss = 0, died = false;
-      const [cm0, ct0] = comboOf(id, t), seen = t.shiyi && u.kind === 'pc' && id !== 'atk' && id === u.lastSk ? 0.5 : 1, mk = u.kind === 'pc' && stOf(t, 'mark') ? 1 + stV(t, 'mark') : 1, cm = cm0 * mk, ct = [ct0, mk > 1 ? '印记' : '', u.kind === 'pc' && stOf(t, 'brk') && S.dmg ? '破甲' : ''].filter(Boolean).join('·');
-      let weak = false, bound = false; for (let h = 0; h < hits && t.alive; h++) { const r = hitCalc(u, t, S.dmg * pb * cm * seen / hits, S.mag, { sure: !!stOf(u, 'sure'), pierce: S.pierce, el: S.el }); if (r.miss) { miss++; fxe(B, { k: 'miss', t: t.id }); continue; } tot += r.dmg; crit = crit || r.crit; weak = weak || r.weak; bound = bound || r.bound; if (applyDmg(B, u, t, r.dmg, { crit: r.crit, weak: r.weak })) died = true; }
+      const [cm0, ct0] = comboOf(id, t), seen = t.shiyi && u.kind === 'pc' && id !== 'atk' && id !== 'kunpeng' && id === u.lastSk ? 0.5 : 1, mk = u.kind === 'pc' && stOf(t, 'mark') ? 1 + stV(t, 'mark') : 1, cm = cm0 * mk, ct = [ct0, mk > 1 ? '印记' : '', u.kind === 'pc' && stOf(t, 'brk') && S.dmg ? '破甲' : ''].filter(Boolean).join('·');
+      if (S.dispel && t.alive) { const n0 = t.st.length; t.st = t.st.filter(s => !['shield', 'atk', 'rage', 'def', 'dodge', 'guard'].includes(s.k)); if (t.st.length < n0) dispelled = true; }
+      let weak = false, bound = false, cloned = false, dispelled2 = dispelled; dispelled = false; for (let h = 0; h < hits && t.alive; h++) { const r = hitCalc(u, t, S.dmg * pb * cm * seen / hits, S.mag, { sure: !!stOf(u, 'sure'), pierce: S.pierce, el: S.el }); if (r.miss) { miss++; fxe(B, { k: 'miss', t: t.id }); continue; } tot += r.dmg; crit = crit || r.crit; weak = weak || r.weak; bound = bound || r.bound; if (applyDmg(B, u, t, r.dmg, { crit: r.crit, weak: r.weak })) died = true; }
+      if (t.alive && u.kind === 'pc' && S.tgt === 'enemy' && id !== 'atk' && stOf(u, 'clone')) { const r2 = hitCalc(u, t, S.dmg * pb * cm * 0.4, S.mag, { pierce: S.pierce, el: S.el }); if (!r2.miss) { tot += r2.dmg; cloned = true; if (applyDmg(B, u, t, r2.dmg, {})) died = true; } }
       if (weak && u.side === 0) { noteWeak(t, S.el); B.weakHits = (B.weakHits || 0) + 1; }
       if (miss === hits) parts.push(`${uName(t)} <span class="miss">躲开了</span>`);
-      else { parts.push(`${uName(t)} <span class="${crit ? 'crit' : 'dmg'}">-${tot}${crit ? ' 暴击!' : ''}</span>${weak ? ' <span class="weak">正中要害</span>' : ''}${ct ? ` <span class="weak">${ct}</span>` : ''}${bound ? ' <span class="weak">借着骨文锁链</span>' : ''}${seen < 1 ? ' <span class="miss">重瞳看穿了这一招</span>' : ''}${died ? ' <b class="die">倒下</b>' : ''}`); B.fx = crit ? 'crit' : 'hit';
+      else { parts.push(`${uName(t)} <span class="${crit ? 'crit' : 'dmg'}">-${tot}${crit ? ' 暴击!' : ''}</span>${weak ? ' <span class="weak">正中要害</span>' : ''}${ct ? ` <span class="weak">${ct}</span>` : ''}${bound ? ' <span class="weak">借着骨文锁链</span>' : ''}${seen < 1 ? ' <span class="miss">重瞳看穿了这一招</span>' : ''}${cloned ? ' <span class="weak">分身补了一下</span>' : ''}${dispelled2 ? ' <span class="weak">护体全被啃掉了</span>' : ''}${died ? ' <b class="die">倒下</b>' : ''}`); B.fx = crit ? 'crit' : 'hit';
         let stunned = false; if (t.alive && S.st) for (const s of S.st) if (Math.random() < (s.p ?? 1) && !(s.k === 'stun' && t.boss && Math.random() < 0.5)) { addSt(t, { k: s.k, t: s.t, v: s.v ? Math.round(u.atk * s.v) : 0 }); if (s.k === 'stun') stunned = true; parts.push(`<span class="st" style="color:${STATUS[s.k].c}">${STATUS[s.k].n}</span>`); }
         if (t.alive && id === 'gw') addSt(t, { k: 'bound', t: 2 });
         if (u.side === 0 && (stunned || weak) && tryInterrupt(B, t)) parts.push('<span class="weak">打断了它的蓄力！</span>'); } }
     L(head + '：' + parts.join('，'));
   } else if (S.shield) { const v = Math.round(u.atk * S.shield * pb); for (const t of tg) { addSt(t, { k: 'shield', t: 3, v }); fxe(B, { k: 'shield', t: t.id, v }); } L(`${head}，全队获得 <span class="heal">${v}</span> 点护盾`); B.fx = 'heal'; }
   else L(head);
+  bsAfter(B, u, S, foes, allies, L);
   if (S.self) for (const s of S.self) addSt(u, s); if (S.mpBack) u.mp = Math.min(u.mpMax, u.mp + u.mpMax * S.mpBack);
   if (stOf(u, 'sure') && S.dmg) u.st = u.st.filter(s => s.k !== 'sure'); u.lastSk = id; if (u.kind === 'pc') mechHeroAct(B, u, Object.assign({}, act, { sk: id }));
 }
@@ -1938,7 +1944,7 @@ function mobAct(B, u, L) {
 }
 /* who acts when: by speed, but 石昊 and the partner act back to back (at the earlier of their two places), in the order you picked */
 function turnOrder(B, jitter) {
-  const L = B.units.filter(u => u.alive).map(u => ({ u, k: u.spd * (jitter ? rnd(0.85, 1.15) : 1) + (B.acts[u.id] && B.acts[u.id].swap ? 100 : 0) + (u.first && B.round === 1 ? 1000 : 0) + (u.trait === 'xiaobai' ? 500 : 0) })).sort((a, b) => b.k - a.k).map(x => x.u);
+  const L = B.units.filter(u => u.alive).map(u => ({ u, k: u.spd * (jitter ? rnd(0.85, 1.15) : 1) + (B.acts[u.id] && B.acts[u.id].swap ? 100 : 0) + (u.first && B.round === 1 ? 1000 : 0) + (u.trait === 'xiaobai' ? 500 : 0) + (stOf(u, 'swift') ? 300 : 0) })).sort((a, b) => b.k - a.k).map(x => x.u);
   const h = L.find(u => u.kind === 'pc'), p = L.find(u => u.pet && u.lead); if (!h || !p) return L;
   const i = Math.min(L.indexOf(h), L.indexOf(p)), rest = L.filter(u => u !== h && u !== p); rest.splice(i, 0, ...((C.duo || 'hero') === 'pet' ? [p, h] : [h, p])); return rest; }
 function battleResolve(B) {
@@ -2151,6 +2157,130 @@ function partyUp(id) { const L = partyList(), i = L.indexOf(id); if (i <= 0) ret
 function partyCardHtml() { const L = partyList(); if (L.length < 2) return '';
   return `<div class="card"><h3>出战顺序 <span class="dim" style="font-size:.8rem;font-family:var(--ff)">排在前面的先上：野外 1 个 · 剧情战/秘境/守城 2 个 · 首领战 3 个（困难 +1；15 层前最多 1、30 层前最多 2）。首领战、秘境、守城前还能临时挑。</span></h3>
     <div class="list">${L.map((id, i) => { const P = PETS[id], T = PET_TRAIT[id] || {}; return `<div class="li ${i === 0 ? 'on' : ''}"><span class="ic">${P.icon}</span><div class="t"><b>${i + 1}. ${P.name}</b>${i === 0 ? ' <span class="pill gold">领头</span>' : ''} <span class="pill">${T.n || ''}</span><small>${T.d || ''}</small><small class="dim">适合：${T.use || ''}</small></div>${i ? `<button class="sb" onclick="partyUp('${id}')">↑</button>` : ''}</div>`; }).join('')}</div></div>`; }
+
+/* ================= 宝术谱: every 宝术 石昊 met in the book, in the order he met them =================
+   - Some 宝术 grow into a higher one (进化): the old one is 包含 in the new — it leaves the list, its slot and its 熟练度 go to the new one.
+       青鳞鹰宝术 → 鲲鹏法 · 雷道 → 雷道四绝天 → 雷帝宝术 · 朱雀宝术 → 真凰宝术 · 锈剑 → 草字剑诀（残）→ 草字剑诀 · 天角蚁·力之篇 → 不灭经
+   - Others are new: 符文分身, 蛄之宝术, 麒麟宝术, 真龙宝术. Each comes from a 机缘 task (BSQ) in the task list, at the point of the story the book puts it.
+   - 原著搭配: one click sets the 宝术栏 the way 石昊 fought at that stage (with what you own); or pick your own.
+   - Foes use the same 宝术 (MOB_BS / rivals), so 宁川 really throws 麒麟宝术 at you and 鲲帝 swallows the sky with 鲲鹏法.
+   All prose here is original; the sources are named in OPTIMIZATIONS.md. */
+const BS_NEW = {
+  kunpeng: { name: '鲲鹏法', icon: '🐋', mp: 12, cd: 1, tgt: 'enemy', dmg: 2.4, hits: 3, st: [{ k: 'bleed', t: 2, v: 0.25, p: 0.6 }], self: [{ k: 'swift', t: 2 }], line: 'qly', desc: '鲲鹏巢里拿回来的十凶宝术：鹰爪变成了鹏翼，连击三下共 2.4 倍伤害，可能流血；之后一回合抢先出手。重瞳看不穿它（不受“看穿”减半）。包含青鳞鹰宝术。' },
+  lei4: { name: '雷道四绝天', icon: '⚡', mp: 22, cd: 3, tgt: 'enemies', dmg: 1.7, mag: 1, el: 'lei', st: [{ k: 'stun', t: 1, p: 0.26 }], line: 'lei', desc: '元天秘境第一页金纸上的四道雷：全体 1.7 倍伤害，无视一半防御，26% 眩晕；劈在动弹不得的敌人身上 ×1.25。包含雷道。' },
+  leidi: { name: '雷帝宝术', icon: '🌩️', mp: 26, cd: 3, tgt: 'enemies', dmg: 2.0, mag: 1, el: 'lei', st: [{ k: 'stun', t: 1, p: 0.3 }], self: [{ k: 'def', t: 2, v: 0.3 }], line: 'lei', desc: '两页金纸合在一起，十凶雷帝的全本：全体 2 倍伤害，无视一半防御，30% 眩晕；身上披一层雷帝甲胄（2 回合防御 +30%）。包含雷道四绝天。' },
+  zhenhuang: { name: '真凰宝术', icon: '🐦‍🔥', mp: 30, cd: 3, tgt: 'enemies', dmg: 2.2, mag: 1, el: 'fire', st: [{ k: 'burn', t: 3, v: 0.45, p: 0.9 }], line: 'zhuque', desc: '虚神界十块青铜书碎片换来的十凶真凰：全体 2.2 倍伤害，重灼烧。带在宝术栏里时，每场战斗第一次倒下会浴火重生（回三成气血）。包含朱雀宝术。' },
+  caozi0: { name: '草字剑诀（残）', icon: '🌿', mp: 20, cd: 3, tgt: 'enemy', dmg: 2.4, hits: 3, mag: 1, st: [{ k: 'bleed', t: 3, v: 0.4, p: 1 }], line: 'jian', desc: '一张兽皮上的半篇剑诀：三片剑叶连斩，共 2.4 倍伤害，无视一半防御，重创流血；斩在流血的伤口上 ×1.35。包含锈剑的剑意。' },
+  caozi: { name: '草字剑诀', icon: '🍃', mp: 34, cd: 3, tgt: 'enemy', dmg: 5.0, hits: 9, mag: 1, pierce: 1, st: [{ k: 'bleed', t: 3, v: 0.5, p: 1 }], line: 'jian', desc: '十凶九叶剑草的全本：九片剑叶一片接一片，共 5 倍伤害，无视防御，重创流血；斩在流血的伤口上 ×1.35。包含草字剑诀（残）。' },
+  tjy0: { name: '天角蚁·力之篇', icon: '🐜', mp: 22, cd: 3, tgt: 'enemy', dmg: 2.8, el: 'blunt', st: [{ k: 'brk', t: 2, v: 0.25, p: 1 }], line: 'tjy0', desc: '古龙骸骨里一只蒲团上留下的开篇，讲的只有一个字：力。2.8 倍伤害，破甲（防御 -25%）。' },
+  tjy: { name: '不灭经', icon: '🐜', mp: 34, cd: 4, tgt: 'enemy', dmg: 3.6, el: 'blunt', pierce: 1, st: [{ k: 'brk', t: 2, v: 0.3, p: 1 }], heal: 0.1, line: 'tjy0', desc: '老天角蚁传下的全本：打不死的身子，打得死人的拳。3.6 倍伤害，无视防御，破甲；自己回 10% 气血。包含天角蚁·力之篇。' },
+  fuwen: { name: '符文分身', icon: '👤', mp: 24, cd: 5, tgt: 'self', self: [{ k: 'clone', t: 3 }], desc: '重新长出来的至尊骨里藏着的神通：骨文凝成另一个你。3 回合内，你每一门打单个敌人的宝术，分身都会跟着再打一下（四成威力）。' },
+  gu: { name: '蛄之宝术', icon: '🪲', mp: 40, cd: 4, tgt: 'enemy', dmg: 3.4, mag: 1, pierce: 1, st: [{ k: 'weak', t: 2, v: 0.3, p: 1 }], dispel: 1, desc: '蛄祖临走前塞进你脑子里的东西：3.4 倍伤害，无视防御，虚弱；先把敌人身上的护盾、狂怒和增益全啃掉。' },
+  qilin: { name: '麒麟宝术', icon: '🦄', mp: 48, cd: 4, tgt: 'enemies', dmg: 3.2, mag: 1, el: 'fire', st: [{ k: 'burn', t: 3, v: 0.5, p: 0.8 }], cleanse: 1, healAll: 0.06, desc: '梦回仙古时那头白麒麟教的：麒麟踏火，全体 3.2 倍伤害，灼烧；麒麟是瑞兽——顺手洗掉自己身上的坏状态，全队回 6% 气血。' },
+  zhenlong: { name: '真龙宝术', icon: '🐉', mp: 56, cd: 5, tgt: 'enemies', dmg: 3.6, mag: 1, st: [{ k: 'weak', t: 2, v: 0.35, p: 0.9 }], awe: 1, desc: '跟一位老仙王换来的十凶真龙：龙威压下来，全体 3.6 倍伤害，虚弱；所有正在蓄力的敌人，力气当场散掉。' },
+};
+Object.assign(SKILLS, BS_NEW);
+SKILL_ORDER.splice(0, SKILL_ORDER.length, 'qly', 'sn', 'gw', 'lei', 'dsh', 'jian', 'ta', 'kunpeng', 'zhuque', 'fuwen', 'zhizun', 'lunhui', 'lei4', 'tjy0', 'caozi0', 'wudi', 'leidi', 'zhenhuang', 'liushen', 'tjy', 'daluo', 'gu', 'caozi', 'tahua', 'qilin', 'zhenlong', 'duduan');
+Object.assign(STATUS, { swift: { n: '先手', c: '#9ad8ff' }, clone: { n: '分身', c: '#e8d8a0' } });
+/* lines: an evolved 宝术 counts as its root wherever the root is asked for (合成, combos, 宝骨 that boost 雷道, the auto-battle) */
+const skLine = id => (SKILLS[id] && SKILLS[id].line) || id;
+const skOwn = (c, base) => c && c.sk ? (c.sk.includes(base) ? base : c.sk.find(s => skLine(s) === skLine(base) && SKILLS[s].line)) : null;
+const skRes = (u, id) => u.sk.includes(id) ? id : u.sk.find(s => skLine(s) === id) || id;
+const EVO = [['qly', 'kunpeng'], ['lei', 'lei4'], ['lei4', 'leidi'], ['zhuque', 'zhenhuang'], ['jian', 'caozi0'], ['caozi0', 'caozi'], ['tjy0', 'tjy']];
+function evolveSkill(from, to, quiet) { // the new one takes the old one's place, slot and mastery
+  const c = C; if (!c.sk.includes(from) || c.sk.includes(to)) { if (!c.sk.includes(to)) learnSkill(to); return; }
+  c.sk[c.sk.indexOf(from)] = to; const b = c.bar.indexOf(from); if (b >= 0) c.bar[b] = to; c.prof[to] = Math.max(c.prof[to] || 0, c.prof[from] || 0); c.skEvo = c.skEvo || {}; c.skEvo[to] = from;
+  if (!quiet) { const A = SKILLS[from], S = SKILLS[to]; logLine(`<b class="lvup">宝术进化</b>：${A.icon}${A.name} → ${S.icon}<b>${S.name}</b>（熟练度带了过来）——${S.desc}`, 'sys'); sfx('epic'); } }
+function bsGain(id, quiet) { const E = EVO.find(([, t]) => t === id); if (E && C.sk.includes(E[0])) return evolveSkill(E[0], id, quiet); if (C.sk.includes(id)) return; if (quiet) { C.sk.push(id); if (C.bar.length < barSlots(C.lv)) C.bar.push(id); C.prof[id] = C.prof[id] || 0; } else learnSkill(id); }
+
+/* ---------- 机缘: one task per 宝术, at the place and time the book gives it ---------- */
+const bsSt = id => C.story.f['bs_' + id] || 0;
+const bsHas = base => !!skOwn(C, base);
+const BSQ = [
+  { id: 'kp', n: '鲲鹏巢', sk: 'kunpeng', max: 2, open: () => F_('v2') && bsHas('qly'), by: 'v3', loc: s => s === 0 ? 'xs_hall' : 'bd_bone', hint: s => s === 0 ? '虚神界里，有人知道鲲鹏法的下落。（虚神界）' : '鲲鹏巢在天骨禁区的尽头。（百断山 · 天骨禁区）', done: '青鳞鹰宝术进化成了鲲鹏法。' },
+  { id: 'fw', n: '至尊骨里的另一个你', sk: 'fuwen', max: 1, open: () => F_('guBack'), by: 'shihuang', loc: () => 'hg_nirvana', hint: () => '刚长回来的至尊骨里，好像还藏着什么。回涅槃池坐一坐。（火国 · 涅槃池）', done: '学会了符文分身。' },
+  { id: 'tj', n: '天角蚁', sk: 'tjy', max: 2, open: () => F_('v4'), by: 'v7end', by0: 'v4end', loc: s => s === 0 ? 'bz_field' : (F_('v7') ? 'xg_forest' : null), hint: s => s === 0 ? '百族战场上躺着一具古龙的骨头，天角蚁族的人总绕着它走。（百族战场）' : F_('v7') ? '仙古古林里，有一只很老很老的天角蚁。（仙古古林）' : '力之篇只是开头。剩下的，要等到了仙古才找得到。', done: '天角蚁·力之篇进化成了不灭经。' },
+  { id: 'ld', n: '元天秘境的金纸', sk: 'leidi', max: 2, open: () => F_('gutai') && bsHas('lei'), by: 'v5end', loc: s => s === 0 ? 'sj_desert' : 'sj_wild', hint: s => s === 0 ? '天仙州荒漠底下，压着元天至尊留下的秘境。（天仙州荒漠）' : '第二页金纸不在秘境里——有人看见它飘进了无人区。（无人区）', done: '雷道一路进化成了雷帝宝术。' },
+  { id: 'zh', n: '十块青铜书碎片', sk: 'zhenhuang', max: 2, open: () => F_('zuixue') && bsHas('zhuque'), by: 'v6end', loc: s => s === 1 ? 'xs_hall' : null, hint: s => s === 0 ? `在虚神界打赢对手，攒青铜书碎片（${C.story.f.bsShard || 0}/10）。打赢隐世天骄一次给 3 块。` : '十块碎片齐了。去虚神界深处，真凰的传承地开了。（虚神界）', done: '朱雀宝术进化成了真凰宝术。' },
+  { id: 'cz', n: '草字剑诀', sk: 'caozi', max: 2, open: () => F_('zuixue') && bsHas('jian'), by: 'v9end', by0: 'v6', loc: s => s === 0 ? 'xs_hall' : (F_('zhizun') ? 'jt_peak' : null), hint: s => s === 0 ? '虚神界里有个补天教的老婆婆，身上藏着一张写着剑诀的兽皮。（虚神界）' : F_('zhizun') ? '下界的至尊殿堂开了，草字剑诀的下半篇在那里。（九天之巅）' : '剑诀只有半篇。另外半篇在下界的至尊殿堂——等你重回至尊。', done: '锈剑的剑意进化成了草字剑诀。' },
+  { id: 'gz', n: '蛄祖的礼物', sk: 'gu', max: 1, open: () => F_('daoze'), by: 'yyEnd', loc: () => 'yy_guzu', hint: () => '蛄祖补完了你的道则，又把你叫了回去。（异域 · 蛄祖洞）', done: '学会了蛄之宝术。' },
+  { id: 'ql', n: '白麒麟', sk: 'qilin', max: 1, open: () => F_('dlAge'), by: 'v13end', loc: () => 'dl_age', hint: () => '梦回仙古，古战场上走过一头浑身雪白的麒麟。（帝落古战场）', done: '学会了麒麟宝术。' },
+  { id: 'zl', n: '换一门真龙', sk: 'zhenlong', max: 1, open: () => F_('xianwar'), by: 'v14end', loc: () => 'xy_city', hint: () => '仙域古城里，一位老仙王说他手里有真龙宝术——要换，拿本事来换。（仙域古城）', done: '学会了真龙宝术。' },
+];
+function bsDone(q) { return bsSt(q.id) >= q.max; }
+/* a jump lands where a player who played well would be: every 机缘 whose time has passed is already taken */
+function bsJump(c) { const P = Object.values(c.prof || {}), avg = Math.round(P.reduce((a, b) => a + b, 0) / Math.max(1, P.length) * 0.7), f = c.story.f, has = base => c.sk.includes(base) || c.sk.some(s => skLine(s) === base && SKILLS[s].line);
+  const C0 = C; C = c; try { for (const q of BSQ) { if (!f[q.by0 || q.by] && !f[q.by]) continue; const steps = { kp: [[1, 'kunpeng']], fw: [[1, 'fuwen']], tj: [[1, 'tjy0'], [2, 'tjy']], ld: [[1, 'lei4'], [2, 'leidi']], zh: [[2, 'zhenhuang']], cz: [[1, 'caozi0'], [2, 'caozi']], gz: [[1, 'gu']], ql: [[1, 'qilin']], zl: [[1, 'zhenlong']] }[q.id];
+      const need = { kp: 'qly', ld: 'lei', zh: 'zhuque', cz: 'jian' }[q.id]; if (need && !has(need)) continue;
+      for (const [s, id] of steps) { if (s > 1 && !f[q.by]) break; if (s === 1 && q.by0 && !f[q.by0]) break; bsGain(id, true); f['bs_' + q.id] = s; if (!c.prof[id]) c.prof[id] = avg; } if (q.id === 'zh' && f.bs_zh) f.bsShard = 10; } } finally { C = C0; } }
+
+/* 虚神界: each win is a 青铜书碎片 once the 真凰 task is open (隐世天骄 give 3) */
+function bsArenaWin(n = 1) { const q = BSQ[4]; if (!q.open() || bsSt('zh') >= 1) return; const f = C.story.f; f.bsShard = Math.min(10, (f.bsShard || 0) + n); logLine(`虚神界掉下 <b>${n} 块青铜书碎片</b>（${f.bsShard}/10）。`, 'loot');
+  if (f.bsShard >= 10) { f.bs_zh = 1; logLine('十块青铜书碎片齐了——虚神界深处，有一道门开了。（再进一次 <b>虚神界</b>）', 'sys'); } }
+
+/* ---------- foes use the same 宝术 ---------- */
+Object.assign(MOBS, {
+  kpcan: { name: '鲲鹏残念', lv: 24, boss: 1, mul: { hp: 4.2, atk: 1.35, def: 1.3, spd: 1.2 }, sk: [{ n: '鲲鹏法', dmg: 1.15, w: 3, st: { k: 'bleed', t: 2, v: 0.25, p: 0.4 } }, { n: '吞天', dmg: 0.85, aoe: 1, w: 2 }, { n: '扶摇九万里', dmg: 2.2, w: 1, charge: 1 }], loot: [['baoyao', 1]], p2: '残念张开了翅膀，整个巢都被它带着飞了起来！', d: '鲲鹏死后留在巢里的一口气。十凶之一，死了也还能吞天。' },
+  longao: { name: '龙獒骸骨', lv: 42, boss: 1, weak: { lei: 1 }, mul: { hp: 5.4, atk: 1.55, def: 1.6 }, sk: [{ n: '骨爪', dmg: 1.2, w: 3 }, { n: '雷道四绝天', dmg: 0.9, aoe: 1, mag: 1, el: 'lei', st: { k: 'stun', t: 1, p: 0.15 }, w: 2 }, { n: '獒吼', dmg: 2.2, w: 1, charge: 1 }], loot: [['baoyao', 2]], p2: '骸骨的肋骨缝里，金纸亮了起来——它在用纸上的雷！', d: '元天秘境里的一副骸骨，脑袋像獒，身子像龙，肋骨里夹着雷帝宝术的第一页。' },
+  zhyy: { name: '真凰虚影', lv: 46, boss: 1, weak: { lei: 1 }, mul: { hp: 5.1, atk: 1.5, def: 1.45, spd: 1.1 }, sk: [{ n: '真凰宝术', dmg: 0.9, aoe: 1, mag: 1, el: 'fire', st: { k: 'burn', t: 3, v: 0.3, p: 0.45 }, w: 3 }, { n: '凰啄', dmg: 1.3, w: 2 }, { n: '浴火', healAlly: 0.08, w: 1 }, { n: '焚天', dmg: 2.2, aoe: 1, w: 1, charge: 1 }], loot: [['baoyao', 2]], p2: '真凰虚影烧成了一团白火！', d: '虚神界深处，真凰传承地的守关者。朱雀只是它掉下来的一根羽毛。' },
+});
+const MOB_BS = [['eagle', 1, 'qly'], ['suanni', 1, 'sn'], ['leishou', 1, 'lei'], ['leiyun', 0, 'lei'], ['ape', 0, 'lei'], ['tianjiao', 0, 'tjy0'], ['ningchuan', 2, 'qilin'], ['kundi', 0, 'kunpeng'], ['butianjiao', 0, 'caozi0'], ['kpcan', 0, 'kunpeng'], ['longao', 1, 'lei4'], ['zhyy', 0, 'zhenhuang']];
+for (const [m, i, bs] of MOB_BS) { const s = MOBS[m] && MOBS[m].sk[i], S = SKILLS[bs]; if (!s) continue; s.n = S.name; s.bs = bs; if (!s.el && S.el) s.el = S.el; if (!s.st && S.st) s.st = Object.assign({}, S.st[0], { p: (S.st[0].p ?? 1) * 0.6 }); }
+const mobBs = id => MOBS[id] ? [...new Set(MOBS[id].sk.filter(s => s.bs).map(s => s.bs))] : [];
+
+/* ---------- 原著搭配: how 石昊 fought at each stage of the book ---------- */
+const BS_SETS = [
+  { n: '石村 · 小不点', f: null, sk: ['qly', 'sn', 'gw'] },
+  { n: '补天阁 · 百断山', f: 'butian', sk: ['qly', 'sn', 'lei', 'dsh', 'jian', 'gw'] },
+  { n: '石国 · 双石之战', f: 'v2', sk: ['kunpeng', 'sn', 'lei', 'zhuque', 'jian', 'ta'] },
+  { n: '石皇 · 斩七神', f: 'guBack', sk: ['zhizun', 'lunhui', 'fuwen', 'kunpeng', 'zhuque', 'lei', 'ta'] },
+  { n: '上界 · 至尊古台', f: 'zuixue', sk: ['leidi', 'kunpeng', 'zhizun', 'wudi', 'zhenhuang', 'tjy0', 'fuwen', 'lunhui'] },
+  { n: '争霸 · 仙古', f: 'v6', sk: ['daluo', 'liushen', 'leidi', 'kunpeng', 'tjy', 'zhenhuang', 'lunhui', 'zhizun'] },
+  { n: '帝关 · 异域', f: 'v8', sk: ['gu', 'daluo', 'leidi', 'kunpeng', 'liushen', 'tjy', 'caozi', 'zhenhuang'] },
+  { n: '帝落 · 仙域', f: 'v12', sk: ['caozi', 'qilin', 'leidi', 'kunpeng', 'daluo', 'liushen', 'gu', 'tjy'] },
+  { n: '独断万古', f: 'v13end', sk: ['duduan', 'tahua', 'zhenlong', 'qilin', 'kunpeng', 'leidi', 'caozi', 'daluo'] },
+];
+function bsPreset(i) { const P = BS_SETS[i]; if (!P) return; const own = P.sk.map(id => skOwn(C, id)).filter(Boolean); if (!own.length) { toast('这一套里的宝术你还一门都没有'); return; }
+  C.bar = [...new Set(own)].slice(0, barSlots(C.lv)); C.bar.sort((a, b) => SKILL_ORDER.indexOf(a) - SKILL_ORDER.indexOf(b)); save(); refresh(); toast(`宝术栏换成了「${P.n}」的搭配（${C.bar.length} 门）`); }
+
+/* ---------- the 宝术谱 page ---------- */
+const BS_BOOK = [
+  ['下界 · 石村', ['qly', 'sn', 'gw']], ['下界 · 补天阁 · 百断山', ['lei', 'dsh', 'jian', 'ta']], ['下界 · 石国 · 火国', ['kunpeng', 'zhuque', 'zhizun', 'fuwen', 'lunhui']],
+  ['百族战场 · 上界', ['tjy0', 'lei4', 'leidi', 'wudi', 'zhenhuang', 'caozi0']], ['三千州 · 仙古', ['liushen', 'daluo', 'tjy']], ['帝关 · 异域', ['gu']], ['九天 · 帝落 · 仙域', ['caozi', 'qilin', 'tahua', 'zhenlong', 'duduan']],
+];
+function evoAfter(id) { const out = []; for (let x = id, e; (e = EVO.find(([a]) => a === x)); x = e[1]) out.push(e[1]); return out; }
+function bsWhere(id) { const q = BSQ.find(q => q.sk === id || ({ lei4: 'ld', tjy0: 'tj', caozi0: 'cz' })[id] === q.id); return q; }
+function bsHtml() { if (!C.sk.length) return ''; const evoTo = {}; for (const [a, b] of EVO) evoTo[a] = b;
+  const row = id => { const S = SKILLS[id], own = C.sk.includes(id), absorbed = !own && evoAfter(id).some(x => C.sk.includes(x)), q = bsWhere(id);
+    const st = own ? '<span class="pill gold">已领悟</span>' : absorbed ? '<span class="pill">已进化</span>' : '<span class="pill">未得</span>';
+    const nx = evoTo[id] ? `<span class="dim"> → ${SKILLS[evoTo[id]].icon}${SKILLS[evoTo[id]].name}</span>` : '';
+    const how = own || absorbed ? '' : q && q.open() ? `<small class="warn">机缘：${q.hint(bsSt(q.id))}</small>` : q ? '<small class="dim">时候还没到。</small>' : '<small class="dim">跟着主线走，会遇到的。</small>';
+    const foes = Object.keys(MOBS).filter(m => mobBs(m).includes(id) && C.codex && C.codex[m]).map(m => MOBS[m].name);
+    return `<div class="li ${own ? 'on' : ''}" style="${own || absorbed ? '' : 'opacity:.78'}"><span class="ic">${own || absorbed || (q && q.open()) ? S.icon : '❔'}</span><div class="t"><b>${own || absorbed || (q && q.open()) ? S.name : '？？？'}</b> ${st}${nx}${own || absorbed ? `<small>${S.desc}</small>` : ''}${how}${foes.length ? `<small class="dim">用过它的对手：${foes.join('、')}</small>` : ''}</div></div>`; };
+  const sets = BS_SETS.filter(P => !P.f || F_(P.f)).map((P, i) => { const k = BS_SETS.indexOf(P), n = P.sk.filter(id => skOwn(C, id)).length; return `<button class="sb" onclick="bsPreset(${k})" title="${P.sk.map(id => SKILLS[id].name).join('、')}">${P.n} <span class="dim">${n}/${P.sk.length}</span></button>`; }).join('');
+  return `<div class="card"><h3>宝术谱 <span class="dim" style="font-size:.8rem;font-family:var(--ff)">原著里石昊一路学过的宝术 · 有的会进化，旧的被新的包含（熟练度带过去）</span></h3>
+    <h4 style="margin:4px 0">原著搭配 <span class="dim" style="font-size:.78rem">点一下，宝术栏换成那时候石昊的打法（只放你已经有的）；也可以在上面自己点选</span></h4><div class="dts">${sets}</div>
+    <details style="margin-top:8px" ${UI.bsOpen ? 'open' : ''} ontoggle="UI.bsOpen=this.open"><summary style="cursor:pointer;color:var(--gold2)">全部宝术（领悟 ${BS_BOOK.flatMap(x => x[1]).filter(id => C.sk.includes(id) || evoAfter(id).some(x => C.sk.includes(x))).length}/${BS_BOOK.flatMap(x => x[1]).length}）· 来历、进化、机缘</summary>${BS_BOOK.map(([t, L]) => `<h4 style="margin:10px 0 2px;color:var(--gold2)">${t}</h4><div class="list">${L.map(row).join('')}</div>`).join('')}</details></div>`; }
+
+/* ---------- what makes each new 宝术 its own (called from perform in 30_battle.js) ---------- */
+const BS_FX = { zhenhuang: 'fire', qilin: 'fire', gu: 'curse', zhenlong: 'roar', fuwen: 'bless', tjy0: 'rock', tjy: 'rock' };
+function bsAfter(B, u, S, foes, allies, L) {
+  if (S.heal) { const v = Math.round(u.hpMax * S.heal); u.hp = Math.min(u.hpMax, u.hp + v); fxe(B, { k: 'heal', t: u.id, v, hp: hpr(u) }); L(`${uName(u)} 打不死的身子又长好了一截 <span class="heal">+${v}</span>`); }
+  if (S.cleanse) { const n0 = u.st.length; u.st = u.st.filter(s => !['stun', 'bleed', 'burn', 'poison', 'weak', 'brk', 'freeze', 'dark', 'bound', 'mark'].includes(s.k)); if (u.st.length < n0) L(`${uName(u)} 身上的坏状态被麒麟火烧干净了`); }
+  if (S.healAll) for (const t of allies) { if (!t.alive) continue; const v = Math.round(t.hpMax * S.healAll * (t.pet ? 0.55 : 1)); t.hp = Math.min(t.hpMax, t.hp + v); fxe(B, { k: 'heal', t: t.id, v, hp: hpr(t) }); }
+  if (S.awe) { let n = 0; for (const f of foes) if (tryInterrupt(B, f)) n++; if (n) L(`<span class="weak">龙威压下来，${n} 个正在蓄力的敌人力气全散了！</span>`); }
+}
+/* the auto-battle knows the new 宝术 too: 分身 before a big single-target round, 真龙 on a charge, otherwise the strongest it can afford */
+function bsBot(B, u, a) { const foes = alive(B, 1 - u.side); if (!foes.length || a.item || a.swap || a.flee) return a;
+  const can = id => u.sk.includes(id) && !(u.cd[id] > 0) && u.mp >= SKILLS[id].mp, boss = foes.find(f => f.boss);
+  if (can('zhenlong') && foes.some(f => f.plan === 'charge' || f.releasing)) return { sk: 'zhenlong' };
+  if (can('gu') && boss && boss.st.some(s => ['shield', 'rage', 'atk'].includes(s.k))) return { sk: 'gu', tgt: boss.id };
+  if (can('fuwen') && !stOf(u, 'clone') && (boss || foes.length === 1) && u.mp >= SKILLS.fuwen.mp + 20) return { sk: 'fuwen' };
+  if (can('qilin') && (u.st.some(s => ['stun', 'burn', 'poison', 'weak', 'bleed'].includes(s.k)) || foes.length >= 2)) return { sk: 'qilin' };
+  if (a.sk === 'atk' || a.sk === 'guard' && u.mp > u.mpMax * 0.3) { const main = boss || foes.slice().sort((x, y) => x.hp - y.hp)[0];
+    const best = u.sk.filter(id => id !== 'atk' && id !== 'guard' && SKILLS[id].dmg && can(id)).sort((x, y) => SKILLS[y].dmg * (SKILLS[y].tgt === 'enemies' ? Math.min(foes.length, 3) * 0.7 : 1) - SKILLS[x].dmg * (SKILLS[x].tgt === 'enemies' ? Math.min(foes.length, 3) * 0.7 : 1))[0];
+    if (best && BS_NEW[best]) return { sk: best, tgt: main.id }; }
+  return a; }
 
 /* ================= moving, exploring, battles, dungeons, roaming 凶兽首领 ================= */
 const exitsOf = loc => { const ex = {}; for (const [d, id] of Object.entries(PLACES[loc].exits)) if (placeOpen(id)) ex[d] = id; return ex; };
@@ -3253,7 +3383,7 @@ async function S_shiyiDuel() {
   else if (c === 1) await say('石毅', '（他愣了一下，重瞳里有什么东西晃了晃）……今天，只有你和我。');
   else await say('石毅', '……好。');
   const lv = slv(28, 0, 2);
-  if (!await fightRetry({ rivals: [{ name: '石毅', lv, gear: 1.15, sk: ['sn', 'lei', 'jian', 'qly'], icon: '👁️', shiyi: 1, boss: 1 }], title: '天空战场 · 双石', noPet: true, epic: { name: '石毅', sub: '重瞳者 · 武王府 · 你的堂兄', seal: '双石', intro: ['两个人，一块骨头。', '他的重瞳在看你。你的骨头，在看他。'], phase: '石毅胸口亮起了刺眼的光——他催动了那块至尊骨！<b>上苍劫光</b>，从天上砸了下来！', low: { who: '至尊骨', t: '劫光把你整个吞了进去。<br>……可你胸口那块刚长出来的骨头，在<b>吃</b>它。<br>一口，一口。像你小时候喝兽奶那样。<br>劫光越吃越少，骨头越长越亮——它<b>长成了</b>。' }, end: ['光散了。', '石毅躺在台上，看着天，重瞳里的光一点一点淡下去。'] } }, '你被劫光打下了天空战场。等你醒过来，石毅留下一句话：“养好了，再来。”')) return false;
+  if (!await fightRetry({ rivals: [{ name: '石毅', lv, gear: 1.15, sk: ['zhizun', 'sn', 'lei', 'qly'], /* 他胸口那块，是你的至尊骨 */ icon: '👁️', shiyi: 1, boss: 1 }], title: '天空战场 · 双石', noPet: true, epic: { name: '石毅', sub: '重瞳者 · 武王府 · 你的堂兄', seal: '双石', intro: ['两个人，一块骨头。', '他的重瞳在看你。你的骨头，在看他。'], phase: '石毅胸口亮起了刺眼的光——他催动了那块至尊骨！<b>上苍劫光</b>，从天上砸了下来！', low: { who: '至尊骨', t: '劫光把你整个吞了进去。<br>……可你胸口那块刚长出来的骨头，在<b>吃</b>它。<br>一口，一口。像你小时候喝兽奶那样。<br>劫光越吃越少，骨头越长越亮——它<b>长成了</b>。' }, end: ['光散了。', '石毅躺在台上，看着天，重瞳里的光一点一点淡下去。'] } }, '你被劫光打下了天空战场。等你醒过来，石毅留下一句话：“养好了，再来。”')) return false;
   await say('石毅', '……（他笑了一下，很轻）原来……是这种感觉。');
   if (F().duelTalk === 'father') await say('石毅', '你刚才说……欠你的不是我。（他闭上眼睛）……谢谢。');
   await cine('一道看不清的影子从云里落下来。<br>那是一个女人，眼睛里，也有两个瞳孔。<br>她抱起石毅，看了你一眼，<b>走了</b>。', 'mem');
@@ -4797,6 +4927,7 @@ function tasks() {
     const miss = S.need.find(([k, n]) => itemN(k) < n), prog = S.need.map(([k, n]) => `${ITEMS[k].name} ${Math.min(itemN(k), n)}/${n}`).join('、');
     out.push({ key: 'side:' + id, kind: '支线', title: S.title, goal: miss ? `${prog}（${PLACES[itemWhere(miss[0])]?.name || '野外'}能找到）` : `${prog} → 交给${N.name}`, where: miss ? itemWhere(miss[0]) : npcLocNow(S.npc) }); }
   for (const q of SIDEQ) { if (!q.open()) continue; const s = q.st(); if (s >= q.max) continue; out.push({ key: 'sideq:' + q.id, kind: '支线', title: q.n, goal: q.hint(s), where: q.loc(s) }); }
+  for (const q of BSQ) { if (!q.open()) continue; const s = bsSt(q.id); if (s >= q.max) continue; out.push({ key: 'bsq:' + q.id, kind: '机缘', title: '宝术 · ' + q.n, goal: q.hint(s), where: q.loc(s) }); } /* 宝术谱 tasks */
   for (const b of bountyToday()) { if (b.st === 'done') continue; const N = NPCS[b.npc], ready = b.st === 'on' && bountyReady(b);
     const loc = b.st === 'new' || ready ? npcLocNow(b.npc) : b.kind === 'kill' ? (b.loc || Object.values(PLACES).find(p => p.name === b.where)?.id) : itemWhere(b.id);
     out.push({ key: 'bounty:' + b.npc, kind: b.st === 'new' ? '悬赏 · 可接' : '悬赏', title: `${N.name}的悬赏`, goal: bountyText(b) + (b.st === 'new' ? ` · 去找${N.name}接` : ready ? ` → 交给${N.name}` : ''), where: loc }); }
@@ -5298,7 +5429,7 @@ async function arenaFight(o) {
   if (o.shiyi) logLine('石毅的两个瞳孔一起转了过来。<b>重瞳</b>：同一门宝术连着对他用，会被他看穿（伤害减半）。', 'tip');
   const r = await startBattle({ rivals: [o], title: `虚神界 · 挑战第 ${o.rank} 名 ${o.name}`, noLose: true, flee: false, arena: 1, noPet: true });
   if (r && r.win && o.shiyi && !C.story.f.shiyiWin) { C.story.f.shiyiWin = 1; setTimeout(() => runScene(async () => { await nar('光幕上，你的名字压过了那个带着“重瞳”二字的名字。'); await say('石毅', '……第一，你先拿着。'); await nar('他转身走进了光里，没有回头。你胸口的疤，又跳了一下。'); }, { title: '登顶' }), 900); }
-  fullHeal(); if (r && r.win) { C.arena.wins++; const old = C.arena.rank; if (o.rank < old) C.arena.rank = o.rank; logLine(`虚神界排名 ${old > 100 ? '榜外' : old} → <b>${C.arena.rank}</b>`, 'sys'); arenaMilestones(); storyArena(); }
+  fullHeal(); if (r && r.win) { C.arena.wins++; const old = C.arena.rank; if (o.rank < old) C.arena.rank = o.rank; logLine(`虚神界排名 ${old > 100 ? '榜外' : old} → <b>${C.arena.rank}</b>`, 'sys'); arenaMilestones(); storyArena(); bsArenaWin(1); }
   else logLine('输了。光幕上你的名字没动。', 'dim'); save(); refresh();
 }
 
@@ -6677,8 +6808,8 @@ const FUSED = {
 };
 Object.assign(SKILLS, FUSED); SKILL_ORDER.push(...Object.keys(FUSED));
 const PROF_MAX = PROF.length - 1, FUSE_COST = [['baoyao', 2]];
-const fuseReady = id => { const F_ = FUSED[id]; return F_.fuse.every(s => C.sk.includes(s) && profLevel(s) >= PROF_MAX); };
-const fuseKnown = id => FUSED[id].fuse.every(s => C.sk.includes(s));
+const fuseReady = id => { const F_ = FUSED[id]; return F_.fuse.every(s => skOwn(C, s) && profLevel(skOwn(C, s)) >= PROF_MAX); }; /* an evolved 宝术 still counts as its root */
+const fuseKnown = id => FUSED[id].fuse.every(s => skOwn(C, s));
 async function fuseSkill(id) {
   if (NETROLE === 'guest' || STATE.scene || STATE.battle || !FUSED[id] || C.sk.includes(id)) return; const F_ = FUSED[id];
   if (!fuseReady(id)) { toast('两门宝术都要练到圆满才行'); return; } if (FUSE_COST.some(([k, n]) => itemN(k) < n)) { toast('需要 宝药 ×2'); return; }
@@ -6763,7 +6894,7 @@ function pHero() {
   return `<div class="card"><div class="me-hd"><div style="flex:1;min-width:0"><div class="nm">石昊 <span class="dim" style="font-size:.85rem">小不点</span>${C.title && ACH.find(a => a.id === C.title) ? ` <span class="pill gold">${ACH.find(a => a.id === C.title).n}</span>` : ''}</div><div class="sub">${R.name} · 第 ${C.lv} 层${C.dt.length ? ` · ${C.dt.length} 座洞天` : ''}</div></div><div class="pw" title="战力">${fmt(s.power)}</div></div>
     <div class="bars" style="margin-top:8px">气血 ${Math.ceil(C.hp)}/${s.hpMax}<div class="bar"><i style="width:${C.hp / s.hpMax * 100}%"></i></div>符力 ${Math.floor(C.mp)}/${s.mpMax}<div class="bar mp"><i style="width:${C.mp / s.mpMax * 100}%"></i></div>经验 ${fmt(C.exp)}/${fmt(BAL.expNext(C.lv))}<div class="bar exp"><i style="width:${Math.min(100, C.exp / BAL.expNext(C.lv) * 100)}%"></i></div></div>
     <div class="kv"><div><span>攻击</span> ${s.atk}</div><div><span>防御</span> ${s.def}</div><div><span>身法</span> ${s.spd}</div><div><span>暴击</span> ${(s.crit * 100).toFixed(0)}%</div></div>${dt}</div>
-    <div class="card"><h3>宝术 <span class="dim" style="font-size:.8rem;font-family:var(--ff)">点选带进战斗（${C.bar.length}/${barSlots(C.lv)}，境界越高能带越多）· 越用越熟</span></h3><div class="list">${sk}</div></div>${fuseHtml()}
+    <div class="card"><h3>宝术 <span class="dim" style="font-size:.8rem;font-family:var(--ff)">点选带进战斗（${C.bar.length}/${barSlots(C.lv)}，境界越高能带越多）· 越用越熟</span></h3><div class="list">${sk}</div></div>${bsHtml()}${fuseHtml()}
     <div class="card"><h3>宝骨 <span class="dim" style="font-size:.8rem;font-family:var(--ff)">打倒首领得到（${(C.eq || []).length}/${relicSlots(C.lv)}，境界越高能戴越多）</span></h3>${forgeOpen() ? '<div class="dim" style="font-size:.78rem;margin-bottom:4px">🔥炼：每炼一级效果 +20%（特殊效果 +10%），最多 +5；+4、+5 可能失败</div>' : ''}${relics || '<div class="dim" style="font-size:.87rem">还没有。第一次打倒一个首领，它会留下点东西。</div>'}</div>${daoHtml()}
     <div class="card"><h3>修炼</h3><div class="list">${gf}</div></div>
     <div class="card"><h3>称号 <span class="dim" style="font-size:.8rem;font-family:var(--ff)">${Object.keys(C.ach || {}).length}/${ACH.length} · 点一个戴上</span></h3><div class="dts">${ACH.map(A => (C.ach || {})[A.id] ? `<button class="sb ${C.title === A.id ? 'pri' : ''}" style="min-height:30px" title="${A.d}" onclick="setTitle('${A.id}')">${A.n}</button>` : `<span class="pill" title="${A.d}">？ ${A.d}</span>`).join('')}</div></div>`;
@@ -6920,7 +7051,7 @@ async function hiddenFight(id) { const H = HIDDEN.find(x => x.id === id); if (!H
   closeModal(); s.day = gameDay(); fullHeal();
   await runScene(async () => { await nar(H.intro);
     const r = await startBattle({ rivals: [{ name: H.n, lv: hiddenLv(H), gear: 1.42, sk: H.sk, icon: H.icon, boss: 1 }], title: `隐世天骄 · ${H.n}`, noLose: true, flee: true });
-    if (r && r.win) { await nar(H.win); if (!s.win) { s.win = 1; gainRelic(H.relic); give('baoyao', 3); gainExp(BAL.expNext(C.lv) * 0.6); } else { gainMoney(C.lv * 12, '隐世天骄留下的'); gainExp(BAL.expNext(C.lv) * 0.15); } }
+    if (r && r.win) { await nar(H.win); bsArenaWin(3); if (!s.win) { s.win = 1; gainRelic(H.relic); give('baoyao', 3); gainExp(BAL.expNext(C.lv) * 0.6); } else { gainMoney(C.lv * 12, '隐世天骄留下的'); gainExp(BAL.expNext(C.lv) * 0.15); } }
     else await nar(`${H.n}没有追你。“明天再来。”`); }, { title: '隐世天骄 · ' + H.n }); fullHeal(); save(); refresh(); }
 Object.assign(RELICS, {
   r_shiguan: { n: '世界树叶', i: '🌳', d: '气血 +10%，防御 +10%。', b: { hpP: 0.1, defP: 0.1 } },
@@ -7104,6 +7235,96 @@ async function recapShow(force) { if (!C || STATE.scene || STATE.battle || NETRO
     const L = []; for (let i = 1; i <= v; i++) L.push(...recapText(i)); if (L.length && force) await nar(`<b>一路上你做过的选择：</b><br>${L.slice(-8).map(t => '· ' + t).join('<br>')}`);
     await nar(`<b>现在：</b>${esc(q.title)}——${q.goal}`); }); }
 function recapOnLoad() { if (!C || !C.savedAt || now() - C.savedAt < 20 * 60 * 1000 || C.story.q < 3) return; setTimeout(() => recapShow(false), 900); }
+
+/* ================= 宝术谱 · 机缘 scenes (the tasks are BSQ in 34_baoshu.js) ================= */
+/* the 机缘 scenes */
+const bsRetry = id => { C.story.f['ev_' + id] = 0; }; // not done yet: the place keeps its secret until you come back
+EVENTS.push(
+  { id: 'bs_kp0', loc: 'xs_hall', title: '鲲鹏法的下落', when: () => BSQ[0].open() && bsSt('kp') === 0, scene: async () => {
+    await nar('光幕边上，一个穿紫衣的姑娘冲你招手。是云曦。她身边站着一个白胡子老头，眯着眼看你的后背——像在看你背上有没有翅膀。');
+    await say('云曦', '爷爷说，你身上有鹰的骨文，可鹰飞不到最高。');
+    await say('云曦的爷爷', '鲲鹏死了很多年了，巢还在。在百断山天骨禁区的尽头，悬在一面断崖上。里头的东西，没人拿得走——因为没人能活着走到巢里。');
+    await nar('他把一只旧护臂扔给你：“戴上。巢里的风，能把骨头吹散。”');
+    await me('……为什么帮我？'); await say('云曦', '（她别过头）谁帮你了。护臂是借的，要还。');
+    C.story.f.bs_kp = 1; logLine('机缘：鲲鹏巢在 <b>百断山 · 天骨禁区</b> 的尽头。', 'sys'); } },
+  { id: 'bs_kp1', loc: 'bd_bone', title: '鲲鹏巢', when: () => BSQ[0].open() && bsSt('kp') === 1, scene: async () => {
+    await nar('天骨禁区的尽头是一面看不见底的断崖。崖壁上挂着一个巢——大得像一座倒扣的山，每一根枝条都是一截发白的骨头。');
+    await nar('风从巢里往外灌。护臂嗡嗡作响，你的骨头也跟着嗡嗡作响。巢的正中，一团残念睁开了眼——它还记得自己能吞天。');
+    if (!await fightRetry({ mobs: [['kpcan', Math.max(24, C.lv)]], title: '鲲鹏巢 · 鲲鹏残念', epic: { name: '鲲鹏残念', sub: '十凶 · 死了很多年', seal: '鲲鹏', intro: ['它只剩下一口气。', '这一口气，也能把你吹下崖。'] } }, '风把你卷出了巢，挂在崖壁的一根骨头上。')) { bsRetry('bs_kp1'); return; }
+    await nar('残念散了。巢底压着一块骨头，上面的骨文像一条鱼，又像一只鸟——游着游着，就飞了起来。');
+    const r = await miniGame('lights', { title: '鲲鹏骨文', desc: '鱼的纹路和鸟的纹路缠在一起。按灭多余的那几道，让它们合成一道。', presses: 4 });
+    if (!r.ok) { await nar('骨文在你手里滑走了。你得再来一次。'); bsRetry('bs_kp1'); return; }
+    await cine('你身上的鹰纹一道道褪下去，<br>长出来的，是鹏的翅膀。<br><b>🐋 鲲鹏法</b>');
+    bsGain('kunpeng'); C.story.f.bs_kp = 2; save(); } },
+  { id: 'bs_fw', loc: 'hg_nirvana', title: '另一个你', when: () => BSQ[1].open() && bsSt('fw') === 0, scene: async () => {
+    await nar('涅槃池已经凉了。你坐在池边，胸口那块刚长回来的骨头一跳一跳，像有人在里面敲门。');
+    await nar('你闭上眼，顺着骨文往里走。走到最深处，你看见一个人背对着你坐着——和你一模一样。');
+    await say('另一个你', '（他没回头）你终于来了。打一架，看看谁是谁。');
+    if (!await fightRetry({ rivals: [{ name: '符文里的你', lv: C.lv, gear: 1.05, sk: (C.bar.length ? C.bar : ['qly', 'sn']).slice(0, 4), icon: '👤' }], title: '至尊骨 · 另一个你', noPet: true }, '他和你打成了平手——然后你就醒了，满头大汗。')) { bsRetry('bs_fw'); return; }
+    await say('另一个你', '……行吧。你是你，我是你的影子。要用我的时候，叫一声。');
+    await cine('骨文一道道亮起来，<br>在你身边，凝出另一个你。<br><b>👤 符文分身</b>'); bsGain('fuwen'); C.story.f.bs_fw = 1; save(); } },
+  { id: 'bs_tj0', loc: 'bz_field', title: '古龙骸骨', when: () => BSQ[2].open() && bsSt('tj') === 0, scene: async () => {
+    await nar('百族战场的边上，横着一具龙骨，长得一眼望不到头。几个天角蚁族的人在远处守着，谁也不往骨头里走。');
+    await say('天角蚁族战士', '那是我们老祖宗打死的龙。骨头里有我们的东西——外人进去，出不来。');
+    if (!await fightRetry({ mobs: [['tianjiao', Math.max(35, C.lv - 1)], ['tianjiao', Math.max(35, C.lv - 1)]], title: '古龙骸骨 · 天角蚁族' }, '天角蚁族的人把你扔出了龙骨。')) { bsRetry('bs_tj0'); return; }
+    await nar('你钻进龙的肚子。最里面放着一只蒲团，坐垫上压出了一个小小的印子——像一只蚂蚁坐过。');
+    await nar('你坐上去。脑子里只剩一个字：<b>力</b>。不是拳头的力，是把一座山扛起来再放下的那种力。');
+    const r = await miniGame('mash', { title: '力之篇', desc: '蒲团上的力往你身上压。扛住它！', time: 6500, rate: 8 }); if (!r.ok) { await nar('你被压趴在蒲团上，起不来。缓一缓，再来。'); bsRetry('bs_tj0'); return; }
+    bsGain('tjy0'); C.story.f.bs_tj = 1; save(); } },
+  { id: 'bs_tj1', loc: 'xg_forest', title: '老天角蚁', when: () => BSQ[2].open() && bsSt('tj') === 1, scene: async () => {
+    await nar('仙古古林里，一只蚂蚁趴在树根上晒太阳。它有拳头那么大，角已经磨秃了，壳上全是裂纹。');
+    await say('老天角蚁', '（它连眼都没睁）你身上有我们家的力之篇。坐过那只蒲团了？');
+    await me('坐过。'); await say('老天角蚁', '那只是开头。后面的，叫不灭。……接我三下，你没趴下，我就教你。');
+    if (!await fightRetry({ rivals: [{ name: '老天角蚁', lv: C.lv + 1, gear: 1.15, sk: ['tjy', 'tjy0', 'sn'], icon: '🐜', boss: 1 }], title: '仙古古林 · 老天角蚁', noPet: true }, '你趴下了。老天角蚁打了个哈欠。')) { bsRetry('bs_tj1'); return; }
+    await say('老天角蚁', '……没趴下。行，记住：打不死，才打得死人。');
+    await cine('力之篇往下翻了一页，<br>翻到的那一页上，写着两个字。<br><b>🐜 不灭经</b>'); bsGain('tjy'); C.story.f.bs_tj = 2; save(); } },
+  { id: 'bs_ld0', loc: 'sj_desert', title: '元天秘境', when: () => BSQ[3].open() && bsSt('ld') === 0, scene: async () => {
+    await nar('荒漠下面埋着一座秘境。元天至尊死前，把他这辈子最得意的东西都塞了进去。你挤在一群上界天才中间，踩着他们的脚印往里走。');
+    await nar('秘境最深处躺着一副巨兽的骨架，脑袋像獒，身子像龙。它的肋骨缝里，夹着一张金色的纸。');
+    if (!await fightRetry({ mobs: [['longao', Math.max(41, C.lv)]], title: '元天秘境 · 龙獒骸骨', epic: { name: '龙獒骸骨', sub: '元天秘境 · 守着一页纸', seal: '獒', intro: ['骨头动了。', '它守着这页纸，守了几千年。'] } }, '骸骨一爪子把你拍出了秘境。')) { bsRetry('bs_ld0'); return; }
+    await nar('金纸到了你手里。纸上画着四道雷：一道劈天，一道劈地，一道劈人，一道——劈自己。');
+    const r = await miniGame('thunder', { title: '四绝天', desc: '四道雷，一道一道接住它。', strikes: 5, need: 3 }); if (!r.ok) { await nar('雷把纸上的字劈乱了。等它们重新排好，再来。'); bsRetry('bs_ld0'); return; }
+    bsGain('lei4'); C.story.f.bs_ld = 1; logLine('金纸只有一页。听人说，第二页飘进了 <b>无人区</b>。', 'sys'); save(); } },
+  { id: 'bs_ld1', loc: 'sj_wild', title: '第二页金纸', when: () => BSQ[3].open() && bsSt('ld') === 1, scene: async () => {
+    await nar('无人区的一块骨头上，压着一只青色的蒲团。蒲团底下，露出金纸的一角。你刚伸手，一道雷从天上劈下来——第二页纸，在挑人。');
+    const r = await miniGame('thunder', { title: '雷帝', desc: '这一回的雷，是活的。它往哪儿躲，你往哪儿接。', strikes: 6, need: 4 }); if (!r.ok) { await nar('你被劈出去三丈远。纸还在那儿，等着。'); bsRetry('bs_ld1'); return; }
+    await cine('两页金纸合在一起，<br>纸上的雷，从你的骨头里响了起来。<br>你身上，披了一层雷做的甲。<br><b>🌩️ 雷帝宝术</b>'); bsGain('leidi'); C.story.f.bs_ld = 2; save(); } },
+  { id: 'bs_zh', loc: 'xs_hall', title: '真凰的传承地', when: () => BSQ[4].open() && bsSt('zh') === 1, scene: async () => {
+    await nar('十块青铜书碎片在你手心里拼成了一本书。书一合上，虚神界的光幕裂开一道门，门里全是火。');
+    await nar('火里站着一只鸟。比朱雀大，比朱雀亮——朱雀只是它掉下来的一根羽毛。');
+    if (!await fightRetry({ mobs: [['zhyy', Math.max(44, C.lv)]], title: '虚神界 · 真凰虚影', epic: { name: '真凰虚影', sub: '十凶 · 火里生，火里死', seal: '凰', intro: ['它看了一眼你身上的朱雀羽。', '然后，它笑了。'] } }, '火把你推回了光幕外面。碎片还在，门也还开着。')) { bsRetry('bs_zh'); return; }
+    await cine('朱雀的火一点点熄了，<br>再烧起来的时候，<br>它不会再灭。<br><b>🐦‍🔥 真凰宝术</b>'); bsGain('zhenhuang'); C.story.f.bs_zh = 2; save(); } },
+  { id: 'bs_cz0', loc: 'xs_hall', title: '惜花', when: () => BSQ[5].open() && bsSt('cz') === 0, scene: async () => {
+    await nar('虚神界的一角，一个老婆婆坐在花丛里绣花。她绣的不是花，是剑。');
+    await say('补天教的老婆婆', '石昊？补天教找你很久了。（她把针一抽，花丛里立起九片草叶）我这把老骨头，正好拿你试试剑。');
+    if (!await fightRetry({ rivals: [{ name: '惜花婆婆', lv: C.lv + 1, gear: 1.15, sk: ['caozi0', 'gw', 'jian'], icon: '🌿', boss: 1 }], title: '虚神界 · 惜花婆婆', noPet: true }, '剑叶把你钉在了光幕上。老婆婆接着绣她的花。')) { bsRetry('bs_cz0'); return; }
+    await nar('她化成光散了，地上留下一张兽皮。兽皮上写着半篇剑诀，字是用草叶刻的。');
+    bsGain('caozi0'); C.story.f.bs_cz = 1; logLine('剑诀只有半篇。另外半篇，在下界的 <b>至尊殿堂</b>。', 'sys'); save(); } },
+  { id: 'bs_cz1', loc: 'jt_peak', title: '至尊殿堂', when: () => BSQ[5].open() && bsSt('cz') === 1 && F_('zhizun'), scene: async () => {
+    await nar('你重回至尊的那天夜里，九天之巅的云散了，露出一座殿。殿门上没有字，门槛上长着一株草，九片叶子。');
+    await nar('你把兽皮放在门槛上。草叶动了一下，兽皮上缺的那半篇，一个字一个字地长了出来。');
+    const r = await miniGame('memory', { title: '九叶', desc: '九片剑叶，每一片都对着兽皮上的一个字。把它们一一对上。' }); if (!r.ok) { await nar('有几片叶子对错了，字又缩了回去。'); bsRetry('bs_cz1'); return; }
+    await cine('九片叶子，<br>一片一片落在你的剑上。<br><b>🍃 草字剑诀</b>'); bsGain('caozi'); C.story.f.bs_cz = 2; save(); } },
+  { id: 'bs_gz', loc: 'yy_guzu', title: '蛄祖的礼物', when: () => BSQ[6].open() && bsSt('gz') === 0, scene: async () => {
+    await nar('蛄祖坐在洞口，手里捏着一只虫子。虫子很小，壳是灰的，看着一点也不起眼。');
+    await say('蛄祖', '我们这一族，没什么本事。就是能吃——吃护体的光，吃别人身上的神力，吃到最后，连道都能啃一口。');
+    await say('蛄祖', '（他把虫子按在你的眉心）我老了。这点东西，留给你，比留给异域强。');
+    const r = await miniGame('lights', { title: '蛄', desc: '虫子往你的骨文里钻。把挡路的骨文按灭，给它让出一条道。', presses: 5 }); if (!r.ok) { await nar('虫子退了回去。蛄祖说：“不急，它认人，慢慢来。”'); bsRetry('bs_gz'); return; }
+    await cine('你身上多了一样东西。<br>它很小，不起眼。<br>可它什么都吃。<br><b>🪲 蛄之宝术</b>'); bsGain('gu'); C.story.f.bs_gz = 1; save(); } },
+  { id: 'bs_ql', loc: 'dl_age', title: '白麒麟', when: () => BSQ[7].open() && bsSt('ql') === 0, scene: async () => {
+    await nar('古战场的雾里走出来一头麒麟，浑身雪白，蹄子落下的地方开出火做的花。它看你的眼神，像认识你很久了。');
+    await say('白麒麟', '你身上有我们一族的血的味道——不是你的，是被你打过的人的。六冠王那个孩子，是你打的？');
+    await me('他先动的手。'); await say('白麒麟', '（它笑了）那就好。来，我看看你配不配学。');
+    if (!await fightRetry({ rivals: [{ name: '白麒麟', lv: C.lv + 1, gear: 1.2, sk: ['qilin', 'zhuque', 'lei'], icon: '🦄', boss: 1 }], title: '帝落古战场 · 白麒麟', noPet: true }, '白麒麟用蹄子把你按在地上，按了一会儿，又松开了。')) { bsRetry('bs_ql'); return; }
+    await cine('火做的花，从你脚下开了一路。<br><b>🦄 麒麟宝术</b>'); bsGain('qilin'); C.story.f.bs_ql = 1; save(); } },
+  { id: 'bs_zl', loc: 'xy_city', title: '老仙王', when: () => BSQ[8].open() && bsSt('zl') === 0, scene: async () => {
+    await nar('古城的一家酒馆里，一个老头独自喝酒。他身上没有一点仙王的样子，可酒馆里谁也不敢坐他旁边。');
+    await say('老仙王', '我年轻时跟一条真龙换过命，换来一门宝术，一直没传人。你拿你的本事来换——赢我一次。');
+    if (!await fightRetry({ rivals: [{ name: '老仙王', lv: C.lv + 2, gear: 1.25, sk: ['zhenlong', 'lunhui', 'zhizun'], icon: '🧓', boss: 1 }], title: '仙域古城 · 老仙王', noPet: true }, '老头把你扔出了酒馆，接着喝。')) { bsRetry('bs_zl'); return; }
+    await say('老仙王', '（他擦了擦嘴角的血，乐了）好，好。龙给你了——别给它丢人。');
+    await cine('龙吟从你的骨头里响起来，<br>整座古城的人都抬起了头。<br><b>🐉 真龙宝术</b>'); bsGain('zhenlong'); C.story.f.bs_zl = 1; save(); } },
+);
+for (const H of HIDDEN) if (H.id === 'longnv') H.sk = H.sk.map(s => s === 'lunhui' ? 'zhenlong' : s); // 龙女: of course she has the dragon
 
 /* ================= the late world: side stories, more wild events and bounties, four late 秘境, three small games for
    the great techniques, the branch choices, the quiet scenes between fights, and what the ending remembers =================
@@ -7748,6 +7969,7 @@ function jumpLate(c, i) { const J = JUMPS[i], f = c.story.f, since = flag => JUM
   for (const [id, p] of Object.entries(c.pets)) { const open = PETS[id].sk.map((s, k) => ({ s, k })).filter(x => (!x.s.aff || p.aff >= x.s.aff) && (!x.s.evo || p.evo)).map(x => x.k); p.seen = open.slice(); p.bar = [0, ...open.filter(k => k).reverse()].slice(0, 4 + (p.evo ? 1 : 0)); } /* a ready loadout (the newest moves plus the basic one), so no "learned a move" toasts right after the jump */
   if (c.lv > 44) { const n = Math.floor((c.lv - 44) * 1.2), spent = Math.floor(n / 2); c.daoP = { hp: Math.ceil(spent / 3), atk: Math.ceil(spent / 3), def: Math.floor(spent / 3) }; c.dao = n - c.daoP.hp - c.daoP.atk - c.daoP.def; }
   if (f.tiantingDone) c.tt = { yao: 2, lu: f.v13end ? 2 : 1, wu: 2, qiang: f.v13end ? 2 : 1 };
+  bsJump(c); c.bar = c.sk.slice().sort((a, b) => SKILL_ORDER.indexOf(b) - SKILL_ORDER.indexOf(a)).slice(0, barSlots(c.lv)); /* 宝术谱: the 机缘 a good player had taken by now */
   const fl = c.lv >= 75 ? 3 : c.lv >= 59 ? 2 : c.lv >= 47 ? 1 : 0; if (fl) { c.forge = {}; for (const r of c.eq) c.forge[r] = fl; } } /* 炼器 opens with volume six: the worn 宝骨 come already worked */
 /* 跳章 = a player who played well (中上水平), not an average one: a few levels over the preset (never past a realm gate the story hasn't opened),
    宝术 ×1.3, partners closer and stronger, a fuller purse and bag, a better 虚神界 rank */
@@ -7802,7 +8024,7 @@ function netSync() { if (NETROLE !== 'host' || !NET.conns.size || !C) return; cl
 function snapshot() { return { t: 'st', C, st: { battle: STATE.battle, dungeon: STATE.dungeon, scene: !!STATE.scene, busy: STATE.busy, dtPending: !!STATE.dtPending }, dlg: DLG ? Object.assign(DLG.mini ? { mini: Object.assign({}, DLG.mini, { age: now() - DLG.mini.t0 }) } : DLG.rune ? { rune: DLG.rune } : DLG.choice ? { choice: DLG.choice.map(o => ({ t: o.t, dis: !!o.dis })) } : { o: DLG.o }, { ctx: dlgCtx() }) : null, roam: ROAM, ctrl: NET.ctrl, peers: NET.conns.size }; }
 function takeControl() { if (NETROLE === 'host') { NET.ctrl = 'host'; netBroadcast({ t: 'ctrl', ctrl: 'host' }); } else netSend({ t: 'take' }); toast('你来操作'); refresh(); if (UI.modal === 'coop') openModal('coop', 1); }
 /* commands a guest (or a host who handed over control) may trigger by clicking */
-const CMD_NAMES = ['siegeStart', 'leitaiStart', 'go', 'explore', 'rest', 'train', 'enterDungeon', 'fightRoam', 'autoWalk', 'npcTalk', 'battleAct', 'toggleAuto', 'useItem', 'feedPet', 'setPet', 'toggleBar', 'arenaFight', 'storyHereRun', 'runeTap', 'runeSkip', 'arenaClaim', 'battleUndo', 'equipRelic', 'teleport', 'tradeDo', 'bountyTake', 'enterDungeonHard', 'setTitle', 'trackTask', 'camp', 'sellItem', 'buyItem', 'togglePetMove', 'setDuo', 'petRankUp', 'miniTap', 'miniSkip', 'fuseSkill', 'autoExplore', 'toggleAutoFight', 'miniRetry', 'miniGiveUp', 'runeRetry', 'runeAccept'];
+const CMD_NAMES = ['siegeStart', 'leitaiStart', 'go', 'explore', 'rest', 'train', 'enterDungeon', 'fightRoam', 'autoWalk', 'npcTalk', 'battleAct', 'toggleAuto', 'useItem', 'feedPet', 'setPet', 'toggleBar', 'arenaFight', 'storyHereRun', 'runeTap', 'runeSkip', 'arenaClaim', 'battleUndo', 'equipRelic', 'teleport', 'tradeDo', 'bountyTake', 'enterDungeonHard', 'setTitle', 'trackTask', 'camp', 'sellItem', 'buyItem', 'togglePetMove', 'setDuo', 'petRankUp', 'miniTap', 'miniSkip', 'fuseSkill', 'autoExplore', 'toggleAutoFight', 'miniRetry', 'miniGiveUp', 'runeRetry', 'runeAccept', 'bsPreset'];
 const CMDS = {};
 UI.inClick = false; const markClick = () => { UI.inClick = true; setTimeout(() => { UI.inClick = false; }, 0); };
 document.addEventListener('click', markClick, true); document.addEventListener('keydown', markClick, true);

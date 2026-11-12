@@ -159,6 +159,18 @@ const { chromium } = require('playwright');
       stopAutoEx(); Math.random = rnd; await p; await idle(); await w8(30); ok('autoExStopInFight', inB && btn && !UI.autoEx && (UI.bN || 0) === n0 + 1); if (!(inB && btn)) out.autoEx = [inB, btn, UI.bN - n0].join();
       fullHeal(); Math.random = () => 0.1; const p2 = autoExplore(); for (let i = 0; i < 200 && !S().battle; i++) await w8(2); if (S().battle) toggleAuto(); ok('autoExTakeOver', !UI.autoEx); Math.random = rnd; const B2 = S().battle; if (B2) { B2.auto = true; renderBattle(true); } await p2; await idle();
       UI.autoEx = true; UI.autoExN = 2; UI.autoExAt = Date.now() + 2500; ok('autoExCountdown', /[23] 秒后继续/.test(autoExLabel())); dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' })); ok('autoExEsc', !UI.autoEx); D.noCD = false; refresh(); }
+    // 宝术谱: tasks evolve / teach, foes use 宝术, presets, 浴火
+    { jumpTo(JUMPS.findIndex(J => J.q === 'q_v14')); await w8(30); await idle(); const c = D.C; c.auto = true; ok('bsJump', ['kunpeng', 'leidi', 'caozi', 'zhenhuang', 'tjy', 'gu', 'qilin'].every(k => c.sk.includes(k)) && !c.sk.includes('qly') && !c.sk.includes('lei') && !c.sk.includes('zhenlong'));
+      c.sk = c.sk.filter(k => !BS_NEW[k]).concat(['qly', 'lei', 'zhuque', 'jian']); c.skEvo = {}; for (const k of Object.keys(c.story.f)) if (/^bs_|^ev_bs_|bsShard/.test(k)) delete c.story.f[k]; for (const k of c.sk) c.prof[k] = 170; const p0 = c.prof.lei; c.story.f.xianwar = 1;
+      D.pick = o => o.length === 2 && /再来/.test(o[0]) ? 1 : o.findIndex(Boolean);
+      for (let pass = 0; pass < 3; pass++) for (const E of EVENTS.filter(e => e.id.startsWith('bs_'))) { if (c.story.f['ev_' + E.id] || !E.when()) continue; c.story.f['ev_' + E.id] = 1; fullHeal(); await runScene(E.scene, { title: E.title }); await idle(); }
+      for (let k = 0; k < 10; k++) bsArenaWin(1); const Z = EVENTS.find(e => e.id === 'bs_zh'); if (Z.when()) { fullHeal(); await runScene(Z.scene, {}); await idle(); } D.pick = null;
+      ok('bsTasks', BSQ.every(q => bsSt(q.id) >= q.max)); ok('bsEvolve', c.sk.includes('leidi') && !c.sk.includes('lei') && !c.sk.includes('lei4') && c.prof.leidi >= p0 && c.skEvo.leidi === 'lei4');
+      ok('bsFuseRoot', fuseKnown('f_leiying') && fuseKnown('f_daolei')); ok('bsTaskList', !tasks().some(t => /^bsq:/.test(t.key)));
+      bsPreset(BS_SETS.length - 2); ok('bsPreset', c.bar.includes('caozi') && c.bar.includes('qilin'));
+      ok('bsFoes', MOBS.ningchuan.sk.some(s => s.bs === 'qilin') && MOBS.kundi.sk.some(s => s.bs === 'kunpeng') && HIDDEN.find(h => h.id === 'longnv').sk.includes('zhenlong'));
+      c.bar = ['zhenhuang']; D.startBattle({ mobs: [['kundi', 84]], title: 'p', noLose: true }); await w8(10); const B2 = S().battle, h2 = B2.units.find(u => u.kind === 'pc'); h2.hp = 1; applyDmg(B2, B2.units.find(u => u.side === 1), h2, 50); ok('bsPhoenix', h2.alive && h2.hp > 1); await idle();
+      navTo('hero'); await w8(20); ok('bsPanel', document.body.innerHTML.includes('宝术谱') && document.body.innerHTML.includes('原著搭配')); navTo('adv'); }
     // save slots: a second save lives beside the first one
     { save(true); const lv1 = D.C.lv; slotNew(2); await w8(50); const c2 = D.C; ok('slotNew', SLOT === 2 && c2.lv === 1 && slotInfo(1) && slotInfo(1).v.lv === lv1); c2.lv = 3; save(true);
       slotPlay(1); await w8(50); ok('slotSwitch', SLOT === 1 && D.C.lv === lv1 && slotInfo(2).v.lv === 3); toTitle(); slotsShow(); ok('slotList', document.querySelectorAll('#title .slot').length === 5);

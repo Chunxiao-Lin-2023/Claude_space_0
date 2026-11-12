@@ -60,7 +60,7 @@ async function hiddenFight(id) { const H = HIDDEN.find(x => x.id === id); if (!H
   closeModal(); s.day = gameDay(); fullHeal();
   await runScene(async () => { await nar(H.intro);
     const r = await startBattle({ rivals: [{ name: H.n, lv: hiddenLv(H), gear: 1.42, sk: H.sk, icon: H.icon, boss: 1 }], title: `隐世天骄 · ${H.n}`, noLose: true, flee: true });
-    if (r && r.win) { await nar(H.win); if (!s.win) { s.win = 1; gainRelic(H.relic); give('baoyao', 3); gainExp(BAL.expNext(C.lv) * 0.6); } else { gainMoney(C.lv * 12, '隐世天骄留下的'); gainExp(BAL.expNext(C.lv) * 0.15); } }
+    if (r && r.win) { await nar(H.win); bsArenaWin(3); if (!s.win) { s.win = 1; gainRelic(H.relic); give('baoyao', 3); gainExp(BAL.expNext(C.lv) * 0.6); } else { gainMoney(C.lv * 12, '隐世天骄留下的'); gainExp(BAL.expNext(C.lv) * 0.15); } }
     else await nar(`${H.n}没有追你。“明天再来。”`); }, { title: '隐世天骄 · ' + H.n }); fullHeal(); save(); refresh(); }
 Object.assign(RELICS, {
   r_shiguan: { n: '世界树叶', i: '🌳', d: '气血 +10%，防御 +10%。', b: { hpP: 0.1, defP: 0.1 } },
