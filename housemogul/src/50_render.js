@@ -448,6 +448,7 @@ function drawLabels() {
     }
   };
   if (window.__dbg && __dbg.notags) return;
+  if (STATE.mode !== 'play' && STATE.mode !== 'end') { drawDist(null); return; }   // title backdrop: just the city
   // collect tags
   const NUMF = '600 13px Oswald,"Noto Sans SC",sans-serif', CHF = '700 11px "Noto Sans SC",sans-serif';
   const tags = [];

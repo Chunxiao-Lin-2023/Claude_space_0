@@ -16,7 +16,6 @@
 | 尸夜孤楼 | `lasttower/` | 开发中 |
 | 尸潮堡垒 | `deadtide/` | 开发中 |
 | 百戏茶馆 | `baixi/` | 开发中 |
-| 房产大亨 | `housemogul/` | 开发中 |
 | 百变迷藏 | `prophunt/` | 开发中 |
 | 完美世界 | `wanmei/` | 开发中 |
 | 完美世界 · 石昊篇（文字版） | `wanmeiol/` | 开发中 |

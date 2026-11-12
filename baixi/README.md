@@ -1,13 +1,14 @@
 # 百戏茶馆 (baixi)
 
-国风茶馆主题的棋牌与小游戏合集：一个页面，大厅按 16 个类别列出 59 款游戏。
+国风茶馆主题的棋牌与小游戏合集：一个页面，大厅按 16 个类别列出 60 款游戏。
 每款支持人机（三档难度）/ 同屏 / 双人联机（PeerJS 房间码，房主权威），按游戏而定。
 
 ## 结构
 
 - `index.html` —— 构建产物（不要直接改）。
 - `src/core/` —— 框架：工具、合成音效、Canvas 绘图助手、联机、对局运行时（回合制按动作日志同步 / 实时游戏主机快照）、大厅、AI 工具。
-- `src/games/<id>.js` —— 每款游戏一个文件，调用 `BX.register({...})`。`_*.js` 是共享数据/助手，先于游戏加载。
+- `src/games/<id>.js` —— 每款游戏一个文件，调用 `BX.register({...})`。
+- `src/games/housemogul.js` —— 例外：房产大亨（实时炒房）是独立工程 `../housemogul/`（自己的构建、联机大厅和测试），这里只注册一张卡片，开局时用 iframe 全屏嵌入 `../housemogul/?embed=1`；顶栏暂停通过 postMessage 传给它。改玩法去 `housemogul/src/`。单文件 artifact 版里显示提示，不嵌入。`_*.js` 是共享数据/助手，先于游戏加载。
 - `src/SPEC.md` —— 游戏模块接口规范（新增游戏前必读）。
 - `src/build.py` —— 构建：`python3 build.py` 输出 `../index.html` 和 `out/artifact.html`（单人版）。
 - `src/test/` —— 自动测试：`bash test/t.sh --games id1,id2 [--phone] [--online]`

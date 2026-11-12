@@ -3,7 +3,14 @@ const SET0 = LS.get('set', {}); if (SET0.v !== 2) LS.del('save');
 const SET = Object.assign({ name: '', ai: 0, preset: 'pure', diff: 'easy', opt: Object.assign({}, PRESET.pure) }, LS.get('set', {}));
 const saveSet = () => { SET.v = 2; LS.set('set', SET); };
 if (SET0.v !== 2) saveSet();   // old turn-based saves were dropped above; mark settings as current
-const HUB = /\/housemogul\/(index\.html)?$/.test(location.pathname) && !inArtifact();
+/* the game now lives inside 百戏茶馆 (../baixi/): embedded there with ?embed=1 (its top bar has the way back);
+   opened directly, the back buttons lead to the tea house */
+const EMBED = QS.has('embed');
+const HUB = /\/housemogul\/(index\.html)?$/.test(location.pathname) && !inArtifact() && !EMBED;
+addEventListener('message', e => {
+  const m = e.data; if (!m || !m.hm) return;
+  if ('pause' in m && NETROLE === 'solo' && STATE.mode === 'play') { STATE.paused = !!m.pause; saveGame(); renderHUD(true); }
+});
 const SCREENS = ['title', 'lobby', 'help', 'menuScr', 'endScr', 'confirm'];
 function showScreen(id) { for (const s of SCREENS) $(s).classList.toggle('hidden', s !== id); }
 function titleStatus(t) { $('titleStatus').textContent = t || ''; }
@@ -46,7 +53,7 @@ $('contBtn').onclick = () => { audioInit(); const sv = LS.get('save', null); if 
 $('hostBtn').onclick = () => { audioInit(); sfx('click'); NET.ai = SET.ai; NET.diff = SET.diff; NET.preset = SET.preset; NET.opt = optOf(SET.preset); netHost(); };
 $('joinBtn').onclick = () => { audioInit(); sfx('click'); netJoin($('codeIn').value); };
 $('helpBtn').onclick = () => openHelp();
-$('hubBtn').onclick = () => { location.href = '../'; };
+$('hubBtn').onclick = () => { location.href = '../baixi/'; };
 
 /* ---------- lobby ---------- */
 function lobbyUI(st) {
@@ -92,7 +99,7 @@ function enterGame(me) {
 function openMenu() {
   $('menuScr').classList.remove('hidden'); $('mHub').classList.toggle('hidden', !HUB);
   $('mStatus').textContent = NETROLE === 'solo' ? '单人游戏会自动存档；菜单打开时时间暂停' : '联机时时间不会暂停';
-  delete $('mTitle').dataset.arm; $('mTitle').textContent = '返回标题'; delete $('mHub').dataset.arm; $('mHub').textContent = '返回游戏厅';
+  delete $('mTitle').dataset.arm; $('mTitle').textContent = '返回标题'; delete $('mHub').dataset.arm; $('mHub').textContent = '返回百戏茶馆';
 }
 const menuOpen = () => !$('menuScr').classList.contains('hidden') || !$('help').classList.contains('hidden') || !$('confirm').classList.contains('hidden');
 function closeMenu() { $('menuScr').classList.add('hidden'); }
@@ -110,7 +117,7 @@ $('mResume').onclick = closeMenu; $('mHelp').onclick = openHelp; $('helpClose').
 $('mSound').onclick = () => setSound(!AU.on); $('sndBtn').onclick = () => { audioInit(); setSound(!AU.on); };
 function armTwice(btn, fn) { if (NETROLE === 'solo' || btn.dataset.arm) { fn(); return; } btn.dataset.arm = 1; btn.textContent = '再点一次确认'; }
 $('mTitle').onclick = () => armTwice($('mTitle'), () => { if (NETROLE === 'solo') saveGame(); netLeave(); closeMenu(); toTitle(); });
-$('mHub').onclick = () => armTwice($('mHub'), () => { if (NETROLE === 'solo') saveGame(); netLeave(); location.href = '../'; });
+$('mHub').onclick = () => armTwice($('mHub'), () => { if (NETROLE === 'solo') saveGame(); netLeave(); location.href = '../baixi/'; });
 $('eAgain').onclick = () => {
   if (NETROLE === 'solo') { $('newBtn').onclick(); return; }
   if (NETROLE === 'host' && NET.gctl && NET.gctl.open) { newGame((Math.random() * 1e9) | 0, [SET.name || '房主', NET.guestName || '玩家二'], NET.ai, NET.opt, NET.diff); G.preset = NET.preset; sendRaw(NET.gctl, { t: 'start', G, me: 1 }); enterGame(0); return; }
