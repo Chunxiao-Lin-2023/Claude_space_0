@@ -65,7 +65,7 @@ EVENTS.push(
   { id: 'bs_cz1', loc: 'jt_peak', title: '至尊殿堂', when: () => BSQ[5].open() && bsSt('cz') === 1 && F_('zhizun'), scene: async () => {
     await nar('你重回至尊的那天夜里，九天之巅的云散了，露出一座殿。殿门上没有字，门槛上长着一株草，九片叶子。');
     await nar('你把兽皮放在门槛上。草叶动了一下，兽皮上缺的那半篇，一个字一个字地长了出来。');
-    const r = await miniGame('memory', { title: '九叶', desc: '九片剑叶，每一片都对着兽皮上的一个字。把它们一一对上。' }); if (!r.ok) { await nar('有几片叶子对错了，字又缩了回去。'); bsRetry('bs_cz1'); return; }
+    const r = await miniGame('memory', { title: '九叶', desc: '兽皮上缺的字一个一个亮起来。看亮的是哪个字，就把对应的那片叶子放上去。', hint: '看上面亮的是哪个字，<b>点下面对应的那片叶子</b>。点错几次也没关系。', pairs: [['🌿', '草'], ['🗡️', '剑'], ['🍃', '叶'], ['⚡', '雷'], ['🔥', '火'], ['💧', '水'], ['🌙', '月'], ['🪨', '石']], miss: 4 }); if (!r.ok) { await nar('有几片叶子对错了，字又缩了回去。'); bsRetry('bs_cz1'); return; }
     await cine('九片叶子，<br>一片一片落在你的剑上。<br><b>🍃 草字剑诀</b>'); bsGain('caozi'); C.story.f.bs_cz = 2; save(); } },
   { id: 'bs_gz', loc: 'yy_guzu', title: '蛄祖的礼物', when: () => BSQ[6].open() && bsSt('gz') === 0, scene: async () => {
     await nar('蛄祖坐在洞口，手里捏着一只虫子。虫子很小，壳是灰的，看着一点也不起眼。');

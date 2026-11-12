@@ -65,6 +65,6 @@ function miniGiveUp() { const D_ = DLG, M = D_ && D_.mini; if (!M || !M.ask || N
 function miniHtml(M) { const G = MINI[M.kind];
   if (M.ask) return `<div class="line"><div>${sealHtml({ n: M.title, c: '#7a4a1a' })}</div><div class="tx nar">没成……${M.tries ? `（已经试了 ${M.tries + 1} 回）` : ''}要再来一次吗？</div></div><div class="ch"><button class="chb" onclick="miniRetry()">↻ 再试一次</button><button class="chb" onclick="miniGiveUp()">跳过，接着往下</button></div>`;
   if (M.done) return `<div class="line"><div>${sealHtml({ n: M.title, c: '#7a4a1a' })}</div><div class="tx nar">${M.skip ? '先不玩了。' : '<b>成了！</b>'}</div></div>`;
-  return `<div class="line"><div>${sealHtml({ n: M.title, c: '#7a4a1a' })}</div><div class="tx nar">${M.desc || ''}<div class="mhint">${G.hint}</div></div></div>
+  return `<div class="line"><div>${sealHtml({ n: M.title, c: '#7a4a1a' })}</div><div class="tx nar">${M.desc || ''}<div class="mhint">${(M.o && M.o.hint) || G.hint}</div></div></div>
     <div class="mini m-${M.kind}">${now() < M.t0 ? '<div class="mready">准备……</div>' : ''}${G.html.call(G, M)}</div><div class="ch"><button class="chb" onclick="miniSkip()">先不玩了（跳过）</button></div>`; }
 addEventListener('keydown', e => { if (DLG && DLG.mini && !DLG.mini.done && (e.key === ' ' || e.key === 'Enter') && DLG.mini.kind !== 'lights') { e.preventDefault(); miniTap(); } }, true);

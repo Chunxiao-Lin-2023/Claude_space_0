@@ -199,6 +199,11 @@ body.noanim #rumor.on{opacity:1;transform:none}
 @keyframes mbolt{0%,60%{height:0}72.7%{height:50%}85%{height:50%;opacity:1}100%{height:50%;opacity:0}}
 .mgrid{display:grid;gap:8px;width:230px;margin:8px auto}
 .mgrid .cell{aspect-ratio:1;border-radius:10px;border:2px solid #8a6a3a;background:#ede2c8;font-family:var(--fh);font-size:1.6rem;color:#fff;transition:background .15s}
+.mprompt{margin:6px auto 2px;max-width:300px;text-align:center;font-size:1.15rem;font-weight:700;color:#7a2a1a;background:#fff6dc;border:1px dashed #c9a24a;border-radius:10px;padding:6px 10px}
+.mgrid .cell.pick{font-family:inherit;font-size:1.9rem}
+.mgrid .cell.bad{animation:mshake .3s;border-color:#b3342a;background:#f3c9b8}
+@keyframes mshake{25%{translate:-4px 0}75%{translate:4px 0}}
+.mgrid .cell[disabled]{opacity:.55}
 .mgrid .cell.on{background:radial-gradient(#ffe28a,#e0a030);border-color:#b3342a;color:#8a3a14;box-shadow:0 0 12px #e0a030}
 .msneak{display:flex;flex-direction:column;align-items:center;gap:6px}
 .msneak .tiger{font-size:2.6rem;transition:transform .15s}.msneak .tiger.stir{transform:scale(1.15);filter:drop-shadow(0 0 8px #b3342a)}
@@ -4518,7 +4523,7 @@ async function S_lives() {
   await cine('第一世，你是一个铁匠。打了一辈子刀，没打过一架。<br>第二世，你是一个将军。守了一辈子城，城没破。<br>第三世，你是一个乞丐，在一座很大的城门下，看着一个被吊着的人。', 'mem');
   await cine('第四世，你是一棵树。<br>第五世，你是一个母亲，抱着孩子在一个池子边跪了三天。<br>第六世，你是一个守坝的人，一辈子没回过头。', 'mem');
   await cine('第七世，你是一个老人，坐在一个小村子的树桩边，等一个孩子回家。<br>……<br>第八世——<b>它来了</b>。', 'mem');
-  const mm = await miniGame('memory', { title: '逆活八世', desc: '八辈子的事，一件一件地对上——铁匠的锤，将军的盾，乞丐的碗，一棵树，一个母亲，一道坝，一把椅子，一柄剑。' });
+  const mm = await miniGame('memory', { title: '逆活八世', desc: '八辈子的事，一件一件地对上——铁匠的锤，将军的盾，乞丐的碗，一棵树，一个母亲，一道坝，一截树桩，一柄剑。' });
   if (mm.ok) { F().baxiMem = 1; await nar('八世的你，一个一个对上了。你忽然看清了每一世里那个影子——它出手之前，总是先往左边看一眼。'); }
   else await nar('有几世，你怎么也想不起来了。它们像河里的光，一晃就过去了。');
   await say('前世之敌', '每一世，我都会找到你。（一个看不清脸的影子站在你面前）上一世，我杀过你一次。这一世——');
@@ -5091,7 +5096,7 @@ function miniGiveUp() { const D_ = DLG, M = D_ && D_.mini; if (!M || !M.ask || N
 function miniHtml(M) { const G = MINI[M.kind];
   if (M.ask) return `<div class="line"><div>${sealHtml({ n: M.title, c: '#7a4a1a' })}</div><div class="tx nar">没成……${M.tries ? `（已经试了 ${M.tries + 1} 回）` : ''}要再来一次吗？</div></div><div class="ch"><button class="chb" onclick="miniRetry()">↻ 再试一次</button><button class="chb" onclick="miniGiveUp()">跳过，接着往下</button></div>`;
   if (M.done) return `<div class="line"><div>${sealHtml({ n: M.title, c: '#7a4a1a' })}</div><div class="tx nar">${M.skip ? '先不玩了。' : '<b>成了！</b>'}</div></div>`;
-  return `<div class="line"><div>${sealHtml({ n: M.title, c: '#7a4a1a' })}</div><div class="tx nar">${M.desc || ''}<div class="mhint">${G.hint}</div></div></div>
+  return `<div class="line"><div>${sealHtml({ n: M.title, c: '#7a4a1a' })}</div><div class="tx nar">${M.desc || ''}<div class="mhint">${(M.o && M.o.hint) || G.hint}</div></div></div>
     <div class="mini m-${M.kind}">${now() < M.t0 ? '<div class="mready">准备……</div>' : ''}${G.html.call(G, M)}</div><div class="ch"><button class="chb" onclick="miniSkip()">先不玩了（跳过）</button></div>`; }
 addEventListener('keydown', e => { if (DLG && DLG.mini && !DLG.mini.done && (e.key === ' ' || e.key === 'Enter') && DLG.mini.kind !== 'lights') { e.preventDefault(); miniTap(); } }, true);
 
@@ -7340,7 +7345,7 @@ EVENTS.push(
   { id: 'bs_cz1', loc: 'jt_peak', title: '至尊殿堂', when: () => BSQ[5].open() && bsSt('cz') === 1 && F_('zhizun'), scene: async () => {
     await nar('你重回至尊的那天夜里，九天之巅的云散了，露出一座殿。殿门上没有字，门槛上长着一株草，九片叶子。');
     await nar('你把兽皮放在门槛上。草叶动了一下，兽皮上缺的那半篇，一个字一个字地长了出来。');
-    const r = await miniGame('memory', { title: '九叶', desc: '九片剑叶，每一片都对着兽皮上的一个字。把它们一一对上。' }); if (!r.ok) { await nar('有几片叶子对错了，字又缩了回去。'); bsRetry('bs_cz1'); return; }
+    const r = await miniGame('memory', { title: '九叶', desc: '兽皮上缺的字一个一个亮起来。看亮的是哪个字，就把对应的那片叶子放上去。', hint: '看上面亮的是哪个字，<b>点下面对应的那片叶子</b>。点错几次也没关系。', pairs: [['🌿', '草'], ['🗡️', '剑'], ['🍃', '叶'], ['⚡', '雷'], ['🔥', '火'], ['💧', '水'], ['🌙', '月'], ['🪨', '石']], miss: 4 }); if (!r.ok) { await nar('有几片叶子对错了，字又缩了回去。'); bsRetry('bs_cz1'); return; }
     await cine('九片叶子，<br>一片一片落在你的剑上。<br><b>🍃 草字剑诀</b>'); bsGain('caozi'); C.story.f.bs_cz = 2; save(); } },
   { id: 'bs_gz', loc: 'yy_guzu', title: '蛄祖的礼物', when: () => BSQ[6].open() && bsSt('gz') === 0, scene: async () => {
     await nar('蛄祖坐在洞口，手里捏着一只虫子。虫子很小，壳是灰的，看着一点也不起眼。');
@@ -7378,12 +7383,16 @@ for (const H of HIDDEN) if (H.id === 'longnv') H.sk = H.sk.map(s => s === 'lunhu
 
 /* ---------- three small games ---------- */
 Object.assign(MINI, {
-  memory: { title: '逆活八世', hint: '翻开两张，一样的就留下。<b>把八世都对上</b>——翻错太多次，前世就散了。',
-    init(o) { const L = (o.faces || ['🔨', '🛡️', '🥣', '🌳', '🤱', '🧱', '🪑', '⚔️']).slice(0, 8); return { c: shuffle([...L, ...L]), open: [], got: [], miss: 0, lim: o.miss || 10 }; },
-    tap(M, i) { if (typeof i !== 'number' || M.got.includes(i) || M.open.includes(i)) return; if (M.open.length >= 2) M.open = []; M.open.push(i); sfx('click');
-      if (M.open.length === 2) { const [a, b] = M.open; if (M.c[a] === M.c[b]) { M.got.push(a, b); M.open = []; sfx('level'); if (M.got.length === M.c.length) return { end: true, score: M.miss <= 3 ? 3 : M.miss <= 6 ? 2 : 1 }; } else { M.miss++; if (M.miss > M.lim) return { end: false, score: 0 }; } } },
-    html(M) { return `<div class="mgrid" style="grid-template-columns:repeat(4,1fr);width:248px">${M.c.map((f, i) => { const up = M.got.includes(i) || M.open.includes(i); return `<button class="cell ${M.got.includes(i) ? 'on' : ''}" onclick="miniTap(${i})">${up ? f : ''}</button>`; }).join('')}</div>
-        <div class="mmsg">对上 ${M.got.length / 2}/8 · 翻错 <span class="${M.miss > M.lim * 0.7 ? 'bad' : ''}">${M.miss}/${M.lim}</span></div>`; } },
+  /* 对上 (was a 16-card flip game — too hard): one line on top, eight things below, tap the one it means. No memorising, a few slips allowed. */
+  memory: { title: '逆活八世', hint: '看上面写的是哪一世、哪样东西，<b>点下面对应的那一个</b>。点错几次也没关系。',
+    init(o) { const P = (o.pairs || [['🔨', '第一世 · 打铁的铁匠'], ['🛡️', '第二世 · 守城的将军'], ['🥣', '第三世 · 城门下的乞丐'], ['🌳', '第四世 · 一棵树'], ['🤱', '第五世 · 池边跪了三天的母亲'], ['🧱', '第六世 · 守坝的人'], ['🪵', '第七世 · 树桩边等孩子回家的老人'], ['⚔️', '第八世 · 你自己']]).slice(0, 8);
+      return { P, faces: shuffle(P.map(x => x[0])), order: o.inOrder ? P.map((_, i) => i) : shuffle(P.map((_, i) => i)), i: 0, miss: 0, lim: o.miss || 4, bad: -1 }; },
+    tap(M, k) { if (typeof k !== 'number' || M.i >= M.order.length) return; const want = M.P[M.order[M.i]][0];
+      if (M.faces[k] === want) { M.i++; M.bad = -1; M.last = '对上了'; M.lastOk = true; sfx('level'); if (M.i >= M.order.length) return { end: true, score: M.miss === 0 ? 3 : M.miss <= 2 ? 2 : 1 }; }
+      else { M.miss++; M.bad = k; M.last = '不是这个'; M.lastOk = false; sfx('miss'); if (M.miss > M.lim) return { end: false }; } M._dirty = 1; },
+    html(M) { const cur = M.P[M.order[Math.min(M.i, M.order.length - 1)]], done = M.order.slice(0, M.i).map(j => M.P[j][0]);
+      return `<div class="mprompt">${esc(cur[1])}</div><div class="mgrid" style="grid-template-columns:repeat(4,1fr);width:248px">${M.faces.map((f, k) => `<button class="cell pick ${done.includes(f) ? 'on' : ''} ${M.bad === k ? 'bad' : ''}" ${done.includes(f) ? 'disabled' : ''} onclick="miniTap(${k})">${f}</button>`).join('')}</div>
+        <div class="mmsg ${M.lastOk ? 'ok' : ''}">${M.last || ''}　对上 ${M.i}/${M.order.length} · 点错 <span class="${M.miss > M.lim * 0.7 ? 'bad' : ''}">${M.miss}/${M.lim}</span></div>`; } },
   clones: { title: '他化自在', hint: '追兵从三路来。<b>哪一路亮起 ⚠，就点哪一路</b>——让那一路的你挡住它。',
     init: o => ({ n: o.n || 8, need: o.need || 6, i: 0, hits: 0, lane: rint(0, 2), T: o.T || 1500 }),
     next(M, ok, msg) { M.hits += ok; M.last = msg; M.lastOk = ok; sfx(ok ? 'hit' : 'miss'); M.i++; M.t0 = now(); M.lane = rint(0, 2); M._dirty = 1; if (M.i >= M.n) return { end: M.hits >= M.need, score: M.hits >= M.n ? 3 : 2 }; },
@@ -7796,7 +7805,7 @@ async function dieBack7() {
   const sw = await miniGame('mash', { title: '逆流', desc: '黑河往下流。你往上游——别让它把你带走！', time: 7500, rate: 7 });
   await nar(sw.ok ? '你一下一下地往上划。河水推你，灯里的孩子们在后面推你。' : '河水把你冲下去三次。第四次，好几盏灯一起撞在你背上——是灯里的孩子，在推你。');
   await nar('你游到了河的源头。那里散落着很多碎片——都是你。被神火烧碎的，你自己。');
-  const mm = await miniGame('memory', { title: '拼回自己', desc: '一片一片对上：石锁、兽奶、柳枝、毛球、火羽、锈剑、小塔、涅槃池。', faces: ['🪨', '🥛', '🌿', '🐒', '🔥', '🗡️', '🗼', '🌊'], miss: 12 });
+  const mm = await miniGame('memory', { title: '拼回自己', desc: '碎掉的你，一片一片拼回来。上面说的是哪一片，就点哪一个。', hint: '看上面写的是哪一片，<b>点下面对应的那一个</b>。点错几次也没关系。', pairs: [['🪨', '族长逼你举了一年的石锁'], ['🥛', '全村人一口一口喂大你的兽奶'], ['🌿', '雷劈过的柳树上，那根柳枝'], ['🐒', '毛球'], ['🔥', '大红掉下来的火羽'], ['🗡️', '诡爷给的锈剑'], ['🗼', '小塔'], ['🌊', '你烧了三天的涅槃池']], miss: 5 });
   if (sw.ok && mm.ok) { F().dieBack = 1; await nar('每一片都对上了。你从来没有这么清楚地知道，自己是由什么拼起来的。'); }
   else await nar(mm.ok ? '碎片拼回来了。有几道裂缝，可你不在乎——裂缝里，能透进光来。' : '有几片怎么也找不着了。你没再找——缺了几块，也还是你。');
 }

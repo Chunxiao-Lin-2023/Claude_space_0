@@ -13,12 +13,16 @@
 
 /* ---------- three small games ---------- */
 Object.assign(MINI, {
-  memory: { title: '逆活八世', hint: '翻开两张，一样的就留下。<b>把八世都对上</b>——翻错太多次，前世就散了。',
-    init(o) { const L = (o.faces || ['🔨', '🛡️', '🥣', '🌳', '🤱', '🧱', '🪑', '⚔️']).slice(0, 8); return { c: shuffle([...L, ...L]), open: [], got: [], miss: 0, lim: o.miss || 10 }; },
-    tap(M, i) { if (typeof i !== 'number' || M.got.includes(i) || M.open.includes(i)) return; if (M.open.length >= 2) M.open = []; M.open.push(i); sfx('click');
-      if (M.open.length === 2) { const [a, b] = M.open; if (M.c[a] === M.c[b]) { M.got.push(a, b); M.open = []; sfx('level'); if (M.got.length === M.c.length) return { end: true, score: M.miss <= 3 ? 3 : M.miss <= 6 ? 2 : 1 }; } else { M.miss++; if (M.miss > M.lim) return { end: false, score: 0 }; } } },
-    html(M) { return `<div class="mgrid" style="grid-template-columns:repeat(4,1fr);width:248px">${M.c.map((f, i) => { const up = M.got.includes(i) || M.open.includes(i); return `<button class="cell ${M.got.includes(i) ? 'on' : ''}" onclick="miniTap(${i})">${up ? f : ''}</button>`; }).join('')}</div>
-        <div class="mmsg">对上 ${M.got.length / 2}/8 · 翻错 <span class="${M.miss > M.lim * 0.7 ? 'bad' : ''}">${M.miss}/${M.lim}</span></div>`; } },
+  /* 对上 (was a 16-card flip game — too hard): one line on top, eight things below, tap the one it means. No memorising, a few slips allowed. */
+  memory: { title: '逆活八世', hint: '看上面写的是哪一世、哪样东西，<b>点下面对应的那一个</b>。点错几次也没关系。',
+    init(o) { const P = (o.pairs || [['🔨', '第一世 · 打铁的铁匠'], ['🛡️', '第二世 · 守城的将军'], ['🥣', '第三世 · 城门下的乞丐'], ['🌳', '第四世 · 一棵树'], ['🤱', '第五世 · 池边跪了三天的母亲'], ['🧱', '第六世 · 守坝的人'], ['🪵', '第七世 · 树桩边等孩子回家的老人'], ['⚔️', '第八世 · 你自己']]).slice(0, 8);
+      return { P, faces: shuffle(P.map(x => x[0])), order: o.inOrder ? P.map((_, i) => i) : shuffle(P.map((_, i) => i)), i: 0, miss: 0, lim: o.miss || 4, bad: -1 }; },
+    tap(M, k) { if (typeof k !== 'number' || M.i >= M.order.length) return; const want = M.P[M.order[M.i]][0];
+      if (M.faces[k] === want) { M.i++; M.bad = -1; M.last = '对上了'; M.lastOk = true; sfx('level'); if (M.i >= M.order.length) return { end: true, score: M.miss === 0 ? 3 : M.miss <= 2 ? 2 : 1 }; }
+      else { M.miss++; M.bad = k; M.last = '不是这个'; M.lastOk = false; sfx('miss'); if (M.miss > M.lim) return { end: false }; } M._dirty = 1; },
+    html(M) { const cur = M.P[M.order[Math.min(M.i, M.order.length - 1)]], done = M.order.slice(0, M.i).map(j => M.P[j][0]);
+      return `<div class="mprompt">${esc(cur[1])}</div><div class="mgrid" style="grid-template-columns:repeat(4,1fr);width:248px">${M.faces.map((f, k) => `<button class="cell pick ${done.includes(f) ? 'on' : ''} ${M.bad === k ? 'bad' : ''}" ${done.includes(f) ? 'disabled' : ''} onclick="miniTap(${k})">${f}</button>`).join('')}</div>
+        <div class="mmsg ${M.lastOk ? 'ok' : ''}">${M.last || ''}　对上 ${M.i}/${M.order.length} · 点错 <span class="${M.miss > M.lim * 0.7 ? 'bad' : ''}">${M.miss}/${M.lim}</span></div>`; } },
   clones: { title: '他化自在', hint: '追兵从三路来。<b>哪一路亮起 ⚠，就点哪一路</b>——让那一路的你挡住它。',
     init: o => ({ n: o.n || 8, need: o.need || 6, i: 0, hits: 0, lane: rint(0, 2), T: o.T || 1500 }),
     next(M, ok, msg) { M.hits += ok; M.last = msg; M.lastOk = ok; sfx(ok ? 'hit' : 'miss'); M.i++; M.t0 = now(); M.lane = rint(0, 2); M._dirty = 1; if (M.i >= M.n) return { end: M.hits >= M.need, score: M.hits >= M.n ? 3 : 2 }; },
@@ -431,7 +435,7 @@ async function dieBack7() {
   const sw = await miniGame('mash', { title: '逆流', desc: '黑河往下流。你往上游——别让它把你带走！', time: 7500, rate: 7 });
   await nar(sw.ok ? '你一下一下地往上划。河水推你，灯里的孩子们在后面推你。' : '河水把你冲下去三次。第四次，好几盏灯一起撞在你背上——是灯里的孩子，在推你。');
   await nar('你游到了河的源头。那里散落着很多碎片——都是你。被神火烧碎的，你自己。');
-  const mm = await miniGame('memory', { title: '拼回自己', desc: '一片一片对上：石锁、兽奶、柳枝、毛球、火羽、锈剑、小塔、涅槃池。', faces: ['🪨', '🥛', '🌿', '🐒', '🔥', '🗡️', '🗼', '🌊'], miss: 12 });
+  const mm = await miniGame('memory', { title: '拼回自己', desc: '碎掉的你，一片一片拼回来。上面说的是哪一片，就点哪一个。', hint: '看上面写的是哪一片，<b>点下面对应的那一个</b>。点错几次也没关系。', pairs: [['🪨', '族长逼你举了一年的石锁'], ['🥛', '全村人一口一口喂大你的兽奶'], ['🌿', '雷劈过的柳树上，那根柳枝'], ['🐒', '毛球'], ['🔥', '大红掉下来的火羽'], ['🗡️', '诡爷给的锈剑'], ['🗼', '小塔'], ['🌊', '你烧了三天的涅槃池']], miss: 5 });
   if (sw.ok && mm.ok) { F().dieBack = 1; await nar('每一片都对上了。你从来没有这么清楚地知道，自己是由什么拼起来的。'); }
   else await nar(mm.ok ? '碎片拼回来了。有几道裂缝，可你不在乎——裂缝里，能透进光来。' : '有几片怎么也找不着了。你没再找——缺了几块，也还是你。');
 }
