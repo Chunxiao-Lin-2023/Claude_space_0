@@ -167,9 +167,9 @@ function stFxOver(g, list, dark) { const F = STG.fx, t = STG.t, H = (i, k) => ha
   if (F.lightning) { STG.ltT = (STG.ltT ?? 2) - 1 / 30; if (STG.ltT <= 0) { STG.ltT = 3 + Math.random() * 4; STG.flash = .9; sfx('boom'); } }
   if (F.chroma || STG.glitch > .3) { const T = STG.ct || (STG.ct = mk(SW, SH)), tg = T.getContext('2d'); tg.clearRect(0, 0, SW, SH); tg.drawImage(g.canvas, 0, 0); g.globalCompositeOperation = 'lighter'; g.globalAlpha = .16; g.drawImage(T, 2, 0); g.drawImage(T, -2, 1); g.globalAlpha = 1; g.globalCompositeOperation = 'source-over'; } }
 /* 镜头推近某个人（^zoom 名字 [倍数] / ^zoom off） */
-function stZoom(full, g) { const Z = STG.zoom; if (!Z) return; Z.z += (Z.k - Z.z) * .14; const a = stFind(Z.n), ax = a ? a.x : SW / 2, ay = a ? FEET - (GHOST_OF[Z.n] ? GH[GHOST_OF[Z.n][0]].h * .7 : 18) : SH / 2;
+function stZoom(full, g) { STG.zoomT = null; const Z = STG.zoom; if (!Z) return; Z.z += (Z.k - Z.z) * .14; const a = stFind(Z.n), pr = !a && STG.props[Z.n], ax = a ? a.x : pr ? pr[1] * 16 + 8 : SW / 2, ay = a ? FEET - (GHOST_OF[Z.n] ? GH[GHOST_OF[Z.n][0]].h * .7 : 18) : pr ? pr[2] * 16 + 7 : SH / 2;
   const T = STG.zt || (STG.zt = mk(SW, SH)), tg = T.getContext('2d'); tg.clearRect(0, 0, SW, SH); tg.drawImage(full, 0, 0); const w = SW / Z.z, h = SH / Z.z, sx = clamp(ax - w / 2, 0, SW - w), sy = clamp(ay - h / 2, 0, SH - h);
-  g.imageSmoothingEnabled = false; g.drawImage(T, sx, sy, w, h, 0, 0, SW, SH); STG.zoomX = (ax - sx) * Z.z; }
+  g.imageSmoothingEnabled = false; g.drawImage(T, sx, sy, w, h, 0, 0, SW, SH); STG.zoomX = (ax - sx) * Z.z; STG.zoomT = { sx, sy, z: SW / w }; }
 
 /* ================= 新道具：墙里的脸、吊着的布偶、血字、三个人的合影 ================= */
 Object.assign(SPR, {

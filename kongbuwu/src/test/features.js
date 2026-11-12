@@ -149,5 +149,15 @@ const { chromium } = require('playwright');
       const pr2 = D.receive('mh'); await wait(() => D.HS && !!document.querySelector('#hsset .hs-sb'), 4000); const g0 = C.hh.good + C.hh.bad; hsCancel(); await pr2; ok('布置时可以不接了（不算好评差评）', C.hh.good + C.hh.bad === g0 && !D.STATE.house); }
     { D.instant = true; C = await fresh(3); D.auto = true; C.tick = 0; D.go('hh_door', true, true); await D.receive('ws'); const L = D.HS_LAST; ok('每场有评级和最狠的一下', ['S', 'A', 'B', 'C'].includes(L.grade) && (L.res === 'lose' || !!L.best), L); }
     { D.instant = true; C = await fresh(3); const o = { mobs: [['zhangpeng', 5]], chase: D.HCHASE.zhangpeng }; await chasePhase(o); ok('追逐甩开以后：对方开场带破绽、发懵', o.pre.some(p => p[1] === 'vuln') && o.pre.some(p => p[1] === 'stun') && !o.chase); }
+    /* 19 回忆 / 梦 / 传闻 */
+    { D.instant = true; C = await fresh(3); D.auto = true; await wait(() => !D.STATE.scene, 5000); D.auto = false; UI.ff = false; let fin = 0;
+      D.runScene(async () => { await D.T_('徐婉|现在\n^fx dark\n^recall dream 测试的梦\n^stage wardhall\n^at 人影 9\n门楠|梦里\n^recall off\n徐婉|回来了'); fin = 1; }); await tick(140); dlgTap(); await tick(80);
+      ok('^recall：现在台上的人先存起来，台上只剩回忆里的', !stFind('徐婉') && !stFind('陈歌') && !!stFind('人影') && STG.rec && STG.rec.k === 'dream', STG.sc.map(a => a.name));
+      ok('回忆里说话的人只出声音，不自动上台', !stFind('门楠'));
+      ok('对白框挂上“梦”的牌子、纸换颜色', /梦 · 测试的梦/.test(document.querySelector('#dlg .dh').textContent) && document.body.classList.contains('rec-dream'));
+      const cv3 = document.createElement('canvas'); cv3.width = 208; cv3.height = 112; let threw = ''; try { for (const k of ['dream', 'past', 'tale']) { STG.rec.k = k; for (let i = 0; i < 6; i++) { stageTick(.05, STG.sc); stageDraw(cv3, STG.sc, true); } } STG.rec.k = 'dream'; } catch (e) { threw = e.message; } ok('三种回忆画面都画得出来', !threw, threw);
+      await tick(140); dlgTap(); await tick(60); ok('^recall off：原样回到现在（人、效果都在）', !!stFind('徐婉') && !!stFind('陈歌') && !stFind('人影') && STG.fx.dark && !STG.rec, STG.sc.map(a => a.name));
+      await tick(60); ok('回到现在以后牌子撤掉', !/梦 ·/.test(document.querySelector('#dlg .dh').textContent) && !document.body.classList.contains('rec-dream'));
+      dlgTap(); await wait(() => fin, 3000); D.STATE.scene = false; }
     return R.concat(window.__unh || []); });
   for (const l of res) console.log(l); console.log('errors', errs); const bad = res.filter(l => !l.startsWith('ok')).length; console.log(res.length - bad + ' / ' + res.length + ' 通过'); await b.close(); process.exit(errs.length || bad ? 1 : 0); })();

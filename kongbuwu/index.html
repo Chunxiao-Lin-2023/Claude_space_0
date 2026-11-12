@@ -39,6 +39,7 @@ body.m-ex #vEx,body.m-dlg #vDlg,body.m-bt #vBt,body.m-hs #vHs{opacity:1;pointer-
 #vDlg{background:#14110d}.stgw{flex:1 1 auto;min-height:0;display:flex;align-items:center;justify-content:center;padding:10px 10px 0}#stg{width:100%;height:100%;object-fit:contain;image-rendering:pixelated;display:block}#dlg{flex:none}#mini{flex:none}#blk{position:absolute;inset:8px;z-index:6;background:rgba(14,11,8,.97);border:1px solid #5a4a30;border-radius:6px;overflow-y:auto;padding:10px 14px;font-family:'Songti SC',serif;color:#d8cfb8;font-size:.9em;line-height:1.8}#blk p{margin:3px 0}#blk b{color:#c9a45c;font-weight:500}#blk .me{color:#9cc}.dbtn{font-size:.85em;padding:1px 7px;margin-left:6px;border:1px solid #b8a880;border-radius:4px;color:#6a5a3a;font-family:inherit;min-height:24px}.dbtn.on{background:#6a5a3a;color:#fff}#dlg.ph .dbtn{border-color:#600;color:#a33}#vDlg .bgc{filter:blur(6px) brightness(.42) sepia(.4)}
 .dm-dlg{position:absolute!important;top:6px;left:0;right:0;height:38%;overflow:hidden;pointer-events:none;z-index:1}
 #dlg{margin:10px;background:var(--paper);color:var(--pink);border-radius:4px;padding:10px 16px 12px;min-height:34%;max-height:62%;overflow-y:auto;box-shadow:0 8px 30px rgba(0,0,0,.6),inset 0 0 40px rgba(120,90,40,.18);cursor:pointer;display:flex;flex-direction:column;font-family:"Songti SC","Noto Serif SC","STSong",serif}
+.recb{display:inline-block;margin-right:8px;padding:1px 8px;border-radius:2px;letter-spacing:.18em;font-size:.95em;vertical-align:middle}.r-dream{background:#18213c;color:#aec4ff;box-shadow:0 0 10px rgba(110,140,255,.35)}.r-past{background:#3a2810;color:#ecd2a0}.r-tale{background:#1a2420;color:#b8d4bc}body.rec-dream #dlg:not(.ph){background:#dde2ec;box-shadow:0 8px 30px rgba(0,0,0,.6),inset 0 0 50px rgba(60,80,170,.28)}body.rec-past #dlg:not(.ph){background:#e6d6b2;box-shadow:0 8px 30px rgba(0,0,0,.6),inset 0 0 60px rgba(120,80,20,.35)}body.rec-tale #dlg:not(.ph){background:#d8dcd4;box-shadow:0 8px 30px rgba(0,0,0,.6),inset 0 0 50px rgba(40,70,50,.25)}body.rec-dream #dlg .dtext,body.rec-past #dlg .dtext,body.rec-tale #dlg .dtext{font-style:italic}
 #dlg.ph{background:#060606;color:#e02a22;font-family:"SF Mono",Menlo,Consolas,"PingFang SC",monospace;box-shadow:0 0 0 1px #300,0 0 40px rgba(180,0,0,.25);border-radius:14px}
 #dlg .dh{display:flex;justify-content:space-between;align-items:center;font-size:.72em;color:#8a7a5c;margin-bottom:6px;min-height:1.9em}#dlg.ph .dh{color:#711}
 .seal{display:inline-block;padding:1px 10px;border-radius:3px;color:#fff;font-size:1.25em;letter-spacing:.12em;font-weight:600;transform-origin:left center}.seal.in{animation:stamp .25s ease-out}@keyframes stamp{from{transform:scale(1.5) rotate(-4deg);opacity:0}}
@@ -1178,7 +1179,24 @@ async function S_firstday() { await T_(`八点四十五。离乐园开门还有�
 高汝雪|他没骗你们。尸体对我们来说，早就习以为常。
 一个戴遮阳帽、穿白色短裙的女人走过来，所过之处温度都像降了几度。九江医科大学法医学院——鹤山，和他的学姐高汝雪。
 我|（刚开张就碰上法医砸场子。）
-我|进去之前，有件事要告诉二位。我们脚下这片地，五十年前是九江最大的乱葬岗。三十年前建了医院，后来因为一些解释不了的事，搬走了。这座鬼屋，就是用医院旧楼改的。
+^recall tale 脚下这片地
+^stage field
+^fx fog
+^prop g1 gravestone 4 4
+^prop g2 gravestone 7 5 {"flowers":1}
+^prop g3 gravestone 12 4
+^prop g4 gravestone 15 5
+我|进去之前，有件事要告诉二位。我们脚下这片地，五十年前是九江最大的乱葬岗。
+^fx hands
+^sfx wind
+没有碑的坟，一层压着一层。
+^stage corridor
+^fx dark
+^fx flicker
+^creep 戴口罩的护士 14
+我|三十年前建了医院，后来因为一些解释不了的事，搬走了。
+^recall off
+我|这座鬼屋，就是用医院旧楼改的。
 我|本次项目：冥婚。十五分钟内找到出口。实在害怕，就对着监控喊。
 你锁上出口，跑进总控制室。本来不打算用那首曲子的。
 我|是可忍，孰不可忍。`);
@@ -1274,7 +1292,29 @@ async function S_wangqi() { setClock(7, '晚上 8 点');
   await T_(`^in 王琦 15
 王琦在走廊里，往没人住的空房间门缝里塞寻人启事。
 ` + (F().helpWq ? `王琦|你人不错，听我一句：别在这过夜。钱重要还是命重要？` : `王琦|……新来的？别在这过夜。`) + `
-王琦|这楼以前叫富安公寓。五年前一家四口被灭门，凶手到现在都没抓到。出了事才改的名。
+^recall tale 五年前的富安公寓
+^stage fuan
+^at 父亲 6
+^at 母亲 8
+^at 女儿 10
+^at 儿子 12
+王琦|这楼以前叫富安公寓。五年前，这屋里住着一家四口。
+^sfx knock
+^at 人影 17
+^turn 父亲 R
+^turn 母亲 R
+那天晚上，有人敲了三下门。没有人去开，门自己开了。
+^out 父亲
+^out 母亲
+^out 女儿
+^out 儿子
+^fx dark
+^fx blood
+^fx red
+^to 人影 9
+^sfx scream
+王琦|一夜之间，全没了。凶手到现在都没抓到。出了事才改的名。
+^recall off
 王琦|我未婚妻就是在这附近失踪的。每天午夜以后，我都会收到她发来的短信。只有两个字。
 ^prop ph phone 14 5
 他把手机递过来。发件时间：昨天凌晨两点。内容：救我。
@@ -1629,8 +1669,39 @@ async function S_dance() { setClock(10, '凌晨 2 点'); await T_(`^stage corrid
 镜子里，你的背后多了一个低着头的女孩。染血的校服贴在身上，一眼看去，尽是猩红。
 ^at 张雅 7
 她靠在了你的背上。黑发和你的头发，缠在了一起。
-#m很多年前的一个假期。六个女孩在这里练舞。／她带了一盒自己包的糖，想分给室友。只有一个人伸手，又被拦了回去。／老师走后，进来一个男人。他把她叫进了办公室。／另外五个人都看见了。没有一个人站起来。／后来，她从楼上掉了下去。
-#m男人站在五个女孩面前，一个一个地威胁。／其中一个女孩，在笑。
+^recall past 镜子里的往事
+^stage dance
+^at 练舞的女孩 5
+^at 练舞的女孩乙 7
+^at 练舞的女孩丙 9
+^at 练舞的女孩丁 11
+^at 那个女孩 14
+镜子里的画面变了。很多年前的一个假期，六个女孩在这里练舞。
+^prop cd candy 13 5
+^to 那个女孩 12
+她带了一盒自己包的糖，想分给室友。
+^to 练舞的女孩丁 12
+^to 练舞的女孩丙 11
+只有一个人伸手，又被拦了回去。
+^to 练舞的女孩丁 11
+^del cd
+^in 那个男人 17
+^turn 那个女孩 R
+老师走后，进来一个男人。他把她叫进了办公室。
+^out 那个女孩
+^out 那个男人
+另外的人都看见了。没有一个人站起来。
+^fx dark
+^sfx heavy
+^fx flash
+后来，她从楼上掉了下去。
+^in 那个男人 14
+^turn 练舞的女孩乙 R
+男人站在剩下的女孩面前，一个一个地威胁。
+^fx chroma
+^zoom 练舞的女孩乙 2.2
+其中一个女孩，在笑。
+^recall off
 ^fx red
 ^fx pulse
 ^zoom 张雅 2
@@ -1792,8 +1863,24 @@ async function S_fanyu() { await T_(`^in 姑姑 13
 男孩凑到她面前，仰着头，死死盯着她看——直到她离开。
 ^out 徐婉
 ^to 范郁 14
-姑姑|小郁的父母都是暮阳中学的老师，先后失踪。那时候他才五岁。我只能骗他说，爸爸妈妈去了一个叫天堂的地方。
-范郁|天堂在井里。`);
+^recall past 范郁五岁那年
+^stage school
+^at 范郁的爸爸 7
+^at 范郁 9
+^at 范郁的妈妈 11
+姑姑|小郁的父母都是暮阳中学的老师，先后失踪。
+^out 范郁的爸爸
+^wait 500
+^out 范郁的妈妈
+^turn 范郁 L
+姑姑|那时候他才五岁。我只能骗他说，爸爸妈妈去了一个叫天堂的地方。
+^stage wellyard
+^fx dark
+^fx fog
+^at 范郁 9
+^sfx drip
+范郁|天堂在井里。
+^recall off`);
   const c = await choose([['蹲下来，问他愿不愿意画给你看', ''], ['不打扰他，让他在井边多待一会', '']]); F().fanyu = c;
   await T_(c === 0 ? `他画了一栋黑色的房子。房子里，有很多红色的小人。还有两个黑色的。
 他把画送给了你。` : `他趴在井边，很安静。走的时候，他把一张画塞进了你手里：黑色的房子，红色的小人。`);
@@ -2051,7 +2138,25 @@ ${win ? '围观的游客开始排队买票。' : '围观的游客将信将疑，
 async function S_wish() { await T_(`^stage room
 ^prop pp paper 10 5
 圆珠笔在纸上写了一个名字：王欣。
-当年和它一起玩笔仙的五个学生里，有两个被吓出了毛病。它想知道，她后来怎么样了。
+^recall past 当年的笔仙
+^stage classroom
+^fx dark
+^fx candle 9
+^at 男生 6
+^at 女生 8
+^at 王欣 10
+^at 女生乙 11
+^at 男生乙 13
+^prop pq paper 9 5
+当年和它一起玩笔仙的，是五个学生。
+^fx flicker
+^sfx chalk
+^out 女生乙
+^out 男生乙
+笔自己写完了最后一个字。有两个人被吓出了毛病。
+^zoom 王欣 2
+它想知道，她后来怎么样了。
+^recall off
 你打给李队，又按他说的在领养登记网站上找了半个小时。收养她的人，姓顾。给她做过治疗的医生，姓高。
 ^call 高医生
 高医生|我是高汝雪的父亲。她回来以后，三天没敢关灯睡觉。……你想问王欣？
@@ -2130,7 +2235,31 @@ async function S_mennan() { await T_(`^in 门楠 13
 口袋里的圆珠笔动了一下。你摸出来，它在你掌心的纸上写了两个字：` + (F().bixian === 1 ? `有。加班吗？` : `有的。`) + `
 ^del pp` : '') + `
 我|你还记得梦里是什么地方吗？
-门楠|走廊。很多一样的门。我小时候……我曾听他们说过一个词，“第三病栋”。我不知道那是哪。`);
+^recall dream 门楠的梦
+^stage wardhall
+^fx dark
+^fx fog
+^fx flicker
+^at 门楠 4
+^at 人影 15
+门楠|走廊。很多一样的门。我一直往前走，门上都没有号码。
+^to 门楠 7
+^creep 人影 12
+^sfx steps
+门楠|每走几步，我就忍不住回头。每回一次头，他就近一扇门。
+^creep 人影 9
+^turn 门楠 R
+门楠|我不敢跑。好像一跑，他就会知道我在怕他。
+^stage room
+^fx dark
+^at 人影 12
+^sfx breath
+门楠|昨晚我睁开眼，床边站着一个人。低着头，在看我。
+^zoom 人影 2.4
+^fx pulse
+门楠|他的脸……我想不起来。可我知道，我认识他。
+^recall off
+门楠|我小时候……我曾听他们说过一个词，“第三病栋”。我不知道那是哪。`);
   const c = await choose([['“今晚我去你住的地方看看。”', ''], ['“我认识一位心理医生，一起去。”', '高医生']]); F().mennan = c;
   await T_(`~phone
 @第二位特殊游客已经离开，成功获得任务信息！解锁隐藏试炼任务——三个人的房间（尖叫指数一星）：午夜之前抵达海明公寓，找出特殊游客的病因。
@@ -2143,7 +2272,21 @@ async function S_haiming() { setClock(8, '晚上 11 点'); await T_(`^in 大叔 
 ^out 大叔
 ^in 年轻人 16
 302 的年轻人，隔着门缝说话。
-年轻人|303 以前住的人叫王海明。我听见过他屋里两个声音吵架。其中一个说，要不是怕被“红衣”发现，宁死也不跟一个垃圾共存。
+^recall tale 302 隔着墙听见的
+^stage apt303
+^fx dark
+^fx candle 8
+^at 王海明 8
+^at 影子 10
+^turn 王海明 R
+^turn 影子 L
+年轻人|303 以前住的人叫王海明。我听见过他屋里两个声音吵架。
+^fx chroma
+年轻人|可那屋里，从来只住着他一个人。
+^to 影子 9
+^fx flicker
+年轻人|其中一个说，要不是怕被“红衣”发现，宁死也不跟一个垃圾共存。
+^recall off
 我|红衣？
 你打开好感度页面。小小的名字后面写着“厉鬼”。张雅后面，是“红衣厉鬼”。
 ^stage apt303
@@ -2229,7 +2372,18 @@ async function S_cat() { await T_(`^stage park
   gainPet('canmian'); petAff('canmian', 15); if (ok) petAff('canmian', 15); C.hh.scenes.push('my');
   const win = await fight({ scare: 1, scene: 'my', mobs: [['wanghl', L(1)], ['wangwl', L(0)]], title: '暮阳中学 · 两万元', epic: { name: '王海龙', sub: '开业第一天 · 奖金两万', seal: '挑战', intro: ['教室中间，一个人偶的领口上挂着校牌。', '想拿到，得从所有人偶中间穿过去。', '“一开局就是地狱难度？”'], phase: '龙哥没哭！是这屋里灰大！' } });
   await T_(`${win ? '龙哥是哭着出来的。' : '龙哥撑到了最后，一个校牌都没拿全。'}
-王海龙|老板……我弟弟王声龙，小时候住过院。出来以后，他说有个“很高的人”一直踩在他肩膀上，跟他玩一个游戏，叫“看谁先开口说话”。
+^recall past 王声龙小时候
+^stage oldward
+^fx dark
+^at 瘦长怪物 9
+^at 王声龙 9
+王海龙|老板……我弟弟王声龙，小时候住过院。
+^sfx creak
+^zoom 瘦长怪物 1.35
+王海龙|出来以后，他说有个“很高的人”一直踩在他肩膀上，跟他玩一个游戏，叫“看谁先开口说话”。
+^fx pulse
+病床边的孩子两只手捂着嘴，一整夜没敢出声。
+^recall off
 王海龙|他住的那个地方，叫第三封闭病区。也有人叫它——第三病栋。
 所有的线索，都指向同一个地方。`); C.hh.total += 12; C.hh.month += 12; }
 
@@ -2408,10 +2562,62 @@ async function S_dean() { setClock(10, '凌晨 2 点'); await T_(`^fx dark
 院长办公室。地上散着病例单。里间有一个被警方封条封住的衣柜。
 抽屉里有四封信。寄出去过，又回到了这里。`);
   await look('四封信，信封上的日期一封比一封晚。', [
-    ['第一封', `#m第一封。二十多年前，一个男人送来一个怀孕的女人，预付了钱，再也没出现。／女人疯得很厉害。孩子在三号病房出生。`],
-    ['第二封', `#m第二封。孩子在病栋里长到三岁。他学什么都快得吓人。／他把吃了药的病人叫作“玩具”。／有一天，他念出了一个名字：何亚军——建楼时出意外死去的工人。没有人告诉过他。`],
-    ['第三封', `#m第三封。“陈医生，我第一次见到这样的孩子。”／母亲病愈出院。那一天，孩子的支柱倒了。／午夜，三号房的门变成了血红色。`],
-    ['第四封', `#m第四封。“门后面有东西在走动。还有咀嚼的声音。”／“方法只有一个：让那个孩子自己进去，把门关上。”`]]);
+    ['第一封', `^recall past 第一封信
+^stage oldward
+^at 男人 16
+^at 孕妇 13
+第一封。二十多年前，一个男人送来一个怀孕的女人，预付了钱，再也没出现。
+^out 男人
+^to 孕妇 9
+^fx flicker
+女人疯得很厉害，整夜对着墙说话。孩子在三号病房出生。
+^recall off`],
+    ['第二封', `^recall past 第二封信
+^stage oldward
+^at 病人 4
+^at 病人乙 14
+^down 病人
+^down 病人乙
+^at 孩子 9
+第二封。孩子在病栋里长到三岁。他学什么都快得吓人。
+^turn 孩子 L
+他把吃了药的病人叫作“玩具”。
+^fx dark
+^fx flicker
+^at 人影 17
+^creep 人影 11
+有一天，他念出了一个名字：何亚军——建楼时出意外死去的工人。没有人告诉过他。
+^recall off`],
+    ['第三封', `^recall past 第三封信
+^stage oldward
+^at 陈医生 6
+^at 孩子 9
+^at 那个女人 13
+第三封。“陈医生，我第一次见到这样的孩子。”
+^out 那个女人
+^turn 孩子 R
+母亲病愈出院。那一天，孩子的支柱倒了。
+^stage doorhall
+^fx dark
+^fx red
+^at 孩子 9
+^sfx creak
+午夜，三号房的门变成了血红色。
+^recall off`],
+    ['第四封', `^recall past 第四封信
+^stage doorhall
+^fx dark
+^fx red
+^at 陈医生 5
+^sfx steps
+第四封。“门后面有东西在走动。还有咀嚼的声音。”
+^fx eyes
+^at 孩子 7
+^to 孩子 9
+“方法只有一个：让那个孩子自己进去，把门关上。”
+^out 孩子
+^sfx door
+^recall off`]]);
   await T_(`^sfx creak
 里间那个衣柜的封条，从里面被顶起了一点，又落了回去。
 我|姓陈的医生……？
@@ -2526,7 +2732,22 @@ async function S_candy() { setClock(10, '凌晨 3 点'); await T_(`^mus door
 我|门楠，你是在这所医院出生的。你在三号病房里长到了三岁。唤醒你身体里最小的那个人格——我要找的是他！
 电话那边沉默了很久。
 门楠|……他不在我身上。他把自己关进了门里。
-门楠|十几年前，院长和一位姓陈的医生来找过我。等我再清醒，已经是午夜十二点。他走之前好像对我说过：如果有一天要去找他，进了门后那个血红色的房间，千万不要开口说话。
+^recall past 门楠的记忆
+^stage room
+^at 小门楠 13
+^in 院长 5
+^in 陈医生 8
+门楠|十几年前，院长和一位姓陈的医生来找过我。
+^fx flicker
+^out 院长
+^out 陈医生
+^fx dark
+^fx steady
+^prop ck wallclock 7 1
+门楠|等我再清醒，已经是午夜十二点。
+^turn 小门楠 F
+门楠|他走之前好像对我说过：如果有一天要去找他，进了门后那个血红色的房间，千万不要开口说话。
+^recall off
 你正要劝张雅离开。
 #r黑发像潮水一样从她身后涌出。／那一袭红衣，直接朝楼下冲了过去。
 ^out 张雅
@@ -2582,9 +2803,24 @@ async function S_boy() { await T_(`^fx red
 我|……厉鬼都这么记仇吗。
 男孩身上，也是一件红衣。他笑着，看了你很久。
 ` + (F().spoke ? `男孩|你开过口。它们都听见了。下次进来，别再喊人的名字。` : `男孩|你一路上没出声。很聪明。上一个这么聪明的人，姓陈。`) + `
-男孩|我答应过陈医生，进了门，就一直守在这里。直到四年前，门被人从外面打开。
+男孩|我答应过陈医生，进了门，就一直守在这里。
+^recall past 四年前
+^stage doorhall
+^fx dark
+^fx red
+^sfx door
+^in 院长 7
+男孩|直到四年前，门被人从外面打开。
+^in 病人 4
+^in 病人乙 5
+^fx glitch
 男孩|院长得了癌症，想进来续命。他带了七个病人。四个被最低级的东西占了身体。剩下的三个，我看不透。
+^at 美丽的女人 11
+^at 毁容的男人 13
+^at 吴非 15
 男孩|一个很美的女人。一个毁了容的男人。还有一个，叫吴非。
+^zoom 吴非 2.2
+^recall off
 他说到最后那个名字的时候，牙咬在了一起。
 男孩|设局害我睡过去的，就是他。他们出去了。你和他们起过冲突，他们会去找你的。
 我|这个世界……到底是什么？
@@ -2839,27 +3075,69 @@ const TALKS = [
 我|你听错了。`, ch: [['“……是新来的。很怕生。”', '徐婉|哦！那我下次给她带糖。\n床底下，有什么东西高兴地滚了一圈。', 5], ['“别乱想，好好扮你的鬼。”', '徐婉|我扮的是鬼，可我怕鬼啊老板！', 2]] },
   { id: 'tk_wan3', npc: 'xuwan', from: 'q_parking', to: 'q_end', s: `徐婉|小魏那封辞职信，你一直没批。
 我|他想回来随时可以回来。${''}`, ch: [['“你当时为什么没走？”', '徐婉|……因为老板你还没发我上个月工资啊。\n她笑了，没说实话。', 6], ['“这个月开始，给你涨工资。”', '徐婉|真的？！老板万岁！', 8]] },
-  { id: 'tk_xu1', npc: 'xushu', from: 'q_attic', to: 'q_parking', s: `徐叔|你爸妈刚来乐园的时候，就一间小屋子。扮鬼、卖票、修道具，全是两个人。
+  { id: 'tk_xu1', npc: 'xushu', from: 'q_attic', to: 'q_parking', s: `^recall past 刚来乐园的时候
+^stage hall
+^at 年轻的爸爸 6
+^at 年轻的妈妈 13
+徐叔|你爸妈刚来乐园的时候，就一间小屋子。扮鬼、卖票、修道具，全是两个人。
+^turn 年轻的爸爸 R
+^to 年轻的妈妈 12
+^fx glitch
+有一个假人的头，跟着他们转了过去。
+^recall off
 徐叔|他们对这地方是有感情的。你也是。我知道。`, ch: [['“他们会回来的。”', '徐叔|……嗯。回来了让他们先把水电费结了。'], ['“徐叔，谢谢你一直帮我拖着。”', '徐叔|少来这套。']] },
   { id: 'tk_xu2', npc: 'xushu', from: 'q_parking', to: 'q_end', s: `徐叔|东郊那边开出了三倍工资挖人。咱们这已经走了四个了。
 我|你呢？`, ch: [['“你要走，我不怪你。”', '徐叔|我走了谁给你看大门？……再说了，我在这二十年了。'], ['“等我把这里做成主题乐园，你当园长。”', '徐叔|你小子……口气越来越像你爸了。']] },
-  { id: 'tk_he1', npc: 'heshan', from: 'q_scene', to: 'q_end', s: `鹤山|老大，我跟你说实话。那天我晕过去以前，看见那个纸人娃娃对我笑了。
+  { id: 'tk_he1', npc: 'heshan', from: 'q_scene', to: 'q_end', s: `^recall past 鹤山晕过去以前
+^stage wedding
+^fx dark
+^fx candle 6
+^at 鹤山 8
+^prop pm paperman 6 4
+鹤山|老大，我跟你说实话。那天我晕过去以前……
+^prop pm paperman 6 4 {"grin":1,"keep":1}
+^zoom pm 2.4
+^sfx giggle
+鹤山|看见那个纸人娃娃，对我笑了。
+^recall off
 鹤山|是机关吧？是吧？`, ch: [['“是机关。”', '鹤山|我就说嘛！……那它为什么第二天换了个位置？\n你没有回答。'], ['“你猜。”', '鹤山|老大你别这样！']] },
   { id: 'tk_he2', npc: 'heshan', from: 'q_well', to: 'q_end', s: `鹤山|学姐的微信我要到了。
 鹤山|是她爸给的。让我转给你。说有问题随时问。
 我|……那是高医生的微信。`, ch: [['“谢了。请你吃饭。”', '鹤山|顺便带我参观新场景！\n他说完自己打了个哆嗦。'], ['“你学姐还好吗？”', '鹤山|她现在路过解剖室都要开灯了。以前她都是摸黑进去的。']] },
-  { id: 'tk_shop1', npc: 'shop', from: 'q_firstday', to: 'q_end', s: `老板娘|小陈，你那鬼屋晚上是不是有人值班？我关门的时候，老看见二楼窗户站着个穿红衣服的。
+  { id: 'tk_shop1', npc: 'shop', from: 'q_firstday', to: 'q_end', s: `^recall tale 老板娘关门的时候
+^stage house
+^at 老板娘 5
+^prop wf winfig 11 1 {"keep":1}
+老板娘|小陈，你那鬼屋晚上是不是有人值班？
+^zoom wf 3
+^sfx wind
+老板娘|我关门的时候，老看见二楼窗户站着个穿红衣服的。
+^recall off
 我|……您看错了。`, ch: [['“可能是道具。”', '老板娘|道具会招手啊？'], ['“下次看见，别跟她招手。”', '老板娘|你这孩子，吓唬阿姨呢。\n她把卷帘门又往下拉了一截。']] },
   { id: 'tk_gao1', npc: 'heshan', from: 'q_wish', to: 'q_end', s: `鹤山|老大，学姐让我带句话：她爸说，你上次问的那个叫王欣的女孩，过得挺好的。
 鹤山|学姐还说……谢谢你那天把她吓哭。她说她好久没哭过了。`, ch: [['“替我谢谢高医生。”', '鹤山|好嘞！……那学姐那句呢？'], ['“让她下次再来，门票打折。”', '鹤山|我不敢转达。']] },
   { id: 'tk_shop2', npc: 'shop', from: 'q_prep', to: 'q_end', s: `老板娘|小陈，盐、鸡、杀猪刀……你这一趟买的东西，我都不敢问。
-老板娘|你爸妈以前也这样。大晚上来买蜡烛和白米。`, ch: [['“他们买那些干什么？”', '老板娘|没说。你妈只说了一句：给“客人”准备的。'], ['“下次给我留几袋盐。”', '老板娘|给你留着。不收钱。']] },
+^recall past 很多年前的晚上
+^stage shop
+^at 老板娘 15
+^in 年轻的爸爸 11
+^in 年轻的妈妈 12
+^prop cl candles 14 3
+^prop rc rice 13 5
+老板娘|你爸妈以前也这样。大晚上来买蜡烛和白米。`, ch: [['“他们买那些干什么？”', '^turn 年轻的妈妈 F\n^zoom 年轻的妈妈 2\n老板娘|没说。你妈只说了一句：给“客人”准备的。\n^recall off'], ['“下次给我留几袋盐。”', '^recall off\n老板娘|给你留着。不收钱。']] },
   { id: 'tk_xu3', npc: 'xushu', from: 'q_boy', to: 'q_end', s: `徐叔|小陈。那晚你在医院里，罗董一直在办公室没走。
 徐叔|他让我跟你说：地下那块地，以后有什么要扩的，直接找他。`, ch: [['“替我谢谢罗董。”', '徐叔|自己去谢。他等着呢。'], ['“徐叔，你也一夜没睡吧。”', '徐叔|……少废话。把水电费交了。']] },
   { id: 'tk_wan4', npc: 'xuwan', from: 'q_boy', to: 'q_end', s: `徐婉|老板，我想好了。我不走了。
 徐婉|反正……别的鬼屋也不会有这么奇怪的老板。`, ch: [['“那从今天起你是正式员工。”', '徐婉|真的？！那我要五险一金！', 8], ['“你确定？这里真的有鬼。”', '徐婉|我知道。……我早就知道了。', 5]] },
-  { id: 'tk_luo1', npc: 'luo', from: 'q_guest', to: 'q_end', s: `罗董|这座乐园，是我女儿出生那年建的。她最喜欢旋转木马。
+  { id: 'tk_luo1', npc: 'luo', from: 'q_guest', to: 'q_end', s: `^recall past 那一年的乐园
+^stage park
+^at 罗董 7
+^at 罗董的女儿 9
+罗董|这座乐园，是我女儿出生那年建的。她最喜欢旋转木马。
+^out 罗董的女儿
+^fx flicker
 他没有往下说。
+^recall off
 你想起了那串塑料手链。`, ch: [['把手链轻轻放在他桌上', '罗董拿起来看了很久。\n罗董|……她还在这里，是不是？\n我|她一直在看着这座乐园。'], ['什么都不说', '有些事，等他自己问。']] }
 ];
 function talkNext(k) { return TALKS.find(t => t.npc === k && inRange(t) && !C.seen[t.id]) || null; }
@@ -2965,10 +3243,10 @@ function relicGain(area) { const s = area ? RELIC_AREA[area] : null; const L = (
 /* —— 15 午夜售票台的特殊游客 —— */
 const SPECIAL = [
   { id: 'sv_rain', n: '穿黄雨衣的小女孩', s: `^at 雨衣女孩 13\n大太阳底下，一个穿黄雨衣的小女孩站在售票台前。雨衣是湿的。\n雨衣女孩|叔叔，今天会下雨吗？`, ch: [['把伞借给她', () => { addItem('g_raincoat', 1, 1); return `她接过伞，没打开，抱在怀里走了。\n^out 雨衣女孩\n傍晚的时候，伞被放回了门口。伞面上全是水。伞柄上挂着一件小雨衣——是给你的。`; }], ['告诉她不会', () => { gainExp(20 + C.lv * 4); return `雨衣女孩|哦。\n她点点头，走进了乐园。\n^out 雨衣女孩\n半小时后下了一场雨，只下在恐怖屋门口那一小块地上。`; }]] },
-  { id: 'sv_old', n: '拿着旧票根的老人', s: `^at 老人 13\n一个老人递过来一张票根。纸已经黄了，上面印着二十年前的日期。\n老人|那时候，里面只有一对年轻夫妻，自己扮鬼，自己卖票。我女儿吓哭了，那个男的蹲下来给了她一颗糖。`, ch: [['请他免费进去', () => { C.hh.spins++; return `老人|……不了。我就是想看看，这地方还在不在。\n^out 老人\n他把票根留在了柜台上。黑色手机震了一下：获得一次免费转盘机会。`; }], ['问他记不记得那对夫妻的样子', () => { gainExp(30 + C.lv * 5); return `老人|那个男的，笑起来跟你一模一样。\n^out 老人\n你在柜台后面站了很久。`; }]] },
+  { id: 'sv_old', n: '拿着旧票根的老人', s: `^at 老人 13\n一个老人递过来一张票根。纸已经黄了，上面印着二十年前的日期。\n^recall past 二十年前\n^stage house\n^at 年轻的妈妈 12\n^at 年轻的爸爸 10\n^at 老人的女儿 8\n^to 年轻的爸爸 9\n^prop cy candy 8 5\n老人|那时候，里面只有一对年轻夫妻，自己扮鬼，自己卖票。我女儿吓哭了，那个男的蹲下来给了她一颗糖。\n^recall off`, ch: [['请他免费进去', () => { C.hh.spins++; return `老人|……不了。我就是想看看，这地方还在不在。\n^out 老人\n他把票根留在了柜台上。黑色手机震了一下：获得一次免费转盘机会。`; }], ['问他记不记得那对夫妻的样子', () => { gainExp(30 + C.lv * 5); return `老人|那个男的，笑起来跟你一模一样。\n^out 老人\n你在柜台后面站了很久。`; }]] },
   { id: 'sv_food', n: '送外卖的小哥', s: `^in 外卖小哥 13\n外卖小哥|恐怖屋三楼……小小收？备注写着：放床底下就行。\n订单上的付款人一栏，是空的。`, ch: [['签收，拿去三楼', () => { if (C.pets.xiaoxiao) petAff('xiaoxiao', 6); else gainMoney(-15); return `一份儿童套餐。你放到了床底下。\n第二天，盒子空了，里面的玩具被摆在了枕头上。`; }], ['说送错了', () => `外卖小哥|可是导航就停在这里啊……\n^out 外卖小哥\n他走了以后，三楼传来一声很小的叹气。`]] },
   { id: 'sv_count', n: '一直在数人数的学生', s: `^in 数数的学生 13\n数数的学生|我们一共五个人。一、二、三、四、五……六？\n他又数了一遍。还是六。他的四个同学都在笑他。`, ch: [['让他们进去', () => { C.fans += 120; return `出来的时候，他们五个人脸都白了。\n他们在门口拍了张合照，发到网上：里面那个人到底是谁？——关注 +120。`; }], ['请他再数一遍', () => { gainExp(20 + C.lv * 4); return `数数的学生|一、二、三、四、五。……五。\n他松了一口气。你没告诉他，第六个刚刚站到了你身后。`; }]] },
-  { id: 'sv_wet', n: '浑身湿透的男人', s: `^at 湿透的男人 13\n^sfx drip\n一个男人站在门口，全身都在往下滴水。\n湿透的男人|请问……你们这里的浴缸，现在有人用吗？`, ch: [['说有人', () => { C.mp = charStats().mmp; return `湿透的男人|那我等一会。\n^out 湿透的男人\n他走了。地上那一摊水，过了一下午都没干。你却觉得脑子清醒了很多。（精神回满）`; }], ['问他为什么问这个', () => { gainExp(25 + C.lv * 4); return `湿透的男人|我在里面待了六十秒。出来以后，就一直是湿的。\n^out 湿透的男人\n你想起了深水那一晚。`; }]] },
+  { id: 'sv_wet', n: '浑身湿透的男人', s: `^at 湿透的男人 13\n^sfx drip\n一个男人站在门口，全身都在往下滴水。\n湿透的男人|请问……你们这里的浴缸，现在有人用吗？`, ch: [['说有人', () => { C.mp = charStats().mmp; return `湿透的男人|那我等一会。\n^out 湿透的男人\n他走了。地上那一摊水，过了一下午都没干。你却觉得脑子清醒了很多。（精神回满）`; }], ['问他为什么问这个', () => { gainExp(25 + C.lv * 4); return `^recall past 那六十秒\n^stage bathroom\n^fx dark\n^fx water\n^at 湿透的男人 13\n湿透的男人|我在里面待了六十秒。出来以后，就一直是湿的。\n^recall off\n^out 湿透的男人\n你想起了深水那一晚。`; }]] },
   { id: 'sv_nurse', n: '戴口罩的护士', need: 'q_ward', s: `^at 戴口罩的护士 13\n一个护士站在售票台前，口罩遮了半张脸。\n戴口罩的护士|请问……第三病栋怎么走？我好像走错路了。`, ch: [['告诉她病栋封了', () => { addItem('bandage', 2); return `戴口罩的护士|封了？……那我的病人怎么办。\n^out 戴口罩的护士\n她在柜台上留下两卷绷带，走了。走路没有声音。`; }], ['给她指路', () => { C.mp = Math.max(0, C.mp - 5); gainExp(40 + C.lv * 5); return `她听完，朝你鞠了一躬。\n^out 戴口罩的护士\n^fx glitch\n她转身的时候，你看见她的腰，折成了一个不可能的角度。（精神 -5）`; }]] },
   { id: 'sv_press', n: '拿录音笔的记者', s: `^in 记者 13\n记者|陈老板，我是做城市怪谈专题的。能聊几句吗？你这里……是真的吗？`, ch: [['“都是真的。”', () => { C.fans += 300; return `记者笑了，在本子上写了一行字。\n第二天的报道标题是：西郊鬼屋老板疑似精神失常。——关注 +300。`; }], ['“都是特效。”', () => { gainMoney(150, '采访费'); return `记者|也是。\n他付了采访费，进去转了一圈。出来的时候，录音笔里多了一段不是他录的笑声。`; }]] },
   { id: 'sv_draw', n: '背画板的孩子', s: `^in 画画的孩子 13\n一个背着画板的孩子坐在恐怖屋对面，画了一下午。\n他把画递给你：恐怖屋的每一扇窗户里，都有一张脸。`, ch: [['把画挂在休息室', () => { for (const k in C.pets) petAff(k, 2); return `你把画挂在了休息室墙上。\n第二天早上，画里窗户上的脸，都换成了笑脸。（员工好感 +2）`; }], ['问他看见了谁', () => { gainExp(20 + C.lv * 4); return `画画的孩子|你身边那个红衣服的姐姐，她一直在看你。\n^out 画画的孩子\n他收起画板，跑了。`; }]] }];
@@ -3466,7 +3744,7 @@ function dlgShow(o) { return new Promise(res => { DLG.prev = DLG.cur && !DLG.cur
 function dlgTap(e) { if (UI.blk) return; if (!DLG.res || !DLG.cur || DLG.cur.choices) return; if (performance.now() - (DLG.t0 || 0) < 120) return; const r = DLG.res; DLG.res = null; r(); }
 function dlgPick(i) { if (!DLG.res || !DLG.cur || !DLG.cur.choices) return; const r = DLG.res, c = DLG.cur.choices[i]; DLG.res = null; journalAdd('▸', c[0] || c); sfx('tap'); r(i); }
 function renderDlg() { const d = $('#dlg'), o = DLG.cur; if (!d || !o) return; DLG.t0 = performance.now(); const ph = o.kind === 'ph'; d.classList.toggle('ph', ph); const who = ph ? '黑色手机' : o.who || '';
-  const q = curQ(); let h = '<div class="dh"><span>' + (who ? '<span class="seal s-' + sealOf(who) + (who !== UI.lastWho ? ' in' : '') + '">' + esc(who) + (NPC_TITLE[who] && who !== UI.lastWho ? '<small>' + NPC_TITLE[who] + '</small>' : '') + '</span>' : '') + '</span><span>' + (STATE.live ? '<span class="live">直播中 ' + hotText() + '</span>' : (q ? '<span class="chn">' + (CH_NAMES[q.ch] || '') + '</span>' : '')) + '<button class="dbtn" onclick="event.stopPropagation();showBacklog()">≡ 回看</button><button class="dbtn' + (UI.ff ? ' on' : '') + '" onclick="event.stopPropagation();toggleFF()">⏩</button></span></div>';
+  const q = curQ(); let h = '<div class="dh"><span>' + recBadge() + (who ? '<span class="seal s-' + sealOf(who) + (who !== UI.lastWho ? ' in' : '') + '">' + esc(who) + (NPC_TITLE[who] && who !== UI.lastWho ? '<small>' + NPC_TITLE[who] + '</small>' : '') + '</span>' : '') + '</span><span>' + (STATE.live ? '<span class="live">直播中 ' + hotText() + '</span>' : (q ? '<span class="chn">' + (CH_NAMES[q.ch] || '') + '</span>' : '')) + '<button class="dbtn" onclick="event.stopPropagation();showBacklog()">≡ 回看</button><button class="dbtn' + (UI.ff ? ' on' : '') + '" onclick="event.stopPropagation();toggleFF()">⏩</button></span></div>';
   UI.lastWho = who; const p = DLG.prev; if (p && p.text && !o.choices) h += '<div class="dprev">' + (p.who ? esc(p.who) + '：' : '') + esc(p.text) + '</div>'; if (o.choices && o.text == null && p && p.text) h += '<div class="dtext' + (p.who ? '' : ' nar') + '">' + esc(p.text) + '</div>';
   if (o.text != null) h += '<div class="dtext' + (o.who || ph ? '' : ' nar') + '">' + esc(o.text) + '</div>';
   if (o.choices) h += '<div class="dch">' + o.choices.map((c, i) => '<button onclick="event.stopPropagation();dlgPick(' + i + ')">' + esc(c[0] || c) + (c[1] ? '<small>' + esc(c[1]) + '</small>' : '') + '</button>').join('') + '</div>'; else h += '<div class="dhint">点击继续 ▼</div>';
@@ -4238,15 +4516,15 @@ function stMirrorDraw(g, list, hero) { const M = STG.mir; if (!M) return; const 
   g.fillStyle = 'rgba(255,255,255,.06)'; g.fillRect(G.x0 + 3, G.y0, 2, G.h); if (STG.fx.dark && !STG.fx.candle) { g.fillStyle = 'rgba(0,0,0,.45)'; g.fillRect(G.x0, G.y0, G.w, G.h); } g.restore();
   /* 从镜子里伸出来的手：苍白，越伸越长，伸向陈歌 */
   if (M.outT) { M.out = Math.min(1, M.out + .03); const sx = G.x0 + G.w / 2, sy = G.y0 + G.h * .55, ex = hero ? hero.x : sx, ey = FEET - 17, L = M.out; g.strokeStyle = '#cfc8be'; g.lineWidth = 3; g.beginPath(); g.moveTo(sx, sy); g.lineTo(sx + (ex - sx) * L, sy + (ey - sy) * L); g.stroke(); g.fillStyle = '#cfc8be'; const hx3 = sx + (ex - sx) * L, hy3 = sy + (ey - sy) * L; g.fillRect(Math.round(hx3) - 2, Math.round(hy3) - 2, 5, 4); for (let i = 0; i < 4; i++) g.fillRect(Math.round(hx3) - 2 + i, Math.round(hy3) + 2, 1, 3); } }
-function stageSceneStart() { STG.zoom = null; STG.bloodT0 = 0; STG.handT0 = 0; STG.mir = null; STATE.musOv = null; stageIdle(); STG.jump = null; STG.glitch = 0; STG.remote = new Set(); STG.cam = null; STG.over = ''; STG.fx = {}; STG.props = {}; STG.sc = [stActor('陈歌', 96)]; const s = STG.ex.filter(a => a.name !== '陈歌'); for (const a of s) STG.sc.push(stActor(a.name, a.x)); STG.lastKey = stageKey(); }
+function stageSceneStart() { STG.rec = null; STG.recStack = []; STG.zoom = null; STG.bloodT0 = 0; STG.handT0 = 0; STG.mir = null; STATE.musOv = null; stageIdle(); STG.jump = null; STG.glitch = 0; STG.remote = new Set(); STG.cam = null; STG.over = ''; STG.fx = {}; STG.props = {}; STG.sc = [stActor('陈歌', 96)]; const s = STG.ex.filter(a => a.name !== '陈歌'); for (const a of s) STG.sc.push(stActor(a.name, a.x)); STG.lastKey = stageKey(); }
 function stageIdle() { if (!C) return; const ns = npcsHere().slice(0, 3); STG.ex = [stActor('陈歌', 120)]; ns.forEach((k, i) => STG.ex.push(stActor(NPCS[k].name, 196 + i * 36, { dir: 1 }))); }
 /* 换了地点或 ^stage：立刻换景（清掉别人、效果、道具），免得下一帧把刚加上的东西又清掉 */
 function stSync() { if (!STATE.scene || !C) return; const k = stageKey(); if (k !== STG.lastKey) { STG.lastKey = k; STG.sc = STG.sc.filter(a => a.name === '陈歌'); STG.fx = {}; STG.props = {}; STG.mir = null; } }
-function stageSpeak(o) { if (!STATE.scene) return; stSync(); let who = o.kind === 'ph' ? '陈歌' : o.who; for (const a of STG.sc) { a.talk = 0; a.phone = 0; } if (!who) return; const remote = STG.remote.has(who) || who === '手机里的声音'; if (remote) who = '陈歌'; const a = who === '陈歌' ? stFind('陈歌') : stEnter(who); if (!a) return; a.talk = 1; a.phone = o.kind === 'ph' || remote;
+function stageSpeak(o) { if (!STATE.scene) return; stSync(); let who = o.kind === 'ph' ? '陈歌' : o.who; for (const a of STG.sc) { a.talk = 0; a.phone = 0; } if (!who) return; const remote = STG.remote.has(who) || who === '手机里的声音'; if (remote) who = '陈歌'; const a = who === '陈歌' || STG.rec ? stFind(who) : stEnter(who); if (!a) return; a.talk = 1; a.phone = o.kind === 'ph' || remote;
   const hero = stFind('陈歌'); if (hero && a !== hero) { a.face = hero.x < a.tx ? 1 : 2; hero.face = hero.x < a.tx ? 2 : 1; } }
 function stageCmd(s) { const p = s.trim().split(/\s+/), c = p[0], n = p[1]; if (c !== 'stage') stSync(); const T = v => v == null || v === '' ? null : Math.round(+v * 16 + 8);
   if (c === 'in' || c === 'at') STG.remote.delete(n);
-  if (c === 'in') stEnter(n, T(p[2])); else if (c === 'at') { const a = stEnter(n, T(p[2]), 1); if (a) a.x = a.tx; } else if (c === 'out') { const a = stFind(n); if (a) { if (a.ghost || !SET.motion) a.ta = 0; else a.tx = a.x > 160 ? SW + 20 : -20; a.leaving = 1; } }
+  if (c === 'in') stEnter(n, T(p[2])); else if (c === 'at') { const a = stEnter(n, T(p[2]), 1); if (a) a.x = a.tx; } else if (c === 'out') { const a = stFind(n); if (a) { if (a.ghost || !SET.motion || STG.rec) a.ta = 0; else a.tx = a.x > 160 ? SW + 20 : -20; a.leaving = 1; } }
   else if (c === 'to') { const a = stFind(n) || stEnter(n); if (a) a.tx = T(p[2]); } else if (c === 'turn') { const a = stFind(n); if (a) a.face = { L: 1, R: 2, F: 0, B: 3 }[p[2]] ?? 0; }
   else if (c === 'down' || c === 'up') { const a = stFind(n); if (a) a.down = c === 'down' ? 1 : 0; }
   else if (c === 'fx') { if (n === 'clear') STG.fx = {}; else if (n === 'flash') STG.flash = 1; else if (n === 'shake') STG.shake = .4; else if (n === 'candle') STG.fx.candle = T(p[2] || 9); else if (n === 'light') { delete STG.fx.dark; delete STG.fx.flicker; } else if (n === 'steady') delete STG.fx.flicker; else if (n === 'glitch') { STG.glitch = .7; if (p[2] === 'on') STG.fx.glitch = 1; else if (p[2] === 'off') delete STG.fx.glitch; sfx('static'); } else if (p[2] === 'off') delete STG.fx[n]; else STG.fx[n] = 1; }
@@ -4254,6 +4532,7 @@ function stageCmd(s) { const p = s.trim().split(/\s+/), c = p[0], n = p[1]; if (
   else if (c === 'creep') { const a = stFind(n) || stEnter(n, T(p[2]), 1); if (a) { a.tx = T(p[2]); a.creep = 1; } }
   else if (c === 'sfx') sfx(n);
   else if (c === 'mirror') stMirror(p);
+  else if (c === 'recall') stRecallCmd(p);
   else if (c === 'zoom') { STG.zoom = n === 'off' ? null : { n, k: +(p[2] || 2), z: STG.zoom ? STG.zoom.z : 1 }; }
   else if (c === 'mus') { STATE.musOv = n === 'off' ? '' : n; musicMode(STATE.musOv); }
   else if (c === 'prop') { let o = {}; try { o = p[5] ? JSON.parse(p.slice(5).join(' ')) : {}; } catch (e) {} STG.props[n] = [p[2], +p[3], +p[4], o]; } else if (c === 'del') delete STG.props[n];
@@ -4265,7 +4544,7 @@ function stageTick(dt, list) { STG.t += dt; if (STG.mir) { const h = list.find(a
     a.alpha += (a.ta - a.alpha) * Math.min(1, dt * 4); }
   for (let i = list.length - 1; i >= 0; i--) { const a = list[i]; if (a.leaving && (a.alpha < .03 || a.x < -16 || a.x > SW + 16)) list.splice(i, 1); }
   STG.flash = Math.max(0, STG.flash - dt * 2.5); STG.shake = Math.max(0, STG.shake - dt); }
-function stageDraw(cv, list, scene) { const full = cv.width < SW ? (STG.full || (STG.full = mk(SW, SH))) : cv; const g = full.getContext('2d'), night = isNight(), key = stageKey(); g.imageSmoothingEnabled = false; if (key !== STG.lastKey && scene) { STG.lastKey = key; STG.sc = STG.sc.filter(a => a.name === '陈歌'); STG.fx = {}; STG.props = {}; } g.save();
+function stageDraw(cv, list, scene) { const full = cv.width < SW ? (STG.full || (STG.full = mk(SW, SH))) : cv; const g = full.getContext('2d'), night = isNight(), key = stageKey(), vx = full !== cv ? (STG.cam || 0) : 0, vw = full !== cv ? cv.width : SW, rec = scene && STG.rec; g.imageSmoothingEnabled = false; if (key !== STG.lastKey && scene) { STG.lastKey = key; STG.sc = STG.sc.filter(a => a.name === '陈歌'); STG.fx = {}; STG.props = {}; } g.save();
   if (STG.shake > 0) g.translate(Math.round((Math.random() - .5) * 6), Math.round((Math.random() - .5) * 4));
   g.drawImage(stageBg(key, night), 0, 0);
   const drawProp = p => { if (SPR[p[0]]) SPR[p[0]](g, Object.assign({ x: p[1], y: p[2] }, p[3]), STG.t, (x, y, w, h, c) => { if (!c) return; g.fillStyle = c; g.fillRect(p[1] * 16 + Math.floor(x), p[2] * 16 + Math.floor(y), Math.ceil(w), Math.ceil(h)); }); };
@@ -4280,10 +4559,10 @@ function stageDraw(cv, list, scene) { const full = cv.width < SW ? (STG.full || 
   g.globalAlpha = 1; for (const id in STG.props) if (STG.props[id][3].front) drawProp(STG.props[id]);
   g.globalAlpha = 1;
   /* 灯光：夜里非乐园的地方，或者剧本关了灯，只剩陈歌的手电 */
-  const S = STAGES[key] || {}, flickOff = stFlickOff(), dark = flickOff ? .985 : STG.fx.dark ? .93 : night ? (PLACES[C.loc].town ? (PLACES[C.loc].area === 'park' && PLACES[C.loc].art !== 'house' && PLACES[C.loc].art !== 'park' ? .5 : .32) : .76) : 0;
+  const S = STAGES[key] || {}, flickOff = stFlickOff(), dark = rec ? (flickOff ? .985 : STG.fx.dark ? .88 : 0) : flickOff ? .985 : STG.fx.dark ? .93 : night ? (PLACES[C.loc].town ? (PLACES[C.loc].area === 'park' && PLACES[C.loc].art !== 'house' && PLACES[C.loc].art !== 'park' ? .5 : .32) : .76) : 0;
   if (dark) { const L = STG.lit || (STG.lit = mk(SW, SH)), lg = L.getContext('2d'); lg.globalCompositeOperation = 'source-over'; lg.clearRect(0, 0, SW, SH); lg.fillStyle = 'rgba(2,3,6,' + dark + ')'; lg.fillRect(0, 0, SW, SH); lg.globalCompositeOperation = 'destination-out';
     const hole = (x, y, r, a) => { const gr = lg.createRadialGradient(x, y, 2, x, y, r); gr.addColorStop(0, 'rgba(0,0,0,' + a + ')'); gr.addColorStop(1, 'rgba(0,0,0,0)'); lg.fillStyle = gr; lg.fillRect(x - r, y - r, r * 2, r * 2); };
-    if (!flickOff && (hero && !PLACES[C.loc].town || STG.fx.dark)) { const hx = hero ? hero.x : 96, dirR = hero && hero.dir !== 1; hole(hx + (dirR ? 26 : -26), FEET - 14, STG.fx.dark ? 40 : 58, 1); hole(hx, FEET - 12, 18, .8); }
+    if (!flickOff && rec) hole(vx + vw / 2, FEET - 22, vw * .42, .8); else if (!flickOff && (hero && !PLACES[C.loc].town || STG.fx.dark)) { const hx = hero ? hero.x : 96, dirR = hero && hero.dir !== 1; hole(hx + (dirR ? 26 : -26), FEET - 14, STG.fx.dark ? 40 : 58, 1); hole(hx, FEET - 12, 18, .8); }
     /* 黑暗里的其他人：留一圈很淡的轮廓光，说话的人亮一点（不然站在门口说话的人整个看不见） */
     if (!flickOff) for (const a of list) if (a !== hero && a.alpha > .1 && !a.leaving) hole(a.x, FEET - 12, a.talk ? 20 : 15, a.talk ? .8 : .45);
     if (STG.fx.candle) { const fl = .85 + Math.sin(STG.t * 17) * .08; hole(STG.fx.candle, FEET - 16, 34 * fl, 1); }
@@ -4299,12 +4578,12 @@ function stageDraw(cv, list, scene) { const full = cv.width < SW ? (STG.full || 
   /* 贴脸：只画头部特写，越来越近 */
   if (STG.jump) { const jx = full !== cv ? (STG.cam || 0) + cv.width / 2 : SW / 2, k = 6.2 + (.75 - STG.jump.t) * 2.4, w = Math.round(16 * k), h = Math.round(13 * k); g.globalAlpha = 1; const bg = g.createRadialGradient(jx, SH / 2, 10, jx, SH / 2, 150); bg.addColorStop(0, '#7a1a16'); bg.addColorStop(1, '#0a0202'); g.fillStyle = bg; g.fillRect(0, 0, SW, SH); if (GHOST_OF[STG.jump.name]) { const G = GH[GHOST_OF[STG.jump.name][0]], T = STG.jt || (STG.jt = mk(32, 64)), tg = T.getContext('2d'); tg.clearRect(0, 0, 32, 64); ghDraw(tg, { name: STG.jump.name, x: G.w / 2, dir: 0, feet: G.h - 2 }, 'body'); const hh = Math.min(18, G.h * .42), kk = k * 13 / hh; g.drawImage(T, 0, 0, G.w, hh, Math.round(jx - G.w * kk / 2 + (Math.random() - .5) * 5), Math.round(SH / 2 - hh * kk * .55), Math.round(G.w * kk), Math.round(hh * kk)); }
     else g.drawImage(personSprite(STG.jump.P, 0, 0), 0, 0, 16, 13, Math.round(jx - w / 2 + (Math.random() - .5) * 5), Math.round(SH / 2 - h * .52 + (Math.random() - .5) * 3), w, h); }
-  g.restore(); stZoom(full, g);
+  g.restore(); stZoom(full, g); if (rec) stRecallDraw(g, vx, vw);
   if (full !== cv) { /* 镜头：对着说话的人和陈歌的中间，慢慢跟过去 */ const vis = list.filter(a => a.alpha > .3 && a.x > -10 && a.x < SW + 10), tk = vis.filter(a => a.talk || a.name === '陈歌'), ax = vis.map(a => a.tx); /* 所有人放得下就都拍进去，放不下才只拍说话的人和陈歌 */ const xs = ax.length && Math.max(...ax) - Math.min(...ax) <= cv.width - 28 ? ax : (tk.length ? tk : vis).map(a => a.tx); const mid = xs.length ? (Math.min(...xs) + Math.max(...xs)) / 2 : SW / 2;
     const want = clamp((STG.zoom ? STG.zoomX : mid) - cv.width / 2, 0, SW - cv.width); STG.cam = STG.cam == null ? want : STG.cam + (want - STG.cam) * .12; const cx = cv.getContext('2d'); cx.imageSmoothingEnabled = false; cx.drawImage(full, Math.round(STG.cam), 0, cv.width, SH, 0, 0, cv.width, SH); } }
 let stLast = 0;
 function stageLoop(ts) { requestAnimationFrame(stageLoop); if (!C || document.hidden) return; if (ts - stLast < 33) return; const dt = Math.min(.1, (ts - stLast) / 1000); stLast = ts;
-  const m = curMode(); if (m === 'bt') return; const scene = m === 'dlg', cv = $(scene ? '#stg' : '#bnr'); if (!cv || !cv.offsetParent) return; const list = scene && STATE.scene ? STG.sc : STG.ex; if (!SET.motion) for (const a of list) a.x = a.tx; stageTick(dt, list); stageDraw(cv, list, scene && STATE.scene); }
+  const m = curMode(); if (m === 'bt') return; const scene = m === 'dlg', cv = $(scene ? '#stg' : '#bnr'); if (!cv || !cv.offsetParent) return; const list = scene && STATE.scene ? STG.sc : STG.ex; recBody(); if (!SET.motion) for (const a of list) a.x = a.tx; stageTick(dt, list); stageDraw(cv, list, scene && STATE.scene); }
 requestAnimationFrame(stageLoop);
 
 /* ================= 小剧场里的怪物（手画像素，比普通小人大 2–3 倍） =================
@@ -4476,9 +4755,9 @@ function stFxOver(g, list, dark) { const F = STG.fx, t = STG.t, H = (i, k) => ha
   if (F.lightning) { STG.ltT = (STG.ltT ?? 2) - 1 / 30; if (STG.ltT <= 0) { STG.ltT = 3 + Math.random() * 4; STG.flash = .9; sfx('boom'); } }
   if (F.chroma || STG.glitch > .3) { const T = STG.ct || (STG.ct = mk(SW, SH)), tg = T.getContext('2d'); tg.clearRect(0, 0, SW, SH); tg.drawImage(g.canvas, 0, 0); g.globalCompositeOperation = 'lighter'; g.globalAlpha = .16; g.drawImage(T, 2, 0); g.drawImage(T, -2, 1); g.globalAlpha = 1; g.globalCompositeOperation = 'source-over'; } }
 /* 镜头推近某个人（^zoom 名字 [倍数] / ^zoom off） */
-function stZoom(full, g) { const Z = STG.zoom; if (!Z) return; Z.z += (Z.k - Z.z) * .14; const a = stFind(Z.n), ax = a ? a.x : SW / 2, ay = a ? FEET - (GHOST_OF[Z.n] ? GH[GHOST_OF[Z.n][0]].h * .7 : 18) : SH / 2;
+function stZoom(full, g) { STG.zoomT = null; const Z = STG.zoom; if (!Z) return; Z.z += (Z.k - Z.z) * .14; const a = stFind(Z.n), pr = !a && STG.props[Z.n], ax = a ? a.x : pr ? pr[1] * 16 + 8 : SW / 2, ay = a ? FEET - (GHOST_OF[Z.n] ? GH[GHOST_OF[Z.n][0]].h * .7 : 18) : pr ? pr[2] * 16 + 7 : SH / 2;
   const T = STG.zt || (STG.zt = mk(SW, SH)), tg = T.getContext('2d'); tg.clearRect(0, 0, SW, SH); tg.drawImage(full, 0, 0); const w = SW / Z.z, h = SH / Z.z, sx = clamp(ax - w / 2, 0, SW - w), sy = clamp(ay - h / 2, 0, SH - h);
-  g.imageSmoothingEnabled = false; g.drawImage(T, sx, sy, w, h, 0, 0, SW, SH); STG.zoomX = (ax - sx) * Z.z; }
+  g.imageSmoothingEnabled = false; g.drawImage(T, sx, sy, w, h, 0, 0, SW, SH); STG.zoomX = (ax - sx) * Z.z; STG.zoomT = { sx, sy, z: SW / w }; }
 
 /* ================= 新道具：墙里的脸、吊着的布偶、血字、三个人的合影 ================= */
 Object.assign(SPR, {
@@ -4531,6 +4810,79 @@ Object.assign(STAGE_PLACE, { hh_rest: 'staffroom', pa_208: 'apt208', hm_303: 'ap
 /* 影子：没有脸的黑色人形，只有两点白（镜头里、身后、楼梯底下“多出来的那个人”） */
 Object.assign(GHOST_OF, { 影子: ['shadow'], 人影: ['shadow'] });
 PPL.影子 = PPL.人影 = P_({ sil: '#060508', ghost: 1 });
+
+/* —— 回忆 / 梦 / 传闻（RULES 28）——
+   有人讲自己的梦、往事、听来的怪事时，小剧场切到“那段画面”，讲完再切回来。
+   ^recall dream|past|tale [标题]   进入：现在台上的人、布景、效果先存起来，台上清空；
+                                     说话的人只出声音（不自动上台），要上台的用 ^at / ^in 摆
+   ^recall off                      回到现在（原样恢复）
+   道具加 {"keep":1} 就不褪色（“整段发黄，只有那件红衣服还是红的”）。
+   回忆里 ^out 的人不走开，是慢慢淡掉（记忆里的人是“没了”，不是“走了”）。
+   dream = 梦（发蓝、水波一样晃、重影、浮着的光点）
+   past  = 回忆（发黄的老胶片：颗粒、划痕、闪烁、上下黑边）
+   tale  = 传闻（灰绿的旧录像：扫描线、一条往下走的噪声带）
+   进入后要先 ^stage 换景，再 ^fx（换景会清掉效果）。对白框上会挂一个“梦 · 标题”的小牌子，纸也换颜色。 */
+const REC_K = { dream: ['梦', 'reverse'], past: ['回忆', 'clock'], tale: ['传闻', 'static'] };
+function stRecallCmd(p) { const k = p[1];
+  if (k === 'off') { const s = (STG.recStack || []).pop(); const was = STG.rec; if (!s) { STG.rec = null; return; } Object.assign(STG, s.st); STG.rec = s.rec; STG.lastKey = stageKey(); if (SET.motion && was) { if (was.k === 'tale') STG.glitch = .35; else STG.flash = .5; } if (typeof renderDlg === 'function' && DLG.cur && !DLG.cur.choices) renderDlg(); return; }
+  if (!REC_K[k]) return;
+  (STG.recStack = STG.recStack || []).push({ rec: STG.rec, st: { over: STG.over, sc: STG.sc, fx: STG.fx, props: STG.props, mir: STG.mir, zoom: STG.zoom, remote: STG.remote, cam: STG.cam } });
+  STG.rec = { k, lab: p.slice(2).join(' '), t0: STG.t }; STG.sc = []; STG.fx = {}; STG.props = {}; STG.mir = null; STG.zoom = null; STG.remote = new Set(); STG.lastKey = stageKey(); sfx(REC_K[k][1]); }
+/* 对白框上的小牌子 */
+function recBadge() { const R = STATE.scene && STG.rec; return R ? '<span class="recb r-' + R.k + '">' + REC_K[R.k][0] + (R.lab ? ' · ' + esc(R.lab) : '') + '</span>' : ''; }
+function recBody() { const k = STATE.scene && STG.rec ? STG.rec.k : ''; if ((document.body.dataset.rec || '') === k) return; document.body.dataset.rec = k; for (const x in REC_K) document.body.classList.toggle('rec-' + x, x === k); }
+/* 画在最上面（镜头推近之后、裁成手机画面之前）；vx/vw = 这一帧能看见的那一段 */
+function stRecallDraw(g, vx, vw) { const R = STG.rec; if (!R) return; const t = STG.t - R.t0, mo = SET.motion, cx = vx + vw / 2;
+  const T = STG.rt || (STG.rt = mk(SW, SH)), tg = T.getContext('2d'); tg.clearRect(0, 0, SW, SH); tg.drawImage(g.canvas, 0, 0);
+  g.save(); g.setTransform(1, 0, 0, 1, 0, 0);
+  if (R.k === 'dream' && mo) { const amp = 1 + Math.max(0, 1.1 - t) * 5; for (let y = 0; y < SH; y += 2) { const dx = Math.round(Math.sin(y * .11 + STG.t * 1.7) * amp); if (dx) g.drawImage(T, 0, y, SW, 2, dx, y, SW, 2); } g.globalAlpha = .16; g.drawImage(T, 3, -1); g.globalAlpha = 1; }
+  /* 去色 + 染色 */
+  g.globalCompositeOperation = 'saturation'; g.globalAlpha = R.k === 'dream' ? .7 : R.k === 'tale' ? .72 : .95; g.fillStyle = '#808080'; g.fillRect(0, 0, SW, SH);
+  g.globalCompositeOperation = 'color'; g.globalAlpha = R.k === 'past' ? .72 : R.k === 'dream' ? .5 : .2; g.fillStyle = R.k === 'past' ? '#a87c48' : R.k === 'dream' ? '#4a6ac0' : '#6aa08a'; g.fillRect(0, 0, SW, SH);
+  g.globalCompositeOperation = 'source-over'; g.globalAlpha = 1;
+  /* 红色留下来（门后的房间、血）：老照片里也要看得出是红的 */
+  if (STG.fx.red || (STAGES[stageKey()] || {}).red) { g.fillStyle = 'rgba(150,12,10,.3)'; g.fillRect(0, 0, SW, SH); }
+  /* 椭圆暗角 */
+  g.save(); g.translate(cx, SH / 2); g.scale(1, .62); const vg = g.createRadialGradient(0, 0, vw * .2, 0, 0, vw * .6); vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, R.k === 'dream' ? 'rgba(4,8,24,.95)' : R.k === 'past' ? 'rgba(22,12,4,.85)' : 'rgba(0,0,0,.65)'); g.fillStyle = vg; g.fillRect(-SW, -SH * 2, SW * 2, SH * 4); g.restore();
+  if (R.k === 'dream') { for (let i = 0; i < 14; i++) { const x = vx + ((hash(i, 41) * vw + STG.t * (4 + hash(i, 42) * 6)) % vw), y = SH - ((hash(i, 43) * SH + STG.t * (5 + hash(i, 44) * 7)) % SH), a = .25 + .3 * Math.sin(STG.t * 2 + i); g.fillStyle = 'rgba(190,210,255,' + a.toFixed(2) + ')'; g.fillRect(x | 0, y | 0, 1, 1); } }
+  if (R.k === 'past') { if (mo) { g.fillStyle = 'rgba(0,0,0,' + (hash(Math.floor(STG.t * 12), 5) * .14).toFixed(3) + ')'; g.fillRect(0, 0, SW, SH);
+      for (let i = 0; i < 34; i++) { g.fillStyle = Math.random() < .5 ? 'rgba(255,238,200,.35)' : 'rgba(0,0,0,.45)'; g.fillRect((vx + Math.random() * vw) | 0, (Math.random() * SH) | 0, 1, 1); }
+      const sk = Math.floor(STG.t * 5); if (hash(sk, 9) > .5) { g.fillStyle = 'rgba(232,216,180,.28)'; g.fillRect((vx + hash(sk, 11) * vw) | 0, 0, 1, SH); } }
+    g.fillStyle = '#000'; g.fillRect(0, 0, SW, 7); g.fillRect(0, SH - 7, SW, 7); }
+  if (R.k === 'tale') { g.fillStyle = 'rgba(0,0,0,.2)'; for (let y = 0; y < SH; y += 2) g.fillRect(0, y, SW, 1);
+    if (mo) { const by = ((STG.t * 24) % (SH + 24)) - 12; for (let y = Math.max(0, by | 0); y < Math.min(SH, (by | 0) + 5); y++) g.drawImage(T, 0, y, SW, 1, Math.round((Math.random() - .5) * 8), y, SW, 1); for (let i = 0; i < 26; i++) { g.fillStyle = 'rgba(220,230,220,' + (Math.random() * .4).toFixed(2) + ')'; g.fillRect((vx + Math.random() * vw) | 0, (by + Math.random() * 6) | 0, 2, 1); } } }
+  /* 进来的那一下 */
+  if (mo && t < .7) { const k = 1 - t / .7;
+    if (R.k === 'dream') { const bg = g.createRadialGradient(cx, SH / 2, 4, cx, SH / 2, vw * .7); bg.addColorStop(0, 'rgba(230,238,255,' + (k * .9).toFixed(2) + ')'); bg.addColorStop(1, 'rgba(120,140,200,' + (k * .5).toFixed(2) + ')'); g.fillStyle = bg; g.fillRect(0, 0, SW, SH); }
+    else if (R.k === 'past') { if (Math.floor(t * 18) % 2 === 0) { g.fillStyle = 'rgba(0,0,0,' + (k * .9).toFixed(2) + ')'; g.fillRect(0, 0, SW, SH); } }
+    else { for (let y = 0; y < SH; y += 1) { g.fillStyle = 'rgba(' + ((Math.random() * 200) | 0) + ',' + ((Math.random() * 210) | 0) + ',' + ((Math.random() * 200) | 0) + ',' + (k * .8).toFixed(2) + ')'; g.fillRect(0, y, SW, 1); } } }
+  g.restore();
+  /* {"keep":1} 的道具不褪色：整段回忆发黄发灰，只有它还是红的 */
+  for (const id in STG.props) { const p = STG.props[id]; if (!p[3].keep || !SPR[p[0]]) continue; g.save(); const Z = STG.zoomT; if (Z) g.setTransform(Z.z, 0, 0, Z.z, -Z.sx * Z.z, -Z.sy * Z.z); else g.setTransform(1, 0, 0, 1, 0, 0);
+    SPR[p[0]](g, Object.assign({ x: p[1], y: p[2] }, p[3]), STG.t, (x, y, w, h, c) => { if (!c) return; g.fillStyle = c; g.fillRect(p[1] * 16 + Math.floor(x), p[2] * 16 + Math.floor(y), Math.ceil(w), Math.ceil(h)); }); g.restore(); } }
+
+/* 回忆里用到的人：都是通用像素小人，不照着原著或改编作品画 */
+Object.assign(PPL, {
+  父亲: P_({ hair: '#1c1a18', hs: 'short', top: '#5a5a6a', bottom: '#2a2a30' }), 母亲: P_({ hair: '#2a1a14', hs: 'bun', top: '#a86a5a', skirt: 1, bottom: '#4a3a3a' }),
+  女儿: P_({ child: 1, hair: '#1a1416', hs: 'twin', top: '#e8b0c0', dress: 1 }), 儿子: P_({ child: 1, hair: '#1a1416', hs: 'short', top: '#4a8ac0', bottom: '#2a3048' }),
+  王海明: P_({ skin: '#d8ccc0', hair: '#1a1614', hs: 'messy', top: '#6a6a5a', bottom: '#3a3a34' }), 王声龙: P_({ child: 1, skin: '#e6dcd6', hair: '#1a1614', hs: 'short', top: '#a8b8c8', bottom: '#a8b8c8' }),
+  练舞的女孩: P_({ hair: '#141214', hs: 'bun', top: '#e8d0d8', dress: 1 }), 练舞的女孩乙: P_({ hair: '#1a1614', hs: 'bun', top: '#d8d8e8', dress: 1 }), 练舞的女孩丙: P_({ hair: '#141214', hs: 'bob', top: '#e8e0d0', dress: 1 }), 练舞的女孩丁: P_({ hair: '#2a1a14', hs: 'bun', top: '#d0e0d8', dress: 1 }),
+  那个女孩: P_({ skin: '#ece4e0', hair: '#0e0c0c', hs: 'long', top: '#f0ece8', dress: 1 }), 那个男人: P_({ skin: '#d8c8b8', hair: '#1a1614', hs: 'short', top: '#2a2a30', bottom: '#1e1e22', tall: 1.15 }),
+  男人: P_({ hair: '#141414', hs: 'short', top: '#3a3430', bottom: '#2a2420', hat: 'cap', hatC: '#2a2420' }), 孕妇: P_({ skin: '#e0d8d4', hair: '#1a1416', hs: 'messy', top: '#c8d0d8', dress: 1 }), 那个女人: P_({ skin: '#e0d8d4', hair: '#1a1416', hs: 'long', top: '#c8d0d8', dress: 1 }),
+  孩子: P_({ child: 1, skin: '#ece6e2', hair: '#141214', hs: 'short', top: '#c8d0d8', bottom: '#c8d0d8', ghost: 1 }), 病人: P_({ skin: '#d8d0cc', hair: '#3a3430', hs: 'messy', top: '#a8b8c8', bottom: '#a8b8c8' }), 病人乙: P_({ skin: '#d8d0cc', hair: '#8a8a88', hs: 'short', top: '#a8b8c8', bottom: '#a8b8c8' }),
+  陈医生: P_({ hair: '#1c1a18', hs: 'short', top: '#ecece8', coat: 1, bottom: '#2a2a30' }), 院长: P_({ skin: '#e0d4c8', hair: '#a8a8a4', hs: 'short', top: '#ecece8', coat: 1, bottom: '#3a3a40' }), 小门楠: P_({ child: 1, hair: '#2a2826', hs: 'messy', top: '#a8b8c8', bottom: '#a8b8c8' }),
+  美丽的女人: P_({ sil: '#2a1e26', hs: 'long', dress: 1, ghost: 1 }), 毁容的男人: P_({ sil: '#2a2424', hs: 'messy', ghost: 1 }), 吴非: P_({ sil: '#141418', hs: 'short', tall: 1.1, ghost: 1 }),
+  范郁的爸爸: P_({ hair: '#1c1a18', hs: 'short', top: '#4a5a4a', bottom: '#2a3028' }), 范郁的妈妈: P_({ hair: '#2a1a14', hs: 'long', top: '#8a6a7a', skirt: 1, bottom: '#3a3040' }),
+  男生: P_({ hair: '#141214', hs: 'short', top: '#2e3e5e', top2: '#e8e8e8', bottom: '#2e3e5e' }), 男生乙: P_({ hair: '#1c1a18', hs: 'messy', top: '#2e3e5e', top2: '#e8e8e8', bottom: '#2e3e5e' }), 女生: P_({ hair: '#141214', hs: 'bob', top: '#2e3e5e', top2: '#e8e8e8', skirt: 1, bottom: '#2e3e5e' }), 女生乙: P_({ hair: '#2a1a14', hs: 'twin', top: '#2e3e5e', top2: '#e8e8e8', skirt: 1, bottom: '#2e3e5e' }), 王欣: P_({ hair: '#141214', hs: 'long', top: '#2e3e5e', top2: '#e8e8e8', skirt: 1, bottom: '#2e3e5e' }),
+  年轻的爸爸: P_({ hair: '#1c1a1e', hs: 'short', top: '#3a4a3a', bottom: '#26262c' }), 年轻的妈妈: P_({ hair: '#1a1416', hs: 'long', top: '#c8b090', skirt: 1, bottom: '#4a3a30' }),
+  罗董的女儿: P_({ child: 1, hair: '#1a1416', hs: 'twin', top: '#e8e4c8', dress: 1 }), 老人的女儿: P_({ child: 1, hair: '#1a1416', hs: 'bob', top: '#e8a0a0', dress: 1 }) });
+/* 回忆里的两处布景 */
+Object.assign(STAGES, {
+  oldward: { wall: 'tile', floor: 'linoleum', grime: 1, props: [['curtain', 2, 1], ['window', 3, 1], ['bed', 4, 3], ['bed', 9, 3], ['bed', 14, 3], ['wallclock', 12, 1], ['wheelchair', 17, 4]] },
+  fuan: { wall: 'paper', floor: 'wood', props: [['window', 3, 1], ['lamp', 5, 3], ['famphoto', 9, 1, { four: 1 }], ['table', 9, 4], ['chair', 8, 4], ['chair', 11, 4], ['tv', 14, 2], ['door', 17, 2]] } });
+/* 窗户里站着一个穿红衣服的，在招手；纸人可以咧嘴 */
+SPR.winfig = function (g, e, t, R) { R(1, 0, 14, 13, '#3a2a1a'); R(2, 1, 12, 11, '#c8a860'); R(2, 1, 12, 2, '#a88848'); R(6, 4, 4, 8, '#8a0a0a'); R(6, 2, 4, 3, '#0e0808'); R(7, 3, 1, 1, '#e8d8d0'); const w = Math.sin(t * 5) > 0 ? -2 : 0; R(10, 4 + w, 1, 4, '#8a0a0a'); R(10, 3 + w, 2, 1, '#e0d0c8'); R(7, 1, 1, 11, '#3a2a1a'); };
+const _pmSpr = SPR.paperman; SPR.paperman = function (g, e, t, R) { _pmSpr(g, e, t, R); if (e.grin) { R(5, 1, 6, 2, '#c03030'); R(6, 1, 4, 1, '#300'); R(6, 0, 1, 1, Math.sin(t * 3) > .7 ? '#c00' : '#111'); R(9, 0, 1, 1, Math.sin(t * 3) > .7 ? '#c00' : '#111'); } };
 
 /* ================= 鬼屋地图：画面、界面、操作 ================= */
 Object.assign(SPR, {

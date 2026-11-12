@@ -48,7 +48,7 @@ if re.search(r'[^:]//[^\n]*\n', game) and re.search(r'^\s*//', game, re.M) is No
 # 小剧场指令：命令名、道具贴图、场景名都要存在（拼错了不会报错，只会什么都不演）
 spr = set(re.findall(r'^  (\w+)\(g, e, t, R\)', game, re.M)) | set(re.findall(r'SPR\.(\w+) = function', game))
 stg = set(re.findall(r'^  (\w+): \{', game[game.find('const STAGES'):game.find('const STAGES') + 400000], re.M))
-cmds = {'in', 'at', 'out', 'to', 'turn', 'down', 'up', 'fx', 'prop', 'del', 'stage', 'call', 'hang', 'wait', 'scare', 'creep', 'sfx', 'mirror', 'mus', 'zoom'}
+cmds = {'in', 'at', 'out', 'to', 'turn', 'down', 'up', 'fx', 'prop', 'del', 'stage', 'call', 'hang', 'wait', 'scare', 'creep', 'sfx', 'mirror', 'mus', 'zoom', 'recall'}
 mirs = {'follow', 'lag', 'stare', 'smile', 'close', 'empty', 'other', 'hand', 'crack', 'out', 'off'}
 moods = set(re.findall(r'^  (\w+): \{ root', game, re.M))
 fxs = {'dark', 'candle', 'rain', 'red', 'tv', 'flash', 'shake', 'light', 'clear', 'flicker', 'steady', 'glitch', 'blood', 'fog', 'eyes', 'hands', 'crack', 'ash', 'pulse', 'chroma', 'lightning', 'water'}
@@ -56,7 +56,7 @@ _sf = game[game.find('const SFX'):game.find('function sfx(')]
 sfxs = set(re.findall(r'(?:^  |[{,;] )(\w+)\(\) \{', _sf, re.M))
 for m in re.finditer(r'(?:\n|`|\\n)~(\w+)', game):
     if m.group(1) not in sfxs: errs.append('音效不存在: ~' + m.group(1))
-for m in re.finditer(r'(?:^|\n|`|\\n)\^(\w+)((?:(?!\\n)[^\n`])*)', game):
+for m in re.finditer(r"(?:^|\n|`|\\n|')\^(\w+)((?:(?!\\n)[^\n`'])*)", game):
     c, rest = m.group(1), m.group(2).split()
     if c not in cmds: errs.append('小剧场指令不存在: ^' + c + ' ' + ' '.join(rest)); continue
     if c == 'prop' and (len(rest) < 4 or rest[1] not in spr): errs.append('小剧场道具贴图不存在: ^prop ' + ' '.join(rest)[:50])
@@ -65,6 +65,7 @@ for m in re.finditer(r'(?:^|\n|`|\\n)\^(\w+)((?:(?!\\n)[^\n`])*)', game):
     if c == 'sfx' and (not rest or rest[0] not in sfxs): errs.append('小剧场声音不存在: ^sfx ' + ' '.join(rest))
     if c == 'mirror' and (not rest or not (rest[0].isdigit() or rest[0] in mirs)): errs.append('^mirror 用法不对: ' + ' '.join(rest))
     if c == 'mus' and (not rest or (rest[0] != 'off' and rest[0] not in moods)): errs.append('^mus 背景氛围不存在: ' + ' '.join(rest))
+    if c == 'recall' and (not rest or rest[0] not in ('dream', 'past', 'tale', 'off')): errs.append('^recall 只能是 dream/past/tale/off: ' + ' '.join(rest))
     if c == 'turn' and (len(rest) < 2 or rest[1] not in 'LRFB'): errs.append('^turn 方向只能是 L/R/F/B: ' + ' '.join(rest))
 if errs: sys.exit('构建检查失败:\n  ' + '\n  '.join(errs))
 tpl = src('template.html')

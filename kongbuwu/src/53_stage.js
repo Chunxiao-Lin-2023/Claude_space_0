@@ -157,15 +157,15 @@ function stMirrorDraw(g, list, hero) { const M = STG.mir; if (!M) return; const 
   g.fillStyle = 'rgba(255,255,255,.06)'; g.fillRect(G.x0 + 3, G.y0, 2, G.h); if (STG.fx.dark && !STG.fx.candle) { g.fillStyle = 'rgba(0,0,0,.45)'; g.fillRect(G.x0, G.y0, G.w, G.h); } g.restore();
   /* 从镜子里伸出来的手：苍白，越伸越长，伸向陈歌 */
   if (M.outT) { M.out = Math.min(1, M.out + .03); const sx = G.x0 + G.w / 2, sy = G.y0 + G.h * .55, ex = hero ? hero.x : sx, ey = FEET - 17, L = M.out; g.strokeStyle = '#cfc8be'; g.lineWidth = 3; g.beginPath(); g.moveTo(sx, sy); g.lineTo(sx + (ex - sx) * L, sy + (ey - sy) * L); g.stroke(); g.fillStyle = '#cfc8be'; const hx3 = sx + (ex - sx) * L, hy3 = sy + (ey - sy) * L; g.fillRect(Math.round(hx3) - 2, Math.round(hy3) - 2, 5, 4); for (let i = 0; i < 4; i++) g.fillRect(Math.round(hx3) - 2 + i, Math.round(hy3) + 2, 1, 3); } }
-function stageSceneStart() { STG.zoom = null; STG.bloodT0 = 0; STG.handT0 = 0; STG.mir = null; STATE.musOv = null; stageIdle(); STG.jump = null; STG.glitch = 0; STG.remote = new Set(); STG.cam = null; STG.over = ''; STG.fx = {}; STG.props = {}; STG.sc = [stActor('陈歌', 96)]; const s = STG.ex.filter(a => a.name !== '陈歌'); for (const a of s) STG.sc.push(stActor(a.name, a.x)); STG.lastKey = stageKey(); }
+function stageSceneStart() { STG.rec = null; STG.recStack = []; STG.zoom = null; STG.bloodT0 = 0; STG.handT0 = 0; STG.mir = null; STATE.musOv = null; stageIdle(); STG.jump = null; STG.glitch = 0; STG.remote = new Set(); STG.cam = null; STG.over = ''; STG.fx = {}; STG.props = {}; STG.sc = [stActor('陈歌', 96)]; const s = STG.ex.filter(a => a.name !== '陈歌'); for (const a of s) STG.sc.push(stActor(a.name, a.x)); STG.lastKey = stageKey(); }
 function stageIdle() { if (!C) return; const ns = npcsHere().slice(0, 3); STG.ex = [stActor('陈歌', 120)]; ns.forEach((k, i) => STG.ex.push(stActor(NPCS[k].name, 196 + i * 36, { dir: 1 }))); }
 /* 换了地点或 ^stage：立刻换景（清掉别人、效果、道具），免得下一帧把刚加上的东西又清掉 */
 function stSync() { if (!STATE.scene || !C) return; const k = stageKey(); if (k !== STG.lastKey) { STG.lastKey = k; STG.sc = STG.sc.filter(a => a.name === '陈歌'); STG.fx = {}; STG.props = {}; STG.mir = null; } }
-function stageSpeak(o) { if (!STATE.scene) return; stSync(); let who = o.kind === 'ph' ? '陈歌' : o.who; for (const a of STG.sc) { a.talk = 0; a.phone = 0; } if (!who) return; const remote = STG.remote.has(who) || who === '手机里的声音'; if (remote) who = '陈歌'; const a = who === '陈歌' ? stFind('陈歌') : stEnter(who); if (!a) return; a.talk = 1; a.phone = o.kind === 'ph' || remote;
+function stageSpeak(o) { if (!STATE.scene) return; stSync(); let who = o.kind === 'ph' ? '陈歌' : o.who; for (const a of STG.sc) { a.talk = 0; a.phone = 0; } if (!who) return; const remote = STG.remote.has(who) || who === '手机里的声音'; if (remote) who = '陈歌'; const a = who === '陈歌' || STG.rec ? stFind(who) : stEnter(who); if (!a) return; a.talk = 1; a.phone = o.kind === 'ph' || remote;
   const hero = stFind('陈歌'); if (hero && a !== hero) { a.face = hero.x < a.tx ? 1 : 2; hero.face = hero.x < a.tx ? 2 : 1; } }
 function stageCmd(s) { const p = s.trim().split(/\s+/), c = p[0], n = p[1]; if (c !== 'stage') stSync(); const T = v => v == null || v === '' ? null : Math.round(+v * 16 + 8);
   if (c === 'in' || c === 'at') STG.remote.delete(n);
-  if (c === 'in') stEnter(n, T(p[2])); else if (c === 'at') { const a = stEnter(n, T(p[2]), 1); if (a) a.x = a.tx; } else if (c === 'out') { const a = stFind(n); if (a) { if (a.ghost || !SET.motion) a.ta = 0; else a.tx = a.x > 160 ? SW + 20 : -20; a.leaving = 1; } }
+  if (c === 'in') stEnter(n, T(p[2])); else if (c === 'at') { const a = stEnter(n, T(p[2]), 1); if (a) a.x = a.tx; } else if (c === 'out') { const a = stFind(n); if (a) { if (a.ghost || !SET.motion || STG.rec) a.ta = 0; else a.tx = a.x > 160 ? SW + 20 : -20; a.leaving = 1; } }
   else if (c === 'to') { const a = stFind(n) || stEnter(n); if (a) a.tx = T(p[2]); } else if (c === 'turn') { const a = stFind(n); if (a) a.face = { L: 1, R: 2, F: 0, B: 3 }[p[2]] ?? 0; }
   else if (c === 'down' || c === 'up') { const a = stFind(n); if (a) a.down = c === 'down' ? 1 : 0; }
   else if (c === 'fx') { if (n === 'clear') STG.fx = {}; else if (n === 'flash') STG.flash = 1; else if (n === 'shake') STG.shake = .4; else if (n === 'candle') STG.fx.candle = T(p[2] || 9); else if (n === 'light') { delete STG.fx.dark; delete STG.fx.flicker; } else if (n === 'steady') delete STG.fx.flicker; else if (n === 'glitch') { STG.glitch = .7; if (p[2] === 'on') STG.fx.glitch = 1; else if (p[2] === 'off') delete STG.fx.glitch; sfx('static'); } else if (p[2] === 'off') delete STG.fx[n]; else STG.fx[n] = 1; }
@@ -173,6 +173,7 @@ function stageCmd(s) { const p = s.trim().split(/\s+/), c = p[0], n = p[1]; if (
   else if (c === 'creep') { const a = stFind(n) || stEnter(n, T(p[2]), 1); if (a) { a.tx = T(p[2]); a.creep = 1; } }
   else if (c === 'sfx') sfx(n);
   else if (c === 'mirror') stMirror(p);
+  else if (c === 'recall') stRecallCmd(p);
   else if (c === 'zoom') { STG.zoom = n === 'off' ? null : { n, k: +(p[2] || 2), z: STG.zoom ? STG.zoom.z : 1 }; }
   else if (c === 'mus') { STATE.musOv = n === 'off' ? '' : n; musicMode(STATE.musOv); }
   else if (c === 'prop') { let o = {}; try { o = p[5] ? JSON.parse(p.slice(5).join(' ')) : {}; } catch (e) {} STG.props[n] = [p[2], +p[3], +p[4], o]; } else if (c === 'del') delete STG.props[n];
@@ -184,7 +185,7 @@ function stageTick(dt, list) { STG.t += dt; if (STG.mir) { const h = list.find(a
     a.alpha += (a.ta - a.alpha) * Math.min(1, dt * 4); }
   for (let i = list.length - 1; i >= 0; i--) { const a = list[i]; if (a.leaving && (a.alpha < .03 || a.x < -16 || a.x > SW + 16)) list.splice(i, 1); }
   STG.flash = Math.max(0, STG.flash - dt * 2.5); STG.shake = Math.max(0, STG.shake - dt); }
-function stageDraw(cv, list, scene) { const full = cv.width < SW ? (STG.full || (STG.full = mk(SW, SH))) : cv; const g = full.getContext('2d'), night = isNight(), key = stageKey(); g.imageSmoothingEnabled = false; if (key !== STG.lastKey && scene) { STG.lastKey = key; STG.sc = STG.sc.filter(a => a.name === '陈歌'); STG.fx = {}; STG.props = {}; } g.save();
+function stageDraw(cv, list, scene) { const full = cv.width < SW ? (STG.full || (STG.full = mk(SW, SH))) : cv; const g = full.getContext('2d'), night = isNight(), key = stageKey(), vx = full !== cv ? (STG.cam || 0) : 0, vw = full !== cv ? cv.width : SW, rec = scene && STG.rec; g.imageSmoothingEnabled = false; if (key !== STG.lastKey && scene) { STG.lastKey = key; STG.sc = STG.sc.filter(a => a.name === '陈歌'); STG.fx = {}; STG.props = {}; } g.save();
   if (STG.shake > 0) g.translate(Math.round((Math.random() - .5) * 6), Math.round((Math.random() - .5) * 4));
   g.drawImage(stageBg(key, night), 0, 0);
   const drawProp = p => { if (SPR[p[0]]) SPR[p[0]](g, Object.assign({ x: p[1], y: p[2] }, p[3]), STG.t, (x, y, w, h, c) => { if (!c) return; g.fillStyle = c; g.fillRect(p[1] * 16 + Math.floor(x), p[2] * 16 + Math.floor(y), Math.ceil(w), Math.ceil(h)); }); };
@@ -199,10 +200,10 @@ function stageDraw(cv, list, scene) { const full = cv.width < SW ? (STG.full || 
   g.globalAlpha = 1; for (const id in STG.props) if (STG.props[id][3].front) drawProp(STG.props[id]);
   g.globalAlpha = 1;
   /* 灯光：夜里非乐园的地方，或者剧本关了灯，只剩陈歌的手电 */
-  const S = STAGES[key] || {}, flickOff = stFlickOff(), dark = flickOff ? .985 : STG.fx.dark ? .93 : night ? (PLACES[C.loc].town ? (PLACES[C.loc].area === 'park' && PLACES[C.loc].art !== 'house' && PLACES[C.loc].art !== 'park' ? .5 : .32) : .76) : 0;
+  const S = STAGES[key] || {}, flickOff = stFlickOff(), dark = rec ? (flickOff ? .985 : STG.fx.dark ? .88 : 0) : flickOff ? .985 : STG.fx.dark ? .93 : night ? (PLACES[C.loc].town ? (PLACES[C.loc].area === 'park' && PLACES[C.loc].art !== 'house' && PLACES[C.loc].art !== 'park' ? .5 : .32) : .76) : 0;
   if (dark) { const L = STG.lit || (STG.lit = mk(SW, SH)), lg = L.getContext('2d'); lg.globalCompositeOperation = 'source-over'; lg.clearRect(0, 0, SW, SH); lg.fillStyle = 'rgba(2,3,6,' + dark + ')'; lg.fillRect(0, 0, SW, SH); lg.globalCompositeOperation = 'destination-out';
     const hole = (x, y, r, a) => { const gr = lg.createRadialGradient(x, y, 2, x, y, r); gr.addColorStop(0, 'rgba(0,0,0,' + a + ')'); gr.addColorStop(1, 'rgba(0,0,0,0)'); lg.fillStyle = gr; lg.fillRect(x - r, y - r, r * 2, r * 2); };
-    if (!flickOff && (hero && !PLACES[C.loc].town || STG.fx.dark)) { const hx = hero ? hero.x : 96, dirR = hero && hero.dir !== 1; hole(hx + (dirR ? 26 : -26), FEET - 14, STG.fx.dark ? 40 : 58, 1); hole(hx, FEET - 12, 18, .8); }
+    if (!flickOff && rec) hole(vx + vw / 2, FEET - 22, vw * .42, .8); else if (!flickOff && (hero && !PLACES[C.loc].town || STG.fx.dark)) { const hx = hero ? hero.x : 96, dirR = hero && hero.dir !== 1; hole(hx + (dirR ? 26 : -26), FEET - 14, STG.fx.dark ? 40 : 58, 1); hole(hx, FEET - 12, 18, .8); }
     /* 黑暗里的其他人：留一圈很淡的轮廓光，说话的人亮一点（不然站在门口说话的人整个看不见） */
     if (!flickOff) for (const a of list) if (a !== hero && a.alpha > .1 && !a.leaving) hole(a.x, FEET - 12, a.talk ? 20 : 15, a.talk ? .8 : .45);
     if (STG.fx.candle) { const fl = .85 + Math.sin(STG.t * 17) * .08; hole(STG.fx.candle, FEET - 16, 34 * fl, 1); }
@@ -218,10 +219,10 @@ function stageDraw(cv, list, scene) { const full = cv.width < SW ? (STG.full || 
   /* 贴脸：只画头部特写，越来越近 */
   if (STG.jump) { const jx = full !== cv ? (STG.cam || 0) + cv.width / 2 : SW / 2, k = 6.2 + (.75 - STG.jump.t) * 2.4, w = Math.round(16 * k), h = Math.round(13 * k); g.globalAlpha = 1; const bg = g.createRadialGradient(jx, SH / 2, 10, jx, SH / 2, 150); bg.addColorStop(0, '#7a1a16'); bg.addColorStop(1, '#0a0202'); g.fillStyle = bg; g.fillRect(0, 0, SW, SH); if (GHOST_OF[STG.jump.name]) { const G = GH[GHOST_OF[STG.jump.name][0]], T = STG.jt || (STG.jt = mk(32, 64)), tg = T.getContext('2d'); tg.clearRect(0, 0, 32, 64); ghDraw(tg, { name: STG.jump.name, x: G.w / 2, dir: 0, feet: G.h - 2 }, 'body'); const hh = Math.min(18, G.h * .42), kk = k * 13 / hh; g.drawImage(T, 0, 0, G.w, hh, Math.round(jx - G.w * kk / 2 + (Math.random() - .5) * 5), Math.round(SH / 2 - hh * kk * .55), Math.round(G.w * kk), Math.round(hh * kk)); }
     else g.drawImage(personSprite(STG.jump.P, 0, 0), 0, 0, 16, 13, Math.round(jx - w / 2 + (Math.random() - .5) * 5), Math.round(SH / 2 - h * .52 + (Math.random() - .5) * 3), w, h); }
-  g.restore(); stZoom(full, g);
+  g.restore(); stZoom(full, g); if (rec) stRecallDraw(g, vx, vw);
   if (full !== cv) { /* 镜头：对着说话的人和陈歌的中间，慢慢跟过去 */ const vis = list.filter(a => a.alpha > .3 && a.x > -10 && a.x < SW + 10), tk = vis.filter(a => a.talk || a.name === '陈歌'), ax = vis.map(a => a.tx); /* 所有人放得下就都拍进去，放不下才只拍说话的人和陈歌 */ const xs = ax.length && Math.max(...ax) - Math.min(...ax) <= cv.width - 28 ? ax : (tk.length ? tk : vis).map(a => a.tx); const mid = xs.length ? (Math.min(...xs) + Math.max(...xs)) / 2 : SW / 2;
     const want = clamp((STG.zoom ? STG.zoomX : mid) - cv.width / 2, 0, SW - cv.width); STG.cam = STG.cam == null ? want : STG.cam + (want - STG.cam) * .12; const cx = cv.getContext('2d'); cx.imageSmoothingEnabled = false; cx.drawImage(full, Math.round(STG.cam), 0, cv.width, SH, 0, 0, cv.width, SH); } }
 let stLast = 0;
 function stageLoop(ts) { requestAnimationFrame(stageLoop); if (!C || document.hidden) return; if (ts - stLast < 33) return; const dt = Math.min(.1, (ts - stLast) / 1000); stLast = ts;
-  const m = curMode(); if (m === 'bt') return; const scene = m === 'dlg', cv = $(scene ? '#stg' : '#bnr'); if (!cv || !cv.offsetParent) return; const list = scene && STATE.scene ? STG.sc : STG.ex; if (!SET.motion) for (const a of list) a.x = a.tx; stageTick(dt, list); stageDraw(cv, list, scene && STATE.scene); }
+  const m = curMode(); if (m === 'bt') return; const scene = m === 'dlg', cv = $(scene ? '#stg' : '#bnr'); if (!cv || !cv.offsetParent) return; const list = scene && STATE.scene ? STG.sc : STG.ex; recBody(); if (!SET.motion) for (const a of list) a.x = a.tx; stageTick(dt, list); stageDraw(cv, list, scene && STATE.scene); }
 requestAnimationFrame(stageLoop);
