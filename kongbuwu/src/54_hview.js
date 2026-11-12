@@ -45,18 +45,20 @@ function hsMapCache(M) { if (M.cache) return M.cache; const c = M.cache = mk(M.w
 function hsSpr(g, e, ox, oy, t) { const fn = SPR[e.spr]; if (!fn) return; const x = Math.round(e.x * 16 - ox), y = Math.round(e.y * 16 - oy); fn(g, e, t, (a, b, w, h, col) => { if (!col) return; g.fillStyle = col; g.fillRect(x + Math.floor(a), y + Math.floor(b), Math.ceil(w), Math.ceil(h)); }); }
 function hsPerson(g, P, x, y, dir, fr, alpha) { const s = personSprite(P, dir, fr), tl = P.tall || 1, h = Math.round(24 * tl); g.globalAlpha = alpha ?? 1; g.drawImage(stTint(s, P.sil), Math.round(x), Math.round(y + 16 - h), 16, h); g.globalAlpha = 1; }
 const HLC = mk(8, 8);
+const HCARRY = P_({ hair: '#1a1614', hs: 'short', top: '#1e1e22', top2: '#c84040', bottom: '#1e1e22' });   /* 收工时抬人的工作人员 */
 /* 被吓到的游客：按姿势画（跳起来 / 摔坐 / 发抖 / 捂眼 / 哭），跑的时候一颠一颠、甩汗（RULES 29） */
-function hsPose(H, v) { const t = H.t, a = t - (v.poseT ?? -9), on = v.st === 'react' || (v.st === 'flee' && v.fleeWait > 0); if (!on) return v.st === 'run' || v.st === 'flee' ? { dy: Math.floor(t * 12) % 2 ? -1 : 0, sweat: 1 } : t < (v.shaky || 0) ? { dx: Math.floor(t * 9) % 3 === 0 ? 1 : 0 } : null;
+function hsPose(H, v) { const t = H.t, a = t - (v.poseT ?? -9), on = v.st === 'react'; if (v.st === 'faint' || v.st === 'carry') return { lie: 1, dx: v.st === 'faint' && a < .25 ? (Math.floor(t * 30) % 2 ? 1 : -1) : 0 }; if (!on) return v.st === 'run' ? { dy: Math.floor(t * 12) % 2 ? -1 : 0, sweat: 1 } : t < (v.shaky || 0) ? { dx: Math.floor(t * 9) % 3 === 0 ? 1 : 0 } : null;
   const sh = Math.floor(t * 30) % 2 ? 1 : -1;
   switch (v.pose) { case 'jump': return { dy: -Math.round(Math.abs(Math.sin(Math.min(1, a / .4) * Math.PI)) * 11 + (a > .4 ? Math.abs(Math.sin(a * 14)) * 1.5 : 0)), dx: a > .4 ? sh * .5 : 0 };
     case 'fall': return { sq: .62, dx: a < .15 ? sh : 0 }; case 'shake': return { dx: sh }; case 'cover': return { sq: .8, dx: sh * .5, cover: 1 }; case 'cry': return { dx: sh * .5, tears: 1 }; } return null; }
 /* 头上的表情：白色小气泡里一个像素符号（不用 emoji：有的手机/浏览器没有 emoji 字体） */
 const HEMO = { '!!': ['#d02020', '.#..#..|.#..#..|.#..#..|.......|.#..#..'], '!!!': ['#d02020', '#.#.#..|#.#.#..|#.#.#..|.......|#.#.#..'], sweat: ['#3a8ad8', '...#...|..###..|.#####.|.#####.|..###..'],
-  '?!': ['#d87a10', '###..#.|..#..#.|.##..#.|.......|.#...#.'], xx: ['#5a3030', '#.#.#.#|.#...#.|#.#.#.#|.......|.......'], TT: ['#3a7ad0', '###.###|.#...#.|.#...#.|.#...#.|.#...#.'] };
+  '?!': ['#d87a10', '###..#.|..#..#.|.##..#.|.......|.#...#.'], xx: ['#5a3030', '#.#.#.#|.#...#.|#.#.#.#|.......|.......'], TT: ['#3a7ad0', '###.###|.#...#.|.#...#.|.#...#.|.#...#.'], dizzy: ['#8a4ad0', '.###...|#...#..|#.#.#..|#..##..|.###...'] };
 function hsEmo(g, k, x, y, age) { const E = HEMO[k]; if (!E) return; const pop = age < .18 ? Math.round((1 - age / .18) * 3) : 0, X = Math.round(x), Y = Math.round(y - 9 + pop);
   g.fillStyle = '#1a1414'; g.fillRect(X - 1, Y, 11, 9); g.fillRect(X, Y - 1, 9, 11); g.fillStyle = '#f4f0e6'; g.fillRect(X, Y, 9, 9); g.fillRect(X + 1, Y + 9, 2, 1); g.fillStyle = '#1a1414'; g.fillRect(X, Y + 10, 1, 1);
   g.fillStyle = E[0]; E[1].split('|').forEach((r, j) => { for (let i = 0; i < 7; i++) if (r[i] === '#') g.fillRect(X + 1 + i, Y + 2 + j, 1, 1); }); }
-function hsPersonPose(g, P, x, y, dir, fr, po, t, alpha) { if (!po) return hsPerson(g, P, x, y, dir, fr, alpha); const s = personSprite(P, po.sq || po.cover || po.tears ? 0 : dir, po.sq ? 0 : fr), tl = P.tall || 1, h = Math.round(24 * tl * (po.sq || 1)), X = Math.round(x + (po.dx || 0)), Y = Math.round(y + 16 - h + (po.dy || 0));
+function hsPersonPose(g, P, x, y, dir, fr, po, t, alpha) { if (!po) return hsPerson(g, P, x, y, dir, fr, alpha);
+  if (po.lie) { const s = personSprite(P, 0, 0), h = Math.round(24 * (P.tall || 1)); g.fillStyle = 'rgba(0,0,0,.3)'; g.fillRect(Math.round(x - 3), Math.round(y + 15), h, 2); g.save(); g.globalAlpha = alpha ?? 1; g.translate(Math.round(x - 4 + (po.dx || 0)), Math.round(y + 16)); g.rotate(-Math.PI / 2); g.drawImage(stTint(s, P.sil), 0, 0, 11, h); g.restore(); return; } const s = personSprite(P, po.sq || po.cover || po.tears ? 0 : dir, po.sq ? 0 : fr), tl = P.tall || 1, h = Math.round(24 * tl * (po.sq || 1)), X = Math.round(x + (po.dx || 0)), Y = Math.round(y + 16 - h + (po.dy || 0));
   g.globalAlpha = alpha ?? 1; g.drawImage(stTint(s, P.sil), X, Y, 16, h); g.globalAlpha = 1;
   if (po.cover) { g.fillStyle = P.skin || '#e8d0b8'; g.fillRect(X + 4, Y + 4, 3, 2); g.fillRect(X + 9, Y + 4, 3, 2); }
   if (po.tears) { g.fillStyle = '#8ac8ff'; const k = Math.floor(t * 8) % 4; g.fillRect(X + 5, Y + 7 + k, 1, 1); g.fillRect(X + 10, Y + 7 + (k + 2) % 4, 1, 1); }
@@ -79,21 +81,23 @@ function hsWorld(H) { const M = H.M, t = H.t; if (!H.world) H.world = mk(M.w * 1
   L.sort((a, b) => a[0] - b[0]);
   for (const [, k, o] of L) {
     if (k === 0) { if (o.hide && H.hero.hidden && H.hero.tx === o.x && H.hero.ty === o.y && !setup) { hsSpr(g, Object.assign({}, o, { open: (t * 2 % 3) < .4 }), ox, oy, t); const x = o.x * 16 - ox, y = o.y * 16 - oy; g.fillStyle = '#e8e0c8'; g.fillRect(x + 5, y - 2, 1, 1); g.fillRect(x + 9, y - 2, 1, 1); } else hsSpr(g, o, ox, oy, t); }
-    else if (k === 1) hsPersonPose(g, o.P, o.x * 16 - ox, o.y * 16 - oy, o.dir, o.mv ? o.fr : 0, hsPose(H, o), t);
+    else if (k === 1) { if (o.st === 'carry') hsPerson(g, HCARRY, o.x * 16 - ox + (o.dir === 1 ? -11 : 11), o.y * 16 - oy - 1, o.dir, o.mv ? o.fr : 0); hsPersonPose(g, o.P, o.x * 16 - ox, o.y * 16 - oy - (o.st === 'carry' ? 5 : 0), o.dir, o.mv ? o.fr : 0, hsPose(H, o), t); }
     else if (k === 3) hsPersonPose(g, o.f.P, o.tr[0] * 16 - ox + 3, o.tr[1] * 16 - oy + 1, o.tr[2], o.tr[3], hsPose(H, o.v), t + .13, .95);
     else if (k === 2) { const pop = o.pop > 0; hsPerson(g, o.P, o.x * 16 - ox, o.y * 16 - oy, pop ? (o.px < o.home[0] ? 1 : o.px > o.home[0] ? 2 : 0) : 0, 0, o.off ? .15 : pop ? 1 : .42); }
     else if (k === 4) { if (!o.hidden) hsPerson(g, o.P, o.x * 16 - ox, o.y * 16 - oy, o.dir, o.mv ? o.fr : 0); }
     else if (k === 5) hsPerson(g, o.P, o.x * 16 - ox + (o.hunt ? (rnd() - .5) * 1.5 : 0), o.y * 16 - oy, o.dir, o.mv ? o.fr : 0, o.ghost ? .88 : 1); }
   /* 黑暗 */ if (!setup) hsDark(H, g, ox, oy);
   else { g.fillStyle = 'rgba(5,4,8,.28)'; g.fillRect(0, 0, W, Hh); }
-  /* 黑暗之上：机关圈、胆量条、气泡标记 */
+  /* 黑暗之上：机关圈、SAN 条、气泡标记 */
   if (!setup) {
     if (H.mode === 'house') for (const s of M.slots) { if (!s.k) continue; const x = s.x * 16 + 8 - ox, y = s.y * 16 + 8 - oy, inr = hDevInRange(H, s), rdy = hDevReady(H, s), tg = rdy && inr && hDevTargets(H, s).length;
       if (tg) { const p = .6 + Math.sin(t * 9) * .4; g.strokeStyle = `rgba(255,70,50,${p})`; g.lineWidth = 1; g.beginPath(); g.arc(x, y, (HB.zone + .5) * 16, 0, 7); g.stroke(); g.fillStyle = 'rgba(255,60,40,.12)'; g.fill(); }
       else if (inr) { g.strokeStyle = rdy ? 'rgba(232,176,74,.55)' : 'rgba(150,150,150,.3)'; g.setLineDash([2, 3]); g.beginPath(); g.arc(x, y, (HB.zone + .5) * 16, 0, 7); g.stroke(); g.setLineDash([]); }
       g.fillStyle = rdy ? (inr ? '#e8b04a' : 'rgba(232,176,74,.5)') : '#555'; g.fillRect(x - 1, y - 12, 2, 2); if (s.cd > 0) { g.fillStyle = '#e8b04a'; g.fillRect(x - 6, y + 9, Math.round(12 * (1 - s.cd / HB.devCd)), 1); } }
-    for (const v of H.vis) { if (v.st === 'wait' || v.st === 'gone') continue; const x = v.x * 16 - ox, y = v.y * 16 - oy - (v.P.tall ? 14 : 10), r = Math.max(0, v.u.hp / v.u.mhp); if (v.st !== 'flee') { g.fillStyle = '#1a0a0a'; g.fillRect(x + 1, y - 3, 14, 3); g.fillStyle = r < .3 ? '#ff5a3a' : r < .6 ? '#e8b04a' : '#9ad0a0'; g.fillRect(x + 2, y - 2, Math.ceil(12 * r), 1); if (v.u.charging || (v.u.intent && v.u.intent.charge)) { g.fillStyle = '#ff3a2a'; g.fillRect(x + 7, y - 9, 2, 4); g.fillRect(x + 7, y - 4, 2, 1); } if (v.u.picky) { g.fillStyle = '#e8b04a'; g.fillRect(x + 13, y - 6, 2, 2); } if (H.hero.chase === v) { g.strokeStyle = '#ff5a3a'; g.strokeRect(x + .5, y + 3.5, 15, 22); } } }
-    for (const v of H.vis) if (v.emo && v.emo.until > t && v.st !== 'gone' && v.st !== 'wait') hsEmo(g, v.emo.s, v.x * 16 - ox + 11, v.y * 16 - oy - (v.P.tall ? 20 : 16), t - (v.poseT ?? t));
+    for (const v of H.vis) { if (v.st === 'wait' || v.st === 'gone') continue; const x = v.x * 16 - ox, y = v.y * 16 - oy - (v.P.tall ? 14 : 10), r = Math.max(0, v.u.hp / v.u.mhp); if (!hOut(v)) { g.fillStyle = '#1a0a0a'; g.fillRect(x + 1, y - 3, 14, 3); g.fillStyle = r < .3 ? '#ff5a3a' : r < .6 ? '#e8b04a' : '#9ad0a0'; g.fillRect(x + 2, y - 2, Math.ceil(12 * r), 1); if (v.u.charging || (v.u.intent && v.u.intent.charge)) { g.fillStyle = '#ff3a2a'; g.fillRect(x + 7, y - 9, 2, 4); g.fillRect(x + 7, y - 4, 2, 1); } if (v.u.picky) { g.fillStyle = '#e8b04a'; g.fillRect(x + 13, y - 6, 2, 2); } if (H.hero.chase === v) { g.strokeStyle = '#ff5a3a'; g.strokeRect(x + .5, y + 3.5, 15, 22); } } }
+    for (const v of H.vis) if (v.emo && v.emo.until > t && v.st !== 'gone' && v.st !== 'wait') hsEmo(g, v.emo.s, v.x * 16 - ox + (v.st === 'faint' ? 4 : 11), v.y * 16 - oy - (v.st === 'faint' ? 2 : v.P.tall ? 20 : 16), t - (v.poseT ?? t));
+    if (H.task) { const T = H.task, x = T.x * 16 - ox, y = T.y * 16 - oy, gr = g.createRadialGradient(x + 8, y + 9, 1, x + 8, y + 9, 12); gr.addColorStop(0, 'rgba(255,220,120,' + (.35 + Math.sin(t * 3) * .1).toFixed(2) + ')'); gr.addColorStop(1, 'rgba(255,220,120,0)'); g.fillStyle = gr; g.fillRect(x - 6, y - 4, 28, 28); }
+    if (H.task) { const T = H.task, x = T.x * 16 - ox, y = T.y * 16 - oy, b = Math.sin(t * 4) * 1; g.fillStyle = 'rgba(240,210,120,.25)'; g.fillRect(x + 3, y + 11, 10, 2); g.fillStyle = '#e8c860'; g.fillRect(x + 6, y + 5 + b, 4, 5); g.fillStyle = '#fff4c0'; g.fillRect(x + 7, y + 6 + b, 1, 1); if (t % 1.2 < .2) hsSpr(g, { spr: 'sparkle', x: T.x, y: T.y - .2 }, ox, oy, t); }
     if (H.hero.hidden) { const x = H.hero.x * 16 - ox, y = H.hero.y * 16 - oy; g.fillStyle = 'rgba(232,224,200,.9)'; g.fillRect(x + 5, y - 2, 1, 1); g.fillRect(x + 9, y - 2, 1, 1); }
     if (H.hero.path && !H.hero.chase) { const [px, py] = H.hero.path, x = px * 16 + 8 - ox, y = py * 16 + 8 - oy; g.strokeStyle = 'rgba(160,220,200,.6)'; g.beginPath(); g.arc(x, y, 3 + Math.sin(t * 8), 0, 7); g.stroke(); } }
   hsFxDraw(H, g, ox, oy);
@@ -166,7 +170,7 @@ function hsPause(on) { const H = HS; if (!H || H.done) return; H.paused = on ?? 
   if (!el) { el = document.createElement('div'); el.id = 'hspause'; $('#hsw').appendChild(el); }
   el.innerHTML = '<div class="hs-end"><div class="c1">暂停</div><div class="mini" style="margin-bottom:12px">' + (H.mode === 'house' ? '游客还在里面等着。' : '它也停下了。') + '</div><div class="hp-l"><button class="btn pri big" onclick="hsPause(false)">继续</button><button class="btn" onclick="openModal(\'set\')">⚙ 设置</button><button class="btn red" onclick="hsQuit()">' + (H.mode === 'house' ? '提前收工（这批算没吓到）' : '不躲了，回头跟它打（算被追上）') + '</button></div></div>'; }
 function hsQuit() { const H = HS; if (!H || H.done) return; const el = $('#hspause'); if (el) el.remove(); H.paused = false;
-  if (H.mode === 'house') { H.lost = '你提前收工了。游客们莫名其妙地走了出去。'; for (const v of H.vis) if (v.st !== 'flee') v.st = 'gone'; hLog(H, '提前收工。', 'warn'); hsEnd(H); } else { H.res = 'caught'; hLog(H, '你停下脚步，转过身。', 'warn'); hsEnd(H); } }
+  if (H.mode === 'house') { H.lost = '你提前收工了。游客们莫名其妙地走了出去。'; for (const v of H.vis) v.st = 'gone'; hLog(H, '提前收工。', 'warn'); hsEnd(H); } else { H.res = 'caught'; hLog(H, '你停下脚步，转过身。', 'warn'); hsEnd(H); } }
 function hsCancel() { const H = HS; if (!H || H.phase !== 'setup') return; H.res = 'cancel'; H.done = true; hsClear(); STATE.house = null; HS = null; applyMode(); musicMode(moodNow()); sfx('tap'); hsResolve('cancel'); }
 function hsAutoLay() { const H = HS; if (!H) return; H.lay = houseAutoLayout(H.o.scene, H.M); sfx('tap'); hsSetupHtml(H); }
 function hsPickSlot(H, s, staff) { const el = $('#hspick'); if (!el) return; const cur = staff ? H.lay.staff[s.i] : H.lay.slots[s.i]; let h = '<div class="hp-h">' + (staff ? '员工位 ' + (s.i + 1) : s.n + ' 号机关位 · ' + esc((hmRoomAt(H.M, s.x, s.y) || {}).n || '')) + '<button class="x" onclick="hsPickClose()">×</button></div><div class="hp-l">';
@@ -187,12 +191,12 @@ function hsHud(H) { const el = $('#hshud'); if (!el) return; const chase = H.mod
   const mm = $('#hsmm'); if (mm) { mm.onpointerdown = ev => { ev.stopPropagation(); const r = mm.getBoundingClientRect(); hGo(H, (ev.clientX - r.left) / r.width * H.M.w, (ev.clientY - r.top) / r.height * H.M.h); sfx('tap'); }; }
   hsHudTick(H, true); hsSize(); }
 function hsHudTick(H, force) { H.hudT = (H.hudT || 0) - H.dt; if (H.hudT > 0 && !force) return; H.hudT = .12; const B = H.B, h = H.hero;
-  const room = hmRoomAt(H.M, h.x, h.y); const rm = $('#hsroom'); if (rm) rm.textContent = (room ? room.n : '') + (h.hidden ? ' · 躲着' : '');
+  const room = hmRoomAt(H.M, h.x, h.y); const rm = $('#hsroom'); if (rm) rm.textContent = (room ? room.n : '') + (h.hidden ? ' · 躲着' : '') + (H.task ? '　游客要找：' + H.task.n : '');
   const mp = $('#hsmp'); if (mp) mp.textContent = '精神 ' + Math.max(0, Math.round(C.mp));
   const tk = $('#hstick'); if (tk) { const l = H.log[H.log.length - 1]; tk.textContent = l && H.t - l.t < 6 ? l.s : ''; tk.className = 'hs-tick ' + (l ? l.cls : ''); }
   if (H.mode === 'chase') { const o = $('#hsobj'); if (o) o.textContent = H.item && !H.item.got ? '找到：' + H.item.n : H.o.wait ? '撑住 ' + Math.max(0, Math.ceil(H.o.wait - H.t)) + ' 秒' : '跑'; }
   else { const a = $('#hsatm'), at = $('#hsatt'); if (a) { a.style.width = Math.max(0, B.hero.hp / B.hero.mhp * 100) + '%'; at.textContent = '氛围 ' + Math.max(0, Math.round(B.hero.hp)) + '/' + B.hero.mhp; }
-    const k = $('#hsk'); if (k) k.textContent = '吓退 ' + H.vis.filter(v => v.u.hp <= 0).length + '/' + H.vis.length + (H.tagGot != null ? ' · 校牌 ' + H.tagGot + '/8' : '');
+    const k = $('#hsk'); if (k) k.textContent = '吓晕 ' + H.vis.filter(v => v.u.hp <= 0).length + '/' + H.vis.length + (H.tagGot != null ? ' · 校牌 ' + H.tagGot + '/8' : '');
     const au = $('#hsauto'); if (au) au.classList.toggle('on', H.auto);
     const dv = $('#hsdevs'); if (dv) { dv.innerHTML = H.M.slots.filter(s => s.k).map(s => { const S = hDev(s.k), inr = hDevInRange(H, s), rdy = hDevReady(H, s), arm = rdy && inr && hDevTargets(H, s).length; const p = s.cd > 0 ? Math.round((1 - s.cd / HB.devCd) * 100) : 100;
       return '<button class="hd' + (arm ? ' arm' : inr && rdy ? ' rdy' : '') + (s.ping && H.t - s.ping < .5 ? ' ping' : '') + '" style="--p:' + p + '%" onclick="hsDev(' + s.i + ')"><b>' + S.ic + '</b><small>' + (S.remote ? '📡' : '') + s.n + '</small></button>'; }).join(''); }
@@ -217,7 +221,7 @@ function hsMini(H) { const mm = $('#hsmm'); if (!mm || !H.minimap) return; const
   g.fillStyle = 'rgba(10,10,14,.8)'; g.fillRect(0, 0, mm.width, mm.height); g.fillStyle = 'rgba(120,120,130,.45)'; for (let y = 0; y < M.h; y++) for (let x = 0; x < M.w; x++) if (!M.hs[y * M.w + x] || M.hides.some(e => e.x === x && e.y === y)) g.fillRect(x * s, y * s, s, s);
   for (const sl of M.slots) if (sl.k) { g.fillStyle = sl.cd > 0 ? '#665' : '#e8b04a'; g.fillRect(sl.x * s, sl.y * s, s, s); }
   if (H.item && !H.item.got) { g.fillStyle = '#f0e090'; g.fillRect(H.item.x * s - 1, H.item.y * s - 1, s + 2, s + 2); }
-  for (const v of H.vis) if (v.st !== 'wait' && v.st !== 'gone') { g.fillStyle = v.st === 'flee' ? '#888' : '#ff5a3a'; g.fillRect(Math.round(v.x * s), Math.round(v.y * s), s, s); }
+  for (const v of H.vis) if (v.st !== 'wait' && v.st !== 'gone') { g.fillStyle = hOut(v) ? '#888' : '#ff5a3a'; g.fillRect(Math.round(v.x * s), Math.round(v.y * s), s, s); }
   if (H.boss && (H.boss.hunt || hDist(H.boss, H.hero) < 6)) { g.fillStyle = '#ff2020'; g.fillRect(Math.round(H.boss.x * s) - 1, Math.round(H.boss.y * s) - 1, s + 2, s + 2); }
   g.fillStyle = '#fff'; g.fillRect(Math.round(H.hero.x * s), Math.round(H.hero.y * s), s, s); }
 /* 「吓！」按钮现在会做什么 */
@@ -226,7 +230,7 @@ function hsActPlan(H) { const h = H.hero, ac = hActive(H); const near = ac.filte
   let best = null, bd = 9; for (const s of H.M.slots) { if (!hDevReady(H, s) || !hDevInRange(H, s)) continue; const tg = hDevTargets(H, s); if (!tg.length) continue; const d = Math.min(...tg.map(v => hDist(v, s))); if (d < bd) { bd = d; best = s; } }
   if (best) return { lab: hDev(best.k).ic + ' ' + best.n + (best.sp ? '' : ' 号') + (bd <= hPerf(best) ? ' ⭕' : ''), f: () => hTrigger(H, best) };
   if (near && h.pcd <= 0) return { lab: '扑！', f: () => hPounce(H, near) };
-  const fv = H.vis.filter(v => (v.st === 'flee' && !v.caught || v.st === 'run') && hDist(v, h) <= 4).sort((a, b) => hDist(a, h) - hDist(b, h))[0]; if (fv && h.chase !== fv) return { lab: '追上去！', f: () => { h.chase = fv; h.path = null; } }; return null; }
+  const fv = H.vis.filter(v => v.st === 'run' && hDist(v, h) <= 4).sort((a, b) => hDist(a, h) - hDist(b, h))[0]; if (fv && h.chase !== fv) return { lab: '追上去！', f: () => { h.chase = fv; h.path = null; } }; return null; }
 function hsAct() { const H = HS; if (!H || H.phase !== 'live' || H.done) return; const a = hsActPlan(H); if (a) { a.f(); hsHudTick(H, true); } else toast('附近没有能吓的游客'); }
 function hsDev(i) { const H = HS; if (!H || H.phase !== 'live') return; const s = H.M.slots[i]; if (!s) return; if (hDevInRange(H, s) && hDevReady(H, s) && hDevTargets(H, s).length) { hTrigger(H, s); hsHudTick(H, true); return; } if (!hDevInRange(H, s)) { hsGoNear(H, s); toast('走到 ' + s.n + ' 号机关旁边'); } else hTrigger(H, s); }
 function hsGoNear(H, s) { const l = hLurk(H, s); if (l) hGo(H, l[0], l[1]); else hGo(H, s.x, s.y); }
@@ -238,7 +242,7 @@ function hsHideNear() { const H = HS; if (!H) return; const h = H.hero; let best
 function hsTap(ev) { const H = HS; if (!H) return; const [x, y] = hsPt(H, ev);
   if (H.phase === 'setup') { const s = H.M.slots.find(q => Math.hypot(q.x - x, q.y - y) < .8); if (s) return hsPickSlot(H, s, 0); const st = H.M.staff.find(q => Math.abs(q.x - x) < .7 && y > q.y - 1.5 && y < q.y + .7); if (st) return hsPickSlot(H, st, 1); hsPickClose(); return; }
   if (H.phase !== 'live' || H.done || H.paused) return; H.auto = false; const h = H.hero;
-  if (H.mode === 'house') { const v = hActive(H).concat(H.vis.filter(q => q.st === 'flee' && !q.caught)).filter(q => Math.hypot(q.x - x, q.y - .5 - y) < 1).sort((a, b) => Math.hypot(a.x - x, a.y - y) - Math.hypot(b.x - x, b.y - y))[0]; if (v) { h.chase = v; h.path = null; sfx('tap'); if (v.st === 'flee') { hFloat(H, h.x, h.y - 1.6, '追！', 'txt'); if (hDist(v, h) <= 1.3) hCatch(H, v); } else if (hDist(v, h) <= 1.5 && h.pcd <= 0) hPounce(H, v); return; }
+  if (H.mode === 'house') { const v = hActive(H).filter(q => Math.hypot(q.x - x, q.y - .5 - y) < 1).sort((a, b) => Math.hypot(a.x - x, a.y - y) - Math.hypot(b.x - x, b.y - y))[0]; if (v) { h.chase = v; h.path = null; sfx('tap'); if (v.st === 'run') hFloat(H, h.x, h.y - 1.6, '追！', 'txt'); if (hDist(v, h) <= 1.5 && h.pcd <= 0) hPounce(H, v); return; }
     const s = H.M.slots.find(q => q.k && Math.hypot(q.x - x, q.y - y) < .75); if (s) return hsDev(s.i);
     const st = H.staff.find(q => Math.abs(q.x - x) < .7 && y > q.y - 1.5 && y < q.y + .7); if (st) { if (hStaffGo(H, st)) { sfx('tap'); hFloat(H, st.x, st.y - 1.6, PETS[st.k].n + '：去了！', 'staff'); } return; } }
   hGo(H, x, y); sfx('tap'); }
@@ -257,7 +261,7 @@ function hsFrame(now) { const H = HS; if (!H || STATE.house !== H) return; const
   if (H.done && H.phase === 'live' && !H.fin) { H.fin = 1; hsDraw(H); hsTextLayer(H); hsFinish(H); return; }
   hsDraw(H); hsTextLayer(H); H.raf = requestAnimationFrame(hsFrame); }
 function hsEndPanel(H) { const B = H.B, rw = H.rw, s = H.stats, el = $('#hsset'), k = H.scared, n = H.vis.length; $('#hshud').innerHTML = ''; $('#hsfx').innerHTML = ''; const pz = $('#hspause'); if (pz) pz.remove();
-  el.innerHTML = '<div class="hs-end"><div class="c1">' + (H.res === 'win' ? '游客尖叫着跑了出去' : (H.lost || '“一点都不吓人。”')) + '</div><div class="hs-grid"><span>吓退</span><b>' + k + '/' + n + '</b><span>完美时机</span><b>' + s.perfect + '</b><span>扑人</span><b>' + s.pounce + '</b><span>被看见</span><b>' + s.exposed + '</b>' + (s.house ? '<span>全场尖叫</span><b>×' + s.house + '</b>' : '') + (s.chain ? '<span>连环尖叫</span><b>×' + s.chain + '</b>' : '') + (s.caught ? '<span>追到门口</span><b>' + s.caught + ' 人</b>' : '') + '</div>' + (H.grade ? '<div class="hs-grade g' + H.grade + '">' + H.grade + '<small>' + ({ S: '全吓跑、没被看见、两次以上完美：尖叫 +30%，门票 +100', A: '全吓跑：尖叫 +15%，门票 +30', B: '吓跑了一半以上', C: '下次换个布置试试' })[H.grade] + '</small></div>' : '') + (H.best ? '<div class="mini">最狠的一下：' + esc(H.best.txt) + ' -' + H.best.v + '</div>' : '')
+  el.innerHTML = '<div class="hs-end"><div class="c1">' + (H.res === 'win' ? '晕倒的游客被一个个抬了出来' : (H.lost || '“一点都不吓人。”')) + '</div><div class="hs-grid"><span>吓晕</span><b>' + k + '/' + n + '</b><span>完美时机</span><b>' + s.perfect + '</b><span>扑人</span><b>' + s.pounce + '</b><span>被看见</span><b>' + s.exposed + '</b>' + (s.house ? '<span>全场尖叫</span><b>×' + s.house + '</b>' : '') + (s.chain ? '<span>连环尖叫</span><b>×' + s.chain + '</b>' : '') + '</div>' + (H.grade ? '<div class="hs-grade g' + H.grade + '">' + H.grade + '<small>' + ({ S: '全吓跑、没被看见、两次以上完美：尖叫 +30%，门票 +100', A: '全吓跑：尖叫 +15%，门票 +30', B: '吓跑了一半以上', C: '下次换个布置试试' })[H.grade] + '</small></div>' : '') + (H.best ? '<div class="mini">最狠的一下：' + esc(H.best.txt) + ' -' + H.best.v + '</div>' : '')
     + (rw ? '<div class="hs-rw">' + (rw.money ? '门票 +' + rw.money + ' 元　' : '') + (rw.screams ? '尖叫 +' + rw.screams + '　' : '') + '经验 +' + rw.exp + (rw.picky ? '<br>挑剔的游客被吓哭了！' : '') + '</div>' : '') + '<button class="btn pri big" onclick="hsClose()">收工</button></div>';
   if (H.auto && C.auto) setTimeout(() => { if (HS === H) hsClose(); }, 900); }
 window.addEventListener('resize', () => { if (HS && STATE.house) hsSize(); });
