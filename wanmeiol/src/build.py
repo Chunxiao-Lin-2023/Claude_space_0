@@ -11,6 +11,11 @@ game = '\n'.join(src(f) for f in ORDER)
 import collections
 dup = [n for n, c in collections.Counter(re.findall(r'^(?:async )?function ([A-Za-z_0-9]+)', game, re.M)).items() if c > 1]
 if dup: sys.exit('duplicate top-level functions (the later one silently wins): ' + ', '.join(dup))
+# foe ids: an object literal (or a later Object.assign) with the same key silently replaces the first foe (蒲魔王 once ate 蒲魔树)
+mob_keys = []
+for m in re.finditer(r'(?:const MOBS = \{|Object\.assign\(MOBS, \{)(.*?)\n\}\)?;', game, re.S): mob_keys += re.findall(r'^  ([a-z_0-9]+): \{', m.group(1), re.M)
+dupm = [k for k, c in collections.Counter(mob_keys).items() if c > 1]
+if dupm: sys.exit('duplicate foe ids (the later one silently wins): ' + ', '.join(dupm))
 # NPC chatter must say where (at) and when (from/to), and only name places, quest steps and people that exist
 def check_chatter():
     places = set(re.findall(r'^  (\w+): \{ name:', src('11_places.js'), re.M)); areas = set(re.findall(r'^  (\w+): \{ name: .*sub:', src('11_places.js'), re.M))

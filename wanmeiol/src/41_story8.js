@@ -73,7 +73,7 @@ async function S_xianwar() {
   if (!await fightRetry({ mobs: [['daowang', slv(84, -1, 1)]], allies: ['a_liushen'], title: '仙域 · 刀王', epic: { name: '刀王', sub: '界海来的巨头', seal: '刀王', intro: ['他的刀，斩过很多仙王。'], phase: '刀王的刀光把仙域的天劈成了两半！', low: { who: '柳神', t: '“……昊儿。你不是一直想看看，自己能走多远吗？”<br>（你骨头里那根柳枝，动了一下。）' } } })) return false;
   await tzZhun();
   learnGongfa('zhunxiandi');
-  if (!await fightRetry({ mobs: [['pumo', slv(84, -1, 1)]], allies: ['a_liushen'], title: '仙域 · 蒲魔王', epic: { name: '蒲魔王', sub: '异域巨头', seal: '魔王', intro: ['刀王已经倒下了。'], phase: '蒲魔王身后升起一片魔海！' } })) return false;
+  if (!await fightRetry({ mobs: [['pumowang', slv(84, -1, 1)]], allies: ['a_liushen'], title: '仙域 · 蒲魔王', epic: { name: '蒲魔王', sub: '异域巨头', seal: '魔王', intro: ['刀王已经倒下了。'], phase: '蒲魔王身后升起一片魔海！' } })) return false;
   await cine('刀王倒了。蒲魔王倒了。<br>九头魔想跑，被你一把扯了回来。<br>无殇，也倒了。<br>仙域的天，被你一个人，撑住了。');
   F().xianwar = 1; gainExp(BAL.expNext(C.lv) * 0.5);
   tip('鲲帝逃回了异域。<b>鲲帝城</b>在异域封印地北边。这一次，你打过去。');

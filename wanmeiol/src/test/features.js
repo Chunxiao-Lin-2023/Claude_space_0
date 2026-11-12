@@ -176,7 +176,7 @@ const { chromium } = require('playwright');
       for (let k = 0; k < 6; k++) questAdvance(); await w8(500); ok('lvCapRelease', c.lv > lv0); dropRunning();
       STATE.assist = 2; D.startBattle({ mobs: [['wolf', 10]], title: 'a', story: 1, noLose: true }); const B1 = S().battle, w1 = B1.units.find(u => u.side === 1); STATE.assist = 0; const w0 = mobUnit('wolf', 10); ok('assist', B1.assist === 2 && w1.hpMax < w0.hpMax * 0.75); B1.auto = true; renderBattle(true); await idle();
       ok('weakFraction', stVal({ atk: 500 }, { k: 'weak', v: 0.3 }) === 0.3 && stVal({ atk: 500 }, { k: 'bleed', v: 0.3 }) === 150);
-      ok('toughCurve', BAL.toughAtk(30) === 1 && BAL.toughAtk(85) > 1.3 && BAL.toughAtk(85, 0) < BAL.toughAtk(85)); }
+      ok('toughCurve', BAL.toughAtk(20) === 1 && BAL.toughHp(45) < 0.6 && BAL.toughAtk(85) > 1.5 && BAL.toughAtk(85, 0) < BAL.toughAtk(85) && BAL.toughHp(45, 0) > BAL.toughHp(45)); }
     // save slots: a second save lives beside the first one
     { save(true); const lv1 = D.C.lv; slotNew(2); await w8(50); const c2 = D.C; ok('slotNew', SLOT === 2 && c2.lv === 1 && slotInfo(1) && slotInfo(1).v.lv === lv1); c2.lv = 3; save(true);
       slotPlay(1); await w8(50); ok('slotSwitch', SLOT === 1 && D.C.lv === lv1 && slotInfo(2).v.lv === 3); toTitle(); slotsShow(); ok('slotList', document.querySelectorAll('#title .slot').length === 5);

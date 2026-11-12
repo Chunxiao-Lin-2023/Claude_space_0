@@ -1,6 +1,6 @@
 /* ================= boss mechanics, hold-out fights, and the reward for fighting by hand =================
    Each great boss of the later volumes has one thing of its own (MOBS[id].mech), so the fights stop feeling alike:
-     rewind   万古之劫   every 3rd round it gathers 时光倒流; if not broken it winds its 气血 back two rounds
+     rewind   万古之劫   every 4th round it gathers 时光倒流; if not broken it winds its 气血 back one round
      dark     鲲帝       its blows leave 黑暗 that stacks and burns; 雷道 or 柳神法 wash it off you
      question 帝城守将   at half 气血 it asks "帝关还在吗？" — answer by choosing 防御 that round and it lays down its spear
      revive   尸骸仙帝   the first time it falls, the darkness flows back and it rises with 40% 气血
@@ -25,11 +25,11 @@ const MECH_ROUND = {
     if (B.lastHero && B.lastHero.sk === 'guard') { blog(B, `<span class="weak">门里伸出的手抓了个空——你护住了要害</span>`); return; } addSt(h, { k: 'stun', t: 1 }); blog(B, `<span class="warn">造化之门往里一拉，${uName(h)} 被拽得站不稳（眩晕）</span>　<span class="dim">（每 3 回合一次，那回合选「防御」就不会被拽）</span>`); },
 };
 const MECH_PLAN = { // runs after the normal plan for the next round
-  rewind: (B, u) => { if (B.round % 3 || u.releasing) return; const M = unitDef(u.mob), i = M.sk.findIndex(s => s.mfn === 'rewind'); if (i < 0) return; u.charging = i; u.plan = 'charge'; u.intent = '⏳ 蓄力：时光倒流'; },
+  rewind: (B, u) => { if (B.round % 4 || u.releasing) return; const M = unitDef(u.mob), i = M.sk.findIndex(s => s.mfn === 'rewind'); if (i < 0) return; u.charging = i; u.plan = 'charge'; u.intent = '⏳ 蓄力：时光倒流'; },
 };
 const MECH_FN = { // special moves (sk.mfn)
-  rewind: (B, u, s, L) => { const h = u.hist || [], back = h.length >= 3 ? h[h.length - 3] : u.hp, v = Math.max(0, Math.round(back - u.hp)); u.hp = Math.min(u.hpMax, u.hp + v); fxe(B, { k: 'heal', t: u.id, v, hp: hpr(u) });
-    L(`${uName(u)} <span class="sk">时光倒流</span>：两回合前的伤，全回去了 <span class="heal">+${v}</span>　<span class="dim">（打晕它或打中弱点能打断）</span>`); },
+  rewind: (B, u, s, L) => { const h = u.hist || [], back = h.length >= 2 ? h[h.length - 2] : u.hp, v = Math.max(0, Math.round(back - u.hp)); u.hp = Math.min(u.hpMax, u.hp + v); fxe(B, { k: 'heal', t: u.id, v, hp: hpr(u) });
+    L(`${uName(u)} <span class="sk">时光倒流</span>：上一回合的伤，全回去了 <span class="heal">+${v}</span>　<span class="dim">（打晕它或打中弱点能打断）</span>`); },
 };
 function mechInit(B, spec) {
   B.survive = spec.survive || 0; B.protect = spec.protect || null; B.baseTitle = B.title;
