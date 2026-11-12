@@ -127,10 +127,39 @@ function stScare(name) { if (window.__dbg && (__dbg.auto || __dbg.instant)) retu
 function stAmbient(dt, list) { if (!STATE.scene || !(STG.fx.dark || STG.fx.red)) { STG.amb = 4; return; } STG.amb = (STG.amb || 6) - dt; const hero = list.find(a => a.name === '陈歌');
   const near = hero && list.some(a => a !== hero && a.ghost && a.alpha > .3 && Math.abs(a.x - hero.x) < 44); if (near) { STG.hb = (STG.hb || 0) - dt; if (STG.hb <= 0) { STG.hb = 1.1; sfx('heart'); } }
   if (STG.amb <= 0) { STG.amb = 7 + Math.random() * 8; sfx(['drip', 'whisper', 'steps', 'creak', 'breath', 'wind'][Math.floor(Math.random() * 6)]); } }
-function stageSceneStart() { stageIdle(); STG.jump = null; STG.glitch = 0; STG.remote = new Set(); STG.cam = null; STG.over = ''; STG.fx = {}; STG.props = {}; STG.sc = [stActor('陈歌', 96)]; const s = STG.ex.filter(a => a.name !== '陈歌'); for (const a of s) STG.sc.push(stActor(a.name, a.x)); STG.lastKey = stageKey(); }
+/* —— 镜子：小剧场里的镜子真的照出东西 ——
+   ^mirror 格 [big]  在墙上挂一面镜子（big = 落地镜）
+   ^mirror follow / lag（慢半拍）/ stare（不跟着动，直勾勾看着）/ smile（咧嘴、眼睛发红）/ close（贴到镜面上越来越大）
+   ^mirror empty（照不出你）/ other 名字（你身后多一个人）/ hand（镜子里拍出手印）/ crack（裂开）/ out（从镜子里伸出手）/ off */
+function stMirror(p) { const k = p[1]; if (!k) return; if (/^\d+$/.test(k)) { STG.mir = { x: Math.round(+k * 16 + 8), big: p[2] === 'big', mode: 'follow', hist: [], crack: 0, ct: 0, hands: [], out: 0, close: 1, seed: Math.floor(Math.random() * 999) }; return; } const M = STG.mir; if (!M) return;
+  if (k === 'off') { STG.mir = null; return; } if (k === 'crack') { M.ct = 1; sfx('crack'); return; } if (k === 'hand') { M.hands.push([Math.random(), Math.random() * .7]); sfx('knock'); return; } if (k === 'out') { M.outT = 1; sfx('scrape'); return; }
+  if (k === 'other') { M.other = p[2] ? pplOf(p[2]) : null; return; } if (k === 'close') M.close = 1; if (k === 'stare' || k === 'smile' || k === 'close') { const h = STG.sc.find(a => a.name === '陈歌'); M.fx = h ? h.x : M.x; } M.mode = k; }
+function stMirrorGeo(M) { return M.big ? { x0: M.x - 26, y0: 14, w: 52, h: 74 } : { x0: M.x - 15, y0: 16, w: 30, h: 46 }; }
+function stMirrorDraw(g, list, hero) { const M = STG.mir; if (!M) return; const G = stMirrorGeo(M), t = STG.t;
+  g.fillStyle = '#4a3418'; g.fillRect(G.x0 - 3, G.y0 - 3, G.w + 6, G.h + 6); g.fillStyle = '#6e5026'; g.fillRect(G.x0 - 2, G.y0 - 2, G.w + 4, G.h + 4);
+  const gr = g.createLinearGradient(G.x0, G.y0, G.x0 + G.w, G.y0 + G.h); gr.addColorStop(0, '#2a3640'); gr.addColorStop(1, '#10161b'); g.fillStyle = gr; g.fillRect(G.x0, G.y0, G.w, G.h);
+  g.save(); g.beginPath(); g.rect(G.x0, G.y0, G.w, G.h); g.clip();
+  if (STG.fx.candle) { const cx = G.x0 + G.w / 2 + (STG.fx.candle - M.x) * .5; const fl = Math.sin(t * 17) > .2 ? 1 : 0; g.fillStyle = 'rgba(255,190,90,.18)'; g.beginPath(); g.arc(cx, G.y0 + G.h * .78, 9 + fl, 0, 7); g.fill(); g.fillStyle = '#ffd27a'; g.fillRect(Math.round(cx), Math.round(G.y0 + G.h * .74) - fl, 1, 2 + fl); }
+  /* 倒影的位置：正常跟着你；lag 用 0.8 秒前的位置；stare/smile/close 停在原地 */
+  const hx = hero ? hero.x : M.x; let rx = hx; if (M.mode === 'lag') { const old = M.hist.find(h => h[0] >= t - .8) || M.hist[0]; rx = old ? old[1] : hx; } else if (['stare', 'smile', 'close'].includes(M.mode)) rx = M.fx;
+  const sc = M.big ? 1.35 : 1.15, base = M.mode === 'close' ? Math.min(3.2, M.close) : 1, s = sc * base, w = Math.round(16 * s), h = Math.round(24 * s);
+  const px = Math.round(G.x0 + G.w / 2 + (rx - M.x) * .6 - w / 2), py = Math.round(G.y0 + (M.big ? 10 : 5) - (base - 1) * 7 * s);
+  if (M.other) { const os = s * 1.08, ow = Math.round(16 * os), oh = Math.round(24 * os); g.globalAlpha = .95; g.drawImage(stTint(personSprite(M.other, 0, 0), M.other.sil ? '#9aa2b0' : null), px + Math.round(w * .3), py - Math.round(2 * s), ow, oh); g.globalAlpha = 1; }
+  if (M.mode !== 'empty' && hero) { const P = hero.P, spr = personSprite(P, 0, 0); g.globalAlpha = .82; g.drawImage(spr, px, py, w, h); g.globalAlpha = 1;
+    if (M.mode === 'smile' || M.mode === 'close') { const u = s, fx = px, fy = py; g.fillStyle = '#e01818'; g.fillRect(Math.round(fx + 5 * u), Math.round(fy + 7.5 * u), Math.max(1, Math.round(u)), Math.max(1, Math.round(u))); g.fillRect(Math.round(fx + 10 * u), Math.round(fy + 7.5 * u), Math.max(1, Math.round(u)), Math.max(1, Math.round(u)));
+      g.fillStyle = '#0a0404'; g.fillRect(Math.round(fx + 4.5 * u), Math.round(fy + 10.5 * u), Math.round(7 * u), Math.max(1, Math.round(1.2 * u))); g.fillRect(Math.round(fx + 4 * u), Math.round(fy + 9.6 * u), Math.max(1, Math.round(u)), Math.max(1, Math.round(u))); g.fillRect(Math.round(fx + 11 * u), Math.round(fy + 9.6 * u), Math.max(1, Math.round(u)), Math.max(1, Math.round(u)));
+      g.fillStyle = '#8a0c0c'; g.fillRect(Math.round(fx + 5.5 * u), Math.round(fy + 11.6 * u), Math.round(5 * u), Math.max(1, Math.round(.6 * u))); } }
+  for (const hd of M.hands) { const hx2 = G.x0 + 3 + hd[0] * (G.w - 9), hy = G.y0 + 3 + hd[1] * (G.h - 12); g.fillStyle = 'rgba(200,190,180,.55)'; g.fillRect(hx2, hy + 3, 4, 4); for (let i = 0; i < 4; i++) g.fillRect(hx2 + i, hy + (i === 0 || i === 3 ? 1 : 0), 1, 3); g.fillStyle = 'rgba(120,10,10,.5)'; g.fillRect(hx2 + 1, hy + 7, 1, 3); }
+  /* 裂纹：从一点往外裂，seed 固定，裂到哪画到哪 */
+  if (M.ct) { M.crack = Math.min(1, M.crack + .04); const R = srng(M.seed), cx = G.x0 + G.w * (.35 + R() * .3), cy = G.y0 + G.h * (.3 + R() * .3); g.strokeStyle = 'rgba(215,225,235,.85)'; g.lineWidth = 1;
+    for (let i = 0; i < 9; i++) { let x = cx, y = cy, a = i / 9 * 6.28 + R() * .5; g.beginPath(); g.moveTo(x, y); const L = (6 + R() * 18) * M.crack * (M.big ? 1.8 : 1); for (let k = 0; k < 4; k++) { a += (R() - .5) * .9; x += Math.cos(a) * L / 4; y += Math.sin(a) * L / 4; g.lineTo(Math.round(x) + .5, Math.round(y) + .5); } g.stroke(); } }
+  g.fillStyle = 'rgba(255,255,255,.06)'; g.fillRect(G.x0 + 3, G.y0, 2, G.h); if (STG.fx.dark && !STG.fx.candle) { g.fillStyle = 'rgba(0,0,0,.45)'; g.fillRect(G.x0, G.y0, G.w, G.h); } g.restore();
+  /* 从镜子里伸出来的手：苍白，越伸越长，伸向陈歌 */
+  if (M.outT) { M.out = Math.min(1, M.out + .03); const sx = G.x0 + G.w / 2, sy = G.y0 + G.h * .55, ex = hero ? hero.x : sx, ey = FEET - 17, L = M.out; g.strokeStyle = '#cfc8be'; g.lineWidth = 3; g.beginPath(); g.moveTo(sx, sy); g.lineTo(sx + (ex - sx) * L, sy + (ey - sy) * L); g.stroke(); g.fillStyle = '#cfc8be'; const hx3 = sx + (ex - sx) * L, hy3 = sy + (ey - sy) * L; g.fillRect(Math.round(hx3) - 2, Math.round(hy3) - 2, 5, 4); for (let i = 0; i < 4; i++) g.fillRect(Math.round(hx3) - 2 + i, Math.round(hy3) + 2, 1, 3); } }
+function stageSceneStart() { STG.mir = null; STATE.musOv = null; stageIdle(); STG.jump = null; STG.glitch = 0; STG.remote = new Set(); STG.cam = null; STG.over = ''; STG.fx = {}; STG.props = {}; STG.sc = [stActor('陈歌', 96)]; const s = STG.ex.filter(a => a.name !== '陈歌'); for (const a of s) STG.sc.push(stActor(a.name, a.x)); STG.lastKey = stageKey(); }
 function stageIdle() { if (!C) return; const ns = npcsHere().slice(0, 3); STG.ex = [stActor('陈歌', 120)]; ns.forEach((k, i) => STG.ex.push(stActor(NPCS[k].name, 196 + i * 36, { dir: 1 }))); }
 /* 换了地点或 ^stage：立刻换景（清掉别人、效果、道具），免得下一帧把刚加上的东西又清掉 */
-function stSync() { if (!STATE.scene || !C) return; const k = stageKey(); if (k !== STG.lastKey) { STG.lastKey = k; STG.sc = STG.sc.filter(a => a.name === '陈歌'); STG.fx = {}; STG.props = {}; } }
+function stSync() { if (!STATE.scene || !C) return; const k = stageKey(); if (k !== STG.lastKey) { STG.lastKey = k; STG.sc = STG.sc.filter(a => a.name === '陈歌'); STG.fx = {}; STG.props = {}; STG.mir = null; } }
 function stageSpeak(o) { if (!STATE.scene) return; stSync(); let who = o.kind === 'ph' ? '陈歌' : o.who; for (const a of STG.sc) { a.talk = 0; a.phone = 0; } if (!who) return; const remote = STG.remote.has(who) || who === '手机里的声音'; if (remote) who = '陈歌'; const a = who === '陈歌' ? stFind('陈歌') : stEnter(who); if (!a) return; a.talk = 1; a.phone = o.kind === 'ph' || remote;
   const hero = stFind('陈歌'); if (hero && a !== hero) { a.face = hero.x < a.tx ? 1 : 2; hero.face = hero.x < a.tx ? 2 : 1; } }
 function stageCmd(s) { const p = s.trim().split(/\s+/), c = p[0], n = p[1]; if (c !== 'stage') stSync(); const T = v => v == null || v === '' ? null : Math.round(+v * 16 + 8);
@@ -142,10 +171,12 @@ function stageCmd(s) { const p = s.trim().split(/\s+/), c = p[0], n = p[1]; if (
   else if (c === 'scare') stScare(n);
   else if (c === 'creep') { const a = stFind(n) || stEnter(n, T(p[2]), 1); if (a) { a.tx = T(p[2]); a.creep = 1; } }
   else if (c === 'sfx') sfx(n);
+  else if (c === 'mirror') stMirror(p);
+  else if (c === 'mus') { STATE.musOv = n === 'off' ? '' : n; musicMode(STATE.musOv); }
   else if (c === 'prop') { let o = {}; try { o = p[5] ? JSON.parse(p.slice(5).join(' ')) : {}; } catch (e) {} STG.props[n] = [p[2], +p[3], +p[4], o]; } else if (c === 'del') delete STG.props[n];
   else if (c === 'stage') { STG.over = n === 'clear' ? '' : n; stSync(); } else if (c === 'call') { STG.remote.add(n); const a = stFind(n); if (a) STG.sc.splice(STG.sc.indexOf(a), 1); } else if (c === 'hang') STG.remote.delete(n); }
 /* —— 每帧 —— */
-function stageTick(dt, list) { STG.t += dt; stAmbient(dt, list); const off = stFlickOff(); if (STG.jump && (STG.jump.t -= dt) <= 0) STG.jump = null; STG.glitch = Math.max(0, (STG.glitch || 0) - dt); if (STG.fx.glitch && Math.random() < dt * .4) STG.glitch = .25;
+function stageTick(dt, list) { STG.t += dt; if (STG.mir) { const h = list.find(a => a.name === '陈歌'); if (h) { STG.mir.hist.push([STG.t, h.x]); if (STG.mir.hist.length > 60) STG.mir.hist.shift(); } if (STG.mir.mode === 'close') STG.mir.close = Math.min(3.2, STG.mir.close + dt * .5); } stAmbient(dt, list); const off = stFlickOff(); if (STG.jump && (STG.jump.t -= dt) <= 0) STG.jump = null; STG.glitch = Math.max(0, (STG.glitch || 0) - dt); if (STG.fx.glitch && Math.random() < dt * .4) STG.glitch = .25;
   for (const a of list) { if (a.creep) { if (!off) continue; a.x += Math.sign(a.tx - a.x) * Math.min(Math.abs(a.tx - a.x), 260 * dt); if (Math.abs(a.tx - a.x) < .5) a.creep = 0; a.dir = 0; continue; }
     const d = a.tx - a.x, sp = (Math.abs(d) > 40 ? 96 : 64) * dt; if (Math.abs(d) > .5) { a.x += Math.sign(d) * Math.min(Math.abs(d), sp); a.ft += dt; a.fr = [0, 1, 0, 3][Math.floor(a.ft / .13) % 4]; a.dir = d < 0 ? 1 : 2; a.moving = 1; } else { a.x = a.tx; a.fr = 0; a.moving = 0; a.dir = a.face != null ? a.face : 0; }
     a.alpha += (a.ta - a.alpha) * Math.min(1, dt * 4); }
@@ -177,6 +208,8 @@ function stageDraw(cv, list, scene) { const full = cv.width < SW ? (STG.full || 
   if (STG.fx.rain || (night && PLACES[C.loc].area === 'muyang' && S.out)) { g.fillStyle = 'rgba(180,200,220,.35)'; for (let i = 0; i < 60; i++) { const x = (hash(i, 1) * SW + STG.t * 40) % SW, y = (hash(i, 2) * SH + STG.t * 260 * (.7 + hash(i, 3) * .5)) % SH; g.fillRect(x | 0, y | 0, 1, 5); } }
   if (STG.fx.red || S.red) { g.fillStyle = 'rgba(140,0,0,.22)'; g.fillRect(0, 0, SW, SH); }
   if (STG.glitch > 0) { const T = STG.gl || (STG.gl = mk(SW, SH)), tg = T.getContext('2d'); tg.clearRect(0, 0, SW, SH); tg.drawImage(g.canvas, 0, 0); for (let i = 0; i < 7; i++) { const y = Math.floor(Math.random() * SH), hh = 2 + Math.floor(Math.random() * 9), dx = Math.round((Math.random() - .5) * 26); g.drawImage(T, 0, y, SW, hh, dx, y, SW, hh); } g.fillStyle = 'rgba(255,0,40,.08)'; g.fillRect(0, Math.floor(Math.random() * SH), SW, 2); }
+  /* 镜子画在黑暗上面：它反着烛光，是这一片黑里唯一看得清的东西 */
+  if (scene && STG.mir) { g.globalAlpha = 1; stMirrorDraw(g, list, hero); }
   if (STG.flash > 0) { g.fillStyle = 'rgba(255,255,255,' + STG.flash * .8 + ')'; g.fillRect(0, 0, SW, SH); }
   /* 贴脸：只画头部特写，越来越近 */
   if (STG.jump) { const jx = full !== cv ? (STG.cam || 0) + cv.width / 2 : SW / 2, k = 6.2 + (.75 - STG.jump.t) * 2.4, w = Math.round(16 * k), h = Math.round(13 * k); g.globalAlpha = 1; const bg = g.createRadialGradient(jx, SH / 2, 10, jx, SH / 2, 150); bg.addColorStop(0, '#7a1a16'); bg.addColorStop(1, '#0a0202'); g.fillStyle = bg; g.fillRect(0, 0, SW, SH); g.drawImage(personSprite(STG.jump.P, 0, 0), 0, 0, 16, 13, Math.round(jx - w / 2 + (Math.random() - .5) * 5), Math.round(SH / 2 - h * .52 + (Math.random() - .5) * 3), w, h); }

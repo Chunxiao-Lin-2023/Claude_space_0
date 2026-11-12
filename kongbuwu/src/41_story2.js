@@ -28,6 +28,8 @@ async function S_dance() { setClock(10, '凌晨 2 点'); await T_(`^stage corrid
 二楼走廊中间也有一把椅子。带靠背，不是这里的东西。椅子底下写着一个女生的名字。
 三四楼之间立着木板：禁止入内。你迈了过去。
 ^stage dance
+^mus mirror
+^mirror 4 big
 ^prop c1 chair 9 5 {"col":"#6a5040"}
 ^prop c2 chair 11 5 {"col":"#6a5040"}
 ^prop c3 chair 13 5 {"col":"#6a5040"}
@@ -41,8 +43,12 @@ async function S_dance() { setClock(10, '凌晨 2 点'); await T_(`^stage corrid
 荣誉墙上那张是五个人。这一张，是六个女孩。`]], 3);
   await T_(`^del ph
 ^to 陈歌 8
+^to 陈歌 4
+^turn 陈歌 B
+^mirror lag
 ^fx glitch
 你抬起头。落地镜里的你，慢了半拍才抬头。
+^mirror follow
 ^sfx whisper
 我|被剪掉的那一个……张雅。
 ^fx dark
@@ -60,6 +66,7 @@ async function S_dance() { setClock(10, '凌晨 2 点'); await T_(`^stage corrid
 你砸烂了椅背，抓起椅子腿抡向另外两把。镜子里的画面有点奇葩，但你顾不上了。
 碎片里，她们还抓着你的脚踝。
 然后，温度降了下来。
+^mirror other 张雅
 镜子里，你的背后多了一个低着头的女孩。染血的校服贴在身上，一眼看去，尽是猩红。
 ^at 张雅 7
 她靠在了你的背上。黑发和你的头发，缠在了一起。
@@ -123,11 +130,15 @@ async function S_shoes() { setClock(11, '凌晨 4 点'); await T_(`^call 李队
 可解锁场景那一栏里，多了一个血红色的名字。光看那些支线的描述，你的鸡皮疙瘩就起来了。
 我|四星……以后再说。
 ^stage hall
+^mirror 13
 ^fx dark
 回到恐怖屋已经快天亮。你走在漆黑的走廊上——你熟悉这里的每一个地方。
 所以你立刻知道，屋里有人。
 ^in 张鹏 15
-张鹏站在走廊尽头。他身后的每一面镜子里，都有东西在往外看。
+^mirror empty
+^mirror other 镜鬼
+张鹏站在走廊尽头。他身后的每一面镜子里，都有东西在往外看。——镜子里照不出你，只照得出它。
+^mirror hand
 ^at 镜鬼 17`);
   go('hh_hall', true, true);
   const win = await fight({ mobs: [['mirror', L(2)], ['zhangpeng', L(0)]], ally: 'zhangya', title: '恐怖屋 · 走廊', intro: '你的影子，站了起来。', epic: { name: '镜中怪物', sub: '从镜子游戏那晚，一直跟到今天', seal: '镜', intro: ['墙上的数字归零了。', '它等的就是这一晚。', '——可它没算到，你的影子里也住着东西。'], phase: '（镜面一块接一块地碎）', low: '背后很冷。但这一次，冷是站在你这边的。' } });
@@ -252,7 +263,8 @@ async function S_muyang() { await chapterCard('四', '暮阳中学', '雨夜 · 
   await T_(`>来了来了／主播这次又去哪作死／暮阳中学？我表哥以前就是那的，说有一个班……／前面的把话说完啊！
 @四条支线：送不走的笔仙——宿舍楼。厕所的第五个隔间——教学楼三楼。封闭的教室——教学楼尽头。深井——未知。
 我|现在还没过十二点，不是“它们”最活跃的时候。一个一个来。`); }
-async function S_pen() { setClock(8, '晚上 9:30'); await T_(`^fx dark
+async function S_pen() { setClock(8, '晚上 9:30'); await T_(`^mus night
+^fx dark
 ^prop c1 chair 9 5
 ^prop c2 chair 10 5
 ^prop pp paper 11 5
@@ -287,6 +299,7 @@ async function S_pen() { setClock(8, '晚上 9:30'); await T_(`^fx dark
 >？？？？主播在威胁笔仙／笔：我只是一支笔／人气两万了！
 直播间人气不知道什么时候破了两万。`); gainTitle('host'); if (ok) gainExp(30); STATE.live && (STATE.live.hot = Math.max(STATE.live.hot, 21000)); }
 async function S_wc() { setClock(8, '晚上 10 点'); await T_(`^fx dark
+^mus door
 ^prop s4 stall 8 4
 ^prop s5 stall 10 4
 ^prop s6 stall 12 4
@@ -348,7 +361,8 @@ async function S_office() { setClock(8, '晚上 10:30');
 ^fx glitch
 一个拿着锤子的小人，站在第五个隔间门口。画上的蜡笔，还没干。
 >卧槽／所以那两个小孩是……／主播快跑吧十点半了`); if (F().fanyu === 0) gainExp(20); }
-async function S_last() { setClock(9, '晚上 11:40'); await T_(`^fx dark
+async function S_last() { setClock(9, '晚上 11:40'); await T_(`^mus door
+^fx dark
 教学楼尽头。传说，有个班出去郊游，大巴出了车祸。那个班的学生，总是还回来上课。
 ^prop dk schooldesk 11 5
 大火没有烧到这间教室。正中间那张课桌上刻满了字，每一笔都用尽了全力，笔迹各不相同：
@@ -465,7 +479,8 @@ async function S_wish() { await T_(`^stage room
 你把它的资料看了好几遍。它能负责一个小场景，还能在一定范围内“预知”。
 我|万事开头难。以后会有更多新员工的。
 @激活隐藏任务下一环节：为二十四个名字，制作出寄托残念的人偶。`); gainPet('bixian'); petAff('bixian', 20); if (c === 1) petAff('bixian', 12); }
-async function S_guest() { setClock(9, '午夜 0 点'); await T_(`^fx dark
+async function S_guest() { setClock(9, '午夜 0 点'); await T_(`^mus night
+^fx dark
 一楼卫生间那个隔间的门后面，有声音。你把它锁上了。
 @噩梦难度：这个游戏叫做看不见的客人。午夜把浸湿的白米撒在房子周围，把一双穿过的拖鞋放在门外，床铺整理成有人熟睡的样子，你躺在床下。任务的关键是你必须真的睡着。只要看到它的脸，任务就算成功。
 @本次任务是你接受的第三个噩梦级别日常任务，完成后可随机获得一个恐怖场景的试炼任务。
@@ -546,15 +561,19 @@ async function S_haiming() { setClock(8, '晚上 11 点'); await T_(`^in 大叔 
 我|红衣？
 你打开好感度页面。小小的名字后面写着“厉鬼”。张雅后面，是“红衣厉鬼”。
 ^stage room
+^mus mirror
+^mirror 8
 303。卫生间的镜子，正对着卧室。卧室没有门。
 门楠${F().mennan === 1 ? '和高医生' : ''}在外面等。你关了灯，坐在镜子照不到的地方。
 ^to 陈歌 5
 ^fx dark
 ^fx glitch
+^mirror other 黑影
 半夜。你瞥了一眼镜子：镜子里的卧室门框后面，多了一道影子。
 你转头去看真正的门框——空的。
 ^sfx whisper
-再看镜子。它离镜面近了一点。
+^mirror hand
+再看镜子。它离镜面近了一点。玻璃上，从里面按上来一只手印。
 ^at 黑影 13
 ^scare 黑影
 卧室门框后面，立着一道高瘦的黑影。它长着两张不同的脸。

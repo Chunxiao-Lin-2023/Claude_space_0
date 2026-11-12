@@ -131,33 +131,79 @@ async function S_daily1() { await T_(`@日常任务每日凌晨刷新，每天�
 我|这手机……奖励是真的会出现在现实里。`);
   addItem('cd'); learnSkill('friday'); if (ok) gainExp(20); }
 async function S_mirror() { setClock(10, '凌晨 2:44'); await T_(`^fx clear
+^mus mirror
 凌晨。日常任务刷新了，噩梦难度那一条，一个字都没变。
 @你需要独自一人：凌晨两点四十四分走进浴室，关灯，面对镜子，在自己和镜子之间点一根蜡烛。闭上眼，心里默念自己的名字。
 @黑暗里什么都可能发生。你要做的只是：不要睁眼。半个小时后，任务自动成功。
 你上网搜了一下。有人玩这个游戏疯了，有人说自己被拽进了镜子。
 我|我是开鬼屋的，每天琢磨怎么吓人。这种东西……正好全程录下来，给恐怖屋添个新项目。
-你把自己的手机架在洗手池边，镜头同时对着你、和镜子里的你。
+^mirror 6
 ^to 陈歌 6
 ^turn 陈歌 B
+你把手机架在洗手池边，镜头同时对着你、和镜子里的你。
 ^fx candle 5
 ^fx dark
-蜡烛点着了。火苗夹在镜子和现实中间，像一盏引路的灯。
+^sfx clock
+两点四十四分。蜡烛点着了。火苗夹在镜子和现实中间，像一盏引路的灯。
+^to 陈歌 7
+^turn 陈歌 B
+你往旁边挪了半步，想把蜡烛让到正中间。
+^mirror lag
+镜子里的你，过了一会儿，才跟着挪过来。
+^to 陈歌 6
+^turn 陈歌 B
+……大概是眼睛花了。
 我|陈歌、陈歌、陈歌……`);
   const ok = await miniGame('mirror');
-  if (ok) await T_(`窗户没关严，夜风吹在后颈上，像一双手。隔间的门在轻轻晃。水一滴一滴地落。
+  if (ok) await T_(`^mirror stare
+你闭上了眼睛。你看不见镜子。
+^sfx wind
+窗户没关严，夜风吹在后颈上，像一双手。隔间的门在轻轻晃。
+^sfx drip
+水一滴一滴地落。
+^mirror smile
+镜子里的你，没有闭眼。它看着你，慢慢咧开了嘴。
 你一直念着自己的名字，一边默数时间。
+^sfx whisper
+^mirror other 镜鬼
+耳边有人跟着你一起念。陈歌、陈歌……那个声音比你慢半拍。
 ~knock
+^mirror crack
 第二十五分钟，镜子“咔”地响了一声。
+^mirror hand
 ^fx glitch
 ^sfx breath
 有人在你耳边呼吸。离得很近，节奏和你一模一样——只是慢了半拍。
-你没有睁眼。`); else { F().mirrorFail = 1; await T_(`你睁了一下眼。只有一下。
+^mirror close
+^fx flicker
+镜子里那张脸贴到了玻璃上。越贴越近。玻璃上的裂纹，正好从它咧开的嘴角裂开。
+你没有睁眼。
+^fx steady
+^sfx clock
+第三十分钟。
+^mirror follow
+^mirror other
+你睁开眼。镜子里的你好好地站着，和你一样喘着气。
+只有镜面上那道裂缝，和裂缝旁边一个从里面按上去的手印，还在。`); else { F().mirrorFail = 1; await T_(`^mirror stare
+你睁了一下眼。只有一下。
+^mirror smile
+镜子里的你没有闭眼。它一直在看着你。它在笑。
+^mirror crack
 !mirror
-镜子里的你没有闭眼。它一直在看着你。
+^mirror out
+^fx red
+一只苍白的手，从裂开的镜面里伸了出来，按住了你的肩膀。
 %
+^fx clear
+^fx dark
 领口里的布偶动了。你再醒过来的时候，蜡烛已经烧完，半个小时过去了。`); }
-  await T_(`录像回放：25 分 14 秒，镜面自己裂开。镜子里那个“你”，开始往外撞。
+  await T_(`^mirror follow
+^fx tv
+录像回放：25 分 14 秒，镜面自己裂开。镜子里那个“你”，开始往外撞。
+^fx clear
+^fx dark
 卫生间的木门边缘，多了一圈抓痕，像被什么东西啃过。你抱着布偶缩在窗台下面，一晚上没敢出去。
+^mirror off
 ~phone
 @不得不说你是幸运的。恭喜你完成噩梦难度日常任务！奖励：初级天赋技能——殓容。
 @第一次完成噩梦难度日常任务，获得称号「噩梦之城新人」。额外奖励：解锁一星恐怖场景「午夜逃杀」的试炼任务。
@@ -322,7 +368,8 @@ async function S_live() { setClock(8, '晚上 10 点');
 ^fx steady
 出门的时候，你往锁眼里放了一根自己的头发。`); }
 async function S_3f() { setClock(9, '凌晨 1 点');
-  await T_(`^fx dark
+  await T_(`^mus door
+^fx dark
 三楼没翻修过。到处是烧过的痕迹，杂物和垃圾堆到没地方下脚。
 你翻了很久，从垃圾里找出四个布偶。出自同一个厂家，五年前的款。房子家具都烧没了，它们是怎么躲过去的？
 ^prop d1 doll 8 5 {"col":"#c8b8a0"}
@@ -381,7 +428,8 @@ async function S_escape() { setClock(10, '凌晨 2 点'); await T_((F().seen3f ?
 王琦|……是我看错了？不可能啊。
 他拿着手电在原地转了几圈，走了。
 你分不清方向，地势越走越陡。前面有一间木屋，像护林员住的。门没锁。`); learnTalent('run'); }
-async function S_hut() { setClock(10, '凌晨 3 点'); await T_(`^fx dark
+async function S_hut() { setClock(10, '凌晨 3 点'); await T_(`^mus door
+^fx dark
 一股怪味。生活用品堆得像垃圾场。
 床底下塞满了衣服——大部分是女人的，从来没洗过。有一件上面的泥还没干透，像这一两天还有人穿过。
 尺码和墙里那个人，对得上。
@@ -452,8 +500,11 @@ async function S_water() { setClock(9, '凌晨 1:10'); await T_(`^fx dark
 ^fx flicker
 你提着锤子上去，声音就停了。
 ^fx steady
+^mirror 10
+^mirror stare
 ^fx glitch
-午夜逃杀的浴室里，那面镜子上有一道新的裂痕。
+^mirror crack
+午夜逃杀的浴室里，那面镜子上有一道新的裂痕。镜子里的你，没有跟着你转过头。
 从镜子游戏那晚开始，就有什么东西跟着你。你用笔在墙上记过一个数字——它每晚都在变小。
 @噩梦难度：深夜的浴室总会发出奇怪的声音，想知道原因的话，就按照我说的去做吧。
 @幸运的厉鬼眷顾者，你的勇气让人惊讶。这个游戏叫做深水：把浴缸放满，整个人沉进去，屏住呼吸六十秒。它可以跨越生死，让你见到亡故之人。

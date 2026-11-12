@@ -87,7 +87,7 @@ body.m-ex #vEx,body.m-dlg #vDlg,body.m-bt #vBt{opacity:1;pointer-events:auto}bod
 #toast{position:fixed;left:50%;top:calc(52px + var(--sat));transform:translateX(-50%);background:rgba(0,0,0,.86);border:1px solid var(--line);border-radius:18px;padding:6px 16px;font-size:.84em;z-index:60;opacity:0;transition:opacity .25s;pointer-events:none;max-width:86%;text-align:center}#toast.on{opacity:1}
 #cine{position:fixed;inset:0;z-index:40;background:#000;display:none;align-items:center;justify-content:center;flex-direction:column;padding:8% 9%;text-align:center;cursor:pointer}#cine.on{display:flex}#cine p{font-family:"Songti SC","Noto Serif SC",serif;font-size:1.25em;line-height:2.1;margin:.3em 0;opacity:0;animation:cin 1s forwards;color:#e9e4d6;max-width:30em}#cine.mem{background:#1a140c}#cine.mem p{color:#d9c49a}#cine.red{background:#1a0000}#cine.red p{color:#ff5a48}#cine .hint{position:absolute;bottom:calc(18px + var(--sab));font-size:.72em;color:#666}@keyframes cin{to{opacity:1}}
 #card{position:fixed;inset:0;z-index:41;background:#000;display:none;align-items:center;justify-content:center;flex-direction:column;cursor:pointer}#card.on{display:flex}#card .c1{font-size:.9em;letter-spacing:.6em;color:#a33;margin-bottom:14px}#card .c2{font-family:"Songti SC",serif;font-size:2em;letter-spacing:.25em;color:#eee;text-align:center;padding:0 8%}#card .c3{margin-top:16px;font-size:.84em;color:#888;max-width:26em;text-align:center;padding:0 8%;line-height:1.9}#card .seal2{margin-top:22px;border:2px solid #a22;color:#c33;padding:4px 14px;font-size:1.2em;letter-spacing:.3em;transform:rotate(-6deg);font-family:"Songti SC",serif}
-#scare{position:fixed;inset:0;z-index:50;display:none;background:#000}#scare.on{display:block}#scare canvas{width:100%;height:100%;display:block}
+#scare{position:fixed;inset:0;z-index:50;display:none;background:#000}#scare.on{display:block}#scare canvas{width:100%;height:100%;display:block;object-fit:cover;image-rendering:pixelated}
 #flash{position:fixed;inset:0;z-index:49;pointer-events:none;background:#b00;opacity:0}#flash.on{animation:fl2 .5s}@keyframes fl2{0%{opacity:.7}100%{opacity:0}}
 #trans{position:fixed;inset:0;z-index:30;pointer-events:none;background:#000;opacity:0;display:flex;align-items:center;justify-content:center;font-family:"Songti SC",serif;font-size:2em;letter-spacing:.5em;color:#c33}#trans.on{animation:tr .7s}@keyframes tr{0%{opacity:0}35%{opacity:1}70%{opacity:1}100%{opacity:0}}
 #stamp{position:fixed;left:50%;top:42%;z-index:31;transform:translate(-50%,-50%) rotate(-8deg);border:4px solid #c33;color:#e44;font-family:"Songti SC",serif;font-size:2.1em;white-space:nowrap;padding:4px 16px 4px 22px;letter-spacing:.3em;pointer-events:none;opacity:0;background:rgba(0,0,0,.4)}#stamp.on{animation:stp 1s forwards}@keyframes stp{0%{opacity:0;transform:translate(-50%,-50%) rotate(-8deg) scale(2)}20%{opacity:1;transform:translate(-50%,-50%) rotate(-8deg) scale(1)}85%{opacity:1}100%{opacity:0}}
@@ -139,52 +139,133 @@ function el(tag, cls, html) { const e = document.createElement(tag); if (cls) e.
 const SET = Object.assign({ motion: 1, scare: 1, snd: 1, mus: 1, font: 0, diff: 1 }, store.get('set', {}));
 function saveSet() { store.set('set', SET); }
 
-/* —— 声音：全部现场合成，没有音频文件 —— */
-const AU = { ctx: null, master: null, noiseBuf: null, last: {} };
-function audioInit() {
-  if (AU.ctx || !SET.snd && !SET.mus) return; const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
-  try { const c = AU.ctx = new AC(); AU.master = c.createGain(); AU.master.gain.value = .5; const comp = c.createDynamicsCompressor(); AU.master.connect(comp); comp.connect(c.destination);
-    const b = AU.noiseBuf = c.createBuffer(1, c.sampleRate, c.sampleRate), d = b.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1; } catch (e) { AU.ctx = null; }
-}
-function tone(type, f0, f1, dur, vol, delay, lp) { const c = AU.ctx; if (!c || !SET.snd) return; const t = c.currentTime + (delay || 0), o = c.createOscillator(), g = c.createGain(); o.type = type; const j = 1 + (Math.random() - .5) * .06;
-  o.frequency.setValueAtTime(f0 * j, t); if (f1) o.frequency.exponentialRampToValueAtTime(Math.max(20, f1 * j), t + dur); g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vol, t + .012); g.gain.exponentialRampToValueAtTime(.0008, t + dur);
-  let n = o; if (lp) { const f = c.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = lp; o.connect(f); n = f; } n.connect(g); g.connect(AU.master); o.start(t); o.stop(t + dur + .05); }
-function noise(dur, vol, ft, f0, f1, q, delay) { const c = AU.ctx; if (!c || !SET.snd) return; const t = c.currentTime + (delay || 0), s = c.createBufferSource(), f = c.createBiquadFilter(), g = c.createGain(); s.buffer = AU.noiseBuf; s.loop = true; f.type = ft || 'lowpass'; f.Q.value = q || 1;
-  f.frequency.setValueAtTime(f0 || 800, t); if (f1) f.frequency.exponentialRampToValueAtTime(f1, t + dur); g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(.0008, t + dur); s.connect(f); f.connect(g); g.connect(AU.master); s.start(t); s.stop(t + dur + .05); }
+/* —— 声音：全部现场合成，没有音频文件。v2：混响、左右声道、恐怖氛围分层 —— */
+const AU = { ctx: null, master: null, noiseBuf: null, verbIn: null, musBus: null, last: {} };
+/* 混响用的冲激响应：一段越来越暗、慢慢消失的噪声（像空旷的走廊） */
+function auGraph(c) { const g = {}; g.master = c.createGain(); g.master.gain.value = .55; const comp = c.createDynamicsCompressor(); comp.threshold.value = -16; comp.ratio.value = 4; g.master.connect(comp); comp.connect(c.destination);
+  const len = Math.floor(c.sampleRate * 3.4), ir = c.createBuffer(2, len, c.sampleRate); for (let ch = 0; ch < 2; ch++) { const d = ir.getChannelData(ch); let lp = 0; for (let i = 0; i < len; i++) { const k = i / len; lp += ((Math.random() * 2 - 1) - lp) * (.5 - .42 * k); d[i] = lp * Math.pow(1 - k, 2.6) * (i < c.sampleRate * .012 ? i / (c.sampleRate * .012) : 1); } }
+  const cv = c.createConvolver(); cv.buffer = ir; g.verbIn = c.createGain(); g.verbIn.gain.value = 1; const vo = c.createGain(); vo.gain.value = .85; g.verbIn.connect(cv); cv.connect(vo); vo.connect(g.master);
+  g.musBus = c.createGain(); g.musBus.gain.value = SET.mus ? 1 : 0; g.musBus.connect(g.master); const ms = c.createGain(); ms.gain.value = .55; g.musBus.connect(ms); ms.connect(g.verbIn);
+  const b = c.createBuffer(1, c.sampleRate * 2, c.sampleRate), dd = b.getChannelData(0); for (let i = 0; i < dd.length; i++) dd[i] = Math.random() * 2 - 1; g.noiseBuf = b; return g; }
+function audioInit() { if (AU.ctx || !SET.snd && !SET.mus) return; const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
+  try { const c = AU.ctx = new AC(); Object.assign(AU, auGraph(c)); } catch (e) { AU.ctx = null; } }
+/* 一个声音：振荡器或噪声 → 滤波 → 包络 → 声像 → 干声 + 混响 */
+function V(o) { const c = AU.ctx; if (!c) return; if (o.mus ? !SET.mus : !SET.snd) return; const t = (o.at != null ? o.at : c.currentTime + (AU.off || 0)) + (o.delay || 0), dur = o.dur || .3, vol = (o.vol || .1) * (AU.gm || 1); let src;
+  if (o.noise) { src = c.createBufferSource(); src.buffer = AU.noiseBuf; src.loop = true; src.playbackRate.value = o.rate || 1; }
+  else { src = c.createOscillator(); src.type = o.type || 'sine'; const j = o.exact ? 1 : 1 + (Math.random() - .5) * .03; src.frequency.setValueAtTime(o.f0 * j, t); if (o.f1) src.frequency[o.lin ? 'linearRampToValueAtTime' : 'exponentialRampToValueAtTime'](Math.max(20, o.f1 * j), t + dur * (o.glide || 1)); if (o.det) src.detune.value = o.det;
+    if (o.vib) { const l = c.createOscillator(), lg = c.createGain(); l.frequency.value = o.vib[0]; lg.gain.value = o.vib[1]; l.connect(lg); lg.connect(src.frequency); l.start(t); l.stop(t + dur + .1); } }
+  let n = src; const filt = (type, f0, f1, q) => { const f = c.createBiquadFilter(); f.type = type; f.Q.value = q || .8; f.frequency.setValueAtTime(f0, t); if (f1) f.frequency.exponentialRampToValueAtTime(f1, t + dur); n.connect(f); n = f; };
+  if (o.hp) filt('highpass', o.hp); if (o.lp) filt('lowpass', o.lp, o.lp1, o.lq);
+  if (o.bp2) { const sum = c.createGain(); for (const fr of [o.bp, o.bp2]) { const f = c.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = fr; f.Q.value = o.q || 4; n.connect(f); f.connect(sum); } n = sum; } else if (o.bp) filt('bandpass', o.bp, o.bp1, o.q || 4);
+  const g = c.createGain(), at = o.att != null ? o.att : .008; g.gain.setValueAtTime(0, t);
+  if (o.swell) { g.gain.linearRampToValueAtTime(vol, t + dur); g.gain.linearRampToValueAtTime(0, t + dur + .03); }
+  else { g.gain.linearRampToValueAtTime(vol, t + at); if (o.hold) g.gain.setValueAtTime(vol, t + at + o.hold); g.gain.exponentialRampToValueAtTime(.0006, t + dur); }
+  if (o.am) { const l = c.createOscillator(), lg = c.createGain(), ag = c.createGain(); l.type = o.am[2] || 'sine'; l.frequency.value = o.am[0]; lg.gain.value = o.am[1] * .5; ag.gain.value = 1 - o.am[1] * .5; l.connect(lg); lg.connect(ag.gain); n.connect(ag); n = ag; l.start(t); l.stop(t + dur + .1); }
+  n.connect(g); let out = g; if (o.pan && c.createStereoPanner) { const p = c.createStereoPanner(); p.pan.setValueAtTime(o.pan, t); if (o.pan1 != null) p.pan.linearRampToValueAtTime(o.pan1, t + dur); g.connect(p); out = p; }
+  out.connect(o.mus ? AU.musBus : AU.master); if (o.rv) { const s = c.createGain(); s.gain.value = o.rv; out.connect(s); s.connect(AU.verbIn); }
+  src.start(t); src.stop(t + dur + (o.swell ? .06 : .05)); }
+/* 旧接口照旧能用 */
+function tone(type, f0, f1, dur, vol, delay, lp) { V({ type, f0, f1, dur, vol, delay, lp, rv: .12 }); }
+function noise(dur, vol, ft, f0, f1, q, delay) { V({ noise: 1, dur, vol, delay, [ft === 'highpass' ? 'hp' : ft === 'bandpass' ? 'bp' : 'lp']: f0 || 800, bp1: ft === 'bandpass' ? f1 : undefined, lp1: ft === 'lowpass' || !ft ? f1 : undefined, q, att: .004, rv: .1 }); }
+const rnd2 = (a, b) => a + Math.random() * (b - a), side = () => (Math.random() < .5 ? -1 : 1) * rnd2(.4, .9);
 const SFX = {
-  tap() { tone('sine', 520, 380, .05, .05); }, page() { noise(.07, .05, 'highpass', 2500, 1200); }, ok() { tone('triangle', 520, 780, .12, .09); tone('triangle', 780, 1040, .14, .07, .09); },
-  bad() { tone('sawtooth', 160, 90, .22, .09, 0, 600); }, hit() { noise(.09, .22, 'lowpass', 900, 200); tone('square', 120, 50, .1, .12, 0, 400); }, heavy() { noise(.2, .32, 'lowpass', 600, 80); tone('sine', 90, 35, .28, .3); },
-  blade() { noise(.08, .16, 'highpass', 3000, 6000, 2); }, hurt() { tone('sawtooth', 220, 110, .16, .1, 0, 900); noise(.06, .1, 'lowpass', 500, 200); }, miss() { noise(.1, .05, 'highpass', 1800, 3600); },
-  scream() { tone('sawtooth', 700, 1500, .18, .1, 0, 3000); tone('sawtooth', 1500, 500, .4, .1, .16, 3000); }, guard() { tone('triangle', 200, 260, .1, .1); },
-  phone() { tone('sine', 1320, 1320, .09, .1); tone('sine', 1320, 1320, .09, .1, .16); noise(.3, .02, 'bandpass', 160, 160, 3); }, coin() { tone('square', 1200, 1600, .06, .05); tone('square', 1600, 2100, .09, .05, .06); },
-  heart() { tone('sine', 62, 40, .12, .35); tone('sine', 55, 36, .14, .28, .2); }, door() { tone('sawtooth', 70, 110, .5, .06, 0, 300); noise(.5, .05, 'bandpass', 300, 500, 6); }, knock() { for (let i = 0; i < 3; i++) { noise(.05, .3, 'lowpass', 300, 120, 1, i * .28); tone('sine', 110, 60, .08, .2, i * .28); } },
-  drip() { tone('sine', 1500, 600, .07, .06); }, wind() { noise(1.6, .05, 'bandpass', 300, 700, 2); }, cat() { tone('sawtooth', 620, 900, .16, .07, 0, 2400); tone('sawtooth', 900, 520, .3, .07, .15, 2400); },
-  stinger() { noise(.5, .5, 'bandpass', 2600, 500, .7); tone('sawtooth', 66, 49, .7, .32); tone('square', 1400, 240, .32, .12, 0, 2600); tone('sawtooth', 933, 880, .6, .08, .02); },
-  static() { noise(.4, .08, 'highpass', 4000, 6000); },
-  /* 恐怖氛围用的小声音 */
-  whisper() { for (let i = 0; i < 5; i++) noise(.22, .045, 'bandpass', 1800 + Math.random() * 1600, 900 + Math.random() * 900, 6, i * .19); },
-  steps() { for (let i = 0; i < 3; i++) { noise(.07, .14, 'lowpass', 320, 90, 1, i * .46); tone('sine', 70, 45, .08, .09, i * .46); } },
-  creak() { tone('sawtooth', 95, 150, .9, .035, 0, 420); tone('sawtooth', 150, 82, .5, .025, .8, 380); },
-  breath() { noise(.9, .05, 'bandpass', 500, 260, 1.2); noise(1.1, .04, 'bandpass', 380, 620, 1.2, 1.1); },
-  giggle() { [880, 990, 880, 1046, 830].forEach((f, i) => tone('triangle', f, f * .94, .08, .035, i * .09, 2600)); },
-  scrape() { noise(.7, .07, 'bandpass', 2400, 900, 9); tone('sawtooth', 2100, 1700, .6, .012, 0, 3000); },
-  hum() { [392, 370, 349, 330, 311].forEach((f, i) => tone('sine', f, f * .985, .42, .03, i * .4)); }, spin() { tone('square', 500, 500, .03, .05); }, big() { tone('triangle', 392, 392, .3, .1); tone('triangle', 523, 523, .3, .1, .12); tone('triangle', 784, 784, .5, .12, .24); }, chalk() { noise(.25, .04, 'bandpass', 2400, 3200, 8); }
+  tap() { V({ f0: 520, f1: 380, dur: .05, vol: .05 }); }, page() { V({ noise: 1, hp: 2500, dur: .07, vol: .05 }); }, ok() { V({ type: 'triangle', f0: 520, f1: 780, dur: .12, vol: .08, rv: .2 }); V({ type: 'triangle', f0: 780, f1: 1040, dur: .14, vol: .06, delay: .09, rv: .2 }); },
+  bad() { V({ type: 'sawtooth', f0: 160, f1: 90, dur: .25, vol: .08, lp: 600, rv: .2 }); }, hit() { V({ noise: 1, lp: 900, lp1: 200, dur: .1, vol: .22 }); V({ type: 'square', f0: 120, f1: 50, dur: .12, vol: .1, lp: 400 }); },
+  heavy() { V({ noise: 1, lp: 600, lp1: 80, dur: .25, vol: .32, rv: .25 }); V({ f0: 90, f1: 32, dur: .4, vol: .32 }); }, blade() { V({ noise: 1, hp: 3000, bp: 5000, q: 2, dur: .09, vol: .16, rv: .15 }); },
+  hurt() { V({ type: 'sawtooth', f0: 220, f1: 110, dur: .18, vol: .09, lp: 900 }); V({ noise: 1, lp: 500, dur: .07, vol: .1 }); }, miss() { V({ noise: 1, hp: 1800, dur: .12, vol: .05, pan: side() }); },
+  guard() { V({ type: 'triangle', f0: 200, f1: 260, dur: .1, vol: .1 }); }, coin() { V({ type: 'square', f0: 1200, f1: 1600, dur: .06, vol: .04 }); V({ type: 'square', f0: 1600, f1: 2100, dur: .09, vol: .04, delay: .06 }); },
+  spin() { V({ type: 'square', f0: 500, dur: .03, vol: .04 }); }, big() { [392, 523, 784].forEach((f, i) => V({ type: 'triangle', f0: f, dur: .4, vol: .09, delay: i * .12, rv: .3, exact: 1 })); }, chalk() { V({ noise: 1, bp: 2600, q: 8, dur: .25, vol: .05, am: [28, .8] }); },
+  phone() { V({ f0: 1320, dur: .09, vol: .09, exact: 1 }); V({ f0: 1320, dur: .09, vol: .09, delay: .16, exact: 1 }); V({ noise: 1, bp: 160, q: 3, dur: .35, vol: .03 }); },
+  static() { V({ noise: 1, hp: 3000, dur: .45, vol: .07, am: [37, .7, 'square'] }); },
+  /* —— 心跳：低沉的“扑通”，有分量 —— */
+  heart() { for (const [d, v] of [[0, .5], [.2, .36]]) { V({ f0: 58, f1: 36, dur: .16, vol: v, delay: d, lp: 140 }); V({ noise: 1, lp: 180, dur: .05, vol: v * .5, delay: d }); } },
+  /* —— 惊吓的重击：不协和的弦乐群 + 尖啸 + 低频下坠，混响很长 —— */
+  stinger() { [0, 1, 6, 7, 13, 18].forEach(s => V({ type: 'sawtooth', f0: 110 * Math.pow(2, s / 12), f1: 104 * Math.pow(2, s / 12), dur: 1.5, vol: .07, lp: 2600, lp1: 600, att: .004, rv: .7, pan: rnd2(-.6, .6) }));
+    V({ type: 'sawtooth', f0: 1900, f1: 2500, dur: 1.1, vol: .05, vib: [9, 60], bp: 2200, q: 2, rv: .8 }); V({ noise: 1, bp: 1800, bp1: 400, q: .7, dur: .6, vol: .45, att: .002, rv: .6 }); V({ f0: 62, f1: 26, dur: 1.4, vol: .5, att: .003 }); },
+  /* 倒放的“吸气”：惊吓前一秒越来越响，然后戛然而止 */
+  reverse() { [0, 1, 6, 11].forEach(s => V({ type: 'sawtooth', f0: 98 * Math.pow(2, s / 12), dur: .9, vol: .06, lp: 1400, swell: 1, rv: .3 })); V({ noise: 1, bp: 900, q: .8, dur: .9, vol: .2, swell: 1 }); },
+  /* 镜子裂开：越来越密的脆响 + 玻璃的回音 */
+  crack() { for (let i = 0; i < 7; i++) { const d = i * (.11 - i * .012); V({ noise: 1, hp: 2600, dur: .03, vol: .2 + i * .02, att: .001, delay: d, rv: .5, pan: rnd2(-.3, .3) }); V({ f0: rnd2(3800, 6200), dur: .5, vol: .025, delay: d, rv: .8, exact: 1 }); } V({ f0: 70, f1: 40, dur: .4, vol: .15, delay: .5 }); },
+  shatter() { for (let i = 0; i < 18; i++) { const d = rnd2(0, .6); V({ noise: 1, hp: 3000, dur: .05, vol: .16, att: .001, delay: d, pan: rnd2(-.9, .9), rv: .5 }); V({ f0: rnd2(3000, 7500), dur: rnd2(.3, .9), vol: .02, delay: d, rv: .7, exact: 1 }); } V({ noise: 1, lp: 400, dur: .5, vol: .25 }); },
+  /* 耳语：像人说话的气声，左右飘，听不清在说什么 */
+  whisper() { const p = side(); for (let i = 0; i < 7; i++) { const d = i * rnd2(.14, .22); V({ noise: 1, bp: rnd2(700, 1100), bp2: rnd2(2000, 2900), q: 7, dur: rnd2(.12, .22), vol: .09, att: .03, delay: d, pan: p, pan1: p * .7, rv: .55 }); } },
+  /* 呼吸：贴着耳朵，先吸后呼 */
+  breath() { const p = rnd2(.5, .8) * (Math.random() < .5 ? -1 : 1); V({ noise: 1, bp: 800, bp1: 1500, q: 1.3, dur: .8, vol: .12, swell: 1, pan: p, rv: .08 }); V({ noise: 1, bp: 1300, bp1: 500, q: 1.1, dur: 1.1, vol: .12, att: .08, delay: .85, pan: p, rv: .08 }); },
+  /* 脚步：很重、很慢，从一边走到另一边 */
+  steps() { const a = side(); for (let i = 0; i < 3; i++) { const pn = a + (-a * 2) * i / 3; V({ noise: 1, lp: 340, lp1: 90, dur: .14, vol: .26, att: .003, delay: i * .62, pan: pn, rv: .5 }); V({ f0: 72, f1: 44, dur: .14, vol: .18, delay: i * .62, pan: pn }); } },
+  /* 门轴的吱呀：一顿一顿的摩擦 */
+  creak() { V({ type: 'sawtooth', f0: 95, f1: 150, dur: 1.3, vol: .06, bp: 700, q: 3, am: [34, .9, 'square'], rv: .5, pan: side(), lin: 1 }); V({ type: 'sawtooth', f0: 150, f1: 88, dur: .7, vol: .05, bp: 600, q: 3, am: [46, .9, 'square'], delay: 1.2, rv: .5 }); },
+  door() { AU.gm = SFX_GAIN.creak; SFX.creak(); AU.gm = 1; V({ noise: 1, lp: 300, dur: .2, vol: .3, delay: 1.9, rv: .5 }); V({ f0: 80, f1: 40, dur: .3, vol: .25, delay: 1.9 }); },
+  /* 敲门：木头的闷响，混在走廊的回声里 */
+  knock() { for (let i = 0; i < 3; i++) { V({ noise: 1, lp: 1200, lp1: 300, dur: .07, vol: .4, att: .001, delay: i * .3, rv: .5 }); V({ noise: 1, bp: 190, q: 8, dur: .12, vol: .35, delay: i * .3, rv: .4 }); V({ f0: 140, f1: 90, dur: .09, vol: .18, delay: i * .3 }); } },
+  /* 水滴：往上挑的“咚”，空荡荡的 */
+  drip() { V({ f0: 700, f1: 1700, dur: .06, vol: .09, rv: .8, pan: rnd2(-.5, .5) }); },
+  wind() { V({ noise: 1, bp: 300, bp1: 800, q: 2, dur: 2.2, vol: .08, swell: 0, att: .8, rv: .3, pan: -.6, pan1: .6 }); },
+  /* 小孩的笑声：从远处传来 */
+  giggle() { const p = side(); [1180, 1250, 1120, 1320, 1050].forEach((f, i) => V({ type: 'triangle', f0: f, f1: f * .9, dur: .1, vol: .05, delay: i * .11, vib: [8, 25], bp: 1400, q: 1.5, pan: p, rv: .75 })); },
+  /* 女人的尖叫/哀嚎：带颤音、带共鸣 */
+  scream() { V({ type: 'sawtooth', f0: 520, f1: 1150, dur: 1.2, vol: .08, vib: [6.5, 35], bp: 1100, q: 3, rv: .7, glide: .5 }); V({ type: 'sawtooth', f0: 760, f1: 1500, dur: 1.1, vol: .05, vib: [7, 40], bp: 2400, q: 4, rv: .7 }); V({ noise: 1, bp: 1800, q: 2, dur: 1, vol: .08, rv: .5 }); },
+  /* 指甲刮玻璃 */
+  scrape() { V({ noise: 1, bp: 2900, q: 14, dur: 1, vol: .14, am: [31, .9, 'square'], rv: .4, pan: side() }); V({ type: 'sawtooth', f0: 2300, f1: 2100, dur: 1, vol: .02, bp: 2300, q: 8, am: [31, .9, 'square'] }); },
+  /* 走调的哼歌：每个音都低一点点，有回声 */
+  hum() { [392, 370, 349, 330, 311, 330].forEach((f, i) => { V({ f0: f, f1: f * .985, dur: .5, vol: .045, delay: i * .44, lp: 900, vib: [5, 3], rv: .8, pan: -.3 }); V({ f0: f * 1.006, dur: .5, vol: .02, delay: i * .44, lp: 900, rv: .8, pan: .3 }); }); },
+  /* 丧钟：不和谐的金属泛音，余音很长 */
+  bell() { [1, 2.76, 5.4, 8.93].forEach((m, i) => V({ f0: 196 * m, dur: 3.6 - i * .6, vol: .07 / (i + 1), att: .002, rv: .7, exact: 1 })); },
+  /* 钟表：滴答四声 */
+  clock() { for (let i = 0; i < 4; i++) V({ noise: 1, bp: 3200, q: 9, dur: .03, vol: .18, att: .001, delay: i * .5, rv: .5 }); },
+  boom() { V({ f0: 55, f1: 25, dur: 2.2, vol: .5, att: .01, rv: .5 }); V({ noise: 1, lp: 200, dur: 1.2, vol: .25, rv: .6 }); },
+  cat() { V({ type: 'sawtooth', f0: 620, f1: 900, dur: .2, vol: .06, bp: 1200, q: 2, rv: .4 }); V({ type: 'sawtooth', f0: 900, f1: 520, dur: .35, vol: .06, bp: 1100, q: 2, delay: .18, vib: [7, 15], rv: .4 }); },
+  metal() { [1, 1.47, 2.09, 2.83, 3.6].forEach((m, i) => V({ f0: 310 * m, dur: 2.4, vol: .03, att: .002, rv: .8, exact: 1, pan: rnd2(-.7, .7) })); }
 };
-function sfx(n) { const now = performance.now(); if (now - (AU.last[n] || 0) < 45) return; AU.last[n] = now; audioInit(); try { SFX[n] && SFX[n](); } catch (e) {} }
+/* 每个音效的音量校准（离线渲染量过：氛围音峰值约 0.06–0.15，惊吓重击 0.2–0.3，背景音乐 rms 约 0.02） */
+const SFX_GAIN = { tap: 3.5, page: 2.8, miss: 3, guard: 2.3, coin: 2, blade: 3, hurt: 3, hit: 2.5, bad: 2.5, spin: 6, chalk: 15, cat: 3, whisper: 4.3, breath: 2.6, creak: 6.5, drip: 6, wind: 6.5, giggle: 3.3, scream: 5, scrape: 7, clock: 5, metal: 2, hum: 1.6, static: 2 };
+function sfxRaw(n) { AU.gm = SFX_GAIN[n] || 1; try { SFX[n] && SFX[n](); } catch (e) {} AU.gm = 1; }
+function sfx(n) { const now = performance.now(); if (now - (AU.last[n] || 0) < 45) return; AU.last[n] = now; audioInit(); sfxRaw(n); }
 
-/* —— 背景氛围：很低的持续音 + 稀疏的音符，按情境切换 —— */
-const MUS = { mood: '', t: 0, step: 0, drone: null };
-const MOODS = { /* [根音Hz, 音阶半音, 每步秒, 音量, 音色] */
-  day: [196, [0, 4, 7, 9, 12, 7], .62, .05, 'triangle'], house: [110, [0, 3, 7, 8, 12, 3], 1.1, .045, 'sine'], night: [82, [0, 1, 6, 7, 1, 0], 1.7, .05, 'sine'],
-  fight: [98, [0, 3, 5, 6, 7, 10, 6, 3], .3, .06, 'sawtooth'], scare: [147, [0, 4, 7, 4, 12, 7, 4, 0], .26, .05, 'square'], door: [61, [0, 6, 1, 7], 2.2, .06, 'sine'], phone: [73, [0, 1], 2.6, .05, 'sine']
+/* —— 背景氛围：低沉的持续音（会“呼吸”）+ 风/底噪 + 不定时出现的声音事件，按情境切换 —— */
+const MUS = { mood: '', drone: null, next: {} };
+/* root 根音；dr 持续音的音程；w 波形；dv 音量；cut 滤波范围；nz 底噪[音量,中心频率]；ev 事件[名字, 最短秒, 最长秒] */
+const MOODS = {
+  day: { root: 98, dr: [0, 7], w: 'sine', dv: .022, cut: [500, 900], nz: 0, ev: [['box', 4, 8]] },
+  house: { root: 73.4, dr: [0, 6], w: 'sawtooth', dv: .022, cut: [180, 420], nz: [.012, 500], ev: [['box', 5, 9], ['creak', 18, 30], ['drip', 7, 13]] },
+  night: { root: 55, dr: [0, 1, 7], w: 'sawtooth', dv: .026, cut: [140, 340], nz: [.02, 380], ev: [['thump', 10, 18], ['whisper', 14, 26], ['knock', 26, 44], ['steps', 22, 36], ['screech', 28, 46], ['swell', 18, 30]] },
+  fight: { root: 61.7, dr: [0, 6], w: 'sawtooth', dv: .028, cut: [260, 700], nz: [.012, 900], ev: [['pulse', .34, .34], ['screech', 7, 12], ['metal', 6, 10]] },
+  scare: { root: 87.3, dr: [0, 7], w: 'triangle', dv: .018, cut: [400, 800], nz: 0, ev: [['tune', .46, .46], ['giggle', 9, 16]] },
+  door: { root: 46.2, dr: [0, 1, 6, 11], w: 'sawtooth', dv: .03, cut: [120, 300], nz: [.024, 260], ev: [['whisper', 6, 11], ['swell', 9, 16], ['metal', 8, 14], ['hum', 30, 44], ['thump', 7, 12]] },
+  phone: { root: 73.4, dr: [0, 1], w: 'sine', dv: .022, cut: [300, 500], nz: [.008, 3000], ev: [['static', 6, 10]] },
+  mirror: { root: 523, dr: [0, 6], w: 'sine', dv: .009, cut: [1800, 2600], nz: [.01, 600], sub: 55, ev: [['drip', 4, 7], ['breath', 9, 15], ['whisper', 11, 18], ['glass', 7, 12]] }
 };
-function musicMode(m) { if (MUS.mood === m) return; MUS.mood = m; MUS.step = 0; }
-function musicTick() { const c = AU.ctx; if (!c || !SET.mus || !MUS.mood || document.hidden) return; const M = MOODS[MUS.mood]; if (!M) return; const now = c.currentTime; if (now < MUS.t) return; MUS.t = now + M[2];
-  const semi = M[1][MUS.step++ % M[1].length], f = M[0] * Math.pow(2, semi / 12); const o = c.createOscillator(), g = c.createGain(), lp = c.createBiquadFilter(); o.type = M[4]; o.frequency.value = f; lp.type = 'lowpass'; lp.frequency.value = M[4] === 'sine' ? 900 : 1300;
-  g.gain.setValueAtTime(0, now); g.gain.linearRampToValueAtTime(M[3], now + .05); g.gain.exponentialRampToValueAtTime(.0006, now + M[2] * 1.8); o.connect(lp); lp.connect(g); g.connect(AU.master); o.start(now); o.stop(now + M[2] * 1.9);
-  if (MUS.step % 4 === 1) { const o2 = c.createOscillator(), g2 = c.createGain(); o2.type = 'sine'; o2.frequency.value = M[0] / 2; g2.gain.setValueAtTime(0, now); g2.gain.linearRampToValueAtTime(M[3] * .9, now + .3); g2.gain.exponentialRampToValueAtTime(.0006, now + M[2] * 4); o2.connect(g2); g2.connect(AU.master); o2.start(now); o2.stop(now + M[2] * 4.1); }
+const BOX = [0, 2, 3, 5, 7, 8, 10, 12, 14, 15], TUNE = [7, 10, 12, 10, 7, 6, 7, -1, 3, 6, 7, 6, 3, 2, 3, -1];
+function musEvent(k, at, M) { const r = M.root, o = { mus: 1, at };
+  if (k === 'box') { const s = BOX[Math.floor(Math.random() * BOX.length)], f = r * 4 * Math.pow(2, s / 12); V({ ...o, f0: f, dur: 2.2, vol: .03, att: .002, rv: .9, det: rnd2(-25, 25), pan: rnd2(-.5, .5) }); V({ ...o, f0: f * 2.01, dur: 1, vol: .008, att: .002, rv: .9 }); }
+  else if (k === 'tune') { const s = TUNE[MUS.step++ % TUNE.length]; if (s >= 0) { const f = r * 4 * Math.pow(2, s / 12); V({ ...o, type: 'triangle', f0: f, dur: .7, vol: .028, att: .003, rv: .6, det: rnd2(-18, 18) }); V({ ...o, f0: f * 3.01, dur: .35, vol: .006, rv: .6 }); } }
+  else if (k === 'pulse') { const s = (MUS.step++ % 8) < 6 ? 0 : 1, acc = MUS.step % 4 === 1; V({ ...o, type: 'sawtooth', f0: r * 2 * Math.pow(2, s / 12), dur: .3, vol: acc ? .05 : .03, lp: acc ? 900 : 500, att: .004 }); if (MUS.step % 8 === 1) V({ ...o, f0: 55, f1: 38, dur: .16, vol: .2, lp: 140 }); }
+  else if (k === 'thump') V({ ...o, f0: 48, f1: 30, dur: 1.2, vol: .16, rv: .7, pan: rnd2(-.5, .5) });
+  else if (k === 'swell') [0, 1, 6].forEach(s => V({ ...o, type: 'sawtooth', f0: r * 2 * Math.pow(2, s / 12), dur: rnd2(2.5, 4), vol: .025, lp: 900, swell: 1, rv: .8, pan: rnd2(-.6, .6) }));
+  else if (k === 'screech') V({ ...o, type: 'sawtooth', f0: rnd2(1500, 2100), f1: rnd2(1300, 2600), dur: 2.6, vol: .012, bp: 2000, q: 3, vib: [5, 18], att: 1.2, rv: .9, pan: rnd2(-.8, .8) });
+  else if (k === 'glass') { const f = rnd2(1700, 2600); V({ ...o, f0: f, dur: 3.5, vol: .014, att: .6, rv: .9, exact: 1, pan: -.4 }); V({ ...o, f0: f * 1.004, dur: 3.5, vol: .014, att: .6, rv: .9, exact: 1, pan: .4 }); }
+  else if (SFX[k] && SET.snd) { AU.off = Math.max(0, at - AU.ctx.currentTime); sfxRaw(k); AU.off = 0; }
 }
-setInterval(musicTick, 90);
+/* 持续音：几只略微走调的振荡器，滤波器慢慢开合，像在喘气 */
+function musDrone(M, at) { const c = AU.ctx, g = c.createGain(), lp = c.createBiquadFilter(), parts = []; lp.type = 'lowpass'; lp.Q.value = 2; lp.frequency.value = M.cut[0];
+  const lfo = c.createOscillator(), lg = c.createGain(); lfo.frequency.value = .06 + Math.random() * .05; lg.gain.value = (M.cut[1] - M.cut[0]) / 2; lfo.connect(lg); lg.connect(lp.frequency); lp.frequency.setValueAtTime((M.cut[0] + M.cut[1]) / 2, at);
+  const amp = c.createOscillator(), ag = c.createGain(); amp.frequency.value = .09; ag.gain.value = M.dv * .35; amp.connect(ag); ag.connect(g.gain);
+  for (const s of M.dr) for (const dt of [-7, 6]) { const o = c.createOscillator(); o.type = M.w; o.frequency.value = M.root * Math.pow(2, s / 12); o.detune.value = dt + rnd2(-3, 3); o.connect(lp); parts.push(o); }
+  if (M.sub) { const o = c.createOscillator(); o.frequency.value = M.sub; const sg = c.createGain(); sg.gain.value = 1.6; o.connect(sg); sg.connect(g); parts.push(o); }
+  let nz = null; if (M.nz) { nz = c.createBufferSource(); nz.buffer = AU.noiseBuf; nz.loop = true; const nf = c.createBiquadFilter(); nf.type = 'bandpass'; nf.frequency.value = M.nz[1]; nf.Q.value = 1.2; const ng = c.createGain(); ng.gain.value = M.nz[0] / M.dv; const nl = c.createOscillator(), nlg = c.createGain(); nl.frequency.value = .05; nlg.gain.value = M.nz[1] * .4; nl.connect(nlg); nlg.connect(nf.frequency); nz.connect(nf); nf.connect(ng); ng.connect(g); parts.push(nl); }
+  lp.connect(g); g.gain.setValueAtTime(0, at); g.gain.linearRampToValueAtTime(M.dv, at + 2.5); g.connect(AU.musBus); for (const p of parts.concat([lfo, amp])) p.start(at); if (nz) nz.start(at);
+  return { g, stop(t) { g.gain.cancelScheduledValues(t); g.gain.setValueAtTime(g.gain.value, t); g.gain.linearRampToValueAtTime(0, t + 1.8); for (const p of parts.concat([lfo, amp])) p.stop(t + 2); if (nz) nz.stop(t + 2); } }; }
+function musicMode(m) { if (MUS.mood === m) return; MUS.mood = m; MUS.step = 0; MUS.next = {}; const c = AU.ctx; if (!c) return; const now = c.currentTime; if (MUS.drone) { MUS.drone.stop(now); MUS.drone = null; } }
+function musicTick(at) { const c = AU.ctx; if (!c || !MUS.mood || document.hidden) return; if (!SET.mus) { if (MUS.drone) { MUS.drone.stop(c.currentTime); MUS.drone = null; } return; } const M = MOODS[MUS.mood]; if (!M) return; const now = at != null ? at : c.currentTime;
+  if (!MUS.drone) MUS.drone = musDrone(M, now + .05);
+  for (const e of M.ev) { const k = e[0]; if (MUS.next[k] == null) MUS.next[k] = now + (e[1] < 1 ? 0 : rnd2(e[1] * .3, e[1])); while (MUS.next[k] <= now + .25) { musEvent(k, Math.max(now, MUS.next[k]), M); MUS.next[k] += rnd2(e[1], e[2]); } } }
+setInterval(() => { if (!AU.offline) musicTick(); }, 120);
+/* 测试用：离线渲染一段声音（不出声），返回 {peak, rms, buf}；页面里也能拿来做试听文件 */
+async function auRender(secs, fn) { const OC = window.OfflineAudioContext || window.webkitOfflineAudioContext; const c = new OC(2, Math.ceil(44100 * secs), 44100), keep = { ...AU }, mk = { ...MUS }; Object.assign(AU, auGraph(c), { ctx: c, last: {}, offline: 1 });
+  try { fn(c); } finally { } const buf = await c.startRendering(); Object.assign(AU, keep, { offline: 0 }); Object.assign(MUS, mk); let pk = 0, ss = 0; for (let ch = 0; ch < 2; ch++) { const d = buf.getChannelData(ch); for (let i = 0; i < d.length; i++) { const v = Math.abs(d[i]); if (v > pk) pk = v; ss += v * v; } } return { peak: pk, rms: Math.sqrt(ss / (buf.length * 2)), buf }; }
+function auWav(buf) { const n = buf.length, ch = 2, out = new DataView(new ArrayBuffer(44 + n * ch * 2)); const W = (o, s) => { for (let i = 0; i < s.length; i++) out.setUint8(o + i, s.charCodeAt(i)); };
+  W(0, 'RIFF'); out.setUint32(4, 36 + n * ch * 2, true); W(8, 'WAVEfmt '); out.setUint32(16, 16, true); out.setUint16(20, 1, true); out.setUint16(22, ch, true); out.setUint32(24, 44100, true); out.setUint32(28, 44100 * ch * 2, true); out.setUint16(32, ch * 2, true); out.setUint16(34, 16, true); W(36, 'data'); out.setUint32(40, n * ch * 2, true);
+  const L = buf.getChannelData(0), R = buf.getChannelData(1); for (let i = 0; i < n; i++) { out.setInt16(44 + i * 4, Math.max(-1, Math.min(1, L[i])) * 32767, true); out.setInt16(46 + i * 4, Math.max(-1, Math.min(1, R[i])) * 32767, true); } return new Uint8Array(out.buffer); }
 
 /* 数值与数据表。改 BAL / HERO / 怪物倍率前先给用户看 旧值 → 新值（RULES 第 8 条） */
 const BAL = {
@@ -706,7 +787,7 @@ async function battleFinish() { const B = STATE.battle; if (!B) return; B.phase 
   B.rw = rw; sfx(res === 'win' ? 'big' : 'bad'); await fxStamp(res === 'win' ? (B.scare ? '吓退' : '撑住了') : res === 'flee' ? '脱身' : (B.scare ? '不吓人' : '倒下')); renderBattle();
   if (B.auto || (window.__dbg && __dbg.instant)) battleEnd(); }
 function battleEnd() { const B = STATE.battle; if (!B || B.phase !== 'end') return; STATE.battle = null; applyMode(); musicMode(moodNow()); refresh(); save(); const r = battleDone; battleDone = null; if (r) r(B.result); }
-function moodNow() { if (STATE.battle) return STATE.battle.scare ? 'scare' : 'fight'; if (PLACES[C.loc].art === 'inside') return 'door'; return isNight() ? (PLACES[C.loc].area === 'park' ? 'house' : 'night') : 'day'; }
+function moodNow() { if (STATE.scene && STATE.musOv && !STATE.battle) return STATE.musOv; if (STATE.battle) return STATE.battle.scare ? 'scare' : 'fight'; if (PLACES[C.loc].art === 'inside') return 'door'; return isNight() ? (PLACES[C.loc].area === 'park' ? 'house' : 'night') : 'day'; }
 
 /* —— 买卖 —— */
 const SHOP = ['bread', 'drink', 'bandage', 'smoke', 'coffee', 'saltbag', 'g_raincoat', 'g_torch', 'g_shoes'];
@@ -960,33 +1041,79 @@ async function S_daily1() { await T_(`@日常任务每日凌晨刷新，每天�
 我|这手机……奖励是真的会出现在现实里。`);
   addItem('cd'); learnSkill('friday'); if (ok) gainExp(20); }
 async function S_mirror() { setClock(10, '凌晨 2:44'); await T_(`^fx clear
+^mus mirror
 凌晨。日常任务刷新了，噩梦难度那一条，一个字都没变。
 @你需要独自一人：凌晨两点四十四分走进浴室，关灯，面对镜子，在自己和镜子之间点一根蜡烛。闭上眼，心里默念自己的名字。
 @黑暗里什么都可能发生。你要做的只是：不要睁眼。半个小时后，任务自动成功。
 你上网搜了一下。有人玩这个游戏疯了，有人说自己被拽进了镜子。
 我|我是开鬼屋的，每天琢磨怎么吓人。这种东西……正好全程录下来，给恐怖屋添个新项目。
-你把自己的手机架在洗手池边，镜头同时对着你、和镜子里的你。
+^mirror 6
 ^to 陈歌 6
 ^turn 陈歌 B
+你把手机架在洗手池边，镜头同时对着你、和镜子里的你。
 ^fx candle 5
 ^fx dark
-蜡烛点着了。火苗夹在镜子和现实中间，像一盏引路的灯。
+^sfx clock
+两点四十四分。蜡烛点着了。火苗夹在镜子和现实中间，像一盏引路的灯。
+^to 陈歌 7
+^turn 陈歌 B
+你往旁边挪了半步，想把蜡烛让到正中间。
+^mirror lag
+镜子里的你，过了一会儿，才跟着挪过来。
+^to 陈歌 6
+^turn 陈歌 B
+……大概是眼睛花了。
 我|陈歌、陈歌、陈歌……`);
   const ok = await miniGame('mirror');
-  if (ok) await T_(`窗户没关严，夜风吹在后颈上，像一双手。隔间的门在轻轻晃。水一滴一滴地落。
+  if (ok) await T_(`^mirror stare
+你闭上了眼睛。你看不见镜子。
+^sfx wind
+窗户没关严，夜风吹在后颈上，像一双手。隔间的门在轻轻晃。
+^sfx drip
+水一滴一滴地落。
+^mirror smile
+镜子里的你，没有闭眼。它看着你，慢慢咧开了嘴。
 你一直念着自己的名字，一边默数时间。
+^sfx whisper
+^mirror other 镜鬼
+耳边有人跟着你一起念。陈歌、陈歌……那个声音比你慢半拍。
 ~knock
+^mirror crack
 第二十五分钟，镜子“咔”地响了一声。
+^mirror hand
 ^fx glitch
 ^sfx breath
 有人在你耳边呼吸。离得很近，节奏和你一模一样——只是慢了半拍。
-你没有睁眼。`); else { F().mirrorFail = 1; await T_(`你睁了一下眼。只有一下。
+^mirror close
+^fx flicker
+镜子里那张脸贴到了玻璃上。越贴越近。玻璃上的裂纹，正好从它咧开的嘴角裂开。
+你没有睁眼。
+^fx steady
+^sfx clock
+第三十分钟。
+^mirror follow
+^mirror other
+你睁开眼。镜子里的你好好地站着，和你一样喘着气。
+只有镜面上那道裂缝，和裂缝旁边一个从里面按上去的手印，还在。`); else { F().mirrorFail = 1; await T_(`^mirror stare
+你睁了一下眼。只有一下。
+^mirror smile
+镜子里的你没有闭眼。它一直在看着你。它在笑。
+^mirror crack
 !mirror
-镜子里的你没有闭眼。它一直在看着你。
+^mirror out
+^fx red
+一只苍白的手，从裂开的镜面里伸了出来，按住了你的肩膀。
 %
+^fx clear
+^fx dark
 领口里的布偶动了。你再醒过来的时候，蜡烛已经烧完，半个小时过去了。`); }
-  await T_(`录像回放：25 分 14 秒，镜面自己裂开。镜子里那个“你”，开始往外撞。
+  await T_(`^mirror follow
+^fx tv
+录像回放：25 分 14 秒，镜面自己裂开。镜子里那个“你”，开始往外撞。
+^fx clear
+^fx dark
 卫生间的木门边缘，多了一圈抓痕，像被什么东西啃过。你抱着布偶缩在窗台下面，一晚上没敢出去。
+^mirror off
 ~phone
 @不得不说你是幸运的。恭喜你完成噩梦难度日常任务！奖励：初级天赋技能——殓容。
 @第一次完成噩梦难度日常任务，获得称号「噩梦之城新人」。额外奖励：解锁一星恐怖场景「午夜逃杀」的试炼任务。
@@ -1151,7 +1278,8 @@ async function S_live() { setClock(8, '晚上 10 点');
 ^fx steady
 出门的时候，你往锁眼里放了一根自己的头发。`); }
 async function S_3f() { setClock(9, '凌晨 1 点');
-  await T_(`^fx dark
+  await T_(`^mus door
+^fx dark
 三楼没翻修过。到处是烧过的痕迹，杂物和垃圾堆到没地方下脚。
 你翻了很久，从垃圾里找出四个布偶。出自同一个厂家，五年前的款。房子家具都烧没了，它们是怎么躲过去的？
 ^prop d1 doll 8 5 {"col":"#c8b8a0"}
@@ -1210,7 +1338,8 @@ async function S_escape() { setClock(10, '凌晨 2 点'); await T_((F().seen3f ?
 王琦|……是我看错了？不可能啊。
 他拿着手电在原地转了几圈，走了。
 你分不清方向，地势越走越陡。前面有一间木屋，像护林员住的。门没锁。`); learnTalent('run'); }
-async function S_hut() { setClock(10, '凌晨 3 点'); await T_(`^fx dark
+async function S_hut() { setClock(10, '凌晨 3 点'); await T_(`^mus door
+^fx dark
 一股怪味。生活用品堆得像垃圾场。
 床底下塞满了衣服——大部分是女人的，从来没洗过。有一件上面的泥还没干透，像这一两天还有人穿过。
 尺码和墙里那个人，对得上。
@@ -1281,8 +1410,11 @@ async function S_water() { setClock(9, '凌晨 1:10'); await T_(`^fx dark
 ^fx flicker
 你提着锤子上去，声音就停了。
 ^fx steady
+^mirror 10
+^mirror stare
 ^fx glitch
-午夜逃杀的浴室里，那面镜子上有一道新的裂痕。
+^mirror crack
+午夜逃杀的浴室里，那面镜子上有一道新的裂痕。镜子里的你，没有跟着你转过头。
 从镜子游戏那晚开始，就有什么东西跟着你。你用笔在墙上记过一个数字——它每晚都在变小。
 @噩梦难度：深夜的浴室总会发出奇怪的声音，想知道原因的话，就按照我说的去做吧。
 @幸运的厉鬼眷顾者，你的勇气让人惊讶。这个游戏叫做深水：把浴缸放满，整个人沉进去，屏住呼吸六十秒。它可以跨越生死，让你见到亡故之人。
@@ -1375,6 +1507,8 @@ async function S_dance() { setClock(10, '凌晨 2 点'); await T_(`^stage corrid
 二楼走廊中间也有一把椅子。带靠背，不是这里的东西。椅子底下写着一个女生的名字。
 三四楼之间立着木板：禁止入内。你迈了过去。
 ^stage dance
+^mus mirror
+^mirror 4 big
 ^prop c1 chair 9 5 {"col":"#6a5040"}
 ^prop c2 chair 11 5 {"col":"#6a5040"}
 ^prop c3 chair 13 5 {"col":"#6a5040"}
@@ -1388,8 +1522,12 @@ async function S_dance() { setClock(10, '凌晨 2 点'); await T_(`^stage corrid
 荣誉墙上那张是五个人。这一张，是六个女孩。`]], 3);
   await T_(`^del ph
 ^to 陈歌 8
+^to 陈歌 4
+^turn 陈歌 B
+^mirror lag
 ^fx glitch
 你抬起头。落地镜里的你，慢了半拍才抬头。
+^mirror follow
 ^sfx whisper
 我|被剪掉的那一个……张雅。
 ^fx dark
@@ -1407,6 +1545,7 @@ async function S_dance() { setClock(10, '凌晨 2 点'); await T_(`^stage corrid
 你砸烂了椅背，抓起椅子腿抡向另外两把。镜子里的画面有点奇葩，但你顾不上了。
 碎片里，她们还抓着你的脚踝。
 然后，温度降了下来。
+^mirror other 张雅
 镜子里，你的背后多了一个低着头的女孩。染血的校服贴在身上，一眼看去，尽是猩红。
 ^at 张雅 7
 她靠在了你的背上。黑发和你的头发，缠在了一起。
@@ -1470,11 +1609,15 @@ async function S_shoes() { setClock(11, '凌晨 4 点'); await T_(`^call 李队
 可解锁场景那一栏里，多了一个血红色的名字。光看那些支线的描述，你的鸡皮疙瘩就起来了。
 我|四星……以后再说。
 ^stage hall
+^mirror 13
 ^fx dark
 回到恐怖屋已经快天亮。你走在漆黑的走廊上——你熟悉这里的每一个地方。
 所以你立刻知道，屋里有人。
 ^in 张鹏 15
-张鹏站在走廊尽头。他身后的每一面镜子里，都有东西在往外看。
+^mirror empty
+^mirror other 镜鬼
+张鹏站在走廊尽头。他身后的每一面镜子里，都有东西在往外看。——镜子里照不出你，只照得出它。
+^mirror hand
 ^at 镜鬼 17`);
   go('hh_hall', true, true);
   const win = await fight({ mobs: [['mirror', L(2)], ['zhangpeng', L(0)]], ally: 'zhangya', title: '恐怖屋 · 走廊', intro: '你的影子，站了起来。', epic: { name: '镜中怪物', sub: '从镜子游戏那晚，一直跟到今天', seal: '镜', intro: ['墙上的数字归零了。', '它等的就是这一晚。', '——可它没算到，你的影子里也住着东西。'], phase: '（镜面一块接一块地碎）', low: '背后很冷。但这一次，冷是站在你这边的。' } });
@@ -1599,7 +1742,8 @@ async function S_muyang() { await chapterCard('四', '暮阳中学', '雨夜 · 
   await T_(`>来了来了／主播这次又去哪作死／暮阳中学？我表哥以前就是那的，说有一个班……／前面的把话说完啊！
 @四条支线：送不走的笔仙——宿舍楼。厕所的第五个隔间——教学楼三楼。封闭的教室——教学楼尽头。深井——未知。
 我|现在还没过十二点，不是“它们”最活跃的时候。一个一个来。`); }
-async function S_pen() { setClock(8, '晚上 9:30'); await T_(`^fx dark
+async function S_pen() { setClock(8, '晚上 9:30'); await T_(`^mus night
+^fx dark
 ^prop c1 chair 9 5
 ^prop c2 chair 10 5
 ^prop pp paper 11 5
@@ -1634,6 +1778,7 @@ async function S_pen() { setClock(8, '晚上 9:30'); await T_(`^fx dark
 >？？？？主播在威胁笔仙／笔：我只是一支笔／人气两万了！
 直播间人气不知道什么时候破了两万。`); gainTitle('host'); if (ok) gainExp(30); STATE.live && (STATE.live.hot = Math.max(STATE.live.hot, 21000)); }
 async function S_wc() { setClock(8, '晚上 10 点'); await T_(`^fx dark
+^mus door
 ^prop s4 stall 8 4
 ^prop s5 stall 10 4
 ^prop s6 stall 12 4
@@ -1695,7 +1840,8 @@ async function S_office() { setClock(8, '晚上 10:30');
 ^fx glitch
 一个拿着锤子的小人，站在第五个隔间门口。画上的蜡笔，还没干。
 >卧槽／所以那两个小孩是……／主播快跑吧十点半了`); if (F().fanyu === 0) gainExp(20); }
-async function S_last() { setClock(9, '晚上 11:40'); await T_(`^fx dark
+async function S_last() { setClock(9, '晚上 11:40'); await T_(`^mus door
+^fx dark
 教学楼尽头。传说，有个班出去郊游，大巴出了车祸。那个班的学生，总是还回来上课。
 ^prop dk schooldesk 11 5
 大火没有烧到这间教室。正中间那张课桌上刻满了字，每一笔都用尽了全力，笔迹各不相同：
@@ -1812,7 +1958,8 @@ async function S_wish() { await T_(`^stage room
 你把它的资料看了好几遍。它能负责一个小场景，还能在一定范围内“预知”。
 我|万事开头难。以后会有更多新员工的。
 @激活隐藏任务下一环节：为二十四个名字，制作出寄托残念的人偶。`); gainPet('bixian'); petAff('bixian', 20); if (c === 1) petAff('bixian', 12); }
-async function S_guest() { setClock(9, '午夜 0 点'); await T_(`^fx dark
+async function S_guest() { setClock(9, '午夜 0 点'); await T_(`^mus night
+^fx dark
 一楼卫生间那个隔间的门后面，有声音。你把它锁上了。
 @噩梦难度：这个游戏叫做看不见的客人。午夜把浸湿的白米撒在房子周围，把一双穿过的拖鞋放在门外，床铺整理成有人熟睡的样子，你躺在床下。任务的关键是你必须真的睡着。只要看到它的脸，任务就算成功。
 @本次任务是你接受的第三个噩梦级别日常任务，完成后可随机获得一个恐怖场景的试炼任务。
@@ -1893,15 +2040,19 @@ async function S_haiming() { setClock(8, '晚上 11 点'); await T_(`^in 大叔 
 我|红衣？
 你打开好感度页面。小小的名字后面写着“厉鬼”。张雅后面，是“红衣厉鬼”。
 ^stage room
+^mus mirror
+^mirror 8
 303。卫生间的镜子，正对着卧室。卧室没有门。
 门楠${F().mennan === 1 ? '和高医生' : ''}在外面等。你关了灯，坐在镜子照不到的地方。
 ^to 陈歌 5
 ^fx dark
 ^fx glitch
+^mirror other 黑影
 半夜。你瞥了一眼镜子：镜子里的卧室门框后面，多了一道影子。
 你转头去看真正的门框——空的。
 ^sfx whisper
-再看镜子。它离镜面近了一点。
+^mirror hand
+再看镜子。它离镜面近了一点。玻璃上，从里面按上来一只手印。
 ^at 黑影 13
 ^scare 黑影
 卧室门框后面，立着一道高瘦的黑影。它长着两张不同的脸。
@@ -2102,7 +2253,8 @@ ${win ? '独臂的那个，另一条胳膊也抬不起来了。畸形脸翻窗�
 我|你该吃药了。
 >感谢逗比小仙女的打赏／乖乖，太真实了／人气十五万
 王海明带出去的镜鬼，王声龙肩膀上的高个子——连鬼，都不愿意待在那栋楼里。`); }
-async function S_b3() { setClock(9, '凌晨 1 点'); await T_(`^fx dark
+async function S_b3() { setClock(9, '凌晨 1 点'); await T_(`^mus door
+^fx dark
 连廊的铁门，锁上的铁条是被人一点一点磨断的。
 ^prop f1 futon 7 4 {"col":"#6a6a5a"}
 ^prop f2 futon 10 4 {"col":"#5a5a4e"}
@@ -2169,7 +2321,8 @@ ${win ? '她散成了一地的白大褂。' : '白猫扑到了她脸上。你把
 >秦广那边黑屏了／都来这边了／所以这个是真的？？？
 我|暮阳中学里的不是恶灵。他应该不会有生命危险。……希望他下次别再跟风了。
 你把直播间的名字，改成了恐怖屋的地址。`); if (STATE.live) STATE.live.hot = 300000; }
-async function S_door() { setClock(10, '凌晨 2:30'); await T_(`^fx dark
+async function S_door() { setClock(10, '凌晨 2:30'); await T_(`^mus door
+^fx dark
 一楼。臭味到了刺鼻的地步。十号是特制的铁门，像囚室。
 ^prop dr door 11 3
 三号病房的门，开着一条缝。
@@ -2214,7 +2367,8 @@ async function S_door() { setClock(10, '凌晨 2:30'); await T_(`^fx dark
 !eyes
 在自己的直播间里，你看到了自己的后背。——有“人”捡起了你掉在地上的那个镜头。
 他是故意把你往四楼引的。`); go('kf_b3_4', true, true); }
-async function S_candy() { setClock(10, '凌晨 3 点'); await T_(`^fx dark
+async function S_candy() { setClock(10, '凌晨 3 点'); await T_(`^mus door
+^fx dark
 ^to 陈歌 9
 四楼走廊中央。
 ^in 瘦长怪物 14
@@ -2876,8 +3030,16 @@ function epicPhase(B, u) { return (B.o.epic && B.o.epic.phase) || (SAY[u.id] && 
 
 /* —— 惊吓：整屏一闪的脸。设置里能关（关掉只剩红光和心跳） —— */
 function scareFlash() { flashRed(); sfx('heart'); shake(); }
-function scare(kind) { if (window.__dbg && (__dbg.auto || __dbg.instant)) return Promise.resolve(); if (!SET.scare || !SET.motion) { scareFlash(); return sleep(300); } const box = $('#scare'), cv = $('#scv'), x = cv.getContext('2d'), W = cv.width, H = cv.height; paintScare(x, W, H, kind || 'face'); box.classList.add('on'); sfx('stinger'); shake();
-  return new Promise(res => { let n = 0; const iv = setInterval(() => { n++; cv.style.transform = 'scale(' + (1 + n * .035) + ') translate(' + (Math.random() * 8 - 4) + 'px,' + (Math.random() * 8 - 4) + 'px)'; if (n > 9) { clearInterval(iv); box.classList.remove('on'); cv.style.transform = ''; flashRed(); res(); } }, 48); }); }
+/* 整屏惊吓：逐帧像素动画 + 按种类配声音（关掉惊吓画面或动画时只闪红光 + 心跳） */
+const SCARE_SFX = { face: ['stinger', 'scream'], mirror: ['crack', 'stinger'], eyes: ['whisper', 'stinger'], hand: ['knock', 'stinger'], red: ['heart', 'scream', 'stinger'] };
+let SCB = null;
+function scare(kind) { if (window.__dbg && (__dbg.auto || __dbg.instant)) return Promise.resolve(); kind = kind || 'face'; if (!SET.scare || !SET.motion) { scareFlash(); return sleep(300); }
+  const box = $('#scare'), cv = $('#scv'), x = cv.getContext('2d'); SCB = SCB || mk(120, 160); const b = SCB.getContext('2d'); b.imageSmoothingEnabled = false; x.imageSmoothingEnabled = false; box.classList.add('on'); for (const k of SCARE_SFX[kind] || ['stinger']) sfx(k); shake();
+  const D = kind === 'hand' ? 1350 : kind === 'mirror' ? 1250 : 1050, t0 = performance.now(); let lastHand = 0;
+  return new Promise(res => { const step = () => { const p = Math.min(1, (performance.now() - t0) / D); paintScare(b, 120, 160, kind, p); x.drawImage(SCB, 0, 0, cv.width, cv.height);
+      if (kind === 'hand') { const n = Math.min(7, Math.floor(p * 9)); if (n > lastHand) { lastHand = n; sfx('heavy'); } } if (kind === 'mirror' && p > .82 && !step.sh) { step.sh = 1; sfx('shatter'); }
+      cv.style.transform = 'scale(' + (1 + p * .16) + ') translate(' + (Math.random() * 6 - 3) + 'px,' + (Math.random() * 6 - 3) + 'px)';
+      if (p < 1) requestAnimationFrame(step); else { box.classList.remove('on'); cv.style.transform = ''; flashRed(); res(); } }; step(); }); }
 
 /* —— 直播弹幕 —— */
 function danmu(list) { if (typeof list === 'string') list = [list]; for (const s of list) { C.dlog.push([C.day, s]); if (C.dlog.length > 90) C.dlog.shift(); } if (STATE.live) STATE.live.hot = Math.round(STATE.live.hot * (1.04 + list.length * .03) + list.length * 37); renderDanmuWide(); if (!animOn()) return;
@@ -3339,14 +3501,45 @@ function paintScene(cv, key, night) { const x = cv.getContext('2d'), W = cv.widt
   /* 纸纹 + 暗角 */ for (let i = 0; i < 900; i++) { x.fillStyle = 'rgba(' + (r() < .5 ? '0,0,0' : '255,255,255') + ',' + (r() * .05) + ')'; x.fillRect(r() * W, r() * H, 1.5, 1.5); }
   const v = x.createRadialGradient(W / 2, H * .45, H * .3, W / 2, H / 2, W * .65); v.addColorStop(0, 'rgba(0,0,0,0)'); v.addColorStop(1, 'rgba(0,0,0,' + (night ? .7 : .35) + ')'); x.fillStyle = v; x.fillRect(0, 0, W, H); x.restore(); }
 /* 惊吓画面：只画“某种东西”，不是任何原著角色的长相 */
-function paintScare(x, W, H, kind) { x.fillStyle = '#000'; x.fillRect(0, 0, W, H); const cx = W / 2, cy = H * .46;
-  if (kind === 'eyes') { for (let i = 0; i < 46; i++) { const ex = Math.random() * W, ey = Math.random() * H, s = 10 + Math.random() * 30; x.fillStyle = '#d9d2c2'; x.beginPath(); x.ellipse(ex, ey, s, s * .52, 0, 0, 7); x.fill(); x.fillStyle = '#300'; x.beginPath(); x.arc(ex, ey, s * .42, 0, 7); x.fill(); x.fillStyle = '#000'; x.beginPath(); x.arc(ex, ey, s * .2, 0, 7); x.fill(); } return; }
-  if (kind === 'hand') { x.fillStyle = '#7a0c0c'; for (let k = 0; k < 3; k++) { const hx = W * (.25 + k * .25), hy = H * (.3 + (k % 2) * .3); x.beginPath(); x.ellipse(hx, hy, 40, 50, 0, 0, 7); x.fill(); for (let i = 0; i < 5; i++) { x.save(); x.translate(hx, hy); x.rotate(-.7 + i * .35); x.fillRect(-9, -120, 18, 80); x.restore(); } x.fillRect(hx - 6, hy + 40, 8, 160); } return; }
-  if (kind === 'red') { const g = x.createRadialGradient(cx, cy, 10, cx, cy, W * .7); g.addColorStop(0, '#5a0606'); g.addColorStop(1, '#000'); x.fillStyle = g; x.fillRect(0, 0, W, H); x.fillStyle = '#b01010'; x.beginPath(); x.moveTo(cx - 70, H); x.lineTo(cx - 46, cy - 40); x.lineTo(cx + 46, cy - 40); x.lineTo(cx + 70, H); x.fill(); x.strokeStyle = '#000'; x.lineWidth = 3; for (let i = 0; i < 70; i++) { x.beginPath(); const sx = cx - 50 + Math.random() * 100; x.moveTo(sx, cy - 150); x.bezierCurveTo(sx - 30 + Math.random() * 60, cy, sx - 80 + Math.random() * 160, cy + 120, sx - 160 + Math.random() * 320, H); x.stroke(); } x.fillStyle = '#000'; x.beginPath(); x.ellipse(cx, cy - 100, 52, 64, 0, 0, 7); x.fill(); return; }
-  /* face / mirror */ const g = x.createRadialGradient(cx, cy, 20, cx, cy, W * .6); g.addColorStop(0, '#2a2f30'); g.addColorStop(1, '#000'); x.fillStyle = g; x.fillRect(0, 0, W, H); x.fillStyle = '#cfc9bb'; x.beginPath(); x.ellipse(cx, cy, W * .27, H * .3, 0, 0, 7); x.fill();
-  x.fillStyle = '#000'; x.beginPath(); x.ellipse(cx - W * .11, cy - H * .05, W * .07, H * .06, .2, 0, 7); x.fill(); x.beginPath(); x.ellipse(cx + W * .11, cy - H * .05, W * .07, H * .06, -.2, 0, 7); x.fill(); x.beginPath(); x.ellipse(cx, cy + H * .15, W * .1, H * .09, 0, 0, 7); x.fill();
-  x.fillStyle = '#fff'; x.beginPath(); x.arc(cx - W * .1, cy - H * .05, 3, 0, 7); x.arc(cx + W * .12, cy - H * .05, 3, 0, 7); x.fill(); x.strokeStyle = '#000'; x.lineWidth = 2; for (let i = 0; i < 26; i++) { const sx = cx - W * .27 + Math.random() * W * .54; x.beginPath(); x.moveTo(sx, cy - H * .34); x.lineTo(sx + Math.random() * 30 - 15, cy - H * .34 + 60 + Math.random() * 260); x.stroke(); }
-  if (kind === 'mirror') { x.strokeStyle = 'rgba(255,255,255,.8)'; x.lineWidth = 1.5; for (let i = 0; i < 14; i++) { x.beginPath(); x.moveTo(cx, cy); let px = cx, py = cy; for (let k = 0; k < 5; k++) { px += Math.cos(i * .45 + Math.random() * .3) * 70; py += Math.sin(i * .45 + Math.random() * .3) * 70; x.lineTo(px, py); } x.stroke(); } } }
+/* —— 整屏惊吓：120×160 的像素逐帧动画（p 从 0 走到 1），放大铺满屏幕 —— */
+function paintScare(x, W, H, kind, p) { p = p == null ? .7 : p; const R = (a, b, w, h, c) => { x.fillStyle = c; x.fillRect(Math.round(a), Math.round(b), Math.max(1, Math.round(w)), Math.max(1, Math.round(h))); }, S = srng(kind.length * 977 + 13), cx = W / 2;
+  x.fillStyle = '#000'; x.fillRect(0, 0, W, H);
+  const oval = (ox, oy, rx, ry, c, c2) => { for (let yy = -ry; yy <= ry; yy++) { const hw = Math.round(rx * Math.sqrt(Math.max(0, 1 - (yy / ry) * (yy / ry)))); R(ox - hw, oy + yy, hw * 2 + 1, 1, c); if (c2 && hw > 2) { R(ox - hw, oy + yy, 2, 1, c2); R(ox + hw - 1, oy + yy, 2, 1, c2); } } };
+  const grain = (a) => { for (let i = 0; i < 260; i++) R(Math.random() * W, Math.random() * H, 1, 1, 'rgba(255,255,255,' + Math.random() * a + ')'); };
+  const tear = (n, amt) => { const im = x.getImageData(0, 0, W, H); for (let i = 0; i < n; i++) { const y0 = Math.floor(Math.random() * H), hh = 1 + Math.floor(Math.random() * 6), dx = Math.round((Math.random() - .5) * amt); x.putImageData(im, dx, 0, 0, y0, W, hh); } };
+  if (kind === 'face' || kind === 'mirror') {
+    const mir = kind === 'mirror', k = mir ? 1 : .8 + p * .6, fy = 74 - (mir ? 0 : p * 6);
+    if (mir) { R(6, 4, W - 12, H - 8, '#4a3418'); R(9, 7, W - 18, H - 14, '#6e5026'); R(12, 10, W - 24, H - 20, '#141b20'); R(16, 12, 3, H - 24, 'rgba(255,255,255,.07)'); }
+    else { const g = x.createRadialGradient(cx, fy, 4, cx, fy, 90); g.addColorStop(0, '#1b1f20'); g.addColorStop(1, '#000'); x.fillStyle = g; x.fillRect(0, 0, W, H); }
+    const fw = 25 * k, fh = 33 * k;
+    /* 脖子和肩（镜子里是陈歌自己：短发、深色衣服；脸是她：长发） */
+    if (mir) { R(cx - 8, fy + fh - 4, 16, 14, '#cfc6ba'); oval(cx, fy + fh + 30, 40, 20, '#1d2128'); } else R(cx - 7 * k, fy + fh - 6, 14 * k, 40, '#bdb6aa');
+    oval(cx, fy, fw, fh, mir ? '#d6cdc0' : '#d8d2c6', mir ? '#b4ab9e' : '#a9a398');
+    /* 头发 */
+    if (mir) { oval(cx, fy - fh * .55, fw + 2, fh * .55, '#141214'); R(cx - fw - 2, fy - fh * .55, 5, fh * .6, '#141214'); R(cx + fw - 3, fy - fh * .55, 5, fh * .6, '#141214'); }
+    else { const gap = 4 + p * 16 * k; R(cx - fw - 8, fy - fh - 6, fw * 2 + 16, 10, '#0b0909'); for (let i = 0; i < 26; i++) { const sx = cx - fw - 8 + i * ((fw * 2 + 16) / 26), len = fh * 2 + 30 + S() * 40; if (Math.abs(sx - cx) < gap) continue; R(sx, fy - fh - 2, 2.2, len, i % 3 ? '#0b0909' : '#1a1416'); } }
+    /* 眼睛：先是正常的，接着睁大成两个黑洞，中间一个白点 */
+    const ey = fy - fh * .12, ex = fw * .42, wake = mir ? (p > .3) : p > .12;
+    for (const sgn of [-1, 1]) { const X = cx + sgn * ex; if (!wake) { R(X - 4, ey, 8, 2, '#2a2420'); R(X - 1, ey - 1, 3, 3, '#1a1410'); } else { const r = mir ? 3.5 + p * 2 : 4.5 * k + p * 2; oval(X, ey, r, r * (mir ? .9 : 1.15), '#050303'); R(X - (mir ? 0 : .5), ey - 1, 1.5, 1.5, mir ? '#ff2a1a' : '#f2efe6'); if (p > .5 && !mir) R(X - 1, ey + r, 2, (p - .5) * 60, '#7a0808'); } }
+    /* 嘴：一点一点张开，大得不像人 */
+    const my = fy + fh * .42; if (mir) { if (p > .3) { const gw = Math.min(fw * 1.6, 6 + (p - .3) * 70); R(cx - gw / 2, my, gw, 2 + p * 3, '#060202'); R(cx - gw / 2 - 2, my - 2, 3, 3, '#060202'); R(cx + gw / 2 - 1, my - 2, 3, 3, '#060202'); for (let i = 0; i < gw / 3; i++) R(cx - gw / 2 + 1 + i * 3, my, 1.5, 1.5, '#e8e2d2'); R(cx - gw / 2 + 2, my + 2 + p * 3, gw - 4, 1, '#7a0c0c'); } else R(cx - 4, my, 8, 1, '#7a6a60'); }
+    else { const mh = 1 + Math.max(0, p - .2) * 44 * k, mw = 7 * k + p * 8; oval(cx, my + mh / 2, mw, mh / 2 + 1, '#060202'); if (mh > 6) { oval(cx, my + mh * .65, mw * .6, mh * .25, '#4a0606'); for (let i = -2; i <= 2; i++) R(cx + i * mw * .35 - 1, my + 1, 2, 3, '#ddd6c6'); } }
+    /* 镜子：后半段裂开，碎片错位 */
+    if (mir && p > .58) { const q = Math.min(1, (p - .58) / .3), C2 = srng(41); x.strokeStyle = 'rgba(230,236,240,.9)'; x.lineWidth = 1; for (let i = 0; i < 16; i++) { let a = i / 16 * 6.28 + C2() * .3, X = cx + 3, Y = fy + 6; x.beginPath(); x.moveTo(X, Y); for (let s = 0; s < 6; s++) { a += (C2() - .5) * .8; X += Math.cos(a) * 14 * q; Y += Math.sin(a) * 14 * q; x.lineTo(Math.round(X) + .5, Math.round(Y) + .5); } x.stroke(); } if (p > .82) tear(14, 18); }
+    grain(.08); if (p > .86) { x.fillStyle = 'rgba(150,0,0,' + (p - .86) * 3 + ')'; x.fillRect(0, 0, W, H); tear(8, 10); } return; }
+  if (kind === 'eyes') { const N = 46; for (let i = 0; i < N; i++) { const ex = 6 + S() * (W - 12), ey = 6 + S() * (H - 12), s = 3 + S() * 7, o = Math.max(0, Math.min(1, (p - i * .012) * 3.2)); if (o <= 0) { R(ex - s, ey, s * 2, 1, '#1a1210'); continue; }
+      oval(ex, ey, s, Math.max(1, s * .5 * o), '#d9d2c2'); if (o > .35) { const lx = (cx - ex) * .05, ly = (80 - ey) * .05; oval(ex + lx, ey + ly, s * .42, s * .42 * o, '#4a0a06'); R(ex + lx - .5, ey + ly - .5, Math.max(1, s * .18), Math.max(1, s * .18), '#000'); R(ex - s * .7, ey, 1, 1, '#a02020'); } }
+    grain(.05); if (p > .85) tear(10, 8); return; }
+  if (kind === 'hand') { x.fillStyle = '#0d0505'; x.fillRect(0, 0, W, H); const n = Math.min(7, Math.floor(p * 9)); const C3 = srng(7);
+    for (let i = 0; i < n; i++) { const hx = 14 + C3() * (W - 40), hy = 14 + C3() * (H - 60), age = p * 9 - i, red = i % 2 ? '#7a0c0c' : '#8e1010'; R(hx, hy + 12, 16, 16, red); for (let f = 0; f < 4; f++) R(hx + f * 4, hy + (f === 0 || f === 3 ? 4 : 0) - (f === 1 ? 2 : 0), 3, 13, red); R(hx - 5, hy + 15, 6, 3, red); R(hx + 1, hy + 25, 3, Math.min(60, age * 14), red); R(hx + 9, hy + 26, 2, Math.min(40, age * 9), red); }
+    grain(.04); return; }
+  if (kind === 'red') { const g = x.createRadialGradient(cx, 70, 6, cx, 70, 110); g.addColorStop(0, '#6a0808'); g.addColorStop(1, '#0a0000'); x.fillStyle = g; x.fillRect(0, 0, W, H);
+    const k = .7 + p * .6; R(cx - 18 * k, 70 + 24 * k, 36 * k, 90, '#a80e0e'); R(cx - 12 * k, 70 + 24 * k, 4, 90, '#7a0808');
+    oval(cx, 70, 15 * k, 19 * k, '#cfc6ba', '#a99f92'); const C4 = srng(99), n = 34 + p * 60; x.lineCap = 'round';
+    /* 黑发：从头顶垂下来，越往后越往四周涌，最后像潮水一样漫过整个画面；只在一只眼睛那里留一条缝 */
+    for (let i = 0; i < n; i++) { const u = i / n, sx = cx + (u - .5) * 34 * k, spread = (u - .5) * (1.2 + p * 3.2); let X = sx, Y = 70 - 21 * k, a = Math.PI / 2 + spread * .6; if (p > .45 && Math.abs(sx - (cx + 5 * k)) < 3) continue;
+      x.strokeStyle = i % 4 ? '#070505' : '#1b1214'; x.lineWidth = 1.6 + C4() * 1.2; x.beginPath(); x.moveTo(X, Y); const len = 26 + p * 70 + C4() * 20; for (let s = 0; s < len; s += 4) { a += spread * .05 + Math.sin(s * .12 + i) * .06; X += Math.cos(a) * 4; Y += Math.sin(a) * 4; x.lineTo(X, Y); } x.stroke(); }
+    if (p > .45) { oval(cx + 5 * k, 69, 2.5, 2, '#050303'); R(cx + 5 * k, 68.5, 1, 1, '#ff3a2a'); } grain(.05); if (p > .88) tear(10, 12); return; } }
 function titleDraw() { const cv = $('#tcv'); if (!cv) return; const x = cv.getContext('2d'), W = cv.width, H = cv.height; const tmp = document.createElement('canvas'); tmp.width = 640; tmp.height = 300; paintScene(tmp, 'house', true); x.fillStyle = '#030405'; x.fillRect(0, 0, W, H); x.globalAlpha = .55; x.drawImage(tmp, 140, 0, 360, 300, 0, H * .5, W, H * .5); x.globalAlpha = 1; const g = x.createLinearGradient(0, H * .4, 0, H); g.addColorStop(0, '#030405'); g.addColorStop(.5, 'rgba(3,4,5,.2)'); g.addColorStop(1, '#030405'); x.fillStyle = g; x.fillRect(0, 0, W, H); }
 
 /* 像素小剧场：探索画面上方和对话画面上方的像素场景。人物都是 51_pix 的生成器拼出来的通用小人，不照任何改编作品的形象画。
@@ -3478,10 +3671,39 @@ function stScare(name) { if (window.__dbg && (__dbg.auto || __dbg.instant)) retu
 function stAmbient(dt, list) { if (!STATE.scene || !(STG.fx.dark || STG.fx.red)) { STG.amb = 4; return; } STG.amb = (STG.amb || 6) - dt; const hero = list.find(a => a.name === '陈歌');
   const near = hero && list.some(a => a !== hero && a.ghost && a.alpha > .3 && Math.abs(a.x - hero.x) < 44); if (near) { STG.hb = (STG.hb || 0) - dt; if (STG.hb <= 0) { STG.hb = 1.1; sfx('heart'); } }
   if (STG.amb <= 0) { STG.amb = 7 + Math.random() * 8; sfx(['drip', 'whisper', 'steps', 'creak', 'breath', 'wind'][Math.floor(Math.random() * 6)]); } }
-function stageSceneStart() { stageIdle(); STG.jump = null; STG.glitch = 0; STG.remote = new Set(); STG.cam = null; STG.over = ''; STG.fx = {}; STG.props = {}; STG.sc = [stActor('陈歌', 96)]; const s = STG.ex.filter(a => a.name !== '陈歌'); for (const a of s) STG.sc.push(stActor(a.name, a.x)); STG.lastKey = stageKey(); }
+/* —— 镜子：小剧场里的镜子真的照出东西 ——
+   ^mirror 格 [big]  在墙上挂一面镜子（big = 落地镜）
+   ^mirror follow / lag（慢半拍）/ stare（不跟着动，直勾勾看着）/ smile（咧嘴、眼睛发红）/ close（贴到镜面上越来越大）
+   ^mirror empty（照不出你）/ other 名字（你身后多一个人）/ hand（镜子里拍出手印）/ crack（裂开）/ out（从镜子里伸出手）/ off */
+function stMirror(p) { const k = p[1]; if (!k) return; if (/^\d+$/.test(k)) { STG.mir = { x: Math.round(+k * 16 + 8), big: p[2] === 'big', mode: 'follow', hist: [], crack: 0, ct: 0, hands: [], out: 0, close: 1, seed: Math.floor(Math.random() * 999) }; return; } const M = STG.mir; if (!M) return;
+  if (k === 'off') { STG.mir = null; return; } if (k === 'crack') { M.ct = 1; sfx('crack'); return; } if (k === 'hand') { M.hands.push([Math.random(), Math.random() * .7]); sfx('knock'); return; } if (k === 'out') { M.outT = 1; sfx('scrape'); return; }
+  if (k === 'other') { M.other = p[2] ? pplOf(p[2]) : null; return; } if (k === 'close') M.close = 1; if (k === 'stare' || k === 'smile' || k === 'close') { const h = STG.sc.find(a => a.name === '陈歌'); M.fx = h ? h.x : M.x; } M.mode = k; }
+function stMirrorGeo(M) { return M.big ? { x0: M.x - 26, y0: 14, w: 52, h: 74 } : { x0: M.x - 15, y0: 16, w: 30, h: 46 }; }
+function stMirrorDraw(g, list, hero) { const M = STG.mir; if (!M) return; const G = stMirrorGeo(M), t = STG.t;
+  g.fillStyle = '#4a3418'; g.fillRect(G.x0 - 3, G.y0 - 3, G.w + 6, G.h + 6); g.fillStyle = '#6e5026'; g.fillRect(G.x0 - 2, G.y0 - 2, G.w + 4, G.h + 4);
+  const gr = g.createLinearGradient(G.x0, G.y0, G.x0 + G.w, G.y0 + G.h); gr.addColorStop(0, '#2a3640'); gr.addColorStop(1, '#10161b'); g.fillStyle = gr; g.fillRect(G.x0, G.y0, G.w, G.h);
+  g.save(); g.beginPath(); g.rect(G.x0, G.y0, G.w, G.h); g.clip();
+  if (STG.fx.candle) { const cx = G.x0 + G.w / 2 + (STG.fx.candle - M.x) * .5; const fl = Math.sin(t * 17) > .2 ? 1 : 0; g.fillStyle = 'rgba(255,190,90,.18)'; g.beginPath(); g.arc(cx, G.y0 + G.h * .78, 9 + fl, 0, 7); g.fill(); g.fillStyle = '#ffd27a'; g.fillRect(Math.round(cx), Math.round(G.y0 + G.h * .74) - fl, 1, 2 + fl); }
+  /* 倒影的位置：正常跟着你；lag 用 0.8 秒前的位置；stare/smile/close 停在原地 */
+  const hx = hero ? hero.x : M.x; let rx = hx; if (M.mode === 'lag') { const old = M.hist.find(h => h[0] >= t - .8) || M.hist[0]; rx = old ? old[1] : hx; } else if (['stare', 'smile', 'close'].includes(M.mode)) rx = M.fx;
+  const sc = M.big ? 1.35 : 1.15, base = M.mode === 'close' ? Math.min(3.2, M.close) : 1, s = sc * base, w = Math.round(16 * s), h = Math.round(24 * s);
+  const px = Math.round(G.x0 + G.w / 2 + (rx - M.x) * .6 - w / 2), py = Math.round(G.y0 + (M.big ? 10 : 5) - (base - 1) * 7 * s);
+  if (M.other) { const os = s * 1.08, ow = Math.round(16 * os), oh = Math.round(24 * os); g.globalAlpha = .95; g.drawImage(stTint(personSprite(M.other, 0, 0), M.other.sil ? '#9aa2b0' : null), px + Math.round(w * .3), py - Math.round(2 * s), ow, oh); g.globalAlpha = 1; }
+  if (M.mode !== 'empty' && hero) { const P = hero.P, spr = personSprite(P, 0, 0); g.globalAlpha = .82; g.drawImage(spr, px, py, w, h); g.globalAlpha = 1;
+    if (M.mode === 'smile' || M.mode === 'close') { const u = s, fx = px, fy = py; g.fillStyle = '#e01818'; g.fillRect(Math.round(fx + 5 * u), Math.round(fy + 7.5 * u), Math.max(1, Math.round(u)), Math.max(1, Math.round(u))); g.fillRect(Math.round(fx + 10 * u), Math.round(fy + 7.5 * u), Math.max(1, Math.round(u)), Math.max(1, Math.round(u)));
+      g.fillStyle = '#0a0404'; g.fillRect(Math.round(fx + 4.5 * u), Math.round(fy + 10.5 * u), Math.round(7 * u), Math.max(1, Math.round(1.2 * u))); g.fillRect(Math.round(fx + 4 * u), Math.round(fy + 9.6 * u), Math.max(1, Math.round(u)), Math.max(1, Math.round(u))); g.fillRect(Math.round(fx + 11 * u), Math.round(fy + 9.6 * u), Math.max(1, Math.round(u)), Math.max(1, Math.round(u)));
+      g.fillStyle = '#8a0c0c'; g.fillRect(Math.round(fx + 5.5 * u), Math.round(fy + 11.6 * u), Math.round(5 * u), Math.max(1, Math.round(.6 * u))); } }
+  for (const hd of M.hands) { const hx2 = G.x0 + 3 + hd[0] * (G.w - 9), hy = G.y0 + 3 + hd[1] * (G.h - 12); g.fillStyle = 'rgba(200,190,180,.55)'; g.fillRect(hx2, hy + 3, 4, 4); for (let i = 0; i < 4; i++) g.fillRect(hx2 + i, hy + (i === 0 || i === 3 ? 1 : 0), 1, 3); g.fillStyle = 'rgba(120,10,10,.5)'; g.fillRect(hx2 + 1, hy + 7, 1, 3); }
+  /* 裂纹：从一点往外裂，seed 固定，裂到哪画到哪 */
+  if (M.ct) { M.crack = Math.min(1, M.crack + .04); const R = srng(M.seed), cx = G.x0 + G.w * (.35 + R() * .3), cy = G.y0 + G.h * (.3 + R() * .3); g.strokeStyle = 'rgba(215,225,235,.85)'; g.lineWidth = 1;
+    for (let i = 0; i < 9; i++) { let x = cx, y = cy, a = i / 9 * 6.28 + R() * .5; g.beginPath(); g.moveTo(x, y); const L = (6 + R() * 18) * M.crack * (M.big ? 1.8 : 1); for (let k = 0; k < 4; k++) { a += (R() - .5) * .9; x += Math.cos(a) * L / 4; y += Math.sin(a) * L / 4; g.lineTo(Math.round(x) + .5, Math.round(y) + .5); } g.stroke(); } }
+  g.fillStyle = 'rgba(255,255,255,.06)'; g.fillRect(G.x0 + 3, G.y0, 2, G.h); if (STG.fx.dark && !STG.fx.candle) { g.fillStyle = 'rgba(0,0,0,.45)'; g.fillRect(G.x0, G.y0, G.w, G.h); } g.restore();
+  /* 从镜子里伸出来的手：苍白，越伸越长，伸向陈歌 */
+  if (M.outT) { M.out = Math.min(1, M.out + .03); const sx = G.x0 + G.w / 2, sy = G.y0 + G.h * .55, ex = hero ? hero.x : sx, ey = FEET - 17, L = M.out; g.strokeStyle = '#cfc8be'; g.lineWidth = 3; g.beginPath(); g.moveTo(sx, sy); g.lineTo(sx + (ex - sx) * L, sy + (ey - sy) * L); g.stroke(); g.fillStyle = '#cfc8be'; const hx3 = sx + (ex - sx) * L, hy3 = sy + (ey - sy) * L; g.fillRect(Math.round(hx3) - 2, Math.round(hy3) - 2, 5, 4); for (let i = 0; i < 4; i++) g.fillRect(Math.round(hx3) - 2 + i, Math.round(hy3) + 2, 1, 3); } }
+function stageSceneStart() { STG.mir = null; STATE.musOv = null; stageIdle(); STG.jump = null; STG.glitch = 0; STG.remote = new Set(); STG.cam = null; STG.over = ''; STG.fx = {}; STG.props = {}; STG.sc = [stActor('陈歌', 96)]; const s = STG.ex.filter(a => a.name !== '陈歌'); for (const a of s) STG.sc.push(stActor(a.name, a.x)); STG.lastKey = stageKey(); }
 function stageIdle() { if (!C) return; const ns = npcsHere().slice(0, 3); STG.ex = [stActor('陈歌', 120)]; ns.forEach((k, i) => STG.ex.push(stActor(NPCS[k].name, 196 + i * 36, { dir: 1 }))); }
 /* 换了地点或 ^stage：立刻换景（清掉别人、效果、道具），免得下一帧把刚加上的东西又清掉 */
-function stSync() { if (!STATE.scene || !C) return; const k = stageKey(); if (k !== STG.lastKey) { STG.lastKey = k; STG.sc = STG.sc.filter(a => a.name === '陈歌'); STG.fx = {}; STG.props = {}; } }
+function stSync() { if (!STATE.scene || !C) return; const k = stageKey(); if (k !== STG.lastKey) { STG.lastKey = k; STG.sc = STG.sc.filter(a => a.name === '陈歌'); STG.fx = {}; STG.props = {}; STG.mir = null; } }
 function stageSpeak(o) { if (!STATE.scene) return; stSync(); let who = o.kind === 'ph' ? '陈歌' : o.who; for (const a of STG.sc) { a.talk = 0; a.phone = 0; } if (!who) return; const remote = STG.remote.has(who) || who === '手机里的声音'; if (remote) who = '陈歌'; const a = who === '陈歌' ? stFind('陈歌') : stEnter(who); if (!a) return; a.talk = 1; a.phone = o.kind === 'ph' || remote;
   const hero = stFind('陈歌'); if (hero && a !== hero) { a.face = hero.x < a.tx ? 1 : 2; hero.face = hero.x < a.tx ? 2 : 1; } }
 function stageCmd(s) { const p = s.trim().split(/\s+/), c = p[0], n = p[1]; if (c !== 'stage') stSync(); const T = v => v == null || v === '' ? null : Math.round(+v * 16 + 8);
@@ -3493,10 +3715,12 @@ function stageCmd(s) { const p = s.trim().split(/\s+/), c = p[0], n = p[1]; if (
   else if (c === 'scare') stScare(n);
   else if (c === 'creep') { const a = stFind(n) || stEnter(n, T(p[2]), 1); if (a) { a.tx = T(p[2]); a.creep = 1; } }
   else if (c === 'sfx') sfx(n);
+  else if (c === 'mirror') stMirror(p);
+  else if (c === 'mus') { STATE.musOv = n === 'off' ? '' : n; musicMode(STATE.musOv); }
   else if (c === 'prop') { let o = {}; try { o = p[5] ? JSON.parse(p.slice(5).join(' ')) : {}; } catch (e) {} STG.props[n] = [p[2], +p[3], +p[4], o]; } else if (c === 'del') delete STG.props[n];
   else if (c === 'stage') { STG.over = n === 'clear' ? '' : n; stSync(); } else if (c === 'call') { STG.remote.add(n); const a = stFind(n); if (a) STG.sc.splice(STG.sc.indexOf(a), 1); } else if (c === 'hang') STG.remote.delete(n); }
 /* —— 每帧 —— */
-function stageTick(dt, list) { STG.t += dt; stAmbient(dt, list); const off = stFlickOff(); if (STG.jump && (STG.jump.t -= dt) <= 0) STG.jump = null; STG.glitch = Math.max(0, (STG.glitch || 0) - dt); if (STG.fx.glitch && Math.random() < dt * .4) STG.glitch = .25;
+function stageTick(dt, list) { STG.t += dt; if (STG.mir) { const h = list.find(a => a.name === '陈歌'); if (h) { STG.mir.hist.push([STG.t, h.x]); if (STG.mir.hist.length > 60) STG.mir.hist.shift(); } if (STG.mir.mode === 'close') STG.mir.close = Math.min(3.2, STG.mir.close + dt * .5); } stAmbient(dt, list); const off = stFlickOff(); if (STG.jump && (STG.jump.t -= dt) <= 0) STG.jump = null; STG.glitch = Math.max(0, (STG.glitch || 0) - dt); if (STG.fx.glitch && Math.random() < dt * .4) STG.glitch = .25;
   for (const a of list) { if (a.creep) { if (!off) continue; a.x += Math.sign(a.tx - a.x) * Math.min(Math.abs(a.tx - a.x), 260 * dt); if (Math.abs(a.tx - a.x) < .5) a.creep = 0; a.dir = 0; continue; }
     const d = a.tx - a.x, sp = (Math.abs(d) > 40 ? 96 : 64) * dt; if (Math.abs(d) > .5) { a.x += Math.sign(d) * Math.min(Math.abs(d), sp); a.ft += dt; a.fr = [0, 1, 0, 3][Math.floor(a.ft / .13) % 4]; a.dir = d < 0 ? 1 : 2; a.moving = 1; } else { a.x = a.tx; a.fr = 0; a.moving = 0; a.dir = a.face != null ? a.face : 0; }
     a.alpha += (a.ta - a.alpha) * Math.min(1, dt * 4); }
@@ -3528,6 +3752,8 @@ function stageDraw(cv, list, scene) { const full = cv.width < SW ? (STG.full || 
   if (STG.fx.rain || (night && PLACES[C.loc].area === 'muyang' && S.out)) { g.fillStyle = 'rgba(180,200,220,.35)'; for (let i = 0; i < 60; i++) { const x = (hash(i, 1) * SW + STG.t * 40) % SW, y = (hash(i, 2) * SH + STG.t * 260 * (.7 + hash(i, 3) * .5)) % SH; g.fillRect(x | 0, y | 0, 1, 5); } }
   if (STG.fx.red || S.red) { g.fillStyle = 'rgba(140,0,0,.22)'; g.fillRect(0, 0, SW, SH); }
   if (STG.glitch > 0) { const T = STG.gl || (STG.gl = mk(SW, SH)), tg = T.getContext('2d'); tg.clearRect(0, 0, SW, SH); tg.drawImage(g.canvas, 0, 0); for (let i = 0; i < 7; i++) { const y = Math.floor(Math.random() * SH), hh = 2 + Math.floor(Math.random() * 9), dx = Math.round((Math.random() - .5) * 26); g.drawImage(T, 0, y, SW, hh, dx, y, SW, hh); } g.fillStyle = 'rgba(255,0,40,.08)'; g.fillRect(0, Math.floor(Math.random() * SH), SW, 2); }
+  /* 镜子画在黑暗上面：它反着烛光，是这一片黑里唯一看得清的东西 */
+  if (scene && STG.mir) { g.globalAlpha = 1; stMirrorDraw(g, list, hero); }
   if (STG.flash > 0) { g.fillStyle = 'rgba(255,255,255,' + STG.flash * .8 + ')'; g.fillRect(0, 0, SW, SH); }
   /* 贴脸：只画头部特写，越来越近 */
   if (STG.jump) { const jx = full !== cv ? (STG.cam || 0) + cv.width / 2 : SW / 2, k = 6.2 + (.75 - STG.jump.t) * 2.4, w = Math.round(16 * k), h = Math.round(13 * k); g.globalAlpha = 1; const bg = g.createRadialGradient(jx, SH / 2, 10, jx, SH / 2, 150); bg.addColorStop(0, '#7a1a16'); bg.addColorStop(1, '#0a0202'); g.fillStyle = bg; g.fillRect(0, 0, SW, SH); g.drawImage(personSprite(STG.jump.P, 0, 0), 0, 0, 16, 13, Math.round(jx - w / 2 + (Math.random() - .5) * 5), Math.round(SH / 2 - h * .52 + (Math.random() - .5) * 3), w, h); }

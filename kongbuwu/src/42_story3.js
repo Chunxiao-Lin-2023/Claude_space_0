@@ -129,7 +129,8 @@ ${win ? '独臂的那个，另一条胳膊也抬不起来了。畸形脸翻窗�
 我|你该吃药了。
 >感谢逗比小仙女的打赏／乖乖，太真实了／人气十五万
 王海明带出去的镜鬼，王声龙肩膀上的高个子——连鬼，都不愿意待在那栋楼里。`); }
-async function S_b3() { setClock(9, '凌晨 1 点'); await T_(`^fx dark
+async function S_b3() { setClock(9, '凌晨 1 点'); await T_(`^mus door
+^fx dark
 连廊的铁门，锁上的铁条是被人一点一点磨断的。
 ^prop f1 futon 7 4 {"col":"#6a6a5a"}
 ^prop f2 futon 10 4 {"col":"#5a5a4e"}
@@ -196,7 +197,8 @@ ${win ? '她散成了一地的白大褂。' : '白猫扑到了她脸上。你把
 >秦广那边黑屏了／都来这边了／所以这个是真的？？？
 我|暮阳中学里的不是恶灵。他应该不会有生命危险。……希望他下次别再跟风了。
 你把直播间的名字，改成了恐怖屋的地址。`); if (STATE.live) STATE.live.hot = 300000; }
-async function S_door() { setClock(10, '凌晨 2:30'); await T_(`^fx dark
+async function S_door() { setClock(10, '凌晨 2:30'); await T_(`^mus door
+^fx dark
 一楼。臭味到了刺鼻的地步。十号是特制的铁门，像囚室。
 ^prop dr door 11 3
 三号病房的门，开着一条缝。
@@ -241,7 +243,8 @@ async function S_door() { setClock(10, '凌晨 2:30'); await T_(`^fx dark
 !eyes
 在自己的直播间里，你看到了自己的后背。——有“人”捡起了你掉在地上的那个镜头。
 他是故意把你往四楼引的。`); go('kf_b3_4', true, true); }
-async function S_candy() { setClock(10, '凌晨 3 点'); await T_(`^fx dark
+async function S_candy() { setClock(10, '凌晨 3 点'); await T_(`^mus door
+^fx dark
 ^to 陈歌 9
 四楼走廊中央。
 ^in 瘦长怪物 14

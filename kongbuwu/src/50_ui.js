@@ -129,8 +129,16 @@ function epicPhase(B, u) { return (B.o.epic && B.o.epic.phase) || (SAY[u.id] && 
 
 /* —— 惊吓：整屏一闪的脸。设置里能关（关掉只剩红光和心跳） —— */
 function scareFlash() { flashRed(); sfx('heart'); shake(); }
-function scare(kind) { if (window.__dbg && (__dbg.auto || __dbg.instant)) return Promise.resolve(); if (!SET.scare || !SET.motion) { scareFlash(); return sleep(300); } const box = $('#scare'), cv = $('#scv'), x = cv.getContext('2d'), W = cv.width, H = cv.height; paintScare(x, W, H, kind || 'face'); box.classList.add('on'); sfx('stinger'); shake();
-  return new Promise(res => { let n = 0; const iv = setInterval(() => { n++; cv.style.transform = 'scale(' + (1 + n * .035) + ') translate(' + (Math.random() * 8 - 4) + 'px,' + (Math.random() * 8 - 4) + 'px)'; if (n > 9) { clearInterval(iv); box.classList.remove('on'); cv.style.transform = ''; flashRed(); res(); } }, 48); }); }
+/* 整屏惊吓：逐帧像素动画 + 按种类配声音（关掉惊吓画面或动画时只闪红光 + 心跳） */
+const SCARE_SFX = { face: ['stinger', 'scream'], mirror: ['crack', 'stinger'], eyes: ['whisper', 'stinger'], hand: ['knock', 'stinger'], red: ['heart', 'scream', 'stinger'] };
+let SCB = null;
+function scare(kind) { if (window.__dbg && (__dbg.auto || __dbg.instant)) return Promise.resolve(); kind = kind || 'face'; if (!SET.scare || !SET.motion) { scareFlash(); return sleep(300); }
+  const box = $('#scare'), cv = $('#scv'), x = cv.getContext('2d'); SCB = SCB || mk(120, 160); const b = SCB.getContext('2d'); b.imageSmoothingEnabled = false; x.imageSmoothingEnabled = false; box.classList.add('on'); for (const k of SCARE_SFX[kind] || ['stinger']) sfx(k); shake();
+  const D = kind === 'hand' ? 1350 : kind === 'mirror' ? 1250 : 1050, t0 = performance.now(); let lastHand = 0;
+  return new Promise(res => { const step = () => { const p = Math.min(1, (performance.now() - t0) / D); paintScare(b, 120, 160, kind, p); x.drawImage(SCB, 0, 0, cv.width, cv.height);
+      if (kind === 'hand') { const n = Math.min(7, Math.floor(p * 9)); if (n > lastHand) { lastHand = n; sfx('heavy'); } } if (kind === 'mirror' && p > .82 && !step.sh) { step.sh = 1; sfx('shatter'); }
+      cv.style.transform = 'scale(' + (1 + p * .16) + ') translate(' + (Math.random() * 6 - 3) + 'px,' + (Math.random() * 6 - 3) + 'px)';
+      if (p < 1) requestAnimationFrame(step); else { box.classList.remove('on'); cv.style.transform = ''; flashRed(); res(); } }; step(); }); }
 
 /* —— 直播弹幕 —— */
 function danmu(list) { if (typeof list === 'string') list = [list]; for (const s of list) { C.dlog.push([C.day, s]); if (C.dlog.length > 90) C.dlog.shift(); } if (STATE.live) STATE.live.hot = Math.round(STATE.live.hot * (1.04 + list.length * .03) + list.length * 37); renderDanmuWide(); if (!animOn()) return;
