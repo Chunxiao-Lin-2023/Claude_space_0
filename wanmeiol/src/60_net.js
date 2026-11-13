@@ -7,13 +7,19 @@ const inArtifact = () => !!window.__ARTIFACT__ || /(^|\.)(claudeusercontent\.com
 const PEER_SRC = ['https://unpkg.com/peerjs@1.5.5/dist/peerjs.min.js', 'https://cdn.jsdelivr.net/npm/peerjs@1.5.5/dist/peerjs.min.js'];
 /* ICE: two public STUN servers plus PeerJS's own TURN relay, so two phones on different networks (mobile data, strict NATs) can still reach each other */
 const PEER_ICE = { iceServers: [{ urls: ['stun:stun.l.google.com:19302', 'stun:stun.cloudflare.com:3478'] }, { urls: ['turn:eu-0.turn.peerjs.com:3478', 'turn:us-0.turn.peerjs.com:3478'], username: 'peerjs', credential: 'peerjsp' }] };
+/* a second relay that listens on 80/443 (gets through school / office / some mobile networks): Open Relay's public static-auth secret → time-limited TURN credentials, computed here */
+async function iceRelay() { if (NET.relay && NET.relay.until > Date.now()) return NET.relay.list; try { const user = Math.floor(Date.now() / 1000) + 86400 + ':wmol', enc = new TextEncoder();
+    const key = await crypto.subtle.importKey('raw', enc.encode('openrelayprojectsecret'), { name: 'HMAC', hash: 'SHA-1' }, false, ['sign']), sig = new Uint8Array(await crypto.subtle.sign('HMAC', key, enc.encode(user)));
+    const credential = btoa(String.fromCharCode(...sig)), h = 'staticauth.openrelay.metered.ca';
+    const list = [{ urls: [`turn:${h}:80`, `turn:${h}:80?transport=tcp`, `turn:${h}:443`, `turns:${h}:443?transport=tcp`], username: user, credential }]; NET.relay = { list, until: Date.now() + 6 * 3600e3 }; return list; } catch (e) { return []; } }
+async function peerOpts(relayOnly) { const ic = QS.get('icecfg'); /* tests: ?icecfg=1 uses the real ICE list on a local server, ?icecfg=relay forces relay-only from the start */ if (QS.get('peerhost') && !ic) return PEER_OPTS; const extra = await iceRelay(); return Object.assign({}, PEER_OPTS, { config: { iceServers: [...PEER_ICE.iceServers, ...extra], iceTransportPolicy: relayOnly || ic === 'relay' ? 'relay' : 'all' } }); }
 const PEER_OPTS = QS.get('peerhost') ? { host: QS.get('peerhost'), port: +(QS.get('peerport') || 9000), path: QS.get('peerpath') || '/', secure: QS.get('peersecure') === '1' } : { config: PEER_ICE, pingInterval: 4000 };
 const CODE_CH = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 const genCode = () => Array.from({ length: 4 }, () => CODE_CH[Math.floor(Math.random() * CODE_CH.length)]).join('');
 const NET = { peer: null, code: '', conn: null, conns: new Map(), ctrl: 'host', status: '', peers: 0, syncT: 0 };
 function loadPeer() { return new Promise((res, rej) => { if (window.Peer) return res(); let i = 0; const next = () => { if (window.Peer) return res(); if (i >= PEER_SRC.length) return rej(new Error('load')); const sc = document.createElement('script'); let done = false; const fail = () => { if (done) return; done = true; sc.remove(); next(); }; sc.src = PEER_SRC[i++]; sc.onload = () => { if (done) return; done = true; window.Peer ? res() : next(); }; sc.onerror = fail; setTimeout(fail, 9000); /* a CDN that hangs counts as down: try the next one */ document.head.appendChild(sc); }; next(); }); }
 const NET_WAIT = 15000; /* the public PeerJS server sometimes takes minutes to answer: give up on a socket after this long and open a fresh one */
-function netErrText(type, host) { return ({ 'browser-incompatible': '这个浏览器不支持联机，换 Chrome / Safari / Edge 试试。', 'peer-unavailable': '没找到这个房间：检查房间码；确认房主停在游戏页面上（手机切到别的应用时房间会暂停），或者让房主重新开房间。', 'unavailable-id': '房间码撞车了，再点一次。', nohost: '房主那边一直没回应：让房主回到游戏页面（手机上别切到别的应用），或者让他重新开一次房间，把新的房间码发过来。', ice: '找到了房间，但两边的网络打不通：让其中一个人换个网络（比如开手机热点），或者关掉 VPN，再试一次。', timeout: '联机服务器一直没回应（公共服务器偶尔很慢）。过一会儿再点一次；开着 VPN 或广告拦截的话，关掉或换个网络试试。', load: '联机组件下载不下来：检查网络，或者关掉广告拦截再试。' })[type] || `联机服务器连不上（${type}）。过一会儿再点一次${host ? '“开房间”' : '“加入”'}；开着 VPN 或广告拦截的话，关掉或换个网络试试。`; }
+function netErrText(type, host) { return ({ 'browser-incompatible': '这个浏览器不支持联机，换 Chrome / Safari / Edge 试试。', 'peer-unavailable': '没找到这个房间：检查房间码；确认房主停在游戏页面上（手机切到别的应用时房间会暂停），或者让房主重新开房间。', 'unavailable-id': '房间码撞车了，再点一次。', nohost: '房主那边一直没回应：让房主回到游戏页面（手机上别切到别的应用），或者让他重新开一次房间，把新的房间码发过来。', ice: '找到了房间，但两边的网络打不通（直连和中转都试过了）。最常见的原因是校园网、公司网或 VPN 不让两台设备直接相连——让其中一个人改用手机热点，一般就能连上。', timeout: '联机服务器一直没回应（公共服务器偶尔很慢）。过一会儿再点一次；开着 VPN 或广告拦截的话，关掉或换个网络试试。', load: '联机组件下载不下来：检查网络，或者关掉广告拦截再试。' })[type] || `联机服务器连不上（${type}）。过一会儿再点一次${host ? '“开房间”' : '“加入”'}；开着 VPN 或广告拦截的话，关掉或换个网络试试。`; }
 const raw = (c, o) => { try { if (c && c.open) c.send(JSON.stringify(o)); } catch (e) { } };
 const myControl = () => !NETROLE || (NETROLE === 'host' ? NET.ctrl === 'host' : NET.ctrl === MYID);
 function netSend(o) { if (NETROLE === 'guest') raw(NET.conn, o); }
@@ -67,9 +73,9 @@ function netLeave() {
 /* ---------- host ---------- */
 async function netHost() {
   netLeave(); const tok = NET.tok = (NET.tok || 0) + 1; NET.status = '正在加载联机组件…'; openModal('coop', 1);
-  try { await loadPeer(); } catch (e) { if (NET.tok === tok) { NET.status = netErrText('load', 1); openModal('coop', 1); } return; } if (NET.tok !== tok) return;
+  try { await loadPeer(); } catch (e) { if (NET.tok === tok) { NET.status = netErrText('load', 1); openModal('coop', 1); } return; } if (NET.tok !== tok) return; const HOPTS = await peerOpts(false); if (NET.tok !== tok) return;
   const fail = type => { if (NET.tok !== tok) return; try { NET.peer && NET.peer.destroy(); } catch (e) { } NET.peer = null; NET.code = ''; NETROLE = null; MYID = 'local'; NET.status = netErrText(type, 1); if (UI.modal === 'coop' || STATE.mode === 'play') openModal('coop', 1); };
-  const open = (tries, keep) => { if (NET.tok !== tok) return; const code = keep || genCode(), peer = new Peer('wmol-' + code, PEER_OPTS); NET.peer = peer; NET.code = code; NET.revive = () => revive(peer, code);
+  const open = (tries, keep) => { if (NET.tok !== tok) return; const code = keep || genCode(), peer = new Peer('wmol-' + code, HOPTS); NET.peer = peer; NET.code = code; NET.revive = () => revive(peer, code);
     NET.status = tries ? `联机服务器有点慢，换一条线再试（第 ${tries + 1} 次）…` : '正在连接联机服务器…'; if (UI.modal === 'coop') openModal('coop', 1);
     const retry = type => { clearTimeout(to); if (NET.peer !== peer || NET.tok !== tok) return; try { peer.destroy(); } catch (e) { } if (tries < 2) setTimeout(() => open(tries + 1), type === 'timeout' ? 0 : 1500); else fail(type); }; /* a quick refusal is often a blip: wait a moment before the next try */
     const to = setTimeout(() => { if (!NETROLE) retry('timeout'); }, NET_WAIT);
@@ -80,8 +86,7 @@ async function netHost() {
     peer.on('connection', conn => { logLine('有人拿着房间码来敲门了，正在接通……', 'dim'); const t0 = setTimeout(() => { if (!conn.open) logLine('<span class="warn">有人想加入，但连接没建成（两边的网络打不通）。让朋友换个网络（比如手机热点）再试，或者关掉 VPN。</span>', 'sys'); }, 20000);
       conn.on('error', e => logLine('加入的连接出错了（' + (e && e.type || e) + '）。', 'dim')); conn.on('iceStateChanged', st => { if (st === 'failed') logLine('<span class="warn">和朋友之间的网络打不通（' + st + '）。换个网络或关掉 VPN 再试。</span>', 'sys'); });
       if (NET.conns.size >= 3) { conn.on('open', () => { raw(conn, { t: 'full' }); setTimeout(() => conn.close(), 300); }); return; }
-      conn.on('open', () => { clearTimeout(t0); NET.conns.set(conn.peer, conn); NET.peers = NET.conns.size; const L = [...$('log').children].slice(-120).map(d => [d.innerHTML, d.className.replace(/^ln\s*/, '')]);
-        raw(conn, { t: 'hello', log: L, code: NET.code }); raw(conn, snapshot()); UI.viewSent = null; setTimeout(viewSend, 300); /* the newcomer starts on the controller's page */ logLine('有人加入了房间，正在和你看同一个画面。', 'sys'); sfx('level'); refresh(); });
+      conn.on('open', () => { clearTimeout(t0); NET.conns.set(conn.peer, conn); NET.peers = NET.conns.size; netWelcome(conn); logLine('有人加入了房间，正在和你看同一个画面。', 'sys'); sfx('level'); refresh(); });
       conn.on('data', d => { try { hostRecv(conn.peer, JSON.parse(d)); } catch (e) { console.error(e); } });
       conn.on('close', () => { if (NET.conns.get(conn.peer) === conn) { NET.conns.delete(conn.peer); NET.peers = NET.conns.size; if (NET.ctrl === conn.peer) { NET.ctrl = 'host'; toast('队友离开了，你接回了操作'); } logLine('队友离开了房间。', 'dim'); netSync(); refresh(); } });
     }); };
@@ -99,6 +104,7 @@ document.addEventListener('visibilitychange', () => { if (document.visibilitySta
 function hostRecv(pid, m) {
   if (m.t === 'take') { NET.ctrl = pid; netBroadcast({ t: 'ctrl', ctrl: pid }); toast('队友接手了操作'); refresh(); netSync(); return; }
   if (NET.ctrl !== pid) return;
+  if (m.t === 'hi') { const c = NET.conns.get(pid); if (c) netWelcome(c); return; }
   if (m.t === 'view') { if (NET.ctrl !== pid) return; NET.lastView = m.v; viewApply(m.v); const o = { t: 'view', v: m.v, from: pid }; for (const [id, c] of NET.conns) if (id !== pid) raw(c, o); return; } /* the guest in control leads everyone's view */
   if ((m.t === 'cmd' || m.t === 'dlg') && m.tap) { const t = { t: 'tap', who: 'guest', from: pid, tap: m.tap }; showTap(t); netBroadcast(t); } /* show the host (and the other guests) what the guest pressed, before it changes the screen */
   if (m.t === 'cmd' && CMDS[m.fn]) { const go = () => { try { CMDS[m.fn](...(m.a || [])); } catch (e) { console.error(e); } netSync(); }; if (m.tap) setTimeout(go, NET_PICK_MS); else go(); return; }
@@ -110,16 +116,19 @@ async function netJoin(code) {
   code = (code || '').toUpperCase().replace(/[^A-Z0-9]/g, '').replace(/0/g, 'O').replace(/1/g, 'I'); if (code.length !== 4) { toast('房间码是 4 位'); return; } if (/[OI]/.test(code)) { toast('房间码里没有 O/0/I/1，再看一眼？'); return; }
   if (C && NETROLE !== 'guest') save(true); netLeave(); const tok = NET.tok = (NET.tok || 0) + 1; const say = s => { NET.status = s; if (STATE.mode === 'play') openModal('coop', 1); else titleStatus(s); }; say('正在连接 ' + code + '…');
   try { await loadPeer(); } catch (e) { if (NET.tok === tok) say(netErrText('load')); return; } if (NET.tok !== tok) return;
-  const give = type => { if (NET.tok !== tok || NETROLE) return; try { NET.peer && NET.peer.destroy(); } catch (e) { } NET.peer = null; NET.conn = null; MYID = 'local'; say(netErrText(type)); };
+  const OPTS = [await peerOpts(false), await peerOpts(true)]; let relay = 0; if (NET.tok !== tok) return;
+  const give = async type => { if (NET.tok !== tok || NETROLE) return; const c0 = NET.conn;
+    if (type === 'ice' && !relay && !(QS.get('peerhost') && !QS.get('icecfg'))) { relay = 1; try { NET.peer && NET.peer.destroy(); } catch (e) { } say('找到了房间，但直连打不通，改走中转服务器再试一次…'); attempt(0); return; } /* direct failed: force the relay (TURN over 80/443) */
+    const info = type === 'ice' ? await iceInfo(c0) : ''; if (NET.tok !== tok || NETROLE) return; try { NET.peer && NET.peer.destroy(); } catch (e) { } NET.peer = null; NET.conn = null; MYID = 'local'; say(netErrText(type) + info); };
   /* three phases, each with its own patience: reach the server (retry with a fresh socket), find the room (ask again), open the channel (ICE can take a while through a relay) */
-  const t0 = Date.now(); const attempt = tries => { if (NET.tok !== tok) return; const peer = new Peer(PEER_OPTS); NET.peer = peer; let found = 0, asked = 0, miss = 0;
+  const t0 = Date.now(); const attempt = tries => { if (NET.tok !== tok) return; const peer = new Peer(OPTS[relay]); NET.peer = peer; let found = 0, asked = 0, miss = 0;
     const toSrv = setTimeout(() => { if (NET.tok !== tok || NET.peer !== peer || peer.open) return; try { peer.destroy(); } catch (e) { } if (tries < 2) { say(`联机服务器有点慢，换一条线再试（第 ${tries + 2} 次）…`); attempt(tries + 1); } else give('timeout'); }, NET_WAIT);
     const ask = () => { if (NET.tok !== tok || NET.peer !== peer || NETROLE) return; asked++; const c = peer.connect('wmol-' + code, { reliable: true, serialization: 'raw', label: 'ctl' }); NET.conn = c;
-      c.on('open', () => { if (NET.tok !== tok) return; NETROLE = 'guest'; NET.code = code; });
+      c.on('open', () => { if (NET.tok !== tok || NET.conn !== c) return; NETROLE = 'guest'; NET.code = code; say('连上了，正在接收房主的画面…'); let n = 0; const hi = () => { if (NET.tok !== tok || NET.conn !== c || C || n++ > 12) return; raw(c, { t: 'hi' }); setTimeout(hi, 1500); }; setTimeout(hi, 150); }); /* keep saying hi until the state arrives */
       c.on('data', d => { try { guestRecv(JSON.parse(d)); } catch (e) { console.error(e); } });
       c.on('error', () => { }); c.on('iceStateChanged', st => { if (st === 'failed' && !NETROLE && NET.tok === tok) give('ice'); });
       c.on('close', () => { if (NETROLE === 'guest' && NET.conn === c) { toast('房主离开了'); netLeave(); } });
-      setTimeout(() => { if (NET.tok !== tok || NETROLE || NET.peer !== peer || NET.conn !== c) return; if (asked < 3) { say(found ? `找到房间了，正在打通两边的网络（第 ${asked + 1} 次）…` : `房主那边还没回应，再敲一次门（第 ${asked + 1} 次）…`); try { c.close(); } catch (e) { } ask(); } else give(found ? 'ice' : 'nohost'); }, 15000); };
+      setTimeout(() => { if (NET.tok !== tok || NETROLE || NET.peer !== peer || NET.conn !== c) return; if (c.peerConnection && c.peerConnection.remoteDescription) found = 1; /* the host answered: the room is there, the network is what fails */ if (asked < (found ? 2 : 3)) { say(found ? `找到房间了，正在打通两边的网络（第 ${asked + 1} 次）…` : `房主那边还没回应，再敲一次门（第 ${asked + 1} 次）…`); try { c.close(); } catch (e) { } ask(); } else give(found ? 'ice' : 'nohost'); }, 15000); };
     peer.on('open', id => { clearTimeout(toSrv); if (NET.tok !== tok || NET.peer !== peer) return; MYID = id; say('已连上联机服务器，正在找房间 ' + code + '…'); ask(); });
     peer.on('error', err => { if (NET.tok !== tok || NET.peer !== peer || NETROLE === 'guest') return;
       if (err.type === 'peer-unavailable') { miss++; if (miss < 7) { say(`还没找到房间 ${code}，已经找了 ${Math.round((Date.now() - t0) / 1000)} 秒，继续找…（房主要停在游戏页面上）`); try { NET.conn && NET.conn.close(); } catch (e) { } NET.conn = null; asked = 0; setTimeout(ask, 4000); } else give('peer-unavailable'); return; } /* the room may simply not be open yet: keep knocking for ~40s */
@@ -128,6 +137,10 @@ async function netJoin(code) {
     const oc = peer.connect.bind(peer); peer.connect = (...a) => { const c = oc(...a); c.on && c.on('iceStateChanged', st => { if (st === 'checking' || st === 'connected') found = 1; }); return c; }; };
   attempt(0);
 }
+/* the welcome pack: recent log + the whole game state + the controller's page. Sent when the channel opens and again on every 'hi' from the guest,
+   because a message sent the very instant a channel opens can be dropped (seen: the friend sat on the title screen with an open channel and no state) */
+function netWelcome(conn) { const L = [...$('log').children].slice(-120).map(d => [d.innerHTML, d.className.replace(/^ln\s*/, '')]);
+  raw(conn, { t: 'hello', log: L, code: NET.code }); raw(conn, snapshot()); UI.viewSent = null; setTimeout(viewSend, 300); }
 function guestRecv(m) {
   if (m.t === 'full') { NET.status = '房间满了'; netLeave(); titleStatus(NET.status); return; }
   if (m.t === 'hello') { STATE.mode = 'play'; $('title').style.display = 'none'; closeModal(); $('log').innerHTML = ''; for (const [h, c] of m.log || []) $('log').appendChild(el('div', 'ln ' + c, h)); NET.status = ''; UI.nav = null; layout(); return; }
@@ -164,3 +177,7 @@ for (const fn of ['navTo', 'openModal', 'closeModal', 'renderSide']) { const o =
 document.addEventListener('scroll', e => { if (NETROLE && e.target && (e.target.id === 'sbody' || e.target.id === 'mb')) viewSoon(); }, true);
 document.addEventListener('toggle', () => { if (NETROLE) viewSoon(); }, true);
 function toggleFollow() { SET.follow = SET.follow === false; saveSet(); toast(SET.follow ? '跟随队友的画面' : '不跟随了，你可以自己翻页面'); if (SET.follow && NET.lastView) viewApply(NET.lastView); if (UI.modal === 'coop') openModal('coop', 1); }
+
+/* why the channel didn't open: which kinds of route this device found (direct / via STUN / via the relay) — one short line the player can pass on */
+async function iceInfo(c) { try { const pc = c && c.peerConnection; if (!pc) return ''; const st = await pc.getStats(), k = new Set(); st.forEach(r => { if (r.type === 'local-candidate') k.add(r.candidateType); });
+    const relay = k.has('relay'); return `（这台设备：${k.has('host') || k.has('srflx') ? '直连线路有' : '直连线路没有'}，${relay ? '中转线路也拿到了——多半是房主那边的网络挡住了' : '中转线路没拿到——这边的网络连中转服务器都挡了'}）`; } catch (e) { return ''; } }
