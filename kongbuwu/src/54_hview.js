@@ -66,7 +66,7 @@ function hsPersonPose(g, P, x, y, dir, fr, po, t, alpha) { if (!po) return hsPer
   if (po.sq === .62) { g.fillStyle = 'rgba(0,0,0,.25)'; g.fillRect(X + 2, Y + h - 1, 12, 1); } }
 /* 整张图先画在一块和地图一样大的画布上（主画面、监控小窗都从这里裁） */
 function hsWorld(H) { const M = H.M, t = H.t; if (!H.world) H.world = mk(M.w * 16, M.h * 16); const g = H.world.getContext('2d'), W = H.world.width, Hh = H.world.height; g.imageSmoothingEnabled = false; const ox = 0, oy = 0;
-  g.fillStyle = '#050405'; g.fillRect(0, 0, W, Hh); g.drawImage(hsMapCache(M), 0, 0);
+  g.fillStyle = '#050405'; g.fillRect(0, 0, W, Hh); g.drawImage(hsMapCache(M), 0, 0); g.drawImage(hsDecoCache(M), 0, 0);
   const setup = H.phase === 'setup';
   /* 机关位 */
   for (const s of M.slots) { const x = s.x * 16 - ox, y = s.y * 16 - oy; if (setup) { const k = (H.lay && H.lay.slots[s.i]) || ''; g.strokeStyle = k ? '#e8b04a' : 'rgba(232,200,120,.55)'; g.setLineDash([2, 2]); g.beginPath(); g.arc(x + 8, y + 8, 7, 0, 7); g.stroke(); g.setLineDash([]); if (k || s.sp) hsDevDraw(g, H, s, k || s.k, ox, oy, t, true); }
@@ -84,12 +84,13 @@ function hsWorld(H) { const M = H.M, t = H.t; if (!H.world) H.world = mk(M.w * 1
     else if (k === 1) { if (o.st === 'carry') hsPerson(g, HCARRY, o.x * 16 - ox + (o.dir === 1 ? -11 : 11), o.y * 16 - oy - 1, o.dir, o.mv ? o.fr : 0); hsPersonPose(g, o.P, o.x * 16 - ox, o.y * 16 - oy - (o.st === 'carry' ? 5 : 0), o.dir, o.mv ? o.fr : 0, hsPose(H, o), t); }
     else if (k === 3) hsPersonPose(g, o.f.P, o.tr[0] * 16 - ox + 3, o.tr[1] * 16 - oy + 1, o.tr[2], o.tr[3], hsPose(H, o.v), t + .13, .95);
     else if (k === 2) { const pop = o.pop > 0; hsPerson(g, o.P, o.x * 16 - ox, o.y * 16 - oy, pop ? (o.px < o.home[0] ? 1 : o.px > o.home[0] ? 2 : 0) : 0, 0, o.off ? .15 : pop ? 1 : .42); }
-    else if (k === 4) { if (!o.hidden) hsPerson(g, o.P, o.x * 16 - ox, o.y * 16 - oy, o.dir, o.mv ? o.fr : 0); }
+    else if (k === 4) { if (H.mode === 'house') hsHero(g, H, o, ox, oy, t); else if (!o.hidden) hsPerson(g, o.P, o.x * 16 - ox, o.y * 16 - oy, o.dir, o.mv ? o.fr : 0); }
     else if (k === 5) hsPerson(g, o.P, o.x * 16 - ox + (o.hunt ? (rnd() - .5) * 1.5 : 0), o.y * 16 - oy, o.dir, o.mv ? o.fr : 0, o.ghost ? .88 : 1); }
   /* 黑暗 */ if (!setup) hsDark(H, g, ox, oy);
   else { g.fillStyle = 'rgba(5,4,8,.28)'; g.fillRect(0, 0, W, Hh); }
+  if (H.mode === 'house') hsRouteDraw(g, H, ox, oy, t, setup);
   /* 黑暗之上：机关圈、SAN 条、气泡标记 */
-  if (!setup) {
+  if (!setup) { if (H.mode === 'house') { hsNextDraw(g, H, ox, oy, t); hsAmbDraw(g, H, ox, oy, t); }
     if (H.mode === 'house') for (const s of M.slots) { if (!s.k) continue; const x = s.x * 16 + 8 - ox, y = s.y * 16 + 8 - oy, inr = hDevInRange(H, s), rdy = hDevReady(H, s), tg = rdy && inr && hDevTargets(H, s).length;
       if (tg) { const p = .6 + Math.sin(t * 9) * .4; g.strokeStyle = `rgba(255,70,50,${p})`; g.lineWidth = 1; g.beginPath(); g.arc(x, y, (HB.zone + .5) * 16, 0, 7); g.stroke(); g.fillStyle = 'rgba(255,60,40,.12)'; g.fill(); }
       else if (inr) { g.strokeStyle = rdy ? 'rgba(232,176,74,.55)' : 'rgba(150,150,150,.3)'; g.setLineDash([2, 3]); g.beginPath(); g.arc(x, y, (HB.zone + .5) * 16, 0, 7); g.stroke(); g.setLineDash([]); }
@@ -112,24 +113,35 @@ function hsDraw(H) { const cv = $('#hcv'); if (!cv) return; hsWorld(H); const g 
   if (H.red > 0) { g.fillStyle = `rgba(150,0,0,${H.red * .28})`; g.fillRect(0, 0, W, Hh); }
   if (H.phase === 'live' && !H.done) hsArrows(H, g, W, Hh);
   if (H.heart > .05) { const gr = g.createRadialGradient(W / 2, Hh / 2, Math.min(W, Hh) * .25, W / 2, Hh / 2, Math.max(W, Hh) * .7); gr.addColorStop(0, 'rgba(120,0,0,0)'); gr.addColorStop(1, `rgba(140,0,0,${H.heart * .55 * (.75 + Math.sin(t * 9) * .25)})`); g.fillStyle = gr; g.fillRect(0, 0, W, Hh); }
-  for (let i = 0; i < 26; i++) { g.fillStyle = 'rgba(255,255,255,.03)'; g.fillRect((rnd() * W) | 0, (rnd() * Hh) | 0, 1, 1); } }
+  if (H.mode === 'house' && H.phase === 'live') hsMood(H, g, W, Hh, t);
+  for (let i = 0; i < 26; i++) { g.fillStyle = 'rgba(255,255,255,.03)'; g.fillRect((rnd() * W) | 0, (rnd() * Hh) | 0, 1, 1); }
+  hsCutDraw(H, g, W, Hh); }
 /* 画面外的游客（红）和已经能拉的机关（黄）：屏幕边缘的小箭头 */
 function hsArrows(H, g, W, Hh) { const pts = []; for (const v of hActive(H)) pts.push([v.x, v.y, '#ff4a3a']); if (H.mode === 'house') for (const s of H.M.slots) if (s.armed) pts.push([s.x, s.y, '#f0c050']); if (H.boss && H.boss.hunt) pts.push([H.boss.x, H.boss.y, '#ff2020']);
   const cx = W / 2, cy = Hh / 2; for (const [x, y, col] of pts) { const px = x * 16 + 8 - H.cam.x, py = y * 16 + 4 - H.cam.y; if (px > 4 && px < W - 4 && py > 4 && py < Hh - 4) continue; const dx = px - cx, dy = py - cy, k = Math.min((W / 2 - 7) / Math.abs(dx || 1e-3), (Hh / 2 - 7) / Math.abs(dy || 1e-3)), ax = cx + dx * k, ay = cy + dy * k, an = Math.atan2(dy, dx);
     g.save(); g.translate(Math.round(ax), Math.round(ay)); g.rotate(an); g.globalAlpha = .65 + Math.sin(H.t * 8) * .3; g.fillStyle = col; g.beginPath(); g.moveTo(5, 0); g.lineTo(-3, -4); g.lineTo(-3, 4); g.closePath(); g.fill(); g.restore(); } g.globalAlpha = 1; }
 let HDK = null;
 function hsDark(H, g, ox, oy) { const M = H.M, W = g.canvas.width, Hh = g.canvas.height; if (!HDK || HDK.width !== W || HDK.height !== Hh) HDK = mk(W, Hh); const L = HDK.getContext('2d'); L.globalCompositeOperation = 'source-over'; L.clearRect(0, 0, W, Hh);
-  L.globalAlpha = M.D.dark; L.fillStyle = '#04030a'; L.fillRect(0, 0, W, Hh); L.globalAlpha = 1; L.globalCompositeOperation = 'destination-out';
+  const house = H.mode === 'house', offA = house ? Math.min(.96, M.D.dark + .14) : M.D.dark; L.globalAlpha = offA; L.fillStyle = '#04030a'; L.fillRect(0, 0, W, Hh); L.globalAlpha = 1; L.globalCompositeOperation = 'destination-out';
+  const warm0 = [], cones = [];
+  /* 开着灯的房间：整间亮一些，顶上一盏灯（RULES 31）；刚开关时闪几下，偶尔自己闪一下 */
+  if (house) for (const r of M.rooms) { let lit = !(H.lit && H.lit[r.n] === false); const ft = H.flick ? H.t - (H.flick[r.n] ?? -9) : 9; if (ft < .45) lit = Math.floor(ft * 14) % 2 ? !lit : lit; else if (lit && hash(Math.floor(H.t * 7), r.x0 * 3 + r.y0, 5) < .012) lit = false;
+    if (!lit) continue; L.globalAlpha = 1 - (M.D.dark * .72) / offA; L.fillStyle = '#000'; L.fillRect(r.x0 * 16 - ox, (r.y0 - 1) * 16 - oy, (r.x1 - r.x0 + 1) * 16, (r.y1 - r.y0 + 2) * 16); L.globalAlpha = 1;
+    const cx = (r.x0 + r.x1 + 1) * 8 - ox, cy = (r.y0 + 1) * 16 - oy, rr = Math.min(r.x1 - r.x0 + 1, r.y1 - r.y0 + 2) * 8 + 10; warm0.push([cx, cy, rr, 'rgba(255,214,150,.13)']); }
   const hole = (x, y, r, a) => { if (r <= 0) return; const gr = L.createRadialGradient(x, y, r * .12, x, y, r); gr.addColorStop(0, `rgba(0,0,0,${a})`); gr.addColorStop(.6, `rgba(0,0,0,${a * .55})`); gr.addColorStop(1, 'rgba(0,0,0,0)'); L.fillStyle = gr; L.beginPath(); L.arc(x, y, r, 0, 7); L.fill(); };
   const warm = [], P = (o, dy) => [o.x * 16 + 8 - ox, o.y * 16 + (dy ?? 4) - oy];
-  const h = H.hero; if (!h.hidden) hole(...P(h), (H.mode === 'chase' ? 3.2 : 2.3) * 16, H.mode === 'chase' ? .95 : .62); else hole(...P(h), 1.2 * 16, .35);
+  const h = H.hero, hdk = house && hDarkAt(H, h.x, h.y); if (!h.hidden) hole(...P(h), (H.mode === 'chase' ? 3.2 : hdk ? 1.4 : 2.3) * 16, H.mode === 'chase' ? .95 : hdk ? .45 : .62); else hole(...P(h), 1.2 * 16, .35);
+  if (house && !h.hidden && hCos() === 'paper') { const [x, y] = P(h); hole(x + 5, y + 4, 1.8 * 16, .55); warm0.push([x + 5, y + 4, 1.8 * 16, 'rgba(230,240,255,.18)']); }
   for (const e of M.ents) if (e.light) { const fl = 1 + Math.sin(H.t * 11 + e.x) * .05 + (rnd() < .015 ? -.35 : 0); const [x, y] = P(e, 6); hole(x, y, e.light[0] * 16 * fl, .9); warm.push([x, y, e.light[0] * 16, e.light[1]]); }
-  for (const v of H.vis) { if (v.st === 'wait' || v.st === 'gone' || v.u.st.dark) continue; const [x, y] = P(v); hole(x, y, v.light * 16, .85); if (v.light > 2) { const [dx, dy] = HD[v.dir]; hole(x + dx * 30, y + dy * 30, 2.4 * 16, .7); } }
+  for (const v of H.vis) { if (v.st === 'wait' || v.st === 'gone' || v.u.st.dark) continue; const [x, y] = P(v);
+    if (house && !hOut(v) && hDarkAt(H, v.x, v.y)) { /* 黑屋：手机手电的光柱 */ hole(x, y, 14, .55); const [dx, dy] = HD[v.dir], an = Math.atan2(dy, dx) + Math.sin(H.t * 2 + v.x) * .12, R = 3.3 * 16, gr = L.createRadialGradient(x, y, 2, x, y, R); gr.addColorStop(0, 'rgba(0,0,0,.95)'); gr.addColorStop(.65, 'rgba(0,0,0,.65)'); gr.addColorStop(1, 'rgba(0,0,0,0)'); L.fillStyle = gr; L.beginPath(); L.moveTo(x, y); L.arc(x, y, R, an - .42, an + .42); L.closePath(); L.fill(); cones.push([x, y, an, R]); continue; }
+    hole(x, y, v.light * 16, .85); if (v.light > 2) { const [dx, dy] = HD[v.dir]; hole(x + dx * 30, y + dy * 30, 2.4 * 16, .7); } }
   for (const s of M.slots) if (s.fx > 0) { const [x, y] = P(s, 8); hole(x, y, 3 * 16 * s.fx, .9); warm.push([x, y, 3 * 16 * s.fx, 'rgba(255,40,30,.3)']); }
   for (const s of H.staff) if (s.pop > 0) { const [x, y] = P(s); hole(x, y, 2 * 16, .7); }
   if (H.boss) { const [x, y] = P(H.boss); hole(x, y, 1.2 * 16, .5); warm.push([x, y, 2 * 16, 'rgba(160,0,0,.25)']); }
   if (H.item && !H.item.got) { const [x, y] = P(H.item, 8); hole(x, y, 1.6 * 16, .8); warm.push([x, y, 1.6 * 16, 'rgba(255,230,140,.2)']); }
-  L.globalCompositeOperation = 'source-over'; g.drawImage(HDK, 0, 0);
+  L.globalCompositeOperation = 'source-over'; g.drawImage(HDK, 0, 0); warm.push(...warm0);
+  if (cones.length) { g.globalCompositeOperation = 'lighter'; for (const [x, y, an, R] of cones) { const gr = g.createRadialGradient(x, y, 2, x, y, R); gr.addColorStop(0, 'rgba(230,236,255,.22)'); gr.addColorStop(1, 'rgba(230,236,255,0)'); g.fillStyle = gr; g.beginPath(); g.moveTo(x, y); g.arc(x, y, R, an - .42, an + .42); g.closePath(); g.fill(); } g.globalCompositeOperation = 'source-over'; }
   if (warm.length) { g.globalCompositeOperation = 'lighter'; for (const [x, y, r, col] of warm) { const gr = g.createRadialGradient(x, y, 0, x, y, r * .8); gr.addColorStop(0, col); gr.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = gr; g.beginPath(); g.arc(x, y, r * .8, 0, 7); g.fill(); } g.globalCompositeOperation = 'source-over'; } }
 /* 机关和员工的像素动画 */
 const HGHOST = { jump: P_({ sil: '#5a0606', hs: 'long', cover: 1, redEye: 1, dress: 1, top: '#700', ghost: 1 }), doll: P_({ skin: '#e8e4dc', hair: '#141214', hs: 'bob', top: '#c8c0b0', dress: 1, mask: 1, ghost: 1 }) };
@@ -147,7 +159,7 @@ function hsFxDraw(H, g, ox, oy) { for (let i = H.fx.length - 1; i >= 0; i--) { c
     else if (f.k === 'light') { g.fillStyle = `rgba(255,255,255,${a < .1 ? .7 : 0})`; g.fillRect(0, 0, g.canvas.width, g.canvas.height); } } }
 
 /* ---------- 文字层（飘字、气泡） ---------- */
-function hsTextLayer(H) { const el = $('#hsfx'); if (!el) return; let h = ''; const now = H.t;
+function hsTextLayer(H) { const el = $('#hsfx'); if (!el) return; let h = hsCutCss(H); const now = H.t;
   for (const f of H.txt) { const a = (now - f.t0) / 1.3; if (a >= 1) continue; const [x, y] = hsToCss(H, f.x, f.y - a * .8); h += '<span class="hf ' + f.k + '" style="left:' + Math.round(x) + 'px;top:' + Math.round(y) + 'px;opacity:' + (1 - a * a).toFixed(2) + '">' + esc(f.s) + '</span>'; }
   H.txt = H.txt.filter(f => now - f.t0 < 1.3);
   if (H.phase === 'setup' && H.lay) { for (const s of H.M.slots) { const k = s.sp ? s.k : H.lay.slots[s.i], [x, y] = hsToCss(H, s.x, s.y + .5); h += '<span class="hl' + (k ? ' on' : '') + '" style="left:' + Math.round(x) + 'px;top:' + Math.round(y) + 'px">' + (k ? hDev(k).ic : '') + s.n + '</span>'; }
@@ -163,8 +175,8 @@ function hsSetup(H) { H.phase = 'setup'; H.lay = JSON.parse(JSON.stringify(house
 function hsSetupHtml(H) { const B = H.B, el = $('#hsset'), devN = Object.entries(H.lay.slots).filter(([i, k]) => k && !(H.M.slots[i] || {}).sp).length, stN = Object.values(H.lay.staff).filter(Boolean).length;
   const vis = B.foes.map(f => { const cd = C.codex[f.id] || { wk: [] }; return '<span class="hv">' + esc(f.n) + (f.trait ? '<small>' + esc(TRAITS[f.trait].split('：')[0]) + '</small>' : '') + (cd.wk.length ? '<small class="wk">怕' + cd.wk.map(w => EL[w]).join('、') + '</small>' : '<small>弱点未知</small>') + (f.picky ? '<small class="pk">最怕' + EL[f.picky] + '</small>' : '') + '</span>'; }).join('');
   const P = scenePas(H.o.scene);
-  el.innerHTML = '<div class="hs-st"><b>' + esc(H.M.D.n) + '</b> · ' + (H.o.ppl || B.foes.length) + ' 位游客<div class="hvs">' + vis + '</div>' + (P.t ? '<div class="hs-rule">场景：' + esc(P.t) + '</div>' : '') + (H.rule ? '<div class="hs-rule red">💡 ' + esc(H.rule.t) + '</div>' : '') + '</div>'
-    + '<div class="hs-sb"><div class="hs-cnt">机关 ' + devN + '/' + houseMaxDev() + ' · 员工 ' + stN + '/' + Math.min(H.M.staff.length, houseStaffList().length) + '<small>点圆圈放机关，点人形框安排员工</small></div><button class="btn" onclick="hsCancel()">‹ 不接了</button><button class="btn" onclick="hsAutoLay()">自动布置</button><button class="btn pri big" onclick="hsOpen()">开门营业</button></div><div id="hspick"></div>'; hsSize(); }
+  el.innerHTML = '<div class="hs-st"><b>' + esc(H.M.D.n) + '</b> · ' + (H.o.ppl || B.foes.length) + ' 位游客 <button class="hs-cos" onclick="hsCosCycle()">🎭 扮相：' + esc(HCOS[hCos()].n) + ' <small>' + esc(HCOS[hCos()].tip) + '</small></button><div class="hvs">' + vis + '</div>' + (P.t ? '<div class="hs-rule">场景：' + esc(P.t) + '</div>' : '') + (H.rule ? '<div class="hs-rule red">💡 ' + esc(H.rule.t) + '</div>' : '') + '</div>'
+    + '<div class="hs-sb"><div class="hs-cnt">机关 ' + devN + '/' + houseMaxDev() + ' · 员工 ' + stN + '/' + Math.min(H.M.staff.length, houseStaffList().length) + '<small>点圆圈放机关，点人形框排员工 · <span style="color:#ffce6e">黄虚线</span>＝游客路线</small></div><button class="btn" onclick="hsCancel()">‹ 不接了</button><button class="btn" onclick="hsAutoLay()">自动布置</button><button class="btn pri big" onclick="hsOpen()">开门营业</button></div><div id="hspick"></div>'; hsSize(); }
 /* 暂停 / 退出（RULES 23） */
 function hsPause(on) { const H = HS; if (!H || H.done) return; H.paused = on ?? !H.paused; sfx('tap'); let el = $('#hspause'); if (!H.paused) { if (el) el.remove(); H.last = performance.now(); return; }
   if (!el) { el = document.createElement('div'); el.id = 'hspause'; $('#hsw').appendChild(el); }
@@ -187,11 +199,11 @@ function hsOpen() { const H = HS; if (!H || H.phase !== 'setup') return; C.hh.la
 function hsHud(H) { const el = $('#hshud'); if (!el) return; const chase = H.mode === 'chase';
   el.innerHTML = '<div class="hs-top">' + (chase ? '<span class="hs-obj" id="hsobj"></span>' : '<div class="hs-atm"><i id="hsatm"></i><span id="hsatt"></span></div><span class="hs-k" id="hsk"></span>') + '<span class="hs-mp" id="hsmp"></span>' + (chase ? '' : '<button class="tb" id="hsauto" onclick="hsAuto()">🤖</button>') + '<button class="tb" id="hszoom" onclick="hsZoom()">🔍</button><button class="tb" onclick="hsPause()" aria-label="暂停">⏸</button></div>'
     + '<div class="hs-room" id="hsroom"></div><div class="hs-side" id="hsside"><canvas id="hsmm"></canvas><div id="hsmon"></div></div><button class="btn" id="hsctr" onclick="hsCenter()">📍 回到陈歌</button><div class="hs-hint" id="hshint"></div><div class="hs-tick" id="hstick"></div>'
-    + '<div class="hs-bot">' + (chase ? '<button class="btn" onclick="hsHideNear()">躲进最近的柜子</button>' : '<div class="hs-devs" id="hsdevs"></div>' + '<button class="btn" id="hslure" onclick="hsLure()">👂 引</button>' + (tapeReady() ? '<button class="btn" id="hstape" onclick="hsTape()">📼</button>' : '') + '<button class="btn pri big" id="hsgo" onclick="hsAct()">吓！</button>') + '</div>';
+    + '<div class="hs-bot">' + (chase ? '<button class="btn" onclick="hsHideNear()">躲进最近的柜子</button>' : '<div class="hs-devs" id="hsdevs"></div>' + '<button class="btn" id="hslight" onclick="hsLight()">🌑 关灯</button><button class="btn" id="hslure" onclick="hsLure()">👂 引</button>' + (tapeReady() ? '<button class="btn" id="hstape" onclick="hsTape()">📼</button>' : '') + '<button class="btn pri big" id="hsgo" onclick="hsAct()">吓！</button>') + '</div>';
   const mm = $('#hsmm'); if (mm) { mm.onpointerdown = ev => { ev.stopPropagation(); const r = mm.getBoundingClientRect(); hGo(H, (ev.clientX - r.left) / r.width * H.M.w, (ev.clientY - r.top) / r.height * H.M.h); sfx('tap'); }; }
   hsHudTick(H, true); hsSize(); }
 function hsHudTick(H, force) { H.hudT = (H.hudT || 0) - H.dt; if (H.hudT > 0 && !force) return; H.hudT = .12; const B = H.B, h = H.hero;
-  const room = hmRoomAt(H.M, h.x, h.y); const rm = $('#hsroom'); if (rm) rm.textContent = (room ? room.n : '') + (h.hidden ? ' · 躲着' : '') + (H.task ? '　游客要找：' + H.task.n : '');
+  const room = hmRoomAt(H.M, h.x, h.y); { const lb = $('#hslight'); if (lb) { const dk = room && H.lit && H.lit[room.n] === false; lb.textContent = dk ? '💡 开灯' : '🌑 关灯'; lb.disabled = !room || H.t < ((H.lcd || {})[room.n] || 0); } } const rm = $('#hsroom'); if (rm) rm.textContent = (room ? room.n : '') + (h.hidden ? ' · 躲着' : '') + (H.task ? '　游客要找：' + H.task.n : '');
   const mp = $('#hsmp'); if (mp) mp.textContent = '精神 ' + Math.max(0, Math.round(C.mp));
   const tk = $('#hstick'); if (tk) { const l = H.log[H.log.length - 1]; tk.textContent = l && H.t - l.t < 6 ? l.s : ''; tk.className = 'hs-tick ' + (l ? l.cls : ''); }
   if (H.mode === 'chase') { const o = $('#hsobj'); if (o) o.textContent = H.item && !H.item.got ? '找到：' + H.item.n : H.o.wait ? '撑住 ' + Math.max(0, Math.ceil(H.o.wait - H.t)) + ' 秒' : '跑'; }

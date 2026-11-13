@@ -99,7 +99,7 @@ function houseAutoLayout(sid, M) { const devs = houseDevices(), max = houseMaxDe
 function houseApplyLayout(H) { const M = H.M, l = houseLayout(H.o.scene, M), devs = houseDevices(); let n = 0; const used = {};
   for (const s of M.slots) { if (s.sp) continue; const k = l.slots[s.i]; if (k && devs.includes(k) && n < houseMaxDev() && (!used[k] || (k === 'jump' && used[k] < 2))) { s.k = k; used[k] = (used[k] || 0) + 1; n++; } else s.k = ''; }
   H.staff = []; for (const sp of M.staff) { const k = l.staff[sp.i]; if (k && C.pets[k] && HSTAFF_OK(k) && !H.staff.some(s => s.k === k)) H.staff.push(hActor(sp.x, sp.y, { k, home: [sp.x, sp.y], u: petUnit(k), cd: 1.5 + H.staff.length, pop: 0, P: pplOf(PETS[k].n === '殷小小' ? '小小' : PETS[k].n), off: false })); } }
-function houseStart(H) { const B = H.B, M = H.M; houseApplyLayout(H); H.phase = 'live'; H.t = 0;
+function houseStart(H) { const B = H.B, M = H.M; houseApplyLayout(H); H.phase = 'live'; H.t = 0; H.hero.P = HCOS[hCos()].P; H.lit = {}; H.flick = {}; H.lcd = {}; H.puffT = 0; hLog(H, '陈歌换上了' + HCOS[hCos()].n + '的行头。', 'sys');
   const ppl = H.o.ppl || B.foes.length, extra = Math.max(0, ppl - B.foes.length), per = Math.min(3, Math.ceil(extra / B.foes.length));
   B.foes.forEach((u, i) => { const P = u.boss || ['gaoru', 'heshan', 'feiyl', 'zhujn', 'wanghl', 'wangwl'].includes(u.id) ? pplOf(MOBS[u.id].n) : pplOf(u.n + i + C.day); const v = hActor(M.route[0][0], M.route[0][1], { u, P, st: 'wait', at: i * HB.enterGap + (i ? 0 : .6), wi: 1, wait: 0, seeCd: 0, mockN: 0, ftrail: [], fol: [], bub: null, light: u.trait === 'torch' ? 3.2 : 1.8, tags: 0 });
     for (let j = 0; j < (u.boss ? 0 : per); j++) v.fol.push({ P: pplOf('同伴' + i + j + C.day), lag: 4 + j * 4 }); H.vis.push(v); });
@@ -137,10 +137,10 @@ function hVisTick(H, v, dt) { const M = H.M, u = v.u;
   if (!goal && at(tgt[0], tgt[1])) { if (v.wi >= M.route.length - 1) { v.st = 'gone'; hLog(H, u.n + ' 拿着' + ((H.task && H.task.n) || '东西') + '走出了出口，回头笑了一声。', 'warn'); return; } hWi(H, v); if (v.st !== 'panic' && v.wi > 1) { v.st = 'look'; v.wait = 1.1 + rnd() * .8; } return; }
   if (rg && at(rg[0], rg[1])) { hsRule(H, 'reach', v); return; }
   const n = hmNext(M, hmField(M, tgt[0], tgt[1], 'v'), v.tx, v.ty, 'v'); if (!n) { if (lg) v.lure = null; else hWi(H, v); return; }
-  const spd = v.st === 'panic' ? HB.panic : HB.walk * (u.spd / 10) * (u.st.slow ? .6 : 1) * (u.st.dark ? .75 : 1) * (H.t < (v.shaky || 0) ? .8 : 1); hStepTo(v, n[0], n[1], spd); }
+  const spd = v.st === 'panic' ? HB.panic : HB.walk * (u.spd / 10) * (u.st.slow ? .6 : 1) * (u.st.dark ? .75 : 1) * (H.t < (v.shaky || 0) ? .8 : 1) * (hDarkAt(H, v.tx, v.ty) ? .85 : 1); hStepTo(v, n[0], n[1], spd); }
 /* 游客看见陈歌：拆穿 */
 function hSee(H, v) { const h = H.hero; if (h.hidden || v.seeCd > 0 || v.u.st.dark || hScaredSt(v) || H.t < (v.shaky || 0) || hOut(v) || v.st === 'leave' || v.st === 'wait') return false; const dx = h.x - v.x, dy = h.y - v.y, d = Math.hypot(dx, dy); if (d > HB.seeDist || d < .2) return false;
-  const [fx, fy] = HD[v.dir]; if ((dx * fx + dy * fy) < d * .35 && v.st !== 'look') return false; return hmLos(H.M, v.x, v.y, h.x, h.y); }
+  const [fx, fy] = HD[v.dir]; if (hDarkAt(H, v.x, v.y) || hDarkAt(H, h.x, h.y)) { /* 黑屋里只看得见手机手电照到的那一条 */ if (d > (hCos() === 'paper' ? 2 : 3.2) || (dx * fx + dy * fy) < d * .78) return false; return hmLos(H.M, v.x, v.y, h.x, h.y); } if ((dx * fx + dy * fy) < d * .35 && v.st !== 'look') return false; return hmLos(H.M, v.x, v.y, h.x, h.y); }
 function hExpose(H, v, who) { const B = H.B; hHint(H, 'seen', '被看见了：从背后、躲在柜子里，或者先断电再出手。游客头上冒「？」就是要回头了。'); v.seeCd = HB.seeCd; H.stats.exposed++; const a = Math.round(B.hero.mhp * HB.exposeAtm * (H.rule && H.rule.cam && v.u.id === 'feiyl' ? 2 : 1)); B.hero.hp = Math.max(0, B.hero.hp - a); v.u.hp = Math.min(v.u.mhp, v.u.hp + Math.round(v.u.mhp * HB.exposeHp));
   hBub(H, v, pick(who === 'staff' ? ['那是工作人员吧？', '我看见拉链了。', '化妆的，别怕。'] : ['工作人员吧？', '我看见你了哈。', '老板，你鞋带开了。', '那人在躲什么？']), 1.8); hFloat(H, H.hero.x, H.hero.y - 1, '被看见 · 氛围 -' + a, 'bad'); hLog(H, v.u.n + ' 看见了陈歌——氛围 -' + a, 'warn'); sfx('miss'); }
 /* 每一“回合”：游客拆台、状态结算、场景特色 */
@@ -153,7 +153,7 @@ function hFlush(H) { const B = H.B; for (const e of B.ev) { const v = e.who === 
     else if (e.t === 'txt' && v) hFloat(H, x, y - .4, e.txt, 'txt'); else if (e.t === 'banner' && e.who === 'hero' && /连段|全场|完美/.test(e.txt)) hFloat(H, H.hero.x, H.hero.y - 2, e.txt, 'crit'); }
   B.ev = []; for (let i = H.logN || 0; i < B.log.length; i++) { const l = B.log[i]; if (l.cls === 'say' || l.cls === 'gain' || l.cls === 'warn' || l.cls === 'epic') hLog(H, l.s, l.cls); } H.logN = B.log.length;
   for (const v of H.vis) if (v.u.hp <= 0 && !hOut(v) && v.st !== 'wait') hScared(H, v); }
-function hScared(H, v) { hSnap(v); v.st = 'faint'; v.pose = 'faint'; v.poseT = H.t; v.emo = { s: 'dizzy', until: H.t + 9999 }; v.mv = null; v.lure = null; if (H.hero.chase === v) H.hero.chase = null; H.stats.scared++; H.burst = (H.burst || 0) + 1; hBub(H, v, pick(['啊啊啊啊——', '我、我不行了……', '妈……', '（翻了个白眼）']), 1.8); hFloat(H, v.x, v.y - 2, 'SAN 0 · 晕过去了', 'crit'); sfx('scream'); H.shake = .25; H.slow = .45; hsRule(H, 'scared', v);
+function hScared(H, v) { hSnap(v); v.st = 'faint'; v.pose = 'faint'; v.poseT = H.t; v.emo = { s: 'dizzy', until: H.t + 9999 }; v.mv = null; v.lure = null; if (H.hero.chase === v) H.hero.chase = null; H.stats.scared++; H.burst = (H.burst || 0) + 1; if (H.t - (H.lastHitT ?? -9) < .3) hCut(H, v, H.lastHitK, true); hBub(H, v, pick(['啊啊啊啊——', '我、我不行了……', '妈……', '（翻了个白眼）']), 1.8); hFloat(H, v.x, v.y - 2, 'SAN 0 · 晕过去了', 'crit'); sfx('scream'); H.shake = .25; H.slow = .45; hsRule(H, 'scared', v);
   H.chain = H.t - (H.lastScare ?? -9) < 5 ? (H.chain || 1) + 1 : 1; H.lastScare = H.t; if (H.chain >= 2) { H.stats.chain = Math.max(H.stats.chain || 0, H.chain); H.red = 1; hFloat(H, v.x, v.y - 3, '连环尖叫 ×' + H.chain, 'crit'); }
   for (const q of hActive(H)) if (q !== v && hDist(q, v) < 4 && q.u.hp > 0) { const d = Math.max(1, Math.round(q.u.mhp * .08)); q.u.hp = Math.max(0, q.u.hp - d); hReact(H, q, v); hBub(H, q, '他跑什么？！', 1.3); hFloat(H, q.x, q.y - 1.8, '被吓到的人吓到 -' + d, 'dmg'); } }
 
@@ -179,10 +179,13 @@ function hGo(H, x, y) { const h = H.hero, M = H.M; x = clamp(Math.round(x), 0, M
   if (hmSolid(M, M.hs, x, y)) { let best = null, bd = 99; for (let yy = y - 2; yy <= y + 2; yy++) for (let xx = x - 2; xx <= x + 2; xx++) if (!hmSolid(M, M.hs, xx, yy) && hmField(M, xx, yy, 'h')[h.ty * M.w + h.tx] >= 0) { const d = Math.abs(xx - x) + Math.abs(yy - y); if (d < bd) { bd = d; best = [xx, yy]; } } if (!best) return; [x, y] = best; }
   if (hmField(M, x, y, 'h')[h.ty * M.w + h.tx] < 0) return; h.path = [x, y]; }
 function hPounce(H, v) { const B = H.B, h = H.hero; const k = C.sk.includes('chase') && C.mp >= SKILLS.chase.cost ? 'chase' : 'jump', S = SKILLS[k];
-  let mul = HB.dmg * skillMul(k) * (v.u.st.fear ? 1.3 : 1) * (h.hidden || v.u.st.dark ? 1.5 : 1) * (v.st === 'look' ? 1 : 1.1); C.mp -= S.cost; profUse(k); h.pcd = HB.pounceCd; H.stats.pounce++;
+  const cos = hCos(); let mul = HB.dmg * skillMul(k) * (v.u.st.fear ? 1.3 : 1) * (h.hidden || v.u.st.dark ? 1.5 : 1) * (v.st === 'look' ? 1 : 1.1) * (cos === 'doctor' ? 1.2 : 1) * hDarkMul(H, v); C.mp -= S.cost; h.swingT = H.t; h.sdir = hDirTo(h, v); H.lastHitK = 'hero'; H.lastHitT = H.t; profUse(k); h.pcd = HB.pounceCd; H.stats.pounce++;
   if (v.u.picky && v.u.picky === S.el) v.u.pickyHit = 1; hBest(H, doHit(B, B.hero, v.u, S.pow, S.el, { mul }), '扑 → ' + v.u.n); reactLine(B, v.u); if (v.u.hp > 0 && S.stun && chance(S.stun * (v.u.boss ? .6 : 1))) addSt(B, v.u, 'stun', 1);
-  if (v.u.hp > 0) hReact(H, v, h, 1); h.hidden = false; H.shake = .18; hFx(H, 'pounce', v.x, v.y, k); sfx(k === 'chase' ? 'scrape' : 'stinger'); hLog(H, k === 'chase' ? '陈歌拖着铁锤追了上去。' : '陈歌从暗处扑了出去。', ''); hFlush(H); }
-function hChaseHit(H, v) { const B = H.B; H.hero.ctick = HB.chaseTick; hReact(H, v, H.hero); doHit(B, B.hero, v.u, HB.chasePow, 'chase', { mul: (v.u.st.fear ? 1.3 : 1) * HB.dmg * skillMul(C.sk.includes('chase') ? 'chase' : 'jump') }); if (rnd() < .3) sfx('steps'); hFlush(H); }
+  if (v.u.hp > 0) hReact(H, v, h, 1); h.hidden = false; H.shake = .18; hFx(H, 'pounce', v.x, v.y, k); sfx(k === 'chase' ? 'scrape' : 'stinger'); hLog(H, '陈歌扮成' + HCOS[cos].n + '，' + ({ hammer: '抡着锤子', cleaver: '举着剁骨刀', lantern: '提着白灯笼', scissors: '咔嚓咔嚓地剪着剪刀' })[HCOS[cos].wp] + '扑了出去。', '');
+  if (cos === 'red') for (const q of hActive(H)) if (q !== v && hDist(q, v) <= 2.5) { const d = Math.max(1, Math.round(q.u.mhp * .12)); q.u.hp = Math.max(0, q.u.hp - d); if (q.u.hp > 0) hReact(H, q, h); hFloat(H, q.x, q.y - 1.4, '红衣 SAN -' + d, 'dmg'); }
+  hFlush(H); }
+function hDirTo(a, b) { const dx = b.x - a.x, dy = b.y - a.y; return Math.abs(dx) > Math.abs(dy) ? (dx < 0 ? 1 : 2) : (dy < 0 ? 3 : 0); }
+function hChaseHit(H, v) { const B = H.B; H.hero.ctick = HB.chaseTick; H.hero.swingT = H.t; H.hero.sdir = hDirTo(H.hero, v); H.lastHitK = 'hero'; H.lastHitT = H.t; hReact(H, v, H.hero); doHit(B, B.hero, v.u, HB.chasePow, 'chase', { mul: (v.u.st.fear ? 1.3 : 1) * HB.dmg * skillMul(C.sk.includes('chase') ? 'chase' : 'jump') * (hCos() === 'butcher' ? 1.5 : 1) * hDarkMul(H, v) }); if (rnd() < .3) sfx('steps'); hFlush(H); }
 
 /* ---------- 机关 ---------- */
 function hDevTargets(H, s) { return hActive(H).filter(v => Math.max(Math.abs(v.x - s.x), Math.abs(v.y - s.y)) <= HB.zone + .3 && hmLos(H.M, s.x, s.y, v.x, v.y)); }
@@ -195,11 +198,11 @@ function hTrigger(H, s, quiet) { const B = H.B, S = hDev(s.k); if (!s.k) return 
   if (perfect) { mul *= PERFECT_MUL; FN().perfect++; H.stats.perfect++; hFloat(H, s.x, s.y - 2.2, '⭕ 完美时机', 'crit'); }
   if (H.hero.hidden) { mul *= 1.15; hFloat(H, H.hero.x, H.hero.y - 1.4, '暗处 +15%', 'txt'); }
   if (HDEV[s.k].sk) profUse(s.k); s.cd = HB.devCd * (S.cd || 1); s.fx = 1; H.stats.dev++; H.burst = 0; hLog(H, s.n + ' 号 · ' + S.ic + S.n, '');
-  for (const v of (S.all ? tg : [near[0]])) { const t = v.u; let m = mul; if (t.st.dark && S.el === 'jump') { m *= S.dark || 1.5; hFloat(H, v.x, v.y - 2.6, '漆黑里突脸 ×1.5', 'crit'); } if (S.first && !t.acted) m *= S.first;
+  H.lastHitK = s.k; H.lastHitT = H.t; for (const v of (S.all ? tg : [near[0]])) { const t = v.u; let m = mul * hDarkMul(H, v); if (t.st.dark && S.el === 'jump') { m *= S.dark || 1.5; hFloat(H, v.x, v.y - 2.6, '漆黑里突脸 ×1.5', 'crit'); } if (S.first && !t.acted) m *= S.first;
     if (!hActive(H).some(q => q !== v && hDist(q, v) < 5)) { m *= 1.25; hFloat(H, v.x + .6, v.y - 2.2, '落单', 'txt'); } const soft = softHit(B, t, S); m *= soft; if (t.picky && t.picky === S.el) t.pickyHit = 1;
     const dv = doHit(B, B.hero, t, S.pow, S.el, { mul: m }); hBest(H, dv, s.n + ' 号 ' + S.n + ' → ' + t.n); reactLine(B, t); if (t.hp > 0) { if (S.st) addSt(B, t, S.st[0], S.st[1]); if (soft > 1) addSt(B, t, 'stun', 1); if (S.stun && chance(S.stun * (t.boss ? .6 : 1))) addSt(B, t, 'stun', 1); if (!hOut(v)) { hReact(H, v, s, perfect); hBub(H, v, pick(HREACT[S.el] || HREACT.jump), 1.6); } } t.acted = true; }
-  hFx(H, HFXK[s.k] || S.el, s.x, s.y, s.k); sfx(HSFX[s.k] || ({ jump: 'stinger', light: 'crack', doll: 'creak', story: 'whisper', sound: 'reverse', chase: 'scrape' })[S.el] || 'stinger'); H.shake = perfect ? .3 : .12; hFlush(H);
-  if (H.burst >= 2) { B.fullHouse = Math.max(B.fullHouse || 0, H.burst); FN().house++; H.stats.house++; hFloat(H, s.x, s.y - 3, '😱 全场尖叫 ×' + H.burst, 'crit'); hLog(H, '全场尖叫！' + H.burst + ' 批游客一起冲了出去。', 'epic'); } return true; }
+  hFx(H, HFXK[s.k] || S.el, s.x, s.y, s.k); sfx(HSFX[s.k] || ({ jump: 'stinger', light: 'crack', doll: 'creak', story: 'whisper', sound: 'reverse', chase: 'scrape' })[S.el] || 'stinger'); H.shake = perfect ? .3 : .12; if (perfect && !hOut(near[0])) hCut(H, near[0], s.k, false); hFlush(H);
+  if (H.burst >= 2) { B.fullHouse = Math.max(B.fullHouse || 0, H.burst); FN().house++; H.stats.house++; hFloat(H, s.x, s.y - 3, '😱 全场尖叫 ×' + H.burst, 'crit'); hLog(H, '全场尖叫！' + H.burst + ' 批游客叫成一片。', 'epic'); } return true; }
 const HREACT = { jump: ['啊！！', '什么东西！', '我的妈——'], sound: ['你听见没有？', '谁在哭……', '别、别出声'], story: ['墙上……那是什么', '我不想看了', '刚才是不是多了一个人'], doll: ['它在看我', '它刚才转头了！', '别看它的眼睛'], chase: ['跑跑跑！', '别抓我！！', '它追上来了'], light: ['灯呢？！', '谁关的灯', '抓紧我的手'] };
 const HFXK = { hang: 'hang', hand: 'hand', blood: 'blood', baby: 'sound', steps: 'sound', phone: 'sound', dollwall: 'doll', coffin: 'coffin', sp_mh: 'bride', sp_ws: 'chase', sp_zombie: 'zombie', sp_room: 'jump', sp_my: 'sound', sp_ward: 'chase' };
 const HSFX = { hang: 'creak', hand: 'scrape', blood: 'drip', baby: 'giggle', steps: 'steps', phone: 'bell', dollwall: 'creak', coffin: 'door', sp_mh: 'reverse', sp_ws: 'scrape', sp_zombie: 'breath', sp_room: 'whisper', sp_my: 'static', sp_ward: 'metal' };
@@ -249,7 +252,7 @@ function hStep(H, dt) { if (H.done || H.phase !== 'live') return; H.t += dt; con
   if (H.mode === 'chase') return hChaseTick(H, dt);
   for (const s of H.M.slots) { if (s.cd > 0) s.cd -= dt; if (s.fx > 0) s.fx -= dt * 1.4; const arm = !!(s.k && s.cd <= 0 && hDevInRange(H, s) && hDevTargets(H, s).length); if (arm && !s.armed) { s.ping = H.t; if (!H.auto) sfx('tap'); hHint(H, 'zone', '游客走进 ' + s.n + ' 号机关的圈了——点它（或者点「吓！」）。踩在机关上那一下最狠。'); if (hDev(s.k).remote && hDist(H.hero, s) > HB.devRange) hHint(H, 'remote', s.n + ' 号是电控的，离得再远也能拉。'); } s.armed = arm; }
   if (H.t > 3) hHint(H, 'mon', '右上角是监控：每批游客那边的画面。点一下镜头就切过去；拖动地图能看别处，📍 回到陈歌。'); if (H.t > 22 && !H.stats.scared) hHint(H, 'lure', '游客不往机关那边走？站在机关旁边点「引」，敲墙把他们引过来。');
-  for (const v of H.vis) { hVisTick(H, v, dt); if (hSee(H, v)) hExpose(H, v); }
+  for (const v of H.vis) { hVisTick(H, v, dt); hRoomEnter(H, v); if (hSee(H, v)) hExpose(H, v); } hsAmbTick(H, dt);
   for (const st of H.staff) hStaffTick(H, st, dt);
   hsRule(H, 'tick', dt);
   H.rt = (H.rt || 0) + dt; if (H.rt >= HB.round) { H.rt = 0; hRound(H); }
@@ -265,6 +268,7 @@ function hCarryStart(H) { const fs = H.vis.filter(v => v.st === 'faint'); if (!f
 /* ---------- 自动（🤖 和测试） ---------- */
 function hBot(H, dt) { H.botT = (H.botT || 0) - dt; if (H.botT > 0) return; H.botT = .2; const h = H.hero, M = H.M;
   if (H.mode === 'chase') return hBotChase(H);
+  /* 0. 游客进了陈歌所在的房间就关灯 */ { const r = hLightCan(H); if (r && (!H.lit || H.lit[r.n] !== false) && hActive(H).some(v => hmRoomAt(M, v.x, v.y) === r && !hScaredSt(v))) hLight(H, false); }
   /* 1. 能拉的机关 */
   for (const s of M.slots) { if (!hDevReady(H, s) || !hDevInRange(H, s)) continue; const tg = hDevTargets(H, s); if (!tg.length) continue; const d = Math.min(...tg.map(v => hDist(v, s))); const leaving = tg.every(v => { const f = hmField(M, s.x, s.y, 'v'); const n = v.mv ? f[v.mv.ty * M.w + v.mv.tx] : 0; return v.mv && n > f[v.ty * M.w + v.tx]; });
     if (d <= hPerf(s) || leaving || (hDev(s.k).all && tg.length >= 2) || tg.some(v => v.u.charging)) { hTrigger(H, s, true); return; } }

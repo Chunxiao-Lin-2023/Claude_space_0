@@ -129,7 +129,20 @@ const { chromium } = require('playwright');
       const w = H.vis[1] || H.vis[0]; if (w !== v) { w.st = 'leave'; w.u.hp = w.u.mhp; w.wi = 1; w.got = 0; w.mv = null; w.x = w.tx = H.M.route[1][0]; w.y = w.ty = H.M.route[1][1]; let wis = [w.wi]; for (let i = 0; i < 3000 && w.st !== 'gone'; i++) { D.hStep(H, .05); if (wis[wis.length - 1] !== w.wi) wis.push(w.wi); }
         ok('不想玩了也得把剩下的路走完、拿到东西才出得去（不抄近路）', w.st === 'gone' && w.got === 1 && wis.length >= H.M.route.length - 2, wis); }
       for (const q of H.vis) if (q !== v) q.st = 'gone'; D.hStep(H, .05); ok('醒着的都出去了：工作人员把晕倒的抬出来', !!H.carry && v.st === 'carry');
-      for (let i = 0; i < 80 && !H.done; i++) D.hStep(H, .05); ok('抬完收工，晕倒的算吓到', H.done && v.st === 'gone' && H.scared >= 1, [H.done, v.st, H.scared]);  H.done = false; H.carry = null; H.res = null; H.focusPt = null; for (const q of H.vis) { q.st = 'walk'; q.u.hp = q.u.mhp; q.emo = null; } }
+      for (let i = 0; i < 80 && !H.done; i++) D.hStep(H, .05); ok('抬完收工，晕倒的算吓到', H.done && v.st === 'gone' && H.scared >= 1, [H.done, v.st, H.scared]);  H.done = false; H.carry = null; H.res = null; H.focusPt = null; for (const q of H.vis) { q.st = 'walk'; q.u.hp = q.u.mhp; q.emo = null; } 
+      /* RULES 31 氛围层 */
+      ok('路线：整条路线的格子都在、地图有脏东西缓存', H.M.path.length > 10 && !!hsDecoCache(H.M));
+      ok('扮相：默认碎颅医生，换装按钮会轮到下一个已解锁的', hCos() === 'doctor' && (hsCosCycle(), hCos() !== 'doctor' || hCosList().length === 1) && (F().hcos = 'doctor', hCos() === 'doctor'));
+      { const r = H.M.rooms.find(q => q.x1 - q.x0 >= 3 && q.y1 - q.y0 >= 3), cx = Math.round((r.x0 + r.x1) / 2), cy = Math.round((r.y0 + r.y1) / 2), v2 = H.vis[0];
+        v2.st = 'walk'; v2.mv = null; v2.u.hp = v2.u.mhp; v2.x = v2.tx = cx; v2.y = v2.ty = cy; v2.dir = 2; H.hero.mv = null; H.hero.path = null; H.hero.chase = null; H.hero.hidden = false; H.hero.x = H.hero.tx = cx - 1; H.hero.y = H.hero.ty = cy; H.lcd = {}; H.lit = {};
+        const h1 = v2.u.hp; ok('关灯：陈歌所在的房间灭灯，屋里的游客 SAN 掉一截', hLight(H, false) && H.lit[r.n] === false && v2.u.hp < h1 && hDarkAt(H, cx, cy));
+        ok('关了灯马上再按要等复位', !hLight(H, true));
+        v2.st = 'walk'; v2.seeCd = 0; v2.dir = 2; ok('黑屋里游客背后的陈歌看不见', !D.hSee(H, v2));
+        v2.dir = 1; ok('黑屋里手电照到才看得见', D.hSee(H, v2)); v2.dir = 2;
+        ok('黑屋里吓人 ×1.25', hDarkMul(H, v2) === 1.25);
+        H.lcd = {}; ok('再按一次开灯', hLight(H, true) && H.lit[r.n] === true && hDarkMul(H, v2) === 1); }
+      { let threw = ''; try { const cv = document.createElement('canvas'); cv.width = 320; cv.height = 200; H.cutT = -9; H.cut = { t0: H.t, v: H.vis[0], P: H.vis[0].P, gh: ['redwoman'], txt: '测试！' }; hsCutDraw(H, cv.getContext('2d'), 320, 200); H.cut = { t0: H.t, v: H.vis[0], P: H.vis[0].P, hero: 1, faint: 1, txt: '测试！' }; hsCutDraw(H, cv.getContext('2d'), 320, 200); H.cut = null; hsWorld(H); } catch (e) { threw = e.message; } ok('吓中特写（鬼 / 陈歌）和整张图都画得出来', !threw, threw); }
+      H.lit = {}; }
     { const st = H.staff[0]; if (st) { const v = H.vis[0]; v.st = 'walk'; v.u.hp = v.u.mhp; v.x = v.tx = st.home[0]; v.y = v.ty = st.home[1] + 1; st.cd = 0; st.pop = 0; const h0 = v.u.hp; for (let i = 0; i < 3; i++) D.hStep(H, .05); ok('员工会自己从藏身处出来吓路过的游客', v.u.hp < h0 || st.pop > 0, [h0, v.u.hp]); } }
     H.auto = true; let nn = 0; while (!H.done && nn++ < 4000) D.hStep(H, .1); await wait(() => !!document.querySelector('.hs-end'), 3000); ok('收工面板：吓晕几个、完美几次、被看见几次', !!document.querySelector('.hs-end') && /吓晕/.test(document.querySelector('.hs-end').textContent)); D.hsClose(); const rr = await hp0; ok('接待的结果交回营业流程（好评/差评有记录）', rr === undefined && C.hh.good + C.hh.bad >= 1 && !D.STATE.house);
     D.instant = true; C = await fresh(2); D.auto = true; C.tick = 0; D.go('hh_door', true, true); const m1 = C.money; await D.receive('zombie'); ok('自动接待（测试和🤖）能走完一整场', D.HS_LAST && D.HS_LAST.mode === 'house' && D.HS_LAST.n >= 1 && (C.money > m1 || D.HS_LAST.res === 'lose'), D.HS_LAST);
