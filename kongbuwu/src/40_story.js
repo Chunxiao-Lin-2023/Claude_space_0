@@ -31,7 +31,7 @@ async function runScene(fn, title) { if (STATE.scene) return; const my = ++STATE
   try { await fn(); if (C.fun && C.fun.gradeQ) { const g = C.fun.gradeQ; C.fun.gradeQ = 0; await gradeCard(g); } } catch (e) { console.error(e); if (window.__dbg) __dbg.err = String(e && e.stack || e); } if (my !== STATE.run) return; if (STATE.jr.l.length > 1) { JOURNAL.push(STATE.jr); saveJournal(); } STATE.jr = null; STATE.scene = false; DLG.cur = null; refresh(); save(); }
 function storyHereRun() { const q = curQ(); if (!q || STATE.scene || STATE.battle || questWhere(q) !== C.loc) return; if (questBlocked(q)) { toast(q.need()); return; } closeSide();
   if (q.night && !isNight()) { setNight(); logLine('你一直等到天黑。', 'sys'); } else if (q.day && isNight()) { newDay(); fullHeal(); logLine('你等到了天亮。第 ' + C.day + ' 天。', 'sys'); }
-  return runScene(async () => { const ch0 = q.ch; await q.run(); if (C.q === q.id) questAdvance(q); }, q.title); }
+  return runScene(async () => { const ch0 = q.ch; STATE.qAbort = 0; await q.run(); if (C.q === q.id && !STATE.qAbort) questAdvance(q); STATE.qAbort = 0; }, q.title); }
 function storyArrive() { const q = curQ(); if (q && q.auto && questWhere(q) === C.loc && !questBlocked(q) && !(q.day && isNight()) && !STATE.scene && !STATE.battle) storyHereRun(); }
 function questAdvance(q) { const i = MAIN.indexOf(q), nx = MAIN[i + 1]; if (!nx || nx.ch !== q.ch) { FN().gradeQ = q.ch; if (nx) chStart(nx.ch); } C.q = nx ? nx.id : 'q_end'; C.qMark = C.hh.batches; gainExp(Math.round(HERO.need(C.lv) * .22)); const s = charStats(); C.hp = Math.max(C.hp, Math.round(s.mhp * .5)); C.mp = Math.max(C.mp, Math.round(s.mmp * .5)); logLine('主线推进：' + (nx ? nx.title : '第一卷完'), 'gain'); save(); }
 
@@ -80,34 +80,15 @@ async function S_open() { await cine(['半年前。凌晨两点四十四分。',
 ^sfx creak
 你走到楼梯口的时候，楼上传来很轻的一声——像有人把一个箱子，往门口推了推。
 ^zoom off`); }
-async function S_attic() { await T_(`推开落灰的木门。三楼堆满了被淘汰的道具，大半是父母经营时留下的。
-^prop bk phone 9 3
-你从小就在这些东西中间长大。别的孩子玩字母拼图的时候，你已经在拆人头模型了。
-最里面有一个木箱。里面是父母失踪前留下的东西：一个针脚粗糙的布偶，和一部黑色的手机。
-布偶是你小时候做的第一个玩具。手机，没有印象。
-它们是警方在郊区一所废弃医院里找到的。至于爸妈为什么深夜去那里，没人知道。
-我|再撑不下去，就真要停业转让了。
-^fx dark
-~phone
-话音刚落，那部从来没亮过的黑色手机，屏幕一闪。
-它没有电池，也没有卡。
-^fx glitch
-^at 影子 15
-^fx chroma
-屏幕亮起来的那一瞬间，黑色的边框里映出了你身后——站着一个人。
-^out 影子
-^fx chroma off
-你回头。是一排挂起来的旧戏服，领口空空的。
-@你是否相信，这个世界上有鬼？`);
-  const c = await choose(['相信', '不相信', '……应该有吧']); F().believe = c;
-  await T_(`^prop rd doll 10 5 {"col":"#b8a080"}
-^sfx creak
-你下意识看了一眼箱子里的布偶。
-它的脸朝着你。你记得刚才把它拿出来的时候，它是脸朝下的。
+async function S_attic() { await T_(`^fx dark
+晚上十点，最后一批游客骂骂咧咧地走了。今天的门票钱，刚够交一半电费。
+我|三楼还堆着爸妈留下的东西。……有些，该收拾了。`);
+  const r = await nt('attic', { autoF: { k_believe: 2 } }); if (!r) return;
+  F().believe = r.f.k_believe != null ? r.f.k_believe : 2;
+  await T_(`~phone
 @你心中所想，即是答案。从这一刻起，你将正式接替我，成为恐怖屋的新主人。
 @当然，这并不是一件值得庆贺的事情。新手教程的最后，送你一句忠告：自杀是最懦弱的行为，请努力的活下去。
 我|……这中二的语气，怎么跟我老爹有点像。
-手机里只有一个应用，图标是一扇门——有点眼熟。像自家恐怖屋的大门。
 @九江市西郊恐怖屋　状态：濒临倒闭　好评度：无　今日游览人数：四　当月游览人数：十
 @我的鬼怪团队成员：无。　现有设施场景：僵尸复活夜（尖叫指数无）；冥婚（尖叫指数半颗星）。
 @可解锁恐怖场景：午夜逃杀（一星）；第三病栋（三星）。
@@ -120,23 +101,8 @@ async function S_daily1() { await T_(`@日常任务每日凌晨刷新，每天�
 @噩梦：独自一人太孤单了吗？来玩个游戏吧，我保证你会终身难忘。`);
   const c = await choose([['一般：修人偶', '稳妥'], ['噩梦：那个“游戏”', '难度越高，奖励越丰厚——但他今晚选了稳妥的']], '先从哪个开始？');
   if (c === 1) await me('万一是个坑……先从一般难度试试水。噩梦的，明晚再说。');
-  setClock(8, '晚上 11 点'); await T_(`^fx dark
-你提着一桶没用完的人造血浆，一个人把整座恐怖屋的人偶过了一遍。为了省电，连走廊灯都没开，胳膊底下夹着手电。
-换了任何一个别人，这场面足够吓到报警。
-^prop m1 doll 9 5 {"col":"#c8b8a0"}
-^prop m2 doll 11 5 {"col":"#b8a890"}
-^prop m3 doll 13 5 {"col":"#d8c8b0"}
-^fx flicker
-手电接触不良，闪了几下。
-^prop m4 doll 15 5 {"col":"#8a7a6a"}
-^sfx breath
-^fx eyes
-光再亮起来的时候，你面前那排人偶里，多了一个你没修过的。
-^fx steady
-^del m4
-^fx eyes off
-你拍了拍手电。……是你记错了。大概。`);
-  const ok = await miniGame('sew'); await nar(ok ? '最后一针收线。你退后两步看了看：比以前自己修的强。原来以前的维护一直不到位。' : '有几个缝得歪歪扭扭，但至少胳膊不会掉了。');
+  setClock(8, '晚上 11 点');
+  const r = await nt('daily1'); if (!r) return; const ok = r.kind === 'end';
   await T_(`~phone
 @你已完成一般难度日常任务。专注细节，才能营造出真正的恐怖氛围。奖励：背景曲目《黑色星期五》。
 我|《黑色星期五》？传说听过的人里有一百多个自杀，原曲早就失传的那首？
@@ -145,80 +111,15 @@ async function S_daily1() { await T_(`@日常任务每日凌晨刷新，每天�
 一曲终了，你后背全湿了。幸亏没点循环。
 我|这手机……奖励是真的会出现在现实里。`);
   addItem('cd'); learnSkill('friday'); if (ok) gainExp(20); }
-async function S_mirror() { setClock(10, '凌晨 2:44'); await T_(`^fx clear
-^mus mirror
+async function S_mirror() { setClock(10, '凌晨 2:44'); await T_(`^fx dark
 凌晨。日常任务刷新了，噩梦难度那一条，一个字都没变。
-@你需要独自一人：凌晨两点四十四分走进浴室，关灯，面对镜子，在自己和镜子之间点一根蜡烛。闭上眼，心里默念自己的名字。
-@黑暗里什么都可能发生。你要做的只是：不要睁眼。半个小时后，任务自动成功。
-你上网搜了一下。有人玩这个游戏疯了，有人说自己被拽进了镜子。
-我|我是开鬼屋的，每天琢磨怎么吓人。这种东西……正好全程录下来，给恐怖屋添个新项目。
-^mirror 6
-^to 陈歌 6
-^turn 陈歌 B
-你把手机架在洗手池边，镜头同时对着你、和镜子里的你。
-^fx candle 5
-^fx dark
-^sfx clock
-两点四十四分。蜡烛点着了。火苗夹在镜子和现实中间，像一盏引路的灯。
-^to 陈歌 7
-^turn 陈歌 B
-你往旁边挪了半步，想把蜡烛让到正中间。
-^mirror lag
-镜子里的你，过了一会儿，才跟着挪过来。
-^to 陈歌 6
-^turn 陈歌 B
-……大概是眼睛花了。
-我|陈歌、陈歌、陈歌……`);
-  const ok = await miniGame('mirror');
-  if (ok) await T_(`^mirror stare
-你闭上了眼睛。你看不见镜子。
-^sfx wind
-窗户没关严，夜风吹在后颈上，像一双手。隔间的门在轻轻晃。
-^sfx drip
-水一滴一滴地落。
-^mirror smile
-镜子里的你，没有闭眼。它看着你，慢慢咧开了嘴。
-你一直念着自己的名字，一边默数时间。
-^sfx whisper
-^mirror other 镜鬼
-耳边有人跟着你一起念。陈歌、陈歌……那个声音比你慢半拍。
-~knock
-^mirror crack
-第二十五分钟，镜子“咔”地响了一声。
-^mirror hand
-^fx glitch
-^sfx breath
-有人在你耳边呼吸。离得很近，节奏和你一模一样——只是慢了半拍。
-^mirror close
-^fx flicker
-镜子里那张脸贴到了玻璃上。越贴越近。玻璃上的裂纹，正好从它咧开的嘴角裂开。
-你没有睁眼。
-^fx steady
-^sfx clock
-第三十分钟。
-^mirror follow
-^mirror other
-你睁开眼。镜子里的你好好地站着，和你一样喘着气。
-只有镜面上那道裂缝，和裂缝旁边一个从里面按上去的手印，还在。`); else { F().mirrorFail = 1; await T_(`^mirror stare
-你睁了一下眼。只有一下。
-^mirror smile
-镜子里的你没有闭眼。它一直在看着你。它在笑。
-^mirror crack
-!mirror
-^mirror out
-^fx red
-一只苍白的手，从裂开的镜面里伸了出来，按住了你的肩膀。
-%
-^fx clear
-^fx dark
-领口里的布偶动了。你再醒过来的时候，蜡烛已经烧完，半个小时过去了。`); }
-  await T_(`^mirror follow
-^fx tv
+我|我是开鬼屋的，每天琢磨怎么吓人。这种东西……正好全程录下来。`);
+  const r = await nt('mirror'); if (!r) return;
+  if (r.f.k_fail || r.kind === 'skip') F().mirrorFail = 1;
+  await T_(`^fx tv
 录像回放：25 分 14 秒，镜面自己裂开。镜子里那个“你”，开始往外撞。
 ^fx clear
 ^fx dark
-卫生间的木门边缘，多了一圈抓痕，像被什么东西啃过。你抱着布偶缩在窗台下面，一晚上没敢出去。
-^mirror off
 ~phone
 @不得不说你是幸运的。恭喜你完成噩梦难度日常任务！奖励：初级天赋技能——殓容。
 @第一次完成噩梦难度日常任务，获得称号「噩梦之城新人」。额外奖励：解锁一星恐怖场景「午夜逃杀」的试炼任务。
@@ -327,246 +228,31 @@ async function S_wheel() { await T_(`生死有命，富贵在天。这里有增�
 
 /* ================= 第二章 ================= */
 async function S_trial() { await chapterCard('二', '午夜逃杀', '平安公寓 · 从前叫富安公寓'); setClock(7, '晚上 7 点');
-  await look('长满野草的院子。主楼三层，旁边一个仓库、一个水房。', [
-    ['铁门边的那张纸', `^prop ps poster 6 3 {"col":"#d8d0c0"}
-^zoom ps 2.4
-一张寻人启事。照片上是个年轻女人。
-末尾的联系人“王先生”，住址填的就是这栋楼。
-^zoom off`],
-    ['大门的锁', `^prop gl door 10 2 {"col":"#3a3a3a"}
-^sfx metal
-^zoom gl 2.2
-大门很破，锁倒是挺新。最近有人换过。
-^zoom off`],
-    ['水房', `^prop sk sink 15 3
-^zoom sk 2.2
-^sfx drip
-水龙头没拧紧。一滴，一滴。地上没有积水——像是每天都有人来擦。
-^fx eyes
-^zoom off
-^fx eyes off`]], 1);
-  await T_(`我|有人吗？住一晚多少钱？
-一楼一扇门开了半指宽，又关上了。
-^in 房东 15
-楼梯上下来一个跛脚的男人，上下打量你，像要把你看穿。
-房东|住一晚？行。身份证我看下，上二楼交钱。
-^in 王琦 12
-楼梯中间站着个瘦削的中年人，抱着一沓寻人启事，眼珠浑浊，像没有焦点。
-房东|王琦！我说过你女朋友不在这里。再死缠烂打，别怪我不客气！
-^down 王琦
-^fx shake
-他被一把推到墙上，启事散了一地。他没还手，蹲下去一张一张捡，像一具会动的空壳。`);
-  const c = await choose([['帮他捡起来', '有一张正好落在你脚边'], ['从旁边绕过去', '少惹事']]);
-  if (c === 0) { F().helpWq = 1; await T_(`^up 王琦
-王琦|……谢谢。
-这是他第一次开口。声音很哑。`); } else await T_(`^up 王琦`);
-  await T_(`^out 王琦
-房东|五十一晚。二楼随便挑，一楼三楼不能住。午夜以后别出门。
-我|三楼为什么……
-房东|你问题怎么那么多？不能住就是不能住！
-^prop whc wheelchair 10 4
-^at 老爷子 10
-^turn 老爷子 B
-^sfx door
-他屋里，一个老人背对着门坐在轮椅上。门“嘭”地关了。你的房间是 208，就在他隔壁。`);
-  go('pa_208', true, true);
-  await T_(`隔壁传来碗摔碎的声音，接着是房东的咒骂，夹着几句外地方言。然后电视音量被调到最大——放的全是广告。
-你拉开门想出去看看。
-^in 房东 3
-^fx flash
-%
-房东就站在你门外。不知道站了多久。
-房东|……给你送暖瓶。
-^out 房东
-我|（假如他就是那个“精神病患者”，我今晚要和他做一夜邻居。）`); }
+  const r = await nt('trial'); if (!r) return;
+  if (r.f.k_helpWq) F().helpWq = 1;
+  go('pa_208', true, true); }
 async function S_wangqi() { setClock(7, '晚上 8 点');
-  await T_(`^in 王琦 15
-王琦在走廊里，往没人住的空房间门缝里塞寻人启事。
-` + (F().helpWq ? `王琦|你人不错，听我一句：别在这过夜。钱重要还是命重要？` : `王琦|……新来的？别在这过夜。`) + `
-^recall tale 五年前的富安公寓
-^stage fuan
-^at 父亲 6
-^at 母亲 8
-^at 女儿 10
-^at 儿子 12
-王琦|这楼以前叫富安公寓。五年前，这屋里住着一家四口。
-^sfx knock
-^at 人影 17
-^turn 父亲 R
-^turn 母亲 R
-那天晚上，有人敲了三下门。没有人去开，门自己开了。
-^out 父亲
-^out 母亲
-^out 女儿
-^out 儿子
-^fx dark
-^fx blood
-^fx red
-^to 人影 9
-^sfx scream
-王琦|一夜之间，全没了。凶手到现在都没抓到。出了事才改的名。
-^recall off
-王琦|我未婚妻就是在这附近失踪的。每天午夜以后，我都会收到她发来的短信。只有两个字。
-^prop ph phone 14 5
-他把手机递过来。发件时间：昨天凌晨两点。内容：救我。
-^del ph
-王琦|一觉醒来，她的东西还会出现在我床上。我知道你把我当疯子。
-^out 王琦
-^in 纹身男 4
-一楼的高瘦男人靠在楼梯口抽烟，冲你抬了抬下巴。他夹烟的左手手背上，纹着一朵牡丹。
-纹身男|新来的，离那个贴纸的远点。这世上哪有鬼？最多是有人装鬼。回屋去。
-^out 纹身男
-两个人里，肯定有一个在撒谎。`);
-  await look('回到 208，你把今晚看到的东西过一遍。', [
-    ['网上那桩旧案', `火灾现场有多个起火点；四具尸体；现场有第五个人的痕迹，没找到人。`],
-    ['轮椅上的老人', `老爷子是唯一的亲属，也是火灾后最大的受益人。可他连饭碗都端不稳——那只碗，摔得太是时候了。`],
-    ['房东的方言', `他骂人的时候夹着外地方言。老人的公寓，为什么让一个外地人管着？`],
-    ['王琦的短信', `每天午夜，同一个号码，同两个字。发件的人，到底在哪里？`]], 3);
-  await T_(`^fx dark
-^sfx scrape
-^fx eyes
-你关了灯。楼上传来拖东西的声音，一下，一下，从走廊这头拖到那头。
-三楼不让住人。`);
-  const g = await choose([['房东。他鸠占鹊巢，挟持了老人', '方言、电视、门外偷听'], ['王琦。他的故事太完整了', '短信、失踪、热情得过分'], ['现在下结论太早', '需要证据']], '你觉得，谁最可疑？'); F().guess = g; }
+  const r = await nt('wangqi', { autoF: { k_guess: 2 } }); if (!r) return;
+  F().guess = r.f.k_guess != null ? r.f.k_guess : 2; }
 async function S_live() { setClock(8, '晚上 10 点');
   await T_(`^call 鹤山
 你唯一能求助的“专业人士”，是白天被吓晕的那个医学生。
 鹤山|老大！我一直在等你发新视频！……你说你现在在哪？凶宅？隔壁可能住着杀人犯？！报警啊！
-我|一报警，今晚就白来了。不过你提醒了我——我可以开直播。真出了事，直播间里的人能替我报警，录像就是证据。
-你输入标题：夜宿凶宅！亲身探秘！为你掀开这世界不为人知的一幕！`);
+我|一报警，今晚就白来了。不过你提醒了我——我可以开直播。真出了事，直播间里的人能替我报警，录像就是证据。`);
   liveOn(40);
-  await T_(`>有没有吊大的知道这直播间播什么？／喂妖妖灵吗，我发现一个野生的精神病／李明！我知道你在看，回来帮我带份炒冷面
-我|你们把我当神经病没关系。我会证明的。
-你用工具锤刮掉一层墙皮，露出下面熏黑的砖。
->好好的墙皮被刮坏了，心疼公寓老板一秒／现实版狼人杀啊，有请预言家发言／我怀疑真凶是轮椅上的老人
-我|……你们的关注点能不能别那么刁钻。
-你把水果刀放进口袋，练了几次抽刀。
->主播你身后！！！／门缝下面！／我截图了你们看
-^fx flicker
-^at 影子 1
-弹幕突然刷成一片。直播画面里，你身后那扇门的门缝下面，有一道影子，停住了。
-^sfx steps
-^out 影子
-你回头。门缝下面什么都没有。走廊里的脚步声，往楼上去了。
-^fx steady
-出门的时候，你往锁眼里放了一根自己的头发。`); }
+  const r = await nt('live'); if (!r) return;
+  await T_(`>主播你身后！！！／门缝下面！／我截图了你们看／主播回去还敢睡吗`); }
 async function S_3f() { setClock(9, '凌晨 1 点');
-  await T_(`^mus door
-^fx dark
-三楼没翻修过。到处是烧过的痕迹，杂物和垃圾堆到没地方下脚。
-^fx ash
-你翻了很久，从垃圾里找出四个布偶。出自同一个厂家，五年前的款。房子家具都烧没了，它们是怎么躲过去的？
-^prop d1 doll 8 5 {"col":"#c8b8a0"}
-^prop d2 doll 9 5 {"col":"#b8a890"}
-^prop d3 doll 10 5 {"col":"#d8c8b0"}
-^prop d4 doll 11 5 {"col":"#a89880"}`);
-  await look('拉锁都锈死了。撕开看看？', [
-    ['第一个布偶', `发霉的棉絮里有一张卡片，字里行间全是爱意。`],
-    ['第二个布偶', `也是一张卡片。同样的话，同样的笔迹。`],
-    ['第三个布偶', `第三张卡片。写卡片的人很用心，一笔一画。`],
-    ['第四个布偶', `没有卡片。棉絮里塞满了撕碎的纸条，每一张上只有三个字：
-#去死吧！
->？？？／主播别翻了我害怕／这字迹和卡片不是一个人的`]]);
-  await T_(`^fx flash
-楼梯拐角的声控灯，突然亮了。
-你躲进门后，屏住呼吸，从门缝往外看。`);
-  const ok = await miniGame('peek');
-  await T_(`^in 房东 14
-^in 纹身男 15
-^in 女人 17
-^in 胖子 18
-房东|必须赶紧把那东西弄出去。最近来的外人越来越多。
-纹身男|叫上其他人，今夜就给它挖出来，埋到后山去。
-女人|这事大家人人有份，谁也跑不了。干活吧。
-矮胖的那个抓着铁钎，手在抖。他掀开走廊尽头杂物堆后面的布帘——墙是新砌的。
-^fx pulse
-^zoom 陈歌 1.4
-墙里，是一个人。
-^fx blood
-!hand
-^zoom off
-你给鹤山发了两个字：报警。`);
-  if (!ok) { F().seen3f = 1; await T_(`你往后退的时候，踩到了一个布偶。
-纹身男|谁？！`); await fight({ mobs: [['tattoo', L(-1)]], title: '三楼走廊', intro: '只追上来一个。别让他喊出声。' }); }
-  await T_(`^out 房东
-^out 纹身男
-房东和纹身男抬着麻袋下了楼，说是去“后山老地方”。脚步声远了。
-^out 女人
-^out 胖子
->黑屏了？？／刚才那是尸体吗／已报警，主播撑住
-你摸黑下到一楼。防盗门从里面锁死了。`); }
-async function S_escape() { setClock(10, '凌晨 2 点'); await T_((F().seen3f ? `楼下的脚步声一直没停。刚才那一下，他们一定听见了。
-` : '') + `只能回 208，把床单捆在窗框上，从二楼下去。
-^prop kd door 6 2
-^zoom kd 2.6
-你摸出钥匙，借着屏幕的微光对准锁孔——
-^fx flash
-^fx pulse
-锁眼里那根头发，被顶进去了。
-#有人进过你的房间。／或者说，现在就在里面。
-^sfx breath
-门板那一边，有人也屏住了呼吸。
-^zoom off
-^to 陈歌 15
-你一点声音都没出，一步一步退到走廊最右边。
-~door
-^fx pulse off
-^fx red
-^in 房东 6
-^in 纹身男 7
-^fx shake
-208 的门被推开。房东和纹身男提着钢钎和菜刀冲了出来。`);
-  const ok = await miniGame('run');
-  if (ok) await T_(`^stage apt
-^fx dark
-^at 陈歌 8
-^prop kf knife 9 5
-你撞开最近的一扇门，翻出窗户，踩着一楼的防盗网往下跳。一把菜刀擦着你的肩膀飞过去，钉在地上。
-^in 胖子 5
-^in 女人 6
-^to 陈歌 13
-胖子和那个女人举着修灌木的铁剪从楼门口冲出来。你一头扎进了树林。`); else { await T_(`你被纹身男堵在了楼梯口。`); await fight({ mobs: [['tattoo', L(-1)], ['landlord', L(-1)]], title: '二楼走廊', intro: '打出一条路，然后跳窗。' }); await nar('你翻出窗户，一头扎进了树林。'); }
-  go('pa_woods', true, true);
-  await T_(`衣服被树杈挂烂了。跑了十五分钟，身后的手电光才消失。
-直播还开着。黑屏了一个多小时，满屏都在刷问号。
-^fx dark
-^at 王琦 15
-^fx candle 15
-有一束很浅的光扫过来。你握紧了工具锤。
-王琦|……是我看错了？不可能啊。
-^turn 王琦 L
-他拿着手电在原地转了几圈，走了。
-^out 王琦
-^fx candle off
-你分不清方向，地势越走越陡。前面有一间木屋，像护林员住的。门没锁。`); learnTalent('run'); }
-async function S_hut() { setClock(10, '凌晨 3 点'); await T_(`^mus door
-^fx dark
-一股怪味。生活用品堆得像垃圾场。
-床底下塞满了衣服——大部分是女人的，从来没洗过。有一件上面的泥还没干透，像这一两天还有人穿过。
-尺码和墙里那个人，对得上。
-口袋里有一些皱巴巴的碎纸条，写着“我爱你”。和五年前布偶里的卡片，是一样的话。
-^prop pk phone 8 4
-一部桃红色外壳的手机从衣服里掉出来。屏幕停在编辑短信的页面。
-你点开发件箱。每一条都是凌晨发的。每一条都只有两个字。
-^fx blood
-#救我
-我|用死者的手机，每天夜里给自己发短信。然后一觉醒来，什么都不记得。
-我|贴寻人启事的那个人，找的是被他自己砌进墙里的人。
-手机屏幕暗下去。黑色的屏幕上，映出你身后站着一个小女孩，七八岁。她抬手，指了指你的背后。
-^in 小小 4
-!face
-^out 小小`); F().wqAxe = 1; await T_(`^in 王琦 16
-^fx blood off
-^fx pulse
-你转身。王琦提着一把斧头，堵在门口。
-^zoom 王琦 1.8
-^sfx stinger
-王琦|毕竟……是我亲手把她砌进墙里的。我不想这样的。你知道吗？我也不想这样的。
-^zoom off`);
-  if (F().guess === 1) await me('（猜对了。但我宁愿是猜错了。）');
-  const win = await fight({ chase: HCHASE.wangqi, mobs: [['wangqi', L(1)]], title: '后山木屋', candy: 0, epic: { name: '王琦', sub: '午夜逃杀 · 试炼任务', seal: '凶', intro: ['五年前，富安公寓一家四口。', '五年后，墙里又多了一个人。', '“我每天都在寻找那个被自己杀死的人。”'], phase: '她为什么总能找到我？！', low: '屏幕里那个小女孩又指了一次。她在替你看着背后。' } });
-  await T_((win ? `工具锤砸下去，手腕上一热。你又补了一脚，夺门而出。` : `你撞开他，夺门而出。斧头砍在门框上。`) + `
-^out 王琦
+  const r = await nt('f3'); if (!r) return;
+  if (r.f.k_seen) F().seen3f = 1;
+  await T_(`>黑屏了？？／刚才那是尸体吗／已报警，主播撑住`); }
+async function S_escape() { setClock(10, '凌晨 2 点');
+  const r = await nt('escape'); if (!r) return;
+  go('pa_woods', true, true); learnTalent('run'); }
+async function S_hut() { setClock(10, '凌晨 3 点');
+  const r = await nt('hut'); if (!r) return;
+  F().wqAxe = 1;
+  await T_(`^out 王琦
 ^stage apt
 ^fx clear
 ^prop cr car 3 5
@@ -596,68 +282,17 @@ async function S_scene() { await T_(`三楼变了。错综的通道，烧焦的�
 我|锤子拖在地上走，效果更好。`);
   addItem('uniform'); addItem('g_mask'); learnSkill('chase'); learnSkill('skull');
   const win = await fight({ scare: 1, scene: 'ws', mobs: [['med', L(0), '老赵'], ['med', L(0), '慧姐'], ['heshan', L(0)]], title: '午夜逃杀 · 法医学院寝室团' });
-  await T_(`${win ? '七个人进去，抬出来四个。' : '他们撑到了最后，但出来的时候没人说话。'}
-鹤山|老大……里面那个小孩是谁演的？就是一直跟在猴子后面那个。
-我|小孩？
-你的员工只有徐婉一个。
-!face
-^stage burnt
-^fx dark
-^prop d1 doll 8 5 {"col":"#c8b8a0"}
-^prop d2 doll 9 5 {"col":"#b8a890"}
-^prop d3 doll 10 5 {"col":"#d8c8b0"}
-^prop d4 doll 11 5 {"col":"#a89880"}
-三楼最里面的房间，门关着。房间正中央，并排坐着四个布偶——你从平安公寓带回来的那四个。
-~phone
-@幸运的厉鬼眷顾者！你已触发午夜逃杀场景唯一隐藏任务：亡者的执念尚未放下，完成它们的心愿，它们方才能为你所用。`);
-  const c = await choose([['把王琦的寻人启事贴在这个房间里', '让它们知道：他被抓住了'], ['把寻人启事烧掉', '让这件事到此为止']]);
-  F().notice = c; await T_(c === 0 ? `你把那张纸贴在墙上。照片下面，你用红笔写了四个字：已经归案。
-最小的那个布偶，往你这边歪了一下。` : `纸烧成灰的时候，四个布偶一动不动。过了很久，最小的那个，往你这边歪了一下。`);
-  await T_(`@隐藏任务完成！厉鬼好感度加一，获得平安公寓受害者残念的善意：它们将每天为你清理垃圾，保持午夜逃杀场景原貌。
-我|每一个场景背后都有自己的故事。解锁它们，也算是给无家可归的“它们”，一个住处吧。
-^in 小小 8
-一个小小的影子拽了拽你的衣角。你低头，什么都没有。
-^out 小小
-我|小家伙，别乱跑，小心被人踩到。`);
+  await T_(`${win ? '七个人进去，抬出来四个。' : '他们撑到了最后，但出来的时候没人说话。'}`);
+  const r = await nt('dolls', { autoF: { k_notice: 0 } }); if (!r) return;
+  const c = r.f.k_notice != null ? r.f.k_notice : 0; F().notice = c;
+  await T_(`~phone
+@隐藏任务完成！厉鬼好感度加一，获得平安公寓受害者残念的善意：它们将每天为你清理垃圾，保持午夜逃杀场景原貌。
+我|每一个场景背后都有自己的故事。解锁它们，也算是给无家可归的“它们”，一个住处吧。`);
   gainPet('xiaoxiao'); petAff('xiaoxiao', 15); if (c === 0) petAff('xiaoxiao', 10); F().xiaoxiao = 1; C.hh.total += 9; C.hh.month += 9; }
-async function S_water() { setClock(9, '凌晨 1:10'); await T_(`^fx dark
-凌晨一点十分。你被一种声音弄醒了。
-^sfx steps
-三楼。有人在切东西。一下，一下。
-^fx flicker
-你提着锤子上去，声音就停了。
-^fx steady
-^stage bathroom
-^fx dark
-^mirror 10
-^mirror stare
-^fx glitch
-^mirror crack
-午夜逃杀的浴室里，那面镜子上有一道新的裂痕。镜子里的你，没有跟着你转过头。
-从镜子游戏那晚开始，就有什么东西跟着你。你用笔在墙上记过一个数字——它每晚都在变小。
-@噩梦难度：深夜的浴室总会发出奇怪的声音，想知道原因的话，就按照我说的去做吧。
-@幸运的厉鬼眷顾者，你的勇气让人惊讶。这个游戏叫做深水：把浴缸放满，整个人沉进去，屏住呼吸六十秒。它可以跨越生死，让你见到亡故之人。
-我|只有噩梦任务的奖励能作用在我自己身上。要处理镜子里的东西，没有别的路。
-你溜进乐园员工食堂，提了两把菜刀回来。浴室门反锁，父母留下的布偶放在门后，四个小布偶摆在浴缸四周。
-我|一分钟。熬过这一分钟。` + (F().mirrorFail ? `
-我|镜子游戏那晚，我睁过一次眼。它记得我的脸。` : ''));
-  const ok = await miniGame('water', F().mirrorFail ? { dur: 11 } : {});
-  await T_(ok ? `^fx dark
-^sfx breath
-水很冷。耳朵里只剩下自己的心跳。
-第三十秒，你在水底睁开了眼。
-^fx glitch
-^stage doorhall
-^fx water
-^fx fog
-浴缸底不是白瓷。是一条很长的走廊，两边全是门。最远的那一扇，开着一条缝。
-你最想见的人，没有出现。
-——这至少说明一件事：爸妈没有死。
-^fx hands
-第五十秒，一只手按住了你的后脑。是它逼着你，多撑了那几秒。
-~phone
-@你在水中闭气六十二秒。恭喜你完成噩梦难度日常任务！奖励：阴瞳。` : `你呛了水，翻出浴缸的时候，镜子碎了一地。布偶挡在你和镜子中间。
-~phone
+async function S_water() { setClock(9, '凌晨 1:10');
+  const r = await nt('water'); if (!r) return; const ok = r.kind === 'end' && !r.f.k_fail;
+  await T_(ok ? `~phone
+@你在水中闭气六十二秒。恭喜你完成噩梦难度日常任务！奖励：阴瞳。` : `~phone
 @任务勉强完成。奖励：阴瞳。（完成度不足，没有额外奖励）`);
   await T_(`@阴瞳：视之不详，通之地阴，以阳身看阴神。
 @解锁全新功能——厉鬼好感度。殷小小（厉鬼）：略有好感。张雅（红衣厉鬼）：情有独钟——你对她来说与众不同，她喜欢你，不过，喜欢的是死后的你。
@@ -670,35 +305,9 @@ async function S_water() { setClock(9, '凌晨 1:10'); await T_(`^fx dark
 async function S_zhangpeng() { await T_(`^call 李队
 李队|小陈，张鹏在你那附近露面了——平安公寓一楼那个纹牡丹的。监控拍到了他的左手。他是冲你来的，你坏了他的事。
 李队|我们想在乐园布控。你今晚最好别住鬼屋。
-我|我不在，他会看出来的。那么狡猾的人，不会上钩。……我留下。
-凌晨一点。监控里，一个人翻过了护栏。
-他在一楼找了十五分钟才找到员工休息室。站在门口，手一直在抖。几次碰到门板，又缩回去。
-然后他深吸一口气，举着刀冲了进去——床上是一个人偶。
-你换上了那件制服，戴上人皮面具，提着锤子，站在监控室门后。
-他从门口走了过去，没进来。他撬开了员工通道尽头的木板。
-我|……他进了午夜逃杀。
-^stage corridor
-^fx dark
-你跟了进去。在楼道口的门后面等他。
-^in 张鹏 15
-^to 张鹏 8
-~heavy
-我|不好意思，砸歪了。我本来是准备砸碎你肩胛骨的。`);
-  if (F().notice === 0) await T_(`走廊尽头，四个布偶并排坐在楼道口——那张写着“已经归案”的寻人启事，还贴在它们头顶。张鹏回头看了一眼，脚步乱了。`);
-  const win = await fight({ chase: HCHASE.zhangpeng, pre: F().notice === 0 ? [[0, 'slow', 2], [0, 'weak', 2]] : [], mobs: [['zhangpeng', L(1)]], title: '午夜逃杀 · 凌晨', intro: '你在自己的地盘上。', epic: { name: '张鹏', sub: '在逃嫌犯 · 手背纹着牡丹', seal: '逃', intro: ['赌徒。欠了几十万高利贷。入室盗窃、抢劫。', '“报仇的事以后再说——”', '他不知道，这栋楼里今晚不止两个人。'], phase: '求求你放我走吧！', low: '“我是一个没有感情的杀手。”——你对着面具里的自己说。' } });
-  await T_(`${win ? '他扔了刀，像没头苍蝇一样乱撞。' : '他撞开你，像没头苍蝇一样乱撞。'}鬼屋里地形复杂，又没开灯，跑出几米他就找不到来时的路了。
-那种切东西的声音又响了。
-!mirror
-^in 镜鬼 2
-^fx chroma
-一道黑影从员工通道里窜出来，把张鹏拖进了浴室。门从里面顶死了。你砸掉门锁——里面只剩一地碎镜子，和开着的窗。
-^out 镜鬼
-^out 张鹏
-^fx chroma off
-李队|小陈！你没受伤吧！床单上这血——
-我|不是我的。
-他带着镜子里的那个东西，一起跑了。墙上的数字，又小了一个。
-傍晚，你调好了冥婚场景的灯光节奏。
+我|我不在，他会看出来的。那么狡猾的人，不会上钩。……我留下。`);
+  const r = await nt('zhangpeng'); if (!r) return;
+  await T_(`傍晚，你调好了冥婚场景的灯光节奏。
 ~phone
 @张弛有度，才能带给游客最佳的体验。奖励：背景曲目《嫁衣》。注意：《嫁衣》和冥婚场景完美契合，冥婚场景尖叫指数上升为一星！`);
   addItem('jiayicd'); learnSkill('jiayi'); F().jiayi = 1; SCENES.mh.star = 1;

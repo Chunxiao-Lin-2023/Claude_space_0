@@ -68,6 +68,12 @@ for m in re.finditer(r"(?:^|\n|`|\\n|')\^(\w+)((?:(?!\\n)[^\n`'])*)", game):
     if c == 'recall' and (not rest or rest[0] not in ('dream', 'past', 'tale', 'off')): errs.append('^recall 只能是 dream/past/tale/off: ' + ' '.join(rest))
     if c == 'turn' and (len(rest) < 2 or rest[1] not in 'LRFB'): errs.append('^turn 方向只能是 L/R/F/B: ' + ' '.join(rest))
 if errs: sys.exit('构建检查失败:\n  ' + '\n  '.join(errs))
+# 夜晚任务（百物语引擎，kongbuwu/night/）：先构建它，再把 NIGHT_HTML 拼进来（放在检查之后，免得把引擎里的字符串当成小剧场指令查）
+import subprocess
+r = subprocess.run([sys.executable, os.path.join(D, '..', 'night', 'build.py')], capture_output=True, text=True)
+if r.returncode: sys.exit('夜晚任务构建失败:\n' + r.stdout + r.stderr)
+print(r.stdout.strip())
+game += '\n' + open(os.path.join(D, '..', 'night', 'out', 'night_embed.js'), encoding='utf-8').read()
 tpl = src('template.html')
 IOS = '<meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="恐怖屋"><meta name="theme-color" content="#0a0d0f">'
 def page(kind):
