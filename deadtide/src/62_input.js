@@ -238,7 +238,7 @@ function buildAt(me, x, y, L, demo, quiet) {
   if (demo) { const i = ci(x, y, L); if ((W.blk[i] && B[W.blk[i]].cost) || (W.slab[i] && B[W.slab[i]].cost)) act('demo', { x, y, l: L }); return; }
   const why = buildWhy(me, x, y, L);
   if (why) { if (!quiet && thr('denyL', 0.3)) { toast(why, '#ff8a7a'); sfx('deny'); } return; }
-  act('build', { x, y, l: L, b: me.sel, d: me.sdir });
+  act('build', { x, y, l: L, b: me.sel, d: me.sdir }); me._swingT = 0.3;
 }
 function bindBtn(id, down, up) {
   const el = document.getElementById(id); if (!el) return;

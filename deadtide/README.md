@@ -8,11 +8,12 @@
 - **楼梯**：往下走楼梯 / 从边缘跳下要继续推 `stairHold` / `ledgeHold` 秒；楼梯口三面有栏杆，侧面进不去。小镇每栋房子至少三面有门洞，营地小屋四面有门。
 - **触屏摇杆**：左侧任意处按下出现，拖出圈外底座跟着走，死区 0.12，靠近网格方向自动吸附；左下角虚线圈提示。
 - **丧尸**：流场寻路（会算上砸墙的代价，所以会挑最薄弱的地方砸），走楼梯和山坡；攀爬者会翻墙上楼；喷吐者远程吐酸；重锤拆墙；血月（第 5 / 10 / 15 夜）有巨尸，尸潮从四面来。
+- **角色**（`src/54_chars.js`）：幸存者是分段关节模型（膝盖、手肘、手套、靴子、脸、发型；1P 短乱发橙夹克，2P 马尾红头带青色外套），下半身朝移动方向、上半身朝瞄准方向，倒退走自动反向；手臂用两段 IK 按武器握枪；开枪后坐 / 枪口上跳 / 霰弹枪拉栓 / 狙击枪拉机柄，换弹、推、扔雷、挥锤、用医疗包、受伤后仰红闪、倒地跪姿都有动作。丧尸照恐怖屋的怪物规则做（有机的锥形身体、多关节肢体、长指爪、不对称、歪头、破布条和长发、夜里发光的眼睛、偶尔抽搐）：游荡者 5 种变体（伸手拖腿、红衣长发、独臂、歪脖子、下巴脱落）、疾跑者前倾甩臂张嘴、攀爬者四肢着地像蜘蛛、喷吐者鼓胀发光的肚子和仰头蓄力、重锤一只巨拳加背上骨刺、巨尸两张脸。攻击有举手前摇再砸下，中弹踉跄，三种倒法，尸体慢慢沉下去。粗曳光、墙面火花和烟、地上血迹、跑步扬尘、自己开枪时镜头往后一顶。
 - **双人**：PeerJS，房主权威，材料共用；倒地后队友按住 F 扶起或医疗包自救。
 
 ## 源码
 
-- `src/` 按序拼接：`00_core.js`（数据表、`BAL`）、`10_world.js`（分层网格、地形生成、三维支撑）、`20_nav.js`（移动、楼梯 / 坡道、流场、三维射线）、`30_sim.js`、`35_zombies.js`、`50_render.js`（Three.js：合并地形网格 + 实例化方块 / 树 / 丧尸，切层、光照、小地图）、`52_arch.js`（建筑美术：程序纹理的木栅栏 / 砖堡 / 钢碉堡墙、墙顶木桩 / 垛口 / 尖刺、沙袋射击栅栏、小镇墙皮和残破瓦顶）、`60_audio.js`、`62_input.js`、`70_net.js`、`80_ui.js`、`90_main.js`、`99_boot.js`；`template.html`；`three.vendor.js`（three r160 + mergeGeometries，和幽宅双影同一份）。
+- `src/` 按序拼接：`00_core.js`（数据表、`BAL`）、`10_world.js`（分层网格、地形生成、三维支撑）、`20_nav.js`（移动、楼梯 / 坡道、流场、三维射线）、`30_sim.js`、`35_zombies.js`、`50_render.js`（Three.js：合并地形网格 + 实例化方块 / 树 / 丧尸，切层、光照、小地图）、`52_arch.js`（建筑美术：程序纹理的木栅栏 / 砖堡 / 钢碉堡墙、墙顶木桩 / 垛口 / 尖刺、沙袋射击栅栏、小镇墙皮和残破瓦顶）、`54_chars.js`（人物和丧尸模型 / 动画、曳光、血迹）、`60_audio.js`、`62_input.js`、`70_net.js`、`80_ui.js`、`90_main.js`、`99_boot.js`；`template.html`；`three.vendor.js`（three r160 + mergeGeometries，和幽宅双影同一份）。
 - 构建：`python3 deadtide/src/build.py --deploy`；`src/out/` 另有 `test.html`（带 `window.__dbg`）和 `artifact.html`（单人版）。
-- 测试（`node test/serve.js out 8766`）：`test/smoke.js`、`test/phone.js`、`test/coop.js`（需 `node test/peerserver.js`）、`test/balance.js`、`test/touchctl.js`、`test/views.js`、`test/buildings.js`、`test/mechanics.js`（任务 / 矮墙 / 建造指向 / 楼梯 / 门洞 / 摇杆）、`test/cover.js`。无头 Chromium 的软件渲染很慢，测试时关掉绘制（`__dbg.skipDraw`），只在截图时渲染。
+- 测试（`node test/serve.js out 8766`）：`test/smoke.js`、`test/phone.js`、`test/coop.js`（需 `node test/peerserver.js`）、`test/balance.js`、`test/touchctl.js`、`test/views.js`、`test/buildings.js`、`test/mechanics.js`（任务 / 矮墙 / 建造指向 / 楼梯 / 门洞 / 摇杆）、`test/chars.js`（角色总览截图）、`test/cover.js`。无头 Chromium 的软件渲染很慢，测试时关掉绘制（`__dbg.skipDraw`），只在截图时渲染。
 - 本地存储键前缀 `deadtide.`；联机房间 id 前缀 `deadtide-`。
