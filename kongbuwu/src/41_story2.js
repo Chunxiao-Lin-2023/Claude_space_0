@@ -1,163 +1,17 @@
 /* ================= 第三章 · 红舞鞋 ================= */
 async function S_date() { await chapterCard('三', '红舞鞋', '西城私立学院 · 第一次约会'); setClock(10, '凌晨 1:40');
-  await T_(`^in 司机大叔 12
-司机大叔|小伙子，这个点去那所废校？……行吧，祝你成功。
-对讲机里有人说话：“老刘，你也去西城私立学校啊？我这也拉了一个。”
-^out 司机大叔
-出租车飞也似的开走了。
-我|凌晨一点多，还有另一个人往这里来。
-^stage dorm
-^fx dark
-^prop ch chair 12 5 {"col":"#6a5040"}
-你去宿舍楼看了一眼。走廊正中间，放着一把背对寝室门的椅子。廊灯碎了，电线垂下来——像上吊。
-^to 陈歌 9
-你把手机架在玻璃门上录了一段，回放。
-!face
-录像里，椅子转过来了一点。
-^fx flicker
-你抬头去看真的那把椅子。它背对着你，一动没动。
-^sfx creak
-可录像还在往下播。录像里的椅子，又转过来了一点。现在，它正对着你的镜头。
-^fx steady
-^turn 陈歌 L
-^stage clear
-我|在弄清楚之前，不招惹。……张雅是这所学校最恐怖的存在，我有她的情书，谁敢难为我？
-事到如今，你也只能这么安慰自己。操场另一头，有一栋孤零零的楼：艺术生活动中心。`); }
-async function S_dance() { setClock(10, '凌晨 2 点'); await T_(`^stage corridor
-^prop c0 chair 12 5 {"col":"#6a5040"}
-二楼走廊中间也有一把椅子。带靠背，不是这里的东西。椅子底下写着一个女生的名字。
-三四楼之间立着木板：禁止入内。你迈了过去。
-^stage dance
-^mus mirror
-^mirror 4 big
-^prop c1 chair 9 5 {"col":"#6a5040"}
-^prop c2 chair 11 5 {"col":"#6a5040"}
-^prop c3 chair 13 5 {"col":"#6a5040"}
-舞蹈室。时间把这里忘了。六米长的落地镜，正中间摆着三把椅子，每一把下面都有一个名字。`);
-  await look('落地镜照着整间屋子，也照着你。', [
-    ['荣誉墙', `天鹅湖市级芭蕾舞团体赛冠军。照片上是五个女孩，笑得很整齐。`],
-    ['更衣室角落的柜子', `^prop lk locker 16 4
-一个没写名字的柜子。里面是一条芭蕾舞裙，和一盒手工包的糖——每一颗的包装纸上都写着一句话，是打算送人的。`],
-    ['柜子最里面', `^prop ph photo 15 5
-一张合影。背面：祝贺 414 宿舍获得省级赛资格。
-荣誉墙上那张是五个人。这一张，是六个女孩。`]], 3);
-  await T_(`^del ph
-^to 陈歌 8
-^to 陈歌 4
-^turn 陈歌 B
-^mirror lag
-^fx glitch
-你抬起头。落地镜里的你，慢了半拍才抬头。
-^mirror follow
-^sfx whisper
-我|被剪掉的那一个……张雅。
-^fx dark
-你念出了那个名字。
-%
-整个舞蹈室都变了。那个名字，是这里不能提的。
-!face
-^at 舞蹈室的女孩 11
-^fx shake
-三把椅子，自己转了过来。有什么东西按着你的肩膀，要你坐下去。`);
-  const win = await fight({ mobs: [['chairgirl', L(0)], ['chairgirl', L(0)], ['chairgirl', L(-1)]], title: '舞蹈室', intro: '椅子砸裂一条缝，上面的“人”就从哀求变成了怨毒。' });
-  await T_(`^del c1
-^del c2
-^out 舞蹈室的女孩
-你砸烂了椅背，抓起椅子腿抡向另外两把。镜子里的画面有点奇葩，但你顾不上了。
-碎片里，她们还抓着你的脚踝。
-然后，温度降了下来。
-^mirror other 张雅
-镜子里，你的背后多了一个低着头的女孩。染血的校服贴在身上，一眼看去，尽是猩红。
-^at 张雅 7
-她靠在了你的背上。黑发和你的头发，缠在了一起。
-^recall past 镜子里的往事
-^stage dance
-^at 练舞的女孩 5
-^at 练舞的女孩乙 7
-^at 练舞的女孩丙 9
-^at 练舞的女孩丁 11
-^at 那个女孩 14
-镜子里的画面变了。很多年前的一个假期，六个女孩在这里练舞。
-^prop cd candy 13 5
-^to 那个女孩 12
-她带了一盒自己包的糖，想分给室友。
-^to 练舞的女孩丁 12
-^to 练舞的女孩丙 11
-只有一个人伸手，又被拦了回去。
-^to 练舞的女孩丁 11
-^del cd
-^in 那个男人 17
-^turn 那个女孩 R
-老师走后，进来一个男人。他把她叫进了办公室。
-^out 那个女孩
-^out 那个男人
-另外的人都看见了。没有一个人站起来。
-^fx dark
-^sfx heavy
-^fx flash
-后来，她从楼上掉了下去。
-^in 那个男人 14
-^turn 练舞的女孩乙 R
-男人站在剩下的女孩面前，一个一个地威胁。
-^fx chroma
-^zoom 练舞的女孩乙 2.2
-其中一个女孩，在笑。
-^recall off
-^fx red
-^fx pulse
-^zoom 张雅 2
-黑发勒紧了。她想把你的每一部分，都塞进自己的身体里。`);
-  const ok = await miniGame('hair');
-  const c = await choose([['“我会报警。让他被绳之以法。”', '你快喘不上气了'], ['“我看见了。我替你记着。”', '']]); F().vow = c;
-  await T_(`${ok ? '你挣出一只手。' : '你挣不动。'}但那句话说出口之后，黑发不再往里收了。
-^fx clear
-^fx dark
-^zoom off
-^fx pulse off
-舞蹈室重归寂静。十几秒后——
-^in 张鹏 16
-门口出现了一个人。左手手背，一朵牡丹。
-张鹏|可算找到你了。这地方好啊，喊破喉咙也——
-他踏进舞蹈室，脸上的表情换了，像换了一张脸。他身后，镜子里的那个东西也看见了你的背后。
-#r它们同时达成了共识：跑。
-!red
-^out 张雅
-靠在你背上的重量消失了。镜子里一道红影闪过，追了出去。
-^out 张鹏
-你捡起手机。只响了一声。
-^fx clear
-^call 李队
-李队|小陈？张鹏又去找你了？
-我|在西城私立学院。我发现了另外一起命案。
-李队|你“又”发现一起命案？`); if (ok) gainExp(30); }
-async function S_shoes() { setClock(11, '凌晨 4 点'); await T_(`^call 李队
+  const r = await nt('date'); if (!r) return; }
+async function S_dance() { setClock(10, '凌晨 2 点');
+  const r = await nt('dance', { autoF: { k_vow: 0 } }); if (!r) return;
+  F().vow = r.f.k_vow != null ? r.f.k_vow : 0;
+  await T_(`李队|你“又”发现一起命案？`); if (r.kind === 'end') gainExp(30); }
+async function S_shoes() { setClock(11, '凌晨 4 点'); let quit = 0; await preOnce('shoes', async () => { await T_(`^call 李队
 我|四年前这所学校有个女孩坠楼。不是自杀，是被逼的。逼她的人身高一米八左右，有点驼背，能随便进出舞蹈室。
 李队|陈歌，办案不是儿戏。……不过，严格公正是警察的宗旨。你等着。
 ` + (F().vow === 1 ? `我|（我说过替她记着。现在该让别人也记住了。）` : `我|（我答应过她，会报警。现在报了。）`) + `
-^hang 李队
-^turn 陈歌 L
-你一转身。
-!red
-^in 张雅 3
-^zoom 张雅 1.8
-张雅就站在你身后。她抬起手，指了指办公楼。
-^zoom off
-^out 张雅
-我|……我只是觉得舞蹈室里太闷，出来透个气。
-十五分钟后，两辆警车。液压钳剪开了校门。
-^stage storage
-^in 李队 13
-^in 警察 15
-体育器材室，门上贴着封条。柜子后面有一张单人床。
-^prop bd bed 10 4
-床单上有一个人形的凹陷。李队伸手按了一下，皱起了眉——是温的。
-^prop s1 shoes 9 5 {"col":"#d8d0c8"}
-^prop s2 shoes 10 5 {"col":"#c8b8d8"}
-^prop s3 shoes 11 5 {"col":"#4a0606"}
-床板下面，藏着十几只尺码各不相同的芭蕾舞鞋。其中一双，被血染成了黑红色。
-李队|……没有关于这些鞋的记录。体育用品管理员。查。
-^out 警察
-~phone
+^hang 李队`);
+  const r = await nt('shoes'); if (!r) { quit = 1; return false; }
+  await T_(`~phone
 @天亮之前成功找到张雅的红色舞鞋，好感度任务完成。非你莫属！你可以写下想要她去完成的一件事（不能违背张雅的意愿）。`);
   let c = await choose([['“我希望张雅永远听从我的话。”', ''], ['“请帮我除掉镜子里的那个东西。”', '']]);
   if (c === 0) { F().greedy = 1; await T_(`@很抱歉，你违背了张雅的意愿，请更换一个请求。
@@ -165,41 +19,12 @@ async function S_shoes() { setClock(11, '凌晨 4 点'); await T_(`^call 李队
   await T_(`@请求已记录。
 @恭喜你完成稀有级红衣厉鬼好感度任务，本任务为四星级恐怖场景——通灵鬼校支线任务之一！
 可解锁场景那一栏里，多了一个血红色的名字。光看那些支线的描述，你的鸡皮疙瘩就起来了。
-我|四星……以后再说。
-^stage hall
-^mirror 13
-^fx dark
-回到恐怖屋已经快天亮。你走在漆黑的走廊上——你熟悉这里的每一个地方。
-所以你立刻知道，屋里有人。
-^in 张鹏 15
-^mirror empty
-^mirror other 镜鬼
-张鹏站在走廊尽头。他身后的每一面镜子里，都有东西在往外看。——镜子里照不出你，只照得出它。
-^mirror hand
-^at 镜鬼 17`);
+我|四星……以后再说。`); }); if (quit) return;
+  const r2 = await nt('mirrorhall'); if (!r2) return;
   go('hh_hall', true, true);
-  const win = await fight({ chase: HCHASE.mirror, mobs: [['mirror', L(2)], ['zhangpeng', L(0)]], ally: 'zhangya', title: '恐怖屋 · 走廊', intro: '你的影子，站了起来。', epic: { name: '镜中怪物', sub: '从镜子游戏那晚，一直跟到今天', seal: '镜', intro: ['墙上的数字归零了。', '它等的就是这一晚。', '——可它没算到，你的影子里也住着东西。'], phase: '（镜面一块接一块地碎）', low: '背后很冷。但这一次，冷是站在你这边的。' } });
-  await T_(`^fx dark
-^at 张鹏 15
-^at 镜鬼 17
-^in 张雅 12
-${win ? '' : '你退到墙角。然后，就不需要你了。\n'}张雅似乎对杀戮情有独钟。根本不用你开口，黑发就勒进了张鹏的身体，把镜子里的东西一点一点拽了出来。
-^out 镜鬼
-^fx flash
-它被吃掉了。
-^down 张鹏
-^in 警察 17
-张鹏瘫在地上，尿了一裤子，被赶来的警察押上了车。
-^out 张鹏
-^out 警察
-你想问张雅镜子后面是什么。
-^out 张雅
-她化成影子，不见了。
-^fx clear
-我|平安公寓的尾巴处理干净了。镜鬼也没了。天一亮，所有场景都可以开放。
-你拆掉了员工通道上的木板。`);
   gainTitle('dater'); addItem('shoes'); F().shoes = 1; F().tongling = 1; F().wsClosed = 0; await dayCard('上午 10 点'); go('hh_rest', true, true); }
-async function S_parking() { await T_(`^in 颜队长 13
+async function S_parking() { await preOnce('parking', async () => {
+  await T_(`^in 颜队长 13
 市分局来了人。
 颜队长|陈歌同志。灭门案的凶手、在逃的张鹏，都是你提供的关键线索。这是奖章。赏金随后到账。
 ^out 颜队长
@@ -223,17 +48,9 @@ async function S_parking() { await T_(`^in 颜队长 13
 ~phone
 @选定场地，第一次扩建成功。恭喜你获得特殊建筑——午夜售票台（残缺）：有千分之一的概率吸引到特殊的“游客”。它们与众不同，或许能成为你的助力。
 @一般难度任务完成：一次免费恐怖转盘机会。
-^prop st stairsdown 12 5
-^fx flash
-我|扩建就扩建出一截楼梯？
-你用手电往下照。台阶一级一级往下，照到第七级，光就没了——不是被挡住，是被吃掉了。
-^sfx steps
-^at 影子 12
-^fx eyes
-楼梯底下，有人往上走了一步。
-^out 影子
-你关掉手电，退了出来。……不过整个地下都是我的了。
-我|三个月。在东郊建成之前，尽可能多地解锁场景。
+我|扩建就扩建出一截楼梯？`); });
+  const r = await nt('stairs'); if (!r) return;
+  await T_(`我|三个月。在东郊建成之前，尽可能多地解锁场景。
 你顺手把控制台的总闸也接到了手边。`); addItem('ticketbooth'); C.hh.spins++; learnSkill('lights'); learnSkill('paper'); }
 async function S_fanyu() { await T_(`^in 姑姑 13
 ^in 范郁 14

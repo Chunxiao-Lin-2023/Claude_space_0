@@ -270,7 +270,8 @@ async function S_hut() { setClock(10, '凌晨 3 点');
 警车把你送回了乐园。早间新闻里，你的脸打了码。
 徐婉|老板，你上电视了！！`);
   liveOff(); C.fans += 900; C.hh.scenes.push('ws'); addItem('notice'); F().zhangpeng = 1; await dayCard('早上 7 点'); go('hh_rest', true, true); C.f.lockArea = 0; }
-async function S_scene() { await T_(`三楼变了。错综的通道，烧焦的屋顶，随处可见疤痕一样的刀痕。新场景占了整个三层，还吃掉了冥婚和僵尸复活夜的一角。
+async function S_scene() { await preOnce('scene', async () => {
+  await T_(`三楼变了。错综的通道，烧焦的屋顶，随处可见疤痕一样的刀痕。新场景占了整个三层，还吃掉了冥婚和僵尸复活夜的一角。
 @注意：恐怖屋内部空间已不足，扩建之后，才能继续解锁全新恐怖场景！
 今天的一般难度任务不难：在引人注目的东西的反方向，设计惊吓点。你用了一个中午。
 ~phone
@@ -282,7 +283,7 @@ async function S_scene() { await T_(`三楼变了。错综的通道，烧焦的�
 我|锤子拖在地上走，效果更好。`);
   addItem('uniform'); addItem('g_mask'); learnSkill('chase'); learnSkill('skull');
   const win = await fight({ scare: 1, scene: 'ws', mobs: [['med', L(0), '老赵'], ['med', L(0), '慧姐'], ['heshan', L(0)]], title: '午夜逃杀 · 法医学院寝室团' });
-  await T_(`${win ? '七个人进去，抬出来四个。' : '他们撑到了最后，但出来的时候没人说话。'}`);
+  await T_(`${win ? '七个人进去，抬出来四个。' : '他们撑到了最后，但出来的时候没人说话。'}`); });
   const r = await nt('dolls', { autoF: { k_notice: 0 } }); if (!r) return;
   const c = r.f.k_notice != null ? r.f.k_notice : 0; F().notice = c;
   await T_(`~phone

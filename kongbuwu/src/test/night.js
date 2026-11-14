@@ -29,5 +29,18 @@ const { chromium } = require('playwright');
   await runQ('q_mirror'); f = await frame(); if (f) await f.evaluate(() => __kn.finish('skip'));
   await pg.waitForFunction(() => window.__qdone, null, { timeout: 8000 }).catch(() => 0);
   chk('mirror skip: advanced + mirrorFail', await pg.evaluate(() => __dbg.C.q === 'q_firstday' && __dbg.C.f.mirrorFail === 1 && __dbg.C.talents.includes('lianrong')));
+  // 4. 红舞鞋：一步两夜。第二夜中途离开 → 再进来直接是第二夜，第一夜和许愿不重来
+  await pg.evaluate(() => { __dbg.C.f.vow = 1; });
+  await runQ('q_shoes'); f = await frame(); chk('shoes: first night is shoes', !!f && await f.evaluate(() => __kn.W.ch.id === 'shoes'));
+  if (f) await f.evaluate(() => __kn.finish('end'));
+  for (let i = 0; i < 40; i++) { await pg.waitForTimeout(150); const g = pg.frames().find(x => x !== pg.mainFrame()); if (g) { try { if (await g.evaluate(() => !!(window.__kn && __kn.W && __kn.W.ch.id === 'mirrorhall'))) { f = g; break; } } catch (e) { } } }
+  chk('shoes: second night is mirrorhall', !!f && await f.evaluate(() => __kn.W.ch.id === 'mirrorhall'));
+  if (f) await f.evaluate(() => __kn.finish('quit'));
+  await pg.waitForFunction(() => window.__qdone, null, { timeout: 8000 }).catch(() => 0);
+  chk('shoes quit: not advanced, pre-part remembered', await pg.evaluate(() => __dbg.C.q === 'q_shoes' && __dbg.C.f.pre && __dbg.C.f.pre.shoes === 1));
+  await runQ('q_shoes'); f = await frame(); chk('shoes rerun: goes straight to mirrorhall', !!f && await f.evaluate(() => __kn.W.ch.id === 'mirrorhall'));
+  if (f) await f.evaluate(() => __kn.finish('end'));
+  await pg.waitForFunction(() => window.__qdone, null, { timeout: 8000 }).catch(() => 0);
+  chk('shoes end: advanced + shoes item', await pg.evaluate(() => __dbg.C.q === 'q_parking' && !!__dbg.C.bag.shoes));
   console.log('night bridge', ok.length + '/' + (ok.length + bad.length), bad.length ? 'FAIL: ' + bad.join(' | ') : 'OK'); console.log('errors', errs);
   await b.close(); process.exit(bad.length || errs.length ? 1 : 0); })();

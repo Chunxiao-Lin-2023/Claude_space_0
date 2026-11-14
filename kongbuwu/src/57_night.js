@@ -24,3 +24,5 @@ function night(id, o = {}) {
 function nightQuit() { STATE.qAbort = 1; toast('这一夜还没走完——下次从刚才的检查点接着走'); }
 /* 剧情里统一这样调：const r = await nt('attic'); if (!r) return;   （中途离开返回 null，这一步不算完成） */
 async function nt(id, o) { const r = await night(id, o); if (r.kind === 'quit') { nightQuit(); return null; } return r; }
+/* 同一步里夜晚任务之前已经发过的奖励/打过的仗：中途离开再进来时不再重复（按步骤 id 记） */
+async function preOnce(key, fn) { F().pre = F().pre || {}; if (F().pre[key]) return; const r = await fn(); if (r !== false) F().pre[key] = 1; return r; }   // fn 返回 false = 这一段没走完，下次还要再来

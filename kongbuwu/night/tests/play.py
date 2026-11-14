@@ -18,7 +18,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.abspath(os.path.join(HERE, '..', '..', '..'))
 import importlib.util, glob as _glob
 SOL = {}
-for _f in sorted(_glob.glob(os.path.join(HERE, 'sol', '*.py'))):
+for _f in sorted(f for f in _glob.glob(os.path.join(HERE, 'sol', '*.py')) if not os.path.basename(f).startswith('_')):
     _sp = importlib.util.spec_from_file_location('sol_' + os.path.basename(_f)[:-3], _f); _m = importlib.util.module_from_spec(_sp); _sp.loader.exec_module(_m)
     SOL[os.path.basename(_f)[:-3]] = _m.SOL
 WARN = []
