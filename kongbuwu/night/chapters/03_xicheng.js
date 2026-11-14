@@ -10,6 +10,7 @@
       R(5 + sh, -6, 6, 6, '#d8d0cc'); R(4 + sh, -8, 8, 5, '#120c0c'); R(4 + sh, -3, 2, 8, '#120c0c'); R(5 + sh, 0, 6, 8, '#2a2a44'); R(6 + sh, -3, 1, 1, '#000'); R(9 + sh, -3, 1, 1, '#000'); R(6, -1, 4, 1, '#3a0a0a'); },
     chairx(g, e, t, R) { R(2, 11, 6, 2, '#5a4030'); R(9, 12, 5, 2, '#4a3020'); R(4, 8, 2, 4, '#6a5040'); R(11, 9, 3, 2, '#6a5040'); },
     bigmirror(g, e, t, R) { box(R, 0, -4, 16, 18, '#8a8a90'); R(1, -3, 14, 16, e.ghost ? '#2a1a20' : '#1c2430'); R(2, -2, 3, 14, 'rgba(255,255,255,.08)'); R(11, -1, 1, 12, 'rgba(255,255,255,.12)');
+      if (!e.ghost) kReflect(g, e, e.sx + 1, e.sy - 3, 14, 16);
       if (e.ghost) { R(5, 1, 6, 6, '#e0d8d0'); R(4, -1, 8, 4, '#140c0c'); R(4, 3, 2, 9, '#140c0c'); R(10, 3, 2, 9, '#140c0c'); R(5, 7, 6, 6, '#8a0a0a'); R(6, 3, 1, 1, '#000'); R(9, 3, 1, 1, '#000'); }
       if (e.crack) { R(3, 0, 1, 4, '#ddd'); R(4, 3, 3, 1, '#ddd'); R(7, 4, 1, 5, '#ddd'); R(8, 8, 3, 1, '#ddd'); } },
     board(g, e, t, R) { R(1, 4, 14, 8, '#8a6a40'); R(1, 6, 14, 1, '#6a4a28'); R(2, 12, 2, 4, '#5a3a20'); R(12, 12, 2, 4, '#5a3a20'); R(3, 7, 10, 3, '#d8c8a0'); R(4, 8, 8, 1, '#8a1a1a'); },
@@ -145,16 +146,16 @@
   async function mirrorLook(S) {
     if (!S.f.ready) return S.narr('落地镜照着整间屋子，也照着你。');
     if (S.f.named) return S.narr(S.f.won ? '镜子里，只剩你自己。' : '……');
-    S.turn(3); await S.wait(400); S.turn(0); S.sfx('whisper'); await S.scare('glitch', { sfx: 'sting' });
+    for (let i = 0; i < 4; i++) S.ent('mr' + i).lag = 1.1; S.turn(3); await S.wait(400); S.turn(0); await S.wait(1300); S.sfx('whisper'); await S.scare('glitch', { sfx: 'sting' });
     await S.narr('你抬起头。落地镜里的你，慢了半拍才抬头。');
     await S.think('荣誉墙上五个人，合影上六个。被剪掉的那一个……');
     const r = await S.ask('那个名字，是这里不能提的。', ['念出来：张雅', '不念']);
     if (r === 1) return S.narr('你闭上嘴。\n镜子里的你，嘴唇却还在动。它在替你念。');
-    S.f.named = true; S.shake(500, 3); S.sfx('scream');
+    S.f.named = true; for (let i = 0; i < 4; i++) { S.ent('mr' + i).lag = .4; S.ent('mr' + i).smile = true; } S.shake(500, 3); S.sfx('scream');
     await S.narr('你念出了那个名字。\n整个舞蹈室都变了。');
     for (const i of [1, 2, 3]) { S.hide('ch' + i); S.show('g' + i); }
     await S.narr('三把椅子，自己转了过来。\n有什么东西按着你的肩膀，要你坐下去。');
-    kCpAt(S, 'chairs'); S.goal('椅子在追你：靠近的时候按调查键，砸碎它（0/3）'); S.f.fight = true; S.f.sm = 0; goChairs(S); }
+    await kEpic(S, { name: '舞蹈室的椅子', sub: '三个名字', seal: '坐', intro: ['每一把椅子底下，都写着一个名字。', '那天，她们都看见了。没有一个人站起来。', '现在，她们想让你坐下。'], phase: '（椅子腿在地板上刮出一声尖叫）', low: '碎片里，她们还抓着你的脚踝。', ids: ['g1', 'g2', 'g3'] }); kCpAt(S, 'chairs'); S.goal('椅子在追你：靠近的时候按调查键，砸碎它（0/3）'); S.f.fight = true; S.f.sm = 0; goChairs(S); }
   function goChairs(S) { const sp = [2.4, 2.2, 2.6]; [1, 2, 3].forEach(i => { if (!S.ent('g' + i).hidden) S.chase('g' + i, { spd: sp[i - 1], catch: async S => { await S.scare('face', { face: 'child', sfx: 'scream' }); await S.die('你被按在了椅子上。\n椅子底下那个名字，变成了你的。', '坐下了'); } }); }); }
   async function smash(S) {
     const near = [1, 2, 3].map(i => S.ent('g' + i)).filter(e => !e.hidden).sort((a, b) => (Math.abs(a.x - S.pl.x) + Math.abs(a.y - S.pl.y)) - (Math.abs(b.x - S.pl.x) + Math.abs(b.y - S.pl.y)))[0];
@@ -162,7 +163,7 @@
     const i = +near.id.slice(1); S.stop(near.id); S.hide(near.id); S.place('x' + i, near.x, near.y); S.show('x' + i); S.sfx('thud'); S.shake(300, 2);
     S.f.sm++; await S.narr(['你抓起椅背，砸在地上。木头裂了一条缝——上面那个“人”的哀求，一下子变成了怨毒。', '你抓起断掉的椅子腿抡过去。镜子里的画面有点奇葩，但你顾不上了。', '最后一把。碎片里，她们还抓着你的脚踝。'][S.f.sm - 1]);
     S.goal('砸碎追你的椅子（' + S.f.sm + '/3）');
-    if (S.f.sm >= 3) { S.f.won = true; await zhangya(S); } }
+    if (S.f.sm >= 3) { S.f.won = true; kEpicLow(S); for (let i = 0; i < 4; i++) S.ent('mr' + i).smile = false; await zhangya(S); } }
   async function zhangya(S) {
     await S.narr('然后，温度降了下来。'); S.show('zy'); S.place('zy', S.pl.x, Math.max(2, S.pl.y - 1), 0);
     await S.narr('镜子里，你的背后多了一个低着头的女孩。\n染血的校服贴在身上，一眼看去，尽是猩红。');
@@ -241,7 +242,7 @@
     maps: {
       hall: { rows: HALLW, amb: 'room',
         ents: [
-          ...[5, 9, 13, 17].map((x, i) => ({ id: 'm' + i, x, y: 1, spr: 'bigmirror', on: async S => S.narr(MIRRORS[i]) })),
+          ...[5, 9, 13, 17].map((x, i) => ({ id: 'm' + i, x, y: 1, spr: 'bigmirror', empty: true, on: async S => S.narr(MIRRORS[i]) })),
           { id: 'zp', x: 21, y: 3, spr: '@zp', solid: true, on: async S => S.narr('张鹏站在走廊尽头，一动不动。他的眼睛里没有你。') },
           { id: 'mg', x: 21, y: 2, spr: 'gh_mirrorghost', hidden: true, solid: true, light: KGLOW },
           { id: 'zy', x: 2, y: 2, spr: 'gh_redwoman', hidden: true, light: KRED },
@@ -254,12 +255,12 @@
   async function emerge(S) {
     S.ent('m1').crack = true; await S.scare('glitch', { sfx: 'sting' });
     await S.narr('镜子里照不出你，只照得出它。\n墙上的数字归零了——它等的就是这一晚。');
-    S.show('mg'); S.place('mg', 21, 2, 1); kCpAt(S, 'mirror'); S.f.chase = true;
+    S.show('mg'); S.place('mg', 21, 2, 1); await kEpic(S, { name: '镜中怪物', sub: '从镜子游戏那晚，一直跟到今天', seal: '镜', intro: ['墙上的数字归零了。', '它等的就是这一晚。', '——可它没算到，你的影子里也住着东西。'], phase: '（镜面一块接一块地碎）', low: '背后很冷。但这一次，冷是站在你这边的。', ids: ['mg'] }); kCpAt(S, 'mirror'); S.f.chase = true;
     S.goal('它从镜子里出来了。口袋里那双舞鞋……（它靠近时按调查键）');
     S.chase('mg', { spd: 2.7, catch: mgCatch }); }
   async function callZy(S) {
     const g = S.ent('mg'); if (Math.abs(g.x - S.pl.x) + Math.abs(g.y - S.pl.y) > 4) return S.narr('你攥着那双舞鞋。等它再近一点。');
-    S.f.done = true; S.stop('mg'); S.sfx('heart');
+    S.f.done = true; S.stop('mg'); S.sfx('heart'); kEpicLow(S);
     await S.narr('你把那双黑红色的舞鞋，放在了脚边。\n背后很冷。但这一次，冷是站在你这边的。');
     S.show('zy'); S.place('zy', S.pl.x, S.pl.y - 1 >= 2 ? S.pl.y - 1 : S.pl.y + 1, 2); await S.scare('red', { sfx: 'scream' });
     await S.narr('张雅似乎对杀戮情有独钟。根本不用你开口，黑发就勒进了张鹏的身体，把镜子里的东西一点一点拽了出来。');

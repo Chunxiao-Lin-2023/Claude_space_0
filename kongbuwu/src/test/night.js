@@ -9,12 +9,16 @@ const { chromium } = require('playwright');
   // 1. 三楼的旧箱子：走完，带回“相信”的选择
   await runQ('q_attic'); let f = await frame(); chk('attic iframe opened', !!f);
   chk('management UI hidden under overlay', await pg.evaluate(() => document.body.classList.contains('nightup') && !!document.querySelector('#nightov')));
-  if (f) { await f.evaluate(() => { __kn.W.f.k_believe = 1; __kn.finish('end'); }); }
+  chk('env: talents / live passed in', !!f && await f.evaluate(() => Array.isArray(KENV.talents) && 'live' in KENV));
+  const exp0 = await pg.evaluate(() => [__dbg.C.exp, __dbg.C.lv]);
+  if (f) { await f.evaluate(() => { SAPI.say('wangqi', '测试台词'); }); await pg.waitForTimeout(200); await f.evaluate(() => { __kn.doAct('adv'); }); await pg.waitForTimeout(300); await f.evaluate(() => { __kn.W.f.k_believe = 1; __kn.finish('end'); }); }
   await pg.waitForFunction(() => window.__qdone, null, { timeout: 8000 }).catch(() => 0);
   chk('attic: overlay removed', await pg.evaluate(() => !document.querySelector('#nightov') && !document.body.classList.contains('nightup')));
   chk('attic: believe=1 carried back', await pg.evaluate(() => __dbg.C.f.believe === 1));
   chk('attic: phone + ragdoll given', await pg.evaluate(() => !!__dbg.C.bag.phone && !!__dbg.C.bag.ragdoll));
   chk('attic: quest advanced', await pg.evaluate(() => __dbg.C.q === 'q_daily1'));
+  chk('attic: night lines in journal with Chinese speaker name', await pg.evaluate(() => __dbg.JOURNAL().some(j => j.l.some(l => /夜晚 · /.test(l[1])) && j.l.some(l => l[0] === '王琦' && l[1] === '测试台词'))));
+  chk('attic: grade S gives exp', await pg.evaluate(([e, l]) => __dbg.C.lv > l || __dbg.C.exp > e, exp0) && await pg.evaluate(() => __dbg.STATE.nightGrade === 'S'));
   // 2. 修人偶：中途离开 → 不推进；再进 → 从检查点接着走；走完 → 推进
   await runQ('q_daily1'); f = await frame(); if (f) await f.evaluate(() => { __kn.SAPI.cp('mid'); __kn.finish('quit'); });
   await pg.waitForFunction(() => window.__qdone, null, { timeout: 8000 }).catch(() => 0);
@@ -28,7 +32,7 @@ const { chromium } = require('playwright');
   // 3. 镜子游戏：死了选“跳过这一夜”→ 剧情照常往下走，记作失败
   await runQ('q_mirror'); f = await frame(); if (f) await f.evaluate(() => __kn.finish('skip'));
   await pg.waitForFunction(() => window.__qdone, null, { timeout: 8000 }).catch(() => 0);
-  chk('mirror skip: advanced + mirrorFail', await pg.evaluate(() => __dbg.C.q === 'q_firstday' && __dbg.C.f.mirrorFail === 1 && __dbg.C.talents.includes('lianrong')));
+  chk('mirror skip: grade C, chapter lose counted', await pg.evaluate(() => __dbg.STATE.nightGrade === 'C' && (__dbg.C.fun.chs[1].lose || 0) >= 2)); chk('mirror skip: advanced + mirrorFail', await pg.evaluate(() => __dbg.C.q === 'q_firstday' && __dbg.C.f.mirrorFail === 1 && __dbg.C.talents.includes('lianrong')));
   // 4. 红舞鞋：一步两夜。第二夜中途离开 → 再进来直接是第二夜，第一夜和许愿不重来
   await pg.evaluate(() => { __dbg.C.f.vow = 1; });
   await runQ('q_shoes'); f = await frame(); chk('shoes: first night is shoes', !!f && await f.evaluate(() => __kn.W.ch.id === 'shoes'));

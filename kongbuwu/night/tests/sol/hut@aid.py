@@ -1,0 +1,16 @@
+# 「灵」：阴瞳 / 小小 / 笔仙 / 白猫 / 殓容 都能用；布偶挡一次抓；开播时有弹幕；开场卡是印章版
+SOL = [['js', "KENV.talents = ['yintong', 'lianrong']; KENV.pets = ['xiaoxiao', 'bixian', 'baimao']; KENV.items = ['ragdoll']; KDM.on = true; kDm(DMP.idle, {n: 3})"],
+       ['expect', "document.querySelectorAll('#kdm span').length > 0 && !document.getElementById('hAid').classList.contains('hidden')"],
+       ['use', 'bed'], ['use', 'cl'], ['use', 'ph'],
+       ['expect', "window.__dbg.W.f.chase === true && window.__kbwEpicSeen !== false"],
+       ['js', "(() => { const W = window.__dbg.W, z = W.maps.hut.ents.find(e => e.id === 'wq'); z.mv = null; z.px = W.pl.px + 4; z.py = W.pl.py; })()"],
+       ['wait', 600], ['expect', "window.__dbg.W.f._doll === 1 && !window.__dbg.W.endScreen"],
+       ['js', "(() => { const z = window.__dbg.W.maps.hut.ents.find(e => e.id === 'wq'); z.hidden = true; z.chase = null; })()"], ['wait', 2200],
+       ['js', "(() => { const W = window.__dbg.W, z = W.maps.hut.ents.find(e => e.id === 'wq'); if (z.chase) z.chase.spd = .02; z.mv = null; z.x = 7; z.y = 2; z.px = 112; z.py = 32; })()"],
+       ['js', "kAid()", [0]], ['expect', "document.body.classList.contains('krec-yin')"],
+       ['js', "kAid()", [2]], ['js', "kAid()", [3]], ['js', "kAid()", [4]],
+       ['js', "kAid()", [1]], ['expect', "window.__dbg.W.kMask > window.__dbg.W.t"],
+       ['expect', "window.__dbg.W.f._aid.yin === 1 && window.__dbg.W.f._aid.xiao === 1 && window.__dbg.W.f._aid.pen === 1 && window.__dbg.W.f._aid.cat === 1 && window.__dbg.W.f._aid.mask === 1"],
+       ['js', "(() => { const W = window.__dbg.W, z = W.maps.hut.ents.find(e => e.id === 'wq'); if (z.chase) z.chase.spd = .02; z.hidden = false; z.frozen = false; z.mv = null; if (!z.chase) SAPI.chase('wq', { spd: .02, nodoll: true }); z.chase.spd = .02; const p = W.pl; z.x = p.x; z.y = p.y - 1 >= 2 ? p.y - 1 : p.y + 1; z.px = z.x * 16; z.py = z.y * 16; })()"],
+       ['use', 'raise'], ['use', 'door'], ['step', 11, 11],
+       ['expect', "kGrade('end').g === 'S' && kGrade('end').why.includes('布偶') && KLOG.length > 20"]]

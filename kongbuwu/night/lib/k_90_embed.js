@@ -3,14 +3,16 @@
    - 暂停菜单的「离开」：下次从检查点接着走（恐怖屋那边这一步不算完成）
    - 没有标题页、选章页、联机 */
 function kPost(o) { try { if (window.parent !== window) window.parent.postMessage(Object.assign({ kbwNight: 1 }, o), '*'); } catch (e) { } window.__kbwLast = o; }
-function kResult(kind) { const o = { t: 'done', id: W && W.ch.id, kind, f: {}, inv: [] }; if (W) { for (const k in W.f) if (k.startsWith('k_')) o.f[k] = W.f[k]; o.inv = W.inv.slice(); } return o; }
+function kResult(kind) { const o = { t: 'done', id: W && W.ch.id, kind, f: {}, inv: [] }; if (W) { for (const k in W.f) if (k.startsWith('k_')) o.f[k] = W.f[k]; o.inv = W.inv.slice(); }
+  if (kind !== 'quit') { const gr = kGrade(kind); o.grade = gr.g; o.why = gr.why; } o.deaths = KST.deaths; o.aids = Object.assign({}, KST.aids); o.log = KLOG.slice(); o.title = W && W.ch.title; return o; }
 function kFinish(kind) { const o = kResult(kind); if (W && kind !== 'quit') store.del('cp.' + W.ch.id); quitChapter(); UI.show('play'); $('hud').classList.add('hidden'); $('touch').classList.add('hidden'); ['endov', 'dlg', 'card', 'note', 'keypad'].forEach(i => $(i) && $(i).classList.add('hidden')); kPost(o); }
 goSelect = function () { kFinish('quit'); };
 drawTitleBG = function (g) { g.fillStyle = '#000'; g.fillRect(0, 0, VW, VH); };
 { const _sync = UI.sync.bind(UI);
-  UI.sync = function (dt) { _sync(dt); const es = W && W.endScreen; if (!es) return; const B = $('enB'), key = es.kind + '|' + es.title; if (B.dataset.k === key && B.querySelector('[data-kb]')) return; B.dataset.k = key; B.innerHTML = '';
+  UI.sync = function (dt) { _sync(dt); const cd = $('card'); if (cd) { const ep = !!(W && W.card && KEPIC); cd.classList.toggle('epic', ep); const sl = cd.querySelector('.kseal'); if (ep && sl && sl.textContent !== KEPIC.seal) sl.textContent = KEPIC.seal; }
+    const es = W && W.endScreen; if (!es) return; const B = $('enB'), key = es.kind + '|' + es.title; if (B.dataset.k === key && B.querySelector('[data-kb]')) return; B.dataset.k = key; B.innerHTML = '';
     const add = (t, f, pri) => { const b = document.createElement('button'); b.className = 'btn' + (pri ? ' primary' : ''); b.dataset.kb = 1; b.textContent = t; b.onclick = f; B.appendChild(b); };
-    if (es.kind === 'end') add('继续', () => kFinish('end'), true);
+    if (es.kind === 'end') { add('继续', () => kFinish('end'), true); const gr = kGrade('end'), L = $('enL'); L.classList.remove('hidden'); L.innerHTML = '<b style="color:#e8c070;font-size:20px;letter-spacing:.2em">评价 ' + gr.g + '</b>　<span style="opacity:.8">' + esc(gr.why) + '</span>'; setTimeout(() => this.focusFirst(), 900); return; }
     else { add('从检查点重来', () => sendAct('retry'), true); add('跳过这一夜（剧情照常往下走）', () => kFinish('skip')); }
     $('enL').classList.add('hidden'); setTimeout(() => this.focusFirst(), 900); }; }
 window.addEventListener('message', ev => { const m = ev.data; if (!m || !m.kbwNight) return;

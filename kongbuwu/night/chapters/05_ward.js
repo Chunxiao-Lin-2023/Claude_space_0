@@ -15,7 +15,7 @@
     letters(g, e, t, R) { for (let i = 0; i < 4; i++) { R(2 + i * 3, 8 - i, 7, 5, '#e8e0d0'); R(2 + i * 3, 8 - i, 7, 1, '#c8a0a0'); } },
     redbed(g, e, t, R) { box(R, 1, -2, 14, 30, '#3a0606'); R(3, -1, 10, 5, '#d8c8c8'); R(2, 6, 12, 18, '#6a0a0a'); if (!e.empty) { R(5, 0, 6, 5, '#e8d0c0'); R(4, -1, 8, 2, '#1a1010'); } },
   };
-  const PEOPLE = { me: KP.chen, liu: KP.liudao || KP.police, boy: Object.assign({}, KP.boy || KP.fanyu, { top: '#8a0a0a', bottom: '#5a0606' }), xu: KP.patient || KP.student };
+  const PEOPLE = { kid: { skin: '#f0d8c0', hair: '#1a1414', hs: 'short', top: '#d8d8d0', bottom: '#a8a8a0', child: true }, mom: { skin: '#f0c8a8', hair: '#2a1a14', hs: 'long', top: '#c8c8c0', skirt: true, bottom: '#a8a8a0' }, me: KP.chen, liu: KP.liudao || KP.police, boy: Object.assign({}, KP.boy || KP.fanyu, { top: '#8a0a0a', bottom: '#5a0606' }), xu: KP.patient || KP.student };
   const BASE = { people: PEOPLE, faces: KFACES, sprites: SPR5, icon: '@me' };
   const HALL = w => ['#'.repeat(w), '#'.repeat(w), '#' + 'n'.repeat(w - 2) + '#', '#' + 'n'.repeat(w - 2) + '#', '#' + 'n'.repeat(w - 2) + '#', '#'.repeat(w)];
   const ROOMR = (w, h, c) => ['#'.repeat(w), '#'.repeat(w), ...Array(h).fill('#' + c.repeat(w - 2) + '#'), '#'.repeat(w)];
@@ -24,7 +24,7 @@
 
   /* =================== 第一病栋 =================== */
   defChapter(Object.assign({}, BASE, {
-    id: 'ward', n: 28, title: '精神疾病康复中心', sub: '晚上十一点。第一病栋的门锁是坏的。', origin: '第三病栋 · 第五章', color: '#1a2a2a',
+    id: 'ward', live: true, danmu: ['主播手里为什么提着一只鸡', '灵异美食博主？', '秦广今晚去的是暮阳中学', '这医院封了好几年了', '笼子里是吃的？'], n: 28, title: '精神疾病康复中心', sub: '晚上十一点。第一病栋的门锁是坏的。', origin: '第三病栋 · 第五章', color: '#1a2a2a',
     amb: 'wind', floor: 'linoleum', wall: 'school', dark: .9, plr: 2.4, items: {},
     notes: { hair: { title: '护士台的木板', text: '木板上钉着一绺一绺的头发。\n旁边写着很小的字：\n\n“一号的。二号的。三号没有。四号的。五号的……”\n\n写到一半就乱了。' } },
     start: { map: 'b1', x: 2, y: 3, dir: 2 },
@@ -46,7 +46,7 @@
 
   /* =================== 两碗水（洗衣间） =================== */
   defChapter(Object.assign({}, BASE, {
-    id: 'laundry', n: 29, title: '两碗水', sub: '午夜零点半。第二病栋三楼，洗衣间。', origin: '第三病栋 · 第五章', color: '#2a2a1a',
+    id: 'laundry', live: true, danmu: ['洗衣机自己在转', '被子下面有东西', '这是演员吗', '报警啊', '人气八万了'], hint: S => S.f.asked && !S.f.done ? 'sh' : null, n: 29, title: '两碗水', sub: '午夜零点半。第二病栋三楼，洗衣间。', origin: '第三病栋 · 第五章', color: '#2a2a1a',
     amb: 'room', floor: 'tile', wall: 'tile', dark: .9, plr: 2.4, items: { lens: { name: '手腕上的小镜头', desc: '刘刀给的。' } },
     notes: { xu: { title: '许童说的', text: '“王海明……他住过三号房。那是禁闭室，也叫电休克治疗室。\n通电以后，他说他看见屋子里有四个人。\n有个‘魔鬼’说可以帮他出去。他答应了。在卫生间里，对着镜子。”\n\n王海明带出去的镜鬼，王声龙肩膀上的高个子——连鬼，都不愿意待在那栋楼里。' } },
     start: { map: 'ld', x: 3, y: 4, dir: 2 },
@@ -86,7 +86,7 @@
     S.show('ln'); await S.narr('你把手腕上的小镜头摘下来，摆在正对门口的地上。\n手机屏幕里，门外站着两个人。一个只有一条手臂。另一个的脸……');
     S.sfx('thud'); S.shake(500, 3); S.place('wm', 4, 3); S.show('xq'); S.show('oa');
     await S.scare('face', { face: 'slender', sfx: 'scream' }); await S.narr('洗衣机被撞倒了。');
-    kCpAt(S, 'fight'); S.goal('门边那个高架子——等他们走到架子底下，推倒它（调查架子）'); goPsy(S); }
+    await kEpic(S, { name: '畸形脸 · 熊青', sub: '八号病室 · 曾经的医生', seal: '八', intro: ['偏侧空间失调症。', '在他眼里，完整的人是“错的”。', '“只剩半边，才顺眼。”'], phase: '你、你到底是病人还是我是病人？！', low: '直播间里有人在刷：主播别死。你笑了一下。', ids: ['xq', 'oa'] }); kCpAt(S, 'fight'); S.goal('门边那个高架子——等他们走到架子底下，推倒它（调查架子）'); goPsy(S); }
   function go2(S) { S.goal(S.f.k ? '问问笼子里的人' : '被子下面……'); }
   function goPsy(S) { const c = async S => { await S.scare('face', { face: 'slender', sfx: 'scream' }); await S.die('他歪着头看你，像在看一幅挂歪了的画。\n“只剩半边，才顺眼。”', '洗衣间'); };
     S.chase('xq', { spd: 2.6, catch: c }); S.chase('oa', { spd: 2.4, catch: c }); }
@@ -94,7 +94,7 @@
     if (!S.ent('xq') || S.ent('xq').hidden || S.f.done) return S.narr('一个顶到天花板的铁架子，上面堆满了床单和消毒水。');
     const near = ['xq', 'oa'].some(k => { const e = S.ent(k); return Math.abs(e.x - 7) <= 1 && e.y >= 2 && e.y <= 4; });
     if (!near) return S.narr('还不是时候。等他们走到架子底下。');
-    S.f.done = true; S.stop('xq'); S.stop('oa'); S.ent('sh').down = true; S.sfx('thud'); S.shake(700, 4);
+    S.f.done = true; S.stop('xq'); S.stop('oa'); kEpicLow(S); S.ent('sh').down = true; S.sfx('thud'); S.shake(700, 4);
     await S.narr('你一脚踹在架子腿上。整架床单和消毒水，砸了下去。');
     await S.narr('独臂的那个，另一条胳膊也抬不起来了。畸形脸翻窗跑向了连廊。'); S.hide('xq'); S.hide('oa');
     S.goal('问问许童'); }
@@ -102,7 +102,7 @@
   /* =================== 谁在扮演医生（被褥走廊） =================== */
   const NROUTE = [[18, 3], [12, 3], [6, 3], [3, 4], [8, 4], [16, 4]];
   defChapter(Object.assign({}, BASE, {
-    id: 'b3', n: 30, title: '谁在扮演医生', sub: '凌晨一点。第三病栋。', origin: '第三病栋 · 第五章', color: '#1a1a1a',
+    id: 'b3', live: true, danmu: ['被子下面全是假人？', '那个护士腰是断的吧', '别让她看见你', '药是刚配的……', '猫都怕了'], hint: S => S.f.go && !S.f.got ? 'ns' : null, n: 30, title: '谁在扮演医生', sub: '凌晨一点。第三病栋。', origin: '第三病栋 · 第五章', color: '#1a1a1a',
     amb: 'drone', floor: 'linoleum', wall: 'school', dark: .92, plr: 2.2, items: { nbook: { name: '护士的笔记本', desc: '沾满污渍。' } },
     notes: { nb: { title: '柜台下的笔记本', text: '笔记本上记着的病人，有一个共同点：\n他们全都已经不在人世了。\n\n最后一页：\n“三号房的那个孩子又开始发疯了。他是第一个看见‘门’的人。”' }, dm: { title: '被褥下面', text: '下面是一个假人。\n背后写着一个名字：张启思。\n\n每一个都有名字。' } },
     start: { map: 'c', x: 2, y: 3, dir: 2 },
@@ -140,7 +140,7 @@
 
   /* =================== 三号房的病人（院长办公室） =================== */
   defChapter(Object.assign({}, BASE, {
-    id: 'dean', n: 31, title: '三号房的病人', sub: '凌晨两点。院长办公室的台灯还亮着。', origin: '第三病栋 · 第五章', color: '#2a1a0a',
+    id: 'dean', live: true, danmu: ['台灯怎么亮着', '信里写的什么', '衣柜里有人', '那照片上的小孩是谁', '三十万人在看'], n: 31, title: '三号房的病人', sub: '凌晨两点。院长办公室的台灯还亮着。', origin: '第三病栋 · 第五章', color: '#2a1a0a',
     amb: 'room', floor: 'carpet', wall: 'wood', dark: .88, plr: 2.4, items: { nbook: { name: '护士的笔记本', desc: '她是来找它的。' } },
     notes: {
       l1: { title: '第一封信', text: '二十多年前，一个男人送来一个怀孕的女人，预付了钱，再也没出现。\n女人疯得很厉害，整夜对着墙说话。\n孩子在三号病房出生。' },
@@ -151,6 +151,7 @@
     start: { map: 'off', x: 2, y: 5, dir: 3 },
     async intro(S) { S.give('nbook', true); await S.card('三号房的病人', '院长办公室　凌晨两点', '台灯还亮着——这里断电好几年了。\n地上散着病例单。'); },
     maps: {
+      pastw: { rows: ROOMR(14, 4, 'n'), amb: 'none', dark: .6, ents: [{ id: 'pk', x: 7, y: 3, spr: '@kid', solid: true }, { id: 'pm', x: 6, y: 3, spr: '@mom', solid: true }, { id: 'pd', x: 9, y: 1, spr: 'door3', solid: true }, { id: 'pb', x: 11, y: 2, spr: 'bed', solid: true, col: '#d8d8d0' }, { id: 'pex', x: 3, y: 1, spr: 'door', solid: true }] },
       off: { rows: ROOMR(14, 4, 'c'), amb: 'room',
         ents: [
           { id: 'door', x: 2, y: 1, spr: 'door', solid: true, on: async S => S.f.won ? S.end({ title: '三号房的病人', text: '口袋里的手机在震。\n刘刀：你快看你的直播间！三十万，还在涨！' }) : S.narr(S.f.n >= 4 ? '门外有脚步声。' : '还没看完。') },
@@ -168,21 +169,25 @@
     resume: { nurse: async S => { S.f.chase = true; S.f.won = false; S.show('nurse'); S.place('nurse', 2, 2, 0); goN(S); } } }));
   async function letters(S) {
     S.f.n = (S.f.n || 0) + 1; if (S.f.n > 5) return S.narr('四封信，一张合影。');
+    if (S.f.n === 3) await kRecall(S, 'past', '第三封信', { map: 'pastw', x: 1, y: 2, focus: [6, 3] }, async S => {
+      await S.narr('“陈医生，我第一次见到这样的孩子。”'); S.face('pm', 1); await S.walk('pm', [3, 2], 2); S.hide('pm'); S.sfx('close');
+      await S.narr('母亲病愈出院。那一天，孩子的支柱倒了。'); S.face('pk', 3); await S.wait(800);
+      S.ent('pd').red = true; S.sfx('heart'); await S.scare('glitch', { sfx: 'sting' }); await S.narr('午夜，三号房的门变成了血红色。'); });
     if (S.f.n <= 4) { await S.note('l' + S.f.n); if (S.f.n < 4) return S.goal('四封信（' + S.f.n + '/4）'); }
     if (S.f.n === 4) { S.ent('sl').up = true; S.sfx('close'); await S.narr('里间那个衣柜的封条，从里面被顶起了一点，又落了回去。'); await S.think('姓陈的医生……？'); return S.goal('信封里还夹着东西'); }
     await S.note('photo');
     S.sfx('open'); S.show('nurse'); await S.narr('办公室的门被推开了。她是来找笔记本的。');
     if (!KENV.flags.sneakNurse) await S.narr('她在走廊里的时候，就看见你了。她一进门，就直直地朝你走过来。');
-    kCpAt(S, 'nurse'); S.f.chase = true; S.goal('她要的是笔记本——等她走近，还给她（调查键）'); goN(S); }
+    await kEpic(S, { name: '女护士', sub: '死后仍在此地徘徊', seal: '药', intro: ['她每晚照着笔记本，给死去的病人发药。', '笔记本不见了。', '她念到了一个新的名字——你的。'], phase: '（她的腰折成了不可能的角度）', low: '白猫异色的眼睛闪了一下，扑到了她脸上。', ids: ['nurse'] }); kCpAt(S, 'nurse'); S.f.chase = true; S.goal('她要的是笔记本——等她走近，还给她（调查键）'); goN(S); }
   function goN(S) { S.chase('nurse', { spd: KENV.flags.sneakNurse ? 2.4 : 2.8, catch: async S => { await S.scare('face', { face: 'dean', sfx: 'scream' }); await S.die('她的腰折成了不可能的角度。\n她在笔记本最后一页，写下了一个新的名字——你的。', '院长办公室'); } }); }
   async function giveBack(S) {
     const n = S.ent('nurse'); if (Math.abs(n.x - S.pl.x) + Math.abs(n.y - S.pl.y) > 3) return S.narr('你攥着那本笔记本。等她再近一点。');
-    S.f.won = true; S.stop('nurse'); S.take('nbook');
+    S.f.won = true; S.stop('nurse'); S.take('nbook'); kEpicLow(S);
     await S.narr('你把笔记本扔了过去。'); S.sfx('cry'); await S.narr('白猫异色的眼睛闪了一下，扑到了她脸上。\n她抱着笔记本，退进了墙里。'); S.hide('nurse'); S.goal('出去'); }
 
   /* =================== 门 =================== */
   defChapter(Object.assign({}, BASE, {
-    id: 'door', n: 32, title: '门', sub: '凌晨两点半。一楼，三号病房的门开着一条缝。', origin: '第三病栋 · 第五章', color: '#3a0a0a',
+    id: 'door', live: true, danmu: ['门在渗血', '顶住啊！！', '那只手好多毛', '别说话别说话', '笔仙干得漂亮'], n: 32, title: '门', sub: '凌晨两点半。一楼，三号病房的门开着一条缝。', origin: '第三病栋 · 第五章', color: '#3a0a0a',
     amb: 'drone', floor: 'linoleum', wall: 'school', dark: .92, plr: 2.2, items: {}, notes: {},
     start: { map: 'f1', x: 3, y: 3, dir: 2 },
     async intro(S) { await S.card('门', '第三病栋一楼　凌晨两点半', '臭味到了刺鼻的地步。\n十号是特制的铁门，像囚室。'); },
@@ -231,7 +236,7 @@
 
   /* =================== 最后一张底牌（四楼） =================== */
   defChapter(Object.assign({}, BASE, {
-    id: 'candy', n: 33, title: '最后一张底牌', sub: '凌晨三点。四楼走廊中央。', origin: '第三病栋 · 第五章', color: '#2a0a14',
+    id: 'candy', live: true, danmu: ['三个！三个！', '它们在靠近', '主播你还有底牌吗', '吃糖？？', '这不是演的吧……'], n: 33, title: '最后一张底牌', sub: '凌晨三点。四楼走廊中央。', origin: '第三病栋 · 第五章', color: '#2a0a14',
     amb: 'drone', floor: 'linoleum', wall: 'school', dark: .9, plr: 2.4, items: { candy: { name: '白色情人节糖果', desc: '吃掉它，张雅就会出现。' } }, notes: {},
     start: { map: 'f4', x: 10, y: 3, dir: 0 },
     async intro(S) { S.give('candy', true); await S.card('最后一张底牌', '第三病栋四楼　凌晨三点', '前面一个。后面一个。\n楼梯口，瞎了一只眼的那个也爬了上来。'); },
@@ -245,7 +250,7 @@
           ...[5, 9, 13, 17].map((x, i) => ({ id: 'w' + i, x, y: 1, spr: 'door', solid: true, on: async S => S.narr('门锁着。门后有指甲刮门板的声音。') }))],
         tick(S) { const r = S.ent('raise'); if (S.f.go && !S.f.done) { r.hidden = false; S.place('raise', S.pl.x, S.pl.y); } else r.hidden = true; },
         async enter(S, first) { if (!first) return; await S.narr('三个瘦长的东西，堵住了所有出口。\n手电开始一闪一闪。每暗一下，它们就近一步。'); await S.say('弹幕', ['完了完了完了', '主播快跑啊', '这不是演的吧……'], { style: 'big' });
-          await S.narr('你靠着墙，从贴身的口袋里取出了那颗糖。\n这是你的最后一张底牌。'); kCpAt(S, 'ring'); S.goal('它们每次在黑暗里靠近一步。等到最近的时候，吃掉糖（调查键）'); S.f.go = true; } } },
+          await S.narr('你靠着墙，从贴身的口袋里取出了那颗糖。\n这是你的最后一张底牌。'); await kEpic(S, { name: '瘦长怪物', sub: '从门后跑出来的东西 · 三只', seal: '门', intro: ['它们踩着人的肩膀长高。', '每一张脸，都曾经是一个活人。', '“看谁先开口说话。”'], phase: '（白布下面的脸，一起张开了嘴）', low: '舌尖是甜的。背后是冷的。有人从后面抱住了你。', ids: ['t1', 't2', 't3'] }); kCpAt(S, 'ring'); S.goal('它们每次在黑暗里靠近一步。等到最近的时候，吃掉糖（调查键）'); S.f.go = true; } } },
     resume: { ring: async S => { S.f.go = true; S.f.done = false; S.f.k = 0; S.place('t1', 17, 3, 1); S.place('t2', 3, 3, 2); S.place('t3', 19, 2, 1); S.pos(10, 3, 0); } } }));
   async function flick(S) {
     S.plr(.1); S.sfx('switch'); S.f.k = (S.f.k || 0) + 1;
@@ -257,7 +262,7 @@
   async function eat(S) {
     if (S.f.done) return; const near = ['t1', 't2', 't3'].map(id => S.ent(id)).some(e => Math.abs(e.x - S.pl.x) + Math.abs(e.y - S.pl.y) <= 3);
     if (!near) return S.narr('还远。糖只有一颗。');
-    S.f.done = true; S.take('candy'); await S.narr('你把糖放进嘴里。\n舌尖是甜的。背后是冷的。有人从后面抱住了你。');
+    S.f.done = true; S.take('candy'); kEpicLow(S); await S.narr('你把糖放进嘴里。\n舌尖是甜的。背后是冷的。有人从后面抱住了你。');
     S.show('zy'); S.place('zy', S.pl.x, 2, 0); await S.scare('red', { sfx: 'scream' });
     await S.narr('十几分钟后，走廊里是一边倒的虐杀。'); for (const id of ['t1', 't2', 't3']) S.hide(id);
     await S.narr('怪物被撕碎，长廊里像下起了黑色的雪。\n张雅站在雪里，黑发吞吸着它们的怨念。她身上的红衣，越来越鲜艳了。');
@@ -305,14 +310,14 @@
         async enter(S, first) { if (!first) return; S.sfx('knock'); S.show('dean'); await S.scare('face', { face: 'dean', sfx: 'sting' });
           await S.narr('门口站着一个老人。穿着红色的衣服。\n你的脑子里只有两个字：红衣。');
           await S.say('', '活人？……很多年没有活人进来过了。把那个孩子交给我。', { style: 'whisper' });
-          kCpAt(S, 'dean'); S.goal('叫醒床上的孩子（调查床，要叫三次）'); S.f.go = true; goDean(S); } } },
+          await kEpic(S, { name: '红衣 · 老院长', sub: '四年前走进门里的人', seal: '红衣', intro: ['他写过那四封信。', '他也曾是想救人的人。', '后来他病了，想活下去，推开了这扇门。'], phase: '你把魔鬼吵醒了！', low: '床上的孩子睁开了眼睛。', ids: ['dean'] }); kCpAt(S, 'dean'); S.goal('叫醒床上的孩子（调查床，要叫三次）'); S.f.go = true; goDean(S); } } },
     resume: { dean: async S => { S.f.go = true; S.f.w = 0; S.f.zy = false; S.show('dean'); S.place('dean', 2, 2, 2); S.hide('zy'); goDean(S); } } }));
   function goDean(S) { S.chase('dean', { spd: 2.5, catch: async S => { if (!S.f.zy) { S.f.zy = true; S.stop('dean'); S.show('zy'); S.place('zy', S.pl.x, S.pl.y, 1); await S.narr('你被摔在血红色的地面上。\n黑发从你身后涌出来，缠住了他。'); S.place('dean', 2, 3, 2); await S.wait(300); S.hide('zy'); goDean(S); return; } await S.scare('face', { face: 'dean', sfx: 'scream' }); await S.die('他的手指像铁钳一样。\n“你把魔鬼吵醒了。”', '红衣'); } }); }
   async function wakeBoy(S) {
     if (!S.f.go || S.f.done) return S.narr('床上睡着一个男孩。');
     S.f.w = (S.f.w || 0) + 1; S.sfx('blip');
     if (S.f.w < 3) return S.narr(['你推了推他。他没醒。', '你喊不出声——在这里不能开口。你只能用力摇他。他的眼皮动了一下。'][S.f.w - 1]);
-    S.f.done = true; S.stop('dean'); S.ent('bed').empty = true; S.show('boy');
+    S.f.done = true; S.stop('dean'); S.ent('bed').empty = true; kEpicLow(S); S.show('boy');
     await S.narr('床上的孩子睁开了眼睛。'); await S.narr('他只做了一个动作。\n老院长重重砸在地上，身上的红衣一下子暗了下去。'); S.shake(500, 3);
     S.show('zy'); S.place('zy', 3, 3, 1); await S.narr('张雅的黑发裹住了他缺失的身体。几秒钟后，他不见了。'); S.hide('dean');
     await S.narr('男孩身上，也是一件红衣。他笑着，看了你很久。');

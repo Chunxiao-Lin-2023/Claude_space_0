@@ -13,7 +13,7 @@
     workbench(g, e, t, R) { box(R, 0, 3, 16, 10, '#6a4a30'); R(2, 4, 4, 3, '#d8d0c0'); R(9, 5, 5, 2, '#8a2a2a'); R(7, 2, 1, 4, '#bbb'); },
     dollrow(g, e, t, R) { const n = e.n || 0; for (let i = 0; i < Math.min(5, n); i++) { const x = 1 + i * 3; R(x, 8, 2, 5, '#3e4e6e'); R(x, 6, 2, 2, '#d8c8b0'); } },
   };
-  const PEOPLE = { me: KP.chen, aunt: KP.aunt, li: KP.police, police: KP.police, mn: KP.mennan || KP.student, ruoyu: Object.assign({}, KP.xiaoxiao, { top: '#e8d8a0' }), uncle: KP.oldman, youth: KP.student };
+  const PEOPLE = { hm: { skin: '#e0c0a0', hair: '#1a1614', hs: 'messy', top: '#4a4a52', bottom: '#2a2a30' }, me: KP.chen, aunt: KP.aunt, li: KP.police, police: KP.police, mn: KP.mennan || KP.student, ruoyu: Object.assign({}, KP.xiaoxiao, { top: '#e8d8a0' }), uncle: KP.oldman, youth: KP.student };
   const BASE = { people: PEOPLE, faces: KFACES, sprites: SPR4, icon: '@me' };
   const SCH = [
     '############################',
@@ -78,7 +78,7 @@
 
   /* =================== 送不走的笔仙 =================== */
   defChapter(Object.assign({}, BASE, {
-    id: 'pen', n: 19, title: '送不走的笔仙', sub: '宿舍楼二楼，第四间寝室。', origin: '暮阳中学 · 第四章', color: '#2a2a1a',
+    id: 'pen', live: true, danmu: ['主播真玩笔仙？', '别问死法啊！！', '笔动了笔动了', '床底下是什么声音', '人气要破万了'], n: 19, title: '送不走的笔仙', sub: '宿舍楼二楼，第四间寝室。', origin: '暮阳中学 · 第四章', color: '#2a2a1a',
     amb: 'rain', floor: 'linoleum', wall: 'school', dark: .9, plr: 2.4, items: {},
     notes: { q: { title: '桌上的两张纸', text: '第一张纸上写着问题。\n第二张上只有一行字：\n\n我会以什么方式去死？\n\n字是用圆珠笔写的。笔画很用力，纸被划破了。' } },
     start: { map: 'dc', x: 2, y: 3, dir: 2 },
@@ -128,7 +128,7 @@
 
   /* =================== 厕所的第五个隔间 =================== */
   defChapter(Object.assign({}, BASE, {
-    id: 'wc', n: 20, title: '厕所的第五个隔间', sub: '教学楼三楼。六个隔间的门全关着。', origin: '暮阳中学 · 第四章', color: '#3a0a0a',
+    id: 'wc', live: true, danmu: ['第五个隔间……', '全是眼睛我密恐犯了', '别进去啊', '红色的那是什么', '主播你躲好'], hint: S => S.f.six && !S.f.inSix && !S.f.flee ? 's6' : null, n: 20, title: '厕所的第五个隔间', sub: '教学楼三楼。六个隔间的门全关着。', origin: '暮阳中学 · 第四章', color: '#3a0a0a',
     amb: 'rain', floor: 'tile', wall: 'tile', dark: .9, plr: 2.4, items: {},
     notes: { story: { title: '支线：厕所的第五个隔间', text: '这条支线是用第一人称写的：\n\n“总有一个红影在午夜出现。\n我躲进了第五个隔间，想抓住它。\n门缝外面，有一只充血的眼珠，在看我。”' } },
     start: { map: 'wc', x: 2, y: 5, dir: 2 },
@@ -136,7 +136,7 @@
     maps: {
       wc: { rows: ROOMR(16, 4, '+'), amb: 'rain',
         ents: [
-          { id: 'out', x: 1, y: 2, spr: 'door', solid: true, on: async S => S.f.flee ? S.end({ title: '厕所的第五个隔间', text: '隔间里的两个孩子看着你手里的锤子，往后缩了缩。\n“……我不是冲你们。”' }) : S.narr('还没弄清楚。') },
+          { id: 'out', x: 1, y: 2, spr: 'door', solid: true, on: async S => S.f.flee ? (kEpicLow(S), S.end({ title: '厕所的第五个隔间', text: '隔间里的两个孩子看着你手里的锤子，往后缩了缩。\n“……我不是冲你们。”' })) : S.narr('还没弄清楚。') },
           ...[3, 5, 7, 9, 11, 13].map((x, i) => ({ id: 's' + (i + 1), x, y: 2, spr: 'stall', solid: true, on: async S => stall(S, i + 1) })),
           { id: 'ew', x: 11, y: 2, spr: 'eyewall', hidden: true },
           { id: 'ph', x: 12, y: 2, spr: 'peephole', hidden: true },
@@ -164,6 +164,7 @@
     await S.walk('rs', [12, 3], 2); S.face('rs', 3); S.ent('ph').eye = true;
     await S.scare('face', { face: 'red', sfx: 'scream' });
     await S.narr('它停在了第六个门口。\n门缝里，一只充血的眼睛，正对着你的眼睛。');
+    await kEpic(S, { name: '红影', sub: '厕所的第五个隔间', seal: '眼', intro: ['它每天午夜来一次。', '一扇一扇拉开隔间的门。', '它在找躲在第六个隔间里偷看的人。'], phase: '（门缝里那只眼睛，眨都不眨）', low: '红影在地上一滚，身形变得很淡，逃出了厕所。', ids: ['rs'] }); 
     const r = await S.ask('', ['撞开门', '屏住呼吸，不动']);
     S.ent('ph').eye = false; S.focus(null); S.plr(null); S.hidePlayer(false);
     if (r === 0) { S.sfx('thud'); S.shake(400, 3); await S.narr('门板还没完全打开，你的锤子已经出去了。\n红影在地上一滚，身形变得很淡，逃出了厕所。'); S.hide('rs'); S.f.flee = true; S.goal('出去'); return; }
@@ -174,7 +175,7 @@
 
   /* =================== 唯一的目击者（数学组） =================== */
   defChapter(Object.assign({}, BASE, {
-    id: 'office', n: 21, title: '唯一的目击者', sub: '办公楼一层，数学组。', origin: '暮阳中学 · 第四章', color: '#1a1a2a',
+    id: 'office', live: true, danmu: ['撬抽屉犯法吧', '这画册好诡异', '两个红色的小人……', '十点半了主播快跑'], n: 21, title: '唯一的目击者', sub: '办公楼一层，数学组。', origin: '暮阳中学 · 第四章', color: '#1a1a2a',
     amb: 'rain', floor: 'linoleum', wall: 'school', dark: .9, plr: 2.4, items: {},
     notes: {
       book: { title: '桌上的画册', text: '一个卡通画册，一盒蜡笔。\n整本都在画同一个场景：黑色的房间里，关着两个红色的小人。' },
@@ -196,7 +197,7 @@
 
   /* =================== 最后一间教室 =================== */
   defChapter(Object.assign({}, BASE, {
-    id: 'last', n: 22, title: '最后一间教室', sub: '晚上十一点四十。教学楼尽头。', origin: '暮阳中学 · 第四章', color: '#0a1a2a',
+    id: 'last', live: true, danmu: ['最后一间教室！', '有个班出车祸那个', '我表哥说的就是这个', '别碰椅子啊', '那个阿姨是谁'], n: 22, title: '最后一间教室', sub: '晚上十一点四十。教学楼尽头。', origin: '暮阳中学 · 第四章', color: '#0a1a2a',
     amb: 'rain', floor: 'linoleum', wall: 'school', dark: .92, plr: 2.4, items: {},
     notes: { desk: { title: '课桌上的刻字', text: '每一笔都用尽了全力，笔迹各不相同：\n\n“它可能藏在任何地方。抽屉里，柜子里，枕头后面。”\n“那个眼珠我很熟悉。”\n“希望这间教室的传说是真的。我愿意奉献我的一切，只求毁掉那双眼睛。”\n\n最后这一条的字迹，你见过。在范郁家，他姑姑签免责协议的时候。' },
       legend: { title: '最后一间教室的传说', text: '有个班出去郊游，大巴出了车祸。\n那个班的学生，总是还回来上课。\n\n二十四个座位。一个都没空着。' } },
@@ -237,10 +238,10 @@
     await S.say('aunt', '没想到你真的跑到这地方来了。我是来救你的。这学校有一口死过很多人的井，井里的东西快出来了，你已经被盯上——快走。');
     await S.say('me', '好。'); S.turn(2); await S.narr('你转过身，把后背留给了她。');
     S.sfx('step'); await S.scare('red', { sfx: 'sting' }); await S.say('aunt', '早就知道你有问题。');
-    kCpAt(S, 'aunt'); S.f.chase = true; S.goal('她手里有刀。往回跑——把她引到最后那间教室门口'); goAunt(S); }
+    await kEpic(S, { name: '范郁的姑姑', sub: '深井 · 最后一条支线', seal: '井', intro: ['“我哥已经疯了。”', '“从他拿着那张合照回家开始。”', '那天晚上，她九点多到的学校。'], phase: '我从没想过杀人！你根本不知道那天发生了什么！', low: '走廊尽头的教室里，二十四个人都在往门外看。', ids: ['aunt'] }); kCpAt(S, 'aunt'); S.f.chase = true; S.goal('她手里有刀。往回跑——把她引到最后那间教室门口'); goAunt(S); }
   function goAunt(S) { S.chase('aunt', { spd: 2.9, catch: async S => { await S.scare('face', { face: 'axe', sfx: 'scream' }); await S.die('你被推倒在湿漉漉的地上。\n她喘着气说：“我从没想过杀人。”', '最后一间教室门外'); } }); }
   async function lure(S) {
-    if (S.f.won) return; S.f.won = true; S.stop('aunt'); S.face('aunt', 3);
+    if (S.f.won) return; S.f.won = true; S.stop('aunt'); S.face('aunt', 3); kEpicLow(S);
     await S.narr('你跑过教室门口。她追了上来——\n经过那扇门的时候，她突然摔倒了。');
     await S.narr('门上的玻璃后面，二十四张脸，都在看她。\n她也看见了：那些低着头的孩子，像极了她哥哥拿回家的那张合照。');
     await S.say('aunt', '……我哥有那种癖好。被发现以后，他说有东西缠上了他，要报复他。嫂子要报警。');
@@ -344,7 +345,7 @@
     id: 'dream', n: 25, title: '门楠的梦', sub: '走廊。很多一样的门。门上都没有号码。', origin: '特殊游客 · 第四章', color: '#141a14',
     amb: 'otherworld', floor: 'linoleum', wall: 'plain', dark: .9, plr: 2.2, icon: '@mn', items: {}, notes: {},
     start: { map: 'dh', x: 3, y: 3, dir: 2 },
-    async intro(S) { S.wear('@mn'); await S.card('门楠的梦', '（门楠说的）', '我一直做同一个梦。\n梦里有个人，离我越来越近。\n\n我不敢跑。好像一跑，他就会知道我在怕他。'); },
+    nodoll: true, async intro(S) { kRecallOn('dream', '梦 · 门楠的梦'); S.wear('@mn'); await S.card('门楠的梦', '（门楠说的）', '我一直做同一个梦。\n梦里有个人，离我越来越近。\n\n我不敢跑。好像一跑，他就会知道我在怕他。'); },
     tick(S, dt) { if (!S.f.go || S.busy || S.f.done) return;
       const p = S.pl; if (S.running && !S.f.run) { S.f.run = true; S.run(async S => { await S.narr('你跑了起来。\n身后的脚步声，也跑了起来。'); S.chase('fig', { spd: 6, catch: wake }); }); return; }
       const back = p.dir === 1; if (back && !S.f.back) { S.f.looks = (S.f.looks || 0) + 1; const f = S.ent('fig'), nx = Math.max(f.x, p.x - Math.max(2, 9 - S.f.looks * 2)); S.place('fig', nx, 3, 2); S.sfx('step'); if (p.x - nx <= 2) { S.f.done = true; S.run(wake); } }
@@ -356,7 +357,7 @@
           { id: 'end', x: 38, y: 2, spr: 'door', solid: true, on: async S => { S.f.done = true; await wake(S); } },
           { id: 'fig', x: 1, y: 3, spr: 'gh_slender', solid: true, light: KGLOW }],
         async enter(S, first) { if (first) { S.goal('往前走。别跑。（每回一次头，他就近一扇门）'); S.f.go = true; } } } } }));
-  const wake = async S => { S.f.done = true; S.stop('fig'); S.f.k_looks = S.f.looks || 0;
+  const wake = async S => { S.f.done = true; S.stop('fig'); kRecallOff(); S.f.k_looks = S.f.looks || 0;
     await S.fade(1, 500); await S.narr('……你睁开眼。'); await S.fade(.6, 400);
     await S.scare('face', { face: 'slender', sfx: 'sting' });
     await S.narr('床边站着一个人。低着头，在看你。\n他的脸……想不起来。可你知道，你认识他。');
@@ -373,9 +374,16 @@
       ap: { rows: HALL(16), amb: 'tv',
         ents: [
           { id: 'd301', x: 4, y: 1, spr: 'door', solid: true, on: async S => { S.f.a = 1; await S.say('uncle', '带着你朋友走吧。303 死过人。出事以后，那屋再没租出去过。这地方不是谁都能住的。'); } },
-          { id: 'd302', x: 8, y: 1, spr: 'door', solid: true, on: async S => { S.f.b = 1; await S.narr('302 的年轻人，隔着门缝说话。'); await S.note('wall'); await S.think('红衣？……张雅后面写的，是“红衣厉鬼”。'); } },
+          { id: 'd302', x: 8, y: 1, spr: 'door', solid: true, on: async S => { S.f.b = 1; await S.narr('302 的年轻人，隔着门缝说话。');
+            await kRecall(S, 'tale', '302 隔着墙听见的', { map: 'h303p', x: 1, y: 2, focus: [6, 3] }, async S => {
+              await S.narr('“303 以前住的人叫王海明。我听见过他屋里两个声音吵架。”'); S.sfx('whisper');
+              S.face('hm', 2); await S.say('', '你出去！这是我的身体！', { style: 'whisper' }); S.face('hsh', 1);
+              await S.say('', '要不是怕被红衣发现，我宁死也不跟一个垃圾共存。', { style: 'whisper' }); await S.scare('glitch', { sfx: 'sting' });
+              await S.narr('“可那屋里，从来只住着他一个人。”'); });
+            await S.think('红衣？……张雅后面写的，是“红衣厉鬼”。'); } },
           { id: 'd303', x: 12, y: 1, spr: 'door', solid: true, on: async S => { if (!S.f.b) return S.narr('303。门上的封条撕了一半。先问问邻居。'); S.sfx('open'); await S.go('r303', 10, 4, 1); } }],
         async enter(S, first) { if (first) S.goal('三楼。先问问邻居'); } },
+      h303p: { rows: ROOMR(14, 4, 'w'), amb: 'none', dark: .7, ents: [{ id: 'hm', x: 5, y: 3, spr: '@hm', solid: true }, { id: 'hsh', x: 7, y: 3, spr: 'gh_twoface', light: KGLOW }, { id: 'hmr', x: 3, y: 1, spr: 'mirror' }, { id: 'hcd', x: 6, y: 2, spr: 'candle', light: { r: 1.8, col: 'rgba(255,190,110,.2)', flick: true } }] },
       r303: { rows: ROOMR(14, 4, 'w'), amb: 'none', dark: .92,
         ents: [
           { id: 'out', x: 12, y: 1, spr: 'door', solid: true, on: async S => S.narr('门楠在外面等。') },
@@ -393,7 +401,7 @@
     resume: { tf: async S => { S.f.won = false; S.f.chase = true; S.show('tf'); S.place('tf', 5, 3, 2); goTf(S); } } }));
   async function sit(S) {
     if (S.f.sat) return S.narr('……');
-    S.f.sat = true; await S.fade(.9, 700); await S.wait(500); await S.fade(0, 500);
+    S.f.sat = true; S.ent('mr').lag = .6; await S.fade(.9, 700); await S.wait(500); await S.fade(0, 500);
     await S.narr('半夜。'); S.goal('瞥一眼镜子'); }
   async function mirror(S) {
     if (!S.f.sat) return S.narr('镜子里照着卧室。卧室门框后面，什么都没有。');
@@ -401,12 +409,12 @@
     if (S.f.m === 1) { S.f.m = 2; S.show('hd'); await S.narr('再看镜子。它离镜面近了一点。\n玻璃上，从里面按上来一只手印。');
       S.show('tf'); S.place('tf', 6, 3, 2); await S.scare('face', { face: 'slender', sfx: 'scream' });
       await S.narr('卧室门框后面，立着一道高瘦的黑影。它长着两张不同的脸。\n两张脸在互相咒骂。它们并不是一条心。');
-      kCpAt(S, 'tf', 9, 4, 1); S.f.chase = true;
+      S.ent('mr').smile = true; await kEpic(S, { name: '两张脸的黑影', sub: '三个人的房间', seal: '镜', intro: ['王海明从“那个地方”带出来的东西。', '它一直躲在镜子里，等门楠睡着。', '——它也在怕着什么。'], phase: '（其中一张脸在喊：别把红衣引来！）', low: '钥匙在你口袋里发烫。生了锈的那一把。', ids: ['tf'] }); kCpAt(S, 'tf', 9, 4, 1); S.f.chase = true;
       S.goal(kHas('shoes') ? '它不敢离开镜子太远——退到门口去。（口袋里有张雅的舞鞋）' : '它不敢离开镜子太远——退到门口去'); goTf(S); return; }
     S.narr('镜子里只有你。'); }
   function goTf(S) { S.chase('tf', { spd: 2.9, zone: (x, y) => x <= 8, catch: async S => { await S.scare('face', { face: 'slender', sfx: 'scream' }); await S.die('两张脸同时贴了上来。\n一张在哭，一张在笑。', '303 房'); } }); }
-  async function retreat(S) { S.stop('tf'); await S.narr('它停在了门框边，没有追出来。\n它不敢离开镜子太远。'); await S.narr('其中一张脸在喊：别把红衣引来！'); await S.alpha('tf', 0, 600); S.hide('tf'); S.show('ky'); S.goal('地上有东西'); }
-  async function redShoes(S) { if (S.f.won) return; S.f.won = true; S.stop('tf'); await S.narr('你把那双黑红色的舞鞋举了起来。'); await S.narr('两张脸同时尖叫：别把红衣引来！\n它缩回了镜子里，镜面晃了几下，平了。'); S.hide('tf'); S.show('ky'); S.goal('地上有东西'); }
+  async function retreat(S) { S.stop('tf'); kEpicLow(S); S.ent('mr').smile = false; await S.narr('它停在了门框边，没有追出来。\n它不敢离开镜子太远。'); await S.narr('其中一张脸在喊：别把红衣引来！'); await S.alpha('tf', 0, 600); S.hide('tf'); S.show('ky'); S.goal('地上有东西'); }
+  async function redShoes(S) { if (S.f.won) return; S.f.won = true; S.stop('tf'); kEpicLow(S); S.ent('mr').smile = false; await S.narr('你把那双黑红色的舞鞋举了起来。'); await S.narr('两张脸同时尖叫：别把红衣引来！\n它缩回了镜子里，镜面晃了几下，平了。'); S.hide('tf'); S.show('ky'); S.goal('地上有东西'); }
 
   /* =================== 二十四个人偶 =================== */
   defChapter(Object.assign({}, BASE, {

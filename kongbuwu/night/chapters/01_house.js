@@ -192,12 +192,12 @@
             if (!S.f.dark || !S.f.candle) return S.narr(!S.f.dark ? '镜子里的你，脸色比你想象的白。\n……先关灯。' : '还差一根蜡烛。放在你和镜子中间。');
             if (S.f.ritual) return;
             const r = await S.ask('两点四十四分。蜡烛的火苗夹在镜子和你中间，像一盏引路的灯。\n闭上眼，开始念自己的名字？', ['闭眼，开始', '再等等']); if (r) return;
-            S.pos(3, 3, 3); await S.narr('你往旁边挪了半步，想把蜡烛让到正中间。\n镜子里的你，过了一会儿，才跟着挪过来。');
+            S.ent('mir').lag = 1.2; S.pos(3, 3, 3); await S.wait(1600); await S.narr('你往旁边挪了半步，想把蜡烛让到正中间。\n镜子里的你，过了一会儿，才跟着挪过来。'); S.ent('mir').lag = .35;
             await S.think('……大概是眼睛花了。\n陈歌、陈歌、陈歌……');
             S.cp('ritual'); await S.fade(.985, 900); S.goal('别睁眼，也别动'); S.toast('闭着眼：不要按方向键');
             S.f.ritual = true; S.f.rt = 0; S.f.ei = 0; S.timer(30, '闭眼', async S => success(S)); }
   async function success(S) {
-    S.clearTimer(); S.f.ritual = false; await S.fade(0, 600); S.ent('mir').face = null;
+    S.clearTimer(); S.f.ritual = false; await S.fade(0, 600); S.ent('mir').face = null; S.ent('mir').lag = 0;
     await S.narr('第三十分钟。\n你睁开眼。镜子里的你好好地站着，和你一样喘着气。');
     await S.narr('只有镜面上那道裂缝，和裂缝旁边一个从里面按上去的手印，还在。');
     await S.end({ title: '三十分钟', text: '你抱着布偶缩在窗台下面，一晚上没敢出去。\n门框边缘，多了一圈抓痕。' }); }

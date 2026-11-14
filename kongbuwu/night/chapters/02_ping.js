@@ -12,7 +12,7 @@
     tub(g, e, t, R) { box(R, 0, 2, 32, 13, '#e8e6e0'); R(2, 4, 28, 9, e.full ? '#3a5a6a' : '#d8d4cc'); if (e.full) R(4, 6, 10, 1, '#6a8a9a'); R(28, 1, 2, 3, '#aab'); },
     dolls4(g, e, t, R) { for (let i = 0; i < 4; i++) { const x = 1 + i * 4, c = ['#c8b8a0', '#b8a890', '#d8c8b0', '#a89880'][i]; R(x, 8, 3, 6, c); R(x, 5, 3, 3, shade(c, .15)); R(x + 1, 6, 1, 1, '#222'); } },
   };
-  const PEOPLE = { me: KP.chen, wangqi: KP.wangqi, landlord: KP.landlord, tattoo: KP.tattoo, fat: KP.fat, woman: KP.woman, oldman: KP.oldman, police: KP.police, zp: KP.zhangpeng, xiao: KP.xiaoxiao,
+  const PEOPLE = { dad: { skin: '#e8c4a0', hair: '#2a2420', hs: 'short', top: '#4a5a6a', bottom: '#2a2a30' }, mom: { skin: '#f0c8a8', hair: '#2a1a14', hs: 'bun', top: '#8a6a5a', skirt: true, bottom: '#5a4a40' }, girl: { skin: '#f0d0b0', hair: '#1a1414', hs: 'twin', top: '#c86a7a', dress: true, child: true }, son: { skin: '#f0d0b0', hair: '#1a1414', hs: 'short', top: '#5a8aca', bottom: '#3a3a4a', child: true }, me: KP.chen, wangqi: KP.wangqi, landlord: KP.landlord, tattoo: KP.tattoo, fat: KP.fat, woman: KP.woman, oldman: KP.oldman, police: KP.police, zp: KP.zhangpeng, xiao: KP.xiaoxiao,
     me2: Object.assign({}, KP.chen, { top: '#e8e4dc', top2: '#a01818', coat: true, hair: '#d8d0c8', hs: 'bald' }) };
   const BASE = { people: PEOPLE, faces: KFACES, sprites: SPR2, icon: '@me' };
 
@@ -191,7 +191,13 @@
             await S.say('wangqi', KENV.flags.helpWq ? '你人不错，听我一句：别在这过夜。钱重要还是命重要？' : '……新来的？别在这过夜。');
             await S.say('wangqi', '这楼以前叫富安公寓。五年前，这层楼上住着一家四口。');
             S.sfx('knock'); await S.wait(300); S.sfx('knock'); await S.wait(300); S.sfx('knock');
-            await S.note('fuan');
+            await kRecall(S, 'tale', '五年前的富安公寓', { map: 'fuan', x: 1, y: 2, focus: [6, 3] }, async S => {
+              await S.narr('王琦的声音，像是从很远的地方传过来：\n“那屋里住着一家四口。”'); await S.wait(500);
+              for (let i = 0; i < 3; i++) { S.sfx('knock'); await S.wait(700); }
+              ['fa', 'mo', 'da', 'so'].forEach(k => S.face(k, 3)); await S.narr('有人敲了三下门。\n没有人去开。');
+              S.ent('fd').open = true; S.sfx('open'); S.show('fs'); await S.scare('glitch', { sfx: 'sting' }); await S.narr('门自己开了。');
+              await S.fade(1, 300); ['fa', 'mo', 'da', 'so'].forEach(k => S.hide(k)); S.place('fs', 6, 3, 0); await S.fade(0, 300); S.sfx('scream');
+              await S.narr('一夜之间，全没了。凶手到现在都没抓到。\n出了事，才改的名字：富安改成了平安。'); });
             await S.say('wangqi', '我未婚妻就是在这附近失踪的。每天午夜以后，我都会收到她发来的短信。只有两个字。');
             S.sfx('phone'); await S.note('sms');
             await S.say('wangqi', '一觉醒来，她的东西还会出现在我床上。……我知道你把我当疯子。');
@@ -204,6 +210,10 @@
             await S.think('两个人里，肯定有一个在撒谎。');
             S.hide('tt'); S.sfx('step'); S.goal('回 208，把今晚看到的东西过一遍'); } }] }),
         async enter(S, first) { if (first) { S.sfx('paper'); await S.narr('走廊里有窸窸窣窣的声音。\n有人正往没人住的空房间门缝里，一张一张地塞纸。'); S.goal('看看是谁'); } } },
+      fuan: { rows: ROOM, floor: 'wood', amb: 'tv', dark: .6, ents: [
+          { id: 'fa', x: 4, y: 3, spr: '@dad', solid: true }, { id: 'mo', x: 5, y: 3, spr: '@mom', solid: true }, { id: 'da', x: 7, y: 3, spr: '@girl', solid: true }, { id: 'so', x: 8, y: 3, spr: '@son', solid: true },
+          { id: 'ft', x: 6, y: 4, spr: 'table', solid: true }, { id: 'ftv', x: 10, y: 2, spr: 'tv' }, { id: 'fd', x: 6, y: 1, spr: 'door', solid: true },
+          { id: 'fs', x: 6, y: 2, spr: 'gh_shadow', hidden: true, light: KGLOW }] },
       r208: { rows: ROOM, floor: 'wood', amb: 'tv', dark: .72,
         ents: r208({
           desk: async S => { S.f.c1 = 1; await S.note('news'); clue(S); },
@@ -223,7 +233,7 @@
 
   /* =================== 凶宅直播 =================== */
   defChapter(Object.assign({}, BASE, {
-    id: 'live', n: 6, title: '凶宅直播', sub: '晚上十点。直播开着，房间里只有你一个人。', origin: '平安公寓 · 第二章', color: '#3a2a2a',
+    id: 'live', live: true, danmu: ['主播在刮墙？', '心疼墙一秒', '208 是吧我记住了', '楼上有声音你们听见没', '这屋子烧过吧'], n: 6, title: '凶宅直播', sub: '晚上十点。直播开着，房间里只有你一个人。', origin: '平安公寓 · 第二章', color: '#3a2a2a',
     amb: 'room', floor: 'wood', wall: 'plain', dark: .7, plr: 2.6,
     items: { hammer: { name: '工具锤', desc: '从恐怖屋带来的。' }, knife: { name: '水果刀', desc: '口袋里的。抽了几次，顺手了。' } },
     notes: { dm: { title: '弹幕', text: '有没有吊大的知道这直播间播什么？\n喂妖妖灵吗，我发现一个野生的精神病\n好好的墙皮被刮坏了，心疼公寓老板一秒\n现实版狼人杀啊，有请预言家发言\n我怀疑真凶是轮椅上的老人' } },
@@ -255,7 +265,7 @@
   const PILE = ['一把烧变形的椅子底下，压着一个布偶。', '一卷发霉的地毯里，裹着第二个。', '一个破纸箱，里面只有第三个布偶，坐得端端正正。', '最后一个在墙角。它的脸朝着墙。'];
   const CARD = ['发霉的棉絮里有一张卡片，字里行间全是爱意。', '也是一张卡片。同样的话，同样的笔迹。', '第三张卡片。写卡片的人很用心，一笔一画。'];
   defChapter(Object.assign({}, BASE, {
-    id: 'f3', n: 7, title: '三楼', sub: '凌晨一点。三楼不让住人。', origin: '平安公寓 · 第二章', color: '#2a2020',
+    id: 'f3', live: true, danmu: ['三楼不让住你还去', '主播胆子是真大', '这布偶好旧', '那堵墙颜色不对', '我听见拖东西的声音了'], hint: S => S.f.alarm && !S.pl.hidden ? 'hd' : null, n: 7, title: '三楼', sub: '凌晨一点。三楼不让住人。', origin: '平安公寓 · 第二章', color: '#2a2020',
     amb: 'wind', floor: 'concrete', wall: 'plain', dark: .9, plr: 2.4,
     items: { dolls: { name: '四个布偶', desc: '同一个厂家，五年前的款。' } },
     notes: { scraps: { title: '第四个布偶', text: '没有卡片。\n棉絮里塞满了撕碎的纸条。\n\n每一张上，只有三个字：\n\n去死吧！\n\n（弹幕：这字迹和卡片不是一个人的）' } },
@@ -321,7 +331,7 @@
 
   /* =================== 午夜逃杀 =================== */
   defChapter(Object.assign({}, BASE, {
-    id: 'escape', n: 8, title: '午夜逃杀', sub: '凌晨两点。回 208，从窗户下去。', origin: '平安公寓 · 第二章', color: '#3a1a1a',
+    id: 'escape', live: true, danmu: ['头发！！', '有人在你房间里', '203！203！', '跳啊！', '树林里有光'], hint: S => S.f.chase && S.map === 'f2' ? 'd203' : S.f.chase && S.map === 'r203' ? 'win' : null, n: 8, title: '午夜逃杀', sub: '凌晨两点。回 208，从窗户下去。', origin: '平安公寓 · 第二章', color: '#3a1a1a',
     amb: 'none', floor: 'concrete', wall: 'plain', dark: .9, plr: 2.4, items: {}, notes: {},
     start: { map: 'f1', x: 3, y: 2, dir: 2 },
     async intro(S) { await S.card('午夜逃杀', '平安公寓　凌晨两点', '大门锁死了。\n只能回 208，把床单捆在窗框上，从二楼下去。'); },
@@ -390,7 +400,7 @@
 
   /* =================== 真凶（木屋） =================== */
   defChapter(Object.assign({}, BASE, {
-    id: 'hut', n: 9, title: '真凶', sub: '凌晨三点。后山护林员的木屋。', origin: '平安公寓 · 第二章', color: '#2a1a1a',
+    id: 'hut', live: true, danmu: ['画面怎么黑了', '主播你在哪', '有声音没画面', '?????', '那是女人的衣服吧'], n: 9, title: '真凶', sub: '凌晨三点。后山护林员的木屋。', origin: '平安公寓 · 第二章', color: '#2a1a1a',
     amb: 'night', floor: 'darkwood', wall: 'wood', dark: .88, plr: 2.4,
     items: { pinkphone: { name: '桃红色的手机', desc: '发件箱里，每一条都是“救我”。' } },
     notes: {
@@ -436,6 +446,7 @@
     await S.narr('你转身。王琦提着一把斧头，堵在门口。');
     await S.say('wangqi', '毕竟……是我亲手把她砌进墙里的。我不想这样的。你知道吗？我也不想这样的。');
     if (KENV.flags.guess === 1) await S.think('猜对了。但我宁愿是猜错了。');
+    await kEpic(S, { name: '王琦', sub: '午夜逃杀 · 试炼任务', seal: '凶', intro: ['五年前，富安公寓一家四口。', '五年后，墙里又多了一个人。', '“我每天都在寻找那个被自己杀死的人。”'], phase: '她为什么总能找到我？！', low: '屏幕里那个小女孩又指了一次。她在替你看着背后。', ids: ['wq'] }); 
     S.f.chase = true; kCpAt(S, 'axe'); S.goal('他堵着门。等他走近，把手机举到他眼前（按调查键）');
     S.chase('wq', { spd: 2.7, catch: axeCatch });
     S.after(2500, async S => { if (!S.f.froze) { S.show('xiao'); await S.narr('屋角那个小女孩又出现了。\n她指了指你手里的手机，又指了指他。'); S.hide('xiao'); } }); }
@@ -444,7 +455,7 @@
     S.stop('wq'); S.f.froze = true; S.ent('ph').lit = true;
     await S.narr('你把那部桃红色的手机举到他眼前。\n屏幕亮着：凌晨两点，救我。');
     await S.say('wangqi', '……她发的。她又发了。她在哪儿？她在哪儿……');
-    await S.narr('斧头垂了下去。他盯着屏幕，嘴唇一直在动。\n门口空出来了。');
+    await S.narr('斧头垂了下去。他盯着屏幕，嘴唇一直在动。\n门口空出来了。'); kEpicLow(S);
     S.place('wq', 6, 3, 0); S.goal('跑！出门'); }
   async function road(S) {
     if (S.f.end) return; S.f.end = true; S.stop('wq2'); S.hide('wq2');
@@ -515,8 +526,8 @@
     maps: {
       ws: { rows: WS, amb: 'room',
         ents: wsEnts({
-          mir: async S => { if (S.f.m) return S.narr('镜子里的你，这一次跟着你转过头了。慢了一点。'); S.f.m = true; S.sfx('glass');
-            await S.narr('午夜逃杀的浴室里，那面镜子上有一道新的裂痕。'); S.turn(1); await S.wait(300);
+          mir: async S => { if (S.f.m) { const m = S.ent('mir'); m.stare = false; m.lag = .8; return S.narr('镜子里的你，这一次跟着你转过头了。慢了一点。'); } S.f.m = true; S.sfx('glass');
+            await S.narr('午夜逃杀的浴室里，那面镜子上有一道新的裂痕。'); S.ent('mir').stare = true; S.turn(1); await S.wait(300);
             await S.scare('glitch', { sfx: 'sting' }); await S.narr('你转头。\n镜子里的你，没有跟着转过来。'); await S.note('wall'); await S.note('task'); S.goal('把布偶挂在门后，把四个小布偶摆在浴缸四周，放水'); },
           tub: async S => {
             if (!S.f.m) return S.narr('浴缸。白瓷，冰凉。');
@@ -571,7 +582,7 @@
           { id: 'zp', x: 3, y: 7, spr: '@zp', solid: true, light: { r: 2.4, col: 'rgba(255,240,200,.22)' }, on: async S => scareZ(S) },
           { id: 'd4', x: 3, y: 4, spr: 'dolls4', hidden: true },
           { id: 'mg', x: 18, y: 2, spr: 'gh_mirrorghost', hidden: true, light: KGLOW }] }),
-        async enter(S, first) { if (!first) return; await S.note('rule');
+        async enter(S, first) { if (!first) return; await S.note('rule'); await kEpic(S, { name: '张鹏', sub: '在逃嫌犯 · 手背纹着牡丹', seal: '逃', intro: ['赌徒。欠了几十万高利贷。入室盗窃、抢劫。', '“报仇的事以后再说——”', '他不知道，这栋楼里今晚不止两个人。'], phase: '求求你放我走吧！', low: '“我是一个没有感情的杀手。”——你对着面具里的自己说。', ids: ['zp'] }); 
           if (KENV.flags.notice === 0) { S.f.slow = true; S.show('d4'); await S.narr('走廊尽头，四个布偶并排坐在楼道口——那张写着“已经归案”的寻人启事，还贴在它们头顶。'); }
           S.goal('从背后吓他（0/3）'); kCpAt(S, 'hunt'); S.f.go = true; } } },
     resume: { hunt: async S => { S.f.go = true; S.f.n = 0; S.stop('zp'); S.place('zp', 3, 7, 2); S.ent('zp')._pr = 0; S.goal('从背后吓他（0/3）'); } } }));
@@ -592,7 +603,7 @@
     S.goal('从背后吓他（' + S.f.n + '/3）');
     if (S.f.n >= 3) await finaleZ(S); }
   async function finaleZ(S) {
-    S.f.done = true; S.stop('zp'); S.place('zp', 16, 4, 2);
+    S.f.done = true; S.stop('zp'); S.place('zp', 16, 4, 2); kEpicLow(S);
     await S.narr('他像没头苍蝇一样乱撞，一头扎进了浴室。');
     S.sfx('cut'); await S.wait(300); S.sfx('cut'); await S.narr('那种切东西的声音，又响了。');
     S.show('mg'); S.focus(17, 3); await S.scare('face', { face: 'mirror', sfx: 'scream' });
