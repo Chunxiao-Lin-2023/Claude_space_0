@@ -7,13 +7,18 @@ const { chromium } = require('playwright'); const PJ = require('fs').readFileSyn
     await pg.addInitScript(() => { if (window === window.top && !sessionStorage.k) { localStorage.clear(); sessionStorage.k = 1; } }); await pg.goto('http://localhost:8771/test.html?peerhost=127.0.0.1&peerport=9000'); await pg.waitForFunction(() => window.__dbg && __dbg.ready); return pg; };
   const H = await mk('host'), G = await mk('guest'); const w = ms => new Promise(r => setTimeout(r, ms)); const SHOT = process.env.SHOT; const shot = async (pg, n) => { if (SHOT) await pg.screenshot({ path: SHOT + '/' + n + '.png' }); };
   const frameOf = async pg => { for (let i = 0; i < 60; i++) { const f = pg.frames().find(x => x !== pg.mainFrame()); if (f) { try { if (await f.evaluate(() => !!window.__kn)) return f; } catch (e) { } } await w(100); } return null; };
-  // 房主进存档，开场剧情停在第一句
+  // 房主在标题页直接开房间，队友加入后在等待画面；房主开新档，队友自动跟上
+  await H.evaluate(() => __dbg.netHost()); await H.waitForFunction(() => __dbg.NETROLE === 'host' && __dbg.NET.code, null, { timeout: 15000 });
+  const code = await H.evaluate(() => __dbg.NET.code); chk('host opens a room from the title (' + code + ')', /^[A-Z0-9]{4}$/.test(code) && await H.evaluate(() => !__dbg.C && document.querySelector('#title').classList.contains('on')));
+  await G.evaluate(c => __dbg.netJoin(c), code); await G.waitForFunction(() => !!document.querySelector('#tlobby'), null, { timeout: 15000 }).catch(() => 0);
+  chk('guest waits in the lobby', await G.evaluate(() => !!document.querySelector('#tlobby') && !__dbg.C && /已加入房间/.test(document.querySelector('#tcoopst').textContent)));
+  await H.waitForFunction(() => /队友已加入/.test((document.querySelector('#tcoopst') || {}).textContent || ''), null, { timeout: 4000 }).catch(() => 0);
+  chk('host title shows the guest joined', await H.evaluate(() => /队友已加入/.test((document.querySelector('#tcoopst') || {}).textContent || '')));
+  await shot(G, '0_guest_lobby');
   await H.evaluate(async () => { const D = __dbg; D.nosave = true; D.slotNew(1); for (let i = 0; i < 80 && !(D.DLG.cur && D.DLG.cur.text); i++) { await new Promise(r => setTimeout(r, 150)); if (document.querySelector('#card.on')) cardTap(); if (document.querySelector('#cine.on')) cineTap(); } });
   await H.waitForFunction(() => __dbg.DLG.cur && __dbg.STATE.scene, null, { timeout: 8000 });
-  await H.evaluate(() => __dbg.netHost()); await H.waitForFunction(() => __dbg.NETROLE === 'host' && __dbg.NET.code, null, { timeout: 15000 });
-  const code = await H.evaluate(() => __dbg.NET.code); chk('host room open (' + code + ')', /^[A-Z0-9]{4}$/.test(code));
-  await G.evaluate(c => __dbg.netJoin(c), code); await G.waitForFunction(() => __dbg.NETROLE === 'guest' && !!__dbg.C && !!__dbg.DLG.cur, null, { timeout: 15000 }).catch(() => 0);
-  chk('guest joined and mirrors the save', await G.evaluate(() => !!__dbg.C) && await G.evaluate(() => __dbg.C.day) === await H.evaluate(() => __dbg.C.day));
+  await G.waitForFunction(() => !!__dbg.C && !!__dbg.DLG.cur, null, { timeout: 8000 }).catch(() => 0);
+  chk('guest follows the host into the save', await G.evaluate(() => !!__dbg.C && !document.querySelector('#title').classList.contains('on')) && await G.evaluate(() => __dbg.C.day) === await H.evaluate(() => __dbg.C.day));
   await w(400); const t0 = await H.evaluate(() => __dbg.DLG.cur.text); chk('guest sees the same dialogue line', await G.evaluate(() => __dbg.DLG.cur && __dbg.DLG.cur.text) === t0);
   await shot(G, '0_guest_joined');
   chk('guest has the 🔗 chip, host in control', await G.evaluate(() => !!document.querySelector('#coopchip') && /房主在操作/.test(document.querySelector('#coopchip').textContent)));
@@ -87,6 +92,12 @@ const { chromium } = require('playwright'); const PJ = require('fs').readFileSyn
     await hf.evaluate(() => __kn.finish('end'));
     await G.waitForFunction(() => !document.querySelector('#nightov'), null, { timeout: 4000 }).catch(() => 0); chk('night closes on both', await G.evaluate(() => !document.querySelector('#nightov')) && await H.evaluate(() => !document.querySelector('#nightov')));
   }
+  // 房主回标题 → 队友回等待画面；房主再读档 → 队友跟上
+  await H.evaluate(() => __dbg.toTitle()); await G.waitForFunction(() => !!document.querySelector('#tlobby'), null, { timeout: 4000 }).catch(() => 0);
+  chk('host back to title → guest back to lobby', await G.evaluate(() => !__dbg.C && !!document.querySelector('#tlobby') && __dbg.NETROLE === 'guest'));
+  await H.evaluate(() => __dbg.slotNew(2)); await G.waitForFunction(() => !!__dbg.C, null, { timeout: 6000 }).catch(() => 0);
+  chk('host picks another save → guest follows', await G.evaluate(() => !!__dbg.C && !document.querySelector('#title').classList.contains('on')));
+  for (let i = 0; i < 30; i++) { const d = await H.evaluate(() => { if (document.querySelector('#card.on')) { cardTap(); return 0; } if (document.querySelector('#cine.on')) { cineTap(); return 0; } return 1; }); if (d) break; await w(150); }
   // 快捷发言、断开
   await G.evaluate(() => __dbg.coopQuick(3)); await H.waitForFunction(() => !!document.querySelector('.coopsay'), null, { timeout: 2000 }).catch(() => 0); chk('quick chat shows on host', await H.evaluate(() => /队友：/.test((document.querySelector('.coopsay') || {}).textContent || '')));
   await G.evaluate(() => __dbg.netLeave()); await H.waitForFunction(() => __dbg.NET.conns.size === 0, null, { timeout: 5000 }).catch(() => 0);

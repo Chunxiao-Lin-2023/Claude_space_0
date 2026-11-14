@@ -33,7 +33,7 @@ async function netHost() {
     peer.on('error', e => { if (tok !== NET.tok) return; if (e.type === 'unavailable-id') { try { peer.destroy(); } catch (x) { } open(); return; } NET.status = netErrText(e.type || String(e)); coopRender(); toast(NET.status); });
     peer.on('connection', c => {
       c.on('open', () => { if (NET.conns.size) { raw(c, { t: 'full' }); setTimeout(() => c.close(), 400); return; }   // 只接一位
-        NET.conns.set(c.peer, c); NET.status = '队友已加入'; raw(c, { t: 'hello', code: NET.code }); NET.last = NET.lastStg = NET.lastDlg = NET.lastHs = NET.lastMg = ''; netSync(true); coopFxFull(c); toast('队友加入了'); sfx('ok'); coopRender(); });
+        NET.conns.set(c.peer, c); NET.status = '队友已加入'; raw(c, { t: 'hello', code: NET.code, lobby: !C }); if (!C) raw(c, { t: 'lobby' }); NET.last = NET.lastStg = NET.lastDlg = NET.lastHs = NET.lastMg = ''; netSync(true); coopFxFull(c); toast('队友加入了'); sfx('ok'); coopRender(); });
       c.on('data', d => { try { hostRecv(JSON.parse(d), c); } catch (e) { console.error(e); } });
       c.on('close', () => { NET.conns.delete(c.peer); NET.ctrl = 'host'; NET.req = null; NET.status = '队友断开了'; if (HS && HS.staff) for (const s of HS.staff) s.p2 = false; toast('队友断开了，你可以继续单人玩'); coopRender(); });
     }); };
@@ -42,7 +42,7 @@ async function netJoin(code) {
   code = String(code || '').toUpperCase().replace(/[^A-Z0-9]/g, ''); if (code.length !== 4) { toast('房间码是 4 位'); return; }
   if (inArtifact()) { toast('这个预览版不能联机，双人请打开游戏厅网址'); return; }
   try { await loadPeer(); } catch (e) { toast(netErrText('load')); return; }
-  netLeave(true); NETROLE = 'guest'; NET.ctrl = 'host'; NET.status = '正在连接……'; const tok = ++NET.tok; coopRender();
+  if (C && !NETROLE) saveNow(); netLeave(true); NETROLE = 'guest'; NET.ctrl = 'host'; NET.status = '正在连接……'; const tok = ++NET.tok; coopRender();
   const peer = new Peer(undefined, PEER_OPTS); NET.peer = peer; const to = setTimeout(() => fail('timeout'), 15000);
   const fail = t => { if (tok !== NET.tok) return; clearTimeout(to); toast(netErrText(t)); NET.status = netErrText(t); netLeave(true); coopRender(); };
   peer.on('error', e => fail(e.type || String(e)));
@@ -55,6 +55,14 @@ function netLeave(quiet) {
   NET.tok++; Object.assign(NET, { peer: null, conn: null, code: '', ctrl: 'host', req: null, status: '', night: null }); NET.conns.clear(); NETROLE = null; MYID = 'local';
   if (HS && HS.staff) for (const s of HS.staff) s.p2 = false;
   if (was === 'guest' && !quiet) guestDrop(); coopRender(); }
+/* 房主在标题页（还没进存档 / 回了标题）：队友停在等待画面 */
+function guestLobby() { NET.lobbyGo = true; try { NET.night && nightGuestClose(); if (STATE.house) { STATE.house = null; HS = null; hsClear(); } if (MG) { MG = null; STATE.mini = null; } STATE.scene = null; STATE.battle = null; STATE.busy = false; DLG.cur = null; DLG.res = null; NET.lastDlg = ''; $('#card').classList.remove('on'); $('#cine').className = ''; C = null; closeModal(); toTitle(); } finally { NET.lobbyGo = false; } coopRender(); }
+function coopTitle() { const T = $('#title'); if (!T || !T.classList.contains('on')) return; let st = $('#tcoopst');
+  if (!NETROLE) { if (st) st.remove(); const b = $('#tcoop'); if (b) b.textContent = '🔗 双人同屏'; return; }
+  if (!st) { st = el('div', 'coopst', ''); st.id = 'tcoopst'; $('#tbtns').insertAdjacentElement('beforebegin', st); }
+  const up = netUp(), code = NET.code || '……';
+  if (NETROLE === 'host') { st.innerHTML = '🔗 房间 <b>' + code + '</b> · ' + (up ? '队友已加入，选一个存档开始（继续 / 开始 / 📂 存档）' : esc(NET.status || '等队友输入房间码')); const b = $('#tcoop'); if (b) b.textContent = '🔗 房间 ' + code; }
+  else { st.innerHTML = '🔗 已加入房间 <b>' + code + '</b>'; const tb = $('#tbtns'); if (tb && !$('#tlobby')) tb.innerHTML = '<p id="tlobby" class="mini" style="text-align:center">等房主选存档……<br>房主进游戏后你这边会自动跟上</p><button class="btn tbtn" onclick="netLeave()">离开房间</button>'; } }
 function guestDrop() { const was = NETROLE === 'guest'; NETROLE = null; try { NET.peer && NET.peer.destroy(); } catch (e) { } NET.conn = null; NET.night && nightGuestClose(); if (STATE.house) { STATE.house = null; HS = null; hsClear(); } if (MG) { MG = null; STATE.mini = null; } STATE.scene = null; STATE.battle = null; DLG.cur = null; C = null; coopRender(); if (was || true) { $('#title').classList.add('on'); toTitle(); } }
 
 /* ---------- 房主：快照 ---------- */
@@ -91,7 +99,8 @@ function hostRecv(m, c) {
 /* ---------- 队友：收到房主 ---------- */
 function guestRecv(m) {
   switch (m.t) {
-    case 'hello': toast('已加入房间 ' + m.code + '：房主在操作，想接手就点上面的 🔗'); break;
+    case 'hello': toast(m.lobby ? '已加入房间 ' + m.code + '：等房主选存档' : '已加入房间 ' + m.code + '：房主在操作，想接手就点上面的 🔗'); break;
+    case 'lobby': guestLobby(); break;
     case 'full': toast('这个房间已经有队友了'); netLeave(); break;
     case 'st': guestApply(m); break;
     case 'stg': if (C) { Object.assign(STG, m.s); } break;
@@ -136,7 +145,7 @@ function guestFx(m) {
   W_('flashRed', () => coopFx({ f: 'flash' }));
   W_('fxStamp', a => coopFx({ f: 'stamp', s: a[0] }));
   W_('fxBanner', a => coopFx({ f: 'banner', s: a[0], c: a[1] }));
-  W_('toast', a => coopFx({ f: 'toast', s: a[0] }));
+  W_('toast', a => { if (!/^队友|^已把操作|^已请求接手|^现在是|预览版|房间码/.test(String(a[0]))) coopFx({ f: 'toast', s: a[0] }); });
   const oc = window.cardTap; window.cardTap = function () { const had = !!cardRes; const r = oc.apply(this, arguments); if (had && !cardRes) coopFx({ f: 'cardoff' }); return r; };
   const oi = window.cineTap; window.cineTap = function () { const had = !!cineRes; const r = oi.apply(this, arguments); if (had && !cineRes) coopFx({ f: 'cineoff' }); return r; };
   const os = window.sfx; window.sfx = function (n) { if (NETROLE === 'host' && NET.conns.size) { const t = performance.now(); if (t - (os._b && os._b[n] || 0) > 90) { (os._b = os._b || {})[n] = t; netBroadcast({ t: 'sfx', n }); } } return os.apply(this, arguments); };
@@ -203,17 +212,17 @@ function coopQuick(i) { const s = QUICK[i]; if (!s) return; if (NETROLE === 'gue
 /* ---------- 界面：顶栏小牌子、请求提示、联机面板 ---------- */
 function coopRender() {
   let chip = $('#coopchip'); const top = $('#top');
-  if (!NETROLE) { if (chip) chip.remove(); const q = $('#coopreq'); if (q) q.remove(); return; }
+  if (!NETROLE) { if (chip) chip.remove(); const q = $('#coopreq'); if (q) q.remove(); if (UI.modal === 'coop') coopModal(); coopTitle(); return; }
   if (!chip && top) { chip = el('button', 'tb', ''); chip.id = 'coopchip'; chip.onclick = () => openModal('coop'); top.insertBefore(chip, top.children[1] || null); }
   if (chip) { const up = netUp(), mine = myControl(); chip.className = 'tb coopchip ' + (up ? (mine ? 'mine' : 'theirs') : 'wait'); chip.innerHTML = '🔗 ' + (NET.code || '…') + ' · ' + (up ? (mine ? '你在操作' : whoName(NET.ctrl) + '在操作') : (NETROLE === 'host' ? '等队友' : '连接中')); }
   let q = $('#coopreq'); const ask = netUp() && NET.req && ((NETROLE === 'host' && NET.req === 'guest' && NET.ctrl === 'host') || (NETROLE === 'guest' && NET.req === 'host' && NET.ctrl === 'guest'));
   if (ask && !q) { q = el('div', '', '<span>' + whoName(NET.req) + '想接手操作</span><button class="btn pri" onclick="coopAnswer(1)">交给' + whoName(NET.req) + '</button><button class="btn" onclick="coopAnswer(0)">再等等</button>'); q.id = 'coopreq'; document.body.appendChild(q); sfx('select'); }
   else if (!ask && q) q.remove();
-  if (UI.modal === 'coop') coopModal(); }
+  if (UI.modal === 'coop') coopModal(); coopTitle(); }
 function coopModal() {
   const m = $('#mb'); if (!m) return; let h = '<div class="box"><h3>双人同屏</h3>';
   if (!NETROLE) h += '<p class="mini">两台设备一起玩：房主开房间，把 4 位房间码告诉朋友。两人看同一个画面、共用陈歌，同一时刻一人操作；另一人可以请求接手，操作的人同意后交换。白天接待时房主扮陈歌，朋友操作一名站岗员工。夜晚任务里也一样，谁在操作看屏幕最上方。</p>'
-    + (C ? '<div class="row"><button class="btn pri big" onclick="netHost()">开房间（我当房主）</button></div>' : '<p class="mini">要当房主，先进入一个存档，再从 ⚙ 里开房间。</p>')
+    + '<div class="row"><button class="btn pri big" onclick="netHost()">开房间（我当房主）</button></div><p class="mini">' + (C ? '用现在这个存档一起玩。' : '在标题页开也行：队友进来后你再选存档（继续 / 开始 / 读取），他会自动跟上。') + '</p>'
     + '<div class="row"><input id="cjoin" maxlength="4" placeholder="房间码" style="width:7em;text-transform:uppercase;font-size:18px;text-align:center"><button class="btn" onclick="netJoin($(\'#cjoin\').value)">加入朋友的房间</button></div>';
   else { const up = netUp(), mine = myControl();
     h += '<div class="coopcode">' + (NET.code || '……') + '</div><p class="mini">' + esc(NET.status || '') + '</p>'
@@ -223,11 +232,11 @@ function coopModal() {
   m.innerHTML = h + '<div class="row"><span></span><button class="btn" onclick="closeModal()">返回</button></div></div>'; }
 { const om = window.openModal; window.openModal = function (k) { if (k === 'coop') { UI.modal = 'coop'; sfx('tap'); $('#modal').classList.add('on'); coopModal(); return; } return om.apply(this, arguments); }; }
 /* 标题画面：加入房间；设置面板：开房间 */
-{ const tt = window.toTitle; window.toTitle = function () { if (NETROLE === 'guest') { NETROLE = null; } const r = tt.apply(this, arguments); const b = $('#tbtns'); if (b && !$('#tcoop')) b.insertAdjacentHTML('beforeend', '<button class="btn tbtn" id="tcoop" onclick="openModal(\'coop\')">🔗 双人同屏</button>'); return r; };
+{ const tt = window.toTitle; window.toTitle = function () { if (NETROLE === 'guest' && !NET.lobbyGo) netLeave(true); const r = tt.apply(this, arguments); const b = $('#tbtns'); if (b && !$('#tcoop') && NETROLE !== 'guest') b.insertAdjacentHTML('beforeend', '<button class="btn tbtn" id="tcoop" onclick="openModal(\'coop\')">🔗 双人同屏</button>'); if (NETROLE === 'host' && NET.conns.size) { NET.last = NET.lastStg = NET.lastMg = NET.lastHs = ''; netBroadcast({ t: 'lobby' }); } coopTitle(); return r; };
   const om = window.openModal; window.openModal = function (k) { const r = om.apply(this, arguments); if (k === 'set') { const box = $('#mb .box'); if (box && !$('#setcoop')) box.insertAdjacentHTML('beforeend', '<div class="row" id="setcoop"><button class="btn pri" onclick="openModal(\'coop\')">🔗 双人同屏' + (NETROLE ? '（房间 ' + NET.code + '）' : '') + '</button></div>'); } return r; }; }
 /* 队友那边：自己的存档、剧情推进都不跑 */
 { const sh = window.storyHereRun; window.storyHereRun = function () { if (NETROLE === 'guest' && !UI.inClick) return; return sh.apply(this, arguments); }; }
-if (window.__dbg) { Object.assign(__dbg, { netHost, netJoin, netLeave, coopCtrl, coopAnswer, myControl, coopQuick, guestScare, coopHsSend: m => netSend(Object.assign({ t: 'hs' }, m)) }); Object.defineProperty(__dbg, 'NET', { get() { return NET; }, configurable: true }); Object.defineProperty(__dbg, 'NETROLE', { get() { return NETROLE; }, configurable: true }); Object.defineProperty(__dbg, 'HS', { get() { return HS; }, configurable: true }); Object.defineProperty(__dbg, 'MG', { get() { return MG; }, configurable: true }); }
+if (window.__dbg) { Object.assign(__dbg, { coopTitle, netHost, netJoin, netLeave, coopCtrl, coopAnswer, myControl, coopQuick, guestScare, coopHsSend: m => netSend(Object.assign({ t: 'hs' }, m)) }); Object.defineProperty(__dbg, 'NET', { get() { return NET; }, configurable: true }); Object.defineProperty(__dbg, 'NETROLE', { get() { return NETROLE; }, configurable: true }); Object.defineProperty(__dbg, 'HS', { get() { return HS; }, configurable: true }); Object.defineProperty(__dbg, 'MG', { get() { return MG; }, configurable: true }); }
 
 /* ---------- 白天接待：房主扮陈歌，队友操作一名站岗员工 ---------- */
 { const hs0 = window.houseStart; window.houseStart = function (H) { const r = hs0.apply(this, arguments); if (NETROLE === 'host' && netUp()) { const st = hP2Pick(H); netBroadcast({ t: 'toast', s: st ? '这一场你操作' + PETS[st.k].n + '：点地面走过去，点游客吓他' : '这一场没有员工站岗——你可以看着，或者用快捷发言提醒房主' }); } return r; }; }
