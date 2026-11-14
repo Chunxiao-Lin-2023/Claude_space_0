@@ -68,17 +68,18 @@ body.krec-yin #cv{filter:saturate(.35) hue-rotate(80deg) brightness(1.25) contra
   addEventListener('keydown', e => { if ((e.key === 'q' || e.key === 'Q') && !e.ctrlKey && !e.metaKey) kAid(); });
 }
 function kDm(pool, o = {}) {
-  if (!KDM.on) return; const box = document.getElementById('kdm'); if (!box) return;
-  const list = Array.isArray(pool) ? pool : [pool], n = o.n || (1 + (Math.random() * 2 | 0));
-  for (let i = 0; i < n; i++) {
-    const t = list[(Math.random() * list.length) | 0], s = document.createElement('span'); s.textContent = t; if (o.cls) s.className = o.cls;
+  if (!KDM.on) return; const list = Array.isArray(pool) ? pool : [pool], n = o.n || (1 + (Math.random() * 2 | 0)), out = [];
+  for (let i = 0; i < n; i++) out.push(list[(Math.random() * list.length) | 0]);
+  if (o.log !== false) kLog('弹幕', out[0]); kDmShow(out, o.cls);
+  if (typeof kTell === 'function') kTell({ f: 'dm', list: out, cls: o.cls || '' }); }
+function kDmShow(out, cls) {
+  const box = document.getElementById('kdm'); if (!box) return;
+  out.forEach((t, i) => { const s = document.createElement('span'); s.textContent = t; if (cls) s.className = cls;
     let lane = 0; for (let k = 0; k < 8; k++) { const L = (Math.random() * 8) | 0; if (!KDM.lanes[L] || performance.now() - KDM.lanes[L] > 900) { lane = L; break; } }
     KDM.lanes[lane] = performance.now(); s.style.top = (lane * 12.5) + '%';
     const dur = 7 + Math.random() * 3, delay = i * (250 + Math.random() * 400);
-    s.animate([{ transform: 'translateX(0)' }, { transform: `translateX(calc(-100vw - 100%))` }], { duration: dur * 1000, delay, easing: 'linear' }).onfinish = () => s.remove();
-    box.appendChild(s); if (o.log !== false && i === 0) kLog('弹幕', t);
-  }
-}
+    s.animate([{ transform: 'translateX(0)' }, { transform: 'translateX(calc(-100vw - 100%))' }], { duration: dur * 1000, delay, easing: 'linear' }).onfinish = () => s.remove();
+    box.appendChild(s); }); }
 { const _scare = SAPI.scare; SAPI.scare = async function (k, o) { kDm(DMP.warn, { cls: 'w', n: 1, log: false }); const r = await _scare.call(this, k, o); kDm(DMP.scare, { n: 3 }); return r; };
   const _hp = SAPI.hidePlayer; SAPI.hidePlayer = function (b = true) { if (b) kDm(DMP.hide, { n: 2, log: false }); return _hp.call(this, b); };
   const _show = SAPI.show; SAPI.show = function (id, v = true) { if (v) { const e = getEnt(id); if (e && e.hidden && typeof e.spr === 'string' && /^gh_|redshadow/.test(e.spr)) kDm(DMP.warn, { cls: 'w', n: 1, log: false }); } return _show.call(this, id, v); };
@@ -96,6 +97,8 @@ const kAidsHave = () => KAIDS.filter(a => a.has());
 const kDollHave = () => kHas('ragdoll') && !(W && W.ch.nodoll);
 function kAidLeft(a) { W.f._aid = W.f._aid || {}; return a.uses - (W.f._aid[a.id] || 0); }
 function kAid() {
+  if (W && NET.up && !iControl()) { UI.toast('对方在操作 · 按 T 请求操作'); return; }
+  if (W && NET.role === 'guest') { netSend({ t: 'act', a: 'kaid' }); return; }
   if (!W || W.ended || W.endScreen || W.busy || W.dlg || W.card || W.note || UI.modal) return;
   const list = kAidsHave(); if (!list.length) return;
   runScript(async S => {
@@ -164,7 +167,7 @@ function kEpicLow(S) { if (KEPW && KEPW.low) { kShout(KEPW.low, 2600); kDm(DMP.w
 
 /* ---------- 4. 镜子：照出你，还会慢半拍 ---------- */
 const KMIR = [];
-function kMirState(lag) { if (!KMIR.length) return null; if (!lag) return KMIR[KMIR.length - 1]; const t = W.t - lag; for (let i = KMIR.length - 1; i >= 0; i--) if (KMIR[i].t <= t) return KMIR[i]; return KMIR[0]; }
+function kMirState(lag) { if (!KMIR.length) return null; if (!lag) return KMIR[KMIR.length - 1]; const t = RT - lag; for (let i = KMIR.length - 1; i >= 0; i--) if (KMIR[i].t <= t) return KMIR[i]; return KMIR[0]; }
 /* 在镜面区域（屏幕坐标 gx,gy,gw,gh）里画倒影。e.lag 秒数（慢半拍）、e.stare（不管你怎么动都盯着你）、e.smile（在笑）、e.empty（照不出你）、e.other（照出别的人，人物 id） */
 function kReflect(g, e, gx, gy, gw, gh) {
   if (!W || !W.pl || e.empty) return; const st = kMirState(e.lag || 0); if (!st) return;
@@ -206,7 +209,7 @@ function kGrade(kind) {
   hostTick = function (dt) {
     const mask = W && W.kMask > W.t; let h; if (mask) { h = W.pl.hidden; W.pl.hidden = true; }
     _ht(dt); if (mask && W) W.pl.hidden = h; if (!W) return;
-    const p = W.pl; KMIR.push({ t: W.t, px: p.px, py: p.py, dir: p.dir, fr: p.fr, spr: p.spr }); while (KMIR.length > 2 && W.t - KMIR[0].t > 3) KMIR.shift();
+    const p = W.pl; KMIR.push({ t: RT, px: p.px, py: p.py, dir: p.dir, fr: p.fr, spr: p.spr }); while (KMIR.length > 2 && RT - KMIR[0].t > 3) KMIR.shift();
     if (KDM.on && !W.ended) { KDM.t -= dt; if (KDM.t <= 0) { KDM.t = 5 + Math.random() * 6; kDm((W.ch.danmu || []).concat(DMP.idle), { log: false }); } }
     if (KEPW && KEPW.phase && !KEPW.said) { const es = KEPW.ids.map(id => getEnt(id)).filter(e => e && !e.hidden); if (es.some(e => kDist(e, p) <= 3)) { KEPW.said = true; kShout(KEPW.phase, 2400); kDm(DMP.chase, { n: 2, cls: 'w' }); } }
     const b = document.getElementById('hAid'); if (b) { const on = kAidsHave().length > 0; if (on === b.classList.contains('hidden')) b.classList.toggle('hidden', !on); }

@@ -16,8 +16,9 @@ drawTitleBG = function (g) { g.fillStyle = '#000'; g.fillRect(0, 0, VW, VH); };
     else { add('从检查点重来', () => sendAct('retry'), true); add('跳过这一夜（剧情照常往下走）', () => kFinish('skip')); }
     $('enL').classList.add('hidden'); setTimeout(() => this.focusFirst(), 900); }; }
 window.addEventListener('message', ev => { const m = ev.data; if (!m || !m.kbwNight) return;
-  if (m.t === 'play') { KENV = Object.assign({ lv: 1, items: [], pets: [], flags: {} }, m.env || {}); if (m.mute != null) AU.setMute(!!m.mute); const has = !!store.get('cp.' + m.id, null); if (!m.fromCp) store.del('cp.' + m.id); startChapter(m.id, !!(m.fromCp && has)); }
+  if (m.t === 'coopGuest') { KENV = Object.assign({ lv: 1, items: [], pets: [], flags: {} }, m.env || {}); if (m.mute != null) AU.setMute(!!m.mute); kDmInit(); return; }
+  if (m.t === 'play') { KENV = Object.assign({ lv: 1, items: [], pets: [], flags: {} }, m.env || {}); if (m.mute != null) AU.setMute(!!m.mute); const has = !!store.get('cp.' + m.id, null); if (!m.fromCp) store.del('cp.' + m.id); startChapter(m.id, !!(m.fromCp && has)); if (m.coop === 'host') { kCoopStart('host'); kTell({ f: 'live', on: KDM.on, hot: document.querySelector('#klive b') ? document.querySelector('#klive b').textContent : '' }); } }
   if (m.t === 'mute') AU.setMute(!!m.mute); });
-{ const _open = UI.open.bind(UI); UI.open = function (id) { _open(id); if (id === 'menu') { $('mHub').classList.add('hidden'); $('mQuit').textContent = '离开这一夜（下次从检查点接着走）'; } }; }
+{ const _open = UI.open.bind(UI); UI.open = function (id) { _open(id); if (id === 'menu') { $('mHub').classList.add('hidden'); $('mQuit').textContent = '离开这一夜（下次从检查点接着走）'; $('mQuit').classList.toggle('hidden', KCOOP === 'guest'); $('mRetry').classList.toggle('hidden', KCOOP === 'guest' && !(W && W.cp)); } }; }
 /* 恐怖屋测试用的小钩子（iframe 里没有 ?debug=1） */
 window.__kn = { get W() { return W; }, doAct, SAPI, startChapter, retryFromCP, store, finish: kFinish };

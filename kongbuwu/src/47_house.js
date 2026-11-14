@@ -214,8 +214,19 @@ function hLure(H) { const h = H.hero; if (H.mode !== 'house' || (h.lureCd || 0) 
 /* 点员工：让他主动冲出去吓最近的游客 */
 function hStaffGo(H, st) { if (st.off || st.pop > 0) return false; if (st.cd > 0) { toast(PETS[st.k].n + '还在缓（' + Math.ceil(st.cd) + ' 秒）'); return false; } const v = hActive(H).filter(q => hDist(q, st) <= 6).sort((a, b) => hDist(a, st) - hDist(b, st))[0]; if (!v) { toast('附近没有游客'); return false; } st.force = v; st.cd = 0; return true; }
 
+/* ---------- 双人：队友操作的员工（st.p2，RULES 34）：自己走，点游客才吓，不会自己冲出去 ---------- */
+function hP2Move(H, st, dt) { const M = H.M;
+  if (st.mv) { hMove(st, dt); st.home = [st.tx, st.ty]; return; } st.x = st.tx; st.y = st.ty; st.home = [st.tx, st.ty];
+  const w = st.want && !hOut(st.want) && st.want.st !== 'leave' ? st.want : (st.want = null);
+  if (w) { const d = hDist(st, w); if (d <= 1.8) { if (st.cd <= 0) { st.force = w; st.want = null; st.path = null; return; } } else st.path = [Math.round(w.x), Math.round(w.y)]; }
+  if (st.path) { const [tx, ty] = st.path; if (st.tx === tx && st.ty === ty) { st.path = null; return; } const n = hmNext(M, hmField(M, tx, ty, 'h'), st.tx, st.ty, 'h'); if (!n) { st.path = null; return; } hStepTo(st, n[0], n[1], HB.hero * 1.05); } }
+function hP2Go(H, st, x, y) { const M = H.M; x = clamp(Math.round(x), 0, M.w - 1); y = clamp(Math.round(y), 0, M.h - 1); st.want = null;
+  if (hmSolid(M, M.hs, x, y)) { let best = null, bd = 99; for (let yy = y - 2; yy <= y + 2; yy++) for (let xx = x - 2; xx <= x + 2; xx++) if (!hmSolid(M, M.hs, xx, yy) && hmField(M, xx, yy, 'h')[st.ty * M.w + st.tx] >= 0) { const d = Math.abs(xx - x) + Math.abs(yy - y); if (d < bd) { bd = d; best = [xx, yy]; } } if (!best) return; [x, y] = best; }
+  if (hmField(M, x, y, 'h')[st.ty * M.w + st.tx] < 0) return; st.path = [x, y]; }
+function hP2Scare(H, st, v) { if (!v) { v = hActive(H).filter(q => hDist(q, st) <= 6).sort((a, b) => hDist(a, st) - hDist(b, st))[0]; if (!v) return '附近没有游客'; } if (st.cd > 0) { st.want = v; return PETS[st.k].n + '还在缓（' + Math.ceil(st.cd) + ' 秒）'; } st.want = v; hFloat(H, st.x, st.y - 1.6, PETS[st.k].n + '：去了！', 'staff'); return ''; }
+function hP2Pick(H) { for (const s of H.staff) s.p2 = false; const st = H.staff.find(s => !s.off) || null; if (st) { st.p2 = true; st.tx = st.tx ?? st.home[0]; st.ty = st.ty ?? st.home[1]; st.cd = Math.min(st.cd, 1); } return st; }
 /* ---------- 员工 ---------- */
-function hStaffTick(H, st, dt) { const B = H.B; st.cd -= dt; if (st.pop > 0) { st.pop -= dt; const k = Math.max(0, st.pop / .7); st.x = st.home[0] + (st.px - st.home[0]) * Math.sin(k * Math.PI) * .6; st.y = st.home[1] + (st.py - st.home[1]) * Math.sin(k * Math.PI) * .6; return; } st.x = st.home[0]; st.y = st.home[1];
+function hStaffTick(H, st, dt) { const B = H.B; st.cd -= dt; if (st.pop > 0) { st.pop -= dt; const k = Math.max(0, st.pop / .7); st.x = st.home[0] + (st.px - st.home[0]) * Math.sin(k * Math.PI) * .6; st.y = st.home[1] + (st.py - st.home[1]) * Math.sin(k * Math.PI) * .6; return; } if (st.p2) { hP2Move(H, st, dt); if (!st.force) return; } else { st.x = st.home[0]; st.y = st.home[1]; }
   if (st.off || st.cd > 0) return; const force = st.force && !hOut(st.force) ? st.force : null; st.force = null; const tg = force ? [force] : hActive(H).filter(v => Math.max(Math.abs(v.x - st.x), Math.abs(v.y - st.y)) <= HB.staffRange + .3 && hmLos(H.M, st.x, st.y, v.x, v.y)); if (!tg.length) return; if (!force) hHint(H, 'staff', '员工会自己出来吓人。点员工可以让他冲出去吓附近的游客。');
   const mv = petMoves(st.k).filter(m => m.c === 'atk' || m.c === 'deb' || m.c === 'buf'); if (!mv.length) return; const m = mv.filter(q => q.c === 'atk').length && chance(.75) ? pick(mv.filter(q => q.c === 'atk')) : pick(mv); const v = tg[0];
   st.cd = HB.staffCd + rnd() * 1.5 + (force ? 2 : 0); st.pop = .7; st.px = v.x; st.py = v.y; hFloat(H, st.x, st.y - 1.8, PETS[st.k].n + ' · ' + m.n, 'staff');
