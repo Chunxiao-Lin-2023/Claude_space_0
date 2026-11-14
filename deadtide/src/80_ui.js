@@ -51,7 +51,7 @@ function uiMsg(t, col) {
 }
 function toast(t, col) { const el = $('toast'); el.textContent = t; el.style.color = col || ''; el.classList.add('show'); UI.toastT = 1.6; }
 function banner(t, s, col) { $('bnT').textContent = t; $('bnT').style.color = col || ''; $('bnS').textContent = s || ''; $('banner').classList.add('show'); UI.bannerT = 3.2; }
-function uiMute() { $('muteBtn').textContent = SET.mute ? '🔇' : '🔊'; }
+function uiMute() { $('muteBtn').textContent = SET.mute ? '🔇' : '🔊'; $('pMute').textContent = '声音：' + (SET.mute ? '关' : '开'); }
 /* HUD */
 function blockIcon(id) {
   const c = document.createElement('canvas'); c.width = 52; c.height = 52; const g = c.getContext('2d'), col = B[id].col || '#888';
@@ -141,6 +141,20 @@ function hudTick(dt) {
     if (me.down) ptxt = me.meds > 0 ? (INP.touch ? '点「医疗」' : '按 H ') + '用医疗包自救' : (W.p.length > 1 ? '等待队友来扶你…' : '');
     if (me.medT > 0 && me.selfRev) { ptxt = '正在自救…'; prog = 1 - me.medT / 3; }
   }
+  if (INP.touch) {
+    const tgt = !me.dead && !me.build && !me.down ? useTarget(me) : null, bench = !tgt && !me.build && nearBench(me);
+    const u = $('tUse'); u.classList.toggle('hidden', !(tgt || bench));
+    if (tgt) { u.firstElementChild.textContent = '按住'; u.lastElementChild.textContent = tgt.name; u.style.setProperty('--p', clamp(me.useT / tgt.t, 0, 1)); }
+    else if (bench) { u.firstElementChild.textContent = '点一下'; u.lastElementChild.textContent = '打开工作台'; u.style.setProperty('--p', 0); }
+    if (tgt || bench) ptxt = ''; else if (me.down && me.meds > 0) ptxt = '点「自救」用医疗包站起来';
+    const md = $('tMed'), showMed = me.meds > 0 && !me.dead && me.medT <= 0 && (me.down || me.hp < me.maxHp * 0.7);
+    md.classList.toggle('hidden', !showMed); md.textContent = (me.down ? '自救' : '用医疗包') + ' ×' + me.meds;
+    $('tWpn').firstElementChild.textContent = w.name; $('tWpn').lastElementChild.textContent = w.inf ? '∞' : me.mag[wi] + ' / ' + me.ammo[wi];
+    $('tWpn').classList.toggle('hidden', me.down || me.owned.filter(Boolean).length < 2);
+    $('tNadeN').textContent = me.nades; $('tNade').classList.toggle('empty', !me.nades);
+    $('tFire').style.setProperty('--rl', rl);
+    $('tLLbl').textContent = (buildL() + 1) + 'F';
+  }
   $('prompt').classList.toggle('hidden', !ptxt); $('pTxt').textContent = ptxt; $('pPr').style.width = clamp(prog, 0, 1) * 100 + '%';
   $('prompt').querySelector('.pr').style.display = prog > 0 ? '' : 'none';
   if (me.build) uiBuildBar();
@@ -215,6 +229,7 @@ function initUI() {
   confirmBtn($('pHub'), () => { netLeave(); location.href = '../'; });
   $('pauseBtn').onclick = () => togglePause();
   $('muteBtn').onclick = () => { setMute(!SET.mute); uiMute(); };
+  $('pMute').onclick = () => { setMute(!SET.mute); uiMute(); };
   $('readyBtn').onclick = () => inGame() && toggleReady();
   $('oAgain').onclick = () => { $('over').classList.add('hidden'); if (NETROLE === 'host') { if (!NET.gctl || !NET.gctl.open) { NETROLE = 'solo'; startGame((Math.random() * 1e9) | 0, [SET.name || '幸存者'], SET.diff, 0); } else hostStart(); } else startGame((Math.random() * 1e9) | 0, [SET.name || '幸存者'], SET.diff, 0); };
   $('oLobby').onclick = () => { netSendCtl({ t: 'toLobby' }); backToLobby(); };

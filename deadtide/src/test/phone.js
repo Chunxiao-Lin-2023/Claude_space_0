@@ -34,7 +34,7 @@ const UA = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/6
     console.log(name, 'built by tap', await p.evaluate(() => W.blk[ci(38, 30, 0)]), 'at', tgt2.map(v => v | 0).join(','));
     await shot('build');
     await p.tap('#tBuild'); await simWait(0.2);
-    await p.tap('#vZin'); await p.tap('#vRr'); await p.tap('#vUp'); await simWait(0.3);
+    await p.tap('#vToggle'); await p.tap('#vZin'); await p.tap('#vRr'); await p.tap('#vUp'); await simWait(0.3);
     console.log(name, 'view', await p.evaluate(() => [CAM.zoom.toFixed(1), CAM.rot, VIEW.auto, VIEW.L].join(',')));
     await shot('view');
     await p.tap('#vAuto'); await p.tap('#pauseBtn'); await p.waitForTimeout(300); await p.screenshot({ path: `${OUT}/t_${name}_pause.png` });

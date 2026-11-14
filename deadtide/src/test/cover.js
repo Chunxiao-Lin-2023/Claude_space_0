@@ -7,7 +7,7 @@ const { chromium } = require('playwright'); const OUT = process.env.OUT || '/tmp
   await p.goto('http://localhost:8766/test.html'); await p.waitForFunction(() => window.__ready, null, { timeout: 120000 });
   await p.evaluate(() => {
     window.__dbg.skipDraw = true; NETROLE = 'solo'; startGame(4242, ['阿橙', '小青'], 'normal', 0); window.__dbg.speed = 0;
-    document.getElementById('hud').style.display = 'none'; document.getElementById('tpad').style.display = 'none';
+    document.getElementById('hud').style.display = 'none'; document.getElementById('tctl').style.display = 'none';
     const me = W.p[0], P2 = W.p[1]; W.res = { wood: 9999, stone: 9999, steel: 9999, parts: 999 };
     const Bd = (x, y, L, id, d) => { me.x = x + 0.5; me.y = y + 0.5; me.L = L; doBuild(me, x, y, L, id, d); };
     // second storey walls on the open sides + third storey

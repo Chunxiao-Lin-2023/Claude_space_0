@@ -1,6 +1,6 @@
 /* ================= input: keyboard + mouse, touch sticks & buttons, camera controls ================= */
 const INP = { keys: {}, mx: 0, my: 0, mL: false, mR: false, mouseT: 0, touch: false, lastTouch: 0,
-  move: { id: null, ox: 0, oy: 0, x: 0, y: 0 }, aim: { id: null, ox: 0, oy: 0, x: 0, y: 0, a: 0, t: 0 }, useHeld: false, bldT: 0, bldLast: '', paint: null, aimT: 0 };
+  move: { id: null, ox: 0, oy: 0, x: 0, y: 0 }, aim: { id: null, ox: 0, oy: 0, x: 0, y: 0, a: 0, t: 0, btn: false }, tp: {}, pinch: null, useHeld: false, bldT: 0, bldLast: '', paint: null, aimT: 0 };
 const KD = k => !!INP.keys[k];
 const inGame = () => STATE.mode === 'play' && W && !W.over;
 const panelOpen = () => !$('craft').classList.contains('hidden') || !$('pause').classList.contains('hidden') || !$('help').classList.contains('hidden');
@@ -25,7 +25,7 @@ function cycleWpn(d) { const me = W.p[ME]; let w = me.wpn; for (let k = 0; k < 4
 // camera controls (shared by keys and the HUD buttons)
 function camRot(d) { CAM.rot = (CAM.rot + d + 4) % 4; sfx('click'); }
 function camZoom(f) { CAM.zoom = clamp(CAM.zoom * f, 4, 22); SET.zoom = CAM.zoom; saveSet(); }
-function viewStep(d) { if (!W) return; const me = W.p[ME]; if (VIEW.auto) { VIEW.auto = false; VIEW.L = Math.min(viewL(), topBuiltL()); } VIEW.L = clamp(VIEW.L + d, 0, ML - 2); uiView(); sfx('click'); }
+function viewStep(d) { if (!W) return; const me = W.p[ME]; if (VIEW.auto) { const base = me.build ? me.L : Math.min(viewL(), topBuiltL()); VIEW.auto = false; VIEW.L = base; } VIEW.L = clamp(VIEW.L + d, 0, ML - 2); uiView(); sfx('click'); }
 function topBuiltL() { let t = 0; for (let i = 0; i < NC; i++) if ((W.slab[i] && B[W.slab[i]].cost) || (W.blk[i] && B[W.blk[i]].cost)) t = Math.max(t, cl_(i)); return Math.min(ML - 2, t + 1); }
 function viewAuto() { VIEW.auto = true; uiView(); sfx('click'); }
 // default stairs direction: up the screen
@@ -95,7 +95,21 @@ CV.addEventListener('pointerdown', e => {
   if (e.pointerType !== 'touch') return;
   audioInit(); e.preventDefault();
   if (!inGame()) return;
-  const me = W.p[ME];
+  const me = W.p[ME], now = performance.now();
+  INP.tp[e.pointerId] = { x: e.clientX, y: e.clientY, t: now };
+  // two fingers landing together on the map = pinch to zoom
+  const others = Object.keys(INP.tp).filter(k => +k !== e.pointerId);
+  if (!me.build && others.length === 1 && !INP.pinch) {
+    const o = INP.tp[others[0]];
+    if (now - o.t < 350 && Math.hypot(o.x - (o.x0 == null ? o.x : o.x0), o.y - (o.y0 == null ? o.y : o.y0)) < 24) {
+      for (const s of [INP.move, INP.aim]) if (s.id === +others[0] && !s.btn) { s.id = null; s.x = s.y = 0; }
+      stickDraw(stickL, INP.move); if (!INP.aim.btn) stickDraw(stickR, INP.aim);
+      INP.pinch = { a: +others[0], b: e.pointerId, d0: Math.max(30, Math.hypot(o.x - e.clientX, o.y - e.clientY)), z0: CAM.zoom };
+      try { CV.setPointerCapture(e.pointerId); } catch (_) { } return;
+    }
+  }
+  if (INP.pinch) return;
+  INP.tp[e.pointerId].x0 = e.clientX; INP.tp[e.pointerId].y0 = e.clientY;
   if (e.clientX < VW * 0.45 && INP.move.id == null) { Object.assign(INP.move, { id: e.pointerId, ox: e.clientX, oy: e.clientY, x: 0, y: 0, t0: performance.now(), far: false }); stickDraw(stickL, INP.move, STICK_R()); }
   else if (me.build) { INP.paint = e.pointerId; INP.bldLast = ''; touchBuild(e.clientX, e.clientY); }
   else if (INP.aim.id == null) { Object.assign(INP.aim, { id: e.pointerId, ox: e.clientX, oy: e.clientY, x: 0, y: 0 }); stickDraw(stickR, INP.aim, STICK_R()); }
@@ -103,6 +117,9 @@ CV.addEventListener('pointerdown', e => {
 }, { passive: false });
 CV.addEventListener('pointermove', e => {
   if (e.pointerType !== 'touch') return; e.preventDefault();
+  const tp = INP.tp[e.pointerId]; if (tp) { tp.x = e.clientX; tp.y = e.clientY; }
+  const P = INP.pinch;
+  if (P && (e.pointerId === P.a || e.pointerId === P.b)) { const A = INP.tp[P.a], Bq = INP.tp[P.b]; if (A && Bq) { CAM.zoom = clamp(P.z0 * P.d0 / Math.max(20, Math.hypot(A.x - Bq.x, A.y - Bq.y)), 4, 22); SET.zoom = CAM.zoom; } return; }
   const R = STICK_R();
   for (const s of [INP.move, INP.aim]) if (s.id === e.pointerId) { s.x = (e.clientX - s.ox) / R; s.y = (e.clientY - s.oy) / R; if (Math.hypot(e.clientX - s.ox, e.clientY - s.oy) > 14) s.far = true; stickDraw(s === INP.move ? stickL : stickR, s, R); }
   if (INP.aim.id === e.pointerId && Math.hypot(INP.aim.x, INP.aim.y) > 0.25) INP.aim.t = performance.now();
@@ -110,11 +127,31 @@ CV.addEventListener('pointermove', e => {
 }, { passive: false });
 function endPtr(e) {
   if (e.pointerType !== 'touch') return;
+  delete INP.tp[e.pointerId];
+  if (INP.pinch && (e.pointerId === INP.pinch.a || e.pointerId === INP.pinch.b)) { INP.pinch = null; saveSet(); return; }
   if (INP.paint === e.pointerId) INP.paint = null;
   if (INP.move.id === e.pointerId && !INP.move.far && performance.now() - INP.move.t0 < 350 && inGame() && W.p[ME].build) touchBuild(INP.move.ox, INP.move.oy);
   if (INP.move.id === e.pointerId) { INP.move.id = null; INP.move.x = INP.move.y = 0; stickDraw(stickL, INP.move); }
-  if (INP.aim.id === e.pointerId) { INP.aim.id = null; INP.aim.x = INP.aim.y = 0; INP.aim.t = performance.now(); stickDraw(stickR, INP.aim); }
+  if (INP.aim.id === e.pointerId && !INP.aim.btn) { INP.aim.id = null; INP.aim.x = INP.aim.y = 0; INP.aim.t = performance.now(); stickDraw(stickR, INP.aim); }
 }
+/* fire stick: hold to shoot (auto-aims at the nearest zombie), drag to choose the direction */
+const FIRE = document.getElementById('tFire');
+function fireKnob() { const k = FIRE.firstElementChild, R = FIRE.clientWidth * 0.36, m = Math.hypot(INP.aim.x, INP.aim.y), f = m > 1 ? 1 / m : 1; k.style.transform = INP.aim.id != null && INP.aim.btn ? `translate(${INP.aim.x * f * R}px,${INP.aim.y * f * R}px)` : ''; }
+FIRE.addEventListener('pointerdown', e => {
+  e.preventDefault(); e.stopPropagation(); audioInit(); if (!inGame()) return;
+  if (INP.aim.id != null && !INP.aim.btn) { INP.aim.id = null; stickDraw(stickR, INP.aim); }
+  const r = FIRE.getBoundingClientRect();
+  Object.assign(INP.aim, { id: e.pointerId, ox: r.left + r.width / 2, oy: r.top + r.height / 2, x: 0, y: 0, btn: true });
+  INP.aimT = 0; W.p[ME].aimPt = null; FIRE.classList.add('on'); fireKnob();
+  try { FIRE.setPointerCapture(e.pointerId); } catch (_) { }
+});
+FIRE.addEventListener('pointermove', e => {
+  if (INP.aim.id !== e.pointerId || !INP.aim.btn) return; e.preventDefault();
+  const R = FIRE.clientWidth * 0.5; INP.aim.x = (e.clientX - INP.aim.ox) / R; INP.aim.y = (e.clientY - INP.aim.oy) / R;
+  if (Math.hypot(INP.aim.x, INP.aim.y) > 0.3) INP.aim.t = performance.now(); fireKnob();
+});
+function fireEnd(e) { if (INP.aim.id !== e.pointerId || !INP.aim.btn) return; Object.assign(INP.aim, { id: null, x: 0, y: 0, btn: false, t: performance.now() }); FIRE.classList.remove('on'); fireKnob(); }
+FIRE.addEventListener('pointerup', fireEnd); FIRE.addEventListener('pointercancel', fireEnd);
 CV.addEventListener('pointerup', endPtr); CV.addEventListener('pointercancel', endPtr);
 function touchBuild(sx, sy) {
   const me = W.p[ME], c = buildPick(sx, sy, buildL()); if (!c) return;
@@ -142,7 +179,9 @@ function bindBtn(id, down, up) {
   el.addEventListener('pointerup', end); el.addEventListener('pointercancel', end);
 }
 bindBtn('tReload', () => inGame() && (W.p[ME].build ? rotStairs() : act('reload')));
-bindBtn('tSwap', () => inGame() && cycleWpn(1));
+bindBtn('tWpn', () => inGame() && cycleWpn(1));
+bindBtn('tLUp', () => viewStep(1)); bindBtn('tLDn', () => viewStep(-1));
+bindBtn('vToggle', () => { document.body.classList.toggle('vopen'); $('vToggle').classList.toggle('on', document.body.classList.contains('vopen')); sfx('click'); });
 bindBtn('tShove', () => inGame() && act('shove'));
 bindBtn('tNade', () => inGame() && act('nade'));
 bindBtn('tMed', () => inGame() && act('med'));
@@ -153,14 +192,14 @@ bindBtn('vRl', () => camRot(-1)); bindBtn('vRr', () => camRot(1));
 bindBtn('vUp', () => viewStep(1)); bindBtn('vDn', () => viewStep(-1)); bindBtn('vAuto', () => viewAuto());
 
 /* ---------- per-frame: fold devices into the local player's input ---------- */
-function touchAutoAim(me, dirx, diry) {
+function touchAutoAim(me, dirx, diry, any) {
   const [sx, sy, sz] = shoulder(me); let best = null, bs = 1e9;
   const wi = me.down ? 0 : me.wpn, range = WPN[wi].range, a0 = Math.atan2(diry, dirx);
   for (const z of W.zs) {
     if (z.L > viewL()) continue;
     const dx = z.x - sx, dy = z.y - sy, d = Math.hypot(dx, dy); if (d > range || d < 0.2) continue;
-    const da = Math.abs(angDiff(a0, Math.atan2(dy, dx))); if (da > 0.38) continue;
-    const score = d + da * 12; if (score < bs && los(sx, sy, sz, z.x, z.y, z.z + z.h * 0.6)) { bs = score; best = z; }
+    const da = Math.abs(angDiff(a0, Math.atan2(dy, dx))); if (!any && da > 0.38) continue;
+    const score = any ? d + da * 1.5 : d + da * 12; if (score < bs && los(sx, sy, sz, z.x, z.y, z.z + z.h * 0.6)) { bs = score; best = z; }
   }
   if (best) return { x: best.x, y: best.y, z: best.z + best.h * 0.6 };
   return { x: sx + dirx * 6, y: sy + diry * 6, z: sz };
@@ -194,13 +233,17 @@ function readInput(dt) {
       } else BUILD_HOVER = null;
     } else BUILD_HOVER = null;
   } else {
-    const A = INP.aim, active = A.id != null && Math.hypot(A.x, A.y) > 0.3;
+    const A = INP.aim, held = A.id != null, active = held && Math.hypot(A.x, A.y) > 0.3;
     if (active) {
       const a = Math.atan2(-A.y, A.x), wx = rx * Math.cos(a) + fx * Math.sin(a), wy = ry * Math.cos(a) + fy * Math.sin(a);
       INP.aimT -= dt; if (INP.aimT <= 0 || !me.aimPt) { INP.aimT = 0.1; me.aimPt = touchAutoAim(me, wx, wy); }
       me.aim = Math.atan2(me.aimPt.y - me.y, me.aimPt.x - me.x);
+    } else if (held && A.btn) {
+      // just holding the fire button: lock on to the nearest zombie, otherwise shoot where you face
+      INP.aimT -= dt; if (INP.aimT <= 0 || !me.aimPt) { INP.aimT = 0.12; const f = Math.hypot(I.mx, I.my) > 0.2 ? [I.mx, I.my] : [Math.cos(me.aim), Math.sin(me.aim)]; me.aimPt = touchAutoAim(me, f[0], f[1], true); }
+      me.aim = Math.atan2(me.aimPt.y - me.y, me.aimPt.x - me.x);
     } else if (performance.now() - A.t > 600 && Math.hypot(I.mx, I.my) > 0.2) { me.aim = Math.atan2(I.my, I.mx); me.aimPt = null; }
-    I.fire = !blocked && active && !me.build ? 1 : 0;
+    I.fire = !blocked && (active || (held && A.btn)) && !me.build ? 1 : 0;
     CAM.lookX = lerp(CAM.lookX || 0, Math.cos(me.aim) * 1.5, Math.min(1, dt * 2)); CAM.lookY = lerp(CAM.lookY || 0, Math.sin(me.aim) * 1.5, Math.min(1, dt * 2));
     if (!me.build || !BUILD_HOVER || !BUILD_HOVER.t) BUILD_HOVER = me.build ? BUILD_HOVER : null;
   }
