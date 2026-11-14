@@ -6,7 +6,7 @@
 import os, re, sys
 D = os.path.dirname(os.path.abspath(__file__))
 src = lambda f: open(os.path.join(D, f), encoding='utf-8').read()
-ORDER = ['00_core.js', '10_world.js', '20_nav.js', '30_sim.js', '35_zombies.js', '50_render.js', '60_audio.js', '62_input.js', '70_net.js', '80_ui.js', '90_main.js', '99_boot.js']
+ORDER = ['00_core.js', '10_world.js', '20_nav.js', '30_sim.js', '35_zombies.js', '50_render.js', '52_arch.js', '60_audio.js', '62_input.js', '70_net.js', '80_ui.js', '90_main.js', '99_boot.js']
 game = '\n'.join('/* ---- %s ---- */\n' % f + src(f) for f in ORDER)
 vendor = src('three.vendor.js')
 assert '</script' not in game and '</script' not in vendor

@@ -105,6 +105,7 @@ function buildScene() {
   I.rock = inst(GEO.rock, lam('#ffffff'), 1500);
   I.crate = inst(GEO.crate, lam('#4f5d3c'), 300); I.rubble = inst(GEO.rubble, lam('#6a625a'), 300); I.fence = inst(GEO.fence, lam('#6b5a48'), 400);
   I.car = inst(GEO.carBody, lam('#ffffff'), 60); I.carW = inst(GEO.carWheels, lam('#151515'), 60);
+  archScene();
   // radio + bench
   const radio = new THREE.Group();
   const rb = new THREE.Mesh(boxG(0.7, 0.55, 0.5, 0, 0.28, 0), lam('#3a403b')); const rs = new THREE.Mesh(boxG(0.34, 0.16, 0.02, -0.1, 0.4, 0.26), new THREE.MeshBasicMaterial({ color: '#8fd38b' }));
@@ -179,24 +180,23 @@ function wallAxis(x, y, L) { const solid = (xx, yy) => { const b = blkAt(xx, yy,
 function rebuildCells() {
   const I = OBJ.I, me = W.p[ME], vl = viewL(), [ox, oy] = [Math.sin(CAM.yaw), Math.cos(CAM.yaw)];
   const c = { wall: 0, slab: 0, stairs: 0, door: 0, bars: 0, wire: 0, lamp: 0, trunk: 0, pine: 0, oak: 0, rock: 0, crate: 0, rubble: 0, fence: 0, car: 0 };
-  const lamps = [];
+  const lamps = []; archBegin();
   for (let L = 0; L < ML; L++) for (let y = 0; y < MH; y++) for (let x = 0; x < MW; x++) {
     const i = ci(x, y, L), b = W.blk[i], s = W.slab[i];
     if (!b && !s) continue;
     const X = x + 0.5, Y = L * FH, Z = y + 0.5, h = hash2(x * 3 + L, y * 7);
     const hide = L > vl && !(b && B[b].nat);
     if (hide) continue;
-    if (s) { setInst(I.slab, c.slab++, X, Y, Z, 0, 1, 1, 1, dmgTint(B[s].col, s === SLAB_BRIDGE ? 1 : W.shp[i] / B[s].hp)); }
+    if (s && !archSlab(s, i, x, y, L, X, Y, Z)) { setInst(I.slab, c.slab++, X, Y, Z, 0, 1, 1, 1, dmgTint(B[s].col, s === SLAB_BRIDGE ? 1 : W.shp[i] / B[s].hp)); }
     if (!b || b === 20 || b === 23 || b === 28 || b === 30 || b === 31) continue;
     let cut = 1;
     if (L === vl && me && !me.dead && (B[b].P || B[b].Z) && !B[b].nat) { const dx = X - me.x, dy = Z - me.y; if (dx * dx + dy * dy < 40 && dx * ox + dy * oy > 0.25) cut = 0.3; }
     switch (b) {
-      case 1: case 2: case 3: setInst(I.wall, c.wall++, X, Y, Z, 0, 1, cut, 1, dmgTint(B[b].col, W.bhp[i] / B[b].hp)); break;
-      case 24: setInst(I.wall, c.wall++, X, Y, Z, 0, 1, 0.55 + h * 0.45, 1, dmgTint(h < 0.5 ? '#7c4a3a' : '#74503e', W.bhp[i] / B[b].hp)); break;
-      case 6: setInst(I.stairs, c.stairs++, X, Y, Z, -W.bdir[i] * Math.PI / 2, 1, 1, 1, dmgTint(B[b].col, W.bhp[i] / B[b].hp)); break;
-      case 7: { const ax = wallAxis(x, y, L) ? Math.PI / 2 : 0; setInst(I.doorF, c.door, X, Y, Z, ax, 1, cut, 1, dmgTint('#8a4c3a', 1)); setInst(I.doorL, c.door++, X, Y, Z, ax, 1, cut, 1); break; }
-      case 8: setInst(I.bars, c.bars++, X, Y, Z, wallAxis(x, y, L) ? Math.PI / 2 : 0, 1, cut, 1, dmgTint('#6f8494', W.bhp[i] / B[b].hp)); break;
-      case 9: setInst(I.wire, c.wire++, X, Y, Z, h * 3, 1, 1, 1); break;
+      case 1: case 2: case 3: case 24: archWall(b, i, x, y, L, X, Y, Z, h, cut, vl); break;
+      case 6: archPut('stairs', X, Y, Z, -W.bdir[i] * Math.PI / 2, 1, 1, 1, dmgTint('#e8d8c0', W.bhp[i] / B[b].hp)); break;
+      case 7: { const ax = wallAxis(x, y, L) ? Math.PI / 2 : 0, f = W.bhp[i] / B[b].hp; archPut('doorF', X, Y, Z, ax, 1, cut, 1, dmgTint('#ffffff', f)); archPut('doorL', X, Y, Z, ax, 1, cut, 1, dmgTint('#ffffff', f)); break; }
+      case 8: { const ax = wallAxis(x, y, L) ? Math.PI / 2 : 0, f = W.bhp[i] / B[b].hp; archPut('sand', X, Y, Z, ax, 1, Math.max(cut, 0.6), 1, dmgTint('#ffffff', f)); if (cut === 1) archPut('bars', X, Y, Z, ax, 1, 1, 1, dmgTint('#ffffff', f)); break; }
+      case 9: { const wa = blkAt(x - 1, y, L) === 9 || blkAt(x + 1, y, L) === 9 ? 0 : Math.PI / 2; setInst(I.wire, c.wire++, X, Y, Z, wa, 1, 1, 1); archPut('wireP', X, Y, Z, wa, 1, 1, 1); break; }
       case 10: setInst(I.lampP, c.lamp, X - 0.2, Y, Z - 0.2, 0, 1, 1, 1); setInst(I.lampH, c.lamp++, X - 0.2, Y, Z - 0.2, 0, 1, 1, 1); lamps.push([X + 0.05, Y + 0.75, Z - 0.2]); break;
       case 22: { const sc = 0.8 + h * 0.5, rot = h * 6; setInst(I.trunk, c.trunk++, X, Y, Z, rot, sc, sc, sc); if (h < 0.6) for (let k = 0; k < 3; k++) setInst(I.pine[k], c.pine + 0, X, Y, Z, rot + k, sc, sc, sc); if (h < 0.6) c.pine++; else setInst(I.oak, c.oak++, X, Y, Z, rot, sc, sc, sc, h < 0.8 ? '#4f6a33' : '#5b7339'); break; }
       case 21: setInst(I.rock, c.rock++, X, Y, Z, h * 6, 0.8 + h * 0.6, 0.7 + h * 0.6, 0.8 + h * 0.5, h < 0.5 ? '#78746c' : '#6c6862'); break;
@@ -210,7 +210,7 @@ function rebuildCells() {
   I.lampP.count = I.lampH.count = c.lamp; I.trunk.count = c.trunk; for (const m of I.pine) m.count = c.pine; I.oak.count = c.oak; I.rock.count = c.rock;
   I.crate.count = c.crate; I.rubble.count = c.rubble; I.fence.count = c.fence; I.car.count = I.carW.count = c.car;
   for (const k in I) { const arr = Array.isArray(I[k]) ? I[k] : [I[k]]; for (const m of arr) { m.instanceMatrix.needsUpdate = true; if (m.instanceColor) m.instanceColor.needsUpdate = true; } }
-  RC.lamps = lamps;
+  archEnd(); RC.lamps = lamps;
 }
 
 /* ---------- characters ---------- */
@@ -416,7 +416,7 @@ function draw(dt) {
   const me = W.p[ME], vl = viewL();
   const key = W.ver + ':' + vl + ':' + CAM.rot + ':' + (me ? Math.floor(me.x) + ',' + Math.floor(me.y) + ',' + me.L : '');
   if (key !== CUT_KEY) { CUT_KEY = key; rebuildCells(); }
-  applyTime(darkness());
+  applyTime(darkness()); archFrame();
   drawZombies(vl); drawPlayers(vl); drawFx(); drawGhost(me);
   OBJ.zone.visible = !W.demo && W.phase === 'day' || !!(me && me.build);
   RENDER.render(SCN, CAMO);

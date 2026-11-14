@@ -24,6 +24,7 @@ const radioDist = (x, y) => Math.max(Math.abs(x - W.radio.x), Math.abs(y - W.rad
 const inZone = (x, y) => radioDist(x, y) <= BUILD_R;
 
 /* ---------- map generation (deterministic from seed) ---------- */
+const TOWN_HOUSES = [[32, 40, 37, 45], [43, 40, 49, 45], [32, 50, 37, 56], [43, 49, 48, 55], [44, 58, 49, 62]];
 function genMap(seed) {
   const r = mulberry(seed ^ 0x2545F491);
   const G = new Uint8Array(MW * MH), tt = new Uint8Array(MW * MH);
@@ -92,7 +93,7 @@ function genMap(seed) {
     if (v < pTree) put(x, y, g, 22); else if (v < pTree + pRock) put(x, y, g, 21);
   }
   // town (south, along the north-south road): ruined houses with rubble and crates
-  const houses = [[32, 40, 37, 45], [43, 40, 49, 45], [32, 50, 37, 56], [43, 49, 48, 55], [44, 58, 49, 62]];
+  const houses = TOWN_HOUSES;
   for (const [x0, y0, x1, y1] of houses) {
     for (let x = x0; x <= x1; x++) for (let y = y0; y <= y1; y++) { if (G[col(x, y)] !== 0 || tt[col(x, y)] === TT.water) continue; blk[ci(x, y, 0)] = 0; blk[ci(x, y, 1)] = 0; tt[col(x, y)] = TT.dirt; }
     for (let x = x0; x <= x1; x++) for (let y = y0; y <= y1; y++) {
@@ -101,7 +102,7 @@ function genMap(seed) {
       if (!edge) continue;
       if (r() < 0.22) { if (r() < 0.5) put(x, y, 0, 29); continue; } // gaps / rubble
       put(x, y, 0, 24);
-      if (r() < 0.35) put(x, y, 1, 24);
+      if (r() < 0.35 && !ARCH.roofCells.has(x + ',' + y)) put(x, y, 1, 24);
     }
     put(x0 + 1 + Math.floor(r() * (x1 - x0 - 2)), y0 + 1 + Math.floor(r() * (y1 - y0 - 2)), 0, 26);
     put(x0 + 1 + Math.floor(r() * (x1 - x0 - 2)), y0 + 1 + Math.floor(r() * (y1 - y0 - 2)), 0, 29);

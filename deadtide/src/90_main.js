@@ -2,7 +2,7 @@
 let ACC = 0, LAST = 0, HUD_BUILT = false, TIPS = [];
 function startGame(seed, names, diff, me) {
   TIPS.forEach(clearTimeout); TIPS = [];
-  ME = me; newWorld(seed, names, diff); buildTerrain();
+  ME = me; newWorld(seed, names, diff); buildTerrain(); archTown();
   Object.assign(RND, { parts: [], tracers: [], corpses: [], floats: [], flashes: [], booms: [], hurtV: 0 });
   STATE.mode = 'play'; STATE.paused = false; ACC = 0; NET.lastT = 0; VIEW.auto = true; CUT_KEY = '';
   CAM.zoom = clamp(+SET.zoom || 9, 4, 22); if (CAM.zoom < 4.5) CAM.zoom = 9;
@@ -19,7 +19,7 @@ function startGame(seed, names, diff, me) {
 }
 function startDemo() {
   ME = 0; newWorld(777, ['demo'], 'normal'); W.demo = true; W.p[0].gone = true;
-  W.phase = 'night'; W.night = 4; W.demoT = 0; buildTerrain(); VIEW.auto = false; VIEW.L = 1; CUT_KEY = ''; CAM.zoom = 11;
+  W.phase = 'night'; W.night = 4; W.demoT = 0; buildTerrain(); archTown(); VIEW.auto = false; VIEW.L = 1; CUT_KEY = ''; CAM.zoom = 11;
 }
 function demoStep(dt) {
   W.t += dt; W.demoT += dt;
