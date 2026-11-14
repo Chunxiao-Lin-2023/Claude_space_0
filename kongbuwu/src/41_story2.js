@@ -119,200 +119,28 @@ async function S_fanyu() { await T_(`^in 姑姑 13
 
 /* ================= 第四章 · 暮阳中学 ================= */
 async function S_muyang() { await chapterCard('四', '暮阳中学', '雨夜 · 四条支线'); setClock(8, '晚上 9 点');
-  await T_(`^fx rain
-第一辆出租车听到地名就拒载了。第二辆只肯送到荒地边上。
-雨越下越急。你把雨衣的帽檐往下拽，沿着土路走了三十分钟。`);
-  await look('暮阳中学到了。手电只照得到眼前一小块。', [
-    ['倒在地上的标牌', `^prop sg sign 12 5 {"col":"#8a2a2a"}
-几块标牌被推倒了，字被雨泡得发白：“危楼，禁止入内”。`],
-    ['围栏', `木头围栏有一段被人掰开过，断口还是新的。最近有人进去过。`],
-    ['远处的楼', `教学楼、两层的宿舍楼、两层的办公楼。所有的窗都是黑的——只有一扇，好像动了一下。`]], 2);
-  await T_(`^sfx steps
-^at 影子 2
-你停下来系鞋带。身后的脚步声，多走了一步，才停。
-^fx flicker
-^out 影子
-你回头。雨里只有你自己的脚印。
-^fx steady
-^call 鹤山
+  const r = await nt('muyang'); if (!r) return;
+  await T_(`^call 鹤山
 鹤山|老大！你快去平台首页看看，有人抢你饭碗！那个秦广，六十万粉的大主播，说下一期也要“夜探凶宅”！
 我|他播的都是我玩剩下的。
 你开了直播。信号很差，弹幕半天刷不出一条，然后突然涌出一大片。`); liveOn(80);
-  await T_(`>来了来了／主播这次又去哪作死／暮阳中学？我表哥以前就是那的，说有一个班……／前面的把话说完啊！
-@四条支线：送不走的笔仙——宿舍楼。厕所的第五个隔间——教学楼三楼。封闭的教室——教学楼尽头。深井——未知。
-我|现在还没过十二点，不是“它们”最活跃的时候。一个一个来。`); }
-async function S_pen() { setClock(8, '晚上 9:30'); await T_(`^mus night
-^fx dark
-^prop c1 chair 9 5
-^prop c2 chair 10 5
-^prop pp paper 11 5
-^prop c3 chair 12 5
-^prop c4 chair 13 5
-二楼第四间寝室。中间并排摆着四把椅子，椅子上放着纸和笔。
-第一张纸上写着问题。第二张上只有一行字：
-#我会以什么方式去死？
-^to 陈歌 10
-你把布偶放在胸口，右手握笔，左手抓着工具锤。
-我|笔仙笔仙，我是你的今生，如果要与我续缘，请在纸上画圈。
-手背上多了一股力气，冰凉。^fx flash
-有一瞬间，你看见握着这支笔的手，不止一只。
-^fx hands
-#是三只。
-^fx shake`);
-  const ok = await miniGame('pen');
-  const c = await choose([['“我父母在哪里？”', ''], ['“我未来的妻子是谁？”', '']]); F().penQ = c;
-  await T_(c === 0 ? `笔抖了起来。它在纸上画了两个圈，停住了。
-我|……跳过了？
-它也不知道。` : `笔写了一个“徐”字。停了一下。
-然后在上面狠狠打了个叉，在旁边另写了一个名字。两个字。
-你背后凉了一下。
-我|……我跟别人玩的笔仙，好像不太一样。`);
-  await T_(`我|笔仙笔仙，请离开。
-没有回应。它不走。
-^sfx giggle
-^fx hands off
-^fx eyes
-床底下，有人很小声地笑了一下。
-^fx shake
-你把笔往纸上一拍。
-我|给你一次重新组织语言的机会。
-笔在桌上滚了半圈，自己停了。
->？？？？主播在威胁笔仙／笔：我只是一支笔／人气两万了！
-直播间人气不知道什么时候破了两万。`); gainTitle('host'); if (ok) gainExp(30); STATE.live && (STATE.live.hot = Math.max(STATE.live.hot, 21000)); }
-async function S_wc() { setClock(8, '晚上 10 点'); await T_(`^fx dark
-^mus door
-^prop s4 stall 8 4
-^prop s5 stall 10 4
-^prop s6 stall 12 4
-三楼厕所。六个隔间的门全关着，像每一个里面都躲着人。
-这条支线是用第一人称写的：有一个人，为了抓住总在午夜出现的红影，躲进了第五个隔间。
-^to 陈歌 10
-^turn 陈歌 B
-你用锤头顶开了第五个隔间的门。
-!eyes
-^fx eyes
-隔板上，墙上，全是眼睛。画上去的。
-只有第六个隔间的隔板上有画，墙上没有。你凑近看：所有的眼睛，都是为了藏住隔板中间的一个小孔。
-我|不是有东西在第五个隔间里偷看。是有人躲在第六个隔间里，往第五个看。
-脚步声上来了。
-^to 陈歌 12
-^turn 陈歌 L
-你躲进第六个隔间，屏住呼吸，把眼睛凑到小孔上。`);
-  const ok = await miniGame('sneak', { t: '第六个隔间', tip: '红影<b>转过身去</b>（眼睛闭着）的时候点「凑近」看。6 次，被它发现 2 次就失败。', btn: '凑近' });
-  await T_(`^at 小男孩 9
-^at 小女孩 10
-孔的那一边，没有充血的眼珠。只有两个看起来三四岁大的孩子，手拉着手，站在第五个隔间里。
-^sfx steps
-^in 红影 4
-然后，红影进来了。它一个一个拉开隔间的门，探头进去看。
-^to 红影 8
-第五个。
-^to 红影 13
-^turn 红影 L
-^fx pulse
-它停在了第六个门口。
-^scare 红影
-门缝里，一只充血的眼睛，正对着你的眼睛。`);
-  await fight({ chase: HCHASE.redshadow, mobs: [['redshadow', L(0)]], title: '厕所的第五个隔间', intro: ok ? '门板还没完全打开，你的锤子已经出去了。' : '它已经看见你了。' });
-  await T_(`^at 小男孩 9
-^at 小女孩 10
-^at 红影 14
-^out 红影
-红影在地上一滚，身形变得很淡，逃出了厕所。
->主播追着鬼打？？／该害怕的是鬼才对啊／那两个小孩呢
-^turn 陈歌 L
-^to 小男孩 7
-^to 小女孩 8
-隔间里的两个孩子看着你手里的锤子，往后缩了缩。
-我|……我不是冲你们。`); }
+  await T_(`>来了来了／主播这次又去哪作死／暮阳中学？我表哥以前就是那的，说有一个班……／前面的把话说完啊！`); }
+async function S_pen() { setClock(8, '晚上 9:30');
+  const r = await nt('pen', { autoF: { k_penQ: 0 } }); if (!r) return;
+  F().penQ = r.f.k_penQ != null ? r.f.k_penQ : 0;
+  await T_(`>？？？？主播在威胁笔仙／笔：我只是一支笔／人气两万了！`); gainTitle('host'); if (r.kind === 'end') gainExp(30); STATE.live && (STATE.live.hot = Math.max(STATE.live.hot, 21000)); }
+async function S_wc() { setClock(8, '晚上 10 点');
+  const r = await nt('wc'); if (!r) return;
+  await T_(`>主播追着鬼打？？／该害怕的是鬼才对啊／那两个小孩呢`); }
 async function S_office() { setClock(8, '晚上 10:30');
-  await look('办公楼一层，数学组。', [
-    ['地上的牌子', `一块掉了色的牌子：数学组。牌子背面有人用指甲划了一道又一道。`],
-    ['桌上的画册', () => T_(`^prop bk book 11 5 {"col":"#3a4a7a"}
-一个卡通画册，一盒蜡笔。整本都在画同一个场景：黑色的房间里，关着两个红色的小人。
-` + (F().fanyu === 0 ? `和范郁送给你的那幅，几乎一模一样——他画给你看的时候，一点都不像在编。` : `你想起范郁趴在井边的样子，和他姑姑说的那句“天堂在井里”。`) + `
-我|如果黑房子是“家”——那几年前，范郁家里就已经住进了两个“人”。`)],
-    ['上锁的抽屉', `^prop dk desk 13 5
-^prop nt paper 13 4
-你用锤子撬开了两侧上锁的抽屉。一本教案里夹着三张纸条，笔迹各不相同，内容差不多：
-#“我知道第六个隔间里的人是你。”`]]);
-  await T_(`范郁的父亲，范老师，因为“酒后误事”被学校开除。
-我|躲在第六个隔间里偷看的人，是范郁的父亲。
-我|留着纸条，是想比对字迹找出这三个学生——可这三个人，在学校里根本找不到。
-^sfx creak
-你把纸条放回去。转身的时候，桌上那本画册自己翻到了新的一页。
-^fx glitch
-一个拿着锤子的小人，站在第五个隔间门口。画上的蜡笔，还没干。
->卧槽／所以那两个小孩是……／主播快跑吧十点半了`); if (F().fanyu === 0) gainExp(20); }
-async function S_last() { setClock(9, '晚上 11:40'); await T_(`^mus door
-^fx dark
-教学楼尽头。传说，有个班出去郊游，大巴出了车祸。那个班的学生，总是还回来上课。
-^prop dk schooldesk 11 5
-大火没有烧到这间教室。正中间那张课桌上刻满了字，每一笔都用尽了全力，笔迹各不相同：
-#“它可能藏在任何地方。抽屉里，柜子里，枕头后面。”／“那个眼珠我很熟悉。”／“希望这间教室的传说是真的。我愿意奉献我的一切，只求毁掉那双眼睛。”
-最后这一条的字迹，你见过。在范郁家，他姑姑签免责协议的时候。
-你碰倒了一把椅子。
-!face
-^at 学生 8
-^at 学生乙 13
-^at 学生丙 15
-^turn 学生 B
-^turn 学生乙 B
-^turn 学生丙 B
-^fx pulse
-教室里坐满了人。二十四个，穿着校服，低着头。
-^fx flicker
-^sfx whisper
-^turn 学生 F
-^turn 学生乙 F
-^turn 学生丙 F
-手电闪了一下。再亮起来的时候，二十四张脸，全都转向了你。
-^zoom 学生 2.2
-^fx steady
-^stage corridor
-^fx dark
-^prop fp footprints 12 5 {"col":"rgba(90,110,130,.6)"}
-^prop fq footprints 14 5 {"col":"rgba(90,110,130,.6)"}
-^zoom off
-^fx pulse off
-你退出去，带上了门。走廊的地上，有一串不属于你的湿鞋印。
-姑姑|没想到你真的跑到这地方来了。我是来救你的。这学校有一口死过很多人的井，井里的东西快出来了，你已经被盯上——快走。
-我|好。
-^turn 陈歌 L
-你转过身，把后背留给了她。`);
-  const win = await fight({ chase: HCHASE.aunt, mobs: [['aunt', L(1)]], title: '最后一间教室门外', intro: '早就知道你有问题。', epic: { name: '范郁的姑姑', sub: '深井 · 最后一条支线', seal: '井', intro: ['“我哥已经疯了。”', '“从他拿着那张合照回家开始。”', '那天晚上，她九点多到的学校。'], phase: '我从没想过杀人！你根本不知道那天发生了什么！', low: '走廊尽头的教室里，二十四个人都在往门外看。' } });
-  await T_(`姑姑|……我哥有那种癖好。被发现以后，他说有东西缠上了他，要报复他。嫂子要报警。
-姑姑|那天下着这么大的雨。我到的时候，他已经把嫂子塞进了井里。我把他也推了下去。他在井里骂了我一夜。
-我|你说过，你自己的丈夫孩子出事以后，是范郁画了弟弟妹妹来哄你。他是真心的。${F().fanyu === 0 ? `
-^prop pc paper 11 5
-你把范郁画给你的那张画递过去。黑房子，红色的小人，两个黑色的。
-她看了很久。手一直在抖。
-^del pc` : ''}
-我|让这件事到此为止吧。
-你关掉直播，报了警。
-^stage classroom
-^at 姑姑 10
-^at 学生 13
-^at 学生乙 15
-^down 姑姑
-经过最后那间教室的时候，她突然摔倒了。她也看见了：那些低着头的孩子，像极了她哥哥拿回家的那张合照。`); liveOff(); F().my_hill = 1; }
-async function S_well() { setClock(10, '凌晨 3 点'); await T_(`^fx rain
-^in 李队 14
-灌木被推开。一行人穿着雨衣，硬踩出一条路来。
-李队|又是你。陈歌，你是不是在我们辖区装了雷达？
-我|另一个凶手已经死了。在井里。
-她只记得一个大致的范围。警察挖了整整一夜。
-^prop wl well 11 5
-^stage wellyard
-^fx fog
-凌晨三点多，暮阳中学后山的深井，找到了。
-井盖撬开的那一刻，雨停了。
-^sfx knock
-井底传上来三下敲击声。很慢。像有人在下面，敲井壁。
-^fx hands
-所有拿着铁锹的人都停了手。没有人说话。
-^fx hands off
-~phone
+  const r = await nt('office'); if (!r) return;
+  await T_(`范郁的父亲，范老师，因为“酒后误事”被学校开除。`); if (F().fanyu === 0) gainExp(20); }
+async function S_last() { setClock(9, '晚上 11:40');
+  const r = await nt('last'); if (!r) return;
+  liveOff(); F().my_hill = 1; }
+async function S_well() { setClock(10, '凌晨 3 点');
+  const r = await nt('well'); if (!r) return;
+  await T_(`~phone
 @玩家成功体验四条支线任务，并存活至天亮，暮阳中学试炼任务完成！
 @试炼任务完成度超过百分之九十，获得隐藏道具——怨念缠绕的圆珠笔（残破）：笔仙并不想搭理你，它朝你翻了个白眼，并把自己藏了起来。
 这所学校里滞留的，不是恶灵。包括笔仙在内，它们大多没有害人的心思。
@@ -388,49 +216,9 @@ async function S_wish() { await T_(`^stage room
 你把它的资料看了好几遍。它能负责一个小场景，还能在一定范围内“预知”。
 我|万事开头难。以后会有更多新员工的。
 @激活隐藏任务下一环节：为二十四个名字，制作出寄托残念的人偶。`); gainPet('bixian'); petAff('bixian', 20); if (c === 1) petAff('bixian', 12); }
-async function S_guest() { setClock(9, '午夜 0 点'); await T_(`^mus night
-^fx dark
-一楼卫生间那个隔间的门后面，有声音。你把它锁上了。
-@噩梦难度：这个游戏叫做看不见的客人。午夜把浸湿的白米撒在房子周围，把一双穿过的拖鞋放在门外，床铺整理成有人熟睡的样子，你躺在床下。任务的关键是你必须真的睡着。只要看到它的脸，任务就算成功。
-@本次任务是你接受的第三个噩梦级别日常任务，完成后可随机获得一个恐怖场景的试炼任务。
-^stage room
-^fx dark
-^prop rc rice 3 5
-^prop sh shoes 5 5 {"col":"#7a7a80"}
-^prop bd bed 11 4
-^prop cd candle 14 5
-你照做了。白米，拖鞋，白蜡，枕头塞进被子里。
-^to 陈歌 11
-^down 陈歌
-然后钻到床下。
-^sfx steps
-^prop f1 footprints 2 5 {"col":"rgba(200,195,180,.5)"}
-化妆间的面具掉在了地上。门关上的声音。
-^prop f2 footprints 5 5 {"col":"rgba(200,195,180,.5)"}
-^sfx steps
-地上的白米，一粒一粒被踩开。
-^prop f3 footprints 8 5 {"col":"rgba(200,195,180,.5)"}
-^fx flicker
-它停在了床边。床板压低了一点——有什么东西，坐在了你头顶的床上。
-^fx steady
-^prop sh shoes 6 5 {"col":"#7a7a80"}
-^fx candle 14
-那双拖鞋，鞋尖转向了休息室。`);
-  const ok = await miniGame('guest');
-  await T_(ok ? `你看见了。
-^in 罗若雨 13
-不是一张吓人的脸。是一个小女孩的影子。她把枕头旁边的布偶摆正，才往外走。
-^out 罗若雨
-^del rc
-地上的白米被踢散了。` : `^prop dl doll 10 5
-你没敢看。但布偶从床上掉下来，滚到了你手边——像有人递给你的。`);
-  await T_(`^stage parking
-^fx dark
-你跟着那道影子，一直走到地下。墙角有一个只容四根手指伸进去的洞。
-^prop pc paper 12 5
-洞里是一串塑料手链，和一只压变形的千纸鹤。手链末端有三个歪歪斜斜的字：罗若雨。
-我|姓罗……罗董的女儿？她成了这座乐园的守护灵。所以布偶只在乐园里有用。
-^stage room
+async function S_guest() { setClock(9, '午夜 0 点');
+  const r = await nt('guest'); if (!r) return; if (r.f.k_saw) F().sawRuoyu = 1;
+  await T_(`^stage room
 ^prop ph photo 10 5
 你从上锁的抽屉里取出相册。第一页，一家三口。
 还有一张：父亲指着恐怖屋在向你炫耀，母亲半蹲在地上，伸手轻轻抚摸着——空气。
@@ -453,94 +241,23 @@ async function S_mennan() { await T_(`^in 门楠 13
 口袋里的圆珠笔动了一下。你摸出来，它在你掌心的纸上写了两个字：` + (F().bixian === 1 ? `有。加班吗？` : `有的。`) + `
 ^del pp` : '') + `
 我|你还记得梦里是什么地方吗？
-^recall dream 门楠的梦
-^stage wardhall
-^fx dark
-^fx fog
-^fx flicker
-^at 门楠 4
-^at 人影 15
-门楠|走廊。很多一样的门。我一直往前走，门上都没有号码。
-^to 门楠 7
-^creep 人影 12
-^sfx steps
-门楠|每走几步，我就忍不住回头。每回一次头，他就近一扇门。
-^creep 人影 9
-^turn 门楠 R
-门楠|我不敢跑。好像一跑，他就会知道我在怕他。
-^stage room
-^fx dark
-^at 人影 12
-^sfx breath
-门楠|昨晚我睁开眼，床边站着一个人。低着头，在看我。
-^zoom 人影 2.4
-^fx pulse
-门楠|他的脸……我想不起来。可我知道，我认识他。
-^recall off
-门楠|我小时候……我曾听他们说过一个词，“第三病栋”。我不知道那是哪。`);
+`);
+  const r = await nt('dream'); if (!r) return;
+  await T_(`门楠|我小时候……我曾听他们说过一个词，“第三病栋”。我不知道那是哪。`);
   const c = await choose([['“今晚我去你住的地方看看。”', ''], ['“我认识一位心理医生，一起去。”', '高医生']]); F().mennan = c;
   await T_(`~phone
 @第二位特殊游客已经离开，成功获得任务信息！解锁隐藏试炼任务——三个人的房间（尖叫指数一星）：午夜之前抵达海明公寓，找出特殊游客的病因。
 @本任务与三星恐怖场景第三病栋存在关联。
 我|任务的名字，本身就是提示。门楠算一个，梦里的人算一个。第三个……
 下午四点，你把钥匙交给徐婉，钻进了工具间。`); F().a_haiming = 1; F().know_room = 1; }
-async function S_haiming() { setClock(8, '晚上 11 点'); await T_(`^in 大叔 13
-301 的大叔把电视音量放大了才开口。
-大叔|带着你朋友走吧。303 死过人。出事以后，那屋再没租出去过。这地方不是谁都能住的。
-^out 大叔
-^in 年轻人 16
-302 的年轻人，隔着门缝说话。
-^recall tale 302 隔着墙听见的
-^stage apt303
-^fx dark
-^fx candle 8
-^at 王海明 8
-^at 影子 10
-^turn 王海明 R
-^turn 影子 L
-年轻人|303 以前住的人叫王海明。我听见过他屋里两个声音吵架。
-^fx chroma
-年轻人|可那屋里，从来只住着他一个人。
-^to 影子 9
-^fx flicker
-年轻人|其中一个说，要不是怕被“红衣”发现，宁死也不跟一个垃圾共存。
-^recall off
-我|红衣？
-你打开好感度页面。小小的名字后面写着“厉鬼”。张雅后面，是“红衣厉鬼”。
-^stage apt303
-^mus mirror
-^mirror 8
-303。卫生间的镜子，正对着卧室。卧室没有门。
-门楠${F().mennan === 1 ? '和高医生' : ''}在外面等。你关了灯，坐在镜子照不到的地方。
-^to 陈歌 5
-^fx dark
-^fx glitch
-^mirror other 黑影
-半夜。你瞥了一眼镜子：镜子里的卧室门框后面，多了一道影子。
-你转头去看真正的门框——空的。
-^sfx whisper
-^mirror hand
-再看镜子。它离镜面近了一点。玻璃上，从里面按上来一只手印。
-^at 黑影 13
-^scare 黑影
-^fx pulse
-^zoom 黑影 1.9
-卧室门框后面，立着一道高瘦的黑影。它长着两张不同的脸。
-!mirror`);
-  const win = await fight({ chase: HCHASE.twoface, mobs: [['twoface', L(1)]], title: '303 房', intro: '两张脸在互相咒骂。它们并不是一条心。', epic: { name: '两张脸的黑影', sub: '三个人的房间', seal: '镜', intro: ['王海明从“那个地方”带出来的东西。', '它一直躲在镜子里，等门楠睡着。', '——它也在怕着什么。'], phase: '（其中一张脸在喊：别把红衣引来！）', low: '钥匙在你口袋里发烫。生了锈的那一把。' } });
-  await T_(`^fx dark
-^out 黑影
-^zoom off
-^fx pulse off
-${win ? '它缩回了镜子里，镜面晃了几下，平了。' : '它没有追出来。它不敢离开镜子太远。'}
-^prop ky key 12 5
-地上留下一把生锈的钥匙。
-门楠|我……想起来一点。我是在一所医院里出生的。
+async function S_haiming() { setClock(8, '晚上 11 点');
+  const r = await nt('haiming'); if (!r) return;
+  await T_(`门楠|我……想起来一点。我是在一所医院里出生的。
 ~phone
 @一星试炼任务完成！全新恐怖场景「三个人的房间」已解锁。隐藏道具——自知力钥匙（怨念值十三）：当你出现类似的症状时，这把钥匙可以帮你一次。
 我|“当我出现类似的症状时”？这是在婉转地说我也有病？
 从那个地方跑出来的东西，知道“红衣”。也就是说，第三病栋里，很可能有和张雅同级的东西。`); addItem('key'); C.hh.scenes.push('room'); await dayCard('早上 8 点'); go('hh_rest', true, true); }
-async function S_cat() { await T_(`^stage park
+async function S_cat() { await preOnce('cat', async () => { await T_(`^stage park
 ^prop bx box 12 5
 ^prop ct cat 11 5
 乐园后门的垃圾桶边，一只白猫守着一个纸箱。箱子里的小猫，已经不动了。
@@ -559,21 +276,8 @@ async function S_cat() { await T_(`^stage park
 ^del ct
 ^out 小小
 然后它耳朵竖了起来，冲出去，在一楼卫生间的门板上留下了一道道刻痕——就是你锁上的那个隔间。
-我|它看得见。`); gainPet('baimao'); petAff('baimao', 20); addItem('g_coat');
-  await T_(`^stage prop
-^prop d1 doll 9 5 {"col":"#3e4e6e"}
-^prop d2 doll 10 5 {"col":"#3e4e6e"}
-^prop d3 doll 11 5 {"col":"#3e4e6e"}
-^prop d4 doll 12 5 {"col":"#3e4e6e"}
-你用了两个晚上，做了二十四个人偶。每一个的胸口，都缝着一个名字。
-^fx flicker
-做到第二十个的时候，你停下来数了数桌上的人偶。
-^prop d5 doll 13 5 {"col":"#3e4e6e"}
-二十一个。
-^fx steady
-^del d5
-你又数了一遍。二十个。你没敢再数。`);
-  const ok = await miniGame('doll24');
+我|它看得见。`); gainPet('baimao'); petAff('baimao', 20); addItem('g_coat'); });
+  const r = await nt('doll24'); if (!r) return; const ok = true;
   await T_(`~phone
 @暮阳中学隐藏任务——为二十四个名字制作躯体完成！奖励：回归者的信任，你可以通过手机简单操控它们。
 ^stage classroom
