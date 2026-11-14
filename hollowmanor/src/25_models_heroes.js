@@ -115,7 +115,7 @@ function foldLathe(pts, seg, amp, freq, zs = 1) { const g = GEO.lathe(pts, seg),
 function foldTube(p, rTop, rBot, len, mat, folds = 0.05) { const g = new THREE.CylinderGeometry(rTop, rBot, len, 18, 6, false), q = g.attributes.position; for (let i = 0; i < q.count; i++) { const x = q.getX(i), z = q.getZ(i), y = q.getY(i), a = Math.atan2(z, x), k = 1 + Math.sin(a * 5 + y * 30) * folds * 0.3 + Math.sin(y * 22) * folds * 0.2; q.setX(i, x * k); q.setZ(i, z * k); } g.computeVertexNormals(); addM(p, g, mat, 0, -len / 2, 0); addM(p, GEO.sph(rBot, 16, 10), mat, 0, -len, 0); addM(p, GEO.sph(rTop, 16, 10), mat, 0, 0, 0); }
 /* ---------- head: sculpted skull + painted face (open/closed for blinking) + small 3D nose + ears ---------- */
 function makeHead(R, H, r, skullY, neck, skin, ho, fo, ears = true) {
-  addM(H, GEO.cyl(neck[0], neck[1], 0.2, 14), skin, 0, -0.07, -0.008);
+  addM(H, GEO.cyl(neck[0], neck[1], 0.16, 14), skin, 0, -0.03, -0.008);
   const skull = grp(H, 0, skullY, 0); R.skull = skull;
   addM(skull, headGeo(r, ho), skin, 0, 0, 0);
   const mk = closed => { const m = new THREE.Mesh(facePatch(r, ho), pmat('face' + fo.key + closed, { map: faceTex(fo, closed), transparent: true, depthWrite: false, roughness: 0.42, clearcoat: 0.15, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 })); m.userData.keep = true; m.renderOrder = 2; skull.add(m); return m; };
@@ -161,7 +161,7 @@ function makeHand(parent, sx, skin, glove, curl = 0.5, thumbCurl = 0.4) {
 /* ---------- 持灯者 阿岩 ---------- */
 function makeHolder() {
   heroTex();
-  const R = rig({ hipY: 0.84, chestY: 0.32, headY: 0.22, shX: 0.205, shY: 0.07, upper: 0.28, fore: 0.26, legX: 0.1, thigh: 0.4, shin: 0.38 });
+  const R = rig({ hipY: 0.84, chestY: 0.32, headY: 0.195, shX: 0.205, shY: 0.07, upper: 0.28, fore: 0.26, legX: 0.1, thigh: 0.4, shin: 0.38 });
   const skin = pmat('skinA', { color: 0xd6a07a, roughness: 0.55, sheen: 0.15, sheenColor: new THREE.Color(0xffc0a8), sheenRoughness: 0.5 });
   const coat = pmat('raincoat', { color: 0xd8a024, roughness: 0.42, clearcoat: 0.55, clearcoatRoughness: 0.3, bumpMap: TEX.fabric, bumpScale: 0.3 });
   const coatD = pmat('raincoatD', { color: 0x9a6c12, roughness: 0.5, clearcoat: 0.3 });
@@ -254,7 +254,7 @@ function makeHolder() {
 /* ---------- 灵视者 小雾 ---------- */
 function makeSeer() {
   heroTex();
-  const R = rig({ hipY: 0.76, chestY: 0.29, headY: 0.188, shX: 0.172, shY: 0.065, upper: 0.25, fore: 0.225, legX: 0.084, thigh: 0.37, shin: 0.345 });
+  const R = rig({ hipY: 0.76, chestY: 0.29, headY: 0.13, shX: 0.172, shY: 0.065, upper: 0.25, fore: 0.225, legX: 0.084, thigh: 0.37, shin: 0.345 });
   const skin = pmat('skinB', { color: 0xe8b89a, roughness: 0.52, sheen: 0.2, sheenColor: new THREE.Color(0xffd0c4), sheenRoughness: 0.45 });
   const knit = pmat('cardigan', { color: 0x1e2846, roughness: 0.95, map: TEX.knit, bumpMap: TEX.knit, bumpScale: 1.1 });
   const knitRib = pmat('cardiganRib', { color: 0x182038, roughness: 0.95, map: TEX.knit, bumpMap: TEX.knit, bumpScale: 1.6 });

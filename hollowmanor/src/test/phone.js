@@ -2,7 +2,7 @@
 const { chromium } = require('playwright'); const OUT = process.env.OUT || '/tmp';
 const UA = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1';
 (async () => {
-  const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome', args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] });
+  const b = await chromium.launch({ executablePath: process.env.CHROME || require('fs').readdirSync('/opt/pw-browsers').filter(d => /^chromium-\d+$/.test(d)).flatMap(d => ['/chrome-linux/chrome', '/chrome-linux64/chrome'].map(s => '/opt/pw-browsers/' + d + s)).find(p => require('fs').existsSync(p)), args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] });
   const views = JSON.parse(process.env.VIEWS || '[[393,852,1],[852,393,1]]');
   for (const [w, h, touch] of views) {
     const c = await b.newContext(touch ? { viewport: { width: w, height: h }, hasTouch: true, isMobile: true, deviceScaleFactor: 1, userAgent: UA } : { viewport: { width: w, height: h } });

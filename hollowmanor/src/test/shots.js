@@ -2,7 +2,7 @@
 const { chromium } = require('playwright'); const OUT = process.env.OUT || '/tmp';
 const W_ = +(process.env.W || 1100), H_ = +(process.env.H || 650);
 (async () => {
-  const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome', args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] });
+  const b = await chromium.launch({ executablePath: process.env.CHROME || require('fs').readdirSync('/opt/pw-browsers').filter(d => /^chromium-\d+$/.test(d)).flatMap(d => ['/chrome-linux/chrome', '/chrome-linux64/chrome'].map(s => '/opt/pw-browsers/' + d + s)).find(p => require('fs').existsSync(p)), args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] });
   const p = await b.newPage({ viewport: { width: W_, height: H_ } });
   const errs = []; p.on('pageerror', e => errs.push(e.message)); p.on('console', m => { if (m.type() === 'error' && !/fonts|Failed to load/.test(m.text())) errs.push(m.text().slice(0, 300)); });
   await p.route(/fonts\.(googleapis|gstatic)/, r => r.abort());

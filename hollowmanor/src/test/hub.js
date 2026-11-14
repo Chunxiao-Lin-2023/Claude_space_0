@@ -1,7 +1,7 @@
 // Gallery integration: the hub card opens the game; the title screen's "‹ 游戏厅" returns to the hub. Serve the repo root on :8766.
 const { chromium } = require('playwright'); const OUT = process.env.OUT || '/tmp';
 (async () => {
-  const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome', args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] });
+  const b = await chromium.launch({ executablePath: process.env.CHROME || require('fs').readdirSync('/opt/pw-browsers').filter(d => /^chromium-\d+$/.test(d)).flatMap(d => ['/chrome-linux/chrome', '/chrome-linux64/chrome'].map(s => '/opt/pw-browsers/' + d + s)).find(p => require('fs').existsSync(p)), args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] });
   const p = await b.newPage({ viewport: { width: 1280, height: 800 } }); const errs = []; p.on('pageerror', e => errs.push(e.message));
   await p.route(/fonts\.(googleapis|gstatic)/, r => r.abort());
   await p.goto('http://localhost:8766/', { waitUntil: 'domcontentloaded' });
