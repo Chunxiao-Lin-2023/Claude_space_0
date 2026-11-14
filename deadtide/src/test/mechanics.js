@@ -23,7 +23,7 @@ const UA = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/6
     const roll = await p.evaluate(() => { const s = new Set(); for (let n = 0; n < 14; n++) { W.night = n; rollTasks(); W.tasks.forEach(t => s.add(t.k)); } W.night = 0; rollTasks(); return [...s].join(','); });
     ok('task variety over nights', roll.split(',').length >= 9, roll);
     // zombies hunt players, not the camp
-    const hunt = await p.evaluate(() => { const me = W.p[0]; me.x = W.radio.x + 30.5; me.y = W.radio.y + 0.5; me.L = gAt(Math.floor(me.x), Math.floor(me.y)); updateFields(0, true); const z = spawnZombie('walker', 0); z.x = W.radio.x + 30.5; z.y = W.radio.y + 9.5; z.L = gAt(Math.floor(z.x), Math.floor(z.y)); z.z = surfZ(z.x, z.y, z.L); const d0 = Math.hypot(z.x - me.x, z.y - me.y); return d0; });
+    const hunt = await p.evaluate(() => { const me = W.p[0]; me.x = W.radio.x + 0.5; me.y = W.radio.y + 14.5; me.L = gAt(Math.floor(me.x), Math.floor(me.y)); updateFields(0, true); const z = spawnZombie('walker', 0); z.x = W.radio.x + 9.5; z.y = W.radio.y + 14.5; z.L = gAt(Math.floor(z.x), Math.floor(z.y)); z.z = surfZ(z.x, z.y, z.L); const d0 = Math.hypot(z.x - me.x, z.y - me.y); return d0; });
     await simWait(2);
     const hunt2 = await p.evaluate(() => { const me = W.p[0], z = W.zs[W.zs.length - 1]; const d = Math.hypot(z.x - me.x, z.y - me.y); W.zs.length = 0; return d; });
     ok('zombie walks toward the player', hunt2 < hunt - 1, hunt.toFixed(1) + ' -> ' + hunt2.toFixed(1));
@@ -46,7 +46,7 @@ const UA = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/6
     // build targeting: pointing at the top of a wall stacks, at the floor builds on it, drag paints a row
     const bt = await p.evaluate(() => {
       const me = W.p[0], X = W.radio.x + 7, Y = W.radio.y + 2; me.x = X - 1.5; me.y = Y + 1.5; me.L = 0; me.z = 0; me.sel = 1; me.build = true; me.demo = false;
-      for (let x = X - 2; x <= X + 6; x++) for (let y = Y - 3; y <= Y + 3; y++) for (let L = 0; L < 3; L++) { const i = ci(x, y, L); if (W.blk[i] && !B[W.blk[i]].nat) W.blk[i] = 0; W.slab[i] = 0; }
+      for (let x = X - 2; x <= X + 6; x++) for (let y = Y - 3; y <= Y + 5; y++) for (let L = 0; L < 3; L++) { const i = ci(x, y, L); if (W.blk[i] && W.blk[i] !== 20 && W.blk[i] !== 23) W.blk[i] = 0; W.slab[i] = 0; }
       W.ver++; recomputeStab(); CAM.tx = me.x; CAM.ty = me.y; CAM.zoom = 9; updateCamera(1); updateCamera(1);
       const r = {};
       let [sx, sy] = w2s(X + 0.5, Y + 0.5, 0.02); r.floor = pickBuild(sx, sy, me, false);
@@ -66,8 +66,10 @@ const UA = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/6
       const a = w2s(X + 0.5, Y + 0.5, 0.02), c = w2s(X + 4.5, Y + 0.8, 0.02);
       paintBuild(a[0], a[1], true, false);
       for (let k = 1; k <= 6; k++) paintBuild(a[0] + (c[0] - a[0]) * k / 6, a[1] + (c[1] - a[1]) * k / 6, false, false);
+      const pv = PREV ? PREV.cells.map(c => (c.x - X) + ':' + (buildWhy(me, c.x, c.y, c.L) || 'ok')).join(' ') : 'noprev', mp = [me.x - X, me.y - Y].map(v => v.toFixed(1)).join(',');
+      finishPaint(); const pl = PLAN ? PLAN.cells.map(c => (c.x - X) + ',' + (c.y - Y) + ',' + c.L).join(' ') : 'none'; confirmPlan();
       await new Promise(r => setTimeout(r, 300));
-      let n = 0; for (let x = X; x <= X + 4; x++) if (W.blk[ci(x, Y, 0)] === 2) n++; return n;
+      let n = 0; for (let x = X; x <= X + 4; x++) if (W.blk[ci(x, Y, 0)] === 2) n++; return n === 5 ? n : n + ' plan ' + pl + ' prev ' + pv + ' me ' + mp;
     });
     ok('drag paints a straight row', row === 5, 'row ' + row);
     // stairs: walking off the top requires a push; side entry is blocked by rails

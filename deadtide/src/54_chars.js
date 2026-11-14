@@ -46,6 +46,9 @@ function charScene() {
   G.fist = jitterG(merge([new THREE.IcosahedronGeometry(0.12, 0).translate(0, -0.1, 0), new THREE.ConeGeometry(0.025, 0.09, 4).rotateZ(-Math.PI / 2).translate(0.13, -0.08, 0.04), new THREE.ConeGeometry(0.025, 0.09, 4).rotateZ(-Math.PI / 2).translate(0.13, -0.12, -0.04)].map(ni)), 0.02, 13);
   const sp = []; for (let k = 0; k < 5; k++) sp.push(new THREE.ConeGeometry(0.03 - k * 0.003, 0.14 + hash2(k, 8) * 0.1, 4).rotateZ(0.9 + hash2(k, 2) * 0.3).translate(-0.12, 0.1 + k * 0.075, (hash2(k, 6) - 0.5) * 0.08));
   G.spikes = merge(sp);
+  // riot helmet (dome + visor) and riot shield with a window
+  G.helmet = merge([new THREE.SphereGeometry(0.135, 9, 5, 0, Math.PI * 2, 0, Math.PI / 2).translate(0, 0.14, 0), boxG(0.03, 0.09, 0.22, 0.12, 0.12, 0), boxG(0.2, 0.025, 0.25, 0.01, 0.14, 0)].map(ni));
+  G.shield = merge([boxG(0.035, 0.55, 0.36, 0, -0.12, 0), boxG(0.045, 0.12, 0.22, 0.004, 0.06, 0), boxG(0.05, 0.03, 0.38, 0, -0.39, 0)]);
   const eyeMat = new THREE.MeshBasicMaterial({ color: '#ffffff' });
   const glowMat = new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0.4, blending: THREE.AdditiveBlending, depthWrite: false });
   const def = (k, geo, mat, cap, sh = true) => { const m = inst(geo, mat, cap, sh); ZPOOL[k] = { m, n: 0, cap }; };
@@ -55,6 +58,7 @@ function charScene() {
   def('hair', G.hair, lam('#ffffff'), ZCAP); def('eye', G.eye, eyeMat, ZCAP + 40, false); def('glow', G.glow, glowMat, ZCAP + 40, false);
   def('belly', G.belly, lam('#ffffff'), 120); def('pust', G.pust, new THREE.MeshBasicMaterial({ color: '#ffffff' }), 120, false);
   def('fist', G.fist, lam('#ffffff'), 120); def('spikes', G.spikes, lam('#ffffff'), 120);
+  def('helmet', G.helmet, lam('#ffffff'), 160); def('shield', G.shield, lam('#ffffff'), 160);
   // survivors' shared geometry
   PGEO.limb = limbGeo(1, 0.8, 7);
   // thick additive tracers + blood decals on the floor
@@ -65,7 +69,7 @@ function charScene() {
 function zput(k, M, sx, sy, sz, col) { const q = ZPOOL[k]; if (q.n >= q.cap) return; _sm.makeScale(sx, sy, sz); _m2.multiplyMatrices(M, _sm); q.m.setMatrixAt(q.n, _m2); if (col) q.m.setColorAt(q.n, tmpC.set(col)); q.n++; }
 const ZSHIRT = ['#3c4652', '#4f3e33', '#34402f', '#5a4a3a', '#3e3446', '#46503f', '#5a3434', '#2f3a44', '#6a5a48', '#2c2c30'];
 const ZSKIN = ['#93a383', '#82967a', '#a0aa8e', '#8a9a80', '#b4b8a4'];
-const ZEYE = { walker: '#ffd36a', runner: '#ff9a3a', climber: '#d6f0ff', spitter: '#b6ff4a', brute: '#ff6a3a', boss: '#ff2a2a' };
+const ZEYE = { walker: '#ffd36a', runner: '#ff9a3a', climber: '#d6f0ff', spitter: '#b6ff4a', brute: '#ff6a3a', boss: '#ff2a2a', dog: '#ff3a2a', crawler: '#ffd36a', bloater: '#c8ff4a', screamer: '#ff6ad0', armored: '#9ad8ff' };
 // per-type body plan: proportions + posture. Walkers get variants from their seed.
 const ZBODY = {
   walker: { tw: 1, th: 1, hs: 1, ua: 0.2, fa: 0.2, tl: 0.22, sl: 0.22, sw: 0.15, hunch: 0.32 },
@@ -74,6 +78,10 @@ const ZBODY = {
   spitter: { tw: 1.15, th: 0.95, hs: 1.05, ua: 0.18, fa: 0.18, tl: 0.2, sl: 0.2, sw: 0.17, hunch: 0.15 },
   brute: { tw: 1.65, th: 1.05, hs: 0.72, ua: 0.22, fa: 0.22, tl: 0.22, sl: 0.2, sw: 0.25, hunch: 0.28 },
   boss: { tw: 1.45, th: 1.05, hs: 0.95, ua: 0.27, fa: 0.33, tl: 0.21, sl: 0.2, sw: 0.24, hunch: 0.38 },
+  crawler: { tw: 0.95, th: 0.9, hs: 1, ua: 0.22, fa: 0.24, tl: 0.09, sl: 0.06, sw: 0.15, hunch: 1.42 },
+  bloater: { tw: 1.75, th: 1.0, hs: 0.85, ua: 0.17, fa: 0.17, tl: 0.21, sl: 0.19, sw: 0.2, hunch: 0.08 },
+  screamer: { tw: 0.76, th: 1.05, hs: 0.95, ua: 0.26, fa: 0.27, tl: 0.24, sl: 0.24, sw: 0.13, hunch: 0.12 },
+  armored: { tw: 1.15, th: 1.0, hs: 1, ua: 0.2, fa: 0.2, tl: 0.22, sl: 0.22, sw: 0.17, hunch: 0.18 },
 };
 const ZM = []; for (let k = 0; k < 16; k++) ZM.push(new THREE.Matrix4());
 function drawZombies(vl, dt) {
@@ -91,6 +99,8 @@ function drawZombies(vl, dt) {
   for (const k in ZPOOL) { const q = ZPOOL[k]; q.m.count = q.n; q.m.instanceMatrix.needsUpdate = true; if (q.m.instanceColor) q.m.instanceColor.needsUpdate = true; }
 }
 function rigZombie(z, corpse, dt, dk) {
+  if ((z.burn > 0 || z.burnF) && !corpse && Math.random() < dt * 22) addP({ x: z.x + frnd(-0.2, 0.2), y: z.y + frnd(-0.2, 0.2), z: z.z + frnd(0.2, ZT[z.k].h), vx: frnd(-0.3, 0.3), vy: frnd(-0.3, 0.3), vz: frnd(0.8, 1.6), g: -0.5, col: Math.random() < 0.5 ? '#ffb030' : '#ff6a1a', s: frnd(0.06, 0.12), life: 0.45 });
+  if (z.k === 'dog') return rigDog(z, corpse, dt);
   const T = ZT[z.k], Bd = ZBODY[z.k] || ZBODY.walker, s = T.sc, sd = z.seed || 0, v = z.k === 'walker' ? sd % 5 : 0;
   // render-side smoothing: facing, speed and gait phase (works the same for host and guest)
   if (!corpse) {
@@ -100,12 +110,12 @@ function rigZombie(z, corpse, dt, dk) {
     z._ph += dt * (1.2 + z._spd * (z.k === 'runner' ? 3.2 : z.k === 'climber' ? 4.2 : 3.6) / s);
   }
   const hit = !corpse && z.hitT > 0, white = c => hit ? '#ffd8cc' : c;
-  const skin = white(z.k === 'climber' ? '#7d8e98' : z.k === 'spitter' ? '#93a64e' : z.k === 'brute' ? '#7a6d62' : z.k === 'boss' ? '#6e534c' : v === 1 ? '#c2c4b2' : ZSKIN[sd % 5]);
+  const skin = white(z.k === 'bloater' ? '#9aa86a' : z.k === 'screamer' ? '#b8b0b4' : z.k === 'crawler' ? '#8a9480' : z.k === 'climber' ? '#7d8e98' : z.k === 'spitter' ? '#93a64e' : z.k === 'brute' ? '#7a6d62' : z.k === 'boss' ? '#6e534c' : v === 1 ? '#c2c4b2' : ZSKIN[sd % 5]);
   const shirt = white(v === 1 ? ['#6b1414', '#3a3a52', '#d8d0bc'][sd % 3] : ZSHIRT[sd % 10]), pants = white(z.k === 'brute' || z.k === 'boss' ? '#2a2420' : '#26292b'), shoe = '#1b1a18';
   const rag = white(v === 1 ? ['#4a0808', '#24243a', '#a8a090'][sd % 3] : tmpC.set(ZSHIRT[sd % 10]).multiplyScalar(0.7).getStyle());
   const amp = corpse ? 0 : clamp(z._spd / Math.max(0.6, T.spd * 0.8), 0, 1.15), ph = corpse ? 0 : z._ph, t = W.t;
   const atk = !corpse && z.atk > 0, aph = atk ? (t * 3.2 + sd * 0.37) % 1 : 0, swing = atk ? (aph < 0.62 ? -ease(aph / 0.62) : -1 + ease((aph - 0.62) / 0.2) * 1.6) : 0; // raise, then slam
-  const climbing = !corpse && !!z.climbing, quad = z.k === 'climber' && !climbing;
+  const climbing = !corpse && !!z.climbing, quad = z.k === 'climber' && !climbing, crawl = z.k === 'crawler', scream = !corpse && z.scr > 0;
   const twitch = !corpse && hash2(Math.floor(t * 3) + sd, 7) > 0.93 ? (hash2(Math.floor(t * 3), sd) - 0.5) * 1.3 : 0;
   const flinch = hit ? 0.35 : 0;
   // --- legs: thigh swing + knee bend; left/right can differ (limp) ---
@@ -114,6 +124,7 @@ function rigZombie(z, corpse, dt, dk) {
   let aL = Math.sin(ph) * thA, aR = -Math.sin(ph) * thA * (limp ? 0.45 : 1);
   let kL = 0.12 + Math.max(0, Math.cos(ph)) * kn, kR = limp ? 0.08 : 0.12 + Math.max(0, -Math.cos(ph)) * kn;
   if (quad) { aL += 0.85; aR += 0.85; kL += 1.25; kR += 1.25; }
+  if (crawl) { aL = 1.3 + Math.sin(ph) * 0.15; aR = 1.4; kL = kR = 0; }
   if (z.k === 'spitter') { aL *= 0.8; aR *= 0.8; }
   // corpse fall styles
   let fall = 0, fstyle = sd % 3, knees = 0;
@@ -124,7 +135,7 @@ function rigZombie(z, corpse, dt, dk) {
     aL = aR = knees * 1.2; kL = kR = knees * 2.2 + fall * 0.3;
   }
   const TL = Bd.tl, SL = Bd.sl, legH = l => TL * Math.cos(l[0]) + SL * Math.cos(l[0] - l[1]);
-  let hipY = Math.max(legH([aL, kL]), legH([aR, kR]));
+  let hipY = crawl ? 0.13 : Math.max(legH([aL, kL]), legH([aR, kR]));
   // --- root ---
   const R0 = ZM[0];
   tmpQ.setFromAxisAngle(UPV, -(corpse ? z.face || 0 : z._f)); tmpV.set(z.x, z.z, z.y); tmpS.set(s, s, s); R0.compose(tmpV, tmpQ, tmpS);
@@ -133,7 +144,7 @@ function rigZombie(z, corpse, dt, dk) {
     J(R0, R0, 0, 0.06 * fall - sink, 0, fstyle === 2 ? 0.25 * fall : 0, 0, dir * fall * Math.PI / 2 * 0.94);
   }
   // body roll / bob
-  const roll = (limp ? Math.sin(ph) * 0.13 : z.k === 'spitter' ? Math.sin(ph) * 0.15 : big ? Math.sin(ph) * 0.07 : Math.sin(ph) * 0.04) * amp;
+  const roll = crawl ? Math.sin(ph) * 0.12 * amp : (limp ? Math.sin(ph) * 0.13 : z.k === 'spitter' ? Math.sin(ph) * 0.15 : big ? Math.sin(ph) * 0.07 : Math.sin(ph) * 0.04) * amp;
   const hunch = (climbing ? -0.15 : Bd.hunch + (z.k === 'runner' ? 0.1 * amp : 0)) - flinch + (corpse ? knees * 0.4 : 0) + Math.sin(t * 1.3 + sd) * 0.03;
   const pelv = J(ZM[1], R0, 0, hipY, 0, roll, Math.sin(ph) * 0.08 * amp, 0);
   // legs
@@ -144,13 +155,14 @@ function rigZombie(z, corpse, dt, dk) {
     const knee = J(ZM[3], hip, 0, -TL, 0, 0, 0, -k);
     zput('limb', knee, 0.04 * (big ? 1.4 : 1), SL, 0.04 * (big ? 1.4 : 1), sg > 0 && limp ? skin : pants);
     const foot = J(ZM[4], knee, 0, -SL, 0, 0, 0, k - a);
-    zput('foot', foot, big ? 1.4 : 1, 1, big ? 1.4 : 1, shoe);
+    if (!crawl) zput('foot', foot, big ? 1.4 : 1, 1, big ? 1.4 : 1, shoe);
   }
   // torso
   const tor = J(ZM[5], pelv, 0, 0, 0, 0, Math.sin(ph) * -0.12 * amp, -hunch);
   zput('torso', tor, Bd.tw, Bd.th, Bd.tw, shirt);
   zput('rag', J(ZM[6], tor, 0, 0.02, 0, Math.sin(ph * 2) * 0.08, 0, -Math.sin(ph) * 0.15 * amp), Bd.tw, v === 1 ? 2.2 : 1, Bd.tw, rag);
-  if (z.k === 'spitter') { const sw = 1 + Math.sin(t * 3 + sd) * 0.04; zput('belly', J(ZM[7], tor, 0.07, 0.17, 0, 0, 0, 0), sw, sw, sw, skin); zput('pust', ZM[7], sw, sw, sw, '#c8ff4a'); }
+  if (z.k === 'spitter' || z.k === 'bloater') { const bl = z.k === 'bloater', sw = (bl ? 1.75 : 1) * (1 + Math.sin(t * (bl ? 5 : 3) + sd) * (bl ? 0.06 : 0.04)); zput('belly', J(ZM[7], tor, bl ? 0.1 : 0.07, bl ? 0.2 : 0.17, 0, 0, 0, 0), sw, sw * (bl ? 0.95 : 1), sw, skin); zput('pust', ZM[7], sw, sw, sw, bl ? '#ffb84a' : '#c8ff4a'); }
+  if (z.k === 'armored') zput('torso', J(ZM[6], tor, 0, 0.06, 0, 0, 0, 0), Bd.tw * 1.12, Bd.th * 0.82, Bd.tw * 1.12, white('#1f2a3a'));
   if (big) zput('spikes', tor, Bd.tw, Bd.th, Bd.tw, '#d8ccb4');
   // head: tilted, drooped, twitching; climbers have the neck wrung sideways and look up
   const TH = 0.44 * Bd.th, spitWind = z.k === 'spitter' && z.spitT != null && z.spitT < 0.55 ? ease(1 - z.spitT / 0.55) : 0;
@@ -160,12 +172,19 @@ function rigZombie(z, corpse, dt, dk) {
   else if (z.k === 'climber') { hRoll = 1.15; hPitch = quad ? -1.05 : 0.2; jaw = 0.3; }
   else if (z.k === 'spitter') { hRoll = 0.1; hPitch = 0.15 - spitWind * 1.0; jaw = 0.2 + spitWind * 0.8; }
   else if (big) { hRoll = 0.2; hPitch = -0.15 + (z.k === 'boss' ? 0.25 : 0); jaw = 0.35; }
+  else if (crawl) { hRoll = 0.3; hPitch = -1.25; jaw = 0.45; }
+  else if (z.k === 'screamer') { hRoll = 0.2; hPitch = scream ? -1.0 : 0.1; jaw = scream ? 1.05 : 0.8; }
+  else if (z.k === 'bloater') { hRoll = 0.15; hPitch = 0.2; jaw = 0.3; }
+  else if (z.k === 'armored') { hRoll = 0.05; hPitch = 0.1; jaw = 0.1; }
   hPitch += hunch * 0.4 - flinch * 1.5; // look ahead despite the hunch
-  const head = J(ZM[8], tor, 0.03 * Bd.tw, TH * (big && z.k === 'brute' ? 0.82 : 0.97), 0, hRoll + twitch, hYaw + twitch * 0.6 + Math.sin(t * 0.7 + sd) * 0.15, -hPitch);
+  const head = J(ZM[8], tor, 0.03 * Bd.tw, TH * (big && z.k === 'brute' ? 0.82 : 0.97) + (z.k === 'screamer' ? 0.1 : 0), 0, hRoll + twitch, hYaw + twitch * 0.6 + Math.sin(t * 0.7 + sd) * 0.15, -hPitch);
   const hs = Bd.hs;
   zput('head', head, hs, hs, hs, skin);
   zput('jaw', J(ZM[9], head, 0.02 * hs, 0.05 * hs, 0, 0, 0, -jaw), hs, hs, hs, skin);
-  const ec = ZEYE[z.k] || '#ffd36a';
+  const ec = z.rage > 0 || z.rageF ? '#ff2a1a' : ZEYE[z.k] || '#ffd36a';
+  if (z.k === 'screamer') zput('limb', J(ZM[11], tor, 0.03, TH * 0.97 + 0.12, 0, 0, 0, Math.PI - hPitch * 0.5), 0.035, 0.13, 0.035, skin); // the long neck
+  if (z.k === 'armored') zput('helmet', head, hs, hs, hs, white('#2a3442'));
+  if (z.k === 'armored' && !corpse) zput('shield', J(ZM[15], tor, 0.24, TH * 0.62, -0.08, 0, 0.15, hunch - flinch), 1, 1, 1, white('#3a4656')); // riot shield held upright in front
   if (!corpse) { zput('eye', head, hs, hs, hs, ec); zput('glow', head, hs, hs, hs, ec); }
   if (v === 1 || z.k === 'boss') zput('hair', J(ZM[10], head, 0, 0, 0, 0, 0, 0), hs, hs * (z.k === 'boss' ? 1.4 : 1), hs, z.k === 'boss' ? '#120c0a' : '#151010');
   if (z.k === 'boss') { // the second face on the back of the head
@@ -196,6 +215,10 @@ function rigZombie(z, corpse, dt, dk) {
     } else if (z.k === 'boss') {
       ap = (atk && sg > 0 ? 1.4 + swing * 1.6 : 0.35 + sw * 0.15 * amp); el = 0.2; ar = 0.3; faL *= 1.15; if (sg > 0) { hand = 'fist'; hsz = 1.4; }
     }
+    else if (crawl) { ap = 2.0 + sw * 0.55 * Math.max(0.35, amp) + (atk ? swing * 0.4 : 0); el = -0.3; ar = 0.45; }
+    else if (z.k === 'bloater') { ap = 0.45 + sw * 0.2 * amp; ar = 0.75; el = 0.5; uaL *= 0.9; if (atk) ap = 1.2 + swing * 0.8; }
+    else if (z.k === 'screamer') { if (scream) { ap = 2.5; ar = 0.9; el = 0.2; faL *= 1.1; } else { ap = 0.3 + sw * 0.3 * amp; ar = 0.25; el = 0.45; faL *= 1.2; } if (atk) ap = 1.5 + swing; }
+    else if (z.k === 'armored') { if (sg < 0) { ap = 1.25; ar = 0.1; el = 1.2; } else { ap = 0.25 + sw * 0.3 * amp; el = 0.4; if (atk) { ap = 1.7 + swing * 1.4; el = 0.15; } } sleeve = white('#1f2a3a'); }
     if (corpse) { ap = 0.3 + fall * 1.3; el = 0.4; ar = 0.6 + fall * 0.4; }
     ap += flinch * -1.2;
     const sh = J(ZM[12], tor, 0, TH * 0.9, sg * 0.15 * Bd.tw, sg * -ar, 0, ap);
@@ -208,6 +231,40 @@ function rigZombie(z, corpse, dt, dk) {
   }
   // footfall dust for the heavy ones
   if (!corpse && big && amp > 0.3) { const st = Math.sign(Math.sin(ph)); if (z._st != null && st !== z._st) { addP({ x: z.x, y: z.y, z: z.z + 0.05, vx: frnd(-0.5, 0.5), vy: frnd(-0.5, 0.5), vz: 0.3, g: -0.2, col: '#7a7266', s: 0.18 * s * 0.6, life: 0.6, smoke: 1 }); if (z.k === 'boss') shake(z.x, z.y, 0.06); } z._st = st; }
+}
+
+// zombie dog: low and long, four jointed legs at a gallop, snout, ears and a ragged tail
+function rigDog(z, corpse, dt) {
+  const sd = z.seed || 0, t = W.t;
+  if (!corpse) {
+    if (z._f == null) { z._f = z.face || 0; z._px = z.x; z._py = z.y; z._spd = 0; z._ph = sd * 0.1; }
+    const sp = dt > 0 ? Math.min(8, Math.hypot(z.x - z._px, z.y - z._py) / dt) : 0; z._px = z.x; z._py = z.y;
+    z._spd = lerp(z._spd, sp, Math.min(1, dt * 8)); z._f = angLerp(z._f, z.face || 0, Math.min(1, dt * 10)); z._ph += dt * (2 + z._spd * 3.4);
+  }
+  const hit = !corpse && z.hitT > 0, fur = hit ? '#ffd8cc' : ['#4a3c32', '#3a3530', '#5a4a3a'][sd % 3], raw = hit ? '#ffd8cc' : '#7a3a34';
+  const amp = corpse ? 0 : clamp(z._spd / 3, 0, 1.1), ph = corpse ? 0 : z._ph, atk = !corpse && z.atk > 0;
+  const R0 = ZM[0]; tmpQ.setFromAxisAngle(UPV, -(corpse ? z.face || 0 : z._f)); tmpV.set(z.x, z.z, z.y); tmpS.set(1, 1, 1); R0.compose(tmpV, tmpQ, tmpS);
+  if (corpse) J(R0, R0, 0, 0.05, 0, ease(z.t / 0.4) * Math.PI / 2 * 0.95, 0, 0);
+  const bob = Math.abs(Math.sin(ph)) * 0.04 * amp, lunge = atk ? Math.sin(t * 14) * 0.12 : 0;
+  const body = J(ZM[1], R0, lunge, 0.33 + bob, 0, 0, 0, -Math.PI / 2 + Math.sin(ph) * 0.12 * amp);
+  zput('torso', body, 0.62, 1.05, 0.55, fur);
+  zput('rag', J(ZM[2], body, 0, 0.3, 0, 0, 0, 0), 0.5, 0.6, 0.5, raw);
+  // legs: front pair and back pair, diagonal gait
+  const legs = [[0.36, -1, 0], [0.36, 1, Math.PI], [-0.05, -1, Math.PI * 0.9], [-0.05, 1, -0.1]];
+  for (const [ox, sg, off] of legs) {
+    const a = Math.sin(ph + off) * 0.7 * amp + (corpse ? 1.2 : 0);
+    const hip = J(ZM[3], R0, ox + lunge, 0.3 + bob, sg * 0.1, 0, 0, a);
+    zput('limb', hip, 0.04, 0.17, 0.04, fur);
+    const knee = J(ZM[4], hip, 0, -0.17, 0, 0, 0, ox > 0 ? 0.5 + Math.max(0, Math.cos(ph + off)) * 0.6 * amp : -0.6 - Math.max(0, Math.cos(ph + off)) * 0.5 * amp);
+    zput('limb', knee, 0.03, 0.16, 0.03, fur);
+  }
+  const head = J(ZM[5], R0, 0.44 + lunge * 1.4, 0.4 + bob, 0, Math.sin(t * 7 + sd) * 0.08, 0, atk ? 0.2 + Math.sin(t * 14) * 0.3 : -0.15);
+  zput('head', head, 0.75, 0.62, 0.68, fur);
+  zput('jaw', J(ZM[6], head, 0.07, 0.05, 0, 0, 0, 0), 2.1, 1.6, 0.8, fur);                    // snout
+  zput('jaw', J(ZM[7], head, 0.07, 0.02, 0, 0, 0, -(atk ? 0.6 : 0.2)), 1.9, 1.2, 0.7, raw);    // open jaw
+  zput('limb', J(ZM[8], head, -0.03, 0.15, -0.05, -0.3, 0, -0.2), 0.02, 0.09, 0.03, fur); zput('limb', J(ZM[9], head, -0.03, 0.15, 0.05, 0.3, 0, -0.2), 0.02, 0.09, 0.03, fur); // ears
+  if (!corpse) { zput('eye', J(ZM[10], head, -0.02, -0.03, 0, 0, 0, 0), 0.8, 0.7, 1.1, z.rage > 0 || z.rageF ? '#ff2a1a' : ZEYE.dog); zput('glow', ZM[10], 0.8, 0.7, 1.1, ZEYE.dog); }
+  zput('limb', J(ZM[11], R0, -0.22, 0.38 + bob, 0, Math.sin(t * 9 + sd) * 0.4, 0, -2.2), 0.025, 0.2, 0.025, fur); // tail
 }
 
 /* ================= survivors ================= */
@@ -273,6 +330,11 @@ function mkPlayerModel(i) {
     mk([[boxG(0.36, 0.07, 0.055, 0.12, 0.03, 0), '#2a2f28'], [boxG(0.22, 0.03, 0.03, 0.39, 0.04, 0), dark], [boxG(0.05, 0.13, 0.045, 0.1, -0.06, 0), dark], [boxG(0.17, 0.06, 0.05, -0.12, 0.01, 0), '#2a2f28'], [boxG(0.04, 0.08, 0.04, 0, -0.04, 0), dark]]),
     mk([[boxG(0.7, 0.045, 0.045, 0.32, 0.04, 0), dark], [boxG(0.22, 0.07, 0.06, 0.05, 0.02, 0), wood], [boxG(0.2, 0.05, 0.05, -0.12, 0.0, 0), wood], [new THREE.CylinderGeometry(0.025, 0.025, 0.2, 8).rotateZ(Math.PI / 2).translate(0.12, 0.1, 0), '#14161a'], [boxG(0.04, 0.08, 0.04, 0, -0.04, 0), wood]]),
   ];
+  guns.push(
+    mk([[boxG(0.42, 0.05, 0.05, 0.12, 0.03, 0), wood], [boxG(0.04, 0.03, 0.46, 0.3, 0.05, 0), '#3a3a3a'], [boxG(0.01, 0.01, 0.4, 0.22, 0.05, 0), '#ddd'], [boxG(0.04, 0.08, 0.04, 0, -0.04, 0), wood], [boxG(0.3, 0.015, 0.015, 0.2, 0.07, 0), '#c9a23a']]),
+    mk([[boxG(0.42, 0.06, 0.06, 0.18, 0.04, 0), '#4a4f55'], [new THREE.CylinderGeometry(0.035, 0.05, 0.12, 8).rotateZ(Math.PI / 2).translate(0.44, 0.04, 0), '#2a2d30'], [new THREE.CylinderGeometry(0.06, 0.06, 0.26, 10).rotateZ(Math.PI / 2).translate(0.08, -0.06, 0), '#a8322a'], [boxG(0.04, 0.08, 0.04, 0, -0.03, 0), dark]]),
+    mk([[new THREE.CylinderGeometry(0.06, 0.06, 0.5, 10).rotateZ(Math.PI / 2).translate(0.2, 0.05, 0), '#3d4a34'], [boxG(0.08, 0.1, 0.07, 0.02, -0.03, 0), dark], [boxG(0.18, 0.06, 0.05, -0.12, 0.03, 0), '#3d4a34'], [boxG(0.06, 0.05, 0.06, 0.3, 0.12, 0), dark]]),
+  );
   const hammer = mk([[boxG(0.03, 0.32, 0.03, 0, 0.1, 0), '#8a6a44'], [boxG(0.12, 0.06, 0.06, 0.02, 0.26, 0), '#5a5f66']]);
   const medkit = mk([[boxG(0.14, 0.1, 0.2, 0, 0, 0), '#e8e2d6'], [boxG(0.145, 0.03, 0.08, 0, 0, 0), '#c83a32'], [boxG(0.145, 0.08, 0.03, 0, 0, 0), '#c83a32']]);
   const nade = mk([[new THREE.IcosahedronGeometry(0.05, 0), '#3c4a32']]);
@@ -293,13 +355,13 @@ function ikArm(A, tx, ty, tz, sg) {
   A.el.quaternion.setFromUnitVectors(_down, _v2);
 }
 // hand targets per weapon in aim-rig coordinates: [right x,y,z, left x,y,z]
-const GRIP = [[0.2, -0.04, 0.05, 0.19, -0.06, -0.02], [0.2, -0.04, 0.06, 0.42, -0.02, 0.0], [0.2, -0.04, 0.06, 0.4, -0.02, 0.0], [0.2, -0.04, 0.06, 0.46, -0.0, 0.0]];
+const GRIP = [[0.2, -0.04, 0.05, 0.19, -0.06, -0.02], [0.2, -0.04, 0.06, 0.42, -0.02, 0.0], [0.2, -0.04, 0.06, 0.4, -0.02, 0.0], [0.2, -0.04, 0.06, 0.46, -0.0, 0.0], [0.2, -0.04, 0.06, 0.34, -0.02, 0.0], [0.2, -0.04, 0.06, 0.3, -0.08, 0.0], [0.2, -0.04, 0.06, 0.36, -0.06, 0.0]];
 function drawPlayers(vl, dt) {
   while (OBJ.pl.length < W.p.length) OBJ.pl.push(mkPlayerModel(OBJ.pl.length));
   OBJ.pl.forEach((m, i) => { const p = W.p[i]; m.g.visible = !!p && !p.gone && !p.dead && p.L <= vl; });
   W.p.forEach((p, i) => {
     const m = OBJ.pl[i]; if (!m.g.visible) return;
-    const zv = p.zv != null ? p.zv : p.z; m.g.position.set(p.x, zv, p.y);
+    const zv = (p.zv != null ? p.zv : p.z) + (p.jz || 0); m.g.position.set(p.x, zv, p.y);
     // smoothing state
     if (p._uy == null) { p._uy = p.aim; p._ly = p.aim; p._ph = 0; p._kick = 0; p._spd = 0; p._px = p.x; p._py = p.y; p._st = 0; }
     const sp = dt > 0 ? Math.min(8, Math.hypot(p.x - p._px, p.y - p._py) / dt) : 0, mvx = p.x - p._px, mvy = p.y - p._py; p._px = p.x; p._py = p.y;
@@ -319,6 +381,7 @@ function drawPlayers(vl, dt) {
     // gait
     const ph = p._ph, down = p.down, A = 0.62 * amp, K = 1.05 * amp;
     let aL = Math.sin(ph) * A, aR = -Math.sin(ph) * A, kL = 0.08 + Math.max(0, Math.cos(ph)) * K, kR = 0.08 + Math.max(0, -Math.cos(ph)) * K;
+    if (p.jz > 0.05) { aL = 0.9; aR = -0.2; kL = 1.5; kR = 0.9; } // tucked legs in the air
     if (down) { aL = 1.35 + Math.sin(ph) * 0.2; aR = 0.2; kL = 2.1; kR = 1.9; }
     const legH = (a, k) => 0.23 * Math.cos(a) + 0.22 * Math.cos(a - k) + 0.03;
     const hipY = down ? 0.2 : Math.max(legH(aL, kL), legH(aR, kR));
@@ -339,7 +402,7 @@ function drawPlayers(vl, dt) {
     if (m.head.userData.tail) m.head.userData.tail.rotation.z = 0.25 + Math.sin(ph * 2) * 0.25 * amp + (moving ? 0.25 : 0);
     const flash = hurt > 0 ? hurt : 0; for (const mt of m.mats) mt.emissive.setRGB(flash * 0.7, flash * 0.08, flash * 0.05);
     // aim rig: pitch toward the target, recoil kick, shove thrust, run bob
-    const wi = down ? 0 : p.wpn, kickM = [0.6, 1.4, 0.7, 1.6][wi];
+    const wi = down ? 0 : p.wpn, kickM = [0.6, 1.4, 0.7, 1.6, 0.5, 0.08, 1.3][wi];
     const pitch = p.aimPt ? Math.atan2(p.aimPt.z - (p.z + 0.72), Math.max(0.4, Math.hypot(p.aimPt.x - p.x, p.aimPt.y - p.y))) : 0;
     const shove = p.shoveT > 0 ? Math.sin(Math.PI * (1 - p.shoveT / 0.18)) : 0;
     m.aim.rotation.z = p.build ? -0.15 : clamp(pitch, -0.9, 0.7) * 0.85 + p._kick * 0.22 * kickM - shove * 0.25 + m.torso.rotation.z * -0.8;
@@ -376,7 +439,14 @@ function drawTracers() {
     const x1 = lerp(t.x, t.x2, f), y1 = lerp(t.y, t.y2, f), z1 = lerp(t.z, t.z2, f);
     _dv.set(t.x2 - x1, t.z2 - z1, t.y2 - y1); const len = _dv.length(); if (len < 0.01) continue; _dv.divideScalar(len);
     _qd.setFromUnitVectors(_xa, _dv); tmpV.set(x1, z1, y1); const w = (t.w || 0.035) * (0.6 + a * 0.4); tmpS.set(len, w, w);
-    tmpM.compose(tmpV, _qd, tmpS); T.setMatrixAt(n, tmpM); T.setColorAt(n, tmpC.setRGB(a, a * 0.85, a * 0.5)); n++;
+    tmpM.compose(tmpV, _qd, tmpS); T.setMatrixAt(n, tmpM); const c = t.col || [1, 0.85, 0.5]; T.setColorAt(n, tmpC.setRGB(a * c[0], a * c[1], a * c[2])); n++;
+  }
+  // sniper laser sight
+  for (const p of W.p) {
+    if (n >= 140 || p.gone || p.dead || p.down || p.build || p.wpn !== 3 || p.reloadT > 0 || !OBJ.pl[p.i] || !OBJ.pl[p.i].g.visible) continue;
+    const [sx, sy, sz] = shoulder(p), [ax, ay, az] = aimDir(p), hit = rayWorld(sx, sy, sz, ax, ay, az, 30, { lean: LEAN }), x0 = sx + ax * 0.6, y0 = sy + ay * 0.6, z0 = sz + az * 0.6;
+    _dv.set(ax, az, ay); _qd.setFromUnitVectors(_xa, _dv); tmpV.set(x0, z0 + (p.jz || 0), y0); tmpS.set(Math.max(0.1, hit.d - 0.6), 0.012, 0.012);
+    tmpM.compose(tmpV, _qd, tmpS); T.setMatrixAt(n, tmpM); T.setColorAt(n, tmpC.setRGB(0.9, 0.08, 0.05)); n++;
   }
   T.count = n; T.instanceMatrix.needsUpdate = true; if (T.instanceColor) T.instanceColor.needsUpdate = true;
   const D = OBJ.decal; let k = 0;

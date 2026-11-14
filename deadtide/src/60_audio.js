@@ -43,6 +43,14 @@ function sfx(n, x, y) {
     case 'shotgun': noise(0.32, 0.8 * v, 'lowpass', 3000 * r, 300, 0.7); tone('sawtooth', 110 * r, 40, 0.18, 0.3 * v, 0, 800); break;
     case 'rifle': noise(0.09, 0.45 * v, 'bandpass', 3000 * r, 900, 0.9); tone('square', 150 * r, 70, 0.06, 0.14 * v); break;
     case 'sniper': noise(0.5, 0.85 * v, 'lowpass', 5000 * r, 200, 0.6); tone('sawtooth', 220 * r, 50, 0.3, 0.3 * v, 0, 1500); noise(0.6, 0.15 * v, 'bandpass', 900, 300, 2, 0.12); break;
+    case 'crossbow': tone('triangle', 420 * r, 120, 0.12, 0.25 * v); noise(0.08, 0.25 * v, 'highpass', 2500, 2500, 1); break;
+    case 'flamer': noise(0.3, 0.32 * v, 'lowpass', 900 * r, 400, 0.7); noise(0.25, 0.12 * v, 'bandpass', 2400, 1800, 2); break;
+    case 'launcher': noise(0.25, 0.6 * v, 'lowpass', 700 * r, 150, 0.7); tone('sine', 140 * r, 60, 0.2, 0.4 * v); break;
+    case 'scream': tone('sawtooth', 900 * r, 1500, 0.7, 0.18 * v, 0, 2400); tone('square', 640 * r, 1200, 0.6, 0.08 * v, 0.05, 1800); noise(0.6, 0.15 * v, 'bandpass', 2600, 3200, 3); break;
+    case 'jump': noise(0.12, 0.14, 'bandpass', 900, 1600, 1.5); break;
+    case 'vault': noise(0.2, 0.18, 'bandpass', 700, 1300, 1.2); tone('triangle', 200, 160, 0.08, 0.06, 0.1); break;
+    case 'trap': tone('square', 1200 * r, 300, 0.06, 0.3 * v); noise(0.1, 0.3 * v, 'highpass', 3000, 3000, 1); break;
+    case 'clank': tone('square', 1500 * r, 900, 0.05, 0.12 * v); noise(0.05, 0.15 * v, 'highpass', 4000, 4000, 2); break;
     case 'empty': tone('square', 1300, 1100, 0.03, 0.12); break;
     case 'reload': tone('square', 600 * r, 500, 0.04, 0.1 * v); noise(0.05, 0.2 * v, 'highpass', 3000, 3000, 1, 0.12); tone('square', 900 * r, 700, 0.05, 0.12 * v, 0.35); break;
     case 'swap': noise(0.06, 0.2, 'highpass', 2500); tone('triangle', 500, 700, 0.05, 0.08, 0.04); break;

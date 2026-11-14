@@ -71,7 +71,9 @@ input:focus{border-color:var(--amber)}
 #hTC{position:absolute;left:50%;transform:translateX(-50%);top:calc(10px + var(--sa-t));display:flex;flex-direction:column;align-items:center;gap:6px;min-width:260px}
 #phase{font-size:16px;font-weight:700;letter-spacing:.06em;text-align:center}#phase .sub{font-weight:400;font-size:13px;color:var(--sub);margin-left:6px}
 #phase.night{color:#ffd27a}#phase.blood{color:#ff6a5a}
-#tasks{display:flex;flex-direction:column;gap:3px;width:100%;font-size:11.5px;color:var(--sub);text-align:left}
+#tasks{display:flex;flex-direction:column;gap:3px;width:100%;font-size:11.5px;color:var(--sub);text-align:left;cursor:pointer;pointer-events:auto}
+#tasks .tksum{text-align:center;color:#ffd76a;font-size:12px}#tasks .tksum span{opacity:.7}#tasks.open .tksum span{display:inline-block;transform:rotate(180deg)}
+#tasks:not(.open) .tk{display:none}
 #tasks .tk{display:grid;grid-template-columns:14px 1fr auto;column-gap:5px;align-items:center;line-height:1.25}
 #tasks .tk i{width:12px;height:12px;border:1px solid rgba(255,255,255,.3);border-radius:3px;font-style:normal;font-size:10px;line-height:11px;text-align:center;color:#7fd36b}
 #tasks .tk .tt{color:#e9e2d0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}#tasks .tk b{color:#ffd76a;font-weight:600}
@@ -142,6 +144,11 @@ body.touch.building #tctl .fight,body.touch:not(.building) #tctl .bld{display:no
 #tReload{right:calc(var(--fs) / 2 + var(--d) - var(--tb) / 2);bottom:calc(var(--fs) / 2 - var(--tb) / 2)}
 #tNade{right:calc(var(--fs) / 2 + var(--d45) - var(--tb) / 2);bottom:calc(var(--fs) / 2 + var(--d45) - var(--tb) / 2)}
 #tShove{right:calc(var(--fs) / 2 - var(--tb) / 2);bottom:calc(var(--fs) / 2 + var(--d) - var(--tb) / 2)}
+#tJump{right:calc(var(--fs) / 2 + var(--d) * 1.9 - var(--tb) / 2);bottom:calc(var(--fs) / 2 - var(--tb) / 2 - 4px)}
+#bconf{position:fixed;z-index:8;display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:12px;background:rgba(14,16,20,.88);border:1px solid rgba(125,255,138,.55);box-shadow:0 6px 20px rgba(0,0,0,.45);font-size:13px;color:#e9e2d0;white-space:nowrap}
+#bconf.demo{border-color:rgba(255,110,90,.7)}#bconf button{min-height:40px;padding:6px 12px;font-size:14px}#bcOk{background:#2f7a3a;border-color:#7dff8a}#bconf.demo #bcOk{background:#8a2a22;border-color:#ff8a7a}
+#bconf #bcTxt{max-width:220px;overflow:hidden;text-overflow:ellipsis}
+@media (max-width:700px){#bconf #bcTxt{display:none}}
 #tWpn{position:absolute;right:-6px;bottom:calc(var(--fs) / 2 + var(--d) + var(--tb) / 2 + 12px);min-height:38px;min-width:96px;padding:3px 10px;border-radius:19px;display:flex;flex-direction:column;align-items:center;line-height:1.1;
   background:rgba(20,18,16,.72);pointer-events:auto;touch-action:none}
 #tWpn b{font-size:13px}#tWpn span{font-family:var(--num);font-size:13px;color:#ffe6c0}
@@ -263,12 +270,14 @@ body:not(.touch) .tch{display:none}
   <div id="wbar"></div>
   <div id="binfo" class="hidden"></div>
   <div id="bbar" class="hidden"></div>
+  <div id="bconf" class="hidden"><span id="bcTxt"></span><button id="bcOk">✓ 确认 <span class="kbd">Enter</span></button><button id="bcNo" class="ghost">✗ 取消 <span class="kbd">Esc</span></button></div>
 </div>
 <div id="tctl">
   <div id="tFire" class="fight"><i></i><span>射击</span></div>
   <button id="tReload" class="tb fight">换弹</button>
   <button id="tNade" class="tb fight">手雷<small id="tNadeN">1</small></button>
   <button id="tShove" class="tb fight">推开</button>
+  <button id="tJump" class="tb fight">跳</button>
   <button id="tWpn" class="fight"><b>手枪</b><span>∞</span></button>
   <button id="tUse" class="hidden"><b>按住</b><span>交互</span></button>
   <div id="tLay" class="bld"><button id="tLUp">▲</button><span id="tLLbl">1F</span><button id="tLDn">▼</button></div>
@@ -322,12 +331,12 @@ body:not(.touch) .tch{display:none}
 <div id="help" class="modal hidden">
   <div class="card"><h3>玩法和操作</h3>
     <div class="help">
-      <h4>目标</h4><b>活下去，撑过 15 夜</b>，救援直升机就会来。所有人同时倒下就失败。丧尸会一路追着离它最近的人，挡路的墙会被砸开。<h4>每日任务</h4>每天天亮刷新 3 个小任务（左上角），比如击杀、搜索、建造、今夜无人倒下。完成立刻发奖励：材料、全队弹药、医疗包、手雷或强化弹头。没完成的会在下一个天亮作废。
+      <h4>目标</h4><b>活下去，撑过 15 夜</b>，救援直升机就会来。所有人同时倒下就失败。丧尸会一路追着离它最近的人，挡路的墙会被砸开。<h4>丧尸</h4>游荡者、疾跑者、攀爬者（翻墙）、喷吐者（吐酸）、重锤（拆墙）、巨尸（血月），还有成群的尸犬、贴地的爬行尸、死了会炸开（连墙一起炸）的爆尸、会尖叫让周围丧尸发狂并引来更多丧尸的尖叫者、正面打不动的防暴尸（绕到侧面后面，或者用狙击枪、弩、火、炸药）。<h4>武器</h4>手枪爆头伤害高；霰弹枪近距离打退打晕；步枪连射越久越散；狙击枪穿透 5 只、带激光；弩穿透 3 只并把丧尸钉住；喷火器点燃一片，火会传染；榴弹发射器落地就炸。后三种在工作台造。<h4>每日任务</h4>每天天亮刷新 3 个小任务（左上角），比如击杀、搜索、建造、今夜无人倒下。完成立刻发奖励：材料、全队弹药、医疗包、手雷或强化弹头。没完成的会在下一个天亮作废。
       <h4>白天</h4>出门砍树（木材）、采石（砖石），搜汽车、补给箱和废墟瓦砾（钢材、零件、弹药），离家越远收获越多；回来盖楼、在营地小屋的工作台造枪。河上只有两座桥，丧尸也只能从桥上过河。每 5 夜一次血月。
-      <h4>建造</h4>只能在营地周围的黄框里建造。<b>指哪盖哪，不用切楼层</b>：指地面或楼板就盖在上面；指墙顶就往上叠一层；指墙的侧面就贴着它盖；楼板会自动铺成墙上的天花板，站在楼上指外面能往外延伸阳台。<b>按住拖动</b>沿直线一次盖一排。拆除也是指哪拆哪。方块要有<b>支撑</b>：从地面往上传，往旁边每格减 1，支撑断了会连锁坍塌。<b>楼上最外圈、上面没东西的墙是半人高的矮墙</b>：子弹能从上面飞过，贴着矮墙可以探身往下打；地面一层的墙还是整面墙。门让人通过但挡丧尸，射击栅栏能从里面开枪。丧尸会砸墙砸门、走楼梯；攀爬者会翻墙。<h4>楼梯</h4>往下走楼梯、从边缘跳下去都要<b>继续推一下</b>才会下去，不会再一不小心掉下楼；楼梯口有栏杆，侧面走不进去。
+      <h4>建造</h4>只能在营地周围的黄框里建造。<b>指哪盖哪，不用切楼层</b>：指地面或楼板就盖在上面；指墙顶就往上叠一层；指墙的侧面就贴着它盖；楼板会自动铺成墙上的天花板，站在楼上指外面能往外延伸阳台。<b>按住拖动</b>沿直线一次盖一排。拆除也是指哪拆哪。方块要有<b>支撑</b>：从地面往上传，往旁边每格减 1，支撑断了会连锁坍塌。<b>楼上最外圈、上面没东西的墙是半人高的矮墙</b>：子弹能从上面飞过，贴着矮墙可以探身往下打；地面一层的墙还是整面墙。门让人通过但挡丧尸，射击栅栏能从里面开枪。丧尸会砸墙砸门、走楼梯；攀爬者会翻墙。<h4>爬梯、翻越和跳</h4>楼梯换成了靠墙的爬梯：朝箭头方向走就爬上去，往下爬要继续推一下。丧尸爬梯子很慢（攀爬者除外），所以多放几个梯子方便自己走位，梯子口就是守点。人能<b>翻过</b>沙袋矮墙、拒马、铁皮掩体、栅栏、瓦砾和一人高的墙（贴着推一下，或按跳），也能跳过一格宽的空隙；丧尸不会翻，只能砸。<h4>障碍物</h4>沙袋矮墙（子弹能从上面打过去）、拒马（丧尸砸它会被扎）、铁皮掩体（挡子弹）、捕兽夹（夹住丧尸 2.5 秒，一次性）、铁丝网、探照灯。用矮墙和掩体把楼里隔成一段一段，自己翻来翻去，丧尸只能一路砸过来。<h4>建造确认</h4>点一下或拖一排，先出现绿色预览（拆除是红色），再点 ✓、按 Enter 或再点一下预览才真正建造 / 拆除；建造栏的「二次确认」可以关掉。
       <h4>视角</h4>滚轮或 ＋/－ 缩放，Q / E 或 ⟲⟳ 转镜头。楼层视图默认跟随你所在的层，上面的楼层会自动隐藏；▲▼ 手动看别的层，「跟随我所在的层」恢复。
-      <h4 class="kbd">键鼠</h4><div class="kbd"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> 移动（相对屏幕）　鼠标瞄准，左键射击<br><kbd>R</kbd> 换弹　<kbd>1</kbd>–<kbd>4</kbd> 换枪　<kbd>V</kbd> 推开丧尸　<kbd>G</kbd> 手雷　<kbd>H</kbd> 医疗包（倒地时自救）<br><kbd>F</kbd> 按住：砍树 / 采石 / 搜索 / 扶起队友；在工作台按 <kbd>F</kbd> 打开制作<br><kbd>B</kbd> 建造模式：数字键选方块，鼠标指哪盖哪（左键放置或修理，按住拖动盖一排），右键拆除，<kbd>R</kbd> 转楼梯朝向<br><kbd>Q</kbd><kbd>E</kbd> 转镜头　滚轮缩放　<kbd>PageUp</kbd><kbd>PageDown</kbd> 切换楼层视图　<kbd>Home</kbd> 跟随自己<br><kbd>N</kbd> 准备入夜　<kbd>M</kbd> 静音　<kbd>Esc</kbd> 菜单</div>
-      <h4 class="tch">触屏</h4><div class="tch">左半屏任意位置按下就出现摇杆（左下角的虚线圈是提示），拖过圈外摇杆会跟着手指走；靠近横平竖直的方向会自动吸附，沿墙走、过门更稳。右下的红色「射击」键：按住就开火，自动瞄准最近的丧尸（包括楼上楼下）；按住拖向某个方向就朝那边打。旁边三个键是换弹、手雷、推开，上面的小条点一下换枪。靠近树、石头、汽车、补给箱或倒地的队友时，会冒出一个大按键，按住就砍树 / 搜索 / 扶人；受伤后左上角会出现「用医疗包」。右上角「建造」进出建造模式：在右半屏点哪盖哪，按住拖动盖一排；「视角」打开缩放、转镜头和楼层视图。两根手指捏合也能缩放。</div>
+      <h4 class="kbd">键鼠</h4><div class="kbd"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> 移动（相对屏幕）　鼠标瞄准，左键射击<br><kbd>R</kbd> 换弹　<kbd>1</kbd>–<kbd>7</kbd> 换枪　<kbd>空格</kbd> 跳 / 翻越　<kbd>V</kbd> 推开丧尸　<kbd>G</kbd> 手雷　<kbd>H</kbd> 医疗包（倒地时自救）<br><kbd>F</kbd> 按住：砍树 / 采石 / 搜索 / 扶起队友；在工作台按 <kbd>F</kbd> 打开制作<br><kbd>B</kbd> 建造模式：数字键选方块，鼠标指哪盖哪（左键放置或修理，按住拖动盖一排），右键拆除，<kbd>R</kbd> 转楼梯朝向<br><kbd>Q</kbd><kbd>E</kbd> 转镜头　滚轮缩放　<kbd>PageUp</kbd><kbd>PageDown</kbd> 切换楼层视图　<kbd>Home</kbd> 跟随自己<br><kbd>N</kbd> 准备入夜　<kbd>M</kbd> 静音　<kbd>Esc</kbd> 菜单</div>
+      <h4 class="tch">触屏</h4><div class="tch">左半屏任意位置按下就出现摇杆（左下角的虚线圈是提示），拖过圈外摇杆会跟着手指走；靠近横平竖直的方向会自动吸附，沿墙走、过门更稳。右下的红色「射击」键：按住就开火，自动瞄准最近的丧尸（包括楼上楼下）；按住拖向某个方向就朝那边打。旁边是换弹、手雷、推开和「跳」（翻越障碍、跳过空隙），上面的小条点一下换枪。靠近树、石头、汽车、补给箱或倒地的队友时，会冒出一个大按键，按住就砍树 / 搜索 / 扶人；受伤后左上角会出现「用医疗包」。右上角「建造」进出建造模式：在右半屏点哪盖哪，按住拖动盖一排，再点 ✓ 确认；「视角」打开缩放、转镜头和楼层视图。两根手指捏合也能缩放。</div>
     </div>
     <button id="helpClose" class="primary">好</button>
   </div>
@@ -4062,9 +4071,14 @@ defB(2, { key: 'brick', name: '砖墙', cost: { stone: 4 }, hp: 340, cap: 8, P: 
 defB(3, { key: 'steel', name: '钢墙', cost: { steel: 4 }, hp: 700, cap: 12, P: 1, Z: 1, B: 1, top: 1, st: 1, brk: 1, col: '#6f8494', tip: '最硬的墙，重锤也要砸半天' });
 defB(4, { key: 'wfloor', name: '木地板', cost: { wood: 2 }, hp: 90, cap: 6, slab: 1, st: 1, brk: 1, col: '#7a5232', tip: '指墙顶就铺在墙上，指屋里就铺成天花板，站在楼上指外面能往外延伸' });
 defB(5, { key: 'sfloor', name: '钢地板', cost: { steel: 2 }, hp: 280, cap: 10, slab: 1, st: 1, brk: 1, col: '#64788a', tip: '跨度大的楼板' });
-defB(6, { key: 'stairs', name: '楼梯', cost: { wood: 4 }, hp: 120, cap: 5, stairs: 1, st: 1, brk: 1, col: '#8a6440', tip: '朝向是放置时屏幕的「上」，R 键旋转。攀爬者以外的丧尸也会走楼梯' });
+defB(6, { key: 'stairs', name: '爬梯', cost: { wood: 3 }, hp: 120, cap: 5, stairs: 1, st: 1, brk: 1, col: '#8a6440', tip: '靠墙的梯子：朝箭头方向走就爬上去，R 键转方向。丧尸爬梯子很慢，正好守着打' });
 defB(7, { key: 'door', name: '木门', cost: { wood: 6 }, hp: 200, cap: 6, Z: 1, B: 1, top: 1, st: 1, brk: 1, col: '#5c3c22', tip: '人能穿过，丧尸只能砸' });
 defB(8, { key: 'bars', name: '射击栅栏', cost: { steel: 3 }, hp: 300, cap: 6, P: 1, Z: 1, top: 1, st: 1, brk: 1, col: '#6f7f8c', tip: '挡人挡丧尸，子弹能穿过' });
+// obstacles: people vault over them, zombies have to smash through
+defB(12, { key: 'sandbag', name: '沙袋矮墙', cost: { stone: 3 }, hp: 260, P: 1, Z: 1, dep: 1, brk: 1, vault: 1, col: '#a8946a', tip: '半人高：人能翻过去、子弹能从上面打过去，丧尸只能砸' });
+defB(13, { key: 'spikes', name: '拒马', cost: { wood: 4, steel: 1 }, hp: 200, P: 1, Z: 1, dep: 1, brk: 1, vault: 1, thorns: 10, col: '#6a5038', tip: '丧尸砸它会被扎伤，人能翻过去' });
+defB(14, { key: 'cover', name: '铁皮掩体', cost: { steel: 3 }, hp: 420, P: 1, Z: 1, B: 1, dep: 1, brk: 1, vault: 1, col: '#7a8590', tip: '挡子弹的掩体，人能翻过去' });
+defB(15, { key: 'trap', name: '捕兽夹', cost: { steel: 1, parts: 2 }, hp: 40, dep: 1, trap: 1, col: '#5a5a55', tip: '丧尸踩上去被夹住 2.5 秒，用一次就坏' });
 defB(9, { key: 'wire', name: '铁丝网', cost: { steel: 2, parts: 1 }, hp: 110, dep: 1, wire: 1, brk: 0, col: '#9aa0a6', tip: '减速并割伤经过的丧尸，会磨损' });
 defB(10, { key: 'lamp', name: '探照灯', cost: { parts: 3, wood: 1 }, hp: 60, dep: 1, lamp: 1, col: '#ffe9a8', tip: '夜里照亮周围' });
 // natural / fixed
@@ -4080,7 +4094,18 @@ defB(28, { key: 'ramp', stairs: 1, nat: 1 });
 defB(29, { key: 'rubble', P: 1, Z: 1, nat: 1, spot: 'rubble' });
 defB(30, { key: 'radio', P: 1, Z: 1, B: 1, nat: 1 });
 defB(31, { key: 'bench', P: 1, Z: 1, B: 1, nat: 1 });
-const PAL = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+// more things to search (spot) and gather (res) around the map
+defB(32, { key: 'trash', P: 1, Z: 1, nat: 1, spot: 'trash' });
+defB(33, { key: 'backpack', nat: 1, spot: 'backpack' });
+defB(34, { key: 'cabinet', P: 1, Z: 1, B: 1, nat: 1, spot: 'cabinet' });
+defB(35, { key: 'toolbox', nat: 1, spot: 'toolbox' });
+defB(36, { key: 'milcrate', P: 1, Z: 1, B: 1, nat: 1, spot: 'milcrate' });
+defB(37, { key: 'barrel', P: 1, Z: 1, B: 1, nat: 1, spot: 'barrel' });
+defB(38, { key: 'vending', P: 1, Z: 1, B: 1, nat: 1, spot: 'vending' });
+defB(39, { key: 'scrap', P: 1, Z: 1, nat: 1, res: 'steel', hp: 1 });
+defB(40, { key: 'logs', P: 1, Z: 1, B: 1, nat: 1, res: 'wood', hp: 1 });
+defB(41, { key: 'bush', nat: 1, res: 'wood', hp: 1 });
+const PAL = [1, 2, 3, 4, 5, 6, 7, 8, 12, 13, 14, 9, 15, 10];
 const SLAB_BRIDGE = 11; // slab id for the pre-built bridges (not buildable)
 defB(11, { key: 'bridge', slab: 1, nat: 1, col: '#7e5a36' });
 const RES = [
@@ -4093,12 +4118,18 @@ const costText = c => Object.keys(c).map(k => RES.find(r => r.k === k).name + c[
 const affordable = (res, cost) => Object.keys(cost).every(k => (res[k] || 0) >= cost[k]);
 
 /* ---------- weapons (ranges in tiles) ---------- */
+// each gun has its own trick: pistol headshots, shotgun knock-back + stagger (falls off with range), rifle bloom,
+// sniper pierce + laser, crossbow pins, flamer sets fire, launcher explodes. loot = ammo found per supply pickup.
 const WPN = [
-  { k: 'pistol', name: '手枪', dmg: 24, rate: 0.2, mag: 12, reload: 1.0, spread: 0.03, range: 15, pellets: 1, inf: 1, kick: 0.6, shake: 0.12 },
-  { k: 'shotgun', name: '霰弹枪', dmg: 13, rate: 0.72, mag: 6, reload: 1.7, spread: 0.17, range: 8, pellets: 8, kick: 1.6, shake: 0.35, start: 24 },
-  { k: 'rifle', name: '步枪', dmg: 23, rate: 0.095, mag: 30, reload: 1.6, spread: 0.045, range: 20, pellets: 1, kick: 0.4, shake: 0.12 },
-  { k: 'sniper', name: '狙击枪', dmg: 150, rate: 1.05, mag: 5, reload: 2.1, spread: 0.004, range: 45, pellets: 1, pierce: 5, kick: 2, shake: 0.4 },
+  { k: 'pistol', name: '手枪', dmg: 26, rate: 0.2, mag: 12, reload: 1.0, spread: 0.03, range: 15, pellets: 1, inf: 1, kick: 0.6, shake: 0.12, hs: 2.2, loot: 0 },
+  { k: 'shotgun', name: '霰弹枪', dmg: 13, rate: 0.72, mag: 6, reload: 1.7, spread: 0.17, range: 8, pellets: 8, kick: 2.6, shake: 0.35, start: 24, stun: 0.3, falloff: 1, loot: 8 },
+  { k: 'rifle', name: '步枪', dmg: 23, rate: 0.095, mag: 30, reload: 1.6, spread: 0.035, range: 20, pellets: 1, kick: 0.4, shake: 0.12, bloom: 0.22, loot: 30 },
+  { k: 'sniper', name: '狙击枪', dmg: 150, rate: 1.05, mag: 5, reload: 2.1, spread: 0.004, range: 45, pellets: 1, pierce: 5, kick: 4, shake: 0.4, stun: 0.5, laser: 1, loot: 4 },
+  { k: 'crossbow', name: '弩', dmg: 85, rate: 0.75, mag: 6, reload: 1.5, spread: 0.008, range: 26, pellets: 1, pierce: 3, kick: 0.6, shake: 0.06, pin: 1.1, loot: 6 },
+  { k: 'flamer', name: '喷火器', dmg: 9, rate: 0.07, mag: 80, reload: 2.2, spread: 0.32, range: 4.8, pellets: 1, flame: 1, burn: 3.5, kick: 0, shake: 0.02, loot: 40 },
+  { k: 'launcher', name: '榴弹发射器', dmg: 170, rate: 0.9, mag: 4, reload: 2.6, spread: 0.015, range: 22, pellets: 1, gl: 1, kick: 0, shake: 0.3, loot: 2 },
 ];
+const NW = WPN.length;
 
 /* ---------- zombies (speeds in tiles/s) ---------- */
 const ZT = {
@@ -4108,14 +4139,28 @@ const ZT = {
   spitter: { name: '喷吐者', hp: 95, spd: 0.9, r: 0.32, h: 1.05, dmg: 10, bdmg: 8, cd: 1.0, sc: 1.05, range: 9, spitCD: 3 },
   brute: { name: '重锤', hp: 650, spd: 0.8, r: 0.42, h: 1.45, dmg: 28, bdmg: 75, cd: 1.6, sc: 1.45, kb: 6 },
   boss: { name: '巨尸', hp: 2600, spd: 0.65, r: 0.62, h: 2.2, dmg: 45, bdmg: 220, cd: 2.0, sc: 2.2, kb: 9 },
+  dog: { name: '尸犬', hp: 40, spd: 3.7, r: 0.24, h: 0.55, dmg: 8, bdmg: 3, cd: 0.5, sc: 1 },
+  crawler: { name: '爬行尸', hp: 60, spd: 0.75, r: 0.27, h: 0.38, dmg: 11, bdmg: 9, cd: 0.9, sc: 1 },
+  bloater: { name: '爆尸', hp: 120, spd: 0.75, r: 0.36, h: 1.1, dmg: 10, bdmg: 10, cd: 1.1, sc: 1.1, blast: 1 },
+  screamer: { name: '尖叫者', hp: 80, spd: 1.5, r: 0.27, h: 1.05, dmg: 9, bdmg: 6, cd: 0.9, sc: 1.05, scream: 1 },
+  armored: { name: '防暴尸', hp: 170, spd: 0.9, r: 0.32, h: 1.05, dmg: 15, bdmg: 16, cd: 1.1, sc: 1.08, armor: 0.3 },
 };
-const ZKEYS = ['walker', 'runner', 'climber', 'spitter', 'brute', 'boss'];
+const ZKEYS = ['walker', 'runner', 'climber', 'spitter', 'brute', 'boss', 'dog', 'crawler', 'bloater', 'screamer', 'armored']; // order is the net id
 
 /* ---------- scavenging / gathering ---------- */
+// vanish: searched once and gone (restocked at random places every dawn); otherwise a fixture that refills sometimes
+// ammo: x supply pickups for the whole team; med / nade: chance of one; fuel: flamer fuel if someone owns it
 const SPOTS = {
-  car: { name: '汽车残骸', loot: { steel: [3, 6], parts: [1, 3] } },
-  crate: { name: '补给箱', loot: { parts: [2, 4] }, ammo: 1 },
-  rubble: { name: '废墟瓦砾', loot: { stone: [5, 9], wood: [2, 4] } },
+  car: { name: '汽车残骸', loot: { steel: [3, 6], parts: [1, 3] }, refill: 0.5 },
+  vending: { name: '售货机', loot: { parts: [1, 3] }, med: 0.5, refill: 0.5 },
+  crate: { name: '补给箱', loot: { parts: [2, 4] }, ammo: 1, med: 0.35, nade: 0.35, vanish: 1, n: 16 },
+  rubble: { name: '废墟瓦砾', loot: { stone: [5, 9], wood: [2, 4] }, vanish: 1, n: 24 },
+  trash: { name: '垃圾桶', loot: { parts: [0, 2], wood: [1, 3] }, med: 0.12, vanish: 1, n: 24 },
+  backpack: { name: '遇难者的背包', loot: { parts: [1, 2] }, ammo: 1, med: 0.5, nade: 0.3, vanish: 1, n: 10 },
+  cabinet: { name: '柜子', loot: { parts: [1, 3], wood: [2, 4] }, med: 0.35, vanish: 1, n: 24 },
+  toolbox: { name: '工具箱', loot: { parts: [3, 5], steel: [2, 4] }, vanish: 1, n: 10 },
+  milcrate: { name: '军用物资箱', loot: { parts: [2, 4] }, ammo: 2, nade: 1, vanish: 1, n: 4 },
+  barrel: { name: '油桶', loot: { steel: [2, 4] }, fuel: 40, vanish: 1, n: 14 },
 };
 /* ---------- daily tasks: three are rolled every dawn (and at the start) and last until the next dawn ---------- */
 // need(d, W) -> target count for upcoming night d; min = first night it can appear; rw = reward pool keys
@@ -4153,7 +4198,10 @@ function taskRewardText(r) {
   if (r.upg) out.push('强化弹头+1');
   return out.join(' ');
 }
-const GATHER = { 22: { name: '砍树', res: 'wood', n: [6, 10], t: 1.6 }, 21: { name: '采石', res: 'stone', n: [6, 10], t: 2.0 } };
+const GATHER = {
+  22: { name: '砍树', res: 'wood', n: [6, 10], t: 1.6 }, 21: { name: '采石', res: 'stone', n: [6, 10], t: 2.0 },
+  39: { name: '拆废铁', res: 'steel', n: [4, 7], t: 2.0 }, 40: { name: '搬原木', res: 'wood', n: [10, 16], t: 2.2 }, 41: { name: '砍灌木', res: 'wood', n: [2, 4], t: 0.7 },
+};
 
 /* ---------- crafting (workbench in the starter house) ---------- */
 const CRAFT = [
@@ -4162,6 +4210,12 @@ const CRAFT = [
   { id: 'shells', name: '霰弹 ×12', desc: '', cost: { parts: 2 }, ammo: [1, 12] },
   { id: 'rounds', name: '步枪弹 ×60', desc: '', cost: { parts: 3 }, ammo: [2, 60] },
   { id: 'slugs', name: '狙击弹 ×10', desc: '', cost: { parts: 3 }, ammo: [3, 10] },
+  { id: 'crossbow', name: '弩', desc: '穿透 3 只，把丧尸钉在原地 1 秒', cost: { parts: 12, wood: 12 }, wpn: 4 },
+  { id: 'flamer', name: '喷火器', desc: '近距离喷火，点着的丧尸会烧，火还会传给旁边的', cost: { parts: 20, steel: 10 }, wpn: 5 },
+  { id: 'launcher', name: '榴弹发射器', desc: '打出去落地就炸，炸一片', cost: { parts: 26, steel: 14 }, wpn: 6 },
+  { id: 'bolts', name: '弩箭 ×12', desc: '', cost: { wood: 4, parts: 1 }, ammo: [4, 12] },
+  { id: 'fuel', name: '燃料 ×120', desc: '', cost: { parts: 3, steel: 1 }, ammo: [5, 120] },
+  { id: 'shells40', name: '榴弹 ×4', desc: '', cost: { parts: 5, steel: 2 }, ammo: [6, 4] },
   { id: 'nade', name: '手雷 ×2', desc: '最多带 6 颗', cost: { parts: 4 }, nade: 2 },
   { id: 'med', name: '医疗包', desc: '回复 60 生命，最多 3 个', cost: { parts: 3, wood: 2 }, med: 1 },
   { id: 'upg', name: '强化弹头', desc: '全队伤害 +12%（最多 5 级）', cost: { parts: 8 }, upg: 1 },
@@ -4181,14 +4235,15 @@ const BAL = {
   radioHp: 1500, radioDmg: 0.5,
   startRes: { wood: 90, stone: 30, steel: 20, parts: 8 },
   refund: 0.5,
-  nightSpawn: n => Math.round(12 + n * 6),
+  nightSpawn: n => Math.round(16 + n * 7),
   bloodMul: 1.5,
-  hpMul: n => 1 + 0.11 * (n - 1),
+  hpMul: n => 1 + 0.13 * (n - 1),
   spdMul: n => 1 + 0.02 * (n - 1),
   spawnDur: n => 80 + n * 5,      // the horde trickles in over this long
   nightMin: n => 150 + n * 6,     // a night lasts at least this long; small groups keep coming until then
-  nightTrickleCD: 9, nightTrickleMax: 4,
-  dayStragglers: 4, dayStragglerCD: 13,
+  nightTrickleCD: 7, nightTrickleMax: 6,
+  dayStragglers: 6, dayStragglerCD: 10,
+  burnDps: 22, blastR: 2.3, blastDmgP: 32, blastDmgB: 160, screamR: 9, screamCD: 9, rageMul: 1.45,
   lootFar: 30, wireDps: 14, wireSlow: 0.45, wireWear: 6,
   aggro: 11,                     // (legacy) zombies now always hunt the nearest reachable player
   diff: { easy: { hp: 0.75, n: 0.75, dmg: 0.7 }, normal: { hp: 1, n: 1, dmg: 1 }, hard: { hp: 1.3, n: 1.3, dmg: 1.25 } },
@@ -4199,7 +4254,7 @@ const isBlood = n => n % 5 === 0;
 const SKEY = 'deadtide.';
 function lsGet(k, d) { try { const v = localStorage.getItem(SKEY + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } }
 function lsSet(k, v) { try { localStorage.setItem(SKEY + k, JSON.stringify(v)); } catch (e) { } }
-const SET = Object.assign({ name: '', mute: false, diff: 'normal', zoom: 1, shadows: 1 }, lsGet('set', {}));
+const SET = Object.assign({ name: '', mute: false, diff: 'normal', zoom: 1, shadows: 1, bconf: 1 }, lsGet('set', {}));
 const saveSet = () => lsSet('set', SET);
 
 let W = null, ME = 0, NETROLE = null;
@@ -4242,14 +4297,10 @@ const inZone = (x, y) => radioDist(x, y) <= BUILD_R;
    128 x 128: river and forest in the west, the camp north-west of centre, hills to the north-east, a farm in the north
    and a big ruined town (three rows of blocks on a street grid) filling the south and south-east. Town lots: [x0, y0, x1, y1, storeys]. */
 const TOWN_HOUSES = [
-  // row A (between the main road and the y 76 street)
-  [33, 67, 40, 75, 1], [44, 67, 53, 74, 1], [61, 66, 69, 74, 2], [74, 66, 85, 75, 2], [94, 63, 103, 73, 2], [107, 64, 116, 74, 1], [119, 63, 125, 73, 1],
-  // row B (between the y 76 and y 100 streets)
-  [41, 78, 53, 87, 2], [61, 78, 71, 86, 1], [74, 79, 83, 88, 1], [39, 90, 53, 98, 1], [61, 89, 70, 98, 2], [74, 91, 86, 98, 2],
-  [94, 79, 103, 88, 1], [106, 79, 117, 89, 2], [94, 91, 102, 98, 2], [106, 92, 116, 98, 1], [119, 80, 125, 90, 1],
-  // row C (south of the y 100 street)
-  [36, 104, 46, 113, 1], [49, 104, 55, 112, 1], [61, 104, 72, 114, 2], [75, 104, 86, 113, 1], [94, 104, 104, 114, 2], [107, 104, 118, 115, 1],
-  [38, 117, 48, 124, 2], [62, 117, 71, 124, 1], [77, 116, 88, 124, 2], [94, 118, 105, 125, 1], [110, 118, 121, 125, 2],
+  // spread out along the streets with yards, a park, a gas station, a parking lot and a junkyard in between
+  [35, 62, 43, 70, 1], [62, 58, 70, 66, 2], [78, 66, 87, 74, 1], [96, 57, 104, 65, 2], [113, 64, 122, 72, 1],
+  [39, 83, 50, 91, 2], [64, 87, 72, 96, 1], [78, 79, 86, 86, 1], [95, 84, 104, 92, 2], [113, 79, 122, 87, 1],
+  [35, 108, 44, 116, 1], [47, 118, 55, 125, 2], [62, 104, 73, 113, 2], [79, 113, 88, 121, 1], [96, 106, 106, 115, 2], [113, 114, 123, 123, 1],
   // the barn up at the farm
   [48, 3, 58, 11, 1],
 ];
@@ -4316,11 +4367,11 @@ function genMap(seed) {
       if ((x === RX && (y === Y1 || y === Y0)) || ((x === X0 || x === X1) && y === RY)) id = 7; // a door on every side
       if ((y === Y0 && (x === RX - 2 || x === RX + 2)) || (x === X1 && (y === RY - 2 || y === RY + 2)) || (x === X0 && y === RY + 2) || (y === Y1 && x === RX + 3)) id = 8;
       put(x, y, 0, id);
-    } else if (y <= RY && !(x === X1 - 1 && y === Y0 + 2)) putS(x, y, 1, 4);
+    } else if (y <= RY && !(x === X1 - 1 && y === Y0 + 2) && !(x === X0 + 1 && y === RY)) putS(x, y, 1, 4);
     if ((x === X0 || y === Y0 || x === X1) && y <= RY) { let id = 1; if (y === Y0 && (x === RX - 2 || x === RX + 2)) id = 8; if ((x === X0 || x === X1) && y === RY - 2) id = 8; put(x, y, 1, id); }
     if (y === RY + 1 && x > X0 && x < X1) putS(x, y, 1, 4);
   }
-  put(X1 - 1, Y0 + 2, 0, 6, 3);   // stairs going north up to the first floor
+  put(X1 - 1, Y0 + 2, 0, 6, 3); put(X0 + 1, RY, 0, 6, 3); // two ladders up to the first floor
   put(X0 + 2, Y0 + 2, 1, 10);      // lamp upstairs
   put(RX - 2, RY + 2, 0, 31);
   // town: plastered ruins; two-storey houses keep half an upper floor with stairs up
@@ -4364,7 +4415,22 @@ function genMap(seed) {
     for (let n = 0; n < 3; n++) { const [x, y] = inner(); if (!blk[ci(x, y, 0)] && ok(x, y)) put(x, y, 0, n ? 29 : 26); }
     if (st === 2) { const x = west ? upX0 + 1 : upX1 - 1, y = y1 - 1; if (slab[ci(x, y, 1)] && !blk[ci(x, y, 1)]) put(x, y, 1, 26); }
   });
-  // trees, rocks
+  // landmarks: gas station, parking lot, park, military checkpoint, junkyard, campsites
+  const free = (x, y) => inMap(x, y) && G[col(x, y)] === 0 && tt[col(x, y)] !== TT.water && !blk[ci(x, y, 0)] && !slab[ci(x, y, 0)];
+  const lot = (x0, y0, x1, y1, t) => { for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) if (inMap(x, y) && G[col(x, y)] === 0 && tt[col(x, y)] !== TT.water) tt[col(x, y)] = t; };
+  const at = (x, y, id, d) => { if (free(x, y)) put(x, y, 0, id, d); };
+  lot(74, 54, 86, 61, TT.road); at(78, 56, 37); at(82, 56, 37); at(76, 60, 38); at(84, 60, 38); at(80, 58, 25, 0); at(86, 55, 32); at(74, 61, 32);       // gas station
+  lot(40, 54, 54, 59, TT.road); for (const [x, y, d] of [[42, 55, 1], [45, 55, 1], [51, 55, 3], [43, 58, 1], [49, 58, 3], [53, 58, 1]]) at(x, y, 25, d); at(54, 54, 32); // parking lot
+  for (let x = 60; x <= 74; x++) for (const y of [79, 84]) if ((x + y) % 3) at(x, y, 41);                                                           // park: hedges
+  at(63, 81, 22); at(70, 82, 22); at(66, 82, 38); at(72, 80, 33);
+  for (const [x, y] of [[104, 49], [105, 49], [107, 49], [108, 49], [104, 54], [105, 54], [107, 54], [108, 54]]) at(x, y, 27);                     // checkpoint
+  at(103, 48, 36); at(109, 55, 36); at(106, 48, 37); at(110, 50, 25, 1);
+  lot(112, 38, 124, 47, TT.dirt); for (let k = 0; k < 9; k++) at(113 + Math.floor(r() * 11), 39 + Math.floor(r() * 8), 39);                          // junkyard
+  for (const [x, y, d] of [[114, 41, 0], [119, 44, 1], [122, 39, 2], [116, 46, 3]]) at(x, y, 25, d); at(124, 42, 37); at(112, 45, 37); at(118, 38, 35);
+  for (let x = 111; x <= 125; x++) for (const y of [37, 48]) if (r() < 0.75) at(x, y, 27);
+  for (const [cx, cy] of [[8, 32], [97, 14], [12, 100], [74, 34]]) { at(cx, cy, 33); at(cx + 1, cy + 1, 40); at(cx - 1, cy + 2, 40); at(cx + 2, cy - 1, 41); at(cx - 2, cy, 41); } // campsites
+  at(46, 13, 40); at(47, 15, 40); at(59, 12, 39); at(60, 6, 35);                                                                                    // farmyard
+  // trees, rocks, bushes, log piles, scrap
   const clearNear = (x, y) => Math.max(Math.abs(x - RX), Math.abs(y - RY)) <= 9;
   for (let y = 0; y < MH; y++) for (let x = 0; x < MW; x++) {
     const i = col(x, y), t = tt[i], g = G[i];
@@ -4373,6 +4439,9 @@ function genMap(seed) {
     const pTree = t === TT.forest ? 0.42 : t === TT.hill ? 0.1 : 0.035, pRock = t === TT.hill ? 0.05 : 0.018;
     const v = r();
     if (v < pTree) put(x, y, g, 22); else if (v < pTree + pRock) put(x, y, g, 21);
+    else if (v < pTree + pRock + (t === TT.forest ? 0.05 : 0.025)) put(x, y, g, 41);
+    else if (v < pTree + pRock + 0.032 && t === TT.forest) put(x, y, g, 40);
+    else if (v < pTree + pRock + 0.03 && (t === TT.hill || t === TT.dirt)) put(x, y, g, 39);
   }
   // cars on the roads (not on bridges), crates in the open
   const cars = [[8, 51], [24, 52], [38, 51], [66, 52], [80, 51], [92, 52], [110, 51], [124, 52], [57, 60], [58, 71], [57, 90], [57, 108], [58, 122], [40, 76], [70, 77], [86, 76], [100, 77], [118, 76], [80, 101], [112, 100], [45, 100], [90, 60], [91, 84], [90, 112], [44, 6], [45, 16]];
@@ -4656,7 +4725,7 @@ function mkPlayer(i, name) {
   return {
     i, name, x: RADIO_XY[0] - 0.5 + i * 2, y: RADIO_XY[1] + 0.5 + i, L: 0, z: 0, r: 0.28, h: 1.0, vx: 0, vy: 0, kbx: 0, kby: 0, aim: -Math.PI / 2, aimPt: null,
     hp: BAL.pMaxHp, maxHp: BAL.pMaxHp, down: false, downT: 0, dead: false, gone: false,
-    wpn: 1, owned: [1, 1, 0, 0], mag: [12, 6, 0, 0], ammo: [0, WPN[1].start, 0, 0], reloadT: 0, reloadW: 0, fireCD: 0, shoveCD: 0, shoveT: 0,
+    wpn: 1, owned: WPN.map((w, k) => k < 2 ? 1 : 0), mag: WPN.map((w, k) => k === 0 ? 12 : k === 1 ? 6 : 0), ammo: WPN.map((w, k) => k === 1 ? w.start : 0), bloom: 0, reloadT: 0, reloadW: 0, fireCD: 0, shoveCD: 0, shoveT: 0,
     nades: 1, meds: 1, medT: 0, selfRev: false, useT: 0, useK: '', build: false, sel: 1, demo: false, sdir: 3,
     inp: { mx: 0, my: 0, fire: 0, use: 0 }, kills: 0, hurtT: 0, anim: 0, emptyT: 0, ready: false, recoilT: 0,
   };
@@ -4664,7 +4733,7 @@ function mkPlayer(i, name) {
 function newWorld(seed, names, diff) {
   const m = genMap(seed);
   W = {
-    seed, t: 0, G: m.G, tt: m.tt, blk: m.blk, bhp: m.bhp, slab: m.slab, shp: m.shp, bdir: m.bdir, stab: new Int8Array(NC), spots: m.spots,
+    seed, t: 0, G: m.G, tt: m.tt, blk: m.blk, bhp: m.bhp, slab: m.slab, shp: m.shp, bdir: m.bdir, stab: new Int8Array(NC), srch: new Set(),
     radio: { x: m.radio.x, y: m.radio.y }, bench: m.bench, tasks: [], tkv: 0, clean: true,
     p: names.map((n, i) => mkPlayer(i, n)), zs: [], proj: [], zid: 1,
     phase: 'day', clock: BAL.dayLen[0], dayLen: BAL.dayLen[0], night: 0, res: Object.assign({}, BAL.startRes), upg: 0, kills: 0,
@@ -4673,6 +4742,7 @@ function newWorld(seed, names, diff) {
     ff: { rw: new Float32Array(NC), rc: new Float32Array(NC), pw: new Float32Array(NC), pc: new Float32Array(NC), rT: 0, pT: 0 },
   };
   recomputeStab();
+  restockSpots(true);
   updateFields(0, true);
   W.edges = edgeSpawns();
   rollTasks();
@@ -4716,6 +4786,13 @@ function stepMove(p, dt) {
   if (p.dead || p.gone) return;
   p.hurtT = Math.max(0, p.hurtT - dt);
   const I = p.inp, m = Math.hypot(I.mx, I.my), k = m > 1 ? 1 / m : 1;
+  if (p.jmp) { // mid-vault / mid-jump: a scripted arc
+    const J = p.jmp; J.t += dt; const f = Math.min(1, J.t / J.T);
+    p.x = lerp(J.x0, J.x1, f); p.y = lerp(J.y0, J.y1, f); p.jz = Math.sin(f * Math.PI) * J.h;
+    p.vx = (J.x1 - J.x0) / J.T; p.vy = (J.y1 - J.y0) / J.T; p.anim += dt * 6;
+    if (f >= 1) { const drop = p.L - J.L; p.L = J.L; p.jmp = null; p.jz = 0; p.vx *= 0.3; p.vy *= 0.3; if (drop > 0 || J.k) emitLocal('land'); }
+    p.z = pZ(p); return;
+  }
   const spd = BAL.pSpeed * (p.down ? 0.22 : 1) * (p.medT > 0 ? 0.45 : 1) * (p.build ? 0.9 : 1);
   const tx = I.mx * k * spd, ty = I.my * k * spd, a = Math.min(1, dt * 14);
   p.vx = lerp(p.vx, tx, a); p.vy = lerp(p.vy, ty, a);
@@ -4723,10 +4800,40 @@ function stepMove(p, dt) {
   p.dropped = 0; p.edgeWant = 0;
   moveEnt(p, (p.vx + p.kbx) * dt, (p.vy + p.kby) * dt, 'p', true);
   p.edgeK = p.edgeWant; p.edgeT = p.edgeWant && m > 0.3 ? (p.edgeT || 0) + dt : 0;
+  // keep pushing into a low obstacle (or a wall) to vault over it
+  let vk = 0;
+  if (p.bump >= 0 && m > 0.5 && !p.down) {
+    const bx = cx_(p.bump) - Math.floor(p.x), by = cy_(p.bump) - Math.floor(p.y);
+    if (Math.abs(bx) + Math.abs(by) === 1 && (bx * I.mx + by * I.my) / m > 0.7 && jumpTarget(p, bx, by)) { vk = vaultKind(W.blk[p.bump]); p.vaultT = (p.vaultT || 0) + dt; if (p.vaultT >= (vk === 2 ? 0.32 : 0.12)) { p.vaultT = 0; startJump(p, bx, by); } }
+  }
+  if (!vk) p.vaultT = 0; else p.edgeK = 3;
   if (p.dropped) emitLocal('land');
   const sp = Math.hypot(p.vx, p.vy);
   if (sp > 0.3) p.anim += dt * sp * 2.6; else p.anim = lerp(p.anim, Math.round(p.anim / Math.PI) * Math.PI, Math.min(1, dt * 8));
   p.z = pZ(p);
+}
+/* ---------- vaulting and jumping (local to each player, like walking) ---------- */
+function vaultKind(b) { if (!b) return 0; const Bb = B[b]; if (Bb.vault || b === 27 || b === 29 || b === 26 || b === 32 || b === 37) return 1; if (b === 1 || b === 2 || b === 3 || b === 8 || b === 24 || b === 31 || b === 40) return 2; return 0; }
+function jumpTarget(p, dx, dy) {
+  const cx = Math.floor(p.x), cy = Math.floor(p.y), L = p.L, ax = cx + dx, ay = cy + dy, bx = cx + 2 * dx, by = cy + 2 * dy;
+  if (!inMap(ax, ay)) return null;
+  const vk = vaultKind(W.blk[ci(ax, ay, L)]);
+  const land = (x, y) => { if (!inMap(x, y)) return -1; for (let l = L; l >= Math.max(0, L - 2); l--) { if (standable(x, y, l, 'p')) return l; if (!enterable(x, y, l, 'p')) return -1; } return -1; };
+  if (vk) {
+    if (vk === 2 && L + 1 < ML && (W.blk[ci(ax, ay, L + 1)] || W.slab[ci(ax, ay, L + 1)])) return null; // that wall goes up to the ceiling
+    const l2 = land(bx, by); if (l2 >= 0) return { x: bx + 0.5, y: by + 0.5, L: l2, T: vk === 2 ? 0.55 : 0.36, h: vk === 2 ? 0.95 : 0.55, k: vk };
+    return null;
+  }
+  // a gap: leap one empty tile to the same floor
+  if (enterable(ax, ay, L, 'p') && !standable(ax, ay, L, 'p') && standable(bx, by, L, 'p')) return { x: bx + 0.5, y: by + 0.5, L, T: 0.45, h: 0.55, k: 3 };
+  return null;
+}
+function startJump(p, dx, dy, hop) {
+  if (p.jmp || p.down || p.dead || p.medT > 0) return false;
+  const t = jumpTarget(p, dx, dy);
+  if (!t) { if (!hop) return false; p.jmp = { t: 0, T: 0.34, x0: p.x, y0: p.y, x1: p.x + dx * 0.25 * (standable(Math.floor(p.x + dx * 0.6), Math.floor(p.y + dy * 0.6), p.L, 'p') ? 1 : 0), y1: p.y + dy * 0.25 * (standable(Math.floor(p.x + dx * 0.6), Math.floor(p.y + dy * 0.6), p.L, 'p') ? 1 : 0), L: p.L, h: 0.4, k: 0 }; emitLocal('jump'); return true; }
+  p.jmp = { t: 0, T: t.T, x0: p.x, y0: p.y, x1: t.x, y1: t.y, L: t.L, h: t.h + Math.max(0, p.L - t.L) * 0.15, k: t.k };
+  emitLocal(t.k === 2 ? 'vault' : 'jump'); return true;
 }
 function emitLocal(name) { fxEvent({ k: 'sfx', n: name, local: 1 }); }
 
@@ -4735,7 +4842,7 @@ const shoulder = p => [p.x, p.y, pZ(p) + (p.down ? 0.25 : 0.72)];
 function stepActions(p, dt) {
   if (p.gone) return;
   const I = p.inp;
-  p.fireCD -= dt; p.shoveCD -= dt; p.emptyT -= dt;
+  p.fireCD -= dt; p.shoveCD -= dt; p.emptyT -= dt; if (p.bloom) p.bloom = Math.max(0, p.bloom - dt * 2.2);
   if (p.dead) return;
   if (p.reloadT > 0) { p.reloadT -= dt; if (p.reloadT <= 0) finishReload(p); }
   if (p.medT > 0) {
@@ -4771,7 +4878,7 @@ function useTarget(p) {
     const i = ci(x, y, p.L), b = W.blk[i]; if (!b) continue;
     const d = d2(x + 0.5, y + 0.5, p.x, p.y);
     if (d > bd) continue;
-    if (B[b].spot) { const s = W.spots.find(s => s.i === i); if (s && !s.searched) { bd = d; best = { k: 'spot', i, t: BAL.searchTime, name: '搜索' + SPOTS[s.k].name }; } }
+    if (B[b].spot) { const S = SPOTS[B[b].spot]; if (S && (S.vanish || !W.srch.has(i))) { bd = d; best = { k: 'spot', i, t: BAL.searchTime, name: '搜索' + S.name }; } }
     else if (GATHER[b]) { bd = d; best = { k: 'gather', i, t: GATHER[b].t, name: GATHER[b].name }; }
   }
   return best;
@@ -4787,16 +4894,17 @@ function completeUse(p, tgt) {
     emit({ k: 'loot', p: p.i, x: wx, y: wy, z: wz, text: '+' + n + ' ' + RES.find(r => r.k === g.res).name });
     return;
   }
-  const s = W.spots.find(s => s.i === i); if (!s || s.searched) return;
-  s.searched = true; emit({ k: 'spot', i, v: 1 }); taskAdd('search'); if (!inZone(x, y)) taskAdd('far');
-  const S = SPOTS[s.k], got = [];
-  for (const k in S.loot) { const [a, b] = S.loot[k]; const n = Math.round(rand(a, b) * m); W.res[k] += n; got.push('+' + n + ' ' + RES.find(r => r.k === k).name); }
-  if (S.ammo) {
-    for (const q of activeP()) { const give = [0, 8, 30, 4]; for (let wi = 1; wi < 4; wi++) if (q.owned[wi]) q.ammo[wi] += Math.round(give[wi] * m); }
-    got.push('全队弹药');
-    if (rand() < 0.35 && p.meds < 3) { p.meds++; got.push('医疗包'); }
-    if (rand() < 0.35 && p.nades < 6) { p.nades++; got.push('手雷'); }
-  }
+  const S = SPOTS[B[W.blk[i]].spot]; if (!S || (!S.vanish && W.srch.has(i))) return;
+  // containers are gone once searched (new ones turn up at dawn); cars and machines are marked searched
+  if (S.vanish) setCell(i, 0, W.slab[i], null, 'loot'); else { W.srch.add(i); W.ver++; emit({ k: 'spot', i, v: 1 }); }
+  taskAdd('search'); if (!inZone(x, y)) taskAdd('far');
+  const got = [];
+  for (const k in S.loot) { const [a, b] = S.loot[k]; const n = Math.round(rand(a, b) * m); if (n > 0) { W.res[k] += n; got.push('+' + n + ' ' + RES.find(r => r.k === k).name); } }
+  if (S.ammo) { for (const q of activeP()) for (let wi = 1; wi < NW; wi++) if (q.owned[wi]) q.ammo[wi] += Math.round(WPN[wi].loot * S.ammo * m); got.push('全队弹药'); }
+  if (S.fuel && activeP().some(q => q.owned[5])) { for (const q of activeP()) if (q.owned[5]) q.ammo[5] += Math.round(S.fuel * m); got.push('燃料'); }
+  if (S.med && rand() < S.med && p.meds < 3) { p.meds++; got.push('医疗包'); }
+  if (S.nade && rand() < S.nade && p.nades < 6) { p.nades = Math.min(6, p.nades + (S.nade >= 1 ? 2 : 1)); got.push('手雷'); }
+  if (!got.length) got.push('什么也没有');
   emit({ k: 'loot', p: p.i, x: wx, y: wy, z: wz, text: got.join('  ') });
 }
 /* ---------- daily tasks ---------- */
@@ -4828,12 +4936,68 @@ function payTask(t) {
   const r = t.rw;
   if (r.res) for (const k in r.res) W.res[k] += r.res[k];
   for (const q of activeP()) {
-    if (r.ammo) { const give = [0, 8, 30, 4]; for (let wi = 1; wi < 4; wi++) if (q.owned[wi]) q.ammo[wi] += give[wi] * r.ammo; }
+    if (r.ammo) { for (let wi = 1; wi < NW; wi++) if (q.owned[wi]) q.ammo[wi] += WPN[wi].loot * r.ammo; }
     if (r.med) q.meds = Math.min(3, q.meds + r.med);
     if (r.nade) q.nades = Math.min(6, q.nades + r.nade);
   }
   if (r.upg) W.upg = Math.min(5, W.upg + r.upg);
   emit({ k: 'task', txt: t.txt, rt: t.rt });
+}
+/* ---------- bloaters: a burst that hurts people, zombies and walls ---------- */
+function zBlast(x, y, z) {
+  const R = BAL.blastR;
+  for (const p of W.p) { if (p.gone || p.dead) continue; const d = Math.hypot(p.x - x, p.y - y, (pZ(p) + 0.5 - z) * 0.8); if (d < R) { const f = 1 - d / R; hurtPlayer(p, BAL.blastDmgP * (0.4 + 0.6 * f) * W.D.dmg); knock(p, (p.x - x) / (d || 1) * 6 * f, (p.y - y) / (d || 1) * 6 * f); } }
+  for (const zb of W.zs) { if (zb.hp <= 0) continue; const d = Math.hypot(zb.x - x, zb.y - y); if (d < R && Math.abs(zb.z - z) < 1.5) hurtZombie(zb, 70 * (1 - d / R), null, (zb.x - x) / (d || 1) * 4, (zb.y - y) / (d || 1) * 4); }
+  const cx = Math.floor(x), cy = Math.floor(y), L = Math.floor(z / FH);
+  for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) for (let l = L - 1; l <= L + 1; l++) {
+    const xx = cx + dx, yy = cy + dy, d = Math.hypot(dx, dy); if (!inMap(xx, yy) || l < 0 || l >= ML || d > R) continue;
+    const i = ci(xx, yy, l); if (W.blk[i] && B[W.blk[i]].brk) damageCell(i, BAL.blastDmgB * (1 - d / (R + 0.6)) * W.D.dmg);
+  }
+  emit({ k: 'boom', x: r2(x), y: r2(y), z: r2(z), g: 1 });
+}
+// what turns up between waves / in daylight
+function strayKind(n) {
+  const r = rand();
+  if (n >= 3 && r < 0.12) return 'dog'; if (r < 0.22) return 'crawler'; if (n >= 4 && r < 0.3) return 'runner';
+  if (n >= 5 && r < 0.36) return 'bloater'; if (n >= 6 && r < 0.4) return 'armored'; return 'walker';
+}
+/* ---------- daily restock of searchable containers ---------- */
+const SPOT_IDS = { crate: 26, rubble: 29, trash: 32, backpack: 33, cabinet: 34, toolbox: 35, milcrate: 36, barrel: 37 };
+function spotCount() { const c = {}; for (let i = 0; i < NC; i++) { const s = B[W.blk[i]].spot; if (s) c[s] = (c[s] || 0) + 1; } return c; }
+function spotFree(x, y, L) {
+  if (!inMap(x, y) || L < 0 || L >= ML) return false;
+  const i = ci(x, y, L); if (W.blk[i] || !support(x, y, L) || W.tt[y * MW + x] === TT.water) return false;
+  if (radioDist(x, y) <= BUILD_R + 1) return false;
+  for (const p of W.p) if (Math.floor(p.x) === x && Math.floor(p.y) === y) return false;
+  return true;
+}
+function pickSpot(kind) {
+  for (let tries = 0; tries < 400; tries++) {
+    let x, y, L;
+    const indoor = kind === 'cabinet' || ((kind === 'rubble' || kind === 'toolbox' || kind === 'crate') && rand() < 0.45);
+    if (indoor) {
+      const H = TOWN_HOUSES[Math.floor(rand() * TOWN_HOUSES.length)];
+      x = H[0] + 1 + Math.floor(rand() * (H[2] - H[0] - 1)); y = H[1] + 1 + Math.floor(rand() * (H[3] - H[1] - 1));
+      L = W.slab[ci(x, y, 1)] && rand() < 0.4 ? 1 : gAt(x, y);
+      if (kind === 'cabinet' && !DIRS.some(([dx, dy]) => { const b = blkAt(x + dx, y + dy, L); return b === 24 || b === 2 || b === 1; })) continue; // against a wall
+    } else {
+      x = Math.floor(rand() * MW); y = Math.floor(rand() * MH); L = gAt(x, y);
+      const t = W.tt[y * MW + x];
+      if (kind === 'trash') { if (t === TT.road || !DIRS.some(([dx, dy]) => inMap(x + dx * 2, y + dy * 2) && (W.tt[(y + dy) * MW + x + dx] === TT.road || W.tt[(y + dy * 2) * MW + x + dx * 2] === TT.road))) continue; }
+      else if (t === TT.road) continue;
+      if (kind === 'milcrate' && radioDist(x, y) < 34) continue;
+      if (kind === 'backpack' && t !== TT.forest && t !== TT.grass && t !== TT.hill) continue;
+    }
+    if (spotFree(x, y, L)) return ci(x, y, L);
+  }
+  return -1;
+}
+function restockSpots(initial) {
+  const c = spotCount();
+  for (const k in SPOT_IDS) {
+    let need = (SPOTS[k].n || 0) - (c[k] || 0);
+    while (need-- > 0) { const i = pickSpot(k); if (i < 0) break; if (initial) { W.blk[i] = SPOT_IDS[k]; W.bhp[i] = 1; } else setCell(i, SPOT_IDS[k], W.slab[i], null, 'spawn'); }
+  }
 }
 function startReload(p) {
   const wi = p.down ? 0 : p.wpn, w = WPN[wi];
@@ -4855,8 +5019,23 @@ function fireWeapon(p, wi) {
   const [sx, sy, sz] = shoulder(p), [ax, ay, az] = aimDir(p);
   const yaw = Math.atan2(ay, ax), pitch = Math.asin(clamp(az, -1, 1));
   const mul = 1 + 0.12 * W.upg, ends = [];
+  if (w.gl) { // launcher: an explosive shell on a flat arc that bursts on whatever it touches
+    const v = 17; W.proj.push({ k: 'gl', x: sx + ax * 0.45, y: sy + ay * 0.45, z: sz, vx: Math.cos(pitch) * Math.cos(yaw) * v, vy: Math.cos(pitch) * Math.sin(yaw) * v, vz: Math.sin(pitch) * v + 1.2, o: p.i, t: 2.6 });
+    emit({ k: 'shot', o: p.i, w: wi, e: [] }); return;
+  }
+  if (w.flame) { // a cone of fire: everything in front, in range and in sight catches fire
+    for (const z of W.zs) {
+      if (z.hp <= 0 || Math.abs(z.L - p.L) > 1) continue;
+      const dx = z.x - sx, dy = z.y - sy, d = Math.hypot(dx, dy); if (d > w.range + z.r) continue;
+      if (Math.abs(angDiff(yaw, Math.atan2(dy, dx))) > w.spread + z.r / Math.max(d, 0.5)) continue;
+      if (!los(sx, sy, sz, z.x, z.y, z.z + z.h * 0.5, LEAN)) continue;
+      hurtZombie(z, w.dmg * mul, p, 0, 0, true); z.burn = Math.max(z.burn || 0, w.burn); z.burnBy = p.i;
+    }
+    emit({ k: 'shot', o: p.i, w: wi, e: [] }); return;
+  }
+  if (w.bloom) p.bloom = Math.min(2.2, (p.bloom || 0) + w.bloom);
   for (let k = 0; k < w.pellets; k++) {
-    const sp = w.spread * (p.down ? 1.6 : 1);
+    const sp = w.spread * (p.down ? 1.6 : 1) * (1 + (w.bloom ? p.bloom : 0));
     const yw = yaw + (rand() - 0.5) * 2 * sp, pt = pitch + (rand() - 0.5) * sp;
     const dx = Math.cos(pt) * Math.cos(yw), dy = Math.cos(pt) * Math.sin(yw), dz = Math.sin(pt);
     const wall = rayWorld(sx, sy, sz, dx, dy, dz, w.range, { lean: LEAN });
@@ -4871,8 +5050,15 @@ function fireWeapon(p, wi) {
     for (const [d, z] of hits) {
       if (left <= 0) break;
       const hzv = sz + dz * d, head = hzv > z.z + z.h * 0.76;
-      hurtZombie(z, w.dmg * mul * (head ? BAL.headshot : 1), p, dx * w.kick / (z.k === 'boss' ? 6 : z.k === 'brute' ? 3 : 1), dy * w.kick / (z.k === 'boss' ? 6 : z.k === 'brute' ? 3 : 1));
-      if (k < 3 || head) emit({ k: 'hit', x: r2(sx + dx * d), y: r2(sy + dy * d), z: r2(hzv), h: head ? 1 : 0, g: z.k === 'spitter' ? 1 : 0 });
+      let dmg = w.dmg * mul * (head ? (w.hs || BAL.headshot) : 1);
+      if (w.falloff) dmg *= d < 3 ? 1 : Math.max(0.35, 1 - (d - 3) / (w.range - 3) * 0.65); // shotgun: brutal up close
+      let armor = false;
+      if (ZT[z.k].armor && !w.pierce && Math.cos(angDiff(z.face, Math.atan2(-dy, -dx))) > 0.2) { dmg *= ZT[z.k].armor; armor = true; } // riot gear: only piercing shots or a flank get through
+      const heavy = z.k === 'boss' ? 6 : z.k === 'brute' ? 3 : z.k === 'armored' ? 2 : 1;
+      hurtZombie(z, dmg, p, dx * w.kick / heavy, dy * w.kick / heavy);
+      if (w.stun && !armor) z.stun = Math.max(z.stun || 0, w.stun / heavy);
+      if (w.pin) z.stun = Math.max(z.stun || 0, w.pin / (heavy > 2 ? 3 : 1));
+      if (k < 3 || head) emit({ k: 'hit', x: r2(sx + dx * d), y: r2(sy + dy * d), z: r2(hzv), h: head ? 1 : 0, g: z.k === 'spitter' || z.k === 'bloater' ? 1 : 0, a: armor ? 1 : 0 });
       left--; endD = d; hz = 1;
     }
     if (left > 0 || !hz) endD = wall.d;
@@ -4880,9 +5066,9 @@ function fireWeapon(p, wi) {
   }
   emit({ k: 'shot', o: p.i, w: wi, e: ends });
 }
-function hurtZombie(z, dmg, p, kx, ky) {
+function hurtZombie(z, dmg, p, kx, ky, quiet) {
   if (z.hp <= 0) return;
-  z.hp -= dmg; z.hitT = 0.12;
+  z.hp -= dmg; if (!quiet) z.hitT = 0.12;
   if (kx || ky) { z.kbx = (z.kbx || 0) + kx; z.kby = (z.kby || 0) + ky; }
   if (z.hp <= 0) killZombie(z, p);
 }
@@ -4890,6 +5076,7 @@ let KSRC = '';
 function killZombie(z, p) {
   z.hp = 0; W.kills++; if (p) p.kills++;
   taskAdd('kill'); if (TASKS[z.k]) taskAdd(z.k); if (KSRC === 'nade') taskAdd('nade');
+  if (ZT[z.k].blast) zBlast(z.x, z.y, z.z + 0.5);
   emit({ k: 'zdie', x: r2(z.x), y: r2(z.y), z: r2(z.z), t: z.k, f: r2(z.face), id: z.id });
   if (rand() < (z.k === 'boss' ? 1 : z.k === 'brute' ? 0.6 : 0.07)) { const n = z.k === 'boss' ? 15 : z.k === 'brute' ? 3 : 1; W.res.parts += n; emit({ k: 'loot', p: -1, x: z.x, y: z.y, z: z.z + z.h, text: '+' + n + ' 零件' }); }
 }
@@ -4920,7 +5107,7 @@ function doAct(p, a, v) {
   if (!W || W.over || p.gone || p.dead) return;
   switch (a) {
     case 'reload': if (!p.down) startReload(p); else if (p.mag[0] < WPN[0].mag) { p.reloadT = WPN[0].reload; p.reloadW = 0; } break;
-    case 'wpn': if (!p.down && v >= 0 && v < 4 && p.owned[v] && p.wpn !== v) { p.wpn = v; p.reloadT = 0; p.fireCD = Math.max(p.fireCD, 0.25); emit({ k: 'sfx', n: 'swap', x: p.x, y: p.y, o: p.i }); } break;
+    case 'wpn': if (!p.down && v >= 0 && v < NW && p.owned[v] && p.wpn !== v) { p.wpn = v; p.reloadT = 0; p.fireCD = Math.max(p.fireCD, 0.25); emit({ k: 'sfx', n: 'swap', x: p.x, y: p.y, o: p.i }); } break;
     case 'shove': shove(p); break;
     case 'nade': throwNade(p); break;
     case 'med':
@@ -4977,7 +5164,7 @@ function craftBlocked(p, c) {
 function doCraft(p, id) {
   const c = CRAFT.find(c => c.id === id); if (!c || !nearBench(p) || craftBlocked(p, c)) return;
   for (const k in c.cost) W.res[k] -= c.cost[k];
-  if (c.wpn) { p.owned[c.wpn] = 1; p.mag[c.wpn] = WPN[c.wpn].mag; p.ammo[c.wpn] += c.wpn === 2 ? 60 : 10; p.wpn = c.wpn; }
+  if (c.wpn) { p.owned[c.wpn] = 1; p.mag[c.wpn] = WPN[c.wpn].mag; p.ammo[c.wpn] += WPN[c.wpn].loot * 2 || 10; p.wpn = c.wpn; }
   if (c.ammo) p.ammo[c.ammo[0]] += c.ammo[1];
   if (c.nade) p.nades = Math.min(6, p.nades + c.nade);
   if (c.med) p.meds = Math.min(3, p.meds + 1);
@@ -5033,7 +5220,8 @@ function startNight() {
   W.p.forEach(p => p.ready = false);
   const n = W.night, blood = isBlood(n), D = W.D;
   const count = Math.round(BAL.nightSpawn(n) * D.n * (blood ? BAL.bloodMul : 1));
-  const wts = { walker: 10, runner: n >= 3 ? 2 + n * 0.35 : n === 2 ? 1.5 : 0, climber: n >= 4 ? 0.8 + n * 0.2 : 0, spitter: n >= 6 ? 1.3 + n * 0.1 : 0, brute: n >= 5 ? (0.5 + n * 0.07) * (blood ? 2 : 1) : 0 };
+  const wts = { walker: 10, runner: n >= 3 ? 2 + n * 0.35 : n === 2 ? 1.5 : 0, climber: n >= 4 ? 0.8 + n * 0.2 : 0, spitter: n >= 6 ? 1.3 + n * 0.1 : 0, brute: n >= 5 ? (0.5 + n * 0.07) * (blood ? 2 : 1) : 0,
+    crawler: 1.4, dog: n >= 3 ? 0.6 + n * 0.07 : 0, bloater: n >= 4 ? 0.8 + n * 0.06 : 0, screamer: n >= 5 ? 0.45 + n * 0.03 : 0, armored: n >= 6 ? 0.8 + n * 0.08 : 0 };
   const tot = Object.values(wts).reduce((a, b) => a + b, 0), dur = BAL.spawnDur(n), q = [];
   const sides = [0, 1, 2, 3].filter(s => W.edges[s].length);
   for (let k = sides.length - 1; k > 0; k--) { const j = Math.floor(rand() * (k + 1)); [sides[k], sides[j]] = [sides[j], sides[k]]; }
@@ -5042,7 +5230,8 @@ function startNight() {
     let r = rand() * tot, type = 'walker';
     for (const key in wts) { r -= wts[key]; if (r <= 0) { type = key; break; } }
     const frac = k / count, burst = Math.floor(frac * 6) / 6;
-    q.push({ t: lerp(burst, frac, 0.55) * dur + rand() * 3, k: type, side: front[Math.floor(rand() * front.length)] });
+    const t0 = lerp(burst, frac, 0.55) * dur + rand() * 3, side = front[Math.floor(rand() * front.length)];
+    for (let j = 0; j < (type === 'dog' ? 3 : 1); j++) q.push({ t: t0 + j * 0.5, k: type, side }); // dogs come in packs
   }
   if (blood) q.push({ t: dur * 0.55, k: 'boss', side: front[0] });
   q.sort((a, b) => a.t - b.t);
@@ -5055,7 +5244,8 @@ function dawn() {
   if (W.night >= BAL.nights && !W.endless) return endGame('win', '救援直升机到了');
   W.phase = 'day'; W.dayLen = W.clock = BAL.dayLen[1];
   rollTasks();
-  W.spots.forEach(s => s.searched = false);
+  for (const i of [...W.srch]) { const S = SPOTS[B[W.blk[i]].spot]; if (!S || rand() < (S.refill || 1)) { W.srch.delete(i); emit({ k: 'spot', i, v: 0 }); } }
+  W.ver++; restockSpots(false);
   for (const p of activeP()) {
     p.ready = false;
     if (p.dead) { p.dead = false; p.down = false; p.hp = Math.round(p.maxHp * BAL.respawnHp); p.x = W.radio.x - 0.5 + p.i * 2; p.y = W.radio.y + 0.5; p.L = gAt(W.radio.x, W.radio.y); p.vx = p.vy = 0; emit({ k: 'tp', p: p.i, x: p.x, y: p.y, l: p.L }); }
@@ -5076,7 +5266,7 @@ function stepPhase(dt) {
   if (W.over) return;
   if (W.phase === 'day') {
     W.clock -= dt; W.strayT -= dt;
-    if (W.strayT <= 0 && W.night >= 1) { W.strayT = BAL.dayStragglerCD; if (W.zs.length < BAL.dayStragglers) spawnZombie(W.night >= 4 && rand() < 0.3 ? 'runner' : 'walker', Math.floor(rand() * 4)); }
+    if (W.strayT <= 0 && W.night >= 1) { W.strayT = BAL.dayStragglerCD; if (W.zs.length < BAL.dayStragglers) spawnZombie(strayKind(W.night), Math.floor(rand() * 4)); }
     if (W.clock <= 0) startNight();
   } else if (W.phase === 'night') {
     W.nightT += dt;
@@ -5085,7 +5275,7 @@ function stepPhase(dt) {
     // after the horde, small groups keep coming until the night has run its minimum length
     if (!W.spawnQ.length && W.nightT < minT) {
       W.strayT -= dt;
-      if (W.strayT <= 0) { W.strayT = BAL.nightTrickleCD; if (W.zs.length < BAL.nightTrickleMax) { const n = W.night; for (let k = 0; k < 1 + (rand() < 0.4 ? 1 : 0); k++) spawnZombie(n >= 4 && rand() < 0.35 ? 'runner' : n >= 6 && rand() < 0.2 ? 'climber' : 'walker', Math.floor(rand() * 4)); } }
+      if (W.strayT <= 0) { W.strayT = BAL.nightTrickleCD; if (W.zs.length < BAL.nightTrickleMax) { const n = W.night; for (let k = 0; k < 1 + (rand() < 0.5 ? 1 : 0); k++) spawnZombie(strayKind(n), Math.floor(rand() * 4)); } }
     }
     if (!W.spawnQ.length && W.zs.length && W.zs.length <= 3 && W.nightT > Math.max(BAL.spawnDur(W.night) + 240, minT + 60)) { W.zs.forEach(z => { z.hp = 0; }); W.zs = []; say('残余的丧尸散去了'); }
     if (!W.spawnQ.length && !W.zs.length && W.nightT >= minT) dawn();
@@ -5096,8 +5286,14 @@ function stepPhase(dt) {
 function floorUnder(x, y, z) { const cx = Math.floor(x), cy = Math.floor(y); for (let L = Math.min(ML - 1, Math.floor(z / FH)); L >= 0; L--) if (support(cx, cy, L) || solidFor(blkAt(cx, cy, L - 1), 'b')) return L * FH; return 0; }
 function stepProj(dt) {
   for (const b of W.proj) {
-    b.vz -= (b.k === 'acid' ? 10 : 14) * dt;
-    if (b.k === 'nade') {
+    b.vz -= (b.k === 'acid' ? 10 : b.k === 'gl' ? 7 : 14) * dt;
+    if (b.k === 'gl') {
+      b.t -= dt;
+      const nx = b.x + b.vx * dt, ny = b.y + b.vy * dt, nz = b.z + b.vz * dt, cx = Math.floor(nx), cy = Math.floor(ny);
+      let boom = b.t <= 0 || !inMap(cx, cy) || solidFor(blkAt(cx, cy, Math.floor(nz / FH)), 'b') || nz <= floorUnder(nx, ny, b.z + 0.05);
+      if (!boom) for (const z of W.zs) if (z.hp > 0 && d2(z.x, z.y, nx, ny) < z.r + 0.2 && nz > z.z - 0.1 && nz < z.z + z.h + 0.15) { boom = true; break; }
+      if (boom) { b.dead = true; explode(b.x, b.y, Math.max(b.z, floorUnder(b.x, b.y, b.z + 0.05)) + 0.15, W.p[b.o], 2.4, WPN[6].dmg); } else { b.x = nx; b.y = ny; b.z = nz; }
+    } else if (b.k === 'nade') {
       b.t -= dt;
       const nx = b.x + b.vx * dt, ny = b.y + b.vy * dt, nz = b.z + b.vz * dt;
       const L = Math.floor(b.z / FH);
@@ -5117,12 +5313,12 @@ function stepProj(dt) {
   }
   W.proj = W.proj.filter(b => !b.dead);
 }
-function explode(x, y, z, p) {
-  const R = BAL.nadeR; KSRC = 'nade';
+function explode(x, y, z, p, R = BAL.nadeR, dmg = BAL.nadeDmg) {
+  KSRC = 'nade';
   for (const zb of W.zs) {
     if (zb.hp <= 0) continue;
     const d = Math.hypot(zb.x - x, zb.y - y, (zb.z + zb.h / 2 - z) * 0.8);
-    if (d < R + zb.r) { const f = 1 - Math.max(0, d - zb.r) / R; hurtZombie(zb, BAL.nadeDmg * (0.35 + 0.65 * f) * (1 + 0.12 * W.upg), p, (zb.x - x) / (d || 1) * 5 * f, (zb.y - y) / (d || 1) * 5 * f); }
+    if (d < R + zb.r) { const f = 1 - Math.max(0, d - zb.r) / R; hurtZombie(zb, dmg * (0.35 + 0.65 * f) * (1 + 0.12 * W.upg), p, (zb.x - x) / (d || 1) * 5 * f, (zb.y - y) / (d || 1) * 5 * f); }
   }
   KSRC = '';
   emit({ k: 'boom', x: r2(x), y: r2(y), z: r2(z) });
@@ -5149,7 +5345,8 @@ function zAttackCell(z, i) {
   if (z.cd > 0) return;
   z.cd = ZT[z.k].cd;
   if (!W.blk[i]) return;
-  damageCell(i, ZT[z.k].bdmg * W.D.dmg);
+  const thorns = B[W.blk[i]].thorns; damageCell(i, ZT[z.k].bdmg * W.D.dmg);
+  if (thorns) hurtZombie(z, thorns, null);
   emit({ k: 'bash', i, z: z.k });
 }
 function stepZombies(dt) {
@@ -5161,6 +5358,13 @@ function stepZombies(dt) {
     const Z = ZT[z.k], climbT = !!Z.climb;
     z.cd -= dt; z.hitT -= dt; z.atk -= dt; z.anim += dt;
     if (z.stun > 0) z.stun -= dt;
+    if (z.rage > 0) z.rage -= dt;
+    if (z.scr > 0) z.scr -= dt;
+    // burning: damage over time, and the fire jumps to zombies right next to it
+    if (z.burn > 0) {
+      z.burn -= dt; hurtZombie(z, BAL.burnDps * dt, W.p[z.burnBy] || null, 0, 0, true); if (z.hp <= 0) continue;
+      if (rand() < dt * 1.2) { const a = grid.get(ci(Math.floor(z.x), Math.floor(z.y), z.L)); if (a) for (const o of a) if (o !== z && o.hp > 0 && !(o.burn > 0)) { o.burn = 1.8; o.burnBy = z.burnBy; } }
+    }
     z.st = 'walk';
     // wall climbing in progress
     if (z.climbing) {
@@ -5172,6 +5376,8 @@ function stepZombies(dt) {
     const cx = Math.floor(z.x), cy = Math.floor(z.y), i = ci(cx, cy, z.L);
     // barbed wire
     let slow = 1;
+    if (B[W.blk[i]].trap) { z.stun = 2.5; hurtZombie(z, 30, null); setCell(i, 0, W.slab[i], null, 'trap'); if (z.hp <= 0) continue; }
+    if (B[W.blk[i]].stairs && !B[W.blk[i]].nat) slow = climbT ? 0.75 : 0.38; // ladders are slow going for zombies
     if (B[W.blk[i]].wire) {
       slow = BAL.wireSlow; hurtZombie(z, BAL.wireDps * dt, null);
       W.bhp[i] -= BAL.wireWear * dt * (z.k === 'brute' || z.k === 'boss' ? 4 : 1); W.dirty.add(i);
@@ -5195,6 +5401,18 @@ function stepZombies(dt) {
           W.proj.push({ k: 'acid', x: sx, y: sy, z: sz, vx: (tp.x - sx) / T, vy: (tp.y - sy) / T, vz: (tp.z + 0.5 - sz) / T + 5 * T });
           emit({ k: 'sfx', n: 'spit', x: sx, y: sy });
         }
+      }
+    }
+    // screamer: keeps its distance and shrieks, enraging every zombie around it (and calling more at night)
+    if (Z.scream) {
+      z.scrT = (z.scrT == null ? 2 + rand() * 3 : z.scrT) - dt;
+      let tp = null, td = 1e9; for (const p of W.p) { if (!standingP(p)) continue; const d = d2(p.x, p.y, z.x, z.y); if (d < td) { td = d; tp = p; } }
+      if (tp && td < 6.5) { hold = true; z.face = Math.atan2(tp.y - z.y, tp.x - z.x); }
+      if (tp && td < BAL.screamR * 1.3 && z.scrT <= 0 && los(z.x, z.y, z.z + 0.9, tp.x, tp.y, tp.z + 0.6)) {
+        z.scrT = BAL.screamCD; z.scr = 1.3;
+        for (const o of zs) if (o !== z && o.hp > 0 && d2(o.x, o.y, z.x, z.y) < BAL.screamR) o.rage = 5;
+        if (W.phase === 'night') for (let k = 0; k < 2; k++) spawnZombie('walker', Math.floor(rand() * 4));
+        emit({ k: 'scream', x: r2(z.x), y: r2(z.y), z: r2(z.z) });
       }
     }
     // choose the next step
@@ -5229,7 +5447,8 @@ function stepZombies(dt) {
     let mx = 0, my = 0;
     if (tx != null && z.stun <= 0) {
       const dx = tx - z.x, dy = ty - z.y, d = Math.hypot(dx, dy);
-      if (d > 0.02) { mx = dx / d * z.spd * slow; my = dy / d * z.spd * slow; z.face = Math.atan2(dy, dx); }
+      const rg = z.rage > 0 ? BAL.rageMul : 1;
+      if (d > 0.02) { mx = dx / d * z.spd * slow * rg; my = dy / d * z.spd * slow * rg; z.face = Math.atan2(dy, dx); }
     }
     z.kbx *= Math.max(0, 1 - dt * 6); z.kby *= Math.max(0, 1 - dt * 6);
     moveEnt(z, (mx + z.kbx) * dt, (my + z.kby) * dt, 'z', climbT);
@@ -5371,7 +5590,7 @@ function buildScene() {
   radio.add(rb, rs, ant, OBJ.radioLed); radio.traverse(m => { m.castShadow = true; }); SCN.add(radio); OBJ.radio = radio;
   const bench = new THREE.Group(); bench.add(new THREE.Mesh(boxG(1, 0.08, 0.5, 0, 0.5, 0), lam('#5b4026')), new THREE.Mesh(boxG(0.08, 0.46, 0.44, -0.44, 0.23, 0), lam('#3d2a18')), new THREE.Mesh(boxG(0.08, 0.46, 0.44, 0.44, 0.23, 0), lam('#3d2a18')), new THREE.Mesh(boxG(0.3, 0.14, 0.24, -0.2, 0.61, 0), lam('#6c7a84')), new THREE.Mesh(boxG(0.1, 0.22, 0.1, 0.25, 0.65, 0), lam('#b8c0c6')));
   bench.traverse(m => { m.castShadow = true; }); SCN.add(bench); OBJ.bench = bench;
-  charScene();
+  charScene(); propScene();
   // players
   OBJ.pl = [];
   // projectiles, particles, tracers
@@ -5430,7 +5649,7 @@ function wallAxis(x, y, L) { const solid = (xx, yy) => { const b = blkAt(xx, yy,
 function rebuildCells() {
   const I = OBJ.I, me = W.p[ME], vl = viewL(), [ox, oy] = [Math.sin(CAM.yaw), Math.cos(CAM.yaw)];
   const c = { wall: 0, slab: 0, stairs: 0, door: 0, bars: 0, wire: 0, lamp: 0, trunk: 0, pine: 0, oak: 0, rock: 0, crate: 0, rubble: 0, fence: 0, car: 0 };
-  const lamps = []; archBegin();
+  const lamps = []; archBegin(); propBegin();
   if (RC.topVer !== W.ver) { RC.topVer = W.ver; RC.topL = 0; for (let i = NC - 1; i >= 0; i--) if (W.blk[i] || W.slab[i]) { RC.topL = cl_(i); break; } }
   for (let L = 0; L <= RC.topL; L++) for (let y = 0; y < MH; y++) for (let x = 0; x < MW; x++) {
     const i = ci(x, y, L), b = W.blk[i], s = W.slab[i];
@@ -5441,11 +5660,14 @@ function rebuildCells() {
     if (s && !archSlab(s, i, x, y, L, X, Y, Z)) { setInst(I.slab, c.slab++, X, Y, Z, 0, 1, 1, 1, dmgTint(B[s].col, s === SLAB_BRIDGE ? 1 : W.shp[i] / B[s].hp)); }
     if (!b || b === 20 || b === 23 || b === 28 || b === 30 || b === 31) continue;
     let cut = 1;
-    if (L === vl && me && !me.dead && (B[b].P || B[b].Z) && !B[b].nat) { const dx = X - me.x, dy = Z - me.y; if (dx * dx + dy * dy < 40 && dx * ox + dy * oy > 0.25) cut = 0.3; }
+    // anything solid between the camera and you (your floor and up) is cut down, town ruins included
+    const fdx = me ? X - me.x : 0, fdy = me ? Z - me.y : 0, fwd = fdx * ox + fdy * oy, lat = Math.abs(fdx * oy - fdy * ox);
+    const inFront = me && !me.dead && L >= me.L && fwd > 0.2 && fwd < 5 + (L - me.L) * 1.5 && lat < 2.4 + fwd * 0.45;
+    if (inFront && (B[b].P || B[b].Z) && (!B[b].nat || b === 24)) cut = 0.3;
     switch (b) {
       case 1: case 2: case 3: case 24: archWall(b, i, x, y, L, X, Y, Z, h, cut, vl); break;
       case 6: {
-        archPut('stairs', X, Y, Z, -W.bdir[i] * Math.PI / 2, 1, 1, 1, dmgTint('#e8d8c0', W.bhp[i] / B[b].hp));
+        propPut(6, i, x, y, L, X, Y, Z, h);
         // railings around the opening above, on every side you could walk up to except the top step
         if (L + 1 < ML && L + 1 <= vl) for (let k = 0; k < 4; k++) {
           if (k === W.bdir[i]) continue; const [ex, ey] = DIRS[k], nx = x + ex, ny = y + ey;
@@ -5457,19 +5679,20 @@ function rebuildCells() {
       case 8: { const ax = wallAxis(x, y, L) ? Math.PI / 2 : 0, f = W.bhp[i] / B[b].hp; archPut('sand', X, Y, Z, ax, 1, Math.max(cut, 0.6), 1, dmgTint('#ffffff', f)); if (cut === 1) archPut('bars', X, Y, Z, ax, 1, 1, 1, dmgTint('#ffffff', f)); break; }
       case 9: { const wa = blkAt(x - 1, y, L) === 9 || blkAt(x + 1, y, L) === 9 ? 0 : Math.PI / 2; setInst(I.wire, c.wire++, X, Y, Z, wa, 1, 1, 1); archPut('wireP', X, Y, Z, wa, 1, 1, 1); break; }
       case 10: setInst(I.lampP, c.lamp, X - 0.2, Y, Z - 0.2, 0, 1, 1, 1); setInst(I.lampH, c.lamp++, X - 0.2, Y, Z - 0.2, 0, 1, 1, 1); lamps.push([X + 0.05, Y + 0.75, Z - 0.2]); break;
-      case 22: { const sc = 0.8 + h * 0.5, rot = h * 6; setInst(I.trunk, c.trunk++, X, Y, Z, rot, sc, sc, sc); if (h < 0.6) for (let k = 0; k < 3; k++) setInst(I.pine[k], c.pine + 0, X, Y, Z, rot + k, sc, sc, sc); if (h < 0.6) c.pine++; else setInst(I.oak, c.oak++, X, Y, Z, rot, sc, sc, sc, h < 0.8 ? '#4f6a33' : '#5b7339'); break; }
+      case 22: { const sc = 0.8 + h * 0.5, rot = h * 6; if (inFront && fwd < 3.5 && lat < 1.8) { setInst(I.trunk, c.trunk++, X, Y, Z, rot, sc, sc * 0.35, sc); break; } setInst(I.trunk, c.trunk++, X, Y, Z, rot, sc, sc, sc); if (h < 0.6) for (let k = 0; k < 3; k++) setInst(I.pine[k], c.pine + 0, X, Y, Z, rot + k, sc, sc, sc); if (h < 0.6) c.pine++; else setInst(I.oak, c.oak++, X, Y, Z, rot, sc, sc, sc, h < 0.8 ? '#4f6a33' : '#5b7339'); break; }
       case 21: setInst(I.rock, c.rock++, X, Y, Z, h * 6, 0.8 + h * 0.6, 0.7 + h * 0.6, 0.8 + h * 0.5, h < 0.5 ? '#78746c' : '#6c6862'); break;
       case 26: setInst(I.crate, c.crate++, X, Y, Z, h * 2, 1, 1, 1); break;
       case 29: setInst(I.rubble, c.rubble++, X, Y, Z, h * 6, 1, 1, 1); break;
       case 27: setInst(I.fence, c.fence++, X, Y, Z, wallAxis(x, y, L) ? 0 : Math.PI / 2, 1, 1, 1); break;
-      case 25: { const rot = -W.bdir[i] * Math.PI / 2 + (h - 0.5) * 0.3; const col = ['#7a3b2a', '#3c5a6e', '#6b6b5a', '#5a4a6a'][Math.floor(h * 4)]; setInst(I.car, c.car, X, Y, Z, rot, 1, 1, 1, col); setInst(I.carW, c.car++, X, Y, Z, rot, 1, 1, 1); break; }
+      case 25: { const rot = -W.bdir[i] * Math.PI / 2 + (h - 0.5) * 0.3; const col = W.srch.has(i) ? '#3a3633' : ['#7a3b2a', '#3c5a6e', '#6b6b5a', '#5a4a6a'][Math.floor(h * 4)]; setInst(I.car, c.car, X, Y, Z, rot, 1, 1, 1, col); setInst(I.carW, c.car++, X, Y, Z, rot, 1, 1, 1); break; }
+      default: propPut(b, i, x, y, L, X, Y, Z, h);
     }
   }
   I.wall.count = c.wall; I.slab.count = c.slab; I.stairs.count = c.stairs; I.doorF.count = I.doorL.count = c.door; I.bars.count = c.bars; I.wire.count = c.wire;
   I.lampP.count = I.lampH.count = c.lamp; I.trunk.count = c.trunk; for (const m of I.pine) m.count = c.pine; I.oak.count = c.oak; I.rock.count = c.rock;
   I.crate.count = c.crate; I.rubble.count = c.rubble; I.fence.count = c.fence; I.car.count = I.carW.count = c.car;
   for (const k in I) { const arr = Array.isArray(I[k]) ? I[k] : [I[k]]; for (const m of arr) { m.instanceMatrix.needsUpdate = true; if (m.instanceColor) m.instanceColor.needsUpdate = true; } }
-  archEnd(); RC.lamps = lamps;
+  propEnd(); archEnd(); RC.lamps = lamps;
 }
 
 /* ---------- effects ---------- */
@@ -5495,7 +5718,7 @@ function drawFx() {
   drawTracers();
   let f = 0; for (const fl of RND.flashes) { if (f >= 8) break; const s = (fl.big ? 1.6 : 1) * (1 - fl.t / fl.life); setInst(OBJ.flashM, f++, fl.x, fl.z, fl.y, 0, s, s, s); } OBJ.flashM.count = f; OBJ.flashM.instanceMatrix.needsUpdate = true;
   let b = 0; for (const bo of RND.booms) { if (b >= 8) break; const s = BAL.nadeR * (0.3 + bo.t * 1.4); setInst(OBJ.boom, b++, bo.x, bo.z, bo.y, 0, s, s, s); } OBJ.boom.count = b; OBJ.boom.instanceMatrix.needsUpdate = true; OBJ.boom.material.opacity = RND.booms.length ? 0.55 * (1 - RND.booms[0].t / 0.6) : 0;
-  let ng = 0, na = 0; for (const p of W.proj) { if (p.k === 'nade') setInst(OBJ.nade, ng++, p.x, p.z, p.y, W.t * 8, 1, 1, 1); else setInst(OBJ.acid, na++, p.x, p.z, p.y, 0, 1, 1, 1); }
+  let ng = 0, na = 0; for (const p of W.proj) { if (p.k === 'gl') { setInst(OBJ.nade, ng++, p.x, p.z, p.y, W.t * 12, 1.3, 1.3, 1.3); if (Math.random() < 0.5) addP({ x: p.x, y: p.y, z: p.z, vz: 0.2, g: -0.2, col: '#9a948a', s: 0.07, life: 0.4, smoke: 1 }); } else if (p.k === 'nade') setInst(OBJ.nade, ng++, p.x, p.z, p.y, W.t * 8, 1, 1, 1); else setInst(OBJ.acid, na++, p.x, p.z, p.y, 0, 1, 1, 1); }
   OBJ.nade.count = ng; OBJ.acid.count = na; OBJ.nade.instanceMatrix.needsUpdate = OBJ.acid.instanceMatrix.needsUpdate = true;
   // flashes + explosions light pool
   const srcs = RND.flashes.map(fl => [fl.x, fl.z, fl.y, (fl.big ? 6 : 4) * (1 - fl.t / fl.life), 5]).concat(RND.booms.map(bo => [bo.x, bo.z + 0.6, bo.y, 40 * (1 - bo.t / 0.6), 12]));
@@ -5600,7 +5823,7 @@ function draw(dt) {
   const key = W.ver + ':' + vl + ':' + CAM.rot + ':' + (me ? Math.floor(me.x) + ',' + Math.floor(me.y) + ',' + me.L : '');
   if (key !== CUT_KEY) { CUT_KEY = key; rebuildCells(); }
   applyTime(darkness()); archFrame();
-  drawZombies(vl, dt); drawPlayers(vl, dt); drawFx(); drawGhost(me);
+  drawZombies(vl, dt); drawPlayers(vl, dt); drawFx(); drawGhost(me); drawPlan();
   OBJ.zone.visible = !W.demo && W.phase === 'day' || !!(me && me.build);
   RENDER.render(SCN, CAMO);
   drawOverlay();
@@ -5654,7 +5877,8 @@ function fxEvent(e) {
   const guest = NETROLE === 'guest';
   switch (e.k) {
     case 'shot': if (guest && e.o === ME) break; shotFx(e.o, e.w, e.e); break;
-    case 'hit': bloodFx(e.x, e.y, e.z, e.h ? 9 : 5, e.g); if (Math.random() < 0.45) addDecal(e.x + frnd(-0.3, 0.3), e.y + frnd(-0.3, 0.3), e.z - 0.6, frnd(0.08, 0.16), e.g ? '#3c5a14' : null); if (thr('flesh', 0.05)) sfx(e.h ? 'head' : 'flesh', e.x, e.y); break;
+    case 'hit': if (e.a) { for (let k = 0; k < 6; k++) addP({ x: e.x, y: e.y, z: e.z, vx: frnd(-3, 3), vy: frnd(-3, 3), vz: frnd(0.5, 3), col: k % 2 ? '#ffe9a0' : '#ffffff', s: 0.035, life: 0.25, floor: e.z - 1 }); if (thr('clank', 0.06)) sfx('clank', e.x, e.y); break; }
+      bloodFx(e.x, e.y, e.z, e.h ? 9 : 5, e.g); if (Math.random() < 0.45) addDecal(e.x + frnd(-0.3, 0.3), e.y + frnd(-0.3, 0.3), e.z - 0.6, frnd(0.08, 0.16), e.g ? '#3c5a14' : null); if (thr('flesh', 0.05)) sfx(e.h ? 'head' : 'flesh', e.x, e.y); break;
     case 'zdie':
       RND.corpses.push({ corpse: 1, x: e.x, y: e.y, z: e.z, k: e.t, face: e.f, t: 0, seed: e.id * 7, L: Math.floor((e.z + 0.1) / FH) }); if (RND.corpses.length > 60) RND.corpses.shift();
       bloodFx(e.x, e.y, e.z + 0.6, 10, e.t === 'spitter'); addDecal(e.x, e.y, e.z, (e.t === 'boss' ? 0.9 : e.t === 'brute' ? 0.6 : 0.32) + Math.random() * 0.15, e.t === 'spitter' ? '#3c5a14' : null);
@@ -5670,6 +5894,8 @@ function fxEvent(e) {
       else if (e.c === 'demo') { sfx('demo', x, y); debrisFx(x, y, z - 0.5, col, 4); }
       else if (e.c === 'chop') { sfx('chop', x, y); debrisFx(x, y, z - 0.4, '#3c5f35', 8); }
       else if (e.c === 'mine') { sfx('brk', x, y); debrisFx(x, y, z - 0.5, '#77736b', 8); }
+      else if (e.c === 'loot') { debrisFx(x, y, z - 0.6, B[prevB] && B[prevB].col || '#6a5a48', 4); }
+      else if (e.c === 'trap') { sfx('trap', x, y); bloodFx(x, y, z - 0.8, 8); }
       break;
     }
     case 'bash': { const [x, y, z] = cellPos(e.i); if (thr('bash' + e.i, 0.15)) { sfx(e.z === 'brute' || e.z === 'boss' ? 'smash' : 'bash', x, y); addP({ x, y, z, vx: frnd(-1.5, 1.5), vy: frnd(-1.5, 1.5), vz: frnd(0.5, 2.5), col: B[W.blk[e.i]] && B[W.blk[e.i]].col || '#888', s: 0.07, life: 0.5, floor: z - 0.6 }); if (e.z === 'brute' || e.z === 'boss') shake(x, y, 0.15); } break; }
@@ -5686,14 +5912,15 @@ function fxEvent(e) {
     case 'tp': if (guest && e.p === ME) { const p = W.p[ME]; p.x = e.x; p.y = e.y; p.L = e.l; p.vx = p.vy = 0; } break;
     case 'kb': if (guest && e.p === ME) { const p = W.p[ME]; p.kbx += e.x; p.kby += e.y; } break;
     case 'night': sfx(e.blood ? 'blood' : 'night'); banner(e.blood ? '第 ' + e.n + ' 夜 · 血月' : '第 ' + e.n + ' 夜', (e.blood ? '尸潮从四面八方涌来，巨尸出没' : '尸潮从' + e.from + '边来了') + '，守住堡垒', e.blood ? '#ff5a4a' : '#ffd27a'); break;
-    case 'dawn': document.getElementById('over').classList.add('hidden'); sfx('dawn'); banner('天亮了', '撑过了第 ' + e.n + ' 夜 · 新的任务已刷新（左上角）', '#ffe7b0'); break;
+    case 'dawn': document.getElementById('over').classList.add('hidden'); sfx('dawn'); banner('天亮了', '撑过了第 ' + e.n + ' 夜 · 新的任务已刷新（点上方「今日任务」展开）', '#ffe7b0'); break;
     case 'say': uiMsg(e.text, e.col); break;
     case 'craft': if (e.p === ME) { sfx('craft'); toast('制作完成：' + e.name); } break;
     case 'deny': if (e.p === ME && thr('deny', 0.3)) { sfx('deny'); toast(e.why, '#ff8a7a'); } break;
-    case 'boom': RND.booms.push({ x: e.x, y: e.y, z: e.z, t: 0 }); debrisFx(e.x, e.y, e.z, '#3a3530', 12); sfx('boom', e.x, e.y); shake(e.x, e.y, 0.4); break;
+    case 'boom': RND.booms.push({ x: e.x, y: e.y, z: e.z, t: 0 }); debrisFx(e.x, e.y, e.z, e.g ? '#6a8a2a' : '#3a3530', 12); if (e.g) { bloodFx(e.x, e.y, e.z, 24, true); addDecal(e.x, e.y, e.z - 0.5, 1.1, '#3c5a14'); } sfx('boom', e.x, e.y); shake(e.x, e.y, 0.4); break;
     case 'acid': for (let k = 0; k < 8; k++) addP({ x: e.x, y: e.y, z: e.z, vx: frnd(-2, 2), vy: frnd(-2, 2), vz: frnd(0, 2.5), col: k % 2 ? '#9dff3a' : '#5f9a20', s: 0.06, life: 0.5, floor: e.z - 0.3 }); sfx('acid', e.x, e.y); break;
     case 'rhit': if (thr('rhit', 0.3)) { sfx('rhit', W.radio.x, W.radio.y); for (let k = 0; k < 4; k++) addP({ x: W.radio.x + 0.5, y: W.radio.y + 0.5, z: 0.6, vx: frnd(-2, 2), vy: frnd(-2, 2), vz: frnd(1, 3), col: '#ffd76a', s: 0.05, life: 0.4 }); } break;
     case 'shove': sfx(e.n ? 'shoveHit' : 'shove', W.p[e.p].x, W.p[e.p].y); if (guest || e.p !== ME) W.p[e.p].shoveT = 0.18; break;
+    case 'scream': (RND.rings = RND.rings || []).push({ x: e.x, y: e.y, z: e.z, t: 0 }); sfx('scream', e.x, e.y); if (thr('scrMsg', 8)) uiMsg('尖叫者在叫——附近的丧尸发狂了！', '#ff8ac0'); break;
     case 'over': if (!W.demo && STATE.mode === 'play') showOver(e); break;
     case 'sfx': if (e.n === 'throw') { let bp = null, bd = 2; for (const q of W.p) { const d = d2(q.x, q.y, e.x, e.y); if (d < bd) { bd = d; bp = q; } } if (bp) bp._throwT = 0.35; }
       if (e.local || !(guest && e.o === ME && /reload|swap/.test(e.n))) sfx(e.n, e.x, e.y); break;
@@ -5702,13 +5929,19 @@ function fxEvent(e) {
 function shotFx(o, wi, ends) {
   const p = W.p[o]; if (!p) return;
   const z0 = (p.zv != null ? p.zv : p.z) + (p.down ? 0.25 : 0.72), mx = p.x + Math.cos(p.aim) * 0.55, my = p.y + Math.sin(p.aim) * 0.55;
+  if (WPN[wi].flame) { // a roaring tongue of fire
+    for (let k = 0; k < 7; k++) { const a = p.aim + frnd(-0.3, 0.3), v = frnd(5, 9); addP({ x: mx, y: my, z: z0 - 0.03, vx: Math.cos(a) * v, vy: Math.sin(a) * v, vz: frnd(-0.3, 0.8), g: -1.5, col: k % 3 === 0 ? '#fff0a0' : k % 3 === 1 ? '#ffb030' : '#ff5a1a', s: frnd(0.08, 0.16), life: frnd(0.35, 0.55), smoke: k === 6 ? 1 : 0 }); }
+    RND.flashes.push({ x: mx, y: my, z: z0, t: 0, life: 0.05 }); p.recoilT = 0.04; p._kick = Math.max(p._kick || 0, 0.25);
+    if (thr('flame' + o, 0.18)) sfx('flamer', p.x, p.y); return;
+  }
+  if (WPN[wi].gl) { for (let k = 0; k < 4; k++) addP({ x: mx, y: my, z: z0, vx: frnd(-0.4, 0.4), vy: frnd(-0.4, 0.4), vz: frnd(0.2, 0.6), g: -0.3, col: '#8a8478', s: 0.12, life: 0.6, smoke: 1 }); RND.flashes.push({ x: mx, y: my, z: z0, t: 0, life: 0.07, big: 1 }); p.recoilT = 0.08; p._kick = 1; sfx('launcher', p.x, p.y); if (o === ME) CAM.shake = Math.max(CAM.shake, 0.2); return; }
   for (const [x2, y2, z2, wall] of ends) {
-    RND.tracers.push({ x: mx, y: my, z: z0, x2, y2, z2, t: 0, life: wi === 3 ? 0.18 : 0.09, w: wi === 3 ? 0.06 : wi === 1 ? 0.025 : 0.035 });
+    RND.tracers.push({ x: mx, y: my, z: z0, x2, y2, z2, t: 0, life: wi === 3 ? 0.18 : wi === 4 ? 0.22 : 0.09, w: wi === 3 ? 0.06 : wi === 1 ? 0.025 : wi === 4 ? 0.03 : 0.035, col: wi === 4 ? [0.75, 0.55, 0.3] : null });
     if (wall) { for (let k = 0; k < 5; k++) addP({ x: x2, y: y2, z: z2, vx: frnd(-2.5, 2.5), vy: frnd(-2.5, 2.5), vz: frnd(0, 2.5), col: k % 2 ? '#ffd76a' : '#fff2c0', s: 0.035, life: 0.22, floor: z2 - 1, g: 6 }); addP({ x: x2, y: y2, z: z2, vx: frnd(-0.3, 0.3), vy: frnd(-0.3, 0.3), vz: 0.3, g: -0.2, col: '#8a8070', s: 0.08, life: 0.4, smoke: 1 }); }
   }
   RND.flashes.push({ x: mx, y: my, z: z0, t: 0, life: 0.06, big: wi === 1 || wi === 3 });
   p.recoilT = 0.08; p._kick = 1;
-  if (wi) addP({ x: p.x, y: p.y, z: z0, vx: -Math.sin(p.aim) * frnd(1, 2), vy: Math.cos(p.aim) * frnd(1, 2), vz: frnd(1.5, 2.5), col: '#c9a23a', s: 0.04, life: 0.7, floor: z0 - 0.72 });
+  if (wi && wi < 4) addP({ x: p.x, y: p.y, z: z0, vx: -Math.sin(p.aim) * frnd(1, 2), vy: Math.cos(p.aim) * frnd(1, 2), vz: frnd(1.5, 2.5), col: '#c9a23a', s: 0.04, life: 0.7, floor: z0 - 0.72 });
   sfx(WPN[wi].k, p.x, p.y);
   if (o === ME) { CAM.shake = Math.max(CAM.shake, WPN[wi].shake * 0.6); const kk = [0.06, 0.16, 0.05, 0.2][wi]; CAM.kx = (CAM.kx || 0) - Math.cos(p.aim) * kk; CAM.ky = (CAM.ky || 0) - Math.sin(p.aim) * kk; }
 }
@@ -5917,7 +6150,7 @@ function archWall(b, i, x, y, L, X, Y, Z, h, cut, vl) {
     let v = h < 0.28 ? 0 : h < 0.58 ? 1 : h < 0.84 ? 2 : 3; if (ARCH.roofCells.has(x + ',' + y + ',' + L)) v = h < 0.4 ? 0 : 2;
     const rot = (v === 0 ? ax : 0) + (v === 1 && hash2(x, y * 3) < 0.5 ? Math.PI : 0) + (v === 1 ? ax : 0);
     const hk = houseOf(x, y), col = PLASTER[hk >= 0 ? (hk * 2 + 1) % PLASTER.length : Math.floor(hash2(x >> 3, y >> 3) * PLASTER.length)];
-    archPut('ruin' + v, X, Y, Z, rot, 1, 1, 1, dmgTint(col, f));
+    archPut('ruin' + v, X, Y, Z, rot, 1, cut < 1 ? Math.min(cut * 1.6, 1) : 1, 1, dmgTint(col, f));
   } else return false;
   return true;
 }
@@ -6005,7 +6238,9 @@ function archFrame() {
   if (!W) return; const me = W.p[ME];
   for (const R of ARCH.roofs) {
     if (!R.down && W.t - (R.chk || -9) > 1) { R.chk = W.t; let n = 0; for (const i of R.sup) if (W.blk[i] === 24) n++; if (n < R.sup.length * 0.5) R.down = true; }
-    const inside = me && !me.dead && me.x >= R.rect[0] && me.x <= R.rect[2] && me.y >= R.rect[1] && me.y <= R.rect[3];
+    const ox = Math.sin(CAM.yaw), oy = Math.cos(CAM.yaw), inR = (x, y) => x >= R.rect[0] && x <= R.rect[2] && y >= R.rect[1] && y <= R.rect[3];
+    let inside = false; // inside, or behind it as seen from the camera
+    if (me && !me.dead) for (let k = 0; k <= 4 && !inside; k++) inside = inR(me.x + ox * k * 0.9, me.y + oy * k * 0.9);
     for (const m of R.roof) m.visible = !R.down && !inside;
   }
 }
@@ -6059,6 +6294,9 @@ function charScene() {
   G.fist = jitterG(merge([new THREE.IcosahedronGeometry(0.12, 0).translate(0, -0.1, 0), new THREE.ConeGeometry(0.025, 0.09, 4).rotateZ(-Math.PI / 2).translate(0.13, -0.08, 0.04), new THREE.ConeGeometry(0.025, 0.09, 4).rotateZ(-Math.PI / 2).translate(0.13, -0.12, -0.04)].map(ni)), 0.02, 13);
   const sp = []; for (let k = 0; k < 5; k++) sp.push(new THREE.ConeGeometry(0.03 - k * 0.003, 0.14 + hash2(k, 8) * 0.1, 4).rotateZ(0.9 + hash2(k, 2) * 0.3).translate(-0.12, 0.1 + k * 0.075, (hash2(k, 6) - 0.5) * 0.08));
   G.spikes = merge(sp);
+  // riot helmet (dome + visor) and riot shield with a window
+  G.helmet = merge([new THREE.SphereGeometry(0.135, 9, 5, 0, Math.PI * 2, 0, Math.PI / 2).translate(0, 0.14, 0), boxG(0.03, 0.09, 0.22, 0.12, 0.12, 0), boxG(0.2, 0.025, 0.25, 0.01, 0.14, 0)].map(ni));
+  G.shield = merge([boxG(0.035, 0.55, 0.36, 0, -0.12, 0), boxG(0.045, 0.12, 0.22, 0.004, 0.06, 0), boxG(0.05, 0.03, 0.38, 0, -0.39, 0)]);
   const eyeMat = new THREE.MeshBasicMaterial({ color: '#ffffff' });
   const glowMat = new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0.4, blending: THREE.AdditiveBlending, depthWrite: false });
   const def = (k, geo, mat, cap, sh = true) => { const m = inst(geo, mat, cap, sh); ZPOOL[k] = { m, n: 0, cap }; };
@@ -6068,6 +6306,7 @@ function charScene() {
   def('hair', G.hair, lam('#ffffff'), ZCAP); def('eye', G.eye, eyeMat, ZCAP + 40, false); def('glow', G.glow, glowMat, ZCAP + 40, false);
   def('belly', G.belly, lam('#ffffff'), 120); def('pust', G.pust, new THREE.MeshBasicMaterial({ color: '#ffffff' }), 120, false);
   def('fist', G.fist, lam('#ffffff'), 120); def('spikes', G.spikes, lam('#ffffff'), 120);
+  def('helmet', G.helmet, lam('#ffffff'), 160); def('shield', G.shield, lam('#ffffff'), 160);
   // survivors' shared geometry
   PGEO.limb = limbGeo(1, 0.8, 7);
   // thick additive tracers + blood decals on the floor
@@ -6078,7 +6317,7 @@ function charScene() {
 function zput(k, M, sx, sy, sz, col) { const q = ZPOOL[k]; if (q.n >= q.cap) return; _sm.makeScale(sx, sy, sz); _m2.multiplyMatrices(M, _sm); q.m.setMatrixAt(q.n, _m2); if (col) q.m.setColorAt(q.n, tmpC.set(col)); q.n++; }
 const ZSHIRT = ['#3c4652', '#4f3e33', '#34402f', '#5a4a3a', '#3e3446', '#46503f', '#5a3434', '#2f3a44', '#6a5a48', '#2c2c30'];
 const ZSKIN = ['#93a383', '#82967a', '#a0aa8e', '#8a9a80', '#b4b8a4'];
-const ZEYE = { walker: '#ffd36a', runner: '#ff9a3a', climber: '#d6f0ff', spitter: '#b6ff4a', brute: '#ff6a3a', boss: '#ff2a2a' };
+const ZEYE = { walker: '#ffd36a', runner: '#ff9a3a', climber: '#d6f0ff', spitter: '#b6ff4a', brute: '#ff6a3a', boss: '#ff2a2a', dog: '#ff3a2a', crawler: '#ffd36a', bloater: '#c8ff4a', screamer: '#ff6ad0', armored: '#9ad8ff' };
 // per-type body plan: proportions + posture. Walkers get variants from their seed.
 const ZBODY = {
   walker: { tw: 1, th: 1, hs: 1, ua: 0.2, fa: 0.2, tl: 0.22, sl: 0.22, sw: 0.15, hunch: 0.32 },
@@ -6087,6 +6326,10 @@ const ZBODY = {
   spitter: { tw: 1.15, th: 0.95, hs: 1.05, ua: 0.18, fa: 0.18, tl: 0.2, sl: 0.2, sw: 0.17, hunch: 0.15 },
   brute: { tw: 1.65, th: 1.05, hs: 0.72, ua: 0.22, fa: 0.22, tl: 0.22, sl: 0.2, sw: 0.25, hunch: 0.28 },
   boss: { tw: 1.45, th: 1.05, hs: 0.95, ua: 0.27, fa: 0.33, tl: 0.21, sl: 0.2, sw: 0.24, hunch: 0.38 },
+  crawler: { tw: 0.95, th: 0.9, hs: 1, ua: 0.22, fa: 0.24, tl: 0.09, sl: 0.06, sw: 0.15, hunch: 1.42 },
+  bloater: { tw: 1.75, th: 1.0, hs: 0.85, ua: 0.17, fa: 0.17, tl: 0.21, sl: 0.19, sw: 0.2, hunch: 0.08 },
+  screamer: { tw: 0.76, th: 1.05, hs: 0.95, ua: 0.26, fa: 0.27, tl: 0.24, sl: 0.24, sw: 0.13, hunch: 0.12 },
+  armored: { tw: 1.15, th: 1.0, hs: 1, ua: 0.2, fa: 0.2, tl: 0.22, sl: 0.22, sw: 0.17, hunch: 0.18 },
 };
 const ZM = []; for (let k = 0; k < 16; k++) ZM.push(new THREE.Matrix4());
 function drawZombies(vl, dt) {
@@ -6104,6 +6347,8 @@ function drawZombies(vl, dt) {
   for (const k in ZPOOL) { const q = ZPOOL[k]; q.m.count = q.n; q.m.instanceMatrix.needsUpdate = true; if (q.m.instanceColor) q.m.instanceColor.needsUpdate = true; }
 }
 function rigZombie(z, corpse, dt, dk) {
+  if ((z.burn > 0 || z.burnF) && !corpse && Math.random() < dt * 22) addP({ x: z.x + frnd(-0.2, 0.2), y: z.y + frnd(-0.2, 0.2), z: z.z + frnd(0.2, ZT[z.k].h), vx: frnd(-0.3, 0.3), vy: frnd(-0.3, 0.3), vz: frnd(0.8, 1.6), g: -0.5, col: Math.random() < 0.5 ? '#ffb030' : '#ff6a1a', s: frnd(0.06, 0.12), life: 0.45 });
+  if (z.k === 'dog') return rigDog(z, corpse, dt);
   const T = ZT[z.k], Bd = ZBODY[z.k] || ZBODY.walker, s = T.sc, sd = z.seed || 0, v = z.k === 'walker' ? sd % 5 : 0;
   // render-side smoothing: facing, speed and gait phase (works the same for host and guest)
   if (!corpse) {
@@ -6113,12 +6358,12 @@ function rigZombie(z, corpse, dt, dk) {
     z._ph += dt * (1.2 + z._spd * (z.k === 'runner' ? 3.2 : z.k === 'climber' ? 4.2 : 3.6) / s);
   }
   const hit = !corpse && z.hitT > 0, white = c => hit ? '#ffd8cc' : c;
-  const skin = white(z.k === 'climber' ? '#7d8e98' : z.k === 'spitter' ? '#93a64e' : z.k === 'brute' ? '#7a6d62' : z.k === 'boss' ? '#6e534c' : v === 1 ? '#c2c4b2' : ZSKIN[sd % 5]);
+  const skin = white(z.k === 'bloater' ? '#9aa86a' : z.k === 'screamer' ? '#b8b0b4' : z.k === 'crawler' ? '#8a9480' : z.k === 'climber' ? '#7d8e98' : z.k === 'spitter' ? '#93a64e' : z.k === 'brute' ? '#7a6d62' : z.k === 'boss' ? '#6e534c' : v === 1 ? '#c2c4b2' : ZSKIN[sd % 5]);
   const shirt = white(v === 1 ? ['#6b1414', '#3a3a52', '#d8d0bc'][sd % 3] : ZSHIRT[sd % 10]), pants = white(z.k === 'brute' || z.k === 'boss' ? '#2a2420' : '#26292b'), shoe = '#1b1a18';
   const rag = white(v === 1 ? ['#4a0808', '#24243a', '#a8a090'][sd % 3] : tmpC.set(ZSHIRT[sd % 10]).multiplyScalar(0.7).getStyle());
   const amp = corpse ? 0 : clamp(z._spd / Math.max(0.6, T.spd * 0.8), 0, 1.15), ph = corpse ? 0 : z._ph, t = W.t;
   const atk = !corpse && z.atk > 0, aph = atk ? (t * 3.2 + sd * 0.37) % 1 : 0, swing = atk ? (aph < 0.62 ? -ease(aph / 0.62) : -1 + ease((aph - 0.62) / 0.2) * 1.6) : 0; // raise, then slam
-  const climbing = !corpse && !!z.climbing, quad = z.k === 'climber' && !climbing;
+  const climbing = !corpse && !!z.climbing, quad = z.k === 'climber' && !climbing, crawl = z.k === 'crawler', scream = !corpse && z.scr > 0;
   const twitch = !corpse && hash2(Math.floor(t * 3) + sd, 7) > 0.93 ? (hash2(Math.floor(t * 3), sd) - 0.5) * 1.3 : 0;
   const flinch = hit ? 0.35 : 0;
   // --- legs: thigh swing + knee bend; left/right can differ (limp) ---
@@ -6127,6 +6372,7 @@ function rigZombie(z, corpse, dt, dk) {
   let aL = Math.sin(ph) * thA, aR = -Math.sin(ph) * thA * (limp ? 0.45 : 1);
   let kL = 0.12 + Math.max(0, Math.cos(ph)) * kn, kR = limp ? 0.08 : 0.12 + Math.max(0, -Math.cos(ph)) * kn;
   if (quad) { aL += 0.85; aR += 0.85; kL += 1.25; kR += 1.25; }
+  if (crawl) { aL = 1.3 + Math.sin(ph) * 0.15; aR = 1.4; kL = kR = 0; }
   if (z.k === 'spitter') { aL *= 0.8; aR *= 0.8; }
   // corpse fall styles
   let fall = 0, fstyle = sd % 3, knees = 0;
@@ -6137,7 +6383,7 @@ function rigZombie(z, corpse, dt, dk) {
     aL = aR = knees * 1.2; kL = kR = knees * 2.2 + fall * 0.3;
   }
   const TL = Bd.tl, SL = Bd.sl, legH = l => TL * Math.cos(l[0]) + SL * Math.cos(l[0] - l[1]);
-  let hipY = Math.max(legH([aL, kL]), legH([aR, kR]));
+  let hipY = crawl ? 0.13 : Math.max(legH([aL, kL]), legH([aR, kR]));
   // --- root ---
   const R0 = ZM[0];
   tmpQ.setFromAxisAngle(UPV, -(corpse ? z.face || 0 : z._f)); tmpV.set(z.x, z.z, z.y); tmpS.set(s, s, s); R0.compose(tmpV, tmpQ, tmpS);
@@ -6146,7 +6392,7 @@ function rigZombie(z, corpse, dt, dk) {
     J(R0, R0, 0, 0.06 * fall - sink, 0, fstyle === 2 ? 0.25 * fall : 0, 0, dir * fall * Math.PI / 2 * 0.94);
   }
   // body roll / bob
-  const roll = (limp ? Math.sin(ph) * 0.13 : z.k === 'spitter' ? Math.sin(ph) * 0.15 : big ? Math.sin(ph) * 0.07 : Math.sin(ph) * 0.04) * amp;
+  const roll = crawl ? Math.sin(ph) * 0.12 * amp : (limp ? Math.sin(ph) * 0.13 : z.k === 'spitter' ? Math.sin(ph) * 0.15 : big ? Math.sin(ph) * 0.07 : Math.sin(ph) * 0.04) * amp;
   const hunch = (climbing ? -0.15 : Bd.hunch + (z.k === 'runner' ? 0.1 * amp : 0)) - flinch + (corpse ? knees * 0.4 : 0) + Math.sin(t * 1.3 + sd) * 0.03;
   const pelv = J(ZM[1], R0, 0, hipY, 0, roll, Math.sin(ph) * 0.08 * amp, 0);
   // legs
@@ -6157,13 +6403,14 @@ function rigZombie(z, corpse, dt, dk) {
     const knee = J(ZM[3], hip, 0, -TL, 0, 0, 0, -k);
     zput('limb', knee, 0.04 * (big ? 1.4 : 1), SL, 0.04 * (big ? 1.4 : 1), sg > 0 && limp ? skin : pants);
     const foot = J(ZM[4], knee, 0, -SL, 0, 0, 0, k - a);
-    zput('foot', foot, big ? 1.4 : 1, 1, big ? 1.4 : 1, shoe);
+    if (!crawl) zput('foot', foot, big ? 1.4 : 1, 1, big ? 1.4 : 1, shoe);
   }
   // torso
   const tor = J(ZM[5], pelv, 0, 0, 0, 0, Math.sin(ph) * -0.12 * amp, -hunch);
   zput('torso', tor, Bd.tw, Bd.th, Bd.tw, shirt);
   zput('rag', J(ZM[6], tor, 0, 0.02, 0, Math.sin(ph * 2) * 0.08, 0, -Math.sin(ph) * 0.15 * amp), Bd.tw, v === 1 ? 2.2 : 1, Bd.tw, rag);
-  if (z.k === 'spitter') { const sw = 1 + Math.sin(t * 3 + sd) * 0.04; zput('belly', J(ZM[7], tor, 0.07, 0.17, 0, 0, 0, 0), sw, sw, sw, skin); zput('pust', ZM[7], sw, sw, sw, '#c8ff4a'); }
+  if (z.k === 'spitter' || z.k === 'bloater') { const bl = z.k === 'bloater', sw = (bl ? 1.75 : 1) * (1 + Math.sin(t * (bl ? 5 : 3) + sd) * (bl ? 0.06 : 0.04)); zput('belly', J(ZM[7], tor, bl ? 0.1 : 0.07, bl ? 0.2 : 0.17, 0, 0, 0, 0), sw, sw * (bl ? 0.95 : 1), sw, skin); zput('pust', ZM[7], sw, sw, sw, bl ? '#ffb84a' : '#c8ff4a'); }
+  if (z.k === 'armored') zput('torso', J(ZM[6], tor, 0, 0.06, 0, 0, 0, 0), Bd.tw * 1.12, Bd.th * 0.82, Bd.tw * 1.12, white('#1f2a3a'));
   if (big) zput('spikes', tor, Bd.tw, Bd.th, Bd.tw, '#d8ccb4');
   // head: tilted, drooped, twitching; climbers have the neck wrung sideways and look up
   const TH = 0.44 * Bd.th, spitWind = z.k === 'spitter' && z.spitT != null && z.spitT < 0.55 ? ease(1 - z.spitT / 0.55) : 0;
@@ -6173,12 +6420,19 @@ function rigZombie(z, corpse, dt, dk) {
   else if (z.k === 'climber') { hRoll = 1.15; hPitch = quad ? -1.05 : 0.2; jaw = 0.3; }
   else if (z.k === 'spitter') { hRoll = 0.1; hPitch = 0.15 - spitWind * 1.0; jaw = 0.2 + spitWind * 0.8; }
   else if (big) { hRoll = 0.2; hPitch = -0.15 + (z.k === 'boss' ? 0.25 : 0); jaw = 0.35; }
+  else if (crawl) { hRoll = 0.3; hPitch = -1.25; jaw = 0.45; }
+  else if (z.k === 'screamer') { hRoll = 0.2; hPitch = scream ? -1.0 : 0.1; jaw = scream ? 1.05 : 0.8; }
+  else if (z.k === 'bloater') { hRoll = 0.15; hPitch = 0.2; jaw = 0.3; }
+  else if (z.k === 'armored') { hRoll = 0.05; hPitch = 0.1; jaw = 0.1; }
   hPitch += hunch * 0.4 - flinch * 1.5; // look ahead despite the hunch
-  const head = J(ZM[8], tor, 0.03 * Bd.tw, TH * (big && z.k === 'brute' ? 0.82 : 0.97), 0, hRoll + twitch, hYaw + twitch * 0.6 + Math.sin(t * 0.7 + sd) * 0.15, -hPitch);
+  const head = J(ZM[8], tor, 0.03 * Bd.tw, TH * (big && z.k === 'brute' ? 0.82 : 0.97) + (z.k === 'screamer' ? 0.1 : 0), 0, hRoll + twitch, hYaw + twitch * 0.6 + Math.sin(t * 0.7 + sd) * 0.15, -hPitch);
   const hs = Bd.hs;
   zput('head', head, hs, hs, hs, skin);
   zput('jaw', J(ZM[9], head, 0.02 * hs, 0.05 * hs, 0, 0, 0, -jaw), hs, hs, hs, skin);
-  const ec = ZEYE[z.k] || '#ffd36a';
+  const ec = z.rage > 0 || z.rageF ? '#ff2a1a' : ZEYE[z.k] || '#ffd36a';
+  if (z.k === 'screamer') zput('limb', J(ZM[11], tor, 0.03, TH * 0.97 + 0.12, 0, 0, 0, Math.PI - hPitch * 0.5), 0.035, 0.13, 0.035, skin); // the long neck
+  if (z.k === 'armored') zput('helmet', head, hs, hs, hs, white('#2a3442'));
+  if (z.k === 'armored' && !corpse) zput('shield', J(ZM[15], tor, 0.24, TH * 0.62, -0.08, 0, 0.15, hunch - flinch), 1, 1, 1, white('#3a4656')); // riot shield held upright in front
   if (!corpse) { zput('eye', head, hs, hs, hs, ec); zput('glow', head, hs, hs, hs, ec); }
   if (v === 1 || z.k === 'boss') zput('hair', J(ZM[10], head, 0, 0, 0, 0, 0, 0), hs, hs * (z.k === 'boss' ? 1.4 : 1), hs, z.k === 'boss' ? '#120c0a' : '#151010');
   if (z.k === 'boss') { // the second face on the back of the head
@@ -6209,6 +6463,10 @@ function rigZombie(z, corpse, dt, dk) {
     } else if (z.k === 'boss') {
       ap = (atk && sg > 0 ? 1.4 + swing * 1.6 : 0.35 + sw * 0.15 * amp); el = 0.2; ar = 0.3; faL *= 1.15; if (sg > 0) { hand = 'fist'; hsz = 1.4; }
     }
+    else if (crawl) { ap = 2.0 + sw * 0.55 * Math.max(0.35, amp) + (atk ? swing * 0.4 : 0); el = -0.3; ar = 0.45; }
+    else if (z.k === 'bloater') { ap = 0.45 + sw * 0.2 * amp; ar = 0.75; el = 0.5; uaL *= 0.9; if (atk) ap = 1.2 + swing * 0.8; }
+    else if (z.k === 'screamer') { if (scream) { ap = 2.5; ar = 0.9; el = 0.2; faL *= 1.1; } else { ap = 0.3 + sw * 0.3 * amp; ar = 0.25; el = 0.45; faL *= 1.2; } if (atk) ap = 1.5 + swing; }
+    else if (z.k === 'armored') { if (sg < 0) { ap = 1.25; ar = 0.1; el = 1.2; } else { ap = 0.25 + sw * 0.3 * amp; el = 0.4; if (atk) { ap = 1.7 + swing * 1.4; el = 0.15; } } sleeve = white('#1f2a3a'); }
     if (corpse) { ap = 0.3 + fall * 1.3; el = 0.4; ar = 0.6 + fall * 0.4; }
     ap += flinch * -1.2;
     const sh = J(ZM[12], tor, 0, TH * 0.9, sg * 0.15 * Bd.tw, sg * -ar, 0, ap);
@@ -6221,6 +6479,40 @@ function rigZombie(z, corpse, dt, dk) {
   }
   // footfall dust for the heavy ones
   if (!corpse && big && amp > 0.3) { const st = Math.sign(Math.sin(ph)); if (z._st != null && st !== z._st) { addP({ x: z.x, y: z.y, z: z.z + 0.05, vx: frnd(-0.5, 0.5), vy: frnd(-0.5, 0.5), vz: 0.3, g: -0.2, col: '#7a7266', s: 0.18 * s * 0.6, life: 0.6, smoke: 1 }); if (z.k === 'boss') shake(z.x, z.y, 0.06); } z._st = st; }
+}
+
+// zombie dog: low and long, four jointed legs at a gallop, snout, ears and a ragged tail
+function rigDog(z, corpse, dt) {
+  const sd = z.seed || 0, t = W.t;
+  if (!corpse) {
+    if (z._f == null) { z._f = z.face || 0; z._px = z.x; z._py = z.y; z._spd = 0; z._ph = sd * 0.1; }
+    const sp = dt > 0 ? Math.min(8, Math.hypot(z.x - z._px, z.y - z._py) / dt) : 0; z._px = z.x; z._py = z.y;
+    z._spd = lerp(z._spd, sp, Math.min(1, dt * 8)); z._f = angLerp(z._f, z.face || 0, Math.min(1, dt * 10)); z._ph += dt * (2 + z._spd * 3.4);
+  }
+  const hit = !corpse && z.hitT > 0, fur = hit ? '#ffd8cc' : ['#4a3c32', '#3a3530', '#5a4a3a'][sd % 3], raw = hit ? '#ffd8cc' : '#7a3a34';
+  const amp = corpse ? 0 : clamp(z._spd / 3, 0, 1.1), ph = corpse ? 0 : z._ph, atk = !corpse && z.atk > 0;
+  const R0 = ZM[0]; tmpQ.setFromAxisAngle(UPV, -(corpse ? z.face || 0 : z._f)); tmpV.set(z.x, z.z, z.y); tmpS.set(1, 1, 1); R0.compose(tmpV, tmpQ, tmpS);
+  if (corpse) J(R0, R0, 0, 0.05, 0, ease(z.t / 0.4) * Math.PI / 2 * 0.95, 0, 0);
+  const bob = Math.abs(Math.sin(ph)) * 0.04 * amp, lunge = atk ? Math.sin(t * 14) * 0.12 : 0;
+  const body = J(ZM[1], R0, lunge, 0.33 + bob, 0, 0, 0, -Math.PI / 2 + Math.sin(ph) * 0.12 * amp);
+  zput('torso', body, 0.62, 1.05, 0.55, fur);
+  zput('rag', J(ZM[2], body, 0, 0.3, 0, 0, 0, 0), 0.5, 0.6, 0.5, raw);
+  // legs: front pair and back pair, diagonal gait
+  const legs = [[0.36, -1, 0], [0.36, 1, Math.PI], [-0.05, -1, Math.PI * 0.9], [-0.05, 1, -0.1]];
+  for (const [ox, sg, off] of legs) {
+    const a = Math.sin(ph + off) * 0.7 * amp + (corpse ? 1.2 : 0);
+    const hip = J(ZM[3], R0, ox + lunge, 0.3 + bob, sg * 0.1, 0, 0, a);
+    zput('limb', hip, 0.04, 0.17, 0.04, fur);
+    const knee = J(ZM[4], hip, 0, -0.17, 0, 0, 0, ox > 0 ? 0.5 + Math.max(0, Math.cos(ph + off)) * 0.6 * amp : -0.6 - Math.max(0, Math.cos(ph + off)) * 0.5 * amp);
+    zput('limb', knee, 0.03, 0.16, 0.03, fur);
+  }
+  const head = J(ZM[5], R0, 0.44 + lunge * 1.4, 0.4 + bob, 0, Math.sin(t * 7 + sd) * 0.08, 0, atk ? 0.2 + Math.sin(t * 14) * 0.3 : -0.15);
+  zput('head', head, 0.75, 0.62, 0.68, fur);
+  zput('jaw', J(ZM[6], head, 0.07, 0.05, 0, 0, 0, 0), 2.1, 1.6, 0.8, fur);                    // snout
+  zput('jaw', J(ZM[7], head, 0.07, 0.02, 0, 0, 0, -(atk ? 0.6 : 0.2)), 1.9, 1.2, 0.7, raw);    // open jaw
+  zput('limb', J(ZM[8], head, -0.03, 0.15, -0.05, -0.3, 0, -0.2), 0.02, 0.09, 0.03, fur); zput('limb', J(ZM[9], head, -0.03, 0.15, 0.05, 0.3, 0, -0.2), 0.02, 0.09, 0.03, fur); // ears
+  if (!corpse) { zput('eye', J(ZM[10], head, -0.02, -0.03, 0, 0, 0, 0), 0.8, 0.7, 1.1, z.rage > 0 || z.rageF ? '#ff2a1a' : ZEYE.dog); zput('glow', ZM[10], 0.8, 0.7, 1.1, ZEYE.dog); }
+  zput('limb', J(ZM[11], R0, -0.22, 0.38 + bob, 0, Math.sin(t * 9 + sd) * 0.4, 0, -2.2), 0.025, 0.2, 0.025, fur); // tail
 }
 
 /* ================= survivors ================= */
@@ -6286,6 +6578,11 @@ function mkPlayerModel(i) {
     mk([[boxG(0.36, 0.07, 0.055, 0.12, 0.03, 0), '#2a2f28'], [boxG(0.22, 0.03, 0.03, 0.39, 0.04, 0), dark], [boxG(0.05, 0.13, 0.045, 0.1, -0.06, 0), dark], [boxG(0.17, 0.06, 0.05, -0.12, 0.01, 0), '#2a2f28'], [boxG(0.04, 0.08, 0.04, 0, -0.04, 0), dark]]),
     mk([[boxG(0.7, 0.045, 0.045, 0.32, 0.04, 0), dark], [boxG(0.22, 0.07, 0.06, 0.05, 0.02, 0), wood], [boxG(0.2, 0.05, 0.05, -0.12, 0.0, 0), wood], [new THREE.CylinderGeometry(0.025, 0.025, 0.2, 8).rotateZ(Math.PI / 2).translate(0.12, 0.1, 0), '#14161a'], [boxG(0.04, 0.08, 0.04, 0, -0.04, 0), wood]]),
   ];
+  guns.push(
+    mk([[boxG(0.42, 0.05, 0.05, 0.12, 0.03, 0), wood], [boxG(0.04, 0.03, 0.46, 0.3, 0.05, 0), '#3a3a3a'], [boxG(0.01, 0.01, 0.4, 0.22, 0.05, 0), '#ddd'], [boxG(0.04, 0.08, 0.04, 0, -0.04, 0), wood], [boxG(0.3, 0.015, 0.015, 0.2, 0.07, 0), '#c9a23a']]),
+    mk([[boxG(0.42, 0.06, 0.06, 0.18, 0.04, 0), '#4a4f55'], [new THREE.CylinderGeometry(0.035, 0.05, 0.12, 8).rotateZ(Math.PI / 2).translate(0.44, 0.04, 0), '#2a2d30'], [new THREE.CylinderGeometry(0.06, 0.06, 0.26, 10).rotateZ(Math.PI / 2).translate(0.08, -0.06, 0), '#a8322a'], [boxG(0.04, 0.08, 0.04, 0, -0.03, 0), dark]]),
+    mk([[new THREE.CylinderGeometry(0.06, 0.06, 0.5, 10).rotateZ(Math.PI / 2).translate(0.2, 0.05, 0), '#3d4a34'], [boxG(0.08, 0.1, 0.07, 0.02, -0.03, 0), dark], [boxG(0.18, 0.06, 0.05, -0.12, 0.03, 0), '#3d4a34'], [boxG(0.06, 0.05, 0.06, 0.3, 0.12, 0), dark]]),
+  );
   const hammer = mk([[boxG(0.03, 0.32, 0.03, 0, 0.1, 0), '#8a6a44'], [boxG(0.12, 0.06, 0.06, 0.02, 0.26, 0), '#5a5f66']]);
   const medkit = mk([[boxG(0.14, 0.1, 0.2, 0, 0, 0), '#e8e2d6'], [boxG(0.145, 0.03, 0.08, 0, 0, 0), '#c83a32'], [boxG(0.145, 0.08, 0.03, 0, 0, 0), '#c83a32']]);
   const nade = mk([[new THREE.IcosahedronGeometry(0.05, 0), '#3c4a32']]);
@@ -6306,13 +6603,13 @@ function ikArm(A, tx, ty, tz, sg) {
   A.el.quaternion.setFromUnitVectors(_down, _v2);
 }
 // hand targets per weapon in aim-rig coordinates: [right x,y,z, left x,y,z]
-const GRIP = [[0.2, -0.04, 0.05, 0.19, -0.06, -0.02], [0.2, -0.04, 0.06, 0.42, -0.02, 0.0], [0.2, -0.04, 0.06, 0.4, -0.02, 0.0], [0.2, -0.04, 0.06, 0.46, -0.0, 0.0]];
+const GRIP = [[0.2, -0.04, 0.05, 0.19, -0.06, -0.02], [0.2, -0.04, 0.06, 0.42, -0.02, 0.0], [0.2, -0.04, 0.06, 0.4, -0.02, 0.0], [0.2, -0.04, 0.06, 0.46, -0.0, 0.0], [0.2, -0.04, 0.06, 0.34, -0.02, 0.0], [0.2, -0.04, 0.06, 0.3, -0.08, 0.0], [0.2, -0.04, 0.06, 0.36, -0.06, 0.0]];
 function drawPlayers(vl, dt) {
   while (OBJ.pl.length < W.p.length) OBJ.pl.push(mkPlayerModel(OBJ.pl.length));
   OBJ.pl.forEach((m, i) => { const p = W.p[i]; m.g.visible = !!p && !p.gone && !p.dead && p.L <= vl; });
   W.p.forEach((p, i) => {
     const m = OBJ.pl[i]; if (!m.g.visible) return;
-    const zv = p.zv != null ? p.zv : p.z; m.g.position.set(p.x, zv, p.y);
+    const zv = (p.zv != null ? p.zv : p.z) + (p.jz || 0); m.g.position.set(p.x, zv, p.y);
     // smoothing state
     if (p._uy == null) { p._uy = p.aim; p._ly = p.aim; p._ph = 0; p._kick = 0; p._spd = 0; p._px = p.x; p._py = p.y; p._st = 0; }
     const sp = dt > 0 ? Math.min(8, Math.hypot(p.x - p._px, p.y - p._py) / dt) : 0, mvx = p.x - p._px, mvy = p.y - p._py; p._px = p.x; p._py = p.y;
@@ -6332,6 +6629,7 @@ function drawPlayers(vl, dt) {
     // gait
     const ph = p._ph, down = p.down, A = 0.62 * amp, K = 1.05 * amp;
     let aL = Math.sin(ph) * A, aR = -Math.sin(ph) * A, kL = 0.08 + Math.max(0, Math.cos(ph)) * K, kR = 0.08 + Math.max(0, -Math.cos(ph)) * K;
+    if (p.jz > 0.05) { aL = 0.9; aR = -0.2; kL = 1.5; kR = 0.9; } // tucked legs in the air
     if (down) { aL = 1.35 + Math.sin(ph) * 0.2; aR = 0.2; kL = 2.1; kR = 1.9; }
     const legH = (a, k) => 0.23 * Math.cos(a) + 0.22 * Math.cos(a - k) + 0.03;
     const hipY = down ? 0.2 : Math.max(legH(aL, kL), legH(aR, kR));
@@ -6352,7 +6650,7 @@ function drawPlayers(vl, dt) {
     if (m.head.userData.tail) m.head.userData.tail.rotation.z = 0.25 + Math.sin(ph * 2) * 0.25 * amp + (moving ? 0.25 : 0);
     const flash = hurt > 0 ? hurt : 0; for (const mt of m.mats) mt.emissive.setRGB(flash * 0.7, flash * 0.08, flash * 0.05);
     // aim rig: pitch toward the target, recoil kick, shove thrust, run bob
-    const wi = down ? 0 : p.wpn, kickM = [0.6, 1.4, 0.7, 1.6][wi];
+    const wi = down ? 0 : p.wpn, kickM = [0.6, 1.4, 0.7, 1.6, 0.5, 0.08, 1.3][wi];
     const pitch = p.aimPt ? Math.atan2(p.aimPt.z - (p.z + 0.72), Math.max(0.4, Math.hypot(p.aimPt.x - p.x, p.aimPt.y - p.y))) : 0;
     const shove = p.shoveT > 0 ? Math.sin(Math.PI * (1 - p.shoveT / 0.18)) : 0;
     m.aim.rotation.z = p.build ? -0.15 : clamp(pitch, -0.9, 0.7) * 0.85 + p._kick * 0.22 * kickM - shove * 0.25 + m.torso.rotation.z * -0.8;
@@ -6389,7 +6687,14 @@ function drawTracers() {
     const x1 = lerp(t.x, t.x2, f), y1 = lerp(t.y, t.y2, f), z1 = lerp(t.z, t.z2, f);
     _dv.set(t.x2 - x1, t.z2 - z1, t.y2 - y1); const len = _dv.length(); if (len < 0.01) continue; _dv.divideScalar(len);
     _qd.setFromUnitVectors(_xa, _dv); tmpV.set(x1, z1, y1); const w = (t.w || 0.035) * (0.6 + a * 0.4); tmpS.set(len, w, w);
-    tmpM.compose(tmpV, _qd, tmpS); T.setMatrixAt(n, tmpM); T.setColorAt(n, tmpC.setRGB(a, a * 0.85, a * 0.5)); n++;
+    tmpM.compose(tmpV, _qd, tmpS); T.setMatrixAt(n, tmpM); const c = t.col || [1, 0.85, 0.5]; T.setColorAt(n, tmpC.setRGB(a * c[0], a * c[1], a * c[2])); n++;
+  }
+  // sniper laser sight
+  for (const p of W.p) {
+    if (n >= 140 || p.gone || p.dead || p.down || p.build || p.wpn !== 3 || p.reloadT > 0 || !OBJ.pl[p.i] || !OBJ.pl[p.i].g.visible) continue;
+    const [sx, sy, sz] = shoulder(p), [ax, ay, az] = aimDir(p), hit = rayWorld(sx, sy, sz, ax, ay, az, 30, { lean: LEAN }), x0 = sx + ax * 0.6, y0 = sy + ay * 0.6, z0 = sz + az * 0.6;
+    _dv.set(ax, az, ay); _qd.setFromUnitVectors(_xa, _dv); tmpV.set(x0, z0 + (p.jz || 0), y0); tmpS.set(Math.max(0.1, hit.d - 0.6), 0.012, 0.012);
+    tmpM.compose(tmpV, _qd, tmpS); T.setMatrixAt(n, tmpM); T.setColorAt(n, tmpC.setRGB(0.9, 0.08, 0.05)); n++;
   }
   T.count = n; T.instanceMatrix.needsUpdate = true; if (T.instanceColor) T.instanceColor.needsUpdate = true;
   const D = OBJ.decal; let k = 0;
@@ -6402,6 +6707,78 @@ function addDecal(x, y, z, s, col) {
   for (let l = Math.min(ML - 1, Math.floor((z + 0.2) / FH)); l >= 0; l--) { if (inMap(cx, cy) && support(cx, cy, l)) { fz = l * FH; break; } }
   RND.decals.push({ x, y, z: fz, s, col: col || (hash2(cx, cy) < 0.5 ? '#4a0606' : '#5e0b08'), r: frnd(0, 6.28), e: frnd(0.6, 1), t: 0 });
   if (RND.decals.length > 210) RND.decals.shift();
+}
+
+/* ---- 56_props.js ---- */
+/* ================= props: new searchables / gatherables, buildable obstacles, ladders, build-plan ghosts, x-ray ring ================= */
+const PROP = {};   // block id -> { m: InstancedMesh, n, col, al: align to walls }
+function propScene() {
+  const nI = g => g.index ? g.toNonIndexed() : g, M = gs => THREE.mergeGeometries(gs.map(nI), false);
+  const cyl = (rt, rb, h, s, x = 0, y = 0, z = 0) => new THREE.CylinderGeometry(rt, rb, h, s || 8).translate(x, y, z);
+  const ico = (r, x, y, z, d = 0) => new THREE.IcosahedronGeometry(r, d).translate(x, y, z);
+  const G = {
+    32: M([cyl(0.2, 0.17, 0.52, 9, 0, 0.26, 0), cyl(0.22, 0.22, 0.05, 9, 0, 0.54, 0), boxG(0.12, 0.03, 0.04, 0, 0.58, 0)]),                         // trash bin
+    33: M([boxG(0.3, 0.16, 0.24, 0, 0.08, 0), boxG(0.12, 0.1, 0.2, 0.14, 0.06, 0), cyl(0.06, 0.06, 0.26, 7, -0.12, 0.2, 0).rotateX(Math.PI / 2)]),     // backpack
+    34: M([boxG(0.46, 0.86, 0.72, 0, 0.43, 0), boxG(0.02, 0.02, 0.6, 0.235, 0.58, 0), boxG(0.02, 0.02, 0.6, 0.235, 0.3, 0), boxG(0.03, 0.06, 0.06, 0.24, 0.72, 0.2)]), // cabinet
+    35: M([boxG(0.36, 0.16, 0.2, 0, 0.08, 0), boxG(0.04, 0.08, 0.03, -0.1, 0.2, 0), boxG(0.04, 0.08, 0.03, 0.1, 0.2, 0), boxG(0.24, 0.03, 0.03, 0, 0.24, 0)]), // toolbox
+    36: M([boxG(0.72, 0.42, 0.5, 0, 0.21, 0), boxG(0.74, 0.06, 0.52, 0, 0.36, 0), boxG(0.06, 0.1, 0.2, 0.37, 0.25, 0), boxG(0.06, 0.1, 0.2, -0.37, 0.25, 0)]), // military crate
+    37: M([cyl(0.25, 0.25, 0.74, 10, 0, 0.37, 0), cyl(0.265, 0.265, 0.05, 10, 0, 0.2, 0), cyl(0.265, 0.265, 0.05, 10, 0, 0.55, 0)]),                  // oil barrel
+    38: M([boxG(0.62, 1.25, 0.66, 0, 0.625, 0), boxG(0.04, 0.6, 0.44, 0.32, 0.78, -0.06), boxG(0.05, 0.16, 0.12, 0.33, 0.35, 0.18)]),                // vending machine
+    39: M([boxG(0.5, 0.18, 0.36, -0.1, 0.09, 0.05).rotateY(0.4), cyl(0.12, 0.12, 0.5, 7, 0.15, 0.14, -0.1).rotateZ(1.3), boxG(0.3, 0.3, 0.06, 0.05, 0.2, 0.18).rotateX(0.6), ico(0.16, -0.18, 0.18, -0.15)]), // scrap heap
+    40: M([cyl(0.13, 0.13, 0.9, 7, 0, 0.13, -0.14).rotateZ(Math.PI / 2), cyl(0.13, 0.13, 0.9, 7, 0, 0.13, 0.14).rotateZ(Math.PI / 2), cyl(0.12, 0.12, 0.85, 7, 0, 0.36, 0).rotateZ(Math.PI / 2)]), // log pile
+    41: M([ico(0.26, 0, 0.24, 0, 0), ico(0.2, 0.18, 0.18, 0.12, 0), ico(0.18, -0.16, 0.17, -0.1, 0), ico(0.15, 0.05, 0.38, -0.12, 0)]),              // bush
+    12: M((() => { const a = []; for (let r = 0; r < 3; r++) for (let k = 0; k < 3; k++) { const g = new THREE.SphereGeometry(0.5, 7, 4); g.scale(0.36, 0.17, 0.42); g.translate(-0.33 + k * 0.33 + (r % 2 ? 0.16 : 0) - (r % 2 && k === 2 ? 0.66 : 0), 0.09 + r * 0.17, 0); a.push(g); } return a; })()), // sandbags
+    13: M([boxG(0.9, 0.08, 0.08, 0, 0.35, 0).rotateZ(0.6), boxG(0.9, 0.08, 0.08, 0, 0.35, 0).rotateZ(-0.6), boxG(0.08, 0.08, 0.9, 0, 0.35, 0).rotateX(0.6), boxG(0.08, 0.08, 0.9, 0, 0.35, 0).rotateX(-0.6), new THREE.ConeGeometry(0.04, 0.2, 4).translate(0.42, 0.62, 0), new THREE.ConeGeometry(0.04, 0.2, 4).translate(-0.42, 0.62, 0)]), // cheval de frise
+    14: M([boxG(0.12, 0.85, 0.98, 0, 0.425, 0), boxG(0.3, 0.06, 0.06, -0.15, 0.3, 0.42).rotateZ(-0.7), boxG(0.3, 0.06, 0.06, -0.15, 0.3, -0.42).rotateZ(-0.7), boxG(0.14, 0.04, 1.0, 0, 0.84, 0)]), // steel cover
+    15: M([new THREE.TorusGeometry(0.17, 0.025, 4, 12).rotateX(Math.PI / 2).translate(0, 0.03, 0), boxG(0.3, 0.02, 0.06, 0, 0.02, 0), ...[0, 1, 2, 3, 4, 5].map(k => new THREE.ConeGeometry(0.02, 0.07, 3).translate(Math.cos(k * 1.05) * 0.15, 0.06, Math.sin(k * 1.05) * 0.15))]), // bear trap
+    6: M([boxG(0.05, FH + 0.35, 0.05, 0.36, (FH + 0.35) / 2, -0.26), boxG(0.05, FH + 0.35, 0.05, 0.36, (FH + 0.35) / 2, 0.26), ...[0, 1, 2, 3, 4, 5].map(k => boxG(0.04, 0.035, 0.5, 0.36, 0.18 + k * 0.24, 0))]), // wall ladder
+  };
+  const C = { 32: '#3f5a3a', 33: '#5a4a2e', 34: '#6a4a30', 35: '#a8322a', 36: '#4f5a32', 37: '#9a3a2a', 38: '#b8333a', 39: '#7a5a44', 40: '#6a4a2c', 41: '#3e5f2e', 12: '#a8946a', 13: '#6a5038', 14: '#7a8590', 15: '#5a5a55', 6: '#8a6440' };
+  const cap = { 41: 3000, 40: 600, 39: 600, 12: 1500, 13: 800, 14: 800, 15: 400, 6: 400, 32: 400, 34: 400 };
+  for (const id in G) { const m = inst(G[id], lam('#ffffff'), cap[id] || 300); PROP[id] = { m, n: 0, col: C[id], al: id == 12 || id == 13 || id == 14 }; }
+  // build-plan ghosts and the x-ray ring that shows survivors through walls
+  OBJ.planI = inst(boxG(1, 1, 1, 0, 0.5, 0), new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0.4, depthWrite: false }), 64, false);
+  OBJ.xray = inst(new THREE.RingGeometry(0.3, 0.4, 20).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0.55, depthTest: false, depthWrite: false }), 4, false);
+  OBJ.xray.renderOrder = 999;
+  OBJ.ringI = inst(new THREE.RingGeometry(0.85, 1, 32).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0.6, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }), 8, false);
+}
+function propBegin() { for (const id in PROP) PROP[id].n = 0; }
+// returns true if it drew block b
+function propPut(b, i, x, y, L, X, Y, Z, h) {
+  const P = PROP[b]; if (!P) return false;
+  if (P.n >= P.m.instanceMatrix.count) return true;
+  let rot = h * 6.28, col = P.col, sc = 1;
+  if (P.al) rot = wallAxis(x, y, L) ? 0 : Math.PI / 2;
+  if (b === 6) rot = -W.bdir[i] * Math.PI / 2;
+  if (b === 37) col = ['#9a3a2a', '#2f5a8a', '#c9a23a'][Math.floor(h * 3)];
+  if (b === 38 && W.srch.has(i)) col = '#5a2a2c';
+  if (b === 41) sc = 0.8 + h * 0.5;
+  if (b === 15 || b === 33 || b === 35) rot = h * 6.28;
+  if (B[b].brk && W.bhp[i] && B[b].hp) col = dmgTint(col, W.bhp[i] / B[b].hp);
+  setInst(P.m, P.n++, X, Y, Z, rot, sc, sc, sc, col);
+  return true;
+}
+function propEnd() { for (const id in PROP) { const P = PROP[id]; P.m.count = P.n; P.m.instanceMatrix.needsUpdate = true; if (P.m.instanceColor) P.m.instanceColor.needsUpdate = true; } }
+// translucent boxes for the plan waiting for confirmation (pulsing) and the one being drawn
+function drawPlan() {
+  const I = OBJ.planI, P = typeof PLAN !== 'undefined' && (PLAN || PREV); let n = 0;
+  if (P && W.p[ME] && W.p[ME].build) {
+    const slab = !P.demo && B[P.id] && B[P.id].slab, low = !P.demo && B[P.id] && (B[P.id].dep || B[P.id].vault);
+    for (const c of P.cells) {
+      if (n >= 64) break; const h = slab ? 0.14 : low ? 0.6 : FH * 0.98;
+      setInst(I, n++, c.x + 0.5, c.L * FH + (slab ? -0.12 : 0.01), c.y + 0.5, 0, 1.02, h, 1.02, P.demo ? '#ff5a4a' : '#7dff8a');
+    }
+    I.material.opacity = P === PLAN ? 0.32 + Math.sin(W.t * 6) * 0.12 : 0.28;
+  }
+  I.count = n; I.instanceMatrix.needsUpdate = true; if (I.instanceColor) I.instanceColor.needsUpdate = true;
+  // x-ray rings: always drawn on top, so a survivor behind a building is never lost
+  const X = OBJ.xray; let k = 0;
+  for (const p of W.p) { if (p.gone || p.dead || !OBJ.pl[p.i] || !OBJ.pl[p.i].g.visible) continue; setInst(X, k++, p.x, (p.zv != null ? p.zv : p.z) + 0.03, p.y, 0, 1, 1, 1, PCOL[p.i % 2].j); }
+  X.count = k; X.instanceMatrix.needsUpdate = true; if (X.instanceColor) X.instanceColor.needsUpdate = true;
+  // scream shockwaves
+  const R = OBJ.ringI; let r = 0; RND.rings = (RND.rings || []).filter(q => (q.t += 1 / 60) < 0.8);
+  for (const q of RND.rings) { if (r >= 8) break; const s = 0.5 + q.t * BAL.screamR * 1.1; setInst(R, r++, q.x, q.z + 0.1, q.y, 0, s, 1, s, '#ff5a8a'); }
+  R.count = r; R.material.opacity = RND.rings.length ? 0.6 * (1 - RND.rings[0].t / 0.8) : 0; R.instanceMatrix.needsUpdate = true; if (R.instanceColor) R.instanceColor.needsUpdate = true;
 }
 
 /* ---- 60_audio.js ---- */
@@ -6450,6 +6827,14 @@ function sfx(n, x, y) {
     case 'shotgun': noise(0.32, 0.8 * v, 'lowpass', 3000 * r, 300, 0.7); tone('sawtooth', 110 * r, 40, 0.18, 0.3 * v, 0, 800); break;
     case 'rifle': noise(0.09, 0.45 * v, 'bandpass', 3000 * r, 900, 0.9); tone('square', 150 * r, 70, 0.06, 0.14 * v); break;
     case 'sniper': noise(0.5, 0.85 * v, 'lowpass', 5000 * r, 200, 0.6); tone('sawtooth', 220 * r, 50, 0.3, 0.3 * v, 0, 1500); noise(0.6, 0.15 * v, 'bandpass', 900, 300, 2, 0.12); break;
+    case 'crossbow': tone('triangle', 420 * r, 120, 0.12, 0.25 * v); noise(0.08, 0.25 * v, 'highpass', 2500, 2500, 1); break;
+    case 'flamer': noise(0.3, 0.32 * v, 'lowpass', 900 * r, 400, 0.7); noise(0.25, 0.12 * v, 'bandpass', 2400, 1800, 2); break;
+    case 'launcher': noise(0.25, 0.6 * v, 'lowpass', 700 * r, 150, 0.7); tone('sine', 140 * r, 60, 0.2, 0.4 * v); break;
+    case 'scream': tone('sawtooth', 900 * r, 1500, 0.7, 0.18 * v, 0, 2400); tone('square', 640 * r, 1200, 0.6, 0.08 * v, 0.05, 1800); noise(0.6, 0.15 * v, 'bandpass', 2600, 3200, 3); break;
+    case 'jump': noise(0.12, 0.14, 'bandpass', 900, 1600, 1.5); break;
+    case 'vault': noise(0.2, 0.18, 'bandpass', 700, 1300, 1.2); tone('triangle', 200, 160, 0.08, 0.06, 0.1); break;
+    case 'trap': tone('square', 1200 * r, 300, 0.06, 0.3 * v); noise(0.1, 0.3 * v, 'highpass', 3000, 3000, 1); break;
+    case 'clank': tone('square', 1500 * r, 900, 0.05, 0.12 * v); noise(0.05, 0.15 * v, 'highpass', 4000, 4000, 2); break;
     case 'empty': tone('square', 1300, 1100, 0.03, 0.12); break;
     case 'reload': tone('square', 600 * r, 500, 0.04, 0.1 * v); noise(0.05, 0.2 * v, 'highpass', 3000, 3000, 1, 0.12); tone('square', 900 * r, 700, 0.05, 0.12 * v, 0.35); break;
     case 'swap': noise(0.06, 0.2, 'highpass', 2500); tone('triangle', 500, 700, 0.05, 0.08, 0.04); break;
@@ -6523,7 +6908,14 @@ function toggleBuild(v) {
 }
 function selBlock(id) { const me = W.p[ME]; me.sel = id; me.demo = false; uiBuildBar(); sfx('click'); }
 function rotStairs() { const me = W.p[ME]; me.sdir = (me.sdir + 1) & 3; uiBuildBar(); sfx('click'); }
-function cycleWpn(d) { const me = W.p[ME]; let w = me.wpn; for (let k = 0; k < 4; k++) { w = (w + d + 4) % 4; if (me.owned[w]) break; } if (w !== me.wpn) act('wpn', w); }
+function cycleWpn(d) { const me = W.p[ME]; let w = me.wpn; for (let k = 0; k < NW; k++) { w = (w + d + NW) % NW; if (me.owned[w]) break; } if (w !== me.wpn) act('wpn', w); }
+// jump: vault what's in front (or leap a gap), else a little hop. Direction = where you're walking, else where you aim
+function doJump() {
+  const me = W.p[ME]; if (!me || me.dead || me.down) return;
+  let ax = me.inp.mx, ay = me.inp.my; if (Math.hypot(ax, ay) < 0.3) { ax = Math.cos(me.aim); ay = Math.sin(me.aim); }
+  const dx = Math.abs(ax) >= Math.abs(ay) ? Math.sign(ax) : 0, dy = dx ? 0 : Math.sign(ay);
+  startJump(me, dx, dy, true);
+}
 // camera controls (shared by keys and the HUD buttons)
 function camRot(d) { CAM.rot = (CAM.rot + d + 4) % 4; sfx('click'); }
 function camZoom(f) { CAM.zoom = clamp(CAM.zoom * f, 4, 22); SET.zoom = CAM.zoom; saveSet(); }
@@ -6536,7 +6928,7 @@ addEventListener('keydown', e => {
   if (e.target && e.target.tagName === 'INPUT') return;
   const k = e.key.length === 1 ? e.key.toLowerCase() : e.key;
   audioInit();
-  if (k === 'Escape') { if (STATE.mode === 'play') togglePause(); e.preventDefault(); return; }
+  if (k === 'Escape') { if (PLAN || PREV) { cancelPlan(); e.preventDefault(); return; } if (STATE.mode === 'play') togglePause(); e.preventDefault(); return; }
   if (!INP.keys[k]) onKeyPress(k);
   INP.keys[k] = true;
   if ([' ', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Tab', 'PageUp', 'PageDown', 'Home'].includes(k)) e.preventDefault();
@@ -6562,7 +6954,9 @@ function onKeyPress(k) {
     const n = '1234567890'.indexOf(k); if (n >= 0 && PAL[n]) return selBlock(PAL[n]);
     if (k === 'x') { me.demo = !me.demo; uiBuildBar(); return; }
     if (k === 'r') return rotStairs();
-  } else { const n = '1234'.indexOf(k); if (n >= 0) return act('wpn', n); if (k === 'r') return act('reload'); }
+    if ((k === 'Enter' || k === ' ') && PLAN) return confirmPlan();
+  } else { const n = '1234567'.indexOf(k); if (n >= 0) return act('wpn', n); if (k === 'r') return act('reload'); }
+  if (k === ' ') return doJump();
   if (k === 'v') return act('shove');
   if (k === 'g') return act('nade');
   if (k === 'h') return act('med');
@@ -6646,8 +7040,8 @@ function endPtr(e) {
   if (e.pointerType !== 'touch') return;
   delete INP.tp[e.pointerId];
   if (INP.pinch && (e.pointerId === INP.pinch.a || e.pointerId === INP.pinch.b)) { INP.pinch = null; saveSet(); return; }
-  if (INP.paint === e.pointerId) INP.paint = null;
-  if (INP.move.id === e.pointerId && !INP.move.far && performance.now() - INP.move.t0 < 350 && inGame() && W.p[ME].build) touchBuild(INP.move.ox, INP.move.oy, true);
+  if (INP.paint === e.pointerId) finishPaint();
+  if (INP.move.id === e.pointerId && !INP.move.far && performance.now() - INP.move.t0 < 350 && inGame() && W.p[ME].build) { touchBuild(INP.move.ox, INP.move.oy, true); finishPaint(); }
   if (INP.move.id === e.pointerId) { INP.move.id = null; INP.move.x = INP.move.y = 0; stickDraw(stickL, INP.move); }
   if (INP.aim.id === e.pointerId && !INP.aim.btn) { INP.aim.id = null; INP.aim.x = INP.aim.y = 0; INP.aim.t = performance.now(); stickDraw(stickR, INP.aim); }
 }
@@ -6705,16 +7099,51 @@ function pickBuild(sx, sy, me, demo) {
   for (const c of cands) if (c && inMap(c.x, c.y) && c.L >= 0 && c.L < ML && !buildWhy(me, c.x, c.y, c.L)) return Object.assign(c, { ok: true, why: '' });
   return Object.assign(front, { ok: false, why: buildWhy(me, front.x, front.y, front.L) });
 }
+/* ---------- build plan: click / tap / drag makes a preview; confirm with the ✓ bar, Enter, or a second tap on it ---------- */
+let PLAN = null, PREV = null;   // PREV: being drawn right now; PLAN: waiting for confirmation
+function planHas(P, c) { return P && c && P.cells.some(q => q.x === c.x && q.y === c.y && q.L === c.L); }
+function cancelPlan() { PLAN = null; PREV = null; INP.bA = null; uiPlan(); }
+function confirmPlan() {
+  const me = W.p[ME]; if (!PLAN || !me) return;
+  PLAN.cells.forEach((c, k) => buildAt(me, c.x, c.y, c.L, PLAN.demo, k > 0));
+  if (!PLAN.demo) me._swingT = 0.3; sfx(PLAN.demo ? 'demo' : 'click');
+  PLAN = null; uiPlan();
+}
+function prevAdd(c, demo) {
+  if (!PREV) PREV = { cells: [], demo, id: W.p[ME].sel, d: W.p[ME].sdir };
+  if (!planHas(PREV, c) && PREV.cells.length < 40) PREV.cells.push({ x: c.x, y: c.y, L: c.L });
+}
+function finishPaint() {
+  INP.paint = null;
+  if (!SET.bconf || !PREV) { PREV = null; return; }
+  const me = W.p[ME];
+  // keep only what can actually be built / demolished
+  PREV.cells = PREV.cells.filter(c => PREV.demo ? true : !buildWhy(me, c.x, c.y, c.L));
+  PLAN = PREV.cells.length ? PREV : null; if (!PLAN && PREV.cells.length === 0 && BUILD_HOVER && BUILD_HOVER.why) { toast(BUILD_HOVER.why, '#ff8a7a'); sfx('deny'); }
+  PREV = null; uiPlan();
+}
+function planCost() {
+  if (!PLAN) return ''; const me = W.p[ME];
+  if (PLAN.demo) return '拆掉 ' + PLAN.cells.length + ' 个';
+  const B0 = B[PLAN.id], c = {}; for (const k in B0.cost) c[k] = B0.cost[k] * PLAN.cells.length;
+  return '建 ' + PLAN.cells.length + ' 个' + B0.name + ' · ' + costText(c) + (affordable(W.res, c) ? '' : ' · 材料不够');
+}
 // one painting step (mouse held / finger down). Dragging builds a straight row on the first cell's floor.
 function paintBuild(sx, sy, start, demo) {
   const me = W.p[ME]; if (!me || !me.build) return;
+  if (start) {
+    // tapping the waiting plan again confirms it; tapping elsewhere starts a new one
+    if (PLAN) { const c = PLAN.demo ? pickBuild(sx, sy, me, true) : pickBuild(sx, sy, me, false); const q = c && buildPick(sx, sy, PLAN.cells[0].L); if (planHas(PLAN, c) || planHas(PLAN, q)) { confirmPlan(); INP.noPaint = true; return; } PLAN = null; uiPlan(); }
+    INP.noPaint = false; PREV = null;
+  }
+  if (INP.noPaint) return;
   if (start) { INP.bA = null; INP.bAxis = null; INP.bPrev = null; INP.bldLast = ''; }
   if (!demo && INP.bA) {
     const A = INP.bA, q = buildPick(sx, sy, A.L); if (!q) return;
     if (!INP.bAxis && (q.x !== A.x || q.y !== A.y)) INP.bAxis = Math.abs(q.x - A.x) >= Math.abs(q.y - A.y) ? 'x' : 'y';
     const c = INP.bAxis === 'x' ? { x: q.x, y: A.y, L: A.L } : INP.bAxis === 'y' ? { x: A.x, y: q.y, L: A.L } : { x: A.x, y: A.y, L: A.L };
     const P = INP.bPrev || A, n = Math.abs(c.x - P.x) + Math.abs(c.y - P.y), sx_ = Math.sign(c.x - P.x), sy_ = Math.sign(c.y - P.y);
-    for (let k = 1; k <= n; k++) buildAt(me, P.x + sx_ * k, P.y + sy_ * k, A.L, false, true);
+    for (let k = 1; k <= n; k++) { if (SET.bconf) prevAdd({ x: P.x + sx_ * k, y: P.y + sy_ * k, L: A.L }, false); else buildAt(me, P.x + sx_ * k, P.y + sy_ * k, A.L, false, true); }
     INP.bPrev = c;
     const why = buildWhy(me, c.x, c.y, c.L); BUILD_HOVER = Object.assign(c, { ok: !why, why, t: 1 });
     return;
@@ -6722,7 +7151,7 @@ function paintBuild(sx, sy, start, demo) {
   const c = pickBuild(sx, sy, me, demo); if (!c) { BUILD_HOVER = null; return; }
   BUILD_HOVER = Object.assign(c, { t: 1 });
   const key = c.x + ',' + c.y + ',' + c.L; if (INP.bldLast === key) return; INP.bldLast = key;
-  buildAt(me, c.x, c.y, c.L, demo);
+  if (SET.bconf) prevAdd(c, demo); else buildAt(me, c.x, c.y, c.L, demo);
   if (!demo) { INP.bA = { x: c.x, y: c.y, L: c.L }; INP.bPrev = INP.bA; }
 }
 function touchBuild(sx, sy, start) { paintBuild(sx, sy, start, W.p[ME].demo); }
@@ -6753,6 +7182,8 @@ bindBtn('tWpn', () => inGame() && cycleWpn(1));
 bindBtn('tLUp', () => viewStep(1)); bindBtn('tLDn', () => viewStep(-1));
 bindBtn('vToggle', () => { document.body.classList.toggle('vopen'); $('vToggle').classList.toggle('on', document.body.classList.contains('vopen')); sfx('click'); });
 bindBtn('tShove', () => inGame() && act('shove'));
+bindBtn('tJump', () => inGame() && doJump());
+bindBtn('bcOk', () => confirmPlan()); bindBtn('bcNo', () => cancelPlan());
 bindBtn('tNade', () => inGame() && act('nade'));
 bindBtn('tMed', () => inGame() && act('med'));
 bindBtn('tUse', () => { if (!inGame()) return; const me = W.p[ME]; if (nearBench(me) && !useTarget(me)) openCraft(); INP.useHeld = true; }, () => { INP.useHeld = false; });
@@ -6802,9 +7233,9 @@ function readInput(dt) {
     if (me.build && !blocked) {
       const down = INP.mL || INP.mR, demo = INP.mR || me.demo;
       if (down) paintBuild(INP.mx, INP.my, !INP.bDown, demo);
-      else { const c = pickBuild(INP.mx, INP.my, me, me.demo); BUILD_HOVER = c; }
+      else { if (INP.bDown) finishPaint(); const c = pickBuild(INP.mx, INP.my, me, me.demo); BUILD_HOVER = c; }
       INP.bDown = down;
-    } else { BUILD_HOVER = null; INP.bDown = false; }
+    } else { BUILD_HOVER = null; INP.bDown = false; if (!me.build && (PLAN || PREV)) cancelPlan(); }
   } else {
     const A = INP.aim, held = A.id != null, active = held && Math.hypot(A.x, A.y) > 0.3;
     if (active) {
@@ -6895,8 +7326,8 @@ const ZI = ZKEYS;
 function pFlags(p) { return (p.down ? 1 : 0) | (p.dead ? 2 : 0) | (p.gone ? 4 : 0) | (p.build ? 32 : 0) | (p.ready ? 64 : 0) | (p.selfRev ? 128 : 0); }
 function makeSnap() {
   const P = p => [r2(p.x), r2(p.y), p.L, r2(p.vx), r2(p.vy), r2(p.aim), Math.ceil(p.hp), pFlags(p), Math.round(p.downT * 10) / 10, p.wpn, p.mag.join(','), p.ammo.join(','), p.owned.join(''), p.nades, p.meds, Math.round(p.useT * 100), Math.round(p.medT * 10) / 10, Math.round(p.reloadT * 10) / 10, p.kills, Math.round(p.anim * 10) / 10, p.sel, p.aimPt ? [r2(p.aimPt.x), r2(p.aimPt.y), r2(p.aimPt.z)] : 0];
-  const z = []; for (const q of W.zs) z.push(q.id, ZI.indexOf(q.k), Math.round(q.x * 100), Math.round(q.y * 100), q.L, Math.round(q.z * 100), Math.round(q.face * 100), Math.ceil(q.hp / q.max * 100), (q.climbing ? 1 : 0) | (q.atk > 0 ? 2 : 0) | (q.hitT > 0 ? 4 : 0) | (q.moving ? 8 : 0));
-  const pr = []; for (const b of W.proj) pr.push(b.k === 'nade' ? 0 : 1, r2(b.x), r2(b.y), r2(b.z), r2(b.vx), r2(b.vy), r2(b.vz));
+  const z = []; for (const q of W.zs) z.push(q.id, ZI.indexOf(q.k), Math.round(q.x * 100), Math.round(q.y * 100), q.L, Math.round(q.z * 100), Math.round(q.face * 100), Math.ceil(q.hp / q.max * 100), (q.climbing ? 1 : 0) | (q.atk > 0 ? 2 : 0) | (q.hitT > 0 ? 4 : 0) | (q.moving ? 8 : 0) | (q.burn > 0 ? 16 : 0) | (q.scr > 0 ? 32 : 0) | (q.rage > 0 ? 64 : 0));
+  const pr = []; for (const b of W.proj) pr.push(b.k === 'nade' ? 0 : b.k === 'gl' ? 2 : 1, r2(b.x), r2(b.y), r2(b.z), r2(b.vx), r2(b.vy), r2(b.vz));
   const d = []; for (const i of W.dirty) d.push(i, Math.round(W.bhp[i]), Math.round(W.shp[i])); W.dirty.clear();
   return { t: 's', T: r2(W.t), ph: W.phase, cl: Math.round(W.clock * 10) / 10, dl: W.dayLen, n: W.night, nt: Math.round(W.nightT), tk: NET.tkv === W.tkv && (NET.tkN = (NET.tkN || 0) + 1) % 12 ? 0 : (NET.tkv = W.tkv, W.tasks.map(t => [t.k, t.need, t.got, t.done, t.txt, t.rt])), res: RES.map(r => W.res[r.k]), u: W.upg, k: W.kills, p: W.p.map(P), z, pr, d, sl: W.spawnQ.length };
 }
@@ -6962,11 +7393,11 @@ function applySnap(s) {
     let z = old.get(id);
     if (!z) z = { id, k: key, x: s.z[k + 2] / 100, y: s.z[k + 3] / 100, z: s.z[k + 5] / 100, r: T.r, h: T.h, face: 0, hp: 100, max: 100, anim: Math.random() * 6, seed: id * 7, hitT: 0, atk: 0 };
     z.tx = s.z[k + 2] / 100; z.ty = s.z[k + 3] / 100; z.L = s.z[k + 4]; z.tz = s.z[k + 5] / 100; z.face = s.z[k + 6] / 100; z.hp = s.z[k + 7]; z.max = 100;
-    const b = s.z[k + 8]; z.climbing = b & 1 ? {} : null; if (b & 2) z.atk = 0.3; if (b & 4) z.hitT = 0.12; z.moving = !!(b & 8);
+    const b = s.z[k + 8]; z.climbing = b & 1 ? {} : null; if (b & 2) z.atk = 0.3; if (b & 4) z.hitT = 0.12; z.moving = !!(b & 8); z.burnF = !!(b & 16); z.scr = b & 32 ? 0.6 : 0; z.rageF = !!(b & 64);
     zs.push(z);
   }
   W.zs = zs;
-  W.proj = []; for (let k = 0; k < s.pr.length; k += 7) W.proj.push({ k: s.pr[k] ? 'acid' : 'nade', x: s.pr[k + 1], y: s.pr[k + 2], z: s.pr[k + 3], vx: s.pr[k + 4], vy: s.pr[k + 5], vz: s.pr[k + 6] });
+  W.proj = []; for (let k = 0; k < s.pr.length; k += 7) W.proj.push({ k: ['nade', 'acid', 'gl'][s.pr[k]], x: s.pr[k + 1], y: s.pr[k + 2], z: s.pr[k + 3], vx: s.pr[k + 4], vy: s.pr[k + 5], vz: s.pr[k + 6] });
   for (let k = 0; k < s.d.length; k += 3) { const i = s.d[k]; if (W.blk[i]) W.bhp[i] = s.d[k + 1]; if (W.slab[i]) W.shp[i] = s.d[k + 2]; W.ver++; }
 }
 function guestNetTick(dt) {
@@ -6987,6 +7418,7 @@ function guestPredictFire(dt) {
   const wi = p.down ? 0 : p.wpn, w = WPN[wi];
   if (!p.inp.fire || p.build || p.dead || p.lfCD > 0 || p.reloadT > 0 || p.reloadVis > 0 || p.medT > 0 || p.mag[wi] <= 0) return;
   p.lfCD = w.rate; p.mag[wi]--;
+  if (w.flame || w.gl) { shotFx(ME, wi, []); return; }
   const [sx, sy, sz] = shoulder(p), [ax, ay, az] = aimDir(p), ends = [];
   const yaw = Math.atan2(ay, ax), pitch = Math.asin(clamp(az, -1, 1));
   for (let k = 0; k < w.pellets; k++) {
@@ -7084,6 +7516,8 @@ function buildHudStatic() {
   dm.addEventListener('pointerdown', e => { e.stopPropagation(); const me = W.p[ME]; me.demo = !me.demo; uiBuildBar(); sfx('click'); }); bb.appendChild(dm);
   const ro = document.createElement('button'); ro.id = 'bRot'; ro.innerHTML = '<span style="font-size:18px">↻</span><span>楼梯朝向</span><small class="kbd">R</small>';
   ro.addEventListener('pointerdown', e => { e.stopPropagation(); rotStairs(); }); bb.appendChild(ro);
+  const cf = document.createElement('button'); cf.id = 'bConf'; cf.innerHTML = '<span style="font-size:16px">✓✓</span><span>二次确认</span><small></small>';
+  cf.addEventListener('pointerdown', e => { e.stopPropagation(); SET.bconf = SET.bconf ? 0 : 1; saveSet(); uiBuildBar(); toast(SET.bconf ? '二次确认：开（先预览，点 ✓ 才建）' : '二次确认：关（点了就建）'); sfx('click'); }); bb.appendChild(cf);
   const ex = document.createElement('button'); ex.innerHTML = '<span style="font-size:18px">↩</span><span>退出</span><small class="kbd">B</small>';
   ex.addEventListener('pointerdown', e => { e.stopPropagation(); toggleBuild(false); }); bb.appendChild(ex);
 }
@@ -7096,10 +7530,21 @@ function uiBuildBar() {
   $('tBuild').classList.toggle('on', !!me.build); document.body.classList.toggle('building', !!me.build);
   const Bs = B[me.sel];
   const why = BUILD_HOVER && !BUILD_HOVER.ok && BUILD_HOVER.why ? ' · ' + BUILD_HOVER.why : '';
-  $('binfo').textContent = (me.demo ? '拆除：点方块拆掉，退还一半材料（按血量折算）' : Bs.name + ' · ' + costText(Bs.cost) + ' · ' + Bs.tip + (Bs.hp ? ' · 耐久 ' + Bs.hp : '')) + ' · 建在 ' + (buildL() + 1) + 'F' + why;
+  $('binfo').textContent = (me.demo ? '拆除：点（或拖过）要拆的方块，' + (SET.bconf ? '再点 ✓ 确认，' : '') + '退还一半材料（按血量折算）' : Bs.name + ' · ' + costText(Bs.cost) + ' · ' + Bs.tip + (Bs.hp ? ' · 耐久 ' + Bs.hp : '')) + ' · 建在 ' + (buildL() + 1) + 'F' + why;
   $('bRot').classList.toggle('hidden', me.sel !== 6 || me.demo);
+  const cf = $('bConf'); if (cf) { cf.classList.toggle('sel', !!SET.bconf); cf.lastElementChild.textContent = SET.bconf ? '开' : '关'; }
+}
+// the confirm bar floats next to the waiting plan
+function uiPlan() {
+  const el = $('bconf'); if (!el) return; el.classList.toggle('hidden', !PLAN);
+  if (PLAN) { $('bcTxt').textContent = planCost(); el.classList.toggle('demo', !!PLAN.demo); }
+}
+function uiPlanPos() {
+  if (!PLAN) return; const el = $('bconf'), c = PLAN.cells[PLAN.cells.length - 1], [sx, sy] = w2s(c.x + 0.5, c.y + 0.5, (c.L + 1) * FH);
+  el.style.left = clamp(sx - el.offsetWidth / 2, 8, VW - el.offsetWidth - 8) + 'px'; el.style.top = clamp(sy - el.offsetHeight - 26, 60, VH - el.offsetHeight - 110) + 'px';
 }
 function hudTick(dt) {
+  uiPlanPos();
   if (UI.toastT > 0 && (UI.toastT -= dt) <= 0) $('toast').classList.remove('show');
   if (UI.bannerT > 0 && (UI.bannerT -= dt) <= 0) $('banner').classList.remove('show');
   UI.hudT -= dt; if (UI.hudT > 0) return; UI.hudT = 0.1;
@@ -7128,10 +7573,16 @@ function hudTick(dt) {
     const rest = Math.max(0, Math.ceil(BAL.nightMin(W.night) - W.nightT));
     ph.innerHTML = '第 ' + W.night + ' 夜' + (isBlood(W.night) ? ' · 血月' : '') + `<span class="sub">剩余 ${left} 只${rest > 0 ? ' · 天亮还要 ' + Math.floor(rest / 60) + ':' + String(rest % 60).padStart(2, '0') : ''} · ${W.night}/${BAL.nights}</span>`;
   } else ph.textContent = W.phase === 'win' ? '获救' : '失守';
+  // tasks: a one-line summary that opens on tap, and pops open for a few seconds when something changes
   if (UI.tkv !== W.tkv) {
-    UI.tkv = W.tkv;
-    $('tasks').innerHTML = W.tasks.map(t => `<div class="tk${t.done ? ' done' : ''}"><i>${t.done ? '✔' : ''}</i><span class="tt">${t.txt}</span><b>${t.done ? '完成' : t.got + '/' + t.need}</b><span class="tr">${t.rt}</span></div>`).join('');
+    const changed = UI.tkv != null && UI.tkv >= 0 && W.tasks.some(t => t.done) !== UI.tkDone;
+    if ((UI.tkv === -1 || changed) && !INP.touch) UI.tkOpenT = 5; // on phones it stays folded unless tapped
+    UI.tkv = W.tkv; UI.tkDone = W.tasks.some(t => t.done);
+    const nd = W.tasks.filter(t => t.done).length;
+    $('tasks').innerHTML = `<div class="tksum">今日任务 ${nd}/${W.tasks.length} <span>▾</span></div>` + W.tasks.map(t => `<div class="tk${t.done ? ' done' : ''}"><i>${t.done ? '✔' : ''}</i><span class="tt">${t.txt}</span><b>${t.done ? '完成' : t.got + '/' + t.need}</b><span class="tr">${t.rt}</span></div>`).join('');
   }
+  UI.tkOpenT = Math.max(0, (UI.tkOpenT || 0) - dt);
+  $('tasks').classList.toggle('open', !!UI.tkPin || UI.tkOpenT > 0);
   const rb = $('readyBtn'); rb.classList.toggle('hidden', W.phase !== 'day');
   if (W.phase === 'day') { const n = activeP().filter(p => !p.dead && p.ready).length, tot = activeP().filter(p => !p.dead).length; rb.classList.toggle('on', me.ready); rb.innerHTML = (me.ready ? '已准备' : '准备入夜') + (tot > 1 ? ` ${n}/${tot}` : '') + ' <span class="kbd">(N)</span>'; }
   // resources
@@ -7240,6 +7691,7 @@ function initUI() {
   $('muteBtn').onclick = () => { setMute(!SET.mute); uiMute(); };
   $('pMute').onclick = () => { setMute(!SET.mute); uiMute(); };
   $('readyBtn').onclick = () => inGame() && toggleReady();
+  $('tasks').addEventListener('pointerdown', e => { e.stopPropagation(); UI.tkPin = !UI.tkPin; UI.tkOpenT = 0; sfx('click'); });
   $('oAgain').onclick = () => { $('over').classList.add('hidden'); if (NETROLE === 'host') { if (!NET.gctl || !NET.gctl.open) { NETROLE = 'solo'; startGame((Math.random() * 1e9) | 0, [SET.name || '幸存者'], SET.diff, 0); } else hostStart(); } else startGame((Math.random() * 1e9) | 0, [SET.name || '幸存者'], SET.diff, 0); };
   $('oLobby').onclick = () => { netSendCtl({ t: 'toLobby' }); backToLobby(); };
   $('oEndless').onclick = () => { $('over').classList.add('hidden'); W.endless = true; W.over = null; W.phase = 'night'; dawn(); };
@@ -7265,8 +7717,8 @@ function startGame(seed, names, diff, me) {
   uiBuildBar(); markDiff(); uiView();
   banner('第一个白天', '撑过 ' + BAL.nights + ' 夜就能等到救援 · 完成每日任务拿奖励', '#ffe7b0'); UI.tkv = -1;
   const tips = INP.touch
-    ? ['出门砍树、采石，按住「交互」搜汽车和补给箱', '点「建造」后手指指哪就盖哪：点墙顶往上叠，点墙面贴着盖，拖动一次盖一排', '左上角是今天的 3 个任务，完成就有奖励', '小屋里的工作台可以造步枪和狙击枪', '楼上的矮墙可以探身开枪，天黑前回到堡垒']
-    : ['出门砍树、采石，按住 F 搜汽车和补给箱', '按 B 建造：鼠标指哪就盖哪——指墙顶往上叠、指墙面贴着盖，按住拖动一次盖一排，右键拆除', '左上角是今天的 3 个任务，完成就有奖励', '在小屋里的工作台按 F 造步枪和狙击枪', '楼上外墙是半人高的矮墙，可以探身朝下开枪。按 N 可以提前入夜'];
+    ? ['出门砍树、采石，按住「交互」搜汽车和补给箱', '点「建造」后手指指哪就盖哪：点墙顶往上叠，点墙面贴着盖，拖动一次盖一排', '上方「今日任务」点开能看到今天的 3 个任务，完成就有奖励', '小屋里的工作台可以造步枪和狙击枪', '楼上的矮墙可以探身开枪，天黑前回到堡垒']
+    : ['出门砍树、采石，按住 F 搜汽车和补给箱', '按 B 建造：鼠标指哪就盖哪——指墙顶往上叠、指墙面贴着盖，按住拖动一次盖一排，右键拆除', '上方「今日任务」点开能看到今天的 3 个任务，完成就有奖励', '在小屋里的工作台按 F 造步枪和狙击枪', '楼上外墙是半人高的矮墙，可以探身朝下开枪。按 N 可以提前入夜'];
   tips.forEach((t, k) => TIPS.push(setTimeout(() => { if (W && W.night === 0 && STATE.mode === 'play') uiMsg(t, '#ffd27a'); }, 2500 + k * 7000)));
 }
 function startDemo() {

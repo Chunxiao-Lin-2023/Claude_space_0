@@ -21,7 +21,14 @@ function toggleBuild(v) {
 }
 function selBlock(id) { const me = W.p[ME]; me.sel = id; me.demo = false; uiBuildBar(); sfx('click'); }
 function rotStairs() { const me = W.p[ME]; me.sdir = (me.sdir + 1) & 3; uiBuildBar(); sfx('click'); }
-function cycleWpn(d) { const me = W.p[ME]; let w = me.wpn; for (let k = 0; k < 4; k++) { w = (w + d + 4) % 4; if (me.owned[w]) break; } if (w !== me.wpn) act('wpn', w); }
+function cycleWpn(d) { const me = W.p[ME]; let w = me.wpn; for (let k = 0; k < NW; k++) { w = (w + d + NW) % NW; if (me.owned[w]) break; } if (w !== me.wpn) act('wpn', w); }
+// jump: vault what's in front (or leap a gap), else a little hop. Direction = where you're walking, else where you aim
+function doJump() {
+  const me = W.p[ME]; if (!me || me.dead || me.down) return;
+  let ax = me.inp.mx, ay = me.inp.my; if (Math.hypot(ax, ay) < 0.3) { ax = Math.cos(me.aim); ay = Math.sin(me.aim); }
+  const dx = Math.abs(ax) >= Math.abs(ay) ? Math.sign(ax) : 0, dy = dx ? 0 : Math.sign(ay);
+  startJump(me, dx, dy, true);
+}
 // camera controls (shared by keys and the HUD buttons)
 function camRot(d) { CAM.rot = (CAM.rot + d + 4) % 4; sfx('click'); }
 function camZoom(f) { CAM.zoom = clamp(CAM.zoom * f, 4, 22); SET.zoom = CAM.zoom; saveSet(); }
@@ -34,7 +41,7 @@ addEventListener('keydown', e => {
   if (e.target && e.target.tagName === 'INPUT') return;
   const k = e.key.length === 1 ? e.key.toLowerCase() : e.key;
   audioInit();
-  if (k === 'Escape') { if (STATE.mode === 'play') togglePause(); e.preventDefault(); return; }
+  if (k === 'Escape') { if (PLAN || PREV) { cancelPlan(); e.preventDefault(); return; } if (STATE.mode === 'play') togglePause(); e.preventDefault(); return; }
   if (!INP.keys[k]) onKeyPress(k);
   INP.keys[k] = true;
   if ([' ', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Tab', 'PageUp', 'PageDown', 'Home'].includes(k)) e.preventDefault();
@@ -60,7 +67,9 @@ function onKeyPress(k) {
     const n = '1234567890'.indexOf(k); if (n >= 0 && PAL[n]) return selBlock(PAL[n]);
     if (k === 'x') { me.demo = !me.demo; uiBuildBar(); return; }
     if (k === 'r') return rotStairs();
-  } else { const n = '1234'.indexOf(k); if (n >= 0) return act('wpn', n); if (k === 'r') return act('reload'); }
+    if ((k === 'Enter' || k === ' ') && PLAN) return confirmPlan();
+  } else { const n = '1234567'.indexOf(k); if (n >= 0) return act('wpn', n); if (k === 'r') return act('reload'); }
+  if (k === ' ') return doJump();
   if (k === 'v') return act('shove');
   if (k === 'g') return act('nade');
   if (k === 'h') return act('med');
@@ -144,8 +153,8 @@ function endPtr(e) {
   if (e.pointerType !== 'touch') return;
   delete INP.tp[e.pointerId];
   if (INP.pinch && (e.pointerId === INP.pinch.a || e.pointerId === INP.pinch.b)) { INP.pinch = null; saveSet(); return; }
-  if (INP.paint === e.pointerId) INP.paint = null;
-  if (INP.move.id === e.pointerId && !INP.move.far && performance.now() - INP.move.t0 < 350 && inGame() && W.p[ME].build) touchBuild(INP.move.ox, INP.move.oy, true);
+  if (INP.paint === e.pointerId) finishPaint();
+  if (INP.move.id === e.pointerId && !INP.move.far && performance.now() - INP.move.t0 < 350 && inGame() && W.p[ME].build) { touchBuild(INP.move.ox, INP.move.oy, true); finishPaint(); }
   if (INP.move.id === e.pointerId) { INP.move.id = null; INP.move.x = INP.move.y = 0; stickDraw(stickL, INP.move); }
   if (INP.aim.id === e.pointerId && !INP.aim.btn) { INP.aim.id = null; INP.aim.x = INP.aim.y = 0; INP.aim.t = performance.now(); stickDraw(stickR, INP.aim); }
 }
@@ -203,16 +212,51 @@ function pickBuild(sx, sy, me, demo) {
   for (const c of cands) if (c && inMap(c.x, c.y) && c.L >= 0 && c.L < ML && !buildWhy(me, c.x, c.y, c.L)) return Object.assign(c, { ok: true, why: '' });
   return Object.assign(front, { ok: false, why: buildWhy(me, front.x, front.y, front.L) });
 }
+/* ---------- build plan: click / tap / drag makes a preview; confirm with the ✓ bar, Enter, or a second tap on it ---------- */
+let PLAN = null, PREV = null;   // PREV: being drawn right now; PLAN: waiting for confirmation
+function planHas(P, c) { return P && c && P.cells.some(q => q.x === c.x && q.y === c.y && q.L === c.L); }
+function cancelPlan() { PLAN = null; PREV = null; INP.bA = null; uiPlan(); }
+function confirmPlan() {
+  const me = W.p[ME]; if (!PLAN || !me) return;
+  PLAN.cells.forEach((c, k) => buildAt(me, c.x, c.y, c.L, PLAN.demo, k > 0));
+  if (!PLAN.demo) me._swingT = 0.3; sfx(PLAN.demo ? 'demo' : 'click');
+  PLAN = null; uiPlan();
+}
+function prevAdd(c, demo) {
+  if (!PREV) PREV = { cells: [], demo, id: W.p[ME].sel, d: W.p[ME].sdir };
+  if (!planHas(PREV, c) && PREV.cells.length < 40) PREV.cells.push({ x: c.x, y: c.y, L: c.L });
+}
+function finishPaint() {
+  INP.paint = null;
+  if (!SET.bconf || !PREV) { PREV = null; return; }
+  const me = W.p[ME];
+  // keep only what can actually be built / demolished
+  PREV.cells = PREV.cells.filter(c => PREV.demo ? true : !buildWhy(me, c.x, c.y, c.L));
+  PLAN = PREV.cells.length ? PREV : null; if (!PLAN && PREV.cells.length === 0 && BUILD_HOVER && BUILD_HOVER.why) { toast(BUILD_HOVER.why, '#ff8a7a'); sfx('deny'); }
+  PREV = null; uiPlan();
+}
+function planCost() {
+  if (!PLAN) return ''; const me = W.p[ME];
+  if (PLAN.demo) return '拆掉 ' + PLAN.cells.length + ' 个';
+  const B0 = B[PLAN.id], c = {}; for (const k in B0.cost) c[k] = B0.cost[k] * PLAN.cells.length;
+  return '建 ' + PLAN.cells.length + ' 个' + B0.name + ' · ' + costText(c) + (affordable(W.res, c) ? '' : ' · 材料不够');
+}
 // one painting step (mouse held / finger down). Dragging builds a straight row on the first cell's floor.
 function paintBuild(sx, sy, start, demo) {
   const me = W.p[ME]; if (!me || !me.build) return;
+  if (start) {
+    // tapping the waiting plan again confirms it; tapping elsewhere starts a new one
+    if (PLAN) { const c = PLAN.demo ? pickBuild(sx, sy, me, true) : pickBuild(sx, sy, me, false); const q = c && buildPick(sx, sy, PLAN.cells[0].L); if (planHas(PLAN, c) || planHas(PLAN, q)) { confirmPlan(); INP.noPaint = true; return; } PLAN = null; uiPlan(); }
+    INP.noPaint = false; PREV = null;
+  }
+  if (INP.noPaint) return;
   if (start) { INP.bA = null; INP.bAxis = null; INP.bPrev = null; INP.bldLast = ''; }
   if (!demo && INP.bA) {
     const A = INP.bA, q = buildPick(sx, sy, A.L); if (!q) return;
     if (!INP.bAxis && (q.x !== A.x || q.y !== A.y)) INP.bAxis = Math.abs(q.x - A.x) >= Math.abs(q.y - A.y) ? 'x' : 'y';
     const c = INP.bAxis === 'x' ? { x: q.x, y: A.y, L: A.L } : INP.bAxis === 'y' ? { x: A.x, y: q.y, L: A.L } : { x: A.x, y: A.y, L: A.L };
     const P = INP.bPrev || A, n = Math.abs(c.x - P.x) + Math.abs(c.y - P.y), sx_ = Math.sign(c.x - P.x), sy_ = Math.sign(c.y - P.y);
-    for (let k = 1; k <= n; k++) buildAt(me, P.x + sx_ * k, P.y + sy_ * k, A.L, false, true);
+    for (let k = 1; k <= n; k++) { if (SET.bconf) prevAdd({ x: P.x + sx_ * k, y: P.y + sy_ * k, L: A.L }, false); else buildAt(me, P.x + sx_ * k, P.y + sy_ * k, A.L, false, true); }
     INP.bPrev = c;
     const why = buildWhy(me, c.x, c.y, c.L); BUILD_HOVER = Object.assign(c, { ok: !why, why, t: 1 });
     return;
@@ -220,7 +264,7 @@ function paintBuild(sx, sy, start, demo) {
   const c = pickBuild(sx, sy, me, demo); if (!c) { BUILD_HOVER = null; return; }
   BUILD_HOVER = Object.assign(c, { t: 1 });
   const key = c.x + ',' + c.y + ',' + c.L; if (INP.bldLast === key) return; INP.bldLast = key;
-  buildAt(me, c.x, c.y, c.L, demo);
+  if (SET.bconf) prevAdd(c, demo); else buildAt(me, c.x, c.y, c.L, demo);
   if (!demo) { INP.bA = { x: c.x, y: c.y, L: c.L }; INP.bPrev = INP.bA; }
 }
 function touchBuild(sx, sy, start) { paintBuild(sx, sy, start, W.p[ME].demo); }
@@ -251,6 +295,8 @@ bindBtn('tWpn', () => inGame() && cycleWpn(1));
 bindBtn('tLUp', () => viewStep(1)); bindBtn('tLDn', () => viewStep(-1));
 bindBtn('vToggle', () => { document.body.classList.toggle('vopen'); $('vToggle').classList.toggle('on', document.body.classList.contains('vopen')); sfx('click'); });
 bindBtn('tShove', () => inGame() && act('shove'));
+bindBtn('tJump', () => inGame() && doJump());
+bindBtn('bcOk', () => confirmPlan()); bindBtn('bcNo', () => cancelPlan());
 bindBtn('tNade', () => inGame() && act('nade'));
 bindBtn('tMed', () => inGame() && act('med'));
 bindBtn('tUse', () => { if (!inGame()) return; const me = W.p[ME]; if (nearBench(me) && !useTarget(me)) openCraft(); INP.useHeld = true; }, () => { INP.useHeld = false; });
@@ -300,9 +346,9 @@ function readInput(dt) {
     if (me.build && !blocked) {
       const down = INP.mL || INP.mR, demo = INP.mR || me.demo;
       if (down) paintBuild(INP.mx, INP.my, !INP.bDown, demo);
-      else { const c = pickBuild(INP.mx, INP.my, me, me.demo); BUILD_HOVER = c; }
+      else { if (INP.bDown) finishPaint(); const c = pickBuild(INP.mx, INP.my, me, me.demo); BUILD_HOVER = c; }
       INP.bDown = down;
-    } else { BUILD_HOVER = null; INP.bDown = false; }
+    } else { BUILD_HOVER = null; INP.bDown = false; if (!me.build && (PLAN || PREV)) cancelPlan(); }
   } else {
     const A = INP.aim, held = A.id != null, active = held && Math.hypot(A.x, A.y) > 0.3;
     if (active) {

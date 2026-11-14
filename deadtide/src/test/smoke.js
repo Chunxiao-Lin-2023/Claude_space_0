@@ -26,7 +26,7 @@ require('fs').mkdirSync(OUT, { recursive: true });
     me.x = free[0] + 0.5; me.y = free[1] + 0.5; me.L = tl; const w0 = W.res.wood; INP.keys.f = true; await until(2.0); INP.keys.f = false;
     o.chop = (W.res.wood - w0) + ' tree gone ' + (W.blk[ti] === 0);
     // search a car
-    const car = W.spots.find(s => s.k === 'car'); const cx = cx_(car.i), cy = cy_(car.i), cl = cl_(car.i);
+    const car = { i: W.blk.findIndex(b => b === 25) }; const cx = cx_(car.i), cy = cy_(car.i), cl = cl_(car.i);
     const f2 = DIRS.map(([dx, dy]) => [cx + dx, cy + dy]).find(([x, y]) => standable(x, y, cl, 'p'));
     me.x = f2[0] + 0.5; me.y = f2[1] + 0.5; me.L = cl; INP.keys.f = true; await until(1.8); INP.keys.f = false;
     o.car = car.searched + ' ' + JSON.stringify(W.res);

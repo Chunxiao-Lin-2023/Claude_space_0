@@ -33,14 +33,10 @@ const inZone = (x, y) => radioDist(x, y) <= BUILD_R;
    128 x 128: river and forest in the west, the camp north-west of centre, hills to the north-east, a farm in the north
    and a big ruined town (three rows of blocks on a street grid) filling the south and south-east. Town lots: [x0, y0, x1, y1, storeys]. */
 const TOWN_HOUSES = [
-  // row A (between the main road and the y 76 street)
-  [33, 67, 40, 75, 1], [44, 67, 53, 74, 1], [61, 66, 69, 74, 2], [74, 66, 85, 75, 2], [94, 63, 103, 73, 2], [107, 64, 116, 74, 1], [119, 63, 125, 73, 1],
-  // row B (between the y 76 and y 100 streets)
-  [41, 78, 53, 87, 2], [61, 78, 71, 86, 1], [74, 79, 83, 88, 1], [39, 90, 53, 98, 1], [61, 89, 70, 98, 2], [74, 91, 86, 98, 2],
-  [94, 79, 103, 88, 1], [106, 79, 117, 89, 2], [94, 91, 102, 98, 2], [106, 92, 116, 98, 1], [119, 80, 125, 90, 1],
-  // row C (south of the y 100 street)
-  [36, 104, 46, 113, 1], [49, 104, 55, 112, 1], [61, 104, 72, 114, 2], [75, 104, 86, 113, 1], [94, 104, 104, 114, 2], [107, 104, 118, 115, 1],
-  [38, 117, 48, 124, 2], [62, 117, 71, 124, 1], [77, 116, 88, 124, 2], [94, 118, 105, 125, 1], [110, 118, 121, 125, 2],
+  // spread out along the streets with yards, a park, a gas station, a parking lot and a junkyard in between
+  [35, 62, 43, 70, 1], [62, 58, 70, 66, 2], [78, 66, 87, 74, 1], [96, 57, 104, 65, 2], [113, 64, 122, 72, 1],
+  [39, 83, 50, 91, 2], [64, 87, 72, 96, 1], [78, 79, 86, 86, 1], [95, 84, 104, 92, 2], [113, 79, 122, 87, 1],
+  [35, 108, 44, 116, 1], [47, 118, 55, 125, 2], [62, 104, 73, 113, 2], [79, 113, 88, 121, 1], [96, 106, 106, 115, 2], [113, 114, 123, 123, 1],
   // the barn up at the farm
   [48, 3, 58, 11, 1],
 ];
@@ -107,11 +103,11 @@ function genMap(seed) {
       if ((x === RX && (y === Y1 || y === Y0)) || ((x === X0 || x === X1) && y === RY)) id = 7; // a door on every side
       if ((y === Y0 && (x === RX - 2 || x === RX + 2)) || (x === X1 && (y === RY - 2 || y === RY + 2)) || (x === X0 && y === RY + 2) || (y === Y1 && x === RX + 3)) id = 8;
       put(x, y, 0, id);
-    } else if (y <= RY && !(x === X1 - 1 && y === Y0 + 2)) putS(x, y, 1, 4);
+    } else if (y <= RY && !(x === X1 - 1 && y === Y0 + 2) && !(x === X0 + 1 && y === RY)) putS(x, y, 1, 4);
     if ((x === X0 || y === Y0 || x === X1) && y <= RY) { let id = 1; if (y === Y0 && (x === RX - 2 || x === RX + 2)) id = 8; if ((x === X0 || x === X1) && y === RY - 2) id = 8; put(x, y, 1, id); }
     if (y === RY + 1 && x > X0 && x < X1) putS(x, y, 1, 4);
   }
-  put(X1 - 1, Y0 + 2, 0, 6, 3);   // stairs going north up to the first floor
+  put(X1 - 1, Y0 + 2, 0, 6, 3); put(X0 + 1, RY, 0, 6, 3); // two ladders up to the first floor
   put(X0 + 2, Y0 + 2, 1, 10);      // lamp upstairs
   put(RX - 2, RY + 2, 0, 31);
   // town: plastered ruins; two-storey houses keep half an upper floor with stairs up
@@ -155,7 +151,22 @@ function genMap(seed) {
     for (let n = 0; n < 3; n++) { const [x, y] = inner(); if (!blk[ci(x, y, 0)] && ok(x, y)) put(x, y, 0, n ? 29 : 26); }
     if (st === 2) { const x = west ? upX0 + 1 : upX1 - 1, y = y1 - 1; if (slab[ci(x, y, 1)] && !blk[ci(x, y, 1)]) put(x, y, 1, 26); }
   });
-  // trees, rocks
+  // landmarks: gas station, parking lot, park, military checkpoint, junkyard, campsites
+  const free = (x, y) => inMap(x, y) && G[col(x, y)] === 0 && tt[col(x, y)] !== TT.water && !blk[ci(x, y, 0)] && !slab[ci(x, y, 0)];
+  const lot = (x0, y0, x1, y1, t) => { for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) if (inMap(x, y) && G[col(x, y)] === 0 && tt[col(x, y)] !== TT.water) tt[col(x, y)] = t; };
+  const at = (x, y, id, d) => { if (free(x, y)) put(x, y, 0, id, d); };
+  lot(74, 54, 86, 61, TT.road); at(78, 56, 37); at(82, 56, 37); at(76, 60, 38); at(84, 60, 38); at(80, 58, 25, 0); at(86, 55, 32); at(74, 61, 32);       // gas station
+  lot(40, 54, 54, 59, TT.road); for (const [x, y, d] of [[42, 55, 1], [45, 55, 1], [51, 55, 3], [43, 58, 1], [49, 58, 3], [53, 58, 1]]) at(x, y, 25, d); at(54, 54, 32); // parking lot
+  for (let x = 60; x <= 74; x++) for (const y of [79, 84]) if ((x + y) % 3) at(x, y, 41);                                                           // park: hedges
+  at(63, 81, 22); at(70, 82, 22); at(66, 82, 38); at(72, 80, 33);
+  for (const [x, y] of [[104, 49], [105, 49], [107, 49], [108, 49], [104, 54], [105, 54], [107, 54], [108, 54]]) at(x, y, 27);                     // checkpoint
+  at(103, 48, 36); at(109, 55, 36); at(106, 48, 37); at(110, 50, 25, 1);
+  lot(112, 38, 124, 47, TT.dirt); for (let k = 0; k < 9; k++) at(113 + Math.floor(r() * 11), 39 + Math.floor(r() * 8), 39);                          // junkyard
+  for (const [x, y, d] of [[114, 41, 0], [119, 44, 1], [122, 39, 2], [116, 46, 3]]) at(x, y, 25, d); at(124, 42, 37); at(112, 45, 37); at(118, 38, 35);
+  for (let x = 111; x <= 125; x++) for (const y of [37, 48]) if (r() < 0.75) at(x, y, 27);
+  for (const [cx, cy] of [[8, 32], [97, 14], [12, 100], [74, 34]]) { at(cx, cy, 33); at(cx + 1, cy + 1, 40); at(cx - 1, cy + 2, 40); at(cx + 2, cy - 1, 41); at(cx - 2, cy, 41); } // campsites
+  at(46, 13, 40); at(47, 15, 40); at(59, 12, 39); at(60, 6, 35);                                                                                    // farmyard
+  // trees, rocks, bushes, log piles, scrap
   const clearNear = (x, y) => Math.max(Math.abs(x - RX), Math.abs(y - RY)) <= 9;
   for (let y = 0; y < MH; y++) for (let x = 0; x < MW; x++) {
     const i = col(x, y), t = tt[i], g = G[i];
@@ -164,6 +175,9 @@ function genMap(seed) {
     const pTree = t === TT.forest ? 0.42 : t === TT.hill ? 0.1 : 0.035, pRock = t === TT.hill ? 0.05 : 0.018;
     const v = r();
     if (v < pTree) put(x, y, g, 22); else if (v < pTree + pRock) put(x, y, g, 21);
+    else if (v < pTree + pRock + (t === TT.forest ? 0.05 : 0.025)) put(x, y, g, 41);
+    else if (v < pTree + pRock + 0.032 && t === TT.forest) put(x, y, g, 40);
+    else if (v < pTree + pRock + 0.03 && (t === TT.hill || t === TT.dirt)) put(x, y, g, 39);
   }
   // cars on the roads (not on bridges), crates in the open
   const cars = [[8, 51], [24, 52], [38, 51], [66, 52], [80, 51], [92, 52], [110, 51], [124, 52], [57, 60], [58, 71], [57, 90], [57, 108], [58, 122], [40, 76], [70, 77], [86, 76], [100, 77], [118, 76], [80, 101], [112, 100], [45, 100], [90, 60], [91, 84], [90, 112], [44, 6], [45, 16]];

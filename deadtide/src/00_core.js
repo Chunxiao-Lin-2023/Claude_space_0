@@ -36,9 +36,14 @@ defB(2, { key: 'brick', name: '砖墙', cost: { stone: 4 }, hp: 340, cap: 8, P: 
 defB(3, { key: 'steel', name: '钢墙', cost: { steel: 4 }, hp: 700, cap: 12, P: 1, Z: 1, B: 1, top: 1, st: 1, brk: 1, col: '#6f8494', tip: '最硬的墙，重锤也要砸半天' });
 defB(4, { key: 'wfloor', name: '木地板', cost: { wood: 2 }, hp: 90, cap: 6, slab: 1, st: 1, brk: 1, col: '#7a5232', tip: '指墙顶就铺在墙上，指屋里就铺成天花板，站在楼上指外面能往外延伸' });
 defB(5, { key: 'sfloor', name: '钢地板', cost: { steel: 2 }, hp: 280, cap: 10, slab: 1, st: 1, brk: 1, col: '#64788a', tip: '跨度大的楼板' });
-defB(6, { key: 'stairs', name: '楼梯', cost: { wood: 4 }, hp: 120, cap: 5, stairs: 1, st: 1, brk: 1, col: '#8a6440', tip: '朝向是放置时屏幕的「上」，R 键旋转。攀爬者以外的丧尸也会走楼梯' });
+defB(6, { key: 'stairs', name: '爬梯', cost: { wood: 3 }, hp: 120, cap: 5, stairs: 1, st: 1, brk: 1, col: '#8a6440', tip: '靠墙的梯子：朝箭头方向走就爬上去，R 键转方向。丧尸爬梯子很慢，正好守着打' });
 defB(7, { key: 'door', name: '木门', cost: { wood: 6 }, hp: 200, cap: 6, Z: 1, B: 1, top: 1, st: 1, brk: 1, col: '#5c3c22', tip: '人能穿过，丧尸只能砸' });
 defB(8, { key: 'bars', name: '射击栅栏', cost: { steel: 3 }, hp: 300, cap: 6, P: 1, Z: 1, top: 1, st: 1, brk: 1, col: '#6f7f8c', tip: '挡人挡丧尸，子弹能穿过' });
+// obstacles: people vault over them, zombies have to smash through
+defB(12, { key: 'sandbag', name: '沙袋矮墙', cost: { stone: 3 }, hp: 260, P: 1, Z: 1, dep: 1, brk: 1, vault: 1, col: '#a8946a', tip: '半人高：人能翻过去、子弹能从上面打过去，丧尸只能砸' });
+defB(13, { key: 'spikes', name: '拒马', cost: { wood: 4, steel: 1 }, hp: 200, P: 1, Z: 1, dep: 1, brk: 1, vault: 1, thorns: 10, col: '#6a5038', tip: '丧尸砸它会被扎伤，人能翻过去' });
+defB(14, { key: 'cover', name: '铁皮掩体', cost: { steel: 3 }, hp: 420, P: 1, Z: 1, B: 1, dep: 1, brk: 1, vault: 1, col: '#7a8590', tip: '挡子弹的掩体，人能翻过去' });
+defB(15, { key: 'trap', name: '捕兽夹', cost: { steel: 1, parts: 2 }, hp: 40, dep: 1, trap: 1, col: '#5a5a55', tip: '丧尸踩上去被夹住 2.5 秒，用一次就坏' });
 defB(9, { key: 'wire', name: '铁丝网', cost: { steel: 2, parts: 1 }, hp: 110, dep: 1, wire: 1, brk: 0, col: '#9aa0a6', tip: '减速并割伤经过的丧尸，会磨损' });
 defB(10, { key: 'lamp', name: '探照灯', cost: { parts: 3, wood: 1 }, hp: 60, dep: 1, lamp: 1, col: '#ffe9a8', tip: '夜里照亮周围' });
 // natural / fixed
@@ -54,7 +59,18 @@ defB(28, { key: 'ramp', stairs: 1, nat: 1 });
 defB(29, { key: 'rubble', P: 1, Z: 1, nat: 1, spot: 'rubble' });
 defB(30, { key: 'radio', P: 1, Z: 1, B: 1, nat: 1 });
 defB(31, { key: 'bench', P: 1, Z: 1, B: 1, nat: 1 });
-const PAL = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+// more things to search (spot) and gather (res) around the map
+defB(32, { key: 'trash', P: 1, Z: 1, nat: 1, spot: 'trash' });
+defB(33, { key: 'backpack', nat: 1, spot: 'backpack' });
+defB(34, { key: 'cabinet', P: 1, Z: 1, B: 1, nat: 1, spot: 'cabinet' });
+defB(35, { key: 'toolbox', nat: 1, spot: 'toolbox' });
+defB(36, { key: 'milcrate', P: 1, Z: 1, B: 1, nat: 1, spot: 'milcrate' });
+defB(37, { key: 'barrel', P: 1, Z: 1, B: 1, nat: 1, spot: 'barrel' });
+defB(38, { key: 'vending', P: 1, Z: 1, B: 1, nat: 1, spot: 'vending' });
+defB(39, { key: 'scrap', P: 1, Z: 1, nat: 1, res: 'steel', hp: 1 });
+defB(40, { key: 'logs', P: 1, Z: 1, B: 1, nat: 1, res: 'wood', hp: 1 });
+defB(41, { key: 'bush', nat: 1, res: 'wood', hp: 1 });
+const PAL = [1, 2, 3, 4, 5, 6, 7, 8, 12, 13, 14, 9, 15, 10];
 const SLAB_BRIDGE = 11; // slab id for the pre-built bridges (not buildable)
 defB(11, { key: 'bridge', slab: 1, nat: 1, col: '#7e5a36' });
 const RES = [
@@ -67,12 +83,18 @@ const costText = c => Object.keys(c).map(k => RES.find(r => r.k === k).name + c[
 const affordable = (res, cost) => Object.keys(cost).every(k => (res[k] || 0) >= cost[k]);
 
 /* ---------- weapons (ranges in tiles) ---------- */
+// each gun has its own trick: pistol headshots, shotgun knock-back + stagger (falls off with range), rifle bloom,
+// sniper pierce + laser, crossbow pins, flamer sets fire, launcher explodes. loot = ammo found per supply pickup.
 const WPN = [
-  { k: 'pistol', name: '手枪', dmg: 24, rate: 0.2, mag: 12, reload: 1.0, spread: 0.03, range: 15, pellets: 1, inf: 1, kick: 0.6, shake: 0.12 },
-  { k: 'shotgun', name: '霰弹枪', dmg: 13, rate: 0.72, mag: 6, reload: 1.7, spread: 0.17, range: 8, pellets: 8, kick: 1.6, shake: 0.35, start: 24 },
-  { k: 'rifle', name: '步枪', dmg: 23, rate: 0.095, mag: 30, reload: 1.6, spread: 0.045, range: 20, pellets: 1, kick: 0.4, shake: 0.12 },
-  { k: 'sniper', name: '狙击枪', dmg: 150, rate: 1.05, mag: 5, reload: 2.1, spread: 0.004, range: 45, pellets: 1, pierce: 5, kick: 2, shake: 0.4 },
+  { k: 'pistol', name: '手枪', dmg: 26, rate: 0.2, mag: 12, reload: 1.0, spread: 0.03, range: 15, pellets: 1, inf: 1, kick: 0.6, shake: 0.12, hs: 2.2, loot: 0 },
+  { k: 'shotgun', name: '霰弹枪', dmg: 13, rate: 0.72, mag: 6, reload: 1.7, spread: 0.17, range: 8, pellets: 8, kick: 2.6, shake: 0.35, start: 24, stun: 0.3, falloff: 1, loot: 8 },
+  { k: 'rifle', name: '步枪', dmg: 23, rate: 0.095, mag: 30, reload: 1.6, spread: 0.035, range: 20, pellets: 1, kick: 0.4, shake: 0.12, bloom: 0.22, loot: 30 },
+  { k: 'sniper', name: '狙击枪', dmg: 150, rate: 1.05, mag: 5, reload: 2.1, spread: 0.004, range: 45, pellets: 1, pierce: 5, kick: 4, shake: 0.4, stun: 0.5, laser: 1, loot: 4 },
+  { k: 'crossbow', name: '弩', dmg: 85, rate: 0.75, mag: 6, reload: 1.5, spread: 0.008, range: 26, pellets: 1, pierce: 3, kick: 0.6, shake: 0.06, pin: 1.1, loot: 6 },
+  { k: 'flamer', name: '喷火器', dmg: 9, rate: 0.07, mag: 80, reload: 2.2, spread: 0.32, range: 4.8, pellets: 1, flame: 1, burn: 3.5, kick: 0, shake: 0.02, loot: 40 },
+  { k: 'launcher', name: '榴弹发射器', dmg: 170, rate: 0.9, mag: 4, reload: 2.6, spread: 0.015, range: 22, pellets: 1, gl: 1, kick: 0, shake: 0.3, loot: 2 },
 ];
+const NW = WPN.length;
 
 /* ---------- zombies (speeds in tiles/s) ---------- */
 const ZT = {
@@ -82,14 +104,28 @@ const ZT = {
   spitter: { name: '喷吐者', hp: 95, spd: 0.9, r: 0.32, h: 1.05, dmg: 10, bdmg: 8, cd: 1.0, sc: 1.05, range: 9, spitCD: 3 },
   brute: { name: '重锤', hp: 650, spd: 0.8, r: 0.42, h: 1.45, dmg: 28, bdmg: 75, cd: 1.6, sc: 1.45, kb: 6 },
   boss: { name: '巨尸', hp: 2600, spd: 0.65, r: 0.62, h: 2.2, dmg: 45, bdmg: 220, cd: 2.0, sc: 2.2, kb: 9 },
+  dog: { name: '尸犬', hp: 40, spd: 3.7, r: 0.24, h: 0.55, dmg: 8, bdmg: 3, cd: 0.5, sc: 1 },
+  crawler: { name: '爬行尸', hp: 60, spd: 0.75, r: 0.27, h: 0.38, dmg: 11, bdmg: 9, cd: 0.9, sc: 1 },
+  bloater: { name: '爆尸', hp: 120, spd: 0.75, r: 0.36, h: 1.1, dmg: 10, bdmg: 10, cd: 1.1, sc: 1.1, blast: 1 },
+  screamer: { name: '尖叫者', hp: 80, spd: 1.5, r: 0.27, h: 1.05, dmg: 9, bdmg: 6, cd: 0.9, sc: 1.05, scream: 1 },
+  armored: { name: '防暴尸', hp: 170, spd: 0.9, r: 0.32, h: 1.05, dmg: 15, bdmg: 16, cd: 1.1, sc: 1.08, armor: 0.3 },
 };
-const ZKEYS = ['walker', 'runner', 'climber', 'spitter', 'brute', 'boss'];
+const ZKEYS = ['walker', 'runner', 'climber', 'spitter', 'brute', 'boss', 'dog', 'crawler', 'bloater', 'screamer', 'armored']; // order is the net id
 
 /* ---------- scavenging / gathering ---------- */
+// vanish: searched once and gone (restocked at random places every dawn); otherwise a fixture that refills sometimes
+// ammo: x supply pickups for the whole team; med / nade: chance of one; fuel: flamer fuel if someone owns it
 const SPOTS = {
-  car: { name: '汽车残骸', loot: { steel: [3, 6], parts: [1, 3] } },
-  crate: { name: '补给箱', loot: { parts: [2, 4] }, ammo: 1 },
-  rubble: { name: '废墟瓦砾', loot: { stone: [5, 9], wood: [2, 4] } },
+  car: { name: '汽车残骸', loot: { steel: [3, 6], parts: [1, 3] }, refill: 0.5 },
+  vending: { name: '售货机', loot: { parts: [1, 3] }, med: 0.5, refill: 0.5 },
+  crate: { name: '补给箱', loot: { parts: [2, 4] }, ammo: 1, med: 0.35, nade: 0.35, vanish: 1, n: 16 },
+  rubble: { name: '废墟瓦砾', loot: { stone: [5, 9], wood: [2, 4] }, vanish: 1, n: 24 },
+  trash: { name: '垃圾桶', loot: { parts: [0, 2], wood: [1, 3] }, med: 0.12, vanish: 1, n: 24 },
+  backpack: { name: '遇难者的背包', loot: { parts: [1, 2] }, ammo: 1, med: 0.5, nade: 0.3, vanish: 1, n: 10 },
+  cabinet: { name: '柜子', loot: { parts: [1, 3], wood: [2, 4] }, med: 0.35, vanish: 1, n: 24 },
+  toolbox: { name: '工具箱', loot: { parts: [3, 5], steel: [2, 4] }, vanish: 1, n: 10 },
+  milcrate: { name: '军用物资箱', loot: { parts: [2, 4] }, ammo: 2, nade: 1, vanish: 1, n: 4 },
+  barrel: { name: '油桶', loot: { steel: [2, 4] }, fuel: 40, vanish: 1, n: 14 },
 };
 /* ---------- daily tasks: three are rolled every dawn (and at the start) and last until the next dawn ---------- */
 // need(d, W) -> target count for upcoming night d; min = first night it can appear; rw = reward pool keys
@@ -127,7 +163,10 @@ function taskRewardText(r) {
   if (r.upg) out.push('强化弹头+1');
   return out.join(' ');
 }
-const GATHER = { 22: { name: '砍树', res: 'wood', n: [6, 10], t: 1.6 }, 21: { name: '采石', res: 'stone', n: [6, 10], t: 2.0 } };
+const GATHER = {
+  22: { name: '砍树', res: 'wood', n: [6, 10], t: 1.6 }, 21: { name: '采石', res: 'stone', n: [6, 10], t: 2.0 },
+  39: { name: '拆废铁', res: 'steel', n: [4, 7], t: 2.0 }, 40: { name: '搬原木', res: 'wood', n: [10, 16], t: 2.2 }, 41: { name: '砍灌木', res: 'wood', n: [2, 4], t: 0.7 },
+};
 
 /* ---------- crafting (workbench in the starter house) ---------- */
 const CRAFT = [
@@ -136,6 +175,12 @@ const CRAFT = [
   { id: 'shells', name: '霰弹 ×12', desc: '', cost: { parts: 2 }, ammo: [1, 12] },
   { id: 'rounds', name: '步枪弹 ×60', desc: '', cost: { parts: 3 }, ammo: [2, 60] },
   { id: 'slugs', name: '狙击弹 ×10', desc: '', cost: { parts: 3 }, ammo: [3, 10] },
+  { id: 'crossbow', name: '弩', desc: '穿透 3 只，把丧尸钉在原地 1 秒', cost: { parts: 12, wood: 12 }, wpn: 4 },
+  { id: 'flamer', name: '喷火器', desc: '近距离喷火，点着的丧尸会烧，火还会传给旁边的', cost: { parts: 20, steel: 10 }, wpn: 5 },
+  { id: 'launcher', name: '榴弹发射器', desc: '打出去落地就炸，炸一片', cost: { parts: 26, steel: 14 }, wpn: 6 },
+  { id: 'bolts', name: '弩箭 ×12', desc: '', cost: { wood: 4, parts: 1 }, ammo: [4, 12] },
+  { id: 'fuel', name: '燃料 ×120', desc: '', cost: { parts: 3, steel: 1 }, ammo: [5, 120] },
+  { id: 'shells40', name: '榴弹 ×4', desc: '', cost: { parts: 5, steel: 2 }, ammo: [6, 4] },
   { id: 'nade', name: '手雷 ×2', desc: '最多带 6 颗', cost: { parts: 4 }, nade: 2 },
   { id: 'med', name: '医疗包', desc: '回复 60 生命，最多 3 个', cost: { parts: 3, wood: 2 }, med: 1 },
   { id: 'upg', name: '强化弹头', desc: '全队伤害 +12%（最多 5 级）', cost: { parts: 8 }, upg: 1 },
@@ -155,14 +200,15 @@ const BAL = {
   radioHp: 1500, radioDmg: 0.5,
   startRes: { wood: 90, stone: 30, steel: 20, parts: 8 },
   refund: 0.5,
-  nightSpawn: n => Math.round(12 + n * 6),
+  nightSpawn: n => Math.round(16 + n * 7),
   bloodMul: 1.5,
-  hpMul: n => 1 + 0.11 * (n - 1),
+  hpMul: n => 1 + 0.13 * (n - 1),
   spdMul: n => 1 + 0.02 * (n - 1),
   spawnDur: n => 80 + n * 5,      // the horde trickles in over this long
   nightMin: n => 150 + n * 6,     // a night lasts at least this long; small groups keep coming until then
-  nightTrickleCD: 9, nightTrickleMax: 4,
-  dayStragglers: 4, dayStragglerCD: 13,
+  nightTrickleCD: 7, nightTrickleMax: 6,
+  dayStragglers: 6, dayStragglerCD: 10,
+  burnDps: 22, blastR: 2.3, blastDmgP: 32, blastDmgB: 160, screamR: 9, screamCD: 9, rageMul: 1.45,
   lootFar: 30, wireDps: 14, wireSlow: 0.45, wireWear: 6,
   aggro: 11,                     // (legacy) zombies now always hunt the nearest reachable player
   diff: { easy: { hp: 0.75, n: 0.75, dmg: 0.7 }, normal: { hp: 1, n: 1, dmg: 1 }, hard: { hp: 1.3, n: 1.3, dmg: 1.25 } },
@@ -173,7 +219,7 @@ const isBlood = n => n % 5 === 0;
 const SKEY = 'deadtide.';
 function lsGet(k, d) { try { const v = localStorage.getItem(SKEY + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } }
 function lsSet(k, v) { try { localStorage.setItem(SKEY + k, JSON.stringify(v)); } catch (e) { } }
-const SET = Object.assign({ name: '', mute: false, diff: 'normal', zoom: 1, shadows: 1 }, lsGet('set', {}));
+const SET = Object.assign({ name: '', mute: false, diff: 'normal', zoom: 1, shadows: 1, bconf: 1 }, lsGet('set', {}));
 const saveSet = () => lsSet('set', SET);
 
 let W = null, ME = 0, NETROLE = null;

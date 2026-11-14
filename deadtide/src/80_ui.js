@@ -82,6 +82,8 @@ function buildHudStatic() {
   dm.addEventListener('pointerdown', e => { e.stopPropagation(); const me = W.p[ME]; me.demo = !me.demo; uiBuildBar(); sfx('click'); }); bb.appendChild(dm);
   const ro = document.createElement('button'); ro.id = 'bRot'; ro.innerHTML = '<span style="font-size:18px">↻</span><span>楼梯朝向</span><small class="kbd">R</small>';
   ro.addEventListener('pointerdown', e => { e.stopPropagation(); rotStairs(); }); bb.appendChild(ro);
+  const cf = document.createElement('button'); cf.id = 'bConf'; cf.innerHTML = '<span style="font-size:16px">✓✓</span><span>二次确认</span><small></small>';
+  cf.addEventListener('pointerdown', e => { e.stopPropagation(); SET.bconf = SET.bconf ? 0 : 1; saveSet(); uiBuildBar(); toast(SET.bconf ? '二次确认：开（先预览，点 ✓ 才建）' : '二次确认：关（点了就建）'); sfx('click'); }); bb.appendChild(cf);
   const ex = document.createElement('button'); ex.innerHTML = '<span style="font-size:18px">↩</span><span>退出</span><small class="kbd">B</small>';
   ex.addEventListener('pointerdown', e => { e.stopPropagation(); toggleBuild(false); }); bb.appendChild(ex);
 }
@@ -94,10 +96,21 @@ function uiBuildBar() {
   $('tBuild').classList.toggle('on', !!me.build); document.body.classList.toggle('building', !!me.build);
   const Bs = B[me.sel];
   const why = BUILD_HOVER && !BUILD_HOVER.ok && BUILD_HOVER.why ? ' · ' + BUILD_HOVER.why : '';
-  $('binfo').textContent = (me.demo ? '拆除：点方块拆掉，退还一半材料（按血量折算）' : Bs.name + ' · ' + costText(Bs.cost) + ' · ' + Bs.tip + (Bs.hp ? ' · 耐久 ' + Bs.hp : '')) + ' · 建在 ' + (buildL() + 1) + 'F' + why;
+  $('binfo').textContent = (me.demo ? '拆除：点（或拖过）要拆的方块，' + (SET.bconf ? '再点 ✓ 确认，' : '') + '退还一半材料（按血量折算）' : Bs.name + ' · ' + costText(Bs.cost) + ' · ' + Bs.tip + (Bs.hp ? ' · 耐久 ' + Bs.hp : '')) + ' · 建在 ' + (buildL() + 1) + 'F' + why;
   $('bRot').classList.toggle('hidden', me.sel !== 6 || me.demo);
+  const cf = $('bConf'); if (cf) { cf.classList.toggle('sel', !!SET.bconf); cf.lastElementChild.textContent = SET.bconf ? '开' : '关'; }
+}
+// the confirm bar floats next to the waiting plan
+function uiPlan() {
+  const el = $('bconf'); if (!el) return; el.classList.toggle('hidden', !PLAN);
+  if (PLAN) { $('bcTxt').textContent = planCost(); el.classList.toggle('demo', !!PLAN.demo); }
+}
+function uiPlanPos() {
+  if (!PLAN) return; const el = $('bconf'), c = PLAN.cells[PLAN.cells.length - 1], [sx, sy] = w2s(c.x + 0.5, c.y + 0.5, (c.L + 1) * FH);
+  el.style.left = clamp(sx - el.offsetWidth / 2, 8, VW - el.offsetWidth - 8) + 'px'; el.style.top = clamp(sy - el.offsetHeight - 26, 60, VH - el.offsetHeight - 110) + 'px';
 }
 function hudTick(dt) {
+  uiPlanPos();
   if (UI.toastT > 0 && (UI.toastT -= dt) <= 0) $('toast').classList.remove('show');
   if (UI.bannerT > 0 && (UI.bannerT -= dt) <= 0) $('banner').classList.remove('show');
   UI.hudT -= dt; if (UI.hudT > 0) return; UI.hudT = 0.1;
@@ -126,10 +139,16 @@ function hudTick(dt) {
     const rest = Math.max(0, Math.ceil(BAL.nightMin(W.night) - W.nightT));
     ph.innerHTML = '第 ' + W.night + ' 夜' + (isBlood(W.night) ? ' · 血月' : '') + `<span class="sub">剩余 ${left} 只${rest > 0 ? ' · 天亮还要 ' + Math.floor(rest / 60) + ':' + String(rest % 60).padStart(2, '0') : ''} · ${W.night}/${BAL.nights}</span>`;
   } else ph.textContent = W.phase === 'win' ? '获救' : '失守';
+  // tasks: a one-line summary that opens on tap, and pops open for a few seconds when something changes
   if (UI.tkv !== W.tkv) {
-    UI.tkv = W.tkv;
-    $('tasks').innerHTML = W.tasks.map(t => `<div class="tk${t.done ? ' done' : ''}"><i>${t.done ? '✔' : ''}</i><span class="tt">${t.txt}</span><b>${t.done ? '完成' : t.got + '/' + t.need}</b><span class="tr">${t.rt}</span></div>`).join('');
+    const changed = UI.tkv != null && UI.tkv >= 0 && W.tasks.some(t => t.done) !== UI.tkDone;
+    if ((UI.tkv === -1 || changed) && !INP.touch) UI.tkOpenT = 5; // on phones it stays folded unless tapped
+    UI.tkv = W.tkv; UI.tkDone = W.tasks.some(t => t.done);
+    const nd = W.tasks.filter(t => t.done).length;
+    $('tasks').innerHTML = `<div class="tksum">今日任务 ${nd}/${W.tasks.length} <span>▾</span></div>` + W.tasks.map(t => `<div class="tk${t.done ? ' done' : ''}"><i>${t.done ? '✔' : ''}</i><span class="tt">${t.txt}</span><b>${t.done ? '完成' : t.got + '/' + t.need}</b><span class="tr">${t.rt}</span></div>`).join('');
   }
+  UI.tkOpenT = Math.max(0, (UI.tkOpenT || 0) - dt);
+  $('tasks').classList.toggle('open', !!UI.tkPin || UI.tkOpenT > 0);
   const rb = $('readyBtn'); rb.classList.toggle('hidden', W.phase !== 'day');
   if (W.phase === 'day') { const n = activeP().filter(p => !p.dead && p.ready).length, tot = activeP().filter(p => !p.dead).length; rb.classList.toggle('on', me.ready); rb.innerHTML = (me.ready ? '已准备' : '准备入夜') + (tot > 1 ? ` ${n}/${tot}` : '') + ' <span class="kbd">(N)</span>'; }
   // resources
@@ -238,6 +257,7 @@ function initUI() {
   $('muteBtn').onclick = () => { setMute(!SET.mute); uiMute(); };
   $('pMute').onclick = () => { setMute(!SET.mute); uiMute(); };
   $('readyBtn').onclick = () => inGame() && toggleReady();
+  $('tasks').addEventListener('pointerdown', e => { e.stopPropagation(); UI.tkPin = !UI.tkPin; UI.tkOpenT = 0; sfx('click'); });
   $('oAgain').onclick = () => { $('over').classList.add('hidden'); if (NETROLE === 'host') { if (!NET.gctl || !NET.gctl.open) { NETROLE = 'solo'; startGame((Math.random() * 1e9) | 0, [SET.name || '幸存者'], SET.diff, 0); } else hostStart(); } else startGame((Math.random() * 1e9) | 0, [SET.name || '幸存者'], SET.diff, 0); };
   $('oLobby').onclick = () => { netSendCtl({ t: 'toLobby' }); backToLobby(); };
   $('oEndless').onclick = () => { $('over').classList.add('hidden'); W.endless = true; W.over = null; W.phase = 'night'; dawn(); };

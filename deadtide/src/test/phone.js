@@ -32,6 +32,7 @@ const UA = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/6
     await simWait(0.3);
     const tgt2 = await p.evaluate(() => w2s(W.radio.x + 7.5, W.radio.y + 2.5, 0));
     await p.touchscreen.tap(tgt2[0], tgt2[1]); await simWait(0.3);
+    await p.touchscreen.tap(tgt2[0], tgt2[1]); await simWait(0.3); // second tap on the preview confirms
     console.log(name, 'built by tap', await p.evaluate(() => W.blk[ci(W.radio.x + 7, W.radio.y + 2, 0)]), 'at', tgt2.map(v => v | 0).join(','));
     await shot('build');
     await p.tap('#tBuild'); await simWait(0.2);

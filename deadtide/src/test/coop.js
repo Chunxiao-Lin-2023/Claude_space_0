@@ -26,10 +26,10 @@ const { chromium } = require('playwright'); const OUT = process.env.OUT || '/tmp
   { await simWait(H, 4.5); const th = await H.evaluate(() => W.tasks.map(t => t.txt + t.got).join('|')), tg = await G.evaluate(() => W.tasks.map(t => t.txt + t.got).join('|') + ' panel ' + document.querySelectorAll('#tasks .tk').length); console.log('tasks synced', th === tg.split(' panel')[0], tg); }
   await G.evaluate(() => act('build', { x: W.radio.x + 7, y: W.radio.y + 2, l: 0, b: 1, d: 0 })); await simWait(H, 0.4);
   console.log('guest build host/guest', await H.evaluate(() => W.blk[ci(W.radio.x + 7, W.radio.y + 2, 0)]), await G.evaluate(() => W.blk[ci(W.radio.x + 7, W.radio.y + 2, 0)]), 'wood', await H.evaluate(() => W.res.wood), await G.evaluate(() => W.res.wood));
-  const si = await H.evaluate(() => { const s = W.spots.find(s => s.k === 'crate'); return s.i; });
+  const si = await H.evaluate(() => { for (let i = 0; i < NC; i++) { if (W.blk[i] !== 26) continue; const x = cx_(i), y = cy_(i), L = cl_(i); const f = DIRS.map(([dx, dy]) => [x + dx, y + dy]).find(([a, b]) => standable(a, b, L, 'p')); if (!f) continue; const t = useTarget({ x: f[0] + 0.5, y: f[1] + 0.5, L, down: false, dead: false }); if (t && t.i === i) return i; } return -1; });
   await G.evaluate(si => { const x = cx_(si), y = cy_(si), L = cl_(si); const f = DIRS.map(([dx, dy]) => [x + dx, y + dy]).find(([a, b]) => standable(a, b, L, 'p')); const me = W.p[ME]; me.x = f[0] + 0.5; me.y = f[1] + 0.5; me.L = L; INP.keys.f = true; }, si);
   await simWait(H, 2.0); await G.evaluate(() => { INP.keys.f = false; });
-  console.log('guest searched crate host', await H.evaluate(si => W.spots.find(s => s.i === si).searched, si), 'guest', await G.evaluate(si => W.spots.find(s => s.i === si).searched, si));
+  console.log('guest searched crate (gone) host', await H.evaluate(si => W.blk[si] !== 26, si), 'guest', await G.evaluate(si => W.blk[si] !== 26, si));
   await H.evaluate(() => { W.res.parts += 30; W.res.steel += 20; });
   await G.evaluate(() => { const me = W.p[ME]; me.x = W.bench.x + 1.5; me.y = W.bench.y + 0.5; me.L = 0; }); await simWait(H, 0.3);
   await G.evaluate(() => act('craft', 'rifle')); await simWait(H, 0.5);

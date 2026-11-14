@@ -3,7 +3,7 @@ function mkPlayer(i, name) {
   return {
     i, name, x: RADIO_XY[0] - 0.5 + i * 2, y: RADIO_XY[1] + 0.5 + i, L: 0, z: 0, r: 0.28, h: 1.0, vx: 0, vy: 0, kbx: 0, kby: 0, aim: -Math.PI / 2, aimPt: null,
     hp: BAL.pMaxHp, maxHp: BAL.pMaxHp, down: false, downT: 0, dead: false, gone: false,
-    wpn: 1, owned: [1, 1, 0, 0], mag: [12, 6, 0, 0], ammo: [0, WPN[1].start, 0, 0], reloadT: 0, reloadW: 0, fireCD: 0, shoveCD: 0, shoveT: 0,
+    wpn: 1, owned: WPN.map((w, k) => k < 2 ? 1 : 0), mag: WPN.map((w, k) => k === 0 ? 12 : k === 1 ? 6 : 0), ammo: WPN.map((w, k) => k === 1 ? w.start : 0), bloom: 0, reloadT: 0, reloadW: 0, fireCD: 0, shoveCD: 0, shoveT: 0,
     nades: 1, meds: 1, medT: 0, selfRev: false, useT: 0, useK: '', build: false, sel: 1, demo: false, sdir: 3,
     inp: { mx: 0, my: 0, fire: 0, use: 0 }, kills: 0, hurtT: 0, anim: 0, emptyT: 0, ready: false, recoilT: 0,
   };
@@ -11,7 +11,7 @@ function mkPlayer(i, name) {
 function newWorld(seed, names, diff) {
   const m = genMap(seed);
   W = {
-    seed, t: 0, G: m.G, tt: m.tt, blk: m.blk, bhp: m.bhp, slab: m.slab, shp: m.shp, bdir: m.bdir, stab: new Int8Array(NC), spots: m.spots,
+    seed, t: 0, G: m.G, tt: m.tt, blk: m.blk, bhp: m.bhp, slab: m.slab, shp: m.shp, bdir: m.bdir, stab: new Int8Array(NC), srch: new Set(),
     radio: { x: m.radio.x, y: m.radio.y }, bench: m.bench, tasks: [], tkv: 0, clean: true,
     p: names.map((n, i) => mkPlayer(i, n)), zs: [], proj: [], zid: 1,
     phase: 'day', clock: BAL.dayLen[0], dayLen: BAL.dayLen[0], night: 0, res: Object.assign({}, BAL.startRes), upg: 0, kills: 0,
@@ -20,6 +20,7 @@ function newWorld(seed, names, diff) {
     ff: { rw: new Float32Array(NC), rc: new Float32Array(NC), pw: new Float32Array(NC), pc: new Float32Array(NC), rT: 0, pT: 0 },
   };
   recomputeStab();
+  restockSpots(true);
   updateFields(0, true);
   W.edges = edgeSpawns();
   rollTasks();
@@ -63,6 +64,13 @@ function stepMove(p, dt) {
   if (p.dead || p.gone) return;
   p.hurtT = Math.max(0, p.hurtT - dt);
   const I = p.inp, m = Math.hypot(I.mx, I.my), k = m > 1 ? 1 / m : 1;
+  if (p.jmp) { // mid-vault / mid-jump: a scripted arc
+    const J = p.jmp; J.t += dt; const f = Math.min(1, J.t / J.T);
+    p.x = lerp(J.x0, J.x1, f); p.y = lerp(J.y0, J.y1, f); p.jz = Math.sin(f * Math.PI) * J.h;
+    p.vx = (J.x1 - J.x0) / J.T; p.vy = (J.y1 - J.y0) / J.T; p.anim += dt * 6;
+    if (f >= 1) { const drop = p.L - J.L; p.L = J.L; p.jmp = null; p.jz = 0; p.vx *= 0.3; p.vy *= 0.3; if (drop > 0 || J.k) emitLocal('land'); }
+    p.z = pZ(p); return;
+  }
   const spd = BAL.pSpeed * (p.down ? 0.22 : 1) * (p.medT > 0 ? 0.45 : 1) * (p.build ? 0.9 : 1);
   const tx = I.mx * k * spd, ty = I.my * k * spd, a = Math.min(1, dt * 14);
   p.vx = lerp(p.vx, tx, a); p.vy = lerp(p.vy, ty, a);
@@ -70,10 +78,40 @@ function stepMove(p, dt) {
   p.dropped = 0; p.edgeWant = 0;
   moveEnt(p, (p.vx + p.kbx) * dt, (p.vy + p.kby) * dt, 'p', true);
   p.edgeK = p.edgeWant; p.edgeT = p.edgeWant && m > 0.3 ? (p.edgeT || 0) + dt : 0;
+  // keep pushing into a low obstacle (or a wall) to vault over it
+  let vk = 0;
+  if (p.bump >= 0 && m > 0.5 && !p.down) {
+    const bx = cx_(p.bump) - Math.floor(p.x), by = cy_(p.bump) - Math.floor(p.y);
+    if (Math.abs(bx) + Math.abs(by) === 1 && (bx * I.mx + by * I.my) / m > 0.7 && jumpTarget(p, bx, by)) { vk = vaultKind(W.blk[p.bump]); p.vaultT = (p.vaultT || 0) + dt; if (p.vaultT >= (vk === 2 ? 0.32 : 0.12)) { p.vaultT = 0; startJump(p, bx, by); } }
+  }
+  if (!vk) p.vaultT = 0; else p.edgeK = 3;
   if (p.dropped) emitLocal('land');
   const sp = Math.hypot(p.vx, p.vy);
   if (sp > 0.3) p.anim += dt * sp * 2.6; else p.anim = lerp(p.anim, Math.round(p.anim / Math.PI) * Math.PI, Math.min(1, dt * 8));
   p.z = pZ(p);
+}
+/* ---------- vaulting and jumping (local to each player, like walking) ---------- */
+function vaultKind(b) { if (!b) return 0; const Bb = B[b]; if (Bb.vault || b === 27 || b === 29 || b === 26 || b === 32 || b === 37) return 1; if (b === 1 || b === 2 || b === 3 || b === 8 || b === 24 || b === 31 || b === 40) return 2; return 0; }
+function jumpTarget(p, dx, dy) {
+  const cx = Math.floor(p.x), cy = Math.floor(p.y), L = p.L, ax = cx + dx, ay = cy + dy, bx = cx + 2 * dx, by = cy + 2 * dy;
+  if (!inMap(ax, ay)) return null;
+  const vk = vaultKind(W.blk[ci(ax, ay, L)]);
+  const land = (x, y) => { if (!inMap(x, y)) return -1; for (let l = L; l >= Math.max(0, L - 2); l--) { if (standable(x, y, l, 'p')) return l; if (!enterable(x, y, l, 'p')) return -1; } return -1; };
+  if (vk) {
+    if (vk === 2 && L + 1 < ML && (W.blk[ci(ax, ay, L + 1)] || W.slab[ci(ax, ay, L + 1)])) return null; // that wall goes up to the ceiling
+    const l2 = land(bx, by); if (l2 >= 0) return { x: bx + 0.5, y: by + 0.5, L: l2, T: vk === 2 ? 0.55 : 0.36, h: vk === 2 ? 0.95 : 0.55, k: vk };
+    return null;
+  }
+  // a gap: leap one empty tile to the same floor
+  if (enterable(ax, ay, L, 'p') && !standable(ax, ay, L, 'p') && standable(bx, by, L, 'p')) return { x: bx + 0.5, y: by + 0.5, L, T: 0.45, h: 0.55, k: 3 };
+  return null;
+}
+function startJump(p, dx, dy, hop) {
+  if (p.jmp || p.down || p.dead || p.medT > 0) return false;
+  const t = jumpTarget(p, dx, dy);
+  if (!t) { if (!hop) return false; p.jmp = { t: 0, T: 0.34, x0: p.x, y0: p.y, x1: p.x + dx * 0.25 * (standable(Math.floor(p.x + dx * 0.6), Math.floor(p.y + dy * 0.6), p.L, 'p') ? 1 : 0), y1: p.y + dy * 0.25 * (standable(Math.floor(p.x + dx * 0.6), Math.floor(p.y + dy * 0.6), p.L, 'p') ? 1 : 0), L: p.L, h: 0.4, k: 0 }; emitLocal('jump'); return true; }
+  p.jmp = { t: 0, T: t.T, x0: p.x, y0: p.y, x1: t.x, y1: t.y, L: t.L, h: t.h + Math.max(0, p.L - t.L) * 0.15, k: t.k };
+  emitLocal(t.k === 2 ? 'vault' : 'jump'); return true;
 }
 function emitLocal(name) { fxEvent({ k: 'sfx', n: name, local: 1 }); }
 
@@ -82,7 +120,7 @@ const shoulder = p => [p.x, p.y, pZ(p) + (p.down ? 0.25 : 0.72)];
 function stepActions(p, dt) {
   if (p.gone) return;
   const I = p.inp;
-  p.fireCD -= dt; p.shoveCD -= dt; p.emptyT -= dt;
+  p.fireCD -= dt; p.shoveCD -= dt; p.emptyT -= dt; if (p.bloom) p.bloom = Math.max(0, p.bloom - dt * 2.2);
   if (p.dead) return;
   if (p.reloadT > 0) { p.reloadT -= dt; if (p.reloadT <= 0) finishReload(p); }
   if (p.medT > 0) {
@@ -118,7 +156,7 @@ function useTarget(p) {
     const i = ci(x, y, p.L), b = W.blk[i]; if (!b) continue;
     const d = d2(x + 0.5, y + 0.5, p.x, p.y);
     if (d > bd) continue;
-    if (B[b].spot) { const s = W.spots.find(s => s.i === i); if (s && !s.searched) { bd = d; best = { k: 'spot', i, t: BAL.searchTime, name: '搜索' + SPOTS[s.k].name }; } }
+    if (B[b].spot) { const S = SPOTS[B[b].spot]; if (S && (S.vanish || !W.srch.has(i))) { bd = d; best = { k: 'spot', i, t: BAL.searchTime, name: '搜索' + S.name }; } }
     else if (GATHER[b]) { bd = d; best = { k: 'gather', i, t: GATHER[b].t, name: GATHER[b].name }; }
   }
   return best;
@@ -134,16 +172,17 @@ function completeUse(p, tgt) {
     emit({ k: 'loot', p: p.i, x: wx, y: wy, z: wz, text: '+' + n + ' ' + RES.find(r => r.k === g.res).name });
     return;
   }
-  const s = W.spots.find(s => s.i === i); if (!s || s.searched) return;
-  s.searched = true; emit({ k: 'spot', i, v: 1 }); taskAdd('search'); if (!inZone(x, y)) taskAdd('far');
-  const S = SPOTS[s.k], got = [];
-  for (const k in S.loot) { const [a, b] = S.loot[k]; const n = Math.round(rand(a, b) * m); W.res[k] += n; got.push('+' + n + ' ' + RES.find(r => r.k === k).name); }
-  if (S.ammo) {
-    for (const q of activeP()) { const give = [0, 8, 30, 4]; for (let wi = 1; wi < 4; wi++) if (q.owned[wi]) q.ammo[wi] += Math.round(give[wi] * m); }
-    got.push('全队弹药');
-    if (rand() < 0.35 && p.meds < 3) { p.meds++; got.push('医疗包'); }
-    if (rand() < 0.35 && p.nades < 6) { p.nades++; got.push('手雷'); }
-  }
+  const S = SPOTS[B[W.blk[i]].spot]; if (!S || (!S.vanish && W.srch.has(i))) return;
+  // containers are gone once searched (new ones turn up at dawn); cars and machines are marked searched
+  if (S.vanish) setCell(i, 0, W.slab[i], null, 'loot'); else { W.srch.add(i); W.ver++; emit({ k: 'spot', i, v: 1 }); }
+  taskAdd('search'); if (!inZone(x, y)) taskAdd('far');
+  const got = [];
+  for (const k in S.loot) { const [a, b] = S.loot[k]; const n = Math.round(rand(a, b) * m); if (n > 0) { W.res[k] += n; got.push('+' + n + ' ' + RES.find(r => r.k === k).name); } }
+  if (S.ammo) { for (const q of activeP()) for (let wi = 1; wi < NW; wi++) if (q.owned[wi]) q.ammo[wi] += Math.round(WPN[wi].loot * S.ammo * m); got.push('全队弹药'); }
+  if (S.fuel && activeP().some(q => q.owned[5])) { for (const q of activeP()) if (q.owned[5]) q.ammo[5] += Math.round(S.fuel * m); got.push('燃料'); }
+  if (S.med && rand() < S.med && p.meds < 3) { p.meds++; got.push('医疗包'); }
+  if (S.nade && rand() < S.nade && p.nades < 6) { p.nades = Math.min(6, p.nades + (S.nade >= 1 ? 2 : 1)); got.push('手雷'); }
+  if (!got.length) got.push('什么也没有');
   emit({ k: 'loot', p: p.i, x: wx, y: wy, z: wz, text: got.join('  ') });
 }
 /* ---------- daily tasks ---------- */
@@ -175,12 +214,68 @@ function payTask(t) {
   const r = t.rw;
   if (r.res) for (const k in r.res) W.res[k] += r.res[k];
   for (const q of activeP()) {
-    if (r.ammo) { const give = [0, 8, 30, 4]; for (let wi = 1; wi < 4; wi++) if (q.owned[wi]) q.ammo[wi] += give[wi] * r.ammo; }
+    if (r.ammo) { for (let wi = 1; wi < NW; wi++) if (q.owned[wi]) q.ammo[wi] += WPN[wi].loot * r.ammo; }
     if (r.med) q.meds = Math.min(3, q.meds + r.med);
     if (r.nade) q.nades = Math.min(6, q.nades + r.nade);
   }
   if (r.upg) W.upg = Math.min(5, W.upg + r.upg);
   emit({ k: 'task', txt: t.txt, rt: t.rt });
+}
+/* ---------- bloaters: a burst that hurts people, zombies and walls ---------- */
+function zBlast(x, y, z) {
+  const R = BAL.blastR;
+  for (const p of W.p) { if (p.gone || p.dead) continue; const d = Math.hypot(p.x - x, p.y - y, (pZ(p) + 0.5 - z) * 0.8); if (d < R) { const f = 1 - d / R; hurtPlayer(p, BAL.blastDmgP * (0.4 + 0.6 * f) * W.D.dmg); knock(p, (p.x - x) / (d || 1) * 6 * f, (p.y - y) / (d || 1) * 6 * f); } }
+  for (const zb of W.zs) { if (zb.hp <= 0) continue; const d = Math.hypot(zb.x - x, zb.y - y); if (d < R && Math.abs(zb.z - z) < 1.5) hurtZombie(zb, 70 * (1 - d / R), null, (zb.x - x) / (d || 1) * 4, (zb.y - y) / (d || 1) * 4); }
+  const cx = Math.floor(x), cy = Math.floor(y), L = Math.floor(z / FH);
+  for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) for (let l = L - 1; l <= L + 1; l++) {
+    const xx = cx + dx, yy = cy + dy, d = Math.hypot(dx, dy); if (!inMap(xx, yy) || l < 0 || l >= ML || d > R) continue;
+    const i = ci(xx, yy, l); if (W.blk[i] && B[W.blk[i]].brk) damageCell(i, BAL.blastDmgB * (1 - d / (R + 0.6)) * W.D.dmg);
+  }
+  emit({ k: 'boom', x: r2(x), y: r2(y), z: r2(z), g: 1 });
+}
+// what turns up between waves / in daylight
+function strayKind(n) {
+  const r = rand();
+  if (n >= 3 && r < 0.12) return 'dog'; if (r < 0.22) return 'crawler'; if (n >= 4 && r < 0.3) return 'runner';
+  if (n >= 5 && r < 0.36) return 'bloater'; if (n >= 6 && r < 0.4) return 'armored'; return 'walker';
+}
+/* ---------- daily restock of searchable containers ---------- */
+const SPOT_IDS = { crate: 26, rubble: 29, trash: 32, backpack: 33, cabinet: 34, toolbox: 35, milcrate: 36, barrel: 37 };
+function spotCount() { const c = {}; for (let i = 0; i < NC; i++) { const s = B[W.blk[i]].spot; if (s) c[s] = (c[s] || 0) + 1; } return c; }
+function spotFree(x, y, L) {
+  if (!inMap(x, y) || L < 0 || L >= ML) return false;
+  const i = ci(x, y, L); if (W.blk[i] || !support(x, y, L) || W.tt[y * MW + x] === TT.water) return false;
+  if (radioDist(x, y) <= BUILD_R + 1) return false;
+  for (const p of W.p) if (Math.floor(p.x) === x && Math.floor(p.y) === y) return false;
+  return true;
+}
+function pickSpot(kind) {
+  for (let tries = 0; tries < 400; tries++) {
+    let x, y, L;
+    const indoor = kind === 'cabinet' || ((kind === 'rubble' || kind === 'toolbox' || kind === 'crate') && rand() < 0.45);
+    if (indoor) {
+      const H = TOWN_HOUSES[Math.floor(rand() * TOWN_HOUSES.length)];
+      x = H[0] + 1 + Math.floor(rand() * (H[2] - H[0] - 1)); y = H[1] + 1 + Math.floor(rand() * (H[3] - H[1] - 1));
+      L = W.slab[ci(x, y, 1)] && rand() < 0.4 ? 1 : gAt(x, y);
+      if (kind === 'cabinet' && !DIRS.some(([dx, dy]) => { const b = blkAt(x + dx, y + dy, L); return b === 24 || b === 2 || b === 1; })) continue; // against a wall
+    } else {
+      x = Math.floor(rand() * MW); y = Math.floor(rand() * MH); L = gAt(x, y);
+      const t = W.tt[y * MW + x];
+      if (kind === 'trash') { if (t === TT.road || !DIRS.some(([dx, dy]) => inMap(x + dx * 2, y + dy * 2) && (W.tt[(y + dy) * MW + x + dx] === TT.road || W.tt[(y + dy * 2) * MW + x + dx * 2] === TT.road))) continue; }
+      else if (t === TT.road) continue;
+      if (kind === 'milcrate' && radioDist(x, y) < 34) continue;
+      if (kind === 'backpack' && t !== TT.forest && t !== TT.grass && t !== TT.hill) continue;
+    }
+    if (spotFree(x, y, L)) return ci(x, y, L);
+  }
+  return -1;
+}
+function restockSpots(initial) {
+  const c = spotCount();
+  for (const k in SPOT_IDS) {
+    let need = (SPOTS[k].n || 0) - (c[k] || 0);
+    while (need-- > 0) { const i = pickSpot(k); if (i < 0) break; if (initial) { W.blk[i] = SPOT_IDS[k]; W.bhp[i] = 1; } else setCell(i, SPOT_IDS[k], W.slab[i], null, 'spawn'); }
+  }
 }
 function startReload(p) {
   const wi = p.down ? 0 : p.wpn, w = WPN[wi];
@@ -202,8 +297,23 @@ function fireWeapon(p, wi) {
   const [sx, sy, sz] = shoulder(p), [ax, ay, az] = aimDir(p);
   const yaw = Math.atan2(ay, ax), pitch = Math.asin(clamp(az, -1, 1));
   const mul = 1 + 0.12 * W.upg, ends = [];
+  if (w.gl) { // launcher: an explosive shell on a flat arc that bursts on whatever it touches
+    const v = 17; W.proj.push({ k: 'gl', x: sx + ax * 0.45, y: sy + ay * 0.45, z: sz, vx: Math.cos(pitch) * Math.cos(yaw) * v, vy: Math.cos(pitch) * Math.sin(yaw) * v, vz: Math.sin(pitch) * v + 1.2, o: p.i, t: 2.6 });
+    emit({ k: 'shot', o: p.i, w: wi, e: [] }); return;
+  }
+  if (w.flame) { // a cone of fire: everything in front, in range and in sight catches fire
+    for (const z of W.zs) {
+      if (z.hp <= 0 || Math.abs(z.L - p.L) > 1) continue;
+      const dx = z.x - sx, dy = z.y - sy, d = Math.hypot(dx, dy); if (d > w.range + z.r) continue;
+      if (Math.abs(angDiff(yaw, Math.atan2(dy, dx))) > w.spread + z.r / Math.max(d, 0.5)) continue;
+      if (!los(sx, sy, sz, z.x, z.y, z.z + z.h * 0.5, LEAN)) continue;
+      hurtZombie(z, w.dmg * mul, p, 0, 0, true); z.burn = Math.max(z.burn || 0, w.burn); z.burnBy = p.i;
+    }
+    emit({ k: 'shot', o: p.i, w: wi, e: [] }); return;
+  }
+  if (w.bloom) p.bloom = Math.min(2.2, (p.bloom || 0) + w.bloom);
   for (let k = 0; k < w.pellets; k++) {
-    const sp = w.spread * (p.down ? 1.6 : 1);
+    const sp = w.spread * (p.down ? 1.6 : 1) * (1 + (w.bloom ? p.bloom : 0));
     const yw = yaw + (rand() - 0.5) * 2 * sp, pt = pitch + (rand() - 0.5) * sp;
     const dx = Math.cos(pt) * Math.cos(yw), dy = Math.cos(pt) * Math.sin(yw), dz = Math.sin(pt);
     const wall = rayWorld(sx, sy, sz, dx, dy, dz, w.range, { lean: LEAN });
@@ -218,8 +328,15 @@ function fireWeapon(p, wi) {
     for (const [d, z] of hits) {
       if (left <= 0) break;
       const hzv = sz + dz * d, head = hzv > z.z + z.h * 0.76;
-      hurtZombie(z, w.dmg * mul * (head ? BAL.headshot : 1), p, dx * w.kick / (z.k === 'boss' ? 6 : z.k === 'brute' ? 3 : 1), dy * w.kick / (z.k === 'boss' ? 6 : z.k === 'brute' ? 3 : 1));
-      if (k < 3 || head) emit({ k: 'hit', x: r2(sx + dx * d), y: r2(sy + dy * d), z: r2(hzv), h: head ? 1 : 0, g: z.k === 'spitter' ? 1 : 0 });
+      let dmg = w.dmg * mul * (head ? (w.hs || BAL.headshot) : 1);
+      if (w.falloff) dmg *= d < 3 ? 1 : Math.max(0.35, 1 - (d - 3) / (w.range - 3) * 0.65); // shotgun: brutal up close
+      let armor = false;
+      if (ZT[z.k].armor && !w.pierce && Math.cos(angDiff(z.face, Math.atan2(-dy, -dx))) > 0.2) { dmg *= ZT[z.k].armor; armor = true; } // riot gear: only piercing shots or a flank get through
+      const heavy = z.k === 'boss' ? 6 : z.k === 'brute' ? 3 : z.k === 'armored' ? 2 : 1;
+      hurtZombie(z, dmg, p, dx * w.kick / heavy, dy * w.kick / heavy);
+      if (w.stun && !armor) z.stun = Math.max(z.stun || 0, w.stun / heavy);
+      if (w.pin) z.stun = Math.max(z.stun || 0, w.pin / (heavy > 2 ? 3 : 1));
+      if (k < 3 || head) emit({ k: 'hit', x: r2(sx + dx * d), y: r2(sy + dy * d), z: r2(hzv), h: head ? 1 : 0, g: z.k === 'spitter' || z.k === 'bloater' ? 1 : 0, a: armor ? 1 : 0 });
       left--; endD = d; hz = 1;
     }
     if (left > 0 || !hz) endD = wall.d;
@@ -227,9 +344,9 @@ function fireWeapon(p, wi) {
   }
   emit({ k: 'shot', o: p.i, w: wi, e: ends });
 }
-function hurtZombie(z, dmg, p, kx, ky) {
+function hurtZombie(z, dmg, p, kx, ky, quiet) {
   if (z.hp <= 0) return;
-  z.hp -= dmg; z.hitT = 0.12;
+  z.hp -= dmg; if (!quiet) z.hitT = 0.12;
   if (kx || ky) { z.kbx = (z.kbx || 0) + kx; z.kby = (z.kby || 0) + ky; }
   if (z.hp <= 0) killZombie(z, p);
 }
@@ -237,6 +354,7 @@ let KSRC = '';
 function killZombie(z, p) {
   z.hp = 0; W.kills++; if (p) p.kills++;
   taskAdd('kill'); if (TASKS[z.k]) taskAdd(z.k); if (KSRC === 'nade') taskAdd('nade');
+  if (ZT[z.k].blast) zBlast(z.x, z.y, z.z + 0.5);
   emit({ k: 'zdie', x: r2(z.x), y: r2(z.y), z: r2(z.z), t: z.k, f: r2(z.face), id: z.id });
   if (rand() < (z.k === 'boss' ? 1 : z.k === 'brute' ? 0.6 : 0.07)) { const n = z.k === 'boss' ? 15 : z.k === 'brute' ? 3 : 1; W.res.parts += n; emit({ k: 'loot', p: -1, x: z.x, y: z.y, z: z.z + z.h, text: '+' + n + ' 零件' }); }
 }
@@ -267,7 +385,7 @@ function doAct(p, a, v) {
   if (!W || W.over || p.gone || p.dead) return;
   switch (a) {
     case 'reload': if (!p.down) startReload(p); else if (p.mag[0] < WPN[0].mag) { p.reloadT = WPN[0].reload; p.reloadW = 0; } break;
-    case 'wpn': if (!p.down && v >= 0 && v < 4 && p.owned[v] && p.wpn !== v) { p.wpn = v; p.reloadT = 0; p.fireCD = Math.max(p.fireCD, 0.25); emit({ k: 'sfx', n: 'swap', x: p.x, y: p.y, o: p.i }); } break;
+    case 'wpn': if (!p.down && v >= 0 && v < NW && p.owned[v] && p.wpn !== v) { p.wpn = v; p.reloadT = 0; p.fireCD = Math.max(p.fireCD, 0.25); emit({ k: 'sfx', n: 'swap', x: p.x, y: p.y, o: p.i }); } break;
     case 'shove': shove(p); break;
     case 'nade': throwNade(p); break;
     case 'med':
@@ -324,7 +442,7 @@ function craftBlocked(p, c) {
 function doCraft(p, id) {
   const c = CRAFT.find(c => c.id === id); if (!c || !nearBench(p) || craftBlocked(p, c)) return;
   for (const k in c.cost) W.res[k] -= c.cost[k];
-  if (c.wpn) { p.owned[c.wpn] = 1; p.mag[c.wpn] = WPN[c.wpn].mag; p.ammo[c.wpn] += c.wpn === 2 ? 60 : 10; p.wpn = c.wpn; }
+  if (c.wpn) { p.owned[c.wpn] = 1; p.mag[c.wpn] = WPN[c.wpn].mag; p.ammo[c.wpn] += WPN[c.wpn].loot * 2 || 10; p.wpn = c.wpn; }
   if (c.ammo) p.ammo[c.ammo[0]] += c.ammo[1];
   if (c.nade) p.nades = Math.min(6, p.nades + c.nade);
   if (c.med) p.meds = Math.min(3, p.meds + 1);
@@ -380,7 +498,8 @@ function startNight() {
   W.p.forEach(p => p.ready = false);
   const n = W.night, blood = isBlood(n), D = W.D;
   const count = Math.round(BAL.nightSpawn(n) * D.n * (blood ? BAL.bloodMul : 1));
-  const wts = { walker: 10, runner: n >= 3 ? 2 + n * 0.35 : n === 2 ? 1.5 : 0, climber: n >= 4 ? 0.8 + n * 0.2 : 0, spitter: n >= 6 ? 1.3 + n * 0.1 : 0, brute: n >= 5 ? (0.5 + n * 0.07) * (blood ? 2 : 1) : 0 };
+  const wts = { walker: 10, runner: n >= 3 ? 2 + n * 0.35 : n === 2 ? 1.5 : 0, climber: n >= 4 ? 0.8 + n * 0.2 : 0, spitter: n >= 6 ? 1.3 + n * 0.1 : 0, brute: n >= 5 ? (0.5 + n * 0.07) * (blood ? 2 : 1) : 0,
+    crawler: 1.4, dog: n >= 3 ? 0.6 + n * 0.07 : 0, bloater: n >= 4 ? 0.8 + n * 0.06 : 0, screamer: n >= 5 ? 0.45 + n * 0.03 : 0, armored: n >= 6 ? 0.8 + n * 0.08 : 0 };
   const tot = Object.values(wts).reduce((a, b) => a + b, 0), dur = BAL.spawnDur(n), q = [];
   const sides = [0, 1, 2, 3].filter(s => W.edges[s].length);
   for (let k = sides.length - 1; k > 0; k--) { const j = Math.floor(rand() * (k + 1)); [sides[k], sides[j]] = [sides[j], sides[k]]; }
@@ -389,7 +508,8 @@ function startNight() {
     let r = rand() * tot, type = 'walker';
     for (const key in wts) { r -= wts[key]; if (r <= 0) { type = key; break; } }
     const frac = k / count, burst = Math.floor(frac * 6) / 6;
-    q.push({ t: lerp(burst, frac, 0.55) * dur + rand() * 3, k: type, side: front[Math.floor(rand() * front.length)] });
+    const t0 = lerp(burst, frac, 0.55) * dur + rand() * 3, side = front[Math.floor(rand() * front.length)];
+    for (let j = 0; j < (type === 'dog' ? 3 : 1); j++) q.push({ t: t0 + j * 0.5, k: type, side }); // dogs come in packs
   }
   if (blood) q.push({ t: dur * 0.55, k: 'boss', side: front[0] });
   q.sort((a, b) => a.t - b.t);
@@ -402,7 +522,8 @@ function dawn() {
   if (W.night >= BAL.nights && !W.endless) return endGame('win', '救援直升机到了');
   W.phase = 'day'; W.dayLen = W.clock = BAL.dayLen[1];
   rollTasks();
-  W.spots.forEach(s => s.searched = false);
+  for (const i of [...W.srch]) { const S = SPOTS[B[W.blk[i]].spot]; if (!S || rand() < (S.refill || 1)) { W.srch.delete(i); emit({ k: 'spot', i, v: 0 }); } }
+  W.ver++; restockSpots(false);
   for (const p of activeP()) {
     p.ready = false;
     if (p.dead) { p.dead = false; p.down = false; p.hp = Math.round(p.maxHp * BAL.respawnHp); p.x = W.radio.x - 0.5 + p.i * 2; p.y = W.radio.y + 0.5; p.L = gAt(W.radio.x, W.radio.y); p.vx = p.vy = 0; emit({ k: 'tp', p: p.i, x: p.x, y: p.y, l: p.L }); }
@@ -423,7 +544,7 @@ function stepPhase(dt) {
   if (W.over) return;
   if (W.phase === 'day') {
     W.clock -= dt; W.strayT -= dt;
-    if (W.strayT <= 0 && W.night >= 1) { W.strayT = BAL.dayStragglerCD; if (W.zs.length < BAL.dayStragglers) spawnZombie(W.night >= 4 && rand() < 0.3 ? 'runner' : 'walker', Math.floor(rand() * 4)); }
+    if (W.strayT <= 0 && W.night >= 1) { W.strayT = BAL.dayStragglerCD; if (W.zs.length < BAL.dayStragglers) spawnZombie(strayKind(W.night), Math.floor(rand() * 4)); }
     if (W.clock <= 0) startNight();
   } else if (W.phase === 'night') {
     W.nightT += dt;
@@ -432,7 +553,7 @@ function stepPhase(dt) {
     // after the horde, small groups keep coming until the night has run its minimum length
     if (!W.spawnQ.length && W.nightT < minT) {
       W.strayT -= dt;
-      if (W.strayT <= 0) { W.strayT = BAL.nightTrickleCD; if (W.zs.length < BAL.nightTrickleMax) { const n = W.night; for (let k = 0; k < 1 + (rand() < 0.4 ? 1 : 0); k++) spawnZombie(n >= 4 && rand() < 0.35 ? 'runner' : n >= 6 && rand() < 0.2 ? 'climber' : 'walker', Math.floor(rand() * 4)); } }
+      if (W.strayT <= 0) { W.strayT = BAL.nightTrickleCD; if (W.zs.length < BAL.nightTrickleMax) { const n = W.night; for (let k = 0; k < 1 + (rand() < 0.5 ? 1 : 0); k++) spawnZombie(strayKind(n), Math.floor(rand() * 4)); } }
     }
     if (!W.spawnQ.length && W.zs.length && W.zs.length <= 3 && W.nightT > Math.max(BAL.spawnDur(W.night) + 240, minT + 60)) { W.zs.forEach(z => { z.hp = 0; }); W.zs = []; say('残余的丧尸散去了'); }
     if (!W.spawnQ.length && !W.zs.length && W.nightT >= minT) dawn();
@@ -443,8 +564,14 @@ function stepPhase(dt) {
 function floorUnder(x, y, z) { const cx = Math.floor(x), cy = Math.floor(y); for (let L = Math.min(ML - 1, Math.floor(z / FH)); L >= 0; L--) if (support(cx, cy, L) || solidFor(blkAt(cx, cy, L - 1), 'b')) return L * FH; return 0; }
 function stepProj(dt) {
   for (const b of W.proj) {
-    b.vz -= (b.k === 'acid' ? 10 : 14) * dt;
-    if (b.k === 'nade') {
+    b.vz -= (b.k === 'acid' ? 10 : b.k === 'gl' ? 7 : 14) * dt;
+    if (b.k === 'gl') {
+      b.t -= dt;
+      const nx = b.x + b.vx * dt, ny = b.y + b.vy * dt, nz = b.z + b.vz * dt, cx = Math.floor(nx), cy = Math.floor(ny);
+      let boom = b.t <= 0 || !inMap(cx, cy) || solidFor(blkAt(cx, cy, Math.floor(nz / FH)), 'b') || nz <= floorUnder(nx, ny, b.z + 0.05);
+      if (!boom) for (const z of W.zs) if (z.hp > 0 && d2(z.x, z.y, nx, ny) < z.r + 0.2 && nz > z.z - 0.1 && nz < z.z + z.h + 0.15) { boom = true; break; }
+      if (boom) { b.dead = true; explode(b.x, b.y, Math.max(b.z, floorUnder(b.x, b.y, b.z + 0.05)) + 0.15, W.p[b.o], 2.4, WPN[6].dmg); } else { b.x = nx; b.y = ny; b.z = nz; }
+    } else if (b.k === 'nade') {
       b.t -= dt;
       const nx = b.x + b.vx * dt, ny = b.y + b.vy * dt, nz = b.z + b.vz * dt;
       const L = Math.floor(b.z / FH);
@@ -464,12 +591,12 @@ function stepProj(dt) {
   }
   W.proj = W.proj.filter(b => !b.dead);
 }
-function explode(x, y, z, p) {
-  const R = BAL.nadeR; KSRC = 'nade';
+function explode(x, y, z, p, R = BAL.nadeR, dmg = BAL.nadeDmg) {
+  KSRC = 'nade';
   for (const zb of W.zs) {
     if (zb.hp <= 0) continue;
     const d = Math.hypot(zb.x - x, zb.y - y, (zb.z + zb.h / 2 - z) * 0.8);
-    if (d < R + zb.r) { const f = 1 - Math.max(0, d - zb.r) / R; hurtZombie(zb, BAL.nadeDmg * (0.35 + 0.65 * f) * (1 + 0.12 * W.upg), p, (zb.x - x) / (d || 1) * 5 * f, (zb.y - y) / (d || 1) * 5 * f); }
+    if (d < R + zb.r) { const f = 1 - Math.max(0, d - zb.r) / R; hurtZombie(zb, dmg * (0.35 + 0.65 * f) * (1 + 0.12 * W.upg), p, (zb.x - x) / (d || 1) * 5 * f, (zb.y - y) / (d || 1) * 5 * f); }
   }
   KSRC = '';
   emit({ k: 'boom', x: r2(x), y: r2(y), z: r2(z) });

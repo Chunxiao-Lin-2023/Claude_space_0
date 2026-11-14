@@ -113,7 +113,7 @@ function buildScene() {
   radio.add(rb, rs, ant, OBJ.radioLed); radio.traverse(m => { m.castShadow = true; }); SCN.add(radio); OBJ.radio = radio;
   const bench = new THREE.Group(); bench.add(new THREE.Mesh(boxG(1, 0.08, 0.5, 0, 0.5, 0), lam('#5b4026')), new THREE.Mesh(boxG(0.08, 0.46, 0.44, -0.44, 0.23, 0), lam('#3d2a18')), new THREE.Mesh(boxG(0.08, 0.46, 0.44, 0.44, 0.23, 0), lam('#3d2a18')), new THREE.Mesh(boxG(0.3, 0.14, 0.24, -0.2, 0.61, 0), lam('#6c7a84')), new THREE.Mesh(boxG(0.1, 0.22, 0.1, 0.25, 0.65, 0), lam('#b8c0c6')));
   bench.traverse(m => { m.castShadow = true; }); SCN.add(bench); OBJ.bench = bench;
-  charScene();
+  charScene(); propScene();
   // players
   OBJ.pl = [];
   // projectiles, particles, tracers
@@ -172,7 +172,7 @@ function wallAxis(x, y, L) { const solid = (xx, yy) => { const b = blkAt(xx, yy,
 function rebuildCells() {
   const I = OBJ.I, me = W.p[ME], vl = viewL(), [ox, oy] = [Math.sin(CAM.yaw), Math.cos(CAM.yaw)];
   const c = { wall: 0, slab: 0, stairs: 0, door: 0, bars: 0, wire: 0, lamp: 0, trunk: 0, pine: 0, oak: 0, rock: 0, crate: 0, rubble: 0, fence: 0, car: 0 };
-  const lamps = []; archBegin();
+  const lamps = []; archBegin(); propBegin();
   if (RC.topVer !== W.ver) { RC.topVer = W.ver; RC.topL = 0; for (let i = NC - 1; i >= 0; i--) if (W.blk[i] || W.slab[i]) { RC.topL = cl_(i); break; } }
   for (let L = 0; L <= RC.topL; L++) for (let y = 0; y < MH; y++) for (let x = 0; x < MW; x++) {
     const i = ci(x, y, L), b = W.blk[i], s = W.slab[i];
@@ -183,11 +183,14 @@ function rebuildCells() {
     if (s && !archSlab(s, i, x, y, L, X, Y, Z)) { setInst(I.slab, c.slab++, X, Y, Z, 0, 1, 1, 1, dmgTint(B[s].col, s === SLAB_BRIDGE ? 1 : W.shp[i] / B[s].hp)); }
     if (!b || b === 20 || b === 23 || b === 28 || b === 30 || b === 31) continue;
     let cut = 1;
-    if (L === vl && me && !me.dead && (B[b].P || B[b].Z) && !B[b].nat) { const dx = X - me.x, dy = Z - me.y; if (dx * dx + dy * dy < 40 && dx * ox + dy * oy > 0.25) cut = 0.3; }
+    // anything solid between the camera and you (your floor and up) is cut down, town ruins included
+    const fdx = me ? X - me.x : 0, fdy = me ? Z - me.y : 0, fwd = fdx * ox + fdy * oy, lat = Math.abs(fdx * oy - fdy * ox);
+    const inFront = me && !me.dead && L >= me.L && fwd > 0.2 && fwd < 5 + (L - me.L) * 1.5 && lat < 2.4 + fwd * 0.45;
+    if (inFront && (B[b].P || B[b].Z) && (!B[b].nat || b === 24)) cut = 0.3;
     switch (b) {
       case 1: case 2: case 3: case 24: archWall(b, i, x, y, L, X, Y, Z, h, cut, vl); break;
       case 6: {
-        archPut('stairs', X, Y, Z, -W.bdir[i] * Math.PI / 2, 1, 1, 1, dmgTint('#e8d8c0', W.bhp[i] / B[b].hp));
+        propPut(6, i, x, y, L, X, Y, Z, h);
         // railings around the opening above, on every side you could walk up to except the top step
         if (L + 1 < ML && L + 1 <= vl) for (let k = 0; k < 4; k++) {
           if (k === W.bdir[i]) continue; const [ex, ey] = DIRS[k], nx = x + ex, ny = y + ey;
@@ -199,19 +202,20 @@ function rebuildCells() {
       case 8: { const ax = wallAxis(x, y, L) ? Math.PI / 2 : 0, f = W.bhp[i] / B[b].hp; archPut('sand', X, Y, Z, ax, 1, Math.max(cut, 0.6), 1, dmgTint('#ffffff', f)); if (cut === 1) archPut('bars', X, Y, Z, ax, 1, 1, 1, dmgTint('#ffffff', f)); break; }
       case 9: { const wa = blkAt(x - 1, y, L) === 9 || blkAt(x + 1, y, L) === 9 ? 0 : Math.PI / 2; setInst(I.wire, c.wire++, X, Y, Z, wa, 1, 1, 1); archPut('wireP', X, Y, Z, wa, 1, 1, 1); break; }
       case 10: setInst(I.lampP, c.lamp, X - 0.2, Y, Z - 0.2, 0, 1, 1, 1); setInst(I.lampH, c.lamp++, X - 0.2, Y, Z - 0.2, 0, 1, 1, 1); lamps.push([X + 0.05, Y + 0.75, Z - 0.2]); break;
-      case 22: { const sc = 0.8 + h * 0.5, rot = h * 6; setInst(I.trunk, c.trunk++, X, Y, Z, rot, sc, sc, sc); if (h < 0.6) for (let k = 0; k < 3; k++) setInst(I.pine[k], c.pine + 0, X, Y, Z, rot + k, sc, sc, sc); if (h < 0.6) c.pine++; else setInst(I.oak, c.oak++, X, Y, Z, rot, sc, sc, sc, h < 0.8 ? '#4f6a33' : '#5b7339'); break; }
+      case 22: { const sc = 0.8 + h * 0.5, rot = h * 6; if (inFront && fwd < 3.5 && lat < 1.8) { setInst(I.trunk, c.trunk++, X, Y, Z, rot, sc, sc * 0.35, sc); break; } setInst(I.trunk, c.trunk++, X, Y, Z, rot, sc, sc, sc); if (h < 0.6) for (let k = 0; k < 3; k++) setInst(I.pine[k], c.pine + 0, X, Y, Z, rot + k, sc, sc, sc); if (h < 0.6) c.pine++; else setInst(I.oak, c.oak++, X, Y, Z, rot, sc, sc, sc, h < 0.8 ? '#4f6a33' : '#5b7339'); break; }
       case 21: setInst(I.rock, c.rock++, X, Y, Z, h * 6, 0.8 + h * 0.6, 0.7 + h * 0.6, 0.8 + h * 0.5, h < 0.5 ? '#78746c' : '#6c6862'); break;
       case 26: setInst(I.crate, c.crate++, X, Y, Z, h * 2, 1, 1, 1); break;
       case 29: setInst(I.rubble, c.rubble++, X, Y, Z, h * 6, 1, 1, 1); break;
       case 27: setInst(I.fence, c.fence++, X, Y, Z, wallAxis(x, y, L) ? 0 : Math.PI / 2, 1, 1, 1); break;
-      case 25: { const rot = -W.bdir[i] * Math.PI / 2 + (h - 0.5) * 0.3; const col = ['#7a3b2a', '#3c5a6e', '#6b6b5a', '#5a4a6a'][Math.floor(h * 4)]; setInst(I.car, c.car, X, Y, Z, rot, 1, 1, 1, col); setInst(I.carW, c.car++, X, Y, Z, rot, 1, 1, 1); break; }
+      case 25: { const rot = -W.bdir[i] * Math.PI / 2 + (h - 0.5) * 0.3; const col = W.srch.has(i) ? '#3a3633' : ['#7a3b2a', '#3c5a6e', '#6b6b5a', '#5a4a6a'][Math.floor(h * 4)]; setInst(I.car, c.car, X, Y, Z, rot, 1, 1, 1, col); setInst(I.carW, c.car++, X, Y, Z, rot, 1, 1, 1); break; }
+      default: propPut(b, i, x, y, L, X, Y, Z, h);
     }
   }
   I.wall.count = c.wall; I.slab.count = c.slab; I.stairs.count = c.stairs; I.doorF.count = I.doorL.count = c.door; I.bars.count = c.bars; I.wire.count = c.wire;
   I.lampP.count = I.lampH.count = c.lamp; I.trunk.count = c.trunk; for (const m of I.pine) m.count = c.pine; I.oak.count = c.oak; I.rock.count = c.rock;
   I.crate.count = c.crate; I.rubble.count = c.rubble; I.fence.count = c.fence; I.car.count = I.carW.count = c.car;
   for (const k in I) { const arr = Array.isArray(I[k]) ? I[k] : [I[k]]; for (const m of arr) { m.instanceMatrix.needsUpdate = true; if (m.instanceColor) m.instanceColor.needsUpdate = true; } }
-  archEnd(); RC.lamps = lamps;
+  propEnd(); archEnd(); RC.lamps = lamps;
 }
 
 /* ---------- effects ---------- */
@@ -237,7 +241,7 @@ function drawFx() {
   drawTracers();
   let f = 0; for (const fl of RND.flashes) { if (f >= 8) break; const s = (fl.big ? 1.6 : 1) * (1 - fl.t / fl.life); setInst(OBJ.flashM, f++, fl.x, fl.z, fl.y, 0, s, s, s); } OBJ.flashM.count = f; OBJ.flashM.instanceMatrix.needsUpdate = true;
   let b = 0; for (const bo of RND.booms) { if (b >= 8) break; const s = BAL.nadeR * (0.3 + bo.t * 1.4); setInst(OBJ.boom, b++, bo.x, bo.z, bo.y, 0, s, s, s); } OBJ.boom.count = b; OBJ.boom.instanceMatrix.needsUpdate = true; OBJ.boom.material.opacity = RND.booms.length ? 0.55 * (1 - RND.booms[0].t / 0.6) : 0;
-  let ng = 0, na = 0; for (const p of W.proj) { if (p.k === 'nade') setInst(OBJ.nade, ng++, p.x, p.z, p.y, W.t * 8, 1, 1, 1); else setInst(OBJ.acid, na++, p.x, p.z, p.y, 0, 1, 1, 1); }
+  let ng = 0, na = 0; for (const p of W.proj) { if (p.k === 'gl') { setInst(OBJ.nade, ng++, p.x, p.z, p.y, W.t * 12, 1.3, 1.3, 1.3); if (Math.random() < 0.5) addP({ x: p.x, y: p.y, z: p.z, vz: 0.2, g: -0.2, col: '#9a948a', s: 0.07, life: 0.4, smoke: 1 }); } else if (p.k === 'nade') setInst(OBJ.nade, ng++, p.x, p.z, p.y, W.t * 8, 1, 1, 1); else setInst(OBJ.acid, na++, p.x, p.z, p.y, 0, 1, 1, 1); }
   OBJ.nade.count = ng; OBJ.acid.count = na; OBJ.nade.instanceMatrix.needsUpdate = OBJ.acid.instanceMatrix.needsUpdate = true;
   // flashes + explosions light pool
   const srcs = RND.flashes.map(fl => [fl.x, fl.z, fl.y, (fl.big ? 6 : 4) * (1 - fl.t / fl.life), 5]).concat(RND.booms.map(bo => [bo.x, bo.z + 0.6, bo.y, 40 * (1 - bo.t / 0.6), 12]));
@@ -342,7 +346,7 @@ function draw(dt) {
   const key = W.ver + ':' + vl + ':' + CAM.rot + ':' + (me ? Math.floor(me.x) + ',' + Math.floor(me.y) + ',' + me.L : '');
   if (key !== CUT_KEY) { CUT_KEY = key; rebuildCells(); }
   applyTime(darkness()); archFrame();
-  drawZombies(vl, dt); drawPlayers(vl, dt); drawFx(); drawGhost(me);
+  drawZombies(vl, dt); drawPlayers(vl, dt); drawFx(); drawGhost(me); drawPlan();
   OBJ.zone.visible = !W.demo && W.phase === 'day' || !!(me && me.build);
   RENDER.render(SCN, CAMO);
   drawOverlay();
@@ -396,7 +400,8 @@ function fxEvent(e) {
   const guest = NETROLE === 'guest';
   switch (e.k) {
     case 'shot': if (guest && e.o === ME) break; shotFx(e.o, e.w, e.e); break;
-    case 'hit': bloodFx(e.x, e.y, e.z, e.h ? 9 : 5, e.g); if (Math.random() < 0.45) addDecal(e.x + frnd(-0.3, 0.3), e.y + frnd(-0.3, 0.3), e.z - 0.6, frnd(0.08, 0.16), e.g ? '#3c5a14' : null); if (thr('flesh', 0.05)) sfx(e.h ? 'head' : 'flesh', e.x, e.y); break;
+    case 'hit': if (e.a) { for (let k = 0; k < 6; k++) addP({ x: e.x, y: e.y, z: e.z, vx: frnd(-3, 3), vy: frnd(-3, 3), vz: frnd(0.5, 3), col: k % 2 ? '#ffe9a0' : '#ffffff', s: 0.035, life: 0.25, floor: e.z - 1 }); if (thr('clank', 0.06)) sfx('clank', e.x, e.y); break; }
+      bloodFx(e.x, e.y, e.z, e.h ? 9 : 5, e.g); if (Math.random() < 0.45) addDecal(e.x + frnd(-0.3, 0.3), e.y + frnd(-0.3, 0.3), e.z - 0.6, frnd(0.08, 0.16), e.g ? '#3c5a14' : null); if (thr('flesh', 0.05)) sfx(e.h ? 'head' : 'flesh', e.x, e.y); break;
     case 'zdie':
       RND.corpses.push({ corpse: 1, x: e.x, y: e.y, z: e.z, k: e.t, face: e.f, t: 0, seed: e.id * 7, L: Math.floor((e.z + 0.1) / FH) }); if (RND.corpses.length > 60) RND.corpses.shift();
       bloodFx(e.x, e.y, e.z + 0.6, 10, e.t === 'spitter'); addDecal(e.x, e.y, e.z, (e.t === 'boss' ? 0.9 : e.t === 'brute' ? 0.6 : 0.32) + Math.random() * 0.15, e.t === 'spitter' ? '#3c5a14' : null);
@@ -412,6 +417,8 @@ function fxEvent(e) {
       else if (e.c === 'demo') { sfx('demo', x, y); debrisFx(x, y, z - 0.5, col, 4); }
       else if (e.c === 'chop') { sfx('chop', x, y); debrisFx(x, y, z - 0.4, '#3c5f35', 8); }
       else if (e.c === 'mine') { sfx('brk', x, y); debrisFx(x, y, z - 0.5, '#77736b', 8); }
+      else if (e.c === 'loot') { debrisFx(x, y, z - 0.6, B[prevB] && B[prevB].col || '#6a5a48', 4); }
+      else if (e.c === 'trap') { sfx('trap', x, y); bloodFx(x, y, z - 0.8, 8); }
       break;
     }
     case 'bash': { const [x, y, z] = cellPos(e.i); if (thr('bash' + e.i, 0.15)) { sfx(e.z === 'brute' || e.z === 'boss' ? 'smash' : 'bash', x, y); addP({ x, y, z, vx: frnd(-1.5, 1.5), vy: frnd(-1.5, 1.5), vz: frnd(0.5, 2.5), col: B[W.blk[e.i]] && B[W.blk[e.i]].col || '#888', s: 0.07, life: 0.5, floor: z - 0.6 }); if (e.z === 'brute' || e.z === 'boss') shake(x, y, 0.15); } break; }
@@ -428,14 +435,15 @@ function fxEvent(e) {
     case 'tp': if (guest && e.p === ME) { const p = W.p[ME]; p.x = e.x; p.y = e.y; p.L = e.l; p.vx = p.vy = 0; } break;
     case 'kb': if (guest && e.p === ME) { const p = W.p[ME]; p.kbx += e.x; p.kby += e.y; } break;
     case 'night': sfx(e.blood ? 'blood' : 'night'); banner(e.blood ? '第 ' + e.n + ' 夜 · 血月' : '第 ' + e.n + ' 夜', (e.blood ? '尸潮从四面八方涌来，巨尸出没' : '尸潮从' + e.from + '边来了') + '，守住堡垒', e.blood ? '#ff5a4a' : '#ffd27a'); break;
-    case 'dawn': document.getElementById('over').classList.add('hidden'); sfx('dawn'); banner('天亮了', '撑过了第 ' + e.n + ' 夜 · 新的任务已刷新（左上角）', '#ffe7b0'); break;
+    case 'dawn': document.getElementById('over').classList.add('hidden'); sfx('dawn'); banner('天亮了', '撑过了第 ' + e.n + ' 夜 · 新的任务已刷新（点上方「今日任务」展开）', '#ffe7b0'); break;
     case 'say': uiMsg(e.text, e.col); break;
     case 'craft': if (e.p === ME) { sfx('craft'); toast('制作完成：' + e.name); } break;
     case 'deny': if (e.p === ME && thr('deny', 0.3)) { sfx('deny'); toast(e.why, '#ff8a7a'); } break;
-    case 'boom': RND.booms.push({ x: e.x, y: e.y, z: e.z, t: 0 }); debrisFx(e.x, e.y, e.z, '#3a3530', 12); sfx('boom', e.x, e.y); shake(e.x, e.y, 0.4); break;
+    case 'boom': RND.booms.push({ x: e.x, y: e.y, z: e.z, t: 0 }); debrisFx(e.x, e.y, e.z, e.g ? '#6a8a2a' : '#3a3530', 12); if (e.g) { bloodFx(e.x, e.y, e.z, 24, true); addDecal(e.x, e.y, e.z - 0.5, 1.1, '#3c5a14'); } sfx('boom', e.x, e.y); shake(e.x, e.y, 0.4); break;
     case 'acid': for (let k = 0; k < 8; k++) addP({ x: e.x, y: e.y, z: e.z, vx: frnd(-2, 2), vy: frnd(-2, 2), vz: frnd(0, 2.5), col: k % 2 ? '#9dff3a' : '#5f9a20', s: 0.06, life: 0.5, floor: e.z - 0.3 }); sfx('acid', e.x, e.y); break;
     case 'rhit': if (thr('rhit', 0.3)) { sfx('rhit', W.radio.x, W.radio.y); for (let k = 0; k < 4; k++) addP({ x: W.radio.x + 0.5, y: W.radio.y + 0.5, z: 0.6, vx: frnd(-2, 2), vy: frnd(-2, 2), vz: frnd(1, 3), col: '#ffd76a', s: 0.05, life: 0.4 }); } break;
     case 'shove': sfx(e.n ? 'shoveHit' : 'shove', W.p[e.p].x, W.p[e.p].y); if (guest || e.p !== ME) W.p[e.p].shoveT = 0.18; break;
+    case 'scream': (RND.rings = RND.rings || []).push({ x: e.x, y: e.y, z: e.z, t: 0 }); sfx('scream', e.x, e.y); if (thr('scrMsg', 8)) uiMsg('尖叫者在叫——附近的丧尸发狂了！', '#ff8ac0'); break;
     case 'over': if (!W.demo && STATE.mode === 'play') showOver(e); break;
     case 'sfx': if (e.n === 'throw') { let bp = null, bd = 2; for (const q of W.p) { const d = d2(q.x, q.y, e.x, e.y); if (d < bd) { bd = d; bp = q; } } if (bp) bp._throwT = 0.35; }
       if (e.local || !(guest && e.o === ME && /reload|swap/.test(e.n))) sfx(e.n, e.x, e.y); break;
@@ -444,13 +452,19 @@ function fxEvent(e) {
 function shotFx(o, wi, ends) {
   const p = W.p[o]; if (!p) return;
   const z0 = (p.zv != null ? p.zv : p.z) + (p.down ? 0.25 : 0.72), mx = p.x + Math.cos(p.aim) * 0.55, my = p.y + Math.sin(p.aim) * 0.55;
+  if (WPN[wi].flame) { // a roaring tongue of fire
+    for (let k = 0; k < 7; k++) { const a = p.aim + frnd(-0.3, 0.3), v = frnd(5, 9); addP({ x: mx, y: my, z: z0 - 0.03, vx: Math.cos(a) * v, vy: Math.sin(a) * v, vz: frnd(-0.3, 0.8), g: -1.5, col: k % 3 === 0 ? '#fff0a0' : k % 3 === 1 ? '#ffb030' : '#ff5a1a', s: frnd(0.08, 0.16), life: frnd(0.35, 0.55), smoke: k === 6 ? 1 : 0 }); }
+    RND.flashes.push({ x: mx, y: my, z: z0, t: 0, life: 0.05 }); p.recoilT = 0.04; p._kick = Math.max(p._kick || 0, 0.25);
+    if (thr('flame' + o, 0.18)) sfx('flamer', p.x, p.y); return;
+  }
+  if (WPN[wi].gl) { for (let k = 0; k < 4; k++) addP({ x: mx, y: my, z: z0, vx: frnd(-0.4, 0.4), vy: frnd(-0.4, 0.4), vz: frnd(0.2, 0.6), g: -0.3, col: '#8a8478', s: 0.12, life: 0.6, smoke: 1 }); RND.flashes.push({ x: mx, y: my, z: z0, t: 0, life: 0.07, big: 1 }); p.recoilT = 0.08; p._kick = 1; sfx('launcher', p.x, p.y); if (o === ME) CAM.shake = Math.max(CAM.shake, 0.2); return; }
   for (const [x2, y2, z2, wall] of ends) {
-    RND.tracers.push({ x: mx, y: my, z: z0, x2, y2, z2, t: 0, life: wi === 3 ? 0.18 : 0.09, w: wi === 3 ? 0.06 : wi === 1 ? 0.025 : 0.035 });
+    RND.tracers.push({ x: mx, y: my, z: z0, x2, y2, z2, t: 0, life: wi === 3 ? 0.18 : wi === 4 ? 0.22 : 0.09, w: wi === 3 ? 0.06 : wi === 1 ? 0.025 : wi === 4 ? 0.03 : 0.035, col: wi === 4 ? [0.75, 0.55, 0.3] : null });
     if (wall) { for (let k = 0; k < 5; k++) addP({ x: x2, y: y2, z: z2, vx: frnd(-2.5, 2.5), vy: frnd(-2.5, 2.5), vz: frnd(0, 2.5), col: k % 2 ? '#ffd76a' : '#fff2c0', s: 0.035, life: 0.22, floor: z2 - 1, g: 6 }); addP({ x: x2, y: y2, z: z2, vx: frnd(-0.3, 0.3), vy: frnd(-0.3, 0.3), vz: 0.3, g: -0.2, col: '#8a8070', s: 0.08, life: 0.4, smoke: 1 }); }
   }
   RND.flashes.push({ x: mx, y: my, z: z0, t: 0, life: 0.06, big: wi === 1 || wi === 3 });
   p.recoilT = 0.08; p._kick = 1;
-  if (wi) addP({ x: p.x, y: p.y, z: z0, vx: -Math.sin(p.aim) * frnd(1, 2), vy: Math.cos(p.aim) * frnd(1, 2), vz: frnd(1.5, 2.5), col: '#c9a23a', s: 0.04, life: 0.7, floor: z0 - 0.72 });
+  if (wi && wi < 4) addP({ x: p.x, y: p.y, z: z0, vx: -Math.sin(p.aim) * frnd(1, 2), vy: Math.cos(p.aim) * frnd(1, 2), vz: frnd(1.5, 2.5), col: '#c9a23a', s: 0.04, life: 0.7, floor: z0 - 0.72 });
   sfx(WPN[wi].k, p.x, p.y);
   if (o === ME) { CAM.shake = Math.max(CAM.shake, WPN[wi].shake * 0.6); const kk = [0.06, 0.16, 0.05, 0.2][wi]; CAM.kx = (CAM.kx || 0) - Math.cos(p.aim) * kk; CAM.ky = (CAM.ky || 0) - Math.sin(p.aim) * kk; }
 }

@@ -200,7 +200,7 @@ function archWall(b, i, x, y, L, X, Y, Z, h, cut, vl) {
     let v = h < 0.28 ? 0 : h < 0.58 ? 1 : h < 0.84 ? 2 : 3; if (ARCH.roofCells.has(x + ',' + y + ',' + L)) v = h < 0.4 ? 0 : 2;
     const rot = (v === 0 ? ax : 0) + (v === 1 && hash2(x, y * 3) < 0.5 ? Math.PI : 0) + (v === 1 ? ax : 0);
     const hk = houseOf(x, y), col = PLASTER[hk >= 0 ? (hk * 2 + 1) % PLASTER.length : Math.floor(hash2(x >> 3, y >> 3) * PLASTER.length)];
-    archPut('ruin' + v, X, Y, Z, rot, 1, 1, 1, dmgTint(col, f));
+    archPut('ruin' + v, X, Y, Z, rot, 1, cut < 1 ? Math.min(cut * 1.6, 1) : 1, 1, dmgTint(col, f));
   } else return false;
   return true;
 }
@@ -288,7 +288,9 @@ function archFrame() {
   if (!W) return; const me = W.p[ME];
   for (const R of ARCH.roofs) {
     if (!R.down && W.t - (R.chk || -9) > 1) { R.chk = W.t; let n = 0; for (const i of R.sup) if (W.blk[i] === 24) n++; if (n < R.sup.length * 0.5) R.down = true; }
-    const inside = me && !me.dead && me.x >= R.rect[0] && me.x <= R.rect[2] && me.y >= R.rect[1] && me.y <= R.rect[3];
+    const ox = Math.sin(CAM.yaw), oy = Math.cos(CAM.yaw), inR = (x, y) => x >= R.rect[0] && x <= R.rect[2] && y >= R.rect[1] && y <= R.rect[3];
+    let inside = false; // inside, or behind it as seen from the camera
+    if (me && !me.dead) for (let k = 0; k <= 4 && !inside; k++) inside = inR(me.x + ox * k * 0.9, me.y + oy * k * 0.9);
     for (const m of R.roof) m.visible = !R.down && !inside;
   }
 }

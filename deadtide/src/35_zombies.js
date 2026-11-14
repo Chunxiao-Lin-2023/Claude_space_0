@@ -5,7 +5,8 @@ function zAttackCell(z, i) {
   if (z.cd > 0) return;
   z.cd = ZT[z.k].cd;
   if (!W.blk[i]) return;
-  damageCell(i, ZT[z.k].bdmg * W.D.dmg);
+  const thorns = B[W.blk[i]].thorns; damageCell(i, ZT[z.k].bdmg * W.D.dmg);
+  if (thorns) hurtZombie(z, thorns, null);
   emit({ k: 'bash', i, z: z.k });
 }
 function stepZombies(dt) {
@@ -17,6 +18,13 @@ function stepZombies(dt) {
     const Z = ZT[z.k], climbT = !!Z.climb;
     z.cd -= dt; z.hitT -= dt; z.atk -= dt; z.anim += dt;
     if (z.stun > 0) z.stun -= dt;
+    if (z.rage > 0) z.rage -= dt;
+    if (z.scr > 0) z.scr -= dt;
+    // burning: damage over time, and the fire jumps to zombies right next to it
+    if (z.burn > 0) {
+      z.burn -= dt; hurtZombie(z, BAL.burnDps * dt, W.p[z.burnBy] || null, 0, 0, true); if (z.hp <= 0) continue;
+      if (rand() < dt * 1.2) { const a = grid.get(ci(Math.floor(z.x), Math.floor(z.y), z.L)); if (a) for (const o of a) if (o !== z && o.hp > 0 && !(o.burn > 0)) { o.burn = 1.8; o.burnBy = z.burnBy; } }
+    }
     z.st = 'walk';
     // wall climbing in progress
     if (z.climbing) {
@@ -28,6 +36,8 @@ function stepZombies(dt) {
     const cx = Math.floor(z.x), cy = Math.floor(z.y), i = ci(cx, cy, z.L);
     // barbed wire
     let slow = 1;
+    if (B[W.blk[i]].trap) { z.stun = 2.5; hurtZombie(z, 30, null); setCell(i, 0, W.slab[i], null, 'trap'); if (z.hp <= 0) continue; }
+    if (B[W.blk[i]].stairs && !B[W.blk[i]].nat) slow = climbT ? 0.75 : 0.38; // ladders are slow going for zombies
     if (B[W.blk[i]].wire) {
       slow = BAL.wireSlow; hurtZombie(z, BAL.wireDps * dt, null);
       W.bhp[i] -= BAL.wireWear * dt * (z.k === 'brute' || z.k === 'boss' ? 4 : 1); W.dirty.add(i);
@@ -51,6 +61,18 @@ function stepZombies(dt) {
           W.proj.push({ k: 'acid', x: sx, y: sy, z: sz, vx: (tp.x - sx) / T, vy: (tp.y - sy) / T, vz: (tp.z + 0.5 - sz) / T + 5 * T });
           emit({ k: 'sfx', n: 'spit', x: sx, y: sy });
         }
+      }
+    }
+    // screamer: keeps its distance and shrieks, enraging every zombie around it (and calling more at night)
+    if (Z.scream) {
+      z.scrT = (z.scrT == null ? 2 + rand() * 3 : z.scrT) - dt;
+      let tp = null, td = 1e9; for (const p of W.p) { if (!standingP(p)) continue; const d = d2(p.x, p.y, z.x, z.y); if (d < td) { td = d; tp = p; } }
+      if (tp && td < 6.5) { hold = true; z.face = Math.atan2(tp.y - z.y, tp.x - z.x); }
+      if (tp && td < BAL.screamR * 1.3 && z.scrT <= 0 && los(z.x, z.y, z.z + 0.9, tp.x, tp.y, tp.z + 0.6)) {
+        z.scrT = BAL.screamCD; z.scr = 1.3;
+        for (const o of zs) if (o !== z && o.hp > 0 && d2(o.x, o.y, z.x, z.y) < BAL.screamR) o.rage = 5;
+        if (W.phase === 'night') for (let k = 0; k < 2; k++) spawnZombie('walker', Math.floor(rand() * 4));
+        emit({ k: 'scream', x: r2(z.x), y: r2(z.y), z: r2(z.z) });
       }
     }
     // choose the next step
@@ -85,7 +107,8 @@ function stepZombies(dt) {
     let mx = 0, my = 0;
     if (tx != null && z.stun <= 0) {
       const dx = tx - z.x, dy = ty - z.y, d = Math.hypot(dx, dy);
-      if (d > 0.02) { mx = dx / d * z.spd * slow; my = dy / d * z.spd * slow; z.face = Math.atan2(dy, dx); }
+      const rg = z.rage > 0 ? BAL.rageMul : 1;
+      if (d > 0.02) { mx = dx / d * z.spd * slow * rg; my = dy / d * z.spd * slow * rg; z.face = Math.atan2(dy, dx); }
     }
     z.kbx *= Math.max(0, 1 - dt * 6); z.kby *= Math.max(0, 1 - dt * 6);
     moveEnt(z, (mx + z.kbx) * dt, (my + z.kby) * dt, 'z', climbT);
