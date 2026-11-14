@@ -11,10 +11,10 @@ function startGame(seed, names, diff, me) {
   $('over').classList.add('hidden'); $('log').innerHTML = '';
   const p = W.p[ME]; CAM.tx = p.x; CAM.ty = p.y;
   uiBuildBar(); markDiff(); uiView();
-  banner('第一个白天', '电台在呼救 · 撑过 ' + BAL.nights + ' 夜就能等到救援', '#ffe7b0');
+  banner('第一个白天', '撑过 ' + BAL.nights + ' 夜就能等到救援 · 完成每日任务拿奖励', '#ffe7b0'); UI.tkv = -1;
   const tips = INP.touch
-    ? ['出门砍树、采石，按住「交互」搜汽车和补给箱', '点「建造」盖墙、楼板、楼梯——只能盖在电台周围的黄框里', '右上角可以缩放、转镜头、切换楼层视图', '电台旁的工作台可以造步枪和狙击枪', '天黑前回到堡垒，丧尸会过桥、翻山涌来']
-    : ['出门砍树、采石，按住 F 搜汽车和补给箱', '按 B 建造：墙、楼板、楼梯、门、射击栅栏——只能盖在电台周围的黄框里', '滚轮缩放，Q / E 转镜头，PageUp / PageDown 切换楼层视图', '在电台旁的工作台按 F 造步枪和狙击枪', '天黑前回到堡垒，丧尸会过桥、翻山涌来。按 N 可以提前入夜'];
+    ? ['出门砍树、采石，按住「交互」搜汽车和补给箱', '点「建造」后手指指哪就盖哪：点墙顶往上叠，点墙面贴着盖，拖动一次盖一排', '左上角是今天的 3 个任务，完成就有奖励', '小屋里的工作台可以造步枪和狙击枪', '楼上的矮墙可以探身开枪，天黑前回到堡垒']
+    : ['出门砍树、采石，按住 F 搜汽车和补给箱', '按 B 建造：鼠标指哪就盖哪——指墙顶往上叠、指墙面贴着盖，按住拖动一次盖一排，右键拆除', '左上角是今天的 3 个任务，完成就有奖励', '在小屋里的工作台按 F 造步枪和狙击枪', '楼上外墙是半人高的矮墙，可以探身朝下开枪。按 N 可以提前入夜'];
   tips.forEach((t, k) => TIPS.push(setTimeout(() => { if (W && W.night === 0 && STATE.mode === 'play') uiMsg(t, '#ffd27a'); }, 2500 + k * 7000)));
 }
 function startDemo() {
@@ -25,7 +25,7 @@ function demoStep(dt) {
   W.t += dt; W.demoT += dt;
   if (W.zs.length < 16 && Math.random() < dt * 1.2) spawnZombie(Math.random() < 0.15 ? 'climber' : Math.random() < 0.08 ? 'brute' : 'walker', Math.floor(Math.random() * 4));
   updateFields(dt); stepZombies(dt); stepProj(dt);
-  if (W.radio.hp <= 0 || W.demoT > 120) startDemo();
+  if (W.demoT > 120) startDemo();
 }
 function smoothZ(dt) { for (const p of W.p) { if (p.zv == null) p.zv = p.z; if (p.z < p.zv - 0.05) p.zv = Math.max(p.z, p.zv - 7 * dt); else p.zv = lerp(p.zv, p.z, Math.min(1, dt * 20)); } }
 function frame(now) {

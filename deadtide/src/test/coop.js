@@ -23,6 +23,7 @@ const { chromium } = require('playwright'); const OUT = process.env.OUT || '/tmp
   const g1 = await H.evaluate(() => [W.p[1].x, W.p[1].y]);
   console.log('guest moved on host', Math.hypot(g1[0] - g0[0], g1[1] - g0[1]).toFixed(2));
   await G.evaluate(() => { const me = W.p[ME]; me.x = W.radio.x + 6.5; me.y = W.radio.y + 0.5; me.L = 0; }); await simWait(H, 0.3);
+  { await simWait(H, 4.5); const th = await H.evaluate(() => W.tasks.map(t => t.txt + t.got).join('|')), tg = await G.evaluate(() => W.tasks.map(t => t.txt + t.got).join('|') + ' panel ' + document.querySelectorAll('#tasks .tk').length); console.log('tasks synced', th === tg.split(' panel')[0], tg); }
   await G.evaluate(() => act('build', { x: W.radio.x + 7, y: W.radio.y + 2, l: 0, b: 1, d: 0 })); await simWait(H, 0.4);
   console.log('guest build host/guest', await H.evaluate(() => W.blk[ci(W.radio.x + 7, W.radio.y + 2, 0)]), await G.evaluate(() => W.blk[ci(W.radio.x + 7, W.radio.y + 2, 0)]), 'wood', await H.evaluate(() => W.res.wood), await G.evaluate(() => W.res.wood));
   const si = await H.evaluate(() => { const s = W.spots.find(s => s.k === 'crate'); return s.i; });

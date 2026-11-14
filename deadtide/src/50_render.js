@@ -168,7 +168,7 @@ function buildTerrain() {
   }
   I.water.count = w; I.ramp.count = rp;
   for (const m of [I.water, I.ramp]) m.instanceMatrix.needsUpdate = true;
-  OBJ.radio.position.set(W.radio.x + 0.5, gAt(W.radio.x, W.radio.y) * FH, W.radio.y + 0.5);
+  OBJ.radio.visible = false;
   OBJ.bench.position.set(W.bench.x + 0.5, gAt(W.bench.x, W.bench.y) * FH, W.bench.y + 0.5);
   OBJ.grid.position.set(W.radio.x, 0, W.radio.y); OBJ.zone.position.set(W.radio.x, 0.03, W.radio.y);
   RC.ver = -1; buildMinimapBase();
@@ -194,7 +194,15 @@ function rebuildCells() {
     if (L === vl && me && !me.dead && (B[b].P || B[b].Z) && !B[b].nat) { const dx = X - me.x, dy = Z - me.y; if (dx * dx + dy * dy < 40 && dx * ox + dy * oy > 0.25) cut = 0.3; }
     switch (b) {
       case 1: case 2: case 3: case 24: archWall(b, i, x, y, L, X, Y, Z, h, cut, vl); break;
-      case 6: archPut('stairs', X, Y, Z, -W.bdir[i] * Math.PI / 2, 1, 1, 1, dmgTint('#e8d8c0', W.bhp[i] / B[b].hp)); break;
+      case 6: {
+        archPut('stairs', X, Y, Z, -W.bdir[i] * Math.PI / 2, 1, 1, 1, dmgTint('#e8d8c0', W.bhp[i] / B[b].hp));
+        // railings around the opening above, on every side you could walk up to except the top step
+        if (L + 1 < ML && L + 1 <= vl) for (let k = 0; k < 4; k++) {
+          if (k === W.bdir[i]) continue; const [ex, ey] = DIRS[k], nx = x + ex, ny = y + ey;
+          if (inMap(nx, ny) && support(nx, ny, L + 1) && !W.blk[ci(nx, ny, L + 1)]) archPut('rail', X, Y + FH, Z, Math.atan2(-ex, -ey), 1, 1, 1);
+        }
+        break;
+      }
       case 7: { const ax = wallAxis(x, y, L) ? Math.PI / 2 : 0, f = W.bhp[i] / B[b].hp; archPut('doorF', X, Y, Z, ax, 1, cut, 1, dmgTint('#ffffff', f)); archPut('doorL', X, Y, Z, ax, 1, cut, 1, dmgTint('#ffffff', f)); break; }
       case 8: { const ax = wallAxis(x, y, L) ? Math.PI / 2 : 0, f = W.bhp[i] / B[b].hp; archPut('sand', X, Y, Z, ax, 1, Math.max(cut, 0.6), 1, dmgTint('#ffffff', f)); if (cut === 1) archPut('bars', X, Y, Z, ax, 1, 1, 1, dmgTint('#ffffff', f)); break; }
       case 9: { const wa = blkAt(x - 1, y, L) === 9 || blkAt(x + 1, y, L) === 9 ? 0 : Math.PI / 2; setInst(I.wire, c.wire++, X, Y, Z, wa, 1, 1, 1); archPut('wireP', X, Y, Z, wa, 1, 1, 1); break; }
@@ -351,8 +359,7 @@ function applyTime(dk) {
     const tx = p.aimPt ? p.aimPt.x : p.x + Math.cos(p.aim) * 6, ty = p.aimPt ? p.aimPt.y : p.y + Math.sin(p.aim) * 6, tz = p.aimPt ? Math.min(p.aimPt.z, z) - 0.6 : z - 1.2;
     S.target.position.set(tx, tz, ty); S.intensity = 36 * Math.min(1, (dk - 0.25) * 2);
   });
-  OBJ.radioL.position.set(W.radio.x + 0.75, gAt(W.radio.x, W.radio.y) * FH + 1.4, W.radio.y + 0.5); OBJ.radioL.intensity = Math.sin(W.t * 6) > 0 ? 2.5 * Math.max(0.2, dk) : 0.3;
-  OBJ.radioLed.material.color.set(Math.sin(W.t * 6) > 0 ? '#ff3b2f' : '#4a1410');
+  OBJ.radioL.intensity = 0;
 }
 
 /* ---------- camera ---------- */
@@ -399,7 +406,7 @@ function buildPick(sx, sy, L) { const { o, d } = screenRay(sx, sy), pz = L * FH;
 let BUILD_HOVER = null;
 function drawGhost(me) {
   const G = OBJ.ghost, E = OBJ.ghostEdge, H = BUILD_HOVER, show = me && me.build && H && !me.down && !me.dead;
-  OBJ.grid.visible = !!(me && me.build); if (OBJ.grid.visible) OBJ.grid.position.y = buildL() * FH + 0.02;
+  OBJ.grid.visible = !!(me && me.build); if (OBJ.grid.visible) OBJ.grid.position.y = (H ? H.L : buildL()) * FH + 0.02;
   G.visible = E.visible = !!show; if (!show) return;
   const b = me.demo ? 0 : me.sel, geo = me.demo ? GEO.wall : B[b].slab ? GEO.slab : b === 6 ? GEO.stairs : b === 8 ? GEO.bars : b === 9 ? GEO.wire : b === 10 ? GEO.lampPole : GEO.wall;
   if (G.geometry !== geo) G.geometry = geo;
@@ -498,11 +505,12 @@ function fxEvent(e) {
     case 'phurt': if (e.p === ME) { RND.hurtV = Math.min(1, RND.hurtV + 0.5); CAM.shake = Math.max(CAM.shake, 0.12); if (thr('hurt', 0.25)) sfx('hurt'); } break;
     case 'down': sfx('down', W.p[e.p].x, W.p[e.p].y); uiMsg(e.p === ME ? (W.p.length > 1 ? '你倒地了！等队友扶你，或按 H 用医疗包自救' : '你倒地了！按 H 用医疗包自救') : W.p[e.p].name + ' 倒地了！快去扶（按住 F）', '#ff6b5a'); break;
     case 'revive': sfx('revive'); uiMsg(e.p === e.by ? W.p[e.p].name + ' 自救成功' : W.p[e.by].name + ' 扶起了 ' + W.p[e.p].name, '#8fe39a'); break;
-    case 'dead': uiMsg(W.p[e.p].name + ' 阵亡了，天亮后会在电台旁复活', '#ff6b5a'); break;
+    case 'dead': uiMsg(W.p[e.p].name + ' 阵亡了，天亮后会在营地复活', '#ff6b5a'); break;
+    case 'task': sfx('craft'); uiMsg('任务完成：' + e.txt + '  奖励 ' + e.rt, '#ffd76a'); toast('任务完成 · ' + e.rt, '#ffd76a'); break;
     case 'tp': if (guest && e.p === ME) { const p = W.p[ME]; p.x = e.x; p.y = e.y; p.L = e.l; p.vx = p.vy = 0; } break;
     case 'kb': if (guest && e.p === ME) { const p = W.p[ME]; p.kbx += e.x; p.kby += e.y; } break;
-    case 'night': sfx(e.blood ? 'blood' : 'night'); banner(e.blood ? '第 ' + e.n + ' 夜 · 血月' : '第 ' + e.n + ' 夜', (e.blood ? '尸潮从四面八方涌来，巨尸出没' : '尸潮从' + e.from + '边来了') + '，守住电台', e.blood ? '#ff5a4a' : '#ffd27a'); break;
-    case 'dawn': document.getElementById('over').classList.add('hidden'); sfx('dawn'); banner('天亮了', '撑过了第 ' + e.n + ' 夜 · 出去搜物资、砍树采石、加固堡垒', '#ffe7b0'); break;
+    case 'night': sfx(e.blood ? 'blood' : 'night'); banner(e.blood ? '第 ' + e.n + ' 夜 · 血月' : '第 ' + e.n + ' 夜', (e.blood ? '尸潮从四面八方涌来，巨尸出没' : '尸潮从' + e.from + '边来了') + '，守住堡垒', e.blood ? '#ff5a4a' : '#ffd27a'); break;
+    case 'dawn': document.getElementById('over').classList.add('hidden'); sfx('dawn'); banner('天亮了', '撑过了第 ' + e.n + ' 夜 · 新的任务已刷新（左上角）', '#ffe7b0'); break;
     case 'say': uiMsg(e.text, e.col); break;
     case 'craft': if (e.p === ME) { sfx('craft'); toast('制作完成：' + e.name); } break;
     case 'deny': if (e.p === ME && thr('deny', 0.3)) { sfx('deny'); toast(e.why, '#ff8a7a'); } break;

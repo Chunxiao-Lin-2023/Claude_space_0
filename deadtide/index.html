@@ -71,8 +71,12 @@ input:focus{border-color:var(--amber)}
 #hTC{position:absolute;left:50%;transform:translateX(-50%);top:calc(10px + var(--sa-t));display:flex;flex-direction:column;align-items:center;gap:6px;min-width:260px}
 #phase{font-size:16px;font-weight:700;letter-spacing:.06em;text-align:center}#phase .sub{font-weight:400;font-size:13px;color:var(--sub);margin-left:6px}
 #phase.night{color:#ffd27a}#phase.blood{color:#ff6a5a}
-.rbar{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--sub);width:100%}.rbar .bar{flex:1;height:7px}.rbar .bar>i{background:linear-gradient(90deg,#4caf50,#8fe39a)}
-.rbar.low .bar>i{background:linear-gradient(90deg,#b0281f,#ff5a4a)}
+#tasks{display:flex;flex-direction:column;gap:3px;width:100%;font-size:11.5px;color:var(--sub);text-align:left}
+#tasks .tk{display:grid;grid-template-columns:14px 1fr auto;column-gap:5px;align-items:center;line-height:1.25}
+#tasks .tk i{width:12px;height:12px;border:1px solid rgba(255,255,255,.3);border-radius:3px;font-style:normal;font-size:10px;line-height:11px;text-align:center;color:#7fd36b}
+#tasks .tk .tt{color:#e9e2d0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}#tasks .tk b{color:#ffd76a;font-weight:600}
+#tasks .tk .tr{grid-column:2/4;font-size:10.5px;color:#c9a75a;opacity:.85}
+#tasks .tk.done{opacity:.55}#tasks .tk.done i{border-color:#7fd36b}#tasks .tk.done .tt{text-decoration:line-through}
 #readyBtn{min-height:34px;padding:4px 14px;font-size:13px}
 #readyBtn.on{border-color:var(--green);color:var(--green)}
 #hTR{position:absolute;right:calc(10px + var(--sa-r));top:calc(10px + var(--sa-t));display:flex;flex-direction:column;align-items:flex-end;gap:6px}
@@ -113,8 +117,11 @@ input:focus{border-color:var(--amber)}
 #binfo{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(92px + var(--sa-b));font-size:13px;color:#d8cbb4;text-shadow:0 1px 3px #000;text-align:center;white-space:nowrap}
 /* touch */
 .stick{position:fixed;z-index:6;width:0;height:0;pointer-events:none}
-.stick::before{content:"";position:absolute;width:120px;height:120px;left:-60px;top:-60px;border-radius:50%;border:2px solid rgba(255,255,255,.22);background:rgba(0,0,0,.18)}
-.stick i{position:absolute;width:52px;height:52px;left:-26px;top:-26px;border-radius:50%;background:rgba(255,200,140,.35);border:2px solid rgba(255,220,180,.6)}
+.stick{--R:60px}
+.stick::before{content:"";position:absolute;width:calc(var(--R)*2);height:calc(var(--R)*2);left:calc(var(--R)*-1);top:calc(var(--R)*-1);border-radius:50%;border:2px solid rgba(255,255,255,.22);background:rgba(0,0,0,.18)}
+.stick i{position:absolute;width:calc(var(--R)*.86);height:calc(var(--R)*.86);left:calc(var(--R)*-.43);top:calc(var(--R)*-.43);border-radius:50%;background:rgba(255,200,140,.35);border:2px solid rgba(255,220,180,.6)}
+#stickHint{position:fixed;z-index:5;pointer-events:none;border-radius:50%;border:2px dashed rgba(255,255,255,.16);display:none;align-items:center;justify-content:center;color:rgba(255,255,255,.35);font-size:12px;transform:translate(-50%,-50%)}
+body.touch #stickHint.on{display:flex}
 #stickR i{background:rgba(255,110,90,.35)}
 /* twin-stick cluster: fire stick bottom-right, three combat buttons on an arc, weapon chip, contextual use */
 #tctl{--fs:124px;--tb:52px;--d:96px;--d45:68px;display:none;position:fixed;z-index:6;right:calc(20px + var(--sa-r));bottom:calc(20px + var(--sa-b));width:var(--fs);height:var(--fs);pointer-events:none}
@@ -195,7 +202,6 @@ body:not(.touch) .tch{display:none}
   #binfo{bottom:calc(70px + var(--sa-b))}
   #prompt{bottom:calc(64px + var(--sa-b))}
   #log{font-size:12px;bottom:calc(60px + var(--sa-b))!important}
-  .stick::before{width:96px;height:96px;left:-48px;top:-48px}.stick i{width:42px;height:42px;left:-21px;top:-21px}
   .logo h1{font-size:54px}.logo .tag{display:none}.wrapT{gap:10px}
 }
 @media (pointer:coarse) and (max-width:500px){
@@ -225,6 +231,7 @@ body:not(.touch) .tch{display:none}
 <div id="stickR" class="stick hidden"><i></i></div>
 
 <div id="hud" class="hidden">
+  <div id="stickHint">移动</div>
   <div id="hTL">
     <div class="hcard" id="pcards"></div>
     <div class="hcard">
@@ -236,7 +243,7 @@ body:not(.touch) .tch{display:none}
   </div>
   <div id="hTC" class="hcard">
     <div id="phase">白天</div>
-    <div class="rbar" id="rbar"><span>电台</span><div class="bar"><i id="rHp"></i></div><span id="rTxt"></span></div>
+    <div id="tasks"></div>
     <button id="readyBtn" class="ghost">准备入夜 <span class="kbd">(N)</span></button>
   </div>
   <div id="hTR">
@@ -270,7 +277,7 @@ body:not(.touch) .tch{display:none}
 <div id="title" class="scr">
   <button id="hubBtn" class="hubBack ghost hidden">‹ 游戏厅</button>
   <div class="wrapT">
-    <div class="logo"><h1>尸潮<b>堡</b>垒</h1><div class="en">DEAD TIDE</div><div class="tag">砍树采石盖堡垒 · 夜里守住电台 · 撑过十五夜</div></div>
+    <div class="logo"><h1>尸潮<b>堡</b>垒</h1><div class="en">DEAD TIDE</div><div class="tag">砍树采石盖堡垒 · 完成任务拿奖励 · 撑过十五夜</div></div>
     <div class="card menu">
       <div class="row"><input id="nameIn" maxlength="10" placeholder="你的名字"></div>
       <div class="lbl">难度</div>
@@ -315,12 +322,12 @@ body:not(.touch) .tch{display:none}
 <div id="help" class="modal hidden">
   <div class="card"><h3>玩法和操作</h3>
     <div class="help">
-      <h4>目标</h4>堡垒里的电台在不停呼救。<b>守住电台，撑过 15 夜</b>，救援直升机就会来。电台被毁、或者所有人同时倒下就失败。
-      <h4>白天</h4>出门砍树（木材）、采石（砖石），搜汽车、补给箱和废墟瓦砾（钢材、零件、弹药），离家越远收获越多；回来盖楼、在电台旁的工作台造枪。河上只有两座桥，丧尸也只能从桥上过河。每 5 夜一次血月。
-      <h4>建造</h4>只能在电台周围的黄框里建造，放在<b>当前视图层</b>：想往上盖就把楼层视图切到上一层。方块要有<b>支撑</b>：从地面往上传，往旁边每格减 1，支撑断了会连锁坍塌。门让人通过但挡丧尸，射击栅栏能从里面开枪。贴着墙砸的丧尸会被墙挡住，要站到楼上的墙顶边缘往下打。丧尸会砸墙砸门、走楼梯；攀爬者会翻墙。
+      <h4>目标</h4><b>活下去，撑过 15 夜</b>，救援直升机就会来。所有人同时倒下就失败。丧尸会一路追着离它最近的人，挡路的墙会被砸开。<h4>每日任务</h4>每天天亮刷新 3 个小任务（左上角），比如击杀、搜索、建造、今夜无人倒下。完成立刻发奖励：材料、全队弹药、医疗包、手雷或强化弹头。没完成的会在下一个天亮作废。
+      <h4>白天</h4>出门砍树（木材）、采石（砖石），搜汽车、补给箱和废墟瓦砾（钢材、零件、弹药），离家越远收获越多；回来盖楼、在营地小屋的工作台造枪。河上只有两座桥，丧尸也只能从桥上过河。每 5 夜一次血月。
+      <h4>建造</h4>只能在营地周围的黄框里建造。<b>指哪盖哪，不用切楼层</b>：指地面或楼板就盖在上面；指墙顶就往上叠一层；指墙的侧面就贴着它盖；楼板会自动铺成墙上的天花板，站在楼上指外面能往外延伸阳台。<b>按住拖动</b>沿直线一次盖一排。拆除也是指哪拆哪。方块要有<b>支撑</b>：从地面往上传，往旁边每格减 1，支撑断了会连锁坍塌。<b>楼上最外圈、上面没东西的墙是半人高的矮墙</b>：子弹能从上面飞过，贴着矮墙可以探身往下打；地面一层的墙还是整面墙。门让人通过但挡丧尸，射击栅栏能从里面开枪。丧尸会砸墙砸门、走楼梯；攀爬者会翻墙。<h4>楼梯</h4>往下走楼梯、从边缘跳下去都要<b>继续推一下</b>才会下去，不会再一不小心掉下楼；楼梯口有栏杆，侧面走不进去。
       <h4>视角</h4>滚轮或 ＋/－ 缩放，Q / E 或 ⟲⟳ 转镜头。楼层视图默认跟随你所在的层，上面的楼层会自动隐藏；▲▼ 手动看别的层，「跟随我所在的层」恢复。
-      <h4 class="kbd">键鼠</h4><div class="kbd"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> 移动（相对屏幕）　鼠标瞄准，左键射击<br><kbd>R</kbd> 换弹　<kbd>1</kbd>–<kbd>4</kbd> 换枪　<kbd>V</kbd> 推开丧尸　<kbd>G</kbd> 手雷　<kbd>H</kbd> 医疗包（倒地时自救）<br><kbd>F</kbd> 按住：砍树 / 采石 / 搜索 / 扶起队友；在工作台按 <kbd>F</kbd> 打开制作<br><kbd>B</kbd> 建造模式：数字键选方块，左键放置或修理，右键拆除，<kbd>R</kbd> 转楼梯朝向<br><kbd>Q</kbd><kbd>E</kbd> 转镜头　滚轮缩放　<kbd>PageUp</kbd><kbd>PageDown</kbd> 切换楼层视图　<kbd>Home</kbd> 跟随自己<br><kbd>N</kbd> 准备入夜　<kbd>M</kbd> 静音　<kbd>Esc</kbd> 菜单</div>
-      <h4 class="tch">触屏</h4><div class="tch">左半屏拖动走路。右下的红色「射击」键：按住就开火，自动瞄准最近的丧尸（包括楼上楼下）；按住拖向某个方向就朝那边打。旁边三个键是换弹、手雷、推开，上面的小条点一下换枪。靠近树、石头、汽车、补给箱或倒地的队友时，会冒出一个大按键，按住就砍树 / 搜索 / 扶人；受伤后左上角会出现「用医疗包」。右上角「建造」进出建造模式（点地面放方块，右下 ▲▼ 换要建的楼层），「视角」打开缩放、转镜头和楼层视图。两根手指捏合也能缩放。</div>
+      <h4 class="kbd">键鼠</h4><div class="kbd"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> 移动（相对屏幕）　鼠标瞄准，左键射击<br><kbd>R</kbd> 换弹　<kbd>1</kbd>–<kbd>4</kbd> 换枪　<kbd>V</kbd> 推开丧尸　<kbd>G</kbd> 手雷　<kbd>H</kbd> 医疗包（倒地时自救）<br><kbd>F</kbd> 按住：砍树 / 采石 / 搜索 / 扶起队友；在工作台按 <kbd>F</kbd> 打开制作<br><kbd>B</kbd> 建造模式：数字键选方块，鼠标指哪盖哪（左键放置或修理，按住拖动盖一排），右键拆除，<kbd>R</kbd> 转楼梯朝向<br><kbd>Q</kbd><kbd>E</kbd> 转镜头　滚轮缩放　<kbd>PageUp</kbd><kbd>PageDown</kbd> 切换楼层视图　<kbd>Home</kbd> 跟随自己<br><kbd>N</kbd> 准备入夜　<kbd>M</kbd> 静音　<kbd>Esc</kbd> 菜单</div>
+      <h4 class="tch">触屏</h4><div class="tch">左半屏任意位置按下就出现摇杆（左下角的虚线圈是提示），拖过圈外摇杆会跟着手指走；靠近横平竖直的方向会自动吸附，沿墙走、过门更稳。右下的红色「射击」键：按住就开火，自动瞄准最近的丧尸（包括楼上楼下）；按住拖向某个方向就朝那边打。旁边三个键是换弹、手雷、推开，上面的小条点一下换枪。靠近树、石头、汽车、补给箱或倒地的队友时，会冒出一个大按键，按住就砍树 / 搜索 / 扶人；受伤后左上角会出现「用医疗包」。右上角「建造」进出建造模式：在右半屏点哪盖哪，按住拖动盖一排；「视角」打开缩放、转镜头和楼层视图。两根手指捏合也能缩放。</div>
     </div>
     <button id="helpClose" class="primary">好</button>
   </div>
@@ -4034,12 +4041,14 @@ const angDiff = (a, b) => { let d = (b - a) % (Math.PI * 2); if (d > Math.PI) d 
 
 /* ---------- world geometry ---------- */
 const MW = 96, MH = 96, ML = 10;     // grid columns, rows, layers
-const FH = 1.3;                      // height of one layer (storey / terrain step) in world units
+const FH = 1.3;
+const PH = 0.62;
+const LEAN = 1.7;                   // shooters lean over parapets this close to them                    // parapet height: upper-floor walls with nothing on top are only waist high                      // height of one layer (storey / terrain step) in world units
 const NC = MW * MH * ML;
 const ci = (x, y, L) => (L * MH + y) * MW + x;
 const cx_ = i => i % MW, cy_ = i => ((i / MW) | 0) % MH, cl_ = i => (i / (MW * MH)) | 0;
 const DIRS = [[1, 0], [0, 1], [-1, 0], [0, -1]]; // 0:+x(east) 1:+y(south) 2:-x(west) 3:-y(north)
-const BUILD_R = 20;                 // build zone: Chebyshev distance from the radio
+const BUILD_R = 20;                 // build zone: Chebyshev distance from the camp centre
 const GRAV = 22;
 
 /* ---------- blocks (cell contents) ----------
@@ -4051,7 +4060,7 @@ defB(0, { key: 'air' });
 defB(1, { key: 'wood', name: '木墙', cost: { wood: 4 }, hp: 140, cap: 6, P: 1, Z: 1, B: 1, top: 1, st: 1, brk: 1, col: '#86603a', tip: '便宜的墙，撑得住 5 格跨度' });
 defB(2, { key: 'brick', name: '砖墙', cost: { stone: 4 }, hp: 340, cap: 8, P: 1, Z: 1, B: 1, top: 1, st: 1, brk: 1, col: '#8a4c3a', tip: '结实，承重更好' });
 defB(3, { key: 'steel', name: '钢墙', cost: { steel: 4 }, hp: 700, cap: 12, P: 1, Z: 1, B: 1, top: 1, st: 1, brk: 1, col: '#6f8494', tip: '最硬的墙，重锤也要砸半天' });
-defB(4, { key: 'wfloor', name: '木地板', cost: { wood: 2 }, hp: 90, cap: 6, slab: 1, st: 1, brk: 1, col: '#7a5232', tip: '楼板：要建在当前视图层，往上一层就切到上一层再建' });
+defB(4, { key: 'wfloor', name: '木地板', cost: { wood: 2 }, hp: 90, cap: 6, slab: 1, st: 1, brk: 1, col: '#7a5232', tip: '指墙顶就铺在墙上，指屋里就铺成天花板，站在楼上指外面能往外延伸' });
 defB(5, { key: 'sfloor', name: '钢地板', cost: { steel: 2 }, hp: 280, cap: 10, slab: 1, st: 1, brk: 1, col: '#64788a', tip: '跨度大的楼板' });
 defB(6, { key: 'stairs', name: '楼梯', cost: { wood: 4 }, hp: 120, cap: 5, stairs: 1, st: 1, brk: 1, col: '#8a6440', tip: '朝向是放置时屏幕的「上」，R 键旋转。攀爬者以外的丧尸也会走楼梯' });
 defB(7, { key: 'door', name: '木门', cost: { wood: 6 }, hp: 200, cap: 6, Z: 1, B: 1, top: 1, st: 1, brk: 1, col: '#5c3c22', tip: '人能穿过，丧尸只能砸' });
@@ -4108,9 +4117,45 @@ const SPOTS = {
   crate: { name: '补给箱', loot: { parts: [2, 4] }, ammo: 1 },
   rubble: { name: '废墟瓦砾', loot: { stone: [5, 9], wood: [2, 4] } },
 };
+/* ---------- daily tasks: three are rolled every dawn (and at the start) and last until the next dawn ---------- */
+// need(d, W) -> target count for upcoming night d; min = first night it can appear; rw = reward pool keys
+const TASKS = {
+  kill: { t: n => '击杀 ' + n + ' 只丧尸', need: d => Math.round(BAL.nightSpawn(d) * 0.6), w: 3, rw: ['parts', 'ammo', 'steel'] },
+  runner: { t: n => '击杀 ' + n + ' 只奔跑者', need: d => 3 + Math.floor(d / 2), min: 3, w: 2, rw: ['parts', 'ammo'] },
+  climber: { t: n => '击杀 ' + n + ' 只爬墙尸', need: d => 2 + Math.floor(d / 4), min: 5, w: 1.3, rw: ['parts', 'nade'] },
+  brute: { t: n => '击杀 ' + n + ' 只巨尸', need: () => 1, min: 6, w: 1.3, rw: ['parts', 'upg'] },
+  nade: { t: n => '用手雷炸死 ' + n + ' 只丧尸', need: d => 4 + Math.floor(d / 2), min: 2, w: 1.2, rw: ['nade', 'ammo'] },
+  shove: { t: n => '推开 ' + n + ' 次丧尸', need: d => 10 + d, w: 1, rw: ['med', 'wood'] },
+  search: { t: n => '搜索 ' + n + ' 处汽车 / 补给箱 / 瓦砾', need: d => 5 + Math.floor(d / 3), w: 2, rw: ['steel', 'ammo', 'med'] },
+  far: { t: n => '去建造区外搜索 ' + n + ' 处', need: () => 3, w: 1.6, rw: ['parts', 'nade', 'med'] },
+  gather: { t: n => '砍树或采石 ' + n + ' 次', need: d => 6 + Math.floor(d / 3), w: 1.5, rw: ['steel', 'parts'] },
+  build: { t: n => '建造 ' + n + ' 个方块', need: d => 12 + d * 2, w: 2, rw: ['wood', 'stone', 'parts'] },
+  high: { t: n => '在 3 层或更高处建造 ' + n + ' 个方块', need: () => 6, min: 2, w: 1, rw: ['steel', 'parts'] },
+  clean: { t: () => '今夜没有人倒下', need: () => 1, min: 2, w: 1.4, rw: ['upg', 'med', 'nade'] },
+};
+// reward pools: what one completed task pays out (d = night the task was rolled for)
+const TASK_RW = {
+  parts: d => ({ res: { parts: 6 + Math.floor(d / 2) } }),
+  steel: d => ({ res: { steel: 8 + d } }),
+  wood: d => ({ res: { wood: 30 + d * 3 } }),
+  stone: d => ({ res: { stone: 25 + d * 3 } }),
+  ammo: () => ({ ammo: 2 }),
+  med: () => ({ med: 1 }),
+  nade: () => ({ nade: 2 }),
+  upg: d => ({ upg: 1, res: { parts: 4 } }),
+};
+function taskRewardText(r) {
+  const out = [];
+  if (r.res) for (const k in r.res) out.push(RES.find(x => x.k === k).name + '+' + r.res[k]);
+  if (r.ammo) out.push('全队弹药');
+  if (r.med) out.push('每人医疗包');
+  if (r.nade) out.push('每人手雷+' + r.nade);
+  if (r.upg) out.push('强化弹头+1');
+  return out.join(' ');
+}
 const GATHER = { 22: { name: '砍树', res: 'wood', n: [6, 10], t: 1.6 }, 21: { name: '采石', res: 'stone', n: [6, 10], t: 2.0 } };
 
-/* ---------- crafting (workbench next to the radio) ---------- */
+/* ---------- crafting (workbench in the starter house) ---------- */
 const CRAFT = [
   { id: 'rifle', name: '步枪', desc: '全自动，30 发弹匣', cost: { parts: 12, steel: 6 }, wpn: 2 },
   { id: 'sniper', name: '狙击枪', desc: '一枪穿透 5 只', cost: { parts: 18, steel: 8 }, wpn: 3 },
@@ -4119,7 +4164,6 @@ const CRAFT = [
   { id: 'slugs', name: '狙击弹 ×10', desc: '', cost: { parts: 3 }, ammo: [3, 10] },
   { id: 'nade', name: '手雷 ×2', desc: '最多带 6 颗', cost: { parts: 4 }, nade: 2 },
   { id: 'med', name: '医疗包', desc: '回复 60 生命，最多 3 个', cost: { parts: 3, wood: 2 }, med: 1 },
-  { id: 'radio', name: '加固电台', desc: '电台 +250 生命', cost: { steel: 6, parts: 2 }, radio: 250 },
   { id: 'upg', name: '强化弹头', desc: '全队伤害 +12%（最多 5 级）', cost: { parts: 8 }, upg: 1 },
 ];
 
@@ -4128,6 +4172,7 @@ const BAL = {
   nights: 15,
   dayLen: [160, 120],
   pMaxHp: 100, pSpeed: 4.4, pReach: 6.5,
+  stairHold: 0.18, ledgeHold: 0.45,  // seconds of pushing before you walk down stairs / jump off a ledge
   downTime: 30, reviveTime: 2.4, soloDownTime: 8, respawnHp: 0.5,
   searchTime: 1.5, healTime: 1.0, medHeal: 60,
   shoveDmg: 18, shoveKB: 6, shoveCD: 0.55, shoveRange: 1.3,
@@ -4143,7 +4188,7 @@ const BAL = {
   spawnDur: n => 45 + n * 3,
   dayStragglers: 4, dayStragglerCD: 13,
   lootFar: 30, wireDps: 14, wireSlow: 0.45, wireWear: 6,
-  aggro: 11,                     // path distance at which zombies switch from the radio to a player
+  aggro: 11,                     // (legacy) zombies now always hunt the nearest reachable player
   diff: { easy: { hp: 0.75, n: 0.75, dmg: 0.7 }, normal: { hp: 1, n: 1, dmg: 1 }, hard: { hp: 1.3, n: 1.3, dmg: 1.25 } },
 };
 const isBlood = n => n % 5 === 0;
@@ -4174,6 +4219,12 @@ function blkAt(x, y, L) {
 }
 const slabAt = (x, y, L) => (inMap(x, y) && L >= 0 && L < ML) ? W.slab[ci(x, y, L)] : 0;
 const solidFor = (b, who) => b !== 0 && !!(who === 'p' ? B[b].P : who === 'z' ? B[b].Z : B[b].B);
+// a player wall (wood / brick / steel) above ground level with nothing on top: waist-high parapet you can shoot over
+function isParapet(i) {
+  const b = W.blk[i]; if (b !== 1 && b !== 2 && b !== 3) return false;
+  const x = cx_(i), y = cy_(i), L = cl_(i); if (L < 1 || L <= gAt(x, y)) return false;
+  if (L + 1 >= ML) return true; const u = ci(x, y, L + 1); return !W.blk[u] && !W.slab[u];
+}
 function support(x, y, L) {
   if (!inMap(x, y) || L < 0 || L >= ML) return false;
   if (L === W.G[y * MW + x] && W.tt[y * MW + x] !== TT.water) return true;
@@ -4242,7 +4293,7 @@ function genMap(seed) {
       if (r() < 0.12 + pass * 0.3) { ramps.push([x, y]); blk[ci(x, y, g)] = 28; bdir[ci(x, y, g)] = d; tt[col(x, y)] = TT.dirt; }
     }
   }
-  // radio + starter house (9 x 9, half second floor)
+  // camp: starter house (9 x 9, half second floor) with the workbench
   const put = (x, y, L, id, d) => { blk[ci(x, y, L)] = id; bhp[ci(x, y, L)] = B[id].hp || 1; if (d != null) bdir[ci(x, y, L)] = d; };
   const putS = (x, y, L, id) => { slab[ci(x, y, L)] = id; shp[ci(x, y, L)] = B[id].hp; };
   for (let y = RY - 7; y <= RY + 7; y++) for (let x = RX - 7; x <= RX + 7; x++) { G[col(x, y)] = 0; if (tt[col(x, y)] !== TT.road) tt[col(x, y)] = TT.grass; for (let L = 0; L < ML; L++) blk[ci(x, y, L)] = 0; }
@@ -4251,7 +4302,7 @@ function genMap(seed) {
     const edge = x === X0 || x === X1 || y === Y0 || y === Y1;
     if (edge) {
       let id = 2;
-      if ((x === RX && y === Y1) || (x === X0 && y === RY)) id = 7;
+      if ((x === RX && (y === Y1 || y === Y0)) || ((x === X0 || x === X1) && y === RY)) id = 7; // a door on every side
       if ((y === Y0 && (x === RX - 2 || x === RX + 2)) || (x === X1 && (y === RY - 2 || y === RY + 2)) || (x === X0 && y === RY + 2) || (y === Y1 && x === RX + 3)) id = 8;
       put(x, y, 0, id);
     } else if (y <= RY && !(x === X1 - 1 && y === Y0 + 2)) putS(x, y, 1, 4);
@@ -4260,7 +4311,7 @@ function genMap(seed) {
   }
   put(X1 - 1, Y0 + 2, 0, 6, 3);   // stairs going north up to the first floor
   put(X0 + 2, Y0 + 2, 1, 10);      // lamp upstairs
-  put(RX, RY, 0, 30); put(RX - 2, RY + 2, 0, 31);
+  put(RX - 2, RY + 2, 0, 31);
   // town: plastered ruins; two-storey houses keep half an upper floor with stairs up
   const spotsAt = [];
   TOWN_HOUSES.forEach(([x0, y0, x1, y1, st], k) => {
@@ -4281,6 +4332,20 @@ function genMap(seed) {
         if (!edge) putS(x, y, 1, 4);
         if (ue && (edge || (x === (west ? upX1 : upX0)))) { if (edge || y % 3) put(x, y, edge ? 1 : 0, 24); if (edge && !ARCH.roofCells.has(x + ',' + y + ',1') && rr() < 0.15) blk[ci(x, y, 1)] = 0; }
       }
+    }
+    // entrances: at least three sides get a real doorway (gaps above might otherwise be filled with rubble)
+    const sides = [[x0 + 1, x1 - 1, y0, y0], [x0 + 1, x1 - 1, y1, y1], [x0, x0, y0 + 1, y1 - 1], [x1, x1, y0 + 1, y1 - 1]];
+    for (let k = sides.length - 1; k > 0; k--) { const j = Math.floor(rr() * (k + 1)); [sides[k], sides[j]] = [sides[j], sides[k]]; }
+    let open = 0;
+    for (const [ax, bx, ay, by] of sides) {
+      const cells = []; for (let x = ax; x <= bx; x++) for (let y = ay; y <= by; y++) if (ok(x, y)) cells.push([x, y]);
+      if (!cells.length) continue;
+      if (cells.some(([x, y]) => !blk[ci(x, y, 0)])) { open++; continue; }
+      if (open >= 3) continue;
+      // prefer a doorway outside the upper floor, near the middle of the side
+      cells.sort((a, b) => ((st === 2 && a[0] >= upX0 && a[0] <= upX1) - (st === 2 && b[0] >= upX0 && b[0] <= upX1)) * 4 + (Math.abs(a[0] - (ax + bx) / 2) + Math.abs(a[1] - (ay + by) / 2)) - (Math.abs(b[0] - (ax + bx) / 2) + Math.abs(b[1] - (ay + by) / 2)) + (rr() - 0.5));
+      const [x, y] = cells[0], upper = st === 2 && x >= upX0 && x <= upX1;
+      blk[ci(x, y, 0)] = 0; if (!upper) blk[ci(x, y, 1)] = 0; open++;
     }
     if (st === 2) { const sx = west ? upX1 + 1 : upX0 - 1; blk[ci(sx, y0 + 3, 0)] = 0; put(sx, y0 + 3, 0, 6, 3); blk[ci(sx, y0 + 2, 0)] = 0; slab[ci(sx, y0 + 2, 1)] = 0; putS(sx, y0 + 2, 1, 4); }
     // loot inside: crates and rubble piles, one upstairs in two-storey houses
@@ -4362,7 +4427,7 @@ function supportIf(x, y, L, id) {
 }
 // can block `id` (with stairs dir) go into cell (x,y,L)? returns '' or a reason
 function canPlace(x, y, L, id, dir) {
-  if (!inMap(x, y) || !inZone(x, y)) return '只能在电台周围的建造区内建造';
+  if (!inMap(x, y) || !inZone(x, y)) return '只能在营地周围的建造区（黄框）内建造';
   if (L < 0 || L >= ML - 1) return '太高了';
   const g = gAt(x, y), i = ci(x, y, L), Bi = B[id];
   if (L < g) return '这里是实心地面';
@@ -4396,7 +4461,7 @@ function transition(cx, cy, nx, ny, L, who, canDrop) {
   if (standable(nx, ny, L, who)) return L;
   if (L > 0 && enterable(nx, ny, L, who) && !support(nx, ny, L)) {
     const b = blkAt(nx, ny, L - 1);
-    if (B[b].stairs) { const d = DIRS[W.bdir[ci(nx, ny, L - 1)]]; if (nx + d[0] === cx && ny + d[1] === cy) return L - 1; }
+    if (B[b].stairs) { const d = DIRS[W.bdir[ci(nx, ny, L - 1)]]; if (nx + d[0] === cx && ny + d[1] === cy) return L - 1; if (who === 'p') return -1; } // railings around the stairwell
     if (canDrop) { for (let l = L - 1; l >= 0; l--) { if (standable(nx, ny, l, who)) return l; if (!enterable(nx, ny, l, who)) return -1; } }
   }
   return -1;
@@ -4426,7 +4491,11 @@ function moveEnt(e, dx, dy, who, canDrop) {
       if (nc !== cur) {
         const nx = ax ? cx : nc, ny = ax ? nc : cy;
         const L2 = transition(cx, cy, nx, ny, e.L, who, canDrop);
-        if (L2 < 0) { v = d > 0 ? nc - 0.001 : cur + 0.001; noteBump(e, nx, ny); }
+        // players only go down (stairs or off a ledge) if they keep pushing for a moment: no accidental falls
+        const st = L2 >= 0 && L2 < e.L && who === 'p' ? (B[blkAt(nx, ny, L2)].stairs ? 1 : 2) : 0;
+        const hold = st && (e.edgeT || 0) < (st === 1 ? BAL.stairHold : BAL.ledgeHold);
+        if (hold) e.edgeWant = st;
+        if (L2 < 0 || hold) { v = d > 0 ? nc - 0.001 : cur + 0.001; if (L2 < 0) noteBump(e, nx, ny); }
         else { if (L2 < e.L && !B[blkAt(nx, ny, L2)].stairs) e.dropped = e.L - L2; e.L = L2; }
       } else {
         // keep a radius from blocked neighbour columns
@@ -4509,8 +4578,9 @@ function updateFields(dt, force) {
 
 /* ---------- 3D rays (world: x east, y south, z up; cells are 1 x 1 x FH) ---------- */
 // returns {d, i} distance to the first bullet-stopping cell / floor, i = cell index or -1
+let PARA_D = -1;
 function rayWorld(ox, oy, oz, dx, dy, dz, maxD, opt) {
-  const maxL = opt && opt.maxL != null ? opt.maxL : ML - 1, pick = opt && opt.pick;
+  const maxL = opt && opt.maxL != null ? opt.maxL : ML - 1, pick = opt && opt.pick, any = opt && opt.any, lean = opt && opt.lean || 0, hz = Math.hypot(dx, dy);
   let x = Math.floor(ox), y = Math.floor(oy), l = Math.floor(oz / FH);
   const sx = dx > 0 ? 1 : -1, sy = dy > 0 ? 1 : -1, sz = dz > 0 ? 1 : -1;
   const tdx = dx ? Math.abs(1 / dx) : 1e9, tdy = dy ? Math.abs(1 / dy) : 1e9, tdz = dz ? Math.abs(FH / dz) : 1e9;
@@ -4522,14 +4592,24 @@ function rayWorld(ox, oy, oz, dx, dy, dz, maxD, opt) {
     if (l < 0) return true;
     if (!inMap(x, y) || l >= ML) return false;
     if (l > maxL) return false;
-    const b = W.blk[ci(x, y, l)];
+    const i = ci(x, y, l), b = W.blk[i];
     if (!b) return false;
-    if (B[b].B) return true;
+    if (B[b].B || any) {
+      if ((b === 1 || b === 2 || b === 3) && isParapet(i)) {
+        // waist-high: the ray only stops if it dips below the top inside this cell (or the shooter is leaning over it)
+        if (lean && d * hz < lean) return false;
+        const top = l * FH + PH, z0 = oz + dz * d, z1 = oz + dz * Math.min(tmx, tmy, tmz, maxD);
+        if (Math.min(z0, z1) > top) return false;
+        if (z0 > top && dz < 0) PARA_D = (top - oz) / dz;
+      }
+      return true;
+    }
     if (pick && (b === 22 || b === 21 || b === 23 || B[b].P)) return true;
     return false;
   };
   for (let it = 0; it < 400 && d <= maxD; it++) {
-    if (blocks(x, y, l)) return { d, i: inMap(x, y) && l >= 0 && l < ML ? ci(x, y, l) : -1, face, x, y, l };
+    PARA_D = -1;
+    if (blocks(x, y, l)) return { d: PARA_D > d ? PARA_D : d, i: inMap(x, y) && l >= 0 && l < ML ? ci(x, y, l) : -1, face, x, y, l };
     if (tmx < tmy && tmx < tmz) { d = tmx; tmx += tdx; x += sx; face = 0; }
     else if (tmy < tmz) { d = tmy; tmy += tdy; y += sy; face = 1; }
     else {
@@ -4554,9 +4634,9 @@ function rayBox(ox, oy, oz, dx, dy, dz, bx, by, bz, sx, sy, sz, maxD) {
   return t0;
 }
 // line of sight between two points (bullet rules)
-function los(ax, ay, az, bx, by, bz) {
+function los(ax, ay, az, bx, by, bz, lean) {
   const dx = bx - ax, dy = by - ay, dz = bz - az, L = Math.hypot(dx, dy, dz); if (L < 1e-6) return true;
-  return rayWorld(ax, ay, az, dx / L, dy / L, dz / L, L).d >= L - 0.05;
+  return rayWorld(ax, ay, az, dx / L, dy / L, dz / L, L, lean ? { lean } : null).d >= L - 0.05;
 }
 
 /* ---- 30_sim.js ---- */
@@ -4574,7 +4654,7 @@ function newWorld(seed, names, diff) {
   const m = genMap(seed);
   W = {
     seed, t: 0, G: m.G, tt: m.tt, blk: m.blk, bhp: m.bhp, slab: m.slab, shp: m.shp, bdir: m.bdir, stab: new Int8Array(NC), spots: m.spots,
-    radio: { x: m.radio.x, y: m.radio.y, hp: BAL.radioHp, max: BAL.radioHp, hitT: 0, alarmT: 0 }, bench: m.bench,
+    radio: { x: m.radio.x, y: m.radio.y }, bench: m.bench, tasks: [], tkv: 0, clean: true,
     p: names.map((n, i) => mkPlayer(i, n)), zs: [], proj: [], zid: 1,
     phase: 'day', clock: BAL.dayLen[0], dayLen: BAL.dayLen[0], night: 0, res: Object.assign({}, BAL.startRes), upg: 0, kills: 0,
     spawnQ: [], nightT: 0, strayT: 8, diff, D: BAL.diff[diff] || BAL.diff.normal, rng: mulberry(seed ^ 0x9e3779b9), seq: 0,
@@ -4584,6 +4664,7 @@ function newWorld(seed, names, diff) {
   recomputeStab();
   updateFields(0, true);
   W.edges = edgeSpawns();
+  rollTasks();
   return W;
 }
 const rand = (a = 0, b = 1) => a + W.rng() * (b - a);
@@ -4628,8 +4709,9 @@ function stepMove(p, dt) {
   const tx = I.mx * k * spd, ty = I.my * k * spd, a = Math.min(1, dt * 14);
   p.vx = lerp(p.vx, tx, a); p.vy = lerp(p.vy, ty, a);
   p.kbx *= Math.max(0, 1 - dt * 6); p.kby *= Math.max(0, 1 - dt * 6);
-  p.dropped = 0;
+  p.dropped = 0; p.edgeWant = 0;
   moveEnt(p, (p.vx + p.kbx) * dt, (p.vy + p.kby) * dt, 'p', true);
+  p.edgeK = p.edgeWant; p.edgeT = p.edgeWant && m > 0.3 ? (p.edgeT || 0) + dt : 0;
   if (p.dropped) emitLocal('land');
   const sp = Math.hypot(p.vx, p.vy);
   if (sp > 0.3) p.anim += dt * sp * 2.6; else p.anim = lerp(p.anim, Math.round(p.anim / Math.PI) * Math.PI, Math.min(1, dt * 8));
@@ -4690,12 +4772,12 @@ function completeUse(p, tgt) {
   if (tgt.k === 'gather') {
     const g = GATHER[W.blk[i]]; if (!g) return;
     const n = Math.round(rand(g.n[0], g.n[1])); W.res[g.res] += n;
-    setCell(i, 0, W.slab[i], null, W.blk[i] === 22 ? 'chop' : 'mine');
+    setCell(i, 0, W.slab[i], null, W.blk[i] === 22 ? 'chop' : 'mine'); taskAdd('gather');
     emit({ k: 'loot', p: p.i, x: wx, y: wy, z: wz, text: '+' + n + ' ' + RES.find(r => r.k === g.res).name });
     return;
   }
   const s = W.spots.find(s => s.i === i); if (!s || s.searched) return;
-  s.searched = true; emit({ k: 'spot', i, v: 1 });
+  s.searched = true; emit({ k: 'spot', i, v: 1 }); taskAdd('search'); if (!inZone(x, y)) taskAdd('far');
   const S = SPOTS[s.k], got = [];
   for (const k in S.loot) { const [a, b] = S.loot[k]; const n = Math.round(rand(a, b) * m); W.res[k] += n; got.push('+' + n + ' ' + RES.find(r => r.k === k).name); }
   if (S.ammo) {
@@ -4705,6 +4787,42 @@ function completeUse(p, tgt) {
     if (rand() < 0.35 && p.nades < 6) { p.nades++; got.push('手雷'); }
   }
   emit({ k: 'loot', p: p.i, x: wx, y: wy, z: wz, text: got.join('  ') });
+}
+/* ---------- daily tasks ---------- */
+function rollTasks() {
+  const d = W.night + 1, pool = [];
+  for (const k in TASKS) { const T = TASKS[k]; if ((T.min || 1) <= d) pool.push(k); }
+  const pick = [];
+  while (pick.length < 3 && pool.length) {
+    let tot = 0; for (const k of pool) tot += TASKS[k].w;
+    let r = rand() * tot, j = 0;
+    for (; j < pool.length - 1; j++) { r -= TASKS[pool[j]].w; if (r <= 0) break; }
+    pick.push(pool.splice(j, 1)[0]);
+  }
+  W.tasks = pick.map(k => {
+    const T = TASKS[k], need = Math.max(1, T.need(d)), rk = T.rw[Math.floor(rand() * T.rw.length)], rw = TASK_RW[rk](d);
+    return { k, need, got: 0, done: 0, rw, txt: T.t(need), rt: taskRewardText(rw) };
+  });
+  W.tkv++;
+}
+function taskAdd(k, n = 1) {
+  if (!W || W.demo || W.over || NETROLE === 'guest') return;
+  for (const t of W.tasks) {
+    if (t.k !== k || t.done) continue;
+    t.got = Math.min(t.need, t.got + n); W.tkv++;
+    if (t.got >= t.need) { t.done = 1; payTask(t); }
+  }
+}
+function payTask(t) {
+  const r = t.rw;
+  if (r.res) for (const k in r.res) W.res[k] += r.res[k];
+  for (const q of activeP()) {
+    if (r.ammo) { const give = [0, 8, 30, 4]; for (let wi = 1; wi < 4; wi++) if (q.owned[wi]) q.ammo[wi] += give[wi] * r.ammo; }
+    if (r.med) q.meds = Math.min(3, q.meds + r.med);
+    if (r.nade) q.nades = Math.min(6, q.nades + r.nade);
+  }
+  if (r.upg) W.upg = Math.min(5, W.upg + r.upg);
+  emit({ k: 'task', txt: t.txt, rt: t.rt });
 }
 function startReload(p) {
   const wi = p.down ? 0 : p.wpn, w = WPN[wi];
@@ -4730,7 +4848,7 @@ function fireWeapon(p, wi) {
     const sp = w.spread * (p.down ? 1.6 : 1);
     const yw = yaw + (rand() - 0.5) * 2 * sp, pt = pitch + (rand() - 0.5) * sp;
     const dx = Math.cos(pt) * Math.cos(yw), dy = Math.cos(pt) * Math.sin(yw), dz = Math.sin(pt);
-    const wall = rayWorld(sx, sy, sz, dx, dy, dz, w.range);
+    const wall = rayWorld(sx, sy, sz, dx, dy, dz, w.range, { lean: LEAN });
     const hits = [];
     for (const z of W.zs) {
       if (z.hp <= 0) continue;
@@ -4757,8 +4875,10 @@ function hurtZombie(z, dmg, p, kx, ky) {
   if (kx || ky) { z.kbx = (z.kbx || 0) + kx; z.kby = (z.kby || 0) + ky; }
   if (z.hp <= 0) killZombie(z, p);
 }
+let KSRC = '';
 function killZombie(z, p) {
   z.hp = 0; W.kills++; if (p) p.kills++;
+  taskAdd('kill'); if (TASKS[z.k]) taskAdd(z.k); if (KSRC === 'nade') taskAdd('nade');
   emit({ k: 'zdie', x: r2(z.x), y: r2(z.y), z: r2(z.z), t: z.k, f: r2(z.face), id: z.id });
   if (rand() < (z.k === 'boss' ? 1 : z.k === 'brute' ? 0.6 : 0.07)) { const n = z.k === 'boss' ? 15 : z.k === 'brute' ? 3 : 1; W.res.parts += n; emit({ k: 'loot', p: -1, x: z.x, y: z.y, z: z.z + z.h, text: '+' + n + ' 零件' }); }
 }
@@ -4767,12 +4887,11 @@ function hurtPlayer(p, dmg) {
   if (DBG && DBG.god) return;
   if (p.down) { p.downT -= dmg * 0.18; p.hurtT = 0.3; emit({ k: 'phurt', p: p.i, d: 1 }); return; }
   p.hp -= dmg; p.hurtT = 0.3; emit({ k: 'phurt', p: p.i, d: Math.round(dmg) });
-  if (p.hp <= 0) { p.hp = 0; p.down = true; p.downT = activeP().length > 1 ? BAL.downTime : BAL.soloDownTime; p.reloadT = 0; p.medT = 0; p.build = false; emit({ k: 'down', p: p.i }); checkLose(); }
+  if (p.hp <= 0) { p.hp = 0; p.down = true; if (W.phase === 'night') W.clean = false; p.downT = activeP().length > 1 ? BAL.downTime : BAL.soloDownTime; p.reloadT = 0; p.medT = 0; p.build = false; emit({ k: 'down', p: p.i }); checkLose(); }
 }
 function knock(p, kx, ky) { if (p.i === ME && NETROLE !== 'guest') { p.kbx += kx; p.kby += ky; } else emit({ k: 'kb', p: p.i, x: r2(kx), y: r2(ky) }); }
 function checkLose() {
   if (W.over) return;
-  if (W.radio.hp <= 0) return endGame('lose', '电台被摧毁了');
   const act = activeP(); if (!act.length) return;
   if (act.some(standingP)) return;
   if (act.some(p => p.down && (p.meds > 0 || p.selfRev))) return;
@@ -4817,6 +4936,7 @@ function shove(p) {
     z.kbx = (z.kbx || 0) + dx / (d || 1) * BAL.shoveKB * heavy; z.kby = (z.kby || 0) + dy / (d || 1) * BAL.shoveKB * heavy; z.stun = 0.45 * heavy;
     hurtZombie(z, BAL.shoveDmg * (1 + 0.12 * W.upg), p); n++;
   }
+  if (n) taskAdd('shove', n);
   emit({ k: 'shove', p: p.i, n });
 }
 function throwNade(p) {
@@ -4840,7 +4960,6 @@ function craftBlocked(p, c) {
   if (c.nade && p.nades >= 6) return '已满';
   if (c.med && p.meds >= 3) return '已满';
   if (c.upg && W.upg >= 5) return '已满级';
-  if (c.radio && W.radio.max >= BAL.radioHp + 2000) return '已满';
   if (!affordable(W.res, c.cost)) return '材料不足';
   return '';
 }
@@ -4851,7 +4970,6 @@ function doCraft(p, id) {
   if (c.ammo) p.ammo[c.ammo[0]] += c.ammo[1];
   if (c.nade) p.nades = Math.min(6, p.nades + c.nade);
   if (c.med) p.meds = Math.min(3, p.meds + 1);
-  if (c.radio) { W.radio.max += c.radio * 0.5; W.radio.hp = Math.min(W.radio.max, W.radio.hp + c.radio); }
   if (c.upg) W.upg++;
   emit({ k: 'craft', p: p.i, id, name: c.name });
 }
@@ -4876,7 +4994,7 @@ function doBuild(p, x, y, L, id, dir) {
   for (const k in Bi.cost) W.res[k] -= Bi.cost[k];
   if (Bi.slab) setCell(i, W.blk[i] === 23 ? 0 : W.blk[i], id, null, 'build');
   else setCell(i, id, W.slab[i], Bi.stairs ? (dir & 3) : null, 'build');
-  W.stats.built++;
+  W.stats.built++; taskAdd('build'); if (L >= 2) taskAdd('high');
   recomputeStab();
 }
 function doDemolish(p, x, y, L) {
@@ -4900,7 +5018,7 @@ function edgeSpawns() {
   return out;
 }
 function startNight() {
-  W.night++; W.phase = 'night'; W.nightT = 0;
+  W.night++; W.phase = 'night'; W.nightT = 0; W.clean = true;
   W.p.forEach(p => p.ready = false);
   const n = W.night, blood = isBlood(n), D = W.D;
   const count = Math.round(BAL.nightSpawn(n) * D.n * (blood ? BAL.bloodMul : 1));
@@ -4922,8 +5040,10 @@ function startNight() {
   emit({ k: 'night', n, blood: blood ? 1 : 0, count: q.length, from: front.map(s => names[s]).join('、') });
 }
 function dawn() {
+  if (W.clean && W.night > 0) taskAdd('clean');
   if (W.night >= BAL.nights && !W.endless) return endGame('win', '救援直升机到了');
   W.phase = 'day'; W.dayLen = W.clock = BAL.dayLen[1];
+  rollTasks();
   W.spots.forEach(s => s.searched = false);
   for (const p of activeP()) {
     p.ready = false;
@@ -4981,12 +5101,13 @@ function stepProj(dt) {
   W.proj = W.proj.filter(b => !b.dead);
 }
 function explode(x, y, z, p) {
-  const R = BAL.nadeR;
+  const R = BAL.nadeR; KSRC = 'nade';
   for (const zb of W.zs) {
     if (zb.hp <= 0) continue;
     const d = Math.hypot(zb.x - x, zb.y - y, (zb.z + zb.h / 2 - z) * 0.8);
     if (d < R + zb.r) { const f = 1 - Math.max(0, d - zb.r) / R; hurtZombie(zb, BAL.nadeDmg * (0.35 + 0.65 * f) * (1 + 0.12 * W.upg), p, (zb.x - x) / (d || 1) * 5 * f, (zb.y - y) / (d || 1) * 5 * f); }
   }
+  KSRC = '';
   emit({ k: 'boom', x: r2(x), y: r2(y), z: r2(z) });
 }
 
@@ -4999,7 +5120,6 @@ function simStep(dt) {
     updateFields(dt);
     stepZombies(dt);
     stepProj(dt);
-    W.radio.hitT = Math.max(0, W.radio.hitT - dt); W.radio.alarmT -= dt;
     checkLose();
   }
 }
@@ -5042,8 +5162,8 @@ function stepZombies(dt) {
       if (z.hp <= 0) continue;
     }
     const rf = climbT ? F.rc : F.rw, pf = climbT ? F.pc : F.pw;
-    let field = rf;
-    if (pf[i] < BAL.aggro * (climbT ? 1.6 : 1) && pf[i] < rf[i] + 8) field = pf;
+    // pure survival: always hunt the nearest reachable player (smashing through walls if needed)
+    const field = pf[i] < Infinity ? pf : rf;
     // spitter: lob acid at a visible player in range
     let hold = false;
     if (z.k === 'spitter') {
@@ -5073,16 +5193,9 @@ function stepZombies(dt) {
         } else if (ub && B[ub].Z && !B[ub].stairs && B[ub].brk) attackI = u;
         else { tx = bx + 0.5; ty = by + 0.5; }
       }
-    } else if (!hold) { tx = W.radio.x + 0.5; ty = W.radio.y + 0.5; }
-    // at the radio
-    const rL = gAt(W.radio.x, W.radio.y);
-    if (z.L === rL && Math.abs(cx - W.radio.x) + Math.abs(cy - W.radio.y) === 1 && field === rf) {
-      z.st = 'attack'; z.atk = 0.3; z.face = Math.atan2(W.radio.y + 0.5 - z.y, W.radio.x + 0.5 - z.x); tx = null;
-      if (z.cd <= 0) {
-        z.cd = Z.cd; W.radio.hp -= Z.bdmg * BAL.radioDmg * W.D.dmg; W.radio.hitT = 0.2; emit({ k: 'rhit' });
-        if (W.radio.alarmT <= 0) { W.radio.alarmT = 6; say('电台正在被攻击！', '#ff6b6b'); }
-        if (W.radio.hp <= 0) { W.radio.hp = 0; checkLose(); }
-      }
+    } else if (!hold) {
+      let best = null, bd = 1e9; for (const p of W.p) { if (!standingP(p) && !p.down) continue; const d = d2(p.x, p.y, z.x, z.y); if (d < bd) { bd = d; best = p; } }
+      if (best) { tx = best.x; ty = best.y; } else { tx = W.radio.x + 0.5; ty = W.radio.y + 0.5; }
     }
     if (attackI >= 0) { zAttackCell(z, attackI); tx = null; }
     // bite players in reach
@@ -5296,7 +5409,7 @@ function buildTerrain() {
   }
   I.water.count = w; I.ramp.count = rp;
   for (const m of [I.water, I.ramp]) m.instanceMatrix.needsUpdate = true;
-  OBJ.radio.position.set(W.radio.x + 0.5, gAt(W.radio.x, W.radio.y) * FH, W.radio.y + 0.5);
+  OBJ.radio.visible = false;
   OBJ.bench.position.set(W.bench.x + 0.5, gAt(W.bench.x, W.bench.y) * FH, W.bench.y + 0.5);
   OBJ.grid.position.set(W.radio.x, 0, W.radio.y); OBJ.zone.position.set(W.radio.x, 0.03, W.radio.y);
   RC.ver = -1; buildMinimapBase();
@@ -5322,7 +5435,15 @@ function rebuildCells() {
     if (L === vl && me && !me.dead && (B[b].P || B[b].Z) && !B[b].nat) { const dx = X - me.x, dy = Z - me.y; if (dx * dx + dy * dy < 40 && dx * ox + dy * oy > 0.25) cut = 0.3; }
     switch (b) {
       case 1: case 2: case 3: case 24: archWall(b, i, x, y, L, X, Y, Z, h, cut, vl); break;
-      case 6: archPut('stairs', X, Y, Z, -W.bdir[i] * Math.PI / 2, 1, 1, 1, dmgTint('#e8d8c0', W.bhp[i] / B[b].hp)); break;
+      case 6: {
+        archPut('stairs', X, Y, Z, -W.bdir[i] * Math.PI / 2, 1, 1, 1, dmgTint('#e8d8c0', W.bhp[i] / B[b].hp));
+        // railings around the opening above, on every side you could walk up to except the top step
+        if (L + 1 < ML && L + 1 <= vl) for (let k = 0; k < 4; k++) {
+          if (k === W.bdir[i]) continue; const [ex, ey] = DIRS[k], nx = x + ex, ny = y + ey;
+          if (inMap(nx, ny) && support(nx, ny, L + 1) && !W.blk[ci(nx, ny, L + 1)]) archPut('rail', X, Y + FH, Z, Math.atan2(-ex, -ey), 1, 1, 1);
+        }
+        break;
+      }
       case 7: { const ax = wallAxis(x, y, L) ? Math.PI / 2 : 0, f = W.bhp[i] / B[b].hp; archPut('doorF', X, Y, Z, ax, 1, cut, 1, dmgTint('#ffffff', f)); archPut('doorL', X, Y, Z, ax, 1, cut, 1, dmgTint('#ffffff', f)); break; }
       case 8: { const ax = wallAxis(x, y, L) ? Math.PI / 2 : 0, f = W.bhp[i] / B[b].hp; archPut('sand', X, Y, Z, ax, 1, Math.max(cut, 0.6), 1, dmgTint('#ffffff', f)); if (cut === 1) archPut('bars', X, Y, Z, ax, 1, 1, 1, dmgTint('#ffffff', f)); break; }
       case 9: { const wa = blkAt(x - 1, y, L) === 9 || blkAt(x + 1, y, L) === 9 ? 0 : Math.PI / 2; setInst(I.wire, c.wire++, X, Y, Z, wa, 1, 1, 1); archPut('wireP', X, Y, Z, wa, 1, 1, 1); break; }
@@ -5479,8 +5600,7 @@ function applyTime(dk) {
     const tx = p.aimPt ? p.aimPt.x : p.x + Math.cos(p.aim) * 6, ty = p.aimPt ? p.aimPt.y : p.y + Math.sin(p.aim) * 6, tz = p.aimPt ? Math.min(p.aimPt.z, z) - 0.6 : z - 1.2;
     S.target.position.set(tx, tz, ty); S.intensity = 36 * Math.min(1, (dk - 0.25) * 2);
   });
-  OBJ.radioL.position.set(W.radio.x + 0.75, gAt(W.radio.x, W.radio.y) * FH + 1.4, W.radio.y + 0.5); OBJ.radioL.intensity = Math.sin(W.t * 6) > 0 ? 2.5 * Math.max(0.2, dk) : 0.3;
-  OBJ.radioLed.material.color.set(Math.sin(W.t * 6) > 0 ? '#ff3b2f' : '#4a1410');
+  OBJ.radioL.intensity = 0;
 }
 
 /* ---------- camera ---------- */
@@ -5527,7 +5647,7 @@ function buildPick(sx, sy, L) { const { o, d } = screenRay(sx, sy), pz = L * FH;
 let BUILD_HOVER = null;
 function drawGhost(me) {
   const G = OBJ.ghost, E = OBJ.ghostEdge, H = BUILD_HOVER, show = me && me.build && H && !me.down && !me.dead;
-  OBJ.grid.visible = !!(me && me.build); if (OBJ.grid.visible) OBJ.grid.position.y = buildL() * FH + 0.02;
+  OBJ.grid.visible = !!(me && me.build); if (OBJ.grid.visible) OBJ.grid.position.y = (H ? H.L : buildL()) * FH + 0.02;
   G.visible = E.visible = !!show; if (!show) return;
   const b = me.demo ? 0 : me.sel, geo = me.demo ? GEO.wall : B[b].slab ? GEO.slab : b === 6 ? GEO.stairs : b === 8 ? GEO.bars : b === 9 ? GEO.wire : b === 10 ? GEO.lampPole : GEO.wall;
   if (G.geometry !== geo) G.geometry = geo;
@@ -5626,11 +5746,12 @@ function fxEvent(e) {
     case 'phurt': if (e.p === ME) { RND.hurtV = Math.min(1, RND.hurtV + 0.5); CAM.shake = Math.max(CAM.shake, 0.12); if (thr('hurt', 0.25)) sfx('hurt'); } break;
     case 'down': sfx('down', W.p[e.p].x, W.p[e.p].y); uiMsg(e.p === ME ? (W.p.length > 1 ? '你倒地了！等队友扶你，或按 H 用医疗包自救' : '你倒地了！按 H 用医疗包自救') : W.p[e.p].name + ' 倒地了！快去扶（按住 F）', '#ff6b5a'); break;
     case 'revive': sfx('revive'); uiMsg(e.p === e.by ? W.p[e.p].name + ' 自救成功' : W.p[e.by].name + ' 扶起了 ' + W.p[e.p].name, '#8fe39a'); break;
-    case 'dead': uiMsg(W.p[e.p].name + ' 阵亡了，天亮后会在电台旁复活', '#ff6b5a'); break;
+    case 'dead': uiMsg(W.p[e.p].name + ' 阵亡了，天亮后会在营地复活', '#ff6b5a'); break;
+    case 'task': sfx('craft'); uiMsg('任务完成：' + e.txt + '  奖励 ' + e.rt, '#ffd76a'); toast('任务完成 · ' + e.rt, '#ffd76a'); break;
     case 'tp': if (guest && e.p === ME) { const p = W.p[ME]; p.x = e.x; p.y = e.y; p.L = e.l; p.vx = p.vy = 0; } break;
     case 'kb': if (guest && e.p === ME) { const p = W.p[ME]; p.kbx += e.x; p.kby += e.y; } break;
-    case 'night': sfx(e.blood ? 'blood' : 'night'); banner(e.blood ? '第 ' + e.n + ' 夜 · 血月' : '第 ' + e.n + ' 夜', (e.blood ? '尸潮从四面八方涌来，巨尸出没' : '尸潮从' + e.from + '边来了') + '，守住电台', e.blood ? '#ff5a4a' : '#ffd27a'); break;
-    case 'dawn': document.getElementById('over').classList.add('hidden'); sfx('dawn'); banner('天亮了', '撑过了第 ' + e.n + ' 夜 · 出去搜物资、砍树采石、加固堡垒', '#ffe7b0'); break;
+    case 'night': sfx(e.blood ? 'blood' : 'night'); banner(e.blood ? '第 ' + e.n + ' 夜 · 血月' : '第 ' + e.n + ' 夜', (e.blood ? '尸潮从四面八方涌来，巨尸出没' : '尸潮从' + e.from + '边来了') + '，守住堡垒', e.blood ? '#ff5a4a' : '#ffd27a'); break;
+    case 'dawn': document.getElementById('over').classList.add('hidden'); sfx('dawn'); banner('天亮了', '撑过了第 ' + e.n + ' 夜 · 新的任务已刷新（左上角）', '#ffe7b0'); break;
     case 'say': uiMsg(e.text, e.col); break;
     case 'craft': if (e.p === ME) { sfx('craft'); toast('制作完成：' + e.name); } break;
     case 'deny': if (e.p === ME && thr('deny', 0.3)) { sfx('deny'); toast(e.why, '#ff8a7a'); } break;
@@ -5805,6 +5926,8 @@ function archGeo() {
   G.doorLeaf = boxG(0.72, h * 0.78, 0.14, 0, h * 0.39, 0);
   const sst = []; for (let k = 0; k < 5; k++) sst.push(boxG(0.2, h * (k + 1) / 5, 1, -0.4 + k * 0.2, h * (k + 1) / 10, 0));
   G.stairs = merge(sst);
+  // railing along one edge of a stairwell opening (local north edge; rotated per side)
+  G.rail = merge([boxG(1, 0.06, 0.07, 0, 0.66, -0.46), boxG(1, 0.04, 0.05, 0, 0.36, -0.46), boxG(0.07, 0.68, 0.07, -0.46, 0.34, -0.46), boxG(0.06, 0.68, 0.06, 0, 0.34, -0.46), boxG(0.07, 0.68, 0.07, 0.46, 0.34, -0.46)]);
   // wire: posts at both ends
   G.wirePosts = merge([boxG(0.06, 0.5, 0.06, -0.48, 0.25, 0).rotateX(0.25), boxG(0.06, 0.5, 0.06, -0.48, 0.25, 0).rotateX(-0.25), boxG(0.06, 0.5, 0.06, 0.48, 0.25, 0).rotateX(0.25), boxG(0.06, 0.5, 0.06, 0.48, 0.25, 0).rotateX(-0.25)]);
   // ruins: window wall, broken stepped top, full with cornice, low stub
@@ -5826,7 +5949,7 @@ function archScene() {
   I.wfloor = inst(G.slab, tm(T.wfloor), 4000); I.sfloor = inst(G.slab, tm(T.sfloor), 4000); I.joist = inst(G.joist, lam('#3e2a1a'), 4000);
   I.sand = inst(G.sand, lam('#b4a273'), 600); I.bars = inst(G.bars, lam('#3a434b'), 600);
   I.doorF = inst(G.doorFrame, lam('#4a3220'), 400); I.doorL = inst(G.doorLeaf, tm(T.door), 400);
-  I.stairs = inst(G.stairs, tm(T.wfloor), 400);
+  I.stairs = inst(G.stairs, tm(T.wfloor), 400); I.rail = inst(G.rail, lam('#5a3d26'), 1200);
   I.wireP = inst(G.wirePosts, lam('#5a4630'), 600);
   // the plaster spans three cells; each instance reads the slice for its own position so walls don't repeat cell by cell
   const wide = m => { m.onBeforeCompile = sh => { sh.vertexShader = sh.vertexShader.replace('#include <uv_vertex>', '#include <uv_vertex>\n#ifdef USE_INSTANCING\nvMapUv.x = (vMapUv.x + instanceMatrix[3].x + instanceMatrix[3].z) / 3.0;\n#endif'); }; m.customProgramCacheKey = () => 'wide3'; return m; };
@@ -5841,16 +5964,19 @@ function archEnd() { for (const k in ARCH.I) { const arr = Array.isArray(ARCH.I[
 function archWall(b, i, x, y, L, X, Y, Z, h, cut, vl) {
   const f = W.bhp[i] / (B[b].hp || 1), tint = dmgTint('#ffffff', f);
   const up = L + 1 < ML ? ci(x, y, L + 1) : -1, open = up < 0 || (!W.blk[up] && !W.slab[up]);
-  const crown = open && cut === 1, ax = wallAxis(x, y, L) ? Math.PI / 2 : 0;
+  let crown = open && cut === 1; const ax = wallAxis(x, y, L) ? Math.PI / 2 : 0;
+  // upper-floor walls with nothing on top are waist-high parapets (matches the bullet rule in rayWorld)
+  const para = b <= 3 && isParapet(i), cY = para ? Y - (FH - PH) : Y;
+  if (para) { cut = Math.min(cut, PH / FH); crown = false; }
   if (b === 1) {
     archPut(h < 0.35 ? 'woodB' : 'wood', X, Y, Z, 0, 1, cut, 1, tint); archPut('tWood', X, Y, Z, 0, 1, cut, 1, dmgTint('#ffffff', 0.6 + f * 0.4));
-    if (crown) archPut('stakes', X, Y, Z, ax, 1, 1, 1, dmgTint('#ffffff', 0.6 + f * 0.4));
+    if (crown) archPut('stakes', X, cY, Z, ax, 1, 1, 1, dmgTint('#ffffff', 0.6 + f * 0.4));
   } else if (b === 2) {
     archPut('brick', X, Y, Z, 0, 1, cut, 1, tint); archPut('tBrick', X, Y, Z, 0, 1, cut, 1);
-    if (crown && (x + y + L) % 2 === 0) archPut('merlon', X, Y, Z, 0, 1, 1, 1, tint);
+    if (crown && (x + y + L) % 2 === 0) archPut('merlon', X, cY, Z, 0, 1, 1, 1, tint);
   } else if (b === 3) {
     archPut('steel', X, Y, Z, 0, 1, cut, 1, tint); archPut('tSteel', X, Y, Z, 0, 1, cut, 1);
-    if (crown) archPut('spikes', X, Y, Z, ax, 1, 1, 1);
+    if (crown) archPut('spikes', X, cY, Z, ax, 1, 1, 1);
   } else if (b === 24) {
     let v = h < 0.28 ? 0 : h < 0.58 ? 1 : h < 0.84 ? 2 : 3; if (ARCH.roofCells.has(x + ',' + y + ',' + L)) v = h < 0.4 ? 0 : 2;
     const rot = (v === 0 ? ax : 0) + (v === 1 && hash2(x, y * 3) < 0.5 ? Math.PI : 0) + (v === 1 ? ax : 0);
@@ -6132,7 +6258,7 @@ const stickL = document.getElementById('stickL'), stickR = document.getElementBy
 function setTouch(on) { if (INP.touch === on) return; INP.touch = on; document.body.classList.toggle('touch', on); }
 function stickDraw(el, s, R) {
   if (s.id == null) { el.classList.add('hidden'); return; }
-  el.classList.remove('hidden'); el.style.left = s.ox + 'px'; el.style.top = s.oy + 'px';
+  el.classList.remove('hidden'); el.style.left = s.ox + 'px'; el.style.top = s.oy + 'px'; if (R) el.style.setProperty('--R', R + 'px');
   const k = el.firstElementChild, m = Math.hypot(s.x, s.y), f = m > 1 ? 1 / m : 1;
   k.style.transform = `translate(${s.x * f * R}px,${s.y * f * R}px)`;
 }
@@ -6166,8 +6292,8 @@ CV.addEventListener('pointerdown', e => {
   INP.tp[e.pointerId].x0 = e.clientX; INP.tp[e.pointerId].y0 = e.clientY;
   // a near-miss on a button must not pop a joystick or place a block
   if (nearUI(e.clientX, e.clientY)) { delete INP.tp[e.pointerId]; return; }
-  if (moveZone(e.clientX, e.clientY) && INP.move.id == null) { Object.assign(INP.move, { id: e.pointerId, ox: e.clientX, oy: e.clientY, x: 0, y: 0, t0: performance.now(), far: false }); stickDraw(stickL, INP.move, STICK_R()); }
-  else if (me.build) { INP.paint = e.pointerId; INP.bldLast = ''; touchBuild(e.clientX, e.clientY); }
+  if (moveZone(e.clientX, e.clientY) && INP.move.id == null) { const R = STICK_R(), m = R * 0.6; Object.assign(INP.move, { id: e.pointerId, ox: clamp(e.clientX, m, VW - m), oy: clamp(e.clientY, m, VH - m), x: 0, y: 0, t0: performance.now(), far: false, sx: e.clientX, sy: e.clientY }); INP.move.x = (e.clientX - INP.move.ox) / R; INP.move.y = (e.clientY - INP.move.oy) / R; stickDraw(stickL, INP.move, R); }
+  else if (me.build) { INP.paint = e.pointerId; touchBuild(e.clientX, e.clientY, true); }
   else return; // shooting is on the fire button; the rest of the right side does nothing
   try { CV.setPointerCapture(e.pointerId); } catch (_) { }
 }, { passive: false });
@@ -6177,16 +6303,21 @@ CV.addEventListener('pointermove', e => {
   const P = INP.pinch;
   if (P && (e.pointerId === P.a || e.pointerId === P.b)) { const A = INP.tp[P.a], Bq = INP.tp[P.b]; if (A && Bq) { CAM.zoom = clamp(P.z0 * P.d0 / Math.max(20, Math.hypot(A.x - Bq.x, A.y - Bq.y)), 4, 22); SET.zoom = CAM.zoom; } return; }
   const R = STICK_R();
-  for (const s of [INP.move, INP.aim]) if (s.id === e.pointerId) { s.x = (e.clientX - s.ox) / R; s.y = (e.clientY - s.oy) / R; if (Math.hypot(e.clientX - s.ox, e.clientY - s.oy) > 14) s.far = true; stickDraw(s === INP.move ? stickL : stickR, s, R); }
+  for (const s of [INP.move, INP.aim]) if (s.id === e.pointerId) {
+    let dx = e.clientX - s.ox, dy = e.clientY - s.oy; const dd = Math.hypot(dx, dy);
+    // floating move stick: the base follows the thumb once it is dragged past the ring, so it never runs out of travel
+    if (s === INP.move && dd > R * 1.15) { const k = (dd - R * 1.15) / dd; s.ox += dx * k; s.oy += dy * k; dx = e.clientX - s.ox; dy = e.clientY - s.oy; }
+    s.x = dx / R; s.y = dy / R; if (Math.hypot(e.clientX - (s.sx == null ? s.ox : s.sx), e.clientY - (s.sy == null ? s.oy : s.sy)) > 14) s.far = true; stickDraw(s === INP.move ? stickL : stickR, s, R);
+  }
   if (INP.aim.id === e.pointerId && Math.hypot(INP.aim.x, INP.aim.y) > 0.25) INP.aim.t = performance.now();
-  if (INP.paint === e.pointerId && inGame() && W.p[ME].build) touchBuild(e.clientX, e.clientY);
+  if (INP.paint === e.pointerId && inGame() && W.p[ME].build) touchBuild(e.clientX, e.clientY, false);
 }, { passive: false });
 function endPtr(e) {
   if (e.pointerType !== 'touch') return;
   delete INP.tp[e.pointerId];
   if (INP.pinch && (e.pointerId === INP.pinch.a || e.pointerId === INP.pinch.b)) { INP.pinch = null; saveSet(); return; }
   if (INP.paint === e.pointerId) INP.paint = null;
-  if (INP.move.id === e.pointerId && !INP.move.far && performance.now() - INP.move.t0 < 350 && inGame() && W.p[ME].build) touchBuild(INP.move.ox, INP.move.oy);
+  if (INP.move.id === e.pointerId && !INP.move.far && performance.now() - INP.move.t0 < 350 && inGame() && W.p[ME].build) touchBuild(INP.move.ox, INP.move.oy, true);
   if (INP.move.id === e.pointerId) { INP.move.id = null; INP.move.x = INP.move.y = 0; stickDraw(stickL, INP.move); }
   if (INP.aim.id === e.pointerId && !INP.aim.btn) { INP.aim.id = null; INP.aim.x = INP.aim.y = 0; INP.aim.t = performance.now(); stickDraw(stickR, INP.aim); }
 }
@@ -6209,23 +6340,76 @@ FIRE.addEventListener('pointermove', e => {
 function fireEnd(e) { if (INP.aim.id !== e.pointerId || !INP.aim.btn) return; Object.assign(INP.aim, { id: null, x: 0, y: 0, btn: false, t: performance.now() }); FIRE.classList.remove('on'); fireKnob(); }
 FIRE.addEventListener('pointerup', fireEnd); FIRE.addEventListener('pointercancel', fireEnd);
 CV.addEventListener('pointerup', endPtr); CV.addEventListener('pointercancel', endPtr);
-function touchBuild(sx, sy) {
-  const me = W.p[ME], c = buildPick(sx, sy, buildL()); if (!c) return;
-  const key = c.x + ',' + c.y + ',' + c.L; if (INP.bldLast === key) return; INP.bldLast = key;
-  BUILD_HOVER = Object.assign(c, { ok: true, t: 1 });
-  buildAt(me, c.x, c.y, c.L, me.demo);
+/* ---------- build targeting: the surface under the cursor / finger decides the cell (no layer switching) ---------- */
+// point at the top of a wall -> stack on it; at a wall's side -> build next to it; at a floor -> build on it.
+// Floors also try the ceiling above what you point at, and your own level (balconies out over the edge).
+function pickBuild(sx, sy, me, demo) {
+  const { o, d } = screenRay(sx, sy), maxL = Math.min(ML - 1, viewL());
+  const top = (maxL + 1) * FH + 0.01; let t0 = 0; if (o[2] > top && d[2] < 0) t0 = (o[2] - top) / -d[2];
+  const h = rayWorld(o[0] + d[0] * t0, o[1] + d[1] * t0, o[2] + d[2] * t0, d[0], d[1], d[2], 300, { maxL, any: true });
+  if (h.x == null || !inMap(h.x, h.y)) return null;
+  let surf = null, front;
+  if (h.slab) { surf = { x: h.x, y: h.y, L: h.l, slab: 1 }; front = { x: h.x, y: h.y, L: h.l }; }
+  else if (h.l < 0) front = { x: h.x, y: h.y, L: 0 };
+  else {
+    surf = { x: h.x, y: h.y, L: h.l };
+    const b = W.blk[h.i];
+    if (b === 23) front = { x: h.x, y: h.y, L: h.l };
+    else if (h.face === 0) front = { x: h.x - (d[0] > 0 ? 1 : -1), y: h.y, L: h.l };
+    else if (h.face === 1) front = { x: h.x, y: h.y - (d[1] > 0 ? 1 : -1), L: h.l };
+    else front = { x: h.x, y: h.y, L: h.l + 1 };
+  }
+  if (demo) {
+    if (!surf) return null;
+    const i = ci(surf.x, surf.y, surf.L), b = surf.slab ? W.slab[i] : W.blk[i];
+    return b && B[b].cost ? { x: surf.x, y: surf.y, L: surf.L, ok: true } : null;
+  }
+  const slab = !!B[me.sel].slab, cands = [];
+  if (surf && !!surf.slab === slab) {
+    const i = ci(surf.x, surf.y, surf.L), cur = slab ? W.slab[i] : W.blk[i];
+    if (cur && B[cur].cost && (slab ? W.shp[i] : W.bhp[i]) < B[cur].hp * 0.98) cands.push({ x: surf.x, y: surf.y, L: surf.L });
+  }
+  cands.push(front);
+  if (slab) { cands.push(buildPick(sx, sy, front.L + 1), buildPick(sx, sy, me.L), buildPick(sx, sy, me.L + 1)); }
+  else if (front.L < me.L) cands.push(buildPick(sx, sy, me.L));
+  for (const c of cands) if (c && inMap(c.x, c.y) && c.L >= 0 && c.L < ML && !buildWhy(me, c.x, c.y, c.L)) return Object.assign(c, { ok: true, why: '' });
+  return Object.assign(front, { ok: false, why: buildWhy(me, front.x, front.y, front.L) });
 }
+// one painting step (mouse held / finger down). Dragging builds a straight row on the first cell's floor.
+function paintBuild(sx, sy, start, demo) {
+  const me = W.p[ME]; if (!me || !me.build) return;
+  if (start) { INP.bA = null; INP.bAxis = null; INP.bPrev = null; INP.bldLast = ''; }
+  if (!demo && INP.bA) {
+    const A = INP.bA, q = buildPick(sx, sy, A.L); if (!q) return;
+    if (!INP.bAxis && (q.x !== A.x || q.y !== A.y)) INP.bAxis = Math.abs(q.x - A.x) >= Math.abs(q.y - A.y) ? 'x' : 'y';
+    const c = INP.bAxis === 'x' ? { x: q.x, y: A.y, L: A.L } : INP.bAxis === 'y' ? { x: A.x, y: q.y, L: A.L } : { x: A.x, y: A.y, L: A.L };
+    const P = INP.bPrev || A, n = Math.abs(c.x - P.x) + Math.abs(c.y - P.y), sx_ = Math.sign(c.x - P.x), sy_ = Math.sign(c.y - P.y);
+    for (let k = 1; k <= n; k++) buildAt(me, P.x + sx_ * k, P.y + sy_ * k, A.L, false, true);
+    INP.bPrev = c;
+    const why = buildWhy(me, c.x, c.y, c.L); BUILD_HOVER = Object.assign(c, { ok: !why, why, t: 1 });
+    return;
+  }
+  const c = pickBuild(sx, sy, me, demo); if (!c) { BUILD_HOVER = null; return; }
+  BUILD_HOVER = Object.assign(c, { t: 1 });
+  const key = c.x + ',' + c.y + ',' + c.L; if (INP.bldLast === key) return; INP.bldLast = key;
+  buildAt(me, c.x, c.y, c.L, demo);
+  if (!demo) { INP.bA = { x: c.x, y: c.y, L: c.L }; INP.bPrev = INP.bA; }
+}
+function touchBuild(sx, sy, start) { paintBuild(sx, sy, start, W.p[ME].demo); }
 function buildWhy(me, x, y, L) {
   const i = inMap(x, y) && L >= 0 && L < ML ? ci(x, y, L) : -1;
-  const cur = i < 0 ? 0 : B[me.sel].slab ? W.slab[i] : W.blk[i];
-  if (cur && B[cur].cost) return ''; // repair
+  const slab = B[me.sel].slab, cur = i < 0 ? 0 : slab ? W.slab[i] : W.blk[i];
+  if (cur && B[cur].cost) { // repair (only if damaged)
+    if ((slab ? W.shp[i] : W.bhp[i]) >= B[cur].hp * 0.98) return slab ? '这里已经有楼板了' : '这里已经有东西了';
+    return !inReach(me, x, y, L) ? '太远了' : '';
+  }
   return canPlace(x, y, L, me.sel, me.sdir) || (!inReach(me, x, y, L) ? '太远了' : '') || (!affordable(W.res, B[me.sel].cost) ? '材料不足' : '');
 }
-function buildAt(me, x, y, L, demo) {
+function buildAt(me, x, y, L, demo, quiet) {
   if (!inMap(x, y) || L < 0 || L >= ML) return;
   if (demo) { const i = ci(x, y, L); if ((W.blk[i] && B[W.blk[i]].cost) || (W.slab[i] && B[W.slab[i]].cost)) act('demo', { x, y, l: L }); return; }
   const why = buildWhy(me, x, y, L);
-  if (why) { if (thr('denyL', 0.3)) { toast(why, '#ff8a7a'); sfx('deny'); } return; }
+  if (why) { if (!quiet && thr('denyL', 0.3)) { toast(why, '#ff8a7a'); sfx('deny'); } return; }
   act('build', { x, y, l: L, b: me.sel, d: me.sdir });
 }
 function bindBtn(id, down, up) {
@@ -6255,7 +6439,7 @@ function touchAutoAim(me, dirx, diry, any) {
     if (z.L > viewL()) continue;
     const dx = z.x - sx, dy = z.y - sy, d = Math.hypot(dx, dy); if (d > range || d < 0.2) continue;
     const da = Math.abs(angDiff(a0, Math.atan2(dy, dx))); if (!any && da > 0.38) continue;
-    const score = any ? d + da * 1.5 : d + da * 12; if (score < bs && los(sx, sy, sz, z.x, z.y, z.z + z.h * 0.6)) { bs = score; best = z; }
+    const score = any ? d + da * 1.5 : d + da * 12; if (score < bs && los(sx, sy, sz, z.x, z.y, z.z + z.h * 0.6, LEAN)) { bs = score; best = z; }
   }
   if (best) return { x: best.x, y: best.y, z: best.z + best.h * 0.6 };
   return { x: sx + dirx * 6, y: sy + diry * 6, z: sz };
@@ -6268,9 +6452,15 @@ function readInput(dt) {
     sx = (KD('d') || KD('ArrowRight') ? 1 : 0) - (KD('a') || KD('ArrowLeft') ? 1 : 0);
     sy = (KD('w') || KD('ArrowUp') ? 1 : 0) - (KD('s') || KD('ArrowDown') ? 1 : 0);
     const mv = INP.move.id != null ? INP.move : null;
-    if (mv && Math.hypot(mv.x, mv.y) > 0.18) { const m = Math.min(1, Math.hypot(mv.x, mv.y)); const a = Math.atan2(-mv.y, mv.x); sx = Math.cos(a) * m; sy = Math.sin(a) * m; }
+    const mm = mv ? Math.hypot(mv.x, mv.y) : 0;
+    if (mm > 0.12) { const m = Math.min(1, (mm - 0.12) / 0.55), a = Math.atan2(-mv.y, mv.x); sx = Math.cos(a) * m; sy = Math.sin(a) * m; }
   }
   I.mx = rx * sx + fx * sy; I.my = ry * sx + fy * sy;
+  // touch: snap to the grid axes when close, so walking along a wall or through a doorway stays straight
+  if (INP.move.id != null && (I.mx || I.my)) {
+    const m = Math.hypot(I.mx, I.my), a = Math.atan2(I.my, I.mx), q = Math.round(a / (Math.PI / 2)) * Math.PI / 2;
+    if (Math.abs(a - q) < 0.2) { I.mx = Math.cos(q) * m; I.my = Math.sin(q) * m; }
+  }
   I.use = !blocked && (KD('f') || INP.useHeld) ? 1 : 0;
   const usingMouse = !INP.touch || (performance.now() - INP.mouseT < 1500 && performance.now() - INP.lastTouch > 1500);
   if (usingMouse) {
@@ -6280,14 +6470,11 @@ function readInput(dt) {
     CAM.lookX = lerp(CAM.lookX || 0, clamp((pt.x - me.x) * 0.18, -3, 3), Math.min(1, dt * 3)); CAM.lookY = lerp(CAM.lookY || 0, clamp((pt.y - me.y) * 0.18, -3, 3), Math.min(1, dt * 3));
     I.fire = !blocked && INP.mL && !me.build ? 1 : 0;
     if (me.build && !blocked) {
-      const c = buildPick(INP.mx, INP.my, buildL());
-      if (c) {
-        const why = INP.mR || me.demo ? '' : buildWhy(me, c.x, c.y, c.L);
-        BUILD_HOVER = Object.assign(c, { ok: !why, why });
-        INP.bldT -= dt; const key = c.x + ',' + c.y + ',' + c.L;
-        if ((INP.mL || INP.mR) && INP.bldT <= 0 && INP.bldLast !== key) { INP.bldT = 0.08; INP.bldLast = key; buildAt(me, c.x, c.y, c.L, INP.mR || me.demo); }
-      } else BUILD_HOVER = null;
-    } else BUILD_HOVER = null;
+      const down = INP.mL || INP.mR, demo = INP.mR || me.demo;
+      if (down) paintBuild(INP.mx, INP.my, !INP.bDown, demo);
+      else { const c = pickBuild(INP.mx, INP.my, me, me.demo); BUILD_HOVER = c; }
+      INP.bDown = down;
+    } else { BUILD_HOVER = null; INP.bDown = false; }
   } else {
     const A = INP.aim, held = A.id != null, active = held && Math.hypot(A.x, A.y) > 0.3;
     if (active) {
@@ -6381,7 +6568,7 @@ function makeSnap() {
   const z = []; for (const q of W.zs) z.push(q.id, ZI.indexOf(q.k), Math.round(q.x * 100), Math.round(q.y * 100), q.L, Math.round(q.z * 100), Math.round(q.face * 100), Math.ceil(q.hp / q.max * 100), (q.climbing ? 1 : 0) | (q.atk > 0 ? 2 : 0) | (q.hitT > 0 ? 4 : 0) | (q.moving ? 8 : 0));
   const pr = []; for (const b of W.proj) pr.push(b.k === 'nade' ? 0 : 1, r2(b.x), r2(b.y), r2(b.z), r2(b.vx), r2(b.vy), r2(b.vz));
   const d = []; for (const i of W.dirty) d.push(i, Math.round(W.bhp[i]), Math.round(W.shp[i])); W.dirty.clear();
-  return { t: 's', T: r2(W.t), ph: W.phase, cl: Math.round(W.clock * 10) / 10, dl: W.dayLen, n: W.night, r: [Math.round(W.radio.hp), Math.round(W.radio.max), W.radio.hitT > 0 ? 1 : 0], res: RES.map(r => W.res[r.k]), u: W.upg, k: W.kills, p: W.p.map(P), z, pr, d, sl: W.spawnQ.length };
+  return { t: 's', T: r2(W.t), ph: W.phase, cl: Math.round(W.clock * 10) / 10, dl: W.dayLen, n: W.night, tk: NET.tkv === W.tkv && (NET.tkN = (NET.tkN || 0) + 1) % 12 ? 0 : (NET.tkv = W.tkv, W.tasks.map(t => [t.k, t.need, t.got, t.done, t.txt, t.rt])), res: RES.map(r => W.res[r.k]), u: W.upg, k: W.kills, p: W.p.map(P), z, pr, d, sl: W.spawnQ.length };
 }
 function hostNetTick(dt) {
   if (!NET.gctl || !NET.gctl.open) return;
@@ -6425,7 +6612,7 @@ function guestRecv(m) {
 function applySnap(s) {
   if (s.T < NET.lastT - 5) return; NET.lastT = s.T;
   W.t = s.T; W.phase = s.ph; W.clock = s.cl; W.dayLen = s.dl; W.night = s.n; W.upg = s.u; W.kills = s.k;
-  W.radio.hp = s.r[0]; W.radio.max = s.r[1]; if (s.r[2]) W.radio.hitT = 0.2;
+  if (s.tk) { W.tasks = s.tk.map(a => ({ k: a[0], need: a[1], got: a[2], done: a[3], txt: a[4], rt: a[5] })); W.tkv++; }
   RES.forEach((r, i) => W.res[r.k] = s.res[i]); W.spawnLeft = s.sl;
   s.p.forEach((a, i) => {
     const p = W.p[i]; if (!p) return;
@@ -6457,7 +6644,6 @@ function guestNetTick(dt) {
   for (const p of W.p) if (p.i !== ME && p.tx != null) { const k = Math.min(1, dt * 14); p.x = lerp(p.x, p.tx + p.vx * 0.03, k); p.y = lerp(p.y, p.ty + p.vy * 0.03, k); p.z = surfZ(p.x, p.y, p.L); }
   for (const z of W.zs) { z.anim += dt; z.hitT -= dt; z.atk -= dt; if (z.tx != null) { const k = Math.min(1, dt * 10); z.x = lerp(z.x, z.tx, k); z.y = lerp(z.y, z.ty, k); z.z = lerp(z.z, z.tz, k); } }
   for (const b of W.proj) { b.x += b.vx * dt; b.y += b.vy * dt; b.z += b.vz * dt; b.vz -= 12 * dt; }
-  W.radio.hitT = Math.max(0, W.radio.hitT - dt);
   NET.iT -= dt;
   if (NET.iT <= 0) {
     NET.iT = 1 / 30; const p = W.p[ME], i = p.inp;
@@ -6475,7 +6661,7 @@ function guestPredictFire(dt) {
   for (let k = 0; k < w.pellets; k++) {
     const yw = yaw + (Math.random() - 0.5) * 2 * w.spread, pt = pitch + (Math.random() - 0.5) * w.spread;
     const dx = Math.cos(pt) * Math.cos(yw), dy = Math.cos(pt) * Math.sin(yw), dz = Math.sin(pt);
-    const wall = rayWorld(sx, sy, sz, dx, dy, dz, w.range); let d = wall.d, hz = 0;
+    const wall = rayWorld(sx, sy, sz, dx, dy, dz, w.range, { lean: LEAN }); let d = wall.d, hz = 0;
     if (!w.pierce) for (const z of W.zs) { const e = rayBox(sx, sy, sz, dx, dy, dz, z.x - z.r, z.y - z.r, z.z, z.r * 2, z.r * 2, z.h, d); if (e >= 0 && e < d) { d = e; hz = 1; } }
     ends.push([sx + dx * d, sy + dy * d, sz + dz * d, !hz && wall.i >= 0 ? 1 : 0]);
   }
@@ -6610,8 +6796,10 @@ function hudTick(dt) {
     ph.className = isBlood(W.night) ? 'blood' : 'night';
     ph.innerHTML = '第 ' + W.night + ' 夜' + (isBlood(W.night) ? ' · 血月' : '') + `<span class="sub">剩余 ${left} 只 · ${W.night}/${BAL.nights}</span>`;
   } else ph.textContent = W.phase === 'win' ? '获救' : '失守';
-  const rr = W.radio.hp / W.radio.max;
-  $('rHp').style.width = clamp(rr, 0, 1) * 100 + '%'; $('rbar').classList.toggle('low', rr < 0.3); $('rTxt').textContent = Math.max(0, Math.ceil(W.radio.hp));
+  if (UI.tkv !== W.tkv) {
+    UI.tkv = W.tkv;
+    $('tasks').innerHTML = W.tasks.map(t => `<div class="tk${t.done ? ' done' : ''}"><i>${t.done ? '✔' : ''}</i><span class="tt">${t.txt}</span><b>${t.done ? '完成' : t.got + '/' + t.need}</b><span class="tr">${t.rt}</span></div>`).join('');
+  }
   const rb = $('readyBtn'); rb.classList.toggle('hidden', W.phase !== 'day');
   if (W.phase === 'day') { const n = activeP().filter(p => !p.dead && p.ready).length, tot = activeP().filter(p => !p.dead).length; rb.classList.toggle('on', me.ready); rb.innerHTML = (me.ready ? '已准备' : '准备入夜') + (tot > 1 ? ` ${n}/${tot}` : '') + ' <span class="kbd">(N)</span>'; }
   // resources
@@ -6627,6 +6815,9 @@ function hudTick(dt) {
     if (me.medT > 0 && me.selfRev) { ptxt = '正在自救…'; prog = 1 - me.medT / 3; }
   }
   if (INP.touch) {
+    const sh = $('stickHint'), on = INP.move.id == null && !me.dead && !panelOpen();
+    sh.classList.toggle('on', on);
+    if (on) { const R = STICK_R(), x = Math.max(R + 22, Math.min(VW * 0.16, 170)), y = VH - Math.max(R + 40, Math.min(VH * 0.24, 190)); sh.style.left = x + 'px'; sh.style.top = y + 'px'; sh.style.width = sh.style.height = R * 2 + 'px'; }
     const tgt = !me.dead && !me.build && !me.down ? useTarget(me) : null, bench = !tgt && !me.build && nearBench(me);
     const u = $('tUse'); u.classList.toggle('hidden', !(tgt || bench));
     if (tgt) { u.firstElementChild.textContent = '按住'; u.lastElementChild.textContent = tgt.name; u.style.setProperty('--p', clamp(me.useT / tgt.t, 0, 1)); }
@@ -6638,8 +6829,9 @@ function hudTick(dt) {
     $('tWpn').classList.toggle('hidden', me.down || me.owned.filter(Boolean).length < 2);
     $('tNadeN').textContent = me.nades; $('tNade').classList.toggle('empty', !me.nades);
     $('tFire').style.setProperty('--rl', rl);
-    $('tLLbl').textContent = (buildL() + 1) + 'F';
+    $('tLLbl').textContent = ((me.build && BUILD_HOVER ? BUILD_HOVER.L : buildL()) + 1) + 'F';
   }
+  if (!ptxt && me.edgeK && !me.dead) ptxt = me.edgeK === 1 ? '继续往前走 · 下楼梯' : '继续推 · 从这里跳下去';
   $('prompt').classList.toggle('hidden', !ptxt); $('pTxt').textContent = ptxt; $('pPr').style.width = clamp(prog, 0, 1) * 100 + '%';
   $('prompt').querySelector('.pr').style.display = prog > 0 ? '' : 'none';
   if (me.build) uiBuildBar();
@@ -6653,7 +6845,7 @@ function uiView() {
 /* craft */
 function openCraft() {
   if (!W || W.over) return; const me = W.p[ME];
-  if (!nearBench(me)) { toast('要在电台旁的工作台才能制作'); return; }
+  if (!nearBench(me)) { toast('要在营地小屋里的工作台旁才能制作'); return; }
   renderCraft(); $('craft').classList.remove('hidden'); sfx('click');
 }
 function closeCraft() { $('craft').classList.add('hidden'); }
@@ -6739,10 +6931,10 @@ function startGame(seed, names, diff, me) {
   $('over').classList.add('hidden'); $('log').innerHTML = '';
   const p = W.p[ME]; CAM.tx = p.x; CAM.ty = p.y;
   uiBuildBar(); markDiff(); uiView();
-  banner('第一个白天', '电台在呼救 · 撑过 ' + BAL.nights + ' 夜就能等到救援', '#ffe7b0');
+  banner('第一个白天', '撑过 ' + BAL.nights + ' 夜就能等到救援 · 完成每日任务拿奖励', '#ffe7b0'); UI.tkv = -1;
   const tips = INP.touch
-    ? ['出门砍树、采石，按住「交互」搜汽车和补给箱', '点「建造」盖墙、楼板、楼梯——只能盖在电台周围的黄框里', '右上角可以缩放、转镜头、切换楼层视图', '电台旁的工作台可以造步枪和狙击枪', '天黑前回到堡垒，丧尸会过桥、翻山涌来']
-    : ['出门砍树、采石，按住 F 搜汽车和补给箱', '按 B 建造：墙、楼板、楼梯、门、射击栅栏——只能盖在电台周围的黄框里', '滚轮缩放，Q / E 转镜头，PageUp / PageDown 切换楼层视图', '在电台旁的工作台按 F 造步枪和狙击枪', '天黑前回到堡垒，丧尸会过桥、翻山涌来。按 N 可以提前入夜'];
+    ? ['出门砍树、采石，按住「交互」搜汽车和补给箱', '点「建造」后手指指哪就盖哪：点墙顶往上叠，点墙面贴着盖，拖动一次盖一排', '左上角是今天的 3 个任务，完成就有奖励', '小屋里的工作台可以造步枪和狙击枪', '楼上的矮墙可以探身开枪，天黑前回到堡垒']
+    : ['出门砍树、采石，按住 F 搜汽车和补给箱', '按 B 建造：鼠标指哪就盖哪——指墙顶往上叠、指墙面贴着盖，按住拖动一次盖一排，右键拆除', '左上角是今天的 3 个任务，完成就有奖励', '在小屋里的工作台按 F 造步枪和狙击枪', '楼上外墙是半人高的矮墙，可以探身朝下开枪。按 N 可以提前入夜'];
   tips.forEach((t, k) => TIPS.push(setTimeout(() => { if (W && W.night === 0 && STATE.mode === 'play') uiMsg(t, '#ffd27a'); }, 2500 + k * 7000)));
 }
 function startDemo() {
@@ -6753,7 +6945,7 @@ function demoStep(dt) {
   W.t += dt; W.demoT += dt;
   if (W.zs.length < 16 && Math.random() < dt * 1.2) spawnZombie(Math.random() < 0.15 ? 'climber' : Math.random() < 0.08 ? 'brute' : 'walker', Math.floor(Math.random() * 4));
   updateFields(dt); stepZombies(dt); stepProj(dt);
-  if (W.radio.hp <= 0 || W.demoT > 120) startDemo();
+  if (W.demoT > 120) startDemo();
 }
 function smoothZ(dt) { for (const p of W.p) { if (p.zv == null) p.zv = p.z; if (p.z < p.zv - 0.05) p.zv = Math.max(p.z, p.zv - 7 * dt); else p.zv = lerp(p.zv, p.z, Math.min(1, dt * 20)); } }
 function frame(now) {

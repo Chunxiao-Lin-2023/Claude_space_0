@@ -125,8 +125,10 @@ function hudTick(dt) {
     ph.className = isBlood(W.night) ? 'blood' : 'night';
     ph.innerHTML = '第 ' + W.night + ' 夜' + (isBlood(W.night) ? ' · 血月' : '') + `<span class="sub">剩余 ${left} 只 · ${W.night}/${BAL.nights}</span>`;
   } else ph.textContent = W.phase === 'win' ? '获救' : '失守';
-  const rr = W.radio.hp / W.radio.max;
-  $('rHp').style.width = clamp(rr, 0, 1) * 100 + '%'; $('rbar').classList.toggle('low', rr < 0.3); $('rTxt').textContent = Math.max(0, Math.ceil(W.radio.hp));
+  if (UI.tkv !== W.tkv) {
+    UI.tkv = W.tkv;
+    $('tasks').innerHTML = W.tasks.map(t => `<div class="tk${t.done ? ' done' : ''}"><i>${t.done ? '✔' : ''}</i><span class="tt">${t.txt}</span><b>${t.done ? '完成' : t.got + '/' + t.need}</b><span class="tr">${t.rt}</span></div>`).join('');
+  }
   const rb = $('readyBtn'); rb.classList.toggle('hidden', W.phase !== 'day');
   if (W.phase === 'day') { const n = activeP().filter(p => !p.dead && p.ready).length, tot = activeP().filter(p => !p.dead).length; rb.classList.toggle('on', me.ready); rb.innerHTML = (me.ready ? '已准备' : '准备入夜') + (tot > 1 ? ` ${n}/${tot}` : '') + ' <span class="kbd">(N)</span>'; }
   // resources
@@ -142,6 +144,9 @@ function hudTick(dt) {
     if (me.medT > 0 && me.selfRev) { ptxt = '正在自救…'; prog = 1 - me.medT / 3; }
   }
   if (INP.touch) {
+    const sh = $('stickHint'), on = INP.move.id == null && !me.dead && !panelOpen();
+    sh.classList.toggle('on', on);
+    if (on) { const R = STICK_R(), x = Math.max(R + 22, Math.min(VW * 0.16, 170)), y = VH - Math.max(R + 40, Math.min(VH * 0.24, 190)); sh.style.left = x + 'px'; sh.style.top = y + 'px'; sh.style.width = sh.style.height = R * 2 + 'px'; }
     const tgt = !me.dead && !me.build && !me.down ? useTarget(me) : null, bench = !tgt && !me.build && nearBench(me);
     const u = $('tUse'); u.classList.toggle('hidden', !(tgt || bench));
     if (tgt) { u.firstElementChild.textContent = '按住'; u.lastElementChild.textContent = tgt.name; u.style.setProperty('--p', clamp(me.useT / tgt.t, 0, 1)); }
@@ -153,8 +158,9 @@ function hudTick(dt) {
     $('tWpn').classList.toggle('hidden', me.down || me.owned.filter(Boolean).length < 2);
     $('tNadeN').textContent = me.nades; $('tNade').classList.toggle('empty', !me.nades);
     $('tFire').style.setProperty('--rl', rl);
-    $('tLLbl').textContent = (buildL() + 1) + 'F';
+    $('tLLbl').textContent = ((me.build && BUILD_HOVER ? BUILD_HOVER.L : buildL()) + 1) + 'F';
   }
+  if (!ptxt && me.edgeK && !me.dead) ptxt = me.edgeK === 1 ? '继续往前走 · 下楼梯' : '继续推 · 从这里跳下去';
   $('prompt').classList.toggle('hidden', !ptxt); $('pTxt').textContent = ptxt; $('pPr').style.width = clamp(prog, 0, 1) * 100 + '%';
   $('prompt').querySelector('.pr').style.display = prog > 0 ? '' : 'none';
   if (me.build) uiBuildBar();
@@ -168,7 +174,7 @@ function uiView() {
 /* craft */
 function openCraft() {
   if (!W || W.over) return; const me = W.p[ME];
-  if (!nearBench(me)) { toast('要在电台旁的工作台才能制作'); return; }
+  if (!nearBench(me)) { toast('要在营地小屋里的工作台旁才能制作'); return; }
   renderCraft(); $('craft').classList.remove('hidden'); sfx('click');
 }
 function closeCraft() { $('craft').classList.add('hidden'); }

@@ -39,10 +39,10 @@ const UA = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/6
     const tr = await p.evaluate(() => { for (let i = 0; i < NC; i++) if (W.blk[i] === 22) { const x = cx_(i), y = cy_(i), L = cl_(i); const f = DIRS.map(([dx, dy]) => [x + dx, y + dy]).find(([a, b]) => standable(a, b, L, 'p')); if (f) { const me = W.p[0]; me.x = f[0] + 0.5; me.y = f[1] + 0.5; me.L = L; me.z = surfZ(me.x, me.y, L); return i; } } return -1; });
     await simWait(0.3); await p.waitForTimeout(250);
     const useVis = await p.evaluate(() => !document.getElementById('tUse').classList.contains('hidden') && document.getElementById('tUse').textContent);
-    const w0 = await p.evaluate(() => W.res.wood);
+    const w0 = await p.evaluate(() => W.res.wood + W.res.stone);
     const [ux, uy] = await center('#tUse');
     await tch('touchStart', [{ x: ux, y: uy, id: 8 }]); await simWait(2.4); await tch('touchEnd', []);
-    ok(vp + ' use button appears and chops by holding', !!useVis && (await p.evaluate(() => W.res.wood)) > w0, 'label ' + useVis);
+    ok(vp + ' use button appears and chops by holding', !!useVis && (await p.evaluate(() => W.res.wood + W.res.stone)) > w0, 'label ' + useVis);
     await p.screenshot({ path: `${OUT}/tc_${vp}_use.png` });
     // near-misses around the use button, taps on the right side and in the top HUD never pop a joystick
     const ur = await p.evaluate(() => { const r = document.getElementById('tUse').getBoundingClientRect(); return [r.left, r.top, r.right, r.bottom]; });

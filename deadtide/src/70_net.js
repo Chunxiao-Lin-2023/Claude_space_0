@@ -72,7 +72,7 @@ function makeSnap() {
   const z = []; for (const q of W.zs) z.push(q.id, ZI.indexOf(q.k), Math.round(q.x * 100), Math.round(q.y * 100), q.L, Math.round(q.z * 100), Math.round(q.face * 100), Math.ceil(q.hp / q.max * 100), (q.climbing ? 1 : 0) | (q.atk > 0 ? 2 : 0) | (q.hitT > 0 ? 4 : 0) | (q.moving ? 8 : 0));
   const pr = []; for (const b of W.proj) pr.push(b.k === 'nade' ? 0 : 1, r2(b.x), r2(b.y), r2(b.z), r2(b.vx), r2(b.vy), r2(b.vz));
   const d = []; for (const i of W.dirty) d.push(i, Math.round(W.bhp[i]), Math.round(W.shp[i])); W.dirty.clear();
-  return { t: 's', T: r2(W.t), ph: W.phase, cl: Math.round(W.clock * 10) / 10, dl: W.dayLen, n: W.night, r: [Math.round(W.radio.hp), Math.round(W.radio.max), W.radio.hitT > 0 ? 1 : 0], res: RES.map(r => W.res[r.k]), u: W.upg, k: W.kills, p: W.p.map(P), z, pr, d, sl: W.spawnQ.length };
+  return { t: 's', T: r2(W.t), ph: W.phase, cl: Math.round(W.clock * 10) / 10, dl: W.dayLen, n: W.night, tk: NET.tkv === W.tkv && (NET.tkN = (NET.tkN || 0) + 1) % 12 ? 0 : (NET.tkv = W.tkv, W.tasks.map(t => [t.k, t.need, t.got, t.done, t.txt, t.rt])), res: RES.map(r => W.res[r.k]), u: W.upg, k: W.kills, p: W.p.map(P), z, pr, d, sl: W.spawnQ.length };
 }
 function hostNetTick(dt) {
   if (!NET.gctl || !NET.gctl.open) return;
@@ -116,7 +116,7 @@ function guestRecv(m) {
 function applySnap(s) {
   if (s.T < NET.lastT - 5) return; NET.lastT = s.T;
   W.t = s.T; W.phase = s.ph; W.clock = s.cl; W.dayLen = s.dl; W.night = s.n; W.upg = s.u; W.kills = s.k;
-  W.radio.hp = s.r[0]; W.radio.max = s.r[1]; if (s.r[2]) W.radio.hitT = 0.2;
+  if (s.tk) { W.tasks = s.tk.map(a => ({ k: a[0], need: a[1], got: a[2], done: a[3], txt: a[4], rt: a[5] })); W.tkv++; }
   RES.forEach((r, i) => W.res[r.k] = s.res[i]); W.spawnLeft = s.sl;
   s.p.forEach((a, i) => {
     const p = W.p[i]; if (!p) return;
@@ -148,7 +148,6 @@ function guestNetTick(dt) {
   for (const p of W.p) if (p.i !== ME && p.tx != null) { const k = Math.min(1, dt * 14); p.x = lerp(p.x, p.tx + p.vx * 0.03, k); p.y = lerp(p.y, p.ty + p.vy * 0.03, k); p.z = surfZ(p.x, p.y, p.L); }
   for (const z of W.zs) { z.anim += dt; z.hitT -= dt; z.atk -= dt; if (z.tx != null) { const k = Math.min(1, dt * 10); z.x = lerp(z.x, z.tx, k); z.y = lerp(z.y, z.ty, k); z.z = lerp(z.z, z.tz, k); } }
   for (const b of W.proj) { b.x += b.vx * dt; b.y += b.vy * dt; b.z += b.vz * dt; b.vz -= 12 * dt; }
-  W.radio.hitT = Math.max(0, W.radio.hitT - dt);
   NET.iT -= dt;
   if (NET.iT <= 0) {
     NET.iT = 1 / 30; const p = W.p[ME], i = p.inp;
@@ -166,7 +165,7 @@ function guestPredictFire(dt) {
   for (let k = 0; k < w.pellets; k++) {
     const yw = yaw + (Math.random() - 0.5) * 2 * w.spread, pt = pitch + (Math.random() - 0.5) * w.spread;
     const dx = Math.cos(pt) * Math.cos(yw), dy = Math.cos(pt) * Math.sin(yw), dz = Math.sin(pt);
-    const wall = rayWorld(sx, sy, sz, dx, dy, dz, w.range); let d = wall.d, hz = 0;
+    const wall = rayWorld(sx, sy, sz, dx, dy, dz, w.range, { lean: LEAN }); let d = wall.d, hz = 0;
     if (!w.pierce) for (const z of W.zs) { const e = rayBox(sx, sy, sz, dx, dy, dz, z.x - z.r, z.y - z.r, z.z, z.r * 2, z.r * 2, z.h, d); if (e >= 0 && e < d) { d = e; hz = 1; } }
     ends.push([sx + dx * d, sy + dy * d, sz + dz * d, !hz && wall.i >= 0 ? 1 : 0]);
   }

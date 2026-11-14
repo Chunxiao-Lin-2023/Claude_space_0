@@ -15,12 +15,14 @@ const angDiff = (a, b) => { let d = (b - a) % (Math.PI * 2); if (d > Math.PI) d 
 
 /* ---------- world geometry ---------- */
 const MW = 96, MH = 96, ML = 10;     // grid columns, rows, layers
-const FH = 1.3;                      // height of one layer (storey / terrain step) in world units
+const FH = 1.3;
+const PH = 0.62;
+const LEAN = 1.7;                   // shooters lean over parapets this close to them                    // parapet height: upper-floor walls with nothing on top are only waist high                      // height of one layer (storey / terrain step) in world units
 const NC = MW * MH * ML;
 const ci = (x, y, L) => (L * MH + y) * MW + x;
 const cx_ = i => i % MW, cy_ = i => ((i / MW) | 0) % MH, cl_ = i => (i / (MW * MH)) | 0;
 const DIRS = [[1, 0], [0, 1], [-1, 0], [0, -1]]; // 0:+x(east) 1:+y(south) 2:-x(west) 3:-y(north)
-const BUILD_R = 20;                 // build zone: Chebyshev distance from the radio
+const BUILD_R = 20;                 // build zone: Chebyshev distance from the camp centre
 const GRAV = 22;
 
 /* ---------- blocks (cell contents) ----------
@@ -32,7 +34,7 @@ defB(0, { key: 'air' });
 defB(1, { key: 'wood', name: '木墙', cost: { wood: 4 }, hp: 140, cap: 6, P: 1, Z: 1, B: 1, top: 1, st: 1, brk: 1, col: '#86603a', tip: '便宜的墙，撑得住 5 格跨度' });
 defB(2, { key: 'brick', name: '砖墙', cost: { stone: 4 }, hp: 340, cap: 8, P: 1, Z: 1, B: 1, top: 1, st: 1, brk: 1, col: '#8a4c3a', tip: '结实，承重更好' });
 defB(3, { key: 'steel', name: '钢墙', cost: { steel: 4 }, hp: 700, cap: 12, P: 1, Z: 1, B: 1, top: 1, st: 1, brk: 1, col: '#6f8494', tip: '最硬的墙，重锤也要砸半天' });
-defB(4, { key: 'wfloor', name: '木地板', cost: { wood: 2 }, hp: 90, cap: 6, slab: 1, st: 1, brk: 1, col: '#7a5232', tip: '楼板：要建在当前视图层，往上一层就切到上一层再建' });
+defB(4, { key: 'wfloor', name: '木地板', cost: { wood: 2 }, hp: 90, cap: 6, slab: 1, st: 1, brk: 1, col: '#7a5232', tip: '指墙顶就铺在墙上，指屋里就铺成天花板，站在楼上指外面能往外延伸' });
 defB(5, { key: 'sfloor', name: '钢地板', cost: { steel: 2 }, hp: 280, cap: 10, slab: 1, st: 1, brk: 1, col: '#64788a', tip: '跨度大的楼板' });
 defB(6, { key: 'stairs', name: '楼梯', cost: { wood: 4 }, hp: 120, cap: 5, stairs: 1, st: 1, brk: 1, col: '#8a6440', tip: '朝向是放置时屏幕的「上」，R 键旋转。攀爬者以外的丧尸也会走楼梯' });
 defB(7, { key: 'door', name: '木门', cost: { wood: 6 }, hp: 200, cap: 6, Z: 1, B: 1, top: 1, st: 1, brk: 1, col: '#5c3c22', tip: '人能穿过，丧尸只能砸' });
@@ -89,9 +91,45 @@ const SPOTS = {
   crate: { name: '补给箱', loot: { parts: [2, 4] }, ammo: 1 },
   rubble: { name: '废墟瓦砾', loot: { stone: [5, 9], wood: [2, 4] } },
 };
+/* ---------- daily tasks: three are rolled every dawn (and at the start) and last until the next dawn ---------- */
+// need(d, W) -> target count for upcoming night d; min = first night it can appear; rw = reward pool keys
+const TASKS = {
+  kill: { t: n => '击杀 ' + n + ' 只丧尸', need: d => Math.round(BAL.nightSpawn(d) * 0.6), w: 3, rw: ['parts', 'ammo', 'steel'] },
+  runner: { t: n => '击杀 ' + n + ' 只奔跑者', need: d => 3 + Math.floor(d / 2), min: 3, w: 2, rw: ['parts', 'ammo'] },
+  climber: { t: n => '击杀 ' + n + ' 只爬墙尸', need: d => 2 + Math.floor(d / 4), min: 5, w: 1.3, rw: ['parts', 'nade'] },
+  brute: { t: n => '击杀 ' + n + ' 只巨尸', need: () => 1, min: 6, w: 1.3, rw: ['parts', 'upg'] },
+  nade: { t: n => '用手雷炸死 ' + n + ' 只丧尸', need: d => 4 + Math.floor(d / 2), min: 2, w: 1.2, rw: ['nade', 'ammo'] },
+  shove: { t: n => '推开 ' + n + ' 次丧尸', need: d => 10 + d, w: 1, rw: ['med', 'wood'] },
+  search: { t: n => '搜索 ' + n + ' 处汽车 / 补给箱 / 瓦砾', need: d => 5 + Math.floor(d / 3), w: 2, rw: ['steel', 'ammo', 'med'] },
+  far: { t: n => '去建造区外搜索 ' + n + ' 处', need: () => 3, w: 1.6, rw: ['parts', 'nade', 'med'] },
+  gather: { t: n => '砍树或采石 ' + n + ' 次', need: d => 6 + Math.floor(d / 3), w: 1.5, rw: ['steel', 'parts'] },
+  build: { t: n => '建造 ' + n + ' 个方块', need: d => 12 + d * 2, w: 2, rw: ['wood', 'stone', 'parts'] },
+  high: { t: n => '在 3 层或更高处建造 ' + n + ' 个方块', need: () => 6, min: 2, w: 1, rw: ['steel', 'parts'] },
+  clean: { t: () => '今夜没有人倒下', need: () => 1, min: 2, w: 1.4, rw: ['upg', 'med', 'nade'] },
+};
+// reward pools: what one completed task pays out (d = night the task was rolled for)
+const TASK_RW = {
+  parts: d => ({ res: { parts: 6 + Math.floor(d / 2) } }),
+  steel: d => ({ res: { steel: 8 + d } }),
+  wood: d => ({ res: { wood: 30 + d * 3 } }),
+  stone: d => ({ res: { stone: 25 + d * 3 } }),
+  ammo: () => ({ ammo: 2 }),
+  med: () => ({ med: 1 }),
+  nade: () => ({ nade: 2 }),
+  upg: d => ({ upg: 1, res: { parts: 4 } }),
+};
+function taskRewardText(r) {
+  const out = [];
+  if (r.res) for (const k in r.res) out.push(RES.find(x => x.k === k).name + '+' + r.res[k]);
+  if (r.ammo) out.push('全队弹药');
+  if (r.med) out.push('每人医疗包');
+  if (r.nade) out.push('每人手雷+' + r.nade);
+  if (r.upg) out.push('强化弹头+1');
+  return out.join(' ');
+}
 const GATHER = { 22: { name: '砍树', res: 'wood', n: [6, 10], t: 1.6 }, 21: { name: '采石', res: 'stone', n: [6, 10], t: 2.0 } };
 
-/* ---------- crafting (workbench next to the radio) ---------- */
+/* ---------- crafting (workbench in the starter house) ---------- */
 const CRAFT = [
   { id: 'rifle', name: '步枪', desc: '全自动，30 发弹匣', cost: { parts: 12, steel: 6 }, wpn: 2 },
   { id: 'sniper', name: '狙击枪', desc: '一枪穿透 5 只', cost: { parts: 18, steel: 8 }, wpn: 3 },
@@ -100,7 +138,6 @@ const CRAFT = [
   { id: 'slugs', name: '狙击弹 ×10', desc: '', cost: { parts: 3 }, ammo: [3, 10] },
   { id: 'nade', name: '手雷 ×2', desc: '最多带 6 颗', cost: { parts: 4 }, nade: 2 },
   { id: 'med', name: '医疗包', desc: '回复 60 生命，最多 3 个', cost: { parts: 3, wood: 2 }, med: 1 },
-  { id: 'radio', name: '加固电台', desc: '电台 +250 生命', cost: { steel: 6, parts: 2 }, radio: 250 },
   { id: 'upg', name: '强化弹头', desc: '全队伤害 +12%（最多 5 级）', cost: { parts: 8 }, upg: 1 },
 ];
 
@@ -109,6 +146,7 @@ const BAL = {
   nights: 15,
   dayLen: [160, 120],
   pMaxHp: 100, pSpeed: 4.4, pReach: 6.5,
+  stairHold: 0.18, ledgeHold: 0.45,  // seconds of pushing before you walk down stairs / jump off a ledge
   downTime: 30, reviveTime: 2.4, soloDownTime: 8, respawnHp: 0.5,
   searchTime: 1.5, healTime: 1.0, medHeal: 60,
   shoveDmg: 18, shoveKB: 6, shoveCD: 0.55, shoveRange: 1.3,
@@ -124,7 +162,7 @@ const BAL = {
   spawnDur: n => 45 + n * 3,
   dayStragglers: 4, dayStragglerCD: 13,
   lootFar: 30, wireDps: 14, wireSlow: 0.45, wireWear: 6,
-  aggro: 11,                     // path distance at which zombies switch from the radio to a player
+  aggro: 11,                     // (legacy) zombies now always hunt the nearest reachable player
   diff: { easy: { hp: 0.75, n: 0.75, dmg: 0.7 }, normal: { hp: 1, n: 1, dmg: 1 }, hard: { hp: 1.3, n: 1.3, dmg: 1.25 } },
 };
 const isBlood = n => n % 5 === 0;

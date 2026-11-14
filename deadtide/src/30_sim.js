@@ -12,7 +12,7 @@ function newWorld(seed, names, diff) {
   const m = genMap(seed);
   W = {
     seed, t: 0, G: m.G, tt: m.tt, blk: m.blk, bhp: m.bhp, slab: m.slab, shp: m.shp, bdir: m.bdir, stab: new Int8Array(NC), spots: m.spots,
-    radio: { x: m.radio.x, y: m.radio.y, hp: BAL.radioHp, max: BAL.radioHp, hitT: 0, alarmT: 0 }, bench: m.bench,
+    radio: { x: m.radio.x, y: m.radio.y }, bench: m.bench, tasks: [], tkv: 0, clean: true,
     p: names.map((n, i) => mkPlayer(i, n)), zs: [], proj: [], zid: 1,
     phase: 'day', clock: BAL.dayLen[0], dayLen: BAL.dayLen[0], night: 0, res: Object.assign({}, BAL.startRes), upg: 0, kills: 0,
     spawnQ: [], nightT: 0, strayT: 8, diff, D: BAL.diff[diff] || BAL.diff.normal, rng: mulberry(seed ^ 0x9e3779b9), seq: 0,
@@ -22,6 +22,7 @@ function newWorld(seed, names, diff) {
   recomputeStab();
   updateFields(0, true);
   W.edges = edgeSpawns();
+  rollTasks();
   return W;
 }
 const rand = (a = 0, b = 1) => a + W.rng() * (b - a);
@@ -66,8 +67,9 @@ function stepMove(p, dt) {
   const tx = I.mx * k * spd, ty = I.my * k * spd, a = Math.min(1, dt * 14);
   p.vx = lerp(p.vx, tx, a); p.vy = lerp(p.vy, ty, a);
   p.kbx *= Math.max(0, 1 - dt * 6); p.kby *= Math.max(0, 1 - dt * 6);
-  p.dropped = 0;
+  p.dropped = 0; p.edgeWant = 0;
   moveEnt(p, (p.vx + p.kbx) * dt, (p.vy + p.kby) * dt, 'p', true);
+  p.edgeK = p.edgeWant; p.edgeT = p.edgeWant && m > 0.3 ? (p.edgeT || 0) + dt : 0;
   if (p.dropped) emitLocal('land');
   const sp = Math.hypot(p.vx, p.vy);
   if (sp > 0.3) p.anim += dt * sp * 2.6; else p.anim = lerp(p.anim, Math.round(p.anim / Math.PI) * Math.PI, Math.min(1, dt * 8));
@@ -128,12 +130,12 @@ function completeUse(p, tgt) {
   if (tgt.k === 'gather') {
     const g = GATHER[W.blk[i]]; if (!g) return;
     const n = Math.round(rand(g.n[0], g.n[1])); W.res[g.res] += n;
-    setCell(i, 0, W.slab[i], null, W.blk[i] === 22 ? 'chop' : 'mine');
+    setCell(i, 0, W.slab[i], null, W.blk[i] === 22 ? 'chop' : 'mine'); taskAdd('gather');
     emit({ k: 'loot', p: p.i, x: wx, y: wy, z: wz, text: '+' + n + ' ' + RES.find(r => r.k === g.res).name });
     return;
   }
   const s = W.spots.find(s => s.i === i); if (!s || s.searched) return;
-  s.searched = true; emit({ k: 'spot', i, v: 1 });
+  s.searched = true; emit({ k: 'spot', i, v: 1 }); taskAdd('search'); if (!inZone(x, y)) taskAdd('far');
   const S = SPOTS[s.k], got = [];
   for (const k in S.loot) { const [a, b] = S.loot[k]; const n = Math.round(rand(a, b) * m); W.res[k] += n; got.push('+' + n + ' ' + RES.find(r => r.k === k).name); }
   if (S.ammo) {
@@ -143,6 +145,42 @@ function completeUse(p, tgt) {
     if (rand() < 0.35 && p.nades < 6) { p.nades++; got.push('手雷'); }
   }
   emit({ k: 'loot', p: p.i, x: wx, y: wy, z: wz, text: got.join('  ') });
+}
+/* ---------- daily tasks ---------- */
+function rollTasks() {
+  const d = W.night + 1, pool = [];
+  for (const k in TASKS) { const T = TASKS[k]; if ((T.min || 1) <= d) pool.push(k); }
+  const pick = [];
+  while (pick.length < 3 && pool.length) {
+    let tot = 0; for (const k of pool) tot += TASKS[k].w;
+    let r = rand() * tot, j = 0;
+    for (; j < pool.length - 1; j++) { r -= TASKS[pool[j]].w; if (r <= 0) break; }
+    pick.push(pool.splice(j, 1)[0]);
+  }
+  W.tasks = pick.map(k => {
+    const T = TASKS[k], need = Math.max(1, T.need(d)), rk = T.rw[Math.floor(rand() * T.rw.length)], rw = TASK_RW[rk](d);
+    return { k, need, got: 0, done: 0, rw, txt: T.t(need), rt: taskRewardText(rw) };
+  });
+  W.tkv++;
+}
+function taskAdd(k, n = 1) {
+  if (!W || W.demo || W.over || NETROLE === 'guest') return;
+  for (const t of W.tasks) {
+    if (t.k !== k || t.done) continue;
+    t.got = Math.min(t.need, t.got + n); W.tkv++;
+    if (t.got >= t.need) { t.done = 1; payTask(t); }
+  }
+}
+function payTask(t) {
+  const r = t.rw;
+  if (r.res) for (const k in r.res) W.res[k] += r.res[k];
+  for (const q of activeP()) {
+    if (r.ammo) { const give = [0, 8, 30, 4]; for (let wi = 1; wi < 4; wi++) if (q.owned[wi]) q.ammo[wi] += give[wi] * r.ammo; }
+    if (r.med) q.meds = Math.min(3, q.meds + r.med);
+    if (r.nade) q.nades = Math.min(6, q.nades + r.nade);
+  }
+  if (r.upg) W.upg = Math.min(5, W.upg + r.upg);
+  emit({ k: 'task', txt: t.txt, rt: t.rt });
 }
 function startReload(p) {
   const wi = p.down ? 0 : p.wpn, w = WPN[wi];
@@ -168,7 +206,7 @@ function fireWeapon(p, wi) {
     const sp = w.spread * (p.down ? 1.6 : 1);
     const yw = yaw + (rand() - 0.5) * 2 * sp, pt = pitch + (rand() - 0.5) * sp;
     const dx = Math.cos(pt) * Math.cos(yw), dy = Math.cos(pt) * Math.sin(yw), dz = Math.sin(pt);
-    const wall = rayWorld(sx, sy, sz, dx, dy, dz, w.range);
+    const wall = rayWorld(sx, sy, sz, dx, dy, dz, w.range, { lean: LEAN });
     const hits = [];
     for (const z of W.zs) {
       if (z.hp <= 0) continue;
@@ -195,8 +233,10 @@ function hurtZombie(z, dmg, p, kx, ky) {
   if (kx || ky) { z.kbx = (z.kbx || 0) + kx; z.kby = (z.kby || 0) + ky; }
   if (z.hp <= 0) killZombie(z, p);
 }
+let KSRC = '';
 function killZombie(z, p) {
   z.hp = 0; W.kills++; if (p) p.kills++;
+  taskAdd('kill'); if (TASKS[z.k]) taskAdd(z.k); if (KSRC === 'nade') taskAdd('nade');
   emit({ k: 'zdie', x: r2(z.x), y: r2(z.y), z: r2(z.z), t: z.k, f: r2(z.face), id: z.id });
   if (rand() < (z.k === 'boss' ? 1 : z.k === 'brute' ? 0.6 : 0.07)) { const n = z.k === 'boss' ? 15 : z.k === 'brute' ? 3 : 1; W.res.parts += n; emit({ k: 'loot', p: -1, x: z.x, y: z.y, z: z.z + z.h, text: '+' + n + ' 零件' }); }
 }
@@ -205,12 +245,11 @@ function hurtPlayer(p, dmg) {
   if (DBG && DBG.god) return;
   if (p.down) { p.downT -= dmg * 0.18; p.hurtT = 0.3; emit({ k: 'phurt', p: p.i, d: 1 }); return; }
   p.hp -= dmg; p.hurtT = 0.3; emit({ k: 'phurt', p: p.i, d: Math.round(dmg) });
-  if (p.hp <= 0) { p.hp = 0; p.down = true; p.downT = activeP().length > 1 ? BAL.downTime : BAL.soloDownTime; p.reloadT = 0; p.medT = 0; p.build = false; emit({ k: 'down', p: p.i }); checkLose(); }
+  if (p.hp <= 0) { p.hp = 0; p.down = true; if (W.phase === 'night') W.clean = false; p.downT = activeP().length > 1 ? BAL.downTime : BAL.soloDownTime; p.reloadT = 0; p.medT = 0; p.build = false; emit({ k: 'down', p: p.i }); checkLose(); }
 }
 function knock(p, kx, ky) { if (p.i === ME && NETROLE !== 'guest') { p.kbx += kx; p.kby += ky; } else emit({ k: 'kb', p: p.i, x: r2(kx), y: r2(ky) }); }
 function checkLose() {
   if (W.over) return;
-  if (W.radio.hp <= 0) return endGame('lose', '电台被摧毁了');
   const act = activeP(); if (!act.length) return;
   if (act.some(standingP)) return;
   if (act.some(p => p.down && (p.meds > 0 || p.selfRev))) return;
@@ -255,6 +294,7 @@ function shove(p) {
     z.kbx = (z.kbx || 0) + dx / (d || 1) * BAL.shoveKB * heavy; z.kby = (z.kby || 0) + dy / (d || 1) * BAL.shoveKB * heavy; z.stun = 0.45 * heavy;
     hurtZombie(z, BAL.shoveDmg * (1 + 0.12 * W.upg), p); n++;
   }
+  if (n) taskAdd('shove', n);
   emit({ k: 'shove', p: p.i, n });
 }
 function throwNade(p) {
@@ -278,7 +318,6 @@ function craftBlocked(p, c) {
   if (c.nade && p.nades >= 6) return '已满';
   if (c.med && p.meds >= 3) return '已满';
   if (c.upg && W.upg >= 5) return '已满级';
-  if (c.radio && W.radio.max >= BAL.radioHp + 2000) return '已满';
   if (!affordable(W.res, c.cost)) return '材料不足';
   return '';
 }
@@ -289,7 +328,6 @@ function doCraft(p, id) {
   if (c.ammo) p.ammo[c.ammo[0]] += c.ammo[1];
   if (c.nade) p.nades = Math.min(6, p.nades + c.nade);
   if (c.med) p.meds = Math.min(3, p.meds + 1);
-  if (c.radio) { W.radio.max += c.radio * 0.5; W.radio.hp = Math.min(W.radio.max, W.radio.hp + c.radio); }
   if (c.upg) W.upg++;
   emit({ k: 'craft', p: p.i, id, name: c.name });
 }
@@ -314,7 +352,7 @@ function doBuild(p, x, y, L, id, dir) {
   for (const k in Bi.cost) W.res[k] -= Bi.cost[k];
   if (Bi.slab) setCell(i, W.blk[i] === 23 ? 0 : W.blk[i], id, null, 'build');
   else setCell(i, id, W.slab[i], Bi.stairs ? (dir & 3) : null, 'build');
-  W.stats.built++;
+  W.stats.built++; taskAdd('build'); if (L >= 2) taskAdd('high');
   recomputeStab();
 }
 function doDemolish(p, x, y, L) {
@@ -338,7 +376,7 @@ function edgeSpawns() {
   return out;
 }
 function startNight() {
-  W.night++; W.phase = 'night'; W.nightT = 0;
+  W.night++; W.phase = 'night'; W.nightT = 0; W.clean = true;
   W.p.forEach(p => p.ready = false);
   const n = W.night, blood = isBlood(n), D = W.D;
   const count = Math.round(BAL.nightSpawn(n) * D.n * (blood ? BAL.bloodMul : 1));
@@ -360,8 +398,10 @@ function startNight() {
   emit({ k: 'night', n, blood: blood ? 1 : 0, count: q.length, from: front.map(s => names[s]).join('、') });
 }
 function dawn() {
+  if (W.clean && W.night > 0) taskAdd('clean');
   if (W.night >= BAL.nights && !W.endless) return endGame('win', '救援直升机到了');
   W.phase = 'day'; W.dayLen = W.clock = BAL.dayLen[1];
+  rollTasks();
   W.spots.forEach(s => s.searched = false);
   for (const p of activeP()) {
     p.ready = false;
@@ -419,12 +459,13 @@ function stepProj(dt) {
   W.proj = W.proj.filter(b => !b.dead);
 }
 function explode(x, y, z, p) {
-  const R = BAL.nadeR;
+  const R = BAL.nadeR; KSRC = 'nade';
   for (const zb of W.zs) {
     if (zb.hp <= 0) continue;
     const d = Math.hypot(zb.x - x, zb.y - y, (zb.z + zb.h / 2 - z) * 0.8);
     if (d < R + zb.r) { const f = 1 - Math.max(0, d - zb.r) / R; hurtZombie(zb, BAL.nadeDmg * (0.35 + 0.65 * f) * (1 + 0.12 * W.upg), p, (zb.x - x) / (d || 1) * 5 * f, (zb.y - y) / (d || 1) * 5 * f); }
   }
+  KSRC = '';
   emit({ k: 'boom', x: r2(x), y: r2(y), z: r2(z) });
 }
 
@@ -437,7 +478,6 @@ function simStep(dt) {
     updateFields(dt);
     stepZombies(dt);
     stepProj(dt);
-    W.radio.hitT = Math.max(0, W.radio.hitT - dt); W.radio.alarmT -= dt;
     checkLose();
   }
 }

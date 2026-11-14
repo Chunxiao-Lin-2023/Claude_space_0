@@ -12,6 +12,12 @@ function blkAt(x, y, L) {
 }
 const slabAt = (x, y, L) => (inMap(x, y) && L >= 0 && L < ML) ? W.slab[ci(x, y, L)] : 0;
 const solidFor = (b, who) => b !== 0 && !!(who === 'p' ? B[b].P : who === 'z' ? B[b].Z : B[b].B);
+// a player wall (wood / brick / steel) above ground level with nothing on top: waist-high parapet you can shoot over
+function isParapet(i) {
+  const b = W.blk[i]; if (b !== 1 && b !== 2 && b !== 3) return false;
+  const x = cx_(i), y = cy_(i), L = cl_(i); if (L < 1 || L <= gAt(x, y)) return false;
+  if (L + 1 >= ML) return true; const u = ci(x, y, L + 1); return !W.blk[u] && !W.slab[u];
+}
 function support(x, y, L) {
   if (!inMap(x, y) || L < 0 || L >= ML) return false;
   if (L === W.G[y * MW + x] && W.tt[y * MW + x] !== TT.water) return true;
@@ -80,7 +86,7 @@ function genMap(seed) {
       if (r() < 0.12 + pass * 0.3) { ramps.push([x, y]); blk[ci(x, y, g)] = 28; bdir[ci(x, y, g)] = d; tt[col(x, y)] = TT.dirt; }
     }
   }
-  // radio + starter house (9 x 9, half second floor)
+  // camp: starter house (9 x 9, half second floor) with the workbench
   const put = (x, y, L, id, d) => { blk[ci(x, y, L)] = id; bhp[ci(x, y, L)] = B[id].hp || 1; if (d != null) bdir[ci(x, y, L)] = d; };
   const putS = (x, y, L, id) => { slab[ci(x, y, L)] = id; shp[ci(x, y, L)] = B[id].hp; };
   for (let y = RY - 7; y <= RY + 7; y++) for (let x = RX - 7; x <= RX + 7; x++) { G[col(x, y)] = 0; if (tt[col(x, y)] !== TT.road) tt[col(x, y)] = TT.grass; for (let L = 0; L < ML; L++) blk[ci(x, y, L)] = 0; }
@@ -89,7 +95,7 @@ function genMap(seed) {
     const edge = x === X0 || x === X1 || y === Y0 || y === Y1;
     if (edge) {
       let id = 2;
-      if ((x === RX && y === Y1) || (x === X0 && y === RY)) id = 7;
+      if ((x === RX && (y === Y1 || y === Y0)) || ((x === X0 || x === X1) && y === RY)) id = 7; // a door on every side
       if ((y === Y0 && (x === RX - 2 || x === RX + 2)) || (x === X1 && (y === RY - 2 || y === RY + 2)) || (x === X0 && y === RY + 2) || (y === Y1 && x === RX + 3)) id = 8;
       put(x, y, 0, id);
     } else if (y <= RY && !(x === X1 - 1 && y === Y0 + 2)) putS(x, y, 1, 4);
@@ -98,7 +104,7 @@ function genMap(seed) {
   }
   put(X1 - 1, Y0 + 2, 0, 6, 3);   // stairs going north up to the first floor
   put(X0 + 2, Y0 + 2, 1, 10);      // lamp upstairs
-  put(RX, RY, 0, 30); put(RX - 2, RY + 2, 0, 31);
+  put(RX - 2, RY + 2, 0, 31);
   // town: plastered ruins; two-storey houses keep half an upper floor with stairs up
   const spotsAt = [];
   TOWN_HOUSES.forEach(([x0, y0, x1, y1, st], k) => {
@@ -119,6 +125,20 @@ function genMap(seed) {
         if (!edge) putS(x, y, 1, 4);
         if (ue && (edge || (x === (west ? upX1 : upX0)))) { if (edge || y % 3) put(x, y, edge ? 1 : 0, 24); if (edge && !ARCH.roofCells.has(x + ',' + y + ',1') && rr() < 0.15) blk[ci(x, y, 1)] = 0; }
       }
+    }
+    // entrances: at least three sides get a real doorway (gaps above might otherwise be filled with rubble)
+    const sides = [[x0 + 1, x1 - 1, y0, y0], [x0 + 1, x1 - 1, y1, y1], [x0, x0, y0 + 1, y1 - 1], [x1, x1, y0 + 1, y1 - 1]];
+    for (let k = sides.length - 1; k > 0; k--) { const j = Math.floor(rr() * (k + 1)); [sides[k], sides[j]] = [sides[j], sides[k]]; }
+    let open = 0;
+    for (const [ax, bx, ay, by] of sides) {
+      const cells = []; for (let x = ax; x <= bx; x++) for (let y = ay; y <= by; y++) if (ok(x, y)) cells.push([x, y]);
+      if (!cells.length) continue;
+      if (cells.some(([x, y]) => !blk[ci(x, y, 0)])) { open++; continue; }
+      if (open >= 3) continue;
+      // prefer a doorway outside the upper floor, near the middle of the side
+      cells.sort((a, b) => ((st === 2 && a[0] >= upX0 && a[0] <= upX1) - (st === 2 && b[0] >= upX0 && b[0] <= upX1)) * 4 + (Math.abs(a[0] - (ax + bx) / 2) + Math.abs(a[1] - (ay + by) / 2)) - (Math.abs(b[0] - (ax + bx) / 2) + Math.abs(b[1] - (ay + by) / 2)) + (rr() - 0.5));
+      const [x, y] = cells[0], upper = st === 2 && x >= upX0 && x <= upX1;
+      blk[ci(x, y, 0)] = 0; if (!upper) blk[ci(x, y, 1)] = 0; open++;
     }
     if (st === 2) { const sx = west ? upX1 + 1 : upX0 - 1; blk[ci(sx, y0 + 3, 0)] = 0; put(sx, y0 + 3, 0, 6, 3); blk[ci(sx, y0 + 2, 0)] = 0; slab[ci(sx, y0 + 2, 1)] = 0; putS(sx, y0 + 2, 1, 4); }
     // loot inside: crates and rubble piles, one upstairs in two-storey houses
@@ -200,7 +220,7 @@ function supportIf(x, y, L, id) {
 }
 // can block `id` (with stairs dir) go into cell (x,y,L)? returns '' or a reason
 function canPlace(x, y, L, id, dir) {
-  if (!inMap(x, y) || !inZone(x, y)) return '只能在电台周围的建造区内建造';
+  if (!inMap(x, y) || !inZone(x, y)) return '只能在营地周围的建造区（黄框）内建造';
   if (L < 0 || L >= ML - 1) return '太高了';
   const g = gAt(x, y), i = ci(x, y, L), Bi = B[id];
   if (L < g) return '这里是实心地面';

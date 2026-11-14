@@ -29,7 +29,7 @@ const { chromium } = require('playwright');
   let last = -1;
   for (let t = 0; t < 900; t++) {
     await p.waitForTimeout(1000);
-    const s = await p.evaluate(() => ({ n: W.night, ph: W.phase, r: Math.round(W.radio.hp), hp: Math.round(W.p[0].hp), k: W.kills, lost: W.stats.lost, z: W.zs.length, over: W.over, kinds: [...new Set(W.zs.map(z => z.k))].join('') }));
+    const s = await p.evaluate(() => ({ n: W.night, ph: W.phase, tk: W.tasks.filter(t => t.done).length, hp: Math.round(W.p[0].hp), k: W.kills, lost: W.stats.lost, z: W.zs.length, over: W.over, kinds: [...new Set(W.zs.map(z => z.k))].join('') }));
     if (s.over || (s.ph === 'day' && s.n !== last)) { console.log(JSON.stringify(s)); last = s.n; }
     if (s.over || s.n >= 6) break;
   }

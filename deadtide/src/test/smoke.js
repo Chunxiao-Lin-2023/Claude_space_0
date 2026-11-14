@@ -58,14 +58,14 @@ require('fs').mkdirSync(OUT, { recursive: true });
   // night
   await p.evaluate(() => { window.__dbg.god = true; W.clock = 0.3; });
   await p.waitForTimeout(1500); await p.evaluate(() => { window.__dbg.speed = 4; }); await p.waitForTimeout(9000);
-  console.log('night', await p.evaluate(() => JSON.stringify({ ph: W.phase, n: W.night, zs: W.zs.length, q: W.spawnQ.length, radio: Math.round(W.radio.hp), atk: W.zs.filter(z => z.st === 'attack').length, lost: W.stats.lost, pos: W.zs.slice(0, 6).map(z => z.x.toFixed(0) + ',' + z.y.toFixed(0) + ',' + z.L).join(' ') })));
+  console.log('night', await p.evaluate(() => JSON.stringify({ ph: W.phase, n: W.night, zs: W.zs.length, q: W.spawnQ.length, tasks: W.tasks.map(t => t.k + ' ' + t.got + '/' + t.need).join('; '), atk: W.zs.filter(z => z.st === 'attack').length, lost: W.stats.lost, pos: W.zs.slice(0, 6).map(z => z.x.toFixed(0) + ',' + z.y.toFixed(0) + ',' + z.L).join(' ') })));
   await p.evaluate(() => { window.__dbg.speed = 1; });
   for (let k = 0; k < 16; k++) { await p.evaluate(() => { const me = W.p[0]; const z = W.zs.slice().sort((a, b) => Math.hypot(a.x - me.x, a.y - me.y) - Math.hypot(b.x - me.x, b.y - me.y))[0]; if (z) { const [sx, sy] = w2s(z.x, z.y, z.z + 0.6); INP.mx = sx; INP.my = sy; INP.mouseT = performance.now(); INP.mL = true; } }); await p.waitForTimeout(150); }
   await p.evaluate(() => { INP.mL = false; });
   await shot('06_night');
   console.log('fight', await p.evaluate(() => 'kills ' + W.kills + ' mag ' + W.p[0].mag.join(',')));
   await p.evaluate(() => { CAM.zoom = 5; CAM.rot = 2; }); await shot('07_zoom_rot');
-  await p.evaluate(() => { W.radio.hp = 0; }); await p.waitForTimeout(500); await shot('08_over');
+  await p.evaluate(() => { window.__dbg.god = false; endGame('lose', '所有人都倒下了'); }); await p.waitForTimeout(500); await shot('08_over');
   console.log('errs', errs.slice(0, 8), await p.evaluate(() => window.__dbg.err || ''));
   await b.close();
 })();

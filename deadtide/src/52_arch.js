@@ -145,6 +145,8 @@ function archGeo() {
   G.doorLeaf = boxG(0.72, h * 0.78, 0.14, 0, h * 0.39, 0);
   const sst = []; for (let k = 0; k < 5; k++) sst.push(boxG(0.2, h * (k + 1) / 5, 1, -0.4 + k * 0.2, h * (k + 1) / 10, 0));
   G.stairs = merge(sst);
+  // railing along one edge of a stairwell opening (local north edge; rotated per side)
+  G.rail = merge([boxG(1, 0.06, 0.07, 0, 0.66, -0.46), boxG(1, 0.04, 0.05, 0, 0.36, -0.46), boxG(0.07, 0.68, 0.07, -0.46, 0.34, -0.46), boxG(0.06, 0.68, 0.06, 0, 0.34, -0.46), boxG(0.07, 0.68, 0.07, 0.46, 0.34, -0.46)]);
   // wire: posts at both ends
   G.wirePosts = merge([boxG(0.06, 0.5, 0.06, -0.48, 0.25, 0).rotateX(0.25), boxG(0.06, 0.5, 0.06, -0.48, 0.25, 0).rotateX(-0.25), boxG(0.06, 0.5, 0.06, 0.48, 0.25, 0).rotateX(0.25), boxG(0.06, 0.5, 0.06, 0.48, 0.25, 0).rotateX(-0.25)]);
   // ruins: window wall, broken stepped top, full with cornice, low stub
@@ -166,7 +168,7 @@ function archScene() {
   I.wfloor = inst(G.slab, tm(T.wfloor), 4000); I.sfloor = inst(G.slab, tm(T.sfloor), 4000); I.joist = inst(G.joist, lam('#3e2a1a'), 4000);
   I.sand = inst(G.sand, lam('#b4a273'), 600); I.bars = inst(G.bars, lam('#3a434b'), 600);
   I.doorF = inst(G.doorFrame, lam('#4a3220'), 400); I.doorL = inst(G.doorLeaf, tm(T.door), 400);
-  I.stairs = inst(G.stairs, tm(T.wfloor), 400);
+  I.stairs = inst(G.stairs, tm(T.wfloor), 400); I.rail = inst(G.rail, lam('#5a3d26'), 1200);
   I.wireP = inst(G.wirePosts, lam('#5a4630'), 600);
   // the plaster spans three cells; each instance reads the slice for its own position so walls don't repeat cell by cell
   const wide = m => { m.onBeforeCompile = sh => { sh.vertexShader = sh.vertexShader.replace('#include <uv_vertex>', '#include <uv_vertex>\n#ifdef USE_INSTANCING\nvMapUv.x = (vMapUv.x + instanceMatrix[3].x + instanceMatrix[3].z) / 3.0;\n#endif'); }; m.customProgramCacheKey = () => 'wide3'; return m; };
@@ -181,16 +183,19 @@ function archEnd() { for (const k in ARCH.I) { const arr = Array.isArray(ARCH.I[
 function archWall(b, i, x, y, L, X, Y, Z, h, cut, vl) {
   const f = W.bhp[i] / (B[b].hp || 1), tint = dmgTint('#ffffff', f);
   const up = L + 1 < ML ? ci(x, y, L + 1) : -1, open = up < 0 || (!W.blk[up] && !W.slab[up]);
-  const crown = open && cut === 1, ax = wallAxis(x, y, L) ? Math.PI / 2 : 0;
+  let crown = open && cut === 1; const ax = wallAxis(x, y, L) ? Math.PI / 2 : 0;
+  // upper-floor walls with nothing on top are waist-high parapets (matches the bullet rule in rayWorld)
+  const para = b <= 3 && isParapet(i), cY = para ? Y - (FH - PH) : Y;
+  if (para) { cut = Math.min(cut, PH / FH); crown = false; }
   if (b === 1) {
     archPut(h < 0.35 ? 'woodB' : 'wood', X, Y, Z, 0, 1, cut, 1, tint); archPut('tWood', X, Y, Z, 0, 1, cut, 1, dmgTint('#ffffff', 0.6 + f * 0.4));
-    if (crown) archPut('stakes', X, Y, Z, ax, 1, 1, 1, dmgTint('#ffffff', 0.6 + f * 0.4));
+    if (crown) archPut('stakes', X, cY, Z, ax, 1, 1, 1, dmgTint('#ffffff', 0.6 + f * 0.4));
   } else if (b === 2) {
     archPut('brick', X, Y, Z, 0, 1, cut, 1, tint); archPut('tBrick', X, Y, Z, 0, 1, cut, 1);
-    if (crown && (x + y + L) % 2 === 0) archPut('merlon', X, Y, Z, 0, 1, 1, 1, tint);
+    if (crown && (x + y + L) % 2 === 0) archPut('merlon', X, cY, Z, 0, 1, 1, 1, tint);
   } else if (b === 3) {
     archPut('steel', X, Y, Z, 0, 1, cut, 1, tint); archPut('tSteel', X, Y, Z, 0, 1, cut, 1);
-    if (crown) archPut('spikes', X, Y, Z, ax, 1, 1, 1);
+    if (crown) archPut('spikes', X, cY, Z, ax, 1, 1, 1);
   } else if (b === 24) {
     let v = h < 0.28 ? 0 : h < 0.58 ? 1 : h < 0.84 ? 2 : 3; if (ARCH.roofCells.has(x + ',' + y + ',' + L)) v = h < 0.4 ? 0 : 2;
     const rot = (v === 0 ? ax : 0) + (v === 1 && hash2(x, y * 3) < 0.5 ? Math.PI : 0) + (v === 1 ? ax : 0);

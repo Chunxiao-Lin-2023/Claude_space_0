@@ -7,7 +7,7 @@ function transition(cx, cy, nx, ny, L, who, canDrop) {
   if (standable(nx, ny, L, who)) return L;
   if (L > 0 && enterable(nx, ny, L, who) && !support(nx, ny, L)) {
     const b = blkAt(nx, ny, L - 1);
-    if (B[b].stairs) { const d = DIRS[W.bdir[ci(nx, ny, L - 1)]]; if (nx + d[0] === cx && ny + d[1] === cy) return L - 1; }
+    if (B[b].stairs) { const d = DIRS[W.bdir[ci(nx, ny, L - 1)]]; if (nx + d[0] === cx && ny + d[1] === cy) return L - 1; if (who === 'p') return -1; } // railings around the stairwell
     if (canDrop) { for (let l = L - 1; l >= 0; l--) { if (standable(nx, ny, l, who)) return l; if (!enterable(nx, ny, l, who)) return -1; } }
   }
   return -1;
@@ -37,7 +37,11 @@ function moveEnt(e, dx, dy, who, canDrop) {
       if (nc !== cur) {
         const nx = ax ? cx : nc, ny = ax ? nc : cy;
         const L2 = transition(cx, cy, nx, ny, e.L, who, canDrop);
-        if (L2 < 0) { v = d > 0 ? nc - 0.001 : cur + 0.001; noteBump(e, nx, ny); }
+        // players only go down (stairs or off a ledge) if they keep pushing for a moment: no accidental falls
+        const st = L2 >= 0 && L2 < e.L && who === 'p' ? (B[blkAt(nx, ny, L2)].stairs ? 1 : 2) : 0;
+        const hold = st && (e.edgeT || 0) < (st === 1 ? BAL.stairHold : BAL.ledgeHold);
+        if (hold) e.edgeWant = st;
+        if (L2 < 0 || hold) { v = d > 0 ? nc - 0.001 : cur + 0.001; if (L2 < 0) noteBump(e, nx, ny); }
         else { if (L2 < e.L && !B[blkAt(nx, ny, L2)].stairs) e.dropped = e.L - L2; e.L = L2; }
       } else {
         // keep a radius from blocked neighbour columns
@@ -120,8 +124,9 @@ function updateFields(dt, force) {
 
 /* ---------- 3D rays (world: x east, y south, z up; cells are 1 x 1 x FH) ---------- */
 // returns {d, i} distance to the first bullet-stopping cell / floor, i = cell index or -1
+let PARA_D = -1;
 function rayWorld(ox, oy, oz, dx, dy, dz, maxD, opt) {
-  const maxL = opt && opt.maxL != null ? opt.maxL : ML - 1, pick = opt && opt.pick;
+  const maxL = opt && opt.maxL != null ? opt.maxL : ML - 1, pick = opt && opt.pick, any = opt && opt.any, lean = opt && opt.lean || 0, hz = Math.hypot(dx, dy);
   let x = Math.floor(ox), y = Math.floor(oy), l = Math.floor(oz / FH);
   const sx = dx > 0 ? 1 : -1, sy = dy > 0 ? 1 : -1, sz = dz > 0 ? 1 : -1;
   const tdx = dx ? Math.abs(1 / dx) : 1e9, tdy = dy ? Math.abs(1 / dy) : 1e9, tdz = dz ? Math.abs(FH / dz) : 1e9;
@@ -133,14 +138,24 @@ function rayWorld(ox, oy, oz, dx, dy, dz, maxD, opt) {
     if (l < 0) return true;
     if (!inMap(x, y) || l >= ML) return false;
     if (l > maxL) return false;
-    const b = W.blk[ci(x, y, l)];
+    const i = ci(x, y, l), b = W.blk[i];
     if (!b) return false;
-    if (B[b].B) return true;
+    if (B[b].B || any) {
+      if ((b === 1 || b === 2 || b === 3) && isParapet(i)) {
+        // waist-high: the ray only stops if it dips below the top inside this cell (or the shooter is leaning over it)
+        if (lean && d * hz < lean) return false;
+        const top = l * FH + PH, z0 = oz + dz * d, z1 = oz + dz * Math.min(tmx, tmy, tmz, maxD);
+        if (Math.min(z0, z1) > top) return false;
+        if (z0 > top && dz < 0) PARA_D = (top - oz) / dz;
+      }
+      return true;
+    }
     if (pick && (b === 22 || b === 21 || b === 23 || B[b].P)) return true;
     return false;
   };
   for (let it = 0; it < 400 && d <= maxD; it++) {
-    if (blocks(x, y, l)) return { d, i: inMap(x, y) && l >= 0 && l < ML ? ci(x, y, l) : -1, face, x, y, l };
+    PARA_D = -1;
+    if (blocks(x, y, l)) return { d: PARA_D > d ? PARA_D : d, i: inMap(x, y) && l >= 0 && l < ML ? ci(x, y, l) : -1, face, x, y, l };
     if (tmx < tmy && tmx < tmz) { d = tmx; tmx += tdx; x += sx; face = 0; }
     else if (tmy < tmz) { d = tmy; tmy += tdy; y += sy; face = 1; }
     else {
@@ -165,7 +180,7 @@ function rayBox(ox, oy, oz, dx, dy, dz, bx, by, bz, sx, sy, sz, maxD) {
   return t0;
 }
 // line of sight between two points (bullet rules)
-function los(ax, ay, az, bx, by, bz) {
+function los(ax, ay, az, bx, by, bz, lean) {
   const dx = bx - ax, dy = by - ay, dz = bz - az, L = Math.hypot(dx, dy, dz); if (L < 1e-6) return true;
-  return rayWorld(ax, ay, az, dx / L, dy / L, dz / L, L).d >= L - 0.05;
+  return rayWorld(ax, ay, az, dx / L, dy / L, dz / L, L, lean ? { lean } : null).d >= L - 0.05;
 }

@@ -35,8 +35,8 @@ function stepZombies(dt) {
       if (z.hp <= 0) continue;
     }
     const rf = climbT ? F.rc : F.rw, pf = climbT ? F.pc : F.pw;
-    let field = rf;
-    if (pf[i] < BAL.aggro * (climbT ? 1.6 : 1) && pf[i] < rf[i] + 8) field = pf;
+    // pure survival: always hunt the nearest reachable player (smashing through walls if needed)
+    const field = pf[i] < Infinity ? pf : rf;
     // spitter: lob acid at a visible player in range
     let hold = false;
     if (z.k === 'spitter') {
@@ -66,16 +66,9 @@ function stepZombies(dt) {
         } else if (ub && B[ub].Z && !B[ub].stairs && B[ub].brk) attackI = u;
         else { tx = bx + 0.5; ty = by + 0.5; }
       }
-    } else if (!hold) { tx = W.radio.x + 0.5; ty = W.radio.y + 0.5; }
-    // at the radio
-    const rL = gAt(W.radio.x, W.radio.y);
-    if (z.L === rL && Math.abs(cx - W.radio.x) + Math.abs(cy - W.radio.y) === 1 && field === rf) {
-      z.st = 'attack'; z.atk = 0.3; z.face = Math.atan2(W.radio.y + 0.5 - z.y, W.radio.x + 0.5 - z.x); tx = null;
-      if (z.cd <= 0) {
-        z.cd = Z.cd; W.radio.hp -= Z.bdmg * BAL.radioDmg * W.D.dmg; W.radio.hitT = 0.2; emit({ k: 'rhit' });
-        if (W.radio.alarmT <= 0) { W.radio.alarmT = 6; say('电台正在被攻击！', '#ff6b6b'); }
-        if (W.radio.hp <= 0) { W.radio.hp = 0; checkLose(); }
-      }
+    } else if (!hold) {
+      let best = null, bd = 1e9; for (const p of W.p) { if (!standingP(p) && !p.down) continue; const d = d2(p.x, p.y, z.x, z.y); if (d < bd) { bd = d; best = p; } }
+      if (best) { tx = best.x; ty = best.y; } else { tx = W.radio.x + 0.5; ty = W.radio.y + 0.5; }
     }
     if (attackI >= 0) { zAttackCell(z, attackI); tx = null; }
     // bite players in reach

@@ -86,7 +86,7 @@ const stickL = document.getElementById('stickL'), stickR = document.getElementBy
 function setTouch(on) { if (INP.touch === on) return; INP.touch = on; document.body.classList.toggle('touch', on); }
 function stickDraw(el, s, R) {
   if (s.id == null) { el.classList.add('hidden'); return; }
-  el.classList.remove('hidden'); el.style.left = s.ox + 'px'; el.style.top = s.oy + 'px';
+  el.classList.remove('hidden'); el.style.left = s.ox + 'px'; el.style.top = s.oy + 'px'; if (R) el.style.setProperty('--R', R + 'px');
   const k = el.firstElementChild, m = Math.hypot(s.x, s.y), f = m > 1 ? 1 / m : 1;
   k.style.transform = `translate(${s.x * f * R}px,${s.y * f * R}px)`;
 }
@@ -120,8 +120,8 @@ CV.addEventListener('pointerdown', e => {
   INP.tp[e.pointerId].x0 = e.clientX; INP.tp[e.pointerId].y0 = e.clientY;
   // a near-miss on a button must not pop a joystick or place a block
   if (nearUI(e.clientX, e.clientY)) { delete INP.tp[e.pointerId]; return; }
-  if (moveZone(e.clientX, e.clientY) && INP.move.id == null) { Object.assign(INP.move, { id: e.pointerId, ox: e.clientX, oy: e.clientY, x: 0, y: 0, t0: performance.now(), far: false }); stickDraw(stickL, INP.move, STICK_R()); }
-  else if (me.build) { INP.paint = e.pointerId; INP.bldLast = ''; touchBuild(e.clientX, e.clientY); }
+  if (moveZone(e.clientX, e.clientY) && INP.move.id == null) { const R = STICK_R(), m = R * 0.6; Object.assign(INP.move, { id: e.pointerId, ox: clamp(e.clientX, m, VW - m), oy: clamp(e.clientY, m, VH - m), x: 0, y: 0, t0: performance.now(), far: false, sx: e.clientX, sy: e.clientY }); INP.move.x = (e.clientX - INP.move.ox) / R; INP.move.y = (e.clientY - INP.move.oy) / R; stickDraw(stickL, INP.move, R); }
+  else if (me.build) { INP.paint = e.pointerId; touchBuild(e.clientX, e.clientY, true); }
   else return; // shooting is on the fire button; the rest of the right side does nothing
   try { CV.setPointerCapture(e.pointerId); } catch (_) { }
 }, { passive: false });
@@ -131,16 +131,21 @@ CV.addEventListener('pointermove', e => {
   const P = INP.pinch;
   if (P && (e.pointerId === P.a || e.pointerId === P.b)) { const A = INP.tp[P.a], Bq = INP.tp[P.b]; if (A && Bq) { CAM.zoom = clamp(P.z0 * P.d0 / Math.max(20, Math.hypot(A.x - Bq.x, A.y - Bq.y)), 4, 22); SET.zoom = CAM.zoom; } return; }
   const R = STICK_R();
-  for (const s of [INP.move, INP.aim]) if (s.id === e.pointerId) { s.x = (e.clientX - s.ox) / R; s.y = (e.clientY - s.oy) / R; if (Math.hypot(e.clientX - s.ox, e.clientY - s.oy) > 14) s.far = true; stickDraw(s === INP.move ? stickL : stickR, s, R); }
+  for (const s of [INP.move, INP.aim]) if (s.id === e.pointerId) {
+    let dx = e.clientX - s.ox, dy = e.clientY - s.oy; const dd = Math.hypot(dx, dy);
+    // floating move stick: the base follows the thumb once it is dragged past the ring, so it never runs out of travel
+    if (s === INP.move && dd > R * 1.15) { const k = (dd - R * 1.15) / dd; s.ox += dx * k; s.oy += dy * k; dx = e.clientX - s.ox; dy = e.clientY - s.oy; }
+    s.x = dx / R; s.y = dy / R; if (Math.hypot(e.clientX - (s.sx == null ? s.ox : s.sx), e.clientY - (s.sy == null ? s.oy : s.sy)) > 14) s.far = true; stickDraw(s === INP.move ? stickL : stickR, s, R);
+  }
   if (INP.aim.id === e.pointerId && Math.hypot(INP.aim.x, INP.aim.y) > 0.25) INP.aim.t = performance.now();
-  if (INP.paint === e.pointerId && inGame() && W.p[ME].build) touchBuild(e.clientX, e.clientY);
+  if (INP.paint === e.pointerId && inGame() && W.p[ME].build) touchBuild(e.clientX, e.clientY, false);
 }, { passive: false });
 function endPtr(e) {
   if (e.pointerType !== 'touch') return;
   delete INP.tp[e.pointerId];
   if (INP.pinch && (e.pointerId === INP.pinch.a || e.pointerId === INP.pinch.b)) { INP.pinch = null; saveSet(); return; }
   if (INP.paint === e.pointerId) INP.paint = null;
-  if (INP.move.id === e.pointerId && !INP.move.far && performance.now() - INP.move.t0 < 350 && inGame() && W.p[ME].build) touchBuild(INP.move.ox, INP.move.oy);
+  if (INP.move.id === e.pointerId && !INP.move.far && performance.now() - INP.move.t0 < 350 && inGame() && W.p[ME].build) touchBuild(INP.move.ox, INP.move.oy, true);
   if (INP.move.id === e.pointerId) { INP.move.id = null; INP.move.x = INP.move.y = 0; stickDraw(stickL, INP.move); }
   if (INP.aim.id === e.pointerId && !INP.aim.btn) { INP.aim.id = null; INP.aim.x = INP.aim.y = 0; INP.aim.t = performance.now(); stickDraw(stickR, INP.aim); }
 }
@@ -163,23 +168,76 @@ FIRE.addEventListener('pointermove', e => {
 function fireEnd(e) { if (INP.aim.id !== e.pointerId || !INP.aim.btn) return; Object.assign(INP.aim, { id: null, x: 0, y: 0, btn: false, t: performance.now() }); FIRE.classList.remove('on'); fireKnob(); }
 FIRE.addEventListener('pointerup', fireEnd); FIRE.addEventListener('pointercancel', fireEnd);
 CV.addEventListener('pointerup', endPtr); CV.addEventListener('pointercancel', endPtr);
-function touchBuild(sx, sy) {
-  const me = W.p[ME], c = buildPick(sx, sy, buildL()); if (!c) return;
-  const key = c.x + ',' + c.y + ',' + c.L; if (INP.bldLast === key) return; INP.bldLast = key;
-  BUILD_HOVER = Object.assign(c, { ok: true, t: 1 });
-  buildAt(me, c.x, c.y, c.L, me.demo);
+/* ---------- build targeting: the surface under the cursor / finger decides the cell (no layer switching) ---------- */
+// point at the top of a wall -> stack on it; at a wall's side -> build next to it; at a floor -> build on it.
+// Floors also try the ceiling above what you point at, and your own level (balconies out over the edge).
+function pickBuild(sx, sy, me, demo) {
+  const { o, d } = screenRay(sx, sy), maxL = Math.min(ML - 1, viewL());
+  const top = (maxL + 1) * FH + 0.01; let t0 = 0; if (o[2] > top && d[2] < 0) t0 = (o[2] - top) / -d[2];
+  const h = rayWorld(o[0] + d[0] * t0, o[1] + d[1] * t0, o[2] + d[2] * t0, d[0], d[1], d[2], 300, { maxL, any: true });
+  if (h.x == null || !inMap(h.x, h.y)) return null;
+  let surf = null, front;
+  if (h.slab) { surf = { x: h.x, y: h.y, L: h.l, slab: 1 }; front = { x: h.x, y: h.y, L: h.l }; }
+  else if (h.l < 0) front = { x: h.x, y: h.y, L: 0 };
+  else {
+    surf = { x: h.x, y: h.y, L: h.l };
+    const b = W.blk[h.i];
+    if (b === 23) front = { x: h.x, y: h.y, L: h.l };
+    else if (h.face === 0) front = { x: h.x - (d[0] > 0 ? 1 : -1), y: h.y, L: h.l };
+    else if (h.face === 1) front = { x: h.x, y: h.y - (d[1] > 0 ? 1 : -1), L: h.l };
+    else front = { x: h.x, y: h.y, L: h.l + 1 };
+  }
+  if (demo) {
+    if (!surf) return null;
+    const i = ci(surf.x, surf.y, surf.L), b = surf.slab ? W.slab[i] : W.blk[i];
+    return b && B[b].cost ? { x: surf.x, y: surf.y, L: surf.L, ok: true } : null;
+  }
+  const slab = !!B[me.sel].slab, cands = [];
+  if (surf && !!surf.slab === slab) {
+    const i = ci(surf.x, surf.y, surf.L), cur = slab ? W.slab[i] : W.blk[i];
+    if (cur && B[cur].cost && (slab ? W.shp[i] : W.bhp[i]) < B[cur].hp * 0.98) cands.push({ x: surf.x, y: surf.y, L: surf.L });
+  }
+  cands.push(front);
+  if (slab) { cands.push(buildPick(sx, sy, front.L + 1), buildPick(sx, sy, me.L), buildPick(sx, sy, me.L + 1)); }
+  else if (front.L < me.L) cands.push(buildPick(sx, sy, me.L));
+  for (const c of cands) if (c && inMap(c.x, c.y) && c.L >= 0 && c.L < ML && !buildWhy(me, c.x, c.y, c.L)) return Object.assign(c, { ok: true, why: '' });
+  return Object.assign(front, { ok: false, why: buildWhy(me, front.x, front.y, front.L) });
 }
+// one painting step (mouse held / finger down). Dragging builds a straight row on the first cell's floor.
+function paintBuild(sx, sy, start, demo) {
+  const me = W.p[ME]; if (!me || !me.build) return;
+  if (start) { INP.bA = null; INP.bAxis = null; INP.bPrev = null; INP.bldLast = ''; }
+  if (!demo && INP.bA) {
+    const A = INP.bA, q = buildPick(sx, sy, A.L); if (!q) return;
+    if (!INP.bAxis && (q.x !== A.x || q.y !== A.y)) INP.bAxis = Math.abs(q.x - A.x) >= Math.abs(q.y - A.y) ? 'x' : 'y';
+    const c = INP.bAxis === 'x' ? { x: q.x, y: A.y, L: A.L } : INP.bAxis === 'y' ? { x: A.x, y: q.y, L: A.L } : { x: A.x, y: A.y, L: A.L };
+    const P = INP.bPrev || A, n = Math.abs(c.x - P.x) + Math.abs(c.y - P.y), sx_ = Math.sign(c.x - P.x), sy_ = Math.sign(c.y - P.y);
+    for (let k = 1; k <= n; k++) buildAt(me, P.x + sx_ * k, P.y + sy_ * k, A.L, false, true);
+    INP.bPrev = c;
+    const why = buildWhy(me, c.x, c.y, c.L); BUILD_HOVER = Object.assign(c, { ok: !why, why, t: 1 });
+    return;
+  }
+  const c = pickBuild(sx, sy, me, demo); if (!c) { BUILD_HOVER = null; return; }
+  BUILD_HOVER = Object.assign(c, { t: 1 });
+  const key = c.x + ',' + c.y + ',' + c.L; if (INP.bldLast === key) return; INP.bldLast = key;
+  buildAt(me, c.x, c.y, c.L, demo);
+  if (!demo) { INP.bA = { x: c.x, y: c.y, L: c.L }; INP.bPrev = INP.bA; }
+}
+function touchBuild(sx, sy, start) { paintBuild(sx, sy, start, W.p[ME].demo); }
 function buildWhy(me, x, y, L) {
   const i = inMap(x, y) && L >= 0 && L < ML ? ci(x, y, L) : -1;
-  const cur = i < 0 ? 0 : B[me.sel].slab ? W.slab[i] : W.blk[i];
-  if (cur && B[cur].cost) return ''; // repair
+  const slab = B[me.sel].slab, cur = i < 0 ? 0 : slab ? W.slab[i] : W.blk[i];
+  if (cur && B[cur].cost) { // repair (only if damaged)
+    if ((slab ? W.shp[i] : W.bhp[i]) >= B[cur].hp * 0.98) return slab ? '这里已经有楼板了' : '这里已经有东西了';
+    return !inReach(me, x, y, L) ? '太远了' : '';
+  }
   return canPlace(x, y, L, me.sel, me.sdir) || (!inReach(me, x, y, L) ? '太远了' : '') || (!affordable(W.res, B[me.sel].cost) ? '材料不足' : '');
 }
-function buildAt(me, x, y, L, demo) {
+function buildAt(me, x, y, L, demo, quiet) {
   if (!inMap(x, y) || L < 0 || L >= ML) return;
   if (demo) { const i = ci(x, y, L); if ((W.blk[i] && B[W.blk[i]].cost) || (W.slab[i] && B[W.slab[i]].cost)) act('demo', { x, y, l: L }); return; }
   const why = buildWhy(me, x, y, L);
-  if (why) { if (thr('denyL', 0.3)) { toast(why, '#ff8a7a'); sfx('deny'); } return; }
+  if (why) { if (!quiet && thr('denyL', 0.3)) { toast(why, '#ff8a7a'); sfx('deny'); } return; }
   act('build', { x, y, l: L, b: me.sel, d: me.sdir });
 }
 function bindBtn(id, down, up) {
@@ -209,7 +267,7 @@ function touchAutoAim(me, dirx, diry, any) {
     if (z.L > viewL()) continue;
     const dx = z.x - sx, dy = z.y - sy, d = Math.hypot(dx, dy); if (d > range || d < 0.2) continue;
     const da = Math.abs(angDiff(a0, Math.atan2(dy, dx))); if (!any && da > 0.38) continue;
-    const score = any ? d + da * 1.5 : d + da * 12; if (score < bs && los(sx, sy, sz, z.x, z.y, z.z + z.h * 0.6)) { bs = score; best = z; }
+    const score = any ? d + da * 1.5 : d + da * 12; if (score < bs && los(sx, sy, sz, z.x, z.y, z.z + z.h * 0.6, LEAN)) { bs = score; best = z; }
   }
   if (best) return { x: best.x, y: best.y, z: best.z + best.h * 0.6 };
   return { x: sx + dirx * 6, y: sy + diry * 6, z: sz };
@@ -222,9 +280,15 @@ function readInput(dt) {
     sx = (KD('d') || KD('ArrowRight') ? 1 : 0) - (KD('a') || KD('ArrowLeft') ? 1 : 0);
     sy = (KD('w') || KD('ArrowUp') ? 1 : 0) - (KD('s') || KD('ArrowDown') ? 1 : 0);
     const mv = INP.move.id != null ? INP.move : null;
-    if (mv && Math.hypot(mv.x, mv.y) > 0.18) { const m = Math.min(1, Math.hypot(mv.x, mv.y)); const a = Math.atan2(-mv.y, mv.x); sx = Math.cos(a) * m; sy = Math.sin(a) * m; }
+    const mm = mv ? Math.hypot(mv.x, mv.y) : 0;
+    if (mm > 0.12) { const m = Math.min(1, (mm - 0.12) / 0.55), a = Math.atan2(-mv.y, mv.x); sx = Math.cos(a) * m; sy = Math.sin(a) * m; }
   }
   I.mx = rx * sx + fx * sy; I.my = ry * sx + fy * sy;
+  // touch: snap to the grid axes when close, so walking along a wall or through a doorway stays straight
+  if (INP.move.id != null && (I.mx || I.my)) {
+    const m = Math.hypot(I.mx, I.my), a = Math.atan2(I.my, I.mx), q = Math.round(a / (Math.PI / 2)) * Math.PI / 2;
+    if (Math.abs(a - q) < 0.2) { I.mx = Math.cos(q) * m; I.my = Math.sin(q) * m; }
+  }
   I.use = !blocked && (KD('f') || INP.useHeld) ? 1 : 0;
   const usingMouse = !INP.touch || (performance.now() - INP.mouseT < 1500 && performance.now() - INP.lastTouch > 1500);
   if (usingMouse) {
@@ -234,14 +298,11 @@ function readInput(dt) {
     CAM.lookX = lerp(CAM.lookX || 0, clamp((pt.x - me.x) * 0.18, -3, 3), Math.min(1, dt * 3)); CAM.lookY = lerp(CAM.lookY || 0, clamp((pt.y - me.y) * 0.18, -3, 3), Math.min(1, dt * 3));
     I.fire = !blocked && INP.mL && !me.build ? 1 : 0;
     if (me.build && !blocked) {
-      const c = buildPick(INP.mx, INP.my, buildL());
-      if (c) {
-        const why = INP.mR || me.demo ? '' : buildWhy(me, c.x, c.y, c.L);
-        BUILD_HOVER = Object.assign(c, { ok: !why, why });
-        INP.bldT -= dt; const key = c.x + ',' + c.y + ',' + c.L;
-        if ((INP.mL || INP.mR) && INP.bldT <= 0 && INP.bldLast !== key) { INP.bldT = 0.08; INP.bldLast = key; buildAt(me, c.x, c.y, c.L, INP.mR || me.demo); }
-      } else BUILD_HOVER = null;
-    } else BUILD_HOVER = null;
+      const down = INP.mL || INP.mR, demo = INP.mR || me.demo;
+      if (down) paintBuild(INP.mx, INP.my, !INP.bDown, demo);
+      else { const c = pickBuild(INP.mx, INP.my, me, me.demo); BUILD_HOVER = c; }
+      INP.bDown = down;
+    } else { BUILD_HOVER = null; INP.bDown = false; }
   } else {
     const A = INP.aim, held = A.id != null, active = held && Math.hypot(A.x, A.y) > 0.3;
     if (active) {
