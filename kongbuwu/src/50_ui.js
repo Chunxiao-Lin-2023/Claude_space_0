@@ -6,7 +6,7 @@ function shake() { if (!animOn()) return; document.body.classList.remove('shake'
 function logLine(s, cls) { UI.feed.push({ s, cls: cls || '' }); if (UI.feed.length > 60) UI.feed.shift(); if (!C) return; if (!C.log) C.log = []; C.log.push([C.day, s, cls || '']); if (C.log.length > 120) C.log.shift(); renderFeed(); }
 function renderFeed() { const f = $('#feed'); if (f) f.innerHTML = UI.feed.slice(-3).map(l => '<div class="' + l.cls + '">' + esc(l.s) + '</div>').join(''); }
 function curMode() { return STATE.house ? 'hs' : STATE.battle ? 'bt' : (STATE.scene || STATE.mini) ? 'dlg' : 'ex'; }
-function applyMode() { const m = curMode(), b = document.body; clearTimeout(UI.modeT); const set = () => { b.classList.remove('m-ex', 'm-dlg', 'm-bt', 'm-hs'); b.classList.add('m-' + m); b.classList.toggle('m-mini', !!STATE.mini); };
+function applyMode() { const m = curMode(), b = document.body; clearTimeout(UI.modeT); const set = () => { b.classList.remove('m-ex', 'm-dlg', 'm-bt', 'm-hs'); b.classList.add('m-' + m); b.classList.toggle('m-mini', !!STATE.mini); b.classList.toggle('vnn', m === 'dlg' && typeof isNight === 'function' && isNight()); };   // 夜里的剧情：经营栏目收起来（RULES 32）
   /* 离开对话先等 140ms：下一句往往马上就来 */ if (b.classList.contains('m-dlg') && m === 'ex' && animOn()) UI.modeT = setTimeout(() => { if (curMode() === 'ex') set(); }, 140); else set();
   b.classList.toggle('nomo', !SET.motion); b.classList.toggle('night', !!C && isNight() && m !== 'bt' && m !== 'hs'); b.classList.toggle('lowmp', !!C && C.mp < charStats().mmp * .2 && isNight()); if (m !== 'ex') closeSide(true); }
 

@@ -181,5 +181,8 @@ const { chromium } = require('playwright');
       await tick(140); dlgTap(); await tick(60); ok('^recall off：原样回到现在（人、效果都在）', !!stFind('徐婉') && !!stFind('陈歌') && !stFind('人影') && STG.fx.dark && !STG.rec, STG.sc.map(a => a.name));
       await tick(60); ok('回到现在以后牌子撤掉', !/梦 ·/.test(document.querySelector('#dlg .dh').textContent) && !document.body.classList.contains('rec-dream'));
       dlgTap(); await wait(() => fin, 3000); D.STATE.scene = false; }
+    { C = await fresh(2); D.auto = false; D.C.tick = 9; let fin = 0; D.runScene(async () => { await T_('夜里的一段剧情'); fin = 1; }); await tick(80); ok('夜里的剧情：经营栏目（底栏、钱、体力）收起来', document.body.classList.contains('vnn') && getComputedStyle(document.querySelector('#nav')).display === 'none');
+      D.STATE.run++; D.STATE.scene = false; D.refresh(); applyMode(); await tick(400); ok('剧情结束，经营栏目回来', !document.body.classList.contains('vnn'), document.body.className); D.STATE.scene = false; }
+    ok('夜晚任务都在：剧情里的 nt() 全部有对应章节', typeof NIGHT_IDS !== 'undefined' && NIGHT_IDS.length >= 35, typeof NIGHT_IDS !== 'undefined' && NIGHT_IDS.length);
     return R.concat(window.__unh || []); });
   for (const l of res) console.log(l); console.log('errors', errs); const bad = res.filter(l => !l.startsWith('ok')).length; console.log(res.length - bad + ' / ' + res.length + ' 通过'); await b.close(); process.exit(errs.length || bad ? 1 : 0); })();

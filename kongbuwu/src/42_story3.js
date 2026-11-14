@@ -48,312 +48,31 @@ async function S_ward() { setClock(8, '晚上 11 点'); await T_(`^in 刘刀 14
 秦广的直播间有四十万人。他的车刚冲进了暮阳中学外面的荒地——司机说，有东西趴在了挡风玻璃上。
 我|我给过他忠告的。`);
   go('kf_b1', true, true);
-  await T_(`^fx dark
-^prop ct cat 7 5
-第一病栋的门锁是坏的。卡簧崩断，暴力开锁——近期的事。
-一楼所有房间的门都开着。`);
-  await look('护士站附近。', [
-    ['两个铁笼', `^prop k1 cage 11 5
-^prop k2 cage 13 5
-护士站里放着两个钢筋焊的铁笼，像狗市里的那种。笼子里是煮熟的鸡和鸭，肉已经发硬。笼外摆着两碗水。
-我|有人在这里“养”着什么。楼里不止我一个。`],
-    ['护士台的木板', `^prop hd handprint 14 4
-木板上钉着一绺一绺的头发。旁边写着很小的字，写到一半就乱了。`],
-    ['白猫在叫的那扇窗', `~cat
-^prop wn window 9 3 {"face":1}
-白猫突然对着窗户叫。你推开窗，往楼上看。
-!face
-二楼的窗口，有一张脸正朝下看着你。两边不太对称。
-^prop wn window 9 3
-你再看的时候，没有了。`]]);
-  await T_(`你回到门口。铁门被人从外面锁上了。
-我|二楼的窗户没装防盗网。暂时没必要报警。`); }
-async function S_laundry() { setClock(9, '午夜 0:30'); await T_(`^fx dark
-^prop ct cat 3 5
-越靠近第三病栋，那股臭味越浓。
-^sfx scrape
-楼上有一台洗衣机自己转了起来。滚筒撞在铁皮上，一下，一下。转了很久才停。
-^prop ln linen 17 4
-第二病栋三楼，洗衣间。霉味。墙边一床被子，盖着什么东西。
-^prop ln linen 17 4 {"open":1}
-^prop k1 cage 10 5 {"front":1}
-^prop k2 cage 12 5 {"front":1}
-^prop k3 cage 14 5 {"front":1}
-^at 老人 10
-^at 女人 12
-^at 许童 14
-^fx shake
-你掀开。三个铁笼，品字摆放——像这三座病栋。
-笼子里是三个人。一个老人，旁若无人地吮着手指上的油。一个女人，嘴里塞着枕头套。一个头发很长的中年男人，缩在最里面发抖。
-^to 陈歌 4
-^prop wm box 3 5
-你先关上门，把洗衣机推到门后，才开口。
-^to 陈歌 8
-我|你们被关在这里多久了？
->？？？这是演员吗／报警啊／剧本吧，演技可以`);
-  const c = await choose([['先拿掉女人嘴里的枕头套', ''], ['先问那个发抖的男人', '']]); F().cage = c;
-  await T_(c === 0 ? `女人|手……手……手……
-她只会说这一个字。看见你的手，她蹬着钢筋往后缩。` : `许童|你也是他！你们都是他！别以为换了张脸我就认不出来——
-上一秒还正常，下一秒面目扭曲。五号病室，许童。`);
-  await T_(`你注意到了：中年男人的左手上，有一个很深的咬痕，还在流血。老人的牙缝里有血。
-我|“受害者”？你是把手伸进他的笼子，才被咬的。
-洗衣间的门被人推了一下。很轻。没想到门后有台洗衣机。
-你把手腕上的小镜头摘下来，摆在正对门口的地上，然后从背包里抽出了碎颅锤。
-^prop cm phone 7 5
-手机屏幕里，门外站着两个人。一个只有一条手臂。另一个的脸……
-^del wm
-^fx shake
-^fx pulse
-^in 畸形脸 2
-^in 独臂 4
-洗衣机被撞倒了。`);
-  const win = await fight({ chase: HCHASE.xiong, mobs: [['xiong', L(1)], ['onearm', L(0)]], title: '第二病栋 · 洗衣间', intro: '他们没想到，门后面的这个更凶。', epic: { name: '畸形脸 · 熊青', sub: '八号病室 · 曾经的医生', seal: '八', intro: ['偏侧空间失调症。', '在他眼里，完整的人是“错的”。', '“只剩半边，才顺眼。”'], phase: '你、你到底是病人还是我是病人？！', low: '直播间里有人在刷：主播别死。你笑了一下。' } });
-  await T_(`^fx dark
-^at 畸形脸 3
-^at 独臂 5
-^down 独臂
-^out 畸形脸
-${win ? '独臂的那个，另一条胳膊也抬不起来了。畸形脸翻窗跑向了连廊。' : '他们退了。畸形脸翻窗跑向了连廊。'}
->主播追着精神病打？？？／这剧情逼真得主播自己看了都害怕／人气八万了
-^prop k1 cage 10 5 {"front":1}
-^prop k2 cage 12 5 {"front":1}
-^prop k3 cage 14 5 {"front":1}
-^at 老人 10
-^at 女人 12
-^at 许童 14
-^to 陈歌 16
-^turn 陈歌 L
-你用锤子把许童那只笼子的钢筋一根一根砸弯。笼子里的空间小了四分之一。
-许童|你不是说不强人所难吗！！我说！
-许童|王海明……他住过三号房。那是禁闭室，也叫电休克治疗室。通电以后，他说他看见屋子里有四个人。
-许童|有个“魔鬼”说可以帮他出去。他答应了。在卫生间里，对着镜子。
-我|你该吃药了。
->感谢逗比小仙女的打赏／乖乖，太真实了／人气十五万
-王海明带出去的镜鬼，王声龙肩膀上的高个子——连鬼，都不愿意待在那栋楼里。`); }
-async function S_b3() { setClock(9, '凌晨 1 点'); await T_(`^mus door
-^fx dark
-连廊的铁门，锁上的铁条是被人一点一点磨断的。
-^prop f1 futon 7 4 {"col":"#6a6a5a"}
-^prop f2 futon 10 4 {"col":"#5a5a4e"}
-^prop f3 futon 13 4 {"col":"#6a6a5a"}
-第三病栋。走廊中间扔着很多被褥，一个个隆起，像坟包。你用锤头挑开一床：
-!face
-下面是一个假人。背后写着一个名字：张启思。每一个都有名字。
-^fx flicker
-^sfx creak
-你放下被子，往前走了两步。身后，有一床被子的隆起，比刚才高了一点。
-^prop f2 futon 10 4 {"col":"#7a7a6a"}
-像有什么东西，在下面坐了起来。
-^fx steady
-^prop ct cat 6 5
-白猫本来对你爱答不理。进了这条走廊，它主动跳上了你的肩膀，爪子抓得很紧。
-^del ct
-^prop cn counter 16 5
-护士站。药品和记录摆得整整齐齐。你搓了搓纸药袋上的名字——墨是新的。
-我|这些药，是刚配好的。
-^in 女护士 18
-走廊尽头有一个影子。腰是弯折的，走路没有声音。它穿着护士的衣服。`);
-  const ok = await miniGame('sneak', { t: '女护士', tip: '她<b>背过身发药</b>（眼睛闭着）的时候点「迈步」。6 步，被看见 2 次就失败。' });
-  await T_(ok ? `^to 女护士 10
-她挨个房间发药。每一袋，都放在一个假人的枕边。
-^out 女护士
-你趁她走远，翻出了柜台下那个沾满污渍的笔记本。` : `^turn 女护士 L
-她停了一下，朝你这边偏了偏头。白猫的毛炸了起来。她又转了回去。
-^out 女护士
-你一把抓起柜台下的笔记本，退进了楼道。`);
-  await T_(`笔记本上记着的病人，有一个共同点：他们全都已经不在人世了。
-我|“门”太久没有关上。门后的世界，和这里叠在了一起。就像我鬼屋厕所里的那个隔间。
-笔记的最后一页：
-#“三号房的那个孩子又开始发疯了。他是第一个看见‘门’的人。”`); F().sneakNurse = ok ? 1 : 0; }
-async function S_dean() { setClock(10, '凌晨 2 点'); await T_(`^stage deanroom
-^fx dark
-^fx candle 10
-^prop ds desk 10 5
-^prop p1 paper 6 5
-^prop p2 paper 12 5
-^prop p3 paper 7 6
-^prop bk book 11 5
-^prop wd wardrobe 12 3
-^prop sp stain 13 5
-院长办公室。台灯还亮着——这里断电好几年了。地上散着病例单。
-^zoom wd 2
-^sfx creak
-里间有一个被警方封条封住的衣柜。
-^zoom off
-^fx eyes
-抽屉里有四封信。寄出去过，又回到了这里。
-^fx eyes off`);
-  await look('四封信，信封上的日期一封比一封晚。', [
-    ['第一封', `^recall past 第一封信
-^stage oldward
-^at 男人 16
-^at 孕妇 13
-第一封。二十多年前，一个男人送来一个怀孕的女人，预付了钱，再也没出现。
-^out 男人
-^to 孕妇 9
-^fx flicker
-女人疯得很厉害，整夜对着墙说话。孩子在三号病房出生。
-^recall off`],
-    ['第二封', `^recall past 第二封信
-^stage oldward
-^at 病人 4
-^at 病人乙 14
-^down 病人
-^down 病人乙
-^at 孩子 9
-第二封。孩子在病栋里长到三岁。他学什么都快得吓人。
-^turn 孩子 L
-他把吃了药的病人叫作“玩具”。
-^fx dark
-^fx flicker
-^at 人影 17
-^creep 人影 11
-有一天，他念出了一个名字：何亚军——建楼时出意外死去的工人。没有人告诉过他。
-^recall off`],
-    ['第三封', `^recall past 第三封信
-^stage oldward
-^at 陈医生 6
-^at 孩子 9
-^at 那个女人 13
-第三封。“陈医生，我第一次见到这样的孩子。”
-^out 那个女人
-^turn 孩子 R
-母亲病愈出院。那一天，孩子的支柱倒了。
-^stage doorhall
-^fx dark
-^fx red
-^at 孩子 9
-^sfx creak
-午夜，三号房的门变成了血红色。
-^recall off`],
-    ['第四封', `^recall past 第四封信
-^stage doorhall
-^fx dark
-^fx red
-^at 陈医生 5
-^sfx steps
-第四封。“门后面有东西在走动。还有咀嚼的声音。”
-^fx eyes
-^at 孩子 7
-^to 孩子 9
-“方法只有一个：让那个孩子自己进去，把门关上。”
-^out 孩子
-^sfx door
-^recall off`]]);
-  await T_(`^sfx creak
-^fx flicker
-^zoom wd 2.4
-里间那个衣柜的封条，从里面被顶起了一点，又落了回去。
-^zoom off
-^fx steady
-我|姓陈的医生……？
-^prop ph photo 9 4
-信封里夹着一张合影。没有化妆的女人，和一个孩子。孩子的脸，是小时候的门楠。
-我|他的第三个人格。最年幼的那一个。
-办公室的门被推开了。她是来找笔记本的。
-^in 女护士 15` + (F().sneakNurse ? '' : `
-她在你走廊里退出去的时候，就看见你了。她一进门，就直直地朝你走过来。`));
-  const win = await fight({ pre: F().sneakNurse ? [] : [[0, 'rage', 3]], mobs: [['nurse', L(1)]], title: '院长办公室', intro: '杀猪刀划过的地方没有血，但她的身体缺了一块。', epic: { name: '女护士', sub: '死后仍在此地徘徊', seal: '药', intro: ['她每晚照着笔记本，给死去的病人发药。', '笔记本不见了。', '她念到了一个新的名字——你的。'], phase: '（她的腰折成了不可能的角度）', low: '白猫异色的眼睛闪了一下，扑到了她脸上。' } });
-  await T_(`^fx dark
-^out 女护士
-${win ? '她散成了一地的白大褂。' : '白猫扑到了她脸上。你把笔记本扔了回去，她抱着它退进了墙里。'}
-口袋里的手机在震。
-^call 刘刀
+  const r = await nt('ward'); if (!r) return; }
+async function S_laundry() { setClock(9, '午夜 0:30');
+  const r = await nt('laundry', { autoF: { k_cage: 0 } }); if (!r) return;
+  F().cage = r.f.k_cage != null ? r.f.k_cage : 0;
+  await T_(`>主播追着精神病打？？？／这剧情逼真得主播自己看了都害怕／人气十五万`); }
+async function S_b3() { setClock(9, '凌晨 1 点');
+  const r = await nt('b3', { autoF: { k_sneak: 1 } }); if (!r) return;
+  F().sneakNurse = r.f.k_sneak ? 1 : 0; }
+async function S_dean() { setClock(10, '凌晨 2 点');
+  const r = await nt('dean'); if (!r) return;
+  await T_(`^call 刘刀
 刘刀|你快看你的直播间！！
 三十万。还在涨。
 刘刀|不是平台出问题，是秦广出问题了！他带人进了暮阳中学最后一间教室，画面黑了二十五分钟！
 >秦广那边黑屏了／都来这边了／所以这个是真的？？？
 我|暮阳中学里的不是恶灵。他应该不会有生命危险。……希望他下次别再跟风了。
 你把直播间的名字，改成了恐怖屋的地址。`); if (STATE.live) STATE.live.hot = 300000; }
-async function S_door() { setClock(10, '凌晨 2:30'); await T_(`^mus door
-^fx dark
-一楼。臭味到了刺鼻的地步。十号是特制的铁门，像囚室。
-^prop dr door 11 3
-三号病房的门，开着一条缝。
-^to 陈歌 10
-你伸手想把它合上。推动的时候，你听见了一种熟悉的声音——和恐怖屋厕所隔间里的，一样。
-^prop sn stain 11 5
-门板在往外渗东西。像血。
-#r门是一面镜子。／另一边，也有“人”把手按在了门上。
-~knock
-^fx shake
-半开的门后，伸出一只长满毛发的手。` + (F().cage === 0 ? `
-你想起铁笼里那个女人，嘴里只会重复一个字：手。——原来她见过的，是这一只。` : `
-许童说过，王海明在这间屋子里看见了“四个人”。现在门缝里只有一只手。`) + `
-^to 陈歌 11
-^turn 陈歌 F
-你用整个后背顶住门，把碎颅锤斜撑在门后。`);
-  const ok = await miniGame('door');
-  await T_(`${ok ? '门，暂时合上了。' : '门被撞开一掌宽，你用肩膀硬顶了回去。肩膀上多了几道口子。'}
-你腾出一只手，拨通了高医生的电话。
-^call 高医生
-我|我需要门楠。需要他身体里最年幼的那个人格。只有他能关上这扇门。
-高医生|我这就开车去找他。二十分钟。不要挂电话。
-八号病房传来锁链滑动的声音。
-^in 畸形脸 17
-^fx pulse
-畸形脸回来了。他的嘴越裂越大，后背上，浮出了第二个人头。
-^zoom 畸形脸 2
-^at 瘦长怪物 18
-那东西一开始可能并不高。它跳到一个又一个人的肩膀上，一个一个吃掉，才长成现在这样。白布的缺口里，露出好几张人脸。
-畸形脸|我们来玩个游戏吧。你赢了，我就放过你。你输了，就把身体给我。
-^fx flicker
-畸形脸|游戏的名字叫做——看谁先开口说话。`); if (!ok) C.hp = Math.max(1, Math.round(C.hp * .8));
-  const ok2 = await miniGame('silent');
-  await T_(ok2 ? `^fx steady
-那张脸倒悬在你眼前，等了很久。
-你把杀猪刀扔了出去——刀柄朝着自己。他低头去看刀的那一下，你已经把刀捡回来，架在了他脖子上。
-他先叫出了声。
-笔仙的笔尖，戳进了怪物的一只眼睛。` : `^fx steady
-你喊了出来。怪物笑了。
-笔仙的笔尖，戳进了它的一只眼睛——替你抢回了一步。`);
-  await T_(`^out 畸形脸
-^out 瘦长怪物
-你往楼上跑。跑出十几米，低头看了一眼手机。
-!eyes
-^zoom off
-^fx hands
-在自己的直播间里，你看到了自己的后背。——有“人”捡起了你掉在地上的那个镜头。
-他是故意把你往四楼引的。`); go('kf_b3_4', true, true); }
-async function S_candy() { setClock(10, '凌晨 3 点'); await T_(`^mus door
-^fx dark
-^to 陈歌 9
-四楼走廊中央。
-^fx fog
-^in 瘦长怪物 14
-前面一个。
-^at 瘦长怪物乙 3
-后面一个。
-^in 独眼的瘦长怪物 18
-楼梯口，瞎了一只眼的那个也爬了上来。
-三个瘦长的东西，堵住了所有出口。
-^fx flicker
-^creep 瘦长怪物 12
-^creep 瘦长怪物乙 6
-^creep 独眼的瘦长怪物 14
-^sfx breath
-手电开始一闪一闪。每暗一下，它们就近一步。
-^fx steady
->完了完了完了／主播快跑啊／这不是演的吧……
-你靠着墙，从贴身的口袋里取出了那颗糖。
-我|这是我的最后一张底牌。`);
-  const win = await fight({ chase: HCHASE.tallone, mobs: [['tallone', L(1)], ['tallone', L(1)], ['tallone', L(0), '独眼的瘦长怪物']], candy: 1, title: '第三病栋 · 四楼', intro: '🍬 撑不住的时候，吃掉那颗糖。', epic: { name: '瘦长怪物', sub: '从门后跑出来的东西 · 三只', seal: '门', intro: ['它们踩着人的肩膀长高。', '每一张脸，都曾经是一个活人。', '“看谁先开口说话。”'], phase: '（白布下面的脸，一起张开了嘴）', low: '舌尖是甜的。背后是冷的。有人从后面抱住了你。' } });
-  if (itemN('candy')) { takeItem('candy'); await candyScene(null); }
-  await T_(`^fx dark
-^at 张雅 11
-^at 瘦长怪物 14
-^at 独眼的瘦长怪物 16
-十几分钟后，走廊里是一边倒的虐杀。
-^fx red
-^out 瘦长怪物
-^out 独眼的瘦长怪物
-^fx flash
-^fx ash
-^fx blood
-怪物被撕碎，长廊里像下起了黑色的雪。张雅站在雪里，黑发吞吸着它们的怨念。她身上的红衣，越来越鲜艳了。
-我|（她一个二星、三星场景出来的厉鬼，在这里虐杀三星的怪物。只能说明——这栋楼里，还有更可怕的。）
-^at 张雅 11
-手机里的声音|陈歌！我找到门楠了！
+async function S_door() { setClock(10, '凌晨 2:30');
+  const r = await nt('door'); if (!r) return;
+  if (r.f.k_fail) C.hp = Math.max(1, Math.round(C.hp * .8));
+  go('kf_b3_4', true, true); }
+async function S_candy() { setClock(10, '凌晨 3 点');
+  const r = await nt('candy'); if (!r) return;
+  if (itemN('candy')) takeItem('candy');
+  await T_(`手机里的声音|陈歌！我找到门楠了！
 ^call 门楠
 我|门楠，你是在这所医院出生的。你在三号病房里长到了三岁。唤醒你身体里最小的那个人格——我要找的是他！
 电话那边沉默了很久。
@@ -379,55 +98,13 @@ async function S_candy() { setClock(10, '凌晨 3 点'); await T_(`^mus door
 ^out 张雅
 我|……这也太刚了。
 三号病房的门大开着。她进去了。`); F().inside = 1; go('kf_b3_1', true, true); toast('三号病房的门开着'); }
-async function S_inside() { setClock(11, '凌晨 3:30'); await T_(`^fx red
-这就是门后的世界。
-一样的病栋。血红色。被褥和假人都不见了，像一直有专人在打扫。很安静。
-手机没有信号。直播断了。
-^fx glitch
-^sfx hum
-走廊深处，有人在哼歌。调子你没听过，每一个音，都比该有的低了半度。`); liveOff(); musicMode('door');
-  const c = await choose([['一句话也不说，往里走', '千万不要开口说话'], ['小声喊：“张雅？”', '']]); F().spoke = c;
-  if (c === 1) { await T_(`你的声音传出去很远。
-^fx shake
-^fx eyes
-^fx hands
-走廊两边所有的门，同时响了一下。
-%
-你闭上了嘴。可已经有东西醒了。`); C.mp = Math.round(C.mp * .7); }
-  await look('你没有出声，一间一间往里看。', [
-    ['护士站', `^prop cn counter 13 5 {"col":"#6a1a1a"}
-药品摆得整整齐齐，标签是新写的。名字一个也不认识。`],
-    ['墙上的值班表', `值班表上只有一个名字，从第一天排到最后一天：陈。`],
-    ['走廊尽头', `^prop dr door 15 3
-三号病房的门半开着。里面有呼吸声，很轻，很慢。`]], 2);
-  await T_(`你走进了三号病房。`); F().in3 = 1; go('kf_in3', true, true); }
-async function S_boy() { await T_(`^fx red
-^prop bed bed 15 3 {"col":"#5a0a0a"}
-三号病房里，有一张小床。床上睡着一个男孩。和合影里一模一样。
-门楠的主人格。他在这里睡了十几年。
-你还没来得及叫醒他。
-~knock
-^at 老院长 4
-^scare 老院长
-门口站着一个老人。穿着红色的衣服。
-^fx pulse
-^zoom 老院长 1.8
-你的脑子里只有两个字：红衣。
-老院长|活人？……很多年没有活人进来过了。把那个孩子交给我。
-他不是失踪。四年前，他自己走进了这扇门。`);
-  const win = await fight({ chase: HCHASE.dean, mobs: [['dean', L(2)]], ally: 'zhangya', title: '门后 · 三号病房', intro: '你第一次直面红衣。但你不是一个人。', epic: { name: '红衣 · 老院长', sub: '四年前走进门里的人', seal: '红衣', intro: ['他写过那四封信。', '他也曾是想救人的人。', '后来他病了，想活下去，推开了这扇门。'], phase: '你把魔鬼吵醒了！', low: '床上的孩子睁开了眼睛。' } });
-  await T_(`${win ? '' : '你被摔在血红色的地面上。'}床上的男孩坐了起来。
-^in 男孩 14
-^in 张雅 8
-他只做了一个动作。老院长重重砸在地上，身上的红衣一下子暗了下去。
-^down 老院长
-^zoom off
-^fx pulse off
-老院长|魔……魔鬼……
-张雅的黑发裹住了他缺失的身体。几秒钟后，他不见了。
-^out 老院长
-我|……厉鬼都这么记仇吗。
-男孩身上，也是一件红衣。他笑着，看了你很久。
+async function S_inside() { setClock(11, '凌晨 3:30'); liveOff(); musicMode('door');
+  const r = await nt('inside', { autoF: { k_spoke: 0 } }); if (!r) return;
+  F().spoke = r.f.k_spoke ? 1 : 0; if (F().spoke) C.mp = Math.round(C.mp * .7);
+  F().in3 = 1; go('kf_in3', true, true); }
+async function S_boy() {
+  const r = await nt('boy'); if (!r) return;
+  await T_(`男孩身上，也是一件红衣。他笑着，看了你很久。
 ` + (F().spoke ? `男孩|你开过口。它们都听见了。下次进来，别再喊人的名字。` : `男孩|你一路上没出声。很聪明。上一个这么聪明的人，姓陈。`) + `
 男孩|我答应过陈医生，进了门，就一直守在这里。
 ^recall past 四年前
@@ -475,7 +152,6 @@ async function S_boy() { await T_(`^fx red
   C.hh.scenes.push('ward'); gainTitle('keeper'); C.fans += 150000; await dayCard('中午 12 点'); go('hh_rest', true, true);
   await cine(['几天后。', '恐怖屋的门缝里，塞进来一张宣传单。', '上面只有一行字，和一个地址：', '“怪谈协会 · 诚邀您讲述自己的故事。”'], '');
   await cine(['第一卷 · 完', ['你相信，这个世界上有鬼吗？', '你不信。可你已经见过太多了。', '你说“应该有吧”。现在你知道答案了。'][F().believe || 0], '——门后的世界、怪谈协会、通灵鬼校，留给下一卷。', '现在，你可以继续经营恐怖屋，夜里回到去过的地方。']); }
-
 /* 主线步骤：id 不能改、不能重名（build.py 检查）。at = 在哪里触发；auto = 走到就开始；night/day = 需要的时段 */
 const MAIN = [
   { id: 'q_open', ch: 1, title: '濒临倒闭', goal: '恐怖屋门口', at: 'hh_door', act: '开门营业', run: S_open },

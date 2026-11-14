@@ -3,7 +3,7 @@
    out/test.html      同上 + window.__dbg 测试钩子
    out/artifact.html  claude.ai artifact 版（不带 doctype）
    ../index.html      只有加 --deploy 才写"""
-import os, sys, re, collections
+import json, os, sys, re, collections
 D = os.path.dirname(os.path.abspath(__file__))
 src = lambda f: open(os.path.join(D, f), encoding='utf-8').read()
 ORDER = sorted(f for f in os.listdir(D) if re.match(r'^\d\d_.*\.js$', f))
@@ -73,7 +73,11 @@ import subprocess
 r = subprocess.run([sys.executable, os.path.join(D, '..', 'night', 'build.py')], capture_output=True, text=True)
 if r.returncode: sys.exit('夜晚任务构建失败:\n' + r.stdout + r.stderr)
 print(r.stdout.strip())
-game += '\n' + open(os.path.join(D, '..', 'night', 'out', 'night_embed.js'), encoding='utf-8').read()
+emb = open(os.path.join(D, '..', 'night', 'out', 'night_embed.js'), encoding='utf-8').read()
+nids = set(json.loads(re.search(r"const NIGHT_IDS = (\[.*?\]);", emb).group(1)))
+miss = sorted(set(re.findall(r"\bnt\('(\w+)'", game)) - nids)
+if miss: sys.exit('剧情里调用了不存在的夜晚任务: ' + ', '.join(miss))
+game += '\n' + emb
 tpl = src('template.html')
 IOS = '<meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="恐怖屋"><meta name="theme-color" content="#0a0d0f">'
 def page(kind):

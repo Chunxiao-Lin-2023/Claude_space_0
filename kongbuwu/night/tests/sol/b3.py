@@ -1,0 +1,1 @@
+SOL = [['use', 'f0'], ['js', "(() => { const e = window.__dbg.W.maps.c.ents.find(z => z.id === 'nurse'); e.hidden = true; e.mv = null; e.x = 2; e.y = 4; e.px = 32; e.py = 64; })()"], ['use', 'ns'], ['use', 'out'], ['expect', 'window.__dbg.W.f.k_sneak != null']]
