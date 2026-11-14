@@ -22,9 +22,9 @@ const { chromium } = require('playwright'); const OUT = process.env.OUT || '/tmp
   await G.keyboard.down('a'); await simWait(H, 1.0); await G.keyboard.up('a'); await simWait(H, 0.4);
   const g1 = await H.evaluate(() => [W.p[1].x, W.p[1].y]);
   console.log('guest moved on host', Math.hypot(g1[0] - g0[0], g1[1] - g0[1]).toFixed(2));
-  await G.evaluate(() => { const me = W.p[ME]; me.x = 37.5; me.y = 28.5; me.L = 0; }); await simWait(H, 0.3);
-  await G.evaluate(() => act('build', { x: 38, y: 30, l: 0, b: 1, d: 0 })); await simWait(H, 0.4);
-  console.log('guest build host/guest', await H.evaluate(() => W.blk[ci(38, 30, 0)]), await G.evaluate(() => W.blk[ci(38, 30, 0)]), 'wood', await H.evaluate(() => W.res.wood), await G.evaluate(() => W.res.wood));
+  await G.evaluate(() => { const me = W.p[ME]; me.x = W.radio.x + 6.5; me.y = W.radio.y + 0.5; me.L = 0; }); await simWait(H, 0.3);
+  await G.evaluate(() => act('build', { x: W.radio.x + 7, y: W.radio.y + 2, l: 0, b: 1, d: 0 })); await simWait(H, 0.4);
+  console.log('guest build host/guest', await H.evaluate(() => W.blk[ci(W.radio.x + 7, W.radio.y + 2, 0)]), await G.evaluate(() => W.blk[ci(W.radio.x + 7, W.radio.y + 2, 0)]), 'wood', await H.evaluate(() => W.res.wood), await G.evaluate(() => W.res.wood));
   const si = await H.evaluate(() => { const s = W.spots.find(s => s.k === 'crate'); return s.i; });
   await G.evaluate(si => { const x = cx_(si), y = cy_(si), L = cl_(si); const f = DIRS.map(([dx, dy]) => [x + dx, y + dy]).find(([a, b]) => standable(a, b, L, 'p')); const me = W.p[ME]; me.x = f[0] + 0.5; me.y = f[1] + 0.5; me.L = L; INP.keys.f = true; }, si);
   await simWait(H, 2.0); await G.evaluate(() => { INP.keys.f = false; });
@@ -34,8 +34,8 @@ const { chromium } = require('playwright'); const OUT = process.env.OUT || '/tmp
   await G.evaluate(() => act('craft', 'rifle')); await simWait(H, 0.5);
   console.log('guest rifle host', await H.evaluate(() => W.p[1].owned.join('') + ' wpn ' + W.p[1].wpn), 'guest', await G.evaluate(() => W.p[ME].owned.join('')));
   await H.evaluate(() => { window.__dbg.god = true; W.clock = 0.3; }); await simWait(H, 0.8);
-  await H.evaluate(() => { for (let k = 0; k < 4; k++) { const z = spawnZombie('walker', 0); z.x = 41.5 + k * 0.6; z.y = 28.5; z.L = 0; } });
-  await G.evaluate(() => { const me = W.p[ME]; me.x = 37.5; me.y = 28.5; me.L = 0; }); await simWait(H, 0.6);
+  await H.evaluate(() => { for (let k = 0; k < 4; k++) { const z = spawnZombie('walker', 0); z.x = W.radio.x + 10.5 + k * 0.6; z.y = W.radio.y + 0.5; z.L = 0; } });
+  await G.evaluate(() => { const me = W.p[ME]; me.x = W.radio.x + 6.5; me.y = W.radio.y + 0.5; me.L = 0; }); await simWait(H, 0.6);
   console.log('guest sees zombies', await G.evaluate(() => W.zs.length + ' phase ' + W.phase + ' night ' + W.night));
   for (let k = 0; k < 14; k++) { await G.evaluate(() => { const me = W.p[ME]; const z = W.zs.slice().sort((a, b) => Math.hypot(a.x - me.x, a.y - me.y) - Math.hypot(b.x - me.x, b.y - me.y))[0]; if (z) { const [sx, sy] = w2s(z.x, z.y, z.z + 0.6); INP.mx = sx; INP.my = sy; INP.mouseT = performance.now(); INP.mL = true; } }); await simWait(H, 0.18); }
   await G.evaluate(() => { INP.mL = false; });

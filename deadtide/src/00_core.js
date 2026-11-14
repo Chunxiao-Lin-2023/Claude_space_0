@@ -14,13 +14,13 @@ const FXR = mulberry(99); const frnd = (a = 0, b = 1) => a + FXR() * (b - a);
 const angDiff = (a, b) => { let d = (b - a) % (Math.PI * 2); if (d > Math.PI) d -= Math.PI * 2; if (d < -Math.PI) d += Math.PI * 2; return d; };
 
 /* ---------- world geometry ---------- */
-const MW = 64, MH = 64, ML = 8;     // grid columns, rows, layers
+const MW = 96, MH = 96, ML = 10;     // grid columns, rows, layers
 const FH = 1.3;                      // height of one layer (storey / terrain step) in world units
 const NC = MW * MH * ML;
 const ci = (x, y, L) => (L * MH + y) * MW + x;
 const cx_ = i => i % MW, cy_ = i => ((i / MW) | 0) % MH, cl_ = i => (i / (MW * MH)) | 0;
 const DIRS = [[1, 0], [0, 1], [-1, 0], [0, -1]]; // 0:+x(east) 1:+y(south) 2:-x(west) 3:-y(north)
-const BUILD_R = 13;                 // build zone: Chebyshev distance from the radio
+const BUILD_R = 20;                 // build zone: Chebyshev distance from the radio
 const GRAV = 22;
 
 /* ---------- blocks (cell contents) ----------

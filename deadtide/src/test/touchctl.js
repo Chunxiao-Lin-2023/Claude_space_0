@@ -16,7 +16,7 @@ const UA = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/6
     const simWait = s => p.evaluate(s => new Promise(r => { const t0 = W.t; const f = () => W.t - t0 >= s ? r() : setTimeout(f, 30); f(); }), s);
     const center = async sel => p.evaluate(sel => { const r = document.querySelector(sel).getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2, r.width]; }, sel);
     // 1. hold fire (no drag) auto-aims at a zombie behind the player
-    await p.evaluate(() => { const me = W.p[0]; me.x = 32.5; me.y = 34.5; me.L = 0; me.aim = 0; W.zs.length = 0; const z = spawnZombie('walker', 0); z.x = 28.5; z.y = 34.5; z.L = 0; z.z = surfZ(z.x, z.y, 0); window.__z = z; });
+    await p.evaluate(() => { const me = W.p[0]; me.x = W.radio.x + 0.5; me.y = W.radio.y + 6.5; me.L = 0; me.aim = 0; W.zs.length = 0; const z = spawnZombie('walker', 0); z.x = W.radio.x - 3.5; z.y = W.radio.y + 6.5; z.L = 0; z.z = surfZ(z.x, z.y, 0); window.__z = z; });
     const [fx, fy, fw] = await center('#tFire');
     await tch('touchStart', [{ x: fx, y: fy, id: 5 }]); await simWait(2.5); await tch('touchEnd', []);
     ok(vp + ' hold fire kills a zombie behind you', await p.evaluate(() => window.__z.hp <= 0), 'kills ' + await p.evaluate(() => W.kills));
@@ -44,6 +44,14 @@ const UA = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/6
     await tch('touchStart', [{ x: ux, y: uy, id: 8 }]); await simWait(2.4); await tch('touchEnd', []);
     ok(vp + ' use button appears and chops by holding', !!useVis && (await p.evaluate(() => W.res.wood)) > w0, 'label ' + useVis);
     await p.screenshot({ path: `${OUT}/tc_${vp}_use.png` });
+    // near-misses around the use button, taps on the right side and in the top HUD never pop a joystick
+    const ur = await p.evaluate(() => { const r = document.getElementById('tUse').getBoundingClientRect(); return [r.left, r.top, r.right, r.bottom]; });
+    let popped = 0;
+    for (const [x, y] of [[ur[0] - 14, (ur[1] + ur[3]) / 2], [(ur[0] + ur[2]) / 2, ur[1] - 14], [w * 0.8, h * 0.3], [w * 0.15, Math.min(h * 0.3, 150) - 20]]) {
+      await tch('touchStart', [{ x, y, id: 20 }]); await p.waitForTimeout(60);
+      popped += await p.evaluate(() => (INP.move.id != null ? 1 : 0) + (INP.aim.id != null ? 1 : 0)); await tch('touchEnd', []);
+    }
+    ok(vp + ' no joystick from near-misses, right side or top HUD', popped === 0, 'popped ' + popped);
     // 5. med button only when hurt
     const medHidden = await p.evaluate(() => document.getElementById('tMed').classList.contains('hidden'));
     await p.evaluate(() => { W.p[0].hp = 40; }); await p.waitForTimeout(250);

@@ -1,4 +1,5 @@
 // Hub cover: staged dusk scene + title -> /tmp/dt/cover_raw.png (python resizes to covers/deadtide.webp)
+// NOTE: staged for the old 64x64 map (fort at 29..35 x 25..31); re-stage relative to W.radio before regenerating the cover.
 const { chromium } = require('playwright'); const OUT = process.env.OUT || '/tmp/dt';
 (async () => {
   const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome', args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] });

@@ -12,26 +12,27 @@ require('fs').mkdirSync(OUT, { recursive: true });
     window.__dbg.god = true; W.clock = 999; document.getElementById('hud').style.display = 'none';
     const K = (x, y, L, id, d) => setCell(ci(x, y, L), id, W.slab[ci(x, y, L)], d == null ? null : d, 'build');
     const S = (x, y, L, id) => setCell(ci(x, y, L), W.blk[ci(x, y, L)], id, null, 'build');
-    // east annex: steel-walled tower with a steel floor and a wooden palisade yard
-    for (let x = 36; x <= 39; x++) for (let y = 25; y <= 29; y++) {
-      const edge = x === 36 || x === 39 || y === 25 || y === 29;
-      if (edge) K(x, y, 0, (y === 29 && x === 37) ? 7 : (x === 39 && y === 27) ? 8 : 3);
+    const R = W.radio, X = R.x, Y = R.y;
+    // east annex: steel tower with a steel floor and brick upper storey, wooden palisade yard to the south
+    for (let x = X + 6; x <= X + 9; x++) for (let y = Y - 3; y <= Y + 1; y++) {
+      const edge = x === X + 6 || x === X + 9 || y === Y - 3 || y === Y + 1;
+      if (edge) K(x, y, 0, (y === Y + 1 && x === X + 7) ? 7 : (x === X + 9 && y === Y - 1) ? 8 : 3);
       if (!edge) S(x, y, 1, 5);
-      if (edge) K(x, y, 1, (x === 39 && y === 26) ? 8 : 2);
+      if (edge) K(x, y, 1, (x === X + 9 && y === Y - 2) ? 8 : 2);
     }
-    for (let x = 30; x <= 40; x++) if (!W.blk[ci(x, 33, 0)]) K(x, 33, 0, x === 34 ? 7 : 1);
-    for (let y = 30; y <= 32; y++) { K(40, y, 0, 1); K(29, y + 0, 0, y === 31 ? 8 : 1); }
-    for (let x = 30; x <= 40; x += 2) K(x, 35, 0, 9);
-    K(31, 32, 0, 10); K(38, 32, 0, 10); K(37, 26, 1, 10);
+    for (let x = X - 6; x <= X + 10; x++) if (!W.blk[ci(x, Y + 7, 0)]) K(x, Y + 7, 0, x === X + 2 ? 7 : 1);
+    for (let y = Y + 2; y <= Y + 6; y++) { if (!W.blk[ci(X + 10, y, 0)]) K(X + 10, y, 0, 1); if (!W.blk[ci(X - 6, y, 0)]) K(X - 6, y, 0, y === Y + 4 ? 8 : 1); }
+    for (let x = X - 6; x <= X + 10; x += 2) K(x, Y + 9, 0, 9);
+    K(X - 3, Y + 6, 0, 10); K(X + 8, Y + 6, 0, 10);
     recomputeStab(); setTimeout(() => { RND.parts.length = 0; }, 1500);
-    const me = W.p[0]; me.x = 34.5; me.y = 31.5; me.L = 0; me.z = surfZ(me.x, me.y, 0);
+    const me = W.p[0]; me.x = X + 2.5; me.y = Y + 5.5; me.L = 0; me.z = surfZ(me.x, me.y, 0);
   });
   const shot = async (n, fn) => { await p.evaluate(fn); await p.evaluate(() => { window.__dbg.speed = 0; }); await p.waitForTimeout(3000); await p.screenshot({ path: `${OUT}/${TAG}_${n}.png` }); };
-  await shot('fort', () => { VIEW.auto = false; VIEW.L = ML - 1; CAM.zoom = 7.5; CAM.rot = 0; uiView(); });
+  await shot('fort', () => { VIEW.auto = false; VIEW.L = ML - 1; CAM.zoom = 9; CAM.rot = 0; uiView(); });
   await shot('fort_r2', () => { CAM.rot = 2; });
-  await shot('house', () => { CAM.rot = 0; CAM.zoom = 4.5; const me = W.p[0]; me.x = 44.5; me.y = 47.5; me.z = surfZ(me.x, me.y, 0); });
-  await shot('town', () => { CAM.rot = 0; CAM.zoom = 8; const me = W.p[0]; me.x = 40.5; me.y = 47.5; me.z = surfZ(me.x, me.y, 0); });
-  await shot('night', () => { CAM.zoom = 7.5; const me = W.p[0]; me.x = 34.5; me.y = 31.5; me.z = surfZ(me.x, me.y, 0); W.phase = 'night'; W.night = 2; W.spawnQ = [{ t: 999, k: 'walker', side: 0 }]; });
+  await shot('house', () => { CAM.rot = 0; CAM.zoom = 4.5; const me = W.p[0]; me.x = 50.5; me.y = 76.5; me.z = surfZ(me.x, me.y, 0); });
+  await shot('town', () => { CAM.rot = 0; CAM.zoom = 8; const me = W.p[0]; me.x = 57.5; me.y = 74.5; CAM.zoom = 12; me.z = surfZ(me.x, me.y, 0); });
+  await shot('night', () => { CAM.zoom = 7.5; const me = W.p[0]; me.x = W.radio.x + 2.5; me.y = W.radio.y + 5.5; me.z = surfZ(me.x, me.y, 0); W.phase = 'night'; W.night = 2; W.spawnQ = [{ t: 999, k: 'walker', side: 0 }]; });
   console.log('errs', errs);
   await b.close();
 })();

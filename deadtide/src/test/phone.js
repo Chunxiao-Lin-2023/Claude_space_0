@@ -21,17 +21,18 @@ const UA = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/6
     await tch('touchEnd', []);
     const x1 = await p.evaluate(() => [W.p[0].x, W.p[0].y]);
     const m0 = await p.evaluate(() => W.p[0].mag[1]);
-    await tch('touchStart', [{ x: w * 0.75, y: h * 0.45, id: 2 }]); await tch('touchMove', [{ x: w * 0.75 - 60, y: h * 0.45, id: 2 }]);
+    const fr = await p.evaluate(() => { const r = document.getElementById('tFire').getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; });
+    await tch('touchStart', [{ x: fr[0], y: fr[1], id: 2 }]); await tch('touchMove', [{ x: fr[0] - 40, y: fr[1], id: 2 }]);
     await simWait(0.4); await tch('touchEnd', []);
     const m1 = await p.evaluate(() => W.p[0].mag[1]);
     console.log(name, 'moved', Math.hypot(x1[0] - x0[0], x1[1] - x0[1]).toFixed(2), JSON.stringify(mid), 'fire mag', m0, '->', m1);
     await p.tap('#tBuild'); await simWait(0.2);
     // place a wall 2 tiles east of the player by tapping its screen position
-    const tgt = await p.evaluate(() => { const me = W.p[0]; me.x = 37.5; me.y = 28.5; me.L = 0; me.sel = 1; const c = [38, 30]; const [sx, sy] = w2s(c[0] + 0.5, c[1] + 0.5, 0); return [sx, sy]; });
+    const tgt = await p.evaluate(() => { const me = W.p[0]; me.x = W.radio.x + 6.5; me.y = W.radio.y + 0.5; me.L = 0; me.sel = 1; const c = [W.radio.x + 7, W.radio.y + 2]; const [sx, sy] = w2s(c[0] + 0.5, c[1] + 0.5, 0); return [sx, sy]; });
     await simWait(0.3);
-    const tgt2 = await p.evaluate(() => w2s(38.5, 30.5, 0));
+    const tgt2 = await p.evaluate(() => w2s(W.radio.x + 7.5, W.radio.y + 2.5, 0));
     await p.touchscreen.tap(tgt2[0], tgt2[1]); await simWait(0.3);
-    console.log(name, 'built by tap', await p.evaluate(() => W.blk[ci(38, 30, 0)]), 'at', tgt2.map(v => v | 0).join(','));
+    console.log(name, 'built by tap', await p.evaluate(() => W.blk[ci(W.radio.x + 7, W.radio.y + 2, 0)]), 'at', tgt2.map(v => v | 0).join(','));
     await shot('build');
     await p.tap('#tBuild'); await simWait(0.2);
     await p.tap('#vToggle'); await p.tap('#vZin'); await p.tap('#vRr'); await p.tap('#vUp'); await simWait(0.3);

@@ -90,6 +90,14 @@ function stickDraw(el, s, R) {
   const k = el.firstElementChild, m = Math.hypot(s.x, s.y), f = m > 1 ? 1 / m : 1;
   k.style.transform = `translate(${s.x * f * R}px,${s.y * f * R}px)`;
 }
+// where the move stick may appear: left part of the screen, below the top HUD cards
+function moveZone(x, y) { return x < VW * (VH > VW ? 0.6 : 0.45) && y > Math.min(VH * 0.3, 150); }
+let UIR = { t: -1, r: [] };
+function nearUI(x, y) {
+  const now = performance.now();
+  if (now - UIR.t > 250) { UIR.t = now; UIR.r = [...document.querySelectorAll('#tctl button, #tFire, #hud button, #bbar, #viewBox')].map(el => el.getBoundingClientRect()).filter(r => r.width && r.height); }
+  const m = 26; return UIR.r.some(r => x > r.left - m && x < r.right + m && y > r.top - m && y < r.bottom + m);
+}
 const STICK_R = () => Math.min(64, Math.max(44, Math.min(VW, VH) * 0.09));
 CV.addEventListener('pointerdown', e => {
   if (e.pointerType !== 'touch') return;
@@ -110,9 +118,11 @@ CV.addEventListener('pointerdown', e => {
   }
   if (INP.pinch) return;
   INP.tp[e.pointerId].x0 = e.clientX; INP.tp[e.pointerId].y0 = e.clientY;
-  if (e.clientX < VW * 0.45 && INP.move.id == null) { Object.assign(INP.move, { id: e.pointerId, ox: e.clientX, oy: e.clientY, x: 0, y: 0, t0: performance.now(), far: false }); stickDraw(stickL, INP.move, STICK_R()); }
+  // a near-miss on a button must not pop a joystick or place a block
+  if (nearUI(e.clientX, e.clientY)) { delete INP.tp[e.pointerId]; return; }
+  if (moveZone(e.clientX, e.clientY) && INP.move.id == null) { Object.assign(INP.move, { id: e.pointerId, ox: e.clientX, oy: e.clientY, x: 0, y: 0, t0: performance.now(), far: false }); stickDraw(stickL, INP.move, STICK_R()); }
   else if (me.build) { INP.paint = e.pointerId; INP.bldLast = ''; touchBuild(e.clientX, e.clientY); }
-  else if (INP.aim.id == null) { Object.assign(INP.aim, { id: e.pointerId, ox: e.clientX, oy: e.clientY, x: 0, y: 0 }); stickDraw(stickR, INP.aim, STICK_R()); }
+  else return; // shooting is on the fire button; the rest of the right side does nothing
   try { CV.setPointerCapture(e.pointerId); } catch (_) { }
 }, { passive: false });
 CV.addEventListener('pointermove', e => {

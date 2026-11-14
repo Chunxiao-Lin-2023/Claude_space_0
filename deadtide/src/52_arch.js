@@ -192,7 +192,7 @@ function archWall(b, i, x, y, L, X, Y, Z, h, cut, vl) {
     archPut('steel', X, Y, Z, 0, 1, cut, 1, tint); archPut('tSteel', X, Y, Z, 0, 1, cut, 1);
     if (crown) archPut('spikes', X, Y, Z, ax, 1, 1, 1);
   } else if (b === 24) {
-    let v = h < 0.28 ? 0 : h < 0.58 ? 1 : h < 0.84 ? 2 : 3; if (L === 0 && ARCH.roofCells.has(x + ',' + y)) v = h < 0.4 ? 0 : 2;
+    let v = h < 0.28 ? 0 : h < 0.58 ? 1 : h < 0.84 ? 2 : 3; if (ARCH.roofCells.has(x + ',' + y + ',' + L)) v = h < 0.4 ? 0 : 2;
     const rot = (v === 0 ? ax : 0) + (v === 1 && hash2(x, y * 3) < 0.5 ? Math.PI : 0) + (v === 1 ? ax : 0);
     const hk = houseOf(x, y), col = PLASTER[hk >= 0 ? (hk * 2 + 1) % PLASTER.length : Math.floor(hash2(x >> 3, y >> 3) * PLASTER.length)];
     archPut('ruin' + v, X, Y, Z, rot, 1, 1, 1, dmgTint(col, f));
@@ -211,10 +211,15 @@ function archSlab(s, i, x, y, L, X, Y, Z) {
 
 /* ---------- ruined town: house colours, broken tiled roofs over one end of each house, fallen beams ---------- */
 function houseOf(x, y) { for (let k = 0; k < TOWN_HOUSES.length; k++) { const [x0, y0, x1, y1] = TOWN_HOUSES[k]; if (x >= x0 && x <= x1 && y >= y0 && y <= y1) return k; } return -1; }
-// roof cells must be known before the first cell rebuild (they decide the wall variant)
+// roof spans must be known before map generation (walls under a roof stay full height, no gaps there)
+function roofSpan(k) {
+  const [x0, y0, x1, y1, st] = TOWN_HOUSES[k], west = hash2(k, 77) < 0.5;
+  if (st === 2) return { west, xa: west ? x0 : Math.ceil((x0 + x1) / 2), xb: west ? Math.floor((x0 + x1) / 2) : x1, lvl: 1 };
+  return { west, xa: west ? x0 : x1 - 2, xb: west ? x0 + 2 : x1, lvl: 0 };
+}
 for (let k = 0; k < TOWN_HOUSES.length; k++) {
-  const [x0, y0, x1, y1] = TOWN_HOUSES[k], west = hash2(k, 77) < 0.5, xa = west ? x0 : x1 - 2, xb = xa + 2;
-  for (let x = xa; x <= xb; x++) for (let y = y0; y <= y1; y++) if (y === y0 || y === y1 || x === (west ? x0 : x1)) ARCH.roofCells.add(x + ',' + y);
+  const [x0, y0, x1, y1] = TOWN_HOUSES[k], R = roofSpan(k);
+  for (let x = R.xa; x <= R.xb; x++) for (let y = y0; y <= y1; y++) if (y === y0 || y === y1 || x === (R.west ? x0 : x1)) ARCH.roofCells.add(x + ',' + y + ',' + R.lvl);
 }
 function tileTex() {
   return archTex(128, 128, 71, (g, r, w, h) => {
@@ -236,15 +241,15 @@ function archTown() {
   ARCH.roofs = [];
   if (!ARCH.tex.tile) ARCH.tex.tile = tileTex();
   const tileM = new THREE.MeshLambertMaterial({ map: ARCH.tex.tile, side: THREE.DoubleSide }), dark = lam('#2c231c');
-  TOWN_HOUSES.forEach(([x0, y0, x1, y1], k) => {
-    const r = mulberry(k * 977 + 13), west = hash2(k, 77) < 0.5, xa = west ? x0 : x1 - 2, xb = xa + 3, g = new THREE.Group();
-    const S = y1 - y0 + 1, zc = (y0 + y1 + 1) / 2, Ye = FH + 0.02, Rz = S * 0.3, Yr = Ye + Rz, oh = 0.18;
+  TOWN_HOUSES.forEach(([x0, y0, x1, y1, st], k) => {
+    const r = mulberry(k * 977 + 13), R = roofSpan(k), west = R.west, xa = R.xa, xe = R.xb + 1, g = new THREE.Group();
+    const S = y1 - y0 + 1, zc = (y0 + y1 + 1) / 2, Ye = (R.lvl + 1) * FH + 0.02, Rz = S * 0.3, Yr = Ye + Rz, oh = 0.18, Lr = xe - xa, nStr = Lr * 2;
     // roof planes as strips: whole near the gable end, ragged toward the open end of the house
     const pos = [], uv = [], slopeLen = Math.hypot(Rz + 0.1, S / 2 + oh);
-    for (const s of [-1, 1]) for (let q = 0; q < 6; q++) {
-      const xs = (west ? xa - oh : xa) + q * 0.5 + (west ? 0 : 0), xe2 = Math.min(xs + 0.5, west ? xb : xb + oh);
-      const fromGable = west ? q : 5 - q; let t1 = 1;
-      if (fromGable >= 3) { const u = r(); if (u < 0.3) continue; t1 = 0.35 + u * 0.6; }
+    for (const s of [-1, 1]) for (let q = 0; q < nStr; q++) {
+      let xs = xa + q * 0.5, xe2 = xs + 0.5; if (west && q === 0) xs -= oh; if (!west && q === nStr - 1) xe2 += oh;
+      const fromGable = west ? q : nStr - 1 - q; let t1 = 1;
+      if (fromGable >= nStr * (st === 2 ? 0.75 : 0.5)) { const u = r(); if (u < 0.3) continue; t1 = 0.35 + u * 0.6; }
       const P = (x, t) => [x, Yr + t * (Ye - 0.1 - Yr), zc + t * s * (S / 2 + oh)];
       const a = P(xs, 0), b = P(xe2, 0), c = P(xe2, t1), d = P(xs, t1);
       for (const v of [a, b, c, a, c, d]) pos.push(...v);
@@ -253,23 +258,24 @@ function archTown() {
     }
     const rg = new THREE.BufferGeometry(); rg.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); rg.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); rg.computeVertexNormals();
     const roof = new THREE.Mesh(rg, tileM); roof.castShadow = roof.receiveShadow = true; g.add(roof);
-    const gx = west ? xa - 0.02 : xb + 0.02, gl = west ? xb - xa + oh : xb - xa + oh;
-    const ridge = new THREE.Mesh(boxG(gl * (west ? 0.62 : 0.62), 0.12, 0.14), dark); ridge.position.set(west ? xa - oh + gl * 0.31 : xb + oh - gl * 0.31, Yr + 0.03, zc); ridge.castShadow = true; g.add(ridge);
-    for (const s of [-1, 1]) { const f = new THREE.Mesh(boxG(gl, 0.1, 0.06), dark); f.position.set((xa + xb) / 2 + (west ? -oh / 2 : oh / 2), Ye - 0.12, zc + s * (S / 2 + oh)); g.add(f); }
+    const gl = Lr + oh, parts = [roof];
+    const ridge = new THREE.Mesh(boxG(gl * 0.62, 0.12, 0.14), dark); ridge.position.set(west ? xa - oh + gl * 0.31 : xe + oh - gl * 0.31, Yr + 0.03, zc); ridge.castShadow = true; g.add(ridge); parts.push(ridge);
+    for (const s of [-1, 1]) { const f = new THREE.Mesh(boxG(gl, 0.1, 0.06), dark); f.position.set((xa + xe) / 2 + (west ? -oh / 2 : oh / 2), Ye - 0.12, zc + s * (S / 2 + oh)); g.add(f); parts.push(f); }
     // gable triangle in the house's plaster
+    const gx = west ? xa - 0.02 : xe + 0.02;
     const tg = new THREE.BufferGeometry(); tg.setAttribute('position', new THREE.Float32BufferAttribute([gx, Ye, y0, gx, Ye, y1 + 1, gx, Yr, zc], 3));
     tg.setAttribute('uv', new THREE.Float32BufferAttribute([0, Ye / FH, S, Ye / FH, S / 2, Yr / FH], 2)); tg.computeVertexNormals();
     const gm = new THREE.MeshLambertMaterial({ map: ARCH.tex.plasterA, side: THREE.DoubleSide, color: PLASTER[(k * 2 + 1) % PLASTER.length] });
-    const gable = new THREE.Mesh(tg, gm); gable.castShadow = true; g.add(gable);
+    const gable = new THREE.Mesh(tg, gm); gable.castShadow = true; g.add(gable); parts.push(gable);
     // a few charred beams fallen into the open part of the house
-    for (let n = 0; n < 3; n++) {
+    const ox0 = west ? xe + 0.5 : x0 + 1, ox1 = west ? x1 - 0.5 : xa - 0.5;
+    if (ox1 > ox0) for (let n = 0; n < 3; n++) {
       const len = 1.6 + r() * 1.6, bm = new THREE.Mesh(boxG(len, 0.13, 0.13), lam('#2e2620'));
-      const bx = west ? xb + 0.5 + r() * (x1 - xb - 0.5) : x0 + 1 + r() * (xa - x0 - 1), by = y0 + 1.2 + r() * (S - 2.4);
-      bm.position.set(bx, 0.1 + r() * 0.35, by); bm.rotation.set(0, r() * Math.PI, (r() - 0.5) * 0.5); bm.castShadow = true; g.add(bm);
+      bm.position.set(ox0 + r() * (ox1 - ox0), 0.1 + r() * 0.35, y0 + 1.2 + r() * (S - 2.4)); bm.rotation.set(0, r() * Math.PI, (r() - 0.5) * 0.5); bm.castShadow = true; g.add(bm);
     }
     SCN.add(g);
-    const sup = []; for (const c of ARCH.roofCells) { const [cx, cy] = c.split(',').map(Number); if (cx >= xa && cx <= xb - 1 + (west ? 0 : 1) && cy >= y0 && cy <= y1) sup.push(ci(cx, cy, 0)); }
-    ARCH.roofs.push({ g, roof: [roof, ridge, gable, ...g.children.filter(m => m.geometry && m.geometry.parameters && m.geometry.parameters.width === gl)], rect: [x0, y0, x1 + 1, y1 + 1], sup, down: false });
+    const sup = []; for (const c of ARCH.roofCells) { const [cx, cy, cl] = c.split(',').map(Number); if (cl === R.lvl && cx >= R.xa && cx <= R.xb && cy >= y0 && cy <= y1) sup.push(ci(cx, cy, cl)); }
+    ARCH.roofs.push({ g, roof: parts, rect: [x0, y0, x1 + 1, y1 + 1], sup, down: false });
   });
 }
 // per frame: lift the roof off a house the local player is inside; drop it for good once its walls are mostly gone

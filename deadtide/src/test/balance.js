@@ -16,7 +16,7 @@ const { chromium } = require('playwright');
       if (!me.down) {
         // stand on the upper floor or on a wall top, as close to the target as possible (battlements)
         let best = null, bd = 1e9;
-        for (let y = 25; y <= 31; y++) for (let x = 29; x <= 35; x++) { if (!standable(x, y, 1, 'p')) continue; const d = Math.hypot(x + 0.5 - z.x, y + 0.5 - z.y); if (d < bd) { bd = d; best = [x, y]; } }
+        for (let y = W.radio.y - 4; y <= W.radio.y + 4; y++) for (let x = W.radio.x - 4; x <= W.radio.x + 4; x++) { if (!standable(x, y, 1, 'p')) continue; const d = Math.hypot(x + 0.5 - z.x, y + 0.5 - z.y); if (d < bd) { bd = d; best = [x, y]; } }
         if (best) { me.x = best[0] + 0.5; me.y = best[1] + 0.5; me.L = 1; me.z = surfZ(me.x, me.y, 1); me.vx = me.vy = 0; }
         const far = Math.hypot(z.x - me.x, z.y - me.y) > 7.5;
         if (far && me.wpn === 1) doAct(me, 'wpn', 0); else if (!far && me.wpn === 0 && (me.mag[1] || me.ammo[1])) doAct(me, 'wpn', 1);

@@ -181,7 +181,8 @@ function rebuildCells() {
   const I = OBJ.I, me = W.p[ME], vl = viewL(), [ox, oy] = [Math.sin(CAM.yaw), Math.cos(CAM.yaw)];
   const c = { wall: 0, slab: 0, stairs: 0, door: 0, bars: 0, wire: 0, lamp: 0, trunk: 0, pine: 0, oak: 0, rock: 0, crate: 0, rubble: 0, fence: 0, car: 0 };
   const lamps = []; archBegin();
-  for (let L = 0; L < ML; L++) for (let y = 0; y < MH; y++) for (let x = 0; x < MW; x++) {
+  if (RC.topVer !== W.ver) { RC.topVer = W.ver; RC.topL = 0; for (let i = NC - 1; i >= 0; i--) if (W.blk[i] || W.slab[i]) { RC.topL = cl_(i); break; } }
+  for (let L = 0; L <= RC.topL; L++) for (let y = 0; y < MH; y++) for (let x = 0; x < MW; x++) {
     const i = ci(x, y, L), b = W.blk[i], s = W.slab[i];
     if (!b && !s) continue;
     const X = x + 0.5, Y = L * FH, Z = y + 0.5, h = hash2(x * 3 + L, y * 7);

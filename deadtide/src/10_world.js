@@ -23,35 +23,50 @@ const standable = (x, y, L, who) => inMap(x, y) && L >= 0 && L < ML && !solidFor
 const radioDist = (x, y) => Math.max(Math.abs(x - W.radio.x), Math.abs(y - W.radio.y));
 const inZone = (x, y) => radioDist(x, y) <= BUILD_R;
 
-/* ---------- map generation (deterministic from seed) ---------- */
-const TOWN_HOUSES = [[32, 40, 37, 45], [43, 40, 49, 45], [32, 50, 37, 56], [43, 49, 48, 55], [44, 58, 49, 62]];
+/* ---------- map generation (deterministic from seed) ----------
+   96 x 96: river and forest in the west, the radio base in the middle, hills to the east, a farm in the north
+   and a ruined town south of the main road. Town lots: [x0, y0, x1, y1, storeys]. */
+const TOWN_HOUSES = [
+  [44, 67, 53, 74, 1], [41, 78, 53, 87, 2], [33, 67, 40, 75, 1],
+  [61, 66, 69, 74, 2], [61, 78, 71, 86, 1], [74, 66, 85, 75, 2], [74, 79, 83, 88, 1],
+  [48, 3, 58, 11, 1],
+];
+const RADIO_XY = [48, 40];
 function genMap(seed) {
   const r = mulberry(seed ^ 0x2545F491);
   const G = new Uint8Array(MW * MH), tt = new Uint8Array(MW * MH);
   const blk = new Uint8Array(NC), bhp = new Float32Array(NC), slab = new Uint8Array(NC), shp = new Float32Array(NC), bdir = new Uint8Array(NC);
   const col = (x, y) => y * MW + x;
   const noise = (x, y, s) => { const xi = Math.floor(x / s), yi = Math.floor(y / s), fx = x / s - xi, fy = y / s - yi; const v = (a, b) => hash2(a + seed % 997, b + 31); const sm = t => t * t * (3 - 2 * t); return lerp(lerp(v(xi, yi), v(xi + 1, yi), sm(fx)), lerp(v(xi, yi + 1), v(xi + 1, yi + 1), sm(fx)), sm(fy)); };
-  // hills
-  const hill = (cx, cy, rad, top) => { for (let y = 0; y < MH; y++) for (let x = 0; x < MW; x++) { const d = d2(x, y, cx, cy) / rad + (noise(x, y, 5) - 0.5) * 0.45; if (d < 1) { G[col(x, y)] = Math.max(G[col(x, y)], 1); tt[col(x, y)] = TT.hill; } if (top && d < 0.48) G[col(x, y)] = 2; } };
-  hill(53, 11, 10.5, true); hill(58, 31, 5.5, false); hill(57, 56, 6.5, false);
-  // river (west), pond (south-west)
-  const riverC = y => 12 + 3 * Math.sin(y / 9 + 1.3) + 1.4 * Math.sin(y / 3.7);
+  const [RX, RY] = RADIO_XY;
+  const inTown = (x, y, pad) => TOWN_HOUSES.some(([x0, y0, x1, y1]) => x >= x0 - pad && x <= x1 + pad && y >= y0 - pad && y <= y1 + pad);
+  // hills (kept away from the base and the town)
+  const hill = (cx, cy, rad, top) => { for (let y = 0; y < MH; y++) for (let x = 0; x < MW; x++) { if (inTown(x, y, 2) || Math.max(Math.abs(x - RX), Math.abs(y - RY)) <= BUILD_R + 1) continue; const d = d2(x, y, cx, cy) / rad + (noise(x, y, 5) - 0.5) * 0.45; if (d < 1) { G[col(x, y)] = Math.max(G[col(x, y)], 1); tt[col(x, y)] = TT.hill; } if (top && d < 0.48) G[col(x, y)] = 2; } };
+  hill(80, 20, 12.5, true); hill(88, 50, 7, false); hill(10, 84, 7.5, true); hill(26, 8, 5.5, false);
+  // river (west), lake (south-west of town), farm pond (north)
+  const riverC = y => 16 + 3 * Math.sin(y / 11 + 1.3) + 1.4 * Math.sin(y / 3.7);
   for (let y = 0; y < MH; y++) { const c = Math.round(riverC(y)), w = 2 + (noise(0, y, 6) > 0.55 ? 1 : 0); for (let x = c; x < c + w; x++) { G[col(x, y)] = 0; tt[col(x, y)] = TT.water; } }
-  for (let y = 0; y < MH; y++) for (let x = 0; x < MW; x++) { const dx = (x - 25) / 3.6, dy = (y - 53) / 2.8; if (dx * dx + dy * dy + (noise(x, y, 3) - 0.5) * 0.5 < 1) { G[col(x, y)] = 0; tt[col(x, y)] = TT.water; } }
-  // roads: east-west at y 35-36, north-south at x 40-41 (south half)
+  const pond = (cx, cy, rx, ry) => { for (let y = 0; y < MH; y++) for (let x = 0; x < MW; x++) { const dx = (x - cx) / rx, dy = (y - cy) / ry; if (dx * dx + dy * dy + (noise(x, y, 3) - 0.5) * 0.5 < 1) { G[col(x, y)] = 0; tt[col(x, y)] = TT.water; } } };
+  pond(30, 87, 5.5, 3.8); pond(66, 8, 3.2, 2.4);
+  // roads: main east-west road y 51-52, town road x 57-58 south of it, farm track x 44-45 north
   const roadCells = new Set();
-  for (let x = 0; x < MW; x++) for (const y of [35, 36]) if (G[col(x, y)] === 0) { if (tt[col(x, y)] !== TT.water) tt[col(x, y)] = TT.road; roadCells.add(col(x, y)); }
-  for (let y = 37; y < MH; y++) for (const x of [40, 41]) if (G[col(x, y)] === 0 && tt[col(x, y)] !== TT.water) { tt[col(x, y)] = TT.road; roadCells.add(col(x, y)); }
+  const road = (x, y) => { if (!inMap(x, y) || G[col(x, y)] !== 0) return; if (tt[col(x, y)] !== TT.water) tt[col(x, y)] = TT.road; roadCells.add(col(x, y)); };
+  for (let x = 0; x < MW; x++) { road(x, 51); road(x, 52); }
+  for (let y = 53; y < MH; y++) { road(57, y); road(58, y); }
+  for (let y = 0; y < 19; y++) { road(44, y); road(45, y); }
+  for (let x = 30; x <= 88; x++) { road(x, 76); road(x, 77); } // town cross street
   for (let y = 0; y < MH; y++) for (let x = 0; x < MW; x++) {
     const i = col(x, y);
-    if (tt[i] === TT.grass) { const n = noise(x, y, 7); if (x < riverC(y) - 1 && n > 0.25) tt[i] = TT.forest; else if (n < 0.18) tt[i] = TT.dirt; }
+    if (tt[i] === TT.grass) { const n = noise(x, y, 7); if ((x < riverC(y) - 1 && n > 0.22) || (n > 0.8 && !inTown(x, y, 3))) tt[i] = TT.forest; else if (n < 0.16) tt[i] = TT.dirt; }
     if (tt[i] !== TT.water && tt[i] !== TT.road) for (const [dx, dy] of DIRS) { const xx = x + dx, yy = y + dy; if (inMap(xx, yy) && tt[col(xx, yy)] === TT.water && G[i] === 0) { tt[i] = TT.sand; break; } }
   }
+  // farm fields north of the base: ploughed rows between the track and the barn
+  for (let y = 2; y <= 14; y++) for (let x = 32; x <= 43; x++) if (G[col(x, y)] === 0 && tt[col(x, y)] !== TT.water && tt[col(x, y)] !== TT.road) tt[col(x, y)] = y % 2 ? TT.dirt : TT.grass;
   // fill terrain below ground; water
   for (let y = 0; y < MH; y++) for (let x = 0; x < MW; x++) { const g = G[col(x, y)]; for (let L = 0; L < g; L++) blk[ci(x, y, L)] = 20; if (tt[col(x, y)] === TT.water) blk[ci(x, y, 0)] = 23; }
-  // bridges: the road crossing + a northern footbridge
-  const bridgeRow = (ys) => { for (const y of ys) for (let x = 0; x < MW; x++) if (tt[col(x, y)] === TT.water && x < 30) { blk[ci(x, y, 0)] = 0; slab[ci(x, y, 0)] = SLAB_BRIDGE; } };
-  bridgeRow([35, 36]); bridgeRow([13]);
+  // bridges over the river: the main road, a northern footbridge, a southern one
+  const bridgeRow = (ys) => { for (const y of ys) for (let x = 0; x < 30; x++) if (tt[col(x, y)] === TT.water) { blk[ci(x, y, 0)] = 0; slab[ci(x, y, 0)] = SLAB_BRIDGE; } };
+  bridgeRow([51, 52]); bridgeRow([22]); bridgeRow([74]);
   // ramps up the hills
   const ramps = [];
   for (let pass = 0; pass < 2; pass++) for (let y = 1; y < MH - 1; y++) for (let x = 1; x < MW - 1; x++) {
@@ -59,65 +74,80 @@ function genMap(seed) {
     for (let d = 0; d < 4; d++) {
       const [dx, dy] = DIRS[d], hx = x + dx, hy = y + dy, bx = x - dx, by = y - dy;
       if (G[col(hx, hy)] !== g + 1 || G[col(bx, by)] !== g || tt[col(x, y)] === TT.water || tt[col(bx, by)] === TT.water) continue;
-      const sx = x + dy, sy = y + dx, ox = x - dy, oy = y - dx; // sides must be same level so the ramp reads clean
+      const sx = x + dy, sy = y + dx, ox = x - dy, oy = y - dx;
       if (!inMap(sx, sy) || !inMap(ox, oy) || G[col(sx, sy)] !== g || G[col(ox, oy)] !== g) continue;
       if (ramps.some(q => d2(q[0], q[1], x, y) < 9)) continue;
       if (r() < 0.12 + pass * 0.3) { ramps.push([x, y]); blk[ci(x, y, g)] = 28; bdir[ci(x, y, g)] = d; tt[col(x, y)] = TT.dirt; }
     }
   }
-  // radio + starter fort
-  const RX = 32, RY = 28;
-  const put = (x, y, L, id, d) => { blk[ci(x, y, L)] = id; bhp[ci(x, y, L)] = B[id].hp; if (d != null) bdir[ci(x, y, L)] = d; };
+  // radio + starter house (9 x 9, half second floor)
+  const put = (x, y, L, id, d) => { blk[ci(x, y, L)] = id; bhp[ci(x, y, L)] = B[id].hp || 1; if (d != null) bdir[ci(x, y, L)] = d; };
   const putS = (x, y, L, id) => { slab[ci(x, y, L)] = id; shp[ci(x, y, L)] = B[id].hp; };
-  for (let y = 22; y <= 34; y++) for (let x = 26; x <= 38; x++) { G[col(x, y)] = 0; if (tt[col(x, y)] !== TT.road) tt[col(x, y)] = TT.grass; for (let L = 0; L < ML; L++) blk[ci(x, y, L)] = 0; }
-  for (let x = 29; x <= 35; x++) for (let y = 25; y <= 31; y++) {
-    const edge = x === 29 || x === 35 || y === 25 || y === 31;
+  for (let y = RY - 7; y <= RY + 7; y++) for (let x = RX - 7; x <= RX + 7; x++) { G[col(x, y)] = 0; if (tt[col(x, y)] !== TT.road) tt[col(x, y)] = TT.grass; for (let L = 0; L < ML; L++) blk[ci(x, y, L)] = 0; }
+  const X0 = RX - 4, X1 = RX + 4, Y0 = RY - 4, Y1 = RY + 4;
+  for (let x = X0; x <= X1; x++) for (let y = Y0; y <= Y1; y++) {
+    const edge = x === X0 || x === X1 || y === Y0 || y === Y1;
     if (edge) {
       let id = 2;
-      if ((x === 32 && y === 31) || (x === 29 && y === 28)) id = 7;
-      if ((x === 31 && y === 25) || (x === 33 && y === 25) || (x === 35 && y === 28) || (x === 29 && y === 30)) id = 8;
+      if ((x === RX && y === Y1) || (x === X0 && y === RY)) id = 7;
+      if ((y === Y0 && (x === RX - 2 || x === RX + 2)) || (x === X1 && (y === RY - 2 || y === RY + 2)) || (x === X0 && y === RY + 2) || (y === Y1 && x === RX + 3)) id = 8;
       put(x, y, 0, id);
-    } else if (!(x === 34 && y === 27)) putS(x, y, 1, 4);
-    if (x === 29 || y === 25) { let id = 1; if ((x === 31 || x === 33) && y === 25) id = 8; if (x === 29 && (y === 28 || y === 30)) id = 8; put(x, y, 1, id); }
+    } else if (y <= RY && !(x === X1 - 1 && y === Y0 + 2)) putS(x, y, 1, 4);
+    if ((x === X0 || y === Y0 || x === X1) && y <= RY) { let id = 1; if (y === Y0 && (x === RX - 2 || x === RX + 2)) id = 8; if ((x === X0 || x === X1) && y === RY - 2) id = 8; put(x, y, 1, id); }
+    if (y === RY + 1 && x > X0 && x < X1) putS(x, y, 1, 4);
   }
-  put(34, 27, 0, 6, 3);           // stairs going north up to (34,26) on the first floor
-  put(31, 26, 1, 10);              // lamp upstairs
-  put(RX, RY, 0, 30); put(30, 30, 0, 31);
+  put(X1 - 1, Y0 + 2, 0, 6, 3);   // stairs going north up to the first floor
+  put(X0 + 2, Y0 + 2, 1, 10);      // lamp upstairs
+  put(RX, RY, 0, 30); put(RX - 2, RY + 2, 0, 31);
+  // town: plastered ruins; two-storey houses keep half an upper floor with stairs up
+  const spotsAt = [];
+  TOWN_HOUSES.forEach(([x0, y0, x1, y1, st], k) => {
+    const rr = mulberry(seed ^ (k * 7919 + 17));
+    for (let x = x0; x <= x1; x++) for (let y = y0; y <= y1; y++) { if (G[col(x, y)] !== 0 || tt[col(x, y)] === TT.water) continue; for (let L = 0; L < 3; L++) blk[ci(x, y, L)] = 0; if (tt[col(x, y)] !== TT.road) tt[col(x, y)] = TT.dirt; }
+    const ok = (x, y) => G[col(x, y)] === 0 && tt[col(x, y)] !== TT.water && tt[col(x, y)] !== TT.road;
+    const west = hash2(k, 77) < 0.5, upX0 = west ? x0 : Math.ceil((x0 + x1) / 2), upX1 = west ? Math.floor((x0 + x1) / 2) : x1;
+    for (let x = x0; x <= x1; x++) for (let y = y0; y <= y1; y++) {
+      if (!ok(x, y)) continue;
+      const edge = x === x0 || x === x1 || y === y0 || y === y1, upper = st === 2 && x >= upX0 && x <= upX1, roofed = ARCH.roofCells.has(x + ',' + y + ',0');
+      if (edge) {
+        if (!roofed && !upper && rr() < 0.2) { if (rr() < 0.5) put(x, y, 0, 29); continue; } // gaps / rubble
+        put(x, y, 0, 24);
+        if (st === 1 && !roofed && rr() < 0.3) put(x, y, 1, 24);
+      }
+      if (st === 2 && x >= upX0 && x <= upX1) {
+        const ue = x === upX0 || x === upX1 || y === y0 || y === y1;
+        if (!edge) putS(x, y, 1, 4);
+        if (ue && (edge || (x === (west ? upX1 : upX0)))) { if (edge || y % 3) put(x, y, edge ? 1 : 0, 24); if (edge && !ARCH.roofCells.has(x + ',' + y + ',1') && rr() < 0.15) blk[ci(x, y, 1)] = 0; }
+      }
+    }
+    if (st === 2) { const sx = west ? upX1 + 1 : upX0 - 1; blk[ci(sx, y0 + 3, 0)] = 0; put(sx, y0 + 3, 0, 6, 3); blk[ci(sx, y0 + 2, 0)] = 0; slab[ci(sx, y0 + 2, 1)] = 0; putS(sx, y0 + 2, 1, 4); }
+    // loot inside: crates and rubble piles, one upstairs in two-storey houses
+    const inner = () => [x0 + 1 + Math.floor(rr() * (x1 - x0 - 1)), y0 + 1 + Math.floor(rr() * (y1 - y0 - 1))];
+    for (let n = 0; n < 3; n++) { const [x, y] = inner(); if (!blk[ci(x, y, 0)] && ok(x, y)) put(x, y, 0, n ? 29 : 26); }
+    if (st === 2) { const x = west ? upX0 + 1 : upX1 - 1, y = y1 - 1; if (slab[ci(x, y, 1)] && !blk[ci(x, y, 1)]) put(x, y, 1, 26); }
+  });
   // trees, rocks
-  const clearNear = (x, y) => Math.max(Math.abs(x - RX), Math.abs(y - RY)) <= 7;
+  const clearNear = (x, y) => Math.max(Math.abs(x - RX), Math.abs(y - RY)) <= 9;
   for (let y = 0; y < MH; y++) for (let x = 0; x < MW; x++) {
     const i = col(x, y), t = tt[i], g = G[i];
-    if (t === TT.water || t === TT.road || roadCells.has(i) || clearNear(x, y) || blk[ci(x, y, g)]) continue;
+    if (t === TT.water || t === TT.road || roadCells.has(i) || clearNear(x, y) || inTown(x, y, 1) || blk[ci(x, y, g)]) continue;
+    if (y >= 2 && y <= 14 && x >= 32 && x <= 43) continue; // fields
     const pTree = t === TT.forest ? 0.42 : t === TT.hill ? 0.1 : 0.035, pRock = t === TT.hill ? 0.05 : 0.018;
     const v = r();
     if (v < pTree) put(x, y, g, 22); else if (v < pTree + pRock) put(x, y, g, 21);
   }
-  // town (south, along the north-south road): ruined houses with rubble and crates
-  const houses = TOWN_HOUSES;
-  for (const [x0, y0, x1, y1] of houses) {
-    for (let x = x0; x <= x1; x++) for (let y = y0; y <= y1; y++) { if (G[col(x, y)] !== 0 || tt[col(x, y)] === TT.water) continue; blk[ci(x, y, 0)] = 0; blk[ci(x, y, 1)] = 0; tt[col(x, y)] = TT.dirt; }
-    for (let x = x0; x <= x1; x++) for (let y = y0; y <= y1; y++) {
-      if (G[col(x, y)] !== 0 || tt[col(x, y)] === TT.water) continue;
-      const edge = x === x0 || x === x1 || y === y0 || y === y1;
-      if (!edge) continue;
-      if (r() < 0.22) { if (r() < 0.5) put(x, y, 0, 29); continue; } // gaps / rubble
-      put(x, y, 0, 24);
-      if (r() < 0.35 && !ARCH.roofCells.has(x + ',' + y)) put(x, y, 1, 24);
-    }
-    put(x0 + 1 + Math.floor(r() * (x1 - x0 - 2)), y0 + 1 + Math.floor(r() * (y1 - y0 - 2)), 0, 26);
-    put(x0 + 1 + Math.floor(r() * (x1 - x0 - 2)), y0 + 1 + Math.floor(r() * (y1 - y0 - 2)), 0, 29);
-  }
-  // cars on the roads (not on bridges), a few crates in the open
-  const cars = [[6, 35], [22, 36], [46, 35], [55, 36], [40, 47], [41, 59], [62, 35]];
-  for (const [x, y] of cars) if (!slab[ci(x, y, 0)] && G[col(x, y)] === 0) put(x, y, 0, 25, Math.floor(r() * 4));
-  for (const [x, y] of [[20, 24], [44, 20], [24, 44], [5, 28], [58, 46], [52, 4]]) if (!blk[ci(x, y, G[col(x, y)])]) put(x, y, G[col(x, y)], 26);
-  // fences around the town lots
-  for (let x = 31; x <= 38; x++) if (!blk[ci(x, 48, 0)] && tt[col(x, 48)] !== TT.road) put(x, 48, 0, 27);
-  for (let y = 38; y <= 46; y++) if (!blk[ci(51, y, 0)] && G[col(51, y)] === 0) put(51, y, 0, 27);
+  // cars on the roads (not on bridges), crates in the open
+  const cars = [[8, 51], [24, 52], [38, 51], [66, 52], [80, 51], [92, 52], [57, 60], [58, 71], [57, 90], [40, 76], [70, 77], [86, 76], [44, 6], [45, 16]];
+  for (const [x, y] of cars) if (inMap(x, y) && !slab[ci(x, y, 0)] && G[col(x, y)] === 0 && !blk[ci(x, y, 0)]) put(x, y, 0, 25, Math.floor(r() * 4));
+  for (const [x, y] of [[22, 40], [70, 30], [30, 60], [8, 30], [88, 64], [76, 6], [10, 66], [64, 92], [90, 90], [36, 30]]) if (inMap(x, y) && !blk[ci(x, y, G[col(x, y)])] && tt[col(x, y)] !== TT.water) put(x, y, G[col(x, y)], 26);
+  // fences: around the farm fields and along the town lots
+  for (let x = 31; x <= 43; x++) for (const y of [1, 15]) if (!blk[ci(x, y, 0)] && G[col(x, y)] === 0 && tt[col(x, y)] !== TT.road && tt[col(x, y)] !== TT.water) put(x, y, 0, 27);
+  for (let y = 2; y <= 14; y++) if (!blk[ci(31, y, 0)] && G[col(31, y)] === 0 && tt[col(31, y)] !== TT.water) put(31, y, 0, 27);
+  for (const [x0, y0, x1, y1] of TOWN_HOUSES) for (let x = x0 - 1; x <= x1 + 1; x++) { const y = y1 + 2; if (inMap(x, y) && !blk[ci(x, y, 0)] && G[col(x, y)] === 0 && tt[col(x, y)] !== TT.road && tt[col(x, y)] !== TT.water && hash2(x, y) < 0.7) put(x, y, 0, 27); }
   // spots
   const spots = [];
   for (let i = 0; i < NC; i++) if (B[blk[i]].spot) spots.push({ i, k: B[blk[i]].spot, searched: false });
-  return { G, tt, blk, bhp, slab, shp, bdir, spots, radio: { x: RX, y: RY }, bench: { x: 30, y: 30 } };
+  return { G, tt, blk, bhp, slab, shp, bdir, spots, radio: { x: RX, y: RY }, bench: { x: RX - 2, y: RY + 2 } };
 }
 
 /* ---------- structural support (3D) ----------

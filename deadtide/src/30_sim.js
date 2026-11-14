@@ -1,7 +1,7 @@
 /* ================= simulation: players, weapons, building, gathering, crafting, day/night ================= */
 function mkPlayer(i, name) {
   return {
-    i, name, x: 31.5 + i * 2, y: 28.5 + i, L: 0, z: 0, r: 0.28, h: 1.0, vx: 0, vy: 0, kbx: 0, kby: 0, aim: -Math.PI / 2, aimPt: null,
+    i, name, x: RADIO_XY[0] - 0.5 + i * 2, y: RADIO_XY[1] + 0.5 + i, L: 0, z: 0, r: 0.28, h: 1.0, vx: 0, vy: 0, kbx: 0, kby: 0, aim: -Math.PI / 2, aimPt: null,
     hp: BAL.pMaxHp, maxHp: BAL.pMaxHp, down: false, downT: 0, dead: false, gone: false,
     wpn: 1, owned: [1, 1, 0, 0], mag: [12, 6, 0, 0], ammo: [0, WPN[1].start, 0, 0], reloadT: 0, reloadW: 0, fireCD: 0, shoveCD: 0, shoveT: 0,
     nades: 1, meds: 1, medT: 0, selfRev: false, useT: 0, useK: '', build: false, sel: 1, demo: false, sdir: 3,
@@ -318,7 +318,7 @@ function doBuild(p, x, y, L, id, dir) {
   recomputeStab();
 }
 function doDemolish(p, x, y, L) {
-  if (!inMap(x, y) || L < 0 || L >= ML || !inReach(p, x, y, L)) return;
+  if (!inMap(x, y) || L < 0 || L >= ML || !inReach(p, x, y, L) || !inZone(x, y)) return;
   const i = ci(x, y, L), b = W.blk[i], s = W.slab[i];
   let Bb, frac;
   if (b && B[b].cost) { Bb = B[b]; frac = W.bhp[i] / Bb.hp; setCell(i, 0, s, null, 'demo'); }
@@ -330,9 +330,11 @@ function doDemolish(p, x, y, L) {
 
 /* ---------- phases & waves ---------- */
 function edgeSpawns() {
+  // zombies come out of the wilds on a square ring around the radio (or the map edge if that is closer)
   const out = { 0: [], 1: [], 2: [], 3: [] }; // by side: 0 east, 1 south, 2 west, 3 north
-  const add = (x, y, side) => { const L = gAt(x, y); if (standable(x, y, L, 'z') && W.ff.rw[ci(x, y, L)] < Infinity) out[side].push([x, y, L]); };
-  for (let k = 0; k < MW; k++) { add(MW - 1, k, 0); add(k, MH - 1, 1); add(0, k, 2); add(k, 0, 3); }
+  const { x: RX, y: RY } = W.radio, D = 36;
+  const add = (x, y, side) => { x = clamp(x, 0, MW - 1); y = clamp(y, 0, MH - 1); const L = gAt(x, y); if (standable(x, y, L, 'z') && W.ff.rw[ci(x, y, L)] < Infinity) out[side].push([x, y, L]); };
+  for (let k = -D; k <= D; k++) { add(RX + D, RY + k, 0); add(RX + k, RY + D, 1); add(RX - D, RY + k, 2); add(RX + k, RY - D, 3); }
   return out;
 }
 function startNight() {
