@@ -14,7 +14,7 @@ const FXR = mulberry(99); const frnd = (a = 0, b = 1) => a + FXR() * (b - a);
 const angDiff = (a, b) => { let d = (b - a) % (Math.PI * 2); if (d > Math.PI) d -= Math.PI * 2; if (d < -Math.PI) d += Math.PI * 2; return d; };
 
 /* ---------- world geometry ---------- */
-const MW = 96, MH = 96, ML = 10;     // grid columns, rows, layers
+const MW = 128, MH = 128, ML = 10;     // grid columns, rows, layers
 const FH = 1.3;
 const PH = 0.62;
 const LEAN = 1.7;                   // shooters lean over parapets this close to them                    // parapet height: upper-floor walls with nothing on top are only waist high                      // height of one layer (storey / terrain step) in world units
@@ -144,7 +144,7 @@ const CRAFT = [
 /* ---------- balance ---------- */
 const BAL = {
   nights: 15,
-  dayLen: [160, 120],
+  dayLen: [300, 240],            // first day, later days (seconds)
   pMaxHp: 100, pSpeed: 4.4, pReach: 6.5,
   stairHold: 0.18, ledgeHold: 0.45,  // seconds of pushing before you walk down stairs / jump off a ledge
   downTime: 30, reviveTime: 2.4, soloDownTime: 8, respawnHp: 0.5,
@@ -159,7 +159,9 @@ const BAL = {
   bloodMul: 1.5,
   hpMul: n => 1 + 0.11 * (n - 1),
   spdMul: n => 1 + 0.02 * (n - 1),
-  spawnDur: n => 45 + n * 3,
+  spawnDur: n => 80 + n * 5,      // the horde trickles in over this long
+  nightMin: n => 150 + n * 6,     // a night lasts at least this long; small groups keep coming until then
+  nightTrickleCD: 9, nightTrickleMax: 4,
   dayStragglers: 4, dayStragglerCD: 13,
   lootFar: 30, wireDps: 14, wireSlow: 0.45, wireWear: 6,
   aggro: 11,                     // (legacy) zombies now always hunt the nearest reachable player

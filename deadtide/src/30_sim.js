@@ -126,7 +126,7 @@ function useTarget(p) {
 function completeUse(p, tgt) {
   if (tgt.k === 'rev') { const q = W.p[tgt.i]; if (!q.down) return; q.down = false; q.hp = 35; q.medT = 0; q.selfRev = false; emit({ k: 'revive', p: q.i, by: p.i }); return; }
   const i = tgt.i, x = cx_(i), y = cy_(i), L = cl_(i), wx = x + 0.5, wy = y + 0.5, wz = L * FH + 1;
-  const m = 1 + Math.max(0, radioDist(x, y) - 8) / BAL.lootFar;
+  const m = 1 + Math.min(40, Math.max(0, radioDist(x, y) - 8)) / BAL.lootFar; // capped where the old 96-map edge was
   if (tgt.k === 'gather') {
     const g = GATHER[W.blk[i]]; if (!g) return;
     const n = Math.round(rand(g.n[0], g.n[1])); W.res[g.res] += n;
@@ -428,8 +428,14 @@ function stepPhase(dt) {
   } else if (W.phase === 'night') {
     W.nightT += dt;
     while (W.spawnQ.length && W.spawnQ[0].t <= W.nightT) { const s = W.spawnQ.shift(); spawnZombie(s.k, s.side); }
-    if (!W.spawnQ.length && W.zs.length && W.zs.length <= 3 && W.nightT > BAL.spawnDur(W.night) + 240) { W.zs.forEach(z => { z.hp = 0; }); W.zs = []; say('残余的丧尸散去了'); }
-    if (!W.spawnQ.length && !W.zs.length) dawn();
+    const minT = BAL.nightMin(W.night);
+    // after the horde, small groups keep coming until the night has run its minimum length
+    if (!W.spawnQ.length && W.nightT < minT) {
+      W.strayT -= dt;
+      if (W.strayT <= 0) { W.strayT = BAL.nightTrickleCD; if (W.zs.length < BAL.nightTrickleMax) { const n = W.night; for (let k = 0; k < 1 + (rand() < 0.4 ? 1 : 0); k++) spawnZombie(n >= 4 && rand() < 0.35 ? 'runner' : n >= 6 && rand() < 0.2 ? 'climber' : 'walker', Math.floor(rand() * 4)); } }
+    }
+    if (!W.spawnQ.length && W.zs.length && W.zs.length <= 3 && W.nightT > Math.max(BAL.spawnDur(W.night) + 240, minT + 60)) { W.zs.forEach(z => { z.hp = 0; }); W.zs = []; say('残余的丧尸散去了'); }
+    if (!W.spawnQ.length && !W.zs.length && W.nightT >= minT) dawn();
   }
 }
 

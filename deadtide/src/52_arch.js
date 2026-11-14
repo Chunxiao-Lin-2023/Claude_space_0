@@ -172,7 +172,7 @@ function archScene() {
   I.wireP = inst(G.wirePosts, lam('#5a4630'), 600);
   // the plaster spans three cells; each instance reads the slice for its own position so walls don't repeat cell by cell
   const wide = m => { m.onBeforeCompile = sh => { sh.vertexShader = sh.vertexShader.replace('#include <uv_vertex>', '#include <uv_vertex>\n#ifdef USE_INSTANCING\nvMapUv.x = (vMapUv.x + instanceMatrix[3].x + instanceMatrix[3].z) / 3.0;\n#endif'); }; m.customProgramCacheKey = () => 'wide3'; return m; };
-  I.ruin = G.ruin.map((g, k) => inst(g, wide(tm(k % 2 ? T.plasterB : T.plasterA)), 900));
+  I.ruin = G.ruin.map((g, k) => inst(g, wide(tm(k % 2 ? T.plasterB : T.plasterA)), 2600));
 }
 const PLASTER = ['#e6cf96', '#a9c3cf', '#e2ae92', '#bfcf9e', '#d9b8b0', '#c8c2b0'];
 const ARC = {};

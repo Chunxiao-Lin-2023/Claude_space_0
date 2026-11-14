@@ -4040,7 +4040,7 @@ const FXR = mulberry(99); const frnd = (a = 0, b = 1) => a + FXR() * (b - a);
 const angDiff = (a, b) => { let d = (b - a) % (Math.PI * 2); if (d > Math.PI) d -= Math.PI * 2; if (d < -Math.PI) d += Math.PI * 2; return d; };
 
 /* ---------- world geometry ---------- */
-const MW = 96, MH = 96, ML = 10;     // grid columns, rows, layers
+const MW = 128, MH = 128, ML = 10;     // grid columns, rows, layers
 const FH = 1.3;
 const PH = 0.62;
 const LEAN = 1.7;                   // shooters lean over parapets this close to them                    // parapet height: upper-floor walls with nothing on top are only waist high                      // height of one layer (storey / terrain step) in world units
@@ -4170,7 +4170,7 @@ const CRAFT = [
 /* ---------- balance ---------- */
 const BAL = {
   nights: 15,
-  dayLen: [160, 120],
+  dayLen: [300, 240],            // first day, later days (seconds)
   pMaxHp: 100, pSpeed: 4.4, pReach: 6.5,
   stairHold: 0.18, ledgeHold: 0.45,  // seconds of pushing before you walk down stairs / jump off a ledge
   downTime: 30, reviveTime: 2.4, soloDownTime: 8, respawnHp: 0.5,
@@ -4185,7 +4185,9 @@ const BAL = {
   bloodMul: 1.5,
   hpMul: n => 1 + 0.11 * (n - 1),
   spdMul: n => 1 + 0.02 * (n - 1),
-  spawnDur: n => 45 + n * 3,
+  spawnDur: n => 80 + n * 5,      // the horde trickles in over this long
+  nightMin: n => 150 + n * 6,     // a night lasts at least this long; small groups keep coming until then
+  nightTrickleCD: 9, nightTrickleMax: 4,
   dayStragglers: 4, dayStragglerCD: 13,
   lootFar: 30, wireDps: 14, wireSlow: 0.45, wireWear: 6,
   aggro: 11,                     // (legacy) zombies now always hunt the nearest reachable player
@@ -4237,11 +4239,18 @@ const radioDist = (x, y) => Math.max(Math.abs(x - W.radio.x), Math.abs(y - W.rad
 const inZone = (x, y) => radioDist(x, y) <= BUILD_R;
 
 /* ---------- map generation (deterministic from seed) ----------
-   96 x 96: river and forest in the west, the radio base in the middle, hills to the east, a farm in the north
-   and a ruined town south of the main road. Town lots: [x0, y0, x1, y1, storeys]. */
+   128 x 128: river and forest in the west, the camp north-west of centre, hills to the north-east, a farm in the north
+   and a big ruined town (three rows of blocks on a street grid) filling the south and south-east. Town lots: [x0, y0, x1, y1, storeys]. */
 const TOWN_HOUSES = [
-  [44, 67, 53, 74, 1], [41, 78, 53, 87, 2], [33, 67, 40, 75, 1],
-  [61, 66, 69, 74, 2], [61, 78, 71, 86, 1], [74, 66, 85, 75, 2], [74, 79, 83, 88, 1],
+  // row A (between the main road and the y 76 street)
+  [33, 67, 40, 75, 1], [44, 67, 53, 74, 1], [61, 66, 69, 74, 2], [74, 66, 85, 75, 2], [94, 63, 103, 73, 2], [107, 64, 116, 74, 1], [119, 63, 125, 73, 1],
+  // row B (between the y 76 and y 100 streets)
+  [41, 78, 53, 87, 2], [61, 78, 71, 86, 1], [74, 79, 83, 88, 1], [39, 90, 53, 98, 1], [61, 89, 70, 98, 2], [74, 91, 86, 98, 2],
+  [94, 79, 103, 88, 1], [106, 79, 117, 89, 2], [94, 91, 102, 98, 2], [106, 92, 116, 98, 1], [119, 80, 125, 90, 1],
+  // row C (south of the y 100 street)
+  [36, 104, 46, 113, 1], [49, 104, 55, 112, 1], [61, 104, 72, 114, 2], [75, 104, 86, 113, 1], [94, 104, 104, 114, 2], [107, 104, 118, 115, 1],
+  [38, 117, 48, 124, 2], [62, 117, 71, 124, 1], [77, 116, 88, 124, 2], [94, 118, 105, 125, 1], [110, 118, 121, 125, 2],
+  // the barn up at the farm
   [48, 3, 58, 11, 1],
 ];
 const RADIO_XY = [48, 40];
@@ -4255,7 +4264,7 @@ function genMap(seed) {
   const inTown = (x, y, pad) => TOWN_HOUSES.some(([x0, y0, x1, y1]) => x >= x0 - pad && x <= x1 + pad && y >= y0 - pad && y <= y1 + pad);
   // hills (kept away from the base and the town)
   const hill = (cx, cy, rad, top) => { for (let y = 0; y < MH; y++) for (let x = 0; x < MW; x++) { if (inTown(x, y, 2) || Math.max(Math.abs(x - RX), Math.abs(y - RY)) <= BUILD_R + 1) continue; const d = d2(x, y, cx, cy) / rad + (noise(x, y, 5) - 0.5) * 0.45; if (d < 1) { G[col(x, y)] = Math.max(G[col(x, y)], 1); tt[col(x, y)] = TT.hill; } if (top && d < 0.48) G[col(x, y)] = 2; } };
-  hill(80, 20, 12.5, true); hill(88, 50, 7, false); hill(10, 84, 7.5, true); hill(26, 8, 5.5, false);
+  hill(80, 20, 12.5, true); hill(105, 32, 9, true); hill(119, 11, 6.5, false); hill(10, 84, 7.5, true); hill(26, 8, 5.5, false); hill(12, 116, 6, false);
   // river (west), lake (south-west of town), farm pond (north)
   const riverC = y => 16 + 3 * Math.sin(y / 11 + 1.3) + 1.4 * Math.sin(y / 3.7);
   for (let y = 0; y < MH; y++) { const c = Math.round(riverC(y)), w = 2 + (noise(0, y, 6) > 0.55 ? 1 : 0); for (let x = c; x < c + w; x++) { G[col(x, y)] = 0; tt[col(x, y)] = TT.water; } }
@@ -4267,7 +4276,9 @@ function genMap(seed) {
   for (let x = 0; x < MW; x++) { road(x, 51); road(x, 52); }
   for (let y = 53; y < MH; y++) { road(57, y); road(58, y); }
   for (let y = 0; y < 19; y++) { road(44, y); road(45, y); }
-  for (let x = 30; x <= 88; x++) { road(x, 76); road(x, 77); } // town cross street
+  for (let x = 30; x <= 126; x++) { road(x, 76); road(x, 77); } // town cross streets
+  for (let x = 33; x <= 126; x++) { road(x, 100); road(x, 101); }
+  for (let y = 53; y < MH; y++) { road(90, y); road(91, y); }
   for (let y = 0; y < MH; y++) for (let x = 0; x < MW; x++) {
     const i = col(x, y);
     if (tt[i] === TT.grass) { const n = noise(x, y, 7); if ((x < riverC(y) - 1 && n > 0.22) || (n > 0.8 && !inTown(x, y, 3))) tt[i] = TT.forest; else if (n < 0.16) tt[i] = TT.dirt; }
@@ -4364,9 +4375,9 @@ function genMap(seed) {
     if (v < pTree) put(x, y, g, 22); else if (v < pTree + pRock) put(x, y, g, 21);
   }
   // cars on the roads (not on bridges), crates in the open
-  const cars = [[8, 51], [24, 52], [38, 51], [66, 52], [80, 51], [92, 52], [57, 60], [58, 71], [57, 90], [40, 76], [70, 77], [86, 76], [44, 6], [45, 16]];
+  const cars = [[8, 51], [24, 52], [38, 51], [66, 52], [80, 51], [92, 52], [110, 51], [124, 52], [57, 60], [58, 71], [57, 90], [57, 108], [58, 122], [40, 76], [70, 77], [86, 76], [100, 77], [118, 76], [80, 101], [112, 100], [45, 100], [90, 60], [91, 84], [90, 112], [44, 6], [45, 16]];
   for (const [x, y] of cars) if (inMap(x, y) && !slab[ci(x, y, 0)] && G[col(x, y)] === 0 && !blk[ci(x, y, 0)]) put(x, y, 0, 25, Math.floor(r() * 4));
-  for (const [x, y] of [[22, 40], [70, 30], [30, 60], [8, 30], [88, 64], [76, 6], [10, 66], [64, 92], [90, 90], [36, 30]]) if (inMap(x, y) && !blk[ci(x, y, G[col(x, y)])] && tt[col(x, y)] !== TT.water) put(x, y, G[col(x, y)], 26);
+  for (const [x, y] of [[22, 40], [70, 30], [30, 60], [8, 30], [88, 64], [76, 6], [10, 66], [64, 101], [92, 102], [36, 30], [104, 44], [120, 30], [118, 56], [52, 115], [126, 110], [30, 120], [8, 120], [100, 8], [124, 96]]) if (inMap(x, y) && !blk[ci(x, y, G[col(x, y)])] && tt[col(x, y)] !== TT.water) put(x, y, G[col(x, y)], 26);
   // fences: around the farm fields and along the town lots
   for (let x = 31; x <= 43; x++) for (const y of [1, 15]) if (!blk[ci(x, y, 0)] && G[col(x, y)] === 0 && tt[col(x, y)] !== TT.road && tt[col(x, y)] !== TT.water) put(x, y, 0, 27);
   for (let y = 2; y <= 14; y++) if (!blk[ci(31, y, 0)] && G[col(31, y)] === 0 && tt[col(31, y)] !== TT.water) put(31, y, 0, 27);
@@ -4768,7 +4779,7 @@ function useTarget(p) {
 function completeUse(p, tgt) {
   if (tgt.k === 'rev') { const q = W.p[tgt.i]; if (!q.down) return; q.down = false; q.hp = 35; q.medT = 0; q.selfRev = false; emit({ k: 'revive', p: q.i, by: p.i }); return; }
   const i = tgt.i, x = cx_(i), y = cy_(i), L = cl_(i), wx = x + 0.5, wy = y + 0.5, wz = L * FH + 1;
-  const m = 1 + Math.max(0, radioDist(x, y) - 8) / BAL.lootFar;
+  const m = 1 + Math.min(40, Math.max(0, radioDist(x, y) - 8)) / BAL.lootFar; // capped where the old 96-map edge was
   if (tgt.k === 'gather') {
     const g = GATHER[W.blk[i]]; if (!g) return;
     const n = Math.round(rand(g.n[0], g.n[1])); W.res[g.res] += n;
@@ -5070,8 +5081,14 @@ function stepPhase(dt) {
   } else if (W.phase === 'night') {
     W.nightT += dt;
     while (W.spawnQ.length && W.spawnQ[0].t <= W.nightT) { const s = W.spawnQ.shift(); spawnZombie(s.k, s.side); }
-    if (!W.spawnQ.length && W.zs.length && W.zs.length <= 3 && W.nightT > BAL.spawnDur(W.night) + 240) { W.zs.forEach(z => { z.hp = 0; }); W.zs = []; say('残余的丧尸散去了'); }
-    if (!W.spawnQ.length && !W.zs.length) dawn();
+    const minT = BAL.nightMin(W.night);
+    // after the horde, small groups keep coming until the night has run its minimum length
+    if (!W.spawnQ.length && W.nightT < minT) {
+      W.strayT -= dt;
+      if (W.strayT <= 0) { W.strayT = BAL.nightTrickleCD; if (W.zs.length < BAL.nightTrickleMax) { const n = W.night; for (let k = 0; k < 1 + (rand() < 0.4 ? 1 : 0); k++) spawnZombie(n >= 4 && rand() < 0.35 ? 'runner' : n >= 6 && rand() < 0.2 ? 'climber' : 'walker', Math.floor(rand() * 4)); } }
+    }
+    if (!W.spawnQ.length && W.zs.length && W.zs.length <= 3 && W.nightT > Math.max(BAL.spawnDur(W.night) + 240, minT + 60)) { W.zs.forEach(z => { z.hp = 0; }); W.zs = []; say('残余的丧尸散去了'); }
+    if (!W.spawnQ.length && !W.zs.length && W.nightT >= minT) dawn();
   }
 }
 
@@ -5340,12 +5357,12 @@ function buildScene() {
   I.bars = inst(GEO.bars, lam('#ffffff'), 600);
   I.wire = inst(GEO.wire, lam('#9aa0a6'), 600, false);
   I.lampP = inst(GEO.lampPole, lam('#2d3238'), 200); I.lampH = inst(GEO.lampHead, new THREE.MeshBasicMaterial({ color: '#ffe9a8' }), 200, false);
-  I.trunk = inst(GEO.trunk, lam('#4a3220'), 3000);
-  I.pine = GEO.pine.map((g, k) => inst(g, lam(['#2e4a2c', '#35552f', '#3c5f35'][k]), 3000));
-  I.oak = inst(GEO.oak, lam('#ffffff'), 3000);
-  I.rock = inst(GEO.rock, lam('#ffffff'), 1500);
-  I.crate = inst(GEO.crate, lam('#4f5d3c'), 300); I.rubble = inst(GEO.rubble, lam('#6a625a'), 300); I.fence = inst(GEO.fence, lam('#6b5a48'), 400);
-  I.car = inst(GEO.carBody, lam('#ffffff'), 60); I.carW = inst(GEO.carWheels, lam('#151515'), 60);
+  I.trunk = inst(GEO.trunk, lam('#4a3220'), 7000);
+  I.pine = GEO.pine.map((g, k) => inst(g, lam(['#2e4a2c', '#35552f', '#3c5f35'][k]), 7000));
+  I.oak = inst(GEO.oak, lam('#ffffff'), 7000);
+  I.rock = inst(GEO.rock, lam('#ffffff'), 3000);
+  I.crate = inst(GEO.crate, lam('#4f5d3c'), 600); I.rubble = inst(GEO.rubble, lam('#6a625a'), 800); I.fence = inst(GEO.fence, lam('#6b5a48'), 1200);
+  I.car = inst(GEO.carBody, lam('#ffffff'), 120); I.carW = inst(GEO.carWheels, lam('#151515'), 120);
   archScene();
   // radio + bench
   const radio = new THREE.Group();
@@ -5953,7 +5970,7 @@ function archScene() {
   I.wireP = inst(G.wirePosts, lam('#5a4630'), 600);
   // the plaster spans three cells; each instance reads the slice for its own position so walls don't repeat cell by cell
   const wide = m => { m.onBeforeCompile = sh => { sh.vertexShader = sh.vertexShader.replace('#include <uv_vertex>', '#include <uv_vertex>\n#ifdef USE_INSTANCING\nvMapUv.x = (vMapUv.x + instanceMatrix[3].x + instanceMatrix[3].z) / 3.0;\n#endif'); }; m.customProgramCacheKey = () => 'wide3'; return m; };
-  I.ruin = G.ruin.map((g, k) => inst(g, wide(tm(k % 2 ? T.plasterB : T.plasterA)), 900));
+  I.ruin = G.ruin.map((g, k) => inst(g, wide(tm(k % 2 ? T.plasterB : T.plasterA)), 2600));
 }
 const PLASTER = ['#e6cf96', '#a9c3cf', '#e2ae92', '#bfcf9e', '#d9b8b0', '#c8c2b0'];
 const ARC = {};
@@ -6568,7 +6585,7 @@ function makeSnap() {
   const z = []; for (const q of W.zs) z.push(q.id, ZI.indexOf(q.k), Math.round(q.x * 100), Math.round(q.y * 100), q.L, Math.round(q.z * 100), Math.round(q.face * 100), Math.ceil(q.hp / q.max * 100), (q.climbing ? 1 : 0) | (q.atk > 0 ? 2 : 0) | (q.hitT > 0 ? 4 : 0) | (q.moving ? 8 : 0));
   const pr = []; for (const b of W.proj) pr.push(b.k === 'nade' ? 0 : 1, r2(b.x), r2(b.y), r2(b.z), r2(b.vx), r2(b.vy), r2(b.vz));
   const d = []; for (const i of W.dirty) d.push(i, Math.round(W.bhp[i]), Math.round(W.shp[i])); W.dirty.clear();
-  return { t: 's', T: r2(W.t), ph: W.phase, cl: Math.round(W.clock * 10) / 10, dl: W.dayLen, n: W.night, tk: NET.tkv === W.tkv && (NET.tkN = (NET.tkN || 0) + 1) % 12 ? 0 : (NET.tkv = W.tkv, W.tasks.map(t => [t.k, t.need, t.got, t.done, t.txt, t.rt])), res: RES.map(r => W.res[r.k]), u: W.upg, k: W.kills, p: W.p.map(P), z, pr, d, sl: W.spawnQ.length };
+  return { t: 's', T: r2(W.t), ph: W.phase, cl: Math.round(W.clock * 10) / 10, dl: W.dayLen, n: W.night, nt: Math.round(W.nightT), tk: NET.tkv === W.tkv && (NET.tkN = (NET.tkN || 0) + 1) % 12 ? 0 : (NET.tkv = W.tkv, W.tasks.map(t => [t.k, t.need, t.got, t.done, t.txt, t.rt])), res: RES.map(r => W.res[r.k]), u: W.upg, k: W.kills, p: W.p.map(P), z, pr, d, sl: W.spawnQ.length };
 }
 function hostNetTick(dt) {
   if (!NET.gctl || !NET.gctl.open) return;
@@ -6612,6 +6629,7 @@ function guestRecv(m) {
 function applySnap(s) {
   if (s.T < NET.lastT - 5) return; NET.lastT = s.T;
   W.t = s.T; W.phase = s.ph; W.clock = s.cl; W.dayLen = s.dl; W.night = s.n; W.upg = s.u; W.kills = s.k;
+  W.nightT = s.nt || 0;
   if (s.tk) { W.tasks = s.tk.map(a => ({ k: a[0], need: a[1], got: a[2], done: a[3], txt: a[4], rt: a[5] })); W.tkv++; }
   RES.forEach((r, i) => W.res[r.k] = s.res[i]); W.spawnLeft = s.sl;
   s.p.forEach((a, i) => {
@@ -6794,7 +6812,8 @@ function hudTick(dt) {
   } else if (W.phase === 'night') {
     const left = W.zs.length + (NETROLE === 'guest' ? (W.spawnLeft || 0) : W.spawnQ.length);
     ph.className = isBlood(W.night) ? 'blood' : 'night';
-    ph.innerHTML = '第 ' + W.night + ' 夜' + (isBlood(W.night) ? ' · 血月' : '') + `<span class="sub">剩余 ${left} 只 · ${W.night}/${BAL.nights}</span>`;
+    const rest = Math.max(0, Math.ceil(BAL.nightMin(W.night) - W.nightT));
+    ph.innerHTML = '第 ' + W.night + ' 夜' + (isBlood(W.night) ? ' · 血月' : '') + `<span class="sub">剩余 ${left} 只${rest > 0 ? ' · 天亮还要 ' + Math.floor(rest / 60) + ':' + String(rest % 60).padStart(2, '0') : ''} · ${W.night}/${BAL.nights}</span>`;
   } else ph.textContent = W.phase === 'win' ? '获救' : '失守';
   if (UI.tkv !== W.tkv) {
     UI.tkv = W.tkv;

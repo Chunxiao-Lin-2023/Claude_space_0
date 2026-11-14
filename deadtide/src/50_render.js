@@ -99,12 +99,12 @@ function buildScene() {
   I.bars = inst(GEO.bars, lam('#ffffff'), 600);
   I.wire = inst(GEO.wire, lam('#9aa0a6'), 600, false);
   I.lampP = inst(GEO.lampPole, lam('#2d3238'), 200); I.lampH = inst(GEO.lampHead, new THREE.MeshBasicMaterial({ color: '#ffe9a8' }), 200, false);
-  I.trunk = inst(GEO.trunk, lam('#4a3220'), 3000);
-  I.pine = GEO.pine.map((g, k) => inst(g, lam(['#2e4a2c', '#35552f', '#3c5f35'][k]), 3000));
-  I.oak = inst(GEO.oak, lam('#ffffff'), 3000);
-  I.rock = inst(GEO.rock, lam('#ffffff'), 1500);
-  I.crate = inst(GEO.crate, lam('#4f5d3c'), 300); I.rubble = inst(GEO.rubble, lam('#6a625a'), 300); I.fence = inst(GEO.fence, lam('#6b5a48'), 400);
-  I.car = inst(GEO.carBody, lam('#ffffff'), 60); I.carW = inst(GEO.carWheels, lam('#151515'), 60);
+  I.trunk = inst(GEO.trunk, lam('#4a3220'), 7000);
+  I.pine = GEO.pine.map((g, k) => inst(g, lam(['#2e4a2c', '#35552f', '#3c5f35'][k]), 7000));
+  I.oak = inst(GEO.oak, lam('#ffffff'), 7000);
+  I.rock = inst(GEO.rock, lam('#ffffff'), 3000);
+  I.crate = inst(GEO.crate, lam('#4f5d3c'), 600); I.rubble = inst(GEO.rubble, lam('#6a625a'), 800); I.fence = inst(GEO.fence, lam('#6b5a48'), 1200);
+  I.car = inst(GEO.carBody, lam('#ffffff'), 120); I.carW = inst(GEO.carWheels, lam('#151515'), 120);
   archScene();
   // radio + bench
   const radio = new THREE.Group();

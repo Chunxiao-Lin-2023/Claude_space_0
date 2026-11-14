@@ -30,11 +30,18 @@ const radioDist = (x, y) => Math.max(Math.abs(x - W.radio.x), Math.abs(y - W.rad
 const inZone = (x, y) => radioDist(x, y) <= BUILD_R;
 
 /* ---------- map generation (deterministic from seed) ----------
-   96 x 96: river and forest in the west, the radio base in the middle, hills to the east, a farm in the north
-   and a ruined town south of the main road. Town lots: [x0, y0, x1, y1, storeys]. */
+   128 x 128: river and forest in the west, the camp north-west of centre, hills to the north-east, a farm in the north
+   and a big ruined town (three rows of blocks on a street grid) filling the south and south-east. Town lots: [x0, y0, x1, y1, storeys]. */
 const TOWN_HOUSES = [
-  [44, 67, 53, 74, 1], [41, 78, 53, 87, 2], [33, 67, 40, 75, 1],
-  [61, 66, 69, 74, 2], [61, 78, 71, 86, 1], [74, 66, 85, 75, 2], [74, 79, 83, 88, 1],
+  // row A (between the main road and the y 76 street)
+  [33, 67, 40, 75, 1], [44, 67, 53, 74, 1], [61, 66, 69, 74, 2], [74, 66, 85, 75, 2], [94, 63, 103, 73, 2], [107, 64, 116, 74, 1], [119, 63, 125, 73, 1],
+  // row B (between the y 76 and y 100 streets)
+  [41, 78, 53, 87, 2], [61, 78, 71, 86, 1], [74, 79, 83, 88, 1], [39, 90, 53, 98, 1], [61, 89, 70, 98, 2], [74, 91, 86, 98, 2],
+  [94, 79, 103, 88, 1], [106, 79, 117, 89, 2], [94, 91, 102, 98, 2], [106, 92, 116, 98, 1], [119, 80, 125, 90, 1],
+  // row C (south of the y 100 street)
+  [36, 104, 46, 113, 1], [49, 104, 55, 112, 1], [61, 104, 72, 114, 2], [75, 104, 86, 113, 1], [94, 104, 104, 114, 2], [107, 104, 118, 115, 1],
+  [38, 117, 48, 124, 2], [62, 117, 71, 124, 1], [77, 116, 88, 124, 2], [94, 118, 105, 125, 1], [110, 118, 121, 125, 2],
+  // the barn up at the farm
   [48, 3, 58, 11, 1],
 ];
 const RADIO_XY = [48, 40];
@@ -48,7 +55,7 @@ function genMap(seed) {
   const inTown = (x, y, pad) => TOWN_HOUSES.some(([x0, y0, x1, y1]) => x >= x0 - pad && x <= x1 + pad && y >= y0 - pad && y <= y1 + pad);
   // hills (kept away from the base and the town)
   const hill = (cx, cy, rad, top) => { for (let y = 0; y < MH; y++) for (let x = 0; x < MW; x++) { if (inTown(x, y, 2) || Math.max(Math.abs(x - RX), Math.abs(y - RY)) <= BUILD_R + 1) continue; const d = d2(x, y, cx, cy) / rad + (noise(x, y, 5) - 0.5) * 0.45; if (d < 1) { G[col(x, y)] = Math.max(G[col(x, y)], 1); tt[col(x, y)] = TT.hill; } if (top && d < 0.48) G[col(x, y)] = 2; } };
-  hill(80, 20, 12.5, true); hill(88, 50, 7, false); hill(10, 84, 7.5, true); hill(26, 8, 5.5, false);
+  hill(80, 20, 12.5, true); hill(105, 32, 9, true); hill(119, 11, 6.5, false); hill(10, 84, 7.5, true); hill(26, 8, 5.5, false); hill(12, 116, 6, false);
   // river (west), lake (south-west of town), farm pond (north)
   const riverC = y => 16 + 3 * Math.sin(y / 11 + 1.3) + 1.4 * Math.sin(y / 3.7);
   for (let y = 0; y < MH; y++) { const c = Math.round(riverC(y)), w = 2 + (noise(0, y, 6) > 0.55 ? 1 : 0); for (let x = c; x < c + w; x++) { G[col(x, y)] = 0; tt[col(x, y)] = TT.water; } }
@@ -60,7 +67,9 @@ function genMap(seed) {
   for (let x = 0; x < MW; x++) { road(x, 51); road(x, 52); }
   for (let y = 53; y < MH; y++) { road(57, y); road(58, y); }
   for (let y = 0; y < 19; y++) { road(44, y); road(45, y); }
-  for (let x = 30; x <= 88; x++) { road(x, 76); road(x, 77); } // town cross street
+  for (let x = 30; x <= 126; x++) { road(x, 76); road(x, 77); } // town cross streets
+  for (let x = 33; x <= 126; x++) { road(x, 100); road(x, 101); }
+  for (let y = 53; y < MH; y++) { road(90, y); road(91, y); }
   for (let y = 0; y < MH; y++) for (let x = 0; x < MW; x++) {
     const i = col(x, y);
     if (tt[i] === TT.grass) { const n = noise(x, y, 7); if ((x < riverC(y) - 1 && n > 0.22) || (n > 0.8 && !inTown(x, y, 3))) tt[i] = TT.forest; else if (n < 0.16) tt[i] = TT.dirt; }
@@ -157,9 +166,9 @@ function genMap(seed) {
     if (v < pTree) put(x, y, g, 22); else if (v < pTree + pRock) put(x, y, g, 21);
   }
   // cars on the roads (not on bridges), crates in the open
-  const cars = [[8, 51], [24, 52], [38, 51], [66, 52], [80, 51], [92, 52], [57, 60], [58, 71], [57, 90], [40, 76], [70, 77], [86, 76], [44, 6], [45, 16]];
+  const cars = [[8, 51], [24, 52], [38, 51], [66, 52], [80, 51], [92, 52], [110, 51], [124, 52], [57, 60], [58, 71], [57, 90], [57, 108], [58, 122], [40, 76], [70, 77], [86, 76], [100, 77], [118, 76], [80, 101], [112, 100], [45, 100], [90, 60], [91, 84], [90, 112], [44, 6], [45, 16]];
   for (const [x, y] of cars) if (inMap(x, y) && !slab[ci(x, y, 0)] && G[col(x, y)] === 0 && !blk[ci(x, y, 0)]) put(x, y, 0, 25, Math.floor(r() * 4));
-  for (const [x, y] of [[22, 40], [70, 30], [30, 60], [8, 30], [88, 64], [76, 6], [10, 66], [64, 92], [90, 90], [36, 30]]) if (inMap(x, y) && !blk[ci(x, y, G[col(x, y)])] && tt[col(x, y)] !== TT.water) put(x, y, G[col(x, y)], 26);
+  for (const [x, y] of [[22, 40], [70, 30], [30, 60], [8, 30], [88, 64], [76, 6], [10, 66], [64, 101], [92, 102], [36, 30], [104, 44], [120, 30], [118, 56], [52, 115], [126, 110], [30, 120], [8, 120], [100, 8], [124, 96]]) if (inMap(x, y) && !blk[ci(x, y, G[col(x, y)])] && tt[col(x, y)] !== TT.water) put(x, y, G[col(x, y)], 26);
   // fences: around the farm fields and along the town lots
   for (let x = 31; x <= 43; x++) for (const y of [1, 15]) if (!blk[ci(x, y, 0)] && G[col(x, y)] === 0 && tt[col(x, y)] !== TT.road && tt[col(x, y)] !== TT.water) put(x, y, 0, 27);
   for (let y = 2; y <= 14; y++) if (!blk[ci(31, y, 0)] && G[col(31, y)] === 0 && tt[col(31, y)] !== TT.water) put(31, y, 0, 27);

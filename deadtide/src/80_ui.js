@@ -123,7 +123,8 @@ function hudTick(dt) {
   } else if (W.phase === 'night') {
     const left = W.zs.length + (NETROLE === 'guest' ? (W.spawnLeft || 0) : W.spawnQ.length);
     ph.className = isBlood(W.night) ? 'blood' : 'night';
-    ph.innerHTML = '第 ' + W.night + ' 夜' + (isBlood(W.night) ? ' · 血月' : '') + `<span class="sub">剩余 ${left} 只 · ${W.night}/${BAL.nights}</span>`;
+    const rest = Math.max(0, Math.ceil(BAL.nightMin(W.night) - W.nightT));
+    ph.innerHTML = '第 ' + W.night + ' 夜' + (isBlood(W.night) ? ' · 血月' : '') + `<span class="sub">剩余 ${left} 只${rest > 0 ? ' · 天亮还要 ' + Math.floor(rest / 60) + ':' + String(rest % 60).padStart(2, '0') : ''} · ${W.night}/${BAL.nights}</span>`;
   } else ph.textContent = W.phase === 'win' ? '获救' : '失守';
   if (UI.tkv !== W.tkv) {
     UI.tkv = W.tkv;
