@@ -123,8 +123,10 @@ function hVisTick(H, v, dt) { const M = H.M, u = v.u;
   /* 没意思了 / 到点了：照着剩下的路线快步走完（也得拿了东西从出口出去，不能抄近路） */
   if (v.st === 'leave') { const tg = M.route[Math.min(v.wi, M.route.length - 1)]; if (at(tg[0], tg[1])) { if (v.wi >= M.route.length - 1) { v.st = 'gone'; return; } hWi(H, v); return; } const n = hmNext(M, hmField(M, tg[0], tg[1], 'v'), v.tx, v.ty, 'v'); if (n) hStepTo(v, n[0], n[1], HB.leave); else hWi(H, v); return; }
   /* 被吓到：先定住做个动作，再往远离吓人的地方跑一段 */
-  if (v.st === 'react') { v.wait -= dt; v.fr = 0; if (v.wait <= 0) { v.st = 'run'; v.wait = HB.runT; v.runTo = hRunTo(H, v); hBub(H, v, pick(HRUN), 1.4); } return; }
-  if (v.st === 'run') { v.wait -= dt; const r = v.runTo; if (v.wait <= 0 || !r || at(r[0], r[1])) { v.st = 'walk'; v.runTo = null; v.shaky = H.t + 4; return; } const n = hmNext(M, hmField(M, r[0], r[1], 'v'), v.tx, v.ty, 'v'); if (!n) { v.st = 'walk'; v.shaky = H.t + 4; return; } hStepTo(v, n[0], n[1], HB.run); return; }
+  if (v.st === 'react') { v.wait -= dt; v.fr = 0; if (v.wait <= 0) { v.st = 'run'; v.runEnd = H.t + HB.runT; v.runN = 6; v.runTo = null; hBub(H, v, pick(HRUN), 1.4); } return; }
+  /* 被抓住脚踝（笔仙「送不走」）：原地挣扎 */ if ((v.root || 0) > H.t) { v.fr = 0; return; }
+  /* 跑：只能顺着路线往前跑（RULES 35），跑到出口前那一段就不跑了，接着走 */
+  if (v.st === 'run') { const last = M.route.length - 1, tg = M.route[Math.min(v.wi, last)]; if (H.t >= v.runEnd || v.runN <= 0 || v.wi >= last) { v.st = 'walk'; v.shaky = H.t + 4; return; } if (at(tg[0], tg[1])) { hWi(H, v); return; } const n = hmNext(M, hmField(M, tg[0], tg[1], 'v'), v.tx, v.ty, 'v'); if (!n) { v.st = 'walk'; v.shaky = H.t + 4; return; } v.runN--; hStepTo(v, n[0], n[1], HB.run); return; }
   if (u.st.stun) { v.fr = 0; return; }
   if (v.st === 'phone') { v.wait -= dt; if (v.wait <= 0) v.st = 'walk'; return; }
   if (v.st === 'look') { v.wait -= dt; v.dir = [0, 1, 3, 2][Math.max(0, Math.floor(v.wait * 1.6)) % 4]; if (v.wait <= 0) v.st = 'walk'; return; }
@@ -164,15 +166,10 @@ const HPOSE = { jump: '!!', fall: 'sweat', shake: '?!', cover: 'xx', cry: 'TT' }
 const hScaredSt = v => v.st === 'panic' || v.st === 'react' || v.st === 'run';
 function hSnap(v) { const m = v.mv; if (!m) return; if (m.p > .5) { v.tx = m.tx; v.ty = m.ty; } v.x = v.tx; v.y = v.ty; v.mv = null; }
 function hReact(H, v, src, hard) { if (hOut(v) || v.st === 'wait' || v.st === 'leave') return; const pose = hard ? pick(['fall', 'jump', 'cry']) : pick(Object.keys(HPOSE)); hSnap(v); v.st = 'react'; v.pose = pose; v.poseT = H.t; v.wait = HB.react; v.from = [src.x, src.y]; v.emo = { s: HPOSE[pose], until: H.t + HB.react + 1.4 }; hsRule(H, 'hit', v); }
-/* 往哪跑：六步以内、离吓人的地方远、又往鬼屋深处去的空地（往回跑会撞上陈歌，也碰不到后面的机关） */
-function hRunTo(H, v) { const M = H.M, sx = v.from ? v.from[0] : v.x, sy = v.from ? v.from[1] : v.y, seen = new Map([[v.ty * M.w + v.tx, 0]]), q = [[v.tx, v.ty]]; let best = null, bs = -1;
-  const nx0 = M.route[Math.min(v.wi + 1, M.route.length - 1)], fw = hmField(M, nx0[0], nx0[1], 'v'), f0 = fw[v.ty * M.w + v.tx];
-  while (q.length) { const [x, y] = q.shift(), d = seen.get(y * M.w + x), fk = fw[y * M.w + x], sc = Math.hypot(x - sx, y - sy) - d * .15 + (fk >= 0 && f0 >= 0 ? (f0 - fk) * .6 : 0); if (d >= 2 && sc > bs) { bs = sc; best = [x, y]; } if (d >= 6) continue; for (const [dx, dy] of HD) { const nx = x + dx, ny = y + dy, k = ny * M.w + nx; if (hmSolid(M, M.vs, nx, ny) || seen.has(k)) continue; seen.set(k, d + 1); q.push([nx, ny]); } }
-  return best; }
-
 /* ---------- 陈歌 ---------- */
 function hHeroTick(H, dt) { const h = H.hero, M = H.M; h.pcd -= dt; h.ctick -= dt;
   if (h.mv) { if (hMove(h, dt)) { h.hidden = M.hides.some(e => e.x === h.tx && e.y === h.ty); if (h.hidden) { sfx('creak'); if (H.mode === 'chase') hChaseHid(H); } } else return; }
+  /* 方向键 / WASD 按住就一直走（RULES 35） */ const kd = H.kd && H.kd.length ? H.kd[H.kd.length - 1] : null; if (kd != null) { h.path = null; h.chase = null; h.dir = kd; const nx = h.tx + HD[kd][0], ny = h.ty + HD[kd][1]; if (!hmSolid(M, M.hs, nx, ny)) { hStepTo(h, nx, ny, HB.hero); h.hidden = false; } return; }
   if (h.chase) { const v = h.chase; if (!v.u ? false : (hOut(v) || v.st === 'leave')) h.chase = null; else if (H.mode === 'house') { const d = hDist(h, v); if (d <= 1.5 && h.pcd <= 0) hPounce(H, v); else if (hScaredSt(v) && d <= 1.45 && h.ctick <= 0) hChaseHit(H, v); if (h.chase) h.path = d > 1 ? [Math.round(v.x), Math.round(v.y)] : null; } }
   if (h.path) { const [tx, ty] = h.path; if (h.tx === tx && h.ty === ty) { h.path = null; return; } const n = hmNext(M, hmField(M, tx, ty, 'h'), h.tx, h.ty, 'h'); if (!n) { h.path = null; return; } hStepTo(h, n[0], n[1], h.chase ? HB.heroChase : HB.hero); h.hidden = false; } }
 function hGo(H, x, y) { const h = H.hero, M = H.M; x = clamp(Math.round(x), 0, M.w - 1); y = clamp(Math.round(y), 0, M.h - 1); h.chase = null;
@@ -211,28 +208,23 @@ function hBest(H, v, txt) { if (v > ((H.best && H.best.v) || 0)) H.best = { v, t
 function hLure(H) { const h = H.hero; if (H.mode !== 'house' || (h.lureCd || 0) > H.t) return false; const sl = H.M.slots.filter(s => s.k && hDist(s, h) <= 4).sort((a, b) => (b.cd <= 0) - (a.cd <= 0) || hDist(a, h) - hDist(b, h))[0], pt = sl ? [sl.x, sl.y] : [h.tx, h.ty];
   const f = hmField(H.M, pt[0], pt[1], 'v'), vs = hActive(H).filter(v => !hScaredSt(v) && f[v.ty * H.M.w + v.tx] >= 0 && f[v.ty * H.M.w + v.tx] <= 9); h.lureCd = H.t + 9; sfx('knock');
   if (!vs.length) { hFloat(H, h.x, h.y - 1.5, '没人听见', 'txt'); return true; } for (const v of vs) { v.lure = { pt, until: H.t + 6 }; hBub(H, v, pick(['那边……有声音？', '谁在敲墙？', '过去看看？']), 1.6); } hFloat(H, h.x, h.y - 1.5, '咚、咚', 'txt'); hLog(H, '陈歌敲了敲墙。' + vs.length + ' 批游客朝' + (sl ? ' ' + sl.n + ' 号机关' : '这边') + '走过来了。', ''); return true; }
-/* 点员工：让他主动冲出去吓最近的游客 */
-function hStaffGo(H, st) { if (st.off || st.pop > 0) return false; if (st.cd > 0) { toast(PETS[st.k].n + '还在缓（' + Math.ceil(st.cd) + ' 秒）'); return false; } const v = hActive(H).filter(q => hDist(q, st) <= 6).sort((a, b) => hDist(a, st) - hDist(b, st))[0]; if (!v) { toast('附近没有游客'); return false; } st.force = v; st.cd = 0; return true; }
+/* 点员工：马上放招（挑当下最好的一招） */
+function hStaffGo(H, st) { if (st.off || st.cast) return false; if (st.cd > 0) { toast(PETS[st.k].n + '还在缓（' + Math.ceil(st.cd) + ' 秒）'); return false; } const p = hSkPlan(H, st); if (!p) { toast(PETS[st.k].n + '够不着：' + hSkList(st).map(S => S.n).join(' / ') + ' 的范围里没有游客'); return false; } return hSkCast(H, st, p, 1); }
 
-/* ---------- 双人：队友操作的员工（st.p2，RULES 34）：自己走，点游客才吓，不会自己冲出去 ---------- */
+/* ---------- 双人：队友操作的员工（st.p2，RULES 34）：自己走（方向键或点地面），点游客 = 走到够得着就放招，不会自己放 ---------- */
 function hP2Move(H, st, dt) { const M = H.M;
   if (st.mv) { hMove(st, dt); st.home = [st.tx, st.ty]; return; } st.x = st.tx; st.y = st.ty; st.home = [st.tx, st.ty];
+  if (st.kd != null) { st.want = null; st.path = null; st.dir = st.kd; const nx = st.tx + HD[st.kd][0], ny = st.ty + HD[st.kd][1]; if (!hmSolid(M, M.hs, nx, ny)) hStepTo(st, nx, ny, HB.hero * 1.05); return; }
   const w = st.want && !hOut(st.want) && st.want.st !== 'leave' ? st.want : (st.want = null);
-  if (w) { const d = hDist(st, w); if (d <= 1.8) { if (st.cd <= 0) { st.force = w; st.want = null; st.path = null; return; } } else st.path = [Math.round(w.x), Math.round(w.y)]; }
+  if (w) { if (st.cd <= 0) { const p = hSkPlan(H, st, w); if (p) { hSkCast(H, st, p, 1); st.want = null; st.path = null; return; } } st.path = hDist(st, w) > 1.2 ? [Math.round(w.x), Math.round(w.y)] : null; }
   if (st.path) { const [tx, ty] = st.path; if (st.tx === tx && st.ty === ty) { st.path = null; return; } const n = hmNext(M, hmField(M, tx, ty, 'h'), st.tx, st.ty, 'h'); if (!n) { st.path = null; return; } hStepTo(st, n[0], n[1], HB.hero * 1.05); } }
 function hP2Go(H, st, x, y) { const M = H.M; x = clamp(Math.round(x), 0, M.w - 1); y = clamp(Math.round(y), 0, M.h - 1); st.want = null;
   if (hmSolid(M, M.hs, x, y)) { let best = null, bd = 99; for (let yy = y - 2; yy <= y + 2; yy++) for (let xx = x - 2; xx <= x + 2; xx++) if (!hmSolid(M, M.hs, xx, yy) && hmField(M, xx, yy, 'h')[st.ty * M.w + st.tx] >= 0) { const d = Math.abs(xx - x) + Math.abs(yy - y); if (d < bd) { bd = d; best = [xx, yy]; } } if (!best) return; [x, y] = best; }
   if (hmField(M, x, y, 'h')[st.ty * M.w + st.tx] < 0) return; st.path = [x, y]; }
-function hP2Scare(H, st, v) { if (!v) { v = hActive(H).filter(q => hDist(q, st) <= 6).sort((a, b) => hDist(a, st) - hDist(b, st))[0]; if (!v) return '附近没有游客'; } if (st.cd > 0) { st.want = v; return PETS[st.k].n + '还在缓（' + Math.ceil(st.cd) + ' 秒）'; } st.want = v; hFloat(H, st.x, st.y - 1.6, PETS[st.k].n + '：去了！', 'staff'); return ''; }
+function hP2Scare(H, st, v) { if (st.cast || st.off) return ''; if (v) { st.want = v; if (st.cd > 0) return PETS[st.k].n + '还在缓（' + Math.ceil(st.cd) + ' 秒），缓好了就放'; hFloat(H, st.x, st.y - 1.6, PETS[st.k].n + '：去了！', 'staff'); return ''; } if (st.cd > 0) return PETS[st.k].n + '还在缓（' + Math.ceil(st.cd) + ' 秒）'; const p = hSkPlan(H, st); if (!p) return '够不着：附近没有游客'; hSkCast(H, st, p, 1); return ''; }
 function hP2Pick(H) { for (const s of H.staff) s.p2 = false; const st = H.staff.find(s => !s.off) || null; if (st) { st.p2 = true; st.tx = st.tx ?? st.home[0]; st.ty = st.ty ?? st.home[1]; st.cd = Math.min(st.cd, 1); } return st; }
 /* ---------- 员工 ---------- */
-function hStaffTick(H, st, dt) { const B = H.B; st.cd -= dt; if (st.pop > 0) { st.pop -= dt; const k = Math.max(0, st.pop / .7); st.x = st.home[0] + (st.px - st.home[0]) * Math.sin(k * Math.PI) * .6; st.y = st.home[1] + (st.py - st.home[1]) * Math.sin(k * Math.PI) * .6; return; } if (st.p2) { hP2Move(H, st, dt); if (!st.force) return; } else { st.x = st.home[0]; st.y = st.home[1]; }
-  if (st.off || st.cd > 0) return; const force = st.force && !hOut(st.force) ? st.force : null; st.force = null; const tg = force ? [force] : hActive(H).filter(v => Math.max(Math.abs(v.x - st.x), Math.abs(v.y - st.y)) <= HB.staffRange + .3 && hmLos(H.M, st.x, st.y, v.x, v.y)); if (!tg.length) return; if (!force) hHint(H, 'staff', '员工会自己出来吓人。点员工可以让他冲出去吓附近的游客。');
-  const mv = petMoves(st.k).filter(m => m.c === 'atk' || m.c === 'deb' || m.c === 'buf'); if (!mv.length) return; const m = mv.filter(q => q.c === 'atk').length && chance(.75) ? pick(mv.filter(q => q.c === 'atk')) : pick(mv); const v = tg[0];
-  st.cd = HB.staffCd + rnd() * 1.5 + (force ? 2 : 0); st.pop = .7; st.px = v.x; st.py = v.y; hFloat(H, st.x, st.y - 1.8, PETS[st.k].n + ' · ' + m.n, 'staff');
-  if (m.c === 'buf') { if (m.st) addSt(B, B.hero, m.st[0], m.st[1]); if (m.see || (m.st && m.st[0] === 'see')) for (const q of hActive(H)) for (const w of q.u.weak) noteWeak(B, q.u, w); }
-  else for (const q of (m.all ? tg : [v])) { const t = q.u; doHit(B, st.u, t, m.pow || .5, m.el || 'none', { mul: HB.dmg * HB.staffMul * skillMulStaff(st.k) * (force ? 1.2 : 1) }); reactLine(B, t); if (t.hp > 0) { if (m.st) addSt(B, t, m.st[0], m.st[1]); if (m.stun && chance(m.stun)) addSt(B, t, 'stun', 1); if (!hOut(q)) hReact(H, q, st); } }
-  hFx(H, 'staff', v.x, v.y, st.k); sfx(st.k === 'baimao' ? 'cat' : st.k === 'xiaoxiao' ? 'giggle' : st.k === 'bixian' ? 'scrape' : 'whisper'); hFlush(H); }
+function hStaffTick(H, st, dt) { st.cd -= dt; if (hSkTick(H, st)) return; if (st.p2) { hP2Move(H, st, dt); return; } st.x = st.home[0]; st.y = st.home[1]; st.fr = 0; if (st.off || st.cd > 0) return; hSkAuto(H, st, dt); }
 function skillMulStaff(k) { let m = 1 + relicBonus(C, 'scare'); const P = scenePas(HS && HS.o.scene); void P; return m; }
 
 /* ---------- 剧情战的特殊规则 ---------- */
@@ -343,7 +335,7 @@ async function hsLoop(H) { const auto = !!(C.auto || (window.__dbg && __dbg.auto
   else { await stageTransition(H.o.title || '快跑'); if (!C.seen.tutc) { C.seen.tutc = 1; await showCard(HTUT.chase, 900); } H.phase = 'live'; hsHud(H); }
   H.last = performance.now(); if (!H.raf) H.raf = requestAnimationFrame(hsFrame); return done; }
 function hsAutoChase(H) { H.phase = 'live'; H.res = 'ok'; H.done = true; }
-const HTUT = { house: '<div class="c1">亲自扮鬼</div><div class="c3" style="text-align:left">先在地图上的<b>圆圈</b>里放机关、在<b>人形框</b>里安排员工，然后开门。<br><b>点地面</b>：陈歌走过去。<b>点柜子</b>：躲进去。<b>点游客</b>：追上去扑他。<br>游客走进机关的圈里，点机关（或「吓！」）拉动它——<b>正好踩在机关上</b>是完美时机。<br>别让游客<b>看见你</b>：从背后、从柜子里、或者关了灯再出手。<br>每吓中一下游客的 <b>SAN</b> 就掉一截，掉到 0 就<b>晕过去</b>，收工时一起被抬出来。游客<b>中途出不去</b>：得拿到任务里的东西、走到出口才能出门。</div><div class="c3">点任意处开始</div>',
+const HTUT = { house: '<div class="c1">亲自扮鬼</div><div class="c3" style="text-align:left">先在地图上的<b>圆圈</b>里放机关、在<b>人形框</b>里安排员工，然后开门。<br><b>点地面</b>或按住<b>方向键 / WASD</b>：陈歌走过去。<b>点柜子</b>：躲进去。<b>点游客</b>：追上去扑他。<br>员工站在岗位上会<b>自己挑时机放招</b>（变身、砸地、尖叫……，蓄力时红框是范围）；<b>点员工</b>让他马上放。被吓到的游客只会<b>往前跑</b>。<br>游客走进机关的圈里，点机关（或「吓！」）拉动它——<b>正好踩在机关上</b>是完美时机。<br>别让游客<b>看见你</b>：从背后、从柜子里、或者关了灯再出手。<br>每吓中一下游客的 <b>SAN</b> 就掉一截，掉到 0 就<b>晕过去</b>，收工时一起被抬出来。游客<b>中途出不去</b>：得拿到任务里的东西、走到出口才能出门。</div><div class="c3">点任意处开始</div>',
   chase: '<div class="c1">被追了</div><div class="c3" style="text-align:left"><b>点地面</b>跑过去，<b>点柜子</b>躲进去。<br>它没看见你钻进去，就找不到你。心跳越响，它离你越近。<br>拿到要找的东西（或者撑到员工准备好），就能回头跟它打。</div><div class="c3">点任意处开始</div>' };
 let HS_LAST = null;
 async function hsFinish(H, quiet) { cancelAnimationFrame(H.raf); const B = H.B; HS_LAST = { mode: H.mode, res: H.res, grade: H.grade, best: H.best, t: Math.round(H.t), stats: H.stats, scared: H.scared, n: H.vis.length, atm: B ? Math.round(B.hero.hp / B.hero.mhp * 100) : 0, mp: Math.round(C.mp), dmg: B ? H.vis.map(v => Math.round((1 - v.u.hp / v.u.mhp) * 100)) : [] };

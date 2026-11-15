@@ -186,7 +186,7 @@ for (const fn of CMD_NAMES) { const orig = window[fn]; if (typeof orig !== 'func
     if (!NETROLE || !netUp() || NET.inRun) return orig.apply(this, a);
     if (!UI.inClick) return orig.apply(this, a);   // 剧本自己调用的，不拦
     if (NETROLE === 'host' && STATE.house && HOST_ONLY.includes(fn)) return orig.apply(this, a);
-    if (NETROLE === 'guest' && STATE.house && HOST_ONLY.includes(fn)) { toast('接待时陈歌归房主，你管员工：点地面走过去，点游客吓他'); return; }
+    if (NETROLE === 'guest' && STATE.house && HOST_ONLY.includes(fn)) { toast('接待时陈歌归房主，你管员工：方向键或点地面走，点游客 = 走过去放招'); return; }
     if (!myControl()) { toast('现在是' + whoName(NET.ctrl) + '在操作（点上面的 🔗 请求接手）'); return; }
     if (UI.picking) return;
     const tap = tapInfo(), args = (fn === 'dlgTap') ? [] : JSON.parse(JSON.stringify(a.filter(x => !(x && typeof x === 'object' && (x instanceof Event || x.nodeType)))));
@@ -239,9 +239,10 @@ function coopModal() {
 if (window.__dbg) { Object.assign(__dbg, { coopTitle, netHost, netJoin, netLeave, coopCtrl, coopAnswer, myControl, coopQuick, guestScare, coopHsSend: m => netSend(Object.assign({ t: 'hs' }, m)) }); Object.defineProperty(__dbg, 'NET', { get() { return NET; }, configurable: true }); Object.defineProperty(__dbg, 'NETROLE', { get() { return NETROLE; }, configurable: true }); Object.defineProperty(__dbg, 'HS', { get() { return HS; }, configurable: true }); Object.defineProperty(__dbg, 'MG', { get() { return MG; }, configurable: true }); }
 
 /* ---------- 白天接待：房主扮陈歌，队友操作一名站岗员工 ---------- */
-{ const hs0 = window.houseStart; window.houseStart = function (H) { const r = hs0.apply(this, arguments); if (NETROLE === 'host' && netUp()) { const st = hP2Pick(H); netBroadcast({ t: 'toast', s: st ? '这一场你操作' + PETS[st.k].n + '：点地面走过去，点游客吓他' : '这一场没有员工站岗——你可以看着，或者用快捷发言提醒房主' }); } return r; }; }
+{ const hs0 = window.houseStart; window.houseStart = function (H) { const r = hs0.apply(this, arguments); if (NETROLE === 'host' && netUp()) { const st = hP2Pick(H); netBroadcast({ t: 'toast', s: st ? '这一场你操作' + PETS[st.k].n + '：方向键或点地面走，点游客 = 走过去放招，「吓！」= 马上放' : '这一场没有员工站岗——你可以看着，或者用快捷发言提醒房主' }); } return r; }; }
 function coopHsIn(m) { const H = HS; if (!H || H.phase !== 'live' || H.done) return; let st = H.staff.find(s => s.p2); if (!st && netUp()) st = hP2Pick(H); if (!st) return;
   if (m.a === 'go') hP2Go(H, st, m.x, m.y);
+  else if (m.a === 'key') { st.kds = (st.kds || []).filter(x => x !== m.d); if (!m.up) st.kds.push(m.d); st.kd = st.kds.length ? st.kds[st.kds.length - 1] : null; }
   else if (m.a === 'scare') { const v = m.key ? H.vis.find(q => q.u.key === m.key) : null; const r = hP2Scare(H, st, v); if (r) for (const c of NET.conns.values()) raw(c, { t: 'toast', s: r }); } }
 function guestHouse(h) {
   if (NETROLE !== 'guest') return;
@@ -262,13 +263,14 @@ function guestHsFrame(now) { const H = HS; if (!H || NETROLE !== 'guest' || STAT
   try { hsCam(H); hsDraw(H); hsTextLayer(H); if (H.phase === 'live' && !H.done) { hsHudTick(H); guestHudTick(H); } } catch (e) { }
   H.raf = requestAnimationFrame(guestHsFrame); }
 function guestHud(H) { try { hsHud(H); } catch (e) { } const hud = $('#hshud'); if (!hud) return; hud.classList.add('gview'); const bot = hud.querySelector('.hs-bot'); if (bot) bot.insertAdjacentHTML('beforeend', '<div class="p2bar"><span id="p2who"></span><button class="btn pri big" onclick="guestScare()">吓！</button></div>'); const c = $('#hsctr'); if (c) c.textContent = '📍 回到我'; }
-function guestHudTick(H) { const w = $('#p2who'); if (!w) return; const st = H.staff.find(s => s.p2); const t = st ? '你是 ' + PETS[st.k].n + (st.cd > 0 ? ' · 缓 ' + Math.ceil(st.cd) + ' 秒' : ' · 准备好了') + ' · 点地面走，点游客吓他' : '这一场没有员工站岗 · 看着房主吓人吧'; if (w.textContent !== t) w.textContent = t; }
+function guestHudTick(H) { const w = $('#p2who'); if (!w) return; const st = H.staff.find(s => s.p2); const t = st ? '你是 ' + PETS[st.k].n + (st.cd > 0 ? ' · 缓 ' + Math.ceil(st.cd) + ' 秒' : ' · 准备好了') + ' · 方向键走，点游客放招' : '这一场没有员工站岗 · 看着房主吓人吧'; if (w.textContent !== t) w.textContent = t; }
 function guestScare() { netSend({ t: 'hs', a: 'scare' }); sfx('tap'); }
 { const ht = window.hsTap; window.hsTap = function (ev) { if (NETROLE !== 'guest') return ht.apply(this, arguments); const H = HS; if (!H || H.phase !== 'live' || H.done) return; const [x, y] = hsPt(H, ev);
     const v = hActive(H).filter(q => Math.hypot(q.x - x, q.y - .5 - y) < 1).sort((a, b) => Math.hypot(a.x - x, a.y - y) - Math.hypot(b.x - x, b.y - y))[0];
     if (v) { netSend({ t: 'hs', a: 'scare', key: v.u.key }); sfx('tap'); return; } netSend({ t: 'hs', a: 'go', x, y }); sfx('tap'); };
-  const hk = window.hsKey; window.hsKey = function (e) { if (NETROLE !== 'guest') return hk.apply(this, arguments); const H = HS; if (!H || H.phase !== 'live' || H.done) return false; const st = H.staff.find(s => s.p2); const d = { ArrowDown: 0, s: 0, ArrowLeft: 1, a: 1, ArrowRight: 2, d: 2, ArrowUp: 3, w: 3 }[e.key];
-    if (d != null && st) { netSend({ t: 'hs', a: 'go', x: st.tx + HD[d][0], y: st.ty + HD[d][1] }); return true; } if (e.key === ' ' || e.key === 'Enter') { guestScare(); return true; } return false; };
+  const hk = window.hsKey; window.hsKey = function (e) { if (NETROLE !== 'guest') return hk.apply(this, arguments); const H = HS; if (!H || H.phase !== 'live' || H.done) return false; const st = H.staff.find(s => s.p2); const d = HKEYS[e.key];
+    if (d != null && st) { if (!e.repeat) netSend({ t: 'hs', a: 'key', d }); return true; } if (e.key === ' ' || e.key === 'Enter') { guestScare(); return true; } return false; };
+  const hu = window.hsKeyUp; window.hsKeyUp = function (e) { if (NETROLE !== 'guest') return hu.apply(this, arguments); const d = HKEYS[e.key]; if (d != null && HS) netSend({ t: 'hs', a: 'key', d, up: 1 }); };
   const hc = window.hsCenter; window.hsCenter = function () { if (NETROLE === 'guest' && HS) { HS.focusPt = null; return; } return hc.apply(this, arguments); }; }
 
 /* ---------- 小游戏：房主那边在玩，队友看同一块；队友操作时，按键发给房主 ---------- */

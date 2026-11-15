@@ -63,6 +63,9 @@ const { chromium } = require('playwright'); const PJ = require('fs').readFileSyn
   await G.evaluate(([x, y]) => __dbg.coopHsSend({ a: 'go', x: x + 3, y }), p0); await G.evaluate(([x, y]) => __dbg.coopHsSend({ a: 'go', x, y: y + 3 }), p0); await w(1600);
   const p1 = await H.evaluate(() => { const s = __dbg.HS.staff.find(q => q.p2); return [s.tx, s.ty]; });
   chk('guest moves the staff (' + p0 + ' → ' + p1 + ')', p1[0] !== p0[0] || p1[1] !== p0[1]);
+  { const dk = await H.evaluate(() => { const H = __dbg.HS, M = H.M, st = H.staff.find(q => q.p2), ks = ['ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowUp']; st.path = null; st.want = null; let best = 0, bn = -1; for (let d = 0; d < 4; d++) { let n = 0; while (n < 5 && !hmSolid(M, M.hs, st.tx + HD[d][0] * (n + 1), st.ty + HD[d][1] * (n + 1))) n++; if (n > bn) { bn = n; best = d; } } return [ks[best], bn, st.tx, st.ty]; });
+    await G.keyboard.down(dk[0]); await w(900); await G.keyboard.up(dk[0]); await w(500); const q = await H.evaluate(() => { const st = __dbg.HS.staff.find(q => q.p2); return [st.tx, st.ty, st.kd]; });
+    chk('guest arrow keys move the staff (' + dk + ' → ' + q + ')', Math.abs(q[0] - dk[2]) + Math.abs(q[1] - dk[3]) >= Math.min(2, dk[1]) && q[2] == null); }
   await H.evaluate(() => { const H = __dbg.HS, st = H.staff.find(q => q.p2), v = hActive(H)[0] || H.vis[0]; if (v) { v.x = st.x + 1; v.y = st.y; v.tx = Math.round(v.x); v.ty = Math.round(v.y); v.mv = null; if (v.st !== 'in') v.st = 'in'; } st.cd = 0; window.__sc0 = H.staff.find(q => q.p2).cd; });
   await G.evaluate(() => __dbg.guestScare()); await H.waitForFunction(() => { const st = __dbg.HS.staff.find(q => q.p2); return st && (st.want || st.pop > 0 || st.cd > 0); }, null, { timeout: 3000 }).catch(() => 0);
   chk('guest 吓！ reaches the host staff', await H.evaluate(() => { const st = __dbg.HS.staff.find(q => q.p2); return !!st && (!!st.want || st.pop > 0 || st.cd > 0); }));
