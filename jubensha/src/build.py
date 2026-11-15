@@ -1,7 +1,7 @@
 """把源码拼成单文件页面。
    out/index.html     独立页面（GitHub Pages / 本地）
    out/test.html      同上 + window.__dbg 测试钩子
-   out/artifact.html  claude.ai artifact 版（不带 doctype）
+   out/artifact.html  claude.ai artifact 版（不能联机，不显示游戏厅按钮）
    ../index.html      只有加 --deploy 才写
    构建前用 node 跑 check.js 检查剧本数据（id 拼错、引用不存在的线索等）"""
 import json, os, sys, re, collections, subprocess
@@ -22,7 +22,7 @@ IOS = '<meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobil
 def page(kind):
     pre = {'standalone': '', 'test': 'window.__dbg={};', 'artifact': 'window.__ARTIFACT__=1;'}[kind]
     body = tpl.replace('__IOSMETA__', IOS if kind != 'artifact' else '').replace('__SCRIPTS__', '<script>\n' + pre + '\n' + game + '\n</script>')
-    head = '<!doctype html>\n<html lang="zh-CN">\n<head>' if kind != 'artifact' else '<html lang="zh-CN">\n<head>'
+    head = '<!DOCTYPE html>\n<html lang="zh-CN">\n<head>'  # 新版 artifact 服务器也要求 doctype
     return head + body.replace('<body', '</head>\n<body', 1) + '\n</body>\n</html>\n'
 for k, f in [('standalone', 'index.html'), ('test', 'test.html'), ('artifact', 'artifact.html')]:
     open(os.path.join(out, f), 'w', encoding='utf-8').write(page(k))
