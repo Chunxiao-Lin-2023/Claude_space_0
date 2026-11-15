@@ -8,7 +8,7 @@ const UA = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/6
   // ---------- desktop ----------
   {
     const c = await b.newContext({ viewport: { width: 1280, height: 760 } }); await c.route(/fonts\.(googleapis|gstatic)/, r => r.abort());
-    const p = await c.newPage(); const errs = []; p.on('pageerror', e => errs.push(e.message));
+    const p = await c.newPage(); p.setDefaultTimeout(150000); const errs = []; p.on('pageerror', e => errs.push(e.message));
     await p.goto('http://localhost:8766/test.html'); await p.waitForFunction(() => window.__ready, null, { timeout: 120000 });
     await p.click('#soloBtn'); await p.waitForFunction(() => W && W.t > 0.5, null, { timeout: 90000 });
     await p.evaluate(() => { window.__dbg.god = true; W.clock = 999; W.res.wood = W.res.stone = W.res.steel = W.res.parts = 999; });
@@ -29,10 +29,10 @@ const UA = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/6
     ok('zombie walks toward the player', hunt2 < hunt - 1, hunt.toFixed(1) + ' -> ' + hunt2.toFixed(1));
     // parapets: starter house upper-floor walls on the north side; ground walls stay full
     const para = await p.evaluate(() => {
-      const X = W.radio.x, Y0 = W.radio.y - 4, i1 = ci(X - 1, Y0, 1), i0 = ci(X - 1, Y0, 0);
+      const X = W.radio.x, Y0 = W.radio.y - 5, i1 = ci(X - 1, Y0, 2), i0 = ci(X - 1, Y0, 0);
       const r = { up: isParapet(i1), ground: isParapet(i0) };
       // shoot north from upstairs behind the parapet, level and slightly down
-      const sx = X - 0.5, sy = Y0 + 1.5, sz = FH + 0.72;
+      const sx = X - 0.5, sy = Y0 + 1.5, sz = 2 * FH + 0.72;
       r.level = rayWorld(sx, sy, sz, 0, -1, 0, 20, { lean: LEAN }).d;
       const n = Math.hypot(1, 0.12); r.down = rayWorld(sx, sy, sz, 0, -1 / n, -0.12 / n, 20, { lean: LEAN }).d;
       r.noLeanFar = rayWorld(X - 0.5, Y0 + 3.5, sz, 0, -1 / Math.hypot(1, 0.25), -0.25 / Math.hypot(1, 0.25), 20).d;
@@ -46,7 +46,7 @@ const UA = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/6
     // build targeting: pointing at the top of a wall stacks, at the floor builds on it, drag paints a row
     const bt = await p.evaluate(() => {
       const me = W.p[0], X = W.radio.x + 7, Y = W.radio.y + 2; me.x = X - 1.5; me.y = Y + 1.5; me.L = 0; me.z = 0; me.sel = 1; me.build = true; me.demo = false;
-      for (let x = X - 2; x <= X + 6; x++) for (let y = Y - 3; y <= Y + 5; y++) for (let L = 0; L < 3; L++) { const i = ci(x, y, L); if (W.blk[i] && W.blk[i] !== 20 && W.blk[i] !== 23) W.blk[i] = 0; W.slab[i] = 0; }
+      for (let x = X - 1; x <= X + 6; x++) for (let y = Y - 3; y <= Y + 5; y++) for (let L = 0; L < 3; L++) { const i = ci(x, y, L); if (W.blk[i] && W.blk[i] !== 20 && W.blk[i] !== 23) W.blk[i] = 0; W.slab[i] = 0; }
       W.ver++; recomputeStab(); CAM.tx = me.x; CAM.ty = me.y; CAM.zoom = 9; updateCamera(1); updateCamera(1);
       const r = {};
       let [sx, sy] = w2s(X + 0.5, Y + 0.5, 0.02); r.floor = pickBuild(sx, sy, me, false);
@@ -74,26 +74,26 @@ const UA = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/6
     ok('drag paints a straight row', row === 5, 'row ' + row);
     // stairs: walking off the top requires a push; side entry is blocked by rails
     const st = await p.evaluate(() => {
-      const X1 = W.radio.x + 4, Y0 = W.radio.y - 4, sx = X1 - 1, sy = Y0 + 2; // stairs going north, up to (sx, sy-1, 1)
-      return { st: B[W.blk[ci(sx, sy, 0)]].stairs, dir: W.bdir[ci(sx, sy, 0)], side: transition(sx - 1, sy, sx, sy, 1, 'p', true), front: transition(sx, sy - 1, sx, sy, 1, 'p', true), sx, sy };
+      const sx = W.radio.x - 1, sy = W.radio.y - 2; // ladder hung on the partition, facing east, up to (sx+1, sy, 1)
+      return { st: B[W.blk[ci(sx, sy, 0)]].stairs, dir: W.bdir[ci(sx, sy, 0)], wall: B[W.blk[ci(sx + 1, sy, 0)]].key, side: transition(sx, sy - 1, sx, sy, 1, 'p', true), front: transition(sx + 1, sy, sx, sy, 1, 'p', true), sx, sy };
     });
-    ok('stair side entry blocked, front entry allowed', st.st && st.side === -1 && st.front === 0, JSON.stringify(st));
+    ok('ladder hangs on a wall; side entry blocked, front entry allowed', st.st && st.dir === 0 && st.wall === 'brick' && st.side === -1 && st.front === 0, JSON.stringify(st));
     const hold = await p.evaluate(async () => {
-      const me = W.p[0], X1 = W.radio.x + 4, Y0 = W.radio.y - 4, sx = X1 - 1, sy = Y0 + 2; me.build = false;
-      me.x = sx + 0.5; me.y = sy - 1 + 0.7; me.L = 1; me.vx = me.vy = 0; me.edgeT = 0;
+      const me = W.p[0], sx = W.radio.x - 1, sy = W.radio.y - 2; me.build = false;
+      me.x = sx + 1.3; me.y = sy + 0.5; me.L = 1; me.vx = me.vy = 0; me.edgeT = 0;
       const want = W.p[0];
       INP.keys = {}; const [fx, fy] = camFwd();
       // walk "south" (+y) in world terms using a direct input override
       const r = { L0: me.L };
-      for (let k = 0; k < 3; k++) { me.inp.mx = 0; me.inp.my = 1; stepMove(me, 1 / 60); }
+      for (let k = 0; k < 3; k++) { me.inp.mx = -1; me.inp.my = 0; stepMove(me, 1 / 60); }
       r.afterTap = me.L;
-      for (let k = 0; k < 40; k++) { me.inp.mx = 0; me.inp.my = 1; stepMove(me, 1 / 60); }
-      r.afterPush = me.L; me.inp.my = 0; return r;
+      for (let k = 0; k < 40; k++) { me.inp.mx = -1; me.inp.my = 0; stepMove(me, 1 / 60); }
+      r.afterPush = me.L; me.inp.mx = 0; return r;
     });
     ok('brief step does not go down, pushing does', hold.afterTap === 1 && hold.afterPush === 0, JSON.stringify(hold));
     // entrances: starter house has 4 doors; every town house opens on >= 3 sides
     const ent = await p.evaluate(() => {
-      const X0 = W.radio.x - 4, X1 = W.radio.x + 4, Y0 = W.radio.y - 4, Y1 = W.radio.y + 4; let doors = 0;
+      const X0 = W.radio.x - 5, X1 = W.radio.x + 5, Y0 = W.radio.y - 5, Y1 = W.radio.y + 5; let doors = 0;
       for (let x = X0; x <= X1; x++) for (let y = Y0; y <= Y1; y++) if (W.blk[ci(x, y, 0)] === 7) doors++;
       const fam = TOWN_HOUSES.map(([x0, y0, x1, y1]) => {
         const side = (ax, bx, ay, by) => { for (let x = ax; x <= bx; x++) for (let y = ay; y <= by; y++) if (!W.blk[ci(x, y, 0)] && W.tt[y * MW + x] !== TT.water) return 1; return 0; };
@@ -114,7 +114,7 @@ const UA = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/6
   {
     const c = await b.newContext({ viewport: { width: 852, height: 393 }, hasTouch: true, isMobile: true, deviceScaleFactor: 1, userAgent: UA });
     await c.route(/fonts\.(googleapis|gstatic)/, r => r.abort());
-    const p = await c.newPage(); const errs = []; p.on('pageerror', e => errs.push(e.message));
+    const p = await c.newPage(); p.setDefaultTimeout(150000); const errs = []; p.on('pageerror', e => errs.push(e.message));
     await p.goto('http://localhost:8766/test.html'); await p.waitForFunction(() => window.__ready, null, { timeout: 120000 });
     await p.tap('#soloBtn'); await p.evaluate(() => { window.__dbg.god = true; W.clock = 999; }); await p.waitForFunction(() => W && W.t > 0.5, null, { timeout: 90000 });
     const cdp = await c.newCDPSession(p); const tch = (type, pts) => cdp.send('Input.dispatchTouchEvent', { type, touchPoints: pts });

@@ -204,7 +204,7 @@ const BAL = {
   bloodMul: 1.5,
   hpMul: n => 1 + 0.13 * (n - 1),
   spdMul: n => 1 + 0.02 * (n - 1),
-  spawnDur: n => 80 + n * 5,      // the horde trickles in over this long
+  spawnDur: n => 50 + n * 4,      // the horde trickles in over this long
   nightMin: n => 150 + n * 6,     // a night lasts at least this long; small groups keep coming until then
   nightTrickleCD: 7, nightTrickleMax: 6,
   dayStragglers: 6, dayStragglerCD: 10,

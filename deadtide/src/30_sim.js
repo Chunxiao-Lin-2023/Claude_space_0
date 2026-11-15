@@ -488,7 +488,7 @@ function doDemolish(p, x, y, L) {
 function edgeSpawns() {
   // zombies come out of the wilds on a square ring around the radio (or the map edge if that is closer)
   const out = { 0: [], 1: [], 2: [], 3: [] }; // by side: 0 east, 1 south, 2 west, 3 north
-  const { x: RX, y: RY } = W.radio, D = 36;
+  const { x: RX, y: RY } = W.radio, D = 27;
   const add = (x, y, side) => { x = clamp(x, 0, MW - 1); y = clamp(y, 0, MH - 1); const L = gAt(x, y); if (standable(x, y, L, 'z') && W.ff.rw[ci(x, y, L)] < Infinity) out[side].push([x, y, L]); };
   for (let k = -D; k <= D; k++) { add(RX + D, RY + k, 0); add(RX + k, RY + D, 1); add(RX - D, RY + k, 2); add(RX + k, RY - D, 3); }
   return out;
@@ -508,7 +508,7 @@ function startNight() {
     let r = rand() * tot, type = 'walker';
     for (const key in wts) { r -= wts[key]; if (r <= 0) { type = key; break; } }
     const frac = k / count, burst = Math.floor(frac * 6) / 6;
-    const t0 = lerp(burst, frac, 0.55) * dur + rand() * 3, side = front[Math.floor(rand() * front.length)];
+    const t0 = (frac < 0.25 ? frac * 12 : lerp(burst, frac, 0.55) * dur) + rand() * 2.5, side = front[Math.floor(rand() * front.length)]; // a quarter rushes in at once
     for (let j = 0; j < (type === 'dog' ? 3 : 1); j++) q.push({ t: t0 + j * 0.5, k: type, side }); // dogs come in packs
   }
   if (blood) q.push({ t: dur * 0.55, k: 'boss', side: front[0] });

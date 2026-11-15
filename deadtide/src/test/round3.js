@@ -5,7 +5,7 @@ require('fs').mkdirSync(OUT, { recursive: true });
   const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome', args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] });
   let fails = 0; const ok = (name, cond, info) => { console.log((cond ? 'PASS ' : 'FAIL ') + name + (info ? '  ' + info : '')); if (!cond) fails++; };
   const c = await b.newContext({ viewport: { width: 1280, height: 760 } }); await c.route(/fonts\.(googleapis|gstatic)/, r => r.abort());
-  const p = await c.newPage(); const errs = []; p.on('pageerror', e => errs.push(e.message));
+  const p = await c.newPage(); p.setDefaultTimeout(150000); const errs = []; p.on('pageerror', e => errs.push(e.message));
   await p.goto('http://localhost:8766/test.html'); await p.waitForFunction(() => window.__ready, null, { timeout: 120000 });
   await p.click('#soloBtn'); await p.waitForFunction(() => W && W.t > 0.5, null, { timeout: 90000 });
   await p.evaluate(() => { window.__dbg.god = true; W.clock = 999; W.res.wood = W.res.stone = W.res.steel = W.res.parts = 999; });
@@ -73,13 +73,24 @@ require('fs').mkdirSync(OUT, { recursive: true });
   ok('pushing into it vaults back over automatically', auto <= -2, 'moved ' + auto);
   // ladders slow zombies; traps hold them
   const lr = await p.evaluate(() => {
-    const X1 = W.radio.x + 4, Y0 = W.radio.y - 4; const L1 = B[W.blk[ci(X1 - 1, Y0 + 2, 0)]], L2 = B[W.blk[ci(W.radio.x - 3, W.radio.y, 0)]];
+    const L1 = B[W.blk[ci(W.radio.x - 1, W.radio.y - 2, 0)]], L2 = B[W.blk[ci(W.radio.x + 1, W.radio.y + 1, 0)]];
     const me = W.p[0], X = W.radio.x + 12, Y = W.radio.y + 14; W.blk[ci(X, Y, 0)] = 15; W.bhp[ci(X, Y, 0)] = 40; W.ver++;
     const z = spawnZombie('walker', 0); z.x = X + 0.5; z.y = Y + 0.5; z.L = 0; z.z = 0; stepZombies(1 / 60);
     return { ladders: L1.name + ',' + L2.name, stun: z.stun, trapGone: W.blk[ci(X, Y, 0)] !== 15 };
   });
   ok('starter house has two ladders', lr.ladders === '爬梯,爬梯', lr.ladders);
   ok('bear trap holds a zombie and breaks', lr.stun > 2 && lr.trapGone, JSON.stringify(lr));
+  // houses: several storeys, ladders all hang on walls
+  const hs = await p.evaluate(() => {
+    let maxSt = 0, lad = 0, flush = 0, ok2 = 0;
+    for (const [x0, y0, x1, y1, st] of TOWN_HOUSES) maxSt = Math.max(maxSt, st);
+    for (let i = 0; i < NC; i++) if (W.blk[i] === 6) { lad++; const x = cx_(i), y = cy_(i), L = cl_(i), [dx, dy] = DIRS[W.bdir[i]], f = blkAt(x + dx, y + dy, L); if (B[f].top && (B[f].P || B[f].Z)) flush++; if (standable(x + dx, y + dy, L + 1, 'p')) ok2++; }
+    return { maxSt, lad, flush, ok2, size: TOWN_HOUSES.map(h => (h[2] - h[0] + 1) + 'x' + (h[3] - h[1] + 1) + '/' + h[4]).join(' ') };
+  });
+  ok('town has 3-4 storey blocks and every ladder hangs on a wall with somewhere to step off', hs.maxSt >= 4 && hs.lad >= 20 && hs.flush === hs.lad && hs.ok2 === hs.lad, JSON.stringify(hs));
+  const ld = await p.evaluate(() => { const me = W.p[0], X = W.radio.x + 12, Y = W.radio.y + 5; for (let x = X - 1; x <= X + 2; x++) for (let y = Y - 1; y <= Y + 1; y++) for (let l = 0; l < 2; l++) { W.blk[ci(x, y, l)] = 0; W.slab[ci(x, y, l)] = 0; } W.blk[ci(X + 1, Y, 0)] = 2; W.bhp[ci(X + 1, Y, 0)] = 340; W.ver++; recomputeStab();
+    me.x = X - 1.5; me.y = Y + 0.5; me.L = 0; me.sel = 6; me.sdir = 3; const why = buildWhy(me, X, Y, 0), dir = me.sdir, lonely = canPlace(X - 1, Y - 1, 0, 6, 0); return { why, dir, lonely }; });
+  ok('ladders turn to face the wall next to them; none in open floor', ld.why === '' && ld.dir === 0 && ld.lonely !== '', JSON.stringify(ld));
   // build confirmation
   const bc = await p.evaluate(() => {
     const me = W.p[0], X = W.radio.x + 7, Y = W.radio.y + 3; me.x = X - 1.5; me.y = Y + 1.5; me.L = 0; me.build = true; me.demo = false; me.sel = 2; SET.bconf = 1;

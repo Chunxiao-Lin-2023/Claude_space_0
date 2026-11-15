@@ -270,6 +270,7 @@ function paintBuild(sx, sy, start, demo) {
 function touchBuild(sx, sy, start) { paintBuild(sx, sy, start, W.p[ME].demo); }
 function buildWhy(me, x, y, L) {
   const i = inMap(x, y) && L >= 0 && L < ML ? ci(x, y, L) : -1;
+  if (B[me.sel].stairs && i >= 0 && !W.blk[i]) me.sdir = ladderDir(x, y, L, me.sdir); // ladders turn to face the wall they hang on
   const slab = B[me.sel].slab, cur = i < 0 ? 0 : slab ? W.slab[i] : W.blk[i];
   if (cur && B[cur].cost) { // repair (only if damaged)
     if ((slab ? W.shp[i] : W.bhp[i]) >= B[cur].hp * 0.98) return slab ? '这里已经有楼板了' : '这里已经有东西了';
@@ -291,7 +292,22 @@ function bindBtn(id, down, up) {
   el.addEventListener('pointerup', end); el.addEventListener('pointercancel', end);
 }
 bindBtn('tReload', () => inGame() && (W.p[ME].build ? rotStairs() : act('reload')));
-bindBtn('tWpn', () => inGame() && cycleWpn(1));
+bindBtn('tWpn', () => { if (!inGame()) return; const me = W.p[ME]; if (me.owned.filter(Boolean).length <= 2) cycleWpn(1); else toggleWpick(); });
+// weapon picker: every gun you own in one tap instead of cycling through them
+function toggleWpick(force) {
+  const el = $('wpick'), open = force != null ? force : el.classList.contains('hidden');
+  el.classList.toggle('hidden', !open); if (!open) return;
+  const me = W.p[ME]; el.innerHTML = '';
+  WPN.forEach((w, k) => {
+    if (!me.owned[k]) return;
+    const b = document.createElement('button'); b.className = k === me.wpn ? 'sel' : '';
+    b.innerHTML = '<b>' + w.name + '</b><span>' + (w.inf ? '∞' : me.mag[k] + ' / ' + me.ammo[k]) + '</span>';
+    b.addEventListener('pointerdown', e => { e.stopPropagation(); e.preventDefault(); act('wpn', k); sfx('click'); toggleWpick(false); });
+    el.appendChild(b);
+  });
+  const r = $('tWpn').getBoundingClientRect(); el.style.right = Math.max(8, VW - r.right) + 'px'; el.style.bottom = (VH - r.top + 8) + 'px';
+}
+document.addEventListener('pointerdown', e => { const el = $('wpick'); if (el && !el.classList.contains('hidden') && !el.contains(e.target) && e.target.id !== 'tWpn' && !$('tWpn').contains(e.target)) toggleWpick(false); }, true);
 bindBtn('tLUp', () => viewStep(1)); bindBtn('tLDn', () => viewStep(-1));
 bindBtn('vToggle', () => { document.body.classList.toggle('vopen'); $('vToggle').classList.toggle('on', document.body.classList.contains('vopen')); sfx('click'); });
 bindBtn('tShove', () => inGame() && act('shove'));

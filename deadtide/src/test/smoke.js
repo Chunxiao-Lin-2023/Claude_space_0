@@ -4,7 +4,7 @@ require('fs').mkdirSync(OUT, { recursive: true });
 (async () => {
   const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome', args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] });
   const c = await b.newContext({ viewport: { width: 1280, height: 800 } }); await c.route(/fonts\.(googleapis|gstatic)/, r => r.abort());
-  const p = await c.newPage(); const errs = [];
+  const p = await c.newPage(); p.setDefaultTimeout(150000); const errs = [];
   p.on('pageerror', e => errs.push(e.message)); p.on('console', m => { if (m.type() === 'error' && !/fonts|Failed to load/.test(m.text())) errs.push(m.text().slice(0, 300)); });
   await p.goto('http://localhost:8766/test.html'); await p.waitForFunction(() => window.__ready, null, { timeout: 120000 });
   // the software GPU in CI renders ~2 fps: simulate with drawing off, render only for screenshots

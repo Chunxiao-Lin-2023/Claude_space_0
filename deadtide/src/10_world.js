@@ -33,10 +33,10 @@ const inZone = (x, y) => radioDist(x, y) <= BUILD_R;
    128 x 128: river and forest in the west, the camp north-west of centre, hills to the north-east, a farm in the north
    and a big ruined town (three rows of blocks on a street grid) filling the south and south-east. Town lots: [x0, y0, x1, y1, storeys]. */
 const TOWN_HOUSES = [
-  // spread out along the streets with yards, a park, a gas station, a parking lot and a junkyard in between
-  [35, 62, 43, 70, 1], [62, 58, 70, 66, 2], [78, 66, 87, 74, 1], [96, 57, 104, 65, 2], [113, 64, 122, 72, 1],
-  [39, 83, 50, 91, 2], [64, 87, 72, 96, 1], [78, 79, 86, 86, 1], [95, 84, 104, 92, 2], [113, 79, 122, 87, 1],
-  [35, 108, 44, 116, 1], [47, 118, 55, 125, 2], [62, 104, 73, 113, 2], [79, 113, 88, 121, 1], [96, 106, 106, 115, 2], [113, 114, 123, 123, 1],
+  // [x0, y0, x1, y1, storeys]: bigger blocks of 1-4 storeys with yards between them
+  [33, 62, 45, 72, 2], [62, 62, 74, 72, 3], [77, 64, 88, 74, 1], [95, 57, 107, 67, 4], [112, 62, 124, 73, 2],
+  [37, 81, 50, 93, 3], [62, 86, 74, 97, 2], [78, 79, 88, 88, 1], [94, 82, 106, 94, 3], [112, 79, 124, 90, 2],
+  [33, 106, 45, 117, 2], [47, 116, 55, 125, 1], [61, 104, 74, 115, 4], [78, 111, 89, 122, 2], [95, 104, 107, 116, 3], [112, 112, 124, 124, 2],
   // the barn up at the farm
   [48, 3, 58, 11, 1],
 ];
@@ -95,61 +95,84 @@ function genMap(seed) {
   const put = (x, y, L, id, d) => { blk[ci(x, y, L)] = id; bhp[ci(x, y, L)] = B[id].hp || 1; if (d != null) bdir[ci(x, y, L)] = d; };
   const putS = (x, y, L, id) => { slab[ci(x, y, L)] = id; shp[ci(x, y, L)] = B[id].hp; };
   for (let y = RY - 7; y <= RY + 7; y++) for (let x = RX - 7; x <= RX + 7; x++) { G[col(x, y)] = 0; if (tt[col(x, y)] !== TT.road) tt[col(x, y)] = TT.grass; for (let L = 0; L < ML; L++) blk[ci(x, y, L)] = 0; }
-  const X0 = RX - 4, X1 = RX + 4, Y0 = RY - 4, Y1 = RY + 4;
+  // 11 x 11, two full floors and a roof terrace. A short partition wall in the middle carries the ladders:
+  // they hang flat on the wall and climb through a hatch in the floor above onto the top of the wall.
+  const X0 = RX - 5, X1 = RX + 5, Y0 = RY - 5, Y1 = RY + 5;
+  const slit = (x, y) => (y === Y0 || y === Y1) && Math.abs(x - RX) === 3 || (x === X0 || x === X1) && Math.abs(y - RY) === 3;
+  const hatch = new Set([(RX - 1) + ',' + (RY - 2) + ',1', (RX + 1) + ',' + (RY + 1) + ',1', (RX + 1) + ',' + (RY + 2) + ',2', (RX - 1) + ',' + (RY - 1) + ',2']);
   for (let x = X0; x <= X1; x++) for (let y = Y0; y <= Y1; y++) {
     const edge = x === X0 || x === X1 || y === Y0 || y === Y1;
-    if (edge) {
-      let id = 2;
-      if ((x === RX && (y === Y1 || y === Y0)) || ((x === X0 || x === X1) && y === RY)) id = 7; // a door on every side
-      if ((y === Y0 && (x === RX - 2 || x === RX + 2)) || (x === X1 && (y === RY - 2 || y === RY + 2)) || (x === X0 && y === RY + 2) || (y === Y1 && x === RX + 3)) id = 8;
-      put(x, y, 0, id);
-    } else if (y <= RY && !(x === X1 - 1 && y === Y0 + 2) && !(x === X0 + 1 && y === RY)) putS(x, y, 1, 4);
-    if ((x === X0 || y === Y0 || x === X1) && y <= RY) { let id = 1; if (y === Y0 && (x === RX - 2 || x === RX + 2)) id = 8; if ((x === X0 || x === X1) && y === RY - 2) id = 8; put(x, y, 1, id); }
-    if (y === RY + 1 && x > X0 && x < X1) putS(x, y, 1, 4);
+    if (edge) put(x, y, 0, (x === RX && (y === Y0 || y === Y1)) || ((x === X0 || x === X1) && y === RY) ? 7 : slit(x, y) ? 8 : 2); // a door on every side
+    for (const L of [1, 2]) if (!hatch.has(x + ',' + y + ',' + L)) putS(x, y, L, 4);
+    if (edge) { put(x, y, 1, slit(x, y) ? 8 : 1); put(x, y, 2, 1); } // first-floor walls; waist-high parapet round the roof
   }
-  put(X1 - 1, Y0 + 2, 0, 6, 3); put(X0 + 1, RY, 0, 6, 3); // two ladders up to the first floor
-  put(X0 + 2, Y0 + 2, 1, 10);      // lamp upstairs
+  for (let y = RY - 2; y <= RY + 2; y++) { if (y !== RY) put(RX, y, 0, 2); if (y !== RY - 2 && y !== RY + 1) put(RX, y, 1, 1); }
+  put(RX - 1, RY - 2, 0, 6, 0); put(RX + 1, RY + 1, 0, 6, 2); // ground -> first floor
+  put(RX + 1, RY + 2, 1, 6, 2); put(RX - 1, RY - 1, 1, 6, 0); // first floor -> roof
+  put(X0 + 2, Y0 + 2, 1, 10); put(X1 - 1, Y1 - 1, 2, 10);    // lamps
   put(RX - 2, RY + 2, 0, 31);
-  // town: plastered ruins; two-storey houses keep half an upper floor with stairs up
-  const spotsAt = [];
+  // town: plastered ruins of 1-4 storeys. Concrete floors, a partition wall on every floor, and two ladders per floor hung on
+  // that wall, each climbing through a hatch onto the top of the wall (a doorway in the partition upstairs).
   TOWN_HOUSES.forEach(([x0, y0, x1, y1, st], k) => {
     const rr = mulberry(seed ^ (k * 7919 + 17));
-    for (let x = x0; x <= x1; x++) for (let y = y0; y <= y1; y++) { if (G[col(x, y)] !== 0 || tt[col(x, y)] === TT.water) continue; for (let L = 0; L < 3; L++) blk[ci(x, y, L)] = 0; if (tt[col(x, y)] !== TT.road) tt[col(x, y)] = TT.dirt; }
-    const ok = (x, y) => G[col(x, y)] === 0 && tt[col(x, y)] !== TT.water && tt[col(x, y)] !== TT.road;
-    const west = hash2(k, 77) < 0.5, upX0 = west ? x0 : Math.ceil((x0 + x1) / 2), upX1 = west ? Math.floor((x0 + x1) / 2) : x1;
-    for (let x = x0; x <= x1; x++) for (let y = y0; y <= y1; y++) {
-      if (!ok(x, y)) continue;
-      const edge = x === x0 || x === x1 || y === y0 || y === y1, upper = st === 2 && x >= upX0 && x <= upX1, roofed = ARCH.roofCells.has(x + ',' + y + ',0');
-      if (edge) {
-        if (!roofed && !upper && rr() < 0.2) { if (rr() < 0.5) put(x, y, 0, 29); continue; } // gaps / rubble
-        put(x, y, 0, 24);
-        if (st === 1 && !roofed && rr() < 0.3) put(x, y, 1, 24);
-      }
-      if (st === 2 && x >= upX0 && x <= upX1) {
-        const ue = x === upX0 || x === upX1 || y === y0 || y === y1;
-        if (!edge) putS(x, y, 1, 4);
-        if (ue && (edge || (x === (west ? upX1 : upX0)))) { if (edge || y % 3) put(x, y, edge ? 1 : 0, 24); if (edge && !ARCH.roofCells.has(x + ',' + y + ',1') && rr() < 0.15) blk[ci(x, y, 1)] = 0; }
+    const ok = (x, y) => inMap(x, y) && G[col(x, y)] === 0 && tt[col(x, y)] !== TT.water && tt[col(x, y)] !== TT.road;
+    for (let x = x0; x <= x1; x++) for (let y = y0; y <= y1; y++) { if (G[col(x, y)] !== 0 || tt[col(x, y)] === TT.water) continue; for (let L = 0; L <= st + 1 && L < ML; L++) { blk[ci(x, y, L)] = 0; slab[ci(x, y, L)] = 0; } if (tt[col(x, y)] !== TT.road) tt[col(x, y)] = TT.dirt; }
+    const vert = x1 - x0 >= y1 - y0, px = Math.floor((x0 + x1) / 2), py = Math.floor((y0 + y1) / 2), len = vert ? y1 - y0 - 1 : x1 - x0 - 1;
+    const onPart = (x, y) => vert ? x === px && y > y0 && y < y1 : y === py && x > x0 && x < x1;
+    const pc = a => vert ? [px, y0 + 1 + a] : [x0 + 1 + a, py];                 // partition cell #a
+    // ladders: two per storey (not on the roof), on opposite faces of the partition
+    const lad = [], used = new Set(), key = (x, y) => x + ',' + y;
+    if (st > 1) for (let L = 0; L < st; L++) for (let j = 0; j < 2; j++) {
+      for (let tries = 0; tries < 12; tries++) {
+        const a = 1 + Math.floor(rr() * Math.max(1, len - 2)), [fx, fy] = pc(a), sd = (j + L) % 2 ? 1 : -1;
+        const cx = vert ? fx + sd : fx, cy = vert ? fy : fy + sd, dir = vert ? (sd > 0 ? 2 : 0) : (sd > 0 ? 3 : 1);
+        if (used.has(key(fx, fy) + L) || used.has(key(cx, cy) + L) || used.has(key(cx, cy) + (L + 1)) || used.has(key(fx, fy) + (L + 1))) continue;
+        used.add(key(fx, fy) + L); used.add(key(cx, cy) + L); used.add(key(cx, cy) + (L + 1)); used.add(key(fx, fy) + (L + 1));
+        lad.push({ L, cx, cy, dir, fx, fy }); break;
       }
     }
-    // entrances: at least three sides get a real doorway (gaps above might otherwise be filled with rubble)
+    const isExit = (x, y, L) => lad.some(q => q.L === L - 1 && q.fx === x && q.fy === y), isHatch = (x, y, L) => lad.some(q => q.L === L - 1 && q.cx === x && q.cy === y);
+    const isFront = (x, y, L) => lad.some(q => q.L === L && q.fx === x && q.fy === y);
+    for (let L = 0; L < st; L++) {
+      const door = 1 + Math.floor(rr() * len);                                    // one doorway through the partition per floor
+      for (let x = x0; x <= x1; x++) for (let y = y0; y <= y1; y++) {
+        if (!ok(x, y)) continue;
+        const edge = x === x0 || x === x1 || y === y0 || y === y1, corner = (x === x0 || x === x1) && (y === y0 || y === y1);
+        if (edge) {
+          if (!corner && rr() < (L === 0 ? 0.12 : 0.22)) { if (L === 0 && rr() < 0.5) put(x, y, 0, 29); continue; } // gaps / broken windows
+          put(x, y, L, 24);
+        } else if (onPart(x, y)) {
+          const a = vert ? y - y0 - 1 : x - x0 - 1;
+          if ((a === door - 1 || isExit(x, y, L)) && !isFront(x, y, L)) continue;
+          put(x, y, L, 24);
+        }
+      }
+    }
+    for (let L = 1; L <= st && L < ML; L++) for (let x = x0; x <= x1; x++) for (let y = y0; y <= y1; y++) {
+      if (!ok(x, y) || isHatch(x, y, L)) continue;
+      if (L < st && !onPart(x, y) && !(x === x0 || x === x1 || y === y0 || y === y1) && rr() < 0.03 && !lad.some(q => Math.abs(q.cx - x) + Math.abs(q.cy - y) < 3)) continue; // a few collapsed holes
+      if (st > 1 || L < st) putS(x, y, L, 5);
+    }
+    if (st === 1) for (let x = x0; x <= x1; x++) for (let y = y0; y <= y1; y++) if (ok(x, y) && slab[ci(x, y, 1)]) { slab[ci(x, y, 1)] = 0; }
+    for (const q of lad) if (q.L + 1 < st || st > 1) { blk[ci(q.cx, q.cy, q.L)] = 0; put(q.cx, q.cy, q.L, 6, q.dir); }
+    // entrances: at least three sides get a real doorway on the ground floor
     const sides = [[x0 + 1, x1 - 1, y0, y0], [x0 + 1, x1 - 1, y1, y1], [x0, x0, y0 + 1, y1 - 1], [x1, x1, y0 + 1, y1 - 1]];
-    for (let k = sides.length - 1; k > 0; k--) { const j = Math.floor(rr() * (k + 1)); [sides[k], sides[j]] = [sides[j], sides[k]]; }
+    for (let s = sides.length - 1; s > 0; s--) { const j = Math.floor(rr() * (s + 1)); [sides[s], sides[j]] = [sides[j], sides[s]]; }
     let open = 0;
     for (const [ax, bx, ay, by] of sides) {
       const cells = []; for (let x = ax; x <= bx; x++) for (let y = ay; y <= by; y++) if (ok(x, y)) cells.push([x, y]);
       if (!cells.length) continue;
       if (cells.some(([x, y]) => !blk[ci(x, y, 0)])) { open++; continue; }
       if (open >= 3) continue;
-      // prefer a doorway outside the upper floor, near the middle of the side
-      cells.sort((a, b) => ((st === 2 && a[0] >= upX0 && a[0] <= upX1) - (st === 2 && b[0] >= upX0 && b[0] <= upX1)) * 4 + (Math.abs(a[0] - (ax + bx) / 2) + Math.abs(a[1] - (ay + by) / 2)) - (Math.abs(b[0] - (ax + bx) / 2) + Math.abs(b[1] - (ay + by) / 2)) + (rr() - 0.5));
-      const [x, y] = cells[0], upper = st === 2 && x >= upX0 && x <= upX1;
-      blk[ci(x, y, 0)] = 0; if (!upper) blk[ci(x, y, 1)] = 0; open++;
+      cells.sort((a, b) => Math.abs(a[0] - (ax + bx) / 2) + Math.abs(a[1] - (ay + by) / 2) - Math.abs(b[0] - (ax + bx) / 2) - Math.abs(b[1] - (ay + by) / 2));
+      const [x, y] = cells[0]; blk[ci(x, y, 0)] = 0; open++;
     }
-    if (st === 2) { const sx = west ? upX1 + 1 : upX0 - 1; blk[ci(sx, y0 + 3, 0)] = 0; put(sx, y0 + 3, 0, 6, 3); blk[ci(sx, y0 + 2, 0)] = 0; slab[ci(sx, y0 + 2, 1)] = 0; putS(sx, y0 + 2, 1, 4); }
-    // loot inside: crates and rubble piles, one upstairs in two-storey houses
-    const inner = () => [x0 + 1 + Math.floor(rr() * (x1 - x0 - 1)), y0 + 1 + Math.floor(rr() * (y1 - y0 - 1))];
-    for (let n = 0; n < 3; n++) { const [x, y] = inner(); if (!blk[ci(x, y, 0)] && ok(x, y)) put(x, y, 0, n ? 29 : 26); }
-    if (st === 2) { const x = west ? upX0 + 1 : upX1 - 1, y = y1 - 1; if (slab[ci(x, y, 1)] && !blk[ci(x, y, 1)]) put(x, y, 1, 26); }
+    // loot on every floor and the roof
+    for (let L = 0; L <= st; L++) for (let n = 0; n < (L === 0 ? 3 : 2); n++) {
+      const x = x0 + 1 + Math.floor(rr() * (x1 - x0 - 1)), y = y0 + 1 + Math.floor(rr() * (y1 - y0 - 1)), i = ci(x, y, L);
+      if (L >= ML || blk[i] || !ok(x, y) || (L > 0 && !slab[i]) || onPart(x, y) || isHatch(x, y, L) || lad.some(q => q.L === L && Math.abs(q.cx - x) + Math.abs(q.cy - y) < 2)) continue;
+      put(x, y, L, n ? 29 : 26);
+    }
   });
   // landmarks: gas station, parking lot, park, military checkpoint, junkyard, campsites
   const free = (x, y) => inMap(x, y) && G[col(x, y)] === 0 && tt[col(x, y)] !== TT.water && !blk[ci(x, y, 0)] && !slab[ci(x, y, 0)];
@@ -242,6 +265,11 @@ function supportIf(x, y, L, id) {
   return s;
 }
 // can block `id` (with stairs dir) go into cell (x,y,L)? returns '' or a reason
+// which way can a ladder in (x,y,L) face? the preferred facing if it works, else any wall next to it
+function ladderDir(x, y, L, pref) {
+  for (const d of [pref, 0, 1, 2, 3]) if (d != null && !canPlace(x, y, L, 6, d)) return d;
+  return pref;
+}
 function canPlace(x, y, L, id, dir) {
   if (!inMap(x, y) || !inZone(x, y)) return '只能在营地周围的建造区（黄框）内建造';
   if (L < 0 || L >= ML - 1) return '太高了';
@@ -251,12 +279,17 @@ function canPlace(x, y, L, id, dir) {
   if (Bi.slab) {
     if (W.slab[i]) return '这里已经有楼板了';
     if (L === g && !water) return '地面上不用铺楼板';
-    if (B[W.blk[i]].stairs) return '楼梯口不能铺楼板';
-    if (L > 0 && B[blkAt(x, y, L - 1)].stairs) return '这是楼梯口，留空才能上下';
+    if (B[W.blk[i]].stairs) return '梯子这格不能铺楼板';
+    if (L > 0 && B[blkAt(x, y, L - 1)].stairs) return '这是梯子口，留空才能上下';
   } else {
     if (water && !W.slab[i]) return '水面要先铺楼板';
     if (W.blk[i]) return '这里已经有东西了';
-    if (Bi.stairs) { if (L + 1 >= ML) return '太高了'; if (W.slab[ci(x, y, L + 1)]) return '楼梯上方有楼板，先拆掉'; }
+    if (Bi.stairs) {
+      if (L + 1 >= ML) return '太高了'; if (W.slab[ci(x, y, L + 1)]) return '梯子上方有楼板，先拆掉';
+      const [dx, dy] = DIRS[dir || 0], fb = blkAt(x + dx, y + dy, L);
+      if (!B[fb].top || !(B[fb].P || B[fb].Z) || B[fb].stairs) return '爬梯要贴着墙放';
+      if (W.blk[ci(x + dx, y + dy, L + 1)] && !B[W.blk[ci(x + dx, y + dy, L + 1)]].dep) return '这面墙上面还有墙，爬上去没地方站';
+    }
     if (Bi.P || Bi.Z) {
       const hit = e => Math.floor(e.x) === x && Math.floor(e.y) === y && e.L === L;
       for (const p of W.p) if (!p.gone && !p.dead && hit(p)) return '有人站在这里';

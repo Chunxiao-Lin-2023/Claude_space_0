@@ -197,7 +197,7 @@ function archWall(b, i, x, y, L, X, Y, Z, h, cut, vl) {
     archPut('steel', X, Y, Z, 0, 1, cut, 1, tint); archPut('tSteel', X, Y, Z, 0, 1, cut, 1);
     if (crown) archPut('spikes', X, cY, Z, ax, 1, 1, 1);
   } else if (b === 24) {
-    let v = h < 0.28 ? 0 : h < 0.58 ? 1 : h < 0.84 ? 2 : 3; if (ARCH.roofCells.has(x + ',' + y + ',' + L)) v = h < 0.4 ? 0 : 2;
+    let v = h < 0.28 ? 0 : h < 0.58 ? 1 : h < 0.84 ? 2 : 3; if (ARCH.roofCells.has(x + ',' + y + ',' + L) || (L + 1 < ML && (W.slab[ci(x, y, L + 1)] || W.blk[ci(x, y, L + 1)]))) v = h < 0.4 ? 0 : 2; // carrying a floor: full height
     const rot = (v === 0 ? ax : 0) + (v === 1 && hash2(x, y * 3) < 0.5 ? Math.PI : 0) + (v === 1 ? ax : 0);
     const hk = houseOf(x, y), col = PLASTER[hk >= 0 ? (hk * 2 + 1) % PLASTER.length : Math.floor(hash2(x >> 3, y >> 3) * PLASTER.length)];
     archPut('ruin' + v, X, Y, Z, rot, 1, cut < 1 ? Math.min(cut * 1.6, 1) : 1, 1, dmgTint(col, f));
@@ -219,11 +219,11 @@ function houseOf(x, y) { for (let k = 0; k < TOWN_HOUSES.length; k++) { const [x
 // roof spans must be known before map generation (walls under a roof stay full height, no gaps there)
 function roofSpan(k) {
   const [x0, y0, x1, y1, st] = TOWN_HOUSES[k], west = hash2(k, 77) < 0.5;
-  if (st === 2) return { west, xa: west ? x0 : Math.ceil((x0 + x1) / 2), xb: west ? Math.floor((x0 + x1) / 2) : x1, lvl: 1 };
+  if (st >= 2) return null; // flat concrete roofs on the taller blocks
   return { west, xa: west ? x0 : x1 - 2, xb: west ? x0 + 2 : x1, lvl: 0 };
 }
 for (let k = 0; k < TOWN_HOUSES.length; k++) {
-  const [x0, y0, x1, y1] = TOWN_HOUSES[k], R = roofSpan(k);
+  const [x0, y0, x1, y1] = TOWN_HOUSES[k], R = roofSpan(k); if (!R) continue;
   for (let x = R.xa; x <= R.xb; x++) for (let y = y0; y <= y1; y++) if (y === y0 || y === y1 || x === (R.west ? x0 : x1)) ARCH.roofCells.add(x + ',' + y + ',' + R.lvl);
 }
 function tileTex() {
@@ -247,7 +247,8 @@ function archTown() {
   if (!ARCH.tex.tile) ARCH.tex.tile = tileTex();
   const tileM = new THREE.MeshLambertMaterial({ map: ARCH.tex.tile, side: THREE.DoubleSide }), dark = lam('#2c231c');
   TOWN_HOUSES.forEach(([x0, y0, x1, y1, st], k) => {
-    const r = mulberry(k * 977 + 13), R = roofSpan(k), west = R.west, xa = R.xa, xe = R.xb + 1, g = new THREE.Group();
+    const R0 = roofSpan(k); if (!R0) return;
+    const r = mulberry(k * 977 + 13), R = R0, west = R.west, xa = R.xa, xe = R.xb + 1, g = new THREE.Group();
     const S = y1 - y0 + 1, zc = (y0 + y1 + 1) / 2, Ye = (R.lvl + 1) * FH + 0.02, Rz = S * 0.3, Yr = Ye + Rz, oh = 0.18, Lr = xe - xa, nStr = Lr * 2;
     // roof planes as strips: whole near the gable end, ragged toward the open end of the house
     const pos = [], uv = [], slopeLen = Math.hypot(Rz + 0.1, S / 2 + oh);
