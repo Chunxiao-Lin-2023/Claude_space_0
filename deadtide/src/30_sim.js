@@ -29,7 +29,7 @@ function newWorld(seed, names, diff) {
 const rand = (a = 0, b = 1) => a + W.rng() * (b - a);
 const activeP = () => W.p.filter(p => !p.gone);
 const standingP = p => !p.gone && !p.dead && !p.down;
-function emit(e) { if (!W) return; e.s = ++W.seq; fxEvent(e); if (NETROLE === 'host') netSendCtl({ t: 'ev', e }); }
+function emit(e) { if (!W) return; e.q = ++W.seq; /* NB: `q`, not `s` — cell events carry the slab id in `s` */ fxEvent(e); if (NETROLE === 'host') netSendCtl({ t: 'ev', e }); }
 function say(text, col) { emit({ k: 'say', text, col: col || '' }); }
 const pZ = p => surfZ(p.x, p.y, p.L);
 

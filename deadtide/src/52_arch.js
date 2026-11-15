@@ -170,6 +170,7 @@ function archScene() {
   I.doorF = inst(G.doorFrame, lam('#e0a63a'), 400); /* bright frames so doors read at a glance */ I.doorL = inst(G.doorLeaf, tm(T.door), 400);
   I.stairs = inst(G.stairs, tm(T.wfloor), 400); I.rail = inst(G.rail, lam('#5a3d26'), 1200);
   I.wireP = inst(G.wirePosts, lam('#5a4630'), 600);
+  for (const k of ['wfloor', 'sfloor', 'joist', 'tWood', 'tBrick', 'tSteel', 'rail', 'wireP', 'stairs', 'bars', 'stakes', 'spikes']) I[k].castShadow = false; // flat / thin: no shadow pass
   // the plaster spans three cells; each instance reads the slice for its own position so walls don't repeat cell by cell
   const wide = m => { m.onBeforeCompile = sh => { sh.vertexShader = sh.vertexShader.replace('#include <uv_vertex>', '#include <uv_vertex>\n#ifdef USE_INSTANCING\nvMapUv.x = (vMapUv.x + instanceMatrix[3].x + instanceMatrix[3].z) / 3.0;\n#endif'); }; m.customProgramCacheKey = () => 'wide3'; return m; };
   I.ruin = G.ruin.map((g, k) => inst(g, wide(tm(k % 2 ? T.plasterB : T.plasterA)), 2600));
@@ -288,7 +289,7 @@ function archTown() {
     }
     SCN.add(g);
     const sup = []; for (const c of ARCH.roofCells) { const [cx, cy, cl] = c.split(',').map(Number); if (cl === R.lvl && cx >= R.xa && cx <= R.xb && cy >= y0 && cy <= y1) sup.push(ci(cx, cy, cl)); }
-    ARCH.roofs.push({ g, roof: parts, rect: [x0, y0, x1 + 1, y1 + 1], sup, down: false });
+    ARCH.roofs.push({ g, roof: parts, rect: [x0, y0, x1 + 1, y1 + 1], sup, down: false, k });
   });
 }
 // per frame: lift the roof off a house the local player is inside; drop it for good once its walls are mostly gone
@@ -299,6 +300,7 @@ function archFrame() {
     const ox = Math.sin(CAM.yaw), oy = Math.cos(CAM.yaw), inR = (x, y) => x >= R.rect[0] && x <= R.rect[2] && y >= R.rect[1] && y <= R.rect[3];
     let inside = false; // inside, or behind it as seen from the camera
     if (me && !me.dead) for (let k = 0; k <= 4 && !inside; k++) inside = inR(me.x + ox * k * 0.9, me.y + oy * k * 0.9);
+    if (lcCut(R.k)) inside = true;
     for (const m of R.roof) m.visible = !R.down && !inside;
   }
 }

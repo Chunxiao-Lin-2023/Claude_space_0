@@ -109,7 +109,7 @@ function guestRecv(m) {
     case 'lobby': NET.ready = m.ready; NET.hostName = m.host; NET.diff = m.diff; lobbyUI(); return;
     case 'start': startGame(m.seed, m.names, m.diff, 1); return;
     case 'toLobby': backToLobby(); return;
-    case 'ev': if (W && m.e.s > (W.seq || 0)) { W.seq = m.e.s; fxEvent(m.e); } return;
+    case 'ev': if (W && m.e.q > (W.rq || 0)) { W.rq = m.e.q; fxEvent(m.e); } return; // own counter: local emits on the guest never swallow host events
     case 's': if (W && STATE.mode === 'play') applySnap(m); return;
   }
 }
@@ -146,6 +146,7 @@ function applySnap(s) {
 function guestNetTick(dt) {
   if (!NET.ctl || !NET.ctl.open || !W) return;
   if (performance.now() - NET.seen > 9000) { hostGone(); return; }
+  if (W.stabDirty) { W.stabDirty = false; recomputeStab(); }
   for (const p of W.p) if (p.i !== ME && p.tx != null) { const k = Math.min(1, dt * 14); p.x = lerp(p.x, p.tx + p.vx * 0.03, k); p.y = lerp(p.y, p.ty + p.vy * 0.03, k); p.z = surfZ(p.x, p.y, p.L); }
   for (const z of W.zs) { z.anim += dt; z.hitT -= dt; z.atk -= dt; if (z.tx != null) { const k = Math.min(1, dt * 10); z.x = lerp(z.x, z.tx, k); z.y = lerp(z.y, z.ty, k); z.z = lerp(z.z, z.tz, k); } }
   for (const b of W.proj) { b.x += b.vx * dt; b.y += b.vy * dt; b.z += b.vz * dt; b.vz -= 12 * dt; }

@@ -183,7 +183,7 @@ CV.addEventListener('pointerup', endPtr); CV.addEventListener('pointercancel', e
 function pickBuild(sx, sy, me, demo) {
   const { o, d } = screenRay(sx, sy), maxL = Math.min(ML - 1, viewL(), LCUT ? LCUT.L : ML - 1);
   const top = (maxL + 1) * FH + 0.01; let t0 = 0; if (o[2] > top && d[2] < 0) t0 = (o[2] - top) / -d[2];
-  const h = rayWorld(o[0] + d[0] * t0, o[1] + d[1] * t0, o[2] + d[2] * t0, d[0], d[1], d[2], 300, { maxL, any: true });
+  const h = rayWorld(o[0] + d[0] * t0, o[1] + d[1] * t0, o[2] + d[2] * t0, d[0], d[1], d[2], 300, { maxL, any: true, hide: lcHide });
   if (h.x == null || !inMap(h.x, h.y)) return null;
   let surf = null, front;
   if (h.slab) { surf = { x: h.x, y: h.y, L: h.l, slab: 1 }; front = { x: h.x, y: h.y, L: h.l }; }

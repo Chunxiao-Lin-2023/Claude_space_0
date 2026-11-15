@@ -138,6 +138,7 @@ function rayWorld(ox, oy, oz, dx, dy, dz, maxD, opt) {
     if (l < 0) return true;
     if (!inMap(x, y) || l >= ML) return false;
     if (l > maxL) return false;
+    if (opt && opt.hide && opt.hide(x, y, l)) return false;
     const i = ci(x, y, l), b = W.blk[i];
     if (!b) return false;
     if (B[b].B || any) {
@@ -161,7 +162,7 @@ function rayWorld(ox, oy, oz, dx, dy, dz, maxD, opt) {
     else {
       d = tmz; tmz += tdz;
       const upper = sz > 0 ? l + 1 : l; // the layer whose floor we cross
-      if (inMap(x, y) && upper >= 0 && upper < ML && upper <= maxL && (W.slab[ci(x, y, upper)] || (pick && upper === gAt(x, y) && upper > 0 && false))) return { d, i: ci(x, y, upper), face: 2, slab: 1, x, y, l: upper };
+      if (inMap(x, y) && upper >= 0 && upper < ML && upper <= maxL && !(opt && opt.hide && opt.hide(x, y, upper)) && (W.slab[ci(x, y, upper)] || (pick && upper === gAt(x, y) && upper > 0 && false))) return { d, i: ci(x, y, upper), face: 2, slab: 1, x, y, l: upper };
       l += sz; face = 2;
       if (l >= ML + 2 && sz > 0) break;
     }

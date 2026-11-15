@@ -24,7 +24,7 @@ function propScene() {
   G[42] = M([boxG(0.06, 0.9, 0.06, 0, 0.45, -0.44), boxG(0.06, 0.9, 0.06, 0, 0.45, 0.44), boxG(0.06, 0.9, 0.06, 0, 0.45, 0), boxG(0.07, 0.06, 1, 0, 0.88, 0), boxG(0.04, 0.04, 1, 0, 0.45, 0)]);
   const C = { 42: '#7a8088', 32: '#3f5a3a', 33: '#5a4a2e', 34: '#6a4a30', 35: '#a8322a', 36: '#4f5a32', 37: '#9a3a2a', 38: '#b8333a', 39: '#7a5a44', 40: '#6a4a2c', 41: '#3e5f2e', 12: '#a8946a', 13: '#6a5038', 14: '#7a8590', 15: '#5a5a55', 6: '#8a6440' };
   const cap = { 42: 2500, 41: 3000, 40: 600, 39: 600, 12: 1500, 13: 800, 14: 800, 15: 400, 6: 400, 32: 400, 34: 400 };
-  for (const id in G) { const m = inst(G[id], lam('#ffffff'), cap[id] || 300); PROP[id] = { m, n: 0, col: C[id], al: id == 12 || id == 13 || id == 14 }; }
+  for (const id in G) { const m = inst(G[id], lam('#ffffff'), cap[id] || 300); m.castShadow = id == 38 || id == 34; PROP[id] = { m, n: 0, col: C[id], al: id == 12 || id == 13 || id == 14 }; }
   // build-plan ghosts and the x-ray ring that shows survivors through walls
   OBJ.planI = inst(boxG(1, 1, 1, 0, 0.5, 0), new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0.4, depthWrite: false }), 64, false);
   OBJ.xray = inst(new THREE.RingGeometry(0.3, 0.4, 20).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0.55, depthTest: false, depthWrite: false }), 4, false);

@@ -11,6 +11,24 @@ const CAMO = new THREE.OrthographicCamera(-10, 10, 10, -10, 0.1, 300);
 let VW = 1, VH = 1;
 function resize() { VW = innerWidth; VH = innerHeight; RENDER.setSize(VW, VH, false); }
 addEventListener('resize', resize); resize();
+const DPR0 = Math.min(devicePixelRatio || 1, TOUCHY ? 1.5 : 2);
+const QUAL = { lv: 0, acc: 0, n: 0, t: 0 };
+const qualPick = () => SET.q == null || SET.q === 'auto' ? (SET.qa || 0) : SET.q;
+function applyQual() {
+  const lv = QUAL.lv = qualPick();
+  RENDER.setPixelRatio(lv === 0 ? DPR0 : Math.min(DPR0, 1)); resize();
+  if (OBJ.sun) OBJ.sun.castShadow = !!SET.shadows && lv < 2;
+}
+const QNAME = ['高', '中', '低'];
+const qualLabel = () => '画质：' + (SET.q == null || SET.q === 'auto' ? '自动（' + QNAME[qualPick()] + '）' : QNAME[SET.q]);
+// auto: average frame time over 3 s of play; slower than ~30 fps steps down one level (never back up on its own)
+function qualTick(dt) {
+  if (!(SET.q == null || SET.q === 'auto') || QUAL.lv >= 2 || (DBG && !DBG.autoQ)) return;
+  QUAL.t += dt; if (QUAL.t < 6) return; // skip the loading hitch at the start
+  QUAL.acc += dt; QUAL.n++;
+  if (QUAL.acc >= 3) { const avg = QUAL.acc / QUAL.n; QUAL.acc = 0; QUAL.n = 0;
+    if (avg > 1 / 32) { SET.qa = Math.min(2, (SET.qa || 0) + 1); saveSet(); applyQual(); toast('画面有点卡，已自动调低画质（暂停菜单可改）', '#ffd27a'); } }
+}
 const CAM = { rot: 0, yaw: -Math.PI / 4, zoom: 9, tx: 32, ty: 28, tz: 0, shake: 0, pitch: 0.62 };
 const VIEW = { auto: true, L: 0 };
 const camYawTarget = () => -Math.PI / 4 + CAM.rot * Math.PI / 2;
@@ -25,19 +43,39 @@ let VL_CACHE = { k: '', v: ML - 1 };
 function viewL() {
   if (!W) return 0; if (!VIEW.auto) return VIEW.L;
   const me = W.p[ME]; if (!me || me.gone) return ML - 1;
-  cutBox(); return ML - 1; // auto: nothing is hidden globally; only the building you're in loses its upper floors (cutBox)
+  cutBox(); return ML - 1; // auto: nothing is hidden globally; only buildings you're in, next to, or behind lose the floors above you (cutBox)
 }
 // auto view: inside a building, hide the floors above you in that building only — the rest of town keeps all its floors
-let LCUT = null, LC_KEY = '';
+// LCUT: the building you're inside (null outdoors). LCUTS: every building cut down to your floor — the one you're in,
+// the ones right next to you (so you can see their doors and rooms) and any standing between the camera and you
+let LCUT = null, LCUTS = [], LC_KEY = '';
+const CUT_HOUSES = TOWN_HOUSES.concat([[RADIO_XY[0] - 6, RADIO_XY[1] - 5, RADIO_XY[0] + 6, RADIO_XY[1] + 7, 3, 'camp']]);
+const CUT_NEAR = 2.5;
 function cutBox() {
-  const me = W && W.p[ME]; if (!VIEW.auto || !me || me.gone) { LCUT = null; return null; }
-  const k = W.ver + ':' + Math.floor(me.x) + ',' + Math.floor(me.y) + ',' + me.L; if (LC_KEY === k) return LCUT; LC_KEY = k;
-  if (!covered(me)) { LCUT = null; return null; }
-  const x = Math.floor(me.x), y = Math.floor(me.y), H = TOWN_HOUSES.find(h => x >= h[0] - 2 && x <= h[2] + 2 && y >= h[1] - 2 && y <= h[3] + 2);
-  LCUT = { L: me.L, b: H ? [H[0] - 3, H[1] - 3, H[2] + 3, H[3] + 3] : [x - 10, y - 10, x + 10, y + 10] };
+  const me = W && W.p[ME]; if (!VIEW.auto || !me || me.gone) { LCUT = null; LCUTS = []; LC_KEY = ''; return null; }
+  const t = me.dead ? (W.p.find(p => !p.dead && !p.gone) || me) : me;
+  const k = W.ver + ':' + Math.floor(t.x) + ',' + Math.floor(t.y) + ',' + t.L + ':' + CAM.rot; if (LC_KEY === k) return LCUT; LC_KEY = k;
+  const x = Math.floor(t.x), y = Math.floor(t.y), L = t.L, box = (H, m) => [H[0] - m, H[1] - m, H[2] + m, H[3] + m];
+  LCUT = null; LCUTS = [];
+  let hin = -1;
+  if (covered(t)) {
+    hin = CUT_HOUSES.findIndex(h => x >= h[0] - 2 && x <= h[2] + 2 && y >= h[1] - 2 && y <= h[3] + 2);
+    LCUT = { L, b: hin >= 0 ? box(CUT_HOUSES[hin], 3) : [x - 10, y - 10, x + 10, y + 10], k: hin }; LCUTS.push(LCUT);
+  }
+  const yaw = camYawTarget(), ox = Math.sin(yaw), oy = Math.cos(yaw), lx = oy, ly = -ox, tp = Math.tan(CAM.pitch);
+  CUT_HOUSES.forEach((H, hk) => {
+    if (hk === hin || H[4] <= L) return; // nothing above you there
+    const inR = (px, py, m) => px >= H[0] - m && px <= H[2] + 1 + m && py >= H[1] - m && py <= H[3] + 1 + m;
+    let cut = inR(t.x, t.y, CUT_NEAR);
+    // between the camera and you: walk from you toward the camera as far as that building's top could hide you
+    const reach = (H[4] - L) * FH / tp + 1.5;
+    for (let s = 0.5; !cut && s <= reach; s += 0.7) for (const o of [-1.3, 0, 1.3]) if (inR(t.x + ox * s + lx * o, t.y + oy * s + ly * o, 0)) { cut = true; break; }
+    if (cut) LCUTS.push({ L, b: box(H, 3), k: hk });
+  });
   return LCUT;
 }
-const lcHide = (x, y, L) => LCUT && L > LCUT.L && x >= LCUT.b[0] && x <= LCUT.b[2] && y >= LCUT.b[1] && y <= LCUT.b[3];
+function lcHide(x, y, L) { for (const c of LCUTS) if (L > c.L && x >= c.b[0] && x <= c.b[2] && y >= c.b[1] && y <= c.b[3]) return true; return false; }
+const lcCut = hk => LCUTS.some(c => c.k === hk);
 
 /* ---------- materials & helpers ---------- */
 const MATS = {};
@@ -92,10 +130,9 @@ function buildScene() {
   OBJ.hemi = new THREE.HemisphereLight('#c9d8ff', '#3a3024', 1.1); SCN.add(OBJ.hemi);
   const sun = new THREE.DirectionalLight('#fff0d8', 2.2); sun.castShadow = !!SET.shadows;
   sun.shadow.mapSize.set(TOUCHY ? 1024 : 2048, TOUCHY ? 1024 : 2048); sun.shadow.bias = -0.0006; sun.shadow.normalBias = 0.02;
-  SCN.add(sun, sun.target); OBJ.sun = sun;
-  OBJ.lamps = []; for (let k = 0; k < 6; k++) { const L = new THREE.PointLight('#ffc27a', 0, 8, 1.5); SCN.add(L); OBJ.lamps.push(L); }
-  OBJ.flash = []; for (let k = 0; k < 3; k++) { const L = new THREE.PointLight('#ffb050', 0, 6, 2); SCN.add(L); OBJ.flash.push(L); }
-  OBJ.radioL = new THREE.PointLight('#ff3b2f', 0, 3, 2); SCN.add(OBJ.radioL);
+  SCN.add(sun, sun.target); OBJ.sun = sun; applyQual();
+  OBJ.lamps = []; for (let k = 0; k < 3; k++) { const L = new THREE.PointLight('#ffc27a', 0, 8, 1.5); SCN.add(L); OBJ.lamps.push(L); }
+  OBJ.flash = []; for (let k = 0; k < 2; k++) { const L = new THREE.PointLight('#ffb050', 0, 6, 2); SCN.add(L); OBJ.flash.push(L); }
   OBJ.spots = [0, 1].map(() => { const s = new THREE.SpotLight('#fff1d6', 0, 14, 0.42, 0.55, 1.2); SCN.add(s, s.target); return s; });
   // instanced pools
   const I = OBJ.I = {};
@@ -114,6 +151,7 @@ function buildScene() {
   I.rock = inst(GEO.rock, lam('#ffffff'), 3000);
   I.crate = inst(GEO.crate, lam('#4f5d3c'), 600); I.rubble = inst(GEO.rubble, lam('#6a625a'), 800); I.fence = inst(GEO.fence, lam('#6b5a48'), 1200);
   I.car = inst(GEO.carBody, lam('#ffffff'), 120); I.carW = inst(GEO.carWheels, lam('#151515'), 120);
+  for (const m of [I.slab, I.ramp, I.rock, I.crate, I.rubble, I.fence, I.carW, I.lampP, I.bars]) m.castShadow = false; // flat / small: not worth a shadow pass
   archScene();
   // radio + bench
   const radio = new THREE.Group();
@@ -161,7 +199,7 @@ function buildTerrain() {
   }
   const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); g.computeVertexNormals();
   if (OBJ.terrain) { SCN.remove(OBJ.terrain); OBJ.terrain.geometry.dispose(); }
-  OBJ.terrain = new THREE.Mesh(g, new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true, side: THREE.DoubleSide })); OBJ.terrain.receiveShadow = true; OBJ.terrain.castShadow = true; SCN.add(OBJ.terrain);
+  OBJ.terrain = new THREE.Mesh(g, new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true, side: THREE.DoubleSide })); OBJ.terrain.receiveShadow = true; OBJ.terrain.castShadow = false; SCN.add(OBJ.terrain);
   const I = OBJ.I; let w = 0, rp = 0;
   for (let y = 0; y < MH; y++) for (let x = 0; x < MW; x++) {
     if (ttAt(x, y) === TT.water) setInst(I.water, w++, x + 0.5, -0.12, y + 0.5, 0, 1, 1, 1);
@@ -189,6 +227,7 @@ function rebuildCells() {
   for (let L = 0; L <= RC.topL; L++) for (let y = cy0; y <= cy1; y++) for (let x = cx0; x <= cx1; x++) {
     const i = ci(x, y, L), b = W.blk[i], s = W.slab[i];
     if (!b && !s) continue;
+    if ((b && !B[b]) || (s && !B[s])) continue;
     const X = x + 0.5, Y = L * FH, Z = y + 0.5, h = hash2(x * 3 + L, y * 7);
     const hide = (L > vl && !(b && B[b].nat)) || (lcHide(x, y, L) && b !== 20 && b !== 21 && b !== 22);
     if (hide) continue;
@@ -258,7 +297,7 @@ function drawFx() {
   let ng = 0, na = 0; for (const p of W.proj) { if (p.k === 'gl') { setInst(OBJ.nade, ng++, p.x, p.z, p.y, W.t * 12, 1.3, 1.3, 1.3); if (Math.random() < 0.5) addP({ x: p.x, y: p.y, z: p.z, vz: 0.2, g: -0.2, col: '#9a948a', s: 0.07, life: 0.4, smoke: 1 }); } else if (p.k === 'nade') setInst(OBJ.nade, ng++, p.x, p.z, p.y, W.t * 8, 1, 1, 1); else setInst(OBJ.acid, na++, p.x, p.z, p.y, 0, 1, 1, 1); }
   OBJ.nade.count = ng; OBJ.acid.count = na; OBJ.nade.instanceMatrix.needsUpdate = OBJ.acid.instanceMatrix.needsUpdate = true;
   // flashes + explosions light pool
-  const srcs = RND.flashes.map(fl => [fl.x, fl.z, fl.y, (fl.big ? 6 : 4) * (1 - fl.t / fl.life), 5]).concat(RND.booms.map(bo => [bo.x, bo.z + 0.6, bo.y, 40 * (1 - bo.t / 0.6), 12]));
+  const srcs = RND.flashes.map(fl => [fl.x, fl.z, fl.y, (fl.big ? 6 : 4) * (1 - fl.t / fl.life), 5]).concat(RND.booms.map(bo => [bo.x, bo.z + 0.6, bo.y, 40 * (1 - bo.t / 0.6), 12])).sort((a, b) => b[3] - a[3]);
   OBJ.flash.forEach((L, k) => { const s = srcs[k]; if (s) { L.position.set(s[0], s[1], s[2]); L.intensity = s[3]; L.distance = s[4]; } else L.intensity = 0; });
 }
 
@@ -292,7 +331,6 @@ function applyTime(dk) {
     const tx = p.aimPt ? p.aimPt.x : p.x + Math.cos(p.aim) * 6, ty = p.aimPt ? p.aimPt.y : p.y + Math.sin(p.aim) * 6, tz = p.aimPt ? Math.min(p.aimPt.z, z) - 0.6 : z - 1.2;
     S.target.position.set(tx, tz, ty); S.intensity = 36 * Math.min(1, (dk - 0.25) * 2);
   });
-  OBJ.radioL.intensity = 0;
 }
 
 /* ---------- camera ---------- */
@@ -357,8 +395,9 @@ function draw(dt) {
   stepFx(dt);
   updateCamera(dt);
   const me = W.p[ME], vl = viewL();
-  const key = W.ver + ':' + vl + ':' + CAM.rot + ':' + (me ? Math.floor(me.x) + ',' + Math.floor(me.y) + ',' + me.L : '') + ':' + Math.floor(CAM.tx / 6) + ',' + Math.floor(CAM.ty / 6) + ':' + Math.round(cullR() / 4);
+  const key = W.ver + ':' + vl + ':' + CAM.rot + ':' + (me ? Math.floor(me.x) + ',' + Math.floor(me.y) + ',' + me.L : '') + ':' + Math.floor(CAM.tx / 6) + ',' + Math.floor(CAM.ty / 6) + ':' + Math.round(cullR() / 4) + ':' + LC_KEY;
   if (key !== CUT_KEY) { CUT_KEY = key; rebuildCells(); }
+  if (STATE.mode === 'play' && !W.demo) qualTick(dt);
   applyTime(darkness()); archFrame();
   drawZombies(vl, dt); drawPlayers(vl, dt); drawFx(); drawGhost(me); drawPlan();
   OBJ.zone.visible = !W.demo && W.phase === 'day' || !!(me && me.build);
@@ -424,7 +463,7 @@ function fxEvent(e) {
       break;
     case 'cell': {
       const prevB = W.blk[e.i], prevS = W.slab[e.i];
-      if (guest) { W.blk[e.i] = e.b; W.bhp[e.i] = e.b ? (B[e.b].hp || 1) : 0; W.slab[e.i] = e.s; W.shp[e.i] = e.s ? (B[e.s].hp || 1) : 0; W.bdir[e.i] = e.d; W.ver++; recomputeStab(); }
+      if (guest) { const eb = B[e.b] ? e.b : 0, es = B[e.s] ? e.s : 0; W.blk[e.i] = eb; W.bhp[e.i] = eb ? (B[eb].hp || 1) : 0; W.slab[e.i] = es; W.shp[e.i] = es ? (B[es].hp || 1) : 0; W.bdir[e.i] = e.d || 0; W.ver++; W.navDirty = true; W.stabDirty = true; }
       const [x, y, z] = cellPos(e.i), col = (B[prevB] && B[prevB].col) || (B[prevS] && B[prevS].col) || '#777';
       if (e.c === 'brk' || e.c === 'fall') { debrisFx(x, y, z - 0.5, col, e.c === 'fall' ? 6 : 10); if (thr('brk', 0.06)) sfx(e.c === 'fall' ? 'fall' : prevB === 3 || prevB === 8 || prevS === 5 ? 'brkMetal' : 'brk', x, y); }
       else if (e.c === 'build') { sfx('build', x, y); debrisFx(x, y, z - 0.5, '#c8bba8', 2); }
@@ -438,7 +477,7 @@ function fxEvent(e) {
     case 'bash': { const [x, y, z] = cellPos(e.i); if (thr('bash' + e.i, 0.15)) { sfx(e.z === 'brute' || e.z === 'boss' ? 'smash' : 'bash', x, y); addP({ x, y, z, vx: frnd(-1.5, 1.5), vy: frnd(-1.5, 1.5), vz: frnd(0.5, 2.5), col: B[W.blk[e.i]] && B[W.blk[e.i]].col || '#888', s: 0.07, life: 0.5, floor: z - 0.6 }); if (e.z === 'brute' || e.z === 'boss') shake(x, y, 0.15); } break; }
     case 'collapse': { const [x, y] = cellPos(e.i); sfx('collapse', x, y); shake(x, y, 0.35); break; }
     case 'repair': { const [x, y] = cellPos(e.i); sfx('build', x, y); break; }
-    case 'spot': if (guest) { const s = W.spots.find(s => s.i === e.i); if (s) s.searched = !!e.v; } break;
+    case 'spot': if (guest) { if (e.v) W.srch.add(e.i); else W.srch.delete(e.i); W.ver++; } break;
     case 'loot': RND.floats.push({ x: e.x, y: e.y, z: e.z, text: e.text, col: '#ffd76a', t: 0 }); if (e.p === ME || e.p < 0) sfx('loot'); break;
     case 'phurt': if (e.d > 6 && Math.random() < 0.5) { const q = W.p[e.p]; addDecal(q.x + frnd(-0.2, 0.2), q.y + frnd(-0.2, 0.2), q.z, frnd(0.08, 0.14)); }
       if (e.p === ME) { RND.hurtV = Math.min(1, RND.hurtV + 0.5); CAM.shake = Math.max(CAM.shake, 0.12); if (thr('hurt', 0.25)) sfx('hurt'); } break;
