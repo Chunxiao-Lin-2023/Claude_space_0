@@ -168,6 +168,7 @@ window.GAMES = [
     url: 'wanmei/',
     cover: 'covers/wanmei.webp',
     status: 'dev',
+    hidden: true, /* old pixel version, superseded by wanmeiol; still playable at wanmei/ */
     tags: ['单人', '双人联机', '剧情', '像素'],
     hue: 120
   },

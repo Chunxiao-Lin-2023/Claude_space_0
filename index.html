@@ -102,7 +102,7 @@ kbd{font-family:inherit;font-size:11px;border:1px solid var(--line2);border-bott
 <script>document.write('<script src="games.js?t=' + Date.now() + '"><\/script>')</script>
 <script>
 (() => {
-  const games = Array.isArray(window.GAMES) ? window.GAMES : [];
+  const games = (Array.isArray(window.GAMES) ? window.GAMES : []).filter(g => !g.hidden);
   const STATUS = { done: '已完成', dev: '开发中' };
   const KINDS = [['game', '游戏'], ['tool', '工具']];
   const kindOf = g => g.kind === 'tool' ? 'tool' : 'game';
