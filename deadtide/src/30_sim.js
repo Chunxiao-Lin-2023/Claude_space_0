@@ -302,7 +302,7 @@ function fireWeapon(p, wi) {
   const yaw = Math.atan2(ay, ax), pitch = Math.asin(clamp(az, -1, 1));
   const mul = 1 + 0.12 * W.upg, ends = [];
   if (w.gl) { // launcher: an explosive shell on a flat arc that bursts on whatever it touches
-    const v = 17; W.proj.push({ k: 'gl', x: sx + ax * 0.45, y: sy + ay * 0.45, z: sz, vx: Math.cos(pitch) * Math.cos(yaw) * v, vy: Math.cos(pitch) * Math.sin(yaw) * v, vz: Math.sin(pitch) * v + 1.2, o: p.i, t: 2.6 });
+    const v = 17; W.proj.push({ k: 'gl', ox: p.x, oy: p.y, x: sx + ax * 0.45, y: sy + ay * 0.45, z: sz, vx: Math.cos(pitch) * Math.cos(yaw) * v, vy: Math.cos(pitch) * Math.sin(yaw) * v, vz: Math.sin(pitch) * v + 1.2, o: p.i, t: 2.6 });
     emit({ k: 'shot', o: p.i, w: wi, e: [] }); return;
   }
   if (w.flame) { // a cone of fire: everything in front, in range and in sight catches fire
@@ -589,7 +589,8 @@ function stepProj(dt) {
     if (b.k === 'gl') {
       b.t -= dt;
       const nx = b.x + b.vx * dt, ny = b.y + b.vy * dt, nz = b.z + b.vz * dt, cx = Math.floor(nx), cy = Math.floor(ny);
-      let boom = b.t <= 0 || !inMap(cx, cy) || solidFor(blkAt(cx, cy, Math.floor(nz / FH)), 'b') || nz <= floorUnder(nx, ny, b.z + 0.05);
+      const hb = blkAt(cx, cy, Math.floor(nz / FH)), port = hb && B[hb].cost && b.ox != null && Math.hypot(nx - b.ox, ny - b.oy) < PORT + 0.4;
+      let boom = b.t <= 0 || !inMap(cx, cy) || (solidFor(hb, 'b') && !port) || nz <= floorUnder(nx, ny, b.z + 0.05);
       if (!boom) for (const z of W.zs) if (z.hp > 0 && d2(z.x, z.y, nx, ny) < z.r + 0.2 && nz > z.z - 0.1 && nz < z.z + z.h + 0.15) { boom = true; break; }
       if (boom) { b.dead = true; explode(b.x, b.y, Math.max(b.z, floorUnder(b.x, b.y, b.z + 0.05)) + 0.15, W.p[b.o], 2.4, WPN[6].dmg); } else { b.x = nx; b.y = ny; b.z = nz; }
     } else if (b.k === 'nade') {

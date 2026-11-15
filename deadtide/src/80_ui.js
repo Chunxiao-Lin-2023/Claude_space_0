@@ -67,7 +67,7 @@ function uiKeys(me) {
       ['V', '刀（自动追）'], ['空格', '跳 / 翻越'], ['F', ut ? ut.name : '交互', ut ? 1 : 0], ['1–' + NW, '换枪'], ['C', '制作', bench ? 1 : -1], ['B', '建造']];
     if (W.phase === 'day') rows.push(['N', me.ready ? '取消准备' : '准备入夜', me.ready ? 1 : 0]);
   }
-  rows.push(['Q E', '转镜头'], ['Esc', '菜单']);
+  rows.push(['Tab', '大地图'], ['Q E', '转镜头'], ['Esc', '菜单']);
   const key = (SET.keysOff ? 1 : 0) + rows.map(r => r.join(':')).join('|'); if (UI.keysK === key) return; UI.keysK = key;
   el.classList.toggle('min', !!SET.keysOff);
   el.innerHTML = `<div class="kh"><span>按键</span><span>${SET.keysOff ? '展开 ▾' : '收起 ▴'}</span></div><div class="kg">` + rows.map(([k, t, c]) => `<kbd${st(c)}>${k}</kbd><span${st(c)}>${t}</span>`).join('') + '</div>';
@@ -137,6 +137,7 @@ function hudTick(dt) {
   if (UI.toastT > 0 && (UI.toastT -= dt) <= 0) $('toast').classList.remove('show');
   if (UI.bannerT > 0 && (UI.bannerT -= dt) <= 0) $('banner').classList.remove('show');
   UI.hudT -= dt; if (UI.hudT > 0) return; UI.hudT = 0.1;
+  if (bigMapOpen() && (UI.bmT = (UI.bmT || 0) + 1) % 3 === 0) drawBigMap();
   const me = W.p[ME];
   // players
   $('pcards').innerHTML = W.p.map(p => {
@@ -244,6 +245,35 @@ function togglePause(force) {
   $('pHub').classList.toggle('hidden', !HUB);
   STATE.paused = open && NETROLE === 'solo';
 }
+/* ---------- big map: tap the minimap (or Tab) ---------- */
+const BTYPE = { apt: ['公寓', '#c9a46a'], villa: ['别墅', '#b46a4a'], ware: ['仓库', '#7f8a96'], shop: ['超市', '#5a9a6a'], clinic: ['诊所', '#e8e2d6'], police: ['警局', '#4a6aa8'], garage: ['修车厂', '#a8783a'], barn: ['谷仓', '#8a5a3a'] };
+const BTIP = { apt: '房间多，柜子和补给箱', villa: '柜子、背包', ware: '补给箱、油桶、军用箱', shop: '货架上的柜子，仓库里有补给', clinic: '背包和柜子（医疗包多）', police: '军用物资箱（弹药、手雷）', garage: '工具箱、废铁、汽车（零件和钢材）', barn: '杂物' };
+function bigMapOpen() { return !$('bigmap').classList.contains('hidden'); }
+function toggleBigMap(force) {
+  if (STATE.mode !== 'play' || !W) return;
+  const open = force != null ? force : !bigMapOpen();
+  $('bigmap').classList.toggle('hidden', !open); STATE.paused = open && NETROLE === 'solo';
+  if (open) { drawBigMap(); $('bmLeg').innerHTML = Object.entries(BTYPE).map(([k, [n, c]]) => `<span title="${BTIP[k]}"><i style="background:${c}"></i>${n}：${BTIP[k]}</span>`).join('') + '<span><i style="background:#7fd36b"></i>营地</span><span><i style="background:#ff3b2f;border-radius:50%"></i>丧尸</span><span><i style="background:#9aa0a6"></i>汽车</span>'; }
+  sfx('click');
+}
+function drawBigMap() {
+  const cv = $('bigmapC'); if (!cv || !MM.base) return; const g = cv.getContext('2d'), S = cv.width / MW, R = CAM.yaw;
+  const rot = (x, y) => { const cx = cv.width / 2, cy = cv.height / 2, dx = x * S - cx, dy = y * S - cy; return [cx + dx * Math.cos(R) - dy * Math.sin(R), cy + dx * Math.sin(R) + dy * Math.cos(R)]; };
+  g.save(); g.clearRect(0, 0, cv.width, cv.height);
+  g.translate(cv.width / 2, cv.height / 2); g.rotate(R); g.translate(-cv.width / 2, -cv.height / 2);
+  g.imageSmoothingEnabled = false; g.globalAlpha = 0.85; g.drawImage(MM.base, 0, 0, cv.width, cv.height); g.globalAlpha = 1;
+  TOWN_HOUSES.forEach(([x0, y0, x1, y1, st, t]) => { const c = (BTYPE[t] || ['', '#888'])[1]; g.fillStyle = c; g.globalAlpha = 0.8; g.fillRect(x0 * S, y0 * S, (x1 - x0 + 1) * S, (y1 - y0 + 1) * S); g.globalAlpha = 1; g.strokeStyle = 'rgba(0,0,0,.6)'; g.lineWidth = 1.5; g.strokeRect(x0 * S, y0 * S, (x1 - x0 + 1) * S, (y1 - y0 + 1) * S); });
+  g.strokeStyle = 'rgba(255,207,107,.8)'; g.lineWidth = 2; g.strokeRect((W.radio.x - BUILD_R) * S, (W.radio.y - BUILD_R) * S, (BUILD_R * 2 + 1) * S, (BUILD_R * 2 + 1) * S);
+  g.fillStyle = 'rgba(127,211,107,.85)'; g.fillRect((W.radio.x - 6) * S, (W.radio.y - 5) * S, 13 * S, 11 * S);
+  for (let i = 0; i < NC; i++) { const b = W.blk[i]; if (b !== 25 && b !== 38) continue; g.fillStyle = W.srch.has(i) ? '#4a4a4a' : b === 38 ? '#e05a5a' : '#c8ccd0'; g.fillRect(cx_(i) * S - 2, cy_(i) * S - 2, 4, 4); }
+  g.fillStyle = '#ff3b2f'; for (const z of W.zs) g.fillRect(z.x * S - 2, z.y * S - 2, 4, 4);
+  g.restore();
+  // labels and players upright on top
+  g.font = '600 13px ' + getComputedStyle(document.body).fontFamily; g.textAlign = 'center'; g.textBaseline = 'middle';
+  TOWN_HOUSES.forEach(([x0, y0, x1, y1, st, t]) => { const [px, py] = rot((x0 + x1 + 1) / 2, (y0 + y1 + 1) / 2), lab = (BTYPE[t] || [t])[0] + (st > 1 ? ' ' + st + '层' : ''); g.lineWidth = 3; g.strokeStyle = 'rgba(0,0,0,.75)'; g.strokeText(lab, px, py); g.fillStyle = '#fff'; g.fillText(lab, px, py); });
+  { const [px, py] = rot(W.radio.x + 0.5, W.radio.y + 0.5); g.lineWidth = 3; g.strokeStyle = 'rgba(0,0,0,.75)'; g.strokeText('营地', px, py); g.fillStyle = '#d8ffcc'; g.fillText('营地', px, py); }
+  for (const p of W.p) { if (p.gone || p.dead) continue; const [px, py] = rot(p.x, p.y); g.fillStyle = PCOL[p.i % 2].j; g.beginPath(); g.arc(px, py, 6, 0, 7); g.fill(); g.strokeStyle = '#fff'; g.lineWidth = 2; g.stroke(); g.fillStyle = '#fff'; g.font = '600 12px ' + getComputedStyle(document.body).fontFamily; g.strokeStyle = 'rgba(0,0,0,.8)'; g.lineWidth = 3; g.strokeText(p.name, px, py - 14); g.fillText(p.name, px, py - 14); }
+}
 function openHelp() { $('help').classList.remove('hidden'); }
 function closeHelp() { $('help').classList.add('hidden'); }
 function showOver(e) {
@@ -286,6 +316,8 @@ function initUI() {
   $('pauseBtn').onclick = () => togglePause();
   $('muteBtn').onclick = () => { setMute(!SET.mute); uiMute(); };
   $('pMute').onclick = () => { setMute(!SET.mute); uiMute(); };
+  $('mini').addEventListener('pointerdown', e => { e.stopPropagation(); e.preventDefault(); toggleBigMap(true); });
+  $('bigmap').addEventListener('pointerdown', e => { e.stopPropagation(); e.preventDefault(); toggleBigMap(false); });
   $('keys').addEventListener('pointerdown', e => { e.stopPropagation(); if (!e.target.closest('.kh')) return; SET.keysOff = !SET.keysOff; saveSet(); UI.keysK = ''; if (W && W.p[ME]) uiKeys(W.p[ME]); sfx('click'); });
   $('pAssist').onclick = () => { SET.assist = ((SET.assist == null ? 1 : SET.assist) + 1) % 3; saveSet(); $('pAssist').textContent = '辅助瞄准：' + assistLv().name; sfx('click'); };
   $('pQual').onclick = () => { const o = ['auto', 0, 1, 2], i = o.indexOf(SET.q == null ? 'auto' : SET.q); SET.q = o[(i + 1) % 4]; if (SET.q === 'auto') SET.qa = 0; saveSet(); applyQual(); $('pQual').textContent = qualLabel(); sfx('click'); };

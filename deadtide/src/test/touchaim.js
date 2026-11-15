@@ -42,7 +42,7 @@ const UA = 'Mozilla/5.0 (iPad; CPU OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (
     await simWait(0.6); const a1 = await p.evaluate(() => ({ fire: W.p[0].inp.fire, acq: INP.lockAcq, auto: W.p[0].inp.auto })); await tch('touchEnd', []);
     check(vp + ' auto-aim: holds fire while locking on, then shoots looser', a0.lock && a0.fire === 0 && a0.acq < 1 && a1.fire === 1 && a1.auto > 1, JSON.stringify([a0, a1]));
     // the move stick still works on the left, and two fingers still pinch
-    const z0 = await p.evaluate(() => { window.__dbg.skipDraw = true; INP.tp = {}; INP.tAim.id = null; INP.pinch = null; return CAM.zoom; }); const mx = w * 0.65, my = h * 0.55;
+    await p.evaluate(() => { window.__dbg.skipDraw = true; }); await p.waitForTimeout(1500); const z0 = await p.evaluate(() => { INP.tp = {}; INP.tAim.id = null; INP.pinch = null; return CAM.zoom; }); const mx = w * 0.65, my = h * 0.55;
     await tch('touchStart', [{ x: mx, y: my, id: 5 }]); await p.waitForTimeout(60); await tch('touchStart', [{ x: mx, y: my, id: 5 }, { x: mx + 120, y: my, id: 6 }]);
     await tch('touchMove', [{ x: mx - 60, y: my, id: 5 }, { x: mx + 180, y: my, id: 6 }]); await p.waitForTimeout(300); await tch('touchEnd', []); await p.waitForTimeout(300);
     check(vp + ' two fingers on the right still pinch-zoom, no shooting left on', await p.evaluate(z0 => CAM.zoom < z0 * 0.8 && INP.tAim.id == null && W.p[0].inp.fire === 0, z0), 'zoom ' + z0.toFixed(1) + ' -> ' + (await p.evaluate(() => CAM.zoom)).toFixed(1));

@@ -225,8 +225,8 @@ function houseOf(x, y) { for (let k = 0; k < TOWN_HOUSES.length; k++) { const [x
 function roofSpan(k) {
   const [x0, y0, x1, y1, st] = TOWN_HOUSES[k], west = hash2(k, 77) < 0.5;
   const type = TOWN_HOUSES[k][5];
-  if (type === 'apt') return null;                                       // flat roofs with a rail on apartment blocks
-  if (type === 'villa' || type === 'ware') return { west, xa: x0, xb: x1, lvl: st - 1, whole: 1 }; // a whole pitched roof (the attic / the hall)
+  if (type === 'apt' || type === 'shop' || type === 'clinic' || type === 'police') return null; // flat roofs with a rail you can stand on
+  if (type === 'villa' || type === 'ware' || type === 'garage') return { west, xa: x0, xb: x1, lvl: st - 1, whole: 1 }; // a whole pitched roof (the attic / the hall)
   return { west, xa: west ? x0 : x1 - 2, xb: west ? x0 + 2 : x1, lvl: 0 };
 }
 for (let k = 0; k < TOWN_HOUSES.length; k++) {

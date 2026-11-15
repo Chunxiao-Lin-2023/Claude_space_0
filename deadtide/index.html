@@ -251,6 +251,11 @@ body:not(.touch) .tch{display:none}
 #reticle.far .c{border-style:dashed;border-color:rgba(255,255,255,.45)}
 body.aiming canvas#cv{cursor:none}body.touch #reticle b{left:-34px;top:-38px}
 @media (max-height:600px){#keys .kg{grid-template-columns:auto 1fr auto 1fr auto 1fr}}
+#mini{pointer-events:auto;cursor:pointer}
+.bmcard{width:min(96vw,96dvh - 20px,820px)!important;padding:12px 14px!important;gap:8px!important}
+.bmhead{display:flex;align-items:baseline;justify-content:space-between}.bmhead h3{margin:0}.bmhint{font-size:12px;color:var(--sub)}
+#bigmapC{width:100%;aspect-ratio:1;border-radius:8px;image-rendering:pixelated;background:#1a1d1a}
+.bmleg{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:12px;color:var(--sub)}.bmleg i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:4px;vertical-align:-1px}
 </style>
 </head>
 <body>
@@ -346,6 +351,7 @@ body.aiming canvas#cv{cursor:none}body.touch #reticle b{left:-34px;top:-38px}
 <div id="craft" class="modal hidden">
   <div class="card"><h3>工作台</h3><div class="lbl">材料全队共用 · 制作的武器和道具归你</div><div class="clist" id="clist"></div><button id="craftClose" class="ghost">关闭 <span class="kbd">(E)</span></button></div>
 </div>
+<div id="bigmap" class="modal hidden"><div class="card bmcard"><div class="bmhead"><h3>地图</h3><span class="bmhint">点任意处关闭 · 电脑按 Tab / Esc</span></div><canvas id="bigmapC" width="640" height="640"></canvas><div class="bmleg" id="bmLeg"></div></div></div>
 <div id="pause" class="modal hidden">
   <div class="card"><h3 id="pauseT">暂停</h3>
     <button id="resumeBtn" class="primary">继续</button>
@@ -4096,13 +4102,13 @@ const GRAV = 22;
 const B = [];
 const defB = (id, o) => { B[id] = Object.assign({ id, P: 0, Z: 0, B: 0, top: 0, st: 0, cap: 0, hp: 0, brk: 0, nat: 0 }, o); };
 defB(0, { key: 'air' });
-defB(1, { key: 'wood', name: '木墙', cost: { wood: 4 }, hp: 140, cap: 6, P: 1, Z: 1, B: 1, top: 1, st: 1, brk: 1, col: '#86603a', tip: '便宜的墙，撑得住 5 格跨度' });
-defB(2, { key: 'brick', name: '砖墙', cost: { stone: 4 }, hp: 340, cap: 8, P: 1, Z: 1, B: 1, top: 1, st: 1, brk: 1, col: '#8a4c3a', tip: '结实，承重更好' });
-defB(3, { key: 'steel', name: '钢墙', cost: { steel: 4 }, hp: 700, cap: 12, P: 1, Z: 1, B: 1, top: 1, st: 1, brk: 1, col: '#6f8494', tip: '最硬的墙，重锤也要砸半天' });
+defB(1, { key: 'wood', name: '木墙', cost: { wood: 4 }, hp: 260, cap: 6, P: 1, Z: 1, B: 1, top: 1, st: 1, brk: 1, col: '#86603a', tip: '便宜的墙，撑得住 5 格跨度' });
+defB(2, { key: 'brick', name: '砖墙', cost: { stone: 4 }, hp: 600, cap: 8, P: 1, Z: 1, B: 1, top: 1, st: 1, brk: 1, col: '#8a4c3a', tip: '结实，承重更好' });
+defB(3, { key: 'steel', name: '钢墙', cost: { steel: 4 }, hp: 1100, cap: 12, P: 1, Z: 1, B: 1, top: 1, st: 1, brk: 1, col: '#6f8494', tip: '最硬的墙，重锤也要砸半天' });
 defB(4, { key: 'wfloor', name: '木地板', cost: { wood: 2 }, hp: 90, cap: 6, slab: 1, st: 1, brk: 1, col: '#7a5232', tip: '指墙顶就铺在墙上，指屋里就铺成天花板，站在楼上指外面能往外延伸' });
 defB(5, { key: 'sfloor', name: '钢地板', cost: { steel: 2 }, hp: 280, cap: 10, slab: 1, st: 1, brk: 1, col: '#64788a', tip: '跨度大的楼板' });
 defB(6, { key: 'stairs', name: '爬梯', cost: { wood: 3 }, hp: 120, cap: 5, stairs: 1, st: 1, brk: 1, col: '#8a6440', tip: '靠墙的梯子：朝箭头方向走就爬上去，R 键转方向。丧尸爬梯子很慢，正好守着打' });
-defB(7, { key: 'door', name: '木门', cost: { wood: 6 }, hp: 200, cap: 6, Z: 1, B: 1, top: 1, st: 1, brk: 1, col: '#5c3c22', tip: '人能穿过，丧尸只能砸' });
+defB(7, { key: 'door', name: '木门', cost: { wood: 6 }, hp: 320, cap: 6, Z: 1, B: 1, top: 1, st: 1, brk: 1, col: '#5c3c22', tip: '人能穿过，丧尸只能砸' });
 defB(8, { key: 'bars', name: '射击栅栏', cost: { steel: 3 }, hp: 300, cap: 6, P: 1, Z: 1, top: 1, st: 1, brk: 1, col: '#6f7f8c', tip: '挡人挡丧尸，子弹能穿过' });
 // obstacles: people vault over them, zombies have to smash through
 defB(12, { key: 'sandbag', name: '沙袋矮墙', cost: { stone: 3 }, hp: 260, P: 1, Z: 1, dep: 1, brk: 1, vault: 1, col: '#a8946a', tip: '半人高：人能翻过去、子弹能从上面打过去，丧尸只能砸' });
@@ -4113,7 +4119,7 @@ defB(9, { key: 'wire', name: '铁丝网', cost: { steel: 2, parts: 1 }, hp: 110,
 defB(10, { key: 'lamp', name: '探照灯', cost: { parts: 3, wood: 1 }, hp: 60, dep: 1, lamp: 1, col: '#ffe9a8', tip: '夜里照亮周围' });
 // natural / fixed
 defB(20, { key: 'dirt', P: 1, Z: 1, B: 1, top: 1, nat: 1 });
-defB(21, { key: 'rock', P: 1, Z: 1, B: 1, nat: 1, res: 'stone', hp: 1 });
+defB(21, { key: 'rock', P: 1, Z: 1, nat: 1, res: 'stone', hp: 1 });
 defB(22, { key: 'tree', P: 1, Z: 1, nat: 1, res: 'wood', hp: 1 });
 defB(23, { key: 'water', P: 1, Z: 1, nat: 1 });
 defB(24, { key: 'ruin', P: 1, Z: 1, B: 1, top: 1, nat: 1, brk: 1, hp: 260, col: '#7c4a3a' });
@@ -4133,7 +4139,7 @@ defB(36, { key: 'milcrate', P: 1, Z: 1, B: 1, nat: 1, spot: 'milcrate' });
 defB(37, { key: 'barrel', P: 1, Z: 1, B: 1, nat: 1, spot: 'barrel' });
 defB(38, { key: 'vending', P: 1, Z: 1, B: 1, nat: 1, spot: 'vending' });
 defB(39, { key: 'scrap', P: 1, Z: 1, nat: 1, res: 'steel', hp: 1 });
-defB(40, { key: 'logs', P: 1, Z: 1, B: 1, nat: 1, res: 'wood', hp: 1 });
+defB(40, { key: 'logs', P: 1, Z: 1, nat: 1, res: 'wood', hp: 1 });
 defB(41, { key: 'bush', nat: 1, res: 'wood', hp: 1 });
 defB(42, { key: 'rail', P: 1, Z: 1, nat: 1, brk: 1, vault: 1, hp: 120, col: '#6a6f74' }); // balcony / roof / mezzanine railing: low, vaultable, bullets pass
 const PAL = [1, 2, 3, 4, 5, 6, 7, 8, 12, 13, 14, 9, 15, 10];
@@ -4177,6 +4183,7 @@ const ZT = {
   armored: { name: '防暴尸', hp: 170, spd: 0.9, r: 0.36, h: 1.26, dmg: 15, bdmg: 16, cd: 1.1, sc: 1.3, armor: 0.3 },
 };
 // aim assist (SET.assist): fire-button lock range (x weapon range), lock-on time before it fires, spread while auto-aimed, mouse/finger magnet
+const PORT = 1.25; // firing port: your own shots pass a wall / door you built if it is this close to you
 const ASSIST = [{ name: '关', range: 0, acq: 0, spread: 1, mag: 0 }, { name: '标准', range: 0.75, acq: 0.3, spread: 1.5, mag: 1 }, { name: '强', range: 1, acq: 0, spread: 1, mag: 1 }];
 const assistLv = () => ASSIST[SET.assist == null ? 1 : SET.assist] || ASSIST[1];
 const ZKEYS = ['walker', 'runner', 'climber', 'spitter', 'brute', 'boss', 'dog', 'crawler', 'bloater', 'screamer', 'armored']; // order is the net id
@@ -4331,12 +4338,16 @@ const inZone = (x, y) => radioDist(x, y) <= BUILD_R;
    128 x 128: river and forest in the west, the camp north-west of centre, hills to the north-east, a farm in the north
    and a big ruined town (three rows of blocks on a street grid) filling the south and south-east. Town lots: [x0, y0, x1, y1, storeys]. */
 const TOWN_HOUSES = [
-  // [x0, y0, x1, y1, storeys, type]: big blocks, one or two per street block. apt: apartment block (corridor, rooms,
-  // balconies, roof); villa: big house with rooms, balcony and an attic under a pitched roof; ware: warehouse with a mezzanine.
-  [33, 62, 54, 76, 2, 'villa'], [61, 62, 86, 77, 4, 'apt'], [94, 58, 121, 75, 5, 'apt'], [128, 58, 155, 74, 3, 'apt'],
-  [36, 81, 54, 96, 2, 'ware'], [62, 81, 87, 96, 2, 'villa'], [95, 81, 121, 96, 2, 'ware'], [129, 80, 155, 96, 2, 'villa'],
-  [33, 104, 54, 124, 3, 'apt'], [61, 105, 87, 124, 2, 'ware'], [94, 104, 121, 124, 4, 'apt'], [128, 104, 155, 124, 2, 'villa'],
-  [33, 132, 54, 156, 2, 'villa'], [61, 132, 87, 156, 5, 'apt'], [94, 133, 121, 156, 2, 'ware'], [128, 132, 155, 156, 3, 'apt'],
+  // [x0, y0, x1, y1, storeys, type] — one building per street block, two in the long northern row, yards in between.
+  // apt: apartments (corridor + rooms, balconies, roof); villa: house (open living room downstairs, bedrooms in the attic);
+  // ware: warehouse (tall hall, mezzanine); shop: supermarket (aisles, stockroom, roof); clinic: wards off a corridor (medkits);
+  // police: cells, armoury (ammo, grenades), offices upstairs; garage: repair hall with cars and tool benches (parts, steel).
+  [35, 64, 52, 76, 2, 'villa'], [40, 84, 54, 95, 1, 'shop'],
+  [63, 66, 84, 79, 4, 'apt'], [63, 86, 82, 96, 1, 'garage'],
+  [96, 62, 119, 76, 5, 'apt'], [98, 84, 117, 96, 2, 'police'],
+  [131, 62, 150, 75, 2, 'villa'], [130, 83, 154, 97, 2, 'ware'],
+  [36, 107, 52, 122, 2, 'clinic'], [64, 107, 85, 122, 2, 'ware'], [97, 106, 120, 123, 4, 'apt'], [131, 108, 152, 121, 1, 'shop'],
+  [36, 134, 52, 150, 2, 'villa'], [64, 134, 85, 151, 3, 'apt'], [97, 136, 118, 150, 1, 'garage'], [131, 134, 150, 150, 2, 'police'],
   [48, 3, 58, 11, 1, 'barn'],
 ];
 const RADIO_XY = [48, 40];
@@ -4412,89 +4423,146 @@ function genMap(seed) {
   put(WX - 1, Y0 + 1, 0, 6, 0); put(WX - 1, Y1 - 1, 0, 6, 0);   // hall corners -> upstairs (onto the top of the hall wall)
   put(X0 + 2, RY + 1, 1, 6, 3); put(RX - 1, RY - 1, 1, 6, 1);   // upstairs -> roof (on the dividing wall)
   put(X0 + 2, Y0 + 2, 1, 10); put(X1 - 1, Y1 - 1, 2, 10); put(RX + 4, RY + 3, 0, 10); // lamps
-  // town: ruined buildings in the style of a real small town. Every type has rooms, ladders hung on inner walls (each climbs
-  // through a hatch onto the top of that wall, where the wall upstairs leaves a doorway), and things to search on each floor.
+  // town: one building per street block (two in the long northern blocks), each type with its own interior. Every building
+  // has a stair core near its main door: a short two-cell wall with the ladders on one side, alternating cells floor by floor,
+  // so the way up is always in the same, obvious place. Each ladder climbs through a hatch onto the top of that wall.
   TOWN_HOUSES.forEach((H, k) => genBuilding(H, k));
   function genBuilding([x0, y0, x1, y1, st, type], k) {
     const rr = mulberry(seed ^ (k * 7919 + 17));
     const ok = (x, y) => inMap(x, y) && G[col(x, y)] === 0 && tt[col(x, y)] !== TT.water;
     const okIn = (x, y) => ok(x, y) && tt[col(x, y)] !== TT.road;
-    const pad = type === 'apt' || type === 'villa' ? 2 : 0;
+    const flat = type === 'apt' || type === 'shop' || type === 'clinic' || type === 'police';   // flat roof you can get onto
+    const pad = type === 'garage' || type === 'ware' || type === 'barn' ? 0 : 2;
     for (let x = x0 - pad; x <= x1 + pad; x++) for (let y = y0 - pad; y <= y1 + pad; y++) { if (!ok(x, y)) continue; for (let L = 0; L <= st + 1 && L < ML; L++) { blk[ci(x, y, L)] = 0; if (L) slab[ci(x, y, L)] = 0; } if (x >= x0 && x <= x1 && y >= y0 && y <= y1 && tt[col(x, y)] !== TT.road) tt[col(x, y)] = TT.dirt; }
-    const W_ = (x, y, L, id = 24) => { if (okIn(x, y) && L < ML) put(x, y, L, id); };
+    const W_ = (x, y, L, id = 24) => { if (okIn(x, y) && L < ML && !gaps.has(K(x, y, L))) put(x, y, L, id); };
     const F_ = (x, y, L, id = 5) => { if (ok(x, y) && L < ML) putS(x, y, L, id); };
+    const P_ = (x, y, L, id, d) => { if (okIn(x, y) && L < ML && !blk[ci(x, y, L)] && (L === 0 || slab[ci(x, y, L)]) && !hatches.has(K(x, y, L)) && !lads.some(q => q[2] === L && Math.abs(q[0] - x) + Math.abs(q[1] - y) < 2)) put(x, y, L, id, d); };
     const isEdge = (x, y) => x === x0 || x === x1 || y === y0 || y === y1;
     const lads = [], gaps = new Set(), hatches = new Set(), K = (x, y, L) => x + ',' + y + ',' + L;
-    // hang a ladder on wall cell (wx,wy) at floor L, standing on side (sx,sy); the wall upstairs gets a doorway there
     const ladder = (wx, wy, sx, sy, L) => {
       const cx = wx + sx, cy = wy + sy, dir = sx > 0 ? 2 : sx < 0 ? 0 : sy > 0 ? 3 : 1;
       if (hatches.has(K(cx, cy, L)) || gaps.has(K(cx, cy, L)) || hatches.has(K(wx, wy, L + 1))) return false;
       lads.push([cx, cy, L, dir]); gaps.add(K(wx, wy, L + 1)); hatches.add(K(cx, cy, L + 1)); return true;
     };
-    const floors = (from, to, hole) => // hatches are left open here and closed again at the end if their ladder is dropped
-      { for (let L = from; L <= to && L < ML; L++) for (let x = x0; x <= x1; x++) for (let y = y0; y <= y1; y++) if (!hatches.has(K(x, y, L)) && !(hole && hole(x, y, L))) F_(x, y, L); };
-    const perim = (L, gapP, keep) => { for (let x = x0; x <= x1; x++) for (let y = y0; y <= y1; y++) { if (!isEdge(x, y)) continue; const corner = (x === x0 || x === x1) && (y === y0 || y === y1); if (!corner && !(keep && keep(x, y)) && rr() < gapP) { if (L === 0 && rr() < 0.4) W_(x, y, 0, 29); continue; } W_(x, y, L); } };
-    const balcony = (side, a, L) => { // a 3-wide balcony on the north (-1) or south (+1) side of the building, rail round it
+    // stair core: wall cells (wx, wy) and (wx, wy+1); ladders on side sx (-1 west / +1 east) from floor 0 up to floor `top`
+    const coreAt = [];
+    const core = (wx, wy, sx, top) => { coreAt.push([wx, wy]); for (let L = 0; L <= top; L++) ladder(wx, wy + (L % 2), sx, 0, L); };
+    const coreWalls = L => { for (const [wx, wy] of coreAt) for (const y of [wy, wy + 1]) W_(wx, y, L); };
+    const floors = (from, to) => { for (let L = from; L <= to && L < ML; L++) for (let x = x0; x <= x1; x++) for (let y = y0; y <= y1; y++) if (!hatches.has(K(x, y, L))) F_(x, y, L); };
+    // outer wall with a few windows knocked out (never at corners or next to the stair core)
+    const perim = (L, winP) => { for (let x = x0; x <= x1; x++) for (let y = y0; y <= y1; y++) { if (!isEdge(x, y)) continue; const corner = (x === x0 || x === x1) && (y === y0 || y === y1); if (!corner && L > 0 && rr() < winP) continue; W_(x, y, L); } };
+    const roofRail = () => { for (let x = x0; x <= x1; x++) for (let y = y0; y <= y1; y++) if (isEdge(x, y) && !hatches.has(K(x, y, st))) W_(x, y, st, 42); };
+    const balcony = (side, a, L) => {
       const yb = side < 0 ? y0 - 1 : y1 + 1, yr = side < 0 ? y0 - 2 : y1 + 2, yw = side < 0 ? y0 : y1;
       for (let x = a - 1; x <= a + 3; x++) { F_(x, yb, L); F_(x, yr, L); W_(x, yr, L, 42); }
-      W_(a - 1, yb, L, 42); W_(a + 3, yb, L, 42); blk[ci(a + 1, yw, L)] = 0; // the balcony door
+      W_(a - 1, yb, L, 42); W_(a + 3, yb, L, 42); blk[ci(a + 1, yw, L)] = 0;
     };
-    const loot = (L, n, ids) => { for (let j = 0; j < n * 4 && n > 0; j++) { const x = x0 + 1 + Math.floor(rr() * (x1 - x0 - 1)), y = y0 + 1 + Math.floor(rr() * (y1 - y0 - 1)), i = ci(x, y, L); if (blk[i] || !okIn(x, y) || (L > 0 && !slab[i]) || hatches.has(K(x, y, L)) || lads.some(q => q[2] === L && Math.abs(q[0] - x) + Math.abs(q[1] - y) < 2)) continue; put(x, y, L, ids[Math.floor(rr() * ids.length)]); n--; } };
-    const doorsOn = (cells) => { for (const [x, y] of cells) if (okIn(x, y)) { blk[ci(x, y, 0)] = 0; put(x, y, 0, 7); } };
+    const loot = (L, n, ids, ax0 = x0 + 1, ay0 = y0 + 1, ax1 = x1 - 1, ay1 = y1 - 1) => { for (let j = 0; j < n * 6 && n > 0; j++) { const x = ax0 + Math.floor(rr() * (ax1 - ax0 + 1)), y = ay0 + Math.floor(rr() * (ay1 - ay0 + 1)), i = ci(x, y, L); const b0 = blk[i]; P_(x, y, L, ids[Math.floor(rr() * ids.length)]); if (!b0 && blk[i]) n--; } };
+    const door = (x, y) => { if (okIn(x, y)) { blk[ci(x, y, 0)] = 0; put(x, y, 0, 7); } };
+    const open = (x, y, L = 0) => { if (inMap(x, y)) blk[ci(x, y, L)] = 0; };
+    const w = x1 - x0, h = y1 - y0, mx = Math.floor((x0 + x1) / 2), py = Math.floor((y0 + y1) / 2);
+    // a corridor block (apartments, clinic, police upstairs): 3-wide corridor along py, rooms of width `rw` both sides, a door into each
+    const corridorFloor = (L, rw) => {
+      for (let x = x0 + 1; x < x1; x++) for (const yy of [py - 2, py + 2]) { if (Math.floor((x - x0 - 1) % rw) === Math.floor(rw / 2)) continue; W_(x, yy, L); }
+      for (let wx = x0 + rw + 1; wx < x1 - 2; wx += rw) for (let y = y0 + 1; y < y1; y++) { if (Math.abs(y - py) <= 2) continue; W_(wx, y, L); }
+    };
     if (type === 'apt') {
-      // a corridor down the middle, rooms 3 wide on both sides, two ladders per floor on the room walls
-      const py = Math.floor((y0 + y1) / 2), xs = []; for (let x = x0 + 4; x < x1 - 1; x += 4) xs.push(x);
-      for (let L = 0; L < st; L++) {
-        const ya = y0 + 2 + Math.floor(rr() * Math.max(1, py - y0 - 3)), yb = py + 2 + Math.floor(rr() * Math.max(1, y1 - py - 3));
-        const w1 = xs[Math.floor(rr() * xs.length)], w2 = xs[Math.floor(rr() * xs.length)];
-        ladder(w1, ya, -1, 0, L) || ladder(w1, ya, 1, 0, L); ladder(w2, yb, 1, 0, L) || ladder(w2, yb, -1, 0, L);
-      }
+      core(x0 + 3, py - 1, -1, st - 1); if (w >= 24) core(x1 - 3, py - 1, 1, st - 2);
       floors(1, st);
       for (let L = 0; L < st; L++) {
-        perim(L, L === 0 ? 0.06 : 0.16, (x, y) => y === py);
-        for (let x = x0 + 1; x < x1; x++) for (const yy of [py - 1, py + 1]) { if (xs.some(w => x === w - 2) && !gaps.has(K(x, yy, L))) continue; if (!gaps.has(K(x, yy, L))) W_(x, yy, L); } // corridor walls, a door into every room
-        for (const w of xs) for (let y = y0 + 1; y < y1; y++) { if (Math.abs(y - py) <= 1 || gaps.has(K(w, y, L))) continue; W_(w, y, L); }
-        if (L >= 1) for (const w of xs) { if (rr() < 0.55) balcony(-1, w + 1, L); if (rr() < 0.55) balcony(1, w + 1, L); }
-        loot(L, 6, [26, 29, 34, 34, 32, 35]);
+        perim(L, 0.12); coreWalls(L); corridorFloor(L, 6);
+        if (L >= 1) for (let a = x0 + 3; a < x1 - 4; a += 6) { if (rr() < 0.35) balcony(-1, a, L); if (rr() < 0.35) balcony(1, a, L); }
+        loot(L, 4, [34, 34, 32, 26, 33]);
       }
-      for (let x = x0; x <= x1; x++) for (let y = y0; y <= y1; y++) if (isEdge(x, y) && !hatches.has(K(x, y, st))) W_(x, y, st, 42); // roof rail
-      loot(st, 3, [26, 36, 37]);
-      doorsOn([[x0, py], [x1, py], [Math.floor((x0 + x1) / 2), y1]]);
-      blk[ci(Math.floor((x0 + x1) / 2), py + 1, 0)] = 0;
-    } else if (type === 'villa' || type === 'barn') {
-      const py = Math.floor((y0 + y1) / 2), px = x0 + Math.floor((x1 - x0) * (0.35 + rr() * 0.3));
-      if (type === 'villa' && st > 1) for (let L = 0; L < st - 1; L++) { const a = x0 + 2 + Math.floor(rr() * (x1 - x0 - 4)); ladder(a, py, 0, 1, L) || ladder(a + 1, py, 0, -1, L); ladder(x0 + 1 + Math.floor(rr() * 2), py, 0, -1, L) || ladder(x1 - 2, py, 0, 1, L); }
-      if (st > 1) floors(1, st - 1);
-      for (let L = 0; L < st; L++) {
-        perim(L, L === 0 ? 0.05 : 0.12);
-        if (type === 'villa') {
-          for (let x = x0 + 1; x < x1; x++) { if (gaps.has(K(x, py, L)) || (x - x0) % 6 === 3) continue; W_(x, py, L); }                    // front / back rooms, a doorway every 6
-          for (let wx = x0 + 6 + (L % 2) * 2; wx < x1 - 2; wx += 6) for (let y = y0 + 1; y < y1; y++) if (y !== py && y !== py - 2 && y !== py + 2 && !gaps.has(K(wx, y, L))) W_(wx, y, L); // side rooms
-          if (L >= 1 && L === st - 1) balcony(1, Math.floor((x0 + x1) / 2) - 1, L);
-        }
-        loot(L, type === 'barn' ? 4 : 5, [26, 29, 34, 35, 32, 33]);
+      roofRail(); loot(st, 2, [26, 36, 37]);
+      door(x0, py + 1); door(x1, py); door(mx, y1); open(mx, py + 2);
+    } else if (type === 'villa') {
+      const kx = x0 + Math.floor(w * 0.6);
+      core(x0 + 3, y1 - 4, -1, st - 2);
+      floors(1, st - 1);
+      // ground floor: an open living room and a kitchen behind a wall with a wide opening
+      perim(0, 0); coreWalls(0); for (let y = y0 + 1; y < y1; y++) if (Math.abs(y - py) > 1) W_(kx, y, 0);
+      P_(kx + 2, y0 + 1, 0, 34); P_(kx + 3, y0 + 1, 0, 34); P_(x1 - 1, y0 + 1, 0, 32); P_(x0 + 6, py, 0, 14); P_(x0 + 7, py, 0, 14); // kitchen cupboards, bin, a sofa
+      loot(0, 2, [26, 33]);
+      // upstairs (the attic under the roof): a landing by the ladder, three bedrooms along the back
+      for (let L = 1; L < st; L++) {
+        perim(L, 0.1); coreWalls(L);
+        for (let x = x0 + 1; x < x1; x++) if ((x - x0) % 5 !== 3) W_(x, py, L);
+        for (let wx = x0 + 5; wx < x1 - 1; wx += 5) for (let y = y0 + 1; y < py; y++) W_(wx, y, L);
+        balcony(1, mx - 1, L);
+        loot(L, 4, [34, 34, 33, 35]);
       }
-      if (type === 'villa') doorsOn([[Math.floor((x0 + x1) / 2), y1], [x0 + 2, y0], [x1, py + 2]]); else for (const [x, y] of [[Math.floor((x0 + x1) / 2), y1], [Math.floor((x0 + x1) / 2) + 1, y1]]) blk[ci(x, y, 0)] = 0;
+      door(mx, y1); door(x0 + 2, y0); door(x1, py + 2);
     } else if (type === 'ware') {
-      // a tall hall (two storeys of wall), a mezzanine along the north side reached by ladders on its pillars, rows of shelves
       const my = y0 + 3;
       for (let x = x0 + 1; x < x1; x++) for (let y = y0 + 1; y <= my; y++) F_(x, y, 1);
       const pillars = []; for (let x = x0 + 3; x < x1 - 1; x += 4) pillars.push(x);
       for (const x of pillars) W_(x, my, 0);
       const lp = [pillars[0], pillars[pillars.length - 1]];
       for (const x of lp) { lads.push([x, my + 1, 0, 3]); gaps.add(K(x, my, 1)); }
-      for (let x = x0 + 1; x < x1; x++) if (!lp.includes(x)) W_(x, my, 1, 42);                       // mezzanine rail
-      perim(0, 0.04); perim(1, 0.1, (x, y) => true);
-      for (let L = 1; L < 2; L++) for (let x = x0; x <= x1; x++) for (let y = y0; y <= y1; y++) if (isEdge(x, y) && (x + y) % 3 === 0 && y !== y0) blk[ci(x, y, 1)] = 0; // high windows
-      for (let y = my + 3; y < y1 - 1; y += 3) for (let x = x0 + 3; x < x1 - 2; x++) if ((x - x0) % 6 !== 0 && okIn(x, y) && !blk[ci(x, y, 0)]) put(x, y, 0, [34, 26, 37, 40, 34][Math.floor(rr() * 5)]); // shelves / crates / drums
-      loot(1, 5, [26, 36, 35]);
-      const dx = Math.floor((x0 + x1) / 2); for (const x of [dx, dx + 1]) blk[ci(x, y1, 0)] = 0; doorsOn([[x0, y1 - 2], [x1, my + 2]]);
+      for (let x = x0 + 1; x < x1; x++) if (!lp.includes(x)) W_(x, my, 1, 42);
+      perim(0, 0); perim(1, 0.25);
+      for (let y = my + 3; y < y1 - 1; y += 3) for (let x = x0 + 3; x < x1 - 2; x++) if ((x - x0) % 6 !== 0 && okIn(x, y) && !blk[ci(x, y, 0)]) put(x, y, 0, rr() < 0.3 ? [34, 26, 37][Math.floor(rr() * 3)] : [14, 40][Math.floor(rr() * 2)]); // racks, drums, crates
+      loot(1, 4, [26, 36, 35]);
+      for (const x of [mx, mx + 1]) open(x, y1); door(x0, y1 - 2); door(x1, my + 2);
+    } else if (type === 'shop') {
+      // supermarket: aisles of shelving, checkouts by the doors, a stockroom at the back with the way up to the roof
+      const sx = x1 - 5;
+      for (let y = y0 + 1; y < y1; y++) if (y !== py) W_(sx, y, 0);
+      ladder(sx, y0 + 2, 1, 0, 0);
+      floors(1, 1);
+      perim(0, 0);
+      for (let y = y0 + 3; y <= y1 - 4; y += 3) for (let x = x0 + 3; x < sx - 1; x++) if ((x - x0) % 7 !== 0) P_(x, y, 0, rr() < 0.3 ? 34 : 14);
+      for (let x = x0 + 3; x < sx - 2; x += 4) P_(x, y1 - 2, 0, 14);
+      loot(0, 4, [26, 37, 36], sx + 1, y0 + 1, x1 - 1, y1 - 1);
+      roofRail(); loot(1, 2, [26, 33]);
+      for (const x of [mx - 1, mx]) open(x, y1); door(x0, py); door(x1, y1 - 2);
+    } else if (type === 'clinic') {
+      core(x0 + 3, py - 1, -1, st - 1);
+      floors(1, st);
+      for (let L = 0; L < st; L++) {
+        perim(L, 0.1); coreWalls(L); corridorFloor(L, 5);
+        loot(L, 4, [33, 33, 34, 34, 26]);   // backpacks and cabinets carry the medkits
+      }
+      P_(x0 + 6, py + 1, 0, 14); P_(x0 + 7, py + 1, 0, 14);               // reception desk
+      roofRail(); loot(st, 1, [26]);
+      door(x0, py + 1); door(x1, py); door(mx, y1); open(mx, py + 2);
+    } else if (type === 'police') {
+      // ground: front office with a desk, a row of cells behind bars, an armoury with military crates; offices upstairs
+      const cy = y0 + 4, ax = x1 - 5;
+      core(x0 + 3, y1 - 4, -1, st - 1);
+      floors(1, st);
+      perim(0, 0); coreWalls(0);
+      for (let x = x0 + 1; x < ax; x++) W_(x, cy, 0, (x - x0) % 4 === 2 ? 0 : 8);              // bars along the cells, a gap into each
+      for (let x = x0 + 4; x < ax; x += 4) for (let y = y0 + 1; y < cy; y++) W_(x, y, 0);
+      for (let y = y0 + 1; y < y1; y++) if (y !== py + 1) W_(ax, y, 0);
+      for (const [x, y] of [[ax + 2, y0 + 1], [ax + 3, y0 + 1], [ax + 2, y0 + 2], [x1 - 1, y1 - 1]]) P_(x, y, 0, 36); P_(ax + 3, y1 - 1, 0, 26);
+      P_(mx - 1, y1 - 3, 0, 14); P_(mx, y1 - 3, 0, 14); P_(mx + 1, y1 - 3, 0, 14);
+      loot(0, 2, [34, 33], x0 + 1, cy + 1, ax - 1, y1 - 1);
+      for (let L = 1; L < st; L++) { perim(L, 0.1); coreWalls(L); corridorFloor(L, 5); loot(L, 4, [34, 34, 36, 33]); }
+      roofRail(); loot(st, 1, [36]);
+      door(mx, y1); door(x0, py + 1); door(x1, py + 1);
+    } else if (type === 'garage') {
+      // repair shop: a big hall with cars up on the floor, tool benches along the back, an office in the corner
+      perim(0, 0);
+      for (let x = mx - 2; x <= mx + 1; x++) open(x, y1);                                   // the roller door
+      const ox = x1 - 5, oy = y0 + 4;
+      for (let x = ox; x < x1; x++) W_(x, oy, 0); for (let y = y0 + 1; y < oy; y++) W_(ox, y, 0); open(ox + 2, oy);
+      P_(ox + 2, y0 + 1, 0, 34); P_(x1 - 1, y0 + 2, 0, 26);
+      for (const [x, y, d] of [[x0 + 4, py, 1], [x0 + 9, py + 1, 1], [x0 + 14, py, 3]]) if (x < ox - 1) P_(x, y, 0, 25, d);
+      for (let x = x0 + 2; x < ox - 1; x += 3) P_(x, y0 + 1, 0, rr() < 0.6 ? 35 : 39);
+      for (let y = y0 + 3; y < y1 - 1; y += 3) P_(x0 + 1, y, 0, 37);
+      loot(0, 2, [39, 35, 26]);
+      door(x0, py); door(x1, y1 - 2);
+    } else { // barn: one big shed
+      perim(0, 0); loot(0, 4, [26, 29, 34, 35, 32, 33]);
+      for (const x of [mx, mx + 1]) open(x, y1);
     }
     const placed = new Set();
     for (const [cx, cy, L, dir] of lads) {
       const [dx, dy] = DIRS[dir], fb = blk[ci(cx + dx, cy + dy, L)], up = blk[ci(cx + dx, cy + dy, L + 1)];
       const exitOk = !up || !(B[up].P || B[up].Z);
-      if (!fb || !B[fb].top || !(B[fb].P || B[fb].Z) || B[fb].stairs || !exitOk || !okIn(cx, cy) || blk[ci(cx, cy, L)] === 7) continue; // no wall to hang on: no ladder (the floor above stays closed)
+      if (!fb || !B[fb].top || !(B[fb].P || B[fb].Z) || B[fb].stairs || !exitOk || !okIn(cx, cy) || blk[ci(cx, cy, L)] === 7) continue;
       blk[ci(cx, cy, L)] = 0; slab[ci(cx, cy, L + 1)] = 0; shp[ci(cx, cy, L + 1)] = 0; put(cx, cy, L, 6, dir); placed.add(K(cx, cy, L + 1));
     }
     for (const h of hatches) if (!placed.has(h)) { const [x, y, L] = h.split(',').map(Number); if (L <= st && L < ML && okIn(x, y) && !slab[ci(x, y, L)] && (type !== 'ware' || y <= y0 + 3)) F_(x, y, L); }
@@ -4769,6 +4837,7 @@ function rayWorld(ox, oy, oz, dx, dy, dz, maxD, opt) {
     if (opt && opt.hide && opt.hide(x, y, l)) return false;
     const i = ci(x, y, l), b = W.blk[i];
     if (!b) return false;
+    if (lean && B[b].cost && !B[b].slab && d * hz < PORT) return false; // hugging your own wall: shoot through the gap (zombies still can't pass)
     if (B[b].B || any) {
       if ((b === 1 || b === 2 || b === 3) && isParapet(i)) {
         // waist-high: the ray only stops if it dips below the top inside this cell (or the shooter is leaning over it)
@@ -4779,7 +4848,7 @@ function rayWorld(ox, oy, oz, dx, dy, dz, maxD, opt) {
       }
       return true;
     }
-    if (pick && (b === 22 || b === 21 || b === 23 || B[b].P)) return true;
+    if (pick && b !== 21 && b !== 22 && b !== 41 && b !== 40 && (b === 23 || B[b].P)) return true; // aiming looks past trees, rocks, bushes, logs
     return false;
   };
   for (let it = 0; it < 400 && d <= maxD; it++) {
@@ -5119,7 +5188,7 @@ function fireWeapon(p, wi) {
   const yaw = Math.atan2(ay, ax), pitch = Math.asin(clamp(az, -1, 1));
   const mul = 1 + 0.12 * W.upg, ends = [];
   if (w.gl) { // launcher: an explosive shell on a flat arc that bursts on whatever it touches
-    const v = 17; W.proj.push({ k: 'gl', x: sx + ax * 0.45, y: sy + ay * 0.45, z: sz, vx: Math.cos(pitch) * Math.cos(yaw) * v, vy: Math.cos(pitch) * Math.sin(yaw) * v, vz: Math.sin(pitch) * v + 1.2, o: p.i, t: 2.6 });
+    const v = 17; W.proj.push({ k: 'gl', ox: p.x, oy: p.y, x: sx + ax * 0.45, y: sy + ay * 0.45, z: sz, vx: Math.cos(pitch) * Math.cos(yaw) * v, vy: Math.cos(pitch) * Math.sin(yaw) * v, vz: Math.sin(pitch) * v + 1.2, o: p.i, t: 2.6 });
     emit({ k: 'shot', o: p.i, w: wi, e: [] }); return;
   }
   if (w.flame) { // a cone of fire: everything in front, in range and in sight catches fire
@@ -5406,7 +5475,8 @@ function stepProj(dt) {
     if (b.k === 'gl') {
       b.t -= dt;
       const nx = b.x + b.vx * dt, ny = b.y + b.vy * dt, nz = b.z + b.vz * dt, cx = Math.floor(nx), cy = Math.floor(ny);
-      let boom = b.t <= 0 || !inMap(cx, cy) || solidFor(blkAt(cx, cy, Math.floor(nz / FH)), 'b') || nz <= floorUnder(nx, ny, b.z + 0.05);
+      const hb = blkAt(cx, cy, Math.floor(nz / FH)), port = hb && B[hb].cost && b.ox != null && Math.hypot(nx - b.ox, ny - b.oy) < PORT + 0.4;
+      let boom = b.t <= 0 || !inMap(cx, cy) || (solidFor(hb, 'b') && !port) || nz <= floorUnder(nx, ny, b.z + 0.05);
       if (!boom) for (const z of W.zs) if (z.hp > 0 && d2(z.x, z.y, nx, ny) < z.r + 0.2 && nz > z.z - 0.1 && nz < z.z + z.h + 0.15) { boom = true; break; }
       if (boom) { b.dead = true; explode(b.x, b.y, Math.max(b.z, floorUnder(b.x, b.y, b.z + 0.05)) + 0.15, W.p[b.o], 2.4, WPN[6].dmg); } else { b.x = nx; b.y = ny; b.z = nz; }
     } else if (b.k === 'nade') {
@@ -6351,8 +6421,8 @@ function houseOf(x, y) { for (let k = 0; k < TOWN_HOUSES.length; k++) { const [x
 function roofSpan(k) {
   const [x0, y0, x1, y1, st] = TOWN_HOUSES[k], west = hash2(k, 77) < 0.5;
   const type = TOWN_HOUSES[k][5];
-  if (type === 'apt') return null;                                       // flat roofs with a rail on apartment blocks
-  if (type === 'villa' || type === 'ware') return { west, xa: x0, xb: x1, lvl: st - 1, whole: 1 }; // a whole pitched roof (the attic / the hall)
+  if (type === 'apt' || type === 'shop' || type === 'clinic' || type === 'police') return null; // flat roofs with a rail you can stand on
+  if (type === 'villa' || type === 'ware' || type === 'garage') return { west, xa: x0, xb: x1, lvl: st - 1, whole: 1 }; // a whole pitched roof (the attic / the hall)
   return { west, xa: west ? x0 : x1 - 2, xb: west ? x0 + 2 : x1, lvl: 0 };
 }
 for (let k = 0; k < TOWN_HOUSES.length; k++) {
@@ -7118,7 +7188,7 @@ const INP = { keys: {}, mx: 0, my: 0, mL: false, mR: false, mouseT: 0, touch: fa
   move: { id: null, ox: 0, oy: 0, x: 0, y: 0 }, tAim: { id: null, x: 0, y: 0 }, aim: { id: null, ox: 0, oy: 0, x: 0, y: 0, a: 0, t: 0, btn: false }, tp: {}, pinch: null, useHeld: false, bldT: 0, bldLast: '', paint: null, aimT: 0 };
 const KD = k => !!INP.keys[k];
 const inGame = () => STATE.mode === 'play' && W && !W.over;
-const panelOpen = () => !$('craft').classList.contains('hidden') || !$('pause').classList.contains('hidden') || !$('help').classList.contains('hidden');
+const panelOpen = () => !$('bigmap').classList.contains('hidden') || !$('craft').classList.contains('hidden') || !$('pause').classList.contains('hidden') || !$('help').classList.contains('hidden');
 function act(a, v) {
   const me = W && W.p[ME]; if (!me) return;
   if (a === 'wpn' && (me.down || !me.owned[v])) return;
@@ -7169,6 +7239,8 @@ addEventListener('keydown', e => {
   if (e.target && e.target.tagName === 'INPUT') return;
   const k = e.key.length === 1 ? e.key.toLowerCase() : e.key;
   audioInit();
+  if (k === 'Escape' && typeof bigMapOpen === 'function' && bigMapOpen()) { toggleBigMap(false); e.preventDefault(); return; }
+  if (k === 'Tab' && STATE.mode === 'play') { toggleBigMap(); e.preventDefault(); return; }
   if (k === 'Escape') { if (PLAN || PREV) { cancelPlan(); e.preventDefault(); return; } if (STATE.mode === 'play') togglePause(); e.preventDefault(); return; }
   if (!INP.keys[k]) onKeyPress(k);
   INP.keys[k] = true;
@@ -7805,7 +7877,7 @@ function uiKeys(me) {
       ['V', '刀（自动追）'], ['空格', '跳 / 翻越'], ['F', ut ? ut.name : '交互', ut ? 1 : 0], ['1–' + NW, '换枪'], ['C', '制作', bench ? 1 : -1], ['B', '建造']];
     if (W.phase === 'day') rows.push(['N', me.ready ? '取消准备' : '准备入夜', me.ready ? 1 : 0]);
   }
-  rows.push(['Q E', '转镜头'], ['Esc', '菜单']);
+  rows.push(['Tab', '大地图'], ['Q E', '转镜头'], ['Esc', '菜单']);
   const key = (SET.keysOff ? 1 : 0) + rows.map(r => r.join(':')).join('|'); if (UI.keysK === key) return; UI.keysK = key;
   el.classList.toggle('min', !!SET.keysOff);
   el.innerHTML = `<div class="kh"><span>按键</span><span>${SET.keysOff ? '展开 ▾' : '收起 ▴'}</span></div><div class="kg">` + rows.map(([k, t, c]) => `<kbd${st(c)}>${k}</kbd><span${st(c)}>${t}</span>`).join('') + '</div>';
@@ -7875,6 +7947,7 @@ function hudTick(dt) {
   if (UI.toastT > 0 && (UI.toastT -= dt) <= 0) $('toast').classList.remove('show');
   if (UI.bannerT > 0 && (UI.bannerT -= dt) <= 0) $('banner').classList.remove('show');
   UI.hudT -= dt; if (UI.hudT > 0) return; UI.hudT = 0.1;
+  if (bigMapOpen() && (UI.bmT = (UI.bmT || 0) + 1) % 3 === 0) drawBigMap();
   const me = W.p[ME];
   // players
   $('pcards').innerHTML = W.p.map(p => {
@@ -7982,6 +8055,35 @@ function togglePause(force) {
   $('pHub').classList.toggle('hidden', !HUB);
   STATE.paused = open && NETROLE === 'solo';
 }
+/* ---------- big map: tap the minimap (or Tab) ---------- */
+const BTYPE = { apt: ['公寓', '#c9a46a'], villa: ['别墅', '#b46a4a'], ware: ['仓库', '#7f8a96'], shop: ['超市', '#5a9a6a'], clinic: ['诊所', '#e8e2d6'], police: ['警局', '#4a6aa8'], garage: ['修车厂', '#a8783a'], barn: ['谷仓', '#8a5a3a'] };
+const BTIP = { apt: '房间多，柜子和补给箱', villa: '柜子、背包', ware: '补给箱、油桶、军用箱', shop: '货架上的柜子，仓库里有补给', clinic: '背包和柜子（医疗包多）', police: '军用物资箱（弹药、手雷）', garage: '工具箱、废铁、汽车（零件和钢材）', barn: '杂物' };
+function bigMapOpen() { return !$('bigmap').classList.contains('hidden'); }
+function toggleBigMap(force) {
+  if (STATE.mode !== 'play' || !W) return;
+  const open = force != null ? force : !bigMapOpen();
+  $('bigmap').classList.toggle('hidden', !open); STATE.paused = open && NETROLE === 'solo';
+  if (open) { drawBigMap(); $('bmLeg').innerHTML = Object.entries(BTYPE).map(([k, [n, c]]) => `<span title="${BTIP[k]}"><i style="background:${c}"></i>${n}：${BTIP[k]}</span>`).join('') + '<span><i style="background:#7fd36b"></i>营地</span><span><i style="background:#ff3b2f;border-radius:50%"></i>丧尸</span><span><i style="background:#9aa0a6"></i>汽车</span>'; }
+  sfx('click');
+}
+function drawBigMap() {
+  const cv = $('bigmapC'); if (!cv || !MM.base) return; const g = cv.getContext('2d'), S = cv.width / MW, R = CAM.yaw;
+  const rot = (x, y) => { const cx = cv.width / 2, cy = cv.height / 2, dx = x * S - cx, dy = y * S - cy; return [cx + dx * Math.cos(R) - dy * Math.sin(R), cy + dx * Math.sin(R) + dy * Math.cos(R)]; };
+  g.save(); g.clearRect(0, 0, cv.width, cv.height);
+  g.translate(cv.width / 2, cv.height / 2); g.rotate(R); g.translate(-cv.width / 2, -cv.height / 2);
+  g.imageSmoothingEnabled = false; g.globalAlpha = 0.85; g.drawImage(MM.base, 0, 0, cv.width, cv.height); g.globalAlpha = 1;
+  TOWN_HOUSES.forEach(([x0, y0, x1, y1, st, t]) => { const c = (BTYPE[t] || ['', '#888'])[1]; g.fillStyle = c; g.globalAlpha = 0.8; g.fillRect(x0 * S, y0 * S, (x1 - x0 + 1) * S, (y1 - y0 + 1) * S); g.globalAlpha = 1; g.strokeStyle = 'rgba(0,0,0,.6)'; g.lineWidth = 1.5; g.strokeRect(x0 * S, y0 * S, (x1 - x0 + 1) * S, (y1 - y0 + 1) * S); });
+  g.strokeStyle = 'rgba(255,207,107,.8)'; g.lineWidth = 2; g.strokeRect((W.radio.x - BUILD_R) * S, (W.radio.y - BUILD_R) * S, (BUILD_R * 2 + 1) * S, (BUILD_R * 2 + 1) * S);
+  g.fillStyle = 'rgba(127,211,107,.85)'; g.fillRect((W.radio.x - 6) * S, (W.radio.y - 5) * S, 13 * S, 11 * S);
+  for (let i = 0; i < NC; i++) { const b = W.blk[i]; if (b !== 25 && b !== 38) continue; g.fillStyle = W.srch.has(i) ? '#4a4a4a' : b === 38 ? '#e05a5a' : '#c8ccd0'; g.fillRect(cx_(i) * S - 2, cy_(i) * S - 2, 4, 4); }
+  g.fillStyle = '#ff3b2f'; for (const z of W.zs) g.fillRect(z.x * S - 2, z.y * S - 2, 4, 4);
+  g.restore();
+  // labels and players upright on top
+  g.font = '600 13px ' + getComputedStyle(document.body).fontFamily; g.textAlign = 'center'; g.textBaseline = 'middle';
+  TOWN_HOUSES.forEach(([x0, y0, x1, y1, st, t]) => { const [px, py] = rot((x0 + x1 + 1) / 2, (y0 + y1 + 1) / 2), lab = (BTYPE[t] || [t])[0] + (st > 1 ? ' ' + st + '层' : ''); g.lineWidth = 3; g.strokeStyle = 'rgba(0,0,0,.75)'; g.strokeText(lab, px, py); g.fillStyle = '#fff'; g.fillText(lab, px, py); });
+  { const [px, py] = rot(W.radio.x + 0.5, W.radio.y + 0.5); g.lineWidth = 3; g.strokeStyle = 'rgba(0,0,0,.75)'; g.strokeText('营地', px, py); g.fillStyle = '#d8ffcc'; g.fillText('营地', px, py); }
+  for (const p of W.p) { if (p.gone || p.dead) continue; const [px, py] = rot(p.x, p.y); g.fillStyle = PCOL[p.i % 2].j; g.beginPath(); g.arc(px, py, 6, 0, 7); g.fill(); g.strokeStyle = '#fff'; g.lineWidth = 2; g.stroke(); g.fillStyle = '#fff'; g.font = '600 12px ' + getComputedStyle(document.body).fontFamily; g.strokeStyle = 'rgba(0,0,0,.8)'; g.lineWidth = 3; g.strokeText(p.name, px, py - 14); g.fillText(p.name, px, py - 14); }
+}
 function openHelp() { $('help').classList.remove('hidden'); }
 function closeHelp() { $('help').classList.add('hidden'); }
 function showOver(e) {
@@ -8024,6 +8126,8 @@ function initUI() {
   $('pauseBtn').onclick = () => togglePause();
   $('muteBtn').onclick = () => { setMute(!SET.mute); uiMute(); };
   $('pMute').onclick = () => { setMute(!SET.mute); uiMute(); };
+  $('mini').addEventListener('pointerdown', e => { e.stopPropagation(); e.preventDefault(); toggleBigMap(true); });
+  $('bigmap').addEventListener('pointerdown', e => { e.stopPropagation(); e.preventDefault(); toggleBigMap(false); });
   $('keys').addEventListener('pointerdown', e => { e.stopPropagation(); if (!e.target.closest('.kh')) return; SET.keysOff = !SET.keysOff; saveSet(); UI.keysK = ''; if (W && W.p[ME]) uiKeys(W.p[ME]); sfx('click'); });
   $('pAssist').onclick = () => { SET.assist = ((SET.assist == null ? 1 : SET.assist) + 1) % 3; saveSet(); $('pAssist').textContent = '辅助瞄准：' + assistLv().name; sfx('click'); };
   $('pQual').onclick = () => { const o = ['auto', 0, 1, 2], i = o.indexOf(SET.q == null ? 'auto' : SET.q); SET.q = o[(i + 1) % 4]; if (SET.q === 'auto') SET.qa = 0; saveSet(); applyQual(); $('pQual').textContent = qualLabel(); sfx('click'); };

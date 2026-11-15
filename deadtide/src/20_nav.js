@@ -141,6 +141,7 @@ function rayWorld(ox, oy, oz, dx, dy, dz, maxD, opt) {
     if (opt && opt.hide && opt.hide(x, y, l)) return false;
     const i = ci(x, y, l), b = W.blk[i];
     if (!b) return false;
+    if (lean && B[b].cost && !B[b].slab && d * hz < PORT) return false; // hugging your own wall: shoot through the gap (zombies still can't pass)
     if (B[b].B || any) {
       if ((b === 1 || b === 2 || b === 3) && isParapet(i)) {
         // waist-high: the ray only stops if it dips below the top inside this cell (or the shooter is leaning over it)
@@ -151,7 +152,7 @@ function rayWorld(ox, oy, oz, dx, dy, dz, maxD, opt) {
       }
       return true;
     }
-    if (pick && (b === 22 || b === 21 || b === 23 || B[b].P)) return true;
+    if (pick && b !== 21 && b !== 22 && b !== 41 && b !== 40 && (b === 23 || B[b].P)) return true; // aiming looks past trees, rocks, bushes, logs
     return false;
   };
   for (let it = 0; it < 400 && d <= maxD; it++) {
