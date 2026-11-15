@@ -232,6 +232,25 @@ body:not(.touch) .tch{display:none}
   #prompt{white-space:normal;width:90vw}
 }
 @media (max-height:520px){#pause .card{display:grid;grid-template-columns:1fr 1fr;gap:8px;align-content:start}#pause .card h3,#pause #resumeBtn{grid-column:1/-1}#pause .card button{margin:0}}
+#keys{font-size:12px;color:var(--sub);padding:5px 8px 6px;pointer-events:auto}
+#keys .kh{display:flex;justify-content:space-between;cursor:pointer;color:#cdbfa8;font-size:12px;margin-bottom:3px}
+#keys .kg{display:grid;grid-template-columns:auto 1fr auto 1fr;gap:3px 6px;align-items:center}
+#keys kbd,#wbar kbd{font-family:var(--num);font-size:11.5px;color:#fff;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.22);border-radius:4px;padding:0 5px;min-width:12px;text-align:center;line-height:17px;justify-self:start}
+#keys span{white-space:nowrap}#keys .off{opacity:.35}#keys .hot{color:#ffd27a}#keys .hot kbd{border-color:#ffd27a;color:#ffd27a}
+#keys .warn{color:#ff7a6a;animation:kp .8s ease-in-out infinite alternate}#keys .warn kbd{border-color:#ff7a6a;color:#ff7a6a}@keyframes kp{to{opacity:.55}}
+#keys.min .kg{display:none}#keys.min .kh{margin:0}
+#wbar kbd{margin-right:4px;font-size:11px;line-height:15px}
+#reticle{position:fixed;left:0;top:0;width:0;height:0;pointer-events:none;z-index:6}
+#reticle i{position:absolute;left:0;top:0;transform:translate(-50%,-50%);border-radius:50%}
+#reticle .c{border:2px solid rgba(255,255,255,.9);box-shadow:0 0 0 1px rgba(0,0,0,.45),inset 0 0 0 1px rgba(0,0,0,.35);transition:width .08s,height .08s}
+#reticle .d{width:4px;height:4px;background:#fff;box-shadow:0 0 0 1px rgba(0,0,0,.6)}
+#reticle .r{width:30px;height:30px;background:conic-gradient(#ffd27a var(--p,0%),transparent 0);-webkit-mask:radial-gradient(circle,transparent 11px,#000 12px);mask:radial-gradient(circle,transparent 11px,#000 12px)}
+#reticle b{position:absolute;left:14px;top:10px;font:600 11px var(--font);color:#ffd23a;text-shadow:0 1px 2px #000;white-space:nowrap}
+#reticle.lock .c{border-color:#ff5a4a}#reticle.lock .d{background:#ff5a4a}
+#reticle.head .c{border-color:#ffd23a}#reticle.head .d{background:#ffd23a}
+#reticle.far .c{border-style:dashed;border-color:rgba(255,255,255,.45)}
+body.aiming canvas#cv{cursor:none}body.touch #reticle{display:none!important}
+@media (max-height:600px){#keys .kg{grid-template-columns:auto 1fr auto 1fr auto 1fr}}
 </style>
 </head>
 <body>
@@ -251,6 +270,7 @@ body:not(.touch) .tch{display:none}
       <div class="items"><div>手雷 <span id="iNade">1</span></div><div>医疗包 <span id="iMed">1</span></div><div>击杀 <span id="iKill">0</span></div></div>
       <button id="tMed" class="tmed tch hidden">医疗</button>
     </div>
+    <div class="hcard ptr" id="keys"></div>
   </div>
   <div id="hTC" class="hcard">
     <div id="phase">白天</div>
@@ -271,6 +291,7 @@ body:not(.touch) .tch{display:none}
   <div id="log"></div>
   <div id="banner"><h2 id="bnT"></h2><p id="bnS"></p></div>
   <div id="toast"></div>
+  <div id="reticle" class="hidden"><i class="c"></i><i class="r"></i><i class="d"></i><b id="rtTag"></b></div>
   <div id="wbar"></div>
   <div id="binfo" class="hidden"></div>
   <div id="bbar" class="hidden"></div>
@@ -343,8 +364,8 @@ body:not(.touch) .tch{display:none}
       <h4>白天</h4>出门砍树（木材）、采石（砖石），搜汽车、补给箱和废墟瓦砾（钢材、零件、弹药），离家越远收获越多；回来盖楼、在营地小屋的工作台造枪。河上只有两座桥，丧尸也只能从桥上过河。每 5 夜一次血月。
       <h4>建造</h4>只能在营地周围的黄框里建造。<b>指哪盖哪，不用切楼层</b>：指地面或楼板就盖在上面；指墙顶就往上叠一层；指墙的侧面就贴着它盖；楼板会自动铺成墙上的天花板，站在楼上指外面能往外延伸阳台。<b>按住拖动</b>沿直线一次盖一排。拆除也是指哪拆哪。方块要有<b>支撑</b>：从地面往上传，往旁边每格减 1，支撑断了会连锁坍塌。<b>楼上最外圈、上面没东西的墙是半人高的矮墙</b>：子弹能从上面飞过，贴着矮墙可以探身往下打；地面一层的墙还是整面墙。门让人通过但挡丧尸，射击栅栏能从里面开枪。丧尸会砸墙砸门、走楼梯；攀爬者会翻墙。<h4>爬梯、翻越和跳</h4>楼梯换成了靠墙的爬梯：朝箭头方向走就爬上去，往下爬要继续推一下。丧尸爬梯子很慢（攀爬者除外），所以多放几个梯子方便自己走位，梯子口就是守点。人能<b>翻过</b>沙袋矮墙、拒马、铁皮掩体、栅栏、瓦砾和一人高的墙（贴着推一下，或按跳），也能跳过一格宽的空隙；丧尸不会翻，只能砸。<h4>障碍物</h4>沙袋矮墙（子弹能从上面打过去）、拒马（丧尸砸它会被扎）、铁皮掩体（挡子弹）、捕兽夹（夹住丧尸 2.5 秒，一次性）、铁丝网、探照灯。用矮墙和掩体把楼里隔成一段一段，自己翻来翻去，丧尸只能一路砸过来。<h4>建造确认</h4>点一下或拖一排，先出现绿色预览（拆除是红色），再点 ✓、按 Enter 或再点一下预览才真正建造 / 拆除；建造栏的「二次确认」可以关掉。
       <h4>视角</h4>滚轮或 ＋/－ 缩放，Q / E 或 ⟲⟳ 转镜头。楼层视图默认跟随你所在的层，上面的楼层会自动隐藏；▲▼ 手动看别的层，「跟随我所在的层」恢复。
-      <h4 class="kbd">键鼠</h4><div class="kbd"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> 移动（相对屏幕）　鼠标瞄准，左键射击<br><kbd>R</kbd> 换弹　<kbd>1</kbd>–<kbd>7</kbd> 换枪　<kbd>空格</kbd> 跳 / 翻越　<kbd>V</kbd> 推开丧尸　<kbd>G</kbd> 手雷　<kbd>H</kbd> 医疗包（倒地时自救）<br><kbd>F</kbd> 按住：砍树 / 采石 / 搜索 / 扶起队友；在工作台按 <kbd>F</kbd> 打开制作<br><kbd>B</kbd> 建造模式：数字键选方块，鼠标指哪盖哪（左键放置或修理，按住拖动盖一排），右键拆除，<kbd>R</kbd> 转楼梯朝向<br><kbd>Q</kbd><kbd>E</kbd> 转镜头　滚轮缩放　<kbd>PageUp</kbd><kbd>PageDown</kbd> 切换楼层视图　<kbd>Home</kbd> 跟随自己<br><kbd>N</kbd> 准备入夜　<kbd>M</kbd> 静音　<kbd>Esc</kbd> 菜单</div>
-      <h4 class="tch">触屏</h4><div class="tch">左半屏任意位置按下就出现摇杆（左下角的虚线圈是提示），拖过圈外摇杆会跟着手指走；靠近横平竖直的方向会自动吸附，沿墙走、过门更稳。右下的红色「射击」键：按住就开火，自动瞄准最近的丧尸（包括楼上楼下）；按住拖向某个方向就朝那边打。旁边是换弹、手雷、推开和「跳」（翻越障碍、跳过空隙），上面的小条点一下换枪。靠近树、石头、汽车、补给箱或倒地的队友时，会冒出一个大按键，按住就砍树 / 搜索 / 扶人；受伤后左上角会出现「用医疗包」。右上角「建造」进出建造模式：在右半屏点哪盖哪，按住拖动盖一排，再点 ✓ 确认；「视角」打开缩放、转镜头和楼层视图。两根手指捏合也能缩放。</div>
+      <h4 class="kbd">键鼠</h4><div class="kbd"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> 移动（相对屏幕）　鼠标瞄准，左键射击<br>瞄准：准星圆圈的大小就是这把枪在那个距离的散布；指在丧尸身上变红，指在它头顶（身形最上面那一截）变黄＝爆头，手枪爆头 ×2.2；离丧尸差一点也会吸过去；虚线＝超出射程。左上角列出所有按键，点「收起」可折叠。<br><kbd>R</kbd> 换弹　<kbd>1</kbd>–<kbd>7</kbd> 换枪　<kbd>空格</kbd> 跳 / 翻越　<kbd>V</kbd> 推开丧尸　<kbd>G</kbd> 手雷　<kbd>H</kbd> 医疗包（倒地时自救）<br><kbd>F</kbd> 按住：砍树 / 采石 / 搜索 / 扶起队友；在工作台按 <kbd>F</kbd> 打开制作<br><kbd>B</kbd> 建造模式：数字键选方块，鼠标指哪盖哪（左键放置或修理，按住拖动盖一排），右键拆除，<kbd>R</kbd> 转楼梯朝向<br><kbd>Q</kbd><kbd>E</kbd> 转镜头　滚轮缩放　<kbd>PageUp</kbd><kbd>PageDown</kbd> 切换楼层视图　<kbd>Home</kbd> 跟随自己<br><kbd>N</kbd> 准备入夜　<kbd>M</kbd> 静音　<kbd>Esc</kbd> 菜单</div>
+      <h4 class="tch">触屏</h4><div class="tch">左半屏任意位置按下就出现摇杆（左下角的虚线圈是提示），拖过圈外摇杆会跟着手指走；靠近横平竖直的方向会自动吸附，沿墙走、过门更稳。右下的红色「射击」键：按住就开火，自动瞄准最近的丧尸（贴身的优先，锁定后不会来回跳，脚下有红圈）；按住拖向某个方向就只打那边约 20° 内的。旁边是换弹、手雷、推开和「跳」（翻越障碍、跳过空隙），上面的小条点一下换枪。靠近树、石头、汽车、补给箱或倒地的队友时，会冒出一个大按键，按住就砍树 / 搜索 / 扶人；受伤后左上角会出现「用医疗包」。右上角「建造」进出建造模式：在右半屏点哪盖哪，按住拖动盖一排，再点 ✓ 确认；「视角」打开缩放、转镜头和楼层视图。两根手指捏合也能缩放。</div>
     </div>
     <button id="helpClose" class="primary">好</button>
   </div>
@@ -5914,7 +5935,12 @@ function aimPick(sx, sy) {
   const { o, d } = screenRay(sx, sy), vl = viewL();
   let best = null, bd = 1e9;
   for (const z of W.zs) { if (z.L > vl || lcHide(Math.floor(z.x), Math.floor(z.y), z.L)) continue; const t = rayBox(o[0], o[1], o[2], d[0], d[1], d[2], z.x - z.r - 0.15, z.y - z.r - 0.15, z.z, z.r * 2 + 0.3, z.r * 2 + 0.3, z.h, 400); if (t >= 0 && t < bd) { bd = t; best = z; } }
-  if (best) return { x: best.x, y: best.y, z: best.z + best.h * 0.65, zb: best };
+  // cursor on a zombie: aim at the height you point at — over its head (the top of the silhouette) is a headshot
+  if (best) { const hz = clamp(o[2] + d[2] * bd, best.z + best.h * 0.35, best.z + best.h * 0.9); return { x: best.x, y: best.y, z: hz, zb: best, head: hz > best.z + best.h * 0.76 }; }
+  // near miss: a zombie within ~34 px of the cursor on screen pulls the aim onto its body
+  let mb = null, md = 34;
+  for (const z of W.zs) { if (z.L > vl || z.hp <= 0 || lcHide(Math.floor(z.x), Math.floor(z.y), z.L)) continue; const [px, py, pz] = w2s(z.x, z.y, z.z + z.h * 0.55); if (pz > 1) continue; const dd = Math.hypot(px - sx, py - sy); if (dd < md) { md = dd; mb = z; } }
+  if (mb) return { x: mb.x, y: mb.y, z: mb.z + mb.h * 0.6, zb: mb, mag: 1 };
   // march the camera ray into the visible part of the map
   const top = (vl + 2) * FH; let t0 = 0; if (o[2] > top && d[2] < 0) t0 = (o[2] - top) / -d[2];
   const h = rayWorld(o[0] + d[0] * t0, o[1] + d[1] * t0, o[2] + d[2] * t0, d[0], d[1], d[2], 200, { maxL: vl, pick: true });
@@ -6876,6 +6902,7 @@ function propScene() {
   OBJ.planI = inst(boxG(1, 1, 1, 0, 0.5, 0), new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0.4, depthWrite: false }), 64, false);
   OBJ.xray = inst(new THREE.RingGeometry(0.3, 0.4, 20).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0.55, depthTest: false, depthWrite: false }), 4, false);
   OBJ.xray.renderOrder = 999;
+  OBJ.lockI = inst(new THREE.RingGeometry(0.78, 1, 28).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0.85, depthTest: false, depthWrite: false }), 1, false); OBJ.lockI.renderOrder = 998;
   OBJ.ringI = inst(new THREE.RingGeometry(0.85, 1, 32).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0.6, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }), 8, false);
 }
 function propBegin() { for (const id in PROP) PROP[id].n = 0; }
@@ -6912,6 +6939,8 @@ function drawPlan() {
   const X = OBJ.xray; let k = 0;
   for (const p of W.p) { if (p.gone || p.dead || !OBJ.pl[p.i] || !OBJ.pl[p.i].g.visible) continue; setInst(X, k++, p.x, (p.zv != null ? p.zv : p.z) + 0.03, p.y, 0, 1, 1, 1, PCOL[p.i % 2].j); }
   X.count = k; X.instanceMatrix.needsUpdate = true; if (X.instanceColor) X.instanceColor.needsUpdate = true;
+  const LI = OBJ.lockI, lk = typeof INP !== 'undefined' && INP.lockShow; LI.count = 0;
+  if (lk) { const z = lk.zb, s = z.r * 2.3 * (1 + Math.sin(W.t * 10) * 0.06); setInst(LI, 0, z.x, z.z + 0.04, z.y, W.t * 1.5, s, 1, s, lk.head ? '#ffd23a' : '#ff4a3a'); LI.count = 1; LI.instanceMatrix.needsUpdate = true; if (LI.instanceColor) LI.instanceColor.needsUpdate = true; }
   // scream shockwaves
   const R = OBJ.ringI; let r = 0; RND.rings = (RND.rings || []).filter(q => (q.t += 1 / 60) < 0.8);
   for (const q of RND.rings) { if (r >= 8) break; const s = 0.5 + q.t * BAL.screamR * 1.1; setInst(R, r++, q.x, q.z + 0.1, q.y, 0, s, 1, s, '#ff5a8a'); }
@@ -7346,17 +7375,39 @@ bindBtn('vRl', () => camRot(-1)); bindBtn('vRr', () => camRot(1));
 bindBtn('vUp', () => viewStep(1)); bindBtn('vDn', () => viewStep(-1)); bindBtn('vAuto', () => viewAuto());
 
 /* ---------- per-frame: fold devices into the local player's input ---------- */
-function touchAutoAim(me, dirx, diry, any) {
-  const [sx, sy, sz] = shoulder(me); let best = null, bs = 1e9;
-  const wi = me.down ? 0 : me.wpn, range = WPN[wi].range, a0 = Math.atan2(diry, dirx);
+// touch auto-aim: best zombie in range and in sight; `any` = whole circle (fire button held), else a ~22° cone along the drag.
+// Close zombies (< 2.5) win, and the current target is kept unless another is clearly better, so the aim doesn't flicker.
+const zAlive = z => z && z.hp > 0 && W.zs.includes(z);
+function touchAutoAim(me, dirx, diry, any, cur) {
+  const [sx, sy, sz] = shoulder(me); let best = null, bs = 1e9, cs = 1e9;
+  const wi = me.down ? 0 : me.wpn, range = WPN[wi].range, a0 = Math.atan2(diry, dirx), vl = viewL();
   for (const z of W.zs) {
-    if (z.L > viewL()) continue;
+    if (z.hp <= 0 || z.L > vl || lcHide(Math.floor(z.x), Math.floor(z.y), z.L)) continue;
     const dx = z.x - sx, dy = z.y - sy, d = Math.hypot(dx, dy); if (d > range || d < 0.2) continue;
     const da = Math.abs(angDiff(a0, Math.atan2(dy, dx))); if (!any && da > 0.38) continue;
-    const score = any ? d + da * 1.5 : d + da * 12; if (score < bs && los(sx, sy, sz, z.x, z.y, z.z + z.h * 0.6, LEAN)) { bs = score; best = z; }
+    const score = (any ? d + da * 1.5 : d + da * 12) - (d < 2.5 ? 2.5 : 0);
+    if ((score < bs || z === cur) && los(sx, sy, sz, z.x, z.y, z.z + z.h * 0.6, LEAN)) { if (z === cur) cs = score; if (score < bs) { bs = score; best = z; } }
   }
-  if (best) return { x: best.x, y: best.y, z: best.z + best.h * 0.6 };
+  if (cur && cs < 1e9 && cs <= bs * 1.35 + 0.6) best = cur;
+  if (best) return { x: best.x, y: best.y, z: best.z + best.h * 0.6, zb: best };
   return { x: sx + dirx * 6, y: sy + diry * 6, z: sz };
+}
+// keep the aim point glued to a locked zombie between re-picks
+function trackAim(me) { const z = me.aimPt && me.aimPt.zb; if (!z) return; if (!zAlive(z)) { INP.aimT = 0; return; } me.aimPt.x = z.x; me.aimPt.y = z.y; me.aimPt.z = z.z + z.h * 0.6; }
+// desktop reticle: its circle is the weapon's real spread at that distance; red = on a zombie, yellow = headshot, dashed = out of range
+function drawReticle(me, pt, show) {
+  const el = $('reticle'); if (!el) return;
+  document.body.classList.toggle('aiming', !!show); el.classList.toggle('hidden', !show); if (!show) return;
+  const wi = me.down ? 0 : me.wpn, w = WPN[wi], [sx, sy, sz] = shoulder(me), dist = Math.hypot(pt.x - sx, pt.y - sy, pt.z - sz);
+  const sp = w.spread * (me.down ? 1.6 : 1) * (1 + (w.bloom ? me.bloom || 0 : 0)), half = VH > VW ? clamp(CAM.zoom, 4, 22) * 1.25 : clamp(CAM.zoom, 4, 22);
+  const px = clamp(2 * Math.tan(sp) * Math.min(dist, w.range) * VH / (2 * half), 12, 170);
+  const c = el.children[0]; c.style.width = c.style.height = px + 'px';
+  el.style.transform = `translate(${INP.mx}px,${INP.my}px)`;
+  const rl = me.reloadT > 0 ? 1 - me.reloadT / WPN[me.reloadW != null ? me.reloadW : wi].reload : me.reloadVis > 0 ? 1 - me.reloadVis / w.reload : 0;
+  el.children[1].style.display = rl > 0 ? '' : 'none'; el.children[1].style.setProperty('--p', (rl * 100).toFixed(0) + '%');
+  const lock = !!pt.zb, head = lock && pt.head && !w.flame && !w.gl;
+  el.classList.toggle('lock', lock && !head); el.classList.toggle('head', head); el.classList.toggle('far', Math.hypot(pt.x - sx, pt.y - sy) > w.range);
+  $('rtTag').textContent = rl > 0 ? '换弹' : me.mag[wi] === 0 ? '没子弹 R' : head ? '爆头' : '';
 }
 function readInput(dt) {
   const me = W.p[ME], I = me.inp, blocked = panelOpen() || W.over || STATE.paused;
@@ -7385,6 +7436,7 @@ function readInput(dt) {
     if (INP.touch && performance.now() - INP.mouseT < 300) setTouch(false);
     const pt = DBG && DBG.aimAt ? DBG.aimAt() : aimPick(INP.mx, INP.my);
     me.aimPt = pt; me.aim = Math.atan2(pt.y - me.y, pt.x - me.x);
+    drawReticle(me, pt, !blocked && !me.build && !me.dead);
     CAM.lookX = lerp(CAM.lookX || 0, clamp((pt.x - me.x) * 0.18, -3, 3), Math.min(1, dt * 3)); CAM.lookY = lerp(CAM.lookY || 0, clamp((pt.y - me.y) * 0.18, -3, 3), Math.min(1, dt * 3));
     I.fire = !blocked && INP.mL && !me.build ? 1 : 0;
     if (me.build && !blocked) {
@@ -7394,14 +7446,15 @@ function readInput(dt) {
       INP.bDown = down;
     } else { BUILD_HOVER = null; INP.bDown = false; if (!me.build && (PLAN || PREV)) cancelPlan(); }
   } else {
+    drawReticle(me, null, false);
     const A = INP.aim, held = A.id != null, active = held && Math.hypot(A.x, A.y) > 0.3;
     if (active) {
       const a = Math.atan2(-A.y, A.x), wx = rx * Math.cos(a) + fx * Math.sin(a), wy = ry * Math.cos(a) + fy * Math.sin(a);
-      INP.aimT -= dt; if (INP.aimT <= 0 || !me.aimPt) { INP.aimT = 0.1; me.aimPt = touchAutoAim(me, wx, wy); }
+      trackAim(me); INP.aimT -= dt; if (INP.aimT <= 0 || !me.aimPt) { INP.aimT = 0.1; me.aimPt = touchAutoAim(me, wx, wy, false, me.aimPt && me.aimPt.zb); }
       me.aim = Math.atan2(me.aimPt.y - me.y, me.aimPt.x - me.x);
     } else if (held && A.btn) {
       // just holding the fire button: lock on to the nearest zombie, otherwise shoot where you face
-      INP.aimT -= dt; if (INP.aimT <= 0 || !me.aimPt) { INP.aimT = 0.12; const f = Math.hypot(I.mx, I.my) > 0.2 ? [I.mx, I.my] : [Math.cos(me.aim), Math.sin(me.aim)]; me.aimPt = touchAutoAim(me, f[0], f[1], true); }
+      trackAim(me); INP.aimT -= dt; if (INP.aimT <= 0 || !me.aimPt) { INP.aimT = 0.12; const f = Math.hypot(I.mx, I.my) > 0.2 ? [I.mx, I.my] : [Math.cos(me.aim), Math.sin(me.aim)]; me.aimPt = touchAutoAim(me, f[0], f[1], true, me.aimPt && me.aimPt.zb); }
       me.aim = Math.atan2(me.aimPt.y - me.y, me.aimPt.x - me.x);
     } else if (performance.now() - A.t > 600 && Math.hypot(I.mx, I.my) > 0.2) { me.aim = Math.atan2(I.my, I.mx); me.aimPt = null; }
     I.fire = !blocked && (active || (held && A.btn)) && !me.build ? 1 : 0;
@@ -7409,6 +7462,7 @@ function readInput(dt) {
     if (!me.build || !BUILD_HOVER || !BUILD_HOVER.t) BUILD_HOVER = me.build ? BUILD_HOVER : null;
   }
   if (blocked) I.fire = 0;
+  INP.lockShow = !blocked && !me.build && !me.dead && me.aimPt && zAlive(me.aimPt.zb) && (usingMouse || I.fire) ? me.aimPt : null;
 }
 
 /* ---- 70_net.js ---- */
@@ -7646,6 +7700,24 @@ function uiMsg(t, col) {
   const L = $('log'); L.appendChild(d); while (L.children.length > 5) L.firstChild.remove();
   setTimeout(() => d.remove(), 6200);
 }
+// desktop: the keys you can press right now, greyed out when they'd do nothing, lit when they matter
+function uiKeys(me) {
+  const el = $('keys'); if (!el || INP.touch) return;
+  const wi = me.down ? 0 : me.wpn, w = WPN[wi], st = c => c === 1 ? ' class="hot"' : c === 2 ? ' class="warn"' : c === -1 ? ' class="off"' : '';
+  let rows;
+  if (me.build) rows = [['左键', '盖（拖动一排）'], ['右键', '拆'], ['1–0', '选材料'], ['R', '转向'], ['X', '拆除模式', me.demo ? 1 : 0], ['Enter', '确认'], ['Esc', '取消'], ['B', '退出建造', 1]];
+  else {
+    const canRl = me.mag[wi] < w.mag && (w.inf || me.ammo[wi] > 0) && !(me.reloadT > 0), ut = useTarget(me), bench = nearBench(me);
+    rows = [['左键', '射击'], ['R', '换弹', me.mag[wi] === 0 && canRl ? 2 : canRl ? 0 : -1], ['G', '手雷 ×' + me.nades, me.nades ? 0 : -1],
+      ['H', me.down ? '自救' : '医疗 ×' + me.meds, !me.meds ? -1 : (me.down || me.hp < me.maxHp * 0.4) ? 2 : me.hp >= me.maxHp ? -1 : 0],
+      ['V', '推开'], ['空格', '跳 / 翻越'], ['F', ut ? ut.name : '交互', ut ? 1 : 0], ['1–' + NW, '换枪'], ['C', '制作', bench ? 1 : -1], ['B', '建造']];
+    if (W.phase === 'day') rows.push(['N', me.ready ? '取消准备' : '准备入夜', me.ready ? 1 : 0]);
+  }
+  rows.push(['Q E', '转镜头'], ['Esc', '菜单']);
+  const key = (SET.keysOff ? 1 : 0) + rows.map(r => r.join(':')).join('|'); if (UI.keysK === key) return; UI.keysK = key;
+  el.classList.toggle('min', !!SET.keysOff);
+  el.innerHTML = `<div class="kh"><span>按键</span><span>${SET.keysOff ? '展开 ▾' : '收起 ▴'}</span></div><div class="kg">` + rows.map(([k, t, c]) => `<kbd${st(c)}>${k}</kbd><span${st(c)}>${t}</span>`).join('') + '</div>';
+}
 function toast(t, col) { const el = $('toast'); el.textContent = t; el.style.color = col || ''; el.classList.add('show'); UI.toastT = 1.6; }
 function banner(t, s, col) { $('bnT').textContent = t; $('bnT').style.color = col || ''; $('bnS').textContent = s || ''; $('banner').classList.add('show'); UI.bannerT = 3.2; }
 function uiMute() { $('muteBtn').textContent = SET.mute ? '🔇' : '🔊'; $('pMute').textContent = '声音：' + (SET.mute ? '关' : '开'); if ($('pQual') && typeof qualLabel === 'function') $('pQual').textContent = qualLabel(); }
@@ -7664,7 +7736,7 @@ function blockIcon(id) {
 }
 function buildHudStatic() {
   $('resBox').innerHTML = RES.map(r => `<div id="res_${r.k}"><b style="color:${r.col}">0</b><small>${r.name}</small></div>`).join('');
-  $('wbar').innerHTML = WPN.map((w, i) => `<button data-w="${i}"><span>${w.name}</span><small id="wb${i}"></small></button>`).join('');
+  $('wbar').innerHTML = WPN.map((w, i) => `<button data-w="${i}"><span><kbd>${i + 1}</kbd>${w.name}</span><small id="wb${i}"></small></button>`).join('');
   $('wbar').querySelectorAll('button').forEach(b => b.addEventListener('pointerdown', e => { e.stopPropagation(); if (inGame()) act('wpn', +b.dataset.w); }));
   const bb = $('bbar'); bb.innerHTML = '';
   PAL.forEach((id, n) => {
@@ -7724,6 +7796,7 @@ function hudTick(dt) {
   const rl = me.reloadT > 0 ? 1 - me.reloadT / WPN[me.reloadW != null ? me.reloadW : wi].reload : me.reloadVis > 0 ? 1 - me.reloadVis / w.reload : me.medT > 0 ? 1 - me.medT / (me.selfRev ? 3 : BAL.healTime) : 0;
   $('wRl').style.width = (rl * 100) + '%';
   $('iNade').textContent = me.nades; $('iMed').textContent = me.meds; $('iKill').textContent = me.kills;
+  uiKeys(me);
   WPN.forEach((w2, i) => { const b = $('wbar').children[i]; b.classList.toggle('hidden', !me.owned[i]); b.classList.toggle('sel', i === me.wpn); $('wb' + i).textContent = w2.inf ? '∞' : me.mag[i] + '/' + me.ammo[i]; });
   // phase
   const ph = $('phase');
@@ -7859,6 +7932,7 @@ function initUI() {
   $('pauseBtn').onclick = () => togglePause();
   $('muteBtn').onclick = () => { setMute(!SET.mute); uiMute(); };
   $('pMute').onclick = () => { setMute(!SET.mute); uiMute(); };
+  $('keys').addEventListener('pointerdown', e => { e.stopPropagation(); if (!e.target.closest('.kh')) return; SET.keysOff = !SET.keysOff; saveSet(); UI.keysK = ''; if (W && W.p[ME]) uiKeys(W.p[ME]); sfx('click'); });
   $('pQual').onclick = () => { const o = ['auto', 0, 1, 2], i = o.indexOf(SET.q == null ? 'auto' : SET.q); SET.q = o[(i + 1) % 4]; if (SET.q === 'auto') SET.qa = 0; saveSet(); applyQual(); $('pQual').textContent = qualLabel(); sfx('click'); };
   $('readyBtn').onclick = () => inGame() && toggleReady();
   $('tasks').addEventListener('pointerdown', e => { e.stopPropagation(); UI.tkPin = !UI.tkPin; UI.tkOpenT = 0; sfx('click'); });

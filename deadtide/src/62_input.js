@@ -322,17 +322,39 @@ bindBtn('vRl', () => camRot(-1)); bindBtn('vRr', () => camRot(1));
 bindBtn('vUp', () => viewStep(1)); bindBtn('vDn', () => viewStep(-1)); bindBtn('vAuto', () => viewAuto());
 
 /* ---------- per-frame: fold devices into the local player's input ---------- */
-function touchAutoAim(me, dirx, diry, any) {
-  const [sx, sy, sz] = shoulder(me); let best = null, bs = 1e9;
-  const wi = me.down ? 0 : me.wpn, range = WPN[wi].range, a0 = Math.atan2(diry, dirx);
+// touch auto-aim: best zombie in range and in sight; `any` = whole circle (fire button held), else a ~22° cone along the drag.
+// Close zombies (< 2.5) win, and the current target is kept unless another is clearly better, so the aim doesn't flicker.
+const zAlive = z => z && z.hp > 0 && W.zs.includes(z);
+function touchAutoAim(me, dirx, diry, any, cur) {
+  const [sx, sy, sz] = shoulder(me); let best = null, bs = 1e9, cs = 1e9;
+  const wi = me.down ? 0 : me.wpn, range = WPN[wi].range, a0 = Math.atan2(diry, dirx), vl = viewL();
   for (const z of W.zs) {
-    if (z.L > viewL()) continue;
+    if (z.hp <= 0 || z.L > vl || lcHide(Math.floor(z.x), Math.floor(z.y), z.L)) continue;
     const dx = z.x - sx, dy = z.y - sy, d = Math.hypot(dx, dy); if (d > range || d < 0.2) continue;
     const da = Math.abs(angDiff(a0, Math.atan2(dy, dx))); if (!any && da > 0.38) continue;
-    const score = any ? d + da * 1.5 : d + da * 12; if (score < bs && los(sx, sy, sz, z.x, z.y, z.z + z.h * 0.6, LEAN)) { bs = score; best = z; }
+    const score = (any ? d + da * 1.5 : d + da * 12) - (d < 2.5 ? 2.5 : 0);
+    if ((score < bs || z === cur) && los(sx, sy, sz, z.x, z.y, z.z + z.h * 0.6, LEAN)) { if (z === cur) cs = score; if (score < bs) { bs = score; best = z; } }
   }
-  if (best) return { x: best.x, y: best.y, z: best.z + best.h * 0.6 };
+  if (cur && cs < 1e9 && cs <= bs * 1.35 + 0.6) best = cur;
+  if (best) return { x: best.x, y: best.y, z: best.z + best.h * 0.6, zb: best };
   return { x: sx + dirx * 6, y: sy + diry * 6, z: sz };
+}
+// keep the aim point glued to a locked zombie between re-picks
+function trackAim(me) { const z = me.aimPt && me.aimPt.zb; if (!z) return; if (!zAlive(z)) { INP.aimT = 0; return; } me.aimPt.x = z.x; me.aimPt.y = z.y; me.aimPt.z = z.z + z.h * 0.6; }
+// desktop reticle: its circle is the weapon's real spread at that distance; red = on a zombie, yellow = headshot, dashed = out of range
+function drawReticle(me, pt, show) {
+  const el = $('reticle'); if (!el) return;
+  document.body.classList.toggle('aiming', !!show); el.classList.toggle('hidden', !show); if (!show) return;
+  const wi = me.down ? 0 : me.wpn, w = WPN[wi], [sx, sy, sz] = shoulder(me), dist = Math.hypot(pt.x - sx, pt.y - sy, pt.z - sz);
+  const sp = w.spread * (me.down ? 1.6 : 1) * (1 + (w.bloom ? me.bloom || 0 : 0)), half = VH > VW ? clamp(CAM.zoom, 4, 22) * 1.25 : clamp(CAM.zoom, 4, 22);
+  const px = clamp(2 * Math.tan(sp) * Math.min(dist, w.range) * VH / (2 * half), 12, 170);
+  const c = el.children[0]; c.style.width = c.style.height = px + 'px';
+  el.style.transform = `translate(${INP.mx}px,${INP.my}px)`;
+  const rl = me.reloadT > 0 ? 1 - me.reloadT / WPN[me.reloadW != null ? me.reloadW : wi].reload : me.reloadVis > 0 ? 1 - me.reloadVis / w.reload : 0;
+  el.children[1].style.display = rl > 0 ? '' : 'none'; el.children[1].style.setProperty('--p', (rl * 100).toFixed(0) + '%');
+  const lock = !!pt.zb, head = lock && pt.head && !w.flame && !w.gl;
+  el.classList.toggle('lock', lock && !head); el.classList.toggle('head', head); el.classList.toggle('far', Math.hypot(pt.x - sx, pt.y - sy) > w.range);
+  $('rtTag').textContent = rl > 0 ? '换弹' : me.mag[wi] === 0 ? '没子弹 R' : head ? '爆头' : '';
 }
 function readInput(dt) {
   const me = W.p[ME], I = me.inp, blocked = panelOpen() || W.over || STATE.paused;
@@ -361,6 +383,7 @@ function readInput(dt) {
     if (INP.touch && performance.now() - INP.mouseT < 300) setTouch(false);
     const pt = DBG && DBG.aimAt ? DBG.aimAt() : aimPick(INP.mx, INP.my);
     me.aimPt = pt; me.aim = Math.atan2(pt.y - me.y, pt.x - me.x);
+    drawReticle(me, pt, !blocked && !me.build && !me.dead);
     CAM.lookX = lerp(CAM.lookX || 0, clamp((pt.x - me.x) * 0.18, -3, 3), Math.min(1, dt * 3)); CAM.lookY = lerp(CAM.lookY || 0, clamp((pt.y - me.y) * 0.18, -3, 3), Math.min(1, dt * 3));
     I.fire = !blocked && INP.mL && !me.build ? 1 : 0;
     if (me.build && !blocked) {
@@ -370,14 +393,15 @@ function readInput(dt) {
       INP.bDown = down;
     } else { BUILD_HOVER = null; INP.bDown = false; if (!me.build && (PLAN || PREV)) cancelPlan(); }
   } else {
+    drawReticle(me, null, false);
     const A = INP.aim, held = A.id != null, active = held && Math.hypot(A.x, A.y) > 0.3;
     if (active) {
       const a = Math.atan2(-A.y, A.x), wx = rx * Math.cos(a) + fx * Math.sin(a), wy = ry * Math.cos(a) + fy * Math.sin(a);
-      INP.aimT -= dt; if (INP.aimT <= 0 || !me.aimPt) { INP.aimT = 0.1; me.aimPt = touchAutoAim(me, wx, wy); }
+      trackAim(me); INP.aimT -= dt; if (INP.aimT <= 0 || !me.aimPt) { INP.aimT = 0.1; me.aimPt = touchAutoAim(me, wx, wy, false, me.aimPt && me.aimPt.zb); }
       me.aim = Math.atan2(me.aimPt.y - me.y, me.aimPt.x - me.x);
     } else if (held && A.btn) {
       // just holding the fire button: lock on to the nearest zombie, otherwise shoot where you face
-      INP.aimT -= dt; if (INP.aimT <= 0 || !me.aimPt) { INP.aimT = 0.12; const f = Math.hypot(I.mx, I.my) > 0.2 ? [I.mx, I.my] : [Math.cos(me.aim), Math.sin(me.aim)]; me.aimPt = touchAutoAim(me, f[0], f[1], true); }
+      trackAim(me); INP.aimT -= dt; if (INP.aimT <= 0 || !me.aimPt) { INP.aimT = 0.12; const f = Math.hypot(I.mx, I.my) > 0.2 ? [I.mx, I.my] : [Math.cos(me.aim), Math.sin(me.aim)]; me.aimPt = touchAutoAim(me, f[0], f[1], true, me.aimPt && me.aimPt.zb); }
       me.aim = Math.atan2(me.aimPt.y - me.y, me.aimPt.x - me.x);
     } else if (performance.now() - A.t > 600 && Math.hypot(I.mx, I.my) > 0.2) { me.aim = Math.atan2(I.my, I.mx); me.aimPt = null; }
     I.fire = !blocked && (active || (held && A.btn)) && !me.build ? 1 : 0;
@@ -385,4 +409,5 @@ function readInput(dt) {
     if (!me.build || !BUILD_HOVER || !BUILD_HOVER.t) BUILD_HOVER = me.build ? BUILD_HOVER : null;
   }
   if (blocked) I.fire = 0;
+  INP.lockShow = !blocked && !me.build && !me.dead && me.aimPt && zAlive(me.aimPt.zb) && (usingMouse || I.fire) ? me.aimPt : null;
 }
