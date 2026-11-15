@@ -7605,6 +7605,7 @@ setInterval(() => {
 
 /* ================= game flow, UI, main loop ================= */
 const STATE = { mode: 'menu', cfg: null, me: null, killer: 0, resultShown: false, watching: false, acc: 0, deathAt: 0, endAt: 0, startT: 0, lastHurt: 0, gid: 0, hitstop: 0, slowUntil: 0, killcam: null, cmd: 'free', pingT: 0, run: null, recorded: false };
+const EMBED = QS.has('embed') && window.parent !== window;
 const SEL = Object.assign({ hero: 0, mode: 'solo', map: 'random', diff: 1, name: '', online: false, versus: false, sp: {}, skin: {} }, LS.get('sel', {}));
 if (SEL.mode === 'online') { SEL.mode = 'duo'; SEL.online = true; }
 if (!MODES[SEL.mode]) SEL.mode = 'solo';
@@ -8149,7 +8150,13 @@ function initMenu() {
     startLocal(STATE.cfg.mode);
   };
   $('rWatch').onclick = () => hideResultWatch();
-  if (/\/dunerumble\/(index\.html)?$/.test(location.pathname)) { $('hubBtn').classList.remove('hidden'); $('pHub').classList.remove('hidden'); }
+  // ?embed=1: shown full-size inside 百戏茶馆 (../baixi/), whose top bar has the way back and the pause button
+  if (!EMBED && /\/dunerumble\/(index\.html)?$/.test(location.pathname)) { $('hubBtn').classList.remove('hidden'); $('pHub').classList.remove('hidden'); }
+  if (EMBED) addEventListener('message', e => {
+    const m = e.data; if (!m || !m.dr || e.source !== parent) return;
+    if (m.pause && STATE.mode === 'play') togglePause();
+    else if (m.pause === false && STATE.mode === 'pause') togglePause();
+  });
   $('hubBtn').onclick = () => { if (NET.role) netLeave(); location.href = '../'; };
   $('pHub').onclick = () => {
     const b = $('pHub');

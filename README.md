@@ -8,7 +8,6 @@
 | 机巧百战 | `jiqiao/` | 已完成 |
 | 云岛冒险 | `cloudisle/` | 开发中 |
 | 裂隙守卫 | `riftwardens/` | 开发中 |
-| 沙丘乱斗 | `dunerumble/` | 开发中 |
 | 猫猫咕咕的家 | `pawpals/` | 开发中 |
 | 幽宅双影 | `hollowmanor/` | 开发中 |
 | 百物语（目录与九十则清单） | `baiwuyu/` | 开发中 |
@@ -18,6 +17,7 @@
 | 尸夜孤楼 | `lasttower/` | 开发中 |
 | 尸潮堡垒 | `deadtide/` | 开发中 |
 | 百戏茶馆 | `baixi/` | 开发中 |
+| 　沙丘乱斗（从百戏茶馆进入） | `dunerumble/` | 开发中 |
 | 百变迷藏 | `prophunt/` | 开发中 |
 | 完美世界（旧版像素，已从大厅隐藏） | `wanmei/` | 隐藏 |
 | 完美世界 · 石昊篇（文字版） | `wanmeiol/` | 开发中 |
