@@ -28,7 +28,9 @@ const { chromium } = require('playwright');
           else if (q2.type === 'talk') { const w = npcLocNow(q2.npc); if (w && c.loc !== w) { for (const p of (route(c.loc, w) || []).slice(1)) { go(p, true); await w8(30); await idle(); if (c.story.q !== before) break; } } if (c.story.q === before) await npcTalk(q2.npc); }
           else if (q2.type === 'auto' || q2.type === 'none') await storyPoll();
           else if (q2.type === 'dungeon') { go(DUNGEONS[q2.dungeon].loc, true, true); await enterDungeon(q2.dungeon); await w8(900); }
-          else if (q2.type === 'kill') { for (let t = 0; t < 30 && c.story.q === before; t++) { go(q2.loc || c.loc, true, true); await explore(); await idle(); } }
+          else if (q2.type === 'kill') { for (let t = 0; t < 30 && c.story.n < q2.n; t++) { go(q2.loc || c.loc, true, true); await explore(); await idle(); }
+            /* a kill step is handed in to its NPC (as flow.js does): walk there and talk */
+            if (c.story.n >= q2.n && q2.npc) { const w = npcLocNow(q2.npc); if (!w || !route(c.loc, w)) bad.push(`${jumpName(J)}: 打完了，但回不去找 ${q2.npc}（${w}）`); else { for (const p of (route(c.loc, w) || []).slice(1)) { go(p, true); await w8(30); await idle(); } if (c.story.q === before) await npcTalk(q2.npc); } } }
           await w8(50); await idle(); } catch (e) { bad.push(`${jumpName(J)}: 往下走时报错 ${q2.id}: ${e.message}`); break; }
         if (c.story.q === before) { if (q2.type !== 'none') bad.push(`${jumpName(J)}: 卡在 ${q2.id}（${q2.type}）`); break; } }
       info.push(`${jumpName(J)}: ${MAIN[start].id} → ${MAIN[c.story.q].id}`); }
