@@ -213,10 +213,10 @@ function hStaffGo(H, st) { if (st.off || st.cast) return false; if (st.cd > 0) {
 
 /* ---------- 双人：队友操作的员工（st.p2，RULES 34）：自己走（方向键或点地面），点游客 = 走到够得着就放招，不会自己放 ---------- */
 function hP2Move(H, st, dt) { const M = H.M;
-  if (st.mv) { hMove(st, dt); st.home = [st.tx, st.ty]; return; } st.x = st.tx; st.y = st.ty; st.home = [st.tx, st.ty];
+  st.walked = st.walked || 0; if (st.mv) { hMove(st, dt); st.home = [st.tx, st.ty]; return; } st.x = st.tx; st.y = st.ty; st.home = [st.tx, st.ty];
   if (st.kd != null) { st.want = null; st.path = null; st.dir = st.kd; const nx = st.tx + HD[st.kd][0], ny = st.ty + HD[st.kd][1]; if (!hmSolid(M, M.hs, nx, ny)) hStepTo(st, nx, ny, HB.hero * 1.05); return; }
   const w = st.want && !hOut(st.want) && st.want.st !== 'leave' ? st.want : (st.want = null);
-  if (w) { if (st.cd <= 0) { const p = hSkPlan(H, st, w); if (p) { hSkCast(H, st, p, 1); st.want = null; st.path = null; return; } } st.path = hDist(st, w) > 1.2 ? [Math.round(w.x), Math.round(w.y)] : null; }
+  st.ctick = (st.ctick || 0) - dt; if (w) { if (st.cd <= 0) { const p = hSkPlan(H, st, w); if (p) { hSkCast(H, st, p, 1); st.want = null; st.path = null; return; } } else if (hScaredSt(w) && hDist(st, w) <= 1.45 && st.ctick <= 0) { hScHit(H, st, w); return; } st.path = hDist(st, w) > 1.2 ? [Math.round(w.x), Math.round(w.y)] : null; }
   if (st.path) { const [tx, ty] = st.path; if (st.tx === tx && st.ty === ty) { st.path = null; return; } const n = hmNext(M, hmField(M, tx, ty, 'h'), st.tx, st.ty, 'h'); if (!n) { st.path = null; return; } hStepTo(st, n[0], n[1], HB.hero * 1.05); } }
 function hP2Go(H, st, x, y) { const M = H.M; x = clamp(Math.round(x), 0, M.w - 1); y = clamp(Math.round(y), 0, M.h - 1); st.want = null;
   if (hmSolid(M, M.hs, x, y)) { let best = null, bd = 99; for (let yy = y - 2; yy <= y + 2; yy++) for (let xx = x - 2; xx <= x + 2; xx++) if (!hmSolid(M, M.hs, xx, yy) && hmField(M, xx, yy, 'h')[st.ty * M.w + st.tx] >= 0) { const d = Math.abs(xx - x) + Math.abs(yy - y); if (d < bd) { bd = d; best = [xx, yy]; } } if (!best) return; [x, y] = best; }
@@ -224,7 +224,7 @@ function hP2Go(H, st, x, y) { const M = H.M; x = clamp(Math.round(x), 0, M.w - 1
 function hP2Scare(H, st, v) { if (st.cast || st.off) return ''; if (v) { st.want = v; if (st.cd > 0) return PETS[st.k].n + '还在缓（' + Math.ceil(st.cd) + ' 秒），缓好了就放'; hFloat(H, st.x, st.y - 1.6, PETS[st.k].n + '：去了！', 'staff'); return ''; } if (st.cd > 0) return PETS[st.k].n + '还在缓（' + Math.ceil(st.cd) + ' 秒）'; const p = hSkPlan(H, st); if (!p) return '够不着：附近没有游客'; hSkCast(H, st, p, 1); return ''; }
 function hP2Pick(H) { for (const s of H.staff) s.p2 = false; const st = H.staff.find(s => !s.off) || null; if (st) { st.p2 = true; st.tx = st.tx ?? st.home[0]; st.ty = st.ty ?? st.home[1]; st.cd = Math.min(st.cd, 1); } return st; }
 /* ---------- 员工 ---------- */
-function hStaffTick(H, st, dt) { st.cd -= dt; if (hSkTick(H, st)) return; if (st.p2) { hP2Move(H, st, dt); return; } st.x = st.home[0]; st.y = st.home[1]; st.fr = 0; if (st.off || st.cd > 0) return; hSkAuto(H, st, dt); }
+function hStaffTick(H, st, dt) { st.cd -= dt; if (hSkTick(H, st)) return; if (st.p2) { hP2Move(H, st, dt); return; } if (st.off) return; hScTick(H, st, dt); if (st.cd <= 0 && !st.mv) hSkAuto(H, st, dt); }
 function skillMulStaff(k) { let m = 1 + relicBonus(C, 'scare'); const P = scenePas(HS && HS.o.scene); void P; return m; }
 
 /* ---------- 剧情战的特殊规则 ---------- */

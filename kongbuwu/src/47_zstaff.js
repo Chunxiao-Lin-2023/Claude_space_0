@@ -42,12 +42,12 @@ function hSkAuto(H, st, dt) { const p = hSkPlan(H, st); if (!p) { st.hold = 0; r
     face = (S.kind === 'target' || S.kind === 'cone') && !S.back && p.a && !hBackTo(p.a, st) && !p.a.u.boss;
   if (p.fresh >= 2 || p.low || slip || st.hold > (more ? 1.6 : face ? 1 : .3)) hSkCast(H, st, p); }
 function hSkCast(H, st, p, manual) { const S = p.S, a = p.a, M = H.M; st.hold = 0; st.dir = hDirTo(st, a); st.cd = S.cd + rnd() * .8;
-  const c = st.cast = { k: S.id, t0: H.t, wind: S.wind, dur: S.dur, ax: a.x, ay: a.y, vi: H.vis.indexOf(a), done: 0, man: manual ? 1 : 0 };
+  const c = st.cast = { k: S.id, t0: H.t, wind: S.wind, dur: S.fx === 'grow' || S.kind === 'blink' ? S.dur : Math.min(S.dur, .5), ax: a.x, ay: a.y, vi: H.vis.indexOf(a), done: 0, man: manual ? 1 : 0 };
   if (S.kind === 'blink') { const [fx, fy] = HD[a.dir || 0], cand = [[-fx, -fy], [fy, fx], [-fy, -fx], [fx, fy]]; for (const [dx, dy] of cand) { const x = Math.round(a.x) + dx, y = Math.round(a.y) + dy; if (!hmSolid(M, M.hs, x, y)) { c.bx = x; c.by = y; break; } } if (c.bx == null) { c.bx = Math.round(a.x); c.by = Math.round(a.y); } }
   hFloat(H, st.x, st.y - 1.9, PETS[st.k].n + ' · ' + S.n, 'staff'); sfx(S.kind === 'ring' || S.kind === 'aoe' ? 'breath' : 'whisper'); H.stats.staff = (H.stats.staff || 0) + 1; return true; }
 function hSkFire(H, st) { const c = st.cast, S = HSK[c.k], B = H.B; c.done = 1; const a0 = H.vis[c.vi], a = a0 && !hOut(a0) && a0.st !== 'leave' ? a0 : null;
   const src = S.kind === 'blink' ? { x: c.bx, y: c.by } : { x: st.x, y: st.y };
-  let hits = S.kind === 'blink' ? (a && hDist(src, a) <= 2.2 ? [a] : []) : hSkHits(H, src, S, a);
+  let hits = S.kind === 'blink' ? (a && hDist(src, a) <= 2.2 ? [a] : []) : hSkHits(H, src, S.kind === 'aoe' || S.kind === 'ring' ? Object.assign({}, S, { r: S.r + .7 }) : S, a);   // 蓄力时走出去小半格，照样算
   if (S.kind === 'target' && !hits.length && a && hDist(src, a) <= S.r + 1.5) hits = [a];   // 风头上刚好走出半格，照样算
   if (a) { c.ax = a.x; c.ay = a.y; }
   if (S.line) { const onT = (S.kind === 'target' || S.kind === 'cone') && a; hFloat(H, onT ? a.x : src.x, onT ? a.y - 2.6 : src.y - 3.1, pick(S.line), 'txt'); }
@@ -58,6 +58,7 @@ function hSkFire(H, st) { const c = st.cast, S = HSK[c.k], B = H.B; c.done = 1; 
     if (t.hp > 0) { if (S.st) addSt(B, t, S.st[0], S.st[1]); if (S.stun && chance(S.stun * (t.boss ? .6 : 1))) addSt(B, t, 'stun', 1); if (!hOut(q)) { hReact(H, q, src, S.hard); if (S.root) q.root = H.t + HB.react + S.root; } } }
   if (!hits.length) hFloat(H, src.x, src.y - 2.2, '扑了个空', 'txt');
   H.skfx = H.skfx || []; H.skfx.push({ k: S.fx, x: src.x, y: src.y, ax: c.ax, ay: c.ay, r: S.r, ang: S.ang || 0, t0: H.t, dur: S.fx === 'hands' && S.root ? S.root + HB.react + .4 : Math.max(.9, S.dur), sk: st.k, n: hits.length });
+  /* 放完招追着跑得最狠的那个补两下 */ const fl = hits.filter(q => !hOut(q) && q.u.hp > 0).sort((x, y) => x.u.hp / x.u.mhp - y.u.hp / y.u.mhp)[0]; if (fl && !st.p2) hScStart(H, st, fl, c.dur);
   if (S.shake) H.shake = S.shake; sfx(S.sfx); if (hits.length >= 3) { H.slow = Math.max(H.slow || 0, .35); hLog(H, PETS[st.k].n + '的「' + S.n + '」一下吓到了 ' + hits.length + ' 个人。', 'good'); } hFlush(H); }
 /* 每帧：放招中的员工原地不动 */
 function hSkTick(H, st) { const c = st.cast; if (!c) return false; const e = H.t - c.t0, S = HSK[c.k];
@@ -93,3 +94,22 @@ function hSkDrawOver(H, g, ox, oy, t) {
     else if (f.k === 'hands') { g.fillStyle = `rgba(10,0,0,${Math.min(.6, (1 - a) * 1.2)})`; g.beginPath(); g.ellipse(ax, ay + 6, 11, 4, 0, 0, 7); g.fill(); const up = Math.min(1, a * 6); for (let j = 0; j < 5; j++) { const hx = ax - 9 + j * 4.5, hh = Math.round((5 + (j % 3) * 2) * up * (1 - Math.max(0, a - .85) * 6)); if (hh <= 0) continue; g.fillStyle = '#c8bcb0'; g.fillRect(Math.round(hx), Math.round(ay + 6 - hh), 2, hh); g.fillRect(Math.round(hx) - 1, Math.round(ay + 6 - hh), 4, 1); } }
     else if (f.k === 'name') { const fl = Math.sin(H.t * 40) > 0 && a < .3; if (fl) { g.fillStyle = 'rgba(255,255,255,.12)'; g.fillRect(ax - 40, ay - 40, 80, 80); } g.fillStyle = `rgba(245,245,235,${a < .15 ? a * 6 : 1 - a})`; g.font = 'bold 9px serif'; g.textAlign = 'center'; g.fillText('点 名', ax, ay - 26); g.textAlign = 'left'; g.strokeStyle = `rgba(240,240,230,${(1 - a) * .6})`; g.beginPath(); g.moveTo(ax - 10, ay - 22); g.lineTo(ax + 10, ay - 22); g.stroke(); }
     else if (f.k === 'blink') { g.fillStyle = `rgba(200,140,255,${(1 - a) * .5})`; for (let j = 0; j < 8; j++) { const an = j * .8 + a * 4; g.fillRect(Math.round(x + Math.cos(an) * (6 + a * 10)), Math.round(y - 6 + Math.sin(an) * (4 + a * 8)), 2, 2); } } } }
+
+/* ---------- 一点点追逐（RULES 35 补充）----------
+   放完招，员工会离开岗位追着被吓跑的那个游客补吓两下；受惊的游客从岗位附近跑过，闲着的员工也会追出去。
+   离岗位最多 6 格，追 3 秒或补够 2 下就回岗位；追的速度只比游客逃跑快一点点，多半是游客定住做动作时追上。 */
+const HSC = { leash: 6, t: 3, spd: 3.4, tick: .9, pow: .3, hits: 2, join: 3 };
+function hScStart(H, st, v, delay) { if (!v || hOut(v) || st.p2) return; st.ch = { vi: H.vis.indexOf(v), until: H.t + (delay || 0) + HSC.t, n: 0 }; st.ctick = Math.max(st.ctick || 0, delay || 0); }
+function hScHit(H, st, v) { const B = H.B, c = st.ch; st.ctick = HSC.tick; if (c) c.n++; st.dir = hDirTo(st, v);
+  doHit(B, st.u, v.u, HSC.pow, 'chase', { mul: HB.dmg * HB.staffMul * skillMulStaff(st.k) * hDarkMul(H, v) * (v.u.st.fear ? 1.15 : 1) }); if (v.u.hp > 0 && !hOut(v)) hReact(H, v, st);
+  hFx(H, 'chase', v.x, v.y); hFloat(H, st.x, st.y - 1.6, pick(['别跑——', '等等我呀', '嘿嘿……', '抓到了！']), 'staff'); sfx('steps'); H.stats.staffChase = (H.stats.staffChase || 0) + 1; hFlush(H); }
+function hScTick(H, st, dt) { const M = H.M; if (st.tx == null) { st.tx = st.home[0]; st.ty = st.home[1]; st.x = st.tx; st.y = st.ty; } st.walked = st.walked || 0; st.ctick = (st.ctick || 0) - dt;
+  if (st.mv) { hMove(st, dt); st.away = true; return; }
+  const hd = q => Math.hypot(q.x - st.home[0], q.y - st.home[1]);
+  let c = st.ch, v = c && H.vis[c.vi]; if (c && (!v || hOut(v) || v.st === 'leave' || H.t > c.until || c.n >= HSC.hits || hd(v) > HSC.leash)) { st.ch = c = null; v = null; }
+  if (!c && !st.away) { const j = hActive(H).filter(q => hScaredSt(q) && hDist(q, st) <= HSC.join && hd(q) <= HSC.leash).sort((a, b) => hDist(a, st) - hDist(b, st))[0]; if (j) { hScStart(H, st, j); c = st.ch; v = j; hFloat(H, st.x, st.y - 1.6, PETS[st.k].n + '：追！', 'staff'); } }
+  if (v) { const d = hDist(st, v); if (d <= 1.45 && st.ctick <= 0) { hScHit(H, st, v); return; }
+    if (d > 1) { const n = hmNext(M, hmField(M, Math.round(v.x), Math.round(v.y), 'h'), st.tx, st.ty, 'h'); if (n && Math.hypot(n[0] - st.home[0], n[1] - st.home[1]) <= HSC.leash) { hStepTo(st, n[0], n[1], HSC.spd); st.away = true; return; } }
+    st.dir = hDirTo(st, v); st.x = st.tx; st.y = st.ty; st.fr = 0; return; }
+  if (st.tx !== st.home[0] || st.ty !== st.home[1]) { const n = hmNext(M, hmField(M, st.home[0], st.home[1], 'h'), st.tx, st.ty, 'h'); if (n) { hStepTo(st, n[0], n[1], HB.hero); st.away = true; return; } st.tx = st.home[0]; st.ty = st.home[1]; }
+  st.x = st.tx; st.y = st.ty; st.away = false; st.fr = 0; }

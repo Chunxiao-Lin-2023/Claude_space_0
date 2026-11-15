@@ -46,6 +46,14 @@ const { chromium } = require('playwright');
       for (let i = 0; i < 80; i++) { hStep(H, .05); if (v.st === 'run') runT += .05; const pr = prog(); if (pr < last - .01) back++; last = pr; if (v.st === 'walk' && runT > 0) break; } res.push({ wi, back, runT: Math.round(runT * 10) / 10 }); }
     __close(H); return res; });
   chk('scared visitors only run forward (' + JSON.stringify(fwd) + ')', fwd.length >= 2 && fwd.every(r => r.back === 0 && r.runT > .5));
+  // 6b. 放完招追出去补吓，不超过 6 格，追完回岗位
+  const ch = await pg.evaluate(async () => { const H = await __open('wan', 0), st = H.staff[0], v = H.vis[0]; __put(H, v, __near(H, st, 1.6, 2.2), 'walk'); v.wi = Math.max(1, hmRouteIdx(H.M, v)); st.cd = 0; const hp0 = v.u.hp; let away = 0, maxd = 0, hit = 0, back = -1, hpCast = null;
+    for (let i = 0; i < 260; i++) { hStep(H, .05); if (st.cast && st.cast.done && hpCast == null) hpCast = v.u.hp; if (st.away) away++; maxd = Math.max(maxd, Math.hypot(st.x - st.home[0], st.y - st.home[1])); hit = H.stats.staffChase || 0; if (away && !st.away && back < 0) back = i * .05; }
+    const r = { away, maxd: Math.round(maxd * 10) / 10, hit, back, hp0, hpCast, hp: v.u.hp, home: st.tx === st.home[0] && st.ty === st.home[1] }; __close(H); return r; });
+  chk('after a skill the staff chases, lands a hit, stays within 6 tiles, returns (' + JSON.stringify(ch) + ')', ch.away > 0 && ch.hit >= 1 && ch.hit <= 2 && ch.maxd <= 6.01 && ch.home && ch.back > 0);
+  // 6c. 闲着的员工：受惊游客从旁边跑过也追
+  const join = await pg.evaluate(async () => { const H = await __open('xiaoxiao', 0), st = H.staff[0], v = H.vis[0]; __put(H, v, __near(H, st, 1.6, 2.6), 'walk'); v.wi = Math.max(1, hmRouteIdx(H.M, v)); st.cd = 99; hReact(H, v, H.hero, 1); let saw = 0; for (let i = 0; i < 60; i++) { hStep(H, .05); if (st.ch || st.away) saw = 1; } __close(H); return saw; });
+  chk('idle staff joins the chase of a fleeing visitor nearby', join === 1);
   // 7. 方向键按住一直走，松开就停
   await pg.evaluate(async () => { const H = await __open(null, 0, false); H.hero.path = null; });
   const dir = await pg.evaluate(() => { const H = __dbg.HS, M = H.M, h = H.hero, ks = ['ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowUp']; let best = 0, bn = -1; for (let d = 0; d < 4; d++) { let n = 0; while (n < 6 && !hmSolid(M, M.hs, h.tx + HD[d][0] * (n + 1), h.ty + HD[d][1] * (n + 1))) n++; if (n > bn) { bn = n; best = d; } } return [ks[best], bn, h.tx, h.ty]; });
@@ -62,5 +70,6 @@ const { chromium } = require('playwright');
       await pg.evaluate(() => { const H = __dbg.HS; hsCam(H, 1); hsDraw(H); hsTextLayer(H); }); await pg.screenshot({ path: process.env.SHOT + '/' + sk + '_a.png' });
       await pg.evaluate(s => { const H = __dbg.HS; __step(H, s.wind * .3 + Math.min(.35, s.dur * .3)); hsCam(H, 1); hsDraw(H); hsTextLayer(H); }, S); await pg.screenshot({ path: process.env.SHOT + '/' + sk + '_b.png' });
       await pg.evaluate(() => { const H = __dbg.HS; __close(H); }); } }
+  if (process.env.SHOT) { await pg.evaluate(async () => { const H = await __open('xiaoxiao', 0), st = H.staff[0], v = H.vis[0]; __put(H, v, __near(H, st, 1.6, 2.2), 'walk'); v.wi = Math.max(1, hmRouteIdx(H.M, v)); st.cd = 0; for (let i = 0; i < 200 && !(st.away && Math.hypot(st.x - st.home[0], st.y - st.home[1]) > 1.5); i++) hStep(H, .05); H.focusPt = [st.x, st.y]; hsCam(H, 1); hsDraw(H); hsTextLayer(H); }); await pg.screenshot({ path: process.env.SHOT + '/chase.png' }); await pg.evaluate(() => __close(__dbg.HS)); }
   console.log('staff', ok.length + '/' + (ok.length + bad.length), bad.length ? 'FAIL:\n  ' + bad.join('\n  ') : 'OK'); console.log('errors', errs.slice(0, 6));
   await b.close(); process.exit(bad.length || errs.length ? 1 : 0); })();
