@@ -52,14 +52,14 @@ function hSkFire(H, st) { const c = st.cast, S = HSK[c.k], B = H.B; c.done = 1; 
   if (a) { c.ax = a.x; c.ay = a.y; }
   if (S.line) { const onT = (S.kind === 'target' || S.kind === 'cone') && a; hFloat(H, onT ? a.x : src.x, onT ? a.y - 2.6 : src.y - 3.1, pick(S.line), 'txt'); }
   for (const q of hits) { const t = q.u, los = hmLos(H.M, src.x, src.y, q.x, q.y);
-    const mul = HB.dmg * HB.staffMul * skillMulStaff(st.k) * (S.back || hBackTo(q, src) ? 1.3 : 1) * hDarkMul(H, q) * (S.wall && !los ? .7 : 1) * (t.st.fear ? 1.15 : 1);
+    const mul = HB.dmg * HB.staffMul * skillMulStaff(st.k) * (S.back || hBackTo(q, src) ? 1.3 : 1) * hDarkMul(H, q) * (S.wall && !los ? .7 : 1) * (t.st.fear ? 1.15 : 1) * hPace(H, q, S.id, src, S.el);
     if (t.picky && t.picky === S.el) t.pickyHit = 1;
     hBest(H, doHit(B, st.u, t, S.pow, S.el, { mul }), PETS[st.k].n + ' · ' + S.n + ' → ' + t.n); reactLine(B, t);
     if (t.hp > 0) { if (S.st) addSt(B, t, S.st[0], S.st[1]); if (S.stun && chance(S.stun * (t.boss ? .6 : 1))) addSt(B, t, 'stun', 1); if (!hOut(q)) { hReact(H, q, src, S.hard); if (S.root) q.root = H.t + HB.react + S.root; } } }
   if (!hits.length) hFloat(H, src.x, src.y - 2.2, '扑了个空', 'txt');
   H.skfx = H.skfx || []; H.skfx.push({ k: S.fx, x: src.x, y: src.y, ax: c.ax, ay: c.ay, r: S.r, ang: S.ang || 0, t0: H.t, dur: S.fx === 'hands' && S.root ? S.root + HB.react + .4 : Math.max(.9, S.dur), sk: st.k, n: hits.length });
   /* 放完招追着跑得最狠的那个补两下 */ const fl = hits.filter(q => !hOut(q) && q.u.hp > 0).sort((x, y) => x.u.hp / x.u.mhp - y.u.hp / y.u.mhp)[0]; if (fl && !st.p2) hScStart(H, st, fl, c.dur);
-  if (S.shake) H.shake = S.shake; sfx(S.sfx); if (hits.length >= 3) { H.slow = Math.max(H.slow || 0, .35); hLog(H, PETS[st.k].n + '的「' + S.n + '」一下吓到了 ' + hits.length + ' 个人。', 'good'); } hFlush(H); }
+  hAttendNear(H, src.x, src.y, hits, 6); if (S.shake) H.shake = S.shake; hS(H, S.sfx, src.x, src.y); if (hits.length >= 3) { H.slow = Math.max(H.slow || 0, .35); hLog(H, PETS[st.k].n + '的「' + S.n + '」一下吓到了 ' + hits.length + ' 个人。', 'good'); } hFlush(H); }
 /* 每帧：放招中的员工原地不动 */
 function hSkTick(H, st) { const c = st.cast; if (!c) return false; const e = H.t - c.t0, S = HSK[c.k];
   if (!c.done) { const a = H.vis[c.vi]; if (a && !hOut(a)) { c.ax = a.x; c.ay = a.y; if (S.kind !== 'aoe' && S.kind !== 'ring') st.dir = hDirTo(st, a); } if (e >= c.wind) hSkFire(H, st); }
@@ -101,8 +101,8 @@ function hSkDrawOver(H, g, ox, oy, t) {
 const HSC = { leash: 6, t: 3, spd: 3.4, tick: .9, pow: .3, hits: 2, join: 3 };
 function hScStart(H, st, v, delay) { if (!v || hOut(v) || st.p2) return; st.ch = { vi: H.vis.indexOf(v), until: H.t + (delay || 0) + HSC.t, n: 0 }; st.ctick = Math.max(st.ctick || 0, delay || 0); }
 function hScHit(H, st, v) { const B = H.B, c = st.ch; st.ctick = HSC.tick; if (c) c.n++; st.dir = hDirTo(st, v);
-  doHit(B, st.u, v.u, HSC.pow, 'chase', { mul: HB.dmg * HB.staffMul * skillMulStaff(st.k) * hDarkMul(H, v) * (v.u.st.fear ? 1.15 : 1) }); if (v.u.hp > 0 && !hOut(v)) hReact(H, v, st);
-  hFx(H, 'chase', v.x, v.y); hFloat(H, st.x, st.y - 1.6, pick(['别跑——', '等等我呀', '嘿嘿……', '抓到了！']), 'staff'); sfx('steps'); H.stats.staffChase = (H.stats.staffChase || 0) + 1; hFlush(H); }
+  doHit(B, st.u, v.u, HSC.pow, 'chase', { mul: HB.dmg * HB.staffMul * skillMulStaff(st.k) * hDarkMul(H, v) * (v.u.st.fear ? 1.15 : 1) * hPace(H, v, 'schase', st, 'chase') }); if (v.u.hp > 0 && !hOut(v)) hReact(H, v, st);
+  hFx(H, 'chase', v.x, v.y); hFloat(H, st.x, st.y - 1.6, pick(['别跑——', '等等我呀', '嘿嘿……', '抓到了！']), 'staff'); hS(H, 'steps', v.x, v.y); H.stats.staffChase = (H.stats.staffChase || 0) + 1; hFlush(H); }
 function hScTick(H, st, dt) { const M = H.M; if (st.tx == null) { st.tx = st.home[0]; st.ty = st.home[1]; st.x = st.tx; st.y = st.ty; } st.walked = st.walked || 0; st.ctick = (st.ctick || 0) - dt;
   if (st.mv) { hMove(st, dt); st.away = true; return; }
   const hd = q => Math.hypot(q.x - st.home[0], q.y - st.home[1]);
@@ -111,5 +111,5 @@ function hScTick(H, st, dt) { const M = H.M; if (st.tx == null) { st.tx = st.hom
   if (v) { const d = hDist(st, v); if (d <= 1.45 && st.ctick <= 0) { hScHit(H, st, v); return; }
     if (d > 1) { const n = hmNext(M, hmField(M, Math.round(v.x), Math.round(v.y), 'h'), st.tx, st.ty, 'h'); if (n && Math.hypot(n[0] - st.home[0], n[1] - st.home[1]) <= HSC.leash) { hStepTo(st, n[0], n[1], HSC.spd); st.away = true; return; } }
     st.dir = hDirTo(st, v); st.x = st.tx; st.y = st.ty; st.fr = 0; return; }
-  if (st.tx !== st.home[0] || st.ty !== st.home[1]) { const n = hmNext(M, hmField(M, st.home[0], st.home[1], 'h'), st.tx, st.ty, 'h'); if (n) { hStepTo(st, n[0], n[1], HB.hero); st.away = true; return; } st.tx = st.home[0]; st.ty = st.home[1]; }
+  /* 回岗：优先钻员工通道，别在游客眼前晃 */ if (st.tx !== st.home[0] || st.ty !== st.home[1]) { const n = hmNext(M, hmFieldW(M, st.home[0], st.home[1]), st.tx, st.ty, 'h'); if (n) { hStaffSeen(H, st); hStepTo(st, n[0], n[1], HB.hero); st.away = true; return; } st.tx = st.home[0]; st.ty = st.home[1]; }
   st.x = st.tx; st.y = st.ty; st.away = false; st.fr = 0; }

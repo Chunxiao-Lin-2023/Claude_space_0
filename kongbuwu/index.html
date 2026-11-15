@@ -39,7 +39,7 @@ body.m-ex #vEx,body.m-dlg #vDlg,body.m-bt #vBt,body.m-hs #vHs{opacity:1;pointer-
 #vDlg{background:#14110d}.stgw{flex:1 1 auto;min-height:0;display:flex;align-items:center;justify-content:center;padding:10px 10px 0}#stg{width:100%;height:100%;object-fit:contain;image-rendering:pixelated;display:block}#dlg{flex:none}#mini{flex:none}#blk{position:absolute;inset:8px;z-index:6;background:rgba(14,11,8,.97);border:1px solid #5a4a30;border-radius:6px;overflow-y:auto;padding:10px 14px;font-family:'Songti SC',serif;color:#d8cfb8;font-size:.9em;line-height:1.8}#blk p{margin:3px 0}#blk b{color:#c9a45c;font-weight:500}#blk .me{color:#9cc}.dbtn{font-size:.85em;padding:1px 7px;margin-left:6px;border:1px solid #b8a880;border-radius:4px;color:#6a5a3a;font-family:inherit;min-height:24px}.dbtn.on{background:#6a5a3a;color:#fff}#dlg.ph .dbtn{border-color:#600;color:#a33}#vDlg .bgc{filter:blur(6px) brightness(.42) sepia(.4)}
 .dm-dlg{position:absolute!important;top:6px;left:0;right:0;height:38%;overflow:hidden;pointer-events:none;z-index:1}
 #dlg{margin:10px;background:var(--paper);color:var(--pink);border-radius:4px;padding:10px 16px 12px;min-height:34%;max-height:62%;overflow-y:auto;box-shadow:0 8px 30px rgba(0,0,0,.6),inset 0 0 40px rgba(120,90,40,.18);cursor:pointer;display:flex;flex-direction:column;font-family:"Songti SC","Noto Serif SC","STSong",serif}
-.coopst{position:relative;z-index:2;margin:0 auto 10px;padding:6px 12px;border:1px solid #6a5a9a;border-radius:8px;background:rgba(30,20,50,.85);color:#e0d4ff;font-size:13px;text-align:center;max-width:22em}.coopst b{color:#ffd76a;letter-spacing:2px}#nightov{position:fixed;inset:0;z-index:9999;background:#000}.picked{outline:3px solid #ffd76a!important;outline-offset:1px;box-shadow:0 0 16px #ffd76aaa!important;filter:brightness(1.15);transform:scale(1.03);transition:transform .12s,box-shadow .12s}.dch button.picked::before,.btn.picked::before{content:'✓ ';color:#ffd76a;font-weight:700}.taptag{position:fixed;z-index:9000;pointer-events:none;background:#1a1410;color:#ffd76a;border:1px solid #ffd76a;border-radius:6px;padding:3px 10px;font-size:13px;white-space:nowrap;box-shadow:0 2px 10px #000}.coopchip{font-size:12px;white-space:nowrap}.coopchip.mine{color:#ffd76a;border-color:#8a6a2a}.coopchip.theirs{color:#9ad8ff}.coopchip.wait{opacity:.7}#coopreq{position:fixed;z-index:9001;left:50%;top:60px;transform:translateX(-50%);display:flex;gap:8px;align-items:center;background:#120c0a;border:1px solid #c9a24a;border-radius:8px;padding:8px 12px;box-shadow:0 4px 20px #000;font-size:14px}.coopsay{position:fixed;z-index:9002;left:50%;bottom:22%;transform:translateX(-50%);background:rgba(10,8,8,.92);color:#f0e0c8;border:1px solid #6a5a4a;border-radius:16px;padding:6px 14px;font-size:15px;pointer-events:none;animation:csay 2.6s forwards}@keyframes csay{0%{opacity:0;transform:translate(-50%,8px)}10%,80%{opacity:1;transform:translate(-50%,0)}100%{opacity:0}}.coopcode{font-size:44px;letter-spacing:.35em;text-align:center;color:#ffd76a;font-family:monospace;margin:6px 0}#hshud.gview .hs-bot>*:not(.p2bar){display:none!important}.p2bar{display:flex;gap:10px;align-items:center;justify-content:center;width:100%}.p2bar span{font-size:13px;color:#cfe8ff}body.vnn #nav{display:none}body.vnn #tl .bars,body.vnn #tl>span:not(:first-of-type){visibility:hidden}#nightov iframe{width:100%;height:100%;border:0;display:block}body.nightup{overflow:hidden}.hs-cos{margin-left:6px;padding:1px 8px;border:1px solid #6a2a2a;border-radius:3px;background:#2a0e0e;color:#f0d8c8;font-size:12px;cursor:pointer}.hs-cos small{color:#c8a890;margin-left:4px}.hcut-t{position:absolute;left:0;right:0;text-align:center;transform:translateY(-50%);font:900 30px/1 'Noto Serif SC','Songti SC',serif;color:#e8241c;letter-spacing:.12em;text-shadow:0 0 6px #000,2px 2px 0 #300,0 0 18px rgba(255,0,0,.6);pointer-events:none;z-index:6}.recb{display:inline-block;margin-right:8px;padding:1px 8px;border-radius:2px;letter-spacing:.18em;font-size:.95em;vertical-align:middle}.r-dream{background:#18213c;color:#aec4ff;box-shadow:0 0 10px rgba(110,140,255,.35)}.r-past{background:#3a2810;color:#ecd2a0}.r-tale{background:#1a2420;color:#b8d4bc}body.rec-dream #dlg:not(.ph){background:#dde2ec;box-shadow:0 8px 30px rgba(0,0,0,.6),inset 0 0 50px rgba(60,80,170,.28)}body.rec-past #dlg:not(.ph){background:#e6d6b2;box-shadow:0 8px 30px rgba(0,0,0,.6),inset 0 0 60px rgba(120,80,20,.35)}body.rec-tale #dlg:not(.ph){background:#d8dcd4;box-shadow:0 8px 30px rgba(0,0,0,.6),inset 0 0 50px rgba(40,70,50,.25)}body.rec-dream #dlg .dtext,body.rec-past #dlg .dtext,body.rec-tale #dlg .dtext{font-style:italic}
+#hsfx .hrole{position:absolute;transform:translate(-50%,-100%);font-size:10px;line-height:1;padding:1px 4px;border-radius:3px;background:rgba(10,6,6,.62);color:#d8c8a8;white-space:nowrap;pointer-events:none;letter-spacing:1px}.coopst{position:relative;z-index:2;margin:0 auto 10px;padding:6px 12px;border:1px solid #6a5a9a;border-radius:8px;background:rgba(30,20,50,.85);color:#e0d4ff;font-size:13px;text-align:center;max-width:22em}.coopst b{color:#ffd76a;letter-spacing:2px}#nightov{position:fixed;inset:0;z-index:9999;background:#000}.picked{outline:3px solid #ffd76a!important;outline-offset:1px;box-shadow:0 0 16px #ffd76aaa!important;filter:brightness(1.15);transform:scale(1.03);transition:transform .12s,box-shadow .12s}.dch button.picked::before,.btn.picked::before{content:'✓ ';color:#ffd76a;font-weight:700}.taptag{position:fixed;z-index:9000;pointer-events:none;background:#1a1410;color:#ffd76a;border:1px solid #ffd76a;border-radius:6px;padding:3px 10px;font-size:13px;white-space:nowrap;box-shadow:0 2px 10px #000}.coopchip{font-size:12px;white-space:nowrap}.coopchip.mine{color:#ffd76a;border-color:#8a6a2a}.coopchip.theirs{color:#9ad8ff}.coopchip.wait{opacity:.7}#coopreq{position:fixed;z-index:9001;left:50%;top:60px;transform:translateX(-50%);display:flex;gap:8px;align-items:center;background:#120c0a;border:1px solid #c9a24a;border-radius:8px;padding:8px 12px;box-shadow:0 4px 20px #000;font-size:14px}.coopsay{position:fixed;z-index:9002;left:50%;bottom:22%;transform:translateX(-50%);background:rgba(10,8,8,.92);color:#f0e0c8;border:1px solid #6a5a4a;border-radius:16px;padding:6px 14px;font-size:15px;pointer-events:none;animation:csay 2.6s forwards}@keyframes csay{0%{opacity:0;transform:translate(-50%,8px)}10%,80%{opacity:1;transform:translate(-50%,0)}100%{opacity:0}}.coopcode{font-size:44px;letter-spacing:.35em;text-align:center;color:#ffd76a;font-family:monospace;margin:6px 0}#hshud.gview .hs-bot>*:not(.p2bar){display:none!important}.p2bar{display:flex;gap:10px;align-items:center;justify-content:center;width:100%}.p2bar span{font-size:13px;color:#cfe8ff}body.vnn #nav{display:none}body.vnn #tl .bars,body.vnn #tl>span:not(:first-of-type){visibility:hidden}#nightov iframe{width:100%;height:100%;border:0;display:block}body.nightup{overflow:hidden}.hs-cos{margin-left:6px;padding:1px 8px;border:1px solid #6a2a2a;border-radius:3px;background:#2a0e0e;color:#f0d8c8;font-size:12px;cursor:pointer}.hs-cos small{color:#c8a890;margin-left:4px}.hcut-t{position:absolute;left:0;right:0;text-align:center;transform:translateY(-50%);font:900 30px/1 'Noto Serif SC','Songti SC',serif;color:#e8241c;letter-spacing:.12em;text-shadow:0 0 6px #000,2px 2px 0 #300,0 0 18px rgba(255,0,0,.6);pointer-events:none;z-index:6}.recb{display:inline-block;margin-right:8px;padding:1px 8px;border-radius:2px;letter-spacing:.18em;font-size:.95em;vertical-align:middle}.r-dream{background:#18213c;color:#aec4ff;box-shadow:0 0 10px rgba(110,140,255,.35)}.r-past{background:#3a2810;color:#ecd2a0}.r-tale{background:#1a2420;color:#b8d4bc}body.rec-dream #dlg:not(.ph){background:#dde2ec;box-shadow:0 8px 30px rgba(0,0,0,.6),inset 0 0 50px rgba(60,80,170,.28)}body.rec-past #dlg:not(.ph){background:#e6d6b2;box-shadow:0 8px 30px rgba(0,0,0,.6),inset 0 0 60px rgba(120,80,20,.35)}body.rec-tale #dlg:not(.ph){background:#d8dcd4;box-shadow:0 8px 30px rgba(0,0,0,.6),inset 0 0 50px rgba(40,70,50,.25)}body.rec-dream #dlg .dtext,body.rec-past #dlg .dtext,body.rec-tale #dlg .dtext{font-style:italic}
 #dlg.ph{background:#060606;color:#e02a22;font-family:"SF Mono",Menlo,Consolas,"PingFang SC",monospace;box-shadow:0 0 0 1px #300,0 0 40px rgba(180,0,0,.25);border-radius:14px}
 #dlg .dh{display:flex;justify-content:space-between;align-items:center;font-size:.72em;color:#8a7a5c;margin-bottom:6px;min-height:1.9em}#dlg.ph .dh{color:#711}
 .seal{display:inline-block;padding:1px 10px;border-radius:3px;color:#fff;font-size:1.25em;letter-spacing:.12em;font-weight:600;transform-origin:left center}.seal.in{animation:stamp .25s ease-out}@keyframes stamp{from{transform:scale(1.5) rotate(-4deg);opacity:0}}
@@ -170,7 +170,7 @@ function auGraph(c) { const g = {}; g.master = c.createGain(); g.master.gain.val
 function audioInit() { if (AU.ctx || !SET.snd && !SET.mus) return; const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
   try { const c = AU.ctx = new AC(); Object.assign(AU, auGraph(c)); } catch (e) { AU.ctx = null; } }
 /* 一个声音：振荡器或噪声 → 滤波 → 包络 → 声像 → 干声 + 混响 */
-function V(o) { const c = AU.ctx; if (!c) return; if (o.mus ? !SET.mus : !SET.snd) return; const t = (o.at != null ? o.at : c.currentTime + (AU.off || 0)) + (o.delay || 0), dur = o.dur || .3, vol = (o.vol || .1) * (AU.gm || 1); let src;
+function V(o) { if (AU.pos && !o.mus) o = Object.assign({}, o, { pan: Math.max(-1, Math.min(1, (o.pan || 0) * .3 + AU.pos.pan)), vol: (o.vol || .1) * AU.pos.vol, lp: AU.pos.lp ? Math.min(o.lp || 20000, AU.pos.lp) : o.lp }); const c = AU.ctx; if (!c) return; if (o.mus ? !SET.mus : !SET.snd) return; const t = (o.at != null ? o.at : c.currentTime + (AU.off || 0)) + (o.delay || 0), dur = o.dur || .3, vol = (o.vol || .1) * (AU.gm || 1); let src;
   if (o.noise) { src = c.createBufferSource(); src.buffer = AU.noiseBuf; src.loop = true; src.playbackRate.value = o.rate || 1; }
   else { src = c.createOscillator(); src.type = o.type || 'sine'; const j = o.exact ? 1 : 1 + (Math.random() - .5) * .03; src.frequency.setValueAtTime(o.f0 * j, t); if (o.f1) src.frequency[o.lin ? 'linearRampToValueAtTime' : 'exponentialRampToValueAtTime'](Math.max(20, o.f1 * j), t + dur * (o.glide || 1)); if (o.det) src.detune.value = o.det;
     if (o.vib) { const l = c.createOscillator(), lg = c.createGain(); l.frequency.value = o.vib[0]; lg.gain.value = o.vib[1]; l.connect(lg); lg.connect(src.frequency); l.start(t); l.stop(t + dur + .1); } }
@@ -2170,8 +2170,8 @@ function daySurprise() { if (window.__dbg && !__dbg.surp) return; if (!C || STAT
    百物语那样的俯视房间地图。白天：先布置惊吓点和员工，再控制陈歌（点哪走哪）躲、追、拉机关。
    夜里：大战前先被追——躲进柜子、拿到关键道具或等员工准备好，再进对峙。
    数值都在 HB 里；地图在 48_hmaps.js。 */
-const HB = { dmg: 1.15, bossHp: .65, visHp: 1.3, react: .8, run: 3.3, runT: 2.4, carry: 2.4, round: 2.6, mockEvery: 3, devCd: 5, devRange: 4.6, zone: 2, staffCd: 5, staffMul: .8, staffRange: 2, pounceCd: 2.4, chaseTick: .9, chasePow: .3,
-  walk: 1.45, panic: 3, flee: 3.8, leave: 2.4, hero: 3.7, heroChase: 4.5, enterGap: 7, seeDist: 3.4, seeCd: 6, exposeAtm: .05, exposeHp: .06, tMax: 170,
+const HB = { dmg: 1.15, bossHp: .65, visHp: 1, react: .8, run: 3.3, runT: 2.4, carry: 2.4, round: 2.6, mockEvery: 3, devCd: 5, devRange: 4.6, zone: 2, staffCd: 5, staffMul: .8, staffRange: 2, pounceCd: 2.4, chaseTick: .9, chasePow: .3,
+  walk: 1.9, panic: 3, flee: 3.8, leave: 2.4, hero: 3.7, heroChase: 4.5, enterGap: 10, seeDist: 3.4, seeCd: 6, exposeAtm: .05, exposeHp: .06, tMax: 400,
   bossSee: 7.5, bossSpd: 3.05, bossPatrol: 2, senseHit: .55, sense0: 3, sense: 6, bossSense: 2.6 };
 const HD = [[0, 1], [-1, 0], [1, 0], [0, -1]];
 const HLIGHT = { candle: [2.2, 'rgba(255,170,80,.16)'], candles: [2.8, 'rgba(255,160,70,.2)'], lantern: [3, 'rgba(255,90,60,.2)'], lamp: [3, 'rgba(255,220,160,.14)'], stonelantern: [2.6, 'rgba(255,180,90,.16)'], tv: [2.4, 'rgba(140,170,255,.18)'], vending: [2.6, 'rgba(160,220,255,.16)'], streetlamp: [3.6, 'rgba(255,230,170,.14)'], fireplace: [3, 'rgba(255,120,40,.22)'] };
@@ -2207,7 +2207,8 @@ function hmBuild(id) {
   const D = HMAPS[id], w = D.w, h = D.h, N = w * h;
   const M = { id, D, w, h, t: new Array(N).fill('wall'), vs: new Uint8Array(N), hs: new Uint8Array(N), ents: [], slots: [], staff: [], hides: [], rooms: [], sec: new Uint8Array(N), fields: {} };
   const set = (x, y, t) => { if (x >= 0 && y >= 0 && x < w && y < h) M.t[y * w + x] = t; };
-  for (const n in D.rooms) { const [x0, y0, x1, y1, fl] = D.rooms[n]; M.rooms.push({ n, x0, y0, x1, y1 }); for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) set(x, y, fl || D.fl); }
+  if (D.grid) { for (let i = 0; i < N; i++) M.t[i] = D.grid[i]; for (const r of D.rlist) M.rooms.push(Object.assign({}, r)); M.stw = D.stw; for (const i of D.secs) M.sec[i] = 1; for (let i = 0; i < N; i++) if (D.stw[i]) M.sec[i] = 1; }
+  else for (const n in D.rooms) { const [x0, y0, x1, y1, fl] = D.rooms[n]; M.rooms.push({ n, x0, y0, x1, y1 }); for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) set(x, y, fl || D.fl); }
   for (const p of D.tiles || []) { const [t, x0, y0, x1, y1] = p; for (let y = y0; y <= (y1 ?? y0); y++) for (let x = x0; x <= (x1 ?? x0); x++) set(x, y, t); }
   for (const n in D.inner || {}) { const [x0, y0, x1, y1, fl] = D.inner[n]; M.rooms.push({ n, x0, y0, x1, y1 }); for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) set(x, y, fl || D.fl); }
   const near = (x, y) => { for (const [dx, dy] of HD) { const t = M.t[(y + dy) * w + x + dx]; if (t && t !== 'wall' && t !== 'void') return t; } return D.fl; };
@@ -2220,7 +2221,7 @@ function hmBuild(id) {
   for (const d of D.hides || []) { const e = ent(d[0] || 'wardrobe', d[1], d[2], Object.assign({ hide: 1 }, d[3])); M.hs[d[2] * w + d[1]] = 0; M.hides.push(e); }
   (D.slots || []).forEach((p, i) => M.slots.push({ i, n: i + 1, x: p[0], y: p[1], k: '', cd: 0, fx: 0 }));
   if (D.sp && HDEV['sp_' + id]) M.slots.push({ i: M.slots.length, n: '★', x: D.sp[0], y: D.sp[1], k: 'sp_' + id, sp: 1, cd: 0, fx: 0 });
-  (D.staff || []).forEach((p, i) => M.staff.push({ i, x: p[0], y: p[1] }));
+  (D.staff || []).forEach((p, i) => M.staff.push({ i, x: p[0], y: p[1], front: D.fronts ? D.fronts[i] : null }));
   M.route = (D.route || []).map(r => typeof r === 'string' ? hmCenter(M, r) : r); M.route.unshift(D.enter.slice()); M.route.push(D.exit.slice());
   M.start = (D.start || M.route[0]).slice(); M.path = hmPath(M); for (const s of M.slots) s.pd = M.path.length ? Math.min(...M.path.map(q => Math.hypot(q[0] - s.x, q[1] - s.y))) : 0;
   return M;
@@ -2237,7 +2238,7 @@ function hmField(M, tx, ty, who) { const key = who + tx + ',' + ty; if (M.fields
   return M.fields[key] = f; }
 function hmNext(M, f, x, y, who) { const w = M.w, here = f[y * w + x]; if (here <= 0) return null; let best = null, bv = here; const g = who === 'v' ? M.vs : M.hs;
   for (const [dx, dy] of HD) { const nx = x + dx, ny = y + dy; if (hmSolid(M, g, nx, ny)) continue; const v = f[ny * w + nx]; if (v >= 0 && v < bv) { bv = v; best = [nx, ny]; } } return best; }
-function hmLos(M, x0, y0, x1, y1) { const n = Math.ceil(Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0)) * 2); for (let i = 1; i < n; i++) { const x = Math.round(x0 + (x1 - x0) * i / n), y = Math.round(y0 + (y1 - y0) * i / n); const t = M.t[y * M.w + x]; if (t === 'wall' || t === 'void' || M.sec[y * M.w + x]) return false; } return true; }
+function hmLos(M, x0, y0, x1, y1) { const n = Math.ceil(Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0)) * 2), ax = Math.round(x0), ay = Math.round(y0), bx = Math.round(x1), by = Math.round(y1); for (let i = 1; i < n; i++) { const x = Math.round(x0 + (x1 - x0) * i / n), y = Math.round(y0 + (y1 - y0) * i / n); if ((x === ax && y === ay) || (x === bx && y === by)) continue; const t = M.t[y * M.w + x]; if (t === 'wall' || t === 'void' || M.sec[y * M.w + x]) return false; } return true; }
 const hDist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y), hPerf = s => Math.max(.55, (s.pd || 0) + .2);
 
 /* ---------- 走路的人 ---------- */
@@ -2247,12 +2248,12 @@ function hMove(a, dt) { const m = a.mv; if (!m) return false; m.p = Math.min(1, 
   if (m.p >= 1) { a.tx = m.tx; a.ty = m.ty; a.x = a.tx; a.y = a.ty; a.mv = null; return true; } return false; }
 
 /* ---------- 一场会话 ---------- */
-function hsNew(o) { const M = hmBuild(o.map), H = { o, M, mode: o.mode, t: 0, dt: 0, done: false, res: null, phase: o.mode === 'house' ? 'setup' : 'live', fx: [], txt: [], log: [], vis: [], staff: [], tap: null, combo: 0, auto: false, speed: 1, minimap: true, stats: { perfect: 0, exposed: 0, scared: 0, pounce: 0, dev: 0, house: 0 } };
+function hsNew(o) { const M = hmBuild(o.mode === 'chase' && HMAPS[o.map + '_c'] ? o.map + '_c' : o.map), H = { o, M, mode: o.mode, t: 0, dt: 0, done: false, res: null, phase: o.mode === 'house' ? 'setup' : 'live', fx: [], txt: [], log: [], vis: [], staff: [], tap: null, combo: 0, auto: false, speed: 1, minimap: true, stats: { perfect: 0, exposed: 0, scared: 0, pounce: 0, dev: 0, house: 0 } };
   H.hero = hActor(M.start[0], M.start[1], { P: PPL.陈歌, hidden: false, path: null, chase: null, pcd: 0, ctick: 0, mpLeft: 0 });
   return H; }
 
 /* ===== 白天：接待 ===== */
-function houseLayout(sid, M) { const L = C.hh.lay = C.hh.lay || {}; let l = L[sid]; if (!l || !l.v) l = L[sid] = houseAutoLayout(sid, M);
+function houseLayout(sid, M) { const L = C.hh.lay = C.hh.lay || {}; let l = L[sid]; if (!l || l.v !== HLAY_V) l = L[sid] = houseAutoLayout(sid, M);
   /* 学了新手段、等级够了多一个机关位、来了新员工：空位自动补上（自己摆好的不动） */ const nd = houseDevices().length, mx = houseMaxDev(), ns = houseStaffList().length;
   if ((l.nd ?? 0) < nd || (l.mx ?? 0) < mx || (l.ns ?? 0) < ns) { const a = houseAutoLayout(sid, M), used = Object.values(l.slots); const spare = Object.values(a.slots).filter(k => { const i = used.indexOf(k); if (i >= 0) { used.splice(i, 1); return false; } return true; });
     for (const s of M.slots) { if (s.sp) continue; if (Object.values(l.slots).filter(Boolean).length >= mx || !spare.length) break; if (!l.slots[s.i]) l.slots[s.i] = spare.shift(); }
@@ -2261,17 +2262,19 @@ function houseLayout(sid, M) { const L = C.hh.lay = C.hh.lay || {}; let l = L[si
 function houseDevices() { const own = C.hh.dev || {}; return Object.keys(HDEV).filter(k => !HDEV[k].sp && (HDEV[k].sk ? C.sk.includes(k) && SKILLS[k] : own[k])); }
 function houseMaxDev() { return Math.min(8, 2 + Math.floor(C.lv / 4) + (C.hh.up.light ? 1 : 0)); }
 function houseStaffList() { return Object.keys(C.pets).filter(HSTAFF_OK); }
-function houseAutoLayout(sid, M) { const devs = houseDevices(), max = houseMaxDev(), slots = {}, order = M.slots.filter(s => !s.sp).map(s => s.i);
+const HLAY_V = 2, hSpread = (a, n) => a.length <= n ? a.slice() : Array.from({ length: n }, (_, j) => a[Math.floor((j + .5) * a.length / n)]);
+function houseAutoLayout(sid, M) { const devs = houseDevices(), max = houseMaxDev(), slots = {}, order = hSpread(M.slots.filter(s => !s.sp).map(s => s.i), max);
   /* 按路线先后放：越往里放越贵的 */ const pw = k => hDev(k).pow * (hDev(k).all ? 1.4 : 1); const list = devs.slice().sort((a, b) => pw(b) - pw(a)); while (list.length < max && devs.includes('jump')) list.push('jump');
-  order.slice(0, max).forEach((si, j) => { if (list[j]) slots[si] = list[j]; }); const staff = {}; houseStaffList().slice(0, M.staff.length).forEach((k, i) => { staff[i] = k; }); return { v: 1, slots, staff, nd: devs.length, mx: max, ns: houseStaffList().length }; }
+  order.slice(0, max).forEach((si, j) => { if (list[j]) slots[si] = list[j]; }); const staff = {}, posts = hSpread(M.staff.map(s => s.i), Math.min(M.staff.length, houseStaffList().length)); houseStaffList().slice(0, posts.length).forEach((k, i) => { staff[posts[i]] = k; }); return { v: HLAY_V, slots, staff, nd: devs.length, mx: max, ns: houseStaffList().length }; }
 function houseApplyLayout(H) { const M = H.M, l = houseLayout(H.o.scene, M), devs = houseDevices(); let n = 0; const used = {};
   for (const s of M.slots) { if (s.sp) continue; const k = l.slots[s.i]; if (k && devs.includes(k) && n < houseMaxDev() && (!used[k] || (k === 'jump' && used[k] < 2))) { s.k = k; used[k] = (used[k] || 0) + 1; n++; } else s.k = ''; }
-  H.staff = []; for (const sp of M.staff) { const k = l.staff[sp.i]; if (k && C.pets[k] && HSTAFF_OK(k) && !H.staff.some(s => s.k === k)) H.staff.push(hActor(sp.x, sp.y, { k, home: [sp.x, sp.y], u: petUnit(k), cd: 1.5 + H.staff.length, pop: 0, P: pplOf(PETS[k].n === '殷小小' ? '小小' : PETS[k].n), off: false })); } }
+  H.staff = []; for (const sp of M.staff) { const k = l.staff[sp.i]; if (k && C.pets[k] && HSTAFF_OK(k) && !H.staff.some(s => s.k === k)) H.staff.push(hActor(sp.x, sp.y, { k, home: [sp.x, sp.y], front: sp.front || [sp.x, sp.y], u: petUnit(k), cd: 1.5 + H.staff.length, pop: 0, P: pplOf(PETS[k].n === '殷小小' ? '小小' : PETS[k].n), off: false })); } }
 function houseStart(H) { const B = H.B, M = H.M; houseApplyLayout(H); H.phase = 'live'; H.t = 0; H.hero.P = HCOS[hCos()].P; H.lit = {}; H.flick = {}; H.lcd = {}; H.puffT = 0; hLog(H, '陈歌换上了' + HCOS[hCos()].n + '的行头。', 'sys');
   const ppl = H.o.ppl || B.foes.length, extra = Math.max(0, ppl - B.foes.length), per = Math.min(3, Math.ceil(extra / B.foes.length));
   B.foes.forEach((u, i) => { const P = u.boss || ['gaoru', 'heshan', 'feiyl', 'zhujn', 'wanghl', 'wangwl'].includes(u.id) ? pplOf(MOBS[u.id].n) : pplOf(u.n + i + C.day); const v = hActor(M.route[0][0], M.route[0][1], { u, P, st: 'wait', at: i * HB.enterGap + (i ? 0 : .6), wi: 1, wait: 0, seeCd: 0, mockN: 0, ftrail: [], fol: [], bub: null, light: u.trait === 'torch' ? 3.2 : 1.8, tags: 0 });
     for (let j = 0; j < (u.boss ? 0 : per); j++) v.fol.push({ P: pplOf('同伴' + i + j + C.day), lag: 4 + j * 4 }); H.vis.push(v); });
-  { const R = M.route, i = Math.max(1, Math.min(R.length - 2, Math.round((R.length - 1) * .7))); H.task = { i, x: R[i][0], y: R[i][1], n: HTASK[H.o.scene] || '出口的钥匙' }; }
+  { const R = M.route, i = M.D.taskIdx || Math.max(1, Math.min(R.length - 2, Math.round((R.length - 1) * .7))); H.task = { i, x: R[i][0], y: R[i][1], n: HTASK[H.o.scene] || '出口的钥匙' }; }
+  H.beats = {}; for (const b of M.D.beats || []) H.beats[b.room] = b;
   hsRule(H, 'start'); hLog(H, '开门营业。' + B.foes.length + ' 批游客在门口排着队。游客的任务：找到' + H.task.n + '，从出口出去。', 'sys'); sfx('door'); musicMode('scare'); }
 /* 走进鬼屋的游客 */
 function hInside(H) { return H.vis.filter(v => v.st !== 'wait' && v.st !== 'gone'); }
@@ -2283,7 +2286,7 @@ function hWi(H, v) { v.wi++; const T = H.task; if (T && !v.got && v.wi > T.i) { 
 function hVisTick(H, v, dt) { const M = H.M, u = v.u;
   if (v.st === 'wait') { if (H.t >= v.at) { v.st = 'walk'; hBub(H, v, '……进去了？', 1.6); sfx('creak'); } return; }
   if (v.st === 'gone') return;
-  v.seeCd -= dt; if (v.bub && v.bub.until < H.t) v.bub = null;
+  v.seeCd -= dt; if (v.bub && v.bub.until < H.t) v.bub = null; hPaceTick(H, v, dt);
   if (v.mv) { hMove(v, dt); v.ftrail.unshift([v.x, v.y, v.dir, v.fr]); if (v.ftrail.length > 20) v.ftrail.pop(); return; }
   const at = (x, y) => v.tx === x && v.ty === y;
   if (v.st === 'faint') { v.fr = 0; return; }
@@ -2297,6 +2300,7 @@ function hVisTick(H, v, dt) { const M = H.M, u = v.u;
   if (v.st === 'run') { const last = M.route.length - 1, tg = M.route[Math.min(v.wi, last)]; if (H.t >= v.runEnd || v.runN <= 0 || v.wi >= last) { v.st = 'walk'; v.shaky = H.t + 4; return; } if (at(tg[0], tg[1])) { hWi(H, v); return; } const n = hmNext(M, hmField(M, tg[0], tg[1], 'v'), v.tx, v.ty, 'v'); if (!n) { v.st = 'walk'; v.shaky = H.t + 4; return; } v.runN--; hStepTo(v, n[0], n[1], HB.run); return; }
   if (u.st.stun) { v.fr = 0; return; }
   if (v.st === 'phone') { v.wait -= dt; if (v.wait <= 0) v.st = 'walk'; return; }
+  /* 被什么东西吸引住了：站住盯着看（RULES 36） */ if (v.st === 'stare') { v.wait -= dt; v.fr = 0; if (v.att) v.dir = hDirTo(v, v.att); if (v.wait <= 0) v.st = 'walk'; return; }
   if (v.st === 'look') { v.wait -= dt; v.dir = [0, 1, 3, 2][Math.max(0, Math.floor(v.wait * 1.6)) % 4]; if (v.wait <= 0) v.st = 'walk'; return; }
   /* 突然回头看（先冒“？”） */ if (v.st === 'back') { v.wait -= dt; if (v.wait < 1.1) v.dir = [3, 2, 1, 0][v.wdir]; if (v.wait <= 0) { v.st = 'walk'; v.dir = v.wdir; } return; }
   if (v.st === 'walk' && !u.boss) { v.backT = (v.backT ?? 5 + rnd() * 6) - dt; if (v.backT <= 0) { v.backT = 7 + rnd() * 6; v.st = 'back'; v.wait = 1.7; v.wdir = v.dir; hBub(H, v, '？', .6); return; } }
@@ -2309,13 +2313,13 @@ function hVisTick(H, v, dt) { const M = H.M, u = v.u;
   const n = hmNext(M, hmField(M, tgt[0], tgt[1], 'v'), v.tx, v.ty, 'v'); if (!n) { if (lg) v.lure = null; else hWi(H, v); return; }
   const spd = v.st === 'panic' ? HB.panic : HB.walk * (u.spd / 10) * (u.st.slow ? .6 : 1) * (u.st.dark ? .75 : 1) * (H.t < (v.shaky || 0) ? .8 : 1) * (hDarkAt(H, v.tx, v.ty) ? .85 : 1); hStepTo(v, n[0], n[1], spd); }
 /* 游客看见陈歌：拆穿 */
-function hSee(H, v) { const h = H.hero; if (h.hidden || v.seeCd > 0 || v.u.st.dark || hScaredSt(v) || H.t < (v.shaky || 0) || hOut(v) || v.st === 'leave' || v.st === 'wait') return false; const dx = h.x - v.x, dy = h.y - v.y, d = Math.hypot(dx, dy); if (d > HB.seeDist || d < .2) return false;
+function hSee(H, v) { const h = H.hero; if (h.hidden || H.M.sec[Math.round(h.y) * H.M.w + Math.round(h.x)] || v.seeCd > 0 || v.u.st.dark || hScaredSt(v) || H.t < (v.shaky || 0) || hOut(v) || v.st === 'leave' || v.st === 'wait') return false; const dx = h.x - v.x, dy = h.y - v.y, d = Math.hypot(dx, dy); if (d > HB.seeDist * (v.u.trait === 'torch' ? 1.3 : 1) || d < .2) return false;
   const [fx, fy] = HD[v.dir]; if (hDarkAt(H, v.x, v.y) || hDarkAt(H, h.x, h.y)) { /* 黑屋里只看得见手机手电照到的那一条 */ if (d > (hCos() === 'paper' ? 2 : 3.2) || (dx * fx + dy * fy) < d * .78) return false; return hmLos(H.M, v.x, v.y, h.x, h.y); } if ((dx * fx + dy * fy) < d * .35 && v.st !== 'look') return false; return hmLos(H.M, v.x, v.y, h.x, h.y); }
 function hExpose(H, v, who) { const B = H.B; hHint(H, 'seen', '被看见了：从背后、躲在柜子里，或者先断电再出手。游客头上冒「？」就是要回头了。'); v.seeCd = HB.seeCd; H.stats.exposed++; const a = Math.round(B.hero.mhp * HB.exposeAtm * (H.rule && H.rule.cam && v.u.id === 'feiyl' ? 2 : 1)); B.hero.hp = Math.max(0, B.hero.hp - a); v.u.hp = Math.min(v.u.mhp, v.u.hp + Math.round(v.u.mhp * HB.exposeHp));
   hBub(H, v, pick(who === 'staff' ? ['那是工作人员吧？', '我看见拉链了。', '化妆的，别怕。'] : ['工作人员吧？', '我看见你了哈。', '老板，你鞋带开了。', '那人在躲什么？']), 1.8); hFloat(H, H.hero.x, H.hero.y - 1, '被看见 · 氛围 -' + a, 'bad'); hLog(H, v.u.n + ' 看见了陈歌——氛围 -' + a, 'warn'); sfx('miss'); }
 /* 每一“回合”：游客拆台、状态结算、场景特色 */
 function hRound(H) { const B = H.B, ins = hInside(H).filter(v => !hOut(v) && v.st !== 'leave'); B.turn++; const all = B.foes; B.foes = ins.map(v => v.u);
-  for (const v of ins) { const u = v.u; tickSt(B, u); if (u.hp <= 0) continue; v.mockN++; if (u.st.fear || u.st.stun || hScaredSt(v) || H.t < (v.shaky || 0) || (v.mockN % HB.mockEvery)) continue; const n0 = B.log.length; mobAct(B, u); planMob(B, u); const ln = B.log.slice(n0).map(l => l.s).filter(s => s.startsWith(u.n)).pop(); if (ln) hBub(H, v, ln.slice(u.n.length).replace(/^[ ·：]+/, ''), 2.2, u.intent && u.intent.exec); if (u.st.phone === undefined && /手机/.test(ln || '')) { v.st = 'phone'; v.wait = 2; } }
+  for (const v of ins) { const u = v.u; tickSt(B, u); if (u.hp <= 0) continue; v.mockN++; if (u.st.fear || u.st.stun || hScaredSt(v) || H.t < (v.shaky || 0) || (v.mockN % HB.mockEvery) || !hBored(H, v)) continue; const n0 = B.log.length; mobAct(B, u); planMob(B, u); const ln = B.log.slice(n0).map(l => l.s).filter(s => s.startsWith(u.n)).pop(); if (ln) hBub(H, v, ln.slice(u.n.length).replace(/^[ ·：]+/, ''), 2.2, u.intent && u.intent.exec); if (u.st.phone === undefined && /手机/.test(ln || '')) { v.st = 'phone'; v.wait = 2; } }
   if (ins.some(v => v.u.hp > 0)) sceneTurn(B); B.foes = all; B.result = null; hFlush(H); }
 /* 战斗事件 → 地图上的飘字 */
 function hFlush(H) { const B = H.B; for (const e of B.ev) { const v = e.who === 'hero' ? null : H.vis.find(q => q.u.key === e.who); const x = v ? v.x : H.hero.x, y = v ? v.y - 1.4 : H.hero.y - 1.6;
@@ -2333,7 +2337,7 @@ function hScared(H, v) { hSnap(v); v.st = 'faint'; v.pose = 'faint'; v.poseT = H
 const HPOSE = { jump: '!!', fall: 'sweat', shake: '?!', cover: 'xx', cry: 'TT' }, HRUN = ['快跑快跑！', '别过来！！', '刚才那是什么！', '等等我——', '我腿软了……', '妈呀妈呀妈呀'];
 const hScaredSt = v => v.st === 'panic' || v.st === 'react' || v.st === 'run';
 function hSnap(v) { const m = v.mv; if (!m) return; if (m.p > .5) { v.tx = m.tx; v.ty = m.ty; } v.x = v.tx; v.y = v.ty; v.mv = null; }
-function hReact(H, v, src, hard) { if (hOut(v) || v.st === 'wait' || v.st === 'leave') return; const pose = hard ? pick(['fall', 'jump', 'cry']) : pick(Object.keys(HPOSE)); hSnap(v); v.st = 'react'; v.pose = pose; v.poseT = H.t; v.wait = HB.react; v.from = [src.x, src.y]; v.emo = { s: HPOSE[pose], until: H.t + HB.react + 1.4 }; hsRule(H, 'hit', v); }
+function hReact(H, v, src, hard) { if (hOut(v) || v.st === 'wait' || v.st === 'leave') return; const pose = hard ? pick(['fall', 'jump', 'cry']) : pick(Object.keys(HPOSE)); hSnap(v); v.st = 'react'; v.pose = pose; v.poseT = H.t; v.wait = HB.react; v.from = [src.x, src.y]; v.emo = { s: HPOSE[pose], until: H.t + HB.react + 1.4 }; hPaceHit(H, v, src); hsRule(H, 'hit', v); }
 /* ---------- 陈歌 ---------- */
 function hHeroTick(H, dt) { const h = H.hero, M = H.M; h.pcd -= dt; h.ctick -= dt;
   if (h.mv) { if (hMove(h, dt)) { h.hidden = M.hides.some(e => e.x === h.tx && e.y === h.ty); if (h.hidden) { sfx('creak'); if (H.mode === 'chase') hChaseHid(H); } } else return; }
@@ -2344,13 +2348,13 @@ function hGo(H, x, y) { const h = H.hero, M = H.M; x = clamp(Math.round(x), 0, M
   if (hmSolid(M, M.hs, x, y)) { let best = null, bd = 99; for (let yy = y - 2; yy <= y + 2; yy++) for (let xx = x - 2; xx <= x + 2; xx++) if (!hmSolid(M, M.hs, xx, yy) && hmField(M, xx, yy, 'h')[h.ty * M.w + h.tx] >= 0) { const d = Math.abs(xx - x) + Math.abs(yy - y); if (d < bd) { bd = d; best = [xx, yy]; } } if (!best) return; [x, y] = best; }
   if (hmField(M, x, y, 'h')[h.ty * M.w + h.tx] < 0) return; h.path = [x, y]; }
 function hPounce(H, v) { const B = H.B, h = H.hero; const k = C.sk.includes('chase') && C.mp >= SKILLS.chase.cost ? 'chase' : 'jump', S = SKILLS[k];
-  const cos = hCos(); let mul = HB.dmg * skillMul(k) * (v.u.st.fear ? 1.3 : 1) * (h.hidden || v.u.st.dark ? 1.5 : 1) * (v.st === 'look' ? 1 : 1.1) * (cos === 'doctor' ? 1.2 : 1) * hDarkMul(H, v); C.mp -= S.cost; h.swingT = H.t; h.sdir = hDirTo(h, v); H.lastHitK = 'hero'; H.lastHitT = H.t; profUse(k); h.pcd = HB.pounceCd; H.stats.pounce++;
+  const cos = hCos(); let mul = HB.dmg * skillMul(k) * (v.u.st.fear ? 1.3 : 1) * (h.hidden || v.u.st.dark ? 1.5 : 1) * (v.st === 'look' ? 1 : 1.1) * (cos === 'doctor' ? 1.2 : 1) * hDarkMul(H, v) * hPace(H, v, 'hero', h, S.el); C.mp -= S.cost; h.swingT = H.t; h.sdir = hDirTo(h, v); H.lastHitK = 'hero'; H.lastHitT = H.t; profUse(k); h.pcd = HB.pounceCd; H.stats.pounce++;
   if (v.u.picky && v.u.picky === S.el) v.u.pickyHit = 1; hBest(H, doHit(B, B.hero, v.u, S.pow, S.el, { mul }), '扑 → ' + v.u.n); reactLine(B, v.u); if (v.u.hp > 0 && S.stun && chance(S.stun * (v.u.boss ? .6 : 1))) addSt(B, v.u, 'stun', 1);
-  if (v.u.hp > 0) hReact(H, v, h, 1); h.hidden = false; H.shake = .18; hFx(H, 'pounce', v.x, v.y, k); sfx(k === 'chase' ? 'scrape' : 'stinger'); hLog(H, '陈歌扮成' + HCOS[cos].n + '，' + ({ hammer: '抡着锤子', cleaver: '举着剁骨刀', lantern: '提着白灯笼', scissors: '咔嚓咔嚓地剪着剪刀' })[HCOS[cos].wp] + '扑了出去。', '');
+  if (v.u.hp > 0) hReact(H, v, h, 1); h.hidden = false; H.shake = .18; hFx(H, 'pounce', v.x, v.y, k); hS(H, k === 'chase' ? 'scrape' : 'stinger', v.x, v.y); hLog(H, '陈歌扮成' + HCOS[cos].n + '，' + ({ hammer: '抡着锤子', cleaver: '举着剁骨刀', lantern: '提着白灯笼', scissors: '咔嚓咔嚓地剪着剪刀' })[HCOS[cos].wp] + '扑了出去。', '');
   if (cos === 'red') for (const q of hActive(H)) if (q !== v && hDist(q, v) <= 2.5) { const d = Math.max(1, Math.round(q.u.mhp * .12)); q.u.hp = Math.max(0, q.u.hp - d); if (q.u.hp > 0) hReact(H, q, h); hFloat(H, q.x, q.y - 1.4, '红衣 SAN -' + d, 'dmg'); }
   hFlush(H); }
 function hDirTo(a, b) { const dx = b.x - a.x, dy = b.y - a.y; return Math.abs(dx) > Math.abs(dy) ? (dx < 0 ? 1 : 2) : (dy < 0 ? 3 : 0); }
-function hChaseHit(H, v) { const B = H.B; H.hero.ctick = HB.chaseTick; H.hero.swingT = H.t; H.hero.sdir = hDirTo(H.hero, v); H.lastHitK = 'hero'; H.lastHitT = H.t; hReact(H, v, H.hero); doHit(B, B.hero, v.u, HB.chasePow, 'chase', { mul: (v.u.st.fear ? 1.3 : 1) * HB.dmg * skillMul(C.sk.includes('chase') ? 'chase' : 'jump') * (hCos() === 'butcher' ? 1.5 : 1) * hDarkMul(H, v) }); if (rnd() < .3) sfx('steps'); hFlush(H); }
+function hChaseHit(H, v) { const B = H.B; H.hero.ctick = HB.chaseTick; H.hero.swingT = H.t; H.hero.sdir = hDirTo(H.hero, v); H.lastHitK = 'hero'; H.lastHitT = H.t; hReact(H, v, H.hero); doHit(B, B.hero, v.u, HB.chasePow, 'chase', { mul: (v.u.st.fear ? 1.3 : 1) * HB.dmg * skillMul(C.sk.includes('chase') ? 'chase' : 'jump') * (hCos() === 'butcher' ? 1.5 : 1) * hDarkMul(H, v) * hPace(H, v, 'hchase', H.hero, 'chase') }); if (rnd() < .3) sfx('steps'); hFlush(H); }
 
 /* ---------- 机关 ---------- */
 function hDevTargets(H, s) { return hActive(H).filter(v => Math.max(Math.abs(v.x - s.x), Math.abs(v.y - s.y)) <= HB.zone + .3 && hmLos(H.M, s.x, s.y, v.x, v.y)); }
@@ -2363,10 +2367,10 @@ function hTrigger(H, s, quiet) { const B = H.B, S = hDev(s.k); if (!s.k) return 
   if (perfect) { mul *= PERFECT_MUL; FN().perfect++; H.stats.perfect++; hFloat(H, s.x, s.y - 2.2, '⭕ 完美时机', 'crit'); }
   if (H.hero.hidden) { mul *= 1.15; hFloat(H, H.hero.x, H.hero.y - 1.4, '暗处 +15%', 'txt'); }
   if (HDEV[s.k].sk) profUse(s.k); s.cd = HB.devCd * (S.cd || 1); s.fx = 1; H.stats.dev++; H.burst = 0; hLog(H, s.n + ' 号 · ' + S.ic + S.n, '');
-  H.lastHitK = s.k; H.lastHitT = H.t; for (const v of (S.all ? tg : [near[0]])) { const t = v.u; let m = mul * hDarkMul(H, v); if (t.st.dark && S.el === 'jump') { m *= S.dark || 1.5; hFloat(H, v.x, v.y - 2.6, '漆黑里突脸 ×1.5', 'crit'); } if (S.first && !t.acted) m *= S.first;
+  H.lastHitK = s.k; H.lastHitT = H.t; for (const v of (S.all ? tg : [near[0]])) { const t = v.u; let m = mul * hDarkMul(H, v) * hPace(H, v, s.k, s, S.el); if (t.st.dark && S.el === 'jump') { m *= S.dark || 1.5; hFloat(H, v.x, v.y - 2.6, '漆黑里突脸 ×1.5', 'crit'); } if (S.first && !t.acted) m *= S.first;
     if (!hActive(H).some(q => q !== v && hDist(q, v) < 5)) { m *= 1.25; hFloat(H, v.x + .6, v.y - 2.2, '落单', 'txt'); } const soft = softHit(B, t, S); m *= soft; if (t.picky && t.picky === S.el) t.pickyHit = 1;
     const dv = doHit(B, B.hero, t, S.pow, S.el, { mul: m }); hBest(H, dv, s.n + ' 号 ' + S.n + ' → ' + t.n); reactLine(B, t); if (t.hp > 0) { if (S.st) addSt(B, t, S.st[0], S.st[1]); if (soft > 1) addSt(B, t, 'stun', 1); if (S.stun && chance(S.stun * (t.boss ? .6 : 1))) addSt(B, t, 'stun', 1); if (!hOut(v)) { hReact(H, v, s, perfect); hBub(H, v, pick(HREACT[S.el] || HREACT.jump), 1.6); } } t.acted = true; }
-  hFx(H, HFXK[s.k] || S.el, s.x, s.y, s.k); sfx(HSFX[s.k] || ({ jump: 'stinger', light: 'crack', doll: 'creak', story: 'whisper', sound: 'reverse', chase: 'scrape' })[S.el] || 'stinger'); H.shake = perfect ? .3 : .12; if (perfect && !hOut(near[0])) hCut(H, near[0], s.k, false); hFlush(H);
+  hAttendNear(H, s.x, s.y, S.all ? tg : [near[0]]); hFx(H, HFXK[s.k] || S.el, s.x, s.y, s.k); hS(H, HSFX[s.k] || ({ jump: 'stinger', light: 'crack', doll: 'creak', story: 'whisper', sound: 'reverse', chase: 'scrape' })[S.el] || 'stinger', s.x, s.y); H.shake = perfect ? .3 : .12; if (perfect && !hOut(near[0])) hCut(H, near[0], s.k, false); hFlush(H);
   if (H.burst >= 2) { B.fullHouse = Math.max(B.fullHouse || 0, H.burst); FN().house++; H.stats.house++; hFloat(H, s.x, s.y - 3, '😱 全场尖叫 ×' + H.burst, 'crit'); hLog(H, '全场尖叫！' + H.burst + ' 批游客叫成一片。', 'epic'); } return true; }
 const HREACT = { jump: ['啊！！', '什么东西！', '我的妈——'], sound: ['你听见没有？', '谁在哭……', '别、别出声'], story: ['墙上……那是什么', '我不想看了', '刚才是不是多了一个人'], doll: ['它在看我', '它刚才转头了！', '别看它的眼睛'], chase: ['跑跑跑！', '别抓我！！', '它追上来了'], light: ['灯呢？！', '谁关的灯', '抓紧我的手'] };
 const HFXK = { hang: 'hang', hand: 'hand', blood: 'blood', baby: 'sound', steps: 'sound', phone: 'sound', dollwall: 'doll', coffin: 'coffin', sp_mh: 'bride', sp_ws: 'chase', sp_zombie: 'zombie', sp_room: 'jump', sp_my: 'sound', sp_ward: 'chase' };
@@ -2375,7 +2379,7 @@ function hBest(H, v, txt) { if (v > ((H.best && H.best.v) || 0)) H.best = { v, t
 /* 引：弄出一点声音，把附近的游客引到机关上 */
 function hLure(H) { const h = H.hero; if (H.mode !== 'house' || (h.lureCd || 0) > H.t) return false; const sl = H.M.slots.filter(s => s.k && hDist(s, h) <= 4).sort((a, b) => (b.cd <= 0) - (a.cd <= 0) || hDist(a, h) - hDist(b, h))[0], pt = sl ? [sl.x, sl.y] : [h.tx, h.ty];
   const f = hmField(H.M, pt[0], pt[1], 'v'), vs = hActive(H).filter(v => !hScaredSt(v) && f[v.ty * H.M.w + v.tx] >= 0 && f[v.ty * H.M.w + v.tx] <= 9); h.lureCd = H.t + 9; sfx('knock');
-  if (!vs.length) { hFloat(H, h.x, h.y - 1.5, '没人听见', 'txt'); return true; } for (const v of vs) { v.lure = { pt, until: H.t + 6 }; hBub(H, v, pick(['那边……有声音？', '谁在敲墙？', '过去看看？']), 1.6); } hFloat(H, h.x, h.y - 1.5, '咚、咚', 'txt'); hLog(H, '陈歌敲了敲墙。' + vs.length + ' 批游客朝' + (sl ? ' ' + sl.n + ' 号机关' : '这边') + '走过来了。', ''); return true; }
+  if (!vs.length) { hFloat(H, h.x, h.y - 1.5, '没人听见', 'txt'); return true; } for (const v of vs) { v.lure = { pt, until: H.t + 6 }; v.att = { x: pt[0], y: pt[1], until: H.t + 6 }; hBub(H, v, pick(['那边……有声音？', '谁在敲墙？', '过去看看？']), 1.6); } hFloat(H, h.x, h.y - 1.5, '咚、咚', 'txt'); hLog(H, '陈歌敲了敲墙。' + vs.length + ' 批游客朝' + (sl ? ' ' + sl.n + ' 号机关' : '这边') + '走过来了。', ''); return true; }
 /* 点员工：马上放招（挑当下最好的一招） */
 function hStaffGo(H, st) { if (st.off || st.cast) return false; if (st.cd > 0) { toast(PETS[st.k].n + '还在缓（' + Math.ceil(st.cd) + ' 秒）'); return false; } const p = hSkPlan(H, st); if (!p) { toast(PETS[st.k].n + '够不着：' + hSkList(st).map(S => S.n).join(' / ') + ' 的范围里没有游客'); return false; } return hSkCast(H, st, p, 1); }
 
@@ -2403,8 +2407,8 @@ const HRULES = {
     mul(H, s) { const g = H.vis.find(v => v.u.id === 'gaoru'); if (!g || hDist(g, s) > HB.zone + .5) return 1; H.seenDev = H.seenDev || {}; const k = s.i; if (H.seenDev[k]) { hBub(H, g, '这个机关刚才见过了。', 1.8); return .7; } H.seenDev[k] = 1; return 1; },
     scared(H, v) { if (v.u.id !== 'heshan') return; const g = H.vis.find(q => q.u.id === 'gaoru'); if (g && g.u.hp > 0) { const d = Math.round(g.u.mhp * .35); g.u.hp = Math.max(1, g.u.hp - d); hFloat(H, g.x, g.y - 1.6, '学弟跑了 -' + d, 'crit'); hBub(H, g, '鹤山？！你跑什么——', 2); } } },
   feiyl: { cam: 1, t: '费友亮举着摄像头找员工：被他发现的员工会被拍到（氛围 -10%，员工退场）；他看见陈歌拆穿翻倍。朱佳宁时不时站住给外面打电话——好机会。',
-    goal(H, v) { if (v.u.id !== 'feiyl' || hScaredSt(v)) return null; const f = s => hmField(H.M, s.home[0], s.home[1], 'v')[v.ty * H.M.w + v.tx]; const s = H.staff.filter(q => !q.off && f(q) >= 0 && f(q) <= 6).sort((a, b) => f(a) - f(b))[0]; return s ? s.home : null; },
-    reach(H, v) { const s = H.staff.find(q => !q.off && q.home[0] === v.tx && q.home[1] === v.ty) || H.staff.find(q => !q.off && hDist(q, v) <= 1.2); if (s) { s.off = true; s.shot = true; const a = Math.round(H.B.hero.mhp * .1); H.B.hero.hp = Math.max(0, H.B.hero.hp - a); hBub(H, v, '拍到了！这就是你们的“鬼”。', 2); hFloat(H, s.x, s.y - 1.5, '被拍到 · 氛围 -' + a, 'bad'); hLog(H, '费友亮拍到了' + PETS[s.k].n + '。' + PETS[s.k].n + '只好退场。', 'warn'); sfx('static'); } else v.wi = Math.max(v.wi, 1); },
+    goal(H, v) { if (v.u.id !== 'feiyl' || hScaredSt(v)) return null; const fr = s => s.front || s.home, f = s => hmField(H.M, fr(s)[0], fr(s)[1], 'v')[v.ty * H.M.w + v.tx]; const s = H.staff.filter(q => !q.off && f(q) >= 0 && f(q) <= 6).sort((a, b) => f(a) - f(b))[0]; return s ? fr(s) : null; },
+    reach(H, v) { const s = H.staff.find(q => !q.off && (q.front || q.home)[0] === v.tx && (q.front || q.home)[1] === v.ty) || H.staff.find(q => !q.off && hDist(q, v) <= 1.2); if (s) { s.off = true; s.shot = true; const a = Math.round(H.B.hero.mhp * .1); H.B.hero.hp = Math.max(0, H.B.hero.hp - a); hBub(H, v, '拍到了！这就是你们的“鬼”。', 2); hFloat(H, s.x, s.y - 1.5, '被拍到 · 氛围 -' + a, 'bad'); hLog(H, '费友亮拍到了' + PETS[s.k].n + '。' + PETS[s.k].n + '只好退场。', 'warn'); sfx('static'); } else v.wi = Math.max(v.wi, 1); },
     tick(H, dt) { const z = H.vis.find(v => v.u.id === 'zhujn' && v.st === 'walk'); if (z && rnd() < dt / 9) { z.st = 'phone'; z.wait = 3; hBub(H, z, '喂？对，我们在里面……信号不好……', 3); } } },
   wanghl: { t: '王海龙兄弟在抢校牌：两人一共凑够 8 个就算他们赢走奖金。被吓到慌乱时会把手里的校牌掉在地上。',
     start(H) { H.tags = []; const M = H.M, cand = []; for (let y = 0; y < M.h; y++) for (let x = 0; x < M.w; x++) if (!M.vs[y * M.w + x] && !M.slots.some(s => s.x === x && s.y === y) && hmField(M, M.route[0][0], M.route[0][1], 'v')[y * M.w + x] > 6) cand.push([x, y]);
@@ -2425,7 +2429,7 @@ function hStep(H, dt) { if (H.done || H.phase !== 'live') return; H.t += dt; con
   if (H.t > 3) hHint(H, 'mon', '右上角是监控：每批游客那边的画面。点一下镜头就切过去；拖动地图能看别处，📍 回到陈歌。'); if (H.t > 22 && !H.stats.scared) hHint(H, 'lure', '游客不往机关那边走？站在机关旁边点「引」，敲墙把他们引过来。');
   for (const v of H.vis) { hVisTick(H, v, dt); hRoomEnter(H, v); if (hSee(H, v)) hExpose(H, v); } hsAmbTick(H, dt);
   for (const st of H.staff) hStaffTick(H, st, dt);
-  hsRule(H, 'tick', dt);
+  hsRule(H, 'tick', dt); hPaceStep(H, dt);
   H.rt = (H.rt || 0) + dt; if (H.rt >= HB.round) { H.rt = 0; hRound(H); }
   if (!H.broken && B.hero.hp <= 0) { H.broken = true; hLog(H, '氛围被拆完了。游客们打着哈欠往外走。', 'warn'); for (const v of H.vis) if (!hOut(v)) { v.st = v.st === 'wait' ? 'gone' : 'leave'; } sfx('bad'); }
   if (H.t > HB.tMax) for (const v of H.vis) if (!hOut(v)) v.st = v.st === 'wait' ? 'gone' : 'leave';
@@ -2518,6 +2522,86 @@ function hsResolve(r) { const f = hsDone; hsDone = null; if (f) f(r); return r; 
 function hsClear() { for (const id of ['#hsset', '#hshud', '#hsfx']) { const e = $(id); if (e) e.innerHTML = ''; } const p = $('#hspause'); if (p) p.remove(); }
 function hsClose() { const H = HS; if (!H || !H.done) return; hsClear(); STATE.house = null; HS = null; applyMode(); musicMode(moodNow()); refresh(); save(); hsResolve(H.res); }
 
+/* ===== 真实鬼屋的节奏（RULES 36）=====
+   紧张—释放：游客越久没被吓，紧张度越高，下一下越狠（安静 9 秒满，×1.6）；被吓一次清零。
+   习惯：同一种吓法 25 秒内对同一个人连用，每次 ×0.72（最低 ×0.45）；换着来才有效。
+   恢复：8 秒没被吓，SAN 每秒回 0.5%（最多回到 75%）。
+   声东击西：机关 / 敲墙 / 房间剧情点 / 别人的尖叫会把游客的注意力拉过去（头上「？」+ 黄色虚线指着看的方向），
+   这时从他背后（和他看的方向夹角 ≥ 100°）出手 ×1.6。
+   游客性格（按游客种类）：主播看得远、被吓狠了会喊「家人们」；情侣被吓后 3 秒内再吓 ×1.4；嘴硬的前两下只会笑（×0.4），之后 ×1.25；
+   学生注意力最容易被拉走（×1.6 久）；壮汉在亮处 ×0.8、黑屋 ×1.4，他被吓跑旁边的人一起慌；医学生不怕人偶棺材（×0.6），怕声音（×1.3）。
+   房间剧情点：每个房间第一次有游客进来时触发（look 盯着一样东西 / dark 灯灭 6 秒 / story 一句不对劲的话 + 紧张度）。 */
+const HPC = { tenseT: 9, tenseMul: .6, habWin: 25, habK: .72, habMin: .45, recDelay: 8, recRate: .005, recCap: .75, lookT: 2.4, combo: 1.6, comboAng: 1.75, attR: 7, darkT: 6 };
+const HROLE = { torch: '主播', pair: '情侣', calm: '嘴硬', distract: '学生', darkfear: '胆大', corpse: '医学生' };
+const HROLE_IN = { torch: '家人们，我进来了！', pair: '别怕，我在呢。', calm: '哈，全是假的。', distract: '等等，我先拍个照……', darkfear: '我走前面，跟紧了。', corpse: '解剖课比这吓人多了。' };
+function hRoleOf(v) { return HROLE[v.u.trait] ? v.u.trait : ''; }
+/* 每一下吓人都过一遍：返回倍率（紧张度 × 习惯 × 声东击西 × 性格） */
+function hPace(H, v, kind, src, el) { const t = v.tense || 0; let m = 1 + t * HPC.tenseMul;
+  v.hab = v.hab || {}; const h = v.hab[kind], n = h && H.t - h.t < HPC.habWin ? h.n : 0; m *= Math.max(HPC.habMin, Math.pow(HPC.habK, n)); v.hab[kind] = { n: n + 1, t: H.t };
+  let combo = false; if (v.att && H.t < v.att.until && src) { const a1 = Math.atan2(v.att.y - v.y, v.att.x - v.x), a2 = Math.atan2(src.y - v.y, src.x - v.x); let da = Math.abs(a1 - a2); if (da > Math.PI) da = 2 * Math.PI - da; combo = da >= HPC.comboAng; }
+  if (combo) { m *= HPC.combo; v.att = null; H.stats.combo = (H.stats.combo || 0) + 1; hFloat(H, v.x, v.y - 2.4, '声东击西！', 'crit'); hHint(H, 'combo', '声东击西：游客头上冒「？」、盯着别处的时候，从他背后出手 ×1.6。'); }
+  else if (t > .6) hFloat(H, v.x, v.y - 2.4, '憋了很久……', 'crit');
+  if (n >= 2) { hFloat(H, v.x + .5, v.y - 2.9, '又来？', 'txt'); if (n === 2) hHint(H, 'hab', '同一种吓法连着用，游客会习惯（越来越不灵）。换个机关、换个员工，或者先安静一会儿。'); }
+  m *= hRoleMul(H, v, kind, el, m); return m; }
+function hRoleMul(H, v, kind, el, m0) { switch (v.u.trait) {
+  case 'calm': if ((v.laugh ?? 2) > 0) { v.laugh = (v.laugh ?? 2) - 1; hBub(H, v, v.laugh ? '哈哈哈，假的吧' : '哈……哈，有点意思', 1.6); v.emo = { s: 'sweat', until: H.t + 1.2 }; return .4; } if (!v.laughEnd) { v.laughEnd = 1; hBub(H, v, '……笑不出来了', 1.8); } return 1.25;
+  case 'darkfear': return hDarkAt(H, v.x, v.y) ? 1.4 : .8;
+  case 'corpse': return el === 'doll' || kind === 'coffin' || kind === 'sp_ward' ? .6 : el === 'sound' ? 1.3 : 1;
+  case 'pair': if (v.hug && H.t < v.hug) { hBub(H, v, '抱、抱紧一点……', 1.4); return 1.4; } return 1;
+  case 'torch': if (m0 >= 1.5) hBub(H, v, '家人们快看——啊啊啊！！', 1.6); return 1;
+  default: return 1; } }
+/* 注意力被拉走 */
+function hAttend(H, v, x, y, dur, say) { if (hOut(v) || hScaredSt(v) || v.st === 'wait' || v.st === 'leave') return; if (v.att && H.t < v.att.until - .5) return;
+  const d = (dur || HPC.lookT) * (v.u.trait === 'distract' ? 1.6 : 1); v.att = { x, y, until: H.t + d }; if (v.st === 'walk' || v.st === 'look') { hSnap(v); v.st = 'stare'; v.wait = Math.min(d, 1.8); } if (say) hBub(H, v, say, 1.6); }
+const HATT = ['那边……什么声音？', '你听见没有？', '谁在那儿？', '那边亮了一下？'];
+function hAttendNear(H, x, y, not, r) { for (const q of hActive(H)) { if ((not || []).includes(q) || hDist(q, { x, y }) > (r || HPC.attR) || !hmLos(H.M, q.x, q.y, x, y)) continue; hAttend(H, q, x, y, 0, rnd() < .5 ? pick(HATT) : null); } }
+/* 被吓了一下：清零紧张度；情侣抱紧；壮汉被吓跑旁边的人一起慌；胆小的尖叫把别人的注意力拉过来 */
+function hPaceHit(H, v, src) { v.tense = 0; v.lastHit = H.t; if (v.u.trait === 'pair') v.hug = H.t + 3;
+  if (v.u.trait === 'darkfear' && v.u.hp < v.u.mhp * .5 && !v.braveBroke) { v.braveBroke = 1; for (const q of hActive(H)) if (q !== v && hDist(q, v) <= 5) { const d = Math.max(1, Math.round(q.u.mhp * .08)); q.u.hp = Math.max(1, q.u.hp - d); hBub(H, q, '连他都跑了？！', 1.6); } }
+  if (v.u.trait === 'distract' || v.u.trait === 'pair') hAttendNear(H, v.x, v.y, [v], 5); }
+/* 起哄只来自无聊：25 秒没被吓，或者已经习惯了（某种吓法 25 秒内用了 3 次以上） */
+function hBored(H, v) { if (H.t - (v.lastHit ?? v.inT ?? H.t) > 25) return true; for (const k in v.hab || {}) if (v.hab[k].n >= 3 && H.t - v.hab[k].t < HPC.habWin) return true; return false; }
+/* 每帧：紧张度涨、SAN 慢慢回、房间剧情点 */
+function hPaceTick(H, v, dt) { if (hOut(v) || v.st === 'wait' || v.st === 'leave') return; if (v.inT == null) v.inT = H.t; if (!hScaredSt(v)) v.tense = Math.min(1, (v.tense || 0) + dt / HPC.tenseT);
+  const q = H.t - (v.lastHit ?? H.t); if (q > HPC.recDelay && v.u.hp > 0 && v.u.hp < v.u.mhp * HPC.recCap) v.u.hp = Math.min(v.u.mhp * HPC.recCap, v.u.hp + v.u.mhp * HPC.recRate * (v.u.trait === 'pair' ? 1.5 : 1) * dt);
+  if (v.att && H.t >= v.att.until) v.att = null;
+  if (v.mv) return; const r = hmRoomAt(H.M, v.tx, v.ty); if (!r) return; v.rooms = v.rooms || {}; if (v.rooms[r.n]) return; v.rooms[r.n] = 1; if (v.st === 'walk' && !v.greet) { v.greet = 1; if (HROLE_IN[v.u.trait]) hBub(H, v, HROLE_IN[v.u.trait], 2); }
+  const b = H.beats && H.beats[r.n]; if (!b || hScaredSt(v)) return; H.beatSeen = H.beatSeen || {}; const first = !H.beatSeen[r.n]; H.beatSeen[r.n] = 1;
+  if (b.k === 'look' && b.at) hAttend(H, v, b.at[0], b.at[1], HPC.lookT + .6, b.say);
+  else if (b.k === 'dark') { if (!H.lit || H.lit[r.n] !== false) { H.lit = H.lit || {}; H.lit[r.n] = false; H.litT = H.litT || {}; H.litT[r.n] = H.t + HPC.darkT; H.black = .5; hS(H, 'crack', v.x, v.y); } hBub(H, v, b.say, 1.8); v.tense = Math.min(1, (v.tense || 0) + .3); }
+  else { hBub(H, v, b.say, 2.2); v.tense = Math.min(1, (v.tense || 0) + .35); }
+  if (first) hLog(H, r.n + '：' + b.say, ''); }
+function hPaceStep(H, dt) { if (H.litT) for (const n in H.litT) if (H.t >= H.litT[n]) { if (H.lit && H.lit[n] === false) H.lit[n] = true; delete H.litT[n]; }
+  /* 心跳：离陈歌最近、最怕的那个人越怕跳得越快 */ if (H.t >= (H.hbT || 0)) { const w = hActive(H).filter(v => hDist(v, H.hero) < 12).sort((a, b) => a.u.hp / a.u.mhp - b.u.hp / b.u.mhp)[0]; if (w) { const fr = w.u.hp / w.u.mhp; if (fr < .75) hS(H, 'heart', w.x, w.y); H.hbT = H.t + .42 + fr * .9; } else H.hbT = H.t + 1; } }
+/* 带位置的音效：左右声像按屏幕位置，离陈歌远了小声，隔着墙发闷 */
+function hS(H, n, x, y) { if (!H || x == null || typeof AU === 'undefined' || !AU.ctx) return sfx(n); const cv = $('#hcv'), cw = cv ? cv.width / 16 : 20, ch = cv ? cv.height / 16 : 12, cx = (H.cam ? H.cam.x / 16 : 0) + cw / 2, cy = (H.cam ? H.cam.y / 16 : 0) + ch / 2; void cy;
+  const pan = clamp((x - cx) / Math.max(6, cw / 2), -1, 1) * .85, d = Math.hypot(x - H.hero.x, y - H.hero.y), vol = clamp(1.25 - d / 22, .3, 1), lp = hmLos(H.M, H.hero.x, H.hero.y, x, y) ? 0 : 900;
+  AU.pos = { pan, vol, lp }; try { sfx(n); } finally { AU.pos = null; } }
+/* 员工回岗优先走员工通道（加权距离：通道 1，明处 2.2） */
+function hmFieldW(M, tx, ty) { const key = 'w' + tx + ',' + ty; if (M.fields[key]) return M.fields[key]; const w = M.w, N = w * M.h, f = new Float32Array(N).fill(-1), done = new Uint8Array(N), hp = [[0, ty * w + tx]]; f[ty * w + tx] = 0;
+  const push = (d, i) => { hp.push([d, i]); let c = hp.length - 1; while (c > 0) { const p = (c - 1) >> 1; if (hp[p][0] <= hp[c][0]) break; [hp[p], hp[c]] = [hp[c], hp[p]]; c = p; } };
+  const pop = () => { const top = hp[0], last = hp.pop(); if (hp.length) { hp[0] = last; let c = 0; for (;;) { const l = c * 2 + 1, r = l + 1; let m = c; if (l < hp.length && hp[l][0] < hp[m][0]) m = l; if (r < hp.length && hp[r][0] < hp[m][0]) m = r; if (m === c) break; [hp[m], hp[c]] = [hp[c], hp[m]]; c = m; } } return top; };
+  while (hp.length) { const [d, c] = pop(); if (done[c]) continue; done[c] = 1; const cx = c % w, cy = (c / w) | 0; for (const [dx, dy] of HD) { const nx = cx + dx, ny = cy + dy, k = ny * w + nx; if (nx < 0 || ny < 0 || nx >= w || ny >= M.h || M.hs[k] || done[k]) continue; const nd = d + (M.sec[k] ? 1 : 2.2); if (f[k] < 0 || nd < f[k]) { f[k] = nd; push(nd, k); } } }
+  return M.fields[key] = f; }
+/* 员工在明处走回岗位被游客看见：「那是工作人员吧？」紧张度清零 */
+function hStaffSeen(H, st) { if (H.M.sec[st.ty * H.M.w + st.tx]) return; for (const v of hActive(H)) { if (hScaredSt(v) || (v.staffSeen || 0) > H.t || hDist(v, st) > 4) continue; const [fx, fy] = HD[v.dir || 0], dx = st.x - v.x, dy = st.y - v.y, d = Math.hypot(dx, dy); if ((dx * fx + dy * fy) < d * .3 || !hmLos(H.M, v.x, v.y, st.x, st.y)) continue; v.staffSeen = H.t + 15; v.tense = 0; hBub(H, v, '……那是工作人员吧？', 1.8); hHint(H, 'staffseen', '员工走回岗位时被游客看见，会让游客放松下来。员工会尽量走员工通道（墙里的暗紫虚线）。'); } }
+/* ---------- 画 ---------- */
+/* 游客在看哪：脚下一个小三角；注意力被拉走时头上「？」+ 黄色虚线指过去（沉浸模式只留「？」） */
+function hAttDraw(g, H, ox, oy, t) { for (const v of hActive(H)) { const x = v.x * 16 + 8 - ox, y = v.y * 16 + 8 - oy, [fx, fy] = HD[v.dir || 0];
+    if (!SET.imm) { g.fillStyle = 'rgba(255,240,200,.28)'; g.beginPath(); g.moveTo(x + fx * 9, y + 5 + fy * 6); g.lineTo(x + fx * 4 - fy * 3, y + 5 + fy * 3 - fx * 2); g.lineTo(x + fx * 4 + fy * 3, y + 5 + fy * 3 + fx * 2); g.fill(); }
+    if (!v.att || H.t >= v.att.until) continue; const ax = v.att.x * 16 + 8 - ox, ay = v.att.y * 16 + 8 - oy, a = .45 + Math.sin(t * 8) * .2;
+    if (!SET.imm) { const d = Math.hypot(ax - x, ay - y), k = Math.min(1, 44 / Math.max(1, d)); g.strokeStyle = `rgba(255,220,90,${a})`; g.setLineDash([2, 2]); g.beginPath(); g.moveTo(x, y - 4); g.lineTo(x + (ax - x) * k, y - 4 + (ay - y) * k); g.stroke(); g.setLineDash([]); }
+    g.fillStyle = `rgba(255,220,90,${.7 + a * .3})`; g.font = 'bold 9px sans-serif'; g.textAlign = 'center'; g.fillText('?', x, y - 24 - (v.P.tall ? 4 : 0)); g.textAlign = 'left'; } }
+/* 俯瞰（🔍）= 总控制室的监控画面：发绿、扫描线、噪点、偶尔一阵雪花；陈歌所在的房间是正常画面 */
+function hCctv(H, g, ox, oy, t) { const cw = g.canvas.width, ch = g.canvas.height, M = H.M, hr = hmRoomAt(M, H.hero.x, H.hero.y); g.save(); g.beginPath(); g.rect(0, 0, cw, ch);
+  if (hr) for (const r of M.rooms) if (r.n === hr.n) g.rect(r.x0 * 16 - ox, r.y0 * 16 - oy, (r.x1 - r.x0 + 1) * 16, (r.y1 - r.y0 + 1) * 16);
+  g.clip('evenodd'); g.fillStyle = 'rgba(40,70,55,.28)'; g.fillRect(0, 0, cw, ch); g.fillStyle = 'rgba(0,0,0,.16)'; for (let y = (t * 20 | 0) % 3; y < ch; y += 3) g.fillRect(0, y, cw, 1);
+  const burst = (t % 9) < .14; for (let i = 0, n = (cw * ch / (burst ? 40 : 320)) | 0; i < n; i++) { g.fillStyle = `rgba(220,240,230,${Math.random() * (burst ? .35 : .12)})`; g.fillRect((Math.random() * cw) | 0, (Math.random() * ch) | 0, 1, 1); }
+  const gr = g.createRadialGradient(cw / 2, ch / 2, Math.min(cw, ch) * .3, cw / 2, ch / 2, Math.max(cw, ch) * .7); gr.addColorStop(0, 'rgba(0,0,0,0)'); gr.addColorStop(1, 'rgba(0,0,0,.45)'); g.fillStyle = gr; g.fillRect(0, 0, cw, ch); g.restore();
+  const cr = hmRoomAt(M, (ox + cw / 2) / 16, (oy + ch / 2) / 16), sec = (H.t + 2 * 3600 + 13 * 60) | 0, ts = [sec / 3600 | 0, (sec / 60 | 0) % 60, sec % 60].map(n => String(n).padStart(2, '0')).join(':');
+  g.font = '8px monospace'; g.fillStyle = 'rgba(200,232,210,.85)'; g.fillText('CAM ' + String(1 + ((cr ? M.rooms.findIndex(r => r.n === cr.n) : 0) % 12)).padStart(2, '0') + (cr ? ' · ' + cr.n : ''), 6, ch - 26); g.fillText('REC  ' + ts, 14, ch - 16);
+  if ((t % 1.2) < .7) { g.fillStyle = '#e03030'; g.beginPath(); g.arc(8, ch - 19, 2.5, 0, 7); g.fill(); } }
+
 /* ===== 鬼屋员工的招（RULES 35）=====
    员工不再冲出去追游客，而是站在岗位上（或闪到游客背后）放招：变大变鬼、锤子砸地、尖叫、捉迷藏、鬼画符、地里伸手、齐刷刷回头、点名。
    每个员工两招（第二招好感 25 解锁）。自己放时会挑时机：游客凑成一堆、背过身、快走出范围、残血要补一下；刚被吓跑的不浪费。
@@ -2572,14 +2656,14 @@ function hSkFire(H, st) { const c = st.cast, S = HSK[c.k], B = H.B; c.done = 1; 
   if (a) { c.ax = a.x; c.ay = a.y; }
   if (S.line) { const onT = (S.kind === 'target' || S.kind === 'cone') && a; hFloat(H, onT ? a.x : src.x, onT ? a.y - 2.6 : src.y - 3.1, pick(S.line), 'txt'); }
   for (const q of hits) { const t = q.u, los = hmLos(H.M, src.x, src.y, q.x, q.y);
-    const mul = HB.dmg * HB.staffMul * skillMulStaff(st.k) * (S.back || hBackTo(q, src) ? 1.3 : 1) * hDarkMul(H, q) * (S.wall && !los ? .7 : 1) * (t.st.fear ? 1.15 : 1);
+    const mul = HB.dmg * HB.staffMul * skillMulStaff(st.k) * (S.back || hBackTo(q, src) ? 1.3 : 1) * hDarkMul(H, q) * (S.wall && !los ? .7 : 1) * (t.st.fear ? 1.15 : 1) * hPace(H, q, S.id, src, S.el);
     if (t.picky && t.picky === S.el) t.pickyHit = 1;
     hBest(H, doHit(B, st.u, t, S.pow, S.el, { mul }), PETS[st.k].n + ' · ' + S.n + ' → ' + t.n); reactLine(B, t);
     if (t.hp > 0) { if (S.st) addSt(B, t, S.st[0], S.st[1]); if (S.stun && chance(S.stun * (t.boss ? .6 : 1))) addSt(B, t, 'stun', 1); if (!hOut(q)) { hReact(H, q, src, S.hard); if (S.root) q.root = H.t + HB.react + S.root; } } }
   if (!hits.length) hFloat(H, src.x, src.y - 2.2, '扑了个空', 'txt');
   H.skfx = H.skfx || []; H.skfx.push({ k: S.fx, x: src.x, y: src.y, ax: c.ax, ay: c.ay, r: S.r, ang: S.ang || 0, t0: H.t, dur: S.fx === 'hands' && S.root ? S.root + HB.react + .4 : Math.max(.9, S.dur), sk: st.k, n: hits.length });
   /* 放完招追着跑得最狠的那个补两下 */ const fl = hits.filter(q => !hOut(q) && q.u.hp > 0).sort((x, y) => x.u.hp / x.u.mhp - y.u.hp / y.u.mhp)[0]; if (fl && !st.p2) hScStart(H, st, fl, c.dur);
-  if (S.shake) H.shake = S.shake; sfx(S.sfx); if (hits.length >= 3) { H.slow = Math.max(H.slow || 0, .35); hLog(H, PETS[st.k].n + '的「' + S.n + '」一下吓到了 ' + hits.length + ' 个人。', 'good'); } hFlush(H); }
+  hAttendNear(H, src.x, src.y, hits, 6); if (S.shake) H.shake = S.shake; hS(H, S.sfx, src.x, src.y); if (hits.length >= 3) { H.slow = Math.max(H.slow || 0, .35); hLog(H, PETS[st.k].n + '的「' + S.n + '」一下吓到了 ' + hits.length + ' 个人。', 'good'); } hFlush(H); }
 /* 每帧：放招中的员工原地不动 */
 function hSkTick(H, st) { const c = st.cast; if (!c) return false; const e = H.t - c.t0, S = HSK[c.k];
   if (!c.done) { const a = H.vis[c.vi]; if (a && !hOut(a)) { c.ax = a.x; c.ay = a.y; if (S.kind !== 'aoe' && S.kind !== 'ring') st.dir = hDirTo(st, a); } if (e >= c.wind) hSkFire(H, st); }
@@ -2621,8 +2705,8 @@ function hSkDrawOver(H, g, ox, oy, t) {
 const HSC = { leash: 6, t: 3, spd: 3.4, tick: .9, pow: .3, hits: 2, join: 3 };
 function hScStart(H, st, v, delay) { if (!v || hOut(v) || st.p2) return; st.ch = { vi: H.vis.indexOf(v), until: H.t + (delay || 0) + HSC.t, n: 0 }; st.ctick = Math.max(st.ctick || 0, delay || 0); }
 function hScHit(H, st, v) { const B = H.B, c = st.ch; st.ctick = HSC.tick; if (c) c.n++; st.dir = hDirTo(st, v);
-  doHit(B, st.u, v.u, HSC.pow, 'chase', { mul: HB.dmg * HB.staffMul * skillMulStaff(st.k) * hDarkMul(H, v) * (v.u.st.fear ? 1.15 : 1) }); if (v.u.hp > 0 && !hOut(v)) hReact(H, v, st);
-  hFx(H, 'chase', v.x, v.y); hFloat(H, st.x, st.y - 1.6, pick(['别跑——', '等等我呀', '嘿嘿……', '抓到了！']), 'staff'); sfx('steps'); H.stats.staffChase = (H.stats.staffChase || 0) + 1; hFlush(H); }
+  doHit(B, st.u, v.u, HSC.pow, 'chase', { mul: HB.dmg * HB.staffMul * skillMulStaff(st.k) * hDarkMul(H, v) * (v.u.st.fear ? 1.15 : 1) * hPace(H, v, 'schase', st, 'chase') }); if (v.u.hp > 0 && !hOut(v)) hReact(H, v, st);
+  hFx(H, 'chase', v.x, v.y); hFloat(H, st.x, st.y - 1.6, pick(['别跑——', '等等我呀', '嘿嘿……', '抓到了！']), 'staff'); hS(H, 'steps', v.x, v.y); H.stats.staffChase = (H.stats.staffChase || 0) + 1; hFlush(H); }
 function hScTick(H, st, dt) { const M = H.M; if (st.tx == null) { st.tx = st.home[0]; st.ty = st.home[1]; st.x = st.tx; st.y = st.ty; } st.walked = st.walked || 0; st.ctick = (st.ctick || 0) - dt;
   if (st.mv) { hMove(st, dt); st.away = true; return; }
   const hd = q => Math.hypot(q.x - st.home[0], q.y - st.home[1]);
@@ -2631,7 +2715,7 @@ function hScTick(H, st, dt) { const M = H.M; if (st.tx == null) { st.tx = st.hom
   if (v) { const d = hDist(st, v); if (d <= 1.45 && st.ctick <= 0) { hScHit(H, st, v); return; }
     if (d > 1) { const n = hmNext(M, hmField(M, Math.round(v.x), Math.round(v.y), 'h'), st.tx, st.ty, 'h'); if (n && Math.hypot(n[0] - st.home[0], n[1] - st.home[1]) <= HSC.leash) { hStepTo(st, n[0], n[1], HSC.spd); st.away = true; return; } }
     st.dir = hDirTo(st, v); st.x = st.tx; st.y = st.ty; st.fr = 0; return; }
-  if (st.tx !== st.home[0] || st.ty !== st.home[1]) { const n = hmNext(M, hmField(M, st.home[0], st.home[1], 'h'), st.tx, st.ty, 'h'); if (n) { hStepTo(st, n[0], n[1], HB.hero); st.away = true; return; } st.tx = st.home[0]; st.ty = st.home[1]; }
+  /* 回岗：优先钻员工通道，别在游客眼前晃 */ if (st.tx !== st.home[0] || st.ty !== st.home[1]) { const n = hmNext(M, hmFieldW(M, st.home[0], st.home[1]), st.tx, st.ty, 'h'); if (n) { hStaffSeen(H, st); hStepTo(st, n[0], n[1], HB.hero); st.away = true; return; } st.tx = st.home[0]; st.ty = st.home[1]; }
   st.x = st.tx; st.y = st.ty; st.away = false; st.fr = 0; }
 
 /* ================= 鬼屋地图数据（6 个场景 + 夜里两张） =================
@@ -2729,6 +2813,167 @@ const HCHASE = {
   tallone: { map: 'ward', boss: '瘦长怪物', wait: 26, ghost: 1, title: '第三病栋 · 四楼', shout: '……', ready: '口袋里的糖纸沙沙响了一下。', caught: '一只细长的手搭上了你的肩膀。' },
   dean: { map: 'ward', boss: '老院长', wait: 28, ghost: 1, spd: 1.08, title: '门后 · 三号病房', shout: '“送我离开。”', ready: '张雅从你的影子里站了起来。', caught: '红衣一步就到了你面前。' }
 };
+
+/* ===== 大鬼屋地图生成（RULES 36）=====
+   每个场景一份蓝图：路线房间（游客依次走）+ 侧室（游客不进，能躲、能埋伏）。生成器把 6×4 个区块（每块 10×10）
+   按一条蛇形路线分给各个房间：一个房间占 1–3 块，相邻块打通成 L / T 形，块内边缘随机内缩、切角，所以不方正。
+   区块之间的厚墙里是员工通道（stw：游客眼里是墙，陈歌和员工能走），员工位是通道在房间墙上开的暗口（boo hole）。
+   每个房间有主题摆设和一个「剧情点」（第一次有游客进来时触发：look 盯着某样东西 / dark 灯灭 / story 一句不对劲的话）。
+   固定种子：同一个场景每次生成都一样。 */
+const HGEN = { nx: 6, ny: 4, S: 11 };
+/* 房间：n 名字，fl 地面，k 占几块，d 摆设 [精灵, 个数, 选项]，w 墙上挂的，h 柜子，b 剧情点，dk 黑屋 */
+const HBP = {
+  mh: { n: '冥婚', wall: 'red', fl: 'darkwood', dark: .8, tileOpts: { carpetC: '#5a1414', rugC: '#7a1a1a' }, seed: 11, hide: 'wardrobe', sp: '正堂', task: '婚房',
+    route: [
+      { n: '前院', fl: 'stone', k: 2, d: [['lantern', 2], ['well', 1], ['stonelantern', 2], ['deadplant', 3], ['crate', 1]], b: ['look', 'well', '井里……是不是有人在唱戏？'] },
+      { n: '迎亲堂', fl: 'darkwood', k: 2, d: [['chair', 4], ['table', 2], ['candles', 2], ['cushion', 2]], w: [['portrait', 2], ['scroll', 1]], b: ['story', '墙上的喜字是倒着贴的。'] },
+      { n: '正堂', fl: 'darkwood', k: 3, d: [['altar', 1], ['candles', 3], ['incense', 2], ['chair', 4], ['cushion', 3]], w: [['portrait', 3]], b: ['look', 'altar', '供桌上摆的……是两副碗筷？'] },
+      { n: '绣房', fl: 'wood', k: 1, d: [['table', 1], ['basket', 2], ['linen', 2], ['scissors', 1], ['chair', 1], ['candle', 1]], b: ['story', '红线一圈一圈缠在剪刀上。'] },
+      { n: '灵堂', fl: 'stone', k: 2, dk: 1, d: [['hcoffin', 1], ['candles', 2], ['paperman', 2], ['incense', 2], ['photo', 1]], b: ['dark', '蜡烛一下子全灭了。'] },
+      { n: '柴房', fl: 'dirt', k: 1, d: [['crate', 3], ['sack', 2], ['barrel', 2], ['rope', 1]], b: ['look', 'rope', '房梁上那根绳子……自己在晃。'] },
+      { n: '婚房', fl: 'redfloor', k: 2, d: [['bed', 1, { h: 2, col: '#9a1010' }], ['vanity', 1], ['doll', 2], ['candle', 2], ['dresser', 1]], w: [['mirror', 1], ['window', 1]], b: ['story', '被子底下鼓着一个人形。'] },
+      { n: '祠堂', fl: 'darkwood', k: 2, d: [['shrine', 1], ['candles', 2], ['statue', 2], ['incense', 1]], w: [['scroll', 2]], b: ['look', 'shrine', '最新的那块牌位上……写的是谁？'] },
+      { n: '后院', fl: 'stone', k: 2, d: [['gravestone', 3], ['deadplant', 3], ['lantern', 2], ['well', 1]], b: ['story', '院墙外有吹唢呐的声音，越来越近。'] }],
+    side: [{ n: '喜轿间', fl: 'darkwood', d: [['cart', 1], ['box', 2], ['lantern', 1]] }, { n: '厨房', fl: 'tile', d: [['stove', 1], ['table', 1], ['barrel', 1], ['basket', 1]] }, { n: '账房', fl: 'wood', d: [['desk', 1], ['bookshelf', 2], ['book', 1], ['candle', 1]] }] },
+  ws: { n: '午夜逃杀', wall: 'plain', fl: 'wood', dark: .86, wallC: { top: '#3a3a36', face: '#7a7a70' }, seed: 23, hide: 'closet', sp: '走廊', task: '203',
+    route: [
+      { n: '楼道口', fl: 'concrete', k: 1, d: [['shoes', 2], ['lamp', 1], ['box', 1]], w: [['poster', 2]], b: ['look', 'poster', '寻人启事上的照片……是我们几个？'] },
+      { n: '101', fl: 'wood', k: 2, d: [['bed', 1, { h: 2, col: '#5a5a6a' }], ['table', 1], ['tv', 1], ['fridge', 1], ['chair', 1]], b: ['look', 'tv', '电视自己开了，满屏雪花。'] },
+      { n: '走廊', fl: 'linoleum', k: 3, dk: 1, d: [['lamp', 2], ['shoes', 2]], w: [['clock', 1]], b: ['dark', '声控灯啪地灭了。'] },
+      { n: '102 浴室', fl: 'greentile', k: 1, d: [['bathtub', 1, { w: 2 }], ['sink', 1], ['toilet', 1], ['towel', 1]], b: ['story', '浴缸里的水……还是温的。'] },
+      { n: '房东的屋', fl: 'darkwood', k: 2, d: [['desk', 1], ['cabinet', 2], ['photo', 1], ['key', 1], ['chair', 1], ['lamp', 1]], w: [['clock', 1]], b: ['look', 'cabinet', '柜门缝里夹着一缕长头发。'] },
+      { n: '104 儿童房', fl: 'carpet', k: 1, d: [['doll', 3], ['bed', 1, { h: 2, col: '#7a5a8a' }], ['box', 1]], b: ['story', '墙上用蜡笔画了五个人，第五个没有脸。'] },
+      { n: '水房', fl: 'tile', k: 1, d: [['sink', 2], ['bucket', 2]], b: ['look', 'sink', '水龙头里流出来的……是头发。'] },
+      { n: '203', fl: 'wood', k: 2, d: [['bed', 1, { h: 2, col: '#5a2a2a' }], ['dresser', 1], ['scissors', 1], ['candle', 1], ['chair', 1]], w: [['window', 1]], b: ['story', '窗户从里面钉死了。钉子是新的。'] },
+      { n: '天台', fl: 'concrete', k: 2, d: [['box', 2], ['crate', 2], ['streetlamp', 1]], b: ['look', 'streetlamp', '天台边上站着一个人，背对着你们。'] }],
+    side: [{ n: '配电间', fl: 'concrete', d: [['switch', 1], ['box', 2], ['crate', 1]] }, { n: '储物间', fl: 'wood', d: [['box', 3], ['crate', 1], ['bucket', 1]] }, { n: '管理员室', fl: 'linoleum', d: [['desk', 1], ['tv', 1], ['chair', 1], ['lamp', 1]] }] },
+  zombie: { n: '僵尸复活夜', wall: 'concrete', fl: 'tile', dark: .78, seed: 37, hide: 'locker', sp: '货架区', task: '冷库',
+    route: [
+      { n: '入口', fl: 'tile', k: 1, d: [['cart', 2], ['vending', 1], ['lamp', 1]], b: ['story', '自动门在身后关上了，再也没开。'] },
+      { n: '收银台', fl: 'tile', k: 2, d: [['counter', 3], ['vending', 1], ['cart', 1], ['box', 1]], b: ['look', 'counter', '收银机自己在打小票，哗哗地往外吐。'] },
+      { n: '货架区', fl: 'tile', k: 3, d: [['shelf', 12], ['cart', 1], ['box', 2]], b: ['look', 'shelf', '货架后面……有东西在嚼。'] },
+      { n: '生鲜区', fl: 'greentile', k: 2, d: [['fridge', 5], ['counter', 1], ['sack', 1]], b: ['story', '冰柜里的肉在动。'] },
+      { n: '冷库', fl: 'metal', k: 2, dk: 1, d: [['fridge', 3], ['crate', 2], ['barrel', 1]], b: ['dark', '冷库的灯闪了两下，灭了。'] },
+      { n: '监控室', fl: 'linoleum', k: 1, d: [['tv', 2], ['desk', 1], ['chair', 1], ['lamp', 1]], b: ['look', 'tv', '监控画面里，你们身后多了一排人。'] },
+      { n: '仓库', fl: 'concrete', k: 2, d: [['crate', 5], ['barrel', 2], ['sack', 2]], b: ['story', '箱子上印着：实验样本，严禁开启。'] },
+      { n: '员工间', fl: 'linoleum', k: 1, d: [['table', 1], ['chair', 2], ['tv', 1]], b: ['look', 'table', '桌上的盒饭还冒着热气。'] },
+      { n: '后巷', fl: 'asphalt', k: 2, d: [['streetlamp', 2], ['barrel', 2], ['crate', 1]], b: ['story', '巷子尽头的铁门在被人拍。'] }],
+    side: [{ n: '卸货区', fl: 'concrete', d: [['crate', 3], ['cart', 1]] }, { n: '更衣室', fl: 'linoleum', d: [['locker', 3], ['bench', 1]] }, { n: '锅炉房', fl: 'metal', d: [['barrel', 2], ['box', 1]] }] },
+  room: { n: '三个人的房间', wall: 'paper', fl: 'wood', dark: .84, wallC: { top: '#3a3430', face: '#8a7a6a' }, seed: 41, hide: 'wardrobe', sp: '客厅', task: '主卧',
+    route: [
+      { n: '玄关', fl: 'tile', k: 1, d: [['shoes', 3], ['lamp', 1]], w: [['mirror', 1]], b: ['look', 'mirror', '玄关镜子里……三个人？我们明明两个。'] },
+      { n: '客厅', fl: 'wood', k: 3, d: [['sofa', 2], ['lowtable', 1], ['tv', 1], ['lamp', 2], ['plant', 1]], w: [['famphoto', 1], ['clock', 1]], b: ['look', 'tv', '电视里放的是这间客厅，沙发上坐着一个人。'] },
+      { n: '餐厅', fl: 'wood', k: 1, d: [['table', 1], ['chair', 3], ['candle', 1]], b: ['story', '桌上摆着三副碗筷，有一碗吃了一半。'] },
+      { n: '厨房', fl: 'tile', k: 1, d: [['stove', 1], ['fridge', 1], ['sink', 1], ['knife', 1]], b: ['look', 'fridge', '冰箱门开着一条缝，里面亮着。'] },
+      { n: '儿童房', fl: 'carpet', k: 2, d: [['bed', 1, { h: 2, col: '#7a6a9a' }], ['doll', 3], ['box', 1], ['lamp', 1]], b: ['story', '床底下有个小孩在数：一、二、三……'] },
+      { n: '书房', fl: 'darkwood', k: 1, dk: 1, d: [['desk', 1], ['bookshelf', 2], ['chair', 1]], b: ['dark', '台灯自己关了。'] },
+      { n: '主卧', fl: 'carpet', k: 2, d: [['bed', 1, { h: 2 }], ['wardrobe', 1], ['dresser', 1], ['lamp', 1]], w: [['famphoto', 1]], b: ['look', 'famphoto', '全家福里的人……一个一个转过了头。'] },
+      { n: '卫生间', fl: 'greentile', k: 1, d: [['bathtub', 1, { w: 2 }], ['toilet', 1], ['sink', 1]], w: [['mirror', 1]], b: ['story', '镜子上的雾里写着：别回头。'] },
+      { n: '阳台', fl: 'concrete', k: 2, d: [['plant', 3], ['box', 1], ['lamp', 1]], b: ['look', 'plant', '晾衣杆上挂着一件湿透的雨衣。'] }],
+    side: [{ n: '储物间', fl: 'wood', d: [['box', 3], ['crate', 1]] }, { n: '保姆房', fl: 'wood', d: [['bed', 1, { h: 2 }], ['chair', 1], ['candle', 1]] }, { n: '杂物间', fl: 'concrete', d: [['box', 2], ['bucket', 1]] }] },
+  my: { n: '暮阳中学', wall: 'school', fl: 'wood', dark: .85, seed: 53, hide: 'locker', sp: '走廊', task: '最后一间教室',
+    route: [
+      { n: '校门', fl: 'concrete', k: 1, d: [['streetlamp', 1], ['sign', 1]], b: ['story', '传达室的窗户里，有人在看你们。'] },
+      { n: '走廊', fl: 'linoleum', k: 3, d: [['lamp', 2], ['bench', 1]], w: [['poster', 3]], b: ['look', 'poster', '光荣榜最后一张照片……是空的。'] },
+      { n: '教室一', fl: 'wood', k: 2, d: [['schooldesk', 8], ['blackboard', 1]], b: ['look', 'blackboard', '黑板上写着：今天值日的是你。'] },
+      { n: '音乐教室', fl: 'wood', k: 1, d: [['piano', 1], ['chair', 3]], b: ['story', '钢琴自己按下了一个音。'] },
+      { n: '美术室', fl: 'wood', k: 2, d: [['painting', 3], ['table', 2], ['brush', 1], ['statue', 1]], b: ['look', 'statue', '石膏像的眼睛……刚才是闭着的。'] },
+      { n: '厕所', fl: 'greentile', k: 1, dk: 1, d: [['stall', 3], ['sink', 1]], b: ['dark', '第五个隔间的门，慢慢开了。'] },
+      { n: '教室二', fl: 'wood', k: 2, d: [['schooldesk', 8], ['blackboard', 1], ['hdolls', 1]], b: ['story', '每张课桌上都坐着一个人偶。'] },
+      { n: '最后一间教室', fl: 'darkwood', k: 2, d: [['schooldesk', 6], ['blackboard', 1], ['candle', 2]], b: ['look', 'blackboard', '点名册摊在讲台上，最后一个名字还没干。'] },
+      { n: '楼梯间', fl: 'concrete', k: 1, d: [['stairsdown', 1], ['lamp', 1]], b: ['story', '楼梯一共十三级。下楼时数出了十四级。'] }],
+    side: [{ n: '办公室', fl: 'darkwood', d: [['desk', 2], ['chair', 2], ['bookshelf', 1]] }, { n: '器材室', fl: 'concrete', d: [['box', 3], ['crate', 1]] }, { n: '广播室', fl: 'linoleum', d: [['desk', 1], ['hspeaker', 1], ['chair', 1]] }] },
+  ward: { n: '第三病栋', wall: 'tile', fl: 'linoleum', dark: .88, seed: 67, hide: 'closet', sp: '走廊', task: '院长办公室',
+    route: [
+      { n: '大厅', fl: 'marble', k: 2, d: [['bench', 3], ['plant', 2], ['wheelchair', 1], ['lamp', 1]], b: ['story', '挂号窗口的灯亮着，里面没有人。'] },
+      { n: '挂号处', fl: 'tile', k: 1, d: [['counter', 2], ['cabinet', 1], ['phone', 1]], b: ['look', 'phone', '挂号处的电话响了。'] },
+      { n: '走廊', fl: 'linoleum', k: 3, d: [['wheelchair', 1], ['bed', 1, { h: 2 }], ['lamp', 2]], b: ['look', 'wheelchair', '轮椅自己往这边滑了半米。'] },
+      { n: '病房A', fl: 'linoleum', k: 2, d: [['bed', 3, { h: 2 }], ['cabinet', 1], ['candle', 1]], b: ['story', '三张床，被子都铺好了，像在等人。'] },
+      { n: '手术室', fl: 'greentile', k: 2, dk: 1, d: [['bed', 1, { h: 2 }], ['cabinet', 2], ['bucket', 1], ['lamp', 1]], b: ['dark', '无影灯闪了一下，灭了。'] },
+      { n: '药房', fl: 'tile', k: 1, d: [['shelf', 3], ['counter', 1], ['box', 1]], b: ['look', 'shelf', '药瓶上的标签全是同一个名字。'] },
+      { n: '停尸间', fl: 'metal', k: 2, d: [['bed', 2, { h: 2 }], ['fridge', 3], ['linen', 1]], b: ['story', '有一个冷柜的门，是从里面推开的。'] },
+      { n: '院长办公室', fl: 'darkwood', k: 2, d: [['desk', 1], ['bookshelf', 2], ['chair', 1], ['lamp', 1]], w: [['portrait', 1]], b: ['look', 'portrait', '院长的画像在笑。'] },
+      { n: '后楼梯', fl: 'concrete', k: 1, d: [['stairsup', 1], ['lamp', 1]], b: ['story', '楼上传来推床的声音。'] }],
+    side: [{ n: '病房B', fl: 'linoleum', d: [['bed', 2, { h: 2 }], ['cabinet', 1]] }, { n: '护士站', fl: 'tile', d: [['counter', 1], ['chair', 1], ['lamp', 1]] }, { n: '洗衣房', fl: 'tile', d: [['linen', 2], ['bucket', 2]] }] }
+};
+const HGEN_LIGHT = new Set(['candle', 'candles', 'lantern', 'lamp', 'streetlamp', 'stonelantern']);
+function hmRng(seed) { let s = seed >>> 0 || 1; return () => { s = (s + 0x6D2B79F5) >>> 0; let t = s; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+function hmGen(id) { const BP = HBP[id]; for (let tr = 0; tr < 40; tr++) { const D = hmGenTry(id, BP, BP.seed * 101 + tr * 7919); if (D) return D; } return null; }
+function hmGenTry(id, BP, seed) { const R = hmRng(seed), ri = (a, b) => a + Math.floor(R() * (b - a + 1)), { nx, ny, S } = HGEN, W = nx * S + 1, H = ny * S + 1, N = W * H;
+  const I = (x, y) => y * W + x, inb = (x, y) => x >= 0 && y >= 0 && x < W && y < H;
+  /* 1. 蛇形走一遍区块 */ const need = BP.route.reduce((s, r) => s + (r.k || 1), 0); if (need > nx * ny - 1) return null;
+  const edge = (i, j) => i === 0 || j === 0 || i === nx - 1 || j === ny - 1; let walk = null;
+  const dfs = (path, used) => { if (path.length === need) { const [i, j] = path[path.length - 1]; return edge(i, j) ? path.slice() : null; } const [i, j] = path[path.length - 1]; const nb = [[1, 0], [-1, 0], [0, 1], [0, -1]].map(d => [i + d[0], j + d[1]]).filter(([a, b]) => a >= 0 && b >= 0 && a < nx && b < ny && !used.has(a + ',' + b)).sort(() => R() - .5);
+    for (const q of nb) { used.add(q[0] + ',' + q[1]); path.push(q); const r = dfs(path, used); if (r) return r; path.pop(); used.delete(q[0] + ',' + q[1]); if (++dfsN > 4000) return null; } return null; };
+  let dfsN = 0; const s0 = [ri(1, nx - 2), ny - 1]; walk = dfs([s0], new Set([s0[0] + ',' + s0[1]])); if (!walk) return null;
+  /* 2. 区块 → 房间；块内地面随机内缩 */ const blocks = {}, rooms = []; let wi = 0;
+  BP.route.forEach((r, k) => { const room = { bp: r, n: r.n, blocks: [], route: 1, idx: k }; for (let q = 0; q < (r.k || 1); q++) { const [i, j] = walk[wi++]; const b = { i, j, room }; blocks[i + ',' + j] = b; room.blocks.push(b); } room.wb = room.blocks.slice(); rooms.push(room); });
+  const t = new Array(N).fill('wall'), stw = new Uint8Array(N), sec = new Uint8Array(N), rid = new Int16Array(N).fill(-1);
+  for (let x = 0; x < W; x++) for (let y = 0; y < H; y++) if (x % S === 0 || y % S === 0) { stw[I(x, y)] = 1; t[I(x, y)] = 'concrete'; }
+  /* 剩下的区块：最多 3 间侧室，其余并进相邻的房间（房间更大、更不规则） */ const side = [], left = []; for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++) if (!blocks[i + ',' + j]) left.push([i, j]);
+  left.sort(() => R() - .5); const ext = [];
+  for (const [i, j] of left) { if (side.length < Math.min(3, BP.side.length)) { const bp = BP.side[side.length]; const room = { bp, n: bp.n, blocks: [], route: 0 }; const b = { i, j, room }; blocks[i + ',' + j] = b; room.blocks.push(b); side.push(room); rooms.push(room); } else ext.push([i, j]); }
+  for (let guard = 0; ext.length && guard < 20; guard++) for (let q = ext.length - 1; q >= 0; q--) { const [i, j] = ext[q]; const nb = [[1, 0], [-1, 0], [0, 1], [0, -1]].map(d => blocks[(i + d[0]) + ',' + (j + d[1])]).filter(Boolean).sort((a, b) => b.room.route - a.room.route || R() - .5)[0]; if (!nb) continue; const b = { i, j, room: nb.room, ext: nb }; blocks[i + ',' + j] = b; nb.room.blocks.push(b); ext.splice(q, 1); }
+  if (ext.length) return null;
+  rooms.forEach((rm, k) => rm.k = k);
+  for (const key in blocks) { const b = blocks[key], ox = b.i * S + 1, oy = b.j * S + 1, j = () => R() < .45 ? 0 : R() < .7 ? 1 : 2; b.x0 = ox + 1 + j(); b.x1 = ox + 8 - j(); b.y0 = oy + 1 + j(); b.y1 = oy + 8 - j();
+    for (let y = b.y0; y <= b.y1; y++) for (let x = b.x0; x <= b.x1; x++) { t[I(x, y)] = b.room.bp.fl || BP.fl; rid[I(x, y)] = b.room.k; }
+    /* 切一个角，房间不方正 */ if (R() < .55 && b.x1 - b.x0 >= 5 && b.y1 - b.y0 >= 5) { const cw = ri(2, 3), ch = ri(2, 3), cx = R() < .5 ? b.x0 : b.x1 - cw + 1, cy = R() < .5 ? b.y0 : b.y1 - ch + 1; b.cut = [cx, cy, cw, ch]; for (let y = cy; y < cy + ch; y++) for (let x = cx; x < cx + cw; x++) { t[I(x, y)] = 'wall'; rid[I(x, y)] = -1; } } }
+  const carve = (x, y, rm) => { t[I(x, y)] = rm.bp.fl || BP.fl; stw[I(x, y)] = 0; rid[I(x, y)] = rm.k; };
+  /* 两块之间开口：同一个房间整段打通（重叠部分），不同房间开一扇门 */
+  const open = (A, B, door, rm) => { const hz = A.j === B.j, [a, b] = hz ? (A.i < B.i ? [A, B] : [B, A]) : (A.j < B.j ? [A, B] : [B, A]);
+    const fl = (q, x, y) => t[I(x, y)] !== 'wall' && rid[I(x, y)] === q.room.k;
+    if (hz) { const lo = Math.max(a.y0, b.y0), hi = Math.min(a.y1, b.y1); if (hi - lo < (door ? 0 : 2)) return false; let ys; if (door) { const c = []; for (let y = lo; y <= hi; y++) if (fl(a, a.x1, y) && fl(b, b.x0, y)) c.push(y); if (!c.length) return false; ys = [c[Math.floor(R() * c.length)]]; } else { const c = []; for (let y = lo; y <= hi; y++) if (fl(a, a.x1, y) && fl(b, b.x0, y)) c.push(y); if (c.length < 2) return false; ys = c; }
+      for (const y of ys) for (let x = a.x1 + 1; x < b.x0; x++) carve(x, y, rm || a.room); return { x: a.x1 + 1, y: ys[0], x2: b.x0 - 1, hz: 1 }; }
+    const lo = Math.max(a.x0, b.x0), hi = Math.min(a.x1, b.x1); const c = []; for (let x = lo; x <= hi; x++) if (fl(a, x, a.y1) && fl(b, x, b.y0)) c.push(x); if (door ? !c.length : c.length < 2) return false; const xs = door ? [c[Math.floor(R() * c.length)]] : c;
+    for (const x of xs) for (let y = a.y1 + 1; y < b.y0; y++) carve(x, y, rm || a.room); return { x: xs[0], y: a.y1 + 1, y2: b.y0 - 1, hz: 0 }; };
+  for (const rm of rooms) for (let q = 1; q < rm.blocks.length; q++) { const B = rm.blocks[q], A = B.ext || rm.blocks[q - 1]; if (!open(A, B, false)) return null; }
+  const doors = []; for (let k = 1; k < BP.route.length; k++) { const A = rooms[k - 1].wb[rooms[k - 1].wb.length - 1], B = rooms[k].wb[0]; const d = open(A, B, true, rooms[k]); if (!d) return null; doors.push(d); }
+  for (const rm of side) { const b = rm.blocks[0]; const nb = [[1, 0], [-1, 0], [0, 1], [0, -1]].map(d => blocks[(b.i + d[0]) + ',' + (b.j + d[1])]).filter(Boolean).sort(() => R() - .5); let ok = false; for (const q of nb) { if (open(b, q, true, rm)) { ok = true; break; } } if (!ok) return null; }
+  /* 3. 入口、出口 */ const fb = rooms[0].wb[0], lb = rooms[BP.route.length - 1].wb.slice(-1)[0];
+  const cx0 = (() => { const c = []; for (let x = fb.x0; x <= fb.x1; x++) if (rid[I(x, fb.y1)] === 0) c.push(x); return c[Math.floor(c.length / 2)]; })(); for (let y = fb.y1 + 1; y < H; y++) carve(cx0, y, rooms[0]); const enter = [cx0, H - 1];
+  const lr = rooms[BP.route.length - 1]; let exit = null; { const opts = []; if (lb.j === 0) opts.push('u'); if (lb.j === ny - 1) opts.push('d'); if (lb.i === 0) opts.push('l'); if (lb.i === nx - 1) opts.push('r'); const o = opts[Math.floor(R() * opts.length)];
+    if (o === 'u' || o === 'd') { const c = []; for (let x = lb.x0; x <= lb.x1; x++) if (rid[I(x, o === 'u' ? lb.y0 : lb.y1)] === lr.k) c.push(x); const x = c[Math.floor(c.length / 2)]; if (o === 'u') { for (let y = lb.y0 - 1; y >= 0; y--) carve(x, y, lr); exit = [x, 0]; } else { for (let y = lb.y1 + 1; y < H; y++) carve(x, y, lr); exit = [x, H - 1]; } }
+    else { const c = []; for (let y = lb.y0; y <= lb.y1; y++) if (rid[I(o === 'l' ? lb.x0 : lb.x1, y)] === lr.k) c.push(y); const y = c[Math.floor(c.length / 2)]; if (o === 'l') { for (let x = lb.x0 - 1; x >= 0; x--) carve(x, y, lr); exit = [0, y]; } else { for (let x = lb.x1 + 1; x < W; x++) carve(x, y, lr); exit = [W - 1, y]; } } }
+  if (!exit || (exit[0] === enter[0] && exit[1] === enter[1])) return null;
+  /* 4. 房间矩形（同名多块）与路线点 */ const rlist = []; for (const rm of rooms) for (const b of rm.blocks) rlist.push({ n: rm.n, x0: b.x0, y0: b.y0, x1: b.x1, y1: b.y1 });
+  const solidV = i => t[i] === 'wall' || stw[i] || sec[i]; const occ = new Uint8Array(N);
+  const centre = rm => { const b = rm.blocks[Math.floor(rm.blocks.length / 2)]; let best = null, bd = 1e9; const cx = (b.x0 + b.x1) / 2, cy = (b.y0 + b.y1) / 2; for (let y = b.y0; y <= b.y1; y++) for (let x = b.x0; x <= b.x1; x++) { if (rid[I(x, y)] !== rm.k) continue; const d = Math.hypot(x - cx, y - cy); if (d < bd) { bd = d; best = [x, y]; } } return best; };
+  const route = rooms.filter(r => r.route).map(centre);
+  const bfs = (from, to) => { const prev = new Int32Array(N).fill(-2), q = [I(from[0], from[1])]; prev[q[0]] = -1; for (let qi = 0; qi < q.length; qi++) { const c = q[qi]; if (c === I(to[0], to[1])) break; const x = c % W, y = (c / W) | 0; for (const [dx, dy] of HD) { const xx = x + dx, yy = y + dy; if (!inb(xx, yy)) continue; const k = I(xx, yy); if (prev[k] !== -2 || solidV(k) || occ[k]) continue; prev[k] = c; q.push(k); } } const out = []; let c = I(to[0], to[1]); if (prev[c] === -2) return null; while (c !== -1) { out.push(c); c = prev[c]; } return out.reverse(); };
+  const pts = [enter, ...route, exit], path = []; for (let k = 1; k < pts.length; k++) { const p = bfs(pts[k - 1], pts[k]); if (!p) return null; path.push(...(k > 1 ? p.slice(1) : p)); }
+  const resv = new Uint8Array(N); for (const c of path) resv[c] = 1; for (const c of path) { const x = c % W, y = (c / W) | 0; for (const [dx, dy] of HD) if (inb(x + dx, y + dy)) resv[I(x + dx, y + dy)] = resv[I(x + dx, y + dy)] || 2; }
+  /* 门口两边别堵 */ for (let i = 0; i < N; i++) if (!solidV(i) && rid[i] >= 0) { const x = i % W, y = (i / W) | 0; let walls = 0; for (const [dx, dy] of HD) if (inb(x + dx, y + dy) && solidV(I(x + dx, y + dy))) walls++; if (walls >= 2 && (solidV(I(x - 1, y)) && solidV(I(x + 1, y)) || solidV(I(x, y - 1)) && solidV(I(x, y + 1)))) { resv[i] = 1; for (const [dx, dy] of HD) if (inb(x + dx, y + dy)) resv[I(x + dx, y + dy)] = resv[I(x + dx, y + dy)] || 2; } }
+  /* 5. 员工暗口：房间边上一格，向外笔直穿过墙能碰到员工通道（≤3 格墙） */ const staff = [], fronts = [];
+  const tryNiche = (rm, nearPath) => { const cand = []; for (const b of rm.blocks) for (let y = b.y0; y <= b.y1; y++) for (let x = b.x0; x <= b.x1; x++) { if (rid[I(x, y)] !== rm.k || resv[I(x, y)] === 1) continue;
+      for (const [dx, dy] of HD) { let xx = x + dx, yy = y + dy, n = 0, cells = []; while (inb(xx, yy) && t[I(xx, yy)] === 'wall' && !stw[I(xx, yy)] && n < 4) { cells.push(I(xx, yy)); xx += dx; yy += dy; n++; } if (!n || n > 3 || !inb(xx, yy) || !stw[I(xx, yy)]) continue;
+        const pd = Math.min(...path.filter((_, q) => q % 2 === 0).map(c => Math.hypot(c % W - x, ((c / W) | 0) - y))); if (nearPath && (pd < 1.5 || pd > 4.5)) continue; if (staff.some(s => Math.hypot(s[0] - x, s[1] - y) < 4)) continue; cand.push({ x, y, cells, pd, home: [x + dx, y + dy] }); } }
+    if (!cand.length) return false; cand.sort((a, b) => Math.abs(a.pd - 2.5) - Math.abs(b.pd - 2.5)); const c = cand[Math.floor(R() * Math.min(3, cand.length))]; for (const i of c.cells) { t[i] = rm.bp.fl || BP.fl; sec[i] = 1; } staff.push(c.home); fronts.push([c.x, c.y]); occ[I(c.x, c.y)] = 1; return true; };
+  for (const rm of rooms.filter(r => r.route)) tryNiche(rm, true); if (staff.length < 6) return null;
+  /* 6. 摆设（贴墙优先，不踩路线，不压门口） */ const deco = [], hides = [];
+  const free = (x, y, w, h) => { for (let yy = y; yy < y + h; yy++) for (let xx = x; xx < x + w; xx++) { if (!inb(xx, yy)) return false; const i = I(xx, yy); if (solidV(i) || occ[i] || resv[i] || rid[i] < 0) return false; } return true; };
+  const nearWall = (x, y) => HD.some(([dx, dy]) => inb(x + dx, y + dy) && solidV(I(x + dx, y + dy)));
+  const cells = rm => { const c = []; for (const b of rm.blocks) for (let y = b.y0; y <= b.y1; y++) for (let x = b.x0; x <= b.x1; x++) if (rid[I(x, y)] === rm.k) c.push([x, y]); return c; };
+  const put = (rm, spr, o, edgeFirst) => { const w = (o && o.w) || 1, h = (o && o.h) || 1, cs = cells(rm).filter(([x, y]) => free(x, y, w, h)); if (!cs.length) return null; const ed = cs.filter(([x, y]) => nearWall(x, y)), pool = edgeFirst && ed.length ? ed : cs; const [x, y] = pool[Math.floor(R() * pool.length)]; for (let yy = y; yy < y + h; yy++) for (let xx = x; xx < x + w; xx++) occ[I(xx, yy)] = 1; return [x, y]; };
+  const beats = [], flatO = new Uint8Array(N);
+  for (const rm of rooms) { const bp = rm.bp; let lit = 0;
+    const mul = Math.max(1, Math.round(rm.blocks.length / (bp.k || 1) * .8)); for (const [spr, n0, o] of bp.d || []) for (let q = 0, n = n0 * (o && o.h ? 1 : mul); q < n; q++) { const p = put(rm, spr, o, spr !== 'schooldesk' && spr !== 'shelf' && spr !== 'bench'); if (!p) break; deco.push([spr, p[0], p[1], o ? Object.assign({}, o) : undefined]); if (HGEN_LIGHT.has(spr)) lit++; }
+    for (const [spr, n] of bp.w || []) for (let q = 0; q < n; q++) { const c = []; for (const b of rm.blocks) for (let x = b.x0; x <= b.x1; x++) { const y = b.y0; if (rid[I(x, y)] === rm.k && t[I(x, y - 1)] === 'wall' && !stw[I(x, y - 1)] && !sec[I(x, y - 1)] && !deco.some(d => d[3] && d[3].wall && d[1] === x && d[2] === y - 1)) c.push([x, y - 1]); } if (!c.length) break; const p = c[Math.floor(R() * c.length)]; deco.push([spr, p[0], p[1], { wall: 1 }]); }
+    if (!lit && !bp.dk) { const p = put(rm, 'candle', null, true); if (p) deco.push(['candle', p[0], p[1]]); }
+    const nh = rm.blocks.length >= 2 ? 2 : 1; for (let q = 0; q < nh; q++) { const p = put(rm, bp.h || BP.hide, null, true); if (p) hides.push([bp.h || BP.hide, p[0], p[1]]); }
+    /* 地上的脏东西（扁平，不挡路） */ const fl = cells(rm).filter(([x, y]) => !occ[I(x, y)] && resv[I(x, y)] !== 1 && !flatO[I(x, y)]); for (let q = 0; q < Math.min(4, fl.length / 12); q++) { const k = Math.floor(R() * fl.length), [x, y] = fl[k]; fl.splice(k, 1); flatO[I(x, y)] = 1; deco.push([['stain', 'footprints', 'paper', 'handprint', 'puddle'][Math.floor(R() * 5)], x, y]); }
+    if (bp.b) { const at = bp.b[0] === 'look' ? deco.find(d => d[0] === bp.b[1] && rid[I(d[1], d[2] + (d[3] && d[3].wall ? 1 : 0))] === rm.k) : null; beats.push({ room: rm.n, k: bp.b[0], say: bp.b[bp.b.length - 1], at: at ? [at[1], at[2] + (at[3] && at[3].wall ? 1 : 0)] : null }); } }
+  { const hid = new Set(hides.map(h => I(h[1], h[2]))), seen = new Uint8Array(N), q = [I(fronts[0][0], fronts[0][1])]; seen[q[0]] = 1; const walk = i => !(t[i] === 'wall' && !stw[i] && !sec[i]) && (!occ[i] || hid.has(i) || fronts.some(f => I(f[0], f[1]) === i));
+    for (let qi = 0; qi < q.length; qi++) { const c = q[qi]; if (hid.has(c)) continue; const x = c % W, y = (c / W) | 0; for (const [dx, dy] of HD) { const xx = x + dx, yy = y + dy; if (!inb(xx, yy)) continue; const k = I(xx, yy); if (seen[k] || !walk(k)) continue; seen[k] = 1; q.push(k); } }
+    for (let k = hides.length - 1; k >= 0; k--) if (!seen[I(hides[k][1], hides[k][2])]) { occ[I(hides[k][1], hides[k][2])] = 0; hides.splice(k, 1); } }
+  /* 7. 机关位：沿路线每个房间 1–2 个，彼此隔开 */ const slots = []; let last = -99; path.forEach((c, q) => { const x = c % W, y = (c / W) | 0; if (q - last < 9 || q < 4 || q > path.length - 4 || rid[c] < 0 || occ[c]) return; const rm = rooms[rid[c]]; if (slots.filter(s => s[2] === rm.k).length >= 2) return; slots.push([x, y, rm.k]); last = q; });
+  const spRoom = rooms.find(r => r.n === BP.sp); let sp = null; if (spRoom) { const c = path.filter(c => rid[c] === spRoom.k && !slots.some(s => s[0] === c % W && s[1] === ((c / W) | 0))); if (c.length) { const k = c[Math.floor(c.length / 2)]; sp = [k % W, (k / W) | 0]; } }
+  /* 8. 陈歌起点：第二个房间的员工暗口前 */ const start = fronts[Math.min(1, fronts.length - 1)].slice();
+  const taskR = rooms.find(r => r.n === BP.task); const ti = taskR ? rooms.filter(r => r.route).indexOf(taskR) + 1 : null;
+  return { n: BP.n, w: W, h: H, wall: BP.wall, fl: BP.fl, dark: BP.dark, tileOpts: BP.tileOpts, wallC: BP.wallC, gen: 1, grid: t, stw, secs: Array.from(sec.keys()).filter(i => sec[i]), rlist, enter, exit, route, slots: slots.map(s => [s[0], s[1]]), sp, staff, fronts, hides, deco, start, beats, taskIdx: ti, darkRooms: rooms.filter(r => r.bp.dk).map(r => r.n), pathLen: path.length };
+}
+/* 换成大地图；原来的小地图留给「被追」用（_c） */
+for (const id in HBP) { if (HMAPS[id]) HMAPS[id + '_c'] = HMAPS[id]; const D = hmGen(id); if (D) { if (HMAPS[id + '_c'] && HMAPS[id + '_c'].chase) D.chase = null; HMAPS[id] = D; } }
 
 /* 界面：一次只显示一种画面（探索 / 对话 / 对峙），交叉淡化，不许闪（RULES 3） */
 const UI = { tab: '', logTab: 'log', bagTab: 'use', memo: -1, phTab: 'home', mapArea: '', feed: [], pickScene: false, lastWho: '', modeT: 0 };
@@ -3918,7 +4163,7 @@ Object.assign(SPR, {
 const HPPL = { 鬼新娘: P_({ skin: '#e8e0dc', hair: '#0a0808', hs: 'long', cover: 1, top: '#a01010', dress: 1, hat: 'veil', hatC: '#c01818', ghost: 1 }), 剪刀狂人: P_({ skin: '#d8c8b8', hair: '#2a2420', hs: 'messy', top: '#7a7a70', coat: 1, bottom: '#3a3a34', redEye: 1 }), 僵尸: P_({ skin: '#8aa080', hair: '#2a2a20', hs: 'messy', top: '#4a5a3a', bottom: '#3a3a30', redEye: 1 }) };
 const HF = { dmg: '#ffd27a', crit: '#ff6a4a', bad: '#ff8a8a', txt: '#d8d0c0', staff: '#c8a8ff', sys: '#9cc' };
 function hLog(H, s, cls) { H.log.push({ s, cls: cls || '', t: H.t }); if (H.log.length > 40) H.log.shift(); }
-function hFloat(H, x, y, s, k) { if (H.txt.length > 24) H.txt.shift(); const n = H.txt.filter(f => H.t - f.t0 < .9 && Math.abs(f.x - x) < 1.6 && Math.abs(f.y0 - y) < 1.2).length; H.txt.push({ x, y: y - n * .6, y0: y, s, k: k || 'txt', t0: H.t }); }
+function hFloat(H, x, y, s, k) { if (SET.imm && (k === 'dmg' || /\d/.test(s))) return; if (H.txt.length > 24) H.txt.shift(); const n = H.txt.filter(f => H.t - f.t0 < .9 && Math.abs(f.x - x) < 1.6 && Math.abs(f.y0 - y) < 1.2).length; H.txt.push({ x, y: y - n * .6, y0: y, s, k: k || 'txt', t0: H.t }); }
 function hBub(H, v, s, dur, big) { v.bub = { s, until: H.t + (dur || 2), big }; }
 function hFx(H, k, x, y, sk) { H.fx.push({ k, x, y, sk, t0: H.t }); if (k === 'light') H.black = .9; }
 
@@ -3941,10 +4186,11 @@ function hsToCss(H, x, y) { const cv = $('#hcv'), wr = $('#hsw'), r = cv.getBoun
 
 /* ---------- 画面 ---------- */
 function hsMapCache(M) { if (M.cache) return M.cache; const c = M.cache = mk(M.w * 16, M.h * 16), g = c.getContext('2d'); const D = M.D, st = Object.assign({}, WALLSTYLE[D.wall] || WALLSTYLE.paper, D.wallC || {}), opts = D.tileOpts || {};
-  const isW = (x, y) => x < 0 || y < 0 || x >= M.w || y >= M.h || M.t[y * M.w + x] === 'wall' || M.t[y * M.w + x] === 'void';
+  const isW = (x, y) => x < 0 || y < 0 || x >= M.w || y >= M.h || M.t[y * M.w + x] === 'wall' || M.t[y * M.w + x] === 'void' || (M.stw && M.stw[y * M.w + x]);
   for (let y = 0; y < M.h; y++) for (let x = 0; x < M.w; x++) { const R = (a, b, w, h, col) => { if (!col) return; g.fillStyle = col; g.fillRect(x * 16 + Math.floor(a), y * 16 + Math.floor(b), Math.ceil(w), Math.ceil(h)); }; const n = M.t[y * M.w + x];
-    if (n === 'wall') paintWall(R, x, y, !isW(x, y + 1), st, isW); else if (TILE[n]) TILE[n].paint(R, x, y, opts); else R(0, 0, 16, 16, '#000');
-    if (M.sec[y * M.w + x]) { R(0, 0, 16, 16, 'rgba(10,6,6,.55)'); R(3, 2, 10, 12, 'rgba(0,0,0,.5)'); } }
+    const sw = M.stw && M.stw[y * M.w + x]; if (n === 'wall' || sw) paintWall(R, x, y, !isW(x, y + 1), st, isW); else if (TILE[n]) TILE[n].paint(R, x, y, opts); else R(0, 0, 16, 16, '#000');
+    /* 员工通道：游客眼里是墙，玩家看得到一条暗紫的虚线 */ if (sw) { R(7, 7, 2, 2, 'rgba(150,110,200,.35)'); if (isW(x - 1, y) === false || isW(x + 1, y) === false || (M.stw[y * M.w + x - 1] && M.stw[y * M.w + x + 1])) R(0, 7.5, 16, 1, 'rgba(150,110,200,.12)'); else R(7.5, 0, 1, 16, 'rgba(150,110,200,.12)'); }
+    else if (M.sec[y * M.w + x]) { R(0, 0, 16, 16, 'rgba(10,6,6,.55)'); R(3, 2, 10, 12, 'rgba(0,0,0,.5)'); } }
   for (const e of M.ents) if (e.flat || e.wall) hsSpr(g, e, 0, 0, 0); return c; }
 function hsSpr(g, e, ox, oy, t) { const fn = SPR[e.spr]; if (!fn) return; const x = Math.round(e.x * 16 - ox), y = Math.round(e.y * 16 - oy); fn(g, e, t, (a, b, w, h, col) => { if (!col) return; g.fillStyle = col; g.fillRect(x + Math.floor(a), y + Math.floor(b), Math.ceil(w), Math.ceil(h)); }); }
 function hsPerson(g, P, x, y, dir, fr, alpha) { const s = personSprite(P, dir, fr), tl = P.tall || 1, h = Math.round(24 * tl); g.globalAlpha = alpha ?? 1; g.drawImage(stTint(s, P.sil), Math.round(x), Math.round(y + 16 - h), 16, h); g.globalAlpha = 1; }
@@ -3987,25 +4233,25 @@ function hsWorld(H) { const M = H.M, t = H.t; if (!H.world) H.world = mk(M.w * 1
     if (k === 0) { if (o.hide && H.hero.hidden && H.hero.tx === o.x && H.hero.ty === o.y && !setup) { hsSpr(g, Object.assign({}, o, { open: (t * 2 % 3) < .4 }), ox, oy, t); const x = o.x * 16 - ox, y = o.y * 16 - oy; g.fillStyle = '#e8e0c8'; g.fillRect(x + 5, y - 2, 1, 1); g.fillRect(x + 9, y - 2, 1, 1); } else hsSpr(g, o, ox, oy, t); }
     else if (k === 1) { if (o.st === 'carry') hsPerson(g, HCARRY, o.x * 16 - ox + (o.dir === 1 ? -11 : 11), o.y * 16 - oy - 1, o.dir, o.mv ? o.fr : 0); hsPersonPose(g, o.P, o.x * 16 - ox, o.y * 16 - oy - (o.st === 'carry' ? 5 : 0), o.dir, o.mv ? o.fr : 0, hsPose(H, o), t); }
     else if (k === 3) hsPersonPose(g, o.f.P, o.tr[0] * 16 - ox + 3, o.tr[1] * 16 - oy + 1, o.tr[2], o.tr[3], hsPose(H, o.v), t + .13, .95);
-    else if (k === 2 && o.cast) hSkStaffDraw(H, g, o, ox, oy, t); else if (k === 2) { const pop = o.pop > 0; if ((o.p2 || o.away) && !pop) { const x = o.x * 16 - ox, y = o.y * 16 - oy; hsPerson(g, o.P, x, y, o.dir || 0, o.mv ? o.fr : 0, o.off ? .15 : .95); if (o.p2) { g.fillStyle = '#c8a8ff'; g.font = 'bold 8px sans-serif'; g.textAlign = 'center'; g.fillText(typeof NETROLE !== 'undefined' && NETROLE === 'guest' ? '你' : '队友', x, y - 30); g.textAlign = 'left'; } } else hsPerson(g, o.P, o.x * 16 - ox, o.y * 16 - oy, pop ? (o.px < o.home[0] ? 1 : o.px > o.home[0] ? 2 : 0) : 0, 0, o.off ? .15 : pop ? 1 : .42); }
+    else if (k === 2 && o.cast) hSkStaffDraw(H, g, o, ox, oy, t); else if (k === 2) { const pop = o.pop > 0; if ((o.p2 || o.away) && !pop) { const x = o.x * 16 - ox, y = o.y * 16 - oy; hsPerson(g, o.P, x, y, o.dir || 0, o.mv ? o.fr : 0, o.off ? .15 : .95); if (o.p2) { g.fillStyle = '#c8a8ff'; g.font = 'bold 8px sans-serif'; g.textAlign = 'center'; g.fillText(typeof NETROLE !== 'undefined' && NETROLE === 'guest' ? '你' : '队友', x, y - 30); g.textAlign = 'left'; } } else { const inW = H.M.sec[Math.round(o.y) * H.M.w + Math.round(o.x)]; hsPerson(g, o.P, o.x * 16 - ox, o.y * 16 - oy, o.mv ? o.dir : pop ? (o.px < o.home[0] ? 1 : o.px > o.home[0] ? 2 : 0) : (o.front ? hDirTo(o, { x: o.front[0], y: o.front[1] }) : 0), o.mv ? o.fr : 0, o.off ? .15 : pop ? 1 : inW ? .32 : .42); } }
     else if (k === 4) { if (H.mode === 'house') hsHero(g, H, o, ox, oy, t); else if (!o.hidden) hsPerson(g, o.P, o.x * 16 - ox, o.y * 16 - oy, o.dir, o.mv ? o.fr : 0); }
     else if (k === 5) hsPerson(g, o.P, o.x * 16 - ox + (o.hunt ? (rnd() - .5) * 1.5 : 0), o.y * 16 - oy, o.dir, o.mv ? o.fr : 0, o.ghost ? .88 : 1); }
   /* 黑暗 */ if (!setup) hsDark(H, g, ox, oy);
   else { g.fillStyle = 'rgba(5,4,8,.28)'; g.fillRect(0, 0, W, Hh); }
-  if (H.mode === 'house') hsRouteDraw(g, H, ox, oy, t, setup);
+  if (H.mode === 'house' && (setup || !SET.imm)) hsRouteDraw(g, H, ox, oy, t, setup);
   /* 黑暗之上：机关圈、SAN 条、气泡标记 */
-  if (!setup) { if (H.mode === 'house') { hsNextDraw(g, H, ox, oy, t); hsAmbDraw(g, H, ox, oy, t); }
+  if (!setup) { if (H.mode === 'house') { if (!SET.imm) hsNextDraw(g, H, ox, oy, t); hsAmbDraw(g, H, ox, oy, t); hAttDraw(g, H, ox, oy, t); }
     if (H.mode === 'house') for (const s of M.slots) { if (!s.k) continue; const x = s.x * 16 + 8 - ox, y = s.y * 16 + 8 - oy, inr = hDevInRange(H, s), rdy = hDevReady(H, s), tg = rdy && inr && hDevTargets(H, s).length;
       if (tg) { const p = .6 + Math.sin(t * 9) * .4; g.strokeStyle = `rgba(255,70,50,${p})`; g.lineWidth = 1; g.beginPath(); g.arc(x, y, (HB.zone + .5) * 16, 0, 7); g.stroke(); g.fillStyle = 'rgba(255,60,40,.12)'; g.fill(); }
       else if (inr) { g.strokeStyle = rdy ? 'rgba(232,176,74,.55)' : 'rgba(150,150,150,.3)'; g.setLineDash([2, 3]); g.beginPath(); g.arc(x, y, (HB.zone + .5) * 16, 0, 7); g.stroke(); g.setLineDash([]); }
       g.fillStyle = rdy ? (inr ? '#e8b04a' : 'rgba(232,176,74,.5)') : '#555'; g.fillRect(x - 1, y - 12, 2, 2); if (s.cd > 0) { g.fillStyle = '#e8b04a'; g.fillRect(x - 6, y + 9, Math.round(12 * (1 - s.cd / HB.devCd)), 1); } }
-    for (const v of H.vis) { if (v.st === 'wait' || v.st === 'gone') continue; const x = v.x * 16 - ox, y = v.y * 16 - oy - (v.P.tall ? 14 : 10), r = Math.max(0, v.u.hp / v.u.mhp); if (!hOut(v)) { g.fillStyle = '#1a0a0a'; g.fillRect(x + 1, y - 3, 14, 3); g.fillStyle = r < .3 ? '#ff5a3a' : r < .6 ? '#e8b04a' : '#9ad0a0'; g.fillRect(x + 2, y - 2, Math.ceil(12 * r), 1); if (v.u.charging || (v.u.intent && v.u.intent.charge)) { g.fillStyle = '#ff3a2a'; g.fillRect(x + 7, y - 9, 2, 4); g.fillRect(x + 7, y - 4, 2, 1); } if (v.u.picky) { g.fillStyle = '#e8b04a'; g.fillRect(x + 13, y - 6, 2, 2); } if (H.hero.chase === v) { g.strokeStyle = '#ff5a3a'; g.strokeRect(x + .5, y + 3.5, 15, 22); } } }
+    for (const v of H.vis) { if (v.st === 'wait' || v.st === 'gone') continue; const x = v.x * 16 - ox, y = v.y * 16 - oy - (v.P.tall ? 14 : 10), r = Math.max(0, v.u.hp / v.u.mhp); if (!hOut(v) && SET.imm) { if (v.u.charging || (v.u.intent && v.u.intent.charge)) { g.fillStyle = '#ff3a2a'; g.fillRect(x + 7, y - 9, 2, 4); g.fillRect(x + 7, y - 4, 2, 1); } } else if (!hOut(v)) { g.fillStyle = '#1a0a0a'; g.fillRect(x + 1, y - 3, 14, 3); g.fillStyle = r < .3 ? '#ff5a3a' : r < .6 ? '#e8b04a' : '#9ad0a0'; g.fillRect(x + 2, y - 2, Math.ceil(12 * r), 1); if (v.u.charging || (v.u.intent && v.u.intent.charge)) { g.fillStyle = '#ff3a2a'; g.fillRect(x + 7, y - 9, 2, 4); g.fillRect(x + 7, y - 4, 2, 1); } if (v.u.picky) { g.fillStyle = '#e8b04a'; g.fillRect(x + 13, y - 6, 2, 2); } if (H.hero.chase === v) { g.strokeStyle = '#ff5a3a'; g.strokeRect(x + .5, y + 3.5, 15, 22); } } }
     for (const v of H.vis) if (v.emo && v.emo.until > t && v.st !== 'gone' && v.st !== 'wait') hsEmo(g, v.emo.s, v.x * 16 - ox + (v.st === 'faint' ? 4 : 11), v.y * 16 - oy - (v.st === 'faint' ? 2 : v.P.tall ? 20 : 16), t - (v.poseT ?? t));
     if (H.task) { const T = H.task, x = T.x * 16 - ox, y = T.y * 16 - oy, gr = g.createRadialGradient(x + 8, y + 9, 1, x + 8, y + 9, 12); gr.addColorStop(0, 'rgba(255,220,120,' + (.35 + Math.sin(t * 3) * .1).toFixed(2) + ')'); gr.addColorStop(1, 'rgba(255,220,120,0)'); g.fillStyle = gr; g.fillRect(x - 6, y - 4, 28, 28); }
     if (H.task) { const T = H.task, x = T.x * 16 - ox, y = T.y * 16 - oy, b = Math.sin(t * 4) * 1; g.fillStyle = 'rgba(240,210,120,.25)'; g.fillRect(x + 3, y + 11, 10, 2); g.fillStyle = '#e8c860'; g.fillRect(x + 6, y + 5 + b, 4, 5); g.fillStyle = '#fff4c0'; g.fillRect(x + 7, y + 6 + b, 1, 1); if (t % 1.2 < .2) hsSpr(g, { spr: 'sparkle', x: T.x, y: T.y - .2 }, ox, oy, t); }
     if (H.hero.hidden) { const x = H.hero.x * 16 - ox, y = H.hero.y * 16 - oy; g.fillStyle = 'rgba(232,224,200,.9)'; g.fillRect(x + 5, y - 2, 1, 1); g.fillRect(x + 9, y - 2, 1, 1); }
     if (H.hero.path && !H.hero.chase) { const [px, py] = H.hero.path, x = px * 16 + 8 - ox, y = py * 16 + 8 - oy; g.strokeStyle = 'rgba(160,220,200,.6)'; g.beginPath(); g.arc(x, y, 3 + Math.sin(t * 8), 0, 7); g.stroke(); } }
-  if (!setup) hSkDrawOver(H, g, ox, oy, t); hsFxDraw(H, g, ox, oy);
+  if (!setup) hSkDrawOver(H, g, ox, oy, t); hsFxDraw(H, g, ox, oy); if (!setup && H.zoomOut) hCctv(H, g, ox, oy, t);
   }
 function hsDevDraw(g, H, s, k, ox, oy, t, setup) { const D = hDev(k); if (!D) return; const on = s.fx > 0;
   if (D.P) { const P = HPPL[D.P] || pplOf(D.P); hsPerson(g, P, s.x * 16 - ox, s.y * 16 - oy - (on ? 2 : 0), 0, 0, setup ? .8 : on ? 1 : .28); return; }
@@ -4068,9 +4314,10 @@ function hsTextLayer(H) { const el = $('#hsfx'); if (!el) return; let h = hsCutC
   H.txt = H.txt.filter(f => now - f.t0 < 1.3);
   if (H.phase === 'setup' && H.lay) { for (const s of H.M.slots) { const k = s.sp ? s.k : H.lay.slots[s.i], [x, y] = hsToCss(H, s.x, s.y + .5); h += '<span class="hl' + (k ? ' on' : '') + '" style="left:' + Math.round(x) + 'px;top:' + Math.round(y) + 'px">' + (k ? hDev(k).ic : '') + s.n + '</span>'; }
     for (const s of H.M.staff) { const k = H.lay.staff[s.i], [x, y] = hsToCss(H, s.x, s.y - .9); h += '<span class="hl st' + (k ? ' on' : '') + '" style="left:' + Math.round(x) + 'px;top:' + Math.round(y) + 'px">' + (k ? esc(PETS[k].n) : '员工') + '</span>'; }
-    for (const r of H.M.rooms) { const [x, y] = hsToCss(H, (r.x0 + r.x1) / 2, r.y0 + .1); h += '<span class="hr" style="left:' + Math.round(x) + 'px;top:' + Math.round(y) + 'px">' + esc(r.n) + '</span>'; } }
+    const rn = {}; for (const r of H.M.rooms) { if (rn[r.n]) continue; rn[r.n] = 1; const [x, y] = hsToCss(H, (r.x0 + r.x1) / 2, r.y0 + .1); h += '<span class="hr" style="left:' + Math.round(x) + 'px;top:' + Math.round(y) + 'px">' + esc(r.n) + '</span>'; } }
   if (H.phase === 'live') { const bub = (o, s, big) => { const [x, y] = hsToCss(H, o.x, o.y - ((o.P && o.P.tall) ? 2.4 : 1.8)); h += '<span class="hb' + (big ? ' big' : '') + '" style="left:' + Math.round(x) + 'px;top:' + Math.round(y) + 'px">' + esc(s) + '</span>'; };
     for (const v of H.vis) if (v.bub && v.st !== 'gone' && v.st !== 'wait') bub(v, v.bub.s, v.bub.big);
+    /* 游客性格的小标签（沉浸模式不显示） */ if (!SET.imm) for (const v of hActive(H)) { const rl = HROLE[v.u.trait]; if (!rl || v.bub) continue; const [x, y] = hsToCss(H, v.x, v.y - ((v.P && v.P.tall) ? 1.75 : 1.3)); h += '<span class="hrole" style="left:' + Math.round(x) + 'px;top:' + Math.round(y) + 'px">' + rl + '</span>'; }
  if (H.boss && H.boss.bub && H.boss.bub.until > now) bub(H.boss, H.boss.bub.s, 1); }
   el.innerHTML = h; }
 
@@ -4101,7 +4348,7 @@ function hsOpen() { const H = HS; if (!H || H.phase !== 'setup') return; C.hh.la
 
 /* ---------- 界面：开门以后 ---------- */
 function hsHud(H) { const el = $('#hshud'); if (!el) return; const chase = H.mode === 'chase';
-  el.innerHTML = '<div class="hs-top">' + (chase ? '<span class="hs-obj" id="hsobj"></span>' : '<div class="hs-atm"><i id="hsatm"></i><span id="hsatt"></span></div><span class="hs-k" id="hsk"></span>') + '<span class="hs-mp" id="hsmp"></span>' + (chase ? '' : '<button class="tb" id="hsauto" onclick="hsAuto()">🤖</button>') + '<button class="tb" id="hszoom" onclick="hsZoom()">🔍</button><button class="tb" onclick="hsPause()" aria-label="暂停">⏸</button></div>'
+  el.innerHTML = '<div class="hs-top">' + (chase ? '<span class="hs-obj" id="hsobj"></span>' : '<div class="hs-atm"><i id="hsatm"></i><span id="hsatt"></span></div><span class="hs-k" id="hsk"></span>') + '<span class="hs-mp" id="hsmp"></span>' + (chase ? '' : '<button class="tb" id="hsauto" onclick="hsAuto()">🤖</button>') + '<button class="tb" id="hszoom" onclick="hsZoom()">🔍</button><button class="tb' + (SET.imm ? ' on' : '') + '" id="hsimm" onclick="hsImm()" title="沉浸模式：不显示数字和血条">👁</button><button class="tb" onclick="hsPause()" aria-label="暂停">⏸</button></div>'
     + '<div class="hs-room" id="hsroom"></div><div class="hs-side" id="hsside"><canvas id="hsmm"></canvas><div id="hsmon"></div></div><button class="btn" id="hsctr" onclick="hsCenter()">📍 回到陈歌</button><div class="hs-hint" id="hshint"></div><div class="hs-tick" id="hstick"></div>'
     + '<div class="hs-bot">' + (chase ? '<button class="btn" onclick="hsHideNear()">躲进最近的柜子</button>' : '<div class="hs-devs" id="hsdevs"></div>' + '<button class="btn" id="hslight" onclick="hsLight()">🌑 关灯</button><button class="btn" id="hslure" onclick="hsLure()">👂 引</button>' + (tapeReady() ? '<button class="btn" id="hstape" onclick="hsTape()">📼</button>' : '') + '<button class="btn pri big" id="hsgo" onclick="hsAct()">吓！</button>') + '</div>';
   const mm = $('#hsmm'); if (mm) { mm.onpointerdown = ev => { ev.stopPropagation(); const r = mm.getBoundingClientRect(); hGo(H, (ev.clientX - r.left) / r.width * H.M.w, (ev.clientY - r.top) / r.height * H.M.h); sfx('tap'); }; }
@@ -4131,6 +4378,7 @@ function hsMonitors(H) { const el = $('#hsmon'); if (!el || !H.world) return; co
     const rm = hmRoomAt(H.M, v.x, v.y); g.fillStyle = '#000a'; g.fillRect(0, 62, 96, 10); g.fillStyle = armed ? '#ff8a6a' : '#cfe8d0'; g.font = '8px sans-serif'; g.fillText('CAM' + (i + 1) + ' ' + (rm ? rm.n : '') + (armed ? ' ⚠' : ''), 2, 70);
     if (H.t % 1 < .6) { g.fillStyle = '#e02020'; g.fillRect(89, 3, 4, 4); } c.onpointerdown = ev => { ev.stopPropagation(); H.focus = v; H.focusPt = null; sfx('tap'); }; }); }
 function hsCenter() { const H = HS; if (!H) return; H.focus = null; H.focusPt = null; sfx('tap'); hsHudTick(H, true); }
+function hsImm() { SET.imm = SET.imm ? 0 : 1; store.set('set', SET); sfx('tap'); const b = $('#hsimm'); if (b) b.classList.toggle('on', !!SET.imm); toast(SET.imm ? '沉浸模式：不显示数字、血条和路线' : '沉浸模式关了'); }
 function hsZoom() { const H = HS; if (!H) return; H.zoomOut = !H.zoomOut; sfx('tap'); hsSize(); const b = $('#hszoom'); if (b) b.classList.toggle('on', H.zoomOut); }
 function hsLure() { const H = HS; if (!H || H.phase !== 'live' || H.done || H.paused) return; hLure(H); hsHudTick(H, true); }
 function hsMini(H) { const mm = $('#hsmm'); if (!mm || !H.minimap) return; const M = H.M, s = 3; if (mm.width !== M.w * s) { mm.width = M.w * s; mm.height = M.h * s; } const g = mm.getContext('2d'); g.clearRect(0, 0, mm.width, mm.height);

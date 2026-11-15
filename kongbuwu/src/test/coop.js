@@ -90,6 +90,7 @@ const { chromium } = require('playwright'); const PJ = require('fs').readFileSyn
     const chs = await gf.$$('#dlg .ch'); if (chs[1]) await chs[1].click();
     await hf.waitForFunction(() => __kn.W.dlg && __kn.W.dlg.pk === 'g', null, { timeout: 2000 }).catch(() => 0); chk('night: guest pick marked on host', await hf.evaluate(() => !!(__kn.W.dlg && __kn.W.dlg.pk === 'g' && __kn.W.dlg.sel === 1)));
     await shot(G, '3_guest_night_pick'); await shot(H, '3_host_night_pick');
+    await gf.waitForFunction(() => /你选了/.test((document.querySelector('#dlg .watch') || {}).textContent || ''), null, { timeout: 2000 }).catch(() => 0);
     chk('night: guest sees "你选了"', await gf.evaluate(() => /你选了/.test(document.querySelector('#dlg .watch').textContent)));
     await hf.waitForFunction(() => window.__a === 1, null, { timeout: 3000 }).catch(() => 0); chk('night: pick resolved after the pause', await hf.evaluate(() => window.__a === 1));
     await hf.evaluate(() => __kn.finish('end'));

@@ -26,7 +26,7 @@ function auGraph(c) { const g = {}; g.master = c.createGain(); g.master.gain.val
 function audioInit() { if (AU.ctx || !SET.snd && !SET.mus) return; const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
   try { const c = AU.ctx = new AC(); Object.assign(AU, auGraph(c)); } catch (e) { AU.ctx = null; } }
 /* 一个声音：振荡器或噪声 → 滤波 → 包络 → 声像 → 干声 + 混响 */
-function V(o) { const c = AU.ctx; if (!c) return; if (o.mus ? !SET.mus : !SET.snd) return; const t = (o.at != null ? o.at : c.currentTime + (AU.off || 0)) + (o.delay || 0), dur = o.dur || .3, vol = (o.vol || .1) * (AU.gm || 1); let src;
+function V(o) { if (AU.pos && !o.mus) o = Object.assign({}, o, { pan: Math.max(-1, Math.min(1, (o.pan || 0) * .3 + AU.pos.pan)), vol: (o.vol || .1) * AU.pos.vol, lp: AU.pos.lp ? Math.min(o.lp || 20000, AU.pos.lp) : o.lp }); const c = AU.ctx; if (!c) return; if (o.mus ? !SET.mus : !SET.snd) return; const t = (o.at != null ? o.at : c.currentTime + (AU.off || 0)) + (o.delay || 0), dur = o.dur || .3, vol = (o.vol || .1) * (AU.gm || 1); let src;
   if (o.noise) { src = c.createBufferSource(); src.buffer = AU.noiseBuf; src.loop = true; src.playbackRate.value = o.rate || 1; }
   else { src = c.createOscillator(); src.type = o.type || 'sine'; const j = o.exact ? 1 : 1 + (Math.random() - .5) * .03; src.frequency.setValueAtTime(o.f0 * j, t); if (o.f1) src.frequency[o.lin ? 'linearRampToValueAtTime' : 'exponentialRampToValueAtTime'](Math.max(20, o.f1 * j), t + dur * (o.glide || 1)); if (o.det) src.detune.value = o.det;
     if (o.vib) { const l = c.createOscillator(), lg = c.createGain(); l.frequency.value = o.vib[0]; lg.gain.value = o.vib[1]; l.connect(lg); lg.connect(src.frequency); l.start(t); l.stop(t + dur + .1); } }

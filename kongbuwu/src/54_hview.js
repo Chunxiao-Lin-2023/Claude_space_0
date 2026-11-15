@@ -14,7 +14,7 @@ Object.assign(SPR, {
 const HPPL = { 鬼新娘: P_({ skin: '#e8e0dc', hair: '#0a0808', hs: 'long', cover: 1, top: '#a01010', dress: 1, hat: 'veil', hatC: '#c01818', ghost: 1 }), 剪刀狂人: P_({ skin: '#d8c8b8', hair: '#2a2420', hs: 'messy', top: '#7a7a70', coat: 1, bottom: '#3a3a34', redEye: 1 }), 僵尸: P_({ skin: '#8aa080', hair: '#2a2a20', hs: 'messy', top: '#4a5a3a', bottom: '#3a3a30', redEye: 1 }) };
 const HF = { dmg: '#ffd27a', crit: '#ff6a4a', bad: '#ff8a8a', txt: '#d8d0c0', staff: '#c8a8ff', sys: '#9cc' };
 function hLog(H, s, cls) { H.log.push({ s, cls: cls || '', t: H.t }); if (H.log.length > 40) H.log.shift(); }
-function hFloat(H, x, y, s, k) { if (H.txt.length > 24) H.txt.shift(); const n = H.txt.filter(f => H.t - f.t0 < .9 && Math.abs(f.x - x) < 1.6 && Math.abs(f.y0 - y) < 1.2).length; H.txt.push({ x, y: y - n * .6, y0: y, s, k: k || 'txt', t0: H.t }); }
+function hFloat(H, x, y, s, k) { if (SET.imm && (k === 'dmg' || /\d/.test(s))) return; if (H.txt.length > 24) H.txt.shift(); const n = H.txt.filter(f => H.t - f.t0 < .9 && Math.abs(f.x - x) < 1.6 && Math.abs(f.y0 - y) < 1.2).length; H.txt.push({ x, y: y - n * .6, y0: y, s, k: k || 'txt', t0: H.t }); }
 function hBub(H, v, s, dur, big) { v.bub = { s, until: H.t + (dur || 2), big }; }
 function hFx(H, k, x, y, sk) { H.fx.push({ k, x, y, sk, t0: H.t }); if (k === 'light') H.black = .9; }
 
@@ -37,10 +37,11 @@ function hsToCss(H, x, y) { const cv = $('#hcv'), wr = $('#hsw'), r = cv.getBoun
 
 /* ---------- 画面 ---------- */
 function hsMapCache(M) { if (M.cache) return M.cache; const c = M.cache = mk(M.w * 16, M.h * 16), g = c.getContext('2d'); const D = M.D, st = Object.assign({}, WALLSTYLE[D.wall] || WALLSTYLE.paper, D.wallC || {}), opts = D.tileOpts || {};
-  const isW = (x, y) => x < 0 || y < 0 || x >= M.w || y >= M.h || M.t[y * M.w + x] === 'wall' || M.t[y * M.w + x] === 'void';
+  const isW = (x, y) => x < 0 || y < 0 || x >= M.w || y >= M.h || M.t[y * M.w + x] === 'wall' || M.t[y * M.w + x] === 'void' || (M.stw && M.stw[y * M.w + x]);
   for (let y = 0; y < M.h; y++) for (let x = 0; x < M.w; x++) { const R = (a, b, w, h, col) => { if (!col) return; g.fillStyle = col; g.fillRect(x * 16 + Math.floor(a), y * 16 + Math.floor(b), Math.ceil(w), Math.ceil(h)); }; const n = M.t[y * M.w + x];
-    if (n === 'wall') paintWall(R, x, y, !isW(x, y + 1), st, isW); else if (TILE[n]) TILE[n].paint(R, x, y, opts); else R(0, 0, 16, 16, '#000');
-    if (M.sec[y * M.w + x]) { R(0, 0, 16, 16, 'rgba(10,6,6,.55)'); R(3, 2, 10, 12, 'rgba(0,0,0,.5)'); } }
+    const sw = M.stw && M.stw[y * M.w + x]; if (n === 'wall' || sw) paintWall(R, x, y, !isW(x, y + 1), st, isW); else if (TILE[n]) TILE[n].paint(R, x, y, opts); else R(0, 0, 16, 16, '#000');
+    /* 员工通道：游客眼里是墙，玩家看得到一条暗紫的虚线 */ if (sw) { R(7, 7, 2, 2, 'rgba(150,110,200,.35)'); if (isW(x - 1, y) === false || isW(x + 1, y) === false || (M.stw[y * M.w + x - 1] && M.stw[y * M.w + x + 1])) R(0, 7.5, 16, 1, 'rgba(150,110,200,.12)'); else R(7.5, 0, 1, 16, 'rgba(150,110,200,.12)'); }
+    else if (M.sec[y * M.w + x]) { R(0, 0, 16, 16, 'rgba(10,6,6,.55)'); R(3, 2, 10, 12, 'rgba(0,0,0,.5)'); } }
   for (const e of M.ents) if (e.flat || e.wall) hsSpr(g, e, 0, 0, 0); return c; }
 function hsSpr(g, e, ox, oy, t) { const fn = SPR[e.spr]; if (!fn) return; const x = Math.round(e.x * 16 - ox), y = Math.round(e.y * 16 - oy); fn(g, e, t, (a, b, w, h, col) => { if (!col) return; g.fillStyle = col; g.fillRect(x + Math.floor(a), y + Math.floor(b), Math.ceil(w), Math.ceil(h)); }); }
 function hsPerson(g, P, x, y, dir, fr, alpha) { const s = personSprite(P, dir, fr), tl = P.tall || 1, h = Math.round(24 * tl); g.globalAlpha = alpha ?? 1; g.drawImage(stTint(s, P.sil), Math.round(x), Math.round(y + 16 - h), 16, h); g.globalAlpha = 1; }
@@ -83,25 +84,25 @@ function hsWorld(H) { const M = H.M, t = H.t; if (!H.world) H.world = mk(M.w * 1
     if (k === 0) { if (o.hide && H.hero.hidden && H.hero.tx === o.x && H.hero.ty === o.y && !setup) { hsSpr(g, Object.assign({}, o, { open: (t * 2 % 3) < .4 }), ox, oy, t); const x = o.x * 16 - ox, y = o.y * 16 - oy; g.fillStyle = '#e8e0c8'; g.fillRect(x + 5, y - 2, 1, 1); g.fillRect(x + 9, y - 2, 1, 1); } else hsSpr(g, o, ox, oy, t); }
     else if (k === 1) { if (o.st === 'carry') hsPerson(g, HCARRY, o.x * 16 - ox + (o.dir === 1 ? -11 : 11), o.y * 16 - oy - 1, o.dir, o.mv ? o.fr : 0); hsPersonPose(g, o.P, o.x * 16 - ox, o.y * 16 - oy - (o.st === 'carry' ? 5 : 0), o.dir, o.mv ? o.fr : 0, hsPose(H, o), t); }
     else if (k === 3) hsPersonPose(g, o.f.P, o.tr[0] * 16 - ox + 3, o.tr[1] * 16 - oy + 1, o.tr[2], o.tr[3], hsPose(H, o.v), t + .13, .95);
-    else if (k === 2 && o.cast) hSkStaffDraw(H, g, o, ox, oy, t); else if (k === 2) { const pop = o.pop > 0; if ((o.p2 || o.away) && !pop) { const x = o.x * 16 - ox, y = o.y * 16 - oy; hsPerson(g, o.P, x, y, o.dir || 0, o.mv ? o.fr : 0, o.off ? .15 : .95); if (o.p2) { g.fillStyle = '#c8a8ff'; g.font = 'bold 8px sans-serif'; g.textAlign = 'center'; g.fillText(typeof NETROLE !== 'undefined' && NETROLE === 'guest' ? '你' : '队友', x, y - 30); g.textAlign = 'left'; } } else hsPerson(g, o.P, o.x * 16 - ox, o.y * 16 - oy, pop ? (o.px < o.home[0] ? 1 : o.px > o.home[0] ? 2 : 0) : 0, 0, o.off ? .15 : pop ? 1 : .42); }
+    else if (k === 2 && o.cast) hSkStaffDraw(H, g, o, ox, oy, t); else if (k === 2) { const pop = o.pop > 0; if ((o.p2 || o.away) && !pop) { const x = o.x * 16 - ox, y = o.y * 16 - oy; hsPerson(g, o.P, x, y, o.dir || 0, o.mv ? o.fr : 0, o.off ? .15 : .95); if (o.p2) { g.fillStyle = '#c8a8ff'; g.font = 'bold 8px sans-serif'; g.textAlign = 'center'; g.fillText(typeof NETROLE !== 'undefined' && NETROLE === 'guest' ? '你' : '队友', x, y - 30); g.textAlign = 'left'; } } else { const inW = H.M.sec[Math.round(o.y) * H.M.w + Math.round(o.x)]; hsPerson(g, o.P, o.x * 16 - ox, o.y * 16 - oy, o.mv ? o.dir : pop ? (o.px < o.home[0] ? 1 : o.px > o.home[0] ? 2 : 0) : (o.front ? hDirTo(o, { x: o.front[0], y: o.front[1] }) : 0), o.mv ? o.fr : 0, o.off ? .15 : pop ? 1 : inW ? .32 : .42); } }
     else if (k === 4) { if (H.mode === 'house') hsHero(g, H, o, ox, oy, t); else if (!o.hidden) hsPerson(g, o.P, o.x * 16 - ox, o.y * 16 - oy, o.dir, o.mv ? o.fr : 0); }
     else if (k === 5) hsPerson(g, o.P, o.x * 16 - ox + (o.hunt ? (rnd() - .5) * 1.5 : 0), o.y * 16 - oy, o.dir, o.mv ? o.fr : 0, o.ghost ? .88 : 1); }
   /* 黑暗 */ if (!setup) hsDark(H, g, ox, oy);
   else { g.fillStyle = 'rgba(5,4,8,.28)'; g.fillRect(0, 0, W, Hh); }
-  if (H.mode === 'house') hsRouteDraw(g, H, ox, oy, t, setup);
+  if (H.mode === 'house' && (setup || !SET.imm)) hsRouteDraw(g, H, ox, oy, t, setup);
   /* 黑暗之上：机关圈、SAN 条、气泡标记 */
-  if (!setup) { if (H.mode === 'house') { hsNextDraw(g, H, ox, oy, t); hsAmbDraw(g, H, ox, oy, t); }
+  if (!setup) { if (H.mode === 'house') { if (!SET.imm) hsNextDraw(g, H, ox, oy, t); hsAmbDraw(g, H, ox, oy, t); hAttDraw(g, H, ox, oy, t); }
     if (H.mode === 'house') for (const s of M.slots) { if (!s.k) continue; const x = s.x * 16 + 8 - ox, y = s.y * 16 + 8 - oy, inr = hDevInRange(H, s), rdy = hDevReady(H, s), tg = rdy && inr && hDevTargets(H, s).length;
       if (tg) { const p = .6 + Math.sin(t * 9) * .4; g.strokeStyle = `rgba(255,70,50,${p})`; g.lineWidth = 1; g.beginPath(); g.arc(x, y, (HB.zone + .5) * 16, 0, 7); g.stroke(); g.fillStyle = 'rgba(255,60,40,.12)'; g.fill(); }
       else if (inr) { g.strokeStyle = rdy ? 'rgba(232,176,74,.55)' : 'rgba(150,150,150,.3)'; g.setLineDash([2, 3]); g.beginPath(); g.arc(x, y, (HB.zone + .5) * 16, 0, 7); g.stroke(); g.setLineDash([]); }
       g.fillStyle = rdy ? (inr ? '#e8b04a' : 'rgba(232,176,74,.5)') : '#555'; g.fillRect(x - 1, y - 12, 2, 2); if (s.cd > 0) { g.fillStyle = '#e8b04a'; g.fillRect(x - 6, y + 9, Math.round(12 * (1 - s.cd / HB.devCd)), 1); } }
-    for (const v of H.vis) { if (v.st === 'wait' || v.st === 'gone') continue; const x = v.x * 16 - ox, y = v.y * 16 - oy - (v.P.tall ? 14 : 10), r = Math.max(0, v.u.hp / v.u.mhp); if (!hOut(v)) { g.fillStyle = '#1a0a0a'; g.fillRect(x + 1, y - 3, 14, 3); g.fillStyle = r < .3 ? '#ff5a3a' : r < .6 ? '#e8b04a' : '#9ad0a0'; g.fillRect(x + 2, y - 2, Math.ceil(12 * r), 1); if (v.u.charging || (v.u.intent && v.u.intent.charge)) { g.fillStyle = '#ff3a2a'; g.fillRect(x + 7, y - 9, 2, 4); g.fillRect(x + 7, y - 4, 2, 1); } if (v.u.picky) { g.fillStyle = '#e8b04a'; g.fillRect(x + 13, y - 6, 2, 2); } if (H.hero.chase === v) { g.strokeStyle = '#ff5a3a'; g.strokeRect(x + .5, y + 3.5, 15, 22); } } }
+    for (const v of H.vis) { if (v.st === 'wait' || v.st === 'gone') continue; const x = v.x * 16 - ox, y = v.y * 16 - oy - (v.P.tall ? 14 : 10), r = Math.max(0, v.u.hp / v.u.mhp); if (!hOut(v) && SET.imm) { if (v.u.charging || (v.u.intent && v.u.intent.charge)) { g.fillStyle = '#ff3a2a'; g.fillRect(x + 7, y - 9, 2, 4); g.fillRect(x + 7, y - 4, 2, 1); } } else if (!hOut(v)) { g.fillStyle = '#1a0a0a'; g.fillRect(x + 1, y - 3, 14, 3); g.fillStyle = r < .3 ? '#ff5a3a' : r < .6 ? '#e8b04a' : '#9ad0a0'; g.fillRect(x + 2, y - 2, Math.ceil(12 * r), 1); if (v.u.charging || (v.u.intent && v.u.intent.charge)) { g.fillStyle = '#ff3a2a'; g.fillRect(x + 7, y - 9, 2, 4); g.fillRect(x + 7, y - 4, 2, 1); } if (v.u.picky) { g.fillStyle = '#e8b04a'; g.fillRect(x + 13, y - 6, 2, 2); } if (H.hero.chase === v) { g.strokeStyle = '#ff5a3a'; g.strokeRect(x + .5, y + 3.5, 15, 22); } } }
     for (const v of H.vis) if (v.emo && v.emo.until > t && v.st !== 'gone' && v.st !== 'wait') hsEmo(g, v.emo.s, v.x * 16 - ox + (v.st === 'faint' ? 4 : 11), v.y * 16 - oy - (v.st === 'faint' ? 2 : v.P.tall ? 20 : 16), t - (v.poseT ?? t));
     if (H.task) { const T = H.task, x = T.x * 16 - ox, y = T.y * 16 - oy, gr = g.createRadialGradient(x + 8, y + 9, 1, x + 8, y + 9, 12); gr.addColorStop(0, 'rgba(255,220,120,' + (.35 + Math.sin(t * 3) * .1).toFixed(2) + ')'); gr.addColorStop(1, 'rgba(255,220,120,0)'); g.fillStyle = gr; g.fillRect(x - 6, y - 4, 28, 28); }
     if (H.task) { const T = H.task, x = T.x * 16 - ox, y = T.y * 16 - oy, b = Math.sin(t * 4) * 1; g.fillStyle = 'rgba(240,210,120,.25)'; g.fillRect(x + 3, y + 11, 10, 2); g.fillStyle = '#e8c860'; g.fillRect(x + 6, y + 5 + b, 4, 5); g.fillStyle = '#fff4c0'; g.fillRect(x + 7, y + 6 + b, 1, 1); if (t % 1.2 < .2) hsSpr(g, { spr: 'sparkle', x: T.x, y: T.y - .2 }, ox, oy, t); }
     if (H.hero.hidden) { const x = H.hero.x * 16 - ox, y = H.hero.y * 16 - oy; g.fillStyle = 'rgba(232,224,200,.9)'; g.fillRect(x + 5, y - 2, 1, 1); g.fillRect(x + 9, y - 2, 1, 1); }
     if (H.hero.path && !H.hero.chase) { const [px, py] = H.hero.path, x = px * 16 + 8 - ox, y = py * 16 + 8 - oy; g.strokeStyle = 'rgba(160,220,200,.6)'; g.beginPath(); g.arc(x, y, 3 + Math.sin(t * 8), 0, 7); g.stroke(); } }
-  if (!setup) hSkDrawOver(H, g, ox, oy, t); hsFxDraw(H, g, ox, oy);
+  if (!setup) hSkDrawOver(H, g, ox, oy, t); hsFxDraw(H, g, ox, oy); if (!setup && H.zoomOut) hCctv(H, g, ox, oy, t);
   }
 function hsDevDraw(g, H, s, k, ox, oy, t, setup) { const D = hDev(k); if (!D) return; const on = s.fx > 0;
   if (D.P) { const P = HPPL[D.P] || pplOf(D.P); hsPerson(g, P, s.x * 16 - ox, s.y * 16 - oy - (on ? 2 : 0), 0, 0, setup ? .8 : on ? 1 : .28); return; }
@@ -164,9 +165,10 @@ function hsTextLayer(H) { const el = $('#hsfx'); if (!el) return; let h = hsCutC
   H.txt = H.txt.filter(f => now - f.t0 < 1.3);
   if (H.phase === 'setup' && H.lay) { for (const s of H.M.slots) { const k = s.sp ? s.k : H.lay.slots[s.i], [x, y] = hsToCss(H, s.x, s.y + .5); h += '<span class="hl' + (k ? ' on' : '') + '" style="left:' + Math.round(x) + 'px;top:' + Math.round(y) + 'px">' + (k ? hDev(k).ic : '') + s.n + '</span>'; }
     for (const s of H.M.staff) { const k = H.lay.staff[s.i], [x, y] = hsToCss(H, s.x, s.y - .9); h += '<span class="hl st' + (k ? ' on' : '') + '" style="left:' + Math.round(x) + 'px;top:' + Math.round(y) + 'px">' + (k ? esc(PETS[k].n) : '员工') + '</span>'; }
-    for (const r of H.M.rooms) { const [x, y] = hsToCss(H, (r.x0 + r.x1) / 2, r.y0 + .1); h += '<span class="hr" style="left:' + Math.round(x) + 'px;top:' + Math.round(y) + 'px">' + esc(r.n) + '</span>'; } }
+    const rn = {}; for (const r of H.M.rooms) { if (rn[r.n]) continue; rn[r.n] = 1; const [x, y] = hsToCss(H, (r.x0 + r.x1) / 2, r.y0 + .1); h += '<span class="hr" style="left:' + Math.round(x) + 'px;top:' + Math.round(y) + 'px">' + esc(r.n) + '</span>'; } }
   if (H.phase === 'live') { const bub = (o, s, big) => { const [x, y] = hsToCss(H, o.x, o.y - ((o.P && o.P.tall) ? 2.4 : 1.8)); h += '<span class="hb' + (big ? ' big' : '') + '" style="left:' + Math.round(x) + 'px;top:' + Math.round(y) + 'px">' + esc(s) + '</span>'; };
     for (const v of H.vis) if (v.bub && v.st !== 'gone' && v.st !== 'wait') bub(v, v.bub.s, v.bub.big);
+    /* 游客性格的小标签（沉浸模式不显示） */ if (!SET.imm) for (const v of hActive(H)) { const rl = HROLE[v.u.trait]; if (!rl || v.bub) continue; const [x, y] = hsToCss(H, v.x, v.y - ((v.P && v.P.tall) ? 1.75 : 1.3)); h += '<span class="hrole" style="left:' + Math.round(x) + 'px;top:' + Math.round(y) + 'px">' + rl + '</span>'; }
  if (H.boss && H.boss.bub && H.boss.bub.until > now) bub(H.boss, H.boss.bub.s, 1); }
   el.innerHTML = h; }
 
@@ -197,7 +199,7 @@ function hsOpen() { const H = HS; if (!H || H.phase !== 'setup') return; C.hh.la
 
 /* ---------- 界面：开门以后 ---------- */
 function hsHud(H) { const el = $('#hshud'); if (!el) return; const chase = H.mode === 'chase';
-  el.innerHTML = '<div class="hs-top">' + (chase ? '<span class="hs-obj" id="hsobj"></span>' : '<div class="hs-atm"><i id="hsatm"></i><span id="hsatt"></span></div><span class="hs-k" id="hsk"></span>') + '<span class="hs-mp" id="hsmp"></span>' + (chase ? '' : '<button class="tb" id="hsauto" onclick="hsAuto()">🤖</button>') + '<button class="tb" id="hszoom" onclick="hsZoom()">🔍</button><button class="tb" onclick="hsPause()" aria-label="暂停">⏸</button></div>'
+  el.innerHTML = '<div class="hs-top">' + (chase ? '<span class="hs-obj" id="hsobj"></span>' : '<div class="hs-atm"><i id="hsatm"></i><span id="hsatt"></span></div><span class="hs-k" id="hsk"></span>') + '<span class="hs-mp" id="hsmp"></span>' + (chase ? '' : '<button class="tb" id="hsauto" onclick="hsAuto()">🤖</button>') + '<button class="tb" id="hszoom" onclick="hsZoom()">🔍</button><button class="tb' + (SET.imm ? ' on' : '') + '" id="hsimm" onclick="hsImm()" title="沉浸模式：不显示数字和血条">👁</button><button class="tb" onclick="hsPause()" aria-label="暂停">⏸</button></div>'
     + '<div class="hs-room" id="hsroom"></div><div class="hs-side" id="hsside"><canvas id="hsmm"></canvas><div id="hsmon"></div></div><button class="btn" id="hsctr" onclick="hsCenter()">📍 回到陈歌</button><div class="hs-hint" id="hshint"></div><div class="hs-tick" id="hstick"></div>'
     + '<div class="hs-bot">' + (chase ? '<button class="btn" onclick="hsHideNear()">躲进最近的柜子</button>' : '<div class="hs-devs" id="hsdevs"></div>' + '<button class="btn" id="hslight" onclick="hsLight()">🌑 关灯</button><button class="btn" id="hslure" onclick="hsLure()">👂 引</button>' + (tapeReady() ? '<button class="btn" id="hstape" onclick="hsTape()">📼</button>' : '') + '<button class="btn pri big" id="hsgo" onclick="hsAct()">吓！</button>') + '</div>';
   const mm = $('#hsmm'); if (mm) { mm.onpointerdown = ev => { ev.stopPropagation(); const r = mm.getBoundingClientRect(); hGo(H, (ev.clientX - r.left) / r.width * H.M.w, (ev.clientY - r.top) / r.height * H.M.h); sfx('tap'); }; }
@@ -227,6 +229,7 @@ function hsMonitors(H) { const el = $('#hsmon'); if (!el || !H.world) return; co
     const rm = hmRoomAt(H.M, v.x, v.y); g.fillStyle = '#000a'; g.fillRect(0, 62, 96, 10); g.fillStyle = armed ? '#ff8a6a' : '#cfe8d0'; g.font = '8px sans-serif'; g.fillText('CAM' + (i + 1) + ' ' + (rm ? rm.n : '') + (armed ? ' ⚠' : ''), 2, 70);
     if (H.t % 1 < .6) { g.fillStyle = '#e02020'; g.fillRect(89, 3, 4, 4); } c.onpointerdown = ev => { ev.stopPropagation(); H.focus = v; H.focusPt = null; sfx('tap'); }; }); }
 function hsCenter() { const H = HS; if (!H) return; H.focus = null; H.focusPt = null; sfx('tap'); hsHudTick(H, true); }
+function hsImm() { SET.imm = SET.imm ? 0 : 1; store.set('set', SET); sfx('tap'); const b = $('#hsimm'); if (b) b.classList.toggle('on', !!SET.imm); toast(SET.imm ? '沉浸模式：不显示数字、血条和路线' : '沉浸模式关了'); }
 function hsZoom() { const H = HS; if (!H) return; H.zoomOut = !H.zoomOut; sfx('tap'); hsSize(); const b = $('#hszoom'); if (b) b.classList.toggle('on', H.zoomOut); }
 function hsLure() { const H = HS; if (!H || H.phase !== 'live' || H.done || H.paused) return; hLure(H); hsHudTick(H, true); }
 function hsMini(H) { const mm = $('#hsmm'); if (!mm || !H.minimap) return; const M = H.M, s = 3; if (mm.width !== M.w * s) { mm.width = M.w * s; mm.height = M.h * s; } const g = mm.getContext('2d'); g.clearRect(0, 0, mm.width, mm.height);

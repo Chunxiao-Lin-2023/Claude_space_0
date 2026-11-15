@@ -2,7 +2,7 @@
 const vm = require('vm'), fs = require('fs'); const src = __dirname + '/../';
 const fakeCtx = new Proxy({}, { get: () => () => ({}) });
 const ctx = { document: { createElement: () => ({ getContext: () => fakeCtx, width: 0, height: 0 }) }, window: {}, Math, console, PPL: { 陈歌: {} }, pplOf: () => ({}), rnd: Math.random, clamp: (v, a, b) => Math.max(a, Math.min(b, v)) };
-vm.createContext(ctx); for (const f of ['51_pix.js', '47_house.js', '48_hmaps.js']) vm.runInContext(fs.readFileSync(src + f, 'utf8').replace(/^const /gm, 'var ').replace(/^let /gm, 'var '), ctx);
+vm.createContext(ctx); for (const f of ['51_pix.js', '47_house.js', '48_hmaps.js', '48_zgen.js']) vm.runInContext(fs.readFileSync(src + f, 'utf8').replace(/^const /gm, 'var ').replace(/^let /gm, 'var '), ctx);
 const { HMAPS, hmBuild, hmField, TILE } = ctx; let bad = 0; const only = process.argv[2];
 for (const id in HMAPS) { if (only && id !== only) continue; const M = hmBuild(id), D = M.D, w = M.w, h = M.h; const err = m => { bad++; console.log('  ✗ ' + id + ': ' + m); };
   for (const r of D.rows || []) ; const occ = {}; const mark = (x, y, c, what) => { const k = x + ',' + y; if (occ[k]) err(what + ' at ' + k + ' overlaps ' + occ[k][1]); occ[k] = [c, what]; };

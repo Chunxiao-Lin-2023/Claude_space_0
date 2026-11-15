@@ -2,8 +2,8 @@
    百物语那样的俯视房间地图。白天：先布置惊吓点和员工，再控制陈歌（点哪走哪）躲、追、拉机关。
    夜里：大战前先被追——躲进柜子、拿到关键道具或等员工准备好，再进对峙。
    数值都在 HB 里；地图在 48_hmaps.js。 */
-const HB = { dmg: 1.15, bossHp: .65, visHp: 1.3, react: .8, run: 3.3, runT: 2.4, carry: 2.4, round: 2.6, mockEvery: 3, devCd: 5, devRange: 4.6, zone: 2, staffCd: 5, staffMul: .8, staffRange: 2, pounceCd: 2.4, chaseTick: .9, chasePow: .3,
-  walk: 1.45, panic: 3, flee: 3.8, leave: 2.4, hero: 3.7, heroChase: 4.5, enterGap: 7, seeDist: 3.4, seeCd: 6, exposeAtm: .05, exposeHp: .06, tMax: 170,
+const HB = { dmg: 1.15, bossHp: .65, visHp: 1, react: .8, run: 3.3, runT: 2.4, carry: 2.4, round: 2.6, mockEvery: 3, devCd: 5, devRange: 4.6, zone: 2, staffCd: 5, staffMul: .8, staffRange: 2, pounceCd: 2.4, chaseTick: .9, chasePow: .3,
+  walk: 1.9, panic: 3, flee: 3.8, leave: 2.4, hero: 3.7, heroChase: 4.5, enterGap: 10, seeDist: 3.4, seeCd: 6, exposeAtm: .05, exposeHp: .06, tMax: 400,
   bossSee: 7.5, bossSpd: 3.05, bossPatrol: 2, senseHit: .55, sense0: 3, sense: 6, bossSense: 2.6 };
 const HD = [[0, 1], [-1, 0], [1, 0], [0, -1]];
 const HLIGHT = { candle: [2.2, 'rgba(255,170,80,.16)'], candles: [2.8, 'rgba(255,160,70,.2)'], lantern: [3, 'rgba(255,90,60,.2)'], lamp: [3, 'rgba(255,220,160,.14)'], stonelantern: [2.6, 'rgba(255,180,90,.16)'], tv: [2.4, 'rgba(140,170,255,.18)'], vending: [2.6, 'rgba(160,220,255,.16)'], streetlamp: [3.6, 'rgba(255,230,170,.14)'], fireplace: [3, 'rgba(255,120,40,.22)'] };
@@ -39,7 +39,8 @@ function hmBuild(id) {
   const D = HMAPS[id], w = D.w, h = D.h, N = w * h;
   const M = { id, D, w, h, t: new Array(N).fill('wall'), vs: new Uint8Array(N), hs: new Uint8Array(N), ents: [], slots: [], staff: [], hides: [], rooms: [], sec: new Uint8Array(N), fields: {} };
   const set = (x, y, t) => { if (x >= 0 && y >= 0 && x < w && y < h) M.t[y * w + x] = t; };
-  for (const n in D.rooms) { const [x0, y0, x1, y1, fl] = D.rooms[n]; M.rooms.push({ n, x0, y0, x1, y1 }); for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) set(x, y, fl || D.fl); }
+  if (D.grid) { for (let i = 0; i < N; i++) M.t[i] = D.grid[i]; for (const r of D.rlist) M.rooms.push(Object.assign({}, r)); M.stw = D.stw; for (const i of D.secs) M.sec[i] = 1; for (let i = 0; i < N; i++) if (D.stw[i]) M.sec[i] = 1; }
+  else for (const n in D.rooms) { const [x0, y0, x1, y1, fl] = D.rooms[n]; M.rooms.push({ n, x0, y0, x1, y1 }); for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) set(x, y, fl || D.fl); }
   for (const p of D.tiles || []) { const [t, x0, y0, x1, y1] = p; for (let y = y0; y <= (y1 ?? y0); y++) for (let x = x0; x <= (x1 ?? x0); x++) set(x, y, t); }
   for (const n in D.inner || {}) { const [x0, y0, x1, y1, fl] = D.inner[n]; M.rooms.push({ n, x0, y0, x1, y1 }); for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) set(x, y, fl || D.fl); }
   const near = (x, y) => { for (const [dx, dy] of HD) { const t = M.t[(y + dy) * w + x + dx]; if (t && t !== 'wall' && t !== 'void') return t; } return D.fl; };
@@ -52,7 +53,7 @@ function hmBuild(id) {
   for (const d of D.hides || []) { const e = ent(d[0] || 'wardrobe', d[1], d[2], Object.assign({ hide: 1 }, d[3])); M.hs[d[2] * w + d[1]] = 0; M.hides.push(e); }
   (D.slots || []).forEach((p, i) => M.slots.push({ i, n: i + 1, x: p[0], y: p[1], k: '', cd: 0, fx: 0 }));
   if (D.sp && HDEV['sp_' + id]) M.slots.push({ i: M.slots.length, n: '★', x: D.sp[0], y: D.sp[1], k: 'sp_' + id, sp: 1, cd: 0, fx: 0 });
-  (D.staff || []).forEach((p, i) => M.staff.push({ i, x: p[0], y: p[1] }));
+  (D.staff || []).forEach((p, i) => M.staff.push({ i, x: p[0], y: p[1], front: D.fronts ? D.fronts[i] : null }));
   M.route = (D.route || []).map(r => typeof r === 'string' ? hmCenter(M, r) : r); M.route.unshift(D.enter.slice()); M.route.push(D.exit.slice());
   M.start = (D.start || M.route[0]).slice(); M.path = hmPath(M); for (const s of M.slots) s.pd = M.path.length ? Math.min(...M.path.map(q => Math.hypot(q[0] - s.x, q[1] - s.y))) : 0;
   return M;
@@ -69,7 +70,7 @@ function hmField(M, tx, ty, who) { const key = who + tx + ',' + ty; if (M.fields
   return M.fields[key] = f; }
 function hmNext(M, f, x, y, who) { const w = M.w, here = f[y * w + x]; if (here <= 0) return null; let best = null, bv = here; const g = who === 'v' ? M.vs : M.hs;
   for (const [dx, dy] of HD) { const nx = x + dx, ny = y + dy; if (hmSolid(M, g, nx, ny)) continue; const v = f[ny * w + nx]; if (v >= 0 && v < bv) { bv = v; best = [nx, ny]; } } return best; }
-function hmLos(M, x0, y0, x1, y1) { const n = Math.ceil(Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0)) * 2); for (let i = 1; i < n; i++) { const x = Math.round(x0 + (x1 - x0) * i / n), y = Math.round(y0 + (y1 - y0) * i / n); const t = M.t[y * M.w + x]; if (t === 'wall' || t === 'void' || M.sec[y * M.w + x]) return false; } return true; }
+function hmLos(M, x0, y0, x1, y1) { const n = Math.ceil(Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0)) * 2), ax = Math.round(x0), ay = Math.round(y0), bx = Math.round(x1), by = Math.round(y1); for (let i = 1; i < n; i++) { const x = Math.round(x0 + (x1 - x0) * i / n), y = Math.round(y0 + (y1 - y0) * i / n); if ((x === ax && y === ay) || (x === bx && y === by)) continue; const t = M.t[y * M.w + x]; if (t === 'wall' || t === 'void' || M.sec[y * M.w + x]) return false; } return true; }
 const hDist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y), hPerf = s => Math.max(.55, (s.pd || 0) + .2);
 
 /* ---------- 走路的人 ---------- */
@@ -79,12 +80,12 @@ function hMove(a, dt) { const m = a.mv; if (!m) return false; m.p = Math.min(1, 
   if (m.p >= 1) { a.tx = m.tx; a.ty = m.ty; a.x = a.tx; a.y = a.ty; a.mv = null; return true; } return false; }
 
 /* ---------- 一场会话 ---------- */
-function hsNew(o) { const M = hmBuild(o.map), H = { o, M, mode: o.mode, t: 0, dt: 0, done: false, res: null, phase: o.mode === 'house' ? 'setup' : 'live', fx: [], txt: [], log: [], vis: [], staff: [], tap: null, combo: 0, auto: false, speed: 1, minimap: true, stats: { perfect: 0, exposed: 0, scared: 0, pounce: 0, dev: 0, house: 0 } };
+function hsNew(o) { const M = hmBuild(o.mode === 'chase' && HMAPS[o.map + '_c'] ? o.map + '_c' : o.map), H = { o, M, mode: o.mode, t: 0, dt: 0, done: false, res: null, phase: o.mode === 'house' ? 'setup' : 'live', fx: [], txt: [], log: [], vis: [], staff: [], tap: null, combo: 0, auto: false, speed: 1, minimap: true, stats: { perfect: 0, exposed: 0, scared: 0, pounce: 0, dev: 0, house: 0 } };
   H.hero = hActor(M.start[0], M.start[1], { P: PPL.陈歌, hidden: false, path: null, chase: null, pcd: 0, ctick: 0, mpLeft: 0 });
   return H; }
 
 /* ===== 白天：接待 ===== */
-function houseLayout(sid, M) { const L = C.hh.lay = C.hh.lay || {}; let l = L[sid]; if (!l || !l.v) l = L[sid] = houseAutoLayout(sid, M);
+function houseLayout(sid, M) { const L = C.hh.lay = C.hh.lay || {}; let l = L[sid]; if (!l || l.v !== HLAY_V) l = L[sid] = houseAutoLayout(sid, M);
   /* 学了新手段、等级够了多一个机关位、来了新员工：空位自动补上（自己摆好的不动） */ const nd = houseDevices().length, mx = houseMaxDev(), ns = houseStaffList().length;
   if ((l.nd ?? 0) < nd || (l.mx ?? 0) < mx || (l.ns ?? 0) < ns) { const a = houseAutoLayout(sid, M), used = Object.values(l.slots); const spare = Object.values(a.slots).filter(k => { const i = used.indexOf(k); if (i >= 0) { used.splice(i, 1); return false; } return true; });
     for (const s of M.slots) { if (s.sp) continue; if (Object.values(l.slots).filter(Boolean).length >= mx || !spare.length) break; if (!l.slots[s.i]) l.slots[s.i] = spare.shift(); }
@@ -93,17 +94,19 @@ function houseLayout(sid, M) { const L = C.hh.lay = C.hh.lay || {}; let l = L[si
 function houseDevices() { const own = C.hh.dev || {}; return Object.keys(HDEV).filter(k => !HDEV[k].sp && (HDEV[k].sk ? C.sk.includes(k) && SKILLS[k] : own[k])); }
 function houseMaxDev() { return Math.min(8, 2 + Math.floor(C.lv / 4) + (C.hh.up.light ? 1 : 0)); }
 function houseStaffList() { return Object.keys(C.pets).filter(HSTAFF_OK); }
-function houseAutoLayout(sid, M) { const devs = houseDevices(), max = houseMaxDev(), slots = {}, order = M.slots.filter(s => !s.sp).map(s => s.i);
+const HLAY_V = 2, hSpread = (a, n) => a.length <= n ? a.slice() : Array.from({ length: n }, (_, j) => a[Math.floor((j + .5) * a.length / n)]);
+function houseAutoLayout(sid, M) { const devs = houseDevices(), max = houseMaxDev(), slots = {}, order = hSpread(M.slots.filter(s => !s.sp).map(s => s.i), max);
   /* 按路线先后放：越往里放越贵的 */ const pw = k => hDev(k).pow * (hDev(k).all ? 1.4 : 1); const list = devs.slice().sort((a, b) => pw(b) - pw(a)); while (list.length < max && devs.includes('jump')) list.push('jump');
-  order.slice(0, max).forEach((si, j) => { if (list[j]) slots[si] = list[j]; }); const staff = {}; houseStaffList().slice(0, M.staff.length).forEach((k, i) => { staff[i] = k; }); return { v: 1, slots, staff, nd: devs.length, mx: max, ns: houseStaffList().length }; }
+  order.slice(0, max).forEach((si, j) => { if (list[j]) slots[si] = list[j]; }); const staff = {}, posts = hSpread(M.staff.map(s => s.i), Math.min(M.staff.length, houseStaffList().length)); houseStaffList().slice(0, posts.length).forEach((k, i) => { staff[posts[i]] = k; }); return { v: HLAY_V, slots, staff, nd: devs.length, mx: max, ns: houseStaffList().length }; }
 function houseApplyLayout(H) { const M = H.M, l = houseLayout(H.o.scene, M), devs = houseDevices(); let n = 0; const used = {};
   for (const s of M.slots) { if (s.sp) continue; const k = l.slots[s.i]; if (k && devs.includes(k) && n < houseMaxDev() && (!used[k] || (k === 'jump' && used[k] < 2))) { s.k = k; used[k] = (used[k] || 0) + 1; n++; } else s.k = ''; }
-  H.staff = []; for (const sp of M.staff) { const k = l.staff[sp.i]; if (k && C.pets[k] && HSTAFF_OK(k) && !H.staff.some(s => s.k === k)) H.staff.push(hActor(sp.x, sp.y, { k, home: [sp.x, sp.y], u: petUnit(k), cd: 1.5 + H.staff.length, pop: 0, P: pplOf(PETS[k].n === '殷小小' ? '小小' : PETS[k].n), off: false })); } }
+  H.staff = []; for (const sp of M.staff) { const k = l.staff[sp.i]; if (k && C.pets[k] && HSTAFF_OK(k) && !H.staff.some(s => s.k === k)) H.staff.push(hActor(sp.x, sp.y, { k, home: [sp.x, sp.y], front: sp.front || [sp.x, sp.y], u: petUnit(k), cd: 1.5 + H.staff.length, pop: 0, P: pplOf(PETS[k].n === '殷小小' ? '小小' : PETS[k].n), off: false })); } }
 function houseStart(H) { const B = H.B, M = H.M; houseApplyLayout(H); H.phase = 'live'; H.t = 0; H.hero.P = HCOS[hCos()].P; H.lit = {}; H.flick = {}; H.lcd = {}; H.puffT = 0; hLog(H, '陈歌换上了' + HCOS[hCos()].n + '的行头。', 'sys');
   const ppl = H.o.ppl || B.foes.length, extra = Math.max(0, ppl - B.foes.length), per = Math.min(3, Math.ceil(extra / B.foes.length));
   B.foes.forEach((u, i) => { const P = u.boss || ['gaoru', 'heshan', 'feiyl', 'zhujn', 'wanghl', 'wangwl'].includes(u.id) ? pplOf(MOBS[u.id].n) : pplOf(u.n + i + C.day); const v = hActor(M.route[0][0], M.route[0][1], { u, P, st: 'wait', at: i * HB.enterGap + (i ? 0 : .6), wi: 1, wait: 0, seeCd: 0, mockN: 0, ftrail: [], fol: [], bub: null, light: u.trait === 'torch' ? 3.2 : 1.8, tags: 0 });
     for (let j = 0; j < (u.boss ? 0 : per); j++) v.fol.push({ P: pplOf('同伴' + i + j + C.day), lag: 4 + j * 4 }); H.vis.push(v); });
-  { const R = M.route, i = Math.max(1, Math.min(R.length - 2, Math.round((R.length - 1) * .7))); H.task = { i, x: R[i][0], y: R[i][1], n: HTASK[H.o.scene] || '出口的钥匙' }; }
+  { const R = M.route, i = M.D.taskIdx || Math.max(1, Math.min(R.length - 2, Math.round((R.length - 1) * .7))); H.task = { i, x: R[i][0], y: R[i][1], n: HTASK[H.o.scene] || '出口的钥匙' }; }
+  H.beats = {}; for (const b of M.D.beats || []) H.beats[b.room] = b;
   hsRule(H, 'start'); hLog(H, '开门营业。' + B.foes.length + ' 批游客在门口排着队。游客的任务：找到' + H.task.n + '，从出口出去。', 'sys'); sfx('door'); musicMode('scare'); }
 /* 走进鬼屋的游客 */
 function hInside(H) { return H.vis.filter(v => v.st !== 'wait' && v.st !== 'gone'); }
@@ -115,7 +118,7 @@ function hWi(H, v) { v.wi++; const T = H.task; if (T && !v.got && v.wi > T.i) { 
 function hVisTick(H, v, dt) { const M = H.M, u = v.u;
   if (v.st === 'wait') { if (H.t >= v.at) { v.st = 'walk'; hBub(H, v, '……进去了？', 1.6); sfx('creak'); } return; }
   if (v.st === 'gone') return;
-  v.seeCd -= dt; if (v.bub && v.bub.until < H.t) v.bub = null;
+  v.seeCd -= dt; if (v.bub && v.bub.until < H.t) v.bub = null; hPaceTick(H, v, dt);
   if (v.mv) { hMove(v, dt); v.ftrail.unshift([v.x, v.y, v.dir, v.fr]); if (v.ftrail.length > 20) v.ftrail.pop(); return; }
   const at = (x, y) => v.tx === x && v.ty === y;
   if (v.st === 'faint') { v.fr = 0; return; }
@@ -129,6 +132,7 @@ function hVisTick(H, v, dt) { const M = H.M, u = v.u;
   if (v.st === 'run') { const last = M.route.length - 1, tg = M.route[Math.min(v.wi, last)]; if (H.t >= v.runEnd || v.runN <= 0 || v.wi >= last) { v.st = 'walk'; v.shaky = H.t + 4; return; } if (at(tg[0], tg[1])) { hWi(H, v); return; } const n = hmNext(M, hmField(M, tg[0], tg[1], 'v'), v.tx, v.ty, 'v'); if (!n) { v.st = 'walk'; v.shaky = H.t + 4; return; } v.runN--; hStepTo(v, n[0], n[1], HB.run); return; }
   if (u.st.stun) { v.fr = 0; return; }
   if (v.st === 'phone') { v.wait -= dt; if (v.wait <= 0) v.st = 'walk'; return; }
+  /* 被什么东西吸引住了：站住盯着看（RULES 36） */ if (v.st === 'stare') { v.wait -= dt; v.fr = 0; if (v.att) v.dir = hDirTo(v, v.att); if (v.wait <= 0) v.st = 'walk'; return; }
   if (v.st === 'look') { v.wait -= dt; v.dir = [0, 1, 3, 2][Math.max(0, Math.floor(v.wait * 1.6)) % 4]; if (v.wait <= 0) v.st = 'walk'; return; }
   /* 突然回头看（先冒“？”） */ if (v.st === 'back') { v.wait -= dt; if (v.wait < 1.1) v.dir = [3, 2, 1, 0][v.wdir]; if (v.wait <= 0) { v.st = 'walk'; v.dir = v.wdir; } return; }
   if (v.st === 'walk' && !u.boss) { v.backT = (v.backT ?? 5 + rnd() * 6) - dt; if (v.backT <= 0) { v.backT = 7 + rnd() * 6; v.st = 'back'; v.wait = 1.7; v.wdir = v.dir; hBub(H, v, '？', .6); return; } }
@@ -141,13 +145,13 @@ function hVisTick(H, v, dt) { const M = H.M, u = v.u;
   const n = hmNext(M, hmField(M, tgt[0], tgt[1], 'v'), v.tx, v.ty, 'v'); if (!n) { if (lg) v.lure = null; else hWi(H, v); return; }
   const spd = v.st === 'panic' ? HB.panic : HB.walk * (u.spd / 10) * (u.st.slow ? .6 : 1) * (u.st.dark ? .75 : 1) * (H.t < (v.shaky || 0) ? .8 : 1) * (hDarkAt(H, v.tx, v.ty) ? .85 : 1); hStepTo(v, n[0], n[1], spd); }
 /* 游客看见陈歌：拆穿 */
-function hSee(H, v) { const h = H.hero; if (h.hidden || v.seeCd > 0 || v.u.st.dark || hScaredSt(v) || H.t < (v.shaky || 0) || hOut(v) || v.st === 'leave' || v.st === 'wait') return false; const dx = h.x - v.x, dy = h.y - v.y, d = Math.hypot(dx, dy); if (d > HB.seeDist || d < .2) return false;
+function hSee(H, v) { const h = H.hero; if (h.hidden || H.M.sec[Math.round(h.y) * H.M.w + Math.round(h.x)] || v.seeCd > 0 || v.u.st.dark || hScaredSt(v) || H.t < (v.shaky || 0) || hOut(v) || v.st === 'leave' || v.st === 'wait') return false; const dx = h.x - v.x, dy = h.y - v.y, d = Math.hypot(dx, dy); if (d > HB.seeDist * (v.u.trait === 'torch' ? 1.3 : 1) || d < .2) return false;
   const [fx, fy] = HD[v.dir]; if (hDarkAt(H, v.x, v.y) || hDarkAt(H, h.x, h.y)) { /* 黑屋里只看得见手机手电照到的那一条 */ if (d > (hCos() === 'paper' ? 2 : 3.2) || (dx * fx + dy * fy) < d * .78) return false; return hmLos(H.M, v.x, v.y, h.x, h.y); } if ((dx * fx + dy * fy) < d * .35 && v.st !== 'look') return false; return hmLos(H.M, v.x, v.y, h.x, h.y); }
 function hExpose(H, v, who) { const B = H.B; hHint(H, 'seen', '被看见了：从背后、躲在柜子里，或者先断电再出手。游客头上冒「？」就是要回头了。'); v.seeCd = HB.seeCd; H.stats.exposed++; const a = Math.round(B.hero.mhp * HB.exposeAtm * (H.rule && H.rule.cam && v.u.id === 'feiyl' ? 2 : 1)); B.hero.hp = Math.max(0, B.hero.hp - a); v.u.hp = Math.min(v.u.mhp, v.u.hp + Math.round(v.u.mhp * HB.exposeHp));
   hBub(H, v, pick(who === 'staff' ? ['那是工作人员吧？', '我看见拉链了。', '化妆的，别怕。'] : ['工作人员吧？', '我看见你了哈。', '老板，你鞋带开了。', '那人在躲什么？']), 1.8); hFloat(H, H.hero.x, H.hero.y - 1, '被看见 · 氛围 -' + a, 'bad'); hLog(H, v.u.n + ' 看见了陈歌——氛围 -' + a, 'warn'); sfx('miss'); }
 /* 每一“回合”：游客拆台、状态结算、场景特色 */
 function hRound(H) { const B = H.B, ins = hInside(H).filter(v => !hOut(v) && v.st !== 'leave'); B.turn++; const all = B.foes; B.foes = ins.map(v => v.u);
-  for (const v of ins) { const u = v.u; tickSt(B, u); if (u.hp <= 0) continue; v.mockN++; if (u.st.fear || u.st.stun || hScaredSt(v) || H.t < (v.shaky || 0) || (v.mockN % HB.mockEvery)) continue; const n0 = B.log.length; mobAct(B, u); planMob(B, u); const ln = B.log.slice(n0).map(l => l.s).filter(s => s.startsWith(u.n)).pop(); if (ln) hBub(H, v, ln.slice(u.n.length).replace(/^[ ·：]+/, ''), 2.2, u.intent && u.intent.exec); if (u.st.phone === undefined && /手机/.test(ln || '')) { v.st = 'phone'; v.wait = 2; } }
+  for (const v of ins) { const u = v.u; tickSt(B, u); if (u.hp <= 0) continue; v.mockN++; if (u.st.fear || u.st.stun || hScaredSt(v) || H.t < (v.shaky || 0) || (v.mockN % HB.mockEvery) || !hBored(H, v)) continue; const n0 = B.log.length; mobAct(B, u); planMob(B, u); const ln = B.log.slice(n0).map(l => l.s).filter(s => s.startsWith(u.n)).pop(); if (ln) hBub(H, v, ln.slice(u.n.length).replace(/^[ ·：]+/, ''), 2.2, u.intent && u.intent.exec); if (u.st.phone === undefined && /手机/.test(ln || '')) { v.st = 'phone'; v.wait = 2; } }
   if (ins.some(v => v.u.hp > 0)) sceneTurn(B); B.foes = all; B.result = null; hFlush(H); }
 /* 战斗事件 → 地图上的飘字 */
 function hFlush(H) { const B = H.B; for (const e of B.ev) { const v = e.who === 'hero' ? null : H.vis.find(q => q.u.key === e.who); const x = v ? v.x : H.hero.x, y = v ? v.y - 1.4 : H.hero.y - 1.6;
@@ -165,7 +169,7 @@ function hScared(H, v) { hSnap(v); v.st = 'faint'; v.pose = 'faint'; v.poseT = H
 const HPOSE = { jump: '!!', fall: 'sweat', shake: '?!', cover: 'xx', cry: 'TT' }, HRUN = ['快跑快跑！', '别过来！！', '刚才那是什么！', '等等我——', '我腿软了……', '妈呀妈呀妈呀'];
 const hScaredSt = v => v.st === 'panic' || v.st === 'react' || v.st === 'run';
 function hSnap(v) { const m = v.mv; if (!m) return; if (m.p > .5) { v.tx = m.tx; v.ty = m.ty; } v.x = v.tx; v.y = v.ty; v.mv = null; }
-function hReact(H, v, src, hard) { if (hOut(v) || v.st === 'wait' || v.st === 'leave') return; const pose = hard ? pick(['fall', 'jump', 'cry']) : pick(Object.keys(HPOSE)); hSnap(v); v.st = 'react'; v.pose = pose; v.poseT = H.t; v.wait = HB.react; v.from = [src.x, src.y]; v.emo = { s: HPOSE[pose], until: H.t + HB.react + 1.4 }; hsRule(H, 'hit', v); }
+function hReact(H, v, src, hard) { if (hOut(v) || v.st === 'wait' || v.st === 'leave') return; const pose = hard ? pick(['fall', 'jump', 'cry']) : pick(Object.keys(HPOSE)); hSnap(v); v.st = 'react'; v.pose = pose; v.poseT = H.t; v.wait = HB.react; v.from = [src.x, src.y]; v.emo = { s: HPOSE[pose], until: H.t + HB.react + 1.4 }; hPaceHit(H, v, src); hsRule(H, 'hit', v); }
 /* ---------- 陈歌 ---------- */
 function hHeroTick(H, dt) { const h = H.hero, M = H.M; h.pcd -= dt; h.ctick -= dt;
   if (h.mv) { if (hMove(h, dt)) { h.hidden = M.hides.some(e => e.x === h.tx && e.y === h.ty); if (h.hidden) { sfx('creak'); if (H.mode === 'chase') hChaseHid(H); } } else return; }
@@ -176,13 +180,13 @@ function hGo(H, x, y) { const h = H.hero, M = H.M; x = clamp(Math.round(x), 0, M
   if (hmSolid(M, M.hs, x, y)) { let best = null, bd = 99; for (let yy = y - 2; yy <= y + 2; yy++) for (let xx = x - 2; xx <= x + 2; xx++) if (!hmSolid(M, M.hs, xx, yy) && hmField(M, xx, yy, 'h')[h.ty * M.w + h.tx] >= 0) { const d = Math.abs(xx - x) + Math.abs(yy - y); if (d < bd) { bd = d; best = [xx, yy]; } } if (!best) return; [x, y] = best; }
   if (hmField(M, x, y, 'h')[h.ty * M.w + h.tx] < 0) return; h.path = [x, y]; }
 function hPounce(H, v) { const B = H.B, h = H.hero; const k = C.sk.includes('chase') && C.mp >= SKILLS.chase.cost ? 'chase' : 'jump', S = SKILLS[k];
-  const cos = hCos(); let mul = HB.dmg * skillMul(k) * (v.u.st.fear ? 1.3 : 1) * (h.hidden || v.u.st.dark ? 1.5 : 1) * (v.st === 'look' ? 1 : 1.1) * (cos === 'doctor' ? 1.2 : 1) * hDarkMul(H, v); C.mp -= S.cost; h.swingT = H.t; h.sdir = hDirTo(h, v); H.lastHitK = 'hero'; H.lastHitT = H.t; profUse(k); h.pcd = HB.pounceCd; H.stats.pounce++;
+  const cos = hCos(); let mul = HB.dmg * skillMul(k) * (v.u.st.fear ? 1.3 : 1) * (h.hidden || v.u.st.dark ? 1.5 : 1) * (v.st === 'look' ? 1 : 1.1) * (cos === 'doctor' ? 1.2 : 1) * hDarkMul(H, v) * hPace(H, v, 'hero', h, S.el); C.mp -= S.cost; h.swingT = H.t; h.sdir = hDirTo(h, v); H.lastHitK = 'hero'; H.lastHitT = H.t; profUse(k); h.pcd = HB.pounceCd; H.stats.pounce++;
   if (v.u.picky && v.u.picky === S.el) v.u.pickyHit = 1; hBest(H, doHit(B, B.hero, v.u, S.pow, S.el, { mul }), '扑 → ' + v.u.n); reactLine(B, v.u); if (v.u.hp > 0 && S.stun && chance(S.stun * (v.u.boss ? .6 : 1))) addSt(B, v.u, 'stun', 1);
-  if (v.u.hp > 0) hReact(H, v, h, 1); h.hidden = false; H.shake = .18; hFx(H, 'pounce', v.x, v.y, k); sfx(k === 'chase' ? 'scrape' : 'stinger'); hLog(H, '陈歌扮成' + HCOS[cos].n + '，' + ({ hammer: '抡着锤子', cleaver: '举着剁骨刀', lantern: '提着白灯笼', scissors: '咔嚓咔嚓地剪着剪刀' })[HCOS[cos].wp] + '扑了出去。', '');
+  if (v.u.hp > 0) hReact(H, v, h, 1); h.hidden = false; H.shake = .18; hFx(H, 'pounce', v.x, v.y, k); hS(H, k === 'chase' ? 'scrape' : 'stinger', v.x, v.y); hLog(H, '陈歌扮成' + HCOS[cos].n + '，' + ({ hammer: '抡着锤子', cleaver: '举着剁骨刀', lantern: '提着白灯笼', scissors: '咔嚓咔嚓地剪着剪刀' })[HCOS[cos].wp] + '扑了出去。', '');
   if (cos === 'red') for (const q of hActive(H)) if (q !== v && hDist(q, v) <= 2.5) { const d = Math.max(1, Math.round(q.u.mhp * .12)); q.u.hp = Math.max(0, q.u.hp - d); if (q.u.hp > 0) hReact(H, q, h); hFloat(H, q.x, q.y - 1.4, '红衣 SAN -' + d, 'dmg'); }
   hFlush(H); }
 function hDirTo(a, b) { const dx = b.x - a.x, dy = b.y - a.y; return Math.abs(dx) > Math.abs(dy) ? (dx < 0 ? 1 : 2) : (dy < 0 ? 3 : 0); }
-function hChaseHit(H, v) { const B = H.B; H.hero.ctick = HB.chaseTick; H.hero.swingT = H.t; H.hero.sdir = hDirTo(H.hero, v); H.lastHitK = 'hero'; H.lastHitT = H.t; hReact(H, v, H.hero); doHit(B, B.hero, v.u, HB.chasePow, 'chase', { mul: (v.u.st.fear ? 1.3 : 1) * HB.dmg * skillMul(C.sk.includes('chase') ? 'chase' : 'jump') * (hCos() === 'butcher' ? 1.5 : 1) * hDarkMul(H, v) }); if (rnd() < .3) sfx('steps'); hFlush(H); }
+function hChaseHit(H, v) { const B = H.B; H.hero.ctick = HB.chaseTick; H.hero.swingT = H.t; H.hero.sdir = hDirTo(H.hero, v); H.lastHitK = 'hero'; H.lastHitT = H.t; hReact(H, v, H.hero); doHit(B, B.hero, v.u, HB.chasePow, 'chase', { mul: (v.u.st.fear ? 1.3 : 1) * HB.dmg * skillMul(C.sk.includes('chase') ? 'chase' : 'jump') * (hCos() === 'butcher' ? 1.5 : 1) * hDarkMul(H, v) * hPace(H, v, 'hchase', H.hero, 'chase') }); if (rnd() < .3) sfx('steps'); hFlush(H); }
 
 /* ---------- 机关 ---------- */
 function hDevTargets(H, s) { return hActive(H).filter(v => Math.max(Math.abs(v.x - s.x), Math.abs(v.y - s.y)) <= HB.zone + .3 && hmLos(H.M, s.x, s.y, v.x, v.y)); }
@@ -195,10 +199,10 @@ function hTrigger(H, s, quiet) { const B = H.B, S = hDev(s.k); if (!s.k) return 
   if (perfect) { mul *= PERFECT_MUL; FN().perfect++; H.stats.perfect++; hFloat(H, s.x, s.y - 2.2, '⭕ 完美时机', 'crit'); }
   if (H.hero.hidden) { mul *= 1.15; hFloat(H, H.hero.x, H.hero.y - 1.4, '暗处 +15%', 'txt'); }
   if (HDEV[s.k].sk) profUse(s.k); s.cd = HB.devCd * (S.cd || 1); s.fx = 1; H.stats.dev++; H.burst = 0; hLog(H, s.n + ' 号 · ' + S.ic + S.n, '');
-  H.lastHitK = s.k; H.lastHitT = H.t; for (const v of (S.all ? tg : [near[0]])) { const t = v.u; let m = mul * hDarkMul(H, v); if (t.st.dark && S.el === 'jump') { m *= S.dark || 1.5; hFloat(H, v.x, v.y - 2.6, '漆黑里突脸 ×1.5', 'crit'); } if (S.first && !t.acted) m *= S.first;
+  H.lastHitK = s.k; H.lastHitT = H.t; for (const v of (S.all ? tg : [near[0]])) { const t = v.u; let m = mul * hDarkMul(H, v) * hPace(H, v, s.k, s, S.el); if (t.st.dark && S.el === 'jump') { m *= S.dark || 1.5; hFloat(H, v.x, v.y - 2.6, '漆黑里突脸 ×1.5', 'crit'); } if (S.first && !t.acted) m *= S.first;
     if (!hActive(H).some(q => q !== v && hDist(q, v) < 5)) { m *= 1.25; hFloat(H, v.x + .6, v.y - 2.2, '落单', 'txt'); } const soft = softHit(B, t, S); m *= soft; if (t.picky && t.picky === S.el) t.pickyHit = 1;
     const dv = doHit(B, B.hero, t, S.pow, S.el, { mul: m }); hBest(H, dv, s.n + ' 号 ' + S.n + ' → ' + t.n); reactLine(B, t); if (t.hp > 0) { if (S.st) addSt(B, t, S.st[0], S.st[1]); if (soft > 1) addSt(B, t, 'stun', 1); if (S.stun && chance(S.stun * (t.boss ? .6 : 1))) addSt(B, t, 'stun', 1); if (!hOut(v)) { hReact(H, v, s, perfect); hBub(H, v, pick(HREACT[S.el] || HREACT.jump), 1.6); } } t.acted = true; }
-  hFx(H, HFXK[s.k] || S.el, s.x, s.y, s.k); sfx(HSFX[s.k] || ({ jump: 'stinger', light: 'crack', doll: 'creak', story: 'whisper', sound: 'reverse', chase: 'scrape' })[S.el] || 'stinger'); H.shake = perfect ? .3 : .12; if (perfect && !hOut(near[0])) hCut(H, near[0], s.k, false); hFlush(H);
+  hAttendNear(H, s.x, s.y, S.all ? tg : [near[0]]); hFx(H, HFXK[s.k] || S.el, s.x, s.y, s.k); hS(H, HSFX[s.k] || ({ jump: 'stinger', light: 'crack', doll: 'creak', story: 'whisper', sound: 'reverse', chase: 'scrape' })[S.el] || 'stinger', s.x, s.y); H.shake = perfect ? .3 : .12; if (perfect && !hOut(near[0])) hCut(H, near[0], s.k, false); hFlush(H);
   if (H.burst >= 2) { B.fullHouse = Math.max(B.fullHouse || 0, H.burst); FN().house++; H.stats.house++; hFloat(H, s.x, s.y - 3, '😱 全场尖叫 ×' + H.burst, 'crit'); hLog(H, '全场尖叫！' + H.burst + ' 批游客叫成一片。', 'epic'); } return true; }
 const HREACT = { jump: ['啊！！', '什么东西！', '我的妈——'], sound: ['你听见没有？', '谁在哭……', '别、别出声'], story: ['墙上……那是什么', '我不想看了', '刚才是不是多了一个人'], doll: ['它在看我', '它刚才转头了！', '别看它的眼睛'], chase: ['跑跑跑！', '别抓我！！', '它追上来了'], light: ['灯呢？！', '谁关的灯', '抓紧我的手'] };
 const HFXK = { hang: 'hang', hand: 'hand', blood: 'blood', baby: 'sound', steps: 'sound', phone: 'sound', dollwall: 'doll', coffin: 'coffin', sp_mh: 'bride', sp_ws: 'chase', sp_zombie: 'zombie', sp_room: 'jump', sp_my: 'sound', sp_ward: 'chase' };
@@ -207,7 +211,7 @@ function hBest(H, v, txt) { if (v > ((H.best && H.best.v) || 0)) H.best = { v, t
 /* 引：弄出一点声音，把附近的游客引到机关上 */
 function hLure(H) { const h = H.hero; if (H.mode !== 'house' || (h.lureCd || 0) > H.t) return false; const sl = H.M.slots.filter(s => s.k && hDist(s, h) <= 4).sort((a, b) => (b.cd <= 0) - (a.cd <= 0) || hDist(a, h) - hDist(b, h))[0], pt = sl ? [sl.x, sl.y] : [h.tx, h.ty];
   const f = hmField(H.M, pt[0], pt[1], 'v'), vs = hActive(H).filter(v => !hScaredSt(v) && f[v.ty * H.M.w + v.tx] >= 0 && f[v.ty * H.M.w + v.tx] <= 9); h.lureCd = H.t + 9; sfx('knock');
-  if (!vs.length) { hFloat(H, h.x, h.y - 1.5, '没人听见', 'txt'); return true; } for (const v of vs) { v.lure = { pt, until: H.t + 6 }; hBub(H, v, pick(['那边……有声音？', '谁在敲墙？', '过去看看？']), 1.6); } hFloat(H, h.x, h.y - 1.5, '咚、咚', 'txt'); hLog(H, '陈歌敲了敲墙。' + vs.length + ' 批游客朝' + (sl ? ' ' + sl.n + ' 号机关' : '这边') + '走过来了。', ''); return true; }
+  if (!vs.length) { hFloat(H, h.x, h.y - 1.5, '没人听见', 'txt'); return true; } for (const v of vs) { v.lure = { pt, until: H.t + 6 }; v.att = { x: pt[0], y: pt[1], until: H.t + 6 }; hBub(H, v, pick(['那边……有声音？', '谁在敲墙？', '过去看看？']), 1.6); } hFloat(H, h.x, h.y - 1.5, '咚、咚', 'txt'); hLog(H, '陈歌敲了敲墙。' + vs.length + ' 批游客朝' + (sl ? ' ' + sl.n + ' 号机关' : '这边') + '走过来了。', ''); return true; }
 /* 点员工：马上放招（挑当下最好的一招） */
 function hStaffGo(H, st) { if (st.off || st.cast) return false; if (st.cd > 0) { toast(PETS[st.k].n + '还在缓（' + Math.ceil(st.cd) + ' 秒）'); return false; } const p = hSkPlan(H, st); if (!p) { toast(PETS[st.k].n + '够不着：' + hSkList(st).map(S => S.n).join(' / ') + ' 的范围里没有游客'); return false; } return hSkCast(H, st, p, 1); }
 
@@ -235,8 +239,8 @@ const HRULES = {
     mul(H, s) { const g = H.vis.find(v => v.u.id === 'gaoru'); if (!g || hDist(g, s) > HB.zone + .5) return 1; H.seenDev = H.seenDev || {}; const k = s.i; if (H.seenDev[k]) { hBub(H, g, '这个机关刚才见过了。', 1.8); return .7; } H.seenDev[k] = 1; return 1; },
     scared(H, v) { if (v.u.id !== 'heshan') return; const g = H.vis.find(q => q.u.id === 'gaoru'); if (g && g.u.hp > 0) { const d = Math.round(g.u.mhp * .35); g.u.hp = Math.max(1, g.u.hp - d); hFloat(H, g.x, g.y - 1.6, '学弟跑了 -' + d, 'crit'); hBub(H, g, '鹤山？！你跑什么——', 2); } } },
   feiyl: { cam: 1, t: '费友亮举着摄像头找员工：被他发现的员工会被拍到（氛围 -10%，员工退场）；他看见陈歌拆穿翻倍。朱佳宁时不时站住给外面打电话——好机会。',
-    goal(H, v) { if (v.u.id !== 'feiyl' || hScaredSt(v)) return null; const f = s => hmField(H.M, s.home[0], s.home[1], 'v')[v.ty * H.M.w + v.tx]; const s = H.staff.filter(q => !q.off && f(q) >= 0 && f(q) <= 6).sort((a, b) => f(a) - f(b))[0]; return s ? s.home : null; },
-    reach(H, v) { const s = H.staff.find(q => !q.off && q.home[0] === v.tx && q.home[1] === v.ty) || H.staff.find(q => !q.off && hDist(q, v) <= 1.2); if (s) { s.off = true; s.shot = true; const a = Math.round(H.B.hero.mhp * .1); H.B.hero.hp = Math.max(0, H.B.hero.hp - a); hBub(H, v, '拍到了！这就是你们的“鬼”。', 2); hFloat(H, s.x, s.y - 1.5, '被拍到 · 氛围 -' + a, 'bad'); hLog(H, '费友亮拍到了' + PETS[s.k].n + '。' + PETS[s.k].n + '只好退场。', 'warn'); sfx('static'); } else v.wi = Math.max(v.wi, 1); },
+    goal(H, v) { if (v.u.id !== 'feiyl' || hScaredSt(v)) return null; const fr = s => s.front || s.home, f = s => hmField(H.M, fr(s)[0], fr(s)[1], 'v')[v.ty * H.M.w + v.tx]; const s = H.staff.filter(q => !q.off && f(q) >= 0 && f(q) <= 6).sort((a, b) => f(a) - f(b))[0]; return s ? fr(s) : null; },
+    reach(H, v) { const s = H.staff.find(q => !q.off && (q.front || q.home)[0] === v.tx && (q.front || q.home)[1] === v.ty) || H.staff.find(q => !q.off && hDist(q, v) <= 1.2); if (s) { s.off = true; s.shot = true; const a = Math.round(H.B.hero.mhp * .1); H.B.hero.hp = Math.max(0, H.B.hero.hp - a); hBub(H, v, '拍到了！这就是你们的“鬼”。', 2); hFloat(H, s.x, s.y - 1.5, '被拍到 · 氛围 -' + a, 'bad'); hLog(H, '费友亮拍到了' + PETS[s.k].n + '。' + PETS[s.k].n + '只好退场。', 'warn'); sfx('static'); } else v.wi = Math.max(v.wi, 1); },
     tick(H, dt) { const z = H.vis.find(v => v.u.id === 'zhujn' && v.st === 'walk'); if (z && rnd() < dt / 9) { z.st = 'phone'; z.wait = 3; hBub(H, z, '喂？对，我们在里面……信号不好……', 3); } } },
   wanghl: { t: '王海龙兄弟在抢校牌：两人一共凑够 8 个就算他们赢走奖金。被吓到慌乱时会把手里的校牌掉在地上。',
     start(H) { H.tags = []; const M = H.M, cand = []; for (let y = 0; y < M.h; y++) for (let x = 0; x < M.w; x++) if (!M.vs[y * M.w + x] && !M.slots.some(s => s.x === x && s.y === y) && hmField(M, M.route[0][0], M.route[0][1], 'v')[y * M.w + x] > 6) cand.push([x, y]);
@@ -257,7 +261,7 @@ function hStep(H, dt) { if (H.done || H.phase !== 'live') return; H.t += dt; con
   if (H.t > 3) hHint(H, 'mon', '右上角是监控：每批游客那边的画面。点一下镜头就切过去；拖动地图能看别处，📍 回到陈歌。'); if (H.t > 22 && !H.stats.scared) hHint(H, 'lure', '游客不往机关那边走？站在机关旁边点「引」，敲墙把他们引过来。');
   for (const v of H.vis) { hVisTick(H, v, dt); hRoomEnter(H, v); if (hSee(H, v)) hExpose(H, v); } hsAmbTick(H, dt);
   for (const st of H.staff) hStaffTick(H, st, dt);
-  hsRule(H, 'tick', dt);
+  hsRule(H, 'tick', dt); hPaceStep(H, dt);
   H.rt = (H.rt || 0) + dt; if (H.rt >= HB.round) { H.rt = 0; hRound(H); }
   if (!H.broken && B.hero.hp <= 0) { H.broken = true; hLog(H, '氛围被拆完了。游客们打着哈欠往外走。', 'warn'); for (const v of H.vis) if (!hOut(v)) { v.st = v.st === 'wait' ? 'gone' : 'leave'; } sfx('bad'); }
   if (H.t > HB.tMax) for (const v of H.vis) if (!hOut(v)) v.st = v.st === 'wait' ? 'gone' : 'leave';
