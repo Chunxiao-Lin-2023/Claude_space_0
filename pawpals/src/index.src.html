@@ -120,6 +120,13 @@ const PYODIDE_URL = "__PYODIDE_URL__";
 const PY_BUNDLE = "__PY_BUNDLE__";            // base64 zip of the Python code
 const VERSION = "__VERSION__";
 const HUB = /\/pawpals\/(index\.html)?$/.test(location.pathname);
+// ?embed=1: shown inside 百戏茶馆 (baixi) in an iframe — online stays on, the "back to the hall" buttons go back to the tea-house lobby
+const EMBED = HUB && /[?&]embed=1\b/.test(location.search);
+const toLobby = () => { try { api && api.save_now(); } catch (e) {} try { parent.postMessage({ pawpals: 1, lobby: 1 }, "*"); } catch (e) {} };
+window.addEventListener("message", (e) => {   // the tea house asks us to save before it removes the frame
+  if (!EMBED || e.source !== parent || !e.data || !e.data.pawpals) return;
+  if (e.data.save) { try { api && api.save_now(); } catch (er) {} }
+});
 const STORE = "pawpals.";
 
 // ============================================================================ canvas replay of the Qt commands
@@ -457,7 +464,7 @@ window.pawpalsHost = {
   clipboard(t) { try { navigator.clipboard.writeText(String(t)); toast("已复制"); } catch (e) {} },
   open_url(u) { window.open(String(u), "_blank"); },
   sound(name, kind, volume) { if (window.PawSound) window.PawSound.play(String(name), String(kind), volume); },
-  go_hub() { if (HUB) { try { api && api.save_now(); } catch (e) {} location.href = "../"; } else toast("这里就是小屋啦"); },
+  go_hub() { if (EMBED) toLobby(); else if (HUB) { try { api && api.save_now(); } catch (e) {} location.href = "../"; } else toast("这里就是小屋啦"); },
   reload() { location.reload(); },
 };
 
@@ -874,7 +881,7 @@ function tick() {
 async function boot() {
   const msg = document.getElementById("loadmsg"), bar = document.querySelector("#bar i");
   const step = (p, t) => { bar.style.width = p + "%"; msg.textContent = t; };
-  if (HUB) { const b = document.getElementById("hubback"); b.style.display = "block"; b.onclick = () => { location.href = "../"; }; }
+  if (HUB && !EMBED) { const b = document.getElementById("hubback"); b.style.display = "block"; b.onclick = () => { location.href = "../"; }; }
   try {
     step(8, "正在下载 Python 运行环境（第一次大约 10 MB，之后会被浏览器缓存）…");
     const popts = { indexURL: PYODIDE_URL, stdout: (s) => console.log(s), stderr: (s) => console.warn(s) };
@@ -887,7 +894,7 @@ async function boot() {
     await new Promise((r) => setTimeout(r, 30));
     step(85, "猫猫和咕咕正在起床…");
     await new Promise((r) => setTimeout(r, 30));
-    py.runPython("import webapp; webapp.start(" + (HUB ? "True" : "False") + ", " + (PHONE.matches ? "True" : "False") + ")");
+    py.runPython("import webapp; webapp.start(" + (HUB ? "True" : "False") + ", " + (PHONE.matches ? "True" : "False") + ", " + (EMBED ? "True" : "False") + ")");
     document.getElementById("hubback").style.display = "none";
     api = py.pyimport("webapp");
     window.__py = py;

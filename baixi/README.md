@@ -1,6 +1,6 @@
 # 百戏茶馆 (baixi)
 
-国风茶馆主题的棋牌与小游戏合集：一个页面，大厅按 16 个类别列出 61 款游戏。
+国风茶馆主题的棋牌与小游戏合集：一个页面，大厅按 16 个类别列出 62 款游戏。
 每款支持人机（三档难度）/ 同屏 / 双人联机（PeerJS 房间码，房主权威），按游戏而定。
 
 ## 结构
@@ -10,6 +10,7 @@
 - `src/games/<id>.js` —— 每款游戏一个文件，调用 `BX.register({...})`。
 - `src/games/housemogul.js` —— 例外：房产大亨（实时炒房）是独立工程 `../housemogul/`（自己的构建、联机大厅和测试），这里只注册一张卡片，开局时用 iframe 全屏嵌入 `../housemogul/?embed=1`；顶栏暂停通过 postMessage 传给它。改玩法去 `housemogul/src/`。单文件 artifact 版里显示提示，不嵌入。`_*.js` 是共享数据/助手，先于游戏加载。
 - `src/games/dunerumble.js` —— 同样是例外：沙丘乱斗（3D 英雄乱斗，最多 6 人联机）是独立工程 `../dunerumble/`，这里只注册卡片，开局时 iframe 全屏嵌入 `../dunerumble/?embed=1`，顶栏暂停用 postMessage `{dr:1,pause}` 传过去。改玩法去 `dunerumble/src/`。单文件 artifact 版里显示提示，不嵌入。
+- `src/games/pawpals.js` —— 同样是例外：猫猫咕咕的家（养猫小屋生活模拟）是独立工程 `../pawpals/`（桌面版 Python 代码跑在 Pyodide 里，自己的构建和联机房间），这里只注册一张卡片，开局时用 iframe 全屏嵌入 `../pawpals/?embed=1`。
 - `src/SPEC.md` —— 游戏模块接口规范（新增游戏前必读）。
 - `src/build.py` —— 构建：`python3 build.py` 输出 `../index.html` 和 `out/artifact.html`（单人版）。
 - `src/test/` —— 自动测试：`bash test/t.sh --games id1,id2 [--phone] [--online]`
@@ -28,7 +29,7 @@
 | 骰子 | 快艇骰子 · 吹牛骰 |
 | 益智对弈 | 记忆翻牌 · 超级井字棋 · 播棋 · 六角棋 |
 | 街机对战 | 沙丘乱斗 · 桌球·八球 · 桌上冰球 · 贪吃蛇对战 · 方块对战 |
-| 联机社交 | 地产大亨 · 你画我猜 |
+| 联机社交 | 地产大亨 · 房产大亨 · 猫猫咕咕的家 · 你画我猜 |
 | 物理弹射 | 炮弹对决 · 康乐球 · 冰壶 · 迷你高尔夫 · 保龄球 |
 | 体育对战 | 点球大战 · 羽毛球 · 飞驰赛车 |
 | 推理猜谜 | 猜猜我是谁 · 猜数字 1A2B · 数字炸弹 |

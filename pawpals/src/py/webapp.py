@@ -346,6 +346,7 @@ class WebApp:
 
 # ==================================================================================================== the house, for the page
 HUB = True
+EMBED = False
 WEB_REFRESH = 0.07          # seconds between redraws of a character's picture
 
 
@@ -381,7 +382,7 @@ def make_house(app):
 
         def on_button(self, key):
             if key == "home":
-                if HUB:
+                if HUB and not EMBED:
                     _host.call("go_hub")
                 else:                                   # no game hall around: the house menu instead
                     r = self.button_rects()["home"]
@@ -447,11 +448,12 @@ _last = [time.monotonic()]
 TICK = 1 / 30.0
 
 
-def start(hub=True, phone=False):
-    global APP, HUB
+def start(hub=True, phone=False, embed=False):
+    global APP, HUB, EMBED
     HUB = bool(hub)
+    EMBED = bool(embed)                               # inside 百戏茶馆: online on, the home button opens the house menu
     import desktopcats.house as HH
-    HH.WEB_HOME_LABEL = "⌂ 游戏厅" if HUB else "☰ 菜单"
+    HH.WEB_HOME_LABEL = "⌂ 游戏厅" if HUB and not EMBED else "☰ 菜单"
     from desktopcats import house_net as HN
     HN.fill_menu = web_fill_menu
     APP = WebApp()

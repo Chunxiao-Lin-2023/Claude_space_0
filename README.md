@@ -8,7 +8,6 @@
 | 机巧百战 | `jiqiao/` | 已完成 |
 | 云岛冒险 | `cloudisle/` | 开发中 |
 | 裂隙守卫 | `riftwardens/` | 开发中 |
-| 猫猫咕咕的家 | `pawpals/` | 开发中 |
 | 幽宅双影 | `hollowmanor/` | 开发中 |
 | 百物语（目录与九十则清单） | `baiwuyu/` | 开发中 |
 | 　百物语·壹 | `nighttales/` | 开发中 |
