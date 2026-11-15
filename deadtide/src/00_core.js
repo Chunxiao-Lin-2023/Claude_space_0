@@ -87,9 +87,9 @@ const affordable = (res, cost) => Object.keys(cost).every(k => (res[k] || 0) >= 
 // each gun has its own trick: pistol headshots, shotgun knock-back + stagger (falls off with range), rifle bloom,
 // sniper pierce + laser, crossbow pins, flamer sets fire, launcher explodes. loot = ammo found per supply pickup.
 const WPN = [
-  { k: 'pistol', name: '手枪', dmg: 34, rate: 0.2, mag: 12, reload: 1.0, spread: 0.03, range: 15, pellets: 1, inf: 1, kick: 0.6, shake: 0.12, hs: 2.2, loot: 0 },
+  { k: 'pistol', name: '手枪', dmg: 34, rate: 0.3, mag: 12, reload: 1.0, spread: 0.03, range: 15, pellets: 1, inf: 1, kick: 0.6, shake: 0.12, hs: 2.2, loot: 0 },
   { k: 'shotgun', name: '霰弹枪', dmg: 17, rate: 0.72, mag: 6, reload: 1.7, spread: 0.17, range: 8, pellets: 8, kick: 2.6, shake: 0.35, start: 24, stun: 0.3, falloff: 1, loot: 8 },
-  { k: 'rifle', name: '步枪', dmg: 30, rate: 0.095, mag: 30, reload: 1.6, spread: 0.035, range: 20, pellets: 1, kick: 0.4, shake: 0.12, bloom: 0.22, loot: 30 },
+  { k: 'rifle', name: '步枪', dmg: 30, rate: 0.12, mag: 30, reload: 1.6, spread: 0.035, range: 20, pellets: 1, kick: 0.4, shake: 0.12, bloom: 0.22, loot: 30 },
   { k: 'sniper', name: '狙击枪', dmg: 195, rate: 1.05, mag: 5, reload: 2.1, spread: 0.004, range: 45, pellets: 1, pierce: 5, kick: 4, shake: 0.4, stun: 0.5, laser: 1, loot: 4 },
   { k: 'crossbow', name: '弩', dmg: 110, rate: 0.75, mag: 6, reload: 1.5, spread: 0.008, range: 26, pellets: 1, pierce: 3, kick: 0.6, shake: 0.06, pin: 1.1, loot: 6 },
   { k: 'flamer', name: '喷火器', dmg: 12, rate: 0.07, mag: 80, reload: 2.2, spread: 0.32, range: 4.8, pellets: 1, flame: 1, burn: 3.5, kick: 0, shake: 0.02, loot: 40 },
@@ -111,6 +111,9 @@ const ZT = {
   screamer: { name: '尖叫者', hp: 80, spd: 1.5, r: 0.3, h: 1.26, dmg: 9, bdmg: 6, cd: 0.9, sc: 1.26, scream: 1 },
   armored: { name: '防暴尸', hp: 170, spd: 0.9, r: 0.36, h: 1.26, dmg: 15, bdmg: 16, cd: 1.1, sc: 1.3, armor: 0.3 },
 };
+// aim assist (SET.assist): fire-button lock range (x weapon range), lock-on time before it fires, spread while auto-aimed, mouse/finger magnet
+const ASSIST = [{ name: '关', range: 0, acq: 0, spread: 1, mag: 0 }, { name: '标准', range: 0.75, acq: 0.3, spread: 1.5, mag: 1 }, { name: '强', range: 1, acq: 0, spread: 1, mag: 1 }];
+const assistLv = () => ASSIST[SET.assist == null ? 1 : SET.assist] || ASSIST[1];
 const ZKEYS = ['walker', 'runner', 'climber', 'spitter', 'brute', 'boss', 'dog', 'crawler', 'bloater', 'screamer', 'armored']; // order is the net id
 
 /* ---------- scavenging / gathering ---------- */
@@ -220,7 +223,7 @@ const isBlood = n => n % 5 === 0;
 const SKEY = 'deadtide.';
 function lsGet(k, d) { try { const v = localStorage.getItem(SKEY + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } }
 function lsSet(k, v) { try { localStorage.setItem(SKEY + k, JSON.stringify(v)); } catch (e) { } }
-const SET = Object.assign({ name: '', mute: false, diff: 'normal', zoom: 1, shadows: 1, bconf: 1 }, lsGet('set', {}));
+const SET = Object.assign({ name: '', mute: false, diff: 'normal', zoom: 1, shadows: 1, bconf: 1, assist: 1 }, lsGet('set', {}));
 const saveSet = () => lsSet('set', SET);
 
 let W = null, ME = 0, NETROLE = null;

@@ -240,7 +240,7 @@ function togglePause(force) {
   if (!$('help').classList.contains('hidden')) { closeHelp(); return; }
   if (!$('craft').classList.contains('hidden')) { closeCraft(); return; }
   el.classList.toggle('hidden', !open);
-  $('pauseT').textContent = NETROLE === 'solo' ? '暂停' : '菜单（游戏继续中）'; $('pQual').textContent = qualLabel();
+  $('pauseT').textContent = NETROLE === 'solo' ? '暂停' : '菜单（游戏继续中）'; $('pQual').textContent = qualLabel(); $('pAssist').textContent = '辅助瞄准：' + assistLv().name;
   $('pHub').classList.toggle('hidden', !HUB);
   STATE.paused = open && NETROLE === 'solo';
 }
@@ -287,6 +287,7 @@ function initUI() {
   $('muteBtn').onclick = () => { setMute(!SET.mute); uiMute(); };
   $('pMute').onclick = () => { setMute(!SET.mute); uiMute(); };
   $('keys').addEventListener('pointerdown', e => { e.stopPropagation(); if (!e.target.closest('.kh')) return; SET.keysOff = !SET.keysOff; saveSet(); UI.keysK = ''; if (W && W.p[ME]) uiKeys(W.p[ME]); sfx('click'); });
+  $('pAssist').onclick = () => { SET.assist = ((SET.assist == null ? 1 : SET.assist) + 1) % 3; saveSet(); $('pAssist').textContent = '辅助瞄准：' + assistLv().name; sfx('click'); };
   $('pQual').onclick = () => { const o = ['auto', 0, 1, 2], i = o.indexOf(SET.q == null ? 'auto' : SET.q); SET.q = o[(i + 1) % 4]; if (SET.q === 'auto') SET.qa = 0; saveSet(); applyQual(); $('pQual').textContent = qualLabel(); sfx('click'); };
   $('readyBtn').onclick = () => inGame() && toggleReady();
   $('tasks').addEventListener('pointerdown', e => { e.stopPropagation(); UI.tkPin = !UI.tkPin; UI.tkOpenT = 0; sfx('click'); });

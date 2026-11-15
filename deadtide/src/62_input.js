@@ -344,7 +344,8 @@ bindBtn('vUp', () => viewStep(1)); bindBtn('vDn', () => viewStep(-1)); bindBtn('
 const zAlive = z => z && z.hp > 0 && W.zs.includes(z);
 function touchAutoAim(me, dirx, diry, any, cur) {
   const [sx, sy, sz] = shoulder(me); let best = null, bs = 1e9, cs = 1e9;
-  const wi = me.down ? 0 : me.wpn, range = WPN[wi].range, a0 = Math.atan2(diry, dirx), vl = viewL();
+  const AS = assistLv(), wi = me.down ? 0 : me.wpn, range = WPN[wi].range * AS.range, a0 = Math.atan2(diry, dirx), vl = viewL();
+  if (!AS.range) return { x: sx + dirx * 6, y: sy + diry * 6, z: sz };
   for (const z of W.zs) {
     if (z.hp <= 0 || z.L > vl || lcHide(Math.floor(z.x), Math.floor(z.y), z.L)) continue;
     const dx = z.x - sx, dy = z.y - sy, d = Math.hypot(dx, dy); if (d > range || d < 0.2) continue;
@@ -359,19 +360,21 @@ function touchAutoAim(me, dirx, diry, any, cur) {
 // keep the aim point glued to a locked zombie between re-picks
 function trackAim(me) { const z = me.aimPt && me.aimPt.zb; if (!z) return; if (!zAlive(z)) { INP.aimT = 0; return; } me.aimPt.x = z.x; me.aimPt.y = z.y; me.aimPt.z = z.z + z.h * 0.6; }
 // desktop reticle: its circle is the weapon's real spread at that distance; red = on a zombie, yellow = headshot, dashed = out of range
-function drawReticle(me, pt, show) {
+const FINGER_UP = 64; // the finger aims at a point this far above itself, so it never hides the target
+function drawReticle(me, pt, show, px0, py0) {
   const el = $('reticle'); if (!el) return;
   document.body.classList.toggle('aiming', !!show); el.classList.toggle('hidden', !show); if (!show) return;
+  if (!pt) { el.classList.add('hidden'); return; }
   const wi = me.down ? 0 : me.wpn, w = WPN[wi], [sx, sy, sz] = shoulder(me), dist = Math.hypot(pt.x - sx, pt.y - sy, pt.z - sz);
   const sp = w.spread * (me.down ? 1.6 : 1) * (1 + (w.bloom ? me.bloom || 0 : 0)), half = VH > VW ? clamp(CAM.zoom, 4, 22) * 1.25 : clamp(CAM.zoom, 4, 22);
   const px = clamp(2 * Math.tan(sp) * Math.min(dist, w.range) * VH / (2 * half), 12, 170);
   const c = el.children[0]; c.style.width = c.style.height = px + 'px';
-  el.style.transform = `translate(${INP.mx}px,${INP.my}px)`;
+  el.style.transform = `translate(${px0 != null ? px0 : INP.mx}px,${py0 != null ? py0 : INP.my}px)`;
   const rl = me.reloadT > 0 ? 1 - me.reloadT / WPN[me.reloadW != null ? me.reloadW : wi].reload : me.reloadVis > 0 ? 1 - me.reloadVis / w.reload : 0;
   el.children[1].style.display = rl > 0 ? '' : 'none'; el.children[1].style.setProperty('--p', (rl * 100).toFixed(0) + '%');
   const lock = !!pt.zb, head = lock && pt.head && !w.flame && !w.gl;
   el.classList.toggle('lock', lock && !head); el.classList.toggle('head', head); el.classList.toggle('far', Math.hypot(pt.x - sx, pt.y - sy) > w.range);
-  $('rtTag').textContent = rl > 0 ? '换弹' : me.mag[wi] === 0 ? '没子弹 R' : head ? '爆头' : '';
+  $('rtTag').textContent = rl > 0 ? '换弹' : me.mag[wi] === 0 ? '没子弹 R' : head ? '爆头' : (INP.touch && px0 != null ? '按射击开火' : '');
 }
 function readInput(dt) {
   const me = W.p[ME], I = me.inp, blocked = panelOpen() || W.over || STATE.paused;
@@ -410,9 +413,9 @@ function readInput(dt) {
       INP.bDown = down;
     } else { BUILD_HOVER = null; INP.bDown = false; if (!me.build && (PLAN || PREV)) cancelPlan(); }
   } else {
-    drawReticle(me, null, false);
     const A = INP.aim, held = A.id != null, active = held && Math.hypot(A.x, A.y) > 0.3, fing = INP.tAim.id != null && !me.build;
-    if (fing) { const pt = aimPick(INP.tAim.x, INP.tAim.y, 50); me.aimPt = pt; me.aim = Math.atan2(pt.y - me.y, pt.x - me.x); }
+    const fpy = INP.tAim.y - FINGER_UP;
+    if (fing) { const pt = aimPick(INP.tAim.x, fpy, assistLv().mag ? 50 : 0); me.aimPt = pt; me.aim = Math.atan2(pt.y - me.y, pt.x - me.x); }
     else if (active) {
       const a = Math.atan2(-A.y, A.x), wx = rx * Math.cos(a) + fx * Math.sin(a), wy = ry * Math.cos(a) + fy * Math.sin(a);
       trackAim(me); INP.aimT -= dt; if (INP.aimT <= 0 || !me.aimPt) { INP.aimT = 0.1; me.aimPt = touchAutoAim(me, wx, wy, false, me.aimPt && me.aimPt.zb); }
@@ -422,12 +425,19 @@ function readInput(dt) {
       trackAim(me); INP.aimT -= dt; if (INP.aimT <= 0 || !me.aimPt) { INP.aimT = 0.12; const f = Math.hypot(I.mx, I.my) > 0.2 ? [I.mx, I.my] : [Math.cos(me.aim), Math.sin(me.aim)]; me.aimPt = touchAutoAim(me, f[0], f[1], true, me.aimPt && me.aimPt.zb); }
       me.aim = Math.atan2(me.aimPt.y - me.y, me.aimPt.x - me.x);
     } else if (performance.now() - A.t > 600 && Math.hypot(I.mx, I.my) > 0.2) { me.aim = Math.atan2(I.my, I.mx); me.aimPt = null; }
-    I.fire = !blocked && (fing || active || (held && A.btn)) && !me.build ? 1 : 0;
+    drawReticle(me, me.aimPt, fing && !blocked && !me.build && !me.dead, INP.tAim.x, fpy);
+    // auto-aim (fire button without a finger on the map): a new target takes a moment to lock on, and the shots are looser
+    const auto = !fing && (active || (held && A.btn)), AS = assistLv(), lz = auto && me.aimPt && me.aimPt.zb;
+    if (lz !== INP.lockZ) { INP.lockZ = lz || null; INP.lockT = 0; } else INP.lockT = (INP.lockT || 0) + dt;
+    INP.lockAcq = lz && AS.acq ? Math.min(1, INP.lockT / AS.acq) : 1;
+    I.auto = auto && lz ? AS.spread : 0;
+    I.fire = !blocked && ((fing && held && A.btn) || (auto && INP.lockAcq >= 1)) && !me.build ? 1 : 0;
     CAM.lookX = lerp(CAM.lookX || 0, Math.cos(me.aim) * 1.5, Math.min(1, dt * 2)); CAM.lookY = lerp(CAM.lookY || 0, Math.sin(me.aim) * 1.5, Math.min(1, dt * 2));
     if (!me.build || !BUILD_HOVER || !BUILD_HOVER.t) BUILD_HOVER = me.build ? BUILD_HOVER : null;
   }
   if (blocked) I.fire = 0;
   if (!blocked && (KD('v') || INP.knHeld)) doKnife(); // hold to keep slashing
   if (me.knT > 0 && zAlive(me.knZ)) me.aim = Math.atan2(me.knZ.y - me.y, me.knZ.x - me.x); // face what you're cutting
-  INP.lockShow = !blocked && !me.build && !me.dead && me.aimPt && zAlive(me.aimPt.zb) && (usingMouse || I.fire) ? me.aimPt : null;
+  INP.lockShow = !blocked && !me.build && !me.dead && me.aimPt && zAlive(me.aimPt.zb) && (usingMouse || I.fire || INP.tAim.id != null || INP.aim.id != null) ? me.aimPt : null;
+  if (usingMouse) { I.auto = 0; INP.lockAcq = 1; }
 }

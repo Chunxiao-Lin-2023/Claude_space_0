@@ -368,7 +368,7 @@ function aimPick(sx, sy, mag) {
   // cursor on a zombie: aim at the height you point at — over its head (the top of the silhouette) is a headshot
   if (best) { const hz = clamp(o[2] + d[2] * bd, best.z + best.h * 0.35, best.z + best.h * 0.9); return { x: best.x, y: best.y, z: hz, zb: best, head: hz > best.z + best.h * 0.76 }; }
   // near miss: a zombie within ~34 px of the cursor on screen pulls the aim onto its body
-  let mb = null, md = mag || 34;
+  let mb = null, md = mag != null ? mag : assistLv().mag ? 34 : 0;
   for (const z of W.zs) { if (z.L > vl || z.hp <= 0 || lcHide(Math.floor(z.x), Math.floor(z.y), z.L)) continue; const [px, py, pz] = w2s(z.x, z.y, z.z + z.h * 0.55); if (pz > 1) continue; const dd = Math.hypot(px - sx, py - sy); if (dd < md) { md = dd; mb = z; } }
   if (mb) return { x: mb.x, y: mb.y, z: mb.z + mb.h * 0.6, zb: mb, mag: 1 };
   // march the camera ray into the visible part of the map

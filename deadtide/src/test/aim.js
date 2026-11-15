@@ -38,6 +38,15 @@ const { chromium } = require('playwright'); const OUT = process.env.OUT || '/tmp
     const close = spawnZombie('walker', 0); close.x = me.x + 1.2; close.y = me.y + 1; close.L = 0; close.z = 0; close.stun = 999; const n2 = touchAutoAim(me, 0, -1, true, t).zb;
     return { flips, closeWins: n2 === close }; });
   check('touch lock does not flicker between two similar zombies', st.flips === 0, JSON.stringify(st)); check('a zombie right next to you takes the lock', st.closeWins);
+  // assist levels: off = no lock and no magnet, strong = old full lock; the pause button cycles 标准 → 强 → 关
+  const lv = await p.evaluate(() => { const me = W.p[0]; W.zs.length = 0; const z = spawnZombie('walker', 0); z.x = me.x + 0.4; z.y = me.y - 6; z.L = 0; z.z = 0; z.stun = 999;
+    const out = {}; for (const a of [0, 1, 2]) { SET.assist = a; const t = touchAutoAim(me, 0, -1, true, null); const [px, py] = w2s(z.x, z.y, z.z + z.h * 0.55); out[a] = { lock: !!t.zb, magnet: !!aimPick(px + 30, py).zb }; } SET.assist = 1;
+    return out; });
+  check('assist off: no lock, no magnet; standard and strong lock', !lv[0].lock && !lv[0].magnet && lv[1].lock && lv[2].lock && lv[1].magnet, JSON.stringify(lv));
+  await p.keyboard.press('Escape'); await p.waitForTimeout(400);
+  const cyc = []; for (let k = 0; k < 3; k++) { cyc.push(await p.evaluate(() => document.getElementById('pAssist').textContent)); await p.click('#pAssist'); }
+  check('pause button cycles the assist level', cyc.join('|') === '辅助瞄准：标准|辅助瞄准：强|辅助瞄准：关' && await p.evaluate(() => SET.assist === 1), cyc.join(' → '));
+  await p.keyboard.press('Escape');
   await p.evaluate(() => { document.getElementById('hud').style.opacity = 1; }); await p.screenshot({ path: OUT + '/aim_hud.png' });
   check('no page errors', !errs.length, errs.join(' | ')); console.log(ok ? 'ALL PASS' : 'SOME FAIL'); await b.close();
 })();

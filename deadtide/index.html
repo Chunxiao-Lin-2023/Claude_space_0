@@ -249,7 +249,7 @@ body:not(.touch) .tch{display:none}
 #reticle.lock .c{border-color:#ff5a4a}#reticle.lock .d{background:#ff5a4a}
 #reticle.head .c{border-color:#ffd23a}#reticle.head .d{background:#ffd23a}
 #reticle.far .c{border-style:dashed;border-color:rgba(255,255,255,.45)}
-body.aiming canvas#cv{cursor:none}body.touch #reticle{display:none!important}
+body.aiming canvas#cv{cursor:none}body.touch #reticle b{left:-34px;top:-38px}
 @media (max-height:600px){#keys .kg{grid-template-columns:auto 1fr auto 1fr auto 1fr}}
 </style>
 </head>
@@ -353,6 +353,7 @@ body.aiming canvas#cv{cursor:none}body.touch #reticle{display:none!important}
     <button id="pHelp" class="ghost">玩法和操作</button>
     <button id="pMute" class="ghost">声音：开</button>
     <button id="pQual" class="ghost">画质：自动</button>
+    <button id="pAssist" class="ghost">辅助瞄准：标准</button>
     <button id="pTitle" class="danger">存档并返回标题</button>
     <button id="pHub" class="danger hidden">返回游戏厅</button>
   </div>
@@ -4151,9 +4152,9 @@ const affordable = (res, cost) => Object.keys(cost).every(k => (res[k] || 0) >= 
 // each gun has its own trick: pistol headshots, shotgun knock-back + stagger (falls off with range), rifle bloom,
 // sniper pierce + laser, crossbow pins, flamer sets fire, launcher explodes. loot = ammo found per supply pickup.
 const WPN = [
-  { k: 'pistol', name: '手枪', dmg: 34, rate: 0.2, mag: 12, reload: 1.0, spread: 0.03, range: 15, pellets: 1, inf: 1, kick: 0.6, shake: 0.12, hs: 2.2, loot: 0 },
+  { k: 'pistol', name: '手枪', dmg: 34, rate: 0.3, mag: 12, reload: 1.0, spread: 0.03, range: 15, pellets: 1, inf: 1, kick: 0.6, shake: 0.12, hs: 2.2, loot: 0 },
   { k: 'shotgun', name: '霰弹枪', dmg: 17, rate: 0.72, mag: 6, reload: 1.7, spread: 0.17, range: 8, pellets: 8, kick: 2.6, shake: 0.35, start: 24, stun: 0.3, falloff: 1, loot: 8 },
-  { k: 'rifle', name: '步枪', dmg: 30, rate: 0.095, mag: 30, reload: 1.6, spread: 0.035, range: 20, pellets: 1, kick: 0.4, shake: 0.12, bloom: 0.22, loot: 30 },
+  { k: 'rifle', name: '步枪', dmg: 30, rate: 0.12, mag: 30, reload: 1.6, spread: 0.035, range: 20, pellets: 1, kick: 0.4, shake: 0.12, bloom: 0.22, loot: 30 },
   { k: 'sniper', name: '狙击枪', dmg: 195, rate: 1.05, mag: 5, reload: 2.1, spread: 0.004, range: 45, pellets: 1, pierce: 5, kick: 4, shake: 0.4, stun: 0.5, laser: 1, loot: 4 },
   { k: 'crossbow', name: '弩', dmg: 110, rate: 0.75, mag: 6, reload: 1.5, spread: 0.008, range: 26, pellets: 1, pierce: 3, kick: 0.6, shake: 0.06, pin: 1.1, loot: 6 },
   { k: 'flamer', name: '喷火器', dmg: 12, rate: 0.07, mag: 80, reload: 2.2, spread: 0.32, range: 4.8, pellets: 1, flame: 1, burn: 3.5, kick: 0, shake: 0.02, loot: 40 },
@@ -4175,6 +4176,9 @@ const ZT = {
   screamer: { name: '尖叫者', hp: 80, spd: 1.5, r: 0.3, h: 1.26, dmg: 9, bdmg: 6, cd: 0.9, sc: 1.26, scream: 1 },
   armored: { name: '防暴尸', hp: 170, spd: 0.9, r: 0.36, h: 1.26, dmg: 15, bdmg: 16, cd: 1.1, sc: 1.3, armor: 0.3 },
 };
+// aim assist (SET.assist): fire-button lock range (x weapon range), lock-on time before it fires, spread while auto-aimed, mouse/finger magnet
+const ASSIST = [{ name: '关', range: 0, acq: 0, spread: 1, mag: 0 }, { name: '标准', range: 0.75, acq: 0.3, spread: 1.5, mag: 1 }, { name: '强', range: 1, acq: 0, spread: 1, mag: 1 }];
+const assistLv = () => ASSIST[SET.assist == null ? 1 : SET.assist] || ASSIST[1];
 const ZKEYS = ['walker', 'runner', 'climber', 'spitter', 'brute', 'boss', 'dog', 'crawler', 'bloater', 'screamer', 'armored']; // order is the net id
 
 /* ---------- scavenging / gathering ---------- */
@@ -4284,7 +4288,7 @@ const isBlood = n => n % 5 === 0;
 const SKEY = 'deadtide.';
 function lsGet(k, d) { try { const v = localStorage.getItem(SKEY + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } }
 function lsSet(k, v) { try { localStorage.setItem(SKEY + k, JSON.stringify(v)); } catch (e) { } }
-const SET = Object.assign({ name: '', mute: false, diff: 'normal', zoom: 1, shadows: 1, bconf: 1 }, lsGet('set', {}));
+const SET = Object.assign({ name: '', mute: false, diff: 'normal', zoom: 1, shadows: 1, bconf: 1, assist: 1 }, lsGet('set', {}));
 const saveSet = () => lsSet('set', SET);
 
 let W = null, ME = 0, NETROLE = null;
@@ -5130,7 +5134,7 @@ function fireWeapon(p, wi) {
   }
   if (w.bloom) p.bloom = Math.min(2.2, (p.bloom || 0) + w.bloom);
   for (let k = 0; k < w.pellets; k++) {
-    const sp = w.spread * (p.down ? 1.6 : 1) * (1 + (w.bloom ? p.bloom : 0));
+    const sp = w.spread * (p.down ? 1.6 : 1) * (1 + (w.bloom ? p.bloom : 0)) * (p.inp.auto ? p.inp.auto : 1); // auto-aim fires looser
     const yw = yaw + (rand() - 0.5) * 2 * sp, pt = pitch + (rand() - 0.5) * sp;
     const dx = Math.cos(pt) * Math.cos(yw), dy = Math.cos(pt) * Math.sin(yw), dz = Math.sin(pt);
     const wall = rayWorld(sx, sy, sz, dx, dy, dz, w.range, { lean: LEAN });
@@ -5957,7 +5961,7 @@ function aimPick(sx, sy, mag) {
   // cursor on a zombie: aim at the height you point at — over its head (the top of the silhouette) is a headshot
   if (best) { const hz = clamp(o[2] + d[2] * bd, best.z + best.h * 0.35, best.z + best.h * 0.9); return { x: best.x, y: best.y, z: hz, zb: best, head: hz > best.z + best.h * 0.76 }; }
   // near miss: a zombie within ~34 px of the cursor on screen pulls the aim onto its body
-  let mb = null, md = mag || 34;
+  let mb = null, md = mag != null ? mag : assistLv().mag ? 34 : 0;
   for (const z of W.zs) { if (z.L > vl || z.hp <= 0 || lcHide(Math.floor(z.x), Math.floor(z.y), z.L)) continue; const [px, py, pz] = w2s(z.x, z.y, z.z + z.h * 0.55); if (pz > 1) continue; const dd = Math.hypot(px - sx, py - sy); if (dd < md) { md = dd; mb = z; } }
   if (mb) return { x: mb.x, y: mb.y, z: mb.z + mb.h * 0.6, zb: mb, mag: 1 };
   // march the camera ray into the visible part of the map
@@ -6998,7 +7002,7 @@ function drawPlan() {
   for (const p of W.p) { if (p.gone || p.dead || !OBJ.pl[p.i] || !OBJ.pl[p.i].g.visible) continue; setInst(X, k++, p.x, (p.zv != null ? p.zv : p.z) + 0.03, p.y, 0, 1, 1, 1, PCOL[p.i % 2].j); }
   X.count = k; X.instanceMatrix.needsUpdate = true; if (X.instanceColor) X.instanceColor.needsUpdate = true;
   const LI = OBJ.lockI, lk = typeof INP !== 'undefined' && INP.lockShow; LI.count = 0;
-  if (lk) { const z = lk.zb, s = z.r * 2.3 * (1 + Math.sin(W.t * 10) * 0.06); setInst(LI, 0, z.x, z.z + 0.04, z.y, W.t * 1.5, s, 1, s, lk.head ? '#ffd23a' : '#ff4a3a'); LI.count = 1; LI.instanceMatrix.needsUpdate = true; if (LI.instanceColor) LI.instanceColor.needsUpdate = true; }
+  if (lk) { const q = INP.lockAcq == null ? 1 : INP.lockAcq, z = lk.zb, s = z.r * 2.3 * (1 + Math.sin(W.t * 10) * 0.06) * (1 + (1 - q) * 0.8); setInst(LI, 0, z.x, z.z + 0.04, z.y, W.t * 1.5, s, 1, s, q < 1 ? '#b8b8b8' : lk.head ? '#ffd23a' : '#ff4a3a'); LI.count = 1; LI.instanceMatrix.needsUpdate = true; if (LI.instanceColor) LI.instanceColor.needsUpdate = true; }
   // scream shockwaves
   const R = OBJ.ringI; let r = 0; RND.rings = (RND.rings || []).filter(q => (q.t += 1 / 60) < 0.8);
   for (const q of RND.rings) { if (r >= 8) break; const s = 0.5 + q.t * BAL.screamR * 1.1; setInst(R, r++, q.x, q.z + 0.1, q.y, 0, s, 1, s, '#ff5a8a'); }
@@ -7455,7 +7459,8 @@ bindBtn('vUp', () => viewStep(1)); bindBtn('vDn', () => viewStep(-1)); bindBtn('
 const zAlive = z => z && z.hp > 0 && W.zs.includes(z);
 function touchAutoAim(me, dirx, diry, any, cur) {
   const [sx, sy, sz] = shoulder(me); let best = null, bs = 1e9, cs = 1e9;
-  const wi = me.down ? 0 : me.wpn, range = WPN[wi].range, a0 = Math.atan2(diry, dirx), vl = viewL();
+  const AS = assistLv(), wi = me.down ? 0 : me.wpn, range = WPN[wi].range * AS.range, a0 = Math.atan2(diry, dirx), vl = viewL();
+  if (!AS.range) return { x: sx + dirx * 6, y: sy + diry * 6, z: sz };
   for (const z of W.zs) {
     if (z.hp <= 0 || z.L > vl || lcHide(Math.floor(z.x), Math.floor(z.y), z.L)) continue;
     const dx = z.x - sx, dy = z.y - sy, d = Math.hypot(dx, dy); if (d > range || d < 0.2) continue;
@@ -7470,19 +7475,21 @@ function touchAutoAim(me, dirx, diry, any, cur) {
 // keep the aim point glued to a locked zombie between re-picks
 function trackAim(me) { const z = me.aimPt && me.aimPt.zb; if (!z) return; if (!zAlive(z)) { INP.aimT = 0; return; } me.aimPt.x = z.x; me.aimPt.y = z.y; me.aimPt.z = z.z + z.h * 0.6; }
 // desktop reticle: its circle is the weapon's real spread at that distance; red = on a zombie, yellow = headshot, dashed = out of range
-function drawReticle(me, pt, show) {
+const FINGER_UP = 64; // the finger aims at a point this far above itself, so it never hides the target
+function drawReticle(me, pt, show, px0, py0) {
   const el = $('reticle'); if (!el) return;
   document.body.classList.toggle('aiming', !!show); el.classList.toggle('hidden', !show); if (!show) return;
+  if (!pt) { el.classList.add('hidden'); return; }
   const wi = me.down ? 0 : me.wpn, w = WPN[wi], [sx, sy, sz] = shoulder(me), dist = Math.hypot(pt.x - sx, pt.y - sy, pt.z - sz);
   const sp = w.spread * (me.down ? 1.6 : 1) * (1 + (w.bloom ? me.bloom || 0 : 0)), half = VH > VW ? clamp(CAM.zoom, 4, 22) * 1.25 : clamp(CAM.zoom, 4, 22);
   const px = clamp(2 * Math.tan(sp) * Math.min(dist, w.range) * VH / (2 * half), 12, 170);
   const c = el.children[0]; c.style.width = c.style.height = px + 'px';
-  el.style.transform = `translate(${INP.mx}px,${INP.my}px)`;
+  el.style.transform = `translate(${px0 != null ? px0 : INP.mx}px,${py0 != null ? py0 : INP.my}px)`;
   const rl = me.reloadT > 0 ? 1 - me.reloadT / WPN[me.reloadW != null ? me.reloadW : wi].reload : me.reloadVis > 0 ? 1 - me.reloadVis / w.reload : 0;
   el.children[1].style.display = rl > 0 ? '' : 'none'; el.children[1].style.setProperty('--p', (rl * 100).toFixed(0) + '%');
   const lock = !!pt.zb, head = lock && pt.head && !w.flame && !w.gl;
   el.classList.toggle('lock', lock && !head); el.classList.toggle('head', head); el.classList.toggle('far', Math.hypot(pt.x - sx, pt.y - sy) > w.range);
-  $('rtTag').textContent = rl > 0 ? '换弹' : me.mag[wi] === 0 ? '没子弹 R' : head ? '爆头' : '';
+  $('rtTag').textContent = rl > 0 ? '换弹' : me.mag[wi] === 0 ? '没子弹 R' : head ? '爆头' : (INP.touch && px0 != null ? '按射击开火' : '');
 }
 function readInput(dt) {
   const me = W.p[ME], I = me.inp, blocked = panelOpen() || W.over || STATE.paused;
@@ -7521,9 +7528,9 @@ function readInput(dt) {
       INP.bDown = down;
     } else { BUILD_HOVER = null; INP.bDown = false; if (!me.build && (PLAN || PREV)) cancelPlan(); }
   } else {
-    drawReticle(me, null, false);
     const A = INP.aim, held = A.id != null, active = held && Math.hypot(A.x, A.y) > 0.3, fing = INP.tAim.id != null && !me.build;
-    if (fing) { const pt = aimPick(INP.tAim.x, INP.tAim.y, 50); me.aimPt = pt; me.aim = Math.atan2(pt.y - me.y, pt.x - me.x); }
+    const fpy = INP.tAim.y - FINGER_UP;
+    if (fing) { const pt = aimPick(INP.tAim.x, fpy, assistLv().mag ? 50 : 0); me.aimPt = pt; me.aim = Math.atan2(pt.y - me.y, pt.x - me.x); }
     else if (active) {
       const a = Math.atan2(-A.y, A.x), wx = rx * Math.cos(a) + fx * Math.sin(a), wy = ry * Math.cos(a) + fy * Math.sin(a);
       trackAim(me); INP.aimT -= dt; if (INP.aimT <= 0 || !me.aimPt) { INP.aimT = 0.1; me.aimPt = touchAutoAim(me, wx, wy, false, me.aimPt && me.aimPt.zb); }
@@ -7533,14 +7540,21 @@ function readInput(dt) {
       trackAim(me); INP.aimT -= dt; if (INP.aimT <= 0 || !me.aimPt) { INP.aimT = 0.12; const f = Math.hypot(I.mx, I.my) > 0.2 ? [I.mx, I.my] : [Math.cos(me.aim), Math.sin(me.aim)]; me.aimPt = touchAutoAim(me, f[0], f[1], true, me.aimPt && me.aimPt.zb); }
       me.aim = Math.atan2(me.aimPt.y - me.y, me.aimPt.x - me.x);
     } else if (performance.now() - A.t > 600 && Math.hypot(I.mx, I.my) > 0.2) { me.aim = Math.atan2(I.my, I.mx); me.aimPt = null; }
-    I.fire = !blocked && (fing || active || (held && A.btn)) && !me.build ? 1 : 0;
+    drawReticle(me, me.aimPt, fing && !blocked && !me.build && !me.dead, INP.tAim.x, fpy);
+    // auto-aim (fire button without a finger on the map): a new target takes a moment to lock on, and the shots are looser
+    const auto = !fing && (active || (held && A.btn)), AS = assistLv(), lz = auto && me.aimPt && me.aimPt.zb;
+    if (lz !== INP.lockZ) { INP.lockZ = lz || null; INP.lockT = 0; } else INP.lockT = (INP.lockT || 0) + dt;
+    INP.lockAcq = lz && AS.acq ? Math.min(1, INP.lockT / AS.acq) : 1;
+    I.auto = auto && lz ? AS.spread : 0;
+    I.fire = !blocked && ((fing && held && A.btn) || (auto && INP.lockAcq >= 1)) && !me.build ? 1 : 0;
     CAM.lookX = lerp(CAM.lookX || 0, Math.cos(me.aim) * 1.5, Math.min(1, dt * 2)); CAM.lookY = lerp(CAM.lookY || 0, Math.sin(me.aim) * 1.5, Math.min(1, dt * 2));
     if (!me.build || !BUILD_HOVER || !BUILD_HOVER.t) BUILD_HOVER = me.build ? BUILD_HOVER : null;
   }
   if (blocked) I.fire = 0;
   if (!blocked && (KD('v') || INP.knHeld)) doKnife(); // hold to keep slashing
   if (me.knT > 0 && zAlive(me.knZ)) me.aim = Math.atan2(me.knZ.y - me.y, me.knZ.x - me.x); // face what you're cutting
-  INP.lockShow = !blocked && !me.build && !me.dead && me.aimPt && zAlive(me.aimPt.zb) && (usingMouse || I.fire) ? me.aimPt : null;
+  INP.lockShow = !blocked && !me.build && !me.dead && me.aimPt && zAlive(me.aimPt.zb) && (usingMouse || I.fire || INP.tAim.id != null || INP.aim.id != null) ? me.aimPt : null;
+  if (usingMouse) { I.auto = 0; INP.lockAcq = 1; }
 }
 
 /* ---- 70_net.js ---- */
@@ -7596,7 +7610,7 @@ function hostRecv(m) {
     if (m.n < (p.inSeq || 0)) return; p.inSeq = m.n;
     if (!p.dead) { p.x = m.x; p.y = m.y; p.L = m.l; p.vx = m.vx; p.vy = m.vy; p.z = surfZ(p.x, p.y, p.L); }
     p.aim = m.a; p.anim = m.an; p.sel = m.sel || 1; p.aimPt = m.ap ? { x: m.ap[0], y: m.ap[1], z: m.ap[2] } : null;
-    p.inp.fire = m.f; p.inp.use = m.u; p.build = !!m.b;
+    p.inp.fire = m.f; p.inp.use = m.u; p.build = !!m.b; p.inp.auto = m.au || 0;
   } else if (m.t === 'act') doAct(p, m.a, m.v);
 }
 function guestGone() {
@@ -7699,7 +7713,7 @@ function guestNetTick(dt) {
   NET.iT -= dt;
   if (NET.iT <= 0) {
     NET.iT = 1 / 30; const p = W.p[ME], i = p.inp;
-    netSendFast({ t: 'i', n: ++NET.inN, x: r3(p.x), y: r3(p.y), l: p.L, vx: r2(p.vx), vy: r2(p.vy), a: r2(p.aim), ap: p.aimPt ? [r2(p.aimPt.x), r2(p.aimPt.y), r2(p.aimPt.z)] : 0, an: Math.round(p.anim * 10) / 10, f: i.fire, u: i.use, b: p.build ? 1 : 0, sel: p.sel });
+    netSendFast({ t: 'i', n: ++NET.inN, x: r3(p.x), y: r3(p.y), l: p.L, vx: r2(p.vx), vy: r2(p.vy), a: r2(p.aim), ap: p.aimPt ? [r2(p.aimPt.x), r2(p.aimPt.y), r2(p.aimPt.z)] : 0, an: Math.round(p.anim * 10) / 10, f: i.fire, u: i.use, b: p.build ? 1 : 0, sel: p.sel, au: i.auto || 0 });
   }
 }
 function guestPredictFire(dt) {
@@ -7964,7 +7978,7 @@ function togglePause(force) {
   if (!$('help').classList.contains('hidden')) { closeHelp(); return; }
   if (!$('craft').classList.contains('hidden')) { closeCraft(); return; }
   el.classList.toggle('hidden', !open);
-  $('pauseT').textContent = NETROLE === 'solo' ? '暂停' : '菜单（游戏继续中）'; $('pQual').textContent = qualLabel();
+  $('pauseT').textContent = NETROLE === 'solo' ? '暂停' : '菜单（游戏继续中）'; $('pQual').textContent = qualLabel(); $('pAssist').textContent = '辅助瞄准：' + assistLv().name;
   $('pHub').classList.toggle('hidden', !HUB);
   STATE.paused = open && NETROLE === 'solo';
 }
@@ -8011,6 +8025,7 @@ function initUI() {
   $('muteBtn').onclick = () => { setMute(!SET.mute); uiMute(); };
   $('pMute').onclick = () => { setMute(!SET.mute); uiMute(); };
   $('keys').addEventListener('pointerdown', e => { e.stopPropagation(); if (!e.target.closest('.kh')) return; SET.keysOff = !SET.keysOff; saveSet(); UI.keysK = ''; if (W && W.p[ME]) uiKeys(W.p[ME]); sfx('click'); });
+  $('pAssist').onclick = () => { SET.assist = ((SET.assist == null ? 1 : SET.assist) + 1) % 3; saveSet(); $('pAssist').textContent = '辅助瞄准：' + assistLv().name; sfx('click'); };
   $('pQual').onclick = () => { const o = ['auto', 0, 1, 2], i = o.indexOf(SET.q == null ? 'auto' : SET.q); SET.q = o[(i + 1) % 4]; if (SET.q === 'auto') SET.qa = 0; saveSet(); applyQual(); $('pQual').textContent = qualLabel(); sfx('click'); };
   $('readyBtn').onclick = () => inGame() && toggleReady();
   $('tasks').addEventListener('pointerdown', e => { e.stopPropagation(); UI.tkPin = !UI.tkPin; UI.tkOpenT = 0; sfx('click'); });

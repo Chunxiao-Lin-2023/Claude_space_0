@@ -317,7 +317,7 @@ function fireWeapon(p, wi) {
   }
   if (w.bloom) p.bloom = Math.min(2.2, (p.bloom || 0) + w.bloom);
   for (let k = 0; k < w.pellets; k++) {
-    const sp = w.spread * (p.down ? 1.6 : 1) * (1 + (w.bloom ? p.bloom : 0));
+    const sp = w.spread * (p.down ? 1.6 : 1) * (1 + (w.bloom ? p.bloom : 0)) * (p.inp.auto ? p.inp.auto : 1); // auto-aim fires looser
     const yw = yaw + (rand() - 0.5) * 2 * sp, pt = pitch + (rand() - 0.5) * sp;
     const dx = Math.cos(pt) * Math.cos(yw), dy = Math.cos(pt) * Math.sin(yw), dz = Math.sin(pt);
     const wall = rayWorld(sx, sy, sz, dx, dy, dz, w.range, { lean: LEAN });

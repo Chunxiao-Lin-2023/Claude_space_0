@@ -50,7 +50,7 @@ function hostRecv(m) {
     if (m.n < (p.inSeq || 0)) return; p.inSeq = m.n;
     if (!p.dead) { p.x = m.x; p.y = m.y; p.L = m.l; p.vx = m.vx; p.vy = m.vy; p.z = surfZ(p.x, p.y, p.L); }
     p.aim = m.a; p.anim = m.an; p.sel = m.sel || 1; p.aimPt = m.ap ? { x: m.ap[0], y: m.ap[1], z: m.ap[2] } : null;
-    p.inp.fire = m.f; p.inp.use = m.u; p.build = !!m.b;
+    p.inp.fire = m.f; p.inp.use = m.u; p.build = !!m.b; p.inp.auto = m.au || 0;
   } else if (m.t === 'act') doAct(p, m.a, m.v);
 }
 function guestGone() {
@@ -153,7 +153,7 @@ function guestNetTick(dt) {
   NET.iT -= dt;
   if (NET.iT <= 0) {
     NET.iT = 1 / 30; const p = W.p[ME], i = p.inp;
-    netSendFast({ t: 'i', n: ++NET.inN, x: r3(p.x), y: r3(p.y), l: p.L, vx: r2(p.vx), vy: r2(p.vy), a: r2(p.aim), ap: p.aimPt ? [r2(p.aimPt.x), r2(p.aimPt.y), r2(p.aimPt.z)] : 0, an: Math.round(p.anim * 10) / 10, f: i.fire, u: i.use, b: p.build ? 1 : 0, sel: p.sel });
+    netSendFast({ t: 'i', n: ++NET.inN, x: r3(p.x), y: r3(p.y), l: p.L, vx: r2(p.vx), vy: r2(p.vy), a: r2(p.aim), ap: p.aimPt ? [r2(p.aimPt.x), r2(p.aimPt.y), r2(p.aimPt.z)] : 0, an: Math.round(p.anim * 10) / 10, f: i.fire, u: i.use, b: p.build ? 1 : 0, sel: p.sel, au: i.auto || 0 });
   }
 }
 function guestPredictFire(dt) {
