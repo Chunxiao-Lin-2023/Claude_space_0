@@ -5,7 +5,8 @@ function startGame(seed, names, diff, me) {
   ME = me; newWorld(seed, names, diff); buildTerrain(); archTown();
   Object.assign(RND, { parts: [], tracers: [], corpses: [], floats: [], flashes: [], booms: [], hurtV: 0 });
   STATE.mode = 'play'; STATE.paused = false; ACC = 0; NET.lastT = 0; VIEW.auto = true; CUT_KEY = '';
-  CAM.zoom = clamp(+SET.zoom || 9, 4, 22); if (CAM.zoom < 4.5) CAM.zoom = 9;
+  if (SET.zv !== 2) { SET.zv = 2; SET.zoom = 8; saveSet(); } /* round 8: default view one step closer, applied once */
+  CAM.zoom = clamp(+SET.zoom || 8, 4, 22); if (CAM.zoom < 4.5) CAM.zoom = 8;
   showScreen('play');
   if (!HUD_BUILT) { buildHudStatic(); HUD_BUILT = true; }
   $('over').classList.add('hidden'); $('log').innerHTML = '';

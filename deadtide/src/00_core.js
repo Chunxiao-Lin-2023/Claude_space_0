@@ -99,17 +99,17 @@ const NW = WPN.length;
 
 /* ---------- zombies (speeds in tiles/s) ---------- */
 const ZT = {
-  walker: { name: '游荡者', hp: 70, spd: 1.0, r: 0.28, h: 1.0, dmg: 12, bdmg: 12, cd: 1.0, sc: 1 },
-  runner: { name: '疾跑者', hp: 45, spd: 3.1, r: 0.26, h: 0.95, dmg: 8, bdmg: 7, cd: 0.6, sc: 0.95 },
-  climber: { name: '攀爬者', hp: 50, spd: 2.3, r: 0.26, h: 0.7, dmg: 7, bdmg: 8, cd: 0.7, sc: 0.9, climb: 1 },
-  spitter: { name: '喷吐者', hp: 95, spd: 0.9, r: 0.32, h: 1.05, dmg: 10, bdmg: 8, cd: 1.0, sc: 1.05, range: 9, spitCD: 3 },
-  brute: { name: '重锤', hp: 650, spd: 0.8, r: 0.42, h: 1.45, dmg: 28, bdmg: 75, cd: 1.6, sc: 1.45, kb: 6 },
-  boss: { name: '巨尸', hp: 2600, spd: 0.65, r: 0.62, h: 2.2, dmg: 45, bdmg: 220, cd: 2.0, sc: 2.2, kb: 9 },
-  dog: { name: '尸犬', hp: 40, spd: 3.7, r: 0.24, h: 0.55, dmg: 8, bdmg: 3, cd: 0.5, sc: 1 },
-  crawler: { name: '爬行尸', hp: 60, spd: 0.75, r: 0.27, h: 0.38, dmg: 11, bdmg: 9, cd: 0.9, sc: 1 },
-  bloater: { name: '爆尸', hp: 120, spd: 0.75, r: 0.36, h: 1.1, dmg: 10, bdmg: 10, cd: 1.1, sc: 1.1, blast: 1 },
-  screamer: { name: '尖叫者', hp: 80, spd: 1.5, r: 0.27, h: 1.05, dmg: 9, bdmg: 6, cd: 0.9, sc: 1.05, scream: 1 },
-  armored: { name: '防暴尸', hp: 170, spd: 0.9, r: 0.32, h: 1.05, dmg: 15, bdmg: 16, cd: 1.1, sc: 1.08, armor: 0.3 },
+  walker: { name: '游荡者', hp: 70, spd: 1.0, r: 0.31, h: 1.2, dmg: 12, bdmg: 12, cd: 1.0, sc: 1.2 },
+  runner: { name: '疾跑者', hp: 45, spd: 3.1, r: 0.29, h: 1.14, dmg: 8, bdmg: 7, cd: 0.6, sc: 1.14 },
+  climber: { name: '攀爬者', hp: 50, spd: 2.3, r: 0.29, h: 0.84, dmg: 7, bdmg: 8, cd: 0.7, sc: 1.08, climb: 1 },
+  spitter: { name: '喷吐者', hp: 95, spd: 0.9, r: 0.36, h: 1.26, dmg: 10, bdmg: 8, cd: 1.0, sc: 1.26, range: 9, spitCD: 3 },
+  brute: { name: '重锤', hp: 650, spd: 0.8, r: 0.44, h: 1.74, dmg: 28, bdmg: 75, cd: 1.6, sc: 1.74, kb: 6 },
+  boss: { name: '巨尸', hp: 2600, spd: 0.65, r: 0.69, h: 2.64, dmg: 45, bdmg: 220, cd: 2.0, sc: 2.64, kb: 9 },
+  dog: { name: '尸犬', hp: 40, spd: 3.7, r: 0.27, h: 0.66, dmg: 8, bdmg: 3, cd: 0.5, sc: 1.2 },
+  crawler: { name: '爬行尸', hp: 60, spd: 0.75, r: 0.3, h: 0.46, dmg: 11, bdmg: 9, cd: 0.9, sc: 1.2 },
+  bloater: { name: '爆尸', hp: 120, spd: 0.75, r: 0.4, h: 1.32, dmg: 10, bdmg: 10, cd: 1.1, sc: 1.32, blast: 1 },
+  screamer: { name: '尖叫者', hp: 80, spd: 1.5, r: 0.3, h: 1.26, dmg: 9, bdmg: 6, cd: 0.9, sc: 1.26, scream: 1 },
+  armored: { name: '防暴尸', hp: 170, spd: 0.9, r: 0.36, h: 1.26, dmg: 15, bdmg: 16, cd: 1.1, sc: 1.3, armor: 0.3 },
 };
 const ZKEYS = ['walker', 'runner', 'climber', 'spitter', 'brute', 'boss', 'dog', 'crawler', 'bloater', 'screamer', 'armored']; // order is the net id
 

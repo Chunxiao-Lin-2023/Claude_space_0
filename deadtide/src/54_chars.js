@@ -243,7 +243,7 @@ function rigDog(z, corpse, dt) {
   }
   const hit = !corpse && z.hitT > 0, fur = hit ? '#ffd8cc' : ['#4a3c32', '#3a3530', '#5a4a3a'][sd % 3], raw = hit ? '#ffd8cc' : '#7a3a34';
   const amp = corpse ? 0 : clamp(z._spd / 3, 0, 1.1), ph = corpse ? 0 : z._ph, atk = !corpse && z.atk > 0;
-  const R0 = ZM[0]; tmpQ.setFromAxisAngle(UPV, -(corpse ? z.face || 0 : z._f)); tmpV.set(z.x, z.z, z.y); tmpS.set(1, 1, 1); R0.compose(tmpV, tmpQ, tmpS);
+  const R0 = ZM[0]; tmpQ.setFromAxisAngle(UPV, -(corpse ? z.face || 0 : z._f)); tmpV.set(z.x, z.z, z.y); tmpS.setScalar(ZT.dog.sc); R0.compose(tmpV, tmpQ, tmpS);
   if (corpse) J(R0, R0, 0, 0.05, 0, ease(z.t / 0.4) * Math.PI / 2 * 0.95, 0, 0);
   const bob = Math.abs(Math.sin(ph)) * 0.04 * amp, lunge = atk ? Math.sin(t * 14) * 0.12 : 0;
   const body = J(ZM[1], R0, lunge, 0.33 + bob, 0, 0, 0, -Math.PI / 2 + Math.sin(ph) * 0.12 * amp);
