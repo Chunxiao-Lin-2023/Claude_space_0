@@ -2,7 +2,7 @@
    One save slot in localStorage. Written automatically every dawn, from the pause menu, and when the page is hidden or
    closed (solo / host only). The map itself is regenerated from the seed; what changed (blocks, floors, hp, facing) is
    stored as run-length-encoded byte arrays, plus resources, players, the clock, tasks and any zombies on the field. */
-const SAVE_V = 1;
+const SAVE_V = 2; // bump when the map size or layout changes: older saves are ignored
 // byte RLE with varint run lengths: [value, len...]
 function rleEnc(u8) {
   const out = []; let i = 0;
@@ -25,7 +25,7 @@ function canSave() { return W && !W.demo && !W.over && STATE.mode === 'play' && 
 function saveGame(quiet) {
   if (!canSave()) return false;
   const S = {
-    v: SAVE_V, at: Date.now(), seed: W.seed, diff: W.diff, night: W.night, phase: W.phase, clock: W.clock, dayLen: W.dayLen, nightT: W.nightT,
+    v: SAVE_V, mw: MW, at: Date.now(), seed: W.seed, diff: W.diff, night: W.night, phase: W.phase, clock: W.clock, dayLen: W.dayLen, nightT: W.nightT,
     res: W.res, upg: W.upg, kills: W.kills, stats: W.stats, endless: W.endless, clean: W.clean, tasks: W.tasks, srch: [...W.srch], t: W.t,
     p: W.p.filter(p => !p.gone).map(p => ({ name: p.name, x: p.x, y: p.y, L: p.L, hp: p.hp, dead: p.dead, wpn: p.wpn, owned: p.owned, mag: p.mag, ammo: p.ammo, meds: p.meds, nades: p.nades, kills: p.kills })),
     zs: W.zs.filter(z => z.hp > 0).slice(0, 300).map(z => [z.k, +z.x.toFixed(2), +z.y.toFixed(2), z.L, Math.round(z.hp), Math.round(z.max)]),
@@ -37,7 +37,7 @@ function saveGame(quiet) {
   if (!quiet) toast('已存档 · ' + saveLabel(S), '#7dff8a');
   return true;
 }
-function loadSave() { const s = lsGet('save', null); return s && s.v === SAVE_V && s.g ? s : null; }
+function loadSave() { const s = lsGet('save', null); return s && s.v === SAVE_V && s.g && s.mw === MW ? s : null; }
 function clearSave() { try { localStorage.removeItem(SKEY + 'save'); } catch (e) { } }
 function saveLabel(s) { return (s.phase === 'night' ? '第 ' + s.night + ' 夜' : '第 ' + (s.night + 1) + ' 天') + ' · ' + ({ easy: '简单', normal: '普通', hard: '困难' }[s.diff] || ''); }
 function continueGame() {
