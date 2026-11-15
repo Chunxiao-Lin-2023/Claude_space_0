@@ -117,16 +117,16 @@ const ZKEYS = ['walker', 'runner', 'climber', 'spitter', 'brute', 'boss', 'dog',
 // vanish: searched once and gone (restocked at random places every dawn); otherwise a fixture that refills sometimes
 // ammo: x supply pickups for the whole team; med / nade: chance of one; fuel: flamer fuel if someone owns it
 const SPOTS = {
-  car: { name: '汽车残骸', loot: { steel: [3, 6], parts: [1, 3] }, refill: 0.5 },
-  vending: { name: '售货机', loot: { parts: [1, 3] }, med: 0.5, refill: 0.5 },
-  crate: { name: '补给箱', loot: { parts: [2, 4] }, ammo: 1, med: 0.35, nade: 0.35, vanish: 1, n: 16 },
-  rubble: { name: '废墟瓦砾', loot: { stone: [5, 9], wood: [2, 4] }, vanish: 1, n: 24 },
-  trash: { name: '垃圾桶', loot: { parts: [0, 2], wood: [1, 3] }, med: 0.12, vanish: 1, n: 24 },
-  backpack: { name: '遇难者的背包', loot: { parts: [1, 2] }, ammo: 1, med: 0.5, nade: 0.3, vanish: 1, n: 10 },
+  car: { name: '汽车残骸', loot: { steel: [3, 6], parts: [1, 3] }, refill: 1 },
+  vending: { name: '售货机', loot: { parts: [1, 3] }, med: 0.5, refill: 1 },
+  crate: { name: '补给箱', loot: { parts: [2, 4] }, ammo: 1, med: 0.35, nade: 0.35, vanish: 1, n: 30 },
+  rubble: { name: '废墟瓦砾', loot: { stone: [5, 9], wood: [2, 4] }, vanish: 1, n: 40 },
+  trash: { name: '垃圾桶', loot: { parts: [0, 2], wood: [1, 3] }, med: 0.12, vanish: 1, n: 40 },
+  backpack: { name: '遇难者的背包', loot: { parts: [1, 2] }, ammo: 1, med: 0.5, nade: 0.3, vanish: 1, n: 24 },
   cabinet: { name: '柜子', loot: { parts: [1, 3], wood: [2, 4] }, med: 0.35, vanish: 1, n: 24 },
-  toolbox: { name: '工具箱', loot: { parts: [3, 5], steel: [2, 4] }, vanish: 1, n: 10 },
-  milcrate: { name: '军用物资箱', loot: { parts: [2, 4] }, ammo: 2, nade: 1, vanish: 1, n: 4 },
-  barrel: { name: '油桶', loot: { steel: [2, 4] }, fuel: 40, vanish: 1, n: 14 },
+  toolbox: { name: '工具箱', loot: { parts: [3, 5], steel: [2, 4] }, vanish: 1, n: 16 },
+  milcrate: { name: '军用物资箱', loot: { parts: [2, 4] }, ammo: 2, nade: 1, vanish: 1, n: 8 },
+  barrel: { name: '油桶', loot: { steel: [2, 4] }, fuel: 40, vanish: 1, n: 24 },
 };
 /* ---------- daily tasks: three are rolled every dawn (and at the start) and last until the next dawn ---------- */
 // need(d, W) -> target count for upcoming night d; min = first night it can appear; rw = reward pool keys

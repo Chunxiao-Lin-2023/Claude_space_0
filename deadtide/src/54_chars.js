@@ -354,7 +354,22 @@ function ikArm(A, tx, ty, tz, sg) {
   _v2.set(_v1.x - _v3.x, _v1.y - _v3.y, _v1.z - _v3.z).normalize().applyQuaternion(_q1.copy(A.sh.quaternion).invert());
   A.el.quaternion.setFromUnitVectors(_down, _v2);
 }
-// hand targets per weapon in aim-rig coordinates: [right x,y,z, left x,y,z]
+// how each weapon is really held (aim-rig coords: x forward, y up, z right).
+// Shouldered guns: butt in the shoulder pocket `sh`, stock length L back from the grip; `tw` blades the body (support side forward);
+// the gun counter-turns so it still points at the target. `lh` = support hand on the gun (gun-local); `lo` = muzzle dip at low ready.
+const STANCE = [
+  { g: [0.31, 0.09, 0.02], tw: 0, lh: [-0.01, -0.035, -0.045], pz: 0, lo: 0.3, lean: -0.06 },                       // pistol: isosceles, two hands, at the eye line
+  { L: 0.2, sh: [0.02, 0.06, 0.11], tw: 0.55, lh: [0.17, -0.035, -0.005], pz: 0, lo: 0.4, lean: -0.14, cheek: 1 },  // shotgun: bladed, weight forward, hand on the pump
+  { L: 0.205, sh: [0.02, 0.07, 0.11], tw: 0.5, lh: [0.15, -0.035, 0], pz: 0, lo: 0.42, lean: -0.08, cheek: 1 },       // rifle: cheek on the stock, hand on the handguard
+  { L: 0.22, sh: [0.02, 0.06, 0.11], tw: 0.5, lh: [0.15, -0.035, 0], pz: 0, lo: 0.42, lean: 0, cheek: 1, kneel: 1 },  // sniper: kneels when still, eye on the scope
+  { L: 0.12, sh: [0.03, 0.07, 0.11], tw: 0.4, lh: [0.2, -0.035, 0], pz: 0, lo: 0.38, lean: -0.06, cheek: 1 },         // crossbow: shouldered, hand under the stock
+  { g: [0.12, -0.16, 0.1], tw: 0.45, lh: [0.16, -0.02, 0], pz: 0.04, lo: 0.12, lean: -0.05 },                       // flamethrower: from the hip, two hands
+  { L: 0.21, sh: [0.02, 0.06, 0.11], tw: 0.5, lh: [0.18, -0.045, 0], pz: 0.12, lo: 0.38, lean: -0.04, cheek: 1 },     // launcher: shouldered, barrel up for the arc
+];
+const MUZ = [[0.18, 0.03, 0], [0.5, 0.04, 0], [0.5, 0.04, 0], [0.67, 0.04, 0], [0.33, 0.05, 0], [0.5, 0.04, 0], [0.45, 0.05, 0]];
+const _gv = new THREE.Vector3(), _gl = new THREE.Vector3();
+// world position of a survivor's muzzle (from last frame's pose), so shots leave the barrel you see
+function muzzleW(i, wi) { const m = OBJ.pl && OBJ.pl[i], p = W.p[i]; if (!m || !m.g.visible || !m.guns[wi] || !m.guns[wi].visible || (p && p._rdy != null && p._rdy < 0.7)) return null; _gv.set(MUZ[wi][0], MUZ[wi][1], MUZ[wi][2]).applyMatrix4(m.guns[wi].matrixWorld); return [_gv.x, _gv.z, _gv.y]; }
 const GRIP = [[0.2, -0.04, 0.05, 0.19, -0.06, -0.02], [0.2, -0.04, 0.06, 0.42, -0.02, 0.0], [0.2, -0.04, 0.06, 0.4, -0.02, 0.0], [0.2, -0.04, 0.06, 0.46, -0.0, 0.0], [0.2, -0.04, 0.06, 0.34, -0.02, 0.0], [0.2, -0.04, 0.06, 0.3, -0.08, 0.0], [0.2, -0.04, 0.06, 0.36, -0.06, 0.0]];
 function drawPlayers(vl, dt) {
   while (OBJ.pl.length < W.p.length) OBJ.pl.push(mkPlayerModel(OBJ.pl.length));
@@ -383,6 +398,9 @@ function drawPlayers(vl, dt) {
     let aL = Math.sin(ph) * A, aR = -Math.sin(ph) * A, kL = 0.08 + Math.max(0, Math.cos(ph)) * K, kR = 0.08 + Math.max(0, -Math.cos(ph)) * K;
     if (p.jz > 0.05) { aL = 0.9; aR = -0.2; kL = 1.5; kR = 0.9; } // tucked legs in the air
     if (down) { aL = 1.35 + Math.sin(ph) * 0.2; aR = 0.2; kL = 2.1; kR = 1.9; }
+    const wK = down ? 0 : p.wpn, SK = STANCE[wK] || STANCE[0];
+    p._kn = lerp(p._kn || 0, SK.kneel && !moving && !p.build && !(p.medT > 0) && !(p.jz > 0.05) && !down ? 1 : 0, Math.min(1, dt * 7));
+    if (p._kn > 0.01) { const q = p._kn; aL = lerp(aL, 1.45, q); kL = lerp(kL, 1.45, q); aR = lerp(aR, -0.05, q); kR = lerp(kR, 1.62, q); } // right knee down, left foot forward
     const legH = (a, k) => 0.23 * Math.cos(a) + 0.22 * Math.cos(a - k) + 0.03;
     const hipY = down ? 0.2 : Math.max(legH(aL, kL), legH(aR, kR));
     m.hips.position.y = hipY; m.upper.position.y = hipY;
@@ -394,7 +412,7 @@ function drawPlayers(vl, dt) {
     // torso: lean into the run, breathe when idle, flinch when hit, slump when down
     const breath = Math.sin(W.t * 2.2 + i) * 0.012;
     const hurt = p.hurtT > 0 ? p.hurtT / 0.3 : 0;
-    m.torso.rotation.z = -0.1 * amp + hurt * 0.35 + (down ? -0.45 : 0) + (p.medT > 0 ? -0.2 : 0);
+    m.torso.rotation.z = -0.1 * amp + hurt * 0.35 + (down ? -0.45 : 0) + (p.medT > 0 ? -0.2 : 0) + (down || p.build || p.medT > 0 ? 0 : SK.lean * (1 - amp * 0.5) * (p._rdy == null ? 1 : p._rdy));
     m.torso.rotation.x = Math.sin(ph) * 0.05 * amp;
     m.torso.position.y = breath + Math.abs(Math.sin(ph)) * 0.012 * amp;
     m.head.rotation.z = (down ? 0.35 : 0) + (p.medT > 0 ? -0.35 : 0) - m.torso.rotation.z * 0.4;
@@ -411,19 +429,29 @@ function drawPlayers(vl, dt) {
     // what's in hand + arm IK
     const reload = p.reloadT > 0 && !p.build, med = p.medT > 0, thr = p._throwT > 0, build = !!p.build;
     m.guns.forEach((gm, k) => gm.visible = !build && !med && !thr && k === wi); m.hammer.visible = build; m.medkit.visible = med; m.nade.visible = thr;
-    const G = GRIP[wi]; let rx = G[0], ry = G[1], rz = G[2], lx = G[3], ly = G[4], lz = G[5];
-    m.gunG.rotation.set(0, 0, 0); m.gunG.position.set(rx, ry, rz);
-    if (reload) { // tip the gun, off hand to the magazine and back
-      const rr = (W.t * 2.6) % 1, dip = Math.sin(rr * Math.PI);
-      m.gunG.rotation.set(0.55, 0, -0.35); lx = 0.2 + 0.05 * (1 - dip); ly = -0.1 - dip * 0.12; lz = 0.02;
-      if (!p._rl) addP({ x: p.x + Math.cos(p._uy) * 0.25, y: p.y + Math.sin(p._uy) * 0.25, z: zv + 0.7, vx: frnd(-0.3, 0.3), vy: frnd(-0.3, 0.3), vz: 0.4, col: '#2a2d30', s: 0.05, life: 0.9, floor: zv + 0.02 });
-    }
+    // stance: shouldered up when shooting or standing, low ready (muzzle down, butt still in the shoulder) when on the move
+    const S = STANCE[wi], fired = W.t - (p._lastShot || -9) < 1.4, plain = down || build || med || thr;
+    p._rdy = lerp(p._rdy == null ? 1 : p._rdy, plain || !moving || fired || (p.inp && p.inp.fire) ? 1 : 0, Math.min(1, dt * 8));
+    const lo = 1 - p._rdy, bt = plain ? 0 : S.tw;
+    m.torso.rotation.y = -bt; m.head.rotation.y = (S.cheek && !plain && p._rdy > 0.5 ? 0 : m.head.rotation.y) + bt * 0.85; // blade the body, eyes stay on the target
+    if (S.cheek && !plain) { m.head.rotation.x = 0.2 * p._rdy; m.head.rotation.z -= 0.14 * p._rdy; } else m.head.rotation.x = 0; // cheek on the stock
+    const rl = reload ? Math.sin(((W.t * 2.6) % 1) * Math.PI) : 0;
+    m.gunG.rotation.set(reload ? 0.55 : 0, bt, S.pz - lo * S.lo - (reload ? 0.35 : 0));
+    if (S.L) { _gl.set(S.L, 0, 0).applyEuler(m.gunG.rotation); m.gunG.position.set(S.sh[0] + _gl.x, S.sh[1] + _gl.y, S.sh[2] + _gl.z); }
+    else m.gunG.position.set(S.g[0] - lo * 0.06, S.g[1] - lo * 0.05, S.g[2]);
+    if (down) m.gunG.position.set(0.24, -0.02, 0.06);
+    let lhx = S.lh[0], lhy = S.lh[1], lhz = S.lh[2];
+    if (reload) { lhx = 0.06 + 0.04 * (1 - rl); lhy = -0.1 - rl * 0.12; lhz = -0.03; // off hand down to the magazine and back
+      if (!p._rl) addP({ x: p.x + Math.cos(p._uy) * 0.25, y: p.y + Math.sin(p._uy) * 0.25, z: zv + 0.7, vx: frnd(-0.3, 0.3), vy: frnd(-0.3, 0.3), vz: 0.4, col: '#2a2d30', s: 0.05, life: 0.9, floor: zv + 0.02 }); }
     p._rl = reload;
-    if (wi === 1 && p._kick > 0.1 && p._kick < 0.75) lx -= Math.sin((0.75 - p._kick) / 0.65 * Math.PI) * 0.12; // shotgun pump
-    if (wi === 3 && p._kick > 0.1 && p._kick < 0.6) { ry += Math.sin((0.6 - p._kick) / 0.5 * Math.PI) * 0.07; }   // sniper bolt
-    if (build) { const sw = p._swingT > 0 ? Math.sin((1 - p._swingT / 0.3) * Math.PI) : 0; rx = 0.25; ry = 0.08 + sw * 0.12; rz = 0.12; lx = 0.05; ly = -0.3; lz = -0.06; m.gunG.position.set(rx, ry, rz); m.gunG.rotation.z = -0.4 + sw * -1.3; }
-    if (med) { rx = 0.22; ry = -0.12; rz = 0.06; lx = 0.22; ly = -0.12; lz = -0.06; m.gunG.position.set(0.24, -0.12, 0); }
-    if (thr) { const k = 1 - p._throwT / 0.35, wind = k < 0.45 ? ease(k / 0.45) : 1 - ease((k - 0.45) / 0.3); rx = 0.05 + (k < 0.45 ? -0.15 * wind : 0.4 * (1 - wind)); ry = 0.05 + wind * 0.3; rz = 0.15; m.gunG.position.set(rx, ry, rz); }
+    if (wi === 1 && p._kick > 0.1 && p._kick < 0.75) lhx -= Math.sin((0.75 - p._kick) / 0.65 * Math.PI) * 0.1; // rack the pump
+    _gl.set(lhx, lhy, lhz).applyEuler(m.gunG.rotation).add(m.gunG.position);
+    let rx = m.gunG.position.x, ry = m.gunG.position.y, rz = m.gunG.position.z, lx = _gl.x, ly = _gl.y, lz = _gl.z;
+    if (wi === 3 && p._kick > 0.1 && p._kick < 0.6) { ry += Math.sin((0.6 - p._kick) / 0.5 * Math.PI) * 0.07; } // work the bolt
+    if (plain) m.torso.rotation.y = 0;
+    if (build) { const sw = p._swingT > 0 ? Math.sin((1 - p._swingT / 0.3) * Math.PI) : 0; rx = 0.25; ry = 0.08 + sw * 0.12; rz = 0.12; lx = 0.05; ly = -0.3; lz = -0.06; m.gunG.position.set(rx, ry, rz); m.gunG.rotation.set(0, 0, -0.4 + sw * -1.3); }
+    if (med) { rx = 0.22; ry = -0.12; rz = 0.06; lx = 0.22; ly = -0.12; lz = -0.06; m.gunG.position.set(0.24, -0.12, 0); m.gunG.rotation.set(0, 0, 0); }
+    if (thr) { const k = 1 - p._throwT / 0.35, wind = k < 0.45 ? ease(k / 0.45) : 1 - ease((k - 0.45) / 0.3); rx = 0.05 + (k < 0.45 ? -0.15 * wind : 0.4 * (1 - wind)); ry = 0.05 + wind * 0.3; rz = 0.15; m.gunG.position.set(rx, ry, rz); m.gunG.rotation.set(0, 0, 0); }
     ikArm(m.arms[1], rx, ry, rz, 1); ikArm(m.arms[0], lx, ly, lz, -1);
   });
   for (const p of W.p) { if (p._throwT > 0) p._throwT -= dt; if (p._swingT > 0) p._swingT -= dt; }

@@ -21,6 +21,9 @@ function newWorld(seed, names, diff) {
   };
   recomputeStab();
   restockSpots(true);
+  // day one also gets supplies out in the open (the buildings are already stocked by the generator)
+  for (const k of ['crate', 'toolbox', 'rubble']) for (let j = Math.round(SPOTS[k].n * 1.2); j > 0; j--) { const i = pickSpot(k, true); if (i >= 0) { W.blk[i] = SPOT_IDS[k]; W.bhp[i] = 1; } }
+  W.spotN = spotCount();
   updateFields(0, true);
   W.edges = edgeSpawns();
   rollTasks();
@@ -249,10 +252,10 @@ function spotFree(x, y, L) {
   for (const p of W.p) if (Math.floor(p.x) === x && Math.floor(p.y) === y) return false;
   return true;
 }
-function pickSpot(kind) {
+function pickSpot(kind, out) {
   for (let tries = 0; tries < 400; tries++) {
     let x, y, L;
-    const indoor = kind === 'cabinet' || ((kind === 'rubble' || kind === 'toolbox' || kind === 'crate') && rand() < 0.45);
+    const indoor = !out && (kind === 'cabinet' || ((kind === 'rubble' || kind === 'toolbox' || kind === 'crate') && rand() < 0.4));
     if (indoor) {
       const H = TOWN_HOUSES[Math.floor(rand() * TOWN_HOUSES.length)];
       x = H[0] + 1 + Math.floor(rand() * (H[2] - H[0] - 1)); y = H[1] + 1 + Math.floor(rand() * (H[3] - H[1] - 1));
@@ -273,7 +276,7 @@ function pickSpot(kind) {
 function restockSpots(initial) {
   const c = spotCount();
   for (const k in SPOT_IDS) {
-    let need = (SPOTS[k].n || 0) - (c[k] || 0);
+    let need = Math.max(SPOTS[k].n || 0, (W.spotN && W.spotN[k]) || 0) - (c[k] || 0); // back up to the day-one amount
     while (need-- > 0) { const i = pickSpot(k); if (i < 0) break; if (initial) { W.blk[i] = SPOT_IDS[k]; W.bhp[i] = 1; } else setCell(i, SPOT_IDS[k], W.slab[i], null, 'spawn'); }
   }
 }

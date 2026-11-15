@@ -157,10 +157,10 @@ function genMap(seed) {
         for (let x = x0 + 1; x < x1; x++) for (const yy of [py - 1, py + 1]) { if (xs.some(w => x === w - 2) && !gaps.has(K(x, yy, L))) continue; if (!gaps.has(K(x, yy, L))) W_(x, yy, L); } // corridor walls, a door into every room
         for (const w of xs) for (let y = y0 + 1; y < y1; y++) { if (Math.abs(y - py) <= 1 || gaps.has(K(w, y, L))) continue; W_(w, y, L); }
         if (L >= 1) for (const w of xs) { if (rr() < 0.55) balcony(-1, w + 1, L); if (rr() < 0.55) balcony(1, w + 1, L); }
-        loot(L, 3, [26, 29, 34, 34, 32]);
+        loot(L, 6, [26, 29, 34, 34, 32, 35]);
       }
       for (let x = x0; x <= x1; x++) for (let y = y0; y <= y1; y++) if (isEdge(x, y) && !hatches.has(K(x, y, st))) W_(x, y, st, 42); // roof rail
-      loot(st, 2, [26, 36, 37]);
+      loot(st, 3, [26, 36, 37]);
       doorsOn([[x0, py], [x1, py], [Math.floor((x0 + x1) / 2), y1]]);
       blk[ci(Math.floor((x0 + x1) / 2), py + 1, 0)] = 0;
     } else if (type === 'villa' || type === 'barn') {
@@ -174,7 +174,7 @@ function genMap(seed) {
           for (let wx = x0 + 6 + (L % 2) * 2; wx < x1 - 2; wx += 6) for (let y = y0 + 1; y < y1; y++) if (y !== py && y !== py - 2 && y !== py + 2 && !gaps.has(K(wx, y, L))) W_(wx, y, L); // side rooms
           if (L >= 1 && L === st - 1) balcony(1, Math.floor((x0 + x1) / 2) - 1, L);
         }
-        loot(L, type === 'barn' ? 3 : 2, [26, 29, 34, 35, 32]);
+        loot(L, type === 'barn' ? 4 : 5, [26, 29, 34, 35, 32, 33]);
       }
       if (type === 'villa') doorsOn([[Math.floor((x0 + x1) / 2), y1], [x0 + 2, y0], [x1, py + 2]]); else for (const [x, y] of [[Math.floor((x0 + x1) / 2), y1], [Math.floor((x0 + x1) / 2) + 1, y1]]) blk[ci(x, y, 0)] = 0;
     } else if (type === 'ware') {
@@ -189,7 +189,7 @@ function genMap(seed) {
       perim(0, 0.04); perim(1, 0.1, (x, y) => true);
       for (let L = 1; L < 2; L++) for (let x = x0; x <= x1; x++) for (let y = y0; y <= y1; y++) if (isEdge(x, y) && (x + y) % 3 === 0 && y !== y0) blk[ci(x, y, 1)] = 0; // high windows
       for (let y = my + 3; y < y1 - 1; y += 3) for (let x = x0 + 3; x < x1 - 2; x++) if ((x - x0) % 6 !== 0 && okIn(x, y) && !blk[ci(x, y, 0)]) put(x, y, 0, [34, 26, 37, 40, 34][Math.floor(rr() * 5)]); // shelves / crates / drums
-      loot(1, 3, [26, 36, 35]);
+      loot(1, 5, [26, 36, 35]);
       const dx = Math.floor((x0 + x1) / 2); for (const x of [dx, dx + 1]) blk[ci(x, y1, 0)] = 0; doorsOn([[x0, y1 - 2], [x1, my + 2]]);
     }
     const placed = new Set();

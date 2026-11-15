@@ -17,7 +17,7 @@ function act(a, v) {
 function toggleBuild(v) {
   const me = W.p[ME]; if (me.down || me.dead) return;
   const on = v == null ? !me.build : v; me.build = on; if (!on) me.demo = false; else me.sdir = screenUpDir();
-  act('mode', on ? 1 : 0); uiBuildBar(); sfx('click');
+  act('mode', on ? 1 : 0); uiBuildBar(); UI.keysK = ''; uiKeys(me); sfx('click');
 }
 function selBlock(id) { const me = W.p[ME]; me.sel = id; me.demo = false; uiBuildBar(); sfx('click'); }
 function rotStairs() { const me = W.p[ME]; me.sdir = (me.sdir + 1) & 3; uiBuildBar(); sfx('click'); }

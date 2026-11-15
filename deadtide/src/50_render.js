@@ -509,7 +509,9 @@ function fxEvent(e) {
 }
 function shotFx(o, wi, ends) {
   const p = W.p[o]; if (!p) return;
-  const z0 = (p.zv != null ? p.zv : p.z) + (p.down ? 0.25 : 0.72), mx = p.x + Math.cos(p.aim) * 0.55, my = p.y + Math.sin(p.aim) * 0.55;
+  p._lastShot = W.t;
+  const mw = muzzleW(o, wi); let z0 = (p.zv != null ? p.zv : p.z) + (p.down ? 0.25 : 0.72), mx = p.x + Math.cos(p.aim) * 0.55, my = p.y + Math.sin(p.aim) * 0.55;
+  if (mw && Math.hypot(mw[0] - p.x, mw[1] - p.y) < 1.2) { mx = mw[0]; my = mw[1]; z0 = mw[2]; }
   if (WPN[wi].flame) { // a roaring tongue of fire
     for (let k = 0; k < 7; k++) { const a = p.aim + frnd(-0.3, 0.3), v = frnd(5, 9); addP({ x: mx, y: my, z: z0 - 0.03, vx: Math.cos(a) * v, vy: Math.sin(a) * v, vz: frnd(-0.3, 0.8), g: -1.5, col: k % 3 === 0 ? '#fff0a0' : k % 3 === 1 ? '#ffb030' : '#ff5a1a', s: frnd(0.08, 0.16), life: frnd(0.35, 0.55), smoke: k === 6 ? 1 : 0 }); }
     RND.flashes.push({ x: mx, y: my, z: z0, t: 0, life: 0.05 }); p.recoilT = 0.04; p._kick = Math.max(p._kick || 0, 0.25);
