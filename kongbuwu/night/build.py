@@ -19,13 +19,16 @@ for p in engine + lib + chapters + [os.path.join(D, 'main.js')]:
     js += '\n/* ---- %s ---- */\n' % os.path.relpath(p, D) + rd(p)
 assert '</script' not in js
 errs = []
-ids = re.findall(r"defChapter\((?:Object\.assign\(\{\}, \w+, )?\{\s*id: '(\w+)'", js)
+ids = re.findall(r"(?<!function )defChapter\(.*?\bid: '(\w+)'", js, re.S)
 dup = sorted({i for i in ids if ids.count(i) > 1})
 if dup: errs.append('章节 id 重名: ' + ', '.join(dup))
 # 音效 / 环境声名字要存在（拼错了不会报错，只会没声音）
 core = rd(os.path.join(D, 'engine', '00_core.js'))
 i0 = core.find('  sfx(name)'); i1 = core.find('  ambient(name)'); i2 = core.find('\n  }', core.find('switch', i1))
 sfx = set(re.findall(r"case '(\w+)'", core[i0:i1])); amb = set(re.findall(r"case '(\w+)'", core[i1:i2])) | set(re.findall(r"(\w+): \{", core[i1:i2]))
+mood = rd(os.path.join(D, 'lib', 'k_40_mood.js')) if os.path.exists(os.path.join(D, 'lib', 'k_40_mood.js')) else ''
+m1 = mood.find('const KSFX'); m2 = mood.find('const KAMB'); m3 = mood.find('\n};', m2)
+if m1 >= 0: sfx |= set(re.findall(r"^  (\w+)\(\)", mood[m1:m2], re.M)); amb |= set(re.findall(r"^  (\w+)\(h\)", mood[m2:m3], re.M))
 for f in chapters + lib:
     t = rd(f)
     for m in re.finditer(r"(?:S\.sfx\(|sfx: )'(\w+)'", t):
