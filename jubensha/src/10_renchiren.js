@@ -90,7 +90,10 @@ SCRIPTS.renchiren = {
     d_cellar: { who: 'deduce', text: '推论：能把吓得躲在地洞里的赵慈善劝出来的人，得知道那个地洞，还得让他觉得是来救他的' },
     d_gamble: { who: 'deduce', text: '推论：高利贷借条、夜里聚在村长家、穷地方易沉迷赌博——王村长在村里开赌局' },
     d_poor: { who: 'deduce', text: '推论：村子明明符合补助条件却从没申请——有人故意让村子一直穷下去' },
-    d_word: { who: 'deduce', text: '推论：死亡讯息左边是“贝”字旁，右边上半是“土”——“赌徒”' }
+    d_word: { who: 'deduce', text: '推论：死亡讯息左边是“贝”字旁，右边上半是“土”——“赌徒”' },
+    d_hid: { who: 'deduce', text: '推论：死者身上的灰土来自卧室床下的地洞——他死前躲进过地洞' },
+    d_gun: { who: 'deduce', text: '推论：墙上的子弹出自李警察那把装了消音器的配枪' },
+    d_zk: { who: 'deduce', text: '推论：柴刀、被戳瞎双眼的父亲、专砍食指和中指——南城杀人狂就是张村民' }
   },
   /* 公开后，AI 心里对嫌疑人的怀疑加减 */
   sus: {
@@ -99,12 +102,11 @@ SCRIPTS.renchiren = {
     c_hu_knife: { hu: 2 }, c_hu_sons: { hu: 1 }, c_hu_rec: { hu: 1 }, f_hu_threat: { hu: 2 }, f_hu_925: { hu: 1 },
     c_wang_form: { wang: 1 }, f_wang_cellar: { wang: 2 }, f_wang_visit: { wang: 1 }, f_li_night: { wang: 1 },
     d_water: { wang: 1, zhang: -1, hu: -1 }, d_noshot: { li: -4, wang: 1 }, d_time: { wang: 1, zhang: -1 }, d_cellar: { wang: 3, hu: -1, zhang: -1 },
-    d_gamble: { wang: 2 }, d_poor: { wang: 1 }, d_word: { wang: 2 }, f_zh_wake: { zhang: -1 }, f_hu_940: { hu: -1 }
+    d_gamble: { wang: 2 }, d_poor: { wang: 1 }, d_word: { wang: 2 }, d_gun: { li: 1 }, d_zk: { zhang: 2 }, f_zh_wake: { zhang: -1 }, f_hu_940: { hu: -1 }
   },
   /* 两条一起公开 = 有人撒谎被抓 */
   contra: [
     { a: 'f_wang_nocellar', b: 'c_cellar', who: 'wang', add: 2, by: ['li', 'hu'], say: '王村长，这是你家祖上的老宅。你会不知道自己家床底下有个地下室？' },
-    { a: 'f_wang_home', b: 'f_wang_mineral', who: 'wang', add: 1, by: ['hu', 'li'], say: '你说一晚上没出门，那你怎么知道他那晚喝的是什么水？……算了，你接着说。' },
     { a: 'f_wang_seehu', b: 'f_hu_925', who: 'wang', add: 3, by: ['hu', 'li'], say: '我九点二十五去的时候根本没提灯笼，是摸黑去的！王村长，你看见的到底是谁？还是你根本就没看见？' },
     { a: 'f_wang_seehu', b: 'f_wang_lie', who: 'wang', add: 2, by: ['li', 'hu'], say: '你不是说九点前就回家睡了吗？怎么九点多又在外面看见人了？' },
     { a: 'f_wang_seeli', b: 'f_wang_home', who: 'wang', add: 2, by: ['li', 'hu'], say: '一晚上没出门，却看见我从赵家出来？村长，你到底出没出门？' },
@@ -296,7 +298,14 @@ SCRIPTS.renchiren = {
     { id: 'u21', r: 2, who: 'li', ask: { to: 'wang', topic: 'where' }, when: P => P.has('d_time') },
     { id: 'u22', r: 2, who: ['hu'], ask: { to: 'li', topic: 'zhao' }, when: P => !P.brk('li', 'zhao') },
     { id: 'u23', r: 2, who: ['li'], ask: { to: 'zhang', topic: 'about_wang' }, when: P => !P.has('f_zh_dad') },
-    { id: 'u24', r: 2, who: ['hu', 'li'], ask: { to: 'wang', topic: 'village' }, when: P => P.any('c_wang_form', 'f_li_night') }
+    { id: 'u24', r: 2, who: ['hu', 'li'], ask: { to: 'wang', topic: 'village' }, when: P => P.any('c_wang_form', 'f_li_night') },
+    /* AI 凶手反击（标准、困难）和无辜 AI 的回击 */
+    { id: 'w1', r: 2, diff: 'rebut', when: P => P.has('d_gamble') && !P.cut('d_gamble'), who: 'wang', cut: 'd_gamble', say: '高利贷是张富贵出山干活欠下的，跟村里有什么关系？乡亲们晚上来我家，是借粮！你们城里人没饿过肚子，不懂。' },
+    { id: 'w1c', r: 2, diff: 'rebut', when: P => P.cut('d_gamble') && P.has('f_li_night'), who: ['li', 'hu'], uncut: 'd_gamble', say: '借粮要三三两两、大半夜去，一待就是好几个钟头？村长，这话你自己信吗？' },
+    { id: 'w2', r: 2, diff: 'rebut', when: P => P.has('d_word') && !P.cut('d_word'), who: 'wang', cut: 'd_word', push: { zhang: 1 }, say: '那两个字糊成那样，非说是“赌徒”？左边是贝字旁，也可以是个“财”字——他是说有人图他的钱！谁专盯有钱人，大家心里有数。' },
+    { id: 'w2c', r: 2, diff: 'rebut', when: P => P.cut('d_word') && P.has('d_gamble'), who: ['hu', 'li'], uncut: 'd_word', say: '“财”字的右边是个“才”，不是“土”。死亡讯息右边那个字上头是土——就是“徒”。' },
+    { id: 'w3', r: 2, diff: 'rebut', when: P => P.has('d_water') && !P.cut('d_water'), who: 'wang', cut: 'd_water', say: '给客人倒碗井水是我们山里的规矩，谁进他屋都会倒一杯，他自己也会倒，这能说明什么？' },
+    { id: 'w4', r: 2, diff: 'frame', who: 'wang', reveal: ['f_wang_seezh'], push: { zhang: 3 }, say: '有件事我一直没敢说……那晚九点四十左右，我起夜，看见张家小子一身灰土、慌慌张张地从赵老板那边跑回来。' }
   ],
   idle: {
     wang: ['领导们喝口水，慢慢查，不着急。', '要我说，外面来的人里才有坏人。', '我们村的人老实，一辈子没出过山。'],
@@ -392,7 +401,7 @@ SCRIPTS.renchiren = {
   sides: {
     wang: G => !G.confess.wang2 && G.verdict !== 'wang',
     zhang: G => !G.confess.zhang2,
-    li: (G, role) => (G.answers[role] || [])[5] === 1 || G.pub.includes('f_li_zk'),
+    li: (G, role) => (G.answers[role] || [])[5] === 1 || G.pub.includes('f_li_zk') || G.pub.includes('d_zk'),
     hu: (G, role) => (G.answers[role] || [])[6] === 0
   },
 
@@ -417,7 +426,7 @@ SCRIPTS.renchiren = {
   },
   epilogues: [
     { role: 'li', text: G => G.pub.includes('f_li_shot') ? '李警察：他主动交出了配枪，承认那晚带枪私闯民宅、开枪伤人未遂。处分下来那天，他去女友的墓前坐了一下午。' : '李警察：他始终没说那晚九点十分去过哪里。直到弹道鉴定报告摆到他面前。' },
-    { role: 'zhang', text: G => (G.pub.includes('f_li_zk') || G.answersRight(5)) ? '张村民：南城杀人狂的案子在李警察的报告里结了案。被带走的时候，张村民没有反抗，只是回头看了一眼山——他父亲埋在那里。' : '张村民：没有人把柴刀和那些被砍掉的手指联系起来。几个月后，南城又发生了一起命案。' },
+    { role: 'zhang', text: G => (G.pub.includes('f_li_zk') || G.pub.includes('d_zk') || G.answersRight(5)) ? '张村民：南城杀人狂的案子在李警察的报告里结了案。被带走的时候，张村民没有反抗，只是回头看了一眼山——他父亲埋在那里。' : '张村民：没有人把柴刀和那些被砍掉的手指联系起来。几个月后，南城又发生了一起命案。' },
     { role: 'hu', text: G => (G.pub.includes('f_hu_threat') || G.pub.includes('c_hu_rec')) ? '胡调研：那段录音被交了上去。警方顺着赵慈善的工厂，在一间仓库里找到了他的两个儿子——饿瘦了，但都还活着。' : '胡调研：他没能说出儿子被绑的事。赵慈善死了，知道孩子下落的人也就没了。他在山下的派出所门口坐了三天。' },
     { role: 'wang', text: G => G.verdict === 'wang' ? '王村长：判决下来时，他还在念叨“没有我，这村子早散了”。' : '王村长：他依旧是这座山里的“帝王”。直到下一个外乡人进村。' }
   ]

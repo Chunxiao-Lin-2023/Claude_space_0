@@ -26,9 +26,15 @@ for (const sid in ctx.SCRIPTS) {
     if (it.ask && (!roles.has(it.ask.to) || !tops.has(it.ask.topic))) errs.push(`${sid}: 发言 ${it.id} 的 ask 不对`);
     if (it.show && typeof it.show.id === 'string') need(it.show.id, 'talk.' + it.id);
     if (!it.say && !it.ask && !it.show) errs.push(`${sid}: 发言 ${it.id} 什么也不做`);
+    if (it.cut) need(it.cut, 'talk.cut'); if (it.uncut) need(it.uncut, 'talk.uncut');
+    if (it.diff && !['rebut', 'frame'].includes(it.diff)) errs.push(`${sid}: 发言 ${it.id} 的 diff 不对`);
   }
   for (const r in sc.deck) for (const t in sc.deck[r]) { if (t !== '_' && t !== 'rebut' && !tops.has(t)) errs.push(`${sid}: deck.${r}.${t} 话题不存在`); for (const e of sc.deck[r][t]) { (e.reveal || []).forEach(i => need(i, `deck.${r}.${t}`)); if (e.cut) need(e.cut, 'deck.cut'); if (e.kind === 'lie' && r !== sc.killer) errs.push(`${sid}: ${r} 不是凶手却有谎话`); } }
   for (const id in sc.showTopic) { need(id, 'showTopic'); if (!tops.has(sc.showTopic[id])) errs.push(`${sid}: showTopic.${id} 话题不存在`); }
+  for (const L of sc.links || []) { need(L.a, 'links'); need(L.b, 'links'); (L.reveal || []).forEach(i => need(i, 'links.reveal')); for (const r in L.brk || {}) L.brk[r].forEach(t => { if (!sc.ans[r] || !sc.ans[r][t]) errs.push(`${sid}: links 打开的 ${r}.${t} 没有回答`); }); if (!(L.reveal || []).length && !L.brk) errs.push(`${sid}: link ${L.a}+${L.b} 什么也不做`); }
+  const lk = new Set(); for (const L of sc.links || []) { const k = [L.a, L.b].sort().join('+'); if (lk.has(k)) errs.push(`${sid}: link 重复 ${k}`); lk.add(k); }
+  for (const r of sc.suspects.concat(['det'])) { const it = (sc.intros || {})[r]; if (!it || it.length !== 3) errs.push(`${sid}: ${r} 的自我介绍不是 3 条`); }
+  for (const r of sc.suspects) { const f = (sc.finals || {})[r]; if (!f || !f.length) errs.push(`${sid}: ${r} 没有最终陈述`); else f.forEach(e => { if (e.kind === 'lie' && r !== sc.killer) errs.push(`${sid}: ${r} 不是凶手却有谎话（最终陈述）`); }); }
   sc.questions.forEach((q, i) => { if (q.a == null || q.a >= q.opts.length) errs.push(`${sid}: 第 ${i + 1} 题答案不对`); });
   if (sc.questions[0].roles[sc.questions[0].a] !== sc.killer) errs.push(`${sid}: 第一题答案不是凶手`);
   sc.timeline.rows.forEach((r, i) => { if (r.length !== sc.timeline.cols.length + 1) errs.push(`${sid}: 时间线第 ${i + 1} 行列数不对`); });
