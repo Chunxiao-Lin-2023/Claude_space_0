@@ -30,22 +30,35 @@ function hHideSpot(H, v) { const M = H.M, P = M.path; if (!P || !P.length || typ
   for (const e of M.hides) { if (e.occ || (H.hero.hidden && H.hero.tx === e.x && H.hero.ty === e.y)) continue; const i = ahead(e.x, e.y, 3); if (i < 0) continue; const a = HD.map(d => [e.x + d[0], e.y + d[1]]).filter(p => !hmSolid(M, M.vs, p[0], p[1]) && !M.sec[p[1] * M.w + p[0]]).sort((p, q) => fv(p[0], p[1]) - fv(q[0], q[1]))[0]; if (!a || fv(a[0], a[1]) < 0 || busy(e.x, e.y)) continue; const sc = (i - vi) * .8 + fv(a[0], a[1]) * .3; if (sc < bs) { bs = sc; best = { x: a[0], y: a[1], cl: e }; } }
   if (!best || bs > 10) for (let i = vi + 2; i < Math.min(P.length, vi + 16); i++) for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) { const x = P[i][0] + dx, y = P[i][1] + dy; if (hmSolid(M, M.vs, x, y) || M.sec[y * M.w + x]) continue; let wn = 0; for (const d of HD) if (hmSolid(M, M.vs, x + d[0], y + d[1])) wn++; if (wn < 2 || busy(x, y)) continue; const f = fv(x, y); if (f < 0) continue; const sc = (i - vi) * .8 + f * .3 + 4; if (sc < bs) { bs = sc; best = { x, y, cl: null }; } }
   return best; }
+/* 吓懵了在房间里乱跑：在这间屋里绕几个点（离吓他的东西越远越好），再去找往前走的门（第二十五轮） */
+function hPanicPlan(H, v) { const M = H.M, r = hmRoomAt(M, v.x, v.y); if (!r || v.u.boss) return null; const F = hBfs(M, v.tx, v.ty, M.vs), blocks = M.rooms.filter(q => q.n === r.n), src = v.scSrc || H.hero, fear = 1 - v.u.hp / v.u.mhp;
+  const k = clamp(Math.round(1 + fear * 2.4 + (v.nerve < .8 ? 1 : v.nerve > 1.6 ? -1 : 0)), 1, 4), pts = [];
+  for (const b of blocks) for (let y = b.y0; y <= b.y1; y++) for (let x = b.x0; x <= b.x1; x++) { const i = y * M.w + x; if (M.vs[i] || M.sec[i] || F[i] < 2 || F[i] > 6) continue; pts.push([x, y]); }
+  if (pts.length < 4) return null; const out = []; let cur = [v.tx, v.ty];
+  for (let n = 0; n < k; n++) { let best = null, bs = -1e9; for (const p of pts) { const d = Math.hypot(p[0] - cur[0], p[1] - cur[1]); if (d < 2.5 || out.some(o => Math.hypot(o[0] - p[0], o[1] - p[1]) < 2)) continue; const sc = Math.min(5, Math.hypot(p[0] - src.x, p[1] - src.y)) * 1.2 + Math.min(d, 5) * .5 + rnd() * 4;   /* 躲开吓他的东西，但在附近打转，不会一口气跑到屋子另一头 */ if (sc > bs) { bs = sc; best = p; } } if (!best) break; out.push(best); cur = best; }
+  return out.length ? out : null; }
+function hPanicTick(H, v, dt) { const M = H.M, p = v.pan[0]; if ((v.panWait || 0) > 0) { v.panWait -= dt; v.fr = 0; return; } if (v.tx === p[0] && v.ty === p[1]) { v.pan.shift(); v.panF = null; v.panWait = .35 + rnd() * .35; /* 撞到墙 / 回头看一眼，员工这时候追得上 */ if (!v.pan.length) { v.pan = null; const fear = Math.max(0, 1 - v.u.hp / v.u.mhp - .3); v.runN = 3 + Math.round(fear * 6); v.runEnd = H.t + 2.5; if (rnd() < .5) hBub(H, v, pick(['门！门在哪儿！', '这边！', '出口呢？！', '快走快走快走']), 1); } else if (rnd() < .35) hBub(H, v, pick(['啊啊啊——', '别过来！', '不是这边！', '救命！']), .9); return; }
+  if (!v.panF) v.panF = hBfs(M, p[0], p[1], M.vs); const n = hmNext(M, v.panF, v.tx, v.ty, 'v'); if (!n) { v.pan = null; v.panF = null; return; } hStepTo(v, n[0], n[1], HB.run * .85 * (v.legs || 1)); }   /* 吓懵了跑不直，比顺路逃跑慢一点 */
 function hCowerEnd(H, v, quiet) { const e = v.inCl; if (e) { e.occ = null; v.inCl = null; if (v.hideFrom) { v.x = v.tx = v.hideFrom[0]; v.y = v.ty = v.hideFrom[1]; } } v.hideAt = null; v.hideFrom = null; if (!quiet) { v.st = 'walk'; v.shaky = H.t + 3; } }
 { const _vt = hVisTick; hVisTick = function (H, v, dt) { const M = H.M, u = v.u;
   /* 收工 / 氛围拆完时被改成「出去」的：先从柜子里出来，否则卡在柜子里走不动 */ if ((v.inCl || v.hideAt) && v.st !== 'cower' && v.st !== 'tohide') hCowerEnd(H, v, true);
   if (v.st === 'leave' && v.wi > M.route.length + 1) { v.st = 'gone'; return; }
+  const own = !v.mv && (v.st === 'tohide' || v.st === 'cower' || (v.st === 'run' && v.pan)); if (own) { v.seeCd -= dt; if (v.bub && v.bub.until < H.t) v.bub = null; hPaceTick(H, v, dt); }   /* 自己接管的几个状态也要做原来每帧的杂事（气泡过期等） */
   if (v.st === 'tohide' && !v.mv) { const T = v.hideAt; if (!T) { v.st = 'walk'; return; } const g = v.hideFrom || T;
     if (v.tx === g[0] && v.ty === g[1]) { v.st = 'cower'; H.stats.hid = (H.stats.hid || 0) + 1; if (v.cl) H.stats.hidCl = (H.stats.hidCl || 0) + 1; const fear = 1 - u.hp / u.mhp; v.wait = (4 + fear * 5) * (v.nerve < .8 ? 1.25 : v.nerve > 1.6 ? .7 : 1); v.cap = Math.min(u.mhp, u.hp + u.mhp * HB.cowerCap); v.pose = 'shake'; v.poseT = H.t; v.emo = { s: 'TT', until: H.t + v.wait };
       if (v.cl) { v.inCl = v.cl; v.cl.occ = v; v.x = v.tx = v.cl.x; v.y = v.ty = v.cl.y; sfx('creak'); hBub(H, v, '（钻进了柜子）', 1.4); } else hBub(H, v, pick(HCOWER), 1.6); return; }
     const n = hmNext(M, hmField(M, g[0], g[1], 'v'), v.tx, v.ty, 'v'); if (!n) { hCowerEnd(H, v); return; } hStepTo(v, n[0], n[1], HB.run * (v.legs || 1)); return; }
   if (v.st === 'cower') { v.wait -= dt; v.fr = 0; v.seeCd = Math.max(v.seeCd, .5); if (u.hp > 0 && u.hp < v.cap) u.hp = Math.min(v.cap, u.hp + u.mhp * HB.cowerRec * dt); if ((v.whimT = (v.whimT ?? 2) - dt) <= 0) { v.whimT = 2.5 + rnd() * 2; if (!v.bub) hBub(H, v, pick(HCOWER), 1.3); }
     if (v.wait <= 0) { hCowerEnd(H, v); hBub(H, v, pick(['……走了吧？', '快走快走', '我们出去吧']), 1.4); } return; }
+  if (v.st === 'run' && v.pan && !v.mv) { if (H.t > v.panEnd) { v.pan = null; v.panF = null; } else { hPanicTick(H, v, dt); return; } }
+  if (v.st !== 'run' && v.pan) { v.pan = null; v.panF = null; }
   const was = v.st; _vt(H, v, dt);
   if (H.mode !== 'house') return;
-  if (was === 'react' && v.st === 'run') { const fear = Math.max(0, 1 - u.hp / u.mhp - .3); v.runN = Math.round((6 + fear * 13) * (fear > 0 ? v.legs || 1 : 1)); v.runEnd = H.t + HB.runT + fear * 3; }   /* 轻轻一吓照旧跑 6 格；吓狠了跑得远 */
+  if (was === 'react' && v.st === 'run') { const fear = Math.max(0, 1 - u.hp / u.mhp - .3); v.runN = Math.round((6 + fear * 13) * (fear > 0 ? v.legs || 1 : 1)); v.runEnd = H.t + HB.runT + fear * 3;
+    const pl = hPanicPlan(H, v); if (pl) { v.pan = pl; v.panF = null; v.panEnd = H.t + 2 + pl.length * 2.2; v.runEnd = v.panEnd + 3; } }   /* 轻轻一吓照旧跑 6 格；吓狠了跑得远 */
   if (was === 'run' && v.st === 'walk' && !u.boss) { const fear = 1 - u.hp / u.mhp, p = .25 + fear * .7 + (v.nerve < .8 ? .2 : v.nerve > 1.6 ? -.25 : 0);
     if (fear >= .25 && rnd() < p) { const s = hHideSpot(H, v); if (s) { v.st = 'tohide'; v.hideAt = s.cl ? [s.cl.x, s.cl.y] : [s.x, s.y]; v.hideFrom = [s.x, s.y]; v.cl = s.cl; hBub(H, v, pick(['躲起来！', '那边，快！', '先藏一下……']), 1.2); } } } }; }
-{ const _rx = hReact; hReact = function (H, v, src, hard) { if (v.st === 'cower' || v.st === 'tohide') hCowerEnd(H, v, true); return _rx(H, v, src, hard); }; }
+{ const _rx = hReact; hReact = function (H, v, src, hard) { if (v.st === 'cower' || v.st === 'tohide') hCowerEnd(H, v, true); if (src && src.x != null) v.scSrc = { x: src.x, y: src.y }; v.pan = null; v.panF = null; return _rx(H, v, src, hard); }; }
 { const _sc = hScared; hScared = function (H, v) { if (v.inCl || v.hideAt) hCowerEnd(H, v, true); return _sc(H, v); }; }
 { const _see = hSee; hSee = function (H, v) { if (v.st === 'cower' || v.st === 'tohide') return false; return _see(H, v); }; }
 { const _pc = hPace; hPace = function (H, v, kind, src, el) { let m = _pc(H, v, kind, src, el); if (v.st === 'cower' && H.mode === 'house') { m *= 1.5; hFloat(H, v.x, v.y - 2.2, pick(HFOUND) + ' ×1.5', 'crit'); } return m; }; }

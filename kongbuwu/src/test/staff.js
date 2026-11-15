@@ -42,15 +42,16 @@ const { chromium } = require('playwright');
   // 6. 被吓到只往前跑：吓人的站在他前面，他也不往回跑
   const fwd = await pg.evaluate(async () => { const H = await __open(null, 0), M = H.M, v = H.vis[0], res = [];
     for (const wi of [2, 3, 4, 5]) { if (wi >= M.route.length - 1) break; const a = M.route[wi - 1], tg = M.route[wi]; __put(H, v, a, 'walk'); v.wi = wi; const f = hmField(M, tg[0], tg[1], 'v'), n = hmNext(M, f, v.tx, v.ty, 'v') || tg;
-      hReact(H, v, { x: n[0], y: n[1] }, 1); const prog = () => v.wi * 1000 - hmField(M, M.route[Math.min(v.wi, M.route.length - 1)][0], M.route[Math.min(v.wi, M.route.length - 1)][1], 'v')[v.ty * M.w + v.tx]; let last = prog(), back = 0, runT = 0;
-      for (let i = 0; i < 80; i++) { hStep(H, .05); if (v.st === 'run') runT += .05; const pr = prog(); if (pr < last - .01) back++; last = pr; if (v.st === 'walk' && runT > 0) break; } res.push({ wi, back, runT: Math.round(runT * 10) / 10 }); }
+      /* 第二十五轮起：吓懵了会在这间屋里乱跑一圈再找往前的门——只检查不会跑回走过的屋子、路线进度不倒退 */ const ord = {}; M.path.forEach((p, i) => { const r = hmRoomAt(M, p[0], p[1]); if (r && ord[r.n] == null) ord[r.n] = i; }); const oAt = () => { const r = hmRoomAt(M, v.x, v.y); return r ? ord[r.n] : null; };
+      hReact(H, v, { x: n[0], y: n[1] }, 1); const o0 = oAt(), wi0 = v.wi; let back = 0, runT = 0;
+      for (let i = 0; i < 400; i++) { hStep(H, .05); if (v.st === 'run') runT += .05; const o = oAt(); if ((o != null && o0 != null && o < o0) || v.wi < wi0) back++; if (v.st === 'walk' && runT > 0) break; } res.push({ wi, back, runT: Math.round(runT * 10) / 10 }); }
     __close(H); return res; });
-  chk('scared visitors only run forward (' + JSON.stringify(fwd) + ')', fwd.length >= 2 && fwd.every(r => r.back === 0 && r.runT > .5));
+  chk('scared visitors never run back into a room they already passed (' + JSON.stringify(fwd) + ')', fwd.length >= 2 && fwd.every(r => r.back === 0 && r.runT > .5));
   // 6b. 放完招追出去补吓，不超过 6 格，追完回岗位
-  const ch = await pg.evaluate(async () => { const H = await __open('wan', 0), st = H.staff[0], v = H.vis[0]; let sd = 7; __dbg.rng = () => (sd = (sd * 16807) % 2147483647) / 2147483647; /* 随机的东西写成确定的 */ __put(H, v, __near(H, st, 1.6, 2.2), 'walk'); v.wi = Math.max(1, hmRouteIdx(H.M, v)); st.cd = 0; const hp0 = v.u.hp; let away = 0, maxd = 0, hit = 0, back = -1, hpCast = null;
+  const ch = await pg.evaluate(async () => { const H = await __open('wan', 0), st = H.staff[0], v = H.vis[0]; let sd = 7; __dbg.rng = () => (sd = (sd * 16807) % 2147483647) / 2147483647; /* 随机的东西写成确定的 */ __put(H, v, __near(H, st, 1.6, 2.2), 'walk'); v.legs = 1; v.nerve = 1; /* 腿快的游客本来就可能甩掉员工，这里测的是员工追 */ v.wi = Math.max(1, hmRouteIdx(H.M, v)); st.cd = 0; const hp0 = v.u.hp; let away = 0, maxd = 0, hit = 0, back = -1, hpCast = null;
     for (let i = 0; i < 260; i++) { hStep(H, .05); if (st.cast && st.cast.done && hpCast == null) hpCast = v.u.hp; if (st.away) away++; maxd = Math.max(maxd, Math.hypot(st.x - st.home[0], st.y - st.home[1])); hit = H.stats.staffChase || 0; if (away && !st.away && back < 0) back = i * .05; }
     const r = { away, maxd: Math.round(maxd * 10) / 10, hit, back, hp0, hpCast, hp: v.u.hp, home: st.tx === st.home[0] && st.ty === st.home[1] }; __dbg.rng = null; __close(H); return r; });
-  chk('after a skill the staff chases, lands a hit, stays within 6 tiles, returns (' + JSON.stringify(ch) + ')', ch.away > 0 && ch.hit >= 1 && ch.hit <= 2 && ch.maxd <= 6.01 && ch.home && ch.back > 0);
+  chk('after a skill the staff chases, lands a hit, stays within 6 tiles, returns (' + JSON.stringify(ch) + ')', ch.away > 0 && ch.hit >= 1 && ch.maxd <= 6.01 && ch.back > 0);   /* 第二十五轮起游客会在附近乱跑 / 躲，员工可能回岗后再追一回，不再要求最后一刻在岗位上 */
   // 6c. 闲着的员工：受惊游客从旁边跑过也追
   const join = await pg.evaluate(async () => { const H = await __open('xiaoxiao', 0), st = H.staff[0], v = H.vis[0]; __put(H, v, __near(H, st, 1.6, 2.6), 'walk'); v.wi = Math.max(1, hmRouteIdx(H.M, v)); st.cd = 99; hReact(H, v, H.hero, 1); let saw = 0; for (let i = 0; i < 60; i++) { hStep(H, .05); if (st.ch || st.away) saw = 1; } __close(H); return saw; });
   chk('idle staff joins the chase of a fleeing visitor nearby', join === 1);
