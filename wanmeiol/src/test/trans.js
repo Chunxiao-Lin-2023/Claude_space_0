@@ -29,6 +29,9 @@ const { chromium } = require('playwright');
   await pg.evaluate(([a, b]) => { __dbg.go(a, true, true); goT(b); }, setup.cross); await pg.waitForTimeout(800); s = await st();
   ok('roadCard', /k-road/.test(s.cls) && s.n.length > 4 && s.loc === setup.cross[1] && await pg.evaluate(() => getComputedStyle(document.querySelector('#ptr .pt-hill')).display === 'block'));
   if (process.env.SHOT) await pg.screenshot({ path: process.env.SHOT + '/road.png' });
+  /* the hills are painted in ink wash on a canvas and recede: two samples a moment apart differ, and the card is not blank */
+  const hill = async () => pg.evaluate(() => { const c = document.querySelector('#ptr .pt-hill'); if (!c || !c.width) return null; const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data; let h = 0, ink = 0; for (let i = 3; i < d.length; i += 4 * 97) { h = (h * 31 + d[i] + d[i - 1]) % 1e9; if (d[i] > 40) ink++; } return { h, ink }; });
+  const h1 = await hill(); await pg.waitForTimeout(250); const h2 = await hill(); ok('roadHillsMove', !!h1 && !!h2 && h1.h !== h2.h && h1.ink > 50);
   await pg.waitForFunction(() => !ptrBusy, null, { timeout: 5000 }); await pg.waitForTimeout(400);
   // auto-walk: one card for the whole trip, waypoints tick by, the journey part shows the hills
   const seen = await pg.evaluate(async far => { __dbg.go('sc_street', true, true); await new Promise(r => setTimeout(r, 100)); const e = () => document.getElementById('ptr'); const S = new Set(), K = new Set(); const p = autoWalk(far);
