@@ -377,6 +377,7 @@ function endGame(kind, why) {
   if (W.over || W.demo) return;
   W.over = kind; W.phase = kind;
   lsSet('best', Math.max(lsGet('best', 0), kind === 'win' ? W.night : W.night - 1));
+  if (NETROLE !== 'guest') clearSave(); // the run is over
   emit({ k: 'over', v: kind, why, n: W.night, kills: W.kills, pk: W.p.map(p => p.kills), built: W.stats.built });
 }
 
@@ -522,6 +523,7 @@ function dawn() {
   if (W.night >= BAL.nights && !W.endless) return endGame('win', '救援直升机到了');
   W.phase = 'day'; W.dayLen = W.clock = BAL.dayLen[1];
   rollTasks();
+  setTimeout(() => saveGame(true), 0); // autosave every morning
   for (const i of [...W.srch]) { const S = SPOTS[B[W.blk[i]].spot]; if (!S || rand() < (S.refill || 1)) { W.srch.delete(i); emit({ k: 'spot', i, v: 0 }); } }
   W.ver++; restockSpots(false);
   for (const p of activeP()) {

@@ -291,6 +291,7 @@ body:not(.touch) .tch{display:none}
       <div class="row"><input id="nameIn" maxlength="10" placeholder="你的名字"></div>
       <div class="lbl">难度</div>
       <div class="seg" id="diffSeg"><button data-d="easy">简单</button><button data-d="normal">普通</button><button data-d="hard">困难</button></div>
+      <button id="contBtn" class="primary hidden">继续上次</button>
       <button id="soloBtn" class="primary">单人守夜</button>
       <div id="coopBox" style="display:flex;flex-direction:column;gap:10px">
         <button id="hostBtn">创建双人房间</button>
@@ -322,9 +323,10 @@ body:not(.touch) .tch{display:none}
 <div id="pause" class="modal hidden">
   <div class="card"><h3 id="pauseT">暂停</h3>
     <button id="resumeBtn" class="primary">继续</button>
+    <button id="pSave">存档</button>
     <button id="pHelp" class="ghost">玩法和操作</button>
     <button id="pMute" class="ghost">声音：开</button>
-    <button id="pTitle" class="danger">返回标题</button>
+    <button id="pTitle" class="danger">存档并返回标题</button>
     <button id="pHub" class="danger hidden">返回游戏厅</button>
   </div>
 </div>

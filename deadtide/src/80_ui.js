@@ -6,11 +6,16 @@ function showScreen(s) {
   $('hud').classList.toggle('hidden', s !== 'play');
   $('hubBtn').classList.toggle('hidden', !HUB || s !== 'title');
   if (s !== 'play') { for (const id of ['craft', 'pause', 'over']) $(id).classList.add('hidden'); }
+  if (s === 'title' && typeof renderBest === 'function') renderBest();
   if (s === 'title') { STATE.mode = 'title'; renderBest(); }
   if (s === 'lobby') STATE.mode = 'lobby';
 }
 function titleStatus(t) { $('tStatus').textContent = t || ''; }
-function renderBest() { const b = lsGet('best', 0); $('bestTxt').textContent = b ? '最佳纪录：撑过 ' + b + ' 夜' : ''; }
+function renderBest() {
+  const b = lsGet('best', 0); $('bestTxt').textContent = b ? '最佳纪录：撑过 ' + b + ' 夜' : '';
+  const s = loadSave(), cb = $('contBtn'); cb.classList.toggle('hidden', !s); if (s) cb.innerHTML = '继续上次 <small style="opacity:.75;font-weight:400">' + saveLabel(s) + '</small>';
+  $('soloBtn').textContent = s ? '新开一局（单人）' : '单人守夜'; $('soloBtn').classList.toggle('primary', !s);
+}
 function confirmBtn(el, fn) {
   const label = el.textContent;
   el.addEventListener('click', () => {
@@ -240,7 +245,11 @@ function initUI() {
   $('nameIn').addEventListener('input', () => { SET.name = $('nameIn').value.trim().slice(0, 10); saveSet(); });
   diffButtons($('diffSeg')); diffButtons($('lDiffSeg'), () => { if (NETROLE === 'host') sendLobby(); });
   markDiff();
-  $('soloBtn').onclick = () => { audioInit(); netLeave(); NETROLE = 'solo'; startGame((Math.random() * 1e9) | 0, [SET.name || '幸存者'], SET.diff, 0); };
+  $('soloBtn').onclick = () => {
+    const b = $('soloBtn');
+    if (loadSave() && !b.dataset.sure) { b.dataset.sure = 1; b.textContent = '再点一次：新开一局会覆盖存档'; setTimeout(() => { delete b.dataset.sure; renderBest(); }, 3000); return; }
+    delete b.dataset.sure; audioInit(); netLeave(); NETROLE = 'solo'; startGame((Math.random() * 1e9) | 0, [SET.name || '幸存者'], SET.diff, 0);
+  };
   $('hostBtn').onclick = () => { audioInit(); netHost(); };
   $('joinBtn').onclick = () => { audioInit(); netJoin($('codeIn').value); };
   $('codeIn').addEventListener('keydown', e => { if (e.key === 'Enter') $('joinBtn').click(); });
@@ -251,7 +260,9 @@ function initUI() {
   $('lLeave').onclick = () => { netLeave(); showScreen('title'); };
   $('craftClose').onclick = closeCraft;
   $('resumeBtn').onclick = () => togglePause(false);
-  confirmBtn($('pTitle'), () => { netLeave(); W = null; STATE.paused = false; showScreen('title'); });
+  confirmBtn($('pTitle'), () => { saveGame(true); netLeave(); W = null; STATE.paused = false; showScreen('title'); renderBest(); });
+  $('pSave').onclick = () => { if (NETROLE === 'guest') { toast('联机时由房主存档'); return; } saveGame(false); sfx('click'); };
+  $('contBtn').onclick = () => continueGame();
   confirmBtn($('pHub'), () => { netLeave(); location.href = '../'; });
   $('pauseBtn').onclick = () => togglePause();
   $('muteBtn').onclick = () => { setMute(!SET.mute); uiMute(); };
