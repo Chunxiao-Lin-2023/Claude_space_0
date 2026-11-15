@@ -79,7 +79,7 @@ setInterval(() => { if (NETROLE !== 'host' || !NET.conns.size) return; const H =
   if (!H || !STATE.house) { if (NET.lastHs) { NET.lastHs = ''; netBroadcast({ t: 'hs', h: null }); } return; }
   const o = {}; for (const k in H) if (!['M', 'raf', 'rule', 'B', 'focus', 'focusPt', 'cam'].includes(k)) o[k] = H[k];
   o.B = H.B ? { turn: H.B.turn, hero: H.B.hero ? { hp: H.B.hero.hp, mhp: H.B.hero.mhp } : null } : null; o.slots = H.M.slots.map(s => [s.k || '', Math.round((s.cd || 0) * 10) / 10]);
-  o.vis = H.vis.map(v => Object.assign({}, v, { u: { key: v.u.key, n: v.u.n, hp: v.u.hp, mhp: v.u.mhp, boss: v.u.boss, st: v.u.st, trait: v.u.trait } }));
+  o.vis = H.vis.map(v => Object.assign({}, v, { u: { key: v.u.key, n: v.u.n, hp: v.u.hp, mhp: v.u.mhp, boss: v.u.boss, st: v.u.st, trait: v.u.trait }, mate: v.mate ? 1 : 0, inCl: v.inCl ? [v.inCl.x, v.inCl.y] : null, cl: null }));   /* 同伴 / 柜子只传标记，别把整个对象（还互相引用）塞进快照 */
   o.staff = H.staff.map(s => Object.assign({}, s, { u: s.u ? { key: s.u.key, hp: s.u.hp } : null, force: null }));
   const s = jsonSafe({ t: 'hs', h: o }); if (s !== NET.lastHs) { NET.lastHs = s; netBroadcast(s); } }, 100);
 

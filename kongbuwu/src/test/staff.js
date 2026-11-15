@@ -47,9 +47,9 @@ const { chromium } = require('playwright');
     __close(H); return res; });
   chk('scared visitors only run forward (' + JSON.stringify(fwd) + ')', fwd.length >= 2 && fwd.every(r => r.back === 0 && r.runT > .5));
   // 6b. 放完招追出去补吓，不超过 6 格，追完回岗位
-  const ch = await pg.evaluate(async () => { const H = await __open('wan', 0), st = H.staff[0], v = H.vis[0]; __put(H, v, __near(H, st, 1.6, 2.2), 'walk'); v.wi = Math.max(1, hmRouteIdx(H.M, v)); st.cd = 0; const hp0 = v.u.hp; let away = 0, maxd = 0, hit = 0, back = -1, hpCast = null;
+  const ch = await pg.evaluate(async () => { const H = await __open('wan', 0), st = H.staff[0], v = H.vis[0]; let sd = 7; __dbg.rng = () => (sd = (sd * 16807) % 2147483647) / 2147483647; /* 随机的东西写成确定的 */ __put(H, v, __near(H, st, 1.6, 2.2), 'walk'); v.wi = Math.max(1, hmRouteIdx(H.M, v)); st.cd = 0; const hp0 = v.u.hp; let away = 0, maxd = 0, hit = 0, back = -1, hpCast = null;
     for (let i = 0; i < 260; i++) { hStep(H, .05); if (st.cast && st.cast.done && hpCast == null) hpCast = v.u.hp; if (st.away) away++; maxd = Math.max(maxd, Math.hypot(st.x - st.home[0], st.y - st.home[1])); hit = H.stats.staffChase || 0; if (away && !st.away && back < 0) back = i * .05; }
-    const r = { away, maxd: Math.round(maxd * 10) / 10, hit, back, hp0, hpCast, hp: v.u.hp, home: st.tx === st.home[0] && st.ty === st.home[1] }; __close(H); return r; });
+    const r = { away, maxd: Math.round(maxd * 10) / 10, hit, back, hp0, hpCast, hp: v.u.hp, home: st.tx === st.home[0] && st.ty === st.home[1] }; __dbg.rng = null; __close(H); return r; });
   chk('after a skill the staff chases, lands a hit, stays within 6 tiles, returns (' + JSON.stringify(ch) + ')', ch.away > 0 && ch.hit >= 1 && ch.hit <= 2 && ch.maxd <= 6.01 && ch.home && ch.back > 0);
   // 6c. 闲着的员工：受惊游客从旁边跑过也追
   const join = await pg.evaluate(async () => { const H = await __open('xiaoxiao', 0), st = H.staff[0], v = H.vis[0]; __put(H, v, __near(H, st, 1.6, 2.6), 'walk'); v.wi = Math.max(1, hmRouteIdx(H.M, v)); st.cd = 99; hReact(H, v, H.hero, 1); let saw = 0; for (let i = 0; i < 60; i++) { hStep(H, .05); if (st.ch || st.away) saw = 1; } __close(H); return saw; });

@@ -107,7 +107,7 @@ function hScTick(H, st, dt) { const M = H.M; if (st.tx == null) { st.tx = st.hom
   if (st.mv) { hMove(st, dt); st.away = true; return; }
   const hd = q => Math.hypot(q.x - st.home[0], q.y - st.home[1]);
   let c = st.ch, v = c && H.vis[c.vi]; if (c && (!v || hOut(v) || v.st === 'leave' || H.t > c.until || c.n >= HSC.hits || hd(v) > HSC.leash)) { st.ch = c = null; v = null; }
-  if (!c && !st.away) { const j = hActive(H).filter(q => hScaredSt(q) && hDist(q, st) <= HSC.join && hd(q) <= HSC.leash).sort((a, b) => hDist(a, st) - hDist(b, st))[0]; if (j) { hScStart(H, st, j); c = st.ch; v = j; hFloat(H, st.x, st.y - 1.6, PETS[st.k].n + '：追！', 'staff'); } }
+  if (!c && !st.away) { const j = hActive(H).filter(q => (hScaredSt(q) || (q.st === 'cower' && hDist(q, st) <= HSC.join + 2)) && hDist(q, st) <= HSC.join + (q.st === 'cower' ? 2 : 0) && hd(q) <= HSC.leash)   /* 躲在附近的也会被员工找出来（RULES 41） */.sort((a, b) => hDist(a, st) - hDist(b, st))[0]; if (j) { hScStart(H, st, j); c = st.ch; v = j; hFloat(H, st.x, st.y - 1.6, PETS[st.k].n + '：追！', 'staff'); } }
   if (v) { const d = hDist(st, v); if (d <= 1.45 && st.ctick <= 0) { hScHit(H, st, v); return; }
     if (d > 1) { const n = hmNext(M, hmField(M, Math.round(v.x), Math.round(v.y), 'h'), st.tx, st.ty, 'h'); if (n && Math.hypot(n[0] - st.home[0], n[1] - st.home[1]) <= HSC.leash) { hStepTo(st, n[0], n[1], HSC.spd); st.away = true; return; } }
     st.dir = hDirTo(st, v); st.x = st.tx; st.y = st.ty; st.fr = 0; return; }

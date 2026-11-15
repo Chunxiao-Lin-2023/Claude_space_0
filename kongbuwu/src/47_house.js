@@ -151,7 +151,7 @@ function hExpose(H, v, who) { const B = H.B; hHint(H, 'seen', '被看见了：�
   hBub(H, v, pick(who === 'staff' ? ['那是工作人员吧？', '我看见拉链了。', '化妆的，别怕。'] : ['工作人员吧？', '我看见你了哈。', '老板，你鞋带开了。', '那人在躲什么？']), 1.8); hFloat(H, H.hero.x, H.hero.y - 1, '被看见 · 氛围 -' + a, 'bad'); hLog(H, v.u.n + ' 看见了陈歌——氛围 -' + a, 'warn'); sfx('miss'); }
 /* 每一“回合”：游客拆台、状态结算、场景特色 */
 function hRound(H) { const B = H.B, ins = hInside(H).filter(v => !hOut(v) && v.st !== 'leave'); B.turn++; const all = B.foes; B.foes = ins.map(v => v.u);
-  for (const v of ins) { const u = v.u; tickSt(B, u); if (u.hp <= 0) continue; v.mockN++; if (u.st.fear || u.st.stun || hScaredSt(v) || H.t < (v.shaky || 0) || (v.mockN % HB.mockEvery) || !hBored(H, v)) continue; const n0 = B.log.length; mobAct(B, u); planMob(B, u); const ln = B.log.slice(n0).map(l => l.s).filter(s => s.startsWith(u.n)).pop(); if (ln) hBub(H, v, ln.slice(u.n.length).replace(/^[ ·：]+/, ''), 2.2, u.intent && u.intent.exec); if (u.st.phone === undefined && /手机/.test(ln || '')) { v.st = 'phone'; v.wait = 2; } }
+  for (const v of ins) { const u = v.u; tickSt(B, u); if (u.hp <= 0) continue; v.mockN++; if (v.mate || u.st.fear || u.st.stun || hScaredSt(v) || H.t < (v.shaky || 0) || (v.mockN % HB.mockEvery) || !hBored(H, v)) continue; const n0 = B.log.length; mobAct(B, u); planMob(B, u); const ln = B.log.slice(n0).map(l => l.s).filter(s => s.startsWith(u.n)).pop(); if (ln) hBub(H, v, ln.slice(u.n.length).replace(/^[ ·：]+/, ''), 2.2, u.intent && u.intent.exec); if (u.st.phone === undefined && /手机/.test(ln || '')) { v.st = 'phone'; v.wait = 2; } }
   if (ins.some(v => v.u.hp > 0)) sceneTurn(B); B.foes = all; B.result = null; hFlush(H); }
 /* 战斗事件 → 地图上的飘字 */
 function hFlush(H) { const B = H.B; for (const e of B.ev) { const v = e.who === 'hero' ? null : H.vis.find(q => q.u.key === e.who); const x = v ? v.x : H.hero.x, y = v ? v.y - 1.4 : H.hero.y - 1.6;
@@ -167,7 +167,7 @@ function hScared(H, v) { hSnap(v); v.st = 'faint'; v.pose = 'faint'; v.poseT = H
    再往远离吓人那一下的方向跑一段，跑完腿软着接着走。SAN 掉到 0 就晕在原地，收工时和别人一起被抬出去（RULES 30）。
    陈歌点游客就追：追上还在跑的 = 再吓一下。 */
 const HPOSE = { jump: '!!', fall: 'sweat', shake: '?!', cover: 'xx', cry: 'TT' }, HRUN = ['快跑快跑！', '别过来！！', '刚才那是什么！', '等等我——', '我腿软了……', '妈呀妈呀妈呀'];
-const hScaredSt = v => v.st === 'panic' || v.st === 'react' || v.st === 'run';
+const hScaredSt = v => v.st === 'panic' || v.st === 'react' || v.st === 'run' || v.st === 'tohide';
 function hSnap(v) { const m = v.mv; if (!m) return; if (m.p > .5) { v.tx = m.tx; v.ty = m.ty; } v.x = v.tx; v.y = v.ty; v.mv = null; }
 function hReact(H, v, src, hard) { if (hOut(v) || v.st === 'wait' || v.st === 'leave') return; const pose = hard ? pick(['fall', 'jump', 'cry']) : pick(Object.keys(HPOSE)); hSnap(v); v.st = 'react'; v.pose = pose; v.poseT = H.t; v.wait = HB.react; v.from = [src.x, src.y]; v.emo = { s: HPOSE[pose], until: H.t + HB.react + 1.4 }; hPaceHit(H, v, src); hsRule(H, 'hit', v); }
 /* ---------- 陈歌 ---------- */

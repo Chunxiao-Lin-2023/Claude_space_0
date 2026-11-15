@@ -16,12 +16,12 @@ const hBackAt = (M, x, y) => { const i = Math.round(y) * M.w + Math.round(x); re
 /* 通道里跑 */
 { const _st = hStepTo; hStepTo = function (a, nx, ny, spd) { const H = typeof HS !== 'undefined' ? HS : null; if (H && a === H.hero && H.M && hBackAt(H.M, a.tx, a.ty) && hBackAt(H.M, nx, ny)) spd *= HB.heroBack; return _st(a, nx, ny, spd); }; }
 /* 陈歌找路：按时间算（通道里一格只算半格） */
-function hmFieldH(M, tx, ty) { const key = 'H' + tx + ',' + ty; if (M.fields[key]) return M.fields[key]; const w = M.w, N = w * M.h, f = new Float32Array(N).fill(-1), done = new Uint8Array(N), hp = [[0, ty * w + tx]]; f[ty * w + tx] = 0;
+function hmFieldH(M, tx, ty, nocache) { const key = 'H' + tx + ',' + ty; if (M.fields[key]) return M.fields[key]; const w = M.w, N = w * M.h, f = new Float32Array(N).fill(-1), done = new Uint8Array(N), hp = [[0, ty * w + tx]]; f[ty * w + tx] = 0;
   const push = (d, i) => { hp.push([d, i]); let c = hp.length - 1; while (c > 0) { const p = (c - 1) >> 1; if (hp[p][0] <= hp[c][0]) break; [hp[p], hp[c]] = [hp[c], hp[p]]; c = p; } };
   const pop = () => { const top = hp[0], last = hp.pop(); if (hp.length) { hp[0] = last; let c = 0; for (;;) { const l = c * 2 + 1, r = l + 1; let m = c; if (l < hp.length && hp[l][0] < hp[m][0]) m = l; if (r < hp.length && hp[r][0] < hp[m][0]) m = r; if (m === c) break; [hp[m], hp[c]] = [hp[c], hp[m]]; c = m; } } return top; };
   const back = i => M.sec[i] || (M.cross && M.cross[i]);
   while (hp.length) { const [d, c] = pop(); if (done[c]) continue; done[c] = 1; const cx = c % w, cy = (c / w) | 0; for (const [dx, dy] of HD) { const nx = cx + dx, ny = cy + dy, k = ny * w + nx; if (nx < 0 || ny < 0 || nx >= w || ny >= M.h || M.hs[k] || done[k]) continue; const nd = d + (back(k) && back(c) ? 1 / HB.heroBack : 1); if (f[k] < 0 || nd < f[k]) { f[k] = nd; push(nd, k); } } }
-  return M.fields[key] = f; }
+  if (nocache) return f; return M.fields[key] = f; }
 /* 抄近路：去游客前面来得及赶到的藏身处 */
 /* 游客在路线上的位置：路线会走进死胡同再折回来，只在他正走向的那一段里找 */
 function hPathIdx(M, v) { const P = M.path, R = M.route; if (!M.pseg) { M.pseg = [0]; let k = 1; for (let j = 0; j < P.length && k < R.length; j++) if (P[j][0] === R[k][0] && P[j][1] === R[k][1]) { M.pseg[k] = j; k++; } while (M.pseg.length < R.length) M.pseg.push(P.length - 1); }
@@ -31,7 +31,7 @@ function hAmbush(H, v) { const M = H.M, h = H.hero, P = M.path; if (!P || !P.len
   const add = (x, y, kind) => { if (hmSolid(M, M.hs, x, y) && kind !== 'hide') return; for (let i = vi + 4; i < Math.min(P.length, vi + 26); i++) { const d = Math.hypot(P[i][0] - x, P[i][1] - y); if (d <= (kind === 'hide' ? 2.6 : 2.1)) { cand.push({ x, y, kind, i }); return; } } };
   for (const e of M.hides) add(e.x, e.y, 'hide');
   for (let i = 0; i < M.w * M.h; i++) if ((M.cross && M.cross[i]) || (M.sec[i] && !M.stw[i])) add(i % M.w, (i / M.w) | 0, 'back');
-  let best = null, bs = -1e9; for (const c of cand) { if (H.staff.some(s => s.tx === c.x && s.ty === c.y)) continue; const f = hmFieldH(M, c.x, c.y)[h.ty * M.w + h.tx]; if (f < 0) continue;
+  let best = null, bs = -1e9; const FH = hmFieldH(M, h.tx, h.ty, true); for (const c of cand) { if (H.staff.some(s => s.tx === c.x && s.ty === c.y)) continue; const f = FH[c.y * M.w + c.x]; if (f < 0) continue;
     const tH = f / hs, tV = (c.i - vi) / vs, slack = tV - tH - .8; const sc = (slack >= 0 ? 100 - (c.i - vi) * 2 : slack * 10) + (c.kind === 'hide' ? 6 : 0); if (sc > bs) { bs = sc; best = c; } }
   return best; }
 function hsMmGo(H, x, y) { const h = H.hero; H.auto = false; const v = hActive(H).filter(q => !hOut(q) && q.st !== 'wait' && Math.hypot(q.x - x, q.y - y) < 4.5).sort((a, b) => Math.hypot(a.x - x, a.y - y) - Math.hypot(b.x - x, b.y - y))[0];
