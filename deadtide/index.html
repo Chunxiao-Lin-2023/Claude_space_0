@@ -283,7 +283,7 @@ body:not(.touch) .tch{display:none}
   <button id="tJump" class="tb fight">跳</button>
   <button id="tWpn" class="fight"><b>手枪</b><span>∞</span></button>
   <div id="wpick" class="hidden"></div>
-  <button id="tUse" class="hidden"><b>按住</b><span>交互</span></button>
+  <button id="tUse" class="hidden"><b>点一下</b><span>交互</span></button>
   <div id="tLay" class="bld"><button id="tLUp">▲</button><span id="tLLbl">1F</span><button id="tLDn">▼</button></div>
 </div>
 
@@ -4055,7 +4055,7 @@ const FXR = mulberry(99); const frnd = (a = 0, b = 1) => a + FXR() * (b - a);
 const angDiff = (a, b) => { let d = (b - a) % (Math.PI * 2); if (d > Math.PI) d -= Math.PI * 2; if (d < -Math.PI) d += Math.PI * 2; return d; };
 
 /* ---------- world geometry ---------- */
-const MW = 128, MH = 128, ML = 10;     // grid columns, rows, layers
+const MW = 160, MH = 160, ML = 10;     // grid columns, rows, layers
 const FH = 1.3;
 const PH = 0.62;
 const LEAN = 1.7;                   // shooters lean over parapets this close to them                    // parapet height: upper-floor walls with nothing on top are only waist high                      // height of one layer (storey / terrain step) in world units
@@ -4111,6 +4111,7 @@ defB(38, { key: 'vending', P: 1, Z: 1, B: 1, nat: 1, spot: 'vending' });
 defB(39, { key: 'scrap', P: 1, Z: 1, nat: 1, res: 'steel', hp: 1 });
 defB(40, { key: 'logs', P: 1, Z: 1, B: 1, nat: 1, res: 'wood', hp: 1 });
 defB(41, { key: 'bush', nat: 1, res: 'wood', hp: 1 });
+defB(42, { key: 'rail', P: 1, Z: 1, nat: 1, brk: 1, vault: 1, hp: 120, col: '#6a6f74' }); // balcony / roof / mezzanine railing: low, vaultable, bullets pass
 const PAL = [1, 2, 3, 4, 5, 6, 7, 8, 12, 13, 14, 9, 15, 10];
 const SLAB_BRIDGE = 11; // slab id for the pre-built bridges (not buildable)
 defB(11, { key: 'bridge', slab: 1, nat: 1, col: '#7e5a36' });
@@ -4127,13 +4128,13 @@ const affordable = (res, cost) => Object.keys(cost).every(k => (res[k] || 0) >= 
 // each gun has its own trick: pistol headshots, shotgun knock-back + stagger (falls off with range), rifle bloom,
 // sniper pierce + laser, crossbow pins, flamer sets fire, launcher explodes. loot = ammo found per supply pickup.
 const WPN = [
-  { k: 'pistol', name: '手枪', dmg: 26, rate: 0.2, mag: 12, reload: 1.0, spread: 0.03, range: 15, pellets: 1, inf: 1, kick: 0.6, shake: 0.12, hs: 2.2, loot: 0 },
-  { k: 'shotgun', name: '霰弹枪', dmg: 13, rate: 0.72, mag: 6, reload: 1.7, spread: 0.17, range: 8, pellets: 8, kick: 2.6, shake: 0.35, start: 24, stun: 0.3, falloff: 1, loot: 8 },
-  { k: 'rifle', name: '步枪', dmg: 23, rate: 0.095, mag: 30, reload: 1.6, spread: 0.035, range: 20, pellets: 1, kick: 0.4, shake: 0.12, bloom: 0.22, loot: 30 },
-  { k: 'sniper', name: '狙击枪', dmg: 150, rate: 1.05, mag: 5, reload: 2.1, spread: 0.004, range: 45, pellets: 1, pierce: 5, kick: 4, shake: 0.4, stun: 0.5, laser: 1, loot: 4 },
-  { k: 'crossbow', name: '弩', dmg: 85, rate: 0.75, mag: 6, reload: 1.5, spread: 0.008, range: 26, pellets: 1, pierce: 3, kick: 0.6, shake: 0.06, pin: 1.1, loot: 6 },
-  { k: 'flamer', name: '喷火器', dmg: 9, rate: 0.07, mag: 80, reload: 2.2, spread: 0.32, range: 4.8, pellets: 1, flame: 1, burn: 3.5, kick: 0, shake: 0.02, loot: 40 },
-  { k: 'launcher', name: '榴弹发射器', dmg: 170, rate: 0.9, mag: 4, reload: 2.6, spread: 0.015, range: 22, pellets: 1, gl: 1, kick: 0, shake: 0.3, loot: 2 },
+  { k: 'pistol', name: '手枪', dmg: 34, rate: 0.2, mag: 12, reload: 1.0, spread: 0.03, range: 15, pellets: 1, inf: 1, kick: 0.6, shake: 0.12, hs: 2.2, loot: 0 },
+  { k: 'shotgun', name: '霰弹枪', dmg: 17, rate: 0.72, mag: 6, reload: 1.7, spread: 0.17, range: 8, pellets: 8, kick: 2.6, shake: 0.35, start: 24, stun: 0.3, falloff: 1, loot: 8 },
+  { k: 'rifle', name: '步枪', dmg: 30, rate: 0.095, mag: 30, reload: 1.6, spread: 0.035, range: 20, pellets: 1, kick: 0.4, shake: 0.12, bloom: 0.22, loot: 30 },
+  { k: 'sniper', name: '狙击枪', dmg: 195, rate: 1.05, mag: 5, reload: 2.1, spread: 0.004, range: 45, pellets: 1, pierce: 5, kick: 4, shake: 0.4, stun: 0.5, laser: 1, loot: 4 },
+  { k: 'crossbow', name: '弩', dmg: 110, rate: 0.75, mag: 6, reload: 1.5, spread: 0.008, range: 26, pellets: 1, pierce: 3, kick: 0.6, shake: 0.06, pin: 1.1, loot: 6 },
+  { k: 'flamer', name: '喷火器', dmg: 12, rate: 0.07, mag: 80, reload: 2.2, spread: 0.32, range: 4.8, pellets: 1, flame: 1, burn: 3.5, kick: 0, shake: 0.02, loot: 40 },
+  { k: 'launcher', name: '榴弹发射器', dmg: 220, rate: 0.9, mag: 4, reload: 2.6, spread: 0.015, range: 22, pellets: 1, gl: 1, kick: 0, shake: 0.3, loot: 2 },
 ];
 const NW = WPN.length;
 
@@ -4236,20 +4237,20 @@ const BAL = {
   downTime: 30, reviveTime: 2.4, soloDownTime: 8, respawnHp: 0.5,
   searchTime: 1.5, healTime: 1.0, medHeal: 60,
   shoveDmg: 18, shoveKB: 6, shoveCD: 0.55, shoveRange: 1.3,
-  nadeDmg: 220, nadeR: 2.8, nadeFuse: 1.6,
+  nadeDmg: 286, nadeR: 2.8, nadeFuse: 1.6,
   headshot: 1.6,
   radioHp: 1500, radioDmg: 0.5,
   startRes: { wood: 90, stone: 30, steel: 20, parts: 8 },
   refund: 0.5,
-  nightSpawn: n => Math.round(16 + n * 7),
+  nightSpawn: n => Math.round(22 + n * 9),
   bloodMul: 1.5,
   hpMul: n => 1 + 0.13 * (n - 1),
   spdMul: n => 1 + 0.02 * (n - 1),
   spawnDur: n => 50 + n * 4,      // the horde trickles in over this long
   nightMin: n => 150 + n * 6,     // a night lasts at least this long; small groups keep coming until then
-  nightTrickleCD: 7, nightTrickleMax: 6,
-  dayStragglers: 6, dayStragglerCD: 10,
-  burnDps: 22, blastR: 2.3, blastDmgP: 32, blastDmgB: 160, screamR: 9, screamCD: 9, rageMul: 1.45,
+  nightTrickleCD: 7, nightTrickleMax: 8,
+  dayStragglers: 8, dayStragglerCD: 10,
+  burnDps: 28, blastR: 2.3, blastDmgP: 32, blastDmgB: 160, screamR: 9, screamCD: 9, rageMul: 1.45,
   lootFar: 30, wireDps: 14, wireSlow: 0.45, wireWear: 6,
   aggro: 11,                     // (legacy) zombies now always hunt the nearest reachable player
   diff: { easy: { hp: 0.75, n: 0.75, dmg: 0.7 }, normal: { hp: 1, n: 1, dmg: 1 }, hard: { hp: 1.3, n: 1.3, dmg: 1.25 } },
@@ -4303,12 +4304,13 @@ const inZone = (x, y) => radioDist(x, y) <= BUILD_R;
    128 x 128: river and forest in the west, the camp north-west of centre, hills to the north-east, a farm in the north
    and a big ruined town (three rows of blocks on a street grid) filling the south and south-east. Town lots: [x0, y0, x1, y1, storeys]. */
 const TOWN_HOUSES = [
-  // [x0, y0, x1, y1, storeys]: bigger blocks of 1-4 storeys with yards between them
-  [33, 62, 45, 72, 2], [62, 62, 74, 72, 3], [77, 64, 88, 74, 1], [95, 57, 107, 67, 4], [112, 62, 124, 73, 2],
-  [37, 81, 50, 93, 3], [62, 86, 74, 97, 2], [78, 79, 88, 88, 1], [94, 82, 106, 94, 3], [112, 79, 124, 90, 2],
-  [33, 106, 45, 117, 2], [47, 116, 55, 125, 1], [61, 104, 74, 115, 4], [78, 111, 89, 122, 2], [95, 104, 107, 116, 3], [112, 112, 124, 124, 2],
-  // the barn up at the farm
-  [48, 3, 58, 11, 1],
+  // [x0, y0, x1, y1, storeys, type]: big blocks, one or two per street block. apt: apartment block (corridor, rooms,
+  // balconies, roof); villa: big house with rooms, balcony and an attic under a pitched roof; ware: warehouse with a mezzanine.
+  [33, 62, 54, 76, 2, 'villa'], [61, 62, 86, 77, 4, 'apt'], [94, 58, 121, 75, 5, 'apt'], [128, 58, 155, 74, 3, 'apt'],
+  [36, 81, 54, 96, 2, 'ware'], [62, 81, 87, 96, 2, 'villa'], [95, 81, 121, 96, 2, 'ware'], [129, 80, 155, 96, 2, 'villa'],
+  [33, 104, 54, 124, 3, 'apt'], [61, 105, 87, 124, 2, 'ware'], [94, 104, 121, 124, 4, 'apt'], [128, 104, 155, 124, 2, 'villa'],
+  [33, 132, 54, 156, 2, 'villa'], [61, 132, 87, 156, 5, 'apt'], [94, 133, 121, 156, 2, 'ware'], [128, 132, 155, 156, 3, 'apt'],
+  [48, 3, 58, 11, 1, 'barn'],
 ];
 const RADIO_XY = [48, 40];
 function genMap(seed) {
@@ -4333,9 +4335,8 @@ function genMap(seed) {
   for (let x = 0; x < MW; x++) { road(x, 51); road(x, 52); }
   for (let y = 53; y < MH; y++) { road(57, y); road(58, y); }
   for (let y = 0; y < 19; y++) { road(44, y); road(45, y); }
-  for (let x = 30; x <= 126; x++) { road(x, 76); road(x, 77); } // town cross streets
-  for (let x = 33; x <= 126; x++) { road(x, 100); road(x, 101); }
-  for (let y = 53; y < MH; y++) { road(90, y); road(91, y); }
+  for (let x = 30; x <= MW - 2; x++) { road(x, 100); road(x, 101); road(x, 128); road(x, 129); } // town cross streets
+  for (let y = 53; y < MH; y++) { road(90, y); road(91, y); road(124, y); road(125, y); }
   for (let y = 0; y < MH; y++) for (let x = 0; x < MW; x++) {
     const i = col(x, y);
     if (tt[i] === TT.grass) { const n = noise(x, y, 7); if ((x < riverC(y) - 1 && n > 0.22) || (n > 0.8 && !inTown(x, y, 3))) tt[i] = TT.forest; else if (n < 0.16) tt[i] = TT.dirt; }
@@ -4365,93 +4366,120 @@ function genMap(seed) {
   const put = (x, y, L, id, d) => { blk[ci(x, y, L)] = id; bhp[ci(x, y, L)] = B[id].hp || 1; if (d != null) bdir[ci(x, y, L)] = d; };
   const putS = (x, y, L, id) => { slab[ci(x, y, L)] = id; shp[ci(x, y, L)] = B[id].hp; };
   for (let y = RY - 7; y <= RY + 7; y++) for (let x = RX - 7; x <= RX + 7; x++) { G[col(x, y)] = 0; if (tt[col(x, y)] !== TT.road) tt[col(x, y)] = TT.grass; for (let L = 0; L < ML; L++) blk[ci(x, y, L)] = 0; }
-  // 11 x 11, two full floors and a roof terrace. A short partition wall in the middle carries the ladders:
-  // they hang flat on the wall and climb through a hatch in the floor above onto the top of the wall.
-  const X0 = RX - 5, X1 = RX + 5, Y0 = RY - 5, Y1 = RY + 5;
-  const slit = (x, y) => (y === Y0 || y === Y1) && Math.abs(x - RX) === 3 || (x === X0 || x === X1) && Math.abs(y - RY) === 3;
-  const hatch = new Set([(RX - 1) + ',' + (RY - 2) + ',1', (RX + 1) + ',' + (RY + 1) + ',1', (RX + 1) + ',' + (RY + 2) + ',2', (RX - 1) + ',' + (RY - 1) + ',2']);
+  // 13 x 11 house: a big hall and a workshop downstairs, two rooms and a balcony upstairs, a roof terrace with a parapet.
+  // Ladders hang on the hall's inner wall in the corners and on the upstairs dividing wall; doors on every side.
+  const X0 = RX - 6, X1 = RX + 6, Y0 = RY - 5, Y1 = RY + 5, WX = RX + 2;   // WX: wall between hall and workshop
+  const slit = (x, y) => ((y === Y0 || y === Y1) && (x === RX - 4 || x === RX + 1 || x === RX + 4)) || ((x === X0 || x === X1) && (y === RY - 3 || y === RY + 3));
+  const hatch = new Set([(WX - 1) + ',' + (Y0 + 1) + ',1', (WX - 1) + ',' + (Y1 - 1) + ',1', (X0 + 2) + ',' + (RY + 1) + ',2', (RX - 1) + ',' + (RY - 1) + ',2']);
+  const door0 = (x, y) => (x === RX - 2 && (y === Y0 || y === Y1)) || (x === X0 && y === RY) || (x === X1 && y === RY);
   for (let x = X0; x <= X1; x++) for (let y = Y0; y <= Y1; y++) {
     const edge = x === X0 || x === X1 || y === Y0 || y === Y1;
-    if (edge) put(x, y, 0, (x === RX && (y === Y0 || y === Y1)) || ((x === X0 || x === X1) && y === RY) ? 7 : slit(x, y) ? 8 : 2); // a door on every side
+    if (edge) put(x, y, 0, door0(x, y) ? 7 : slit(x, y) ? 8 : 2);
+    else if (x === WX && y !== RY - 2 && y !== RY + 2) put(x, y, 0, 2);                     // hall | workshop, two doorways
     for (const L of [1, 2]) if (!hatch.has(x + ',' + y + ',' + L)) putS(x, y, L, 4);
-    if (edge) { put(x, y, 1, slit(x, y) ? 8 : 1); put(x, y, 2, 1); } // first-floor walls; waist-high parapet round the roof
+    if (edge) { put(x, y, 1, x === RX && y === Y1 ? 0 : slit(x, y) ? 8 : 1); put(x, y, 2, 1); } // upstairs walls (balcony door south); roof parapet
+    else if (y === RY && x !== RX + 1 && x <= WX) put(x, y, 1, 1);                          // upstairs dividing wall with a doorway
   }
-  for (let y = RY - 2; y <= RY + 2; y++) { if (y !== RY) put(RX, y, 0, 2); if (y !== RY - 2 && y !== RY + 1) put(RX, y, 1, 1); }
-  put(RX - 1, RY - 2, 0, 6, 0); put(RX + 1, RY + 1, 0, 6, 2); // ground -> first floor
-  put(RX + 1, RY + 2, 1, 6, 2); put(RX - 1, RY - 1, 1, 6, 0); // first floor -> roof
-  put(X0 + 2, Y0 + 2, 1, 10); put(X1 - 1, Y1 - 1, 2, 10);    // lamps
-  put(RX - 2, RY + 2, 0, 31);
-  // town: plastered ruins of 1-4 storeys. Concrete floors, a partition wall on every floor, and two ladders per floor hung on
-  // that wall, each climbing through a hatch onto the top of the wall (a doorway in the partition upstairs).
-  TOWN_HOUSES.forEach(([x0, y0, x1, y1, st], k) => {
+  for (let x = RX - 3; x <= RX + 3; x++) { putS(x, Y1 + 1, 1, 4); putS(x, Y1 + 2, 1, 4); put(x, Y1 + 2, 1, 42); } // balcony over the front door
+  put(RX - 3, Y1 + 1, 1, 42); put(RX + 3, Y1 + 1, 1, 42);
+  put(WX - 1, Y0 + 1, 0, 6, 0); put(WX - 1, Y1 - 1, 0, 6, 0);   // hall corners -> upstairs (onto the top of the hall wall)
+  put(X0 + 2, RY + 1, 1, 6, 3); put(RX - 1, RY - 1, 1, 6, 1);   // upstairs -> roof (on the dividing wall)
+  put(X0 + 2, Y0 + 2, 1, 10); put(X1 - 1, Y1 - 1, 2, 10); put(RX + 4, RY + 3, 0, 10); // lamps
+  // town: ruined buildings in the style of a real small town. Every type has rooms, ladders hung on inner walls (each climbs
+  // through a hatch onto the top of that wall, where the wall upstairs leaves a doorway), and things to search on each floor.
+  TOWN_HOUSES.forEach((H, k) => genBuilding(H, k));
+  function genBuilding([x0, y0, x1, y1, st, type], k) {
     const rr = mulberry(seed ^ (k * 7919 + 17));
-    const ok = (x, y) => inMap(x, y) && G[col(x, y)] === 0 && tt[col(x, y)] !== TT.water && tt[col(x, y)] !== TT.road;
-    for (let x = x0; x <= x1; x++) for (let y = y0; y <= y1; y++) { if (G[col(x, y)] !== 0 || tt[col(x, y)] === TT.water) continue; for (let L = 0; L <= st + 1 && L < ML; L++) { blk[ci(x, y, L)] = 0; slab[ci(x, y, L)] = 0; } if (tt[col(x, y)] !== TT.road) tt[col(x, y)] = TT.dirt; }
-    const vert = x1 - x0 >= y1 - y0, px = Math.floor((x0 + x1) / 2), py = Math.floor((y0 + y1) / 2), len = vert ? y1 - y0 - 1 : x1 - x0 - 1;
-    const onPart = (x, y) => vert ? x === px && y > y0 && y < y1 : y === py && x > x0 && x < x1;
-    const pc = a => vert ? [px, y0 + 1 + a] : [x0 + 1 + a, py];                 // partition cell #a
-    // ladders: two per storey (not on the roof), on opposite faces of the partition
-    const lad = [], used = new Set(), key = (x, y) => x + ',' + y;
-    if (st > 1) for (let L = 0; L < st; L++) for (let j = 0; j < 2; j++) {
-      for (let tries = 0; tries < 12; tries++) {
-        const a = 1 + Math.floor(rr() * Math.max(1, len - 2)), [fx, fy] = pc(a), sd = (j + L) % 2 ? 1 : -1;
-        const cx = vert ? fx + sd : fx, cy = vert ? fy : fy + sd, dir = vert ? (sd > 0 ? 2 : 0) : (sd > 0 ? 3 : 1);
-        if (used.has(key(fx, fy) + L) || used.has(key(cx, cy) + L) || used.has(key(cx, cy) + (L + 1)) || used.has(key(fx, fy) + (L + 1))) continue;
-        used.add(key(fx, fy) + L); used.add(key(cx, cy) + L); used.add(key(cx, cy) + (L + 1)); used.add(key(fx, fy) + (L + 1));
-        lad.push({ L, cx, cy, dir, fx, fy }); break;
+    const ok = (x, y) => inMap(x, y) && G[col(x, y)] === 0 && tt[col(x, y)] !== TT.water;
+    const okIn = (x, y) => ok(x, y) && tt[col(x, y)] !== TT.road;
+    const pad = type === 'apt' || type === 'villa' ? 2 : 0;
+    for (let x = x0 - pad; x <= x1 + pad; x++) for (let y = y0 - pad; y <= y1 + pad; y++) { if (!ok(x, y)) continue; for (let L = 0; L <= st + 1 && L < ML; L++) { blk[ci(x, y, L)] = 0; if (L) slab[ci(x, y, L)] = 0; } if (x >= x0 && x <= x1 && y >= y0 && y <= y1 && tt[col(x, y)] !== TT.road) tt[col(x, y)] = TT.dirt; }
+    const W_ = (x, y, L, id = 24) => { if (okIn(x, y) && L < ML) put(x, y, L, id); };
+    const F_ = (x, y, L, id = 5) => { if (ok(x, y) && L < ML) putS(x, y, L, id); };
+    const isEdge = (x, y) => x === x0 || x === x1 || y === y0 || y === y1;
+    const lads = [], gaps = new Set(), hatches = new Set(), K = (x, y, L) => x + ',' + y + ',' + L;
+    // hang a ladder on wall cell (wx,wy) at floor L, standing on side (sx,sy); the wall upstairs gets a doorway there
+    const ladder = (wx, wy, sx, sy, L) => {
+      const cx = wx + sx, cy = wy + sy, dir = sx > 0 ? 2 : sx < 0 ? 0 : sy > 0 ? 3 : 1;
+      if (hatches.has(K(cx, cy, L)) || gaps.has(K(cx, cy, L)) || hatches.has(K(wx, wy, L + 1))) return false;
+      lads.push([cx, cy, L, dir]); gaps.add(K(wx, wy, L + 1)); hatches.add(K(cx, cy, L + 1)); return true;
+    };
+    const floors = (from, to, hole) => // hatches are left open here and closed again at the end if their ladder is dropped
+      { for (let L = from; L <= to && L < ML; L++) for (let x = x0; x <= x1; x++) for (let y = y0; y <= y1; y++) if (!hatches.has(K(x, y, L)) && !(hole && hole(x, y, L))) F_(x, y, L); };
+    const perim = (L, gapP, keep) => { for (let x = x0; x <= x1; x++) for (let y = y0; y <= y1; y++) { if (!isEdge(x, y)) continue; const corner = (x === x0 || x === x1) && (y === y0 || y === y1); if (!corner && !(keep && keep(x, y)) && rr() < gapP) { if (L === 0 && rr() < 0.4) W_(x, y, 0, 29); continue; } W_(x, y, L); } };
+    const balcony = (side, a, L) => { // a 3-wide balcony on the north (-1) or south (+1) side of the building, rail round it
+      const yb = side < 0 ? y0 - 1 : y1 + 1, yr = side < 0 ? y0 - 2 : y1 + 2, yw = side < 0 ? y0 : y1;
+      for (let x = a - 1; x <= a + 3; x++) { F_(x, yb, L); F_(x, yr, L); W_(x, yr, L, 42); }
+      W_(a - 1, yb, L, 42); W_(a + 3, yb, L, 42); blk[ci(a + 1, yw, L)] = 0; // the balcony door
+    };
+    const loot = (L, n, ids) => { for (let j = 0; j < n * 4 && n > 0; j++) { const x = x0 + 1 + Math.floor(rr() * (x1 - x0 - 1)), y = y0 + 1 + Math.floor(rr() * (y1 - y0 - 1)), i = ci(x, y, L); if (blk[i] || !okIn(x, y) || (L > 0 && !slab[i]) || hatches.has(K(x, y, L)) || lads.some(q => q[2] === L && Math.abs(q[0] - x) + Math.abs(q[1] - y) < 2)) continue; put(x, y, L, ids[Math.floor(rr() * ids.length)]); n--; } };
+    const doorsOn = (cells) => { for (const [x, y] of cells) if (okIn(x, y)) { blk[ci(x, y, 0)] = 0; put(x, y, 0, 7); } };
+    if (type === 'apt') {
+      // a corridor down the middle, rooms 3 wide on both sides, two ladders per floor on the room walls
+      const py = Math.floor((y0 + y1) / 2), xs = []; for (let x = x0 + 4; x < x1 - 1; x += 4) xs.push(x);
+      for (let L = 0; L < st; L++) {
+        const ya = y0 + 2 + Math.floor(rr() * Math.max(1, py - y0 - 3)), yb = py + 2 + Math.floor(rr() * Math.max(1, y1 - py - 3));
+        const w1 = xs[Math.floor(rr() * xs.length)], w2 = xs[Math.floor(rr() * xs.length)];
+        ladder(w1, ya, -1, 0, L) || ladder(w1, ya, 1, 0, L); ladder(w2, yb, 1, 0, L) || ladder(w2, yb, -1, 0, L);
       }
-    }
-    const isExit = (x, y, L) => lad.some(q => q.L === L - 1 && q.fx === x && q.fy === y), isHatch = (x, y, L) => lad.some(q => q.L === L - 1 && q.cx === x && q.cy === y);
-    const isFront = (x, y, L) => lad.some(q => q.L === L && q.fx === x && q.fy === y);
-    for (let L = 0; L < st; L++) {
-      const door = 1 + Math.floor(rr() * len);                                    // one doorway through the partition per floor
-      for (let x = x0; x <= x1; x++) for (let y = y0; y <= y1; y++) {
-        if (!ok(x, y)) continue;
-        const edge = x === x0 || x === x1 || y === y0 || y === y1, corner = (x === x0 || x === x1) && (y === y0 || y === y1);
-        if (edge) {
-          if (!corner && rr() < (L === 0 ? 0.12 : 0.22)) { if (L === 0 && rr() < 0.5) put(x, y, 0, 29); continue; } // gaps / broken windows
-          put(x, y, L, 24);
-        } else if (onPart(x, y)) {
-          const a = vert ? y - y0 - 1 : x - x0 - 1;
-          if ((a === door - 1 || isExit(x, y, L)) && !isFront(x, y, L)) continue;
-          put(x, y, L, 24);
+      floors(1, st);
+      for (let L = 0; L < st; L++) {
+        perim(L, L === 0 ? 0.06 : 0.16, (x, y) => y === py);
+        for (let x = x0 + 1; x < x1; x++) for (const yy of [py - 1, py + 1]) { if (xs.some(w => x === w - 2) && !gaps.has(K(x, yy, L))) continue; if (!gaps.has(K(x, yy, L))) W_(x, yy, L); } // corridor walls, a door into every room
+        for (const w of xs) for (let y = y0 + 1; y < y1; y++) { if (Math.abs(y - py) <= 1 || gaps.has(K(w, y, L))) continue; W_(w, y, L); }
+        if (L >= 1) for (const w of xs) { if (rr() < 0.55) balcony(-1, w + 1, L); if (rr() < 0.55) balcony(1, w + 1, L); }
+        loot(L, 3, [26, 29, 34, 34, 32]);
+      }
+      for (let x = x0; x <= x1; x++) for (let y = y0; y <= y1; y++) if (isEdge(x, y) && !hatches.has(K(x, y, st))) W_(x, y, st, 42); // roof rail
+      loot(st, 2, [26, 36, 37]);
+      doorsOn([[x0, py], [x1, py], [Math.floor((x0 + x1) / 2), y1]]);
+      blk[ci(Math.floor((x0 + x1) / 2), py + 1, 0)] = 0;
+    } else if (type === 'villa' || type === 'barn') {
+      const py = Math.floor((y0 + y1) / 2), px = x0 + Math.floor((x1 - x0) * (0.35 + rr() * 0.3));
+      if (type === 'villa' && st > 1) for (let L = 0; L < st - 1; L++) { const a = x0 + 2 + Math.floor(rr() * (x1 - x0 - 4)); ladder(a, py, 0, 1, L) || ladder(a + 1, py, 0, -1, L); ladder(x0 + 1 + Math.floor(rr() * 2), py, 0, -1, L) || ladder(x1 - 2, py, 0, 1, L); }
+      if (st > 1) floors(1, st - 1);
+      for (let L = 0; L < st; L++) {
+        perim(L, L === 0 ? 0.05 : 0.12);
+        if (type === 'villa') {
+          for (let x = x0 + 1; x < x1; x++) { if (gaps.has(K(x, py, L)) || (x - x0) % 6 === 3) continue; W_(x, py, L); }                    // front / back rooms, a doorway every 6
+          for (let wx = x0 + 6 + (L % 2) * 2; wx < x1 - 2; wx += 6) for (let y = y0 + 1; y < y1; y++) if (y !== py && y !== py - 2 && y !== py + 2 && !gaps.has(K(wx, y, L))) W_(wx, y, L); // side rooms
+          if (L >= 1 && L === st - 1) balcony(1, Math.floor((x0 + x1) / 2) - 1, L);
         }
+        loot(L, type === 'barn' ? 3 : 2, [26, 29, 34, 35, 32]);
       }
+      if (type === 'villa') doorsOn([[Math.floor((x0 + x1) / 2), y1], [x0 + 2, y0], [x1, py + 2]]); else for (const [x, y] of [[Math.floor((x0 + x1) / 2), y1], [Math.floor((x0 + x1) / 2) + 1, y1]]) blk[ci(x, y, 0)] = 0;
+    } else if (type === 'ware') {
+      // a tall hall (two storeys of wall), a mezzanine along the north side reached by ladders on its pillars, rows of shelves
+      const my = y0 + 3;
+      for (let x = x0 + 1; x < x1; x++) for (let y = y0 + 1; y <= my; y++) F_(x, y, 1);
+      const pillars = []; for (let x = x0 + 3; x < x1 - 1; x += 4) pillars.push(x);
+      for (const x of pillars) W_(x, my, 0);
+      const lp = [pillars[0], pillars[pillars.length - 1]];
+      for (const x of lp) { lads.push([x, my + 1, 0, 3]); gaps.add(K(x, my, 1)); }
+      for (let x = x0 + 1; x < x1; x++) if (!lp.includes(x)) W_(x, my, 1, 42);                       // mezzanine rail
+      perim(0, 0.04); perim(1, 0.1, (x, y) => true);
+      for (let L = 1; L < 2; L++) for (let x = x0; x <= x1; x++) for (let y = y0; y <= y1; y++) if (isEdge(x, y) && (x + y) % 3 === 0 && y !== y0) blk[ci(x, y, 1)] = 0; // high windows
+      for (let y = my + 3; y < y1 - 1; y += 3) for (let x = x0 + 3; x < x1 - 2; x++) if ((x - x0) % 6 !== 0 && okIn(x, y) && !blk[ci(x, y, 0)]) put(x, y, 0, [34, 26, 37, 40, 34][Math.floor(rr() * 5)]); // shelves / crates / drums
+      loot(1, 3, [26, 36, 35]);
+      const dx = Math.floor((x0 + x1) / 2); for (const x of [dx, dx + 1]) blk[ci(x, y1, 0)] = 0; doorsOn([[x0, y1 - 2], [x1, my + 2]]);
     }
-    for (let L = 1; L <= st && L < ML; L++) for (let x = x0; x <= x1; x++) for (let y = y0; y <= y1; y++) {
-      if (!ok(x, y) || isHatch(x, y, L)) continue;
-      if (L < st && !onPart(x, y) && !(x === x0 || x === x1 || y === y0 || y === y1) && rr() < 0.03 && !lad.some(q => Math.abs(q.cx - x) + Math.abs(q.cy - y) < 3)) continue; // a few collapsed holes
-      if (st > 1 || L < st) putS(x, y, L, 5);
+    const placed = new Set();
+    for (const [cx, cy, L, dir] of lads) {
+      const [dx, dy] = DIRS[dir], fb = blk[ci(cx + dx, cy + dy, L)], up = blk[ci(cx + dx, cy + dy, L + 1)];
+      const exitOk = !up || !(B[up].P || B[up].Z);
+      if (!fb || !B[fb].top || !(B[fb].P || B[fb].Z) || B[fb].stairs || !exitOk || !okIn(cx, cy) || blk[ci(cx, cy, L)] === 7) continue; // no wall to hang on: no ladder (the floor above stays closed)
+      blk[ci(cx, cy, L)] = 0; slab[ci(cx, cy, L + 1)] = 0; shp[ci(cx, cy, L + 1)] = 0; put(cx, cy, L, 6, dir); placed.add(K(cx, cy, L + 1));
     }
-    if (st === 1) for (let x = x0; x <= x1; x++) for (let y = y0; y <= y1; y++) if (ok(x, y) && slab[ci(x, y, 1)]) { slab[ci(x, y, 1)] = 0; }
-    for (const q of lad) if (q.L + 1 < st || st > 1) { blk[ci(q.cx, q.cy, q.L)] = 0; put(q.cx, q.cy, q.L, 6, q.dir); }
-    // entrances: at least three sides get a real doorway on the ground floor
-    const sides = [[x0 + 1, x1 - 1, y0, y0], [x0 + 1, x1 - 1, y1, y1], [x0, x0, y0 + 1, y1 - 1], [x1, x1, y0 + 1, y1 - 1]];
-    for (let s = sides.length - 1; s > 0; s--) { const j = Math.floor(rr() * (s + 1)); [sides[s], sides[j]] = [sides[j], sides[s]]; }
-    let open = 0;
-    for (const [ax, bx, ay, by] of sides) {
-      const cells = []; for (let x = ax; x <= bx; x++) for (let y = ay; y <= by; y++) if (ok(x, y)) cells.push([x, y]);
-      if (!cells.length) continue;
-      if (cells.some(([x, y]) => !blk[ci(x, y, 0)])) { open++; continue; }
-      if (open >= 3) continue;
-      cells.sort((a, b) => Math.abs(a[0] - (ax + bx) / 2) + Math.abs(a[1] - (ay + by) / 2) - Math.abs(b[0] - (ax + bx) / 2) - Math.abs(b[1] - (ay + by) / 2));
-      const [x, y] = cells[0]; blk[ci(x, y, 0)] = 0; open++;
-    }
-    // loot on every floor and the roof
-    for (let L = 0; L <= st; L++) for (let n = 0; n < (L === 0 ? 3 : 2); n++) {
-      const x = x0 + 1 + Math.floor(rr() * (x1 - x0 - 1)), y = y0 + 1 + Math.floor(rr() * (y1 - y0 - 1)), i = ci(x, y, L);
-      if (L >= ML || blk[i] || !ok(x, y) || (L > 0 && !slab[i]) || onPart(x, y) || isHatch(x, y, L) || lad.some(q => q.L === L && Math.abs(q.cx - x) + Math.abs(q.cy - y) < 2)) continue;
-      put(x, y, L, n ? 29 : 26);
-    }
-  });
+    for (const h of hatches) if (!placed.has(h)) { const [x, y, L] = h.split(',').map(Number); if (L <= st && L < ML && okIn(x, y) && !slab[ci(x, y, L)] && (type !== 'ware' || y <= y0 + 3)) F_(x, y, L); }
+  }
   // landmarks: gas station, parking lot, park, military checkpoint, junkyard, campsites
   const free = (x, y) => inMap(x, y) && G[col(x, y)] === 0 && tt[col(x, y)] !== TT.water && !blk[ci(x, y, 0)] && !slab[ci(x, y, 0)];
   const lot = (x0, y0, x1, y1, t) => { for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) if (inMap(x, y) && G[col(x, y)] === 0 && tt[col(x, y)] !== TT.water) tt[col(x, y)] = t; };
   const at = (x, y, id, d) => { if (free(x, y)) put(x, y, 0, id, d); };
   lot(74, 54, 86, 61, TT.road); at(78, 56, 37); at(82, 56, 37); at(76, 60, 38); at(84, 60, 38); at(80, 58, 25, 0); at(86, 55, 32); at(74, 61, 32);       // gas station
   lot(40, 54, 54, 59, TT.road); for (const [x, y, d] of [[42, 55, 1], [45, 55, 1], [51, 55, 3], [43, 58, 1], [49, 58, 3], [53, 58, 1]]) at(x, y, 25, d); at(54, 54, 32); // parking lot
-  for (let x = 60; x <= 74; x++) for (const y of [79, 84]) if ((x + y) % 3) at(x, y, 41);                                                           // park: hedges
-  at(63, 81, 22); at(70, 82, 22); at(66, 82, 38); at(72, 80, 33);
+  for (let x = 4; x <= 20; x++) for (const y of [140, 150]) if ((x + y) % 3) at(x, y, 41);                                                           // park out west: hedges
+  at(8, 145, 22); at(15, 146, 22); at(12, 144, 38); at(18, 142, 33);
   for (const [x, y] of [[104, 49], [105, 49], [107, 49], [108, 49], [104, 54], [105, 54], [107, 54], [108, 54]]) at(x, y, 27);                     // checkpoint
   at(103, 48, 36); at(109, 55, 36); at(106, 48, 37); at(110, 50, 25, 1);
   lot(112, 38, 124, 47, TT.dirt); for (let k = 0; k < 9; k++) at(113 + Math.floor(r() * 11), 39 + Math.floor(r() * 8), 39);                          // junkyard
@@ -4483,7 +4511,7 @@ function genMap(seed) {
   // spots
   const spots = [];
   for (let i = 0; i < NC; i++) if (B[blk[i]].spot) spots.push({ i, k: B[blk[i]].spot, searched: false });
-  return { G, tt, blk, bhp, slab, shp, bdir, spots, radio: { x: RX, y: RY }, bench: { x: RX - 2, y: RY + 2 } };
+  return { G, tt, blk, bhp, slab, shp, bdir, spots, radio: { x: RX, y: RY }, bench: { x: RX + 4, y: RY } };
 }
 
 /* ---------- structural support (3D) ----------
@@ -5017,7 +5045,7 @@ function pickSpot(kind) {
     if (indoor) {
       const H = TOWN_HOUSES[Math.floor(rand() * TOWN_HOUSES.length)];
       x = H[0] + 1 + Math.floor(rand() * (H[2] - H[0] - 1)); y = H[1] + 1 + Math.floor(rand() * (H[3] - H[1] - 1));
-      L = W.slab[ci(x, y, 1)] && rand() < 0.4 ? 1 : gAt(x, y);
+      L = Math.floor(rand() * Math.max(1, H[4])); if (L > 0 && !W.slab[ci(x, y, L)]) L = gAt(x, y);
       if (kind === 'cabinet' && !DIRS.some(([dx, dy]) => { const b = blkAt(x + dx, y + dy, L); return b === 24 || b === 2 || b === 1; })) continue; // against a wall
     } else {
       x = Math.floor(rand() * MW); y = Math.floor(rand() * MH); L = gAt(x, y);
@@ -5543,10 +5571,19 @@ let VL_CACHE = { k: '', v: ML - 1 };
 function viewL() {
   if (!W) return 0; if (!VIEW.auto) return VIEW.L;
   const me = W.p[ME]; if (!me || me.gone) return ML - 1;
-  const k = W.ver + ':' + Math.floor(me.x) + ',' + Math.floor(me.y) + ',' + me.L;
-  if (VL_CACHE.k !== k) VL_CACHE = { k, v: covered(me) ? me.L : ML - 1 };
-  return VL_CACHE.v;
+  cutBox(); return ML - 1; // auto: nothing is hidden globally; only the building you're in loses its upper floors (cutBox)
 }
+// auto view: inside a building, hide the floors above you in that building only — the rest of town keeps all its floors
+let LCUT = null, LC_KEY = '';
+function cutBox() {
+  const me = W && W.p[ME]; if (!VIEW.auto || !me || me.gone) { LCUT = null; return null; }
+  const k = W.ver + ':' + Math.floor(me.x) + ',' + Math.floor(me.y) + ',' + me.L; if (LC_KEY === k) return LCUT; LC_KEY = k;
+  if (!covered(me)) { LCUT = null; return null; }
+  const x = Math.floor(me.x), y = Math.floor(me.y), H = TOWN_HOUSES.find(h => x >= h[0] - 2 && x <= h[2] + 2 && y >= h[1] - 2 && y <= h[3] + 2);
+  LCUT = { L: me.L, b: H ? [H[0] - 3, H[1] - 3, H[2] + 3, H[3] + 3] : [x - 10, y - 10, x + 10, y + 10] };
+  return LCUT;
+}
+const lcHide = (x, y, L) => LCUT && L > LCUT.L && x >= LCUT.b[0] && x <= LCUT.b[2] && y >= LCUT.b[1] && y <= LCUT.b[3];
 
 /* ---------- materials & helpers ---------- */
 const MATS = {};
@@ -5687,17 +5724,22 @@ function buildTerrain() {
 const RC = { ver: -1, key: '', lamps: [] };
 const dmgTint = (hex, f) => { tmpC.set(hex); const k = 0.45 + 0.55 * clamp(f, 0, 1); return '#' + tmpC.multiplyScalar(k).getHexString(); };
 function wallAxis(x, y, L) { const solid = (xx, yy) => { const b = blkAt(xx, yy, L); return b && (B[b].P || B[b].Z) && !B[b].nat || b === 24; }; return (solid(x - 1, y) || solid(x + 1, y)) && !(solid(x, y - 1) || solid(x, y + 1)) ? 0 : (solid(x, y - 1) || solid(x, y + 1)) ? 1 : 0; }
+function cullR() { return Math.min(MW, CAM.zoom * Math.max(1, VW / Math.max(1, VH)) * 1.6 + 8); }
 function rebuildCells() {
   const I = OBJ.I, me = W.p[ME], vl = viewL(), [ox, oy] = [Math.sin(CAM.yaw), Math.cos(CAM.yaw)];
   const c = { wall: 0, slab: 0, stairs: 0, door: 0, bars: 0, wire: 0, lamp: 0, trunk: 0, pine: 0, oak: 0, rock: 0, crate: 0, rubble: 0, fence: 0, car: 0 };
   const lamps = []; archBegin(); propBegin();
   if (RC.topVer !== W.ver) { RC.topVer = W.ver; RC.topL = 0; for (let i = NC - 1; i >= 0; i--) if (W.blk[i] || W.slab[i]) { RC.topL = cl_(i); break; } }
-  for (let L = 0; L <= RC.topL; L++) for (let y = 0; y < MH; y++) for (let x = 0; x < MW; x++) {
+  // only the part of the map the camera can see (plus a margin) is put into the instance buffers
+  const CR = cullR(), cx0 = Math.max(0, Math.floor(CAM.tx - CR)), cx1 = Math.min(MW - 1, Math.ceil(CAM.tx + CR)), cy0 = Math.max(0, Math.floor(CAM.ty - CR)), cy1 = Math.min(MH - 1, Math.ceil(CAM.ty + CR));
+  for (let L = 0; L <= RC.topL; L++) for (let y = cy0; y <= cy1; y++) for (let x = cx0; x <= cx1; x++) {
     const i = ci(x, y, L), b = W.blk[i], s = W.slab[i];
     if (!b && !s) continue;
     const X = x + 0.5, Y = L * FH, Z = y + 0.5, h = hash2(x * 3 + L, y * 7);
-    const hide = L > vl && !(b && B[b].nat);
+    const hide = (L > vl && !(b && B[b].nat)) || (lcHide(x, y, L) && b !== 20 && b !== 21 && b !== 22);
     if (hide) continue;
+    // inside a town building, anything under a floor that is drawn can't be seen: skip it (big saving on tall blocks)
+    if (L + 1 < ML && L + 1 <= vl && W.slab[i + MW * MH] && !lcHide(x, y, L + 1) && houseInterior(x, y)) continue;
     if (s && !archSlab(s, i, x, y, L, X, Y, Z)) { setInst(I.slab, c.slab++, X, Y, Z, 0, 1, 1, 1, dmgTint(B[s].col, s === SLAB_BRIDGE ? 1 : W.shp[i] / B[s].hp)); }
     if (!b || b === 20 || b === 23 || b === 28 || b === 30 || b === 31) continue;
     let cut = 1;
@@ -5710,7 +5752,7 @@ function rebuildCells() {
       case 6: {
         propPut(6, i, x, y, L, X, Y, Z, h);
         // railings around the opening above, on every side you could walk up to except the top step
-        if (L + 1 < ML && L + 1 <= vl) for (let k = 0; k < 4; k++) {
+        if (L + 1 < ML && L + 1 <= vl && !lcHide(x, y, L + 1)) for (let k = 0; k < 4; k++) {
           if (k === W.bdir[i]) continue; const [ex, ey] = DIRS[k], nx = x + ex, ny = y + ey;
           if (inMap(nx, ny) && support(nx, ny, L + 1) && !W.blk[ci(nx, ny, L + 1)]) archPut('rail', X, Y + FH, Z, Math.atan2(-ex, -ey), 1, 1, 1);
         }
@@ -5830,7 +5872,7 @@ function screenRay(sx, sy) { NDC.set(sx / VW * 2 - 1, -(sy / VH) * 2 + 1); RAY.s
 function aimPick(sx, sy) {
   const { o, d } = screenRay(sx, sy), vl = viewL();
   let best = null, bd = 1e9;
-  for (const z of W.zs) { if (z.L > vl) continue; const t = rayBox(o[0], o[1], o[2], d[0], d[1], d[2], z.x - z.r - 0.15, z.y - z.r - 0.15, z.z, z.r * 2 + 0.3, z.r * 2 + 0.3, z.h, 400); if (t >= 0 && t < bd) { bd = t; best = z; } }
+  for (const z of W.zs) { if (z.L > vl || lcHide(Math.floor(z.x), Math.floor(z.y), z.L)) continue; const t = rayBox(o[0], o[1], o[2], d[0], d[1], d[2], z.x - z.r - 0.15, z.y - z.r - 0.15, z.z, z.r * 2 + 0.3, z.r * 2 + 0.3, z.h, 400); if (t >= 0 && t < bd) { bd = t; best = z; } }
   if (best) return { x: best.x, y: best.y, z: best.z + best.h * 0.65, zb: best };
   // march the camera ray into the visible part of the map
   const top = (vl + 2) * FH; let t0 = 0; if (o[2] > top && d[2] < 0) t0 = (o[2] - top) / -d[2];
@@ -5861,7 +5903,7 @@ function draw(dt) {
   stepFx(dt);
   updateCamera(dt);
   const me = W.p[ME], vl = viewL();
-  const key = W.ver + ':' + vl + ':' + CAM.rot + ':' + (me ? Math.floor(me.x) + ',' + Math.floor(me.y) + ',' + me.L : '');
+  const key = W.ver + ':' + vl + ':' + CAM.rot + ':' + (me ? Math.floor(me.x) + ',' + Math.floor(me.y) + ',' + me.L : '') + ':' + Math.floor(CAM.tx / 6) + ',' + Math.floor(CAM.ty / 6) + ':' + Math.round(cullR() / 4);
   if (key !== CUT_KEY) { CUT_KEY = key; rebuildCells(); }
   applyTime(darkness()); archFrame();
   drawZombies(vl, dt); drawPlayers(vl, dt); drawFx(); drawGhost(me); drawPlan();
@@ -6158,7 +6200,7 @@ function archScene() {
   I.merlon = inst(G.merlon, tm(T.brick), 2000); I.stakes = inst(G.stakes, lam('#7a5332'), 2000); I.spikes = inst(G.spikes, lam('#4a545c'), 2000);
   I.wfloor = inst(G.slab, tm(T.wfloor), 4000); I.sfloor = inst(G.slab, tm(T.sfloor), 4000); I.joist = inst(G.joist, lam('#3e2a1a'), 4000);
   I.sand = inst(G.sand, lam('#b4a273'), 600); I.bars = inst(G.bars, lam('#3a434b'), 600);
-  I.doorF = inst(G.doorFrame, lam('#4a3220'), 400); I.doorL = inst(G.doorLeaf, tm(T.door), 400);
+  I.doorF = inst(G.doorFrame, lam('#e0a63a'), 400); /* bright frames so doors read at a glance */ I.doorL = inst(G.doorLeaf, tm(T.door), 400);
   I.stairs = inst(G.stairs, tm(T.wfloor), 400); I.rail = inst(G.rail, lam('#5a3d26'), 1200);
   I.wireP = inst(G.wirePosts, lam('#5a4630'), 600);
   // the plaster spans three cells; each instance reads the slice for its own position so walls don't repeat cell by cell
@@ -6201,16 +6243,22 @@ function archSlab(s, i, x, y, L, X, Y, Z) {
   archPut(s === 4 ? 'wfloor' : 'sfloor', X, Y, Z, 0, 1, 1, 1, dmgTint('#ffffff', f));
   // joists under the floor where nothing holds it from below
   const below = L > 0 ? W.blk[ci(x, y, L - 1)] : 1;
-  if (L > 0 && !below) archPut('joist', X, Y, Z, (x + y) % 2 ? 0 : Math.PI / 2, 1, 1, 1);
+  if (L > 0 && !below && HOUSE_ID[y * MW + x] < 0) archPut('joist', X, Y, Z, (x + y) % 2 ? 0 : Math.PI / 2, 1, 1, 1); // town floors skip the joists
   return true;
 }
 
 /* ---------- ruined town: house colours, broken tiled roofs over one end of each house, fallen beams ---------- */
+// which town building covers each ground cell (-1: none); interior = strictly inside its outline
+const HOUSE_ID = new Int8Array(MW * MH).fill(-1);
+TOWN_HOUSES.forEach(([x0, y0, x1, y1], k) => { for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) if (x >= 0 && y >= 0 && x < MW && y < MH) HOUSE_ID[y * MW + x] = k; });
+function houseInterior(x, y) { const k = HOUSE_ID[y * MW + x]; if (k < 0) return false; const H = TOWN_HOUSES[k]; return x > H[0] && x < H[2] && y > H[1] && y < H[3]; }
 function houseOf(x, y) { for (let k = 0; k < TOWN_HOUSES.length; k++) { const [x0, y0, x1, y1] = TOWN_HOUSES[k]; if (x >= x0 && x <= x1 && y >= y0 && y <= y1) return k; } return -1; }
 // roof spans must be known before map generation (walls under a roof stay full height, no gaps there)
 function roofSpan(k) {
   const [x0, y0, x1, y1, st] = TOWN_HOUSES[k], west = hash2(k, 77) < 0.5;
-  if (st >= 2) return null; // flat concrete roofs on the taller blocks
+  const type = TOWN_HOUSES[k][5];
+  if (type === 'apt') return null;                                       // flat roofs with a rail on apartment blocks
+  if (type === 'villa' || type === 'ware') return { west, xa: x0, xb: x1, lvl: st - 1, whole: 1 }; // a whole pitched roof (the attic / the hall)
   return { west, xa: west ? x0 : x1 - 2, xb: west ? x0 + 2 : x1, lvl: 0 };
 }
 for (let k = 0; k < TOWN_HOUSES.length; k++) {
@@ -6240,13 +6288,14 @@ function archTown() {
   TOWN_HOUSES.forEach(([x0, y0, x1, y1, st], k) => {
     const R0 = roofSpan(k); if (!R0) return;
     const r = mulberry(k * 977 + 13), R = R0, west = R.west, xa = R.xa, xe = R.xb + 1, g = new THREE.Group();
-    const S = y1 - y0 + 1, zc = (y0 + y1 + 1) / 2, Ye = (R.lvl + 1) * FH + 0.02, Rz = S * 0.3, Yr = Ye + Rz, oh = 0.18, Lr = xe - xa, nStr = Lr * 2;
+    const S = y1 - y0 + 1, zc = (y0 + y1 + 1) / 2, Ye = (R.lvl + 1) * FH + 0.02, Rz = Math.min(S * 0.3, 2.4), Yr = Ye + Rz, oh = 0.18, Lr = xe - xa, nStr = Lr * 2;
     // roof planes as strips: whole near the gable end, ragged toward the open end of the house
     const pos = [], uv = [], slopeLen = Math.hypot(Rz + 0.1, S / 2 + oh);
     for (const s of [-1, 1]) for (let q = 0; q < nStr; q++) {
       let xs = xa + q * 0.5, xe2 = xs + 0.5; if (west && q === 0) xs -= oh; if (!west && q === nStr - 1) xe2 += oh;
       const fromGable = west ? q : nStr - 1 - q; let t1 = 1;
-      if (fromGable >= nStr * (st === 2 ? 0.75 : 0.5)) { const u = r(); if (u < 0.3) continue; t1 = 0.35 + u * 0.6; }
+      if (!R.whole && fromGable >= nStr * 0.5) { const u = r(); if (u < 0.3) continue; t1 = 0.35 + u * 0.6; }
+      else if (R.whole && r() < 0.06) { t1 = 0.4 + r() * 0.5; }
       const P = (x, t) => [x, Yr + t * (Ye - 0.1 - Yr), zc + t * s * (S / 2 + oh)];
       const a = P(xs, 0), b = P(xe2, 0), c = P(xe2, t1), d = P(xs, t1);
       for (const v of [a, b, c, a, c, d]) pos.push(...v);
@@ -6382,7 +6431,7 @@ function drawZombies(vl, dt) {
   for (const z of list) {
     if (drawn >= ZCAP - 2) break;
     const corpse = !!z.corpse, L = z.L != null ? z.L : Math.floor((z.z + 0.1) / FH);
-    if (L > vl) continue;
+    if (L > vl || lcHide(Math.floor(z.x), Math.floor(z.y), L)) continue;
     drawn++;
     rigZombie(z, corpse, dt, dk);
   }
@@ -6775,8 +6824,9 @@ function propScene() {
     15: M([new THREE.TorusGeometry(0.17, 0.025, 4, 12).rotateX(Math.PI / 2).translate(0, 0.03, 0), boxG(0.3, 0.02, 0.06, 0, 0.02, 0), ...[0, 1, 2, 3, 4, 5].map(k => new THREE.ConeGeometry(0.02, 0.07, 3).translate(Math.cos(k * 1.05) * 0.15, 0.06, Math.sin(k * 1.05) * 0.15))]), // bear trap
     6: M([boxG(0.05, FH + 0.4, 0.05, 0.445, (FH + 0.4) / 2, -0.24), boxG(0.05, FH + 0.4, 0.05, 0.445, (FH + 0.4) / 2, 0.24), ...[0, 1, 2, 3, 4, 5].map(k => boxG(0.04, 0.035, 0.46, 0.445, 0.18 + k * 0.24, 0)), boxG(0.04, 0.04, 0.04, 0.47, FH * 0.3, -0.24), boxG(0.04, 0.04, 0.04, 0.47, FH * 0.75, 0.24)]), // ladder hung flat on the wall
   };
-  const C = { 32: '#3f5a3a', 33: '#5a4a2e', 34: '#6a4a30', 35: '#a8322a', 36: '#4f5a32', 37: '#9a3a2a', 38: '#b8333a', 39: '#7a5a44', 40: '#6a4a2c', 41: '#3e5f2e', 12: '#a8946a', 13: '#6a5038', 14: '#7a8590', 15: '#5a5a55', 6: '#8a6440' };
-  const cap = { 41: 3000, 40: 600, 39: 600, 12: 1500, 13: 800, 14: 800, 15: 400, 6: 400, 32: 400, 34: 400 };
+  G[42] = M([boxG(0.06, 0.9, 0.06, 0, 0.45, -0.44), boxG(0.06, 0.9, 0.06, 0, 0.45, 0.44), boxG(0.06, 0.9, 0.06, 0, 0.45, 0), boxG(0.07, 0.06, 1, 0, 0.88, 0), boxG(0.04, 0.04, 1, 0, 0.45, 0)]);
+  const C = { 42: '#7a8088', 32: '#3f5a3a', 33: '#5a4a2e', 34: '#6a4a30', 35: '#a8322a', 36: '#4f5a32', 37: '#9a3a2a', 38: '#b8333a', 39: '#7a5a44', 40: '#6a4a2c', 41: '#3e5f2e', 12: '#a8946a', 13: '#6a5038', 14: '#7a8590', 15: '#5a5a55', 6: '#8a6440' };
+  const cap = { 42: 2500, 41: 3000, 40: 600, 39: 600, 12: 1500, 13: 800, 14: 800, 15: 400, 6: 400, 32: 400, 34: 400 };
   for (const id in G) { const m = inst(G[id], lam('#ffffff'), cap[id] || 300); PROP[id] = { m, n: 0, col: C[id], al: id == 12 || id == 13 || id == 14 }; }
   // build-plan ghosts and the x-ray ring that shows survivors through walls
   OBJ.planI = inst(boxG(1, 1, 1, 0, 0.5, 0), new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0.4, depthWrite: false }), 64, false);
@@ -6791,7 +6841,8 @@ function propPut(b, i, x, y, L, X, Y, Z, h) {
   if (P.n >= P.m.instanceMatrix.count) return true;
   let rot = h * 6.28, col = P.col, sc = 1;
   if (P.al) rot = wallAxis(x, y, L) ? 0 : Math.PI / 2;
-  if (b === 6) rot = -W.bdir[i] * Math.PI / 2;
+  if (b === 6) { rot = -W.bdir[i] * Math.PI / 2; col = '#e2a43a'; }
+  if (b === 42) { const r = (xx, yy) => { const q = blkAt(xx, yy, L); return q === 42 || (q && B[q].top); }; rot = r(x - 1, y) || r(x + 1, y) ? Math.PI / 2 : 0; }
   if (b === 37) col = ['#9a3a2a', '#2f5a8a', '#c9a23a'][Math.floor(h * 3)];
   if (b === 38 && W.srch.has(i)) col = '#5a2a2c';
   if (b === 41) sc = 0.8 + h * 0.5;
@@ -6961,7 +7012,7 @@ function doJump() {
 // camera controls (shared by keys and the HUD buttons)
 function camRot(d) { CAM.rot = (CAM.rot + d + 4) % 4; sfx('click'); }
 function camZoom(f) { CAM.zoom = clamp(CAM.zoom * f, 4, 22); SET.zoom = CAM.zoom; saveSet(); }
-function viewStep(d) { if (!W) return; const me = W.p[ME]; if (VIEW.auto) { const base = me.build ? me.L : Math.min(viewL(), topBuiltL()); VIEW.auto = false; VIEW.L = base; } VIEW.L = clamp(VIEW.L + d, 0, ML - 2); uiView(); sfx('click'); }
+function viewStep(d) { if (!W) return; const me = W.p[ME]; if (VIEW.auto) { const base = me.build ? me.L : (cutBox() ? LCUT.L : topBuiltL()); VIEW.auto = false; VIEW.L = base; } VIEW.L = clamp(VIEW.L + d, 0, ML - 2); uiView(); sfx('click'); }
 function topBuiltL() { let t = 0; for (let i = 0; i < NC; i++) if ((W.slab[i] && B[W.slab[i]].cost) || (W.blk[i] && B[W.blk[i]].cost)) t = Math.max(t, cl_(i)); return Math.min(ML - 2, t + 1); }
 function viewAuto() { VIEW.auto = true; uiView(); sfx('click'); }
 // default stairs direction: up the screen
@@ -7004,7 +7055,7 @@ function onKeyPress(k) {
   if (k === 'h') return act('med');
   if (k === 'n') return toggleReady();
   if (k === 'c') return openCraft();
-  if (k === 'f') { if (nearBench(me) && !useTarget(me)) return openCraft(); }
+  if (k === 'f') { if (nearBench(me) && !useTarget(me)) return openCraft(); if (INP.useLatch) INP.useLatch = null; else INP.useReq = true; }
 }
 function toggleReady() { const me = W.p[ME]; if (W.phase !== 'day') return; act('ready', me.ready ? 0 : 1); if (NETROLE === 'guest') me.ready = !me.ready; sfx('ready'); }
 // mouse
@@ -7110,7 +7161,7 @@ CV.addEventListener('pointerup', endPtr); CV.addEventListener('pointercancel', e
 // point at the top of a wall -> stack on it; at a wall's side -> build next to it; at a floor -> build on it.
 // Floors also try the ceiling above what you point at, and your own level (balconies out over the edge).
 function pickBuild(sx, sy, me, demo) {
-  const { o, d } = screenRay(sx, sy), maxL = Math.min(ML - 1, viewL());
+  const { o, d } = screenRay(sx, sy), maxL = Math.min(ML - 1, viewL(), LCUT ? LCUT.L : ML - 1);
   const top = (maxL + 1) * FH + 0.01; let t0 = 0; if (o[2] > top && d[2] < 0) t0 = (o[2] - top) / -d[2];
   const h = rayWorld(o[0] + d[0] * t0, o[1] + d[1] * t0, o[2] + d[2] * t0, d[0], d[1], d[2], 300, { maxL, any: true });
   if (h.x == null || !inMap(h.x, h.y)) return null;
@@ -7244,7 +7295,7 @@ bindBtn('tJump', () => inGame() && doJump());
 bindBtn('bcOk', () => confirmPlan()); bindBtn('bcNo', () => cancelPlan());
 bindBtn('tNade', () => inGame() && act('nade'));
 bindBtn('tMed', () => inGame() && act('med'));
-bindBtn('tUse', () => { if (!inGame()) return; const me = W.p[ME]; if (nearBench(me) && !useTarget(me)) openCraft(); INP.useHeld = true; }, () => { INP.useHeld = false; });
+bindBtn('tUse', () => { if (!inGame()) return; const me = W.p[ME]; if (nearBench(me) && !useTarget(me)) openCraft(); else if (INP.useLatch) INP.useLatch = null; else INP.useReq = true; });
 bindBtn('tBuild', () => inGame() && toggleBuild());
 bindBtn('vZin', () => camZoom(0.8)); bindBtn('vZout', () => camZoom(1.25));
 bindBtn('vRl', () => camRot(-1)); bindBtn('vRr', () => camRot(1));
@@ -7280,7 +7331,11 @@ function readInput(dt) {
     const m = Math.hypot(I.mx, I.my), a = Math.atan2(I.my, I.mx), q = Math.round(a / (Math.PI / 2)) * Math.PI / 2;
     if (Math.abs(a - q) < 0.2) { I.mx = Math.cos(q) * m; I.my = Math.sin(q) * m; }
   }
-  I.use = !blocked && (KD('f') || INP.useHeld) ? 1 : 0;
+  // one tap starts a search / chop / revive and it carries on by itself; walking away or finishing ends it
+  const ut = W.p[ME] && !blocked ? useTarget(W.p[ME]) : null, uk = ut ? ut.k + ':' + ut.i : '';
+  if (INP.useReq) { INP.useLatch = uk || null; INP.useReq = false; }
+  if (INP.useLatch && (INP.useLatch !== uk || Math.hypot(I.mx, I.my) > 0.3 || W.p[ME].down)) INP.useLatch = null;
+  I.use = !blocked && (KD('f') || INP.useHeld || INP.useLatch) ? 1 : 0;
   const usingMouse = !INP.touch || (performance.now() - INP.mouseT < 1500 && performance.now() - INP.lastTouch > 1500);
   if (usingMouse) {
     if (INP.touch && performance.now() - INP.mouseT < 300) setTouch(false);
@@ -7654,7 +7709,7 @@ function hudTick(dt) {
   let ptxt = '', prog = 0;
   if (!me.dead && !me.build) {
     const tgt = useTarget(me);
-    const key = INP.touch ? '按住「交互」' : '按住 F ';
+    const key = INP.touch ? '点「交互」' : '按 F ';
     if (tgt) { ptxt = key + tgt.name; prog = me.useT / tgt.t; }
     else if (nearBench(me)) ptxt = (INP.touch ? '点「交互」' : '按 F ') + '打开工作台';
     if (me.down) ptxt = me.meds > 0 ? (INP.touch ? '点「医疗」' : '按 H ') + '用医疗包自救' : (W.p.length > 1 ? '等待队友来扶你…' : '');
@@ -7666,7 +7721,7 @@ function hudTick(dt) {
     if (on) { const R = STICK_R(), x = Math.max(R + 22, Math.min(VW * 0.16, 170)), y = VH - Math.max(R + 40, Math.min(VH * 0.24, 190)); sh.style.left = x + 'px'; sh.style.top = y + 'px'; sh.style.width = sh.style.height = R * 2 + 'px'; }
     const tgt = !me.dead && !me.build && !me.down ? useTarget(me) : null, bench = !tgt && !me.build && nearBench(me);
     const u = $('tUse'); u.classList.toggle('hidden', !(tgt || bench));
-    if (tgt) { u.firstElementChild.textContent = '按住'; u.lastElementChild.textContent = tgt.name; u.style.setProperty('--p', clamp(me.useT / tgt.t, 0, 1)); }
+    if (tgt) { u.firstElementChild.textContent = INP.useLatch ? '进行中 · 再点停' : '点一下'; u.lastElementChild.textContent = tgt.name; u.style.setProperty('--p', clamp(me.useT / tgt.t, 0, 1)); }
     else if (bench) { u.firstElementChild.textContent = '点一下'; u.lastElementChild.textContent = '打开工作台'; u.style.setProperty('--p', 0); }
     if (tgt || bench) ptxt = ''; else if (me.down && me.meds > 0) ptxt = '点「自救」用医疗包站起来';
     const md = $('tMed'), showMed = me.meds > 0 && !me.dead && me.medT <= 0 && (me.down || me.hp < me.maxHp * 0.7);
@@ -7786,8 +7841,8 @@ function startGame(seed, names, diff, me) {
   uiBuildBar(); markDiff(); uiView();
   banner('第一个白天', '撑过 ' + BAL.nights + ' 夜就能等到救援 · 完成每日任务拿奖励', '#ffe7b0'); UI.tkv = -1;
   const tips = INP.touch
-    ? ['出门砍树、采石，按住「交互」搜汽车和补给箱', '点「建造」后手指指哪就盖哪：点墙顶往上叠，点墙面贴着盖，拖动一次盖一排', '上方「今日任务」点开能看到今天的 3 个任务，完成就有奖励', '小屋里的工作台可以造步枪和狙击枪', '楼上的矮墙可以探身开枪，天黑前回到堡垒']
-    : ['出门砍树、采石，按住 F 搜汽车和补给箱', '按 B 建造：鼠标指哪就盖哪——指墙顶往上叠、指墙面贴着盖，按住拖动一次盖一排，右键拆除', '上方「今日任务」点开能看到今天的 3 个任务，完成就有奖励', '在小屋里的工作台按 F 造步枪和狙击枪', '楼上外墙是半人高的矮墙，可以探身朝下开枪。按 N 可以提前入夜'];
+    ? ['出门砍树、采石，点一下「交互」搜汽车和补给箱（会自动搜完）', '点「建造」后手指指哪就盖哪：点墙顶往上叠，点墙面贴着盖，拖动一次盖一排', '上方「今日任务」点开能看到今天的 3 个任务，完成就有奖励', '小屋里的工作台可以造步枪和狙击枪', '楼上的矮墙可以探身开枪，天黑前回到堡垒']
+    : ['出门砍树、采石，按 F 搜汽车和补给箱（会自动搜完，走开就停）', '按 B 建造：鼠标指哪就盖哪——指墙顶往上叠、指墙面贴着盖，按住拖动一次盖一排，右键拆除', '上方「今日任务」点开能看到今天的 3 个任务，完成就有奖励', '在小屋里的工作台按 F 造步枪和狙击枪', '楼上外墙是半人高的矮墙，可以探身朝下开枪。按 N 可以提前入夜'];
   tips.forEach((t, k) => TIPS.push(setTimeout(() => { if (W && W.night === 0 && STATE.mode === 'play') uiMsg(t, '#ffd27a'); }, 2500 + k * 7000)));
 }
 function startDemo() {

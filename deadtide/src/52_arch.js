@@ -167,7 +167,7 @@ function archScene() {
   I.merlon = inst(G.merlon, tm(T.brick), 2000); I.stakes = inst(G.stakes, lam('#7a5332'), 2000); I.spikes = inst(G.spikes, lam('#4a545c'), 2000);
   I.wfloor = inst(G.slab, tm(T.wfloor), 4000); I.sfloor = inst(G.slab, tm(T.sfloor), 4000); I.joist = inst(G.joist, lam('#3e2a1a'), 4000);
   I.sand = inst(G.sand, lam('#b4a273'), 600); I.bars = inst(G.bars, lam('#3a434b'), 600);
-  I.doorF = inst(G.doorFrame, lam('#4a3220'), 400); I.doorL = inst(G.doorLeaf, tm(T.door), 400);
+  I.doorF = inst(G.doorFrame, lam('#e0a63a'), 400); /* bright frames so doors read at a glance */ I.doorL = inst(G.doorLeaf, tm(T.door), 400);
   I.stairs = inst(G.stairs, tm(T.wfloor), 400); I.rail = inst(G.rail, lam('#5a3d26'), 1200);
   I.wireP = inst(G.wirePosts, lam('#5a4630'), 600);
   // the plaster spans three cells; each instance reads the slice for its own position so walls don't repeat cell by cell
@@ -210,16 +210,22 @@ function archSlab(s, i, x, y, L, X, Y, Z) {
   archPut(s === 4 ? 'wfloor' : 'sfloor', X, Y, Z, 0, 1, 1, 1, dmgTint('#ffffff', f));
   // joists under the floor where nothing holds it from below
   const below = L > 0 ? W.blk[ci(x, y, L - 1)] : 1;
-  if (L > 0 && !below) archPut('joist', X, Y, Z, (x + y) % 2 ? 0 : Math.PI / 2, 1, 1, 1);
+  if (L > 0 && !below && HOUSE_ID[y * MW + x] < 0) archPut('joist', X, Y, Z, (x + y) % 2 ? 0 : Math.PI / 2, 1, 1, 1); // town floors skip the joists
   return true;
 }
 
 /* ---------- ruined town: house colours, broken tiled roofs over one end of each house, fallen beams ---------- */
+// which town building covers each ground cell (-1: none); interior = strictly inside its outline
+const HOUSE_ID = new Int8Array(MW * MH).fill(-1);
+TOWN_HOUSES.forEach(([x0, y0, x1, y1], k) => { for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) if (x >= 0 && y >= 0 && x < MW && y < MH) HOUSE_ID[y * MW + x] = k; });
+function houseInterior(x, y) { const k = HOUSE_ID[y * MW + x]; if (k < 0) return false; const H = TOWN_HOUSES[k]; return x > H[0] && x < H[2] && y > H[1] && y < H[3]; }
 function houseOf(x, y) { for (let k = 0; k < TOWN_HOUSES.length; k++) { const [x0, y0, x1, y1] = TOWN_HOUSES[k]; if (x >= x0 && x <= x1 && y >= y0 && y <= y1) return k; } return -1; }
 // roof spans must be known before map generation (walls under a roof stay full height, no gaps there)
 function roofSpan(k) {
   const [x0, y0, x1, y1, st] = TOWN_HOUSES[k], west = hash2(k, 77) < 0.5;
-  if (st >= 2) return null; // flat concrete roofs on the taller blocks
+  const type = TOWN_HOUSES[k][5];
+  if (type === 'apt') return null;                                       // flat roofs with a rail on apartment blocks
+  if (type === 'villa' || type === 'ware') return { west, xa: x0, xb: x1, lvl: st - 1, whole: 1 }; // a whole pitched roof (the attic / the hall)
   return { west, xa: west ? x0 : x1 - 2, xb: west ? x0 + 2 : x1, lvl: 0 };
 }
 for (let k = 0; k < TOWN_HOUSES.length; k++) {
@@ -249,13 +255,14 @@ function archTown() {
   TOWN_HOUSES.forEach(([x0, y0, x1, y1, st], k) => {
     const R0 = roofSpan(k); if (!R0) return;
     const r = mulberry(k * 977 + 13), R = R0, west = R.west, xa = R.xa, xe = R.xb + 1, g = new THREE.Group();
-    const S = y1 - y0 + 1, zc = (y0 + y1 + 1) / 2, Ye = (R.lvl + 1) * FH + 0.02, Rz = S * 0.3, Yr = Ye + Rz, oh = 0.18, Lr = xe - xa, nStr = Lr * 2;
+    const S = y1 - y0 + 1, zc = (y0 + y1 + 1) / 2, Ye = (R.lvl + 1) * FH + 0.02, Rz = Math.min(S * 0.3, 2.4), Yr = Ye + Rz, oh = 0.18, Lr = xe - xa, nStr = Lr * 2;
     // roof planes as strips: whole near the gable end, ragged toward the open end of the house
     const pos = [], uv = [], slopeLen = Math.hypot(Rz + 0.1, S / 2 + oh);
     for (const s of [-1, 1]) for (let q = 0; q < nStr; q++) {
       let xs = xa + q * 0.5, xe2 = xs + 0.5; if (west && q === 0) xs -= oh; if (!west && q === nStr - 1) xe2 += oh;
       const fromGable = west ? q : nStr - 1 - q; let t1 = 1;
-      if (fromGable >= nStr * (st === 2 ? 0.75 : 0.5)) { const u = r(); if (u < 0.3) continue; t1 = 0.35 + u * 0.6; }
+      if (!R.whole && fromGable >= nStr * 0.5) { const u = r(); if (u < 0.3) continue; t1 = 0.35 + u * 0.6; }
+      else if (R.whole && r() < 0.06) { t1 = 0.4 + r() * 0.5; }
       const P = (x, t) => [x, Yr + t * (Ye - 0.1 - Yr), zc + t * s * (S / 2 + oh)];
       const a = P(xs, 0), b = P(xe2, 0), c = P(xe2, t1), d = P(xs, t1);
       for (const v of [a, b, c, a, c, d]) pos.push(...v);

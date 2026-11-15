@@ -45,7 +45,7 @@ const UA = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/6
     ok('ground wall still stops bullets', para.groundShot < 2);
     // build targeting: pointing at the top of a wall stacks, at the floor builds on it, drag paints a row
     const bt = await p.evaluate(() => {
-      const me = W.p[0], X = W.radio.x + 7, Y = W.radio.y + 2; me.x = X - 1.5; me.y = Y + 1.5; me.L = 0; me.z = 0; me.sel = 1; me.build = true; me.demo = false;
+      const me = W.p[0], X = W.radio.x + 10, Y = W.radio.y + 2; me.x = X - 1.5; me.y = Y + 1.5; me.L = 0; me.z = 0; me.sel = 1; me.build = true; me.demo = false;
       for (let x = X - 1; x <= X + 6; x++) for (let y = Y - 3; y <= Y + 5; y++) for (let L = 0; L < 3; L++) { const i = ci(x, y, L); if (W.blk[i] && W.blk[i] !== 20 && W.blk[i] !== 23) W.blk[i] = 0; W.slab[i] = 0; }
       W.ver++; recomputeStab(); CAM.tx = me.x; CAM.ty = me.y; CAM.zoom = 9; updateCamera(1); updateCamera(1);
       const r = {};
@@ -62,7 +62,7 @@ const UA = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/6
     ok('floor item on wall top -> slab on the wall', B1.slabTop && B1.slabTop.L === 1 && B1.slabTop.ok);
     ok('demolish picks the wall', B1.demo && B1.demo.L === 0);
     const row = await p.evaluate(async () => {
-      const me = W.p[0], X = W.radio.x + 7, Y = W.radio.y + 2 + 2; me.sel = 2;
+      const me = W.p[0], X = W.radio.x + 10, Y = W.radio.y + 2 + 2; me.sel = 2;
       const a = w2s(X + 0.5, Y + 0.5, 0.02), c = w2s(X + 4.5, Y + 0.8, 0.02);
       paintBuild(a[0], a[1], true, false);
       for (let k = 1; k <= 6; k++) paintBuild(a[0] + (c[0] - a[0]) * k / 6, a[1] + (c[1] - a[1]) * k / 6, false, false);
@@ -74,12 +74,12 @@ const UA = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/6
     ok('drag paints a straight row', row === 5, 'row ' + row);
     // stairs: walking off the top requires a push; side entry is blocked by rails
     const st = await p.evaluate(() => {
-      const sx = W.radio.x - 1, sy = W.radio.y - 2; // ladder hung on the partition, facing east, up to (sx+1, sy, 1)
-      return { st: B[W.blk[ci(sx, sy, 0)]].stairs, dir: W.bdir[ci(sx, sy, 0)], wall: B[W.blk[ci(sx + 1, sy, 0)]].key, side: transition(sx, sy - 1, sx, sy, 1, 'p', true), front: transition(sx + 1, sy, sx, sy, 1, 'p', true), sx, sy };
+      const sx = W.radio.x + 1, sy = W.radio.y - 4; // ladder hung on the hall wall, facing east, up to (sx+1, sy, 1)
+      return { st: B[W.blk[ci(sx, sy, 0)]].stairs, dir: W.bdir[ci(sx, sy, 0)], wall: B[W.blk[ci(sx + 1, sy, 0)]].key, side: transition(sx - 1, sy, sx, sy, 1, 'p', true), front: transition(sx + 1, sy, sx, sy, 1, 'p', true), sx, sy };
     });
     ok('ladder hangs on a wall; side entry blocked, front entry allowed', st.st && st.dir === 0 && st.wall === 'brick' && st.side === -1 && st.front === 0, JSON.stringify(st));
     const hold = await p.evaluate(async () => {
-      const me = W.p[0], sx = W.radio.x - 1, sy = W.radio.y - 2; me.build = false;
+      const me = W.p[0], sx = W.radio.x + 1, sy = W.radio.y - 4; me.build = false;
       me.x = sx + 1.3; me.y = sy + 0.5; me.L = 1; me.vx = me.vy = 0; me.edgeT = 0;
       const want = W.p[0];
       INP.keys = {}; const [fx, fy] = camFwd();
@@ -93,10 +93,10 @@ const UA = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/6
     ok('brief step does not go down, pushing does', hold.afterTap === 1 && hold.afterPush === 0, JSON.stringify(hold));
     // entrances: starter house has 4 doors; every town house opens on >= 3 sides
     const ent = await p.evaluate(() => {
-      const X0 = W.radio.x - 5, X1 = W.radio.x + 5, Y0 = W.radio.y - 5, Y1 = W.radio.y + 5; let doors = 0;
+      const X0 = W.radio.x - 6, X1 = W.radio.x + 6, Y0 = W.radio.y - 5, Y1 = W.radio.y + 5; let doors = 0;
       for (let x = X0; x <= X1; x++) for (let y = Y0; y <= Y1; y++) if (W.blk[ci(x, y, 0)] === 7) doors++;
-      const fam = TOWN_HOUSES.map(([x0, y0, x1, y1]) => {
-        const side = (ax, bx, ay, by) => { for (let x = ax; x <= bx; x++) for (let y = ay; y <= by; y++) if (!W.blk[ci(x, y, 0)] && W.tt[y * MW + x] !== TT.water) return 1; return 0; };
+      const fam = TOWN_HOUSES.filter(h => h[5] !== 'barn').map(([x0, y0, x1, y1]) => {
+        const side = (ax, bx, ay, by) => { for (let x = ax; x <= bx; x++) for (let y = ay; y <= by; y++) if ((!W.blk[ci(x, y, 0)] || W.blk[ci(x, y, 0)] === 7) && W.tt[y * MW + x] !== TT.water) return 1; return 0; };
         return side(x0 + 1, x1 - 1, y0, y0) + side(x0 + 1, x1 - 1, y1, y1) + side(x0, x0, y0 + 1, y1 - 1) + side(x1, x1, y0 + 1, y1 - 1);
       });
       return { doors, min: Math.min(...fam), houses: fam.length };

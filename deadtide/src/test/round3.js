@@ -15,7 +15,7 @@ require('fs').mkdirSync(OUT, { recursive: true });
   ok('every searchable / gatherable type is on the map', Object.keys(pc).length >= 13, JSON.stringify(pc));
   ok('town spread out', await p.evaluate(() => TOWN_HOUSES.length) <= 18);
   // search a crate: it vanishes; car: marked; dawn restocks
-  const SPOTS_N_CRATE = 16;
+  const SPOTS_N_CRATE = 16; const BAL_SEARCH = 3;
   const sr = await p.evaluate(() => {
     const me = W.p[0]; let ci0 = -1, car = -1; for (let i = 0; i < NC; i++) { if (ci0 < 0 && W.blk[i] === 26) ci0 = i; if (car < 0 && W.blk[i] === 25) car = i; }
     const n0 = spotCount().crate; completeUse(me, { k: 'spot', i: ci0 }); const gone = W.blk[ci0] === 0;
@@ -36,7 +36,7 @@ require('fs').mkdirSync(OUT, { recursive: true });
     z = mk('walker', 2); fireAt(1, z); R.sgStun = z.stun > 0.1;
     let a = mk('armored', 5, Math.PI), h0 = a.hp; me.wpn = 0; fireAt(0, a); R.armorFront = (h0 - a.hp) / WPN[0].dmg;
     a.face = 0; h0 = a.hp; fireAt(0, a); R.armorBack = (h0 - a.hp) / WPN[0].dmg;
-    h0 = a.hp; a.face = Math.PI; fireAt(3, a); R.armorSniper = (h0 - a.hp) / WPN[3].dmg;
+    a.hp = a.max = 9999; h0 = a.hp; a.face = Math.PI; fireAt(3, a); R.armorSniper = (h0 - a.hp) / WPN[3].dmg;
     W.zs.length = 0; z = mk('walker', 6); fireAt(6, z); R.glProj = W.proj.some(b => b.k === 'gl');
     return R;
   });
@@ -73,13 +73,17 @@ require('fs').mkdirSync(OUT, { recursive: true });
   ok('pushing into it vaults back over automatically', auto <= -2, 'moved ' + auto);
   // ladders slow zombies; traps hold them
   const lr = await p.evaluate(() => {
-    const L1 = B[W.blk[ci(W.radio.x - 1, W.radio.y - 2, 0)]], L2 = B[W.blk[ci(W.radio.x + 1, W.radio.y + 1, 0)]];
+    const L1 = B[W.blk[ci(W.radio.x + 1, W.radio.y - 4, 0)]], L2 = B[W.blk[ci(W.radio.x + 1, W.radio.y + 4, 0)]];
     const me = W.p[0], X = W.radio.x + 12, Y = W.radio.y + 14; W.blk[ci(X, Y, 0)] = 15; W.bhp[ci(X, Y, 0)] = 40; W.ver++;
     const z = spawnZombie('walker', 0); z.x = X + 0.5; z.y = Y + 0.5; z.L = 0; z.z = 0; stepZombies(1 / 60);
     return { ladders: L1.name + ',' + L2.name, stun: z.stun, trapGone: W.blk[ci(X, Y, 0)] !== 15 };
   });
   ok('starter house has two ladders', lr.ladders === '爬梯,爬梯', lr.ladders);
   ok('bear trap holds a zombie and breaks', lr.stun > 2 && lr.trapGone, JSON.stringify(lr));
+  // one tap searches to the end without holding
+  const tapI = await p.evaluate(() => { const me = W.p[0]; me.build = false; W.zs.length = 0; for (let i = 0; i < NC; i++) { if (W.blk[i] !== 26) continue; const x = cx_(i), y = cy_(i), L = cl_(i); const f = DIRS.map(([dx, dy]) => [x + dx, y + dy]).find(([a, b]) => standable(a, b, L, 'p')); if (!f) continue; me.x = f[0] + 0.5; me.y = f[1] + 0.5; me.L = L; me.z = pZ(me); const t = useTarget(me); if (t && t.i === i) { INP.useReq = true; return i; } } return -1; });
+  await simWait(BAL_SEARCH);
+  ok('one tap finishes a search', tapI >= 0 && await p.evaluate(i => W.blk[i] !== 26, tapI), 'crate ' + tapI);
   // houses: several storeys, ladders all hang on walls
   const hs = await p.evaluate(() => {
     let maxSt = 0, lad = 0, flush = 0, ok2 = 0;

@@ -256,7 +256,7 @@ function pickSpot(kind) {
     if (indoor) {
       const H = TOWN_HOUSES[Math.floor(rand() * TOWN_HOUSES.length)];
       x = H[0] + 1 + Math.floor(rand() * (H[2] - H[0] - 1)); y = H[1] + 1 + Math.floor(rand() * (H[3] - H[1] - 1));
-      L = W.slab[ci(x, y, 1)] && rand() < 0.4 ? 1 : gAt(x, y);
+      L = Math.floor(rand() * Math.max(1, H[4])); if (L > 0 && !W.slab[ci(x, y, L)]) L = gAt(x, y);
       if (kind === 'cabinet' && !DIRS.some(([dx, dy]) => { const b = blkAt(x + dx, y + dy, L); return b === 24 || b === 2 || b === 1; })) continue; // against a wall
     } else {
       x = Math.floor(rand() * MW); y = Math.floor(rand() * MH); L = gAt(x, y);

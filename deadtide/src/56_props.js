@@ -21,8 +21,9 @@ function propScene() {
     15: M([new THREE.TorusGeometry(0.17, 0.025, 4, 12).rotateX(Math.PI / 2).translate(0, 0.03, 0), boxG(0.3, 0.02, 0.06, 0, 0.02, 0), ...[0, 1, 2, 3, 4, 5].map(k => new THREE.ConeGeometry(0.02, 0.07, 3).translate(Math.cos(k * 1.05) * 0.15, 0.06, Math.sin(k * 1.05) * 0.15))]), // bear trap
     6: M([boxG(0.05, FH + 0.4, 0.05, 0.445, (FH + 0.4) / 2, -0.24), boxG(0.05, FH + 0.4, 0.05, 0.445, (FH + 0.4) / 2, 0.24), ...[0, 1, 2, 3, 4, 5].map(k => boxG(0.04, 0.035, 0.46, 0.445, 0.18 + k * 0.24, 0)), boxG(0.04, 0.04, 0.04, 0.47, FH * 0.3, -0.24), boxG(0.04, 0.04, 0.04, 0.47, FH * 0.75, 0.24)]), // ladder hung flat on the wall
   };
-  const C = { 32: '#3f5a3a', 33: '#5a4a2e', 34: '#6a4a30', 35: '#a8322a', 36: '#4f5a32', 37: '#9a3a2a', 38: '#b8333a', 39: '#7a5a44', 40: '#6a4a2c', 41: '#3e5f2e', 12: '#a8946a', 13: '#6a5038', 14: '#7a8590', 15: '#5a5a55', 6: '#8a6440' };
-  const cap = { 41: 3000, 40: 600, 39: 600, 12: 1500, 13: 800, 14: 800, 15: 400, 6: 400, 32: 400, 34: 400 };
+  G[42] = M([boxG(0.06, 0.9, 0.06, 0, 0.45, -0.44), boxG(0.06, 0.9, 0.06, 0, 0.45, 0.44), boxG(0.06, 0.9, 0.06, 0, 0.45, 0), boxG(0.07, 0.06, 1, 0, 0.88, 0), boxG(0.04, 0.04, 1, 0, 0.45, 0)]);
+  const C = { 42: '#7a8088', 32: '#3f5a3a', 33: '#5a4a2e', 34: '#6a4a30', 35: '#a8322a', 36: '#4f5a32', 37: '#9a3a2a', 38: '#b8333a', 39: '#7a5a44', 40: '#6a4a2c', 41: '#3e5f2e', 12: '#a8946a', 13: '#6a5038', 14: '#7a8590', 15: '#5a5a55', 6: '#8a6440' };
+  const cap = { 42: 2500, 41: 3000, 40: 600, 39: 600, 12: 1500, 13: 800, 14: 800, 15: 400, 6: 400, 32: 400, 34: 400 };
   for (const id in G) { const m = inst(G[id], lam('#ffffff'), cap[id] || 300); PROP[id] = { m, n: 0, col: C[id], al: id == 12 || id == 13 || id == 14 }; }
   // build-plan ghosts and the x-ray ring that shows survivors through walls
   OBJ.planI = inst(boxG(1, 1, 1, 0, 0.5, 0), new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0.4, depthWrite: false }), 64, false);
@@ -37,7 +38,8 @@ function propPut(b, i, x, y, L, X, Y, Z, h) {
   if (P.n >= P.m.instanceMatrix.count) return true;
   let rot = h * 6.28, col = P.col, sc = 1;
   if (P.al) rot = wallAxis(x, y, L) ? 0 : Math.PI / 2;
-  if (b === 6) rot = -W.bdir[i] * Math.PI / 2;
+  if (b === 6) { rot = -W.bdir[i] * Math.PI / 2; col = '#e2a43a'; }
+  if (b === 42) { const r = (xx, yy) => { const q = blkAt(xx, yy, L); return q === 42 || (q && B[q].top); }; rot = r(x - 1, y) || r(x + 1, y) ? Math.PI / 2 : 0; }
   if (b === 37) col = ['#9a3a2a', '#2f5a8a', '#c9a23a'][Math.floor(h * 3)];
   if (b === 38 && W.srch.has(i)) col = '#5a2a2c';
   if (b === 41) sc = 0.8 + h * 0.5;

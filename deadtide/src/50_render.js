@@ -25,10 +25,19 @@ let VL_CACHE = { k: '', v: ML - 1 };
 function viewL() {
   if (!W) return 0; if (!VIEW.auto) return VIEW.L;
   const me = W.p[ME]; if (!me || me.gone) return ML - 1;
-  const k = W.ver + ':' + Math.floor(me.x) + ',' + Math.floor(me.y) + ',' + me.L;
-  if (VL_CACHE.k !== k) VL_CACHE = { k, v: covered(me) ? me.L : ML - 1 };
-  return VL_CACHE.v;
+  cutBox(); return ML - 1; // auto: nothing is hidden globally; only the building you're in loses its upper floors (cutBox)
 }
+// auto view: inside a building, hide the floors above you in that building only — the rest of town keeps all its floors
+let LCUT = null, LC_KEY = '';
+function cutBox() {
+  const me = W && W.p[ME]; if (!VIEW.auto || !me || me.gone) { LCUT = null; return null; }
+  const k = W.ver + ':' + Math.floor(me.x) + ',' + Math.floor(me.y) + ',' + me.L; if (LC_KEY === k) return LCUT; LC_KEY = k;
+  if (!covered(me)) { LCUT = null; return null; }
+  const x = Math.floor(me.x), y = Math.floor(me.y), H = TOWN_HOUSES.find(h => x >= h[0] - 2 && x <= h[2] + 2 && y >= h[1] - 2 && y <= h[3] + 2);
+  LCUT = { L: me.L, b: H ? [H[0] - 3, H[1] - 3, H[2] + 3, H[3] + 3] : [x - 10, y - 10, x + 10, y + 10] };
+  return LCUT;
+}
+const lcHide = (x, y, L) => LCUT && L > LCUT.L && x >= LCUT.b[0] && x <= LCUT.b[2] && y >= LCUT.b[1] && y <= LCUT.b[3];
 
 /* ---------- materials & helpers ---------- */
 const MATS = {};
@@ -169,17 +178,22 @@ function buildTerrain() {
 const RC = { ver: -1, key: '', lamps: [] };
 const dmgTint = (hex, f) => { tmpC.set(hex); const k = 0.45 + 0.55 * clamp(f, 0, 1); return '#' + tmpC.multiplyScalar(k).getHexString(); };
 function wallAxis(x, y, L) { const solid = (xx, yy) => { const b = blkAt(xx, yy, L); return b && (B[b].P || B[b].Z) && !B[b].nat || b === 24; }; return (solid(x - 1, y) || solid(x + 1, y)) && !(solid(x, y - 1) || solid(x, y + 1)) ? 0 : (solid(x, y - 1) || solid(x, y + 1)) ? 1 : 0; }
+function cullR() { return Math.min(MW, CAM.zoom * Math.max(1, VW / Math.max(1, VH)) * 1.6 + 8); }
 function rebuildCells() {
   const I = OBJ.I, me = W.p[ME], vl = viewL(), [ox, oy] = [Math.sin(CAM.yaw), Math.cos(CAM.yaw)];
   const c = { wall: 0, slab: 0, stairs: 0, door: 0, bars: 0, wire: 0, lamp: 0, trunk: 0, pine: 0, oak: 0, rock: 0, crate: 0, rubble: 0, fence: 0, car: 0 };
   const lamps = []; archBegin(); propBegin();
   if (RC.topVer !== W.ver) { RC.topVer = W.ver; RC.topL = 0; for (let i = NC - 1; i >= 0; i--) if (W.blk[i] || W.slab[i]) { RC.topL = cl_(i); break; } }
-  for (let L = 0; L <= RC.topL; L++) for (let y = 0; y < MH; y++) for (let x = 0; x < MW; x++) {
+  // only the part of the map the camera can see (plus a margin) is put into the instance buffers
+  const CR = cullR(), cx0 = Math.max(0, Math.floor(CAM.tx - CR)), cx1 = Math.min(MW - 1, Math.ceil(CAM.tx + CR)), cy0 = Math.max(0, Math.floor(CAM.ty - CR)), cy1 = Math.min(MH - 1, Math.ceil(CAM.ty + CR));
+  for (let L = 0; L <= RC.topL; L++) for (let y = cy0; y <= cy1; y++) for (let x = cx0; x <= cx1; x++) {
     const i = ci(x, y, L), b = W.blk[i], s = W.slab[i];
     if (!b && !s) continue;
     const X = x + 0.5, Y = L * FH, Z = y + 0.5, h = hash2(x * 3 + L, y * 7);
-    const hide = L > vl && !(b && B[b].nat);
+    const hide = (L > vl && !(b && B[b].nat)) || (lcHide(x, y, L) && b !== 20 && b !== 21 && b !== 22);
     if (hide) continue;
+    // inside a town building, anything under a floor that is drawn can't be seen: skip it (big saving on tall blocks)
+    if (L + 1 < ML && L + 1 <= vl && W.slab[i + MW * MH] && !lcHide(x, y, L + 1) && houseInterior(x, y)) continue;
     if (s && !archSlab(s, i, x, y, L, X, Y, Z)) { setInst(I.slab, c.slab++, X, Y, Z, 0, 1, 1, 1, dmgTint(B[s].col, s === SLAB_BRIDGE ? 1 : W.shp[i] / B[s].hp)); }
     if (!b || b === 20 || b === 23 || b === 28 || b === 30 || b === 31) continue;
     let cut = 1;
@@ -192,7 +206,7 @@ function rebuildCells() {
       case 6: {
         propPut(6, i, x, y, L, X, Y, Z, h);
         // railings around the opening above, on every side you could walk up to except the top step
-        if (L + 1 < ML && L + 1 <= vl) for (let k = 0; k < 4; k++) {
+        if (L + 1 < ML && L + 1 <= vl && !lcHide(x, y, L + 1)) for (let k = 0; k < 4; k++) {
           if (k === W.bdir[i]) continue; const [ex, ey] = DIRS[k], nx = x + ex, ny = y + ey;
           if (inMap(nx, ny) && support(nx, ny, L + 1) && !W.blk[ci(nx, ny, L + 1)]) archPut('rail', X, Y + FH, Z, Math.atan2(-ex, -ey), 1, 1, 1);
         }
@@ -312,7 +326,7 @@ function screenRay(sx, sy) { NDC.set(sx / VW * 2 - 1, -(sy / VH) * 2 + 1); RAY.s
 function aimPick(sx, sy) {
   const { o, d } = screenRay(sx, sy), vl = viewL();
   let best = null, bd = 1e9;
-  for (const z of W.zs) { if (z.L > vl) continue; const t = rayBox(o[0], o[1], o[2], d[0], d[1], d[2], z.x - z.r - 0.15, z.y - z.r - 0.15, z.z, z.r * 2 + 0.3, z.r * 2 + 0.3, z.h, 400); if (t >= 0 && t < bd) { bd = t; best = z; } }
+  for (const z of W.zs) { if (z.L > vl || lcHide(Math.floor(z.x), Math.floor(z.y), z.L)) continue; const t = rayBox(o[0], o[1], o[2], d[0], d[1], d[2], z.x - z.r - 0.15, z.y - z.r - 0.15, z.z, z.r * 2 + 0.3, z.r * 2 + 0.3, z.h, 400); if (t >= 0 && t < bd) { bd = t; best = z; } }
   if (best) return { x: best.x, y: best.y, z: best.z + best.h * 0.65, zb: best };
   // march the camera ray into the visible part of the map
   const top = (vl + 2) * FH; let t0 = 0; if (o[2] > top && d[2] < 0) t0 = (o[2] - top) / -d[2];
@@ -343,7 +357,7 @@ function draw(dt) {
   stepFx(dt);
   updateCamera(dt);
   const me = W.p[ME], vl = viewL();
-  const key = W.ver + ':' + vl + ':' + CAM.rot + ':' + (me ? Math.floor(me.x) + ',' + Math.floor(me.y) + ',' + me.L : '');
+  const key = W.ver + ':' + vl + ':' + CAM.rot + ':' + (me ? Math.floor(me.x) + ',' + Math.floor(me.y) + ',' + me.L : '') + ':' + Math.floor(CAM.tx / 6) + ',' + Math.floor(CAM.ty / 6) + ':' + Math.round(cullR() / 4);
   if (key !== CUT_KEY) { CUT_KEY = key; rebuildCells(); }
   applyTime(darkness()); archFrame();
   drawZombies(vl, dt); drawPlayers(vl, dt); drawFx(); drawGhost(me); drawPlan();

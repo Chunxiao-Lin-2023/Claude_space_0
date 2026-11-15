@@ -32,7 +32,7 @@ function doJump() {
 // camera controls (shared by keys and the HUD buttons)
 function camRot(d) { CAM.rot = (CAM.rot + d + 4) % 4; sfx('click'); }
 function camZoom(f) { CAM.zoom = clamp(CAM.zoom * f, 4, 22); SET.zoom = CAM.zoom; saveSet(); }
-function viewStep(d) { if (!W) return; const me = W.p[ME]; if (VIEW.auto) { const base = me.build ? me.L : Math.min(viewL(), topBuiltL()); VIEW.auto = false; VIEW.L = base; } VIEW.L = clamp(VIEW.L + d, 0, ML - 2); uiView(); sfx('click'); }
+function viewStep(d) { if (!W) return; const me = W.p[ME]; if (VIEW.auto) { const base = me.build ? me.L : (cutBox() ? LCUT.L : topBuiltL()); VIEW.auto = false; VIEW.L = base; } VIEW.L = clamp(VIEW.L + d, 0, ML - 2); uiView(); sfx('click'); }
 function topBuiltL() { let t = 0; for (let i = 0; i < NC; i++) if ((W.slab[i] && B[W.slab[i]].cost) || (W.blk[i] && B[W.blk[i]].cost)) t = Math.max(t, cl_(i)); return Math.min(ML - 2, t + 1); }
 function viewAuto() { VIEW.auto = true; uiView(); sfx('click'); }
 // default stairs direction: up the screen
@@ -75,7 +75,7 @@ function onKeyPress(k) {
   if (k === 'h') return act('med');
   if (k === 'n') return toggleReady();
   if (k === 'c') return openCraft();
-  if (k === 'f') { if (nearBench(me) && !useTarget(me)) return openCraft(); }
+  if (k === 'f') { if (nearBench(me) && !useTarget(me)) return openCraft(); if (INP.useLatch) INP.useLatch = null; else INP.useReq = true; }
 }
 function toggleReady() { const me = W.p[ME]; if (W.phase !== 'day') return; act('ready', me.ready ? 0 : 1); if (NETROLE === 'guest') me.ready = !me.ready; sfx('ready'); }
 // mouse
@@ -181,7 +181,7 @@ CV.addEventListener('pointerup', endPtr); CV.addEventListener('pointercancel', e
 // point at the top of a wall -> stack on it; at a wall's side -> build next to it; at a floor -> build on it.
 // Floors also try the ceiling above what you point at, and your own level (balconies out over the edge).
 function pickBuild(sx, sy, me, demo) {
-  const { o, d } = screenRay(sx, sy), maxL = Math.min(ML - 1, viewL());
+  const { o, d } = screenRay(sx, sy), maxL = Math.min(ML - 1, viewL(), LCUT ? LCUT.L : ML - 1);
   const top = (maxL + 1) * FH + 0.01; let t0 = 0; if (o[2] > top && d[2] < 0) t0 = (o[2] - top) / -d[2];
   const h = rayWorld(o[0] + d[0] * t0, o[1] + d[1] * t0, o[2] + d[2] * t0, d[0], d[1], d[2], 300, { maxL, any: true });
   if (h.x == null || !inMap(h.x, h.y)) return null;
@@ -315,7 +315,7 @@ bindBtn('tJump', () => inGame() && doJump());
 bindBtn('bcOk', () => confirmPlan()); bindBtn('bcNo', () => cancelPlan());
 bindBtn('tNade', () => inGame() && act('nade'));
 bindBtn('tMed', () => inGame() && act('med'));
-bindBtn('tUse', () => { if (!inGame()) return; const me = W.p[ME]; if (nearBench(me) && !useTarget(me)) openCraft(); INP.useHeld = true; }, () => { INP.useHeld = false; });
+bindBtn('tUse', () => { if (!inGame()) return; const me = W.p[ME]; if (nearBench(me) && !useTarget(me)) openCraft(); else if (INP.useLatch) INP.useLatch = null; else INP.useReq = true; });
 bindBtn('tBuild', () => inGame() && toggleBuild());
 bindBtn('vZin', () => camZoom(0.8)); bindBtn('vZout', () => camZoom(1.25));
 bindBtn('vRl', () => camRot(-1)); bindBtn('vRr', () => camRot(1));
@@ -351,7 +351,11 @@ function readInput(dt) {
     const m = Math.hypot(I.mx, I.my), a = Math.atan2(I.my, I.mx), q = Math.round(a / (Math.PI / 2)) * Math.PI / 2;
     if (Math.abs(a - q) < 0.2) { I.mx = Math.cos(q) * m; I.my = Math.sin(q) * m; }
   }
-  I.use = !blocked && (KD('f') || INP.useHeld) ? 1 : 0;
+  // one tap starts a search / chop / revive and it carries on by itself; walking away or finishing ends it
+  const ut = W.p[ME] && !blocked ? useTarget(W.p[ME]) : null, uk = ut ? ut.k + ':' + ut.i : '';
+  if (INP.useReq) { INP.useLatch = uk || null; INP.useReq = false; }
+  if (INP.useLatch && (INP.useLatch !== uk || Math.hypot(I.mx, I.my) > 0.3 || W.p[ME].down)) INP.useLatch = null;
+  I.use = !blocked && (KD('f') || INP.useHeld || INP.useLatch) ? 1 : 0;
   const usingMouse = !INP.touch || (performance.now() - INP.mouseT < 1500 && performance.now() - INP.lastTouch > 1500);
   if (usingMouse) {
     if (INP.touch && performance.now() - INP.mouseT < 300) setTouch(false);

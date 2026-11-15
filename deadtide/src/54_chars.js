@@ -92,7 +92,7 @@ function drawZombies(vl, dt) {
   for (const z of list) {
     if (drawn >= ZCAP - 2) break;
     const corpse = !!z.corpse, L = z.L != null ? z.L : Math.floor((z.z + 0.1) / FH);
-    if (L > vl) continue;
+    if (L > vl || lcHide(Math.floor(z.x), Math.floor(z.y), L)) continue;
     drawn++;
     rigZombie(z, corpse, dt, dk);
   }

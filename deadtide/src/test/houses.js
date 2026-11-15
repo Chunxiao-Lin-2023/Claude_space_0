@@ -9,10 +9,14 @@ const UA = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/6
   await p.click('#soloBtn'); await p.waitForFunction(() => W && W.t > 0.5, null, { timeout: 90000 });
   await p.evaluate(() => { window.__dbg.god = true; W.clock = 999; document.getElementById('hud').style.opacity = 0.2; });
   const shot = async (n, f) => { await p.evaluate(f); await p.evaluate(() => { const me = W.p[0]; CAM.tx = me.x; CAM.ty = me.y; CAM.tz = me.L * FH; CAM.lookX = CAM.lookY = 0; }); await p.waitForTimeout(1500); await p.screenshot({ path: OUT + '/h_' + n + '.png' }); };
-  await shot('block_out', () => { const me = W.p[0]; me.x = 101.5; me.y = 70.5; me.L = 0; CAM.zoom = 9; });
-  await shot('block_in1', () => { const me = W.p[0]; me.x = 99.5; me.y = 61.5; me.L = 1; me.z = FH; CAM.zoom = 6; });
+  await shot('block_out', () => { const me = W.p[0]; me.x = 107.5; me.y = 78.5; me.L = 0; CAM.zoom = 13; });
+  await shot('block_in1', () => { const me = W.p[0]; me.x = 100.5; me.y = 62.5; me.L = 1; me.z = FH; CAM.zoom = 9; });
   await shot('block_in3', () => { const me = W.p[0]; me.L = 3; me.z = 3 * FH; });
-  await shot('camp_in', () => { const me = W.p[0]; me.x = W.radio.x + 2.5; me.y = W.radio.y + 0.5; me.L = 0; me.z = 0; CAM.zoom = 5; });
+  await shot('camp_in', () => { const me = W.p[0]; me.x = W.radio.x - 2.5; me.y = W.radio.y + 0.5; me.L = 0; me.z = 0; CAM.zoom = 6; });
+  await shot('camp_up', () => { const me = W.p[0]; me.L = 1; me.z = FH; me.y = W.radio.y + 2.5; });
+  await shot('villa', () => { const me = W.p[0]; me.x = 66.5; me.y = 85.5; me.L = 0; me.z = 0; CAM.zoom = 10; });
+  await shot('ware', () => { const me = W.p[0]; me.x = 105.5; me.y = 90.5; me.L = 0; me.z = 0; CAM.zoom = 11; });
+  await shot('town', () => { const me = W.p[0]; me.x = 108.5; me.y = 100.5; me.L = 0; me.z = 0; CAM.zoom = 20; });
   await shot('camp_roof', () => { const me = W.p[0]; me.L = 2; me.z = 2 * FH; CAM.zoom = 7; });
   console.log('errs', errs.slice(0, 3)); await c.close();
   const m = await b.newContext({ viewport: { width: 852, height: 393 }, hasTouch: true, isMobile: true, userAgent: UA }); await m.route(/fonts\.(googleapis|gstatic)/, r => r.abort());
