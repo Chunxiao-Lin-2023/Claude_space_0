@@ -168,7 +168,7 @@ function hsTextLayer(H) { const el = $('#hsfx'); if (!el) return; let h = hsCutC
     const rn = {}; for (const r of H.M.rooms) { if (rn[r.n]) continue; rn[r.n] = 1; const [x, y] = hsToCss(H, (r.x0 + r.x1) / 2, r.y0 + .1); h += '<span class="hr" style="left:' + Math.round(x) + 'px;top:' + Math.round(y) + 'px">' + esc(r.n) + '</span>'; } }
   if (H.phase === 'live') { const bub = (o, s, big) => { const [x, y] = hsToCss(H, o.x, o.y - ((o.P && o.P.tall) ? 2.4 : 1.8)); h += '<span class="hb' + (big ? ' big' : '') + '" style="left:' + Math.round(x) + 'px;top:' + Math.round(y) + 'px">' + esc(s) + '</span>'; };
     for (const v of H.vis) if (v.bub && v.st !== 'gone' && v.st !== 'wait') bub(v, v.bub.s, v.bub.big);
-    /* 游客性格的小标签（沉浸模式不显示） */ if (!SET.imm) for (const v of hActive(H)) { const rl = [HROLE[v.u.trait], v.tmpTag].filter(Boolean).join('·'); if (!rl || v.bub || v.inCl) continue; const [x, y] = hsToCss(H, v.x, v.y - ((v.P && v.P.tall) ? 1.75 : 1.3)); h += '<span class="hrole" style="left:' + Math.round(x) + 'px;top:' + Math.round(y) + 'px">' + rl + '</span>'; }
+    /* 游客性格的小标签（沉浸模式不显示） */ if (!SET.imm) for (const v of hActive(H)) { const rl = (v.u.who ? v.u.n + ' ' : '') + [HROLE[v.u.trait], v.tmpTag].filter(Boolean).join('·'); if (!rl || v.bub || v.inCl) continue; const [x, y] = hsToCss(H, v.x, v.y - ((v.P && v.P.tall) ? 1.75 : 1.3)); h += '<span class="hrole" style="left:' + Math.round(x) + 'px;top:' + Math.round(y) + 'px">' + rl + '</span>'; }
  if (H.boss && H.boss.bub && H.boss.bub.until > now) bub(H.boss, H.boss.bub.s, 1); }
   el.innerHTML = h; }
 
