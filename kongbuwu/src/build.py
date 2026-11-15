@@ -7,7 +7,8 @@ import json, os, sys, re, collections
 D = os.path.dirname(os.path.abspath(__file__))
 src = lambda f: open(os.path.join(D, f), encoding='utf-8').read()
 ORDER = sorted(f for f in os.listdir(D) if re.match(r'^\d\d_.*\.js$', f))
-game = '\n'.join(src(f) for f in ORDER)
+BLDJS = os.path.join('..', 'night', 'lib', 'k_15_bld.js')   # 建筑主题（墙、地面、挂件、家具）和夜晚地图共用一份
+game = '\n'.join(src(f) + ('\n' + src(BLDJS) if f == '51_pix.js' else '') for f in ORDER)
 errs = []
 dup = [n for n, c in collections.Counter(re.findall(r'^(?:async )?function ([A-Za-z_0-9$]+)', game, re.M)).items() if c > 1]
 if dup: errs.append('顶层函数重名（后面的会悄悄覆盖前面的）: ' + ', '.join(dup))

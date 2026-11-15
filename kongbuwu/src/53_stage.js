@@ -48,6 +48,9 @@ Object.assign(SPR, {
   ferris(g, e, t, R) { const c = e.col || '#3a4a52'; for (let a = 0; a < 24; a++) { const r = 26, x = 28 + Math.cos(a / 24 * 6.283) * r, y = 28 + Math.sin(a / 24 * 6.283) * r; R(x, y, 2, 2, c); } for (let a = 0; a < 8; a++) { const x = 28 + Math.cos(a / 8 * 6.283) * 26, y = 28 + Math.sin(a / 8 * 6.283) * 26; R(x - 2, y, 5, 4, a === 3 && e.dark ? '#000' : (e.lit && a % 2 ? '#d8a840' : '#6a3a3a')); } R(27, 28, 3, 34, c); }
 });
 /* 场景：wall 墙面风格 / floor 地面瓦片 / out 室外（back 远景）/ props [精灵, 格x, 格y, 参数] / tiles [瓦片, 格x, 格y]（树、灌木） */
+/* 建筑主题的挂件清单（RULES 39）：[挂件, 列, 行(1 上半墙 / 2 下半墙 / 3–6 地面), 参数] */
+const stWire = () => Array.from({ length: 20 }, (_, x) => ['aptWire', x, 1, { box: x === 6 || x === 15 }]);
+const stLine = () => Array.from({ length: 20 }, (_, x) => ['hospLine', x, 6]);
 const STAGES = {
   park: { out: 1, floor: 'sidewalk', back: 'park', props: [['streetlamp', 2, 4], ['bench', 13, 4], ['vending', 17, 3], ['sign', 8, 4, { col: '#6a2a2a' }]] },
   house: { out: 1, floor: 'asphalt', back: 'house', props: [['streetlamp', 1, 4], ['rail', 3, 4], ['rail', 4, 4], ['rail', 15, 4], ['rail', 16, 4], ['poster', 6, 3, { col: '#8a2a2a' }]] },
@@ -64,21 +67,32 @@ const STAGES = {
   woods: { out: 1, floor: 'grass', back: 'woods', tiles: [['tree', 0, 3], ['tree', 1, 4], ['pine', 18, 3], ['tree', 19, 4], ['bushes', 15, 6], ['tree', 3, 6]] },
   apt: { out: 1, floor: 'dirt', back: 'apt', tiles: [['tree', 0, 3], ['pine', 19, 3], ['bushes', 18, 5]], props: [['sign', 4, 4, { col: '#5a5a50' }], ['paper', 5, 3]] },
   corridor: { wall: 'concrete', floor: 'linoleum', props: [['door', 2, 2], ['door', 6, 2], ['door', 13, 2], ['door', 17, 2], ['wallclock', 10, 1]] },
+  aptcorr: { wall: 'apt', floor: 'cement2', props: [['door', 2, 2], ['door', 7, 2], ['door', 12, 2], ['door', 17, 2], ['shoerack', 4, 3], ['plant', 9, 3], ['bike', 14, 3]],
+    deco: [...stWire(), ['aptPlate', 2, 1], ['aptPlate', 7, 1], ['aptPlate', 12, 1], ['aptPlate', 17, 1], ['aptMeter', 5, 1], ['aptAds', 10, 1], ['aptLamp', 9, 1], ['aptStain', 15, 1], ['aptStain', 19, 1], ['aptAds', 0, 1],
+      ['aptSwitch', 3, 2], ['aptSwitch', 18, 2], ['aptStamp', 10, 2], ['aptAds', 15, 2, { low: 1 }], ['aptMat', 2, 3], ['aptMat', 7, 3, { c: '#3a4a6a' }], ['aptMat', 17, 3, { c: '#5a5a3a' }], ['aptShoes', 8, 3], ['aptBag', 19, 3]] },
+  schcorr: { wall: 'sch', floor: 'terrazzo', props: [['door', 3, 2], ['door', 13, 2], ['window', 6, 2], ['window', 9, 2], ['window', 16, 2], ['waterdisp', 11, 3], ['bins', 18, 3]],
+    deco: [['schPlate', 3, 1], ['schPlate', 13, 1], ['schWin', 1, 1], ['schWin', 5, 1], ['schBoard', 7, 1, { part: 0 }], ['schBoard', 8, 1, { part: 1 }], ['schWin', 10, 1], ['schClock', 12, 1], ['schBanner', 15, 1, { end: 0 }], ['schBanner', 16, 1, { end: 1 }], ['schWin', 18, 1],
+      ['schFire', 0, 2], ['schSwitch', 4, 2], ['schNotice', 15, 2], ['schSwitch', 14, 2]] },
+  hospcorr: { wall: 'hosp', floor: 'hlino', props: [['door', 2, 2], ['door', 7, 2], ['door', 12, 2], ['door', 17, 2], ['hbench', 4, 3], ['ivstand', 10, 3], ['wheelchair', 14, 3]],
+    deco: [...stLine(), ['hospPlate', 2, 1], ['hospPlate', 7, 1], ['hospPlate', 12, 1], ['hospPlate', 17, 1], ['hospCall', 2, 1], ['hospCall', 7, 1], ['hospCall', 12, 1], ['hospCall', 17, 1], ['hospExit', 0, 1], ['hospPoster', 4, 1], ['hospPoster', 9, 1, { c: '#3a9a6a' }], ['hospQuiet', 10, 1], ['hospClock', 14, 1], ['hospPoster', 19, 1, { c: '#c07a3a' }],
+      ['hospSan', 3, 2], ['hospSan', 13, 2]] },
+  aptroom: { wall: 'apt', floor: 'wood', props: [['window', 9, 1], ['bed', 14, 3], ['table', 3, 4], ['lamp', 5, 3], ['door', 1, 2], ['wardrobe', 17, 3]], deco: [['aptStain', 6, 1], ['aptStain', 12, 1], ['aptSwitch', 2, 2], ['aptLamp', 10, 1]] },
   burnt: { wall: 'brick', floor: 'concrete', props: [['stain', 3, 4], ['stain', 12, 5], ['box', 6, 4], ['crate', 15, 3], ['doll', 9, 5, { col: '#c8b8a0' }], ['doll', 10, 5, { col: '#b8a890' }], ['curtain', 17, 1], ['door', 2, 2, { open: 1 }]] },
   hut: { wall: 'wood', floor: 'dirt', props: [['bed', 14, 3, { col: '#4a3a3a' }], ['box', 3, 4], ['crate', 5, 3], ['lantern', 9, 1], ['rope', 11, 5], ['window', 7, 1]] },
   school: { out: 1, floor: 'concrete', back: 'school', props: [['sign', 3, 4, { col: '#4a5a48' }], ['streetlamp', 16, 4, { off: 1 }]] },
   field: { out: 1, floor: 'grass', back: 'field', tiles: [['bushes', 2, 6], ['reeds', 17, 5], ['reeds', 18, 6]] },
   dance: { wall: 'plain', floor: 'lightwood', props: [['mirror', 4, 2], ['mirror', 6, 2], ['mirror', 8, 2], ['mirror', 10, 2], ['mirror', 12, 2], ['mirror', 14, 2], ['chair', 8, 4, { col: '#2a2a2a' }], ['chair', 10, 4, { col: '#2a2a2a' }], ['chair', 12, 4, { col: '#2a2a2a' }]] },
   toilet: { wall: 'tile', floor: 'tile', props: [['stall', 3, 3], ['stall', 5, 3], ['stall', 7, 3], ['stall', 9, 3], ['stall', 11, 3, { num: 1 }], ['stall', 13, 3], ['handprint', 16, 2]] },
-  classroom: { wall: 'school', floor: 'wood', props: [['blackboard', 9, 1, { text: 1 }], ['schooldesk', 3, 4], ['schooldesk', 5, 4], ['schooldesk', 7, 4], ['schooldesk', 11, 4], ['schooldesk', 13, 4], ['schooldesk', 15, 4], ['schooldesk', 5, 6], ['schooldesk', 13, 6]] },
-  dorm: { wall: 'plain', floor: 'wood', props: [['bed', 1, 3], ['bed', 17, 3], ['chair', 7, 4], ['chair', 9, 4], ['chair', 11, 4], ['chair', 13, 4], ['paper', 9, 5], ['window', 9, 1]] },
-  wardhall: { wall: 'school', floor: 'linoleum', props: [['door', 2, 2, { locked: 1 }], ['door', 7, 2, { locked: 1 }], ['door', 12, 2, { locked: 1 }], ['door', 17, 2, { locked: 1 }], ['linen', 15, 3], ['stain', 9, 5], ['futon', 4, 5]] },
+  classroom: { wall: 'sch', floor: 'wood', deco: [['schWin', 2, 1], ['schWin', 4, 1], ['schClock', 13, 1], ['schWin', 16, 1], ['schWin', 18, 1], ['schNotice', 1, 2], ['schSwitch', 19, 2]], props: [['blackboard', 9, 1, { text: 1 }], ['schooldesk', 3, 4], ['schooldesk', 5, 4], ['schooldesk', 7, 4], ['schooldesk', 11, 4], ['schooldesk', 13, 4], ['schooldesk', 15, 4], ['schooldesk', 5, 6], ['schooldesk', 13, 6]] },
+  dorm: { wall: 'sch', floor: 'terrazzo', deco: [['schWin', 4, 1], ['schWin', 14, 1], ['schNotice', 6, 2], ['schSwitch', 3, 2]], props: [['bed', 1, 3], ['bed', 17, 3], ['chair', 7, 4], ['chair', 9, 4], ['chair', 11, 4], ['chair', 13, 4], ['paper', 9, 5], ['window', 9, 1]] },
+  wardhall: { wall: 'hosp', floor: 'hlino', props: [['door', 2, 2, { locked: 1 }], ['door', 7, 2, { locked: 1 }], ['door', 12, 2, { locked: 1 }], ['door', 17, 2, { locked: 1 }], ['linen', 15, 3], ['hbench', 4, 3], ['ivstand', 10, 3], ['stain', 9, 5], ['gurney', 4, 5]],
+    deco: [...stLine(), ['hospPlate', 2, 1], ['hospPlate', 7, 1], ['hospPlate', 12, 1], ['hospPlate', 17, 1], ['hospExit', 0, 1], ['hospPoster', 5, 1], ['hospQuiet', 9, 1], ['hospClock', 14, 1], ['hospPoster', 19, 1, { c: '#3a9a6a' }], ['hospSan', 13, 2]] },
   laundry: { wall: 'tile', floor: 'concrete', props: [['cage', 6, 4], ['cage', 11, 3], ['cage', 14, 5], ['linen', 1, 3], ['towel', 3, 2]] },
-  doorhall: { wall: 'tile', floor: 'linoleum', props: [['door', 3, 2, { locked: 1 }], ['door', 9, 2, { col: '#6a0a0a' }], ['door', 15, 2, { col: '#3a3a40', locked: 1 }], ['handprint', 10, 1], ['stain', 9, 4], ['footprints', 11, 5]] },
+  doorhall: { wall: 'hosp', floor: 'hlino', deco: [['hospPlate', 3, 1], ['hospPlate', 15, 1], ['hospExit', 19, 1], ['hospPoster', 6, 1, { c: '#c07a3a' }], ['hospClock', 12, 1]], props: [['door', 3, 2, { locked: 1 }], ['door', 9, 2, { col: '#6a0a0a' }], ['door', 15, 2, { col: '#3a3a40', locked: 1 }], ['handprint', 10, 1], ['stain', 9, 4], ['footprints', 11, 5]] },
   inside: { wall: 'red', floor: 'redfloor', props: [['door', 3, 2, { col: '#3a0606' }], ['door', 9, 2, { col: '#3a0606' }], ['door', 15, 2, { col: '#3a0606' }], ['bed', 17, 4, { col: '#5a0a0a' }]], red: 1 },
   ward: { out: 1, floor: 'dirt', back: 'ward', tiles: [['fence', 0, 3], ['fence', 1, 3], ['fence', 18, 3], ['fence', 19, 3]] }
 };
-const STAGE_PLACE = { hh_rest: 'room', pa_208: 'room', xc_office: 'office', my_office: 'office', kf_dean: 'office', kf_b3_4: 'wardhall', hm_303: 'room', hm_3f: 'corridor', my_teach: 'corridor', pa_1f: 'corridor', pa_2f: 'corridor', my_hill: 'woods', pa_road: 'woods', my_road: 'woods' };
+const STAGE_PLACE = { hh_rest: 'room', pa_208: 'aptroom', xc_office: 'office', my_office: 'office', kf_dean: 'office', kf_b1: 'hospcorr', kf_b3: 'hospcorr', kf_b3_4: 'wardhall', hm_303: 'aptroom', hm_3f: 'aptcorr', my_teach: 'schcorr', xc_center: 'schcorr', xc_dorm: 'dorm', pa_1f: 'aptcorr', pa_2f: 'aptcorr', my_hill: 'woods', pa_road: 'woods', my_road: 'woods' };
 const STG = { remote: new Set(), sc: [], ex: [], fx: {}, key: '', props: {}, t: 0, flash: 0, shake: 0, cache: new Map() };
 function stageKey() { return STG.over || STAGE_PLACE[C.loc] || PLACES[C.loc].art; }
 /* 远景（室外天空下面那一条） */
@@ -86,11 +100,25 @@ function stageBack(g, kind, night) { const R = (x, y, w, h, c) => { g.fillStyle 
   const bld = (x, y, w, h, c, cols, rows, lits) => { R(x, y, w, h, c); R(x - 1, y - 2, w + 2, 2, '#121618'); let n = 0; for (let r = 0; r < rows; r++) for (let i = 0; i < cols; i++) win(x + 4 + i * ((w - 8) / cols), y + 4 + r * ((h - 6) / rows), night && lits ? lits[n++] : 0); };
   if (kind === 'park') { SPR.ferris(g, { col: night ? '#1c2a30' : '#5a6a70', lit: night, dark: night }, 0, (x, y, w, h, c) => R(30 + x, -12 + y, w, h, c)); R(200, 26, 60, 22, night ? '#141c20' : '#8a6a5a'); R(196, 22, 68, 5, night ? '#1c2428' : '#a07060'); for (let i = 0; i < 6; i++) R(204 + i * 10, 30, 2, 18, night ? '#2a343a' : '#6a5040'); }
   else if (kind === 'house') { bld(96, 4, 128, 44, night ? '#11171a' : '#5e625e', 7, 2, [0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0]); SPR.redsign(g, { lit: night }, 0, (x, y, w, h, c) => R(128 + x, 26 + y, w, h, c)); R(150, 36, 20, 12, '#030405'); R(150, 36, 20, 4, night ? '#2a0606' : '#4a1616'); }
-  else if (kind === 'apt') { bld(110, 6, 100, 42, night ? '#12181b' : '#5e6262', 6, 3, [1, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 1, 0, 0]); R(155, 36, 10, 12, '#020303'); }
-  else if (kind === 'school') { bld(40, 6, 240, 42, night ? '#0f1518' : '#6a6c66', 12, 3, []); R(156, 36, 10, 12, '#020303'); }
-  else if (kind === 'ward') { bld(20, 18, 70, 30, night ? '#10171a' : '#74786f', 4, 2, []); bld(230, 18, 70, 30, night ? '#10171a' : '#74786f', 4, 2, []); bld(120, 4, 80, 44, night ? '#0a0f12' : '#5e625b', 5, 3, [0, 0, 0, 0, 0, 0, 0, 2]); }
+  else if (kind === 'apt') { /* 居民楼：一层层阳台、空调外机、晾衣杆、楼梯间的竖窗、楼顶水箱 */ const wc = night ? '#141a1c' : '#7a766a', bc = night ? '#0c1012' : '#5a564c';
+    R(104, 3, 112, 45, wc); R(103, 2, 114, 2, '#121618'); R(196, -3, 14, 5, night ? '#101416' : '#5a5e60'); R(198, -4, 10, 1, night ? '#181c1e' : '#6a6e70');
+    R(156, 2, 8, 46, night ? '#101618' : '#6a675c'); for (let r = 0; r < 4; r++) R(158, 6 + r * 10, 4, 5, night ? (r === 2 ? '#3a3020' : '#05070a') : '#3a4448');
+    const lit = [0, 0, 1, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 1, 0, 0]; let n = 0;
+    for (let r = 0; r < 4; r++) for (const x of [110, 128, 168, 186, 204].slice(0, 5)) { if (x === 204 && r === 0) continue; const y = 5 + r * 10, L = night ? lit[n++ % lit.length] : 0;
+      win(x + 1, y, L); win(x + 6, y, L); R(x, y + 4, 10, 3, bc); R(x, y + 4, 10, 1, night ? '#1c2224' : '#8a867a'); if (hash(x, r) < .45) R(x + 11, y + 2, 3, 3, night ? '#1a2022' : '#b8b4a8');
+      if (hash(r, x) < .3) { R(x - 1, y + 3, 12, 1, '#2a2a2a'); R(x + 1, y + 4, 2, 2, night ? '#2a2a30' : '#b04a3a'); R(x + 5, y + 4, 2, 3, night ? '#20242a' : '#4a6a9a'); } }
+    R(152, 38, 16, 2, night ? '#1a2022' : '#4a4a44'); R(155, 40, 10, 8, '#020303'); }
+  else if (kind === 'school') { /* 教学楼：长条窗带、中间钟楼、红横幅、门前旗杆 */ const wc = night ? '#121719' : '#b8b2a0', band = night ? '#0c1214' : '#5a7a6a';
+    R(40, 10, 240, 38, wc); R(39, 8, 242, 2, '#121618'); for (let r = 0; r < 3; r++) { R(40, 14 + r * 11, 240, 5, night ? '#05080a' : '#3a4a52'); for (let x = 44; x < 280; x += 9) R(x, 14 + r * 11, 1, 5, wc); R(40, 19 + r * 11, 240, 1, band); }
+    R(146, -2, 28, 50, night ? '#141a1c' : '#c4bea8'); R(145, -4, 30, 2, '#121618'); R(154, 1, 12, 12, night ? '#0a0e10' : '#2a3a3a'); R(155, 2, 10, 10, night ? '#2a2c26' : '#e8e4d8'); R(159, 4, 1, 4, '#222'); R(160, 7, 3, 1, '#222');
+    R(70, 10, 60, 4, night ? '#3a0c0c' : '#a82a26'); R(190, 10, 60, 4, night ? '#3a0c0c' : '#a82a26'); for (let i = 0; i < 6; i++) { R(74 + i * 9, 11, 3, 2, night ? '#5a4a20' : '#e8c860'); R(194 + i * 9, 11, 3, 2, night ? '#5a4a20' : '#e8c860'); }
+    R(150, 38, 20, 2, night ? '#1a2022' : '#8a8478'); R(155, 36, 10, 12, '#020303'); R(22, 4, 1, 44, night ? '#3a3e42' : '#c8ccd0'); R(23, 5, 12, 8, night ? '#3a0a0a' : '#c02a26'); R(25, 6, 2, 2, night ? '#5a4a10' : '#f0d040'); }
+  else if (kind === 'ward') { /* 医院：白楼、楼顶红十字、雨棚、两侧病栋 */ const wc = night ? '#10171a' : '#c8cecb';
+    bld(20, 18, 70, 30, night ? '#0e1517' : '#a8aea8', 4, 2, []); bld(230, 18, 70, 30, night ? '#0e1517' : '#a8aea8', 4, 2, []); bld(120, 12, 80, 36, wc, 5, 3, [0, 0, 0, 0, 0, 0, 0, 2]);
+    R(120, 36, 80, 1, night ? '#16323a' : '#5a8a9a'); R(150, 1, 20, 10, night ? '#1a1012' : '#e8e8e4'); R(158, 2, 4, 8, night ? '#8a1818' : '#c82a2a'); R(156, 4, 8, 4, night ? '#8a1818' : '#c82a2a'); R(153, 11, 1, 2, '#3a3e40'); R(166, 11, 1, 2, '#3a3e40');
+    R(146, 36, 28, 3, night ? '#1a2a2e' : '#6a8a90'); R(148, 39, 1, 9, '#3a4a4e'); R(171, 39, 1, 9, '#3a4a4e'); R(152, 40, 16, 8, '#020303'); if (night) { R(140, 30, 8, 3, '#1a4a2a'); R(141, 31, 6, 1, '#3a8a4a'); } }
   else if (kind === 'field') { bld(220, 16, 60, 32, night ? '#0e1417' : '#62665f', 3, 3, []); }
-  if (kind === 'woods' || kind === 'field' || kind === 'apt' || kind === 'ward') for (let i = 0; i < 22; i++) { const x = i * 15 + (hash(i, 3) * 8) | 0, h = 14 + hash(i, 7) * 18; g.fillStyle = night ? '#060a0a' : '#2c3a2c'; g.beginPath(); g.moveTo(x - 9, 48); g.lineTo(x, 48 - h); g.lineTo(x + 9, 48); g.fill(); } }
+  if (kind === 'woods' || kind === 'field' || kind === 'apt' || kind === 'ward') for (let i = 0; i < 22; i++) { const x = i * 15 + (hash(i, 3) * 8) | 0, h = (kind === 'apt' || kind === 'ward' ? 8 + hash(i, 7) * 12 : 14 + hash(i, 7) * 18); g.fillStyle = night ? '#060a0a' : '#2c3a2c'; g.beginPath(); g.moveTo(x - 9, 48); g.lineTo(x, 48 - h); g.lineTo(x + 9, 48); g.fill(); } }
 function stageBg(key, night) { const ck = key + (night ? 'N' : 'D'); let c = STG.cache.get(ck); if (c) return c; const S = STAGES[key] || STAGES.corridor; c = mk(SW, SH); const g = c.getContext('2d');
   const at = (ox, oy) => (x, y, w, h, col) => { if (!col || w <= 0 || h <= 0) return; g.fillStyle = col; g.fillRect(ox + Math.floor(x), oy + Math.floor(y), Math.ceil(w), Math.ceil(h)); };
   const ws = WALLSTYLE[S.wall] || WALLSTYLE.plain;
@@ -101,6 +129,7 @@ function stageBg(key, night) { const ck = key + (night ? 'N' : 'D'); let c = STG
     if (night) { for (let i = 0; i < 30; i++) { g.fillStyle = 'rgba(255,255,255,' + (.2 + hash(i, 9) * .5) + ')'; g.fillRect((hash(i, 1) * SW) | 0, (hash(i, 2) * 30) | 0, 1, 1); } g.fillStyle = '#d8dde2'; g.fillRect(270, 8, 7, 7); g.fillStyle = '#04070c'; g.fillRect(273, 7, 6, 6); }
     stageBack(g, S.back, night); }
   for (const t of S.tiles || []) TILE[t[0]].paint(at(t[1] * 16, t[2] * 16), t[1], t[2], {});
+  if (S.deco) for (const [k, x, y, o] of S.deco) BDEC[k](at(x * 16, y * 16), Object.assign({ x, y }, o || {}));   /* 墙上挂的、地上画的（k_15_bld.js），先画，家具压在上面 */
   for (const p of S.props || []) if (p[0] === 'roadline') for (let x = 0; x < 20; x++) TILE.roadline.paint(at(x * 16, 6 * 16), x, 6); else if (SPR[p[0]]) SPR[p[0]](g, Object.assign({ x: p[1], y: p[2] }, p[3] || {}), 0, at(p[1] * 16, p[2] * 16));
   if (S.grime) stGrime(g, S.grime, key); if (S.paint) S.paint(g, night, at);
   STG.cache.set(ck, c); return c; }

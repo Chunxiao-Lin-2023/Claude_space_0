@@ -74,7 +74,7 @@ async function kFlash(S, ids, o = {}) { const map = W.mapId, d0 = W.mapDark[map]
     emit('sfx', 'step'); await SAPI.fade(1, 620); emit('sfx', 'step'); if (o.sfx) emit('sfx', o.sfx);
     const p = W.pl; W.mapId = map; p.x = x; p.y = y; p.px = x * TS; p.py = y * TS; p.mv = null; p.prev = [x, y]; if (dir != null) p.dir = dir;
     for (const e of W.maps[map].ents) if (e.follow && !e.hidden) { e.px = p.px; e.py = p.py; e.mv = null; }
-    W.forceK++; lastPTile = map + ':' + x + ',' + y; W.camFocus = null; camUpdate(0, true); if (md.amb) emit('amb', md.amb);
+    W.forceK++; lastPTile = map + ':' + x + ',' + y; W.camFocus = null; camUpdate(0, true); if (window.bldArrive) bldArrive(); if (md.amb) emit('amb', md.amb);
     if (name) { W.f['_pn_' + map] = 1; emit('place', name); await SAPI.wait(1000); } else await SAPI.wait(220);
     await SAPI.fade(0, 650); chk(g);
     if (md.enter) { const first = !W.f['_v_' + map]; W.f['_v_' + map] = true; await md.enter(SAPI, first); chk(g); } else W.f['_v_' + map] = true; }; }
