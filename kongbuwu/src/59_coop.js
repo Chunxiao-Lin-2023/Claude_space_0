@@ -133,6 +133,7 @@ function guestFx(m) {
   else if (m.f === 'cardoff') $('#card').classList.remove('on');
   else if (m.f === 'cine') { const c = $('#cine'); c.className = m.cls || 'on'; c.innerHTML = m.html; }
   else if (m.f === 'cineoff') $('#cine').className = '';
+  else if (m.f === 'ptr') { if (animOn()) ptrShow(m.o); }
   else if (m.f === 'trans') stageTransition(m.s);
   else if (m.f === 'flash') flashRed();
   else if (m.f === 'stamp') fxStamp(m.s);
@@ -155,7 +156,7 @@ function guestFx(m) {
 
 /* ---------- 点了什么，两边都亮一下（完美世界文字版的“选中停顿”） ---------- */
 const NET_PICK_MS = 600;
-const CMD_NAMES = ['go', 'travel', 'explore', 'camp', 'autoWalk', 'sleepBed', 'storyHereRun', 'questGo', 'npcTalk', 'dailyTake', 'dayRun', 'spinWheel', 'svMeet', 'buyItem', 'buyUpgrade', 'buyDevice', 'sellItem', 'equipGear', 'useItem', 'setPet', 'keepPet', 'toggleBar', 'pickPetMove', 'pickSkillFx', 'guardFx', 'sceneStrike',
+const CMD_NAMES = ['go', 'goT', 'travelHome', 'travel', 'explore', 'camp', 'autoWalk', 'sleepBed', 'storyHereRun', 'questGo', 'npcTalk', 'dailyTake', 'dayRun', 'spinWheel', 'svMeet', 'buyItem', 'buyUpgrade', 'buyDevice', 'sellItem', 'equipGear', 'useItem', 'setPet', 'keepPet', 'toggleBar', 'pickPetMove', 'pickSkillFx', 'guardFx', 'sceneStrike',
   'battleAct', 'battleItem', 'battleUndo', 'battleEnd', 'selFoe', 'toggleAuto', 'dlgTap', 'dlgPick', 'cardTap', 'cineTap', 'miniTap', 'miniKey', 'miniRetry', 'miniGiveUp',
   'hsOpen', 'hsAct', 'hsDev', 'hsLight', 'hsLure', 'hsTape', 'hsAuto', 'hsQuit', 'hsClose', 'hsCosCycle', 'hsAutoLay', 'hsSetPick', 'hsPickClose', 'hsCancel', 'hsHideNear', 'hsPause'];
 const NO_HOLD = ['dlgTap', 'cardTap', 'cineTap', 'miniTap', 'miniKey', 'battleUndo', 'toggleAuto', 'hsAct', 'hsDev', 'hsLight', 'hsLure', 'hsTape', 'hsHideNear', 'hsPause', 'hsSetPick', 'hsPickClose', 'hsCancel'];

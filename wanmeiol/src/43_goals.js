@@ -58,7 +58,7 @@ const TP = [{ id: 'sc_street', n: '石村' }, { id: 'bt_court', n: '补天阁内
 const canTeleport = () => !!C.story.f.joined && (PLACES[C.loc].town || C.loc === 'bd_gate');
 async function teleport() { if (!canTeleport() || STATE.scene || STATE.battle || STATE.dungeon) return; const L = TP.filter(t => t.id !== C.loc && placeOpen(t.id)); if (!L.length) return; let to = null;
   await runScene(async () => { const c = await dlgChoose([...L.map(t => ({ t: '🌀 ' + t.n })), { t: '算了' }], '玉符在掌心微微发烫。去哪儿？'); if (c < L.length) to = L[c].id; });
-  if (to) { logLine('玉符一亮，眼前的景物像水面一样晃了晃——', 'dim'); go(to); } }
+  if (to) { logLine('玉符一亮，眼前的景物像水面一样晃了晃——', 'dim'); ptrGo(to, 'tp'); } }
 
 /* ---------- 休息：歇一会儿 / 睡到天黑 / 睡到天亮 ---------- */
 async function rest() { if (STATE.scene || STATE.battle) return; let c = 0;

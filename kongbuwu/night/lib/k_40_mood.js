@@ -52,7 +52,7 @@ AU.dread = function (lv) { this.dreadLv = lv; const c = this.ctx; if (!c) return
     { const og = osc(L[3], 'sine', 52, .0); const l = c.createOscillator(), lg = c.createGain(); l.frequency.value = 1.15; lg.gain.value = .2; l.connect(lg); lg.connect(og.gain); l.start(); } }
   [0, .9, .8, .9].forEach((v, i) => { if (i) this.dreadL[i].gain.setTargetAtTime(lv >= i ? v : 0.0001, c.currentTime, lv >= i ? 2.2 : 1.2); }); };
 { const _init = AU.init; AU.init = function () { const had = !!this.ctx; _init.call(this); if (!had && this.ctx && this.dreadLv) this.dread(this.dreadLv); }; }
-{ const _ae = applyEmit; applyEmit = function (t, a) { if (t === 'dread') { AU.dread(a); return; } return _ae(t, a); }; }
+{ const _ae = applyEmit; applyEmit = function (t, a) { if (t === 'dread') { AU.dread(a); return; } if (t === 'place') { kPlace(a); return; } return _ae(t, a); }; }
 SAPI.dread = function (lv) { if (!W) return; if ((W.f._dread || 0) === lv) return; W.f._dread = lv; emit('dread', lv); };
 /* 闪电 */
 async function kFlash(S, ids, o = {}) { const map = W.mapId, d0 = W.mapDark[map]; ids = ids || []; S.fx('flash', { dur: o.dur || .35 }); S.dark(o.lit ?? .25); for (const id of ids) S.show(id); await S.wait(o.hold || 170); if (W.mapId === map) { S.dark(d0 ?? null); for (const id of ids) S.hide(id); }
@@ -67,4 +67,16 @@ async function kFlash(S, ids, o = {}) { const map = W.mapId, d0 = W.mapDark[map]
 /* 开章 / 退出：紧张层归零 */
 { const _sc = startChapter; startChapter = function (id, fromCp) { AU.dread(0); const r = _sc(id, fromCp); if (W && W.f._dread) AU.dread(W.f._dread); return r; }; }
 /* 地图进入次数：S.f['v_' + 地图] */
-{ const _go = SAPI.go; SAPI.go = async function (map, x, y, dir, o) { if (W) W.f['v_' + map] = (W.f['v_' + map] || 0) + 1; return _go.call(this, map, x, y, dir, o); }; }
+/* 换地图慢一点：脚步声 → 淡出 0.62 秒 → 第一次到有名字的地方，黑屏里浮出地名 → 淡入 0.65 秒（RULES 38）
+   地图写 name: '教学楼 · 二楼' 就会显示；o.fade === false 或指定了 o.ms 的照旧 */
+{ const _go = SAPI.go; SAPI.go = async function (map, x, y, dir, o = {}) { if (W) W.f['v_' + map] = (W.f['v_' + map] || 0) + 1; if (o.fade === false || o.ms || !W || !W.maps[map]) return _go.call(this, map, x, y, dir, o);
+    const g = GEN, md = W.maps[map].def, name = md.name && !W.f['_pn_' + map] ? md.name : null;
+    emit('sfx', 'step'); await SAPI.fade(1, 620); emit('sfx', 'step'); if (o.sfx) emit('sfx', o.sfx);
+    const p = W.pl; W.mapId = map; p.x = x; p.y = y; p.px = x * TS; p.py = y * TS; p.mv = null; p.prev = [x, y]; if (dir != null) p.dir = dir;
+    for (const e of W.maps[map].ents) if (e.follow && !e.hidden) { e.px = p.px; e.py = p.py; e.mv = null; }
+    W.forceK++; lastPTile = map + ':' + x + ',' + y; W.camFocus = null; camUpdate(0, true); if (md.amb) emit('amb', md.amb);
+    if (name) { W.f['_pn_' + map] = 1; emit('place', name); await SAPI.wait(1000); } else await SAPI.wait(220);
+    await SAPI.fade(0, 650); chk(g);
+    if (md.enter) { const first = !W.f['_v_' + map]; W.f['_v_' + map] = true; await md.enter(SAPI, first); chk(g); } else W.f['_v_' + map] = true; }; }
+function kPlace(name) { let e = document.getElementById('kplace'); if (!e) { e = document.createElement('div'); e.id = 'kplace'; document.body.appendChild(e); const st = document.createElement('style'); st.textContent = '#kplace{position:fixed;left:0;right:0;top:42%;text-align:center;font-family:"Songti SC","STSong",serif;font-size:22px;letter-spacing:.5em;text-indent:.5em;color:#e0d6c4;text-shadow:0 0 12px rgba(0,0,0,.9);opacity:0;pointer-events:none;z-index:60;transition:opacity .5s ease}#kplace.on{opacity:1}'; document.head.appendChild(st); }
+  e.textContent = name; e.classList.add('on'); clearTimeout(e._t); e._t = setTimeout(() => e.classList.remove('on'), 1300 / (typeof FAST !== 'undefined' ? FAST : 1)); }

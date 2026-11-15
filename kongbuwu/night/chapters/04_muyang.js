@@ -414,6 +414,12 @@
     await S.narr('井沿的青苔上，有几个手印。是从里面往外按的。'); await S.wait(1200); await S.narr('所有拿着铁锹的人都停了手。\n没有人说话。'); await S.wait(1600);
     S.dread(0); await S.end({ title: '深井', text: '天快亮的时候，雨又下了起来。\n玩家成功体验四条支线任务，并存活至天亮。暮阳中学试炼任务完成。' }); }
 
+  /* 地名（换地图时黑屏里浮出来，RULES 38） */
+  { const NM = { muyang: { road: '荒地', yard: '暮阳中学', tb: '教学楼 · 一楼' }, pen: { dorm1: '宿舍楼 · 一楼', dc: '宿舍楼 · 二楼', room: '第四间寝室' },
+      wc: { h1: '教学楼 · 一楼', w1: '一楼 · 厕所', h2: '教学楼 · 二楼', w2: '二楼 · 厕所', h3: '教学楼 · 三楼', wc: '三楼 · 厕所' }, office: { offh: '办公楼 · 一楼', math: '数学组' },
+      last: { cr: '教学楼 · 走廊尽头', room: '最后一间教室' }, well: { path: '后山', hill: '山顶' } };
+    for (const id in NM) { const ch = CHAPTERS.find(c => c.id === id); for (const m in NM[id]) ch.maps[m].name = NM[id][m]; } }
+
   /* =================== 看不见的客人 =================== */
   defChapter(Object.assign({}, BASE, {
     id: 'guest', n: 24, title: '看不见的客人', sub: '噩梦难度：你必须真的睡着。只要看到它的脸，任务就算成功。', origin: '恐怖屋 · 日常任务', color: '#1a1a14',

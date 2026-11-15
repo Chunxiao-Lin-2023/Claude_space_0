@@ -135,7 +135,7 @@ function renderActs() {
   if (STATE.dungeon) { A.innerHTML = `<div class="wait">${DUNGEONS[STATE.dungeon.id].name} · 第 ${STATE.dungeon.room + 1} 关……</div>`; return; }
   if (STATE.scene || STATE.busy) { A.innerHTML = '<div class="wait">……</div>'; return; }
   const P = PLACES[C.loc], ex = exitsOf(C.loc), qw = taskWhere(); const g = (l, xs) => xs.length ? `<div class="grp"><span class="gl">${l}</span>${xs.join('')}</div>` : '';
-  const dirs = Object.entries(ex).map(([d, id]) => { const T = PLACES[id], ec = T.lv ? exCount(id) : null; return `<button class="ab dir ${qw === id ? 'q' : ''}" onclick="go('${id}')">${DIRS[d]} · ${T.name}${qw === id ? ' ★' : ''}${ec && ec.done ? ' ✓' : ''}${T.lv ? `<small>${T.lv[0]}-${T.lv[1]}层</small>` : ''}</button>`; });
+  const dirs = Object.entries(ex).map(([d, id]) => { const T = PLACES[id], ec = T.lv ? exCount(id) : null; return `<button class="ab dir ${qw === id ? 'q' : ''}" onclick="goT('${id}')">${DIRS[d]} · ${T.name}${qw === id ? ' ★' : ''}${ec && ec.done ? ' ✓' : ''}${T.lv ? `<small>${T.lv[0]}-${T.lv[1]}层</small>` : ''}</button>`; });
   const acts = []; const sh = storyHere(); if (sh) acts.push(`<button class="ab q" onclick="storyHereRun()">▶ ${sh}</button>`);
   if (P.mobs) acts.push(`<button class="ab main" onclick="explore()">🔍 探索</button>`);
   if (ROAM && !ROAM.dead && ROAM.loc === C.loc && now() >= ROAM.start && now() < ROAM.end) acts.push(`<button class="ab wb" onclick="fightRoam()">⚔ ${MOBS[ROAM.id].name}</button>`);

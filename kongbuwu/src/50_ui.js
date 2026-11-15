@@ -58,7 +58,7 @@ function renderActs() { const a = $('#acts'); if (!a) return; const p = PLACES[C
   if (p.bed) h += '<button class="btn" onclick="sleepBed()">🛏 ' + (night ? '睡到天亮' : '睡到天黑') + '</button>'; if (p.shop) h += '<button class="btn" onclick="UI.bagTab=\'shop\';navTo(\'bag\')">🛒 买卖</button>'; if (C.loc === 'hh_ctrl' && C.f.open) h += '<button class="btn pri" id="upbtn" onclick="navTo(\'up\')">🔧 翻新恐怖屋</button>';
   h += '<button class="btn' + (C.auto ? ' on' : '') + '" onclick="C.auto=C.auto?0:1;save();renderActs()">🤖 自动对峙：' + (C.auto ? '开' : '关') + '</button></div>';
   const ns = npcsHere(); if (ns.length) h += '<div class="grp"><label>说话</label>' + ns.map(k => '<button class="btn" onclick="npcTalk(\'' + k + '\')">' + NPCS[k].name + (talkNext(k) ? ' 💬' : '') + '</button>').join('') + '</div>';
-  h += '<div class="grp"><label>去往</label>' + exitsOf(C.loc).map(e => '<button class="btn" onclick="go(\'' + e[1] + '\')">' + e[0] + '</button>').join('');
+  h += '<div class="grp"><label>去往</label>' + exitsOf(C.loc).map(e => '<button class="btn" onclick="goT(\'' + e[1] + '\')">' + e[0] + '</button>').join('');
   if (Object.values(ENTRY).includes(C.loc)) h += areasOpen().filter(k => k !== p.area).map(k => '<button class="btn" onclick="travel(\'' + k + '\')">🚕 ' + AREAS[k].name + '</button>').join('');
   else if (p.area !== 'park' && !C.f.lockArea) h += '<button class="btn" onclick="autoWalk(\'' + ENTRY[p.area] + '\')">↩ 回到入口</button>';
   h += '</div>'; a.innerHTML = h; }
