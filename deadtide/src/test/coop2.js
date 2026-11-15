@@ -12,6 +12,8 @@ const { chromium } = require('playwright'); const OUT = process.env.OUT || '/tmp
   await G.fill('#codeIn', code); await G.click('#joinBtn');
   await H.waitForFunction(() => NET.guestName === '小青', null, { timeout: 30000 });
   await G.click('#lReady'); await H.waitForFunction(() => NET.ready, null, { timeout: 10000 });
+  await H.evaluate(() => { SET.mode = 'towers'; SET.map = 'islands'; sendLobby(); }); await G.waitForTimeout(600);
+  console.log('guest lobby sees mode', await G.evaluate(() => NET.mode + '/' + NET.map + ' ' + document.getElementById('lModeLbl').textContent));
   await H.click('#lStart');
   await G.waitForFunction(() => STATE.mode === 'play' && W && W.p.length === 2, null, { timeout: 30000 });
   await H.waitForFunction(() => W.t > 1, null, { timeout: 90000 });
@@ -35,6 +37,10 @@ const { chromium } = require('playwright'); const OUT = process.env.OUT || '/tmp
   { const zid = await H.evaluate(() => { const g = W.p[1]; W.zs.length = 0; const z = spawnZombie('walker', 0); z.x = g.x + 1.6; z.y = g.y; z.L = g.L; z.z = g.z; z.stun = 99; z.hp = z.max = 500; return z.id; });
     await simWait(H, 0.4); await G.evaluate(() => { W.p[ME].knCD = 0; doKnife(); }); await simWait(H, 0.8);
     console.log('guest knife hit on host', await H.evaluate(zid => { const z = W.zs.find(q => q.id === zid); return z ? 500 - z.hp : -1; }, zid)); }
+  { const hs = await H.evaluate(() => W.mode + '/' + W.map + ' ' + W.obj.towers.map(q => q.x + ',' + q.y).join(' ')), gs = await G.evaluate(() => W.mode + '/' + W.map + ' ' + W.obj.towers.map(q => q.x + ',' + q.y).join(' '));
+    console.log('mode + objectives identical on both', hs === gs, hs);
+    await H.evaluate(() => { W.obj.towers[0].st = 1; W.obj.towers[0].prog = 0.4; objChanged(); }); await simWait(H, 0.6);
+    console.log('guest sees the tower state', await G.evaluate(() => W.obj.towers[0].st + ' ' + W.obj.towers[0].prog.toFixed(1) + ' hud ' + (modeHud() || {}).t)); }
   const sum = p => p.evaluate(() => { let a = 0, c = 0; for (let i = 0; i < NC; i++) { a = (a * 31 + W.blk[i]) % 1000000007; c = (c * 31 + W.slab[i]) % 1000000007; } return a + '/' + c; });
   { const a = await sum(H), g = await sum(G); console.log('map identical host/guest', a === g, a, g); }
   console.log('linked', await H.evaluate(() => !!(NET.gctl && NET.gctl.open) && !W.p[1].gone), await G.evaluate(() => linkUp()));

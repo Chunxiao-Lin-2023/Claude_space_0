@@ -218,7 +218,6 @@ function archSlab(s, i, x, y, L, X, Y, Z) {
 /* ---------- ruined town: house colours, broken tiled roofs over one end of each house, fallen beams ---------- */
 // which town building covers each ground cell (-1: none); interior = strictly inside its outline
 const HOUSE_ID = new Int8Array(MW * MH).fill(-1);
-TOWN_HOUSES.forEach(([x0, y0, x1, y1], k) => { for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) if (x >= 0 && y >= 0 && x < MW && y < MH) HOUSE_ID[y * MW + x] = k; });
 function houseInterior(x, y) { const k = HOUSE_ID[y * MW + x]; if (k < 0) return false; const H = TOWN_HOUSES[k]; return x > H[0] && x < H[2] && y > H[1] && y < H[3]; }
 function houseOf(x, y) { for (let k = 0; k < TOWN_HOUSES.length; k++) { const [x0, y0, x1, y1] = TOWN_HOUSES[k]; if (x >= x0 && x <= x1 && y >= y0 && y <= y1) return k; } return -1; }
 // roof spans must be known before map generation (walls under a roof stay full height, no gaps there)
@@ -229,10 +228,16 @@ function roofSpan(k) {
   if (type === 'villa' || type === 'ware' || type === 'garage') return { west, xa: x0, xb: x1, lvl: st - 1, whole: 1 }; // a whole pitched roof (the attic / the hall)
   return { west, xa: west ? x0 : x1 - 2, xb: west ? x0 + 2 : x1, lvl: 0 };
 }
-for (let k = 0; k < TOWN_HOUSES.length; k++) {
-  const [x0, y0, x1, y1] = TOWN_HOUSES[k], R = roofSpan(k); if (!R) continue;
-  for (let x = R.xa; x <= R.xb; x++) for (let y = y0; y <= y1; y++) if (y === y0 || y === y1 || x === (R.west ? x0 : x1)) ARCH.roofCells.add(x + ',' + y + ',' + R.lvl);
+// (re)build the per-map lookups: which house covers each cell, and the wall cells that carry a roof
+function archMapInit() {
+  HOUSE_ID.fill(-1); ARCH.roofCells.clear();
+  TOWN_HOUSES.forEach(([x0, y0, x1, y1], k) => { for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) if (x >= 0 && y >= 0 && x < MW && y < MH) HOUSE_ID[y * MW + x] = k; });
+  for (let k = 0; k < TOWN_HOUSES.length; k++) {
+    const [x0, y0, x1, y1] = TOWN_HOUSES[k], R = roofSpan(k); if (!R) continue;
+    for (let x = R.xa; x <= R.xb; x++) for (let y = y0; y <= y1; y++) if (y === y0 || y === y1 || x === (R.west ? x0 : x1)) ARCH.roofCells.add(x + ',' + y + ',' + R.lvl);
+  }
 }
+archMapInit();
 function tileTex() {
   return archTex(128, 128, 71, (g, r, w, h) => {
     g.fillStyle = '#5a2a1c'; g.fillRect(0, 0, w, h);

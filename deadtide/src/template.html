@@ -253,6 +253,25 @@ body.aiming canvas#cv{cursor:none}body.touch #reticle b{left:-34px;top:-38px}
 .bmhead{display:flex;align-items:baseline;justify-content:space-between}.bmhead h3{margin:0}.bmhint{font-size:12px;color:var(--sub)}
 #bigmapC{width:100%;aspect-ratio:1;border-radius:8px;image-rendering:pixelated;background:#1a1d1a}
 .bmleg{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:12px;color:var(--sub)}.bmleg i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:4px;vertical-align:-1px}
+#objp{width:100%;font-size:12px;text-align:left;background:rgba(0,0,0,.25);border-radius:6px;padding:4px 7px}
+#objp .ot{display:flex;gap:6px;align-items:baseline;color:#ffe2a0;font-size:13px}#objp .os{color:var(--sub);margin-top:1px}
+#objp .obar{height:4px;background:rgba(255,255,255,.12);border-radius:2px;margin-top:3px;overflow:hidden}#objp .obar i{display:block;height:100%;background:#ffcf6b;width:0}
+#objp.boss .obar{height:6px}#objp.boss .obar i{background:#ff5a4a}
+.modeBtn{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;border-color:rgba(255,207,107,.6)}
+.modeBtn span{font-size:16px;font-weight:700;color:#ffe2a0}.modeBtn small{font-size:12px;color:var(--sub)}
+.mscard{width:min(980px,96vw)!important}.mscard h3{margin:4px 0 0}
+.mgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:8px}
+.mcard{display:flex;flex-direction:column;gap:4px;align-items:flex-start;text-align:left;padding:10px 12px;min-height:0;height:auto;line-height:1.45}
+.mcard b{font-size:16px;color:#ffe2a0}.mcard p{margin:0;font-size:12px;color:var(--sub);white-space:normal}.mcard i{font-style:normal;font-size:11px;color:#9ad0ff}
+.mcard.sel,.mapcard.sel{border-color:#ffcf6b;box-shadow:0 0 0 2px rgba(255,207,107,.5) inset}
+.mapgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px}
+.mapcard{display:flex;flex-direction:column;gap:4px;padding:6px;min-height:0;height:auto;align-items:stretch;text-align:left}
+.mapcard canvas{width:100%;aspect-ratio:1;border-radius:6px;background:#222;image-rendering:pixelated}
+.mapcard b{font-size:14px}.mapcard p{margin:0;font-size:11px;color:var(--sub);white-space:normal;line-height:1.35}.mapcard em{font-style:normal;font-size:11px;color:#8fe39a}
+#ov .om{position:absolute;transform:translate(-50%,-100%);font-size:11px;font-weight:700;text-shadow:0 1px 3px #000;white-space:nowrap;text-align:center}
+#ov .oa{position:absolute;transform:translate(-50%,-50%);font-size:11px;font-weight:700;text-shadow:0 1px 3px #000;white-space:nowrap;text-align:center}
+#ov .oa i{display:block;font-style:normal;font-size:20px;line-height:1}
+@media (max-height:520px){.mapgrid{grid-template-columns:repeat(auto-fill,minmax(104px,1fr))}.mgrid{grid-template-columns:repeat(auto-fill,minmax(180px,1fr))}.mcard p{font-size:11px}.mapcard p{display:none}}
 </style>
 <body>
 <div id="loading">尸潮堡垒</div>
@@ -275,6 +294,7 @@ body.aiming canvas#cv{cursor:none}body.touch #reticle b{left:-34px;top:-38px}
   </div>
   <div id="hTC" class="hcard">
     <div id="phase">白天</div>
+    <div id="objp" class="hidden"><div class="ot"><span id="objI"></span><b id="objT"></b></div><div class="os" id="objS"></div><div class="obar"><i id="objB"></i></div></div>
     <div id="tasks"></div>
     <button id="readyBtn" class="ghost">准备入夜 <span class="kbd">(N)</span></button>
   </div>
@@ -313,13 +333,14 @@ body.aiming canvas#cv{cursor:none}body.touch #reticle b{left:-34px;top:-38px}
 <div id="title" class="scr">
   <button id="hubBtn" class="hubBack ghost hidden">‹ 游戏厅</button>
   <div class="wrapT">
-    <div class="logo"><h1>尸潮<b>堡</b>垒</h1><div class="en">DEAD TIDE</div><div class="tag">砍树采石盖堡垒 · 完成任务拿奖励 · 撑过十五夜</div></div>
+    <div class="logo"><h1>尸潮<b>堡</b>垒</h1><div class="en">DEAD TIDE</div><div class="tag">六种模式 · 六张地图 · 砍树采石盖堡垒，守住尸潮</div></div>
     <div class="card menu">
       <div class="row"><input id="nameIn" maxlength="10" placeholder="你的名字"></div>
       <div class="lbl">难度</div>
       <div class="seg" id="diffSeg"><button data-d="easy">简单</button><button data-d="normal">普通</button><button data-d="hard">困难</button></div>
+      <button id="modeBtn" class="modeBtn"><span id="modeLbl">经典守夜</span><small id="mapLbl">地图：小镇</small></button>
       <button id="contBtn" class="primary hidden">继续上次</button>
-      <button id="soloBtn" class="primary">单人守夜</button>
+      <button id="soloBtn" class="primary">单人开始</button>
       <div id="coopBox" style="display:flex;flex-direction:column;gap:10px">
         <button id="hostBtn">创建双人房间</button>
         <div class="row"><input id="codeIn" maxlength="4" placeholder="房间码" style="text-transform:uppercase;font-family:var(--num);letter-spacing:.2em"><button id="joinBtn" style="flex:none">加入</button></div>
@@ -337,6 +358,8 @@ body.aiming canvas#cv{cursor:none}body.touch #reticle b{left:-34px;top:-38px}
     <div class="lbl" style="text-align:center">房间码（告诉队友）</div>
     <div class="code" id="lCode">····</div>
     <div class="plist"><div class="pl p0"><div class="n" id="lP0">房主</div><div class="s">房主 · 橙色</div></div><div class="pl p1"><div class="n" id="lP1">等待加入…</div><div class="s" id="lP1s">队友 · 青色</div></div></div>
+    <div class="lbl">模式 / 地图 <span id="lModeNote"></span></div>
+    <button id="lModeBtn" class="modeBtn"><span id="lModeLbl"></span><small id="lMapLbl"></small></button>
     <div class="lbl">难度 <span id="lDiffNote"></span></div>
     <div class="seg" id="lDiffSeg"><button data-d="easy">简单</button><button data-d="normal">普通</button><button data-d="hard">困难</button></div>
     <div class="status" id="lStatus"></div>
@@ -347,6 +370,7 @@ body.aiming canvas#cv{cursor:none}body.touch #reticle b{left:-34px;top:-38px}
 <div id="craft" class="modal hidden">
   <div class="card"><h3>工作台</h3><div class="lbl">材料全队共用 · 制作的武器和道具归你</div><div class="clist" id="clist"></div><button id="craftClose" class="ghost">关闭 <span class="kbd">(E)</span></button></div>
 </div>
+<div id="modesel" class="modal hidden"><div class="card mscard"><h3>选择模式</h3><div class="mgrid" id="mGrid"></div><h3>选择地图 <small id="mapHint" class="lbl"></small></h3><div class="mapgrid" id="mapGrid"></div><button id="msOk" class="primary">确定</button></div></div>
 <div id="bigmap" class="modal hidden"><div class="card bmcard"><div class="bmhead"><h3>地图</h3><span class="bmhint">点任意处关闭 · 电脑按 Tab / Esc</span></div><canvas id="bigmapC" width="640" height="640"></canvas><div class="bmleg" id="bmLeg"></div></div></div>
 <div id="pause" class="modal hidden">
   <div class="card"><h3 id="pauseT">暂停</h3>
@@ -363,7 +387,7 @@ body.aiming canvas#cv{cursor:none}body.touch #reticle b{left:-34px;top:-38px}
 <div id="help" class="modal hidden">
   <div class="card"><h3>玩法和操作</h3>
     <div class="help">
-      <h4>目标</h4><b>活下去，撑过 15 夜</b>，救援直升机就会来。所有人同时倒下就失败。丧尸会一路追着离它最近的人，挡路的墙会被砸开。<h4>丧尸</h4>游荡者、疾跑者、攀爬者（翻墙）、喷吐者（吐酸）、重锤（拆墙）、巨尸（血月），还有成群的尸犬、贴地的爬行尸、死了会炸开（连墙一起炸）的爆尸、会尖叫让周围丧尸发狂并引来更多丧尸的尖叫者、正面打不动的防暴尸（绕到侧面后面，或者用狙击枪、弩、火、炸药）。<h4>武器</h4>手枪爆头伤害高；霰弹枪近距离打退打晕；步枪连射越久越散；狙击枪穿透 5 只、带激光；弩穿透 3 只并把丧尸钉住；喷火器点燃一片，火会传染；榴弹发射器落地就炸。后三种在工作台造。<h4>每日任务</h4>每天天亮刷新 3 个小任务（左上角），比如击杀、搜索、建造、今夜无人倒下。完成立刻发奖励：材料、全队弹药、医疗包、手雷或强化弹头。没完成的会在下一个天亮作废。
+      <h4>目标</h4>标题页点「模式」选玩法和地图：<b>经典守夜</b>撑过 15 夜；<b>修车逃离</b>找齐 6 个零件修好卡车；<b>摧毁尸巢</b>炸掉 5 个尸巢和母巢；<b>信号塔</b>守住 4 座塔的校准再等直升机；<b>抢空投</b>集齐 6 个空投信标后守住撤离点；<b>尸王狩猎</b>击杀 4 只尸王。当前目标显示在屏幕上方，屏幕边的箭头和大地图（点小地图 / Tab）指路。所有人同时倒下就失败。丧尸会一路追着离它最近的人，挡路的墙会被砸开。<h4>丧尸</h4>游荡者、疾跑者、攀爬者（翻墙）、喷吐者（吐酸）、重锤（拆墙）、巨尸（血月），还有成群的尸犬、贴地的爬行尸、死了会炸开（连墙一起炸）的爆尸、会尖叫让周围丧尸发狂并引来更多丧尸的尖叫者、正面打不动的防暴尸（绕到侧面后面，或者用狙击枪、弩、火、炸药）。<h4>武器</h4>手枪爆头伤害高；霰弹枪近距离打退打晕；步枪连射越久越散；狙击枪穿透 5 只、带激光；弩穿透 3 只并把丧尸钉住；喷火器点燃一片，火会传染；榴弹发射器落地就炸。后三种在工作台造。<h4>每日任务</h4>每天天亮刷新 3 个小任务（左上角），比如击杀、搜索、建造、今夜无人倒下。完成立刻发奖励：材料、全队弹药、医疗包、手雷或强化弹头。没完成的会在下一个天亮作废。
       <h4>白天</h4>出门砍树（木材）、采石（砖石），搜汽车、补给箱和废墟瓦砾（钢材、零件、弹药），离家越远收获越多；回来盖楼、在营地小屋的工作台造枪。河上只有两座桥，丧尸也只能从桥上过河。每 5 夜一次血月。
       <h4>建造</h4>只能在营地周围的黄框里建造。<b>指哪盖哪，不用切楼层</b>：指地面或楼板就盖在上面；指墙顶就往上叠一层；指墙的侧面就贴着它盖；楼板会自动铺成墙上的天花板，站在楼上指外面能往外延伸阳台。<b>按住拖动</b>沿直线一次盖一排。拆除也是指哪拆哪。方块要有<b>支撑</b>：从地面往上传，往旁边每格减 1，支撑断了会连锁坍塌。<b>楼上最外圈、上面没东西的墙是半人高的矮墙</b>：子弹能从上面飞过，贴着矮墙可以探身往下打；地面一层的墙还是整面墙。门让人通过但挡丧尸，射击栅栏能从里面开枪。丧尸会砸墙砸门、走楼梯；攀爬者会翻墙。<h4>爬梯、翻越和跳</h4>楼梯换成了靠墙的爬梯：朝箭头方向走就爬上去，往下爬要继续推一下。丧尸爬梯子很慢（攀爬者除外），所以多放几个梯子方便自己走位，梯子口就是守点。人能<b>翻过</b>沙袋矮墙、拒马、铁皮掩体、栅栏、瓦砾和一人高的墙（贴着推一下，或按跳），也能跳过一格宽的空隙；丧尸不会翻，只能砸。<h4>障碍物</h4>沙袋矮墙（子弹能从上面打过去）、拒马（丧尸砸它会被扎）、铁皮掩体（挡子弹）、捕兽夹（夹住丧尸 2.5 秒，一次性）、铁丝网、探照灯。用矮墙和掩体把楼里隔成一段一段，自己翻来翻去，丧尸只能一路砸过来。<h4>建造确认</h4>点一下或拖一排，先出现绿色预览（拆除是红色），再点 ✓、按 Enter 或再点一下预览才真正建造 / 拆除；建造栏的「二次确认」可以关掉。
       <h4>视角</h4>滚轮或 ＋/－ 缩放，Q / E 或 ⟲⟳ 转镜头。楼层视图默认跟随你所在的层，上面的楼层会自动隐藏；▲▼ 手动看别的层，「跟随我所在的层」恢复。

@@ -49,7 +49,9 @@ function viewL() {
 // LCUT: the building you're inside (null outdoors). LCUTS: every building cut down to your floor — the one you're in,
 // the ones right next to you (so you can see their doors and rooms) and any standing between the camera and you
 let LCUT = null, LCUTS = [], LC_KEY = '';
-const CUT_HOUSES = TOWN_HOUSES.concat([[RADIO_XY[0] - 6, RADIO_XY[1] - 5, RADIO_XY[0] + 6, RADIO_XY[1] + 7, 3, 'camp']]);
+let CUT_HOUSES = [];
+function cutHousesInit() { CUT_HOUSES = TOWN_HOUSES.concat([[RADIO_XY[0] - 6, RADIO_XY[1] - 5, RADIO_XY[0] + 6, RADIO_XY[1] + 7, 3, 'camp']]); LC_KEY = ''; }
+cutHousesInit();
 const CUT_NEAR = 2.5;
 function cutBox() {
   const me = W && W.p[ME]; if (!VIEW.auto || !me || me.gone) { LCUT = null; LCUTS = []; LC_KEY = ''; return null; }
@@ -145,8 +147,8 @@ function buildScene() {
   I.bars = inst(GEO.bars, lam('#ffffff'), 600);
   I.wire = inst(GEO.wire, lam('#9aa0a6'), 600, false);
   I.lampP = inst(GEO.lampPole, lam('#2d3238'), 200); I.lampH = inst(GEO.lampHead, new THREE.MeshBasicMaterial({ color: '#ffe9a8' }), 200, false);
-  I.trunk = inst(GEO.trunk, lam('#4a3220'), 7000);
-  I.pine = GEO.pine.map((g, k) => inst(g, lam(['#2e4a2c', '#35552f', '#3c5f35'][k]), 7000));
+  I.trunk = inst(GEO.trunk, new THREE.MeshLambertMaterial({ color: '#4a3220', flatShading: true }), 7000);
+  I.pine = GEO.pine.map((g, k) => inst(g, new THREE.MeshLambertMaterial({ color: ['#2e4a2c', '#35552f', '#3c5f35'][k], flatShading: true }), 7000));
   I.oak = inst(GEO.oak, lam('#ffffff'), 7000);
   I.rock = inst(GEO.rock, lam('#ffffff'), 3000);
   I.crate = inst(GEO.crate, lam('#4f5d3c'), 600); I.rubble = inst(GEO.rubble, lam('#6a625a'), 800); I.fence = inst(GEO.fence, lam('#6b5a48'), 1200);
@@ -181,14 +183,22 @@ function buildScene() {
 }
 /* ---------- terrain (static per world) ---------- */
 const TCOL = { [TT.grass]: ['#55733e', '#5a7843', '#50703a'], [TT.hill]: ['#4b663b', '#516c3e', '#476038'], [TT.dirt]: ['#6e5a42', '#74604a'], [TT.road]: ['#3c3d40', '#38393c'], [TT.sand]: ['#7d7356', '#857a5a'], [TT.forest]: ['#3f5a30', '#445f33', '#3b552d'], [TT.water]: ['#2b2723'] };
+// per-map tints for trees and bushes
+function applyMapLook() {
+  const T = MAPDEF.trees || {}, I = OBJ.I; if (!I) return;
+  ['#2e4a2c', '#35552f', '#3c5f35'].forEach((c, k) => I.pine[k].material.color.set((T.pine && T.pine[k]) || c));
+  I.trunk.material.color.set(T.trunk || '#4a3220');
+  if (typeof PROP !== 'undefined' && PROP[41]) PROP[41].col = MAPDEF.bush || '#3e5f2e';
+}
 function buildTerrain() {
+  applyMapLook();
   // one merged mesh: column tops + only the exposed side faces (vertex colours, flat shading)
   const pos = [], col = [], c = new THREE.Color();
   const quad = (a, b2, c2, d, hex, k) => { c.set(hex).multiplyScalar(k); for (const v of [a, b2, c2, a, c2, d]) { pos.push(v[0], v[1], v[2]); col.push(c.r, c.g, c.b); } };
   const topOf = (x, y) => !inMap(x, y) ? -1.6 : ttAt(x, y) === TT.water ? -0.55 : gAt(x, y) * FH;
   for (let y = 0; y < MH; y++) for (let x = 0; x < MW; x++) {
     const t = ttAt(x, y), h = hash2(x, y), top = topOf(x, y);
-    const cols = TCOL[t] || TCOL[TT.grass], tc = t === TT.water ? '#4a4136' : cols[Math.floor(h * cols.length)];
+    const cols = (MAPDEF.tcol && MAPDEF.tcol[t]) || TCOL[t] || TCOL[TT.grass], tc = t === TT.water ? '#4a4136' : cols[Math.floor(h * cols.length)];
     quad([x, top, y], [x, top, y + 1], [x + 1, top, y + 1], [x + 1, top, y], tc, 1);
     const side = t === TT.water ? '#3a3128' : gAt(x, y) > 0 ? (h < 0.5 ? '#6b6052' : '#625849') : '#4e4134';
     const nb = [[x + 1, y, [x + 1, y + 1], [x + 1, y], 0.62], [x, y + 1, [x, y + 1], [x + 1, y + 1], 0.78], [x - 1, y, [x, y], [x, y + 1], 0.62], [x, y - 1, [x + 1, y], [x, y], 0.78]];
@@ -255,7 +265,7 @@ function rebuildCells() {
       case 8: { const ax = wallAxis(x, y, L) ? Math.PI / 2 : 0, f = W.bhp[i] / B[b].hp; archPut('sand', X, Y, Z, ax, 1, Math.max(cut, 0.6), 1, dmgTint('#ffffff', f)); if (cut === 1) archPut('bars', X, Y, Z, ax, 1, 1, 1, dmgTint('#ffffff', f)); break; }
       case 9: { const wa = blkAt(x - 1, y, L) === 9 || blkAt(x + 1, y, L) === 9 ? 0 : Math.PI / 2; setInst(I.wire, c.wire++, X, Y, Z, wa, 1, 1, 1); archPut('wireP', X, Y, Z, wa, 1, 1, 1); break; }
       case 10: setInst(I.lampP, c.lamp, X - 0.2, Y, Z - 0.2, 0, 1, 1, 1); setInst(I.lampH, c.lamp++, X - 0.2, Y, Z - 0.2, 0, 1, 1, 1); lamps.push([X + 0.05, Y + 0.75, Z - 0.2]); break;
-      case 22: { const sc = 0.8 + h * 0.5, rot = h * 6; if (inFront && fwd < 3.5 && lat < 1.8) { setInst(I.trunk, c.trunk++, X, Y, Z, rot, sc, sc * 0.35, sc); break; } setInst(I.trunk, c.trunk++, X, Y, Z, rot, sc, sc, sc); if (h < 0.6) for (let k = 0; k < 3; k++) setInst(I.pine[k], c.pine + 0, X, Y, Z, rot + k, sc, sc, sc); if (h < 0.6) c.pine++; else setInst(I.oak, c.oak++, X, Y, Z, rot, sc, sc, sc, h < 0.8 ? '#4f6a33' : '#5b7339'); break; }
+      case 22: { const sc = 0.8 + h * 0.5, rot = h * 6; if (inFront && fwd < 3.5 && lat < 1.8) { setInst(I.trunk, c.trunk++, X, Y, Z, rot, sc, sc * 0.35, sc); break; } setInst(I.trunk, c.trunk++, X, Y, Z, rot, sc, sc, sc); if (h < 0.6) for (let k = 0; k < 3; k++) setInst(I.pine[k], c.pine + 0, X, Y, Z, rot + k, sc, sc, sc); if (h < 0.6) c.pine++; else setInst(I.oak, c.oak++, X, Y, Z, rot, sc, sc, sc, MAPDEF.trees ? MAPDEF.trees.oak[h < 0.8 ? 0 : 1] : h < 0.8 ? '#4f6a33' : '#5b7339'); break; }
       case 21: setInst(I.rock, c.rock++, X, Y, Z, h * 6, 0.8 + h * 0.6, 0.7 + h * 0.6, 0.8 + h * 0.5, h < 0.5 ? '#78746c' : '#6c6862'); break;
       case 26: setInst(I.crate, c.crate++, X, Y, Z, h * 2, 1, 1, 1); break;
       case 29: setInst(I.rubble, c.rubble++, X, Y, Z, h * 6, 1, 1, 1); break;
@@ -400,7 +410,7 @@ function draw(dt) {
   stepFx(dt);
   updateCamera(dt);
   const me = W.p[ME], vl = viewL();
-  const key = W.ver + ':' + vl + ':' + CAM.rot + ':' + (me ? Math.floor(me.x) + ',' + Math.floor(me.y) + ',' + me.L : '') + ':' + Math.floor(CAM.tx / 6) + ',' + Math.floor(CAM.ty / 6) + ':' + Math.round(cullR() / 4) + ':' + LC_KEY;
+  const key = W.ver + ':' + vl + ':' + CAM.rot + ':' + (me ? Math.floor(me.x) + ',' + Math.floor(me.y) + ',' + me.L : '') + ':' + Math.floor(CAM.tx / 6) + ',' + Math.floor(CAM.ty / 6) + ':' + Math.round(cullR() / 4) + ':' + LC_KEY + ':' + (W.mode === 'nests' || W.mode === 'towers' ? W.obv : 0);
   if (key !== CUT_KEY) { CUT_KEY = key; rebuildCells(); }
   if (STATE.mode === 'play' && !W.demo) qualTick(dt);
   applyTime(darkness()); archFrame();
@@ -422,6 +432,18 @@ function drawOverlay() {
     if (on) html += `<div class="tag" style="left:${sx | 0}px;top:${sy | 0}px"><span>${p.name}${p.L !== W.p[ME].L ? ' · ' + (p.L + 1) + 'F' : ''}</span><i style="width:${(p.down ? 0 : p.hp / p.maxHp * 100) | 0}%;background:${PCOL[p.i % 2].j}"></i></div>`;
     else { const ax = clamp(sx, 26, VW - 26), ay = clamp(sy, 80, VH - 80); const an = Math.atan2(sy - ay, sx - ax); html += `<div class="arr" style="left:${ax | 0}px;top:${ay | 0}px;transform:translate(-50%,-50%) rotate(${an}rad);color:${p.down ? '#ff5a4a' : PCOL[p.i % 2].j}">➤</div>`; }
   }
+  // objectives: a label over the ones on screen, an arrow at the edge for the rest (the three nearest)
+  const me = W.p[ME];
+  if (me && !W.demo) { const used = []; let arrows = 0;
+    for (const m of modeMarks().filter(m => m.a).map(m => Object.assign({}, m, { d: Math.hypot(m.x - me.x, m.y - me.y) })).sort((a, b) => a.d - b.d).slice(0, 4)) {
+      const [sx, sy] = w2s(m.x, m.y, gAt(Math.floor(m.x), Math.floor(m.y)) * FH + 1.8), on = sx > 30 && sx < VW - 30 && sy > 70 && sy < VH - 70;
+      if (on) { if (m.d > 3.5) html += `<div class="om" style="left:${sx | 0}px;top:${sy | 0}px;color:${m.c}">${m.n}<br>${Math.round(m.d)} 米</div>`; continue; }
+      if (arrows >= 2) continue;
+      let ax = clamp(sx, 56, VW - 56), ay = clamp(sy, 110, VH - 110); const an = Math.atan2(sy - ay, sx - ax);
+      for (const [ux, uy] of used) if (Math.abs(ux - ax) < 90 && Math.abs(uy - ay) < 40) ay += ay > VH / 2 ? -44 : 44; // don't stack labels
+      used.push([ax, ay]); arrows++;
+      html += `<div class="oa" style="left:${ax | 0}px;top:${ay | 0}px;color:${m.c}"><i style="transform:rotate(${an}rad)">➤</i>${m.n} ${Math.round(m.d)} 米</div>`;
+    } }
   OV.innerHTML = html;
 }
 
@@ -430,6 +452,7 @@ const MM = { base: null, t: 0 };
 function buildMinimapBase() {
   const c = document.createElement('canvas'); c.width = MW; c.height = MH; const g = c.getContext('2d');
   const MC = { [TT.grass]: '#55733e', [TT.hill]: '#7a8a5a', [TT.dirt]: '#6e5a42', [TT.road]: '#3c3d40', [TT.sand]: '#8a7f5a', [TT.forest]: '#3c5530', [TT.water]: '#2a6a86' };
+  if (MAPDEF.mc) Object.assign(MC, MAPDEF.mc);
   for (let y = 0; y < MH; y++) for (let x = 0; x < MW; x++) { let col = MC[ttAt(x, y)] || '#555'; if (gAt(x, y) === 2) col = '#8f9a6a'; g.fillStyle = col; g.fillRect(x, y, 1, 1); }
   MM.base = c;
 }
@@ -495,6 +518,8 @@ function fxEvent(e) {
     case 'night': sfx(e.blood ? 'blood' : 'night'); banner(e.blood ? '第 ' + e.n + ' 夜 · 血月' : '第 ' + e.n + ' 夜', (e.blood ? '尸潮从四面八方涌来，巨尸出没' : '尸潮从' + e.from + '边来了') + '，守住堡垒', e.blood ? '#ff5a4a' : '#ffd27a'); break;
     case 'dawn': document.getElementById('over').classList.add('hidden'); sfx('dawn'); banner('天亮了', '撑过了第 ' + e.n + ' 夜 · 新的任务已刷新（点上方「今日任务」展开）', '#ffe7b0'); break;
     case 'say': uiMsg(e.text, e.col); break;
+    case 'mbanner': banner(e.t, '', e.c); sfx('ready'); break;
+    case 'dig': for (let k = 0; k < (e.big ? 14 : 4); k++) addP({ x: e.x + frnd(-0.4, 0.4), y: e.y + frnd(-0.4, 0.4), z: e.z + 0.05, vx: frnd(-1.2, 1.2), vy: frnd(-1.2, 1.2), vz: frnd(1, 3), col: k % 2 ? '#6a5236' : '#4a3a28', s: frnd(0.08, 0.16), life: 0.8, floor: e.z }); if (e.big) sfx('collapse', e.x, e.y); break;
     case 'craft': if (e.p === ME) { sfx('craft'); toast('制作完成：' + e.name); } break;
     case 'deny': if (e.p === ME && thr('deny', 0.3)) { sfx('deny'); toast(e.why, '#ff8a7a'); } break;
     case 'boom': RND.booms.push({ x: e.x, y: e.y, z: e.z, t: 0 }); debrisFx(e.x, e.y, e.z, e.g ? '#6a8a2a' : '#3a3530', 12); if (e.g) { bloodFx(e.x, e.y, e.z, 24, true); addDecal(e.x, e.y, e.z - 0.5, 1.1, '#3c5a14'); } sfx('boom', e.x, e.y); shake(e.x, e.y, 0.4); break;

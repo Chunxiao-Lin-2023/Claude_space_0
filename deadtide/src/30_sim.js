@@ -8,9 +8,10 @@ function mkPlayer(i, name) {
     inp: { mx: 0, my: 0, fire: 0, use: 0 }, kills: 0, hurtT: 0, anim: 0, emptyT: 0, ready: false, recoilT: 0,
   };
 }
-function newWorld(seed, names, diff) {
+function newWorld(seed, names, diff, mode) {
   const m = genMap(seed);
   W = {
+    mode: MODES[mode] ? mode : 'classic', map: MAP_ID, obj: {}, obv: 1,
     seed, t: 0, G: m.G, tt: m.tt, blk: m.blk, bhp: m.bhp, slab: m.slab, shp: m.shp, bdir: m.bdir, stab: new Int8Array(NC), srch: new Set(),
     radio: { x: m.radio.x, y: m.radio.y }, bench: m.bench, tasks: [], tkv: 0, clean: true,
     p: names.map((n, i) => mkPlayer(i, n)), zs: [], proj: [], zid: 1,
@@ -24,6 +25,7 @@ function newWorld(seed, names, diff) {
   // day one also gets supplies out in the open (the buildings are already stocked by the generator)
   for (const k of ['crate', 'toolbox', 'rubble']) for (let j = Math.round(SPOTS[k].n * 1.2); j > 0; j--) { const i = pickSpot(k, true); if (i >= 0) { W.blk[i] = SPOT_IDS[k]; W.bhp[i] = 1; } }
   W.spotN = spotCount();
+  modeInit();
   updateFields(0, true);
   W.edges = edgeSpawns();
   rollTasks();
@@ -160,13 +162,15 @@ function useTarget(p) {
     const i = ci(x, y, p.L), b = W.blk[i]; if (!b) continue;
     const d = d2(x + 0.5, y + 0.5, p.x, p.y);
     if (d > bd) continue;
-    if (B[b].spot) { const S = SPOTS[B[b].spot]; if (S && (S.vanish || !W.srch.has(i))) { bd = d; best = { k: 'spot', i, t: BAL.searchTime, name: '搜索' + S.name }; } }
+    if (B[b].obj) { const t = modeUse(p, i, b); if (t) { bd = d; best = t; } }
+    else if (B[b].spot) { const S = SPOTS[B[b].spot]; if (S && (S.vanish || !W.srch.has(i))) { bd = d; best = { k: 'spot', i, t: BAL.searchTime, name: '搜索' + S.name }; } }
     else if (GATHER[b]) { bd = d; best = { k: 'gather', i, t: GATHER[b].t, name: GATHER[b].name }; }
   }
   return best;
 }
 function completeUse(p, tgt) {
   if (tgt.k === 'rev') { const q = W.p[tgt.i]; if (!q.down) return; q.down = false; q.hp = 35; q.medT = 0; q.selfRev = false; emit({ k: 'revive', p: q.i, by: p.i }); return; }
+  if (tgt.k === 'obj') { modeDone(p, tgt); return; }
   const i = tgt.i, x = cx_(i), y = cy_(i), L = cl_(i), wx = x + 0.5, wy = y + 0.5, wz = L * FH + 1;
   const m = 1 + Math.min(40, Math.max(0, radioDist(x, y) - 8)) / BAL.lootFar; // capped where the old 96-map edge was
   if (tgt.k === 'gather') {
@@ -313,6 +317,7 @@ function fireWeapon(p, wi) {
       if (!los(sx, sy, sz, z.x, z.y, z.z + z.h * 0.5, LEAN)) continue;
       hurtZombie(z, w.dmg * mul, p, 0, 0, true); z.burn = Math.max(z.burn || 0, w.burn); z.burnBy = p.i;
     }
+    modeAreaHit(sx + Math.cos(yaw) * w.range * 0.5, sy + Math.sin(yaw) * w.range * 0.5, w.range * 0.5, w.dmg * mul * 0.8);
     emit({ k: 'shot', o: p.i, w: wi, e: [] }); return;
   }
   if (w.bloom) p.bloom = Math.min(2.2, (p.bloom || 0) + w.bloom);
@@ -343,13 +348,13 @@ function fireWeapon(p, wi) {
       if (k < 3 || head) emit({ k: 'hit', x: r2(sx + dx * d), y: r2(sy + dy * d), z: r2(hzv), h: head ? 1 : 0, g: z.k === 'spitter' || z.k === 'bloater' ? 1 : 0, a: armor ? 1 : 0 });
       left--; endD = d; hz = 1;
     }
-    if (left > 0 || !hz) endD = wall.d;
+    if (left > 0 || !hz) { endD = wall.d; if (wall.i >= 0 && W.blk[wall.i] === 44) modeHit(wall.i, w.dmg * mul * (w.falloff ? 0.7 : 1)); }
     ends.push([r2(sx + dx * endD), r2(sy + dy * endD), r2(sz + dz * endD), !hz && wall.i >= 0 ? 1 : 0]);
   }
   emit({ k: 'shot', o: p.i, w: wi, e: ends });
 }
 function hurtZombie(z, dmg, p, kx, ky, quiet) {
-  if (z.hp <= 0) return;
+  if (z.hp <= 0 || z.hidden) return;
   z.hp -= dmg; if (!quiet) z.hitT = 0.12;
   if (kx || ky) { z.kbx = (z.kbx || 0) + kx; z.kby = (z.kby || 0) + ky; }
   if (z.hp <= 0) killZombie(z, p);
@@ -424,7 +429,7 @@ function knife(p, zid) {
   let z = zid >= 0 ? W.zs.find(q => q.id === zid && q.hp > 0) : null;
   if (z && Math.hypot(z.x - p.x, z.y - p.y) > BAL.knifeRange + BAL.knifeLunge * 0.6 + z.r) z = null;
   if (!z) { z = knifeTarget(p); if (z && Math.hypot(z.x - p.x, z.y - p.y) > z.r + p.r + 0.9) z = null; } // no lunge happened: only what's in arm's reach
-  if (!z) { emit({ k: 'knife', p: p.i, n: 0 }); return; }
+  if (!z) { modeAreaHit(p.x + Math.cos(p.aim), p.y + Math.sin(p.aim), 0.9, BAL.knifeDmg * 1.3); emit({ k: 'knife', p: p.i, n: 0 }); return; }
   const dx = z.x - p.x, dy = z.y - p.y, d = Math.hypot(dx, dy) || 1;
   const back = Math.cos(angDiff(z.face || 0, Math.atan2(-dy, -dx))) < -0.2;          // it was facing away from you
   const heavy = z.k === 'boss' ? 0 : z.k === 'brute' ? 0.25 : 1;
@@ -535,11 +540,12 @@ function startNight() {
   q.sort((a, b) => a.t - b.t);
   W.spawnQ = q;
   const names = ['东', '南', '西', '北'];
+  modeNight(n);
   emit({ k: 'night', n, blood: blood ? 1 : 0, count: q.length, from: front.map(s => names[s]).join('、') });
 }
 function dawn() {
   if (W.clean && W.night > 0) taskAdd('clean');
-  if (W.night >= BAL.nights && !W.endless) return endGame('win', '救援直升机到了');
+  if (W.mode === 'classic' && W.night >= BAL.nights && !W.endless) return endGame('win', '救援直升机到了');
   W.phase = 'day'; W.dayLen = W.clock = BAL.dayLen[1];
   rollTasks();
   setTimeout(() => saveGame(true), 0); // autosave every morning
@@ -576,8 +582,9 @@ function stepPhase(dt) {
       W.strayT -= dt;
       if (W.strayT <= 0) { W.strayT = BAL.nightTrickleCD; if (W.zs.length < BAL.nightTrickleMax) { const n = W.night; for (let k = 0; k < 1 + (rand() < 0.5 ? 1 : 0); k++) spawnZombie(strayKind(n), Math.floor(rand() * 4)); } }
     }
-    if (!W.spawnQ.length && W.zs.length && W.zs.length <= 3 && W.nightT > Math.max(BAL.spawnDur(W.night) + 240, minT + 60)) { W.zs.forEach(z => { z.hp = 0; }); W.zs = []; say('残余的丧尸散去了'); }
-    if (!W.spawnQ.length && !W.zs.length && W.nightT >= minT) dawn();
+    const wz = W.zs.filter(z => !z.mz);
+    if (!W.spawnQ.length && wz.length && wz.length <= 3 && W.nightT > Math.max(BAL.spawnDur(W.night) + 240, minT + 60)) { wz.forEach(z => { z.hp = 0; }); W.zs = W.zs.filter(z => z.mz); say('残余的丧尸散去了'); }
+    if (!W.spawnQ.length && !W.zs.some(z => !z.mz) && W.nightT >= minT) dawn();
   }
 }
 
@@ -608,7 +615,7 @@ function stepProj(dt) {
       let hit = false;
       if (solidFor(blk, 'b') || b.z <= floorUnder(b.x, b.y, b.z + 0.3) + 0.02) { if (inMap(x, y) && L >= 0 && L < ML) damageCell(ci(x, y, L), 9 * W.D.dmg); hit = true; }
       for (const p of W.p) if ((standingP(p) || p.down) && d2(p.x, p.y, b.x, b.y) < p.r + 0.15 && b.z > p.z - 0.1 && b.z < p.z + p.h + 0.1) { hurtPlayer(p, 11 * W.D.dmg); hit = true; }
-      if (hit || b.z < -2) { b.dead = true; emit({ k: 'acid', x: r2(b.x), y: r2(b.y), z: r2(b.z) }); }
+      if (hit || b.z < -2) { b.dead = true; if (b.pool) acidPool(b.x, b.y); emit({ k: 'acid', x: r2(b.x), y: r2(b.y), z: r2(b.z) }); }
     }
   }
   W.proj = W.proj.filter(b => !b.dead);
@@ -621,6 +628,7 @@ function explode(x, y, z, p, R = BAL.nadeR, dmg = BAL.nadeDmg) {
     if (d < R + zb.r) { const f = 1 - Math.max(0, d - zb.r) / R; hurtZombie(zb, dmg * (0.35 + 0.65 * f) * (1 + 0.12 * W.upg), p, (zb.x - x) / (d || 1) * 5 * f, (zb.y - y) / (d || 1) * 5 * f); }
   }
   KSRC = '';
+  modeAreaHit(x, y, R, dmg * 0.8);
   emit({ k: 'boom', x: r2(x), y: r2(y), z: r2(z) });
 }
 
@@ -633,6 +641,7 @@ function simStep(dt) {
     updateFields(dt);
     stepZombies(dt);
     stepProj(dt);
+    modeTick(dt);
     checkLose();
   }
 }

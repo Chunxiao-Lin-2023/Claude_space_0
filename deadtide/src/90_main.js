@@ -1,8 +1,9 @@
 /* ================= game start, main loop, title-screen attract mode ================= */
 let ACC = 0, LAST = 0, HUD_BUILT = false, TIPS = [];
-function startGame(seed, names, diff, me) {
+function startGame(seed, names, diff, me, mode, map) {
   TIPS.forEach(clearTimeout); TIPS = [];
-  ME = me; newWorld(seed, names, diff); buildTerrain(); archTown();
+  mode = MODES[mode] ? mode : (MODES[SET.mode] ? SET.mode : 'classic'); setMap(map || SET.map || MODES[mode].map);
+  ME = me; newWorld(seed, names, diff, mode); buildTerrain(); archTown();
   Object.assign(RND, { parts: [], tracers: [], corpses: [], floats: [], flashes: [], booms: [], hurtV: 0 });
   STATE.mode = 'play'; STATE.paused = false; ACC = 0; NET.lastT = 0; VIEW.auto = true; CUT_KEY = '';
   if (SET.zv !== 2) { SET.zv = 2; SET.zoom = 8; saveSet(); } /* round 8: default view one step closer, applied once */
@@ -12,14 +13,14 @@ function startGame(seed, names, diff, me) {
   $('over').classList.add('hidden'); $('log').innerHTML = '';
   const p = W.p[ME]; CAM.tx = p.x; CAM.ty = p.y;
   uiBuildBar(); markDiff(); uiView();
-  banner('第一个白天', '撑过 ' + BAL.nights + ' 夜就能等到救援 · 完成每日任务拿奖励', '#ffe7b0'); UI.tkv = -1;
+  banner(MODES[W.mode].icon + ' ' + MODES[W.mode].name + ' · ' + MAPDEF.name, W.mode === 'classic' ? '撑过 ' + BAL.nights + ' 夜就能等到救援 · 完成每日任务拿奖励' : MODES[W.mode].desc, '#ffe7b0'); UI.tkv = -1;
   const tips = INP.touch
     ? ['出门砍树、采石，点一下「交互」搜汽车和补给箱（会自动搜完）', '点「建造」后手指指哪就盖哪：点墙顶往上叠，点墙面贴着盖，拖动一次盖一排', '上方「今日任务」点开能看到今天的 3 个任务，完成就有奖励', '小屋里的工作台可以造步枪和狙击枪', '楼上的矮墙可以探身开枪，天黑前回到堡垒']
     : ['出门砍树、采石，按 F 搜汽车和补给箱（会自动搜完，走开就停）', '按 B 建造：鼠标指哪就盖哪——指墙顶往上叠、指墙面贴着盖，按住拖动一次盖一排，右键拆除', '上方「今日任务」点开能看到今天的 3 个任务，完成就有奖励', '在小屋里的工作台按 F 造步枪和狙击枪', '楼上外墙是半人高的矮墙，可以探身朝下开枪。按 N 可以提前入夜'];
   tips.forEach((t, k) => TIPS.push(setTimeout(() => { if (W && W.night === 0 && STATE.mode === 'play') uiMsg(t, '#ffd27a'); }, 2500 + k * 7000)));
 }
 function startDemo() {
-  ME = 0; newWorld(777, ['demo'], 'normal'); W.demo = true; W.p[0].gone = true;
+  setMap(MAPS[SET.map] ? SET.map : 'town'); ME = 0; newWorld(777, ['demo'], 'normal', 'classic'); W.demo = true; W.p[0].gone = true;
   W.phase = 'night'; W.night = 4; W.demoT = 0; buildTerrain(); archTown(); VIEW.auto = false; VIEW.L = 1; CUT_KEY = ''; CAM.zoom = 11;
 }
 function demoStep(dt) {

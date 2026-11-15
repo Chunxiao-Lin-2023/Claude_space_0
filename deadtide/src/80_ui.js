@@ -40,7 +40,7 @@ function lobbyUI(status) {
   $('lReady').classList.toggle('hidden', host); $('lReady').textContent = NET.ready ? '取消准备' : '准备';
   $('lStart').classList.toggle('hidden', !host); $('lStart').disabled = !(host && NET.guestName && NET.ready);
   $('lDiffSeg').querySelectorAll('button').forEach(b => b.disabled = !host);
-  $('lDiffNote').textContent = host ? '' : '（房主决定）';
+  $('lDiffNote').textContent = host ? '' : '（房主决定）'; uiModeLbl();
   markDiff();
   if (host && !NET.guestName && !$('lStatus').textContent) $('lStatus').textContent = '把房间码发给队友';
 }
@@ -138,6 +138,7 @@ function hudTick(dt) {
   if (UI.bannerT > 0 && (UI.bannerT -= dt) <= 0) $('banner').classList.remove('show');
   UI.hudT -= dt; if (UI.hudT > 0) return; UI.hudT = 0.1;
   if (bigMapOpen() && (UI.bmT = (UI.bmT || 0) + 1) % 3 === 0) drawBigMap();
+  uiObjective();
   const me = W.p[ME];
   // players
   $('pcards').innerHTML = W.p.map(p => {
@@ -271,8 +272,51 @@ function drawBigMap() {
   // labels and players upright on top
   g.font = '600 13px ' + getComputedStyle(document.body).fontFamily; g.textAlign = 'center'; g.textBaseline = 'middle';
   TOWN_HOUSES.forEach(([x0, y0, x1, y1, st, t]) => { const [px, py] = rot((x0 + x1 + 1) / 2, (y0 + y1 + 1) / 2), lab = (BTYPE[t] || [t])[0] + (st > 1 ? ' ' + st + '层' : ''); g.lineWidth = 3; g.strokeStyle = 'rgba(0,0,0,.75)'; g.strokeText(lab, px, py); g.fillStyle = '#fff'; g.fillText(lab, px, py); });
+  for (const m of modeMarks()) { const [px, py] = rot(m.x, m.y); g.fillStyle = m.c; g.strokeStyle = 'rgba(0,0,0,.8)'; g.lineWidth = 2;
+    if (m.r) { g.globalAlpha = 0.25; g.beginPath(); g.arc(px, py, m.r * S, 0, 7); g.fill(); g.globalAlpha = 1; g.beginPath(); g.arc(px, py, m.r * S, 0, 7); g.strokeStyle = m.c; g.stroke(); }
+    else { g.beginPath(); g.arc(px, py, 7, 0, 7); g.fill(); g.stroke(); if (m.ring) { g.beginPath(); g.arc(px, py, m.ring * S, 0, 7); g.strokeStyle = m.c; g.stroke(); } }
+    g.font = '700 12px ' + getComputedStyle(document.body).fontFamily; g.lineWidth = 3; g.strokeStyle = 'rgba(0,0,0,.85)'; g.strokeText(m.n, px, py - 14); g.fillStyle = m.c; g.fillText(m.n, px, py - 14); }
   { const [px, py] = rot(W.radio.x + 0.5, W.radio.y + 0.5); g.lineWidth = 3; g.strokeStyle = 'rgba(0,0,0,.75)'; g.strokeText('营地', px, py); g.fillStyle = '#d8ffcc'; g.fillText('营地', px, py); }
   for (const p of W.p) { if (p.gone || p.dead) continue; const [px, py] = rot(p.x, p.y); g.fillStyle = PCOL[p.i % 2].j; g.beginPath(); g.arc(px, py, 6, 0, 7); g.fill(); g.strokeStyle = '#fff'; g.lineWidth = 2; g.stroke(); g.fillStyle = '#fff'; g.font = '600 12px ' + getComputedStyle(document.body).fontFamily; g.strokeStyle = 'rgba(0,0,0,.8)'; g.lineWidth = 3; g.strokeText(p.name, px, py - 14); g.fillText(p.name, px, py - 14); }
+}
+/* ---------- modes and maps: picker (title / lobby), objective panel ---------- */
+const curMode = () => MODES[SET.mode] ? SET.mode : 'classic';
+const curMap = () => MAPS[SET.map] ? SET.map : MODES[curMode()].map;
+function uiModeLbl() {
+  const m = MODES[curMode()], mp = MAPS[curMap()];
+  $('modeLbl').textContent = m.icon + ' ' + m.name + ' ›'; $('mapLbl').textContent = '地图：' + mp.name + ' · 点这里换模式 / 地图';
+  const gm = NETROLE === 'guest' ? (MODES[NET.mode] || MODES.classic) : m, gp = NETROLE === 'guest' ? (MAPS[NET.map] || MAPS[gm.map]) : mp;
+  if ($('lModeLbl')) { $('lModeLbl').textContent = gm.icon + ' ' + gm.name; $('lMapLbl').textContent = '地图：' + gp.name + (NETROLE === 'host' ? ' · 点这里更换' : ''); $('lModeBtn').disabled = NETROLE === 'guest'; $('lModeNote').textContent = NETROLE === 'guest' ? '（房主决定）' : ''; }
+}
+const MAPTHUMB = {};
+function mapThumb(id, cv) { // a little rendered overview of the map (generated once, cached)
+  const paint = () => { const img = MAPTHUMB[id]; if (img) { const g = cv.getContext('2d'); g.imageSmoothingEnabled = false; g.drawImage(img, 0, 0, cv.width, cv.height); } };
+  if (MAPTHUMB[id]) return paint();
+  setTimeout(() => {
+    const keep = MAP_ID; setMap(id); const m = genMap(31337); const c = document.createElement('canvas'); c.width = MW; c.height = MH; const g = c.getContext('2d');
+    const MC = Object.assign({ [TT.grass]: '#55733e', [TT.hill]: '#7a8a5a', [TT.dirt]: '#6e5a42', [TT.road]: '#3c3d40', [TT.sand]: '#8a7f5a', [TT.forest]: '#3c5530', [TT.water]: '#2a6a86' }, MAPDEF.mc || {});
+    for (let y = 0; y < MH; y++) for (let x = 0; x < MW; x++) { g.fillStyle = MC[m.tt[y * MW + x]] || '#555'; if (m.G[y * MW + x] >= 1) g.fillStyle = MC[TT.hill]; g.fillRect(x, y, 1, 1); }
+    for (const [x0, y0, x1, y1, st, t] of TOWN_HOUSES) { g.fillStyle = (BTYPE[t] || ['', '#888'])[1]; g.fillRect(x0, y0, x1 - x0 + 1, y1 - y0 + 1); }
+    g.fillStyle = '#7fd36b'; g.fillRect(RADIO_XY[0] - 6, RADIO_XY[1] - 5, 13, 11);
+    setMap(keep); MAPTHUMB[id] = c; paint();
+  }, 30);
+}
+function openModeSel() {
+  if (NETROLE === 'guest') return;
+  const draw = () => {
+    $('mGrid').innerHTML = MODE_IDS.map(k => { const m = MODES[k]; return `<button class="mcard ghost${k === curMode() ? ' sel' : ''}" data-m="${k}"><b>${m.icon} ${m.name}</b><p>${m.desc}</p><i>推荐地图：${MAPS[m.map].name}</i></button>`; }).join('');
+    $('mapGrid').innerHTML = MAP_IDS.map(k => `<button class="mapcard ghost${k === curMap() ? ' sel' : ''}" data-p="${k}"><canvas width="160" height="160"></canvas><b>${MAPS[k].name}${MODES[curMode()].map === k ? ' <em>推荐</em>' : ''}</b><p>${MAPS[k].desc}</p></button>`).join('');
+    $('mapHint').textContent = '每种模式在哪张图上都能玩';
+    $('mGrid').querySelectorAll('.mcard').forEach(b => b.onclick = () => { SET.mode = b.dataset.m; SET.map = MODES[SET.mode].map; saveSet(); sfx('click'); draw(); });
+    $('mapGrid').querySelectorAll('.mapcard').forEach(b => { mapThumb(b.dataset.p, b.querySelector('canvas')); b.onclick = () => { SET.map = b.dataset.p; saveSet(); sfx('click'); draw(); }; });
+  };
+  draw(); $('modesel').classList.remove('hidden');
+}
+function closeModeSel() { $('modesel').classList.add('hidden'); uiModeLbl(); if (NETROLE === 'host') sendLobby(); if (STATE.mode === 'title' && (!W || W.demo) && MAP_ID !== curMap()) startDemo(); }
+function uiObjective() {
+  const el = $('objp'), h = W && modeHud(); if (!h) { el.classList.add('hidden'); return; }
+  el.classList.remove('hidden'); el.classList.toggle('boss', !!h.boss);
+  $('objI').textContent = MODES[W.mode].icon + ' ' + MODES[W.mode].name; $('objT').textContent = h.t; $('objS').textContent = h.s || ''; $('objB').style.width = Math.round(clamp(h.p || 0, 0, 1) * 100) + '%';
 }
 function openHelp() { $('help').classList.remove('hidden'); }
 function closeHelp() { $('help').classList.add('hidden'); }
@@ -297,7 +341,7 @@ function initUI() {
   $('soloBtn').onclick = () => {
     const b = $('soloBtn');
     if (loadSave() && !b.dataset.sure) { b.dataset.sure = 1; b.textContent = '再点一次：新开一局会覆盖存档'; setTimeout(() => { delete b.dataset.sure; renderBest(); }, 3000); return; }
-    delete b.dataset.sure; audioInit(); netLeave(); NETROLE = 'solo'; startGame((Math.random() * 1e9) | 0, [SET.name || '幸存者'], SET.diff, 0);
+    delete b.dataset.sure; audioInit(); netLeave(); NETROLE = 'solo'; startGame((Math.random() * 1e9) | 0, [SET.name || '幸存者'], SET.diff, 0, SET.mode, SET.map);
   };
   $('hostBtn').onclick = () => { audioInit(); netHost(); };
   $('joinBtn').onclick = () => { audioInit(); netJoin($('codeIn').value); };
@@ -316,6 +360,7 @@ function initUI() {
   $('pauseBtn').onclick = () => togglePause();
   $('muteBtn').onclick = () => { setMute(!SET.mute); uiMute(); };
   $('pMute').onclick = () => { setMute(!SET.mute); uiMute(); };
+  $('modeBtn').onclick = () => { sfx('click'); openModeSel(); }; $('lModeBtn').onclick = () => { sfx('click'); openModeSel(); }; $('msOk').onclick = () => { sfx('click'); closeModeSel(); }; uiModeLbl();
   $('mini').addEventListener('pointerdown', e => { e.stopPropagation(); e.preventDefault(); toggleBigMap(true); });
   $('bigmap').addEventListener('pointerdown', e => { e.stopPropagation(); e.preventDefault(); toggleBigMap(false); });
   $('keys').addEventListener('pointerdown', e => { e.stopPropagation(); if (!e.target.closest('.kh')) return; SET.keysOff = !SET.keysOff; saveSet(); UI.keysK = ''; if (W && W.p[ME]) uiKeys(W.p[ME]); sfx('click'); });
@@ -323,7 +368,7 @@ function initUI() {
   $('pQual').onclick = () => { const o = ['auto', 0, 1, 2], i = o.indexOf(SET.q == null ? 'auto' : SET.q); SET.q = o[(i + 1) % 4]; if (SET.q === 'auto') SET.qa = 0; saveSet(); applyQual(); $('pQual').textContent = qualLabel(); sfx('click'); };
   $('readyBtn').onclick = () => inGame() && toggleReady();
   $('tasks').addEventListener('pointerdown', e => { e.stopPropagation(); UI.tkPin = !UI.tkPin; UI.tkOpenT = 0; sfx('click'); });
-  $('oAgain').onclick = () => { $('over').classList.add('hidden'); if (NETROLE === 'host') { if (!NET.gctl || !NET.gctl.open) { NETROLE = 'solo'; startGame((Math.random() * 1e9) | 0, [SET.name || '幸存者'], SET.diff, 0); } else hostStart(); } else startGame((Math.random() * 1e9) | 0, [SET.name || '幸存者'], SET.diff, 0); };
+  $('oAgain').onclick = () => { $('over').classList.add('hidden'); if (NETROLE === 'host') { if (!NET.gctl || !NET.gctl.open) { NETROLE = 'solo'; startGame((Math.random() * 1e9) | 0, [SET.name || '幸存者'], SET.diff, 0, W ? W.mode : SET.mode, W ? W.map : SET.map); } else hostStart(); } else startGame((Math.random() * 1e9) | 0, [SET.name || '幸存者'], SET.diff, 0, W ? W.mode : SET.mode, W ? W.map : SET.map); };
   $('oLobby').onclick = () => { netSendCtl({ t: 'toLobby' }); backToLobby(); };
   $('oEndless').onclick = () => { $('over').classList.add('hidden'); W.endless = true; W.over = null; W.phase = 'night'; dawn(); };
   $('oTitle').onclick = () => { netLeave(); W = null; showScreen('title'); };

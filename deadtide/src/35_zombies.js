@@ -18,6 +18,7 @@ function stepZombies(dt) {
     const Z = ZT[z.k], climbT = !!Z.climb;
     z.cd -= dt; z.hitT -= dt; z.atk -= dt; z.anim += dt;
     if (z.stun > 0) z.stun -= dt;
+    if (ZT[z.k].boss && bossStep(z, dt)) continue;
     if (z.rage > 0) z.rage -= dt;
     if (z.scr > 0) z.scr -= dt;
     // burning: damage over time, and the fire jumps to zombies right next to it

@@ -25,10 +25,10 @@ function canSave() { return W && !W.demo && !W.over && STATE.mode === 'play' && 
 function saveGame(quiet) {
   if (!canSave()) return false;
   const S = {
-    v: SAVE_V, mw: MW, at: Date.now(), seed: W.seed, diff: W.diff, night: W.night, phase: W.phase, clock: W.clock, dayLen: W.dayLen, nightT: W.nightT,
+    v: SAVE_V, mw: MW, at: Date.now(), mode: W.mode, map: W.map, obj: W.obj, seed: W.seed, diff: W.diff, night: W.night, phase: W.phase, clock: W.clock, dayLen: W.dayLen, nightT: W.nightT,
     res: W.res, upg: W.upg, kills: W.kills, stats: W.stats, endless: W.endless, clean: W.clean, tasks: W.tasks, srch: [...W.srch], spotN: W.spotN, t: W.t,
     p: W.p.filter(p => !p.gone).map(p => ({ name: p.name, x: p.x, y: p.y, L: p.L, hp: p.hp, dead: p.dead, wpn: p.wpn, owned: p.owned, mag: p.mag, ammo: p.ammo, meds: p.meds, nades: p.nades, kills: p.kills })),
-    zs: W.zs.filter(z => z.hp > 0).slice(0, 300).map(z => [z.k, +z.x.toFixed(2), +z.y.toFixed(2), z.L, Math.round(z.hp), Math.round(z.max)]),
+    zs: W.zs.filter(z => z.hp > 0).slice(0, 300).map(z => [z.k, +z.x.toFixed(2), +z.y.toFixed(2), z.L, Math.round(z.hp), Math.round(z.max), z.mz ? 1 : 0]),
     q: W.spawnQ.slice(0, 400).map(s => [+s.t.toFixed(1), s.k, s.side]),
     g: [rleEnc(W.blk), rleEnc(W.slab), rleEnc(W.bdir), rleEnc(hpPack(W.bhp)), rleEnc(hpPack(W.shp))].map(b64e),
   };
@@ -39,11 +39,11 @@ function saveGame(quiet) {
 }
 function loadSave() { const s = lsGet('save', null); return s && s.v === SAVE_V && s.g && s.mw === MW ? s : null; }
 function clearSave() { try { localStorage.removeItem(SKEY + 'save'); } catch (e) { } }
-function saveLabel(s) { return (s.phase === 'night' ? '第 ' + s.night + ' 夜' : '第 ' + (s.night + 1) + ' 天') + ' · ' + ({ easy: '简单', normal: '普通', hard: '困难' }[s.diff] || ''); }
+function saveLabel(s) { return (MODES[s.mode] && s.mode !== 'classic' ? MODES[s.mode].name + ' · ' : '') + (MAPS[s.map] ? MAPS[s.map].name + ' · ' : '') + (s.phase === 'night' ? '第 ' + s.night + ' 夜' : '第 ' + (s.night + 1) + ' 天') + ' · ' + ({ easy: '简单', normal: '普通', hard: '困难' }[s.diff] || ''); }
 function continueGame() {
   const S = loadSave(); if (!S) return;
   audioInit(); netLeave(); NETROLE = 'solo';
-  startGame(S.seed, [S.p[0] ? S.p[0].name : SET.name || '幸存者'], S.diff, 0);
+  startGame(S.seed, [S.p[0] ? S.p[0].name : SET.name || '幸存者'], S.diff, 0, S.mode || 'classic', S.map || 'town');
   try { applySave(S); } catch (e) { console.error(e); toast('存档读取失败，已开始新的一局', '#ff8a7a'); return; }
   TIPS.forEach(clearTimeout); TIPS = [];
   banner('继续', saveLabel(S), '#ffe7b0');
@@ -59,7 +59,8 @@ function applySave(S) {
   // older saves may have fewer weapons
   for (const k of ['owned', 'mag', 'ammo']) while (p[k].length < NW) p[k].push(0);
   p.z = pZ(p); p.zv = p.z; CAM.tx = p.x; CAM.ty = p.y;
-  W.zs = []; for (const [k, x, y, L, hp, max] of S.zs || []) { if (!ZT[k]) continue; const z = spawnZombie(k, 0); Object.assign(z, { x, y, L, hp, max }); z.z = surfZ(x, y, L); }
+  if (S.obj) { W.obj = S.obj; W.obv++; }
+  W.zs = []; for (const [k, x, y, L, hp, max, mz] of S.zs || []) { if (!ZT[k]) continue; const z = spawnZombie(k, 0); Object.assign(z, { x, y, L, hp, max }); z.z = surfZ(x, y, L); if (mz || ZT[k].boss) z.mz = 1; if (ZT[k].boss && W.obj && W.obj.curK === k) W.obj.cur = z.id; }
   W.spawnQ = (S.q || []).map(([t, k, side]) => ({ t, k, side }));
   recomputeStab(); W.navDirty = true; W.ver++; W.dirty = new Set(); updateFields(0, true); W.edges = edgeSpawns();
 }

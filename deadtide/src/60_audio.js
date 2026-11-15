@@ -81,6 +81,7 @@ function sfx(n, x, y) {
     case 'boom': noise(0.9, 1.0 * v, 'lowpass', 1800, 60, 0.6); tone('sine', 70, 25, 0.7, 0.6 * v); break;
     case 'throw': noise(0.15, 0.2, 'bandpass', 900, 2400, 1); break;
     case 'clink': tone('triangle', 1800 * r, 1500, 0.05, 0.08 * v); break;
+    case 'plane': noise(3.2, 0.32, 'lowpass', 260, 120, 1); tone('sawtooth', 70, 62, 3, 0.05); break;
     case 'spit': noise(0.25, 0.25 * v, 'bandpass', 600 * r, 1500, 3); break;
     case 'acid': noise(0.3, 0.25 * v, 'highpass', 2500 * r, 6000, 1); break;
     case 'rhit': tone('square', 880, 880, 0.08, 0.12); tone('square', 660, 660, 0.08, 0.12, 0.1); noise(0.1, 0.25, 'bandpass', 2000); break;

@@ -256,6 +256,25 @@ body.aiming canvas#cv{cursor:none}body.touch #reticle b{left:-34px;top:-38px}
 .bmhead{display:flex;align-items:baseline;justify-content:space-between}.bmhead h3{margin:0}.bmhint{font-size:12px;color:var(--sub)}
 #bigmapC{width:100%;aspect-ratio:1;border-radius:8px;image-rendering:pixelated;background:#1a1d1a}
 .bmleg{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:12px;color:var(--sub)}.bmleg i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:4px;vertical-align:-1px}
+#objp{width:100%;font-size:12px;text-align:left;background:rgba(0,0,0,.25);border-radius:6px;padding:4px 7px}
+#objp .ot{display:flex;gap:6px;align-items:baseline;color:#ffe2a0;font-size:13px}#objp .os{color:var(--sub);margin-top:1px}
+#objp .obar{height:4px;background:rgba(255,255,255,.12);border-radius:2px;margin-top:3px;overflow:hidden}#objp .obar i{display:block;height:100%;background:#ffcf6b;width:0}
+#objp.boss .obar{height:6px}#objp.boss .obar i{background:#ff5a4a}
+.modeBtn{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;border-color:rgba(255,207,107,.6)}
+.modeBtn span{font-size:16px;font-weight:700;color:#ffe2a0}.modeBtn small{font-size:12px;color:var(--sub)}
+.mscard{width:min(980px,96vw)!important}.mscard h3{margin:4px 0 0}
+.mgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:8px}
+.mcard{display:flex;flex-direction:column;gap:4px;align-items:flex-start;text-align:left;padding:10px 12px;min-height:0;height:auto;line-height:1.45}
+.mcard b{font-size:16px;color:#ffe2a0}.mcard p{margin:0;font-size:12px;color:var(--sub);white-space:normal}.mcard i{font-style:normal;font-size:11px;color:#9ad0ff}
+.mcard.sel,.mapcard.sel{border-color:#ffcf6b;box-shadow:0 0 0 2px rgba(255,207,107,.5) inset}
+.mapgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px}
+.mapcard{display:flex;flex-direction:column;gap:4px;padding:6px;min-height:0;height:auto;align-items:stretch;text-align:left}
+.mapcard canvas{width:100%;aspect-ratio:1;border-radius:6px;background:#222;image-rendering:pixelated}
+.mapcard b{font-size:14px}.mapcard p{margin:0;font-size:11px;color:var(--sub);white-space:normal;line-height:1.35}.mapcard em{font-style:normal;font-size:11px;color:#8fe39a}
+#ov .om{position:absolute;transform:translate(-50%,-100%);font-size:11px;font-weight:700;text-shadow:0 1px 3px #000;white-space:nowrap;text-align:center}
+#ov .oa{position:absolute;transform:translate(-50%,-50%);font-size:11px;font-weight:700;text-shadow:0 1px 3px #000;white-space:nowrap;text-align:center}
+#ov .oa i{display:block;font-style:normal;font-size:20px;line-height:1}
+@media (max-height:520px){.mapgrid{grid-template-columns:repeat(auto-fill,minmax(104px,1fr))}.mgrid{grid-template-columns:repeat(auto-fill,minmax(180px,1fr))}.mcard p{font-size:11px}.mapcard p{display:none}}
 </style>
 </head>
 <body>
@@ -279,6 +298,7 @@ body.aiming canvas#cv{cursor:none}body.touch #reticle b{left:-34px;top:-38px}
   </div>
   <div id="hTC" class="hcard">
     <div id="phase">白天</div>
+    <div id="objp" class="hidden"><div class="ot"><span id="objI"></span><b id="objT"></b></div><div class="os" id="objS"></div><div class="obar"><i id="objB"></i></div></div>
     <div id="tasks"></div>
     <button id="readyBtn" class="ghost">准备入夜 <span class="kbd">(N)</span></button>
   </div>
@@ -317,13 +337,14 @@ body.aiming canvas#cv{cursor:none}body.touch #reticle b{left:-34px;top:-38px}
 <div id="title" class="scr">
   <button id="hubBtn" class="hubBack ghost hidden">‹ 游戏厅</button>
   <div class="wrapT">
-    <div class="logo"><h1>尸潮<b>堡</b>垒</h1><div class="en">DEAD TIDE</div><div class="tag">砍树采石盖堡垒 · 完成任务拿奖励 · 撑过十五夜</div></div>
+    <div class="logo"><h1>尸潮<b>堡</b>垒</h1><div class="en">DEAD TIDE</div><div class="tag">六种模式 · 六张地图 · 砍树采石盖堡垒，守住尸潮</div></div>
     <div class="card menu">
       <div class="row"><input id="nameIn" maxlength="10" placeholder="你的名字"></div>
       <div class="lbl">难度</div>
       <div class="seg" id="diffSeg"><button data-d="easy">简单</button><button data-d="normal">普通</button><button data-d="hard">困难</button></div>
+      <button id="modeBtn" class="modeBtn"><span id="modeLbl">经典守夜</span><small id="mapLbl">地图：小镇</small></button>
       <button id="contBtn" class="primary hidden">继续上次</button>
-      <button id="soloBtn" class="primary">单人守夜</button>
+      <button id="soloBtn" class="primary">单人开始</button>
       <div id="coopBox" style="display:flex;flex-direction:column;gap:10px">
         <button id="hostBtn">创建双人房间</button>
         <div class="row"><input id="codeIn" maxlength="4" placeholder="房间码" style="text-transform:uppercase;font-family:var(--num);letter-spacing:.2em"><button id="joinBtn" style="flex:none">加入</button></div>
@@ -341,6 +362,8 @@ body.aiming canvas#cv{cursor:none}body.touch #reticle b{left:-34px;top:-38px}
     <div class="lbl" style="text-align:center">房间码（告诉队友）</div>
     <div class="code" id="lCode">····</div>
     <div class="plist"><div class="pl p0"><div class="n" id="lP0">房主</div><div class="s">房主 · 橙色</div></div><div class="pl p1"><div class="n" id="lP1">等待加入…</div><div class="s" id="lP1s">队友 · 青色</div></div></div>
+    <div class="lbl">模式 / 地图 <span id="lModeNote"></span></div>
+    <button id="lModeBtn" class="modeBtn"><span id="lModeLbl"></span><small id="lMapLbl"></small></button>
     <div class="lbl">难度 <span id="lDiffNote"></span></div>
     <div class="seg" id="lDiffSeg"><button data-d="easy">简单</button><button data-d="normal">普通</button><button data-d="hard">困难</button></div>
     <div class="status" id="lStatus"></div>
@@ -351,6 +374,7 @@ body.aiming canvas#cv{cursor:none}body.touch #reticle b{left:-34px;top:-38px}
 <div id="craft" class="modal hidden">
   <div class="card"><h3>工作台</h3><div class="lbl">材料全队共用 · 制作的武器和道具归你</div><div class="clist" id="clist"></div><button id="craftClose" class="ghost">关闭 <span class="kbd">(E)</span></button></div>
 </div>
+<div id="modesel" class="modal hidden"><div class="card mscard"><h3>选择模式</h3><div class="mgrid" id="mGrid"></div><h3>选择地图 <small id="mapHint" class="lbl"></small></h3><div class="mapgrid" id="mapGrid"></div><button id="msOk" class="primary">确定</button></div></div>
 <div id="bigmap" class="modal hidden"><div class="card bmcard"><div class="bmhead"><h3>地图</h3><span class="bmhint">点任意处关闭 · 电脑按 Tab / Esc</span></div><canvas id="bigmapC" width="640" height="640"></canvas><div class="bmleg" id="bmLeg"></div></div></div>
 <div id="pause" class="modal hidden">
   <div class="card"><h3 id="pauseT">暂停</h3>
@@ -367,7 +391,7 @@ body.aiming canvas#cv{cursor:none}body.touch #reticle b{left:-34px;top:-38px}
 <div id="help" class="modal hidden">
   <div class="card"><h3>玩法和操作</h3>
     <div class="help">
-      <h4>目标</h4><b>活下去，撑过 15 夜</b>，救援直升机就会来。所有人同时倒下就失败。丧尸会一路追着离它最近的人，挡路的墙会被砸开。<h4>丧尸</h4>游荡者、疾跑者、攀爬者（翻墙）、喷吐者（吐酸）、重锤（拆墙）、巨尸（血月），还有成群的尸犬、贴地的爬行尸、死了会炸开（连墙一起炸）的爆尸、会尖叫让周围丧尸发狂并引来更多丧尸的尖叫者、正面打不动的防暴尸（绕到侧面后面，或者用狙击枪、弩、火、炸药）。<h4>武器</h4>手枪爆头伤害高；霰弹枪近距离打退打晕；步枪连射越久越散；狙击枪穿透 5 只、带激光；弩穿透 3 只并把丧尸钉住；喷火器点燃一片，火会传染；榴弹发射器落地就炸。后三种在工作台造。<h4>每日任务</h4>每天天亮刷新 3 个小任务（左上角），比如击杀、搜索、建造、今夜无人倒下。完成立刻发奖励：材料、全队弹药、医疗包、手雷或强化弹头。没完成的会在下一个天亮作废。
+      <h4>目标</h4>标题页点「模式」选玩法和地图：<b>经典守夜</b>撑过 15 夜；<b>修车逃离</b>找齐 6 个零件修好卡车；<b>摧毁尸巢</b>炸掉 5 个尸巢和母巢；<b>信号塔</b>守住 4 座塔的校准再等直升机；<b>抢空投</b>集齐 6 个空投信标后守住撤离点；<b>尸王狩猎</b>击杀 4 只尸王。当前目标显示在屏幕上方，屏幕边的箭头和大地图（点小地图 / Tab）指路。所有人同时倒下就失败。丧尸会一路追着离它最近的人，挡路的墙会被砸开。<h4>丧尸</h4>游荡者、疾跑者、攀爬者（翻墙）、喷吐者（吐酸）、重锤（拆墙）、巨尸（血月），还有成群的尸犬、贴地的爬行尸、死了会炸开（连墙一起炸）的爆尸、会尖叫让周围丧尸发狂并引来更多丧尸的尖叫者、正面打不动的防暴尸（绕到侧面后面，或者用狙击枪、弩、火、炸药）。<h4>武器</h4>手枪爆头伤害高；霰弹枪近距离打退打晕；步枪连射越久越散；狙击枪穿透 5 只、带激光；弩穿透 3 只并把丧尸钉住；喷火器点燃一片，火会传染；榴弹发射器落地就炸。后三种在工作台造。<h4>每日任务</h4>每天天亮刷新 3 个小任务（左上角），比如击杀、搜索、建造、今夜无人倒下。完成立刻发奖励：材料、全队弹药、医疗包、手雷或强化弹头。没完成的会在下一个天亮作废。
       <h4>白天</h4>出门砍树（木材）、采石（砖石），搜汽车、补给箱和废墟瓦砾（钢材、零件、弹药），离家越远收获越多；回来盖楼、在营地小屋的工作台造枪。河上只有两座桥，丧尸也只能从桥上过河。每 5 夜一次血月。
       <h4>建造</h4>只能在营地周围的黄框里建造。<b>指哪盖哪，不用切楼层</b>：指地面或楼板就盖在上面；指墙顶就往上叠一层；指墙的侧面就贴着它盖；楼板会自动铺成墙上的天花板，站在楼上指外面能往外延伸阳台。<b>按住拖动</b>沿直线一次盖一排。拆除也是指哪拆哪。方块要有<b>支撑</b>：从地面往上传，往旁边每格减 1，支撑断了会连锁坍塌。<b>楼上最外圈、上面没东西的墙是半人高的矮墙</b>：子弹能从上面飞过，贴着矮墙可以探身往下打；地面一层的墙还是整面墙。门让人通过但挡丧尸，射击栅栏能从里面开枪。丧尸会砸墙砸门、走楼梯；攀爬者会翻墙。<h4>爬梯、翻越和跳</h4>楼梯换成了靠墙的爬梯：朝箭头方向走就爬上去，往下爬要继续推一下。丧尸爬梯子很慢（攀爬者除外），所以多放几个梯子方便自己走位，梯子口就是守点。人能<b>翻过</b>沙袋矮墙、拒马、铁皮掩体、栅栏、瓦砾和一人高的墙（贴着推一下，或按跳），也能跳过一格宽的空隙；丧尸不会翻，只能砸。<h4>障碍物</h4>沙袋矮墙（子弹能从上面打过去）、拒马（丧尸砸它会被扎）、铁皮掩体（挡子弹）、捕兽夹（夹住丧尸 2.5 秒，一次性）、铁丝网、探照灯。用矮墙和掩体把楼里隔成一段一段，自己翻来翻去，丧尸只能一路砸过来。<h4>建造确认</h4>点一下或拖一排，先出现绿色预览（拆除是红色），再点 ✓、按 Enter 或再点一下预览才真正建造 / 拆除；建造栏的「二次确认」可以关掉。
       <h4>视角</h4>滚轮或 ＋/－ 缩放，Q / E 或 ⟲⟳ 转镜头。楼层视图默认跟随你所在的层，上面的楼层会自动隐藏；▲▼ 手动看别的层，「跟随我所在的层」恢复。
@@ -4141,6 +4165,12 @@ defB(38, { key: 'vending', P: 1, Z: 1, B: 1, nat: 1, spot: 'vending' });
 defB(39, { key: 'scrap', P: 1, Z: 1, nat: 1, res: 'steel', hp: 1 });
 defB(40, { key: 'logs', P: 1, Z: 1, nat: 1, res: 'wood', hp: 1 });
 defB(41, { key: 'bush', nat: 1, res: 'wood', hp: 1 });
+// mode objectives (not breakable by zombies; the player damages nests through modeHit)
+defB(43, { key: 'objbox', P: 1, Z: 1, nat: 1, obj: 1, col: '#ffcf3a' });
+defB(44, { key: 'nest', P: 1, Z: 1, B: 1, nat: 1, obj: 1, hp: 1500, col: '#6a1f2a' });
+defB(45, { key: 'tower', P: 1, Z: 1, B: 1, nat: 1, obj: 1, col: '#8a96a0' });
+defB(46, { key: 'drop', P: 1, Z: 1, B: 1, nat: 1, obj: 1, col: '#3a6ea8' });
+defB(47, { key: 'truck', P: 1, Z: 1, B: 1, nat: 1, obj: 1, col: '#5a6a3a' });
 defB(42, { key: 'rail', P: 1, Z: 1, nat: 1, brk: 1, vault: 1, hp: 120, col: '#6a6f74' }); // balcony / roof / mezzanine railing: low, vaultable, bullets pass
 const PAL = [1, 2, 3, 4, 5, 6, 7, 8, 12, 13, 14, 9, 15, 10];
 const SLAB_BRIDGE = 11; // slab id for the pre-built bridges (not buildable)
@@ -4180,13 +4210,17 @@ const ZT = {
   crawler: { name: '爬行尸', hp: 60, spd: 0.75, r: 0.3, h: 0.46, dmg: 11, bdmg: 9, cd: 0.9, sc: 1.2 },
   bloater: { name: '爆尸', hp: 120, spd: 0.75, r: 0.4, h: 1.32, dmg: 10, bdmg: 10, cd: 1.1, sc: 1.32, blast: 1 },
   screamer: { name: '尖叫者', hp: 80, spd: 1.5, r: 0.3, h: 1.26, dmg: 9, bdmg: 6, cd: 0.9, sc: 1.26, scream: 1 },
+  leaper: { name: '飞扑尸王', hp: 2300, spd: 1.15, r: 0.5, h: 2.1, dmg: 30, bdmg: 60, cd: 1.2, sc: 2.0, kb: 7, boss: 1, look: 'boss', skin: '#7a4a3a' },
+  digger: { name: '掘地尸王', hp: 2700, spd: 0.95, r: 0.55, h: 2.0, dmg: 34, bdmg: 90, cd: 1.4, sc: 2.0, kb: 8, boss: 1, look: 'brute', skin: '#6a6048' },
+  summoner: { name: '召唤尸王', hp: 2100, spd: 0.72, r: 0.5, h: 2.3, dmg: 22, bdmg: 40, cd: 1.4, sc: 2.2, boss: 1, look: 'boss', skin: '#5a5470' },
+  venom: { name: '毒液尸王', hp: 2300, spd: 0.85, r: 0.52, h: 2.1, dmg: 26, bdmg: 50, cd: 1.3, sc: 2.1, range: 12, boss: 1, look: 'bloater', skin: '#7a9a3a' },
   armored: { name: '防暴尸', hp: 170, spd: 0.9, r: 0.36, h: 1.26, dmg: 15, bdmg: 16, cd: 1.1, sc: 1.3, armor: 0.3 },
 };
 // aim assist (SET.assist): fire-button lock range (x weapon range), lock-on time before it fires, spread while auto-aimed, mouse/finger magnet
 const PORT = 1.25; // firing port: your own shots pass a wall / door you built if it is this close to you
 const ASSIST = [{ name: '关', range: 0, acq: 0, spread: 1, mag: 0 }, { name: '标准', range: 0.75, acq: 0.3, spread: 1.5, mag: 1 }, { name: '强', range: 1, acq: 0, spread: 1, mag: 1 }];
 const assistLv = () => ASSIST[SET.assist == null ? 1 : SET.assist] || ASSIST[1];
-const ZKEYS = ['walker', 'runner', 'climber', 'spitter', 'brute', 'boss', 'dog', 'crawler', 'bloater', 'screamer', 'armored']; // order is the net id
+const ZKEYS = ['walker', 'runner', 'climber', 'spitter', 'brute', 'boss', 'dog', 'crawler', 'bloater', 'screamer', 'armored', 'leaper', 'digger', 'summoner', 'venom']; // order is the net id
 
 /* ---------- scavenging / gathering ---------- */
 // vanish: searched once and gone (restocked at random places every dawn); otherwise a fixture that refills sometimes
@@ -4337,7 +4371,7 @@ const inZone = (x, y) => radioDist(x, y) <= BUILD_R;
 /* ---------- map generation (deterministic from seed) ----------
    128 x 128: river and forest in the west, the camp north-west of centre, hills to the north-east, a farm in the north
    and a big ruined town (three rows of blocks on a street grid) filling the south and south-east. Town lots: [x0, y0, x1, y1, storeys]. */
-const TOWN_HOUSES = [
+const TOWN_LOTS = [
   // [x0, y0, x1, y1, storeys, type] — one building per street block, two in the long northern row, yards in between.
   // apt: apartments (corridor + rooms, balconies, roof); villa: house (open living room downstairs, bedrooms in the attic);
   // ware: warehouse (tall hall, mezzanine); shop: supermarket (aisles, stockroom, roof); clinic: wards off a corridor (medkits);
@@ -4350,43 +4384,42 @@ const TOWN_HOUSES = [
   [36, 134, 52, 150, 2, 'villa'], [64, 134, 85, 151, 3, 'apt'], [97, 136, 118, 150, 1, 'garage'], [131, 134, 150, 150, 2, 'police'],
   [48, 3, 58, 11, 1, 'barn'],
 ];
-const RADIO_XY = [48, 40];
+const TOWN_HOUSES = TOWN_LOTS.map(h => h.slice()); // live list for the current map (setMap swaps it)
+const RADIO_XY = [48, 40];                          // live camp position for the current map
 function genMap(seed) {
+  const M = MAPDEF;
   const r = mulberry(seed ^ 0x2545F491);
   const G = new Uint8Array(MW * MH), tt = new Uint8Array(MW * MH);
   const blk = new Uint8Array(NC), bhp = new Float32Array(NC), slab = new Uint8Array(NC), shp = new Float32Array(NC), bdir = new Uint8Array(NC);
   const col = (x, y) => y * MW + x;
   const noise = (x, y, s) => { const xi = Math.floor(x / s), yi = Math.floor(y / s), fx = x / s - xi, fy = y / s - yi; const v = (a, b) => hash2(a + seed % 997, b + 31); const sm = t => t * t * (3 - 2 * t); return lerp(lerp(v(xi, yi), v(xi + 1, yi), sm(fx)), lerp(v(xi, yi + 1), v(xi + 1, yi + 1), sm(fx)), sm(fy)); };
-  const [RX, RY] = RADIO_XY;
+  const [RX, RY] = RADIO_XY, radioDist0 = (x, y) => Math.max(Math.abs(x - RX), Math.abs(y - RY));
   const inTown = (x, y, pad) => TOWN_HOUSES.some(([x0, y0, x1, y1]) => x >= x0 - pad && x <= x1 + pad && y >= y0 - pad && y <= y1 + pad);
   // hills (kept away from the base and the town)
   const hill = (cx, cy, rad, top) => { for (let y = 0; y < MH; y++) for (let x = 0; x < MW; x++) { if (inTown(x, y, 2) || Math.max(Math.abs(x - RX), Math.abs(y - RY)) <= BUILD_R + 1) continue; const d = d2(x, y, cx, cy) / rad + (noise(x, y, 5) - 0.5) * 0.45; if (d < 1) { G[col(x, y)] = Math.max(G[col(x, y)], 1); tt[col(x, y)] = TT.hill; } if (top && d < 0.48) G[col(x, y)] = 2; } };
-  hill(80, 20, 12.5, true); hill(105, 32, 9, true); hill(119, 11, 6.5, false); hill(10, 84, 7.5, true); hill(26, 8, 5.5, false); hill(12, 116, 6, false);
+  for (const h of M.hills || []) hill(...h);
   // river (west), lake (south-west of town), farm pond (north)
-  const riverC = y => 16 + 3 * Math.sin(y / 11 + 1.3) + 1.4 * Math.sin(y / 3.7);
-  for (let y = 0; y < MH; y++) { const c = Math.round(riverC(y)), w = 2 + (noise(0, y, 6) > 0.55 ? 1 : 0); for (let x = c; x < c + w; x++) { G[col(x, y)] = 0; tt[col(x, y)] = TT.water; } }
+  const riverC = M.river ? M.river.c : null;
+  if (riverC) for (let y = 0; y < MH; y++) { const c = Math.round(riverC(y)), w = (M.river.w || 2) + (noise(0, y, 6) > 0.55 ? 1 : 0); for (let x = c; x < c + w; x++) { G[col(x, y)] = 0; tt[col(x, y)] = TT.water; } }
   const pond = (cx, cy, rx, ry) => { for (let y = 0; y < MH; y++) for (let x = 0; x < MW; x++) { const dx = (x - cx) / rx, dy = (y - cy) / ry; if (dx * dx + dy * dy + (noise(x, y, 3) - 0.5) * 0.5 < 1) { G[col(x, y)] = 0; tt[col(x, y)] = TT.water; } } };
-  pond(30, 87, 5.5, 3.8); pond(66, 8, 3.2, 2.4);
+  for (const p of M.ponds || []) pond(...p);
+  if (M.ocean) for (let y = 0; y < MH; y++) for (let x = 0; x < MW; x++) if (M.ocean(x, y, noise)) { G[col(x, y)] = 0; tt[col(x, y)] = TT.water; }
   // roads: main east-west road y 51-52, town road x 57-58 south of it, farm track x 44-45 north
   const roadCells = new Set();
   const road = (x, y) => { if (!inMap(x, y) || G[col(x, y)] !== 0) return; if (tt[col(x, y)] !== TT.water) tt[col(x, y)] = TT.road; roadCells.add(col(x, y)); };
-  for (let x = 0; x < MW; x++) { road(x, 51); road(x, 52); }
-  for (let y = 53; y < MH; y++) { road(57, y); road(58, y); }
-  for (let y = 0; y < 19; y++) { road(44, y); road(45, y); }
-  for (let x = 30; x <= MW - 2; x++) { road(x, 100); road(x, 101); road(x, 128); road(x, 129); } // town cross streets
-  for (let y = 53; y < MH; y++) { road(90, y); road(91, y); road(124, y); road(125, y); }
+  const K = { r, noise, G, tt, col, road, roadCells, RX, RY, inTown, riverC };
+  M.roads(K);
   for (let y = 0; y < MH; y++) for (let x = 0; x < MW; x++) {
     const i = col(x, y);
-    if (tt[i] === TT.grass) { const n = noise(x, y, 7); if ((x < riverC(y) - 1 && n > 0.22) || (n > 0.8 && !inTown(x, y, 3))) tt[i] = TT.forest; else if (n < 0.16) tt[i] = TT.dirt; }
+    if (tt[i] === TT.grass) { const n = noise(x, y, 7); if (M.forestAt ? M.forestAt(x, y, n, K) : (n > (M.forestN || 0.8) && !inTown(x, y, 3))) tt[i] = TT.forest; else if (n < (M.dirtN || 0.16)) tt[i] = TT.dirt; }
     if (tt[i] !== TT.water && tt[i] !== TT.road) for (const [dx, dy] of DIRS) { const xx = x + dx, yy = y + dy; if (inMap(xx, yy) && tt[col(xx, yy)] === TT.water && G[i] === 0) { tt[i] = TT.sand; break; } }
   }
-  // farm fields north of the base: ploughed rows between the track and the barn
-  for (let y = 2; y <= 14; y++) for (let x = 32; x <= 43; x++) if (G[col(x, y)] === 0 && tt[col(x, y)] !== TT.water && tt[col(x, y)] !== TT.road) tt[col(x, y)] = y % 2 ? TT.dirt : TT.grass;
+  if (M.fields) M.fields(K);
   // fill terrain below ground; water
   for (let y = 0; y < MH; y++) for (let x = 0; x < MW; x++) { const g = G[col(x, y)]; for (let L = 0; L < g; L++) blk[ci(x, y, L)] = 20; if (tt[col(x, y)] === TT.water) blk[ci(x, y, 0)] = 23; }
   // bridges over the river: the main road, a northern footbridge, a southern one
-  const bridgeRow = (ys) => { for (const y of ys) for (let x = 0; x < 30; x++) if (tt[col(x, y)] === TT.water) { blk[ci(x, y, 0)] = 0; slab[ci(x, y, 0)] = SLAB_BRIDGE; } };
-  bridgeRow([51, 52]); bridgeRow([22]); bridgeRow([74]);
+  for (const i of roadCells) if (tt[i] === TT.water) { const x = i % MW, y = Math.floor(i / MW); blk[ci(x, y, 0)] = 0; slab[ci(x, y, 0)] = SLAB_BRIDGE; }
+  for (const [y, xa, xb] of M.bridges || []) for (let x = xa; x <= xb; x++) if (inMap(x, y) && tt[col(x, y)] === TT.water) { blk[ci(x, y, 0)] = 0; slab[ci(x, y, 0)] = SLAB_BRIDGE; }
   // ramps up the hills
   const ramps = [];
   for (let pass = 0; pass < 2; pass++) for (let y = 1; y < MH - 1; y++) for (let x = 1; x < MW - 1; x++) {
@@ -4567,41 +4600,31 @@ function genMap(seed) {
     }
     for (const h of hatches) if (!placed.has(h)) { const [x, y, L] = h.split(',').map(Number); if (L <= st && L < ML && okIn(x, y) && !slab[ci(x, y, L)] && (type !== 'ware' || y <= y0 + 3)) F_(x, y, L); }
   }
-  // landmarks: gas station, parking lot, park, military checkpoint, junkyard, campsites
   const free = (x, y) => inMap(x, y) && G[col(x, y)] === 0 && tt[col(x, y)] !== TT.water && !blk[ci(x, y, 0)] && !slab[ci(x, y, 0)];
   const lot = (x0, y0, x1, y1, t) => { for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) if (inMap(x, y) && G[col(x, y)] === 0 && tt[col(x, y)] !== TT.water) tt[col(x, y)] = t; };
   const at = (x, y, id, d) => { if (free(x, y)) put(x, y, 0, id, d); };
-  lot(74, 54, 86, 61, TT.road); at(78, 56, 37); at(82, 56, 37); at(76, 60, 38); at(84, 60, 38); at(80, 58, 25, 0); at(86, 55, 32); at(74, 61, 32);       // gas station
-  lot(40, 54, 54, 59, TT.road); for (const [x, y, d] of [[42, 55, 1], [45, 55, 1], [51, 55, 3], [43, 58, 1], [49, 58, 3], [53, 58, 1]]) at(x, y, 25, d); at(54, 54, 32); // parking lot
-  for (let x = 4; x <= 20; x++) for (const y of [140, 150]) if ((x + y) % 3) at(x, y, 41);                                                           // park out west: hedges
-  at(8, 145, 22); at(15, 146, 22); at(12, 144, 38); at(18, 142, 33);
-  for (const [x, y] of [[104, 49], [105, 49], [107, 49], [108, 49], [104, 54], [105, 54], [107, 54], [108, 54]]) at(x, y, 27);                     // checkpoint
-  at(103, 48, 36); at(109, 55, 36); at(106, 48, 37); at(110, 50, 25, 1);
-  lot(112, 38, 124, 47, TT.dirt); for (let k = 0; k < 9; k++) at(113 + Math.floor(r() * 11), 39 + Math.floor(r() * 8), 39);                          // junkyard
-  for (const [x, y, d] of [[114, 41, 0], [119, 44, 1], [122, 39, 2], [116, 46, 3]]) at(x, y, 25, d); at(124, 42, 37); at(112, 45, 37); at(118, 38, 35);
-  for (let x = 111; x <= 125; x++) for (const y of [37, 48]) if (r() < 0.75) at(x, y, 27);
-  for (const [cx, cy] of [[8, 32], [97, 14], [12, 100], [74, 34]]) { at(cx, cy, 33); at(cx + 1, cy + 1, 40); at(cx - 1, cy + 2, 40); at(cx + 2, cy - 1, 41); at(cx - 2, cy, 41); } // campsites
-  at(46, 13, 40); at(47, 15, 40); at(59, 12, 39); at(60, 6, 35);                                                                                    // farmyard
+  Object.assign(K, { put, putS, at, lot, free, blk, slab, bdir });
+  if (M.landmarks) M.landmarks(K);
   // trees, rocks, bushes, log piles, scrap
   const clearNear = (x, y) => Math.max(Math.abs(x - RX), Math.abs(y - RY)) <= 9;
   for (let y = 0; y < MH; y++) for (let x = 0; x < MW; x++) {
     const i = col(x, y), t = tt[i], g = G[i];
     if (t === TT.water || t === TT.road || roadCells.has(i) || clearNear(x, y) || inTown(x, y, 1) || blk[ci(x, y, g)]) continue;
-    if (y >= 2 && y <= 14 && x >= 32 && x <= 43) continue; // fields
-    const pTree = t === TT.forest ? 0.42 : t === TT.hill ? 0.1 : 0.035, pRock = t === TT.hill ? 0.05 : 0.018;
+    if (M.noVeg && M.noVeg(x, y)) continue;
+    const VG = M.veg || {}, pTree = (t === TT.forest ? 0.42 : t === TT.hill ? 0.1 : 0.035) * (VG.tree == null ? 1 : VG.tree), pRock = (t === TT.hill ? 0.05 : 0.018) * (VG.rock == null ? 1 : VG.rock);
     const v = r();
     if (v < pTree) put(x, y, g, 22); else if (v < pTree + pRock) put(x, y, g, 21);
-    else if (v < pTree + pRock + (t === TT.forest ? 0.05 : 0.025)) put(x, y, g, 41);
+    else if (v < pTree + pRock + (t === TT.forest ? 0.05 : 0.025) * (VG.bush == null ? 1 : VG.bush)) put(x, y, g, 41);
     else if (v < pTree + pRock + 0.032 && t === TT.forest) put(x, y, g, 40);
     else if (v < pTree + pRock + 0.03 && (t === TT.hill || t === TT.dirt)) put(x, y, g, 39);
   }
   // cars on the roads (not on bridges), crates in the open
-  const cars = [[8, 51], [24, 52], [38, 51], [66, 52], [80, 51], [92, 52], [110, 51], [124, 52], [57, 60], [58, 71], [57, 90], [57, 108], [58, 122], [40, 76], [70, 77], [86, 76], [100, 77], [118, 76], [80, 101], [112, 100], [45, 100], [90, 60], [91, 84], [90, 112], [44, 6], [45, 16]];
+  let cars = M.cars;
+  if (!cars) { cars = []; const rc = [...roadCells].filter(i => tt[i] !== TT.water); for (let k = 0; k < 400 && cars.length < (M.nCars || 28); k++) { const i = rc[Math.floor(r() * rc.length)], x = i % MW, y = Math.floor(i / MW); if (!cars.some(([a, b]) => Math.abs(a - x) + Math.abs(b - y) < 8) && radioDist0(x, y) > 9) cars.push([x, y]); } }
   for (const [x, y] of cars) if (inMap(x, y) && !slab[ci(x, y, 0)] && G[col(x, y)] === 0 && !blk[ci(x, y, 0)]) put(x, y, 0, 25, Math.floor(r() * 4));
-  for (const [x, y] of [[22, 40], [70, 30], [30, 60], [8, 30], [88, 64], [76, 6], [10, 66], [64, 101], [92, 102], [36, 30], [104, 44], [120, 30], [118, 56], [52, 115], [126, 110], [30, 120], [8, 120], [100, 8], [124, 96]]) if (inMap(x, y) && !blk[ci(x, y, G[col(x, y)])] && tt[col(x, y)] !== TT.water) put(x, y, G[col(x, y)], 26);
-  // fences: around the farm fields and along the town lots
-  for (let x = 31; x <= 43; x++) for (const y of [1, 15]) if (!blk[ci(x, y, 0)] && G[col(x, y)] === 0 && tt[col(x, y)] !== TT.road && tt[col(x, y)] !== TT.water) put(x, y, 0, 27);
-  for (let y = 2; y <= 14; y++) if (!blk[ci(31, y, 0)] && G[col(31, y)] === 0 && tt[col(31, y)] !== TT.water) put(31, y, 0, 27);
+  const crates = M.crates || Array.from({ length: 19 }, () => [Math.floor(r() * MW), Math.floor(r() * MH)]);
+  for (const [x, y] of crates) if (inMap(x, y) && !blk[ci(x, y, G[col(x, y)])] && tt[col(x, y)] !== TT.water && radioDist0(x, y) > 9) put(x, y, G[col(x, y)], 26);
+  if (M.after) M.after(K);
   for (const [x0, y0, x1, y1] of TOWN_HOUSES) for (let x = x0 - 1; x <= x1 + 1; x++) { const y = y1 + 2; if (inMap(x, y) && !blk[ci(x, y, 0)] && G[col(x, y)] === 0 && tt[col(x, y)] !== TT.road && tt[col(x, y)] !== TT.water && hash2(x, y) < 0.7) put(x, y, 0, 27); }
   // spots
   const spots = [];
@@ -4691,6 +4714,151 @@ function canPlace(x, y, L, id, dir) {
   }
   if (supportIf(x, y, L, id) <= 0) return Bi.dep ? '下面要有地面或楼板' : '没有支撑，会塌';
   return '';
+}
+
+/* ---- 12_maps.js ---- */
+/* ================= maps: presets for the world generator (setMap swaps the live lots / camp) ================= */
+// Each preset: camp [x, y], lots (TOWN_HOUSES rows), hills [cx, cy, radius, top], river { c: y => x, w }, ponds [cx, cy, rx, ry],
+// ocean(x, y, noise) -> water, roads(K), forestAt(x, y, n, K), fields/landmarks/after(K) hooks, veg multipliers, colours.
+const MAPS = {};
+MAPS.town = {
+  name: '小镇', desc: '河边的小镇：公寓、警局、超市、修车厂，北边有农场', camp: [48, 40], lots: TOWN_LOTS,
+  hills: [[80, 20, 12.5, true], [105, 32, 9, true], [119, 11, 6.5, false], [10, 84, 7.5, true], [26, 8, 5.5, false], [12, 116, 6, false]],
+  river: { c: y => 16 + 3 * Math.sin(y / 11 + 1.3) + 1.4 * Math.sin(y / 3.7), w: 2 },
+  ponds: [[30, 87, 5.5, 3.8], [66, 8, 3.2, 2.4]],
+  bridges: [[22, 0, 30], [74, 0, 30]],
+  roads({ road }) {
+  for (let x = 0; x < MW; x++) { road(x, 51); road(x, 52); }
+  for (let y = 53; y < MH; y++) { road(57, y); road(58, y); }
+  for (let y = 0; y < 19; y++) { road(44, y); road(45, y); }
+  for (let x = 30; x <= MW - 2; x++) { road(x, 100); road(x, 101); road(x, 128); road(x, 129); } // town cross streets
+  for (let y = 53; y < MH; y++) { road(90, y); road(91, y); road(124, y); road(125, y); }
+  },
+  forestAt: (x, y, n, K) => (x < K.riverC(y) - 1 && n > 0.22) || (n > 0.8 && !K.inTown(x, y, 3)),
+  fields({ G, tt, col }) {
+  for (let y = 2; y <= 14; y++) for (let x = 32; x <= 43; x++) if (G[col(x, y)] === 0 && tt[col(x, y)] !== TT.water && tt[col(x, y)] !== TT.road) tt[col(x, y)] = y % 2 ? TT.dirt : TT.grass;
+  },
+  noVeg: (x, y) => y >= 2 && y <= 14 && x >= 32 && x <= 43,
+  landmarks({ lot, at, r, free }) {
+  lot(74, 54, 86, 61, TT.road); at(78, 56, 37); at(82, 56, 37); at(76, 60, 38); at(84, 60, 38); at(80, 58, 25, 0); at(86, 55, 32); at(74, 61, 32);       // gas station
+  lot(40, 54, 54, 59, TT.road); for (const [x, y, d] of [[42, 55, 1], [45, 55, 1], [51, 55, 3], [43, 58, 1], [49, 58, 3], [53, 58, 1]]) at(x, y, 25, d); at(54, 54, 32); // parking lot
+  for (let x = 4; x <= 20; x++) for (const y of [140, 150]) if ((x + y) % 3) at(x, y, 41);                                                           // park out west: hedges
+  at(8, 145, 22); at(15, 146, 22); at(12, 144, 38); at(18, 142, 33);
+  for (const [x, y] of [[104, 49], [105, 49], [107, 49], [108, 49], [104, 54], [105, 54], [107, 54], [108, 54]]) at(x, y, 27);                     // checkpoint
+  at(103, 48, 36); at(109, 55, 36); at(106, 48, 37); at(110, 50, 25, 1);
+  lot(112, 38, 124, 47, TT.dirt); for (let k = 0; k < 9; k++) at(113 + Math.floor(r() * 11), 39 + Math.floor(r() * 8), 39);                          // junkyard
+  for (const [x, y, d] of [[114, 41, 0], [119, 44, 1], [122, 39, 2], [116, 46, 3]]) at(x, y, 25, d); at(124, 42, 37); at(112, 45, 37); at(118, 38, 35);
+  for (let x = 111; x <= 125; x++) for (const y of [37, 48]) if (r() < 0.75) at(x, y, 27);
+  for (const [cx, cy] of [[8, 32], [97, 14], [12, 100], [74, 34]]) { at(cx, cy, 33); at(cx + 1, cy + 1, 40); at(cx - 1, cy + 2, 40); at(cx + 2, cy - 1, 41); at(cx - 2, cy, 41); } // campsites
+  at(46, 13, 40); at(47, 15, 40); at(59, 12, 39); at(60, 6, 35);                                                                                    // farmyard
+
+  },
+  after({ blk, G, tt, col, put }) {
+  // fences: around the farm fields and along the town lots
+  for (let x = 31; x <= 43; x++) for (const y of [1, 15]) if (!blk[ci(x, y, 0)] && G[col(x, y)] === 0 && tt[col(x, y)] !== TT.road && tt[col(x, y)] !== TT.water) put(x, y, 0, 27);
+  for (let y = 2; y <= 14; y++) if (!blk[ci(31, y, 0)] && G[col(31, y)] === 0 && tt[col(31, y)] !== TT.water) put(31, y, 0, 27);
+
+  },
+  cars: [[8, 51], [24, 52], [38, 51], [66, 52], [80, 51], [92, 52], [110, 51], [124, 52], [57, 60], [58, 71], [57, 90], [57, 108], [58, 122], [40, 76], [70, 77], [86, 76], [100, 77], [118, 76], [80, 101], [112, 100], [45, 100], [90, 60], [91, 84], [90, 112], [44, 6], [45, 16]],
+  crates: [[22, 40], [70, 30], [30, 60], [8, 30], [88, 64], [76, 6], [10, 66], [64, 101], [92, 102], [36, 30], [104, 44], [120, 30], [118, 56], [52, 115], [126, 110], [30, 120], [8, 120], [100, 8], [124, 96]],
+};
+MAPS.forest = {
+  name: '林地', desc: '密林和河谷：伐木场、护林站、湖边小屋，视野短、近战多', camp: [80, 82],
+  lots: [[18, 18, 42, 32, 2, 'ware'], [96, 14, 113, 25, 2, 'police'], [20, 100, 35, 111, 2, 'villa'], [44, 128, 66, 140, 3, 'apt'], [92, 100, 108, 110, 1, 'shop'], [128, 56, 150, 68, 1, 'garage'], [132, 120, 148, 131, 2, 'villa'], [46, 50, 62, 62, 2, 'clinic']],
+  hills: [[30, 62, 8, true], [140, 142, 8, true], [70, 150, 5, false], [146, 92, 6, false], [100, 50, 5, false]],
+  river: { c: y => 118 + 7 * Math.sin(y / 14) + 2 * Math.sin(y / 5), w: 3 },
+  ponds: [[38, 122, 5, 3.5], [140, 36, 4, 3]],
+  roads({ road }) {
+    for (let x = 20; x <= 120; x++) { road(x, 34); road(x, 35); }
+    for (let x = 8; x <= 156; x++) { road(x, 92); road(x, 93); }
+    for (let x = 20; x <= 156; x++) { road(x, 114); road(x, 115); }
+    for (let y = 8; y <= 152; y++) { road(70, y); road(71, y); }
+    for (let y = 30; y <= 150; y++) { road(154, y); road(155, y); }
+    for (let y = 26; y <= 34; y++) { road(104, y); road(105, y); }
+  },
+  forestAt: (x, y, n, K) => n > 0.3 && !K.inTown(x, y, 4) && Math.max(Math.abs(x - K.RX), Math.abs(y - K.RY)) > 12,
+  veg: { tree: 1.15, bush: 1.4 },
+  nCars: 14,
+};
+MAPS.desert = {
+  name: '荒漠', desc: '开阔的荒漠和台地：公路交叉口的加油站、汽车旅馆，视野远、适合狙击', camp: [60, 100],
+  lots: [[90, 76, 113, 88, 2, 'apt'], [40, 40, 56, 50, 1, 'shop'], [100, 40, 120, 52, 1, 'garage'], [120, 104, 138, 116, 2, 'police'], [36, 128, 60, 142, 2, 'ware'], [130, 16, 146, 28, 2, 'villa'], [96, 128, 112, 140, 2, 'clinic']],
+  hills: [[26, 26, 9, true], [124, 44, 10, true], [146, 132, 8, true], [80, 146, 7, false], [18, 146, 7, true], [76, 18, 6, false], [140, 80, 6, false], [20, 80, 5, true]],
+  ponds: [[106, 100, 4.5, 3.5]],
+  roads({ road }) {
+    for (let x = 0; x < MW; x++) { road(x, 70); road(x, 71); }
+    for (let y = 0; y < MH; y++) { road(84, y); road(85, y); }
+    for (let x = 20; x <= 150; x++) { road(x, 124); road(x, 125); }
+    for (let y = 72; y <= 150; y++) { road(30, y); road(31, y); }
+  },
+  landmarks({ lot, at }) {
+    lot(72, 60, 82, 68, TT.road); at(75, 62, 37); at(79, 62, 37); at(74, 66, 38); at(80, 66, 25, 0); at(82, 61, 32);          // gas station at the crossing
+    for (const [x, y, d] of [[40, 72, 0], [60, 69, 2], [100, 72, 1], [130, 69, 0], [86, 30, 1], [84, 110, 3]]) at(x, y, 25, d); // wrecks on the highway
+  },
+  forestN: 0.86, dirtN: 0.3, veg: { tree: 0.22, rock: 2.6, bush: 0.6 },
+  tcol: { [TT.grass]: ['#c8aa72', '#c2a46c', '#cfb17a'], [TT.hill]: ['#b48f5c', '#ad8956', '#b9945f'], [TT.forest]: ['#a99a62', '#a09158'], [TT.dirt]: ['#a8805a', '#b08860'], [TT.sand]: ['#d6bf8a', '#ddc792'], [TT.road]: ['#56524c', '#5a564f'] },
+  mc: { [TT.grass]: '#c4a66e', [TT.hill]: '#a8845a', [TT.dirt]: '#a07a52', [TT.road]: '#55524c', [TT.sand]: '#d6bf8a', [TT.forest]: '#9c8e5c', [TT.water]: '#3a7a96' },
+  trees: { pine: ['#5f6b3a', '#66723f', '#6e7a45'], oak: ['#7a7a45', '#8a8450'], trunk: '#5a4632' }, bush: '#8a8a52',
+  nCars: 20,
+};
+const ISLES = [[80, 82, 46], [30, 28, 20], [132, 28, 21], [28, 134, 19], [134, 132, 22]];
+MAPS.islands = {
+  name: '海岛', desc: '一座大岛和四座小岛，桥连在一起：雨林、海滩，过桥是咽喉要道', camp: [80, 82],
+  lots: [[84, 100, 98, 109, 1, 'shop'], [84, 50, 99, 60, 2, 'clinic'], [104, 76, 118, 87, 2, 'villa'], [20, 18, 36, 29, 2, 'villa'], [122, 18, 140, 30, 2, 'police'], [16, 126, 36, 137, 1, 'garage'], [122, 122, 144, 134, 3, 'apt'], [46, 70, 58, 80, 1, 'shop']],
+  ocean: (x, y, noise) => !TOWN_HOUSES.some(([x0, y0, x1, y1]) => x >= x0 - 3 && x <= x1 + 3 && y >= y0 - 3 && y <= y1 + 3) && !ISLES.some(([cx, cy, r]) => Math.hypot(x - cx, y - cy) < r * (0.86 + noise(x, y, 9) * 0.28)),
+  hills: [[70, 110, 5, false], [26, 22, 4, false], [138, 138, 5, true]],
+  roads({ road }) {
+    const line = (x0, y0, x1, y1) => { const n = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0)); for (let k = 0; k <= n; k++) { const x = Math.round(x0 + (x1 - x0) * k / n), y = Math.round(y0 + (y1 - y0) * k / n); road(x, y); road(x + 1, y); road(x, y + 1); } };
+    line(62, 64, 98, 64); line(62, 100, 98, 100); line(62, 64, 62, 100); line(98, 64, 98, 100);
+    line(62, 64, 30, 33); line(98, 64, 130, 34); line(62, 100, 40, 130); line(98, 100, 132, 119);
+  },
+  forestN: 0.42, veg: { tree: 1.2, bush: 1.5 },
+  tcol: { [TT.grass]: ['#4f7a3a', '#548040', '#4a7436'], [TT.forest]: ['#36582a', '#3b5e2e'], [TT.sand]: ['#d8c88e', '#e0d196'] },
+  mc: { [TT.grass]: '#4f7a3a', [TT.forest]: '#33552a', [TT.sand]: '#d8c88e', [TT.water]: '#2a7aa0' },
+  trees: { pine: ['#2c5a2e', '#336233', '#3a6a38'], oak: ['#3f7a34', '#4a8538'] },
+  nCars: 12,
+};
+MAPS.snow = {
+  name: '雪原', desc: '冰天雪地：东北的军事基地、西南的村子、冰湖，白茫茫一片丧尸也难看清', camp: [52, 62],
+  lots: [[126, 20, 144, 32, 2, 'police'], [100, 54, 116, 68, 2, 'ware'], [130, 54, 150, 66, 1, 'garage'], [20, 66, 34, 77, 2, 'villa'], [16, 86, 30, 97, 2, 'villa'], [36, 120, 52, 130, 1, 'shop'], [80, 118, 96, 130, 2, 'clinic'], [96, 88, 118, 100, 4, 'apt']],
+  hills: [[106, 26, 10, true], [142, 96, 8, true], [26, 136, 8, true], [120, 140, 6, false], [20, 30, 7, false]],
+  ponds: [[86, 76, 8, 5.5], [44, 100, 4, 3]],
+  roads({ road }) {
+    for (let x = 0; x < MW; x++) { road(x, 46); road(x, 47); }
+    for (let y = 48; y < MH; y++) { road(72, y); road(73, y); }
+    for (let x = 20; x <= 150; x++) { road(x, 112); road(x, 113); }
+    for (let y = 48; y <= 112; y++) { road(120, y); road(121, y); }
+    for (let y = 33; y <= 46; y++) { road(134, y); road(135, y); }
+  },
+  landmarks({ at }) { for (const [x, y] of [[124, 36], [126, 36], [128, 36], [140, 36], [142, 36], [144, 36]]) at(x, y, 27); at(130, 38, 36); at(138, 38, 36); }, // base gate
+  forestN: 0.72, veg: { tree: 0.9, rock: 1.2 },
+  tcol: { [TT.grass]: ['#e6ecef', '#dfe6ea', '#eef2f4'], [TT.hill]: ['#d3dce2', '#cdd7de', '#d9e1e6'], [TT.forest]: ['#c8d3da', '#c2ced6'], [TT.dirt]: ['#9d978e', '#a49e94'], [TT.road]: ['#5c6066', '#585c62'], [TT.sand]: ['#cfd8dc', '#c8d2d7'] },
+  mc: { [TT.grass]: '#dfe6ea', [TT.hill]: '#c4ced6', [TT.forest]: '#9fb0b8', [TT.dirt]: '#9a948a', [TT.road]: '#55595e', [TT.sand]: '#cfd6da', [TT.water]: '#2b4a62' },
+  trees: { pine: ['#3e5a52', '#45615a', '#4d6a62'], oak: ['#b8c7cc', '#c5d2d6'], trunk: '#4a3a30' }, bush: '#7f948f',
+  nCars: 16,
+};
+MAPS.city = {
+  name: '废城', desc: '密集的街区和高楼：楼多、巷子窄、到处是车，楼顶是好位置', camp: [80, 80],
+  lots: [[18, 18, 37, 32, 5, 'apt'], [70, 18, 91, 32, 4, 'apt'], [98, 18, 117, 30, 2, 'clinic'], [124, 18, 143, 32, 5, 'apt'],
+    [18, 44, 37, 58, 1, 'garage'], [44, 44, 63, 58, 3, 'apt'], [98, 44, 117, 58, 2, 'police'],
+    [18, 70, 37, 84, 4, 'apt'], [44, 70, 63, 82, 2, 'villa'], [98, 70, 117, 84, 4, 'apt'],
+    [18, 98, 37, 112, 2, 'clinic'], [44, 98, 63, 114, 5, 'apt'], [70, 98, 91, 112, 1, 'garage'], [98, 98, 117, 114, 3, 'apt'], [124, 98, 143, 112, 2, 'police'],
+    [44, 124, 63, 140, 4, 'apt'], [98, 124, 117, 138, 1, 'shop'], [124, 70, 143, 82, 1, 'shop']],
+  roads({ road }) { for (const g of [14, 40, 66, 94, 120, 146]) for (let k = 0; k < MW; k++) { road(g, k); road(g + 1, k); road(k, g); road(k, g + 1); } },
+  forestN: 0.97, veg: { tree: 0.35, rock: 0.4, bush: 0.6 },
+  tcol: { [TT.grass]: ['#5f6a4a', '#646f4e', '#5a6546'], [TT.dirt]: ['#6a625a', '#70675e'] },
+  mc: { [TT.grass]: '#5f6a4a', [TT.dirt]: '#6a625a' },
+  nCars: 48,
+};
+const MAP_IDS = ['town', 'forest', 'desert', 'islands', 'snow', 'city'];
+let MAPDEF = MAPS.town, MAP_ID = 'town';
+// switch the live map: building lots, camp position, and everything derived from them (house ids, roof cells, cut boxes)
+function setMap(id) {
+  if (!MAPS[id]) id = 'town'; MAP_ID = id; MAPDEF = MAPS[id];
+  TOWN_HOUSES.length = 0; for (const h of MAPDEF.lots) TOWN_HOUSES.push(h.slice());
+  RADIO_XY[0] = MAPDEF.camp[0]; RADIO_XY[1] = MAPDEF.camp[1];
+  if (typeof archMapInit === 'function') archMapInit();
+  if (typeof cutHousesInit === 'function') cutHousesInit();
 }
 
 /* ---- 20_nav.js ---- */
@@ -4894,9 +5062,10 @@ function mkPlayer(i, name) {
     inp: { mx: 0, my: 0, fire: 0, use: 0 }, kills: 0, hurtT: 0, anim: 0, emptyT: 0, ready: false, recoilT: 0,
   };
 }
-function newWorld(seed, names, diff) {
+function newWorld(seed, names, diff, mode) {
   const m = genMap(seed);
   W = {
+    mode: MODES[mode] ? mode : 'classic', map: MAP_ID, obj: {}, obv: 1,
     seed, t: 0, G: m.G, tt: m.tt, blk: m.blk, bhp: m.bhp, slab: m.slab, shp: m.shp, bdir: m.bdir, stab: new Int8Array(NC), srch: new Set(),
     radio: { x: m.radio.x, y: m.radio.y }, bench: m.bench, tasks: [], tkv: 0, clean: true,
     p: names.map((n, i) => mkPlayer(i, n)), zs: [], proj: [], zid: 1,
@@ -4910,6 +5079,7 @@ function newWorld(seed, names, diff) {
   // day one also gets supplies out in the open (the buildings are already stocked by the generator)
   for (const k of ['crate', 'toolbox', 'rubble']) for (let j = Math.round(SPOTS[k].n * 1.2); j > 0; j--) { const i = pickSpot(k, true); if (i >= 0) { W.blk[i] = SPOT_IDS[k]; W.bhp[i] = 1; } }
   W.spotN = spotCount();
+  modeInit();
   updateFields(0, true);
   W.edges = edgeSpawns();
   rollTasks();
@@ -5046,13 +5216,15 @@ function useTarget(p) {
     const i = ci(x, y, p.L), b = W.blk[i]; if (!b) continue;
     const d = d2(x + 0.5, y + 0.5, p.x, p.y);
     if (d > bd) continue;
-    if (B[b].spot) { const S = SPOTS[B[b].spot]; if (S && (S.vanish || !W.srch.has(i))) { bd = d; best = { k: 'spot', i, t: BAL.searchTime, name: '搜索' + S.name }; } }
+    if (B[b].obj) { const t = modeUse(p, i, b); if (t) { bd = d; best = t; } }
+    else if (B[b].spot) { const S = SPOTS[B[b].spot]; if (S && (S.vanish || !W.srch.has(i))) { bd = d; best = { k: 'spot', i, t: BAL.searchTime, name: '搜索' + S.name }; } }
     else if (GATHER[b]) { bd = d; best = { k: 'gather', i, t: GATHER[b].t, name: GATHER[b].name }; }
   }
   return best;
 }
 function completeUse(p, tgt) {
   if (tgt.k === 'rev') { const q = W.p[tgt.i]; if (!q.down) return; q.down = false; q.hp = 35; q.medT = 0; q.selfRev = false; emit({ k: 'revive', p: q.i, by: p.i }); return; }
+  if (tgt.k === 'obj') { modeDone(p, tgt); return; }
   const i = tgt.i, x = cx_(i), y = cy_(i), L = cl_(i), wx = x + 0.5, wy = y + 0.5, wz = L * FH + 1;
   const m = 1 + Math.min(40, Math.max(0, radioDist(x, y) - 8)) / BAL.lootFar; // capped where the old 96-map edge was
   if (tgt.k === 'gather') {
@@ -5199,6 +5371,7 @@ function fireWeapon(p, wi) {
       if (!los(sx, sy, sz, z.x, z.y, z.z + z.h * 0.5, LEAN)) continue;
       hurtZombie(z, w.dmg * mul, p, 0, 0, true); z.burn = Math.max(z.burn || 0, w.burn); z.burnBy = p.i;
     }
+    modeAreaHit(sx + Math.cos(yaw) * w.range * 0.5, sy + Math.sin(yaw) * w.range * 0.5, w.range * 0.5, w.dmg * mul * 0.8);
     emit({ k: 'shot', o: p.i, w: wi, e: [] }); return;
   }
   if (w.bloom) p.bloom = Math.min(2.2, (p.bloom || 0) + w.bloom);
@@ -5229,13 +5402,13 @@ function fireWeapon(p, wi) {
       if (k < 3 || head) emit({ k: 'hit', x: r2(sx + dx * d), y: r2(sy + dy * d), z: r2(hzv), h: head ? 1 : 0, g: z.k === 'spitter' || z.k === 'bloater' ? 1 : 0, a: armor ? 1 : 0 });
       left--; endD = d; hz = 1;
     }
-    if (left > 0 || !hz) endD = wall.d;
+    if (left > 0 || !hz) { endD = wall.d; if (wall.i >= 0 && W.blk[wall.i] === 44) modeHit(wall.i, w.dmg * mul * (w.falloff ? 0.7 : 1)); }
     ends.push([r2(sx + dx * endD), r2(sy + dy * endD), r2(sz + dz * endD), !hz && wall.i >= 0 ? 1 : 0]);
   }
   emit({ k: 'shot', o: p.i, w: wi, e: ends });
 }
 function hurtZombie(z, dmg, p, kx, ky, quiet) {
-  if (z.hp <= 0) return;
+  if (z.hp <= 0 || z.hidden) return;
   z.hp -= dmg; if (!quiet) z.hitT = 0.12;
   if (kx || ky) { z.kbx = (z.kbx || 0) + kx; z.kby = (z.kby || 0) + ky; }
   if (z.hp <= 0) killZombie(z, p);
@@ -5310,7 +5483,7 @@ function knife(p, zid) {
   let z = zid >= 0 ? W.zs.find(q => q.id === zid && q.hp > 0) : null;
   if (z && Math.hypot(z.x - p.x, z.y - p.y) > BAL.knifeRange + BAL.knifeLunge * 0.6 + z.r) z = null;
   if (!z) { z = knifeTarget(p); if (z && Math.hypot(z.x - p.x, z.y - p.y) > z.r + p.r + 0.9) z = null; } // no lunge happened: only what's in arm's reach
-  if (!z) { emit({ k: 'knife', p: p.i, n: 0 }); return; }
+  if (!z) { modeAreaHit(p.x + Math.cos(p.aim), p.y + Math.sin(p.aim), 0.9, BAL.knifeDmg * 1.3); emit({ k: 'knife', p: p.i, n: 0 }); return; }
   const dx = z.x - p.x, dy = z.y - p.y, d = Math.hypot(dx, dy) || 1;
   const back = Math.cos(angDiff(z.face || 0, Math.atan2(-dy, -dx))) < -0.2;          // it was facing away from you
   const heavy = z.k === 'boss' ? 0 : z.k === 'brute' ? 0.25 : 1;
@@ -5421,11 +5594,12 @@ function startNight() {
   q.sort((a, b) => a.t - b.t);
   W.spawnQ = q;
   const names = ['东', '南', '西', '北'];
+  modeNight(n);
   emit({ k: 'night', n, blood: blood ? 1 : 0, count: q.length, from: front.map(s => names[s]).join('、') });
 }
 function dawn() {
   if (W.clean && W.night > 0) taskAdd('clean');
-  if (W.night >= BAL.nights && !W.endless) return endGame('win', '救援直升机到了');
+  if (W.mode === 'classic' && W.night >= BAL.nights && !W.endless) return endGame('win', '救援直升机到了');
   W.phase = 'day'; W.dayLen = W.clock = BAL.dayLen[1];
   rollTasks();
   setTimeout(() => saveGame(true), 0); // autosave every morning
@@ -5462,8 +5636,9 @@ function stepPhase(dt) {
       W.strayT -= dt;
       if (W.strayT <= 0) { W.strayT = BAL.nightTrickleCD; if (W.zs.length < BAL.nightTrickleMax) { const n = W.night; for (let k = 0; k < 1 + (rand() < 0.5 ? 1 : 0); k++) spawnZombie(strayKind(n), Math.floor(rand() * 4)); } }
     }
-    if (!W.spawnQ.length && W.zs.length && W.zs.length <= 3 && W.nightT > Math.max(BAL.spawnDur(W.night) + 240, minT + 60)) { W.zs.forEach(z => { z.hp = 0; }); W.zs = []; say('残余的丧尸散去了'); }
-    if (!W.spawnQ.length && !W.zs.length && W.nightT >= minT) dawn();
+    const wz = W.zs.filter(z => !z.mz);
+    if (!W.spawnQ.length && wz.length && wz.length <= 3 && W.nightT > Math.max(BAL.spawnDur(W.night) + 240, minT + 60)) { wz.forEach(z => { z.hp = 0; }); W.zs = W.zs.filter(z => z.mz); say('残余的丧尸散去了'); }
+    if (!W.spawnQ.length && !W.zs.some(z => !z.mz) && W.nightT >= minT) dawn();
   }
 }
 
@@ -5494,7 +5669,7 @@ function stepProj(dt) {
       let hit = false;
       if (solidFor(blk, 'b') || b.z <= floorUnder(b.x, b.y, b.z + 0.3) + 0.02) { if (inMap(x, y) && L >= 0 && L < ML) damageCell(ci(x, y, L), 9 * W.D.dmg); hit = true; }
       for (const p of W.p) if ((standingP(p) || p.down) && d2(p.x, p.y, b.x, b.y) < p.r + 0.15 && b.z > p.z - 0.1 && b.z < p.z + p.h + 0.1) { hurtPlayer(p, 11 * W.D.dmg); hit = true; }
-      if (hit || b.z < -2) { b.dead = true; emit({ k: 'acid', x: r2(b.x), y: r2(b.y), z: r2(b.z) }); }
+      if (hit || b.z < -2) { b.dead = true; if (b.pool) acidPool(b.x, b.y); emit({ k: 'acid', x: r2(b.x), y: r2(b.y), z: r2(b.z) }); }
     }
   }
   W.proj = W.proj.filter(b => !b.dead);
@@ -5507,6 +5682,7 @@ function explode(x, y, z, p, R = BAL.nadeR, dmg = BAL.nadeDmg) {
     if (d < R + zb.r) { const f = 1 - Math.max(0, d - zb.r) / R; hurtZombie(zb, dmg * (0.35 + 0.65 * f) * (1 + 0.12 * W.upg), p, (zb.x - x) / (d || 1) * 5 * f, (zb.y - y) / (d || 1) * 5 * f); }
   }
   KSRC = '';
+  modeAreaHit(x, y, R, dmg * 0.8);
   emit({ k: 'boom', x: r2(x), y: r2(y), z: r2(z) });
 }
 
@@ -5519,6 +5695,7 @@ function simStep(dt) {
     updateFields(dt);
     stepZombies(dt);
     stepProj(dt);
+    modeTick(dt);
     checkLose();
   }
 }
@@ -5544,6 +5721,7 @@ function stepZombies(dt) {
     const Z = ZT[z.k], climbT = !!Z.climb;
     z.cd -= dt; z.hitT -= dt; z.atk -= dt; z.anim += dt;
     if (z.stun > 0) z.stun -= dt;
+    if (ZT[z.k].boss && bossStep(z, dt)) continue;
     if (z.rage > 0) z.rage -= dt;
     if (z.scr > 0) z.scr -= dt;
     // burning: damage over time, and the fire jumps to zombies right next to it
@@ -5660,6 +5838,307 @@ function stepZombies(dt) {
   W.zs = zs.filter(z => z.hp > 0);
 }
 
+/* ---- 40_modes.js ---- */
+/* ================= game modes: objectives on top of the day / night survival loop =================
+   W.mode picks one of MODES; W.obj holds its state (plain JSON: saved, and sent to the guest when W.obv changes).
+   Hooks (host side unless noted): init() right after the world is generated (host and guest, same rng => same layout),
+   tick(dt), use(p, i, b) -> interaction target for an objective block, done(p, tgt), hit(i, dmg) (players hurting a nest),
+   hud() -> { t, s, p } (guest too), marks() -> [{ x, y, n, c, a }] for the big map and the screen-edge arrow (guest too). */
+const MODE_IDS = ['classic', 'escape', 'nests', 'towers', 'airdrop', 'boss'];
+const MODES = {
+  classic: { name: '经典守夜', icon: '🌙', map: 'town', desc: '撑过 15 夜等来救援。每天三个小任务，白天搜刮建造，夜里守住堡垒。' },
+  escape: { name: '修车逃离', icon: '🚚', map: 'town', desc: '营地边有辆坏卡车。6 个零件散在不同的楼里（修车厂、警局、超市…），找齐装好，发动引擎后守住 2 分钟就能冲出去。' },
+  nests: { name: '摧毁尸巢', icon: '☣', map: 'forest', desc: '野外有 5 个尸巢，会不停孵出丧尸，每个活着的尸巢都让夜里多来一批。全部炸掉后母巢现身，打掉它就赢。' },
+  towers: { name: '信号塔', icon: '📡', map: 'desert', desc: '启动 4 座信号塔：站在塔边守住校准，丧尸会从四面围上来。全部完成后直升机飞来营地，守到它降落。' },
+  airdrop: { name: '抢空投', icon: '🪂', map: 'islands', desc: '军方不停往野外空投物资，落地会引来尸群。抢到空投拿好东西和信标，集齐 6 个信标后去撤离点守住 90 秒。' },
+  boss: { name: '尸王狩猎', icon: '👑', map: 'snow', desc: '第 2–5 夜各来一只尸王：会飞扑的、会钻地的、会召唤小弟的、会喷毒的。四只全部击杀就赢。' },
+};
+const modeDef = () => MODES[(W && W.mode) || 'classic'] || MODES.classic;
+const objChanged = () => { W.obv = (W.obv || 0) + 1; };
+
+/* ---------- placement helpers (use the seeded rand so host and guest agree) ---------- */
+const inLot = (x, y, pad = 0) => TOWN_HOUSES.some(([x0, y0, x1, y1]) => x >= x0 - pad && x <= x1 + pad && y >= y0 - pad && y <= y1 + pad);
+function openCell(x, y, r = 1) { // dry, flat, empty ground with an empty ring around it
+  if (!inMap(x, y)) return false; const g = gAt(x, y);
+  for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) { const xx = x + dx, yy = y + dy; if (!inMap(xx, yy) || gAt(xx, yy) !== g || ttAt(xx, yy) === TT.water || W.blk[ci(xx, yy, g)] || W.slab[ci(xx, yy, g)]) return false; }
+  return true;
+}
+// n sites far from the camp and from each other; pref(x, y) scores candidates (higher is better)
+function farSites(n, minCamp, minSep, pref) {
+  const out = [];
+  for (let pass = 0; pass < 3 && out.length < n; pass++) {
+    const cand = [];
+    for (let k = 0; k < 900; k++) { const x = 4 + Math.floor(rand() * (MW - 8)), y = 4 + Math.floor(rand() * (MH - 8)); if (radioDist(x, y) < minCamp * (1 - pass * 0.25) || inLot(x, y, 3) || !openCell(x, y, 1)) continue; cand.push([x, y, (pref ? pref(x, y) : 0) + rand()]); }
+    cand.sort((a, b) => b[2] - a[2]);
+    for (const [x, y] of cand) { if (out.length >= n) break; if (out.every(([a, b]) => Math.hypot(a - x, b - y) >= minSep * (1 - pass * 0.25))) out.push([x, y, gAt(x, y)]); }
+  }
+  return out;
+}
+// a free floor cell inside a building of one of the types (any building if none of that type)
+function bldCell(types) {
+  let hs = TOWN_HOUSES.filter(h => types.includes(h[5])); if (!hs.length) hs = TOWN_HOUSES.filter(h => h[5] !== 'barn'); if (!hs.length) return null;
+  for (let k = 0; k < 600; k++) {
+    const [x0, y0, x1, y1, st] = hs[Math.floor(rand() * hs.length)], x = x0 + 1 + Math.floor(rand() * (x1 - x0 - 1)), y = y0 + 1 + Math.floor(rand() * (y1 - y0 - 1)), L = Math.floor(rand() * Math.max(1, st));
+    const i = ci(x, y, L); if (W.blk[i] || !support(x, y, L) || (L > 0 && !W.slab[i])) continue;
+    if (DIRS.some(([dx, dy]) => W.blk[ci(x + dx, y + dy, L)] === 6)) continue;
+    return [x, y, L];
+  }
+  return null;
+}
+function placeObj(x, y, L, id) { const i = ci(x, y, L); W.blk[i] = id; W.bhp[i] = B[id].hp || 1; return i; }
+// a zombie of kind k on open ground ring rmin..rmax around (x, y); mz marks it as a mode zombie (doesn't hold back the dawn)
+function zAround(k, x, y, rmin, rmax) {
+  for (let t = 0; t < 30; t++) {
+    const a = rand() * Math.PI * 2, d = rmin + rand() * (rmax - rmin), zx = Math.floor(x + Math.cos(a) * d), zy = Math.floor(y + Math.sin(a) * d);
+    if (!inMap(zx, zy)) continue; const L = gAt(zx, zy); if (!standable(zx, zy, L, 'z') || ttAt(zx, zy) === TT.water) continue;
+    const z = spawnZombie(k, 0); z.x = zx + 0.5; z.y = zy + 0.5; z.L = L; z.z = surfZ(z.x, z.y, L); z.mz = 1; return z;
+  }
+  return null;
+}
+const modeKind = n => { const r = rand(); return n >= 3 && r < 0.25 ? 'runner' : n >= 4 && r < 0.33 ? 'dog' : n >= 5 && r < 0.4 ? 'armored' : r < 0.55 ? 'crawler' : 'walker'; };
+const alivePl = () => W.p.filter(p => !p.gone && !p.dead);
+const nearPl = (x, y, r) => alivePl().some(p => Math.hypot(p.x - x, p.y - y) < r);
+function modeSay(text, col, big) { say(text, col || '#ffd76a'); if (big) emit({ k: 'mbanner', t: text, c: col || '#ffd76a' }); }
+function giveAmmo(mul) { for (const p of activeP()) WPN.forEach((w, k) => { if (p.owned[k] && !w.inf) p.ammo[k] += Math.round(w.mag * mul); }); }
+const fmtT = s => Math.floor(Math.max(0, s) / 60) + ':' + String(Math.floor(Math.max(0, s) % 60)).padStart(2, '0');
+
+/* ---------- 修车逃离 ---------- */
+const PARTS = [['发动机', ['garage', 'ware']], ['轮胎', ['garage', 'ware', 'shop']], ['电瓶', ['shop', 'police', 'garage']], ['汽油', ['ware', 'garage', 'shop']], ['火花塞', ['garage', 'shop', 'clinic']], ['车钥匙', ['police', 'apt', 'villa', 'clinic']]];
+Object.assign(MODES.escape, {
+  init() {
+    const tx = W.radio.x + 10, ty = W.radio.y + 1;
+    for (let y = ty - 1; y <= ty + 1; y++) for (let x = tx - 1; x <= tx + 2; x++) if (inMap(x, y)) W.blk[ci(x, y, gAt(x, y))] = 0;
+    const tci = placeObj(tx, ty, gAt(tx, ty), 47); W.bdir[tci] = 0;
+    const parts = PARTS.map(([n, types], k) => { const c = bldCell(types) || [W.radio.x + 20 + k * 3, W.radio.y + 20, 0]; const i = placeObj(c[0], c[1], c[2], 43); return { n, x: c[0], y: c[1], L: c[2], ci: i, got: 0, ox: Math.round((rand() - 0.5) * 12), oy: Math.round((rand() - 0.5) * 12) }; });
+    W.obj = { truck: { x: tx, y: ty, ci: tci }, parts, inst: 0, phase: 'collect', t: 0, spT: 0 };
+  },
+  use(p, i, b) {
+    const O = W.obj; if (O.phase === 'done') return null;
+    if (b === 43) { const q = O.parts.find(q => q.ci === i && !q.got); return q ? { k: 'obj', i, t: 1.5, name: '拾取 ' + q.n } : null; }
+    if (b === 47) { const got = O.parts.filter(q => q.got).length; if (got > O.inst) return { k: 'obj', i, t: 2.5, name: '安装零件（' + (got - O.inst) + ' 个）' }; if (O.inst === PARTS.length && O.phase === 'collect') return { k: 'obj', i, t: 1.5, name: '发动引擎' }; }
+    return null;
+  },
+  done(p, tgt) {
+    const O = W.obj, b = W.blk[tgt.i];
+    if (b === 43) { const q = O.parts.find(q => q.ci === tgt.i); if (!q || q.got) return; q.got = 1; setCell(tgt.i, 0, W.slab[tgt.i], null, 'loot'); const n = O.parts.filter(q => q.got).length; modeSay('找到了' + q.n + '（' + n + '/' + PARTS.length + '）——带回营地装到卡车上', '#ffd76a'); sfx('craft'); }
+    else if (b === 47) {
+      const got = O.parts.filter(q => q.got).length;
+      if (got > O.inst) { O.inst = got; modeSay(O.inst === PARTS.length ? '零件装齐了！准备好就发动引擎（引擎响了尸群会围过来）' : '装好了 ' + O.inst + '/' + PARTS.length + ' 个零件', '#8fe39a'); }
+      else if (O.inst === PARTS.length && O.phase === 'collect') { O.phase = 'start'; O.t = 120; modeSay('引擎启动中！守住卡车 2 分钟', '#ff8a6a', true); }
+    }
+    objChanged();
+  },
+  tick(dt) {
+    const O = W.obj; if (O.phase !== 'start') return;
+    O.t -= dt; O.spT -= dt;
+    if (O.spT <= 0) { O.spT = 2.2; const n = Math.max(2, W.night); for (let k = 0; k < 2; k++) { const z = spawnZombie(rand() < 0.08 ? 'brute' : modeKind(n), Math.floor(rand() * 4)); z.mz = 1; } }
+    if (Math.floor(O.t) !== Math.floor(O.t + dt)) objChanged();
+    if (O.t <= 0) { O.phase = 'done'; objChanged(); endGame('win', '卡车发动了！你们冲出了尸潮'); }
+  },
+  hud() {
+    const O = W.obj, got = O.parts.filter(q => q.got).length;
+    if (O.phase === 'start') return { t: '引擎启动中 ' + fmtT(O.t), s: '守住卡车，别让尸群把你们拖住', p: 1 - O.t / 120 };
+    const next = O.parts.find(q => !q.got);
+    return { t: '零件 ' + got + '/' + PARTS.length + ' · 已装 ' + O.inst, s: next ? '去找「' + next.n + '」（大地图上的问号附近）' : O.inst < PARTS.length ? '回营地把零件装到卡车上' : '到卡车旁「发动引擎」', p: (got + O.inst) / (PARTS.length * 2) };
+  },
+  marks() {
+    const O = W.obj, m = [{ x: O.truck.x + 0.5, y: O.truck.y + 0.5, n: '卡车', c: '#8fe39a', a: O.inst < O.parts.filter(q => q.got).length || O.phase !== 'collect' || O.inst === PARTS.length }];
+    for (const q of O.parts) if (!q.got) m.push({ x: q.x + 0.5 + q.ox, y: q.y + 0.5 + q.oy, n: q.n + '?', c: '#ffd76a', a: 1, r: 9 });
+    return m;
+  },
+});
+
+/* ---------- 摧毁尸巢 ---------- */
+Object.assign(MODES.nests, {
+  init() {
+    const hp = 1500 * (1 + 0.35 * (W.p.length - 1)) * (W.D.hp || 1);
+    const nests = farSites(5, 28, 26).map(([x, y, L]) => { const i = placeObj(x, y, L, 44); W.bhp[i] = hp; return { x, y, L, ci: i, alive: 1, cd: 2, hp, max: hp }; });
+    W.obj = { nests, mother: null, phase: 'nests' };
+  },
+  hit(i, dmg) { if (W.blk[i] !== 44) return; W.bhp[i] -= dmg; W.dirty.add(i); const q = (W.obj.mother && W.obj.mother.ci === i) ? W.obj.mother : W.obj.nests.find(q => q.ci === i); if (q) { q.hp = Math.max(0, W.bhp[i]); if (Math.random() < 0.3) objChanged(); } if (W.bhp[i] <= 0) setCell(i, 0, W.slab[i], null, 'brk'); },
+  tick(dt) {
+    const O = W.obj, night = W.phase === 'night';
+    const all = O.mother ? [O.mother] : O.nests;
+    for (const q of all) {
+      if (!q.alive) continue;
+      if (W.blk[q.ci] !== 44) { // destroyed
+        q.alive = 0; W.res.parts += 10; giveAmmo(1); objChanged();
+        if (q === O.mother) { O.phase = 'done'; endGame('win', '母巢被摧毁了，尸潮退去'); return; }
+        const left = O.nests.filter(q => q.alive).length;
+        modeSay(left ? '摧毁了一个尸巢！还剩 ' + left + ' 个（+10 零件、弹药）' : '所有尸巢都毁了——母巢出现了！', '#8fe39a', !left);
+        if (!left) { const s = farSites(1, 40, 0, (x, y) => radioDist(x, y) / 40)[0]; if (s) { const hp = 4200 * (1 + 0.35 * (W.p.length - 1)) * (W.D.hp || 1), i = placeObj(s[0], s[1], s[2], 44); W.bhp[i] = hp; emit({ k: 'cell', i, b: 44, s: W.slab[i], d: 0, c: 'spawn' }); O.mother = { x: s[0], y: s[1], L: s[2], ci: i, alive: 1, cd: 1, hp, max: hp, big: 1 }; O.phase = 'mother'; const g = zAround('boss', s[0], s[1], 2, 4); if (g) g.mz = 1; } }
+        continue;
+      }
+      q.cd -= dt;
+      const near = nearPl(q.x, q.y, 26);
+      if (q.cd <= 0 && (near || night)) {
+        q.cd = (night ? 5 : 7) * (q.big ? 0.6 : 1);
+        const mine = W.zs.filter(z => z.nest === q.ci).length;
+        if (mine < (q.big ? 14 : 8)) for (let k = 0; k < (q.big ? 3 : rand() < 0.5 ? 2 : 1); k++) { const z = zAround(modeKind(W.night + 1), q.x, q.y, 1.5, 3.5); if (z) { z.nest = q.ci; if (night && !near) z.mz = 0; } }
+      }
+    }
+  },
+  hud() {
+    const O = W.obj;
+    if (O.mother) return { t: '母巢', s: '去大地图上的母巢，把它打掉（有巨尸守着）', p: 1 - O.mother.hp / O.mother.max };
+    const left = O.nests.filter(q => q.alive).length; return { t: '尸巢 剩余 ' + left + '/5', s: '尸巢会不停孵丧尸；子弹、刀、手雷、喷火都能伤它', p: (5 - left) / 5 };
+  },
+  marks() { const O = W.obj; return (O.mother ? [O.mother] : O.nests).filter(q => q.alive).map(q => ({ x: q.x + 0.5, y: q.y + 0.5, n: q.big ? '母巢' : '尸巢', c: '#ff5a6a', a: 1, hp: q.hp / q.max })); },
+});
+
+/* ---------- 信号塔 ---------- */
+const TOWER_R = 9, TOWER_T = 75;
+Object.assign(MODES.towers, {
+  init() {
+    const towers = farSites(4, 26, 30, (x, y) => gAt(x, y) * 0.6).map(([x, y, L]) => ({ x, y, L, ci: placeObj(x, y, L, 45), st: 0, prog: 0, spT: 0 }));
+    W.obj = { towers, phase: 'towers', t: 0, spT: 0 };
+  },
+  use(p, i, b) { if (b !== 45) return null; const q = W.obj.towers.find(q => q.ci === i); return q && q.st === 0 ? { k: 'obj', i, t: 2, name: '启动信号塔' } : null; },
+  done(p, tgt) { const q = W.obj.towers.find(q => q.ci === tgt.i); if (!q || q.st) return; q.st = 1; modeSay('信号塔开始校准——站在塔边的圈里守住，离开会停下', '#ffd76a'); objChanged(); },
+  tick(dt) {
+    const O = W.obj, night = W.phase === 'night';
+    for (const q of O.towers) {
+      if (q.st !== 1) continue;
+      const on = nearPl(q.x + 0.5, q.y + 0.5, TOWER_R);
+      const before = q.prog; q.prog = clamp(q.prog + (on ? dt / TOWER_T : -dt / 400), 0, 1);
+      if (Math.floor(before * 20) !== Math.floor(q.prog * 20)) objChanged();
+      q.spT -= dt;
+      if (on && q.spT <= 0) { q.spT = night ? 2.4 : 3.4; for (let k = 0; k < 2; k++) zAround(modeKind(W.night + 1), q.x, q.y, 15, 22); }
+      if (q.prog >= 1) { q.st = 2; W.res.parts += 8; giveAmmo(1); const n = O.towers.filter(q => q.st === 2).length; modeSay(n < O.towers.length ? '信号塔校准完成（' + n + '/' + O.towers.length + '）+8 零件、弹药' : '四座塔都连上了！直升机 2 分 30 秒后到营地，守住！', '#8fe39a', n === O.towers.length); if (n === O.towers.length) { O.phase = 'evac'; O.t = 150; } objChanged(); }
+    }
+    if (O.phase === 'evac') {
+      O.t -= dt; O.spT -= dt;
+      if (O.spT <= 0) { O.spT = 2.6; for (let k = 0; k < 2; k++) { const z = spawnZombie(modeKind(W.night + 2), Math.floor(rand() * 4)); z.mz = 1; } }
+      if (Math.floor(O.t) !== Math.floor(O.t + dt)) objChanged();
+      if (O.t <= 0) { if (alivePl().some(p => inZone(Math.floor(p.x), Math.floor(p.y)))) { O.phase = 'done'; objChanged(); endGame('win', '直升机降落在营地，你们撤离了'); } else if (Math.random() < dt / 6) say('直升机到了——回营地（黄框里）登机！', '#ffd76a'); }
+    }
+  },
+  hud() {
+    const O = W.obj;
+    if (O.phase === 'evac') return { t: '直升机 ' + (O.t > 0 ? fmtT(O.t) + ' 后到达' : '到了！回营地'), s: '守住营地，时间到时要有人在黄框里', p: 1 - Math.max(0, O.t) / 150 };
+    const done = O.towers.filter(q => q.st === 2).length, act = O.towers.find(q => q.st === 1);
+    return { t: '信号塔 ' + done + '/' + O.towers.length + (act ? ' · 校准 ' + Math.floor(act.prog * 100) + '%' : ''), s: act ? (nearPl(act.x, act.y, TOWER_R) ? '守住！丧尸会围上来' : '回到塔边的圈里，离开会停下') : '去塔边按「交互」启动校准', p: (done + (act ? act.prog : 0)) / O.towers.length };
+  },
+  marks() { const O = W.obj; const m = O.towers.filter(q => q.st < 2).map(q => ({ x: q.x + 0.5, y: q.y + 0.5, n: q.st === 1 ? '校准中 ' + Math.floor(q.prog * 100) + '%' : '信号塔', c: q.st === 1 ? '#ffd76a' : '#9ad0ff', a: 1, ring: q.st === 1 ? TOWER_R : 0 })); if (O.phase === 'evac') m.push({ x: W.radio.x + 0.5, y: W.radio.y + 0.5, n: '直升机', c: '#8fe39a', a: 1 }); return m; },
+});
+
+/* ---------- 抢空投 ---------- */
+const DROP_NEED = 6, EVAC_R = 6, EVAC_T = 90;
+Object.assign(MODES.airdrop, {
+  init() { W.obj = { got: 0, drops: [], next: 45, phase: 'drops', ev: null }; },
+  use(p, i, b) { if (b !== 46) return null; return W.obj.drops.find(q => q.ci === i && q.st === 1) ? { k: 'obj', i, t: 2.5, name: '打开空投' } : null; },
+  done(p, tgt) {
+    const O = W.obj, q = O.drops.find(q => q.ci === tgt.i && q.st === 1); if (!q) return;
+    q.st = 2; setCell(tgt.i, 0, W.slab[tgt.i], null, 'loot');
+    const parts = 10 + Math.floor(rand() * 7); W.res.parts += parts; giveAmmo(2); for (const pl of activeP()) { pl.meds++; pl.nades++; }
+    const lock = WPN.map((w, k) => k).filter(k => !p.owned[k]); let gun = '';
+    if (lock.length && rand() < 0.4) { const k = lock[Math.floor(rand() * lock.length)]; p.owned[k] = 1; p.ammo[k] += WPN[k].mag * 2; gun = '、' + WPN[k].name; }
+    O.got++; modeSay('空投到手：信标 ' + O.got + '/' + DROP_NEED + '，+' + parts + ' 零件、弹药、医疗包、手雷' + gun, '#8fe39a');
+    if (O.got >= DROP_NEED && O.phase === 'drops') { const s = farSites(1, 30, 0)[0] || [W.radio.x, W.radio.y + 20, 0]; O.phase = 'evac'; O.ev = { x: s[0], y: s[1], t: 0 }; modeSay('信标够了！去大地图上的撤离点守住 90 秒', '#ffd76a', true); }
+    objChanged();
+  },
+  tick(dt) {
+    const O = W.obj;
+    O.next -= dt;
+    if (O.next <= 0 && O.phase === 'drops') {
+      O.next = 95 + rand() * 45;
+      if (O.drops.filter(q => q.st < 2).length < 3) { const s = farSites(1, 22, 0)[0]; if (s) { O.drops.push({ x: s[0], y: s[1], L: s[2], st: 0, t: 10, ci: -1 }); modeSay('空投正在落下！看屏幕边的箭头 / 大地图', '#9ad0ff', true); emit({ k: 'sfx', n: 'plane' }); } }
+      objChanged();
+    }
+    for (const q of O.drops) if (q.st === 0) {
+      q.t -= dt;
+      if (q.t <= 0) { q.st = 1; const i = placeObj(q.x, q.y, q.L, 46); q.ci = i; emit({ k: 'cell', i, b: 46, s: W.slab[i], d: 0, c: 'spawn' }); const n = 5 + 2 * W.night; for (let k = 0; k < n; k++) zAround(modeKind(W.night + 1), q.x, q.y, 9, 16); emit({ k: 'boom', x: q.x + 0.5, y: q.y + 0.5, z: q.L * FH + 0.3, s: 1 }); objChanged(); }
+    }
+    if (O.phase === 'evac') {
+      const e = O.ev, on = nearPl(e.x + 0.5, e.y + 0.5, EVAC_R);
+      if (on || e.t > 0) { const b0 = e.t; if (on) e.t += dt; if (Math.floor(b0) !== Math.floor(e.t)) objChanged(); e.sp = (e.sp || 0) - dt; if (e.sp <= 0) { e.sp = 2.2; for (let k = 0; k < 2; k++) zAround(modeKind(W.night + 2), e.x, e.y, 13, 20); } }
+      if (e.t >= EVAC_T) { O.phase = 'done'; objChanged(); endGame('win', '撤离直升机接到了你们'); }
+    }
+  },
+  hud() {
+    const O = W.obj;
+    if (O.phase === 'evac') return { t: '撤离点 ' + fmtT(EVAC_T - O.ev.t), s: nearPl(O.ev.x, O.ev.y, EVAC_R) ? '守在圈里！' : '去撤离点（大地图），站在圈里计时', p: O.ev.t / EVAC_T };
+    const fall = O.drops.find(q => q.st === 0), open = O.drops.filter(q => q.st === 1).length;
+    return { t: '信标 ' + O.got + '/' + DROP_NEED + (fall ? ' · 空投落下中' : ' · 下个空投 ' + fmtT(O.next)), s: open ? '有 ' + open + ' 个空投还没打开——尸群在附近' : '空投落地会引来尸群，小心', p: O.got / DROP_NEED };
+  },
+  marks() { const O = W.obj; const m = O.drops.filter(q => q.st < 2).map(q => ({ x: q.x + 0.5, y: q.y + 0.5, n: q.st === 0 ? '空投落下 ' + Math.ceil(q.t) : '空投', c: '#9ad0ff', a: 1 })); if (O.phase === 'evac') m.push({ x: O.ev.x + 0.5, y: O.ev.y + 0.5, n: '撤离点', c: '#8fe39a', a: 1, ring: EVAC_R }); return m; },
+});
+
+/* ---------- 尸王狩猎 ---------- */
+const BOSSES = ['leaper', 'digger', 'summoner', 'venom'];
+Object.assign(MODES.boss, {
+  init() { const order = BOSSES.slice(); for (let k = order.length - 1; k > 0; k--) { const j = Math.floor(rand() * (k + 1)); [order[k], order[j]] = [order[j], order[k]]; } W.obj = { order, dead: [], cur: null, pools: [] }; },
+  night(n) { // nights 2..5 bring one boss each, with the horde
+    const O = W.obj, k = O.order[n - 2]; if (!k || O.dead.includes(k)) return;
+    const z = spawnZombie(k, Math.floor(rand() * 4)); z.mz = 1; z.max = z.hp = ZT[k].hp * (1 + 0.25 * (W.p.length - 1)) * (W.D.hp || 1) * (1 + (n - 2) * 0.12); O.cur = z.id;
+    modeSay('尸王来了：' + ZT[k].name + '！', '#ff6a5a', true); objChanged();
+  },
+  tick(dt) {
+    const O = W.obj;
+    if (O.cur != null) { const z = W.zs.find(q => q.id === O.cur); O.curK = z ? z.k : O.curK; if (!z || z.hp <= 0) { if (O.curK && !O.dead.includes(O.curK)) { O.dead.push(O.curK); W.res.parts += 15; giveAmmo(2); modeSay(ZT[O.curK].name + ' 倒下了！（' + O.dead.length + '/4）+15 零件、弹药', '#8fe39a', true); } O.cur = null; objChanged(); if (O.dead.length >= BOSSES.length) { endGame('win', '四只尸王都被你们猎杀了'); return; } } else if (Math.random() < dt * 2) objChanged(); }
+    // acid pools from the venom king
+    for (const q of O.pools) { q.t -= dt; for (const p of alivePl()) if (!p.down && Math.hypot(p.x - q.x, p.y - q.y) < q.r) hurtPlayer(p, 12 * dt * W.D.dmg); }
+    const n0 = O.pools.length; O.pools = O.pools.filter(q => q.t > 0); if (n0 !== O.pools.length) objChanged();
+  },
+  hud() {
+    const O = W.obj, z = O.cur != null ? W.zs.find(q => q.id === O.cur) : null;
+    if (z) return { t: ZT[z.k].name + ' ' + Math.ceil(z.hp / z.max * 100) + '%', s: { leaper: '它会跳过墙扑向你——别站在一起', digger: '它会钻进地下从你脚下冒出来——看到土包就跑', summoner: '它会召唤小弟——先打它本体', venom: '它会喷毒，地上的绿圈别站' }[z.k], p: 1 - z.hp / z.max, boss: 1 };
+    const nx = O.order.find(k => !O.dead.includes(k)), when = O.order.indexOf(nx) + 2;
+    return { t: '尸王 ' + O.dead.length + '/4', s: nx ? '第 ' + when + ' 夜：' + ZT[nx].name + '（' + (W.night >= when ? '在附近徘徊' : '还没来') + '）' : '', p: O.dead.length / 4 };
+  },
+  marks() { const O = W.obj, z = O.cur != null ? W.zs.find(q => q.id === O.cur) : null; return z ? [{ x: z.x, y: z.y, n: ZT[z.k].name, c: '#ff6a5a', a: 1, hp: z.hp / z.max }] : []; },
+});
+
+/* ---------- hooks used by the rest of the game ---------- */
+function modeInit() { const M = modeDef(); W.obj = {}; W.obv = 1; if (M.init) M.init(); }
+function modeUse(p, i, b) { const M = modeDef(); return M.use && W.obj ? M.use(p, i, b) : null; }
+function modeDone(p, tgt) { const M = modeDef(); if (M.done) M.done(p, tgt); }
+function modeTick(dt) { const M = modeDef(); if (M.tick && W.obj && !W.over) M.tick(dt); }
+function modeNight(n) { const M = modeDef(); if (M.night) M.night(n); }
+function modeHit(i, dmg) { const M = modeDef(); if (M.hit) M.hit(i, dmg); }
+function modeHud() { const M = modeDef(); return M.hud && W.obj && Object.keys(W.obj).length ? M.hud() : null; }
+function modeMarks() { const M = modeDef(); try { return M.marks && W.obj && Object.keys(W.obj).length ? M.marks() : []; } catch (e) { return []; } }
+// nests within reach of an explosion / a flame cone / a knife swing take damage
+function modeAreaHit(x, y, R, dmg) { if (W.mode !== 'nests' || !W.obj.nests) return; for (const q of (W.obj.mother ? [W.obj.mother] : W.obj.nests)) if (q.alive && Math.hypot(q.x + 0.5 - x, q.y + 0.5 - y) < R + 0.6) modeHit(q.ci, dmg); }
+
+/* ---------- boss abilities (host) ---------- */
+function bossStep(z, dt) {
+  const T = ZT[z.k]; if (!T.boss) return false;
+  const tgt = alivePl().filter(p => !p.down).sort((a, b) => Math.hypot(a.x - z.x, a.y - z.y) - Math.hypot(b.x - z.x, b.y - z.y))[0];
+  z.abT = (z.abT == null ? 3 : z.abT) - dt;
+  if (z.leap) { // a big arcing jump that ignores walls
+    const J = z.leap; J.t += dt; const f = Math.min(1, J.t / J.T);
+    z.x = lerp(J.x0, J.x1, f); z.y = lerp(J.y0, J.y1, f); z.z = lerp(J.z0, J.z1, f) + Math.sin(f * Math.PI) * 3; z.face = Math.atan2(J.y1 - J.y0, J.x1 - J.x0);
+    if (f >= 1) { z.leap = null; z.L = J.L1; z.z = J.z1; bossSlam(z, 1.9, 30); }
+    return true;
+  }
+  if (z.dig) { // underground: invisible, invulnerable, homing in on the target, then bursts out
+    const D = z.dig; D.t += dt;
+    if (tgt) { D.tx = tgt.x; D.ty = tgt.y; D.L = tgt.L; }
+    const dx = D.tx - z.x, dy = D.ty - z.y, d = Math.hypot(dx, dy), sp = 5.5 * dt;
+    if (d > 0.1) { z.x += dx / d * Math.min(d, sp); z.y += dy / d * Math.min(d, sp); }
+    if (Math.random() < dt * 12) emit({ k: 'dig', x: r2(z.x), y: r2(z.y), z: r2(z.z) });
+    if (D.t > 2.4 || d < 0.3) { z.dig = null; z.hidden = 0; z.L = D.L; z.z = surfZ(z.x, z.y, z.L); bossSlam(z, 2.1, 36); }
+    return true;
+  }
+  if (!tgt) return false;
+  const d = Math.hypot(tgt.x - z.x, tgt.y - z.y);
+  if (z.abT <= 0) {
+    if (z.k === 'leaper' && d > 2.5 && d < 13) { z.abT = 6; z.leap = { t: 0, T: 0.95, x0: z.x, y0: z.y, z0: z.z, x1: tgt.x, y1: tgt.y, z1: tgt.z, L1: tgt.L }; emit({ k: 'sfx', n: 'jump', x: z.x, y: z.y }); return true; }
+    if (z.k === 'digger' && d > 3 && d < 24) { z.abT = 9; z.dig = { t: 0, tx: tgt.x, ty: tgt.y, L: tgt.L }; z.hidden = 1; emit({ k: 'dig', x: r2(z.x), y: r2(z.y), z: r2(z.z), big: 1 }); return true; }
+    if (z.k === 'summoner' && d < 26) { z.abT = 6; const mine = W.zs.filter(q => q.sum === z.id).length; if (mine < 12) for (let k = 0; k < 3; k++) { const m = zAround(rand() < 0.5 ? 'crawler' : 'walker', z.x, z.y, 1.5, 3); if (m) { m.sum = z.id; m.mz = 1; } } emit({ k: 'scream', x: r2(z.x), y: r2(z.y), z: r2(z.z) }); }
+    if (z.k === 'venom' && d < T.range) { z.abT = 2.8; const [sx, sy, sz] = [z.x, z.y, z.z + z.h * 0.8], dz = (tgt.z + 0.3) - sz, t = Math.max(0.6, d / 8); W.proj.push({ k: 'acid', x: sx, y: sy, z: sz, vx: (tgt.x - sx) / t, vy: (tgt.y - sy) / t, vz: dz / t + 10 * t / 2, o: -1, pool: 1, t: 4 }); emit({ k: 'sfx', n: 'spit', x: z.x, y: z.y }); }
+  }
+  return false;
+}
+function bossSlam(z, R, dmg) {
+  for (const p of alivePl()) { const d = Math.hypot(p.x - z.x, p.y - z.y); if (d < R && !p.down) { hurtPlayer(p, dmg * W.D.dmg); knock(p, (p.x - z.x) / (d || 1) * 7, (p.y - z.y) / (d || 1) * 7); } }
+  const x0 = Math.floor(z.x), y0 = Math.floor(z.y);
+  for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) { const x = x0 + dx, y = y0 + dy; if (!inMap(x, y)) continue; const i = ci(x, y, z.L); if (W.blk[i] && B[W.blk[i]].brk && B[W.blk[i]].cost) damageCell(i, 140); }
+  emit({ k: 'boom', x: r2(z.x), y: r2(z.y), z: r2(z.z + 0.2), s: 1 });
+}
+function acidPool(x, y) { if (W.mode === 'boss' && W.obj.pools) { W.obj.pools.push({ x: r2(x), y: r2(y), r: 1.7, t: 7 }); objChanged(); } }
+
 /* ---- 50_render.js ---- */
 /* ================= rendering (Three.js): terrain, cells, characters, lights, cutaway, camera, effects ================= */
 // world (x east, y south, z up)  ->  three (X = x, Y = z, Z = y)
@@ -5712,7 +6191,9 @@ function viewL() {
 // LCUT: the building you're inside (null outdoors). LCUTS: every building cut down to your floor — the one you're in,
 // the ones right next to you (so you can see their doors and rooms) and any standing between the camera and you
 let LCUT = null, LCUTS = [], LC_KEY = '';
-const CUT_HOUSES = TOWN_HOUSES.concat([[RADIO_XY[0] - 6, RADIO_XY[1] - 5, RADIO_XY[0] + 6, RADIO_XY[1] + 7, 3, 'camp']]);
+let CUT_HOUSES = [];
+function cutHousesInit() { CUT_HOUSES = TOWN_HOUSES.concat([[RADIO_XY[0] - 6, RADIO_XY[1] - 5, RADIO_XY[0] + 6, RADIO_XY[1] + 7, 3, 'camp']]); LC_KEY = ''; }
+cutHousesInit();
 const CUT_NEAR = 2.5;
 function cutBox() {
   const me = W && W.p[ME]; if (!VIEW.auto || !me || me.gone) { LCUT = null; LCUTS = []; LC_KEY = ''; return null; }
@@ -5808,8 +6289,8 @@ function buildScene() {
   I.bars = inst(GEO.bars, lam('#ffffff'), 600);
   I.wire = inst(GEO.wire, lam('#9aa0a6'), 600, false);
   I.lampP = inst(GEO.lampPole, lam('#2d3238'), 200); I.lampH = inst(GEO.lampHead, new THREE.MeshBasicMaterial({ color: '#ffe9a8' }), 200, false);
-  I.trunk = inst(GEO.trunk, lam('#4a3220'), 7000);
-  I.pine = GEO.pine.map((g, k) => inst(g, lam(['#2e4a2c', '#35552f', '#3c5f35'][k]), 7000));
+  I.trunk = inst(GEO.trunk, new THREE.MeshLambertMaterial({ color: '#4a3220', flatShading: true }), 7000);
+  I.pine = GEO.pine.map((g, k) => inst(g, new THREE.MeshLambertMaterial({ color: ['#2e4a2c', '#35552f', '#3c5f35'][k], flatShading: true }), 7000));
   I.oak = inst(GEO.oak, lam('#ffffff'), 7000);
   I.rock = inst(GEO.rock, lam('#ffffff'), 3000);
   I.crate = inst(GEO.crate, lam('#4f5d3c'), 600); I.rubble = inst(GEO.rubble, lam('#6a625a'), 800); I.fence = inst(GEO.fence, lam('#6b5a48'), 1200);
@@ -5844,14 +6325,22 @@ function buildScene() {
 }
 /* ---------- terrain (static per world) ---------- */
 const TCOL = { [TT.grass]: ['#55733e', '#5a7843', '#50703a'], [TT.hill]: ['#4b663b', '#516c3e', '#476038'], [TT.dirt]: ['#6e5a42', '#74604a'], [TT.road]: ['#3c3d40', '#38393c'], [TT.sand]: ['#7d7356', '#857a5a'], [TT.forest]: ['#3f5a30', '#445f33', '#3b552d'], [TT.water]: ['#2b2723'] };
+// per-map tints for trees and bushes
+function applyMapLook() {
+  const T = MAPDEF.trees || {}, I = OBJ.I; if (!I) return;
+  ['#2e4a2c', '#35552f', '#3c5f35'].forEach((c, k) => I.pine[k].material.color.set((T.pine && T.pine[k]) || c));
+  I.trunk.material.color.set(T.trunk || '#4a3220');
+  if (typeof PROP !== 'undefined' && PROP[41]) PROP[41].col = MAPDEF.bush || '#3e5f2e';
+}
 function buildTerrain() {
+  applyMapLook();
   // one merged mesh: column tops + only the exposed side faces (vertex colours, flat shading)
   const pos = [], col = [], c = new THREE.Color();
   const quad = (a, b2, c2, d, hex, k) => { c.set(hex).multiplyScalar(k); for (const v of [a, b2, c2, a, c2, d]) { pos.push(v[0], v[1], v[2]); col.push(c.r, c.g, c.b); } };
   const topOf = (x, y) => !inMap(x, y) ? -1.6 : ttAt(x, y) === TT.water ? -0.55 : gAt(x, y) * FH;
   for (let y = 0; y < MH; y++) for (let x = 0; x < MW; x++) {
     const t = ttAt(x, y), h = hash2(x, y), top = topOf(x, y);
-    const cols = TCOL[t] || TCOL[TT.grass], tc = t === TT.water ? '#4a4136' : cols[Math.floor(h * cols.length)];
+    const cols = (MAPDEF.tcol && MAPDEF.tcol[t]) || TCOL[t] || TCOL[TT.grass], tc = t === TT.water ? '#4a4136' : cols[Math.floor(h * cols.length)];
     quad([x, top, y], [x, top, y + 1], [x + 1, top, y + 1], [x + 1, top, y], tc, 1);
     const side = t === TT.water ? '#3a3128' : gAt(x, y) > 0 ? (h < 0.5 ? '#6b6052' : '#625849') : '#4e4134';
     const nb = [[x + 1, y, [x + 1, y + 1], [x + 1, y], 0.62], [x, y + 1, [x, y + 1], [x + 1, y + 1], 0.78], [x - 1, y, [x, y], [x, y + 1], 0.62], [x, y - 1, [x + 1, y], [x, y], 0.78]];
@@ -5918,7 +6407,7 @@ function rebuildCells() {
       case 8: { const ax = wallAxis(x, y, L) ? Math.PI / 2 : 0, f = W.bhp[i] / B[b].hp; archPut('sand', X, Y, Z, ax, 1, Math.max(cut, 0.6), 1, dmgTint('#ffffff', f)); if (cut === 1) archPut('bars', X, Y, Z, ax, 1, 1, 1, dmgTint('#ffffff', f)); break; }
       case 9: { const wa = blkAt(x - 1, y, L) === 9 || blkAt(x + 1, y, L) === 9 ? 0 : Math.PI / 2; setInst(I.wire, c.wire++, X, Y, Z, wa, 1, 1, 1); archPut('wireP', X, Y, Z, wa, 1, 1, 1); break; }
       case 10: setInst(I.lampP, c.lamp, X - 0.2, Y, Z - 0.2, 0, 1, 1, 1); setInst(I.lampH, c.lamp++, X - 0.2, Y, Z - 0.2, 0, 1, 1, 1); lamps.push([X + 0.05, Y + 0.75, Z - 0.2]); break;
-      case 22: { const sc = 0.8 + h * 0.5, rot = h * 6; if (inFront && fwd < 3.5 && lat < 1.8) { setInst(I.trunk, c.trunk++, X, Y, Z, rot, sc, sc * 0.35, sc); break; } setInst(I.trunk, c.trunk++, X, Y, Z, rot, sc, sc, sc); if (h < 0.6) for (let k = 0; k < 3; k++) setInst(I.pine[k], c.pine + 0, X, Y, Z, rot + k, sc, sc, sc); if (h < 0.6) c.pine++; else setInst(I.oak, c.oak++, X, Y, Z, rot, sc, sc, sc, h < 0.8 ? '#4f6a33' : '#5b7339'); break; }
+      case 22: { const sc = 0.8 + h * 0.5, rot = h * 6; if (inFront && fwd < 3.5 && lat < 1.8) { setInst(I.trunk, c.trunk++, X, Y, Z, rot, sc, sc * 0.35, sc); break; } setInst(I.trunk, c.trunk++, X, Y, Z, rot, sc, sc, sc); if (h < 0.6) for (let k = 0; k < 3; k++) setInst(I.pine[k], c.pine + 0, X, Y, Z, rot + k, sc, sc, sc); if (h < 0.6) c.pine++; else setInst(I.oak, c.oak++, X, Y, Z, rot, sc, sc, sc, MAPDEF.trees ? MAPDEF.trees.oak[h < 0.8 ? 0 : 1] : h < 0.8 ? '#4f6a33' : '#5b7339'); break; }
       case 21: setInst(I.rock, c.rock++, X, Y, Z, h * 6, 0.8 + h * 0.6, 0.7 + h * 0.6, 0.8 + h * 0.5, h < 0.5 ? '#78746c' : '#6c6862'); break;
       case 26: setInst(I.crate, c.crate++, X, Y, Z, h * 2, 1, 1, 1); break;
       case 29: setInst(I.rubble, c.rubble++, X, Y, Z, h * 6, 1, 1, 1); break;
@@ -6063,7 +6552,7 @@ function draw(dt) {
   stepFx(dt);
   updateCamera(dt);
   const me = W.p[ME], vl = viewL();
-  const key = W.ver + ':' + vl + ':' + CAM.rot + ':' + (me ? Math.floor(me.x) + ',' + Math.floor(me.y) + ',' + me.L : '') + ':' + Math.floor(CAM.tx / 6) + ',' + Math.floor(CAM.ty / 6) + ':' + Math.round(cullR() / 4) + ':' + LC_KEY;
+  const key = W.ver + ':' + vl + ':' + CAM.rot + ':' + (me ? Math.floor(me.x) + ',' + Math.floor(me.y) + ',' + me.L : '') + ':' + Math.floor(CAM.tx / 6) + ',' + Math.floor(CAM.ty / 6) + ':' + Math.round(cullR() / 4) + ':' + LC_KEY + ':' + (W.mode === 'nests' || W.mode === 'towers' ? W.obv : 0);
   if (key !== CUT_KEY) { CUT_KEY = key; rebuildCells(); }
   if (STATE.mode === 'play' && !W.demo) qualTick(dt);
   applyTime(darkness()); archFrame();
@@ -6085,6 +6574,18 @@ function drawOverlay() {
     if (on) html += `<div class="tag" style="left:${sx | 0}px;top:${sy | 0}px"><span>${p.name}${p.L !== W.p[ME].L ? ' · ' + (p.L + 1) + 'F' : ''}</span><i style="width:${(p.down ? 0 : p.hp / p.maxHp * 100) | 0}%;background:${PCOL[p.i % 2].j}"></i></div>`;
     else { const ax = clamp(sx, 26, VW - 26), ay = clamp(sy, 80, VH - 80); const an = Math.atan2(sy - ay, sx - ax); html += `<div class="arr" style="left:${ax | 0}px;top:${ay | 0}px;transform:translate(-50%,-50%) rotate(${an}rad);color:${p.down ? '#ff5a4a' : PCOL[p.i % 2].j}">➤</div>`; }
   }
+  // objectives: a label over the ones on screen, an arrow at the edge for the rest (the three nearest)
+  const me = W.p[ME];
+  if (me && !W.demo) { const used = []; let arrows = 0;
+    for (const m of modeMarks().filter(m => m.a).map(m => Object.assign({}, m, { d: Math.hypot(m.x - me.x, m.y - me.y) })).sort((a, b) => a.d - b.d).slice(0, 4)) {
+      const [sx, sy] = w2s(m.x, m.y, gAt(Math.floor(m.x), Math.floor(m.y)) * FH + 1.8), on = sx > 30 && sx < VW - 30 && sy > 70 && sy < VH - 70;
+      if (on) { if (m.d > 3.5) html += `<div class="om" style="left:${sx | 0}px;top:${sy | 0}px;color:${m.c}">${m.n}<br>${Math.round(m.d)} 米</div>`; continue; }
+      if (arrows >= 2) continue;
+      let ax = clamp(sx, 56, VW - 56), ay = clamp(sy, 110, VH - 110); const an = Math.atan2(sy - ay, sx - ax);
+      for (const [ux, uy] of used) if (Math.abs(ux - ax) < 90 && Math.abs(uy - ay) < 40) ay += ay > VH / 2 ? -44 : 44; // don't stack labels
+      used.push([ax, ay]); arrows++;
+      html += `<div class="oa" style="left:${ax | 0}px;top:${ay | 0}px;color:${m.c}"><i style="transform:rotate(${an}rad)">➤</i>${m.n} ${Math.round(m.d)} 米</div>`;
+    } }
   OV.innerHTML = html;
 }
 
@@ -6093,6 +6594,7 @@ const MM = { base: null, t: 0 };
 function buildMinimapBase() {
   const c = document.createElement('canvas'); c.width = MW; c.height = MH; const g = c.getContext('2d');
   const MC = { [TT.grass]: '#55733e', [TT.hill]: '#7a8a5a', [TT.dirt]: '#6e5a42', [TT.road]: '#3c3d40', [TT.sand]: '#8a7f5a', [TT.forest]: '#3c5530', [TT.water]: '#2a6a86' };
+  if (MAPDEF.mc) Object.assign(MC, MAPDEF.mc);
   for (let y = 0; y < MH; y++) for (let x = 0; x < MW; x++) { let col = MC[ttAt(x, y)] || '#555'; if (gAt(x, y) === 2) col = '#8f9a6a'; g.fillStyle = col; g.fillRect(x, y, 1, 1); }
   MM.base = c;
 }
@@ -6158,6 +6660,8 @@ function fxEvent(e) {
     case 'night': sfx(e.blood ? 'blood' : 'night'); banner(e.blood ? '第 ' + e.n + ' 夜 · 血月' : '第 ' + e.n + ' 夜', (e.blood ? '尸潮从四面八方涌来，巨尸出没' : '尸潮从' + e.from + '边来了') + '，守住堡垒', e.blood ? '#ff5a4a' : '#ffd27a'); break;
     case 'dawn': document.getElementById('over').classList.add('hidden'); sfx('dawn'); banner('天亮了', '撑过了第 ' + e.n + ' 夜 · 新的任务已刷新（点上方「今日任务」展开）', '#ffe7b0'); break;
     case 'say': uiMsg(e.text, e.col); break;
+    case 'mbanner': banner(e.t, '', e.c); sfx('ready'); break;
+    case 'dig': for (let k = 0; k < (e.big ? 14 : 4); k++) addP({ x: e.x + frnd(-0.4, 0.4), y: e.y + frnd(-0.4, 0.4), z: e.z + 0.05, vx: frnd(-1.2, 1.2), vy: frnd(-1.2, 1.2), vz: frnd(1, 3), col: k % 2 ? '#6a5236' : '#4a3a28', s: frnd(0.08, 0.16), life: 0.8, floor: e.z }); if (e.big) sfx('collapse', e.x, e.y); break;
     case 'craft': if (e.p === ME) { sfx('craft'); toast('制作完成：' + e.name); } break;
     case 'deny': if (e.p === ME && thr('deny', 0.3)) { sfx('deny'); toast(e.why, '#ff8a7a'); } break;
     case 'boom': RND.booms.push({ x: e.x, y: e.y, z: e.z, t: 0 }); debrisFx(e.x, e.y, e.z, e.g ? '#6a8a2a' : '#3a3530', 12); if (e.g) { bloodFx(e.x, e.y, e.z, 24, true); addDecal(e.x, e.y, e.z - 0.5, 1.1, '#3c5a14'); } sfx('boom', e.x, e.y); shake(e.x, e.y, 0.4); break;
@@ -6414,7 +6918,6 @@ function archSlab(s, i, x, y, L, X, Y, Z) {
 /* ---------- ruined town: house colours, broken tiled roofs over one end of each house, fallen beams ---------- */
 // which town building covers each ground cell (-1: none); interior = strictly inside its outline
 const HOUSE_ID = new Int8Array(MW * MH).fill(-1);
-TOWN_HOUSES.forEach(([x0, y0, x1, y1], k) => { for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) if (x >= 0 && y >= 0 && x < MW && y < MH) HOUSE_ID[y * MW + x] = k; });
 function houseInterior(x, y) { const k = HOUSE_ID[y * MW + x]; if (k < 0) return false; const H = TOWN_HOUSES[k]; return x > H[0] && x < H[2] && y > H[1] && y < H[3]; }
 function houseOf(x, y) { for (let k = 0; k < TOWN_HOUSES.length; k++) { const [x0, y0, x1, y1] = TOWN_HOUSES[k]; if (x >= x0 && x <= x1 && y >= y0 && y <= y1) return k; } return -1; }
 // roof spans must be known before map generation (walls under a roof stay full height, no gaps there)
@@ -6425,10 +6928,16 @@ function roofSpan(k) {
   if (type === 'villa' || type === 'ware' || type === 'garage') return { west, xa: x0, xb: x1, lvl: st - 1, whole: 1 }; // a whole pitched roof (the attic / the hall)
   return { west, xa: west ? x0 : x1 - 2, xb: west ? x0 + 2 : x1, lvl: 0 };
 }
-for (let k = 0; k < TOWN_HOUSES.length; k++) {
-  const [x0, y0, x1, y1] = TOWN_HOUSES[k], R = roofSpan(k); if (!R) continue;
-  for (let x = R.xa; x <= R.xb; x++) for (let y = y0; y <= y1; y++) if (y === y0 || y === y1 || x === (R.west ? x0 : x1)) ARCH.roofCells.add(x + ',' + y + ',' + R.lvl);
+// (re)build the per-map lookups: which house covers each cell, and the wall cells that carry a roof
+function archMapInit() {
+  HOUSE_ID.fill(-1); ARCH.roofCells.clear();
+  TOWN_HOUSES.forEach(([x0, y0, x1, y1], k) => { for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) if (x >= 0 && y >= 0 && x < MW && y < MH) HOUSE_ID[y * MW + x] = k; });
+  for (let k = 0; k < TOWN_HOUSES.length; k++) {
+    const [x0, y0, x1, y1] = TOWN_HOUSES[k], R = roofSpan(k); if (!R) continue;
+    for (let x = R.xa; x <= R.xb; x++) for (let y = y0; y <= y1; y++) if (y === y0 || y === y1 || x === (R.west ? x0 : x1)) ARCH.roofCells.add(x + ',' + y + ',' + R.lvl);
+  }
 }
+archMapInit();
 function tileTex() {
   return archTex(128, 128, 71, (g, r, w, h) => {
     g.fillStyle = '#5a2a1c'; g.fillRect(0, 0, w, h);
@@ -6596,6 +7105,7 @@ function drawZombies(vl, dt) {
   for (const z of list) {
     if (drawn >= ZCAP - 2) break;
     const corpse = !!z.corpse, L = z.L != null ? z.L : Math.floor((z.z + 0.1) / FH);
+    if (z.hidden && !corpse) continue;
     if (L > vl || lcHide(Math.floor(z.x), Math.floor(z.y), L)) continue;
     drawn++;
     rigZombie(z, corpse, dt, dk);
@@ -6603,33 +7113,34 @@ function drawZombies(vl, dt) {
   for (const k in ZPOOL) { const q = ZPOOL[k]; q.m.count = q.n; q.m.instanceMatrix.needsUpdate = true; if (q.m.instanceColor) q.m.instanceColor.needsUpdate = true; }
 }
 function rigZombie(z, corpse, dt, dk) {
+  const zk = ZT[z.k].look || z.k;
   if ((z.burn > 0 || z.burnF) && !corpse && Math.random() < dt * 22) addP({ x: z.x + frnd(-0.2, 0.2), y: z.y + frnd(-0.2, 0.2), z: z.z + frnd(0.2, ZT[z.k].h), vx: frnd(-0.3, 0.3), vy: frnd(-0.3, 0.3), vz: frnd(0.8, 1.6), g: -0.5, col: Math.random() < 0.5 ? '#ffb030' : '#ff6a1a', s: frnd(0.06, 0.12), life: 0.45 });
-  if (z.k === 'dog') return rigDog(z, corpse, dt);
-  const T = ZT[z.k], Bd = ZBODY[z.k] || ZBODY.walker, s = T.sc, sd = z.seed || 0, v = z.k === 'walker' ? sd % 5 : 0;
+  if (zk === 'dog') return rigDog(z, corpse, dt);
+  const T = ZT[z.k], Bd = ZBODY[zk] || ZBODY.walker, s = T.sc, sd = z.seed || 0, v = zk === 'walker' ? sd % 5 : 0;
   // render-side smoothing: facing, speed and gait phase (works the same for host and guest)
   if (!corpse) {
     if (z._f == null) { z._f = z.face || 0; z._px = z.x; z._py = z.y; z._spd = 0; z._ph = (sd % 100) * 0.1; }
     const sp = dt > 0 ? Math.min(6, Math.hypot(z.x - z._px, z.y - z._py) / dt) : 0; z._px = z.x; z._py = z.y;
     z._spd = lerp(z._spd, sp, Math.min(1, dt * 8)); z._f = angLerp(z._f, z.face || 0, Math.min(1, dt * 9));
-    z._ph += dt * (1.2 + z._spd * (z.k === 'runner' ? 3.2 : z.k === 'climber' ? 4.2 : 3.6) / s);
+    z._ph += dt * (1.2 + z._spd * (zk === 'runner' ? 3.2 : zk === 'climber' ? 4.2 : 3.6) / s);
   }
   const hit = !corpse && z.hitT > 0, white = c => hit ? '#ffd8cc' : c;
-  const skin = white(z.k === 'bloater' ? '#9aa86a' : z.k === 'screamer' ? '#b8b0b4' : z.k === 'crawler' ? '#8a9480' : z.k === 'climber' ? '#7d8e98' : z.k === 'spitter' ? '#93a64e' : z.k === 'brute' ? '#7a6d62' : z.k === 'boss' ? '#6e534c' : v === 1 ? '#c2c4b2' : ZSKIN[sd % 5]);
-  const shirt = white(v === 1 ? ['#6b1414', '#3a3a52', '#d8d0bc'][sd % 3] : ZSHIRT[sd % 10]), pants = white(z.k === 'brute' || z.k === 'boss' ? '#2a2420' : '#26292b'), shoe = '#1b1a18';
+  const skin = white(ZT[z.k].skin ? ZT[z.k].skin : zk === 'bloater' ? '#9aa86a' : zk === 'screamer' ? '#b8b0b4' : zk === 'crawler' ? '#8a9480' : zk === 'climber' ? '#7d8e98' : zk === 'spitter' ? '#93a64e' : zk === 'brute' ? '#7a6d62' : zk === 'boss' ? '#6e534c' : v === 1 ? '#c2c4b2' : ZSKIN[sd % 5]);
+  const shirt = white(v === 1 ? ['#6b1414', '#3a3a52', '#d8d0bc'][sd % 3] : ZSHIRT[sd % 10]), pants = white(zk === 'brute' || zk === 'boss' ? '#2a2420' : '#26292b'), shoe = '#1b1a18';
   const rag = white(v === 1 ? ['#4a0808', '#24243a', '#a8a090'][sd % 3] : tmpC.set(ZSHIRT[sd % 10]).multiplyScalar(0.7).getStyle());
   const amp = corpse ? 0 : clamp(z._spd / Math.max(0.6, T.spd * 0.8), 0, 1.15), ph = corpse ? 0 : z._ph, t = W.t;
   const atk = !corpse && z.atk > 0, aph = atk ? (t * 3.2 + sd * 0.37) % 1 : 0, swing = atk ? (aph < 0.62 ? -ease(aph / 0.62) : -1 + ease((aph - 0.62) / 0.2) * 1.6) : 0; // raise, then slam
-  const climbing = !corpse && !!z.climbing, quad = z.k === 'climber' && !climbing, crawl = z.k === 'crawler', scream = !corpse && z.scr > 0;
+  const climbing = !corpse && !!z.climbing, quad = zk === 'climber' && !climbing, crawl = zk === 'crawler', scream = !corpse && z.scr > 0;
   const twitch = !corpse && hash2(Math.floor(t * 3) + sd, 7) > 0.93 ? (hash2(Math.floor(t * 3), sd) - 0.5) * 1.3 : 0;
   const flinch = hit ? 0.35 : 0;
   // --- legs: thigh swing + knee bend; left/right can differ (limp) ---
-  const limp = z.k === 'walker' && (v === 0 || v === 3), big = z.k === 'brute' || z.k === 'boss';
-  let thA = (z.k === 'runner' ? 0.85 : big ? 0.38 : quad ? 0.5 : 0.48) * amp, kn = (z.k === 'runner' ? 1.25 : quad ? 0.6 : 0.75) * amp;
+  const limp = zk === 'walker' && (v === 0 || v === 3), big = zk === 'brute' || zk === 'boss';
+  let thA = (zk === 'runner' ? 0.85 : big ? 0.38 : quad ? 0.5 : 0.48) * amp, kn = (zk === 'runner' ? 1.25 : quad ? 0.6 : 0.75) * amp;
   let aL = Math.sin(ph) * thA, aR = -Math.sin(ph) * thA * (limp ? 0.45 : 1);
   let kL = 0.12 + Math.max(0, Math.cos(ph)) * kn, kR = limp ? 0.08 : 0.12 + Math.max(0, -Math.cos(ph)) * kn;
   if (quad) { aL += 0.85; aR += 0.85; kL += 1.25; kR += 1.25; }
   if (crawl) { aL = 1.3 + Math.sin(ph) * 0.15; aR = 1.4; kL = kR = 0; }
-  if (z.k === 'spitter') { aL *= 0.8; aR *= 0.8; }
+  if (zk === 'spitter') { aL *= 0.8; aR *= 0.8; }
   // corpse fall styles
   let fall = 0, fstyle = sd % 3, knees = 0;
   if (corpse) {
@@ -6648,13 +7159,13 @@ function rigZombie(z, corpse, dt, dk) {
     J(R0, R0, 0, 0.06 * fall - sink, 0, fstyle === 2 ? 0.25 * fall : 0, 0, dir * fall * Math.PI / 2 * 0.94);
   }
   // body roll / bob
-  const roll = crawl ? Math.sin(ph) * 0.12 * amp : (limp ? Math.sin(ph) * 0.13 : z.k === 'spitter' ? Math.sin(ph) * 0.15 : big ? Math.sin(ph) * 0.07 : Math.sin(ph) * 0.04) * amp;
-  const hunch = (climbing ? -0.15 : Bd.hunch + (z.k === 'runner' ? 0.1 * amp : 0)) - flinch + (corpse ? knees * 0.4 : 0) + Math.sin(t * 1.3 + sd) * 0.03;
+  const roll = crawl ? Math.sin(ph) * 0.12 * amp : (limp ? Math.sin(ph) * 0.13 : zk === 'spitter' ? Math.sin(ph) * 0.15 : big ? Math.sin(ph) * 0.07 : Math.sin(ph) * 0.04) * amp;
+  const hunch = (climbing ? -0.15 : Bd.hunch + (zk === 'runner' ? 0.1 * amp : 0)) - flinch + (corpse ? knees * 0.4 : 0) + Math.sin(t * 1.3 + sd) * 0.03;
   const pelv = J(ZM[1], R0, 0, hipY, 0, roll, Math.sin(ph) * 0.08 * amp, 0);
   // legs
   for (const sg of [-1, 1]) {
     const a = sg < 0 ? aL : aR, k = sg < 0 ? kL : kR;
-    const hip = J(ZM[2], pelv, 0, 0, sg * 0.08 * Bd.tw * (z.k === 'spitter' ? 1.3 : 1), (quad ? -0.25 : 0.04) * sg, 0, a);
+    const hip = J(ZM[2], pelv, 0, 0, sg * 0.08 * Bd.tw * (zk === 'spitter' ? 1.3 : 1), (quad ? -0.25 : 0.04) * sg, 0, a);
     zput('limb', hip, 0.05 * (big ? 1.45 : 1), TL, 0.05 * (big ? 1.45 : 1), pants);
     const knee = J(ZM[3], hip, 0, -TL, 0, 0, 0, -k);
     zput('limb', knee, 0.04 * (big ? 1.4 : 1), SL, 0.04 * (big ? 1.4 : 1), sg > 0 && limp ? skin : pants);
@@ -6665,76 +7176,76 @@ function rigZombie(z, corpse, dt, dk) {
   const tor = J(ZM[5], pelv, 0, 0, 0, 0, Math.sin(ph) * -0.12 * amp, -hunch);
   zput('torso', tor, Bd.tw, Bd.th, Bd.tw, shirt);
   zput('rag', J(ZM[6], tor, 0, 0.02, 0, Math.sin(ph * 2) * 0.08, 0, -Math.sin(ph) * 0.15 * amp), Bd.tw, v === 1 ? 2.2 : 1, Bd.tw, rag);
-  if (z.k === 'spitter' || z.k === 'bloater') { const bl = z.k === 'bloater', sw = (bl ? 1.75 : 1) * (1 + Math.sin(t * (bl ? 5 : 3) + sd) * (bl ? 0.06 : 0.04)); zput('belly', J(ZM[7], tor, bl ? 0.1 : 0.07, bl ? 0.2 : 0.17, 0, 0, 0, 0), sw, sw * (bl ? 0.95 : 1), sw, skin); zput('pust', ZM[7], sw, sw, sw, bl ? '#ffb84a' : '#c8ff4a'); }
-  if (z.k === 'armored') zput('torso', J(ZM[6], tor, 0, 0.06, 0, 0, 0, 0), Bd.tw * 1.12, Bd.th * 0.82, Bd.tw * 1.12, white('#1f2a3a'));
+  if (zk === 'spitter' || zk === 'bloater') { const bl = zk === 'bloater', sw = (bl ? 1.75 : 1) * (1 + Math.sin(t * (bl ? 5 : 3) + sd) * (bl ? 0.06 : 0.04)); zput('belly', J(ZM[7], tor, bl ? 0.1 : 0.07, bl ? 0.2 : 0.17, 0, 0, 0, 0), sw, sw * (bl ? 0.95 : 1), sw, skin); zput('pust', ZM[7], sw, sw, sw, bl ? '#ffb84a' : '#c8ff4a'); }
+  if (zk === 'armored') zput('torso', J(ZM[6], tor, 0, 0.06, 0, 0, 0, 0), Bd.tw * 1.12, Bd.th * 0.82, Bd.tw * 1.12, white('#1f2a3a'));
   if (big) zput('spikes', tor, Bd.tw, Bd.th, Bd.tw, '#d8ccb4');
   // head: tilted, drooped, twitching; climbers have the neck wrung sideways and look up
-  const TH = 0.44 * Bd.th, spitWind = z.k === 'spitter' && z.spitT != null && z.spitT < 0.55 ? ease(1 - z.spitT / 0.55) : 0;
+  const TH = 0.44 * Bd.th, spitWind = zk === 'spitter' && z.spitT != null && z.spitT < 0.55 ? ease(1 - z.spitT / 0.55) : 0;
   let hRoll = 0.12, hPitch = 0.25, hYaw = 0, jaw = 0.12;
-  if (z.k === 'walker') { hRoll = [0.4, 0.15, 0.25, 0.85, -0.3][v]; hPitch = [0.35, 0.5, 0.25, 0.2, 0.15][v]; jaw = v === 4 ? 0.7 : 0.15; }
-  else if (z.k === 'runner') { hRoll = -0.15; hPitch = -0.45; jaw = 0.55 + Math.sin(t * 9 + sd) * 0.15; }
-  else if (z.k === 'climber') { hRoll = 1.15; hPitch = quad ? -1.05 : 0.2; jaw = 0.3; }
-  else if (z.k === 'spitter') { hRoll = 0.1; hPitch = 0.15 - spitWind * 1.0; jaw = 0.2 + spitWind * 0.8; }
-  else if (big) { hRoll = 0.2; hPitch = -0.15 + (z.k === 'boss' ? 0.25 : 0); jaw = 0.35; }
+  if (zk === 'walker') { hRoll = [0.4, 0.15, 0.25, 0.85, -0.3][v]; hPitch = [0.35, 0.5, 0.25, 0.2, 0.15][v]; jaw = v === 4 ? 0.7 : 0.15; }
+  else if (zk === 'runner') { hRoll = -0.15; hPitch = -0.45; jaw = 0.55 + Math.sin(t * 9 + sd) * 0.15; }
+  else if (zk === 'climber') { hRoll = 1.15; hPitch = quad ? -1.05 : 0.2; jaw = 0.3; }
+  else if (zk === 'spitter') { hRoll = 0.1; hPitch = 0.15 - spitWind * 1.0; jaw = 0.2 + spitWind * 0.8; }
+  else if (big) { hRoll = 0.2; hPitch = -0.15 + (zk === 'boss' ? 0.25 : 0); jaw = 0.35; }
   else if (crawl) { hRoll = 0.3; hPitch = -1.25; jaw = 0.45; }
-  else if (z.k === 'screamer') { hRoll = 0.2; hPitch = scream ? -1.0 : 0.1; jaw = scream ? 1.05 : 0.8; }
-  else if (z.k === 'bloater') { hRoll = 0.15; hPitch = 0.2; jaw = 0.3; }
-  else if (z.k === 'armored') { hRoll = 0.05; hPitch = 0.1; jaw = 0.1; }
+  else if (zk === 'screamer') { hRoll = 0.2; hPitch = scream ? -1.0 : 0.1; jaw = scream ? 1.05 : 0.8; }
+  else if (zk === 'bloater') { hRoll = 0.15; hPitch = 0.2; jaw = 0.3; }
+  else if (zk === 'armored') { hRoll = 0.05; hPitch = 0.1; jaw = 0.1; }
   hPitch += hunch * 0.4 - flinch * 1.5; // look ahead despite the hunch
-  const head = J(ZM[8], tor, 0.03 * Bd.tw, TH * (big && z.k === 'brute' ? 0.82 : 0.97) + (z.k === 'screamer' ? 0.1 : 0), 0, hRoll + twitch, hYaw + twitch * 0.6 + Math.sin(t * 0.7 + sd) * 0.15, -hPitch);
+  const head = J(ZM[8], tor, 0.03 * Bd.tw, TH * (big && zk === 'brute' ? 0.82 : 0.97) + (zk === 'screamer' ? 0.1 : 0), 0, hRoll + twitch, hYaw + twitch * 0.6 + Math.sin(t * 0.7 + sd) * 0.15, -hPitch);
   const hs = Bd.hs;
   zput('head', head, hs, hs, hs, skin);
   zput('jaw', J(ZM[9], head, 0.02 * hs, 0.05 * hs, 0, 0, 0, -jaw), hs, hs, hs, skin);
   const ec = z.rage > 0 || z.rageF ? '#ff2a1a' : ZEYE[z.k] || '#ffd36a';
-  if (z.k === 'screamer') zput('limb', J(ZM[11], tor, 0.03, TH * 0.97 + 0.12, 0, 0, 0, Math.PI - hPitch * 0.5), 0.035, 0.13, 0.035, skin); // the long neck
-  if (z.k === 'armored') zput('helmet', head, hs, hs, hs, white('#2a3442'));
-  if (z.k === 'armored' && !corpse) zput('shield', J(ZM[15], tor, 0.24, TH * 0.62, -0.08, 0, 0.15, hunch - flinch), 1, 1, 1, white('#3a4656')); // riot shield held upright in front
+  if (zk === 'screamer') zput('limb', J(ZM[11], tor, 0.03, TH * 0.97 + 0.12, 0, 0, 0, Math.PI - hPitch * 0.5), 0.035, 0.13, 0.035, skin); // the long neck
+  if (zk === 'armored') zput('helmet', head, hs, hs, hs, white('#2a3442'));
+  if (zk === 'armored' && !corpse) zput('shield', J(ZM[15], tor, 0.24, TH * 0.62, -0.08, 0, 0.15, hunch - flinch), 1, 1, 1, white('#3a4656')); // riot shield held upright in front
   if (!corpse) { zput('eye', head, hs, hs, hs, ec); zput('glow', head, hs, hs, hs, ec); }
-  if (v === 1 || z.k === 'boss') zput('hair', J(ZM[10], head, 0, 0, 0, 0, 0, 0), hs, hs * (z.k === 'boss' ? 1.4 : 1), hs, z.k === 'boss' ? '#120c0a' : '#151010');
-  if (z.k === 'boss') { // the second face on the back of the head
+  if (v === 1 || zk === 'boss') zput('hair', J(ZM[10], head, 0, 0, 0, 0, 0, 0), hs, hs * (zk === 'boss' ? 1.4 : 1), hs, zk === 'boss' ? '#120c0a' : '#151010');
+  if (zk === 'boss') { // the second face on the back of the head
     const h2 = J(ZM[11], head, -0.02, 0.0, 0, 0.5, Math.PI, 0.25);
     zput('head', h2, hs * 0.9, hs * 0.9, hs * 0.9, '#cfc6bc'); if (!corpse) { zput('eye', h2, hs * 0.9, hs * 0.9, hs * 0.9, '#ff2a2a'); zput('glow', h2, hs * 0.9, hs * 0.9, hs * 0.9, '#ff2a2a'); }
   }
   // arms: every type poses them differently, always asymmetric
   for (const sg of [-1, 1]) {
-    if (z.k === 'walker' && v === 2 && sg > 0) continue; // one-armed
+    if (zk === 'walker' && v === 2 && sg > 0) continue; // one-armed
     let ap = 0.1, ar = 0.12, el = 0.25, uaL = Bd.ua, faL = Bd.fa, hand = 'claw', hsz = 1, sleeve = shirt;
     const sw = Math.sin(ph + (sg > 0 ? Math.PI : 0));
-    if (z.k === 'walker') {
+    if (zk === 'walker') {
       if (sg < 0) { ap = 1.25 + Math.sin(t * 1.1 + sd) * 0.1; el = 0.35; } // the reaching arm
       else { ap = (v === 3 ? 1.1 : 0.12) + sw * 0.18 * amp; ar = 0.22; el = 0.15; faL *= 1.35; } // the one hanging to the knee
       if (atk) { ap = 1.6 + swing * 1.1; el = 0.2; }
-    } else if (z.k === 'runner') {
+    } else if (zk === 'runner') {
       ap = -0.7 + sw * 0.8 * amp; el = 0.9; ar = 0.18;
       if (atk) { ap = 1.4 + swing; el = 0.3; }
-    } else if (z.k === 'climber') {
+    } else if (zk === 'climber') {
       if (climbing) { ap = Math.PI - 0.35 + Math.sin(t * 9 + (sg > 0 ? 3 : 0)) * 0.45; el = 0.5; ar = 0.25; }
       else { ap = 1.25 + sw * 0.55 * Math.max(0.3, amp) + (atk ? swing * 0.6 : 0); el = -0.5; ar = 0.65; }
-    } else if (z.k === 'spitter') {
+    } else if (zk === 'spitter') {
       ap = 0.25 + sw * 0.25 * amp; ar = 0.55; el = 0.6; if (spitWind) { ap = 0.6; ar = 0.9; }
       if (atk) { ap = 1.3 + swing; }
-    } else if (z.k === 'brute') {
+    } else if (zk === 'brute') {
       if (sg > 0) { hand = 'fist'; hsz = 1.25; uaL *= 1.2; faL *= 1.2; ap = (atk ? 1.5 + swing * 1.7 : 0.2 + sw * 0.2 * amp); el = atk ? 0.2 : 0.35; ar = 0.25; }
       else { ap = 0.5 + sw * 0.25 * amp; el = 0.8; ar = 0.3; uaL *= 0.85; faL *= 0.85; }
-    } else if (z.k === 'boss') {
+    } else if (zk === 'boss') {
       ap = (atk && sg > 0 ? 1.4 + swing * 1.6 : 0.35 + sw * 0.15 * amp); el = 0.2; ar = 0.3; faL *= 1.15; if (sg > 0) { hand = 'fist'; hsz = 1.4; }
     }
     else if (crawl) { ap = 2.0 + sw * 0.55 * Math.max(0.35, amp) + (atk ? swing * 0.4 : 0); el = -0.3; ar = 0.45; }
-    else if (z.k === 'bloater') { ap = 0.45 + sw * 0.2 * amp; ar = 0.75; el = 0.5; uaL *= 0.9; if (atk) ap = 1.2 + swing * 0.8; }
-    else if (z.k === 'screamer') { if (scream) { ap = 2.5; ar = 0.9; el = 0.2; faL *= 1.1; } else { ap = 0.3 + sw * 0.3 * amp; ar = 0.25; el = 0.45; faL *= 1.2; } if (atk) ap = 1.5 + swing; }
-    else if (z.k === 'armored') { if (sg < 0) { ap = 1.25; ar = 0.1; el = 1.2; } else { ap = 0.25 + sw * 0.3 * amp; el = 0.4; if (atk) { ap = 1.7 + swing * 1.4; el = 0.15; } } sleeve = white('#1f2a3a'); }
+    else if (zk === 'bloater') { ap = 0.45 + sw * 0.2 * amp; ar = 0.75; el = 0.5; uaL *= 0.9; if (atk) ap = 1.2 + swing * 0.8; }
+    else if (zk === 'screamer') { if (scream) { ap = 2.5; ar = 0.9; el = 0.2; faL *= 1.1; } else { ap = 0.3 + sw * 0.3 * amp; ar = 0.25; el = 0.45; faL *= 1.2; } if (atk) ap = 1.5 + swing; }
+    else if (zk === 'armored') { if (sg < 0) { ap = 1.25; ar = 0.1; el = 1.2; } else { ap = 0.25 + sw * 0.3 * amp; el = 0.4; if (atk) { ap = 1.7 + swing * 1.4; el = 0.15; } } sleeve = white('#1f2a3a'); }
     if (corpse) { ap = 0.3 + fall * 1.3; el = 0.4; ar = 0.6 + fall * 0.4; }
     ap += flinch * -1.2;
     const sh = J(ZM[12], tor, 0, TH * 0.9, sg * 0.15 * Bd.tw, sg * -ar, 0, ap);
-    const ur = (big ? 0.075 : 0.042) * (hand === 'fist' && z.k === 'brute' ? 1.5 : 1);
+    const ur = (big ? 0.075 : 0.042) * (hand === 'fist' && zk === 'brute' ? 1.5 : 1);
     zput('limb', sh, ur, uaL, ur, sleeve);
     const elb = J(ZM[13], sh, 0, -uaL, 0, 0, 0, el);
     zput('limb', elb, ur * 0.85, faL, ur * 0.85, skin);
     const wr = J(ZM[14], elb, 0, -faL, 0, 0, 0, hand === 'claw' ? 0.2 : 0);
-    zput(hand, wr, hsz * (big ? 1.4 : 1.05), hsz * (z.k === 'walker' || z.k === 'climber' ? 1.25 : 1) * (big ? 1.3 : 1), hsz * (big ? 1.4 : 1.05), skin);
+    zput(hand, wr, hsz * (big ? 1.4 : 1.05), hsz * (zk === 'walker' || zk === 'climber' ? 1.25 : 1) * (big ? 1.3 : 1), hsz * (big ? 1.4 : 1.05), skin);
   }
   // footfall dust for the heavy ones
-  if (!corpse && big && amp > 0.3) { const st = Math.sign(Math.sin(ph)); if (z._st != null && st !== z._st) { addP({ x: z.x, y: z.y, z: z.z + 0.05, vx: frnd(-0.5, 0.5), vy: frnd(-0.5, 0.5), vz: 0.3, g: -0.2, col: '#7a7266', s: 0.18 * s * 0.6, life: 0.6, smoke: 1 }); if (z.k === 'boss') shake(z.x, z.y, 0.06); } z._st = st; }
+  if (!corpse && big && amp > 0.3) { const st = Math.sign(Math.sin(ph)); if (z._st != null && st !== z._st) { addP({ x: z.x, y: z.y, z: z.z + 0.05, vx: frnd(-0.5, 0.5), vy: frnd(-0.5, 0.5), vz: 0.3, g: -0.2, col: '#7a7266', s: 0.18 * s * 0.6, life: 0.6, smoke: 1 }); if (zk === 'boss') shake(z.x, z.y, 0.06); } z._st = st; }
 }
 
 // zombie dog: low and long, four jointed legs at a gallop, snout, ears and a ragged tail
@@ -7026,8 +7537,14 @@ function propScene() {
     15: M([new THREE.TorusGeometry(0.17, 0.025, 4, 12).rotateX(Math.PI / 2).translate(0, 0.03, 0), boxG(0.3, 0.02, 0.06, 0, 0.02, 0), ...[0, 1, 2, 3, 4, 5].map(k => new THREE.ConeGeometry(0.02, 0.07, 3).translate(Math.cos(k * 1.05) * 0.15, 0.06, Math.sin(k * 1.05) * 0.15))]), // bear trap
     6: M([boxG(0.05, FH + 0.4, 0.05, 0.445, (FH + 0.4) / 2, -0.24), boxG(0.05, FH + 0.4, 0.05, 0.445, (FH + 0.4) / 2, 0.24), ...[0, 1, 2, 3, 4, 5].map(k => boxG(0.04, 0.035, 0.46, 0.445, 0.18 + k * 0.24, 0)), boxG(0.04, 0.04, 0.04, 0.47, FH * 0.3, -0.24), boxG(0.04, 0.04, 0.04, 0.47, FH * 0.75, 0.24)]), // ladder hung flat on the wall
   };
+  // mode objectives: part crate, zombie nest, signal tower, airdrop, the escape truck
+  G[43] = M([boxG(0.56, 0.44, 0.46, 0, 0.22, 0), boxG(0.58, 0.06, 0.48, 0, 0.38, 0), boxG(0.08, 0.46, 0.5, 0, 0.23, 0)]);
+  G[44] = M([ico(0.62, 0, 0.32, 0, 1), ico(0.36, 0.42, 0.22, 0.25, 0), ico(0.3, -0.4, 0.2, -0.3, 0), ico(0.28, 0.1, 0.75, 0.1, 0), ico(0.22, -0.3, 0.55, 0.35, 0), cyl(0.06, 0.12, 0.6, 5, 0.35, 0.7, -0.2).rotateZ(0.5)]);
+  G[45] = M([boxG(0.6, 0.7, 0.5, 0, 0.35, 0), boxG(0.08, 0.2, 0.3, 0.32, 0.5, 0), cyl(0.05, 0.05, 6.2, 5, -0.2, 3.1, -0.2), cyl(0.05, 0.05, 6.2, 5, 0.2, 3.1, -0.2), cyl(0.05, 0.05, 6.2, 5, 0, 3.1, 0.2), ...[1, 2, 3, 4, 5].map(k => boxG(0.5, 0.04, 0.5, 0, k * 1.15, 0)), boxG(0.06, 0.6, 0.06, 0, 6.5, 0), boxG(0.7, 0.05, 0.05, 0, 6.2, 0)]);
+  G[46] = M([boxG(0.86, 0.6, 0.86, 0, 0.3, 0), boxG(0.88, 0.1, 0.2, 0, 0.3, 0), boxG(0.2, 0.62, 0.88, 0, 0.3, 0), boxG(0.9, 0.06, 0.9, 0, 0.62, 0)]);
+  G[47] = M([boxG(1.9, 0.5, 0.95, 0.45, 0.45, 0), boxG(0.7, 0.55, 0.9, 1.05, 0.95, 0), boxG(1.1, 0.35, 0.95, -0.05, 0.85, 0), ...[[-0.1, 0.48], [-0.1, -0.48], [1.05, 0.48], [1.05, -0.48]].map(([x, z]) => cyl(0.22, 0.22, 0.14, 10, x, 0.22, z).rotateX(Math.PI / 2))]);
   G[42] = M([boxG(0.06, 0.9, 0.06, 0, 0.45, -0.44), boxG(0.06, 0.9, 0.06, 0, 0.45, 0.44), boxG(0.06, 0.9, 0.06, 0, 0.45, 0), boxG(0.07, 0.06, 1, 0, 0.88, 0), boxG(0.04, 0.04, 1, 0, 0.45, 0)]);
-  const C = { 42: '#7a8088', 32: '#3f5a3a', 33: '#5a4a2e', 34: '#6a4a30', 35: '#a8322a', 36: '#4f5a32', 37: '#9a3a2a', 38: '#b8333a', 39: '#7a5a44', 40: '#6a4a2c', 41: '#3e5f2e', 12: '#a8946a', 13: '#6a5038', 14: '#7a8590', 15: '#5a5a55', 6: '#8a6440' };
+  const C = { 43: '#e8b93a', 44: '#6a1f2a', 45: '#7a868f', 46: '#2f5f9a', 47: '#5a6a3a', 42: '#7a8088', 32: '#3f5a3a', 33: '#5a4a2e', 34: '#6a4a30', 35: '#a8322a', 36: '#4f5a32', 37: '#9a3a2a', 38: '#b8333a', 39: '#7a5a44', 40: '#6a4a2c', 41: '#3e5f2e', 12: '#a8946a', 13: '#6a5038', 14: '#7a8590', 15: '#5a5a55', 6: '#8a6440' };
   const cap = { 42: 2500, 41: 3000, 40: 600, 39: 600, 12: 1500, 13: 800, 14: 800, 15: 400, 6: 400, 32: 400, 34: 400 };
   for (const id in G) { const m = inst(G[id], lam('#ffffff'), cap[id] || 300); m.castShadow = id == 38 || id == 34; PROP[id] = { m, n: 0, col: C[id], al: id == 12 || id == 13 || id == 14 }; }
   // build-plan ghosts and the x-ray ring that shows survivors through walls
@@ -7035,6 +7552,10 @@ function propScene() {
   OBJ.xray = inst(new THREE.RingGeometry(0.3, 0.4, 20).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0.55, depthTest: false, depthWrite: false }), 4, false);
   OBJ.xray.renderOrder = 999;
   OBJ.lockI = inst(new THREE.RingGeometry(0.78, 1, 28).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0.85, depthTest: false, depthWrite: false }), 1, false); OBJ.lockI.renderOrder = 998;
+  OBJ.beamI = inst(new THREE.CylinderGeometry(0.16, 0.24, 1, 8, 1, true).translate(0, 0.5, 0), new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0.32, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }), 16, false);
+  OBJ.zoneI = inst(new THREE.RingGeometry(0.94, 1, 48).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0.55, depthWrite: false, side: THREE.DoubleSide }), 8, false);
+  OBJ.poolI = inst(new THREE.CircleGeometry(1, 20).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: '#7fd13a', transparent: true, opacity: 0.38, depthWrite: false }), 16, false);
+  OBJ.chuteI = inst(M([G[46].clone(), new THREE.SphereGeometry(1.1, 10, 5, 0, Math.PI * 2, 0, Math.PI / 2).scale(1, 0.55, 1).translate(0, 2.4, 0), ...[[0.7, 0.7], [-0.7, 0.7], [0.7, -0.7], [-0.7, -0.7]].map(([x, z]) => boxG(0.02, 1.8, 0.02, x * 0.6, 1.5, z * 0.6))]), lam('#ffffff'), 4, false);
   OBJ.ringI = inst(new THREE.RingGeometry(0.85, 1, 32).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0.6, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }), 8, false);
 }
 function propBegin() { for (const id in PROP) PROP[id].n = 0; }
@@ -7049,6 +7570,9 @@ function propPut(b, i, x, y, L, X, Y, Z, h) {
   if (b === 37) col = ['#9a3a2a', '#2f5a8a', '#c9a23a'][Math.floor(h * 3)];
   if (b === 38 && W.srch.has(i)) col = '#5a2a2c';
   if (b === 41) sc = 0.8 + h * 0.5;
+  if (b === 47) rot = -W.bdir[i] * Math.PI / 2;
+  if (b === 44) { sc = W.mode === 'nests' && W.obj.mother && W.obj.mother.ci === i ? 1.9 : 1.15; col = dmgTint('#7a2030', 0.45 + 0.55 * W.bhp[i] / Math.max(1, (W.obj.mother && W.obj.mother.ci === i ? W.obj.mother.max : W.obj.nests ? W.obj.nests[0].max : 1500))); }
+  if (b === 45 && W.obj && W.obj.towers) { const q = W.obj.towers.find(q => q.ci === i); col = q && q.st === 2 ? '#6aa86a' : q && q.st === 1 ? '#c9a23a' : '#7a868f'; }
   if (b === 15 || b === 33 || b === 35) rot = h * 6.28;
   if (B[b].brk && W.bhp[i] && B[b].hp) col = dmgTint(col, W.bhp[i] / B[b].hp);
   setInst(P.m, P.n++, X, Y, Z, rot, sc, sc, sc, col);
@@ -7073,10 +7597,31 @@ function drawPlan() {
   X.count = k; X.instanceMatrix.needsUpdate = true; if (X.instanceColor) X.instanceColor.needsUpdate = true;
   const LI = OBJ.lockI, lk = typeof INP !== 'undefined' && INP.lockShow; LI.count = 0;
   if (lk) { const q = INP.lockAcq == null ? 1 : INP.lockAcq, z = lk.zb, s = z.r * 2.3 * (1 + Math.sin(W.t * 10) * 0.06) * (1 + (1 - q) * 0.8); setInst(LI, 0, z.x, z.z + 0.04, z.y, W.t * 1.5, s, 1, s, q < 1 ? '#b8b8b8' : lk.head ? '#ffd23a' : '#ff4a3a'); LI.count = 1; LI.instanceMatrix.needsUpdate = true; if (LI.instanceColor) LI.instanceColor.needsUpdate = true; }
+  drawModeFx();
   // scream shockwaves
   const R = OBJ.ringI; let r = 0; RND.rings = (RND.rings || []).filter(q => (q.t += 1 / 60) < 0.8);
   for (const q of RND.rings) { if (r >= 8) break; const s = 0.5 + q.t * BAL.screamR * 1.1; setInst(R, r++, q.x, q.z + 0.1, q.y, 0, s, 1, s, '#ff5a8a'); }
   R.count = r; R.material.opacity = RND.rings.length ? 0.6 * (1 - RND.rings[0].t / 0.8) : 0; R.instanceMatrix.needsUpdate = true; if (R.instanceColor) R.instanceColor.needsUpdate = true;
+}
+
+/* ---------- mode objective visuals (per frame) ---------- */
+function drawModeFx() {
+  const B_ = OBJ.beamI, Zr = OBJ.zoneI, Po = OBJ.poolI, Ch = OBJ.chuteI; let nb = 0, nz = 0, np = 0, nc = 0;
+  const O = W && W.obj, beam = (x, y, z, col, h) => { if (nb < 16) setInst(B_, nb++, x, z, y, 0, 1, h || 9, 1, col); };
+  if (O && W.mode === 'escape' && O.parts) { for (const q of O.parts) if (!q.got) beam(q.x + 0.5, q.y + 0.5, q.L * FH, '#ffcf3a'); if (O.parts.some(q => q.got) && O.inst < O.parts.length) beam(O.truck.x + 1, O.truck.y + 0.5, 0, '#8fe39a', 6); }
+  if (O && W.mode === 'nests' && O.nests) for (const q of (O.mother ? [O.mother] : O.nests)) if (q.alive) beam(q.x + 0.5, q.y + 0.5, q.L * FH, '#ff3a4a', q.big ? 14 : 7);
+  if (O && W.mode === 'towers' && O.towers) for (const q of O.towers) { if (q.st === 1 && nz < 8) setInst(Zr, nz++, q.x + 0.5, q.L * FH + 0.06, q.y + 0.5, 0, TOWER_R, 1, TOWER_R, '#ffd76a'); if (q.st === 0) beam(q.x + 0.5, q.y + 0.5, q.L * FH + 6.8, '#9ad0ff', 3); }
+  if (O && W.mode === 'airdrop' && O.drops) {
+    for (const q of O.drops) {
+      if (q.st === 0 && nc < 4) { const h = Math.max(0, q.t) * 2.6; setInst(Ch, nc++, q.x + 0.5, q.L * FH + h, q.y + 0.5, W.t * 0.4, 1, 1, 1, '#c8d8e8'); if (nz < 8) setInst(Zr, nz++, q.x + 0.5, q.L * FH + 0.06, q.y + 0.5, 0, 1.6, 1, 1.6, '#9ad0ff'); }
+      if (q.st === 1) { beam(q.x + 0.5, q.y + 0.5, q.L * FH, '#ff5a3a', 12); if (Math.random() < 0.25) addP({ x: q.x + 0.5 + frnd(-0.2, 0.2), y: q.y + 0.5 + frnd(-0.2, 0.2), z: q.L * FH + 0.7, vz: frnd(1.2, 2), vx: frnd(-0.2, 0.2), vy: frnd(-0.2, 0.2), g: -0.4, col: Math.random() < 0.5 ? '#d84a3a' : '#e8705a', s: 0.16, life: 1.6, smoke: 1 }); }
+    }
+    if (O.phase === 'evac' && O.ev && nz < 8) setInst(Zr, nz++, O.ev.x + 0.5, gAt(O.ev.x, O.ev.y) * FH + 0.06, O.ev.y + 0.5, 0, EVAC_R, 1, EVAC_R, '#8fe39a');
+  }
+  if (O && W.mode === 'boss' && O.pools) for (const q of O.pools) if (np < 16) setInst(Po, np++, q.x, gAt(Math.floor(q.x), Math.floor(q.y)) * FH + 0.05, q.y, 0, q.r * Math.min(1, q.t), 1, q.r * Math.min(1, q.t), '#7fd13a');
+  B_.count = nb; Zr.count = nz; Po.count = np; Ch.count = nc;
+  for (const m of [B_, Zr, Po, Ch]) { m.instanceMatrix.needsUpdate = true; if (m.instanceColor) m.instanceColor.needsUpdate = true; }
+  B_.material.opacity = 0.22 + Math.sin(W.t * 3) * 0.08;
 }
 
 /* ---- 60_audio.js ---- */
@@ -7163,6 +7708,7 @@ function sfx(n, x, y) {
     case 'boom': noise(0.9, 1.0 * v, 'lowpass', 1800, 60, 0.6); tone('sine', 70, 25, 0.7, 0.6 * v); break;
     case 'throw': noise(0.15, 0.2, 'bandpass', 900, 2400, 1); break;
     case 'clink': tone('triangle', 1800 * r, 1500, 0.05, 0.08 * v); break;
+    case 'plane': noise(3.2, 0.32, 'lowpass', 260, 120, 1); tone('sawtooth', 70, 62, 3, 0.05); break;
     case 'spit': noise(0.25, 0.25 * v, 'bandpass', 600 * r, 1500, 3); break;
     case 'acid': noise(0.3, 0.25 * v, 'highpass', 2500 * r, 6000, 1); break;
     case 'rhit': tone('square', 880, 880, 0.08, 0.12); tone('square', 660, 660, 0.08, 0.12, 0.1); noise(0.1, 0.25, 'bandpass', 2000); break;
@@ -7690,21 +8236,22 @@ function guestGone() {
   if (STATE.mode === 'play' && W && W.p[1]) { W.p[1].gone = true; W.p[1].down = false; uiMsg('队友断开了连接，你可以继续单人守夜', '#ff6b5a'); }
   lobbyUI();
 }
-function sendLobby() { netSendCtl({ t: 'lobby', ready: NET.ready, host: SET.name || '房主', code: NET.code, diff: SET.diff }); }
+function sendLobby() { netSendCtl({ t: 'lobby', ready: NET.ready, host: SET.name || '房主', code: NET.code, diff: SET.diff, mode: SET.mode || 'classic', map: SET.map || '' }); }
 function hostStart() {
   if (!NET.gctl || !NET.gctl.open) return;
   const seed = (Math.random() * 1e9) | 0, names = [SET.name || '房主', NET.guestName || '队友'];
-  netSendCtl({ t: 'start', seed, names, diff: SET.diff });
-  startGame(seed, names, SET.diff, 0);
+  const mode = MODES[SET.mode] ? SET.mode : 'classic', map = MAPS[SET.map] ? SET.map : MODES[mode].map;
+  netSendCtl({ t: 'start', seed, names, diff: SET.diff, mode, map });
+  startGame(seed, names, SET.diff, 0, mode, map);
 }
 const ZI = ZKEYS;
 function pFlags(p) { return (p.down ? 1 : 0) | (p.dead ? 2 : 0) | (p.gone ? 4 : 0) | (p.build ? 32 : 0) | (p.ready ? 64 : 0) | (p.selfRev ? 128 : 0); }
 function makeSnap() {
   const P = p => [r2(p.x), r2(p.y), p.L, r2(p.vx), r2(p.vy), r2(p.aim), Math.ceil(p.hp), pFlags(p), Math.round(p.downT * 10) / 10, p.wpn, p.mag.join(','), p.ammo.join(','), p.owned.join(''), p.nades, p.meds, Math.round(p.useT * 100), Math.round(p.medT * 10) / 10, Math.round(p.reloadT * 10) / 10, p.kills, Math.round(p.anim * 10) / 10, p.sel, p.aimPt ? [r2(p.aimPt.x), r2(p.aimPt.y), r2(p.aimPt.z)] : 0];
-  const z = []; for (const q of W.zs) z.push(q.id, ZI.indexOf(q.k), Math.round(q.x * 100), Math.round(q.y * 100), q.L, Math.round(q.z * 100), Math.round(q.face * 100), Math.ceil(q.hp / q.max * 100), (q.climbing ? 1 : 0) | (q.atk > 0 ? 2 : 0) | (q.hitT > 0 ? 4 : 0) | (q.moving ? 8 : 0) | (q.burn > 0 ? 16 : 0) | (q.scr > 0 ? 32 : 0) | (q.rage > 0 ? 64 : 0));
+  const z = []; for (const q of W.zs) z.push(q.id, ZI.indexOf(q.k), Math.round(q.x * 100), Math.round(q.y * 100), q.L, Math.round(q.z * 100), Math.round(q.face * 100), Math.ceil(q.hp / q.max * 100), (q.climbing ? 1 : 0) | (q.atk > 0 ? 2 : 0) | (q.hitT > 0 ? 4 : 0) | (q.moving ? 8 : 0) | (q.burn > 0 ? 16 : 0) | (q.scr > 0 ? 32 : 0) | (q.rage > 0 ? 64 : 0) | (q.hidden ? 128 : 0));
   const pr = []; for (const b of W.proj) pr.push(b.k === 'nade' ? 0 : b.k === 'gl' ? 2 : 1, r2(b.x), r2(b.y), r2(b.z), r2(b.vx), r2(b.vy), r2(b.vz));
   const d = []; for (const i of W.dirty) d.push(i, Math.round(W.bhp[i]), Math.round(W.shp[i])); W.dirty.clear();
-  return { t: 's', T: r2(W.t), ph: W.phase, cl: Math.round(W.clock * 10) / 10, dl: W.dayLen, n: W.night, nt: Math.round(W.nightT), tk: NET.tkv === W.tkv && (NET.tkN = (NET.tkN || 0) + 1) % 12 ? 0 : (NET.tkv = W.tkv, W.tasks.map(t => [t.k, t.need, t.got, t.done, t.txt, t.rt])), res: RES.map(r => W.res[r.k]), u: W.upg, k: W.kills, p: W.p.map(P), z, pr, d, sl: W.spawnQ.length };
+  return { t: 's', T: r2(W.t), ph: W.phase, cl: Math.round(W.clock * 10) / 10, dl: W.dayLen, n: W.night, nt: Math.round(W.nightT), tk: NET.tkv === W.tkv && (NET.tkN = (NET.tkN || 0) + 1) % 12 ? 0 : (NET.tkv = W.tkv, W.tasks.map(t => [t.k, t.need, t.got, t.done, t.txt, t.rt])), res: RES.map(r => W.res[r.k]), u: W.upg, k: W.kills, p: W.p.map(P), z, pr, d, sl: W.spawnQ.length, ob: NET.obv === W.obv ? 0 : (NET.obv = W.obv, W.obj) };
 }
 function hostNetTick(dt) {
   if (!NET.gctl || !NET.gctl.open) return;
@@ -7738,8 +8285,8 @@ function guestRecv(m) {
   switch (m.t) {
     case 'busy': titleStatus('房间已满或已经开始'); netLeave(); showScreen('title'); return;
     case 'bye': hostGone(); return;
-    case 'lobby': NET.ready = m.ready; NET.hostName = m.host; NET.diff = m.diff; lobbyUI(); return;
-    case 'start': startGame(m.seed, m.names, m.diff, 1); return;
+    case 'lobby': NET.ready = m.ready; NET.hostName = m.host; NET.diff = m.diff; NET.mode = m.mode; NET.map = m.map; lobbyUI(); return;
+    case 'start': startGame(m.seed, m.names, m.diff, 1, m.mode, m.map); return;
     case 'toLobby': backToLobby(); return;
     case 'ev': if (W && m.e.q > (W.rq || 0)) { W.rq = m.e.q; fxEvent(m.e); } return; // own counter: local emits on the guest never swallow host events
     case 's': if (W && STATE.mode === 'play') applySnap(m); return;
@@ -7749,6 +8296,7 @@ function applySnap(s) {
   if (s.T < NET.lastT - 5) return; NET.lastT = s.T;
   W.t = s.T; W.phase = s.ph; W.clock = s.cl; W.dayLen = s.dl; W.night = s.n; W.upg = s.u; W.kills = s.k;
   W.nightT = s.nt || 0;
+  if (s.ob) { W.obj = s.ob; W.obv = (W.obv || 0) + 1; }
   if (s.tk) { W.tasks = s.tk.map(a => ({ k: a[0], need: a[1], got: a[2], done: a[3], txt: a[4], rt: a[5] })); W.tkv++; }
   RES.forEach((r, i) => W.res[r.k] = s.res[i]); W.spawnLeft = s.sl;
   s.p.forEach((a, i) => {
@@ -7768,7 +8316,7 @@ function applySnap(s) {
     let z = old.get(id);
     if (!z) z = { id, k: key, x: s.z[k + 2] / 100, y: s.z[k + 3] / 100, z: s.z[k + 5] / 100, r: T.r, h: T.h, face: 0, hp: 100, max: 100, anim: Math.random() * 6, seed: id * 7, hitT: 0, atk: 0 };
     z.tx = s.z[k + 2] / 100; z.ty = s.z[k + 3] / 100; z.L = s.z[k + 4]; z.tz = s.z[k + 5] / 100; z.face = s.z[k + 6] / 100; z.hp = s.z[k + 7]; z.max = 100;
-    const b = s.z[k + 8]; z.climbing = b & 1 ? {} : null; if (b & 2) z.atk = 0.3; if (b & 4) z.hitT = 0.12; z.moving = !!(b & 8); z.burnF = !!(b & 16); z.scr = b & 32 ? 0.6 : 0; z.rageF = !!(b & 64);
+    const b = s.z[k + 8]; z.climbing = b & 1 ? {} : null; if (b & 2) z.atk = 0.3; if (b & 4) z.hitT = 0.12; z.moving = !!(b & 8); z.burnF = !!(b & 16); z.scr = b & 32 ? 0.6 : 0; z.rageF = !!(b & 64); z.hidden = !!(b & 128);
     zs.push(z);
   }
   W.zs = zs;
@@ -7850,7 +8398,7 @@ function lobbyUI(status) {
   $('lReady').classList.toggle('hidden', host); $('lReady').textContent = NET.ready ? '取消准备' : '准备';
   $('lStart').classList.toggle('hidden', !host); $('lStart').disabled = !(host && NET.guestName && NET.ready);
   $('lDiffSeg').querySelectorAll('button').forEach(b => b.disabled = !host);
-  $('lDiffNote').textContent = host ? '' : '（房主决定）';
+  $('lDiffNote').textContent = host ? '' : '（房主决定）'; uiModeLbl();
   markDiff();
   if (host && !NET.guestName && !$('lStatus').textContent) $('lStatus').textContent = '把房间码发给队友';
 }
@@ -7948,6 +8496,7 @@ function hudTick(dt) {
   if (UI.bannerT > 0 && (UI.bannerT -= dt) <= 0) $('banner').classList.remove('show');
   UI.hudT -= dt; if (UI.hudT > 0) return; UI.hudT = 0.1;
   if (bigMapOpen() && (UI.bmT = (UI.bmT || 0) + 1) % 3 === 0) drawBigMap();
+  uiObjective();
   const me = W.p[ME];
   // players
   $('pcards').innerHTML = W.p.map(p => {
@@ -8081,8 +8630,51 @@ function drawBigMap() {
   // labels and players upright on top
   g.font = '600 13px ' + getComputedStyle(document.body).fontFamily; g.textAlign = 'center'; g.textBaseline = 'middle';
   TOWN_HOUSES.forEach(([x0, y0, x1, y1, st, t]) => { const [px, py] = rot((x0 + x1 + 1) / 2, (y0 + y1 + 1) / 2), lab = (BTYPE[t] || [t])[0] + (st > 1 ? ' ' + st + '层' : ''); g.lineWidth = 3; g.strokeStyle = 'rgba(0,0,0,.75)'; g.strokeText(lab, px, py); g.fillStyle = '#fff'; g.fillText(lab, px, py); });
+  for (const m of modeMarks()) { const [px, py] = rot(m.x, m.y); g.fillStyle = m.c; g.strokeStyle = 'rgba(0,0,0,.8)'; g.lineWidth = 2;
+    if (m.r) { g.globalAlpha = 0.25; g.beginPath(); g.arc(px, py, m.r * S, 0, 7); g.fill(); g.globalAlpha = 1; g.beginPath(); g.arc(px, py, m.r * S, 0, 7); g.strokeStyle = m.c; g.stroke(); }
+    else { g.beginPath(); g.arc(px, py, 7, 0, 7); g.fill(); g.stroke(); if (m.ring) { g.beginPath(); g.arc(px, py, m.ring * S, 0, 7); g.strokeStyle = m.c; g.stroke(); } }
+    g.font = '700 12px ' + getComputedStyle(document.body).fontFamily; g.lineWidth = 3; g.strokeStyle = 'rgba(0,0,0,.85)'; g.strokeText(m.n, px, py - 14); g.fillStyle = m.c; g.fillText(m.n, px, py - 14); }
   { const [px, py] = rot(W.radio.x + 0.5, W.radio.y + 0.5); g.lineWidth = 3; g.strokeStyle = 'rgba(0,0,0,.75)'; g.strokeText('营地', px, py); g.fillStyle = '#d8ffcc'; g.fillText('营地', px, py); }
   for (const p of W.p) { if (p.gone || p.dead) continue; const [px, py] = rot(p.x, p.y); g.fillStyle = PCOL[p.i % 2].j; g.beginPath(); g.arc(px, py, 6, 0, 7); g.fill(); g.strokeStyle = '#fff'; g.lineWidth = 2; g.stroke(); g.fillStyle = '#fff'; g.font = '600 12px ' + getComputedStyle(document.body).fontFamily; g.strokeStyle = 'rgba(0,0,0,.8)'; g.lineWidth = 3; g.strokeText(p.name, px, py - 14); g.fillText(p.name, px, py - 14); }
+}
+/* ---------- modes and maps: picker (title / lobby), objective panel ---------- */
+const curMode = () => MODES[SET.mode] ? SET.mode : 'classic';
+const curMap = () => MAPS[SET.map] ? SET.map : MODES[curMode()].map;
+function uiModeLbl() {
+  const m = MODES[curMode()], mp = MAPS[curMap()];
+  $('modeLbl').textContent = m.icon + ' ' + m.name + ' ›'; $('mapLbl').textContent = '地图：' + mp.name + ' · 点这里换模式 / 地图';
+  const gm = NETROLE === 'guest' ? (MODES[NET.mode] || MODES.classic) : m, gp = NETROLE === 'guest' ? (MAPS[NET.map] || MAPS[gm.map]) : mp;
+  if ($('lModeLbl')) { $('lModeLbl').textContent = gm.icon + ' ' + gm.name; $('lMapLbl').textContent = '地图：' + gp.name + (NETROLE === 'host' ? ' · 点这里更换' : ''); $('lModeBtn').disabled = NETROLE === 'guest'; $('lModeNote').textContent = NETROLE === 'guest' ? '（房主决定）' : ''; }
+}
+const MAPTHUMB = {};
+function mapThumb(id, cv) { // a little rendered overview of the map (generated once, cached)
+  const paint = () => { const img = MAPTHUMB[id]; if (img) { const g = cv.getContext('2d'); g.imageSmoothingEnabled = false; g.drawImage(img, 0, 0, cv.width, cv.height); } };
+  if (MAPTHUMB[id]) return paint();
+  setTimeout(() => {
+    const keep = MAP_ID; setMap(id); const m = genMap(31337); const c = document.createElement('canvas'); c.width = MW; c.height = MH; const g = c.getContext('2d');
+    const MC = Object.assign({ [TT.grass]: '#55733e', [TT.hill]: '#7a8a5a', [TT.dirt]: '#6e5a42', [TT.road]: '#3c3d40', [TT.sand]: '#8a7f5a', [TT.forest]: '#3c5530', [TT.water]: '#2a6a86' }, MAPDEF.mc || {});
+    for (let y = 0; y < MH; y++) for (let x = 0; x < MW; x++) { g.fillStyle = MC[m.tt[y * MW + x]] || '#555'; if (m.G[y * MW + x] >= 1) g.fillStyle = MC[TT.hill]; g.fillRect(x, y, 1, 1); }
+    for (const [x0, y0, x1, y1, st, t] of TOWN_HOUSES) { g.fillStyle = (BTYPE[t] || ['', '#888'])[1]; g.fillRect(x0, y0, x1 - x0 + 1, y1 - y0 + 1); }
+    g.fillStyle = '#7fd36b'; g.fillRect(RADIO_XY[0] - 6, RADIO_XY[1] - 5, 13, 11);
+    setMap(keep); MAPTHUMB[id] = c; paint();
+  }, 30);
+}
+function openModeSel() {
+  if (NETROLE === 'guest') return;
+  const draw = () => {
+    $('mGrid').innerHTML = MODE_IDS.map(k => { const m = MODES[k]; return `<button class="mcard ghost${k === curMode() ? ' sel' : ''}" data-m="${k}"><b>${m.icon} ${m.name}</b><p>${m.desc}</p><i>推荐地图：${MAPS[m.map].name}</i></button>`; }).join('');
+    $('mapGrid').innerHTML = MAP_IDS.map(k => `<button class="mapcard ghost${k === curMap() ? ' sel' : ''}" data-p="${k}"><canvas width="160" height="160"></canvas><b>${MAPS[k].name}${MODES[curMode()].map === k ? ' <em>推荐</em>' : ''}</b><p>${MAPS[k].desc}</p></button>`).join('');
+    $('mapHint').textContent = '每种模式在哪张图上都能玩';
+    $('mGrid').querySelectorAll('.mcard').forEach(b => b.onclick = () => { SET.mode = b.dataset.m; SET.map = MODES[SET.mode].map; saveSet(); sfx('click'); draw(); });
+    $('mapGrid').querySelectorAll('.mapcard').forEach(b => { mapThumb(b.dataset.p, b.querySelector('canvas')); b.onclick = () => { SET.map = b.dataset.p; saveSet(); sfx('click'); draw(); }; });
+  };
+  draw(); $('modesel').classList.remove('hidden');
+}
+function closeModeSel() { $('modesel').classList.add('hidden'); uiModeLbl(); if (NETROLE === 'host') sendLobby(); if (STATE.mode === 'title' && (!W || W.demo) && MAP_ID !== curMap()) startDemo(); }
+function uiObjective() {
+  const el = $('objp'), h = W && modeHud(); if (!h) { el.classList.add('hidden'); return; }
+  el.classList.remove('hidden'); el.classList.toggle('boss', !!h.boss);
+  $('objI').textContent = MODES[W.mode].icon + ' ' + MODES[W.mode].name; $('objT').textContent = h.t; $('objS').textContent = h.s || ''; $('objB').style.width = Math.round(clamp(h.p || 0, 0, 1) * 100) + '%';
 }
 function openHelp() { $('help').classList.remove('hidden'); }
 function closeHelp() { $('help').classList.add('hidden'); }
@@ -8107,7 +8699,7 @@ function initUI() {
   $('soloBtn').onclick = () => {
     const b = $('soloBtn');
     if (loadSave() && !b.dataset.sure) { b.dataset.sure = 1; b.textContent = '再点一次：新开一局会覆盖存档'; setTimeout(() => { delete b.dataset.sure; renderBest(); }, 3000); return; }
-    delete b.dataset.sure; audioInit(); netLeave(); NETROLE = 'solo'; startGame((Math.random() * 1e9) | 0, [SET.name || '幸存者'], SET.diff, 0);
+    delete b.dataset.sure; audioInit(); netLeave(); NETROLE = 'solo'; startGame((Math.random() * 1e9) | 0, [SET.name || '幸存者'], SET.diff, 0, SET.mode, SET.map);
   };
   $('hostBtn').onclick = () => { audioInit(); netHost(); };
   $('joinBtn').onclick = () => { audioInit(); netJoin($('codeIn').value); };
@@ -8126,6 +8718,7 @@ function initUI() {
   $('pauseBtn').onclick = () => togglePause();
   $('muteBtn').onclick = () => { setMute(!SET.mute); uiMute(); };
   $('pMute').onclick = () => { setMute(!SET.mute); uiMute(); };
+  $('modeBtn').onclick = () => { sfx('click'); openModeSel(); }; $('lModeBtn').onclick = () => { sfx('click'); openModeSel(); }; $('msOk').onclick = () => { sfx('click'); closeModeSel(); }; uiModeLbl();
   $('mini').addEventListener('pointerdown', e => { e.stopPropagation(); e.preventDefault(); toggleBigMap(true); });
   $('bigmap').addEventListener('pointerdown', e => { e.stopPropagation(); e.preventDefault(); toggleBigMap(false); });
   $('keys').addEventListener('pointerdown', e => { e.stopPropagation(); if (!e.target.closest('.kh')) return; SET.keysOff = !SET.keysOff; saveSet(); UI.keysK = ''; if (W && W.p[ME]) uiKeys(W.p[ME]); sfx('click'); });
@@ -8133,7 +8726,7 @@ function initUI() {
   $('pQual').onclick = () => { const o = ['auto', 0, 1, 2], i = o.indexOf(SET.q == null ? 'auto' : SET.q); SET.q = o[(i + 1) % 4]; if (SET.q === 'auto') SET.qa = 0; saveSet(); applyQual(); $('pQual').textContent = qualLabel(); sfx('click'); };
   $('readyBtn').onclick = () => inGame() && toggleReady();
   $('tasks').addEventListener('pointerdown', e => { e.stopPropagation(); UI.tkPin = !UI.tkPin; UI.tkOpenT = 0; sfx('click'); });
-  $('oAgain').onclick = () => { $('over').classList.add('hidden'); if (NETROLE === 'host') { if (!NET.gctl || !NET.gctl.open) { NETROLE = 'solo'; startGame((Math.random() * 1e9) | 0, [SET.name || '幸存者'], SET.diff, 0); } else hostStart(); } else startGame((Math.random() * 1e9) | 0, [SET.name || '幸存者'], SET.diff, 0); };
+  $('oAgain').onclick = () => { $('over').classList.add('hidden'); if (NETROLE === 'host') { if (!NET.gctl || !NET.gctl.open) { NETROLE = 'solo'; startGame((Math.random() * 1e9) | 0, [SET.name || '幸存者'], SET.diff, 0, W ? W.mode : SET.mode, W ? W.map : SET.map); } else hostStart(); } else startGame((Math.random() * 1e9) | 0, [SET.name || '幸存者'], SET.diff, 0, W ? W.mode : SET.mode, W ? W.map : SET.map); };
   $('oLobby').onclick = () => { netSendCtl({ t: 'toLobby' }); backToLobby(); };
   $('oEndless').onclick = () => { $('over').classList.add('hidden'); W.endless = true; W.over = null; W.phase = 'night'; dawn(); };
   $('oTitle').onclick = () => { netLeave(); W = null; showScreen('title'); };
@@ -8145,9 +8738,10 @@ function initUI() {
 /* ---- 90_main.js ---- */
 /* ================= game start, main loop, title-screen attract mode ================= */
 let ACC = 0, LAST = 0, HUD_BUILT = false, TIPS = [];
-function startGame(seed, names, diff, me) {
+function startGame(seed, names, diff, me, mode, map) {
   TIPS.forEach(clearTimeout); TIPS = [];
-  ME = me; newWorld(seed, names, diff); buildTerrain(); archTown();
+  mode = MODES[mode] ? mode : (MODES[SET.mode] ? SET.mode : 'classic'); setMap(map || SET.map || MODES[mode].map);
+  ME = me; newWorld(seed, names, diff, mode); buildTerrain(); archTown();
   Object.assign(RND, { parts: [], tracers: [], corpses: [], floats: [], flashes: [], booms: [], hurtV: 0 });
   STATE.mode = 'play'; STATE.paused = false; ACC = 0; NET.lastT = 0; VIEW.auto = true; CUT_KEY = '';
   if (SET.zv !== 2) { SET.zv = 2; SET.zoom = 8; saveSet(); } /* round 8: default view one step closer, applied once */
@@ -8157,14 +8751,14 @@ function startGame(seed, names, diff, me) {
   $('over').classList.add('hidden'); $('log').innerHTML = '';
   const p = W.p[ME]; CAM.tx = p.x; CAM.ty = p.y;
   uiBuildBar(); markDiff(); uiView();
-  banner('第一个白天', '撑过 ' + BAL.nights + ' 夜就能等到救援 · 完成每日任务拿奖励', '#ffe7b0'); UI.tkv = -1;
+  banner(MODES[W.mode].icon + ' ' + MODES[W.mode].name + ' · ' + MAPDEF.name, W.mode === 'classic' ? '撑过 ' + BAL.nights + ' 夜就能等到救援 · 完成每日任务拿奖励' : MODES[W.mode].desc, '#ffe7b0'); UI.tkv = -1;
   const tips = INP.touch
     ? ['出门砍树、采石，点一下「交互」搜汽车和补给箱（会自动搜完）', '点「建造」后手指指哪就盖哪：点墙顶往上叠，点墙面贴着盖，拖动一次盖一排', '上方「今日任务」点开能看到今天的 3 个任务，完成就有奖励', '小屋里的工作台可以造步枪和狙击枪', '楼上的矮墙可以探身开枪，天黑前回到堡垒']
     : ['出门砍树、采石，按 F 搜汽车和补给箱（会自动搜完，走开就停）', '按 B 建造：鼠标指哪就盖哪——指墙顶往上叠、指墙面贴着盖，按住拖动一次盖一排，右键拆除', '上方「今日任务」点开能看到今天的 3 个任务，完成就有奖励', '在小屋里的工作台按 F 造步枪和狙击枪', '楼上外墙是半人高的矮墙，可以探身朝下开枪。按 N 可以提前入夜'];
   tips.forEach((t, k) => TIPS.push(setTimeout(() => { if (W && W.night === 0 && STATE.mode === 'play') uiMsg(t, '#ffd27a'); }, 2500 + k * 7000)));
 }
 function startDemo() {
-  ME = 0; newWorld(777, ['demo'], 'normal'); W.demo = true; W.p[0].gone = true;
+  setMap(MAPS[SET.map] ? SET.map : 'town'); ME = 0; newWorld(777, ['demo'], 'normal', 'classic'); W.demo = true; W.p[0].gone = true;
   W.phase = 'night'; W.night = 4; W.demoT = 0; buildTerrain(); archTown(); VIEW.auto = false; VIEW.L = 1; CUT_KEY = ''; CAM.zoom = 11;
 }
 function demoStep(dt) {
@@ -8230,10 +8824,10 @@ function canSave() { return W && !W.demo && !W.over && STATE.mode === 'play' && 
 function saveGame(quiet) {
   if (!canSave()) return false;
   const S = {
-    v: SAVE_V, mw: MW, at: Date.now(), seed: W.seed, diff: W.diff, night: W.night, phase: W.phase, clock: W.clock, dayLen: W.dayLen, nightT: W.nightT,
+    v: SAVE_V, mw: MW, at: Date.now(), mode: W.mode, map: W.map, obj: W.obj, seed: W.seed, diff: W.diff, night: W.night, phase: W.phase, clock: W.clock, dayLen: W.dayLen, nightT: W.nightT,
     res: W.res, upg: W.upg, kills: W.kills, stats: W.stats, endless: W.endless, clean: W.clean, tasks: W.tasks, srch: [...W.srch], spotN: W.spotN, t: W.t,
     p: W.p.filter(p => !p.gone).map(p => ({ name: p.name, x: p.x, y: p.y, L: p.L, hp: p.hp, dead: p.dead, wpn: p.wpn, owned: p.owned, mag: p.mag, ammo: p.ammo, meds: p.meds, nades: p.nades, kills: p.kills })),
-    zs: W.zs.filter(z => z.hp > 0).slice(0, 300).map(z => [z.k, +z.x.toFixed(2), +z.y.toFixed(2), z.L, Math.round(z.hp), Math.round(z.max)]),
+    zs: W.zs.filter(z => z.hp > 0).slice(0, 300).map(z => [z.k, +z.x.toFixed(2), +z.y.toFixed(2), z.L, Math.round(z.hp), Math.round(z.max), z.mz ? 1 : 0]),
     q: W.spawnQ.slice(0, 400).map(s => [+s.t.toFixed(1), s.k, s.side]),
     g: [rleEnc(W.blk), rleEnc(W.slab), rleEnc(W.bdir), rleEnc(hpPack(W.bhp)), rleEnc(hpPack(W.shp))].map(b64e),
   };
@@ -8244,11 +8838,11 @@ function saveGame(quiet) {
 }
 function loadSave() { const s = lsGet('save', null); return s && s.v === SAVE_V && s.g && s.mw === MW ? s : null; }
 function clearSave() { try { localStorage.removeItem(SKEY + 'save'); } catch (e) { } }
-function saveLabel(s) { return (s.phase === 'night' ? '第 ' + s.night + ' 夜' : '第 ' + (s.night + 1) + ' 天') + ' · ' + ({ easy: '简单', normal: '普通', hard: '困难' }[s.diff] || ''); }
+function saveLabel(s) { return (MODES[s.mode] && s.mode !== 'classic' ? MODES[s.mode].name + ' · ' : '') + (MAPS[s.map] ? MAPS[s.map].name + ' · ' : '') + (s.phase === 'night' ? '第 ' + s.night + ' 夜' : '第 ' + (s.night + 1) + ' 天') + ' · ' + ({ easy: '简单', normal: '普通', hard: '困难' }[s.diff] || ''); }
 function continueGame() {
   const S = loadSave(); if (!S) return;
   audioInit(); netLeave(); NETROLE = 'solo';
-  startGame(S.seed, [S.p[0] ? S.p[0].name : SET.name || '幸存者'], S.diff, 0);
+  startGame(S.seed, [S.p[0] ? S.p[0].name : SET.name || '幸存者'], S.diff, 0, S.mode || 'classic', S.map || 'town');
   try { applySave(S); } catch (e) { console.error(e); toast('存档读取失败，已开始新的一局', '#ff8a7a'); return; }
   TIPS.forEach(clearTimeout); TIPS = [];
   banner('继续', saveLabel(S), '#ffe7b0');
@@ -8264,7 +8858,8 @@ function applySave(S) {
   // older saves may have fewer weapons
   for (const k of ['owned', 'mag', 'ammo']) while (p[k].length < NW) p[k].push(0);
   p.z = pZ(p); p.zv = p.z; CAM.tx = p.x; CAM.ty = p.y;
-  W.zs = []; for (const [k, x, y, L, hp, max] of S.zs || []) { if (!ZT[k]) continue; const z = spawnZombie(k, 0); Object.assign(z, { x, y, L, hp, max }); z.z = surfZ(x, y, L); }
+  if (S.obj) { W.obj = S.obj; W.obv++; }
+  W.zs = []; for (const [k, x, y, L, hp, max, mz] of S.zs || []) { if (!ZT[k]) continue; const z = spawnZombie(k, 0); Object.assign(z, { x, y, L, hp, max }); z.z = surfZ(x, y, L); if (mz || ZT[k].boss) z.mz = 1; if (ZT[k].boss && W.obj && W.obj.curK === k) W.obj.cur = z.id; }
   W.spawnQ = (S.q || []).map(([t, k, side]) => ({ t, k, side }));
   recomputeStab(); W.navDirty = true; W.ver++; W.dirty = new Set(); updateFields(0, true); W.edges = edgeSpawns();
 }

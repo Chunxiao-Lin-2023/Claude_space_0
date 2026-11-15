@@ -92,6 +92,7 @@ function drawZombies(vl, dt) {
   for (const z of list) {
     if (drawn >= ZCAP - 2) break;
     const corpse = !!z.corpse, L = z.L != null ? z.L : Math.floor((z.z + 0.1) / FH);
+    if (z.hidden && !corpse) continue;
     if (L > vl || lcHide(Math.floor(z.x), Math.floor(z.y), L)) continue;
     drawn++;
     rigZombie(z, corpse, dt, dk);
@@ -99,33 +100,34 @@ function drawZombies(vl, dt) {
   for (const k in ZPOOL) { const q = ZPOOL[k]; q.m.count = q.n; q.m.instanceMatrix.needsUpdate = true; if (q.m.instanceColor) q.m.instanceColor.needsUpdate = true; }
 }
 function rigZombie(z, corpse, dt, dk) {
+  const zk = ZT[z.k].look || z.k;
   if ((z.burn > 0 || z.burnF) && !corpse && Math.random() < dt * 22) addP({ x: z.x + frnd(-0.2, 0.2), y: z.y + frnd(-0.2, 0.2), z: z.z + frnd(0.2, ZT[z.k].h), vx: frnd(-0.3, 0.3), vy: frnd(-0.3, 0.3), vz: frnd(0.8, 1.6), g: -0.5, col: Math.random() < 0.5 ? '#ffb030' : '#ff6a1a', s: frnd(0.06, 0.12), life: 0.45 });
-  if (z.k === 'dog') return rigDog(z, corpse, dt);
-  const T = ZT[z.k], Bd = ZBODY[z.k] || ZBODY.walker, s = T.sc, sd = z.seed || 0, v = z.k === 'walker' ? sd % 5 : 0;
+  if (zk === 'dog') return rigDog(z, corpse, dt);
+  const T = ZT[z.k], Bd = ZBODY[zk] || ZBODY.walker, s = T.sc, sd = z.seed || 0, v = zk === 'walker' ? sd % 5 : 0;
   // render-side smoothing: facing, speed and gait phase (works the same for host and guest)
   if (!corpse) {
     if (z._f == null) { z._f = z.face || 0; z._px = z.x; z._py = z.y; z._spd = 0; z._ph = (sd % 100) * 0.1; }
     const sp = dt > 0 ? Math.min(6, Math.hypot(z.x - z._px, z.y - z._py) / dt) : 0; z._px = z.x; z._py = z.y;
     z._spd = lerp(z._spd, sp, Math.min(1, dt * 8)); z._f = angLerp(z._f, z.face || 0, Math.min(1, dt * 9));
-    z._ph += dt * (1.2 + z._spd * (z.k === 'runner' ? 3.2 : z.k === 'climber' ? 4.2 : 3.6) / s);
+    z._ph += dt * (1.2 + z._spd * (zk === 'runner' ? 3.2 : zk === 'climber' ? 4.2 : 3.6) / s);
   }
   const hit = !corpse && z.hitT > 0, white = c => hit ? '#ffd8cc' : c;
-  const skin = white(z.k === 'bloater' ? '#9aa86a' : z.k === 'screamer' ? '#b8b0b4' : z.k === 'crawler' ? '#8a9480' : z.k === 'climber' ? '#7d8e98' : z.k === 'spitter' ? '#93a64e' : z.k === 'brute' ? '#7a6d62' : z.k === 'boss' ? '#6e534c' : v === 1 ? '#c2c4b2' : ZSKIN[sd % 5]);
-  const shirt = white(v === 1 ? ['#6b1414', '#3a3a52', '#d8d0bc'][sd % 3] : ZSHIRT[sd % 10]), pants = white(z.k === 'brute' || z.k === 'boss' ? '#2a2420' : '#26292b'), shoe = '#1b1a18';
+  const skin = white(ZT[z.k].skin ? ZT[z.k].skin : zk === 'bloater' ? '#9aa86a' : zk === 'screamer' ? '#b8b0b4' : zk === 'crawler' ? '#8a9480' : zk === 'climber' ? '#7d8e98' : zk === 'spitter' ? '#93a64e' : zk === 'brute' ? '#7a6d62' : zk === 'boss' ? '#6e534c' : v === 1 ? '#c2c4b2' : ZSKIN[sd % 5]);
+  const shirt = white(v === 1 ? ['#6b1414', '#3a3a52', '#d8d0bc'][sd % 3] : ZSHIRT[sd % 10]), pants = white(zk === 'brute' || zk === 'boss' ? '#2a2420' : '#26292b'), shoe = '#1b1a18';
   const rag = white(v === 1 ? ['#4a0808', '#24243a', '#a8a090'][sd % 3] : tmpC.set(ZSHIRT[sd % 10]).multiplyScalar(0.7).getStyle());
   const amp = corpse ? 0 : clamp(z._spd / Math.max(0.6, T.spd * 0.8), 0, 1.15), ph = corpse ? 0 : z._ph, t = W.t;
   const atk = !corpse && z.atk > 0, aph = atk ? (t * 3.2 + sd * 0.37) % 1 : 0, swing = atk ? (aph < 0.62 ? -ease(aph / 0.62) : -1 + ease((aph - 0.62) / 0.2) * 1.6) : 0; // raise, then slam
-  const climbing = !corpse && !!z.climbing, quad = z.k === 'climber' && !climbing, crawl = z.k === 'crawler', scream = !corpse && z.scr > 0;
+  const climbing = !corpse && !!z.climbing, quad = zk === 'climber' && !climbing, crawl = zk === 'crawler', scream = !corpse && z.scr > 0;
   const twitch = !corpse && hash2(Math.floor(t * 3) + sd, 7) > 0.93 ? (hash2(Math.floor(t * 3), sd) - 0.5) * 1.3 : 0;
   const flinch = hit ? 0.35 : 0;
   // --- legs: thigh swing + knee bend; left/right can differ (limp) ---
-  const limp = z.k === 'walker' && (v === 0 || v === 3), big = z.k === 'brute' || z.k === 'boss';
-  let thA = (z.k === 'runner' ? 0.85 : big ? 0.38 : quad ? 0.5 : 0.48) * amp, kn = (z.k === 'runner' ? 1.25 : quad ? 0.6 : 0.75) * amp;
+  const limp = zk === 'walker' && (v === 0 || v === 3), big = zk === 'brute' || zk === 'boss';
+  let thA = (zk === 'runner' ? 0.85 : big ? 0.38 : quad ? 0.5 : 0.48) * amp, kn = (zk === 'runner' ? 1.25 : quad ? 0.6 : 0.75) * amp;
   let aL = Math.sin(ph) * thA, aR = -Math.sin(ph) * thA * (limp ? 0.45 : 1);
   let kL = 0.12 + Math.max(0, Math.cos(ph)) * kn, kR = limp ? 0.08 : 0.12 + Math.max(0, -Math.cos(ph)) * kn;
   if (quad) { aL += 0.85; aR += 0.85; kL += 1.25; kR += 1.25; }
   if (crawl) { aL = 1.3 + Math.sin(ph) * 0.15; aR = 1.4; kL = kR = 0; }
-  if (z.k === 'spitter') { aL *= 0.8; aR *= 0.8; }
+  if (zk === 'spitter') { aL *= 0.8; aR *= 0.8; }
   // corpse fall styles
   let fall = 0, fstyle = sd % 3, knees = 0;
   if (corpse) {
@@ -144,13 +146,13 @@ function rigZombie(z, corpse, dt, dk) {
     J(R0, R0, 0, 0.06 * fall - sink, 0, fstyle === 2 ? 0.25 * fall : 0, 0, dir * fall * Math.PI / 2 * 0.94);
   }
   // body roll / bob
-  const roll = crawl ? Math.sin(ph) * 0.12 * amp : (limp ? Math.sin(ph) * 0.13 : z.k === 'spitter' ? Math.sin(ph) * 0.15 : big ? Math.sin(ph) * 0.07 : Math.sin(ph) * 0.04) * amp;
-  const hunch = (climbing ? -0.15 : Bd.hunch + (z.k === 'runner' ? 0.1 * amp : 0)) - flinch + (corpse ? knees * 0.4 : 0) + Math.sin(t * 1.3 + sd) * 0.03;
+  const roll = crawl ? Math.sin(ph) * 0.12 * amp : (limp ? Math.sin(ph) * 0.13 : zk === 'spitter' ? Math.sin(ph) * 0.15 : big ? Math.sin(ph) * 0.07 : Math.sin(ph) * 0.04) * amp;
+  const hunch = (climbing ? -0.15 : Bd.hunch + (zk === 'runner' ? 0.1 * amp : 0)) - flinch + (corpse ? knees * 0.4 : 0) + Math.sin(t * 1.3 + sd) * 0.03;
   const pelv = J(ZM[1], R0, 0, hipY, 0, roll, Math.sin(ph) * 0.08 * amp, 0);
   // legs
   for (const sg of [-1, 1]) {
     const a = sg < 0 ? aL : aR, k = sg < 0 ? kL : kR;
-    const hip = J(ZM[2], pelv, 0, 0, sg * 0.08 * Bd.tw * (z.k === 'spitter' ? 1.3 : 1), (quad ? -0.25 : 0.04) * sg, 0, a);
+    const hip = J(ZM[2], pelv, 0, 0, sg * 0.08 * Bd.tw * (zk === 'spitter' ? 1.3 : 1), (quad ? -0.25 : 0.04) * sg, 0, a);
     zput('limb', hip, 0.05 * (big ? 1.45 : 1), TL, 0.05 * (big ? 1.45 : 1), pants);
     const knee = J(ZM[3], hip, 0, -TL, 0, 0, 0, -k);
     zput('limb', knee, 0.04 * (big ? 1.4 : 1), SL, 0.04 * (big ? 1.4 : 1), sg > 0 && limp ? skin : pants);
@@ -161,76 +163,76 @@ function rigZombie(z, corpse, dt, dk) {
   const tor = J(ZM[5], pelv, 0, 0, 0, 0, Math.sin(ph) * -0.12 * amp, -hunch);
   zput('torso', tor, Bd.tw, Bd.th, Bd.tw, shirt);
   zput('rag', J(ZM[6], tor, 0, 0.02, 0, Math.sin(ph * 2) * 0.08, 0, -Math.sin(ph) * 0.15 * amp), Bd.tw, v === 1 ? 2.2 : 1, Bd.tw, rag);
-  if (z.k === 'spitter' || z.k === 'bloater') { const bl = z.k === 'bloater', sw = (bl ? 1.75 : 1) * (1 + Math.sin(t * (bl ? 5 : 3) + sd) * (bl ? 0.06 : 0.04)); zput('belly', J(ZM[7], tor, bl ? 0.1 : 0.07, bl ? 0.2 : 0.17, 0, 0, 0, 0), sw, sw * (bl ? 0.95 : 1), sw, skin); zput('pust', ZM[7], sw, sw, sw, bl ? '#ffb84a' : '#c8ff4a'); }
-  if (z.k === 'armored') zput('torso', J(ZM[6], tor, 0, 0.06, 0, 0, 0, 0), Bd.tw * 1.12, Bd.th * 0.82, Bd.tw * 1.12, white('#1f2a3a'));
+  if (zk === 'spitter' || zk === 'bloater') { const bl = zk === 'bloater', sw = (bl ? 1.75 : 1) * (1 + Math.sin(t * (bl ? 5 : 3) + sd) * (bl ? 0.06 : 0.04)); zput('belly', J(ZM[7], tor, bl ? 0.1 : 0.07, bl ? 0.2 : 0.17, 0, 0, 0, 0), sw, sw * (bl ? 0.95 : 1), sw, skin); zput('pust', ZM[7], sw, sw, sw, bl ? '#ffb84a' : '#c8ff4a'); }
+  if (zk === 'armored') zput('torso', J(ZM[6], tor, 0, 0.06, 0, 0, 0, 0), Bd.tw * 1.12, Bd.th * 0.82, Bd.tw * 1.12, white('#1f2a3a'));
   if (big) zput('spikes', tor, Bd.tw, Bd.th, Bd.tw, '#d8ccb4');
   // head: tilted, drooped, twitching; climbers have the neck wrung sideways and look up
-  const TH = 0.44 * Bd.th, spitWind = z.k === 'spitter' && z.spitT != null && z.spitT < 0.55 ? ease(1 - z.spitT / 0.55) : 0;
+  const TH = 0.44 * Bd.th, spitWind = zk === 'spitter' && z.spitT != null && z.spitT < 0.55 ? ease(1 - z.spitT / 0.55) : 0;
   let hRoll = 0.12, hPitch = 0.25, hYaw = 0, jaw = 0.12;
-  if (z.k === 'walker') { hRoll = [0.4, 0.15, 0.25, 0.85, -0.3][v]; hPitch = [0.35, 0.5, 0.25, 0.2, 0.15][v]; jaw = v === 4 ? 0.7 : 0.15; }
-  else if (z.k === 'runner') { hRoll = -0.15; hPitch = -0.45; jaw = 0.55 + Math.sin(t * 9 + sd) * 0.15; }
-  else if (z.k === 'climber') { hRoll = 1.15; hPitch = quad ? -1.05 : 0.2; jaw = 0.3; }
-  else if (z.k === 'spitter') { hRoll = 0.1; hPitch = 0.15 - spitWind * 1.0; jaw = 0.2 + spitWind * 0.8; }
-  else if (big) { hRoll = 0.2; hPitch = -0.15 + (z.k === 'boss' ? 0.25 : 0); jaw = 0.35; }
+  if (zk === 'walker') { hRoll = [0.4, 0.15, 0.25, 0.85, -0.3][v]; hPitch = [0.35, 0.5, 0.25, 0.2, 0.15][v]; jaw = v === 4 ? 0.7 : 0.15; }
+  else if (zk === 'runner') { hRoll = -0.15; hPitch = -0.45; jaw = 0.55 + Math.sin(t * 9 + sd) * 0.15; }
+  else if (zk === 'climber') { hRoll = 1.15; hPitch = quad ? -1.05 : 0.2; jaw = 0.3; }
+  else if (zk === 'spitter') { hRoll = 0.1; hPitch = 0.15 - spitWind * 1.0; jaw = 0.2 + spitWind * 0.8; }
+  else if (big) { hRoll = 0.2; hPitch = -0.15 + (zk === 'boss' ? 0.25 : 0); jaw = 0.35; }
   else if (crawl) { hRoll = 0.3; hPitch = -1.25; jaw = 0.45; }
-  else if (z.k === 'screamer') { hRoll = 0.2; hPitch = scream ? -1.0 : 0.1; jaw = scream ? 1.05 : 0.8; }
-  else if (z.k === 'bloater') { hRoll = 0.15; hPitch = 0.2; jaw = 0.3; }
-  else if (z.k === 'armored') { hRoll = 0.05; hPitch = 0.1; jaw = 0.1; }
+  else if (zk === 'screamer') { hRoll = 0.2; hPitch = scream ? -1.0 : 0.1; jaw = scream ? 1.05 : 0.8; }
+  else if (zk === 'bloater') { hRoll = 0.15; hPitch = 0.2; jaw = 0.3; }
+  else if (zk === 'armored') { hRoll = 0.05; hPitch = 0.1; jaw = 0.1; }
   hPitch += hunch * 0.4 - flinch * 1.5; // look ahead despite the hunch
-  const head = J(ZM[8], tor, 0.03 * Bd.tw, TH * (big && z.k === 'brute' ? 0.82 : 0.97) + (z.k === 'screamer' ? 0.1 : 0), 0, hRoll + twitch, hYaw + twitch * 0.6 + Math.sin(t * 0.7 + sd) * 0.15, -hPitch);
+  const head = J(ZM[8], tor, 0.03 * Bd.tw, TH * (big && zk === 'brute' ? 0.82 : 0.97) + (zk === 'screamer' ? 0.1 : 0), 0, hRoll + twitch, hYaw + twitch * 0.6 + Math.sin(t * 0.7 + sd) * 0.15, -hPitch);
   const hs = Bd.hs;
   zput('head', head, hs, hs, hs, skin);
   zput('jaw', J(ZM[9], head, 0.02 * hs, 0.05 * hs, 0, 0, 0, -jaw), hs, hs, hs, skin);
   const ec = z.rage > 0 || z.rageF ? '#ff2a1a' : ZEYE[z.k] || '#ffd36a';
-  if (z.k === 'screamer') zput('limb', J(ZM[11], tor, 0.03, TH * 0.97 + 0.12, 0, 0, 0, Math.PI - hPitch * 0.5), 0.035, 0.13, 0.035, skin); // the long neck
-  if (z.k === 'armored') zput('helmet', head, hs, hs, hs, white('#2a3442'));
-  if (z.k === 'armored' && !corpse) zput('shield', J(ZM[15], tor, 0.24, TH * 0.62, -0.08, 0, 0.15, hunch - flinch), 1, 1, 1, white('#3a4656')); // riot shield held upright in front
+  if (zk === 'screamer') zput('limb', J(ZM[11], tor, 0.03, TH * 0.97 + 0.12, 0, 0, 0, Math.PI - hPitch * 0.5), 0.035, 0.13, 0.035, skin); // the long neck
+  if (zk === 'armored') zput('helmet', head, hs, hs, hs, white('#2a3442'));
+  if (zk === 'armored' && !corpse) zput('shield', J(ZM[15], tor, 0.24, TH * 0.62, -0.08, 0, 0.15, hunch - flinch), 1, 1, 1, white('#3a4656')); // riot shield held upright in front
   if (!corpse) { zput('eye', head, hs, hs, hs, ec); zput('glow', head, hs, hs, hs, ec); }
-  if (v === 1 || z.k === 'boss') zput('hair', J(ZM[10], head, 0, 0, 0, 0, 0, 0), hs, hs * (z.k === 'boss' ? 1.4 : 1), hs, z.k === 'boss' ? '#120c0a' : '#151010');
-  if (z.k === 'boss') { // the second face on the back of the head
+  if (v === 1 || zk === 'boss') zput('hair', J(ZM[10], head, 0, 0, 0, 0, 0, 0), hs, hs * (zk === 'boss' ? 1.4 : 1), hs, zk === 'boss' ? '#120c0a' : '#151010');
+  if (zk === 'boss') { // the second face on the back of the head
     const h2 = J(ZM[11], head, -0.02, 0.0, 0, 0.5, Math.PI, 0.25);
     zput('head', h2, hs * 0.9, hs * 0.9, hs * 0.9, '#cfc6bc'); if (!corpse) { zput('eye', h2, hs * 0.9, hs * 0.9, hs * 0.9, '#ff2a2a'); zput('glow', h2, hs * 0.9, hs * 0.9, hs * 0.9, '#ff2a2a'); }
   }
   // arms: every type poses them differently, always asymmetric
   for (const sg of [-1, 1]) {
-    if (z.k === 'walker' && v === 2 && sg > 0) continue; // one-armed
+    if (zk === 'walker' && v === 2 && sg > 0) continue; // one-armed
     let ap = 0.1, ar = 0.12, el = 0.25, uaL = Bd.ua, faL = Bd.fa, hand = 'claw', hsz = 1, sleeve = shirt;
     const sw = Math.sin(ph + (sg > 0 ? Math.PI : 0));
-    if (z.k === 'walker') {
+    if (zk === 'walker') {
       if (sg < 0) { ap = 1.25 + Math.sin(t * 1.1 + sd) * 0.1; el = 0.35; } // the reaching arm
       else { ap = (v === 3 ? 1.1 : 0.12) + sw * 0.18 * amp; ar = 0.22; el = 0.15; faL *= 1.35; } // the one hanging to the knee
       if (atk) { ap = 1.6 + swing * 1.1; el = 0.2; }
-    } else if (z.k === 'runner') {
+    } else if (zk === 'runner') {
       ap = -0.7 + sw * 0.8 * amp; el = 0.9; ar = 0.18;
       if (atk) { ap = 1.4 + swing; el = 0.3; }
-    } else if (z.k === 'climber') {
+    } else if (zk === 'climber') {
       if (climbing) { ap = Math.PI - 0.35 + Math.sin(t * 9 + (sg > 0 ? 3 : 0)) * 0.45; el = 0.5; ar = 0.25; }
       else { ap = 1.25 + sw * 0.55 * Math.max(0.3, amp) + (atk ? swing * 0.6 : 0); el = -0.5; ar = 0.65; }
-    } else if (z.k === 'spitter') {
+    } else if (zk === 'spitter') {
       ap = 0.25 + sw * 0.25 * amp; ar = 0.55; el = 0.6; if (spitWind) { ap = 0.6; ar = 0.9; }
       if (atk) { ap = 1.3 + swing; }
-    } else if (z.k === 'brute') {
+    } else if (zk === 'brute') {
       if (sg > 0) { hand = 'fist'; hsz = 1.25; uaL *= 1.2; faL *= 1.2; ap = (atk ? 1.5 + swing * 1.7 : 0.2 + sw * 0.2 * amp); el = atk ? 0.2 : 0.35; ar = 0.25; }
       else { ap = 0.5 + sw * 0.25 * amp; el = 0.8; ar = 0.3; uaL *= 0.85; faL *= 0.85; }
-    } else if (z.k === 'boss') {
+    } else if (zk === 'boss') {
       ap = (atk && sg > 0 ? 1.4 + swing * 1.6 : 0.35 + sw * 0.15 * amp); el = 0.2; ar = 0.3; faL *= 1.15; if (sg > 0) { hand = 'fist'; hsz = 1.4; }
     }
     else if (crawl) { ap = 2.0 + sw * 0.55 * Math.max(0.35, amp) + (atk ? swing * 0.4 : 0); el = -0.3; ar = 0.45; }
-    else if (z.k === 'bloater') { ap = 0.45 + sw * 0.2 * amp; ar = 0.75; el = 0.5; uaL *= 0.9; if (atk) ap = 1.2 + swing * 0.8; }
-    else if (z.k === 'screamer') { if (scream) { ap = 2.5; ar = 0.9; el = 0.2; faL *= 1.1; } else { ap = 0.3 + sw * 0.3 * amp; ar = 0.25; el = 0.45; faL *= 1.2; } if (atk) ap = 1.5 + swing; }
-    else if (z.k === 'armored') { if (sg < 0) { ap = 1.25; ar = 0.1; el = 1.2; } else { ap = 0.25 + sw * 0.3 * amp; el = 0.4; if (atk) { ap = 1.7 + swing * 1.4; el = 0.15; } } sleeve = white('#1f2a3a'); }
+    else if (zk === 'bloater') { ap = 0.45 + sw * 0.2 * amp; ar = 0.75; el = 0.5; uaL *= 0.9; if (atk) ap = 1.2 + swing * 0.8; }
+    else if (zk === 'screamer') { if (scream) { ap = 2.5; ar = 0.9; el = 0.2; faL *= 1.1; } else { ap = 0.3 + sw * 0.3 * amp; ar = 0.25; el = 0.45; faL *= 1.2; } if (atk) ap = 1.5 + swing; }
+    else if (zk === 'armored') { if (sg < 0) { ap = 1.25; ar = 0.1; el = 1.2; } else { ap = 0.25 + sw * 0.3 * amp; el = 0.4; if (atk) { ap = 1.7 + swing * 1.4; el = 0.15; } } sleeve = white('#1f2a3a'); }
     if (corpse) { ap = 0.3 + fall * 1.3; el = 0.4; ar = 0.6 + fall * 0.4; }
     ap += flinch * -1.2;
     const sh = J(ZM[12], tor, 0, TH * 0.9, sg * 0.15 * Bd.tw, sg * -ar, 0, ap);
-    const ur = (big ? 0.075 : 0.042) * (hand === 'fist' && z.k === 'brute' ? 1.5 : 1);
+    const ur = (big ? 0.075 : 0.042) * (hand === 'fist' && zk === 'brute' ? 1.5 : 1);
     zput('limb', sh, ur, uaL, ur, sleeve);
     const elb = J(ZM[13], sh, 0, -uaL, 0, 0, 0, el);
     zput('limb', elb, ur * 0.85, faL, ur * 0.85, skin);
     const wr = J(ZM[14], elb, 0, -faL, 0, 0, 0, hand === 'claw' ? 0.2 : 0);
-    zput(hand, wr, hsz * (big ? 1.4 : 1.05), hsz * (z.k === 'walker' || z.k === 'climber' ? 1.25 : 1) * (big ? 1.3 : 1), hsz * (big ? 1.4 : 1.05), skin);
+    zput(hand, wr, hsz * (big ? 1.4 : 1.05), hsz * (zk === 'walker' || zk === 'climber' ? 1.25 : 1) * (big ? 1.3 : 1), hsz * (big ? 1.4 : 1.05), skin);
   }
   // footfall dust for the heavy ones
-  if (!corpse && big && amp > 0.3) { const st = Math.sign(Math.sin(ph)); if (z._st != null && st !== z._st) { addP({ x: z.x, y: z.y, z: z.z + 0.05, vx: frnd(-0.5, 0.5), vy: frnd(-0.5, 0.5), vz: 0.3, g: -0.2, col: '#7a7266', s: 0.18 * s * 0.6, life: 0.6, smoke: 1 }); if (z.k === 'boss') shake(z.x, z.y, 0.06); } z._st = st; }
+  if (!corpse && big && amp > 0.3) { const st = Math.sign(Math.sin(ph)); if (z._st != null && st !== z._st) { addP({ x: z.x, y: z.y, z: z.z + 0.05, vx: frnd(-0.5, 0.5), vy: frnd(-0.5, 0.5), vz: 0.3, g: -0.2, col: '#7a7266', s: 0.18 * s * 0.6, life: 0.6, smoke: 1 }); if (zk === 'boss') shake(z.x, z.y, 0.06); } z._st = st; }
 }
 
 // zombie dog: low and long, four jointed legs at a gallop, snout, ears and a ragged tail
