@@ -1,6 +1,6 @@
 /* ================= input: keyboard + mouse, touch sticks & buttons, camera controls ================= */
 const INP = { keys: {}, mx: 0, my: 0, mL: false, mR: false, mouseT: 0, touch: false, lastTouch: 0,
-  move: { id: null, ox: 0, oy: 0, x: 0, y: 0 }, aim: { id: null, ox: 0, oy: 0, x: 0, y: 0, a: 0, t: 0, btn: false }, tp: {}, pinch: null, useHeld: false, bldT: 0, bldLast: '', paint: null, aimT: 0 };
+  move: { id: null, ox: 0, oy: 0, x: 0, y: 0 }, tAim: { id: null, x: 0, y: 0 }, aim: { id: null, ox: 0, oy: 0, x: 0, y: 0, a: 0, t: 0, btn: false }, tp: {}, pinch: null, useHeld: false, bldT: 0, bldLast: '', paint: null, aimT: 0 };
 const KD = k => !!INP.keys[k];
 const inGame = () => STATE.mode === 'play' && W && !W.over;
 const panelOpen = () => !$('craft').classList.contains('hidden') || !$('pause').classList.contains('hidden') || !$('help').classList.contains('hidden');
@@ -133,6 +133,7 @@ CV.addEventListener('pointerdown', e => {
     const o = INP.tp[others[0]];
     if (now - o.t < 350 && Math.hypot(o.x - (o.x0 == null ? o.x : o.x0), o.y - (o.y0 == null ? o.y : o.y0)) < 24) {
       for (const s of [INP.move, INP.aim]) if (s.id === +others[0] && !s.btn) { s.id = null; s.x = s.y = 0; }
+      if (INP.tAim.id === +others[0]) INP.tAim.id = null;
       stickDraw(stickL, INP.move); if (!INP.aim.btn) stickDraw(stickR, INP.aim);
       INP.pinch = { a: +others[0], b: e.pointerId, d0: Math.max(30, Math.hypot(o.x - e.clientX, o.y - e.clientY)), z0: CAM.zoom };
       try { CV.setPointerCapture(e.pointerId); } catch (_) { } return;
@@ -144,7 +145,8 @@ CV.addEventListener('pointerdown', e => {
   if (nearUI(e.clientX, e.clientY)) { delete INP.tp[e.pointerId]; return; }
   if (moveZone(e.clientX, e.clientY) && INP.move.id == null) { const R = STICK_R(), m = R * 0.6; Object.assign(INP.move, { id: e.pointerId, ox: clamp(e.clientX, m, VW - m), oy: clamp(e.clientY, m, VH - m), x: 0, y: 0, t0: performance.now(), far: false, sx: e.clientX, sy: e.clientY }); INP.move.x = (e.clientX - INP.move.ox) / R; INP.move.y = (e.clientY - INP.move.oy) / R; stickDraw(stickL, INP.move, R); }
   else if (me.build) { INP.paint = e.pointerId; touchBuild(e.clientX, e.clientY, true); }
-  else return; // shooting is on the fire button; the rest of the right side does nothing
+  else if (INP.tAim.id == null && e.clientX > VW * (VH > VW ? 0.4 : 0.3)) Object.assign(INP.tAim, { id: e.pointerId, x: e.clientX, y: e.clientY }); // touch the map: shoot where your finger is
+  else return;
   try { CV.setPointerCapture(e.pointerId); } catch (_) { }
 }, { passive: false });
 CV.addEventListener('pointermove', e => {
@@ -161,6 +163,7 @@ CV.addEventListener('pointermove', e => {
   }
   if (INP.aim.id === e.pointerId && Math.hypot(INP.aim.x, INP.aim.y) > 0.25) INP.aim.t = performance.now();
   if (INP.paint === e.pointerId && inGame() && W.p[ME].build) touchBuild(e.clientX, e.clientY, false);
+  if (INP.tAim.id === e.pointerId) { INP.tAim.x = e.clientX; INP.tAim.y = e.clientY; }
 }, { passive: false });
 function endPtr(e) {
   if (e.pointerType !== 'touch') return;
@@ -169,6 +172,7 @@ function endPtr(e) {
   if (INP.paint === e.pointerId) finishPaint();
   if (INP.move.id === e.pointerId && !INP.move.far && performance.now() - INP.move.t0 < 350 && inGame() && W.p[ME].build) { touchBuild(INP.move.ox, INP.move.oy, true); finishPaint(); }
   if (INP.move.id === e.pointerId) { INP.move.id = null; INP.move.x = INP.move.y = 0; stickDraw(stickL, INP.move); }
+  if (INP.tAim.id === e.pointerId) { INP.tAim.id = null; INP.aim.t = performance.now(); }
   if (INP.aim.id === e.pointerId && !INP.aim.btn) { INP.aim.id = null; INP.aim.x = INP.aim.y = 0; INP.aim.t = performance.now(); stickDraw(stickR, INP.aim); }
 }
 /* fire stick: hold to shoot (auto-aims at the nearest zombie), drag to choose the direction */
@@ -407,8 +411,9 @@ function readInput(dt) {
     } else { BUILD_HOVER = null; INP.bDown = false; if (!me.build && (PLAN || PREV)) cancelPlan(); }
   } else {
     drawReticle(me, null, false);
-    const A = INP.aim, held = A.id != null, active = held && Math.hypot(A.x, A.y) > 0.3;
-    if (active) {
+    const A = INP.aim, held = A.id != null, active = held && Math.hypot(A.x, A.y) > 0.3, fing = INP.tAim.id != null && !me.build;
+    if (fing) { const pt = aimPick(INP.tAim.x, INP.tAim.y, 50); me.aimPt = pt; me.aim = Math.atan2(pt.y - me.y, pt.x - me.x); }
+    else if (active) {
       const a = Math.atan2(-A.y, A.x), wx = rx * Math.cos(a) + fx * Math.sin(a), wy = ry * Math.cos(a) + fy * Math.sin(a);
       trackAim(me); INP.aimT -= dt; if (INP.aimT <= 0 || !me.aimPt) { INP.aimT = 0.1; me.aimPt = touchAutoAim(me, wx, wy, false, me.aimPt && me.aimPt.zb); }
       me.aim = Math.atan2(me.aimPt.y - me.y, me.aimPt.x - me.x);
@@ -417,7 +422,7 @@ function readInput(dt) {
       trackAim(me); INP.aimT -= dt; if (INP.aimT <= 0 || !me.aimPt) { INP.aimT = 0.12; const f = Math.hypot(I.mx, I.my) > 0.2 ? [I.mx, I.my] : [Math.cos(me.aim), Math.sin(me.aim)]; me.aimPt = touchAutoAim(me, f[0], f[1], true, me.aimPt && me.aimPt.zb); }
       me.aim = Math.atan2(me.aimPt.y - me.y, me.aimPt.x - me.x);
     } else if (performance.now() - A.t > 600 && Math.hypot(I.mx, I.my) > 0.2) { me.aim = Math.atan2(I.my, I.mx); me.aimPt = null; }
-    I.fire = !blocked && (active || (held && A.btn)) && !me.build ? 1 : 0;
+    I.fire = !blocked && (fing || active || (held && A.btn)) && !me.build ? 1 : 0;
     CAM.lookX = lerp(CAM.lookX || 0, Math.cos(me.aim) * 1.5, Math.min(1, dt * 2)); CAM.lookY = lerp(CAM.lookY || 0, Math.sin(me.aim) * 1.5, Math.min(1, dt * 2));
     if (!me.build || !BUILD_HOVER || !BUILD_HOVER.t) BUILD_HOVER = me.build ? BUILD_HOVER : null;
   }

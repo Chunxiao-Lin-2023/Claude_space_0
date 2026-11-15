@@ -361,14 +361,14 @@ function w2s(x, y, z) { projV.set(x, z, y).project(CAMO); return [(projV.x + 1) 
 const RAY = new THREE.Raycaster(), NDC = new THREE.Vector2();
 function screenRay(sx, sy) { NDC.set(sx / VW * 2 - 1, -(sy / VH) * 2 + 1); RAY.setFromCamera(NDC, CAMO); const o = RAY.ray.origin, d = RAY.ray.direction; return { o: [o.x, o.z, o.y], d: [d.x, d.z, d.y] }; }
 // aim pick: nearest visible zombie under the cursor, else the first surface
-function aimPick(sx, sy) {
+function aimPick(sx, sy, mag) {
   const { o, d } = screenRay(sx, sy), vl = viewL();
   let best = null, bd = 1e9;
   for (const z of W.zs) { if (z.L > vl || lcHide(Math.floor(z.x), Math.floor(z.y), z.L)) continue; const t = rayBox(o[0], o[1], o[2], d[0], d[1], d[2], z.x - z.r - 0.15, z.y - z.r - 0.15, z.z, z.r * 2 + 0.3, z.r * 2 + 0.3, z.h, 400); if (t >= 0 && t < bd) { bd = t; best = z; } }
   // cursor on a zombie: aim at the height you point at — over its head (the top of the silhouette) is a headshot
   if (best) { const hz = clamp(o[2] + d[2] * bd, best.z + best.h * 0.35, best.z + best.h * 0.9); return { x: best.x, y: best.y, z: hz, zb: best, head: hz > best.z + best.h * 0.76 }; }
   // near miss: a zombie within ~34 px of the cursor on screen pulls the aim onto its body
-  let mb = null, md = 34;
+  let mb = null, md = mag || 34;
   for (const z of W.zs) { if (z.L > vl || z.hp <= 0 || lcHide(Math.floor(z.x), Math.floor(z.y), z.L)) continue; const [px, py, pz] = w2s(z.x, z.y, z.z + z.h * 0.55); if (pz > 1) continue; const dd = Math.hypot(px - sx, py - sy); if (dd < md) { md = dd; mb = z; } }
   if (mb) return { x: mb.x, y: mb.y, z: mb.z + mb.h * 0.6, zb: mb, mag: 1 };
   // march the camera ray into the visible part of the map
