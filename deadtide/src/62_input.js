@@ -22,6 +22,19 @@ function toggleBuild(v) {
 function selBlock(id) { const me = W.p[ME]; me.sel = id; me.demo = false; uiBuildBar(); sfx('click'); }
 function rotStairs() { const me = W.p[ME]; me.sdir = (me.sdir + 1) & 3; uiBuildBar(); sfx('click'); }
 function cycleWpn(d) { const me = W.p[ME]; let w = me.wpn; for (let k = 0; k < NW; k++) { w = (w + d + NW) % NW; if (me.owned[w]) break; } if (w !== me.wpn) act('wpn', w); }
+// knife: find the zombie, turn to it, lunge into reach and slash; the host settles the damage
+function doKnife() {
+  const me = W.p[ME]; if (!me || me.dead || me.down || me.build || me.medT > 0 || me.jmp || (me.knCD || 0) > performance.now()) return;
+  me.knCD = performance.now() + BAL.knifeCD * 1000;
+  const mv = Math.hypot(me.inp.mx, me.inp.my) > 0.3 && INP.touch ? Math.atan2(me.inp.my, me.inp.mx) : me.aim;
+  const z = knifeTarget(me, mv);
+  if (z) {
+    const dx = z.x - me.x, dy = z.y - me.y, d = Math.hypot(dx, dy) || 1, go = clamp(d - (me.r + z.r + 0.12), 0, BAL.knifeLunge);
+    me.aim = Math.atan2(dy, dx); me.aimPt = { x: z.x, y: z.y, z: z.z + z.h * 0.6, zb: z }; INP.aimT = 0.3;
+    if (go > 0.05) me.dash = { t: 0, T: 0.06 + go * 0.07, dx: dx / d * go, dy: dy / d * go };
+  }
+  me.knT = 0.28; me.knZ = z; act('knife', z ? z.id : -1);
+}
 // jump: vault what's in front (or leap a gap), else a little hop. Direction = where you're walking, else where you aim
 function doJump() {
   const me = W.p[ME]; if (!me || me.dead || me.down) return;
@@ -70,7 +83,7 @@ function onKeyPress(k) {
     if ((k === 'Enter' || k === ' ') && PLAN) return confirmPlan();
   } else { const n = '1234567'.indexOf(k); if (n >= 0) return act('wpn', n); if (k === 'r') return act('reload'); }
   if (k === ' ') return doJump();
-  if (k === 'v') return act('shove');
+  if (k === 'v') return doKnife();
   if (k === 'g') return act('nade');
   if (k === 'h') return act('med');
   if (k === 'n') return toggleReady();
@@ -310,7 +323,7 @@ function toggleWpick(force) {
 document.addEventListener('pointerdown', e => { const el = $('wpick'); if (el && !el.classList.contains('hidden') && !el.contains(e.target) && e.target.id !== 'tWpn' && !$('tWpn').contains(e.target)) toggleWpick(false); }, true);
 bindBtn('tLUp', () => viewStep(1)); bindBtn('tLDn', () => viewStep(-1));
 bindBtn('vToggle', () => { document.body.classList.toggle('vopen'); $('vToggle').classList.toggle('on', document.body.classList.contains('vopen')); sfx('click'); });
-bindBtn('tShove', () => inGame() && act('shove'));
+bindBtn('tShove', () => { if (inGame()) { INP.knHeld = true; doKnife(); } }, () => { INP.knHeld = false; });
 bindBtn('tJump', () => inGame() && doJump());
 bindBtn('bcOk', () => confirmPlan()); bindBtn('bcNo', () => cancelPlan());
 bindBtn('tNade', () => inGame() && act('nade'));
@@ -409,5 +422,7 @@ function readInput(dt) {
     if (!me.build || !BUILD_HOVER || !BUILD_HOVER.t) BUILD_HOVER = me.build ? BUILD_HOVER : null;
   }
   if (blocked) I.fire = 0;
+  if (!blocked && (KD('v') || INP.knHeld)) doKnife(); // hold to keep slashing
+  if (me.knT > 0 && zAlive(me.knZ)) me.aim = Math.atan2(me.knZ.y - me.y, me.knZ.x - me.x); // face what you're cutting
   INP.lockShow = !blocked && !me.build && !me.dead && me.aimPt && zAlive(me.aimPt.zb) && (usingMouse || I.fire) ? me.aimPt : null;
 }

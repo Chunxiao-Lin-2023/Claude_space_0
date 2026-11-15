@@ -285,7 +285,7 @@ function stepFx(dt) {
   for (const c of RND.corpses) c.t += dt; RND.corpses = RND.corpses.filter(c => c.t < 9);
   RND.floats = RND.floats.filter(f => { f.t += dt; f.z += dt * 0.6; return f.t < 2.2; });
   CAM.shake = Math.max(0, CAM.shake - dt * 1.8); RND.hurtV = Math.max(0, RND.hurtV - dt * 1.6);
-  for (const p of W.p) { if (p.recoilT > 0) p.recoilT -= dt; if (p.shoveT > 0) p.shoveT -= dt; }
+  for (const p of W.p) { if (p.recoilT > 0) p.recoilT -= dt; if (p.shoveT > 0) p.shoveT -= dt; if (p.knT > 0) p.knT -= dt; }
 }
 function drawFx() {
   const P = OBJ.parts; let n = 0;
@@ -500,7 +500,7 @@ function fxEvent(e) {
     case 'boom': RND.booms.push({ x: e.x, y: e.y, z: e.z, t: 0 }); debrisFx(e.x, e.y, e.z, e.g ? '#6a8a2a' : '#3a3530', 12); if (e.g) { bloodFx(e.x, e.y, e.z, 24, true); addDecal(e.x, e.y, e.z - 0.5, 1.1, '#3c5a14'); } sfx('boom', e.x, e.y); shake(e.x, e.y, 0.4); break;
     case 'acid': for (let k = 0; k < 8; k++) addP({ x: e.x, y: e.y, z: e.z, vx: frnd(-2, 2), vy: frnd(-2, 2), vz: frnd(0, 2.5), col: k % 2 ? '#9dff3a' : '#5f9a20', s: 0.06, life: 0.5, floor: e.z - 0.3 }); sfx('acid', e.x, e.y); break;
     case 'rhit': if (thr('rhit', 0.3)) { sfx('rhit', W.radio.x, W.radio.y); for (let k = 0; k < 4; k++) addP({ x: W.radio.x + 0.5, y: W.radio.y + 0.5, z: 0.6, vx: frnd(-2, 2), vy: frnd(-2, 2), vz: frnd(1, 3), col: '#ffd76a', s: 0.05, life: 0.4 }); } break;
-    case 'shove': sfx(e.n ? 'shoveHit' : 'shove', W.p[e.p].x, W.p[e.p].y); if (guest || e.p !== ME) W.p[e.p].shoveT = 0.18; break;
+    case 'knife': { const q = W.p[e.p]; sfx(e.n ? 'stab' : 'slash', q.x, q.y); if (e.p !== ME) q.knT = 0.28; if (e.n) { bloodFx(e.x, e.y, e.z, e.b ? 14 : 8, e.g); if (e.b) RND.floats.push({ x: e.x, y: e.y, z: e.z + 0.5, text: '背刺 ×' + BAL.knifeBack, col: '#ff8a6a', t: 0 }); } break; }
     case 'scream': (RND.rings = RND.rings || []).push({ x: e.x, y: e.y, z: e.z, t: 0 }); sfx('scream', e.x, e.y); if (thr('scrMsg', 8)) uiMsg('尖叫者在叫——附近的丧尸发狂了！', '#ff8ac0'); break;
     case 'over': if (!W.demo && STATE.mode === 'play') showOver(e); break;
     case 'sfx': if (e.n === 'throw') { let bp = null, bd = 2; for (const q of W.p) { const d = d2(q.x, q.y, e.x, e.y); if (d < bd) { bd = d; bp = q; } } if (bp) bp._throwT = 0.35; }

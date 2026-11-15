@@ -84,8 +84,8 @@ function sfx(n, x, y) {
     case 'spit': noise(0.25, 0.25 * v, 'bandpass', 600 * r, 1500, 3); break;
     case 'acid': noise(0.3, 0.25 * v, 'highpass', 2500 * r, 6000, 1); break;
     case 'rhit': tone('square', 880, 880, 0.08, 0.12); tone('square', 660, 660, 0.08, 0.12, 0.1); noise(0.1, 0.25, 'bandpass', 2000); break;
-    case 'shove': noise(0.12, 0.2, 'bandpass', 700, 1600, 1); break;
-    case 'shoveHit': noise(0.12, 0.4, 'lowpass', 800, 200); tone('sine', 120, 60, 0.1, 0.3); break;
+    case 'slash': noise(0.13, 0.22, 'bandpass', 2600, 900, 1.2); break;
+    case 'stab': noise(0.1, 0.22, 'bandpass', 2600, 900, 1.2); noise(0.09, 0.45, 'lowpass', 1400, 260); tone('square', 170, 70, 0.07, 0.18); break;
     case 'land': noise(0.08, 0.12, 'lowpass', 500); break;
     case 'chop': noise(0.12, 0.35 * v, 'bandpass', 900 * r, 500, 2); tone('triangle', 180 * r, 120, 0.1, 0.18 * v); noise(0.5, 0.25 * v, 'lowpass', 600, 120, 1, 0.15); break;
     case 'click': tone('triangle', 900, 900, 0.03, 0.08); break;

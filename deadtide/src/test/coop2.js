@@ -31,6 +31,10 @@ const { chromium } = require('playwright'); const OUT = process.env.OUT || '/tmp
   await simWait(H, 1.0);
   console.log('guest in house', await counts(G));
   await G.evaluate(() => { window.__dbg.skipDraw = false; }); await G.waitForTimeout(4000); await G.screenshot({ path: OUT + '/c2_guest.png' }); await G.evaluate(() => { window.__dbg.skipDraw = true; });
+  // guest knife: lunge happens on the guest, the host applies the cut
+  { const zid = await H.evaluate(() => { const g = W.p[1]; W.zs.length = 0; const z = spawnZombie('walker', 0); z.x = g.x + 1.6; z.y = g.y; z.L = g.L; z.z = g.z; z.stun = 99; z.hp = z.max = 500; return z.id; });
+    await simWait(H, 0.4); await G.evaluate(() => { W.p[ME].knCD = 0; doKnife(); }); await simWait(H, 0.8);
+    console.log('guest knife hit on host', await H.evaluate(zid => { const z = W.zs.find(q => q.id === zid); return z ? 500 - z.hp : -1; }, zid)); }
   const sum = p => p.evaluate(() => { let a = 0, c = 0; for (let i = 0; i < NC; i++) { a = (a * 31 + W.blk[i]) % 1000000007; c = (c * 31 + W.slab[i]) % 1000000007; } return a + '/' + c; });
   { const a = await sum(H), g = await sum(G); console.log('map identical host/guest', a === g, a, g); }
   console.log('linked', await H.evaluate(() => !!(NET.gctl && NET.gctl.open) && !W.p[1].gone), await G.evaluate(() => linkUp()));

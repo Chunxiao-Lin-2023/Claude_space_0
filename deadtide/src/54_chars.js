@@ -335,11 +335,12 @@ function mkPlayerModel(i) {
     mk([[boxG(0.42, 0.06, 0.06, 0.18, 0.04, 0), '#4a4f55'], [new THREE.CylinderGeometry(0.035, 0.05, 0.12, 8).rotateZ(Math.PI / 2).translate(0.44, 0.04, 0), '#2a2d30'], [new THREE.CylinderGeometry(0.06, 0.06, 0.26, 10).rotateZ(Math.PI / 2).translate(0.08, -0.06, 0), '#a8322a'], [boxG(0.04, 0.08, 0.04, 0, -0.03, 0), dark]]),
     mk([[new THREE.CylinderGeometry(0.06, 0.06, 0.5, 10).rotateZ(Math.PI / 2).translate(0.2, 0.05, 0), '#3d4a34'], [boxG(0.08, 0.1, 0.07, 0.02, -0.03, 0), dark], [boxG(0.18, 0.06, 0.05, -0.12, 0.03, 0), '#3d4a34'], [boxG(0.06, 0.05, 0.06, 0.3, 0.12, 0), dark]]),
   );
+  const knife = grp(aim); for (const [geo, col] of [[boxG(0.075, 0.03, 0.03, -0.02, 0, 0), '#2a2420'], [boxG(0.02, 0.05, 0.05, 0.025, 0, 0), '#3a3a3a'], [boxG(0.15, 0.012, 0.035, 0.11, 0, 0), '#cfd4d8']]) mesh(geo, col, knife); knife.visible = false;
   const hammer = mk([[boxG(0.03, 0.32, 0.03, 0, 0.1, 0), '#8a6a44'], [boxG(0.12, 0.06, 0.06, 0.02, 0.26, 0), '#5a5f66']]);
   const medkit = mk([[boxG(0.14, 0.1, 0.2, 0, 0, 0), '#e8e2d6'], [boxG(0.145, 0.03, 0.08, 0, 0, 0), '#c83a32'], [boxG(0.145, 0.08, 0.03, 0, 0, 0), '#c83a32']]);
   const nade = mk([[new THREE.IcosahedronGeometry(0.05, 0), '#3c4a32']]);
   SCN.add(g);
-  return { g, lower, hips, legs, upper, torso, head, aim, arms, gunG, guns, hammer, medkit, nade, mats, i };
+  return { g, lower, hips, legs, upper, torso, head, aim, arms, gunG, guns, knife, hammer, medkit, nade, mats, i };
 }
 // two-bone IK inside the aim rig: put the hand of arm A at target T (aim-rig coordinates)
 const _v1 = new THREE.Vector3(), _v2 = new THREE.Vector3(), _v3 = new THREE.Vector3(), _q1 = new THREE.Quaternion(), _down = new THREE.Vector3(0, -1, 0), _pole = new THREE.Vector3();
@@ -428,7 +429,8 @@ function drawPlayers(vl, dt) {
     m.aim.position.y = 0.33 + Math.sin(ph * 2) * 0.01 * amp;
     // what's in hand + arm IK
     const reload = p.reloadT > 0 && !p.build, med = p.medT > 0, thr = p._throwT > 0, build = !!p.build;
-    m.guns.forEach((gm, k) => gm.visible = !build && !med && !thr && k === wi); m.hammer.visible = build; m.medkit.visible = med; m.nade.visible = thr;
+    const kn = p.knT > 0 && !build && !med && !p.down ? 1 - p.knT / 0.28 : -1;
+    m.guns.forEach((gm, k) => gm.visible = !build && !med && !thr && kn < 0 && k === wi); m.knife.visible = kn >= 0; m.hammer.visible = build; m.medkit.visible = med; m.nade.visible = thr;
     // stance: shouldered up when shooting or standing, low ready (muzzle down, butt still in the shoulder) when on the move
     const S = STANCE[wi], fired = W.t - (p._lastShot || -9) < 1.4, plain = down || build || med || thr;
     p._rdy = lerp(p._rdy == null ? 1 : p._rdy, plain || !moving || fired || (p.inp && p.inp.fire) ? 1 : 0, Math.min(1, dt * 8));
@@ -452,6 +454,13 @@ function drawPlayers(vl, dt) {
     if (build) { const sw = p._swingT > 0 ? Math.sin((1 - p._swingT / 0.3) * Math.PI) : 0; rx = 0.25; ry = 0.08 + sw * 0.12; rz = 0.12; lx = 0.05; ly = -0.3; lz = -0.06; m.gunG.position.set(rx, ry, rz); m.gunG.rotation.set(0, 0, -0.4 + sw * -1.3); }
     if (med) { rx = 0.22; ry = -0.12; rz = 0.06; lx = 0.22; ly = -0.12; lz = -0.06; m.gunG.position.set(0.24, -0.12, 0); m.gunG.rotation.set(0, 0, 0); }
     if (thr) { const k = 1 - p._throwT / 0.35, wind = k < 0.45 ? ease(k / 0.45) : 1 - ease((k - 0.45) / 0.3); rx = 0.05 + (k < 0.45 ? -0.15 * wind : 0.4 * (1 - wind)); ry = 0.05 + wind * 0.3; rz = 0.15; m.gunG.position.set(rx, ry, rz); m.gunG.rotation.set(0, 0, 0); }
+    if (kn >= 0) { // wind up high on the right, slash down across the body, recover
+      const a = kn < 0.3 ? ease(kn / 0.3) : 1, b = kn < 0.3 ? 0 : kn < 0.62 ? ease((kn - 0.3) / 0.32) : 1, c = kn > 0.62 ? ease((kn - 0.62) / 0.38) : 0;
+      rx = lerp(lerp(lerp(0.2, 0.1, a), 0.36, b), 0.22, c); ry = lerp(lerp(lerp(0, 0.2, a), -0.1, b), 0.02, c); rz = lerp(lerp(lerp(0.12, 0.2, a), -0.12, b), 0.1, c);
+      lx = 0.17; ly = 0.06; lz = -0.13; m.torso.rotation.y = lerp(lerp(0, 0.35, a), -0.45, b) * (1 - c);
+      m.knife.position.set(rx, ry, rz); m.knife.rotation.set(lerp(-0.4, 0.5, b), lerp(-0.6, 0.7, b), lerp(lerp(0.2, 1.0, a), -0.9, b));
+      m.aim.position.x += Math.sin(b * Math.PI) * 0.08;
+    }
     ikArm(m.arms[1], rx, ry, rz, 1); ikArm(m.arms[0], lx, ly, lz, -1);
   });
   for (const p of W.p) { if (p._throwT > 0) p._throwT -= dt; if (p._swingT > 0) p._swingT -= dt; }

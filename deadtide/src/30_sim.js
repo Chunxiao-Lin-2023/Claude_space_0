@@ -74,6 +74,7 @@ function stepMove(p, dt) {
     if (f >= 1) { const drop = p.L - J.L; p.L = J.L; p.jmp = null; p.jz = 0; p.vx *= 0.3; p.vy *= 0.3; if (drop > 0 || J.k) emitLocal('land'); }
     p.z = pZ(p); return;
   }
+  if (p.dash) { const D = p.dash, f = Math.min(dt, D.T - D.t) / D.T; moveEnt(p, D.dx * f, D.dy * f, 'p', true); D.t += dt; if (D.t >= D.T) p.dash = null; p.z = pZ(p); p.anim += dt * 8; return; }
   const spd = BAL.pSpeed * (p.down ? 0.22 : 1) * (p.medT > 0 ? 0.45 : 1) * (p.build ? 0.9 : 1);
   const tx = I.mx * k * spd, ty = I.my * k * spd, a = Math.min(1, dt * 14);
   p.vx = lerp(p.vx, tx, a); p.vy = lerp(p.vy, ty, a);
@@ -390,7 +391,7 @@ function doAct(p, a, v) {
   switch (a) {
     case 'reload': if (!p.down) startReload(p); else if (p.mag[0] < WPN[0].mag) { p.reloadT = WPN[0].reload; p.reloadW = 0; } break;
     case 'wpn': if (!p.down && v >= 0 && v < NW && p.owned[v] && p.wpn !== v) { p.wpn = v; p.reloadT = 0; p.fireCD = Math.max(p.fireCD, 0.25); emit({ k: 'sfx', n: 'swap', x: p.x, y: p.y, o: p.i }); } break;
-    case 'shove': shove(p); break;
+    case 'knife': knife(p, v); break;
     case 'nade': throwNade(p); break;
     case 'med':
       if (p.medT > 0 || p.meds <= 0) break;
@@ -404,20 +405,35 @@ function doAct(p, a, v) {
     case 'mode': p.build = !!v; break;
   }
 }
-function shove(p) {
-  if (p.down || p.shoveCD > 0) return;
-  p.shoveCD = BAL.shoveCD; p.shoveT = 0.18;
-  let n = 0;
+/* ---------- knife: auto-targets the best zombie within reach, lunges onto it and slashes ---------- */
+// dir: the way you're facing / walking; a zombie must be in sight, on (about) your level and within knifeRange
+function knifeTarget(p, dir) {
+  const [sx, sy, sz] = shoulder(p), f = dir != null ? dir : p.aim; let best = null, bs = 1e9;
   for (const z of W.zs) {
-    if (z.hp <= 0 || z.L !== p.L) continue;
-    const dx = z.x - p.x, dy = z.y - p.y, d = Math.hypot(dx, dy);
-    if (d > BAL.shoveRange + z.r || Math.abs(angDiff(p.aim, Math.atan2(dy, dx))) > 1.0) continue;
-    const heavy = z.k === 'boss' ? 0.15 : z.k === 'brute' ? 0.3 : 1;
-    z.kbx = (z.kbx || 0) + dx / (d || 1) * BAL.shoveKB * heavy; z.kby = (z.kby || 0) + dy / (d || 1) * BAL.shoveKB * heavy; z.stun = 0.45 * heavy;
-    hurtZombie(z, BAL.shoveDmg * (1 + 0.12 * W.upg), p); n++;
+    if (z.hp <= 0 || Math.abs(z.z - p.z) > 0.9) continue;
+    const dx = z.x - p.x, dy = z.y - p.y, d = Math.hypot(dx, dy); if (d > BAL.knifeRange + z.r) continue;
+    const score = d + Math.abs(angDiff(f, Math.atan2(dy, dx))) * 0.6;
+    if (score < bs && los(sx, sy, sz, z.x, z.y, z.z + z.h * 0.5, 0)) { bs = score; best = z; }
   }
-  if (n) taskAdd('shove', n);
-  emit({ k: 'shove', p: p.i, n });
+  return best;
+}
+function knife(p, zid) {
+  if (p.down || p.build || p.medT > 0 || (p.knCDh || 0) > W.t) return;
+  p.knCDh = W.t + BAL.knifeCD * 0.8; p.knT = 0.28;
+  // the client picked the target and lunged; trust it if it's still in reach (a little slack for lag), else pick here
+  let z = zid >= 0 ? W.zs.find(q => q.id === zid && q.hp > 0) : null;
+  if (z && Math.hypot(z.x - p.x, z.y - p.y) > BAL.knifeRange + BAL.knifeLunge * 0.6 + z.r) z = null;
+  if (!z) { z = knifeTarget(p); if (z && Math.hypot(z.x - p.x, z.y - p.y) > z.r + p.r + 0.9) z = null; } // no lunge happened: only what's in arm's reach
+  if (!z) { emit({ k: 'knife', p: p.i, n: 0 }); return; }
+  const dx = z.x - p.x, dy = z.y - p.y, d = Math.hypot(dx, dy) || 1;
+  const back = Math.cos(angDiff(z.face || 0, Math.atan2(-dy, -dx))) < -0.2;          // it was facing away from you
+  const heavy = z.k === 'boss' ? 0 : z.k === 'brute' ? 0.25 : 1;
+  let dmg = BAL.knifeDmg * (1 + 0.12 * W.upg) * (back ? BAL.knifeBack : 1);
+  if (ZT[z.k].armor && !back) dmg *= ZT[z.k].armor;                                     // riot gear: go round the back
+  z.stun = Math.max(z.stun || 0, 0.4 * Math.max(heavy, 0.3));
+  hurtZombie(z, dmg, p, dx / d * BAL.knifeKB * heavy, dy / d * BAL.knifeKB * heavy);
+  taskAdd('shove', 1);
+  emit({ k: 'knife', p: p.i, n: 1, x: r2(z.x), y: r2(z.y), z: r2(z.z + z.h * 0.6), b: back ? 1 : 0, g: z.k === 'spitter' ? 1 : 0 });
 }
 function throwNade(p) {
   if (p.down || p.nades <= 0) return;
