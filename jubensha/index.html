@@ -1,0 +1,1416 @@
+<!doctype html>
+<html lang="zh-CN">
+<head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="推理馆"><meta name="theme-color" content="#0e1218">
+<title>剧本杀 · 夜半推理馆</title>
+<style>
+:root{--bg:#0e1218;--fg:#e9e2d3;--mut:#9a927f;--acc:#c8a35a;--card:rgba(255,255,255,.05);--line:rgba(255,255,255,.12);--btn:#2a2a2e;--btnfg:#efe7d6;--ink:#2b2218;
+--serif:"Songti SC","STSong","Noto Serif SC","Source Han Serif SC","SimSun",serif;--sans:-apple-system,"PingFang SC","Microsoft YaHei","Noto Sans SC",sans-serif;--mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--fg);font-family:var(--sans);overscroll-behavior:none;touch-action:manipulation}
+body{transition:background .5s,color .5s}
+body[data-scr=read],body[data-scr=answer]{--bg:#e9dfc8;--fg:#2b2218;--mut:#7a6a52;--acc:#8a2b1f;--card:rgba(80,50,20,.07);--line:rgba(60,40,20,.2);--btn:#3a2a1c;--btnfg:#f3e9d4}
+body[data-scr=r1],body[data-scr=r2]{--bg:#0f171a;--fg:#dfe8e2;--mut:#86a093;--acc:#7fc0a0;--card:rgba(127,192,160,.07);--line:rgba(127,192,160,.2);--btn:#1f3a33;--btnfg:#e6f2ec}
+body[data-scr=d1],body[data-scr=d2],body[data-scr=intro]{--bg:#1b130d;--fg:#f0e4cf;--mut:#a8937a;--acc:#e3a957;--card:rgba(227,169,87,.07);--line:rgba(227,169,87,.18);--btn:#4a3220;--btnfg:#fbeedb}
+body[data-scr=reveal]{--bg:#140c0c;--fg:#f1e3dc;--mut:#a88d86;--acc:#d9524a;--card:rgba(217,82,74,.08);--line:rgba(217,82,74,.22);--btn:#4b1f1c;--btnfg:#fde9e5}
+#bgc{position:fixed;inset:0;width:100%;height:100%;z-index:0;pointer-events:none}
+#app{position:relative;z-index:1;height:100%;display:flex;flex-direction:column;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
+.scr{flex:1;display:flex;flex-direction:column;min-height:0;animation:fade .35s ease}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+body.same .scr{animation:none}
+body.noanim .scr,body.noanim *{animation:none!important;transition:none!important}
+button{font:inherit;cursor:pointer;border:1px solid var(--line);background:var(--btn);color:var(--btnfg);border-radius:10px;padding:10px 16px;min-height:44px;font-size:16px;transition:transform .08s,filter .15s}
+button:hover{filter:brightness(1.15)}button:active{transform:scale(.97)}
+button:disabled{opacity:.4;cursor:default;filter:none}
+button.pri{background:var(--acc);color:#1a1209;border-color:transparent;font-weight:600}
+button.ghost{background:transparent}
+button.sm{min-height:36px;padding:6px 12px;font-size:14px}
+button.on{outline:2px solid var(--acc);outline-offset:1px}
+input{font:inherit;font-size:20px;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:rgba(0,0,0,.25);color:var(--fg)}
+.code{font-family:var(--mono);font-weight:800;letter-spacing:.25em}
+h1,h2,h3{font-family:var(--serif);font-weight:700;margin:.2em 0}
+.mut{color:var(--mut)}.small{font-size:13px}.acc{color:var(--acc)}
+.top{display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid var(--line);flex-wrap:wrap;background:rgba(0,0,0,.12)}
+.top .ph{font-family:var(--serif);font-size:18px;font-weight:700}
+.top .sp{flex:1}
+.top .tm{font-family:var(--mono);font-size:13px;color:var(--mut)}
+.main{flex:1;overflow:auto;-webkit-overflow-scrolling:touch;padding:14px;min-height:0}
+.wrap{max-width:1000px;margin:0 auto}
+.bar{display:flex;gap:8px;padding:10px 12px;border-top:1px solid var(--line);flex-wrap:wrap;justify-content:flex-end;align-items:center;background:rgba(0,0,0,.12)}
+.bar .sp{flex:1}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px}
+.grid{display:grid;gap:12px;grid-template-columns:repeat(auto-fill,minmax(220px,1fr))}
+/* 标题 */
+.title{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:14px;padding:20px}
+.title h1{font-size:clamp(40px,9vw,78px);letter-spacing:.12em;color:#f3e6c8;text-shadow:0 0 24px rgba(200,163,90,.35)}
+.title .sub{font-family:var(--serif);color:#b9ab8c;letter-spacing:.3em}
+.title .btns{display:flex;flex-direction:column;gap:10px;min-width:260px;margin-top:16px}
+.hubbtn{position:absolute;left:calc(12px + env(safe-area-inset-left));top:calc(10px + env(safe-area-inset-top))}
+/* 剧本卡 */
+.sc{position:relative;cursor:pointer;border-radius:16px;padding:18px;border:1px solid var(--line);background:linear-gradient(160deg,rgba(255,255,255,.07),rgba(0,0,0,.2));min-height:180px}
+.sc h2{font-size:30px;letter-spacing:.1em}.sc.off{opacity:.5;cursor:default}
+.sc .tag{display:inline-block;font-size:12px;padding:2px 8px;border:1px solid var(--line);border-radius:999px;margin:4px 4px 0 0;color:var(--mut)}
+.pick{display:flex;gap:10px;flex-wrap:wrap}
+.pick .opt{flex:1 1 200px;text-align:left;padding:14px;border-radius:14px;border:1px solid var(--line);background:var(--card);color:var(--fg);min-height:auto}
+.pick .opt b{font-family:var(--serif);font-size:19px;display:block;margin-bottom:4px}
+.pick .opt.on{border-color:var(--acc);box-shadow:0 0 0 2px var(--acc) inset}
+/* 印章名牌 */
+.seal{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;flex:none;border-radius:7px;background:var(--c,#7a2a2a);color:#fff5e6;font-family:var(--serif);font-weight:800;font-size:19px;box-shadow:inset 0 0 0 2px rgba(255,240,220,.35),0 1px 3px rgba(0,0,0,.4);transform:rotate(-3deg)}
+.seal.big{width:56px;height:56px;font-size:30px;border-radius:10px}
+.nm{font-family:var(--serif);font-weight:700}
+/* 读本 */
+.book{max-width:760px;margin:0 auto;font-family:var(--serif);font-size:18px;line-height:1.95;background:linear-gradient(#f4ecd9,#efe4cc);color:#2b2218;border-radius:6px;padding:28px 30px;box-shadow:0 10px 30px rgba(60,40,10,.18),inset 0 0 60px rgba(160,120,60,.12)}
+.book p{margin:0 0 1em;text-indent:2em}.book .hd{color:#8a2b1f}
+.book h2{text-align:center;letter-spacing:.2em;margin-bottom:.8em}
+.tabs{display:flex;gap:6px;justify-content:center;margin-bottom:12px;flex-wrap:wrap}
+/* 讨论 */
+.seats{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;padding:6px 0 10px}
+.st{display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 10px;border-radius:12px;border:1px solid transparent;background:transparent;color:var(--fg);min-width:74px;min-height:auto}
+.st.on{border-color:var(--acc);background:var(--card)}
+.st .who{font-size:12px;color:var(--mut)}
+.st .me{font-size:11px;color:var(--acc)}
+.log{display:flex;flex-direction:column;gap:10px;max-width:820px;margin:0 auto;padding-bottom:12px}
+.msg{display:flex;gap:10px;align-items:flex-start;animation:fade .3s ease}
+.msg .bd{flex:1;min-width:0}
+.msg .hd2{font-size:13px;color:var(--mut);margin-bottom:2px}
+.msg .tx{font-family:var(--serif);font-size:17px;line-height:1.75;background:var(--card);border:1px solid var(--line);border-radius:4px 14px 14px 14px;padding:8px 12px;white-space:pre-wrap}
+.msg.k-ask .tx{border-style:dashed}
+.msg.k-say .tx{background:rgba(227,169,87,.1)}
+.msg.mine{flex-direction:row-reverse}.msg.mine .tx{border-radius:14px 4px 14px 14px}.msg.mine .hd2{text-align:right}
+.msg.brk .tx{border-color:var(--acc);box-shadow:0 0 0 1px var(--acc) inset}
+.msg.k-idle .tx{opacity:.75;font-size:15px}
+.sys{text-align:center;font-size:13px;color:var(--mut);margin:2px 0}
+.fact{margin:0 auto;max-width:620px;font-size:14px;border-left:3px solid var(--acc);padding:6px 10px;background:var(--card);border-radius:0 8px 8px 0}
+.fact.ded{border-color:#d9524a}
+.contra .tx{border-color:#d9524a!important;background:rgba(217,82,74,.12)!important}
+.tagk{font-size:11px;padding:1px 6px;border-radius:6px;margin-left:6px;border:1px solid var(--line)}
+/* 搜证 */
+.plan{position:relative;width:100%;max-width:820px;margin:0 auto;aspect-ratio:3/2;border-radius:14px;overflow:hidden;border:1px solid var(--line)}
+.plan canvas{position:absolute;inset:0;width:100%;height:100%}
+.hot{position:absolute;transform:translate(-50%,-50%);min-width:44px;min-height:44px;border-radius:999px;padding:6px 12px;background:rgba(15,23,26,.78);border:1px solid var(--acc);color:var(--fg);font-size:14px;white-space:nowrap}
+.hot.done{opacity:.55;border-style:dashed}
+.hot:not(.done){animation:pulse 2.2s ease-in-out infinite}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(127,192,160,.5)}50%{box-shadow:0 0 0 8px rgba(127,192,160,0)}}
+.cl{border:1px solid var(--line);background:var(--card);border-radius:12px;padding:12px}
+.cl h3{font-size:18px;margin:0 0 6px}
+.cl .tx{font-family:var(--serif);line-height:1.8;white-space:pre-wrap}
+.cl.priv{border-color:var(--acc)}
+.items{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.it{min-height:84px;border-radius:12px;border:1px solid var(--line);background:repeating-linear-gradient(45deg,rgba(127,192,160,.06) 0 8px,transparent 8px 16px);color:var(--fg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-size:14px}
+.it.got{background:var(--card);border-color:var(--acc)}
+.it.gone{opacity:.45}
+.ap{font-family:var(--mono);font-size:18px;color:var(--acc)}
+/* 弹窗 */
+.mask{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:50;display:flex;align-items:center;justify-content:center;padding:16px;animation:fade .2s}
+.dlg{background:var(--bg);color:var(--fg);border:1px solid var(--line);border-radius:16px;max-width:760px;width:100%;max-height:88vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+.dlg .dh{display:flex;align-items:center;gap:8px;padding:12px 14px;border-bottom:1px solid var(--line)}
+.dlg .dh h3{flex:1;margin:0}
+.dlg .db{overflow:auto;padding:14px;-webkit-overflow-scrolling:touch}
+.dlg .df{display:flex;gap:8px;justify-content:flex-end;padding:10px 14px;border-top:1px solid var(--line);flex-wrap:wrap}
+.optl{display:flex;flex-direction:column;gap:8px}
+.optl button{text-align:left;font-family:var(--serif);font-size:16px;line-height:1.6;background:var(--card);color:var(--fg)}
+.optl .k{font-family:var(--sans);font-size:12px;padding:1px 6px;border-radius:6px;margin-right:6px}
+.k-truth{background:#2f5b45;color:#e2f4ea}.k-lie{background:#7a2a2a;color:#fde}.k-evade{background:#555;color:#eee}
+/* 时间线 */
+table.tl{border-collapse:collapse;width:100%;font-size:13px}
+table.tl th,table.tl td{border:1px solid var(--line);padding:6px;vertical-align:top}
+table.tl th{background:var(--card);font-family:var(--serif)}
+table.tl td.t{font-family:var(--mono);white-space:nowrap;color:var(--acc)}
+table.tl td.lie{color:#e08c84;text-decoration:underline dotted}
+table.tl tr.show td{animation:fade .5s}
+/* 答卷 */
+.q{margin-bottom:16px}.q .qt{font-family:var(--serif);font-size:18px;font-weight:700;margin-bottom:8px}
+.q .os{display:flex;flex-wrap:wrap;gap:8px}
+.q .os button{background:rgba(80,50,20,.06);color:var(--fg);text-align:left}
+.q .os button.on{background:var(--acc);color:#fff5ea}
+.stamp{display:inline-block;border:3px solid #a3241b;color:#a3241b;font-family:var(--serif);font-weight:900;font-size:28px;padding:2px 14px;transform:rotate(-8deg);letter-spacing:.2em;border-radius:6px}
+.ending{font-family:var(--serif);font-size:18px;line-height:2}.ending p{text-indent:2em;margin:0 0 1em}
+.toast{position:fixed;left:50%;top:calc(64px + env(safe-area-inset-top));transform:translateX(-50%);z-index:60;background:rgba(20,16,12,.92);color:#f4e8d0;border:1px solid rgba(255,255,255,.15);padding:8px 14px;border-radius:10px;font-size:14px;animation:fade .2s;max-width:90vw}
+.prompt-badge{background:#d9524a;color:#fff;border-radius:999px;padding:0 7px;font-size:12px;margin-left:4px}
+@media (max-width:640px){.hot{font-size:12px;padding:3px 8px;min-height:34px;min-width:34px}.book{padding:18px 16px;font-size:17px}.msg .tx{font-size:16px}.top .ph{font-size:16px}button{padding:9px 12px}}
+</style>
+</head>
+<body data-scr="title">
+<canvas id="bgc"></canvas>
+<div id="app"></div>
+<script>
+
+const TEXT = {"rcr_bg": "【人吃人】\n\nA国南城外的大山之中，有一个与世隔绝的村落，已经享受了百年宁静。但在2032年，有几位不速之客却进入了山村，而前来扶助山村的赵慈善，竟然惨死在了住所之中。是和原住民的冲突，还是和闯入者的纠葛？这个山村还隐藏了什么秘密，一切都等待着公诸于世……\n\n这个世界从来也不是非黑即白的，有吃人的利益，就有吃人的人。\n\n人物角色：\n\n①王村长，山村的村长。\n\n②张村民，山村中不爱与人交流的村民。\n\n③李警察，在山村执行任务的警察。\n\n④胡调研，来山村调研贫困人口的调研员。", "rcr_hu": "胡调研是A国南城的调研员，从很久以前就开始研究贫困人口。他发现一条重要的定理，就是越贫穷的地方，人们的心智就会越不开化，如同坐井观天，而且很容易沉迷黄赌毒等不良嗜好。依靠这个定理，他把扶贫工作分为了经济扶持和知识扶持两部分，在扶贫事业上做出了巨大的贡献。\n\n2032年2月，胡调研在南城外大山之中，发现了一个非常贫困的村庄。这个村庄与外界全无联系，全村人都说着听不懂的方言，只有村里王村长能说普通话。他立即在村中住了下来，把这个村子当成重要的调研对象。\n\n因为语言不通，在普及知识上出现了非常严重的阻碍，只能靠村长口述来传达。可村民依旧是不闻不问的样子，眼神里透露出的无知让胡调研非常头疼。\n\n在胡调研来之前，村内还有一个外面来的人住在里面，是李警察。李警察过来执行一个秘密任务，不能透露内容。但毕竟都是体系内的人，二人平时还是经常交流的。\n\n可在4月份，村里又来了一人，叫做赵慈善。胡调研早就听说过这个人，他在贫困区周围开设工厂，表面扶贫，其实给的工资极少，完全是压榨贫困劳动力，但这个人家大业大，在公众中名声又好，知道他真相的人，都拿他没有办法。\n\n胡调研一直是非常同情贫困人口的，非常看不惯赵慈善这种人。既然这人撞上门来，胡调研决定找寻证据，让他翻不了身。经过一番潜查，他终于录下了一段赵慈善指示手下拖欠贫困员工工资，违法让员工无偿加班的录音。可是在录完音之后，不小心弄出了点动静，被赵慈善发现了。\n\n赵慈善发现了他，还看到了他的录音笔，立刻逼迫胡调研交出录音。胡调研要是能屈服淫威，从一开始就不来和他做对了。他不愿交出，赵慈善也没有跟班，只能言语威胁他说：“你很厉害，希望你不要后悔。”\n\n正当胡调研准备把这份录音上交时，赵慈善找到了他，给他看了一段视频，是胡调研的两个儿子，被绑在椅子上，对着摄像头嚎啕大哭。胡调研立刻急红了眼，可赵慈善却很淡定，删掉了视频，然后告诉胡调研，要是不把录音交出来，后果自负。\n\n胡调研回了家，非常痛苦，而且在仔细思索之后，他知道事情不是交出录音这么简单。胡调研不傻，他知道这种人是什么样，等录音交上去，手里没有他的把柄之后，自己这个不知道什么时候就会爆炸的炸弹会是赵慈善的心头刺。而赵慈善是肯定要拔掉自己这根刺的。自己开始后悔惹上这样的人，还把自己年幼的儿子牵涉其中。自己不怕死，可是儿子是说什么都要保护的。想要保护儿子，胡调研只剩一条路可走了。\n\n2032年5月14日\n\n胡调研听说，赵慈善明天就要离开了，这是他实施行动的最后机会。从来没有干过什么坏事的胡调研内心非常的忐忑，可对儿子的爱让这位父亲可以付出任何代价。他决定先抓住赵慈善，逼他说出儿子的位置，然后再将他彻底解决掉。\n\n晚上9点25分，胡调研离开了住处，来到了赵慈善的家。门没有锁，屋里很黑，什么都看不见。胡调研以为赵慈善睡了，悄悄的来到卧室。卧室门没关，胡调研按耐住了紧张的心情，掏出了准备好的水果刀，左手往床上摸索过去，却发现床上也没人。屋子就这么大，没其他地方藏人了。胡调研还是害怕，又有个好借口安慰自己，便急匆匆的离开了。\n\n晚上9点40分，胡调研在住处辗转反侧，感觉自己不能这么轻易就放弃了，要不然自己的全家可能都受到牵连。他拿起灯笼，再一次前往赵慈善的住处。在路上，胡调研遇到了张村民。到了赵慈善家，再一次推开门的时候，发现赵慈善已经趴在了地上，口吐鲜血，甚是恐怖，已然是死绝了。胡调研大松一口气，恶有恶报，自己也不用付出代价，简直是再好不过了。\n\n『支线任务』（完成+10分）：\n\n很显然你不是凶手，你需要调查王村长隐藏的秘密。", "rcr_li": "李警察在2030年末接到上级命令，调查最近在A国南城闹得腥风血雨的杀人狂事件。根据各方回报，这个南城杀人狂作案十几起，每一次杀人之后都会砍下被害者的食指和中指，而且被害者都是家境比较好的人。可是最近因为居民防范意识加强，杀人狂很难得手，已经销声匿迹许久了，调查一度陷入僵局。\n\n在2032年2月，一次偶然的机会，李警察在南城外寻到一处小山村，山村非常贫穷，连条像样的路都没有。山村中只有一个人会说普通话，就是王村长。李警察隐晦的询问一番之后，并没问出什么有用的线索，可是他总是觉得这个村隐隐有一些诡异。所有的村民眼中都毫无神采，就像是被操控的行尸走肉一般，看不出一点人该有的希望，在李警察的记忆中，有这样眼神的人，只有在监狱中等待死亡的死刑犯而已。\n\n察觉到异样的李警察决定在村庄住下来调查一阵子，村庄中太穷了，电也没通，他随身携带的通讯设备很快就没有电了，村中也没有多余的粮食给他，他只能靠自己去市里采购补给。在一次去市里时，李警察的女友联系他，说担心他的安危，希望和他一起。李警察很无奈，真要碰上危险，女孩子能帮上什么忙？可女友太倔，他拗不过，只得让她跟着进了山村。\n\n同在2月份，村外还来了一个市里派来的扶贫调查员，同属体制内的人，总归还是能聊上两句的。这人叫胡调研，研究A国贫困现象已经很久了，但他说即使这样，也很少能碰到穷到这种地步的村子。胡调研告诉他，贫困人口研究中有一个重要的定理，就是越贫穷的地方，人们的心智就会越不开化，这个村子就是很典型的现象，人们眼中毫无智慧的神采。这种地方的扶贫工作是异常难做的。\n\n在村中的时间里，李警察经常用各种手段调查人们的行为，可因为村中说的方言自己完全听不懂，很难获得有用的线索。李警察只是发现，在夜晚的时候，总是有一些居民三三两两的前往村长家，很久才离开。\n\n4月，村里又来了一个人，赵慈善。不知为什么，赵慈善来了之后不久，胡调研就变得没有原来健谈了，经常在村中发呆。李警察刚意识到不对劲，准备去安慰安慰胡调研时，发生了一件让李警察再也无暇顾及其他的事情——女友失踪了！\n\n女友肯定不会走丢，李警察知道越是此时，越是不能打草惊蛇，加上这个村子诡谲异常，更是让李警察警觉起来，生怕让这个绑架自己女友的人情急之下撕票。\n\n可是怎么调查，都找不到一丁点线索。正在这时，女友却回来了，眼神空洞，衣衫破烂。李警察没有多问，只是默默抱住了女友。女友好像才回过神来，大声哭了出来，还哽咽着说着：“赵慈善，这个恶魔！他不是人！”李警察明白了一切。\n\n女友哭累了之后，渐渐的睡过去了，这么多天肯定都没有好好休息过。李警察心里一阵阵发疼。他去给女友准备了一些吃的，可是再回来时，女友竟然在房梁上上吊自杀了。\n\n赵慈善，赵慈善，赵慈善！\n\n李警察红了眼，他已经把警察的一切抛在了脑后，他心里想的只有一件事，就是将赵慈善碎尸万段。李警察将女友的尸体带下了山，交给了她的父母，之后独自返回，准备为女友复仇。\n\n【2032年5月14日】\n\n李警察打听到，明天赵慈善就要离开了，这是他动手的最后机会。满心复仇的他，将自己配枪反复擦拭，安装好了消音器，便起身前往赵慈善的家中了。\n\n9点10分，李警察来到了赵慈善的住处，他推开门，赵慈善正在屋里看书。赵慈善抬头看到他，好像是被浑身杀气的他吓到了，再加上心里有鬼，把书一扔，拔腿就跑。李警察掏出手枪，心情激动的他手有些发抖，开了几枪都没打中。而赵慈善已经把躲进卧室中，把门反锁了。\n\n李警察一脚把卧室门踹开，卧室里却空空荡荡，窗户是开着的。李警察翻窗而出，在周围四处寻找，却没找到赵慈善的影子。李警察有些悔恨，这下打草惊蛇，能报仇不知道是什么时候了。可是没关系，自己不能复仇，还有法律可以制裁他，至于自己会不会因为这次冲动行为承担后果，他已经不在乎了。想通了这一点，李警察安心了一些。\n\n支线任务（完成+10分）：在村中找到杀人狂的线索，并且发现明确证据或者原因。", "rcr_truth": "凶手是王村长，锁定凶手的关键线索自然就是死者遗留下来的文字。由胡调研的研究“定理”所得，越是贫穷的地方，人们的心智就越不开化（此处为剧情需要进而虚构，并不是真实定理，请不要代入真实生活，更没有歧视意味），所谓“定理”，就是放之四海而皆准的，所以在如此贫困的山村自然也是这样。而根据李警察的发现，人群在夜晚三三两两来到王村长的家中，和张村民父亲借的高利贷，可以推论出，村中有地下赌场的存在。而王村长刻意不申请贫困补助，说明王村长并不想让山村富起来，这背后的原因，就是想利用村民心智低下的弱点来控制他们。结论是，王村长不仅设置赌局，更是拿村民永远不会发现自己的阴谋在赌，称得上【赌徒】二字，也就是死者留下的文字。\n\n以上是凶手杀机和行为的推论。借由时间线，我们能更清晰的锁定凶手。\n\n9：10，李警察前往死者住处，并开枪射击死者，死者躲进地洞，李警察四处寻找没看到，便回去了。李警察进入和出来的过程被张村民目击。\n\n9：15，张村民进入，找到了地洞，却被躲藏其中的赵慈善敲晕。\n\n9：25，胡调研来到赵慈善屋里，没发现人。\n\n9：30，王村长来到赵慈善屋里，在地洞中发现了赵慈善。他没有进入，而是好言相劝，赵慈善正处极度恐慌之际，遇到了一个能救他的人，便病急乱投医，出来之后，王村长给他倒了杯水，下了农药，毒死了赵慈善。\n\n9：40，张村民醒来，发现了被毒死的赵慈善，回去路上碰到了胡调研，胡调研也发现了死者。这里有一个隐藏的逻辑，两人先后发现尸体，因为只有一人撒谎，杀人的只可能是张村民。而张村民杀人必取双指，所以可证明不是张村民。凶案现场没有发现不利于胡调研的物证，所以胡调研没有在杀人之后回到案发现场的理由，自然也不是胡调研。\n\n以上推论，证明凶手在李警察和王村长中间。从凶杀现场的物证“井水”和“矿泉水”看出，死者既然带了矿泉水，自然是没有喝井水的习惯的。所以这杯井水自然是下毒之人亲自倒给死者的，而不可能是将毒药下在井中，等其自投罗网。李警察已经准备枪杀赵慈善了，赵慈善怎么可能喝李警察倒的水，所以凶手只能锁定在王村长身上。", "rcr_wang": "王村长所在的村子位处A国南城外的大山之中，非常贫困，想去到附近的城里需要走十几里的山路，一下雨道路泥泞难行，几乎就与外界完全隔离了。王村长却很受村民拥护，王村长说什么村民都当做圣旨一样看待。全村只有一个例外，就是张村民，张村民早年家庭变故，成了孤儿，从此性格孤僻，但也不会闹事，王村长就没有在意他。\n\n背地里，王村长其实是全村最富有的人，这个村子的穷，和王村长不无关系，或者说，和王村长的家族不无关系。从王村长的某一代祖宗开始，村里的村长就一直由王家人担任了。当王村长年轻时问父亲治理村子的法门时，父亲说了一段话，让王村长这辈子都久久不能忘记：\n\n“你要记住，聪明人不好管，蠢人才能被你玩在手里。什么人会蠢？你要是有钱，不愁吃穿，你就有功夫研究学问，这种人蠢不了。穷人才蠢，越穷的人就越蠢。人穷到只顾得上想明天会不会被饿死，没功夫想别的事，他能不蠢吗。你要让他们一直穷下去，让他们这辈子都搞不清楚这个世界是什么样，让他们变成被你圈养起来的牲口，他们生下来的命就是养着你，仅此而已。”\n\n王村长终于理解了王家在这村中\"统治\"多年的秘密，他想到那些活如行尸走肉的穷苦村民，不旦没有同情，反而是异常的兴奋。没有人不喜欢权力的感觉，在这个村庄，王家就是帝王，就是神。王村长上任之后，每次出村拿着村民的血汗钱去花天酒地时，还觉得钱太少了，于是，他开始在村中开设赌场，自己发明了一些通俗易懂，又有大量作弊空间的赌博方式，自己坐庄，把这些村民仅剩的一点钱还搜刮干净。毕竟被贫穷限制了心智发展的这帮人，控制起来真是太轻松了。\n\n因为村子跟外界隔绝，村民不会说外面的语言，不知道外面是什么样子，没有人有能力发现任何一点不对的地方。\n\n但情况在2030年出现了一些变化，这是王村长上任的第十个年头。村里突然来了一些人，说是什么市里派来扶贫的。这还了得，贫穷是王家统治村庄的唯一武器。扶贫组的人把一张表格交给王村长，让他收集好村民信息之后去市里申报。王村长表面笑着相迎，等人走后就把表放在一边再也不管了。从此时之后，村里还来了一些商人的，说要在这投资，也都被王村长以各种理由回绝了，而有些慈善家给的钱，自然全都被王村长私吞了。\n\n2032年2月，村中来了两个不速之客，一个是李警察，一个是胡调研。李警察说自己是来办案的，需要隐藏在村子里调查一些东西，胡调研说自己是市里扶贫调研组的，过来收集资料。这又让王村长着急了，这两个人简直就像定时炸弹，不知道会给自己惹上什么事。现在唯一的护城河，就是语言不通了。王村长在胡调研和村民之间充当翻译，其实告诉胡调研的话都是自己瞎编的。至于警察，一直深居简出，王村长也没办法接触。\n\n2032年4月，村中又来了一个人，是赵慈善，和往日的慈善家不同，他不是单纯来募捐，而是要在村里投资工厂，其实和往日的投资商没什么不同。王村长就像应付其他投资商一样应付他。一般人考察一圈，发现村庄没有任何发展潜力之后就走了，可赵慈善看了一圈之后，竟然决定住下，长期调研。他说，他不是那些商人，做的是慈善，越是封闭穷苦的地方，他越是要救助。王村长又急了，可人家是外面来的人，自己不能表现得不对劲，要不出去一说，就捅破天了。他查过法律，自己在村中干的这些事，枪毙十次八次都不够。\n\n2032年5月初，赵慈善跟王村长说，自己已经调研好了，准备5月15号就出发回去，派人过来开发。王村长急坏了，连连劝阻他。谁知赵慈善当即拍桌怒斥:你搞的那些勾当，别以为我不知道是什么。你还有脸在这拦我，告诉你，等着回去吃枪子吧！\n\n王村长脑袋发蒙，他知道这下全完了。多年不劳而获的生活，和享受权力的感觉，不允许被任何人破坏，这个赵慈善，敬酒不吃吃罚酒，王村长只剩一条路了。\n\n2032年5月14日\n\n这天就是赵慈善临走前的最后一天了，再不行动就来不及了。这天晚上9点30分，王村长拎着灯笼来到了赵慈善的住处。这其实是王村长自己的房子，临时借给赵慈善住的。\n\n到了地方之后，屋里黑漆漆的，没有找到赵慈善的影子。这时王村长想到，这个房子有一个地下室，入口在卧室的床底下，是王村长前面几代人盖这个房子时就留下的，倒是不知道建地下室的原因。\n\n王村长掀开床板，把灯笼垂了下去，果然发现了赵慈善，地上还趴着一个人，面朝下，看不清是谁。赵慈善发现了他，手上拿着根木棒，拼命的挥舞，嘴里还念叨着别过来，别过来。王村长不知道他受了什么刺激，但想着还是先把他骗出来再说。他安慰着赵慈善，让他冷静点，渐渐地，赵慈善不再像刚才那样了。王村长接着说，自己都想清楚了，愿意接受赵慈善的救助，希望和他好好谈谈相关事宜。\n\n赵慈善听了，这才愿意出来，王村长把他扶到椅子上。转身王村长给赵慈善倒了杯水，然后把自己准备好的农药倒在水杯里递给他。赵慈善把水喝下去，刚喘两口气，立刻感觉到不对劲。这是烈性的农药，一小杯能毒死一头牛的。看着倒在地上怒瞪着他的赵慈善，王村长笑了笑，头也不回的离开了。\n\n回到家里，王村长才想起来地下室里还有一个人。王村长大骂自己糊涂，可毕竟是杀人，怎么能不激动呢？这时候再回去看已经不现实了，王村长干脆就当不知道，就这么过去了。\n\n支线任务（完成+10分）：隐藏自己利用贫穷控制人心的勾当\n\n提示：\n\n1.  你是凶手，千万不要主动说出自己在村里的那些勾当，特别是赌局，否则你基本是无法脱罪了。不要担心张村民，他是个怪人，对村里的事都没什么了解。\n\n2.  当晚的时间线你没有跟任何人重合，建议你把和赵慈善会面的时间提前到晚上9点以前，也不要提到地下室，这样别人看到他的时候还是活着的，能大大减轻你的嫌疑。\n\n3．死者可能留下了一些对你不利的信息", "rcr_zhang": "2015年，张村民出生在A国南市外大山中的小村子里。这个当然是他最后才知道的。很长一段时间里，他都不知道山外还有人居住。\n\n直到2022年，父亲偶然去到了大山外面帮王村长干活，回来之后还带回来很多钱，跟他讲外面有各种各样的好东西。父亲还将他带出山，可就在那一次，他们在街上莫名其妙被一帮凶神恶煞的人抓住，父亲跪在那群人面前求他，可是却被痛打，还被为首的人用食指和中指插瞎了双眼。7岁的张村民受不了这么血腥的刺激，吓晕了过去。等张村民醒来时，父亲虚弱的躺在地上，奄奄一息了。父亲虚弱而又充满怨气的说，有钱人都不是好东西，全都该死，全都该死！张村民忘不了父亲临终前那张扭曲的脸和两个血糊糊的眼洞。他翻遍父亲的身上，只找到一张纸，纸上的字他看不懂，便揣在身上，年幼的他凭着意志和忍耐，硬是将父亲背回了村下葬。他找回了村子，母亲在生他的时候就去世了，没人养他，他就开始靠一些野果野菜为生。他立下志愿，要把父亲说的那些有钱人，全部杀掉。\n\n从2030年开始，已经15岁的张村民已经是个强壮的小伙子了。他开始执行自己的计划，他到外面去，可他分不清哪些人有钱，他就找那些房子漂亮的人去调查，发现这个人如果经常出入一些豪华的地方，就一定是有钱人了，张村民就会杀了这个人，砍下他们的两根手指，就是当初戳瞎父亲的食指和中指。一开始计划很顺利，他杀完人之后还能在人家里吃喝两天，他发现，外面的人过得日子比村里强上千百倍。可他没功夫享受，他要完成自己的志愿。\n\n可渐渐的，他发现外面的人变得警觉起来，门窗锁的严严实实的，他没有机会，很久才能\"猎杀\"到一个有钱人。\n\n2032年2月，村子里来了两个人，住了下来，张村民没有管。可是4月又来了一人，吸引了他的注意，因为这个人很像外面那些有钱人，这人叫赵慈善。张村民开始调查他，可他在村里深居简出，没有什么迹象。在这段时间里，村外来的两个人中有一个人总是鬼鬼祟祟的跟着他，另一个人则会主动找他说话。张村民不会说外面的话，都是由王村长翻译的，问一些他平时都在干嘛，张村民就随便糊弄过去。后来张村民知道，跟着他的那人是李警察，找他说话的是胡调研。\n\n在一番调查之后，张村民终于在赵慈善住处发现了很多钱。他知道赵慈善就是有钱人，自己会跟往常一样杀了他。\n\n2032年5月14日\n\n这天晚上，张村民准备动手了。他带着一直使用的柴刀，前往了赵慈善的住处。大约是9点5分，张村民来到了地方。一直以来的凶杀让他成为了一个智慧的野兽，总会潜伏在暗处等待最佳的时机。现在也不例外。\n\n赵慈善的家里亮着烛光，肯定还没有睡觉。张村民躲在赵慈善住处外面的树丛中，等待着“猎物”睡着。\n\n9点10分，有个人进入了赵慈善家，晚上太黑，什么都看不清。这人推开门之后走了进去，过了一会，传来一声非常用力的踹门声，没过一会，就有一个人影从屋后绕过来了，好像在四处寻找什么，同样的，看不清那个人是谁，那人走远之后没有再回来。\n\n9点15分，张村民觉得时机成熟，便进入了屋子。房里还亮着蜡烛，卧室的门也是开的，张村民将大门关上，把蜡烛吹灭，蹑手蹑脚的走向卧室。卧室里没有人，窗户是开的，张村民到处翻了翻，却发现床板是可以掀开的，底下是一个洞。张村民二话没说跳了进去，还没站稳，头上就挨了一下，昏了过去。\n\n张村民再醒来的时候，已经不知道是什么时间了，他摸了一下，自己插在腰间的柴刀还在。他推开床板爬了出去，出卧室的时候隐约发现地上有个人在趴着，却没有呼吸声，凑近了看，正是赵慈善，吐了很多血，已然是死绝了。张村民没有任何情绪波动，既然不是自己杀的，“战利品”就不取了，于是张村民便径直离开了。\n\n回去的路上，张村民碰到了一个人，还提着灯笼，借着光线，他看出是胡调研。\n\n支线任务（完成+10分）：不主动暴露自己是个杀人狂的事情，被人分析出来依旧算完成。\n\n提示：\n\n1.  由于场外因素，生活在村中的嫌疑人是你和王村长，这点会让你很不好隐藏杀人狂的真相。建议你说自己和杀人狂无关，杀人狂可能是村内的其他人。"};
+/* 剧本杀 · 核心：工具、状态、存档 */
+const SCRIPTS = {};
+const QS = new URLSearchParams(location.search);
+const HUB = /\/jubensha\/(index\.html)?$/.test(location.pathname);
+const ARTIFACT = !!window.__ARTIFACT__;
+const LS = 'jbs-';
+const $ = (s, r) => (r || document).querySelector(s);
+const $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
+const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const para = s => esc(s).split(/\n\n+/).map(p => '<p>' + p.replace(/\n/g, '<br>').replace(/【([^】]+)】/g, '<b class="hd">【$1】</b>') + '</p>').join('');
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+function lsGet(k, d) { try { const v = localStorage.getItem(LS + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } }
+function lsSet(k, v) { try { localStorage.setItem(LS + k, JSON.stringify(v)); } catch (e) { } }
+function lsDel(k) { try { localStorage.removeItem(LS + k); } catch (e) { } }
+/* 可复现的随机数（测试要确定） */
+function rng(seed) { let s = seed >>> 0 || 1; return () => { s ^= s << 13; s >>>= 0; s ^= s >> 17; s ^= s << 5; s >>>= 0; return s / 4294967296; }; }
+
+const OPT = Object.assign({ anim: true, sound: true, autoAI: true, typing: true }, lsGet('opt', {}));
+function saveOpt() { lsSet('opt', OPT); }
+
+let G = null;          /* 共享状态（联机时由房主同步） */
+let ME = { seat: 0 };  /* 本机：座位号；角色从 G.seats 里查 */
+const S = () => SCRIPTS[G.sid];
+const myRole = () => G && G.seats ? G.seats[ME.seat] : null;
+const isHuman = r => G && G.seats && G.seats.includes(r);
+const roleName = r => r === 'zhao' ? S().victim : r === 'deduce' ? '推论' : (S().roles[r] || {}).name || r;
+const PHASES = [
+  { id: 'read', name: '读本', hint: '读完自己的剧本，记下时间线。' },
+  { id: 'intro', name: '自我介绍', hint: '每个人先说说自己是谁。' },
+  { id: 'r1', name: '第一轮 · 现场勘查', hint: '点平面图上的位置查看，线索全部公开。' },
+  { id: 'd1', name: '第一轮 · 讨论', hint: '向任何人提问，或者出示线索。' },
+  { id: 'r2', name: '第二轮 · 搜身搜屋', hint: '每查一条花 1 点行动点，不能搜自己。' },
+  { id: 'd2', name: '第二轮 · 讨论', hint: '把证词和线索对起来，逼出隐瞒的人。' },
+  { id: 'answer', name: '答卷与指认', hint: '答完八道题，第一题就是你的指认。' },
+  { id: 'reveal', name: '真相', hint: '' }
+];
+const phaseIdx = id => PHASES.findIndex(p => p.id === id);
+const AI_BUDGET = { d1: 8, d2: 12 };
+const AP = { human: 6, ai: 2 };
+
+function newGame(sid, mode, seats) {
+  const sc = SCRIPTS[sid];
+  const g = {
+    v: 1, sid, mode, seats: seats.slice(), phase: 'read', pub: [], own: {}, taken: {}, ap: {}, brk: {}, log: [], used: {}, contraUsed: {}, contraAdd: {},
+    evade: {}, evadeT: {}, prompts: [], ready: {}, answers: {}, votes: {}, verdict: null, confess: {}, aiN: { d1: 0, d2: 0 }, idleI: 0, acts: 0, seen: {},
+    t0: Date.now(), pt0: Date.now(), seed: (Date.now() & 0xffff) || 7, nid: 1, asked: {}
+  };
+  for (const r of sc.suspects.concat(['det'])) { g.own[r] = []; g.brk[r] = {}; g.evade[r] = 0; g.evadeT[r] = {}; }
+  return g;
+}
+function save() { if (!G || NET.role === 'guest') return; lsSet('save-' + G.sid, G); }
+function loadSave(sid) { const g = lsGet('save-' + sid, null); return g && g.v === 1 ? g : null; }
+
+/* 《人吃人》剧本数据。原文（背景、人物剧本、案件解析）在 text/rcr_*.txt，构建时注入 TEXT。
+   线索卡文字取自原文两轮线索；侦探开场、AI 台词、答卷、结局是游戏版新增。
+   when(P) 里能用：P.has(...ids) 全部已公开、P.any(...ids)、P.round（1/2）、P.brk(role, topic)、P.human(role) */
+SCRIPTS.renchiren = {
+  id: 'renchiren', title: '人吃人', sub: '山村毒杀案', minutes: '45–60 分钟', players: '1–2 名真人 + AI',
+  blurb: '2032 年，A 国南城外与世隔绝的大山里，来村里投资办厂的赵慈善死在借住的屋子里——农药中毒，墙上却有弹孔。四个嫌疑人，一个凶手；只有凶手会说谎。',
+  victim: '赵慈善', killer: 'wang', suspects: ['wang', 'zhang', 'li', 'hu'],
+  bg: 'rcr_bg', truth: 'rcr_truth',
+  roles: {
+    wang: { name: '王村长', seal: '王', title: '山村的村长', color: '#8a5a2b', book: 'rcr_wang',
+      intro: '各位领导辛苦了。我是这村的村长，姓王，祖上几代都在这儿当村长。村里穷，乡亲们不会说外面的话，有什么事尽管问我，我给大家翻译。赵老板是来帮我们村的大善人，出了这种事，我心里比谁都难受。',
+      side: '隐藏自己利用贫穷控制人心的勾当（不主动承认开赌局，也没被投出去）' },
+    zhang: { name: '张村民', seal: '张', title: '不爱与人交流的村民', color: '#4f6b3a', book: 'rcr_zhang',
+      intro: '……张。村里的。（他说话带着很重的方言，一个词一个词往外蹦，眼睛一直盯着地面。）',
+      side: '不主动暴露自己是杀人狂（被别人分析出来也算完成）' },
+    li: { name: '李警察', seal: '李', title: '在山村执行任务的警察', color: '#2f4f6f', book: 'rcr_li',
+      intro: '李，南城来的。在村里住了三个月，办点事，具体的不方便说。赵慈善……我跟他不熟。',
+      side: '在村中找到杀人狂的线索，并且发现明确证据或者原因' },
+    hu: { name: '胡调研', seal: '胡', title: '来山村调研贫困人口的调研员', color: '#6b3f5e', book: 'rcr_hu',
+      intro: '我姓胡，市里扶贫调研组的，研究贫困问题很多年了。来这个村子三个月，说实话，从来没见过穷到这种地步的地方。',
+      side: '调查王村长隐藏的秘密' },
+    det: { name: '侦探', seal: '探', title: '南城刑警队派来的探员', color: '#7a2a2a', detective: true,
+      bookText: '你是南城刑警队的探员。\n\n2032年5月15日清晨，山村里唯一会说普通话的王村长托人下山报案：来村里投资办厂的赵慈善，死在了借住的屋子里。\n\n你沿着十几里泥泞的山路赶到时，天刚亮。村里三个外来人——住了三个月、说是来“办事”的李警察，市里派来的扶贫调研员胡调研，还有被王村长叫来的村民张村民——都已经被聚在了村长家。王村长忙前忙后，给你倒水、递烟。\n\n你谁也不认识，手里只有现场和他们的证词。\n\n【规则】这四个人里只有凶手会说谎；其他人或许会隐瞒、回避，但不会说假话。回避本身也是线索——找出他们在隐瞒什么，你就离真相不远了。\n\n【你的任务】锁定杀害赵慈善的凶手，并尽可能还原那一夜发生的一切。最后由你一个人指认凶手，其他人的投票只作参考。' }
+  },
+  rules: [
+    '只有凶手可以说假话；其他人可以隐瞒、回避，但不能说假话。',
+    '第一轮：现场勘查，线索全部公开，大家一起看。',
+    '第二轮：搜身搜屋。每人有行动点（AP），查一条花 1 点；不能搜自己。一条线索被谁搜走就归谁，公开不公开由他决定。',
+    '讨论时可以向任何人提问，也可以出示线索或证词。被出示了关键证据，隐瞒的人可能就会说实话。',
+    '最后填答卷、投票。找出凶手占一半分，还原故事占一半；嫌疑人完成支线另加 10 分。'
+  ],
+
+  /* 赵家平面图上的位置（0–1） */
+  spots: {
+    c_body: [0.33, 0.66], c_cup: [0.22, 0.42], c_candle: [0.38, 0.36], c_bullets: [0.07, 0.30],
+    c_msg: [0.44, 0.76], c_room: [0.73, 0.32], c_map: [0.90, 0.86], c_cellar: [0.74, 0.58]
+  },
+  clues: {
+    c_body: { r: 1, title: '尸体', text: '死者赵慈善，死于2032年5月14日8点-10点间，死于农药中毒。死者倒在地上，口吐大量鲜血，身体无外伤，身上有大量灰土。' },
+    c_cup: { r: 1, title: '桌上的水杯', text: '桌上有一杯新鲜的井水，在其中发现了农药。\n\n农药在村中很多，谁都可以得到。' },
+    c_candle: { r: 1, title: '蜡烛', text: '村中没有通电，照明设备只有蜡烛，死者住处的蜡烛燃烧了一半。' },
+    c_bullets: { r: 1, title: '墙上的弹孔', text: '房内发现了几颗子弹和弹壳，子弹射击在墙壁上。需要说明的是，死者身上并没有枪伤。' },
+    c_msg: { r: 1, title: '死亡讯息', img: 'msg', text: '死者右手边留下了一些信息，已经被吐出来的血覆盖了一部分，看不清到底是什么，但能借此判断此案系他杀。\n\n（死者留下的信息，颜色、血液形状等并不隐藏任何线索）' },
+    c_room: { r: 1, title: '卧室', text: '死者住处很小，只有一个客厅和一间卧室，卧室中有一些衣物、食物和矿泉水。' },
+    c_map: { r: 1, title: '村内地图', img: 'map', text: '村子很小，几个地方都相隔一两分钟的路程。\n\n村中除了住屋，没有任何基础设施，如学校、诊所、商店等。李警察、赵慈善、胡调研，都是住在没有人住的空房中。' },
+    c_cellar: { r: 2, scene: true, title: '卧室的床板（深入调查）', text: '床板可以整块掀开，底下是一个挖得很规整的地下室，砖石有些年头了，地上有扭打过的痕迹，还扔着一根木棒。\n\n村民比划着说：这间空房，是王家祖上的老宅。', isNew: 1 },
+    c_li_gf: { r: 2, owner: 'li', title: '女友父母的供述', text: '李警察女友的父母供述，李警察的女友在上个月上吊自杀了，而且是在村中自杀的，原因未知，是李警察将女友的遗体送回来的。' },
+    c_li_gun: { r: 2, owner: 'li', title: '配枪', text: '有一把配枪，还有消音器。' },
+    c_li_records: { r: 2, owner: 'li', title: '村民记录', text: '各种村民的记录，包括照片，日常行为等等，非常详细。' },
+    c_zh_loan: { r: 2, owner: 'zhang', title: '一张借条', text: '借款书：今有借款人张富贵（张村民之父）向贷款人李三柱借款8000元人民币，将在协议签署后30日内归还，届时一并支付利息5000元。\n\n贷款人：李三柱　2022年3月14日　借款人：（一个指印）' },
+    c_zh_father: { r: 2, owner: 'zhang', title: '村里人的说法', text: '村中人表示，2022年张村民将其父的尸体背回来，全身伤痕，眼睛也没了。张村民的母亲也早因难产而死。' },
+    c_zh_knife: { r: 2, owner: 'zhang', title: '一把柴刀', text: '一把柴刀。' },
+    c_wang_form: { r: 2, owner: 'wang', title: '《贫困扶持申请表》', text: '一张名叫《贫困扶持申请表》的表格，是空的，已经很陈旧了，底部信息是“请贫困村村长如实填写表格中所列项，交于南城xx局申请贫困扶持计划”。\n\n查阅记录资料，发现这个村子并没有申请任何的贫困补助。' },
+    c_wang_tools: { r: 2, owner: 'wang', title: '农具', text: '镰刀，锄头等农具。' },
+    c_hu_rec: { r: 2, owner: 'hu', title: '录音笔', text: '录音笔，打开以后有一段录音：“我都跟你说了，那些穷光蛋，给点饭吃就行了，不用急着发工资。项目干不完，让他们加班加点干啊？什么？加班工资？你有病吧，他们懂什么叫加班吗？……”\n\n能听出来是赵慈善的声音。' },
+    c_hu_sons: { r: 2, owner: 'hu', title: '学校老师的供述', text: '据学校老师供述，胡调研的两个儿子从上个月开始就没再来上过学了。' },
+    c_hu_knife: { r: 2, owner: 'hu', title: '水果刀', text: '一把水果刀。' },
+    c_hu_report: { r: 2, owner: 'hu', title: '研究报告', text: '一篇研究报告，题目是《扶贫项目中做好知识扶持的必要性》。' }
+  },
+
+  /* 证词与推论：who 用来放进时间线板，t 是时间（没有就放在“其他”一栏） */
+  facts: {
+    f_wang_lie: { who: 'wang', t: '20:30', text: '王村长：八点多去赵家谈扶贫，九点前就回家了，那时赵慈善还好好的' },
+    f_wang_home: { who: 'wang', t: '21:00', text: '王村长：那晚一直在家，没出过门' },
+    f_wang_nocellar: { who: 'wang', text: '王村长：不知道赵家床底下有什么地洞' },
+    f_wang_cellar: { who: 'wang', text: '王村长：赵家那间房是他家祖上的老宅，床底下有地下室，他小时候就知道' },
+    f_wang_mineral: { who: 'wang', text: '王村长：赵慈善喝不惯井水，只喝自己背上山的矿泉水' },
+    f_wang_visit: { who: 'wang', text: '王村长：晚上乡亲们来他家只是“串门聊庄稼”' },
+    f_wang_seehu: { who: 'hu', t: '21:25', text: '王村长：九点多出门解手，看见一个提着灯笼的人往赵家走，看身形像胡调研' },
+    f_wang_seezh: { who: 'zhang', t: '21:40', text: '王村长：九点四十左右看见张村民一身灰土、慌慌张张地从赵家那边回来' },
+    f_wang_seeli: { who: 'li', t: '21:10', text: '王村长：九点多看见李警察从赵家那边出来，手里像是拿着什么' },
+    f_li_night: { who: 'li', text: '李警察：夜里常有村民三三两两去村长家，很久才走' },
+    f_li_shot: { who: 'li', t: '21:10', text: '李警察：九点十分带枪去赵家，开了几枪没打中；赵逃进卧室反锁，踹开门屋里已空、窗户开着，翻窗追出没找到，回家' },
+    f_li_alive: { who: 'zhao', t: '21:10', text: '赵慈善九点十分还活着，在屋里看书，见李警察就逃进卧室（李警察证词）' },
+    f_li_gf: { who: 'li', text: '李警察：女友在村里被赵慈善所害，回来后上吊自杀' },
+    f_li_case: { who: 'li', text: '李警察：在查南城连环杀人案，凶手专挑有钱人，每次砍下死者的食指和中指' },
+    f_li_zk: { who: 'li', text: '李警察：柴刀、被戳瞎双眼的父亲、食指和中指——南城杀人狂就是张村民' },
+    f_zh_hide: { who: 'zhang', t: '21:05', text: '张村民：九点五分到赵家，躲在屋外树丛里' },
+    f_zh_saw: { who: 'zhang', t: '21:10', text: '张村民：看见有人进屋，一声很响的踹门声，接着有人从屋后绕出来四处找，看不清是谁' },
+    f_zh_cellar: { who: 'zhang', t: '21:15', text: '张村民：九点一刻进屋，吹灭蜡烛，在卧室床下发现地洞，跳下去头上挨了一棍，晕了' },
+    f_zh_wake: { who: 'zhang', t: '21:40', text: '张村民：醒来爬出地洞，赵慈善已经吐血死在地上；离开，路上碰见提灯笼的胡调研' },
+    f_zh_dad: { who: 'zhang', text: '张村民：村长家晚上人多，他爹以前也常去' },
+    f_hu_940: { who: 'hu', t: '21:40', text: '胡调研：九点四十提着灯笼去赵家，路上碰见张村民，到了发现赵慈善已经死了' },
+    f_hu_925: { who: 'hu', t: '21:25', text: '胡调研：九点二十五带着水果刀摸进赵家，屋里黑着，卧室床上没人，害怕就回去了' },
+    f_hu_threat: { who: 'hu', text: '胡调研：录下了赵慈善压榨工人的话，赵慈善绑走他两个儿子，逼他交出录音' },
+    f_hu_theory: { who: 'hu', text: '胡调研：研究定理——越贫穷的地方，人们心智越不开化，越容易沉迷黄赌毒' },
+    d_water: { who: 'deduce', text: '推论：死者自己带了矿泉水、喝不惯井水，桌上那杯下了毒的井水是别人亲手倒给他的——而且是他肯接的人' },
+    d_noshot: { who: 'deduce', text: '推论：刚朝赵慈善开过枪的李警察，倒的水赵慈善不可能喝' },
+    d_time: { who: 'deduce', text: '推论：赵慈善九点一刻还在地洞里打晕了张村民，九点二十五胡调研来时也没发现他——他是九点二十五以后才从地洞出来、被毒死的' },
+    d_cellar: { who: 'deduce', text: '推论：能把吓得躲在地洞里的赵慈善劝出来的人，得知道那个地洞，还得让他觉得是来救他的' },
+    d_gamble: { who: 'deduce', text: '推论：高利贷借条、夜里聚在村长家、穷地方易沉迷赌博——王村长在村里开赌局' },
+    d_poor: { who: 'deduce', text: '推论：村子明明符合补助条件却从没申请——有人故意让村子一直穷下去' },
+    d_word: { who: 'deduce', text: '推论：死亡讯息左边是“贝”字旁，右边上半是“土”——“赌徒”' }
+  },
+  /* 公开后，AI 心里对嫌疑人的怀疑加减 */
+  sus: {
+    c_bullets: { li: 1 }, c_li_gun: { li: 2 }, c_li_gf: { li: 2 }, f_li_gf: { li: 1 }, f_li_shot: { li: 1 },
+    c_zh_knife: { zhang: 2 }, c_zh_father: { zhang: 1 }, f_li_case: { zhang: 1 }, f_li_zk: { zhang: 2 }, f_zh_cellar: { zhang: 1 },
+    c_hu_knife: { hu: 2 }, c_hu_sons: { hu: 1 }, c_hu_rec: { hu: 1 }, f_hu_threat: { hu: 2 }, f_hu_925: { hu: 1 },
+    c_wang_form: { wang: 1 }, f_wang_cellar: { wang: 2 }, f_wang_visit: { wang: 1 }, f_li_night: { wang: 1 },
+    d_water: { wang: 1, zhang: -1, hu: -1 }, d_noshot: { li: -4, wang: 1 }, d_time: { wang: 1, zhang: -1 }, d_cellar: { wang: 3, hu: -1, zhang: -1 },
+    d_gamble: { wang: 2 }, d_poor: { wang: 1 }, d_word: { wang: 2 }, f_zh_wake: { zhang: -1 }, f_hu_940: { hu: -1 }
+  },
+  /* 两条一起公开 = 有人撒谎被抓 */
+  contra: [
+    { a: 'f_wang_nocellar', b: 'c_cellar', who: 'wang', add: 2, by: ['li', 'hu'], say: '王村长，这是你家祖上的老宅。你会不知道自己家床底下有个地下室？' },
+    { a: 'f_wang_home', b: 'f_wang_mineral', who: 'wang', add: 1, by: ['hu', 'li'], say: '你说一晚上没出门，那你怎么知道他那晚喝的是什么水？……算了，你接着说。' },
+    { a: 'f_wang_seehu', b: 'f_hu_925', who: 'wang', add: 3, by: ['hu', 'li'], say: '我九点二十五去的时候根本没提灯笼，是摸黑去的！王村长，你看见的到底是谁？还是你根本就没看见？' },
+    { a: 'f_wang_seehu', b: 'f_wang_lie', who: 'wang', add: 2, by: ['li', 'hu'], say: '你不是说九点前就回家睡了吗？怎么九点多又在外面看见人了？' },
+    { a: 'f_wang_seeli', b: 'f_wang_home', who: 'wang', add: 2, by: ['li', 'hu'], say: '一晚上没出门，却看见我从赵家出来？村长，你到底出没出门？' },
+    { a: 'f_wang_visit', b: 'c_zh_loan', who: 'wang', add: 2, by: ['li', 'hu'], say: '串门聊庄稼？那张家借高利贷的借条怎么解释？一个连路都没有的村子，八千块借来干什么？' }
+  ],
+
+  topics: [
+    { id: 'where', q: '那天晚上你在哪？做了什么？' },
+    { id: 'saw', q: '那晚你看到或听到什么了吗？' },
+    { id: 'zhao', q: '你和赵慈善是什么关系？' },
+    { id: 'village', q: '这个村子有什么不对劲的地方？' },
+    { id: 'cellar', q: '你知道赵家床底下有个地洞吗？', when: P => P.any('c_cellar', 'f_zh_cellar') }
+  ],
+
+  /* AI 回答：从上往下第一条 when 成立的 */
+  ans: {
+    wang: {
+      where: [
+        { when: P => P.has('d_cellar', 'd_gamble'), kind: 'crack', say: '我……我说了，九点前就回去了！你们城里人编故事真有一套，这是要冤枉一个老实人？', reveal: ['f_wang_lie'] },
+        { kind: 'lie', say: '那天晚上八点多，我提着灯笼去赵老板那儿，跟他商量扶贫工厂的事。他好好的，还说第二天一早就走。不到九点我就回家睡了。', reveal: ['f_wang_lie'] }
+      ],
+      saw: [{ kind: 'lie', say: '回去的路上黑灯瞎火的，什么也没看见。哦对了，村里张家那小子，大半夜经常在外头晃，你们可以问问他。' }],
+      zhao: [
+        { when: P => P.has('c_hu_rec'), kind: 'evade', say: '录音？那……那是城里人厂子里的事，我们乡下人不懂什么加班不加班的。赵老板对我们村可是没话说。' },
+        { kind: 'lie', say: '赵老板是大善人，要给我们村盖工厂。我们全村都盼着呢，谁会害他？' }
+      ],
+      village: [
+        { when: P => P.has('c_wang_form'), kind: 'crack', say: '那张表……字太多，我看不懂，就放着了。申请那个要跑好几趟城里，乡亲们走不开……这有什么好问的！', reveal: ['f_wang_visit'] },
+        { when: P => P.any('f_li_night', 'f_zh_dad'), kind: 'lie', say: '乡亲们晚上来我家？串门！聊聊庄稼。乡下人晚上没事干，不来我这儿去哪儿？', reveal: ['f_wang_visit'] },
+        { kind: 'lie', say: '我们村穷是穷，可乡亲们心齐，都听我的。有我在，村里太平得很。' }
+      ],
+      cellar: [{ kind: 'truth', say: '那屋子是我家祖上盖的老宅，床底下有个地下室，我小时候还在里面躲过猫猫。怎么，赵老板钻进去了？', reveal: ['f_wang_cellar'] }],
+      about_zhang: [{ kind: 'lie', say: '张家那小子，爹死得早，性子野，天天往山里钻，有时候一走好几天，谁也不知道去哪了。腰里一直别着把柴刀。' }],
+      about_li: [{ kind: 'lie', say: '李同志住了好几个月，神神秘秘的，天天拿个本子记村里人。前阵子他带来的那个姑娘……唉，后来是抬下山的。' }],
+      about_hu: [{ kind: 'lie', say: '胡同志是好人，就是最近总发呆，跟丢了魂似的。赵老板来了以后就这样。' }]
+    },
+    li: {
+      where: [
+        { when: P => P.brk('li', 'where'), kind: 'truth', say: '……是我。九点十分，我带着枪去了他家。他正在看书，看见我就跑，我开了几枪，手抖，都没打中。他躲进卧室把门反锁了，我一脚踹开，屋里没人，窗户开着。我翻窗出去找了一圈，没找到，就回去了。\n\n我没杀他——他身上没有枪伤，你们都看到了。', reveal: ['f_li_shot', 'f_li_alive'] },
+        { kind: 'evade', say: '那晚我在住处。……九点多出去了一趟。去哪，我不想说。' }
+      ],
+      saw: [{ kind: 'truth', say: '我在村里住了三个月，一直在观察这些村民。晚上常有人三三两两去村长家，待很久才走。听不懂他们说什么。', reveal: ['f_li_night'] }],
+      zhao: [
+        { when: P => P.brk('li', 'zhao'), kind: 'truth', say: '我女朋友跟我一起进的村。四月她失踪了几天，回来的时候眼神是空的，衣服破了，她哭着说“赵慈善，这个恶魔，他不是人”。我去给她拿吃的，回来的时候，她已经吊在房梁上了。', reveal: ['f_li_gf'] },
+        { kind: 'evade', say: '我不想谈他。' }
+      ],
+      village: [{ kind: 'truth', say: '这村子不对劲。所有人的眼神都像监狱里等死的犯人。我听不懂他们的方言，只能靠王村长翻译——可他翻的话，我一句都不信。' }],
+      cellar: [
+        { when: P => P.brk('li', 'where'), kind: 'truth', say: '不知道。……原来他躲在那里。我找遍了屋外，没想到人就在屋里。' },
+        { kind: 'evade', say: '不知道。我没进过他的卧室……那晚之前没进过。' }
+      ],
+      about_wang: [{ kind: 'truth', say: '他太热情了。一个穷成这样的村子，村长的手上却没有一点老茧。' }],
+      about_zhang: [{ kind: 'truth', say: '我一直在盯着他。我在查南城的一桩连环杀人案，凶手专挑有钱人，每次都砍下死者的食指和中指。这孩子经常一个人出山，一走好几天。', reveal: ['f_li_case'] }],
+      about_hu: [{ kind: 'truth', say: '胡调研以前很健谈。赵慈善来了以后，他就像变了个人，经常在村里发呆。' }]
+    },
+    zhang: {
+      where: [
+        { when: P => P.brk('zhang', 'where'), kind: 'truth', say: '……我去了。九点五分，在外面树丛里，等。九点十分有人进去，踹门，砰。又从屋后绕出来，找东西，看不清是谁。\n\n九点一刻，我进去，吹了蜡烛。床底下有洞，我跳下去，头上挨了一棍，晕了。醒来，他躺在地上，死了。不是我。我走了。路上碰见那个姓胡的。', reveal: ['f_zh_hide', 'f_zh_saw', 'f_zh_cellar', 'f_zh_wake'] },
+        { kind: 'evade', say: '……不说。' }
+      ],
+      saw: [
+        { when: P => P.brk('zhang', 'where'), kind: 'truth', say: '说了。踹门的人，从屋后绕出来，找了一圈，走了。看不清脸。' },
+        { kind: 'evade', say: '……（他摇摇头，不说话。）' }
+      ],
+      zhao: [
+        { when: P => P.has('c_zh_father'), kind: 'evade', say: '有钱人……都该死。爹说的。（他说完就闭紧了嘴。）' },
+        { kind: 'evade', say: '有钱人。' }
+      ],
+      village: [{ kind: 'truth', say: '穷。都穷。……村长不穷。' }],
+      cellar: [
+        { when: P => P.brk('zhang', 'where'), kind: 'truth', say: '知道。跳下去了，挨了一棍。' },
+        { kind: 'evade', say: '……（他摸了摸后脑勺，没吭声。）' }
+      ],
+      about_wang: [{ kind: 'truth', say: '……村长家，晚上，人多。爹以前，也去。', reveal: ['f_zh_dad'] }],
+      about_li: [{ kind: 'truth', say: '那个人，一直跟着我。' }],
+      about_hu: [{ kind: 'truth', say: '那个人，老找我说话。村长翻的。我随便说的。' }]
+    },
+    hu: {
+      where: [
+        { when: P => P.brk('hu', 'where'), kind: 'truth', say: '……好吧，我其实去了两次。九点二十五第一次去，屋里黑漆漆的，我摸到卧室，往床上一摸——没人。我……我身上带着刀。我害怕了，给自己找了个借口就跑回去了。\n\n九点四十我又提着灯笼去，路上碰到张村民，到了就看见他倒在地上……', reveal: ['f_hu_925', 'f_hu_940'] },
+        { kind: 'evade', say: '九点四十左右，我提着灯笼想去找赵慈善谈点事，路上碰到了张村民。到了他那儿，就看见他……已经倒在地上了。', reveal: ['f_hu_940'] }
+      ],
+      saw: [{ kind: 'truth', say: '路上碰到张村民，他走得很急，一句话没说。到了赵慈善那儿，桌上点着半截蜡烛……不对，我去的时候是黑的，我自己提着灯笼。' }],
+      zhao: [
+        { when: P => P.brk('hu', 'zhao'), kind: 'truth', say: '他不是什么慈善家！他在贫困区开厂，工资给得少得可怜，还逼人白白加班。我录下了他的话，被他发现了。后来……他给我看了一段视频，我两个儿子被绑在椅子上哭。他要我交出录音。\n\n我想先抓住他，逼他说出孩子在哪……可我去的时候，他不在。', reveal: ['f_hu_threat'] },
+        { kind: 'evade', say: '我对他……有些看法。不过人都死了，不说也罢。' }
+      ],
+      village: [{ kind: 'truth', say: '贫困研究里有个定理：越贫穷的地方，人们的心智就越不开化，越容易沉迷黄赌毒。这个村子是我见过最典型的。奇怪的是，它明明符合申请扶贫补助的所有条件。', reveal: ['f_hu_theory'] }],
+      cellar: [{ kind: 'truth', say: '地洞？我不知道……怪不得，我摸到床上没人，原来他就在床底下。' }],
+      about_wang: [{ kind: 'truth', say: '我和村民说话全靠王村长翻译。可我每次问得深一点，村民的回答就越来越短。我有时候怀疑他根本没照实翻。' }],
+      about_zhang: [{ kind: 'truth', say: '我想和他聊聊他的生活，他总是随便糊弄过去——当然，也是村长翻的。' }],
+      about_li: [{ kind: 'truth', say: '李警察是来办案的，不肯说什么案。我们偶尔聊聊，都是体制内的，他人不坏。' }]
+    }
+  },
+
+  /* 被出示某条线索或证词时的反应；brk 把对应话题“打开”，之后问他就说实话 */
+  show: {
+    wang: {
+      c_cellar: { say: '床底下那个地洞？那屋子是我家祖上盖的，地洞早就有了，我小时候还在里面躲过猫猫。怎么，赵老板钻进去了？', reveal: ['f_wang_cellar'] },
+      f_zh_cellar: { say: '地洞……对，那是我家老宅的地下室。张家小子跳进去了？他半夜跑去赵老板屋里干什么！', reveal: ['f_wang_cellar'] },
+      c_room: { say: '城里人讲究，喝不惯我们的井水，自己背了好几箱矿泉水上山。', reveal: ['f_wang_mineral'] },
+      c_cup: { say: '井水村里家家都喝，农药也是家家都有。这能说明什么？……赵老板？他喝不惯井水的，都喝自己带的矿泉水。', reveal: ['f_wang_mineral'] },
+      c_zh_loan: { say: '李三柱？不认识。张富贵出去打工欠的钱，跟我可没关系。' },
+      c_wang_form: { say: '那张表……字太多，我看不懂，就放着了。申请那个要跑好几趟城里，乡亲们走不开。', reveal: ['f_wang_visit'] },
+      f_li_night: { say: '乡亲们晚上来我家？串门！聊聊庄稼。乡下人晚上没事干嘛。', reveal: ['f_wang_visit'] },
+      f_zh_dad: { say: '张富贵是常来，来借粮食！那年头家家都揭不开锅……' },
+      d_gamble: { say: '赌局？胡说八道！你们城里人编故事真有一套！' },
+      d_word: { say: '这血糊糊的两个字，你说是啥就是啥？我认得的字不多……' },
+      c_msg: { say: '这血糊糊的，看不出写的啥。我认得的字不多。' },
+      c_li_gun: { say: '枪！还装了消音器！我就说他神神秘秘的！领导，开枪的肯定是他！' },
+      c_zh_knife: { say: '看看，柴刀！我早说了这孩子不对劲。' },
+      c_hu_knife: { say: '胡同志也带着刀？这……读书人带刀干什么？' },
+      c_hu_rec: { say: '录音？那是城里厂子里的事，我们乡下人不懂。' },
+      _: ['这……这跟我有什么关系？', '领导，我就是个种地的，这些我真不懂。', '我们村的人老实，不会干这种事的。']
+    },
+    li: {
+      c_li_gun: { say: '……', brk: ['where'] }, c_bullets: { when: P => P.has('c_li_gun'), say: '……', brk: ['where'] },
+      f_zh_saw: { say: '……', brk: ['where'] },
+      c_li_gf: { say: '……', brk: ['zhao'] },
+      c_li_records: { say: '我说了，我在办案。这些都是村民的记录。……我在找一个人。', reveal: ['f_li_case'] },
+      c_zh_knife: { when: P => P.has('c_zh_father'), say: '柴刀……被戳瞎双眼的父亲……食指和中指。是他。南城杀人狂就是张村民。', reveal: ['f_li_case', 'f_li_zk'] },
+      c_zh_father: { when: P => P.has('c_zh_knife'), say: '柴刀……被戳瞎双眼的父亲……食指和中指。是他。南城杀人狂就是张村民。', reveal: ['f_li_case', 'f_li_zk'] },
+      c_cup: { when: P => P.any('c_room', 'f_wang_mineral'), say: '他自己带了矿泉水，桌上却是一杯井水。是有人倒给他的，而且是他愿意喝的人倒的。', reveal: ['d_water'] },
+      c_msg: { say: '两个字。左边那个，能看出“贝”字旁；右边那个，上面像个“土”。' },
+      f_wang_cellar: { when: P => P.has('d_time'), say: '他知道那个地洞。赵慈善那晚吓得躲在地洞里，能把他骗出来的，只能是知道地洞、又让他觉得是来救他的人。', reveal: ['d_cellar'] },
+      c_cellar: { say: '地洞？……原来他躲在那里。我找遍了屋外，没想到人就在屋里。' },
+      _: ['看不出什么。', '这个我不清楚。', '……你自己判断吧。']
+    },
+    zhang: {
+      c_cellar: { say: '……（他下意识摸了摸后脑勺。）', brk: ['where'] },
+      c_body: { when: P => P.has('c_cellar'), say: '……灰土。地洞里的。', brk: ['where'] },
+      f_hu_940: { say: '……他看见我了。好，我说。', brk: ['where'] },
+      f_zh_saw: { say: '……', brk: ['where'] },
+      c_zh_knife: { say: '……砍柴的。' },
+      c_zh_loan: { say: '爹的。……爹出山干活，回来带了好多钱。后来……（他不说了。）' },
+      c_zh_father: { say: '……（他攥紧了拳头，一句话也不说。）' },
+      f_li_zk: { say: '（他抬起头，第一次直直地看着对方。）……他，不是我杀的。' },
+      c_msg: { say: '……不认字。' },
+      _: ['……', '不知道。', '（他摇摇头。）']
+    },
+    hu: {
+      c_hu_knife: { say: '……', brk: ['where'] }, f_zh_wake: { say: '……', brk: ['where'] },
+      c_hu_rec: { say: '……', brk: ['zhao'] }, c_hu_sons: { say: '……', brk: ['zhao'] },
+      c_hu_report: { say: '知识扶持……我一直觉得，光给钱没用，得让人知道外面的世界是什么样子。' },
+      c_wang_form: { say: '空的？这个村子从来没申请过补助？……原来如此。有人不想让这个村子富起来。', reveal: ['d_poor'] },
+      c_zh_loan: { when: P => P.has('f_li_night', 'f_hu_theory'), say: '借高利贷、晚上聚在村长家、穷地方最容易沉迷赌博……我明白了。是赌。王村长在村里开赌局。', reveal: ['d_gamble'] },
+      f_li_night: { when: P => P.any('c_zh_loan', 'f_zh_dad') && P.has('f_hu_theory'), say: '借高利贷、晚上聚在村长家、穷地方最容易沉迷赌博……我明白了。是赌。王村长在村里开赌局。', reveal: ['d_gamble'] },
+      c_msg: { when: P => P.has('d_gamble'), say: '贝字旁……右边上头是个“土”……“赌”字左边就是贝，“徒”字右上是土——“赌徒”！赵慈善留下的是“赌徒”。', reveal: ['d_word'] },
+      d_gamble: { say: '“赌徒”……死亡讯息！左边是贝字旁，右边上头是土。赵慈善临死写下的，就是“赌徒”。', reveal: ['d_word'] },
+      _: ['这个……我也说不好。', '我不知道该怎么解释。', '我是研究贫困的，这种事我不懂。']
+    }
+  },
+
+  /* 讨论里 AI 的主动发言和互相质问。who 可以是数组：取第一个不是真人的。ask/show 是 AI 之间的动作（对真人就弹出让他答） */
+  talk: [
+    { id: 't1', r: 1, who: 'wang', say: '各位领导，赵老板身上没有枪伤，是喝了农药死的。农药家家都有……我看，得查查那晚谁不在家。' },
+    { id: 't2', r: 1, who: ['li', 'hu'], say: '墙上有弹孔，死者却没中枪。那晚至少有两拨人去过他家。' },
+    { id: 't3', r: 1, who: ['hu', 'li'], say: '他身上全是灰土，可这屋子并不脏。他去过什么脏地方？' },
+    { id: 't4', r: 1, who: 'li', ask: { to: 'zhang', topic: 'where' } },
+    { id: 't5', r: 1, who: 'wang', ask: { to: 'li', topic: 'where' } },
+    { id: 't6', r: 1, who: ['hu', 'li'], say: '死亡讯息是两个字，被血盖住了大半……左边那个像是“贝”字旁。' },
+    { id: 't7', r: 1, who: 'li', ask: { to: 'hu', topic: 'where' } },
+    { id: 't8', r: 1, who: 'hu', ask: { to: 'wang', topic: 'where' } },
+    { id: 't9', r: 1, who: 'hu', ask: { to: 'wang', topic: 'village' } },
+    { id: 't10', r: 1, who: 'li', ask: { to: 'zhang', topic: 'about_wang' } },
+    { id: 't11', r: 1, who: 'hu', ask: { to: 'li', topic: 'saw' } },
+    { id: 't12', r: 1, who: 'li', ask: { to: 'hu', topic: 'village' } },
+
+    { id: 'u1', r: 2, when: P => P.has('c_li_gun'), who: 'wang', say: '枪！还装着消音器！墙上的弹孔就是他打的！' },
+    { id: 'u2', r: 2, when: P => P.has('c_li_gun') && !P.brk('li', 'where'), who: ['hu', 'wang'], show: { to: 'li', id: 'c_li_gun' } },
+    { id: 'u3', r: 2, when: P => P.has('c_zh_knife'), who: 'wang', say: '张家小子的柴刀！我就说这孩子不对劲，你们看看他那双眼睛。' },
+    { id: 'u11', r: 2, when: P => P.has('c_cup') && P.any('c_room', 'f_wang_mineral') && !P.has('d_water'), who: ['li', 'hu'], say: '他自己背了矿泉水上山，桌上却是一杯井水。毒不是下在井里等他自己喝的——是有人亲手倒给他，而且是他肯接的人。', reveal: ['d_water'] },
+    { id: 'u12', r: 2, when: P => P.has('d_water', 'f_li_shot') && !P.has('d_noshot'), who: ['li', 'hu'], say: P => P.who === 'li' ? '我朝他开过枪。我递过去的水，他会喝吗？' : '李警察刚朝他开过枪，他怎么可能喝李警察递的水？', reveal: ['d_noshot'] },
+    { id: 'u13', r: 2, when: P => P.has('f_zh_cellar', 'f_hu_925') && !P.has('d_time'), who: ['li', 'hu'], say: '九点一刻，张村民在地洞里被打晕——那时赵慈善还活着，就躲在地洞里。九点二十五胡调研来，屋里也没人。所以他是九点二十五以后才出来、被毒死的。', reveal: ['d_time'] },
+    { id: 'u14', r: 2, when: P => P.has('c_cellar') && !P.has('f_wang_cellar') && !P.has('f_wang_nocellar'), who: ['li', 'hu'], ask: { to: 'wang', topic: 'cellar' } },
+    { id: 'u15', r: 2, when: P => P.has('f_wang_cellar', 'd_time') && !P.has('d_cellar'), who: ['li', 'hu'], say: '赵慈善被枪吓得躲进地洞，谁叫都不该出来。能把他劝出来的人，得知道那个地洞，还得让他觉得是来救他的……这屋子是谁家的老宅？', reveal: ['d_cellar'] },
+    { id: 'u16', r: 2, when: P => P.has('c_wang_form') && !P.has('d_poor'), who: ['hu', 'li'], say: '这张申请表是空的。这个村子明明符合补助条件，却从来没申请过——有人不想让它富起来。', reveal: ['d_poor'] },
+    { id: 'u17', r: 2, when: P => P.has('f_li_night', 'f_hu_theory') && P.any('c_zh_loan', 'f_zh_dad') && !P.has('d_gamble'), who: ['hu', 'li'], say: '高利贷的借条，夜里三三两两聚在村长家，再加上“越穷越容易沉迷赌博”……王村长在村里开赌局。', reveal: ['d_gamble'] },
+    { id: 'u18', r: 2, when: P => P.has('d_gamble') && !P.has('d_word'), who: ['hu', 'li'], say: '死亡讯息！左边是“贝”字旁，右边上头是个“土”——“赌徒”。赵慈善临死前写下的是“赌徒”。', reveal: ['d_word'] },
+    { id: 'u4', r: 2, when: P => P.has('c_zh_knife', 'c_zh_father'), who: 'li', show: { to: 'li', id: 'c_zh_knife' }, self: 1 },
+    { id: 'u5', r: 2, when: P => P.has('c_cellar') && !P.brk('zhang', 'where'), who: ['li', 'hu'], show: { to: 'zhang', id: 'c_cellar' } },
+    { id: 'u6', r: 2, when: P => P.any('f_hu_940') && !P.brk('zhang', 'where'), who: ['hu', 'li'], show: { to: 'zhang', id: 'f_hu_940' } },
+    { id: 'u7', r: 2, when: P => P.has('c_hu_knife') && !P.brk('hu', 'where'), who: ['li', 'wang'], show: { to: 'hu', id: 'c_hu_knife' } },
+    { id: 'u8', r: 2, when: P => P.has('f_zh_wake') && !P.brk('hu', 'where'), who: ['li'], show: { to: 'hu', id: 'f_zh_wake' } },
+    { id: 'u9', r: 2, when: P => P.any('c_hu_rec', 'c_hu_sons') && !P.brk('hu', 'zhao'), who: ['li', 'wang'], show: { to: 'hu', id: P => P.has('c_hu_rec') ? 'c_hu_rec' : 'c_hu_sons' } },
+    { id: 'u10', r: 2, when: P => P.has('c_li_gf') && !P.brk('li', 'zhao'), who: ['hu', 'wang'], show: { to: 'li', id: 'c_li_gf' } },
+    { id: 'u19', r: 2, when: P => P.has('d_gamble'), who: 'wang', say: '你们……你们城里人懂什么！没有我，这村子早就散了！乡亲们都是自愿的！……我是说，我什么都没干。' },
+    { id: 'u20', r: 2, when: P => P.has('f_li_zk'), who: 'zhang', say: '（他抬起头，第一次直直地看着所有人。）……赵慈善，不是我杀的。' },
+    { id: 'u21', r: 2, who: 'li', ask: { to: 'wang', topic: 'where' }, when: P => P.has('d_time') },
+    { id: 'u22', r: 2, who: ['hu'], ask: { to: 'li', topic: 'zhao' }, when: P => !P.brk('li', 'zhao') },
+    { id: 'u23', r: 2, who: ['li'], ask: { to: 'zhang', topic: 'about_wang' }, when: P => !P.has('f_zh_dad') },
+    { id: 'u24', r: 2, who: ['hu', 'li'], ask: { to: 'wang', topic: 'village' }, when: P => P.any('c_wang_form', 'f_li_night') }
+  ],
+  idle: {
+    wang: ['领导们喝口水，慢慢查，不着急。', '要我说，外面来的人里才有坏人。', '我们村的人老实，一辈子没出过山。'],
+    li: ['……', '再看看线索。', '证据不会说谎。'],
+    zhang: ['……', '（他盯着窗外。）', '饿了。'],
+    hu: ['我们再把时间理一理？', '一定有我们漏掉的东西。', '要是能找到我儿子……']
+  },
+
+  /* 真人扮演嫌疑人时，被问到某个话题的可选回答（只有凶手能选 lie）。vol=可以主动说 */
+  deck: {
+    wang: {
+      where: [
+        { kind: 'lie', vol: 1, say: '那天晚上八点多，我去赵老板那儿商量扶贫的事，他好好的。不到九点我就回家了。', reveal: ['f_wang_lie'], tip: '原文推荐的说法' },
+        { kind: 'lie', vol: 1, say: '我一晚上都在家，没出过门。', reveal: ['f_wang_home'] },
+        { kind: 'truth', say: '九点半我提着灯笼去了，在床底下的地洞里找到他，劝他出来，给他倒了杯水……', reveal: ['f_wang_cellar'], confess: 1, tip: '等于认罪' },
+        { kind: 'evade', say: '人老了，记不清了。' }
+      ],
+      saw: [
+        { kind: 'lie', vol: 1, say: '黑灯瞎火的，什么也没看见。倒是张家那小子，大半夜常在外头晃。' },
+        { kind: 'lie', vol: 1, say: '九点多我出门解手，远远看见一个人提着灯笼往赵家那边走，看身形……像是胡同志。', reveal: ['f_wang_seehu'], push: { hu: 3 }, tip: '嫁祸胡调研（有风险）' },
+        { kind: 'lie', vol: 1, say: '九点四十左右，我看见张家小子一身灰土，慌慌张张地从赵家那边回来。', reveal: ['f_wang_seezh'], push: { zhang: 3 }, tip: '嫁祸张村民' },
+        { kind: 'lie', vol: 1, say: '九点多，我看见李同志从赵家那边出来，手里像是拿着什么东西。', reveal: ['f_wang_seeli'], push: { li: 2 }, tip: '嫁祸李警察' },
+        { kind: 'evade', say: '没注意。' }
+      ],
+      zhao: [{ kind: 'lie', vol: 1, say: '赵老板是大善人，要给我们村盖工厂，谁会害他？' }, { kind: 'evade', say: '人家是大老板，我们说不上几句话。' }],
+      village: [
+        { kind: 'lie', vol: 1, say: '乡亲们晚上来我家就是串门，聊聊庄稼。', reveal: ['f_wang_visit'] },
+        { kind: 'truth', say: '……是，我在村里坐庄开了几张赌桌。', reveal: ['d_gamble'], confess: 2, tip: '支线失败' },
+        { kind: 'evade', say: '村里的事，说了你们城里人也不懂。' }
+      ],
+      cellar: [
+        { kind: 'truth', vol: 1, say: '那是我家祖上的老宅，床底下有个地下室，我知道。', reveal: ['f_wang_cellar'] },
+        { kind: 'lie', vol: 1, say: '地洞？什么地洞？我不知道。', reveal: ['f_wang_nocellar'] },
+        { kind: 'evade', say: '老房子了，谁记得底下有什么。' }
+      ],
+      rebut: [
+        { kind: 'lie', vol: 1, when: P => P.has('d_gamble'), cut: 'd_gamble', say: '高利贷是张富贵出山干活欠下的，跟村里有什么关系？乡亲们晚上来我家，是借粮！你们城里人没饿过肚子，不懂。', tip: '反驳“开赌局”' },
+        { kind: 'lie', vol: 1, when: P => P.has('d_word'), cut: 'd_word', push: { zhang: 1 }, say: '那两个字糊成那样，非说是“赌徒”？左边是贝字旁，也可以是个“财”字——他是说有人图他的钱！谁专盯有钱人，大家心里有数。', tip: '反驳死亡讯息' },
+        { kind: 'lie', vol: 1, when: P => P.has('d_water'), cut: 'd_water', say: '给客人倒碗井水是我们山里的规矩，谁进他屋都会倒一杯，他自己也会倒，这能说明什么？', tip: '反驳“亲手倒水”' },
+        { kind: 'lie', vol: 1, when: P => P.has('d_cellar'), cut: 'd_cellar', push: { zhang: 1 }, say: '知道那个地洞的人多了！张家小子不就跳进去了？他能跳进去，就能把人叫出来。', tip: '反驳“知道地洞的人”' }
+      ],
+      _: [{ kind: 'lie', say: '这跟我可没关系。' }, { kind: 'evade', say: '我一个种地的，这些不懂。' }]
+    },
+    zhang: {
+      where: [
+        { kind: 'truth', vol: 1, say: '我去了。在外面树丛里等，看见有人进去踹门、绕屋后找人。九点一刻我进去，跳进床下的地洞，被打晕了，醒来他已经死了。', reveal: ['f_zh_hide', 'f_zh_saw', 'f_zh_cellar', 'f_zh_wake'] },
+        { kind: 'evade', say: '……不说。' }
+      ],
+      saw: [{ kind: 'truth', vol: 1, say: '九点十分，有人进去，踹门，又从屋后绕出来找，看不清是谁。', reveal: ['f_zh_saw'] }, { kind: 'evade', say: '……' }],
+      zhao: [{ kind: 'evade', say: '有钱人。' }, { kind: 'truth', say: '有钱人都该死。……我杀过很多有钱人，砍下他们的两根手指。', reveal: ['f_li_zk'], confess: 2, tip: '暴露杀人狂身份，支线失败' }],
+      village: [{ kind: 'truth', vol: 1, say: '穷。都穷。村长不穷。村长家晚上人多，我爹以前也去。', reveal: ['f_zh_dad'] }, { kind: 'evade', say: '……' }],
+      cellar: [{ kind: 'truth', vol: 1, say: '知道。我跳下去过，挨了一棍。', reveal: ['f_zh_cellar'] }, { kind: 'evade', say: '……' }],
+      _: [{ kind: 'evade', say: '……不知道。' }]
+    },
+    li: {
+      where: [
+        { kind: 'truth', vol: 1, say: '九点十分我带枪去了他家，开了几枪没打中。他躲进卧室，我踹开门，人已经不见了，窗户开着。我追出去没找到，就回去了。', reveal: ['f_li_shot', 'f_li_alive'] },
+        { kind: 'evade', say: '那晚我在住处，九点多出去了一趟。去哪不想说。' }
+      ],
+      saw: [{ kind: 'truth', vol: 1, say: '晚上常有村民三三两两去村长家，很久才走。', reveal: ['f_li_night'] }, { kind: 'evade', say: '没什么特别的。' }],
+      zhao: [{ kind: 'truth', vol: 1, say: '我女朋友被他害了，回来就上吊了。', reveal: ['f_li_gf'] }, { kind: 'evade', say: '我不想谈他。' }],
+      village: [{ kind: 'truth', vol: 1, say: '我在查南城连环杀人案，凶手专挑有钱人，砍下死者的食指和中指。', reveal: ['f_li_case'] }, { kind: 'truth', vol: 1, say: '夜里常有村民去村长家，很久才走。', reveal: ['f_li_night'] }],
+      cellar: [{ kind: 'truth', say: '不知道有地洞。原来他躲在那里。' }, { kind: 'evade', say: '不清楚。' }],
+      _: [{ kind: 'evade', say: '这个我不清楚。' }]
+    },
+    hu: {
+      where: [
+        { kind: 'truth', vol: 1, say: '九点四十我提灯去找他，路上碰到张村民，到了就看见他死了。', reveal: ['f_hu_940'] },
+        { kind: 'truth', vol: 1, say: '我其实去了两次。九点二十五带着刀去过一次，屋里黑着，床上没人，我就回去了。九点四十又去，他已经死了。', reveal: ['f_hu_925', 'f_hu_940'] },
+        { kind: 'evade', say: '我在住处。' }
+      ],
+      saw: [{ kind: 'truth', vol: 1, say: '路上碰到张村民，他走得很急。', reveal: ['f_hu_940'] }, { kind: 'evade', say: '没看到什么。' }],
+      zhao: [{ kind: 'truth', vol: 1, say: '他压榨工人。我录了音，他就绑走了我两个儿子逼我交出来。', reveal: ['f_hu_threat'] }, { kind: 'evade', say: '人都死了，不说也罢。' }],
+      village: [{ kind: 'truth', vol: 1, say: '越贫穷的地方心智越不开化，越容易沉迷黄赌毒。这个村子明明符合补助条件。', reveal: ['f_hu_theory'] }, { kind: 'evade', say: '只是很穷而已。' }],
+      cellar: [{ kind: 'truth', say: '不知道。怪不得床上没人。' }, { kind: 'evade', say: '不清楚。' }],
+      _: [{ kind: 'evade', say: '这个我也说不好。' }]
+    }
+  },
+  /* AI 向真人出示某条线索时，按哪个话题给真人选回答 */
+  showTopic: { c_li_gun: 'where', c_bullets: 'where', c_li_gf: 'zhao', c_cellar: 'cellar', f_hu_940: 'where', f_zh_wake: 'where', c_hu_knife: 'where', c_hu_rec: 'zhao', c_hu_sons: 'zhao', c_zh_knife: 'zhao', c_zh_father: 'zhao', c_wang_form: 'village', f_li_night: 'village', c_zh_loan: 'village', f_zh_cellar: 'cellar' },
+
+  questions: [
+    { q: '杀死赵慈善的凶手是谁？', opts: ['王村长', '张村民', '李警察', '胡调研'], a: 0, killer: 1, roles: ['wang', 'zhang', 'li', 'hu'] },
+    { q: '死亡讯息里被血盖住的两个字是什么？', opts: ['赌徒', '财主', '贼人', '村长'], a: 0 },
+    { q: '毒是怎么下的？', opts: ['凶手亲手倒了一杯下了农药的井水给他', '有人往井里投了毒', '农药混在他带来的矿泉水里', '他自己误喝了农药'], a: 0 },
+    { q: '是谁朝赵慈善开的枪？', opts: ['王村长', '张村民', '李警察', '胡调研'], a: 2 },
+    { q: '那晚被打晕在地洞里的人是谁？', opts: ['张村民', '胡调研', '李警察', '没有人'], a: 0 },
+    { q: '南城杀人狂是谁？', opts: ['王村长', '张村民', '李警察', '不在这几个人里'], a: 1 },
+    { q: '王村长隐藏的秘密是什么？', opts: ['开赌局、故意不申请扶贫，让村民一直穷下去', '私吞了扶贫款', '和赵慈善合伙压榨村民', '他就是南城杀人狂'], a: 0 },
+    { q: '赵慈善的真面目是？', opts: ['压榨贫困工人、绑走胡调研的儿子、害死李警察的女友', '真心扶贫的大善人', '被王村长逼走的投资商', '南城杀人狂的同伙'], a: 0 }
+  ],
+  /* 支线：真人扮演嫌疑人时结算 */
+  sides: {
+    wang: G => !G.confess.wang2 && G.verdict !== 'wang',
+    zhang: G => !G.confess.zhang2,
+    li: (G, role) => (G.answers[role] || [])[5] === 1 || G.pub.includes('f_li_zk'),
+    hu: (G, role) => (G.answers[role] || [])[6] === 0
+  },
+
+  /* 复盘：时间线矩阵（原文案件解析整理） */
+  timeline: {
+    cols: ['wang', 'zhang', 'li', 'hu', 'zhao'],
+    colName: { zhao: '赵慈善' },
+    rows: [
+      ['21:05', '在家', '埋伏在赵家屋外树丛', '在家', '在家', '在屋里看书'],
+      ['21:10', '在家', '看见有人进屋、踹门、绕屋后找人', '带枪进屋开枪未中，踹开卧室门，翻窗追出未果', '在家', '逃进卧室反锁，躲进床下地洞'],
+      ['21:15', '在家', '进屋吹灭蜡烛，跳进地洞被一棍打晕', '回家', '在家', '在地洞里用木棒打晕张村民'],
+      ['21:25', '在家', '昏迷在地洞里', '在家', '带刀摸进卧室，床上没人，离开', '躲在地洞里'],
+      ['21:30', '提灯笼到赵家，劝赵出地洞，倒井水下农药', '昏迷在地洞里', '在家', '在家', '喝下毒水，临死写下“赌徒”'],
+      ['21:40', '已回家', '醒来见尸体，离开，路遇胡调研', '在家', '提灯再去，路遇张村民，发现尸体', '死亡']
+    ]
+  },
+
+  endings: {
+    wang: { title: '赌徒', text: '赵慈善临死前用血写下的两个字，终于被人读懂了。\n\n南城的警察顺着那张空白的《贫困扶持申请表》查下去，查出了王家几代人在这座山里织下的网：赌桌、高利贷、被故意截断的消息、被故意留住的贫穷。王村长被带下山的那天，村民们站在路边看着，没有人说话——他们听不懂外面的话，也还不知道，自己的穷原来是被人“养”出来的。\n\n半年后，第一批扶贫干部带着会说方言的翻译进了村。山路修到一半的时候，有个孩子问翻译：外面是什么样子的？\n\n这个世界从来也不是非黑即白的。有吃人的利益，就有吃人的人。' },
+    other: { title: '吃人的人', text: '你们指认了 {name}。\n\n王村长在送走警察的那天，在村口站了很久。他给每一位领导都塞了一袋山货，笑着说“常来”。\n\n没有人再去读那两个被血盖住的字。那张空白的申请表被他塞进灶膛，一下就烧没了。赌桌照常在夜里摆开，村民照常三三两两地走进村长家的院子。\n\n山还是那么高，路还是那么烂。凶手还在，而且他从来没有离开过。' },
+    none: { title: '悬案', text: '票数打平，没有人被指认。\n\n赵慈善的尸体被抬下山，案子挂了起来。外来的人一个个离开，只有王村长一直把他们送到村口。\n\n那两个被血盖住的字，被雨水冲得越来越淡。' }
+  },
+  epilogues: [
+    { role: 'li', text: G => G.pub.includes('f_li_shot') ? '李警察：他主动交出了配枪，承认那晚带枪私闯民宅、开枪伤人未遂。处分下来那天，他去女友的墓前坐了一下午。' : '李警察：他始终没说那晚九点十分去过哪里。直到弹道鉴定报告摆到他面前。' },
+    { role: 'zhang', text: G => (G.pub.includes('f_li_zk') || G.answersRight(5)) ? '张村民：南城杀人狂的案子在李警察的报告里结了案。被带走的时候，张村民没有反抗，只是回头看了一眼山——他父亲埋在那里。' : '张村民：没有人把柴刀和那些被砍掉的手指联系起来。几个月后，南城又发生了一起命案。' },
+    { role: 'hu', text: G => (G.pub.includes('f_hu_threat') || G.pub.includes('c_hu_rec')) ? '胡调研：那段录音被交了上去。警方顺着赵慈善的工厂，在一间仓库里找到了他的两个儿子——饿瘦了，但都还活着。' : '胡调研：他没能说出儿子被绑的事。赵慈善死了，知道孩子下落的人也就没了。他在山下的派出所门口坐了三天。' },
+    { role: 'wang', text: G => G.verdict === 'wang' ? '王村长：判决下来时，他还在念叨“没有我，这村子早散了”。' : '王村长：他依旧是这座山里的“帝王”。直到下一个外乡人进村。' }
+  ]
+};
+
+/* 剧本杀 · 规则引擎（只在房主/单机上运行；队友把操作发给房主） */
+function mkP(g, who) {
+  const pub = new Set(g.pub);
+  return { has: (...ids) => ids.every(i => pub.has(i)), any: (...ids) => ids.some(i => pub.has(i)), round: g.phase === 'r1' || g.phase === 'd1' ? 1 : 2,
+    brk: (r, t) => !!(g.brk[r] && g.brk[r][t]), human: r => g.seats.includes(r), who };
+}
+const aiRoles = g => SCRIPTS[g.sid].suspects.filter(r => !g.seats.includes(r));
+const humanRoles = g => g.seats.filter(Boolean);
+const topicQ = (sc, t) => t.startsWith('about_') ? '你怎么看' + sc.roles[t.slice(6)].name + '？' : (sc.topics.find(x => x.id === t) || {}).q || t;
+const itemTitle = (sc, id) => sc.clues[id] ? '「' + sc.clues[id].title + '」' : sc.facts[id] ? '「' + sc.facts[id].text.replace(/^[^：]+：/, '').slice(0, 18) + '…」' : id;
+
+function logPush(g, e) { e.i = g.nid++; e.ph = g.phase; g.log.push(e); if (g.log.length > 600) g.log.splice(0, g.log.length - 600); return e; }
+function reveal(g, ids, by) {
+  const sc = SCRIPTS[g.sid]; const added = [];
+  for (const id of ids || []) if (!g.pub.includes(id)) {
+    g.pub.push(id); added.push(id);
+    for (const r in g.own) { const k = g.own[r].indexOf(id); if (k >= 0) g.own[r].splice(k, 1); }
+    if (sc.facts[id]) logPush(g, { k: 'fact', who: by, ref: id, text: sc.facts[id].text });
+  }
+  if (added.length) contraCheck(g);
+  return added;
+}
+function contraCheck(g) {
+  const sc = SCRIPTS[g.sid];
+  sc.contra.forEach((c, i) => {
+    if (g.contraUsed[i] || !g.pub.includes(c.a) || !g.pub.includes(c.b)) return;
+    g.contraUsed[i] = 1; g.contraAdd[c.who] = (g.contraAdd[c.who] || 0) + c.add;
+    const by = c.by.find(r => !g.seats.includes(r) && r !== c.who) || c.by[0];
+    logPush(g, { k: 'contra', who: by, to: c.who, text: c.say });
+  });
+}
+function pickAns(g, role, topic) {
+  const sc = SCRIPTS[g.sid], list = (sc.ans[role] || {})[topic]; if (!list) return null;
+  const P = mkP(g, role); return list.find(x => !x.when || x.when(P)) || null;
+}
+function noteEvade(g, role, topic, kind) {
+  if ((kind === 'evade' || kind === 'crack') && !g.evadeT[role][topic]) { g.evadeT[role][topic] = 1; g.evade[role]++; }
+}
+/* AI 回答一个问题；对真人则弹出问题 */
+function answer(g, from, to, topic) {
+  const sc = SCRIPTS[g.sid];
+  g.asked[to + ':' + topic] = (g.asked[to + ':' + topic] || 0) + 1;
+  logPush(g, { k: 'ask', who: from, to, topic, text: topicQ(sc, topic) });
+  if (g.seats.includes(to)) { addPrompt(g, { to, from, topic }); return; }
+  const a = pickAns(g, to, topic);
+  if (!a) { logPush(g, { k: 'ans', who: to, to: from, text: rnd(g, sc.show[to]._) }); return; }
+  logPush(g, { k: 'ans', who: to, to: from, text: a.say, kind: a.kind });
+  noteEvade(g, to, topic, a.kind); reveal(g, a.reveal, to);
+}
+function showTo(g, from, to, id) {
+  const sc = SCRIPTS[g.sid];
+  if (!g.pub.includes(id)) reveal(g, [id], from);
+  logPush(g, { k: 'show', who: from, to, ref: id, text: '出示了' + itemTitle(sc, id) });
+  if (g.seats.includes(to)) { addPrompt(g, { to, from, topic: sc.showTopic[id] || '_', clue: id }); return; }
+  if (to === from) { /* 自言自语：对着线索说出想法 */ }
+  const ent = (sc.show[to] || {})[id], P = mkP(g, to);
+  if (ent && (!ent.when || ent.when(P))) {
+    if (ent.say && ent.say !== '……') logPush(g, { k: 'ans', who: to, to: from, text: ent.say });
+    if (ent.brk) {
+      if (ent.say === '……') logPush(g, { k: 'ans', who: to, to: from, text: '……（沉默了很久。）' });
+      for (const t of ent.brk) { g.brk[to][t] = 1; const a = pickAns(g, to, t); if (a) { logPush(g, { k: 'ans', who: to, to: from, text: a.say, kind: a.kind, broke: 1 }); reveal(g, a.reveal, to); } }
+    }
+    reveal(g, ent.reveal, to);
+  } else logPush(g, { k: 'ans', who: to, to: from, text: rnd(g, (sc.show[to] || {})._ || ['……']) });
+}
+function rnd(g, arr) { if (!arr || !arr.length) return '……'; g.seed = (g.seed * 1103515245 + 12345) & 0x7fffffff; return arr[g.seed % arr.length]; }
+function addPrompt(g, p) { p.id = g.nid++; g.prompts.push(p); }
+
+/* 真人的发言（回答问题、主动说） */
+function deckFor(g, role, topic) {
+  const sc = SCRIPTS[g.sid], d = sc.deck[role] || {}; let list = d[topic] || d._ || [];
+  if (role !== sc.killer) list = list.filter(x => x.kind !== 'lie');
+  const P = mkP(g, role); return list.map(x => x.when && !x.when(P) ? Object.assign({}, x, { vol: 0 }) : x);
+}
+function humanSay(g, role, ent, prompt) {
+  const sc = SCRIPTS[g.sid];
+  logPush(g, { k: prompt ? 'ans' : 'say', who: role, to: prompt ? prompt.from : null, text: ent.say, kind: ent.kind });
+  if (prompt) noteEvade(g, role, prompt.topic, ent.kind);
+  if (ent.confess === 1) { g.confess[role] = 1; g.contraAdd[role] = (g.contraAdd[role] || 0) + 30; }
+  if (ent.confess === 2) g.confess[role + '2'] = 1;
+  for (const r in ent.push || {}) g.contraAdd[r] = (g.contraAdd[r] || 0) + ent.push[r];
+  if (ent.cut) { g.cut = g.cut || {}; g.cut[ent.cut] = .4; }
+  if (ent.vol && !prompt) { g.saidV = g.saidV || {}; g.saidV[role + ':' + ent.say.slice(0, 12)] = 1; }
+  reveal(g, ent.reveal, role);
+}
+
+/* AI 怀疑度：只看已公开的东西 */
+function suspicion(g, viewer) {
+  const sc = SCRIPTS[g.sid], s = {};
+  for (const r of sc.suspects) s[r] = 0.5 * (g.evade[r] || 0) + (g.contraAdd[r] || 0);
+  for (const id of g.pub) { const w = sc.sus[id], k = (g.cut && g.cut[id]) || 1; if (w) for (const r in w) s[r] += w[r] * k; }
+  if (viewer) delete s[viewer];
+  return s;
+}
+function aiVote(g, viewer) {
+  const s = suspicion(g, viewer), order = ['zhang', 'li', 'hu', 'wang'];
+  let best = null; for (const r of order) if (r in s && (best == null || s[r] > s[best])) best = r;
+  return best;
+}
+
+/* AI 的下一步：按剧本里的顺序挑第一条能说的 */
+function aiStep(g) {
+  const sc = SCRIPTS[g.sid], ph = g.phase; if (ph !== 'd1' && ph !== 'd2') return false;
+  const ais = aiRoles(g); if (!ais.length) return false;
+  const round = ph === 'd1' ? 1 : 2;
+  if (g.aiN[ph] < AI_BUDGET[ph]) {
+    for (const it of sc.talk) {
+      if (g.used[it.id] || it.r > round) continue;
+      const P0 = mkP(g); if (it.when && !it.when(P0)) continue;
+      const cand = [].concat(it.who), who = cand.find(r => !g.seats.includes(r));
+      if (!who || (it.ask && it.ask.to === who)) { g.used[it.id] = 1; continue; }
+      g.used[it.id] = 1; g.aiN[ph]++;
+      const P = mkP(g, who);
+      if (it.say) { logPush(g, { k: 'say', who, text: typeof it.say === 'function' ? it.say(P) : it.say }); reveal(g, it.reveal, who); }
+      if (it.ask) answer(g, who, it.ask.to, it.ask.topic);
+      if (it.show) { const id = typeof it.show.id === 'function' ? it.show.id(P) : it.show.id; if (it.self) selfThink(g, who, id); else showTo(g, who, it.show.to, id); }
+      return true;
+    }
+    /* 剧本里的话说完了：真人是嫌疑人时，AI 轮流追问他还没被问过的话题 */
+    const hs = humanRoles(g).filter(r => r !== 'det');
+    if (hs.length && !g.prompts.length) {
+      for (const h of hs) for (const t of ['where', 'zhao', 'saw', 'village']) {
+        if (g.asked[h + ':' + t]) continue;
+        const who = ais[(g.idleI++) % ais.length]; g.aiN[ph]++; answer(g, who, h, t); return true;
+      }
+    }
+  }
+  const who = ais[(g.idleI++) % ais.length];
+  logPush(g, { k: 'idle', who, text: rnd(g, sc.idle[who]) });
+  return false;
+}
+function selfThink(g, who, id) {
+  const sc = SCRIPTS[g.sid], ent = (sc.show[who] || {})[id], P = mkP(g, who);
+  if (ent && (!ent.when || ent.when(P))) { logPush(g, { k: 'say', who, text: ent.say }); reveal(g, ent.reveal, who); }
+}
+
+/* 第二轮开始时 AI 搜证 */
+function aiSearch(g, one) {
+  const sc = SCRIPTS[g.sid], ais = aiRoles(g).filter(a => (g.aiAp[a] || 0) > 0);
+  for (let n = 0; n < 12 && ais.some(a => g.aiAp[a] > 0); n++) {
+    const a = ais[(g.idleI++) % ais.length]; if (!(g.aiAp[a] > 0)) continue; g.aiAp[a]--; const k = g.aiAp[a];
+    const s = suspicion(g, a), rank = Object.keys(s).sort((x, y) => s[y] - s[x]);
+    let pool = Object.keys(sc.clues).filter(id => sc.clues[id].r === 2 && !g.taken[id] && sc.clues[id].owner !== a);
+    if (!pool.length) return;
+    const pref = pool.filter(id => sc.clues[id].owner === rank[k % rank.length]);
+    const id = (pref.length ? pref : pool)[Math.floor(rng(g.seed + g.nid * 13 + k)() * (pref.length ? pref : pool).length)];
+    g.taken[id] = a; const c = sc.clues[id];
+    logPush(g, { k: 'sys', who: a, text: roleName(a) + (c.scene ? '深入调查了现场，' : '搜查了' + roleName(c.owner) + '，') + '公开了' + itemTitle(sc, id) + '。', ref: id });
+    reveal(g, [id], a);
+    const ent = (sc.show[a] || {})[id]; if (ent && !ent.brk && (!ent.when || ent.when(mkP(g, a)))) { logPush(g, { k: 'say', who: a, text: ent.say }); reveal(g, ent.reveal, a); }
+    if (one) return;
+  }
+}
+
+function enterPhase(g, id) {
+  const sc = SCRIPTS[g.sid]; g.phase = id; g.pt0 = Date.now(); g.ready = {};
+  if (id === 'intro') {
+    for (const r of sc.suspects) logPush(g, { k: 'intro', who: r, text: sc.roles[r].intro });
+    if (g.seats.includes('det')) logPush(g, { k: 'intro', who: 'det', text: '我是南城刑警队的探员，这个案子由我接手。从现在起，谁都不许离开村子。' });
+  }
+  if (id === 'r1') logPush(g, { k: 'sys', text: '第一轮：现场勘查开始。赵家的平面图上标出了可以查看的地方。' });
+  if (id === 'd1') { for (const c in sc.clues) if (sc.clues[c].r === 1 && !g.pub.includes(c)) g.pub.push(c); logPush(g, { k: 'sys', text: '第一轮讨论开始。现场线索已全部放进线索箱。' }); }
+  if (id === 'r2') {
+    for (const r of humanRoles(g)) g.ap[r] = AP.human;
+    g.aiAp = {}; for (const a of aiRoles(g)) g.aiAp[a] = g.seats.includes('det') ? 1 : 2;
+    logPush(g, { k: 'sys', text: '第二轮：搜身搜屋。每人 ' + AP.human + ' 点行动点；你每查一次，AI 也轮流查一次，结束时 AI 把剩下的点用完。' });
+  }
+  if (id === 'd2') aiSearch(g);
+  if (id === 'd2') logPush(g, { k: 'sys', text: '第二轮讨论开始。把证词和线索对起来。' });
+  if (id === 'reveal') finalize(g);
+}
+function finalize(g) {
+  const sc = SCRIPTS[g.sid], q0 = sc.questions[0];
+  for (const a of aiRoles(g)) g.votes[a] = aiVote(g, a);
+  for (const h of humanRoles(g)) { const ans = g.answers[h] || []; g.votes[h] = ans[0] != null ? q0.roles[ans[0]] : null; }
+  if (g.seats.includes('det')) g.verdict = g.votes.det;
+  else {
+    const n = {}; for (const r in g.votes) if (g.votes[r]) n[g.votes[r]] = (n[g.votes[r]] || 0) + 1;
+    const top = Object.keys(n).sort((a, b) => n[b] - n[a]);
+    g.verdict = top.length && (top.length === 1 || n[top[0]] > n[top[1]]) ? top[0] : null;
+  }
+  g.score = {};
+  for (const h of humanRoles(g)) {
+    const ans = g.answers[h] || [], right = sc.questions.map((q, i) => ans[i] === q.a);
+    let s = (right[0] ? 50 : 0) + right.slice(1).filter(Boolean).length * 50 / (sc.questions.length - 1);
+    let side = null; if (sc.sides[h]) { side = !!sc.sides[h](g, h); if (side) s += 10; }
+    g.score[h] = { s: Math.round(s), right, side };
+  }
+}
+function allReady(g) { return humanRoles(g).every(r => g.ready[r]); }
+function advance(g) { const i = phaseIdx(g.phase); if (i < PHASES.length - 1) enterPhase(g, PHASES[i + 1].id); }
+
+/* 所有改动状态的操作 */
+function apply(g, a, seat) {
+  const sc = SCRIPTS[g.sid], role = g.seats[seat];
+  if (!role) return;
+  const disc = g.phase === 'd1' || g.phase === 'd2';
+  switch (a.t) {
+    case 'ready':
+      if (g.phase === 'answer' && !(g.answers[role])) return;
+      g.ready[role] = 1; if (allReady(g)) advance(g); break;
+    case 'unready': delete g.ready[role]; break;
+    case 'look': if (g.phase === 'r1' && sc.clues[a.id] && sc.clues[a.id].r === 1 && !g.pub.includes(a.id)) { g.pub.push(a.id); logPush(g, { k: 'sys', who: role, text: roleName(role) + '查看了' + itemTitle(sc, a.id) + '。', ref: a.id }); } break;
+    case 'search': {
+      const c = sc.clues[a.id];
+      if (g.phase !== 'r2' || !c || c.r !== 2 || g.taken[a.id] || c.owner === role || !(g.ap[role] > 0)) return;
+      g.taken[a.id] = role; g.own[role].push(a.id); g.ap[role]--;
+      logPush(g, { k: 'sys', who: role, text: roleName(role) + (c.scene ? '深入调查了现场' : '搜查了' + roleName(c.owner)) + '，拿到一条线索（还没公开）。' });
+      aiSearch(g, 1); break;
+    }
+    case 'publish': if (g.own[role].includes(a.id)) { logPush(g, { k: 'pub', who: role, ref: a.id, text: '公开了' + itemTitle(sc, a.id) }); reveal(g, [a.id], role); } break;
+    case 'ask': if (disc && a.to !== role && sc.suspects.includes(a.to)) { answer(g, role, a.to, a.topic); g.acts++; } break;
+    case 'show': if (disc && (g.pub.includes(a.id) || g.own[role].includes(a.id)) && sc.suspects.includes(a.to)) { showTo(g, role, a.to, a.id); g.acts++; } break;
+    case 'say': {
+      const pr = a.pid != null ? g.prompts.find(p => p.id === a.pid && p.to === role) : null;
+      const topic = pr ? pr.topic : a.topic; const ent = deckFor(g, role, topic)[a.i]; if (!ent) return;
+      if (pr) g.prompts.splice(g.prompts.indexOf(pr), 1); else if (!ent.vol || (g.saidV || {})[role + ':' + ent.say.slice(0, 12)]) return;
+      humanSay(g, role, ent, pr); g.acts++; break;
+    }
+    case 'listen': if (disc) aiStep(g); break;
+    case 'answers': if (g.phase === 'answer' && Array.isArray(a.v) && a.v.length === sc.questions.length) { g.answers[role] = a.v.slice(); g.ready[role] = 1; if (allReady(g)) advance(g); } break;
+    case 'seen': g.seen[role] = a.n; break;
+  }
+  if (disc && OPT.autoAI && ['ask', 'show', 'say'].includes(a.t) && g.acts % 2 === 0 && !g.prompts.some(p => p.to && g.seats.includes(p.to))) aiStep(g);
+}
+
+/* 剧本杀 · 界面 */
+const U = { scr: 'title', setup: { sid: 'renchiren', mode: 'det', role: null }, tab: 'mine', target: null, modal: null, mtab: 'pub', lastN: 0, hubArm: 0, titleArm: 0, sheet: null, tlShown: 0, lobby: { mode: 'sus', roles: [null, null] }, pSeen: {} };
+const app = () => $('#app');
+function sealH(r, big) { const sc = S ? (G ? S() : SCRIPTS.renchiren) : null; const R = r === 'zhao' ? { seal: '赵', color: '#3d3d3d' } : r === 'deduce' ? { seal: '推', color: '#8a2b1f' } : (sc && sc.roles[r]) || { seal: '?', color: '#555' }; return '<span class="seal' + (big ? ' big' : '') + '" style="--c:' + R.color + '">' + R.seal + '</span>'; }
+function toast(t, ms) { const d = document.createElement('div'); d.className = 'toast'; d.textContent = t; document.body.appendChild(d); setTimeout(() => d.remove(), ms || 2200); }
+function fmtT(ms) { const s = Math.max(0, Math.floor(ms / 1000)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); }
+const PH_MIN = { read: 5, intro: 3, r1: 5, d1: 15, r2: 5, d2: 20, answer: 5 };
+
+function render() {
+  const scr = U.scr === 'game' && G ? G.phase : U.scr;
+  document.body.dataset.scr = scr;
+  const rk = U.scr + ':' + scr; document.body.classList.toggle('same', rk === U._rk); U._rk = rk;
+  document.body.classList.toggle('noanim', !OPT.anim);
+  drawBg(scr);
+  if (U.scr === 'title') return renderTitle();
+  if (U.scr === 'setup') return renderSetup();
+  if (U.scr === 'lobby') return renderLobby();
+  if (U.scr === 'game' && G) return renderGame();
+}
+/* ---------- 标题 ---------- */
+function renderTitle() {
+  const sv = loadSave('renchiren');
+  app().innerHTML = `<div class="scr" style="position:relative">
+    ${HUB ? '<button class="ghost sm hubbtn" onclick="UI.hub(this)">‹ 游戏厅</button>' : ''}
+    <div class="title"><div class="sub">剧本杀</div><h1>夜半推理馆</h1>
+    <div class="mut" style="max-width:520px;font-family:var(--serif);line-height:1.8">一个人当侦探，或者和一个朋友各自入局；其余的位置由 AI 扮演——他们会隐瞒、会回避，凶手会说谎。</div>
+    <div class="btns">
+      <button class="pri" onclick="UI.go('setup')">开始新的案件</button>
+      ${sv && sv.phase !== 'reveal' ? `<button onclick="UI.resume()">继续上次（${esc(SCRIPTS[sv.sid].title)} · ${esc(PHASES[phaseIdx(sv.phase)].name)}）</button>` : ''}
+      <button onclick="UI.go('lobby')">🔗 和朋友联机</button>
+      <button class="ghost" onclick="UI.modal('rules')">玩法说明</button>
+      <button class="ghost" onclick="UI.modal('opts')">设置</button>
+    </div></div></div>`;
+}
+/* ---------- 选剧本、选模式 ---------- */
+function renderSetup() {
+  const st = U.setup, sc = SCRIPTS[st.sid];
+  const roleOpts = sc.suspects.map(r => `<button class="opt ${st.role === r ? 'on' : ''}" onclick="UI.setRole('${r}')"><b>${sealH(r)} ${esc(sc.roles[r].name)}</b><span class="mut small">${esc(sc.roles[r].title)}</span></button>`).join('') +
+    `<button class="opt ${st.role === 'rand' ? 'on' : ''}" onclick="UI.setRole('rand')"><b>🎲 随机</b><span class="mut small">可能抽到凶手</span></button>`;
+  app().innerHTML = `<div class="scr"><div class="top"><button class="ghost sm" onclick="UI.go('title')">‹ 返回</button><span class="ph">选择剧本</span></div>
+  <div class="main"><div class="wrap">
+    <div class="grid" style="margin-bottom:18px">
+      <div class="sc" onclick="UI.pickSc('renchiren')" style="${st.sid === 'renchiren' ? 'border-color:var(--acc)' : ''}"><h2>人吃人</h2><div class="mut">${esc(sc.sub)} · ${esc(sc.minutes)}</div><p style="font-family:var(--serif);line-height:1.8">${esc(sc.blurb)}</p><span class="tag">4 名嫌疑人</span><span class="tag">可加侦探</span><span class="tag">社会派</span></div>
+      <div class="sc off"><h2>再见卡门</h2><div class="mut">1845 · 塞维利亚 · 制作中</div><p style="font-family:var(--serif);line-height:1.8">吉普赛女郎卡门死在自己的帐篷里，胸口有剑伤、有枪伤，还中了毒。四个外乡人里，谁该为她偿命？</p><span class="tag">90–120 分钟</span><span class="tag">变格</span></div>
+    </div>
+    <h3>你想怎么玩？</h3>
+    <div class="pick" style="margin-bottom:14px">
+      <button class="opt ${st.mode === 'det' ? 'on' : ''}" onclick="UI.setMode('det')"><b>🕵 当侦探（推荐首玩）</b><span class="mut small">四名嫌疑人全由 AI 扮演。你审问、出示证据，最后由你指认凶手。</span></button>
+      <button class="opt ${st.mode === 'sus' ? 'on' : ''}" onclick="UI.setMode('sus')"><b>🎭 入局当嫌疑人</b><span class="mut small">拿一本人物剧本，其余三人是 AI。少数服从多数投出凶手——你也可能就是凶手。</span></button>
+    </div>
+    ${st.mode === 'sus' ? `<h3>选一个角色</h3><div class="pick">${roleOpts}</div>` : ''}
+  </div></div>
+  <div class="bar"><span class="mut small">每阶段有建议时长，不会强制结束。</span><span class="sp"></span><button class="pri" ${st.mode === 'sus' && !st.role ? 'disabled' : ''} onclick="UI.start()">开始</button></div></div>`;
+}
+/* ---------- 联机大厅 ---------- */
+function renderLobby() {
+  const L = NET.lobby || {}, host = NET.role === 'host', guest = NET.role === 'guest', sc = SCRIPTS.renchiren;
+  let body = '';
+  if (!NET.role) body = `<div class="card" style="max-width:520px;margin:0 auto">
+      <h3>和一个朋友联机</h3><p class="mut">两人各用自己的设备，各看各的剧本；剩下的位置由 AI 扮演。由开房间的一方运行 AI。</p>
+      <button class="pri" style="width:100%" onclick="NET.host()">开一个房间</button>
+      <div style="display:flex;gap:8px;margin-top:14px"><input id="jcode" class="code" maxlength="4" placeholder="房间码" style="flex:1;text-transform:uppercase" autocomplete="off"><button onclick="NET.join($('#jcode').value)">加入</button></div>
+      ${ARTIFACT ? '<p class="acc small">注意：claude.ai 里的版本不能联机（浏览器安全设置挡住了直连），请在游戏厅网址里玩联机。</p>' : ''}
+      <p class="mut small" id="netmsg">${esc(NET.msg || '')}</p></div>`;
+  else {
+    const seatRole = s => (L.roles || [])[s];
+    const roleBtns = s => (L.mode === 'det' && s === 0 ? ['det'] : sc.suspects).map(r => { const taken = (L.roles || []).some((x, i) => x === r && i !== s); const mine = s === (host ? 0 : 1);
+      return `<button class="opt ${seatRole(s) === r ? 'on' : ''}" ${taken || !mine ? 'disabled' : ''} onclick="NET.pick('${r}')"><b>${sealH(r)} ${esc(sc.roles[r].name)}</b><span class="mut small">${esc(sc.roles[r].title)}</span></button>`; }).join('');
+    body = `<div class="card" style="max-width:760px;margin:0 auto">
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><h3 style="flex:1">房间 <span class="code acc" style="font-size:28px">${esc(NET.code || '----')}</span></h3>
+      <span>${NET.conn ? '🟢 朋友已连接' : host ? '🟡 等朋友输入房间码…' : '🟡 正在连接…'}</span>
+      ${host ? `<button class="sm" onclick="UI.copy('${esc(NET.code || '')}')">复制房间码</button>` : ''}</div>
+      <p class="mut small">${esc(NET.msg || '')}</p>
+      <h3>剧本：人吃人</h3>
+      <div class="pick" style="margin-bottom:10px">
+        <button class="opt ${L.mode === 'sus' ? 'on' : ''}" ${host ? '' : 'disabled'} onclick="NET.setMode('sus')"><b>🎭 两人都入局</b><span class="mut small">各拿一本嫌疑人剧本，另外两人是 AI。</span></button>
+        <button class="opt ${L.mode === 'det' ? 'on' : ''}" ${host ? '' : 'disabled'} onclick="NET.setMode('det')"><b>🕵 房主当侦探</b><span class="mut small">朋友拿一本嫌疑人剧本，其余三人是 AI。</span></button>
+      </div>
+      <h3>房主的角色</h3><div class="pick">${roleBtns(0)}</div>
+      <h3 style="margin-top:12px">朋友的角色</h3><div class="pick">${roleBtns(1)}</div>
+    </div>`;
+  }
+  const can = host && NET.conn && L.roles && L.roles[0] && L.roles[1];
+  app().innerHTML = `<div class="scr"><div class="top"><button class="ghost sm" onclick="NET.leave();UI.go('title')">‹ 返回</button><span class="ph">联机</span></div>
+  <div class="main">${body}</div>
+  <div class="bar">${host ? `<button class="pri" ${can ? '' : 'disabled'} onclick="NET.start()">开始游戏</button>` : guest ? '<span class="mut">等房主开始…</span>' : ''}</div></div>`;
+}
+/* ---------- 游戏 ---------- */
+function topBar() {
+  const p = PHASES[phaseIdx(G.phase)], r = myRole(), sc = S();
+  const np = G.prompts.filter(x => x.to === r).length;
+  const mins = PH_MIN[G.phase];
+  return `<div class="top"><button class="ghost sm" onclick="UI.modal('menu')">≡</button>
+    <span class="ph">${esc(p.name)}</span><span class="tm" id="ptm">${mins ? fmtT(Date.now() - G.pt0) + ' / 建议 ' + mins + ' 分' : ''}</span><span class="sp"></span>
+    ${r ? sealH(r) + '<span class="nm small">' + esc(sc.roles[r].name) + '</span>' : ''}
+    <button class="sm ghost" onclick="UI.modal('book')">📖</button>
+    <button class="sm ghost" onclick="UI.modal('clues')">🗂 ${G.pub.filter(i => sc.clues[i]).length + (G.own[r] || []).length}</button>
+    <button class="sm ghost" onclick="UI.modal('tl')">🕒</button>
+    ${np ? `<button class="sm" onclick="UI.modal('prompt')">有人问你<span class="prompt-badge">${np}</span></button>` : ''}</div>`;
+}
+function readyBar(label, extra, dis) {
+  const r = myRole(), hs = humanRoles(G), rd = G.ready[r];
+  const others = hs.filter(x => x !== r).map(x => (G.ready[x] ? '✓ ' : '… ') + S().roles[x].name).join('　');
+  return `<div class="bar">${extra || ''}<span class="sp"></span>${hs.length > 1 ? `<span class="mut small">${esc(others)}</span>` : ''}
+    ${rd ? `<button onclick="act({t:'unready'})">等对方…（取消）</button>` : `<button class="pri" ${dis ? 'disabled' : ''} onclick="act({t:'ready'})">${label}</button>`}</div>`;
+}
+function renderGame() {
+  const ph = G.phase, f = { read: gRead, intro: gIntro, r1: gR1, d1: gDisc, r2: gR2, d2: gDisc, answer: gAnswer, reveal: gReveal }[ph];
+  const keep = $('.main') && U._ph === ph ? $('.main').scrollTop : null, atBottom = $('.main') && ($('.main').scrollHeight - $('.main').scrollTop - $('.main').clientHeight < 80);
+  app().innerHTML = `<div class="scr" ${U._ph === ph ? 'style="animation:none"' : ''}>${topBar()}${f()}</div>`;
+  const m = $('.main');
+  if (m) { if (ph === 'd1' || ph === 'd2' || ph === 'intro') { if (U._ph !== ph || atBottom || G.log.length !== U.lastN) m.scrollTop = m.scrollHeight; } else if (keep != null) m.scrollTop = keep; }
+  if (U._ph !== ph) { U._ph = ph; U.target = null; sfx('page'); }
+  if (G.log.length > U.lastN && U.lastN) newLogSfx(G.log.slice(U.lastN));
+  U.lastN = G.log.length;
+  $$('#app canvas.cimg').forEach(c => drawImg(c));
+  if (ph === 'r1') drawPlan($('#plan'), 1);
+  if (ph === 'r2') drawPlan($('#plan'), 2);
+  const r = myRole(), np = G.prompts.find(p => p.to === r && !U.pSeen[p.id]); if (np && !U.modalOpen && (ph === 'd1' || ph === 'd2')) { U.pSeen[np.id] = 1; UI.modal('prompt'); }
+  if (U.modalOpen) UI.modal(U.modalOpen, 1);
+}
+function newLogSfx(es) { for (const e of es) { if (e.broke) return sfx('break'); if (e.k === 'contra') return sfx('contra'); if (e.k === 'fact') return sfx('fact'); } sfx('tick'); }
+function bookHTML(tab) {
+  const sc = S(), r = myRole();
+  if (tab === 'bg') return '<h2>背景</h2>' + para(TEXT[sc.bg]);
+  if (tab === 'rules') return '<h2>规则</h2>' + sc.rules.map(x => '<p>' + esc(x) + '</p>').join('');
+  const R = sc.roles[r]; return '<h2>' + esc(R.name) + '</h2>' + para(R.bookText || TEXT[R.book]) + (R.side && !R.detective ? '<p class="mut" style="text-indent:0">本局支线：' + esc(R.side) + '</p>' : '');
+}
+function gRead() {
+  const t = U.tab || 'mine';
+  return `<div class="main"><div class="tabs">${[['bg', '背景'], ['mine', '我的剧本'], ['rules', '规则']].map(([k, n]) => `<button class="sm ${t === k ? 'on' : ''}" onclick="UI.tab('${k}')">${n}</button>`).join('')}</div>
+    <div class="book">${bookHTML(t)}</div></div>` + readyBar('读完了', '<span class="mut small">剧本随时可以从顶栏 📖 再翻。</span>');
+}
+function logHTML(filter) {
+  const r = myRole(), sc = S();
+  return '<div class="log">' + G.log.filter(filter || (() => true)).map(e => {
+    if (e.k === 'sys') return `<div class="sys">${esc(e.text)}</div>`;
+    if (e.k === 'fact') return `<div class="fact ${e.ref && e.ref[0] === 'd' ? 'ded' : ''}">✦ ${esc(e.text)}</div>`;
+    const who = e.who, to = e.to, mine = who === r;
+    const hd = esc(roleName(who)) + (to ? ' → ' + esc(roleName(to)) : '') + (e.k === 'pub' ? ' · 公开' : e.k === 'show' ? ' · 出示' : e.k === 'contra' ? ' · 指出矛盾' : '');
+    const tx = e.k === 'show' || e.k === 'pub' ? esc(e.text) + (e.ref && sc.clues[e.ref] ? `<div class="small mut" style="margin-top:4px">${esc(sc.clues[e.ref].text.slice(0, 80))}${sc.clues[e.ref].text.length > 80 ? '…' : ''}</div>` : '') : esc(e.text);
+    return `<div class="msg k-${e.k} ${mine ? 'mine' : ''} ${e.broke ? 'brk' : ''} ${e.k === 'contra' ? 'contra' : ''}">${sealH(who)}<div class="bd"><div class="hd2">${hd}</div><div class="tx">${tx}</div></div></div>`;
+  }).join('') + '</div>';
+}
+function gIntro() { return `<div class="main">${logHTML(e => e.k === 'intro')}</div>` + readyBar('开始勘查现场'); }
+function gR1() {
+  const sc = S(), seen = Object.keys(sc.clues).filter(c => sc.clues[c].r === 1 && G.pub.includes(c));
+  const hots = Object.keys(sc.clues).filter(c => sc.clues[c].r === 1).map(c => { const p = sc.spots[c]; return `<button class="hot ${G.pub.includes(c) ? 'done' : ''}" style="left:${p[0] * 100}%;top:${p[1] * 100}%" onclick="UI.look('${c}')">${esc(sc.clues[c].title)}</button>`; }).join('');
+  return `<div class="main"><div class="wrap"><div class="plan"><canvas id="plan"></canvas>${hots}</div>
+    <p class="mut small" style="text-align:center">赵慈善借住的屋子 · 5 月 15 日清晨 · 点位置查看</p>
+    <div class="grid">${seen.map(c => clueCard(c)).join('')}</div></div></div>` + readyBar('开始讨论', `<span class="mut small">已看 ${seen.length}/7</span>`, seen.length < 4 && humanRoles(G).length === 1);
+}
+function clueCard(id, extra) {
+  const sc = S(), c = sc.clues[id]; if (!c) { const f = sc.facts[id]; return f ? `<div class="cl"><div class="tx">${esc(f.text)}</div>${extra || ''}</div>` : ''; }
+  return `<div class="cl ${(G.own[myRole()] || []).includes(id) ? 'priv' : ''}"><h3>${esc(c.title)}${c.owner ? ' <span class="mut small">· ' + esc(roleName(c.owner)) + '</span>' : ''}</h3>${c.img ? `<canvas class="cimg" data-img="${c.img}" width="420" height="300" style="width:100%;max-width:420px;border-radius:8px;display:block;margin:4px 0 8px"></canvas>` : ''}<div class="tx">${esc(c.text)}</div>${extra || ''}</div>`;
+}
+function gR2() {
+  const sc = S(), r = myRole(), ap = G.ap[r] || 0;
+  const items = Object.keys(sc.clues).filter(c => sc.clues[c].r === 2);
+  const groups = sc.suspects.concat(['scene']).map(o => {
+    const its = items.filter(c => (sc.clues[c].owner || 'scene') === o); if (!its.length) return '';
+    const cards = its.map((c, i) => { const t = G.taken[c]; const mine = t === r, pubd = G.pub.includes(c);
+      if (t) return `<div class="it ${mine ? 'got' : 'gone'}">${mine || pubd ? '<b>' + esc(sc.clues[c].title) + '</b>' : '？'}<span class="small mut">${mine ? (pubd ? '你搜到 · 已公开' : '你搜到 · 未公开') : esc(roleName(t)) + '搜走' + (pubd ? ' · 已公开' : '')}</span></div>`;
+      const dis = o === r || ap <= 0; return `<button class="it" ${dis ? 'disabled' : ''} onclick="act({t:'search',id:'${c}'})"><b>${o === 'scene' ? '🔍 ' + esc(sc.clues[c].title) : '线索 ' + (i + 1)}</b><span class="small mut">${o === r ? '不能搜自己' : '花 1 点查看'}</span></button>`; }).join('');
+    return `<div style="margin-bottom:14px"><h3>${o === 'scene' ? '🏚 现场深入调查' : sealH(o) + ' ' + esc(roleName(o))}</h3><div class="items">${cards}</div></div>`;
+  }).join('');
+  const mine = (G.own[r] || []);
+  return `<div class="main"><div class="wrap"><div class="card" style="margin-bottom:12px;display:flex;gap:12px;align-items:center;flex-wrap:wrap"><span>行动点</span><span class="ap">${'●'.repeat(ap)}${'○'.repeat(Math.max(0, AP.human - ap))}</span><span class="mut small">搜到的线索只有你看得到，要不要公开由你决定。</span></div>
+    ${groups}
+    ${mine.length ? '<h3>你手上还没公开的线索</h3><div class="grid">' + mine.map(c => clueCard(c, `<div style="margin-top:8px"><button class="sm" onclick="act({t:'publish',id:'${c}'})">公开给所有人</button></div>`)).join('') + '</div>' : ''}
+    <h3 style="margin-top:14px">搜证记录</h3>${logHTML(e => e.ph === 'r2')}</div></div>` + readyBar('开始第二轮讨论', `<span class="mut small">剩 ${ap} 点</span>`);
+}
+function gDisc() {
+  const sc = S(), r = myRole(), t = U.target;
+  const seats = sc.suspects.concat(G.seats.includes('det') ? ['det'] : []).map(x => `<button class="st ${t === x ? 'on' : ''}" onclick="UI.tgt('${x}')" ${x === r ? 'disabled' : ''}>${sealH(x, 1)}<span class="nm small">${esc(sc.roles[x].name)}</span><span class="${isHuman(x) ? 'me' : 'who'}">${x === r ? '你' : isHuman(x) ? '真人' : 'AI'}</span></button>`).join('');
+  const budget = AI_BUDGET[G.phase] - G.aiN[G.phase];
+  const canSay = r !== 'det';
+  return `<div class="seats" style="border-bottom:1px solid var(--line)">${seats}</div><div class="main">${logHTML(e => e.ph === G.phase || (G.phase === 'd2' && e.ph === 'r2' && e.k !== 'sys'))}</div>
+  <div class="bar">
+    <button ${!t || t === 'det' ? 'disabled' : ''} onclick="UI.modal('ask')">❓ 提问${t && t !== 'det' ? '：' + esc(sc.roles[t].name) : ''}</button>
+    <button ${!t || t === 'det' ? 'disabled' : ''} onclick="UI.modal('show')">🗂 出示</button>
+    ${canSay ? `<button onclick="UI.modal('say')">💬 发言</button>` : ''}
+    <button onclick="act({t:'listen'})" title="让 AI 说下一句">👂 听大家说${budget > 0 ? '' : '（没什么新的了）'}</button>
+    <span class="sp"></span>${readyBar('结束讨论', '', false).replace(/^<div class="bar">|<\/div>$/g, '')}
+  </div>`;
+}
+function gAnswer() {
+  const sc = S(), r = myRole(), mine = G.answers[r];
+  if (!U.sheet || U.sheet.length !== sc.questions.length) U.sheet = (mine || sc.questions.map(() => null)).slice();
+  const qs = sc.questions.map((q, i) => `<div class="q"><div class="qt">${i + 1}. ${esc(q.q)}${i === 0 ? ' <span class="stamp" style="font-size:14px;padding:0 6px">指认</span>' : ''}</div><div class="os">${q.opts.map((o, j) => `<button class="${U.sheet[i] === j ? 'on' : ''}" ${mine ? 'disabled' : ''} onclick="UI.ans(${i},${j})">${esc(o)}</button>`).join('')}</div></div>`).join('');
+  const done = U.sheet.every(x => x != null);
+  const hs = humanRoles(G), wait = hs.filter(x => !G.answers[x]).map(x => sc.roles[x].name);
+  return `<div class="main"><div class="book" style="font-family:var(--sans)"><h2>答　卷</h2><p class="mut" style="text-indent:0">第一题就是你的指认。${G.seats.includes('det') ? '侦探的指认决定结果，其他人的投票只作参考。' : '所有人（包括 AI）投票，票多的被指认；平票则无人被指认。'}</p>${qs}</div></div>
+  <div class="bar"><span class="mut small">${mine ? '已交卷' + (wait.length ? '，等 ' + esc(wait.join('、')) + '…' : '') : '答完全部才能交卷'}</span><span class="sp"></span>${mine ? '' : `<button class="pri" ${done ? '' : 'disabled'} onclick="UI.submit()">交卷</button>`}</div>`;
+}
+function gReveal() {
+  const sc = S(), r = myRole(), v = G.verdict, end = v === sc.killer ? sc.endings.wang : v ? sc.endings.other : sc.endings.none;
+  const H = Object.assign({}, G, { answersRight: i => humanRoles(G).some(h => (G.answers[h] || [])[i] === sc.questions[i].a) });
+  const votes = Object.keys(G.votes).map(x => `<div style="display:flex;align-items:center;gap:8px;margin:4px 0">${sealH(x)}<span class="nm">${esc(roleName(x))}</span><span class="mut">${isHuman(x) ? '（真人）' : '（AI）'}投给</span>${G.votes[x] ? sealH(G.votes[x]) + '<span class="nm">' + esc(roleName(G.votes[x])) + '</span>' : '<span class="mut">弃权</span>'}</div>`).join('');
+  const my = G.score[r] || { s: 0, right: [] };
+  const rows = sc.timeline.rows.map((row, i) => `<tr class="${i < U.tlShown ? 'show' : ''}" style="${i < U.tlShown ? '' : 'visibility:hidden'}"><td class="t">${row[0]}</td>${row.slice(1).map(c => `<td>${esc(c)}</td>`).join('')}</tr>`).join('');
+  return `<div class="main"><div class="wrap">
+    <div class="card" style="text-align:center;margin-bottom:14px"><div class="mut">被指认的人</div><div style="margin:10px 0">${v ? sealH(v, 1) + ' <span class="nm" style="font-size:26px">' + esc(roleName(v)) + '</span>' : '<span class="nm" style="font-size:24px">无人</span>'}</div>
+      <div><span class="stamp">${v === sc.killer ? '真　凶' : '错　判'}</span></div><div class="mut" style="margin-top:10px">真凶是 ${esc(roleName(sc.killer))}</div></div>
+    <div class="card" style="margin-bottom:14px"><h3>投票</h3>${votes}</div>
+    <div class="card ending" style="margin-bottom:14px"><h2>${esc(end.title)}</h2>${para(end.text.replace('{name}', roleName(v)))}</div>
+    <div class="card" style="margin-bottom:14px;overflow:auto"><h3>那一夜</h3><table class="tl"><tr><th>时间</th>${sc.timeline.cols.map(c => `<th>${esc(roleName(c))}</th>`).join('')}</tr>${rows}</table>
+      ${U.tlShown < sc.timeline.rows.length ? '<button class="sm" style="margin-top:8px" onclick="UI.tlAll()">全部显示</button>' : ''}</div>
+    <div class="card" style="margin-bottom:14px"><h3>案件解析（原文）</h3><div class="ending" style="font-size:16px">${para(TEXT[sc.truth])}</div></div>
+    <div class="card" style="margin-bottom:14px"><h3>后来</h3>${sc.epilogues.map(e => `<p style="font-family:var(--serif);line-height:1.9">${esc(e.text(H))}</p>`).join('')}</div>
+    <div class="card"><h3>你的得分：<span class="acc" style="font-size:28px">${my.s}</span></h3>
+      ${sc.questions.map((q, i) => `<div class="small">${my.right[i] ? '✅' : '❌'} ${i + 1}. ${esc(q.q)} <span class="mut">正确：${esc(q.opts[q.a])}</span></div>`).join('')}
+      ${my.side != null ? `<div style="margin-top:8px">${my.side ? '✅' : '❌'} 支线：${esc(sc.roles[r].side)}（+10）</div>` : ''}
+      ${humanRoles(G).filter(x => x !== r).map(x => `<div class="mut" style="margin-top:6px">${esc(roleName(x))}：${(G.score[x] || {}).s || 0} 分</div>`).join('')}
+    </div></div></div>
+  <div class="bar"><button class="ghost" onclick="UI.toTitle()">回到标题</button><span class="sp"></span>${NET.role === 'guest' ? '' : '<button class="pri" onclick="UI.again()">再玩一次</button>'}</div>`;
+}
+
+/* ---------- 弹窗 ---------- */
+function dlg(title, body, foot) { return `<div class="mask" onclick="if(event.target===this)UI.close()"><div class="dlg"><div class="dh"><h3>${title}</h3><button class="sm ghost" onclick="UI.close()">✕</button></div><div class="db">${body}</div>${foot ? '<div class="df">' + foot + '</div>' : ''}</div></div>`; }
+function modalHTML(k) {
+  const sc = G ? S() : SCRIPTS.renchiren, r = G ? myRole() : null;
+  if (k === 'rules') return dlg('玩法说明', `<div style="line-height:1.9">${sc.rules.map(x => '<p>· ' + esc(x) + '</p>').join('')}<p>· <b>当侦探</b>：四名嫌疑人都是 AI。你可以向任何人提问、出示线索和证词；被戳中的人会改口说实话。点“听大家说”，AI 们会互相质问、提出推论。</p><p>· <b>入局</b>：AI 也会来问你。你只能从你的剧本允许的说法里选——不是凶手就不能撒谎，只能回避。</p><p>· 顶栏 📖 剧本、🗂 线索箱、🕒 时间线板随时可以看。</p></div>`);
+  if (k === 'opts') return dlg('设置', [['anim', '动画'], ['sound', '声音'], ['autoAI', 'AI 自动插话（每两次操作后）']].map(([o, n]) => `<label style="display:flex;align-items:center;gap:10px;padding:10px 0;font-size:17px"><input type="checkbox" ${OPT[o] ? 'checked' : ''} onchange="OPT['${o}']=this.checked;saveOpt();render()" style="width:22px;height:22px"> ${n}</label>`).join(''));
+  if (k === 'menu') return dlg('菜单', `<div class="optl"><button onclick="UI.close();UI.modal('rules')">玩法说明</button><button onclick="UI.close();UI.modal('opts')">设置</button>
+    <button onclick="UI.toTitle(this)">回到标题（${NET.role ? '离开房间' : '进度已自动保存'}）</button>${HUB ? '<button onclick="UI.hub(this)">返回游戏厅</button>' : ''}</div>`);
+  if (!G) return '';
+  if (k === 'book') { const t = U.btab || 'mine'; return dlg('剧本', `<div class="tabs">${[['bg', '背景'], ['mine', '我的剧本'], ['rules', '规则']].map(([x, n]) => `<button class="sm ${t === x ? 'on' : ''}" onclick="U.btab='${x}';UI.modal('book',1)">${n}</button>`).join('')}</div><div class="book">${bookHTML(t)}</div>`); }
+  if (k === 'clues') {
+    const t = U.mtab, disc = G.phase === 'd1' || G.phase === 'd2';
+    const pubC = G.pub.filter(i => sc.clues[i]), pubF = G.pub.filter(i => sc.facts[i]), mine = G.own[r] || [];
+    const btn = id => disc ? `<div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap">${sc.suspects.filter(x => x !== r).map(x => `<button class="sm" onclick="UI.doShow('${x}','${id}')">出示给${esc(sc.roles[x].name)}</button>`).join('')}${mine.includes(id) ? `<button class="sm" onclick="act({t:'publish',id:'${id}'})">只公开</button>` : ''}</div>` : (mine.includes(id) ? `<div style="margin-top:8px"><button class="sm" onclick="act({t:'publish',id:'${id}'})">公开</button></div>` : '');
+    const list = t === 'pub' ? pubC : t === 'mine' ? mine : pubF;
+    return dlg('线索箱', `<div class="tabs">${[['pub', '公开线索 ' + pubC.length], ['mine', '我私有的 ' + mine.length], ['fact', '证词与推论 ' + pubF.length]].map(([x, n]) => `<button class="sm ${t === x ? 'on' : ''}" onclick="U.mtab='${x}';UI.modal('clues',1)">${n}</button>`).join('')}</div>
+      <div style="display:flex;flex-direction:column;gap:10px">${list.length ? list.map(id => clueCard(id, btn(id))).join('') : '<p class="mut">还没有。</p>'}</div>`);
+  }
+  if (k === 'tl') {
+    const times = ['20:30', '21:00', '21:05', '21:10', '21:15', '21:25', '21:30', '21:40'], cols = sc.timeline.cols;
+    const facts = G.pub.filter(i => sc.facts[i] && sc.facts[i].t);
+    const cell = (t, c) => facts.filter(i => sc.facts[i].t === t && sc.facts[i].who === c).map(i => esc(sc.facts[i].text.replace(/^[^：]+：/, ''))).join('<br>');
+    const other = G.pub.filter(i => sc.facts[i] && !sc.facts[i].t);
+    return dlg('时间线板', `<p class="mut small">只放已经公开的证词。注意：凶手的证词可能是假的。</p><div style="overflow:auto"><table class="tl"><tr><th>时间</th>${cols.map(c => `<th>${esc(roleName(c))}</th>`).join('')}</tr>
+      ${times.map(t => `<tr><td class="t">${t}</td>${cols.map(c => `<td>${cell(t, c)}</td>`).join('')}</tr>`).join('')}</table></div>
+      <h3 style="margin-top:12px">其他证词与推论</h3>${other.length ? other.map(i => `<div class="fact ${i[0] === 'd' ? 'ded' : ''}" style="margin:6px 0">${esc(sc.facts[i].text)}</div>`).join('') : '<p class="mut">还没有。</p>'}`);
+  }
+  if (k === 'ask') {
+    const t = U.target; if (!t) return '';
+    const tops = sc.topics.filter(x => !x.when || x.when(mkP(G))).map(x => x.id).concat(sc.suspects.filter(x => x !== t && x !== r).map(x => 'about_' + x));
+    return dlg('问' + esc(sc.roles[t].name), `<div class="optl">${tops.map(x => `<button onclick="UI.doAsk('${t}','${x}')">${esc(topicQ(sc, x))}${G.asked[t + ':' + x] ? ' <span class="mut small">（问过）</span>' : ''}</button>`).join('')}</div>`);
+  }
+  if (k === 'show') {
+    const t = U.target; if (!t) return '';
+    const ids = (G.own[r] || []).concat(G.pub);
+    return dlg('向' + esc(sc.roles[t].name) + '出示', `<p class="mut small">线索和证词都能出示。出示私有线索等于公开它。</p><div class="optl">${ids.map(id => `<button onclick="UI.doShow('${t}','${id}')">${sc.clues[id] ? '🗂 ' + esc(sc.clues[id].title) + ((G.own[r] || []).includes(id) ? ' <span class="acc small">（私有）</span>' : '') : '✦ ' + esc(sc.facts[id].text)}</button>`).join('')}</div>`);
+  }
+  if (k === 'say') {
+    const d = sc.deck[r] || {}; const opts = [];
+    for (const tp in d) deckFor(G, r, tp).forEach((e, i) => { if (e.vol && !(G.saidV || {})[r + ':' + e.say.slice(0, 12)]) opts.push([tp, i, e]); });
+    return dlg('主动发言', `<p class="mut small">从你的剧本允许的说法里选。${r === sc.killer ? '你是凶手，可以说谎。' : '你不是凶手，不能说谎。'}</p>${opts.length ? '' : '<p class="mut">能主动说的都说过了。</p>'}<div class="optl">${opts.map(([tp, i, e]) => `<button onclick="UI.doSay('${tp}',${i})"><span class="k k-${e.kind}">${{ truth: '实话', lie: '谎话', evade: '回避' }[e.kind]}</span>${esc(e.say)}${e.tip ? ' <span class="mut small">（' + esc(e.tip) + '）</span>' : ''}</button>`).join('')}</div>`);
+  }
+  if (k === 'prompt') {
+    const p = G.prompts.find(x => x.to === r); if (!p) return '';
+    const list = deckFor(G, r, p.topic);
+    return dlg(esc(roleName(p.from)) + '问你', `<div class="msg">${sealH(p.from)}<div class="bd"><div class="tx">${p.clue ? '（出示了' + esc(itemTitle(sc, p.clue)) + '）' : ''}${esc(topicQ(sc, p.topic === '_' ? 'where' : p.topic))}</div></div></div>
+      ${p.clue ? clueCard(p.clue) : ''}<h3 style="margin-top:12px">你怎么回答？</h3>
+      <div class="optl">${list.map((e, i) => `<button onclick="UI.doSay(null,${i},${p.id})"><span class="k k-${e.kind}">${{ truth: '实话', lie: '谎话', evade: '回避' }[e.kind]}</span>${esc(e.say)}${e.tip ? ' <span class="mut small">（' + esc(e.tip) + '）</span>' : ''}</button>`).join('')}</div>`);
+  }
+  return '';
+}
+
+const UI = {
+  go(s) { U.scr = s; U.modalOpen = null; closeMask(); render(); },
+  hub(b) { if (G && U.scr === 'game' && NET.role) { if (!U.hubArm) { U.hubArm = 1; b.textContent = '再点一次确认'; setTimeout(() => U.hubArm = 0, 3000); return; } } save(); NET.leave(); location.href = '../'; },
+  resume() { G = loadSave('renchiren'); ME = { seat: 0 }; U.scr = 'game'; U.lastN = G.log.length; render(); },
+  pickSc(id) { U.setup.sid = id; render(); },
+  setMode(m) { U.setup.mode = m; render(); },
+  setRole(r) { U.setup.role = r; render(); },
+  start() {
+    const st = U.setup, sc = SCRIPTS[st.sid]; let role = st.mode === 'det' ? 'det' : st.role;
+    if (role === 'rand') role = sc.suspects[Math.floor(Math.random() * 4)];
+    G = newGame(st.sid, st.mode, [role]); ME = { seat: 0 }; U.scr = 'game'; U.tab = 'mine'; U.lastN = 0; U.sheet = null; U.tlShown = 0; save(); render();
+    if (st.role === 'rand') toast('你抽到了：' + sc.roles[role].name, 3000);
+  },
+  tab(t) { U.tab = t; render(); },
+  tgt(x) { U.target = U.target === x ? null : x; render(); },
+  look(c) { act({ t: 'look', id: c }); U.modalOpen = null; showClue(c); },
+  doAsk(t, tp) { UI.close(); act({ t: 'ask', to: t, topic: tp }); },
+  doShow(t, id) { UI.close(); act({ t: 'show', to: t, id }); },
+  doSay(tp, i, pid) { UI.close(); act(pid != null ? { t: 'say', i, pid } : { t: 'say', topic: tp, i }); },
+  ans(i, j) { U.sheet[i] = j; render(); },
+  submit() { act({ t: 'answers', v: U.sheet.slice() }); },
+  tlAll() { U.tlShown = 99; render(); },
+  copy(t) { try { navigator.clipboard.writeText(t); toast('已复制'); } catch (e) { toast(t); } },
+  toTitle(b) { if (NET.role && b && !U.titleArm) { U.titleArm = 1; b.textContent = '再点一次确认（会离开房间）'; setTimeout(() => U.titleArm = 0, 3000); return; } save(); NET.leave(); G = null; UI.go('title'); },
+  again() { const g = G; if (NET.role === 'host') { NET.restart(); return; } G = newGame(g.sid, g.mode, g.seats); U.lastN = 0; U.sheet = null; U.tlShown = 0; save(); render(); },
+  modal(k, keep) { closeMask(); const h = modalHTML(k); if (!h) { U.modalOpen = null; return; } U.modalOpen = k; document.body.insertAdjacentHTML('beforeend', h); $$('.mask canvas.cimg').forEach(c => drawImg(c)); if (!keep) sfx('tick'); },
+  close() { U.modalOpen = null; closeMask(); }
+};
+function closeMask() { $$('.mask').forEach(m => m.remove()); }
+function showClue(c) { closeMask(); U.modalOpen = null; document.body.insertAdjacentHTML('beforeend', dlg('线索', clueCard(c))); $$('.mask canvas.cimg').forEach(x => drawImg(x)); sfx('fact'); }
+setInterval(() => { const e = $('#ptm'); if (e && G && PH_MIN[G.phase]) e.textContent = fmtT(Date.now() - G.pt0) + ' / 建议 ' + PH_MIN[G.phase] + ' 分'; }, 1000);
+setInterval(() => { if (G && G.phase === 'reveal' && U.scr === 'game' && U.tlShown < S().timeline.rows.length) { U.tlShown++; if (!U.modalOpen) render(); } }, 900);
+
+/* 剧本杀 · 程序绘制：背景、赵家平面图、死亡讯息、村内地图 */
+const ART = { key: '', off: null, flies: [], raf: 0 };
+function hash(n) { const x = Math.sin(n * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); }
+function ridge(ctx, w, h, base, amp, seed, col, rough) {
+  ctx.beginPath(); ctx.moveTo(0, h);
+  for (let x = 0; x <= w; x += 4) {
+    let y = 0, a = amp, f = 1 / 320;
+    for (let o = 0; o < 5; o++) { y += Math.sin(x * f + seed * (o + 1) * 1.7) * a + (hash(Math.floor(x * f * 6) + seed * 9 + o) - .5) * a * (rough || .25); a *= .5; f *= 2.1; }
+    ctx.lineTo(x, base - y);
+  }
+  ctx.lineTo(w, h); ctx.closePath(); ctx.fillStyle = col; ctx.fill();
+}
+function paperNoise(ctx, w, h, alpha) { for (let i = 0; i < w * h / 260; i++) { ctx.fillStyle = `rgba(${hash(i) > .5 ? '90,60,30' : '255,250,235'},${alpha * hash(i + 3)})`; ctx.fillRect(hash(i + 1) * w, hash(i + 2) * h, 1 + hash(i + 4) * 2, 1); } }
+function drawBg(scr) {
+  const c = $('#bgc'), dpr = Math.min(2, window.devicePixelRatio || 1), w = innerWidth, h = innerHeight;
+  const key = scr + w + 'x' + h; if (ART.key === key) return; ART.key = key;
+  c.width = w * dpr; c.height = h * dpr; const o = document.createElement('canvas'); o.width = c.width; o.height = c.height;
+  const x = o.getContext('2d'); x.scale(dpr, dpr);
+  if (scr === 'title' || scr === 'setup' || scr === 'lobby') {
+    const g = x.createLinearGradient(0, 0, 0, h); g.addColorStop(0, '#070a10'); g.addColorStop(.55, '#151b26'); g.addColorStop(1, '#0b0e13'); x.fillStyle = g; x.fillRect(0, 0, w, h);
+    for (let i = 0; i < 140; i++) { x.fillStyle = `rgba(240,230,210,${.2 + hash(i) * .6})`; x.fillRect(hash(i + 7) * w, hash(i + 9) * h * .5, hash(i) > .92 ? 2 : 1, 1); }
+    const mx = w * .78, my = h * .2, mr = Math.min(w, h) * .06; const mg = x.createRadialGradient(mx, my, mr * .2, mx, my, mr * 4); mg.addColorStop(0, 'rgba(240,226,190,.35)'); mg.addColorStop(1, 'rgba(240,226,190,0)'); x.fillStyle = mg; x.fillRect(0, 0, w, h);
+    x.fillStyle = '#efe2bf'; x.beginPath(); x.arc(mx, my, mr, 0, 7); x.fill(); x.fillStyle = 'rgba(21,27,38,.92)'; x.beginPath(); x.arc(mx + mr * .35, my - mr * .15, mr * .92, 0, 7); x.fill();
+    ridge(x, w, h, h * .62, h * .16, 1.3, '#1a2130', .3); ridge(x, w, h, h * .7, h * .12, 2.9, '#131925', .35);
+    const fg = x.createLinearGradient(0, h * .6, 0, h * .8); fg.addColorStop(0, 'rgba(160,170,180,0)'); fg.addColorStop(.5, 'rgba(160,170,180,.10)'); fg.addColorStop(1, 'rgba(160,170,180,0)'); x.fillStyle = fg; x.fillRect(0, h * .55, w, h * .3);
+    ridge(x, w, h, h * .82, h * .06, 5.1, '#0c1018', .4);
+    /* 村子：几间茅屋，一扇亮着的窗 */
+    const by = h * .8; [[.18, 1], [.27, .8], [.36, 1.1], [.62, .9], [.7, 1.2]].forEach(([p, s], i) => {
+      const hx = w * p, hw = 46 * s, hh = 26 * s; x.fillStyle = '#080b10'; x.fillRect(hx - hw / 2, by - hh, hw, hh);
+      x.beginPath(); x.moveTo(hx - hw * .65, by - hh); x.lineTo(hx, by - hh - 24 * s); x.lineTo(hx + hw * .65, by - hh); x.closePath(); x.fill();
+      if (i === 4 || i === 1) { const lg = x.createRadialGradient(hx + hw * .2, by - hh * .5, 1, hx + hw * .2, by - hh * .5, 40 * s); lg.addColorStop(0, 'rgba(255,190,90,.55)'); lg.addColorStop(1, 'rgba(255,190,90,0)'); x.fillStyle = lg; x.fillRect(hx - 60, by - 80, 140, 120); x.fillStyle = '#f2b45a'; x.fillRect(hx + hw * .1, by - hh * .7, 8 * s, 8 * s); }
+    });
+    x.fillStyle = '#05070a'; x.fillRect(0, h * .86, w, h * .14);
+  } else if (scr === 'read' || scr === 'answer') {
+    x.fillStyle = '#e9dfc8'; x.fillRect(0, 0, w, h); paperNoise(x, w, h, .08);
+    const v = x.createRadialGradient(w / 2, h / 2, Math.min(w, h) * .3, w / 2, h / 2, Math.max(w, h) * .75); v.addColorStop(0, 'rgba(120,80,30,0)'); v.addColorStop(1, 'rgba(120,80,30,.22)'); x.fillStyle = v; x.fillRect(0, 0, w, h);
+  } else if (scr === 'r1' || scr === 'r2') {
+    x.fillStyle = '#0f171a'; x.fillRect(0, 0, w, h); x.strokeStyle = 'rgba(127,192,160,.05)'; for (let i = 0; i < w; i += 32) { x.beginPath(); x.moveTo(i, 0); x.lineTo(i, h); x.stroke(); } for (let i = 0; i < h; i += 32) { x.beginPath(); x.moveTo(0, i); x.lineTo(w, i); x.stroke(); }
+    const v = x.createRadialGradient(w / 2, h * .4, 50, w / 2, h * .4, Math.max(w, h) * .8); v.addColorStop(0, 'rgba(0,0,0,0)'); v.addColorStop(1, 'rgba(0,0,0,.55)'); x.fillStyle = v; x.fillRect(0, 0, w, h);
+  } else if (scr === 'reveal') {
+    x.fillStyle = '#140c0c'; x.fillRect(0, 0, w, h); const v = x.createRadialGradient(w / 2, 0, 20, w / 2, 0, h * 1.1); v.addColorStop(0, 'rgba(160,40,30,.25)'); v.addColorStop(1, 'rgba(0,0,0,0)'); x.fillStyle = v; x.fillRect(0, 0, w, h);
+  } else {
+    x.fillStyle = '#1b130d'; x.fillRect(0, 0, w, h);
+    const cx = w / 2, cy = h * .12, v = x.createRadialGradient(cx, cy, 10, cx, cy, Math.max(w, h) * .9); v.addColorStop(0, 'rgba(240,170,80,.20)'); v.addColorStop(.4, 'rgba(120,70,30,.10)'); v.addColorStop(1, 'rgba(0,0,0,.5)'); x.fillStyle = v; x.fillRect(0, 0, w, h);
+    paperNoise(x, w, h, .03);
+  }
+  ART.off = o; ART.scr = scr; c.getContext('2d').drawImage(o, 0, 0);
+  ART.flies = (scr === 'title' || scr === 'r1' || scr === 'r2' || scr === 'setup') ? Array.from({ length: scr === 'title' ? 26 : 12 }, (_, i) => ({ x: hash(i) * w, y: h * (.5 + hash(i + 5) * .45), p: hash(i + 2) * 6, s: .2 + hash(i + 3) * .5 })) : [];
+  if (!ART.raf) ART.raf = requestAnimationFrame(flyLoop);
+}
+let _flyT = 0;
+function flyLoop(t) {
+  ART.raf = requestAnimationFrame(flyLoop);
+  if (!ART.flies.length || !OPT.anim || document.hidden || t - _flyT < 33) return; _flyT = t;
+  const c = $('#bgc'), x = c.getContext('2d'), dpr = c.width / innerWidth; x.setTransform(1, 0, 0, 1, 0, 0); x.drawImage(ART.off, 0, 0); x.scale(dpr, dpr);
+  const warm = ART.scr === 'title' || ART.scr === 'setup';
+  for (const f of ART.flies) { f.p += .02; f.x += Math.sin(f.p * 1.3) * f.s; f.y += Math.cos(f.p) * f.s * .6; const a = .35 + .35 * Math.sin(f.p * 2.2);
+    const g = x.createRadialGradient(f.x, f.y, 0, f.x, f.y, 7); g.addColorStop(0, warm ? `rgba(255,220,120,${a})` : `rgba(160,240,200,${a * .7})`); g.addColorStop(1, 'rgba(0,0,0,0)'); x.fillStyle = g; x.fillRect(f.x - 7, f.y - 7, 14, 14); }
+}
+addEventListener('resize', () => { ART.key = ''; if (typeof render === 'function') render(); });
+
+/* 赵家平面图（粉笔线） */
+function drawPlan(c, round) {
+  if (!c) return; const r = c.getBoundingClientRect(), dpr = Math.min(2, devicePixelRatio || 1); c.width = r.width * dpr; c.height = r.height * dpr;
+  const x = c.getContext('2d'); x.scale(dpr, dpr); const W = r.width, H = r.height, u = W / 600;
+  const bg = x.createLinearGradient(0, 0, W, H); bg.addColorStop(0, '#16221f'); bg.addColorStop(1, '#0d1513'); x.fillStyle = bg; x.fillRect(0, 0, W, H);
+  x.strokeStyle = 'rgba(127,192,160,.07)'; for (let i = 0; i < W; i += 14 * u) { x.beginPath(); x.moveTo(i, 0); x.lineTo(i, H); x.stroke(); }
+  const chalk = (w, a) => { x.strokeStyle = `rgba(232,240,232,${a || .85})`; x.lineWidth = w * u; x.lineCap = 'round'; x.lineJoin = 'round'; };
+  const P = (px, py) => [px * W, py * H];
+  /* 外墙 */
+  chalk(3.2); x.beginPath(); const L = .05, T = .1, R = .95, B = .88, mid = .6;
+  x.moveTo(...P(L + .1, B)); x.lineTo(...P(L, B)); x.lineTo(...P(L, T)); x.lineTo(...P(R, T)); x.lineTo(...P(R, .26)); x.moveTo(...P(R, .42)); x.lineTo(...P(R, B)); x.lineTo(...P(L + .2, B)); x.stroke();
+  /* 内墙与被踹开的门 */
+  x.beginPath(); x.moveTo(...P(mid, T)); x.lineTo(...P(mid, .5)); x.moveTo(...P(mid, .64)); x.lineTo(...P(mid, B)); x.stroke();
+  chalk(2, .6); x.beginPath(); x.moveTo(...P(mid, .64)); x.lineTo(...P(mid + .07, .55)); x.stroke(); x.setLineDash([4 * u, 4 * u]); x.beginPath(); x.arc(...P(mid, .64), .1 * W * .7, -Math.PI / 2, -.6); x.stroke(); x.setLineDash([]);
+  /* 窗 */
+  chalk(1.5, .7); x.beginPath(); x.moveTo(...P(R - .012, .26)); x.lineTo(...P(R - .012, .42)); x.moveTo(...P(R + .012, .26)); x.lineTo(...P(R + .012, .42)); x.stroke();
+  x.fillStyle = 'rgba(232,240,232,.7)'; x.font = `${12 * u}px var(--sans),sans-serif`; x.fillText('窗（开着）', (R - .1) * W, .47 * H);
+  x.fillText('大门', (L + .115) * W, (B + .07) * H);
+  x.font = `bold ${18 * u}px "Songti SC","Noto Serif SC",serif`; x.fillStyle = 'rgba(232,240,232,.28)'; x.fillText('客　厅', .25 * W, .2 * H); x.fillText('卧　室', .7 * W, .82 * H);
+  /* 桌子、水杯、蜡烛 */
+  chalk(2, .75); x.strokeRect(.14 * W, .32 * H, .2 * W, .16 * H);
+  x.beginPath(); x.arc(.22 * W, .4 * H, 6 * u, 0, 7); x.stroke();
+  x.fillStyle = '#ffcf7a'; x.beginPath(); x.ellipse(.36 * W, .34 * H, 3 * u, 6 * u, 0, 0, 7); x.fill(); x.fillStyle = 'rgba(232,240,232,.85)'; x.fillRect(.36 * W - 3 * u, .35 * H, 6 * u, 10 * u);
+  const cg = x.createRadialGradient(.36 * W, .34 * H, 1, .36 * W, .34 * H, 60 * u); cg.addColorStop(0, 'rgba(255,190,90,.22)'); cg.addColorStop(1, 'rgba(255,190,90,0)'); x.fillStyle = cg; x.fillRect(0, 0, W, H);
+  /* 尸体轮廓与血 */
+  x.fillStyle = 'rgba(150,20,20,.55)'; x.beginPath(); x.ellipse(.4 * W, .73 * H, 30 * u, 14 * u, .3, 0, 7); x.fill();
+  chalk(2.2, .9); x.beginPath(); const bx = .33 * W, by = .66 * H;
+  x.arc(bx + 34 * u, by + 14 * u, 9 * u, 0, 7); x.moveTo(bx + 26 * u, by + 10 * u); x.lineTo(bx - 20 * u, by - 6 * u); x.lineTo(bx - 52 * u, by - 2 * u); x.moveTo(bx - 20 * u, by - 6 * u); x.lineTo(bx - 50 * u, by - 22 * u);
+  x.moveTo(bx + 20 * u, by + 6 * u); x.lineTo(bx + 6 * u, by + 30 * u); x.moveTo(bx + 4 * u, by - 2 * u); x.lineTo(bx + 30 * u, by - 22 * u); x.stroke();
+  /* 墙上弹孔 */
+  x.fillStyle = 'rgba(232,240,232,.9)'; [[.06, .26], [.065, .33], [.058, .38], [.07, .21]].forEach(([px, py]) => { x.beginPath(); x.arc(px * W, py * H, 2.5 * u, 0, 7); x.fill(); });
+  /* 床（第二轮：床板掀开、露出地洞） */
+  const open = round === 2 && G && G.pub.includes('c_cellar');
+  chalk(2, .75); x.strokeRect(.68 * W, .2 * H, .2 * W, .32 * H);
+  if (open) { x.fillStyle = '#050808'; x.fillRect(.7 * W, .24 * H, .16 * W, .24 * H); chalk(1.2, .6); for (let i = 0; i < 4; i++) { x.beginPath(); x.moveTo(.7 * W, (.27 + i * .055) * H); x.lineTo(.86 * W, (.27 + i * .055) * H); x.stroke(); } x.fillStyle = 'rgba(232,240,232,.7)'; x.font = `${12 * u}px sans-serif`; x.fillText('地洞', .75 * W, .38 * H); }
+  else { chalk(1.2, .5); x.beginPath(); x.moveTo(.68 * W, .28 * H); x.lineTo(.88 * W, .28 * H); x.stroke(); }
+  x.fillStyle = 'rgba(232,240,232,.55)'; x.font = `${11 * u}px sans-serif`; x.fillText('衣物 · 食物 · 矿泉水', .62 * W, .66 * H);
+  /* 村内地图图标 */
+  chalk(1.5, .6); x.strokeRect(.85 * W, .8 * H, .08 * W, .1 * H); x.beginPath(); x.moveTo(.87 * W, .83 * H); x.lineTo(.91 * W, .87 * H); x.moveTo(.89 * W, .82 * H); x.lineTo(.89 * W, .88 * H); x.stroke();
+}
+/* 线索图片 */
+function drawImg(c) {
+  const k = c.dataset.img, x = c.getContext('2d'), W = c.width, H = c.height;
+  if (k === 'msg') {
+    x.fillStyle = '#f6f1e6'; x.fillRect(0, 0, W, H); paperNoise(x, W, H, .05);
+    x.strokeStyle = '#7d0a0a'; x.lineWidth = 16; x.lineCap = 'round'; x.lineJoin = 'round';
+    /* 左：露出的“贝”字旁 */
+    x.beginPath(); x.moveTo(62, 88); x.lineTo(62, 190); x.moveTo(62, 88); x.lineTo(120, 82); x.lineTo(112, 200); x.moveTo(98, 150); x.lineTo(70, 240); x.moveTo(108, 210); x.lineTo(130, 240); x.stroke();
+    /* 右：露出的“土” */
+    x.beginPath(); x.moveTo(318, 72); x.lineTo(318, 134); x.moveTo(288, 102); x.lineTo(350, 100); x.moveTo(278, 136); x.lineTo(372, 128); x.stroke();
+    /* 盖住的血 */
+    x.fillStyle = '#7d0a0a'; x.beginPath(); x.moveTo(140, H); x.bezierCurveTo(120, 220, 150, 130, 175, 70); x.bezierCurveTo(190, 10, 270, 0, 290, 60); x.bezierCurveTo(300, 120, 330, 150, 380, 160); x.bezierCurveTo(420, 175, 410, 260, W, H); x.closePath(); x.fill();
+    x.beginPath(); x.ellipse(120, 120, 22, 30, .5, 0, 7); x.fill();
+  } else if (k === 'map') {
+    x.fillStyle = '#0d0f12'; x.fillRect(0, 0, W, H); x.strokeStyle = '#e8e8e8'; x.lineWidth = 4; x.fillStyle = '#e8e8e8'; x.font = 'bold 18px "PingFang SC","Microsoft YaHei",sans-serif'; x.textAlign = 'center';
+    const box = (bx, by, bw, bh, t, ty) => { x.strokeRect(bx, by, bw, bh); x.fillText(t, bx + bw / 2, ty || by + bh / 2 + 6); };
+    box(22, 20, 96, 76, '王村长'); box(286, 34, 96, 72, '赵慈善');
+    box(40, 200, 52, 70, '', 0); box(176, 200, 52, 70, '', 0); box(312, 196, 52, 74, '', 0);
+    x.fillText('李警察', 66, 292); x.fillText('胡调研', 202, 292); x.fillText('张村民', 338, 292); x.font = '13px sans-serif'; x.fillText('窗', 396, 82);
+    x.beginPath();
+    x.moveTo(48, 96); x.lineTo(48, 200); x.moveTo(60, 96); x.lineTo(60, 150); x.lineTo(100, 150); x.lineTo(100, 90); x.lineTo(286, 70);
+    x.moveTo(286, 92); x.lineTo(120, 110); x.lineTo(120, 150); x.lineTo(304, 150); x.lineTo(304, 196);
+    x.moveTo(62, 200); x.lineTo(62, 172); x.lineTo(196, 172); x.lineTo(196, 200);
+    x.moveTo(214, 200); x.lineTo(214, 168); x.lineTo(326, 168); x.lineTo(326, 196);
+    x.moveTo(382, 92); x.lineTo(392, 92); x.lineTo(392, 110); x.stroke();
+  }
+}
+
+/* 剧本杀 · 合成音效（无音频文件） */
+const AU = { ctx: null, out: null, noise: null, amb: 0, last: {} };
+function auInit() {
+  if (AU.ctx) { if (AU.ctx.state === 'suspended') AU.ctx.resume(); return; }
+  try {
+    const C = window.AudioContext || window.webkitAudioContext; if (!C) return; const c = AU.ctx = new C();
+    const comp = c.createDynamicsCompressor(); AU.out = c.createGain(); AU.out.gain.value = .5; AU.out.connect(comp); comp.connect(c.destination);
+    const b = c.createBuffer(1, c.sampleRate, c.sampleRate), d = b.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1; AU.noise = b;
+    ambLoop();
+  } catch (e) { }
+}
+function tone(type, f0, f1, dur, vol, delay, lp) {
+  const c = AU.ctx; if (!c || !OPT.sound) return; const t = c.currentTime + (delay || 0), o = c.createOscillator(), g = c.createGain();
+  o.type = type; const j = 1 + (Math.random() - .5) * .08; o.frequency.setValueAtTime(f0 * j, t); if (f1) o.frequency.exponentialRampToValueAtTime(f1 * j, t + dur);
+  g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vol, t + .01); g.gain.exponentialRampToValueAtTime(.0001, t + dur);
+  let n = o; if (lp) { const f = c.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = lp; o.connect(f); n = f; }
+  n.connect(g); g.connect(AU.out); o.start(t); o.stop(t + dur + .05);
+}
+function noise(dur, vol, type, f0, f1, Q, delay) {
+  const c = AU.ctx; if (!c || !OPT.sound) return; const t = c.currentTime + (delay || 0), s = c.createBufferSource(), f = c.createBiquadFilter(), g = c.createGain();
+  s.buffer = AU.noise; f.type = type || 'bandpass'; f.frequency.setValueAtTime(f0, t); if (f1) f.frequency.exponentialRampToValueAtTime(f1, t + dur); f.Q.value = Q || 1;
+  g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(.0001, t + dur); s.connect(f); f.connect(g); g.connect(AU.out); s.start(t, Math.random() * .5); s.stop(t + dur + .05);
+}
+const SFX = {
+  tick() { tone('sine', 880, 660, .06, .05); },
+  page() { noise(.35, .12, 'highpass', 2500, 6000, .7); },
+  fact() { tone('triangle', 660, 0, .25, .08); tone('triangle', 990, 0, .35, .06, .08); },
+  break() { tone('sine', 220, 110, .9, .18, 0, 900); tone('triangle', 440, 0, .6, .08, .05); noise(.5, .08, 'lowpass', 400, 120); },
+  contra() { tone('square', 330, 0, .12, .06, 0, 1600); tone('square', 247, 0, .3, .06, .12, 1600); },
+  bell() { [523, 784, 1046].forEach((f, i) => tone('sine', f, 0, 1.4, .07, i * .02)); }
+};
+function sfx(k) { if (!AU.ctx || !OPT.sound) return; const now = performance.now(); if (AU.last[k] && now - AU.last[k] < 70) return; AU.last[k] = now; try { SFX[k] && SFX[k](); } catch (e) { } }
+/* 夜里的虫鸣：讨论和搜证时轻轻地响 */
+function ambLoop() {
+  clearTimeout(AU.amb); AU.amb = setTimeout(ambLoop, 900 + Math.random() * 2600);
+  if (!OPT.sound || document.hidden || !AU.ctx) return; const scr = document.body.dataset.scr;
+  if (!['title', 'r1', 'r2', 'd1', 'd2', 'intro', 'setup'].includes(scr)) return;
+  const f = 4200 + Math.random() * 900; for (let i = 0; i < 3 + (Math.random() * 3 | 0); i++) tone('sine', f, f * .98, .05, .012, i * .085);
+}
+addEventListener('pointerdown', auInit, { passive: true });
+addEventListener('keydown', auInit);
+
+/* 剧本杀 · 双人联机（PeerJS，房主权威：房主运行引擎和 AI，朋友只发操作） */
+const PEER_SRC = ['https://unpkg.com/peerjs@1.5.5/dist/peerjs.min.js', 'https://cdn.jsdelivr.net/npm/peerjs@1.5.5/dist/peerjs.min.js'];
+const PEER_ICE = { iceServers: [{ urls: ['stun:stun.l.google.com:19302', 'stun:stun.cloudflare.com:3478'] }, { urls: ['turn:eu-0.turn.peerjs.com:3478', 'turn:us-0.turn.peerjs.com:3478'], username: 'peerjs', credential: 'peerjsp' }] };
+const PEER_OPTS = QS.get('peerhost') ? { host: QS.get('peerhost'), port: +(QS.get('peerport') || 9000), path: QS.get('peerpath') || '/', secure: QS.get('peersecure') === '1' } : { config: PEER_ICE, pingInterval: 4000 };
+const NET = { role: null, peer: null, conn: null, code: '', msg: '', lobby: null, tok: 0, sendT: 0 };
+function loadPeer() {
+  if (window.Peer) return Promise.resolve();
+  return new Promise((ok, no) => { let i = 0; const next = () => { if (i >= PEER_SRC.length) return no(new Error('联机组件下载失败')); const s = document.createElement('script'); s.src = PEER_SRC[i++]; const to = setTimeout(() => { s.remove(); next(); }, 9000); s.onload = () => { clearTimeout(to); ok(); }; s.onerror = () => { clearTimeout(to); s.remove(); next(); }; document.head.appendChild(s); }; next(); });
+}
+const genCode = () => Array.from({ length: 4 }, () => 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[Math.floor(Math.random() * 32)]).join('');
+function netSay(m) { NET.msg = m; const e = $('#netmsg'); if (e) e.textContent = m; else if (U.scr === 'lobby') render(); }
+NET.host = async function () {
+  if (ARTIFACT) return toast('claude.ai 里的版本不能联机，请用游戏厅网址。', 3500);
+  const tok = ++NET.tok; netSay('正在下载联机组件…');
+  try { await loadPeer(); } catch (e) { return netSay('联机组件下载失败：检查网络后再试。'); }
+  const open = tries => {
+    if (NET.tok !== tok) return; const code = genCode(), peer = new Peer('jbs-' + code, PEER_OPTS); NET.peer = peer;
+    const to = setTimeout(() => { try { peer.destroy(); } catch (e) { } if (tries < 2) { netSay('联机服务器没回应，换一条连接再试…'); open(tries + 1); } else netSay('连不上联机服务器（试了 3 次）。稍后再试，或换个网络。'); }, 12000);
+    peer.on('open', () => { clearTimeout(to); NET.role = 'host'; NET.code = code; NET.lobby = { mode: 'sus', roles: [null, null] }; NET.msg = '把房间码发给朋友，让他在“和朋友联机”里输入。'; render(); });
+    peer.on('error', e => { if (e.type === 'unavailable-id') { clearTimeout(to); try { peer.destroy(); } catch (x) { } open(tries); } else netSay('联机出错：' + (e.type || e.message)); });
+    peer.on('disconnected', () => { if (NET.peer === peer && NET.role === 'host') try { peer.reconnect(); } catch (e) { } });
+    peer.on('connection', c => {
+      if (NET.conn && NET.conn.open) { c.on('open', () => { c.send({ t: 'full' }); setTimeout(() => c.close(), 500); }); return; }
+      NET.conn = c;
+      c.on('data', d => hostRecv(d));
+      c.on('close', () => { if (NET.conn !== c) return; NET.conn = null; if (G && U.scr === 'game') { const gr = G.seats[1]; if (gr) { G.guestRole = gr; G.seats[1] = null; logPush(G, { k: 'sys', text: '朋友断开了，' + roleName(gr) + '由 AI 接手。把房间码再发给他就能接回来。' }); save(); render(); } } else render(); });
+    });
+  };
+  open(0);
+};
+function hostRecv(d) {
+  if (!d || !d.t) return;
+  if (d.t === 'hello') {
+    if (G && U.scr === 'game') { if (!G.seats[1] && G.guestRole) { G.seats[1] = G.guestRole; logPush(G, { k: 'sys', text: '朋友回来了，接回' + roleName(G.guestRole) + '。' }); } NET.conn.send({ t: 'state', g: G }); render(); }
+    else { NET.conn.send({ t: 'lobby', lobby: NET.lobby, code: NET.code }); render(); }
+    return;
+  }
+  if (d.t === 'pick' && !G) { const L = NET.lobby; if (L.roles[0] === d.role) return; if (L.mode === 'det' && d.role === 'det') return; L.roles[1] = d.role; netLobby(); return; }
+  if (d.t === 'act' && G) { apply(G, d.a, 1); afterApply(); }
+}
+function netLobby() { if (NET.conn && NET.conn.open) NET.conn.send({ t: 'lobby', lobby: NET.lobby, code: NET.code }); render(); }
+NET.pick = function (r) {
+  if (NET.role === 'host') { const L = NET.lobby; if (L.roles[1] === r) return; L.roles[0] = r; netLobby(); }
+  else if (NET.conn && NET.conn.open) NET.conn.send({ t: 'pick', role: r });
+};
+NET.setMode = function (m) { const L = NET.lobby; L.mode = m; L.roles = m === 'det' ? ['det', L.roles[1] === 'det' ? null : L.roles[1]] : [L.roles[0] === 'det' ? null : L.roles[0], L.roles[1]]; netLobby(); };
+NET.start = function () { const L = NET.lobby; G = newGame('renchiren', 'net', L.roles); ME = { seat: 0 }; U.scr = 'game'; U.lastN = 0; U.sheet = null; U.tlShown = 0; save(); netSend(); render(); };
+NET.restart = function () { G = newGame(G.sid, G.mode, G.seats.map((r, i) => r || (i === 1 ? G.guestRole : r))); U.lastN = 0; U.sheet = null; U.tlShown = 0; save(); netSend(); render(); };
+function netSend() { if (NET.role !== 'host' || !NET.conn || !NET.conn.open) return; clearTimeout(NET.sendT); NET.sendT = setTimeout(() => { try { NET.conn.send({ t: 'state', g: G }); } catch (e) { } }, 60); }
+NET.join = async function (raw) {
+  const code = String(raw || '').trim().toUpperCase(); if (!/^[A-Z0-9]{4}$/.test(code)) return toast('房间码是 4 个字母或数字');
+  if (ARTIFACT) return toast('claude.ai 里的版本不能联机，请用游戏厅网址。', 3500);
+  const tok = ++NET.tok; netSay('正在下载联机组件…');
+  try { await loadPeer(); } catch (e) { return netSay('联机组件下载失败：检查网络后再试。'); }
+  const t0 = Date.now();
+  const attempt = tries => {
+    if (NET.tok !== tok) return; const peer = new Peer(PEER_OPTS); NET.peer = peer; netSay('正在连接联机服务器…');
+    const to = setTimeout(() => { try { peer.destroy(); } catch (e) { } if (tries < 2) attempt(tries + 1); else netSay('连不上联机服务器。稍后再试，或换个网络。'); }, 15000);
+    peer.on('open', () => {
+      clearTimeout(to); netSay('找房间 ' + code + ' …');
+      const knock = () => {
+        if (NET.tok !== tok) return; const c = peer.connect('jbs-' + code, { reliable: true }); let got = 0;
+        const hello = setInterval(() => { if (c.open && !got) c.send({ t: 'hello' }); }, 1500);
+        c.on('open', () => { NET.conn = c; NET.role = 'guest'; NET.code = code; c.send({ t: 'hello' }); netSay('已连上房主，等待同步…'); });
+        c.on('data', d => { got = 1; clearInterval(hello); guestRecv(d); });
+        c.on('close', () => { clearInterval(hello); if (NET.conn === c) { NET.conn = null; NET.role = null; toast('和房主的连接断了。', 3500); G = null; U.scr = 'lobby'; render(); } });
+        setTimeout(() => { if (!c.open && NET.tok === tok && !NET.conn) { clearInterval(hello); try { c.close(); } catch (e) { } if (Date.now() - t0 < 45000) { netSay('还没找到房间（房主可能还没开好），再敲一次门…'); knock(); } else netSay('找不到房间 ' + code + '：检查房间码，或让房主重新开房间。'); } }, 10000);
+      };
+      knock();
+    });
+    peer.on('error', e => { if (e.type === 'peer-unavailable') return; netSay('联机出错：' + (e.type || e.message)); });
+  };
+  attempt(0);
+};
+function guestRecv(d) {
+  if (d.t === 'full') { toast('房间已满。'); return; }
+  if (d.t === 'lobby') { NET.lobby = d.lobby; NET.code = d.code; if (U.scr !== 'lobby') U.scr = 'lobby'; render(); return; }
+  if (d.t === 'state') { const first = !G || U.scr !== 'game'; G = d.g; ME = { seat: 1 }; U.scr = 'game'; if (first) U.lastN = G.log.length; render(); }
+}
+NET.leave = function () { NET.tok++; try { NET.conn && NET.conn.close(); } catch (e) { } try { NET.peer && NET.peer.destroy(); } catch (e) { } Object.assign(NET, { role: null, peer: null, conn: null, code: '', lobby: null, msg: '' }); };
+
+/* 剧本杀 · 入口 */
+function act(a) {
+  if (!G) return;
+  if (NET.role === 'guest') { if (NET.conn && NET.conn.open) NET.conn.send({ t: 'act', a }); else toast('和房主的连接断了'); return; }
+  apply(G, a, ME.seat); afterApply();
+}
+function afterApply() { save(); netSend(); render(); }
+document.addEventListener('visibilitychange', () => { if (!document.hidden && NET.role === 'host' && NET.peer && NET.peer.disconnected) try { NET.peer.reconnect(); } catch (e) { } });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') UI.close(); });
+document.addEventListener('gesturestart', e => e.preventDefault());
+if (window.__dbg) Object.defineProperty(window.__dbg, 'G', { get() { return G; }, set(v) { G = v; } });
+if (window.__dbg) Object.assign(window.__dbg, { U, NET, apply, act, aiStep, suspicion, aiVote, enterPhase, newGame, render, SCRIPTS, ME: () => ME, setME: s => { ME = s; } });
+render();
+
+</script>
+
+</body>
+</html>
