@@ -3287,7 +3287,7 @@ function tkRoom() {
   titleStatus = function (t) {
     if (!t) return;
     if (!/^正在/.test(t)) TK.toast(t, 3600);
-    if (TK.visible && TK.screen === 'room') { if (!NETROLE) TK.roomFail(t); else TK.room({ status: t }); }
+    if (TK.visible && TK.screen === 'room') { if (!/^正在/.test(t) && !linkUp()) TK.roomFail(t); else TK.room({ status: t }); }
   };
 }
 
