@@ -108,6 +108,7 @@ CV.addEventListener('wheel', e => { if (STATE.mode !== 'play') return; e.prevent
 addEventListener('pointerdown', e => { if (e.pointerType === 'touch') { setTouch(true); INP.lastTouch = performance.now(); } }, true);
 const stickL = document.getElementById('stickL'), stickR = document.getElementById('stickR');
 function setTouch(on) { if (INP.touch === on) return; INP.touch = on; document.body.classList.toggle('touch', on); }
+if (TOUCHY) setTouch(true); // phones / tablets start with the touch layout, before the first tap
 function stickDraw(el, s, R) {
   if (s.id == null) { el.classList.add('hidden'); return; }
   el.classList.remove('hidden'); el.style.left = s.ox + 'px'; el.style.top = s.oy + 'px'; if (R) el.style.setProperty('--R', R + 'px');
@@ -122,7 +123,7 @@ function nearUI(x, y) {
   if (now - UIR.t > 250) { UIR.t = now; UIR.r = [...document.querySelectorAll('#tctl button, #tFire, #hud button, #bbar, #viewBox')].map(el => el.getBoundingClientRect()).filter(r => r.width && r.height); }
   const m = 26; return UIR.r.some(r => x > r.left - m && x < r.right + m && y > r.top - m && y < r.bottom + m);
 }
-const STICK_R = () => Math.min(64, Math.max(44, Math.min(VW, VH) * 0.09));
+const STICK_R = () => Math.min(Math.min(VW, VH) >= 760 ? 80 : 64, Math.max(44, Math.min(VW, VH) * 0.09));
 CV.addEventListener('pointerdown', e => {
   if (e.pointerType !== 'touch') return;
   audioInit(); e.preventDefault();
@@ -438,7 +439,7 @@ function readInput(dt) {
     if (!me.build || !BUILD_HOVER || !BUILD_HOVER.t) BUILD_HOVER = me.build ? BUILD_HOVER : null;
   }
   if (blocked) I.fire = 0;
-  if (!blocked && (KD('v') || INP.knHeld)) doKnife(); // hold to keep slashing
+  if (!blocked && !me.build && (KD('v') || INP.knHeld || (usingMouse && INP.mR))) doKnife(); // right mouse button / V / the 刀 button; hold to keep slashing
   if (me.knT > 0 && zAlive(me.knZ)) me.aim = Math.atan2(me.knZ.y - me.y, me.knZ.x - me.x); // face what you're cutting
   INP.lockShow = !blocked && !me.build && !me.dead && me.aimPt && zAlive(me.aimPt.zb) && (usingMouse || I.fire || INP.tAim.id != null || INP.aim.id != null) ? me.aimPt : null;
   if (usingMouse) { I.auto = 0; INP.lockAcq = 1; }

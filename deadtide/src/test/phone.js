@@ -9,7 +9,7 @@ const UA = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/6
     await c.route(/fonts\.(googleapis|gstatic)/, r => r.abort());
     const p = await c.newPage(); const errs = []; p.on('pageerror', e => errs.push(e.message));
     await p.goto('http://localhost:8766/test.html'); await p.waitForFunction(() => window.__ready, null, { timeout: 120000 });
-    await p.tap('#soloBtn'); await p.evaluate(() => { window.__dbg.skipDraw = true; }); await p.waitForFunction(() => W && W.t > 1, null, { timeout: 90000 });
+    await p.evaluate(() => $('soloBtn').click()); await p.evaluate(() => { window.__dbg.skipDraw = true; }); await p.waitForFunction(() => W && W.t > 1, null, { timeout: 90000 });
     const shot = async n => { await p.evaluate(() => { window.__dbg.skipDraw = false; window.__dbg.speed = 0; }); await p.waitForTimeout(2600); await p.screenshot({ path: `${OUT}/t_${name}_${n}.png` }); await p.evaluate(() => { window.__dbg.skipDraw = true; window.__dbg.speed = 1; }); await p.waitForTimeout(300); };
     const cdp = await c.newCDPSession(p);
     const tch = (type, pts) => cdp.send('Input.dispatchTouchEvent', { type, touchPoints: pts });

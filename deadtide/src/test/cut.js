@@ -5,7 +5,7 @@ const { chromium } = require('playwright'); const OUT = process.env.OUT || '/tmp
   const c = await b.newContext({ viewport: { width: 1000, height: 640 } }); await c.route(/fonts\.(googleapis|gstatic)/, r => r.abort());
   const p = await c.newPage(); p.setDefaultTimeout(150000); const errs = []; p.on('pageerror', e => errs.push(e.message));
   await p.goto('http://localhost:8766/test.html'); await p.waitForFunction(() => window.__ready, null, { timeout: 120000 });
-  await p.click('#soloBtn'); await p.waitForFunction(() => W && W.t > 0.5, null, { timeout: 90000 });
+  await p.evaluate(() => $('soloBtn').click()); await p.waitForFunction(() => W && W.t > 0.5, null, { timeout: 90000 });
   await p.evaluate(() => { window.__dbg.god = true; W.clock = 999; document.getElementById('hud').style.opacity = 0.15; W.zs.length = 0; });
   const hk = await p.evaluate(() => TOWN_HOUSES.findIndex(h => h[5] === 'apt' && h[4] >= 4));
   console.log('apt', hk, await p.evaluate(hk => TOWN_HOUSES[hk].join(','), hk));

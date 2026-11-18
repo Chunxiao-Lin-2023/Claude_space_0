@@ -19,7 +19,7 @@ const { chromium } = require('playwright'); const OUT = process.env.OUT || '/tmp
     await p.screenshot({ path: OUT + '/modesel_' + vp + '.png' });
     await p.click('#msOk'); await p.waitForTimeout(400);
     check(vp + ': title button shows the choice', /摧毁尸巢/.test(await p.evaluate(() => document.getElementById('modeBtn').textContent)) && /雪原/.test(await p.evaluate(() => document.getElementById('modeBtn').textContent)));
-    await p.click('#soloBtn'); await p.waitForFunction(() => W && !W.demo && W.t > 0.3);
+    await p.evaluate(() => $('soloBtn').click()); await p.waitForFunction(() => W && !W.demo && W.t > 0.3);
     check(vp + ': the game starts in that mode on that map', await p.evaluate(() => W.mode === 'nests' && W.map === 'snow' && W.obj.nests.length === 5));
     await p.evaluate(() => { saveGame(false); }); const lab = await p.evaluate(() => saveLabel(loadSave()));
     check(vp + ': save label names the mode and map', /摧毁尸巢/.test(lab) && /雪原/.test(lab), lab);

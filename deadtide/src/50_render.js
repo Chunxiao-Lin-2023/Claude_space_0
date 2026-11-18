@@ -434,12 +434,16 @@ function drawOverlay() {
   }
   // objectives: a label over the ones on screen, an arrow at the edge for the rest (the three nearest)
   const me = W.p[ME];
+  let KO = null;
+  if (INP.touch) { if (!UI.koT || performance.now() - UI.koT > 500) { UI.koT = performance.now(); let l = 1e9, t = 1e9, r = -1e9, bt = -1e9; document.querySelectorAll('#tctl > *').forEach(e => { if (e.offsetParent === null) return; const q = e.getBoundingClientRect(); if (!q.width) return; l = Math.min(l, q.left); t = Math.min(t, q.top); r = Math.max(r, q.right); bt = Math.max(bt, q.bottom); }); UI.ko = l < 1e9 ? [l - 50, t - 30, r + 10, bt + 10] : null; } KO = UI.ko; }
   if (me && !W.demo) { const used = []; let arrows = 0;
     for (const m of modeMarks().filter(m => m.a).map(m => Object.assign({}, m, { d: Math.hypot(m.x - me.x, m.y - me.y) })).sort((a, b) => a.d - b.d).slice(0, 4)) {
       const [sx, sy] = w2s(m.x, m.y, gAt(Math.floor(m.x), Math.floor(m.y)) * FH + 1.8), on = sx > 30 && sx < VW - 30 && sy > 70 && sy < VH - 70;
       if (on) { if (m.d > 3.5) html += `<div class="om" style="left:${sx | 0}px;top:${sy | 0}px;color:${m.c}">${m.n}<br>${Math.round(m.d)} 米</div>`; continue; }
       if (arrows >= 2) continue;
       let ax = clamp(sx, 56, VW - 56), ay = clamp(sy, 110, VH - 110); const an = Math.atan2(sy - ay, sx - ax);
+      if (KO && ax > KO[0] && ax < KO[2] && ay > KO[1] && ay < KO[3]) { if (KO[1] - 34 > 110) ay = KO[1] - 34; else ax = KO[0] - 30; } // not on top of the buttons
+      if (INP.touch && ax < 230 && ay > VH - 230) ay = VH - 230;                                                             // nor on the move stick
       for (const [ux, uy] of used) if (Math.abs(ux - ax) < 90 && Math.abs(uy - ay) < 40) ay += ay > VH / 2 ? -44 : 44; // don't stack labels
       used.push([ax, ay]); arrows++;
       html += `<div class="oa" style="left:${ax | 0}px;top:${ay | 0}px;color:${m.c}"><i style="transform:rotate(${an}rad)">➤</i>${m.n} ${Math.round(m.d)} 米</div>`;

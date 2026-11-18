@@ -9,7 +9,7 @@ const UA = 'Mozilla/5.0 (iPad; CPU OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (
     const c = await b.newContext({ viewport: { width: w, height: h }, hasTouch: true, isMobile: true, deviceScaleFactor: 1, userAgent: UA });
     await c.route(/fonts\.(googleapis|gstatic)/, r => r.abort());
     const p = await c.newPage(); p.setDefaultTimeout(200000); const errs = []; p.on('pageerror', e => errs.push(e.message));
-    await p.goto('http://localhost:8766/test.html'); await p.waitForFunction(() => window.__ready); await p.tap('#soloBtn'); await p.waitForFunction(() => W && W.t > 0.5);
+    await p.goto('http://localhost:8766/test.html'); await p.waitForFunction(() => window.__ready); await p.evaluate(() => $('soloBtn').click()); await p.waitForFunction(() => W && W.t > 0.5);
     const cdp = await c.newCDPSession(p); const tch = (type, pts) => cdp.send('Input.dispatchTouchEvent', { type, touchPoints: pts });
     const simWait = s => p.evaluate(s => new Promise(r => { const t0 = W.t; const f = () => W.t - t0 >= s ? r() : setTimeout(f, 30); f(); }), s);
     await p.evaluate(() => { window.__dbg.god = true; const me = W.p[0]; me.x = W.radio.x + 9.5; me.y = W.radio.y - 8.5; me.L = 0; me.wpn = 0;
@@ -33,7 +33,7 @@ const UA = 'Mozilla/5.0 (iPad; CPU OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (
     r = await p.evaluate(() => ({ zb: !!(W.p[0].aimPt && W.p[0].aimPt.zb), mag: !!(W.p[0].aimPt && W.p[0].aimPt.mag) })); check(vp + ' finger 40 px beside it: pulled on (finger magnet)', r.zb && r.mag, JSON.stringify(r));
     await tch('touchMove', [{ x: s[0] + 160, y: s[1] - 60, id: 3 }]); await p.waitForTimeout(400);
     check(vp + ' finger dragged away: free aim follows', await p.evaluate(() => !(W.p[0].aimPt && W.p[0].aimPt.zb) && W.p[0].inp.fire === 0));
-    await tch('touchEnd', []); await p.waitForTimeout(400); check(vp + ' release: reticle gone', await p.evaluate(() => document.getElementById('reticle').classList.contains('hidden')));
+    await tch('touchEnd', []); await p.waitForTimeout(400); check(vp + ' release: reticle gone', await p.evaluate(() => document.getElementById('reticle').classList.contains('hidden')), await p.evaluate(() => JSON.stringify({t: INP.touch, a: INP.tAim.id, aim: INP.aim.id, mv: INP.move.id, tp: Object.keys(INP.tp), b: document.body.className})));
     // fire button alone: auto-aim locks on (grey ring) for ~0.3 s before the first shot, and the shots are flagged as looser
     const fb2 = await p.evaluate(() => { const r = document.getElementById('tFire').getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; });
     await p.evaluate(() => { W.p[0].mag[0] = 12; });
