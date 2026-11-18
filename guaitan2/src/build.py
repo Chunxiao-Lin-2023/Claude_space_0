@@ -14,9 +14,11 @@ if '--only' in sys.argv:   # 只打包指定章节（逗号分隔的 id），并
     chapters = [c for c in chapters if any(os.path.basename(c)[3:-3] == o for o in only)]
 main = [p for p in parts if os.path.basename(p).startswith('99_')]
 core = [p for p in parts if p not in main]
-js = ''
+js = open(os.path.join(HERE, 'vendor', 'titlekit.js'), encoding='utf8').read() + '\n'   # shared start screen (shared/titlekit)
 for p in core + chapters + main:
     js += '\n/* ---- %s ---- */\n' % os.path.relpath(p, HERE) + open(p, encoding='utf8').read()
+assert shell.count('</style>') == 1
+shell = shell.replace('</style>', '</style>\n<style>\n' + open(os.path.join(HERE, 'vendor', 'titlekit.css'), encoding='utf8').read() + '</style>')
 assert shell.count('/*@JS*/') == 1 and shell.count('<!--IOSMETA-->') == 1 and shell.count('<!--PEERJS-->') == 1
 assert '</script' not in js
 IOS = '''<meta name="apple-mobile-web-app-capable" content="yes">

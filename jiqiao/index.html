@@ -731,7 +731,7 @@ button.card:hover{transform:translateY(-2px);border-color:var(--sc)}
     // ---------- top bar ----------
     function renderTop() {
       let h = '';
-      if (cfg.hub && cfg.hubBack !== false) h += '<button class="tk-pill" data-a="hub">' + svg('home') + '游戏厅</button>';
+      if (cfg.hub && cfg.hubBack !== false) h += '<button class="tk-pill" data-a="hub">' + svg('home') + esc(cfg.hubLabel || '游戏厅') + '</button>';
       if (cfg.topLeft) h += cfg.topLeft;
       h += '<span class="tk-sp"></span>';
       if (cfg.topRight) h += cfg.topRight;

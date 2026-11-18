@@ -512,7 +512,7 @@ h1{font-family:var(--title);font-weight:400;font-size:52px;margin:6px 0 0;text-a
     // ---------- top bar ----------
     function renderTop() {
       let h = '';
-      if (cfg.hub && cfg.hubBack !== false) h += '<button class="tk-pill" data-a="hub">' + svg('home') + '游戏厅</button>';
+      if (cfg.hub && cfg.hubBack !== false) h += '<button class="tk-pill" data-a="hub">' + svg('home') + esc(cfg.hubLabel || '游戏厅') + '</button>';
       if (cfg.topLeft) h += cfg.topLeft;
       h += '<span class="tk-sp"></span>';
       if (cfg.topRight) h += cfg.topRight;

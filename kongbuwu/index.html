@@ -446,7 +446,7 @@ textarea{width:100%;height:70px;background:#000;color:#9a9;border:1px solid var(
     // ---------- top bar ----------
     function renderTop() {
       let h = '';
-      if (cfg.hub && cfg.hubBack !== false) h += '<button class="tk-pill" data-a="hub">' + svg('home') + '游戏厅</button>';
+      if (cfg.hub && cfg.hubBack !== false) h += '<button class="tk-pill" data-a="hub">' + svg('home') + esc(cfg.hubLabel || '游戏厅') + '</button>';
       if (cfg.topLeft) h += cfg.topLeft;
       h += '<span class="tk-sp"></span>';
       if (cfg.topRight) h += cfg.topRight;
