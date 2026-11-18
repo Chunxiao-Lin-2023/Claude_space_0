@@ -80,10 +80,12 @@ miss = sorted(set(re.findall(r"\bnt\('(\w+)'", game)) - nids)
 if miss: sys.exit('剧情里调用了不存在的夜晚任务: ' + ', '.join(miss))
 game += '\n' + emb
 tpl = src('template.html')
+assert tpl.count('</style>') == 1
+tpl = tpl.replace('</style>', '</style>\n<style>\n' + src('vendor/titlekit.css') + '</style>')  # shared start screen (shared/titlekit)
 IOS = '<meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="恐怖屋"><meta name="theme-color" content="#0a0d0f">'
 def page(kind):
     pre = {'standalone': '', 'test': 'window.__dbg={};', 'artifact': 'window.__ARTIFACT__=1;'}[kind]
-    body = tpl.replace('__IOSMETA__', IOS if kind != 'artifact' else '').replace('__SCRIPTS__', '<script>\n' + pre + '\n' + game + '\n</script>')
+    body = tpl.replace('__IOSMETA__', IOS if kind != 'artifact' else '').replace('__SCRIPTS__', '<script>\n' + pre + '\n' + src('vendor/titlekit.js') + '\n' + game + '\n</script>')
     head = '<!doctype html>\n<html lang="zh-CN">\n<head>' if kind != 'artifact' else '<html lang="zh-CN">\n<head>'
     return head + body.replace('<body', '</head>\n<body', 1) + '\n</body>\n</html>\n'
 out = os.path.join(D, 'out'); os.makedirs(out, exist_ok=True)
