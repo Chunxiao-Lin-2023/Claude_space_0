@@ -7,6 +7,11 @@ Usage (from anywhere):  python3 cloudisle/src/build.py [--artifact OUT.html]
 import os, re, sys
 HERE=os.path.dirname(os.path.abspath(__file__))
 src=open(os.path.join(HERE,'game.html'),encoding='utf8').read()
+# shared start screen (shared/titlekit): kit CSS after the game's styles, kit + adapter after the game script
+rd=lambda f:open(os.path.join(HERE,f),encoding='utf8').read()
+assert src.count('</style>')==1 and src.count('</script>\n</body>')==1
+src=src.replace('</style>','</style>\n<style>\n'+rd('vendor/titlekit.css')+'</style>')
+src=src.replace('</script>\n</body>','</script>\n<script>\n'+rd('vendor/titlekit.js')+'\n'+rd('title_adapter.js')+'\n</script>\n</body>')
 IOS='''<meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">

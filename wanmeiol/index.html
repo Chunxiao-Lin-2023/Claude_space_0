@@ -982,6 +982,7 @@ body.noanim #bfeed .ln.pend{visibility:visible}
     const hasSetup = mode => fields().some(f => f.type !== 'note' && (mode !== 'host' || f.host !== false) && (!f.modes || f.modes.indexOf(mode) >= 0));
     T.nick = () => { const g = cfg.nick && cfg.nick.get ? call(cfg.nick.get) : null; return (g || ls.get('hub.nick', '') || '').slice(0, 12); };
     function setNick(v) { v = String(v || '').trim().slice(0, 12); ls.set('hub.nick', v); if (cfg.nick && cfg.nick.set) call(cfg.nick.set, v); }
+    function defaultsFor(list) { for (const f of list) if (f.key && setupVals[f.key] === undefined && f.def !== undefined) setupVals[f.key] = val(f.def); }
     function defaults() { for (const f of fields()) if (f.key && setupVals[f.key] === undefined && f.def !== undefined) setupVals[f.key] = val(f.def); }
     function saves() { if (!cfg.saves) return []; const l = call(cfg.saves.list) || []; lastSaves = l; return l; }
     function latest(l) { let b = null; for (const s of l) if (!s.empty && s.time && (!b || s.time > b.time)) b = s; if (!b) b = l.find(s => !s.empty && s.canLoad !== false) || null; return b; }
@@ -1017,8 +1018,8 @@ body.noanim #bfeed .ln.pend{visibility:visible}
       let h = '';
       if (cfg.mainTop) h += val(cfg.mainTop) || '';
       if (last) h += btn({ a: 'continue', icon: 'play', label: cfg.continueLabel || '继续', sub: [last.title, when(last.time)].filter(Boolean).join(' · '), primary: true });
-      if (cfg.solo) { const s = typeof cfg.solo === 'object' ? cfg.solo : {}; h += btn({ a: 'new', arg: 'solo', icon: last ? 'plus' : 'play', label: s.label || cfg.newLabel, sub: s.sub, primary: !last, chev: hasSetup('solo') }); }
-      if (cfg.local) { const s = typeof cfg.local === 'object' ? cfg.local : {}; h += btn({ a: 'new', arg: 'local', icon: 'duo', label: s.label || '双人同屏', sub: s.sub || '一台设备，两人一起玩', chev: hasSetup('local') }); }
+      if (cfg.solo) { const s = typeof cfg.solo === 'object' ? cfg.solo : {}; h += btn({ a: 'new', arg: 'solo', icon: last ? 'plus' : 'play', label: s.label || cfg.newLabel, sub: s.sub, primary: !last, chev: hasSetup('solo') || !!s.chev }); }
+      if (cfg.local) { const s = typeof cfg.local === 'object' ? cfg.local : {}; h += btn({ a: 'new', arg: 'local', icon: 'duo', label: s.label || '双人同屏', sub: s.sub || '一台设备，两人一起玩', chev: hasSetup('local') || !!s.chev }); }
       if (cfg.online) {
         const s = typeof cfg.online === 'object' ? cfg.online : {};
         h += btn({ a: 'go', arg: 'online', icon: 'net', label: s.label || '联机', sub: cfg.artifact ? '这里是单人版，联机请打开游戏厅网页版' : (s.sub || '创建房间 · 用房间码加入'), dis: !onlineOK(), chev: true, primary: !cfg.solo && !last });
@@ -1064,6 +1065,7 @@ body.noanim #bfeed .ln.pend{visibility:visible}
       const s = typeof cfg.online === 'object' ? cfg.online : {};
       let h = head(s.title || '联机');
       if (s.nick !== false) h += '<div class="tk-f"><label><span>昵称</span><i>对方会看到这个名字</i></label><input class="tk-in" data-a="nick" maxlength="12" placeholder="' + esc(s.nickPlaceholder || '给自己起个名字') + '" value="' + esc(T.nick()) + '"></div>';
+      if (s.fields) { defaultsFor(val(s.fields) || []); h += renderFields(val(s.fields) || [], false); }
       h += '<div class="tk-two">';
       h += '<div class="tk-box"><h3>创建房间</h3><p>' + esc(s.hostText || '你当房主，开局设置由你决定。把 4 位房间码或邀请链接发给朋友。') + '</p>' + btn({ a: 'host', label: '创建房间', primary: true, icon: 'plus', cls: 'tk-sm' }) + '</div>';
       h += '<div class="tk-box"><h3>加入房间</h3><p>' + esc(s.joinText || '输入朋友发来的房间码。') + '</p><input class="tk-in tk-code" data-a="code" maxlength="4" inputmode="text" autocapitalize="characters" autocomplete="off" spellcheck="false" placeholder="····" value="' + esc(joinCode) + '">' + btn({ a: 'join', label: '加入', icon: 'link', cls: 'tk-sm', dis: joinCode.length !== 4 }) + '</div>';
@@ -1206,7 +1208,7 @@ body.noanim #bfeed .ln.pend{visibility:visible}
       ls.set(K('recent'), { code, t: Date.now() });
       room = { host: false, code, status: '正在连接房间 ' + code + '…', players: [] };
       stack = ['main', 'online']; scr = 'room'; render();
-      call(cfg.join, { code, nick: T.nick() });
+      call(cfg.join, { code, nick: T.nick(), setup: Object.assign({}, setupVals) });
     }
 
     // ---------- events ----------
@@ -1223,7 +1225,7 @@ body.noanim #bfeed .ln.pend{visibility:visible}
         case 'new': startNew(arg); break;
         case 'go-start': doStart(); break;
         case 'extra': { const x = (val(cfg.extra) || []).find(q => q.id === arg); if (x) call(x.run, T); break; }
-        case 'f-set': setupVals[arg] = JSON.parse(b.dataset.v); persistSetup(); { const f = fields().find(x => x.key === arg); if (f && f.change) call(f.change, setupVals[arg], setupVals); } render(true); break;
+        case 'f-set': setupVals[arg] = JSON.parse(b.dataset.v); persistSetup(); { const f = fields().concat(val(cfg.online && cfg.online.fields) || []).find(x => x.key === arg); if (f && f.change) call(f.change, setupVals[arg], setupVals); } render(true); break;
         case 'f-tog': setupVals[arg] = !setupVals[arg]; persistSetup(); render(true); break;
         case 'rf-set': call(cfg.roomSet, arg, JSON.parse(b.dataset.v)); break;
         case 'rf-tog': { const f = (room && room.fields || []).find(x => x.key === arg); call(cfg.roomSet, arg, !(f && room.values && room.values[arg])); break; }
