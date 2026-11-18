@@ -5,10 +5,12 @@
 import os, re, sys
 D = os.path.dirname(os.path.abspath(__file__))
 src = lambda f: open(os.path.join(D, f), encoding='utf-8').read()
-ORDER = ['00_core.js', '10_world.js', '30_sim.js', '35_zombies.js', '50_render.js', '60_audio.js', '62_input.js', '70_net.js', '80_ui.js', '90_main.js', '99_boot.js']
+ORDER = ['vendor/titlekit.js', '00_core.js', '10_world.js', '30_sim.js', '35_zombies.js', '50_render.js', '60_audio.js', '62_input.js', '70_net.js', '80_ui.js', '85_title.js', '90_main.js', '99_boot.js']
 game = '\n'.join('/* ---- %s ---- */\n' % f + src(f) for f in ORDER)
 assert '</script' not in game
 tpl = src('template.html')
+assert tpl.count('</style>') == 1
+tpl = tpl.replace('</style>', '</style>\n<style>\n' + src('vendor/titlekit.css') + '</style>')  # shared start screen (shared/titlekit)
 assert tpl.count('__IOSMETA__') == 1 and tpl.count('__SCRIPTS__') == 1
 IOS = ('<meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes">'
        '<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="尸夜孤楼"><meta name="theme-color" content="#0b0c0f">')

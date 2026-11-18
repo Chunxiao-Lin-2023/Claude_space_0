@@ -67,10 +67,12 @@ def check_map():
 check_map()
 nchat = check_chatter()
 tpl = src('template.html')
+assert tpl.count('</style>') == 1
+tpl = tpl.replace('</style>', '</style>\n<style>\n' + src('vendor/titlekit.css') + '</style>')
 IOS = '<meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="完美世界OL"><meta name="theme-color" content="#100d0a">'
 def page(kind):
     pre = {'standalone': '', 'test': 'window.__dbg={};', 'artifact': 'window.__ARTIFACT__=1;'}[kind]
-    scripts = '<script>\n' + pre + '\n' + game + '\n</script>'
+    scripts = '<script>\n' + pre + '\n' + src('vendor/titlekit.js') + '\n' + game + '\n</script>'  # shared start screen (shared/titlekit)
     body = tpl.replace('__IOSMETA__', IOS if kind != 'artifact' else '').replace('__SCRIPTS__', scripts)
     head = '<!doctype html>\n<html lang="zh-CN">\n<head>' if kind != 'artifact' else '<html lang="zh-CN">\n<head>'
     return head + body.replace('<body>', '</head>\n<body>', 1) + '\n</html>\n'
