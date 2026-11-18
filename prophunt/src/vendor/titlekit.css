@@ -19,12 +19,12 @@
 @keyframes tk-dots{0%,20%{opacity:.2}50%{opacity:1}100%{opacity:.2}}
 
 /* reset whatever the host game styles buttons / inputs with */
-.tk-root button,.tk-root input,.tk-root textarea{all:unset;box-sizing:border-box;font-family:var(--tk-ui);color:inherit;-webkit-user-select:auto;user-select:auto}
-.tk-root button{cursor:pointer;touch-action:manipulation;-webkit-user-select:none;user-select:none}
+.tk-root :is(button,input,textarea):where(:not(.tk-native *)){all:unset;box-sizing:border-box;font-family:var(--tk-ui);color:inherit;-webkit-user-select:auto;user-select:auto}
+.tk-root button:where(:not(.tk-native *)){cursor:pointer;touch-action:manipulation;-webkit-user-select:none;user-select:none}
 
-.tk-root b,.tk-root small,.tk-root i,.tk-root em,.tk-root strong,.tk-root label,.tk-root p,.tk-root h2,.tk-root h3,.tk-root h4{color:inherit;text-shadow:none;letter-spacing:inherit}
-.tk-root b,.tk-root strong{font-weight:600}
-.tk-root small{font-size:smaller}
+.tk-root :is(b,small,i,em,strong,label,p,h2,h3,h4):where(:not(.tk-native *)){color:inherit;text-shadow:none;letter-spacing:inherit}
+.tk-root :is(b,strong):where(:not(.tk-native *)){font-weight:600}
+.tk-root small:where(:not(.tk-native *)){font-size:smaller}
 /* top bar */
 .tk-top{position:relative;z-index:2;width:100%;display:flex;align-items:center;gap:8px;padding:12px 14px 0}
 .tk-top .tk-sp{flex:1}

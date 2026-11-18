@@ -298,12 +298,12 @@ body.aiming canvas#cv{cursor:none}body.touch #reticle b{left:-34px;top:-38px}
 @keyframes tk-dots{0%,20%{opacity:.2}50%{opacity:1}100%{opacity:.2}}
 
 /* reset whatever the host game styles buttons / inputs with */
-.tk-root button,.tk-root input,.tk-root textarea{all:unset;box-sizing:border-box;font-family:var(--tk-ui);color:inherit;-webkit-user-select:auto;user-select:auto}
-.tk-root button{cursor:pointer;touch-action:manipulation;-webkit-user-select:none;user-select:none}
+.tk-root :is(button,input,textarea):where(:not(.tk-native *)){all:unset;box-sizing:border-box;font-family:var(--tk-ui);color:inherit;-webkit-user-select:auto;user-select:auto}
+.tk-root button:where(:not(.tk-native *)){cursor:pointer;touch-action:manipulation;-webkit-user-select:none;user-select:none}
 
-.tk-root b,.tk-root small,.tk-root i,.tk-root em,.tk-root strong,.tk-root label,.tk-root p,.tk-root h2,.tk-root h3,.tk-root h4{color:inherit;text-shadow:none;letter-spacing:inherit}
-.tk-root b,.tk-root strong{font-weight:600}
-.tk-root small{font-size:smaller}
+.tk-root :is(b,small,i,em,strong,label,p,h2,h3,h4):where(:not(.tk-native *)){color:inherit;text-shadow:none;letter-spacing:inherit}
+.tk-root :is(b,strong):where(:not(.tk-native *)){font-weight:600}
+.tk-root small:where(:not(.tk-native *)){font-size:smaller}
 /* top bar */
 .tk-top{position:relative;z-index:2;width:100%;display:flex;align-items:center;gap:8px;padding:12px 14px 0}
 .tk-top .tk-sp{flex:1}
@@ -4361,8 +4361,8 @@ void main() {
     if (cfg.panel) root.style.setProperty('--tk-panel', cfg.panel);
     if (cfg.z) root.style.zIndex = cfg.z;
     if (cfg.vars) for (const k in cfg.vars) root.style.setProperty(k, cfg.vars[k]);
-    root.innerHTML = '<div class="tk-shade"></div><div class="tk-top"></div><div class="tk-body"><div class="tk-logo"></div><div class="tk-card"></div></div><div class="tk-toast"></div>';
-    const $top = root.querySelector('.tk-top'), $body = root.querySelector('.tk-body'), $logo = root.querySelector('.tk-logo'), $card = root.querySelector('.tk-card'), $toast = root.querySelector('.tk-toast');
+    root.innerHTML = '<div class="tk-shade"></div><div class="tk-top"></div><div class="tk-body"><div class="tk-logo"></div><div class="tk-card"></div></div><div class="tk-toast"></div><div class="tk-park" hidden style="display:none"></div>';
+    const $top = root.querySelector('.tk-top'), $body = root.querySelector('.tk-body'), $logo = root.querySelector('.tk-logo'), $card = root.querySelector('.tk-card'), $toast = root.querySelector('.tk-toast'), $park = root.querySelector('.tk-park');
     if (cfg.logo && cfg.logo.nodeType) $logo.appendChild(cfg.logo);
     else if (cfg.logo) $logo.innerHTML = cfg.logo;
     else $logo.innerHTML = '<div class="tk-t">' + esc(cfg.title || '') + '</div>' + (cfg.sub ? '<div class="tk-s">' + esc(cfg.sub) + '</div>' : '');
@@ -4441,7 +4441,7 @@ void main() {
         const v = vals[f.key];
         if (f.type === 'note') { h += '<div class="tk-note">' + (val(f.html) || esc(val(f.text))) + '</div>'; continue; }
         if (f.type === 'group') { h += '<div class="tk-group">' + esc(f.label) + '</div>'; continue; }
-        if (f.type === 'node') { h += '<div class="tk-f">' + (f.label ? '<label>' + esc(f.label) + '</label>' : '') + '<div class="tk-node" data-node="' + esc(f.key) + '"></div></div>'; continue; }
+        if (f.type === 'node') { h += '<div class="tk-f">' + (f.label ? '<label>' + esc(f.label) + '</label>' : '') + '<div class="tk-node tk-native" data-node="' + esc(f.key) + '"></div></div>'; continue; }
         const opts = val(f.options) || [];
         const sub = opts.find(o => o.v === v);
         h += '<div class="tk-f"><label><span>' + esc(f.label || '') + '</span><i>' + esc(f.hint ? val(f.hint) : (sub && sub.hint) || '') + '</i></label>';
@@ -4488,6 +4488,7 @@ void main() {
       if (r.html) h += '<div class="tk-note">' + r.html + '</div>';
       h += '<div class="tk-status' + (r.error ? ' tk-err' : '') + '">' + esc(r.error || r.status || '') + '</div>';
       const bs = [];
+      for (const x of r.actions || []) bs.push(btn({ a: 'r-act', arg: x.id, label: x.label, cls: 'tk-sm', dis: x.dis }));
       if (r.readyBtn) bs.push(btn({ a: 'r-ready', label: r.ready ? '取消准备' : '准备', cls: 'tk-sm', primary: !r.ready }));
       if (r.startBtn) bs.push(btn({ a: 'r-start', label: r.startLabel || '开始', cls: 'tk-sm', primary: true, dis: !r.canStart }));
       if (bs.length) h += '<div class="tk-row">' + bs.join('') + '</div>';
@@ -4553,12 +4554,15 @@ void main() {
       if (!visible) return;
       const st = keepScroll ? $card.scrollTop : 0;
       const fn = SCR[scr] || SCR.main;
-      $card.className = 'tk-card' + (WIDE[scr] ? ((scr === 'setup' && cfg.setup && cfg.setup.wide) || (scr === 'custom' && T._custom && T._custom.wide) ? ' tk-xwide' : ' tk-wide') : '');
+      $card.className = 'tk-card' + (scr === 'room' && room && room.wide ? ' tk-wide' : '') + (WIDE[scr] ? ((scr === 'setup' && cfg.setup && cfg.setup.wide) || (scr === 'custom' && T._custom && T._custom.wide) ? ' tk-xwide' : ' tk-wide') : '');
       $body.classList.toggle('tk-sub', scr !== 'main');
+      // park game-owned nodes (setup 'node' fields, room.node) so they stay in the document while not shown
+      $card.querySelectorAll('[data-node] > *').forEach(n => $park.appendChild(n));
+      if (room && room.node && room.node.parentNode === $card) $park.appendChild(room.node);
       $card.innerHTML = fn();
       // re-mount game-provided nodes (setup fields of type 'node')
       $card.querySelectorAll('[data-node]').forEach(h => { const f = fields().find(x => x.key === h.dataset.node); const n = f && val(f.node); if (n && n.nodeType) { h.appendChild(n); if (f.mount) call(f.mount, n, setupMode); } });
-      if (room && scr === 'room' && room.node && room.node.nodeType) $card.insertBefore(room.node, $card.querySelector('.tk-status'));
+      if (room && scr === 'room' && room.node && room.node.nodeType) { room.node.classList.add('tk-native'); $card.insertBefore(room.node, $card.querySelector('.tk-status')); }
       $card.scrollTop = st;
       renderTop();
       if (!keepScroll) { $card.style.animation = 'none'; void $card.offsetWidth; $card.style.animation = ''; }
@@ -4624,6 +4628,7 @@ void main() {
         case 'copy-link': copyText(T.inviteLink()).then(ok => T.toast(ok ? '邀请链接已复制，发给朋友点开就能加入' : '复制失败')); break;
         case 'r-ready': call(cfg.roomReady, !(room && room.ready)); break;
         case 'r-start': call(cfg.roomStart); break;
+        case 'r-act': call(cfg.roomAction, arg); break;
         case 'r-leave': leaveRoom(); break;
         case 's-load': call(cfg.saves.load, slotArg(arg), (lastSaves || []).find(s => String(s.slot) === arg)); break;
         case 's-new': call(cfg.saves.newInSlot, slotArg(arg)); break;
@@ -4698,6 +4703,7 @@ void main() {
     };
     T.roomFail = (msg) => { room = null; stack = ['main']; scr = onlineOK() ? 'online' : 'main'; if (visible) render(); T.toast(msg || '连接失败', 3600); return T; };
     T.inviteLink = () => { const u = new URL(location.href); u.search = ''; u.hash = ''; u.searchParams.set('room', (room && room.code) || ''); return u.toString(); };
+    T.park = (n) => { if (n && n.nodeType) { n.classList.add('tk-native'); $park.appendChild(n); } return T; };
     T.custom = (o) => { T._custom = o; go('custom'); };
     T.when = when; T.esc = esc; T.svg = svg;
     T.destroy = () => { window.removeEventListener('keydown', navKeys, true); root.remove(); };
