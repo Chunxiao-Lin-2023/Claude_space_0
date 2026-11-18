@@ -74,6 +74,7 @@
     if (cfg.panel) root.style.setProperty('--tk-panel', cfg.panel);
     if (cfg.z) root.style.zIndex = cfg.z;
     if (cfg.vars) for (const k in cfg.vars) root.style.setProperty(k, cfg.vars[k]);
+    if (cfg.bg) { root.style.background = cfg.bg; root.style.backdropFilter = root.style.webkitBackdropFilter = cfg.blur ? 'blur(' + cfg.blur + 'px)' : ''; }
     root.innerHTML = '<div class="tk-shade"></div><div class="tk-top"></div><div class="tk-body"><div class="tk-logo"></div><div class="tk-card"></div></div><div class="tk-toast"></div><div class="tk-park" hidden style="display:none"></div>';
     const $top = root.querySelector('.tk-top'), $body = root.querySelector('.tk-body'), $logo = root.querySelector('.tk-logo'), $card = root.querySelector('.tk-card'), $toast = root.querySelector('.tk-toast'), $park = root.querySelector('.tk-park');
     if (cfg.logo && cfg.logo.nodeType) $logo.appendChild(cfg.logo);
@@ -134,7 +135,7 @@
         const s = typeof cfg.online === 'object' ? cfg.online : {};
         h += btn({ a: 'go', arg: 'online', icon: 'net', label: s.label || '联机', sub: cfg.artifact ? '这里是单人版，联机请打开游戏厅网页版' : (s.sub || '创建房间 · 用房间码加入'), dis: !onlineOK(), chev: true, primary: !cfg.solo && !last });
       }
-      if (cfg.saves) h += btn({ a: 'go', arg: 'saves', icon: 'save', label: cfg.saves.label || '存档', sub: (cfg.saves.slots ? cfg.saves.slots + ' 个位置 · ' : '') + (used ? '已用 ' + used : '还没有存档'), chev: true });
+      if (cfg.saves && cfg.saves.menu !== false) h += btn({ a: 'go', arg: 'saves', icon: 'save', label: cfg.saves.label || '存档', sub: (cfg.saves.slots ? cfg.saves.slots + ' 个位置 · ' : '') + (used ? '已用 ' + used : '还没有存档'), chev: true });
       if (cfg.records) h += btn({ a: 'go', arg: 'records', icon: 'trophy', label: cfg.recordsLabel || '记录', sub: val(cfg.recordsSub) || '', chev: true });
       if (cfg.extra) for (const x of val(cfg.extra) || []) h += btn({ a: 'extra', arg: x.id, icon: x.icon || 'doc', label: x.label, sub: x.sub, chev: x.chev !== false });
       const foot = val(cfg.foot);
@@ -147,7 +148,7 @@
       const m = setupMode, host = m === 'host', s = cfg.setup || {};
       let h = head(s.title || (host ? '房间设置' : '开局设置'));
       h += renderFields(fields().filter(f => (!f.modes || f.modes.indexOf(m) >= 0) && (!host || f.host !== false)), false);
-      const lbl = host ? '创建房间' : (m === 'local' ? (s.localStart || '开始') : (s.start || '开始'));
+      const lbl = host ? (val(s.hostStart) || '创建房间') : (m === 'local' ? (s.localStart || '开始') : (s.start || '开始'));
       h += '<div class="tk-sep"></div>' + btn({ a: 'go-start', label: lbl, primary: true, icon: host ? 'net' : 'play' });
       return h;
     };
@@ -388,6 +389,7 @@
       if (!visible) return;
       const tag = (e.target && e.target.tagName) || '';
       const typing = tag === 'INPUT' || tag === 'TEXTAREA';
+      if (e.key === 'Escape' && scr === 'main' && cfg.escHub && !typing) { e.preventDefault(); e.stopPropagation(); if (cfg.onHub) call(cfg.onHub); return; }
       if (e.key === 'Escape') { if (scr !== 'main') { e.preventDefault(); e.stopPropagation(); if (typing) e.target.blur(); back(); } return; }
       if (typing) return;
       const up = e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W', dn = e.key === 'ArrowDown' || e.key === 's' || e.key === 'S';
@@ -410,6 +412,7 @@
     Object.defineProperty(T, 'setup', { get: () => Object.assign({}, setupVals) });
     T.setSetup = (o) => { Object.assign(setupVals, o); persistSetup(); if (visible) render(true); };
     T.go = (s) => go(s);
+    T.startMode = (m) => { if (!visible) T.show(); startNew(m); return T; };
     T.home = () => { room = null; if (invited) { invited = false; stack = ['main']; scr = 'online'; } else { stack = []; scr = 'main'; } if (visible) render(); return T; };
     T.refresh = () => { if (visible) render(true); return T; };
     T.toast = (msg, ms) => { $toast.textContent = msg; $toast.classList.add('tk-show'); clearTimeout(toastT); toastT = setTimeout(() => $toast.classList.remove('tk-show'), ms || 2600); };

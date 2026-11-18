@@ -28,6 +28,7 @@ if A.only:
 js = []
 for f in CORE:
     p = os.path.join(R, 'core', f); check(p); js.append('/* ---- core/%s ---- */\n' % f + open(p, encoding='utf-8').read())
+js.append('/* ---- vendor/titlekit.js (shared start screen, shared/titlekit) ---- */\n' + open(os.path.join(R, 'vendor', 'titlekit.js'), encoding='utf-8').read())
 # code hash per game (its file + all shared _ helpers): saved "继续上局" games are dropped when the game's code changed
 shared = ''.join(open(f, encoding='utf-8').read() for f in files if os.path.basename(f).startswith('_'))
 for p in files:
@@ -39,7 +40,7 @@ p = os.path.join(R, 'core', '99_boot.js'); check(p); js.append(open(p, encoding=
 JS = '\n'.join(js)
 assert '</script' not in JS.lower(), 'a source file contains </script'
 shell = open(os.path.join(R, 'core', 'shell.html'), encoding='utf-8').read()
-css = open(os.path.join(R, 'core', 'style.css'), encoding='utf-8').read()
+css = open(os.path.join(R, 'core', 'style.css'), encoding='utf-8').read() + '\n' + open(os.path.join(R, 'vendor', 'titlekit.css'), encoding='utf-8').read()
 page = rep(rep(shell, '/*__CSS__*/', css), '/*__JS__*/', JS)
 IOS = ('<meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes">'
        '<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="百戏茶馆"><meta name="theme-color" content="#2e1d10">\n')

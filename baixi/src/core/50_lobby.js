@@ -89,100 +89,119 @@ BX.lobby = (function () {
   }
 
   /* ---------- game sheet ---------- */
+  /* ---------- game start screen: shared TitleKit (shared/titlekit), the same one every game in the hub uses ----------
+     main menu 继续上局 / 人机对战 / 同屏对战 / 联机对战 / 记录, second level 开局设置 (人数、电脑难度、先后手、玩法选项、辅助模式),
+     联机 (创建 / 加入 the tea-house room) and 房间; top bar ‹ 茶馆 · 玩法 · 设置 · 声音. */
+  let curKit = null, kitDef = null;
+  const KM = {solo: 'ai', local: 'local', host: 'online'};
+  function kitClose() { if (curKit) { const k = curKit; curKit = null; kitDef = null; k.destroy(); } }
+  const kitSettings = () => [
+    {group: '声音', key: 'snd', label: '声音', type: 'toggle', get: () => !BX.sfx.muted, set: v => BX.sfx.setMuted(!v)},
+    {group: '操作', key: 'speed', label: '动画速度', type: 'seg', options: [{v: 1, label: '正常'}, {v: 2, label: '快速'}], get: () => BX.pref('speed'), set: v => BX.setPref('speed', v)},
+    {key: 'confirm', label: '落子确认', type: 'seg', options: [{v: 'auto', label: '触屏点两下'}, {v: 'on', label: '总是'}, {v: 'off', label: '点一下'}], get: () => BX.pref('confirm'), set: v => BX.setPref('confirm', v)},
+    {key: 'hints', label: '走法提示', sub: '能走的位置、上一步', type: 'toggle', get: () => !!BX.pref('hints'), set: v => BX.setPref('hints', v)},
+    {key: 'vibrate', label: '震动反馈', type: 'toggle', get: () => !!BX.pref('vibrate'), set: v => BX.setPref('vibrate', v)},
+    {key: 'assist', label: '辅助模式', sub: '局面提示、概率、更宽松的判定等；默认关（经典）', type: 'toggle', get: () => !!BX.pref('assist'), set: v => BX.setPref('assist', v)}
+  ];
+  const kitLogo = def => { const d = h('div', {style: {display: 'flex', flexDirection: 'column', alignItems: 'center'}}); const ic = iconCanvas(def, 132, 99); ic.style.borderRadius = '14px'; ic.style.boxShadow = '0 8px 24px rgba(0,0,0,.35)'; ic.style.marginBottom = '10px'; d.append(ic, h('div', {class: 'tk-t', text: def.title}), h('div', {class: 'tk-s', text: def.sub || ''})); return d; };
+  const kitCommon = {escHub: true, theme: 'light', accent: '#b8322a', accentInk: '#fff6ee', font: '"Noto Serif SC","Songti SC",serif', bg: 'rgba(246,236,218,.86)', blur: 6, panel: 'rgba(255,251,243,.94)', z: 60, hub: true, hubLabel: '茶馆',
+    sound: {get: () => !!BX.sfx.muted, set: v => BX.sfx.setMuted(v)}, settings: kitSettings, sfx: () => BX.sfx.play('tap')};
   function openSheet(def) {
-    BX.closeModals();
-    const saved = BX.store.get('sel.' + def.id, {});
-    const sel = {mode: saved.mode && def.modes.includes(saved.mode) ? saved.mode : def.modes[0], n: saved.n || def.defSeats || def.seats[0], humans: saved.humans || 2, first: saved.first || 'me', level: saved.level || 2, opts: {}};
-    if (BX.net.up && def.modes.includes('online')) sel.mode = 'online';
-    for (const o of def.options || []) { const v = saved.opts && saved.opts[o.key]; sel.opts[o.key] = o.choices.some(c => c[0] === v) ? v : o.def; }
-    sel.n = BX.clamp(sel.n, def.seats[0], def.seats[1]);
-    let ov;
-    const close = () => ov.remove();
-    const body = h('div', {class: 'sheet-b'}), foot = h('div', {class: 'sheet-f'});
-    const seg = (label, items, cur, set, id) => h('div', {class: 'fld', id}, h('label', {text: label}), h('div', {class: 'seg'}, items.map(([v, t, dis]) => h('button', {class: v === cur ? 'on' : '', text: t, disabled: !!dis, 'data-v': String(v), on: {click: () => { set(v); draw(); }}}))));
-    function draw() {
-      body.innerHTML = ''; foot.innerHTML = '';
-      const net = BX.net;
-      if (def.kind !== 'solo') {
-        body.append(seg('对局方式', def.modes.map(m => [m, BX.MODE_NAMES[m]]), sel.mode, v => sel.mode = v, 'fMode'));
-        if (def.seats[1] > def.seats[0]) body.append(seg('人数', BX.range(def.seats[1] - def.seats[0] + 1).map(i => [def.seats[0] + i, (def.seats[0] + i) + ' 人']), sel.n, v => sel.n = v, 'fN'));
-        const n = BX.clamp(sel.n, def.seats[0], def.seats[1]);
-        if (sel.mode === 'local' && n > 2) body.append(seg('本机玩家', BX.range(n - 1).map(i => [i + 2, (i + 2) + ' 人' + (i + 2 < n ? '（其余电脑）' : '')]), BX.clamp(sel.humans, 2, n), v => sel.humans = v, 'fHum'));
-        const hasAI = sel.mode === 'ai' || (sel.mode === 'local' && BX.clamp(sel.humans, 2, n) < n) || (sel.mode === 'online' && n > 2);
-        if (hasAI && def.aiLevels !== false) body.append(seg('电脑难度', [[1, '初级'], [2, '中级'], [3, '高级']], sel.level, v => sel.level = v, 'fLv'));
-        if (sel.mode !== 'local' && !def.noFirst) body.append(seg(def.firstLabel || (n > 2 ? '座位' : '先后手'), n > 2 ? [['me', '我坐首位'], ['rand', '随机']] : [['me', '我先'], ['other', '对方先'], ['rand', '随机']], sel.first, v => sel.first = v, 'fFirst'));
-        if (sel.mode === 'local' && !def.noFirst && def.seats[1] > 2) body.append(seg('座位', [['me', '按顺序'], ['rand', '随机']], sel.first === 'rand' ? 'rand' : 'me', v => sel.first = v, 'fFirst'));
+    if (def.kind === 'solo' && def.resume === false && def.hint === false) { kitClose(); BX.closeModals(); BX.launch(def, {mode: def.modes[0], opts: {}, seed: BX.newSeed(), seats: BX.makeSeats(def, {mode: def.modes[0]}), sel: {mode: def.modes[0]}}); return; }   // embedded games bring their own start screen
+    BX.closeModals(); kitClose();
+    const saved = BX.store.get('sel.' + def.id, {}), net = BX.net, solo = def.kind === 'solo';
+    const has = m => def.modes.includes(m);
+    let kit;
+    const cur = () => (kit ? kit.setup : {});
+    const nOf = v => BX.clamp(+v.n || def.defSeats || def.seats[0], def.seats[0], def.seats[1]);
+    const fields = () => {
+      const F = [];
+      if (!solo) {
+        if (def.seats[1] > def.seats[0]) F.push({key: 'n', label: '人数', type: 'seg', def: BX.clamp(saved.n || def.defSeats || def.seats[0], def.seats[0], def.seats[1]), options: BX.range(def.seats[1] - def.seats[0] + 1).map(i => ({v: def.seats[0] + i, label: (def.seats[0] + i) + ' 人'}))});
+        F.push({key: 'humans', label: '本机玩家', type: 'seg', modes: ['local'], def: saved.humans || 2, when: (m, v) => nOf(v) > 2, options: () => BX.range(nOf(cur()) - 1).map(i => ({v: i + 2, label: (i + 2) + ' 人' + (i + 2 < nOf(cur()) ? '（其余电脑）' : '')}))});
+        if (def.aiLevels !== false) F.push({key: 'level', label: '电脑难度', type: 'seg', def: saved.level || 2, options: [{v: 1, label: '初级'}, {v: 2, label: '中级'}, {v: 3, label: '高级'}],
+          when: (m, v) => m === 'solo' || (m === 'local' && BX.clamp(+v.humans || 2, 2, nOf(v)) < nOf(v)) || (m === 'host' && nOf(v) > 2)});
+        if (!def.noFirst) F.push({key: 'first', label: def.firstLabel || '先后手', type: 'seg', def: saved.first || 'me', modes: ['solo', 'host'],
+          options: () => nOf(cur()) > 2 ? [{v: 'me', label: '我坐首位'}, {v: 'rand', label: '随机'}] : [{v: 'me', label: '我先'}, {v: 'other', label: '对方先'}, {v: 'rand', label: '随机'}]});
+        if (!def.noFirst && def.seats[1] > 2) F.push({key: 'lfirst', label: '座位', type: 'seg', def: saved.first === 'rand' ? 'rand' : 'me', modes: ['local'], options: [{v: 'me', label: '按顺序'}, {v: 'rand', label: '随机'}]});
       }
-      for (const o of def.options || []) {
-        if (o.modes && !o.modes.includes(sel.mode)) continue;
-        body.append(seg(o.label, o.choices.map(c => [c[0], c[1]]), sel.opts[o.key], v => sel.opts[o.key] = v, 'fo-' + o.key));
-      }
-      if (sel.mode === 'online') {
-        if (!net.up) body.append(h('div', {class: 'note warn', html: '还没有联机房间。点下面的「联机房间」创建房间，或输入对方的房间码加入。'}));
-        else if (net.isGuest) body.append(h('div', {class: 'note', html: `联机对局由房主 <b>${BX.esc(net.other.name)}</b> 开局。可以点「提议」请房主开这个游戏。`}));
-        else body.append(h('div', {class: 'note', html: `与 <b>${BX.esc(net.other.name)}</b> 联机对战。`}));
-      }
-      if (sel.mode === 'local' && def.hidden) body.append(h('div', {class: 'note', html: '同屏对战时有隐藏信息，轮到谁时会提示把设备交给谁。'}));
-      if (sel.mode !== 'online' || BX.net.isHost) body.append(seg('辅助模式（局面提示、概率、更宽松的判定等）', [[false, '关·经典'], [true, '开']], !!BX.pref('assist'), v => BX.setPref('assist', v), 'fAssist'));
-      body.append(h('details', {class: 'rd'}, h('summary', {text: '玩法规则'}), h('div', {class: 'rules', html: def.rules || '暂无说明'})));
-      const st = BX.store.get('stats', {})[def.id];
-      if (st && st.n) body.append(h('div', {class: 'stats', text: def.kind === 'solo' ? `已玩 ${st.n} 局` : `已玩 ${st.n} 局 · 胜 ${st.w} · 负 ${st.l}` + (st.d ? ` · 和 ${st.d}` : '')}));
-      // footer buttons
-      const res = BX.getResume(def.id);
-      if (sel.mode === 'online') {
-        if (!net.up) foot.append(h('button', {class: 'bx-btn', text: '联机房间', on: {click: () => { roomModal(); }}}));
-        else if (net.isGuest) foot.append(h('button', {class: 'bx-btn jade', id: 'bSuggest', text: '提议房主开这局', on: {click: () => { net.send({t: 'suggest', id: def.id}); BX.toast('已告诉房主'); }}}));
-        else foot.append(h('button', {class: 'bx-btn red', id: 'bStart', text: '开局', on: {click: () => { remember(); close(); BX.startOnline(def, sel.opts, {n: sel.n, first: sel.first, level: sel.level}); }}}));
-      } else {
-        if (res && res.log && res.log.length && res.mode !== 'online') foot.append(h('button', {class: 'bx-btn jade', id: 'bResume', text: '继续上局', on: {click: () => { close(); BX.launch(def, {mode: res.mode, opts: res.opts, seed: res.seed, seats: res.seats, sel: res.sel, log: res.log, assist: !!res.assist}); }}}));
-        foot.append(h('button', {class: 'bx-btn red', id: 'bStart', text: res && res.log && res.log.length ? '新开一局' : BX.MODE_NAMES[sel.mode] === '开始游戏' ? '开始游戏' : '开始', on: {click: () => {
-          remember(); close();
-          const s2 = {mode: sel.mode, n: sel.n, humans: sel.humans, first: sel.first, level: sel.level};
-          BX.launch(def, {mode: sel.mode, opts: Object.assign({}, sel.opts), seed: BX.newSeed(), seats: BX.makeSeats(def, s2), sel: s2});
-        }}}));
-      }
-    }
-    function remember() { BX.store.set('sel.' + def.id, sel); }
-    const ic = iconCanvas(def, 96, 72);
-    const sheet = h('div', {class: 'sheet', id: 'gSheet'},
-      h('div', {class: 'sheet-h'}, ic, h('div', {}, h('h3', {text: def.title}), h('p', {text: def.desc || def.sub || ''}))),
-      h('button', {class: 'sheet-x', text: '✕', on: {click: () => close()}}), body, foot);
-    ov = h('div', {class: 'ov', on: {click: e => { if (e.target === ov) close(); }}}, sheet);
-    ov._close = close; BX._modals.add(ov); const rm = ov.remove.bind(ov); ov.remove = () => { BX._modals.delete(ov); rm(); };
-    draw(); $id('layer').append(ov);
-    ov._redraw = draw; curSheet = ov;
+      for (const o of def.options || []) F.push({key: 'o_' + o.key, label: o.label, type: 'seg', def: o.choices.some(c => c[0] === (saved.opts || {})[o.key]) ? saved.opts[o.key] : o.def,
+        modes: o.modes ? Object.keys(KM).filter(k => o.modes.includes(KM[k])) : undefined, options: o.choices.map(c => ({v: c[0], label: c[1]}))});
+      F.push({key: 'assist', label: '辅助模式', type: 'seg', def: !!BX.pref('assist'), options: [{v: false, label: '关 · 经典'}, {v: true, label: '开', sub: '局面提示、概率等'}]});
+      if (has('local') && def.hidden) F.push({type: 'note', modes: ['local'], text: '同屏对战时有隐藏信息，轮到谁时会提示把设备交给谁。'});
+      return F;
+    };
+    const selOf = (mode, s) => { const n = solo ? def.seats[0] : nOf(s); const sel = {mode, n, humans: BX.clamp(+s.humans || 2, 2, n), first: mode === 'local' ? (s.lfirst || 'me') : (s.first || 'me'), level: +s.level || 2, opts: {}};
+      for (const o of def.options || []) sel.opts[o.key] = s['o_' + o.key] !== undefined ? s['o_' + o.key] : o.def; return sel; };
+    const remember = sel => BX.store.set('sel.' + def.id, sel);
+    const launch = (mode, s) => { const sel = selOf(mode, s); remember(sel); BX.setPref('assist', !!s.assist); kitClose();
+      const s2 = {mode, n: sel.n, humans: sel.humans, first: sel.first, level: sel.level};
+      BX.launch(def, {mode, opts: Object.assign({}, sel.opts), seed: BX.newSeed(), seats: BX.makeSeats(def, s2), sel: s2}); };
+    let pending = null;
+    const startOnline = s => { const sel = selOf('online', s); remember(sel); BX.setPref('assist', !!s.assist); kitClose(); BX.startOnline(def, sel.opts, {n: sel.n, first: sel.first, level: sel.level}); };
+    const st = BX.store.get('stats', {})[def.id];
+    const netUp = net.up, online = has('online') && !BX.ARTIFACT;
+    const extra = [];
+    if (online && netUp) extra.push(net.isGuest ? {id: 'sug', icon: 'net', label: '联机对战', sub: '与 ' + net.other.name + ' 同桌 · 由房主开局，点这里提议', chev: false, run: () => { net.send({t: 'suggest', id: def.id}); kit.toast('已告诉房主，等他开这一局'); }}
+      : {id: 'on', icon: 'net', label: '联机对战', sub: '与 ' + net.other.name + ' 同桌', run: () => kit.startMode('host')});
+    kit = curKit = TitleKit.create(Object.assign({}, kitCommon, {
+      id: 'baixi-' + def.id, title: def.title, logo: kitLogo(def), onHub: () => kitClose(),
+      solo: solo ? {label: '开始游戏', sub: def.desc ? '' : ''} : has('ai') ? {label: BX.MODE_NAMES.ai || '人机对战', sub: '和电脑下' + (def.aiLevels !== false ? ' · 三档难度' : '')} : false,
+      local: has('local') ? {label: BX.MODE_NAMES.local || '同屏对战', sub: '一台设备，轮流操作'} : false,
+      online: online && !netUp ? {label: BX.MODE_NAMES.online || '联机对战', sub: '创建房间 · 用房间码加入', hostText: '你当房主，开局设置由你决定。房间建好后，在这里点「开局」。', joinText: '输入对方的房间码。进了房间由房主开局，你可以提议玩哪个。'} : false,
+      extra: () => extra,
+      setup: {fields, start: '开始', hostStart: () => (net.up && net.isHost ? '开局' : '创建房间')},
+      saves: {label: '继续上局', slots: 1, continue: true, menu: false,
+        list: () => { const r = BX.getResume(def.id); return r && r.log && r.log.length && r.mode !== 'online' ? [{slot: 1, title: (BX.MODE_NAMES[r.mode] || '') + ' · 已走 ' + r.log.length + ' 步', detail: r.assist ? '辅助模式' : '经典', time: r.at || r.t || 0}] : []; },
+        load: () => { const r = BX.getResume(def.id); if (!r) return; kitClose(); BX.launch(def, {mode: r.mode, opts: r.opts, seed: r.seed, seats: r.seats, sel: r.sel, log: r.log, assist: !!r.assist}); }},
+      nick: {get: () => BX.myName(), set: v => { if (v) { BX.store.set('name', v.slice(0, 10)); BX.net.sendName && BX.net.sendName(); } }},
+      records: st && st.n ? () => solo ? [['已玩', st.n + ' 局']] : [['已玩', st.n + ' 局'], ['胜', st.w || 0], ['负', st.l || 0]].concat(st.d ? [['和', st.d]] : []) : null,
+      recordsSub: () => st && st.n ? (solo ? '已玩 ' + st.n + ' 局' : '已玩 ' + st.n + ' 局 · 胜 ' + (st.w || 0) + ' · 负 ' + (st.l || 0)) : '',
+      howto: () => (def.howto && def.howto.length ? '<h4>操作</h4><ul>' + def.howto.map(x => '<li>' + BX.esc(x) + '</li>').join('') + '</ul>' : '') + '<h4>规则</h4>' + (def.rules || '暂无说明'),
+      foot: def.desc || '',
+      start: ({mode, setup}) => launch(solo ? def.modes[0] : KM[mode], setup),
+      host: ({setup}) => { if (net.up && net.isHost) { startOnline(setup); return; } pending = setup; net.host(); kitRoom(); },
+      join: ({code}) => { net.join(code); kitRoom(); },
+      leaveRoom: () => net.leave(),
+      roomAction: a => { if (a === 'go' && pending) startOnline(pending); else if (a === 'go') kit.startMode('host'); else if (a === 'sug') { net.send({t: 'suggest', id: def.id}); kit.toast('已告诉房主'); } }
+    }));
+    kitDef = def;
+    kit._room = () => {
+      if (!net.role) { if (kit.screen === 'room') kit.roomFail(net.status || '已离开房间'); return; }
+      const host = net.role === 'host', other = net.other;
+      kit.room({host, code: net.code || '', status: net.status || (other ? (host ? '对方已进茶馆，可以开局了' : '等房主开局') : host ? '把房间码发给对方' : ''),
+        players: [{name: BX.myName(), sub: host ? '房主' : '客人', me: true}, other ? {name: other.name, sub: host ? '客人' : '房主', color: '#2f7d6b'} : {empty: true, name: '等对方加入'}],
+        actions: other ? (host ? [{id: 'go', label: '开局 · ' + def.title}] : [{id: 'sug', label: '提议房主开这局'}]) : []});
+    };
+    function kitRoom() { if (kit === curKit) kit._room(); }
+    curSheet = {isConnected: true, _redraw: () => {}};
   }
   let curSheet = null;
+  document.addEventListener('bx-net', () => { if (curKit && curKit.visible && curKit.screen === 'room' && curKit._room) curKit._room(); });
+  const closeModals0 = BX.closeModals; BX.closeModals = function () { kitClose(); return closeModals0.apply(this, arguments); };
 
-  /* ---------- room ---------- */
+  /* ---------- tea-house room (⇄ 联机 in the lobby header): the same TitleKit 联机 / 房间 screens ---------- */
   function roomModal() {
-    BX.closeModals();
-    const box = h('div', {class: 'mbox'}); let ov;
-    const close = () => { ov.remove(); document.removeEventListener('bx-net', draw); };
-    function draw() {
-      const net = BX.net; box.innerHTML = '';
-      box.append(h('h3', {text: '联机房间'}));
-      if (net.other) {
-        box.append(h('div', {class: 'msg', html: `已与 <b>${BX.esc(net.other.name)}</b> 同桌${net.role === 'host' ? '（你是房主）' : ''}<br>${net.role === 'host' ? '打开任意游戏，选「联机对战」开局。' : '等房主开局；也可以在游戏里点「提议」。'}`}),
-          h('div', {class: 'btns'}, h('button', {class: 'bx-btn', text: '去选游戏', on: {click: close}}), h('button', {class: 'bx-btn ghost', text: '离开房间', on: {click: () => net.leave()}})));
-      } else if (net.role === 'host') {
-        box.append(h('div', {class: 'msg', text: '把房间码告诉对方：'}), h('div', {class: 'code', id: 'roomCode', text: net.code || '····'}), h('div', {class: 'msg', style: {fontSize: '13px'}, text: net.status}),
-          h('div', {class: 'btns'}, h('button', {class: 'bx-btn ghost', text: '取消', on: {click: () => net.leave()}})));
-      } else {
-        const name = h('input', {class: 'txt', id: 'roomName', value: BX.myName(), maxLength: 10, on: {change: e => { BX.store.set('name', e.target.value.trim().slice(0, 10)); }}});
-        const code = h('input', {class: 'txt', id: 'roomJoin', placeholder: '4 位房间码', maxLength: 4, style: {textTransform: 'uppercase', letterSpacing: '6px', textAlign: 'center', fontWeight: 700}});
-        box.append(h('div', {style: {textAlign: 'left'}}, h('div', {class: 'fld'}, h('label', {text: '你的名字'}), name)),
-          h('div', {class: 'btns'}, h('button', {class: 'bx-btn red', id: 'bHost', text: '创建房间', on: {click: () => { BX.store.set('name', name.value.trim().slice(0, 10)); net.host(); }}})),
-          h('div', {class: 'msg', style: {margin: '14px 0 6px'}, text: '或加入别人的房间'}), code,
-          h('div', {class: 'btns'}, h('button', {class: 'bx-btn jade', id: 'bJoin', text: '加入', on: {click: () => { BX.store.set('name', name.value.trim().slice(0, 10)); net.join(code.value); }}})),
-          net.status ? h('div', {class: 'msg', style: {marginTop: '10px', fontSize: '13px', color: 'var(--red)'}, text: net.status}) : null);
-      }
-    }
-    document.addEventListener('bx-net', draw); draw();
-    const sheet = h('div', {class: 'sheet', style: {width: 'min(400px,100%)'}}, box, h('button', {class: 'sheet-x', text: '✕', on: {click: close}}));
-    ov = h('div', {class: 'ov', id: 'roomOv', on: {click: e => { if (e.target === ov) close(); }}}, sheet);
-    ov._close = close; BX._modals.add(ov); const rm = ov.remove.bind(ov); ov.remove = () => { BX._modals.delete(ov); rm(); };
-    $id('layer').append(ov);
+    BX.closeModals(); kitClose();
+    const net = BX.net; let kit;
+    kit = curKit = TitleKit.create(Object.assign({}, kitCommon, {
+      id: 'baixi-room', title: '联机房间', hidden: true, onHub: () => kitClose(),
+      logo: '<div class="tk-t">联机房间</div><div class="tk-s">同一个房间里可以连着玩所有游戏</div>',
+      solo: false, local: false,
+      online: {label: '联机', hostText: '你当房主：建好房间后，打开任意游戏，选「联机对战」开局。', joinText: '输入对方的房间码。进房间后等房主开局，也可以在游戏里提议。'},
+      nick: {get: () => BX.myName(), set: v => { if (v) { BX.store.set('name', v.slice(0, 10)); BX.net.sendName && BX.net.sendName(); } }},
+      host: () => { net.host(); kit._room(); }, join: ({code}) => { net.join(code); kit._room(); },
+      leaveRoom: () => net.leave(), roomAction: a => { if (a === 'pick') kitClose(); },
+      onScreen: s => { if (s === 'main') kitClose(); }
+    }));
+    kit._room = () => {
+      if (!net.role) { if (kit.screen === 'room') kit.roomFail(net.status || '已离开房间'); return; }
+      const host = net.role === 'host', other = net.other;
+      kit.room({host, code: net.code || '', status: net.status || (other ? (host ? '打开任意游戏，选「联机对战」开局' : '等房主开局；也可以在游戏里点「提议」') : host ? '把房间码发给对方' : ''),
+        players: [{name: BX.myName(), sub: host ? '房主' : '客人', me: true}, other ? {name: other.name, sub: host ? '客人' : '房主', color: '#2f7d6b'} : {empty: true, name: '等对方加入'}],
+        actions: other ? [{id: 'pick', label: '去选游戏'}] : []});
+    };
+    kit.show(net.role ? 'room' : 'online'); if (net.role) kit._room();
   }
   document.addEventListener('bx-net', () => {
     if (!$id('lobby').hidden) { const L = $id('lobby'); const old = L.querySelector('.lb-head'); if (old) { render(); } }

@@ -14,5 +14,6 @@ BX.data = BX.data || {};
   };
   BX.lobby.render();
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { if (!$id('lobby').hidden) BX.lobby.render(); });
+  if ((QS.get('room') || QS.get('join')) && !BX.ARTIFACT) BX.lobby.roomModal();   // invite link from a TitleKit room
   const g = QS.get('game'); if (g && BX.games[g]) BX.quick(g, {mode: QS.get('mode') || undefined, level: +QS.get('level') || 2});
 })();
