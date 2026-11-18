@@ -349,6 +349,21 @@ button.card:hover{transform:translateY(-2px);border-color:var(--sc)}
 .netcode{font:700 24px/1.2 var(--font-num);letter-spacing:.24em;color:var(--brass-hi);padding:2px 6px 2px 12px;border:1px dashed var(--brass);border-radius:6px;user-select:all;-webkit-user-select:all}
 .netin{-webkit-user-select:text;user-select:text;font:700 16px var(--font-num);letter-spacing:.2em;text-transform:uppercase;width:116px;padding:6px 10px;border-radius:6px;border:1px solid var(--rule);background:rgba(0,0,0,.3);color:var(--fg)}
 .gobar{display:none}
+.skillb{--cd:0;position:absolute;right:max(16px,env(safe-area-inset-right,0px));bottom:calc(12px + env(safe-area-inset-bottom,0px));width:68px;height:68px;border-radius:50%;border:2px solid var(--brass,#c9a24a);background:radial-gradient(circle at 50% 35%,#2b3a3f,#0d1417 78%);color:#f2cb7a;display:grid;place-items:center;overflow:hidden;cursor:pointer;touch-action:manipulation;padding:0;pointer-events:auto;box-shadow:0 4px 14px rgba(0,0,0,.45)}
+.skillb .g{font:900 26px/1 "Noto Serif SC",serif;margin-top:-8px}
+.skillb .n{position:absolute;bottom:9px;font-size:10px;color:#cfc6b0;letter-spacing:.05em;white-space:nowrap}
+.skillb i{position:absolute;inset:0;background:conic-gradient(rgba(6,10,12,.78) calc(var(--cd)*1turn),transparent 0);pointer-events:none}
+.skillb kbd{position:absolute;top:-2px;right:-4px;font:600 9px/1 sans-serif;padding:2px 4px;border-radius:4px;background:#0d1417;border:1px solid #3a4a50;color:#8f9a9a}
+.skillb.ready{border-color:#f2cb7a;box-shadow:0 0 0 3px rgba(242,203,122,.25),0 0 18px rgba(242,203,122,.45)}
+.skillb.live{animation:skp .5s ease-in-out infinite alternate}@keyframes skp{to{box-shadow:0 0 0 5px rgba(242,203,122,.4),0 0 26px rgba(242,203,122,.7)}}
+@media (pointer:coarse){.skillb kbd{display:none}.skillb{width:72px;height:72px}}
+@media (pointer:coarse) and (max-width:500px){.skillb{width:60px;height:60px;bottom:calc(74px + env(safe-area-inset-bottom,0px))}.skillb .g{font-size:22px}}
+@media (pointer:coarse) and (max-height:500px){.skillb{width:58px;height:58px}}
+.traits li.sk{color:#f2cb7a}.traits li.sk b{color:#ffe4a3}
+.clsb{display:inline-block;font-size:11px;padding:0 6px;margin-right:6px;border-radius:4px;border:1px solid var(--c);color:var(--c);vertical-align:1px}
+.sets{display:grid;gap:6px}.set{display:grid;grid-template-columns:28px 1fr;gap:8px;align-items:start;opacity:.62}.set.on{opacity:1}
+.set>b{width:28px;height:28px;border-radius:6px;display:grid;place-items:center;border:1px solid var(--c);color:var(--c);font:800 15px/1 "Noto Serif SC",serif}
+.set .sn{font-size:13px}.set .sn em{font-style:normal;color:var(--c);font-weight:700}.set small{display:flex;flex-direction:column;gap:1px}.set small i{font-style:normal;font-size:11px;color:#7d8789}.set small i.on{color:#e8e1cf}
 .helpln{color:#7fe0cf}
 .netin:focus{outline:2px solid var(--brass-hi);outline-offset:1px}
 .netst{font-size:13px;color:var(--muted)}.netst b{color:var(--fg);font-weight:500}
@@ -608,6 +623,7 @@ button.card:hover{transform:translateY(-2px);border-color:var(--sc)}
       <div class="hud-r"><button class="fsbtn" id="fsBtn" aria-label="全屏" hidden><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 8V3h5M12 3h5v5M17 12v5h-5M8 17H3v-5"/></svg></button><button class="fsbtn" id="sndBtn" aria-label="音效开关"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h3l4-3.5v11L6 12H3z" fill="currentColor"/><path class="w1" d="M13 7.5a3.5 3.5 0 0 1 0 5M15.2 5.3a6.6 6.6 0 0 1 0 9.4"/><path class="x" d="M13.5 7.5l4 5M17.5 7.5l-4 5"/></svg></button><button class="pausebtn" id="pauseBtn" aria-label="暂停"><span></span><span></span></button></div>
     </div>
     <div class="tray" id="tray"></div>
+    <button class="skillb" id="skillBtn" aria-label="主动技能"><span class="g" id="skG">技</span><span class="n" id="skN"></span><i></i><kbd>空格</kbd></button>
   </div>
   <div id="bossbar" hidden><div class="name" id="bossN"></div><div class="hp"><i id="bossF"></i><span id="bossT"></span></div></div>
   <div id="banner"></div>
@@ -1088,31 +1104,46 @@ const WORLD={w:1600,h:1100};
 
 /* ================= data ================= */
 const WEAPONS={
- hammer:{name:'锻锤',kind:'arc',dmg:17,cd:1.1,range:88,arc:1.7,melee:1,desc:'近身横扫，扇形范围伤害',gold:'金阶：每次挥击额外释放震荡冲击波'},
- spear:{name:'长枪',kind:'thrust',dmg:12,cd:0.9,range:135,melee:1,desc:'直线突刺，贯穿一整排敌人',gold:'金阶：突刺距离翻倍'},
- blades:{name:'双刃',kind:'arc',dmg:8,cd:0.42,range:80,arc:2.2,melee:1,desc:'高速近身连斩',gold:'金阶：每次斩击追加一刀'},
- xbow:{name:'连弩',kind:'proj',dmg:8,cd:0.6,range:340,speed:9,st:'arrow',desc:'快速射出弩箭',gold:'金阶：一次射出三支弩箭'},
- musket:{name:'火铳',kind:'proj',dmg:22,cd:1.5,range:430,speed:13,pierce:2,st:'bullet',desc:'高伤害贯穿弹',gold:'金阶：子弹无限贯穿'},
- shotgun:{name:'霰弹炮',kind:'spread',dmg:6,cd:1.2,range:230,speed:10,desc:'扇形喷射五颗弹丸',gold:'金阶：弹丸增至九颗'},
- turret:{name:'机关炮台',kind:'turret',dmg:5,cd:3.2,range:300,desc:'在身边部署自动射击的炮台，每把最多同时 2 座',gold:'金阶：炮台双管齐射，持续更久'},
- flask:{name:'毒雾瓶',kind:'flask',dmg:5,cd:1.6,range:300,desc:'抛出毒雾，让敌人持续中毒；每把毒雾瓶各算一层毒，可以叠加',gold:'金阶：毒雾范围扩大一倍'},
- talisman:{name:'雷符',kind:'chain',dmg:8,cd:1.2,range:290,desc:'召雷击中目标并连锁跳跃三次',gold:'金阶：连锁次数翻倍'},
- boomerang:{name:'回旋镖',kind:'boom',dmg:10,cd:1.3,range:260,speed:8,desc:'飞出后折返，来回贯穿',gold:'金阶：同时掷出两枚'},
- coin:{name:'金钱镖',kind:'proj',dmg:8,cd:0.75,range:320,speed:10,pierce:1,coin:1,st:'coin',desc:'可贯穿 1 个敌人，击杀额外掉落 1 枚金币',gold:'金阶：击杀额外掉落 3 枚金币'},
- grenade:{name:'爆裂弹',kind:'grenade',dmg:16,cd:1.7,range:320,speed:7,radius:70,desc:'命中后爆炸，范围伤害',gold:'金阶：爆炸后再分裂出三颗弹片'},
- frost:{name:'冰晶',kind:'proj',dmg:7,cd:0.9,range:330,speed:9,slow:1,st:'frost',desc:'命中后减速敌人两秒',gold:'金阶：命中冻结敌人一秒'},
- orbit:{name:'星轮',kind:'orbit',dmg:5,cd:0.5,range:72,melee:1,desc:'环绕自身旋转的刀轮，阶数越高刀轮越多',gold:'金阶：刀轮再加两枚，旋转半径扩大'},
+ hammer:{cls:'melee',name:'锻锤',kind:'arc',dmg:17,cd:1.1,range:88,arc:1.7,melee:1,desc:'近身横扫，扇形范围伤害',gold:'金阶：每次挥击额外释放震荡冲击波'},
+ spear:{cls:'melee',name:'长枪',kind:'thrust',dmg:12,cd:0.9,range:135,melee:1,desc:'直线突刺，贯穿一整排敌人',gold:'金阶：突刺距离翻倍'},
+ blades:{cls:'melee',name:'双刃',kind:'arc',dmg:8,cd:0.42,range:80,arc:2.2,melee:1,desc:'高速近身连斩',gold:'金阶：每次斩击追加一刀'},
+ xbow:{cls:'shot',name:'连弩',kind:'proj',dmg:8,cd:0.6,range:340,speed:9,st:'arrow',desc:'快速射出弩箭',gold:'金阶：一次射出三支弩箭'},
+ musket:{cls:'shot',name:'火铳',kind:'proj',dmg:22,cd:1.5,range:430,speed:13,pierce:2,st:'bullet',desc:'高伤害贯穿弹',gold:'金阶：子弹无限贯穿'},
+ shotgun:{cls:'shot',name:'霰弹炮',kind:'spread',dmg:6,cd:1.2,range:230,speed:10,desc:'扇形喷射五颗弹丸',gold:'金阶：弹丸增至九颗'},
+ turret:{cls:'mech',name:'机关炮台',kind:'turret',dmg:5,cd:3.2,range:300,desc:'在身边部署自动射击的炮台，每把最多同时 2 座',gold:'金阶：炮台双管齐射，持续更久'},
+ flask:{cls:'arcane',name:'毒雾瓶',kind:'flask',dmg:5,cd:1.6,range:300,desc:'抛出毒雾，让敌人持续中毒；每把毒雾瓶各算一层毒，可以叠加',gold:'金阶：毒雾范围扩大一倍'},
+ talisman:{cls:'arcane',name:'雷符',kind:'chain',dmg:8,cd:1.2,range:290,desc:'召雷击中目标并连锁跳跃三次',gold:'金阶：连锁次数翻倍'},
+ boomerang:{cls:'shot',name:'回旋镖',kind:'boom',dmg:10,cd:1.3,range:260,speed:8,desc:'飞出后折返，来回贯穿',gold:'金阶：同时掷出两枚'},
+ grenade:{cls:'mech',name:'爆裂弹',kind:'grenade',dmg:16,cd:1.7,range:320,speed:7,radius:70,desc:'命中后爆炸，范围伤害',gold:'金阶：爆炸后再分裂出三颗弹片'},
+ frost:{cls:'arcane',name:'冰晶',kind:'proj',dmg:7,cd:0.9,range:330,speed:9,slow:1,st:'frost',desc:'命中后减速敌人两秒',gold:'金阶：命中冻结敌人一秒'},
+ orbit:{cls:'melee',name:'星轮',kind:'orbit',dmg:5,cd:0.5,range:72,melee:1,desc:'环绕自身旋转的刀轮，阶数越高刀轮越多',gold:'金阶：刀轮再加两枚，旋转半径扩大'},
 };
 const WKEYS=Object.keys(WEAPONS);
+// 武器流派：同流派武器（同名也算）凑 2 / 4 / 6 件有套装奖励
+const CLASSES={
+ melee:{n:'近战',g:'斗',col:'#c46a3c',b:['护甲 +3','吸血 +4%','命中击退敌人，近战击杀回复 1 生命']},
+ shot:{n:'射击',g:'射',col:'#5cb19d',b:['范围 +15%','所有子弹贯穿 +1','暴击率 +10%']},
+ arcane:{n:'术法',g:'术',col:'#8fa8ff',b:['术法武器伤害 +15%','中毒 / 减速 / 冰冻持续 +50%，雷符多连锁 1 次','敌人死亡时，身上的毒和减速扩散给附近 2 个敌人']},
+ mech:{n:'机关',g:'机',col:'#d69f3e',b:['炮台上限 +1','爆炸范围 +30%','炮台和爆裂弹伤害 +25%，炮台射速 +25%']},
+};
+const CKEYS=Object.keys(CLASSES);
+const setTier=n=>n>=6?3:n>=4?2:n>=2?1:0;
 
 const HEROES=[
- {key:'forge',name:'炉匠',color:'#c46a3c',weapon:'hammer',tag:'近战坦克',lore:'城南炉坊的铁匠，抡锤打铁三十年，机关兽在他眼里只是一堆待回炉的废料。',star:1,pros:['护甲 +5，生命 +10','近战武器伤害 +25%'],cons:['移速 -8%'],stats:{armor:5,hp:10,speed:-8},meleeBonus:25},
- {key:'archer',name:'巡天',color:'#5cb19d',weapon:'xbow',tag:'暴击叠加',lore:'巡天司的弩手，箭越射越准，一局打下来几乎箭箭暴击。',star:2,pros:['范围 +20%','每次击杀永久 +0.1% 暴击率，本局最多 +30%'],cons:[],stats:{range:20},critStack:1},
- {key:'artificer',name:'机关师',color:'#d69f3e',weapon:'turret',tag:'炮台防线',lore:'背着齿轮匣子的机关匠，走到哪里，炮台就架到哪里。',star:2,pros:['每把炮台武器的炮台上限 +1','炮台伤害 +30%'],cons:['其他武器伤害 -15%'],turretMax:1,turretDmg:30,nonTurret:-15},
- {key:'apoth',name:'药师',color:'#8cc65a',weapon:'flask',tag:'中毒续航',lore:'走街串巷的游方药师，毒与药只隔一线，全看她今天心情。',star:2,pros:['中毒伤害 +60%，毒最多叠 5 层（其他英雄 3 层）','所有武器命中 25% 几率使敌人中毒（每秒造成该次伤害的 40%，持续 2 秒）','中毒的敌人受到你的伤害 +10%'],cons:[],poison:60,poisonCap:5,hitPoison:25,poisonAmp:10},
- {key:'storm',name:'雷使',color:'#7fa8ff',weapon:'talisman',tag:'雷击回血',lore:'符箓在手，借雷为刃。回血越快，落雷越密。',star:3,pros:['生命回复 +3','每次回复生命召下一道落雷','落雷命中有 15% 几率再回复 1 生命'],cons:[],stats:{regen:3}},
- {key:'wind',name:'风行者',color:'#ddd8bf',weapon:'blades',tag:'闪避反击',lore:'来去无影的游侠，闪开一击，就还你十刀。',star:3,pros:['闪避 +15%，移速 +10%','闪避后 2 秒内攻速 +40%，并获得 1 点经验'],cons:[],stats:{dodge:15,speed:10}},
- {key:'merchant',name:'豪商',color:'#f0b93a',weapon:'coin',tag:'买卖刷钱',lore:'什么都能买，什么都能卖，打仗也要先算账。',star:3,pros:['开局金币 +30','商店价格 -15%','武器回收价从 40% 提高到 70%'],cons:['伤害 -5%'],stats:{dmg:-5}},
+ {key:'forge',name:'炉匠',color:'#c46a3c',weapon:'hammer',tag:'近战坦克',lore:'城南炉坊的铁匠，抡锤打铁三十年，机关兽在他眼里只是一堆待回炉的废料。',star:1,pros:['护甲 +5，生命 +10','近战武器伤害 +25%'],cons:['移速 -8%'],stats:{armor:5,hp:10,speed:-8},meleeBonus:25,
+  skill:{n:'熔岩重锤',g:'锤',cd:14,d:'砸地，周围敌人受到伤害、被击退并眩晕 1 秒'}},
+ {key:'archer',name:'巡天',color:'#5cb19d',weapon:'xbow',tag:'暴击叠加',lore:'巡天司的弩手，箭越射越准，一局打下来几乎箭箭暴击。',star:2,pros:['范围 +20%','每次击杀永久 +0.1% 暴击率，本局最多 +30%'],cons:[],stats:{range:20},critStack:1,
+  skill:{n:'鹰眼',g:'鹰',cd:18,d:'5 秒内所有攻击必定暴击'}},
+ {key:'artificer',name:'机关师',color:'#d69f3e',weapon:'turret',tag:'炮台防线',lore:'背着齿轮匣子的机关匠，走到哪里，炮台就架到哪里。',star:2,pros:['每把炮台武器的炮台上限 +1','炮台伤害 +30%'],cons:['其他武器伤害 -15%'],turretMax:1,turretDmg:30,nonTurret:-15,
+  skill:{n:'紧急部署',g:'炮',cd:16,d:'立刻在身边放下 2 座临时炮台，持续 10 秒，不占炮台上限'}},
+ {key:'apoth',name:'药师',color:'#8cc65a',weapon:'flask',tag:'中毒续航',lore:'走街串巷的游方药师，毒与药只隔一线，全看她今天心情。',star:2,pros:['中毒伤害 +60%，毒最多叠 5 层（其他英雄 3 层）','所有武器命中 25% 几率使敌人中毒（每秒造成该次伤害的 40%，持续 2 秒）','中毒的敌人受到你的伤害 +10%'],cons:[],poison:60,poisonCap:5,hitPoison:25,poisonAmp:10,
+  skill:{n:'毒爆',g:'爆',cd:14,d:'引爆周围敌人身上的全部毒层，一次结算剩余毒伤；没中毒的敌人染上一层毒'}},
+ {key:'storm',name:'雷使',color:'#7fa8ff',weapon:'talisman',tag:'雷击回血',lore:'符箓在手，借雷为刃。回血越快，落雷越密。',star:3,pros:['生命回复 +3','每次回复生命召下一道落雷','落雷命中有 15% 几率再回复 1 生命'],cons:[],stats:{regen:3},
+  skill:{n:'雷暴',g:'暴',cd:16,d:'3 秒内每 0.3 秒落下一道雷'}},
+ {key:'wind',name:'风行者',color:'#ddd8bf',weapon:'blades',tag:'闪避反击',lore:'来去无影的游侠，闪开一击，就还你十刀。',star:3,pros:['闪避 +15%，移速 +10%','闪避后 2 秒内攻速 +40%，并获得 1 点经验'],cons:[],stats:{dodge:15,speed:10},
+  skill:{n:'疾影',g:'影',cd:8,d:'向移动方向冲刺，0.4 秒无敌，划过的敌人受到伤害'}},
+ {key:'merchant',name:'豪商',color:'#f0b93a',weapon:'boomerang',tag:'买卖刷钱',lore:'什么都能买，什么都能卖，打仗也要先算账。',star:3,pros:['开局金币 +30','商店价格 -15%','武器回收价从 40% 提高到 70%','任何武器击杀 10% 几率多掉 1 枚金币'],cons:['伤害 -5%'],stats:{dmg:-5},coinKill:10,
+  skill:{n:'撒钱',g:'钱',cd:15,d:'花 10 金币：击退周围敌人并造成伤害，全场金币飞向你'}},
 ];
 
 const ITEMS=[
@@ -1584,6 +1615,13 @@ function computeStats(){
  const add=o=>{if(o)for(const k in o)s[k]+=o[k];};
  add(H.stats);add(run.lv);FX={};
  for(const n of run.items){const it=ITEM_BY[n];if(!it)continue;add(it.s);if(it.fx)FX[it.fx]=(FX[it.fx]||0)+1;}
+ // 流派套装
+ const sets={};for(const c of CKEYS)sets[c]=0;for(const w of run.weapons){const c=(WEAPONS[w.key]||{}).cls;if(c)sets[c]++;}run.sets=sets;
+ const st=c=>setTier(sets[c]);
+ if(st('melee')>=1)s.armor+=3;if(st('melee')>=2)s.lifesteal+=4;if(st('melee')>=3)FX.meleeKB=1;
+ if(st('shot')>=1)s.range+=15;if(st('shot')>=2)FX.pierce=(FX.pierce||0)+1;if(st('shot')>=3)s.crit+=10;
+ if(st('arcane')>=1)FX.arcDmg=15;if(st('arcane')>=2)FX.statusDur=1.5;if(st('arcane')>=3)FX.spread=1;
+ if(st('mech')>=1)FX.mechCap=1;if(st('mech')>=2)FX.blastR=1.3;if(st('mech')>=3)FX.mechDmg=25;
  s.hp+=run.level-1;run.rawHp=Math.max(1,Math.round(s.hp));s.hp=Math.max(hpFloor(),run.rawHp);s.crit+=run.critStack;
  S=s;run.maxSlots=6+(FX.extraSlot?1:0);
  if(CUR&&CUR.run===run){CUR.S=S;CUR.FX=FX;CUR.H=H;}
@@ -1609,10 +1647,14 @@ function dmgMult(w,isTurret){
  if(WEAPONS[w.key].melee&&H.meleeBonus)m+=H.meleeBonus/100;
  if(!isTurret&&H.nonTurret)m+=H.nonTurret/100;
  if(FX.goldDmg)m+=Math.min(30,Math.floor(run.gold/10))/100;
+ const cl=WEAPONS[w.key].cls;if(cl==='arcane'&&FX.arcDmg)m+=FX.arcDmg/100;if(cl==='mech'&&FX.mechDmg)m+=FX.mechDmg/100;
  return Math.max(0.1,m);
 }
 const wDmg=(w,isT)=>WEAPONS[w.key].dmg*TIER_MUL[w.tier]*dmgMult(w,isT);
 const flatDmg=b=>b*(1+S.dmg/100)*(1+run.wave*0.1);
+// 主动技能伤害：随波次的敌人血量成长一起变强
+const skillDmg=b=>b*(0.5+0.5*hpScale(run.wave||1))*(1+S.dmg/100);
+const stDur=()=>FX.statusDur||1;
 const xpNeed=()=>Math.round(10+run.level*6+run.level*run.level*0.6);
 
 /* ================= canvas ================= */
@@ -1686,6 +1728,7 @@ addEventListener('keydown',e=>{
  const k=e.key.toLowerCase();
  if(['arrowup','arrowdown','arrowleft','arrowright',' '].includes(k)&&state==='battle')e.preventDefault();
  if((k==='escape'||k==='p')&&state==='battle'){togglePause();return;}
+ if((k===' '||k==='e')&&state==='battle'&&!e.repeat&&!(e.target&&e.target.id==='netCode')){trySkill();return;}
  keys.add(k);
 });
 addEventListener('keyup',e=>keys.delete(e.key.toLowerCase()));
@@ -1832,18 +1875,19 @@ function hitEnemy(e,base,o={}){
  if(e.dead)return;
  if(e.seg){e.flash=0.08;const q=e.parent;if(q&&!q.dead){const f=q.segT===tGame?0.2:0.8;q.segT=tGame;hitEnemy(q,base*f,o);}return;}
  let d=base,crit=false;
- if(!o.noCrit&&Math.random()*100<S.crit+(o.critB||0)){crit=true;d*=1.5+S.critdmg/100;}
+ if(!o.noCrit&&((run.eagle||0)>0||Math.random()*100<S.crit+(o.critB||0))){crit=true;d*=1.5+S.critdmg/100;}
  if(e.dr)d*=e.dr;
  if(H.poisonAmp&&e.poisonT>0)d*=1+H.poisonAmp/100;
  if(e.tough&&e.rec>e.tough)d*=Math.max(BOSS.toughMin,e.tough/e.rec);
  if(e.type==='shield'&&!o.noShield){const sx=o.sx!=null?o.sx:P.x,sy=o.sy!=null?o.sy:P.y;if(Math.abs(angDiff(Math.atan2(sy-e.y,sx-e.x),e.face))<1.05){d*=0.25;if(Math.random()<0.25)fxs.push({type:'spark',x:e.x+Math.cos(e.face)*e.r,y:e.y+Math.sin(e.face)*e.r,a:Math.random()*TAU,life:0.15,max:0.15});}}
  const dealt=Math.min(d,Math.max(0,e.hp));e.hp-=d;e.flash=0.08;if(e.tough)e.rec+=d;
- if(o.slow)e.slowT=2;
- if(o.freeze)e.freezeT=Math.max(e.freezeT,1);
+ if(o.slow)e.slowT=Math.max(e.slowT,2*stDur());
+ if(o.freeze)e.freezeT=Math.max(e.freezeT,1*stDur());
+ if(o.melee&&FX.meleeKB&&!e.boss&&e.hp>0){const ka=Math.atan2(e.y-P.y,e.x-P.x);e.x+=Math.cos(ka)*14;e.y+=Math.sin(ka)*14;}
  if(crit||e.boss||Math.random()<0.45)addText(e.x+rand(-6,6),e.y-e.r,crit?Math.round(d)+'!':Math.max(1,Math.round(d)),crit?C['brass-hi']:(o.col||C.fg),crit?18:12);
  if(crit)fxs.push({type:'spark',x:e.x,y:e.y,a:Math.random()*TAU,life:0.18,max:0.18});
  if(!o.noSteal&&S.lifesteal>0)stealPool+=dealt*S.lifesteal/100;
- if(!o.noSteal&&H.hitPoison&&e.hp>0&&Math.random()*100<H.hitPoison)addPoison(e,d*0.4*poisonMul(),2,'hit:'+H.key,poisonCap());
+ if(!o.noSteal&&H.hitPoison&&e.hp>0&&Math.random()*100<H.hitPoison)addPoison(e,d*0.4*poisonMul(),2*stDur(),'hit:'+H.key,poisonCap());
  if(crit&&FX.critLightning&&Math.random()<0.25*FX.critLightning)chain(e.x,e.y,e,base*0.6,3,{noCrit:1,noSteal:1},GLOW.blue,true);
  if(e.hp<=0)killEnemy(e,o);
 }
@@ -1856,12 +1900,12 @@ function chain(ox,oy,first,dmg,n,o,col,skipFirst,lw=7){
  }
  if(pts.length>1)fxs.push({type:'bolt',pts,col,lw,life:0.22,max:0.22});
 }
-function skyBolt(){
+function skyBolt(dmg){
  const e=nearest(P.x,P.y,460)||(enemies.length?pick(enemies.filter(x=>!x.dead)):null);
  if(!e)return;
  fxs.push({type:'bolt',pts:jag(e.x+rand(-30,30),e.y-280,e.x,e.y),col:GLOW.blue,life:0.24,max:0.24});
  fxs.push({type:'flash',x:e.x,y:e.y,r:40,col:GLOW.blue,life:0.2,max:0.2});
- hitEnemy(e,flatDmg(8),{noCrit:1,noSteal:1,col:'#9fc0ff'});
+ hitEnemy(e,dmg||flatDmg(8),{noCrit:1,noSteal:1,col:'#9fc0ff'});
  if(H.key==='storm'&&Math.random()<0.15)heal(1,'bolt');
 }
 function heal(n,src){
@@ -1884,7 +1928,10 @@ function dropCoins(x,y,g){
 function chestTier(bonus){const r=Math.random()*(1+S.luck/100)+run.wave*0.012;let t=r>1.05?4:r>0.88?3:r>0.55?2:1;return Math.min(4,t+bonus);}
 function killEnemy(e,o){
  e.dead=true;run.kills++;burst(e.x,e.y,e.col,e.boss?24:8,e.boss?10:(e.type==='brute'?4:2));
- dropCoins(e.x,e.y,goldFor(e.gold)+(o.coin||0));
+ dropCoins(e.x,e.y,goldFor(e.gold)+(o.coin||0)+(H.coinKill&&Math.random()*100<H.coinKill?1:0));
+ if(o.melee&&FX.meleeKB)heal(1,'melee');
+ if(FX.spread&&(e.poisonT>0||e.slowT>0)){const ns=enemies.filter(x=>!x.dead&&!x.seg&&x!==e&&Math.hypot(x.x-e.x,x.y-e.y)<140).slice(0,2);
+  for(const x of ns){if(e.poisonT>0)addPoison(x,e.poison,2*stDur(),'spread',poisonCap());if(e.slowT>0)x.slowT=Math.max(x.slowT,2*stDur());fxs.push({type:'bolt',pts:[[e.x,e.y],[x.x,x.y]],col:e.poisonT>0?GLOW.green:GLOW.cyan,lw:3,life:0.2,max:0.2});}}
  addXP(e.xp);
  if(H.critStack&&run.critStack<30){const inc=Math.min(0.1,30-run.critStack);run.critStack+=inc;S.crit+=inc;}
  if(e.type==='fairy'){pickups.push({type:'chest',x:e.x,y:e.y,tier:chestTier(0),ph:0});addText(e.x,e.y-20,'宝箱',C.t4,15);}
@@ -1957,6 +2004,56 @@ function rescueBlast(x,y){
   if(!e.boss){const push=Math.max(0,R+e.r-d)*0.9;e.x=clamp(e.x+dx/d*push,e.r,WORLD.w-e.r);e.y=clamp(e.y+dy/d*push,e.r,WORLD.h-e.r);e.flash=0.1;}}
  for(const b of ebul)if(Math.hypot(b.x-x,b.y-y)<R)b.dead=true;
 }
+/* ================= active skills ================= */
+function dashMove(){
+ const [mx,my,ml]=readInput(),a=ml>0.1?Math.atan2(my,mx):P.face,x0=P.x,y0=P.y;
+ for(let i=0;i<19;i++){P.x=clamp(P.x+Math.cos(a)*10,P.r,WORLD.w-P.r);P.y=clamp(P.y+Math.sin(a)*10,P.r,WORLD.h-P.r);pushOut(P);}
+ P.inv=Math.max(P.inv,0.45);return [Math.round(x0),Math.round(y0),Math.round(P.x),Math.round(P.y)];
+}
+const skSfx=k=>{if(isMe())sfx(k,0.3);else netEvent({sfx:k,vol:0.8});};
+// cast the current player's active skill (host / solo; a guest's cast arrives as a message). path: the dash a guest already moved
+function castSkill(path){
+ const sk=H.skill;if(!sk||(run.skCD||0)>0||state!=='battle')return false;
+ if(H.key==='merchant'){if(run.gold<10){if(isMe())toast('金币不足 10');return false;}run.gold-=10;}
+ run.skCD=sk.cd;addText(P.x,P.y-56,sk.n,C['brass-hi'],17);
+ const near=r=>enemies.filter(e=>!e.dead&&!e.seg&&Math.hypot(e.x-P.x,e.y-P.y)<r+e.r);
+ const knock=(e,d)=>{if(e.boss)return;const a=Math.atan2(e.y-P.y,e.x-P.x);e.x=clamp(e.x+Math.cos(a)*d,e.r,WORLD.w-e.r);e.y=clamp(e.y+Math.sin(a)*d,e.r,WORLD.h-e.r);};
+ switch(H.key){
+  case 'forge':{const R=150*rangeMul();fxs.push({type:'quake',x:P.x,y:P.y,r:R,seed:Math.random()*99,life:0.6,max:0.6});boomFx(P.x,P.y,R*0.8,4);if(isMe())shake=0.45;
+   for(const e of near(R)){hitEnemy(e,skillDmg(14),{noSteal:1,col:C.t4});if(!e.dead){knock(e,90);if(!e.boss)e.freezeT=Math.max(e.freezeT,1);}}skSfx('crush');break;}
+  case 'archer':run.eagle=5;fxs.push({type:'aura',pid:CUR?CUR.id:0,col:GLOW.gold,life:5,max:5});ringFx(P.x,P.y,90,C.t4,0.4);skSfx('revive');break;
+  case 'artificer':{const tw=run.weapons.filter(w=>WEAPONS[w.key].kind==='turret').sort((a,b)=>b.tier-a.tier)[0],T=tw?tw.tier:2;
+   const dmg=tw?wDmg(tw,true)*(1+(H.turretDmg||0)/100):skillDmg(4);
+   for(let k=0;k<2;k++){const a=P.face+(k?1:-1)*1.2,x=clamp(P.x+Math.cos(a)*48,20,WORLD.w-20),y=clamp(P.y+Math.sin(a)*48,20,WORLD.h-20);
+    turrets.push({pl:CUR,x,y,life:10,max:10,cd:0.2,dmg,dbl:true,perm:false,wid:-1,a:0,col:TC[T],tier:T,rg:TIER_RG[T],fcd:0.55,critB:TIER_CRIT[T],kick:0});ringFx(x,y,40,TC[T],0.35);burst(x,y,C.brass,6,3);}
+   skSfx('crush');break;}
+  case 'apoth':{const R=260*rangeMul();ringFx(P.x,P.y,R,C.good,0.5);fxs.push({type:'flash',x:P.x,y:P.y,r:R*0.7,col:GLOW.green,life:0.35,max:0.35});
+   for(const e of near(R)){if(e.pl&&e.pl.length){const tot=e.pl.reduce((a,l)=>a+l.dps*l.t,0)*1.5;e.pl=[];e.poison=0;e.poisonT=0;
+     fxs.push({type:'flash',x:e.x,y:e.y,r:34+e.r,col:GLOW.green,life:0.3,max:0.3});hitEnemy(e,tot,{noCrit:1,noSteal:1,col:C.good});}
+    else addPoison(e,skillDmg(3)*poisonMul(),3*stDur(),'blast',poisonCap());}
+   skSfx('poison');break;}
+  case 'storm':run.stormT=3;run.stormAcc=0;fxs.push({type:'aura',pid:CUR?CUR.id:0,col:GLOW.blue,life:3,max:3});skSfx('zap');break;
+  case 'wind':{const pth=path||dashMove();if(path)P.inv=Math.max(P.inv,0.45);const [x0,y0,x1,y1]=pth,dx=x1-x0,dy=y1-y0,L2=dx*dx+dy*dy||1;
+   for(let i=1;i<=4;i++)fxs.push({type:'after',pid:CUR?CUR.id:0,x:x0+dx*i/5,y:y0+dy*i/5,face:Math.atan2(dy,dx),dface:Math.atan2(dy,dx),life:0.25+i*0.05,max:0.45});
+   fxs.push({type:'dash',x0,y0,x1,y1,life:0.3,max:0.3});
+   for(const e of enemies){if(e.dead||e.seg)continue;const t=clamp(((e.x-x0)*dx+(e.y-y0)*dy)/L2,0,1),px=x0+dx*t,py=y0+dy*t;if(Math.hypot(e.x-px,e.y-py)<e.r+30)hitEnemy(e,skillDmg(9),{melee:1,col:'#ddd8bf'});}
+   skSfx('dodge');break;}
+  case 'merchant':{const R=180*rangeMul(),bonus=1+Math.min(run.gold,200)/200;ringFx(P.x,P.y,R,C.t4,0.45);fxs.push({type:'coins',x:P.x,y:P.y,r:R,seed:Math.random()*99,life:0.6,max:0.6});
+   for(const e of near(R)){hitEnemy(e,skillDmg(6)*bonus,{noSteal:1,col:C.t4});if(!e.dead)knock(e,100);}
+   for(const c of pickups)if(c.type==='coin')c.mag=true;skSfx('revive');break;}
+ }
+ return true;
+}
+function skillTick(dt){
+ if(run.skCD>0)run.skCD=Math.max(0,run.skCD-dt);if(run.eagle>0)run.eagle-=dt;
+ if(run.stormT>0){run.stormT-=dt;run.stormAcc=(run.stormAcc||0)-dt;if(run.stormAcc<=0){run.stormAcc=0.3;skyBolt(skillDmg(7));}}
+}
+function trySkill(){
+ if(state!=='battle'||paused)return;const me=ME();if(!me||me.down)return;use(me);
+ if(NET.role==='guest'){const sk=H.skill;if(!sk||(run.skCD||0)>0)return;if(H.key==='merchant'&&run.gold<10){toast('金币不足 10');return;}
+  const path=H.key==='wind'?dashMove():null;run.skCD=sk.cd;netSend({t:'skill',path});return;}
+ castSkill(null);
+}
 function onDodge(){
  if(H.key==='wind'){dodgeBuff=2;addXP(1);}
  if(FX.dodgeShock){ringFx(P.x,P.y,125,C.verdigris);aoe(P.x,P.y,125,flatDmg(12)*FX.dodgeShock,{noSteal:1});}
@@ -1975,29 +2072,29 @@ function shoot(x,y,a,spd,range,dmg,o){
 }
 function swing(a,range,arc,dmg,w){
  fxs.push({type:'swing',x:P.x,y:P.y,a,range,arc,col:TC[w.tier],tier:w.tier,life:0.2+w.tier*0.02,max:0.2+w.tier*0.02});
- const o=wo(w);
+ const o=wo(w,{melee:1});
  for(const e of enemies){if(e.dead)continue;const dx=e.x-P.x,dy=e.y-P.y,d=Math.hypot(dx,dy);if(d>range+e.r)continue;
   if(Math.abs(angDiff(Math.atan2(dy,dx),a))<=arc/2||d<e.r+P.r+8)hitEnemy(e,dmg,o);}
 }
 function thrust(a,len,dmg,w){
  fxs.push({type:'thrust',x:P.x,y:P.y,a,len,col:TC[w.tier],tier:w.tier,life:0.18,max:0.18});
- const cx=Math.cos(a),cy=Math.sin(a),o=wo(w),wd=18+w.tier*2;
+ const cx=Math.cos(a),cy=Math.sin(a),o=wo(w,{melee:1}),wd=18+w.tier*2;
  for(const e of enemies){if(e.dead)continue;const dx=e.x-P.x,dy=e.y-P.y,t=dx*cx+dy*cy;if(t<-e.r||t>len+e.r)continue;if(Math.abs(dx*cy-dy*cx)<wd+e.r)hitEnemy(e,dmg,o);}
 }
 function deployTurret(w,gold){
- const maxT=2+(H.turretMax||0)+(FX.turretBoost||0);
+ const maxT=2+(H.turretMax||0)+(FX.turretBoost||0)+(FX.mechCap||0);
  const own=turrets.filter(t=>!t.perm&&t.wid===w.id);
  if(own.length>=maxT)turrets.splice(turrets.indexOf(own[0]),1);
  const a=Math.random()*TAU,d=rand(30,60);
  const dmg=wDmg(w,true)*(1+(H.turretDmg||0)/100+(FX.turretBoost||0)*0.5);
  const life=gold?18:13,x=clamp(P.x+Math.cos(a)*d,20,WORLD.w-20),y=clamp(P.y+Math.sin(a)*d,20,WORLD.h-20);
- turrets.push({pl:CUR,x,y,life,max:life,cd:0.3,dmg,dbl:gold,perm:false,wid:w.id,a:0,col:TC[w.tier],tier:w.tier,rg:TIER_RG[w.tier],fcd:0.7*TIER_CD[w.tier],critB:TIER_CRIT[w.tier],kick:0});
+ turrets.push({pl:CUR,x,y,life,max:life,cd:0.3,dmg,dbl:gold,perm:false,wid:w.id,a:0,col:TC[w.tier],tier:w.tier,rg:TIER_RG[w.tier],fcd:0.7*TIER_CD[w.tier]*(FX.mechDmg?0.8:1),critB:TIER_CRIT[w.tier],kick:0});
  ringFx(x,y,34,TC[w.tier],0.3);
 }
 function orbitUpdate(w,dt){
  const gold=w.tier===4,n=w.tier+1+(gold?2:0),R=wRange(w)*rangeMul()*(gold?1.35:1);
  w.ang=(w.ang||0)+dt*3.2*(1+Math.max(-0.5,S.atkspd/200))*(1+(w.tier-1)*0.08);
- const dmg=wDmg(w,false),cdHit=wCD(w)/atkMul(),o=wo(w),hr=12*TIER_SZ[w.tier];
+ const dmg=wDmg(w,false),cdHit=wCD(w)/atkMul(),o=wo(w,{melee:1}),hr=12*TIER_SZ[w.tier];
  const bl=[];for(let k=0;k<n;k++){const a=w.ang+k*TAU/n;bl.push([P.x+Math.cos(a)*R,P.y+Math.sin(a)*R,a]);}
  w.blades=bl;
  for(const e of enemies){if(e.dead)continue;const last=e.ocd[w.id]||-9;if(tGame-last<cdHit)continue;
@@ -2031,14 +2128,14 @@ function fireWeapon(w,dt){
    fxs.push({type:'muzzle',x:P.x+Math.cos(a)*18,y:P.y+Math.sin(a)*18,tier:T,life:0.1,max:0.1});break;}
   case 'turret':deployTurret(w,gold);break;
   case 'flask':projs.push({pl:CUR,wid:w.id,kind:'lob',sx:P.x,sy:P.y,tx:tgt.x,ty:tgt.y,t:0,dur:0.45,x:P.x,y:P.y,dmg,pr:(gold?116:58)*TIER_RG[T],tier:T,opts:wo(w)});break;
-  case 'chain':chain(P.x,P.y,tgt,dmg,gold?6:3,wo(w,{col:'#9fc0ff'}),BOLTC[T],false,3+T*1.6);break;
+  case 'chain':chain(P.x,P.y,tgt,dmg,(gold?6:3)+(FX.statusDur?1:0),wo(w,{col:'#9fc0ff'}),BOLTC[T],false,3+T*1.6);break;
   case 'boom':{const n=gold?2:1;for(let k=0;k<n;k++){const aa=a+(n>1?(k?0.35:-0.35):0),sp=D.speed*60;
    projs.push({pl:CUR,kind:'boom',x:P.x,y:P.y,vx:Math.cos(aa)*sp,vy:Math.sin(aa)*sp,sp,r:10*TIER_SZ[T],dmg,range,trav:0,ret:false,hit:new Set(),life:6,col,tier:T,opts:wo(w),rot:0});}break;}
   case 'grenade':shoot(P.x,P.y,a,D.speed*60,range,dmg,{col,tier:T,st:'grenade',glow:T>=3?gl:GLOW.orange,r:6,grenade:{radius:D.radius*TIER_RG[T],gold,tier:T},opts:wo(w)});break;
  }
 }
 function explode(p){
- const r=p.grenade.radius;boomFx(p.x,p.y,r,p.grenade.tier);aoe(p.x,p.y,r,p.dmg,p.opts);
+ const r=p.grenade.radius*(FX.blastR||1);boomFx(p.x,p.y,r,p.grenade.tier);aoe(p.x,p.y,r,p.dmg,p.opts);
  if(p.grenade.gold)for(let k=0;k<3;k++)shoot(p.x,p.y,Math.random()*TAU,420,160,p.dmg*0.4,{col:C.t4,tier:4,st:'shard',glow:GLOW.gold,r:4,opts:{critB:10}});
 }
 
@@ -2307,7 +2404,7 @@ function playerUpdate(p,dt){
  else{ // remote player: position comes from the network, animate locally
   if(P.moving){P.mface=P.face;P.anim+=dt;}else P.anim+=dt*0.4;
   P.dface+=angDiff(P.mface,P.dface)*Math.min(1,dt*LB.turn);}
- P.inv-=dt;dodgeBuff-=dt;stormCD-=dt;
+ P.inv-=dt;dodgeBuff-=dt;stormCD-=dt;skillTick(dt);
  if(S.regen>0){regenAcc+=S.regen*0.2*dt;while(regenAcc>=1){regenAcc-=1;heal(1,'regen');}}
  if(FX.poisonTrail&&P.moving){trailT-=dt;if(trailT<=0){trailT=0.3;puddles.push({x:P.x,y:P.y,r:30,life:2,max:2,dps:flatDmg(3)*FX.poisonTrail*poisonMul(),tick:0,seed:Math.random()*99,src:'trail:'+(CUR?CUR.id:0),cap:poisonCap()});}}
 }
@@ -2331,7 +2428,7 @@ function update(dt){
  for(const p of projs){
   use(p.pl||ME());
   if(p.kind==='lob'){p.t+=dt;const k=Math.min(1,p.t/p.dur);p.x=p.sx+(p.tx-p.sx)*k;p.y=p.sy+(p.ty-p.sy)*k;
-   if(k>=1){p.dead=true;aoe(p.tx,p.ty,p.pr*0.6,p.dmg,Object.assign({},p.opts,{col:C.good}));puddles.push({x:p.tx,y:p.ty,r:p.pr,life:3.2,max:3.2,dps:p.dmg*1.4*poisonMul(),tick:0,seed:Math.random()*99,tier:p.tier,src:'w'+p.wid,cap:poisonCap()});fxs.push({type:'splash',x:p.tx,y:p.ty,r:p.pr,tier:p.tier,life:0.3,max:0.3});}continue;}
+   if(k>=1){p.dead=true;aoe(p.tx,p.ty,p.pr*0.6,p.dmg,Object.assign({},p.opts,{col:C.good}));puddles.push({x:p.tx,y:p.ty,r:p.pr,life:3.2,max:3.2,dps:p.dmg*1.4*poisonMul(),tick:0,seed:Math.random()*99,tier:p.tier,src:'w'+p.wid,cap:poisonCap(),dur:stDur()});fxs.push({type:'splash',x:p.tx,y:p.ty,r:p.pr,tier:p.tier,life:0.3,max:0.3});}continue;}
   if(p.kind==='boom'){p.rot+=dt*16;
    if(!p.ret){p.trav+=p.sp*dt;if(p.trav>=p.range){p.ret=true;p.hit.clear();}}
    else{const dx=P.x-p.x,dy=P.y-p.y,d=Math.hypot(dx,dy)||1;p.vx=dx/d*p.sp*1.1;p.vy=dy/d*p.sp*1.1;if(d<20){p.dead=true;continue;}}
@@ -2357,10 +2454,10 @@ function update(dt){
   for(const p of alive){if((b.x-p.P.x)**2+(b.y-p.P.y)**2<(b.r+p.P.r-3)**2){b.dead=true;use(p);hurt(b.dmg,'shot');break;}}}
  use(ME());
  ebul=ebul.filter(b=>!b.dead);
- for(const u of puddles){u.life-=dt;u.tick-=dt;if(u.tick<=0){u.tick=0.4;for(const e of enemies){if(e.dead)continue;if((e.x-u.x)**2+(e.y-u.y)**2<(u.r+e.r)**2){addPoison(e,u.dps,2.2,u.src||'pool',u.cap||3);}}}}
+ for(const u of puddles){u.life-=dt;u.tick-=dt;if(u.tick<=0){u.tick=0.4;for(const e of enemies){if(e.dead)continue;if((e.x-u.x)**2+(e.y-u.y)**2<(u.r+e.r)**2){addPoison(e,u.dps,2.2*(u.dur||1),u.src||'pool',u.cap||3);}}}}
  puddles=puddles.filter(u=>u.life>0);if(puddles.length>60)puddles.splice(0,puddles.length-60);
  for(const m of mines){m.arm-=dt;if(m.arm>0)continue;
-  for(const e of enemies){if(e.dead)continue;if((e.x-m.x)**2+(e.y-m.y)**2<(34+e.r)**2){use(m.pl||ME());m.dead=true;boomFx(m.x,m.y,95);aoe(m.x,m.y,95,flatDmg(18),{noSteal:1});break;}}}
+  for(const e of enemies){if(e.dead)continue;if((e.x-m.x)**2+(e.y-m.y)**2<(34+e.r)**2){use(m.pl||ME());m.dead=true;const br=95*(FX.blastR||1);boomFx(m.x,m.y,br);aoe(m.x,m.y,br,flatDmg(18),{noSteal:1});break;}}}
  use(ME());
  mines=mines.filter(m=>!m.dead);
  for(const t of turrets){use(t.pl||ME());const rm=rangeMul();if(!t.perm)t.life-=dt;t.cd-=dt*atkMul();t.kick=Math.max(0,t.kick-dt*6);
@@ -2411,7 +2508,7 @@ function spawnPos(i,n){return n<2?[WORLD.w/2,WORLD.h/2]:[WORLD.w/2+(i?40:-40),WO
 function startWave(){
  run.wave++;waveSpawned=0;if(relief&&run.wave>=FINAL_WAVE)relief=null;state='battle';paused=false;abandonArm=hubArm=false;run.victory=false;
  for(const p of PL){
-  use(p);computeStats();run.hp=S.hp;run.wk0=run.kills;run.minHpR=1;run.helpNeed=null;p.down=false;p.ready=false;p.rv=0;p.rvk=0;p.revives=0;p.reviving=null;
+  use(p);computeStats();run.hp=S.hp;run.skCD=0;run.eagle=0;run.stormT=0;run.wk0=run.kills;run.minHpR=1;run.helpNeed=null;p.down=false;p.ready=false;p.rv=0;p.rvk=0;p.revives=0;p.reviving=null;
   [P.x,P.y]=spawnPos(p.id,PL.length);P.inv=1;P.moving=false;
   dodgeBuff=0;regenAcc=0;stealPool=0;stealClock=0;
   for(const w of run.weapons){const same=run.weapons.filter(x=>x.key===w.key);w.dup=same.indexOf(w);w.dupN=same.length;w.t=rand(0,0.15)+wCD(w)*w.dup/w.dupN;
@@ -2525,7 +2622,7 @@ const fmtNum=v=>Number.isInteger(v)?String(v):v.toFixed(1);
 const fmtStat=(k,v)=>(v>0?'+':'')+fmtNum(v)+(PCT.has(k)?'%':'');
 const fmtStats=s=>s?Object.entries(s).map(([k,v])=>`<span class="${v>0?'pos':'neg'}">${STAT_NAME[k]} ${fmtStat(k,v)}</span>`).join(' · '):'';
 function itemDesc(it){return [it.d||'',fmtStats(it.s)].filter(Boolean).join('<br>');}
-function weaponDesc(key,t){const D=WEAPONS[key],cd=+(D.cd*TIER_CD[t]).toFixed(2);return `${D.desc}<span class="ws2">伤害 ${Math.round(D.dmg*TIER_MUL[t])} · 冷却 ${cd}s · 范围 ${Math.round(D.range*TIER_RG[t])}${TIER_CRIT[t]?' · 暴击 +'+TIER_CRIT[t]+'%':''}</span>${t===4?`<span class="goldtxt ws2">${D.gold}</span>`:''}`;}
+function weaponDesc(key,t){const D=WEAPONS[key],cd=+(D.cd*TIER_CD[t]).toFixed(2);return `<span class="clsb" style="--c:${CLASSES[D.cls].col}">${CLASSES[D.cls].n}</span>${D.desc}<span class="ws2">伤害 ${Math.round(D.dmg*TIER_MUL[t])} · 冷却 ${cd}s · 范围 ${Math.round(D.range*TIER_RG[t])}${TIER_CRIT[t]?' · 暴击 +'+TIER_CRIT[t]+'%':''}</span>${t===4?`<span class="goldtxt ws2">${D.gold}</span>`:''}`;}
 function itemLine(it){return [it.d||'',fmtStats(it.s)].filter(Boolean).join(' · ');}
 const stars=n=>'<b>'+'◆'.repeat(n)+'</b>'+'◇'.repeat(3-n);
 
@@ -2562,7 +2659,7 @@ function renderMenu(){
    <div class="info">
     <div class="top"><h2>${h.name}</h2><span class="tag">${h.tag}</span><span class="diffstar">上手难度 ${stars(h.star)}</span></div>
     <p class="lore">${h.lore}</p>
-    <ul class="traits">${h.pros.map(p=>`<li>${p}</li>`).join('')}${h.cons.map(p=>`<li class="con">${p}</li>`).join('')}</ul>
+    <ul class="traits">${h.skill?`<li class="sk"><b>主动 · ${h.skill.n}</b>（空格，冷却 ${h.skill.cd} 秒）：${h.skill.d}</li>`:''}${h.pros.map(p=>`<li>${p}</li>`).join('')}${h.cons.map(p=>`<li class="con">${p}</li>`).join('')}</ul>
     <div class="sect"><div class="label">皮肤</div><div class="row">${SKINS.map((k,i)=>`<button class="chip" data-act="skin" data-i="${i}" aria-pressed="${i===selSkin}"><img src="${i?LUBAN_POR:PORTRAIT[h.key]}" alt="">${i?k.name:h.name+' · '+k.name}</button>`).join('')}</div>
      <p class="wdesc">${selSkin?'鲁班七号外观，只换造型不改属性。移动时面朝行进方向（8 个朝向），稳稳地迈步走路。':'英雄的原装外观。'}</p></div>
     <div class="sect"><div class="label">初始武器</div><div class="row">${WKEYS.map(k=>`<button class="chip" data-act="weapon" data-k="${k}" aria-pressed="${k===selWeapon}"><img src="${wic(k,1)}" alt="">${WEAPONS[k].name}${k===h.weapon?'<small>推荐</small>':''}</button>`).join('')}</div>
@@ -2573,7 +2670,7 @@ function renderMenu(){
     <div class="go">${startBtn()}<span class="dim">${best.wins?`已通关 ${best.wins} 次`:best.wave?`最好成绩：第 ${best.wave} 波`:'首次挑战'}</span></div>
    </div>
   </section>
-  <p class="howto"><b>移动</b> WASD 或方向键；iPad / 手机上用手指按住屏幕任意位置拖动（虚拟摇杆跟着手指出现）。<b>攻击</b> 武器自动瞄准最近的敌人。没捡完的金币在波次结束时自动收取 70%。击败抱着宝箱的金色小精灵可以拿到宝箱。第 5 波起会出现带词缀的精英怪，击败可能掉宝箱。第 8 波有精英首领，第 16 波是最终首领，击败它即通关。每张战场有自己的地形机关，敌人也会被机关伤到。Esc 或 P 暂停，M 开关音效。双人联机时队友倒地，站进他身边的绿圈就能救起：约 2 秒，救人时受到的伤害减少 40%，救起瞬间会震开周围的怪。</p>
+  <p class="howto"><b>移动</b> WASD 或方向键；iPad / 手机上用手指按住屏幕任意位置拖动（虚拟摇杆跟着手指出现）。<b>攻击</b> 武器自动瞄准最近的敌人。<b>主动技能</b> 空格键或右下角的技能按钮，每个英雄各不相同。<b>流派</b> 武器分近战、射击、术法、机关四派，同派凑 2 / 4 / 6 件有套装奖励。没捡完的金币在波次结束时自动收取 70%。击败抱着宝箱的金色小精灵可以拿到宝箱。第 5 波起会出现带词缀的精英怪，击败可能掉宝箱。第 8 波有精英首领，第 16 波是最终首领，击败它即通关。每张战场有自己的地形机关，敌人也会被机关伤到。Esc 或 P 暂停，M 开关音效。双人联机时队友倒地，站进他身边的绿圈就能救起：约 2 秒，救人时受到的伤害减少 40%，救起瞬间会震开周围的怪。</p>
   <div class="gobar">${startBtn()}</div>
  </div>`;
 }
@@ -2622,6 +2719,8 @@ function renderPrep(){
    <aside class="side frame">
     ${coopPrep()?`<section class="sp"><h3>送给队友<small class="ihint">武器、道具在详情里送</small></h3><div class="row"><button class="mini" data-act="giftgold" data-i="10" ${run.gold<1?'disabled':''}>送 10 金</button><button class="mini" data-act="giftgold" data-i="30" ${run.gold<1?'disabled':''}>送 30 金</button><button class="mini" data-act="giftgold" data-i="-1" ${run.gold<2?'disabled':''}>送一半</button></div></section>`:''}
     <section class="sp"><h3>武器栏 <b>${run.weapons.length} / ${run.maxSlots}</b><small class="ihint">点武器或道具看详情</small></h3><div class="wslots">${slots.join('')}</div></section>
+    <section class="sp"><h3>流派套装<small class="ihint">同派 2 / 4 / 6 件</small></h3><div class="sets">${CKEYS.map(c=>{const n=(run.sets||{})[c]||0,t=setTier(n),K=CLASSES[c];
+     return `<div class="set${t?' on':''}" style="--c:${K.col}"><b>${K.g}</b><div><span class="sn">${K.n} <em>${n}</em> 件</span><small>${[2,4,6].map((th,i)=>`<i class="${t>i?'on':''}">${th}件 ${K.b[i]}</i>`).join('')}</small></div></div>`;}).join('')}</div></section>
     <section class="sp"><h3>属性 · <b>Lv ${run.level}</b></h3><dl class="stats">${stats}</dl></section>
     <section class="sp"><h3>道具 <b>${run.items.length}</b></h3><div class="items">${items||'<span class="dim">还没有道具</span>'}</div></section>
    </aside></div>
@@ -2659,7 +2758,7 @@ function weaponInfo(w){
  const base=Math.round(D.dmg*TIER_MUL[t]),now=Math.round(wDmg(w,isT)*(isT?1+(H.turretDmg||0)/100:1));
  const cd=wCD(w),cdNow=cd/atkMul(),rg=Math.round(wRange(w)),rgNow=Math.round(wRange(w)*rangeMul());
  const same=run.weapons.filter(x=>x!==w&&x.key===w.key&&x.tier===w.tier).length;
- return `<div class="ih"><div class="ic t${t}"><img src="${wic(w.key,t)}" alt=""></div><div><b>${D.name}</b><span class="tier t${t}">${TIER_N[t]}阶武器 · ${D.melee?'近战':'远程'}</span></div></div>
+ return `<div class="ih"><div class="ic t${t}"><img src="${wic(w.key,t)}" alt=""></div><div><b>${D.name}</b><span class="tier t${t}">${TIER_N[t]}阶武器 · ${CLASSES[D.cls].n}流派</span></div></div>
   <p>${D.desc}</p>
   <dl class="ist"><dt>伤害</dt><dd>${now} <small>（基础 ${base}，已算上你的加成）</small></dd>
    <dt>${orbit?'同一敌人受击间隔':'冷却'}</dt><dd>${cdNow.toFixed(2)}s <small>（基础 ${cd.toFixed(2)}s）</small></dd>
@@ -2880,6 +2979,7 @@ function hostRecv(m){
  if(m.t==='hello'){NET.peerPick=m.pick;NET.status='paired';netPick();toast('队友已加入房间');renderMenuIf();}
  else if(m.t==='pick'){NET.peerPick=m.pick;renderMenuIf();}
  else if(m.t==='bye'){netPeerGone();}
+ else if(m.t==='skill'&&state==='battle'&&PL[1]&&!PL[1].down){use(PL[1]);castSkill(Array.isArray(m.path)?m.path.map(Number):null);use(ME());}
  else if(m.t==='act'&&state==='prep'&&PL[1]){
   const g=PL[1];use(g);let msg='';
   if(m.act==='next'){if(prepDone(g.run))g.ready=true;}
@@ -2933,7 +3033,7 @@ function netSnapshot(){
   hz:{v:hz.vents.map(v=>(v.warn?1:0)|(v.hot?2:0)),c:hz.carts.map(c=>[R1(c.x),c.y,c.dir,R2(c.warn)]),s:hz.strikes.map(k=>[R1(k.x),R1(k.y),k.r,R2(k.t)])},
   em:emines.map(m=>[R1(m.x),R1(m.y),m.arm<=0?1:0]),
   pl:pls,
-  me:g?{hp:R1(g.run.hp),gold:g.run.gold,xp:g.run.xp,lvl:g.run.level,pl:g.run.pendingLevels,ws:g.run.weapons.map(w=>R2(w.t)),ch:g.run.chests.length,cs:g.run.critStack,k:g.run.kills,e:g.run.earned,it:g.run.items.length,rv:g.run.revived?1:0,hs:g.hs?[g.hs.n,HURT_KINDS.indexOf(g.hs.k),g.hs.a]:null}:null,
+  me:g?{hp:R1(g.run.hp),gold:g.run.gold,xp:g.run.xp,lvl:g.run.level,pl:g.run.pendingLevels,ws:g.run.weapons.map(w=>R2(w.t)),ch:g.run.chests.length,cs:g.run.critStack,sk:R1(g.run.skCD||0),k:g.run.kills,e:g.run.earned,it:g.run.items.length,rv:g.run.revived?1:0,hs:g.hs?[g.hs.n,HURT_KINDS.indexOf(g.hs.k),g.hs.a]:null}:null,
   bossOn:enemies.some(e=>e.boss&&!e.dead)?1:0};
  const str=JSON.stringify(msg,numRound);netSendFast(str);
  NET.snapInt=str.length>24000?1/15:1/20; // big late-game snapshots go out a little less often
@@ -3023,7 +3123,7 @@ function guestFast(m){
  const me=m.me;if(me){
   if(NET.lastHp!=null&&me.hp<NET.lastHp-0.5)shake=Math.max(shake,0.25);NET.lastHp=me.hp;
   if(me.hs&&me.hs[0]!==NET.lastHs){if(NET.lastHs!=null)sfx(HURT_KINDS[me.hs[1]]||'hit',me.hs[2]);NET.lastHs=me.hs[0];}
-  run.hp=me.hp;run.gold=me.gold;run.xp=me.xp;run.pendingLevels=me.pl;run.critStack=me.cs;run.kills=me.k;run.earned=me.e;run.revived=!!me.rv;
+  if(me.sk!=null&&Math.abs((run.skCD||0)-me.sk)>0.6)run.skCD=me.sk;run.hp=me.hp;run.gold=me.gold;run.xp=me.xp;run.pendingLevels=me.pl;run.critStack=me.cs;run.kills=me.k;run.earned=me.e;run.revived=!!me.rv;
   if(me.lvl!==run.level||me.it!==run.items.length){run.level=me.lvl;if(me.it<run.items.length&&run.items.includes('不灭火种'))run.items.splice(run.items.indexOf('不灭火种'),1);computeStats();}
   me.ws.forEach((t,i)=>{if(run.weapons[i])run.weapons[i].t=t;});
   while(run.chests.length<me.ch)run.chests.push(1);
@@ -3035,7 +3135,7 @@ function guestUpdate(dt){
  shake=Math.max(0,shake-dt);
  const me=PL[NET.me];if(!me)return;use(me);
  if(!me.down)moveLocal(dt);else P.moving=false;
- P.inv-=dt;dodgeBuff-=dt;
+ P.inv-=dt;dodgeBuff-=dt;if(run.skCD>0)run.skCD=Math.max(0,run.skCD-dt);
  NET.inT-=dt;if(NET.inT<=0){NET.inT=1/30;netSendFast({t:'in',x:R1(P.x),y:R1(P.y),f:R2(P.face),m:P.moving?1:0});}
  NET.snapAge+=dt;const k=clamp(NET.snapAge/NET.snapInt,0,1);
  for(const e of enemies){e.x=lerp(e._x0,e._x1,k);e.y=lerp(e._y0,e._y1,k);if(e.segs)for(const s of e.segs){s.x=lerp(s._x0,s._x1,k);s.y=lerp(s._y0,s._y1,k);}}
@@ -3053,6 +3153,8 @@ function guestUpdate(dt){
 
 /* ================= HUD ================= */
 const hpF=$('#hpF'),hpG=$('#hpG'),hpT=$('#hpT'),xpF=$('#xpF'),lvT=$('#lvT'),goldT=$('#goldT'),waveT=$('#waveT'),timeT=$('#timeT'),lvP=$('#lvP'),dial=$('#dial'),bossbar=$('#bossbar'),bossN=$('#bossN'),bossF=$('#bossF'),bossT=$('#bossT');
+const skillBtn=$('#skillBtn'),skG=$('#skG'),skN=$('#skN');
+skillBtn.addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();sfxUnlock();trySkill();});
 const mateBox=$('#mateBox'),matePor=$('#matePor'),mateF=$('#mateF'),mateT=$('#mateT');
 function mateHud(){
  if(NET.mode==='solo'||PL.length<2)return null;
@@ -3060,6 +3162,8 @@ function mateHud(){
  const m=NET.mate;if(!m)return null;return {k:m.hero+m.skin,por:porOfRun(m),hp:m.hp||0,mhp:m.mhp||1,down:m.down};
 }
 function hud(){
+ const sk=H.skill;if(sk){if(skillBtn.dataset.k!==H.key){skillBtn.dataset.k=H.key;skG.textContent=sk.g;skN.textContent=sk.n;skillBtn.setAttribute('aria-label','主动技能：'+sk.n);}
+  const cd=run.skCD||0;skillBtn.style.setProperty('--cd',clamp(cd/sk.cd,0,1).toFixed(3));skillBtn.classList.toggle('ready',cd<=0);skillBtn.classList.toggle('live',(run.eagle||0)>0||(run.stormT||0)>0);}
  const hp=Math.max(0,run.hp);
  hpGhost=hpGhost>hp?hpGhost+(hp-hpGhost)*0.06:hp;
  hpF.style.width=clamp(hp/S.hp,0,1)*100+'%';hpG.style.width=clamp(hpGhost/S.hp,0,1)*100+'%';hpT.textContent=Math.ceil(hp)+' / '+S.hp;
@@ -3323,6 +3427,12 @@ function draw(dt){
   else if(f.type==='lvl'){const lp=(PL[f.pid]||ME()).P;lighter(()=>{ctx.globalAlpha=k*0.5;const gr=ctx.createLinearGradient(0,lp.y-140,0,lp.y+10);gr.addColorStop(0,'rgba(127,224,207,0)');gr.addColorStop(1,'rgba(127,224,207,1)');ctx.fillStyle=gr;ctx.fillRect(lp.x-16,lp.y-140,32,150);drawGlow(lp.x,lp.y+8,30,GLOW.teal,k*0.8);});}
   else if(f.type==='heal'){lighter(()=>{ctx.globalAlpha=k*0.8;ctx.strokeStyle='rgba(127,224,207,1)';ctx.lineWidth=2.5;for(const[x,y] of f.pts){ctx.beginPath();ctx.moveTo(f.x,f.y);ctx.lineTo(x,y);ctx.stroke();drawGlow(x,y,14,GLOW.teal,k*0.6);}});}
   else if(f.type==='warnc'){ctx.globalAlpha=0.25+0.45*(1-k);ctx.strokeStyle=C.danger;ctx.lineWidth=3;ctx.setLineDash([6,5]);ctx.beginPath();ctx.arc(f.x,f.y,f.r,0,TAU);ctx.stroke();ctx.setLineDash([]);ctx.fillStyle='rgba(224,90,75,.12)';ctx.fill();ctx.globalAlpha=1;}
+  else if(f.type==='quake'){const t=1-k;ctx.save();ctx.translate(f.x,f.y);ctx.globalAlpha=k;ctx.strokeStyle='#ff9a4a';ctx.lineWidth=3;ctx.lineCap='round';
+   for(let i=0;i<10;i++){const a=i*TAU/10+f.seed,l=f.r*(0.35+0.65*Math.min(1,t*2.2));ctx.beginPath();ctx.moveTo(Math.cos(a)*14,Math.sin(a)*14);ctx.lineTo(Math.cos(a+0.12)*l*0.5,Math.sin(a+0.12)*l*0.5);ctx.lineTo(Math.cos(a-0.05)*l,Math.sin(a-0.05)*l);ctx.stroke();}
+   lighter(()=>{drawGlow(0,0,f.r*(0.5+t*0.6),GLOW.orange,k*0.7);});ctx.restore();ctx.globalAlpha=1;}
+  else if(f.type==='aura'){const lp=(PL[f.pid]||ME()).P;lighter(()=>{const pu=0.6+Math.sin(tGame*10)*0.2;drawGlow(lp.x,lp.y,46,f.col,pu*Math.min(1,f.life*2));ctx.globalAlpha=Math.min(1,f.life*2)*0.8;ctx.strokeStyle=f.col;ctx.lineWidth=2;ctx.beginPath();ctx.arc(lp.x,lp.y+4,26+Math.sin(tGame*6)*3,0,TAU);ctx.stroke();});}
+  else if(f.type==='dash'){lighter(()=>{ctx.globalAlpha=k;const gr=ctx.createLinearGradient(f.x0,f.y0,f.x1,f.y1);gr.addColorStop(0,'rgba(221,216,191,0)');gr.addColorStop(1,'rgba(255,250,230,.95)');ctx.strokeStyle=gr;ctx.lineCap='round';ctx.lineWidth=18*k+4;ctx.beginPath();ctx.moveTo(f.x0,f.y0);ctx.lineTo(f.x1,f.y1);ctx.stroke();});}
+  else if(f.type==='coins'){const t=1-k;for(let i=0;i<14;i++){const a=f.seed+i*TAU/14,r=f.r*t;ctx.globalAlpha=k;ctx.save();ctx.translate(f.x+Math.cos(a)*r,f.y+Math.sin(a)*r-Math.sin(t*Math.PI)*24);ctx.scale(Math.abs(Math.cos(tGame*12+i)),1);ctx.drawImage(COIN_S,-6,-6,12,12);ctx.restore();}ctx.globalAlpha=1;}
   else if(f.type==='after'){const ar=(PL[f.pid]||ME()).run;ctx.globalAlpha=k*0.45;ctx.save();ctx.translate(f.x,f.y);drawChar(ctx,ar.hero,tGame,ar.skin===1?f.dface:f.face,false,1,ar.skin);ctx.restore();ctx.globalAlpha=1;}
  }
  ctx.globalAlpha=1;
