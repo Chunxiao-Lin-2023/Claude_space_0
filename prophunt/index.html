@@ -563,7 +563,8 @@ h1{font-family:var(--title);font-weight:400;font-size:52px;margin:6px 0 0;text-a
         if (f.type === 'node') { h += '<div class="tk-f">' + (f.label ? '<label>' + esc(f.label) + '</label>' : '') + '<div class="tk-node tk-native" data-node="' + esc(f.key) + '"></div></div>'; continue; }
         const opts = val(f.options) || [];
         const sub = opts.find(o => o.v === v);
-        h += '<div class="tk-f"><label><span>' + esc(f.label || '') + '</span><i>' + esc(f.hint ? val(f.hint) : (sub && sub.hint) || '') + '</i></label>';
+        const hint = f.hint ? val(f.hint) : (sub && sub.hint) || '';
+        h += '<div class="tk-f">' + (f.label || hint ? '<label><span>' + esc(f.label || '') + '</span><i>' + esc(hint) + '</i></label>' : '');
         if (f.type === 'toggle') h += '<div class="tk-tog"><span>' + esc(f.text || '') + '</span><button class="tk-sw' + (v ? ' tk-on' : '') + '" data-a="f-tog" data-arg="' + esc(f.key) + '" role="switch" aria-checked="' + !!v + '"' + (ro ? ' disabled' : '') + '></button></div>';
         else if (f.type === 'text') h += '<input class="tk-in" data-f="' + esc(f.key) + '" maxlength="' + (f.max || 16) + '" placeholder="' + esc(f.placeholder || '') + '" value="' + esc(v || '') + '"' + (ro ? ' disabled' : '') + '>';
         else if (f.type === 'cards') h += '<div class="tk-cards' + (ro ? ' tk-ro' : '') + '">' + opts.map(o => '<button class="' + (o.v === v ? 'tk-on' : '') + '" data-a="f-set" data-arg="' + esc(f.key) + '" data-v="' + esc(JSON.stringify(o.v)) + '"' + (ro ? ' disabled' : '') + '><b>' + (o.icon ? o.icon + ' ' : '') + esc(o.label) + '</b>' + (o.sub ? '<small>' + esc(o.sub) + '</small>' : '') + '</button>').join('') + '</div>';
