@@ -18,10 +18,12 @@ r = subprocess.run(['node', os.path.join(D, 'check.js'), os.path.join(out, 'game
 if r.returncode: sys.exit('剧本数据检查失败:\n' + r.stdout + r.stderr)
 print(r.stdout.strip())
 tpl = src('template.html')
+assert tpl.count('</style>') == 1
+tpl = tpl.replace('</style>', '</style>\n<style>\n' + src('vendor/titlekit.css') + '</style>')  # shared start screen (shared/titlekit)
 IOS = '<meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="推理馆"><meta name="theme-color" content="#0e1218">'
 def page(kind):
     pre = {'standalone': '', 'test': 'window.__dbg={};', 'artifact': 'window.__ARTIFACT__=1;'}[kind]
-    body = tpl.replace('__IOSMETA__', IOS if kind != 'artifact' else '').replace('__SCRIPTS__', '<script>\n' + pre + '\n' + game + '\n</script>')
+    body = tpl.replace('__IOSMETA__', IOS if kind != 'artifact' else '').replace('__SCRIPTS__', '<script>\n' + pre + '\n' + src('vendor/titlekit.js') + '\n' + game + '\n</script>')
     head = '<!DOCTYPE html>\n<html lang="zh-CN">\n<head>'  # 新版 artifact 服务器也要求 doctype
     return head + body.replace('<body', '</head>\n<body', 1) + '\n</body>\n</html>\n'
 for k, f in [('standalone', 'index.html'), ('test', 'test.html'), ('artifact', 'artifact.html')]:
