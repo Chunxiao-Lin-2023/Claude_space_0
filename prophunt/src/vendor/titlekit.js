@@ -80,6 +80,9 @@
     else if (cfg.logo) $logo.innerHTML = cfg.logo;
     else $logo.innerHTML = '<div class="tk-t">' + esc(cfg.title || '') + '</div>' + (cfg.sub ? '<div class="tk-s">' + esc(cfg.sub) + '</div>' : '');
     (cfg.parent || document.body).appendChild(root);
+    // games often block touchmove / wheel on the document for their canvas; let the menu scroll anyway
+    root.addEventListener('touchmove', e => e.stopPropagation(), { passive: true });
+    root.addEventListener('wheel', e => e.stopPropagation(), { passive: true });
 
     // ---------- helpers ----------
     const call = (fn, ...a) => { try { return typeof fn === 'function' ? fn(...a) : undefined; } catch (e) { console.error('[TitleKit]', e); T.toast('出错了：' + (e && e.message || e)); } };

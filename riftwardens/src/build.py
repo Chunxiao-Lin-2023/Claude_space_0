@@ -4,8 +4,10 @@ import base64, json, os, sys
 R = os.path.dirname(os.path.abspath(__file__))
 SRC = os.path.join(R, 'work', 'src'); ATL = os.path.join(R, 'work', 'atlas'); OUT = os.path.join(R, 'out')
 os.makedirs(OUT, exist_ok=True)
-order = ['a_shell.html', 'b_maps.js', 'c_data.js', 'd_util.js', 'e_world.js', 'f_heroes.js', 'l_extra.js', 'g_render.js', 'h_play.js', 'i_menu.js', 'j_net.js', 'k_main.js']
+order = ['a_shell.html', 'vendor/titlekit.js', 'b_maps.js', 'c_data.js', 'd_util.js', 'e_world.js', 'f_heroes.js', 'l_extra.js', 'g_render.js', 'h_play.js', 'i_menu.js', 'i2_title.js', 'j_net.js', 'k_main.js']
 src = ''.join(open(os.path.join(SRC, f)).read() + '\n' for f in order)
+assert src.count('</style></head><body>') == 1
+src = src.replace('</style></head><body>', open(os.path.join(SRC, 'vendor', 'titlekit.css')).read() + '</style></head><body>')  # shared start screen (shared/titlekit)
 open(os.path.join(R, 'work', 'game.html'), 'w').write(src)
 meta = json.load(open(os.path.join(ATL, 'atlas.json')))
 def rep(s, old, new):
