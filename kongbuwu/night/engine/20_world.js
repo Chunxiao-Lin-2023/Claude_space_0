@@ -139,24 +139,38 @@ function bfsStep(m, sx, sy, tx, ty, who, maxN = 2500) {
   const nx = c % W2, ny = (c / W2) | 0;
   return DIRS.findIndex(d => d[0] === nx - sx && d[1] === ny - sy);
 }
-/* 控制者本地推进玩家 */
+/* 控制者本地推进玩家
+   走路精度：① 松手宽限——按住不放时一到格子就接着走下一格；如果这一格是“接着走”的、刚迈出去（进度 < 0.45 且不到 0.12 秒）就松了手，
+   平滑退回上一格停下（不重新触发那一格的踩踏事件），所以看到人走到想停的格子再松手也不会多走一格；刚按下的第一步永远不退。
+   ② 站着不动时按另一个方向：立刻转身，按住满 0.08 秒（从按下算）才迈步——点一下 = 只转身；松手清掉；走着拐弯不等。 */
+const GRACE_P = .45, GRACE_T = .12, TURN_HOLD = 80;
 function updatePlayer(dt) {
   const p = W.pl, m = curMap();
+  if (p.mv) W._still = 0;
+  else if ((W._still = (W._still || 0) + dt) > .6 && IN.runLatch) { IN.runLatch = false; const rb = document.getElementById('bRun'); if (rb) rb.classList.remove('on'); }   // 触屏「跑」：停下 0.6 秒就关
+  let chain = false;
   if (p.mv) {
-    const spd = p.mv.spd;
+    const mv = p.mv;
+    if (mv.chain && !mv.rev && IN.dir() < 0 && mv.p < GRACE_P && (mv.age || 0) < GRACE_T) {
+      p.mv = { fx: mv.tx, fy: mv.ty, tx: mv.fx, ty: mv.fy, p: 1 - mv.p, spd: mv.spd, rev: true };
+      if (mv.prev0) p.prev = mv.prev0;
+    }
+    const rev = p.mv.rev; p.mv.age = (p.mv.age || 0) + dt;
     const arrived = moveEntity(p, dt);
-    if (arrived) { AU.sfx('step'); if (isHost()) onPlayerArrive(); }
-    else return;
-    void spd;
+    if (!arrived) return;
+    if (!rev) { AU.sfx('step'); if (isHost()) onPlayerArrive(); chain = true; }
   }
-  if (!canMove()) { p.fr = 0; return; }
+  if (!canMove()) { p.fr = 0; W._turnD = -1; return; }
   const d = IN.dir();
-  if (d < 0) { p.fr = 0; return; }
-  if (p.dir !== d && !p.mv && W._turnT == null) { p.dir = d; W._turnT = 0.07; return; }
-  if (W._turnT != null) { W._turnT -= dt; if (W._turnT > 0) return; W._turnT = null; }
+  if (d < 0) { p.fr = 0; W._turnD = -1; return; }
+  if (!chain) {
+    if (p.dir !== d) { p.dir = d; W._turnD = d; }
+    if (W._turnD === d && IN.heldMs(d) < TURN_HOLD) { p.fr = 0; return; }
+    W._turnD = -1;
+  }
   p.dir = d;
   const tx = p.x + DIRS[d][0], ty = p.y + DIRS[d][1];
-  if (passable(m, tx, ty, p)) { p.prev = [p.x, p.y]; p.run = IN.running() && !W.noRun; const sp = (p.run ? RUN_SPD : WALK_SPD) * (p.speed || 1) * (m.def.speed || 1); startMove(p, d, sp); }
+  if (passable(m, tx, ty, p)) { const prev0 = p.prev; p.prev = [p.x, p.y]; p.run = IN.running() && !W.noRun; const sp = (p.run ? RUN_SPD : WALK_SPD) * (p.speed || 1) * (m.def.speed || 1); startMove(p, d, sp); if (chain) { p.mv.chain = true; p.mv.prev0 = prev0; } }
   else { p.fr = 0; if (isHost()) onBump(tx, ty); }
 }
 let lastPTile = null;
@@ -244,14 +258,19 @@ function chaseStep(e, m, dt) {
 
 /* ---------------- 摄像机与渲染 ---------------- */
 let CAM = { x: 0, y: 0 };
+/* 跟着人走时镜头锁在人物的整数像素上（不滑、不抖）；目标一下跳开 1.5 格以上（镜头对准别处、换焦点）才平滑过去 */
 function camUpdate(dt, snap) {
-  const m = curMap(), p = W.pl;
-  let tx = p.px + 8 - VW / 2, ty = p.py + 4 - VH / 2;
-  if (W.camFocus) { tx = W.camFocus[0] * TS + 8 - VW / 2; ty = W.camFocus[1] * TS + 8 - VH / 2; }
+  const m = curMap(), p = W.pl, hw = Math.round(VW / 2), hh = Math.round(VH / 2);
+  let tx = Math.round(p.px) + 8 - hw, ty = Math.round(p.py) + 4 - hh;
+  if (W.camFocus) { tx = Math.round(W.camFocus[0] * TS) + 8 - hw; ty = Math.round(W.camFocus[1] * TS) + 8 - hh; }
   const mw = m.w * TS, mh = m.h * TS;
-  tx = mw <= VW ? (mw - VW) / 2 : clamp(tx, 0, mw - VW);
-  ty = mh <= VH ? (mh - VH) / 2 : clamp(ty, 0, mh - VH);
-  if (snap) { CAM.x = tx; CAM.y = ty; } else { const k = Math.min(1, dt * 10); CAM.x += (tx - CAM.x) * k; CAM.y += (ty - CAM.y) * k; }
+  tx = mw <= VW ? Math.round((mw - VW) / 2) : clamp(tx, 0, mw - VW);
+  ty = mh <= VH ? Math.round((mh - VH) / 2) : clamp(ty, 0, mh - VH);
+  if (snap) { CAM.x = tx; CAM.y = ty; CAM.glide = false; return; }
+  const dx = tx - CAM.x, dy = ty - CAM.y, d = Math.hypot(dx, dy);
+  if (!CAM.glide && d > TS * 1.5) CAM.glide = true;
+  if (CAM.glide) { const st = Math.max(d * Math.min(1, dt * 10), 160 * dt); if (st >= d) { CAM.x = tx; CAM.y = ty; CAM.glide = false; } else { CAM.x += dx / d * st; CAM.y += dy / d * st; } }
+  else { CAM.x = tx; CAM.y = ty; }
 }
 const lightCv = mk(320, 200), lx = lightCv.getContext('2d');
 let RT = 0;    // 渲染用时间（秒）

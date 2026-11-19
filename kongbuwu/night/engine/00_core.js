@@ -47,9 +47,11 @@ resize();
 /* ---------------- 输入 ---------------- */
 const IN = {
   stack: [], run: false, runLatch: false, joy: null, joyDir: -1,
+  t: [0, 0, 0, 0], joyT: 0,          // 每个方向按下的时刻（原地转身后按住够久才迈步）
   handlers: [],                      // (name)=>bool ，返回 true 表示已处理
   press(n) { for (let i = this.handlers.length - 1; i >= 0; i--) if (this.handlers[i](n)) return; },
   dir() { if (this.joyDir >= 0) return this.joyDir; return this.stack.length ? this.stack[this.stack.length - 1] : -1; },
+  heldMs(d) { return now() - (this.joyDir >= 0 && this.joyDir === d ? this.joyT : this.t[d] || 0); },
   running() { return this.run || this.runLatch; }
 };
 const KEYDIR = { ArrowDown: 0, KeyS: 0, ArrowLeft: 1, KeyA: 1, ArrowRight: 2, KeyD: 2, ArrowUp: 3, KeyW: 3 };
@@ -58,7 +60,7 @@ addEventListener('keydown', e => {
   if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
   AU.init();
   if (e.code in KEYDIR) {
-    const d = KEYDIR[e.code]; if (!IN.stack.includes(d)) IN.stack.push(d);
+    const d = KEYDIR[e.code]; if (!IN.stack.includes(d)) { IN.stack.push(d); IN.t[d] = now(); }
     if (!e.repeat) IN.press(['down', 'left', 'right', 'up'][d]); e.preventDefault(); return;   // 按住不放不连发（避免选项来回跳）
   }
   if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') { IN.run = true; return; }

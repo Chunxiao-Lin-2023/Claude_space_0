@@ -39,7 +39,8 @@ function hsMmGo(H, x, y) { const h = H.hero; H.auto = false; const v = hActive(H
   hGo(H, x, y); return null; }
 /* 点柜子身上任何地方 = 躲进去 */
 { const _tap = hsTap; hsTap = function (ev) { const H = HS; if (H && H.phase === 'live' && !H.done && !H.paused) { const [x, y] = hsPt(H, ev);
-    const guest = hActive(H).some(q => Math.hypot(q.x - x, q.y - .5 - y) < 1); const e = !guest && H.M.hides.find(q => Math.abs(x - q.x) < .62 && y > q.y - 1.75 && y < q.y + .6);
+    /* 点在柜子那一格 = 躲；点在旁边的空地上 = 走过去；只有点在墙上时，画出墙外的柜顶也算 */ const rx = Math.round(x), ry = Math.round(y), M = H.M;
+    const guest = H.mode === 'house' && !!hTapVis(H, x, y); const e = !guest && (M.hides.find(q => q.x === rx && q.y === ry) || (hmSolid(M, M.hs, rx, ry) && M.hides.find(q => Math.abs(x - q.x) < .5 && y > q.y - 1.3 && y < q.y + .45)));
     if (e) { H.auto = false; const h = H.hero; h.chase = null; if (h.tx === e.x && h.ty === e.y) { h.hidden = true; return; } hGo(H, e.x, e.y); sfx('tap'); hFloat(H, h.x, h.y - 1.6, '躲进去', 'txt'); return; } }
   return _tap(ev); }; }
 /* 「吓！」键：没得吓的时候，附近有柜子就变成「躲进柜子」 */

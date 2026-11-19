@@ -26,9 +26,16 @@ function hsSize() { const H = HS, cv = $('#hcv'), wr = $('#hsw'); if (!H || !cv 
   if (H.phase === 'setup' || H.done) { cv.width = H.M.w * 16; cv.height = H.M.h * 16; H.z = 0; }
   else { let z = clamp(Math.floor(Math.min(W / (16 * 15), Hh / (16 * 9.5))), 2, 4); if (H.zoomOut) z = Math.max(1, Math.floor(Math.min(W / (H.M.w * 16), Hh / (H.M.h * 16))) || 1, z - 2); cv.width = Math.ceil(W / z); cv.height = Math.ceil(Hh / z); H.z = z; }
   H.cam = H.cam || { x: 0, y: 0 }; hsCam(H, true); }
-function hsCam(H, snap) { const cv = $('#hcv'); if (!cv) return; const M = H.M; if (!H.z) { H.cam.x = 0; H.cam.y = 0; return; } if (H.focus && (H.focus.st === 'gone' || H.focus.st === 'wait')) H.focus = null; const f = H.focusPt ? { x: H.focusPt[0], y: H.focusPt[1] } : H.focus || H.hero;
-  let tx = f.x * 16 + 8 - cv.width / 2, ty = f.y * 16 - cv.height / 2 + 4; const mw = M.w * 16, mh = M.h * 16; tx = mw <= cv.width ? (mw - cv.width) / 2 : clamp(tx, 0, mw - cv.width); ty = mh <= cv.height ? (mh - cv.height) / 2 : clamp(ty, 0, mh - cv.height);
-  if (snap) { H.cam.x = tx; H.cam.y = ty; } else { const k = Math.min(1, H.dt * 8); H.cam.x += (tx - H.cam.x) * k; H.cam.y += (ty - H.cam.y) * k; } }
+/* 镜头：跟着陈歌（或盯着的游客）时锁在他的整数像素上，走路不滑、停下不溜；目标一下跳开 1.5 格以上（换焦点、收工对准出口、拖完地图回来）才平滑过去。
+   拖动地图时镜头直接跟着手指；拖开以后陈歌一动就回到陈歌身上。 */
+function hsCam(H, snap) { const cv = $('#hcv'); if (!cv) return; const M = H.M; if (!H.z) { H.cam.x = 0; H.cam.y = 0; return; } if (H.focus && (H.focus.st === 'gone' || H.focus.st === 'wait')) H.focus = null;
+  if (H.panned && H.focusPt && H.hero.mv && !(typeof HPAN !== 'undefined' && HPAN && HPAN.moved)) { H.focusPt = null; H.panned = false; }
+  const f = H.focusPt ? { x: H.focusPt[0], y: H.focusPt[1] } : H.focus || H.hero, drag = H.panned && H.focusPt;
+  let tx = Math.round(f.x * 16) + 8 - Math.floor(cv.width / 2), ty = Math.round(f.y * 16) + 4 - Math.floor(cv.height / 2); const mw = M.w * 16, mh = M.h * 16; tx = mw <= cv.width ? Math.round((mw - cv.width) / 2) : clamp(tx, 0, mw - cv.width); ty = mh <= cv.height ? Math.round((mh - cv.height) / 2) : clamp(ty, 0, mh - cv.height);
+  if (snap) { H.cam.x = tx; H.cam.y = ty; H.cam.glide = false; return; }
+  const dx = tx - H.cam.x, dy = ty - H.cam.y, d = Math.hypot(dx, dy); if (!H.cam.glide && !drag && d > 24) H.cam.glide = true;
+  if (H.cam.glide && !drag) { const st = Math.max(d * Math.min(1, (H.dt || .016) * 8), 200 * (H.dt || .016)); if (st >= d) { H.cam.x = tx; H.cam.y = ty; H.cam.glide = false; } else { H.cam.x += dx / d * st; H.cam.y += dy / d * st; } }
+  else { H.cam.x = tx; H.cam.y = ty; H.cam.glide = false; } }
 /* 屏幕坐标 → 地图坐标（格） */
 function hsPt(H, ev) { const cv = $('#hcv'), r = cv.getBoundingClientRect(), s = Math.min(r.width / cv.width, r.height / cv.height), ox = (r.width - cv.width * s) / 2, oy = (r.height - cv.height * s) / 2;
   return [((ev.clientX - r.left - ox) / s + H.cam.x) / 16 - .5, ((ev.clientY - r.top - oy) / s + H.cam.y) / 16 - .5]; }
@@ -254,23 +261,27 @@ function hsGoNear(H, s) { const l = hLurk(H, s); if (l) hGo(H, l[0], l[1]); else
 function hsTape() { const H = HS; if (!H || H.phase !== 'live' || !tapeReady()) return; const ac = hActive(H); if (!ac.length) { toast('里面还没有游客'); return; } C.tapeDay = C.day; for (const v of ac) { addSt(H.B, v.u, 'fear', 3); addSt(H.B, v.u, 'vuln', 2); hBub(H, v, '……谁在哭？', 1.8); } hLog(H, '陈歌按下了播放键。整座鬼屋都是哭声。', 'epic'); sfx('static'); H.black = .4; const b = $('#hstape'); if (b) b.remove(); }
 function hsAuto() { const H = HS; if (!H) return; H.auto = !H.auto; sfx('tap'); hsHudTick(H, true); }
 function hsHideNear() { const H = HS; if (!H) return; const h = H.hero; let best = null, bd = 1e9; for (const e of H.M.hides) { const f = hmField(H.M, e.x, e.y, 'h')[h.ty * H.M.w + h.tx]; if (f >= 0 && f < bd) { bd = f; best = e; } } if (best) hGo(H, best.x, best.y); }
-/* 点地图 */
+/* 点地图：点在空地上就是走过去——旁边的柜子、游客、机关、员工不抢；它们的点击范围就是画出来的那一块
+   （游客 0.6 格、柜子贴着画的轮廓、机关和员工就是它们那一格；只有点在墙上时才看画出墙外的上半截） */
+function hTapVis(H, x, y) { return hActive(H).filter(q => Math.hypot(q.x - x, q.y - .25 - y) < .6).sort((a, b) => Math.hypot(a.x - x, a.y - .25 - y) - Math.hypot(b.x - x, b.y - .25 - y))[0]; }
+function hTapFloor(H, rx, ry) { const M = H.M; return !hmSolid(M, M.hs, rx, ry) && !M.hides.some(e => e.x === rx && e.y === ry) && !M.slots.some(q => q.k && q.x === rx && q.y === ry) && !H.staff.some(q => Math.round(q.x) === rx && Math.round(q.y) === ry); }
 function hsTap(ev) { const H = HS; if (!H) return; const [x, y] = hsPt(H, ev);
   if (H.phase === 'setup') { const s = H.M.slots.find(q => Math.hypot(q.x - x, q.y - y) < .8); if (s) return hsPickSlot(H, s, 0); const st = H.M.staff.find(q => Math.abs(q.x - x) < .7 && y > q.y - 1.5 && y < q.y + .7); if (st) return hsPickSlot(H, st, 1); hsPickClose(); return; }
-  if (H.phase !== 'live' || H.done || H.paused) return; H.auto = false; const h = H.hero;
-  if (H.mode === 'house') { const v = hActive(H).filter(q => Math.hypot(q.x - x, q.y - .5 - y) < 1).sort((a, b) => Math.hypot(a.x - x, a.y - y) - Math.hypot(b.x - x, b.y - y))[0]; if (v) { h.chase = v; h.path = null; sfx('tap'); if (v.st === 'run') hFloat(H, h.x, h.y - 1.6, '追！', 'txt'); if (hDist(v, h) <= 1.5 && h.pcd <= 0) hPounce(H, v); return; }
-    const s = H.M.slots.find(q => q.k && Math.hypot(q.x - x, q.y - y) < .75); if (s) return hsDev(s.i);
-    const st = H.staff.find(q => Math.abs(q.x - x) < .7 && y > q.y - 1.5 && y < q.y + .7); if (st) { if (hStaffGo(H, st)) { sfx('tap'); hFloat(H, st.x, st.y - 1.6, PETS[st.k].n + '：去了！', 'staff'); } return; } }
-  hGo(H, x, y); sfx('tap'); }
+  if (H.phase !== 'live' || H.done || H.paused) return; H.auto = false; const h = H.hero, rx = Math.round(x), ry = Math.round(y);
+  if (H.mode === 'house') { const v = hTapVis(H, x, y); if (v) { h.chase = v; h.path = null; sfx('tap'); if (v.st === 'run') hFloat(H, h.x, h.y - 1.6, '追！', 'txt'); if (hDist(v, h) <= 1.5 && h.pcd <= 0) hPounce(H, v); return; }
+    const floor = hTapFloor(H, rx, ry);
+    const s = H.M.slots.find(q => q.k && ((q.x === rx && q.y === ry) || (!floor && Math.abs(q.x - x) < .5 && y > q.y - 1.25 && y < q.y + .5))); if (s) return hsDev(s.i);
+    const st = H.staff.find(q => (Math.round(q.x) === rx && Math.round(q.y) === ry) || (!floor && Math.abs(q.x - x) < .5 && y > q.y - 1.05 && y < q.y + .5)); if (st) { if (hStaffGo(H, st)) { sfx('tap'); hFloat(H, st.x, st.y - 1.6, PETS[st.k].n + '：去了！', 'staff'); } return; } }
+  if (hTapGo(H, x, y)) sfx('tap'); }
 /* 拖动地图看别处（不动陈歌）；轻点才算走路/出手 */
 let HPAN = null;
 function hsDown(ev) { const H = HS; if (!H) return; if (H.phase !== 'live' || H.done || H.paused) return hsTap(ev); HPAN = { x: ev.clientX, y: ev.clientY, cx: H.cam.x, cy: H.cam.y, moved: false, id: ev.pointerId }; try { ev.target.setPointerCapture(ev.pointerId); } catch (e) {} }
 function hsMove(ev) { const H = HS; if (!H || !HPAN || ev.pointerId !== HPAN.id) return; const dx = ev.clientX - HPAN.x, dy = ev.clientY - HPAN.y; if (!HPAN.moved && Math.hypot(dx, dy) < 9) return; HPAN.moved = true; const cv = $('#hcv'), r = cv.getBoundingClientRect(), s = r.width / cv.width;
-  const cx = HPAN.cx - dx / s + cv.width / 2, cy = HPAN.cy - dy / s + cv.height / 2; H.focus = null; H.focusPt = [(cx - 8) / 16, (cy - 4) / 16]; }
+  const cx = HPAN.cx - dx / s + cv.width / 2, cy = HPAN.cy - dy / s + cv.height / 2; H.focus = null; H.focusPt = [(cx - 8) / 16, (cy - 4) / 16]; H.panned = true; }
 function hsUp(ev) { const p = HPAN; HPAN = null; if (!p || ev.pointerId !== p.id) return; if (!p.moved) hsTap(ev); else hsHudTick(HS, true); }
 const HKEYS = { ArrowDown: 0, s: 0, S: 0, ArrowLeft: 1, a: 1, A: 1, ArrowRight: 2, d: 2, D: 2, ArrowUp: 3, w: 3, W: 3 };
 function hsKey(e) { const H = HS; if (!H || H.phase !== 'live' || H.done) return false; if (e.key === 'Escape' || e.key === 'p' || e.key === 'P') { hsPause(); return true; } if (H.paused) return false; const k = e.key, d = HKEYS[k];
-  if (d != null) { if (!e.repeat) { H.kd = (H.kd || []).filter(x => x !== d); H.kd.push(d); H.focus = null; H.focusPt = null; } return true; } if (k === ' ' || k === 'Enter') { if (H.mode === 'house') hsAct(); else hsHideNear(); return true; } return false; }
+  if (d != null) { if (!e.repeat) { H.kd = (H.kd || []).filter(x => x !== d); H.kd.push(d); H.focus = null; H.focusPt = null; H.panned = false; H.hero.path = null; H.hero.chase = null; if (H.auto) { H.auto = false; hsHudTick(H, true); } } return true; }   /* 方向键 = 自己走：关掉自动、丢掉点地面排的路 */ if (k === ' ' || k === 'Enter') { if (H.mode === 'house') hsAct(); else hsHideNear(); return true; } return false; }
 /* 松开方向键就停（按住才一直走） */
 function hsKeyUp(e) { const H = HS, d = HKEYS[e.key]; if (!H || d == null || !H.kd) return; H.kd = H.kd.filter(x => x !== d); }
 document.addEventListener('keyup', e => { if (STATE.house && window.hsKeyUp) window.hsKeyUp(e); });

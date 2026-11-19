@@ -318,20 +318,22 @@ function bindUI() {
   const T = $('touch'), jb = $('joyb'), jk = $('joyk');
   T.addEventListener('pointerdown', e => {
     if (e.target !== T) return; AU.init();
-    if (e.clientX < SW * .5 && !IN.joy) { IN.joy = { id: e.pointerId, x: e.clientX, y: e.clientY }; jb.style.left = jk.style.left = e.clientX + 'px'; jb.style.top = jk.style.top = e.clientY + 'px'; jb.classList.remove('hidden'); jk.classList.remove('hidden'); T.setPointerCapture(e.pointerId); }
+    if (e.clientX < SW * .5 && !IN.joy) { IN.joy = { id: e.pointerId, x: e.clientX, y: e.clientY }; jb.style.left = jk.style.left = e.clientX + 'px'; jb.style.top = jk.style.top = e.clientY + 'px'; jb.classList.remove('hidden'); jk.classList.remove('hidden'); IN.joy.r = (jb.offsetWidth || 110) / 2; T.setPointerCapture(e.pointerId); }
     else canvasTap(e.clientX, e.clientY);
     e.preventDefault();
   });
   T.addEventListener('pointermove', e => {
     const j = IN.joy; if (!j || e.pointerId !== j.id) return;
-    let dx = e.clientX - j.x, dy = e.clientY - j.y; const l = Math.hypot(dx, dy), mx = 40;
+    /* 摇杆：死区 16 px；半径和画出来的底盘一样；四向带回滞（另一轴要大过当前轴 1.3 倍才换方向）；只有从中间推出去那一下才算一次按键 */
+    let dx = e.clientX - j.x, dy = e.clientY - j.y; const l = Math.hypot(dx, dy), mx = j.r || 55;
     if (l > mx) { dx = dx / l * mx; dy = dy / l * mx; }
     jk.style.left = (j.x + dx) + 'px'; jk.style.top = (j.y + dy) + 'px';
-    const pd = IN.joyDir;
-    IN.joyDir = l < 14 ? -1 : Math.abs(dx) > Math.abs(dy) ? (dx < 0 ? 1 : 2) : (dy < 0 ? 3 : 0);
-    if (IN.joyDir !== pd && IN.joyDir >= 0) IN.press(['down', 'left', 'right', 'up'][IN.joyDir]);
+    const pd = IN.joyDir, ax = Math.abs(dx), ay = Math.abs(dy);
+    let nd = -1;
+    if (l >= 16) { const horiz = pd === 1 || pd === 2 ? !(ay > ax * 1.3) : pd === 0 || pd === 3 ? ax > ay * 1.3 : ax > ay; nd = horiz ? (dx < 0 ? 1 : 2) : (dy < 0 ? 3 : 0); }
+    if (nd !== pd) { IN.joyDir = nd; if (nd >= 0) IN.joyT = now(); if (pd < 0 && nd >= 0) IN.press(['down', 'left', 'right', 'up'][nd]); }
   });
-  const endJ = e => { const j = IN.joy; if (!j || e.pointerId !== j.id) return; IN.joy = null; IN.joyDir = -1; jb.classList.add('hidden'); jk.classList.add('hidden'); };
+  const endJ = e => { const j = IN.joy; if (!j || e.pointerId !== j.id) return; IN.joy = null; IN.joyDir = -1; jb.classList.add('hidden'); jk.classList.add('hidden'); if (IN.runLatch) { IN.runLatch = false; $('bRun').classList.remove('on'); } };   // 松开摇杆，「跑」也关掉
   T.addEventListener('pointerup', endJ); T.addEventListener('pointercancel', endJ);
   $('bA').addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); AU.init(); IN.press('a'); });
   $('bRun').addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); IN.runLatch = !IN.runLatch; $('bRun').classList.toggle('on', IN.runLatch); });

@@ -171,14 +171,27 @@ const hScaredSt = v => v.st === 'panic' || v.st === 'react' || v.st === 'run' ||
 function hSnap(v) { const m = v.mv; if (!m) return; if (m.p > .5) { v.tx = m.tx; v.ty = m.ty; } v.x = v.tx; v.y = v.ty; v.mv = null; }
 function hReact(H, v, src, hard) { if (hOut(v) || v.st === 'wait' || v.st === 'leave') return; const pose = hard ? pick(['fall', 'jump', 'cry']) : pick(Object.keys(HPOSE)); hSnap(v); v.st = 'react'; v.pose = pose; v.poseT = H.t; v.wait = HB.react; v.from = [src.x, src.y]; v.emo = { s: HPOSE[pose], until: H.t + HB.react + 1.4 }; hPaceHit(H, v, src); hsRule(H, 'hit', v); }
 /* ---------- 陈歌 ---------- */
+/* 走路精度：按住方向键一到格子就接着走；“接着走”的这一格刚迈出去（进度 < 0.45 且不到 0.12 秒）就松手 → 平滑退回上一格停下，
+   所以看到陈歌走到想停的格子再松手不会多走一格；刚按下的第一步不退。点地面换目的地时，这一步要是背着新目的地走、还没过半，也立刻折回。 */
+function hRevStep(a) { const m = a.mv; if (!m) return; a.mv = { fx: m.tx, fy: m.ty, tx: m.fx, ty: m.fy, p: 1 - m.p, spd: m.spd, rev: 1 }; }
+const hGrace = (m, held, t) => m && m.kc && !m.rev && !held && m.p < .45 && t - m.t0 < .12;
+/* 陈歌找路用的距离场：点地面走（h.plain）按普通格子算，不贪员工通道的半价；目的地在通道里、或者自动/抄近路时才按时间算 */
+function hHeroField(H, tx, ty) { const M = H.M; return H.mode === 'house' && typeof hmFieldH === 'function' && !H.hero.plain ? hmFieldH(M, tx, ty) : hmField(M, tx, ty, 'h'); }
 function hHeroTick(H, dt) { const h = H.hero, M = H.M; h.pcd -= dt; h.ctick -= dt;
-  if (h.mv) { if (hMove(h, dt)) { h.hidden = M.hides.some(e => e.x === h.tx && e.y === h.ty); if (h.hidden) { sfx('creak'); if (H.mode === 'chase') hChaseHid(H); } } else return; }
-  /* 方向键 / WASD 按住就一直走（RULES 35） */ const kd = H.kd && H.kd.length ? H.kd[H.kd.length - 1] : null; if (kd != null) { h.path = null; h.chase = null; h.dir = kd; const nx = h.tx + HD[kd][0], ny = h.ty + HD[kd][1]; if (!hmSolid(M, M.hs, nx, ny)) { hStepTo(h, nx, ny, HB.hero); h.hidden = false; } return; }
+  /* 方向键 / WASD 按住就一直走（RULES 35） */ const kd = H.kd && H.kd.length ? H.kd[H.kd.length - 1] : null; let chain = false;
+  if (h.mv) { if (hGrace(h.mv, kd != null, H.t)) hRevStep(h); const rev = h.mv.rev, key = h.mv.key;
+    if (hMove(h, dt)) { h.hidden = M.hides.some(e => e.x === h.tx && e.y === h.ty); if (h.hidden) { if (!rev) sfx('creak'); if (H.mode === 'chase') hChaseHid(H); } chain = !rev && !!key; } else return; }
+  if (kd != null) { h.path = null; h.chase = null; h.dir = kd; const nx = h.tx + HD[kd][0], ny = h.ty + HD[kd][1]; if (!hmSolid(M, M.hs, nx, ny)) { hStepTo(h, nx, ny, HB.hero); h.mv.key = 1; if (chain) { h.mv.kc = 1; h.mv.t0 = H.t; } h.hidden = false; } return; }
   if (h.chase) { const v = h.chase; if (!v.u ? false : (hOut(v) || v.st === 'leave')) h.chase = null; else if (H.mode === 'house') { const d = hDist(h, v); if (d <= 1.5 && h.pcd <= 0) hPounce(H, v); else if (hScaredSt(v) && d <= 1.45 && h.ctick <= 0) hChaseHit(H, v); if (h.chase) h.path = d > 1 ? [Math.round(v.x), Math.round(v.y)] : null; } }
-  if (h.path) { const [tx, ty] = h.path; if (h.tx === tx && h.ty === ty) { h.path = null; return; } const n = hmNext(M, H.mode === 'house' && typeof hmFieldH === 'function' ? hmFieldH(M, tx, ty) : hmField(M, tx, ty, 'h'), h.tx, h.ty, 'h'); if (!n) { h.path = null; return; } hStepTo(h, n[0], n[1], h.chase ? HB.heroChase : HB.hero); h.hidden = false; } }
-function hGo(H, x, y) { const h = H.hero, M = H.M; x = clamp(Math.round(x), 0, M.w - 1); y = clamp(Math.round(y), 0, M.h - 1); h.chase = null;
-  if (hmSolid(M, M.hs, x, y)) { let best = null, bd = 99; for (let yy = y - 2; yy <= y + 2; yy++) for (let xx = x - 2; xx <= x + 2; xx++) if (!hmSolid(M, M.hs, xx, yy) && hmField(M, xx, yy, 'h')[h.ty * M.w + h.tx] >= 0) { const d = Math.abs(xx - x) + Math.abs(yy - y); if (d < bd) { bd = d; best = [xx, yy]; } } if (!best) return; [x, y] = best; }
+  if (h.path) { const [tx, ty] = h.path; if (h.tx === tx && h.ty === ty) { h.path = null; return; } const n = hmNext(M, hHeroField(H, tx, ty), h.tx, h.ty, 'h'); if (!n) { h.path = null; return; } hStepTo(h, n[0], n[1], h.chase ? HB.heroChase : HB.hero); h.hidden = false; } }
+function hGo(H, x, y, sr = 2) { const h = H.hero, M = H.M; x = clamp(Math.round(x), 0, M.w - 1); y = clamp(Math.round(y), 0, M.h - 1); h.chase = null; h.plain = false;
+  if (hmSolid(M, M.hs, x, y)) { let best = null, bd = 99; for (let yy = y - sr; yy <= y + sr; yy++) for (let xx = x - sr; xx <= x + sr; xx++) if (!hmSolid(M, M.hs, xx, yy) && hmField(M, xx, yy, 'h')[h.ty * M.w + h.tx] >= 0) { const d = Math.abs(xx - x) + Math.abs(yy - y); if (d < bd) { bd = d; best = [xx, yy]; } } if (!best) return; [x, y] = best; }
   if (hmField(M, x, y, 'h')[h.ty * M.w + h.tx] < 0) return; h.path = [x, y]; }
+/* 点地面走：点在墙/实心上只吸到 1 格内最近的空地；按普通路线走（目的地在员工通道里才钻通道）；这一步背着目的地就折回 */
+function hTapGo(H, x, y) { const h = H.hero, M = H.M; let rx = clamp(Math.round(x), 0, M.w - 1), ry = clamp(Math.round(y), 0, M.h - 1);
+  if (hmSolid(M, M.hs, rx, ry)) { let best = null, bd = 99; for (let yy = ry - 1; yy <= ry + 1; yy++) for (let xx = rx - 1; xx <= rx + 1; xx++) if (!hmSolid(M, M.hs, xx, yy) && hmField(M, xx, yy, 'h')[h.ty * M.w + h.tx] >= 0) { const d = Math.hypot(xx - x, yy - y); if (d < bd) { bd = d; best = [xx, yy]; } } if (!best) return false; [rx, ry] = best; }
+  hGo(H, rx, ry, 0); if (!h.path) return false; h.plain = !(H.mode === 'house' && hBackAt(M, rx, ry)); hRetarget(H); return true; }
+function hRetarget(H) { const h = H.hero, m = h.mv, M = H.M; if (!m || m.rev || !h.path || m.p >= .5) return; const f = hHeroField(H, h.path[0], h.path[1]), a = f[m.fy * M.w + m.fx], b = f[m.ty * M.w + m.tx]; if (a >= 0 && (b < 0 || a < b)) hRevStep(h); }
 function hPounce(H, v) { const B = H.B, h = H.hero; const k = C.sk.includes('chase') && C.mp >= SKILLS.chase.cost ? 'chase' : 'jump', S = SKILLS[k];
   const cos = hCos(); let mul = HB.dmg * skillMul(k) * (v.u.st.fear ? 1.3 : 1) * (h.hidden || v.u.st.dark ? 1.5 : 1) * (v.st === 'look' ? 1 : 1.1) * (cos === 'doctor' ? 1.2 : 1) * hDarkMul(H, v) * hPace(H, v, 'hero', h, S.el); C.mp -= S.cost; h.swingT = H.t; h.sdir = hDirTo(h, v); H.lastHitK = 'hero'; H.lastHitT = H.t; profUse(k); h.pcd = HB.pounceCd; H.stats.pounce++;
   if (v.u.picky && v.u.picky === S.el) v.u.pickyHit = 1; hBest(H, doHit(B, B.hero, v.u, S.pow, S.el, { mul }), '扑 → ' + v.u.n); reactLine(B, v.u); if (v.u.hp > 0 && S.stun && chance(S.stun * (v.u.boss ? .6 : 1))) addSt(B, v.u, 'stun', 1);
@@ -216,9 +229,13 @@ function hLure(H) { const h = H.hero; if (H.mode !== 'house' || (h.lureCd || 0) 
 function hStaffGo(H, st) { if (st.off || st.cast) return false; if (st.cd > 0) { toast(PETS[st.k].n + '还在缓（' + Math.ceil(st.cd) + ' 秒）'); return false; } const p = hSkPlan(H, st); if (!p) { toast(PETS[st.k].n + '够不着：' + hSkList(st).map(S => S.n).join(' / ') + ' 的范围里没有游客'); return false; } return hSkCast(H, st, p, 1); }
 
 /* ---------- 双人：队友操作的员工（st.p2，RULES 34）：自己走（方向键或点地面），点游客 = 走到够得着就放招，不会自己放 ---------- */
+/* 队友的方向键在房主这边执行：队友按住时每 60ms 发一次“还按着”，150ms 没收到就当松开（到下一格停下）；松手宽限和陈歌一样 */
 function hP2Move(H, st, dt) { const M = H.M;
-  st.walked = st.walked || 0; if (st.mv) { hMove(st, dt); st.home = [st.tx, st.ty]; return; } st.x = st.tx; st.y = st.ty; st.home = [st.tx, st.ty];
-  if (st.kd != null) { st.want = null; st.path = null; st.dir = st.kd; const nx = st.tx + HD[st.kd][0], ny = st.ty + HD[st.kd][1]; if (!hmSolid(M, M.hs, nx, ny)) hStepTo(st, nx, ny, HB.hero * 1.05); return; }
+  if (st.kd != null && st.kdAt && performance.now() - st.kdAt > 150) { st.kds = []; st.kd = null; }
+  st.walked = st.walked || 0; let chain = false;
+  if (st.mv) { if (hGrace(st.mv, st.kd != null, H.t)) hRevStep(st); const rev = st.mv.rev, key = st.mv.key; if (!hMove(st, dt)) { st.home = [st.tx, st.ty]; return; } chain = !rev && !!key; }
+  st.x = st.tx; st.y = st.ty; st.home = [st.tx, st.ty];
+  if (st.kd != null) { st.want = null; st.path = null; st.dir = st.kd; const nx = st.tx + HD[st.kd][0], ny = st.ty + HD[st.kd][1]; if (!hmSolid(M, M.hs, nx, ny)) { hStepTo(st, nx, ny, HB.hero * 1.05); st.mv.key = 1; if (chain) { st.mv.kc = 1; st.mv.t0 = H.t; } } return; }
   const w = st.want && !hOut(st.want) && st.want.st !== 'leave' ? st.want : (st.want = null);
   st.ctick = (st.ctick || 0) - dt; if (w) { if (st.cd <= 0) { const p = hSkPlan(H, st, w); if (p) { hSkCast(H, st, p, 1); st.want = null; st.path = null; return; } } else if (hScaredSt(w) && hDist(st, w) <= 1.45 && st.ctick <= 0) { hScHit(H, st, w); return; } st.path = hDist(st, w) > 1.2 ? [Math.round(w.x), Math.round(w.y)] : null; }
   if (st.path) { const [tx, ty] = st.path; if (st.tx === tx && st.ty === ty) { st.path = null; return; } const n = hmNext(M, hmField(M, tx, ty, 'h'), st.tx, st.ty, 'h'); if (!n) { st.path = null; return; } hStepTo(st, n[0], n[1], HB.hero * 1.05); } }
