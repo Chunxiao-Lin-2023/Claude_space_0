@@ -327,7 +327,7 @@ function genMap(seed) {
     if (M.noVeg && M.noVeg(x, y)) continue;
     if (DIRS.some(([dx, dy]) => inMap(x + dx, y + dy) && blk[ci(x + dx, y + dy, G[col(x + dx, y + dy)])] === 28)) continue; // keep both ends of a ramp clear
     const VG = M.veg || {}, clump = 0.3 + 1.4 * noise(x + 2000, y + 50, 5), noTree = nearRoad.has(i) || inTown(x, y, 3);
-    const pTree = noTree ? 0 : (t === TT.forest ? 0.26 : t === TT.hill ? 0.06 : t === TT.grass ? 0.02 : 0.008) * clump * (VG.tree == null ? 1 : VG.tree);
+    const pTree = noTree ? 0 : (t === TT.forest ? 0.2 : t === TT.hill ? 0.06 : t === TT.grass ? 0.02 : 0.008) * clump * (VG.tree == null ? 1 : VG.tree);
     const pRock = (t === TT.rocky ? 0.14 : t === TT.hill ? 0.04 : 0.012) * (VG.rock == null ? 1 : VG.rock);
     const v = r();
     if (v < pTree) put(x, y, g, 22); else if (v < pTree + pRock) put(x, y, g, 21);

@@ -24,7 +24,7 @@ function stepZombies(dt) {
     // burning: damage over time, and the fire jumps to zombies right next to it
     if (z.burn > 0) {
       z.burn -= dt; hurtZombie(z, BAL.burnDps * dt, W.p[z.burnBy] || null, 0, 0, true); if (z.hp <= 0) continue;
-      if (rand() < dt * 1.2) { const a = grid.get(ci(Math.floor(z.x), Math.floor(z.y), z.L)); if (a) for (const o of a) if (o !== z && o.hp > 0 && !(o.burn > 0)) { o.burn = 1.8; o.burnBy = z.burnBy; } }
+      if (rand() < dt * BAL.burnSpread) { const fx = Math.floor(z.x), fy = Math.floor(z.y); for (let gy = fy - 2; gy <= fy + 2; gy++) for (let gx = fx - 2; gx <= fx + 2; gx++) { const a = inMap(gx, gy) && grid.get(ci(gx, gy, z.L)); if (a) for (const o of a) if (o !== z && o.hp > 0 && !(o.burn > 0) && Math.hypot(o.x - z.x, o.y - z.y) < BAL.burnSpreadR) { o.burn = 2.5; o.burnBy = z.burnBy; } } }
     }
     z.st = 'walk';
     // wall climbing in progress
@@ -77,17 +77,20 @@ function stepZombies(dt) {
       }
     }
     // choose the next step
-    let tx = null, ty = null, attackI = -1;
+    let tx = null, ty = null, attackI = -1, planU = -1;
     if (field[i] < Infinity && !hold) {
       let bestV = Infinity, bx = -1, by = -1, bl = -1, bex = 0;
       navNbrs(cx, cy, z.L, climbT, (nx, ny, nl, ex) => { const u = ci(nx, ny, nl), v = field[u] + enterCost(u) + ex + hash2(nx * 7 + z.seed, ny) * 0.01; if (v < bestV) { bestV = v; bx = nx; by = ny; bl = nl; bex = ex; } });
       if (bx >= 0 && bestV <= field[i] + 0.02) {
-        const u = ci(bx, by, bl), ub = W.blk[u];
+        const u = ci(bx, by, bl), ub = W.blk[u]; planU = u;
         if (bl === z.L + 1 && climbT && bex > 0) {
           if (Math.abs(z.x - (cx + 0.5)) < 0.3 && Math.abs(z.y - (cy + 0.5)) < 0.3 || d2(z.x, z.y, bx + 0.5, by + 0.5) < 0.95) { z.climbing = { t: 0, x0: z.x, y0: z.y, z0: z.z, x1: bx + 0.5, y1: by + 0.5, L: bl }; z.face = Math.atan2(by - cy, bx - cx); continue; }
           tx = cx + 0.5; ty = cy + 0.5;
         } else if (ub && B[ub].Z && !B[ub].stairs && B[ub].brk) attackI = u;
-        else { tx = bx + 0.5; ty = by + 0.5; }
+        else if (ub && B[ub].trunk) { // a tree in the way: aim past the side of the trunk we're already on, not at the trunk
+          const fx = bx - cx, fy = by - cy, px = -fy, py = fx, side = ((z.x - (bx + 0.5)) * px + (z.y - (by + 0.5)) * py) >= 0 ? 1 : -1, off = B[ub].trunk + z.r + 0.08;
+          tx = bx + 0.5 + px * side * off + fx * 0.35; ty = by + 0.5 + py * side * off + fy * 0.35;
+        } else { tx = bx + 0.5; ty = by + 0.5; }
       }
     } else if (!hold) {
       let best = null, bd = 1e9; for (const p of W.p) { if (!standingP(p) && !p.down) continue; const d = d2(p.x, p.y, z.x, z.y); if (d < bd) { bd = d; best = p; } }
@@ -112,8 +115,11 @@ function stepZombies(dt) {
       if (d > 0.02) { mx = dx / d * z.spd * slow * rg; my = dy / d * z.spd * slow * rg; z.face = Math.atan2(dy, dx); }
     }
     z.kbx *= Math.max(0, 1 - dt * 6); z.kby *= Math.max(0, 1 - dt * 6);
+    // wedged against a tree trunk for a second (a gap too narrow round it): squeeze past it for a moment
+    if (z.squeeze > 0) z.squeeze -= dt;
+    if (tx != null && z.stun <= 0) { z.wT = (z.wT || 0) + dt; if (z.wT > 1) { if (z.wx != null && Math.hypot(z.x - z.wx, z.y - z.wy) < 0.15) z.squeeze = 1.5; z.wT = 0; z.wx = z.x; z.wy = z.y; } }
     moveEnt(z, (mx + z.kbx) * dt, (my + z.kby) * dt, 'z', climbT);
-    if (z.bump >= 0 && tx != null && B[W.blk[z.bump]].brk && B[W.blk[z.bump]].Z) zAttackCell(z, z.bump);
+    if (z.bump >= 0 && tx != null && B[W.blk[z.bump]].brk && B[W.blk[z.bump]].Z && (z.bump === planU || !B[W.blk[z.bump]].nat)) zAttackCell(z, z.bump); // only what's in the way of its path (or something you built)
     z.moving = Math.hypot(mx, my) > 0.05;
     z.z = surfZ(z.x, z.y, z.L);
   }

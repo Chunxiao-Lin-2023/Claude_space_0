@@ -133,7 +133,7 @@ Object.assign(MODES.nests, {
       if (q.cd <= 0 && (near || night)) {
         q.cd = (night ? 5 : 7) * (q.big ? 0.6 : 1);
         const mine = W.zs.filter(z => z.nest === q.ci).length;
-        if (mine < (q.big ? 14 : 8)) for (let k = 0; k < (q.big ? 3 : rand() < 0.5 ? 2 : 1); k++) { const z = zAround(modeKind(W.night + 1), q.x, q.y, 1.5, 3.5); if (z) { z.nest = q.ci; if (night && !near) z.mz = 0; } }
+        if (mine < (q.big ? 14 : 8)) for (let k = 0; k < (q.big ? 3 : rand() < 0.5 ? 2 : 1); k++) { const z = zAround(modeKind(W.night + 1), q.x, q.y, 1.5, 3.5); if (z) { z.nest = q.ci; if (night && !near && W.nightT < BAL.nightMin(W.night)) z.mz = 0; } } // (nest zombies stop holding back the dawn once the night has run its length)
       }
     }
   },

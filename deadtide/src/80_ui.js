@@ -61,10 +61,10 @@ function uiKeys(me) {
   let rows;
   if (me.build) rows = [['左键', '盖（拖动一排）'], ['右键', '拆'], ['1–0', '选材料'], ['R', '转向'], ['X', '拆除模式', me.demo ? 1 : 0], ['Enter', '确认'], ['Esc', '取消'], ['B', '退出建造', 1]];
   else {
-    const canRl = me.mag[wi] < w.mag && (w.inf || me.ammo[wi] > 0) && !(me.reloadT > 0), ut = useTarget(me), bench = nearBench(me);
+    const canRl = me.mag[wi] < w.mag && (w.inf || me.ammo[wi] > 0) && !(me.reloadT > 0), ut = useTarget(me), bench = canCraft(me);
     rows = [['左键', '射击'], ['R', '换弹', me.mag[wi] === 0 && canRl ? 2 : canRl ? 0 : -1], ['G', '手雷 ×' + me.nades, me.nades ? 0 : -1],
       ['H', me.down ? '自救' : '医疗 ×' + me.meds, !me.meds ? -1 : (me.down || me.hp < me.maxHp * 0.4) ? 2 : me.hp >= me.maxHp ? -1 : 0],
-      ['右键', '刀（自动追，也可按 V）'], ['空格', '跳 / 翻越'], ['F', ut ? ut.name : '交互', ut ? 1 : 0], ['1–' + NW, '换枪'], ['C', '制作', bench ? 1 : -1], ['B', '建造']];
+      ['右键', '刀（自动追，也可按 V）'], ['空格', '跳 / 翻越'], ['F', ut ? ut.name : '交互', ut ? 1 : 0], ['1–' + NW, '换枪'], ['C', '制作 / 购买', bench ? 1 : -1], ['B', '建造']];
     if (W.phase === 'day') rows.push(['N', me.ready ? '取消准备' : '准备入夜', me.ready ? 1 : 0]);
   }
   rows.push(['M', '大地图（也可按 Tab）'], ['Q E', '转镜头'], ['Esc', '菜单']);
@@ -153,7 +153,7 @@ function hudTick(dt) {
   $('wRl').style.width = (rl * 100) + '%';
   $('iNade').textContent = me.nades; $('iMed').textContent = me.meds; $('iKill').textContent = me.kills;
   uiKeys(me);
-  WPN.forEach((w2, i) => { const b = $('wbar').children[i]; b.classList.toggle('hidden', !me.owned[i]); b.classList.toggle('sel', i === me.wpn); $('wb' + i).textContent = w2.inf ? '∞' : me.mag[i] + '/' + me.ammo[i]; });
+  WPN.forEach((w2, i) => { const b = $('wbar').children[i]; b.classList.toggle('hidden', !me.owned[i]); b.classList.toggle('sel', i === me.wpn); $('wb' + i).textContent = (me.rlBg && me.rlBg[i] > 0 ? '⟳ ' : '') + (w2.inf ? '∞' : me.mag[i] + '/' + me.ammo[i]); });
   // phase
   const ph = $('phase');
   if (W.phase === 'day') {
@@ -182,10 +182,11 @@ function hudTick(dt) {
   // prompt
   let ptxt = '', prog = 0;
   if (!me.dead && !me.build) {
-    const tgt = useTarget(me);
+    const tgt = useTarget(me), inB = canCraft(me); if (inB && !UI.inB) UI.craftHintT = W.t; UI.inB = inB;
     const key = INP.touch ? '点「交互」' : '按 F ';
     if (tgt) { ptxt = key + tgt.name; prog = me.useT / tgt.t; }
     else if (nearBench(me)) ptxt = (INP.touch ? '点「交互」' : '按 F ') + '打开工作台';
+    else if (canCraft(me) && !INP.touch && W.t - (UI.craftHintT || -99) < 4) ptxt = '在建筑里：按 C 制作 / 买弹药';
     if (me.down) ptxt = me.meds > 0 ? (INP.touch ? '点「医疗」' : '按 H ') + '用医疗包自救' : (W.p.length > 1 ? '等待队友来扶你…' : '');
     if (me.medT > 0 && me.selfRev) { ptxt = '正在自救…'; prog = 1 - me.medT / 3; }
   }
@@ -193,10 +194,11 @@ function hudTick(dt) {
     const sh = $('stickHint'), on = INP.move.id == null && !me.dead && !panelOpen();
     sh.classList.toggle('on', on);
     if (on) { const R = STICK_R(), x = Math.max(R + 22, Math.min(VW * 0.16, 170)), y = VH - Math.max(R + 40, Math.min(VH * 0.24, 190)); sh.style.left = x + 'px'; sh.style.top = y + 'px'; sh.style.width = sh.style.height = R * 2 + 'px'; }
-    const tgt = !me.dead && !me.build && !me.down ? useTarget(me) : null, bench = !tgt && !me.build && nearBench(me);
+    const tgt = !me.dead && !me.build && !me.down ? useTarget(me) : null, bench = !tgt && !me.build && canCraft(me);
+    $('tCraft').classList.toggle('hidden', !canCraft(me) || !!me.build);
     const u = $('tUse'); u.classList.toggle('hidden', !(tgt || bench));
     if (tgt) { u.firstElementChild.textContent = INP.useLatch ? '进行中 · 再点停' : '点一下'; u.lastElementChild.textContent = tgt.name; u.style.setProperty('--p', clamp(me.useT / tgt.t, 0, 1)); }
-    else if (bench) { u.firstElementChild.textContent = '点一下'; u.lastElementChild.textContent = '打开工作台'; u.style.setProperty('--p', 0); }
+    else if (bench) { u.firstElementChild.textContent = '点一下'; u.lastElementChild.textContent = '制作 / 购买'; u.style.setProperty('--p', 0); }
     if (tgt || bench) ptxt = ''; else if (me.down && me.meds > 0) ptxt = '点「自救」用医疗包站起来';
     const md = $('tMed'), showMed = me.meds > 0 && !me.dead && me.medT <= 0 && (me.down || me.hp < me.maxHp * 0.7);
     md.classList.toggle('hidden', !showMed); md.textContent = (me.down ? '自救' : '用医疗包') + ' ×' + me.meds;
@@ -220,7 +222,7 @@ function uiView() {
 /* craft */
 function openCraft() {
   if (!W || W.over) return; const me = W.p[ME];
-  if (!nearBench(me)) { toast('要在营地小屋里的工作台旁才能制作'); return; }
+  if (!canCraft(me)) { toast('进到任何建筑里（或回营地）才能制作、买弹药'); return; }
   renderCraft(); $('craft').classList.remove('hidden'); sfx('click');
 }
 function closeCraft() { $('craft').classList.add('hidden'); }

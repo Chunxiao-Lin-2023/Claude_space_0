@@ -159,11 +159,11 @@ function guestNetTick(dt) {
   }
 }
 function guestPredictFire(dt) {
-  const p = W.p[ME]; p.lfCD = (p.lfCD || 0) - dt;
+  const p = W.p[ME]; if (!p.lfW) p.lfW = WPN.map(() => 0); for (let k = 0; k < NW; k++) p.lfW[k] -= dt;
   if (p.reloadVis > 0) p.reloadVis -= dt;
   const wi = p.down ? 0 : p.wpn, w = WPN[wi];
-  if (!p.inp.fire || p.build || p.dead || p.lfCD > 0 || p.reloadT > 0 || p.reloadVis > 0 || p.medT > 0 || p.mag[wi] <= 0) return;
-  p.lfCD = w.rate; p.mag[wi]--;
+  if (!p.inp.fire || p.build || p.dead || p.lfW[p.down ? 0 : p.wpn] > 0 || p.reloadT > 0 || p.reloadVis > 0 || p.medT > 0 || p.mag[wi] <= 0) return;
+  p.lfW[wi] = w.rate; p.mag[wi]--;
   if (w.flame || w.gl) { shotFx(ME, wi, []); return; }
   const [sx, sy, sz] = shoulder(p), [ax, ay, az] = aimDir(p), ends = [];
   const yaw = Math.atan2(ay, ax), pitch = Math.asin(clamp(az, -1, 1));

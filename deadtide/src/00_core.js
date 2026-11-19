@@ -50,7 +50,7 @@ defB(10, { key: 'lamp', name: '探照灯', cost: { parts: 3, wood: 1 }, hp: 60, 
 // natural / fixed
 defB(20, { key: 'dirt', P: 1, Z: 1, B: 1, top: 1, nat: 1 });
 defB(21, { key: 'rock', P: 1, Z: 1, nat: 1, res: 'stone', hp: 1 });
-defB(22, { key: 'tree', P: 1, Z: 1, nat: 1, res: 'wood', hp: 1 });
+defB(22, { key: 'tree', nat: 1, res: 'wood', hp: 1, trunk: 0.2 }); // not a whole-cell block: only the round trunk pushes you aside (moveEnt), so woods are walkable
 defB(23, { key: 'water', P: 1, Z: 1, nat: 1 });
 defB(24, { key: 'ruin', P: 1, Z: 1, B: 1, top: 1, nat: 1, brk: 1, hp: 260, col: '#7c4a3a' });
 defB(25, { key: 'car', P: 1, Z: 1, B: 1, nat: 1, spot: 'car' });
@@ -99,12 +99,12 @@ const affordable = (res, cost) => Object.keys(cost).every(k => (res[k] || 0) >= 
 // sniper pierce + laser, crossbow pins, flamer sets fire, launcher explodes. loot = ammo found per supply pickup.
 const WPN = [
   { k: 'pistol', name: '手枪', dmg: 34, rate: 0.3, mag: 12, reload: 1.0, spread: 0.03, range: 15, pellets: 1, inf: 1, kick: 0.6, shake: 0.12, hs: 2.2, loot: 0 },
-  { k: 'shotgun', name: '霰弹枪', dmg: 17, rate: 0.72, mag: 6, reload: 1.7, spread: 0.17, range: 8, pellets: 8, kick: 2.6, shake: 0.35, start: 24, stun: 0.3, falloff: 1, loot: 8 },
+  { k: 'shotgun', name: '霰弹枪', dmg: 17, rate: 0.72, mag: 6, reload: 1.7, spread: 0.17, range: 8, pellets: 8, pierce: 2, kick: 2.6, shake: 0.35, start: 24, stun: 0.3, falloff: 1, loot: 8 },
   { k: 'rifle', name: '步枪', dmg: 30, rate: 0.12, mag: 30, reload: 1.6, spread: 0.035, range: 20, pellets: 1, kick: 0.4, shake: 0.12, bloom: 0.22, loot: 30 },
   { k: 'sniper', name: '狙击枪', dmg: 195, rate: 1.05, mag: 5, reload: 2.1, spread: 0.004, range: 45, pellets: 1, pierce: 5, kick: 4, shake: 0.4, stun: 0.5, laser: 1, loot: 4 },
   { k: 'crossbow', name: '弩', dmg: 110, rate: 0.75, mag: 6, reload: 1.5, spread: 0.008, range: 26, pellets: 1, pierce: 3, kick: 0.6, shake: 0.06, pin: 1.1, loot: 6 },
-  { k: 'flamer', name: '喷火器', dmg: 12, rate: 0.07, mag: 80, reload: 2.2, spread: 0.32, range: 4.8, pellets: 1, flame: 1, burn: 3.5, kick: 0, shake: 0.02, loot: 40 },
-  { k: 'launcher', name: '榴弹发射器', dmg: 220, rate: 0.9, mag: 4, reload: 2.6, spread: 0.015, range: 22, pellets: 1, gl: 1, kick: 0, shake: 0.3, loot: 2 },
+  { k: 'flamer', name: '喷火器', dmg: 12, rate: 0.07, mag: 80, reload: 2.2, spread: 0.5, range: 5.6, pellets: 1, flame: 1, burn: 3.5, kick: 0, shake: 0.02, loot: 40 },
+  { k: 'launcher', name: '榴弹发射器', blastR: 3.0, dmg: 220, rate: 0.9, mag: 4, reload: 2.6, spread: 0.015, range: 22, pellets: 1, gl: 1, kick: 0, shake: 0.3, loot: 2 },
 ];
 const NW = WPN.length;
 
@@ -215,19 +215,22 @@ const BAL = {
   downTime: 30, reviveTime: 2.4, soloDownTime: 8, respawnHp: 0.5,
   searchTime: 1.5, healTime: 1.0, medHeal: 60,
   knifeDmg: 55, knifeKB: 2.5, knifeCD: 0.5, knifeRange: 2.3, knifeLunge: 1.3, knifeBack: 2, // melee (was a shove: 18 dmg, KB 6, CD 0.55, 1.3 cone)
-  nadeDmg: 286, nadeR: 2.8, nadeFuse: 1.6,
+  nadeDmg: 286, nadeR: 3.4, nadeFuse: 1.6, nadeLand: 0.35, nadeMin: 0.5, // (round 18: radius 2.8 -> 3.4, damage at the edge 35% -> 50%, goes off 0.35 s after landing where you aimed)
   headshot: 1.6,
   radioHp: 1500, radioDmg: 0.5,
   startRes: { wood: 90, stone: 30, steel: 20, parts: 8 },
   refund: 0.5,
-  nightSpawn: n => Math.round(22 + n * 9),
+  nightSpawn: n => Math.round(30 + n * 12),     // (round 18: was 22 + 9n)
   bloodMul: 1.5,
-  hpMul: n => 1 + 0.13 * (n - 1),
-  spdMul: n => 1 + 0.02 * (n - 1),
-  spawnDur: n => 50 + n * 4,      // the horde trickles in over this long
+  hpMul: n => 1 + 0.15 * (n - 1),               // (was 0.13 per night)
+  spdMul: n => 1 + 0.03 * (n - 1),              // (was 0.02 per night)
+  spawnDur: n => 35 + n * 4,      // the horde trickles in over this long (was 50 + 4n)
+  zCap: () => TOUCHY ? 95 : 140,  // most zombies alive at once; the rest of the horde waits its turn
   nightMin: n => 150 + n * 6,     // a night lasts at least this long; small groups keep coming until then
   nightTrickleCD: 7, nightTrickleMax: 8,
   dayStragglers: 8, dayStragglerCD: 10,
+  burnSpread: 2.5, burnSpreadR: 1.15, // burning zombies set fire to others this close, about 2.5 times a second (was: same cell only, 1.2 / s)
+  barrelR: 3.2, barrelDmg: 240, barrelBurn: 3, // red oil barrels go up when shot
   burnDps: 28, blastR: 2.3, blastDmgP: 32, blastDmgB: 160, screamR: 9, screamCD: 9, rageMul: 1.45,
   lootFar: 30, wireDps: 14, wireSlow: 0.45, wireWear: 6,
   aggro: 11,                     // (legacy) zombies now always hunt the nearest reachable player

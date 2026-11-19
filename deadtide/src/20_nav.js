@@ -54,6 +54,14 @@ function moveEnt(e, dx, dy, who, canDrop) {
       if (ax) e.y = v; else e.x = v;
     }
   }
+  // tree trunks: thin and round — slide round them
+  const fx = Math.floor(e.x), fy = Math.floor(e.y);
+  for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+    const xx = fx + dx, yy = fy + dy; if (e.squeeze > 0 || !inMap(xx, yy) || e.L < 0 || e.L >= ML) continue; const b = W.blk[ci(xx, yy, e.L)]; if (!b || !B[b].trunk) continue;
+    let ex = e.x - xx - 0.5, ey = e.y - yy - 0.5; const sd = (xx * 7 + yy * 13) % 2 ? 1 : -1; if (Math.abs(ey) < 0.12) ey += 0.12 * sd; if (Math.abs(ex) < 0.12) ex += 0.12 * sd; // head-on: slip past to one side
+    const d = Math.hypot(ex, ey), m = B[b].trunk + e.r * 0.7;
+    if (d < m) { const ux = d > 1e-3 ? ex / d : 1, uy = d > 1e-3 ? ey / d : 0, nx = xx + 0.5 + ux * m, ny = yy + 0.5 + uy * m; if (standable(Math.floor(nx), Math.floor(ny), e.L, who) || (Math.floor(nx) === Math.floor(e.x) && Math.floor(ny) === Math.floor(e.y))) { e.x = nx; e.y = ny; } }
+  }
   e.x = clamp(e.x, 0.3, MW - 0.3); e.y = clamp(e.y, 0.3, MH - 0.3);
 }
 function noteBump(e, nx, ny) { if (inMap(nx, ny)) { const i = ci(nx, ny, e.L); if (W.blk[i]) e.bump = i; } }
@@ -70,8 +78,8 @@ function enterCost(i) {
   const b = W.blk[i];
   if (!b) return 1;
   const Bb = B[b];
-  if (Bb.stairs || !Bb.Z) return Bb.wire ? 3 : 1;
-  if (Bb.brk) return 1 + W.bhp[i] / 15;
+  if (Bb.stairs || !Bb.Z) return Bb.wire ? 3 : Bb.trunk ? 2.5 : 1; // a tree cell can be crossed, but going round it is nicer
+  if (Bb.brk) return 1 + W.bhp[i] / (Bb.nat ? 3 : 15); // town walls / half walls / furniture: go round if there is any way round
   return Infinity;
 }
 // is cell i a node a zombie can occupy (possibly after smashing what's in it)?

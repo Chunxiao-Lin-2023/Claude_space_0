@@ -54,13 +54,15 @@ const { chromium } = require('playwright'); const NIGHTS = +process.argv[2] || 2
     for (let k = 0; k < nv; k++) { await p.evaluate(k => { const me = W.p[0], [x, y, L] = __soak.visit[k]; me.x = x + 0.5; me.y = y + 0.5; me.L = L; me.z = surfZ(me.x, me.y, L); me.vx = me.vy = 0; }, k); await p.waitForTimeout(120); }
     await p.waitForTimeout(800);
     await p.evaluate(() => { __soak.toured = true; window.__dbg.skipDraw = true; window.__dbg.speed = 8; });
-    let last = -1, s;
+    let last = -1, s; const last2 = { k: -1, t: 0 };
     for (let t = 0; t < 420; t++) {
       await p.waitForTimeout(1000);
       s = await p.evaluate(() => ({ n: W.night, ph: W.phase, over: W.over, z: W.zs.filter(z => z.hp > 0).length, k: W.kills, S: { stuck: __soak.stuck, nan: __soak.nan, st: __soak.st.slice(0, 6) }, ft: (() => { const f = __soak.frames.slice().sort((a, b) => a - b); return f.length ? [Math.round(f[f.length >> 1]), Math.round(f[Math.floor(f.length * 0.95)])] : []; })(), obj: typeof modeHud === 'function' ? modeHud() : '' }));
       if (t % 30 === 0) console.log('   ', map, 't', t, 'night', s.n, s.ph, 'kills', s.k, 'alive', s.z, 'ft', s.ft.join('/'));
       if (s.ph === 'day' && s.n !== last) { last = s.n; }
       if (s.over || s.n > NIGHTS || (s.n === NIGHTS && s.ph === 'day')) break;
+      if (s.k !== (s.kPrev = s.kPrev, last2.k)) { last2.k = s.k; last2.t = t; }
+      if (s.ph === 'night' && t - last2.t > 60) { s.stall = await p.evaluate(() => { const me = W.p[0]; return W.zs.filter(z => z.hp > 0).slice(0, 8).map(z => { const i = ci(Math.floor(z.x), Math.floor(z.y), z.L); return [z.k, +z.x.toFixed(1), +z.y.toFixed(1), z.L, z.st, Math.round(W.ff.pw[i]), Math.round(Math.hypot(z.x - me.x, z.y - me.y)), z.mz ? 'mz' : '']; }).concat([['me', +me.x.toFixed(1), +me.y.toFixed(1), me.L]]); }); console.log('    STALL', JSON.stringify(s.stall)); break; }
     }
     const pass = !errs.length && !s.S.nan && s.S.stuck <= 3;
     if (!pass) ok = false;
