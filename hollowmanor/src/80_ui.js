@@ -121,7 +121,7 @@ function updateHUD(me, dt) {
   if (slow) {
     $('hBadge').innerHTML = `<span style="color:${ROLES[me.role].color}">${ROLES[me.role].name}</span><small>${me.name}</small>`;
     $('battRow').classList.toggle('hidden', me.role !== 'L');
-    const ob = curObjective(); const hd = W.f.seal === 0 && W.phase === 'play' ? '<small>' + MAP.F.exitHint + '</small>' : '<small>' + MAP.F.title + '</small>';
+    const ob = curObjective(); const hd = W.f.seal === 0 && W.phase === 'play' ? '<small>' + MAP.F.exitHint + '</small>' : '<small>' + navWhere(me) + '</small>';
     $('obj').innerHTML = ob + hd;
     $('hInv').innerHTML = W.inv.map(k => `<div class="slot" title="${ITEMS[k].name}">${ITEMS[k].icon}</div>`).join('') + Object.keys(W.evFound).map(k => `<div class="slot" style="border-color:rgba(143,211,255,.5);font-size:18px" title="${EVID[k].name}">${EVID[k].icon}</div>`).join('');
     $('partnerRow').innerHTML = `<span style="color:${ROLES[o.role].color}">${ROLES[o.role].name}</span>　${o.down ? '<b style="color:#ff6b6b;width:auto">倒地 ' + Math.max(0, o.downT) + 's</b>' : o.hide >= 0 ? '躲在柜子里' : '恐惧 ' + Math.round(o.fear)}${W.dc ? '　<b style="color:#ff6b6b;width:auto">断线</b>' : ''}`;
@@ -141,6 +141,7 @@ function updateHUD(me, dt) {
   $('hidden').classList.toggle('hidden', me.hide < 0);
   $('tBoost').classList.toggle('hidden', me.role !== 'L'); $('tGlyph').classList.toggle('hidden', me.role !== 'S');
   updateOverlays(me, dt);
+  navTick(W, me, dt);
   updateFloorCard();
 }
 /* black title card while climbing the stairs and while the next floor fades in */

@@ -69,6 +69,14 @@ input:focus{border-color:var(--gold)}
 #fearBar i{background:linear-gradient(90deg,#6a4ad0,#d0453f)}#stamBar i{background:#a8b8a8}#battBar i{background:linear-gradient(90deg,#c89a3a,#ffe6a0)}
 #hud .tc{position:absolute;left:50%;transform:translateX(-50%);top:calc(12px + var(--sa-t));text-align:center;max-width:min(560px,60vw)}
 #obj{font-size:15px;letter-spacing:.05em;text-shadow:0 2px 6px #000;color:#eadfca;background:rgba(0,0,0,.35);padding:6px 14px;border-radius:20px;border:1px solid rgba(255,255,255,.06)}
+#roomToast{position:absolute;left:50%;top:22%;transform:translate(-50%,6px);display:flex;align-items:center;gap:14px;opacity:0;transition:opacity .35s,transform .35s;pointer-events:none;white-space:nowrap}
+#roomToast.on{opacity:1;transform:translate(-50%,0)}
+#roomToast b{font-family:"Noto Serif SC",serif;font-weight:400;font-size:26px;letter-spacing:.38em;padding-left:.38em;color:#eadfca;text-shadow:0 0 12px #000,0 2px 4px #000}
+#roomToast b small{display:block;font-size:12px;letter-spacing:.2em;text-align:center;margin-bottom:2px}
+#roomToast i{display:block;width:46px;height:1px;background:linear-gradient(90deg,transparent,rgba(226,180,92,.8))}#roomToast i:last-child{transform:scaleX(-1)}
+#mini{position:absolute;right:calc(14px + var(--sa-r));top:70px;border:1px solid rgba(226,180,92,.28);border-radius:6px;pointer-events:auto;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,.6)}
+#mini.big{left:50%;top:50%!important;right:auto;transform:translate(-50%,-50%);z-index:20;border-color:rgba(226,180,92,.5);box-shadow:0 0 0 100vmax rgba(0,0,0,.55)}
+@media (pointer:coarse) and (max-width:500px){#roomToast{top:36%}#roomToast b{font-size:20px}}
 #obj small{display:block;color:var(--sub);font-size:12px;margin-top:2px}
 #hud .tr{position:absolute;right:calc(14px + var(--sa-r));top:calc(12px + var(--sa-t));display:flex;gap:8px;align-items:flex-start;pointer-events:auto}
 .inv{display:flex;gap:6px}
@@ -158,7 +166,7 @@ body{-webkit-touch-callout:none}
 @media (pointer:coarse) and (max-width:500px){
   .logo{margin-bottom:12px}.logo h1{font-size:64px}.logo .tag{margin-top:8px;font-size:13px}
   #hud .tl{width:140px!important;gap:4px}.badge{font-size:15px}.mrow{font-size:11px;gap:5px}.mrow b{width:24px}
-  #hud .tc{top:calc(140px + var(--sa-t));max-width:94vw;width:max-content}#obj{font-size:12px;padding:4px 10px}
+  #hud .tc{top:calc(204px + var(--sa-t));max-width:94vw;width:max-content}#obj{font-size:12px;padding:4px 10px}
   #hud .tr{gap:5px;flex-wrap:wrap;justify-content:flex-end;width:200px}.slot{width:30px;height:30px;font-size:16px}.ibtn{width:40px;height:40px;font-size:17px}
   .inv{order:2;width:100%;flex-wrap:wrap;justify-content:flex-end;gap:4px}
   #log{width:62vw;font-size:12px;bottom:calc(150px + var(--sa-b))}
@@ -456,6 +464,8 @@ body.localPlay #tPing,body.localPlay #tChat{display:none}
   <div id="prompt" class="hidden"><div class="key"><span id="pKey">E</span><svg width="42" height="42"><circle cx="21" cy="21" r="18" fill="none" stroke="#e2b45c" stroke-width="3" stroke-dasharray="113" stroke-dashoffset="113" id="pRing"/></svg></div><span id="pText"></span></div>
   <div id="log"></div>
   <div id="tags"></div>
+  <div id="roomToast"><i></i><b></b><i></i></div>
+  <canvas id="mini" title="地图 (M)"></canvas>
   <div id="downBanner" class="hidden"></div>
   <div id="hidden" class="hidden">躲在柜子里……屏住呼吸　（E 出来）</div>
 </div>
@@ -486,8 +496,8 @@ body.localPlay #tPing,body.localPlay #tChat{display:none}
   <p><b>非对称：</b>持灯者看得见真实世界——手电照出霜痕和镜中影，能转符文锁、装保险丝、推开暗门书架。灵视者看得见另一侧——怨灵的位置（隔墙也能看到）、灵痕手印、灵球、写在墙上的符文密码。你们看到的东西不一样，要互相告诉对方。</p>
   <p><b>猎杀：</b>灯开始乱闪、低沉的嗡鸣响起时，怨灵就要开始猎杀了。快躲进柜子，或者让持灯者用强光（右键 / F）把它定住——被定住两次它就会退散。被抓住会倒下，45 秒内要被同伴扶起来。</p>
   <p><b>恐惧：</b>两个人离得远、待在黑暗里、看见怨灵，恐惧都会上升；恐惧越高，怨灵越早开始猎杀。待在一起、待在有灯的房间里会好一些。</p>
-  <p><b>键鼠：</b>WASD 移动 · 鼠标朝向 · Shift 奔跑 · E / 左键 互动（按住）· 右键 / F 强光 · Q 标记 · 1–4 快捷信号 · G 发送符文 · J 日志 · Esc 菜单 · M 静音</p>
-  <p><b>iPad：</b>左半屏拖动移动，右下拖动朝向，按钮互动 / 强光 / 奔跑，📍 标记，💬 信号，☾ 符文。</p></div></div>
+  <p><b>键鼠：</b>WASD 移动 · 鼠标朝向 · Shift 奔跑 · E / 左键 互动（按住）· 右键 / F 强光 · Q 标记 · 1–4 快捷信号 · G 发送符文 · J 日志 · M 地图 · Esc 菜单 · 右上角 🔊 静音</p>
+  <p><b>iPad：</b>左半屏拖动移动，右下拖动朝向，按钮互动 / 强光 / 奔跑，📍 标记，💬 信号，☾ 符文；点右上角小地图可以放大。</p></div></div>
 <div id="floorCard" class="hidden"><div class="ft"></div><div class="fs"></div></div>
 <div id="result" class="scr hidden"><div class="card"><h2 id="rTitle"></h2><div class="why" id="rWhy"></div><div class="stats" id="rStats"></div><div class="row" style="justify-content:center;flex-wrap:wrap"><button class="primary hidden" id="rRetry">重试</button><button id="rAgain">返回房间</button></div><div class="status" id="rStatus"></div></div></div>
 <script>
@@ -2964,6 +2974,17 @@ function buildFloorCache() {
   }
   for (const f of MAP.furn) if (f.k === 'rug') paintRug(g, f, M);
   for (const f of MAP.furn) if (f.k === 'stairs') paintStairs(g, f, M, true); else if (f.k === 'stairwell') paintStairs(g, f, M, false);
+  // door sills: a worn stone/brass strip across every doorway, so the step from one room into the next reads
+  for (const d of MAP.doors) {
+    if (d.kind === 'crack') continue;
+    const arch = d.kind === 'arch', base = arch ? '#6a6258' : d.kind === 'front' ? '#5a5650' : '#6e5638', T0 = arch ? 0.16 : 0.13;
+    let x0, z0, w, h; if (d.dir === 'h') { x0 = d.a; w = d.b - d.a; z0 = d.at - T0; h = T0 * 2 + 0.08; } else { x0 = d.at - T0; w = T0 * 2; z0 = d.a; h = d.b - d.a; }
+    const X0 = Math.round((x0 + M) * PX), Z0 = Math.round((z0 + M) * PX), Wd = Math.max(2, Math.round(w * PX)), Hd = Math.max(2, Math.round(h * PX));
+    g.fillStyle = shade(base, -0.45); g.fillRect(X0 - 1, Z0 - 1, Wd + 2, Hd + 2);
+    g.fillStyle = base; g.fillRect(X0, Z0, Wd, Hd);
+    g.fillStyle = shade(base, 0.22); if (d.dir === 'h') g.fillRect(X0, Z0 + Hd - 2, Wd, 1); else g.fillRect(X0 + Wd - 2, Z0, 1, Hd);
+    g.fillStyle = shade(base, -0.25); for (let k = 3; k < (d.dir === 'h' ? Wd : Hd) - 2; k += 7) { if (d.dir === 'h') g.fillRect(X0 + k, Z0 + 1, 1, Hd - 2); else g.fillRect(X0 + 1, Z0 + k, Wd - 2, 1); }
+  }
   // spatter of old blood near the ritual rooms and a drag mark on floor 1 (one wrong detail per floor)
   const wrong = [[9.2, 13.4], [20.2, 9.8], [9.5, 8.4]][MAP.fi]; if (wrong) { const R2 = RP(g, (wrong[0] + M) * PX, (wrong[1] + M) * PX); for (let i = 0; i < 14; i++) R2(i * 2, Math.round(Math.sin(i * 0.7) * 2), 2, 1, 'rgba(70,10,12,.55)'); R2(-2, -1, 3, 3, 'rgba(70,10,12,.5)'); }
 }
@@ -3352,6 +3373,18 @@ function drawLighting(W, view, me, t, fk, local) {
   const hole = (x, y, r, a, clip) => { if (x + r < 0 || y + r < 0 || x - r > VW || y - r > VH) return; if (clip) { dg.save(); dg.beginPath(); dg.rect(clip[0], clip[1], clip[2], clip[3]); dg.clip(); } const gr = dg.createRadialGradient(x, y, 0, x, y, r); gr.addColorStop(0, `rgba(0,0,0,${a})`); gr.addColorStop(0.55, `rgba(0,0,0,${a * 0.6})`); gr.addColorStop(1, 'rgba(0,0,0,0)'); dg.fillStyle = gr; dg.fillRect(x - r, y - r, r * 2, r * 2); if (clip) dg.restore(); };
   const tint = (x, y, r, col, a) => { if (x + r < 0 || y + r < 0 || x - r > VW || y - r > VH) return; const gr = gl.createRadialGradient(x, y, 0, x, y, r); gr.addColorStop(0, `rgba(${col},${a})`); gr.addColorStop(1, `rgba(${col},0)`); gl.fillStyle = gr; gl.fillRect(x - r, y - r, r * 2, r * 2); };
   const roomClip = ri => { if (ri < 0) return null; const r = MAP.rooms[ri].r; return [wx(r[0]) - 2, wy(r[1]) - R3.FH - 2, (r[2] - r[0]) * PX + 4, (r[3] - r[1]) * PX + R3.FH + 4]; };
+  // the room you stand in: eyes adjust, so its shape, walls and doorways read; the rooms around stay dark
+  const rv = R3.rv && R3.rv.length === MAP.rooms.length ? R3.rv : (R3.rv = new Float32Array(MAP.rooms.length));
+  const rdt = clamp(t - (R3.rvT || t), 0, 0.1); R3.rvT = t;
+  const here = new Set(); if (!W.menu) for (const p of (local ? W.p : [me])) if (p.hide < 0) { const ri = roomAt(p.x, p.z); if (ri >= 0) here.add(ri); }
+  const REV = view === 'S' ? 0.2 : 0.26;
+  for (let i = 0; i < rv.length; i++) {
+    rv[i] = here.has(i) ? Math.min(1, rv[i] + rdt * 3) : Math.max(0, rv[i] - rdt * 2.2);
+    if (rv[i] < 0.01) continue;
+    const c = roomClip(i), a = rv[i] * REV * (1 - fk * 0.5);
+    dg.fillStyle = `rgba(0,0,0,${a.toFixed(3)})`; dg.fillRect(c[0] + 2, c[1] + 2, c[2] - 4, c[3] - 4);
+    const tc = roomTint(i); gl.fillStyle = `rgba(${tc},${(rv[i] * 0.07).toFixed(3)})`; gl.fillRect(c[0] + 2, c[1] + 2, c[2] - 4, c[3] - 4);
+  }
   // room lights
   let eflick = 1; if (W.flick > 0 && Math.random() < W.flick * 0.5) eflick = 0.15 + Math.random() * 0.4;
   for (const l of MAP.lights) {
@@ -3416,6 +3449,13 @@ function postFX(g, W, me, view, t, dt, fk) {
 }
 /* world → CSS screen pixels (for DOM overlays) */
 function toScreen(x, y, z) { const k = R3.SC / R3.DPR, sx = (x * PX - y * 0 - R3.cam.x) * k, sy = (z * PX - y * 1.5 * PX * VS - R3.cam.y) * k; return { x: sx, y: sy, on: sx > -20 && sy > -20 && sx < innerWidth + 20 && sy < innerHeight + 20 }; }
+/* each room's faint colour cast when you stand in it (from its wallpaper), so neighbouring rooms feel different */
+function roomTint(i) {
+  const r = MAP.rooms[i]; if (r._tint) return r._tint;
+  const P = WALLPAL[r.wall] || WALLPAL.plaster, h = (P.b || P.a).replace('#', '');
+  let c = [0, 2, 4].map(k => parseInt(h.substr(k, 2), 16)); const m = Math.max(...c, 1); c = c.map(v => Math.round(60 + v / m * 170));
+  return (r._tint = c.join(','));
+}
 
 /* ================= pixel theater (floor intros / ending), jump scares, "wrong details" =================
    Scenes play locally on each screen over the live game view: letterbox bars, a speaker plate, typed lines.
@@ -3693,6 +3733,7 @@ function onKeyPress(k, e) {
   if (STATE.mode === 'play') {
     if (STAGE.sc && ['e', 'Enter', ' ', 'Escape', 'l'].includes(k)) { stageKey(k); return; }
     if (UI.modal) { modalKey(k, e); return; }
+    if (NAV.big && (k === 'Escape' || k === 'm')) { toggleMap(false); return; }
     if (STATE.local) { if (k === 'Enter' || k === 'l') { INP.p2.ePress++; INP.p2.eHeld = true; return; } if (k === '/' || k === 'k') { INP.p2.boost++; return; } }
     if (k === 'e') { INP.ePress++; INP.eHeld = true; }
     if (k === 'f' || k === ' ') INP.boost++;
@@ -3702,7 +3743,7 @@ function onKeyPress(k, e) {
     if (k === 'j' || k === 'Tab') toggleJournal();
     if (k === 'g') toggleGlyphs();
     if (k === 'Escape' || k === 'p') togglePause();
-    if (k === 'm') setMute(!AU.muted);
+    if (k === 'm') toggleMap();
   } else if (STATE.mode === 'result') { if (k === 'Enter') document.getElementById('rAgain').click(); }
   else if (k === 'm') setMute(!AU.muted);
 }
@@ -4071,7 +4112,7 @@ function updateHUD(me, dt) {
   if (slow) {
     $('hBadge').innerHTML = `<span style="color:${ROLES[me.role].color}">${ROLES[me.role].name}</span><small>${me.name}</small>`;
     $('battRow').classList.toggle('hidden', me.role !== 'L');
-    const ob = curObjective(); const hd = W.f.seal === 0 && W.phase === 'play' ? '<small>' + MAP.F.exitHint + '</small>' : '<small>' + MAP.F.title + '</small>';
+    const ob = curObjective(); const hd = W.f.seal === 0 && W.phase === 'play' ? '<small>' + MAP.F.exitHint + '</small>' : '<small>' + navWhere(me) + '</small>';
     $('obj').innerHTML = ob + hd;
     $('hInv').innerHTML = W.inv.map(k => `<div class="slot" title="${ITEMS[k].name}">${ITEMS[k].icon}</div>`).join('') + Object.keys(W.evFound).map(k => `<div class="slot" style="border-color:rgba(143,211,255,.5);font-size:18px" title="${EVID[k].name}">${EVID[k].icon}</div>`).join('');
     $('partnerRow').innerHTML = `<span style="color:${ROLES[o.role].color}">${ROLES[o.role].name}</span>　${o.down ? '<b style="color:#ff6b6b;width:auto">倒地 ' + Math.max(0, o.downT) + 's</b>' : o.hide >= 0 ? '躲在柜子里' : '恐惧 ' + Math.round(o.fear)}${W.dc ? '　<b style="color:#ff6b6b;width:auto">断线</b>' : ''}`;
@@ -4091,6 +4132,7 @@ function updateHUD(me, dt) {
   $('hidden').classList.toggle('hidden', me.hide < 0);
   $('tBoost').classList.toggle('hidden', me.role !== 'L'); $('tGlyph').classList.toggle('hidden', me.role !== 'S');
   updateOverlays(me, dt);
+  navTick(W, me, dt);
   updateFloorCard();
 }
 /* black title card while climbing the stairs and while the next floor fades in */
@@ -4175,6 +4217,94 @@ function showResult(phase, why) {
     $('rStatus').textContent = won ? '雨停了。你们一起看着天亮。' : host ? '' : '房主可以选择重试这一层';
   }, phase === 'won' ? (STAGE.id === 'end' && STAGE.sc ? 15000 : 2400) : 2600);
 }
+
+/* ================= where am I: room tracking, room-name card, minimap (M / tap to enlarge) ================= */
+const NAV = { W: null, fi: -1, seen: null, cur: [-1, -1], cand: [-1, -1], candT: [0, 0], big: false, toastT: 0, cv: null, g: null, dpr: 1 };
+function navReset(W) { NAV.W = W; NAV.fi = MAP.fi; NAV.seen = new Uint8Array(MAP.rooms.length); NAV.cur = [-1, -1]; NAV.cand = [-1, -1]; NAV.candT = [0, 0]; NAV.toastT = 0; const t = document.getElementById('roomToast'); if (t) t.classList.remove('on'); toggleMap(false); }
+function roomName(ri) { return ri >= 0 && MAP.rooms[ri] ? MAP.rooms[ri].name : ''; }
+/* called every frame from updateHUD */
+function navTick(W, me, dt) {
+  if (NAV.W !== W || NAV.fi !== MAP.fi || !NAV.seen || NAV.seen.length !== MAP.rooms.length) navReset(W);
+  const who = STATE.local ? W.p : [me];
+  for (const p of who) {
+    const k = STATE.local ? p.id : 0, ri = roomAt(p.x, p.z);
+    if (ri < 0) continue;
+    NAV.seen[ri] = 1;
+    // a short dwell so walking along a doorway doesn't flicker the name
+    if (ri !== NAV.cand[k]) { NAV.cand[k] = ri; NAV.candT[k] = 0; } else NAV.candT[k] += dt;
+    if (NAV.cand[k] !== NAV.cur[k] && NAV.candT[k] > 0.25) {
+      const first = NAV.cur[k] < 0; NAV.cur[k] = ri;
+      if (!first && W.phase === 'play' && !STAGE.sc) navToast(ri, STATE.local ? p : null);
+    }
+  }
+  const tEl = document.getElementById('roomToast');
+  if (NAV.toastT > 0) { NAV.toastT -= dt; if (NAV.toastT <= 0) tEl.classList.remove('on'); }
+  drawMinimap(W, me);
+}
+function navToast(ri, p) {
+  const el = document.getElementById('roomToast'); if (!el) return;
+  el.querySelector('b').innerHTML = (p ? `<small style="color:${ROLES[p.role].color}">${ROLES[p.role].name}</small>` : '') + roomName(ri);
+  el.classList.remove('on'); void el.offsetWidth; el.classList.add('on'); NAV.toastT = 1.9;
+}
+/* HUD sub-line: floor · room */
+function navWhere(me) { const ri = NAV.cur[0] >= 0 ? NAV.cur[0] : roomAt(me.x, me.z); return MAP.F.name + (ri >= 0 ? ' · ' + roomName(ri) : ''); }
+function toggleMap(on) { NAV.big = on == null ? !NAV.big : on; const c = document.getElementById('mini'); if (c) c.classList.toggle('big', NAV.big); const b = document.getElementById('miniBack'); if (b) b.classList.toggle('hidden', !NAV.big); }
+function drawMinimap(W, me) {
+  const cv = NAV.cv || (NAV.cv = document.getElementById('mini')); if (!cv) return;
+  const show = W.phase === 'play' || W.phase === 'ascend' ? !STAGE.sc || NAV.big : false;
+  cv.style.display = show ? 'block' : 'none'; if (!show) return;
+  const small = Math.min(innerWidth, innerHeight) < 500;
+  const s = NAV.big ? Math.min(innerWidth * 0.86 / MAP.W, (innerHeight - 120) * 0.86 / MAP.H) : (small ? 3.3 : 4.6);
+  const pad = NAV.big ? 12 : 4, foot = NAV.big ? 24 : 0, cw = Math.round(MAP.W * s + pad * 2), ch = Math.round(MAP.H * s + pad * 2 + foot), dpr = Math.min(devicePixelRatio || 1, 2);
+  if (cv._w !== cw || cv._h !== ch || cv._d !== dpr) { cv.width = cw * dpr; cv.height = ch * dpr; cv.style.width = cw + 'px'; cv.style.height = ch + 'px'; cv._w = cw; cv._h = ch; cv._d = dpr; }
+  if (!NAV.big) { const tr = document.querySelector('#hud .tr'); if (tr) { const b = tr.getBoundingClientRect(); cv.style.top = Math.round(b.bottom + 8) + 'px'; } } else cv.style.top = '';
+  const g = cv.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, cw, ch);
+  const X = x => pad + x * s, Y = z => pad + z * s;
+  g.fillStyle = NAV.big ? '#08060a' : 'rgba(8,6,10,.62)'; g.fillRect(0, 0, cw, ch);
+  const here = new Set(STATE.local ? NAV.cur : [NAV.cur[0]]);
+  // rooms: unexplored ones only as a faint outline
+  for (const r of MAP.rooms) {
+    const seen = NAV.seen[r.idx], cur = here.has(r.idx), x = X(r.r[0]), y = Y(r.r[1]), w = (r.r[2] - r.r[0]) * s, h = (r.r[3] - r.r[1]) * s;
+    if (cur) { g.fillStyle = `rgba(${roomTint(r.idx)},.42)`; g.fillRect(x, y, w, h); }
+    else if (seen) { g.fillStyle = `rgba(${roomTint(r.idx)},.16)`; g.fillRect(x, y, w, h); }
+    else { g.fillStyle = 'rgba(255,255,255,.025)'; g.fillRect(x, y, w, h); }
+  }
+  // walls (doors and arches are the gaps), locked doors as short red bars
+  g.strokeStyle = 'rgba(225,205,170,.62)'; g.lineWidth = NAV.big ? 2 : 1.2; g.beginPath();
+  for (const sg of MAP.segs) { if (sg.dir === 'h') { g.moveTo(X(sg.a), Y(sg.at)); g.lineTo(X(sg.b), Y(sg.at)); } else { g.moveTo(X(sg.at), Y(sg.a)); g.lineTo(X(sg.at), Y(sg.b)); } }
+  for (const w of MAP.windows) { if (w.dir === 'h') { g.moveTo(X(w.a), Y(w.at)); g.lineTo(X(w.b), Y(w.at)); } else { g.moveTo(X(w.at), Y(w.a)); g.lineTo(X(w.at), Y(w.b)); } }
+  g.stroke();
+  for (const d of MAP.doors) {
+    const st = W.doors && W.doors[d.idx]; if (d.kind === 'crack' && !R3.seerView) { g.strokeStyle = 'rgba(225,205,170,.62)'; }
+    else if (st && st.locked) g.strokeStyle = 'rgba(220,80,70,.9)';
+    else if (d.kind === 'crack') g.strokeStyle = 'rgba(140,220,255,.8)';
+    else if (d.kind !== 'arch' && st && st.open < 0.5) g.strokeStyle = 'rgba(200,150,90,.75)';
+    else continue;
+    g.lineWidth = NAV.big ? 3 : 2; g.beginPath();
+    if (d.dir === 'h') { g.moveTo(X(d.a) + 1, Y(d.at)); g.lineTo(X(d.b) - 1, Y(d.at)); } else { g.moveTo(X(d.at), Y(d.a) + 1); g.lineTo(X(d.at), Y(d.b) - 1); }
+    g.stroke();
+  }
+  // stairs / stairwell / roof hatch once their room has been seen
+  g.font = `${NAV.big ? 15 : 9}px sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle';
+  for (const f of MAP.furn) if ((f.k === 'stairs' || f.k === 'stairwell' || f.k === 'roofHatch') && f.room >= 0 && NAV.seen[f.room]) { g.fillStyle = f.k === 'stairwell' ? 'rgba(200,190,170,.7)' : '#e2b45c'; g.fillText(f.k === 'stairwell' ? '▼' : '▲', X(f.x), Y(f.z)); }
+  // names on the big map
+  if (NAV.big) {
+    for (const r of MAP.rooms) { const cur = here.has(r.idx); g.font = `${cur ? 'bold ' : ''}${Math.max(11, Math.min(16, s * 0.75))}px "Noto Serif SC", serif`; g.fillStyle = cur ? '#ffe2a8' : NAV.seen[r.idx] ? 'rgba(234,223,202,.8)' : 'rgba(234,223,202,.25)'; g.fillText(NAV.seen[r.idx] || cur ? r.name : '？', X(r.cx), Y(r.cz) + (r.r[3] - r.r[1] > 3.5 ? -s * 0.6 : 0)); }
+    g.font = '13px sans-serif'; g.fillStyle = 'rgba(234,223,202,.55)'; g.textAlign = 'left'; g.fillText(MAP.F.title.split(' · ')[0] + '　·　红色＝锁着的门　' + (IS_TOUCH ? '点一下关闭' : 'M / Esc 关闭'), pad, ch - 12); g.textAlign = 'center';
+  }
+  // pings
+  const now = performance.now();
+  for (const p of UI.pings) { const a = 1 - (now - p.t) / 6000; if (a <= 0) continue; g.strokeStyle = p.c; g.globalAlpha = a; g.lineWidth = 1.5; g.beginPath(); g.arc(X(p.x), Y(p.z), (NAV.big ? 6 : 3) + ((now / 160) % 4), 0, TAU); g.stroke(); g.globalAlpha = 1; }
+  // people: me with a facing tick, partner as a dot (hidden in a wardrobe → hollow)
+  const pr = NAV.big ? 6 : 3;
+  W.p.forEach((p, i) => {
+    const mine = STATE.local || i === ME, col = ROLES[p.role].color, x = X(p.x), y = Y(p.z);
+    if (mine) { g.strokeStyle = col; g.lineWidth = NAV.big ? 2.5 : 1.5; g.beginPath(); g.moveTo(x, y); g.lineTo(x + Math.cos(p.aim) * pr * 2.2, y + Math.sin(p.aim) * pr * 2.2); g.stroke(); }
+    g.beginPath(); g.arc(x, y, mine ? pr : pr * 0.85, 0, TAU);
+    if (p.hide >= 0) { g.strokeStyle = col; g.lineWidth = 1.5; g.stroke(); } else { g.fillStyle = p.down ? '#ff6b6b' : col; g.fill(); g.strokeStyle = 'rgba(0,0,0,.8)'; g.lineWidth = 1; g.stroke(); }
+  });
+}
+{ const c = document.getElementById('mini'); if (c) c.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); toggleMap(); }); }
 
 /* ================= start screen: shared TitleKit (shared/titlekit) =================
    幽宅双影: 单人 · AI 队友, 双人同屏 (one device) or 联机 (创建房间 / 加入) + 设置 + 玩法. The room reuses the game's own role cards

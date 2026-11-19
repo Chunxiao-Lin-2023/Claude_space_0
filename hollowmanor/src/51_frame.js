@@ -204,6 +204,18 @@ function drawLighting(W, view, me, t, fk, local) {
   const hole = (x, y, r, a, clip) => { if (x + r < 0 || y + r < 0 || x - r > VW || y - r > VH) return; if (clip) { dg.save(); dg.beginPath(); dg.rect(clip[0], clip[1], clip[2], clip[3]); dg.clip(); } const gr = dg.createRadialGradient(x, y, 0, x, y, r); gr.addColorStop(0, `rgba(0,0,0,${a})`); gr.addColorStop(0.55, `rgba(0,0,0,${a * 0.6})`); gr.addColorStop(1, 'rgba(0,0,0,0)'); dg.fillStyle = gr; dg.fillRect(x - r, y - r, r * 2, r * 2); if (clip) dg.restore(); };
   const tint = (x, y, r, col, a) => { if (x + r < 0 || y + r < 0 || x - r > VW || y - r > VH) return; const gr = gl.createRadialGradient(x, y, 0, x, y, r); gr.addColorStop(0, `rgba(${col},${a})`); gr.addColorStop(1, `rgba(${col},0)`); gl.fillStyle = gr; gl.fillRect(x - r, y - r, r * 2, r * 2); };
   const roomClip = ri => { if (ri < 0) return null; const r = MAP.rooms[ri].r; return [wx(r[0]) - 2, wy(r[1]) - R3.FH - 2, (r[2] - r[0]) * PX + 4, (r[3] - r[1]) * PX + R3.FH + 4]; };
+  // the room you stand in: eyes adjust, so its shape, walls and doorways read; the rooms around stay dark
+  const rv = R3.rv && R3.rv.length === MAP.rooms.length ? R3.rv : (R3.rv = new Float32Array(MAP.rooms.length));
+  const rdt = clamp(t - (R3.rvT || t), 0, 0.1); R3.rvT = t;
+  const here = new Set(); if (!W.menu) for (const p of (local ? W.p : [me])) if (p.hide < 0) { const ri = roomAt(p.x, p.z); if (ri >= 0) here.add(ri); }
+  const REV = view === 'S' ? 0.2 : 0.26;
+  for (let i = 0; i < rv.length; i++) {
+    rv[i] = here.has(i) ? Math.min(1, rv[i] + rdt * 3) : Math.max(0, rv[i] - rdt * 2.2);
+    if (rv[i] < 0.01) continue;
+    const c = roomClip(i), a = rv[i] * REV * (1 - fk * 0.5);
+    dg.fillStyle = `rgba(0,0,0,${a.toFixed(3)})`; dg.fillRect(c[0] + 2, c[1] + 2, c[2] - 4, c[3] - 4);
+    const tc = roomTint(i); gl.fillStyle = `rgba(${tc},${(rv[i] * 0.07).toFixed(3)})`; gl.fillRect(c[0] + 2, c[1] + 2, c[2] - 4, c[3] - 4);
+  }
   // room lights
   let eflick = 1; if (W.flick > 0 && Math.random() < W.flick * 0.5) eflick = 0.15 + Math.random() * 0.4;
   for (const l of MAP.lights) {
@@ -268,3 +280,10 @@ function postFX(g, W, me, view, t, dt, fk) {
 }
 /* world → CSS screen pixels (for DOM overlays) */
 function toScreen(x, y, z) { const k = R3.SC / R3.DPR, sx = (x * PX - y * 0 - R3.cam.x) * k, sy = (z * PX - y * 1.5 * PX * VS - R3.cam.y) * k; return { x: sx, y: sy, on: sx > -20 && sy > -20 && sx < innerWidth + 20 && sy < innerHeight + 20 }; }
+/* each room's faint colour cast when you stand in it (from its wallpaper), so neighbouring rooms feel different */
+function roomTint(i) {
+  const r = MAP.rooms[i]; if (r._tint) return r._tint;
+  const P = WALLPAL[r.wall] || WALLPAL.plaster, h = (P.b || P.a).replace('#', '');
+  let c = [0, 2, 4].map(k => parseInt(h.substr(k, 2), 16)); const m = Math.max(...c, 1); c = c.map(v => Math.round(60 + v / m * 170));
+  return (r._tint = c.join(','));
+}

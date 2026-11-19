@@ -33,6 +33,7 @@ function onKeyPress(k, e) {
   if (STATE.mode === 'play') {
     if (STAGE.sc && ['e', 'Enter', ' ', 'Escape', 'l'].includes(k)) { stageKey(k); return; }
     if (UI.modal) { modalKey(k, e); return; }
+    if (NAV.big && (k === 'Escape' || k === 'm')) { toggleMap(false); return; }
     if (STATE.local) { if (k === 'Enter' || k === 'l') { INP.p2.ePress++; INP.p2.eHeld = true; return; } if (k === '/' || k === 'k') { INP.p2.boost++; return; } }
     if (k === 'e') { INP.ePress++; INP.eHeld = true; }
     if (k === 'f' || k === ' ') INP.boost++;
@@ -42,7 +43,7 @@ function onKeyPress(k, e) {
     if (k === 'j' || k === 'Tab') toggleJournal();
     if (k === 'g') toggleGlyphs();
     if (k === 'Escape' || k === 'p') togglePause();
-    if (k === 'm') setMute(!AU.muted);
+    if (k === 'm') toggleMap();
   } else if (STATE.mode === 'result') { if (k === 'Enter') document.getElementById('rAgain').click(); }
   else if (k === 'm') setMute(!AU.muted);
 }

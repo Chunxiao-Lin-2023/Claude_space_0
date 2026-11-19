@@ -67,6 +67,14 @@ input:focus{border-color:var(--gold)}
 #fearBar i{background:linear-gradient(90deg,#6a4ad0,#d0453f)}#stamBar i{background:#a8b8a8}#battBar i{background:linear-gradient(90deg,#c89a3a,#ffe6a0)}
 #hud .tc{position:absolute;left:50%;transform:translateX(-50%);top:calc(12px + var(--sa-t));text-align:center;max-width:min(560px,60vw)}
 #obj{font-size:15px;letter-spacing:.05em;text-shadow:0 2px 6px #000;color:#eadfca;background:rgba(0,0,0,.35);padding:6px 14px;border-radius:20px;border:1px solid rgba(255,255,255,.06)}
+#roomToast{position:absolute;left:50%;top:22%;transform:translate(-50%,6px);display:flex;align-items:center;gap:14px;opacity:0;transition:opacity .35s,transform .35s;pointer-events:none;white-space:nowrap}
+#roomToast.on{opacity:1;transform:translate(-50%,0)}
+#roomToast b{font-family:"Noto Serif SC",serif;font-weight:400;font-size:26px;letter-spacing:.38em;padding-left:.38em;color:#eadfca;text-shadow:0 0 12px #000,0 2px 4px #000}
+#roomToast b small{display:block;font-size:12px;letter-spacing:.2em;text-align:center;margin-bottom:2px}
+#roomToast i{display:block;width:46px;height:1px;background:linear-gradient(90deg,transparent,rgba(226,180,92,.8))}#roomToast i:last-child{transform:scaleX(-1)}
+#mini{position:absolute;right:calc(14px + var(--sa-r));top:70px;border:1px solid rgba(226,180,92,.28);border-radius:6px;pointer-events:auto;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,.6)}
+#mini.big{left:50%;top:50%!important;right:auto;transform:translate(-50%,-50%);z-index:20;border-color:rgba(226,180,92,.5);box-shadow:0 0 0 100vmax rgba(0,0,0,.55)}
+@media (pointer:coarse) and (max-width:500px){#roomToast{top:36%}#roomToast b{font-size:20px}}
 #obj small{display:block;color:var(--sub);font-size:12px;margin-top:2px}
 #hud .tr{position:absolute;right:calc(14px + var(--sa-r));top:calc(12px + var(--sa-t));display:flex;gap:8px;align-items:flex-start;pointer-events:auto}
 .inv{display:flex;gap:6px}
@@ -156,7 +164,7 @@ body{-webkit-touch-callout:none}
 @media (pointer:coarse) and (max-width:500px){
   .logo{margin-bottom:12px}.logo h1{font-size:64px}.logo .tag{margin-top:8px;font-size:13px}
   #hud .tl{width:140px!important;gap:4px}.badge{font-size:15px}.mrow{font-size:11px;gap:5px}.mrow b{width:24px}
-  #hud .tc{top:calc(140px + var(--sa-t));max-width:94vw;width:max-content}#obj{font-size:12px;padding:4px 10px}
+  #hud .tc{top:calc(204px + var(--sa-t));max-width:94vw;width:max-content}#obj{font-size:12px;padding:4px 10px}
   #hud .tr{gap:5px;flex-wrap:wrap;justify-content:flex-end;width:200px}.slot{width:30px;height:30px;font-size:16px}.ibtn{width:40px;height:40px;font-size:17px}
   .inv{order:2;width:100%;flex-wrap:wrap;justify-content:flex-end;gap:4px}
   #log{width:62vw;font-size:12px;bottom:calc(150px + var(--sa-b))}
@@ -261,6 +269,8 @@ body.localPlay #tPing,body.localPlay #tChat{display:none}
   <div id="prompt" class="hidden"><div class="key"><span id="pKey">E</span><svg width="42" height="42"><circle cx="21" cy="21" r="18" fill="none" stroke="#e2b45c" stroke-width="3" stroke-dasharray="113" stroke-dashoffset="113" id="pRing"/></svg></div><span id="pText"></span></div>
   <div id="log"></div>
   <div id="tags"></div>
+  <div id="roomToast"><i></i><b></b><i></i></div>
+  <canvas id="mini" title="地图 (M)"></canvas>
   <div id="downBanner" class="hidden"></div>
   <div id="hidden" class="hidden">躲在柜子里……屏住呼吸　（E 出来）</div>
 </div>
@@ -291,8 +301,8 @@ body.localPlay #tPing,body.localPlay #tChat{display:none}
   <p><b>非对称：</b>持灯者看得见真实世界——手电照出霜痕和镜中影，能转符文锁、装保险丝、推开暗门书架。灵视者看得见另一侧——怨灵的位置（隔墙也能看到）、灵痕手印、灵球、写在墙上的符文密码。你们看到的东西不一样，要互相告诉对方。</p>
   <p><b>猎杀：</b>灯开始乱闪、低沉的嗡鸣响起时，怨灵就要开始猎杀了。快躲进柜子，或者让持灯者用强光（右键 / F）把它定住——被定住两次它就会退散。被抓住会倒下，45 秒内要被同伴扶起来。</p>
   <p><b>恐惧：</b>两个人离得远、待在黑暗里、看见怨灵，恐惧都会上升；恐惧越高，怨灵越早开始猎杀。待在一起、待在有灯的房间里会好一些。</p>
-  <p><b>键鼠：</b>WASD 移动 · 鼠标朝向 · Shift 奔跑 · E / 左键 互动（按住）· 右键 / F 强光 · Q 标记 · 1–4 快捷信号 · G 发送符文 · J 日志 · Esc 菜单 · M 静音</p>
-  <p><b>iPad：</b>左半屏拖动移动，右下拖动朝向，按钮互动 / 强光 / 奔跑，📍 标记，💬 信号，☾ 符文。</p></div></div>
+  <p><b>键鼠：</b>WASD 移动 · 鼠标朝向 · Shift 奔跑 · E / 左键 互动（按住）· 右键 / F 强光 · Q 标记 · 1–4 快捷信号 · G 发送符文 · J 日志 · M 地图 · Esc 菜单 · 右上角 🔊 静音</p>
+  <p><b>iPad：</b>左半屏拖动移动，右下拖动朝向，按钮互动 / 强光 / 奔跑，📍 标记，💬 信号，☾ 符文；点右上角小地图可以放大。</p></div></div>
 <div id="floorCard" class="hidden"><div class="ft"></div><div class="fs"></div></div>
 <div id="result" class="scr hidden"><div class="card"><h2 id="rTitle"></h2><div class="why" id="rWhy"></div><div class="stats" id="rStats"></div><div class="row" style="justify-content:center;flex-wrap:wrap"><button class="primary hidden" id="rRetry">重试</button><button id="rAgain">返回房间</button></div><div class="status" id="rStatus"></div></div></div>
 __SCRIPTS__
