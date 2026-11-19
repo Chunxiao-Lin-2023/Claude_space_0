@@ -21,7 +21,7 @@ const { chromium } = require('playwright');
   await p.reload(); await p.waitForFunction(() => window.__ready, null, { timeout: 120000 });
   const lbl = await p.evaluate(() => { const b = document.getElementById('contBtn'); return b.classList.contains('hidden') ? '' : b.textContent; });
   ok('continue button shows the day', /第 4 天/.test(lbl), lbl);
-  await p.click('#contBtn'); await p.waitForFunction(() => W && STATE.mode === 'play', null, { timeout: 90000 });
+  await p.evaluate(() => $('contBtn').click()); await p.waitForFunction(() => W && STATE.mode === 'play', null, { timeout: 90000 });
   const after = await p.evaluate(b => ({ seed: W.seed, wood: W.res.wood, parts: W.res.parts, night: W.night, clock: Math.round(W.clock), wall: W.blk[ci(b.X, b.Y, 0)], hp: Math.round(W.bhp[ci(b.X, b.Y, 0)]), slab: W.slab[ci(b.X, b.Y, 1)], crate: W.blk[b.ci0], bow: W.p[0].owned[4] + ':' + W.p[0].ammo[4], meds: W.p[0].meds, zs: W.zs.map(z => z.k + ':' + z.hp).join(','), tasks: W.tasks.map(t => t.txt).join('|'), px: Math.floor(W.p[0].x) - b.X }), before);
   ok('world, resources, player and zombies restored', after.seed === before.seed && after.wood === 321 && after.parts === 45 && after.night === 3 && after.wall === 2 && after.hp === 123 && after.slab === 4 && after.crate === 0 && after.bow === '1:17' && after.meds === 2 && after.zs === 'armored:77' && after.tasks === before.tasks && after.px === 2, JSON.stringify(after));
   await p.evaluate(() => { W.night = BAL.nights; W.phase = 'night'; W.zs.length = 0; W.spawnQ = []; W.nightT = 9999; dawn(); });

@@ -36,7 +36,7 @@ function stepZombies(dt) {
     }
     const cx = Math.floor(z.x), cy = Math.floor(z.y), i = ci(cx, cy, z.L);
     // barbed wire
-    let slow = 1;
+    let slow = inMud(z.x, z.y, z.L) ? MUD_SLOW : 1;
     if (B[W.blk[i]].trap) { z.stun = 2.5; hurtZombie(z, 30, null); setCell(i, 0, W.slab[i], null, 'trap'); if (z.hp <= 0) continue; }
     if (B[W.blk[i]].stairs && !B[W.blk[i]].nat) slow = climbT ? 0.75 : 0.38; // ladders are slow going for zombies
     if (B[W.blk[i]].wire) {

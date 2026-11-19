@@ -77,7 +77,7 @@ function stepMove(p, dt) {
     p.z = pZ(p); return;
   }
   if (p.dash) { const D = p.dash, f = Math.min(dt, D.T - D.t) / D.T; moveEnt(p, D.dx * f, D.dy * f, 'p', true); D.t += dt; if (D.t >= D.T) p.dash = null; p.z = pZ(p); p.anim += dt * 8; return; }
-  const spd = BAL.pSpeed * (p.down ? 0.22 : 1) * (p.medT > 0 ? 0.45 : 1) * (p.build ? 0.9 : 1);
+  const spd = BAL.pSpeed * (p.down ? 0.22 : 1) * (p.medT > 0 ? 0.45 : 1) * (p.build ? 0.9 : 1) * (inMud(p.x, p.y, p.L) ? MUD_SLOW : 1);
   const tx = I.mx * k * spd, ty = I.my * k * spd, a = Math.min(1, dt * 14);
   p.vx = lerp(p.vx, tx, a); p.vy = lerp(p.vy, ty, a);
   p.kbx *= Math.max(0, 1 - dt * 6); p.kby *= Math.max(0, 1 - dt * 6);
@@ -272,7 +272,7 @@ function pickSpot(kind, out) {
       if (kind === 'trash') { if (t === TT.road || !DIRS.some(([dx, dy]) => inMap(x + dx * 2, y + dy * 2) && (W.tt[(y + dy) * MW + x + dx] === TT.road || W.tt[(y + dy * 2) * MW + x + dx * 2] === TT.road))) continue; }
       else if (t === TT.road) continue;
       if (kind === 'milcrate' && radioDist(x, y) < 34) continue;
-      if (kind === 'backpack' && t !== TT.forest && t !== TT.grass && t !== TT.hill) continue;
+      if (kind === 'backpack' && t !== TT.forest && t !== TT.grass && t !== TT.hill && t !== TT.meadow && t !== TT.rocky) continue;
     }
     if (spotFree(x, y, L)) return ci(x, y, L);
   }

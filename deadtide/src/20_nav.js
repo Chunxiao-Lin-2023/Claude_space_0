@@ -142,6 +142,18 @@ function rayWorld(ox, oy, oz, dx, dy, dz, maxD, opt) {
     const i = ci(x, y, l), b = W.blk[i];
     if (!b) return false;
     if (lean && B[b].cost && !B[b].slab && d * hz < PORT) return false; // hugging your own wall: shoot through the gap (zombies still can't pass)
+    if (B[b].B && !any && (B[b].low || b === 24)) {
+      const tEx = Math.min(tmx, tmy, tmz, maxD), fz = l * FH, z0 = oz + dz * d - fz, z1 = oz + dz * tEx - fz, zlo = Math.min(z0, z1), zhi = Math.max(z0, z1);
+      if (B[b].low) { if (zlo > B[b].low) return false; if (z0 > B[b].low && dz < 0) PARA_D = (fz + B[b].low - oz) / dz; return true; }
+      const v = ruinShape(x, y, l);
+      if (v !== 2) {
+        const a = ruinRot(x, y, l, v), ca = Math.cos(a), sa = Math.sin(a), lat = t => (ox + dx * t - x - 0.5) * ca - (oy + dy * t - y - 0.5) * sa, lm = lat((d + tEx) / 2);
+        if (v === 0) { if (zlo > WIN.lo * FH && zhi < WIN.hi * FH && ((lean && d * hz < PORT) || (Math.abs(lm) < WIN.half && Math.abs(lat(d)) < 0.45 && Math.abs(lat(tEx)) < 0.45))) return false; } // standing at a window you can lean and shoot out at an angle
+        else if (v === 1) { if (zlo > 0.5 * FH && !(lm < 0.05 && zlo < 0.8 * FH) && !(lm < -0.25 && zlo < 0.98 * FH)) return false; }
+        else if (zlo > 0.48 * FH) return false;
+      }
+      return true;
+    }
     if (B[b].B || any) {
       if ((b === 1 || b === 2 || b === 3) && isParapet(i)) {
         // waist-high: the ray only stops if it dips below the top inside this cell (or the shooter is leaning over it)

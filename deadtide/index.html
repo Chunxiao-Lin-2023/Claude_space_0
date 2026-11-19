@@ -501,7 +501,7 @@ body.aiming canvas#cv{cursor:none}body.touch #reticle b{left:-34px;top:-38px}
   </div>
   <div id="hTR">
     <div class="res hcard" id="resBox"></div>
-    <div class="tbtn"><button id="tBuild" class="ghost tch">建造</button><button id="vToggle" class="ghost tch">视角</button><button id="muteBtn" class="ghost ptr" title="静音 (M)">🔊</button><button id="pauseBtn" class="ghost" title="菜单 (Esc)">❚❚</button></div>
+    <div class="tbtn"><button id="tBuild" class="ghost tch">建造</button><button id="vToggle" class="ghost tch">视角</button><button id="muteBtn" class="ghost ptr" title="静音">🔊</button><button id="pauseBtn" class="ghost" title="菜单 (Esc)">❚❚</button></div>
     <canvas id="mini" width="128" height="128" class="hcard"></canvas>
     <div id="viewBox" class="hcard">
       <div class="vrow"><button id="vZin" title="放大 (滚轮 / +)">＋</button><button id="vZout" title="缩小 (滚轮 / −)">－</button><button id="vRl" title="向左转 (Q)">⟲</button><button id="vRr" title="向右转 (E)">⟳</button></div>
@@ -572,7 +572,7 @@ body.aiming canvas#cv{cursor:none}body.touch #reticle b{left:-34px;top:-38px}
   <div class="card"><h3>工作台</h3><div class="lbl">材料全队共用 · 制作的武器和道具归你</div><div class="clist" id="clist"></div><button id="craftClose" class="ghost">关闭 <span class="kbd">(E)</span></button></div>
 </div>
 <div id="modesel" class="modal hidden"><div class="card mscard"><h3>选择模式</h3><div class="mgrid" id="mGrid"></div><h3>选择地图 <small id="mapHint" class="lbl"></small></h3><div class="mapgrid" id="mapGrid"></div><button id="msOk" class="primary">确定</button></div></div>
-<div id="bigmap" class="modal hidden"><div class="card bmcard"><div class="bmhead"><h3>地图</h3><span class="bmhint">点任意处关闭 · 电脑按 Tab / Esc</span></div><canvas id="bigmapC" width="640" height="640"></canvas><div class="bmleg" id="bmLeg"></div></div></div>
+<div id="bigmap" class="modal hidden"><div class="card bmcard"><div class="bmhead"><h3>地图</h3><span class="bmhint">点任意处关闭 · 电脑按 M / Tab / Esc</span></div><canvas id="bigmapC" width="640" height="640"></canvas><div class="bmleg" id="bmLeg"></div></div></div>
 <div id="pause" class="modal hidden">
   <div class="card"><h3 id="pauseT">暂停</h3>
     <button id="resumeBtn" class="primary">继续</button>
@@ -588,7 +588,7 @@ body.aiming canvas#cv{cursor:none}body.touch #reticle b{left:-34px;top:-38px}
 <div id="help" class="modal hidden">
   <div class="card"><h3>玩法和操作</h3>
     <div class="help">
-      <h4>目标</h4>标题页点「模式」选玩法和地图：<b>经典守夜</b>撑过 15 夜；<b>修车逃离</b>找齐 6 个零件修好卡车；<b>摧毁尸巢</b>炸掉 5 个尸巢和母巢；<b>信号塔</b>守住 4 座塔的校准再等直升机；<b>抢空投</b>集齐 6 个空投信标后守住撤离点；<b>尸王狩猎</b>击杀 4 只尸王。当前目标显示在屏幕上方，屏幕边的箭头和大地图（点小地图 / Tab）指路。所有人同时倒下就失败。丧尸会一路追着离它最近的人，挡路的墙会被砸开。<h4>丧尸</h4>游荡者、疾跑者、攀爬者（翻墙）、喷吐者（吐酸）、重锤（拆墙）、巨尸（血月），还有成群的尸犬、贴地的爬行尸、死了会炸开（连墙一起炸）的爆尸、会尖叫让周围丧尸发狂并引来更多丧尸的尖叫者、正面打不动的防暴尸（绕到侧面后面，或者用狙击枪、弩、火、炸药）。<h4>武器</h4>手枪爆头伤害高；霰弹枪近距离打退打晕；步枪连射越久越散；狙击枪穿透 5 只、带激光；弩穿透 3 只并把丧尸钉住；喷火器点燃一片，火会传染；榴弹发射器落地就炸。后三种在工作台造。<h4>每日任务</h4>每天天亮刷新 3 个小任务（左上角），比如击杀、搜索、建造、今夜无人倒下。完成立刻发奖励：材料、全队弹药、医疗包、手雷或强化弹头。没完成的会在下一个天亮作废。
+      <h4>目标</h4>标题页点「模式」选玩法和地图：<b>经典守夜</b>撑过 15 夜；<b>修车逃离</b>找齐 6 个零件修好卡车；<b>摧毁尸巢</b>炸掉 5 个尸巢和母巢；<b>信号塔</b>守住 4 座塔的校准再等直升机；<b>抢空投</b>集齐 6 个空投信标后守住撤离点；<b>尸王狩猎</b>击杀 4 只尸王。当前目标显示在屏幕上方，屏幕边的箭头和大地图（点小地图 / 按 M）指路。所有人同时倒下就失败。丧尸会一路追着离它最近的人，挡路的墙会被砸开。<h4>丧尸</h4>游荡者、疾跑者、攀爬者（翻墙）、喷吐者（吐酸）、重锤（拆墙）、巨尸（血月），还有成群的尸犬、贴地的爬行尸、死了会炸开（连墙一起炸）的爆尸、会尖叫让周围丧尸发狂并引来更多丧尸的尖叫者、正面打不动的防暴尸（绕到侧面后面，或者用狙击枪、弩、火、炸药）。<h4>武器</h4>手枪爆头伤害高；霰弹枪近距离打退打晕；步枪连射越久越散；狙击枪穿透 5 只、带激光；弩穿透 3 只并把丧尸钉住；喷火器点燃一片，火会传染；榴弹发射器落地就炸。后三种在工作台造。<h4>每日任务</h4>每天天亮刷新 3 个小任务（左上角），比如击杀、搜索、建造、今夜无人倒下。完成立刻发奖励：材料、全队弹药、医疗包、手雷或强化弹头。没完成的会在下一个天亮作废。
       <h4>白天</h4>出门砍树（木材）、采石（砖石），搜汽车、补给箱和废墟瓦砾（钢材、零件、弹药），离家越远收获越多；回来盖楼、在营地小屋的工作台造枪。河上只有两座桥，丧尸也只能从桥上过河。每 5 夜一次血月。
       <h4>建造</h4>只能在营地周围的黄框里建造。<b>指哪盖哪，不用切楼层</b>：指地面或楼板就盖在上面；指墙顶就往上叠一层；指墙的侧面就贴着它盖；楼板会自动铺成墙上的天花板，站在楼上指外面能往外延伸阳台。<b>按住拖动</b>沿直线一次盖一排。拆除也是指哪拆哪。方块要有<b>支撑</b>：从地面往上传，往旁边每格减 1，支撑断了会连锁坍塌。<b>楼上最外圈、上面没东西的墙是半人高的矮墙</b>：子弹能从上面飞过，贴着矮墙可以探身往下打；地面一层的墙还是整面墙。门让人通过但挡丧尸，射击栅栏能从里面开枪。丧尸会砸墙砸门、走楼梯；攀爬者会翻墙。<h4>爬梯、翻越和跳</h4>楼梯换成了靠墙的爬梯：朝箭头方向走就爬上去，往下爬要继续推一下。丧尸爬梯子很慢（攀爬者除外），所以多放几个梯子方便自己走位，梯子口就是守点。人能<b>翻过</b>沙袋矮墙、拒马、铁皮掩体、栅栏、瓦砾和一人高的墙（贴着推一下，或按跳），也能跳过一格宽的空隙；丧尸不会翻，只能砸。<h4>障碍物</h4>沙袋矮墙（子弹能从上面打过去）、拒马（丧尸砸它会被扎）、铁皮掩体（挡子弹）、捕兽夹（夹住丧尸 2.5 秒，一次性）、铁丝网、探照灯。用矮墙和掩体把楼里隔成一段一段，自己翻来翻去，丧尸只能一路砸过来。<h4>建造确认</h4>点一下或拖一排，先出现绿色预览（拆除是红色），再点 ✓、按 Enter 或再点一下预览才真正建造 / 拆除；建造栏的「二次确认」可以关掉。
       <h4>视角</h4>滚轮或 ＋/－ 缩放，Q / E 或 ⟲⟳ 转镜头。楼层视图默认跟随你所在的层，上面的楼层会自动隐藏；▲▼ 手动看别的层，「跟随我所在的层」恢复。
@@ -4762,6 +4762,7 @@ const NC = MW * MH * ML;
 const ci = (x, y, L) => (L * MH + y) * MW + x;
 const cx_ = i => i % MW, cy_ = i => ((i / MW) | 0) % MH, cl_ = i => (i / (MW * MH)) | 0;
 const DIRS = [[1, 0], [0, 1], [-1, 0], [0, -1]]; // 0:+x(east) 1:+y(south) 2:-x(west) 3:-y(north)
+const MUD_SLOW = 0.78;               // walking speed in mud (players and zombies)
 const BUILD_R = 20;                 // build zone: Chebyshev distance from the camp centre
 const GRAV = 22;
 
@@ -4793,7 +4794,7 @@ defB(22, { key: 'tree', P: 1, Z: 1, nat: 1, res: 'wood', hp: 1 });
 defB(23, { key: 'water', P: 1, Z: 1, nat: 1 });
 defB(24, { key: 'ruin', P: 1, Z: 1, B: 1, top: 1, nat: 1, brk: 1, hp: 260, col: '#7c4a3a' });
 defB(25, { key: 'car', P: 1, Z: 1, B: 1, nat: 1, spot: 'car' });
-defB(26, { key: 'crate', P: 1, Z: 1, B: 1, nat: 1, spot: 'crate' });
+defB(26, { key: 'crate', P: 1, Z: 1, B: 1, nat: 1, spot: 'crate', low: 0.55 });
 defB(27, { key: 'fence', P: 1, Z: 1, nat: 1 });
 defB(28, { key: 'ramp', stairs: 1, nat: 1 });
 defB(29, { key: 'rubble', P: 1, Z: 1, nat: 1, spot: 'rubble' });
@@ -4804,8 +4805,8 @@ defB(32, { key: 'trash', P: 1, Z: 1, nat: 1, spot: 'trash' });
 defB(33, { key: 'backpack', nat: 1, spot: 'backpack' });
 defB(34, { key: 'cabinet', P: 1, Z: 1, B: 1, nat: 1, spot: 'cabinet' });
 defB(35, { key: 'toolbox', nat: 1, spot: 'toolbox' });
-defB(36, { key: 'milcrate', P: 1, Z: 1, B: 1, nat: 1, spot: 'milcrate' });
-defB(37, { key: 'barrel', P: 1, Z: 1, B: 1, nat: 1, spot: 'barrel' });
+defB(36, { key: 'milcrate', P: 1, Z: 1, B: 1, nat: 1, spot: 'milcrate', low: 0.45 });
+defB(37, { key: 'barrel', P: 1, Z: 1, B: 1, nat: 1, spot: 'barrel', low: 0.74 });
 defB(38, { key: 'vending', P: 1, Z: 1, B: 1, nat: 1, spot: 'vending' });
 defB(39, { key: 'scrap', P: 1, Z: 1, nat: 1, res: 'steel', hp: 1 });
 defB(40, { key: 'logs', P: 1, Z: 1, nat: 1, res: 'wood', hp: 1 });
@@ -4816,6 +4817,10 @@ defB(44, { key: 'nest', P: 1, Z: 1, B: 1, nat: 1, obj: 1, hp: 1500, col: '#6a1f2
 defB(45, { key: 'tower', P: 1, Z: 1, B: 1, nat: 1, obj: 1, col: '#8a96a0' });
 defB(46, { key: 'drop', P: 1, Z: 1, B: 1, nat: 1, obj: 1, col: '#3a6ea8' });
 defB(47, { key: 'truck', P: 1, Z: 1, B: 1, nat: 1, obj: 1, col: '#5a6a3a' });
+// town furniture: desks / counters / sofas and low shop shelving. Waist-high: you shoot over them, vault them; zombies smash through
+defB(48, { key: 'desk', P: 1, Z: 1, B: 1, nat: 1, brk: 1, vault: 1, hp: 150, low: 0.5, col: '#6a4a30' });
+defB(49, { key: 'shelf', P: 1, Z: 1, B: 1, nat: 1, brk: 1, vault: 1, hp: 180, low: 0.62, col: '#8a9096' });
+defB(50, { key: 'halfwall', P: 1, Z: 1, B: 1, nat: 1, brk: 1, vault: 1, hp: 220, low: 0.62, col: '#c8b890' }); // waist-high plaster partition (ward fronts, office cubicles, counters)
 defB(42, { key: 'rail', P: 1, Z: 1, nat: 1, brk: 1, vault: 1, hp: 120, col: '#6a6f74' }); // balcony / roof / mezzanine railing: low, vaultable, bullets pass
 const PAL = [1, 2, 3, 4, 5, 6, 7, 8, 12, 13, 14, 9, 15, 10];
 const SLAB_BRIDGE = 11; // slab id for the pre-built bridges (not buildable)
@@ -4984,10 +4989,11 @@ const HUB = /\/deadtide\/(index\.html)?$/.test(location.pathname);
 /* ---- 10_world.js ---- */
 /* ================= world: layered grid, terrain generation, cell rules, structural support ================= */
 // terrain type codes (per column, for colouring)
-const TT = { grass: 0, hill: 1, dirt: 2, road: 3, sand: 4, water: 5, forest: 6 };
+const TT = { grass: 0, hill: 1, dirt: 2, road: 3, sand: 4, water: 5, forest: 6, mud: 7, meadow: 8, rocky: 9 }; // mud slows you; meadow = tall grass and flowers; rocky = gravel and boulders
 const inMap = (x, y) => x >= 0 && y >= 0 && x < MW && y < MH;
 const gAt = (x, y) => inMap(x, y) ? W.G[y * MW + x] : 0;
 const ttAt = (x, y) => inMap(x, y) ? W.tt[y * MW + x] : 0;
+const inMud = (x, y, L) => L === 0 && ttAt(Math.floor(x), Math.floor(y)) === TT.mud && !W.slab[ci(Math.floor(x), Math.floor(y), 0)];
 function blkAt(x, y, L) {
   if (L < 0) return 20;
   if (!inMap(x, y)) return 20;
@@ -4997,6 +5003,15 @@ function blkAt(x, y, L) {
 const slabAt = (x, y, L) => (inMap(x, y) && L >= 0 && L < ML) ? W.slab[ci(x, y, L)] : 0;
 const solidFor = (b, who) => b !== 0 && !!(who === 'p' ? B[b].P : who === 'z' ? B[b].Z : B[b].B);
 // a player wall (wood / brick / steel) above ground level with nothing on top: waist-high parapet you can shoot over
+// town walls come in four shapes: 0 window wall, 1 broken stepped top, 2 full, 3 low stub. A wall carrying a floor is
+// a window wall or full. The renderer draws these and bullets go through the same openings (rayWorld).
+function ruinShape(x, y, L) {
+  const h = hash2(x * 3 + L, y * 7); let v = h < 0.28 ? 0 : h < 0.58 ? 1 : h < 0.84 ? 2 : 3;
+  if (ARCH.roofCells.has(x + ',' + y + ',' + L) || (L + 1 < ML && (W.slab[ci(x, y, L + 1)] || W.blk[ci(x, y, L + 1)]))) v = h < 0.4 ? 0 : 2;
+  return v;
+}
+const ruinRot = (x, y, L, v) => (v === 0 || v === 1 ? (wallAxis(x, y, L) ? Math.PI / 2 : 0) : 0) + (v === 1 && hash2(x, y * 3) < 0.5 ? Math.PI : 0);
+const WIN = { lo: 0.39, hi: 0.78, half: 0.3 };   // window opening: sill / lintel (fractions of FH), half width
 function isParapet(i) {
   const b = W.blk[i]; if (b !== 1 && b !== 2 && b !== 3) return false;
   const x = cx_(i), y = cy_(i), L = cl_(i); if (L < 1 || L <= gAt(x, y)) return false;
@@ -5060,6 +5075,19 @@ function genMap(seed) {
     if (tt[i] !== TT.water && tt[i] !== TT.road) for (const [dx, dy] of DIRS) { const xx = x + dx, yy = y + dy; if (inMap(xx, yy) && tt[col(xx, yy)] === TT.water && G[i] === 0) { tt[i] = TT.sand; break; } }
   }
   if (M.fields) M.fields(K);
+  // terrain variety (per-map switches in MAPDEF.feat): forest trails, mud by the water and in hollows, meadows, gravel flats
+  const FT = Object.assign({ mud: 1, meadow: 1, rocky: 1, trails: 1, farms: 3 }, M.feat || {}), trail = new Set();
+  const nearT = (x, y, r, t) => { for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) if (inMap(x + dx, y + dy) && tt[col(x + dx, y + dy)] === t) return true; return false; };
+  for (let y = 0; y < MH; y++) for (let x = 0; x < MW; x++) {
+    const i = col(x, y), t = tt[i];
+    if (t !== TT.grass && t !== TT.forest && t !== TT.dirt && t !== TT.hill) continue;
+    if (inTown(x, y, 2) || radioDist0(x, y) <= BUILD_R + 1) continue;
+    const n2 = noise(x + 400, y + 400, 9), n3 = noise(x + 900, y + 200, 6);
+    if (FT.trails && t === TT.forest && Math.abs(noise(x + 1300, y + 700, 13) - 0.5) < 0.03) { tt[i] = TT.dirt; trail.add(i); continue; }
+    if (FT.mud && G[i] === 0 && t !== TT.forest && (n2 < 0.16 * FT.mud || (n3 < 0.4 && nearT(x, y, 2, TT.water)))) tt[i] = TT.mud;
+    else if (FT.meadow && t === TT.grass && n3 > 1 - 0.3 * FT.meadow) tt[i] = TT.meadow;
+    else if (FT.rocky && (t === TT.hill || t === TT.grass) && n2 > 1 - 0.13 * FT.rocky) tt[i] = TT.rocky;
+  }
   // fill terrain below ground; water
   for (let y = 0; y < MH; y++) for (let x = 0; x < MW; x++) { const g = G[col(x, y)]; for (let L = 0; L < g; L++) blk[ci(x, y, L)] = 20; if (tt[col(x, y)] === TT.water) blk[ci(x, y, 0)] = 23; }
   // bridges over the river: the main road, a northern footbridge, a southern one
@@ -5114,7 +5142,7 @@ function genMap(seed) {
     for (let x = x0 - pad; x <= x1 + pad; x++) for (let y = y0 - pad; y <= y1 + pad; y++) { if (!ok(x, y)) continue; for (let L = 0; L <= st + 1 && L < ML; L++) { blk[ci(x, y, L)] = 0; if (L) slab[ci(x, y, L)] = 0; } if (x >= x0 && x <= x1 && y >= y0 && y <= y1 && tt[col(x, y)] !== TT.road) tt[col(x, y)] = TT.dirt; }
     const W_ = (x, y, L, id = 24) => { if (okIn(x, y) && L < ML && !gaps.has(K(x, y, L))) put(x, y, L, id); };
     const F_ = (x, y, L, id = 5) => { if (ok(x, y) && L < ML) putS(x, y, L, id); };
-    const P_ = (x, y, L, id, d) => { if (okIn(x, y) && L < ML && !blk[ci(x, y, L)] && (L === 0 || slab[ci(x, y, L)]) && !hatches.has(K(x, y, L)) && !lads.some(q => q[2] === L && Math.abs(q[0] - x) + Math.abs(q[1] - y) < 2)) put(x, y, L, id, d); };
+    const P_ = (x, y, L, id, d) => { if (okIn(x, y) && L < ML && !blk[ci(x, y, L)] && (L === 0 || slab[ci(x, y, L)]) && !hatches.has(K(x, y, L)) && !gaps.has(K(x, y, L)) && !lads.some(q => q[2] === L && Math.abs(q[0] - x) + Math.abs(q[1] - y) < 2)) put(x, y, L, id, d); };
     const isEdge = (x, y) => x === x0 || x === x1 || y === y0 || y === y1;
     const lads = [], gaps = new Set(), hatches = new Set(), K = (x, y, L) => x + ',' + y + ',' + L;
     const ladder = (wx, wy, sx, sy, L) => {
@@ -5135,20 +5163,28 @@ function genMap(seed) {
       for (let x = a - 1; x <= a + 3; x++) { F_(x, yb, L); F_(x, yr, L); W_(x, yr, L, 42); }
       W_(a - 1, yb, L, 42); W_(a + 3, yb, L, 42); blk[ci(a + 1, yw, L)] = 0;
     };
-    const loot = (L, n, ids, ax0 = x0 + 1, ay0 = y0 + 1, ax1 = x1 - 1, ay1 = y1 - 1) => { for (let j = 0; j < n * 6 && n > 0; j++) { const x = ax0 + Math.floor(rr() * (ax1 - ax0 + 1)), y = ay0 + Math.floor(rr() * (ay1 - ay0 + 1)), i = ci(x, y, L); const b0 = blk[i]; P_(x, y, L, ids[Math.floor(rr() * ids.length)]); if (!b0 && blk[i]) n--; } };
+    const wallNb = (x, y, L) => DIRS.some(([dx, dy]) => { const q = blk[ci(x + dx, y + dy, L)]; return q === 24 || q === 7 || q === 8 || q === 50; });
+    const loot = (L, n, ids, ax0 = x0 + 1, ay0 = y0 + 1, ax1 = x1 - 1, ay1 = y1 - 1) => { for (let j = 0; j < n * 8 && n > 0; j++) { const x = ax0 + Math.floor(rr() * (ax1 - ax0 + 1)), y = ay0 + Math.floor(rr() * (ay1 - ay0 + 1)), i = ci(x, y, L); const b0 = blk[i]; if (j < n * 6 && !wallNb(x, y, L)) continue; P_(x, y, L, ids[Math.floor(rr() * ids.length)]); if (!b0 && blk[i]) n--; } };
     const door = (x, y) => { if (okIn(x, y)) { blk[ci(x, y, 0)] = 0; put(x, y, 0, 7); } };
     const open = (x, y, L = 0) => { if (inMap(x, y)) blk[ci(x, y, L)] = 0; };
     const w = x1 - x0, h = y1 - y0, mx = Math.floor((x0 + x1) / 2), py = Math.floor((y0 + y1) / 2);
     // a corridor block (apartments, clinic, police upstairs): 3-wide corridor along py, rooms of width `rw` both sides, a door into each
-    const corridorFloor = (L, rw) => {
-      for (let x = x0 + 1; x < x1; x++) for (const yy of [py - 2, py + 2]) { if (Math.floor((x - x0 - 1) % rw) === Math.floor(rw / 2)) continue; W_(x, yy, L); }
-      for (let wx = x0 + rw + 1; wx < x1 - 2; wx += rw) for (let y = y0 + 1; y < y1; y++) { if (Math.abs(y - py) <= 2) continue; W_(wx, y, L); }
+    // glass: chance a room's corridor wall has waist-high panels beside the door; open: the whole front is waist-high (wards, offices)
+    const corridorFloor = (L, rw, glass = 0, openFront = false) => {
+      const dq = Math.floor(rw / 2), gl = {};
+      for (let x = x0 + 1; x < x1; x++) for (const yy of [py - 2, py + 2]) {
+        const q = (x - x0 - 1) % rw, rk = Math.floor((x - x0 - 1) / rw) + ',' + yy; if (q === dq || q === dq - 1) continue;
+        if (gl[rk] == null) gl[rk] = rr() < glass;
+        W_(x, yy, L, gl[rk] && q > 0 && (openFront || q === dq - 2 || q === dq + 1) ? 50 : 24);
+      }
+      const ym = [Math.floor((y0 + 1 + py - 3) / 2), Math.ceil((py + 3 + y1 - 1) / 2)];
+      for (let wx = x0 + rw + 1; wx < x1 - 2; wx += rw) { const thru = [rr() < 0.5, rr() < 0.5]; for (let y = y0 + 1; y < y1; y++) { if (Math.abs(y - py) <= 2) continue; if ((y === ym[0] && thru[0]) || (y === ym[1] && thru[1])) continue; W_(wx, y, L); } }
     };
     if (type === 'apt') {
       core(x0 + 3, py - 1, -1, st - 1); if (w >= 24) core(x1 - 3, py - 1, 1, st - 2);
       floors(1, st);
       for (let L = 0; L < st; L++) {
-        perim(L, 0.12); coreWalls(L); corridorFloor(L, 6);
+        perim(L, 0.12); coreWalls(L); corridorFloor(L, 7, 0.6);
         if (L >= 1) for (let a = x0 + 3; a < x1 - 4; a += 6) { if (rr() < 0.35) balcony(-1, a, L); if (rr() < 0.35) balcony(1, a, L); }
         loot(L, 4, [34, 34, 32, 26, 33]);
       }
@@ -5160,12 +5196,12 @@ function genMap(seed) {
       floors(1, st - 1);
       // ground floor: an open living room and a kitchen behind a wall with a wide opening
       perim(0, 0); coreWalls(0); for (let y = y0 + 1; y < y1; y++) if (Math.abs(y - py) > 1) W_(kx, y, 0);
-      P_(kx + 2, y0 + 1, 0, 34); P_(kx + 3, y0 + 1, 0, 34); P_(x1 - 1, y0 + 1, 0, 32); P_(x0 + 6, py, 0, 14); P_(x0 + 7, py, 0, 14); // kitchen cupboards, bin, a sofa
+      P_(kx + 2, y0 + 1, 0, 34); P_(kx + 3, y0 + 1, 0, 34); P_(x1 - 1, y0 + 1, 0, 32); P_(x0 + 6, py, 0, 48); P_(x0 + 7, py, 0, 48); // kitchen cupboards, bin, a sofa
       loot(0, 2, [26, 33]);
       // upstairs (the attic under the roof): a landing by the ladder, three bedrooms along the back
       for (let L = 1; L < st; L++) {
         perim(L, 0.1); coreWalls(L);
-        for (let x = x0 + 1; x < x1; x++) if ((x - x0) % 5 !== 3) W_(x, py, L);
+        for (let x = x0 + 1; x < x1; x++) if ((x - x0) % 5 !== 3 && (x - x0) % 5 !== 2) W_(x, py, L);
         for (let wx = x0 + 5; wx < x1 - 1; wx += 5) for (let y = y0 + 1; y < py; y++) W_(wx, y, L);
         balcony(1, mx - 1, L);
         loot(L, 4, [34, 34, 33, 35]);
@@ -5180,7 +5216,7 @@ function genMap(seed) {
       for (const x of lp) { lads.push([x, my + 1, 0, 3]); gaps.add(K(x, my, 1)); }
       for (let x = x0 + 1; x < x1; x++) if (!lp.includes(x)) W_(x, my, 1, 42);
       perim(0, 0); perim(1, 0.25);
-      for (let y = my + 3; y < y1 - 1; y += 3) for (let x = x0 + 3; x < x1 - 2; x++) if ((x - x0) % 6 !== 0 && okIn(x, y) && !blk[ci(x, y, 0)]) put(x, y, 0, rr() < 0.3 ? [34, 26, 37][Math.floor(rr() * 3)] : [14, 40][Math.floor(rr() * 2)]); // racks, drums, crates
+      for (let y = my + 3; y < y1 - 1; y += 3) for (let x = x0 + 3; x < x1 - 2; x++) if ((x - x0) % 6 !== 0 && okIn(x, y) && !blk[ci(x, y, 0)]) put(x, y, 0, rr() < 0.3 ? [34, 26, 37][Math.floor(rr() * 3)] : [49, 49, 40][Math.floor(rr() * 3)]); // racks, drums, crates
       loot(1, 4, [26, 36, 35]);
       for (const x of [mx, mx + 1]) open(x, y1); door(x0, y1 - 2); door(x1, my + 2);
     } else if (type === 'shop') {
@@ -5190,8 +5226,8 @@ function genMap(seed) {
       ladder(sx, y0 + 2, 1, 0, 0);
       floors(1, 1);
       perim(0, 0);
-      for (let y = y0 + 3; y <= y1 - 4; y += 3) for (let x = x0 + 3; x < sx - 1; x++) if ((x - x0) % 7 !== 0) P_(x, y, 0, rr() < 0.3 ? 34 : 14);
-      for (let x = x0 + 3; x < sx - 2; x += 4) P_(x, y1 - 2, 0, 14);
+      for (let y = y0 + 3; y <= y1 - 4; y += 3) for (let x = x0 + 3; x < sx - 1; x++) if ((x - x0) % 7 !== 0) P_(x, y, 0, rr() < 0.12 ? 34 : 49);
+      for (let x = x0 + 3; x < sx - 2; x += 4) P_(x, y1 - 2, 0, 48);
       loot(0, 4, [26, 37, 36], sx + 1, y0 + 1, x1 - 1, y1 - 1);
       roofRail(); loot(1, 2, [26, 33]);
       for (const x of [mx - 1, mx]) open(x, y1); door(x0, py); door(x1, y1 - 2);
@@ -5199,10 +5235,10 @@ function genMap(seed) {
       core(x0 + 3, py - 1, -1, st - 1);
       floors(1, st);
       for (let L = 0; L < st; L++) {
-        perim(L, 0.1); coreWalls(L); corridorFloor(L, 5);
+        perim(L, 0.1); coreWalls(L); corridorFloor(L, 6, 0.75, true);
         loot(L, 4, [33, 33, 34, 34, 26]);   // backpacks and cabinets carry the medkits
       }
-      P_(x0 + 6, py + 1, 0, 14); P_(x0 + 7, py + 1, 0, 14);               // reception desk
+      P_(x0 + 6, py + 1, 0, 48); P_(x0 + 7, py + 1, 0, 48);               // reception desk
       roofRail(); loot(st, 1, [26]);
       door(x0, py + 1); door(x1, py); door(mx, y1); open(mx, py + 2);
     } else if (type === 'police') {
@@ -5215,9 +5251,9 @@ function genMap(seed) {
       for (let x = x0 + 4; x < ax; x += 4) for (let y = y0 + 1; y < cy; y++) W_(x, y, 0);
       for (let y = y0 + 1; y < y1; y++) if (y !== py + 1) W_(ax, y, 0);
       for (const [x, y] of [[ax + 2, y0 + 1], [ax + 3, y0 + 1], [ax + 2, y0 + 2], [x1 - 1, y1 - 1]]) P_(x, y, 0, 36); P_(ax + 3, y1 - 1, 0, 26);
-      P_(mx - 1, y1 - 3, 0, 14); P_(mx, y1 - 3, 0, 14); P_(mx + 1, y1 - 3, 0, 14);
+      P_(mx - 1, y1 - 3, 0, 48); P_(mx, y1 - 3, 0, 48); P_(mx + 1, y1 - 3, 0, 48);
       loot(0, 2, [34, 33], x0 + 1, cy + 1, ax - 1, y1 - 1);
-      for (let L = 1; L < st; L++) { perim(L, 0.1); coreWalls(L); corridorFloor(L, 5); loot(L, 4, [34, 34, 36, 33]); }
+      for (let L = 1; L < st; L++) { perim(L, 0.1); coreWalls(L); corridorFloor(L, 5, 1, true); loot(L, 4, [34, 34, 36, 33]); }
       roofRail(); loot(st, 1, [36]);
       door(mx, y1); door(x0, py + 1); door(x1, py + 1);
     } else if (type === 'garage') {
@@ -5250,19 +5286,46 @@ function genMap(seed) {
   const at = (x, y, id, d) => { if (free(x, y)) put(x, y, 0, id, d); };
   Object.assign(K, { put, putS, at, lot, free, blk, slab, bdir });
   if (M.landmarks) M.landmarks(K);
-  // trees, rocks, bushes, log piles, scrap
+  // abandoned farmsteads out in the country: a ruined shell (broken walls, waist-high bits), a fenced yard, loot and cover
+  const farms = [];
+  for (let k = 0; k < 600 && farms.length < FT.farms; k++) {
+    const fx = 4 + Math.floor(r() * (MW - 14)), fy = 4 + Math.floor(r() * (MH - 13));
+    if (farms.some(([a, b]) => Math.abs(a - fx) + Math.abs(b - fy) < 34) || radioDist0(fx + 3, fy + 3) < BUILD_R + 10 || TOWN_HOUSES.some(([x0, y0, x1, y1]) => fx + 9 >= x0 - 5 && fx - 2 <= x1 + 5 && fy + 8 >= y0 - 5 && fy - 2 <= y1 + 5)) continue;
+    let ok = true; for (let y = fy - 2; y <= fy + 8 && ok; y++) for (let x = fx - 2; x <= fx + 9 && ok; x++) { const i = col(x, y); if (!inMap(x, y) || G[i] !== 0 || tt[i] === TT.water || roadCells.has(i) || blk[ci(x, y, 0)]) ok = false; }
+    if (!ok) continue;
+    farms.push([fx, fy]);
+    const x0 = fx, y0 = fy, x1 = fx + 6, y1 = fy + 4, gaps = new Set([(x0 + 2) + ',' + y1, (x0 + 3) + ',' + y1, x1 + ',' + (y0 + 2)]);
+    for (let y = y0 - 1; y <= y1 + 1; y++) for (let x = x0 - 1; x <= x1 + 1; x++) tt[col(x, y)] = TT.dirt;
+    for (let x = x0; x <= x1; x++) for (let y = y0; y <= y1; y++) {
+      if (!(x === x0 || x === x1 || y === y0 || y === y1) || gaps.has(x + ',' + y)) continue;
+      if (r() < 0.16) continue;                                              // collapsed bits you can walk through
+      put(x, y, 0, r() < 0.3 ? 50 : 24);
+    }
+    for (const [x, y, id] of [[x0 + 1, y0 + 1, 34], [x1 - 1, y0 + 1, 26], [x0 + 1, y1 - 1, 33], [x0 + 4, y0 + 2, 48], [x1 - 1, y1 - 1, 37]]) if (!blk[ci(x, y, 0)]) put(x, y, 0, id);
+    for (let x = x0 - 2; x <= x1 + 2; x++) if (r() < 0.75) put(x, y1 + 3, 0, 27);      // the yard fence
+    put(x1 + 2, y0, 0, 40); put(x1 + 2, y0 + 1, 0, 26); if (r() < 0.5) put(x0 - 2, y0 + 1, 0, 25, Math.floor(r() * 4)); // a log pile, a crate, an old car
+  }
+  // trees, rocks, bushes, log piles, scrap. Trees grow in clumps (noise), keep 2 cells off the roads and 3 off the town,
+  // and leave the forest trails open.
   const clearNear = (x, y) => Math.max(Math.abs(x - RX), Math.abs(y - RY)) <= 9;
+  const nearRoad = new Set(); for (let i = 0; i < MW * MH; i++) { if (!roadCells.has(i) && tt[i] !== TT.road) continue; const x = i % MW, y = Math.floor(i / MW); for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) if (inMap(x + dx, y + dy)) nearRoad.add(col(x + dx, y + dy)); }
+  const farmNear = (x, y) => farms.some(([a, b]) => x >= a - 3 && x <= a + 10 && y >= b - 3 && y <= b + 9);
   for (let y = 0; y < MH; y++) for (let x = 0; x < MW; x++) {
     const i = col(x, y), t = tt[i], g = G[i];
-    if (t === TT.water || t === TT.road || roadCells.has(i) || clearNear(x, y) || inTown(x, y, 1) || blk[ci(x, y, g)]) continue;
+    if (t === TT.water || t === TT.road || roadCells.has(i) || trail.has(i) || clearNear(x, y) || inTown(x, y, 1) || blk[ci(x, y, g)] || farmNear(x, y)) continue;
     if (M.noVeg && M.noVeg(x, y)) continue;
-    const VG = M.veg || {}, pTree = (t === TT.forest ? 0.42 : t === TT.hill ? 0.1 : 0.035) * (VG.tree == null ? 1 : VG.tree), pRock = (t === TT.hill ? 0.05 : 0.018) * (VG.rock == null ? 1 : VG.rock);
+    if (DIRS.some(([dx, dy]) => inMap(x + dx, y + dy) && blk[ci(x + dx, y + dy, G[col(x + dx, y + dy)])] === 28)) continue; // keep both ends of a ramp clear
+    const VG = M.veg || {}, clump = 0.3 + 1.4 * noise(x + 2000, y + 50, 5), noTree = nearRoad.has(i) || inTown(x, y, 3);
+    const pTree = noTree ? 0 : (t === TT.forest ? 0.26 : t === TT.hill ? 0.06 : t === TT.grass ? 0.02 : 0.008) * clump * (VG.tree == null ? 1 : VG.tree);
+    const pRock = (t === TT.rocky ? 0.14 : t === TT.hill ? 0.04 : 0.012) * (VG.rock == null ? 1 : VG.rock);
     const v = r();
     if (v < pTree) put(x, y, g, 22); else if (v < pTree + pRock) put(x, y, g, 21);
-    else if (v < pTree + pRock + (t === TT.forest ? 0.05 : 0.025) * (VG.bush == null ? 1 : VG.bush)) put(x, y, g, 41);
-    else if (v < pTree + pRock + 0.032 && t === TT.forest) put(x, y, g, 40);
-    else if (v < pTree + pRock + 0.03 && (t === TT.hill || t === TT.dirt)) put(x, y, g, 39);
+    else if (v < pTree + pRock + (t === TT.forest ? 0.05 : t === TT.meadow ? 0.04 : 0.022) * (VG.bush == null ? 1 : VG.bush)) put(x, y, g, 41);
+    else if (v < pTree + pRock + 0.02 && t === TT.forest) put(x, y, g, 40);
+    else if (v < pTree + pRock + 0.025 && (t === TT.hill || t === TT.dirt || t === TT.rocky)) put(x, y, g, 39);
   }
+  // fallen trees along the forest trails
+  for (const i of trail) { if (r() > 0.03) continue; const x = i % MW, y = Math.floor(i / MW); for (const [dx, dy] of DIRS) { const xx = x + dx, yy = y + dy; if (inMap(xx, yy) && tt[col(xx, yy)] === TT.forest && !blk[ci(xx, yy, G[col(xx, yy)])]) { put(xx, yy, G[col(xx, yy)], 40); break; } } }
   // cars on the roads (not on bridges), crates in the open
   let cars = M.cars;
   if (!cars) { cars = []; const rc = [...roadCells].filter(i => tt[i] !== TT.water); for (let k = 0; k < 400 && cars.length < (M.nCars || 28); k++) { const i = rc[Math.floor(r() * rc.length)], x = i % MW, y = Math.floor(i / MW); if (!cars.some(([a, b]) => Math.abs(a - x) + Math.abs(b - y) < 8) && radioDist0(x, y) > 9) cars.push([x, y]); } }
@@ -5422,7 +5485,7 @@ MAPS.forest = {
     for (let y = 26; y <= 34; y++) { road(104, y); road(105, y); }
   },
   forestAt: (x, y, n, K) => n > 0.3 && !K.inTown(x, y, 4) && Math.max(Math.abs(x - K.RX), Math.abs(y - K.RY)) > 12,
-  veg: { tree: 1.15, bush: 1.4 },
+  veg: { tree: 1.0, bush: 1.4 }, feat: { farms: 2 },
   nCars: 14,
 };
 MAPS.desert = {
@@ -5440,7 +5503,8 @@ MAPS.desert = {
     lot(72, 60, 82, 68, TT.road); at(75, 62, 37); at(79, 62, 37); at(74, 66, 38); at(80, 66, 25, 0); at(82, 61, 32);          // gas station at the crossing
     for (const [x, y, d] of [[40, 72, 0], [60, 69, 2], [100, 72, 1], [130, 69, 0], [86, 30, 1], [84, 110, 3]]) at(x, y, 25, d); // wrecks on the highway
   },
-  forestN: 0.86, dirtN: 0.3, veg: { tree: 0.22, rock: 2.6, bush: 0.6 },
+  forestN: 0.86, dirtN: 0.3, veg: { tree: 0.22, rock: 2.6, bush: 0.6 }, feat: { mud: 0.2, meadow: 0.5, rocky: 1.8, farms: 3 },
+  deco: { tuft: '#9a8a50', flower: ['#d8a040', '#c86a3a', '#e8d8a0'] },
   tcol: { [TT.grass]: ['#c8aa72', '#c2a46c', '#cfb17a'], [TT.hill]: ['#b48f5c', '#ad8956', '#b9945f'], [TT.forest]: ['#a99a62', '#a09158'], [TT.dirt]: ['#a8805a', '#b08860'], [TT.sand]: ['#d6bf8a', '#ddc792'], [TT.road]: ['#56524c', '#5a564f'] },
   mc: { [TT.grass]: '#c4a66e', [TT.hill]: '#a8845a', [TT.dirt]: '#a07a52', [TT.road]: '#55524c', [TT.sand]: '#d6bf8a', [TT.forest]: '#9c8e5c', [TT.water]: '#3a7a96' },
   trees: { pine: ['#5f6b3a', '#66723f', '#6e7a45'], oak: ['#7a7a45', '#8a8450'], trunk: '#5a4632' }, bush: '#8a8a52',
@@ -5457,7 +5521,7 @@ MAPS.islands = {
     line(62, 64, 98, 64); line(62, 100, 98, 100); line(62, 64, 62, 100); line(98, 64, 98, 100);
     line(62, 64, 30, 33); line(98, 64, 130, 34); line(62, 100, 40, 130); line(98, 100, 132, 119);
   },
-  forestN: 0.42, veg: { tree: 1.2, bush: 1.5 },
+  forestN: 0.42, veg: { tree: 1.0, bush: 1.5 }, feat: { mud: 0.8, farms: 2 },
   tcol: { [TT.grass]: ['#4f7a3a', '#548040', '#4a7436'], [TT.forest]: ['#36582a', '#3b5e2e'], [TT.sand]: ['#d8c88e', '#e0d196'] },
   mc: { [TT.grass]: '#4f7a3a', [TT.forest]: '#33552a', [TT.sand]: '#d8c88e', [TT.water]: '#2a7aa0' },
   trees: { pine: ['#2c5a2e', '#336233', '#3a6a38'], oak: ['#3f7a34', '#4a8538'] },
@@ -5476,7 +5540,8 @@ MAPS.snow = {
     for (let y = 33; y <= 46; y++) { road(134, y); road(135, y); }
   },
   landmarks({ at }) { for (const [x, y] of [[124, 36], [126, 36], [128, 36], [140, 36], [142, 36], [144, 36]]) at(x, y, 27); at(130, 38, 36); at(138, 38, 36); }, // base gate
-  forestN: 0.72, veg: { tree: 0.9, rock: 1.2 },
+  forestN: 0.72, veg: { tree: 0.9, rock: 1.2 }, feat: { mud: 0.5, meadow: 0.4, farms: 3 },
+  deco: { tuft: '#a9b8b4', flower: ['#ffffff', '#c8d8f0'] },
   tcol: { [TT.grass]: ['#e6ecef', '#dfe6ea', '#eef2f4'], [TT.hill]: ['#d3dce2', '#cdd7de', '#d9e1e6'], [TT.forest]: ['#c8d3da', '#c2ced6'], [TT.dirt]: ['#9d978e', '#a49e94'], [TT.road]: ['#5c6066', '#585c62'], [TT.sand]: ['#cfd8dc', '#c8d2d7'] },
   mc: { [TT.grass]: '#dfe6ea', [TT.hill]: '#c4ced6', [TT.forest]: '#9fb0b8', [TT.dirt]: '#9a948a', [TT.road]: '#55595e', [TT.sand]: '#cfd6da', [TT.water]: '#2b4a62' },
   trees: { pine: ['#3e5a52', '#45615a', '#4d6a62'], oak: ['#b8c7cc', '#c5d2d6'], trunk: '#4a3a30' }, bush: '#7f948f',
@@ -5490,7 +5555,7 @@ MAPS.city = {
     [18, 98, 37, 112, 2, 'clinic'], [44, 98, 63, 114, 5, 'apt'], [70, 98, 91, 112, 1, 'garage'], [98, 98, 117, 114, 3, 'apt'], [124, 98, 143, 112, 2, 'police'],
     [44, 124, 63, 140, 4, 'apt'], [98, 124, 117, 138, 1, 'shop'], [124, 70, 143, 82, 1, 'shop']],
   roads({ road }) { for (const g of [14, 40, 66, 94, 120, 146]) for (let k = 0; k < MW; k++) { road(g, k); road(g + 1, k); road(k, g); road(k, g + 1); } },
-  forestN: 0.97, veg: { tree: 0.35, rock: 0.4, bush: 0.6 },
+  forestN: 0.97, veg: { tree: 0.35, rock: 0.4, bush: 0.6 }, feat: { meadow: 0.5, rocky: 1.3, farms: 1 },
   tcol: { [TT.grass]: ['#5f6a4a', '#646f4e', '#5a6546'], [TT.dirt]: ['#6a625a', '#70675e'] },
   mc: { [TT.grass]: '#5f6a4a', [TT.dirt]: '#6a625a' },
   nCars: 48,
@@ -5651,6 +5716,18 @@ function rayWorld(ox, oy, oz, dx, dy, dz, maxD, opt) {
     const i = ci(x, y, l), b = W.blk[i];
     if (!b) return false;
     if (lean && B[b].cost && !B[b].slab && d * hz < PORT) return false; // hugging your own wall: shoot through the gap (zombies still can't pass)
+    if (B[b].B && !any && (B[b].low || b === 24)) {
+      const tEx = Math.min(tmx, tmy, tmz, maxD), fz = l * FH, z0 = oz + dz * d - fz, z1 = oz + dz * tEx - fz, zlo = Math.min(z0, z1), zhi = Math.max(z0, z1);
+      if (B[b].low) { if (zlo > B[b].low) return false; if (z0 > B[b].low && dz < 0) PARA_D = (fz + B[b].low - oz) / dz; return true; }
+      const v = ruinShape(x, y, l);
+      if (v !== 2) {
+        const a = ruinRot(x, y, l, v), ca = Math.cos(a), sa = Math.sin(a), lat = t => (ox + dx * t - x - 0.5) * ca - (oy + dy * t - y - 0.5) * sa, lm = lat((d + tEx) / 2);
+        if (v === 0) { if (zlo > WIN.lo * FH && zhi < WIN.hi * FH && ((lean && d * hz < PORT) || (Math.abs(lm) < WIN.half && Math.abs(lat(d)) < 0.45 && Math.abs(lat(tEx)) < 0.45))) return false; } // standing at a window you can lean and shoot out at an angle
+        else if (v === 1) { if (zlo > 0.5 * FH && !(lm < 0.05 && zlo < 0.8 * FH) && !(lm < -0.25 && zlo < 0.98 * FH)) return false; }
+        else if (zlo > 0.48 * FH) return false;
+      }
+      return true;
+    }
     if (B[b].B || any) {
       if ((b === 1 || b === 2 || b === 3) && isParapet(i)) {
         // waist-high: the ray only stops if it dips below the top inside this cell (or the shooter is leaning over it)
@@ -5776,7 +5853,7 @@ function stepMove(p, dt) {
     p.z = pZ(p); return;
   }
   if (p.dash) { const D = p.dash, f = Math.min(dt, D.T - D.t) / D.T; moveEnt(p, D.dx * f, D.dy * f, 'p', true); D.t += dt; if (D.t >= D.T) p.dash = null; p.z = pZ(p); p.anim += dt * 8; return; }
-  const spd = BAL.pSpeed * (p.down ? 0.22 : 1) * (p.medT > 0 ? 0.45 : 1) * (p.build ? 0.9 : 1);
+  const spd = BAL.pSpeed * (p.down ? 0.22 : 1) * (p.medT > 0 ? 0.45 : 1) * (p.build ? 0.9 : 1) * (inMud(p.x, p.y, p.L) ? MUD_SLOW : 1);
   const tx = I.mx * k * spd, ty = I.my * k * spd, a = Math.min(1, dt * 14);
   p.vx = lerp(p.vx, tx, a); p.vy = lerp(p.vy, ty, a);
   p.kbx *= Math.max(0, 1 - dt * 6); p.kby *= Math.max(0, 1 - dt * 6);
@@ -5971,7 +6048,7 @@ function pickSpot(kind, out) {
       if (kind === 'trash') { if (t === TT.road || !DIRS.some(([dx, dy]) => inMap(x + dx * 2, y + dy * 2) && (W.tt[(y + dy) * MW + x + dx] === TT.road || W.tt[(y + dy * 2) * MW + x + dx * 2] === TT.road))) continue; }
       else if (t === TT.road) continue;
       if (kind === 'milcrate' && radioDist(x, y) < 34) continue;
-      if (kind === 'backpack' && t !== TT.forest && t !== TT.grass && t !== TT.hill) continue;
+      if (kind === 'backpack' && t !== TT.forest && t !== TT.grass && t !== TT.hill && t !== TT.meadow && t !== TT.rocky) continue;
     }
     if (spotFree(x, y, L)) return ci(x, y, L);
   }
@@ -6384,7 +6461,7 @@ function stepZombies(dt) {
     }
     const cx = Math.floor(z.x), cy = Math.floor(z.y), i = ci(cx, cy, z.L);
     // barbed wire
-    let slow = 1;
+    let slow = inMud(z.x, z.y, z.L) ? MUD_SLOW : 1;
     if (B[W.blk[i]].trap) { z.stun = 2.5; hurtZombie(z, 30, null); setCell(i, 0, W.slab[i], null, 'trap'); if (z.hp <= 0) continue; }
     if (B[W.blk[i]].stairs && !B[W.blk[i]].nat) slow = climbT ? 0.75 : 0.38; // ladders are slow going for zombies
     if (B[W.blk[i]].wire) {
@@ -6535,7 +6612,7 @@ function placeObj(x, y, L, id) { const i = ci(x, y, L); W.blk[i] = id; W.bhp[i] 
 function zAround(k, x, y, rmin, rmax) {
   for (let t = 0; t < 30; t++) {
     const a = rand() * Math.PI * 2, d = rmin + rand() * (rmax - rmin), zx = Math.floor(x + Math.cos(a) * d), zy = Math.floor(y + Math.sin(a) * d);
-    if (!inMap(zx, zy)) continue; const L = gAt(zx, zy); if (!standable(zx, zy, L, 'z') || ttAt(zx, zy) === TT.water) continue;
+    if (!inMap(zx, zy)) continue; const L = gAt(zx, zy); if (!standable(zx, zy, L, 'z') || ttAt(zx, zy) === TT.water || !(W.ff.rw[ci(zx, zy, L)] < Infinity)) continue; // not on a ledge it can't get down from
     const z = spawnZombie(k, 0); z.x = zx + 0.5; z.y = zy + 0.5; z.L = L; z.z = surfZ(z.x, z.y, L); z.mz = 1; return z;
   }
   return null;
@@ -6805,6 +6882,7 @@ function applyQual() {
   const lv = QUAL.lv = qualPick();
   RENDER.setPixelRatio(lv === 0 ? DPR0 : Math.min(DPR0, 1)); resize();
   if (OBJ.sun) OBJ.sun.castShadow = !!SET.shadows && lv < 2;
+  if (typeof decoVis === 'function') decoVis();
 }
 const QNAME = ['高', '中', '低'];
 const qualLabel = () => '画质：' + (SET.q == null || SET.q === 'auto' ? '自动（' + QNAME[qualPick()] + '）' : QNAME[SET.q]);
@@ -6969,7 +7047,7 @@ function buildScene() {
   OBJ.zone = new THREE.LineSegments(zg, new THREE.LineBasicMaterial({ color: '#ffcf6b', transparent: true, opacity: 0.55 })); SCN.add(OBJ.zone);
 }
 /* ---------- terrain (static per world) ---------- */
-const TCOL = { [TT.grass]: ['#55733e', '#5a7843', '#50703a'], [TT.hill]: ['#4b663b', '#516c3e', '#476038'], [TT.dirt]: ['#6e5a42', '#74604a'], [TT.road]: ['#3c3d40', '#38393c'], [TT.sand]: ['#7d7356', '#857a5a'], [TT.forest]: ['#3f5a30', '#445f33', '#3b552d'], [TT.water]: ['#2b2723'] };
+const TCOL = { [TT.mud]: ['#4a3b2a', '#45372a', '#503f2c'], [TT.meadow]: ['#6a8440', '#64803c', '#708a44'], [TT.rocky]: ['#6e6c62', '#76736a', '#68665e'], [TT.grass]: ['#55733e', '#5a7843', '#50703a'], [TT.hill]: ['#4b663b', '#516c3e', '#476038'], [TT.dirt]: ['#6e5a42', '#74604a'], [TT.road]: ['#3c3d40', '#38393c'], [TT.sand]: ['#7d7356', '#857a5a'], [TT.forest]: ['#3f5a30', '#445f33', '#3b552d'], [TT.water]: ['#2b2723'] };
 // per-map tints for trees and bushes
 function applyMapLook() {
   const T = MAPDEF.trees || {}, I = OBJ.I; if (!I) return;
@@ -6983,9 +7061,11 @@ function buildTerrain() {
   const pos = [], col = [], c = new THREE.Color();
   const quad = (a, b2, c2, d, hex, k) => { c.set(hex).multiplyScalar(k); for (const v of [a, b2, c2, a, c2, d]) { pos.push(v[0], v[1], v[2]); col.push(c.r, c.g, c.b); } };
   const topOf = (x, y) => !inMap(x, y) ? -1.6 : ttAt(x, y) === TT.water ? -0.55 : gAt(x, y) * FH;
+  const mix = (a, b, t) => '#' + new THREE.Color(a).lerp(new THREE.Color(b), t).getHexString(), MG = (MAPDEF.tcol && MAPDEF.tcol[TT.grass]) || TCOL[TT.grass];
+  const TC2 = Object.assign({}, TCOL, MAPDEF.tcol || {}); if (MAPDEF.tcol && MAPDEF.tcol[TT.grass]) for (const [t, tgt, k] of [[TT.mud, '#3e3020', 0.62], [TT.meadow, '#a6b84a', 0.28], [TT.rocky, '#85827a', 0.58]]) if (!MAPDEF.tcol[t]) TC2[t] = MG.map(c => mix(c, tgt, k));
   for (let y = 0; y < MH; y++) for (let x = 0; x < MW; x++) {
     const t = ttAt(x, y), h = hash2(x, y), top = topOf(x, y);
-    const cols = (MAPDEF.tcol && MAPDEF.tcol[t]) || TCOL[t] || TCOL[TT.grass], tc = t === TT.water ? '#4a4136' : cols[Math.floor(h * cols.length)];
+    const cols = TC2[t] || TCOL[TT.grass], tc = t === TT.water ? '#4a4136' : cols[Math.floor(h * cols.length)];
     quad([x, top, y], [x, top, y + 1], [x + 1, top, y + 1], [x + 1, top, y], tc, 1);
     const side = t === TT.water ? '#3a3128' : gAt(x, y) > 0 ? (h < 0.5 ? '#6b6052' : '#625849') : '#4e4134';
     const nb = [[x + 1, y, [x + 1, y + 1], [x + 1, y], 0.62], [x, y + 1, [x, y + 1], [x + 1, y + 1], 0.78], [x - 1, y, [x, y], [x, y + 1], 0.62], [x, y - 1, [x + 1, y], [x, y], 0.78]];
@@ -7003,16 +7083,55 @@ function buildTerrain() {
     for (let L = 0; L < ML; L++) { const i = ci(x, y, L); if (W.blk[i] === 28) setInst(I.ramp, rp++, x + 0.5, L * FH, y + 0.5, -W.bdir[i] * Math.PI / 2, 1, 1, 1); }
   }
   I.water.count = w; I.ramp.count = rp;
+  buildDeco(MG, mix);
   for (const m of [I.water, I.ramp]) m.instanceMatrix.needsUpdate = true;
   OBJ.radio.visible = false;
   OBJ.bench.position.set(W.bench.x + 0.5, gAt(W.bench.x, W.bench.y) * FH, W.bench.y + 0.5);
   OBJ.grid.position.set(W.radio.x, 0, W.radio.y); OBJ.zone.position.set(W.radio.x, 0.03, W.radio.y);
   RC.ver = -1; buildMinimapBase();
 }
+// ground detail (static per world, not part of the per-rebuild pools): grass tufts, flowers in the meadows, puddles in the mud,
+// pebbles on gravel. Hidden on the lowest quality.
+function buildDeco(MG, mix) {
+  const D = OBJ.deco = OBJ.deco || {};
+  for (const k in D) { SCN.remove(D[k]); D[k].dispose(); delete D[k]; }
+  if (!GEO.tuft) {
+    const bl = []; for (let k = 0; k < 5; k++) { const a = k * 1.26, rr = 0.06 + (k % 2) * 0.05; bl.push(new THREE.ConeGeometry(0.04, 0.3 + (k % 3) * 0.08, 3, 1, true).rotateZ((k % 2 ? 0.25 : -0.2)).rotateY(a).translate(Math.cos(a) * rr, 0.15 + (k % 3) * 0.04, Math.sin(a) * rr)); }
+    GEO.tuft = merge(bl);
+    GEO.flower = merge([0, 1, 2].map(k => new THREE.TetrahedronGeometry(0.06, 0).translate(Math.cos(k * 2.1) * 0.12, 0.28 + k * 0.03, Math.sin(k * 2.1) * 0.12)));
+    GEO.puddle = new THREE.CircleGeometry(0.36, 10).rotateX(-Math.PI / 2).translate(0, 0.015, 0);
+    GEO.pebble = merge([new THREE.OctahedronGeometry(0.09, 0).scale(1, 0.6, 1.2).translate(-0.15, 0.04, 0.1), new THREE.TetrahedronGeometry(0.08, 0).translate(0.18, 0.03, -0.12)]);
+  }
+  const deco = MAPDEF.deco || {}, tuftC = deco.tuft || mix(MG[0], '#3f6a2a', 0.45), flC = deco.flower || ['#e8d24a', '#e86a5a', '#f2f2f2', '#b08ae0'];
+  const L = { tuft: [], flower: [], puddle: [], pebble: [] };
+  for (let y = 0; y < MH; y++) for (let x = 0; x < MW; x++) {
+    const t = ttAt(x, y); if (t === TT.water || t === TT.road || inZone(x, y) || houseInterior(x, y)) continue;
+    const g = gAt(x, y), b = W.blk[ci(x, y, g)]; if (b && B[b].B) continue;
+    const h = hash2(x * 5 + 3, y * 11 + 7), h2 = hash2(x * 13 + 1, y * 3 + 5), Y = g * FH, X = x + 0.2 + h * 0.6, Z = y + 0.2 + h2 * 0.6;
+    if (t === TT.meadow) { L.tuft.push([X, Y, Z, h * 6, 1 + h2 * 0.5]); if (h2 < 0.4) L.tuft.push([x + 1 - (X - x), Y, y + 1 - (Z - y), h2 * 6, 0.8 + h * 0.4]); if (h < 0.55) L.flower.push([X + 0.1, Y, Z - 0.1, h2 * 6, 1, flC[Math.floor(h2 * flC.length)]]); }
+    else if (t === TT.grass || t === TT.hill) { if (h < (t === TT.grass ? 0.08 : 0.05)) L.tuft.push([X, Y, Z, h2 * 6, 0.7 + h2 * 0.4]); if (h > 0.985) L.flower.push([X, Y, Z, h * 6, 0.8, flC[Math.floor(h2 * flC.length)]]); }
+    else if (t === TT.forest) { if (h < 0.06) L.tuft.push([X, Y, Z, h2 * 6, 0.8]); }
+    else if (t === TT.mud) { if (h < 0.4) L.puddle.push([X, Y, Z, 0, 0.6 + h2 * 0.8]); }
+    else if (t === TT.rocky || t === TT.dirt) { if (h < (t === TT.rocky ? 0.65 : 0.05)) L.pebble.push([X, Y, Z, h2 * 6, 0.8 + h * 0.6]); }
+  }
+  const mats = { tuft: lam('#ffffff'), flower: lam('#ffffff'), puddle: new THREE.MeshPhongMaterial({ color: '#4a5a66', transparent: true, opacity: 0.7, shininess: 90, specular: '#9ab0c0', depthWrite: false }), pebble: lam('#ffffff') };
+  const CH = 40;
+  for (const k in L) {
+    const by = {}; L[k].forEach((q, n) => { const c = Math.floor(q[0] / CH) + ',' + Math.floor(q[2] / CH); (by[c] = by[c] || []).push([q, n]); });
+    for (const c in by) {
+      const arr = by[c], m = D[k + c] = inst(GEO[k], mats[k], arr.length, false); m.receiveShadow = k !== 'puddle';
+      arr.forEach(([q, n], j) => setInst(m, j, q[0], q[1], q[2], q[3], q[4], k === 'puddle' ? 1 : q[4], q[4], q[5] || (k === 'tuft' ? (n % 3 ? tuftC : mix(tuftC, '#000000', 0.15)) : k === 'pebble' ? (n % 2 ? '#8a877e' : '#77746c') : null)));
+      m.count = arr.length; m.instanceMatrix.needsUpdate = true; if (m.instanceColor) m.instanceColor.needsUpdate = true;
+      m.computeBoundingSphere(); m.frustumCulled = true; SCN.add(m);
+    }
+  }
+  decoVis();
+}
+const decoVis = () => { if (OBJ.deco) for (const k in OBJ.deco) OBJ.deco[k].visible = QUAL.lv < 2; };
 /* ---------- cell contents (rebuilt when the map, view layer, camera or player cell changes) ---------- */
 const RC = { ver: -1, key: '', lamps: [] };
 const dmgTint = (hex, f) => { tmpC.set(hex); const k = 0.45 + 0.55 * clamp(f, 0, 1); return '#' + tmpC.multiplyScalar(k).getHexString(); };
-function wallAxis(x, y, L) { const solid = (xx, yy) => { const b = blkAt(xx, yy, L); return b && (B[b].P || B[b].Z) && !B[b].nat || b === 24; }; return (solid(x - 1, y) || solid(x + 1, y)) && !(solid(x, y - 1) || solid(x, y + 1)) ? 0 : (solid(x, y - 1) || solid(x, y + 1)) ? 1 : 0; }
+function wallAxis(x, y, L) { const solid = (xx, yy) => { const b = blkAt(xx, yy, L); return b && (B[b].P || B[b].Z) && !B[b].nat || b === 24 || b === 50; }; return (solid(x - 1, y) || solid(x + 1, y)) && !(solid(x, y - 1) || solid(x, y + 1)) ? 0 : (solid(x, y - 1) || solid(x, y + 1)) ? 1 : 0; }
 function cullR() { return Math.min(MW, CAM.zoom * Math.max(1, VW / Math.max(1, VH)) * 1.6 + 8); }
 function rebuildCells() {
   const I = OBJ.I, me = W.p[ME], vl = viewL(), [ox, oy] = [Math.sin(CAM.yaw), Math.cos(CAM.yaw)];
@@ -7038,7 +7157,7 @@ function rebuildCells() {
     const inFront = me && !me.dead && L >= me.L && fwd > 0.2 && fwd < 5 + (L - me.L) * 1.5 && lat < 2.4 + fwd * 0.45;
     if (inFront && (B[b].P || B[b].Z) && (!B[b].nat || b === 24)) cut = 0.3;
     switch (b) {
-      case 1: case 2: case 3: case 24: archWall(b, i, x, y, L, X, Y, Z, h, cut, vl); break;
+      case 1: case 2: case 3: case 24: case 50: archWall(b, i, x, y, L, X, Y, Z, h, cut, vl); break;
       case 6: {
         propPut(6, i, x, y, L, X, Y, Z, h);
         // railings around the opening above, on every side you could walk up to except the top step
@@ -7242,7 +7361,7 @@ function drawOverlay() {
 const MM = { base: null, t: 0 };
 function buildMinimapBase() {
   const c = document.createElement('canvas'); c.width = MW; c.height = MH; const g = c.getContext('2d');
-  const MC = { [TT.grass]: '#55733e', [TT.hill]: '#7a8a5a', [TT.dirt]: '#6e5a42', [TT.road]: '#3c3d40', [TT.sand]: '#8a7f5a', [TT.forest]: '#3c5530', [TT.water]: '#2a6a86' };
+  const MC = { [TT.grass]: '#55733e', [TT.hill]: '#7a8a5a', [TT.dirt]: '#6e5a42', [TT.road]: '#3c3d40', [TT.sand]: '#8a7f5a', [TT.forest]: '#3c5530', [TT.water]: '#2a6a86', [TT.mud]: '#4a3b2a', [TT.meadow]: '#6a8440', [TT.rocky]: '#6e6c62' };
   if (MAPDEF.mc) Object.assign(MC, MAPDEF.mc);
   for (let y = 0; y < MH; y++) for (let x = 0; x < MW; x++) { let col = MC[ttAt(x, y)] || '#555'; if (gAt(x, y) === 2) col = '#8f9a6a'; g.fillStyle = col; g.fillRect(x, y, 1, 1); }
   MM.base = c;
@@ -7255,7 +7374,7 @@ function drawMinimap(dt) {
   g.translate(cv.width / 2, cv.height / 2); g.rotate(CAM.yaw); g.translate(-cv.width / 2, -cv.height / 2);
   g.imageSmoothingEnabled = false; g.drawImage(MM.base, 0, 0, cv.width, cv.height);
   g.fillStyle = 'rgba(30,30,34,.85)';
-  for (let y = 0; y < MH; y++) for (let x = 0; x < MW; x++) { for (let L = gAt(x, y); L < Math.min(ML, gAt(x, y) + 3); L++) { const b = W.blk[ci(x, y, L)]; if ((b && B[b].cost) || b === 24) { g.fillRect(x * S, y * S, S, S); break; } if (b === 22) { g.fillStyle = '#25381f'; g.fillRect(x * S, y * S, S, S); g.fillStyle = 'rgba(30,30,34,.85)'; break; } } }
+  for (let y = 0; y < MH; y++) for (let x = 0; x < MW; x++) { for (let L = gAt(x, y); L < Math.min(ML, gAt(x, y) + 3); L++) { const b = W.blk[ci(x, y, L)]; if ((b && B[b].cost) || b === 24 || b === 50) { g.fillRect(x * S, y * S, S, S); break; } if (b === 22) { g.fillStyle = '#25381f'; g.fillRect(x * S, y * S, S, S); g.fillStyle = 'rgba(30,30,34,.85)'; break; } } }
   g.strokeStyle = 'rgba(255,207,107,.6)'; g.lineWidth = 1; g.strokeRect((W.radio.x - BUILD_R) * S, (W.radio.y - BUILD_R) * S, (BUILD_R * 2 + 1) * S, (BUILD_R * 2 + 1) * S);
   g.fillStyle = '#ff3b2f'; for (const z of W.zs) g.fillRect(z.x * S - 1.5, z.y * S - 1.5, 3, 3);
   g.fillStyle = '#7fd36b'; g.fillRect(W.radio.x * S - 1, W.radio.y * S - 1, S + 2, S + 2);
@@ -7500,10 +7619,11 @@ function archGeo() {
   G.wirePosts = merge([boxG(0.06, 0.5, 0.06, -0.48, 0.25, 0).rotateX(0.25), boxG(0.06, 0.5, 0.06, -0.48, 0.25, 0).rotateX(-0.25), boxG(0.06, 0.5, 0.06, 0.48, 0.25, 0).rotateX(0.25), boxG(0.06, 0.5, 0.06, 0.48, 0.25, 0).rotateX(-0.25)]);
   // ruins: window wall, broken stepped top, full with cornice, low stub
   G.ruin = [
-    merge([boxG(1, h * 0.36, 1, 0, h * 0.18, 0), boxG(0.28, h * 0.42, 1, -0.36, h * 0.57, 0), boxG(0.28, h * 0.42, 1, 0.36, h * 0.57, 0), boxG(1, h * 0.22, 1, 0, h * 0.89, 0), boxG(0.56, 0.05, 1.1, 0, h * 0.37, 0)]),
+    merge([boxG(1, h * 0.36, 1, 0, h * 0.18, 0), boxG(0.2, h * 0.42, 1, -0.4, h * 0.57, 0), boxG(0.2, h * 0.42, 1, 0.4, h * 0.57, 0), boxG(1, h * 0.22, 1, 0, h * 0.89, 0), boxG(0.66, 0.05, 1.1, 0, h * 0.37, 0)]),
     merge([boxG(1, h * 0.5, 1, 0, h * 0.25, 0), boxG(0.55, h * 0.3, 1, -0.225, h * 0.65, 0), boxG(0.25, h * 0.18, 1, -0.375, h * 0.89, 0), boxG(0.18, h * 0.12, 0.6, 0.25, h * 0.56, 0.1)]),
     merge([boxG(1, h, 1, 0, h / 2, 0), boxG(1.08, 0.09, 1.08, 0, h * 0.97, 0)]),
     merge([boxG(1, h * 0.32, 1, 0, h * 0.16, 0), boxG(0.4, h * 0.16, 0.5, 0.1, h * 0.4, -0.1).rotateY(0.3)]),
+    merge([boxG(1, h * 0.46, 0.5, 0, h * 0.23, 0), boxG(1.04, 0.06, 0.62, 0, h * 0.475, 0)]), // 4: clean half wall (block 50)
   ].map(worldUV);
 }
 // called from buildScene: textured instanced pools for walls, floors, trims and ruins
@@ -7546,9 +7666,11 @@ function archWall(b, i, x, y, L, X, Y, Z, h, cut, vl) {
   } else if (b === 3) {
     archPut('steel', X, Y, Z, 0, 1, cut, 1, tint); archPut('tSteel', X, Y, Z, 0, 1, cut, 1);
     if (crown) archPut('spikes', X, cY, Z, ax, 1, 1, 1);
+  } else if (b === 50) {
+    const hk = houseOf(x, y), col = PLASTER[hk >= 0 ? (hk * 2 + 1) % PLASTER.length : 0];
+    archPut('ruin4', X, Y, Z, wallAxis(x, y, L) ? Math.PI / 2 : 0, 1, 1, 1, dmgTint(col, f));
   } else if (b === 24) {
-    let v = h < 0.28 ? 0 : h < 0.58 ? 1 : h < 0.84 ? 2 : 3; if (ARCH.roofCells.has(x + ',' + y + ',' + L) || (L + 1 < ML && (W.slab[ci(x, y, L + 1)] || W.blk[ci(x, y, L + 1)]))) v = h < 0.4 ? 0 : 2; // carrying a floor: full height
-    const rot = (v === 0 ? ax : 0) + (v === 1 && hash2(x, y * 3) < 0.5 ? Math.PI : 0) + (v === 1 ? ax : 0);
+    const v = ruinShape(x, y, L), rot = ruinRot(x, y, L, v); // carrying a floor: window wall or full height
     const hk = houseOf(x, y), col = PLASTER[hk >= 0 ? (hk * 2 + 1) % PLASTER.length : Math.floor(hash2(x >> 3, y >> 3) * PLASTER.length)];
     archPut('ruin' + v, X, Y, Z, rot, 1, cut < 1 ? Math.min(cut * 1.6, 1) : 1, 1, dmgTint(col, f));
   } else return false;
@@ -8193,8 +8315,12 @@ function propScene() {
   G[46] = M([boxG(0.86, 0.6, 0.86, 0, 0.3, 0), boxG(0.88, 0.1, 0.2, 0, 0.3, 0), boxG(0.2, 0.62, 0.88, 0, 0.3, 0), boxG(0.9, 0.06, 0.9, 0, 0.62, 0)]);
   G[47] = M([boxG(1.9, 0.5, 0.95, 0.45, 0.45, 0), boxG(0.7, 0.55, 0.9, 1.05, 0.95, 0), boxG(1.1, 0.35, 0.95, -0.05, 0.85, 0), ...[[-0.1, 0.48], [-0.1, -0.48], [1.05, 0.48], [1.05, -0.48]].map(([x, z]) => cyl(0.22, 0.22, 0.14, 10, x, 0.22, z).rotateX(Math.PI / 2))]);
   G[42] = M([boxG(0.06, 0.9, 0.06, 0, 0.45, -0.44), boxG(0.06, 0.9, 0.06, 0, 0.45, 0.44), boxG(0.06, 0.9, 0.06, 0, 0.45, 0), boxG(0.07, 0.06, 1, 0, 0.88, 0), boxG(0.04, 0.04, 1, 0, 0.45, 0)]);
-  const C = { 43: '#e8b93a', 44: '#6a1f2a', 45: '#7a868f', 46: '#2f5f9a', 47: '#5a6a3a', 42: '#7a8088', 32: '#3f5a3a', 33: '#5a4a2e', 34: '#6a4a30', 35: '#a8322a', 36: '#4f5a32', 37: '#9a3a2a', 38: '#b8333a', 39: '#7a5a44', 40: '#6a4a2c', 41: '#3e5f2e', 12: '#a8946a', 13: '#6a5038', 14: '#7a8590', 15: '#5a5a55', 6: '#8a6440' };
-  const cap = { 42: 2500, 41: 3000, 40: 600, 39: 600, 12: 1500, 13: 800, 14: 800, 15: 400, 6: 400, 32: 400, 34: 400 };
+  // town furniture (waist-high, bullets fly over): desk / counter, low shop shelving with goods
+  G[48] = M([boxG(0.94, 0.06, 0.62, 0, 0.47, 0), boxG(0.9, 0.38, 0.04, 0, 0.25, 0.27), boxG(0.05, 0.44, 0.56, -0.43, 0.22, 0), boxG(0.05, 0.44, 0.56, 0.43, 0.22, 0), boxG(0.3, 0.2, 0.5, 0.25, 0.14, -0.02)]);
+  G[49] = M([boxG(0.96, 0.08, 0.56, 0, 0.04, 0), boxG(0.96, 0.58, 0.06, 0, 0.33, 0), boxG(0.96, 0.03, 0.56, 0, 0.3, 0), boxG(0.96, 0.03, 0.56, 0, 0.61, 0),
+    ...[-0.32, 0, 0.3].map((x, k) => boxG(0.22, 0.16, 0.2, x, 0.4 + (k % 2) * 0.02, 0.15)), ...[-0.3, 0.05, 0.33].map((x, k) => boxG(0.2, 0.14 + k * 0.03, 0.2, x, 0.12 + k * 0.015, -0.15)), ...[-0.2, 0.25].map(x => boxG(0.24, 0.18, 0.18, x, 0.41, -0.15))]);
+  const C = { 48: '#7a5a3c', 49: '#8a9096', 43: '#e8b93a', 44: '#6a1f2a', 45: '#7a868f', 46: '#2f5f9a', 47: '#5a6a3a', 42: '#7a8088', 32: '#3f5a3a', 33: '#5a4a2e', 34: '#6a4a30', 35: '#a8322a', 36: '#4f5a32', 37: '#9a3a2a', 38: '#b8333a', 39: '#7a5a44', 40: '#6a4a2c', 41: '#3e5f2e', 12: '#a8946a', 13: '#6a5038', 14: '#7a8590', 15: '#5a5a55', 6: '#8a6440' };
+  const cap = { 48: 700, 49: 900, 42: 2500, 41: 3000, 40: 600, 39: 600, 12: 1500, 13: 800, 14: 800, 15: 400, 6: 400, 32: 400, 34: 400 };
   for (const id in G) { const m = inst(G[id], lam('#ffffff'), cap[id] || 300); m.castShadow = id == 38 || id == 34; PROP[id] = { m, n: 0, col: C[id], al: id == 12 || id == 13 || id == 14 }; }
   // build-plan ghosts and the x-ray ring that shows survivors through walls
   OBJ.planI = inst(boxG(1, 1, 1, 0, 0.5, 0), new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0.4, depthWrite: false }), 64, false);
@@ -8220,6 +8346,7 @@ function propPut(b, i, x, y, L, X, Y, Z, h) {
   if (b === 38 && W.srch.has(i)) col = '#5a2a2c';
   if (b === 41) sc = 0.8 + h * 0.5;
   if (b === 47) rot = -W.bdir[i] * Math.PI / 2;
+  if (b === 48 || b === 49) { const s = (xx, yy) => { const q = blkAt(xx, yy, L); return q === 48 || q === 49; }; rot = s(x - 1, y) || s(x + 1, y) ? 0 : s(x, y - 1) || s(x, y + 1) ? Math.PI / 2 : Math.floor(h * 4) * Math.PI / 2; if (b === 49) col = ['#8a9096', '#7d8a7a', '#9a8a78'][Math.floor(h * 3)]; }
   if (b === 44) { sc = W.mode === 'nests' && W.obj.mother && W.obj.mother.ci === i ? 1.9 : 1.15; col = dmgTint('#7a2030', 0.45 + 0.55 * W.bhp[i] / Math.max(1, (W.obj.mother && W.obj.mother.ci === i ? W.obj.mother.max : W.obj.nests ? W.obj.nests[0].max : 1500))); }
   if (b === 45 && W.obj && W.obj.towers) { const q = W.obj.towers.find(q => q.ci === i); col = q && q.st === 2 ? '#6aa86a' : q && q.st === 1 ? '#c9a23a' : '#7a868f'; }
   if (b === 15 || b === 33 || b === 35) rot = h * 6.28;
@@ -8435,7 +8562,7 @@ addEventListener('keydown', e => {
   const k = e.key.length === 1 ? e.key.toLowerCase() : e.key;
   audioInit();
   if (k === 'Escape' && typeof bigMapOpen === 'function' && bigMapOpen()) { toggleBigMap(false); e.preventDefault(); return; }
-  if (k === 'Tab' && STATE.mode === 'play') { toggleBigMap(); e.preventDefault(); return; }
+  if ((k === 'Tab' || (k === 'm' && !e.ctrlKey && !e.metaKey)) && STATE.mode === 'play') { toggleBigMap(); e.preventDefault(); return; } // M or Tab: big map
   if (k === 'Escape') { if (PLAN || PREV) { cancelPlan(); e.preventDefault(); return; } if (STATE.mode === 'play') togglePause(); e.preventDefault(); return; }
   if (!INP.keys[k]) onKeyPress(k);
   INP.keys[k] = true;
@@ -8444,7 +8571,6 @@ addEventListener('keydown', e => {
 addEventListener('keyup', e => { const k = e.key.length === 1 ? e.key.toLowerCase() : e.key; INP.keys[k] = false; });
 addEventListener('blur', () => { INP.keys = {}; INP.mL = INP.mR = false; });
 function onKeyPress(k) {
-  if (k === 'm') { setMute(!SET.mute); uiMute(); return; }
   if (STATE.mode !== 'play' || !W) { if (k === 'Enter' && STATE.mode === 'title') $('soloBtn').click(); return; }
   if (k === 'q') return camRot(-1);
   if (k === 'e') return camRot(1);
@@ -9075,7 +9201,7 @@ function uiKeys(me) {
       ['右键', '刀（自动追，也可按 V）'], ['空格', '跳 / 翻越'], ['F', ut ? ut.name : '交互', ut ? 1 : 0], ['1–' + NW, '换枪'], ['C', '制作', bench ? 1 : -1], ['B', '建造']];
     if (W.phase === 'day') rows.push(['N', me.ready ? '取消准备' : '准备入夜', me.ready ? 1 : 0]);
   }
-  rows.push(['Tab', '大地图'], ['Q E', '转镜头'], ['Esc', '菜单']);
+  rows.push(['M', '大地图（也可按 Tab）'], ['Q E', '转镜头'], ['Esc', '菜单']);
   const key = (SET.keysOff ? 1 : 0) + rows.map(r => r.join(':')).join('|'); if (UI.keysK === key) return; UI.keysK = key;
   el.classList.toggle('min', !!SET.keysOff);
   el.innerHTML = `<div class="kh"><span>按键</span><span>${SET.keysOff ? '展开 ▾' : '收起 ▴'}</span></div><div class="kg">` + rows.map(([k, t, c]) => `<kbd${st(c)}>${k}</kbd><span${st(c)}>${t}</span>`).join('') + '</div>';
@@ -9302,7 +9428,7 @@ function mapThumb(id, cv) { // a little rendered overview of the map (generated 
   if (MAPTHUMB[id]) return paint();
   setTimeout(() => {
     const keep = MAP_ID; setMap(id); const m = genMap(31337); const c = document.createElement('canvas'); c.width = MW; c.height = MH; const g = c.getContext('2d');
-    const MC = Object.assign({ [TT.grass]: '#55733e', [TT.hill]: '#7a8a5a', [TT.dirt]: '#6e5a42', [TT.road]: '#3c3d40', [TT.sand]: '#8a7f5a', [TT.forest]: '#3c5530', [TT.water]: '#2a6a86' }, MAPDEF.mc || {});
+    const MC = Object.assign({ [TT.grass]: '#55733e', [TT.hill]: '#7a8a5a', [TT.dirt]: '#6e5a42', [TT.road]: '#3c3d40', [TT.sand]: '#8a7f5a', [TT.forest]: '#3c5530', [TT.water]: '#2a6a86', [TT.mud]: '#4a3b2a', [TT.meadow]: '#6a8440', [TT.rocky]: '#6e6c62' }, MAPDEF.mc || {});
     for (let y = 0; y < MH; y++) for (let x = 0; x < MW; x++) { g.fillStyle = MC[m.tt[y * MW + x]] || '#555'; if (m.G[y * MW + x] >= 1) g.fillStyle = MC[TT.hill]; g.fillRect(x, y, 1, 1); }
     for (const [x0, y0, x1, y1, st, t] of TOWN_HOUSES) { g.fillStyle = (BTYPE[t] || ['', '#888'])[1]; g.fillRect(x0, y0, x1 - x0 + 1, y1 - y0 + 1); }
     g.fillStyle = '#7fd36b'; g.fillRect(RADIO_XY[0] - 6, RADIO_XY[1] - 5, 13, 11);

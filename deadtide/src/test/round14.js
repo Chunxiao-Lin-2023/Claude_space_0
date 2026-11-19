@@ -34,6 +34,8 @@ const { chromium } = require('playwright'); const OUT = process.env.OUT || '/tmp
   await p.mouse.click(50, 50); await p.waitForTimeout(300); check('tap closes it', await p.evaluate(() => !bigMapOpen() && !STATE.paused));
   await p.keyboard.press('Tab'); await p.waitForTimeout(300); const tabOpen = await p.evaluate(() => bigMapOpen()); await p.keyboard.press('Tab'); await p.waitForTimeout(300);
   check('Tab toggles it', tabOpen && await p.evaluate(() => !bigMapOpen()));
+  await p.keyboard.press('m'); await p.waitForTimeout(300); const mOpen = await p.evaluate(() => bigMapOpen()); await p.keyboard.press('m'); await p.waitForTimeout(300);
+  check('M toggles it too (and no longer mutes)', mOpen && await p.evaluate(() => !bigMapOpen() && !SET.mute));
   // interiors: a look inside each type (cut to the ground floor)
   await p.evaluate(() => { document.getElementById('hud').style.opacity = 0.15; });
   for (const t of ['apt', 'villa', 'shop', 'clinic', 'police', 'garage']) {

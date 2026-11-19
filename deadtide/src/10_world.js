@@ -1,9 +1,10 @@
 /* ================= world: layered grid, terrain generation, cell rules, structural support ================= */
 // terrain type codes (per column, for colouring)
-const TT = { grass: 0, hill: 1, dirt: 2, road: 3, sand: 4, water: 5, forest: 6 };
+const TT = { grass: 0, hill: 1, dirt: 2, road: 3, sand: 4, water: 5, forest: 6, mud: 7, meadow: 8, rocky: 9 }; // mud slows you; meadow = tall grass and flowers; rocky = gravel and boulders
 const inMap = (x, y) => x >= 0 && y >= 0 && x < MW && y < MH;
 const gAt = (x, y) => inMap(x, y) ? W.G[y * MW + x] : 0;
 const ttAt = (x, y) => inMap(x, y) ? W.tt[y * MW + x] : 0;
+const inMud = (x, y, L) => L === 0 && ttAt(Math.floor(x), Math.floor(y)) === TT.mud && !W.slab[ci(Math.floor(x), Math.floor(y), 0)];
 function blkAt(x, y, L) {
   if (L < 0) return 20;
   if (!inMap(x, y)) return 20;
@@ -13,6 +14,15 @@ function blkAt(x, y, L) {
 const slabAt = (x, y, L) => (inMap(x, y) && L >= 0 && L < ML) ? W.slab[ci(x, y, L)] : 0;
 const solidFor = (b, who) => b !== 0 && !!(who === 'p' ? B[b].P : who === 'z' ? B[b].Z : B[b].B);
 // a player wall (wood / brick / steel) above ground level with nothing on top: waist-high parapet you can shoot over
+// town walls come in four shapes: 0 window wall, 1 broken stepped top, 2 full, 3 low stub. A wall carrying a floor is
+// a window wall or full. The renderer draws these and bullets go through the same openings (rayWorld).
+function ruinShape(x, y, L) {
+  const h = hash2(x * 3 + L, y * 7); let v = h < 0.28 ? 0 : h < 0.58 ? 1 : h < 0.84 ? 2 : 3;
+  if (ARCH.roofCells.has(x + ',' + y + ',' + L) || (L + 1 < ML && (W.slab[ci(x, y, L + 1)] || W.blk[ci(x, y, L + 1)]))) v = h < 0.4 ? 0 : 2;
+  return v;
+}
+const ruinRot = (x, y, L, v) => (v === 0 || v === 1 ? (wallAxis(x, y, L) ? Math.PI / 2 : 0) : 0) + (v === 1 && hash2(x, y * 3) < 0.5 ? Math.PI : 0);
+const WIN = { lo: 0.39, hi: 0.78, half: 0.3 };   // window opening: sill / lintel (fractions of FH), half width
 function isParapet(i) {
   const b = W.blk[i]; if (b !== 1 && b !== 2 && b !== 3) return false;
   const x = cx_(i), y = cy_(i), L = cl_(i); if (L < 1 || L <= gAt(x, y)) return false;
@@ -76,6 +86,19 @@ function genMap(seed) {
     if (tt[i] !== TT.water && tt[i] !== TT.road) for (const [dx, dy] of DIRS) { const xx = x + dx, yy = y + dy; if (inMap(xx, yy) && tt[col(xx, yy)] === TT.water && G[i] === 0) { tt[i] = TT.sand; break; } }
   }
   if (M.fields) M.fields(K);
+  // terrain variety (per-map switches in MAPDEF.feat): forest trails, mud by the water and in hollows, meadows, gravel flats
+  const FT = Object.assign({ mud: 1, meadow: 1, rocky: 1, trails: 1, farms: 3 }, M.feat || {}), trail = new Set();
+  const nearT = (x, y, r, t) => { for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) if (inMap(x + dx, y + dy) && tt[col(x + dx, y + dy)] === t) return true; return false; };
+  for (let y = 0; y < MH; y++) for (let x = 0; x < MW; x++) {
+    const i = col(x, y), t = tt[i];
+    if (t !== TT.grass && t !== TT.forest && t !== TT.dirt && t !== TT.hill) continue;
+    if (inTown(x, y, 2) || radioDist0(x, y) <= BUILD_R + 1) continue;
+    const n2 = noise(x + 400, y + 400, 9), n3 = noise(x + 900, y + 200, 6);
+    if (FT.trails && t === TT.forest && Math.abs(noise(x + 1300, y + 700, 13) - 0.5) < 0.03) { tt[i] = TT.dirt; trail.add(i); continue; }
+    if (FT.mud && G[i] === 0 && t !== TT.forest && (n2 < 0.16 * FT.mud || (n3 < 0.4 && nearT(x, y, 2, TT.water)))) tt[i] = TT.mud;
+    else if (FT.meadow && t === TT.grass && n3 > 1 - 0.3 * FT.meadow) tt[i] = TT.meadow;
+    else if (FT.rocky && (t === TT.hill || t === TT.grass) && n2 > 1 - 0.13 * FT.rocky) tt[i] = TT.rocky;
+  }
   // fill terrain below ground; water
   for (let y = 0; y < MH; y++) for (let x = 0; x < MW; x++) { const g = G[col(x, y)]; for (let L = 0; L < g; L++) blk[ci(x, y, L)] = 20; if (tt[col(x, y)] === TT.water) blk[ci(x, y, 0)] = 23; }
   // bridges over the river: the main road, a northern footbridge, a southern one
@@ -130,7 +153,7 @@ function genMap(seed) {
     for (let x = x0 - pad; x <= x1 + pad; x++) for (let y = y0 - pad; y <= y1 + pad; y++) { if (!ok(x, y)) continue; for (let L = 0; L <= st + 1 && L < ML; L++) { blk[ci(x, y, L)] = 0; if (L) slab[ci(x, y, L)] = 0; } if (x >= x0 && x <= x1 && y >= y0 && y <= y1 && tt[col(x, y)] !== TT.road) tt[col(x, y)] = TT.dirt; }
     const W_ = (x, y, L, id = 24) => { if (okIn(x, y) && L < ML && !gaps.has(K(x, y, L))) put(x, y, L, id); };
     const F_ = (x, y, L, id = 5) => { if (ok(x, y) && L < ML) putS(x, y, L, id); };
-    const P_ = (x, y, L, id, d) => { if (okIn(x, y) && L < ML && !blk[ci(x, y, L)] && (L === 0 || slab[ci(x, y, L)]) && !hatches.has(K(x, y, L)) && !lads.some(q => q[2] === L && Math.abs(q[0] - x) + Math.abs(q[1] - y) < 2)) put(x, y, L, id, d); };
+    const P_ = (x, y, L, id, d) => { if (okIn(x, y) && L < ML && !blk[ci(x, y, L)] && (L === 0 || slab[ci(x, y, L)]) && !hatches.has(K(x, y, L)) && !gaps.has(K(x, y, L)) && !lads.some(q => q[2] === L && Math.abs(q[0] - x) + Math.abs(q[1] - y) < 2)) put(x, y, L, id, d); };
     const isEdge = (x, y) => x === x0 || x === x1 || y === y0 || y === y1;
     const lads = [], gaps = new Set(), hatches = new Set(), K = (x, y, L) => x + ',' + y + ',' + L;
     const ladder = (wx, wy, sx, sy, L) => {
@@ -151,20 +174,28 @@ function genMap(seed) {
       for (let x = a - 1; x <= a + 3; x++) { F_(x, yb, L); F_(x, yr, L); W_(x, yr, L, 42); }
       W_(a - 1, yb, L, 42); W_(a + 3, yb, L, 42); blk[ci(a + 1, yw, L)] = 0;
     };
-    const loot = (L, n, ids, ax0 = x0 + 1, ay0 = y0 + 1, ax1 = x1 - 1, ay1 = y1 - 1) => { for (let j = 0; j < n * 6 && n > 0; j++) { const x = ax0 + Math.floor(rr() * (ax1 - ax0 + 1)), y = ay0 + Math.floor(rr() * (ay1 - ay0 + 1)), i = ci(x, y, L); const b0 = blk[i]; P_(x, y, L, ids[Math.floor(rr() * ids.length)]); if (!b0 && blk[i]) n--; } };
+    const wallNb = (x, y, L) => DIRS.some(([dx, dy]) => { const q = blk[ci(x + dx, y + dy, L)]; return q === 24 || q === 7 || q === 8 || q === 50; });
+    const loot = (L, n, ids, ax0 = x0 + 1, ay0 = y0 + 1, ax1 = x1 - 1, ay1 = y1 - 1) => { for (let j = 0; j < n * 8 && n > 0; j++) { const x = ax0 + Math.floor(rr() * (ax1 - ax0 + 1)), y = ay0 + Math.floor(rr() * (ay1 - ay0 + 1)), i = ci(x, y, L); const b0 = blk[i]; if (j < n * 6 && !wallNb(x, y, L)) continue; P_(x, y, L, ids[Math.floor(rr() * ids.length)]); if (!b0 && blk[i]) n--; } };
     const door = (x, y) => { if (okIn(x, y)) { blk[ci(x, y, 0)] = 0; put(x, y, 0, 7); } };
     const open = (x, y, L = 0) => { if (inMap(x, y)) blk[ci(x, y, L)] = 0; };
     const w = x1 - x0, h = y1 - y0, mx = Math.floor((x0 + x1) / 2), py = Math.floor((y0 + y1) / 2);
     // a corridor block (apartments, clinic, police upstairs): 3-wide corridor along py, rooms of width `rw` both sides, a door into each
-    const corridorFloor = (L, rw) => {
-      for (let x = x0 + 1; x < x1; x++) for (const yy of [py - 2, py + 2]) { if (Math.floor((x - x0 - 1) % rw) === Math.floor(rw / 2)) continue; W_(x, yy, L); }
-      for (let wx = x0 + rw + 1; wx < x1 - 2; wx += rw) for (let y = y0 + 1; y < y1; y++) { if (Math.abs(y - py) <= 2) continue; W_(wx, y, L); }
+    // glass: chance a room's corridor wall has waist-high panels beside the door; open: the whole front is waist-high (wards, offices)
+    const corridorFloor = (L, rw, glass = 0, openFront = false) => {
+      const dq = Math.floor(rw / 2), gl = {};
+      for (let x = x0 + 1; x < x1; x++) for (const yy of [py - 2, py + 2]) {
+        const q = (x - x0 - 1) % rw, rk = Math.floor((x - x0 - 1) / rw) + ',' + yy; if (q === dq || q === dq - 1) continue;
+        if (gl[rk] == null) gl[rk] = rr() < glass;
+        W_(x, yy, L, gl[rk] && q > 0 && (openFront || q === dq - 2 || q === dq + 1) ? 50 : 24);
+      }
+      const ym = [Math.floor((y0 + 1 + py - 3) / 2), Math.ceil((py + 3 + y1 - 1) / 2)];
+      for (let wx = x0 + rw + 1; wx < x1 - 2; wx += rw) { const thru = [rr() < 0.5, rr() < 0.5]; for (let y = y0 + 1; y < y1; y++) { if (Math.abs(y - py) <= 2) continue; if ((y === ym[0] && thru[0]) || (y === ym[1] && thru[1])) continue; W_(wx, y, L); } }
     };
     if (type === 'apt') {
       core(x0 + 3, py - 1, -1, st - 1); if (w >= 24) core(x1 - 3, py - 1, 1, st - 2);
       floors(1, st);
       for (let L = 0; L < st; L++) {
-        perim(L, 0.12); coreWalls(L); corridorFloor(L, 6);
+        perim(L, 0.12); coreWalls(L); corridorFloor(L, 7, 0.6);
         if (L >= 1) for (let a = x0 + 3; a < x1 - 4; a += 6) { if (rr() < 0.35) balcony(-1, a, L); if (rr() < 0.35) balcony(1, a, L); }
         loot(L, 4, [34, 34, 32, 26, 33]);
       }
@@ -176,12 +207,12 @@ function genMap(seed) {
       floors(1, st - 1);
       // ground floor: an open living room and a kitchen behind a wall with a wide opening
       perim(0, 0); coreWalls(0); for (let y = y0 + 1; y < y1; y++) if (Math.abs(y - py) > 1) W_(kx, y, 0);
-      P_(kx + 2, y0 + 1, 0, 34); P_(kx + 3, y0 + 1, 0, 34); P_(x1 - 1, y0 + 1, 0, 32); P_(x0 + 6, py, 0, 14); P_(x0 + 7, py, 0, 14); // kitchen cupboards, bin, a sofa
+      P_(kx + 2, y0 + 1, 0, 34); P_(kx + 3, y0 + 1, 0, 34); P_(x1 - 1, y0 + 1, 0, 32); P_(x0 + 6, py, 0, 48); P_(x0 + 7, py, 0, 48); // kitchen cupboards, bin, a sofa
       loot(0, 2, [26, 33]);
       // upstairs (the attic under the roof): a landing by the ladder, three bedrooms along the back
       for (let L = 1; L < st; L++) {
         perim(L, 0.1); coreWalls(L);
-        for (let x = x0 + 1; x < x1; x++) if ((x - x0) % 5 !== 3) W_(x, py, L);
+        for (let x = x0 + 1; x < x1; x++) if ((x - x0) % 5 !== 3 && (x - x0) % 5 !== 2) W_(x, py, L);
         for (let wx = x0 + 5; wx < x1 - 1; wx += 5) for (let y = y0 + 1; y < py; y++) W_(wx, y, L);
         balcony(1, mx - 1, L);
         loot(L, 4, [34, 34, 33, 35]);
@@ -196,7 +227,7 @@ function genMap(seed) {
       for (const x of lp) { lads.push([x, my + 1, 0, 3]); gaps.add(K(x, my, 1)); }
       for (let x = x0 + 1; x < x1; x++) if (!lp.includes(x)) W_(x, my, 1, 42);
       perim(0, 0); perim(1, 0.25);
-      for (let y = my + 3; y < y1 - 1; y += 3) for (let x = x0 + 3; x < x1 - 2; x++) if ((x - x0) % 6 !== 0 && okIn(x, y) && !blk[ci(x, y, 0)]) put(x, y, 0, rr() < 0.3 ? [34, 26, 37][Math.floor(rr() * 3)] : [14, 40][Math.floor(rr() * 2)]); // racks, drums, crates
+      for (let y = my + 3; y < y1 - 1; y += 3) for (let x = x0 + 3; x < x1 - 2; x++) if ((x - x0) % 6 !== 0 && okIn(x, y) && !blk[ci(x, y, 0)]) put(x, y, 0, rr() < 0.3 ? [34, 26, 37][Math.floor(rr() * 3)] : [49, 49, 40][Math.floor(rr() * 3)]); // racks, drums, crates
       loot(1, 4, [26, 36, 35]);
       for (const x of [mx, mx + 1]) open(x, y1); door(x0, y1 - 2); door(x1, my + 2);
     } else if (type === 'shop') {
@@ -206,8 +237,8 @@ function genMap(seed) {
       ladder(sx, y0 + 2, 1, 0, 0);
       floors(1, 1);
       perim(0, 0);
-      for (let y = y0 + 3; y <= y1 - 4; y += 3) for (let x = x0 + 3; x < sx - 1; x++) if ((x - x0) % 7 !== 0) P_(x, y, 0, rr() < 0.3 ? 34 : 14);
-      for (let x = x0 + 3; x < sx - 2; x += 4) P_(x, y1 - 2, 0, 14);
+      for (let y = y0 + 3; y <= y1 - 4; y += 3) for (let x = x0 + 3; x < sx - 1; x++) if ((x - x0) % 7 !== 0) P_(x, y, 0, rr() < 0.12 ? 34 : 49);
+      for (let x = x0 + 3; x < sx - 2; x += 4) P_(x, y1 - 2, 0, 48);
       loot(0, 4, [26, 37, 36], sx + 1, y0 + 1, x1 - 1, y1 - 1);
       roofRail(); loot(1, 2, [26, 33]);
       for (const x of [mx - 1, mx]) open(x, y1); door(x0, py); door(x1, y1 - 2);
@@ -215,10 +246,10 @@ function genMap(seed) {
       core(x0 + 3, py - 1, -1, st - 1);
       floors(1, st);
       for (let L = 0; L < st; L++) {
-        perim(L, 0.1); coreWalls(L); corridorFloor(L, 5);
+        perim(L, 0.1); coreWalls(L); corridorFloor(L, 6, 0.75, true);
         loot(L, 4, [33, 33, 34, 34, 26]);   // backpacks and cabinets carry the medkits
       }
-      P_(x0 + 6, py + 1, 0, 14); P_(x0 + 7, py + 1, 0, 14);               // reception desk
+      P_(x0 + 6, py + 1, 0, 48); P_(x0 + 7, py + 1, 0, 48);               // reception desk
       roofRail(); loot(st, 1, [26]);
       door(x0, py + 1); door(x1, py); door(mx, y1); open(mx, py + 2);
     } else if (type === 'police') {
@@ -231,9 +262,9 @@ function genMap(seed) {
       for (let x = x0 + 4; x < ax; x += 4) for (let y = y0 + 1; y < cy; y++) W_(x, y, 0);
       for (let y = y0 + 1; y < y1; y++) if (y !== py + 1) W_(ax, y, 0);
       for (const [x, y] of [[ax + 2, y0 + 1], [ax + 3, y0 + 1], [ax + 2, y0 + 2], [x1 - 1, y1 - 1]]) P_(x, y, 0, 36); P_(ax + 3, y1 - 1, 0, 26);
-      P_(mx - 1, y1 - 3, 0, 14); P_(mx, y1 - 3, 0, 14); P_(mx + 1, y1 - 3, 0, 14);
+      P_(mx - 1, y1 - 3, 0, 48); P_(mx, y1 - 3, 0, 48); P_(mx + 1, y1 - 3, 0, 48);
       loot(0, 2, [34, 33], x0 + 1, cy + 1, ax - 1, y1 - 1);
-      for (let L = 1; L < st; L++) { perim(L, 0.1); coreWalls(L); corridorFloor(L, 5); loot(L, 4, [34, 34, 36, 33]); }
+      for (let L = 1; L < st; L++) { perim(L, 0.1); coreWalls(L); corridorFloor(L, 5, 1, true); loot(L, 4, [34, 34, 36, 33]); }
       roofRail(); loot(st, 1, [36]);
       door(mx, y1); door(x0, py + 1); door(x1, py + 1);
     } else if (type === 'garage') {
@@ -266,19 +297,46 @@ function genMap(seed) {
   const at = (x, y, id, d) => { if (free(x, y)) put(x, y, 0, id, d); };
   Object.assign(K, { put, putS, at, lot, free, blk, slab, bdir });
   if (M.landmarks) M.landmarks(K);
-  // trees, rocks, bushes, log piles, scrap
+  // abandoned farmsteads out in the country: a ruined shell (broken walls, waist-high bits), a fenced yard, loot and cover
+  const farms = [];
+  for (let k = 0; k < 600 && farms.length < FT.farms; k++) {
+    const fx = 4 + Math.floor(r() * (MW - 14)), fy = 4 + Math.floor(r() * (MH - 13));
+    if (farms.some(([a, b]) => Math.abs(a - fx) + Math.abs(b - fy) < 34) || radioDist0(fx + 3, fy + 3) < BUILD_R + 10 || TOWN_HOUSES.some(([x0, y0, x1, y1]) => fx + 9 >= x0 - 5 && fx - 2 <= x1 + 5 && fy + 8 >= y0 - 5 && fy - 2 <= y1 + 5)) continue;
+    let ok = true; for (let y = fy - 2; y <= fy + 8 && ok; y++) for (let x = fx - 2; x <= fx + 9 && ok; x++) { const i = col(x, y); if (!inMap(x, y) || G[i] !== 0 || tt[i] === TT.water || roadCells.has(i) || blk[ci(x, y, 0)]) ok = false; }
+    if (!ok) continue;
+    farms.push([fx, fy]);
+    const x0 = fx, y0 = fy, x1 = fx + 6, y1 = fy + 4, gaps = new Set([(x0 + 2) + ',' + y1, (x0 + 3) + ',' + y1, x1 + ',' + (y0 + 2)]);
+    for (let y = y0 - 1; y <= y1 + 1; y++) for (let x = x0 - 1; x <= x1 + 1; x++) tt[col(x, y)] = TT.dirt;
+    for (let x = x0; x <= x1; x++) for (let y = y0; y <= y1; y++) {
+      if (!(x === x0 || x === x1 || y === y0 || y === y1) || gaps.has(x + ',' + y)) continue;
+      if (r() < 0.16) continue;                                              // collapsed bits you can walk through
+      put(x, y, 0, r() < 0.3 ? 50 : 24);
+    }
+    for (const [x, y, id] of [[x0 + 1, y0 + 1, 34], [x1 - 1, y0 + 1, 26], [x0 + 1, y1 - 1, 33], [x0 + 4, y0 + 2, 48], [x1 - 1, y1 - 1, 37]]) if (!blk[ci(x, y, 0)]) put(x, y, 0, id);
+    for (let x = x0 - 2; x <= x1 + 2; x++) if (r() < 0.75) put(x, y1 + 3, 0, 27);      // the yard fence
+    put(x1 + 2, y0, 0, 40); put(x1 + 2, y0 + 1, 0, 26); if (r() < 0.5) put(x0 - 2, y0 + 1, 0, 25, Math.floor(r() * 4)); // a log pile, a crate, an old car
+  }
+  // trees, rocks, bushes, log piles, scrap. Trees grow in clumps (noise), keep 2 cells off the roads and 3 off the town,
+  // and leave the forest trails open.
   const clearNear = (x, y) => Math.max(Math.abs(x - RX), Math.abs(y - RY)) <= 9;
+  const nearRoad = new Set(); for (let i = 0; i < MW * MH; i++) { if (!roadCells.has(i) && tt[i] !== TT.road) continue; const x = i % MW, y = Math.floor(i / MW); for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) if (inMap(x + dx, y + dy)) nearRoad.add(col(x + dx, y + dy)); }
+  const farmNear = (x, y) => farms.some(([a, b]) => x >= a - 3 && x <= a + 10 && y >= b - 3 && y <= b + 9);
   for (let y = 0; y < MH; y++) for (let x = 0; x < MW; x++) {
     const i = col(x, y), t = tt[i], g = G[i];
-    if (t === TT.water || t === TT.road || roadCells.has(i) || clearNear(x, y) || inTown(x, y, 1) || blk[ci(x, y, g)]) continue;
+    if (t === TT.water || t === TT.road || roadCells.has(i) || trail.has(i) || clearNear(x, y) || inTown(x, y, 1) || blk[ci(x, y, g)] || farmNear(x, y)) continue;
     if (M.noVeg && M.noVeg(x, y)) continue;
-    const VG = M.veg || {}, pTree = (t === TT.forest ? 0.42 : t === TT.hill ? 0.1 : 0.035) * (VG.tree == null ? 1 : VG.tree), pRock = (t === TT.hill ? 0.05 : 0.018) * (VG.rock == null ? 1 : VG.rock);
+    if (DIRS.some(([dx, dy]) => inMap(x + dx, y + dy) && blk[ci(x + dx, y + dy, G[col(x + dx, y + dy)])] === 28)) continue; // keep both ends of a ramp clear
+    const VG = M.veg || {}, clump = 0.3 + 1.4 * noise(x + 2000, y + 50, 5), noTree = nearRoad.has(i) || inTown(x, y, 3);
+    const pTree = noTree ? 0 : (t === TT.forest ? 0.26 : t === TT.hill ? 0.06 : t === TT.grass ? 0.02 : 0.008) * clump * (VG.tree == null ? 1 : VG.tree);
+    const pRock = (t === TT.rocky ? 0.14 : t === TT.hill ? 0.04 : 0.012) * (VG.rock == null ? 1 : VG.rock);
     const v = r();
     if (v < pTree) put(x, y, g, 22); else if (v < pTree + pRock) put(x, y, g, 21);
-    else if (v < pTree + pRock + (t === TT.forest ? 0.05 : 0.025) * (VG.bush == null ? 1 : VG.bush)) put(x, y, g, 41);
-    else if (v < pTree + pRock + 0.032 && t === TT.forest) put(x, y, g, 40);
-    else if (v < pTree + pRock + 0.03 && (t === TT.hill || t === TT.dirt)) put(x, y, g, 39);
+    else if (v < pTree + pRock + (t === TT.forest ? 0.05 : t === TT.meadow ? 0.04 : 0.022) * (VG.bush == null ? 1 : VG.bush)) put(x, y, g, 41);
+    else if (v < pTree + pRock + 0.02 && t === TT.forest) put(x, y, g, 40);
+    else if (v < pTree + pRock + 0.025 && (t === TT.hill || t === TT.dirt || t === TT.rocky)) put(x, y, g, 39);
   }
+  // fallen trees along the forest trails
+  for (const i of trail) { if (r() > 0.03) continue; const x = i % MW, y = Math.floor(i / MW); for (const [dx, dy] of DIRS) { const xx = x + dx, yy = y + dy; if (inMap(xx, yy) && tt[col(xx, yy)] === TT.forest && !blk[ci(xx, yy, G[col(xx, yy)])]) { put(xx, yy, G[col(xx, yy)], 40); break; } } }
   // cars on the roads (not on bridges), crates in the open
   let cars = M.cars;
   if (!cars) { cars = []; const rc = [...roadCells].filter(i => tt[i] !== TT.water); for (let k = 0; k < 400 && cars.length < (M.nCars || 28); k++) { const i = rc[Math.floor(r() * rc.length)], x = i % MW, y = Math.floor(i / MW); if (!cars.some(([a, b]) => Math.abs(a - x) + Math.abs(b - y) < 8) && radioDist0(x, y) > 9) cars.push([x, y]); } }

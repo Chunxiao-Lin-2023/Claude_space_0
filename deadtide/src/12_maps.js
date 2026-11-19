@@ -58,7 +58,7 @@ MAPS.forest = {
     for (let y = 26; y <= 34; y++) { road(104, y); road(105, y); }
   },
   forestAt: (x, y, n, K) => n > 0.3 && !K.inTown(x, y, 4) && Math.max(Math.abs(x - K.RX), Math.abs(y - K.RY)) > 12,
-  veg: { tree: 1.15, bush: 1.4 },
+  veg: { tree: 1.0, bush: 1.4 }, feat: { farms: 2 },
   nCars: 14,
 };
 MAPS.desert = {
@@ -76,7 +76,8 @@ MAPS.desert = {
     lot(72, 60, 82, 68, TT.road); at(75, 62, 37); at(79, 62, 37); at(74, 66, 38); at(80, 66, 25, 0); at(82, 61, 32);          // gas station at the crossing
     for (const [x, y, d] of [[40, 72, 0], [60, 69, 2], [100, 72, 1], [130, 69, 0], [86, 30, 1], [84, 110, 3]]) at(x, y, 25, d); // wrecks on the highway
   },
-  forestN: 0.86, dirtN: 0.3, veg: { tree: 0.22, rock: 2.6, bush: 0.6 },
+  forestN: 0.86, dirtN: 0.3, veg: { tree: 0.22, rock: 2.6, bush: 0.6 }, feat: { mud: 0.2, meadow: 0.5, rocky: 1.8, farms: 3 },
+  deco: { tuft: '#9a8a50', flower: ['#d8a040', '#c86a3a', '#e8d8a0'] },
   tcol: { [TT.grass]: ['#c8aa72', '#c2a46c', '#cfb17a'], [TT.hill]: ['#b48f5c', '#ad8956', '#b9945f'], [TT.forest]: ['#a99a62', '#a09158'], [TT.dirt]: ['#a8805a', '#b08860'], [TT.sand]: ['#d6bf8a', '#ddc792'], [TT.road]: ['#56524c', '#5a564f'] },
   mc: { [TT.grass]: '#c4a66e', [TT.hill]: '#a8845a', [TT.dirt]: '#a07a52', [TT.road]: '#55524c', [TT.sand]: '#d6bf8a', [TT.forest]: '#9c8e5c', [TT.water]: '#3a7a96' },
   trees: { pine: ['#5f6b3a', '#66723f', '#6e7a45'], oak: ['#7a7a45', '#8a8450'], trunk: '#5a4632' }, bush: '#8a8a52',
@@ -93,7 +94,7 @@ MAPS.islands = {
     line(62, 64, 98, 64); line(62, 100, 98, 100); line(62, 64, 62, 100); line(98, 64, 98, 100);
     line(62, 64, 30, 33); line(98, 64, 130, 34); line(62, 100, 40, 130); line(98, 100, 132, 119);
   },
-  forestN: 0.42, veg: { tree: 1.2, bush: 1.5 },
+  forestN: 0.42, veg: { tree: 1.0, bush: 1.5 }, feat: { mud: 0.8, farms: 2 },
   tcol: { [TT.grass]: ['#4f7a3a', '#548040', '#4a7436'], [TT.forest]: ['#36582a', '#3b5e2e'], [TT.sand]: ['#d8c88e', '#e0d196'] },
   mc: { [TT.grass]: '#4f7a3a', [TT.forest]: '#33552a', [TT.sand]: '#d8c88e', [TT.water]: '#2a7aa0' },
   trees: { pine: ['#2c5a2e', '#336233', '#3a6a38'], oak: ['#3f7a34', '#4a8538'] },
@@ -112,7 +113,8 @@ MAPS.snow = {
     for (let y = 33; y <= 46; y++) { road(134, y); road(135, y); }
   },
   landmarks({ at }) { for (const [x, y] of [[124, 36], [126, 36], [128, 36], [140, 36], [142, 36], [144, 36]]) at(x, y, 27); at(130, 38, 36); at(138, 38, 36); }, // base gate
-  forestN: 0.72, veg: { tree: 0.9, rock: 1.2 },
+  forestN: 0.72, veg: { tree: 0.9, rock: 1.2 }, feat: { mud: 0.5, meadow: 0.4, farms: 3 },
+  deco: { tuft: '#a9b8b4', flower: ['#ffffff', '#c8d8f0'] },
   tcol: { [TT.grass]: ['#e6ecef', '#dfe6ea', '#eef2f4'], [TT.hill]: ['#d3dce2', '#cdd7de', '#d9e1e6'], [TT.forest]: ['#c8d3da', '#c2ced6'], [TT.dirt]: ['#9d978e', '#a49e94'], [TT.road]: ['#5c6066', '#585c62'], [TT.sand]: ['#cfd8dc', '#c8d2d7'] },
   mc: { [TT.grass]: '#dfe6ea', [TT.hill]: '#c4ced6', [TT.forest]: '#9fb0b8', [TT.dirt]: '#9a948a', [TT.road]: '#55595e', [TT.sand]: '#cfd6da', [TT.water]: '#2b4a62' },
   trees: { pine: ['#3e5a52', '#45615a', '#4d6a62'], oak: ['#b8c7cc', '#c5d2d6'], trunk: '#4a3a30' }, bush: '#7f948f',
@@ -126,7 +128,7 @@ MAPS.city = {
     [18, 98, 37, 112, 2, 'clinic'], [44, 98, 63, 114, 5, 'apt'], [70, 98, 91, 112, 1, 'garage'], [98, 98, 117, 114, 3, 'apt'], [124, 98, 143, 112, 2, 'police'],
     [44, 124, 63, 140, 4, 'apt'], [98, 124, 117, 138, 1, 'shop'], [124, 70, 143, 82, 1, 'shop']],
   roads({ road }) { for (const g of [14, 40, 66, 94, 120, 146]) for (let k = 0; k < MW; k++) { road(g, k); road(g + 1, k); road(k, g); road(k, g + 1); } },
-  forestN: 0.97, veg: { tree: 0.35, rock: 0.4, bush: 0.6 },
+  forestN: 0.97, veg: { tree: 0.35, rock: 0.4, bush: 0.6 }, feat: { meadow: 0.5, rocky: 1.3, farms: 1 },
   tcol: { [TT.grass]: ['#5f6a4a', '#646f4e', '#5a6546'], [TT.dirt]: ['#6a625a', '#70675e'] },
   mc: { [TT.grass]: '#5f6a4a', [TT.dirt]: '#6a625a' },
   nCars: 48,

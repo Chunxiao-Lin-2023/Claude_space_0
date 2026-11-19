@@ -22,6 +22,7 @@ const NC = MW * MH * ML;
 const ci = (x, y, L) => (L * MH + y) * MW + x;
 const cx_ = i => i % MW, cy_ = i => ((i / MW) | 0) % MH, cl_ = i => (i / (MW * MH)) | 0;
 const DIRS = [[1, 0], [0, 1], [-1, 0], [0, -1]]; // 0:+x(east) 1:+y(south) 2:-x(west) 3:-y(north)
+const MUD_SLOW = 0.78;               // walking speed in mud (players and zombies)
 const BUILD_R = 20;                 // build zone: Chebyshev distance from the camp centre
 const GRAV = 22;
 
@@ -53,7 +54,7 @@ defB(22, { key: 'tree', P: 1, Z: 1, nat: 1, res: 'wood', hp: 1 });
 defB(23, { key: 'water', P: 1, Z: 1, nat: 1 });
 defB(24, { key: 'ruin', P: 1, Z: 1, B: 1, top: 1, nat: 1, brk: 1, hp: 260, col: '#7c4a3a' });
 defB(25, { key: 'car', P: 1, Z: 1, B: 1, nat: 1, spot: 'car' });
-defB(26, { key: 'crate', P: 1, Z: 1, B: 1, nat: 1, spot: 'crate' });
+defB(26, { key: 'crate', P: 1, Z: 1, B: 1, nat: 1, spot: 'crate', low: 0.55 });
 defB(27, { key: 'fence', P: 1, Z: 1, nat: 1 });
 defB(28, { key: 'ramp', stairs: 1, nat: 1 });
 defB(29, { key: 'rubble', P: 1, Z: 1, nat: 1, spot: 'rubble' });
@@ -64,8 +65,8 @@ defB(32, { key: 'trash', P: 1, Z: 1, nat: 1, spot: 'trash' });
 defB(33, { key: 'backpack', nat: 1, spot: 'backpack' });
 defB(34, { key: 'cabinet', P: 1, Z: 1, B: 1, nat: 1, spot: 'cabinet' });
 defB(35, { key: 'toolbox', nat: 1, spot: 'toolbox' });
-defB(36, { key: 'milcrate', P: 1, Z: 1, B: 1, nat: 1, spot: 'milcrate' });
-defB(37, { key: 'barrel', P: 1, Z: 1, B: 1, nat: 1, spot: 'barrel' });
+defB(36, { key: 'milcrate', P: 1, Z: 1, B: 1, nat: 1, spot: 'milcrate', low: 0.45 });
+defB(37, { key: 'barrel', P: 1, Z: 1, B: 1, nat: 1, spot: 'barrel', low: 0.74 });
 defB(38, { key: 'vending', P: 1, Z: 1, B: 1, nat: 1, spot: 'vending' });
 defB(39, { key: 'scrap', P: 1, Z: 1, nat: 1, res: 'steel', hp: 1 });
 defB(40, { key: 'logs', P: 1, Z: 1, nat: 1, res: 'wood', hp: 1 });
@@ -76,6 +77,10 @@ defB(44, { key: 'nest', P: 1, Z: 1, B: 1, nat: 1, obj: 1, hp: 1500, col: '#6a1f2
 defB(45, { key: 'tower', P: 1, Z: 1, B: 1, nat: 1, obj: 1, col: '#8a96a0' });
 defB(46, { key: 'drop', P: 1, Z: 1, B: 1, nat: 1, obj: 1, col: '#3a6ea8' });
 defB(47, { key: 'truck', P: 1, Z: 1, B: 1, nat: 1, obj: 1, col: '#5a6a3a' });
+// town furniture: desks / counters / sofas and low shop shelving. Waist-high: you shoot over them, vault them; zombies smash through
+defB(48, { key: 'desk', P: 1, Z: 1, B: 1, nat: 1, brk: 1, vault: 1, hp: 150, low: 0.5, col: '#6a4a30' });
+defB(49, { key: 'shelf', P: 1, Z: 1, B: 1, nat: 1, brk: 1, vault: 1, hp: 180, low: 0.62, col: '#8a9096' });
+defB(50, { key: 'halfwall', P: 1, Z: 1, B: 1, nat: 1, brk: 1, vault: 1, hp: 220, low: 0.62, col: '#c8b890' }); // waist-high plaster partition (ward fronts, office cubicles, counters)
 defB(42, { key: 'rail', P: 1, Z: 1, nat: 1, brk: 1, vault: 1, hp: 120, col: '#6a6f74' }); // balcony / roof / mezzanine railing: low, vaultable, bullets pass
 const PAL = [1, 2, 3, 4, 5, 6, 7, 8, 12, 13, 14, 9, 15, 10];
 const SLAB_BRIDGE = 11; // slab id for the pre-built bridges (not buildable)

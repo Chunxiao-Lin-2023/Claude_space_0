@@ -55,7 +55,7 @@ addEventListener('keydown', e => {
   const k = e.key.length === 1 ? e.key.toLowerCase() : e.key;
   audioInit();
   if (k === 'Escape' && typeof bigMapOpen === 'function' && bigMapOpen()) { toggleBigMap(false); e.preventDefault(); return; }
-  if (k === 'Tab' && STATE.mode === 'play') { toggleBigMap(); e.preventDefault(); return; }
+  if ((k === 'Tab' || (k === 'm' && !e.ctrlKey && !e.metaKey)) && STATE.mode === 'play') { toggleBigMap(); e.preventDefault(); return; } // M or Tab: big map
   if (k === 'Escape') { if (PLAN || PREV) { cancelPlan(); e.preventDefault(); return; } if (STATE.mode === 'play') togglePause(); e.preventDefault(); return; }
   if (!INP.keys[k]) onKeyPress(k);
   INP.keys[k] = true;
@@ -64,7 +64,6 @@ addEventListener('keydown', e => {
 addEventListener('keyup', e => { const k = e.key.length === 1 ? e.key.toLowerCase() : e.key; INP.keys[k] = false; });
 addEventListener('blur', () => { INP.keys = {}; INP.mL = INP.mR = false; });
 function onKeyPress(k) {
-  if (k === 'm') { setMute(!SET.mute); uiMute(); return; }
   if (STATE.mode !== 'play' || !W) { if (k === 'Enter' && STATE.mode === 'title') $('soloBtn').click(); return; }
   if (k === 'q') return camRot(-1);
   if (k === 'e') return camRot(1);

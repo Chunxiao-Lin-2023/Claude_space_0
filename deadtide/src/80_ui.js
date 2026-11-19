@@ -67,7 +67,7 @@ function uiKeys(me) {
       ['右键', '刀（自动追，也可按 V）'], ['空格', '跳 / 翻越'], ['F', ut ? ut.name : '交互', ut ? 1 : 0], ['1–' + NW, '换枪'], ['C', '制作', bench ? 1 : -1], ['B', '建造']];
     if (W.phase === 'day') rows.push(['N', me.ready ? '取消准备' : '准备入夜', me.ready ? 1 : 0]);
   }
-  rows.push(['Tab', '大地图'], ['Q E', '转镜头'], ['Esc', '菜单']);
+  rows.push(['M', '大地图（也可按 Tab）'], ['Q E', '转镜头'], ['Esc', '菜单']);
   const key = (SET.keysOff ? 1 : 0) + rows.map(r => r.join(':')).join('|'); if (UI.keysK === key) return; UI.keysK = key;
   el.classList.toggle('min', !!SET.keysOff);
   el.innerHTML = `<div class="kh"><span>按键</span><span>${SET.keysOff ? '展开 ▾' : '收起 ▴'}</span></div><div class="kg">` + rows.map(([k, t, c]) => `<kbd${st(c)}>${k}</kbd><span${st(c)}>${t}</span>`).join('') + '</div>';
@@ -294,7 +294,7 @@ function mapThumb(id, cv) { // a little rendered overview of the map (generated 
   if (MAPTHUMB[id]) return paint();
   setTimeout(() => {
     const keep = MAP_ID; setMap(id); const m = genMap(31337); const c = document.createElement('canvas'); c.width = MW; c.height = MH; const g = c.getContext('2d');
-    const MC = Object.assign({ [TT.grass]: '#55733e', [TT.hill]: '#7a8a5a', [TT.dirt]: '#6e5a42', [TT.road]: '#3c3d40', [TT.sand]: '#8a7f5a', [TT.forest]: '#3c5530', [TT.water]: '#2a6a86' }, MAPDEF.mc || {});
+    const MC = Object.assign({ [TT.grass]: '#55733e', [TT.hill]: '#7a8a5a', [TT.dirt]: '#6e5a42', [TT.road]: '#3c3d40', [TT.sand]: '#8a7f5a', [TT.forest]: '#3c5530', [TT.water]: '#2a6a86', [TT.mud]: '#4a3b2a', [TT.meadow]: '#6a8440', [TT.rocky]: '#6e6c62' }, MAPDEF.mc || {});
     for (let y = 0; y < MH; y++) for (let x = 0; x < MW; x++) { g.fillStyle = MC[m.tt[y * MW + x]] || '#555'; if (m.G[y * MW + x] >= 1) g.fillStyle = MC[TT.hill]; g.fillRect(x, y, 1, 1); }
     for (const [x0, y0, x1, y1, st, t] of TOWN_HOUSES) { g.fillStyle = (BTYPE[t] || ['', '#888'])[1]; g.fillRect(x0, y0, x1 - x0 + 1, y1 - y0 + 1); }
     g.fillStyle = '#7fd36b'; g.fillRect(RADIO_XY[0] - 6, RADIO_XY[1] - 5, 13, 11);

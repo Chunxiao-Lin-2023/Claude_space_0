@@ -28,8 +28,12 @@ function propScene() {
   G[46] = M([boxG(0.86, 0.6, 0.86, 0, 0.3, 0), boxG(0.88, 0.1, 0.2, 0, 0.3, 0), boxG(0.2, 0.62, 0.88, 0, 0.3, 0), boxG(0.9, 0.06, 0.9, 0, 0.62, 0)]);
   G[47] = M([boxG(1.9, 0.5, 0.95, 0.45, 0.45, 0), boxG(0.7, 0.55, 0.9, 1.05, 0.95, 0), boxG(1.1, 0.35, 0.95, -0.05, 0.85, 0), ...[[-0.1, 0.48], [-0.1, -0.48], [1.05, 0.48], [1.05, -0.48]].map(([x, z]) => cyl(0.22, 0.22, 0.14, 10, x, 0.22, z).rotateX(Math.PI / 2))]);
   G[42] = M([boxG(0.06, 0.9, 0.06, 0, 0.45, -0.44), boxG(0.06, 0.9, 0.06, 0, 0.45, 0.44), boxG(0.06, 0.9, 0.06, 0, 0.45, 0), boxG(0.07, 0.06, 1, 0, 0.88, 0), boxG(0.04, 0.04, 1, 0, 0.45, 0)]);
-  const C = { 43: '#e8b93a', 44: '#6a1f2a', 45: '#7a868f', 46: '#2f5f9a', 47: '#5a6a3a', 42: '#7a8088', 32: '#3f5a3a', 33: '#5a4a2e', 34: '#6a4a30', 35: '#a8322a', 36: '#4f5a32', 37: '#9a3a2a', 38: '#b8333a', 39: '#7a5a44', 40: '#6a4a2c', 41: '#3e5f2e', 12: '#a8946a', 13: '#6a5038', 14: '#7a8590', 15: '#5a5a55', 6: '#8a6440' };
-  const cap = { 42: 2500, 41: 3000, 40: 600, 39: 600, 12: 1500, 13: 800, 14: 800, 15: 400, 6: 400, 32: 400, 34: 400 };
+  // town furniture (waist-high, bullets fly over): desk / counter, low shop shelving with goods
+  G[48] = M([boxG(0.94, 0.06, 0.62, 0, 0.47, 0), boxG(0.9, 0.38, 0.04, 0, 0.25, 0.27), boxG(0.05, 0.44, 0.56, -0.43, 0.22, 0), boxG(0.05, 0.44, 0.56, 0.43, 0.22, 0), boxG(0.3, 0.2, 0.5, 0.25, 0.14, -0.02)]);
+  G[49] = M([boxG(0.96, 0.08, 0.56, 0, 0.04, 0), boxG(0.96, 0.58, 0.06, 0, 0.33, 0), boxG(0.96, 0.03, 0.56, 0, 0.3, 0), boxG(0.96, 0.03, 0.56, 0, 0.61, 0),
+    ...[-0.32, 0, 0.3].map((x, k) => boxG(0.22, 0.16, 0.2, x, 0.4 + (k % 2) * 0.02, 0.15)), ...[-0.3, 0.05, 0.33].map((x, k) => boxG(0.2, 0.14 + k * 0.03, 0.2, x, 0.12 + k * 0.015, -0.15)), ...[-0.2, 0.25].map(x => boxG(0.24, 0.18, 0.18, x, 0.41, -0.15))]);
+  const C = { 48: '#7a5a3c', 49: '#8a9096', 43: '#e8b93a', 44: '#6a1f2a', 45: '#7a868f', 46: '#2f5f9a', 47: '#5a6a3a', 42: '#7a8088', 32: '#3f5a3a', 33: '#5a4a2e', 34: '#6a4a30', 35: '#a8322a', 36: '#4f5a32', 37: '#9a3a2a', 38: '#b8333a', 39: '#7a5a44', 40: '#6a4a2c', 41: '#3e5f2e', 12: '#a8946a', 13: '#6a5038', 14: '#7a8590', 15: '#5a5a55', 6: '#8a6440' };
+  const cap = { 48: 700, 49: 900, 42: 2500, 41: 3000, 40: 600, 39: 600, 12: 1500, 13: 800, 14: 800, 15: 400, 6: 400, 32: 400, 34: 400 };
   for (const id in G) { const m = inst(G[id], lam('#ffffff'), cap[id] || 300); m.castShadow = id == 38 || id == 34; PROP[id] = { m, n: 0, col: C[id], al: id == 12 || id == 13 || id == 14 }; }
   // build-plan ghosts and the x-ray ring that shows survivors through walls
   OBJ.planI = inst(boxG(1, 1, 1, 0, 0.5, 0), new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0.4, depthWrite: false }), 64, false);
@@ -55,6 +59,7 @@ function propPut(b, i, x, y, L, X, Y, Z, h) {
   if (b === 38 && W.srch.has(i)) col = '#5a2a2c';
   if (b === 41) sc = 0.8 + h * 0.5;
   if (b === 47) rot = -W.bdir[i] * Math.PI / 2;
+  if (b === 48 || b === 49) { const s = (xx, yy) => { const q = blkAt(xx, yy, L); return q === 48 || q === 49; }; rot = s(x - 1, y) || s(x + 1, y) ? 0 : s(x, y - 1) || s(x, y + 1) ? Math.PI / 2 : Math.floor(h * 4) * Math.PI / 2; if (b === 49) col = ['#8a9096', '#7d8a7a', '#9a8a78'][Math.floor(h * 3)]; }
   if (b === 44) { sc = W.mode === 'nests' && W.obj.mother && W.obj.mother.ci === i ? 1.9 : 1.15; col = dmgTint('#7a2030', 0.45 + 0.55 * W.bhp[i] / Math.max(1, (W.obj.mother && W.obj.mother.ci === i ? W.obj.mother.max : W.obj.nests ? W.obj.nests[0].max : 1500))); }
   if (b === 45 && W.obj && W.obj.towers) { const q = W.obj.towers.find(q => q.ci === i); col = q && q.st === 2 ? '#6aa86a' : q && q.st === 1 ? '#c9a23a' : '#7a868f'; }
   if (b === 15 || b === 33 || b === 35) rot = h * 6.28;

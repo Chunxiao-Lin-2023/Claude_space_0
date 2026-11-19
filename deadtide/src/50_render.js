@@ -18,6 +18,7 @@ function applyQual() {
   const lv = QUAL.lv = qualPick();
   RENDER.setPixelRatio(lv === 0 ? DPR0 : Math.min(DPR0, 1)); resize();
   if (OBJ.sun) OBJ.sun.castShadow = !!SET.shadows && lv < 2;
+  if (typeof decoVis === 'function') decoVis();
 }
 const QNAME = ['高', '中', '低'];
 const qualLabel = () => '画质：' + (SET.q == null || SET.q === 'auto' ? '自动（' + QNAME[qualPick()] + '）' : QNAME[SET.q]);
@@ -182,7 +183,7 @@ function buildScene() {
   OBJ.zone = new THREE.LineSegments(zg, new THREE.LineBasicMaterial({ color: '#ffcf6b', transparent: true, opacity: 0.55 })); SCN.add(OBJ.zone);
 }
 /* ---------- terrain (static per world) ---------- */
-const TCOL = { [TT.grass]: ['#55733e', '#5a7843', '#50703a'], [TT.hill]: ['#4b663b', '#516c3e', '#476038'], [TT.dirt]: ['#6e5a42', '#74604a'], [TT.road]: ['#3c3d40', '#38393c'], [TT.sand]: ['#7d7356', '#857a5a'], [TT.forest]: ['#3f5a30', '#445f33', '#3b552d'], [TT.water]: ['#2b2723'] };
+const TCOL = { [TT.mud]: ['#4a3b2a', '#45372a', '#503f2c'], [TT.meadow]: ['#6a8440', '#64803c', '#708a44'], [TT.rocky]: ['#6e6c62', '#76736a', '#68665e'], [TT.grass]: ['#55733e', '#5a7843', '#50703a'], [TT.hill]: ['#4b663b', '#516c3e', '#476038'], [TT.dirt]: ['#6e5a42', '#74604a'], [TT.road]: ['#3c3d40', '#38393c'], [TT.sand]: ['#7d7356', '#857a5a'], [TT.forest]: ['#3f5a30', '#445f33', '#3b552d'], [TT.water]: ['#2b2723'] };
 // per-map tints for trees and bushes
 function applyMapLook() {
   const T = MAPDEF.trees || {}, I = OBJ.I; if (!I) return;
@@ -196,9 +197,11 @@ function buildTerrain() {
   const pos = [], col = [], c = new THREE.Color();
   const quad = (a, b2, c2, d, hex, k) => { c.set(hex).multiplyScalar(k); for (const v of [a, b2, c2, a, c2, d]) { pos.push(v[0], v[1], v[2]); col.push(c.r, c.g, c.b); } };
   const topOf = (x, y) => !inMap(x, y) ? -1.6 : ttAt(x, y) === TT.water ? -0.55 : gAt(x, y) * FH;
+  const mix = (a, b, t) => '#' + new THREE.Color(a).lerp(new THREE.Color(b), t).getHexString(), MG = (MAPDEF.tcol && MAPDEF.tcol[TT.grass]) || TCOL[TT.grass];
+  const TC2 = Object.assign({}, TCOL, MAPDEF.tcol || {}); if (MAPDEF.tcol && MAPDEF.tcol[TT.grass]) for (const [t, tgt, k] of [[TT.mud, '#3e3020', 0.62], [TT.meadow, '#a6b84a', 0.28], [TT.rocky, '#85827a', 0.58]]) if (!MAPDEF.tcol[t]) TC2[t] = MG.map(c => mix(c, tgt, k));
   for (let y = 0; y < MH; y++) for (let x = 0; x < MW; x++) {
     const t = ttAt(x, y), h = hash2(x, y), top = topOf(x, y);
-    const cols = (MAPDEF.tcol && MAPDEF.tcol[t]) || TCOL[t] || TCOL[TT.grass], tc = t === TT.water ? '#4a4136' : cols[Math.floor(h * cols.length)];
+    const cols = TC2[t] || TCOL[TT.grass], tc = t === TT.water ? '#4a4136' : cols[Math.floor(h * cols.length)];
     quad([x, top, y], [x, top, y + 1], [x + 1, top, y + 1], [x + 1, top, y], tc, 1);
     const side = t === TT.water ? '#3a3128' : gAt(x, y) > 0 ? (h < 0.5 ? '#6b6052' : '#625849') : '#4e4134';
     const nb = [[x + 1, y, [x + 1, y + 1], [x + 1, y], 0.62], [x, y + 1, [x, y + 1], [x + 1, y + 1], 0.78], [x - 1, y, [x, y], [x, y + 1], 0.62], [x, y - 1, [x + 1, y], [x, y], 0.78]];
@@ -216,16 +219,55 @@ function buildTerrain() {
     for (let L = 0; L < ML; L++) { const i = ci(x, y, L); if (W.blk[i] === 28) setInst(I.ramp, rp++, x + 0.5, L * FH, y + 0.5, -W.bdir[i] * Math.PI / 2, 1, 1, 1); }
   }
   I.water.count = w; I.ramp.count = rp;
+  buildDeco(MG, mix);
   for (const m of [I.water, I.ramp]) m.instanceMatrix.needsUpdate = true;
   OBJ.radio.visible = false;
   OBJ.bench.position.set(W.bench.x + 0.5, gAt(W.bench.x, W.bench.y) * FH, W.bench.y + 0.5);
   OBJ.grid.position.set(W.radio.x, 0, W.radio.y); OBJ.zone.position.set(W.radio.x, 0.03, W.radio.y);
   RC.ver = -1; buildMinimapBase();
 }
+// ground detail (static per world, not part of the per-rebuild pools): grass tufts, flowers in the meadows, puddles in the mud,
+// pebbles on gravel. Hidden on the lowest quality.
+function buildDeco(MG, mix) {
+  const D = OBJ.deco = OBJ.deco || {};
+  for (const k in D) { SCN.remove(D[k]); D[k].dispose(); delete D[k]; }
+  if (!GEO.tuft) {
+    const bl = []; for (let k = 0; k < 5; k++) { const a = k * 1.26, rr = 0.06 + (k % 2) * 0.05; bl.push(new THREE.ConeGeometry(0.04, 0.3 + (k % 3) * 0.08, 3, 1, true).rotateZ((k % 2 ? 0.25 : -0.2)).rotateY(a).translate(Math.cos(a) * rr, 0.15 + (k % 3) * 0.04, Math.sin(a) * rr)); }
+    GEO.tuft = merge(bl);
+    GEO.flower = merge([0, 1, 2].map(k => new THREE.TetrahedronGeometry(0.06, 0).translate(Math.cos(k * 2.1) * 0.12, 0.28 + k * 0.03, Math.sin(k * 2.1) * 0.12)));
+    GEO.puddle = new THREE.CircleGeometry(0.36, 10).rotateX(-Math.PI / 2).translate(0, 0.015, 0);
+    GEO.pebble = merge([new THREE.OctahedronGeometry(0.09, 0).scale(1, 0.6, 1.2).translate(-0.15, 0.04, 0.1), new THREE.TetrahedronGeometry(0.08, 0).translate(0.18, 0.03, -0.12)]);
+  }
+  const deco = MAPDEF.deco || {}, tuftC = deco.tuft || mix(MG[0], '#3f6a2a', 0.45), flC = deco.flower || ['#e8d24a', '#e86a5a', '#f2f2f2', '#b08ae0'];
+  const L = { tuft: [], flower: [], puddle: [], pebble: [] };
+  for (let y = 0; y < MH; y++) for (let x = 0; x < MW; x++) {
+    const t = ttAt(x, y); if (t === TT.water || t === TT.road || inZone(x, y) || houseInterior(x, y)) continue;
+    const g = gAt(x, y), b = W.blk[ci(x, y, g)]; if (b && B[b].B) continue;
+    const h = hash2(x * 5 + 3, y * 11 + 7), h2 = hash2(x * 13 + 1, y * 3 + 5), Y = g * FH, X = x + 0.2 + h * 0.6, Z = y + 0.2 + h2 * 0.6;
+    if (t === TT.meadow) { L.tuft.push([X, Y, Z, h * 6, 1 + h2 * 0.5]); if (h2 < 0.4) L.tuft.push([x + 1 - (X - x), Y, y + 1 - (Z - y), h2 * 6, 0.8 + h * 0.4]); if (h < 0.55) L.flower.push([X + 0.1, Y, Z - 0.1, h2 * 6, 1, flC[Math.floor(h2 * flC.length)]]); }
+    else if (t === TT.grass || t === TT.hill) { if (h < (t === TT.grass ? 0.08 : 0.05)) L.tuft.push([X, Y, Z, h2 * 6, 0.7 + h2 * 0.4]); if (h > 0.985) L.flower.push([X, Y, Z, h * 6, 0.8, flC[Math.floor(h2 * flC.length)]]); }
+    else if (t === TT.forest) { if (h < 0.06) L.tuft.push([X, Y, Z, h2 * 6, 0.8]); }
+    else if (t === TT.mud) { if (h < 0.4) L.puddle.push([X, Y, Z, 0, 0.6 + h2 * 0.8]); }
+    else if (t === TT.rocky || t === TT.dirt) { if (h < (t === TT.rocky ? 0.65 : 0.05)) L.pebble.push([X, Y, Z, h2 * 6, 0.8 + h * 0.6]); }
+  }
+  const mats = { tuft: lam('#ffffff'), flower: lam('#ffffff'), puddle: new THREE.MeshPhongMaterial({ color: '#4a5a66', transparent: true, opacity: 0.7, shininess: 90, specular: '#9ab0c0', depthWrite: false }), pebble: lam('#ffffff') };
+  const CH = 40;
+  for (const k in L) {
+    const by = {}; L[k].forEach((q, n) => { const c = Math.floor(q[0] / CH) + ',' + Math.floor(q[2] / CH); (by[c] = by[c] || []).push([q, n]); });
+    for (const c in by) {
+      const arr = by[c], m = D[k + c] = inst(GEO[k], mats[k], arr.length, false); m.receiveShadow = k !== 'puddle';
+      arr.forEach(([q, n], j) => setInst(m, j, q[0], q[1], q[2], q[3], q[4], k === 'puddle' ? 1 : q[4], q[4], q[5] || (k === 'tuft' ? (n % 3 ? tuftC : mix(tuftC, '#000000', 0.15)) : k === 'pebble' ? (n % 2 ? '#8a877e' : '#77746c') : null)));
+      m.count = arr.length; m.instanceMatrix.needsUpdate = true; if (m.instanceColor) m.instanceColor.needsUpdate = true;
+      m.computeBoundingSphere(); m.frustumCulled = true; SCN.add(m);
+    }
+  }
+  decoVis();
+}
+const decoVis = () => { if (OBJ.deco) for (const k in OBJ.deco) OBJ.deco[k].visible = QUAL.lv < 2; };
 /* ---------- cell contents (rebuilt when the map, view layer, camera or player cell changes) ---------- */
 const RC = { ver: -1, key: '', lamps: [] };
 const dmgTint = (hex, f) => { tmpC.set(hex); const k = 0.45 + 0.55 * clamp(f, 0, 1); return '#' + tmpC.multiplyScalar(k).getHexString(); };
-function wallAxis(x, y, L) { const solid = (xx, yy) => { const b = blkAt(xx, yy, L); return b && (B[b].P || B[b].Z) && !B[b].nat || b === 24; }; return (solid(x - 1, y) || solid(x + 1, y)) && !(solid(x, y - 1) || solid(x, y + 1)) ? 0 : (solid(x, y - 1) || solid(x, y + 1)) ? 1 : 0; }
+function wallAxis(x, y, L) { const solid = (xx, yy) => { const b = blkAt(xx, yy, L); return b && (B[b].P || B[b].Z) && !B[b].nat || b === 24 || b === 50; }; return (solid(x - 1, y) || solid(x + 1, y)) && !(solid(x, y - 1) || solid(x, y + 1)) ? 0 : (solid(x, y - 1) || solid(x, y + 1)) ? 1 : 0; }
 function cullR() { return Math.min(MW, CAM.zoom * Math.max(1, VW / Math.max(1, VH)) * 1.6 + 8); }
 function rebuildCells() {
   const I = OBJ.I, me = W.p[ME], vl = viewL(), [ox, oy] = [Math.sin(CAM.yaw), Math.cos(CAM.yaw)];
@@ -251,7 +293,7 @@ function rebuildCells() {
     const inFront = me && !me.dead && L >= me.L && fwd > 0.2 && fwd < 5 + (L - me.L) * 1.5 && lat < 2.4 + fwd * 0.45;
     if (inFront && (B[b].P || B[b].Z) && (!B[b].nat || b === 24)) cut = 0.3;
     switch (b) {
-      case 1: case 2: case 3: case 24: archWall(b, i, x, y, L, X, Y, Z, h, cut, vl); break;
+      case 1: case 2: case 3: case 24: case 50: archWall(b, i, x, y, L, X, Y, Z, h, cut, vl); break;
       case 6: {
         propPut(6, i, x, y, L, X, Y, Z, h);
         // railings around the opening above, on every side you could walk up to except the top step
@@ -455,7 +497,7 @@ function drawOverlay() {
 const MM = { base: null, t: 0 };
 function buildMinimapBase() {
   const c = document.createElement('canvas'); c.width = MW; c.height = MH; const g = c.getContext('2d');
-  const MC = { [TT.grass]: '#55733e', [TT.hill]: '#7a8a5a', [TT.dirt]: '#6e5a42', [TT.road]: '#3c3d40', [TT.sand]: '#8a7f5a', [TT.forest]: '#3c5530', [TT.water]: '#2a6a86' };
+  const MC = { [TT.grass]: '#55733e', [TT.hill]: '#7a8a5a', [TT.dirt]: '#6e5a42', [TT.road]: '#3c3d40', [TT.sand]: '#8a7f5a', [TT.forest]: '#3c5530', [TT.water]: '#2a6a86', [TT.mud]: '#4a3b2a', [TT.meadow]: '#6a8440', [TT.rocky]: '#6e6c62' };
   if (MAPDEF.mc) Object.assign(MC, MAPDEF.mc);
   for (let y = 0; y < MH; y++) for (let x = 0; x < MW; x++) { let col = MC[ttAt(x, y)] || '#555'; if (gAt(x, y) === 2) col = '#8f9a6a'; g.fillStyle = col; g.fillRect(x, y, 1, 1); }
   MM.base = c;
@@ -468,7 +510,7 @@ function drawMinimap(dt) {
   g.translate(cv.width / 2, cv.height / 2); g.rotate(CAM.yaw); g.translate(-cv.width / 2, -cv.height / 2);
   g.imageSmoothingEnabled = false; g.drawImage(MM.base, 0, 0, cv.width, cv.height);
   g.fillStyle = 'rgba(30,30,34,.85)';
-  for (let y = 0; y < MH; y++) for (let x = 0; x < MW; x++) { for (let L = gAt(x, y); L < Math.min(ML, gAt(x, y) + 3); L++) { const b = W.blk[ci(x, y, L)]; if ((b && B[b].cost) || b === 24) { g.fillRect(x * S, y * S, S, S); break; } if (b === 22) { g.fillStyle = '#25381f'; g.fillRect(x * S, y * S, S, S); g.fillStyle = 'rgba(30,30,34,.85)'; break; } } }
+  for (let y = 0; y < MH; y++) for (let x = 0; x < MW; x++) { for (let L = gAt(x, y); L < Math.min(ML, gAt(x, y) + 3); L++) { const b = W.blk[ci(x, y, L)]; if ((b && B[b].cost) || b === 24 || b === 50) { g.fillRect(x * S, y * S, S, S); break; } if (b === 22) { g.fillStyle = '#25381f'; g.fillRect(x * S, y * S, S, S); g.fillStyle = 'rgba(30,30,34,.85)'; break; } } }
   g.strokeStyle = 'rgba(255,207,107,.6)'; g.lineWidth = 1; g.strokeRect((W.radio.x - BUILD_R) * S, (W.radio.y - BUILD_R) * S, (BUILD_R * 2 + 1) * S, (BUILD_R * 2 + 1) * S);
   g.fillStyle = '#ff3b2f'; for (const z of W.zs) g.fillRect(z.x * S - 1.5, z.y * S - 1.5, 3, 3);
   g.fillStyle = '#7fd36b'; g.fillRect(W.radio.x * S - 1, W.radio.y * S - 1, S + 2, S + 2);

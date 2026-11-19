@@ -151,10 +151,11 @@ function archGeo() {
   G.wirePosts = merge([boxG(0.06, 0.5, 0.06, -0.48, 0.25, 0).rotateX(0.25), boxG(0.06, 0.5, 0.06, -0.48, 0.25, 0).rotateX(-0.25), boxG(0.06, 0.5, 0.06, 0.48, 0.25, 0).rotateX(0.25), boxG(0.06, 0.5, 0.06, 0.48, 0.25, 0).rotateX(-0.25)]);
   // ruins: window wall, broken stepped top, full with cornice, low stub
   G.ruin = [
-    merge([boxG(1, h * 0.36, 1, 0, h * 0.18, 0), boxG(0.28, h * 0.42, 1, -0.36, h * 0.57, 0), boxG(0.28, h * 0.42, 1, 0.36, h * 0.57, 0), boxG(1, h * 0.22, 1, 0, h * 0.89, 0), boxG(0.56, 0.05, 1.1, 0, h * 0.37, 0)]),
+    merge([boxG(1, h * 0.36, 1, 0, h * 0.18, 0), boxG(0.2, h * 0.42, 1, -0.4, h * 0.57, 0), boxG(0.2, h * 0.42, 1, 0.4, h * 0.57, 0), boxG(1, h * 0.22, 1, 0, h * 0.89, 0), boxG(0.66, 0.05, 1.1, 0, h * 0.37, 0)]),
     merge([boxG(1, h * 0.5, 1, 0, h * 0.25, 0), boxG(0.55, h * 0.3, 1, -0.225, h * 0.65, 0), boxG(0.25, h * 0.18, 1, -0.375, h * 0.89, 0), boxG(0.18, h * 0.12, 0.6, 0.25, h * 0.56, 0.1)]),
     merge([boxG(1, h, 1, 0, h / 2, 0), boxG(1.08, 0.09, 1.08, 0, h * 0.97, 0)]),
     merge([boxG(1, h * 0.32, 1, 0, h * 0.16, 0), boxG(0.4, h * 0.16, 0.5, 0.1, h * 0.4, -0.1).rotateY(0.3)]),
+    merge([boxG(1, h * 0.46, 0.5, 0, h * 0.23, 0), boxG(1.04, 0.06, 0.62, 0, h * 0.475, 0)]), // 4: clean half wall (block 50)
   ].map(worldUV);
 }
 // called from buildScene: textured instanced pools for walls, floors, trims and ruins
@@ -197,9 +198,11 @@ function archWall(b, i, x, y, L, X, Y, Z, h, cut, vl) {
   } else if (b === 3) {
     archPut('steel', X, Y, Z, 0, 1, cut, 1, tint); archPut('tSteel', X, Y, Z, 0, 1, cut, 1);
     if (crown) archPut('spikes', X, cY, Z, ax, 1, 1, 1);
+  } else if (b === 50) {
+    const hk = houseOf(x, y), col = PLASTER[hk >= 0 ? (hk * 2 + 1) % PLASTER.length : 0];
+    archPut('ruin4', X, Y, Z, wallAxis(x, y, L) ? Math.PI / 2 : 0, 1, 1, 1, dmgTint(col, f));
   } else if (b === 24) {
-    let v = h < 0.28 ? 0 : h < 0.58 ? 1 : h < 0.84 ? 2 : 3; if (ARCH.roofCells.has(x + ',' + y + ',' + L) || (L + 1 < ML && (W.slab[ci(x, y, L + 1)] || W.blk[ci(x, y, L + 1)]))) v = h < 0.4 ? 0 : 2; // carrying a floor: full height
-    const rot = (v === 0 ? ax : 0) + (v === 1 && hash2(x, y * 3) < 0.5 ? Math.PI : 0) + (v === 1 ? ax : 0);
+    const v = ruinShape(x, y, L), rot = ruinRot(x, y, L, v); // carrying a floor: window wall or full height
     const hk = houseOf(x, y), col = PLASTER[hk >= 0 ? (hk * 2 + 1) % PLASTER.length : Math.floor(hash2(x >> 3, y >> 3) * PLASTER.length)];
     archPut('ruin' + v, X, Y, Z, rot, 1, cut < 1 ? Math.min(cut * 1.6, 1) : 1, 1, dmgTint(col, f));
   } else return false;
