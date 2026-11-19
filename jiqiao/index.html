@@ -1211,8 +1211,8 @@ const HEROES=[
   skill:{n:'雷暴',g:'暴',cd:16,d:'3 秒内每 0.3 秒落下一道雷'}},
  {key:'wind',name:'风行者',color:'#ddd8bf',weapon:'blades',tag:'闪避反击',lore:'来去无影的游侠，闪开一击，就还你十刀。',star:3,pros:['闪避 +15%，移速 +10%','闪避后 2 秒内攻速 +40%，并获得 1 点经验'],cons:[],stats:{dodge:15,speed:10},
   skill:{n:'疾影',g:'影',cd:8,d:'向移动方向冲刺，0.4 秒无敌，划过的敌人受到伤害'}},
- {key:'merchant',name:'豪商',color:'#f0b93a',weapon:'boomerang',tag:'买卖刷钱',lore:'什么都能买，什么都能卖，打仗也要先算账。',star:3,pros:['开局金币 +30','商店价格 -15%','武器回收价从 40% 提高到 70%','任何武器击杀 10% 几率多掉 1 枚金币'],cons:['伤害 -5%'],stats:{dmg:-5},coinKill:10,
-  skill:{n:'撒钱',g:'钱',cd:15,d:'花 10 金币：击退周围敌人并造成伤害，全场金币飞向你'}},
+ {key:'merchant',name:'豪商',color:'#f0b93a',weapon:'boomerang',tag:'买卖刷钱',lore:'什么都能买，什么都能卖，打仗也要先算账。',star:3,pros:['开局金币 +30','拾取金币 +25%','每波结束拿持有金币 6% 的利息（最多 25）','商店价格 -15%，武器回收价从 40% 提高到 70%','击杀 25% 几率多掉 1 枚金币'],cons:[],coinKill:25,coinPick:25,interest:[0.06,25],
+  skill:{n:'撒钱',g:'钱',cd:14,d:'击退周围敌人并造成伤害（持有金币越多越痛），全场金币飞向你；被撒钱击杀的敌人多掉 2 枚金币'}},
 ];
 
 // 英雄进化：第 6 波结束二选一（A / B），第 12 波结束自动升为终阶（C）
@@ -1223,7 +1223,7 @@ const EVOS={
  apoth:{A:['毒医','中毒的敌人死亡时回复 1 生命（每秒最多 3 次）'],B:['瘟疫','毒层上限 +3'],C:['毒爆连锁','毒爆引爆的每个敌人脚下留下一片毒雾']},
  storm:{A:['雷霆','每道落雷命中后再连锁跳两次'],B:['风暴之眼','身边持续电场，每 0.6 秒电击附近两个敌人'],C:['雷神','雷暴持续 6 秒，落雷更密']},
  wind:{A:['影刃','闪避后下一次命中必定暴击，暴击伤害 +30%'],B:['疾风','每 1% 移速额外换成 0.6% 攻速'],C:['无影','疾影冲刺的起点和终点留下残影，3 秒内持续斩击周围敌人']},
- merchant:{A:['财阀','每波结束获得持有金币 10% 的利息，最多 60（可和利息存单叠加）'],B:['金钟罩','每持有 50 金币，受到的伤害 -2%，最多 -30%'],C:['一掷千金','撒钱不再花钱，伤害翻倍，冷却 9 秒']},
+ merchant:{A:['财阀','每波结束获得持有金币 10% 的利息，最多 60（可和利息存单叠加）'],B:['金钟罩','每持有 50 金币，受到的伤害 -2%，最多 -30%'],C:['一掷千金','撒钱伤害翻倍、冷却 ×0.6，被撒钱击杀的敌人多掉 4 枚金币']},
 };
 const ITEMS=[
  {n:'铜护符',g:'护',t:1,s:{hp:5}},{n:'磨刀石',g:'磨',t:1,s:{dmg:5}},{n:'轻羽',g:'羽',t:1,s:{speed:5}},{n:'机油',g:'油',t:1,s:{atkspd:6}},
@@ -3259,8 +3259,7 @@ function trySkill2(){if(state!=='battle'||paused)return;const me=ME();if(!me||me
  castSkill2(null);}
 function castSkill(path){
  const sk=H.skill;if(!sk||(run.skCD||0)>0||state!=='battle')return false;
- if(H.key==='merchant'&&FX.evoC!=='merchant'){if(run.gold<10){if(isMe())toast('金币不足 10');return false;}run.gold-=10;}
- run.skCD=skCd();addText(P.x,P.y-56,sk.n,C['brass-hi'],17);
+  run.skCD=skCd();addText(P.x,P.y-56,sk.n,C['brass-hi'],17);
  const near=r=>enemies.filter(e=>!e.dead&&!e.seg&&Math.hypot(e.x-P.x,e.y-P.y)<r+e.r);
  const knock=(e,d)=>{if(e.boss)return;const a=Math.atan2(e.y-P.y,e.x-P.x);e.x=clamp(e.x+Math.cos(a)*d,e.r,WORLD.w-e.r);e.y=clamp(e.y+Math.sin(a)*d,e.r,WORLD.h-e.r);};
  switch(H.key){
@@ -3287,7 +3286,7 @@ function castSkill(path){
     for(let k=1;k<=7;k++)delayed.push({t:k*0.4,pl:CUR,fn:()=>{ringFx(ax,ay,75,'#ddd8bf',0.2);for(const e of enemies)if(!e.dead&&!e.seg&&Math.hypot(e.x-ax,e.y-ay)<75+e.r)hitEnemy(e,skillDmg(3),{melee:1,noSteal:1,col:'#ddd8bf'});}});}
    skSfx('dodge');break;}
   case 'merchant':{const R=180*rangeMul(),bonus=(1+Math.min(run.gold,200)/200)*(FX.evoC==='merchant'?2:1);ringFx(P.x,P.y,R,C.t4,0.45);fxs.push({type:'coins',x:P.x,y:P.y,r:R,seed:Math.random()*99,life:0.6,max:0.6});
-   for(const e of near(R)){hitEnemy(e,skillDmg(6)*bonus,{noSteal:1,col:C.t4});if(!e.dead)knock(e,100);}
+   for(const e of near(R)){hitEnemy(e,skillDmg(9)*bonus,{noSteal:1,col:C.t4,coin:FX.evoC==='merchant'?4:2});if(!e.dead)knock(e,100);}
    for(const c of pickups)if(c.type==='coin')c.mag=true;skSfx('revive');break;}
  }
  if(H.key!=='artificer')coopSkill(path||(H.key==='wind'?[0,0,P.x,P.y]:null));
@@ -3301,7 +3300,7 @@ function skillTick(dt){
 }
 function trySkill(){
  if(state!=='battle'||paused)return;const me=ME();if(!me||me.down)return;use(me);
- if(NET.role==='guest'){const sk=H.skill;if(!sk||(run.skCD||0)>0)return;if(H.key==='merchant'&&FX.evoC!=='merchant'&&run.gold<10){toast('金币不足 10');return;}
+ if(NET.role==='guest'){const sk=H.skill;if(!sk||(run.skCD||0)>0)return;
   const path=H.key==='wind'?dashMove():null;run.skCD=skCd();netSend({t:'skill',path});return;}
  castSkill(null);
 }
@@ -4152,7 +4151,7 @@ function moveLocal(dt){
  if(P.jump){const J=P.jump;J.t+=dt;const k=Math.min(1,J.t/J.T);P.x=lerp(J.x0,J.x1,k);P.y=lerp(J.y0,J.y1,k);P.jh=Math.sin(Math.PI*k)*130;P.air=true;P.moving=true;P.anim+=dt;P.face=Math.atan2(J.y1-J.y0,J.x1-J.x0);
   if(k>=1){P.jump=null;P.jh=0;P.air=false;pushOut(P);ringFx(P.x,P.y,70,C['brass-hi'],0.3);P.padCD=0.8;if(isMe())shake=Math.max(shake,0.15);}return;}
  const [mx,my,ml]=readInput();
- const spd=190*Math.max(0.3,1+S.speed/100)*(inPool(P.x,P.y)&&!(CUR&&CUR.antidote>0)?0.62:1)*gzSlow(P.x,P.y)*(P.slowT>0?0.6:1)*(MAP.ter&&MAP.ter.river&&inRiver(P.x,P.y)?1.15:1);if(P.slowT>0)P.slowT-=dt;
+ const spd=210*Math.max(0.3,1+S.speed/100)*(inPool(P.x,P.y)&&!(CUR&&CUR.antidote>0)?0.62:1)*gzSlow(P.x,P.y)*(P.slowT>0?0.6:1)*(MAP.ter&&MAP.ter.river&&inRiver(P.x,P.y)?1.15:1);if(P.slowT>0)P.slowT-=dt;
  let vx=mx*spd,vy=my*spd;
  if(MAP.ice){const ice=MAP.ice.some(([x,y,r])=>(P.x-x)**2+(P.y-y)**2<r*r);if(ice){const k=Math.min(1,dt*2.2);P.ivx=lerp(P.ivx||0,vx,k);P.ivy=lerp(P.ivy||0,vy,k);vx=P.ivx;vy=P.ivy;}else{P.ivx=vx;P.ivy=vy;}
   if(hz.wind&&hz.wind.s>0){vx+=Math.cos(hz.wind.a)*80*hz.wind.s;vy+=Math.sin(hz.wind.a)*80*hz.wind.s;}}
@@ -4259,7 +4258,7 @@ function update(dt){
   if(p.mag){p.x+=dx/d*540*dt;p.y+=dy/d*540*dt;}
   if(d<tp.P.r+8){use(tp);
    if(p.type==='chest'){p.tk=(p.tk||0)|1<<tp.id;p.mag=false;p.dead=PL.every(q=>(p.tk>>q.id)&1);}else p.dead=true;
-   if(p.type==='coin'){run.gold+=p.v;run.earned+=p.v;run.coinPick+=p.v;
+   if(p.type==='coin'){let v=p.v;if(H.coinPick){run.coinFrac=(run.coinFrac||0)+p.v*H.coinPick/100;const k=Math.floor(run.coinFrac);run.coinFrac-=k;v+=k;}run.gold+=v;run.earned+=v;run.coinPick+=p.v;
     while(run.coinPick>=20){run.coinPick-=20;if(FX.mine)for(let k=0;k<FX.mine;k++)if(mines.length<14)mines.push({pl:CUR,x:P.x+rand(-10,10),y:P.y+rand(-10,10),arm:0.5});}}
    else{run.chests.push(p.tier);addText(P.x,P.y-34,'获得宝箱',TC[p.tier],15);ringFx(P.x,P.y,40,TC[p.tier],0.3);}}}
  use(ME());
@@ -4340,7 +4339,7 @@ function endWave(){
   run.helpNeed=L?(lowHp()||((run.minHpR??1)<HELP.hpLow&&kr>=HELP.killLow)?'hp':'dmg'):null;
   run.helpRerolls=HELP.rerolls[L];
   const harvest=Math.round(Math.max(0,Math.round(S.harvest))+BAL.baseInc+run.wave*BAL.incPerWave);
-  const interest=(FX.interest?Math.min(30*FX.interest,Math.floor(run.gold*0.1*FX.interest)):0)+(FX.evo==='merchantA'?Math.min(60,Math.floor(run.gold*0.1)):0);
+  const interest=(FX.interest?Math.min(30*FX.interest,Math.floor(run.gold*0.1*FX.interest)):0)+(FX.evo==='merchantA'?Math.min(60,Math.floor(run.gold*0.1)):0)+(H.interest?Math.min(H.interest[1],Math.floor(run.gold*H.interest[0])):0);
   const sub=Math.round(harvest*HELP.subsidy[p.helpL]);run.gold+=harvest+interest+sub;run.earned+=harvest+interest+sub;p.summary={harvest,interest,swept:sw,help:p.helpL,sub};p.ready=false;
   run.freeUsed=false;run.rerollCost=1+Math.floor(run.wave*0.6);run.lvRerollCost=2+Math.floor(run.wave/2);run.lvChoices=null;run.chestItem=null;
   if(run.wave===6&&!run.evo&&EVOS[run.hero])run.evoPending=1;if(run.wave===12&&run.evo&&!run.evo.c){run.evo.c=1;run.evoNote=1;computeStats();}
