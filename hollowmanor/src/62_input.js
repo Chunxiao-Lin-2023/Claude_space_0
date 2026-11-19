@@ -69,7 +69,7 @@ function initTouch() {
 function showStick(kind, ox, oy, x, y) { const b = document.getElementById(kind === 'move' ? 'mvBase' : 'amBase'), k = document.getElementById(kind === 'move' ? 'mvKnob' : 'amKnob'); b.style.display = k.style.display = 'block'; b.style.left = ox + 'px'; b.style.top = oy + 'px'; const dx = x - ox, dy = y - oy, L = Math.hypot(dx, dy), m = 52, s = L > m ? m / L : 1; k.style.left = ox + dx * s + 'px'; k.style.top = oy + dy * s + 'px'; }
 function hideStick(kind) { document.getElementById(kind === 'move' ? 'mvBase' : 'amBase').style.display = 'none'; document.getElementById(kind === 'move' ? 'mvKnob' : 'amKnob').style.display = 'none'; }
 /* screen direction → world: the camera looks north (−z) from the south, so screen right = +x and screen down = +z */
-function stickVec(T) { if (!T) return null; const dx = T.x - T.ox, dy = T.y - T.oy, L = Math.hypot(dx, dy); if (L <= 6) return [0, 0]; const k = Math.min(1, L / 48); return [dx / L * k, dy / L * k]; }
+function stickVec(T) { if (!T) return null; const dx = T.x - T.ox, dy = T.y - T.oy, L = Math.hypot(dx, dy); if (L <= 9) return [0, 0]; const k = Math.pow(Math.min(1, (L - 9) / 40), 1.5); return [dx / L * Math.max(0.18, k), dy / L * Math.max(0.18, k)]; } // eased: a small push creeps, a full push walks
 /* local co-op leash: nobody may walk off the shared screen */
 function leash(p, mx, mz) {
   if (!STATE.local || !W) return [mx, mz];

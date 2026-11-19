@@ -39,13 +39,16 @@ function renderFrame(W, meIdx, dt) {
   // ---- camera
   let tx, tz;
   if (local) { tx = (W.p[0].x + W.p[1].x) / 2; tz = (W.p[0].z + W.p[1].z) / 2; }
-  else { const hidden = me.hide >= 0, look = me.role === 'L' ? 1.4 : 0.8; tx = me.x + (hidden ? 0 : Math.cos(me.aim) * look); tz = me.z + (hidden ? 0 : Math.sin(me.aim) * look); }
+  else { tx = me.x; tz = me.z; } // locked on the player: no look-ahead, no slide after stopping
   if (W.menu) { tx = W.p[0].x - 1; tz = W.p[0].z - 2.5; }
   if (STAGE.sc && STAGE.cam === 'gate' && MAP.F.gateAt) { tx = MAP.F.gateAt.x; tz = MAP.F.gateAt.z - 1; } else if (STAGE.sc && STAGE.cam === 'boss' && G0(W)) { tx = W.g.x; tz = W.g.z; }
-  R3.camT.x = lerp(R3.camT.x, tx, Math.min(1, dt * 5)); R3.camT.z = lerp(R3.camT.z, tz, Math.min(1, dt * 5));
+  // follow exactly; only glide when the target jumps (floor change, scene camera, menu)
+  const jump = dist(R3.camT.x, R3.camT.z, tx, tz);
+  if (jump > 1.5 || R3.camGlide) { R3.camGlide = jump > 0.05; const k = Math.min(1, dt * 10); R3.camT.x = lerp(R3.camT.x, tx, k); R3.camT.z = lerp(R3.camT.z, tz, k); if (jump < 0.05) { R3.camT.x = tx; R3.camT.z = tz; R3.camGlide = false; } }
+  else { R3.camT.x = tx; R3.camT.z = tz; }
   if (window.__dbg && window.__dbg.cam) { R3.camT.x = window.__dbg.cam[0]; R3.camT.z = window.__dbg.cam[1]; }
   let shx = 0, shy = 0; if (R3.shake > 0) { if (SET.shake !== false) { shx = Math.round((Math.random() - 0.5) * R3.shake * 6); shy = Math.round((Math.random() - 0.5) * R3.shake * 6); } R3.shake = Math.max(0, R3.shake - dt * 2.5); }
-  R3.cam.x = Math.round(R3.camT.x * PX - VW / 2) + shx; R3.cam.y = Math.round(R3.camT.z * PX - VH / 2 - 14) + shy;
+  R3.cam.x = Math.round(R3.camT.x * PX) - (VW >> 1) + shx; R3.cam.y = Math.round(R3.camT.z * PX) - (VH >> 1) - 14 + shy;
   const cx = R3.cam.x, cy = R3.cam.y;
   // ---- lightning
   VIS.nextBolt -= dt; if (VIS.nextBolt <= 0) { VIS.nextBolt = rrLocal(18, 42); R3.flash = 1; R3.flash2 = rrLocal(0.2, 0.45); setTimeout(() => sfx('thunder'), rrLocal(300, 1600)); }
@@ -140,7 +143,7 @@ function heroSprite(p, W, t) {
 }
 function drawHero(g, p, i, W, t, dt) {
   VIS.anim[i] = (VIS.anim[i] || 0) + dt * (p.spd || 0) * 0.62;
-  const X = Math.round(wx(p.x)), Y = Math.round(wy(p.z));
+  const X = Math.round(p.x * PX) - R3.cam.x, Y = Math.round(p.z * PX) - R3.cam.y;
   g.fillStyle = 'rgba(0,0,0,.38)'; g.beginPath(); g.ellipse(X, Y, 7, 2.5, 0, 0, TAU); g.fill();
   const s = heroSprite(p, W, t);
   g.drawImage(s.c, X - SW / 2, Y - FEET);

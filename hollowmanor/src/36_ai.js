@@ -160,10 +160,10 @@ function aiJob(ai, me) {
   const list = interactList(ai, W).filter(it => { const pz = PZ[it.k]; if (!pz) return false; if ((S.bad[it.id] || 0) > W.t) return false; if (pz.skip && pz.skip(it, W, ai)) return false; const r = roleOf(it, W); return r === '*' || r === R; });
   const by = k => list.filter(it => it.k === k).sort((a, b) => dist(a.x, a.z, ai.x, ai.z) - dist(b.x, b.z, ai.x, ai.z));
   const ok = it => { const pr = promptFor(ai, it, W); return pr && pr.ok; };
-  // items I can see nearby (the bag is shared)
-  for (const it of by('item')) if (dist(it.x, it.z, ai.x, ai.z) < 5 && los(ai.x, ai.z, it.x, it.z, W) && near(it.x, it.z)) return { it, say: '这里有东西，我去拿。', key: 'item', cd: 12 };
   // climb together: when the seal is gone and the human heads for the stairs / hatch, go with them
   if (!W.f.seal) { const st = MAP.inter.find(x => x.k === 'stairs' || x.k === 'hatch'); if (st && dist(me.x, me.z, st.x, st.z) < 6) return { it: st, say: st.k === 'hatch' ? '一起出去！' : '走，上楼。', key: 'climb', cd: 15, r: 1.6, run: () => { } }; }
+  // items I can see nearby (the bag is shared)
+  for (const it of by('item')) if (dist(it.x, it.z, ai.x, ai.z) < 5 && los(ai.x, ai.z, it.x, it.z, W) && near(it.x, it.z)) return { it, say: '这里有东西，我去拿。', key: 'item', cd: 12 };
   // twin levers: pull the one the human isn't at, when they're at the other
   const levers = by('lever'); if (levers.length === 2 && !W.f[MAP.F.leverFlag]) { const mine = levers.find(l => dist(l.x, l.z, me.x, me.z) > 3), theirs = levers.find(l => l !== mine && dist(l.x, l.z, me.x, me.z) < 2.2); if (mine && (theirs || W.lv[1 - mine.lv] > 0) && W.lv[mine.lv] <= 0) return { it: mine, say: '你拉那根，我拉这根——一起！', key: 'lever', cd: 10 }; }
   if (R === 'L') {
