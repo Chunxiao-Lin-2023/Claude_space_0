@@ -247,6 +247,15 @@ button.card:hover{transform:translateY(-2px);border-color:var(--sc)}
 .prep .bank{padding:5px 12px;font-size:21px;gap:7px}
 .prep .bank .qian{width:17px;height:17px}.prep .bank .qian::after{width:5px;height:5px}
 .prep-grid{grid-template-columns:minmax(0,1fr) 300px;gap:14px}
+.prep-grid{grid-template-areas:"main side" "build side";grid-template-rows:auto 1fr}
+.pmain{grid-area:main;min-width:0}.prep-grid>.side{grid-area:side}.pbuild{grid-area:build;align-self:start;min-width:0}
+.prep .build{grid-template-columns:minmax(0,1fr);gap:0;align-items:start;padding-block:4px}
+.prep .build .sets{grid-template-columns:repeat(4,minmax(0,1fr));gap:10px 14px}
+.prep .build .stats{grid-template-columns:repeat(4,minmax(0,1fr));gap:0 18px}
+@media (max-width:1100px){.prep .build .sets{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (min-width:600px) and (max-width:900px){.prep .side .wslots{grid-template-columns:repeat(6,minmax(0,1fr))}}
+@media (max-width:900px){.prep-grid{grid-template-areas:"main" "side" "build";grid-template-rows:auto}}
+@media (max-width:600px){.prep .build .sets{grid-template-columns:minmax(0,1fr)}.prep .build .stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .prep .panel{padding:12px 14px;gap:10px}
 .prep .cards{gap:8px}
 .prep .card{padding:10px 11px;gap:7px;border-radius:8px}
@@ -3145,15 +3154,17 @@ function renderPrep(){
    <div class="ttl"><h2>第 ${run.wave} 波完成</h2><div class="sub"><span>${H.name} · ${DIFF[run.diff].name} · ${MAP.name}</span><span>下一波 ${next} / ${FINAL_WAVE}</span>${next===ELITE_WAVE?'<span class="warn">精英首领</span>':''}${MINI_WAVES.includes(next)&&run.minis?`<span class="warn">小首领 · ${(next===MINI_WAVES[1]&&run.diff>=2?run.minis.slice(1,3):[run.minis[next===MINI_WAVES[0]?0:1]]).map(k=>MINIS.find(m=>m.key===k).name).join('、')}</span>`:''}${next===6||next===12?`<span class="warn">敌人进化 · ${EVO_N[next===6?1:2]}</span>`:''}${run.evoNote&&run.evo&&EVOS[H.key]?`<span class="warn">英雄终阶进化：${EVOS[H.key].C[0]}</span>`:''}${next===FINAL_WAVE?'<span class="warn">最终首领，击败即通关</span>':''}<span>本波收入 +${lastSummary.harvest}</span>${lastSummary.interest?`<span>利息 +${lastSummary.interest}</span>`:''}${lastSummary.swept?`<span>地上金币自动收取 +${lastSummary.swept}</span>`:''}${lastSummary.help?`<span class="helpln">${lastSummary.help>1?'苦战':'逆风'}补给：补贴 +${lastSummary.sub} 金 · 免费刷新 ×${HELP.rerolls[lastSummary.help]} · 商店一件 7 折对症补给${lastSummary.relief?' · 下一波敌人更少更脆':''}</span>`:''}${ground?`<span>地上还有 ${ground} 金币待拾取</span>`:''}</div></div>
    <div class="act">${blocked?`<span class="blk">${pending?'先选完升级属性':'先处理宝箱'}</span>`:''}${mateLine()}<div class="bank"><span class="qian"></span><span class="num">${run.gold}</span></div><button class="btn" data-act="next" ${blocked||myReady()?'disabled':''}>${myReady()?'已准备 · 等待队友':NET.mode==='solo'?`开始第 ${next} 波`:`准备好了 · 第 ${next} 波`}</button></div>
   </header>
-  <div class="prep-grid"><div style="min-width:0">${main}</div>
+  <div class="prep-grid"><div class="pmain">${main}</div>
    <aside class="side frame">
     ${coopPrep()?`<section class="sp"><h3>送给队友<small class="ihint">武器、道具在详情里送</small></h3><div class="row"><button class="mini" data-act="giftgold" data-i="10" ${run.gold<1?'disabled':''}>送 10 金</button><button class="mini" data-act="giftgold" data-i="30" ${run.gold<1?'disabled':''}>送 30 金</button><button class="mini" data-act="giftgold" data-i="-1" ${run.gold<2?'disabled':''}>送一半</button></div></section>`:''}
     <section class="sp"><h3>武器栏 <b>${run.weapons.length} / ${run.maxSlots}</b><small class="ihint">点武器或道具看详情</small></h3><div class="wslots">${slots.join('')}</div></section>
+    <section class="sp"><h3>道具 <b>${run.items.length}</b></h3><div class="items">${items||'<span class="dim">还没有道具</span>'}</div></section>
+   </aside>
+   <div class="pbuild"><div class="panel frame build">
     <section class="sp"><h3>流派套装<small class="ihint">同派 2 / 4 / 6 件</small></h3><div class="sets">${CKEYS.map(c=>{const n=(run.sets||{})[c]||0,t=setTier(n),K=CLASSES[c];
      return `<div class="set${t?' on':''}" style="--c:${K.col}"><b>${K.g}</b><div><span class="sn">${K.n} <em>${n}</em> 件</span><small>${[2,4,6].map((th,i)=>`<i class="${t>i?'on':''}">${th}件 ${K.b[i]}</i>`).join('')}</small></div></div>`;}).join('')}</div></section>
     <section class="sp"><h3>属性 · <b>Lv ${run.level}</b></h3><dl class="stats">${stats}</dl></section>
-    <section class="sp"><h3>道具 <b>${run.items.length}</b></h3><div class="items">${items||'<span class="dim">还没有道具</span>'}</div></section>
-   </aside></div>
+   </div></div></div>
  </div>`;
 }
 function mateInfo(){
