@@ -607,7 +607,7 @@ const EVO={
  totem:['疾风图腾：周围敌人加速 30%','召兵图腾：改为召唤冲锋兵'],
 };
 const EVO_HP=[1,1.15,1.3],EVO_N=['','二型','三型'];
-function rollEvo(type,w){const E=EVO[type];if(!E||w<6)return 0;const p3=w>=12&&E[1]?Math.min(0.4,0.15+(w-12)*0.07):0,p2=Math.min(0.8-p3,0.15+(w-6)*0.06),r=Math.random();return r<p3?2:r<p3+p2?1:0;}
+function rollEvo(type,w){if(run&&run.diff>=3)w+=2;const E=EVO[type];if(!E||w<6)return 0;const p3=w>=12&&E[1]?Math.min(0.4,0.15+(w-12)*0.07):0,p2=Math.min(0.8-p3,0.15+(w-6)*0.06),r=Math.random();return r<p3?2:r<p3+p2?1:0;}
 // 小首领：第 4 波一只，第 12 波一只（三阶难度两只）。限时内击杀掉宝箱，否则逃跑
 const MINIS=[
  {key:'grinder',name:'磨刀匠',hp:250,r:38,spd:72,dmg:11,col:'#c9d2d4',base:'brute',d:'转着刀阵直线冲刺，撞到墙或铜柱会眩晕，眩晕时受到的伤害 +60%'},
@@ -699,8 +699,12 @@ const MAPS=[
  {key:'mine',name:'铁轨矿坑',desc:'矿车沿铁轨呼啸而过，人和怪撞上都掉血。拉动道岔拉杆放出只撞敌人的矿车；站上塌方点引发落石',props:[['lever',800,140],['lever',800,960],['rocks',420,180],['rocks',1180,920]],favor:['charger','layer','splitter'],obs:[[240,550,40],[1360,550,40],[600,140,28],[1000,960,28],[560,560,24],[1040,560,24]],rails:[330,770]},
  {key:'swamp',name:'毒沼药圃',desc:'毒池会减速并持续掉血，敌我都受影响。解毒草回血并免疫毒池；爆炸或闪电能引燃毒池里的沼气',props:[['herb',600,330],['herb',1000,780],['herb',800,420]],favor:['spitter','splitter','medic'],obs:[[600,550,24],[1000,550,24],[230,550,24],[1370,550,24]],pools:[[380,300,92],[1220,300,92],[380,800,92],[1220,800,92],[800,170,70],[800,930,70]]},
  {key:'storm',name:'雷云高塔',desc:'地面周期性出现落雷预警，劈中敌我都掉血。站在避雷针旁，雷会劈向周围的敌人；在充能塔里充满电放出全屏雷',props:[['rod',520,550],['rod',1080,550],['tower',800,190]],favor:['stalker','shield','medic'],obs:[[520,380,30],[1080,380,30],[520,720,30],[1080,720,30]]},
+ {key:'bridge',name:'断桥栈道',desc:'深谷上的三块平台由两座吊桥相连，谁也走不进深谷。吊桥会周期性断开，桥上的敌人会坠落，你会被甩回岸边',favor:['charger','brute','shield'],obs:[],
+  voids:[[520,0,160,470],[520,630,160,470],[920,0,160,500],[920,600,160,500],[190,270,150,130],[1260,700,150,130]],bridges:[[520,470,160,160],[920,500,160,100]]},
+ {key:'snow',name:'风雪关隘',desc:'风向每隔一会儿就变，强风推着所有人、也会吹偏敌人的子弹；冰面上脚下打滑',favor:['stalker','spitter','charger'],obs:[[500,300,32],[1100,300,32],[500,800,32],[1100,800,32],[800,190,26],[800,910,26]],
+  ice:[[520,550,105],[1080,550,105],[800,330,90],[800,770,90],[230,230,85],[1370,870,85]]},
 ];
-const DIFF=[{name:'一阶 · 铜',hp:1,dmg:1,spawn:1},{name:'二阶 · 银',hp:1.55,dmg:1.3,spawn:1.2},{name:'三阶 · 金',hp:2,dmg:1.6,spawn:1.4}];
+const DIFF=[{name:'一阶 · 铜',hp:1,dmg:1,spawn:1},{name:'二阶 · 银',hp:1.55,dmg:1.3,spawn:1.2},{name:'三阶 · 金',hp:2,dmg:1.6,spawn:1.4},{name:'四阶 · 噩梦',hp:2.5,dmg:1.9,spawn:1.6}];
 const FINAL_WAVE=16,ELITE_WAVE=8;
 // balance knobs
 // 最终首领：血量倍数、韧性（每秒承伤超过阈值后按比例减伤，最低 35%）、联机倍数
@@ -1257,7 +1261,24 @@ function makeFloor(mapKey,diff){
   g.lineWidth=2;gearPath(g,0,0,90,18,0);g.stroke();g.beginPath();g.arc(0,0,28,0,TAU);g.stroke();g.restore();};
  const border=(dark,hi)=>{g.strokeStyle=dark;g.lineWidth=8;g.strokeRect(4,4,WORLD.w-8,WORLD.h-8);g.strokeStyle=hi;g.lineWidth=2;g.strokeRect(4,4,WORLD.w-8,WORLD.h-8);g.strokeStyle='rgba(242,203,122,.3)';g.lineWidth=1;g.strokeRect(10,10,WORLD.w-20,WORLD.h-20);
   for(let x=40;x<WORLD.w;x+=80){rivet(g,x,4,3);rivet(g,x,WORLD.h-4,3);}for(let y=40;y<WORLD.h;y+=80){rivet(g,4,y,3);rivet(g,WORLD.w-4,y,3);}};
- if(mapKey==='mine'){
+ if(mapKey==='bridge'){
+  g.fillStyle='#07090c';g.fillRect(0,0,WORLD.w,WORLD.h);blot(50,60,160,'rgba(60,80,100,.18)');
+  const vr=MAP.voids||[],brs=MAP.bridges||[],solid=(x,y)=>!vr.some(([a,b,w,h])=>x>=a&&x<a+w&&y>=b&&y<b+h)&&!brs.some(([a,b,w,h])=>x>=a&&x<a+w&&y>=b&&y<b+h);
+  for(let y=0;y<WORLD.h;y+=22)for(let x=0;x<WORLD.w;x+=100){const ox=(y/22)%2?50:0;for(const xx of [x-ox,x-ox+100]){if(xx<0||xx>WORLD.w)continue;}
+   const x0=x-((y/22)%2?50:0);for(let k=0;k<100;k+=4){}
+   if(!solid(x0+50,y+11))continue;g.fillStyle=mix('#4a3520','#6a4c2c',Math.random());g.fillRect(x0+1,y+1,98,20);g.strokeStyle='rgba(0,0,0,.45)';g.lineWidth=1;g.strokeRect(x0+1,y+1,98,20);g.fillStyle='rgba(0,0,0,.35)';g.fillRect(x0+6,y+9,2,2);g.fillRect(x0+92,y+9,2,2);}
+  for(const[a,b,w,h] of vr){const gr=g.createLinearGradient(0,b,0,b+h);gr.addColorStop(0,'rgba(0,0,0,.85)');gr.addColorStop(0.5,'rgba(10,16,22,.95)');gr.addColorStop(1,'rgba(0,0,0,.85)');g.fillStyle=gr;g.fillRect(a,b,w,h);
+   g.strokeStyle='#2a1c10';g.lineWidth=6;g.strokeRect(a+3,b+3,w-6,h-6);for(let k=0;k<6;k++){g.globalAlpha=0.06;g.drawImage(glow('rgba(140,170,200,1)'),a+rand(0,w)-60,b+rand(0,h)-60,120,120);g.globalAlpha=1;}}
+  border('#2a1c10','#6a4c2c');
+ }else if(mapKey==='snow'){
+  g.fillStyle='#1b2530';g.fillRect(0,0,WORLD.w,WORLD.h);
+  for(let y=0;y<WORLD.h;y+=T)for(let x=0;x<WORLD.w;x+=T){g.fillStyle=mix('#25313c','#2c3a46',Math.random());g.fillRect(x+2,y+2,T-4,T-4);}
+  blot(140,30,110,'rgba(220,235,245,.12)');blot(40,40,90,'rgba(0,0,0,.25)');
+  for(const[x,y,r] of MAP.ice||[]){const gr=g.createRadialGradient(x-r*0.3,y-r*0.3,r*0.1,x,y,r);gr.addColorStop(0,'rgba(220,245,255,.55)');gr.addColorStop(0.7,'rgba(150,200,230,.4)');gr.addColorStop(1,'rgba(120,170,210,.15)');g.fillStyle=gr;g.beginPath();g.arc(x,y,r,0,TAU);g.fill();
+   g.strokeStyle='rgba(235,250,255,.5)';g.lineWidth=1.2;for(let k=0;k<5;k++){const a=rand(0,TAU),l=rand(r*0.3,r*0.8);g.beginPath();g.moveTo(x,y);g.lineTo(x+Math.cos(a)*l,y+Math.sin(a)*l);g.stroke();}g.beginPath();g.arc(x,y,r,0,TAU);g.strokeStyle='rgba(200,235,255,.35)';g.lineWidth=2;g.stroke();}
+  for(let k=0;k<300;k++){g.fillStyle=`rgba(235,245,250,${rand(0.08,0.25)})`;g.beginPath();g.ellipse(rand(0,WORLD.w),rand(0,WORLD.h),rand(6,22),rand(3,8),rand(0,3),0,TAU);g.fill();}
+  border('#2a3440','#9fb6cc');
+ }else if(mapKey==='mine'){
   g.fillStyle='#211a13';g.fillRect(0,0,WORLD.w,WORLD.h);
   blot(160,20,70,'rgba(70,52,34,.35)');blot(60,30,90,'rgba(0,0,0,.35)');
   for(let k=0;k<420;k++){g.fillStyle=`rgba(${rand(90,140)|0},${rand(80,110)|0},${rand(60,80)|0},${rand(0.15,0.4)})`;const x=rand(0,WORLD.w),y=rand(0,WORLD.h),r=rand(1.5,5);g.beginPath();g.ellipse(x,y,r,r*0.7,rand(0,3),0,TAU);g.fill();}
@@ -1791,12 +1812,23 @@ function setupMap(key){
  FLOOR=makeFloor(MAP.key,run?run.diff:0);
 }
 function resetHazards(){
- hz={vents:(MAP.vents||[]).map(([x,y],i)=>({x,y,ph:i*1.75,hot:false})),carts:[],strikes:[],cartT:rand(3,5),strikeT:2.5,poolTick:0,ventTick:0};emines=[];
+ hz={vents:(MAP.vents||[]).map(([x,y],i)=>({x,y,ph:i*1.75,hot:false})),carts:[],strikes:[],cartT:rand(3,5),strikeT:2.5,poolTick:0,ventTick:0,
+  br:MAP.bridges?MAP.bridges.map((b,i)=>({t:6+i*7,st:0})):null,wind:MAP.ice?{a:0,s:0,t:rand(5,7),st:0}:null};emines=[];
 }
-function pushOut(o){for(const b of obstacles){const dx=o.x-b.x,dy=o.y-b.y,rs=b.r+o.r,d2=dx*dx+dy*dy;if(d2<rs*rs){const d=Math.sqrt(d2)||0.01;o.x=b.x+dx/d*rs;o.y=b.y+dy/d*rs;}}}
+// 断桥栈道：深谷和断开的吊桥都算墙
+function voidRects(){if(!MAP.voids)return null;const v=MAP.voids.slice();if(hz.br)hz.br.forEach((b,i)=>{if(b.st===2)v.push(MAP.bridges[i]);});return v;}
+function rectOut(o,R){const[x,y,w,h]=R,cx=clamp(o.x,x,x+w),cy=clamp(o.y,y,y+h),dx=o.x-cx,dy=o.y-cy,d2=dx*dx+dy*dy;
+ if(d2>=o.r*o.r&&!(o.x>x&&o.x<x+w&&o.y>y&&o.y<y+h))return false;
+ if(o.x>x&&o.x<x+w&&o.y>y&&o.y<y+h){const l=o.x-x,r=x+w-o.x,t=o.y-y,b=y+h-o.y,m=Math.min(l,r,t,b);if(m===l)o.x=x-o.r;else if(m===r)o.x=x+w+o.r;else if(m===t)o.y=y-o.r;else o.y=y+h+o.r;}
+ else{const d=Math.sqrt(d2)||0.01;o.x=cx+dx/d*o.r;o.y=cy+dy/d*o.r;}return true;}
+function inVoid(x,y,r){const v=voidRects();if(!v)return false;for(const[a,b,w,h] of v)if(x>a-r&&x<a+w+r&&y>b-r&&y<b+h+r)return true;return false;}
+// 敌人过谷时先走向吊桥
+function bridgeNav(e){if(!MAP.bridges)return null;const z=x=>x<600?0:x<1000?1:2,ze=z(e.x),zp=z(P.x);if(ze===zp)return null;const nx=ze+(zp>ze?1:-1),B=MAP.bridges[Math.min(ze,nx)];return [B[0]+B[2]/2,B[1]+B[3]/2];}
+function pushOut(o){const vr=voidRects();if(vr&&o.r)for(const R of vr)rectOut(o,R);for(const b of obstacles){const dx=o.x-b.x,dy=o.y-b.y,rs=b.r+o.r,d2=dx*dx+dy*dy;if(d2<rs*rs){const d=Math.sqrt(d2)||0.01;o.x=b.x+dx/d*rs;o.y=b.y+dy/d*rs;}}}
 function inPool(x,y,pad=0){if(!MAP.pools)return false;for(const[px,py,pr] of MAP.pools)if((x-px)**2+(y-py)**2<(pr+pad)**2)return true;return false;}
 // move toward (ux,uy) and slide around pillars instead of pushing into them
 function chase(e,ux,uy,sp,dt){
+ if(MAP.bridges&&sp>0){const wp=bridgeNav(e);if(wp){const ddx=wp[0]-e.x,ddy=wp[1]-e.y,l=Math.hypot(ddx,ddy)||1;if(ux*ddx+uy*ddy>-0.3*l){ux=ddx/l;uy=ddy/l;}}}
  for(const b of obstacles){const bx=b.x-e.x,by=b.y-e.y,bd=Math.hypot(bx,by),lim=b.r+e.r+28;if(bd<lim&&bx*ux+by*uy>0){const side=(bx*uy-by*ux)>0?1:-1,w=(lim-bd)/lim*1.6;ux+=-by/bd*side*w;uy+=bx/bd*side*w;const l=Math.hypot(ux,uy)||1;ux/=l;uy/=l;}}
  e.x+=ux*sp*dt;e.y+=uy*sp*dt;
 }
@@ -1831,6 +1863,22 @@ function mapUpdate(dt){
     for(const p of alive){if(Math.hypot(p.P.x-k.x,p.P.y-k.y)<k.r+p.P.r*0.5){use(p);hurt(hzHit(10,2,0.18),'zap');}}use(keep);
     for(const e of enemies){if(e.dead||e.seg)continue;if(Math.hypot(e.x-k.x,e.y-k.y)<k.r+e.r*0.5)hitEnemy(e,hzDmg(30,14),{noCrit:1,noSteal:1,noShield:1,col:'#9fc0ff'});}}}
   hz.strikes=hz.strikes.filter(k=>!k.done);}
+ // bridge: 16s cycle — intact 11s, cracking 1.5s, broken 3.5s
+ if(hz.br)hz.br.forEach((b,i)=>{b.t-=dt;if(b.t>0)return;const R=MAP.bridges[i];
+  if(b.st===0){b.st=1;b.t=1.5;}
+  else if(b.st===1){b.st=2;b.t=3.5;shake=Math.max(shake,0.25);burst(R[0]+R[2]/2,R[1]+R[3]/2,'#8a5a32',12,4);
+   const on=(x,y)=>x>R[0]&&x<R[0]+R[2]&&y>R[1]&&y<R[1]+R[3];
+   for(const e of enemies){if(e.dead||e.seg||e.boss)continue;if(on(e.x,e.y)){hitEnemy(e,e.max*0.45+hzDmg(20,8),{noCrit:1,noSteal:1,noShield:1,col:'#8a5a32'});if(!e.dead){e.x=R[0]+R[2]/2+(Math.random()<0.5?-1:1)*(R[2]/2+e.r+4);}}}
+   for(const p of alive){if(on(p.P.x,p.P.y)){use(p);hurt(hzHit(10,2,0.12),'crush');pushOut(P);if(p!==ME())netKnock(p,P.x-p.P.x,0);}}use(keep);}
+  else{b.st=0;b.t=11;}});
+ // snow: wind gusts (calm 6s, warning 1.5s, gust 5s)
+ if(hz.wind){const W=hz.wind;W.t-=dt;
+  if(W.st===0&&W.t<=0){W.st=1;W.t=1.5;W.a=Math.random()*TAU;}
+  else if(W.st===1&&W.t<=0){W.st=2;W.t=5;}
+  else if(W.st===2&&W.t<=0){W.st=0;W.t=rand(5,7);}
+  W.s=W.st===2?Math.min(1,W.s+dt*2):Math.max(0,W.s-dt*2);
+  if(W.s>0){const wx=Math.cos(W.a),wy=Math.sin(W.a);for(const e of enemies){if(e.dead||e.seg||e.boss||e.type==='gturret'||e.type==='totem')continue;e.x+=wx*55*W.s*dt;e.y+=wy*55*W.s*dt;}
+   for(const b of ebul){b.vx+=wx*140*W.s*dt;b.vy+=wy*140*W.s*dt;}}}
  // enemy mines (dropped by layer spiders)
  const mBoom=m=>{m.dead=true;boomFx(m.x,m.y,75);hurtNear(m.x,m.y,75,m.dmg,'boom',0.2);if(m.ev>=2)for(const o of emines)if(!o.dead&&o!==m&&Math.hypot(o.x-m.x,o.y-m.y)<140){o.ev=Math.max(o.ev||0,1);o.fuse=Math.min(o.fuse||9,0.2);}};
  for(const m of emines){if(m.dead)continue;m.arm-=dt;m.life-=dt;if(m.life<=0){m.dead=true;continue;}if(m.ev){m.fuse-=dt;if(m.fuse<=0){mBoom(m);continue;}}if(m.arm>0)continue;
@@ -1840,6 +1888,7 @@ function mapUpdate(dt){
 }
 // danger zones for steering (used by the balance-test bot)
 function hzZones(){const z=[];for(const v of hz.vents)if(v.warn||v.hot)z.push({x:v.x,y:v.y,r:80});for(const k of hz.strikes)z.push({x:k.x,y:k.y,r:k.r+10});if(MAP.pools)for(const[x,y,r] of MAP.pools)z.push({x,y,r:r+8});for(const m of emines)z.push({x:m.x,y:m.y,r:45});
+ if(hz.br)hz.br.forEach((b,i)=>{if(b.st===1){const R=MAP.bridges[i];z.push({x:R[0]+R[2]/2,y:R[1]+R[3]/2,r:Math.max(R[2],R[3])*0.7});}});
  const bands=hz.carts.map(c=>({y:c.y,h:40}));return {z,bands};}
 
 /* ================= enemies ================= */
@@ -1853,7 +1902,7 @@ function makeEnemy(type,x,y,s){
  if(type==='medic'){e.ai=rand(0.8,1.6);}
  if(type==='layer'){e.ai=rand(1.2,2.4);e.orb=Math.random()<0.5?1:-1;}
  if(s&&s.scale){e.hp*=s.scale;e.max=e.hp;e.r*=0.85;e.scale=0.85;e.gold=Math.ceil(e.gold*0.5);}
- if(!(s&&s.noAff)&&w>=5&&!NOAFF.has(type)&&Math.random()<Math.min(0.15,0.02+0.007*w)*(run.diff>=1?1.2:1)){
+ if(!(s&&s.noAff)&&w>=5&&!NOAFF.has(type)&&Math.random()<Math.min(0.15,0.02+0.007*w)*(run.diff>=3?2.2:run.diff>=1?1.2:1)){
   const k=pick(AFFK);e.aff=k;e.hp*=2.6;e.r*=1.22;e.scale*=1.22;e.gold=Math.ceil(e.gold*2.5);e.xp*=3;
   if(k==='frenzy'){e.spd*=1.45;e.dmg*=1.3;}if(k==='armored'){e.hp*=1.8;e.dr=0.75;}if(k==='swift')e.spd*=1.75;if(k==='regen')e.regen=0.04;
   e.max=e.hp;}
@@ -1923,14 +1972,14 @@ function makeBoss(key,elite){
  const B=BOSSES.find(b=>b.key===key),D=DIFF[run.diff];
  const co=PL.length>1?BOSS.coop:1,hp=B.hp*D.hp*(elite?2.2:BOSS.finalMul*co);
  let x=WORLD.w/2,y=150;if(PL.some(p=>Math.abs(p.P.y-y)<300))y=WORLD.h-150;
- const e={id:++EID,type:'boss',boss:true,elite,bkey:key,name:(elite?'精英 · ':'')+B.name,atk:elite?B.atk.concat([B.nw]):B.atk.slice(),x,y,r:elite?B.r*0.85:B.r,hp,max:hp,spd:B.spd,dmg:B.dmg*D.dmg*(1+(run.wave-1)*0.08)*BOSS.dmgMul,col:B.col,
+ const e={id:++EID,type:'boss',boss:true,elite,bkey:key,name:(elite?'精英 · ':'')+B.name,atk:elite?B.atk.concat(run.diff>=3?[B.nw,B.sig]:[B.nw]):B.atk.concat(run.diff>=3?[B.nw]:[]),x,y,r:elite?B.r*0.85:B.r,hp,max:hp,spd:B.spd,dmg:B.dmg*D.dmg*(1+(run.wave-1)*0.08)*BOSS.dmgMul,col:B.col,
   gold:elite?20:0,xp:elite?20:0,flash:0,slowT:0,freezeT:0,poison:0,poisonT:0,ptick:0,ocd:{},st:'',ai:2,face:Math.PI/2,anim:0,spT:0,spEmit:0,spA:0,scale:1,
   tough:elite?0:BOSS.tough*D.hp*co,rec:0,ph:0};
  if(key==='wyrm'){e.hd=Math.atan2(P.y-y,P.x-x);e.trail=[];e.segs=[];const n=elite?7:10;
   for(let i=0;i<n;i++){const sg={type:'seg',seg:true,parent:e,idx:i,x,y,r:e.r*(0.86-i*0.035),hp:1,max:1,dmg:e.dmg*0.6,col:e.col,gold:0,xp:0,flash:0,slowT:0,freezeT:0,poison:0,poisonT:0,ptick:0,ocd:{},face:0,anim:0,scale:1};e.segs.push(sg);}}
  return e;
 }
-function freeSpot(x,y,r){for(const b of obstacles)if(Math.hypot(x-b.x,y-b.y)<b.r+r+6)return false;return true;}
+function freeSpot(x,y,r){if(inVoid(x,y,r+6))return false;for(const b of obstacles)if(Math.hypot(x-b.x,y-b.y)<b.r+r+6)return false;return true;}
 function queueSpawn(type){if(type!=='fairy')waveSpawned++;let x,y,n=0;const rl=evt&&evt.k==='relic'&&evt.st===1&&Math.random()<0.5?evt.p:null;do{if(rl){const a=Math.random()*TAU,r=rand(160,320);x=clamp(rl.x+Math.cos(a)*r,40,WORLD.w-40);y=clamp(rl.y+Math.sin(a)*r,40,WORLD.h-40);}else{x=rand(40,WORLD.w-40);y=rand(40,WORLD.h-40);}}while((minPD(x,y)<230||!freeSpot(x,y,24))&&++n<30);spawns.push({type,x,y,t:0.8});}
 function pickType(w){
  const pool=[['crawler',10]];
@@ -2142,7 +2191,10 @@ function readInput(){
 function moveLocal(dt){
  const [mx,my,ml]=readInput();
  const spd=190*Math.max(0.3,1+S.speed/100)*(inPool(P.x,P.y)&&!(CUR&&CUR.antidote>0)?0.62:1)*gzSlow(P.x,P.y);
- P.x=clamp(P.x+mx*spd*dt,P.r,WORLD.w-P.r);P.y=clamp(P.y+my*spd*dt,P.r,WORLD.h-P.r);pushOut(P);
+ let vx=mx*spd,vy=my*spd;
+ if(MAP.ice){const ice=MAP.ice.some(([x,y,r])=>(P.x-x)**2+(P.y-y)**2<r*r);if(ice){const k=Math.min(1,dt*2.2);P.ivx=lerp(P.ivx||0,vx,k);P.ivy=lerp(P.ivy||0,vy,k);vx=P.ivx;vy=P.ivy;}else{P.ivx=vx;P.ivy=vy;}
+  if(hz.wind&&hz.wind.s>0){vx+=Math.cos(hz.wind.a)*80*hz.wind.s;vy+=Math.sin(hz.wind.a)*80*hz.wind.s;}}
+ P.x=clamp(P.x+vx*dt,P.r,WORLD.w-P.r);P.y=clamp(P.y+vy*dt,P.r,WORLD.h-P.r);pushOut(P);
  P.moving=ml>0.1;if(P.moving){P.face=Math.atan2(my,mx);P.mface=P.face;P.anim+=dt;}else P.anim+=dt*0.4;
  P.dface+=angDiff(P.mface,P.dface)*Math.min(1,dt*LB.turn);
 }
@@ -2249,7 +2301,7 @@ function newW(key,tier){return {id:run.nextId++,key,tier,t:0.3};}
 // picks: [{hero,skin,weapon}] — one per player (index = player id)
 function newRun(picks){
  picks=picks||[{hero:HEROES[selHero].key,skin:selSkin,weapon:selWeapon}];
- G={diff:selDiff,wave:0,map:selMap<0?pick(MAPS).key:MAPS[selMap].key,bosses:shuffle(BOSSES.map(b=>b.key)).slice(0,2),minis:shuffle(MINIS.map(b=>b.key)).slice(0,3),victory:false,waveDur:20,coins:[]};
+ G={diff:selDiff,wave:0,map:selMap<0?pick(MAPS).key:MAPS[selMap].key,bosses:shuffle(BOSSES.map(b=>b.key)).slice(0,2),minis:shuffle(MINIS.map(b=>b.key)).slice(0,4),victory:false,waveDur:20,coins:[]};
  CUR=null;PL=picks.map((pk,i)=>makePlayer(i,newPlayerRun(pk.hero,pk.skin)));
  for(let i=0;i<PL.length;i++){use(PL[i]);run.weapons.push(newW(picks[i].weapon||(HEROES.find(h=>h.key===picks[i].hero)||HEROES[0]).weapon,1));computeStats();}
  use(ME());
@@ -2287,7 +2339,7 @@ function startWave(){
   delayed.push({t:1.2,fn:()=>{const b=makeBoss(key,elite);enemies.push(b);if(b.segs)enemies.push(...b.segs);boomFx(b.x,b.y,b.r+60);shake=0.4;if(key==='citadel')citadelCannons(b);}});
   bn=elite?'精英首领来袭':'最终首领';banner(bn);
  }else if(MINI_WAVES.includes(run.wave)&&run.minis){
-  const ks=run.wave===MINI_WAVES[1]&&run.diff>=2?run.minis.slice(1,3):[run.minis[run.wave===MINI_WAVES[0]?0:1]];
+  const ks=run.wave===MINI_WAVES[1]&&run.diff>=2?run.minis.slice(1,3):run.wave===MINI_WAVES[0]&&run.diff>=3?[run.minis[0],run.minis[3]||run.minis[1]]:[run.minis[run.wave===MINI_WAVES[0]?0:1]];
   ks.forEach((k,i)=>delayed.push({t:1.2+i*0.7,fn:()=>{const b=makeMini(k,i);enemies.push(b);boomFx(b.x,b.y,b.r+50);shake=0.3;if(k==='gunner')gunnerSummon(b);}}));
   bn='小首领来袭：'+ks.map(k=>MINIS.find(m=>m.key===k).name).join('、');banner(bn,1500);
  }else{bn='第 '+run.wave+' 波';banner(bn,900);}
@@ -2497,7 +2549,7 @@ function renderPrep(){
  const next=run.wave+1,blocked=pending||hasChest,ground=run.coins.reduce((s,c)=>s+c.v,0);
  $('#prep').innerHTML=`<div class="prep">
   <header class="prep-head">
-   <div class="ttl"><h2>第 ${run.wave} 波完成</h2><div class="sub"><span>${H.name} · ${DIFF[run.diff].name} · ${MAP.name}</span><span>下一波 ${next} / ${FINAL_WAVE}</span>${next===ELITE_WAVE?'<span class="warn">精英首领</span>':''}${MINI_WAVES.includes(next)&&run.minis?`<span class="warn">小首领 · ${(next===MINI_WAVES[1]&&run.diff>=2?run.minis.slice(1,3):[run.minis[next===MINI_WAVES[0]?0:1]]).map(k=>MINIS.find(m=>m.key===k).name).join('、')}</span>`:''}${next===6||next===12?`<span class="warn">敌人进化 · ${EVO_N[next===6?1:2]}</span>`:''}${run.evoNote&&run.evo&&EVOS[H.key]?`<span class="warn">英雄终阶进化：${EVOS[H.key].C[0]}</span>`:''}${next===FINAL_WAVE?'<span class="warn">最终首领，击败即通关</span>':''}<span>本波收入 +${lastSummary.harvest}</span>${lastSummary.interest?`<span>利息 +${lastSummary.interest}</span>`:''}${lastSummary.swept?`<span>地上金币自动收取 +${lastSummary.swept}</span>`:''}${lastSummary.help?`<span class="helpln">${lastSummary.help>1?'苦战':'逆风'}补给：补贴 +${lastSummary.sub} 金 · 免费刷新 ×${HELP.rerolls[lastSummary.help]} · 商店一件 7 折对症补给${lastSummary.relief?' · 下一波敌人更少更脆':''}</span>`:''}${ground?`<span>地上还有 ${ground} 金币待拾取</span>`:''}</div></div>
+   <div class="ttl"><h2>第 ${run.wave} 波完成</h2><div class="sub"><span>${H.name} · ${DIFF[run.diff].name} · ${MAP.name}</span><span>下一波 ${next} / ${FINAL_WAVE}</span>${next===ELITE_WAVE?'<span class="warn">精英首领</span>':''}${MINI_WAVES.includes(next)&&run.minis?`<span class="warn">小首领 · ${(next===MINI_WAVES[1]&&run.diff>=2?run.minis.slice(1,3):next===MINI_WAVES[0]&&run.diff>=3?[run.minis[0],run.minis[3]||run.minis[1]]:[run.minis[next===MINI_WAVES[0]?0:1]]).map(k=>MINIS.find(m=>m.key===k).name).join('、')}</span>`:''}${next===6||next===12?`<span class="warn">敌人进化 · ${EVO_N[next===6?1:2]}</span>`:''}${run.evoNote&&run.evo&&EVOS[H.key]?`<span class="warn">英雄终阶进化：${EVOS[H.key].C[0]}</span>`:''}${next===FINAL_WAVE?'<span class="warn">最终首领，击败即通关</span>':''}<span>本波收入 +${lastSummary.harvest}</span>${lastSummary.interest?`<span>利息 +${lastSummary.interest}</span>`:''}${lastSummary.swept?`<span>地上金币自动收取 +${lastSummary.swept}</span>`:''}${lastSummary.help?`<span class="helpln">${lastSummary.help>1?'苦战':'逆风'}补给：补贴 +${lastSummary.sub} 金 · 免费刷新 ×${HELP.rerolls[lastSummary.help]} · 商店一件 7 折对症补给${lastSummary.relief?' · 下一波敌人更少更脆':''}</span>`:''}${ground?`<span>地上还有 ${ground} 金币待拾取</span>`:''}</div></div>
    <div class="act">${blocked?`<span class="blk">${pending?'先选完升级属性':'先处理宝箱'}</span>`:''}${mateLine()}<div class="bank"><span class="qian"></span><span class="num">${run.gold}</span></div><button class="btn" data-act="next" ${blocked||myReady()?'disabled':''}>${myReady()?'已准备 · 等待队友':NET.mode==='solo'?`开始第 ${next} 波`:`准备好了 · 第 ${next} 波`}</button></div>
   </header>
   <div class="prep-grid"><div class="pmain">${main}</div>
@@ -2530,7 +2582,7 @@ function renderOver(win){
  const counts={};run.items.forEach(n=>counts[n]=(counts[n]||0)+1);
  $('#over').innerHTML=`<div class="center">
   <section class="result frame"><img src="${porOf()}" alt=""><div style="display:grid;gap:8px"><div class="label">${win?'通关':NET.mode==='solo'?'阵亡':'全员倒下'} · ${H.name} · ${DIFF[run.diff].name} · ${MAP.name}</div><h2>${win?'百战告捷':'止步第 '+run.wave+' 波'}</h2>
-   <div class="dim">${run.evo&&EVOS[H.key]?`<span class="goldtxt">进化：${EVOS[H.key][run.evo.b][0]}${run.evo.c?' → 终阶 '+EVOS[H.key].C[0]:''}</span> · `:''}首领组合：${run.bosses.map(k=>BOSSES.find(b=>b.key===k).name).join(' / ')}${run.minis?' · 小首领：'+run.minis.slice(0,run.diff>=2?3:2).map(k=>MINIS.find(m=>m.key===k).name).join(' / '):''}</div></div></section>
+   <div class="dim">${run.evo&&EVOS[H.key]?`<span class="goldtxt">进化：${EVOS[H.key][run.evo.b][0]}${run.evo.c?' → 终阶 '+EVOS[H.key].C[0]:''}</span> · `:''}首领组合：${run.bosses.map(k=>BOSSES.find(b=>b.key===k).name).join(' / ')}${run.minis?' · 小首领：'+run.minis.slice(0,run.diff>=3?4:run.diff>=2?3:2).map(k=>MINIS.find(m=>m.key===k).name).join(' / '):''}</div></div></section>
   <dl class="kv"><div><dt>击杀</dt><dd>${run.kills}</dd></div><div><dt>累计金币</dt><dd>${run.earned}</dd></div><div><dt>等级</dt><dd>${run.level}</dd></div><div><dt>波次</dt><dd>${run.wave} / ${FINAL_WAVE}</dd></div></dl>
   <section class="panel frame"><h3>最终构筑</h3><div class="slots">${run.weapons.map((w,i)=>`<div class="slot t${w.tier}" data-act="inspect" data-k="w" data-i="${i}" role="button" tabindex="0"><div class="ic"><img src="${wic(w.key,w.tier)}" alt=""></div><div class="bd"><div class="nm">${WEAPONS[w.key].name} <span class="tier">${TIER_N[w.tier]}</span></div></div></div>`).join('')}</div>
    <div class="items">${Object.entries(counts).map(([n,c])=>`<span class="it seal t${ITEM_BY[n].t}" data-act="inspect" data-k="i" data-n="${n}" role="button" tabindex="0">${ITEM_BY[n].g}${c>1?`<em>${c}</em>`:''}</span>`).join('')||'<span class="dim">没有道具</span>'}</div></section>
@@ -2819,7 +2871,7 @@ function netSnapshot(){
  const msg={t:'s',tg:R2(tGame),wt:waveTimer===Infinity?-1:R2(waveTimer),en,bo,pr,
   eb:ebul.map(b=>[R1(b.x),R1(b.y),R1(b.vx),R1(b.vy),b.r,b.home?1:0,b.pool?1:0]),
   gz:gz.map(g=>[GZK.indexOf(g.k),g.x,g.y,g.r,R2(g.life),g.max,g.s]),
-  pp:props.map(p=>[PROPK.indexOf(p.k),p.x,p.y,R2(p.prog),R1(Math.max(0,p.cd)),p.on?1:0,R2(p.ch||0)]),hf:R1(hz.friendT||0),ev:evt&&evt.k==='drop'&&evt.st===1?[evt.x,evt.y,R2(evt.dt)]:null,gc:MAP.pools?MAP.pools.map(pl=>pl.gcd>0?1:0):null,
+  pp:props.map(p=>[PROPK.indexOf(p.k),p.x,p.y,R2(p.prog),R1(Math.max(0,p.cd)),p.on?1:0,R2(p.ch||0)]),bs:hz.br?hz.br.map(b=>b.st):null,wd:hz.wind?[R2(hz.wind.a),R2(hz.wind.s),hz.wind.st]:null,hf:R1(hz.friendT||0),ev:evt&&evt.k==='drop'&&evt.st===1?[evt.x,evt.y,R2(evt.dt)]:null,gc:MAP.pools?MAP.pools.map(pl=>pl.gcd>0?1:0):null,
   pu:pickups.map(p=>p.type==='coin'?[0,R1(p.x),R1(p.y),p.v,R2(p.ph)]:[1,R1(p.x),R1(p.y),p.tier,p.tk||0]),
   sp:spawns.map(s=>[R1(s.x),R1(s.y),R2(s.t),s.type==='fairy'?1:0]),
   tu:turrets.map(t=>({x:R1(t.x),y:R1(t.y),life:R2(t.life),perm:t.perm?1:0,a:R2(t.a),kick:R2(t.kick),dbl:t.dbl?1:0,col:t.col,tier:t.tier||1})),
@@ -2898,7 +2950,7 @@ function guestFast(m){
   ne.push(e);}
  enemies=ne;
  projs=m.pr.map(p=>p.k===1?Object.assign({kind:'lob'},p):p.k===2?Object.assign({kind:'boom'},p):Object.assign({kind:'proj'},p));
- ebul=m.eb.map(b=>({x:b[0],y:b[1],vx:b[2],vy:b[3],r:b[4],home:b[5],pool:b[6]}));props=(m.pp||[]).map(a=>({k:PROPK[a[0]],x:a[1],y:a[2],prog:a[3],cd:a[4],on:a[5],ch:a[6]}));hz.friendT=m.hf||0;evt=m.ev?{k:'drop',st:1,x:m.ev[0],y:m.ev[1],dt:m.ev[2]}:null;if(m.gc&&MAP.pools)MAP.pools.forEach((pl,i)=>pl.gcd=m.gc[i]?1:0);gz=(m.gz||[]).map(a=>({k:GZK[a[0]],x:a[1],y:a[2],r:a[3],life:a[4],max:a[5],s:a[6]}));
+ ebul=m.eb.map(b=>({x:b[0],y:b[1],vx:b[2],vy:b[3],r:b[4],home:b[5],pool:b[6]}));props=(m.pp||[]).map(a=>({k:PROPK[a[0]],x:a[1],y:a[2],prog:a[3],cd:a[4],on:a[5],ch:a[6]}));hz.friendT=m.hf||0;if(m.bs&&hz.br)m.bs.forEach((v,i)=>{if(hz.br[i])hz.br[i].st=v;});if(m.wd&&hz.wind){hz.wind.a=m.wd[0];hz.wind.s=m.wd[1];hz.wind.st=m.wd[2];}evt=m.ev?{k:'drop',st:1,x:m.ev[0],y:m.ev[1],dt:m.ev[2]}:null;if(m.gc&&MAP.pools)MAP.pools.forEach((pl,i)=>pl.gcd=m.gc[i]?1:0);gz=(m.gz||[]).map(a=>({k:GZK[a[0]],x:a[1],y:a[2],r:a[3],life:a[4],max:a[5],s:a[6]}));
  pickups=m.pu.map(p=>p[0]===0?{type:'coin',x:p[1],y:p[2],v:p[3],ph:p[4]}:{type:'chest',x:p[1],y:p[2],tier:p[3],tk:p[4]||0});
  spawns=m.sp.map(s=>({x:s[0],y:s[1],t:s[2],type:s[3]?'fairy':'x'}));
  turrets=m.tu;mines=m.mi.map(a=>({x:a[0],y:a[1],arm:a[2]?1:0}));puddles=m.pd.map(u=>Object.assign({max:3.2},u));
@@ -3330,7 +3382,8 @@ function draw(dt){
  // screen space
  ctx.setTransform(DPR,0,0,DPR,0,0);
  if(motes.length<36)for(let i=motes.length;i<36;i++)motes.push({x:Math.random()*W,y:Math.random()*Hh,v:rand(4,14),s:rand(1,2.2),p:Math.random()*TAU});
- ctx.fillStyle='rgba(242,203,122,.22)';for(const m of motes){m.y-=m.v*dt;m.x+=Math.sin(tGame*0.6+m.p)*6*dt;if(m.y<-4){m.y=Hh+4;m.x=Math.random()*W;}ctx.fillRect(m.x,m.y,m.s,m.s);}
+ if(MAP.ice){const ws=hz.wind?hz.wind.s:0,wx=hz.wind?Math.cos(hz.wind.a):0,wy=hz.wind?Math.sin(hz.wind.a):0;ctx.fillStyle='rgba(235,245,255,.7)';for(const m of motes){m.y+=(m.v*3+wy*260*ws)*dt;m.x+=(Math.sin(tGame*0.8+m.p)*14+wx*260*ws)*dt;if(m.y>Hh+4){m.y=-4;m.x=Math.random()*W;}if(m.y<-6)m.y=Hh+4;if(m.x<-6)m.x=W+4;if(m.x>W+6)m.x=-4;ctx.fillRect(m.x,m.y,m.s+0.6,m.s+0.6);}}
+ else{ctx.fillStyle='rgba(242,203,122,.22)';for(const m of motes){m.y-=m.v*dt;m.x+=Math.sin(tGame*0.6+m.p)*6*dt;if(m.y<-4){m.y=Hh+4;m.x=Math.random()*W;}ctx.fillRect(m.x,m.y,m.s,m.s);}}
  if(VIGNETTE)ctx.drawImage(VIGNETTE,0,0,W,Hh);
  if(run.hp<S.hp*0.3&&state==='battle'){ctx.globalAlpha=0.25+Math.sin(tGame*6)*0.1;ctx.strokeStyle=C.danger;ctx.lineWidth=18;ctx.strokeRect(0,0,W,Hh);ctx.globalAlpha=1;}
  if(joy){ctx.globalAlpha=0.55;ctx.beginPath();ctx.arc(joy.ox,joy.oy,52,0,TAU);ctx.fillStyle='rgba(10,16,19,.35)';ctx.fill();ctx.strokeStyle=C.brass;ctx.lineWidth=2;ctx.stroke();
@@ -3354,6 +3407,13 @@ function drawGroundHazards(){
  for(const k of hz.strikes){const p=1-k.t/1.35;ctx.fillStyle=`rgba(127,168,255,${0.08+p*0.22})`;ctx.beginPath();ctx.arc(k.x,k.y,k.r,0,TAU);ctx.fill();
   ctx.strokeStyle=`rgba(170,200,255,${0.5+p*0.5})`;ctx.lineWidth=2.5;ctx.beginPath();ctx.arc(k.x,k.y,k.r,0,TAU);ctx.stroke();ctx.beginPath();ctx.arc(k.x,k.y,k.r*(1-p),0,TAU);ctx.stroke();}
  drawProps();
+ if(MAP.bridges&&hz.br)MAP.bridges.forEach(([a,b,w,h],i)=>{const st=(hz.br[i]||{}).st||0;if(st===2){ctx.strokeStyle='rgba(138,90,50,.5)';ctx.lineWidth=2;for(const yy of [b+6,b+h-6]){ctx.beginPath();ctx.moveTo(a,yy);ctx.lineTo(a+18,yy+10);ctx.moveTo(a+w,yy);ctx.lineTo(a+w-18,yy+10);ctx.stroke();}return;}
+  const sh=st===1?Math.sin(tGame*50)*1.5:0;for(let x=a;x<a+w;x+=16){ctx.fillStyle=st===1&&((x/16)|0)%3===0?'#3a2a18':'#6a4c2c';ctx.fillRect(x+1,b+2+sh,14,h-4);ctx.strokeStyle='rgba(0,0,0,.45)';ctx.lineWidth=1;ctx.strokeRect(x+1,b+2+sh,14,h-4);}
+  ctx.strokeStyle='#c9b48a';ctx.lineWidth=2.5;for(const yy of [b+3,b+h-3]){ctx.beginPath();ctx.moveTo(a-6,yy);ctx.lineTo(a+w+6,yy);ctx.stroke();}
+  if(st===1){ctx.strokeStyle=`rgba(224,90,75,${0.5+Math.sin(tGame*20)*0.4})`;ctx.lineWidth=3;ctx.setLineDash([8,6]);ctx.strokeRect(a,b,w,h);ctx.setLineDash([]);}});
+ if(hz.wind&&hz.wind.st>0){const W=hz.wind,wx=Math.cos(W.a),wy=Math.sin(W.a),me=ME().P;ctx.save();ctx.globalAlpha=W.st===1?0.55+Math.sin(tGame*14)*0.3:0.55*W.s;ctx.strokeStyle='#eef6ff';ctx.lineWidth=W.st===1?4:2.5;ctx.lineCap='round';
+  for(let k=0;k<(W.st===1?5:14);k++){const ox=me.x+((k*137)%600)-300+((tGame*300*W.s)%120)*wx,oy=me.y+((k*91)%440)-220+((tGame*300*W.s)%120)*wy;ctx.beginPath();ctx.moveTo(ox,oy);ctx.lineTo(ox+wx*(W.st===1?60:40),oy+wy*(W.st===1?60:40));ctx.stroke();
+   if(W.st===1){ctx.beginPath();ctx.moveTo(ox+wx*60,oy+wy*60);ctx.lineTo(ox+wx*44-wy*10,oy+wy*44+wx*10);ctx.moveTo(ox+wx*60,oy+wy*60);ctx.lineTo(ox+wx*44+wy*10,oy+wy*44-wx*10);ctx.stroke();}}ctx.restore();}
  for(const m of emines){ctx.beginPath();ctx.arc(m.x,m.y,9,0,TAU);fs(ctx,'#2a2f45',1.4);ctx.strokeStyle=m.ev?'#ff9a4a':'#5f6f9a';ctx.lineWidth=2;ctx.stroke();
   const on=m.arm<=0&&Math.sin(tGame*(m.ev?22:10)+m.x)>0;ctx.beginPath();ctx.arc(m.x,m.y,3.2,0,TAU);ctx.fillStyle=on?'#ff5a3c':'#5a2a22';ctx.fill();if(on)lighter(()=>drawGlow(m.x,m.y,14,GLOW.red,0.7));}
 }
