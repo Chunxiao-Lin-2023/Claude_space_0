@@ -1119,7 +1119,7 @@ const WEAPONS={
  frost:{cls:'arcane',name:'冰晶',kind:'proj',dmg:7,cd:0.9,range:330,speed:9,slow:1,st:'frost',desc:'命中后减速敌人两秒',gold:'金阶：命中冻结敌人一秒'},
  orbit:{cls:'melee',name:'星轮',kind:'orbit',dmg:5,cd:0.5,range:72,melee:1,desc:'环绕自身旋转的刀轮，阶数越高刀轮越多',gold:'金阶：刀轮再加两枚，旋转半径扩大'},
 };
-const WKEYS=Object.keys(WEAPONS),SHOPK=WKEYS.filter(k=>!WEAPONS[k].fusion);
+const WKEYS=Object.keys(WEAPONS),SHOPK=WKEYS;
 // 合体：任意两把金阶武器都能合体。主武器决定攻击方式，副武器把自己的特性附加到每次命中上；同名两把合成神器
 const GOD={hammer:'挥击震荡冲击波，并把敌人定住 1 秒',spear:'突刺后再射出一道贯穿风刃',xbow:'一次射出五支弩箭，每支多贯穿 1 个敌人',
  shotgun:'弹丸增至十三颗，每颗多贯穿 1 个敌人',turret:'炮台三管齐射，本波不会消失',flask:'毒雾范围翻倍，并让敌人减速',talisman:'同时打出两道连锁闪电',boomerang:'同时掷出三枚更大的回旋镖',
@@ -1266,16 +1266,18 @@ const DIFF=[{name:'一阶 · 铜',hp:1,dmg:1,spawn:1},{name:'二阶 · 银',hp:1
 const FINAL_WAVE=16,ELITE_WAVE=8;
 // balance knobs
 // 最终首领：血量倍数、韧性（每秒承伤超过阈值后按比例减伤，最低 35%）、联机倍数
+// 商店：武器出现几率；武器里「同名同阶可合成」「同名金阶」「已有武器」的比例，其余随机
+const SHOP={wChance:0.42,upgrade:0.5,goldCopy:0.06,ownedKey:0.14};
 // 宝箱：精英怪掉箱几率和每波上限、金色小精灵刷新间隔和每波上限
 const CHEST={eliteP:0.22,eliteCap:4,fairyMin:10,fairyMax:15,fairyCap:4};
-const BOSS={finalMul:42,tough:900,toughMin:0.35,coop:1.6,adds:6,dmgMul:1.3};
+const BOSS={finalMul:60,tough:900,toughMin:0.35,coop:1.6,adds:6,dmgMul:1.3};
 // 逆风保障：每波结束按「击杀率 / 最低血量 / 生命上限」判断这一波打得吃不吃力（0 顺风、1 逆风、2 苦战），缺什么补什么
 // 常驻：生命保底 25+2×波次；波末地上金币自动收 70%
 const HELP={floorBase:25,floorWave:2,lowBase:30,lowWave:3,sweep:0.7,
  killLow:0.55,killVeryLow:0.35,hpLow:0.3,     // 击杀率低于 55% / 35%、最低血量低于 30% 各记 1 分；生命上限偏低记 1 分
  subsidy:[0,0.3,0.6],rerolls:[0,1,2],discount:0.7, // 补贴 = 本波收入的 30% / 60%；免费刷新次数；补给商品 7 折
  relief:{spawn:0.8,hp:0.9}};                   // 苦战：下一波敌人刷得少 20%、血量 -10%
-const BAL={hpLin:0.26,hpQuad:0.037,dmgLin:0.11,goldScale:0.06,baseInc:12,incPerWave:1.5,spawnBase:1.35,spawnSlope:0.05,spawnMin:0.22,batchDiv:5,priceScale:0.17};
+const BAL={hpLin:0.26,hpQuad:0.06,dmgLin:0.13,goldScale:0.06,baseInc:12,incPerWave:1.5,spawnBase:1.35,spawnSlope:0.05,spawnMin:0.22,batchDiv:5,priceScale:0.17};
 // difficulty multipliers ramp in: 30% of the extra at wave 1, full by wave 16
 const dRamp=(m,w)=>1+(m-1)*(0.3+0.7*Math.min(1,(w-1)/15));
 const hpScale=w=>1+(w-1)*BAL.hpLin+(w-1)*(w-1)*BAL.hpQuad;
@@ -2871,10 +2873,26 @@ function price(kind,t){let p=(kind==='w'?[0,18,40,72,120,200]:[0,16,32,60,98,160
 function itemPool(t){let pool=ITEMS.filter(it=>it.t===t&&!(it.u&&run.items.includes(it.n)));if(!pool.length)pool=ITEMS.filter(it=>it.t===1);return pool;}
 function makeOffer(){
  const t=rollTier();
- if(Math.random()<0.38){const owned=run.weapons.map(w=>w.key).filter(k=>!WEAPONS[k].fusion);const key=owned.length&&Math.random()<0.45?pick(owned):pick(SHOPK);return {kind:'w',key,tier:t,price:price('w',t),locked:false,sold:false};}
+ if(Math.random()<SHOP.wChance){const own=run.weapons.filter(w=>WEAPONS[w.key]&&w.tier<4),gold=run.weapons.filter(w=>w.tier===4),r=Math.random();let key,tier=t;
+  if(own.length&&r<SHOP.upgrade){const tot=own.reduce((a,w)=>a+w.tier*w.tier,0);let q=Math.random()*tot,w=own[0];for(const x of own){q-=x.tier*x.tier;if(q<=0){w=x;break;}}key=w.key;tier=w.tier;}  // 同名同阶，买下就能合成
+  else if(gold.length&&run.wave>=8&&r<SHOP.upgrade+SHOP.goldCopy){key=pick(gold).key;tier=4;}  // 后期偶尔直接卖一把同名金阶，凑神器
+  else if(run.weapons.length&&r<SHOP.upgrade+SHOP.goldCopy+SHOP.ownedKey)key=pick(run.weapons.filter(w=>WEAPONS[w.key])).key;
+  else key=pick(SHOPK);
+  return {kind:'w',key,tier,price:price('w',tier),locked:false,sold:false};}
  const it=pick(itemPool(t));return {kind:'i',name:it.n,tier:it.t,price:price('i',it.t),locked:false,sold:false};
 }
-function rollShop(){const old=run.shop||[];run.shop=[0,1,2,3].map(i=>old[i]&&old[i].locked&&!old[i].sold?old[i]:makeOffer());helpOffer();}
+function rollShop(){const old=run.shop||[];run.shop=[0,1,2,3].map(i=>old[i]&&old[i].locked&&!old[i].sold?old[i]:makeOffer());helpOffer();fuseOffer();}
+// 合体保底：第 7 波起，神阶武器少于预期（第 12 波前 1 把，之后 2 把）时，商店保证一件能把最好的武器往金阶推进的同名同阶武器，85 折
+function fuseOffer(){
+ const n5=run.weapons.filter(w=>w.tier>=5).length,want=run.wave>=12?2:run.wave>=7?1:0;if(n5>=want)return;
+ const golds=run.weapons.filter(w=>w.tier===4);if(golds.length>=2)return;  // 已经可以合体了
+ const cand=run.weapons.filter(w=>w.tier<4).sort((a,b)=>b.tier-a.tier||(golds.some(g=>g.key===b.key)?1:0)-(golds.some(g=>g.key===a.key)?1:0));
+ const w=cand[0];if(!w)return;
+ const fits=o=>!o.sold&&o.kind==='w'&&o.key===w.key&&o.tier===w.tier;
+ let o=run.shop.find(fits);
+ if(!o){const i=[0,1,2,3].find(j=>!run.shop[j].locked&&!run.shop[j].sold&&!run.shop[j].help);if(i==null)return;o=run.shop[i]={kind:'w',key:w.key,tier:w.tier,price:price('w',w.tier),locked:false,sold:false};}
+ if(!o.fh){o.fh=true;o.price=Math.max(1,Math.round(o.price*0.85));}
+}
 // 逆风补给：生命偏低时，商店至少有一件加生命上限的道具
 // 逆风补给：商店保证一件对症的商品（缺生命给加生命的道具；打不动怪给能合成升阶的同名武器或加伤害的道具），7 折
 function helpOffer(){
@@ -2982,7 +3000,7 @@ function renderPrep(){
     const owns=isW&&run.weapons.some(w=>w.key===o.key&&w.tier===o.tier&&o.tier<4);
     const ok=run.gold>=o.price&&(!isW||canAddWeapon(o.key,o.tier));
     return `<div class="offer t${o.tier}"${isW&&o.tier<4?` title="${WEAPONS[o.key].gold}"`:''}>${isW?`<div class="ic"><img src="${wic(o.key,o.tier)}" alt=""></div>`:`<div class="ic seal">${it.g}</div>`}
-     <div class="om"><div class="on">${name}<span class="tier">${TIER_N[o.tier]}阶${isW?'武器':'道具'}${owns?' · 可合成':''}${o.help?' · 逆风补给':''}</span></div><div class="od">${isW?weaponDesc(o.key,o.tier):itemLine(it)}</div></div>
+     <div class="om"><div class="on">${name}<span class="tier">${TIER_N[o.tier]}阶${isW?'武器':'道具'}${owns?' · 可合成':''}${o.help?' · 逆风补给':''}${o.fh?' · 合体进度':''}</span></div><div class="od">${isW?weaponDesc(o.key,o.tier):itemLine(it)}</div></div>
      <div class="oa"><button class="buy" data-act="buy" data-i="${i}" ${ok?'':'disabled'}><span class="qian"></span>${o.price}</button><button class="lk" data-act="lock" data-i="${i}" aria-pressed="${o.locked}">${o.locked?'已锁':'锁定'}</button></div></div>`;}).join('')}</div></section>`;
  }
  const slots=[];
