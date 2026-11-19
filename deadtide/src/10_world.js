@@ -406,7 +406,8 @@ function ladderDir(x, y, L, pref) {
   return pref;
 }
 function canPlace(x, y, L, id, dir) {
-  if (!inMap(x, y) || !inZone(x, y)) return '只能在营地周围的建造区（黄框）内建造';
+  if (!inMap(x, y) || !(modeDef().anyBuild || inZone(x, y))) return '只能在营地周围的建造区（黄框）内建造';
+  if (!hasBP(id)) return '还没有「' + B[id].name + '」的蓝图：去搜箱子、清理丧尸占着的楼';
   if (L < 0 || L >= ML - 1) return '太高了';
   const g = gAt(x, y), i = ci(x, y, L), Bi = B[id];
   if (L < g) return '这里是实心地面';

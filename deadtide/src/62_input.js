@@ -16,7 +16,7 @@ function act(a, v) {
 }
 function toggleBuild(v) {
   const me = W.p[ME]; if (me.down || me.dead) return;
-  const on = v == null ? !me.build : v; me.build = on; if (!on) me.demo = false; else me.sdir = screenUpDir();
+  const on = v == null ? !me.build : v; if (on && me.ride) { act('ride'); me.ride = false; } me.build = on; if (!on) me.demo = false; else me.sdir = screenUpDir();
   act('mode', on ? 1 : 0); uiBuildBar(); UI.keysK = ''; uiKeys(me); sfx('click');
 }
 function selBlock(id) { const me = W.p[ME]; me.sel = id; me.demo = false; uiBuildBar(); sfx('click'); }
@@ -24,7 +24,7 @@ function rotStairs() { const me = W.p[ME]; me.sdir = (me.sdir + 1) & 3; uiBuildB
 function cycleWpn(d) { const me = W.p[ME]; let w = me.wpn; for (let k = 0; k < NW; k++) { w = (w + d + NW) % NW; if (me.owned[w]) break; } if (w !== me.wpn) act('wpn', w); }
 // knife: find the zombie, turn to it, lunge into reach and slash; the host settles the damage
 function doKnife() {
-  const me = W.p[ME]; if (!me || me.dead || me.down || me.build || me.medT > 0 || me.jmp || (me.knCD || 0) > performance.now()) return;
+  const me = W.p[ME]; if (!me || me.dead || me.down || me.build || me.ride || me.medT > 0 || me.jmp || (me.knCD || 0) > performance.now()) return;
   me.knCD = performance.now() + BAL.knifeCD * 1000;
   const mv = Math.hypot(me.inp.mx, me.inp.my) > 0.3 && INP.touch ? Math.atan2(me.inp.my, me.inp.mx) : me.aim;
   const z = knifeTarget(me, mv);
@@ -89,6 +89,8 @@ function onKeyPress(k) {
   if (k === 'h') return act('med');
   if (k === 'n') return toggleReady();
   if (k === 'c') return openCraft();
+  if (k === 't') { if (me.veh) act('ride'); else toast('还没有车：找到自行车 / 摩托车的蓝图后在「制作」里造'); return; }
+  if (k === 'f' && me.ride) { act('ride'); return; }
   if (k === 'f') { if (nearBench(me) && !useTarget(me)) return openCraft(); if (INP.useLatch) INP.useLatch = null; else INP.useReq = true; }
 }
 function toggleReady() { const me = W.p[ME]; if (W.phase !== 'day') return; act('ready', me.ready ? 0 : 1); if (NETROLE === 'guest') me.ready = !me.ready; sfx('ready'); }
@@ -337,6 +339,7 @@ bindBtn('tMed', () => inGame() && act('med'));
 bindBtn('tUse', () => { if (!inGame()) return; const me = W.p[ME]; if (canCraft(me) && !useTarget(me)) openCraft(); else if (INP.useLatch) INP.useLatch = null; else INP.useReq = true; });
 bindBtn('tBuild', () => inGame() && toggleBuild());
 bindBtn('tCraft', () => inGame() && openCraft());
+bindBtn('tRide', () => inGame() && W.p[ME].veh && act('ride'));
 bindBtn('vZin', () => camZoom(0.8)); bindBtn('vZout', () => camZoom(1.25));
 bindBtn('vRl', () => camRot(-1)); bindBtn('vRr', () => camRot(1));
 bindBtn('vUp', () => viewStep(1)); bindBtn('vDn', () => viewStep(-1)); bindBtn('vAuto', () => viewAuto());

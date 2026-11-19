@@ -6,9 +6,9 @@ const { chromium } = require('playwright'); const NIGHTS = +process.argv[2] || 2
 (async () => {
   const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome', args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] });
   let ok = true;
-  const runs = [['town', 'classic'], ['forest', 'nests'], ['desert', 'airdrop'], ['islands', 'towers'], ['snow', 'escape'], ['city', 'boss']];
+  const runs = [['siege', 'siege', 'town'], ['siegeF', 'siege', 'forest'], ['town', 'classic'], ['forest', 'nests'], ['desert', 'airdrop'], ['islands', 'towers'], ['snow', 'escape'], ['city', 'boss']];
   const only = process.argv[3] ? process.argv[3].split(',') : null;
-  for (const [map, mode] of runs.filter(r => !only || only.includes(r[0]))) {
+  for (const [tag, mode, realMap] of runs.filter(r => !only || only.includes(r[0]))) { const map = realMap || tag;
     const p = await (await b.newContext({ viewport: { width: 800, height: 500 } })).newPage(); const errs = []; p.on('pageerror', e => errs.push(e.message));
     await p.goto('http://localhost:8766/test.html'); await p.waitForFunction(() => window.__ready, null, { timeout: 120000 });
     await p.evaluate(([map, mode]) => { NETROLE = 'solo'; startGame(1234, ['甲'], 'normal', 0, mode, map); }, [map, mode]);
@@ -43,8 +43,8 @@ const { chromium } = require('playwright'); const NIGHTS = +process.argv[2] || 2
         for (const z of W.zs) {
           if (z.hp <= 0) continue; const q = S.pos.get(z.id);
           if (!q) { S.pos.set(z.id, { x: z.x, y: z.y, t: W.t }); continue; }
-          if (Math.hypot(z.x - q.x, z.y - q.y) > 0.3 || z.st === 'attack' || z.stun > 0 || z.climbing || z.hidden || (ZT[z.k].boss) || W.p.some(q => Math.hypot(q.x - z.x, q.y - z.y) < 2.2)) { S.pos.set(z.id, { x: z.x, y: z.y, t: W.t }); continue; }
-          if (W.t - q.t > 20 && !q.rep) { q.rep = 1; S.stuck++; const key = z.k + '@' + Math.floor(z.x) + ',' + Math.floor(z.y) + ',' + z.L + ':' + (B[W.blk[ci(Math.floor(z.x), Math.floor(z.y), z.L)]].key || '-'); S.st.push(key); }
+          if (Math.hypot(z.x - q.x, z.y - q.y) > 0.3 || z.st === 'attack' || z.stun > 0 || z.climbing || z.hidden || z.sleep || (ZT[z.k].boss) || W.p.some(q => Math.hypot(q.x - z.x, q.y - z.y) < 2.2)) { S.pos.set(z.id, { x: z.x, y: z.y, t: W.t }); continue; }
+          if (W.t - q.t > 20 && !q.rep) { q.rep = 1; S.stuck++; const key = z.k + '@' + Math.floor(z.x) + ',' + Math.floor(z.y) + ',' + z.L + ':' + (B[W.blk[ci(Math.floor(z.x), Math.floor(z.y), z.L)]].key || '-') + ':f' + Math.round(W.ff.pw[ci(Math.floor(z.x), Math.floor(z.y), z.L)]); S.st.push(key); }
         }
       }, 800);
       let lf = performance.now(); const fr = () => { const n = performance.now(); S.frames.push(n - lf); if (S.frames.length > 400) S.frames.shift(); lf = n; requestAnimationFrame(fr); }; requestAnimationFrame(fr);

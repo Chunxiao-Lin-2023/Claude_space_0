@@ -10,7 +10,7 @@ require('fs').mkdirSync(OUT, { recursive: true });
   // the software GPU in CI renders ~2 fps: simulate with drawing off, render only for screenshots
   const shot = async (n) => { await p.evaluate(() => { window.__dbg.skipDraw = false; window.__dbg.speed0 = window.__dbg.speed; window.__dbg.speed = 0; }); await p.waitForTimeout(2600); await p.screenshot({ path: OUT + '/' + n + '.png' }); await p.evaluate(() => { window.__dbg.skipDraw = true; window.__dbg.speed = window.__dbg.speed0; }); await p.waitForTimeout(300); };
   await shot('01_title');
-  await p.evaluate(() => $('soloBtn').click()); await p.evaluate(() => { window.__dbg.skipDraw = true; }); await p.waitForFunction(() => W && W.t > 1, null, { timeout: 90000 });
+  await p.evaluate(() => (SET.mode = 'classic', SET.map = 'town', $('soloBtn').click())); await p.evaluate(() => { window.__dbg.skipDraw = true; }); await p.waitForFunction(() => W && W.t > 1, null, { timeout: 90000 });
   await shot('02_day');
   const r = await p.evaluate(async () => {
     const me = W.p[0], o = {}; const until = sec => new Promise(r => { const t0 = W.t; const f = () => W.t - t0 >= sec ? r() : setTimeout(f, 30); f(); });

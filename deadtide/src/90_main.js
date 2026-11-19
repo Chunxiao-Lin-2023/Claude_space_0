@@ -2,7 +2,7 @@
 let ACC = 0, LAST = 0, HUD_BUILT = false, TIPS = [];
 function startGame(seed, names, diff, me, mode, map) {
   TIPS.forEach(clearTimeout); TIPS = [];
-  mode = MODES[mode] ? mode : (MODES[SET.mode] ? SET.mode : 'classic'); setMap(map || SET.map || MODES[mode].map);
+  mode = MODES[mode] ? mode : (MODES[SET.mode] ? SET.mode : 'siege'); setMap(map || SET.map || MODES[mode].map);
   ME = me; newWorld(seed, names, diff, mode); buildTerrain(); archTown();
   Object.assign(RND, { parts: [], tracers: [], corpses: [], floats: [], flashes: [], booms: [], hurtV: 0 });
   STATE.mode = 'play'; STATE.paused = false; ACC = 0; NET.lastT = 0; VIEW.auto = true; CUT_KEY = '';
@@ -14,7 +14,9 @@ function startGame(seed, names, diff, me, mode, map) {
   const p = W.p[ME]; CAM.tx = p.x; CAM.ty = p.y;
   uiBuildBar(); markDiff(); uiView();
   banner(MODES[W.mode].icon + ' ' + MODES[W.mode].name + ' · ' + MAPDEF.name, W.mode === 'classic' ? '撑过 ' + BAL.nights + ' 夜就能等到救援 · 完成每日任务拿奖励' : MODES[W.mode].desc, '#ffe7b0'); UI.tkv = -1;
-  const tips = INP.touch
+  const tips = W.mode === 'siege' ? (INP.touch
+    ? ['红色标记的楼里睡着丧尸：别贴脸、少开枪就不会吵醒一整屋', '清掉一栋楼会拿到图纸箱：蓝图解锁地雷、机枪塔、车', '哪里都能建：点「建造」就地封门、放木板路障', '每夜到点就天亮——找栋清理过的楼守住', '地上的弹药盒、箱子都比以前给得多']
+    : ['红色标记的楼里睡着丧尸：别贴脸、少开枪就不会吵醒一整屋（弩几乎没声音）', '清掉一栋楼会拿到图纸箱：蓝图解锁地雷、机枪塔、自行车和摩托车', '哪里都能建：按 B 就地封门、放木板路障', '每夜到点就天亮——找栋清理过的楼守住', '有车以后按 T 上下车，骑着走得快但不能开枪']) : INP.touch
     ? ['出门砍树、采石，点一下「交互」搜汽车和补给箱（会自动搜完）', '点「建造」后手指指哪就盖哪：点墙顶往上叠，点墙面贴着盖，拖动一次盖一排', '上方「今日任务」点开能看到今天的 3 个任务，完成就有奖励', '进到任何建筑里，点右上「制作」就能造枪、买弹药', '楼上的矮墙可以探身开枪，天黑前回到堡垒', '丧尸成群结队地来：手雷、喷火器、榴弹专打扎堆的，红色油桶打一枪就炸']
     : ['出门砍树、采石，按 F 搜汽车和补给箱（会自动搜完，走开就停）', '按 B 建造：鼠标指哪就盖哪——指墙顶往上叠、指墙面贴着盖，按住拖动一次盖一排，右键拆除', '上方「今日任务」点开能看到今天的 3 个任务，完成就有奖励', '进到任何建筑里按 C 就能造枪、买弹药（营地工作台也行）', '楼上外墙是半人高的矮墙，可以探身朝下开枪。按 N 可以提前入夜', '丧尸成群结队地来：手雷（G）、喷火器、榴弹专打扎堆的，红色油桶打一枪就炸'];
   tips.forEach((t, k) => TIPS.push(setTimeout(() => { if (W && W.night === 0 && STATE.mode === 'play') uiMsg(t, '#ffd27a'); }, 2500 + k * 7000)));

@@ -4,7 +4,7 @@ const { chromium } = require('playwright');
   const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome', args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] });
   const c = await b.newContext({ viewport: { width: 852, height: 393 } }); await c.route(/fonts\.(googleapis|gstatic)/, r => r.abort());
   const p = await c.newPage(); p.setDefaultTimeout(200000);
-  await p.goto('http://localhost:8766/test.html'); await p.waitForFunction(() => window.__ready); await p.evaluate(() => $('soloBtn').click()); await p.waitForFunction(() => W && W.t > 0.5);
+  await p.goto('http://localhost:8766/test.html'); await p.waitForFunction(() => window.__ready); await p.evaluate(() => (SET.mode = 'classic', SET.map = 'town', $('soloBtn').click())); await p.waitForFunction(() => W && W.t > 0.5);
   await p.evaluate(() => { window.__dbg.god = true; window.__dbg.skipDraw = true; W.clock = 999; });
   const at = (n, x, y, L, zoom) => p.evaluate(([x, y, L, zoom]) => {
     const me = W.p[0]; me.x = x; me.y = y; me.L = L; me.z = pZ(me); CAM.zoom = zoom; CAM.tx = x; CAM.ty = y; CAM.lookX = CAM.lookY = 0; LC_KEY = ''; viewL();

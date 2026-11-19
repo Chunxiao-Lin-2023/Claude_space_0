@@ -81,8 +81,18 @@ defB(47, { key: 'truck', P: 1, Z: 1, B: 1, nat: 1, obj: 1, col: '#5a6a3a' });
 defB(48, { key: 'desk', P: 1, Z: 1, B: 1, nat: 1, brk: 1, vault: 1, hp: 150, low: 0.5, col: '#6a4a30' });
 defB(49, { key: 'shelf', P: 1, Z: 1, B: 1, nat: 1, brk: 1, vault: 1, hp: 180, low: 0.62, col: '#8a9096' });
 defB(50, { key: 'halfwall', P: 1, Z: 1, B: 1, nat: 1, brk: 1, vault: 1, hp: 220, low: 0.62, col: '#c8b890' }); // waist-high plaster partition (ward fronts, office cubicles, counters)
+// 尸城求生 (round 19): builds you unlock with blueprints
+defB(51, { key: 'mine', name: '地雷', cost: { steel: 2, parts: 3 }, hp: 60, dep: 1, mine: 1, col: '#4a4a3a', tip: '丧尸踩上去就炸（半径 2.4），用一次就没；人踩不响' });
+defB(52, { key: 'turret', name: '机枪塔', cost: { steel: 8, parts: 10 }, hp: 450, P: 1, Z: 1, dep: 1, brk: 1, turret: 1, col: '#5a6670', tip: '自动打 9 格内看得见的丧尸，一次装 240 发；打空了走过去按 F 花 3 零件装满' });
+defB(53, { key: 'barricade', name: '木板路障', cost: { wood: 3 }, hp: 300, P: 1, Z: 1, B: 1, dep: 1, brk: 1, low: 0.6, vault: 1, col: '#8a6a44', tip: '快速封门洞、窗洞：丧尸要砸，子弹能从上面打过去，人能翻过去' });
+defB(54, { key: 'ammobox', nat: 1, spot: 'ammobox' });
+defB(55, { key: 'bpcase', P: 1, Z: 1, B: 1, nat: 1, spot: 'bpcase', low: 0.7 });
 defB(42, { key: 'rail', P: 1, Z: 1, nat: 1, brk: 1, vault: 1, hp: 120, col: '#6a6f74' }); // balcony / roof / mezzanine railing: low, vaultable, bullets pass
-const PAL = [1, 2, 3, 4, 5, 6, 7, 8, 12, 13, 14, 9, 15, 10];
+const PAL = [1, 2, 3, 4, 5, 6, 7, 8, 12, 13, 14, 9, 15, 10, 53, 51, 52];
+// blueprints (尸城求生): what you can build / make from the start, and what has to be found first
+const BP_BASE = [1, 4, 6, 7, 12, 53];
+const BP_LIST = [2, 3, 5, 8, 13, 14, 9, 15, 10, 51, 52, 'bike', 'moto'];
+const bpName = k => typeof k === 'number' ? B[k].name : k === 'bike' ? '自行车' : '摩托车';
 const SLAB_BRIDGE = 11; // slab id for the pre-built bridges (not buildable)
 defB(11, { key: 'bridge', slab: 1, nat: 1, col: '#7e5a36' });
 const RES = [
@@ -146,6 +156,8 @@ const SPOTS = {
   toolbox: { name: '工具箱', loot: { parts: [3, 5], steel: [2, 4] }, vanish: 1, n: 16 },
   milcrate: { name: '军用物资箱', loot: { parts: [2, 4] }, ammo: 2, nade: 1, vanish: 1, n: 8 },
   barrel: { name: '油桶', loot: { steel: [2, 4] }, fuel: 40, vanish: 1, n: 24 },
+  ammobox: { name: '弹药盒', loot: {}, ammo: 1.4, allAmmo: 1, vanish: 1, n: 40 },              // bullets lying about: for every gun, owned or not yet
+  bpcase: { name: '图纸箱', loot: { parts: [3, 6] }, ammo: 1, bp: 1, vanish: 1 },               // in a building zombies hold: always a blueprint
 };
 /* ---------- daily tasks: three are rolled every dawn (and at the start) and last until the next dawn ---------- */
 // need(d, W) -> target count for upcoming night d; min = first night it can appear; rw = reward pool keys
@@ -203,6 +215,8 @@ const CRAFT = [
   { id: 'shells40', name: '榴弹 ×4', desc: '', cost: { parts: 5, steel: 2 }, ammo: [6, 4] },
   { id: 'nade', name: '手雷 ×2', desc: '最多带 6 颗', cost: { parts: 4 }, nade: 2 },
   { id: 'med', name: '医疗包', desc: '回复 60 生命，最多 3 个', cost: { parts: 3, wood: 2 }, med: 1 },
+  { id: 'bike', name: '自行车', desc: '骑上走得快 60%（T / 「骑车」上下车，骑着不能开枪）', cost: { wood: 6, steel: 6, parts: 4 }, veh: 1, bp: 'bike' },
+  { id: 'moto', name: '摩托车', desc: '走得快 130%（T / 「骑车」上下车，骑着不能开枪）', cost: { steel: 14, parts: 12 }, veh: 2, bp: 'moto' },
   { id: 'upg', name: '强化弹头', desc: '全队伤害 +12%（最多 5 级）', cost: { parts: 8 }, upg: 1 },
 ];
 

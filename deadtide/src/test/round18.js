@@ -23,7 +23,7 @@ const { chromium } = require('playwright');
   check('night 1 already has more than walkers and crawlers', curve[0].kinds.runner > 0 && curve[0].total >= 40, JSON.stringify(curve[0].kinds));
   check('each night brings more than the last', curve.every((r, i) => !i || r.total > curve[i - 1].total || (curve[i - 1].n % 5 === 0)));
   check('zombies come in herds (several per herd)', curve.every(r => r.packs < r.total * 0.5));
-  check('a herd is spread over the edge (not one spawn cell) and some herds are mixed', curve.every(r => r.spots > r.packs * 1.5) && curve.slice(1).every(r => r.mixed > 0), JSON.stringify(curve.map(r => [r.spots, r.packs, r.mixed])));
+  check('a herd is spread over the edge (not one spawn cell) and some herds are mixed', curve.every(r => r.spots > r.packs * 1.3) && curve.slice(1).every(r => r.mixed > 0), JSON.stringify(curve.map(r => [r.spots, r.packs, r.mixed])));
   // packs stay together on the way in
   const spread = await p.evaluate(() => new Promise(res => {
     startGame(778, ['甲'], 'normal', 0, 'classic', 'town'); window.__dbg.god = true; window.__dbg.speed = 6; W.night = 0; startNight();

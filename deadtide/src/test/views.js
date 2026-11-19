@@ -7,7 +7,7 @@ require('fs').mkdirSync(OUT, { recursive: true });
   const c = await b.newContext({ viewport: { width: 1280, height: 800 } }); await c.route(/fonts\.(googleapis|gstatic)/, r => r.abort());
   const p = await c.newPage(); const errs = []; p.on('pageerror', e => errs.push(e.message));
   await p.goto('http://localhost:8766/test.html'); await p.waitForFunction(() => window.__ready, null, { timeout: 120000 });
-  await p.evaluate(() => $('soloBtn').click()); await p.waitForFunction(() => W && W.t > 0.5, null, { timeout: 90000 });
+  await p.evaluate(() => (SET.mode = 'classic', SET.map = 'town', $('soloBtn').click())); await p.waitForFunction(() => W && W.t > 0.5, null, { timeout: 90000 });
   await p.evaluate(() => {
     window.__dbg.god = true; W.clock = 999;
     const S = (x, y, L, id) => setCell(ci(x, y, L), W.blk[ci(x, y, L)], id, null, 'build');

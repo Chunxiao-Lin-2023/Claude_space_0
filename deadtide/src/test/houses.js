@@ -6,7 +6,7 @@ const UA = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/6
   const c = await b.newContext({ viewport: { width: 1280, height: 760 } }); await c.route(/fonts\.(googleapis|gstatic)/, r => r.abort());
   const p = await c.newPage(); p.setDefaultTimeout(150000); const errs = []; p.on('pageerror', e => errs.push(e.message));
   await p.goto('http://localhost:8766/test.html'); await p.waitForFunction(() => window.__ready, null, { timeout: 120000 });
-  await p.evaluate(() => $('soloBtn').click()); await p.waitForFunction(() => W && W.t > 0.5, null, { timeout: 90000 });
+  await p.evaluate(() => (SET.mode = 'classic', SET.map = 'town', $('soloBtn').click())); await p.waitForFunction(() => W && W.t > 0.5, null, { timeout: 90000 });
   await p.evaluate(() => { window.__dbg.god = true; W.clock = 999; document.getElementById('hud').style.opacity = 0.2; });
   const shot = async (n, f) => { await p.evaluate(f); await p.evaluate(() => { const me = W.p[0]; CAM.tx = me.x; CAM.ty = me.y; CAM.tz = me.L * FH; CAM.lookX = CAM.lookY = 0; }); await p.waitForTimeout(1500); await p.screenshot({ path: OUT + '/h_' + n + '.png' }); };
   await shot('block_out', () => { const me = W.p[0]; me.x = 107.5; me.y = 78.5; me.L = 0; CAM.zoom = 13; });

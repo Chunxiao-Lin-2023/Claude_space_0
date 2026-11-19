@@ -7,7 +7,7 @@ const UA = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/6
   for (const [vp, w, h] of [['phoneL', 852, 393], ['phoneP', 393, 852], ['ipad', 1180, 820], ['ipadP', 820, 1180]]) {
     const c = await b.newContext({ viewport: { width: w, height: h }, hasTouch: true, isMobile: true, userAgent: UA }); await c.route(/fonts\.(googleapis|gstatic)/, r => r.abort());
     const p = await c.newPage(); await p.goto('http://localhost:8766/test.html'); await p.waitForFunction(() => window.__ready, null, { timeout: 120000 });
-    await p.evaluate(() => $('soloBtn').click()); await p.waitForFunction(() => W && W.t > 0.3, null, { timeout: 90000 });
+    await p.evaluate(() => (SET.mode = 'classic', SET.map = 'town', $('soloBtn').click())); await p.waitForFunction(() => W && W.t > 0.3, null, { timeout: 90000 });
     const r = await p.evaluate(() => {
       for (const id of ['tUse', 'tMed']) { const e = document.getElementById(id); e.classList.remove('hidden'); e.style.display = 'flex'; }
       const ids = ['tFire', 'tReload', 'tNade', 'tShove', 'tJump', 'tWpn', 'tUse', 'tMed'], R = {};

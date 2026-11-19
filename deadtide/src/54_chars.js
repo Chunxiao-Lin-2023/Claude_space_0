@@ -88,9 +88,10 @@ function drawZombies(vl, dt) {
   for (const k in ZPOOL) ZPOOL[k].n = 0;
   const list = W.zs.concat(RND.corpses), dk = darkness();
   ZPOOL.glow.m.material.opacity = 0.1 + dk * 0.9;
-  let drawn = 0;
+  let drawn = 0; const CR = cullR() + 2;
   for (const z of list) {
     if (drawn >= ZCAP - 2) break;
+    if (Math.abs(z.x - CAM.tx) > CR || Math.abs(z.y - CAM.ty) > CR) continue; // off screen (the town's sleeping crowds are mostly far away)
     const corpse = !!z.corpse, L = z.L != null ? z.L : Math.floor((z.z + 0.1) / FH);
     if (z.hidden && !corpse) continue;
     if (L > vl || lcHide(Math.floor(z.x), Math.floor(z.y), L)) continue;
@@ -374,11 +375,21 @@ const _gv = new THREE.Vector3(), _gl = new THREE.Vector3();
 // world position of a survivor's muzzle (from last frame's pose), so shots leave the barrel you see
 function muzzleW(i, wi) { const m = OBJ.pl && OBJ.pl[i], p = W.p[i]; if (!m || !m.g.visible || !m.guns[wi] || !m.guns[wi].visible || (p && p._rdy != null && p._rdy < 0.7)) return null; _gv.set(MUZ[wi][0], MUZ[wi][1], MUZ[wi][2]).applyMatrix4(m.guns[wi].matrixWorld); return [_gv.x, _gv.z, _gv.y]; }
 const GRIP = [[0.2, -0.04, 0.05, 0.19, -0.06, -0.02], [0.2, -0.04, 0.06, 0.42, -0.02, 0.0], [0.2, -0.04, 0.06, 0.4, -0.02, 0.0], [0.2, -0.04, 0.06, 0.46, -0.0, 0.0], [0.2, -0.04, 0.06, 0.34, -0.02, 0.0], [0.2, -0.04, 0.06, 0.3, -0.08, 0.0], [0.2, -0.04, 0.06, 0.36, -0.06, 0.0]];
+// bicycle / motorbike under a rider (尸城求生 vehicles); the forward axis is local +x
+function mkVehicles() {
+  const g = new THREE.Group(), wheel = (r, w, x) => new THREE.Mesh(new THREE.CylinderGeometry(r, r, w, 12).rotateX(Math.PI / 2).translate(x, r, 0), lam('#1c1c1c'));
+  const bike = new THREE.Group(); bike.add(wheel(0.22, 0.05, 0.38), wheel(0.22, 0.05, -0.38));
+  const fm = lam('#c0392b'); bike.add(new THREE.Mesh(boxG(0.7, 0.05, 0.05, 0, 0.42, 0).rotateZ(0.08), fm), new THREE.Mesh(boxG(0.05, 0.36, 0.05, -0.12, 0.3, 0).rotateZ(0.35), fm), new THREE.Mesh(boxG(0.18, 0.04, 0.1, -0.16, 0.52, 0), lam('#222')), new THREE.Mesh(boxG(0.05, 0.05, 0.42, 0.36, 0.62, 0), lam('#888')));
+  const moto = new THREE.Group(); moto.add(wheel(0.26, 0.12, 0.5), wheel(0.26, 0.12, -0.5));
+  const bm = lam('#2c3e50'); moto.add(new THREE.Mesh(boxG(0.8, 0.22, 0.26, 0, 0.42, 0), bm), new THREE.Mesh(boxG(0.36, 0.08, 0.28, -0.14, 0.56, 0), lam('#151515')), new THREE.Mesh(boxG(0.22, 0.2, 0.24, 0.32, 0.6, 0), lam('#c0392b')), new THREE.Mesh(boxG(0.05, 0.05, 0.5, 0.42, 0.76, 0), lam('#999')), new THREE.Mesh(boxG(0.3, 0.06, 0.08, -0.3, 0.34, 0.16), lam('#777')));
+  g.add(bike, moto); g.userData = { bike, moto }; return g;
+}
 function drawPlayers(vl, dt) {
   while (OBJ.pl.length < W.p.length) OBJ.pl.push(mkPlayerModel(OBJ.pl.length));
   OBJ.pl.forEach((m, i) => { const p = W.p[i]; m.g.visible = !!p && !p.gone && !p.dead && p.L <= vl; });
   W.p.forEach((p, i) => {
     const m = OBJ.pl[i]; if (!m.g.visible) return;
+    if (!m.veh) { m.veh = mkVehicles(); m.g.add(m.veh); }
     const zv = (p.zv != null ? p.zv : p.z) + (p.jz || 0); m.g.position.set(p.x, zv, p.y);
     // smoothing state
     if (p._uy == null) { p._uy = p.aim; p._ly = p.aim; p._ph = 0; p._kick = 0; p._spd = 0; p._px = p.x; p._py = p.y; p._st = 0; }
@@ -404,9 +415,10 @@ function drawPlayers(vl, dt) {
     const wK = down ? 0 : p.wpn, SK = STANCE[wK] || STANCE[0];
     p._kn = lerp(p._kn || 0, SK.kneel && !moving && !p.build && !(p.medT > 0) && !(p.jz > 0.05) && !down ? 1 : 0, Math.min(1, dt * 7));
     if (p._kn > 0.01) { const q = p._kn; aL = lerp(aL, 1.45, q); kL = lerp(kL, 1.45, q); aR = lerp(aR, -0.05, q); kR = lerp(kR, 1.62, q); } // right knee down, left foot forward
+    const ride = !!p.ride && !down; m.veh.visible = ride; if (ride) { m.veh.userData.bike.visible = (p.veh || 1) === 1; m.veh.userData.moto.visible = p.veh === 2; m.veh.rotation.y = -p._ly; aL = aR = 1.15; kL = kR = 1.35; }
     const legH = (a, k) => 0.23 * Math.cos(a) + 0.22 * Math.cos(a - k) + 0.03;
     const hipY = down ? 0.2 : Math.max(legH(aL, kL), legH(aR, kR));
-    m.hips.position.y = hipY; m.upper.position.y = hipY;
+    const seat = ride ? (p.veh === 2 ? 0.42 : 0.36) : 0; m.hips.position.y = hipY + seat; m.upper.position.y = hipY + seat;
     m.legs[0].th.rotation.z = aL; m.legs[0].kn.rotation.z = -kL; m.legs[0].ft.rotation.z = kL - aL;
     m.legs[1].th.rotation.z = aR; m.legs[1].kn.rotation.z = -kR; m.legs[1].ft.rotation.z = kR - aR;
     if (down) { m.legs[1].th.rotation.x = 0.6; } else m.legs[1].th.rotation.x = 0;

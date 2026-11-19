@@ -6,7 +6,7 @@ const { chromium } = require('playwright'); const OUT = process.env.OUT || '/tmp
   const p = await c.newPage(); p.setDefaultTimeout(200000); const errs = []; p.on('pageerror', e => errs.push(e.message));
   await p.goto('http://localhost:8766/test.html'); await p.waitForFunction(() => window.__ready);
   let ok = true; const check = (n, c, v) => { console.log((c ? 'PASS ' : 'FAIL ') + n, v || ''); if (!c) ok = false; };
-  const start = (mode) => p.evaluate(mode => { window.__dbg.skipDraw = true; window.__dbg.god = true; NETROLE = 'solo'; startGame(777, ['甲'], 'normal', 0, mode); return { mode: W.mode, map: W.map, hud: modeHud(), marks: modeMarks().length }; }, mode);
+  const start = (mode) => p.evaluate(mode => { window.__dbg.skipDraw = true; window.__dbg.god = true; NETROLE = 'solo'; startGame(777, ['甲'], 'normal', 0, mode, MODES[mode].map); return { mode: W.mode, map: W.map, hud: modeHud(), marks: modeMarks().length }; }, mode);
   const step = (s) => p.evaluate(s => { for (let k = 0; k < s * 60; k++) simStep(1 / 60); }, s);
   const at = (x, y, L) => p.evaluate(([x, y, L]) => { const me = W.p[0]; for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) if (standable(x + dx, y + dy, L, 'p')) { me.x = x + dx + 0.5; me.y = y + dy + 0.5; me.L = L; me.z = pZ(me); return true; } me.x = x + 1.5; me.y = y + 0.5; me.L = L; return false; }, [x, y, L]);
   const use = () => p.evaluate(() => { const me = W.p[0], px = Math.floor(me.x), py = Math.floor(me.y); let t = null; for (let dy = -1; dy <= 1 && !t; dy++) for (let dx = -1; dx <= 1 && !t; dx++) { const i = ci(px + dx, py + dy, me.L), b = W.blk[i]; if (b && B[b].obj) t = modeUse(me, i, b); } if (!t) t = useTarget(me); if (!t) return null; completeUse(me, t); return t.name; });

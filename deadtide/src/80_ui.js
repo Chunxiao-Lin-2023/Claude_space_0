@@ -65,6 +65,7 @@ function uiKeys(me) {
     rows = [['左键', '射击'], ['R', '换弹', me.mag[wi] === 0 && canRl ? 2 : canRl ? 0 : -1], ['G', '手雷 ×' + me.nades, me.nades ? 0 : -1],
       ['H', me.down ? '自救' : '医疗 ×' + me.meds, !me.meds ? -1 : (me.down || me.hp < me.maxHp * 0.4) ? 2 : me.hp >= me.maxHp ? -1 : 0],
       ['右键', '刀（自动追，也可按 V）'], ['空格', '跳 / 翻越'], ['F', ut ? ut.name : '交互', ut ? 1 : 0], ['1–' + NW, '换枪'], ['C', '制作 / 购买', bench ? 1 : -1], ['B', '建造']];
+    if (me.veh) rows.push(['T', me.ride ? '下车' : (me.veh === 2 ? '骑摩托' : '骑车'), me.ride ? 1 : 0]);
     if (W.phase === 'day') rows.push(['N', me.ready ? '取消准备' : '准备入夜', me.ready ? 1 : 0]);
   }
   rows.push(['M', '大地图（也可按 Tab）'], ['Q E', '转镜头'], ['Esc', '菜单']);
@@ -114,7 +115,7 @@ function uiBuildBar() {
   if (!W) return; const me = W.p[ME];
   $('bbar').classList.toggle('hidden', !me.build); $('binfo').classList.toggle('hidden', !me.build);
   $('wbar').classList.toggle('hidden', !!me.build);
-  $('bbar').querySelectorAll('button[data-b]').forEach(b => { const id = +b.dataset.b; b.classList.toggle('sel', !me.demo && me.sel === id); b.classList.toggle('na', !affordable(W.res, B[id].cost)); });
+  $('bbar').querySelectorAll('button[data-b]').forEach(b => { const id = +b.dataset.b; b.classList.toggle('sel', !me.demo && me.sel === id); b.classList.toggle('na', !affordable(W.res, B[id].cost)); b.classList.toggle('lock', !hasBP(id)); b.querySelector('small').textContent = hasBP(id) ? costText(B[id].cost) : '🔒 要蓝图'; });
   $('bDemo').classList.toggle('sel', !!me.demo);
   $('tBuild').classList.toggle('on', !!me.build); document.body.classList.toggle('building', !!me.build);
   const Bs = B[me.sel];
@@ -195,7 +196,7 @@ function hudTick(dt) {
     sh.classList.toggle('on', on);
     if (on) { const R = STICK_R(), x = Math.max(R + 22, Math.min(VW * 0.16, 170)), y = VH - Math.max(R + 40, Math.min(VH * 0.24, 190)); sh.style.left = x + 'px'; sh.style.top = y + 'px'; sh.style.width = sh.style.height = R * 2 + 'px'; }
     const tgt = !me.dead && !me.build && !me.down ? useTarget(me) : null, bench = !tgt && !me.build && canCraft(me);
-    $('tCraft').classList.toggle('hidden', !canCraft(me) || !!me.build);
+    $('tCraft').classList.toggle('hidden', !canCraft(me) || !!me.build); $('tRide').classList.toggle('hidden', !me.veh || !!me.build); $('tRide').classList.toggle('on', !!me.ride); $('tRide').textContent = me.ride ? '下车' : (me.veh === 2 ? '骑摩托' : '骑车');
     const u = $('tUse'); u.classList.toggle('hidden', !(tgt || bench));
     if (tgt) { u.firstElementChild.textContent = INP.useLatch ? '进行中 · 再点停' : '点一下'; u.lastElementChild.textContent = tgt.name; u.style.setProperty('--p', clamp(me.useT / tgt.t, 0, 1)); }
     else if (bench) { u.firstElementChild.textContent = '点一下'; u.lastElementChild.textContent = '制作 / 购买'; u.style.setProperty('--p', 0); }
@@ -266,7 +267,7 @@ function drawBigMap() {
   g.translate(cv.width / 2, cv.height / 2); g.rotate(R); g.translate(-cv.width / 2, -cv.height / 2);
   g.imageSmoothingEnabled = false; g.globalAlpha = 0.85; g.drawImage(MM.base, 0, 0, cv.width, cv.height); g.globalAlpha = 1;
   TOWN_HOUSES.forEach(([x0, y0, x1, y1, st, t]) => { const c = (BTYPE[t] || ['', '#888'])[1]; g.fillStyle = c; g.globalAlpha = 0.8; g.fillRect(x0 * S, y0 * S, (x1 - x0 + 1) * S, (y1 - y0 + 1) * S); g.globalAlpha = 1; g.strokeStyle = 'rgba(0,0,0,.6)'; g.lineWidth = 1.5; g.strokeRect(x0 * S, y0 * S, (x1 - x0 + 1) * S, (y1 - y0 + 1) * S); });
-  g.strokeStyle = 'rgba(255,207,107,.8)'; g.lineWidth = 2; g.strokeRect((W.radio.x - BUILD_R) * S, (W.radio.y - BUILD_R) * S, (BUILD_R * 2 + 1) * S, (BUILD_R * 2 + 1) * S);
+  if (!modeDef().anyBuild) g.strokeStyle = 'rgba(255,207,107,.8)', g.lineWidth = 2, g.strokeRect((W.radio.x - BUILD_R) * S, (W.radio.y - BUILD_R) * S, (BUILD_R * 2 + 1) * S, (BUILD_R * 2 + 1) * S);
   g.fillStyle = 'rgba(127,211,107,.85)'; g.fillRect((W.radio.x - 6) * S, (W.radio.y - 5) * S, 13 * S, 11 * S);
   for (let i = 0; i < NC; i++) { const b = W.blk[i]; if (b !== 25 && b !== 38) continue; g.fillStyle = W.srch.has(i) ? '#4a4a4a' : b === 38 ? '#e05a5a' : '#c8ccd0'; g.fillRect(cx_(i) * S - 2, cy_(i) * S - 2, 4, 4); }
   g.fillStyle = '#ff3b2f'; for (const z of W.zs) g.fillRect(z.x * S - 2, z.y * S - 2, 4, 4);
@@ -282,7 +283,7 @@ function drawBigMap() {
   for (const p of W.p) { if (p.gone || p.dead) continue; const [px, py] = rot(p.x, p.y); g.fillStyle = PCOL[p.i % 2].j; g.beginPath(); g.arc(px, py, 6, 0, 7); g.fill(); g.strokeStyle = '#fff'; g.lineWidth = 2; g.stroke(); g.fillStyle = '#fff'; g.font = '600 12px ' + getComputedStyle(document.body).fontFamily; g.strokeStyle = 'rgba(0,0,0,.8)'; g.lineWidth = 3; g.strokeText(p.name, px, py - 14); g.fillText(p.name, px, py - 14); }
 }
 /* ---------- modes and maps: picker (title / lobby), objective panel ---------- */
-const curMode = () => MODES[SET.mode] ? SET.mode : 'classic';
+const curMode = () => MODES[SET.mode] ? SET.mode : 'siege';
 const curMap = () => MAPS[SET.map] ? SET.map : MODES[curMode()].map;
 function uiModeLbl() {
   const m = MODES[curMode()], mp = MAPS[curMap()];

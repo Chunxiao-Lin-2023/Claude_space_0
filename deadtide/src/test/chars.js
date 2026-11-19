@@ -6,7 +6,7 @@ require('fs').mkdirSync(OUT, { recursive: true });
   const c = await b.newContext({ viewport: { width: 1280, height: 760 } }); await c.route(/fonts\.(googleapis|gstatic)/, r => r.abort());
   const p = await c.newPage(); p.setDefaultTimeout(150000); const errs = []; p.on('pageerror', e => errs.push(e.message)); p.on('console', m => { if (m.type() === 'error') errs.push(m.text()); });
   await p.goto('http://localhost:8766/test.html'); await p.waitForFunction(() => window.__ready, null, { timeout: 120000 });
-  await p.evaluate(() => $('soloBtn').click()); await p.waitForFunction(() => W && W.t > 0.5, null, { timeout: 90000 });
+  await p.evaluate(() => (SET.mode = 'classic', SET.map = 'town', $('soloBtn').click())); await p.waitForFunction(() => W && W.t > 0.5, null, { timeout: 90000 });
   await p.evaluate(() => { window.__dbg.god = true; W.clock = 999; document.getElementById('hud').style.opacity = 0.15; });
   const stage = await p.evaluate(() => {
     const X = W.radio.x + 6, Y = W.radio.y + 8, me = W.p[0]; me.x = X + 0.5; me.y = Y + 0.6; me.L = 0; me.aim = 0;

@@ -8,7 +8,7 @@ const { chromium } = require('playwright');
   await p.goto('http://localhost:8766/test.html'); await p.waitForFunction(() => window.__ready, null, { timeout: 120000 });
   await p.evaluate(() => localStorage.removeItem(SKEY + 'save'));
   ok('no continue button without a save', await p.evaluate(() => document.getElementById('contBtn').classList.contains('hidden')));
-  await p.evaluate(() => $('soloBtn').click()); await p.waitForFunction(() => W && W.t > 0.5, null, { timeout: 90000 });
+  await p.evaluate(() => (SET.mode = 'classic', SET.map = 'town', $('soloBtn').click())); await p.waitForFunction(() => W && W.t > 0.5, null, { timeout: 90000 });
   const before = await p.evaluate(() => {
     const me = W.p[0], X = W.radio.x + 8, Y = W.radio.y + 8; W.res.wood = 321; W.res.parts = 45; W.night = 3; W.clock = 77; me.owned[4] = 1; me.ammo[4] = 17; me.meds = 2; me.x = X + 2.5; me.y = Y + 0.5;
     setCell(ci(X, Y, 0), 2, 0, null, 'build'); W.bhp[ci(X, Y, 0)] = 123; setCell(ci(X, Y, 1), 0, 4, null, 'build');

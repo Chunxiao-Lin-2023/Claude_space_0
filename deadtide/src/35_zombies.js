@@ -29,6 +29,7 @@ function stepZombies(dt) {
       z.burn -= dt; hurtZombie(z, BAL.burnDps * dt, W.p[z.burnBy] || null, 0, 0, true); if (z.hp <= 0) continue;
       if (rand() < dt * BAL.burnSpread) { const fx = Math.floor(z.x), fy = Math.floor(z.y); for (let gy = fy - 2; gy <= fy + 2; gy++) for (let gx = fx - 2; gx <= fx + 2; gx++) { const a = inMap(gx, gy) && grid.get(ci(gx, gy, z.L)); if (a) for (const o of a) if (o !== z && o.hp > 0 && !(o.burn > 0) && Math.hypot(o.x - z.x, o.y - z.y) < BAL.burnSpreadR) { o.burn = 2.5; o.burnBy = z.burnBy; } } }
     }
+    if (z.sleep) { z.moving = false; z.st = 'walk'; continue; } // a sleeper in a building: still until something wakes it (41_siege)
     z.st = 'walk';
     // wall climbing in progress
     if (z.climbing) {
@@ -40,6 +41,7 @@ function stepZombies(dt) {
     const cx = Math.floor(z.x), cy = Math.floor(z.y), i = ci(cx, cy, z.L);
     // barbed wire
     let slow = inMud(z.x, z.y, z.L) ? MUD_SLOW : 1;
+    if (B[W.blk[i]].mine) { setCell(i, 0, W.slab[i], null, 'mine'); explode(cx + 0.5, cy + 0.5, z.L * FH + 0.3, null, SIEGE.mineR, SIEGE.mineDmg); if (z.hp <= 0) continue; }
     if (B[W.blk[i]].trap) { z.stun = 2.5; hurtZombie(z, 30, null); setCell(i, 0, W.slab[i], null, 'trap'); if (z.hp <= 0) continue; }
     if (B[W.blk[i]].stairs && !B[W.blk[i]].nat) slow = climbT ? 0.75 : 0.38; // ladders are slow going for zombies
     if (B[W.blk[i]].wire) {

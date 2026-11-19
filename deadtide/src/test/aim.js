@@ -4,7 +4,7 @@ const { chromium } = require('playwright'); const OUT = process.env.OUT || '/tmp
   const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome', args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] });
   const c = await b.newContext({ viewport: { width: 1280, height: 720 } }); await c.route(/fonts\.(googleapis|gstatic)/, r => r.abort());
   const p = await c.newPage(); p.setDefaultTimeout(200000); const errs = []; p.on('pageerror', e => errs.push(e.message));
-  await p.goto('http://localhost:8766/test.html'); await p.waitForFunction(() => window.__ready); await p.evaluate(() => $('soloBtn').click()); await p.waitForFunction(() => W && W.t > 0.5);
+  await p.goto('http://localhost:8766/test.html'); await p.waitForFunction(() => window.__ready); await p.evaluate(() => (SET.mode = 'classic', SET.map = 'town', $('soloBtn').click())); await p.waitForFunction(() => W && W.t > 0.5);
   await p.evaluate(() => { window.__dbg.god = true; const me = W.p[0]; me.x = W.radio.x + 9.5; me.y = W.radio.y - 8.5; me.L = 0; me.wpn = 0; me.nades = 2; me.meds = 1;
     for (let y = -12; y <= 0; y++) for (let x = -3; x <= 6; x++) { const i = ci(Math.floor(me.x) + x, Math.floor(me.y) + y, 0); if (W.blk[i] && !B[W.blk[i]].cost) W.blk[i] = 0; } W.ver++;
     const z = spawnZombie('walker', 0); z.x = me.x + 1.5; z.y = me.y - 6; z.L = 0; z.z = 0; z.stun = 999; z.hp = z.max = 500; });

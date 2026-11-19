@@ -436,7 +436,7 @@ function buildPick(sx, sy, L) { const { o, d } = screenRay(sx, sy), pz = L * FH;
 let BUILD_HOVER = null;
 function drawGhost(me) {
   const G = OBJ.ghost, E = OBJ.ghostEdge, H = BUILD_HOVER, show = me && me.build && H && !me.down && !me.dead;
-  OBJ.grid.visible = !!(me && me.build); if (OBJ.grid.visible) OBJ.grid.position.y = (H ? H.L : buildL()) * FH + 0.02;
+  OBJ.grid.visible = !!(me && me.build) && !modeDef().anyBuild; if (OBJ.grid.visible) OBJ.grid.position.y = (H ? H.L : buildL()) * FH + 0.02;
   G.visible = E.visible = !!show; if (!show) return;
   const b = me.demo ? 0 : me.sel, geo = me.demo ? GEO.wall : B[b].slab ? GEO.slab : b === 6 ? GEO.stairs : b === 8 ? GEO.bars : b === 9 ? GEO.wire : b === 10 ? GEO.lampPole : GEO.wall;
   if (G.geometry !== geo) G.geometry = geo;
@@ -457,7 +457,7 @@ function draw(dt) {
   if (STATE.mode === 'play' && !W.demo) qualTick(dt);
   applyTime(darkness()); archFrame();
   drawZombies(vl, dt); drawPlayers(vl, dt); drawFx(); drawGhost(me); drawPlan();
-  OBJ.zone.visible = !W.demo && W.phase === 'day' || !!(me && me.build);
+  OBJ.zone.visible = (!W.demo && W.phase === 'day' || !!(me && me.build)) && !modeDef().anyBuild;
   RENDER.render(SCN, CAMO);
   drawOverlay();
 }
@@ -511,7 +511,7 @@ function drawMinimap(dt) {
   g.imageSmoothingEnabled = false; g.drawImage(MM.base, 0, 0, cv.width, cv.height);
   g.fillStyle = 'rgba(30,30,34,.85)';
   for (let y = 0; y < MH; y++) for (let x = 0; x < MW; x++) { for (let L = gAt(x, y); L < Math.min(ML, gAt(x, y) + 3); L++) { const b = W.blk[ci(x, y, L)]; if ((b && B[b].cost) || b === 24 || b === 50) { g.fillRect(x * S, y * S, S, S); break; } if (b === 22) { g.fillStyle = '#25381f'; g.fillRect(x * S, y * S, S, S); g.fillStyle = 'rgba(30,30,34,.85)'; break; } } }
-  g.strokeStyle = 'rgba(255,207,107,.6)'; g.lineWidth = 1; g.strokeRect((W.radio.x - BUILD_R) * S, (W.radio.y - BUILD_R) * S, (BUILD_R * 2 + 1) * S, (BUILD_R * 2 + 1) * S);
+  if (!modeDef().anyBuild) g.strokeStyle = 'rgba(255,207,107,.6)', g.lineWidth = 1, g.strokeRect((W.radio.x - BUILD_R) * S, (W.radio.y - BUILD_R) * S, (BUILD_R * 2 + 1) * S, (BUILD_R * 2 + 1) * S);
   g.fillStyle = '#ff3b2f'; for (const z of W.zs) g.fillRect(z.x * S - 1.5, z.y * S - 1.5, 3, 3);
   g.fillStyle = '#7fd36b'; g.fillRect(W.radio.x * S - 1, W.radio.y * S - 1, S + 2, S + 2);
   for (const p of W.p) { if (p.gone || p.dead) continue; g.fillStyle = PCOL[p.i % 2].j; g.beginPath(); g.arc(p.x * S, p.y * S, 3.2, 0, 7); g.fill(); g.strokeStyle = '#fff'; g.lineWidth = 1; g.stroke(); }
@@ -527,6 +527,7 @@ function fxEvent(e) {
   const guest = NETROLE === 'guest';
   switch (e.k) {
     case 'shot': if (guest && e.o === ME) break; shotFx(e.o, e.w, e.e); break;
+    case 'tshot': if (e.i != null) (RND.taim = RND.taim || {})[e.i] = Math.atan2(e.ty - e.y, e.tx - e.x); RND.tracers.push({ x: e.x, y: e.y, z: e.z, x2: e.tx, y2: e.ty, z2: e.tz, t: 0, life: 0.08, w: 0.03, col: [1, 0.85, 0.45] }); RND.flashes.push({ x: e.x, y: e.y, z: e.z, t: 0, life: 0.05 }); if (thr('tur', 0.09)) sfx('rifle', e.x, e.y); break;
     case 'hit': if (e.a) { for (let k = 0; k < 6; k++) addP({ x: e.x, y: e.y, z: e.z, vx: frnd(-3, 3), vy: frnd(-3, 3), vz: frnd(0.5, 3), col: k % 2 ? '#ffe9a0' : '#ffffff', s: 0.035, life: 0.25, floor: e.z - 1 }); if (thr('clank', 0.06)) sfx('clank', e.x, e.y); break; }
       bloodFx(e.x, e.y, e.z, e.h ? 9 : 5, e.g); if (Math.random() < 0.45) addDecal(e.x + frnd(-0.3, 0.3), e.y + frnd(-0.3, 0.3), e.z - 0.6, frnd(0.08, 0.16), e.g ? '#3c5a14' : null); if (thr('flesh', 0.05)) sfx(e.h ? 'head' : 'flesh', e.x, e.y); break;
     case 'zdie':
