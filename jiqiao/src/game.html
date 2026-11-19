@@ -411,6 +411,23 @@ button.card:hover{transform:translateY(-2px);border-color:var(--sc)}
   .result img{width:96px;height:96px}
   .center h2{font-size:44px}
 }
+/* 触屏：暂停键和其他图标按钮一样大（原来被后面的 .pausebtn 规则盖回 44px） */
+@media (pointer:coarse){.hud-r .pausebtn{width:52px;height:52px}}
+@media (pointer:coarse) and (max-width:500px){.hud-r .pausebtn{width:40px;height:40px}}
+@media (pointer:coarse) and (max-width:380px){.hud-r .pausebtn{width:38px;height:38px}}
+@media (pointer:coarse) and (max-height:500px){.hud-r .pausebtn{width:44px;height:44px}}
+/* iPad / 大屏触屏：技能键更大、离开屏幕角落，拇指自然落点；顶部按钮和武器栏同步放大 */
+@media (pointer:coarse) and (min-width:700px) and (min-height:600px){
+  .skillb{width:96px;height:96px;right:max(32px,calc(env(safe-area-inset-right,0px) + 20px));bottom:calc(32px + env(safe-area-inset-bottom,0px))}
+  .skillb .g{font-size:34px;margin-top:-10px}
+  .skillb .n{font-size:12px;bottom:12px}
+  .hud-r{gap:10px}
+  .hud-r .fsbtn,.hud-r .pausebtn{width:56px;height:56px;border-radius:10px}
+  .hud-r .fsbtn svg{width:24px;height:24px}
+  .hud-r .pausebtn span{height:18px;width:5px}
+  .tray{bottom:calc(20px + env(safe-area-inset-bottom,0px));gap:8px;padding:8px;max-width:calc(100% - 300px)}
+  .tw{width:48px;height:48px}.tw img{width:38px;height:38px}
+}
 </style>
 
 <div id="app">
@@ -610,11 +627,11 @@ const EVO_HP=[1,1.15,1.3],EVO_N=['','二型','三型'];
 function rollEvo(type,w){if(run&&run.diff>=3)w+=2;const E=EVO[type];if(!E||w<6)return 0;const p3=w>=12&&E[1]?Math.min(0.4,0.15+(w-12)*0.07):0,p2=Math.min(0.8-p3,0.15+(w-6)*0.06),r=Math.random();return r<p3?2:r<p3+p2?1:0;}
 // 小首领：第 4 波一只，第 12 波一只（三阶难度两只）。限时内击杀掉宝箱，否则逃跑
 const MINIS=[
- {key:'grinder',name:'磨刀匠',hp:250,r:38,spd:72,dmg:11,col:'#c9d2d4',base:'brute',d:'转着刀阵直线冲刺，撞到墙或铜柱会眩晕，眩晕时受到的伤害 +60%'},
- {key:'gunner',name:'炮手队长',hp:220,r:34,spd:42,dmg:11,col:'#e05a4b',base:'shield',d:'召唤 3 座炮台，炮台没拆完时自己只受 40% 伤害；拆光后有 10 秒破绽'},
- {key:'toad',name:'毒蛙王',hp:260,r:40,spd:0,dmg:11,col:'#9ccf5a',base:'spitter',d:'跳到你身边砸地，落点留下毒池，毒池会越积越多'},
- {key:'mirror',name:'镜像刺客',hp:190,r:26,spd:96,dmg:11,col:'#b28ae0',base:'stalker',d:'分出两个幻影一起扑击，只有真身脚下有影子；幻影一碰就散'},
- {key:'foreman',name:'熔铁工头',hp:250,r:38,spd:44,dmg:11,col:'#ff9a4a',base:'layer',d:'把地面格子烧红，预警后爆发；半血后烧得更多'},
+ {key:'grinder',name:'磨刀匠',hp:250,r:38,spd:72,dmg:11,col:'#c9d2d4',base:'brute',d:'转着刀阵直线冲刺，撞到墙或铜柱会眩晕，眩晕时受到的伤害 +60%；每第三轮原地刀阵旋风，向四周甩出螺旋飞刃'},
+ {key:'gunner',name:'炮手队长',hp:220,r:34,spd:42,dmg:11,col:'#e05a4b',base:'shield',d:'召唤 3 座炮台，炮台没拆完时自己只受 40% 伤害；拆光后有 10 秒破绽。不时朝你落迫击炮（看红圈）'},
+ {key:'toad',name:'毒蛙王',hp:260,r:40,spd:0,dmg:11,col:'#9ccf5a',base:'spitter',d:'跳到你身边砸地，落点留下毒池，毒池会越积越多；会吐舌头把你拽过去并减速，看到直线预警就侧移'},
+ {key:'mirror',name:'镜像刺客',hp:190,r:26,spd:96,dmg:11,col:'#b28ae0',base:'stalker',d:'分出两个幻影一起扑击，只有真身脚下有影子；幻影一碰就散。扑击落地甩出影刃，还会瞬身到你背后横斩'},
+ {key:'foreman',name:'熔铁工头',hp:250,r:38,spd:44,dmg:11,col:'#ff9a4a',base:'layer',d:'把地面格子烧红，预警后爆发；每第三轮站定扇形喷铁水（两条预警线之间），半血后烧得更多、双向喷'},
 ];
 const MINI_WAVES=[4,12];
 let gz=[],gzTick=0,corpses=[];
@@ -711,7 +728,7 @@ const FINAL_WAVE=16,ELITE_WAVE=8;
 // 商店：武器出现几率；武器里「同名同阶可合成」「同名金阶」「已有武器」的比例，其余随机
 const SHOP={wChance:0.4,upgrade:0.22,goldCopy:0.03,ownedKey:0.18};
 // 宝箱：精英怪掉箱几率和每波上限、金色小精灵刷新间隔和每波上限
-const CHEST={eliteP:0.22,eliteCap:4,fairyMin:10,fairyMax:15,fairyCap:4};
+const CHEST={eliteP:0.16,eliteCap:3,fairyMin:12,fairyMax:17,fairyCap:3,goldWave:8,goldPerWave:1};
 const BOSS={finalMul:60,tough:900,toughMin:0.35,coop:1.6,adds:6,dmgMul:1.3};
 // 逆风保障：每波结束按「击杀率 / 最低血量 / 生命上限」判断这一波打得吃不吃力（0 顺风、1 逆风、2 苦战），缺什么补什么
 // 常驻：生命保底 25+2×波次；波末地上金币自动收 70%
@@ -719,9 +736,11 @@ const HELP={floorBase:25,floorWave:2,lowBase:30,lowWave:3,sweep:0.7,
  killLow:0.55,killVeryLow:0.35,hpLow:0.3,     // 击杀率低于 55% / 35%、最低血量低于 30% 各记 1 分；生命上限偏低记 1 分
  subsidy:[0,0.3,0.6],rerolls:[0,1,2],discount:0.7, // 补贴 = 本波收入的 30% / 60%；免费刷新次数；补给商品 7 折
  relief:{spawn:0.8,hp:0.9}};                   // 苦战：下一波敌人刷得少 20%、血量 -10%
-const BAL={hpLin:0.26,hpQuad:0.066,dmgLin:0.14,goldScale:0.06,baseInc:12,incPerWave:1.5,spawnBase:1.35,spawnSlope:0.05,spawnMin:0.22,batchDiv:5,priceScale:0.17};
+const BAL={hpLin:0.24,hpQuad:0.056,dmgLin:0.14,dmgLate:0.05,goldScale:0.06,baseInc:12,incPerWave:1.5,spawnBase:1.35,spawnSlope:0.05,spawnMin:0.22,batchDiv:5,priceScale:0.17};
 // difficulty multipliers ramp in: 30% of the extra at wave 1, full by wave 16
 const dRamp=(m,w)=>1+(m-1)*(0.3+0.7*Math.min(1,(w-1)/15));
+// 第 12 波起（二阶以上）敌人伤害每波再 +5%：后期装备成型后仍有压力，不会站着无敌
+const lateDmg=w=>1+Math.max(0,w-11)*BAL.dmgLate*(run&&run.diff>=1?1:0.4);
 const hpScale=w=>1+(w-1)*BAL.hpLin+(w-1)*(w-1)*BAL.hpQuad;
 const goldFor=b=>{const v=b*(1+(run.wave-1)*BAL.goldScale);return Math.floor(v)+(Math.random()<v%1?1:0);};
 
@@ -1214,7 +1233,7 @@ function computeStats(){
 const hpFloor=()=>HELP.floorBase+HELP.floorWave*Math.max(1,run.wave||1);
 const lowHp=()=>(run.rawHp||0)<HELP.lowBase+HELP.lowWave*Math.max(1,run.wave||1);
 const rangeMul=()=>Math.max(0.3,1+S.range/100);
-const atkMul=()=>1+Math.max(-0.8,(S.atkspd+(dodgeBuff>0?40:0))/100);
+const atkMul=()=>1+Math.max(-0.8,soft((S.atkspd+(dodgeBuff>0?40:0))/100,0.7,0.6));  // 攻速超过 +70% 后收益 ×0.6
 const poisonMul=()=>1+(H.poison||0)/100;
 const poisonCap=()=>(H.poisonCap||3)+(FX.evo==='apothB'?3:0);
 const skCd=()=>H.skill?H.skill.cd*(FX.evoC==='merchant'?0.6:1):1;
@@ -1227,16 +1246,22 @@ function addPoison(e,dps,t,src,cap){
  if(e.poisonT<=0)e.ptick=0.5;
  e.poison=L.reduce((a,x)=>a+x.dps,0);e.poisonT=Math.max(e.poisonT,t);
 }
-const dodgeCap=()=>60+(FX.dodgeHeal?10:0);
+// 防御上限按难度分档：一阶能堆到"站桩无敌"，二阶偶尔成型，三阶以上不行
+// dodge = 闪避上限；ls = 吸血每秒上限 [固定, 最大生命比例]；ak = 护甲常数（越大护甲越不值钱）
+const DEF_CAP=[{dodge:60,ls:[4,0.06],ak:15},{dodge:40,ls:[2,0.03],ak:20},{dodge:35,ls:[1.5,0.024],ak:22},{dodge:30,ls:[1,0.018],ak:25}];
+const defCap=()=>DEF_CAP[(run&&run.diff)|0]||DEF_CAP[0];
+const armorMul=A=>{const K=defCap().ak;return A>=0?K/(K+A):(15-A)/15;};
+const soft=(x,k,f)=>x>k?k+(x-k)*f:x;
+const dodgeCap=()=>defCap().dodge+(FX.dodgeHeal?10:0);
 function dmgMult(w,isTurret){
- let m=1+S.dmg/100;
+ let m=1+soft(S.dmg,80,0.7)/100;  // 伤害加成超过 80% 后收益 ×0.7，中后期成长更平
  if(WEAPONS[w.key].melee&&H.meleeBonus)m+=H.meleeBonus/100;if(WEAPONS[w.key].melee&&FX.evo==='forgeB')m+=0.15;
  if(!isTurret&&H.nonTurret)m+=H.nonTurret/100;
  if(FX.goldDmg)m+=Math.min(30,Math.floor(run.gold/10))/100;
  const cl=WEAPONS[w.key].cls;if(cl==='arcane'&&FX.arcDmg)m+=FX.arcDmg/100;if(cl==='mech'&&FX.mechDmg)m+=FX.mechDmg/100;
  return Math.max(0.1,m);
 }
-const wDmg=(w,isT)=>WEAPONS[w.key].dmg*TIER_MUL[w.tier]*dmgMult(w,isT);
+const wDmg=(w,isT)=>WEAPONS[w.key].dmg*TIER_MUL[w.tier]*CAD_DMG*dmgMult(w,isT);
 const flatDmg=b=>b*(1+S.dmg/100)*(1+run.wave*0.1);
 // 主动技能伤害：随波次的敌人血量成长一起变强
 const skillDmg=b=>b*(0.5+0.5*hpScale(run.wave||1))*(1+S.dmg/100);
@@ -1547,7 +1572,10 @@ function dropCoins(x,y,g){
   if(coins.length>260){pick(coins).v+=v;continue;}
   const c={type:'coin',x:clamp(x+rand(-12,12),8,WORLD.w-8),y:clamp(y+rand(-12,12),8,WORLD.h-8),r:6,v,mag:false,ph:Math.random()*TAU};pushOut(c);pickups.push(c);}
 }
-function chestTier(bonus){const r=Math.random()*(1+S.luck/100)+run.wave*0.012;let t=r>1.05?4:r>0.88?3:r>0.55?2:1;return Math.min(4,t+bonus);}
+function chestTier(bonus){const r=Math.random()*(1+S.luck/250)+run.wave*0.01;let t=r>1.1?4:r>0.9?3:r>0.58?2:1;t=Math.min(4,t+bonus);
+ // 普通宝箱：第 8 波前不出金箱，之后每波最多 1 个（小首领 / 事件宝箱不受限）
+ if(t===4&&!bonus){if(run.wave<CHEST.goldWave||(run.waveGold||0)>=CHEST.goldPerWave)t=3;else run.waveGold=(run.waveGold||0)+1;}
+ return t;}
 function killEnemy(e,o){
  e.dead=true;run.kills++;burst(e.x,e.y,e.col,e.boss?24:8,e.boss?10:(e.type==='brute'?4:2));
  dropCoins(e.x,e.y,(e.loot?0:goldFor(e.gold))+(o.coin||0)+(H.coinKill&&Math.random()*100<H.coinKill?1:0));
@@ -1579,7 +1607,7 @@ function killEnemy(e,o){
 function hurt(d,kind='hit'){
  if(P.inv>0||state!=='battle'||run.victory||(CUR&&CUR.down))return;
  if(Math.random()*100<Math.min(dodgeCap(),S.dodge)){P.inv=0.3;hurtSnd(CUR,'dodge',0);addText(P.x,P.y-30,'闪避',C.verdigris,14);fxs.push({type:'after',pid:CUR?CUR.id:0,x:P.x,y:P.y,face:P.face,dface:P.dface,life:0.3,max:0.3});onDodge();return;}
- const A=S.armor;d*=A>=0?15/(15+A):(15-A)/15;if(FX.evo==='merchantB')d*=1-Math.min(0.3,Math.floor(run.gold/50)*0.02);
+ d*=armorMul(S.armor);if(FX.evo==='merchantB')d*=1-Math.min(0.3,Math.floor(run.gold/50)*0.02);
  if(CUR&&CUR.reviving!=null)d*=REV.guard; // reviving a teammate: take less damage
  run.hp-=d;run.minHpR=Math.min(run.minHpR??1,run.hp/Math.max(1,S.hp));P.inv=0.5;if(isMe())shake=0.25;addText(P.x,P.y-30,'-'+Math.max(1,Math.round(d)),C.danger,15);
  hurtSnd(CUR,kind,d/Math.max(1,S.hp));
@@ -1696,9 +1724,11 @@ function onDodge(){
 
 /* ================= weapons ================= */
 // per-tier weapon scaling: damage / cooldown / range / this-weapon crit / visual size
+// CAD: 武器整体出手间隔放慢，CAD_DMG 补回大部分伤害（净输出约 -2%），画面更清楚
+const CAD=1.22,CAD_DMG=1.2;
 const TIER_CD=[0,1,0.9,0.82,0.75,0.68],TIER_RG=[0,1,1.1,1.2,1.3,1.4],TIER_CRIT=[0,0,0,10,10,15],TIER_SZ=[0,1,1.18,1.36,1.55,1.75];
 const BOLTC=['','rgba(170,200,255,1)','rgba(110,170,255,1)','rgba(195,135,255,1)','rgba(255,210,100,1)','rgba(255,140,100,1)'];
-const wCD=w=>WEAPONS[w.key].cd*TIER_CD[w.tier];
+const wCD=w=>WEAPONS[w.key].cd*TIER_CD[w.tier]*CAD;
 const wRange=w=>WEAPONS[w.key].range*TIER_RG[w.tier];
 const wo=(w,extra)=>Object.assign({col:TC[w.tier],critB:TIER_CRIT[w.tier],tier:w.tier,hk:HITK[w.key],fz:payOf(w),wref:w},extra||{});
 function shoot(x,y,a,spd,range,dmg,o){
@@ -1722,7 +1752,7 @@ function deployTurret(w,gold){
  const a=Math.random()*TAU,d=rand(30,60);
  const dmg=wDmg(w,true)*(1+(H.turretDmg||0)/100+(FX.turretBoost||0)*0.5+(FX.evoC==='artificer'?0.5:0));
  const god=isGod(w),life=god?999:gold?18:13,x=clamp(P.x+Math.cos(a)*d,20,WORLD.w-20),y=clamp(P.y+Math.sin(a)*d,20,WORLD.h-20);
- turrets.push({pl:CUR,x,y,life,max:life,cd:0.3,dmg,dbl:gold,tri:god,fz:payOf(w),wo:w,perm:false,wid:w.id,a:0,col:TC[w.tier],tier:w.tier,rg:TIER_RG[w.tier],fcd:0.7*TIER_CD[w.tier]*(FX.mechDmg?0.8:1)*(FX.evoC==='artificer'?0.77:1),critB:TIER_CRIT[w.tier],kick:0});
+ turrets.push({pl:CUR,x,y,life,max:life,cd:0.3,dmg,dbl:gold,tri:god,fz:payOf(w),wo:w,perm:false,wid:w.id,a:0,col:TC[w.tier],tier:w.tier,rg:TIER_RG[w.tier],fcd:0.7*TIER_CD[w.tier]*CAD*(FX.mechDmg?0.8:1)*(FX.evoC==='artificer'?0.77:1),critB:TIER_CRIT[w.tier],kick:0});
  ringFx(x,y,34,TC[w.tier],0.3);
 }
 const orbN=w=>isGod(w)?10:w.tier>=5?8:w.tier+1+(w.tier===4?2:0);
@@ -1832,7 +1862,7 @@ function chase(e,ux,uy,sp,dt){
  for(const b of obstacles){const bx=b.x-e.x,by=b.y-e.y,bd=Math.hypot(bx,by),lim=b.r+e.r+28;if(bd<lim&&bx*ux+by*uy>0){const side=(bx*uy-by*ux)>0?1:-1,w=(lim-bd)/lim*1.6;ux+=-by/bd*side*w;uy+=bx/bd*side*w;const l=Math.hypot(ux,uy)||1;ux/=l;uy/=l;}}
  e.x+=ux*sp*dt;e.y+=uy*sp*dt;
 }
-function hurtDirect(d){if(state!=='battle'||run.victory||(CUR&&CUR.down))return;const A=S.armor;d*=A>=0?15/(15+A):(15-A)/15;run.hp-=d;run.minHpR=Math.min(run.minHpR??1,run.hp/Math.max(1,S.hp));addText(P.x+rand(-6,6),P.y-30,'-'+Math.max(1,Math.round(d)),C.good,12);hurtSnd(CUR,'poison',d/Math.max(1,S.hp));if(run.hp<=0){P.inv=0;hurt(1);}}
+function hurtDirect(d){if(state!=='battle'||run.victory||(CUR&&CUR.down))return;d*=armorMul(S.armor);run.hp-=d;run.minHpR=Math.min(run.minHpR??1,run.hp/Math.max(1,S.hp));addText(P.x+rand(-6,6),P.y-30,'-'+Math.max(1,Math.round(d)),C.good,12);hurtSnd(CUR,'poison',d/Math.max(1,S.hp));if(run.hp<=0){P.inv=0;hurt(1);}}
 const hzDmg=(b,k)=>b+run.wave*k;
 // map hazards: wave-scaled damage, but never more than a set share of the victim's max HP
 const hzHit=(b,k,pct)=>Math.min(hzDmg(b,k),Math.max(3,S.hp*pct));
@@ -1895,7 +1925,7 @@ function hzZones(){const z=[];for(const v of hz.vents)if(v.warn||v.hot)z.push({x
 let EID=0,waveSpawned=0,relief=null;const ETYPES=Object.keys(ENEMY);
 function makeEnemy(type,x,y,s){
  const b=ENEMY[type],w=run.wave,D=DIFF[run.diff],hp=b.hp*hpScale(w)*dRamp(D.hp,w)*(relief?relief.hp:1);
- const e={id:++EID,type,x,y,r:b.r,hp,max:hp,spd:b.spd*(1+w*0.012)*rand(0.9,1.1),dmg:b.dmg*(1+(w-1)*BAL.dmgLin)*dRamp(D.dmg,w),col:b.col,gold:b.gold,xp:b.xp,
+ const e={id:++EID,type,x,y,r:b.r,hp,max:hp,spd:b.spd*(1+w*0.012)*rand(0.9,1.1),dmg:b.dmg*(1+(w-1)*BAL.dmgLin)*dRamp(D.dmg,w)*lateDmg(w),col:b.col,gold:b.gold,xp:b.xp,
   flash:0,slowT:0,freezeT:0,poison:0,poisonT:0,ptick:0,ocd:{},st:0,ai:rand(1.5,3),wa:Math.random()*TAU,life:14,fuse:0,face:Math.atan2(P.y-y,P.x-x),anim:Math.random(),mvA:0,scale:1};
  if(type==='stalker'){e.st='rest';e.ai=rand(0.6,1.4);}
  if(type==='totem'){e.ai=rand(1.5,3);}
@@ -1912,13 +1942,15 @@ function makeEnemy(type,x,y,s){
  return e;
 }
 function makeMini(key,i){
- const B=MINIS.find(m=>m.key===key)||MINIS[0],D=DIFF[run.diff],w=run.wave,co=PL.length>1?1.5:1,hp=B.hp*hpScale(w)*dRamp(D.hp,w)*co*(w>=12?1.3:1);
+ const B=MINIS.find(m=>m.key===key)||MINIS[0],D=DIFF[run.diff],w=run.wave,co=PL.length>1?1.5:1,hp=B.hp*hpScale(w)*dRamp(D.hp,w)*co*(w>=12?1.3:1)*(run.diff>=1&&w>=8?1.2:1)*(run.diff>=3&&w<MINI_WAVES[1]?0.5:1);  // 噩梦第 4 波是双小首领，各自血量 ×0.5、伤害 ×0.75
  let x=WORLD.w/2,y=150,best=-1;for(let k=0;k<12;k++){const cx=rand(120,WORLD.w-120),cy=rand(120,WORLD.h-120),dd=minPD(cx,cy);if(dd>best&&freeSpot(cx,cy,B.r)){best=dd;x=cx;y=cy;}}
- return {id:++EID,type:'boss',boss:true,mini:key,bkey:key,name:'小首领 · '+B.name,x,y,r:B.r,hp,max:hp,spd:B.spd,dmg:B.dmg*(1+(w-1)*BAL.dmgLin)*dRamp(D.dmg,w)*(w<8?0.8:1),col:B.col,
+ return {id:++EID,type:'boss',boss:true,mini:key,bkey:key,name:'小首领 · '+B.name,x,y,r:B.r,hp,max:hp,spd:B.spd,dmg:B.dmg*(1+(w-1)*BAL.dmgLin)*dRamp(D.dmg,w)*lateDmg(w)*(w<8?0.7:1)*(run.diff>=3&&w<MINI_WAVES[1]?0.75:1),col:B.col,
   gold:12,xp:12,flash:0,slowT:0,freezeT:0,poison:0,poisonT:0,ptick:0,ocd:{},st:'',ai:1.6+i*0.8,ai2:0,face:Math.PI/2,anim:0,spT:0,spEmit:0,spA:0,scale:1,tough:0,rec:0,ph:0,jh:0};
 }
 function citadelCannons(e){const n=e.elite?3:4;for(let k=0;k<n;k++){const a=k*TAU/n+Math.PI/4;spawns.push({type:'gturret',x:clamp(e.x+Math.cos(a)*(e.r+55),40,WORLD.w-40),y:clamp(e.y+Math.sin(a)*(e.r+55),40,WORLD.h-40),t:0.6,noAff:true,owner:e.id,big:1});}}
 function gunnerSummon(e){for(let k=0;k<3;k++){const a=e.anim+k*TAU/3+0.5;spawns.push({type:'gturret',x:clamp(e.x+Math.cos(a)*110,40,WORLD.w-40),y:clamp(e.y+Math.sin(a)*110,40,WORLD.h-40),t:0.6,noAff:true,owner:e.id});}e.ai2=99;ringFx(e.x,e.y,e.r+40,C.danger,0.35);}
+// 直线判定（舌头 / 铁水等），cb 对被击中的玩家执行额外效果
+function hurtLine(x,y,a,len,w,d,kind,cb){const keep=CUR,ux=Math.cos(a),uy=Math.sin(a);for(const p of alivePL()){const px=p.P.x-x,py=p.P.y-y,t=px*ux+py*uy;if(t<0||t>len)continue;if(Math.abs(px*uy-py*ux)<w/2+p.P.r){use(p);hurt(d,kind);if(cb)cb(p,t);}}use(keep);}
 function miniAI(e,dt,dx,dy,d,sf){
  e.anim+=dt;const pa=Math.atan2(dy,dx),enr=e.hp<e.max*0.5;
  switch(e.mini){
@@ -1929,7 +1961,13 @@ function miniAI(e,dt,dx,dy,d,sf){
     if(!wall&&e.spinT<=0&&enr&&!e.chain){e.chain=1;e.st='wind';e.windT=0.35;e.dashA=pa;fxs.push({type:'tele',x:e.x,y:e.y,a:pa,len:700,w:e.r*2,life:0.35,max:0.35});}
     else if(wall||e.spinT<=0){e.chain=0;e.st='stun';e.stunT=wall?1.8:0.5;if(wall){shake=Math.max(shake,0.3);ringFx(e.x,e.y,e.r+30,C['brass-hi'],0.3);burst(e.x,e.y,'#c9d2d4',8,3);}}}
    else if(e.st==='stun'){e.stunT-=dt;e.spA+=dt*2;if(e.stunT<=0){e.st='';e.ai=rand(1.4,2.2);}}
-   else{chase(e,dx/d,dy/d,e.spd*sf,dt);e.spA+=dt*4;e.ai-=dt*(enr?1.3:1);if(e.ai<=0){e.st='wind';e.windT=0.7;e.dashA=pa;fxs.push({type:'tele',x:e.x,y:e.y,a:pa,len:700,w:e.r*2,life:0.7,max:0.7});}}
+   else if(e.st==='whirl0'){e.wt-=dt;e.spA+=dt*18;if(e.wt<=0){e.st='whirl';e.wt=enr?2.2:1.5;e.emit=0;e.wa=pa;}}
+   else if(e.st==='whirl'){e.wt-=dt;e.spA+=dt*34;e.wa+=dt*(enr?2.6:2.1);chase(e,dx/d,dy/d,e.spd*0.35*sf,dt);e.emit-=dt;
+    if(e.emit<=0){e.emit=0.1;const arms=enr?3:2;for(let k=0;k<arms;k++)ebullet(e.x,e.y,e.wa+k*TAU/arms,165,e.dmg*0.42,6);}
+    if(e.wt<=0){e.st='';e.ai=rand(1.1,1.6);}}
+   else{chase(e,dx/d,dy/d,e.spd*sf,dt);e.spA+=dt*4;e.ai-=dt*(enr?1.3:1);
+    if(e.ai<=0&&(e.cyc=(e.cyc||0)+1)%3===0){e.st='whirl0';e.wt=0.55;ringFx(e.x,e.y,e.r+60,'#c9d2d4',0.55);e.ai=1;}
+    else if(e.ai<=0){e.st='wind';e.windT=0.7;e.dashA=pa;fxs.push({type:'tele',x:e.x,y:e.y,a:pa,len:700,w:e.r*2,life:0.7,max:0.7});}}
    e.vuln=e.st==='stun'?1.6:1;break;
   case 'gunner':{
    const guns=enemies.filter(o=>o.type==='gturret'&&!o.dead&&o.owner===e.id).length+spawns.filter(o=>o.type==='gturret'&&o.owner===e.id).length;
@@ -1938,13 +1976,21 @@ function miniAI(e,dt,dx,dy,d,sf){
    const dir=d>220?1:d<140?-1:0;chase(e,dx/d*dir,dy/d*dir,e.spd*sf*Math.abs(dir),dt);
    e.ai-=dt*(enr?1.3:1);if(e.ai<=0){e.ai=2.1;const nk=enr?3:2;for(let k=-nk;k<=nk;k++)ebullet(e.x,e.y,pa+k*0.17,210,e.dmg*0.65,6);}
    if(enr)for(const o of enemies)if(o.type==='gturret'&&o.owner===e.id&&o.ai>1.05)o.ai=1.05;
+   // 迫击炮：每隔几秒朝玩家附近落 3 发（半血 5 发），落点先有红圈
+   e.mt=(e.mt??3.5)-dt*(enr?1.3:1);if(e.mt<=0){e.mt=4.4;const n=enr?5:3,al=alivePL(),dm=e.dmg*0.9;
+    for(let i=0;i<n;i++){const tp=(al.length?al[i%al.length]:ME()).P,a=Math.random()*TAU,r=i<al.length?0:rand(50,140),x=clamp(tp.x+Math.cos(a)*r,30,WORLD.w-30),y=clamp(tp.y+Math.sin(a)*r,30,WORLD.h-30),T=1.05+i*0.12;
+     fxs.push({type:'warnc',x,y,r:70,life:T,max:T});delayed.push({t:T,fn:()=>{boomFx(x,y,70);hurtNear(x,y,70,dm,'boom');}});}}
    break;}
   case 'toad':
-   if(e.st==='crouch'){e.ct-=dt;if(e.ct<=0){e.st='air';e.jT=0;e.jD=0.85;e.jx0=e.x;e.jy0=e.y;e.jx1=clamp(P.x,e.r,WORLD.w-e.r);e.jy1=clamp(P.y,e.r,WORLD.h-e.r);fxs.push({type:'warnc',x:e.jx1,y:e.jy1,r:95,life:e.jD,max:e.jD});}}
+   if(e.st==='tongue'){e.tt-=dt;if(e.tt<=0){e.st='';e.ai=enr?0.5:0.8;const tx=e.x,ty=e.y,ta=e.ta;
+     hurtLine(tx,ty,ta,460,30,e.dmg*0.8,'hit',(p,t)=>{const pull=Math.min(t-e.r-20,180);if(pull>0){const ddx=-Math.cos(ta)*pull,ddy=-Math.sin(ta)*pull;p.P.x+=ddx;p.P.y+=ddy;pushOut(p.P);if(p!==ME())netKnock(p,ddx,ddy);}p.P.slowT=Math.max(p.P.slowT||0,1.2);});
+     fxs.push({type:'tele',x:tx,y:ty,a:ta,len:460,w:12,life:0.18,max:0.18});}}
+   else if(e.st==='crouch'){e.ct-=dt;if(e.ct<=0){e.st='air';e.jT=0;e.jD=0.85;e.jx0=e.x;e.jy0=e.y;e.jx1=clamp(P.x,e.r,WORLD.w-e.r);e.jy1=clamp(P.y,e.r,WORLD.h-e.r);fxs.push({type:'warnc',x:e.jx1,y:e.jy1,r:95,life:e.jD,max:e.jD});}}
    else if(e.st==='air'){e.jT+=dt;const k=Math.min(1,e.jT/e.jD);e.x=lerp(e.jx0,e.jx1,k);e.y=lerp(e.jy0,e.jy1,k);e.jh=Math.sin(Math.PI*k)*110;e.immune=true;
     if(k>=1){e.st='';e.jh=0;e.immune=false;e.ai=rand(1.3,1.9);shake=Math.max(shake,0.35);ringFx(e.x,e.y,95,C.good,0.35);hurtNear(e.x,e.y,95,e.dmg*1.1,'crush');addGz('acid',e.x,e.y,80,9,e.dmg*0.2);if(enr&&!e.again){e.again=1;e.st='crouch';e.ct=0.3;}else e.again=0;for(let q=0;q<8;q++)ebullet(e.x,e.y,q*TAU/8+e.anim,150,e.dmg*0.5,7);}}
    else{e.ai-=dt*(enr?1.3:1);if(e.ai<=0){e.jumps=(e.jumps||0)+1;
-    if(e.jumps%3===0){for(const o of [-0.35,0,0.35])ebul.push({x:e.x,y:e.y,vx:Math.cos(pa+o)*190,vy:Math.sin(pa+o)*190,r:9,dmg:e.dmg*0.7,life:Math.min(2.4,d/190),home:0,pool:1});e.ai=1.1;}
+    if(e.jumps%4===2&&d<480){e.st='tongue';e.tt=0.55;e.ta=pa;fxs.push({type:'tele',x:e.x,y:e.y,a:pa,len:460,w:30,life:0.55,max:0.55});}
+    else if(e.jumps%3===0){for(const o of [-0.35,0,0.35])ebul.push({x:e.x,y:e.y,vx:Math.cos(pa+o)*190,vy:Math.sin(pa+o)*190,r:9,dmg:e.dmg*0.7,life:Math.min(2.4,d/190),home:0,pool:1});e.ai=1.1;}
     else{e.st='crouch';e.ct=0.45;}}}
    break;
   case 'mirror':
@@ -1954,19 +2000,29 @@ function miniAI(e,dt,dx,dy,d,sf){
       if(i===ri){e.x=p[0];e.y=p[1];return;}const c=makeEnemy('clone',p[0],p[1],{noAff:true,ev:0});c.r=e.r;c.scale=e.r/ENEMY.clone.r;c.dmg=e.dmg*0.5;c.st='reveal';c.ai=0.55;c.life=4.5;c.owner=e.id;c.face=Math.atan2(P.y-p[1],P.x-p[0]);enemies.push(c);});
      e.st='reveal';e.rt=0.55;}}
    else if(e.st==='reveal'){e.rt-=dt;e.da=pa;if(e.rt<=0){e.st='lunge';e.lt=0.4;}}
-   else if(e.st==='lunge'){e.lt-=dt;e.x+=Math.cos(e.da)*480*dt;e.y+=Math.sin(e.da)*480*dt;if(e.lt<=0){e.st='';e.ai=rand(2.2,3)*(enr?0.8:1);}}
-   else{chase(e,dx/d,dy/d,e.spd*sf,dt);e.ai-=dt;if(e.ai<=0){e.st='fade';e.ft=0.5;}}
+   else if(e.st==='lunge'){e.lt-=dt;e.x+=Math.cos(e.da)*480*dt;e.y+=Math.sin(e.da)*480*dt;if(e.lt<=0){e.st='';e.ai=rand(2.2,3)*(enr?0.8:1);const n=enr?8:6;for(let k=0;k<n;k++)ebullet(e.x,e.y,e.da+k*TAU/n,190,e.dmg*0.42,5);}}
+   else if(e.st==='blink'){e.bt-=dt;if(e.bt<=0){e.st='';e.ai=rand(1.6,2.2);ringFx(e.x,e.y,78,'#b28ae0',0.25);hurtNear(e.x,e.y,78,e.dmg*1.15,'hit');}}
+   else{chase(e,dx/d,dy/d,e.spd*sf,dt);e.ai-=dt;if(e.ai<=0){
+    // 每三次里有一次瞬身到你背后横斩（脚下先出紫圈）
+    if((e.cyc=(e.cyc||0)+1)%3===0){const tp=P,fa=tp.face||0,bx=clamp(tp.x-Math.cos(fa)*60,40,WORLD.w-40),by=clamp(tp.y-Math.sin(fa)*60,40,WORLD.h-40);fxs.push({type:'flash',x:e.x,y:e.y,r:40,col:'rgba(178,138,224,1)',life:0.3,max:0.3});e.x=bx;e.y=by;pushOut(e);e.st='blink';e.bt=enr?0.42:0.55;fxs.push({type:'warnc',x:e.x,y:e.y,r:78,life:e.bt,max:e.bt});}
+    else{e.st='fade';e.ft=0.5;}}}
    break;
   case 'foreman':
+   if(e.st==='pour0'){e.pt-=dt;if(e.pt<=0){e.st='pour';e.pt=1.4;e.emit=0;e.pa0=e.pa;}break;}
+   if(e.st==='pour'){e.pt-=dt;const k=1-e.pt/1.4,a=e.pa0-0.85+k*1.7;e.face=a;e.emit-=dt;
+    if(e.emit<=0){e.emit=0.06;for(const sgn of enr?[1,-1]:[1]){const aa=sgn>0?a:e.pa0*2-a;ebul.push({x:e.x+Math.cos(aa)*e.r,y:e.y+Math.sin(aa)*e.r,vx:Math.cos(aa)*240,vy:Math.sin(aa)*240,r:7,dmg:e.dmg*0.45,life:1.6,home:0,fire:1});}}
+    if(e.pt<=0){e.st='';e.ai=Math.max(e.ai,1.2);}break;}
    chase(e,dx/d,dy/d,e.spd*sf,dt);e.ai-=dt;
-   if(e.ai<=0){e.ai=enr?2.6:3.4;const n=enr?8:5,al=alivePL();
+   // 每三轮里有一轮改成铁水喷流：站定，扇形横扫（半血双向）
+   if(e.ai<=0&&(e.cyc=(e.cyc||0)+1)%3===0){e.ai=enr?2.6:3.4;e.st='pour0';e.pt=0.6;e.pa=pa;fxs.push({type:'tele',x:e.x,y:e.y,a:pa-0.85,len:380,w:20,life:0.6,max:0.6},{type:'tele',x:e.x,y:e.y,a:pa+0.85,len:380,w:20,life:0.6,max:0.6});}
+   else if(e.ai<=0){e.ai=enr?2.6:3.4;const n=enr?8:5,al=alivePL();
     for(let i=0;i<n;i++){const tp=(al.length?al[i%al.length]:ME()).P;let x=tp.x,y=tp.y;if(i>=al.length){const a=Math.random()*TAU,r=rand(70,260);x+=Math.cos(a)*r;y+=Math.sin(a)*r;}
      const gx=clamp(Math.round(x/80)*80,40,WORLD.w-40),gy=clamp(Math.round(y/80)*80,40,WORLD.h-40);addGz('heat',gx,gy,38,1.3,e.dmg*1.2);
      if(enr)delayed.push({t:0.9,fn:()=>{const q=(alivePL()[i%Math.max(1,alivePL().length)]||ME()).P;addGz('heat',clamp(Math.round(q.x/80)*80,40,WORLD.w-40),clamp(Math.round(q.y/80)*80,40,WORLD.h-40),38,1.3,e.dmg*1.2);}});}
     ringFx(e.x,e.y,e.r+40,'#ff9a4a',0.35);}
    break;
  }
- if(e.st!=='spin'&&e.st!=='lunge')e.face+=angDiff(pa,e.face)*Math.min(1,dt*4);
+ if(e.st!=='spin'&&e.st!=='lunge'&&e.st!=='pour')e.face+=angDiff(pa,e.face)*Math.min(1,dt*4);
 }
 function makeBoss(key,elite){
  const B=BOSSES.find(b=>b.key===key),D=DIFF[run.diff];
@@ -2000,7 +2056,7 @@ function spawnLogic(dt){
   const n=1+Math.floor(w/BAL.batchDiv)+(Math.random()<0.3?1:0);
   for(let i=0;i<n;i++)if(enemies.length+spawns.length<170)queueSpawn(pickType(w));
  }
- fairyT-=dt;if(fairyT<=0){fairyT=rand(CHEST.fairyMin,CHEST.fairyMax)/(1+S.luck/300);if((run.waveFairies||0)<CHEST.fairyCap){run.waveFairies=(run.waveFairies||0)+1;queueSpawn('fairy');}}
+ fairyT-=dt;if(fairyT<=0){fairyT=rand(CHEST.fairyMin,CHEST.fairyMax)/(1+S.luck/500);if((run.waveFairies||0)<CHEST.fairyCap){run.waveFairies=(run.waveFairies||0)+1;queueSpawn('fairy');}}
 }
 function ebullet(x,y,a,spd,dmg,r=6,home=0){ebul.push({x,y,vx:Math.cos(a)*spd,vy:Math.sin(a)*spd,r,dmg,life:home?4.5:5,home});}
 function wyrmAI(e,dt,dx,dy,d,sf){
@@ -2183,14 +2239,16 @@ function readInput(){
  let mx=0,my=0;
  if(keys.has('a')||keys.has('arrowleft'))mx-=1;if(keys.has('d')||keys.has('arrowright'))mx+=1;
  if(keys.has('w')||keys.has('arrowup'))my-=1;if(keys.has('s')||keys.has('arrowdown'))my+=1;
- if(joy){const jx=joy.x-joy.ox,jy=joy.y-joy.oy,l=Math.hypot(jx,jy);if(l>8){const k=Math.min(1,l/50)/l;mx=jx*k;my=jy*k;}}
+ if(joy){const jx=joy.x-joy.ox,jy=joy.y-joy.oy,l=Math.hypot(jx,jy);if(l>8){const k=Math.min(1,l/(joyR()-2))/l;mx=jx*k;my=jy*k;}}
  const ml=Math.hypot(mx,my);if(ml>1){mx/=ml;my/=ml;}
  return [mx,my,Math.hypot(mx,my)];
 }
 // local movement for the current player (host's own player, or the guest predicting itself)
+// 摇杆半径随屏幕放大：手机 52，iPad 约 62
+const joyR=()=>Math.max(52,Math.min(70,Math.min(innerWidth,innerHeight)*0.075));
 function moveLocal(dt){
  const [mx,my,ml]=readInput();
- const spd=190*Math.max(0.3,1+S.speed/100)*(inPool(P.x,P.y)&&!(CUR&&CUR.antidote>0)?0.62:1)*gzSlow(P.x,P.y);
+ const spd=190*Math.max(0.3,1+S.speed/100)*(inPool(P.x,P.y)&&!(CUR&&CUR.antidote>0)?0.62:1)*gzSlow(P.x,P.y)*(P.slowT>0?0.6:1);if(P.slowT>0)P.slowT-=dt;
  let vx=mx*spd,vy=my*spd;
  if(MAP.ice){const ice=MAP.ice.some(([x,y,r])=>(P.x-x)**2+(P.y-y)**2<r*r);if(ice){const k=Math.min(1,dt*2.2);P.ivx=lerp(P.ivx||0,vx,k);P.ivy=lerp(P.ivy||0,vy,k);vx=P.ivx;vy=P.ivy;}else{P.ivx=vx;P.ivy=vy;}
   if(hz.wind&&hz.wind.s>0){vx+=Math.cos(hz.wind.a)*80*hz.wind.s;vy+=Math.sin(hz.wind.a)*80*hz.wind.s;}}
@@ -2199,8 +2257,8 @@ function moveLocal(dt){
  P.dface+=angDiff(P.mface,P.dface)*Math.min(1,dt*LB.turn);
 }
 function playerUpdate(p,dt){
- // lifesteal: % of damage dealt, paid out 4x per second, capped at 4 + 6% max HP per second
- stealClock-=dt;if(stealClock<=0){stealClock=0.25;const cap=(4+S.hp*0.06)*0.25;stealPool=Math.min(stealPool,cap*4);const amt=Math.min(Math.floor(stealPool),Math.ceil(cap));if(amt>0){stealPool-=amt;heal(amt,'steal');}}
+ // lifesteal: % of damage dealt, paid out 4x per second, capped per second by DEF_CAP (一阶 4 + 6% 最大生命)
+ stealClock-=dt;if(stealClock<=0){stealClock=0.25;const LC=defCap().ls,cap=(LC[0]+S.hp*LC[1])*0.25;stealPool=Math.min(stealPool,cap*4);const amt=Math.min(Math.floor(stealPool),Math.ceil(cap));if(amt>0){stealPool-=amt;heal(amt,'steal');}}
  if(p===ME())moveLocal(dt);
  else{ // remote player: position comes from the network, animate locally
   if(P.moving){P.mface=P.face;P.anim+=dt;}else P.anim+=dt*0.4;
@@ -2280,7 +2338,7 @@ function update(dt){
  // pickups fly to (and are collected by) the closest living player whose magnet reaches them
  for(const p of pickups){
   let tp=null,bd=Infinity;
-  for(const q of alive){if(p.type==='chest'&&((p.tk||0)>>q.id&1))continue;const d=Math.hypot(q.P.x-p.x,q.P.y-p.y);if(d<60*Math.max(0.2,1+q.S.pickup/100))p.mag=true;if(d<bd){bd=d;tp=q;}}
+  for(const q of alive){if(p.type==='chest'&&((p.tk||0)>>q.id&1))continue;const d=Math.hypot(q.P.x-p.x,q.P.y-p.y);if(d<60*Math.max(0,0.6-0.06*((q.run.wave||1)-1))+60*Math.max(0.2,1+q.S.pickup/100))p.mag=true;/* 前几波自带更大的吸取范围，第 11 波起回到基础值 */if(d<bd){bd=d;tp=q;}}
   if(!tp)continue;
   const dx=tp.P.x-p.x,dy=tp.P.y-p.y,d=bd||1;
   if(p.mag){p.x+=dx/d*540*dt;p.y+=dy/d*540*dt;}
@@ -2330,7 +2388,7 @@ function startWave(){
  enemies=[];spawns=[];projs=[];ebul=[];fxs=[];puddles=[];mines=[];turrets=[];texts=[];delayed=[];gz=[];corpses=[];resetHazards();resetProps();planEvent();
  pickups=run.coins.map(c=>({type:'coin',x:c.x,y:c.y,v:c.v,mag:false,ph:Math.random()*TAU}));
  waveTimer=run.wave>=FINAL_WAVE?Infinity:(run.wave===ELITE_WAVE?45:Math.max(MINI_WAVES.includes(run.wave)?50:0,Math.min(55,20+run.wave*2.5)));run.waveDur=waveTimer;
- spawnT=0.6;fairyT=rand(5,9);for(const p of PL){p.run.waveChests=0;p.run.waveFairies=0;}
+ spawnT=0.6;fairyT=rand(5,9);for(const p of PL){p.run.waveChests=0;p.run.waveFairies=0;p.run.waveGold=0;}
  for(const p of PL){use(p);for(let k=0;k<(FX.miniTurret||0);k++){const a=k*2.1+p.id;turrets.push({pl:p,x:P.x+Math.cos(a)*55,y:P.y+Math.sin(a)*55,life:1,max:1,cd:0.5,dmg:flatDmg(5),dbl:false,perm:true,a:0,col:C.t2,kick:0});}}
  use(ME());
  let bn;
@@ -2399,7 +2457,7 @@ function showOver(win){
 /* ================= shop ================= */
 function rollTier(){
  const w=run.wave,L=1+S.luck/100,r=Math.random();
- const p4=Math.max(0,(w-8)*0.012)*L,p3=Math.max(0,(w-3)*0.03)*L,p2=Math.min(0.6,0.12+w*0.035)*L;
+ const p4=Math.max(0,(w-8)*0.009)*L,p3=Math.max(0,(w-3)*0.025)*L,p2=Math.min(0.6,0.12+w*0.035)*L;
  return r<p4?4:r<p4+p3?3:r<p4+p3+p2?2:1;
 }
 function price(kind,t){let p=(kind==='w'?[0,18,40,72,120,200]:[0,16,32,60,98,160])[t]*(1+run.wave*BAL.priceScale);if(H.key==='merchant')p*=0.85;return Math.max(1,Math.round(p));}
@@ -2456,7 +2514,7 @@ const fmtNum=v=>Number.isInteger(v)?String(v):v.toFixed(1);
 const fmtStat=(k,v)=>(v>0?'+':'')+fmtNum(v)+(PCT.has(k)?'%':'');
 const fmtStats=s=>s?Object.entries(s).map(([k,v])=>`<span class="${v>0?'pos':'neg'}">${STAT_NAME[k]} ${fmtStat(k,v)}</span>`).join(' · '):'';
 function itemDesc(it){return [it.d||'',fmtStats(it.s)].filter(Boolean).join('<br>');}
-function weaponDesc(key,t){const D=WEAPONS[key],cd=+(D.cd*TIER_CD[t]).toFixed(2);return `<span class="clsb" style="--c:${CLASSES[D.cls].col}">${CLASSES[D.cls].n}</span>${D.desc}<span class="ws2">伤害 ${Math.round(D.dmg*TIER_MUL[t])} · 冷却 ${cd}s · 范围 ${Math.round(D.range*TIER_RG[t])}${TIER_CRIT[t]?' · 暴击 +'+TIER_CRIT[t]+'%':''}</span>${t===4?`<span class="goldtxt ws2">${D.gold}</span>`:''}`;}
+function weaponDesc(key,t){const D=WEAPONS[key],cd=+(D.cd*TIER_CD[t]*CAD).toFixed(2);return `<span class="clsb" style="--c:${CLASSES[D.cls].col}">${CLASSES[D.cls].n}</span>${D.desc}<span class="ws2">伤害 ${Math.round(D.dmg*TIER_MUL[t]*CAD_DMG)} · 冷却 ${cd}s · 范围 ${Math.round(D.range*TIER_RG[t])}${TIER_CRIT[t]?' · 暴击 +'+TIER_CRIT[t]+'%':''}</span>${t===4?`<span class="goldtxt ws2">${D.gold}</span>`:''}`;}
 function itemLine(it){return [it.d||'',fmtStats(it.s)].filter(Boolean).join(' · ');}
 const stars=n=>'<b>'+'◆'.repeat(n)+'</b>'+'◇'.repeat(3-n);
 
@@ -2597,7 +2655,7 @@ function fuseOpts(i){const w=run.weapons[i];if(!w||w.tier!==4)return [];const r=
 function fuseHints(w){if(w.tier!==4)return '';return `<div class="note">合体（神阶）：两把同名金阶 → 神器（${GOD[w.key]}）。和另一把金阶合体时，攻击形态鲜明的一把为主（星轮 > 炮台 > 回旋镖 > 霰弹炮 > 连弩 > 长枪 > 双刃 > 雷符 > 爆裂弹 > 毒雾瓶 > 冰晶），另一把的攻击方式融进去。它作为副武器时带来「${FUSE[w.key].n}」：${FUSE[w.key].d}。合体后同时算两把的流派，并空出一格。</div>`;}
 function weaponInfo(w){
  const D=WEAPONS[w.key],t=w.tier,isT=D.kind==='turret',orbit=D.kind==='orbit';
- const base=Math.round(D.dmg*TIER_MUL[t]),now=Math.round(wDmg(w,isT)*(isT?1+(H.turretDmg||0)/100:1));
+ const base=Math.round(D.dmg*TIER_MUL[t]*CAD_DMG),now=Math.round(wDmg(w,isT)*(isT?1+(H.turretDmg||0)/100:1));
  const cd=wCD(w),cdNow=cd/atkMul(),rg=Math.round(wRange(w)),rgNow=Math.round(wRange(w)*rangeMul());
  const same=run.weapons.filter(x=>x!==w&&x.key===w.key&&x.tier===w.tier).length;
  return `<div class="ih"><div class="ic t${t}">${wImg(w)}</div><div><b>${wName(w)}</b><span class="tier t${t}">${TIER_N[t]}阶武器 · ${CLASSES[D.cls].n}${t>=5&&WEAPONS[w.fu||w.key].cls!==D.cls?' / '+CLASSES[WEAPONS[w.fu||w.key].cls].n:''}流派${t>=5?'（算两件）':''}</span></div></div>
@@ -3150,7 +3208,7 @@ function drawMini(e){
  lighter(()=>{drawGlow(e.x,y,e.r*2.1,gl,0.3+Math.sin(tGame*4)*0.08);if(e.st==='wind'||e.st==='crouch'||e.st==='reveal')drawGlow(e.x,y,e.r*2.4,GLOW.red,0.35+Math.sin(tGame*35)*0.15);});
  if(e.mini==='gunner'&&e.guarded){for(const o of enemies)if(o.type==='gturret'&&!o.dead){ctx.globalAlpha=0.35;ctx.strokeStyle='#8fb8ff';ctx.lineWidth=2;ctx.setLineDash([5,7]);ctx.lineDashOffset=-tGame*30;ctx.beginPath();ctx.moveTo(e.x,y);ctx.lineTo(o.x,o.y);ctx.stroke();ctx.setLineDash([]);ctx.globalAlpha=1;}}
  ctx.save();ctx.translate(e.x,y);
- if(e.mini==='grinder')for(let k=0;k<4;k++){const a=e.spA+k*TAU/4,R=e.r+(e.st==='spin'?14:9);ctx.save();ctx.translate(Math.cos(a)*R,Math.sin(a)*R);ctx.rotate(e.spA*2);gearPath(ctx,0,0,9,8,0);fs(ctx,'#c9d2d4',1.4);ctx.beginPath();ctx.arc(0,0,2.4,0,TAU);ctx.fillStyle=INK;ctx.fill();ctx.restore();}
+ if(e.mini==='grinder')for(let k=0;k<4;k++){const a=e.spA+k*TAU/4,R=e.r+(e.st==='spin'||e.st==='whirl'?14:9);ctx.save();ctx.translate(Math.cos(a)*R,Math.sin(a)*R);ctx.rotate(e.spA*2);gearPath(ctx,0,0,9,8,0);fs(ctx,'#c9d2d4',1.4);ctx.beginPath();ctx.arc(0,0,2.4,0,TAU);ctx.fillStyle=INK;ctx.fill();ctx.restore();}
  ctx.globalAlpha=e.st==='fade'?0.25:1;
  if(sp.rot)ctx.rotate(e.face);else if(Math.cos(e.face)<0)ctx.scale(-1,1);
  ctx.drawImage(fr[fi],-h,-h,h*2,h*2);if(e.flash>0){ctx.globalAlpha=0.8;ctx.drawImage(sp.whites[fi],-h,-h,h*2,h*2);}
@@ -3386,8 +3444,8 @@ function draw(dt){
  else{ctx.fillStyle='rgba(242,203,122,.22)';for(const m of motes){m.y-=m.v*dt;m.x+=Math.sin(tGame*0.6+m.p)*6*dt;if(m.y<-4){m.y=Hh+4;m.x=Math.random()*W;}ctx.fillRect(m.x,m.y,m.s,m.s);}}
  if(VIGNETTE)ctx.drawImage(VIGNETTE,0,0,W,Hh);
  if(run.hp<S.hp*0.3&&state==='battle'){ctx.globalAlpha=0.25+Math.sin(tGame*6)*0.1;ctx.strokeStyle=C.danger;ctx.lineWidth=18;ctx.strokeRect(0,0,W,Hh);ctx.globalAlpha=1;}
- if(joy){ctx.globalAlpha=0.55;ctx.beginPath();ctx.arc(joy.ox,joy.oy,52,0,TAU);ctx.fillStyle='rgba(10,16,19,.35)';ctx.fill();ctx.strokeStyle=C.brass;ctx.lineWidth=2;ctx.stroke();
-  const jx=joy.x-joy.ox,jy=joy.y-joy.oy,l=Math.hypot(jx,jy),k=l>52?52/l:1;ctx.beginPath();ctx.arc(joy.ox+jx*k,joy.oy+jy*k,21,0,TAU);ctx.fillStyle=C.brass;ctx.fill();ctx.globalAlpha=1;}
+ if(joy){ctx.globalAlpha=0.55;ctx.beginPath();const JR=joyR();ctx.arc(joy.ox,joy.oy,JR,0,TAU);ctx.fillStyle='rgba(10,16,19,.35)';ctx.fill();ctx.strokeStyle=C.brass;ctx.lineWidth=2;ctx.stroke();
+  const jx=joy.x-joy.ox,jy=joy.y-joy.oy,l=Math.hypot(jx,jy),k=l>JR?JR/l:1;ctx.beginPath();ctx.arc(joy.ox+jx*k,joy.oy+jy*k,JR*0.4,0,TAU);ctx.fillStyle=C.brass;ctx.fill();ctx.globalAlpha=1;}
 }
 function drawGroundHazards(){
  const T=tGame;
