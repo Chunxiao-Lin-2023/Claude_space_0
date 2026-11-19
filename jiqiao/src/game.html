@@ -453,7 +453,7 @@ const WORLD={w:1600,h:1100};
 
 /* ================= data ================= */
 const WEAPONS={
- hammer:{cls:'melee',name:'锻锤',kind:'arc',dmg:17,cd:1.1,range:88,arc:1.7,melee:1,desc:'近身横扫，扇形范围伤害',gold:'金阶：每次挥击额外释放震荡冲击波'},
+ blades:{cls:'melee',name:'双刃',kind:'arc',dmg:8,cd:0.42,range:80,arc:2.2,melee:1,desc:'高速近身连斩',gold:'金阶：每次斩击追加一刀'},
  spear:{cls:'melee',name:'长枪',kind:'thrust',dmg:12,cd:0.9,range:135,melee:1,desc:'直线突刺，贯穿一整排敌人',gold:'金阶：突刺距离翻倍'},
  xbow:{cls:'shot',name:'连弩',kind:'proj',dmg:9,cd:0.6,range:360,speed:10,pierce:1,st:'arrow',desc:'快速射出贯穿弩箭',gold:'金阶：一次射出三支弩箭'},
  shotgun:{cls:'shot',name:'霰弹炮',kind:'spread',dmg:6,cd:1.2,range:230,speed:10,desc:'扇形喷射五颗弹丸',gold:'金阶：弹丸增至九颗'},
@@ -467,18 +467,31 @@ const WEAPONS={
 };
 const WKEYS=Object.keys(WEAPONS),SHOPK=WKEYS;
 // 合体：任意两把金阶武器都能合体。主武器决定攻击方式，副武器把自己的特性附加到每次命中上；同名两把合成神器
-const GOD={hammer:'挥击震荡冲击波，并把敌人定住 1 秒',spear:'突刺后再射出一道贯穿风刃',xbow:'一次射出五支弩箭，每支多贯穿 1 个敌人',
+const GOD={blades:'每次斩击追加两刀',spear:'突刺后再射出一道贯穿风刃',xbow:'一次射出五支弩箭，每支多贯穿 1 个敌人',
  shotgun:'弹丸增至十三颗，每颗多贯穿 1 个敌人',turret:'炮台三管齐射，本波不会消失',flask:'毒雾范围翻倍，并让敌人减速',talisman:'同时打出两道连锁闪电',boomerang:'同时掷出三枚更大的回旋镖',
  grenade:'爆炸后分裂出六颗会再次爆炸的弹片',frost:'命中冻结 1 秒，并炸开一圈冰环减速周围敌人',orbit:'刀轮再加四枚，半径更大'};
-const PAY={hammer:['震岳','命中把敌人震开，25% 几率放出小范围冲击波'],spear:['穿云','范围 +25%，子弹多贯穿 2 个敌人'],orbit:['千刃','命中 25% 几率甩出一枚飞刃'],
- xbow:['连珠','命中 20% 几率朝附近另一个敌人追射一箭'],shotgun:['散华','命中 30% 几率炸出三颗弹丸'],boomerang:['回旋','命中 30% 几率弹向附近另一个敌人'],
- talisman:['雷霆','命中 35% 几率放出连锁闪电'],flask:['剧毒','命中让敌人中毒'],frost:['霜冻','命中减速，15% 几率冻结'],
- turret:['机巧','击杀 20% 几率在原地留下一座临时炮台'],grenade:['爆裂','命中 25% 几率引发小范围爆炸']};
-const NOUN={hammer:'锤',spear:'枪',orbit:'轮',xbow:'弩',shotgun:'炮',boomerang:'镖',talisman:'符',flask:'瓶',frost:'晶',turret:'炮台',grenade:'弹'};
-const PAYC={hammer:'warm',spear:'white',orbit:'white',xbow:'warm',shotgun:'orange',boomerang:'warm',talisman:'blue',flask:'green',frost:'cyan',turret:'gold',grenade:'orange'};
+// 合体：副武器把自己的攻击方式融进主武器
+const FUSE={
+ blades:{n:'连斩',d:'每次攻击都连出两次'},
+ spear:{n:'穿云',d:'范围 +30%，子弹和飞行物贯穿一切，雷符多跳两次'},
+ orbit:{n:'环刃',d:'身边多出三枚环绕刀轮；星轮自身则刀轮更多'},
+ xbow:{n:'连珠',d:'飞行物多两发；近身、毒瓶、雷符等武器则每次攻击额外射出两支弩箭'},
+ shotgun:{n:'散华',d:'飞行物变成三倍数量的扇形齐射（单发伤害降低）；其他武器每次攻击额外喷出一片弹丸'},
+ boomerang:{n:'回旋',d:'飞行物打到尽头会飞回来再打一遍；其他武器每次攻击额外掷出一枚回旋镖'},
+ talisman:{n:'雷霆',d:'每发命中都会引出连锁闪电'},
+ flask:{n:'剧毒',d:'命中使敌人中毒，飞行物落点和攻击目标脚下留下毒雾'},
+ frost:{n:'霜冻',d:'命中减速，击杀时炸开冰环冻住周围敌人'},
+ turret:{n:'机巧',d:'每攻击四次在身边留下一座临时炮台，炮台的子弹带着这把武器的特性'},
+ grenade:{n:'爆裂',d:'每发命中都会爆炸（近身武器每次挥击最多炸一次）'},
+};
+// 每对武器只有一种合体结果：攻击形态鲜明的武器为主，元素类武器融入（越靠前越优先当主武器）
+const FUSE_ORDER=['orbit','turret','boomerang','shotgun','xbow','spear','blades','talisman','grenade','flask','frost'];
+const fuseMain=(a,b)=>FUSE_ORDER.indexOf(a)<=FUSE_ORDER.indexOf(b)?[a,b]:[b,a];
+const NOUN={blades:'刃',spear:'枪',orbit:'轮',xbow:'弩',shotgun:'炮',boomerang:'镖',talisman:'符',flask:'瓶',frost:'晶',turret:'炮台',grenade:'弹'};
+const PAYC={blades:'white',spear:'white',orbit:'white',xbow:'warm',shotgun:'orange',boomerang:'warm',talisman:'blue',flask:'green',frost:'cyan',turret:'gold',grenade:'orange'};
 const isGod=w=>w.tier>=5&&(!w.fu||w.fu===w.key);
 const payOf=w=>w.fu&&w.fu!==w.key?w.fu:null;
-const wName=w=>{const p=payOf(w);return p?PAY[p][0]+NOUN[w.key]:(w.tier>=5?'神·':'')+WEAPONS[w.key].name;};
+const wName=w=>{const p=payOf(w);return p?FUSE[p].n+NOUN[w.key]:(w.tier>=5?'神·':'')+WEAPONS[w.key].name;};
 const wImg=w=>`<img src="${wic(w.key,w.tier)}" alt="">${payOf(w)?`<img class="pb" src="${wic(payOf(w),4)}" alt="">`:''}`;
 const isOrb=w=>!!WEAPONS[w.key]&&WEAPONS[w.key].kind==='orbit';
 // 武器流派：同流派武器（同名也算）凑 2 / 4 / 6 件有套装奖励
@@ -492,7 +505,7 @@ const CKEYS=Object.keys(CLASSES);
 const setTier=n=>n>=6?3:n>=4?2:n>=2?1:0;
 
 const HEROES=[
- {key:'forge',name:'炉匠',color:'#c46a3c',weapon:'hammer',tag:'近战坦克',lore:'城南炉坊的铁匠，抡锤打铁三十年，机关兽在他眼里只是一堆待回炉的废料。',star:1,pros:['护甲 +5，生命 +10','近战武器伤害 +25%'],cons:['移速 -8%'],stats:{armor:5,hp:10,speed:-8},meleeBonus:25,
+ {key:'forge',name:'炉匠',color:'#c46a3c',weapon:'spear',tag:'近战坦克',lore:'城南炉坊的铁匠，抡锤打铁三十年，机关兽在他眼里只是一堆待回炉的废料。',star:1,pros:['护甲 +5，生命 +10','近战武器伤害 +25%'],cons:['移速 -8%'],stats:{armor:5,hp:10,speed:-8},meleeBonus:25,
   skill:{n:'熔岩重锤',g:'锤',cd:14,d:'砸地，周围敌人受到伤害、被击退并眩晕 1 秒'}},
  {key:'archer',name:'巡天',color:'#5cb19d',weapon:'xbow',tag:'暴击叠加',lore:'巡天司的弩手，箭越射越准，一局打下来几乎箭箭暴击。',star:2,pros:['范围 +20%','每次击杀永久 +0.1% 暴击率，本局最多 +30%'],cons:[],stats:{range:20},critStack:1,
   skill:{n:'鹰眼',g:'鹰',cd:18,d:'5 秒内所有攻击必定暴击'}},
@@ -502,7 +515,7 @@ const HEROES=[
   skill:{n:'毒爆',g:'爆',cd:14,d:'引爆周围敌人身上的全部毒层，一次结算剩余毒伤；没中毒的敌人染上一层毒'}},
  {key:'storm',name:'雷使',color:'#7fa8ff',weapon:'talisman',tag:'雷击回血',lore:'符箓在手，借雷为刃。回血越快，落雷越密。',star:3,pros:['生命回复 +3','每次回复生命召下一道落雷','落雷命中有 15% 几率再回复 1 生命'],cons:[],stats:{regen:3},
   skill:{n:'雷暴',g:'暴',cd:16,d:'3 秒内每 0.3 秒落下一道雷'}},
- {key:'wind',name:'风行者',color:'#ddd8bf',weapon:'orbit',tag:'闪避反击',lore:'来去无影的游侠，闪开一击，就还你十刀。',star:3,pros:['闪避 +15%，移速 +10%','闪避后 2 秒内攻速 +40%，并获得 1 点经验'],cons:[],stats:{dodge:15,speed:10},
+ {key:'wind',name:'风行者',color:'#ddd8bf',weapon:'blades',tag:'闪避反击',lore:'来去无影的游侠，闪开一击，就还你十刀。',star:3,pros:['闪避 +15%，移速 +10%','闪避后 2 秒内攻速 +40%，并获得 1 点经验'],cons:[],stats:{dodge:15,speed:10},
   skill:{n:'疾影',g:'影',cd:8,d:'向移动方向冲刺，0.4 秒无敌，划过的敌人受到伤害'}},
  {key:'merchant',name:'豪商',color:'#f0b93a',weapon:'boomerang',tag:'买卖刷钱',lore:'什么都能买，什么都能卖，打仗也要先算账。',star:3,pros:['开局金币 +30','商店价格 -15%','武器回收价从 40% 提高到 70%','任何武器击杀 10% 几率多掉 1 枚金币'],cons:['伤害 -5%'],stats:{dmg:-5},coinKill:10,
   skill:{n:'撒钱',g:'钱',cd:15,d:'花 10 金币：击退周围敌人并造成伤害，全场金币飞向你'}},
@@ -585,7 +598,67 @@ const MINIS=[
  {key:'foreman',name:'熔铁工头',hp:250,r:38,spd:44,dmg:11,col:'#ff9a4a',base:'layer',d:'把地面格子烧红，预警后爆发；半血后烧得更多'},
 ];
 const MINI_WAVES=[4,12];
-let gz=[],gzTick=0,corpses=[];const GZK=['fire','acid','shard','heat','web','blast'];
+let gz=[],gzTick=0,corpses=[];
+// 地图互动点：站上去一会儿就会启动
+const PROPK=['valve','supply','lever','rocks','herb','rod','tower','relic'];
+const PROP={valve:{n:'炉口开关',r:34,need:1,cd:16},supply:{n:'补给炉',r:38,need:1.2,cd:0},lever:{n:'道岔拉杆',r:32,need:1,cd:14},rocks:{n:'塌方点',r:36,need:0.8,cd:18},
+ herb:{n:'解毒草',r:26,need:0,cd:25},rod:{n:'避雷针',r:85,need:0,cd:0},tower:{n:'充能塔',r:75,need:0,cd:30},relic:{n:'守护机关',r:40,need:0,cd:0}};
+let props=[],evt=null;
+function resetProps(){props=(MAP.props||[]).map(([k,x,y])=>({k,x,y,prog:0,cd:k==='herb'?0:3,on:0,ch:0,used:0}));for(const p of PL)p.antidote=0;
+ if(MAP.pools)for(const pl of MAP.pools)pl.gcd=0;}
+function propAct(p,who){const keep=CUR;
+ switch(p.k){
+  case 'valve':hz.friendT=5;banner('炉口开关 · 喷火口只烧敌人',1100);netEvent({banner:'炉口开关 · 喷火口只烧敌人'});break;
+  case 'supply':{use(who);const c=20+run.wave*2;if(p.used&((1<<who.id))){addText(p.x,p.y-40,'本波已用过',C.muted,13);break;}
+   if(run.gold<c){addText(p.x,p.y-40,'需要 '+c+' 金币',C.danger,13);p.prog=0;p.cd=2;use(keep);return;}
+   run.gold-=c;run.chests.push(chestTier(0));p.used|=1<<who.id;addText(p.x,p.y-40,'-'+c+' 金 · 宝箱 +1',C.t4,15);sfx('coin');break;}
+  case 'lever':for(const y of MAP.rails)hz.carts.push({y,dir:Math.random()<0.5?1:-1,x:0,warn:0.5,hit:new Set(),hitP:[],friendly:1});for(const c of hz.carts)if(c.friendly&&!c.x)c.x=c.dir>0?-90:WORLD.w+90;break;
+  case 'rocks':{const x=p.x,y=p.y;fxs.push({type:'warnc',x,y,r:150,life:0.8,max:0.8});delayed.push({t:0.8,pl:who,fn:()=>{shake=Math.max(shake,0.4);burst(x,y,'#7d8789',16,6);ringFx(x,y,150,'#c9b48a',0.4);
+    for(const e of enemies){if(e.dead||e.seg)continue;if(Math.hypot(e.x-x,e.y-y)<150+e.r*0.5){hitEnemy(e,hzDmg(60,26),{noCrit:1,noSteal:1,noShield:1,col:'#c9b48a'});if(!e.boss&&!e.dead)e.freezeT=Math.max(e.freezeT,1.5);}}}});break;}
+  case 'herb':use(who);heal(Math.ceil(S.hp*0.2),'herb');who.antidote=6;addText(who.P.x,who.P.y-40,'解毒',C.good,15);break;
+  case 'tower':{let n=0;for(const e of enemies){if(e.dead||e.seg)continue;hitEnemy(e,hzDmg(40,18),{noCrit:1,noSteal:1,noShield:1,col:'#9fc0ff'});if(n++<24)fxs.push({type:'bolt',pts:jag(e.x+rand(-30,30),e.y-300,e.x,e.y),col:GLOW.blue,lw:6,life:0.3,max:0.3});}
+   shake=0.5;banner('充能塔 · 全屏落雷',1100);netEvent({banner:'充能塔 · 全屏落雷'});break;}
+ }
+ p.cd=PROP[p.k].cd;p.prog=0;use(keep);}
+function propsUpdate(dt){
+ const alive=alivePL();
+ for(const p of props){const D=PROP[p.k];if(p.cd>0)p.cd-=dt;
+  const inside=alive.filter(q=>Math.hypot(q.P.x-p.x,q.P.y-p.y)<D.r+q.P.r*0.5);
+  if(p.k==='rod'){p.on=inside.length?1:0;if(p.on){p.zt=(p.zt||0)-dt;if(p.zt<=0){p.zt=1.1;const ts=enemies.filter(e=>!e.dead&&!e.seg&&Math.hypot(e.x-p.x,e.y-p.y)<300).sort(()=>Math.random()-0.5).slice(0,2);
+     for(const e of ts){fxs.push({type:'bolt',pts:jag(p.x,p.y-60,e.x,e.y),col:GLOW.blue,lw:6,life:0.24,max:0.24});hitEnemy(e,hzDmg(30,14)*1.5,{noCrit:1,noSteal:1,noShield:1,col:'#9fc0ff'});if(!e.boss&&!e.dead)e.freezeT=Math.max(e.freezeT,0.3);}}}continue;}
+  if(p.k==='tower'){if(p.cd>0){p.ch=0;continue;}p.ch=clamp(p.ch+(inside.length?dt/7:-dt*0.1),0,1);p.on=inside.length?1:0;if(p.ch>=1){p.ch=0;propAct(p,inside[0]||ME());}continue;}
+  if(p.k==='relic')continue;
+  if(p.k==='herb'){if(p.cd<=0&&inside.length)propAct(p,inside[0]);continue;}
+  if(p.cd>0){p.prog=0;continue;}
+  if(inside.length){p.prog+=dt;if(p.prog>=D.need)propAct(p,inside[0]);}else p.prog=Math.max(0,p.prog-dt*2);
+ }
+ // 沼气：爆炸或闪电落在毒池里会引燃整池
+ if(hz.friendT>0)hz.friendT-=dt;
+ if(evt)evtUpdate(dt);
+}
+function gasCheck(x,y){if(!MAP.pools||state!=='battle')return;for(const pl of MAP.pools){const[px,py,pr]=pl;if(pl.gcd>0||Math.hypot(x-px,y-py)>pr)continue;pl.gcd=10;
+  delayed.push({t:0.2,fn:()=>{shake=Math.max(shake,0.45);fxs.push({type:'boom',x:px,y:py,r:pr*1.3,tier:0,s:R2(Math.random()*99),life:0.6,max:0.6});ringFx(px,py,pr+30,C.good,0.4);
+   for(const e of enemies){if(e.dead||e.seg)continue;if(Math.hypot(e.x-px,e.y-py)<pr+20+e.r)hitEnemy(e,hzDmg(45,20),{noCrit:1,noSteal:1,noShield:1,col:'#c8e86a'});}}});
+  addText(px,py-pr*0.5,'沼气爆燃！',C.good,16);}}
+// 波中事件：第 5 波起、非首领波，每波最多一个
+const EVTS={beast:'宝藏机关兽出现，快追！',drop:'补给空投即将落地',tide:'兽潮来袭，撑过 20 秒有宝箱',relic:'守护机关：别让敌人拆掉它（25 秒）'};
+function planEvent(){evt=null;const w=run.wave;if(w<5||w===ELITE_WAVE||w>=FINAL_WAVE||MINI_WAVES.includes(w)||Math.random()>0.6)return;evt={k:pick(Object.keys(EVTS)),t:rand(9,16),st:0};}
+function evtUpdate(dt){const e=evt;
+ if(e.st===0){e.t-=dt;if(e.t>0)return;e.st=1;const t=EVTS[e.k];banner(t,1500);netEvent({banner:t});
+  const tp=(pick(alivePL())||ME()).P;
+  if(e.k==='beast'){let x,y,n=0;do{x=rand(80,WORLD.w-80);y=rand(80,WORLD.h-80);}while(minPD(x,y)<260&&++n<30);const b=makeEnemy('fairy',x,y,{noAff:true,noEvo:true});b.loot=1;b.hp*=5+run.wave*0.6;b.max=b.hp;b.r*=1.7;b.scale=1.7;b.spd*=1.15;b.life=14;b.gold=25+run.wave*3;enemies.push(b);}
+  if(e.k==='drop'){let x,y,n=0;do{x=rand(120,WORLD.w-120);y=rand(120,WORLD.h-120);}while((minPD(x,y)<300||!freeSpot(x,y,30))&&++n<40);e.x=x;e.y=y;e.dt=3;fxs.push({type:'warnc',x,y,r:60,life:3,max:3});}
+  if(e.k==='tide'){e.dt=20;}
+  if(e.k==='relic'){let x,y,n=0;do{const a=Math.random()*TAU;x=clamp(tp.x+Math.cos(a)*170,80,WORLD.w-80);y=clamp(tp.y+Math.sin(a)*170,80,WORLD.h-80);}while(!freeSpot(x,y,40)&&++n<20);
+   e.p={k:'relic',x,y,prog:0,cd:0,on:1,ch:1,used:0};props.push(e.p);e.dt=25;}
+  return;}
+ if(e.st!==1)return;
+ if(e.k==='drop'){e.dt-=dt;if(e.dt<=0){e.st=2;pickups.push({type:'chest',x:e.x,y:e.y,tier:chestTier(1),ph:0});boomFx(e.x,e.y,50);for(let k=0;k<5;k++){const a=k*TAU/5;spawns.push({type:pickType(run.wave),x:clamp(e.x+Math.cos(a)*130,30,WORLD.w-30),y:clamp(e.y+Math.sin(a)*130,30,WORLD.h-30),t:0.5});}}}
+ if(e.k==='tide'){e.dt-=dt;if(e.dt<=0){e.st=2;const tp=(pick(alivePL())||ME()).P;pickups.push({type:'chest',x:tp.x+30,y:tp.y,tier:chestTier(1),ph:0});banner('兽潮退去 · 获得宝箱',1300);netEvent({banner:'兽潮退去 · 获得宝箱'});}}
+ if(e.k==='relic'){const p=e.p;e.dt-=dt;for(const en of enemies){if(en.dead||en.seg||en.type==='fairy')continue;if(Math.hypot(en.x-p.x,en.y-p.y)<en.r+PROP.relic.r)p.ch-=en.dmg*0.006*dt*(en.boss?3:1);}
+  if(p.ch<=0){e.st=2;props.splice(props.indexOf(p),1);boomFx(p.x,p.y,60);banner('守护机关被拆掉了',1200);netEvent({banner:'守护机关被拆掉了'});}
+  else if(e.dt<=0){e.st=2;props.splice(props.indexOf(p),1);pickups.push({type:'chest',x:p.x,y:p.y,tier:chestTier(1),ph:0});for(const q of alivePL())turrets.push({pl:q,x:p.x+(q.id?30:-30),y:p.y,life:1,max:1,cd:0.5,dmg:flatDmg(8),dbl:true,perm:true,a:0,col:TC[4],tier:4,kick:0});banner('守护成功 · 宝箱和一座炮台',1300);netEvent({banner:'守护成功 · 宝箱和一座炮台'});}}
+}const GZK=['fire','acid','shard','heat','web','blast'];
 function addGz(k,x,y,r,life,dmg){if(gz.length>=90)gz.shift();gz.push({k,x:Math.round(x),y:Math.round(y),r:Math.round(r),life,max:life,dmg:dmg||0,s:Math.round(Math.random()*9900)/100});}
 function gzSlow(x,y){let m=1;for(const g of gz)if((g.k==='shard'||g.k==='acid'||g.k==='web')&&(x-g.x)**2+(y-g.y)**2<g.r*g.r)m=Math.min(m,g.k==='web'?0.55:0.65);return m;}
 function gzUpdate(dt){if(!gz.length)return;const alive=alivePL(),keep=CUR;gzTick-=dt;const tick=gzTick<=0;if(tick)gzTick=0.4;
@@ -603,17 +676,17 @@ const BOSSES=[
  {key:'hive',name:'蜂巢母舰',hp:760,r:44,spd:40,dmg:11,col:'#c9a24a',atk:['drones','missiles','ring'],nw:'barrage',nwN:'导弹轰炸',sig:'carpet',sigN:'饱和轰炸'},
 ];
 const MAPS=[
- {key:'forge',name:'铜炉工坊',desc:'炉口定时喷火，四根铜柱挡路',favor:['brute','shield','totem'],obs:[[400,300,34],[1200,300,34],[400,800,34],[1200,800,34]],vents:[[800,250],[520,550],[1080,550],[800,850]]},
- {key:'mine',name:'铁轨矿坑',desc:'矿车沿铁轨呼啸而过，人和怪撞上都掉血',favor:['charger','layer','splitter'],obs:[[240,550,40],[1360,550,40],[600,140,28],[1000,960,28],[560,560,24],[1040,560,24]],rails:[330,770]},
- {key:'swamp',name:'毒沼药圃',desc:'毒池会减速并持续掉血，敌我都受影响',favor:['spitter','splitter','medic'],obs:[[600,550,24],[1000,550,24],[230,550,24],[1370,550,24]],pools:[[380,300,92],[1220,300,92],[380,800,92],[1220,800,92],[800,170,70],[800,930,70]]},
- {key:'storm',name:'雷云高塔',desc:'地面周期性出现落雷预警，劈中敌我都掉血',favor:['stalker','shield','medic'],obs:[[520,380,30],[1080,380,30],[520,720,30],[1080,720,30]]},
+ {key:'forge',name:'铜炉工坊',desc:'炉口定时喷火，四根铜柱挡路。站上炉口开关，喷火口只烧敌人；补给炉投 20 金换一个宝箱',props:[['valve',240,300],['valve',1360,800],['supply',800,105]],favor:['brute','shield','totem'],obs:[[400,300,34],[1200,300,34],[400,800,34],[1200,800,34]],vents:[[800,250],[520,550],[1080,550],[800,850]]},
+ {key:'mine',name:'铁轨矿坑',desc:'矿车沿铁轨呼啸而过，人和怪撞上都掉血。拉动道岔拉杆放出只撞敌人的矿车；站上塌方点引发落石',props:[['lever',800,140],['lever',800,960],['rocks',420,180],['rocks',1180,920]],favor:['charger','layer','splitter'],obs:[[240,550,40],[1360,550,40],[600,140,28],[1000,960,28],[560,560,24],[1040,560,24]],rails:[330,770]},
+ {key:'swamp',name:'毒沼药圃',desc:'毒池会减速并持续掉血，敌我都受影响。解毒草回血并免疫毒池；爆炸或闪电能引燃毒池里的沼气',props:[['herb',600,330],['herb',1000,780],['herb',800,420]],favor:['spitter','splitter','medic'],obs:[[600,550,24],[1000,550,24],[230,550,24],[1370,550,24]],pools:[[380,300,92],[1220,300,92],[380,800,92],[1220,800,92],[800,170,70],[800,930,70]]},
+ {key:'storm',name:'雷云高塔',desc:'地面周期性出现落雷预警，劈中敌我都掉血。站在避雷针旁，雷会劈向周围的敌人；在充能塔里充满电放出全屏雷',props:[['rod',520,550],['rod',1080,550],['tower',800,190]],favor:['stalker','shield','medic'],obs:[[520,380,30],[1080,380,30],[520,720,30],[1080,720,30]]},
 ];
 const DIFF=[{name:'一阶 · 铜',hp:1,dmg:1,spawn:1},{name:'二阶 · 银',hp:1.55,dmg:1.3,spawn:1.2},{name:'三阶 · 金',hp:2,dmg:1.6,spawn:1.4}];
 const FINAL_WAVE=16,ELITE_WAVE=8;
 // balance knobs
 // 最终首领：血量倍数、韧性（每秒承伤超过阈值后按比例减伤，最低 35%）、联机倍数
 // 商店：武器出现几率；武器里「同名同阶可合成」「同名金阶」「已有武器」的比例，其余随机
-const SHOP={wChance:0.42,upgrade:0.5,goldCopy:0.06,ownedKey:0.14};
+const SHOP={wChance:0.4,upgrade:0.22,goldCopy:0.03,ownedKey:0.18};
 // 宝箱：精英怪掉箱几率和每波上限、金色小精灵刷新间隔和每波上限
 const CHEST={eliteP:0.22,eliteCap:4,fairyMin:10,fairyMax:15,fairyCap:4};
 const BOSS={finalMul:60,tough:900,toughMin:0.35,coop:1.6,adds:6,dmgMul:1.3};
@@ -842,7 +915,7 @@ const WS_RES=3,WS_BOX=[-14,-16,54,16];
 const WS_LEN={hammer:31,spear:48,blades:28,xbow:29,musket:38,shotgun:31,boomerang:11,talisman:6,flask:6,frost:19,grenade:6,turret:14,thunder:38,blasthammer:31,frostcannon:31,plaguetower:14,skyspear:48,stormrang:11};
 const WS_FLOAT={talisman:1,flask:1,grenade:1,turret:1,plaguetower:1};
 const TMET=['','#a3adb0','#9fb6cc','#b9a6d8','#f0c75a','#ffb070'];
-const HITK={hammer:0,spear:0,orbit:0,boomerang:0,xbow:1,shotgun:1,frost:2,flask:3,talisman:4};
+const HITK={blades:0,spear:0,orbit:0,boomerang:0,xbow:1,shotgun:1,frost:2,flask:3,talisman:4};
 const MZK={musket:'g',xbow:'x',frost:'i',shotgun:'s',grenade:'b',talisman:'z',boomerang:'w',flask:'w',thunder:'g',frostcannon:'i',skyspear:'x',stormrang:'w'};
 const hr=(s,i)=>{const v=Math.sin(s*127.1+i*311.7)*43758.5453;return v-Math.floor(v);};
 const WSD={
@@ -1251,7 +1324,7 @@ function nearestK(x,y,range,k){const l=[];for(const e of enemies){if(e.dead||e.c
 function jag(x1,y1,x2,y2){const pts=[[x1,y1]],n=7;for(let i=1;i<n;i++){const t=i/n;pts.push([x1+(x2-x1)*t+rand(-9,9),y1+(y2-y1)*t+rand(-9,9)]);}pts.push([x2,y2]);return pts;}
 function burst(x,y,col,n=7,gears=2){const ps=[];for(let i=0;i<n;i++){const a=Math.random()*TAU,s=rand(80,220);ps.push([Math.cos(a)*s,Math.sin(a)*s]);}const gs=[];for(let i=0;i<gears;i++){const a=Math.random()*TAU,s=rand(60,140);gs.push([Math.cos(a)*s,Math.sin(a)*s,rand(-8,8),rand(0.35,0.7)]);}fxs.push({type:'burst',x,y,ps,gs,col,life:0.5,max:0.5});}
 function ringFx(x,y,maxR,col,life=0.35){fxs.push({type:'ring',x,y,maxR,col,life,max:life});}
-function boomFx(x,y,r,tier){const sd=R2(Math.random()*99);if(gz.length)gz=gz.filter(g=>!(g.k==='web'&&Math.hypot(g.x-x,g.y-y)<r+g.r*0.5));fxs.push({type:'boom',x,y,r,tier:tier||0,s:sd,life:0.5,max:0.5});let ns=0;for(const f of fxs)if(f.type==='scorch')ns++;if(ns<14)fxs.push({type:'scorch',x:Math.round(x),y:Math.round(y),r:Math.round(Math.min(95,r*0.72)),s:sd,life:4.5,max:4.5});ringFx(x,y,r,tier>=2?TC[tier]:C['brass-hi'],0.32);}
+function boomFx(x,y,r,tier){const sd=R2(Math.random()*99);gasCheck(x,y);if(gz.length)gz=gz.filter(g=>!(g.k==='web'&&Math.hypot(g.x-x,g.y-y)<r+g.r*0.5));fxs.push({type:'boom',x,y,r,tier:tier||0,s:sd,life:0.5,max:0.5});let ns=0;for(const f of fxs)if(f.type==='scorch')ns++;if(ns<14)fxs.push({type:'scorch',x:Math.round(x),y:Math.round(y),r:Math.round(Math.min(95,r*0.72)),s:sd,life:4.5,max:4.5});ringFx(x,y,r,tier>=2?TC[tier]:C['brass-hi'],0.32);}
 function aoe(x,y,r,dmg,o={}){for(const e of enemies){if(e.dead)continue;if((e.x-x)**2+(e.y-y)**2<(r+e.r)**2)hitEnemy(e,dmg,o);}}
 function banner(txt,ms=1300){const b=$('#banner');b.textContent=txt;b.classList.add('show');clearTimeout(banner.t);banner.t=setTimeout(()=>b.classList.remove('show'),ms);}
 function toast(txt){const t=$('#toast');t.textContent=txt;t.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>t.classList.remove('show'),2200);}
@@ -1382,21 +1455,18 @@ function hitEnemy(e,base,o={}){
  if(!o.noSteal&&S.lifesteal>0)stealPool+=dealt*S.lifesteal/100;
  if(!o.noSteal&&H.hitPoison&&e.hp>0&&Math.random()*100<H.hitPoison)addPoison(e,d*0.4*poisonMul(),2*stDur(),'hit:'+H.key,poisonCap());
  if(crit&&FX.critLightning&&Math.random()<0.25*FX.critLightning)chain(e.x,e.y,e,base*0.6,3,{noCrit:1,noSteal:1},GLOW.blue,true);
- if(o.pay&&!o.np)payHit(e,o,d);
+ if(o.fz&&!o.np)fuseHit(e,o,d);
  if(e.hp<=0)killEnemy(e,o);
 }
 // 合体副武器的命中特性（由它触发的伤害不再连锁触发）
-function payHit(e,o,d){const np={np:1,noSteal:1,noCrit:1,col:o.col,tier:5,sx:e.x,sy:e.y},R=Math.random(),busy=fxs.length>280;
- switch(o.pay){
-  case 'hammer':if(!e.boss&&!e.seg&&e.hp>0){const ka=Math.atan2(e.y-(o.sy!=null?o.sy:P.y),e.x-(o.sx!=null?o.sx:P.x));e.x+=Math.cos(ka)*16;e.y+=Math.sin(ka)*16;}if(R<0.25){if(!busy)ringFx(e.x,e.y,60,TC[5],0.25);aoe(e.x,e.y,60,d*0.4,Object.assign({hk:0},np));}break;
-  case 'orbit':if(R<0.25)shoot(e.x,e.y,Math.random()*TAU,430,200,d*0.5,{col:TC[5],tier:5,st:'blade',glow:tierGlow[5],pierce:2,r:6,opts:Object.assign({hk:0},np)});break;
-  case 'xbow':if(R<0.2){const t=nearest(e.x,e.y,260,new Set([e]));if(t)shoot(e.x,e.y,Math.atan2(t.y-e.y,t.x-e.x),560,280,d*0.5,{col:TC[5],tier:5,st:'arrow',glow:tierGlow[5],pierce:1,r:5,opts:Object.assign({hk:1},np)});}break;
-  case 'shotgun':if(R<0.3)for(let k=0;k<3;k++)shoot(e.x,e.y,Math.random()*TAU,520,150,d*0.35,{col:TC[5],tier:5,st:'pellet',glow:GLOW.orange,pierce:0,r:4,opts:Object.assign({hk:1},np)});break;
-  case 'boomerang':if(R<0.3){const t=nearest(e.x,e.y,160,new Set([e]));if(t){if(!busy)fxs.push({type:'bolt',pts:[[Math.round(e.x),Math.round(e.y)],[Math.round(t.x),Math.round(t.y)]],col:'rgba(255,240,210,1)',lw:3,life:0.15,max:0.15});hitEnemy(t,d*0.6,Object.assign({hk:0},np));}}break;
-  case 'talisman':if(R<0.35)chain(e.x,e.y,e,d*0.5,2,Object.assign({col:'#9fc0ff',hk:4},np),BOLTC[5],true,3);break;
-  case 'flask':if(e.hp>0)addPoison(e,d*0.35*poisonMul(),3*stDur(),'pay',poisonCap());break;
-  case 'frost':e.slowT=Math.max(e.slowT,2*stDur());if(!e.boss&&R<0.15)e.freezeT=Math.max(e.freezeT,0.8*stDur());break;
-  case 'grenade':if(R<0.25){const br=60*(FX.blastR||1);boomFx(e.x,e.y,br,5);aoe(e.x,e.y,br,d*0.6,np);}break;
+// 合体副武器带来的命中效果：每发子弹 / 每次挥击最多触发一次连锁和爆炸，星轮按时间间隔
+function fuseHit(e,o,d){const np={np:1,noSteal:1,noCrit:1,col:o.col,tier:5,sx:e.x,sy:e.y},W=o.wref||{};
+ const once=k=>{if(o.orb){if(tGame-(W[k]||-9)<0.25)return false;W[k]=tGame;return true;}if(o[k])return false;o[k]=1;return true;};
+ switch(o.fz){
+  case 'talisman':if(once('_c'))chain(e.x,e.y,e,d*0.5,2,Object.assign({col:'#9fc0ff',hk:4},np),BOLTC[5],true,3);break;
+  case 'flask':if(e.hp>0)addPoison(e,d*0.35*poisonMul(),3*stDur(),'fz'+(W.id||0),poisonCap());break;
+  case 'frost':e.slowT=Math.max(e.slowT,2*stDur());break;
+  case 'grenade':if(once('_b')){const br=55*(FX.blastR||1);boomFx(e.x,e.y,br,5);aoe(e.x,e.y,br,d*0.4,np);}break;
  }}
 function chain(ox,oy,first,dmg,n,o,col,skipFirst,lw=7){
  const hit=new Set(),pts=[[ox,oy]],nd=[];let cur=first,px=ox,py=oy;
@@ -1405,6 +1475,7 @@ function chain(ox,oy,first,dmg,n,o,col,skipFirst,lw=7){
   if(!(skipFirst&&i===0)){jag(px,py,cur.x,cur.y).slice(1).forEach(p=>pts.push(p));nd.push([Math.round(cur.x),Math.round(cur.y)]);hitEnemy(cur,dmg,Object.assign({sx:px,sy:py},o));}
   px=cur.x;py=cur.y;cur=nearest(px,py,170,hit);
  }
+ for(const n of nd)gasCheck(n[0],n[1]);
  if(pts.length>1)fxs.push({type:'bolt',pts,col,lw,fk:forks(pts,Math.min(6,1+(pts.length>>2))),nd,life:0.24,max:0.24});
 }
 function skyBolt(dmg){
@@ -1435,14 +1506,15 @@ function dropCoins(x,y,g){
 function chestTier(bonus){const r=Math.random()*(1+S.luck/100)+run.wave*0.012;let t=r>1.05?4:r>0.88?3:r>0.55?2:1;return Math.min(4,t+bonus);}
 function killEnemy(e,o){
  e.dead=true;run.kills++;burst(e.x,e.y,e.col,e.boss?24:8,e.boss?10:(e.type==='brute'?4:2));
- dropCoins(e.x,e.y,goldFor(e.gold)+(o.coin||0)+(H.coinKill&&Math.random()*100<H.coinKill?1:0));
+ dropCoins(e.x,e.y,(e.loot?0:goldFor(e.gold))+(o.coin||0)+(H.coinKill&&Math.random()*100<H.coinKill?1:0));
  if(o.melee&&FX.meleeKB)heal(1,'melee');
- if(o.pay==='turret'&&!o.np&&Math.random()<0.2&&turrets.length<24)turrets.push({pl:CUR,x:e.x,y:e.y,life:6,max:6,cd:0.3,dmg:flatDmg(7),dbl:false,perm:false,wid:-1,a:0,col:TC[5],tier:5,rg:1.2,fcd:0.6,critB:10,kick:0});
+ if(o.fz==='frost'&&!o.np){ringFx(e.x,e.y,70,'#cfefff',0.3);for(const x of enemies)if(!x.dead&&x!==e&&!x.seg&&Math.hypot(x.x-e.x,x.y-e.y)<70){x.slowT=Math.max(x.slowT,2*stDur());if(!x.boss)x.freezeT=Math.max(x.freezeT,0.6*stDur());}}
  if(FX.spread&&(e.poisonT>0||e.slowT>0)){const ns=enemies.filter(x=>!x.dead&&!x.seg&&x!==e&&Math.hypot(x.x-e.x,x.y-e.y)<140).slice(0,2);
   for(const x of ns){if(e.poisonT>0)addPoison(x,e.poison,2*stDur(),'spread',poisonCap());if(e.slowT>0)x.slowT=Math.max(x.slowT,2*stDur());fxs.push({type:'bolt',pts:[[e.x,e.y],[x.x,x.y]],col:e.poisonT>0?GLOW.green:GLOW.cyan,lw:3,life:0.2,max:0.2});}}
  addXP(e.xp);
  if(H.critStack&&run.critStack<30){const inc=Math.min(0.1,30-run.critStack);run.critStack+=inc;S.crit+=inc;}
- if(e.type==='fairy'){pickups.push({type:'chest',x:e.x,y:e.y,tier:chestTier(0),ph:0});addText(e.x,e.y-20,'宝箱',C.t4,15);}
+ if(e.type==='fairy'&&e.loot){dropCoins(e.x,e.y,e.gold);addText(e.x,e.y-26,'宝藏！',C.t4,18);if(evt)evt.st=2;}
+ else if(e.type==='fairy'){pickups.push({type:'chest',x:e.x,y:e.y,tier:chestTier(0),ph:0});addText(e.x,e.y-20,'宝箱',C.t4,15);}
  if(e.type==='splitter'){if(e.ev>=2&&!e.child)for(let k=0;k<2;k++)spawns.push({type:'splitter',x:e.x+rand(-12,12),y:e.y+rand(-12,12),t:0.05,noAff:true,scale:0.55,ev:1,child:1});
   else for(let k=0;k<(e.ev?3:2);k++)spawns.push({type:'mite',x:e.x+rand(-10,10),y:e.y+rand(-10,10),t:0.05,noAff:true});}
  if(e.type==='crawler'&&e.ev)addGz('shard',e.x,e.y,30,4,0);
@@ -1578,9 +1650,9 @@ const TIER_CD=[0,1,0.9,0.82,0.75,0.68],TIER_RG=[0,1,1.1,1.2,1.3,1.4],TIER_CRIT=[
 const BOLTC=['','rgba(170,200,255,1)','rgba(110,170,255,1)','rgba(195,135,255,1)','rgba(255,210,100,1)','rgba(255,140,100,1)'];
 const wCD=w=>WEAPONS[w.key].cd*TIER_CD[w.tier];
 const wRange=w=>WEAPONS[w.key].range*TIER_RG[w.tier];
-const wo=(w,extra)=>Object.assign({col:TC[w.tier],critB:TIER_CRIT[w.tier],tier:w.tier,hk:HITK[w.key],pay:payOf(w)},extra||{});
+const wo=(w,extra)=>Object.assign({col:TC[w.tier],critB:TIER_CRIT[w.tier],tier:w.tier,hk:HITK[w.key],fz:payOf(w),wref:w},extra||{});
 function shoot(x,y,a,spd,range,dmg,o){
- projs.push({pl:CUR,kind:'proj',x,y,vx:Math.cos(a)*spd,vy:Math.sin(a)*spd,r:(o.r||5)*(TIER_SZ[o.tier||1]*0.5+0.5),dmg,life:range/spd,pierce:o.pierce||0,hit:new Set(),col:o.col,glow:o.glow||GLOW.white,st:o.st||'pellet',tier:o.tier||1,opts:o.opts||{},grenade:o.grenade,endBoom:o.endBoom,seed:Math.random()*TAU});
+ projs.push({pl:CUR,kind:'proj',x,y,vx:Math.cos(a)*spd,vy:Math.sin(a)*spd,r:(o.r||5)*(TIER_SZ[o.tier||1]*0.5+0.5),dmg,life:range/spd,pierce:o.pierce||0,hit:new Set(),col:o.col,glow:o.glow||GLOW.white,st:o.st||'pellet',tier:o.tier||1,opts:o.opts||{},grenade:o.grenade,endBoom:o.endBoom,ret:o.ret||0,puddle:o.puddle,seed:Math.random()*TAU});
 }
 function swing(a,range,arc,dmg,w){
  w.sdir=-(w.sdir||-1);w.swT=0.2+w.tier*0.02;fxs.push({type:'swing',pid:PL.indexOf(CUR),wk:w.key,dir:w.sdir,x:P.x,y:P.y,a,range,arc,col:TC[w.tier],tier:w.tier,life:0.2+w.tier*0.02,max:0.2+w.tier*0.02});
@@ -1600,31 +1672,45 @@ function deployTurret(w,gold){
  const a=Math.random()*TAU,d=rand(30,60);
  const dmg=wDmg(w,true)*(1+(H.turretDmg||0)/100+(FX.turretBoost||0)*0.5);
  const god=isGod(w),life=god?999:gold?18:13,x=clamp(P.x+Math.cos(a)*d,20,WORLD.w-20),y=clamp(P.y+Math.sin(a)*d,20,WORLD.h-20);
- turrets.push({pl:CUR,x,y,life,max:life,cd:0.3,dmg,dbl:gold,tri:god,pay:payOf(w),perm:false,wid:w.id,a:0,col:TC[w.tier],tier:w.tier,rg:TIER_RG[w.tier],fcd:0.7*TIER_CD[w.tier]*(FX.mechDmg?0.8:1),critB:TIER_CRIT[w.tier],kick:0});
+ turrets.push({pl:CUR,x,y,life,max:life,cd:0.3,dmg,dbl:gold,tri:god,fz:payOf(w),wo:w,perm:false,wid:w.id,a:0,col:TC[w.tier],tier:w.tier,rg:TIER_RG[w.tier],fcd:0.7*TIER_CD[w.tier]*(FX.mechDmg?0.8:1),critB:TIER_CRIT[w.tier],kick:0});
  ringFx(x,y,34,TC[w.tier],0.3);
 }
 const orbN=w=>isGod(w)?10:w.tier>=5?8:w.tier+1+(w.tier===4?2:0);
+const hasBl=w=>isOrb(w)||payOf(w)==='orbit';
+// 副武器是星轮：主武器之外，身边再转三枚小刀轮
+function satUpdate(w,dt){const n=3,R=58*rangeMul();w.sa=(w.sa||0)+dt*3.6;const dmg=wDmg(w,false)*0.4,o=wo(w,{melee:1,orb:1}),hr=11;
+ const bl=[];for(let k=0;k<n;k++){const a=w.sa+k*TAU/n;bl.push([P.x+Math.cos(a)*R,P.y+Math.sin(a)*R,a]);}w.blades=bl;
+ for(const e of enemies){if(e.dead)continue;const last=e.ocd['s'+w.id]||-9;if(tGame-last<0.5)continue;for(const b of bl){if((e.x-b[0])**2+(e.y-b[1])**2<(e.r+hr)**2){e.ocd['s'+w.id]=tGame;hitEnemy(e,dmg,o);break;}}}}
+// 临时炮台（副武器是机关炮台时每攻击四次放一座）
+function dropTurret(w,x,y,dmg){if(turrets.length>=24)return;turrets.push({pl:CUR,x:clamp(x,20,WORLD.w-20),y:clamp(y,20,WORLD.h-20),life:7,max:7,cd:0.4,dmg,dbl:false,perm:false,wid:-1,a:0,col:TC[5],tier:5,rg:1.1,fcd:0.6,critB:10,kick:0,fz:null,wo:w});ringFx(x,y,30,TC[5],0.3);}
 function orbitUpdate(w,dt){
- const gold=w.tier>=4,n=orbN(w),R=wRange(w)*rangeMul()*(payOf(w)==='spear'?1.25:1)*(isGod(w)?1.5:gold?1.35:1);
+ const fz=payOf(w),gold=w.tier>=4,n=orbN(w)+(fz==='blades'?3:0),R=wRange(w)*rangeMul()*(fz==='spear'?1.3:1)*(isGod(w)?1.5:gold?1.35:1)*(fz==='boomerang'?1+0.8*Math.max(0,Math.sin(tGame*2.2)):1);
  w.ang=(w.ang||0)+dt*3.2*(1+Math.max(-0.5,S.atkspd/200))*(1+(w.tier-1)*0.08);
- const dmg=wDmg(w,false),cdHit=wCD(w)/atkMul(),o=wo(w,{melee:1}),hr=12*TIER_SZ[w.tier];
+ const dmg=wDmg(w,false),cdHit=wCD(w)/atkMul(),o=wo(w,{melee:1,orb:1}),hr=12*TIER_SZ[w.tier];
  const bl=[];for(let k=0;k<n;k++){const a=w.ang+k*TAU/n;bl.push([P.x+Math.cos(a)*R,P.y+Math.sin(a)*R,a]);}
  w.blades=bl;
  for(const e of enemies){if(e.dead)continue;const last=e.ocd[w.id]||-9;if(tGame-last<cdHit)continue;
   for(const b of bl){if((e.x-b[0])**2+(e.y-b[1])**2<(e.r+hr)**2){e.ocd[w.id]=tGame;hitEnemy(e,dmg,o);break;}}}
+ if(fz==='xbow'||fz==='shotgun'||fz==='turret'||fz==='flask'){w.oe=(w.oe==null?1.3:w.oe)-dt*atkMul();if(w.oe<=0&&enemies.some(e=>!e.dead)){w.oe=fz==='turret'?4:1.3;
+  if(fz==='turret')dropTurret(w,P.x,P.y,dmg*0.6);
+  else if(fz==='flask'){const t=nearest(P.x,P.y,R+120);if(t)puddles.push({x:t.x,y:t.y,r:48,life:2.5,max:2.5,dps:dmg*0.8*poisonMul(),tick:0,seed:Math.random()*99,tier:5,src:'fz'+w.id,cap:poisonCap(),dur:stDur()});}
+  else for(const b of bl){const t=nearest(b[0],b[1],320);const a0=t?Math.atan2(t.y-b[1],t.x-b[0]):b[2];
+   if(fz==='xbow')shoot(b[0],b[1],a0,560,320,dmg*0.5,{col:TC[5],tier:5,st:'arrow',glow:tierGlow[5],pierce:1,r:5,opts:wo(w,{np:1})});
+   else for(let k=-1;k<=1;k++)shoot(b[0],b[1],a0+k*0.25,500,200,dmg*0.3,{col:TC[5],tier:5,st:'pellet',glow:GLOW.orange,r:4,opts:wo(w,{np:1})});}}}
 }
 function fireWeapon(w,dt){
- const D=WEAPONS[w.key];
+ const D=WEAPONS[w.key],fz=payOf(w);
  if(D.kind==='orbit'){orbitUpdate(w,dt);return;}
+ if(fz==='orbit')satUpdate(w,dt);
  w.t-=dt*atkMul();if(w.t>0)return;
- const rm=rangeMul()*(payOf(w)==='spear'?1.25:1),range=wRange(w)*rm;
+ const rm=rangeMul()*(fz==='spear'?1.3:1),range=wRange(w)*rm;
  const tgt=(w.dup?nearestK(P.x,P.y,range,w.dup):null)||nearest(P.x,P.y,range);
  if(!tgt&&D.kind!=='turret'){w.t=0.05+(w.dupN>1?wCD(w)*(w.dup||0)/w.dupN:0);return;}
- w.t=wCD(w);
+ w.t=wCD(w);if(fz==='blades'){if(w.rp)w.rp=0;else{w.rp=1;w.t=0.16;}}  // 连斩：紧接着再打一次
  const dmg=wDmg(w,false),gold=w.tier>=4,god=isGod(w),col=TC[w.tier],gl=tierGlow[w.tier],T=w.tier;
  const a=tgt?Math.atan2(tgt.y-P.y,tgt.x-P.x):P.face;
  if(tgt)P.face=a;
- const pb=(FX.pierce||0)+(payOf(w)==='spear'?2:0);
+ const pb=(FX.pierce||0)+(fz==='spear'?99:0),xtra=fz==='xbow'?2:0,fan=fz==='shotgun',fm=fan?0.45:1,ret=fz==='boomerang'?1:0,pud=fz==='flask';
  // ranged shots leave from the weapon hovering beside the hero, aimed from there
  const hp=heldPos(CUR,w),hx=hp[0],hy=hp[1],ha=tgt?Math.atan2(tgt.y-hy,tgt.x-hx):a;
  w.ra=ha;w.kick=1;w.fc=((w.fc||0)+1)&255;
@@ -1632,29 +1718,37 @@ function fireWeapon(w,dt){
  switch(D.kind){
   case 'arc':
    swing(a,range,D.arc,dmg,w);
-   if(gold&&w.key==='hammer'){ringFx(P.x,P.y,170*rm,god?TC[5]:C.t4,0.4);aoe(P.x,P.y,170*rm,dmg*0.5,wo(w,god?{freeze:1}:{}));}
    if(gold&&w.key==='blades'){delayed.push({t:0.12,pl:CUR,fn:()=>swing(a+0.5,range,D.arc,dmg,w)});if(god)delayed.push({t:0.24,pl:CUR,fn:()=>swing(a-0.5,range,D.arc,dmg,w)});}
    break;
   case 'thrust':thrust(a,range*(gold?2:1),dmg,w);
    if(god)shoot(hx,hy,ha,560,range*2.4,dmg*0.8,{col:TC[5],tier:5,st:'blade',glow:tierGlow[5],pierce:99,r:8,opts:wo(w)});
    break;
   case 'proj':{
-   const n=gold&&w.key==='xbow'?(god?5:3):1;
-   for(let k=0;k<n;k++){const aa=ha+(k-(n-1)/2)*0.16;
-    shoot(hx,hy,aa,D.speed*60*(1+(T-1)*0.06),range+30,dmg,{col,tier:T,glow:D.st==='frost'?GLOW.cyan:D.st==='coin'?GLOW.gold:gl,st:D.st,pierce:(D.pierce||0)+pb+(gold&&w.key==='musket'?99:0)+(god&&w.key==='xbow'?1:0),r:5,opts:wo(w,{slow:D.slow,freeze:gold&&w.key==='frost',nova:god&&w.key==='frost',coin:D.coin?(gold?3:1):0})});}
+   const n=((gold&&w.key==='xbow'?(god?5:3):1)+xtra)*(fan?3:1);
+   for(let k=0;k<n;k++){const aa=ha+(k-(n-1)/2)*(fan?0.13:0.16);
+    shoot(hx,hy,aa,D.speed*60*(1+(T-1)*0.06),range+30,dmg*fm,{ret,puddle:pud,col,tier:T,glow:D.st==='frost'?GLOW.cyan:D.st==='coin'?GLOW.gold:gl,st:D.st,pierce:(D.pierce||0)+pb+(gold&&w.key==='musket'?99:0)+(god&&w.key==='xbow'?1:0),r:5,opts:wo(w,{slow:D.slow,freeze:gold&&w.key==='frost',nova:god&&w.key==='frost',coin:D.coin?(gold?3:1):0})});}
    break;}
-  case 'spread':{const n=god?13:gold?9:5;for(let k=0;k<n;k++){const aa=ha+(k/(n-1)-0.5)*0.75;shoot(hx,hy,aa,D.speed*60*rand(0.9,1.1),range+30,dmg,{col,tier:T,glow:T>=3?gl:GLOW.orange,st:'pellet',pierce:pb+(god?1:0),r:4,opts:wo(w)});}
+  case 'spread':{const n=((god?13:gold?9:5)+xtra)*(fan?2:1),sw=fan?1.3:0.75;for(let k=0;k<n;k++){const aa=ha+(k/(n-1)-0.5)*sw;shoot(hx,hy,aa,D.speed*60*rand(0.9,1.1),range+30,dmg*(fan?0.55:1),{ret,puddle:pud&&k%3===0,col,tier:T,glow:T>=3?gl:GLOW.orange,st:'pellet',pierce:pb+(god?1:0),r:4,opts:wo(w)});}
    break;}
   case 'turret':deployTurret(w,gold);break;
-  case 'flask':projs.push({pl:CUR,wid:w.id,kind:'lob',sx:hx,sy:hy,tx:tgt.x,ty:tgt.y,t:0,dur:0.45,x:hx,y:hy,dmg,pr:(gold?116:58)*TIER_RG[T],tier:T,slow:god,opts:wo(w)});break;
-  case 'chain':chain(hx,hy-6,tgt,dmg,(gold?6:3)+(FX.statusDur?1:0),wo(w,{col:'#9fc0ff'}),BOLTC[T],false,3+T*1.6);
+  case 'flask':projs.push({pl:CUR,wid:w.id,kind:'lob',sx:hx,sy:hy,tx:tgt.x,ty:tgt.y,t:0,dur:0.45,x:hx,y:hy,dmg,pr:(gold?116:58)*TIER_RG[T]*(fz==='spear'?1.3:1),tier:T,slow:god,opts:wo(w)});break;
+  case 'chain':chain(hx,hy-6,tgt,dmg,(gold?6:3)+(FX.statusDur?1:0)+(fz==='spear'?2:0),wo(w,{col:'#9fc0ff'}),BOLTC[T],false,3+T*1.6);
    if(god){const t2=enemies.filter(e=>!e.dead&&!e.seg&&e!==tgt&&Math.hypot(e.x-P.x,e.y-P.y)<range).sort((x,y)=>Math.hypot(x.x-P.x,x.y-P.y)-Math.hypot(y.x-P.x,y.y-P.y))[0];if(t2)chain(hx,hy-6,t2,dmg,6+(FX.statusDur?1:0),wo(w,{col:'#ffb09a'}),BOLTC[5],false,3+T*1.6);}
    break;
-  case 'boom':{const n=god?3:gold?2:1;for(let k=0;k<n;k++){const aa=ha+(n>1?(k-(n-1)/2)*0.7:0),sp=D.speed*60;
-   projs.push({pl:CUR,kind:'boom',x:hx,y:hy,vx:Math.cos(aa)*sp,vy:Math.sin(aa)*sp,sp,r:10*TIER_SZ[T]*(god?1.3:1),dmg,range,trav:0,ret:false,hit:new Set(),life:6,col,tier:T,opts:wo(w),rot:0});}break;}
-  case 'grenade':shoot(hx,hy,ha,D.speed*60,range+30,dmg,{col,tier:T,st:'grenade',glow:T>=3?gl:GLOW.orange,r:6,grenade:{radius:D.radius*TIER_RG[T],gold,god,tier:T},opts:wo(w)});break;
+  case 'boom':{const n=((god?3:gold?2:1)+xtra)*(fan?3:1);for(let k=0;k<n;k++){const aa=ha+(n>1?(k-(n-1)/2)*(fan?0.32:0.7):0),sp=D.speed*60;
+   projs.push({pl:CUR,kind:'boom',x:hx,y:hy,vx:Math.cos(aa)*sp,vy:Math.sin(aa)*sp,sp,r:10*TIER_SZ[T]*(god?1.3:1),dmg:dmg*fm,range:range*(fz==='spear'?1.2:1),trav:0,ret:false,hit:new Set(),life:6,col,tier:T,opts:wo(w),rot:0});}break;}
+  case 'grenade':{const n=(1+xtra)*(fan?3:1);for(let k=0;k<n;k++){const aa=ha+(k-(n-1)/2)*(fan?0.2:0.25);shoot(hx,hy,aa,D.speed*60,range+30,dmg*fm,{col,tier:T,st:'grenade',glow:T>=3?gl:GLOW.orange,r:6,grenade:{radius:D.radius*TIER_RG[T]*(fz==='spear'?1.3:1),gold,god,tier:T},opts:wo(w)});}break;}
  }
+ if(!fz||!tgt)return;
+ // 主武器不是飞行物时，副武器的齐射方式以额外弹幕的形式出现
+ const melee=D.kind==='arc'||D.kind==='thrust'||D.kind==='flask'||D.kind==='chain';
+ if(melee&&fz==='xbow'){const ts=enemies.filter(e=>!e.dead&&!e.seg&&e!==tgt&&Math.hypot(e.x-P.x,e.y-P.y)<range+200).slice(0,2);for(const t of (ts.length?ts:[tgt,tgt]))shoot(hx,hy,Math.atan2(t.y-hy,t.x-hx),620,range+260,dmg*0.5,{col:TC[5],tier:5,st:'arrow',glow:tierGlow[5],pierce:1,r:5,opts:wo(w)});}
+ if(melee&&fz==='shotgun')for(let k=0;k<5;k++)shoot(hx,hy,ha+(k-2)*0.18,520,range+120,dmg*0.3,{col:TC[5],tier:5,st:'pellet',glow:GLOW.orange,r:4,opts:wo(w)});
+ if((melee||D.kind==='grenade'||D.kind==='turret')&&fz==='boomerang'){const sp=480;projs.push({pl:CUR,kind:'boom',x:hx,y:hy,vx:Math.cos(ha)*sp,vy:Math.sin(ha)*sp,sp,r:12,dmg:dmg*0.6,range:range+120,trav:0,ret:false,hit:new Set(),life:6,col:TC[5],tier:5,opts:wo(w),rot:0});}
+ if(pud&&(melee||D.kind==='turret'))puddles.push({x:tgt.x,y:tgt.y,r:44,life:2.5,max:2.5,dps:dmg*0.5*poisonMul(),tick:0,seed:Math.random()*99,tier:5,src:'fz'+w.id,cap:poisonCap(),dur:stDur()});
+ if(fz==='turret'){w.dc=(w.dc||0)+1;if(w.dc%4===0)dropTurret(w,hx+rand(-30,30),hy+rand(-30,30),dmg*0.45);}
 }
+function pDrop(p){if(puddles.length<55)puddles.push({x:p.x,y:p.y,r:40,life:2.4,max:2.4,dps:p.dmg*0.5*poisonMul(),tick:0,seed:Math.random()*99,tier:5,src:'fzp',cap:poisonCap(),dur:stDur()});}
 function explode(p){
  const r=p.grenade.radius*(FX.blastR||1);boomFx(p.x,p.y,r,p.grenade.tier);aoe(p.x,p.y,r,p.dmg,p.opts);
  if(p.grenade.gold)for(let k=0;k<(p.grenade.god?6:3);k++)shoot(p.x,p.y,Math.random()*TAU,420,160,p.dmg*0.4,{col:p.grenade.god?TC[5]:C.t4,tier:p.grenade.god?5:4,st:'shard',glow:p.grenade.god?tierGlow[5]:GLOW.gold,r:4,grenade:p.grenade.god?{radius:45,gold:false,tier:5}:undefined,opts:{critB:10}});
@@ -1684,21 +1778,22 @@ const hzHit=(b,k,pct)=>Math.min(hzDmg(b,k),Math.max(3,S.hp*pct));
 function mapUpdate(dt){
  const w=run.wave,keep=CUR,alive=alivePL();
  // forge: vents cycle 7s — 1s warning glow, then 1.1s of fire
- for(const v of hz.vents){const t=(tGame+v.ph)%7;v.warn=t>=4.9&&t<5.9;v.hot=t>=5.9&&t<7;
-  if(v.hot)for(const p of alive){if(Math.hypot(p.P.x-v.x,p.P.y-v.y)<70+p.P.r*0.5){use(p);hurt(hzHit(8,1.8,0.15),'fire');}}}
+ for(const v of hz.vents){const t=(tGame+v.ph)%7;v.warn=t>=4.9&&t<5.9;v.hot=t>=5.9&&t<7;if(hz.friendT>0){v.warn=false;v.hot=true;}
+  if(v.hot&&!(hz.friendT>0))for(const p of alive){if(Math.hypot(p.P.x-v.x,p.P.y-v.y)<70+p.P.r*0.5){use(p);hurt(hzHit(8,1.8,0.15),'fire');}}}
  use(keep);
- hz.ventTick-=dt;if(hz.ventTick<=0){hz.ventTick=0.35;for(const v of hz.vents)if(v.hot)for(const e of enemies){if(e.dead||e.seg)continue;if(Math.hypot(e.x-v.x,e.y-v.y)<70+e.r*0.5)hitEnemy(e,hzDmg(10,5),{noCrit:1,noSteal:1,noShield:1,col:'#ff9a4a'});}}
+ hz.ventTick-=dt;if(hz.ventTick<=0){hz.ventTick=0.35;for(const v of hz.vents)if(v.hot)for(const e of enemies){if(e.dead||e.seg)continue;if(Math.hypot(e.x-v.x,e.y-v.y)<70+e.r*0.5)hitEnemy(e,hzDmg(10,5)*(hz.friendT>0?2:1),{noCrit:1,noSteal:1,noShield:1,col:'#ff9a4a'});}}
  // mine: carts on rails with 1.3s warning
  if(MAP.rails){hz.cartT-=dt;if(hz.cartT<=0){hz.cartT=rand(4,6.5)*(w>=10?0.8:1);const dir=Math.random()<0.5?1:-1;hz.carts.push({y:pick(MAP.rails),dir,x:dir>0?-90:WORLD.w+90,warn:1.3,hit:new Set(),hitP:[]});}
   for(const c of hz.carts){if(c.warn>0){c.warn-=dt;continue;}c.x+=c.dir*900*dt;
-   for(const p of alive){if(!c.hitP.includes(p.id)&&Math.abs(p.P.y-c.y)<24+p.P.r&&Math.abs(p.P.x-c.x)<42+p.P.r){c.hitP.push(p.id);use(p);hurt(hzHit(12,2.2,0.2),'crush');P.y+=(P.y<c.y?-1:1)*30;if(p!==ME())netKnock(p,0,(p.P.y<c.y?-1:1)*30);}}
+   if(!c.friendly)for(const p of alive){if(!c.hitP.includes(p.id)&&Math.abs(p.P.y-c.y)<24+p.P.r&&Math.abs(p.P.x-c.x)<42+p.P.r){c.hitP.push(p.id);use(p);hurt(hzHit(12,2.2,0.2),'crush');P.y+=(P.y<c.y?-1:1)*30;if(p!==ME())netKnock(p,0,(p.P.y<c.y?-1:1)*30);}}
    use(keep);
-   for(const e of enemies){if(e.dead||c.hit.has(e)||e.seg)continue;if(Math.abs(e.y-c.y)<24+e.r&&Math.abs(e.x-c.x)<42+e.r){c.hit.add(e);hitEnemy(e,hzDmg(25,12),{noCrit:1,noSteal:1,noShield:1,col:'#f2cb7a'});if(!e.boss){e.y+=(e.y<c.y?-1:1)*26;}}}
+   for(const e of enemies){if(e.dead||c.hit.has(e)||e.seg)continue;if(Math.abs(e.y-c.y)<24+e.r&&Math.abs(e.x-c.x)<42+e.r){c.hit.add(e);hitEnemy(e,hzDmg(25,12)*(c.friendly?3:1),{noCrit:1,noSteal:1,noShield:1,col:'#f2cb7a'});if(!e.boss){e.y+=(e.y<c.y?-1:1)*26;}}}
    if(c.x<-140||c.x>WORLD.w+140)c.done=true;}
   hz.carts=hz.carts.filter(c=>!c.done);}
  // swamp: pools slow + poison everyone inside
  if(MAP.pools){hz.poolTick-=dt;if(hz.poolTick<=0){hz.poolTick=0.5;
-  for(const p of alive){if(inPool(p.P.x,p.P.y)){use(p);hurtDirect(hzHit(1.5,0.45,0.025));}}use(keep);
+  for(const p of alive){if(p.antidote>0)continue;if(inPool(p.P.x,p.P.y)){use(p);hurtDirect(hzHit(1.5,0.45,0.025));}}use(keep);
+  for(const p of PL)if(p.antidote>0)p.antidote-=0.5;for(const pl of MAP.pools)if(pl.gcd>0)pl.gcd-=0.5;
   for(const e of enemies){if(e.dead||e.seg||e.type==='fairy')continue;if(inPool(e.x,e.y))hitEnemy(e,hzDmg(1.5,1),{noCrit:1,noSteal:1,noShield:1,col:C.good});}}}
  // storm: lightning warnings, 1.2s later the bolt lands
  if(MAP.key==='storm'){hz.strikeT-=dt;if(hz.strikeT<=0){hz.strikeT=3.2;const n=3+Math.floor(w/5);
@@ -1807,7 +1902,7 @@ function makeBoss(key,elite){
  return e;
 }
 function freeSpot(x,y,r){for(const b of obstacles)if(Math.hypot(x-b.x,y-b.y)<b.r+r+6)return false;return true;}
-function queueSpawn(type){if(type!=='fairy')waveSpawned++;let x,y,n=0;do{x=rand(40,WORLD.w-40);y=rand(40,WORLD.h-40);}while((minPD(x,y)<230||!freeSpot(x,y,24))&&++n<30);spawns.push({type,x,y,t:0.8});}
+function queueSpawn(type){if(type!=='fairy')waveSpawned++;let x,y,n=0;const rl=evt&&evt.k==='relic'&&evt.st===1&&Math.random()<0.5?evt.p:null;do{if(rl){const a=Math.random()*TAU,r=rand(160,320);x=clamp(rl.x+Math.cos(a)*r,40,WORLD.w-40);y=clamp(rl.y+Math.sin(a)*r,40,WORLD.h-40);}else{x=rand(40,WORLD.w-40);y=rand(40,WORLD.h-40);}}while((minPD(x,y)<230||!freeSpot(x,y,24))&&++n<30);spawns.push({type,x,y,t:0.8});}
 function pickType(w){
  const pool=[['crawler',10]];
  if(w>=3)pool.push(['charger',4+w*0.3]);if(w>=4)pool.push(['spitter',3+w*0.25],['splitter',2.4+w*0.15]);
@@ -1823,7 +1918,7 @@ function spawnLogic(dt){
  const w=run.wave,D=DIFF[run.diff],bossAlive=enemies.some(e=>e.boss&&!e.dead);
  spawnT-=dt;
  if(spawnT<=0){
-  spawnT=Math.max(BAL.spawnMin,BAL.spawnBase-w*BAL.spawnSlope)/dRamp(D.spawn,w)*(bossAlive?2:1)/(relief?relief.spawn:1);
+  spawnT=Math.max(BAL.spawnMin,BAL.spawnBase-w*BAL.spawnSlope)/dRamp(D.spawn,w)*(bossAlive?2:1)/(relief?relief.spawn:1)/(evt&&evt.k==='tide'&&evt.st===1?1.7:1);
   const n=1+Math.floor(w/BAL.batchDiv)+(Math.random()<0.3?1:0);
   for(let i=0;i<n;i++)if(enemies.length+spawns.length<170)queueSpawn(pickType(w));
  }
@@ -1935,7 +2030,7 @@ function updateEnemies(dt){
    let ax=Math.cos(e.wa),ay=Math.sin(e.wa);if(d<230){ax=-dx/d;ay=-dy/d;}
    e.x+=ax*e.spd*sf*dt;e.y+=ay*e.spd*sf*dt;ta=Math.atan2(ay,ax);as=3;
    if(e.x<30||e.x>WORLD.w-30||e.y<30||e.y>WORLD.h-30)e.wa=Math.atan2(WORLD.h/2-e.y,WORLD.w/2-e.x);
-   if(e.life<=0){e.dead=true;addText(e.x,e.y-16,'跑掉了',C.muted,12);continue;}
+   if(e.life<=0){e.dead=true;addText(e.x,e.y-16,e.loot?'宝藏机关兽跑掉了':'跑掉了',C.muted,e.loot?15:12);continue;}
   }
   else if(e.type==='charger'){
    if(e.st===0){chase(e,dx/d,dy/d,e.spd*sf,dt);e.ai-=dt;as=2;if(e.ai<=0&&d<330){e.st=1;e.ai=0.55;e.da=Math.atan2(dy,dx);}}
@@ -2016,7 +2111,7 @@ function readInput(){
 // local movement for the current player (host's own player, or the guest predicting itself)
 function moveLocal(dt){
  const [mx,my,ml]=readInput();
- const spd=190*Math.max(0.3,1+S.speed/100)*(inPool(P.x,P.y)?0.62:1)*gzSlow(P.x,P.y);
+ const spd=190*Math.max(0.3,1+S.speed/100)*(inPool(P.x,P.y)&&!(CUR&&CUR.antidote>0)?0.62:1)*gzSlow(P.x,P.y);
  P.x=clamp(P.x+mx*spd*dt,P.r,WORLD.w-P.r);P.y=clamp(P.y+my*spd*dt,P.r,WORLD.h-P.r);pushOut(P);
  P.moving=ml>0.1;if(P.moving){P.face=Math.atan2(my,mx);P.mface=P.face;P.anim+=dt;}else P.anim+=dt*0.4;
  P.dface+=angDiff(P.mface,P.dface)*Math.min(1,dt*LB.turn);
@@ -2050,6 +2145,7 @@ function update(dt){
  updateEnemies(dt);
  mapUpdate(dt);if(state!=='battle')return;
  gzUpdate(dt);if(state!=='battle')return;
+ propsUpdate(dt);if(state!=='battle')return;
  for(const p of projs){
   use(p.pl||ME());
   if(p.kind==='lob'){p.t+=dt;const k=Math.min(1,p.t/p.dur);p.x=p.sx+(p.tx-p.sx)*k;p.y=p.sy+(p.ty-p.sy)*k;
@@ -2058,16 +2154,18 @@ function update(dt){
    if(!p.ret){p.trav+=p.sp*dt;if(p.trav>=p.range){p.ret=true;p.hit.clear();}}
    else{const dx=P.x-p.x,dy=P.y-p.y,d=Math.hypot(dx,dy)||1;p.vx=dx/d*p.sp*1.1;p.vy=dy/d*p.sp*1.1;if(d<20){p.dead=true;continue;}}
    p.life-=dt;if(p.life<=0){p.dead=true;continue;}}
+  if(p.ret===2){const dx=P.x-p.x,dy=P.y-p.y,d=Math.hypot(dx,dy)||1,sp=Math.hypot(p.vx,p.vy);p.vx=dx/d*sp;p.vy=dy/d*sp;if(d<20){p.dead=true;continue;}}
   p.x+=p.vx*dt;p.y+=p.vy*dt;
   if(p.kind==='proj'){p.life-=dt;
-   if(p.life<=0||p.x<0||p.y<0||p.x>WORLD.w||p.y>WORLD.h){if(p.grenade)explode(p);if(p.endBoom){const br=70*(FX.blastR||1);boomFx(p.x,p.y,br,5);aoe(p.x,p.y,br,p.dmg*0.6,p.opts);}p.dead=true;continue;}}
+   if(p.ret===1&&!p.grenade&&p.life<=0){p.ret=2;p.life=3;p.pierce=99;p.hit.clear();}
+   else if(p.life<=0||p.x<0||p.y<0||p.x>WORLD.w||p.y>WORLD.h){if(p.grenade)explode(p);if(p.puddle)pDrop(p);if(p.endBoom){const br=70*(FX.blastR||1);boomFx(p.x,p.y,br,5);aoe(p.x,p.y,br,p.dmg*0.6,p.opts);}p.dead=true;continue;}}
   for(const e of enemies){
    if(e.dead||p.hit.has(e))continue;
    if((e.x-p.x)**2+(e.y-p.y)**2<(e.r+p.r)**2){
     if(p.grenade){explode(p);p.dead=true;break;}
     p.hit.add(e);hitEnemy(e,p.dmg,p.opts);
     if(p.opts.nova){ringFx(e.x,e.y,70,'#cfefff',0.3);for(const o of enemies)if(!o.dead&&o!==e&&Math.hypot(o.x-e.x,o.y-e.y)<70)o.slowT=Math.max(o.slowT,2*stDur());}
-    if(p.kind==='proj'){p.pierce--;if(p.pierce<0){p.dead=true;break;}}
+    if(p.kind==='proj'){p.pierce--;if(p.pierce<0){if(p.puddle)pDrop(p);p.dead=true;break;}}
    }
   }
  }
@@ -2088,7 +2186,10 @@ function update(dt){
  mines=mines.filter(m=>!m.dead);
  for(const t of turrets){use(t.pl||ME());const rm=rangeMul();if(!t.perm)t.life-=dt;t.cd-=dt*atkMul();t.kick=Math.max(0,t.kick-dt*6);
   if(t.cd<=0){const tg=nearest(t.x,t.y,300*rm*(t.rg||1));if(tg){t.cd=t.fcd||0.7;t.a=Math.atan2(tg.y-t.y,tg.x-t.x);t.kick=1;if(fxs.length<300)fxs.push({type:'mz',k:'t',x:Math.round(t.x+Math.cos(t.a)*21),y:Math.round(t.y-3+Math.sin(t.a)*21),a:R2(t.a),tier:t.tier||1,s:R2(Math.random()*99),life:0.32,max:0.32});
-   const off=t.tri?[-6,0,6]:t.dbl?[-5,5]:[0];for(const o of off){shoot(t.x+Math.cos(t.a)*16-Math.sin(t.a)*o,t.y+Math.sin(t.a)*16+Math.cos(t.a)*o,t.a,600,300*rm*(t.rg||1),t.dmg,{col:t.col,tier:t.tier||1,st:'tbolt',glow:(t.tier||1)>=3?tierGlow[t.tier]:GLOW.warm,pierce:FX.pierce||0,r:4,opts:{col:t.col,critB:t.critB||0,sx:t.x,sy:t.y,hk:1,pay:t.pay}});}}else t.cd=0.12;}}
+   const fzz=t.fz,off=t.tri?[-6,0,6]:t.dbl?[-5,5]:[0],angs=fzz==='xbow'?[-0.18,0,0.18]:fzz==='shotgun'?[-0.3,-0.15,0,0.15,0.3]:[0],tf=fzz==='shotgun'?0.45:1,trg=300*rm*(t.rg||1)*(fzz==='spear'?1.3:1);
+   for(const o of off)for(const da of angs)shoot(t.x+Math.cos(t.a)*16-Math.sin(t.a)*o,t.y+Math.sin(t.a)*16+Math.cos(t.a)*o,t.a+da,600,trg,t.dmg*tf,{col:t.col,tier:t.tier||1,st:'tbolt',glow:(t.tier||1)>=3?tierGlow[t.tier]:GLOW.warm,pierce:(FX.pierce||0)+(fzz==='spear'?99:0),ret:fzz==='boomerang'?1:0,puddle:fzz==='flask'&&da===0,r:4,opts:{col:t.col,critB:t.critB||0,sx:t.x,sy:t.y,hk:1,fz:fzz,wref:t}});
+   if(fzz==='blades'){t.rp=!t.rp;if(t.rp)t.cd=0.15;}
+   if(fzz==='turret'){t.dc=(t.dc||0)+1;if(t.dc%6===0&&t.wo)dropTurret(t.wo,t.x+rand(-40,40),t.y+rand(-40,40),t.dmg*0.6);}}else t.cd=0.12;}}
  use(ME());
  turrets=turrets.filter(t=>t.perm||t.life>0);
  // pickups fly to (and are collected by) the closest living player whose magnet reaches them
@@ -2141,7 +2242,7 @@ function startWave(){
    if(isOrb(w)){const n=orbN(w);w.ang=w.dup*TAU/(n*w.dupN);}}
  }
  use(ME());hpGhost=S.hp;
- enemies=[];spawns=[];projs=[];ebul=[];fxs=[];puddles=[];mines=[];turrets=[];texts=[];delayed=[];gz=[];corpses=[];resetHazards();
+ enemies=[];spawns=[];projs=[];ebul=[];fxs=[];puddles=[];mines=[];turrets=[];texts=[];delayed=[];gz=[];corpses=[];resetHazards();resetProps();planEvent();
  pickups=run.coins.map(c=>({type:'coin',x:c.x,y:c.y,v:c.v,mag:false,ph:Math.random()*TAU}));
  waveTimer=run.wave>=FINAL_WAVE?Infinity:(run.wave===ELITE_WAVE?45:Math.max(MINI_WAVES.includes(run.wave)?50:0,Math.min(55,20+run.wave*2.5)));run.waveDur=waveTimer;
  spawnT=0.6;fairyT=rand(5,9);for(const p of PL){p.run.waveChests=0;p.run.waveFairies=0;}
@@ -2188,7 +2289,7 @@ function endWave(){
  // 苦战（联机时全队平均）：下一波敌人更少更脆
  relief=PL.reduce((a,p)=>a+p.helpL,0)/PL.length>=1.5&&run.wave+1<FINAL_WAVE?HELP.relief:null;
  for(const p of PL)p.summary.relief=!!relief;
- enemies=[];spawns=[];projs=[];ebul=[];puddles=[];mines=[];turrets=[];texts=[];delayed=[];fxs=[];joy=null;emines=[];hz.carts=[];hz.strikes=[];gz=[];corpses=[];
+ enemies=[];spawns=[];projs=[];ebul=[];puddles=[];mines=[];turrets=[];texts=[];delayed=[];fxs=[];joy=null;emines=[];hz.carts=[];hz.strikes=[];gz=[];corpses=[];props=[];evt=null;
  state='prep';
  renderPrep();show('prep');$('#prep').scrollTop=0;
  if(NET.role==='host')netPrep();
@@ -2220,7 +2321,7 @@ function itemPool(t){let pool=ITEMS.filter(it=>it.t===t&&!(it.u&&run.items.inclu
 function makeOffer(){
  const t=rollTier();
  if(Math.random()<SHOP.wChance){const own=run.weapons.filter(w=>WEAPONS[w.key]&&w.tier<4),gold=run.weapons.filter(w=>w.tier===4),r=Math.random();let key,tier=t;
-  if(own.length&&r<SHOP.upgrade){const tot=own.reduce((a,w)=>a+w.tier*w.tier,0);let q=Math.random()*tot,w=own[0];for(const x of own){q-=x.tier*x.tier;if(q<=0){w=x;break;}}key=w.key;tier=w.tier;}  // 同名同阶，买下就能合成
+  if(own.length&&r<SHOP.upgrade){const w=pick(own);key=w.key;tier=w.tier;}  // 同名同阶，买下就能合成
   else if(gold.length&&run.wave>=8&&r<SHOP.upgrade+SHOP.goldCopy){key=pick(gold).key;tier=4;}  // 后期偶尔直接卖一把同名金阶，凑神器
   else if(run.weapons.length&&r<SHOP.upgrade+SHOP.goldCopy+SHOP.ownedKey)key=pick(run.weapons.filter(w=>WEAPONS[w.key])).key;
   else key=pick(SHOPK);
@@ -2228,16 +2329,16 @@ function makeOffer(){
  const it=pick(itemPool(t));return {kind:'i',name:it.n,tier:it.t,price:price('i',it.t),locked:false,sold:false};
 }
 function rollShop(){const old=run.shop||[];run.shop=[0,1,2,3].map(i=>old[i]&&old[i].locked&&!old[i].sold?old[i]:makeOffer());helpOffer();fuseOffer();}
-// 合体保底：第 7 波起，神阶武器少于预期（第 12 波前 1 把，之后 2 把）时，商店保证一件能把最好的武器往金阶推进的同名同阶武器，85 折
+// 合体保底：第 9 波起，神阶武器少于预期（第 13 波前 1 把，之后 2 把）时，商店保证一件能把最好的武器往金阶推进的同名同阶武器（原价）
 function fuseOffer(){
- const n5=run.weapons.filter(w=>w.tier>=5).length,want=run.wave>=12?2:run.wave>=7?1:0;if(n5>=want)return;
+ const n5=run.weapons.filter(w=>w.tier>=5).length,want=run.wave>=13?2:run.wave>=9?1:0;if(n5>=want)return;
  const golds=run.weapons.filter(w=>w.tier===4);if(golds.length>=2)return;  // 已经可以合体了
  const cand=run.weapons.filter(w=>w.tier<4).sort((a,b)=>b.tier-a.tier||(golds.some(g=>g.key===b.key)?1:0)-(golds.some(g=>g.key===a.key)?1:0));
  const w=cand[0];if(!w)return;
  const fits=o=>!o.sold&&o.kind==='w'&&o.key===w.key&&o.tier===w.tier;
  let o=run.shop.find(fits);
  if(!o){const i=[0,1,2,3].find(j=>!run.shop[j].locked&&!run.shop[j].sold&&!run.shop[j].help);if(i==null)return;o=run.shop[i]={kind:'w',key:w.key,tier:w.tier,price:price('w',w.tier),locked:false,sold:false};}
- if(!o.fh){o.fh=true;o.price=Math.max(1,Math.round(o.price*0.85));}
+ o.fh=true;
 }
 // 逆风补给：生命偏低时，商店至少有一件加生命上限的道具
 // 逆风补给：商店保证一件对症的商品（缺生命给加生命的道具；打不动怪给能合成升阶的同名武器或加伤害的道具），7 折
@@ -2317,7 +2418,7 @@ function renderMenu(){
     <div class="go">${startBtn()}<span class="dim">${best.wins?`已通关 ${best.wins} 次`:best.wave?`最好成绩：第 ${best.wave} 波`:'首次挑战'}</span></div>
    </div>
   </section>
-  <p class="howto"><b>移动</b> WASD 或方向键；iPad / 手机上用手指按住屏幕任意位置拖动（虚拟摇杆跟着手指出现）。<b>攻击</b> 武器自动瞄准最近的敌人。<b>主动技能</b> 空格键或右下角的技能按钮，每个英雄各不相同。<b>流派</b> 武器分近战、射击、术法、机关四派，同派凑 2 / 4 / 6 件有套装奖励。<b>合体</b> 任意两把金阶武器都能合体成第五阶「神阶」：同名两把合成神器；不同的两把，选一把为主保留攻击方式，另一把的特性附加到每次命中上（例如连弩为主、附带雷符＝雷霆弩）。合体后同时算两把的流派，还能空出一格武器栏。没捡完的金币在波次结束时自动收取 70%。击败抱着宝箱的金色小精灵可以拿到宝箱。第 5 波起会出现带词缀的精英怪，击败可能掉宝箱。<b>首领</b> 大首领狂怒时会学会新招，濒死时放招牌技；铁甲巨像的背后是弱点，旋炮楼的副炮拆光会露出破绽。<b>进化</b> 第 6 波起敌人会进化成二型、第 12 波起进化成三型，带新的攻击方式，身上有「Ⅱ / Ⅲ」标记。第 4、12 波有小首领，限时内击败掉宝箱，否则它会逃走。第 8 波有精英首领，第 16 波是最终首领，击败它即通关。每张战场有自己的地形机关，敌人也会被机关伤到。Esc 或 P 暂停，M 开关音效。双人联机时队友倒地，站进他身边的绿圈就能救起：约 2 秒，救人时受到的伤害减少 40%，救起瞬间会震开周围的怪。</p>
+  <p class="howto"><b>移动</b> WASD 或方向键；iPad / 手机上用手指按住屏幕任意位置拖动（虚拟摇杆跟着手指出现）。<b>攻击</b> 武器自动瞄准最近的敌人。<b>主动技能</b> 空格键或右下角的技能按钮，每个英雄各不相同。<b>地图机关</b> 每张战场都有可互动的机关，靠近会显示名字，站上去就能启动。第 5 波起偶尔有波中事件：宝藏机关兽、补给空投、兽潮、守护机关。<b>流派</b> 武器分近战、射击、术法、机关四派，同派凑 2 / 4 / 6 件有套装奖励。<b>合体</b> 任意两把金阶武器都能合体成第五阶「神阶」：同名两把合成神器；不同的两把，攻击形态鲜明的一把为主，另一把的攻击方式融进去，每对只有一种结果（例如回旋镖＋连弩＝连珠镖，一次多掷两枚；双刃＋雷符＝雷霆刃，每刀都引雷）。合体后同时算两把的流派，还能空出一格武器栏。没捡完的金币在波次结束时自动收取 70%。击败抱着宝箱的金色小精灵可以拿到宝箱。第 5 波起会出现带词缀的精英怪，击败可能掉宝箱。<b>首领</b> 大首领狂怒时会学会新招，濒死时放招牌技；铁甲巨像的背后是弱点，旋炮楼的副炮拆光会露出破绽。<b>进化</b> 第 6 波起敌人会进化成二型、第 12 波起进化成三型，带新的攻击方式，身上有「Ⅱ / Ⅲ」标记。第 4、12 波有小首领，限时内击败掉宝箱，否则它会逃走。第 8 波有精英首领，第 16 波是最终首领，击败它即通关。每张战场有自己的地形机关，敌人也会被机关伤到。Esc 或 P 暂停，M 开关音效。双人联机时队友倒地，站进他身边的绿圈就能救起：约 2 秒，救人时受到的伤害减少 40%，救起瞬间会震开周围的怪。</p>
   <div class="gobar">${startBtn()}</div>
  </div>`;
 }
@@ -2401,8 +2502,8 @@ function renderOver(win){
 let inspectEl=null;
 function closeInspect(){const p=$('#inspect');if(p)p.hidden=true;if(inspectEl)inspectEl.classList.remove('on');inspectEl=null;}
 // 当前武器能和谁合体：[[伙伴下标, 结果武器], ...]
-function fuseOpts(i){const w=run.weapons[i];if(!w||w.tier!==4)return [];const r=[],seen=new Set();run.weapons.forEach((x,j)=>{if(j===i||x.tier!==4||seen.has(x.key))return;seen.add(x.key);r.push([i,j]);if(x.key!==w.key)r.push([j,i]);});return r;}
-function fuseHints(w){if(w.tier!==4)return '';return `<div class="note">合体（神阶）：两把同名金阶 → 神器（${GOD[w.key]}）；和任意另一把金阶合体时，可以选它为主（攻击方式不变，附带对方的特性），也可以选对方为主、把「${PAY[w.key][0]}」特性附带过去：${PAY[w.key][1]}。合体后同时算两把的流派，并空出一格。</div>`;}
+function fuseOpts(i){const w=run.weapons[i];if(!w||w.tier!==4)return [];const r=[],seen=new Set();run.weapons.forEach((x,j)=>{if(j===i||x.tier!==4||seen.has(x.key))return;seen.add(x.key);r.push(fuseMain(w.key,x.key)[0]===w.key?[i,j]:[j,i]);});return r;}
+function fuseHints(w){if(w.tier!==4)return '';return `<div class="note">合体（神阶）：两把同名金阶 → 神器（${GOD[w.key]}）。和另一把金阶合体时，攻击形态鲜明的一把为主（星轮 > 炮台 > 回旋镖 > 霰弹炮 > 连弩 > 长枪 > 双刃 > 雷符 > 爆裂弹 > 毒雾瓶 > 冰晶），另一把的攻击方式融进去。它作为副武器时带来「${FUSE[w.key].n}」：${FUSE[w.key].d}。合体后同时算两把的流派，并空出一格。</div>`;}
 function weaponInfo(w){
  const D=WEAPONS[w.key],t=w.tier,isT=D.kind==='turret',orbit=D.kind==='orbit';
  const base=Math.round(D.dmg*TIER_MUL[t]),now=Math.round(wDmg(w,isT)*(isT?1+(H.turretDmg||0)/100:1));
@@ -2414,8 +2515,8 @@ function weaponInfo(w){
    <dt>${orbit?'同一敌人受击间隔':'冷却'}</dt><dd>${cdNow.toFixed(2)}s <small>（基础 ${cd.toFixed(2)}s）</small></dd>
    <dt>${orbit?'刀轮半径':'范围'}</dt><dd>${rgNow} <small>（基础 ${rg}）</small></dd>
    ${TIER_CRIT[t]?`<dt>暴击</dt><dd>+${TIER_CRIT[t]}%</dd>`:''}</dl>
-  ${payOf(w)?`<div class="gold">金阶效果：${D.gold.replace(/^金阶：/,'')}</div><div class="god">合体 · 「${PAY[payOf(w)][0]}」：${PAY[payOf(w)][1]}（来自${WEAPONS[payOf(w)].name}）</div>`:t>=5?`<div class="gold">金阶效果：${D.gold.replace(/^金阶：/,'')}</div><div class="god">神器效果：${GOD[w.key]}</div>`:t===4?`<div class="gold">金阶效果：${D.gold.replace(/^金阶：/,'')}</div>${fuseHints(w)}`:`<div class="note">升到金阶：${D.gold.replace(/^金阶：/,'')}</div>`}
-  ${state==='prep'&&t===4?(()=>{const i=run.weapons.indexOf(w),fo=fuseOpts(i);return fo.length?`<div class="fuse">${fo.map(([a,b])=>{const A=run.weapons[a],B=run.weapons[b],nm=wName({key:A.key,tier:5,fu:B.key});return `<button class="btn sm" data-act="fuse" data-i="${a*16+b}">合体 → ${nm}${A.key===B.key?'（神器）':`（${WEAPONS[A.key].name}为主，附带${PAY[B.key][0]}）`}</button>`;}).join('')}</div>`:'';})():''}
+  ${payOf(w)?`<div class="gold">金阶效果：${D.gold.replace(/^金阶：/,'')}</div><div class="god">合体 · 「${FUSE[payOf(w)].n}」：${FUSE[payOf(w)].d}（来自${WEAPONS[payOf(w)].name}）</div>`:t>=5?`<div class="gold">金阶效果：${D.gold.replace(/^金阶：/,'')}</div><div class="god">神器效果：${GOD[w.key]}</div>`:t===4?`<div class="gold">金阶效果：${D.gold.replace(/^金阶：/,'')}</div>${fuseHints(w)}`:`<div class="note">升到金阶：${D.gold.replace(/^金阶：/,'')}</div>`}
+  ${state==='prep'&&t===4?(()=>{const i=run.weapons.indexOf(w),fo=fuseOpts(i);return fo.length?`<div class="fuse">${fo.map(([a,b])=>{const A=run.weapons[a],B=run.weapons[b],nm=wName({key:A.key,tier:5,fu:B.key});return `<button class="btn sm" data-act="fuse" data-i="${a*16+b}">合体 → ${nm}${A.key===B.key?'（神器）':`（${WEAPONS[A.key].name}为主，融入${FUSE[B.key].n}）`}</button>`;}).join('')}</div>`:'';})():''}
   ${t<4?`<div class="note">${same?`有 ${same} 把同名同阶，可以合成到${TIER_N[t+1]}阶`:`再有一把同名${TIER_N[t]}阶即可合成到${TIER_N[t+1]}阶`}</div>`:''}`;
 }
 function itemInfo(n){
@@ -2481,7 +2582,7 @@ function prepAct(act,i){
   case 'gifti':{const m=mateOfCur(),it=ITEMS[i];if(!m||!it)break;const j=run.items.indexOf(it.n);if(j<0)break;
    if(it.u&&m.run.items.includes(it.n)){msg='队友已经有这件唯一道具';break;}
    run.items.splice(j,1);m.run.items.push(it.n);restat(m);msg=`把 ${it.n} 送给了队友`;giftNote={to:m.id,text:`队友送来 ${it.n}`};break;}
-  case 'fuse':{const a=Math.floor(i/16),b=i%16,wa=run.weapons[a],wb=run.weapons[b];if(!wa||!wb||a===b||wa.tier!==4||wb.tier!==4)break;
+  case 'fuse':{let a=Math.floor(i/16),b=i%16;if(run.weapons[a]&&run.weapons[b]&&fuseMain(run.weapons[a].key,run.weapons[b].key)[0]!==run.weapons[a].key)[a,b]=[b,a];const wa=run.weapons[a],wb=run.weapons[b];if(!wa||!wb||a===b||wa.tier!==4||wb.tier!==4)break;
    const at=Math.min(a,b),nw=Object.assign(newW(wa.key,5),{fu:wb.key});run.weapons.splice(Math.max(a,b),1);run.weapons.splice(at,1);run.weapons.splice(at,0,nw);msg=wa.key===wb.key?`${WEAPONS[wa.key].name} 合体为神器`:`合体成功：${wName(nw)}`;break;}
   case 'sell':{if(run.weapons.length<=1||!run.weapons[i])break;const w=run.weapons[i];run.gold+=sellValue(w);run.weapons.splice(i,1);break;}
  }
@@ -2666,18 +2767,19 @@ function netSnapshot(){
  const en=[],bo=[];
  for(const e of enemies){if(e.dead||e.seg)continue;
   if(e.boss){bo.push({id:e.id,bkey:e.bkey,elite:e.elite,name:e.name,x:R1(e.x),y:R1(e.y),r:e.r,face:R2(e.face),anim:R2(e.anim),st:e.st,spA:R2(e.spA||0),hp:Math.ceil(e.hp),max:Math.ceil(e.max),flash:e.flash>0?1:0,mini:e.mini,jh:R1(e.jh||0),immune:e.immune?1:0,guarded:e.guarded?1:0,segs:e.segs?e.segs.filter(s=>!s.dead).map(s=>[R1(s.x),R1(s.y),R1(s.r),s.flash>0?1:0]):null});continue;}
-  const f=(e.flash>0?1:0)|(e.freezeT>0?2:0)|(e.slowT>0?4:0)|(e.poisonT>0?8:0)|(e.cloak?16:0)|(e.fuse?32:0)|(e.st===1?64:0)|(e.st===2?128:0)|(e.st==='reveal'?256:0)|(e.guardT>0?512:0)|(e.sh>0?1024:0)|(e.rage?2048:0)|(e.st==='pw'?4096:0)|(e.front?8192:0);
+  const f=(e.flash>0?1:0)|(e.freezeT>0?2:0)|(e.slowT>0?4:0)|(e.poisonT>0?8:0)|(e.cloak?16:0)|(e.fuse?32:0)|(e.st===1?64:0)|(e.st===2?128:0)|(e.st==='reveal'?256:0)|(e.guardT>0?512:0)|(e.sh>0?1024:0)|(e.rage?2048:0)|(e.st==='pw'?4096:0)|(e.front?8192:0)|(e.loot?16384:0);
   en.push([e.id,ETYPES.indexOf(e.type),R1(e.x),R1(e.y),R1(e.r),R2(e.face),R2(e.anim),f,e.aff?AFFK.indexOf(e.aff)+1:0,Math.max(0,Math.round(e.hp/e.max*100)),R2(e.wa||0),R2(e.type==='charger'?(e.da||0):(e.ai||0)),e.ev||0]);}
  const pr=projs.map(p=>p.kind==='lob'?{k:1,x:R1(p.x),y:R1(p.y),sx:R1(p.sx),sy:R1(p.sy),tx:R1(p.tx),ty:R1(p.ty),t:R2(p.t),dur:p.dur,tier:p.tier}
   :p.kind==='boom'?{k:2,x:R1(p.x),y:R1(p.y),vx:R1(p.vx),vy:R1(p.vy),rot:R2(p.rot),tier:p.tier,col:p.col}
   :{k:0,x:R1(p.x),y:R1(p.y),vx:R1(p.vx),vy:R1(p.vy),r:R1(p.r),st:p.st,tier:p.tier,col:p.col,glow:p.glow,seed:R2(p.seed)});
  const pls=PL.map(p=>{const rr=p===CUR?{db:dodgeBuff}:{db:p.dodgeBuff};return {x:R1(p.P.x),y:R1(p.P.y),f:R2(p.P.face),df:R2(p.P.dface),m:p.P.moving?1:0,a:R2(p.P.anim),inv:R2(Math.max(0,p.P.inv)),db:rr.db>0?1:0,dn:p.down?1:0,rv:R2(p.rvk||0),hp:Math.ceil(Math.max(0,p.run.hp)),mhp:p.S.hp||0,
   wp:p.run.weapons.map(w=>[WKEYS.indexOf(w.key),w.tier,w.fc||0,w.fu?WKEYS.indexOf(w.fu):-1]),
-  bl:p.run.weapons.filter(w=>isOrb(w)&&w.blades).map(w=>[w.tier,w.blades.map(b=>[R1(b[0]-p.P.x),R1(b[1]-p.P.y),R2(b[2])])])};});
+  bl:p.run.weapons.filter(w=>hasBl(w)&&w.blades).map(w=>[w.tier,w.blades.map(b=>[R1(b[0]-p.P.x),R1(b[1]-p.P.y),R2(b[2])])])};});
  const g=PL[1];
  const msg={t:'s',tg:R2(tGame),wt:waveTimer===Infinity?-1:R2(waveTimer),en,bo,pr,
   eb:ebul.map(b=>[R1(b.x),R1(b.y),R1(b.vx),R1(b.vy),b.r,b.home?1:0,b.pool?1:0]),
   gz:gz.map(g=>[GZK.indexOf(g.k),g.x,g.y,g.r,R2(g.life),g.max,g.s]),
+  pp:props.map(p=>[PROPK.indexOf(p.k),p.x,p.y,R2(p.prog),R1(Math.max(0,p.cd)),p.on?1:0,R2(p.ch||0)]),hf:R1(hz.friendT||0),ev:evt&&evt.k==='drop'&&evt.st===1?[evt.x,evt.y,R2(evt.dt)]:null,gc:MAP.pools?MAP.pools.map(pl=>pl.gcd>0?1:0):null,
   pu:pickups.map(p=>p.type==='coin'?[0,R1(p.x),R1(p.y),p.v,R2(p.ph)]:[1,R1(p.x),R1(p.y),p.tier,p.tk||0]),
   sp:spawns.map(s=>[R1(s.x),R1(s.y),R2(s.t),s.type==='fairy'?1:0]),
   tu:turrets.map(t=>({x:R1(t.x),y:R1(t.y),life:R2(t.life),perm:t.perm?1:0,a:R2(t.a),kick:R2(t.kick),dbl:t.dbl?1:0,col:t.col,tier:t.tier||1})),
@@ -2718,7 +2820,7 @@ function guestWave(m){
  PL=[makePlayer(0,mate),makePlayer(1,mine)];CUR=null;use(PL[1]);computeStats();
  [P.x,P.y]=m.pos;P.inv=1;PL[0].P.x=WORLD.w/2-40;PL[0].P.y=WORLD.h/2;
  state='battle';paused=false;abandonArm=hubArm=false;NET.meReady=false;
- enemies=[];spawns=[];projs=[];ebul=[];fxs=[];puddles=[];mines=[];turrets=[];texts=[];delayed=[];pickups=[];emines=[];
+ enemies=[];spawns=[];projs=[];ebul=[];fxs=[];puddles=[];mines=[];turrets=[];texts=[];delayed=[];pickups=[];emines=[];gz=[];props=[];evt=null;
  waveTimer=m.wt==null?Infinity:m.wt;NET.snapAge=0;NET.lastHs=null;NET.lastHp=run.hp=S.hp;NET.lastLvl=run.level;hpGhost=S.hp;
  if(m.banner)banner(m.banner,900);
  $('#hudPor').src=porOf();$('#dial').classList.toggle('boss',run.wave>=FINAL_WAVE);
@@ -2747,7 +2849,7 @@ function guestFast(m){
   const e={id:a[0],type,x:o?o.x:a[2],y:o?o.y:a[3],_x0:o?o.x:a[2],_y0:o?o.y:a[3],_x1:a[2],_y1:a[3],r:a[4],face:a[5],anim:a[6],
    flash:f&1?0.08:0,freezeT:f&2?1:0,slowT:f&4?1:0,poisonT:f&8?1:0,cloak:!!(f&16),fuse:f&32?0.3:0,
    st:type==='charger'?(f&64?1:f&128?2:0):type==='stalker'?(f&256?'reveal':f&16?'stalk':'rest'):0,
-   aff:a[8]?AFFK[a[8]-1]:null,hp:a[9],max:100,wa:a[10],da:a[11],ai:a[11],scale:a[4]/ENEMY[type].r,ev:a[12]||0,guardT:f&512?1:0,sh:f&1024?1:0,rage:f&2048?1:0,front:f&8192?1:0};
+   aff:a[8]?AFFK[a[8]-1]:null,hp:a[9],max:100,wa:a[10],da:a[11],ai:a[11],scale:a[4]/ENEMY[type].r,ev:a[12]||0,guardT:f&512?1:0,sh:f&1024?1:0,rage:f&2048?1:0,front:f&8192?1:0,loot:f&16384?1:0};
   if(f&4096)e.st='pw';
   ne.push(e);}
  for(const b of m.bo){const o=old.get(b.id);
@@ -2756,7 +2858,7 @@ function guestFast(m){
   ne.push(e);}
  enemies=ne;
  projs=m.pr.map(p=>p.k===1?Object.assign({kind:'lob'},p):p.k===2?Object.assign({kind:'boom'},p):Object.assign({kind:'proj'},p));
- ebul=m.eb.map(b=>({x:b[0],y:b[1],vx:b[2],vy:b[3],r:b[4],home:b[5],pool:b[6]}));gz=(m.gz||[]).map(a=>({k:GZK[a[0]],x:a[1],y:a[2],r:a[3],life:a[4],max:a[5],s:a[6]}));
+ ebul=m.eb.map(b=>({x:b[0],y:b[1],vx:b[2],vy:b[3],r:b[4],home:b[5],pool:b[6]}));props=(m.pp||[]).map(a=>({k:PROPK[a[0]],x:a[1],y:a[2],prog:a[3],cd:a[4],on:a[5],ch:a[6]}));hz.friendT=m.hf||0;evt=m.ev?{k:'drop',st:1,x:m.ev[0],y:m.ev[1],dt:m.ev[2]}:null;if(m.gc&&MAP.pools)MAP.pools.forEach((pl,i)=>pl.gcd=m.gc[i]?1:0);gz=(m.gz||[]).map(a=>({k:GZK[a[0]],x:a[1],y:a[2],r:a[3],life:a[4],max:a[5],s:a[6]}));
  pickups=m.pu.map(p=>p[0]===0?{type:'coin',x:p[1],y:p[2],v:p[3],ph:p[4]}:{type:'chest',x:p[1],y:p[2],tier:p[3],tk:p[4]||0});
  spawns=m.sp.map(s=>({x:s[0],y:s[1],t:s[2],type:s[3]?'fairy':'x'}));
  turrets=m.tu;mines=m.mi.map(a=>({x:a[0],y:a[1],arm:a[2]?1:0}));puddles=m.pd.map(u=>Object.assign({max:3.2},u));
@@ -2800,7 +2902,7 @@ function guestUpdate(dt){
  for(const p of PL){if(p===me)continue;const q=p.P;if(q._x1!=null){q.x=lerp(q._x0,q._x1,k);q.y=lerp(q._y0,q._y1,k);}if(q.moving)q.anim+=dt;q.dface+=angDiff(q.mface,q.dface)*Math.min(1,dt*LB.turn);q.inv-=dt;}
  // orbit blades follow the (interpolated / predicted) owner
  for(const p of PL){const bl=p.blades||[];
-  if(p===me){for(const w of run.weapons)if(isOrb(w))w.blades=null;let oi=0;for(const w of run.weapons){if(!isOrb(w))continue;const b=bl[oi++];if(b)w.blades=b[1].map(q=>[P.x+q[0],P.y+q[1],q[2]]);}}
+  if(p===me){for(const w of run.weapons)if(hasBl(w))w.blades=null;let oi=0;for(const w of run.weapons){if(!hasBl(w))continue;const b=bl[oi++];if(b)w.blades=b[1].map(q=>[P.x+q[0],P.y+q[1],q[2]]);}}
   else p.run.weapons=bl.map(b=>({key:'orbit',tier:b[0],blades:b[1].map(q=>[p.P.x+q[0],p.P.y+q[1],q[2]])}));}
  for(const p of projs){if(p.kind==='lob'){p.t+=dt;const kk=Math.min(1,p.t/p.dur);p.x=p.sx+(p.tx-p.sx)*kk;p.y=p.sy+(p.ty-p.sy)*kk;}else{p.x+=p.vx*dt;p.y+=p.vy*dt;if(p.kind==='boom')p.rot+=dt*16;}}
  for(const b of ebul){b.x+=b.vx*dt;b.y+=b.vy*dt;}
@@ -2853,6 +2955,7 @@ function drawEnemy(e){
  if(e.type==='crawler'&&e.st==='pw')lighter(()=>drawGlow(e.x,e.y,e.r*2.4,GLOW.orange,0.45+Math.sin(tGame*40)*0.15));
  if(A)lighter(()=>drawGlow(e.x,e.y,e.r*2.1,GLOW[A.g],0.45+Math.sin(tGame*5+e.wa)*0.12));
  if(e.type==='medic')lighter(()=>drawGlow(e.x,e.y,34,GLOW.teal,0.25+Math.sin(tGame*3+e.wa)*0.1));
+ if(e.loot)lighter(()=>{drawGlow(e.x,e.y,e.r*2.6,GLOW.gold,0.6+Math.sin(tGame*8)*0.15);if(Math.random()<0.4)sparkle(ctx,e.x+rand(-e.r,e.r),e.y+rand(-e.r,e.r),3,'#fff1c2');});
  if(e.type==='totem'&&e.ai<0.7)lighter(()=>drawGlow(e.x,e.y,44,GLOW.red,0.5*(1-e.ai/0.7)));
  const float=e.type==='fairy'?Math.sin(tGame*4+e.wa)*3-8:0;
  if(e.type!=='clone'){ctx.fillStyle='rgba(0,0,0,.32)';ctx.beginPath();ctx.ellipse(e.x,e.y+e.r*0.7,e.r*(e.type==='fairy'?0.6:0.95),e.r*0.36,0,0,TAU);ctx.fill();}
@@ -2876,7 +2979,7 @@ function drawEnemy(e){
  if(e.ev&&e.type!=='stalker'||e.ev&&!e.cloak){const bx=e.x+e.r*0.78,by=e.y+e.r*0.55;ctx.beginPath();ctx.arc(bx,by,6.6,0,TAU);ctx.fillStyle=e.ev>=2?'#3a1650':'#4a1a0e';ctx.fill();ctx.strokeStyle=e.ev>=2?'#c89bff':'#f2a06a';ctx.lineWidth=1.3;ctx.stroke();
   ctx.font='700 9px "Chakra Petch",sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle=e.ev>=2?'#e6d2ff':'#ffd2b0';ctx.fillText(e.ev>=2?'Ⅲ':'Ⅱ',bx,by+0.5);}
  if(e.type==='stalker'&&e.cloak){ctx.strokeStyle='rgba(195,139,255,.25)';ctx.lineWidth=1;ctx.beginPath();ctx.arc(e.x,e.y,e.r+2+Math.sin(tGame*9)*1.5,0,TAU);ctx.stroke();}
- if((e.type==='brute'||e.type==='fairy'||e.type==='totem'||A)&&e.hp<e.max){const w=e.r*2,y=e.y-e.r-(A?8:12)+float;ctx.fillStyle='rgba(0,0,0,.65)';ctx.fillRect(e.x-w/2-1,y-1,w+2,6);ctx.fillStyle=e.type==='fairy'?C.t4:C.danger;ctx.fillRect(e.x-w/2,y,w*clamp(e.hp/e.max,0,1),4);}
+ if((e.type==='brute'||e.type==='fairy'||e.type==='totem'||e.type==='gturret'||A)&&e.hp<e.max){const w=e.r*2,y=e.y-e.r-(A?8:12)+float;ctx.fillStyle='rgba(0,0,0,.65)';ctx.fillRect(e.x-w/2-1,y-1,w+2,6);ctx.fillStyle=e.type==='fairy'?C.t4:C.danger;ctx.fillRect(e.x-w/2,y,w*clamp(e.hp/e.max,0,1),4);}
 }
 function drawColossus(g,t,e){
  const walk=Math.sin(e.anim*5)*2.5;
@@ -3095,7 +3198,7 @@ function draw(dt){
  for(const[,k,o] of ens){if(k===0)drawEnemy(o);else if(k===1)drawObstacle(o);else drawPlayer(o);}
  drawTopHazards();
  // orbit blades
- for(const pl of PL)for(const w of pl.run.weapons)if(isOrb(w)&&w.blades)for(const b of w.blades){const sz=TIER_SZ[w.tier],oR=Math.hypot(b[0]-pl.P.x,b[1]-pl.P.y);lighter(()=>{ctx.lineCap='butt';for(let j=0;j<5;j++){ctx.globalAlpha=(0.05+0.06*j)*(0.8+w.tier*0.2);ctx.strokeStyle=tierGlow[w.tier];ctx.lineWidth=(3+j)*sz;ctx.beginPath();ctx.arc(pl.P.x,pl.P.y,oR,b[2]-0.8+j*0.16,b[2]-0.8+(j+1)*0.16);ctx.stroke();}ctx.globalAlpha=1;drawGlow(b[0],b[1],14*sz,tierGlow[w.tier],0.25+w.tier*0.08);if(w.tier>=3)drawGlow(b[0]-Math.cos(b[2]+Math.PI/2)*10,b[1]-Math.sin(b[2]+Math.PI/2)*10,10*sz,tierGlow[w.tier],0.25);});ctx.save();ctx.translate(b[0],b[1]);ctx.rotate(tGame*10);ctx.scale(sz,sz);
+ for(const pl of PL)for(const w of pl.run.weapons)if(hasBl(w)&&w.blades)for(const b of w.blades){const sz=TIER_SZ[w.tier],oR=Math.hypot(b[0]-pl.P.x,b[1]-pl.P.y);lighter(()=>{ctx.lineCap='butt';for(let j=0;j<5;j++){ctx.globalAlpha=(0.05+0.06*j)*(0.8+w.tier*0.2);ctx.strokeStyle=tierGlow[w.tier];ctx.lineWidth=(3+j)*sz;ctx.beginPath();ctx.arc(pl.P.x,pl.P.y,oR,b[2]-0.8+j*0.16,b[2]-0.8+(j+1)*0.16);ctx.stroke();}ctx.globalAlpha=1;drawGlow(b[0],b[1],14*sz,tierGlow[w.tier],0.25+w.tier*0.08);if(w.tier>=3)drawGlow(b[0]-Math.cos(b[2]+Math.PI/2)*10,b[1]-Math.sin(b[2]+Math.PI/2)*10,10*sz,tierGlow[w.tier],0.25);});ctx.save();ctx.translate(b[0],b[1]);ctx.rotate(tGame*10);ctx.scale(sz,sz);
   for(let k=0;k<3;k++){ctx.save();ctx.rotate(k*TAU/3);ctx.beginPath();ctx.moveTo(2,-2);ctx.quadraticCurveTo(10,-6,12,2);ctx.quadraticCurveTo(7,0,2,2);ctx.closePath();fs(ctx,TC[w.tier],1.1);ctx.restore();}
   ctx.beginPath();ctx.arc(0,0,3,0,TAU);fs(ctx,C.brass,1);ctx.restore();}
  // projectiles
@@ -3210,8 +3313,38 @@ function drawGroundHazards(){
   ctx.fillStyle=C.danger;ctx.font='700 22px "Noto Sans SC",sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';const ex=c.dir>0?40:WORLD.w-40;if(on){ctx.fillText(c.dir>0?'▶▶':'◀◀',ex,c.y);}}
  for(const k of hz.strikes){const p=1-k.t/1.35;ctx.fillStyle=`rgba(127,168,255,${0.08+p*0.22})`;ctx.beginPath();ctx.arc(k.x,k.y,k.r,0,TAU);ctx.fill();
   ctx.strokeStyle=`rgba(170,200,255,${0.5+p*0.5})`;ctx.lineWidth=2.5;ctx.beginPath();ctx.arc(k.x,k.y,k.r,0,TAU);ctx.stroke();ctx.beginPath();ctx.arc(k.x,k.y,k.r*(1-p),0,TAU);ctx.stroke();}
+ drawProps();
  for(const m of emines){ctx.beginPath();ctx.arc(m.x,m.y,9,0,TAU);fs(ctx,'#2a2f45',1.4);ctx.strokeStyle=m.ev?'#ff9a4a':'#5f6f9a';ctx.lineWidth=2;ctx.stroke();
   const on=m.arm<=0&&Math.sin(tGame*(m.ev?22:10)+m.x)>0;ctx.beginPath();ctx.arc(m.x,m.y,3.2,0,TAU);ctx.fillStyle=on?'#ff5a3c':'#5a2a22';ctx.fill();if(on)lighter(()=>drawGlow(m.x,m.y,14,GLOW.red,0.7));}
+}
+function drawProps(){const me=ME(),T=tGame;
+ for(const p of props){const D=PROP[p.k],cd=p.cd>0&&D.cd>0,near=me&&Math.hypot(me.P.x-p.x,me.P.y-p.y)<230;ctx.save();ctx.translate(p.x,p.y);
+  if(p.k==='herb'&&cd){ctx.restore();continue;}
+  ctx.globalAlpha=cd?0.45:1;ctx.save();
+  switch(p.k){
+   case 'valve':ctx.beginPath();ctx.arc(0,0,D.r,0,TAU);fs(ctx,'#2a2018',2);ctx.strokeStyle=hz.friendT>0?'#ff9a4a':'#6b4a2e';ctx.lineWidth=3;ctx.stroke();
+    ctx.rotate(T*(hz.friendT>0?4:0.3));for(let k=0;k<4;k++){ctx.rotate(Math.PI/2);s2(ctx,3,'#c0392b',[[0,0],[0,-20]]);}ctx.beginPath();ctx.arc(0,0,20,0,TAU);ctx.strokeStyle='#c0392b';ctx.lineWidth=3;ctx.stroke();ctx.beginPath();ctx.arc(0,0,5,0,TAU);fs(ctx,C.brass,1.2);break;
+   case 'supply':rr(ctx,-26,-30,52,48,8);fs(ctx,metal(ctx,-6,-14,30,'#8a5a32'),2);rr(ctx,-14,-14,28,20,5);fs(ctx,'#1a1410',1.4);lighter(()=>drawGlow(0,-4,22,GLOW.orange,0.35+Math.sin(T*3)*0.12));
+    ctx.drawImage(COIN_S,-7,-13,14,14);ctx.font='700 11px "Chakra Petch",sans-serif';ctx.textAlign='center';ctx.fillStyle=C.t4;ctx.fillText((20+run.wave*2)+'金',0,30);break;
+   case 'lever':rr(ctx,-18,-6,36,16,4);fs(ctx,'#3a4448',1.6);ctx.rotate(p.cd>D.cd-1.2?0.7:-0.7);s2(ctx,3.4,'#8a5a32',[[0,0],[0,-30]]);ctx.beginPath();ctx.arc(0,-31,5,0,TAU);fs(ctx,'#c0392b',1.2);break;
+   case 'rocks':for(const[x,y,r] of [[-14,6,13],[10,8,15],[0,-10,12],[16,-8,9],[-18,-8,8]]){ctx.beginPath();ctx.arc(x,y,r,0,TAU);fs(ctx,metal(ctx,x-3,y-3,r,'#7d8789'),1.4);}
+    ctx.strokeStyle='rgba(20,14,10,.6)';ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(-20,18);ctx.lineTo(-4,4);ctx.lineTo(8,16);ctx.stroke();break;
+   case 'herb':{const b=Math.sin(T*3)*2;lighter(()=>drawGlow(0,0,26,GLOW.green,0.4));for(let k=0;k<5;k++){ctx.save();ctx.rotate(-0.9+k*0.45);ctx.beginPath();ctx.ellipse(0,-12+b,4.5,12,0,0,TAU);fs(ctx,'#6fbf4a',1.1);ctx.restore();}ctx.beginPath();ctx.arc(0,-24+b,4,0,TAU);fs(ctx,'#f0e07a',1);break;}
+   case 'rod':ctx.beginPath();ctx.ellipse(0,6,22,9,0,0,TAU);fs(ctx,'#2a2f45',1.4);s2(ctx,4,'#9aa4a8',[[0,6],[0,-62]]);ctx.beginPath();ctx.arc(0,-64,6,0,TAU);fs(ctx,'#d7dddc',1.2);
+    ctx.globalAlpha=0.25;ctx.strokeStyle='#8fb8ff';ctx.setLineDash([6,8]);ctx.lineWidth=2;ctx.beginPath();ctx.arc(0,0,D.r,0,TAU);ctx.stroke();ctx.setLineDash([]);ctx.globalAlpha=1;
+    if(p.on)lighter(()=>{drawGlow(0,-64,26+Math.sin(T*20)*4,GLOW.blue,0.8);});break;
+   case 'tower':ctx.beginPath();ctx.arc(0,0,D.r,0,TAU);ctx.fillStyle='rgba(40,60,110,.35)';ctx.fill();ctx.strokeStyle='#5f6f9a';ctx.lineWidth=3;ctx.stroke();
+    for(let k=0;k<3;k++){const a=k*TAU/3-Math.PI/2;ctx.save();ctx.translate(Math.cos(a)*D.r*0.7,Math.sin(a)*D.r*0.7);rr(ctx,-6,-20,12,22,3);fs(ctx,metal(ctx,-2,-12,10,'#55607a'),1.3);ctx.beginPath();ctx.arc(0,-22,4,0,TAU);fs(ctx,'#9fc0ff',1);ctx.restore();}
+    if(p.ch>0){ctx.strokeStyle='#9fc0ff';ctx.lineWidth=6;ctx.lineCap='round';ctx.beginPath();ctx.arc(0,0,D.r+6,-Math.PI/2,-Math.PI/2+TAU*p.ch);ctx.stroke();lighter(()=>drawGlow(0,0,D.r*(0.6+p.ch*0.6),GLOW.blue,0.2+p.ch*0.5));}break;
+   case 'relic':{lighter(()=>drawGlow(0,0,46,GLOW.gold,0.4+Math.sin(T*4)*0.1));ctx.beginPath();ctx.arc(0,0,D.r*0.8,0,TAU);fs(ctx,metal(ctx,-6,-6,30,'#c9a24a'),2);ctx.rotate(T*1.5);gearPath(ctx,0,0,14,8,0);fs(ctx,'#5cb19d',1.2);ctx.rotate(-T*1.5);
+    const w=60;ctx.fillStyle='rgba(0,0,0,.65)';ctx.fillRect(-w/2-1,-D.r-16,w+2,7);ctx.fillStyle=p.ch>0.35?C.good:C.danger;ctx.fillRect(-w/2,-D.r-15,w*clamp(p.ch,0,1),5);break;}
+  }
+  ctx.restore();ctx.globalAlpha=1;
+  if(p.prog>0&&D.need){ctx.strokeStyle=C['brass-hi'];ctx.lineWidth=5;ctx.lineCap='round';ctx.beginPath();ctx.arc(0,0,D.r+8,-Math.PI/2,-Math.PI/2+TAU*Math.min(1,p.prog/D.need));ctx.stroke();}
+  if(near||p.k==='relic'){ctx.font='700 12px "Noto Sans SC",sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';const ty=p.k==='rod'?-80:-D.r-(p.k==='relic'?26:14);const tx=cd?D.n+' · '+Math.ceil(p.cd)+'s':D.n;ctx.lineWidth=3;ctx.strokeStyle='rgba(10,8,4,.8)';ctx.strokeText(tx,0,ty);ctx.fillStyle=cd?C.muted:C['brass-hi'];ctx.fillText(tx,0,ty);}
+  ctx.restore();}
+ if(MAP.pools)for(const pl of MAP.pools)if(!(pl.gcd>0))lighter(()=>{for(let b=0;b<3;b++){const ph=((tGame*0.5+b*0.33+pl[0]*0.01)%1),a=b*2.1+pl[1];drawGlow(pl[0]+Math.cos(a)*pl[2]*0.4,pl[1]+Math.sin(a)*pl[2]*0.3-ph*8,6+ph*6,'rgba(220,240,120,1)',0.35*(1-ph));}});
+ if(evt&&evt.k==='drop'&&evt.st===1){const k=1-evt.dt/3;lighter(()=>{ctx.globalAlpha=0.35+k*0.4;const gr=ctx.createLinearGradient(0,evt.y-400,0,evt.y);gr.addColorStop(0,'rgba(240,185,58,0)');gr.addColorStop(1,'rgba(240,185,58,1)');ctx.fillStyle=gr;ctx.fillRect(evt.x-10,evt.y-400,20,400);});}
 }
 function drawTopHazards(){
  for(const c of hz.carts)if(c.warn<=0){
