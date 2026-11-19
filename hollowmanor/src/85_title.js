@@ -1,17 +1,19 @@
 /* ================= start screen: shared TitleKit (shared/titlekit) =================
-   幽宅双影 is two-player only: 双人同屏 (one device) or 联机 (创建房间 / 加入) + 设置 + 玩法. The room reuses the game's own role cards
+   幽宅双影: 单人 · AI 队友, 双人同屏 (one device) or 联机 (创建房间 / 加入) + 设置 + 玩法. The room reuses the game's own role cards
    (持灯者 / 灵视者) and floor picker, moved into the TitleKit room screen. The old #title / #lobby stay hidden. */
 const tkRoleBox = document.createElement('div');
 const TK = TitleKit.create({
   id: 'hollowmanor', title: '幽宅双影', hub: HUB, artifact: inArtifact(), z: 40, hidden: true,
   logo: document.querySelector('#title .logo'),
   accent: '#e6c27a', accentInk: '#1e1608', font: 'var(--title, inherit)',
-  solo: false,
+  solo: { label: '单人 · AI 队友', sub: '你选一个角色，另一个交给 AI' },
   local: { label: '双人同屏', sub: '一台电脑或平板 · 两个人一起进老宅' },
-  setup: { title: '双人同屏', start: '进入老宅', localStart: '进入老宅', fields: () => [
-    { key: 'floor', label: '从哪一层开始', type: 'seg', modes: ['local'], def: 0, options: FLOORS.map((F, i) => ({ v: i, label: F.name || ['一楼', '二楼', '阁楼'][i], dis: i > (LS.get('prog', { max: 0 }).max || 0) })).filter(o => !o.dis) },
+  setup: { title: '开局设置', start: '进入老宅', localStart: '进入老宅', fields: () => [
+    { key: 'role', label: '你来当', type: 'seg', modes: ['solo'], def: 'S', options: [{ v: 'S', label: '灵视者 · 小雾' }, { v: 'L', label: '持灯者 · 阿岩' }] },
+    { type: 'note', modes: ['solo'], text: 'AI 会跟着你，做只有它的角色能做的事：持灯者用强光保护你、拉杆、装保险丝、砸镇物；灵视者告诉你墙上的密码和铃的顺序、主持仪式。Q 标记让它过去，1 叫它过来，2 让它躲，3 让它等。' },
+    { key: 'floor', label: '从哪一层开始', type: 'seg', modes: ['local', 'solo'], def: 0, options: FLOORS.map((F, i) => ({ v: i, label: F.name || ['一楼', '二楼', '阁楼'][i], dis: i > (LS.get('prog', { max: 0 }).max || 0) })).filter(o => !o.dis) },
     { type: 'note', modes: ['local'], text: '键盘：阿岩 WASD 移动、鼠标瞄准、E 互动、F / 空格 强光、左 Shift 跑；小雾 方向键移动、回车 互动、右 Shift 跑。平板：左摇杆 + 左边按钮是阿岩，右摇杆 + 右边按钮是小雾。也支持两个手柄。' }] },
-  start: ({ mode, setup }) => { if (mode === 'local') { TK.hide(); startLocal(+(setup && setup.floor) || 0); } },
+  start: ({ mode, setup }) => { if (mode === 'local') { TK.hide(); startLocal(+(setup && setup.floor) || 0); } else if (mode === 'solo') { TK.hide(); startSolo((setup && setup.role) || 'S', +(setup && setup.floor) || 0); } },
   online: { label: '双人联机', sub: '两个人一起进老宅 · 创建房间或用房间码加入', hostText: '你当房主。同伴加入后，在房间里选好谁拿灯、谁看灵。', joinText: '输入同伴发来的房间码。' },
   extra: [{ id: 'help', icon: 'help', label: '玩法说明', sub: '持灯者与灵视者 · 三层楼', run: T => T.go('howto') }],
   nick: { get: () => SET.name, set: v => { SET.name = v.slice(0, 10); saveSet(); $('nameIn').value = SET.name; } },

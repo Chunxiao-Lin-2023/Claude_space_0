@@ -61,7 +61,7 @@ function initMenus() {
   seg('qSeg', 'quality'); seg('gSeg', 'grain', 1); seg('sSeg', 'shake', 1);
   $('rRetry').onclick = () => hostRetry();
   $('floorSeg').onclick = e => { const b = e.target.closest('button'); if (!b || b.disabled || NETROLE !== 'host') return; NET.floor = +b.dataset.v; sendLobby(); lobbyUI(); };
-  $('rAgain').onclick = () => { if (STATE.local) { backToLobby(); return; } if (NETROLE === 'host') { netSendCtl({ t: 'toLobby' }); backToLobby(); } else $('rStatus').textContent = '等待房主…'; };
+  $('rAgain').onclick = () => { if (STATE.local || STATE.ai) { backToLobby(); return; } if (NETROLE === 'host') { netSendCtl({ t: 'toLobby' }); backToLobby(); } else $('rStatus').textContent = '等待房主…'; };
   document.querySelectorAll('[data-close]').forEach(b => b.onclick = () => closeModal());
   document.querySelectorAll('.modal').forEach(m => m.addEventListener('pointerdown', e => { if (e.target === m) closeModal(); }));
   // quick chat + glyph buttons
@@ -191,6 +191,7 @@ function processEvents() {
       case 'ui': if (e.ui === 'close') { if (UI.modal === 'mRune') closeModal(); } else openModal(e.ui === 'rune' ? 'mRune' : 'mAltar'); break;
       case 'ping': UI.pings.push({ id: ++bubId, x: e.x, z: e.z, t: performance.now(), c: e.by === ME ? '#e2b45c' : ROLES[W.p[e.by].role].color }); sfx('ping', e.x, e.z, 0.8); break;
       case 'quick': { const q = QUICK.find(x => x.k === e.q); UI.bubbles.push({ id: ++bubId, by: e.by, t: performance.now(), html: `<span style="color:${q.c}">${q.t}</span>` }); sfx('quick'); if (e.by !== ME) addLog(W.p[e.by].name + '：' + q.t, q.c); break; }
+      case 'bubble': UI.bubbles.push({ id: ++bubId, by: e.by, t: performance.now(), html: `<span style="color:${ROLES[W.p[e.by].role].color}">${e.txt}</span>` }); break;
       case 'glyph': UI.bubbles.push({ id: ++bubId, by: e.by, t: performance.now(), html: `<span class="g">${GLYPHS[e.g]}</span>` }); sfx('quick'); if (e.by !== ME) addLog(W.p[e.by].name + ' 发来符文：' + GLYPHS[e.g], '#8fd3ff'); break;
       case 'evidence': break;
       case 'floor': if (NETROLE === 'guest') guestFloor(e); break;
@@ -220,7 +221,7 @@ function showResult(phase, why) {
     $('rStats').innerHTML = `<div>${won ? '总用时' : '用时'}　<b>${m} 分 ${s2} 秒</b></div><div>倒在　<b>${won ? '—' : MAP.F.name}</b></div><div>经历猎杀　<b>${W.stats.hunts}</b></div><div>强光定住　<b>${W.stats.stuns}</b></div><div>倒地次数　<b>${W.stats.downs}</b></div><div>${won ? '驱散的怨灵' : '这一层的怨灵'}　<b>${won ? (W.used || []).map(k => GT(k).name).concat(['温夫人']).join('、') : GT(W.setup.gtype).name}</b></div>`;
     const host = NETROLE !== 'guest';
     $('rRetry').classList.toggle('hidden', won || !host); $('rRetry').textContent = '重试' + MAP.F.name;
-    $('rAgain').textContent = STATE.local ? '返回标题' : host ? '返回房间' : '等待房主'; $('rAgain').disabled = !host;
+    $('rAgain').textContent = STATE.local || STATE.ai ? '返回标题' : host ? '返回房间' : '等待房主'; $('rAgain').disabled = !host;
     $('rStatus').textContent = won ? '雨停了。你们一起看着天亮。' : host ? '' : '房主可以选择重试这一层';
   }, phase === 'won' ? (STAGE.id === 'end' && STAGE.sc ? 15000 : 2400) : 2600);
 }

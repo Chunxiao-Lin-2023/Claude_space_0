@@ -227,7 +227,7 @@ function stepGame(dt) {
     if (!W.f[MAP.F.leverFlag] && W.lv[0] > 0 && W.lv[1] > 0) { W.f[MAP.F.leverFlag] = 1; unlockDoor(MAP.F.leverDoor); const d = MAP.doors[doorIdx(MAP.F.leverDoor)]; snd('bigDoor', d.cx, d.cz, 1.2); say(MAP.F.leverMsg, -1, '#ffd36b'); }
   }
   for (const p of W.p) {
-    if (p.id === 0 || NETROLE === 'solo' || NETROLE === 'local') movePlayer(p, dt, W);
+    if (p.id === 0 || NETROLE === 'solo' || NETROLE === 'local' || NETROLE === 'ai') movePlayer(p, dt, W);
     hostPlayerLogic(p, dt);
   }
   stepGhost(dt);
