@@ -52,13 +52,11 @@ function buildFloorCache() {
   // door sills: a worn stone/brass strip across every doorway, so the step from one room into the next reads
   for (const d of MAP.doors) {
     if (d.kind === 'crack') continue;
-    const arch = d.kind === 'arch', base = arch ? '#6a6258' : d.kind === 'front' ? '#5a5650' : '#6e5638', T0 = arch ? 0.16 : 0.13;
+    const base = '#4e463e', T0 = 0.12;
     let x0, z0, w, h; if (d.dir === 'h') { x0 = d.a; w = d.b - d.a; z0 = d.at - T0; h = T0 * 2 + 0.08; } else { x0 = d.at - T0; w = T0 * 2; z0 = d.a; h = d.b - d.a; }
     const X0 = Math.round((x0 + M) * PX), Z0 = Math.round((z0 + M) * PX), Wd = Math.max(2, Math.round(w * PX)), Hd = Math.max(2, Math.round(h * PX));
-    g.fillStyle = shade(base, -0.45); g.fillRect(X0 - 1, Z0 - 1, Wd + 2, Hd + 2);
+    g.fillStyle = shade(base, -0.35); g.fillRect(X0 - 1, Z0 - 1, Wd + 2, Hd + 2);
     g.fillStyle = base; g.fillRect(X0, Z0, Wd, Hd);
-    g.fillStyle = shade(base, 0.22); if (d.dir === 'h') g.fillRect(X0, Z0 + Hd - 2, Wd, 1); else g.fillRect(X0 + Wd - 2, Z0, 1, Hd);
-    g.fillStyle = shade(base, -0.25); for (let k = 3; k < (d.dir === 'h' ? Wd : Hd) - 2; k += 7) { if (d.dir === 'h') g.fillRect(X0 + k, Z0 + 1, 1, Hd - 2); else g.fillRect(X0 + 1, Z0 + k, Wd - 2, 1); }
   }
   // spatter of old blood near the ritual rooms and a drag mark on floor 1 (one wrong detail per floor)
   const wrong = [[9.2, 13.4], [20.2, 9.8], [9.5, 8.4]][MAP.fi]; if (wrong) { const R2 = RP(g, (wrong[0] + M) * PX, (wrong[1] + M) * PX); for (let i = 0; i < 14; i++) R2(i * 2, Math.round(Math.sin(i * 0.7) * 2), 2, 1, 'rgba(70,10,12,.55)'); R2(-2, -1, 3, 3, 'rgba(70,10,12,.5)'); }

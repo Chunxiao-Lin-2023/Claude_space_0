@@ -45,9 +45,9 @@ function drawMinimap(W, me) {
   // rooms: unexplored ones only as a faint outline
   for (const r of MAP.rooms) {
     const seen = NAV.seen[r.idx], cur = here.has(r.idx), x = X(r.r[0]), y = Y(r.r[1]), w = (r.r[2] - r.r[0]) * s, h = (r.r[3] - r.r[1]) * s;
-    if (cur) { g.fillStyle = `rgba(${roomTint(r.idx)},.42)`; g.fillRect(x, y, w, h); }
-    else if (seen) { g.fillStyle = `rgba(${roomTint(r.idx)},.16)`; g.fillRect(x, y, w, h); }
-    else { g.fillStyle = 'rgba(255,255,255,.025)'; g.fillRect(x, y, w, h); }
+    // two tones only: explored = faint, current = warm
+    if (cur) { g.fillStyle = 'rgba(226,180,92,.32)'; g.fillRect(x, y, w, h); }
+    else if (seen) { g.fillStyle = 'rgba(234,223,202,.09)'; g.fillRect(x, y, w, h); }
   }
   // walls (doors and arches are the gaps), locked doors as short red bars
   g.strokeStyle = 'rgba(225,205,170,.62)'; g.lineWidth = NAV.big ? 2 : 1.2; g.beginPath();
@@ -55,10 +55,10 @@ function drawMinimap(W, me) {
   for (const w of MAP.windows) { if (w.dir === 'h') { g.moveTo(X(w.a), Y(w.at)); g.lineTo(X(w.b), Y(w.at)); } else { g.moveTo(X(w.at), Y(w.a)); g.lineTo(X(w.at), Y(w.b)); } }
   g.stroke();
   for (const d of MAP.doors) {
-    const st = W.doors && W.doors[d.idx]; if (d.kind === 'crack' && !R3.seerView) { g.strokeStyle = 'rgba(225,205,170,.62)'; }
-    else if (st && st.locked) g.strokeStyle = 'rgba(220,80,70,.9)';
-    else if (d.kind === 'crack') g.strokeStyle = 'rgba(140,220,255,.8)';
-    else if (d.kind !== 'arch' && st && st.open < 0.5) g.strokeStyle = 'rgba(200,150,90,.75)';
+    // only one marker: locked doors; everything else is just a gap (a crack looks like wall)
+    const st = W.doors && W.doors[d.idx];
+    if (d.kind === 'crack') g.strokeStyle = 'rgba(225,205,170,.62)';
+    else if (st && st.locked) g.strokeStyle = 'rgba(200,90,80,.85)';
     else continue;
     g.lineWidth = NAV.big ? 3 : 2; g.beginPath();
     if (d.dir === 'h') { g.moveTo(X(d.a) + 1, Y(d.at)); g.lineTo(X(d.b) - 1, Y(d.at)); } else { g.moveTo(X(d.at), Y(d.a) + 1); g.lineTo(X(d.at), Y(d.b) - 1); }
@@ -66,11 +66,11 @@ function drawMinimap(W, me) {
   }
   // stairs / stairwell / roof hatch once their room has been seen
   g.font = `${NAV.big ? 15 : 9}px sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle';
-  for (const f of MAP.furn) if ((f.k === 'stairs' || f.k === 'stairwell' || f.k === 'roofHatch') && f.room >= 0 && NAV.seen[f.room]) { g.fillStyle = f.k === 'stairwell' ? 'rgba(200,190,170,.7)' : '#e2b45c'; g.fillText(f.k === 'stairwell' ? '▼' : '▲', X(f.x), Y(f.z)); }
+  for (const f of MAP.furn) if ((f.k === 'stairs' || f.k === 'stairwell' || f.k === 'roofHatch') && f.room >= 0 && NAV.seen[f.room]) { g.fillStyle = 'rgba(234,223,202,.75)'; g.fillText(f.k === 'stairwell' ? '▼' : '▲', X(f.x), Y(f.z)); }
   // names on the big map
   if (NAV.big) {
-    for (const r of MAP.rooms) { const cur = here.has(r.idx); g.font = `${cur ? 'bold ' : ''}${Math.max(11, Math.min(16, s * 0.75))}px "Noto Serif SC", serif`; g.fillStyle = cur ? '#ffe2a8' : NAV.seen[r.idx] ? 'rgba(234,223,202,.8)' : 'rgba(234,223,202,.25)'; g.fillText(NAV.seen[r.idx] || cur ? r.name : '？', X(r.cx), Y(r.cz) + (r.r[3] - r.r[1] > 3.5 ? -s * 0.6 : 0)); }
-    g.font = '13px sans-serif'; g.fillStyle = 'rgba(234,223,202,.55)'; g.textAlign = 'left'; g.fillText(MAP.F.title.split(' · ')[0] + '　·　红色＝锁着的门　' + (IS_TOUCH ? '点一下关闭' : 'M / Esc 关闭'), pad, ch - 12); g.textAlign = 'center';
+    for (const r of MAP.rooms) { const cur = here.has(r.idx); g.font = `${cur ? 'bold ' : ''}${Math.max(11, Math.min(16, s * 0.75))}px "Noto Serif SC", serif`; g.fillStyle = cur ? '#f3e2bf' : NAV.seen[r.idx] ? 'rgba(234,223,202,.7)' : 'rgba(234,223,202,.22)'; g.fillText(NAV.seen[r.idx] || cur ? r.name : '？', X(r.cx), Y(r.cz) + (r.r[3] - r.r[1] > 3.5 ? -s * 0.6 : 0)); }
+    g.font = '13px sans-serif'; g.fillStyle = 'rgba(234,223,202,.55)'; g.textAlign = 'left'; g.fillText(MAP.F.title.split(' · ')[0] + '　·　红线＝锁着的门　' + (IS_TOUCH ? '点一下关闭' : 'M / Esc 关闭'), pad, ch - 12); g.textAlign = 'center';
   }
   // pings
   const now = performance.now();

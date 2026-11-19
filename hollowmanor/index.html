@@ -2977,13 +2977,11 @@ function buildFloorCache() {
   // door sills: a worn stone/brass strip across every doorway, so the step from one room into the next reads
   for (const d of MAP.doors) {
     if (d.kind === 'crack') continue;
-    const arch = d.kind === 'arch', base = arch ? '#6a6258' : d.kind === 'front' ? '#5a5650' : '#6e5638', T0 = arch ? 0.16 : 0.13;
+    const base = '#4e463e', T0 = 0.12;
     let x0, z0, w, h; if (d.dir === 'h') { x0 = d.a; w = d.b - d.a; z0 = d.at - T0; h = T0 * 2 + 0.08; } else { x0 = d.at - T0; w = T0 * 2; z0 = d.a; h = d.b - d.a; }
     const X0 = Math.round((x0 + M) * PX), Z0 = Math.round((z0 + M) * PX), Wd = Math.max(2, Math.round(w * PX)), Hd = Math.max(2, Math.round(h * PX));
-    g.fillStyle = shade(base, -0.45); g.fillRect(X0 - 1, Z0 - 1, Wd + 2, Hd + 2);
+    g.fillStyle = shade(base, -0.35); g.fillRect(X0 - 1, Z0 - 1, Wd + 2, Hd + 2);
     g.fillStyle = base; g.fillRect(X0, Z0, Wd, Hd);
-    g.fillStyle = shade(base, 0.22); if (d.dir === 'h') g.fillRect(X0, Z0 + Hd - 2, Wd, 1); else g.fillRect(X0 + Wd - 2, Z0, 1, Hd);
-    g.fillStyle = shade(base, -0.25); for (let k = 3; k < (d.dir === 'h' ? Wd : Hd) - 2; k += 7) { if (d.dir === 'h') g.fillRect(X0 + k, Z0 + 1, 1, Hd - 2); else g.fillRect(X0 + 1, Z0 + k, Wd - 2, 1); }
   }
   // spatter of old blood near the ritual rooms and a drag mark on floor 1 (one wrong detail per floor)
   const wrong = [[9.2, 13.4], [20.2, 9.8], [9.5, 8.4]][MAP.fi]; if (wrong) { const R2 = RP(g, (wrong[0] + M) * PX, (wrong[1] + M) * PX); for (let i = 0; i < 14; i++) R2(i * 2, Math.round(Math.sin(i * 0.7) * 2), 2, 1, 'rgba(70,10,12,.55)'); R2(-2, -1, 3, 3, 'rgba(70,10,12,.5)'); }
@@ -3383,7 +3381,6 @@ function drawLighting(W, view, me, t, fk, local) {
     if (rv[i] < 0.01) continue;
     const c = roomClip(i), a = rv[i] * REV * (1 - fk * 0.5);
     dg.fillStyle = `rgba(0,0,0,${a.toFixed(3)})`; dg.fillRect(c[0] + 2, c[1] + 2, c[2] - 4, c[3] - 4);
-    const tc = roomTint(i); gl.fillStyle = `rgba(${tc},${(rv[i] * 0.07).toFixed(3)})`; gl.fillRect(c[0] + 2, c[1] + 2, c[2] - 4, c[3] - 4);
   }
   // room lights
   let eflick = 1; if (W.flick > 0 && Math.random() < W.flick * 0.5) eflick = 0.15 + Math.random() * 0.4;
@@ -3449,13 +3446,6 @@ function postFX(g, W, me, view, t, dt, fk) {
 }
 /* world → CSS screen pixels (for DOM overlays) */
 function toScreen(x, y, z) { const k = R3.SC / R3.DPR, sx = (x * PX - y * 0 - R3.cam.x) * k, sy = (z * PX - y * 1.5 * PX * VS - R3.cam.y) * k; return { x: sx, y: sy, on: sx > -20 && sy > -20 && sx < innerWidth + 20 && sy < innerHeight + 20 }; }
-/* each room's faint colour cast when you stand in it (from its wallpaper), so neighbouring rooms feel different */
-function roomTint(i) {
-  const r = MAP.rooms[i]; if (r._tint) return r._tint;
-  const P = WALLPAL[r.wall] || WALLPAL.plaster, h = (P.b || P.a).replace('#', '');
-  let c = [0, 2, 4].map(k => parseInt(h.substr(k, 2), 16)); const m = Math.max(...c, 1); c = c.map(v => Math.round(60 + v / m * 170));
-  return (r._tint = c.join(','));
-}
 
 /* ================= pixel theater (floor intros / ending), jump scares, "wrong details" =================
    Scenes play locally on each screen over the live game view: letterbox bars, a speaker plate, typed lines.
@@ -4265,9 +4255,9 @@ function drawMinimap(W, me) {
   // rooms: unexplored ones only as a faint outline
   for (const r of MAP.rooms) {
     const seen = NAV.seen[r.idx], cur = here.has(r.idx), x = X(r.r[0]), y = Y(r.r[1]), w = (r.r[2] - r.r[0]) * s, h = (r.r[3] - r.r[1]) * s;
-    if (cur) { g.fillStyle = `rgba(${roomTint(r.idx)},.42)`; g.fillRect(x, y, w, h); }
-    else if (seen) { g.fillStyle = `rgba(${roomTint(r.idx)},.16)`; g.fillRect(x, y, w, h); }
-    else { g.fillStyle = 'rgba(255,255,255,.025)'; g.fillRect(x, y, w, h); }
+    // two tones only: explored = faint, current = warm
+    if (cur) { g.fillStyle = 'rgba(226,180,92,.32)'; g.fillRect(x, y, w, h); }
+    else if (seen) { g.fillStyle = 'rgba(234,223,202,.09)'; g.fillRect(x, y, w, h); }
   }
   // walls (doors and arches are the gaps), locked doors as short red bars
   g.strokeStyle = 'rgba(225,205,170,.62)'; g.lineWidth = NAV.big ? 2 : 1.2; g.beginPath();
@@ -4275,10 +4265,10 @@ function drawMinimap(W, me) {
   for (const w of MAP.windows) { if (w.dir === 'h') { g.moveTo(X(w.a), Y(w.at)); g.lineTo(X(w.b), Y(w.at)); } else { g.moveTo(X(w.at), Y(w.a)); g.lineTo(X(w.at), Y(w.b)); } }
   g.stroke();
   for (const d of MAP.doors) {
-    const st = W.doors && W.doors[d.idx]; if (d.kind === 'crack' && !R3.seerView) { g.strokeStyle = 'rgba(225,205,170,.62)'; }
-    else if (st && st.locked) g.strokeStyle = 'rgba(220,80,70,.9)';
-    else if (d.kind === 'crack') g.strokeStyle = 'rgba(140,220,255,.8)';
-    else if (d.kind !== 'arch' && st && st.open < 0.5) g.strokeStyle = 'rgba(200,150,90,.75)';
+    // only one marker: locked doors; everything else is just a gap (a crack looks like wall)
+    const st = W.doors && W.doors[d.idx];
+    if (d.kind === 'crack') g.strokeStyle = 'rgba(225,205,170,.62)';
+    else if (st && st.locked) g.strokeStyle = 'rgba(200,90,80,.85)';
     else continue;
     g.lineWidth = NAV.big ? 3 : 2; g.beginPath();
     if (d.dir === 'h') { g.moveTo(X(d.a) + 1, Y(d.at)); g.lineTo(X(d.b) - 1, Y(d.at)); } else { g.moveTo(X(d.at), Y(d.a) + 1); g.lineTo(X(d.at), Y(d.b) - 1); }
@@ -4286,11 +4276,11 @@ function drawMinimap(W, me) {
   }
   // stairs / stairwell / roof hatch once their room has been seen
   g.font = `${NAV.big ? 15 : 9}px sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle';
-  for (const f of MAP.furn) if ((f.k === 'stairs' || f.k === 'stairwell' || f.k === 'roofHatch') && f.room >= 0 && NAV.seen[f.room]) { g.fillStyle = f.k === 'stairwell' ? 'rgba(200,190,170,.7)' : '#e2b45c'; g.fillText(f.k === 'stairwell' ? '▼' : '▲', X(f.x), Y(f.z)); }
+  for (const f of MAP.furn) if ((f.k === 'stairs' || f.k === 'stairwell' || f.k === 'roofHatch') && f.room >= 0 && NAV.seen[f.room]) { g.fillStyle = 'rgba(234,223,202,.75)'; g.fillText(f.k === 'stairwell' ? '▼' : '▲', X(f.x), Y(f.z)); }
   // names on the big map
   if (NAV.big) {
-    for (const r of MAP.rooms) { const cur = here.has(r.idx); g.font = `${cur ? 'bold ' : ''}${Math.max(11, Math.min(16, s * 0.75))}px "Noto Serif SC", serif`; g.fillStyle = cur ? '#ffe2a8' : NAV.seen[r.idx] ? 'rgba(234,223,202,.8)' : 'rgba(234,223,202,.25)'; g.fillText(NAV.seen[r.idx] || cur ? r.name : '？', X(r.cx), Y(r.cz) + (r.r[3] - r.r[1] > 3.5 ? -s * 0.6 : 0)); }
-    g.font = '13px sans-serif'; g.fillStyle = 'rgba(234,223,202,.55)'; g.textAlign = 'left'; g.fillText(MAP.F.title.split(' · ')[0] + '　·　红色＝锁着的门　' + (IS_TOUCH ? '点一下关闭' : 'M / Esc 关闭'), pad, ch - 12); g.textAlign = 'center';
+    for (const r of MAP.rooms) { const cur = here.has(r.idx); g.font = `${cur ? 'bold ' : ''}${Math.max(11, Math.min(16, s * 0.75))}px "Noto Serif SC", serif`; g.fillStyle = cur ? '#f3e2bf' : NAV.seen[r.idx] ? 'rgba(234,223,202,.7)' : 'rgba(234,223,202,.22)'; g.fillText(NAV.seen[r.idx] || cur ? r.name : '？', X(r.cx), Y(r.cz) + (r.r[3] - r.r[1] > 3.5 ? -s * 0.6 : 0)); }
+    g.font = '13px sans-serif'; g.fillStyle = 'rgba(234,223,202,.55)'; g.textAlign = 'left'; g.fillText(MAP.F.title.split(' · ')[0] + '　·　红线＝锁着的门　' + (IS_TOUCH ? '点一下关闭' : 'M / Esc 关闭'), pad, ch - 12); g.textAlign = 'center';
   }
   // pings
   const now = performance.now();
