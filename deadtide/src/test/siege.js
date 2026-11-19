@@ -18,10 +18,31 @@ const { chromium } = require('playwright');
   await simWait(3);
   let s = await p.evaluate(k => { const zs = W.zs.filter(z => z.occ === k); return { still: zs.every(z => z.sleep), n: zs.length }; }, r.k);
   check('sleepers stay asleep and still with nobody around', s.still, JSON.stringify(s));
-  s = await p.evaluate(k => { const q = W.obj.occ[k]; noiseAt(q.x, q.y, 13); return 1; }, r.k);
+  s = await p.evaluate(k => { const zs = W.zs.filter(z => z.occ === k), cx = zs.reduce((a, z) => a + z.x, 0) / zs.length, cy = zs.reduce((a, z) => a + z.y, 0) / zs.length; const L = zs[0].L, fl = zs.filter(z => z.L === L), fx = fl.reduce((a, z) => a + z.x, 0) / fl.length, fy = fl.reduce((a, z) => a + z.y, 0) / fl.length; noiseAt(fx, fy, 12, zs[0].z); window.__L = L; return 1; }, r.k);
   await simWait(2);
-  s = await p.evaluate(k => { const zs = W.zs.filter(z => z.occ === k); return { awake: zs.filter(z => !z.sleep).length, n: zs.length }; }, r.k);
-  check('a gunshot nearby wakes the building', s.awake >= s.n * 0.7, JSON.stringify(s));
+  s = await p.evaluate(k => { const zs = W.zs.filter(z => z.occ === k), fl = zs.filter(z => z.L === __L); return { awake: fl.filter(z => !z.sleep).length, n: fl.length, otherFloors: zs.filter(z => z.L !== __L && !z.sleep).length + '/' + zs.filter(z => z.L !== __L).length }; }, r.k);
+  check('a gunshot in the middle of them wakes most of that floor (floors and walls muffle it)', s.awake >= s.n * 0.5, JSON.stringify(s));
+  // standing at a building's door doesn't wake the whole building (round 19b)
+  s = await p.evaluate(() => { const O = W.obj, k = O.occ.findIndex((q, k) => !q.out && W.zs.some(z => z.occ === k) && W.zs.filter(z => z.occ === k).every(z => z.sleep)), H = TOWN_HOUSES[O.occ[k].h], me = W.p[0];
+    let door = null; for (let x = H[0]; x <= H[2] && !door; x++) for (const y of [H[1], H[3]]) { const b = W.blk[ci(x, y, 0)]; if ((b === 7 || !b) && standable(x, y + (y === H[1] ? -1 : 1), 0, 'p')) { door = [x, y + (y === H[1] ? -1 : 1)]; break; } }
+    me.x = door[0] + 0.5; me.y = door[1] + 0.5; me.L = 0; me.z = 0; window.__k = k; return { k, n: W.zs.filter(z => z.occ === k && z.sleep).length, door }; });
+  await simWait(3);
+  const sd = await p.evaluate(k => W.zs.filter(z => z.occ === k && !z.sleep).length, s.k);
+  check('standing at a building\'s door for 3 s wakes at most a couple', sd <= 2, JSON.stringify([s, sd]));
+  // one quiet stab kills a sleeper and nobody else hears it; the notice meter: in front 3 cells -> wakes in ~1-2 s, behind -> slower
+  s = await p.evaluate(() => { const me = W.p[0]; const x = Math.floor(me.x) + 30, y = Math.floor(me.y); W.zs = W.zs.filter(z => Math.hypot(z.x - x, z.y - y) > 12);
+    for (let dy = -4; dy <= 4; dy++) for (let dx = -6; dx <= 6; dx++) { const i = ci(x + dx, y + dy, 0); if (W.blk[i] && !B[W.blk[i]].cost) W.blk[i] = 0; } W.ver++;
+    const a = putZombie('walker', x, y, 0), b2 = putZombie('walker', x + 2, y, 0); for (const z of [a, b2]) { z.sleep = 1; z.mz = 1; z.occ = null; z.face = 0; }
+    me.x = x - 0.6; me.y = y + 0.5; me.L = 0; me.z = gAt(x, y) * FH; me.aim = 0; knife(me, a.id); return { aDead: a.hp <= 0, bSleep: !!b2.sleep }; });
+  check('one quiet knife stab kills a sleeper, the one next to it sleeps on', s.aDead && s.bSleep, JSON.stringify(s));
+  r = await p.evaluate(() => { const me = W.p[0]; const x = Math.floor(me.x) + 20, y = Math.floor(me.y);
+    for (let dy = -4; dy <= 4; dy++) for (let dx = -6; dx <= 6; dx++) { const i = ci(x + dx, y + dy, 0); if (W.blk[i] && !B[W.blk[i]].cost) W.blk[i] = 0; } W.ver++;
+    W.zs = W.zs.filter(z => Math.hypot(z.x - x, z.y - y) > 12);
+    const f = putZombie('walker', x, y, 0), bk = putZombie('walker', x + 3, y + 1, 0); for (const z of [f, bk]) { z.sleep = 1; z.mz = 1; z.occ = null; z.aw = 0; } f.x = x + 0.5; f.y = y + 0.5; bk.x = x + 3.5; bk.y = y + 0.5; f.face = Math.PI; bk.face = 0;
+    me.x = x - 1.5; me.y = y + 0.5; me.L = 0; me.z = gAt(x, y) * FH; window.__fz = [f, bk]; return 1; });
+  await simWait(3);
+  s = await p.evaluate(() => __fz.map(z => ({ sleep: !!z.sleep, aw: +(z.aw || 0).toFixed(2) })));
+  check('a sleeper facing you 2 cells away notices you within 3 s; one 5 cells away with its back to you sleeps on', !s[0].sleep && s[1].sleep, JSON.stringify(s));
   // clearing it: kill them all -> cleared, reward
   r = await p.evaluate(k => { const parts = W.res.parts; for (const z of W.zs) if (z.occ === k) hurtZombie(z, 1e5, W.p[0]); return { parts }; }, K);
   await simWait(0.6);
@@ -30,7 +51,7 @@ const { chromium } = require('playwright');
   // blueprints: a locked build is refused; a blueprint case always gives one; then it builds — anywhere, far from camp
   r = await p.evaluate(() => {
     const me = W.p[0]; W.zs = W.zs.filter(z => z.sleep && Math.hypot(z.x - (W.radio.x + 60), z.y - W.radio.y) > 20); W.res = { wood: 500, stone: 500, steel: 500, parts: 500 };
-    const x0 = W.radio.x + 45, y0 = W.radio.y + 2; let spot = null; for (let y = y0; y < y0 + 30 && !spot; y++) for (let x = x0; x < x0 + 30 && !spot; x++) { let free = true; for (let dy = -3; dy <= 3; dy++) for (let dx = -3; dx <= 3; dx++) if (!standable(x + dx, y + dy, 0, 'p') || W.blk[ci(x + dx, y + dy, 0)] || gAt(x + dx, y + dy) || houseInterior(x + dx, y + dy) || ttAt(x + dx, y + dy) === TT.water) free = false; if (free) spot = [x, y]; }
+    const x0 = W.radio.x + 45, y0 = W.radio.y + 2; let spot = null; for (let y = Math.max(5, y0 - 40); y < Math.min(MH - 5, y0 + 40) && !spot; y++) for (let x = Math.max(5, x0 - 20); x < Math.min(MW - 5, x0 + 45) && !spot; x++) { let free = true; for (let dy = -3; dy <= 3; dy++) for (let dx = -3; dx <= 3; dx++) if (!standable(x + dx, y + dy, 0, 'p') || W.blk[ci(x + dx, y + dy, 0)] || gAt(x + dx, y + dy) || houseInterior(x + dx, y + dy) || ttAt(x + dx, y + dy) === TT.water) free = false; if (free && radioDist(x, y) > 30) spot = [x, y]; }
     me.x = spot[0] + 0.5; me.y = spot[1] + 0.5; me.L = 0; me.z = 0; W.obj.bp = [];
     const locked = canPlace(spot[0] + 2, spot[1], 0, 51), wall = canPlace(spot[0] + 2, spot[1], 0, 1);
     const ci0 = ci(spot[0] + 1, spot[1] + 1, 0); W.blk[ci0] = 55; W.bhp[ci0] = 1;

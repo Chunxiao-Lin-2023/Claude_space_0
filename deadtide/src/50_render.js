@@ -467,6 +467,20 @@ function drawOverlay() {
   if (!OV) return;
   let html = '';
   for (const f of RND.floats) { const [sx, sy] = w2s(f.x, f.y, f.z); html += `<div class="fl" style="left:${sx | 0}px;top:${sy | 0}px;opacity:${clamp(2.2 - f.t, 0, 1).toFixed(2)};color:${f.col}">${f.text}</div>`; }
+  // 尸城求生: sleepers show a "z", a growing "?" while they're noticing you, a "!" as they wake
+  if (isSiege()) {
+    const me = W.p[ME], CR = Math.min(cullR(), 16), gst = NETROLE === 'guest';
+    for (const z of W.zs) {
+      if (z.hp <= 0 || z.hidden || Math.abs(z.x - CAM.tx) > CR || Math.abs(z.y - CAM.ty) > CR || z.L > me.L + 1 || lcHide(Math.floor(z.x), Math.floor(z.y), z.L)) continue;
+      const sl = gst ? z.sleepF : z.sleep; if (z._ws && !sl) z.wokeT = W.t; z._ws = sl;
+      const aw = gst ? (z.awF ? 0.6 : 0) : (z.aw || 0); let t = '', c = '', fs = 14;
+      if (sl) { if (aw > 0.15) { t = '?'; c = aw > 0.6 ? '#ff8a3a' : '#ffd65a'; fs = 14 + aw * 12; } else if (Math.hypot(z.x - me.x, z.y - me.y) < 11) { t = 'z'; c = '#cfe0f0'; fs = 16; } }
+      else if (z.wokeT && W.t - z.wokeT < 1.2) { t = '!'; c = '#ff4a3a'; fs = 20; }
+      if (!t) continue;
+      const [sx, sy] = w2s(z.x, z.y, z.z + (ZT[z.k].h || 1.4) * (ZT[z.k].sc || 1) + 0.3);
+      html += `<div class="zmk" style="left:${sx | 0}px;top:${sy | 0}px;color:${c};font-size:${fs | 0}px">${t}</div>`;
+    }
+  }
   for (const p of W.p) {
     if (p.i === ME || p.gone || p.dead || W.p.length < 2) continue;
     const [sx, sy] = w2s(p.x, p.y, (p.zv != null ? p.zv : p.z) + 1.35);

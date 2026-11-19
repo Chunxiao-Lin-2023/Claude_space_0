@@ -4,7 +4,9 @@
    world unlocking the better pieces — barricades, mines, turrets — and two vehicles. Each night the horde comes for
    wherever you are and the sun comes up on time; survive SIEGE.nights nights. Searching pays double, ammo boxes lie about. */
 const SIEGE = {
-  nights: 10, sleepR: 6.5, noiseR: 13, boomR: 20, chainR: 4.5,           // waking: sight range, gunshot / explosion hearing, a woken zombie rouses its neighbours
+  nights: 10, sleepR: 5.5, noiseR: 12, boomR: 18, chainR: 2.6, chainP: 0.5,  // (round 19b) noticing range, loudest gun / explosion hearing, a woken zombie may rouse one close by
+  noticeRate: 1.4, noticeDecay: 0.4, wallMuffle: 0.6,                     // time to notice you: 2 cells ≈ 1.4 s, 3 cells ≈ 2.3 s, 4 cells ≈ 6 s (×2.2 with its back to you); walls cut hearing to 60%
+  gunNoise: { pistol: 8, shotgun: 12, rifle: 11, sniper: 14, crossbow: 2.5, flamer: 6, launcher: 12 },
   tRange: 9, tRate: 0.32, tDmg: 18, tAmmo: 240, tRefill: { parts: 3 },  // turret
   loot: 2, mineR: 2.4, mineDmg: 200, spawnR: 24, vSpd: [1, 1.6, 2.3],    // search yield multiplier, mines, horde ring radius, vehicle speed
   occFrac: 0.55, clearRw: { parts: 6, steel: 4 },
@@ -29,8 +31,9 @@ Object.assign(MODES.siege, {
       const [x0, y0, x1, y1, st, type] = TOWN_HOUSES[k], cells = [];
       for (let L = 0; L < Math.max(1, st); L++) for (let y = y0 + 1; y < y1; y++) for (let x = x0 + 1; x < x1; x++) if (standable(x, y, L, 'z') && (L === 0 || W.slab[ci(x, y, L)])) cells.push([x, y, L]);
       if (cells.length < 8) continue;
+      const deep = cells.filter(([x, y]) => x >= x0 + 3 && x <= x1 - 3 && y >= y0 + 3 && y <= y1 - 3), zc = deep.length >= 8 ? deep : cells; // not right inside the door
       const n = clamp(Math.round((x1 - x0) * (y1 - y0) / 24) + st * 2, 6, 18), id = O.occ.length;
-      for (let j = 0; j < n; j++) { const [x, y, L] = cells[Math.floor(rand() * cells.length)]; const z = putZombie(sleeperKind(), x, y, L); z.sleep = 1; z.mz = 1; z.occ = id; z.face = rand() * 6.28; }
+      for (let j = 0; j < n; j++) { const [x, y, L] = zc[Math.floor(rand() * zc.length)]; const z = putZombie(sleeperKind(), x, y, L); z.sleep = 1; z.mz = 1; z.occ = id; z.face = rand() * 6.28; }
       // the reward: a blueprint case somewhere upstairs if there is an upstairs
       const up = cells.filter(c => c[2] === Math.max(0, Math.min(st - 1, 1 + Math.floor(rand() * st)))), pool = up.length ? up : cells;
       for (let t = 0; t < 40; t++) { const [x, y, L] = pool[Math.floor(rand() * pool.length)], i = ci(x, y, L); if (!W.blk[i] && !DIRS.some(([dx, dy]) => W.blk[ci(x + dx, y + dy, L)] === 6)) { W.blk[i] = 55; W.bhp[i] = 1; break; } }
@@ -50,13 +53,21 @@ Object.assign(MODES.siege, {
     W.noise = (W.noise || []).filter(e => W.t - e.t < 0.6);
     const ap = alivePl();
     if ((W.wakeT = (W.wakeT || 0) - dt) <= 0) {
-      W.wakeT = 0.2;
+      const st = 0.2 - W.wakeT; W.wakeT = 0.2;
       for (const z of W.zs) {
         if (!z.sleep || z.hp <= 0) continue;
-        if (z.wakeAt && W.t >= z.wakeAt) { siegeWake(z); continue; }
-        let wake = false;
-        for (const p of ap) { const d = Math.hypot(p.x - z.x, p.y - z.y); if (d < SIEGE.sleepR && Math.abs(p.L - z.L) <= 1 && (d < 2 || los(z.x, z.y, z.z + 1, p.x, p.y, p.z + 0.8))) { wake = true; break; } }
-        if (!wake) for (const e of W.noise) if (Math.hypot(e.x - z.x, e.y - z.y) < e.r) { wake = true; break; }
+        if (z.wakeAt && W.t >= z.wakeAt) { siegeWake(z, true); continue; }
+        // noticing you takes a moment: quicker the closer you are, slower behind its back, faster if you roar up on a motorbike
+        let gain = 0;
+        for (const p of ap) {
+          const d = Math.hypot(p.x - z.x, p.y - z.y); if (d >= SIEGE.sleepR || p.L !== z.L) continue;
+          if (d > 1.2 && !los(z.x, z.y, z.z + 1, p.x, p.y, p.z + 0.8)) continue;
+          const facing = Math.cos(angDiff(z.face || 0, Math.atan2(p.y - z.y, p.x - z.x))) > 0 ? 1 : 0.45;
+          gain = Math.max(gain, (d < 1.2 ? 4 : Math.pow(1 - d / SIEGE.sleepR, 1.5) * SIEGE.noticeRate) * facing * (p.ride ? 1.6 : 1));
+        }
+        z.aw = Math.max(0, (z.aw || 0) + (gain > 0 ? gain : -SIEGE.noticeDecay) * st);
+        let wake = z.aw >= 1;
+        if (!wake) for (const e of W.noise) { const d = Math.hypot(e.x - z.x, e.y - z.y); if (d < e.r && (d < e.r * SIEGE.wallMuffle || los(e.x, e.y, (e.z || 0) + 1, z.x, z.y, z.z + 1))) { wake = true; break; } }
         if (wake) siegeWake(z);
       }
     }
@@ -80,7 +91,7 @@ Object.assign(MODES.siege, {
       W.tcd[i] = SIEGE.tRate; O.tam[i]--; if (O.tam[i] === 0 || O.tam[i] % 40 === 0) objChanged();
       KSRC = 'turret'; hurtZombie(best, SIEGE.tDmg * (1 + 0.12 * W.upg), null, (best.x - x) / (bd || 1) * 0.6, (best.y - y) / (bd || 1) * 0.6); KSRC = '';
       emit({ k: 'tshot', i, x: r2(x), y: r2(y), z: r2(z0), tx: r2(best.x), ty: r2(best.y), tz: r2(best.z + best.h * 0.6) });
-      W.noise.push({ x, y, r: SIEGE.noiseR * 0.6, t: W.t });
+      noiseAt(x, y, 7, z0 - 0.95);
     }
   },
   use(p, i, b) { if (b !== 52) return null; const a = W.obj.tam[i] == null ? SIEGE.tAmmo : W.obj.tam[i]; return a < SIEGE.tAmmo * 0.5 ? { k: 'obj', i, t: 1, name: '给机枪塔装弹（' + a + '/' + SIEGE.tAmmo + '，3 零件）' } : null; },
@@ -99,9 +110,11 @@ Object.assign(MODES.siege, {
     return O.occ.map((q, k) => ({ x: q.x, y: q.y, n: q.c ? '✓' + (q.out ? '' : q.name) : (q.out ? '尸群' : '尸占') + ' ' + q.left, c: q.c ? '#8fe39a' : '#ff6a5a', a: !q.c && k === near && W.phase === 'day' ? 1 : 0, r: 6 }));
   },
 });
-function siegeWake(z) {
-  if (!z.sleep) return; z.sleep = 0; z.wakeAt = 0; z.rage = 1.2;
-  for (const o of W.zs) if (o.sleep && !o.wakeAt && o.L === z.L && Math.hypot(o.x - z.x, o.y - z.y) < SIEGE.chainR) o.wakeAt = W.t + 0.3 + rand() * 0.9;
+// a zombie wakes (and groans): one close neighbour may stir a second or two later; those don't pass it on
+function siegeWake(z, chained) {
+  if (!z.sleep) return; z.sleep = 0; z.wakeAt = 0; z.aw = 0; z.wokeT = W.t;
+  if (chained) return;
+  for (const o of W.zs) if (o.sleep && !o.wakeAt && o.L === z.L && Math.hypot(o.x - z.x, o.y - z.y) < SIEGE.chainR && rand() < SIEGE.chainP) o.wakeAt = W.t + 1 + rand() * 2;
 }
 // a blueprint from a search (siege only): returns its name or ''
 function siegeBlueprint(kind, sure) {
@@ -113,7 +126,7 @@ function siegeBlueprint(kind, sure) {
   return '蓝图·' + bpName(k);
 }
 // gunfire and blasts wake sleepers
-function noiseAt(x, y, r) { if (isSiege()) (W.noise = W.noise || []).push({ x, y, r, t: W.t }); }
+function noiseAt(x, y, r, z) { if (isSiege()) (W.noise = W.noise || []).push({ x, y, z: z || 0, r, t: W.t }); }
 // the horde comes out on a ring round the survivors (or the camp if nobody is about)
 function siegeEdges() {
   const ap = alivePl(); if (!ap.length) return edgeSpawns();

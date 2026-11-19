@@ -15,6 +15,7 @@
 html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--txt);font-family:var(--font);overscroll-behavior:none;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
 canvas#cv{position:fixed;inset:0;width:100%;height:100%;display:block;cursor:crosshair;touch-action:none}
 #ov{position:fixed;inset:0;z-index:4;pointer-events:none;overflow:hidden}
+#ov .zmk{position:absolute;transform:translate(-50%,-100%);font-weight:900;text-shadow:0 0 3px #000,0 1px 3px #000,0 0 6px #000;pointer-events:none;font-family:system-ui,sans-serif}
 #ov .fl{position:absolute;transform:translate(-50%,-100%);font-weight:700;font-size:14px;text-shadow:0 1px 3px #000;white-space:nowrap}
 #ov .tag{position:absolute;transform:translate(-50%,-100%);text-align:center;font-size:11px;font-weight:600;color:#fff;text-shadow:0 1px 2px #000}
 #ov .tag i{display:block;height:4px;margin:2px auto 0;width:34px;background:#888;border-radius:2px}
@@ -589,7 +590,7 @@ body.aiming canvas#cv{cursor:none}body.touch #reticle b{left:-34px;top:-38px}
 <div id="help" class="modal hidden">
   <div class="card"><h3>玩法和操作</h3>
     <div class="help">
-      <h4>目标</h4>标题页点「模式」选玩法和地图：<b>尸城求生</b>（默认）丧尸占了半座城——红色标记的楼里睡着尸群，靠近或开枪会把它们吵醒；清掉一栋楼拿图纸箱和奖励，任何地方都能就地建造临时据点；箱子里能搜到<b>蓝图</b>，解锁砖墙、钢墙、拒马、铁丝网、捕兽夹、探照灯、地雷、机枪塔和自行车 / 摩托车（T 上下车，骑着不能开枪）；搜刮收获翻倍，地上到处有弹药盒；每夜到点就天亮，撑过 10 夜获胜。<b>经典守夜</b>撑过 15 夜；<b>修车逃离</b>找齐 6 个零件修好卡车；<b>摧毁尸巢</b>炸掉 5 个尸巢和母巢；<b>信号塔</b>守住 4 座塔的校准再等直升机；<b>抢空投</b>集齐 6 个空投信标后守住撤离点；<b>尸王狩猎</b>击杀 4 只尸王。当前目标显示在屏幕上方，屏幕边的箭头和大地图（点小地图 / 按 M）指路。所有人同时倒下就失败。丧尸会一路追着离它最近的人，挡路的墙会被砸开。<h4>丧尸</h4>游荡者、疾跑者、攀爬者（翻墙）、喷吐者（吐酸）、重锤（拆墙）、巨尸（血月），还有成群的尸犬、贴地的爬行尸、死了会炸开（连墙一起炸）的爆尸、会尖叫让周围丧尸发狂并引来更多丧尸的尖叫者、正面打不动的防暴尸（绕到侧面后面，或者用狙击枪、弩、火、炸药）。<h4>武器</h4>手枪爆头伤害高；霰弹枪近距离打退打晕；步枪连射越久越散；狙击枪穿透 5 只、带激光；弩穿透 3 只并把丧尸钉住；喷火器点燃一片，火会传染；榴弹发射器落地就炸。后三种在工作台造。<h4>每日任务</h4>每天天亮刷新 3 个小任务（左上角），比如击杀、搜索、建造、今夜无人倒下。完成立刻发奖励：材料、全队弹药、医疗包、手雷或强化弹头。没完成的会在下一个天亮作废。
+      <h4>目标</h4>标题页点「模式」选玩法和地图：<b>尸城求生</b>（默认）丧尸占了半座城——红色标记的楼里睡着尸群（头上「z」）：你在它视线里待久了它会察觉（「?」越变越大，背对你的察觉得慢），开枪会把附近的吵醒（隔着墙听得小一半，弩几乎没声），<b>用刀能悄悄一刀解决睡着的丧尸</b>；清掉一栋楼拿图纸箱和奖励，任何地方都能就地建造临时据点；箱子里能搜到<b>蓝图</b>，解锁砖墙、钢墙、拒马、铁丝网、捕兽夹、探照灯、地雷、机枪塔和自行车 / 摩托车（T 上下车，骑着不能开枪）；搜刮收获翻倍，地上到处有弹药盒；每夜到点就天亮，撑过 10 夜获胜。<b>经典守夜</b>撑过 15 夜；<b>修车逃离</b>找齐 6 个零件修好卡车；<b>摧毁尸巢</b>炸掉 5 个尸巢和母巢；<b>信号塔</b>守住 4 座塔的校准再等直升机；<b>抢空投</b>集齐 6 个空投信标后守住撤离点；<b>尸王狩猎</b>击杀 4 只尸王。当前目标显示在屏幕上方，屏幕边的箭头和大地图（点小地图 / 按 M）指路。所有人同时倒下就失败。丧尸会一路追着离它最近的人，挡路的墙会被砸开。<h4>丧尸</h4>游荡者、疾跑者、攀爬者（翻墙）、喷吐者（吐酸）、重锤（拆墙）、巨尸（血月），还有成群的尸犬、贴地的爬行尸、死了会炸开（连墙一起炸）的爆尸、会尖叫让周围丧尸发狂并引来更多丧尸的尖叫者、正面打不动的防暴尸（绕到侧面后面，或者用狙击枪、弩、火、炸药）。<h4>武器</h4>手枪爆头伤害高；霰弹枪近距离打退打晕；步枪连射越久越散；狙击枪穿透 5 只、带激光；弩穿透 3 只并把丧尸钉住；喷火器点燃一片，火会传染；榴弹发射器落地就炸。后三种在工作台造。<h4>每日任务</h4>每天天亮刷新 3 个小任务（左上角），比如击杀、搜索、建造、今夜无人倒下。完成立刻发奖励：材料、全队弹药、医疗包、手雷或强化弹头。没完成的会在下一个天亮作废。
       <h4>白天</h4>出门砍树（木材）、采石（砖石），搜汽车、补给箱和废墟瓦砾（钢材、零件、弹药），离家越远收获越多；回来盖楼；在任何建筑里（或营地工作台）都能造枪、买弹药（按 C / 点「制作」）。河上只有两座桥，丧尸也只能从桥上过河。每 5 夜一次血月。
       <h4>建造</h4>只能在营地周围的黄框里建造。<b>指哪盖哪，不用切楼层</b>：指地面或楼板就盖在上面；指墙顶就往上叠一层；指墙的侧面就贴着它盖；楼板会自动铺成墙上的天花板，站在楼上指外面能往外延伸阳台。<b>按住拖动</b>沿直线一次盖一排。拆除也是指哪拆哪。方块要有<b>支撑</b>：从地面往上传，往旁边每格减 1，支撑断了会连锁坍塌。<b>楼上最外圈、上面没东西的墙是半人高的矮墙</b>：子弹能从上面飞过，贴着矮墙可以探身往下打；地面一层的墙还是整面墙。门让人通过但挡丧尸，射击栅栏能从里面开枪。丧尸会砸墙砸门、走楼梯；攀爬者会翻墙。<h4>爬梯、翻越和跳</h4>楼梯换成了靠墙的爬梯：朝箭头方向走就爬上去，往下爬要继续推一下。丧尸爬梯子很慢（攀爬者除外），所以多放几个梯子方便自己走位，梯子口就是守点。人能<b>翻过</b>沙袋矮墙、拒马、铁皮掩体、栅栏、瓦砾和一人高的墙（贴着推一下，或按跳），也能跳过一格宽的空隙；丧尸不会翻，只能砸。<h4>障碍物</h4>沙袋矮墙（子弹能从上面打过去）、拒马（丧尸砸它会被扎）、铁皮掩体（挡子弹）、捕兽夹（夹住丧尸 2.5 秒，一次性）、铁丝网、探照灯。用矮墙和掩体把楼里隔成一段一段，自己翻来翻去，丧尸只能一路砸过来。<h4>建造确认</h4>点一下或拖一排，先出现绿色预览（拆除是红色），再点 ✓、按 Enter 或再点一下预览才真正建造 / 拆除；建造栏的「二次确认」可以关掉。
       <h4>视角</h4>滚轮或 ＋/－ 缩放，Q / E 或 ⟲⟳ 转镜头。楼层视图默认跟随你所在的层，上面的楼层会自动隐藏；▲▼ 手动看别的层，「跟随我所在的层」恢复。
@@ -6110,7 +6111,7 @@ function aimDir(p) {
 }
 function fireWeapon(p, wi) {
   const w = WPN[wi]; if (p.cdW) p.cdW[wi] = w.rate; else p.fireCD = w.rate; p.mag[wi]--;
-  noiseAt(p.x, p.y, w.k === 'crossbow' ? 3 : w.flame ? 7 : SIEGE.noiseR);
+  noiseAt(p.x, p.y, SIEGE.gunNoise[w.k] || SIEGE.noiseR, p.z);
   const [sx, sy, sz] = shoulder(p), [ax, ay, az] = aimDir(p);
   const yaw = Math.atan2(ay, ax), pitch = Math.asin(clamp(az, -1, 1));
   const mul = 1 + 0.12 * W.upg, ends = [];
@@ -6164,7 +6165,7 @@ function fireWeapon(p, wi) {
 }
 function hurtZombie(z, dmg, p, kx, ky, quiet) {
   if (z.hp <= 0 || z.hidden) return;
-  if (z.sleep) siegeWake(z);
+  if (z.sleep) { if (dmg >= z.hp) z.sleep = 0; else siegeWake(z); } // killed in its sleep: nobody else hears it
   z.hp -= dmg; if (!quiet) z.hitT = 0.12;
   if (kx || ky) { z.kbx = (z.kbx || 0) + kx; z.kby = (z.kby || 0) + ky; }
   if (z.hp <= 0) killZombie(z, p);
@@ -6251,6 +6252,7 @@ function knife(p, zid) {
   const heavy = z.k === 'boss' ? 0 : z.k === 'brute' ? 0.25 : 1;
   let dmg = BAL.knifeDmg * (1 + 0.12 * W.upg) * (back ? BAL.knifeBack : 1);
   if (ZT[z.k].armor && !back) dmg *= ZT[z.k].armor;                                     // riot gear: go round the back
+  if (z.sleep && !ZT[z.k].boss) dmg = z.hp + 1;                                          // 尸城求生: a sleeper dies to one quiet stab
   z.stun = Math.max(z.stun || 0, 0.4 * Math.max(heavy, 0.3));
   hurtZombie(z, dmg, p, dx / d * BAL.knifeKB * heavy, dy / d * BAL.knifeKB * heavy);
   taskAdd('shove', 1);
@@ -6465,7 +6467,7 @@ function explode(x, y, z, p, R = BAL.nadeR, dmg = BAL.nadeDmg) {
     if (d < R + zb.r) { const f = 1 - Math.max(0, d - zb.r) / R; hurtZombie(zb, dmg * (BAL.nadeMin + (1 - BAL.nadeMin) * f) * (1 + 0.12 * W.upg), p, (zb.x - x) / (d || 1) * 5 * f, (zb.y - y) / (d || 1) * 5 * f); }
   }
   KSRC = '';
-  modeAreaHit(x, y, R, dmg * 0.8); noiseAt(x, y, SIEGE.boomR);
+  modeAreaHit(x, y, R, dmg * 0.8); noiseAt(x, y, SIEGE.boomR, z);
   emit({ k: 'boom', x: r2(x), y: r2(y), z: r2(z), r: R });
   const cx = Math.floor(x), cy = Math.floor(y), L0 = Math.floor(z / FH), rr = Math.ceil(R);
   for (let dy = -rr; dy <= rr; dy++) for (let dx = -rr; dx <= rr; dx++) for (let l = L0 - 1; l <= L0 + 1; l++) { const xx = cx + dx, yy = cy + dy; if (!inMap(xx, yy) || l < 0 || l >= ML || Math.hypot(dx, dy) > R) continue; const i = ci(xx, yy, l); if (redBarrel(i)) barrelBoom(i, p); }
@@ -6952,7 +6954,9 @@ function acidPool(x, y) { if (W.mode === 'boss' && W.obj.pools) { W.obj.pools.pu
    world unlocking the better pieces — barricades, mines, turrets — and two vehicles. Each night the horde comes for
    wherever you are and the sun comes up on time; survive SIEGE.nights nights. Searching pays double, ammo boxes lie about. */
 const SIEGE = {
-  nights: 10, sleepR: 6.5, noiseR: 13, boomR: 20, chainR: 4.5,           // waking: sight range, gunshot / explosion hearing, a woken zombie rouses its neighbours
+  nights: 10, sleepR: 5.5, noiseR: 12, boomR: 18, chainR: 2.6, chainP: 0.5,  // (round 19b) noticing range, loudest gun / explosion hearing, a woken zombie may rouse one close by
+  noticeRate: 1.4, noticeDecay: 0.4, wallMuffle: 0.6,                     // time to notice you: 2 cells ≈ 1.4 s, 3 cells ≈ 2.3 s, 4 cells ≈ 6 s (×2.2 with its back to you); walls cut hearing to 60%
+  gunNoise: { pistol: 8, shotgun: 12, rifle: 11, sniper: 14, crossbow: 2.5, flamer: 6, launcher: 12 },
   tRange: 9, tRate: 0.32, tDmg: 18, tAmmo: 240, tRefill: { parts: 3 },  // turret
   loot: 2, mineR: 2.4, mineDmg: 200, spawnR: 24, vSpd: [1, 1.6, 2.3],    // search yield multiplier, mines, horde ring radius, vehicle speed
   occFrac: 0.55, clearRw: { parts: 6, steel: 4 },
@@ -6977,8 +6981,9 @@ Object.assign(MODES.siege, {
       const [x0, y0, x1, y1, st, type] = TOWN_HOUSES[k], cells = [];
       for (let L = 0; L < Math.max(1, st); L++) for (let y = y0 + 1; y < y1; y++) for (let x = x0 + 1; x < x1; x++) if (standable(x, y, L, 'z') && (L === 0 || W.slab[ci(x, y, L)])) cells.push([x, y, L]);
       if (cells.length < 8) continue;
+      const deep = cells.filter(([x, y]) => x >= x0 + 3 && x <= x1 - 3 && y >= y0 + 3 && y <= y1 - 3), zc = deep.length >= 8 ? deep : cells; // not right inside the door
       const n = clamp(Math.round((x1 - x0) * (y1 - y0) / 24) + st * 2, 6, 18), id = O.occ.length;
-      for (let j = 0; j < n; j++) { const [x, y, L] = cells[Math.floor(rand() * cells.length)]; const z = putZombie(sleeperKind(), x, y, L); z.sleep = 1; z.mz = 1; z.occ = id; z.face = rand() * 6.28; }
+      for (let j = 0; j < n; j++) { const [x, y, L] = zc[Math.floor(rand() * zc.length)]; const z = putZombie(sleeperKind(), x, y, L); z.sleep = 1; z.mz = 1; z.occ = id; z.face = rand() * 6.28; }
       // the reward: a blueprint case somewhere upstairs if there is an upstairs
       const up = cells.filter(c => c[2] === Math.max(0, Math.min(st - 1, 1 + Math.floor(rand() * st)))), pool = up.length ? up : cells;
       for (let t = 0; t < 40; t++) { const [x, y, L] = pool[Math.floor(rand() * pool.length)], i = ci(x, y, L); if (!W.blk[i] && !DIRS.some(([dx, dy]) => W.blk[ci(x + dx, y + dy, L)] === 6)) { W.blk[i] = 55; W.bhp[i] = 1; break; } }
@@ -6998,13 +7003,21 @@ Object.assign(MODES.siege, {
     W.noise = (W.noise || []).filter(e => W.t - e.t < 0.6);
     const ap = alivePl();
     if ((W.wakeT = (W.wakeT || 0) - dt) <= 0) {
-      W.wakeT = 0.2;
+      const st = 0.2 - W.wakeT; W.wakeT = 0.2;
       for (const z of W.zs) {
         if (!z.sleep || z.hp <= 0) continue;
-        if (z.wakeAt && W.t >= z.wakeAt) { siegeWake(z); continue; }
-        let wake = false;
-        for (const p of ap) { const d = Math.hypot(p.x - z.x, p.y - z.y); if (d < SIEGE.sleepR && Math.abs(p.L - z.L) <= 1 && (d < 2 || los(z.x, z.y, z.z + 1, p.x, p.y, p.z + 0.8))) { wake = true; break; } }
-        if (!wake) for (const e of W.noise) if (Math.hypot(e.x - z.x, e.y - z.y) < e.r) { wake = true; break; }
+        if (z.wakeAt && W.t >= z.wakeAt) { siegeWake(z, true); continue; }
+        // noticing you takes a moment: quicker the closer you are, slower behind its back, faster if you roar up on a motorbike
+        let gain = 0;
+        for (const p of ap) {
+          const d = Math.hypot(p.x - z.x, p.y - z.y); if (d >= SIEGE.sleepR || p.L !== z.L) continue;
+          if (d > 1.2 && !los(z.x, z.y, z.z + 1, p.x, p.y, p.z + 0.8)) continue;
+          const facing = Math.cos(angDiff(z.face || 0, Math.atan2(p.y - z.y, p.x - z.x))) > 0 ? 1 : 0.45;
+          gain = Math.max(gain, (d < 1.2 ? 4 : Math.pow(1 - d / SIEGE.sleepR, 1.5) * SIEGE.noticeRate) * facing * (p.ride ? 1.6 : 1));
+        }
+        z.aw = Math.max(0, (z.aw || 0) + (gain > 0 ? gain : -SIEGE.noticeDecay) * st);
+        let wake = z.aw >= 1;
+        if (!wake) for (const e of W.noise) { const d = Math.hypot(e.x - z.x, e.y - z.y); if (d < e.r && (d < e.r * SIEGE.wallMuffle || los(e.x, e.y, (e.z || 0) + 1, z.x, z.y, z.z + 1))) { wake = true; break; } }
         if (wake) siegeWake(z);
       }
     }
@@ -7028,7 +7041,7 @@ Object.assign(MODES.siege, {
       W.tcd[i] = SIEGE.tRate; O.tam[i]--; if (O.tam[i] === 0 || O.tam[i] % 40 === 0) objChanged();
       KSRC = 'turret'; hurtZombie(best, SIEGE.tDmg * (1 + 0.12 * W.upg), null, (best.x - x) / (bd || 1) * 0.6, (best.y - y) / (bd || 1) * 0.6); KSRC = '';
       emit({ k: 'tshot', i, x: r2(x), y: r2(y), z: r2(z0), tx: r2(best.x), ty: r2(best.y), tz: r2(best.z + best.h * 0.6) });
-      W.noise.push({ x, y, r: SIEGE.noiseR * 0.6, t: W.t });
+      noiseAt(x, y, 7, z0 - 0.95);
     }
   },
   use(p, i, b) { if (b !== 52) return null; const a = W.obj.tam[i] == null ? SIEGE.tAmmo : W.obj.tam[i]; return a < SIEGE.tAmmo * 0.5 ? { k: 'obj', i, t: 1, name: '给机枪塔装弹（' + a + '/' + SIEGE.tAmmo + '，3 零件）' } : null; },
@@ -7047,9 +7060,11 @@ Object.assign(MODES.siege, {
     return O.occ.map((q, k) => ({ x: q.x, y: q.y, n: q.c ? '✓' + (q.out ? '' : q.name) : (q.out ? '尸群' : '尸占') + ' ' + q.left, c: q.c ? '#8fe39a' : '#ff6a5a', a: !q.c && k === near && W.phase === 'day' ? 1 : 0, r: 6 }));
   },
 });
-function siegeWake(z) {
-  if (!z.sleep) return; z.sleep = 0; z.wakeAt = 0; z.rage = 1.2;
-  for (const o of W.zs) if (o.sleep && !o.wakeAt && o.L === z.L && Math.hypot(o.x - z.x, o.y - z.y) < SIEGE.chainR) o.wakeAt = W.t + 0.3 + rand() * 0.9;
+// a zombie wakes (and groans): one close neighbour may stir a second or two later; those don't pass it on
+function siegeWake(z, chained) {
+  if (!z.sleep) return; z.sleep = 0; z.wakeAt = 0; z.aw = 0; z.wokeT = W.t;
+  if (chained) return;
+  for (const o of W.zs) if (o.sleep && !o.wakeAt && o.L === z.L && Math.hypot(o.x - z.x, o.y - z.y) < SIEGE.chainR && rand() < SIEGE.chainP) o.wakeAt = W.t + 1 + rand() * 2;
 }
 // a blueprint from a search (siege only): returns its name or ''
 function siegeBlueprint(kind, sure) {
@@ -7061,7 +7076,7 @@ function siegeBlueprint(kind, sure) {
   return '蓝图·' + bpName(k);
 }
 // gunfire and blasts wake sleepers
-function noiseAt(x, y, r) { if (isSiege()) (W.noise = W.noise || []).push({ x, y, r, t: W.t }); }
+function noiseAt(x, y, r, z) { if (isSiege()) (W.noise = W.noise || []).push({ x, y, z: z || 0, r, t: W.t }); }
 // the horde comes out on a ring round the survivors (or the camp if nobody is about)
 function siegeEdges() {
   const ap = alivePl(); if (!ap.length) return edgeSpawns();
@@ -7539,6 +7554,20 @@ function drawOverlay() {
   if (!OV) return;
   let html = '';
   for (const f of RND.floats) { const [sx, sy] = w2s(f.x, f.y, f.z); html += `<div class="fl" style="left:${sx | 0}px;top:${sy | 0}px;opacity:${clamp(2.2 - f.t, 0, 1).toFixed(2)};color:${f.col}">${f.text}</div>`; }
+  // 尸城求生: sleepers show a "z", a growing "?" while they're noticing you, a "!" as they wake
+  if (isSiege()) {
+    const me = W.p[ME], CR = Math.min(cullR(), 16), gst = NETROLE === 'guest';
+    for (const z of W.zs) {
+      if (z.hp <= 0 || z.hidden || Math.abs(z.x - CAM.tx) > CR || Math.abs(z.y - CAM.ty) > CR || z.L > me.L + 1 || lcHide(Math.floor(z.x), Math.floor(z.y), z.L)) continue;
+      const sl = gst ? z.sleepF : z.sleep; if (z._ws && !sl) z.wokeT = W.t; z._ws = sl;
+      const aw = gst ? (z.awF ? 0.6 : 0) : (z.aw || 0); let t = '', c = '', fs = 14;
+      if (sl) { if (aw > 0.15) { t = '?'; c = aw > 0.6 ? '#ff8a3a' : '#ffd65a'; fs = 14 + aw * 12; } else if (Math.hypot(z.x - me.x, z.y - me.y) < 11) { t = 'z'; c = '#cfe0f0'; fs = 16; } }
+      else if (z.wokeT && W.t - z.wokeT < 1.2) { t = '!'; c = '#ff4a3a'; fs = 20; }
+      if (!t) continue;
+      const [sx, sy] = w2s(z.x, z.y, z.z + (ZT[z.k].h || 1.4) * (ZT[z.k].sc || 1) + 0.3);
+      html += `<div class="zmk" style="left:${sx | 0}px;top:${sy | 0}px;color:${c};font-size:${fs | 0}px">${t}</div>`;
+    }
+  }
   for (const p of W.p) {
     if (p.i === ME || p.gone || p.dead || W.p.length < 2) continue;
     const [sx, sy] = w2s(p.x, p.y, (p.zv != null ? p.zv : p.z) + 1.35);
@@ -8122,6 +8151,8 @@ function rigZombie(z, corpse, dt, dk) {
   if (quad) { aL += 0.85; aR += 0.85; kL += 1.25; kR += 1.25; }
   if (crawl) { aL = 1.3 + Math.sin(ph) * 0.15; aR = 1.4; kL = kR = 0; }
   if (zk === 'spitter') { aL *= 0.8; aR *= 0.8; }
+  const asleep = !corpse && !!(z.sleep || z.sleepF); // 尸城求生 sleepers: slumped on their haunches, head down
+  if (asleep && !crawl && !quad) { aL = aR = 1.45; kL = kR = 2.55; }
   // corpse fall styles
   let fall = 0, fstyle = sd % 3, knees = 0;
   if (corpse) {
@@ -8141,7 +8172,7 @@ function rigZombie(z, corpse, dt, dk) {
   }
   // body roll / bob
   const roll = crawl ? Math.sin(ph) * 0.12 * amp : (limp ? Math.sin(ph) * 0.13 : zk === 'spitter' ? Math.sin(ph) * 0.15 : big ? Math.sin(ph) * 0.07 : Math.sin(ph) * 0.04) * amp;
-  const hunch = (climbing ? -0.15 : Bd.hunch + (zk === 'runner' ? 0.1 * amp : 0)) - flinch + (corpse ? knees * 0.4 : 0) + Math.sin(t * 1.3 + sd) * 0.03;
+  const hunch = (climbing ? -0.15 : Bd.hunch + (zk === 'runner' ? 0.1 * amp : 0)) - flinch + (corpse ? knees * 0.4 : 0) + (asleep ? 0.55 : Math.sin(t * 1.3 + sd) * 0.03);
   const pelv = J(ZM[1], R0, 0, hipY, 0, roll, Math.sin(ph) * 0.08 * amp, 0);
   // legs
   for (const sg of [-1, 1]) {
@@ -8173,6 +8204,7 @@ function rigZombie(z, corpse, dt, dk) {
   else if (zk === 'bloater') { hRoll = 0.15; hPitch = 0.2; jaw = 0.3; }
   else if (zk === 'armored') { hRoll = 0.05; hPitch = 0.1; jaw = 0.1; }
   hPitch += hunch * 0.4 - flinch * 1.5; // look ahead despite the hunch
+  if (asleep) { hPitch += 0.75; jaw = 0.05; }
   const head = J(ZM[8], tor, 0.03 * Bd.tw, TH * (big && zk === 'brute' ? 0.82 : 0.97) + (zk === 'screamer' ? 0.1 : 0), 0, hRoll + twitch, hYaw + twitch * 0.6 + Math.sin(t * 0.7 + sd) * 0.15, -hPitch);
   const hs = Bd.hs;
   zput('head', head, hs, hs, hs, skin);
@@ -9258,7 +9290,7 @@ const ZI = ZKEYS;
 function pFlags(p) { return (p.down ? 1 : 0) | (p.dead ? 2 : 0) | (p.gone ? 4 : 0) | (p.build ? 32 : 0) | (p.ready ? 64 : 0) | (p.selfRev ? 128 : 0) | (p.ride ? 256 : 0) | ((p.veh || 0) << 9); }
 function makeSnap() {
   const P = p => [r2(p.x), r2(p.y), p.L, r2(p.vx), r2(p.vy), r2(p.aim), Math.ceil(p.hp), pFlags(p), Math.round(p.downT * 10) / 10, p.wpn, p.mag.join(','), p.ammo.join(','), p.owned.join(''), p.nades, p.meds, Math.round(p.useT * 100), Math.round(p.medT * 10) / 10, Math.round(p.reloadT * 10) / 10, p.kills, Math.round(p.anim * 10) / 10, p.sel, p.aimPt ? [r2(p.aimPt.x), r2(p.aimPt.y), r2(p.aimPt.z)] : 0];
-  const z = []; for (const q of W.zs) z.push(q.id, ZI.indexOf(q.k), Math.round(q.x * 100), Math.round(q.y * 100), q.L, Math.round(q.z * 100), Math.round(q.face * 100), Math.ceil(q.hp / q.max * 100), (q.climbing ? 1 : 0) | (q.atk > 0 ? 2 : 0) | (q.hitT > 0 ? 4 : 0) | (q.moving ? 8 : 0) | (q.burn > 0 ? 16 : 0) | (q.scr > 0 ? 32 : 0) | (q.rage > 0 ? 64 : 0) | (q.hidden ? 128 : 0));
+  const z = []; for (const q of W.zs) z.push(q.id, ZI.indexOf(q.k), Math.round(q.x * 100), Math.round(q.y * 100), q.L, Math.round(q.z * 100), Math.round(q.face * 100), Math.ceil(q.hp / q.max * 100), (q.climbing ? 1 : 0) | (q.atk > 0 ? 2 : 0) | (q.hitT > 0 ? 4 : 0) | (q.moving ? 8 : 0) | (q.burn > 0 ? 16 : 0) | (q.scr > 0 ? 32 : 0) | (q.rage > 0 ? 64 : 0) | (q.hidden ? 128 : 0) | (q.sleep ? 256 : 0) | ((q.aw || 0) > 0.15 ? 512 : 0));
   const pr = []; for (const b of W.proj) pr.push(b.k === 'nade' ? 0 : b.k === 'gl' ? 2 : 1, r2(b.x), r2(b.y), r2(b.z), r2(b.vx), r2(b.vy), r2(b.vz));
   const d = []; for (const i of W.dirty) d.push(i, Math.round(W.bhp[i]), Math.round(W.shp[i])); W.dirty.clear();
   return { t: 's', T: r2(W.t), ph: W.phase, cl: Math.round(W.clock * 10) / 10, dl: W.dayLen, n: W.night, nt: Math.round(W.nightT), tk: NET.tkv === W.tkv && (NET.tkN = (NET.tkN || 0) + 1) % 12 ? 0 : (NET.tkv = W.tkv, W.tasks.map(t => [t.k, t.need, t.got, t.done, t.txt, t.rt])), res: RES.map(r => W.res[r.k]), u: W.upg, k: W.kills, p: W.p.map(P), z, pr, d, sl: W.spawnQ.length, ob: NET.obv === W.obv ? 0 : (NET.obv = W.obv, W.obj) };
@@ -9326,7 +9358,7 @@ function applySnap(s) {
     let z = old.get(id);
     if (!z) z = { id, k: key, x: s.z[k + 2] / 100, y: s.z[k + 3] / 100, z: s.z[k + 5] / 100, r: T.r, h: T.h, face: 0, hp: 100, max: 100, anim: Math.random() * 6, seed: id * 7, hitT: 0, atk: 0 };
     z.tx = s.z[k + 2] / 100; z.ty = s.z[k + 3] / 100; z.L = s.z[k + 4]; z.tz = s.z[k + 5] / 100; z.face = s.z[k + 6] / 100; z.hp = s.z[k + 7]; z.max = 100;
-    const b = s.z[k + 8]; z.climbing = b & 1 ? {} : null; if (b & 2) z.atk = 0.3; if (b & 4) z.hitT = 0.12; z.moving = !!(b & 8); z.burnF = !!(b & 16); z.scr = b & 32 ? 0.6 : 0; z.rageF = !!(b & 64); z.hidden = !!(b & 128);
+    const b = s.z[k + 8]; z.climbing = b & 1 ? {} : null; if (b & 2) z.atk = 0.3; if (b & 4) z.hitT = 0.12; z.moving = !!(b & 8); z.burnF = !!(b & 16); z.scr = b & 32 ? 0.6 : 0; z.sleepF = !!(b & 256); z.awF = !!(b & 512); z.rageF = !!(b & 64); z.hidden = !!(b & 128);
     zs.push(z);
   }
   W.zs = zs;
@@ -9869,8 +9901,8 @@ function startGame(seed, names, diff, me, mode, map) {
   uiBuildBar(); markDiff(); uiView();
   banner(MODES[W.mode].icon + ' ' + MODES[W.mode].name + ' · ' + MAPDEF.name, W.mode === 'classic' ? '撑过 ' + BAL.nights + ' 夜就能等到救援 · 完成每日任务拿奖励' : MODES[W.mode].desc, '#ffe7b0'); UI.tkv = -1;
   const tips = W.mode === 'siege' ? (INP.touch
-    ? ['红色标记的楼里睡着丧尸：别贴脸、少开枪就不会吵醒一整屋', '清掉一栋楼会拿到图纸箱：蓝图解锁地雷、机枪塔、车', '哪里都能建：点「建造」就地封门、放木板路障', '每夜到点就天亮——找栋清理过的楼守住', '地上的弹药盒、箱子都比以前给得多']
-    : ['红色标记的楼里睡着丧尸：别贴脸、少开枪就不会吵醒一整屋（弩几乎没声音）', '清掉一栋楼会拿到图纸箱：蓝图解锁地雷、机枪塔、自行车和摩托车', '哪里都能建：按 B 就地封门、放木板路障', '每夜到点就天亮——找栋清理过的楼守住', '有车以后按 T 上下车，骑着走得快但不能开枪']) : INP.touch
+    ? ['睡着的丧尸头上有「z」：摸过去用刀一刀一个，没声音', '「?」变大是它快发现你了——绕到背后或者先退开', '红色标记的楼里睡着丧尸：少开枪就不会吵醒一整屋', '清掉一栋楼会拿到图纸箱：蓝图解锁地雷、机枪塔、车', '哪里都能建：点「建造」就地封门、放木板路障', '每夜到点就天亮——找栋清理过的楼守住', '地上的弹药盒、箱子都比以前给得多']
+    : ['睡着的丧尸头上有「z」：摸过去用刀（右键）一刀一个，没声音', '「?」变大是它快发现你了——绕到背后或者先退开', '红色标记的楼里睡着丧尸：少开枪就不会吵醒一整屋（弩几乎没声音）', '清掉一栋楼会拿到图纸箱：蓝图解锁地雷、机枪塔、自行车和摩托车', '哪里都能建：按 B 就地封门、放木板路障', '每夜到点就天亮——找栋清理过的楼守住', '有车以后按 T 上下车，骑着走得快但不能开枪']) : INP.touch
     ? ['出门砍树、采石，点一下「交互」搜汽车和补给箱（会自动搜完）', '点「建造」后手指指哪就盖哪：点墙顶往上叠，点墙面贴着盖，拖动一次盖一排', '上方「今日任务」点开能看到今天的 3 个任务，完成就有奖励', '进到任何建筑里，点右上「制作」就能造枪、买弹药', '楼上的矮墙可以探身开枪，天黑前回到堡垒', '丧尸成群结队地来：手雷、喷火器、榴弹专打扎堆的，红色油桶打一枪就炸']
     : ['出门砍树、采石，按 F 搜汽车和补给箱（会自动搜完，走开就停）', '按 B 建造：鼠标指哪就盖哪——指墙顶往上叠、指墙面贴着盖，按住拖动一次盖一排，右键拆除', '上方「今日任务」点开能看到今天的 3 个任务，完成就有奖励', '进到任何建筑里按 C 就能造枪、买弹药（营地工作台也行）', '楼上外墙是半人高的矮墙，可以探身朝下开枪。按 N 可以提前入夜', '丧尸成群结队地来：手雷（G）、喷火器、榴弹专打扎堆的，红色油桶打一枪就炸'];
   tips.forEach((t, k) => TIPS.push(setTimeout(() => { if (W && W.night === 0 && STATE.mode === 'play') uiMsg(t, '#ffd27a'); }, 2500 + k * 7000)));

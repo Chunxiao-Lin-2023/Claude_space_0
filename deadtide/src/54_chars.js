@@ -129,6 +129,8 @@ function rigZombie(z, corpse, dt, dk) {
   if (quad) { aL += 0.85; aR += 0.85; kL += 1.25; kR += 1.25; }
   if (crawl) { aL = 1.3 + Math.sin(ph) * 0.15; aR = 1.4; kL = kR = 0; }
   if (zk === 'spitter') { aL *= 0.8; aR *= 0.8; }
+  const asleep = !corpse && !!(z.sleep || z.sleepF); // 尸城求生 sleepers: slumped on their haunches, head down
+  if (asleep && !crawl && !quad) { aL = aR = 1.45; kL = kR = 2.55; }
   // corpse fall styles
   let fall = 0, fstyle = sd % 3, knees = 0;
   if (corpse) {
@@ -148,7 +150,7 @@ function rigZombie(z, corpse, dt, dk) {
   }
   // body roll / bob
   const roll = crawl ? Math.sin(ph) * 0.12 * amp : (limp ? Math.sin(ph) * 0.13 : zk === 'spitter' ? Math.sin(ph) * 0.15 : big ? Math.sin(ph) * 0.07 : Math.sin(ph) * 0.04) * amp;
-  const hunch = (climbing ? -0.15 : Bd.hunch + (zk === 'runner' ? 0.1 * amp : 0)) - flinch + (corpse ? knees * 0.4 : 0) + Math.sin(t * 1.3 + sd) * 0.03;
+  const hunch = (climbing ? -0.15 : Bd.hunch + (zk === 'runner' ? 0.1 * amp : 0)) - flinch + (corpse ? knees * 0.4 : 0) + (asleep ? 0.55 : Math.sin(t * 1.3 + sd) * 0.03);
   const pelv = J(ZM[1], R0, 0, hipY, 0, roll, Math.sin(ph) * 0.08 * amp, 0);
   // legs
   for (const sg of [-1, 1]) {
@@ -180,6 +182,7 @@ function rigZombie(z, corpse, dt, dk) {
   else if (zk === 'bloater') { hRoll = 0.15; hPitch = 0.2; jaw = 0.3; }
   else if (zk === 'armored') { hRoll = 0.05; hPitch = 0.1; jaw = 0.1; }
   hPitch += hunch * 0.4 - flinch * 1.5; // look ahead despite the hunch
+  if (asleep) { hPitch += 0.75; jaw = 0.05; }
   const head = J(ZM[8], tor, 0.03 * Bd.tw, TH * (big && zk === 'brute' ? 0.82 : 0.97) + (zk === 'screamer' ? 0.1 : 0), 0, hRoll + twitch, hYaw + twitch * 0.6 + Math.sin(t * 0.7 + sd) * 0.15, -hPitch);
   const hs = Bd.hs;
   zput('head', head, hs, hs, hs, skin);

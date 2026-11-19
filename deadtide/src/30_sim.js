@@ -307,7 +307,7 @@ function aimDir(p) {
 }
 function fireWeapon(p, wi) {
   const w = WPN[wi]; if (p.cdW) p.cdW[wi] = w.rate; else p.fireCD = w.rate; p.mag[wi]--;
-  noiseAt(p.x, p.y, w.k === 'crossbow' ? 3 : w.flame ? 7 : SIEGE.noiseR);
+  noiseAt(p.x, p.y, SIEGE.gunNoise[w.k] || SIEGE.noiseR, p.z);
   const [sx, sy, sz] = shoulder(p), [ax, ay, az] = aimDir(p);
   const yaw = Math.atan2(ay, ax), pitch = Math.asin(clamp(az, -1, 1));
   const mul = 1 + 0.12 * W.upg, ends = [];
@@ -361,7 +361,7 @@ function fireWeapon(p, wi) {
 }
 function hurtZombie(z, dmg, p, kx, ky, quiet) {
   if (z.hp <= 0 || z.hidden) return;
-  if (z.sleep) siegeWake(z);
+  if (z.sleep) { if (dmg >= z.hp) z.sleep = 0; else siegeWake(z); } // killed in its sleep: nobody else hears it
   z.hp -= dmg; if (!quiet) z.hitT = 0.12;
   if (kx || ky) { z.kbx = (z.kbx || 0) + kx; z.kby = (z.kby || 0) + ky; }
   if (z.hp <= 0) killZombie(z, p);
@@ -448,6 +448,7 @@ function knife(p, zid) {
   const heavy = z.k === 'boss' ? 0 : z.k === 'brute' ? 0.25 : 1;
   let dmg = BAL.knifeDmg * (1 + 0.12 * W.upg) * (back ? BAL.knifeBack : 1);
   if (ZT[z.k].armor && !back) dmg *= ZT[z.k].armor;                                     // riot gear: go round the back
+  if (z.sleep && !ZT[z.k].boss) dmg = z.hp + 1;                                          // 尸城求生: a sleeper dies to one quiet stab
   z.stun = Math.max(z.stun || 0, 0.4 * Math.max(heavy, 0.3));
   hurtZombie(z, dmg, p, dx / d * BAL.knifeKB * heavy, dy / d * BAL.knifeKB * heavy);
   taskAdd('shove', 1);
@@ -662,7 +663,7 @@ function explode(x, y, z, p, R = BAL.nadeR, dmg = BAL.nadeDmg) {
     if (d < R + zb.r) { const f = 1 - Math.max(0, d - zb.r) / R; hurtZombie(zb, dmg * (BAL.nadeMin + (1 - BAL.nadeMin) * f) * (1 + 0.12 * W.upg), p, (zb.x - x) / (d || 1) * 5 * f, (zb.y - y) / (d || 1) * 5 * f); }
   }
   KSRC = '';
-  modeAreaHit(x, y, R, dmg * 0.8); noiseAt(x, y, SIEGE.boomR);
+  modeAreaHit(x, y, R, dmg * 0.8); noiseAt(x, y, SIEGE.boomR, z);
   emit({ k: 'boom', x: r2(x), y: r2(y), z: r2(z), r: R });
   const cx = Math.floor(x), cy = Math.floor(y), L0 = Math.floor(z / FH), rr = Math.ceil(R);
   for (let dy = -rr; dy <= rr; dy++) for (let dx = -rr; dx <= rr; dx++) for (let l = L0 - 1; l <= L0 + 1; l++) { const xx = cx + dx, yy = cy + dy; if (!inMap(xx, yy) || l < 0 || l >= ML || Math.hypot(dx, dy) > R) continue; const i = ci(xx, yy, l); if (redBarrel(i)) barrelBoom(i, p); }
