@@ -38,19 +38,20 @@ const store = {
 })();
 function esc(s) { return String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
 
-/* ---------------- 画布：按短边约 12 格选整数倍缩放 ---------------- */
+/* ---------------- 画布：按短边约 12 格选整数倍缩放（倍数按设备像素取整，像素列宽一致） ---------------- */
 const cv = $('cv'), cx = cv.getContext('2d');
 const buf = mk(320, 200), bx = buf.getContext('2d');
-let VW = 320, VH = 200, SC = 4, DPR = 1, SW = 0, SH = 0;
+let VW = 320, VH = 200, SC = 4, DSC = 4, DPR = 1, SW = 0, SH = 0;   // SC：CSS 像素/游戏像素（可能是小数）；DSC：设备像素/游戏像素（整数）
 const PHONE_MQ = matchMedia('(pointer:coarse) and (max-height:500px), (pointer:coarse) and (max-width:500px)');
 let PHONE = PHONE_MQ.matches;
 const TOUCH = matchMedia('(pointer:coarse)').matches || 'ontouchstart' in window;
 function resize() {
   SW = innerWidth; SH = innerHeight; PHONE = PHONE_MQ.matches;
-  SC = Math.max(1, Math.round(Math.min(SW, SH) / (12 * TS)));
-  VW = Math.ceil(SW / SC); VH = Math.ceil(SH / SC);
+  DPR = Math.min(window.devicePixelRatio || 1, 3);
+  DSC = Math.max(1, Math.round(Math.min(SW, SH) * DPR / (12 * TS)));   // 整数设备像素倍数：DPR 是 1.25/1.5 时也不会出现宽窄不一的像素列
+  SC = DSC / DPR;
+  VW = Math.ceil(SW * DPR / DSC); VH = Math.ceil(SH * DPR / DSC);
   buf.width = VW; buf.height = VH;
-  DPR = Math.min(window.devicePixelRatio || 1, 2);
   cv.width = Math.round(SW * DPR); cv.height = Math.round(SH * DPR);
   cv.style.width = SW + 'px'; cv.style.height = SH + 'px';
   document.body.classList.toggle('phone', PHONE);
@@ -62,10 +63,14 @@ resize();
 /* ---------------- 输入 ---------------- */
 const IN = {
   stack: [], run: false, runLatch: false, joy: null, joyDir: -1,
+  downT: [0, 0, 0, 0], joyT: 0,      // 每个方向键按下的时刻 / 摇杆进入当前方向的时刻（performance.now 毫秒）
+  stillT: 0, runMoved: false,        // 触屏「跑」锁定：走过之后停下 0.6 秒自动关闭
   handlers: [],                      // (name)=>bool ，返回 true 表示已处理
   press(n) { for (let i = this.handlers.length - 1; i >= 0; i--) if (this.handlers[i](n)) return; },
   dir() { if (this.joyDir >= 0) return this.joyDir; return this.stack.length ? this.stack[this.stack.length - 1] : -1; },
-  running() { return this.run || this.runLatch; }
+  dirT() { if (this.joyDir >= 0) return this.joyT; return this.stack.length ? this.downT[this.stack[this.stack.length - 1]] : 0; },   // 当前方向从什么时候开始按住
+  running() { return this.run || this.runLatch; },
+  setRunLatch(v) { this.runLatch = !!v; this.stillT = 0; this.runMoved = false; const b = $('bRun'); if (b) b.classList.toggle('on', this.runLatch); }
 };
 const KEYDIR = { ArrowDown: 0, KeyS: 0, ArrowLeft: 1, KeyA: 1, ArrowRight: 2, KeyD: 2, ArrowUp: 3, KeyW: 3 };
 const KEYACT = { Space: 'a', Enter: 'a', KeyZ: 'a', KeyE: 'a', NumpadEnter: 'a', Escape: 'menu', KeyI: 'inv', Tab: 'inv', KeyJ: 'journal', KeyT: 'ctrl', KeyY: 'yes', KeyN: 'no', KeyM: 'mute', KeyX: 'b', Backspace: 'del' };   // del：密码盘里删一位，其他地方等同 b
@@ -73,7 +78,7 @@ addEventListener('keydown', e => {
   if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
   AU.init();
   if (e.code in KEYDIR) {
-    const d = KEYDIR[e.code]; if (!IN.stack.includes(d)) IN.stack.push(d);
+    const d = KEYDIR[e.code]; if (!IN.stack.includes(d)) { IN.stack.push(d); IN.downT[d] = now(); }
     if (!e.repeat) IN.press(['down', 'left', 'right', 'up'][d]); e.preventDefault(); return;   // 按住不放不连发（避免选项来回跳）
   }
   if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') { IN.run = true; return; }

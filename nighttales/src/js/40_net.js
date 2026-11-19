@@ -59,7 +59,10 @@ function onNetHost(m) {
       break;
     case 'pos':
       if (W && W.ctrl === 'g' && !W.busy && m.k === W.forceK && m.map === W.mapId) {
-        const p = W.pl; p.x = m.x; p.y = m.y; p.px = m.px; p.py = m.py; p.dir = m.d; p.fr = m.fr; if (m.pv) p.prev = m.pv;
+        const p = W.pl; p.x = m.x; p.y = m.y; p.dir = m.d; p.fr = m.fr; if (m.pv) p.prev = m.pv;
+        /* 显示位置平滑插值（hostSmoothRemote），瞬移/换图/检查点后才直接跳 */
+        const jump = p._hk !== W.forceK || p._hm !== W.mapId || p.mv || Math.abs(p.px - m.px) + Math.abs(p.py - m.py) > 40;
+        p._hx = m.px; p._hy = m.py; p._hk = W.forceK; p._hm = W.mapId; if (jump) { p.px = m.px; p.py = m.py; }
         p.rmv = !!m.mv; p.rrun = !!m.rn; p.rT = RT;
       } break;
     case 'req': if (W.ctrl === 'g') { W.ctrl = 'h'; W.req = null; UI.toast('对方把操作交给了你'); } else { W.req = 'g'; AU.sfx('select'); } break;

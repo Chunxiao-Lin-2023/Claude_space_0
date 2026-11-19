@@ -322,19 +322,27 @@ function bindUI() {
     else canvasTap(e.clientX, e.clientY);
     e.preventDefault();
   });
+  /* 四向摇杆：带滞回（另一轴要超过当前轴 1.3 倍才换向，45° 附近不来回跳）；死区 16px；摇杆头活动半径 = 底盘半径；
+     只有从中立推到某个方向时才发一次 press（菜单/选项用），推着转向不连发 */
   T.addEventListener('pointermove', e => {
     const j = IN.joy; if (!j || e.pointerId !== j.id) return;
-    let dx = e.clientX - j.x, dy = e.clientY - j.y; const l = Math.hypot(dx, dy), mx = 40;
+    let dx = e.clientX - j.x, dy = e.clientY - j.y; const l = Math.hypot(dx, dy), mx = (jb.offsetWidth || 110) / 2;
     if (l > mx) { dx = dx / l * mx; dy = dy / l * mx; }
     jk.style.left = (j.x + dx) + 'px'; jk.style.top = (j.y + dy) + 'px';
-    const pd = IN.joyDir;
-    IN.joyDir = l < 14 ? -1 : Math.abs(dx) > Math.abs(dy) ? (dx < 0 ? 1 : 2) : (dy < 0 ? 3 : 0);
-    if (IN.joyDir !== pd && IN.joyDir >= 0) IN.press(['down', 'left', 'right', 'up'][IN.joyDir]);
+    const pd = IN.joyDir, ax = Math.abs(dx), ay = Math.abs(dy), H = dx < 0 ? 1 : 2, V = dy < 0 ? 3 : 0;
+    let nd;
+    if (l < 16) nd = -1;
+    else if (pd === 1 || pd === 2) nd = ay > ax * 1.3 ? V : H;
+    else if (pd === 0 || pd === 3) nd = ax > ay * 1.3 ? H : V;
+    else nd = ax > ay ? H : V;
+    if (nd === pd) return;
+    IN.joyDir = nd; if (nd >= 0) IN.joyT = now();
+    if (pd < 0 && nd >= 0) IN.press(['down', 'left', 'right', 'up'][nd]);
   });
-  const endJ = e => { const j = IN.joy; if (!j || e.pointerId !== j.id) return; IN.joy = null; IN.joyDir = -1; jb.classList.add('hidden'); jk.classList.add('hidden'); };
+  const endJ = e => { const j = IN.joy; if (!j || e.pointerId !== j.id) return; IN.joy = null; IN.joyDir = -1; jb.classList.add('hidden'); jk.classList.add('hidden'); if (IN.runLatch) IN.setRunLatch(false); };
   T.addEventListener('pointerup', endJ); T.addEventListener('pointercancel', endJ);
   $('bA').addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); AU.init(); IN.press('a'); });
-  $('bRun').addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); IN.runLatch = !IN.runLatch; $('bRun').classList.toggle('on', IN.runLatch); });
+  $('bRun').addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); IN.setRunLatch(!IN.runLatch); });   // 锁定跑：松开摇杆或停下 0.6 秒自动关闭
   // 键盘：密码盘
   addEventListener('keydown', e => {
     if (!W || !W.keypad || !iControl() || UI.modal || e.ctrlKey || e.metaKey || e.altKey) return;

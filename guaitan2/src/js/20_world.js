@@ -139,25 +139,56 @@ function bfsStep(m, sx, sy, tx, ty, who, maxN = 2500) {
   const nx = c % W2, ny = (c / W2) | 0;
   return DIRS.findIndex(d => d[0] === nx - sx && d[1] === ny - sy);
 }
-/* 控制者本地推进玩家 */
+/* 控制者本地推进玩家
+ * 手感规则：
+ *  - 轻点（短于走一格）朝面向方向 = 正好走一格。
+ *  - 站定时按另一个方向：立刻转身；按下 0.08 秒后仍按住才迈步（按按下时刻算，不靠逐帧倒数），早松手 = 只转身。
+ *  - 连续行走时到格子还按着就直接接着走（换方向也不停顿）。
+ *  - 迟松手宽限：自动接上的那一步刚开始（进度 < 0.45 且 < 0.12 秒）就松手/换方向，平滑退回刚到的那一格停下；
+ *    退回的到达不再触发该格的踩踏脚本（那一格到达时已经触发过）。新按下开始的一步永远不退回。 */
+const TURN_HOLD = 80, UNDO_P = 0.5, UNDO_MS = 120, RUN_IDLE = 0.6;
 function updatePlayer(dt) {
   const p = W.pl, m = curMap();
+  let chain = null;   // 本帧刚走到格子（连续行走）：刚结束的那一步
   if (p.mv) {
-    const spd = p.mv.spd;
+    let mv = p.mv;
+    if (mv.chain && !mv.back && !mv.done && IN.dir() !== mv.d && mv.p < UNDO_P && now() - mv.t0 < UNDO_MS) {
+      mv = p.mv = { fx: mv.tx, fy: mv.ty, tx: mv.fx, ty: mv.fy, p: 1 - mv.p, spd: mv.spd, d: mv.d, t0: mv.t0, back: true };   // 原速退回
+      if (mv.prev0) p.prev = mv.prev0;
+    }
+    const over = Math.max(0, (mv.p + mv.spd * dt - 1) / mv.spd);   // 到格子后多出来的时间，接着走下一步时补上（连走不在每格停一帧）
     const arrived = moveEntity(p, dt);
-    if (arrived) { AU.sfx('step'); if (isHost()) onPlayerArrive(); }
-    else return;
-    void spd;
+    if (!arrived) { runLatchTick(p, dt); return; }
+    if (!mv.back) { AU.sfx('step'); if (isHost()) onPlayerArrive(); }   // 退回原格不重复触发（客机那边 x,y 根本没变过，主机也不会触发）
+    chain = mv; mv.over = over;
   }
-  if (!canMove()) { p.fr = 0; return; }
+  runLatchTick(p, dt);
+  if (!canMove()) { p.fr = 0; W._turn = null; return; }
   const d = IN.dir();
-  if (d < 0) { p.fr = 0; return; }
-  if (p.dir !== d && !p.mv && W._turnT == null) { p.dir = d; W._turnT = 0.07; return; }
-  if (W._turnT != null) { W._turnT -= dt; if (W._turnT > 0) return; W._turnT = null; }
+  if (d < 0) { p.fr = 0; W._turn = null; return; }
+  const dT = IN.dirT();
+  if (W._turn && (W._turn.d !== d || W._turn.t !== dT)) W._turn = null;   // 换了键 / 重新按过
+  if (!chain && (p.dir !== d || W._turn)) {   // 站定时转身：先转，按住够久才走
+    p.dir = d; p.fr = 0;
+    if (now() - dT < TURN_HOLD) { W._turn = { d, t: dT }; return; }
+  }
+  W._turn = null;
   p.dir = d;
   const tx = p.x + DIRS[d][0], ty = p.y + DIRS[d][1];
-  if (passable(m, tx, ty, p)) { p.prev = [p.x, p.y]; p.run = IN.running() && !W.noRun; const sp = (p.run ? RUN_SPD : WALK_SPD) * (p.speed || 1) * (m.def.speed || 1); startMove(p, d, sp); }
+  if (passable(m, tx, ty, p)) {
+    const prev0 = p.prev; p.prev = [p.x, p.y]; p.run = IN.running() && !W.noRun;
+    const sp = (p.run ? RUN_SPD : WALK_SPD) * (p.speed || 1) * (m.def.speed || 1); startMove(p, d, sp);
+    Object.assign(p.mv, { d, t0: now(), prev0, chain: !!(chain && chain.t0 != null && dT <= chain.t0) });   // 只有「上一步开始前就按住」的才算自动接上
+    if (chain && chain.over > 0) moveEntity(p, Math.min(chain.over, .5 / sp));
+  }
   else { p.fr = 0; if (isHost()) onBump(tx, ty); }
+}
+/* 触屏「跑」锁定：走过之后停下 RUN_IDLE 秒自动关闭（摇杆松开时也会关，见 50_ui） */
+function runLatchTick(p, dt) {
+  if (!IN.runLatch) return;
+  if (p.mv) { IN.runMoved = true; IN.stillT = 0; return; }
+  if (!IN.runMoved || IN.dir() >= 0) { IN.stillT = 0; return; }
+  if ((IN.stillT += dt) >= RUN_IDLE) IN.setRunLatch(false);
 }
 let lastPTile = null;
 function onPlayerArrive() {   // 仅主机
@@ -183,6 +214,14 @@ function onBump(x, y) {
   if (W.busy) return;
   const m = curMap(), es = entsAt(m, x, y, e => e.bump);
   if (es.length) runScript(es[0].bump, es[0]);
+}
+/* 主机：客机控制时，把收到的位置（30Hz）平滑插值显示，不直接跳；格子/触发仍以收到的 x,y 为准 */
+function hostSmoothRemote(dt) {
+  const p = W.pl;
+  if (p.mv || p._hx == null || p._hk !== W.forceK || p._hm !== W.mapId || W.busy) return;
+  const k = Math.min(1, dt * 20);
+  p.px += (p._hx - p.px) * k; p.py += (p._hy - p.py) * k;
+  if (Math.abs(p._hx - p.px) < .3) p.px = p._hx; if (Math.abs(p._hy - p.py) < .3) p.py = p._hy;
 }
 /* 主机：检测客机控制下玩家走到新格子 */
 function hostCheckRemoteTile() {
@@ -243,15 +282,24 @@ function chaseStep(e, m, dt) {
 }
 
 /* ---------------- 摄像机与渲染 ---------------- */
-let CAM = { x: 0, y: 0 };
+/* 跟随玩家时镜头锁在玩家的整数像素位置上（不拖尾、停下不滑），角色和背景用同一个取整后的镜头，不会相对抖动；
+ * 只有目标突然跳开 > 1.5 格（camFocus 切换、瞬移）或跟随非玩家焦点时才平滑过渡。 */
+let CAM = { x: 0, y: 0, ease: false };
 function camUpdate(dt, snap) {
-  const m = curMap(), p = W.pl;
-  let tx = p.px + 8 - VW / 2, ty = p.py + 4 - VH / 2;
-  if (W.camFocus) { tx = W.camFocus[0] * TS + 8 - VW / 2; ty = W.camFocus[1] * TS + 8 - VH / 2; }
+  const m = curMap(), p = W.pl, focus = !!W.camFocus;
+  let tx, ty;
+  if (focus) { tx = W.camFocus[0] * TS + 8 - VW / 2; ty = W.camFocus[1] * TS + 8 - VH / 2; }
+  else { tx = Math.round(p.px) + Math.floor(8 - VW / 2); ty = Math.round(p.py) + Math.floor(4 - VH / 2); }
   const mw = m.w * TS, mh = m.h * TS;
-  tx = mw <= VW ? (mw - VW) / 2 : clamp(tx, 0, mw - VW);
-  ty = mh <= VH ? (mh - VH) / 2 : clamp(ty, 0, mh - VH);
-  if (snap) { CAM.x = tx; CAM.y = ty; } else { const k = Math.min(1, dt * 10); CAM.x += (tx - CAM.x) * k; CAM.y += (ty - CAM.y) * k; }
+  tx = mw <= VW ? Math.round((mw - VW) / 2) : clamp(tx, 0, mw - VW);
+  ty = mh <= VH ? Math.round((mh - VH) / 2) : clamp(ty, 0, mh - VH);
+  if (snap) { CAM.x = tx; CAM.y = ty; CAM.ease = false; return; }
+  if (focus || Math.abs(tx - CAM.x) > TS * 1.5 || Math.abs(ty - CAM.y) > TS * 1.5) CAM.ease = true;
+  if (!CAM.ease) { CAM.x = tx; CAM.y = ty; return; }
+  const k = Math.min(1, dt * (focus ? 10 : 12)), vmin = focus ? 0 : 160 * dt;   // 回到玩家时有最低速度，边走边追也一定追得上
+  const step = (c, t) => { const d = t - c, s = Math.max(Math.abs(d) * k, vmin); return Math.abs(d) <= s ? t : c + Math.sign(d) * s; };
+  CAM.x = step(CAM.x, tx); CAM.y = step(CAM.y, ty);
+  if (!focus && CAM.x === tx && CAM.y === ty) CAM.ease = false;
 }
 const lightCv = mk(320, 200), lx = lightCv.getContext('2d');
 let RT = 0;    // 渲染用时间（秒）
@@ -388,7 +436,7 @@ function vignette(g) {
 }
 function blit() {
   cx.imageSmoothingEnabled = false;
-  cx.drawImage(buf, 0, 0, VW, VH, 0, 0, VW * SC * DPR, VH * SC * DPR);
+  cx.drawImage(buf, 0, 0, VW, VH, 0, 0, VW * DSC, VH * DSC);
 }
 
 /* ---------------- 屏幕特效 ---------------- */
