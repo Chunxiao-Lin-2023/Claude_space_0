@@ -14,22 +14,27 @@ const { chromium } = require('playwright');
     for (const n of [1, 2, 3, 4, 6, 8, 12, 15]) {
       startGame(777, ['甲'], 'normal', 0, 'classic', 'town'); W.night = n - 1; startNight();
       const q = W.spawnQ, kinds = {}; for (const s of q) kinds[s.k] = (kinds[s.k] || 0) + 1;
-      const packs = new Set(q.map(s => s.side + ':' + s.f)).size;
-      out.push({ n, total: q.length, packs, sides: new Set(q.map(s => s.side)).size, kinds, hp: +BAL.hpMul(n).toFixed(2), spd: +BAL.spdMul(n).toFixed(2), last: Math.round(q[q.length - 1].t) });
+      const packs = new Set(q.map(s => s.g)).size, spots = new Set(q.map(s => s.side + ':' + s.at)).size, mixed = [...new Set(q.map(s => s.g))].filter(g => new Set(q.filter(s => s.g === g).map(s => s.k)).size > 1).length;
+      out.push({ n, total: q.length, packs, spots, mixed, sides: new Set(q.map(s => s.side)).size, kinds, hp: +BAL.hpMul(n).toFixed(2), spd: +BAL.spdMul(n).toFixed(2), last: Math.round(q[q.length - 1].t) });
     }
     return out;
   });
-  for (const r of curve) console.log('      night', String(r.n).padStart(2), 'zombies', String(r.total).padStart(3), 'in', String(r.packs).padStart(3), 'packs from', r.sides, 'side(s), hp x' + r.hp, 'speed x' + r.spd, 'all out by', r.last + 's', JSON.stringify(r.kinds));
+  for (const r of curve) console.log('      night', String(r.n).padStart(2), 'zombies', String(r.total).padStart(3), 'in', String(r.packs).padStart(3), 'herds (' + r.mixed + ' mixed, ' + r.spots + ' spawn spots) from', r.sides, 'side(s), hp x' + r.hp, 'speed x' + r.spd, 'all out by', r.last + 's', JSON.stringify(r.kinds));
   check('night 1 already has more than walkers and crawlers', curve[0].kinds.runner > 0 && curve[0].total >= 40, JSON.stringify(curve[0].kinds));
   check('each night brings more than the last', curve.every((r, i) => !i || r.total > curve[i - 1].total || (curve[i - 1].n % 5 === 0)));
-  check('zombies come in packs (several per spot)', curve.every(r => r.packs < r.total * 0.5));
+  check('zombies come in herds (several per herd)', curve.every(r => r.packs < r.total * 0.5));
+  check('a herd is spread over the edge (not one spawn cell) and some herds are mixed', curve.every(r => r.spots > r.packs * 1.5) && curve.slice(1).every(r => r.mixed > 0), JSON.stringify(curve.map(r => [r.spots, r.packs, r.mixed])));
   // packs stay together on the way in
   const spread = await p.evaluate(() => new Promise(res => {
     startGame(778, ['甲'], 'normal', 0, 'classic', 'town'); window.__dbg.god = true; window.__dbg.speed = 6; W.night = 0; startNight();
     const t0 = W.t; const f = () => { if (W.t - t0 < 25) return setTimeout(f, 50);
       const zs = W.zs.filter(z => z.hp > 0), nn = zs.map(z => Math.min(...zs.filter(o => o !== z).map(o => Math.hypot(o.x - z.x, o.y - z.y)))); nn.sort((a, b) => a - b);
-      window.__dbg.speed = 1; res({ n: zs.length, median: +nn[nn.length >> 1].toFixed(2) }); }; f(); }));
-  check('a pack walks in close together (median gap to the nearest zombie < 1.6)', spread.median < 1.6, JSON.stringify(spread));
+      const byG = {}; for (const z of zs) if (z.g) (byG[z.g] = byG[z.g] || []).push(z);
+      const herds = Object.values(byG).filter(a => a.length >= 3), spreadG = herds.map(a => { const cx = a.reduce((s, z) => s + z.x, 0) / a.length, cy = a.reduce((s, z) => s + z.y, 0) / a.length; return Math.max(...a.map(z => Math.hypot(z.x - cx, z.y - cy))); });
+      const spds = herds.map(a => new Set(a.map(z => z.spd.toFixed(2))).size >= a.length * 0.6 && Math.max(...a.map(z => z.spd)) - Math.min(...a.map(z => z.spd)) > 0.1);
+      window.__dbg.speed = 1; res({ n: zs.length, median: +nn[nn.length >> 1].toFixed(2), herds: herds.length, radius: spreadG.map(v => +v.toFixed(1)), ownPace: spds.every(Boolean) }); }; f(); }));
+  check('a herd arrives as a loose crowd: not single file, not a solid block (gap 0.6–2.5, herd radius < 9)', spread.median > 0.6 && spread.median < 2.5 && spread.radius.every(r => r < 9), JSON.stringify(spread));
+  check('everyone in a herd keeps its own pace', spread.ownPace, JSON.stringify(spread));
   // ---- area weapons, on cleared open ground
   await p.evaluate(() => {
     startGame(779, ['甲'], 'normal', 0, 'classic', 'town'); window.__dbg.god = true; window.__dbg.speed = 1; W.night = 1;

@@ -14,7 +14,7 @@ function newWorld(seed, names, diff, mode) {
     mode: MODES[mode] ? mode : 'classic', map: MAP_ID, obj: {}, obv: 1,
     seed, t: 0, G: m.G, tt: m.tt, blk: m.blk, bhp: m.bhp, slab: m.slab, shp: m.shp, bdir: m.bdir, stab: new Int8Array(NC), srch: new Set(),
     radio: { x: m.radio.x, y: m.radio.y }, bench: m.bench, tasks: [], tkv: 0, clean: true,
-    p: names.map((n, i) => mkPlayer(i, n)), zs: [], proj: [], zid: 1,
+    p: names.map((n, i) => mkPlayer(i, n)), zs: [], proj: [], zid: 1, gid: 0,
     phase: 'day', clock: BAL.dayLen[0], dayLen: BAL.dayLen[0], night: 0, res: Object.assign({}, BAL.startRes), upg: 0, kills: 0,
     spawnQ: [], nightT: 0, strayT: 8, diff, D: BAL.diff[diff] || BAL.diff.normal, rng: mulberry(seed ^ 0x9e3779b9), seq: 0,
     dirty: new Set(), endless: false, over: null, stats: { built: 0, lost: 0 }, navDirty: true, ver: 1,
@@ -549,8 +549,14 @@ function startNight() {
     const [a, b] = PACK[type] || [1, 1], size = Math.min(type === 'dog' ? 3 : count - k, a + Math.floor(rand() * (b - a + 1)));
     const frac = k / count, burst = Math.floor(frac * 6) / 6;
     const t0 = (frac < 0.25 ? frac * 12 : lerp(burst, frac, 0.55) * dur) + rand() * 2.5, side = front[Math.floor(rand() * front.length)]; // a quarter rushes in at once
-    const L = W.edges[side] || [], at = L.length ? Math.floor(rand() * L.length) : -1, f = 0.88 + rand() * 0.24;   // a pack: one spot on the edge, one pace
-    for (let j = 0; j < size; j++) q.push({ t: t0 + j * 0.35, k: type, side, at: at < 0 ? -1 : clamp(at + (j % 3) - 1, 0, L.length - 1), f });
+    // a herd: comes out of the wilds in roughly the same stretch of the edge over a few seconds, mostly one kind with a few others mixed in;
+    // each keeps its own pace, the herd just loosely keeps together on the way (stepZombies: stragglers hurry, leaders hang back)
+    const L = W.edges[side] || [], at = L.length ? Math.floor(rand() * L.length) : -1, g = W.gid = (W.gid || 0) + 1;
+    for (let j = 0; j < size; j++) {
+      let kk = type; if (type !== 'dog' && j > 0 && rand() < 0.25) { let r2 = rand() * tot; for (const key in wts) { r2 -= wts[key]; if (r2 <= 0) { kk = key === 'dog' ? 'walker' : key; break; } } }
+      const off = Math.round((rand() + rand() + rand() - 1.5) * 3);
+      q.push({ t: t0 + j * 0.5 + rand() * 1.2, k: kk, side, at: at < 0 ? -1 : clamp(at + off, 0, L.length - 1), f: 0, g });
+    }
     k += type === 'dog' ? 1 : size;
   }
   if (blood) q.push({ t: dur * 0.55, k: 'boss', side: front[0] });
@@ -575,10 +581,11 @@ function dawn() {
   }
   emit({ k: 'dawn', n: W.night });
 }
-function spawnZombie(k, side, at, f) {
+function spawnZombie(k, side, at, f, g) {
   const Z = ZT[k], n = Math.max(1, W.night), D = W.D;
   const list = W.edges[side] && W.edges[side].length ? W.edges[side] : W.edges[0];
-  const [x, y, L] = list[at != null && at >= 0 && at < list.length ? at : Math.floor(rand() * list.length)];
+  let [x, y, L] = list[at != null && at >= 0 && at < list.length ? at : Math.floor(rand() * list.length)];
+  if (g) { const o = Math.round(rand() * 4 - 2), nx = x + Math.sign(W.radio.x - x) * o, ny = y + Math.sign(W.radio.y - y) * o, nL = inMap(nx, ny) ? gAt(nx, ny) : -1; if (nL >= 0 && standable(nx, ny, nL, 'z') && W.ff.rw[ci(nx, ny, nL)] < Infinity) { x = nx; y = ny; L = nL; } } // a herd is a crowd, not a queue
   const hpM = BAL.hpMul(n) * D.hp * (k === 'boss' ? 1 + n / 10 : 1) * (activeP().length > 1 ? 1.15 : 1);
   const z = { id: W.zid++, k, x: x + 0.5, y: y + 0.5, L, z: L * FH, r: Z.r, h: Z.h, hp: Z.hp * hpM, max: Z.hp * hpM, spd: Z.spd * BAL.spdMul(n) * (f || (0.85 + rand() * 0.3)), face: 0, cd: rand(), st: 'walk', stun: 0, kbx: 0, kby: 0, hitT: 0, atk: 0, anim: rand() * 6, seed: (rand() * 1e6) | 0, spitT: 1 + rand() * 2, climbT: 0 };
   W.zs.push(z);
@@ -592,7 +599,7 @@ function stepPhase(dt) {
     if (W.clock <= 0) startNight();
   } else if (W.phase === 'night') {
     W.nightT += dt;
-    while (W.spawnQ.length && W.spawnQ[0].t <= W.nightT && W.zs.length < BAL.zCap()) { const s = W.spawnQ.shift(); spawnZombie(s.k, s.side, s.at, s.f); }
+    while (W.spawnQ.length && W.spawnQ[0].t <= W.nightT && W.zs.length < BAL.zCap()) { const s = W.spawnQ.shift(); const z = spawnZombie(s.k, s.side, s.at, s.f, s.g); if (s.g) z.g = s.g; }
     const minT = BAL.nightMin(W.night);
     // after the horde, small groups keep coming until the night has run its minimum length
     if (!W.spawnQ.length && W.nightT < minT) {

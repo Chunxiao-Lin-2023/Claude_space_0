@@ -13,6 +13,9 @@ function stepZombies(dt) {
   const F = W.ff, zs = W.zs;
   const grid = new Map();
   for (const z of zs) { if (z.hp <= 0) continue; const key = ci(Math.floor(z.x), Math.floor(z.y), z.L); let a = grid.get(key); if (!a) grid.set(key, a = []); a.push(z); }
+  // herds: how far along the way each herd is on average (player field), so stragglers can hurry and the ones out in front hang back
+  const herd = new Map();
+  for (const z of zs) { if (z.hp <= 0 || !z.g) continue; const v = F.pw[ci(Math.floor(z.x), Math.floor(z.y), z.L)]; if (!(v < Infinity)) continue; const h = herd.get(z.g) || { s: 0, n: 0 }; h.s += v; h.n++; herd.set(z.g, h); }
   for (const z of zs) {
     if (z.hp <= 0) continue;
     const Z = ZT[z.k], climbT = !!Z.climb;
@@ -111,7 +114,8 @@ function stepZombies(dt) {
     let mx = 0, my = 0;
     if (tx != null && z.stun <= 0) {
       const dx = tx - z.x, dy = ty - z.y, d = Math.hypot(dx, dy);
-      const rg = z.rage > 0 ? BAL.rageMul : 1;
+      let rg = z.rage > 0 ? BAL.rageMul : 1;
+      const hd = z.g && herd.get(z.g); if (hd && hd.n >= 3 && field === pf) rg *= clamp(1 + (field[i] - hd.s / hd.n) * 0.06, 0.78, 1.22);
       if (d > 0.02) { mx = dx / d * z.spd * slow * rg; my = dy / d * z.spd * slow * rg; z.face = Math.atan2(dy, dx); }
     }
     z.kbx *= Math.max(0, 1 - dt * 6); z.kby *= Math.max(0, 1 - dt * 6);
