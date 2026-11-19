@@ -412,6 +412,8 @@ button.card:hover{transform:translateY(-2px);border-color:var(--sc)}
   .result img{width:96px;height:96px}
   .center h2{font-size:44px}
 }
+.sk2grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}.sk2grid .chip{justify-content:center}.sk2s{margin-top:14px}
+@media (max-width:560px){.sk2grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .sk2c b{font:900 15px/1 "Noto Serif SC",serif;color:#9fe8d8;margin-right:5px}.sk2c small{margin-left:5px;color:#8f9a9a;font-size:11px}.sk2c[aria-pressed=true] b{color:#f2cb7a}
 /* 附加技能键：在英雄技能键左边，小一号，青色描边 */
 .skillb.s2{width:56px;height:56px;right:calc(max(16px,env(safe-area-inset-right,0px)) + 78px);bottom:calc(18px + env(safe-area-inset-bottom,0px));border-color:#5fb8a8;color:#bff3ea}
@@ -2549,7 +2551,7 @@ function coopSkill(path){if(PL.length<2)return;const me=CUR,mate=PL.find(p=>p!==
   case 'storm':{const dm=skillDmg(7);for(let k=0;k<4;k++)delayed.push({t:0.15+k*0.3,pl:mate,fn:()=>skyBolt(dm)});tag('雷暴');break;}
   case 'wind':{const low=mate.run.hp<(mate.S.hp||40)*0.4,crowd=enemies.filter(e=>!e.dead&&!e.seg&&Math.hypot(e.x-q.x,e.y-q.y)<160+e.r).length>=5;
    const ex=path?path[2]:P.x,ey=path?path[3]:P.y;if((low||crowd)&&Math.hypot(q.x-ex,q.y-ey)>120){let tx=ex,ty=ey;for(let k=0;k<12;k++){const a=k*TAU/12,x=ex+Math.cos(a)*42,y=ey+Math.sin(a)*42;if(freeSpot(x,y,16)){tx=x;ty=y;break;}}
-    ringFx(q.x,q.y,60,'#ddd8bf',0.4);fxs.push({type:'dash',x0:q.x,y0:q.y,x1:tx,y1:ty,life:0.35,max:0.35});q.x=tx;q.y=ty;q.kx=q.ky=0;q.jump=null;q.inv=Math.max(q.inv||0,1);ringFx(tx,ty,60,'#ddd8bf',0.4);
+    ringFx(q.x,q.y,60,'#ddd8bf',0.4);fxs.push({type:'dash',x0:q.x,y0:q.y,x1:tx,y1:ty,life:0.35,max:0.35});q.x=tx;q.y=ty;q.tx=tx;q.ty=ty;q.kx=q.ky=0;q.jump=null;q.inv=Math.max(q.inv||0,1);ringFx(tx,ty,60,'#ddd8bf',0.4);
     if(mate!==ME())netSend({t:'tp',x:Math.round(tx),y:Math.round(ty)});addText(tx,ty-50,'协力 · 拉回身边','#9fe8d8',15);}break;}
   case 'merchant':{const Rr=140*rangeMul();ringFx(q.x,q.y,Rr,C.t4,0.45);for(const e of enemies){if(e.dead||e.seg||e.boss)continue;if(Math.hypot(e.x-q.x,e.y-q.y)<Rr+e.r){const a=Math.atan2(e.y-q.y,e.x-q.x);e.x=clamp(e.x+Math.cos(a)*100,e.r,WORLD.w-e.r);e.y=clamp(e.y+Math.sin(a)*100,e.r,WORLD.h-e.r);}}tag('震开');break;}
  }}
@@ -3512,6 +3514,7 @@ function playerUpdate(p,dt){
  stealClock-=dt;if(stealClock<=0){stealClock=0.25;const LC=defCap().ls,cap=(LC[0]+S.hp*LC[1])*0.25;stealPool=Math.min(stealPool,cap*4);const amt=Math.min(Math.floor(stealPool),Math.ceil(cap));if(amt>0){stealPool-=amt;heal(amt,'steal');}}
  if(p===ME())moveLocal(dt);
  else{ // remote player: position comes from the network, animate locally
+  if(P.tx!=null){const k=Math.min(1,dt*20);P.x+=(P.tx-P.x)*k;P.y+=(P.ty-P.y)*k;}
   if(P.moving){P.mface=P.face;P.anim+=dt;}else P.anim+=dt*0.4;
   P.dface+=angDiff(P.mface,P.dface)*Math.min(1,dt*LB.turn);}
  P.inv-=dt;dodgeBuff-=dt;stormCD-=dt;skillTick(dt);
@@ -3636,7 +3639,7 @@ function spawnPos(i,n){return n<2?[WORLD.w/2,WORLD.h/2]:[WORLD.w/2+(i?40:-40),WO
 function startWave(){
  run.wave++;waveSpawned=0;for(const p of PL)p.run.evoNote=0;if(relief&&run.wave>=FINAL_WAVE)relief=null;state='battle';paused=false;abandonArm=hubArm=false;run.victory=false;
  for(const p of PL){
-  use(p);computeStats();run.hp=S.hp;run.skCD=0;run.sk2CD=0;run.frz=0;run.sk2Opts=null;run.eagle=0;run.stormT=0;run.wk0=run.kills;run.minHpR=1;run.helpNeed=null;p.down=false;p.ready=false;p.rv=0;p.rvk=0;p.revives=0;p.reviving=null;
+  use(p);computeStats();run.hp=S.hp;run.skCD=0;run.sk2CD=0;run.frz=0;run.eagle=0;run.stormT=0;run.wk0=run.kills;run.minHpR=1;run.helpNeed=null;p.down=false;p.ready=false;p.rv=0;p.rvk=0;p.revives=0;p.reviving=null;
   [P.x,P.y]=spawnPos(p.id,PL.length);P.inv=1;P.moving=false;P.jump=null;P.air=false;P.jh=0;P.tpCD=0;P.padCD=0;P.tpT=0;
   dodgeBuff=0;regenAcc=0;stealPool=0;stealClock=0;
   for(const w of run.weapons){const same=run.weapons.filter(x=>x.key===w.key);w.dup=same.indexOf(w);w.dupN=same.length;w.t=rand(0,0.15)+wCD(w)*w.dup/w.dupN;
@@ -3698,7 +3701,7 @@ function endWave(){
  if(NET.role==='host')netPrep();
 }
 // pre-roll the random choices the prep screen shows, so host and guest always see the same ones
-function ensurePrepChoices(){if(!run.sk2Opts)run.sk2Opts=SK2K.slice();if(run.pendingLevels>0&&!run.lvChoices)run.lvChoices=rollLv();if(run.chests.length&&!run.chestItem)run.chestItem=pick(itemPool(run.chests[0])).n;}
+function ensurePrepChoices(){if(run.pendingLevels>0&&!run.lvChoices)run.lvChoices=rollLv();if(run.chests.length&&!run.chestItem)run.chestItem=pick(itemPool(run.chests[0])).n;}
 function togglePause(){
  if(state!=='battle')return;
  if(NET.mode!=='solo'){const pz=$('#pause');if(pz.hidden){abandonArm=hubArm=false;renderPause();pz.hidden=false;}else pz.hidden=true;return;}
@@ -3825,6 +3828,10 @@ function renderMenu(){
   <div class="gobar">${startBtn()}</div>
  </div>`;
 }
+function sk2Panel(){const L=sk2L(run.wave+1),cur=SK2[run.sk2]?run.sk2:null;
+ return `<section class="panel frame sk2s"><div class="panel-h"><h3>附加技能 · 下一波 Lv${L}</h3><span class="hint grow">8 选 1，和英雄技能一起用 · Q 键 / 英雄技能键左边的第二个按钮 · 第 6 波 Lv2、第 11 波 Lv3</span></div>
+  <div class="sk2grid">${SK2K.map((k,i)=>`<button class="chip sk2c" data-act="sk2" data-i="${i}" aria-pressed="${k===cur}"><b>${SK2[k].g}</b>${SK2[k].n}<small>${sk2Cd(k,L)}s</small></button>`).join('')}</div>
+  <p class="wdesc">${cur?`当前：<b>${SK2[cur].n} · Lv${L}</b>（冷却 ${sk2Cd(cur,L)} 秒）${SK2[cur].d(sk2V(cur,L))}`:'还没选：点一个，下一波就能用。'}</p></section>`;}
 function renderPrep(){
  closeInspect();
  if(NET.role!=='guest'){use(ME());computeStats();ensurePrepChoices();}else computeStats();
@@ -3869,9 +3876,8 @@ function renderPrep(){
    <div class="ttl"><h2>第 ${run.wave} 波完成</h2><div class="sub"><span>${H.name} · ${DIFF[run.diff].name} · ${MAP.name}</span><span>下一波 ${next} / ${FINAL_WAVE}</span>${next===ELITE_WAVE?'<span class="warn">精英首领</span>':''}${MINI_WAVES.includes(next)&&run.minis?`<span class="warn">小首领 · ${(next===MINI_WAVES[1]&&run.diff>=2?run.minis.slice(1,3):next===MINI_WAVES[0]&&run.diff>=3?[run.minis[0],run.minis[3]||run.minis[1]]:[run.minis[next===MINI_WAVES[0]?0:1]]).map(k=>MINIS.find(m=>m.key===k).name).join('、')}</span>`:''}${next===6||next===12?`<span class="warn">敌人进化 · ${EVO_N[next===6?1:2]}</span>`:''}${run.evoNote&&run.evo&&EVOS[H.key]?`<span class="warn">英雄终阶进化：${EVOS[H.key].C[0]}</span>`:''}${next===FINAL_WAVE?'<span class="warn">最终首领，击败即通关</span>':''}<span>本波收入 +${lastSummary.harvest}</span>${lastSummary.interest?`<span>利息 +${lastSummary.interest}</span>`:''}${lastSummary.swept?`<span>地上金币自动收取 +${lastSummary.swept}</span>`:''}${lastSummary.help?`<span class="helpln">${lastSummary.help>1?'苦战':'逆风'}补给：补贴 +${lastSummary.sub} 金 · 免费刷新 ×${HELP.rerolls[lastSummary.help]} · 商店一件 7 折对症补给${lastSummary.relief?' · 下一波敌人更少更脆':''}</span>`:''}${ground?`<span>地上还有 ${ground} 金币待拾取</span>`:''}</div></div>
    <div class="act">${blocked?`<span class="blk">${pending?'先选完升级属性':'先处理宝箱'}</span>`:''}${mateLine()}<div class="bank"><span class="qian"></span><span class="num">${run.gold}</span></div><button class="btn" data-act="next" ${blocked||myReady()?'disabled':''}>${myReady()?'已准备 · 等待队友':NET.mode==='solo'?`开始第 ${next} 波`:`准备好了 · 第 ${next} 波`}</button></div>
   </header>
-  <div class="prep-grid"><div class="pmain">${main}</div>
+  <div class="prep-grid"><div class="pmain">${main}${sk2Panel()}</div>
    <aside class="side frame">
-    ${run.sk2Opts?`<section class="sp sk2s"><h3>附加技能 · Lv${sk2L(run.wave+1)}<small class="ihint">下一波和英雄技能一起用 · Q 键 / 第二个技能按钮</small></h3><div class="row">${(run.sk2&&!run.sk2Opts.includes(run.sk2)?[run.sk2]:[]).concat(run.sk2Opts).map(k=>`<button class="chip sk2c" data-act="sk2" data-i="${run.sk2Opts.indexOf(k)}" aria-pressed="${k===run.sk2}" ${run.sk2Opts.includes(k)?'':'disabled'}><b>${SK2[k].g}</b>${SK2[k].n}<small>${sk2Cd(k,sk2L(run.wave+1))}s</small></button>`).join('')}</div><p class="wdesc">${(()=>{const L=sk2L(run.wave+1);return (run.sk2?`当前：<b>${SK2[run.sk2].n} · Lv${L}</b>（冷却 ${sk2Cd(run.sk2,L)} 秒）${SK2[run.sk2].d(sk2V(run.sk2,L))}`:'挑一个，下一波就能用。不挑也行。')+`<br><span class="dim">技能随波次升级：第 6 波 Lv2、第 11 波 Lv3，效果更强、冷却更短</span>`;})()}</p></section>`:''}
     ${coopPrep()?`<section class="sp"><h3>送给队友<small class="ihint">武器、道具在详情里送</small></h3><div class="row"><button class="mini" data-act="giftgold" data-i="10" ${run.gold<1?'disabled':''}>送 10 金</button><button class="mini" data-act="giftgold" data-i="30" ${run.gold<1?'disabled':''}>送 30 金</button><button class="mini" data-act="giftgold" data-i="-1" ${run.gold<2?'disabled':''}>送一半</button></div></section>`:''}
     <section class="sp"><h3>武器栏 <b>${run.weapons.length} / ${run.maxSlots}</b><small class="ihint">点武器或道具看详情</small></h3><div class="wslots">${slots.join('')}</div></section>
     <section class="sp"><h3>道具 <b>${run.items.length}</b></h3><div class="items">${items||'<span class="dim">还没有道具</span>'}</div></section>
@@ -3968,7 +3974,7 @@ function restat(m){const keep=CUR;use(m);computeStats();use(keep);computeStats()
 function prepAct(act,i){
  let msg='';
  switch(act){
-  case 'sk2':{const o=run.sk2Opts&&run.sk2Opts[i];if(o&&SK2[o]){run.sk2=o;msg='下一波附加技能：'+SK2[o].n;}break;}
+  case 'sk2':{const o=SK2K[i];if(o&&SK2[o]){run.sk2=o;msg='下一波附加技能：'+SK2[o].n;}break;}
   case 'evo':{if(!run.evoPending||!EVOS[H.key])break;run.evo={b:i?'B':'A'};run.evoPending=0;computeStats();msg=`${H.name}进化：${EVOS[H.key][run.evo.b][0]}`;break;}
   case 'lv':{const c=run.lvChoices&&run.lvChoices[i];if(!c||run.pendingLevels<=0)break;run.lv[c.k]=(run.lv[c.k]||0)+c.v;run.pendingLevels--;run.lvChoices=null;break;}
   case 'lvreroll':if(run.gold>=run.lvRerollCost){run.gold-=run.lvRerollCost;run.lvRerollCost+=2;run.lvChoices=rollLv();}break;
@@ -4055,7 +4061,7 @@ $('#pauseBtn').addEventListener('click',togglePause);
    Two data channels: 'ctl' (ordered, for lobby/wave/prep/over messages) and 'snap' (unordered, for
    snapshots + movement). Signalling uses the free public PeerJS server unless ?peerhost=... is given. */
 const inArtifact=()=>!!(window.claude&&typeof window.claude.use==='function')||/(^|\.)(claudeusercontent\.com|claude\.ai|claude\.site)$/.test(location.hostname);
-const NET={fxId:0,mode:'solo',role:null,me:0,peer:null,ctl:null,snap:null,code:'',status:'',joinCode:'',peerPick:null,hostPick:null,mate:null,meReady:false,sT:0,inT:0,snapAge:0,snapInt:1/20,lastHp:null,lastLvl:0,timer:null};
+const NET={fxId:0,inQ:0,sQ:0,rQ:0,rInQ:0,mode:'solo',role:null,me:0,peer:null,ctl:null,snap:null,code:'',status:'',joinCode:'',peerPick:null,hostPick:null,mate:null,meReady:false,sT:0,inT:0,snapAge:0,snapInt:1/20,lastHp:null,lastLvl:0,timer:null};
 const PEER_SRC=['https://unpkg.com/peerjs@1.5.5/dist/peerjs.min.js','https://cdn.jsdelivr.net/npm/peerjs@1.5.5/dist/peerjs.min.js'];
 const QS=new URLSearchParams(location.search);
 const PEER_OPTS=QS.get('peerhost')?{host:QS.get('peerhost'),port:+(QS.get('peerport')||9000),path:QS.get('peerpath')||'/',secure:QS.get('peersecure')==='1'}:{};
@@ -4094,7 +4100,7 @@ async function netHost(){
   peer.on('error',err=>{if(err.type==='unavailable-id'&&tries<4){try{peer.destroy();}catch(e){}open(tries+1);}else if(NET.role==='host'&&!connected())netFail('创建房间失败（'+err.type+'）');});
   peer.on('disconnected',()=>{if(NET.peer===peer&&!peer.destroyed)try{peer.reconnect();}catch(e){}});
   peer.on('connection',conn=>{
-   if(conn.label==='snap'){NET.snap=conn;conn.on('data',d=>{try{hostFast(JSON.parse(d));}catch(e){}});return;}
+   if(conn.label==='snap'){NET.snap=conn;NET.rInQ=0;conn.on('data',d=>{try{hostFast(JSON.parse(d));}catch(e){}});return;}
    if(connected()||state!=='menu'){conn.on('open',()=>{conn.send(JSON.stringify({t:'busy'}));setTimeout(()=>conn.close(),300);});return;}
    NET.ctl=conn;
    conn.on('data',d=>{try{hostRecv(JSON.parse(d));}catch(e){console.error(e);}});
@@ -4158,7 +4164,8 @@ function hostRecv(m){
 function hostFast(m){
  if(m.t!=='in')return;
  const g=PL[1];if(!g||g.down||state!=='battle')return;
- const p=g.P;p.x=clamp(+m.x||p.x,p.r,WORLD.w-p.r);p.y=clamp(+m.y||p.y,p.r,WORLD.h-p.r);p.face=+m.f||0;p.moving=!!m.m;p.jh=+m.j||0;p.air=p.jh>0;
+ if(m.q!=null){if(m.q<=NET.rInQ&&m.q>NET.rInQ-5000)return;NET.rInQ=m.q;}
+ const p=g.P;p.tx=clamp(+m.x||p.x,p.r,WORLD.w-p.r);p.ty=clamp(+m.y||p.y,p.r,WORLD.h-p.r);if(p.tx0==null||Math.hypot(p.tx-p.x,p.ty-p.y)>240){p.x=p.tx;p.y=p.ty;}p.tx0=1;p.face=+m.f||0;p.moving=!!m.m;p.jh=+m.j||0;p.air=p.jh>0;
 }
 function netStartRun(){}
 function netWave(bn){
@@ -4189,7 +4196,7 @@ function netSnapshot(){
   wp:p.run.weapons.map(w=>[WKEYS.indexOf(w.key),w.tier,w.fc||0,w.fu?WKEYS.indexOf(w.fu):-1]),
   bl:p.run.weapons.filter(w=>hasBl(w)&&w.blades).map(w=>[w.tier,w.blades.map(b=>[R1(b[0]-p.P.x),R1(b[1]-p.P.y),R2(b[2])])])};});
  const g=PL[1];
- const msg={t:'s',tg:R2(tGame),wt:waveTimer===Infinity?-1:R2(waveTimer),en,bo,pr,
+ const msg={t:'s',q:++NET.sQ,tg:R2(tGame),wt:waveTimer===Infinity?-1:R2(waveTimer),en,bo,pr,
   eb:ebul.map(b=>[R1(b.x),R1(b.y),R1(b.vx),R1(b.vy),b.r,b.home?1:0,b.pool?1:0]),
   gz:gz.map(g=>[GZK.indexOf(g.k),g.x,g.y,g.r,R2(g.life),g.max,g.s]),
   pp:props.map(p=>[PROPK.indexOf(p.k),p.x,p.y,R2(p.prog),R1(Math.max(0,p.cd)),p.on?1:0,R2(p.ch||0)]),bs:hz.br?hz.br.map(b=>b.st):null,wd:hz.wind?[R2(hz.wind.a),R2(hz.wind.s),hz.wind.st]:null,rn:hz.rune?[hz.rune.on,hz.rune.k]:null,sq:hz.spr?hz.spr.map(Math.round):null,bq:hz.brl?hz.brl.map(b=>[b.st,R1(b.t)]):null,kq:hz.spk?hz.spk.map(q=>q.st):null,mx:mechs.map(m=>{const o={};for(const k in m)if(k!=='hit'&&k!=='own')o[k]=typeof m[k]==='number'?R2(m[k]):m[k];return o;}),db:debris.map(b=>[b.x,b.y,b.r,R1(b.life),b.s]),hf:R1(hz.friendT||0),ev:evt&&evt.k==='drop'&&evt.st===1?[evt.x,evt.y,R2(evt.dt)]:null,gc:MAP.pools?MAP.pools.map(pl=>pl.gcd>0?1:0):null,
@@ -4228,7 +4235,7 @@ function guestRecv(m){
  }
 }
 function guestWave(m){
- G=m.G;
+ G=m.G;NET.rQ=0;
  if(!MAP||MAP.key!==m.map||!FLOOR)setupMap(m.map);
  obstacles=m.obs||obstacles;resetHazards();nxSetup();
  const mine=bindShared(m.me),mate=bindShared({hero:m.mate.hero,skin:m.mate.skin,weapons:[],hp:1});
@@ -4254,6 +4261,7 @@ function guestPrep(m){
 const lerp=(a,b,k)=>a+(b-a)*k;
 function guestFast(m){
  if(m.t!=='s'||state!=='battle'||!PL[1])return;
+ if(m.q!=null){if(m.q<=NET.rQ&&m.q>NET.rQ-5000)return;NET.rQ=m.q;}  // 无序通道：过期快照直接丢
  const now=performance.now();if(NET.lastRecv)NET.snapInt=clamp(lerp(NET.snapInt,(now-NET.lastRecv)/1000,0.2),0.03,0.15);NET.lastRecv=now;
  if(Math.abs(m.tg-tGame)>0.25)tGame=m.tg;
  waveTimer=m.wt<0?Infinity:m.wt;
@@ -4311,7 +4319,7 @@ function guestUpdate(dt){
  const me=PL[NET.me];if(!me)return;use(me);
  if(!me.down)moveLocal(dt);else P.moving=false;
  P.inv-=dt;dodgeBuff-=dt;if(run.skCD>0)run.skCD=Math.max(0,run.skCD-dt*(run.bB>0?1.6:1));
- NET.inT-=dt;if(NET.inT<=0){NET.inT=1/30;netSendFast({t:'in',x:R1(P.x),y:R1(P.y),f:R2(P.face),m:P.moving?1:0,j:R1(P.jh||0)});}
+ NET.inT-=dt;if(NET.inT<=0){NET.inT=1/30;netSendFast({t:'in',q:++NET.inQ,x:R1(P.x),y:R1(P.y),f:R2(P.face),m:P.moving?1:0,j:R1(P.jh||0)});}
  NET.snapAge+=dt;const k=clamp(NET.snapAge/NET.snapInt,0,1);
  for(const e of enemies){e.x=lerp(e._x0,e._x1,k);e.y=lerp(e._y0,e._y1,k);if(e.segs)for(const s of e.segs){s.x=lerp(s._x0,s._x1,k);s.y=lerp(s._y0,s._y1,k);}}
  for(const p of PL){if(p===me)continue;const q=p.P;if(q._x1!=null){q.x=lerp(q._x0,q._x1,k);q.y=lerp(q._y0,q._y1,k);}if(q.moving)q.anim+=dt;q.dface+=angDiff(q.mface,q.dface)*Math.min(1,dt*LB.turn);q.inv-=dt;}
