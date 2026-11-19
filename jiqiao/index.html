@@ -2744,7 +2744,7 @@ const armorMul=A=>{const K=defCap().ak;return A>=0?K/(K+A):(15-A)/15;};
 const soft=(x,k,f)=>x>k?k+(x-k)*f:x;
 const dodgeCap=()=>defCap().dodge+(FX.dodgeHeal?10:0);
 function dmgMult(w,isTurret){
- let m=1+soft(S.dmg,80,0.7)/100;if(run.bR>0)m+=0.2;if(run.aur>0)m+=0.25;  // 伤害加成超过 80% 后收益 ×0.7，中后期成长更平
+ let m=1+soft(S.dmg,80,0.7)/100;if(run.bR>0)m+=0.2;if(run.aur>0)m+=0.25;if(PL.length>1&&CUR&&linked(CUR,PL.find(p=>p!==CUR)))m+=LINK_DMG;  // 伤害加成超过 80% 后收益 ×0.7，中后期成长更平
  if(WEAPONS[w.key].melee&&H.meleeBonus)m+=H.meleeBonus/100;if(WEAPONS[w.key].melee&&FX.evo==='forgeB')m+=0.15;
  if(!isTurret&&H.nonTurret)m+=H.nonTurret/100;
  if(FX.goldDmg)m+=Math.min(30,Math.floor(run.gold/10))/100;
@@ -3166,6 +3166,28 @@ function dashMove(){
 }
 const skSfx=k=>{if(isMe())sfx(k,0.3);else netEvent({sfx:k,vol:0.8});};
 // cast the current player's active skill (host / solo; a guest's cast arrives as a message). path: the dash a guest already moved
+// ================= 双人协力：主动技能顺带作用于队友；两人靠近时"同心"加伤害 =================
+const COOP_N={forge:'队友在身边时，给队友一层护盾（15% 最大生命，4 秒）',archer:'队友也获得 3 秒必定暴击',artificer:'队友离你远时，其中一座炮台直接放到队友身边',
+ apoth:'不论距离，给队友回 18% 生命',storm:'额外在队友身边落 4 道雷',wind:'队友血量低于 40% 或被 5 只以上敌人围住时，把队友拉到你身边，并给 1 秒无敌',merchant:'队友身边的敌人也被震开'};
+const LINK_R=260,LINK_DMG=0.08;
+const linked=(a,b)=>a&&b&&!a.down&&!b.down&&Math.hypot(a.P.x-b.P.x,a.P.y-b.P.y)<LINK_R;
+function coopSkill(path){if(PL.length<2)return;const me=CUR,mate=PL.find(p=>p!==me&&!p.down);if(!mate)return;const q=mate.P,d=Math.hypot(q.x-P.x,q.y-P.y);
+ const tag=t=>{addText(q.x,q.y-50,'协力 · '+t,'#9fe8d8',15);fxs.push({type:'heal',x:P.x,y:P.y-10,pts:[[q.x,q.y-10]],life:0.5,max:0.5});};
+ switch(H.key){
+  case 'forge':if(d<320){mate.run.shd=Math.max(mate.run.shd||0,Math.round((mate.S.hp||40)*0.15));mate.run.shdT=Math.max(mate.run.shdT||0,4);tag('熔岩护盾');}break;
+  case 'archer':mate.run.eagle=Math.max(mate.run.eagle||0,3);fxs.push({type:'aura',pid:mate.id,col:GLOW.gold,life:3,max:3});tag('鹰眼');break;
+  case 'apoth':{const a=Math.max(1,Math.round((mate.S.hp||40)*0.18));use(mate);heal(a,'coop');use(me);tag('回血 +'+a);break;}
+  case 'storm':{const dm=skillDmg(7);for(let k=0;k<4;k++)delayed.push({t:0.15+k*0.3,pl:mate,fn:()=>skyBolt(dm)});tag('雷暴');break;}
+  case 'wind':{const low=mate.run.hp<(mate.S.hp||40)*0.4,crowd=enemies.filter(e=>!e.dead&&!e.seg&&Math.hypot(e.x-q.x,e.y-q.y)<160+e.r).length>=5;
+   const ex=path?path[2]:P.x,ey=path?path[3]:P.y;if((low||crowd)&&Math.hypot(q.x-ex,q.y-ey)>120){let tx=ex,ty=ey;for(let k=0;k<12;k++){const a=k*TAU/12,x=ex+Math.cos(a)*42,y=ey+Math.sin(a)*42;if(freeSpot(x,y,16)){tx=x;ty=y;break;}}
+    ringFx(q.x,q.y,60,'#ddd8bf',0.4);fxs.push({type:'dash',x0:q.x,y0:q.y,x1:tx,y1:ty,life:0.35,max:0.35});q.x=tx;q.y=ty;q.kx=q.ky=0;q.jump=null;q.inv=Math.max(q.inv||0,1);ringFx(tx,ty,60,'#ddd8bf',0.4);
+    if(mate!==ME())netSend({t:'tp',x:Math.round(tx),y:Math.round(ty)});addText(tx,ty-50,'协力 · 拉回身边','#9fe8d8',15);}break;}
+  case 'merchant':{const Rr=140*rangeMul();ringFx(q.x,q.y,Rr,C.t4,0.45);for(const e of enemies){if(e.dead||e.seg||e.boss)continue;if(Math.hypot(e.x-q.x,e.y-q.y)<Rr+e.r){const a=Math.atan2(e.y-q.y,e.x-q.x);e.x=clamp(e.x+Math.cos(a)*100,e.r,WORLD.w-e.r);e.y=clamp(e.y+Math.sin(a)*100,e.r,WORLD.h-e.r);}}tag('震开');break;}
+ }}
+// 同心连线（地面层）
+function drawLink(){if(PL.length<2)return;const[a,b]=PL;if(!linked(a,b))return;const t=tGame;
+ lighter(()=>{ctx.globalAlpha=0.55;ctx.strokeStyle='rgba(242,203,122,1)';ctx.lineWidth=3;ctx.setLineDash([10,8]);ctx.lineDashOffset=-t*30;ctx.beginPath();ctx.moveTo(a.P.x,a.P.y+8);ctx.lineTo(b.P.x,b.P.y+8);ctx.stroke();ctx.setLineDash([]);ctx.globalAlpha=1;
+  const u=(t*0.8)%1;drawGlow(lerp(a.P.x,b.P.x,u),lerp(a.P.y,b.P.y,u)+8,10,GLOW.gold,0.8);drawGlow(lerp(b.P.x,a.P.x,u),lerp(b.P.y,a.P.y,u)+8,10,GLOW.gold,0.8);});}
 function castSkill(path){
  const sk=H.skill;if(!sk||(run.skCD||0)>0||state!=='battle')return false;
  if(H.key==='merchant'&&FX.evoC!=='merchant'){if(run.gold<10){if(isMe())toast('金币不足 10');return false;}run.gold-=10;}
@@ -3178,7 +3200,8 @@ function castSkill(path){
   case 'archer':{const et=FX.evoC==='archer'?8:5;run.eagle=et;fxs.push({type:'aura',pid:CUR?CUR.id:0,col:GLOW.gold,life:et,max:et});}ringFx(P.x,P.y,90,C.t4,0.4);skSfx('revive');break;
   case 'artificer':{const tw=run.weapons.filter(w=>WEAPONS[w.key].kind==='turret').sort((a,b)=>b.tier-a.tier)[0],T=tw?tw.tier:2;
    const dmg=tw?wDmg(tw,true)*(1+(H.turretDmg||0)/100):skillDmg(4);
-   for(let k=0;k<2;k++){const a=P.face+(k?1:-1)*1.2,x=clamp(P.x+Math.cos(a)*48,20,WORLD.w-20),y=clamp(P.y+Math.sin(a)*48,20,WORLD.h-20);
+   const mt=PL.length>1?PL.find(p=>p!==CUR&&!p.down):null,far=mt&&Math.hypot(mt.P.x-P.x,mt.P.y-P.y)>300;if(far)addText(mt.P.x,mt.P.y-50,'协力 · 炮台','#9fe8d8',15);
+   for(let k=0;k<2;k++){const a=P.face+(k?1:-1)*1.2,ox=k&&far?mt.P.x:P.x,oy=k&&far?mt.P.y:P.y,x=clamp(ox+Math.cos(a)*48,20,WORLD.w-20),y=clamp(oy+Math.sin(a)*48,20,WORLD.h-20);
     turrets.push({pl:CUR,x,y,life:10,max:10,cd:0.2,dmg,dbl:true,perm:false,wid:-1,a:0,col:TC[T],tier:T,rg:TIER_RG[T],fcd:0.55,critB:TIER_CRIT[T],kick:0});ringFx(x,y,40,TC[T],0.35);burst(x,y,C.brass,6,3);}
    skSfx('crush');break;}
   case 'apoth':{const R=260*rangeMul();ringFx(P.x,P.y,R,C.good,0.5);fxs.push({type:'flash',x:P.x,y:P.y,r:R*0.7,col:GLOW.green,life:0.35,max:0.35});
@@ -3198,6 +3221,7 @@ function castSkill(path){
    for(const e of near(R)){hitEnemy(e,skillDmg(6)*bonus,{noSteal:1,col:C.t4});if(!e.dead)knock(e,100);}
    for(const c of pickups)if(c.type==='coin')c.mag=true;skSfx('revive');break;}
  }
+ if(H.key!=='artificer')coopSkill(path||(H.key==='wind'?[0,0,P.x,P.y]:null));
  return true;
 }
 function skillTick(dt){
@@ -4373,7 +4397,7 @@ function renderMenu(){
    <div class="info">
     <div class="top"><h2>${h.name}</h2><span class="tag">${h.tag}</span><span class="diffstar">上手难度 ${stars(h.star)}</span></div>
     <p class="lore">${h.lore}</p>
-    <ul class="traits">${h.skill?`<li class="sk"><b>主动 · ${h.skill.n}</b>（空格，冷却 ${h.skill.cd} 秒）：${h.skill.d}</li>`:''}${EVOS[h.key]?`<li class="sk"><b>进化</b>第 6 波后二选一：${EVOS[h.key].A[0]} / ${EVOS[h.key].B[0]}；第 12 波后终阶：${EVOS[h.key].C[0]}</li>`:''}${h.pros.map(p=>`<li>${p}</li>`).join('')}${h.cons.map(p=>`<li class="con">${p}</li>`).join('')}</ul>
+    <ul class="traits">${h.skill?`<li class="sk"><b>主动 · ${h.skill.n}</b>（空格，冷却 ${h.skill.cd} 秒）：${h.skill.d}</li>`:''}${COOP_N[h.key]?`<li class="sk"><b>协力（双人）</b>${COOP_N[h.key]}</li>`:''}${EVOS[h.key]?`<li class="sk"><b>进化</b>第 6 波后二选一：${EVOS[h.key].A[0]} / ${EVOS[h.key].B[0]}；第 12 波后终阶：${EVOS[h.key].C[0]}</li>`:''}${h.pros.map(p=>`<li>${p}</li>`).join('')}${h.cons.map(p=>`<li class="con">${p}</li>`).join('')}</ul>
     <div class="sect"><div class="label">皮肤</div><div class="row">${SKINS.map((k,i)=>`<button class="chip" data-act="skin" data-i="${i}" aria-pressed="${i===selSkin}"><img src="${i?LUBAN_POR:PORTRAIT[h.key]}" alt="">${i?k.name:h.name+' · '+k.name}</button>`).join('')}</div>
      <p class="wdesc">${selSkin?'鲁班七号外观，只换造型不改属性。移动时面朝行进方向（8 个朝向），稳稳地迈步走路。':'英雄的原装外观。'}</p></div>
     <div class="sect"><div class="label">初始武器</div><div class="row">${SHOPK.map(k=>`<button class="chip" data-act="weapon" data-k="${k}" aria-pressed="${k===selWeapon}"><img src="${wic(k,1)}" alt="">${WEAPONS[k].name}${k===h.weapon?'<small>推荐</small>':''}</button>`).join('')}</div>
@@ -4384,7 +4408,7 @@ function renderMenu(){
     <div class="go">${startBtn()}<span class="dim">${best.wins?`已通关 ${best.wins} 次`:best.wave?`最好成绩：第 ${best.wave} 波`:'首次挑战'}</span></div>
    </div>
   </section>
-  <p class="howto"><b>移动</b> WASD 或方向键；iPad / 手机上用手指按住屏幕任意位置拖动（虚拟摇杆跟着手指出现）。<b>攻击</b> 武器自动瞄准最近的敌人。<b>主动技能</b> 空格键或右下角的技能按钮，每个英雄各不相同。<b>英雄进化</b> 第 6 波结束时二选一进化路线，第 12 波结束时升到终阶。<b>地图机关</b> 每张战场都有可互动的机关，靠近会显示名字，站上去就能启动。第 5 波起偶尔有波中事件：宝藏机关兽、补给空投、兽潮、守护机关。<b>流派</b> 武器分近战、射击、术法、机关四派，同派凑 2 / 4 / 6 件有套装奖励。<b>合体</b> 任意两把金阶武器都能合体成第五阶「神阶」：同名两把合成神器；不同的两把，攻击形态鲜明的一把为主，另一把的攻击方式融进去，每对只有一种结果（例如回旋镖＋连弩＝连珠镖，一次多掷两枚；双刃＋雷符＝雷霆刃，每刀都引雷）。合体后同时算两把的流派，还能空出一格武器栏。没捡完的金币在波次结束时自动收取 70%。击败抱着宝箱的金色小精灵可以拿到宝箱。第 5 波起会出现带词缀的精英怪，击败可能掉宝箱。<b>首领</b> 大首领狂怒时会学会新招，濒死时放招牌技；铁甲巨像的背后是弱点，旋炮楼的副炮拆光会露出破绽。<b>进化</b> 第 6 波起敌人会进化成二型、第 12 波起进化成三型，带新的攻击方式，身上有「Ⅱ / Ⅲ」标记。第 4、12 波有小首领，限时内击败掉宝箱，否则它会逃走。第 8 波有精英首领，第 16 波是最终首领，击败它即通关。每张战场有自己的地形机关，敌人也会被机关伤到。Esc 或 P 暂停，M 开关音效。双人联机时队友倒地，站进他身边的绿圈就能救起：约 2 秒，救人时受到的伤害减少 40%，救起瞬间会震开周围的怪。</p>
+  <p class="howto"><b>移动</b> WASD 或方向键；iPad / 手机上用手指按住屏幕任意位置拖动（虚拟摇杆跟着手指出现）。<b>攻击</b> 武器自动瞄准最近的敌人。<b>主动技能</b> 空格键或右下角的技能按钮，每个英雄各不相同。<b>英雄进化</b> 第 6 波结束时二选一进化路线，第 12 波结束时升到终阶。<b>地图机关</b> 每张战场都有可互动的机关，靠近会显示名字，站上去就能启动。第 5 波起偶尔有波中事件：宝藏机关兽、补给空投、兽潮、守护机关。<b>流派</b> 武器分近战、射击、术法、机关四派，同派凑 2 / 4 / 6 件有套装奖励。<b>合体</b> 任意两把金阶武器都能合体成第五阶「神阶」：同名两把合成神器；不同的两把，攻击形态鲜明的一把为主，另一把的攻击方式融进去，每对只有一种结果（例如回旋镖＋连弩＝连珠镖，一次多掷两枚；双刃＋雷符＝雷霆刃，每刀都引雷）。合体后同时算两把的流派，还能空出一格武器栏。没捡完的金币在波次结束时自动收取 70%。击败抱着宝箱的金色小精灵可以拿到宝箱。第 5 波起会出现带词缀的精英怪，击败可能掉宝箱。<b>首领</b> 大首领狂怒时会学会新招，濒死时放招牌技；铁甲巨像的背后是弱点，旋炮楼的副炮拆光会露出破绽。<b>进化</b> 第 6 波起敌人会进化成二型、第 12 波起进化成三型，带新的攻击方式，身上有「Ⅱ / Ⅲ」标记。第 4、12 波有小首领，限时内击败掉宝箱，否则它会逃走。第 8 波有精英首领，第 16 波是最终首领，击败它即通关。每张战场有自己的地形机关，敌人也会被机关伤到。Esc 或 P 暂停，M 开关音效。双人联机时队友倒地，站进他身边的绿圈就能救起。<b>协力</b> 双人时每个英雄的主动技能都会顺带帮队友一把（见英雄介绍）；两人靠在 260 以内会连起金线（同心），各加 8% 伤害：约 2 秒，救人时受到的伤害减少 40%，救起瞬间会震开周围的怪。</p>
   <div class="gobar">${startBtn()}</div>
  </div>`;
 }
@@ -4775,6 +4799,7 @@ function guestRecv(m){
   case 'lobby':NET.hostPick=m.host;if(typeof m.map==='number')selMap=m.map;if(typeof m.diff==='number')selDiff=m.diff;renderMenuIf();break;
   case 'menu':state='menu';run=null;PL=[];CUR=null;G=null;renderMenu();show('menu');break;
   case 'ev':if(m.banner)banner(m.banner,1800);if(m.toast)toast(m.toast);if(m.sfx)sfx(m.sfx,1,m.vol||1);break;
+  case 'tp':if(PL[1]){const q=PL[1].P;q.x=m.x;q.y=m.y;q.kx=q.ky=0;q.jump=null;q.air=false;q.jh=0;q.inv=Math.max(q.inv||0,1);ringFx(q.x,q.y,60,'#ddd8bf',0.4);sfx('dodge',0.4);}break;
   case 'knock':if(PL[1]){const q=PL[1].P;q.kx=(q.kx||0)+(m.dx||0);q.ky=(q.ky||0)+(m.dy||0);}break;
   case 'wave':guestWave(m);break;
   case 'prep':guestPrep(m);break;
@@ -5294,7 +5319,7 @@ function drawGroundHazards(){
   ctx.fillStyle=C.danger;ctx.font='700 22px "Noto Sans SC",sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';const ex=c.dir>0?40:WORLD.w-40;if(on){ctx.fillText(c.dir>0?'▶▶':'◀◀',ex,c.y);}}
  for(const k of hz.strikes){const p=1-k.t/1.35;ctx.fillStyle=`rgba(127,168,255,${0.08+p*0.22})`;ctx.beginPath();ctx.arc(k.x,k.y,k.r,0,TAU);ctx.fill();
   ctx.strokeStyle=`rgba(170,200,255,${0.5+p*0.5})`;ctx.lineWidth=2.5;ctx.beginPath();ctx.arc(k.x,k.y,k.r,0,TAU);ctx.stroke();ctx.beginPath();ctx.arc(k.x,k.y,k.r*(1-p),0,TAU);ctx.stroke();}
- nxDrawGround();
+ drawLink();nxDrawGround();
  drawProps();
  if(MAP.bridges&&hz.br)MAP.bridges.forEach(([a,b,w,h],i)=>{const st=(hz.br[i]||{}).st||0;if(st===2){ctx.strokeStyle='rgba(138,90,50,.5)';ctx.lineWidth=2;for(const yy of [b+6,b+h-6]){ctx.beginPath();ctx.moveTo(a,yy);ctx.lineTo(a+18,yy+10);ctx.moveTo(a+w,yy);ctx.lineTo(a+w-18,yy+10);ctx.stroke();}return;}
   const sh=st===1?Math.sin(tGame*50)*1.5:0;for(let x=a;x<a+w;x+=16){ctx.fillStyle=st===1&&((x/16)|0)%3===0?'#3a2a18':'#6a4c2c';ctx.fillRect(x+1,b+2+sh,14,h-4);ctx.strokeStyle='rgba(0,0,0,.45)';ctx.lineWidth=1;ctx.strokeRect(x+1,b+2+sh,14,h-4);}
