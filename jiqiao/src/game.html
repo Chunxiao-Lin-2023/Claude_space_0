@@ -39,7 +39,8 @@ img{display:block}
 .pos{color:var(--good)} .neg{color:var(--danger)}
 .goldtxt{color:var(--t4)}
 .t1{--sc:var(--t1)}.t2{--sc:var(--t2)}.t3{--sc:var(--t3)}.t4{--sc:var(--t4)}.t5{--sc:var(--t5)}
-.inspect .god{font-size:12px;color:var(--t5)}.inspect .fuse{display:grid;gap:6px;margin-top:8px}.inspect .fuse .btn{justify-content:flex-start;text-align:left}
+.inspect .god{font-size:12px;color:var(--t5)}
+.ic,.tw{position:relative}.ic img.pb,.tw img.pb{position:absolute;right:-3px;bottom:-3px;width:52%;height:52%;border-radius:50%;background:rgba(10,16,19,.9);box-shadow:0 0 0 1.5px var(--t5)}.inspect .fuse{display:grid;gap:6px;margin-top:8px}.inspect .fuse .btn{justify-content:flex-start;text-align:left}
 
 .screen{position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;padding-inline:16px;padding-block:20px;z-index:5;-webkit-overflow-scrolling:touch;
   background:radial-gradient(ellipse 80% 50% at 50% 0%,rgba(214,159,62,.10),transparent 70%),rgba(10,16,19,.84);backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px)}
@@ -454,9 +455,7 @@ const WORLD={w:1600,h:1100};
 const WEAPONS={
  hammer:{cls:'melee',name:'锻锤',kind:'arc',dmg:17,cd:1.1,range:88,arc:1.7,melee:1,desc:'近身横扫，扇形范围伤害',gold:'金阶：每次挥击额外释放震荡冲击波'},
  spear:{cls:'melee',name:'长枪',kind:'thrust',dmg:12,cd:0.9,range:135,melee:1,desc:'直线突刺，贯穿一整排敌人',gold:'金阶：突刺距离翻倍'},
- blades:{cls:'melee',name:'双刃',kind:'arc',dmg:8,cd:0.42,range:80,arc:2.2,melee:1,desc:'高速近身连斩',gold:'金阶：每次斩击追加一刀'},
- xbow:{cls:'shot',name:'连弩',kind:'proj',dmg:8,cd:0.6,range:340,speed:9,st:'arrow',desc:'快速射出弩箭',gold:'金阶：一次射出三支弩箭'},
- musket:{cls:'shot',name:'火铳',kind:'proj',dmg:22,cd:1.5,range:430,speed:13,pierce:2,st:'bullet',desc:'高伤害贯穿弹',gold:'金阶：子弹无限贯穿'},
+ xbow:{cls:'shot',name:'连弩',kind:'proj',dmg:9,cd:0.6,range:360,speed:10,pierce:1,st:'arrow',desc:'快速射出贯穿弩箭',gold:'金阶：一次射出三支弩箭'},
  shotgun:{cls:'shot',name:'霰弹炮',kind:'spread',dmg:6,cd:1.2,range:230,speed:10,desc:'扇形喷射五颗弹丸',gold:'金阶：弹丸增至九颗'},
  turret:{cls:'mech',name:'机关炮台',kind:'turret',dmg:5,cd:3.2,range:300,desc:'在身边部署自动射击的炮台，每把最多同时 2 座',gold:'金阶：炮台双管齐射，持续更久'},
  flask:{cls:'arcane',name:'毒雾瓶',kind:'flask',dmg:5,cd:1.6,range:300,desc:'抛出毒雾，让敌人持续中毒；每把毒雾瓶各算一层毒，可以叠加',gold:'金阶：毒雾范围扩大一倍'},
@@ -465,21 +464,22 @@ const WEAPONS={
  grenade:{cls:'mech',name:'爆裂弹',kind:'grenade',dmg:16,cd:1.7,range:320,speed:7,radius:70,desc:'命中后爆炸，范围伤害',gold:'金阶：爆炸后再分裂出三颗弹片'},
  frost:{cls:'arcane',name:'冰晶',kind:'proj',dmg:7,cd:0.9,range:330,speed:9,slow:1,st:'frost',desc:'命中后减速敌人两秒',gold:'金阶：命中冻结敌人一秒'},
  orbit:{cls:'melee',name:'星轮',kind:'orbit',dmg:5,cd:0.5,range:72,melee:1,desc:'环绕自身旋转的刀轮，阶数越高刀轮越多',gold:'金阶：刀轮再加两枚，旋转半径扩大'},
- // 合体武器：只能由两把指定的金阶武器合成，固定为神阶，同时算两个流派
- thunder:{cls:'shot',cls2:'arcane',name:'雷霆铳',kind:'proj',dmg:24,cd:1.25,range:450,speed:14,pierce:99,st:'bullet',fusion:['musket','talisman'],desc:'贯穿弹，命中的每个敌人都会放出连锁闪电',gold:''},
- blasthammer:{cls:'melee',cls2:'mech',name:'爆裂重锤',kind:'arc',dmg:24,cd:1.15,range:96,arc:1.8,melee:1,fusion:['hammer','grenade'],desc:'横扫之后，在扫过的地方连炸三下',gold:''},
- frostcannon:{cls:'shot',cls2:'arcane',name:'霜爆炮',kind:'spread',dmg:8,cd:1.1,range:260,speed:10,slow:1,fusion:['shotgun','frost'],desc:'喷出九片冰晶，命中减速，20% 几率冻结',gold:''},
- bladewheel:{cls:'melee',cls2:'shot',name:'千刃轮',kind:'orbit',dmg:8,cd:0.45,range:84,melee:1,fusion:['orbit','blades'],desc:'八枚刀轮环绕，每隔一会儿向外甩出飞刃',gold:''},
- plaguetower:{cls:'mech',cls2:'arcane',name:'毒雾炮台',kind:'turret',dmg:6,cd:3,range:300,fusion:['turret','flask'],desc:'部署会抛毒雾瓶的炮台，每把最多同时 3 座',gold:''},
- skyspear:{cls:'melee',cls2:'shot',name:'穿云枪',kind:'thrust',dmg:16,cd:0.85,range:150,speed:12,melee:1,fusion:['spear','xbow'],desc:'突刺的同时射出三支贯穿一切的穿云箭',gold:''},
- stormrang:{cls:'shot',cls2:'arcane',name:'雷光镖',kind:'boom',dmg:13,cd:1.2,range:280,speed:8,fusion:['boomerang','talisman'],desc:'同时掷出两枚，飞行中不断电击附近的敌人',gold:''},
 };
 const WKEYS=Object.keys(WEAPONS),SHOPK=WKEYS.filter(k=>!WEAPONS[k].fusion);
-// 神器：两把同名金阶合成，保留金阶效果，再加一层
-const GOD={hammer:'挥击震荡冲击波，并把敌人定住 1 秒',spear:'突刺后再射出一道贯穿风刃',blades:'每次斩击追加两刀',xbow:'一次射出五支弩箭，每支多贯穿 1 个敌人',musket:'子弹无限贯穿，飞到尽头爆炸',
+// 合体：任意两把金阶武器都能合体。主武器决定攻击方式，副武器把自己的特性附加到每次命中上；同名两把合成神器
+const GOD={hammer:'挥击震荡冲击波，并把敌人定住 1 秒',spear:'突刺后再射出一道贯穿风刃',xbow:'一次射出五支弩箭，每支多贯穿 1 个敌人',
  shotgun:'弹丸增至十三颗，每颗多贯穿 1 个敌人',turret:'炮台三管齐射，本波不会消失',flask:'毒雾范围翻倍，并让敌人减速',talisman:'同时打出两道连锁闪电',boomerang:'同时掷出三枚更大的回旋镖',
  grenade:'爆炸后分裂出六颗会再次爆炸的弹片',frost:'命中冻结 1 秒，并炸开一圈冰环减速周围敌人',orbit:'刀轮再加四枚，半径更大'};
-const FUSE_OF=(a,b)=>{if(a===b)return GOD[a]?a:null;for(const k of WKEYS){const f=WEAPONS[k].fusion;if(f&&((f[0]===a&&f[1]===b)||(f[0]===b&&f[1]===a)))return k;}return null;};
+const PAY={hammer:['震岳','命中把敌人震开，25% 几率放出小范围冲击波'],spear:['穿云','范围 +25%，子弹多贯穿 2 个敌人'],orbit:['千刃','命中 25% 几率甩出一枚飞刃'],
+ xbow:['连珠','命中 20% 几率朝附近另一个敌人追射一箭'],shotgun:['散华','命中 30% 几率炸出三颗弹丸'],boomerang:['回旋','命中 30% 几率弹向附近另一个敌人'],
+ talisman:['雷霆','命中 35% 几率放出连锁闪电'],flask:['剧毒','命中让敌人中毒'],frost:['霜冻','命中减速，15% 几率冻结'],
+ turret:['机巧','击杀 20% 几率在原地留下一座临时炮台'],grenade:['爆裂','命中 25% 几率引发小范围爆炸']};
+const NOUN={hammer:'锤',spear:'枪',orbit:'轮',xbow:'弩',shotgun:'炮',boomerang:'镖',talisman:'符',flask:'瓶',frost:'晶',turret:'炮台',grenade:'弹'};
+const PAYC={hammer:'warm',spear:'white',orbit:'white',xbow:'warm',shotgun:'orange',boomerang:'warm',talisman:'blue',flask:'green',frost:'cyan',turret:'gold',grenade:'orange'};
+const isGod=w=>w.tier>=5&&(!w.fu||w.fu===w.key);
+const payOf=w=>w.fu&&w.fu!==w.key?w.fu:null;
+const wName=w=>{const p=payOf(w);return p?PAY[p][0]+NOUN[w.key]:(w.tier>=5?'神·':'')+WEAPONS[w.key].name;};
+const wImg=w=>`<img src="${wic(w.key,w.tier)}" alt="">${payOf(w)?`<img class="pb" src="${wic(payOf(w),4)}" alt="">`:''}`;
 const isOrb=w=>!!WEAPONS[w.key]&&WEAPONS[w.key].kind==='orbit';
 // 武器流派：同流派武器（同名也算）凑 2 / 4 / 6 件有套装奖励
 const CLASSES={
@@ -502,7 +502,7 @@ const HEROES=[
   skill:{n:'毒爆',g:'爆',cd:14,d:'引爆周围敌人身上的全部毒层，一次结算剩余毒伤；没中毒的敌人染上一层毒'}},
  {key:'storm',name:'雷使',color:'#7fa8ff',weapon:'talisman',tag:'雷击回血',lore:'符箓在手，借雷为刃。回血越快，落雷越密。',star:3,pros:['生命回复 +3','每次回复生命召下一道落雷','落雷命中有 15% 几率再回复 1 生命'],cons:[],stats:{regen:3},
   skill:{n:'雷暴',g:'暴',cd:16,d:'3 秒内每 0.3 秒落下一道雷'}},
- {key:'wind',name:'风行者',color:'#ddd8bf',weapon:'blades',tag:'闪避反击',lore:'来去无影的游侠，闪开一击，就还你十刀。',star:3,pros:['闪避 +15%，移速 +10%','闪避后 2 秒内攻速 +40%，并获得 1 点经验'],cons:[],stats:{dodge:15,speed:10},
+ {key:'wind',name:'风行者',color:'#ddd8bf',weapon:'orbit',tag:'闪避反击',lore:'来去无影的游侠，闪开一击，就还你十刀。',star:3,pros:['闪避 +15%，移速 +10%','闪避后 2 秒内攻速 +40%，并获得 1 点经验'],cons:[],stats:{dodge:15,speed:10},
   skill:{n:'疾影',g:'影',cd:8,d:'向移动方向冲刺，0.4 秒无敌，划过的敌人受到伤害'}},
  {key:'merchant',name:'豪商',color:'#f0b93a',weapon:'boomerang',tag:'买卖刷钱',lore:'什么都能买，什么都能卖，打仗也要先算账。',star:3,pros:['开局金币 +30','商店价格 -15%','武器回收价从 40% 提高到 70%','任何武器击杀 10% 几率多掉 1 枚金币'],cons:['伤害 -5%'],stats:{dmg:-5},coinKill:10,
   skill:{n:'撒钱',g:'钱',cd:15,d:'花 10 金币：击退周围敌人并造成伤害，全场金币飞向你'}},
@@ -840,7 +840,7 @@ const WS_RES=3,WS_BOX=[-14,-16,54,16];
 const WS_LEN={hammer:31,spear:48,blades:28,xbow:29,musket:38,shotgun:31,boomerang:11,talisman:6,flask:6,frost:19,grenade:6,turret:14,thunder:38,blasthammer:31,frostcannon:31,plaguetower:14,skyspear:48,stormrang:11};
 const WS_FLOAT={talisman:1,flask:1,grenade:1,turret:1,plaguetower:1};
 const TMET=['','#a3adb0','#9fb6cc','#b9a6d8','#f0c75a','#ffb070'];
-const HITK={hammer:0,spear:0,blades:0,orbit:0,boomerang:0,xbow:1,musket:1,shotgun:1,frost:2,flask:3,talisman:4,thunder:4,blasthammer:0,frostcannon:2,bladewheel:0,plaguetower:3,skyspear:0,stormrang:4};
+const HITK={hammer:0,spear:0,orbit:0,boomerang:0,xbow:1,shotgun:1,frost:2,flask:3,talisman:4};
 const MZK={musket:'g',xbow:'x',frost:'i',shotgun:'s',grenade:'b',talisman:'z',boomerang:'w',flask:'w',thunder:'g',frostcannon:'i',skyspear:'x',stormrang:'w'};
 const hr=(s,i)=>{const v=Math.sin(s*127.1+i*311.7)*43758.5453;return v-Math.floor(v);};
 const WSD={
@@ -874,14 +874,6 @@ const WSD={
   gearPath(g,-2.5,-1,3.6,6,0.3);fs(g,t>=2?ac:'#5cb19d',1);},
 };
 const ZIG=(g,pts,col)=>{g.lineCap='round';g.lineJoin='round';g.strokeStyle=INK;g.lineWidth=3;g.beginPath();pts.forEach((p,i)=>i?g.lineTo(p[0],p[1]):g.moveTo(p[0],p[1]));g.stroke();g.strokeStyle=col;g.lineWidth=1.5;g.stroke();};
-Object.assign(WSD,{
- thunder(g,t,ac,mt){WSD.musket(g,t,ac,mt);ZIG(g,[[8,-6],[14,-3],[20,-7],[26,-3],[33,-6]],'#9fc0ff');},
- blasthammer(g,t,ac,mt){WSD.hammer(g,t,ac,mt);g.beginPath();g.arc(33,0,4.6,0,TAU);fs(g,'#3a4448',1.2);s2(g,1,'#ff9a4a',[[35,-3.5],[38,-6]]);},
- frostcannon(g,t,ac,mt){WSD.shotgun(g,t,ac,mt);g.beginPath();g.moveTo(37,-0.4);g.lineTo(32,-4.5);g.lineTo(28,-0.4);g.lineTo(32,3.7);g.closePath();fs(g,'#cfefff',1.1);},
- plaguetower(g,t,ac,mt){WSD.turret(g,t,ac,mt);g.beginPath();g.arc(-9,-8,3.6,0,TAU);fs(g,'#8cc65a',1);},
- skyspear(g,t,ac,mt){WSD.spear(g,t,ac,mt);for(const sd of [-1,1])s2(g,1.2,'#ece4ce',[[-8,0],[-13,sd*5]]);},
- stormrang(g,t,ac,mt){WSD.boomerang(g,t,ac,mt);ZIG(g,[[-4,-7],[2,-3],[-1,0],[5,3]],'#9fc0ff');},
-});
 const WSPR={};
 function wsp(k,t){t=t||1;const id=k+t;if(WSPR[id])return WSPR[id];if(!WSD[k])return null;
  const [x0,y0,x1,y1]=WS_BOX,cv=mk((x1-x0)*WS_RES,(y1-y0)*WS_RES),g=cv.getContext('2d');g.scale(WS_RES,WS_RES);g.translate(-x0,-y0);g.lineJoin='round';WSD[k](g,t,TC[t],TMET[t]);return WSPR[id]=cv;}
@@ -902,7 +894,8 @@ function heldTick(pl,dt){const L=heldOf(pl);if(!L.length||pl.down)return;const p
 function drawHeld(pl){const L=heldOf(pl),p=pl.P,n=L.filter(w=>!isOrb(w)).length;let i=0;
  for(const w of L){if(isOrb(w))continue;const j=i,s=slotXY(i++,n);if(w.swT>0)continue;
   const T=w.tier||1,fl=WS_FLOAT[w.key],bob=Math.sin(tGame*3.2+j*1.7)*1.6,a=w.ra!=null?w.ra:(p.face||0),kb=w.kick||0;let x=p.x+s[0],y=p.y+s[1]+bob;
-  if(T>=3)lighter(()=>drawGlow(x,y,15+T*2,tierGlow[T],0.16+(T-3)*0.14+Math.sin(tGame*4+j)*0.05));
+  if(T>=3)lighter(()=>drawGlow(x,y,15+T*2,tierGlow[T],0.16+(Math.min(T,4)-3)*0.14+Math.sin(tGame*4+j)*0.05));
+  if(payOf(w))lighter(()=>drawGlow(x,y,20,GLOW[PAYC[payOf(w)]]||GLOW.white,0.35+Math.sin(tGame*6+j)*0.12));
   if(w.key==='talisman'||w.key==='frost')lighter(()=>drawGlow(x,y,13,w.key==='frost'?GLOW.cyan:GLOW.blue,0.22+kb*0.5));
   if(fl){const sc=0.82+kb*0.22;drawWS(w.key,T,x+Math.cos(a)*kb*3,y+Math.sin(a)*kb*3,Math.sin(tGame*2.2+j)*0.2+(w.key==='turret'?(Math.cos(a)<0?Math.PI:0):0),sc,w.key==='turret'&&Math.cos(a)<0);
    if(w.key==='grenade'&&Math.sin(tGame*40+j)>0)lighter(()=>drawGlow(x+4.6,y-9.6,4,GLOW.orange,0.9));}
@@ -1108,7 +1101,7 @@ function computeStats(){
  add(H.stats);add(run.lv);FX={};
  for(const n of run.items){const it=ITEM_BY[n];if(!it)continue;add(it.s);if(it.fx)FX[it.fx]=(FX[it.fx]||0)+1;}
  // 流派套装
- const sets={};for(const c of CKEYS)sets[c]=0;for(const w of run.weapons){const D=WEAPONS[w.key]||{};if(D.cls)sets[D.cls]++;if(D.cls2)sets[D.cls2]++;}run.sets=sets;
+ const sets={};for(const c of CKEYS)sets[c]=0;for(const w of run.weapons){const D=WEAPONS[w.key]||{};if(D.cls)sets[D.cls]++;if(w.tier>=5){const F=WEAPONS[w.fu||w.key];if(F&&F.cls)sets[F.cls]++;}}run.sets=sets;
  const st=c=>setTier(sets[c]);
  if(st('melee')>=1)s.armor+=3;if(st('melee')>=2)s.lifesteal+=4;if(st('melee')>=3)FX.meleeKB=1;
  if(st('shot')>=1)s.range+=15;if(st('shot')>=2)FX.pierce=(FX.pierce||0)+1;if(st('shot')>=3)s.crit+=10;
@@ -1387,8 +1380,22 @@ function hitEnemy(e,base,o={}){
  if(!o.noSteal&&S.lifesteal>0)stealPool+=dealt*S.lifesteal/100;
  if(!o.noSteal&&H.hitPoison&&e.hp>0&&Math.random()*100<H.hitPoison)addPoison(e,d*0.4*poisonMul(),2*stDur(),'hit:'+H.key,poisonCap());
  if(crit&&FX.critLightning&&Math.random()<0.25*FX.critLightning)chain(e.x,e.y,e,base*0.6,3,{noCrit:1,noSteal:1},GLOW.blue,true);
+ if(o.pay&&!o.np)payHit(e,o,d);
  if(e.hp<=0)killEnemy(e,o);
 }
+// 合体副武器的命中特性（由它触发的伤害不再连锁触发）
+function payHit(e,o,d){const np={np:1,noSteal:1,noCrit:1,col:o.col,tier:5,sx:e.x,sy:e.y},R=Math.random(),busy=fxs.length>280;
+ switch(o.pay){
+  case 'hammer':if(!e.boss&&!e.seg&&e.hp>0){const ka=Math.atan2(e.y-(o.sy!=null?o.sy:P.y),e.x-(o.sx!=null?o.sx:P.x));e.x+=Math.cos(ka)*16;e.y+=Math.sin(ka)*16;}if(R<0.25){if(!busy)ringFx(e.x,e.y,60,TC[5],0.25);aoe(e.x,e.y,60,d*0.4,Object.assign({hk:0},np));}break;
+  case 'orbit':if(R<0.25)shoot(e.x,e.y,Math.random()*TAU,430,200,d*0.5,{col:TC[5],tier:5,st:'blade',glow:tierGlow[5],pierce:2,r:6,opts:Object.assign({hk:0},np)});break;
+  case 'xbow':if(R<0.2){const t=nearest(e.x,e.y,260,new Set([e]));if(t)shoot(e.x,e.y,Math.atan2(t.y-e.y,t.x-e.x),560,280,d*0.5,{col:TC[5],tier:5,st:'arrow',glow:tierGlow[5],pierce:1,r:5,opts:Object.assign({hk:1},np)});}break;
+  case 'shotgun':if(R<0.3)for(let k=0;k<3;k++)shoot(e.x,e.y,Math.random()*TAU,520,150,d*0.35,{col:TC[5],tier:5,st:'pellet',glow:GLOW.orange,pierce:0,r:4,opts:Object.assign({hk:1},np)});break;
+  case 'boomerang':if(R<0.3){const t=nearest(e.x,e.y,160,new Set([e]));if(t){if(!busy)fxs.push({type:'bolt',pts:[[Math.round(e.x),Math.round(e.y)],[Math.round(t.x),Math.round(t.y)]],col:'rgba(255,240,210,1)',lw:3,life:0.15,max:0.15});hitEnemy(t,d*0.6,Object.assign({hk:0},np));}}break;
+  case 'talisman':if(R<0.35)chain(e.x,e.y,e,d*0.5,2,Object.assign({col:'#9fc0ff',hk:4},np),BOLTC[5],true,3);break;
+  case 'flask':if(e.hp>0)addPoison(e,d*0.35*poisonMul(),3*stDur(),'pay',poisonCap());break;
+  case 'frost':e.slowT=Math.max(e.slowT,2*stDur());if(!e.boss&&R<0.15)e.freezeT=Math.max(e.freezeT,0.8*stDur());break;
+  case 'grenade':if(R<0.25){const br=60*(FX.blastR||1);boomFx(e.x,e.y,br,5);aoe(e.x,e.y,br,d*0.6,np);}break;
+ }}
 function chain(ox,oy,first,dmg,n,o,col,skipFirst,lw=7){
  const hit=new Set(),pts=[[ox,oy]],nd=[];let cur=first,px=ox,py=oy;
  for(let i=0;i<=n&&cur;i++){
@@ -1428,6 +1435,7 @@ function killEnemy(e,o){
  e.dead=true;run.kills++;burst(e.x,e.y,e.col,e.boss?24:8,e.boss?10:(e.type==='brute'?4:2));
  dropCoins(e.x,e.y,goldFor(e.gold)+(o.coin||0)+(H.coinKill&&Math.random()*100<H.coinKill?1:0));
  if(o.melee&&FX.meleeKB)heal(1,'melee');
+ if(o.pay==='turret'&&!o.np&&Math.random()<0.2&&turrets.length<24)turrets.push({pl:CUR,x:e.x,y:e.y,life:6,max:6,cd:0.3,dmg:flatDmg(7),dbl:false,perm:false,wid:-1,a:0,col:TC[5],tier:5,rg:1.2,fcd:0.6,critB:10,kick:0});
  if(FX.spread&&(e.poisonT>0||e.slowT>0)){const ns=enemies.filter(x=>!x.dead&&!x.seg&&x!==e&&Math.hypot(x.x-e.x,x.y-e.y)<140).slice(0,2);
   for(const x of ns){if(e.poisonT>0)addPoison(x,e.poison,2*stDur(),'spread',poisonCap());if(e.slowT>0)x.slowT=Math.max(x.slowT,2*stDur());fxs.push({type:'bolt',pts:[[e.x,e.y],[x.x,x.y]],col:e.poisonT>0?GLOW.green:GLOW.cyan,lw:3,life:0.2,max:0.2});}}
  addXP(e.xp);
@@ -1568,7 +1576,7 @@ const TIER_CD=[0,1,0.9,0.82,0.75,0.68],TIER_RG=[0,1,1.1,1.2,1.3,1.4],TIER_CRIT=[
 const BOLTC=['','rgba(170,200,255,1)','rgba(110,170,255,1)','rgba(195,135,255,1)','rgba(255,210,100,1)','rgba(255,140,100,1)'];
 const wCD=w=>WEAPONS[w.key].cd*TIER_CD[w.tier];
 const wRange=w=>WEAPONS[w.key].range*TIER_RG[w.tier];
-const wo=(w,extra)=>Object.assign({col:TC[w.tier],critB:TIER_CRIT[w.tier],tier:w.tier,hk:HITK[w.key]},extra||{});
+const wo=(w,extra)=>Object.assign({col:TC[w.tier],critB:TIER_CRIT[w.tier],tier:w.tier,hk:HITK[w.key],pay:payOf(w)},extra||{});
 function shoot(x,y,a,spd,range,dmg,o){
  projs.push({pl:CUR,kind:'proj',x,y,vx:Math.cos(a)*spd,vy:Math.sin(a)*spd,r:(o.r||5)*(TIER_SZ[o.tier||1]*0.5+0.5),dmg,life:range/spd,pierce:o.pierce||0,hit:new Set(),col:o.col,glow:o.glow||GLOW.white,st:o.st||'pellet',tier:o.tier||1,opts:o.opts||{},grenade:o.grenade,endBoom:o.endBoom,seed:Math.random()*TAU});
 }
@@ -1584,23 +1592,22 @@ function thrust(a,len,dmg,w){
  for(const e of enemies){if(e.dead)continue;const dx=e.x-P.x,dy=e.y-P.y,t=dx*cx+dy*cy;if(t<-e.r||t>len+e.r)continue;if(Math.abs(dx*cy-dy*cx)<wd+e.r)hitEnemy(e,dmg,o);}
 }
 function deployTurret(w,gold){
- const maxT=2+(w.key==='plaguetower'?1:0)+(H.turretMax||0)+(FX.turretBoost||0)+(FX.mechCap||0);
+ const maxT=2+(H.turretMax||0)+(FX.turretBoost||0)+(FX.mechCap||0);
  const own=turrets.filter(t=>!t.perm&&t.wid===w.id);
  if(own.length>=maxT)turrets.splice(turrets.indexOf(own[0]),1);
  const a=Math.random()*TAU,d=rand(30,60);
  const dmg=wDmg(w,true)*(1+(H.turretDmg||0)/100+(FX.turretBoost||0)*0.5);
- const god=w.tier>=5&&w.key==='turret',life=god?999:gold?18:13,x=clamp(P.x+Math.cos(a)*d,20,WORLD.w-20),y=clamp(P.y+Math.sin(a)*d,20,WORLD.h-20);
- turrets.push({pl:CUR,x,y,life,max:life,cd:0.3,dmg,dbl:gold,tri:god,flask:w.key==='plaguetower',wid2:w.id,perm:false,wid:w.id,a:0,col:TC[w.tier],tier:w.tier,rg:TIER_RG[w.tier],fcd:0.7*TIER_CD[w.tier]*(FX.mechDmg?0.8:1),critB:TIER_CRIT[w.tier],kick:0});
+ const god=isGod(w),life=god?999:gold?18:13,x=clamp(P.x+Math.cos(a)*d,20,WORLD.w-20),y=clamp(P.y+Math.sin(a)*d,20,WORLD.h-20);
+ turrets.push({pl:CUR,x,y,life,max:life,cd:0.3,dmg,dbl:gold,tri:god,pay:payOf(w),perm:false,wid:w.id,a:0,col:TC[w.tier],tier:w.tier,rg:TIER_RG[w.tier],fcd:0.7*TIER_CD[w.tier]*(FX.mechDmg?0.8:1),critB:TIER_CRIT[w.tier],kick:0});
  ringFx(x,y,34,TC[w.tier],0.3);
 }
-const orbN=w=>w.key==='bladewheel'?8:w.tier>=5?w.tier+7:w.tier+1+(w.tier===4?2:0);
+const orbN=w=>isGod(w)?10:w.tier>=5?8:w.tier+1+(w.tier===4?2:0);
 function orbitUpdate(w,dt){
- const gold=w.tier>=4,n=orbN(w),R=wRange(w)*rangeMul()*(w.tier>=5&&w.key==='orbit'?1.5:gold?1.35:1);
+ const gold=w.tier>=4,n=orbN(w),R=wRange(w)*rangeMul()*(payOf(w)==='spear'?1.25:1)*(isGod(w)?1.5:gold?1.35:1);
  w.ang=(w.ang||0)+dt*3.2*(1+Math.max(-0.5,S.atkspd/200))*(1+(w.tier-1)*0.08);
  const dmg=wDmg(w,false),cdHit=wCD(w)/atkMul(),o=wo(w,{melee:1}),hr=12*TIER_SZ[w.tier];
  const bl=[];for(let k=0;k<n;k++){const a=w.ang+k*TAU/n;bl.push([P.x+Math.cos(a)*R,P.y+Math.sin(a)*R,a]);}
  w.blades=bl;
- if(w.key==='bladewheel'){w.fl=(w.fl==null?1.2:w.fl)-dt*atkMul();if(w.fl<=0&&enemies.some(e=>!e.dead)){w.fl=1.2;for(const b of bl)shoot(b[0],b[1],b[2]+Math.PI/2,430,240,dmg*0.8,{col:TC[5],tier:5,st:'blade',glow:tierGlow[5],pierce:2,r:6,opts:wo(w)});}}
  for(const e of enemies){if(e.dead)continue;const last=e.ocd[w.id]||-9;if(tGame-last<cdHit)continue;
   for(const b of bl){if((e.x-b[0])**2+(e.y-b[1])**2<(e.r+hr)**2){e.ocd[w.id]=tGame;hitEnemy(e,dmg,o);break;}}}
 }
@@ -1608,14 +1615,14 @@ function fireWeapon(w,dt){
  const D=WEAPONS[w.key];
  if(D.kind==='orbit'){orbitUpdate(w,dt);return;}
  w.t-=dt*atkMul();if(w.t>0)return;
- const rm=rangeMul(),range=wRange(w)*rm;
+ const rm=rangeMul()*(payOf(w)==='spear'?1.25:1),range=wRange(w)*rm;
  const tgt=(w.dup?nearestK(P.x,P.y,range,w.dup):null)||nearest(P.x,P.y,range);
  if(!tgt&&D.kind!=='turret'){w.t=0.05+(w.dupN>1?wCD(w)*(w.dup||0)/w.dupN:0);return;}
  w.t=wCD(w);
- const dmg=wDmg(w,false),gold=w.tier>=4&&!D.fusion,god=w.tier>=5&&!D.fusion,col=TC[w.tier],gl=tierGlow[w.tier],T=w.tier;
+ const dmg=wDmg(w,false),gold=w.tier>=4,god=isGod(w),col=TC[w.tier],gl=tierGlow[w.tier],T=w.tier;
  const a=tgt?Math.atan2(tgt.y-P.y,tgt.x-P.x):P.face;
  if(tgt)P.face=a;
- const pb=FX.pierce||0;
+ const pb=(FX.pierce||0)+(payOf(w)==='spear'?2:0);
  // ranged shots leave from the weapon hovering beside the hero, aimed from there
  const hp=heldPos(CUR,w),hx=hp[0],hy=hp[1],ha=tgt?Math.atan2(tgt.y-hy,tgt.x-hx):a;
  w.ra=ha;w.kick=1;w.fc=((w.fc||0)+1)&255;
@@ -1625,26 +1632,24 @@ function fireWeapon(w,dt){
    swing(a,range,D.arc,dmg,w);
    if(gold&&w.key==='hammer'){ringFx(P.x,P.y,170*rm,god?TC[5]:C.t4,0.4);aoe(P.x,P.y,170*rm,dmg*0.5,wo(w,god?{freeze:1}:{}));}
    if(gold&&w.key==='blades'){delayed.push({t:0.12,pl:CUR,fn:()=>swing(a+0.5,range,D.arc,dmg,w)});if(god)delayed.push({t:0.24,pl:CUR,fn:()=>swing(a-0.5,range,D.arc,dmg,w)});}
-   if(w.key==='blasthammer')for(let k=0;k<3;k++){const aa=a+(k-1)*D.arc*0.33,x=P.x+Math.cos(aa)*range*0.7,y=P.y+Math.sin(aa)*range*0.7,br=72*(FX.blastR||1);delayed.push({t:0.08+k*0.09,pl:CUR,fn:()=>{boomFx(x,y,br,5);aoe(x,y,br,dmg*0.55,wo(w));}});}
    break;
   case 'thrust':thrust(a,range*(gold?2:1),dmg,w);
    if(god)shoot(hx,hy,ha,560,range*2.4,dmg*0.8,{col:TC[5],tier:5,st:'blade',glow:tierGlow[5],pierce:99,r:8,opts:wo(w)});
-   if(w.key==='skyspear')for(let k=-1;k<=1;k++)shoot(hx,hy,ha+k*0.1,D.speed*60,range*2.6,dmg*0.7,{col:TC[5],tier:5,st:'arrow',glow:tierGlow[5],pierce:99,r:5,opts:wo(w)});
    break;
   case 'proj':{
    const n=gold&&w.key==='xbow'?(god?5:3):1;
    for(let k=0;k<n;k++){const aa=ha+(k-(n-1)/2)*0.16;
-    shoot(hx,hy,aa,D.speed*60*(1+(T-1)*0.06),range+30,dmg,{col,tier:T,glow:D.st==='frost'?GLOW.cyan:D.st==='coin'?GLOW.gold:gl,st:D.st,pierce:(D.pierce||0)+pb+(gold&&w.key==='musket'?99:0)+(god&&w.key==='xbow'?1:0),r:w.key==='musket'||w.key==='thunder'?6:5,endBoom:god&&w.key==='musket',opts:wo(w,{slow:D.slow,freeze:gold&&w.key==='frost',nova:god&&w.key==='frost',chainHit:w.key==='thunder'?2:0,coin:D.coin?(gold?3:1):0})});}
+    shoot(hx,hy,aa,D.speed*60*(1+(T-1)*0.06),range+30,dmg,{col,tier:T,glow:D.st==='frost'?GLOW.cyan:D.st==='coin'?GLOW.gold:gl,st:D.st,pierce:(D.pierce||0)+pb+(gold&&w.key==='musket'?99:0)+(god&&w.key==='xbow'?1:0),r:5,opts:wo(w,{slow:D.slow,freeze:gold&&w.key==='frost',nova:god&&w.key==='frost',coin:D.coin?(gold?3:1):0})});}
    break;}
-  case 'spread':{const fc=w.key==='frostcannon',n=fc?9:god?13:gold?9:5;for(let k=0;k<n;k++){const aa=ha+(k/(n-1)-0.5)*0.75;shoot(hx,hy,aa,D.speed*60*rand(0.9,1.1),range+30,dmg,{col,tier:T,glow:fc?GLOW.cyan:T>=3?gl:GLOW.orange,st:fc?'frost':'pellet',pierce:pb+(god?1:0),r:fc?5:4,opts:wo(w,fc?{slow:1,frz:0.2}:{})});}
+  case 'spread':{const n=god?13:gold?9:5;for(let k=0;k<n;k++){const aa=ha+(k/(n-1)-0.5)*0.75;shoot(hx,hy,aa,D.speed*60*rand(0.9,1.1),range+30,dmg,{col,tier:T,glow:T>=3?gl:GLOW.orange,st:'pellet',pierce:pb+(god?1:0),r:4,opts:wo(w)});}
    break;}
-  case 'turret':deployTurret(w,gold||w.tier>=5);break;
+  case 'turret':deployTurret(w,gold);break;
   case 'flask':projs.push({pl:CUR,wid:w.id,kind:'lob',sx:hx,sy:hy,tx:tgt.x,ty:tgt.y,t:0,dur:0.45,x:hx,y:hy,dmg,pr:(gold?116:58)*TIER_RG[T],tier:T,slow:god,opts:wo(w)});break;
   case 'chain':chain(hx,hy-6,tgt,dmg,(gold?6:3)+(FX.statusDur?1:0),wo(w,{col:'#9fc0ff'}),BOLTC[T],false,3+T*1.6);
    if(god){const t2=enemies.filter(e=>!e.dead&&!e.seg&&e!==tgt&&Math.hypot(e.x-P.x,e.y-P.y)<range).sort((x,y)=>Math.hypot(x.x-P.x,x.y-P.y)-Math.hypot(y.x-P.x,y.y-P.y))[0];if(t2)chain(hx,hy-6,t2,dmg,6+(FX.statusDur?1:0),wo(w,{col:'#ffb09a'}),BOLTC[5],false,3+T*1.6);}
    break;
-  case 'boom':{const n=w.key==='stormrang'?2:god?3:gold?2:1;for(let k=0;k<n;k++){const aa=ha+(n>1?(k-(n-1)/2)*0.7:0),sp=D.speed*60;
-   projs.push({pl:CUR,kind:'boom',zap:w.key==='stormrang',zt:0.2,x:hx,y:hy,vx:Math.cos(aa)*sp,vy:Math.sin(aa)*sp,sp,r:10*TIER_SZ[T]*(god?1.3:1),dmg,range,trav:0,ret:false,hit:new Set(),life:6,col,tier:T,opts:wo(w),rot:0});}break;}
+  case 'boom':{const n=god?3:gold?2:1;for(let k=0;k<n;k++){const aa=ha+(n>1?(k-(n-1)/2)*0.7:0),sp=D.speed*60;
+   projs.push({pl:CUR,kind:'boom',x:hx,y:hy,vx:Math.cos(aa)*sp,vy:Math.sin(aa)*sp,sp,r:10*TIER_SZ[T]*(god?1.3:1),dmg,range,trav:0,ret:false,hit:new Set(),life:6,col,tier:T,opts:wo(w),rot:0});}break;}
   case 'grenade':shoot(hx,hy,ha,D.speed*60,range+30,dmg,{col,tier:T,st:'grenade',glow:T>=3?gl:GLOW.orange,r:6,grenade:{radius:D.radius*TIER_RG[T],gold,god,tier:T},opts:wo(w)});break;
  }
 }
@@ -2048,7 +2053,6 @@ function update(dt){
   if(p.kind==='lob'){p.t+=dt;const k=Math.min(1,p.t/p.dur);p.x=p.sx+(p.tx-p.sx)*k;p.y=p.sy+(p.ty-p.sy)*k;
    if(k>=1){p.dead=true;aoe(p.tx,p.ty,p.pr*0.6,p.dmg,Object.assign({},p.opts,{col:C.good}));puddles.push({x:p.tx,y:p.ty,r:p.pr,slow:p.slow,life:3.2,max:3.2,dps:p.dmg*1.4*poisonMul(),tick:0,seed:Math.random()*99,tier:p.tier,src:'w'+p.wid,cap:poisonCap(),dur:stDur()});fxs.push({type:'splash',x:p.tx,y:p.ty,r:p.pr,tier:p.tier,life:0.3,max:0.3});fxs.push({type:'glass',x:Math.round(p.tx),y:Math.round(p.ty),s:R2(Math.random()*99),life:0.42,max:0.42});}continue;}
   if(p.kind==='boom'){p.rot+=dt*16;
-   if(p.zap){p.zt-=dt;if(p.zt<=0){p.zt=0.25;const z=nearest(p.x,p.y,130);if(z)chain(p.x,p.y,z,p.dmg*0.45,1,{noCrit:1,noSteal:1,col:'#9fc0ff',hk:4},BOLTC[4],false,2.5);}}
    if(!p.ret){p.trav+=p.sp*dt;if(p.trav>=p.range){p.ret=true;p.hit.clear();}}
    else{const dx=P.x-p.x,dy=P.y-p.y,d=Math.hypot(dx,dy)||1;p.vx=dx/d*p.sp*1.1;p.vy=dy/d*p.sp*1.1;if(d<20){p.dead=true;continue;}}
    p.life-=dt;if(p.life<=0){p.dead=true;continue;}}
@@ -2060,7 +2064,6 @@ function update(dt){
    if((e.x-p.x)**2+(e.y-p.y)**2<(e.r+p.r)**2){
     if(p.grenade){explode(p);p.dead=true;break;}
     p.hit.add(e);hitEnemy(e,p.dmg,p.opts);
-    if(p.opts.chainHit)chain(e.x,e.y,e,p.dmg*0.5,p.opts.chainHit,{noCrit:1,noSteal:1,col:'#9fc0ff',hk:4},BOLTC[5],true,3);
     if(p.opts.nova){ringFx(e.x,e.y,70,'#cfefff',0.3);for(const o of enemies)if(!o.dead&&o!==e&&Math.hypot(o.x-e.x,o.y-e.y)<70)o.slowT=Math.max(o.slowT,2*stDur());}
     if(p.kind==='proj'){p.pierce--;if(p.pierce<0){p.dead=true;break;}}
    }
@@ -2083,8 +2086,7 @@ function update(dt){
  mines=mines.filter(m=>!m.dead);
  for(const t of turrets){use(t.pl||ME());const rm=rangeMul();if(!t.perm)t.life-=dt;t.cd-=dt*atkMul();t.kick=Math.max(0,t.kick-dt*6);
   if(t.cd<=0){const tg=nearest(t.x,t.y,300*rm*(t.rg||1));if(tg){t.cd=t.fcd||0.7;t.a=Math.atan2(tg.y-t.y,tg.x-t.x);t.kick=1;if(fxs.length<300)fxs.push({type:'mz',k:'t',x:Math.round(t.x+Math.cos(t.a)*21),y:Math.round(t.y-3+Math.sin(t.a)*21),a:R2(t.a),tier:t.tier||1,s:R2(Math.random()*99),life:0.32,max:0.32});
-   if(t.flask){t.cd=1.5;projs.push({pl:t.pl,wid:t.wid2,kind:'lob',sx:t.x,sy:t.y-6,tx:tg.x,ty:tg.y,t:0,dur:0.5,x:t.x,y:t.y,dmg:t.dmg,pr:70,tier:5,opts:{col:TC[5],critB:t.critB||0,sx:t.x,sy:t.y,hk:3}});continue;}
-   const off=t.tri?[-6,0,6]:t.dbl?[-5,5]:[0];for(const o of off){shoot(t.x+Math.cos(t.a)*16-Math.sin(t.a)*o,t.y+Math.sin(t.a)*16+Math.cos(t.a)*o,t.a,600,300*rm*(t.rg||1),t.dmg,{col:t.col,tier:t.tier||1,st:'tbolt',glow:(t.tier||1)>=3?tierGlow[t.tier]:GLOW.warm,pierce:FX.pierce||0,r:4,opts:{col:t.col,critB:t.critB||0,sx:t.x,sy:t.y,hk:1}});}}else t.cd=0.12;}}
+   const off=t.tri?[-6,0,6]:t.dbl?[-5,5]:[0];for(const o of off){shoot(t.x+Math.cos(t.a)*16-Math.sin(t.a)*o,t.y+Math.sin(t.a)*16+Math.cos(t.a)*o,t.a,600,300*rm*(t.rg||1),t.dmg,{col:t.col,tier:t.tier||1,st:'tbolt',glow:(t.tier||1)>=3?tierGlow[t.tier]:GLOW.warm,pierce:FX.pierce||0,r:4,opts:{col:t.col,critB:t.critB||0,sx:t.x,sy:t.y,hk:1,pay:t.pay}});}}else t.cd=0.12;}}
  use(ME());
  turrets=turrets.filter(t=>t.perm||t.life>0);
  // pickups fly to (and are collected by) the closest living player whose magnet reaches them
@@ -2123,7 +2125,7 @@ function show(id){closeInspect();['menu','prep','pause','over'].forEach(s=>{$('#
 let trayEls=[];
 function buildTray(){
  const tray=$('#tray');
- tray.innerHTML=run.weapons.map(w=>`<div class="tw t${w.tier}" title="${WEAPONS[w.key].name} · ${TIER_N[w.tier]}"><img src="${wic(w.key,w.tier)}" alt=""><i></i></div>`).join('');
+ tray.innerHTML=run.weapons.map(w=>`<div class="tw t${w.tier}" title="${wName(w)} · ${TIER_N[w.tier]}">${wImg(w)}<i></i></div>`).join('');
  trayEls=[...tray.children];
 }
 function spawnPos(i,n){return n<2?[WORLD.w/2,WORLD.h/2]:[WORLD.w/2+(i?40:-40),WORLD.h/2];}
@@ -2297,7 +2299,7 @@ function renderMenu(){
     <div class="go">${startBtn()}<span class="dim">${best.wins?`已通关 ${best.wins} 次`:best.wave?`最好成绩：第 ${best.wave} 波`:'首次挑战'}</span></div>
    </div>
   </section>
-  <p class="howto"><b>移动</b> WASD 或方向键；iPad / 手机上用手指按住屏幕任意位置拖动（虚拟摇杆跟着手指出现）。<b>攻击</b> 武器自动瞄准最近的敌人。<b>主动技能</b> 空格键或右下角的技能按钮，每个英雄各不相同。<b>流派</b> 武器分近战、射击、术法、机关四派，同派凑 2 / 4 / 6 件有套装奖励。<b>合体</b> 两把同名金阶武器可以合成神器；指定的两把不同金阶武器可以合成合体武器（例如火铳＋雷符＝雷霆铳），都是第五阶「神阶」，还能空出一格武器栏。没捡完的金币在波次结束时自动收取 70%。击败抱着宝箱的金色小精灵可以拿到宝箱。第 5 波起会出现带词缀的精英怪，击败可能掉宝箱。<b>首领</b> 大首领狂怒时会学会新招，濒死时放招牌技；铁甲巨像的背后是弱点，旋炮楼的副炮拆光会露出破绽。<b>进化</b> 第 6 波起敌人会进化成二型、第 12 波起进化成三型，带新的攻击方式，身上有「Ⅱ / Ⅲ」标记。第 4、12 波有小首领，限时内击败掉宝箱，否则它会逃走。第 8 波有精英首领，第 16 波是最终首领，击败它即通关。每张战场有自己的地形机关，敌人也会被机关伤到。Esc 或 P 暂停，M 开关音效。双人联机时队友倒地，站进他身边的绿圈就能救起：约 2 秒，救人时受到的伤害减少 40%，救起瞬间会震开周围的怪。</p>
+  <p class="howto"><b>移动</b> WASD 或方向键；iPad / 手机上用手指按住屏幕任意位置拖动（虚拟摇杆跟着手指出现）。<b>攻击</b> 武器自动瞄准最近的敌人。<b>主动技能</b> 空格键或右下角的技能按钮，每个英雄各不相同。<b>流派</b> 武器分近战、射击、术法、机关四派，同派凑 2 / 4 / 6 件有套装奖励。<b>合体</b> 任意两把金阶武器都能合体成第五阶「神阶」：同名两把合成神器；不同的两把，选一把为主保留攻击方式，另一把的特性附加到每次命中上（例如连弩为主、附带雷符＝雷霆弩）。合体后同时算两把的流派，还能空出一格武器栏。没捡完的金币在波次结束时自动收取 70%。击败抱着宝箱的金色小精灵可以拿到宝箱。第 5 波起会出现带词缀的精英怪，击败可能掉宝箱。<b>首领</b> 大首领狂怒时会学会新招，濒死时放招牌技；铁甲巨像的背后是弱点，旋炮楼的副炮拆光会露出破绽。<b>进化</b> 第 6 波起敌人会进化成二型、第 12 波起进化成三型，带新的攻击方式，身上有「Ⅱ / Ⅲ」标记。第 4、12 波有小首领，限时内击败掉宝箱，否则它会逃走。第 8 波有精英首领，第 16 波是最终首领，击败它即通关。每张战场有自己的地形机关，敌人也会被机关伤到。Esc 或 P 暂停，M 开关音效。双人联机时队友倒地，站进他身边的绿圈就能救起：约 2 秒，救人时受到的伤害减少 40%，救起瞬间会震开周围的怪。</p>
   <div class="gobar">${startBtn()}</div>
  </div>`;
 }
@@ -2331,7 +2333,7 @@ function renderPrep(){
  }
  const slots=[];
  run.weapons.forEach((w,i)=>{const D=WEAPONS[w.key],canMerge=w.tier<4&&run.weapons.some((x,j)=>j!==i&&x.key===w.key&&x.tier===w.tier),fo=fuseOpts(i);
-  slots.push(`<div class="ws t${w.tier}" data-act="inspect" data-k="w" data-i="${i}" role="button" tabindex="0" aria-label="${D.name} ${TIER_N[w.tier]}阶，查看详情"><div class="ic"><img src="${wic(w.key,w.tier)}" alt=""></div><div class="wn">${D.name}<span class="tier">${TIER_N[w.tier]}</span></div><div class="wa">${canMerge?`<button class="mini hot" data-act="merge" data-i="${i}">合成</button>`:''}${fo.length?`<button class="mini hot" data-act="inspect" data-k="w" data-i="${i}">合体</button>`:''}<button class="mini" data-act="sell" data-i="${i}" ${run.weapons.length<=1?'disabled':''}>售 ${sellValue(w)}</button></div></div>`);});
+  slots.push(`<div class="ws t${w.tier}" data-act="inspect" data-k="w" data-i="${i}" role="button" tabindex="0" aria-label="${D.name} ${TIER_N[w.tier]}阶，查看详情"><div class="ic">${wImg(w)}</div><div class="wn">${wName(w)}<span class="tier">${TIER_N[w.tier]}</span></div><div class="wa">${canMerge?`<button class="mini hot" data-act="merge" data-i="${i}">合成</button>`:''}${fo.length?`<button class="mini hot" data-act="inspect" data-k="w" data-i="${i}">合体</button>`:''}<button class="mini" data-act="sell" data-i="${i}" ${run.weapons.length<=1?'disabled':''}>售 ${sellValue(w)}</button></div></div>`);});
  for(let i=run.weapons.length;i<run.maxSlots;i++)slots.push(`<div class="ws empty"></div>`);
  const counts={};run.items.forEach(n=>counts[n]=(counts[n]||0)+1);
  const items=Object.entries(counts).map(([n,c])=>{const it=ITEM_BY[n];return `<span class="it seal t${it.t}" data-act="inspect" data-k="i" data-n="${n}" role="button" tabindex="0" aria-label="${n}，查看详情">${it.g}${c>1?`<em>${c}</em>`:''}</span>`;}).join('');
@@ -2381,23 +2383,21 @@ function renderOver(win){
 let inspectEl=null;
 function closeInspect(){const p=$('#inspect');if(p)p.hidden=true;if(inspectEl)inspectEl.classList.remove('on');inspectEl=null;}
 // 当前武器能和谁合体：[[伙伴下标, 结果武器], ...]
-function fuseOpts(i){const w=run.weapons[i];if(!w||w.tier!==4)return [];const r=[];run.weapons.forEach((x,j)=>{if(j===i||x.tier!==4)return;const k=FUSE_OF(w.key,x.key);if(k&&!r.some(q=>q[1]===k))r.push([j,k]);});return r;}
-function fuseHints(w){if(w.tier!==4)return '';const L=[`<li>两把金阶${WEAPONS[w.key].name} → 神器：${GOD[w.key]}</li>`];
- for(const k of WKEYS){const f=WEAPONS[k].fusion;if(f&&f.includes(w.key)){const o=f[0]===w.key?f[1]:f[0];L.push(`<li>＋金阶${WEAPONS[o].name} → ${WEAPONS[k].name}：${WEAPONS[k].desc}</li>`);}}
- return `<div class="note">合体（神阶）：<ul class="fl">${L.join('')}</ul></div>`;}
+function fuseOpts(i){const w=run.weapons[i];if(!w||w.tier!==4)return [];const r=[],seen=new Set();run.weapons.forEach((x,j)=>{if(j===i||x.tier!==4||seen.has(x.key))return;seen.add(x.key);r.push([i,j]);if(x.key!==w.key)r.push([j,i]);});return r;}
+function fuseHints(w){if(w.tier!==4)return '';return `<div class="note">合体（神阶）：两把同名金阶 → 神器（${GOD[w.key]}）；和任意另一把金阶合体时，可以选它为主（攻击方式不变，附带对方的特性），也可以选对方为主、把「${PAY[w.key][0]}」特性附带过去：${PAY[w.key][1]}。合体后同时算两把的流派，并空出一格。</div>`;}
 function weaponInfo(w){
  const D=WEAPONS[w.key],t=w.tier,isT=D.kind==='turret',orbit=D.kind==='orbit';
  const base=Math.round(D.dmg*TIER_MUL[t]),now=Math.round(wDmg(w,isT)*(isT?1+(H.turretDmg||0)/100:1));
  const cd=wCD(w),cdNow=cd/atkMul(),rg=Math.round(wRange(w)),rgNow=Math.round(wRange(w)*rangeMul());
  const same=run.weapons.filter(x=>x!==w&&x.key===w.key&&x.tier===w.tier).length;
- return `<div class="ih"><div class="ic t${t}"><img src="${wic(w.key,t)}" alt=""></div><div><b>${D.name}</b><span class="tier t${t}">${TIER_N[t]}阶武器 · ${CLASSES[D.cls].n}${D.cls2?' / '+CLASSES[D.cls2].n:''}流派</span></div></div>
+ return `<div class="ih"><div class="ic t${t}">${wImg(w)}</div><div><b>${wName(w)}</b><span class="tier t${t}">${TIER_N[t]}阶武器 · ${CLASSES[D.cls].n}${t>=5&&WEAPONS[w.fu||w.key].cls!==D.cls?' / '+CLASSES[WEAPONS[w.fu||w.key].cls].n:''}流派${t>=5?'（算两件）':''}</span></div></div>
   <p>${D.desc}</p>
   <dl class="ist"><dt>伤害</dt><dd>${now} <small>（基础 ${base}，已算上你的加成）</small></dd>
    <dt>${orbit?'同一敌人受击间隔':'冷却'}</dt><dd>${cdNow.toFixed(2)}s <small>（基础 ${cd.toFixed(2)}s）</small></dd>
    <dt>${orbit?'刀轮半径':'范围'}</dt><dd>${rgNow} <small>（基础 ${rg}）</small></dd>
    ${TIER_CRIT[t]?`<dt>暴击</dt><dd>+${TIER_CRIT[t]}%</dd>`:''}</dl>
-  ${D.fusion?`<div class="god">合体武器 · 同时算${CLASSES[D.cls].n}和${CLASSES[D.cls2].n}两个流派</div>`:t>=5?`<div class="gold">金阶效果：${D.gold.replace(/^金阶：/,'')}</div><div class="god">神器效果：${GOD[w.key]}</div>`:t===4?`<div class="gold">金阶效果：${D.gold.replace(/^金阶：/,'')}</div>${fuseHints(w)}`:`<div class="note">升到金阶：${D.gold.replace(/^金阶：/,'')}</div>`}
-  ${state==='prep'&&t===4?(()=>{const i=run.weapons.indexOf(w),fo=fuseOpts(i);return fo.length?`<div class="fuse">${fo.map(([j,k])=>`<button class="btn sm" data-act="fuse" data-i="${i*16+j}">合体 → ${WEAPONS[k].name}${k===w.key?'（神器）':''}</button>`).join('')}</div>`:'';})():''}
+  ${payOf(w)?`<div class="gold">金阶效果：${D.gold.replace(/^金阶：/,'')}</div><div class="god">合体 · 「${PAY[payOf(w)][0]}」：${PAY[payOf(w)][1]}（来自${WEAPONS[payOf(w)].name}）</div>`:t>=5?`<div class="gold">金阶效果：${D.gold.replace(/^金阶：/,'')}</div><div class="god">神器效果：${GOD[w.key]}</div>`:t===4?`<div class="gold">金阶效果：${D.gold.replace(/^金阶：/,'')}</div>${fuseHints(w)}`:`<div class="note">升到金阶：${D.gold.replace(/^金阶：/,'')}</div>`}
+  ${state==='prep'&&t===4?(()=>{const i=run.weapons.indexOf(w),fo=fuseOpts(i);return fo.length?`<div class="fuse">${fo.map(([a,b])=>{const A=run.weapons[a],B=run.weapons[b],nm=wName({key:A.key,tier:5,fu:B.key});return `<button class="btn sm" data-act="fuse" data-i="${a*16+b}">合体 → ${nm}${A.key===B.key?'（神器）':`（${WEAPONS[A.key].name}为主，附带${PAY[B.key][0]}）`}</button>`;}).join('')}</div>`:'';})():''}
   ${t<4?`<div class="note">${same?`有 ${same} 把同名同阶，可以合成到${TIER_N[t+1]}阶`:`再有一把同名${TIER_N[t]}阶即可合成到${TIER_N[t+1]}阶`}</div>`:''}`;
 }
 function itemInfo(n){
@@ -2463,8 +2463,8 @@ function prepAct(act,i){
   case 'gifti':{const m=mateOfCur(),it=ITEMS[i];if(!m||!it)break;const j=run.items.indexOf(it.n);if(j<0)break;
    if(it.u&&m.run.items.includes(it.n)){msg='队友已经有这件唯一道具';break;}
    run.items.splice(j,1);m.run.items.push(it.n);restat(m);msg=`把 ${it.n} 送给了队友`;giftNote={to:m.id,text:`队友送来 ${it.n}`};break;}
-  case 'fuse':{const a=Math.floor(i/16),b=i%16,wa=run.weapons[a],wb=run.weapons[b];if(!wa||!wb||a===b||wa.tier!==4||wb.tier!==4)break;const k=FUSE_OF(wa.key,wb.key);if(!k)break;
-   const at=Math.min(a,b);run.weapons.splice(Math.max(a,b),1);run.weapons.splice(at,1);run.weapons.splice(at,0,newW(k,5));msg=k===wa.key?`${WEAPONS[k].name} 合体为神器`:`合体成功：${WEAPONS[k].name}`;break;}
+  case 'fuse':{const a=Math.floor(i/16),b=i%16,wa=run.weapons[a],wb=run.weapons[b];if(!wa||!wb||a===b||wa.tier!==4||wb.tier!==4)break;
+   const at=Math.min(a,b),nw=Object.assign(newW(wa.key,5),{fu:wb.key});run.weapons.splice(Math.max(a,b),1);run.weapons.splice(at,1);run.weapons.splice(at,0,nw);msg=wa.key===wb.key?`${WEAPONS[wa.key].name} 合体为神器`:`合体成功：${wName(nw)}`;break;}
   case 'sell':{if(run.weapons.length<=1||!run.weapons[i])break;const w=run.weapons[i];run.gold+=sellValue(w);run.weapons.splice(i,1);break;}
  }
  computeStats();ensurePrepChoices();
@@ -2654,7 +2654,7 @@ function netSnapshot(){
   :p.kind==='boom'?{k:2,x:R1(p.x),y:R1(p.y),vx:R1(p.vx),vy:R1(p.vy),rot:R2(p.rot),tier:p.tier,col:p.col}
   :{k:0,x:R1(p.x),y:R1(p.y),vx:R1(p.vx),vy:R1(p.vy),r:R1(p.r),st:p.st,tier:p.tier,col:p.col,glow:p.glow,seed:R2(p.seed)});
  const pls=PL.map(p=>{const rr=p===CUR?{db:dodgeBuff}:{db:p.dodgeBuff};return {x:R1(p.P.x),y:R1(p.P.y),f:R2(p.P.face),df:R2(p.P.dface),m:p.P.moving?1:0,a:R2(p.P.anim),inv:R2(Math.max(0,p.P.inv)),db:rr.db>0?1:0,dn:p.down?1:0,rv:R2(p.rvk||0),hp:Math.ceil(Math.max(0,p.run.hp)),mhp:p.S.hp||0,
-  wp:p.run.weapons.map(w=>[WKEYS.indexOf(w.key),w.tier,w.fc||0]),
+  wp:p.run.weapons.map(w=>[WKEYS.indexOf(w.key),w.tier,w.fc||0,w.fu?WKEYS.indexOf(w.fu):-1]),
   bl:p.run.weapons.filter(w=>isOrb(w)&&w.blades).map(w=>[w.tier,w.blades.map(b=>[R1(b[0]-p.P.x),R1(b[1]-p.P.y),R2(b[2])])])};});
  const g=PL[1];
  const msg={t:'s',tg:R2(tGame),wt:waveTimer===Infinity?-1:R2(waveTimer),en,bo,pr,
@@ -2755,7 +2755,7 @@ function guestFast(m){
    NET.mate=Object.assign(NET.mate||{},{hero:p.run.hero,skin:p.run.skin,hp:s.hp,mhp:s.mhp,down:p.down});}
   else{p.P.inv=s.inv;if(p===CUR)dodgeBuff=p.dodgeBuff;}
   if(s.wp){if(i===NET.me)s.wp.forEach((q,j)=>{const w=run.weapons[j];if(w&&w.key===WKEYS[q[0]]){if(w.fc!=null&&q[2]!==w.fc)heldFire(w);w.fc=q[2];}});
-   else{const old=p.held||[];p.held=s.wp.map((q,j)=>{const k=WKEYS[q[0]],o=old[j]&&old[j].key===k?old[j]:{key:k};o.tier=q[1];if(o.fc!=null&&q[2]!==o.fc)heldFire(o);o.fc=q[2];return o;});}}
+   else{const old=p.held||[];p.held=s.wp.map((q,j)=>{const k=WKEYS[q[0]],o=old[j]&&old[j].key===k?old[j]:{key:k};o.tier=q[1];o.fu=q[3]>=0?WKEYS[q[3]]:null;if(o.fc!=null&&q[2]!==o.fc)heldFire(o);o.fc=q[2];return o;});}}
   p.run.weapons=i===NET.me?p.run.weapons:[];
   p.blades=s.bl;
  });
