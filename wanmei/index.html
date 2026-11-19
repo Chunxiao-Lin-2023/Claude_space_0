@@ -301,7 +301,7 @@ function liftH(x, z) { const L = LIFTS.length ? liftAt(x, z) : null; return L ? 
 function zKey(x, z) { // things on a cliff top, or at the foot of its front face, sort after the cliff itself
   for (let i = 0; i < LIFTS.length; i++) { const L = LIFTS[i], dx = x - L.x, dz = z - L.z; if (dz * dz + dx * dx > (L.rmax + 1.5) ** 2) continue; if (liftAt(x, z) === L) return L.z + L.rmax + 0.02 + dz * 0.005; if (dz > 0 && z < L.z + L.rmax + 0.2) return L.z + L.rmax + 0.2 + dz * 0.001; }
   return z; }
-function camSnap() { const K = V.PPM, tl = liftH(V.cx, V.cz); V.camLift = Math.abs(tl - V.camLift) < 0.02 ? tl : lerp(V.camLift, tl, 0.14); V.ox = Math.round(V.cx * K - V.W / 2 - V.sx); V.oz = Math.round(V.cz * K - V.H / 2 - V.sy - V.camLift * K); }
+function camSnap() { const K = V.PPM, tl = liftH(V.cx, V.cz); V.camLift = Math.abs(tl - V.camLift) < 0.02 ? tl : lerp(V.camLift, tl, 0.14); V.ox = Math.round(V.cx * K) - (V.W >> 1) - V.sx; V.oz = Math.round(V.cz * K) - (V.H >> 1) - V.sy - Math.round(V.camLift * K); } // round the centre first: a hero the camera is locked to keeps the same screen pixel (no 1-px jitter against the ground)
 function w2s(x, z, y = 0) { const K = V.PPM; return [Math.round(x * K) - V.ox, Math.round(z * K) - V.oz - Math.round((elevS(y) + (LIFTS.length ? liftH(x, z) : 0)) * K)]; }
 function w2s0(x, z) { const K = V.PPM; return [Math.round(x * K) - V.ox, Math.round(z * K) - V.oz]; }
 function a2w(ax, ay) { const K = V.PPM; return [(ax + V.ox) / K, (ay + V.oz) / K]; }
@@ -2098,11 +2098,14 @@ function syncEnt(e, dt) {
   if (!e.R) { o.rotation.y = e.rot; o.visible = e.vis; if (e.spin) o.rotation.z = W.t * e.spin; return; }
   if (e.R.kind === 'bird' && e.fly) o.position.y += Math.sin(W.t * 3 + e.id) * 0.15;
   if (e.fly) { const k = Math.min(1, dt * 2.5), lh = liftH(e.x, e.z); e.vFlyH = e.vFlyH == null ? (e.flyH ?? 3.5) : lerp(e.vFlyH, e.flyH ?? 3.5, k); o.visLift = o.visLift == null ? lh : lerp(o.visLift, lh, k); o.flyElev = Math.max(0, e.vFlyH + Math.sin(W.t * 3 + e.id) * 0.15); } else { o.flyElev = null; o.visLift = null; e.vFlyH = null; }
-  e.dispRot = e.dispRot == null ? e.rot : angLerp(e.dispRot, e.rot, Math.min(1, dt * 14)); o.rotation.y = e.dispRot;
+  const mine = e === W.P[W.me] && e.ctrl !== 'remote'; // the hero this client steers: snappier turns, legs stop with the input
+  e.dispRot = e.dispRot == null ? e.rot : angLerp(e.dispRot, e.rot, Math.min(1, dt * (mine ? 25 : 14))); o.rotation.y = e.dispRot;
   // animate from the distance actually travelled, not from what the AI asked for: no sliding, no walking on the spot
   const mv = e._lx == null ? 0 : Math.hypot(e.x - e._lx, e.z - e._lz) / Math.max(dt, 1e-3); e._lx = e.x; e._lz = e.z;
-  e.vel = mv > 14 && !e.fly ? 0 : lerp(e.vel || 0, mv, Math.min(1, dt * 12)); if (e.vel < 0.05) e.vel = 0;
-  const A = e.A; A.spd = e.vel; A.vy = e.vy; A.fly = e.fly;
+  e.vel = mv > 14 && !e.fly ? 0 : lerp(e.vel || 0, mv, Math.min(1, dt * (mine ? 30 : 12))); if (e.vel < 0.05) e.vel = 0;
+  const A = e.A;
+  if (mine && !(e.mvSpd > 0) && !e.dash && !e.kbx && !e.kbz && !(e.lungeT > 0) && !e.walk && !W.cine) { e.vel = 0; A.walk = 0; } // no input → back to idle now, not after the legs coast
+  A.spd = e.vel; A.vy = e.vy; A.fly = e.fly;
   if (!e.alive && e.type === 'mob') { A.spd = 0; A.pose = e.R.kind === 'human' ? 'down' : 'dead'; }
   A.talkOn = DLG.open && DLG.e === e && DLG.typing < DLG.full.length;
   o.visible = e.vis; o.shadow = e.swim ? 0 : e.r * (e.R.kind === 'human' ? 1.1 : 1.2) * (e.scale || 1);
@@ -2111,8 +2114,12 @@ function syncEnt(e, dt) {
 /* ================= camera: a fixed 3/4 top-down view that follows the hero; cinematic pans for the story ================= */
 function updateCam(dt) {
   const C = CAM;
-  if (W.cine && C.cine) { const S = C.cine; S.t += dt; const q = S.d ? smooth(clamp(S.t / S.d, 0, 1)) : 1; C.tx = lerp(S.x0, S.x1, q); C.tz = lerp(S.z0, S.z1, q); C.zoom = lerp(S.k0, S.k1, q); }
-  else { const me = W.P[W.me]; if (me) { const q = Math.min(1, dt * 6), far = Math.hypot(C.tx - me.x, C.tz - me.z) > 30; C.tx = far ? me.x : lerp(C.tx, me.x, q); C.tz = far ? me.z : lerp(C.tz, me.z, q); } C.zoom = lerp(C.zoom, C.zoomT, Math.min(1, dt * 5)); }
+  if (W.cine && C.cine) { C.lockF = false; const S = C.cine; S.t += dt; const q = S.d ? smooth(clamp(S.t / S.d, 0, 1)) : 1; C.tx = lerp(S.x0, S.x1, q); C.tz = lerp(S.z0, S.z1, q); C.zoom = lerp(S.k0, S.k1, q); }
+  else { const me = W.P[W.me]; // locked to the hero (no trailing, no scroll after stopping); after a cut-scene or a jump it eases back, then locks again
+    if (me) { const dx = me.x - C.tx, dz = me.z - C.tz, d = Math.hypot(dx, dz);
+      if (d > 30 || d < 0.08 || C.lockF && d < 2.5) { C.tx = me.x; C.tz = me.z; C.lockF = true; }
+      else { C.lockF = false; const q = 1 - Math.exp(-dt * 12); C.tx += dx * q; C.tz += dz * q; } }
+    C.zoom = lerp(C.zoom, C.zoomT, Math.min(1, dt * 5)); }
   V.cx = C.tx; V.cz = C.tz - 0.6; V.zoom = C.zoom; fitLow(); clampCamToArea();
   if (V.shake > 0) { const s = V.shake * 14; V.sx = Math.round((Math.random() - 0.5) * s); V.sy = Math.round((Math.random() - 0.5) * s); V.shake = Math.max(0, V.shake - dt * 2.5); } else V.sx = V.sy = 0;
   camSnap();
@@ -2512,26 +2519,35 @@ function evolvePartner(form) {
   netEv({ k: 'evolve', form }); saveGame();
 }
 /* ---------- local control ---------- */
+/* walking has a little momentum so short taps make short steps: a ramp r goes 0 → 1 in MOVE_ACC s while a direction is held and
+   back to 0 in MOVE_DEC s when let go; speed = top · r² (ease-in, so a 50–80 ms tap moves only ~0.05–0.2 m). Direction changes are instant.
+   Top speeds are unchanged; dashes, knockback and lunges move the hero on their own and are not ramped. */
+const MOVE_ACC = 0.09, MOVE_DEC = 0.035, SLOW_K = 0.4;
+function stopLocal(e) { e.mvSpd = 0; e.mvR = 0; }
 function controlLocal(e, dt) {
   if (!e) return;
-  if (!e.alive) { e.mvSpd = 0; return; }
-  if (W.cine || DLG.open || UI.modal) { e.mvSpd = 0; return; }
+  if (!e.alive) { stopLocal(e); return; }
+  if (W.cine || DLG.open || UI.modal) { stopLocal(e); return; }
   const mv = inputMove(); // camera-relative
-  let sp = e.spd * (1 + buffVal(e, 'spdK')); if (e.swim) sp = BAL.swim * 1.4; if (INP.walk) sp *= 0.45;
+  let sp = e.spd * (1 + buffVal(e, 'spdK')); if (e.swim) sp = BAL.swim * 1.4;
+  if (INP.keys.Alt) sp *= SLOW_K; else if (INP.walk) sp *= 0.45; // Alt held: precise slow walk; V toggles a walk
   if (e.castLock > 0) sp *= 0.25;
   if (e.carry) sp *= 0.7;
   let m = Math.hypot(mv[0], mv[1]);
-  if (m > 0.05) { INP.moveTo = null; INP.chase = null; }
-  else if (!e.dash && (INP.chase || INP.moveTo)) { // click-to-move / click-to-attack (梦幻西游-style)
+  if (m > 1e-3) { INP.moveTo = null; INP.chase = null; }
+  else if (!e.dash && (INP.chase || INP.moveTo)) { // click-to-move / click-to-attack (left click only; 梦幻西游-style)
     const C = INP.chase; if (C && (!C.alive || C.removed || edist(e, C) > 40)) INP.chase = null;
     if (INP.chase) { const bar = e.type === 'player' ? P1_BAR : partnerBar(), rg = SK[bar[0]].range; const d = edist(e, C) - C.r; if (d > rg * 0.85) { const a = Math.atan2(C.x - e.x, C.z - e.z); mv[0] = Math.sin(a - CAM.yaw); mv[1] = Math.cos(a - CAM.yaw); m = 1; } else { faceTo(e, C.x, C.z); if (canCast(e, bar[0])) castSkill(e, bar[0], C); } }
     else if (INP.moveTo) { const T = INP.moveTo, d = dist(e.x, e.z, T.x, T.z); if (T.ent && T.ent.removed) INP.moveTo = null; else if (d < (T.stop || 0.3)) { INP.moveTo = null; if (T.ent) doInteract(e, T.ent); } else { const a = Math.atan2(T.x - e.x, T.z - e.z); mv[0] = Math.sin(a - CAM.yaw); mv[1] = Math.cos(a - CAM.yaw); m = Math.min(1, d / 0.6 + 0.3); T.stuck = (T.stuck || 0) + ((Math.abs(e.x - (T.lx ?? 1e9)) + Math.abs(e.z - (T.lz ?? 1e9))) < sp * dt * 0.15 ? dt : -T.stuck); T.lx = e.x; T.lz = e.z; if (T.stuck > 0.5) INP.moveTo = null; } }
   }
-  if (m > 0.05 && !e.dash) {
-    const a = Math.atan2(mv[0], mv[1]) + CAM.yaw; const k = Math.min(1, m);
-    if (!e.A.act || e.A.act.k === 'hit') e.rot = angLerp(e.rot, a, Math.min(1, dt * 14));
-    moveEnt(e, Math.sin(a) * sp * k * dt, Math.cos(a) * sp * k * dt, dt); e.mvSpd = sp * k; e.moveDir = a;
-  } else e.mvSpd = 0;
+  const want = m > 1e-3;
+  if (want) { const a = Math.atan2(mv[0], mv[1]) + CAM.yaw, tk = sp * Math.min(1, m); e.mvA = a; e.mvK = e.mvR > 0 && e.mvK != null ? e.mvK + (tk - e.mvK) * (1 - Math.exp(-dt / 0.05)) : tk; if (!e.A.act || e.A.act.k === 'hit') e.rot = a; } // face the input at once (the sprite turn is eased in syncEnt)
+  if (e.dash) { e.mvR = want ? 1 : 0; e.mvSpd = 0; } // the dash moves us; come out of it already at the held speed
+  else {
+    e.mvR = want ? Math.min(1, (e.mvR || 0) + dt / MOVE_ACC) : Math.max(0, (e.mvR || 0) - dt / MOVE_DEC);
+    const vs = (e.mvK || 0) * e.mvR * e.mvR;
+    if (vs > 1e-3) { moveEnt(e, Math.sin(e.mvA) * vs * dt, Math.cos(e.mvA) * vs * dt, dt); e.mvSpd = vs; e.moveDir = e.mvA; } else e.mvSpd = 0;
+  }
   if (e.lungeT > 0) { e.lungeT -= dt; const [fx0, fz0] = fwd(e); moveEnt(e, fx0 * e.lunge * dt, fz0 * e.lunge * dt, dt); }
   if (INP.jump) { INP.jump = false; if (e.fly) { } else if (e.onGround || e.swim) { e.vy = BAL.jumpV * (e.type === 'partner' && e.R.kind === 'bird' ? 1.1 : 1); e.onGround = false; e.swim = false; sfx('jump'); } else if (e.canGlide) { e.glide = true; } }
   if (e.glide && !e.onGround) { e.vy = Math.max(e.vy, -2.5); if (!INP.jumpHeld) e.glide = false; } else e.glide = false;
@@ -3463,11 +3479,16 @@ function tickMusic(dt) {
 
 /* ================= input: keyboard + mouse (MMO camera), touch sticks & buttons ================= */
 const INP = { keys: {}, jump: false, jumpHeld: false, intHeld: false, walk: false, drag: null, touchMove: null, touchCam: null, pinch: null, lastClick: 0 };
-const KEYMAP = { attack: ['j'], s1: ['1'], s2: ['2'], s3: ['3'], s4: ['4'], s5: ['5'], dodge: ['Shift'], jump: [' '], int: ['f'], bag: ['b'], skills: ['k'], quests: ['l'], map: ['m'], char: ['c'], tab: ['Tab'], walk: ['v'] };
+const KEYMAP = { attack: ['j'], s1: ['1'], s2: ['2'], s3: ['3'], s4: ['4'], s5: ['5'], dodge: ['Shift'], jump: [' '], int: ['f'], bag: ['b'], skills: ['k'], quests: ['l'], map: ['m'], char: ['c'], tab: ['Tab'], walk: ['v'], slow: ['Alt'] };
+const MOVE_KEYS = ['w', 'a', 's', 'd', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'];
+const STICK_DZ = 0.12; // touch stick: dead zone, then speed ∝ push^1.6 so a small push walks slowly
 function inputMove() {
-  if (INP.touchMove) return [-INP.touchMove.x, -INP.touchMove.y];
+  if (INP.touchMove) { const x = -INP.touchMove.x, y = -INP.touchMove.y, m = Math.hypot(x, y); if (m < STICK_DZ) return [0, 0];
+    const s = (0.08 + 0.92 * Math.pow(Math.min(1, (m - STICK_DZ) / (1 - STICK_DZ)), 1.6)) / m; return [x * s, y * s]; }
   const k = INP.keys; let x = 0, z = 0; if (k.w || k.ArrowUp) z += 1; if (k.s || k.ArrowDown) z -= 1; if (k.a || k.ArrowLeft) x += 1; if (k.d || k.ArrowRight) x -= 1; return [x, z];
 }
+/* with Alt held, macOS turns letters into symbols (Option+W = ∑): read letters/digits from the physical key instead */
+function keyOf(e) { if (e.altKey && /^(Key[A-Z]|Digit\d)$/.test(e.code || '')) return e.code.slice(-1).toLowerCase(); return e.key.length === 1 ? e.key.toLowerCase() : e.key; }
 function pickEnt(sx, sy) {
   sx /= CSSPX(); sy /= CSSPX(); const K = k(); let best = null, bd = 1e9;
   for (const e of W.ents) { if (!e.root || !e.vis || !e.root.visible || e === W.P[W.me] || e.type === 'prop' && !e.interact && !e.name) continue;
@@ -3478,7 +3499,8 @@ function pickEnt(sx, sy) {
 function clickWorld(sx, sy, hold) {
   const me = W.P[W.me]; if (!me || W.cine || DLG.open || UI.modal) return;
   const hit = hold ? null : pickEnt(sx, sy);
-  if (hit) { setTarget(hit); INP.moveTo = null;
+  // left click on a foe: walk into range and attack; on a character / object: walk over and talk / use it
+  if (hit) { setTarget(hit); INP.moveTo = null; INP.chase = null;
     if (isFoe(me, hit)) { INP.chase = hit; return; }
     if (edist(me, hit) < (hit.ir || BAL.interactR) + hit.r + 0.4) doInteract(me, hit); else INP.moveTo = { x: hit.x, z: hit.z, ent: hit, stop: (hit.ir || BAL.interactR) + hit.r - 0.4 };
     return; }
@@ -3488,23 +3510,25 @@ function clickMark(x, z) { fxDraw(0.5, { x, z, layer: 0, draw: (g, f, kk) => { c
 function initInput() {
   addEventListener('keydown', e => {
     if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
-    const k = e.key.length === 1 ? e.key.toLowerCase() : e.key;
+    const k = keyOf(e);
+    if (STATE.mode === 'play' && (e.key === 'Alt' || e.altKey)) e.preventDefault(); // Alt = hold to walk slowly: keep the browser menu / Alt-shortcuts out of it
+    if (MOVE_KEYS.includes(k)) { INP.moveTo = null; INP.chase = null; } // any key movement cancels click-to-move at once
     if (!INP.keys[k]) onKeyPress(k, e);
     INP.keys[k] = true;
     if ([' ', 'Tab', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key) && STATE.mode === 'play') e.preventDefault();
   });
-  addEventListener('keyup', e => { const k = e.key.length === 1 ? e.key.toLowerCase() : e.key; INP.keys[k] = false; if (k === ' ') INP.jumpHeld = false; if (k === 'f') INP.intHeld = false; });
+  addEventListener('keyup', e => { const k = keyOf(e); if (STATE.mode === 'play' && (e.key === 'Alt' || e.altKey)) e.preventDefault(); INP.keys[k] = false; if (k === ' ') INP.jumpHeld = false; if (k === 'f') INP.intHeld = false; });
   addEventListener('blur', () => { INP.keys = {}; INP.intHeld = false; INP.drag = null; });
   const cv = document.getElementById('gl');
   cv.addEventListener('contextmenu', e => e.preventDefault());
   cv.addEventListener('pointerdown', e => {
     audioInit(); if (e.pointerType !== 'mouse') return; if (STATE.mode !== 'play') return;
     INP.drag = { x: e.clientX, y: e.clientY, b: e.button, t: performance.now() }; cv.setPointerCapture(e.pointerId);
-    clickWorld(e.clientX, e.clientY, false);
+    if (e.button === 0) clickWorld(e.clientX, e.clientY, false); // only the left button selects / walks; right & middle never move the hero
   });
   cv.addEventListener('pointermove', e => {
     if (e.pointerType !== 'mouse') return; const [wx, wz] = s2w(e.clientX, e.clientY); INP.aimW = [wx, wz, W.t]; INP.mouse = [e.clientX, e.clientY];
-    const D = INP.drag; if (D && performance.now() - D.t > 180 && !INP.chase && INP.moveTo && !INP.moveTo.ent) INP.moveTo = { x: wx, z: wz };
+    const D = INP.drag; if (D && D.b === 0 && performance.now() - D.t > 180 && !INP.chase && INP.moveTo && !INP.moveTo.ent) INP.moveTo = { x: wx, z: wz };
   });
   cv.addEventListener('pointerup', e => { if (e.pointerType !== 'mouse') return; INP.drag = null; });
   cv.addEventListener('wheel', e => { e.preventDefault(); CAM.zoomT = clamp(CAM.zoomT - Math.sign(e.deltaY) * 0.5, 0.5, 2); }, { passive: false });
@@ -3539,7 +3563,7 @@ function heroAction(a) {
   const bar = me.type === 'player' ? P1_BAR : partnerBar();
   const tgt = UI.target && UI.target.alive && UI.target.team === 1 ? UI.target : autoTarget(me);
   if (a === 'attack') castSkill(me, bar[0], tgt);
-  else if (a === 'dodge') { const mv = inputMove(); const dir = Math.hypot(mv[0], mv[1]) > 0.1 ? Math.atan2(mv[0], mv[1]) + CAM.yaw : me.rot; castSkill(me, 'dodge', null, dir); }
+  else if (a === 'dodge') { const mv = inputMove(); const dir = Math.hypot(mv[0], mv[1]) > 1e-3 ? Math.atan2(mv[0], mv[1]) + CAM.yaw : me.rot; castSkill(me, 'dodge', null, dir); }
   else { const i = +a.slice(1); const id = bar[i]; if (id) { castSkill(me, id, tgt); } }
   hudDirty();
 }
@@ -3598,7 +3622,7 @@ function hostRecv(m) {
   if (m.t === 'bye') { guestGone(); return; }
   if (STATE.mode !== 'play') return; const p = W.P[1]; if (!p) return;
   switch (m.t) {
-    case 'i': if (m.n < (p.inSeq || 0)) return; p.inSeq = m.n; if (p.alive) { p.x = m.x; p.y = m.y; p.z = m.z; p.rot = m.r; p.mvSpd = m.s; p.fly = !!m.f; } p.ctrl = 'remote'; p.remoteT = W.t; break;
+    case 'i': if (m.n < (p.inSeq || 0)) return; p.inSeq = m.n; if (p.alive) { const jump = !p.netTgt || p.ctrl !== 'remote' || W.t - (p.remoteT || -99) > 1 || Math.hypot(m.x - p.x, m.z - p.z) > 4; p.netTgt = { x: m.x, y: m.y, z: m.z }; if (jump) { p.x = m.x; p.y = m.y; p.z = m.z; } p.rot = m.r; p.mvSpd = m.s; p.fly = !!m.f; } p.ctrl = 'remote'; p.remoteT = W.t; break;
     case 'cast': { if (p.alive) { p.rot = m.rot; const t = W.byId.get(m.tgt); const S = SK[m.id]; if (S && p.mp >= S.mp - 0.5) { p.mp -= S.mp; p.inCombat = W.t; S.cast(p, t, rankOf(m.id), m.rot); } } break; }
     case 'hit': { const t = W.byId.get(m.id); if (t) hurt(p, t, m.mul, { kb: m.kb }); break; }
     case 'int': { const t = W.byId.get(m.id); if (t) { if ((t.type === 'player') && !t.alive) revive(t, p); else doInteract(p, t); } break; }
@@ -3613,7 +3637,10 @@ function guestGone() { NET.gctl = null; NET.gsnap = null; NET.known.clear(); if 
 function partyPub() { return { lv: PARTY.lv, xp: PARTY.xp, sp: PARTY.sp, skills: PARTY.skills, items: PARTY.items, form: PARTY.form, pname: PARTY.pname, flags: PARTY.flags }; }
 function sendStart() { netSendCtl({ t: 'start', zone: W.zone.id, P: partyPub(), qi: STORY.qi, si: STORY.si, side: Object.fromEntries(Object.entries(SIDEQ).map(([k, v]) => [k, v.st])) }); NET.known.clear(); }
 const PROJVIS = { moon: () => crescentMesh(0xbfe8ff, 0.8), qmoon: () => crescentMesh(0x5ae8c8, 0.6), orb: () => orbMesh(0x8ae0ff, 0.3), arrow: () => arrowMesh(), rock: () => rockMesh(0.6), bird: () => birdFX(0xff5a2a) };
+/* the guest's hero arrives in 30 Hz packets: glide towards the latest one instead of hopping (the guest stays authoritative) */
+function smoothRemote(dt) { const p = W.P[1]; if (!p || p.ctrl !== 'remote' || !p.netTgt || !p.alive || W.t - (p.remoteT || -99) > 1) return; const T = p.netTgt, q = 1 - Math.exp(-dt * 25); p.x += (T.x - p.x) * q; p.z += (T.z - p.z) * q; p.y += (T.y - p.y) * q; }
 function hostTick(dt) {
+  smoothRemote(dt);
   if (!linkUp()) return; NET.sT += dt; NET.dT += dt;
   if (NET.dT > 1) { NET.dT = 0; const add = [], live = new Set(); for (const e of W.ents) { if (!e.specRef || e === W.P[1]) continue; live.add(e.id); if (!NET.known.has(e.id)) { NET.known.add(e.id); add.push({ id: e.id, s: e.specRef, n: e.name, ti: e.title, ty: e.type, tm: e.team, tag: e.tag, sc: e.scale || 1, lv: e.lv, el: e.elite, bo: e.boss, w: e.weaponRef }); } } const gone = [...NET.known].filter(id => !live.has(id)); gone.forEach(id => NET.known.delete(id)); if (add.length || gone.length) netSendCtl({ t: 'ents', add, gone }); }
   if (NET.sT < 0.05) return; NET.sT = 0;
@@ -3902,7 +3929,7 @@ function renderModal() {
       <div class="frame" style="padding:10px;text-align:left;line-height:2">音量 <input type="range" min="0" max="1" step="0.05" value="${SET.vol}" oninput="SET.vol=+this.value;setVol();saveSet()"><br>音乐 <input type="range" min="0" max="1" step="0.05" value="${SET.music}" oninput="SET.music=+this.value;setVol();saveSet()"><br>镜头灵敏度 <input type="range" min="0.3" max="2" step="0.1" value="${SET.camSens}" oninput="SET.camSens=+this.value;saveSet()"><br>
       <label><input type="checkbox" ${SET.shake ? 'checked' : ''} onchange="SET.shake=this.checked;saveSet()"> 画面震动</label>　<label><input type="checkbox" ${SET.dmgNum ? 'checked' : ''} onchange="SET.dmgNum=this.checked;saveSet()"> 伤害数字</label><br>
       画质 <select onchange="SET.quality=this.value;saveSet();toast('刷新页面后生效')"><option value="high" ${SET.quality === 'high' ? 'selected' : ''}>高</option><option value="mid" ${SET.quality === 'mid' ? 'selected' : ''}>中</option><option value="low" ${SET.quality === 'low' ? 'selected' : ''}>低</option></select></div>
-      <div class="frame" style="padding:10px;text-align:left;font-size:13px;line-height:1.7;color:var(--dim)">${IS_TOUCH ? '左下摇杆 移动（在屏幕左侧任意处按下）<br>右下 拳头 普攻　小圆键 宝术　💨 翻滚　⤴ 跳<br>「互动」键 对话 / 拾取（长按扶起同伴）<br>右上按钮：地图、任务、背包、宝术、角色' : 'WASD 移动　鼠标拖动 转镜头　滚轮 缩放<br>左键 / J 普攻　1–5 宝术　Shift 翻滚　空格 跳<br>F 互动（长按扶起同伴）　Tab 切换目标　R 吃药<br>B 背包　K 宝术　L 任务　M 地图　C 角色　Q/E 转镜头　N 静音'}</div>
+      <div class="frame" style="padding:10px;text-align:left;font-size:13px;line-height:1.7;color:var(--dim)">${IS_TOUCH ? '左下摇杆 移动（在屏幕左侧任意处按下，轻推慢走）<br>右下 拳头 普攻　小圆键 宝术　💨 翻滚　⤴ 跳<br>「互动」键 对话 / 拾取（长按扶起同伴）<br>右上按钮：地图、任务、背包、宝术、角色' : 'WASD 移动　按住 Alt 慢走（V 切换步行）　左键点地面 走过去　滚轮 缩放<br>左键 / J 普攻　1–5 宝术　Shift 翻滚　空格 跳<br>F 互动（长按扶起同伴）　Tab 切换目标　R 吃药<br>B 背包　K 宝术　L 任务　M 地图　C 角色　Q/E 转镜头　N 静音'}</div>
       ${HUB ? `<button class="btn" id="hubq">返回游戏厅</button>` : ''}
       <button class="btn" id="titq">回到标题</button></div>`;
     M.innerHTML = h;

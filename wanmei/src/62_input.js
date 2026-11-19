@@ -1,10 +1,15 @@
 /* ================= input: keyboard + mouse (MMO camera), touch sticks & buttons ================= */
 const INP = { keys: {}, jump: false, jumpHeld: false, intHeld: false, walk: false, drag: null, touchMove: null, touchCam: null, pinch: null, lastClick: 0 };
-const KEYMAP = { attack: ['j'], s1: ['1'], s2: ['2'], s3: ['3'], s4: ['4'], s5: ['5'], dodge: ['Shift'], jump: [' '], int: ['f'], bag: ['b'], skills: ['k'], quests: ['l'], map: ['m'], char: ['c'], tab: ['Tab'], walk: ['v'] };
+const KEYMAP = { attack: ['j'], s1: ['1'], s2: ['2'], s3: ['3'], s4: ['4'], s5: ['5'], dodge: ['Shift'], jump: [' '], int: ['f'], bag: ['b'], skills: ['k'], quests: ['l'], map: ['m'], char: ['c'], tab: ['Tab'], walk: ['v'], slow: ['Alt'] };
+const MOVE_KEYS = ['w', 'a', 's', 'd', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'];
+const STICK_DZ = 0.12; // touch stick: dead zone, then speed ∝ push^1.6 so a small push walks slowly
 function inputMove() {
-  if (INP.touchMove) return [-INP.touchMove.x, -INP.touchMove.y];
+  if (INP.touchMove) { const x = -INP.touchMove.x, y = -INP.touchMove.y, m = Math.hypot(x, y); if (m < STICK_DZ) return [0, 0];
+    const s = (0.08 + 0.92 * Math.pow(Math.min(1, (m - STICK_DZ) / (1 - STICK_DZ)), 1.6)) / m; return [x * s, y * s]; }
   const k = INP.keys; let x = 0, z = 0; if (k.w || k.ArrowUp) z += 1; if (k.s || k.ArrowDown) z -= 1; if (k.a || k.ArrowLeft) x += 1; if (k.d || k.ArrowRight) x -= 1; return [x, z];
 }
+/* with Alt held, macOS turns letters into symbols (Option+W = ∑): read letters/digits from the physical key instead */
+function keyOf(e) { if (e.altKey && /^(Key[A-Z]|Digit\d)$/.test(e.code || '')) return e.code.slice(-1).toLowerCase(); return e.key.length === 1 ? e.key.toLowerCase() : e.key; }
 function pickEnt(sx, sy) {
   sx /= CSSPX(); sy /= CSSPX(); const K = k(); let best = null, bd = 1e9;
   for (const e of W.ents) { if (!e.root || !e.vis || !e.root.visible || e === W.P[W.me] || e.type === 'prop' && !e.interact && !e.name) continue;
@@ -15,7 +20,8 @@ function pickEnt(sx, sy) {
 function clickWorld(sx, sy, hold) {
   const me = W.P[W.me]; if (!me || W.cine || DLG.open || UI.modal) return;
   const hit = hold ? null : pickEnt(sx, sy);
-  if (hit) { setTarget(hit); INP.moveTo = null;
+  // left click on a foe: walk into range and attack; on a character / object: walk over and talk / use it
+  if (hit) { setTarget(hit); INP.moveTo = null; INP.chase = null;
     if (isFoe(me, hit)) { INP.chase = hit; return; }
     if (edist(me, hit) < (hit.ir || BAL.interactR) + hit.r + 0.4) doInteract(me, hit); else INP.moveTo = { x: hit.x, z: hit.z, ent: hit, stop: (hit.ir || BAL.interactR) + hit.r - 0.4 };
     return; }
@@ -25,23 +31,25 @@ function clickMark(x, z) { fxDraw(0.5, { x, z, layer: 0, draw: (g, f, kk) => { c
 function initInput() {
   addEventListener('keydown', e => {
     if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
-    const k = e.key.length === 1 ? e.key.toLowerCase() : e.key;
+    const k = keyOf(e);
+    if (STATE.mode === 'play' && (e.key === 'Alt' || e.altKey)) e.preventDefault(); // Alt = hold to walk slowly: keep the browser menu / Alt-shortcuts out of it
+    if (MOVE_KEYS.includes(k)) { INP.moveTo = null; INP.chase = null; } // any key movement cancels click-to-move at once
     if (!INP.keys[k]) onKeyPress(k, e);
     INP.keys[k] = true;
     if ([' ', 'Tab', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key) && STATE.mode === 'play') e.preventDefault();
   });
-  addEventListener('keyup', e => { const k = e.key.length === 1 ? e.key.toLowerCase() : e.key; INP.keys[k] = false; if (k === ' ') INP.jumpHeld = false; if (k === 'f') INP.intHeld = false; });
+  addEventListener('keyup', e => { const k = keyOf(e); if (STATE.mode === 'play' && (e.key === 'Alt' || e.altKey)) e.preventDefault(); INP.keys[k] = false; if (k === ' ') INP.jumpHeld = false; if (k === 'f') INP.intHeld = false; });
   addEventListener('blur', () => { INP.keys = {}; INP.intHeld = false; INP.drag = null; });
   const cv = document.getElementById('gl');
   cv.addEventListener('contextmenu', e => e.preventDefault());
   cv.addEventListener('pointerdown', e => {
     audioInit(); if (e.pointerType !== 'mouse') return; if (STATE.mode !== 'play') return;
     INP.drag = { x: e.clientX, y: e.clientY, b: e.button, t: performance.now() }; cv.setPointerCapture(e.pointerId);
-    clickWorld(e.clientX, e.clientY, false);
+    if (e.button === 0) clickWorld(e.clientX, e.clientY, false); // only the left button selects / walks; right & middle never move the hero
   });
   cv.addEventListener('pointermove', e => {
     if (e.pointerType !== 'mouse') return; const [wx, wz] = s2w(e.clientX, e.clientY); INP.aimW = [wx, wz, W.t]; INP.mouse = [e.clientX, e.clientY];
-    const D = INP.drag; if (D && performance.now() - D.t > 180 && !INP.chase && INP.moveTo && !INP.moveTo.ent) INP.moveTo = { x: wx, z: wz };
+    const D = INP.drag; if (D && D.b === 0 && performance.now() - D.t > 180 && !INP.chase && INP.moveTo && !INP.moveTo.ent) INP.moveTo = { x: wx, z: wz };
   });
   cv.addEventListener('pointerup', e => { if (e.pointerType !== 'mouse') return; INP.drag = null; });
   cv.addEventListener('wheel', e => { e.preventDefault(); CAM.zoomT = clamp(CAM.zoomT - Math.sign(e.deltaY) * 0.5, 0.5, 2); }, { passive: false });
@@ -76,7 +84,7 @@ function heroAction(a) {
   const bar = me.type === 'player' ? P1_BAR : partnerBar();
   const tgt = UI.target && UI.target.alive && UI.target.team === 1 ? UI.target : autoTarget(me);
   if (a === 'attack') castSkill(me, bar[0], tgt);
-  else if (a === 'dodge') { const mv = inputMove(); const dir = Math.hypot(mv[0], mv[1]) > 0.1 ? Math.atan2(mv[0], mv[1]) + CAM.yaw : me.rot; castSkill(me, 'dodge', null, dir); }
+  else if (a === 'dodge') { const mv = inputMove(); const dir = Math.hypot(mv[0], mv[1]) > 1e-3 ? Math.atan2(mv[0], mv[1]) + CAM.yaw : me.rot; castSkill(me, 'dodge', null, dir); }
   else { const i = +a.slice(1); const id = bar[i]; if (id) { castSkill(me, id, tgt); } }
   hudDirty();
 }

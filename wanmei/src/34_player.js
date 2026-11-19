@@ -26,26 +26,35 @@ function evolvePartner(form) {
   netEv({ k: 'evolve', form }); saveGame();
 }
 /* ---------- local control ---------- */
+/* walking has a little momentum so short taps make short steps: a ramp r goes 0 → 1 in MOVE_ACC s while a direction is held and
+   back to 0 in MOVE_DEC s when let go; speed = top · r² (ease-in, so a 50–80 ms tap moves only ~0.05–0.2 m). Direction changes are instant.
+   Top speeds are unchanged; dashes, knockback and lunges move the hero on their own and are not ramped. */
+const MOVE_ACC = 0.09, MOVE_DEC = 0.035, SLOW_K = 0.4;
+function stopLocal(e) { e.mvSpd = 0; e.mvR = 0; }
 function controlLocal(e, dt) {
   if (!e) return;
-  if (!e.alive) { e.mvSpd = 0; return; }
-  if (W.cine || DLG.open || UI.modal) { e.mvSpd = 0; return; }
+  if (!e.alive) { stopLocal(e); return; }
+  if (W.cine || DLG.open || UI.modal) { stopLocal(e); return; }
   const mv = inputMove(); // camera-relative
-  let sp = e.spd * (1 + buffVal(e, 'spdK')); if (e.swim) sp = BAL.swim * 1.4; if (INP.walk) sp *= 0.45;
+  let sp = e.spd * (1 + buffVal(e, 'spdK')); if (e.swim) sp = BAL.swim * 1.4;
+  if (INP.keys.Alt) sp *= SLOW_K; else if (INP.walk) sp *= 0.45; // Alt held: precise slow walk; V toggles a walk
   if (e.castLock > 0) sp *= 0.25;
   if (e.carry) sp *= 0.7;
   let m = Math.hypot(mv[0], mv[1]);
-  if (m > 0.05) { INP.moveTo = null; INP.chase = null; }
-  else if (!e.dash && (INP.chase || INP.moveTo)) { // click-to-move / click-to-attack (梦幻西游-style)
+  if (m > 1e-3) { INP.moveTo = null; INP.chase = null; }
+  else if (!e.dash && (INP.chase || INP.moveTo)) { // click-to-move / click-to-attack (left click only; 梦幻西游-style)
     const C = INP.chase; if (C && (!C.alive || C.removed || edist(e, C) > 40)) INP.chase = null;
     if (INP.chase) { const bar = e.type === 'player' ? P1_BAR : partnerBar(), rg = SK[bar[0]].range; const d = edist(e, C) - C.r; if (d > rg * 0.85) { const a = Math.atan2(C.x - e.x, C.z - e.z); mv[0] = Math.sin(a - CAM.yaw); mv[1] = Math.cos(a - CAM.yaw); m = 1; } else { faceTo(e, C.x, C.z); if (canCast(e, bar[0])) castSkill(e, bar[0], C); } }
     else if (INP.moveTo) { const T = INP.moveTo, d = dist(e.x, e.z, T.x, T.z); if (T.ent && T.ent.removed) INP.moveTo = null; else if (d < (T.stop || 0.3)) { INP.moveTo = null; if (T.ent) doInteract(e, T.ent); } else { const a = Math.atan2(T.x - e.x, T.z - e.z); mv[0] = Math.sin(a - CAM.yaw); mv[1] = Math.cos(a - CAM.yaw); m = Math.min(1, d / 0.6 + 0.3); T.stuck = (T.stuck || 0) + ((Math.abs(e.x - (T.lx ?? 1e9)) + Math.abs(e.z - (T.lz ?? 1e9))) < sp * dt * 0.15 ? dt : -T.stuck); T.lx = e.x; T.lz = e.z; if (T.stuck > 0.5) INP.moveTo = null; } }
   }
-  if (m > 0.05 && !e.dash) {
-    const a = Math.atan2(mv[0], mv[1]) + CAM.yaw; const k = Math.min(1, m);
-    if (!e.A.act || e.A.act.k === 'hit') e.rot = angLerp(e.rot, a, Math.min(1, dt * 14));
-    moveEnt(e, Math.sin(a) * sp * k * dt, Math.cos(a) * sp * k * dt, dt); e.mvSpd = sp * k; e.moveDir = a;
-  } else e.mvSpd = 0;
+  const want = m > 1e-3;
+  if (want) { const a = Math.atan2(mv[0], mv[1]) + CAM.yaw, tk = sp * Math.min(1, m); e.mvA = a; e.mvK = e.mvR > 0 && e.mvK != null ? e.mvK + (tk - e.mvK) * (1 - Math.exp(-dt / 0.05)) : tk; if (!e.A.act || e.A.act.k === 'hit') e.rot = a; } // face the input at once (the sprite turn is eased in syncEnt)
+  if (e.dash) { e.mvR = want ? 1 : 0; e.mvSpd = 0; } // the dash moves us; come out of it already at the held speed
+  else {
+    e.mvR = want ? Math.min(1, (e.mvR || 0) + dt / MOVE_ACC) : Math.max(0, (e.mvR || 0) - dt / MOVE_DEC);
+    const vs = (e.mvK || 0) * e.mvR * e.mvR;
+    if (vs > 1e-3) { moveEnt(e, Math.sin(e.mvA) * vs * dt, Math.cos(e.mvA) * vs * dt, dt); e.mvSpd = vs; e.moveDir = e.mvA; } else e.mvSpd = 0;
+  }
   if (e.lungeT > 0) { e.lungeT -= dt; const [fx0, fz0] = fwd(e); moveEnt(e, fx0 * e.lunge * dt, fz0 * e.lunge * dt, dt); }
   if (INP.jump) { INP.jump = false; if (e.fly) { } else if (e.onGround || e.swim) { e.vy = BAL.jumpV * (e.type === 'partner' && e.R.kind === 'bird' ? 1.1 : 1); e.onGround = false; e.swim = false; sfx('jump'); } else if (e.canGlide) { e.glide = true; } }
   if (e.glide && !e.onGround) { e.vy = Math.max(e.vy, -2.5); if (!INP.jumpHeld) e.glide = false; } else e.glide = false;

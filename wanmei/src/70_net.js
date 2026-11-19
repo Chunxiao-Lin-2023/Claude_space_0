@@ -37,7 +37,7 @@ function hostRecv(m) {
   if (m.t === 'bye') { guestGone(); return; }
   if (STATE.mode !== 'play') return; const p = W.P[1]; if (!p) return;
   switch (m.t) {
-    case 'i': if (m.n < (p.inSeq || 0)) return; p.inSeq = m.n; if (p.alive) { p.x = m.x; p.y = m.y; p.z = m.z; p.rot = m.r; p.mvSpd = m.s; p.fly = !!m.f; } p.ctrl = 'remote'; p.remoteT = W.t; break;
+    case 'i': if (m.n < (p.inSeq || 0)) return; p.inSeq = m.n; if (p.alive) { const jump = !p.netTgt || p.ctrl !== 'remote' || W.t - (p.remoteT || -99) > 1 || Math.hypot(m.x - p.x, m.z - p.z) > 4; p.netTgt = { x: m.x, y: m.y, z: m.z }; if (jump) { p.x = m.x; p.y = m.y; p.z = m.z; } p.rot = m.r; p.mvSpd = m.s; p.fly = !!m.f; } p.ctrl = 'remote'; p.remoteT = W.t; break;
     case 'cast': { if (p.alive) { p.rot = m.rot; const t = W.byId.get(m.tgt); const S = SK[m.id]; if (S && p.mp >= S.mp - 0.5) { p.mp -= S.mp; p.inCombat = W.t; S.cast(p, t, rankOf(m.id), m.rot); } } break; }
     case 'hit': { const t = W.byId.get(m.id); if (t) hurt(p, t, m.mul, { kb: m.kb }); break; }
     case 'int': { const t = W.byId.get(m.id); if (t) { if ((t.type === 'player') && !t.alive) revive(t, p); else doInteract(p, t); } break; }
@@ -52,7 +52,10 @@ function guestGone() { NET.gctl = null; NET.gsnap = null; NET.known.clear(); if 
 function partyPub() { return { lv: PARTY.lv, xp: PARTY.xp, sp: PARTY.sp, skills: PARTY.skills, items: PARTY.items, form: PARTY.form, pname: PARTY.pname, flags: PARTY.flags }; }
 function sendStart() { netSendCtl({ t: 'start', zone: W.zone.id, P: partyPub(), qi: STORY.qi, si: STORY.si, side: Object.fromEntries(Object.entries(SIDEQ).map(([k, v]) => [k, v.st])) }); NET.known.clear(); }
 const PROJVIS = { moon: () => crescentMesh(0xbfe8ff, 0.8), qmoon: () => crescentMesh(0x5ae8c8, 0.6), orb: () => orbMesh(0x8ae0ff, 0.3), arrow: () => arrowMesh(), rock: () => rockMesh(0.6), bird: () => birdFX(0xff5a2a) };
+/* the guest's hero arrives in 30 Hz packets: glide towards the latest one instead of hopping (the guest stays authoritative) */
+function smoothRemote(dt) { const p = W.P[1]; if (!p || p.ctrl !== 'remote' || !p.netTgt || !p.alive || W.t - (p.remoteT || -99) > 1) return; const T = p.netTgt, q = 1 - Math.exp(-dt * 25); p.x += (T.x - p.x) * q; p.z += (T.z - p.z) * q; p.y += (T.y - p.y) * q; }
 function hostTick(dt) {
+  smoothRemote(dt);
   if (!linkUp()) return; NET.sT += dt; NET.dT += dt;
   if (NET.dT > 1) { NET.dT = 0; const add = [], live = new Set(); for (const e of W.ents) { if (!e.specRef || e === W.P[1]) continue; live.add(e.id); if (!NET.known.has(e.id)) { NET.known.add(e.id); add.push({ id: e.id, s: e.specRef, n: e.name, ti: e.title, ty: e.type, tm: e.team, tag: e.tag, sc: e.scale || 1, lv: e.lv, el: e.elite, bo: e.boss, w: e.weaponRef }); } } const gone = [...NET.known].filter(id => !live.has(id)); gone.forEach(id => NET.known.delete(id)); if (add.length || gone.length) netSendCtl({ t: 'ents', add, gone }); }
   if (NET.sT < 0.05) return; NET.sT = 0;

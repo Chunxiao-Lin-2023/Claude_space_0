@@ -27,7 +27,7 @@ function liftH(x, z) { const L = LIFTS.length ? liftAt(x, z) : null; return L ? 
 function zKey(x, z) { // things on a cliff top, or at the foot of its front face, sort after the cliff itself
   for (let i = 0; i < LIFTS.length; i++) { const L = LIFTS[i], dx = x - L.x, dz = z - L.z; if (dz * dz + dx * dx > (L.rmax + 1.5) ** 2) continue; if (liftAt(x, z) === L) return L.z + L.rmax + 0.02 + dz * 0.005; if (dz > 0 && z < L.z + L.rmax + 0.2) return L.z + L.rmax + 0.2 + dz * 0.001; }
   return z; }
-function camSnap() { const K = V.PPM, tl = liftH(V.cx, V.cz); V.camLift = Math.abs(tl - V.camLift) < 0.02 ? tl : lerp(V.camLift, tl, 0.14); V.ox = Math.round(V.cx * K - V.W / 2 - V.sx); V.oz = Math.round(V.cz * K - V.H / 2 - V.sy - V.camLift * K); }
+function camSnap() { const K = V.PPM, tl = liftH(V.cx, V.cz); V.camLift = Math.abs(tl - V.camLift) < 0.02 ? tl : lerp(V.camLift, tl, 0.14); V.ox = Math.round(V.cx * K) - (V.W >> 1) - V.sx; V.oz = Math.round(V.cz * K) - (V.H >> 1) - V.sy - Math.round(V.camLift * K); } // round the centre first: a hero the camera is locked to keeps the same screen pixel (no 1-px jitter against the ground)
 function w2s(x, z, y = 0) { const K = V.PPM; return [Math.round(x * K) - V.ox, Math.round(z * K) - V.oz - Math.round((elevS(y) + (LIFTS.length ? liftH(x, z) : 0)) * K)]; }
 function w2s0(x, z) { const K = V.PPM; return [Math.round(x * K) - V.ox, Math.round(z * K) - V.oz]; }
 function a2w(ax, ay) { const K = V.PPM; return [(ax + V.ox) / K, (ay + V.oz) / K]; }

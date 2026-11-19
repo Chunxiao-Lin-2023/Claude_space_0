@@ -49,11 +49,14 @@ function syncEnt(e, dt) {
   if (!e.R) { o.rotation.y = e.rot; o.visible = e.vis; if (e.spin) o.rotation.z = W.t * e.spin; return; }
   if (e.R.kind === 'bird' && e.fly) o.position.y += Math.sin(W.t * 3 + e.id) * 0.15;
   if (e.fly) { const k = Math.min(1, dt * 2.5), lh = liftH(e.x, e.z); e.vFlyH = e.vFlyH == null ? (e.flyH ?? 3.5) : lerp(e.vFlyH, e.flyH ?? 3.5, k); o.visLift = o.visLift == null ? lh : lerp(o.visLift, lh, k); o.flyElev = Math.max(0, e.vFlyH + Math.sin(W.t * 3 + e.id) * 0.15); } else { o.flyElev = null; o.visLift = null; e.vFlyH = null; }
-  e.dispRot = e.dispRot == null ? e.rot : angLerp(e.dispRot, e.rot, Math.min(1, dt * 14)); o.rotation.y = e.dispRot;
+  const mine = e === W.P[W.me] && e.ctrl !== 'remote'; // the hero this client steers: snappier turns, legs stop with the input
+  e.dispRot = e.dispRot == null ? e.rot : angLerp(e.dispRot, e.rot, Math.min(1, dt * (mine ? 25 : 14))); o.rotation.y = e.dispRot;
   // animate from the distance actually travelled, not from what the AI asked for: no sliding, no walking on the spot
   const mv = e._lx == null ? 0 : Math.hypot(e.x - e._lx, e.z - e._lz) / Math.max(dt, 1e-3); e._lx = e.x; e._lz = e.z;
-  e.vel = mv > 14 && !e.fly ? 0 : lerp(e.vel || 0, mv, Math.min(1, dt * 12)); if (e.vel < 0.05) e.vel = 0;
-  const A = e.A; A.spd = e.vel; A.vy = e.vy; A.fly = e.fly;
+  e.vel = mv > 14 && !e.fly ? 0 : lerp(e.vel || 0, mv, Math.min(1, dt * (mine ? 30 : 12))); if (e.vel < 0.05) e.vel = 0;
+  const A = e.A;
+  if (mine && !(e.mvSpd > 0) && !e.dash && !e.kbx && !e.kbz && !(e.lungeT > 0) && !e.walk && !W.cine) { e.vel = 0; A.walk = 0; } // no input → back to idle now, not after the legs coast
+  A.spd = e.vel; A.vy = e.vy; A.fly = e.fly;
   if (!e.alive && e.type === 'mob') { A.spd = 0; A.pose = e.R.kind === 'human' ? 'down' : 'dead'; }
   A.talkOn = DLG.open && DLG.e === e && DLG.typing < DLG.full.length;
   o.visible = e.vis; o.shadow = e.swim ? 0 : e.r * (e.R.kind === 'human' ? 1.1 : 1.2) * (e.scale || 1);
@@ -62,8 +65,12 @@ function syncEnt(e, dt) {
 /* ================= camera: a fixed 3/4 top-down view that follows the hero; cinematic pans for the story ================= */
 function updateCam(dt) {
   const C = CAM;
-  if (W.cine && C.cine) { const S = C.cine; S.t += dt; const q = S.d ? smooth(clamp(S.t / S.d, 0, 1)) : 1; C.tx = lerp(S.x0, S.x1, q); C.tz = lerp(S.z0, S.z1, q); C.zoom = lerp(S.k0, S.k1, q); }
-  else { const me = W.P[W.me]; if (me) { const q = Math.min(1, dt * 6), far = Math.hypot(C.tx - me.x, C.tz - me.z) > 30; C.tx = far ? me.x : lerp(C.tx, me.x, q); C.tz = far ? me.z : lerp(C.tz, me.z, q); } C.zoom = lerp(C.zoom, C.zoomT, Math.min(1, dt * 5)); }
+  if (W.cine && C.cine) { C.lockF = false; const S = C.cine; S.t += dt; const q = S.d ? smooth(clamp(S.t / S.d, 0, 1)) : 1; C.tx = lerp(S.x0, S.x1, q); C.tz = lerp(S.z0, S.z1, q); C.zoom = lerp(S.k0, S.k1, q); }
+  else { const me = W.P[W.me]; // locked to the hero (no trailing, no scroll after stopping); after a cut-scene or a jump it eases back, then locks again
+    if (me) { const dx = me.x - C.tx, dz = me.z - C.tz, d = Math.hypot(dx, dz);
+      if (d > 30 || d < 0.08 || C.lockF && d < 2.5) { C.tx = me.x; C.tz = me.z; C.lockF = true; }
+      else { C.lockF = false; const q = 1 - Math.exp(-dt * 12); C.tx += dx * q; C.tz += dz * q; } }
+    C.zoom = lerp(C.zoom, C.zoomT, Math.min(1, dt * 5)); }
   V.cx = C.tx; V.cz = C.tz - 0.6; V.zoom = C.zoom; fitLow(); clampCamToArea();
   if (V.shake > 0) { const s = V.shake * 14; V.sx = Math.round((Math.random() - 0.5) * s); V.sy = Math.round((Math.random() - 0.5) * s); V.shake = Math.max(0, V.shake - dt * 2.5); } else V.sx = V.sy = 0;
   camSnap();
