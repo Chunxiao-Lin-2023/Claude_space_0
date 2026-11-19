@@ -47,6 +47,7 @@ function hostRecv(m, fast) {
   const p = W.p[1];
   switch (m.t) {
     case 'i': // guest input + its own position (client-authoritative movement)
+      if (m.f != null && m.f !== W.floor) return; // still on the floor below: ignore its stale position
       if (m.n < (p.inSeq || 0)) return; p.inSeq = m.n;
       if (p.hide < 0) { p.x = m.x; p.z = m.z; p.spd = m.s; p.run = !!m.r; p.stam = m.st; }
       p.a = m.a; p.aim = m.aim;
@@ -148,7 +149,7 @@ function guestNetTick(dt) {
   const o = W.p[1 - ME]; if (o.tx != null) { const k = Math.min(1, dt * 12); o.x = lerp(o.x, o.tx, k); o.z = lerp(o.z, o.tz, k); }
   const G = W.g; if (G.tx != null) { const k = Math.min(1, dt * 10); G.x = lerp(G.x, G.tx, k); G.z = lerp(G.z, G.tz, k); }
   NET.iT -= dt; if (NET.iT <= 0) { NET.iT = 1 / 30; const p = W.p[ME], i = p.inp; NET.inN = (NET.inN || 0) + 1;
-    netSendFast({ t: 'i', n: NET.inN, x: r2(p.x), z: r2(p.z), a: r2(p.a), aim: r2(i.aim), s: r2(p.spd), r: p.run ? 1 : 0, st: r2(p.stam), act: i.act, h: i.hold ? 1 : 0, pr: i.press, b: i.boost }); }
+    netSendFast({ t: 'i', f: W.floor, n: NET.inN, x: r2(p.x), z: r2(p.z), a: r2(p.a), aim: r2(i.aim), s: r2(p.spd), r: p.run ? 1 : 0, st: r2(p.stam), act: i.act, h: i.hold ? 1 : 0, pr: i.press, b: i.boost }); }
 }
 /* actions that need the host */
 function requestPing() {

@@ -61,7 +61,7 @@ function initMenus() {
   seg('qSeg', 'quality'); seg('gSeg', 'grain', 1); seg('sSeg', 'shake', 1);
   $('rRetry').onclick = () => hostRetry();
   $('floorSeg').onclick = e => { const b = e.target.closest('button'); if (!b || b.disabled || NETROLE !== 'host') return; NET.floor = +b.dataset.v; sendLobby(); lobbyUI(); };
-  $('rAgain').onclick = () => { if (NETROLE === 'host') { netSendCtl({ t: 'toLobby' }); backToLobby(); } else $('rStatus').textContent = '等待房主…'; };
+  $('rAgain').onclick = () => { if (STATE.local) { backToLobby(); return; } if (NETROLE === 'host') { netSendCtl({ t: 'toLobby' }); backToLobby(); } else $('rStatus').textContent = '等待房主…'; };
   document.querySelectorAll('[data-close]').forEach(b => b.onclick = () => closeModal());
   document.querySelectorAll('.modal').forEach(m => m.addEventListener('pointerdown', e => { if (e.target === m) closeModal(); }));
   // quick chat + glyph buttons
@@ -169,6 +169,14 @@ function updateOverlays(me, dt) {
   UI.bubbles = UI.bubbles.filter(b => now - b.t < 3800);
   for (const b of UI.bubbles) { const k = 'bub' + b.id; keep.add(k); const pl = W.p[b.by]; const e = overlayEl(k, 'bubble', b.html); const ss = toScreen(pl.x, 2.3, pl.z); e.style.left = clamp(ss.x, 60, innerWidth - 60) + 'px'; e.style.top = clamp(ss.y, 80, innerHeight - 20) + 'px'; e.style.opacity = 1 - Math.max(0, (now - b.t - 3000) / 800); }
   for (const k of Object.keys(UI.tagEls)) if ((k.startsWith('ping') || k.startsWith('bub')) && !keep.has(k)) dropEl(k);
+  // same screen: each hero gets their own floating prompt
+  if (STATE.local) for (const p of W.p) {
+    const b = p.id === 0 ? UI.best : UI.best2, k = 'lp' + p.id, pr = b && !UI.modal ? promptFor(p, b, W) : null;
+    if (!pr) { dropEl(k); if (p.id === 0) UI.lp0y = null; continue; }
+    const prog = p.act && b && p.act.id === b.id ? p.act.p : 0;
+    const e = overlayEl(k, 'lprompt', `<kbd style="border-color:${ROLES[p.role].color}">${IS_TOUCH ? '✋' : p.id ? '⏎' : 'E'}</kbd><span>${pr.t}</span><i style="width:${Math.round(prog * 100)}%"></i>`);
+    const ss = toScreen(p.x, 2.15, p.z); let y = ss.y; if (p.id === 1 && UI.lp0y != null && Math.abs(UI.lp0x - ss.x) < 160 && Math.abs(UI.lp0y - y) < 28) y = UI.lp0y + 30; if (p.id === 0) { UI.lp0x = ss.x; UI.lp0y = y; } e.style.left = ss.x + 'px'; e.style.top = y + 'px'; e.classList.toggle('no', !pr.ok);
+  }
 }
 function addLog(txt, c) { if (!txt) return; const el = document.createElement('div'); el.textContent = txt; if (c) el.style.borderLeftColor = c, el.style.color = c; $('log').appendChild(el); while ($('log').children.length > 4) $('log').firstChild.remove(); setTimeout(() => { el.style.transition = 'opacity 1s'; el.style.opacity = 0; setTimeout(() => el.remove(), 1000); }, 7000); }
 /* ---------- events (host and guest run the same code) ---------- */
@@ -176,7 +184,7 @@ let bubId = 0;
 function processEvents() {
   for (const e of W.E) {
     if (e.s <= UI.lastSeq) continue; UI.lastSeq = e.s;
-    if (e.to != null && e.to >= 0 && e.to !== ME) continue;
+    if (e.to != null && e.to >= 0 && e.to !== ME && !STATE.local) continue;
     switch (e.k) {
       case 'snd': sfx(e.n, e.x, e.z, e.v); if (/^bell\d$/.test(e.n) && R3.bells[+e.n[4]]) R3.bells[+e.n[4]].sw = 1; break;
       case 'msg': addLog(e.txt, e.c); break;
@@ -187,14 +195,14 @@ function processEvents() {
       case 'evidence': break;
       case 'floor': if (NETROLE === 'guest') guestFloor(e); break;
       case 'fx':
-        if (e.fx === 'hunt') { R3.shake = Math.max(R3.shake, 0.6); }
+        if (e.fx === 'hunt') { R3.shake = Math.max(R3.shake, 0.6); const me = W.p[ME], G = W.g; if (G && W.p.some(p => (STATE.local || p.id === ME) && !p.down && p.hide < 0 && dist(G.x, G.z, p.x, p.z) < 6.5)) scare(ghostForm(W)); }
         if (e.fx === 'power') toast('电力恢复了', '#ffd36b');
-        if (e.fx === 'banish') { R3.flash = 1; R3.flash2 = 0.9; toast(e.boss ? '宅主安息了' : '怨灵消散了', '#c8a8ff'); }
+        if (e.fx === 'banish') { R3.flash = 1; R3.flash2 = 0.9; toast(e.boss ? '宅主安息了' : '怨灵消散了', '#c8a8ff'); if (e.boss) playScene('end'); }
         if (e.fx === 'reveal' && W.setup.gtype !== 'boss') toast('它现出了真身——' + GT(W.setup.gtype).name, '#9fe8ff');
         if (e.fx === 'anchor') { R3.shake = 1.2; R3.flash = 0.6; R3.flash2 = 0.3; }
         if (e.fx === 'ascend') { UI.ascending = true; closeModal(); }
         if (e.fx === 'wrong') { R3.shake = 1.2; }
-        if (e.fx === 'caught' && e.who === ME) R3.shake = 1.5;
+        if (e.fx === 'caught' && (e.who === ME || STATE.local)) { R3.shake = 1.5; if (Math.random() < 0.5) scare(ghostForm(W)); }
         break;
       case 'end': showResult(e.phase, e.why); break;
     }
@@ -212,7 +220,7 @@ function showResult(phase, why) {
     $('rStats').innerHTML = `<div>${won ? '总用时' : '用时'}　<b>${m} 分 ${s2} 秒</b></div><div>倒在　<b>${won ? '—' : MAP.F.name}</b></div><div>经历猎杀　<b>${W.stats.hunts}</b></div><div>强光定住　<b>${W.stats.stuns}</b></div><div>倒地次数　<b>${W.stats.downs}</b></div><div>${won ? '驱散的怨灵' : '这一层的怨灵'}　<b>${won ? (W.used || []).map(k => GT(k).name).concat(['温夫人']).join('、') : GT(W.setup.gtype).name}</b></div>`;
     const host = NETROLE !== 'guest';
     $('rRetry').classList.toggle('hidden', won || !host); $('rRetry').textContent = '重试' + MAP.F.name;
-    $('rAgain').textContent = host ? '返回房间' : '等待房主'; $('rAgain').disabled = !host;
+    $('rAgain').textContent = STATE.local ? '返回标题' : host ? '返回房间' : '等待房主'; $('rAgain').disabled = !host;
     $('rStatus').textContent = won ? '雨停了。你们一起看着天亮。' : host ? '' : '房主可以选择重试这一层';
-  }, phase === 'won' ? 2400 : 2600);
+  }, phase === 'won' ? (STAGE.id === 'end' && STAGE.sc ? 15000 : 2400) : 2600);
 }

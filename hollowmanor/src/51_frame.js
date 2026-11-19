@@ -1,5 +1,5 @@
-/* ================= per-frame visual update (works the same on host and guest) ================= */
-const VIS = { hunt: 0, fear: 0, light: 0, nextBolt: 12, prevDoors: '', seenGhost: 0 };
+/* ================= per-frame pixel render: depth-sorted scene, darkness and lights, spirit layer, post effects ================= */
+const VIS = { hunt: 0, fear: 0, nextBolt: 12, seenGhost: 0, anim: [0, 0], beat: 0 };
 function holderOf(W) { return W.p.find(p => p.role === 'L'); }
 function seerOf(W) { return W.p.find(p => p.role === 'S'); }
 /* how strongly the holder's flashlight lights a world point (0..1) */
@@ -15,134 +15,253 @@ function beamFactor(W, x, y, z, needFace) {
   if (needFace && Math.cos(needFace - (h.aim + PI)) < 0.15) return 0;
   return clamp((1 - ang / half) * 1.6, 0, 1) * clamp(1.2 - d / range, 0, 1) * (h.batt > 0.02 ? 1 : 0.5);
 }
+/* ray through the wall grid; returns the distance to the first blocking edge (and whether it was an east-west wall hit from the south) */
+function castRay(W, x0, z0, a, maxD) {
+  const CS = MAP.CS, dx = Math.cos(a), dz = Math.sin(a), st = 0.08;
+  let ci = Math.floor(x0 / CS), cj = Math.floor(z0 / CS);
+  for (let s = st; s <= maxD; s += st) {
+    const x = x0 + dx * s, z = z0 + dz * s, ni = Math.floor(x / CS), nj = Math.floor(z / CS);
+    if (ni !== ci) { if (ni < 0 || ni > MAP.GW || crossV(Math.max(ci, ni), cj, W)) return [s, 0]; ci = ni; }
+    if (nj !== cj) { if (nj < 0 || nj > MAP.GH || crossH(ci, Math.max(cj, nj), W)) return [s, nj < cj ? 1 : 0]; cj = nj; }
+  }
+  return [maxD, 0];
+}
+const dirOf = a => { const c = Math.cos(a), s = Math.sin(a); return Math.abs(c) > Math.abs(s) * 1.1 ? (c > 0 ? 2 : 1) : (s > 0 ? 0 : 3); };
+const ghostForm = W => W.setup ? (W.setup.gtype === 'boss' || Object.keys(W.evFound || {}).length >= 2 ? W.setup.gtype : 'veil') : 'veil';
+function charOf() { return null; } // (3D-era test hook; kept so old probes don't throw)
+/* world point → internal buffer pixel */
+const wx = (x) => x * PX - R3.cam.x, wy = (z, y = 0) => z * PX - y * PX * VS - R3.cam.y;
 function renderFrame(W, meIdx, dt) {
-  const t = performance.now() / 1000, me = W.p[meIdx], partner = W.p[1 - meIdx], seer = me.role === 'S';
-  ensureChars();
-  // ---- characters
-  for (const p of W.p) { const R = charOf(p.role); poseChar(R, p, dt, t); }
-  // ---- flashlight (holder)
-  const h = holderOf(W), RL = charOf('L');
-  RL.root.updateMatrixWorld(true);
-  const lensP = new THREE.Vector3(); RL.lens.getWorldPosition(lensP);
-  const on = h && h.hide < 0 && !h.down, boost = h && h.boostT > 0, weak = h && h.batt <= 0.02;
-  const fl = R3.flashLight;
-  let flick = 1; if (W.flick > 0 && Math.random() < W.flick * 0.35) flick = Math.random() * 0.3; if (weak) flick *= 0.35 + Math.random() * 0.15;
-  fl.intensity = on ? (boost ? 700 : 190) * flick : 0; fl.angle = boost ? 0.55 : 0.42;
-  fl.position.copy(lensP);
-  if (h) fl.target.position.set(lensP.x + Math.cos(h.aim) * 6, 0.25, lensP.z + Math.sin(h.aim) * 6);
-  fl.target.updateMatrixWorld();
-  R3.flashFill.intensity = on ? 0.6 * flick : 0; R3.flashFill.position.set(lensP.x, 1.3, lensP.z);
-  R3.beam.visible = !!on; R3.beam.position.copy(lensP); R3.beam.lookAt(fl.target.position); R3.beam.material.uniforms.uA.value = (boost ? 0.16 : 0.055) * flick;
-  RL.lens.material.emissiveIntensity = on ? 2.5 * flick : 0;
-  // ---- seer lantern
-  const s = seerOf(W), RS = charOf('S');
-  const lp = new THREE.Vector3(); RS.spiritFlame.getWorldPosition(lp);
-  R3.lantern.position.copy(lp); R3.lantern.intensity = s && s.hide < 0 ? (s.down ? 0.6 : 2.4) * (0.9 + Math.sin(t * 9) * 0.08) : 0;
-  RS.amulet.material.emissiveIntensity = 0.8 + Math.sin(t * 2) * 0.4 + (W.g && dist(W.g.x, W.g.z, s.x, s.z) < 6 ? 1.5 : 0);
-  // ---- ghost
-  const G = W.g;
-  if (G) setGhostForm(W.setup ? (W.setup.gtype === 'boss' || Object.keys(W.evFound || {}).length >= 2 ? W.setup.gtype : 'veil') : 'veil');
-  const gh = R3.ghost;
-  if (G) {
-    const hunting = G.st === 'hunt' || G.st === 'ritual';
-    VIS.hunt = lerp(VIS.hunt, hunting ? 1 : 0, Math.min(1, dt * 3));
-    gh.position.set(G.x, 0.08 + Math.sin(t * 1.3) * 0.05, G.z); gh.rotation.y = HP - G.a;
-    const U = gh.userData; animGhostForm(gh, G, t, dt, hunting);
-    for (const a of U.arms) { a.sh.rotation.x = lerp(a.sh.rotation.x, hunting ? -1.25 + Math.sin(t * 6 + a.sx) * 0.08 : 0.15, dt * 4); a.sh.rotation.z = a.sx * (hunting ? 0.15 : 0.05); a.el.rotation.x = hunting ? -0.2 : 0.1; }
-    U.wisps.forEach((w, i) => { w.rotation.x = PI + 0.3 + Math.sin(t * 2 + i) * 0.15 + (G.spd || 0) * 0.15; });
-    U.head.rotation.z = Math.sin(t * 0.7) * 0.15 + (hunting ? Math.sin(t * 17) * 0.05 : 0);
-    let a = 0, xray = false;
-    if (G.st === 'gone') a = 0;
-    else if (seer && !me.down) { const d = dist(G.x, G.z, me.x, me.z); if (d < 18) { const vis = los(me.x, me.z, G.x, G.z, W); a = vis ? 0.85 : 0.5; xray = !vis; } }
-    if (!seer || a < 0.85) { const lit = beamFactor(W, G.x, 1.2, G.z) > 0.05 ? 0.8 : 0; a = Math.max(a, G.man || 0, lit); }
-    a *= G.fade == null ? 1 : G.fade;
-    GHOST_U.uAlpha.value = lerp(GHOST_U.uAlpha.value, a, Math.min(1, dt * 8)); GHOST_U.uTime.value = t; GHOST_U.uHunt.value = VIS.hunt; GHOST_U.uSpirit.value = seer ? 1 : 0;
-    GHOST_U.uColor.value.setHex(hunting ? 0xc8e6ff : 0x9fd8ff);
-    gh.visible = GHOST_U.uAlpha.value > 0.01; for (const m of gh.userData.glows || []) { m.transparent = true; m.opacity = GHOST_U.uAlpha.value; }
-    gh.traverse(o => { if (o.material && o.material.isShaderMaterial) o.material.depthTest = !xray; });
-    R3.ghostLight.position.set(G.x, 1.5, G.z); R3.ghostLight.intensity = (G.man || 0) * 2.2 + VIS.hunt * 0.6; R3.ghostLight.color.setHex(hunting ? 0xa0c8ff : 0x9fd8ff);
-    if (a > 0.3 && !seer) VIS.seenGhost = t;
-  }
-  // ---- doors, shutter, shelf
-  for (const e of R3.doors) {
-    if (!e) continue; const st = W.doors[e.d.idx], o = st.open;
-    for (const l of e.leaves) l.hinge.rotation.y = l.side * o * 1.75;
-    if (e.kind === 'shutter') { e.slide.position.y = o * 2.2; if (e.lamp) { const m = e.lamp.material; m.emissive.setHex(W.f.power ? 0x20ff40 : 0xff2010); } }
-    if (e.kind === 'shelf') e.slide.position.x = -o * 1.5;
-    if (e.chains) { e.chains.visible = st.locked; }
-  }
-  for (const c of R3.cracks) { for (const m of c.mats) { m.opacity = seer ? 0.22 : 1; m.depthWrite = !seer; } for (const g of c.glow) g.visible = seer; c.fis.opacity = 0.65 + Math.sin(t * 3) * 0.25; }
-  if (R3.tub) R3.tub.water.position.y = lerp(R3.tub.water.position.y, W.f.drained ? 0.12 : 0.5, Math.min(1, dt * 0.6));
-  for (const b of R3.bells) if (b) { b.sw *= Math.pow(0.04, dt); b.body.rotation.z = Math.sin(t * 18) * 0.35 * b.sw; }
-  for (const m of R3.manq) { const lit = beamFactor(W, m.f.x, 1.5, m.f.z) > 0.05; if (m.a === 0 && !m.init) { m.a = m.f.r; m.init = 1; } const want = Math.atan2(me.x - m.f.x, me.z - m.f.z); if (!lit && dist(me.x, me.z, m.f.x, m.f.z) < 9) m.a += angDiff(m.a, want) * Math.min(1, dt * 0.9); m.head.rotation.y = m.a; }
-  for (const a of R3.anchors) { const st = W.anchors ? W.anchors[a.a.i] : 0, inBeam = beamFactor(W, a.a.x, 0.4, a.a.z); a.g.visible = st < 2; a.obj.visible = st === 1 || seer || inBeam > 0.15; a.bind.visible = st === 0 && (seer || inBeam > 0.25); a.redGlow.visible = st === 1; a.bind.rotation.y = t * 0.4; a.redGlow.material.opacity = 0.6 + Math.sin(t * 6) * 0.3; }
-  if (R3.circle) { const on = W.f.sanctum && W.f.seal, pr = W.rit && W.rit.item === 'final' ? W.rit.p : (W.finP || 0); R3.circle.m.userData.glowMat.opacity = on ? 0.35 + pr * 0.6 + Math.sin(t * 4) * 0.08 : W.f.seal ? 0.08 : 0; R3.circle.m.userData.ring.rotation.y = t * (0.2 + pr * 1.5); }
-  if (R3.hatch) R3.hatch.lid.rotation.x = lerp(R3.hatch.lid.rotation.x, W.f.seal ? 0 : -1.9, Math.min(1, dt * 1.2));
-  const dk = W.doors.map(d => d.open > 0.5 ? 1 : 0).join('');
-  if (dk !== VIS.prevDoors) { VIS.prevDoors = dk; R3.moon.shadow.needsUpdate = true; }
-  // wardrobes
-  R3.hides.forEach((doors, i) => { if (!doors) return; const ta = W.hideA ? (W.now - (W.hideA[i] || -9)) : 9; const o = ta < 0.9 ? Math.sin(clamp(ta / 0.9, 0, 1) * PI) * 1.2 : 0; for (const d of doors) d.rotation.y = d.userData.side * o; });
-  R3.levers.forEach((arm, i) => { if (arm) arm.rotation.x = lerp(arm.rotation.x, W.lv[i] > 0 ? 0.7 : -0.6, Math.min(1, dt * 10)); });
-  R3.dials.forEach((d, i) => { const v = W.dials[i]; d.rotation.z = lerp(d.rotation.z, -v / 6 * TAU, Math.min(1, dt * 10)); d.userData.label.material.map = TEX.glyph[v]; d.userData.label.rotation.z = v / 6 * TAU * 0; });
-  if (R3.fuseSlot) R3.fuseSlot.visible = !!W.f.power; if (R3.fuseLamp) R3.fuseLamp.material.emissive.setHex(W.f.power ? 0x20ff40 : 0xff2010);
-  if (R3.gate) { const gt = R3.gate, sealA = W.f.seal ? 1 : 0; gt.sm.opacity = lerp(gt.sm.opacity, sealA * (0.7 + Math.sin(t * 2) * 0.15), dt * 2); gt.chainM.opacity = gt.sm.opacity * 0.85; gt.seal.rotation.z = t * 0.2; gt.open = lerp(gt.open, W.f.seal ? 0 : 1, dt * 0.8); for (const l of gt.leaves) l.h.rotation.y = -l.sx * gt.open * 1.4; }
-  if (R3.pend) R3.pend.rotation.z = Math.sin(t * PI) * 0.22;
-  for (const r of R3.rockers || []) r.rotation.x = Math.sin(t * 1.7) * (0.06 + (G && dist(G.x, G.z, r.position.x, r.position.z) < 5 ? 0.12 : 0));
-  if (R3.mobile && MAP.crib) R3.mobile.rotation.y += dt * (0.3 + (G && dist(G.x, G.z, MAP.crib.x, MAP.crib.z) < 4 ? 2.5 : 0));
-  // ---- lights: flicker, pool assignment
-  const elecOn = W.f && W.f.power ? 1 : 0;
-  const bm = MATC.get('bulbMat'); let eflick = 1; if (W.flick > 0 && Math.random() < W.flick * 0.5) eflick = 0.1 + Math.random() * 0.4;
-  if (bm) bm.emissiveIntensity = elecOn * 2.4 * eflick;
-  const emb = MATC.get('ember'); if (emb) emb.emissiveIntensity = 1.3 + Math.sin(t * 5.3) * 0.3 + Math.sin(t * 11.7) * 0.2;
-  for (const f of R3.flames) { const k = 1 + Math.sin(t * 17 + f.id) * 0.15 + Math.sin(t * 9.3 + f.id * 3) * 0.1; f.scale.set(0.7 * k, 1.7 * k, 0.7 * k); }
-  const cx = R3.camT.x, cz = R3.camT.z;
-  const act = [];
-  for (const fx of R3.fixtures) { const l = fx.l; let I = 0, col = 0xffb870, dist2 = 7; if (fx.k === 'elec') { if (!elecOn) continue; I = (l.k.startsWith('chandelier') ? 5.5 : l.k === 'sconce' ? 2.2 : 3.2) * eflick * (0.96 + Math.sin(t * 50 + fx.phase) * 0.02); col = 0xffc890; dist2 = l.k === 'sconce' ? 4.5 : 8; } else if (fx.k === 'candle') { I = (l.k === 'candles' ? 2.4 : 1.1) * (0.85 + Math.sin(t * 13 + fx.phase) * 0.1 + Math.sin(t * 7.1 + fx.phase) * 0.06); col = 0xffa060; dist2 = l.k === 'candles' ? 6 : 4; } else { I = 3.2 * (0.8 + Math.sin(t * 6 + fx.phase) * 0.15 + Math.sin(t * 13) * 0.07); col = 0xff6a20; dist2 = 6; }
-    if (fx.k === 'oil') { const on = W.lamps && W.lamps[fx.li]; const fxm = R3.lampFx[fx.li]; if (fxm) fxm.material.emissiveIntensity = on ? 2.2 + Math.sin(t * 11 + fx.phase) * 0.3 : 0; if (!on) continue; I = 2.8 * (0.85 + Math.sin(t * 9 + fx.phase) * 0.1 + Math.sin(t * 5.3) * 0.05); col = 0xffa050; dist2 = 6.5; }
-    act.push({ x: l.x, y: l.y - (l.k.startsWith('chandelier') ? 0.35 : l.k === 'oilLamp' ? 0.25 : 0.05), z: l.z, I, col, dist2, d: d2(l.x, l.z, cx, cz) }); }
-  act.sort((a, b) => a.d - b.d);
-  R3.pool.forEach((p, i) => { const a = act[i]; if (!a || a.d > 22 * 22) { p.intensity = 0; return; } p.position.set(a.x, a.y, a.z); p.intensity = a.I; p.color.setHex(a.col); p.distance = a.dist2; });
+  const t = performance.now() / 1000, g = R3.bg, VW = R3.VW, VH = R3.VH, me = W.p[meIdx];
+  const local = !!STATE.local && !W.menu, view = W.menu ? 'both' : local ? 'both' : me.role;
+  const seer = seerOf(W), hold = holderOf(W);
+  R3.seerView = view === 'S' || view === 'both';
+  // ---- camera
+  let tx, tz;
+  if (local) { tx = (W.p[0].x + W.p[1].x) / 2; tz = (W.p[0].z + W.p[1].z) / 2; }
+  else { const hidden = me.hide >= 0, look = me.role === 'L' ? 1.4 : 0.8; tx = me.x + (hidden ? 0 : Math.cos(me.aim) * look); tz = me.z + (hidden ? 0 : Math.sin(me.aim) * look); }
+  if (W.menu) { tx = W.p[0].x - 1; tz = W.p[0].z - 2.5; }
+  if (STAGE.sc && STAGE.cam === 'gate' && MAP.F.gateAt) { tx = MAP.F.gateAt.x; tz = MAP.F.gateAt.z - 1; } else if (STAGE.sc && STAGE.cam === 'boss' && G0(W)) { tx = W.g.x; tz = W.g.z; }
+  R3.camT.x = lerp(R3.camT.x, tx, Math.min(1, dt * 5)); R3.camT.z = lerp(R3.camT.z, tz, Math.min(1, dt * 5));
+  if (window.__dbg && window.__dbg.cam) { R3.camT.x = window.__dbg.cam[0]; R3.camT.z = window.__dbg.cam[1]; }
+  let shx = 0, shy = 0; if (R3.shake > 0) { if (SET.shake !== false) { shx = Math.round((Math.random() - 0.5) * R3.shake * 6); shy = Math.round((Math.random() - 0.5) * R3.shake * 6); } R3.shake = Math.max(0, R3.shake - dt * 2.5); }
+  R3.cam.x = Math.round(R3.camT.x * PX - VW / 2) + shx; R3.cam.y = Math.round(R3.camT.z * PX - VH / 2 - 14) + shy;
+  const cx = R3.cam.x, cy = R3.cam.y;
   // ---- lightning
   VIS.nextBolt -= dt; if (VIS.nextBolt <= 0) { VIS.nextBolt = rrLocal(18, 42); R3.flash = 1; R3.flash2 = rrLocal(0.2, 0.45); setTimeout(() => sfx('thunder'), rrLocal(300, 1600)); }
-  if (R3.flash > 0) { R3.flash = Math.max(0, R3.flash - dt * 2.6); }
-  const fk = R3.flash > 0 ? (R3.flash > 0.8 || (R3.flash > 0.3 && R3.flash < R3.flash2) ? R3.flash : R3.flash * 0.2) : 0;
-  R3.moon.intensity = 1.6 + fk * 9; for (const g of R3.glass) g.m.emissiveIntensity = g.base * (1 + fk * 5);
-  for (const sh of R3.shafts) sh.material.opacity = 0.07 + fk * 0.3;
-  R3.hemi.intensity = ((seer ? 5.0 : 3.6) + fk * 2.5) * (MAP.F && MAP.F.ambient || 1); R3.hemi.color.setHex(seer ? 0x7a9ad0 : 0x6a7898); if (window.__dbgLight) { R3.hemi.intensity = window.__dbgLight; R3.hemi.color.setHex(0xffffff); }
-  // ---- evidence & spirit layer
-  for (const o of R3.spirit) {
-    o.visible = seer;
-    if (o.userData.orbs) o.children.forEach(sp => { sp.position.set(Math.sin(t * 0.5 + sp.userData.ph) * 0.5, Math.sin(t * 0.8 + sp.userData.ph * 2) * 0.3, Math.cos(t * 0.4 + sp.userData.ph) * 0.5); sp.material.opacity = 0.5 + Math.sin(t * 3 + sp.userData.ph) * 0.3; });
-    if (o.userData.bellNum != null) { o.visible = seer && W.f && !W.f.bells; o.material.opacity = o.userData.bellNum < (W.bellN || 0) ? 0.22 : 0.95; o.position.y = 1.75 + Math.sin(t * 2 + o.userData.bellNum) * 0.05; }
-    if (o.userData.tubGlow) { o.visible = seer && W.f && !W.f.drained; o.material.opacity = 0.5 + Math.sin(t * 3) * 0.3; }
-    if (o.userData.draft != null) { o.visible = seer && W.doors[o.userData.draft].open < 0.5; o.children.forEach(sp => { const k = (t * 0.35 + sp.userData.ph) % 1; sp.position.set(Math.sin(k * 9 + sp.userData.ph * 20) * 0.5, 0.2 + k * 2.2, 0); sp.material.opacity = Math.sin(k * PI) * 0.35; }); }
+  if (R3.flash > 0) R3.flash = Math.max(0, R3.flash - dt * 2.6);
+  const fk = R3.flash > 0 ? (R3.flash > 0.8 || (R3.flash > 0.3 && R3.flash < R3.flash2) ? R3.flash : R3.flash * 0.2) : 0; R3.flashK = fk;
+  const G = W.g, hunting = G && (G.st === 'hunt' || G.st === 'ritual');
+  VIS.hunt = lerp(VIS.hunt, hunting ? 1 : 0, Math.min(1, dt * 3)); R3.huntK = VIS.hunt;
+  // ---- floor
+  g.fillStyle = '#020203'; g.fillRect(0, 0, VW, VH);
+  g.drawImage(R3.floorC, cx + R3.M * PX, cy + R3.M * PX, VW, VH, 0, 0, VW, VH);
+  // floor decals: frost (holder's beam), the ritual circle glow, hatch light
+  if (R3.setup) for (const e of R3.setup.ev || []) if (e.k === 'frost') { const b = beamFactor(W, e.x, 0.1, e.z); if (b > 0.02 || (local && b > 0)) { g.globalAlpha = Math.min(1, b * 1.4); drawFrost(g, wx(e.x), wy(e.z, e.y || 0), e); g.globalAlpha = 1; } }
+  // ---- depth-sorted scene
+  const dyn = [];
+  W.p.forEach((p, i) => { if (p.hide < 0) dyn.push({ t: 'hero', p, i, key: p.z }); });
+  const gAlpha = G ? ghostAlphaFor(W, view, me, seer) : 0;
+  if (G && gAlpha.pre > 0.01) dyn.push({ t: 'ghost', key: G.z, a: gAlpha.pre });
+  if (R3.setup) {
+    (R3.setup.items || []).forEach((it, i) => { const st = W.items && W.items[i]; if (st && !st.taken && (!st.need || (W.f && W.f[st.need]))) dyn.push({ t: 'item', it, key: it.z + 0.02 }); });
+    (R3.setup.anchors || []).forEach((a, i) => { const st = W.anchors ? W.anchors[i] : 0; if (st < 2) dyn.push({ t: 'anchor', a, st, key: a.z + 0.01 }); });
   }
-  for (const f of R3.frost) { const b = beamFactor(W, f.e.x, 0.1, f.e.z); f.a = lerp(f.a, b, Math.min(1, dt * 6)); f.m.material.opacity = f.a * 0.9; f.m.visible = f.a > 0.01; }
-  const hasMirror = W.setup && GT(W.setup.gtype).ev.includes('mirror');
-  for (const m of R3.mirrors) { const b = beamFactor(W, m.mr.x, 1.2, m.mr.z, m.mr.r); m.lit = lerp(m.lit, b, Math.min(1, dt * 6)); m.sheen.material.opacity = m.lit * 0.18; m.fig.material.opacity = hasMirror ? m.lit * (0.75 + Math.sin(t * 9) * 0.1) : 0; }
-  for (const it of R3.items) { const st = W.items && W.items[it.it.i]; if (!st) { it.m.visible = false; continue; } it.m.visible = !st.taken && (!st.need || W.f[st.need]); if (it.m.visible) { it.m.rotation.y += dt * 0.6; const g = it.m.userData.glint; const dd = dist(me.x, me.z, st.x, st.z); g.material.opacity = clamp(1.2 - dd / 7, 0, 1) * (0.35 + Math.max(0, Math.sin(t * 2.4 + it.it.i)) * 0.65) + beamFactor(W, st.x, st.y, st.z) * 0.6; } }
-  // ---- camera
-  const hidden = me.hide >= 0;
-  const look = me.role === 'L' ? 1.6 : 1.0;
-  const tx = me.x + (hidden ? 0 : Math.cos(me.aim) * look), tz = me.z + (hidden ? 0 : Math.sin(me.aim) * look);
-  R3.camT.x = lerp(R3.camT.x, tx, Math.min(1, dt * 4)); R3.camT.z = lerp(R3.camT.z, tz, Math.min(1, dt * 4));
-  const asp = innerWidth / innerHeight, far = W.menu ? 1.75 : (asp < 1 ? 1.45 : asp < 1.3 ? 1.15 : 1) * (hidden ? 0.55 : 1) * (window.__dbg && window.__dbg.zoom || 1);
-  let shx = 0, shz = 0; if (R3.shake > 0 && SET.shake) { shx = (Math.random() - 0.5) * R3.shake * 0.4; shz = (Math.random() - 0.5) * R3.shake * 0.4; R3.shake = Math.max(0, R3.shake - dt * 2.5); }
-  R3.cam.position.set(R3.camT.x + shx, 10.4 * far, R3.camT.z + 7.0 * far + shz); R3.cam.lookAt(R3.camT.x + shx, 0.4, R3.camT.z + shz);
-  if (W.cam) { const c = W.cam; R3.cam.position.set(c[0], c[1], c[2]); R3.cam.lookAt(c[3], c[4], c[5]); }
-  else if (window.__dbg && window.__dbg.cam) { const c = window.__dbg.cam; R3.cam.position.set(c[0], c[1], c[2]); R3.cam.lookAt(c[3], c[4], c[5]); }
-  CUT.uCam.value.copy(R3.cam.position); CUT.uP0.value.set(me.x, 0.9, me.z); CUT.uP1.value.set(partner.x, 0.9, partner.z);
-  if (G && (G.st === 'hunt' || G.man > 0.3) && dist(G.x, G.z, me.x, me.z) < dist(partner.x, partner.z, me.x, me.z)) CUT.uP1.value.set(G.x, 0.9, G.z);
-  CUT.uR.value = 2.0 * far;
-  if (R3.rain) R3.rain.material.uniforms.uT.value = t;
-  // ---- post
-  VIS.fear = lerp(VIS.fear, me.fear / 100, Math.min(1, dt * 2));
-  const U = R3.postMat.uniforms; U.uT.value = t; U.uFear.value = VIS.fear; U.uSpirit.value = seer ? 1 : 0; U.uHunt.value = VIS.hunt; U.uFlash.value = fk * 0.6; U.uDown.value = me.down ? 1 : 0; U.uGrain.value = SET.grain ? 1 : 0.2; U.uHide.value = hidden ? 1 : 0;
-  const bpm = 60 + me.fear * 0.8 + VIS.hunt * 40, ph = (t * bpm / 60) % 1; U.uBeat.value = me.fear > 50 || VIS.hunt > 0.5 ? Math.max(0, 1 - ph * 5) * clamp((me.fear - 40) / 60 + VIS.hunt * 0.5, 0, 1) : 0;
-  R3.renderer.setRenderTarget(R3.rt); R3.renderer.render(R3.scene, R3.cam); R3.lastCalls = R3.renderer.info.render.calls; R3.lastTris = R3.renderer.info.render.triangles;
-  R3.renderer.setRenderTarget(null); R3.renderer.render(R3.postScene, R3.postCam);
+  for (const b of R3.bells) if (b) dyn.push({ t: 'bell', b, key: b.f.z + 0.03 });
+  for (const m of R3.manq) dyn.push({ t: 'manq', m, key: m.f.z + 0.03 });
+  const all = R3.drawables.concat(dyn).sort((a, b) => a.key - b.key);
+  // which wall pieces hide someone standing behind them (fade them)
+  const watchers = W.p.filter(p => p.hide < 0 && (local || p.id === meIdx || W.menu));
+  const fadeOf = p => { if (p.t !== 'h' || p.low) return 1; for (const q of watchers) if (q.z < p.z && q.z > p.z - 2.1 && q.x > p.x0 - 1.1 && q.x < p.x1 + 1.1) return 0.32; return 1; };
+  const me1 = me;
+  for (const o of all) {
+    switch (o.t) {
+      case 'h': case 'v': drawPiece(g, o, W, cx, cy, fadeOf(o)); break;
+      case 'prop': { const sx = Math.round(o.f.x * PX + o.b.ox - cx), sy = Math.round(o.f.z * PX + o.b.oy - o.y * PX * VS - cy); if (sx > VW || sy > VH || sx + o.b.c.width < 0 || sy + o.b.c.height < 0) break; g.drawImage(o.b.c, sx, sy); propOverlay(g, o, W, sx, sy, t); break; }
+      case 'rail': drawRail(g, o, cx, cy); break;
+      case 'decor': drawDecor(g, o, W, cx, cy, t); break;
+      case 'paint': drawPainting(g, o, cx, cy, t, me1); break;
+      case 'fix': drawFixture(g, o, W, cx, cy, t); break;
+      case 'gate': drawGate(g, o, W, t, false); break;
+      case 'hero': drawHero(g, o.p, o.i, W, t, dt); break;
+      case 'ghost': drawGhost(g, W, o.a, t, hunting); break;
+      case 'item': { const s = itemSprite(o.it.k), bob = Math.round(Math.sin(t * 2 + o.it.x) * 1); g.drawImage(s, Math.round(wx(o.it.x) - 6), Math.round(wy(o.it.z, o.it.y || 0) - 10 + bob)); break; }
+      case 'anchor': { const vis = o.st === 1 || R3.seerView || beamFactor(W, o.a.x, 0.4, o.a.z) > 0.15; if (vis) g.drawImage(anchorSprite(o.a.k, o.st === 0 && R3.seerView ? 1 : 0), Math.round(wx(o.a.x) - 8), Math.round(wy(o.a.z) - 17)); break; }
+      case 'bell': { const b = o.b; b.sw *= Math.pow(0.04, dt); const X = Math.round(wx(b.f.x)), Y = Math.round(wy(b.f.z, b.f.h - 0.2)), s = Math.round(Math.sin(t * 18) * 2 * b.sw); g.fillStyle = PAL.brass; g.fillRect(X - 3 + s, Y - 2, 6, 5); g.fillRect(X - 4 + s, Y + 2, 8, 2); g.fillStyle = PAL.brassL; g.fillRect(X - 2 + s, Y - 1, 1, 3); break; }
+      case 'manq': { const m = o.m, lit = beamFactor(W, m.f.x, 1.5, m.f.z) > 0.05, X = Math.round(wx(m.f.x)), Y = Math.round(wy(m.f.z, 1.62)); if (!lit && dist(me.x, me.z, m.f.x, m.f.z) < 9) m.a = Math.atan2(me.z - m.f.z, me.x - m.f.x); g.fillStyle = '#c8b8a0'; g.fillRect(X - 3, Y - 4, 6, 6); const d = dirOf(m.a); if (d !== 3) { g.fillStyle = '#5a4a40'; const ox = d === 1 ? -2 : d === 2 ? 1 : 0; g.fillRect(X - 2 + ox, Y - 2, 1, 1); g.fillRect(X + 1 + ox, Y - 2, 1, 1); } break; }
+    }
+  }
+  // mirrors: in the flashlight, a figure stands in the glass that isn't in the room
+  if (W.setup && GT(W.setup.gtype).ev.includes('mirror')) for (const mr of MAP.mirrors) { const b = beamFactor(W, mr.x, 1.2, mr.z, mr.r); if (b < 0.08) continue; const s = ghostSprite(ghostForm(W) === 'veil' ? 'faceless' : ghostForm(W), 0, Math.floor(t * 2) % 4, false), X = Math.round(wx(mr.x)), Y = Math.round(wy(mr.z, mr.y)); g.save(); g.globalAlpha = Math.min(1, b * 1.6) * (0.75 + Math.sin(t * 9) * 0.1); g.beginPath(); g.rect(X - 7, Y - 11, 14, 20); g.clip(); g.drawImage(tintedCache(s, '#0a0c14'), X - 12, Y - 12, 24, 40); g.restore(); }
+  // dust motes (catch the light)
+  if (SET.quality !== 'low') { g.fillStyle = 'rgba(220,210,190,.35)'; } for (const d of SET.quality === 'low' ? [] : R3.dust) { const X = Math.round(wx(d.x + Math.sin(t * 0.2 + d.ph) * 0.4)), Y = Math.round(wy(d.z, d.y + Math.sin(t * 0.3 + d.ph) * 0.2)); if (X >= 0 && Y >= 0 && X < VW && Y < VH) g.fillRect(X, Y, 1, 1); }
+  // rain outside
+  if (MAP.F.outside) { g.fillStyle = 'rgba(140,160,200,.35)'; for (let i = 0; i < 90; i++) { const X = (hash(i, 1, 1) * VW + t * 40) % VW | 0, Y = ((hash(i, 2, 2) * VH + t * 420) % VH) | 0, wxp = (X + cx) / PX, wzp = (Y + cy) / PX; if (roomAt(wxp, wzp) < 0) g.fillRect(X, Y, 1, 4); } }
+  // see-through silhouettes of the people we care about (behind walls)
+  for (const p of watchers) { const s = heroSprite(p, W, t); g.globalAlpha = 0.28; g.drawImage(s.c, Math.round(wx(p.x) - SW / 2), Math.round(wy(p.z) - FEET)); g.globalAlpha = 1; }
+  // ---- darkness + lights
+  drawLighting(W, view, me, t, fk, local);
+  // ---- things that glow over the dark: the seer's spirit layer, ghost (for the seer), seals, item glints
+  g.globalCompositeOperation = 'lighter';
+  const spiritOK = (x, z) => view === 'S' ? dist(x, z, seer.x, seer.z) < 14 : view === 'both' ? dist(x, z, seer.x, seer.z) < 7 && los(seer.x, seer.z, x, z, W) : false;
+  if (R3.setup && seer && !seer.down) drawSpirit(g, W, t, spiritOK);
+  for (const o of R3.drawables) if (o.t === 'gate') drawGate(g, o, W, t, true);
+  if (R3.setup) (R3.setup.items || []).forEach((it, i) => { const st = W.items && W.items[i]; if (!st || st.taken || (st.need && !(W.f && W.f[st.need]))) return; const k = (t * 1.3 + i) % 3; if (k < 0.25) { const X = Math.round(wx(it.x)), Y = Math.round(wy(it.z, it.y || 0) - 6); g.fillStyle = 'rgba(255,240,180,.8)'; g.fillRect(X, Y - 2, 1, 5); g.fillRect(X - 2, Y, 5, 1); } });
+  if (hold && hold.hide < 0 && !hold.down) { const X = Math.round(wx(hold.x + Math.cos(hold.aim) * 0.32)), Y = Math.round(wy(hold.z + Math.sin(hold.aim) * 0.32, 0.95)); g.fillStyle = hold.batt > 0.02 ? 'rgba(255,240,180,.9)' : 'rgba(255,200,120,.4)'; g.fillRect(X - 1, Y - 1, 2, 2); }
+  if (seer && seer.hide < 0) { const X = Math.round(wx(seer.x + 0.3)), Y = Math.round(wy(seer.z + 0.05, 0.62)), fl = 0.6 + Math.sin(t * 9) * 0.1; const gr = g.createRadialGradient(X, Y, 0, X, Y, 9); gr.addColorStop(0, `rgba(120,200,255,${0.45 * fl})`); gr.addColorStop(1, 'rgba(120,200,255,0)'); g.fillStyle = gr; g.fillRect(X - 9, Y - 9, 18, 18); }
+  g.globalCompositeOperation = 'source-over';
+  if (G && gAlpha.post > 0.01) drawGhost(g, W, gAlpha.post, t, hunting, gAlpha.xray);
+  if (G && hunting && view === 'L' && gAlpha.pre < 0.05 && dist(G.x, G.z, me.x, me.z) < 6) { // breathing in the dark: two pale eyes
+    const X = Math.round(wx(G.x)), Y = Math.round(wy(G.z, 1.5)); if (Math.sin(t * 2.7) > -0.2) { g.fillStyle = 'rgba(220,230,255,.75)'; g.fillRect(X - 3, Y, 2, 1); g.fillRect(X + 2, Y, 2, 1); }
+  }
+  // ---- post: fear, hunt, hiding, downed, grain, flash
+  postFX(g, W, me, view, t, dt, fk);
+  STAGE.W = W; drawStage(g, t, dt);
+  // ---- blit
+  const ctx = R3.ctx; ctx.imageSmoothingEnabled = false; ctx.drawImage(R3.buf, 0, 0, VW * R3.SC, VH * R3.SC);
 }
+const G0 = W => W && W.g && W.g.st !== 'gone';
 const rrLocal = (a, b) => a + Math.random() * (b - a);
-/* world → screen for DOM overlays */
-const _pv = new THREE.Vector3();
-function toScreen(x, y, z) { _pv.set(x, y, z).project(R3.cam); return { x: (_pv.x + 1) / 2 * innerWidth, y: (1 - _pv.y) / 2 * innerHeight, on: _pv.z < 1 && Math.abs(_pv.x) < 1.1 && Math.abs(_pv.y) < 1.1 }; }
+function ghostAlphaFor(W, view, me, seer) {
+  const G = W.g; if (!G || G.st === 'gone') return { pre: 0, post: 0 };
+  let lit = beamFactor(W, G.x, 1.2, G.z) > 0.05 ? 0.85 : 0, man = G.man || 0, see = 0, xray = false;
+  if ((view === 'S' || view === 'both') && seer && !seer.down) { const d = dist(G.x, G.z, seer.x, seer.z); if (d < (view === 'S' ? 18 : 9)) { const v = los(seer.x, seer.z, G.x, G.z, W); see = v ? 0.85 : view === 'S' ? 0.5 : 0; xray = !v; } }
+  const fade = G.fade == null ? 1 : G.fade;
+  const pre = Math.max(lit, man) * fade, post = Math.max(see, man * 0.7) * fade;
+  if (pre > 0.3 && view !== 'S') VIS.seenGhost = performance.now() / 1000;
+  return { pre, post: post > pre ? post : 0, xray };
+}
+/* ---------- heroes ---------- */
+function heroSprite(p, W, t) {
+  const moving = (p.spd || 0) > 0.15, dir = dirOf(p.role === 'L' ? p.aim : (moving ? p.a : p.aim));
+  const ph = VIS.anim[p.id] || 0, fr = moving ? [1, 0, 3, 0][Math.floor(ph * 4) % 4] : (Math.floor(t * 1.1 + p.id) % 2 ? 2 : 0);
+  const kneel = W.rit && W.rit.by === p.id;
+  return { c: sprite(p.role, p.down ? 0 : dir, p.down ? 0 : fr, p.down ? 'down' : kneel ? 'kneel' : ''), dir };
+}
+function drawHero(g, p, i, W, t, dt) {
+  VIS.anim[i] = (VIS.anim[i] || 0) + dt * (p.spd || 0) * 0.62;
+  const X = Math.round(wx(p.x)), Y = Math.round(wy(p.z));
+  g.fillStyle = 'rgba(0,0,0,.38)'; g.beginPath(); g.ellipse(X, Y, 7, 2.5, 0, 0, TAU); g.fill();
+  const s = heroSprite(p, W, t);
+  g.drawImage(s.c, X - SW / 2, Y - FEET);
+  if (p.down) { const k = (t * 2) % 1; g.fillStyle = `rgba(255,90,90,${0.5 - k * 0.5})`; g.fillRect(X - 1, Y - 12 - k * 6, 2, 2); }
+}
+/* ---------- ghost ---------- */
+function drawGhost(g, W, a, t, hunting, xray) {
+  const G = W.g, form = ghostForm(W), dir = dirOf(G.a || 0), fr = Math.floor(t * (hunting ? 7 : 3)) % 4;
+  const s = ghostSprite(form, dir, fr, hunting), X = Math.round(wx(G.x) + (hunting ? (Math.random() - 0.5) * 2 : 0)), Y = Math.round(wy(G.z) + Math.sin(t * 1.3) * 1.5);
+  g.globalAlpha = clamp(a, 0, 1) * 0.55; const gr = g.createRadialGradient(X, Y - 18, 2, X, Y - 18, 20); gr.addColorStop(0, hunting ? 'rgba(200,220,255,.5)' : 'rgba(150,210,255,.4)'); gr.addColorStop(1, 'rgba(150,210,255,0)'); g.fillStyle = gr; g.fillRect(X - 20, Y - 38, 40, 40);
+  g.globalAlpha = clamp(a, 0, 1) * (0.82 + Math.sin(t * 5) * 0.08);
+  g.drawImage(xray ? tintedCache(s, '#7fd8ff') : s, X - GW / 2, Y - GH + 2);
+  g.globalAlpha = 1;
+}
+const TINTC = new Map(); function tintedCache(c, col) { let m = TINTC.get(c); if (!m) TINTC.set(c, m = {}); return m[col] || (m[col] = tinted(c, col, 0.85)); }
+/* ---------- floor-level and spirit things ---------- */
+function drawFrost(g, X, Y, e) { const R = RP(g, Math.round(X), Math.round(Y)); for (let i = 0; i < 26; i++) { const a = hash(i, e.x * 10 | 0, 1) * TAU, r = hash(e.z * 10 | 0, i, 2) * 12; R(Math.cos(a) * r, Math.sin(a) * r * 0.6, 2, 1, i % 3 ? 'rgba(220,240,255,.85)' : 'rgba(170,210,240,.7)'); } R(-6, -1, 12, 1, 'rgba(230,245,255,.5)'); }
+function drawSpirit(g, W, t, ok) {
+  const st = R3.setup;
+  for (const e of st.ev || []) {
+    if (!ok(e.x, e.z)) continue;
+    const X = Math.round(wx(e.x)), Y = Math.round(wy(e.z, e.y || 0));
+    if (e.k === 'prints') { const R = RP(g, X, Y), a = 0.5 + Math.sin(t * 2 + e.x) * 0.2; g.globalAlpha = a; R(-2, -3, 4, 5, '#7fe6ff'); for (let f = 0; f < 4; f++) R(-2 + f, -6 - (f === 1 || f === 2 ? 1 : 0), 1, 3, '#7fe6ff'); R(2, -2, 2, 1, '#7fe6ff'); R(-6, 1, 3, 4, '#5fc6df'); g.globalAlpha = 1; }
+    if (e.k === 'orbs') for (let k = 0; k < 3; k++) { const ox = Math.sin(t * 0.5 + k * 2.1) * 8, oy = Math.sin(t * 0.8 + k * 3.3) * 5 - 8, r = 2 + (k % 2); const gr = g.createRadialGradient(X + ox, Y + oy, 0, X + ox, Y + oy, r * 3); gr.addColorStop(0, 'rgba(180,240,255,.9)'); gr.addColorStop(1, 'rgba(180,240,255,0)'); g.fillStyle = gr; g.fillRect(X + ox - r * 3, Y + oy - r * 3, r * 6, r * 6); }
+  }
+  if (st.codeSpot && ok(st.codeSpot.x, st.codeSpot.z)) { const c = st.codeSpot, X = Math.round(wx(c.x)), Y = Math.round(wy(c.z, (c.y || 1.4) + 0.25)); g.fillStyle = 'rgba(150,240,255,.85)'; g.font = '8px serif'; g.textAlign = 'center'; g.fillText(st.code.map(i => GLYPHS[i]).join(''), X, Y); g.fillRect(X - 14, Y + 2, 28, 1); g.textAlign = 'left'; }
+  const shelf = MAP.doors.find(x => x.kind === 'shelf'); if (shelf && W.doors[shelf.idx].open < 0.5 && ok(shelf.cx, shelf.cz)) for (let k = 0; k < 6; k++) { const ph = (t * 0.35 + k / 6) % 1, X = Math.round(wx(shelf.cx + Math.sin(ph * 9 + k) * 0.4)), Y = Math.round(wy(shelf.cz + 0.3, 0.2 + ph * 2)); g.fillStyle = `rgba(160,210,255,${0.5 * (1 - ph)})`; g.fillRect(X, Y, 1, 3); }
+  if (st.bells && W.f && !W.f.bells) st.bells.forEach((bi, order) => { const b = MAP.furn.find(f => f.o.bell === bi); if (!b || !ok(b.x, b.z)) return; const X = Math.round(wx(b.x)), Y = Math.round(wy(b.z, 1.75) + Math.sin(t * 2 + order) * 1); g.fillStyle = order < (W.bellN || 0) ? 'rgba(150,240,255,.25)' : 'rgba(150,240,255,.95)'; g.font = 'bold 9px serif'; g.textAlign = 'center'; g.fillText(String(order + 1), X, Y); g.textAlign = 'left'; });
+  for (const it of st.items || []) if (it.need === 'drained' && W.f && !W.f.drained && ok(it.x, it.z)) { const X = Math.round(wx(it.x)), Y = Math.round(wy(it.z, 0.6)), a = 0.5 + Math.sin(t * 3) * 0.3; g.fillStyle = `rgba(255,233,160,${a})`; g.fillRect(X - 1, Y - 1, 3, 3); }
+  // the mirror figure (holder's evidence) shows for everybody in the beam
+}
+/* stair seal across the gate */
+function drawGate(g, o, W, t, glow) {
+  const X = Math.round(wx(o.at.x)), Y = Math.round(wy(o.at.z)), seal = W.f ? W.f.seal : 1;
+  if (!glow) { g.fillStyle = '#121010'; for (let k = -24; k <= 24; k += 4) { g.fillRect(X + k, Y - 30, 1, 30); g.fillRect(X + k - 1, Y - 32, 3, 2); } g.fillRect(X - 25, Y - 20, 50, 1); g.fillRect(X - 25, Y - 8, 50, 1); if (!seal) { g.fillStyle = 'rgba(0,0,0,.6)'; g.fillRect(X - 25, Y - 30, 50, 30); } return; }
+  if (!seal) return;
+  const a = 0.55 + Math.sin(t * 2) * 0.15; g.save(); g.translate(X, Y - 16); g.rotate(t * 0.2); g.strokeStyle = `rgba(176,138,255,${a})`; g.lineWidth = 1; g.beginPath(); g.arc(0, 0, 12, 0, TAU); g.stroke(); g.beginPath(); for (let i = 0; i <= 6; i++) { const an = i * TAU * 2 / 6 + 0.5; g[i ? 'lineTo' : 'moveTo'](Math.cos(an) * 12, Math.sin(an) * 12); } g.stroke(); g.restore();
+  g.fillStyle = `rgba(176,138,255,${a * 0.5})`; g.fillRect(X - 25, Y - 14, 50, 1); g.fillRect(X - 25, Y - 22, 50, 1);
+}
+/* props with moving parts or state drawn on top of the cached sprite */
+function propOverlay(g, o, W, sx, sy, t) {
+  const f = o.f, b = o.b;
+  if (f.k === 'tub') { const drained = W.f && W.f.drained, X = sx + 4, Y = sy + 3, w = b.c.width - 8, h = Math.round(b.HD * 2 * PX) - 6; if (!drained) { g.fillStyle = 'rgba(60,70,50,.92)'; g.fillRect(X, Y, w, h); g.fillStyle = 'rgba(120,130,100,.5)'; g.fillRect(X + 2 + Math.round(Math.sin(t) * 2), Y + 2, w - 6, 1); } }
+  if (f.o.hide) { const h = MAP.hides.find(q => q.f === f.id); if (h && W.hideA) { const ta = W.now - (W.hideA[h.id] ?? -9); if (ta < 0.9) { const k = Math.sin(clamp(ta / 0.9, 0, 1) * PI); g.fillStyle = '#0a0606'; g.fillRect(sx + Math.round(b.c.width / 2) - 1, sy + Math.round(b.HD * 2 * PX) + 2, Math.round(3 + k * 6), b.c.height - Math.round(b.HD * 2 * PX) - 4); } if (W.occ && W.occ[h.id] >= 0 && R3.seerView) { g.fillStyle = 'rgba(140,220,255,.6)'; g.fillRect(sx + Math.round(b.c.width / 2) - 1, sy + b.c.height - 14, 2, 2); } } }
+  if (f.k === 'ritualCircle' && W.f) { const on = W.f.sanctum && W.f.seal, pr = W.rit && W.rit.item === 'final' ? W.rit.p : (W.finP || 0); if (on || W.finP) { const X = sx + b.c.width / 2, Y = sy + (b.c.height) / 2; g.save(); g.globalCompositeOperation = 'lighter'; g.strokeStyle = `rgba(255,80,90,${0.25 + pr * 0.6 + Math.sin(t * 4) * 0.08})`; g.lineWidth = 2; g.beginPath(); g.arc(X, Y, b.c.width / 2 - 3, -HP, -HP + TAU * Math.max(0.02, pr)); g.stroke(); g.restore(); } }
+  if (f.k === 'roofHatch' && W.f && !W.f.seal) { const X = sx + b.c.width / 2, Y = sy; g.fillStyle = 'rgba(170,190,230,.25)'; g.fillRect(X - 10, Y - 6, 20, b.c.height + 6); }
+  if (f.k === 'grandClock') { const X = sx + Math.round(b.c.width / 2), Y = sy + b.c.height - Math.round(b.Hm * PX * VS * 0.45); g.fillStyle = PAL.brassL; g.fillRect(X + Math.round(Math.sin(t * PI) * 2) - 1, Y, 2, 2); }
+}
+/* ---------- darkness: cut holes for lights, the flashlight cone, the lantern ---------- */
+function drawLighting(W, view, me, t, fk, local) {
+  const dg = R3.dg, VW = R3.VW, VH = R3.VH, amb = (MAP.F && MAP.F.ambient) || 1;
+  const base = view === 'S' ? 0.24 : view === 'both' ? 0.12 : 0.07;
+  let A = 1 - base * amb; if (W.menu) A = 0.62; A *= 1 - fk * 0.55; if (window.__dbgLight) A = 0.1;
+  dg.globalCompositeOperation = 'source-over'; dg.clearRect(0, 0, VW, VH);
+  dg.fillStyle = view === 'S' ? `rgba(4,8,18,${A})` : `rgba(3,3,6,${A})`; dg.fillRect(0, 0, VW, VH);
+  dg.globalCompositeOperation = 'destination-out';
+  const gl = R3.gg; gl.clearRect(0, 0, VW, VH); gl.globalCompositeOperation = 'lighter';
+  const hole = (x, y, r, a, clip) => { if (x + r < 0 || y + r < 0 || x - r > VW || y - r > VH) return; if (clip) { dg.save(); dg.beginPath(); dg.rect(clip[0], clip[1], clip[2], clip[3]); dg.clip(); } const gr = dg.createRadialGradient(x, y, 0, x, y, r); gr.addColorStop(0, `rgba(0,0,0,${a})`); gr.addColorStop(0.55, `rgba(0,0,0,${a * 0.6})`); gr.addColorStop(1, 'rgba(0,0,0,0)'); dg.fillStyle = gr; dg.fillRect(x - r, y - r, r * 2, r * 2); if (clip) dg.restore(); };
+  const tint = (x, y, r, col, a) => { if (x + r < 0 || y + r < 0 || x - r > VW || y - r > VH) return; const gr = gl.createRadialGradient(x, y, 0, x, y, r); gr.addColorStop(0, `rgba(${col},${a})`); gr.addColorStop(1, `rgba(${col},0)`); gl.fillStyle = gr; gl.fillRect(x - r, y - r, r * 2, r * 2); };
+  const roomClip = ri => { if (ri < 0) return null; const r = MAP.rooms[ri].r; return [wx(r[0]) - 2, wy(r[1]) - R3.FH - 2, (r[2] - r[0]) * PX + 4, (r[3] - r[1]) * PX + R3.FH + 4]; };
+  // room lights
+  let eflick = 1; if (W.flick > 0 && Math.random() < W.flick * 0.5) eflick = 0.15 + Math.random() * 0.4;
+  for (const l of MAP.lights) {
+    if (!lightOn(l, W)) continue;
+    const elec = !['candles', 'candleS', 'fire', 'oilLamp'].includes(l.k), k = l.k;
+    const rad = (k === 'chandelierBig' ? 6.5 : k === 'chandelier' ? 5 : k === 'sconce' ? 2.6 : k === 'pendant' ? 3.8 : k === 'bulb' ? 3.4 : k === 'oilLamp' ? (B('lampR') || 3.4) + 0.6 : k === 'fire' ? 4 : 2.2) * PX;
+    const fl = elec ? eflick * (0.97 + Math.sin(t * 50 + l.i) * 0.02) : 0.85 + Math.sin(t * 9 + l.i) * 0.08 + Math.sin(t * 23 + l.i * 2) * 0.05;
+    const X = wx(l.x), Y = wy(l.z, Math.min(l.y, 1.2) * 0.4);
+    hole(X, Y, rad, 0.9 * fl, roomClip(l.room));
+    tint(X, Y, rad * 0.8, elec ? '255,210,150' : k === 'oilLamp' ? '255,190,110' : '255,170,90', 0.22 * fl);
+  }
+  // people always see a little around themselves
+  for (const p of W.p) { if (p.hide >= 0) continue; const X = wx(p.x), Y = wy(p.z, 0.6); hole(X, Y, (p.role === 'S' ? 2.8 : 1.5) * PX, p.role === 'S' ? 0.75 : 0.45); if (p.role === 'S') tint(X, Y, 2.6 * PX, '110,180,255', 0.12); }
+  // the flashlight cone (ray-cast against the walls)
+  const h = holderOf(W);
+  if (h && h.hide < 0 && !h.down) {
+    let flick = 1; if (W.flick > 0 && Math.random() < W.flick * 0.35) flick = Math.random() * 0.3; const weak = h.batt <= 0.02; if (weak) flick *= 0.35 + Math.random() * 0.15;
+    const boost = h.boostT > 0, half = BAL.beamHalf * (boost ? 1.25 : 1) * 1.1, range = BAL.beamRange * (weak ? 0.45 : 1) * (boost ? 1 : 0.85);
+    const ox = h.x + Math.cos(h.aim) * 0.3, oz = h.z + Math.sin(h.aim) * 0.3, n = SET.quality === 'low' ? 16 : 28, pts = [];
+    for (let i = 0; i <= n; i++) { const a = h.aim - half + (i / n) * half * 2, [d, wall] = castRay(W, ox, oz, a, range); const x = ox + Math.cos(a) * d, z = oz + Math.sin(a) * d; pts.push([wx(x), wy(z) - (wall ? R3.FH * 0.85 * clamp(1.4 - d / range, 0, 1) : 0)]); }
+    const X0 = wx(ox), Y0 = wy(oz, 0.5), R = range * PX;
+    for (const [tg, isDark] of [[dg, 1], [gl, 0]]) {
+      tg.save(); tg.beginPath(); tg.moveTo(X0, Y0); for (const p of pts) tg.lineTo(p[0], p[1]); tg.closePath(); tg.clip();
+      const gr = tg.createRadialGradient(X0, Y0, 0, X0, Y0, R);
+      if (isDark) { const a = (boost ? 1 : 0.92) * flick; gr.addColorStop(0, `rgba(0,0,0,${a})`); gr.addColorStop(0.6, `rgba(0,0,0,${a * 0.85})`); gr.addColorStop(1, 'rgba(0,0,0,0)'); }
+      else { const a = (boost ? 0.45 : 0.16) * flick; gr.addColorStop(0, `rgba(255,236,190,${a})`); gr.addColorStop(1, 'rgba(255,236,190,0)'); }
+      tg.fillStyle = gr; tg.fillRect(X0 - R, Y0 - R, R * 2, R * 2); tg.restore();
+    }
+  }
+  // the ghost's own cold light when it manifests; lit windows in a lightning flash; the open roof hatch
+  const G = W.g; if (G && (G.man || 0) > 0.05) { hole(wx(G.x), wy(G.z, 1), 2.4 * PX, 0.6 * G.man); tint(wx(G.x), wy(G.z, 1), 2.4 * PX, '150,200,255', 0.25 * G.man); }
+  if (MAP.F.outside === 'ground' || fk > 0.1) for (const w of MAP.windows) { if (w.dir !== 'h') continue; const X = wx((w.a + w.b) / 2), Y = wy(w.at + 0.6); hole(X, Y, (1.2 + fk * 3) * PX, 0.25 + fk * 0.6, roomClip(w.room)); }
+  if (W.f && !W.f.seal) { const hf = MAP.furn.find(f => f.k === 'roofHatch'); if (hf) { hole(wx(hf.x), wy(hf.z), 3 * PX, 0.7); tint(wx(hf.x), wy(hf.z), 3 * PX, '170,190,230', 0.2); } }
+  // the dawn: after the boss is banished the house slowly lightens
+  if (W.phase === 'won') { dg.globalCompositeOperation = 'destination-out'; dg.fillStyle = 'rgba(0,0,0,.5)'; dg.fillRect(0, 0, VW, VH); }
+  R3.bg.drawImage(R3.dark, 0, 0);
+  R3.bg.globalCompositeOperation = 'lighter'; R3.bg.drawImage(R3.glow, 0, 0); R3.bg.globalCompositeOperation = 'source-over';
+}
+/* ---------- post effects ---------- */
+function postFX(g, W, me, view, t, dt, fk) {
+  const VW = R3.VW, VH = R3.VH, local = view === 'both' && !W.menu;
+  const fearP = local ? Math.max(W.p[0].fear, W.p[1].fear) : me.fear;
+  VIS.fear = lerp(VIS.fear, fearP / 100, Math.min(1, dt * 2));
+  // spirit sight: cold tint
+  if (view === 'S') { g.globalCompositeOperation = 'color'; g.fillStyle = 'rgba(70,110,170,.35)'; g.fillRect(0, 0, VW, VH); g.globalCompositeOperation = 'source-over'; }
+  // hunt: red edge pulse + scanline tearing
+  if (VIS.hunt > 0.05) {
+    if (Math.random() < VIS.hunt * 0.25) { const y = (Math.random() * VH) | 0, h = 2 + ((Math.random() * 8) | 0), off = Math.round((Math.random() - 0.5) * 6 * VIS.hunt); g.drawImage(R3.buf, 0, y, VW, h, off, y, VW, h); }
+    g.fillStyle = `rgba(120,0,10,${0.08 * VIS.hunt * (0.6 + Math.sin(t * 6) * 0.4)})`; g.fillRect(0, 0, VW, VH);
+  }
+  // fear vignette and heartbeat
+  const bpm = 60 + fearP * 0.8 + VIS.hunt * 40, ph = (t * bpm / 60) % 1, beat = fearP > 50 || VIS.hunt > 0.5 ? Math.max(0, 1 - ph * 5) * clamp((fearP - 40) / 60 + VIS.hunt * 0.5, 0, 1) : 0;
+  const vr = Math.max(VW, VH) * (0.75 - VIS.fear * 0.18), gr = g.createRadialGradient(VW / 2, VH / 2, vr * 0.35, VW / 2, VH / 2, vr);
+  gr.addColorStop(0, 'rgba(0,0,0,0)'); gr.addColorStop(1, `rgba(${Math.round(40 * beat)},0,${view === 'S' ? 12 : 0},${0.55 + VIS.fear * 0.35})`); g.fillStyle = gr; g.fillRect(0, 0, VW, VH);
+  // hiding: through the wardrobe slats
+  if (!local && me.hide >= 0) { g.fillStyle = 'rgba(0,0,0,.85)'; for (let y = 0; y < VH; y += 8) g.fillRect(0, y, VW, 5); }
+  // downed: drained colour, red rim
+  if (!local && me.down) { g.globalCompositeOperation = 'saturation'; g.fillStyle = 'rgba(128,128,128,.85)'; g.fillRect(0, 0, VW, VH); g.globalCompositeOperation = 'source-over'; g.fillStyle = 'rgba(90,0,0,.25)'; g.fillRect(0, 0, VW, VH); }
+  // film grain
+  if (SET.grain) { g.fillStyle = 'rgba(255,255,255,.07)'; for (let i = 0; i < 60; i++) g.fillRect((Math.random() * VW) | 0, (Math.random() * VH) | 0, 1, 1); g.fillStyle = 'rgba(0,0,0,.12)'; for (let i = 0; i < 60; i++) g.fillRect((Math.random() * VW) | 0, (Math.random() * VH) | 0, 1, 1); }
+  if (fk > 0) { g.fillStyle = `rgba(200,215,255,${fk * 0.22})`; g.fillRect(0, 0, VW, VH); }
+}
+/* world → CSS screen pixels (for DOM overlays) */
+function toScreen(x, y, z) { const k = R3.SC / R3.DPR, sx = (x * PX - y * 0 - R3.cam.x) * k, sy = (z * PX - y * 1.5 * PX * VS - R3.cam.y) * k; return { x: sx, y: sy, on: sx > -20 && sy > -20 && sx < innerWidth + 20 && sy < innerHeight + 20 }; }

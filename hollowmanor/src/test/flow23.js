@@ -24,7 +24,7 @@ const { chromium } = require('playwright'); const OUT = process.env.OUT || '/tmp
     };
   });
   // ---- floor 1 → 2
-  console.log(await run(() => { T.calm(); W.f.seal = 0; W.g.st = 'gone'; const f = T.climb(); return 'after climb floor=' + f + ' map=' + MAP.F.key + ' phase=' + W.phase + ' rooms=' + MAP.rooms.length + ' worldChildren=' + R3.world.children.length + ' doors=' + R3.doors.length + ' bells=' + R3.bells.length + ' tub=' + !!R3.tub + ' cracks=' + R3.cracks.length; }));
+  console.log(await run(() => { T.calm(); W.f.seal = 0; W.g.st = 'gone'; const f = T.climb(); return 'after climb floor=' + f + ' map=' + MAP.F.key + ' phase=' + W.phase + ' rooms=' + MAP.rooms.length + ' pieces=' + R3.pieces.length + ' bells=' + R3.bells.length + ' crack=' + MAP.doors.some(d => d.kind === 'crack'); }));
   console.log(await run(() => {
     const out = [], L = T.L(), S = T.S(); T.calm(); try {
     out.push('ghost=' + W.setup.gtype + ' used=' + W.used + ' ev=' + GT(W.setup.gtype).ev + ' item=' + GT(W.setup.gtype).item + ' bells=' + W.setup.bells + ' items=' + W.items.map(i => i.k + '@' + i.slot).join(','));
@@ -55,7 +55,11 @@ const { chromium } = require('playwright'); const OUT = process.env.OUT || '/tmp
     out.push('wrong: ' + ritual(wrong) + ' burned=' + W.f.burned + ' seal=' + W.f.seal + ' S.down=' + S.down);
     if (S.down) { T.tp(L, S.x + 0.5, S.z); T.hold(L, 2000, BAL.reviveT + 0.2); }
     W.g.huntT = 0; T.step(0.5); T.calm();
-    out.push('right: ' + ritual(right) + ' seal=' + W.f.seal + ' ghost=' + W.g.st);
+    for (let tries = 0; tries < 4 && W.f.seal; tries++) { // a real hunt can interrupt the chant: revive, recharge, try again
+      if (S.down) { T.tp(L, S.x + 0.5, S.z); T.hold(L, 2000, BAL.reviveT + 0.2); }
+      if (W.g.st === 'hunt' || W.g.st === 'ritual') { W.g.huntT = 0; T.step(0.5); } L.batt = 1; T.calm();
+      out.push('right#' + tries + ': ' + ritual(right) + ' seal=' + W.f.seal + ' ghost=' + W.g.st);
+    }
     T.step(4);
     out.push('objectives ' + MAP.F.objectives(W).map(o => (o.done ? '✔' : '○') + o.t).join(' | '));
     const f = T.climb(); out.push('after climb floor=' + f + ' map=' + MAP.F.key + ' lamps=' + MAP.lamps.length + ' anchors=' + W.setup.anchors.map(a => a.k + '@' + MAP.rooms[a.room].id).join(','));

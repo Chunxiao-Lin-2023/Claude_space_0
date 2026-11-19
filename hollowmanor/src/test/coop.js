@@ -5,19 +5,19 @@ const { chromium } = require('playwright'); const OUT = process.env.OUT || '/tmp
   const b = await chromium.launch({ executablePath: process.env.CHROME || require('fs').readdirSync('/opt/pw-browsers').filter(d => /^chromium-\d+$/.test(d)).flatMap(d => ['/chrome-linux/chrome', '/chrome-linux64/chrome'].map(s => '/opt/pw-browsers/' + d + s)).find(p => require('fs').existsSync(p)), args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--disable-features=WebRtcHideLocalIpsWithMdns'] });
   const U = 'http://localhost:8765/test.html?peerhost=127.0.0.1&peerport=9000';
   const PJ = require('fs').readFileSync(require.resolve('peerjs/dist/peerjs.min.js'), 'utf8');
-  const mk = async (name) => { const c = await b.newContext({ viewport: { width: 960, height: 560 } }); await c.route(/unpkg\.com|jsdelivr\.net/, r => r.fulfill({ status: 200, contentType: 'application/javascript', body: PJ })); await c.route(/fonts\.(googleapis|gstatic)/, r => r.abort()); const p = await c.newPage(); p.errs = []; p.on('pageerror', e => p.errs.push(e.message)); p.on('console', m => { if (m.type() === 'error' && !/fonts|Failed to load/.test(m.text())) p.errs.push(m.text().slice(0, 200)); }); await p.goto(U, { waitUntil: 'commit', timeout: 120000 }); await p.waitForFunction(() => window.__ready, null, { timeout: 180000, polling: 500 }); await p.evaluate(() => { window.__dbg.skipDraw = true; }); await p.fill('#nameIn', name); return p; };
+  const mk = async (name) => { const c = await b.newContext({ viewport: { width: 960, height: 560 } }); await c.route(/unpkg\.com|jsdelivr\.net/, r => r.fulfill({ status: 200, contentType: 'application/javascript', body: PJ })); await c.route(/fonts\.(googleapis|gstatic)/, r => r.abort()); const p = await c.newPage(); p.errs = []; p.on('pageerror', e => p.errs.push(e.message)); p.on('console', m => { if (m.type() === 'error' && !/fonts|Failed to load/.test(m.text())) p.errs.push(m.text().slice(0, 200)); }); await p.goto(U, { waitUntil: 'commit', timeout: 120000 }); await p.waitForFunction(() => window.__ready, null, { timeout: 180000, polling: 500 }); await p.evaluate(() => { window.__dbg.skipDraw = true; }); await p.evaluate(n => { SET.name = n; document.getElementById('nameIn').value = n; window.__dbg.noStage = 1; }, name); return p; };
   const H = await mk('房主'), G = await mk('朋友');
-  await H.click('#hostBtn'); await H.waitForFunction(() => NET.peer && NET.peer.open, null, { timeout: 30000 });
+  await H.evaluate(() => { audioInit(); netHost(); }); await H.waitForFunction(() => NET.peer && NET.peer.open, null, { timeout: 30000 });
   const code = await H.evaluate(() => NET.code); console.log('code', code);
-  await G.fill('#codeIn', code); await G.click('#joinBtn');
+  await G.evaluate(c => { audioInit(); netJoin(c); }, code);
   await H.waitForFunction(() => NET.guestName === '朋友', null, { timeout: 30000 });
   await G.waitForFunction(() => STATE.mode === 'lobby', null, { timeout: 10000 });
-  console.log('lobby host start disabled before ready:', await H.evaluate(() => document.getElementById('startBtn').disabled));
-  await G.click('#swapBtn'); await H.waitForTimeout(800);
+  
+  await G.evaluate(() => document.getElementById('swapBtn').click()); await H.waitForTimeout(800);
   console.log('roles after guest swap request', await H.evaluate(() => NET.roles.join('')), await G.evaluate(() => NET.roles.join('')));
-  await G.click('#readyBtn'); await H.waitForFunction(() => NET.ready[1], null, { timeout: 10000 });
+  await G.evaluate(() => document.getElementById('readyBtn').click()); await H.waitForFunction(() => NET.ready[1], null, { timeout: 10000 });
   await H.screenshot({ path: OUT + '/co_lobby.png', timeout: 60000 }).catch(() => {});
-  await H.click('#startBtn');
+  await H.evaluate(() => hostStart());
   await G.waitForFunction(() => STATE.mode === 'play' && W, null, { timeout: 20000 });
   for (const p of [H, G]) await p.evaluate(() => { W.huntCD = 1e9; });
   console.log('same setup', await H.evaluate(() => JSON.stringify(W.setup.code) + W.setup.gtype), await G.evaluate(() => JSON.stringify(W.setup.code) + W.setup.gtype));

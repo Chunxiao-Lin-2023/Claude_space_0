@@ -75,12 +75,12 @@ window.GAMES = [
   {
     id: 'hollowmanor',
     title: '幽宅双影',
-    sub: '双人鬼屋探索 · 非对称合作',
-    desc: '雨夜被困三层老宅：持灯者照出霜痕、定住怨灵，灵视者看见隔墙的线索。认出怨灵、驱散它，一层层上到阁楼。',
+    sub: '像素双人鬼屋 · 非对称合作',
+    desc: '雨夜被困三层老宅：一人掌灯，一人见鬼。认出怨灵、驱散它，一层层上到阁楼。',
     url: 'hollowmanor/',
     cover: 'covers/hollowmanor.webp',
     status: 'dev',
-    tags: ['双人联机', 'iPad', '恐怖'],
+    tags: ['双人同屏', '双人联机', 'iPad', '恐怖'],
     hue: 205
   },
   {

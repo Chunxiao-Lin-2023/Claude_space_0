@@ -190,10 +190,35 @@ body{-webkit-touch-callout:none}
   #result h2{font-size:44px}.stats{gap:4px;font-size:13px}
 }
 @media (max-width:700px){.roles{grid-template-columns:1fr}.role{min-height:0}#hud .tl{width:170px}#obj{font-size:13px}.code{font-size:36px}}
+
+/* pixel canvas */
+#gl{image-rendering:pixelated;image-rendering:crisp-edges}
+/* pixel theater text */
+#stageBox{position:fixed;left:50%;bottom:calc(3vh + var(--sa-b));transform:translateX(-50%);width:min(760px,92vw);z-index:30;pointer-events:auto;text-align:center;font-family:var(--title,serif);text-shadow:0 2px 4px #000}
+#stageBox b{display:block;font-size:15px;letter-spacing:.2em;margin-bottom:4px}
+#stageBox p{margin:0;font-size:clamp(15px,2.2vw,20px);line-height:1.6;color:#e8e0d0;min-height:1.6em}
+#stageBox small{display:block;margin-top:6px;font-size:11px;color:#8a8070;letter-spacing:.1em}
+/* same-screen prompts */
+.lprompt{position:absolute;transform:translate(-50%,-100%);display:flex;align-items:center;gap:6px;background:rgba(10,8,8,.72);border:1px solid rgba(226,180,92,.35);padding:3px 8px 3px 4px;border-radius:6px;font-size:13px;white-space:nowrap;pointer-events:none;overflow:hidden}
+.lprompt kbd{border:1px solid #e2b45c;border-radius:4px;padding:0 5px;font:12px monospace;color:#fff}
+.lprompt.no{opacity:.55}
+.lprompt i{position:absolute;left:0;bottom:0;height:2px;background:#e2b45c}
+body.localPlay #prompt{display:none!important}
+body.stageOn #log,body.stageOn #prompt,body.stageOn #tags,body.stageOn #touchUI{opacity:0;pointer-events:none;transition:opacity .3s}
+#tAct2,#tRun2{display:none}
+body.localPlay #tAct2,body.localPlay #tRun2{display:flex}
+body.localPlay #tAct{left:calc(120px + var(--sa-l));right:auto}
+body.localPlay #tBoost{left:calc(28px + var(--sa-l));right:auto}
+body.localPlay #tRun{left:calc(210px + var(--sa-l));right:auto}
+#tAct2{right:calc(28px + var(--sa-r));bottom:calc(40px + var(--sa-b));width:80px;height:80px;font-size:15px;border-color:#8fd3ff}
+#tRun2{right:calc(120px + var(--sa-r));bottom:calc(30px + var(--sa-b))}
+body.localPlay #touchAim{width:45%;height:62%}
+body.localPlay #tPing,body.localPlay #tChat{display:none}
 </style>
 <body>
 <canvas id="gl"></canvas>
 <div id="ov"></div>
+<div id="stageBox" class="hidden"><b></b><p></p><small>点击 / E 继续 · Esc 跳过</small></div>
 <div id="loading"><div class="t">幽宅双影</div><div class="bar"><i></i></div><div style="color:#8a7e70;font-size:13px;letter-spacing:.2em">正在点起一盏灯…</div></div>
 
 <div id="title" class="scr hidden">
@@ -243,6 +268,8 @@ body{-webkit-touch-callout:none}
 <div id="touchUI" class="hidden">
   <div id="touchMove"></div><div id="touchAim"></div>
   <button class="tb" id="tAct"><span>✋</span>互动</button>
+  <button class="tb" id="tAct2"><span>✋</span>小雾</button>
+  <button class="tb" id="tRun2"><span>»</span>奔跑</button>
   <button class="tb" id="tBoost"><span>✦</span>强光</button>
   <button class="tb" id="tRun"><span>»</span>奔跑</button>
   <button class="tb" id="tPing">📍</button>

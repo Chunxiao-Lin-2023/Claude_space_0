@@ -31,6 +31,18 @@ const FDEF = {
   wickerChair: { w: 0.8, d: 0.8, h: 1.1, col: 1 }, pedestal: { w: 0.45, d: 0.45, h: 1.6, col: 1 }, chevalMirror: { w: 0.8, d: 0.45, h: 1.9, col: 1 },
   rug: { w: 1, d: 1, h: 0.01, col: 0 }, stairs: { w: 2.6, d: 8, h: 3, col: 1 }, umbrella: { w: 0.35, d: 0.35, h: 0.8, col: 1 }, wateringCan: { w: 0.4, d: 0.3, h: 0.3, col: 0 },
 };
+/* upper-floor furniture */
+Object.assign(FDEF, {
+  canopyBed: { w: 1.9, d: 2.25, h: 2.4, col: 1 }, vanity: { w: 1.3, d: 0.55, h: 1.75, col: 1 }, dresser: { w: 1.4, d: 0.55, h: 1.1, col: 1 },
+  tub: { w: 1.75, d: 0.82, h: 0.75, col: 1 }, washbasin: { w: 0.6, d: 0.5, h: 0.9, col: 1 }, toilet: { w: 0.45, d: 0.7, h: 1.6, col: 1 }, towelRack: { w: 0.7, d: 0.3, h: 1.0, col: 1 },
+  easel: { w: 0.8, d: 0.7, h: 1.8, col: 1 }, sheeted: { w: 1.3, d: 0.9, h: 1.1, col: 1 }, canvasStack: { w: 1.0, d: 0.4, h: 1.1, col: 1 }, libraryLadder: { w: 0.6, d: 0.5, h: 2.4, col: 1 },
+  trunk: { w: 1.0, d: 0.55, h: 0.6, col: 1 }, clothesRail: { w: 1.6, d: 0.5, h: 1.75, col: 1 }, hatbox: { w: 0.5, d: 0.5, h: 0.7, col: 1 }, stairwell: { w: 2.6, d: 8, h: 1.0, col: 1 },
+  bellStand: { w: 0.5, d: 0.5, h: 1.25, col: 1 }, dollhouse: { w: 1.0, d: 0.6, h: 1.3, col: 1 }, mannequin: { w: 0.5, d: 0.5, h: 1.75, col: 1 }, sewingTable: { w: 1.2, d: 0.55, h: 1.0, col: 1 },
+  bunk: { w: 0.95, d: 1.95, h: 1.8, col: 1 }, post: { w: 0.28, d: 0.28, h: 2.5, col: 1 }, crateStack: { w: 1.4, d: 1.0, h: 1.4, col: 1 }, rockingChair: { w: 0.7, d: 1.0, h: 1.1, col: 1 },
+  birdcage: { w: 0.5, d: 0.5, h: 1.6, col: 1 }, waterTank: { w: 2.2, d: 1.6, h: 1.9, col: 1 }, pram: { w: 0.6, d: 1.1, h: 1.1, col: 1 }, ritualCircle: { w: 3.6, d: 3.6, h: 0.1, col: 0 },
+  roofHatch: { w: 1.2, d: 1.6, h: 2.5, col: 1 }, candleCluster: { w: 0.5, d: 0.5, h: 0.3, col: 0 }, portraitStack: { w: 1.1, d: 0.5, h: 1.2, col: 1 }, cot: { w: 0.85, d: 1.9, h: 0.6, col: 1 },
+  beam: { w: 1, d: 0.25, h: 0.3, col: 0 }, smallTable: { w: 0.7, d: 0.7, h: 0.7, col: 1 },
+});
 /* ---------- build ---------- */
 const cellIdx = (i, j) => i + j * MAP.GW;
 function roomAtCell(i, j) { return i < 0 || j < 0 || i >= MAP.GW || j >= MAP.GH ? -1 : MAP.cell[cellIdx(i, j)]; }
