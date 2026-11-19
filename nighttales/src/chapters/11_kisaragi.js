@@ -809,7 +809,7 @@
   const TRAIN_PAX = { salary: [3, 2, 0], obaa: [9, 2, 0], youth: [14, 2, 0], student: [22, 2, 0], woman: [11, 5, 3], drunk: [20, 5, 1] };
 
   defChapter({
-    id: 'kisaragi', n: 11, title: '如月车站', sub: '末班车二十多分钟没有停站。车门打开时，站名牌上写着：きさらぎ。', origin: '日本 2ch 网络怪谈', color: '#14453a',
+    id: 'kisaragi', n: 11, title: '如月车站', sub: '末班车二十多分钟没有停站。车门打开时，站名牌上写着：如月。', origin: '日本网络论坛怪谈', color: '#14453a',
     icon: '@aoiIcon', amb: 'otherworld', floor: 'concrete', wall: 'concrete', dark: .82, plr: 2.8, darkC: '#020807',
     people: PEOPLE_K, tiles: TILES_K, sprites: SPR_K, items: ITEMS_K, notes: NOTES_K, faces: FACES_K,
     endings: { home: '第十一夜　完', car: '帖子停在了这一句', yami: '到「宫」去' },

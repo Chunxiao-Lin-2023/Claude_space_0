@@ -91,7 +91,7 @@ kbd{font-family:inherit;font-size:11px;border:1px solid var(--line2);border-bott
 <div class="wrap">
   <a class="back" href="../">‹ 游戏厅</a>
   <header>
-    <div class="eyebrow">HYAKU MONOGATARI</div>
+    <div class="eyebrow">三部　九十则</div>
     <h1>百物语</h1>
     <p class="lede">旧时讲鬼故事的规矩：夜里点一百支蜡烛，每讲完一个，就吹灭一支。<br>这里是三部、九十则流传已久的怪谈——每一则都是一章像素俯视角探索解谜，单人或两人联机轮流操作。</p>
   </header>
@@ -103,7 +103,7 @@ kbd{font-family:inherit;font-size:11px;border:1px solid var(--line2);border-bott
     <div class="tools">
       <label class="search" id="sw">
         <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>
-        <input id="q" type="search" placeholder="搜索标题、原名、出处、关键词… 如：裂口女 / Mothman / 聊斋 / 1959 / 电梯" autocomplete="off" enterkeyhint="go" aria-label="搜索怪谈">
+        <input id="q" type="search" placeholder="搜索标题、出处、关键词… 如：裂口女 / 天蛾人 / 聊斋 / 1959 / 电梯" autocomplete="off" enterkeyhint="go" aria-label="搜索怪谈">
         <button class="clr" id="clr" type="button" aria-label="清除">×</button>
       </label>
       <div class="chips" id="cV"></div>
@@ -115,7 +115,7 @@ kbd{font-family:inherit;font-size:11px;border:1px solid var(--line2);border-bott
 
   <footer>
     <span>点击任一则，直接打开那一部的章节列表并定位到这一夜。进度读取本机浏览器里的存档。</span>
-    <span>键盘：<kbd>/</kbd> 搜索 · <kbd>Enter</kbd> 打开第一条 · <kbd>Esc</kbd> 清空</span>
+    <span>键盘：<kbd>/</kbd> 搜索 · <kbd>回车</kbd> 打开第一条 · <kbd>退出键</kbd> 清空</span>
   </footer>
 </div>
 <script src="list.js"></script>
@@ -180,7 +180,7 @@ kbd{font-family:inherit;font-size:11px;border:1px solid var(--line2);border-bott
       terms.every(t => { const m = NUMQ.exec(t); return m ? r.n === parseCn(m[1]) : r.hay.includes(t); }));
     $('cnt').textContent = shown.length === ROWS.length ? `共 ${ROWS.length} 则` : `${shown.length} / ${ROWS.length} 则`;
     $('sw').classList.toggle('has', !!F.q);
-    if (!shown.length) { $('out').innerHTML = '<div class="empty">没有找到。换个词试试——中文名、原名、国家、年份都可以搜。</div>'; return; }
+    if (!shown.length) { $('out').innerHTML = '<div class="empty">没有找到。换个词试试——名字、国家、年份都可以搜。</div>'; return; }
     const vis = terms.filter(t => !NUMQ.test(t));
     let html = '', last = '';
     for (const r of shown) {
@@ -188,14 +188,14 @@ kbd{font-family:inherit;font-size:11px;border:1px solid var(--line2);border-bott
       if (g !== last) { html += `<div class="grp">${g}　第${cnum(vi * 10 + 1)}夜 — 第${cnum(vi * 10 + 10)}夜</div>`; last = g; }
       const st = r.st === 'done' ? '<span class="st done">已通关</span>' : r.st === 'cp' ? '<span class="st cp">有存档</span>' : '<span></span>';
       html += `<a class="row" href="${r.href}"><span class="no"><b>${VOLS[r.v].vol}</b>第${cnum(r.n)}夜</span>
-        <span class="mid"><span class="tt">${hl(r.t, vis)}</span>${r.a ? `<span class="aka">${hl(r.a, vis)}</span>` : ''}
+        <span class="mid"><span class="tt">${hl(r.t, vis)}</span>
         <div class="og">${hl(r.o, vis)}</div><div class="sb">${hl(r.s, vis)}</div></span>${st}</a>`;
     }
     $('out').innerHTML = html;
   }
 
   const qi = $('q'); qi.value = F.q;
-  if (matchMedia('(max-width:520px)').matches) qi.placeholder = '搜索：标题 / 原名 / 出处 / 年份';
+  if (matchMedia('(max-width:520px)').matches) qi.placeholder = '搜索：标题 / 出处 / 年份';
   qi.addEventListener('input', () => { F.q = qi.value; save(); draw(); });
   qi.addEventListener('keydown', e => {
     if (e.key === 'Enter' && shown.length) location.href = shown[0].href;

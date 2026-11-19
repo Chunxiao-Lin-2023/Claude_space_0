@@ -3930,7 +3930,7 @@ const TK = TitleKit.create({
   }
 
   defChapter({
-    id: 'kotoribako', n: 2, title: '子取箱', sub: '旧仓最里面的桐木箱子里，装着一只精巧的机关箱。女人和孩子，不能靠近它。', origin: '日本 2ch 怪谈', color: '#4a3220',
+    id: 'kotoribako', n: 2, title: '子取箱', sub: '旧仓最里面的桐木箱子里，装着一只精巧的机关箱。女人和孩子，不能靠近它。', origin: '日本网络论坛怪谈', color: '#4a3220',
     amb: 'night', floor: 'darkwood', wall: 'wood', dark: .6, plr: 3.2,
     endings: { dawn: '天亮了', ret: '送还（隐藏）', opened: '箱开了', door: '门外的人' },
     /* 选章卡片：注连绳下，一只顶盖错开的寄木箱，黑缝里有一只眼睛 */
@@ -5802,7 +5802,7 @@ const TK = TitleKit.create({
   function setCnt(S, n) { S.f.cnt = n; const a = S.ent('andon'); if (a) a.num = 100 - n; S.dark(Math.min(.93, .8 + (n - 88) * .012), 'hall'); }
 
   defChapter({
-    id: 'ushinokubi', n: 4, title: '牛首', sub: '世上最可怕的怪谈。人人都听过它的名字，却没有一个人讲得出它的内容。', origin: '日本都市传说「牛の首」', color: '#26304a',
+    id: 'ushinokubi', n: 4, title: '牛首', sub: '世上最可怕的怪谈。人人都听过它的名字，却没有一个人讲得出它的内容。', origin: '日本都市传说「牛首」', color: '#26304a',
     icon: '@ushicard', amb: 'rain', floor: 'tatami', wall: 'shoji', dark: .8, plr: 2.8,
     endings: { ninetynine: '第九十九支', silent: '一个字也没说（隐藏）', told: '你把它讲完了', hundred: '第一百支' },
     /* 选章卡片：一排蜡烛，只剩最后一支亮着 */
@@ -30156,7 +30156,7 @@ const TK = TitleKit.create({
 
   /* ================= 章节 ================= */
   defChapter({
-    id: 'pocong', n: 25, title: '布包鬼', sub: '裹尸布上的结，要在下葬时一道一道解开。忘了解的那一个，会自己蹦回来。', origin: '印度尼西亚传说「Pocong」', color: '#2e3a34',
+    id: 'pocong', n: 25, title: '布包鬼', sub: '裹尸布上的结，要在下葬时一道一道解开。忘了解的那一个，会自己蹦回来。', origin: '印度尼西亚传说「寿衣鬼」', color: '#2e3a34',
     amb: 'rain', floor: 'tile', wall: 'plain', dark: .5, plr: 3.2, darkC: '#04060a',
     people: PEOPLE, items: ITEMS, notes: NOTES, faces: FACES, sprites: SPRITES, tiles: TILES,
     endings: { rest: '第二十五夜　完', locked: '关在屋里', joko: '给了乔科' },

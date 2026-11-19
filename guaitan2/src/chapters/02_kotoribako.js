@@ -137,7 +137,7 @@
   }
 
   defChapter({
-    id: 'kotoribako', n: 2, title: '子取箱', sub: '旧仓最里面的桐木箱子里，装着一只精巧的机关箱。女人和孩子，不能靠近它。', origin: '日本 2ch 怪谈', color: '#4a3220',
+    id: 'kotoribako', n: 2, title: '子取箱', sub: '旧仓最里面的桐木箱子里，装着一只精巧的机关箱。女人和孩子，不能靠近它。', origin: '日本网络论坛怪谈', color: '#4a3220',
     amb: 'night', floor: 'darkwood', wall: 'wood', dark: .6, plr: 3.2,
     endings: { dawn: '天亮了', ret: '送还（隐藏）', opened: '箱开了', door: '门外的人' },
     /* 选章卡片：注连绳下，一只顶盖错开的寄木箱，黑缝里有一只眼睛 */

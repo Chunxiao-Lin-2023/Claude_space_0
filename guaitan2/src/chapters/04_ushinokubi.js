@@ -29,7 +29,7 @@
   function setCnt(S, n) { S.f.cnt = n; const a = S.ent('andon'); if (a) a.num = 100 - n; S.dark(Math.min(.93, .8 + (n - 88) * .012), 'hall'); }
 
   defChapter({
-    id: 'ushinokubi', n: 4, title: '牛首', sub: '世上最可怕的怪谈。人人都听过它的名字，却没有一个人讲得出它的内容。', origin: '日本都市传说「牛の首」', color: '#26304a',
+    id: 'ushinokubi', n: 4, title: '牛首', sub: '世上最可怕的怪谈。人人都听过它的名字，却没有一个人讲得出它的内容。', origin: '日本都市传说「牛首」', color: '#26304a',
     icon: '@ushicard', amb: 'rain', floor: 'tatami', wall: 'shoji', dark: .8, plr: 2.8,
     endings: { ninetynine: '第九十九支', silent: '一个字也没说（隐藏）', told: '你把它讲完了', hundred: '第一百支' },
     /* 选章卡片：一排蜡烛，只剩最后一支亮着 */

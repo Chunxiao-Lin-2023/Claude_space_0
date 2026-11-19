@@ -15833,7 +15833,7 @@ const TK = TitleKit.create({
   const TRAIN_PAX = { salary: [3, 2, 0], obaa: [9, 2, 0], youth: [14, 2, 0], student: [22, 2, 0], woman: [11, 5, 3], drunk: [20, 5, 1] };
 
   defChapter({
-    id: 'kisaragi', n: 11, title: '如月车站', sub: '末班车二十多分钟没有停站。车门打开时，站名牌上写着：きさらぎ。', origin: '日本 2ch 网络怪谈', color: '#14453a',
+    id: 'kisaragi', n: 11, title: '如月车站', sub: '末班车二十多分钟没有停站。车门打开时，站名牌上写着：如月。', origin: '日本网络论坛怪谈', color: '#14453a',
     icon: '@aoiIcon', amb: 'otherworld', floor: 'concrete', wall: 'concrete', dark: .82, plr: 2.8, darkC: '#020807',
     people: PEOPLE_K, tiles: TILES_K, sprites: SPR_K, items: ITEMS_K, notes: NOTES_K, faces: FACES_K,
     endings: { home: '第十一夜　完', car: '帖子停在了这一句', yami: '到「宫」去' },
@@ -16942,8 +16942,8 @@ const TK = TitleKit.create({
     await S.fade(1, 1400);
     await S.card('之后', '', '那年夏天，我再也没有回过那个村子。\n第二年，K婆婆去世了。\n又过了几年，爷爷也走了。葬礼的时候，奶奶在电话里说：\n「你别回来。」\n\n那张护符，我一直带在钱包里。\n已经黑得看不出字了。');
     await S.note('tegami');
-    if (S.f.glimpse) return S.end({ id: 'glimpse', title: '第十二夜　完（白色的裙摆）', text: '十年后，我把这件事写了下来。\n\n有一件事，我谁也没告诉过：那天在车上，我从睫毛缝里看了一眼。\n只看见了裙摆。白色的，一下一下地摆，跟车一样快。\n\n我一直在想，要是那时候我再往上看一点点——\n\n写完的那天晚上，我做了一个梦。\n梦里我坐在那辆面包车的正中间。车窗外，那片白色的裙摆，还在跟着车走。\n\nぽ、ぽぽ、ぽ。' });
-    await S.end({ id: 'home', title: '第十二夜　完', text: '十年后，我把这件事写了下来。\n\n写完的那天晚上，我做了一个梦。\n梦里我站在爷爷家的院子里，树篱上面，有一顶白色的帽子，慢慢地移过来。\n\nぽ、ぽぽ、ぽ。' });
+    if (S.f.glimpse) return S.end({ id: 'glimpse', title: '第十二夜　完（白色的裙摆）', text: '十年后，我把这件事写了下来。\n\n有一件事，我谁也没告诉过：那天在车上，我从睫毛缝里看了一眼。\n只看见了裙摆。白色的，一下一下地摆，跟车一样快。\n\n我一直在想，要是那时候我再往上看一点点——\n\n写完的那天晚上，我做了一个梦。\n梦里我坐在那辆面包车的正中间。车窗外，那片白色的裙摆，还在跟着车走。\n\n啵、啵啵、啵。' });
+    await S.end({ id: 'home', title: '第十二夜　完', text: '十年后，我把这件事写了下来。\n\n写完的那天晚上，我做了一个梦。\n梦里我站在爷爷家的院子里，树篱上面，有一顶白色的帽子，慢慢地移过来。\n\n啵、啵啵、啵。' });
   }
 
   /* ================= 地图 ================= */
@@ -17247,7 +17247,7 @@ const TK = TitleKit.create({
   /* ================= 章节 ================= */
   const hatX = (g, d, fr, G, R) => { R(0, G.hT + 1, 16, 1, HATC); R(4, G.hT - 3, 8, 3, HATC); R(4, G.hT, 8, 1, '#d9d1bc'); R(5, G.hT - 3, 2, 1, '#ffffff'); };
   defChapter({
-    id: 'hasshaku', n: 12, title: '八尺大人', sub: '盛夏的乡下，树篱上方，一顶白色的宽檐帽慢慢走过。ぽ、ぽぽ、ぽ。', origin: '日本网络怪谈', color: '#3d5a3a',
+    id: 'hasshaku', n: 12, title: '八尺大人', sub: '盛夏的乡下，树篱上方，一顶白色的宽檐帽慢慢走过。啵、啵啵、啵。', origin: '日本网络怪谈', color: '#3d5a3a',
     icon: '@hachiI', amb: 'wind', floor: 'tatami', wall: 'shoji', dark: .1, plr: 3.4,
     people: {
       me: { key: 'shota', skin: '#f0c8a0', hair: '#1a1414', hs: 'short', top: '#f2f2ee', top2: '#d0d0c8', bottom: '#2a3448', shoes: '#e8e4dc' },
@@ -26675,7 +26675,7 @@ const TK = TitleKit.create({
 })();
 
 /* ---- chapters/21_kunekune.js ---- */
-/* ================= 第二十一夜 · くねくね ================= */
+/* ================= 第二十一夜 · 扭扭 ================= */
 (() => {
   const VIEW = 8.5;                                      // 超过这个距离（格），怎么看都没事
   const BLOCK = new Set(['ashi', 'reeds', 'tree', 'pine', 'hedge', 'bushes', 'wall', 'void']);   // 挡得住视线的格子
@@ -27582,7 +27582,7 @@ const TK = TitleKit.create({
   const R0 = async S => { S.f.gz = 0; S.f.lock = false; S.f._still = 0; S.norun(!!S.f.blind); S.speed(S.f.blind ? .75 : 1); faceAway(S); };
 
   defChapter({
-    id: 'kunekune', n: 21, title: 'くねくね', sub: '盛夏正午，田的那一头有个白色的东西在扭。远远看着不要紧——千万别想看清楚它是什么。', origin: '日本网络怪谈（2ch）', color: '#5e7a2e',
+    id: 'kunekune', n: 21, title: '扭扭', sub: '盛夏正午，田的那一头有个白色的东西在扭。远远看着不要紧——千万别想看清楚它是什么。', origin: '日本网络怪谈', color: '#5e7a2e',
     icon: '@kuneI', amb: 'wind', floor: 'wood', wall: 'shoji', dark: 0, plr: 4,
     tileOpts: { grassC: '#4f7a34', treeC: '#2a4a24' },
     people: PEOPLE, sprites: SPRITES, tiles: TILES,
@@ -27608,7 +27608,7 @@ const TK = TitleKit.create({
     faces: FACES,
     async intro(S) {
       S.f.phase = 'noon';
-      await S.card('第二十一夜　くねくね', '2003年8月14日　日本东北·水无濑村', '盂兰盆节，爸妈把你和弟弟翔太送到乡下外婆家，\n自己回城里加班去了。\n\n蝉叫得人头昏。\n田里的稻子绿得发亮，热气从地面上一层一层地往上冒。\n远处的东西，看起来都在轻轻地晃。');
+      await S.card('第二十一夜　扭扭', '2003年8月14日　日本东北·水无濑村', '盂兰盆节，爸妈把你和弟弟翔太送到乡下外婆家，\n自己回城里加班去了。\n\n蝉叫得人头昏。\n田里的稻子绿得发亮，热气从地面上一层一层地往上冒。\n远处的东西，看起来都在轻轻地晃。');
     },
     tick(S, dt) { gazeTick(S, dt); },
     maps: {
@@ -27871,7 +27871,7 @@ const TK = TitleKit.create({
 })();
 
 /* ---- chapters/22_teketeke.js ---- */
-/* ================= 第二十二夜 · テケテケ ================= */
+/* ================= 第二十二夜 · 半身女 ================= */
 (() => {
   /* 每张追逐图上各放一个「她」（跨图实体读档找不回，见 §7） */
   const TK = { hall2: 'tk2', hall1: 'tk1', yard: 'tky' };
@@ -28282,7 +28282,7 @@ const TK = TitleKit.create({
   const TEKE = { skin: SKIN, hair: HAIR, hs: 'long', top: NAVY, top2: '#e8e8e8', bottom: NAVY, shoes: '#111' };
 
   defChapter({
-    id: 'teketeke', n: 22, title: 'テケテケ', sub: '冬夜的校舍里，有人用两只手肘撑着地，テケ、テケ、テケ地爬过来。', origin: '日本校园怪谈', color: '#26364c',
+    id: 'teketeke', n: 22, title: '半身女', sub: '冬夜的校舍里，有人用两只手肘撑着地，嗒、嗒、嗒地爬过来。', origin: '日本校园怪谈', color: '#26364c',
     icon: '@teke', iconX: 14, amb: 'school', floor: 'linoleum', wall: 'school', dark: .6, plr: 3.2, darkC: '#04070e',
     thumb(g, w, h) {   // 雪夜里的铁路道口
       g.fillStyle = 'rgba(210,222,236,.14)'; g.fillRect(0, h - 34, w, 12);
@@ -28357,7 +28357,7 @@ const TK = TitleKit.create({
       final: async S => { finalSetup(S); }
     },
     async intro(S) {
-      await S.card('第二十二夜　テケテケ', '1993年1月22日（星期五）　北海道　某海边小镇', '三天前，为了给校报写「本校七大不可思议」，\n你第一次听说了她的故事。\n\n听过这个故事的人，三天之内，会遇见她。\n\n今天，是第三天。');
+      await S.card('第二十二夜　半身女', '1993年1月22日（星期五）　北海道　某海边小镇', '三天前，为了给校报写「本校七大不可思议」，\n你第一次听说了她的故事。\n\n听过这个故事的人，三天之内，会遇见她。\n\n今天，是第三天。');
     },
     tick(S, dt) {
       if (S.f.phase !== 'chase' || W.busy || W.ended) return;
@@ -28833,7 +28833,7 @@ const TK = TitleKit.create({
 })();
 
 /* ---- chapters/23_akaheya.js ---- */
-/* ================= 第二十三夜 · 赤い部屋 ================= */
+/* ================= 第二十三夜 · 红色房间 ================= */
 (() => {
   /* ---------------- 弹窗：那句话一次比一次长 ---------------- */
   const POP = ['', '你', '你喜欢', '你喜欢红色的', '你喜欢红色的房间', '你喜欢红色的房间吗？'];
@@ -30000,7 +30000,7 @@ const TK = TitleKit.create({
   }
 
   defChapter({
-    id: 'akaheya', n: 23, title: '赤い部屋', sub: '弹出来的窗口只有一句话。关掉它，它会再弹出来——比上一次长一点。', origin: '日本网络都市传说', color: '#7a0a14',
+    id: 'akaheya', n: 23, title: '红色房间', sub: '弹出来的窗口只有一句话。关掉它，它会再弹出来——比上一次长一点。', origin: '日本网络都市传说', color: '#7a0a14',
     icon: '@me', iconDir: 3, iconX: 22, amb: 'room', floor: 'carpet', wall: 'paper', dark: .72, plr: 3.2,
     thumb(g, w, h) {
       const x = 12, y = 10;
@@ -30065,7 +30065,7 @@ const TK = TitleKit.create({
       cut: async S => { S.goal('回到电脑前，删掉那个没有名字的文件'); }
     },
     async intro(S) {
-      await S.card('第二十三夜　赤い部屋', '1999年12月10日　凌晨　千叶县・绿台团地 7号栋 401', '隔壁的千夏，五天前死了。\n大人们什么都不肯说。\n学校里只悄悄地流传着一句话——\n\n她房间的墙，是红色的。');
+      await S.card('第二十三夜　红色房间', '1999年12月10日　凌晨　千叶县・绿台团地 7号栋 401', '隔壁的千夏，五天前死了。\n大人们什么都不肯说。\n学校里只悄悄地流传着一句话——\n\n她房间的墙，是红色的。');
     },
     tick(S, dt) {
       const f = S.f;

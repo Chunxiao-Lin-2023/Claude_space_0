@@ -998,7 +998,7 @@
 
   /* ================= 章节定义 ================= */
   defChapter({
-    id: 'nokken', n: 26, title: '水妖奈克', sub: '星期四的晚上，溪边有人拉琴。听见的人会跟着跳，一直跳进水里。', origin: '瑞典民间传说 · Näcken', color: '#1c3a3a',
+    id: 'nokken', n: 26, title: '水妖奈克', sub: '星期四的晚上，溪边有人拉琴。听见的人会跟着跳，一直跳进水里。', origin: '瑞典民间传说', color: '#1c3a3a',
     icon: '@nack', amb: 'night', floor: 'wood', wall: 'wood', dark: .6, plr: 3,
     people: PEOPLE, faces: FACES, items: ITEMS, notes: NOTES, legend: LEGEND,
     endings: { name: '叫出他的名字', tune: '半瓶酒', dawn: '跳到天亮' },

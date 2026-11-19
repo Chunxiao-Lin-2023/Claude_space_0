@@ -1,4 +1,4 @@
-/* ================= 第二十一夜 · くねくね ================= */
+/* ================= 第二十一夜 · 扭扭 ================= */
 (() => {
   const VIEW = 8.5;                                      // 超过这个距离（格），怎么看都没事
   const BLOCK = new Set(['ashi', 'reeds', 'tree', 'pine', 'hedge', 'bushes', 'wall', 'void']);   // 挡得住视线的格子
@@ -905,7 +905,7 @@
   const R0 = async S => { S.f.gz = 0; S.f.lock = false; S.f._still = 0; S.norun(!!S.f.blind); S.speed(S.f.blind ? .75 : 1); faceAway(S); };
 
   defChapter({
-    id: 'kunekune', n: 21, title: 'くねくね', sub: '盛夏正午，田的那一头有个白色的东西在扭。远远看着不要紧——千万别想看清楚它是什么。', origin: '日本网络怪谈（2ch）', color: '#5e7a2e',
+    id: 'kunekune', n: 21, title: '扭扭', sub: '盛夏正午，田的那一头有个白色的东西在扭。远远看着不要紧——千万别想看清楚它是什么。', origin: '日本网络怪谈', color: '#5e7a2e',
     icon: '@kuneI', amb: 'wind', floor: 'wood', wall: 'shoji', dark: 0, plr: 4,
     tileOpts: { grassC: '#4f7a34', treeC: '#2a4a24' },
     people: PEOPLE, sprites: SPRITES, tiles: TILES,
@@ -931,7 +931,7 @@
     faces: FACES,
     async intro(S) {
       S.f.phase = 'noon';
-      await S.card('第二十一夜　くねくね', '2003年8月14日　日本东北·水无濑村', '盂兰盆节，爸妈把你和弟弟翔太送到乡下外婆家，\n自己回城里加班去了。\n\n蝉叫得人头昏。\n田里的稻子绿得发亮，热气从地面上一层一层地往上冒。\n远处的东西，看起来都在轻轻地晃。');
+      await S.card('第二十一夜　扭扭', '2003年8月14日　日本东北·水无濑村', '盂兰盆节，爸妈把你和弟弟翔太送到乡下外婆家，\n自己回城里加班去了。\n\n蝉叫得人头昏。\n田里的稻子绿得发亮，热气从地面上一层一层地往上冒。\n远处的东西，看起来都在轻轻地晃。');
     },
     tick(S, dt) { gazeTick(S, dt); },
     maps: {

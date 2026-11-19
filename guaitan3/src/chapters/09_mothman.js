@@ -735,7 +735,7 @@
   const CAR_COLS = ['#7a1f22', '#2a4a6a', '#d8c8a0', '#3a5a3a', '#5a3a5a', '#8a6a2a', '#a0a4a8', '#2a2a30'];
 
   defChapter({
-    id: 'mothman', n: 9, title: '天蛾人', sub: 'TNT 废弃区的红眼睛之后，小镇怪事一件接一件。把预兆排对顺序，赶在五点之前。', origin: '美国西弗吉尼亚　1966—1967', color: '#4a2228',
+    id: 'mothman', n: 9, title: '天蛾人', sub: '废弃炸药厂的红眼睛之后，小镇怪事一件接一件。把预兆排对顺序，赶在五点之前。', origin: '美国西弗吉尼亚　1966—1967', color: '#4a2228',
     amb: 'wind', floor: 'wood', wall: 'brick', dark: .6, plr: 3.4,
     people: PEOPLE_M, tiles: TILES_M, sprites: SPR_M, items: ITEMS_M, notes: NOTES_M, faces: FACES_M,
     endings: { dusk: '第九夜　完', onbridge: '自己去了桥上', blackout: '等一场停电' },

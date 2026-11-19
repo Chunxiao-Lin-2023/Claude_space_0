@@ -1,4 +1,4 @@
-/* ================= 第二十二夜 · テケテケ ================= */
+/* ================= 第二十二夜 · 半身女 ================= */
 (() => {
   /* 每张追逐图上各放一个「她」（跨图实体读档找不回，见 §7） */
   const TK = { hall2: 'tk2', hall1: 'tk1', yard: 'tky' };
@@ -409,7 +409,7 @@
   const TEKE = { skin: SKIN, hair: HAIR, hs: 'long', top: NAVY, top2: '#e8e8e8', bottom: NAVY, shoes: '#111' };
 
   defChapter({
-    id: 'teketeke', n: 22, title: 'テケテケ', sub: '冬夜的校舍里，有人用两只手肘撑着地，テケ、テケ、テケ地爬过来。', origin: '日本校园怪谈', color: '#26364c',
+    id: 'teketeke', n: 22, title: '半身女', sub: '冬夜的校舍里，有人用两只手肘撑着地，嗒、嗒、嗒地爬过来。', origin: '日本校园怪谈', color: '#26364c',
     icon: '@teke', iconX: 14, amb: 'school', floor: 'linoleum', wall: 'school', dark: .6, plr: 3.2, darkC: '#04070e',
     thumb(g, w, h) {   // 雪夜里的铁路道口
       g.fillStyle = 'rgba(210,222,236,.14)'; g.fillRect(0, h - 34, w, 12);
@@ -484,7 +484,7 @@
       final: async S => { finalSetup(S); }
     },
     async intro(S) {
-      await S.card('第二十二夜　テケテケ', '1993年1月22日（星期五）　北海道　某海边小镇', '三天前，为了给校报写「本校七大不可思议」，\n你第一次听说了她的故事。\n\n听过这个故事的人，三天之内，会遇见她。\n\n今天，是第三天。');
+      await S.card('第二十二夜　半身女', '1993年1月22日（星期五）　北海道　某海边小镇', '三天前，为了给校报写「本校七大不可思议」，\n你第一次听说了她的故事。\n\n听过这个故事的人，三天之内，会遇见她。\n\n今天，是第三天。');
     },
     tick(S, dt) {
       if (S.f.phase !== 'chase' || W.busy || W.ended) return;

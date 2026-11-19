@@ -984,7 +984,7 @@
 
   /* ================= 章节 ================= */
   defChapter({
-    id: 'pocong', n: 25, title: '布包鬼', sub: '裹尸布上的结，要在下葬时一道一道解开。忘了解的那一个，会自己蹦回来。', origin: '印度尼西亚传说「Pocong」', color: '#2e3a34',
+    id: 'pocong', n: 25, title: '布包鬼', sub: '裹尸布上的结，要在下葬时一道一道解开。忘了解的那一个，会自己蹦回来。', origin: '印度尼西亚传说「寿衣鬼」', color: '#2e3a34',
     amb: 'rain', floor: 'tile', wall: 'plain', dark: .5, plr: 3.2, darkC: '#04060a',
     people: PEOPLE, items: ITEMS, notes: NOTES, faces: FACES, sprites: SPRITES, tiles: TILES,
     endings: { rest: '第二十五夜　完', locked: '关在屋里', joko: '给了乔科' },
