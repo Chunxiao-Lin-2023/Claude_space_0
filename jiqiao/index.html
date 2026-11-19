@@ -39,6 +39,7 @@ html,body{height:100%;overscroll-behavior:none}
 body{background:var(--ground);color:var(--fg);font-family:var(--font-body);font-size:14px;line-height:1.5;overflow:hidden;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;-webkit-text-size-adjust:100%}
 #app{position:relative;height:100%;overflow:hidden}
 #cv{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none}
+#vig{position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse at center,rgba(0,0,0,0) 42%,rgba(4,8,10,.7) 100%);display:none}#vig.on{display:block}
 button{font:inherit;color:inherit;cursor:pointer;background:none;border:0;touch-action:manipulation}
 input{touch-action:manipulation}
 button:focus-visible{outline:2px solid var(--brass-hi);outline-offset:2px}
@@ -646,7 +647,7 @@ button.card:hover{transform:translateY(-2px);border-color:var(--sc)}
 </style>
 
 <div id="app">
-  <canvas id="cv" aria-label="战斗场地"></canvas>
+  <canvas id="cv" aria-label="战斗场地"></canvas><div id="vig" aria-hidden="true"></div>
   <div id="hud" hidden>
     <div class="hud-top">
       <div class="hud-l"><div class="vit">
@@ -2176,9 +2177,13 @@ function nxDrawTop(){const t=tGame;
   const gr=ctx.createLinearGradient(hx,0,hx+hw,0);gr.addColorStop(0,'#3a3e44');gr.addColorStop(0.4,'#7a8088');gr.addColorStop(1,'#2a2e32');ctx.fillStyle=gr;ctx.fillRect(hx,hy-26,hw,hh+26);ctx.fillStyle='#5a6066';ctx.fillRect(hx,hy-26,hw,16);ctx.strokeStyle=INK;ctx.lineWidth=2;ctx.strokeRect(hx,hy-26,hw,hh+26);
   ctx.save();ctx.beginPath();ctx.rect(hx,hy+hh-14,hw,14);ctx.clip();for(let k=-14;k<hw+14;k+=16){ctx.fillStyle='#e8b830';ctx.beginPath();ctx.moveTo(hx+k,hy+hh-14);ctx.lineTo(hx+k+8,hy+hh-14);ctx.lineTo(hx+k-6,hy+hh);ctx.lineTo(hx+k-14,hy+hh);ctx.fill();}ctx.restore();
   for(const[a,b] of [[hx+8,hy-18],[hx+hw-8,hy-18]])rivet(ctx,a,b,3);if(q.st===2&&q.t>0.55)lighter(()=>drawGlow(x+w/2,y+h,w*0.7,GLOW.warm,0.35));});
- if(MAP.clouds)for(const R of cloudRects()){const[x,y,w,h]=R,me=ME().P,inside=inRect(me.x,me.y,R);ctx.globalAlpha=inside?0.35:0.82;
-  for(let k=0;k<9;k++){const cx=x+w*(0.12+0.76*hr(k,R[1]|0)),cy=y+h*(0.25+0.5*hr(k+5,R[1]|0)),r=w*(0.18+0.1*hr(k+9,1));const gr=ctx.createRadialGradient(cx-r*0.3,cy-r*0.4,r*0.1,cx,cy,r);gr.addColorStop(0,'rgba(255,255,255,1)');gr.addColorStop(0.7,'rgba(236,242,250,.95)');gr.addColorStop(1,'rgba(200,215,235,0)');ctx.fillStyle=gr;ctx.beginPath();ctx.arc(cx,cy,r,0,TAU);ctx.fill();}ctx.globalAlpha=1;}
+ if(MAP.clouds)for(const R of cloudRects()){const[x,y,w,h]=R,me=ME().P,inside=inRect(me.x,me.y,R);ctx.globalAlpha=inside?0.35:0.82;ctx.drawImage(cloudImg(w,h,R[1]|0),x-w*0.3,y-h*0.6);ctx.globalAlpha=1;}
 }
+// 云团预渲染成图（每帧只贴图）
+const CLOUD_IMG=new Map();
+function cloudImg(w,h,seed){const key=w+'_'+h+'_'+seed;if(CLOUD_IMG.has(key))return CLOUD_IMG.get(key);const ox=w*0.3,oy=h*0.6,c=mk(Math.ceil(w*1.6),Math.ceil(h*2.2)),g=c.getContext('2d');
+ for(let k=0;k<9;k++){const cx=ox+w*(0.12+0.76*hr(k,seed)),cy=oy+h*(0.25+0.5*hr(k+5,seed)),r=w*(0.18+0.1*hr(k+9,1));const gr=g.createRadialGradient(cx-r*0.3,cy-r*0.4,r*0.1,cx,cy,r);gr.addColorStop(0,'rgba(255,255,255,1)');gr.addColorStop(0.7,'rgba(236,242,250,.95)');gr.addColorStop(1,'rgba(200,215,235,0)');g.fillStyle=gr;g.beginPath();g.arc(cx,cy,r,0,TAU);g.fill();}
+ CLOUD_IMG.set(key,c);return c;}
 // 夜色 / 沙暴：屏幕空间遮罩，光源处挖洞；暗处的敌人只露红眼
 let DKC=null,LSPR=null;
 function lightSpr(){if(LSPR)return LSPR;LSPR=mk(128,128);const g=LSPR.getContext('2d'),gr=g.createRadialGradient(64,64,0,64,64,64);gr.addColorStop(0,'rgba(0,0,0,1)');gr.addColorStop(0.5,'rgba(0,0,0,.9)');gr.addColorStop(1,'rgba(0,0,0,0)');g.fillStyle=gr;g.fillRect(0,0,128,128);return LSPR;}
@@ -2734,7 +2739,7 @@ function computeStats(){
 const hpFloor=()=>HELP.floorBase+HELP.floorWave*Math.max(1,run.wave||1);
 const lowHp=()=>(run.rawHp||0)<HELP.lowBase+HELP.lowWave*Math.max(1,run.wave||1);
 const rangeMul=()=>Math.max(0.3,1+S.range/100);
-const atkMul=()=>1+Math.max(-0.8,soft((S.atkspd+(dodgeBuff>0?40:0)+(run&&run.bR>0?15:0)+(run&&run.aur>0?20:0)+(run&&run.frz>0?40:0))/100,0.7,0.6));  // 攻速超过 +70% 后收益 ×0.6
+const atkMul=()=>1+Math.max(-0.8,soft((S.atkspd+(dodgeBuff>0?40:0)+(run&&run.bR>0?15:0)+(run&&run.aur>0?20:0)+(run&&run.frz>0?(run.frzA||40):0))/100,0.7,0.6));  // 攻速超过 +70% 后收益 ×0.6
 const poisonMul=()=>1+(H.poison||0)/100;
 const poisonCap=()=>(H.poisonCap||3)+(FX.evo==='apothB'?3:0);
 const skCd=()=>H.skill?H.skill.cd*(FX.evoC==='merchant'?0.6:1):1;
@@ -2755,7 +2760,7 @@ const armorMul=A=>{const K=defCap().ak;return A>=0?K/(K+A):(15-A)/15;};
 const soft=(x,k,f)=>x>k?k+(x-k)*f:x;
 const dodgeCap=()=>defCap().dodge+(FX.dodgeHeal?10:0);
 function dmgMult(w,isTurret){
- let m=1+soft(S.dmg,80,0.7)/100;if(run.bR>0)m+=0.2;if(run.aur>0)m+=0.25;if(PL.length>1&&CUR&&linked(CUR,PL.find(p=>p!==CUR)))m+=LINK_DMG;if(gz.length&&inFlag(P.x,P.y))m+=0.2;  // 伤害加成超过 80% 后收益 ×0.7，中后期成长更平
+ let m=1+soft(S.dmg,80,0.7)/100;if(run.bR>0)m+=0.2;if(run.aur>0)m+=0.25;if(PL.length>1&&CUR&&linked(CUR,PL.find(p=>p!==CUR)))m+=LINK_DMG;if(gz.length){const fl=inFlag(P.x,P.y);if(fl)m+=SK2V.banner[fl-1][1]/100;}  // 伤害加成超过 80% 后收益 ×0.7，中后期成长更平
  if(WEAPONS[w.key].melee&&H.meleeBonus)m+=H.meleeBonus/100;if(WEAPONS[w.key].melee&&FX.evo==='forgeB')m+=0.15;
  if(!isTurret&&H.nonTurret)m+=H.nonTurret/100;
  if(FX.goldDmg)m+=Math.min(30,Math.floor(run.gold/10))/100;
@@ -2772,7 +2777,13 @@ const xpNeed=()=>Math.round(10+run.level*6+run.level*run.level*0.6);
 /* ================= canvas ================= */
 const cv=$('#cv'),ctx=cv.getContext('2d');
 let W=0,Hh=0,DPR=1;
-function resize(){const r=cv.getBoundingClientRect();DPR=Math.min(2,window.devicePixelRatio||1);W=r.width;Hh=r.height;cv.width=Math.round(W*DPR);cv.height=Math.round(Hh*DPR);
+// 自适应画质：战斗中连续 2 秒平均帧率低于 45，就把画布分辨率降一档（最低 0.6 倍）；降了没用（比如设备锁 30 帧）就退回并不再调整；帧率富余时慢慢升回去
+let GQ=1;const PERF={acc:0,n:0,good:0,prev:0,lock:false,tried:0};
+function perfTick(dt){if(state!=='battle'||paused||PERF.lock||document.hidden)return;PERF.acc+=dt;PERF.n++;if(PERF.acc<2)return;const avg=PERF.acc/PERF.n;PERF.acc=0;PERF.n=0;
+ if(PERF.tried){const ok=avg<PERF.prev*0.9;PERF.tried=0;if(!ok&&avg>1/45){GQ=Math.min(1,GQ+0.15);resize();PERF.lock=true;return;}}
+ if(avg>1/45&&GQ>0.6){PERF.prev=avg;PERF.tried=1;GQ=Math.max(0.6,GQ-0.15);resize();PERF.good=0;}
+ else if(avg<1/57&&GQ<1){if(++PERF.good>=4){GQ=Math.min(1,GQ+0.1);resize();PERF.good=0;}}else PERF.good=0;}
+function resize(){const r=cv.getBoundingClientRect();DPR=Math.max(0.6,Math.min(2,window.devicePixelRatio||1)*GQ);W=r.width;Hh=r.height;cv.width=Math.round(W*DPR);cv.height=Math.round(Hh*DPR);
  VIGNETTE=mk(Math.max(2,Math.round(W/2)),Math.max(2,Math.round(Hh/2)));const g=VIGNETTE.getContext('2d'),gr=g.createRadialGradient(VIGNETTE.width/2,VIGNETTE.height/2,Math.min(VIGNETTE.width,VIGNETTE.height)*0.3,VIGNETTE.width/2,VIGNETTE.height/2,Math.max(VIGNETTE.width,VIGNETTE.height)*0.72);
  gr.addColorStop(0,'rgba(0,0,0,0)');gr.addColorStop(1,'rgba(4,8,10,.7)');g.fillStyle=gr;g.fillRect(0,0,VIGNETTE.width,VIGNETTE.height);}
 addEventListener('resize',resize);resize();
@@ -2890,7 +2901,7 @@ const endJoy=e=>{if(joy&&e.pointerId===joy.id)joy=null;};
 cv.addEventListener('pointerup',endJoy);cv.addEventListener('pointercancel',endJoy);
 
 /* ================= helpers ================= */
-function addText(x,y,txt,col,size=13){texts.push({x,y,txt,col,size,life:0.75,max:0.75,vx:rand(-12,12)});if(texts.length>90)texts.shift();}
+function addText(x,y,txt,col,size=13){texts.push({x,y,txt,col,size,life:0.75,max:0.75,vx:rand(-12,12)});if(texts.length>70)texts.shift();}
 function nearest(x,y,range,skip){let b=null,bd=Infinity;for(const e of enemies){if(e.dead||e.cloak||(skip&&skip.has(e)))continue;const d=Math.hypot(e.x-x,e.y-y)-e.r;if(d<range&&d<bd){bd=d;b=e;}}return b;}
 function nearestK(x,y,range,k){const l=[];for(const e of enemies){if(e.dead||e.cloak)continue;const d=Math.hypot(e.x-x,e.y-y)-e.r;if(d<range)l.push([d,e]);}if(!l.length)return null;l.sort((a,b)=>a[0]-b[0]);return l[k%l.length][1];}
 function jag(x1,y1,x2,y2){const pts=[[x1,y1]],n=7;for(let i=1;i<n;i++){const t=i/n;pts.push([x1+(x2-x1)*t+rand(-9,9),y1+(y2-y1)*t+rand(-9,9)]);}pts.push([x2,y2]);return pts;}
@@ -3200,44 +3211,49 @@ function coopSkill(path){if(PL.length<2)return;const me=CUR,mate=PL.find(p=>p!==
 function drawLink(){if(PL.length<2)return;const[a,b]=PL;if(!linked(a,b))return;const t=tGame;
  lighter(()=>{ctx.globalAlpha=0.55;ctx.strokeStyle='rgba(242,203,122,1)';ctx.lineWidth=3;ctx.setLineDash([10,8]);ctx.lineDashOffset=-t*30;ctx.beginPath();ctx.moveTo(a.P.x,a.P.y+8);ctx.lineTo(b.P.x,b.P.y+8);ctx.stroke();ctx.setLineDash([]);ctx.globalAlpha=1;
   const u=(t*0.8)%1;drawGlow(lerp(a.P.x,b.P.x,u),lerp(a.P.y,b.P.y,u)+8,10,GLOW.gold,0.8);drawGlow(lerp(b.P.x,a.P.x,u),lerp(b.P.y,a.P.y,u)+8,10,GLOW.gold,0.8);});}
-// ================= 附加技能：每次进商店从 3 个里挑 1 个，下一波和英雄技能一起用（Q 键 / 第二个按钮） =================
+// ================= 附加技能：每次进商店从 8 个里挑 1 个，下一波和英雄技能一起用（Q 键 / 第二个按钮） =================
+// 附加技能随波次升级：第 1–5 波 Lv1，第 6–10 波 Lv2，第 11 波起 Lv3；每级效果更强、冷却 -10%
+const SK2V={heal:[[25,15],[32,20],[40,25]],blink:[[260,0.5],[300,0.7],[340,0.9]],aegis:[[30,6],[40,7],[50,8]],nova:[[220,1.6],[250,1.9],[280,2.2]],meteor:[[3,110],[4,120],[5,130]],
+ frenzy:[[40,6],[50,7],[60,8]],banner:[[170,20,30,8],[190,25,35,9],[210,30,40,10]],magnet:[[1],[1.3],[1.6]]};
 const SK2={
- heal:{n:'回春',g:'春',cd:20,d:'回复 25% 最大生命；双人时队友也回 15%'},
- blink:{n:'闪现',g:'闪',cd:12,d:'朝移动方向瞬移一段距离，0.5 秒无敌；双人时队友离你很远，改为瞬移到队友身边'},
- aegis:{n:'铁壁',g:'壁',cd:20,d:'获得 30% 最大生命的护盾，持续 6 秒'},
- nova:{n:'冰霜新星',g:'霜',cd:16,d:'冻住周围的敌人 1.6 秒并造成伤害（首领只减速）'},
- meteor:{n:'天火',g:'火',cd:18,d:'在敌人最密集的 3 处落下火球，落地爆炸'},
- frenzy:{n:'狂热',g:'狂',cd:20,d:'6 秒内攻速 +40%'},
- banner:{n:'战旗',g:'旗',cd:24,d:'插下一面战旗 8 秒：旗下的玩家伤害 +20%，敌人减速 30%'},
- magnet:{n:'聚财',g:'财',cd:24,d:'全场金币飞向你，并立刻多拿一笔金币（随波次增加）'},
+ heal:{n:'回春',g:'春',cd:20,d:([a,b])=>`回复 ${a}% 最大生命；双人时队友也回 ${b}%`},
+ blink:{n:'闪现',g:'闪',cd:12,d:([a,b])=>`朝移动方向瞬移最远 ${a}，${b} 秒无敌；双人时队友离你很远，改为瞬移到队友身边`},
+ aegis:{n:'铁壁',g:'壁',cd:20,d:([a,b])=>`获得 ${a}% 最大生命的护盾，持续 ${b} 秒`},
+ nova:{n:'冰霜新星',g:'霜',cd:16,d:([a,b])=>`冻住 ${a} 范围内的敌人 ${b} 秒并造成伤害（首领只减速）`},
+ meteor:{n:'天火',g:'火',cd:18,d:([a,b])=>`在敌人最密集的 ${a} 处落下火球，落地爆炸（范围 ${b}）`},
+ frenzy:{n:'狂热',g:'狂',cd:20,d:([a,b])=>`${b} 秒内攻速 +${a}%`},
+ banner:{n:'战旗',g:'旗',cd:24,d:([r,a,b,t])=>`插下一面战旗 ${t} 秒：旗下的玩家伤害 +${a}%，敌人减速 ${b}%`},
+ magnet:{n:'聚财',g:'财',cd:24,d:([a])=>`全场金币飞向你，并立刻多拿一笔金币${a>1?`（×${a}）`:''}`},
 };
+const sk2L=w=>w>=11?3:w>=6?2:1,sk2V=(k,L)=>SK2V[k][L-1],sk2Cd=(k,L)=>Math.round(SK2[k].cd*(1-0.1*(L-1)));
 const SK2K=Object.keys(SK2);
-const inFlag=(x,y)=>{for(const g of gz)if(g.k==='flag'&&(x-g.x)**2+(y-g.y)**2<g.r*g.r)return true;return false;};
+const flagLv=g=>g.r>=205?3:g.r>=185?2:1;
+const inFlag=(x,y)=>{let L=0;for(const g of gz)if(g.k==='flag'&&(x-g.x)**2+(y-g.y)**2<g.r*g.r)L=Math.max(L,flagLv(g));return L;};
 // 闪现：本地算落点（客机算好发给主机）
-function blinkMove(){const x0=P.x,y0=P.y,mate=PL.length>1?PL.find(p=>p!==CUR&&!p.down):null;let x=P.x,y=P.y;
+function blinkMove(){const BV=sk2V('blink',sk2L(run.wave||1)),x0=P.x,y0=P.y,mate=PL.length>1?PL.find(p=>p!==CUR&&!p.down):null;let x=P.x,y=P.y;
  if(mate&&Math.hypot(mate.P.x-P.x,mate.P.y-P.y)>450){for(let k=0;k<12;k++){const a=k*TAU/12,X=mate.P.x+Math.cos(a)*45,Y=mate.P.y+Math.sin(a)*45;if(freeSpot(X,Y,P.r)){x=X;y=Y;break;}}}
- else{const[mx,my,ml]=readInput(),a=ml>0.1?Math.atan2(my,mx):P.face;for(let d=260;d>20;d-=20){const X=clamp(P.x+Math.cos(a)*d,P.r,WORLD.w-P.r),Y=clamp(P.y+Math.sin(a)*d,P.r,WORLD.h-P.r);if(freeSpot(X,Y,P.r)){x=X;y=Y;break;}}}
- P.x=x;P.y=y;P.kx=P.ky=0;P.inv=Math.max(P.inv,0.5);return [Math.round(x0),Math.round(y0),Math.round(x),Math.round(y)];}
-function castSkill2(path){const k=run.sk2,sk=SK2[k];if(!sk||(run.sk2CD||0)>0||state!=='battle')return false;run.sk2CD=sk.cd;addText(P.x,P.y-56,sk.n,'#9fe8d8',17);
+ else{const[mx,my,ml]=readInput(),a=ml>0.1?Math.atan2(my,mx):P.face;for(let d=BV[0];d>20;d-=20){const X=clamp(P.x+Math.cos(a)*d,P.r,WORLD.w-P.r),Y=clamp(P.y+Math.sin(a)*d,P.r,WORLD.h-P.r);if(freeSpot(X,Y,P.r)){x=X;y=Y;break;}}}
+ P.x=x;P.y=y;P.kx=P.ky=0;P.inv=Math.max(P.inv,BV[1]);return [Math.round(x0),Math.round(y0),Math.round(x),Math.round(y)];}
+function castSkill2(path){const k=run.sk2,sk=SK2[k];if(!sk||(run.sk2CD||0)>0||state!=='battle')return false;const L=sk2L(run.wave),V=sk2V(k,L);run.sk2CD=sk2Cd(k,L);addText(P.x,P.y-56,sk.n+(L>1?' Lv'+L:''),'#9fe8d8',17);
  const mate=PL.length>1?PL.find(p=>p!==CUR&&!p.down):null,me=CUR;
  switch(k){
-  case 'heal':{heal(Math.round(S.hp*0.25),'sk2');ringFx(P.x,P.y,70,C.good,0.4);if(mate){const a=Math.max(1,Math.round((mate.S.hp||40)*0.15));use(mate);heal(a,'sk2');use(me);fxs.push({type:'heal',x:P.x,y:P.y-10,pts:[[mate.P.x,mate.P.y-10]],life:0.5,max:0.5});addText(mate.P.x,mate.P.y-50,'协力 · 回春','#9fe8d8',15);}skSfx('revive');break;}
-  case 'blink':{const pth=path||blinkMove();if(path){P.x=pth[2];P.y=pth[3];P.inv=Math.max(P.inv,0.5);}ringFx(pth[0],pth[1],50,'#9fe8d8',0.35);ringFx(pth[2],pth[3],60,'#9fe8d8',0.35);fxs.push({type:'dash',x0:pth[0],y0:pth[1],x1:pth[2],y1:pth[3],life:0.25,max:0.25});skSfx('dodge');break;}
-  case 'aegis':run.shd=Math.max(run.shd||0,Math.round(S.hp*0.3));run.shdT=Math.max(run.shdT||0,6);ringFx(P.x,P.y,60,C.verdigris,0.4);skSfx('revive');break;
-  case 'nova':{const R=220*rangeMul();ringFx(P.x,P.y,R,'#bfe6ff',0.45);fxs.push({type:'flash',x:P.x,y:P.y,r:R*0.8,col:GLOW.cyan,life:0.35,max:0.35});
-   for(const e of enemies){if(e.dead||e.seg||Math.hypot(e.x-P.x,e.y-P.y)>R+e.r)continue;hitEnemy(e,skillDmg(8),{noSteal:1,col:'#bfe6ff'});if(e.dead)continue;if(e.boss)e.slowT=Math.max(e.slowT||0,2);else e.freezeT=Math.max(e.freezeT||0,1.6);}skSfx('zap');break;}
+  case 'heal':{heal(Math.round(S.hp*V[0]/100),'sk2');ringFx(P.x,P.y,70,C.good,0.4);if(mate){const a=Math.max(1,Math.round((mate.S.hp||40)*V[1]/100));use(mate);heal(a,'sk2');use(me);fxs.push({type:'heal',x:P.x,y:P.y-10,pts:[[mate.P.x,mate.P.y-10]],life:0.5,max:0.5});addText(mate.P.x,mate.P.y-50,'协力 · 回春','#9fe8d8',15);}skSfx('revive');break;}
+  case 'blink':{const pth=path||blinkMove();if(path){P.x=pth[2];P.y=pth[3];P.inv=Math.max(P.inv,V[1]);}ringFx(pth[0],pth[1],50,'#9fe8d8',0.35);ringFx(pth[2],pth[3],60,'#9fe8d8',0.35);fxs.push({type:'dash',x0:pth[0],y0:pth[1],x1:pth[2],y1:pth[3],life:0.25,max:0.25});skSfx('dodge');break;}
+  case 'aegis':run.shd=Math.max(run.shd||0,Math.round(S.hp*V[0]/100));run.shdT=Math.max(run.shdT||0,V[1]);ringFx(P.x,P.y,60,C.verdigris,0.4);skSfx('revive');break;
+  case 'nova':{const R=V[0]*rangeMul();ringFx(P.x,P.y,R,'#bfe6ff',0.45);fxs.push({type:'flash',x:P.x,y:P.y,r:R*0.8,col:GLOW.cyan,life:0.35,max:0.35});
+   for(const e of enemies){if(e.dead||e.seg||Math.hypot(e.x-P.x,e.y-P.y)>R+e.r)continue;hitEnemy(e,skillDmg(8),{noSteal:1,col:'#bfe6ff'});if(e.dead)continue;if(e.boss)e.slowT=Math.max(e.slowT||0,2);else e.freezeT=Math.max(e.freezeT||0,V[1]);}skSfx('zap');break;}
   case 'meteor':{const live=enemies.filter(e=>!e.dead&&!e.seg&&e.type!=='fairy'&&Math.hypot(e.x-P.x,e.y-P.y)<700),pts=[];
-   const sc=live.map(e=>[e,live.reduce((n,o)=>n+((o.x-e.x)**2+(o.y-e.y)**2<110*110?1:0),0)]).sort((a,b)=>b[1]-a[1]);
-   for(const[e] of sc){if(pts.length>=3)break;if(pts.every(q=>Math.hypot(q[0]-e.x,q[1]-e.y)>140))pts.push([e.x,e.y]);}
-   while(pts.length<3){const a=Math.random()*TAU;pts.push([P.x+Math.cos(a)*rand(80,220),P.y+Math.sin(a)*rand(80,220)]);}
-   const dm=skillDmg(16);pts.forEach(([x,y],i)=>{fxs.push({type:'warnc',x,y,r:110,life:0.7+i*0.15,max:0.7+i*0.15});delayed.push({t:0.7+i*0.15,pl:me,fn:()=>{boomFx(x,y,110,3);shake=Math.max(shake,0.2);for(const e of enemies)if(!e.dead&&!e.seg&&Math.hypot(e.x-x,e.y-y)<110+e.r)hitEnemy(e,dm,{noSteal:1,col:'#ff9a4a'});}});});skSfx('crush');break;}
-  case 'frenzy':run.frz=6;fxs.push({type:'aura',pid:me?me.id:0,col:GLOW.red,life:6,max:6});skSfx('revive');break;
-  case 'banner':addGz('flag',P.x,P.y,170,8,0);ringFx(P.x,P.y,170,'#f2cb7a',0.45);skSfx('crush');break;
-  case 'magnet':{for(const c of pickups)if(c.type==='coin')c.mag=true;const g=goldFor(4+Math.floor(run.wave/2));run.gold+=g;run.earned+=g;fxs.push({type:'coins',x:P.x,y:P.y,r:160,seed:Math.random()*99,life:0.6,max:0.6});addText(P.x,P.y-74,'+'+g+' 金币',C['brass-hi'],15);skSfx('revive');break;}
+   const N=V[0],MR=V[1],sc=live.map(e=>[e,live.reduce((n,o)=>n+((o.x-e.x)**2+(o.y-e.y)**2<MR*MR?1:0),0)]).sort((a,b)=>b[1]-a[1]);
+   for(const[e] of sc){if(pts.length>=N)break;if(pts.every(q=>Math.hypot(q[0]-e.x,q[1]-e.y)>140))pts.push([e.x,e.y]);}
+   while(pts.length<N){const a=Math.random()*TAU;pts.push([P.x+Math.cos(a)*rand(80,220),P.y+Math.sin(a)*rand(80,220)]);}
+   const dm=skillDmg(16);pts.forEach(([x,y],i)=>{fxs.push({type:'warnc',x,y,r:MR,life:0.7+i*0.15,max:0.7+i*0.15});delayed.push({t:0.7+i*0.15,pl:me,fn:()=>{boomFx(x,y,MR,3);shake=Math.max(shake,0.2);for(const e of enemies)if(!e.dead&&!e.seg&&Math.hypot(e.x-x,e.y-y)<MR+e.r)hitEnemy(e,dm,{noSteal:1,col:'#ff9a4a'});}});});skSfx('crush');break;}
+  case 'frenzy':run.frz=V[1];run.frzA=V[0];fxs.push({type:'aura',pid:me?me.id:0,col:GLOW.red,life:V[1],max:V[1]});skSfx('revive');break;
+  case 'banner':addGz('flag',P.x,P.y,V[0],V[3],0);ringFx(P.x,P.y,V[0],'#f2cb7a',0.45);skSfx('crush');break;
+  case 'magnet':{for(const c of pickups)if(c.type==='coin')c.mag=true;const g=Math.round(goldFor(4+Math.floor(run.wave/2))*V[0]);run.gold+=g;run.earned+=g;fxs.push({type:'coins',x:P.x,y:P.y,r:160,seed:Math.random()*99,life:0.6,max:0.6});addText(P.x,P.y-74,'+'+g+' 金币',C['brass-hi'],15);skSfx('revive');break;}
  }
  return true;}
 function trySkill2(){if(state!=='battle'||paused)return;const me=ME();if(!me||me.down)return;use(me);const sk=SK2[run.sk2];if(!sk||(run.sk2CD||0)>0)return;
- if(NET.role==='guest'){const path=run.sk2==='blink'?blinkMove():null;run.sk2CD=sk.cd;netSend({t:'skill2',path});return;}
+ if(NET.role==='guest'){const path=run.sk2==='blink'?blinkMove():null;run.sk2CD=sk2Cd(run.sk2,sk2L(run.wave));netSend({t:'skill2',path});return;}
  castSkill2(null);}
 function castSkill(path){
  const sk=H.skill;if(!sk||(run.skCD||0)>0||state!=='battle')return false;
@@ -4031,7 +4047,7 @@ function updateEnemies(dt){
   navEnemy(e,dx,dy,d,tp.hid&&d>110,dt);
   if(tp.hid&&!e.boss&&e.hx==null&&d>110&&tp.lsx!=null){dx=tp.lsx-e.x;dy=tp.lsy-e.y;d=Math.hypot(dx,dy)||1;if(d<40){dx=Math.cos(e.wa)*60;dy=Math.sin(e.wa)*60;d=60;}}  // 你在草丛里：远处的敌人只会去你最后出现的位置
   if(e.slowT>0)e.slowT-=dt;
-  let sf=e.slowT>0?0.55:1;if(MAP.pools&&e.type!=='fairy'&&!e.boss&&inPool(e.x,e.y))sf*=0.62;if(MAP.ter&&MAP.ter.river&&!e.boss&&inRiver(e.x,e.y))sf*=0.72;if(!e.boss)sf*=nxSlowE(e);if(gz.length&&inFlag(e.x,e.y))sf*=0.7;
+  let sf=e.slowT>0?0.55:1;if(MAP.pools&&e.type!=='fairy'&&!e.boss&&inPool(e.x,e.y))sf*=0.62;if(MAP.ter&&MAP.ter.river&&!e.boss&&inRiver(e.x,e.y))sf*=0.72;if(!e.boss)sf*=nxSlowE(e);if(gz.length){const fl=inFlag(e.x,e.y);if(fl)sf*=1-SK2V.banner[fl-1][2]/100;}
   if(e.hasteT>0){e.hasteT-=dt;sf*=1.3;}if(e.guardT>0)e.guardT-=dt;
   let ta=Math.atan2(dy,dx),as=1.6;
   if(e.freezeT>0){e.freezeT-=dt;as=0;}
@@ -4336,7 +4352,7 @@ function endWave(){
  if(NET.role==='host')netPrep();
 }
 // pre-roll the random choices the prep screen shows, so host and guest always see the same ones
-function ensurePrepChoices(){if(!run.sk2Opts){const pool=shuffle(SK2K.filter(k=>k!==run.sk2));run.sk2Opts=pool.slice(0,3);}if(run.pendingLevels>0&&!run.lvChoices)run.lvChoices=rollLv();if(run.chests.length&&!run.chestItem)run.chestItem=pick(itemPool(run.chests[0])).n;}
+function ensurePrepChoices(){if(!run.sk2Opts)run.sk2Opts=SK2K.slice();if(run.pendingLevels>0&&!run.lvChoices)run.lvChoices=rollLv();if(run.chests.length&&!run.chestItem)run.chestItem=pick(itemPool(run.chests[0])).n;}
 function togglePause(){
  if(state!=='battle')return;
  if(NET.mode!=='solo'){const pz=$('#pause');if(pz.hidden){abandonArm=hubArm=false;renderPause();pz.hidden=false;}else pz.hidden=true;return;}
@@ -4459,7 +4475,7 @@ function renderMenu(){
     <div class="go">${startBtn()}<span class="dim">${best.wins?`已通关 ${best.wins} 次`:best.wave?`最好成绩：第 ${best.wave} 波`:'首次挑战'}</span></div>
    </div>
   </section>
-  <p class="howto"><b>移动</b> WASD 或方向键；iPad / 手机上用手指按住屏幕任意位置拖动（虚拟摇杆跟着手指出现）。<b>攻击</b> 武器自动瞄准最近的敌人。<b>主动技能</b> 空格键或右下角的技能按钮，每个英雄各不相同。<b>英雄进化</b> 第 6 波结束时二选一进化路线，第 12 波结束时升到终阶。<b>地图机关</b> 每张战场都有可互动的机关，靠近会显示名字，站上去就能启动。第 5 波起偶尔有波中事件：宝藏机关兽、补给空投、兽潮、守护机关。<b>流派</b> 武器分近战、射击、术法、机关四派，同派凑 2 / 4 / 6 件有套装奖励。<b>合体</b> 任意两把金阶武器都能合体成第五阶「神阶」：同名两把合成神器；不同的两把，攻击形态鲜明的一把为主，另一把的攻击方式融进去，每对只有一种结果（例如回旋镖＋连弩＝连珠镖，一次多掷两枚；双刃＋雷符＝雷霆刃，每刀都引雷）。合体后同时算两把的流派，还能空出一格武器栏。没捡完的金币在波次结束时自动收取 70%。击败抱着宝箱的金色小精灵可以拿到宝箱。第 5 波起会出现带词缀的精英怪，击败可能掉宝箱。<b>首领</b> 大首领狂怒时会学会新招，濒死时放招牌技；铁甲巨像的背后是弱点，旋炮楼的副炮拆光会露出破绽。<b>进化</b> 第 6 波起敌人会进化成二型、第 12 波起进化成三型，带新的攻击方式，身上有「Ⅱ / Ⅲ」标记。第 4、12 波有小首领，限时内击败掉宝箱，否则它会逃走。第 8 波有精英首领，第 16 波是最终首领，击败它即通关。每张战场有自己的地形机关，敌人也会被机关伤到。Esc 或 P 暂停，M 开关音效。双人联机时队友倒地，站进他身边的绿圈就能救起。<b>附加技能</b> 每次进商店可以从 3 个附加技能里挑 1 个，下一波和英雄技能一起用（Q 键或第二个技能按钮）。<b>协力</b> 双人时每个英雄的主动技能都会顺带帮队友一把（见英雄介绍）；两人靠在 260 以内会连起金线（同心），各加 8% 伤害：约 2 秒，救人时受到的伤害减少 40%，救起瞬间会震开周围的怪。</p>
+  <p class="howto"><b>移动</b> WASD 或方向键；iPad / 手机上用手指按住屏幕任意位置拖动（虚拟摇杆跟着手指出现）。<b>攻击</b> 武器自动瞄准最近的敌人。<b>主动技能</b> 空格键或右下角的技能按钮，每个英雄各不相同。<b>英雄进化</b> 第 6 波结束时二选一进化路线，第 12 波结束时升到终阶。<b>地图机关</b> 每张战场都有可互动的机关，靠近会显示名字，站上去就能启动。第 5 波起偶尔有波中事件：宝藏机关兽、补给空投、兽潮、守护机关。<b>流派</b> 武器分近战、射击、术法、机关四派，同派凑 2 / 4 / 6 件有套装奖励。<b>合体</b> 任意两把金阶武器都能合体成第五阶「神阶」：同名两把合成神器；不同的两把，攻击形态鲜明的一把为主，另一把的攻击方式融进去，每对只有一种结果（例如回旋镖＋连弩＝连珠镖，一次多掷两枚；双刃＋雷符＝雷霆刃，每刀都引雷）。合体后同时算两把的流派，还能空出一格武器栏。没捡完的金币在波次结束时自动收取 70%。击败抱着宝箱的金色小精灵可以拿到宝箱。第 5 波起会出现带词缀的精英怪，击败可能掉宝箱。<b>首领</b> 大首领狂怒时会学会新招，濒死时放招牌技；铁甲巨像的背后是弱点，旋炮楼的副炮拆光会露出破绽。<b>进化</b> 第 6 波起敌人会进化成二型、第 12 波起进化成三型，带新的攻击方式，身上有「Ⅱ / Ⅲ」标记。第 4、12 波有小首领，限时内击败掉宝箱，否则它会逃走。第 8 波有精英首领，第 16 波是最终首领，击败它即通关。每张战场有自己的地形机关，敌人也会被机关伤到。Esc 或 P 暂停，M 开关音效。双人联机时队友倒地，站进他身边的绿圈就能救起。<b>附加技能</b> 每次进商店可以从 8 个附加技能里挑 1 个，下一波和英雄技能一起用（Q 键或第二个技能按钮）。<b>协力</b> 双人时每个英雄的主动技能都会顺带帮队友一把（见英雄介绍）；两人靠在 260 以内会连起金线（同心），各加 8% 伤害：约 2 秒，救人时受到的伤害减少 40%，救起瞬间会震开周围的怪。</p>
   <div class="gobar">${startBtn()}</div>
  </div>`;
 }
@@ -4509,7 +4525,7 @@ function renderPrep(){
   </header>
   <div class="prep-grid"><div class="pmain">${main}</div>
    <aside class="side frame">
-    ${run.sk2Opts?`<section class="sp sk2s"><h3>附加技能<small class="ihint">下一波和英雄技能一起用 · Q 键 / 第二个技能按钮</small></h3><div class="row">${(run.sk2&&!run.sk2Opts.includes(run.sk2)?[run.sk2]:[]).concat(run.sk2Opts).map(k=>`<button class="chip sk2c" data-act="sk2" data-i="${run.sk2Opts.indexOf(k)}" aria-pressed="${k===run.sk2}" ${run.sk2Opts.includes(k)?'':'disabled'}><b>${SK2[k].g}</b>${SK2[k].n}<small>${SK2[k].cd}s</small></button>`).join('')}</div><p class="wdesc">${run.sk2?`当前：<b>${SK2[run.sk2].n}</b>（冷却 ${SK2[run.sk2].cd} 秒）${SK2[run.sk2].d}`:'挑一个，下一波就能用。不挑也行。'}</p></section>`:''}
+    ${run.sk2Opts?`<section class="sp sk2s"><h3>附加技能 · Lv${sk2L(run.wave+1)}<small class="ihint">下一波和英雄技能一起用 · Q 键 / 第二个技能按钮</small></h3><div class="row">${(run.sk2&&!run.sk2Opts.includes(run.sk2)?[run.sk2]:[]).concat(run.sk2Opts).map(k=>`<button class="chip sk2c" data-act="sk2" data-i="${run.sk2Opts.indexOf(k)}" aria-pressed="${k===run.sk2}" ${run.sk2Opts.includes(k)?'':'disabled'}><b>${SK2[k].g}</b>${SK2[k].n}<small>${sk2Cd(k,sk2L(run.wave+1))}s</small></button>`).join('')}</div><p class="wdesc">${(()=>{const L=sk2L(run.wave+1);return (run.sk2?`当前：<b>${SK2[run.sk2].n} · Lv${L}</b>（冷却 ${sk2Cd(run.sk2,L)} 秒）${SK2[run.sk2].d(sk2V(run.sk2,L))}`:'挑一个，下一波就能用。不挑也行。')+`<br><span class="dim">技能随波次升级：第 6 波 Lv2、第 11 波 Lv3，效果更强、冷却更短</span>`;})()}</p></section>`:''}
     ${coopPrep()?`<section class="sp"><h3>送给队友<small class="ihint">武器、道具在详情里送</small></h3><div class="row"><button class="mini" data-act="giftgold" data-i="10" ${run.gold<1?'disabled':''}>送 10 金</button><button class="mini" data-act="giftgold" data-i="30" ${run.gold<1?'disabled':''}>送 30 金</button><button class="mini" data-act="giftgold" data-i="-1" ${run.gold<2?'disabled':''}>送一半</button></div></section>`:''}
     <section class="sp"><h3>武器栏 <b>${run.weapons.length} / ${run.maxSlots}</b><small class="ihint">点武器或道具看详情</small></h3><div class="wslots">${slots.join('')}</div></section>
     <section class="sp"><h3>道具 <b>${run.items.length}</b></h3><div class="items">${items||'<span class="dim">还没有道具</span>'}</div></section>
@@ -4693,7 +4709,7 @@ $('#pauseBtn').addEventListener('click',togglePause);
    Two data channels: 'ctl' (ordered, for lobby/wave/prep/over messages) and 'snap' (unordered, for
    snapshots + movement). Signalling uses the free public PeerJS server unless ?peerhost=... is given. */
 const inArtifact=()=>!!(window.claude&&typeof window.claude.use==='function')||/(^|\.)(claudeusercontent\.com|claude\.ai|claude\.site)$/.test(location.hostname);
-const NET={mode:'solo',role:null,me:0,peer:null,ctl:null,snap:null,code:'',status:'',joinCode:'',peerPick:null,hostPick:null,mate:null,meReady:false,sT:0,inT:0,snapAge:0,snapInt:1/20,lastHp:null,lastLvl:0,timer:null};
+const NET={fxId:0,mode:'solo',role:null,me:0,peer:null,ctl:null,snap:null,code:'',status:'',joinCode:'',peerPick:null,hostPick:null,mate:null,meReady:false,sT:0,inT:0,snapAge:0,snapInt:1/20,lastHp:null,lastLvl:0,timer:null};
 const PEER_SRC=['https://unpkg.com/peerjs@1.5.5/dist/peerjs.min.js','https://cdn.jsdelivr.net/npm/peerjs@1.5.5/dist/peerjs.min.js'];
 const QS=new URLSearchParams(location.search);
 const PEER_OPTS=QS.get('peerhost')?{host:QS.get('peerhost'),port:+(QS.get('peerport')||9000),path:QS.get('peerpath')||'/',secure:QS.get('peersecure')==='1'}:{};
@@ -4703,6 +4719,7 @@ const renderMenuIf=()=>{if(state==='menu')renderMenu();};
 const myPick=()=>({hero:HEROES[selHero].key,skin:selSkin,weapon:selWeapon});
 function loadPeer(){return new Promise((res,rej)=>{if(window.Peer)return res();let i=0;const next=()=>{if(i>=PEER_SRC.length)return rej(new Error('load'));const sc=document.createElement('script');sc.src=PEER_SRC[i++];sc.onload=()=>window.Peer?res():next();sc.onerror=next;document.head.appendChild(sc);};next();});}
 function netSend(o){try{if(NET.ctl&&NET.ctl.open)NET.ctl.send(JSON.stringify(o));}catch(e){}}
+const FX_KEEP=new Set(['warnc','tele','quake']);  // 预警类：每包都带，客机按编号去重
 function netSendFast(o){try{const c=NET.snap&&NET.snap.open?NET.snap:NET.ctl;if(c&&c.open)c.send(typeof o==='string'?o:JSON.stringify(o));}catch(e){}}
 const connected=()=>!!(NET.ctl&&NET.ctl.open);
 function netFail(msg){netLeave();toast(msg);renderMenuIf();}
@@ -4835,8 +4852,8 @@ function netSnapshot(){
   tu:turrets.map(t=>({x:R1(t.x),y:R1(t.y),life:R2(t.life),perm:t.perm?1:0,a:R2(t.a),kick:R2(t.kick),dbl:t.dbl?1:0,col:t.col,tier:t.tier||1})),
   mi:mines.map(m=>[R1(m.x),R1(m.y),m.arm>0?1:0]),
   pd:puddles.map(u=>({x:R1(u.x),y:R1(u.y),r:u.r,life:R2(u.life),seed:R2(u.seed),tier:u.tier||1})),
-  tx:texts.map(t=>[R1(t.x),R1(t.y),t.txt,t.col,t.size,R2(t.life),t.max,R1(t.vx)]),
-  fx:fxs.filter(f=>f.type!=='lvl'||true),
+  tx:texts.filter(t=>!t._s&&(t._s=1)).map(t=>[R1(t.x),R1(t.y),t.txt,t.col,t.size,R2(t.life),t.max,R1(t.vx)]),
+  fx:fxs.filter(f=>{if(!f._i){f._i=++NET.fxId;return true;}return FX_KEEP.has(f.type);}),
   hz:{v:hz.vents.map(v=>(v.warn?1:0)|(v.hot?2:0)),c:hz.carts.map(c=>[R1(c.x),c.y,c.dir,R2(c.warn)]),s:hz.strikes.map(k=>[R1(k.x),R1(k.y),k.r,R2(k.t)])},
   em:emines.map(m=>[R1(m.x),R1(m.y),m.arm<=0?1:0,m.ev?1:0]),
   nz:nxSnap(),
@@ -4914,8 +4931,8 @@ function guestFast(m){
  pickups=m.pu.map(p=>p[0]===0?{type:'coin',x:p[1],y:p[2],v:p[3],ph:p[4]}:{type:'chest',x:p[1],y:p[2],tier:p[3],tk:p[4]||0});
  spawns=m.sp.map(s=>({x:s[0],y:s[1],t:s[2],type:s[3]?'fairy':'x'}));
  turrets=m.tu;mines=m.mi.map(a=>({x:a[0],y:a[1],arm:a[2]?1:0}));puddles=m.pd.map(u=>Object.assign({max:3.2},u));
- texts=m.tx.map(a=>({x:a[0],y:a[1],txt:a[2],col:a[3],size:a[4],life:a[5],max:a[6],vx:a[7]}));
- fxs=m.fx;nxApply(m.nz,m.tg);
+ for(const a of m.tx)texts.push({x:a[0],y:a[1],txt:a[2],col:a[3],size:a[4],life:a[5],max:a[6],vx:a[7]});if(texts.length>70)texts.splice(0,texts.length-70);
+ {const ids=new Set();for(const f of fxs)if(f._i)ids.add(f._i);for(const f of m.fx){if(f._i&&ids.has(f._i))continue;fxs.push(f);}if(fxs.length>260)fxs.splice(0,fxs.length-260);}nxApply(m.nz,m.tg);
  hz.vents.forEach((v,i)=>{const b=m.hz.v[i]||0;v.warn=!!(b&1);v.hot=!!(b&2);});
  hz.carts=m.hz.c.map(c=>({x:c[0],y:c[1],dir:c[2],warn:c[3]}));hz.strikes=m.hz.s.map(k=>({x:k[0],y:k[1],r:k[2],t:k[3]}));
  emines=m.em.map(a=>({x:a[0],y:a[1],arm:a[2]?0:1,ev:a[3]||0}));
@@ -4976,7 +4993,7 @@ function mateHud(){
  const m=NET.mate;if(!m)return null;return {k:m.hero+m.skin,por:porOfRun(m),hp:m.hp||0,mhp:m.mhp||1,down:m.down};
 }
 function hud(){
- {const s2=SK2[run.sk2];sk2Btn.hidden=!s2;if(s2){if(sk2Btn.dataset.k!==run.sk2){sk2Btn.dataset.k=run.sk2;sk2G.textContent=s2.g;sk2N.textContent=s2.n;sk2Btn.setAttribute('aria-label','附加技能：'+s2.n);}const cd=run.sk2CD||0;sk2Btn.style.setProperty('--cd',clamp(cd/s2.cd,0,1).toFixed(3));sk2Btn.classList.toggle('ready',cd<=0);sk2Btn.classList.toggle('live',(run.frz||0)>0);}}
+ {const s2=SK2[run.sk2];sk2Btn.hidden=!s2;if(s2){if(sk2Btn.dataset.k!==run.sk2){sk2Btn.dataset.k=run.sk2;sk2G.textContent=s2.g;sk2N.textContent=s2.n;sk2Btn.setAttribute('aria-label','附加技能：'+s2.n);}const cd=run.sk2CD||0;sk2Btn.style.setProperty('--cd',clamp(cd/sk2Cd(run.sk2,sk2L(run.wave)),0,1).toFixed(3));sk2Btn.classList.toggle('ready',cd<=0);sk2Btn.classList.toggle('live',(run.frz||0)>0);}}
  const sk=H.skill;if(sk){if(skillBtn.dataset.k!==H.key){skillBtn.dataset.k=H.key;skG.textContent=sk.g;skN.textContent=sk.n;skillBtn.setAttribute('aria-label','主动技能：'+sk.n);}
   const cd=run.skCD||0;skillBtn.style.setProperty('--cd',clamp(cd/skCd(),0,1).toFixed(3));skillBtn.classList.toggle('ready',cd<=0);skillBtn.classList.toggle('live',(run.eagle||0)>0||(run.stormT||0)>0);}
  const hp=Math.max(0,run.hp);
@@ -5221,7 +5238,7 @@ function draw(dt){
  for(const f of fxs)if(f.type==='scorch'){const k=Math.min(1,f.life/1.4);ctx.globalAlpha=k*0.8;ctx.save();ctx.translate(f.x,f.y);ctx.rotate(f.s);ctx.scale(1,0.78);ctx.drawImage(scorchImg(),-f.r,-f.r,f.r*2,f.r*2);ctx.restore();
   const em=f.life-(f.max-1.6);if(em>0)lighter(()=>{for(let i=0;i<5;i++){const a=f.s+i*1.3,d=f.r*(0.2+hr(f.s,i)*0.5);drawGlow(f.x+Math.cos(a)*d,f.y+Math.sin(a)*d*0.78,4+hr(f.s,i+4)*3,GLOW.orange,em/1.6*(0.5+0.5*Math.sin(tGame*9+i)));}});}
  ctx.globalAlpha=1;
- lighter(()=>drawGlow(P.x,P.y,260,'rgba(242,203,122,1)',0.09));
+ lighter(()=>drawGlow(P.x,P.y,170,'rgba(242,203,122,1)',0.1));
  // puddles
  for(const u of puddles){const k=Math.min(1,u.life/0.5),T=u.tier||1;lighter(()=>{drawGlow(u.x,u.y,u.r*1.15,GLOW.green,(0.26+T*0.05)*k);if(T>=3)drawGlow(u.x,u.y,u.r*0.6,tierGlow[T],0.22*k);});
   ctx.fillStyle=`rgba(160,220,110,${0.55*k})`;for(let b=0;b<2+T*2;b++){const ph=((tGame*0.9+b*0.27+u.seed)%1),ang=u.seed+b*1.7;ctx.beginPath();ctx.arc(u.x+Math.cos(ang)*u.r*0.55,u.y+Math.sin(ang)*u.r*0.4-ph*6,(1-ph)*3+0.5,0,TAU);ctx.fill();}}
@@ -5357,7 +5374,7 @@ function draw(dt){
  if(motes.length<36)for(let i=motes.length;i<36;i++)motes.push({x:Math.random()*W,y:Math.random()*Hh,v:rand(4,14),s:rand(1,2.2),p:Math.random()*TAU});
  if(MAP.ice){const ws=hz.wind?hz.wind.s:0,wx=hz.wind?Math.cos(hz.wind.a):0,wy=hz.wind?Math.sin(hz.wind.a):0;ctx.fillStyle='rgba(235,245,255,.7)';for(const m of motes){m.y+=(m.v*3+wy*260*ws)*dt;m.x+=(Math.sin(tGame*0.8+m.p)*14+wx*260*ws)*dt;if(m.y>Hh+4){m.y=-4;m.x=Math.random()*W;}if(m.y<-6)m.y=Hh+4;if(m.x<-6)m.x=W+4;if(m.x>W+6)m.x=-4;ctx.fillRect(m.x,m.y,m.s+0.6,m.s+0.6);}}
  else if(!nxMotes(dt)){ctx.fillStyle='rgba(242,203,122,.22)';for(const m of motes){m.y-=m.v*dt;m.x+=Math.sin(tGame*0.6+m.p)*6*dt;if(m.y<-4){m.y=Hh+4;m.x=Math.random()*W;}ctx.fillRect(m.x,m.y,m.s,m.s);}}
- if(VIGNETTE)ctx.drawImage(VIGNETTE,0,0,W,Hh);
+ 
  if(run.hp<S.hp*0.3&&state==='battle'){ctx.globalAlpha=0.25+Math.sin(tGame*6)*0.1;ctx.strokeStyle=C.danger;ctx.lineWidth=18;ctx.strokeRect(0,0,W,Hh);ctx.globalAlpha=1;}
  if(joy){ctx.globalAlpha=0.55;ctx.beginPath();const JR=joyR();ctx.arc(joy.ox,joy.oy,JR,0,TAU);ctx.fillStyle='rgba(10,16,19,.35)';ctx.fill();ctx.strokeStyle=C.brass;ctx.lineWidth=2;ctx.stroke();
   const jx=joy.x-joy.ox,jy=joy.y-joy.oy,l=Math.hypot(jx,jy),k=l>JR?JR/l:1;ctx.beginPath();ctx.arc(joy.ox+jx*k,joy.oy+jy*k,JR*0.4,0,TAU);ctx.fillStyle=C.brass;ctx.fill();ctx.globalAlpha=1;}
@@ -5478,7 +5495,8 @@ function drawPlayer(pl){
 /* ================= loop ================= */
 let last=performance.now();
 function frame(now){
- const dt=Math.min(0.05,(now-last)/1000);last=now;
+ const raw=(now-last)/1000,dt=Math.min(0.05,raw);last=now;perfTick(Math.min(0.2,raw));
+ {const on=!!(run&&state==='battle');if(on!==frame.vig){frame.vig=on;$('#vig').classList.toggle('on',on);}}
  if(state==='battle'&&run){if(NET.role==='guest')guestUpdate(dt);else if(!paused)update(dt);}
  if(NET.role==='host'&&state==='battle'&&connected()&&PL.length>1){NET.sT-=dt;if(NET.sT<=0){NET.sT=NET.snapInt;netSnapshot();}}
  if(run&&state==='battle'){hud();
