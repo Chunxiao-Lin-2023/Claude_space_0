@@ -465,7 +465,7 @@
           { x: 5, y: 10, spr: 'invisible', touch: async S => { await S.go('hall', 1, 2, 2); } },
           { x: 1, y: 2, spr: 'web', decal: true }, { x: 10, y: 2, spr: 'web', decal: true, ox: 10 },
           { id: 'roundwin', x: 6, y: 1, spr: 'roundwin', on: S => S.narr('阁楼的圆窗正对着街。\n当年她卧室的窗户，就在这扇圆窗的正下方。\n那些孩子，大概就站在对面那盏路灯底下。') },
-          { id: 'shutter', x: 1, y: 3, spr: 'shutter', on: S => S.narr(S.f.phase === 'hunt' ? '百叶窗的刻痕里，渗出了暗红色的水。\n一个字母，一个字母地往下淌。' : '一扇拆下来的旧百叶窗，靠在墙角。\n翻过来——外侧被小刀刻满了字母：\nBLOODY MARY。BLOODY MARY。BLOODY MARY。\n刻痕一道比一道深。') },
+          { id: 'shutter', x: 1, y: 3, spr: 'shutter', on: S => S.narr(S.f.phase === 'hunt' ? '百叶窗的刻痕里，渗出了暗红色的水。\n一个字母，一个字母地往下淌。' : '一扇拆下来的旧百叶窗，靠在墙角。\n翻过来——外侧被小刀刻满了英文字母：\n血腥玛丽（BLOODY MARY）。血腥玛丽。血腥玛丽。\n刻痕一道比一道深。') },
           { id: 'mstack', x: 9, y: 2, w: 2, spr: 'mirrorstack', async on(S) {
             if (S.f.phase === 'hunt') return S.narr('布底下，镜子在一下一下地磕碰。\n……你没敢碰它。');
             await S.narr(S.f.gotDiary ? '「妈妈把家里所有的镜子都收起来了。」\n——原来都收在这里。' : '十几面大大小小的镜子，背面朝外靠在一起，每一面都用布包得严严实实。\n……谁会把这么多镜子藏到阁楼上？');

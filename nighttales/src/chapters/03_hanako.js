@@ -428,17 +428,17 @@
           { x: 2, y: 2, spr: 'getabako', on: S => S.narr('一格一格的木头鞋柜，名牌都发黄了。\n有几格里还塞着没人领走的旧室内鞋，鞋头的颜色是按年级分的。') },
           { x: 3, y: 2, spr: 'getabako', on: S => S.narr('「六年一组」……这些人现在应该都是大人了吧。') },
           { id: 'gbM', x: 4, y: 2, spr: 'getabako', async on(S) {
-            await S.narr('这一格里，整整齐齐地摆着一双红色运动鞋，鞋跟上写着「みさき」。\n她居然换了鞋。这栋楼早就没人用了，她还守着「进门要换鞋」的规矩。');
+            await S.narr('这一格里，整整齐齐地摆着一双红色运动鞋，鞋跟上写着「美咲」。\n她居然换了鞋。这栋楼早就没人用了，她还守着「进门要换鞋」的规矩。');
             await S.think('……那她换上的，是谁的鞋？');
           } },
           { id: 'gbH', x: 5, y: 2, spr: 'getabako', async on(S) {
-            await S.narr('旁边一格贴着褪色的名牌：「三年一组　はなこ」。\n格子里空空的。室内鞋不见了。');
+            await S.narr('旁边一格贴着褪色的名牌：「三年一组　花子」。\n格子里空空的。室内鞋不见了。');
             S.f.sawName = true;
           } },
           { x: 2, y: 5, spr: 'getabako', on: S => S.narr('鞋柜背面贴着一张泛黄的值日表。最后一行的名字被铅笔涂黑了。') },
           { x: 3, y: 5, spr: 'getabako', on: S => S.narr('空的。') },
           { x: 4, y: 5, spr: 'getabako', on: S => S.narr('一只室内鞋倒扣在格子里，鞋底干了一圈白白的水渍。') },
-          { x: 5, y: 5, spr: 'getabako', async on(S) { await S.narr('格子深处，有人用小刀刻了一行字：もういいかい。'); await S.think('もういいかい——「好了吗？」捉迷藏的时候，当鬼的人喊的那一句。'); } },
+          { x: 5, y: 5, spr: 'getabako', async on(S) { await S.narr('格子深处，有人用小刀刻了一行字：「好了吗？」（もういいかい）'); await S.think('「好了吗？」——捉迷藏的时候，当鬼的人喊的那一句。'); } },
           { x: 8, y: 2, spr: 'shelf', on: S => S.narr('奖杯柜。昭和年间的运动会奖状，接力赛的锦旗。\n玻璃上落满了灰，有一小块被手指画了个笑脸。') },
           { x: 9, y: 1, spr: 'board', on: S => S.narr('公告栏。「旧校舍将于明年一月拆除，届时请勿靠近。」\n角落里还钉着一张很旧很旧的海报：「报纸社团独家调查！樱丘小学七大不可思议！」') },
           { id: 'staff', x: 11, y: 1, spr: 'door', col: '#4a3a2a', locked: true, async on(S) {
@@ -446,7 +446,7 @@
             await S.narr('职员室。门锁着。\n门上的玻璃后面，墙上的钥匙箱敞着，有一个挂钩是空的——挂钩下面的标签写着「音乐室」。');
             S.f.sawKeybox = true;
           } },
-          { x: 13, y: 1, spr: 'wallclock', on: S => S.narr('挂钟停在四点四十四分。\n……四，在日语里念「し」，和「死」同音。') },
+          { x: 13, y: 1, spr: 'wallclock', on: S => S.narr('挂钟停在四点四十四分。\n……四，在日语里和「死」念得一模一样。') },
           { x: 15, y: 1, spr: 'window', on: S => S.narr(['窗外是操场。雪地上，你自己的脚印歪歪扭扭的。\n还有一串更大的、拖着走的脚印。……那是刚才就有的吗？', '窗外是操场。操场上的金次郎像……好像离校舍近了一点。\n雪地上，从它原来站的地方到这边，拖着一道长长的印子。', '金次郎像又往前挪了。它站在操场正中间，背对着校门。\n书合上了。它在看这栋楼。'][Math.min(2, S.ent('kinjiro').s.st || 0)]) },
           { id: 'rikaDoor', x: 17, y: 1, spr: 'door', col: '#5a4030', to: ['rika', 6, 8, 3], lock: S => S.f.phase !== 'chase', lockMsg: '理科室——那东西就是从这里出来的。不能进去！' },
           { x: 18, y: 1, spr: 'plate', on: S => S.narr('门牌：「理科室」。') },
@@ -663,7 +663,7 @@
           } },
           { id: 'cp4', x: 12, y: 1, spr: 'composer', hc: '#4a3a2a', col: '#2a3a4a', on: S => portrait(S, '肖邦', '瘦瘦的脸，头发很整齐。') },
           { x: 7, y: 1, spr: 'blackboard', text: true, async on(S) {
-            await S.narr('黑板上用粉笔抄着年末合唱要唱的谱子，一小节一行：\n\n《欢乐颂》\n3 3 4 5　（ミ ミ ファ ソ）\n5 4 3 2　（ソ ファ ミ レ）\n1 1 2 3　（ド ド レ ミ）\n3· 2 2 —（这一行被板擦蹭过，粉笔印淡淡的）');
+            await S.narr('黑板上用粉笔抄着年末合唱要唱的谱子，一小节一行：\n\n《欢乐颂》\n3 3 4 5　（咪 咪 发 唆）\n5 4 3 2　（唆 发 咪 来）\n1 1 2 3　（哆 哆 来 咪）\n3· 2 2 —（这一行被板擦蹭过，粉笔印淡淡的）');
             await S.narr('旁边画了一个大大的花丸，写着「大家一起唱！」');
             S.f.score = true;
           } },
@@ -694,7 +694,7 @@
           await playTune(S, [3, 3, 4, 5, 5, 4, 3, 2, 1, 1, 2, 3], 260);
           await S.wait(400);
           S.dark(null); S.focus(null);
-          await S.narr('琴声弹完「ド ド レ ミ」，就停在了第三小节的末尾。\n像是有人把手从琴键上拿开，等着谁接下去。');
+          await S.narr('琴声弹完「哆 哆 来 咪」，就停在了第三小节的末尾。\n像是有人把手从琴键上拿开，等着谁接下去。');
           S.goal('钢琴在等人接着弹下去');
         }
       },
@@ -756,13 +756,13 @@
           /* 空教室 */
           { id: 'curtL', x: 16, y: 2, spr: 'curtainL', on: S => look(S, '墨绿色的长窗帘，一直拖到地上。', '你一把掀开窗帘——窗玻璃上，只有你自己吓白了的脸。') },
           { x: 19, y: 2, spr: 'window', on: S => S.narr('窗外的雪下得更大了。') },
-          { x: 21, y: 2, spr: 'blackboard', text: true, on: S => S.narr('黑板上画着一张相合伞，伞下写着两个名字，都被擦掉了。\n角落里有一行粉笔字：「もういいかい？」（好了吗？）') },
+          { x: 21, y: 2, spr: 'blackboard', text: true, on: S => S.narr('黑板上画着一张相合伞，伞下写着两个名字，都被擦掉了。\n角落里有一行粉笔字：「好了吗？」') },
           { x: 24, y: 2, spr: 'window', on: S => S.narr('三楼最右边的窗户。从外面看到的那个晃动的窗帘，就在这一间。') },
           { id: 'curtR', x: 27, y: 2, spr: 'curtainL', on: S => spotOn(S, 'curtR', '墨绿色的长窗帘。风从窗缝里钻进来，窗帘一鼓一鼓的。') },
           { id: 'cab', x: 15, y: 3, spr: 'cabinet', col: '#6a5040', on: S => look(S, '放教具的柜子。里面有一个地球仪，日本那里被磨得发白。', '你拉开柜门——地球仪「咕噜」一声滚了出来。') },
           { id: 'pileC', x: 28, y: 3, spr: 'pile', on: S => look(S, '教室后面堆着几张多余的课桌。', '你钻到课桌底下看了看。只有一团灰尘。') },
           { id: 'kyotaku', x: 21, y: 4, spr: 'kyotaku', on: S => spotOn(S, 'kyotaku', '讲台。粉笔灰积了厚厚一层，上面印着一个小小的手印。') },
-          ...[16, 18, 22, 24, 26].map((x, i) => ({ x, y: 6, spr: 'schooldesk', on: S => S.narr(['桌面上刻着「バカ」。', '抽屉里有一块干成石头的面包。', '课桌的抽屉里，整整齐齐地放着一本昭和二十年的算术课本。', '这张桌子上没有灰。一点也没有。', '椅子被拉开了，好像刚刚有人站起来。'][i]) })),
+          ...[16, 18, 22, 24, 26].map((x, i) => ({ x, y: 6, spr: 'schooldesk', on: S => S.narr(['桌面上刻着「笨蛋」。', '抽屉里有一块干成石头的面包。', '课桌的抽屉里，整整齐齐地放着一本昭和二十年的算术课本。', '这张桌子上没有灰。一点也没有。', '椅子被拉开了，好像刚刚有人站起来。'][i]) })),
           { id: 'hdesk', x: 20, y: 6, spr: 'schooldesk', on: S => hanaDesk(S) },
           ...[19, 21, 23, 25].map((x, i) => ({ x, y: 8, spr: 'schooldesk', on: S => S.narr(['空课桌。', '桌面上画着一个小小的相合伞。', '抽屉里塞满了没交的作业。', '桌子底下有一串湿脚印……是你自己的。'][i]) })),
           /* 捉迷藏与追逐 */
@@ -845,7 +845,7 @@
           { x: 7, y: 1, spr: 'mirror', frame: '#9a9a90', on: S => S.narr('洗手池边上的镜子。镜子里，你身后那排隔间的门全都关着。\n……第三间的门缝底下，是黑的。') },
           { x: 8, y: 2, spr: 'sink', on: S => { S.sfx('drip'); return S.narr('水龙头拧不紧，一滴，一滴。'); } },
           { x: 9, y: 2, spr: 'sink', on: S => S.narr('洗手池里放着一块小小的、用旧了的红色肥皂。') },
-          { x: 10, y: 5, spr: 'lockerS', on: S => S.narr('扫除用具柜。门上贴着一张纸：「女子トイレ清扫：三年一组」。') },
+          { x: 10, y: 5, spr: 'lockerS', on: S => S.narr('扫除用具柜。门上贴着一张纸：「女厕所清扫：三年一组」。') },
           { id: 'puddle', x: 3, y: 3, spr: 'puddle', decal: true, solid: false },
           { id: 'dareP', x: 2, y: 4, spr: 'paper', async on(S) { if (S.once('dare')) await S.narr('地上躺着一张被水泡软了的纸。是大辅的字。'); await readNote(S, 'dare'); } },
           { id: 'hanakoT', x: 3, y: 2, spr: '@hanako', hidden: true, solid: false, z: 1, oy: 2, light: { r: 1.8, col: 'rgba(170,200,255,.16)' } }
@@ -923,7 +923,7 @@
   async function pianoPuzzle(S) {
     if (S.f.solved) return S.narr('琴盖合上了。琴凳上，留着一个小小的、凹下去的坐痕。');
     const r = await S.ask('钢琴在等你接着弹下去。要弹吗？', ['弹', '不弹']); if (r) return;
-    const v = await S.keypad('琴键上贴着褪色的数字贴纸：1=ド 2=レ 3=ミ 4=ファ 5=ソ……\n刚才的琴声停在第三小节末尾。接着弹第四小节，三个音：', ['1', '2', '3', '4', '5', '6', '7'], 3);
+    const v = await S.keypad('琴键上贴着褪色的数字贴纸：1=哆 2=来 3=咪 4=发 5=唆……\n刚才的琴声停在第三小节末尾。接着弹第四小节，三个音：', ['1', '2', '3', '4', '5', '6', '7'], 3);
     if (v == null) return;
     await playTune(S, v.split('').map(Number), 300);
     if (v !== '322') {
@@ -1048,8 +1048,8 @@
     setSpot(S, k);
     layTrails(S, SEEK_START, k, [d1, d2]);
     S.f._gg = 4; S.f._bell = false; S.f._mv = false; S.f._ts = null;
-    await S.say('花子（远处）', 'もういいかい——？（好了吗——？）', { style: 'whisper' });
-    await S.say('花子（远处）', '……もういいよ——！（好了哦——！）', { style: 'whisper' });
+    await S.say('花子（远处）', '好了吗——？（もういいかい）', { style: 'whisper' });
+    await S.say('花子（远处）', '……好了哦——！（もういいよ）', { style: 'whisper' });
     S.f.seek = true;
     S.goal('在钟声响起前找到花子（湿脚印、红发绳、笑声）');
     if (S.coop) S.toast('观看的人：点屏幕，可以给同伴标出可疑的地方');
@@ -1127,7 +1127,7 @@
   }
   /* 第七个不可思议：六个都亲眼见过以后，三年一组花子的课桌抽屉里出现被撕下的那一条 */
   async function hanaDesk(S) {
-    await S.narr('桌面上有一个用铅笔描了无数遍的名字：はなこ。');
+    await S.narr('桌面上有一个用铅笔描了无数遍的名字：花子。');
     if (S.f.r_p5) return S.narr('抽屉空了。那张纸条，你已经收好了。');
     const n = WONDERS.filter(w => S.f[w]).length;
     if (n < 6 || S.f.phase === 'chase' || S.f.phase === 'done') { if (n >= 3) await S.narr('抽屉好像卡住了。里面塞着一张纸，可怎么拽也拽不出来。\n……像是有人不让你看。还不到时候。'); return; }
@@ -1154,7 +1154,7 @@
     if (S.f.n3) return;
     S.f.n3 = true;
     await S.narr('崭新的白色隔间门。从门口数，第三间。\n门上，有人用红笔写了一行歪歪扭扭的小字：');
-    await S.say('', '「下次，再一起玩吧。　はなこ」', { style: 'big' });
+    await S.say('', '「下次，再一起玩吧。　花子」', { style: 'big' });
     await S.wait(500);
     await S.say('美咲', '……是谁写的呀。老师明明说，新校舍里没有花子的。');
     S.sfx('knock'); await S.wait(500); S.sfx('knock'); await S.wait(500); S.sfx('knock');
@@ -1162,8 +1162,8 @@
     await S.wait(600);
     S.sfx('giggle');
     if (S.f.r_p5) {
-      await S.say('花子', 'もういいかい？（好了吗？）', { style: 'whisper' });
-      await S.say('健太', '……もういいよ。（好了哦。）');
+      await S.say('花子', '好了吗？', { style: 'whisper' });
+      await S.say('健太', '……好了哦。');
     }
     await S.end({ title: '第三夜　完', text: '后来，新校舍也有了自己的「七大不可思议」。\n三楼女厕所的花子，排在第六个。\n第七个，还是没有人知道。\n\n' + (S.f.r_p5 ? '……只有你知道。\n每年冬天，你都会回来一次，敲三下门，说一声「找到了」。\n\n' : '') + '只是每年拆换隔间的门时，第三间的门背后，总能找到一根打着蝴蝶结的、湿漉漉的红发绳。' });
   }

@@ -18,7 +18,7 @@
   /* ---------- 录像带片段 ---------- */
   const PANEL = [0, 28, 56];        // v8 地图里三个「画面」的左边界
   const CLIPS = [
-    { k: 'A', tc: '15:02:31', label: '15:02　登山口・团体照', p: 0 },
+    { k: 'A', tc: '15:02:31', label: '15:02　登山口·团体照', p: 0 },
     { k: 'B', tc: '15:37:08', label: '15:37　竹林石阶', p: 1 },
     { k: 'C', tc: '16:51:44', label: '16:51　凉亭', p: -1 },
     { k: 'D', tc: '17:26:15', label: '17:26　（不记得录过）', p: 2, br: 0 },
@@ -190,7 +190,7 @@
       redface: Object.assign({ key: 'rg-redface', extra: oldFace }, RED_P)
     },
     items: {
-      v8: { name: 'V8 摄影机', desc: '二舅新买的 Sony 8 釐米摄影机，沉甸甸的。里面是一卷刚拆封的 P6-120 带子。\n观景窗小小的，看出去的世界是黑白的。' },
+      v8: { name: 'V8 摄影机', desc: '二舅新买的索尼 8 厘米摄影机，沉甸甸的。里面是一卷刚拆封的 P6-120 带子。\n观景窗小小的，看出去的世界是黑白的。' },
       amulet: { name: '平安符', desc: '阿嬷在土地公庙求的平安符。红色的小布袋，里面装了香灰。\n「随身带着，不要拿下来。」' },
       raincoat: { name: '小琪的黄雨衣', desc: '湿透了，冰冰的。两个口袋里塞满了嚼烂的草叶。' },
       pot: { name: '生锈的铁锅', desc: '工寮灶上的铁锅，锅耳上挂着一支大汤匙。敲起来「哐、哐」地响，跟锣差不多。' }
@@ -427,7 +427,7 @@
             await S.note('missing'); S.f.readMissing = true;
           } },
           { id: 'ama', x: 3, y: 6, spr: '@ama', dir: 2, on: S => amaOn(S) },
-          { x: 13, y: 3, spr: 'sign', col: '#3a5a3a', on: S => S.narr('木头告示牌：\n「○○山登山步道　往凉亭 0.8K　往山顶 2.0K」\n「请勿脱队　请于天黑前下山」\n底下有人用立可白涂了一行字：「小心魔神仔」。后面画了个笑脸。') },
+          { x: 13, y: 3, spr: 'sign', col: '#3a5a3a', on: S => S.narr('木头告示牌：\n「○○山登山步道　往凉亭 0.8公里　往山顶 2.0公里」\n「请勿脱队　请于天黑前下山」\n底下有人用立可白涂了一行字：「小心魔神仔」。后面画了个笑脸。') },
           { id: 'stall', x: 18, y: 4, w: 2, spr: 'stall2', col: '#3a6a5a', on: S => apoOn(S) },
           { id: 'apo', x: 20, y: 5, spr: '@apo', dir: 1, on: S => apoOn(S) },
           { x: 18, y: 8, w: 2, spr: 'car', col: '#e4e2da', on: S => S.narr(S.f.phase === 'flee' ? '二舅的车门开着，车头灯照着石阶，照进一片白茫茫的雾里。' : '二舅的白色喜美，上礼拜才洗过。\n后座有小琪吃剩的乖乖，还有一包晕车用的塑胶袋。') },
@@ -459,7 +459,7 @@
           { x: 11, y: 0, spr: 'invisible', touch: S => branchEnd(S, 1) },
           { x: 19, y: 1, spr: 'invisible', touch: S => branchEnd(S, 2) },
           { id: 'stele', x: 12, y: 6, spr: 'stele', num: 0, on: S => steleOn(S) },
-          { x: 10, y: 10, spr: 'sign', col: '#5a4024', on: S => S.narr(S.f.phase === 'search' ? '路标还是那块路标：「↑ 石碑岔路　↓ 登山口」。\n……只是箭头好像被人掰歪了，歪歪地指着竹林里面。' : '木头路标：「↑ 石碑岔路・往山顶　↓ 登山口 0.8K」') },
+          { x: 10, y: 10, spr: 'sign', col: '#5a4024', on: S => S.narr(S.f.phase === 'search' ? '路标还是那块路标：「↑ 石碑岔路　↓ 登山口」。\n……只是箭头好像被人掰歪了，歪歪地指着竹林里面。' : '木头路标：「↑ 石碑岔路·往山顶　↓ 登山口 0.8公里」') },
           { id: 'pavilion', x: 14, y: 11, w: 3, spr: 'pavilion', on: S => S.narr('「望云亭」。水泥柱子上漆着红漆，漆掉得一块一块的。\n柱子上有人用原子笔写：「阿明♥小芳 1996」，旁边又被人划掉了。') },
           { id: 'bench_t', x: 14, y: 13, w: 2, spr: 'bench', on: S => benchOn(S) },
           { id: 'mag', x: 16, y: 13, spr: 'newspaper', async on(S) {
@@ -750,7 +750,7 @@
     await viewer(S, async () => {
       const o = S.ent('osd'); S.place('osd', 1, 1); o.s = { mode: 'REC', tc: '15:02:31' };
       S.hide('vA_red'); S.hide('snow');
-      await S.narr('小小的观景窗里，土地公庙前面站了一排人。\n二舅比 YA，二舅妈帮小琪把雨衣帽子拉好，阿伟只肯露半张脸，阿嬷站在后面，笑得眼睛都不见了。');
+      await S.narr('小小的观景窗里，土地公庙前面站了一排人。\n二舅比了个耶，二舅妈帮小琪把雨衣帽子拉好，阿伟只肯露半张脸，阿嬷站在后面，笑得眼睛都不见了。');
       await S.say('二舅', '来！一、二、三——');
       S.sfx('tick');
       await S.say('大家', '茄子——！');
@@ -789,7 +789,7 @@
     await S.wait(400);
     if (c.k === 'A') {
       S.show('vA_red');
-      await S.narr('画面晃了一下，稳住了。土地公庙前面，大家挤成一排。\n二舅比 YA，二舅妈在帮小琪拉雨衣帽子，阿伟只露半张脸，阿嬷在后面笑。');
+      await S.narr('画面晃了一下，稳住了。土地公庙前面，大家挤成一排。\n二舅比了个耶，二舅妈在帮小琪拉雨衣帽子，阿伟只露半张脸，阿嬷在后面笑。');
       await S.narr('……你数了一遍。\n一、二、三、四、五。');
       S.sfx('sting'); S.bubble('vA_red', '…', 1600);
       await S.narr('——六。');
