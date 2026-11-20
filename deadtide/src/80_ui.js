@@ -5,10 +5,12 @@ function showScreen(s) {
   for (const id of ['title', 'lobby']) $(id).classList.toggle('hidden', id !== s);
   $('hud').classList.toggle('hidden', s !== 'play');
   $('hubBtn').classList.toggle('hidden', !HUB || s !== 'title');
-  if (s !== 'play') { for (const id of ['craft', 'pause', 'over']) $(id).classList.add('hidden'); }
+  if (s !== 'play') { for (const id of ['craft', 'kit', 'pause', 'over']) $(id).classList.add('hidden'); }
   if (s === 'title' && typeof renderBest === 'function') renderBest();
   if (s === 'title') { STATE.mode = 'title'; renderBest(); }
   if (s === 'lobby') STATE.mode = 'lobby';
+  if (s === 'play' && INP.touch && !SET.guide22) { SET.guide22 = 1; saveSet(); setTimeout(() => document.body.classList.add('guide'), 600); } // (round 22) the first touch game shows what each control does; the next tap hides it
+  if (s !== 'play') document.body.classList.remove('guide');
 }
 function titleStatus(t) { $('tStatus').textContent = t || ''; }
 function renderBest() {
@@ -59,14 +61,15 @@ function uiKeys(me) {
   const el = $('keys'); if (!el || INP.touch) return;
   const wi = me.down ? 0 : me.wpn, w = WPN[wi], st = c => c === 1 ? ' class="hot"' : c === 2 ? ' class="warn"' : c === -1 ? ' class="off"' : '';
   let rows;
-  if (me.build) rows = [['左键', '盖（拖动一排）'], ['右键', '拆'], ['1–0', '选材料'], ['R', '转向'], ['X', '拆除模式', me.demo ? 1 : 0], ['Enter', '确认'], ['Esc', '取消'], ['B', '退出建造', 1]];
+  if (me.build) rows = [['左键', '放（拖动一排）'], ['右键', '拆'], ['1–9', '选道具（再按换材料）'], ['R', '换材料'], ['X', '拆除模式', me.demo ? 1 : 0], ['Enter', '确认'], ['Esc', '取消'], ['B', '收起道具', 1]];
   else {
     const canRl = me.mag[wi] < w.mag && (w.inf || me.ammo[wi] > 0) && !(me.reloadT > 0), ut = useTarget(me), bench = canCraft(me);
     rows = [['左键', '射击'], ['R', '换弹', me.mag[wi] === 0 && canRl ? 2 : canRl ? 0 : -1], ['G', '手雷 ×' + me.nades, me.nades ? 0 : -1],
       ['H', me.down ? '自救' : '医疗 ×' + me.meds, !me.meds ? -1 : (me.down || me.hp < me.maxHp * 0.4) ? 2 : me.hp >= me.maxHp ? -1 : 0],
-      ['右键', '刀（自动追，也可按 V）'], ['空格', '跳 / 翻越'], ['F', ut ? ut.name : '交互', ut ? 1 : 0], ['1–' + NW, '换枪'], ['C', '制作 / 购买', bench ? 1 : -1], ['B', '建造']];
+      ['右键', '刀（自动追，也可按 V）'], ['空格', '跳 / 翻越'], ['F', ut ? ut.name : '交互', ut ? 1 : 0], ['1–4', '快捷武器'], ['Z', '切回上一把'], ['I', '装备（选快捷枪 / 默认载具）'], ['C', '商店', bench ? 1 : -1], ['B', '道具（墙、陷阱、跳板…）']];
     const pil = !me.ride && !(me.pass >= 0) && pillionFor(me);
-    if (me.veh || me.pass >= 0 || pil) rows.push(['T', me.ride || me.pass >= 0 ? '下车' : pil ? '坐后座' : (me.veh === 2 ? '骑摩托' : '骑车'), me.ride || me.pass >= 0 || pil ? 1 : 0]);
+    if (me.vehs || me.pass >= 0 || pil) rows.push(['T', me.ride || me.pass >= 0 ? '下车' : pil ? '坐后座' : '上' + (VEH[me.veh] ? VEH[me.veh].name : '车'), me.ride || me.pass >= 0 || pil ? 1 : 0]);
+    if (me.vehs & (me.vehs - 1)) rows.push(['⇧T', '换一辆车']);
     if (W.phase === 'day') rows.push(['N', me.ready ? '取消准备' : '准备入夜', me.ready ? 1 : 0]);
   }
   rows.push(['M', '大地图（也可按 Tab）'], ['Q E', '转镜头'], ['Esc', '菜单']);
@@ -83,7 +86,7 @@ function blockIcon(id) {
   const shade = k => { tmpC.set(col).multiplyScalar(k); return '#' + tmpC.getHexString(); };
   const poly = (pts, f) => { g.fillStyle = f; g.beginPath(); pts.forEach(([x, y], i) => i ? g.lineTo(x, y) : g.moveTo(x, y)); g.closePath(); g.fill(); };
   const cube = (h) => { poly([[26, 6 + 30 - h], [46, 16 + 30 - h], [26, 26 + 30 - h], [6, 16 + 30 - h]], shade(1.15)); poly([[6, 46 - h], [26, 56 - h], [26, 56], [6, 46]].map(([x, y]) => [x, y - 6]), shade(0.8)); poly([[26, 56 - h], [46, 46 - h], [46, 46], [26, 56]].map(([x, y]) => [x, y - 6]), shade(0.6)); };
-  if (B[id].slab) cube(6); else if (B[id].dep) { g.fillStyle = col; g.fillRect(22, 14, 8, 30); if (B[id].lamp) { g.fillStyle = '#ffe9a8'; g.fillRect(16, 8, 20, 9); } else { g.strokeStyle = col; g.lineWidth = 2; for (let k = 0; k < 3; k++) { g.beginPath(); g.arc(14 + k * 12, 36, 7, 0, 7); g.stroke(); } } }
+  if (B[id].slab) cube(6); else if (B[id].pad) { cube(8); g.fillStyle = '#2a1e0e'; g.font = 'bold 22px sans-serif'; g.fillText('⤒', 16, 36); } else if (B[id].dep) { g.fillStyle = col; g.fillRect(22, 14, 8, 30); if (B[id].lamp) { g.fillStyle = '#ffe9a8'; g.fillRect(16, 8, 20, 9); } else { g.strokeStyle = col; g.lineWidth = 2; for (let k = 0; k < 3; k++) { g.beginPath(); g.arc(14 + k * 12, 36, 7, 0, 7); g.stroke(); } } }
   else if (B[id].stairs) { for (let k = 0; k < 4; k++) { g.fillStyle = shade(1 - k * 0.08); g.fillRect(8 + k * 9, 40 - k * 9, 36 - k * 9, 9 + k * 9); } }
   else cube(28);
   if (id === 8) { g.fillStyle = 'rgba(0,0,0,.45)'; for (let k = 0; k < 3; k++) g.fillRect(14 + k * 9, 20, 3, 22); }
@@ -92,38 +95,45 @@ function blockIcon(id) {
 }
 function buildHudStatic() {
   $('resBox').innerHTML = RES.map(r => `<div id="res_${r.k}"><b style="color:${r.col}">0</b><small>${r.name}</small></div>`).join('');
-  $('wbar').innerHTML = WPN.map((w, i) => `<button data-w="${i}"><span><kbd>${i + 1}</kbd>${w.name}</span><small id="wb${i}"></small></button>`).join('');
-  $('wbar').querySelectorAll('button').forEach(b => b.addEventListener('pointerdown', e => { e.stopPropagation(); if (inGame()) act('wpn', +b.dataset.w); }));
+  UI.wbK = '';
+  // (round 22) the item bar: one slot per kind of placeable; the same slot again (or the chips above it) switches material
   const bb = $('bbar'); bb.innerHTML = '';
-  PAL.forEach((id, n) => {
-    const Bb = B[id], b = document.createElement('button'); b.dataset.b = id;
-    b.innerHTML = `<span class="k kbd">${(n + 1) % 10}</span>`; b.appendChild(blockIcon(id));
-    const nm = document.createElement('span'); nm.textContent = Bb.name; b.appendChild(nm);
-    const sm = document.createElement('small'); sm.textContent = costText(Bb.cost); b.appendChild(sm);
-    b.addEventListener('pointerdown', e => { e.stopPropagation(); selBlock(id); });
+  ITEMS.forEach((g, n) => {
+    const b = document.createElement('button'); b.dataset.g = n;
+    b.innerHTML = `<span class="k kbd">${n + 1}</span><i class="ic"></i><span class="nm">${g.name}</span><small></small>` + (g.ids.length > 1 ? `<em class="vd">${g.ids.map(() => '·').join('')}</em>` : '');
+    b.addEventListener('pointerdown', e => { e.stopPropagation(); selItem(n); });
     bb.appendChild(b);
   });
   const dm = document.createElement('button'); dm.id = 'bDemo'; dm.innerHTML = '<span style="font-size:20px">✕</span><span>拆除</span><small class="kbd">右键 / X</small>';
   dm.addEventListener('pointerdown', e => { e.stopPropagation(); const me = W.p[ME]; me.demo = !me.demo; uiBuildBar(); sfx('click'); }); bb.appendChild(dm);
-  const ro = document.createElement('button'); ro.id = 'bRot'; ro.innerHTML = '<span style="font-size:18px">↻</span><span>楼梯朝向</span><small class="kbd">R</small>';
-  ro.addEventListener('pointerdown', e => { e.stopPropagation(); rotStairs(); }); bb.appendChild(ro);
   const cf = document.createElement('button'); cf.id = 'bConf'; cf.innerHTML = '<span style="font-size:16px">✓✓</span><span>二次确认</span><small></small>';
   cf.addEventListener('pointerdown', e => { e.stopPropagation(); SET.bconf = SET.bconf ? 0 : 1; saveSet(); uiBuildBar(); toast(SET.bconf ? '二次确认：开（先预览，点 ✓ 才建）' : '二次确认：关（点了就建）'); sfx('click'); }); bb.appendChild(cf);
-  const ex = document.createElement('button'); ex.innerHTML = '<span style="font-size:18px">↩</span><span>退出</span><small class="kbd">B</small>';
+  const ex = document.createElement('button'); ex.id = 'bExit'; ex.innerHTML = '<span style="font-size:18px">↩</span><span>收起</span><small class="kbd">B</small>';
   ex.addEventListener('pointerdown', e => { e.stopPropagation(); toggleBuild(false); }); bb.appendChild(ex);
 }
 function uiBuildBar() {
   if (!W) return; const me = W.p[ME];
   $('bbar').classList.toggle('hidden', !me.build); $('binfo').classList.toggle('hidden', !me.build);
   $('wbar').classList.toggle('hidden', !!me.build);
-  $('bbar').querySelectorAll('button[data-b]').forEach(b => { const id = +b.dataset.b; b.classList.toggle('sel', !me.demo && me.sel === id); b.classList.toggle('na', !affordable(W.res, B[id].cost)); b.classList.toggle('lock', !hasBP(id)); b.querySelector('small').textContent = hasBP(id) ? costText(B[id].cost) : '🔒 要蓝图'; });
+  const G = UI.gsel = UI.gsel || {};
+  $('bbar').querySelectorAll('button[data-g]').forEach(b => { const g = ITEMS[+b.dataset.g], on = !me.demo && itemOf(me.sel) === g, open = g.ids.filter(id => hasBP(id)), id = on ? me.sel : open.includes(G[g.k]) ? G[g.k] : (open[0] || g.ids[0]);
+    if (b.dataset.cur !== String(id)) { b.dataset.cur = id; const ic = b.querySelector('.ic'); ic.innerHTML = ''; ic.appendChild(blockIcon(id)); b.querySelector('small').textContent = (g.ids.length > 1 ? B[id].name + ' ' : '') + costText(B[id].cost); const vd = b.querySelector('.vd'); if (vd) vd.innerHTML = g.ids.map(q => q === id ? '●' : '○').join(''); }
+    b.classList.toggle('sel', on); b.classList.toggle('na', !affordable(W.res, B[id].cost)); b.classList.toggle('lock', !open.length); });
+  uiVariants(me);
   $('bDemo').classList.toggle('sel', !!me.demo);
   $('tBuild').classList.toggle('on', !!me.build); document.body.classList.toggle('building', !!me.build);
   const Bs = B[me.sel];
   const why = BUILD_HOVER && !BUILD_HOVER.ok && BUILD_HOVER.why ? ' · ' + BUILD_HOVER.why : '';
   $('binfo').textContent = (me.demo ? '拆除：点（或拖过）要拆的方块，' + (SET.bconf ? '再点 ✓ 确认，' : '') + '退还一半材料（按血量折算）' : Bs.name + ' · ' + costText(Bs.cost) + ' · ' + Bs.tip + (Bs.hp ? ' · 耐久 ' + Bs.hp : '')) + ' · 建在 ' + (buildL() + 1) + 'F' + why;
-  $('bRot').classList.toggle('hidden', me.sel !== 6 || me.demo);
   const cf = $('bConf'); if (cf) { cf.classList.toggle('sel', !!SET.bconf); cf.lastElementChild.textContent = SET.bconf ? '开' : '关'; }
+}
+// the material / variant chips over the item bar (only for slots with more than one)
+function uiVariants(me) {
+  const el = $('bvar'), g = itemOf(me.sel), show = !!me.build && !me.demo && g.ids.length > 1;
+  el.classList.toggle('hidden', !show); if (!show) return;
+  const key = me.sel + ':' + g.ids.map(id => (hasBP(id) ? 1 : 0) + (affordable(W.res, B[id].cost) ? 2 : 0)).join(''); if (UI.bvK === key) return; UI.bvK = key;
+  el.innerHTML = g.ids.map(id => `<button data-v="${id}" class="${id === me.sel ? 'sel' : ''}${hasBP(id) ? '' : ' lock'}${affordable(W.res, B[id].cost) ? '' : ' na'}"><b>${B[id].name}</b><small>${hasBP(id) ? costText(B[id].cost) : '要蓝图'}</small></button>`).join('');
+  el.querySelectorAll('button').forEach(b => b.addEventListener('pointerdown', e => { e.stopPropagation(); const id = +b.dataset.v; (UI.gsel = UI.gsel || {})[g.k] = id; selBlock(id); }));
 }
 // the confirm bar floats next to the waiting plan
 function uiPlan() {
@@ -148,14 +158,19 @@ function hudTick(dt) {
     return `<div class="pbar p${p.i % 2}${p.i === ME ? '' : ' small'}"><div class="nm"><span>${p.name}${p.i === ME && W.p.length > 1 ? '（你）' : ''}</span><i>${st}</i></div><div class="bar"><i style="width:${p.dead || p.gone ? 0 : p.down ? 100 * p.downT / BAL.downTime : 100 * p.hp / p.maxHp}%;${p.down ? 'background:#7a2a24' : ''}"></i></div></div>`;
   }).join('');
   const wi = me.down ? 0 : me.wpn, w = WPN[wi];
-  $('wName').textContent = me.build ? '建造中' : w.name;
+  $('wName').textContent = me.build ? '拿着道具' : w.name;
   $('wMag').textContent = me.build ? '' : me.mag[wi];
   $('wRes').textContent = me.build ? '' : '/ ' + (w.inf ? '∞' : me.ammo[wi]);
   const rl = me.reloadT > 0 ? 1 - me.reloadT / WPN[me.reloadW != null ? me.reloadW : wi].reload : me.reloadVis > 0 ? 1 - me.reloadVis / w.reload : me.medT > 0 ? 1 - me.medT / (me.selfRev ? 3 : BAL.healTime) : 0;
   $('wRl').style.width = (rl * 100) + '%';
   $('iNade').textContent = me.nades; $('iMed').textContent = me.meds; $('iKill').textContent = me.kills;
   uiKeys(me);
-  WPN.forEach((w2, i) => { const b = $('wbar').children[i]; b.classList.toggle('hidden', !me.owned[i]); b.classList.toggle('sel', i === me.wpn); $('wb' + i).textContent = (me.rlBg && me.rlBg[i] > 0 ? '⟳ ' : '') + (w2.inf ? '∞' : me.mag[i] + '/' + me.ammo[i]); });
+  const q = quickList(me), qk = q.join(','); if (UI.wbK !== qk) { UI.wbK = qk;
+    $('wbar').innerHTML = q.map((k, j) => `<button data-w="${k}"><span><kbd>${j + 1}</kbd>${WPN[k].name}</span><small id="wb${k}"></small></button>`).join('') + `<button id="wbKit" class="kit"><span><kbd>I</kbd>装备</span><small>换快捷枪</small></button>`;
+    $('wbar').querySelectorAll('button[data-w]').forEach(b => b.addEventListener('pointerdown', e => { e.stopPropagation(); if (inGame()) act('wpn', +b.dataset.w); }));
+    $('wbKit').addEventListener('pointerdown', e => { e.stopPropagation(); openKit(); }); }
+  q.forEach(i => { const b = $('wbar').querySelector('[data-w="' + i + '"]'), w2 = WPN[i]; b.classList.toggle('sel', i === me.wpn); $('wb' + i).textContent = (me.rlBg && me.rlBg[i] > 0 ? '⟳ ' : '') + (w2.inf ? '∞' : me.mag[i] + '/' + me.ammo[i]); });
+  if (!q.includes(me.wpn) && !me.build) { const b = $('wbKit'); if (b) b.lastElementChild.textContent = '在用：' + w.name; }
   // phase
   const ph = $('phase');
   if (W.phase === 'day') {
@@ -190,8 +205,8 @@ function hudTick(dt) {
     const key = INP.touch ? '点「交互」' : '按 F ';
     if (tgt) { ptxt = key + tgt.name; prog = me.useT / tgt.t; }
     else if (nearBench(me)) ptxt = (INP.touch ? '点「交互」' : '按 F ') + '打开工作台';
-    else if (canCraft(me) && !INP.touch && W.t - (UI.craftHintT || -99) < 4) ptxt = '在建筑里：按 C 制作 / 买弹药';
-    else if (!me.meds && W.p.some(q => q !== me && q.dead && !q.gone && q.L === me.L && Math.hypot(q.x - me.x, q.y - me.y) < 1.6)) ptxt = '要有医疗包才能把队友救回来（搜背包、柜子，或在「制作」里做）';
+    else if (canCraft(me) && !INP.touch && W.t - (UI.craftHintT || -99) < 4) ptxt = '在建筑里：按 C 逛商店（枪、弹药、盾、载具）';
+    else if (!me.meds && W.p.some(q => q !== me && q.dead && !q.gone && q.L === me.L && Math.hypot(q.x - me.x, q.y - me.y) < 1.6)) ptxt = '要有医疗包才能把队友救回来（搜背包、柜子，或在「商店」里买）';
     if (me.down) ptxt = me.meds > 0 ? (INP.touch ? '点「医疗」' : '按 H ') + '用医疗包自救' : (W.p.length > 1 ? '等待队友来扶你…' : '');
     if (me.medT > 0 && me.selfRev) { ptxt = '正在自救…'; prog = 1 - me.medT / 3; }
   }
@@ -200,15 +215,18 @@ function hudTick(dt) {
     sh.classList.toggle('on', on);
     if (on) { const R = STICK_R(), x = Math.max(R + 22, Math.min(VW * 0.16, 170)), y = VH - Math.max(R + 40, Math.min(VH * 0.24, 190)); sh.style.left = x + 'px'; sh.style.top = y + 'px'; sh.style.width = sh.style.height = R * 2 + 'px'; }
     const tgt = !me.dead && !me.build && !me.down ? useTarget(me) : null, bench = !tgt && !me.build && canCraft(me);
-    $('tCraft').classList.toggle('hidden', !canCraft(me) || !!me.build); const pil = !me.ride && !(me.pass >= 0) && pillionFor(me); $('tRide').classList.toggle('hidden', !(me.veh || me.pass >= 0 || pil) || !!me.build); $('tRide').classList.toggle('on', !!me.ride || me.pass >= 0); $('tRide').textContent = me.ride || me.pass >= 0 ? '下车' : pil ? '坐后座' : (me.veh === 2 ? '骑摩托' : '骑车');
-    const u = $('tUse'); u.classList.toggle('hidden', !(tgt || bench));
-    if (tgt) { u.firstElementChild.textContent = INP.useLatch ? '进行中 · 再点停' : '点一下'; u.lastElementChild.textContent = tgt.name; u.style.setProperty('--p', clamp(me.useT / tgt.t, 0, 1)); }
-    else if (bench) { u.firstElementChild.textContent = '点一下'; u.lastElementChild.textContent = '制作 / 购买'; u.style.setProperty('--p', 0); }
-    if (tgt || bench) ptxt = ''; else if (me.down && me.meds > 0) ptxt = '点「自救」用医疗包站起来';
+    $('tCraft').classList.toggle('hidden', !canCraft(me) || !!me.build); const pil = !me.ride && !(me.pass >= 0) && pillionFor(me), tr = $('tRide');
+    tr.classList.toggle('hidden', !(me.vehs || me.pass >= 0 || pil) || !!me.build); tr.classList.toggle('on', !!me.ride || me.pass >= 0);
+    tr.textContent = me.ride || me.pass >= 0 ? '下车' : pil ? '坐后座' : (VEH[me.veh] ? VEH[me.veh].name : '载具');
+    // (round 22) the context key on the ring: what F would do, else get off / jump
+    const u = $('tUse'), useOK = tgt && !(me.ride && !(VEH[me.veh] && VEH[me.veh].search)); u.classList.toggle('hidden', !!me.dead);
+    u.classList.toggle('hot', !!useOK); u.style.setProperty('--p', useOK ? clamp(me.useT / tgt.t, 0, 1) : 0);
+    u.firstElementChild.textContent = useOK ? (INP.useLatch ? '再点停' : '交互') : ''; u.lastElementChild.textContent = useOK ? shortUse(tgt.name) : me.ride || me.pass >= 0 ? '下车' : '跳';
+    if (useOK) ptxt = tgt.name + (INP.useLatch ? ' · 进行中' : ''); else if (me.down && me.meds > 0) ptxt = '点「自救」用医疗包站起来';
     const md = $('tMed'), showMed = me.meds > 0 && !me.dead && me.medT <= 0 && (me.down || me.hp < me.maxHp * 0.7);
     md.classList.toggle('hidden', !showMed); md.textContent = (me.down ? '自救' : '用医疗包') + ' ×' + me.meds;
-    $('tWpn').firstElementChild.textContent = w.name; $('tWpn').lastElementChild.textContent = w.inf ? '∞' : me.mag[wi] + ' / ' + me.ammo[wi];
-    $('tWpn').classList.toggle('hidden', me.down || me.owned.filter(Boolean).length < 2);
+    $('tWpn').firstElementChild.textContent = w.name; $('tWpn').lastElementChild.textContent = w.inf ? '∞' : me.mag[wi] + '/' + me.ammo[wi];
+    $('tWpn').classList.toggle('dim', me.down || me.owned.filter(Boolean).length < 2);
     $('tNadeN').textContent = me.nades; $('tNade').classList.toggle('empty', !me.nades);
     $('tFire').style.setProperty('--rl', rl);
     $('tLLbl').textContent = ((me.build && BUILD_HOVER ? BUILD_HOVER.L : buildL()) + 1) + 'F';
@@ -219,6 +237,8 @@ function hudTick(dt) {
   if (me.build) uiBuildBar();
   uiView();
 }
+// a short label for the round context key ('搜索汽车残骸' -> '搜索')
+function shortUse(n) { const m = n.match(/^(搜索|扶起|用医疗包救回|砍树|采石|拆废铁|搬原木|砍灌木|启动|打开|装填|拆)/); return m ? (m[1] === '用医疗包救回' ? '救人' : m[1]) : n.slice(0, 4); }
 function uiView() {
   if (!W) return; const vl = viewL();
   $('vLbl').textContent = (VIEW.auto && vl >= ML - 1 ? '全部' : (vl + 1) + 'F') + ' ' + (VIEW.auto ? '自动' : '手动');
@@ -227,20 +247,71 @@ function uiView() {
 /* craft */
 function openCraft() {
   if (!W || W.over) return; const me = W.p[ME];
-  if (!canCraft(me)) { toast('进到任何建筑里（或回营地）才能制作、买弹药'); return; }
+  if (!canCraft(me)) { toast('进到任何建筑里（或回营地）才能逛商店'); return; }
   renderCraft(); $('craft').classList.remove('hidden'); sfx('click');
 }
 function closeCraft() { $('craft').classList.add('hidden'); }
+// (round 22) the shop: tabs by kind; a gun and its ammo share one card; vehicles have their own tab
+const SHOP_TABS = [['gun', '武器 · 弹药'], ['item', '道具'], ['veh', '载具'], ['upg', '强化']];
+function shopBuy(c) {
+  const me = W.p[ME], why = craftBlocked(me, c);
+  if (why) { toast(why, '#ff8a7a'); sfx('deny'); return; }
+  act('craft', c.id); sfx('click');
+  if (NETROLE === 'guest') { for (const k in c.cost) W.res[k] -= c.cost[k]; if (c.wpn) me.owned[c.wpn] = 1; if (c.veh) { me.vehs = (me.vehs || 0) | 1 << c.veh; me.veh = c.veh; } if (c.shield) me.shield = BAL.shieldHp; }
+  setTimeout(() => { if (!$('craft').classList.contains('hidden')) renderCraft(); }, NETROLE === 'guest' ? 250 : 0);
+}
+function shopBtn(c, label) {
+  const me = W.p[ME], why = craftBlocked(me, c), hard = why && why !== '材料不足';
+  return `<button class="sbtn${why ? ' no' : ''}" data-c="${c.id}" ${hard ? 'disabled' : ''}><b>${label || c.name}</b><span>${hard ? why : costText(c.cost) + (why ? ' · 不够' : '')}</span></button>`;
+}
 function renderCraft() {
-  const me = W.p[ME];
-  $('clist').innerHTML = CRAFT.map(c => { const why = craftBlocked(me, c); return `<button class="ci${why ? ' no' : ''}" data-c="${c.id}" ${why && why !== '材料不足' ? 'disabled' : ''}><b>${c.name}</b><small>${c.desc || '&nbsp;'}</small><span class="c">${why && why !== '材料不足' ? why : costText(c.cost)}</span></button>`; }).join('');
-  $('clist').querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
-    const c = CRAFT.find(c => c.id === b.dataset.c), why = craftBlocked(W.p[ME], c);
-    if (why) { toast(why, '#ff8a7a'); sfx('deny'); return; }
-    act('craft', c.id);
-    if (NETROLE === 'guest') { for (const k in c.cost) W.res[k] -= c.cost[k]; if (c.wpn) { W.p[ME].owned[c.wpn] = 1; } }
-    setTimeout(() => { if (!$('craft').classList.contains('hidden')) renderCraft(); }, NETROLE === 'guest' ? 250 : 0);
-  }));
+  const me = W.p[ME], tab = SET.shopTab && SHOP_TABS.some(t => t[0] === SET.shopTab) ? SET.shopTab : 'gun';
+  $('ctabs').innerHTML = SHOP_TABS.map(([k, n]) => `<button data-t="${k}" class="${k === tab ? 'sel' : ''}">${n}</button>`).join('');
+  $('ctabs').querySelectorAll('button').forEach(b => b.onclick = () => { SET.shopTab = b.dataset.t; saveSet(); renderCraft(); sfx('click'); });
+  $('cres').textContent = '全队材料：' + RES.map(r => r.name + ' ' + W.res[r.k]).join(' · ');
+  let h = '';
+  if (tab === 'gun') {
+    h = WPN.map((w, k) => {
+      const buy = CRAFT.find(c => c.wpn === k), am = CRAFT.find(c => c.ammo && c.ammo[0] === k), own = me.owned[k];
+      const st = own ? (w.inf ? '已有 · 子弹无限' : '已有 · ' + me.mag[k] + ' / ' + me.ammo[k]) : '没有';
+      const btns = !own && buy ? shopBtn(buy, '造这把枪') : own && am ? shopBtn(am, '买' + am.name) : own && w.inf ? '<span class="sfree">不用买子弹</span>' : '';
+      return `<div class="sc${own ? ' own' : ''}"><div class="sh"><b>${w.name}</b><em>${st}</em></div><small>${w.tag || ''}</small><div class="sb">${btns}</div></div>`;
+    }).join('');
+  } else if (tab === 'item') {
+    const st = { nade: '带着 ' + me.nades + ' / 6', med: '带着 ' + me.meds + ' / 3', shield: me.shield > 0 ? '耐久 ' + Math.ceil(me.shield) + ' / ' + BAL.shieldHp : '没有' };
+    h = CRAFT.filter(c => c.cat === 'item').map(c => `<div class="sc"><div class="sh"><b>${c.name}</b><em>${st[c.id] || ''}</em></div><small>${c.desc}</small><div class="sb">${shopBtn(c, c.shield && me.shield > 0 ? '修满' : '买')}</div></div>`).join('');
+    h += `<div class="sgrp">放置类道具 · 不用先买：点「去放」，放一个扣一份材料（电脑按 B，触屏点「道具」）</div>`;
+    h += ITEMS.map((g, n) => `<div class="sc mini"><div class="sh"><b>${g.name}</b><em>${g.ids.map(id => B[id].name + (hasBP(id) ? '' : '🔒')).join(' / ')}</em></div><small>${B[g.ids[0]].tip}</small><div class="sb"><button class="sbtn go" data-g="${n}"><b>去放</b><span>${costText(B[g.ids.find(id => hasBP(id)) || g.ids[0]].cost)} 起</span></button></div></div>`).join('');
+  } else if (tab === 'veh') {
+    h = `<div class="sgrp">选一辆当默认：T（触屏点「载具」）就上这辆；Shift+T / 长按「载具」换车</div>`;
+    h += CRAFT.filter(c => c.cat === 'veh').map(c => { const v = c.veh, own = (me.vehs || 0) >> v & 1, def = own && me.veh === v;
+      return `<div class="sc${own ? ' own' : ''}"><div class="sh"><b>${c.name}</b><em>${def ? '默认 ✓' : own ? '已有' : '速度 ×' + VEH[v].spd}</em></div><small>${c.desc}</small><div class="sb">${own ? (def ? '<span class="sfree">按 T 上车</span>' : `<button class="sbtn vdef" data-v="${v}"><b>设为默认</b><span>T 就上这辆</span></button>`) : shopBtn(c, '造')}</div></div>`; }).join('');
+  } else {
+    h = CRAFT.filter(c => c.cat === 'upg').map(c => `<div class="sc"><div class="sh"><b>${c.name}</b><em>${W.upg} / 5 级</em></div><small>${c.desc}</small><div class="sb">${shopBtn(c, '升级')}</div></div>`).join('');
+  }
+  $('clist').innerHTML = h;
+  $('clist').querySelectorAll('button[data-c]').forEach(b => b.addEventListener('click', () => shopBuy(CRAFT.find(c => c.id === b.dataset.c))));
+  $('clist').querySelectorAll('button[data-g]').forEach(b => b.addEventListener('click', () => { closeCraft(); selItem(+b.dataset.g); }));
+  $('clist').querySelectorAll('button.vdef').forEach(b => b.addEventListener('click', () => { const v = +b.dataset.v; act('vdef', v); if (NETROLE === 'guest') me.veh = v; sfx('click'); setTimeout(renderCraft, NETROLE === 'guest' ? 250 : 0); }));
+}
+/* (round 22) 装备: pick the 4 quick weapons and the default vehicle; works anywhere */
+function openKit() { if (!W || W.over) return; UI.kitSlot = UI.kitSlot || 0; renderKit(); $('kit').classList.remove('hidden'); toggleWpick(false); sfx('click'); }
+function closeKit() { $('kit').classList.add('hidden'); }
+function renderKit() {
+  const me = W.p[ME], q = quickList(me), sl = clamp(UI.kitSlot || 0, 0, 3);
+  $('kslots').innerHTML = [0, 1, 2, 3].map(j => `<button data-s="${j}" class="${j === sl ? 'sel' : ''}"><kbd>${j + 1}</kbd><b>${q[j] != null ? WPN[q[j]].name : '空'}</b></button>`).join('');
+  $('kwpn').innerHTML = WPN.map((w, k) => { const own = me.owned[k], j = q.indexOf(k);
+    return `<button data-w="${k}" class="kw${own ? '' : ' no'}${k === me.wpn ? ' cur' : ''}" ${own ? '' : 'disabled'}><b>${w.name}${j >= 0 ? ' <i>' + (j + 1) + '</i>' : ''}</b><small>${own ? (w.inf ? '∞' : me.mag[k] + ' / ' + me.ammo[k]) : '商店里造'}</small><span>${w.tag || ''}</span></button>`; }).join('');
+  $('kveh').innerHTML = [1, 2, 3, 4].map(v => { const own = (me.vehs || 0) >> v & 1;
+    return `<button data-v="${v}" class="${own ? '' : 'no'}${own && me.veh === v ? ' sel' : ''}" ${own ? '' : 'disabled'}><b>${VEH[v].name}</b><small>${own ? (me.veh === v ? '默认 ✓' : '设为默认') : '商店里造'}</small></button>`; }).join('');
+  $('kshield').textContent = me.shield > 0 ? '防暴盾 耐久 ' + Math.ceil(me.shield) + ' / ' + BAL.shieldHp + '（正面挨打少受 75%）' : '没有防暴盾（商店 → 道具）';
+  $('kslots').querySelectorAll('button').forEach(b => b.onclick = () => { UI.kitSlot = +b.dataset.s; renderKit(); sfx('click'); });
+  $('kwpn').querySelectorAll('button[data-w]').forEach(b => b.onclick = () => {
+    const k = +b.dataset.w, cur = quickList(me), j = cur.indexOf(k), s0 = clamp(UI.kitSlot || 0, 0, 3);
+    if (j >= 0 && j !== s0) { cur[j] = cur[s0]; cur[s0] = k; } else if (j < 0) cur[s0] = k;
+    SET.quick = cur.filter(x => x != null); saveSet(); UI.kitSlot = (s0 + 1) % 4; UI.wbK = ''; renderKit(); sfx('click');
+  });
+  $('kveh').querySelectorAll('button[data-v]').forEach(b => b.onclick = () => { const v = +b.dataset.v; act('vdef', v); if (NETROLE === 'guest') me.veh = v; sfx('click'); setTimeout(renderKit, NETROLE === 'guest' ? 250 : 0); });
 }
 /* pause / help / over */
 function togglePause(force) {
@@ -248,6 +319,7 @@ function togglePause(force) {
   const el = $('pause'), open = force != null ? force : el.classList.contains('hidden');
   if (!$('help').classList.contains('hidden')) { closeHelp(); return; }
   if (!$('craft').classList.contains('hidden')) { closeCraft(); return; }
+  if (!$('kit').classList.contains('hidden')) { closeKit(); return; }
   el.classList.toggle('hidden', !open);
   $('pauseT').textContent = NETROLE === 'solo' ? '暂停' : '菜单（游戏继续中）'; $('pQual').textContent = qualLabel(); $('pAssist').textContent = '辅助瞄准：' + assistLv().name;
   $('pHub').classList.toggle('hidden', !HUB);
@@ -337,7 +409,7 @@ function showOver(e) {
   $('oAgain').classList.toggle('hidden', !(solo || host)); $('oLobby').classList.toggle('hidden', !host);
   $('oEndless').classList.toggle('hidden', !(e.v === 'win' && (solo || host)));
   $('oHub').classList.toggle('hidden', !HUB);
-  closeCraft(); $('pause').classList.add('hidden');
+  closeCraft(); closeKit(); $('pause').classList.add('hidden');
   if (W.p[ME] && W.p[ME].build) toggleBuild(false);
 }
 function initUI() {
@@ -358,7 +430,7 @@ function initUI() {
   $('lReady').onclick = () => { NET.ready = !NET.ready; netSendCtl({ t: 'ready', v: NET.ready }); lobbyUI(); sfx('ready'); };
   $('lStart').onclick = () => hostStart();
   $('lLeave').onclick = () => { netLeave(); showScreen('title'); };
-  $('craftClose').onclick = closeCraft;
+  $('craftClose').onclick = closeCraft; $('kitClose').onclick = closeKit;
   $('resumeBtn').onclick = () => togglePause(false);
   confirmBtn($('pTitle'), () => { saveGame(true); netLeave(); W = null; STATE.paused = false; showScreen('title'); renderBest(); });
   $('pSave').onclick = () => { if (NETROLE === 'guest') { toast('联机时由房主存档'); return; } saveGame(false); sfx('click'); };

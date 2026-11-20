@@ -401,12 +401,20 @@ function supportIf(x, y, L, id) {
 }
 // can block `id` (with stairs dir) go into cell (x,y,L)? returns '' or a reason
 // which way can a ladder in (x,y,L) face? the preferred facing if it works, else any wall next to it
+// (round 22) a ladder picks its own side: the wall with somewhere to stand on top wins, so it doesn't matter which way you face
 function ladderDir(x, y, L, pref) {
-  for (const d of [pref, 0, 1, 2, 3]) if (d != null && !canPlace(x, y, L, 6, d)) return d;
-  return pref;
+  let best = pref, bs = -1;
+  for (let d = 0; d < 4; d++) {
+    if (canPlace(x, y, L, 6, d)) continue;
+    const [dx, dy] = DIRS[d]; let s = 1 + (d === pref ? 0.1 : 0);
+    if (standable(x + dx, y + dy, L + 1, 'p')) s += 2;
+    if (standable(x - dx, y - dy, L, 'p')) s += 0.5;                       // room to step on at the foot
+    if (s > bs) { bs = s; best = d; }
+  }
+  return best;
 }
 function canPlace(x, y, L, id, dir) {
-  if (!inMap(x, y) || !(modeDef().anyBuild || inZone(x, y))) return '只能在营地周围的建造区（黄框）内建造';
+  if (!inMap(x, y) || !(modeDef().anyBuild || inZone(x, y) || (B[id] && B[id].any))) return '只能在营地周围的建造区（黄框）内建造';
   if (!hasBP(id)) return '还没有「' + B[id].name + '」的蓝图：去搜箱子、清理丧尸占着的楼';
   if (L < 0 || L >= ML - 1) return '太高了';
   const g = gAt(x, y), i = ci(x, y, L), Bi = B[id];

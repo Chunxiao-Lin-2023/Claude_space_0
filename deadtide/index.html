@@ -85,7 +85,7 @@ input:focus{border-color:var(--amber)}
 #hTR{position:absolute;right:calc(10px + var(--sa-r));top:calc(10px + var(--sa-t));display:flex;flex-direction:column;align-items:flex-end;gap:6px}
 .res{display:flex;gap:6px}.res div{display:flex;flex-direction:column;align-items:center;min-width:46px;padding:4px 6px}.res b{font-family:var(--num);font-size:17px}.res small{font-size:11px;color:var(--sub)}
 .res div.flash{animation:fl .5s}@keyframes fl{0%{background:rgba(255,215,106,.35)}100%{background:transparent}}
-.tbtn{display:flex;gap:6px}.tbtn button{min-height:40px;min-width:44px;padding:4px 10px;font-size:15px}
+.tbtn{display:flex;gap:6px;position:relative}.tbtn button{min-height:40px;min-width:44px;padding:4px 10px;font-size:15px}
 #mini{width:128px;height:128px;padding:0;display:block;image-rendering:pixelated;border-radius:50%}
 #viewBox{display:flex;flex-direction:column;gap:5px;width:168px;pointer-events:auto}
 #viewBox .vrow{display:flex;gap:4px;align-items:center;justify-content:space-between}
@@ -143,24 +143,37 @@ body.touch.building #tctl .fight,body.touch:not(.building) #tctl .bld{display:no
 #tctl .tb small{font-family:var(--num);font-size:11px;color:var(--sub)}
 #tctl .tb.on,#tWpn.on,#tUse.on{background:rgba(255,179,71,.38)}
 #tctl .tb.empty{opacity:.45}
-#tJump{--a:199deg}#tReload{--a:162deg}#tShove{--a:125deg}#tNade{--a:88deg}
-#tJump,#tReload,#tShove,#tNade{right:calc(var(--fs) / 2 - cos(var(--a)) * var(--d) - var(--tb) / 2);bottom:calc(var(--fs) / 2 + sin(var(--a)) * var(--d) - var(--tb) / 2)}
+/* (round 22) one fire button with four keys around it: weapon (tap = next, drag = fan), grenade, knife, context (use / jump / get off) */
+#tWpn{--a:78deg}#tNade{--a:118deg}#tShove{--a:158deg}#tUse{--a:198deg}
+#tWpn,#tNade,#tShove,#tUse{right:calc(var(--fs) / 2 - cos(var(--a)) * var(--d) - var(--tb) / 2);bottom:calc(var(--fs) / 2 + sin(var(--a)) * var(--d) - var(--tb) / 2)}
+#tctl .old{display:none!important}
 #tShove{border-color:rgba(255,200,150,.6)}
 #bconf{position:fixed;z-index:8;display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:12px;background:rgba(14,16,20,.88);border:1px solid rgba(125,255,138,.55);box-shadow:0 6px 20px rgba(0,0,0,.45);font-size:13px;color:#e9e2d0;white-space:nowrap}
 #bconf.demo{border-color:rgba(255,110,90,.7)}#bconf button{min-height:40px;padding:6px 12px;font-size:14px}#bcOk{background:#2f7a3a;border-color:#7dff8a}#bconf.demo #bcOk{background:#8a2a22;border-color:#ff8a7a}
 #bconf #bcTxt{max-width:220px;overflow:hidden;text-overflow:ellipsis}
 @media (max-width:700px){#bconf #bcTxt{display:none}}
-#tWpn{position:absolute;right:-6px;bottom:calc(var(--fs) / 2 + var(--d) + var(--tb) / 2 + 12px);min-height:38px;min-width:96px;padding:3px 10px;border-radius:19px;display:flex;flex-direction:column;align-items:center;line-height:1.1;
-  background:rgba(20,18,16,.72);pointer-events:auto;touch-action:none}
-#wpick{position:fixed;z-index:9;display:flex;flex-direction:column;gap:6px;pointer-events:auto}
-#wpick button{min-width:132px;min-height:44px;display:flex;justify-content:space-between;align-items:center;gap:10px;padding:6px 14px;border-radius:14px;background:rgba(14,16,20,.9)}
-#wpick button.sel{border-color:var(--amber);background:rgba(255,179,71,.3)}#wpick b{font-size:15px}#wpick span{font-family:var(--num);font-size:13px;color:#ffe6c0}
-#tWpn b{font-size:13px}#tWpn span{font-family:var(--num);font-size:13px;color:#ffe6c0}
-#tWpn::before{content:"⇄";position:absolute;left:8px;top:50%;transform:translateY(-50%);font-size:12px;color:var(--sub)}
-#tUse{position:absolute;right:calc(var(--fs) / 2 + var(--d) + var(--tb) / 2 + 14px);bottom:calc(var(--fs) / 2 - 30px);min-width:108px;min-height:60px;padding:4px 12px;border-radius:14px;
-  display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.15;pointer-events:auto;touch-action:none;border-color:var(--amber);
-  background:linear-gradient(90deg,rgba(255,179,71,.42) calc(var(--p,0) * 100%),rgba(20,18,16,.75) 0)}
-#tUse b{font-size:11px;font-weight:400;color:var(--sub)}#tUse span{font-size:15px;font-weight:700;white-space:nowrap}
+#tWpn{border-color:rgba(255,215,150,.7)}#tWpn b{font-size:12px;line-height:1.05;max-width:90%;overflow:hidden;white-space:nowrap}#tWpn span{font-family:var(--num);font-size:10.5px;color:#ffe6c0}
+#tWpn.dim{opacity:.5}
+#tUse b{font-size:9.5px;font-weight:400;color:var(--sub);line-height:1}#tUse span{font-size:13px;font-weight:700;white-space:nowrap}
+#tUse.hot{border-color:var(--amber);background:conic-gradient(rgba(255,179,71,.55) calc(var(--p,0) * 360deg),rgba(70,50,20,.85) 0);box-shadow:0 0 12px rgba(255,179,71,.45)}
+/* the weapon fan: round chips on an arc around the weapon key; slide onto one and let go */
+#wpick{position:fixed;inset:0;z-index:9;pointer-events:none}
+#wpick .wo{position:absolute;width:66px;height:66px;margin:-33px 0 0 -33px;padding:0;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;background:rgba(14,16,20,.92);pointer-events:auto;line-height:1.05;transition:transform .08s}
+#wpick .wo b{font-size:12.5px}#wpick .wo span{font-family:var(--num);font-size:10.5px;color:#ffe6c0}
+#wpick .wo.q{border-color:rgba(255,215,150,.55)}#wpick .wo.x{background:rgba(30,40,52,.92)}#wpick .wo.x span{color:var(--sub)}
+#wpick .wo.sel{border-color:var(--amber);background:rgba(120,80,20,.9)}
+#wpick .wo.hi{transform:scale(1.18);border-color:#fff;background:rgba(255,179,71,.6)}
+/* guide bubbles (the ? button / first game): a short line by each control, gone on the next tap */
+body.guide [data-g]{position:relative}
+body.guide #tctl [data-g],body.guide #tFire{position:absolute}
+body.guide [data-g]::after{content:attr(data-g);position:absolute;z-index:12;right:50%;bottom:calc(100% + 6px);transform:translateX(50%);white-space:nowrap;padding:3px 7px;border-radius:8px;background:rgba(255,236,190,.95);color:#2a1e0e;font-size:11.5px;font-weight:600;line-height:1.3;pointer-events:none;box-shadow:0 2px 8px rgba(0,0,0,.4)}
+body.guide #tFire::after{content:attr(data-g);width:auto;height:auto;font-size:11px;padding:2px 6px;color:#2a1e0e;white-space:nowrap;inset:auto;left:50%;right:auto;bottom:8px;top:auto;transform:translateX(-50%);-webkit-mask:none;mask:none;background:rgba(255,236,190,.95);border-radius:8px}
+#gcard{display:none;position:absolute;right:0;top:calc(100% + 6px);width:min(420px,70vw);padding:8px 10px;border-radius:10px;background:rgba(255,236,190,.96);color:#2a1e0e;font-size:12.5px;line-height:1.55;z-index:12;pointer-events:none;box-shadow:0 4px 14px rgba(0,0,0,.45)}
+#gcard b{color:#7a4a10;margin-right:4px}#gcard small{color:#6a5a40}
+body.guide #gcard{display:block}
+body.guide #tUse::after,body.guide #tShove::after{right:auto;left:auto;bottom:auto;top:50%;transform:translate(calc(-100% - 8px),-50%)}
+body.guide #stickHint::after{content:"左半屏拖动 = 走";position:absolute;top:calc(100% + 6px);white-space:nowrap;padding:3px 7px;border-radius:8px;background:rgba(255,236,190,.95);color:#2a1e0e;font-size:11.5px;font-weight:600}
+#tHelp{min-width:34px;font-weight:700}body.guide #tHelp{border-color:var(--amber);color:var(--amber)}
 #tLay{position:absolute;right:0;bottom:calc(var(--fs) + 60px);display:flex;flex-direction:column;align-items:center;gap:6px;pointer-events:auto}
 #tLay button{width:48px;min-height:44px;padding:0;font-size:16px}#tLay span{font-family:var(--num);font-size:15px;color:var(--amber);text-shadow:0 1px 3px #000}
 .tmed{margin-top:6px;width:100%;min-height:38px;font-size:14px;border-color:#7fd38b;color:#c8f5cf}
@@ -177,6 +190,27 @@ body:not(.touch) .tch{display:none}
 .modal .card{width:min(560px,96vw);max-height:calc(100dvh - 16px);overflow:auto;display:flex;flex-direction:column;gap:10px;margin:auto}
 .modal h3{margin:0;font-family:var(--title);font-weight:400;font-size:30px;letter-spacing:.06em;color:var(--amber)}
 .clist{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.modal .card.shop,.modal .card.kitc{width:min(720px,96vw)}
+.ctabs{display:flex;gap:6px;flex-wrap:wrap}.ctabs button{flex:1;min-height:40px;font-size:14px}.ctabs button.sel{border-color:var(--amber);color:var(--amber);background:rgba(255,179,71,.14)}
+.sc{display:flex;flex-direction:column;gap:4px;padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:rgba(255,255,255,.03)}
+.sc.own{border-color:rgba(125,200,140,.35)}.sc .sh{display:flex;justify-content:space-between;align-items:baseline;gap:8px}.sc .sh b{font-size:15px}.sc .sh em{font-style:normal;font-size:12px;color:#bfe3c6;font-family:var(--num)}
+.sc small{font-size:12px;color:var(--sub);line-height:1.4}.sc .sb{display:flex;gap:6px;margin-top:auto}.sc.mini small{display:none}
+.sbtn{flex:1;min-height:40px;display:flex;justify-content:space-between;align-items:center;gap:6px;padding:4px 10px;font-size:13px}.sbtn span{font-size:12px;color:#e6c55a}.sbtn.no span{color:#c25b4f}
+.sbtn.go{border-color:rgba(125,200,255,.5)}.sbtn.go span{color:#9fd0ff}.sfree{font-size:12px;color:#bfe3c6;padding:8px 0}
+.sgrp{grid-column:1/-1;font-size:12.5px;color:#cdbfa8;padding:4px 2px;border-bottom:1px solid var(--line)}
+.kslots{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}.kslots button{min-height:46px;display:flex;gap:6px;align-items:center;justify-content:center}.kslots button.sel{border-color:var(--amber);background:rgba(255,179,71,.18)}
+.kslots kbd{font-family:var(--num);font-size:11px;padding:0 4px;border:1px solid rgba(255,255,255,.3);border-radius:4px}
+.kwpn{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px}.kw{display:flex;flex-direction:column;align-items:flex-start;text-align:left;gap:2px;min-height:70px;padding:6px 8px}
+.kw b{font-size:14px}.kw b i{font-style:normal;font-size:11px;color:#2a1e0e;background:var(--amber);border-radius:8px;padding:0 6px;margin-left:4px}.kw small{font-family:var(--num);font-size:12px;color:#ffe6c0}.kw span{font-size:11px;color:var(--sub);line-height:1.3}
+.kw.cur{border-color:rgba(125,200,140,.6)}.kw.no{opacity:.45}
+.kveh{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}.kveh button{min-height:52px;display:flex;flex-direction:column;align-items:center;justify-content:center}.kveh button.sel{border-color:var(--amber);color:var(--amber)}.kveh button.no{opacity:.4}.kveh small{font-size:11px;color:var(--sub)}
+#wbar .kit{min-width:64px;border-style:dashed}
+#bbar button .ic{display:block;width:26px;height:26px}#bbar button .ic canvas{width:26px;height:26px}
+#bbar button .vd{position:absolute;right:4px;top:2px;font-style:normal;font-size:8px;letter-spacing:-1px;color:var(--amber)}
+#bvar{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(122px + var(--sa-b));display:flex;gap:6px;padding:4px;border-radius:12px;background:rgba(10,10,12,.72);border:1px solid var(--line)}
+#bvar button{min-height:40px;min-width:74px;display:flex;flex-direction:column;align-items:center;padding:3px 8px;line-height:1.15}#bvar b{font-size:13px}#bvar small{font-size:10.5px;color:#e6c55a}
+#bvar button.sel{border-color:var(--amber);background:rgba(255,179,71,.2)}#bvar button.lock{opacity:.4}#bvar button.na small{color:#c25b4f}
+.help details{border-bottom:1px solid var(--line);padding:4px 0}.help summary{cursor:pointer;color:var(--amber);font-size:15px;font-weight:600;padding:4px 0}.help .hsub{margin:0;font-size:12px;color:var(--sub)}
 .ci{display:flex;flex-direction:column;align-items:flex-start;text-align:left;gap:2px;min-height:64px}
 .ci b{font-size:15px}.ci small{font-size:12px;color:var(--sub)}.ci .c{font-size:12px;color:#e6c55a}
 .ci.no .c{color:#c25b4f}
@@ -192,8 +226,8 @@ body:not(.touch) .tch{display:none}
 @media (pointer:coarse) and (min-width:760px) and (min-height:760px){
   #tctl{--fs:150px;--tb:64px;--d:120px;--d45:85px;right:calc(30px + var(--sa-r));bottom:calc(30px + var(--sa-b))}
   #tctl .tb{font-size:16px}#tFire span{font-size:22px}
-  #tWpn{min-height:46px;min-width:116px}#tWpn b,#tWpn span{font-size:15px}
-  #tUse{min-height:68px;min-width:124px}#tUse span{font-size:17px}
+  #tWpn b{font-size:14px}#tWpn span{font-size:12px}#tUse span{font-size:15px}
+  #wpick .wo{width:76px;height:76px;margin:-38px 0 0 -38px}#wpick .wo b{font-size:14px}
 }
 @media (pointer:coarse) and (max-height:500px){
   #mini{width:64px;height:64px}
@@ -205,9 +239,7 @@ body:not(.touch) .tch{display:none}
   .res div{min-width:38px;padding:2px 4px}.res b{font-size:14px}
   #tctl{--fs:104px;--tb:46px;--d:82px;--d45:58px;right:calc(14px + var(--sa-r));bottom:calc(12px + var(--sa-b))}
   #tctl .tb{font-size:13px}#tFire span{font-size:16px}
-  #tWpn{right:calc(var(--fs) / 2 - 40px);bottom:calc(var(--fs) / 2 + var(--d) + var(--tb) / 2 + 6px);min-width:80px;min-height:34px;padding:2px 8px}
-  #tWpn::before{display:none}#tWpn b{font-size:11px}#tWpn span{font-size:11px}
-  #tUse{min-height:52px;min-width:96px}
+  #tWpn b{font-size:10.5px}#tWpn span{font-size:9.5px}#tUse span{font-size:12px}
   #tLay{bottom:0;right:0;gap:4px}
   body.touch #hTL{width:170px}
   body.touch #log{bottom:calc(10px + var(--sa-b))!important}
@@ -217,6 +249,7 @@ body:not(.touch) .tch{display:none}
   body.building #log{bottom:calc(112px + var(--sa-b))!important}
   #binfo{left:calc(8px + var(--sa-l));transform:none}
   #binfo{bottom:calc(70px + var(--sa-b))}
+  #bvar{left:calc(8px + var(--sa-l));transform:none;bottom:calc(96px + var(--sa-b))}
   #prompt{bottom:calc(64px + var(--sa-b))}
   #log{font-size:12px;bottom:calc(60px + var(--sa-b))!important}
   .logo h1{font-size:54px}.logo .tag{display:none}.wrapT{gap:10px}
@@ -228,7 +261,6 @@ body:not(.touch) .tch{display:none}
   #hTC{top:calc(118px + var(--sa-t));min-width:0;left:calc(10px + var(--sa-l));transform:none;width:calc(100vw - 190px - var(--sa-l) - var(--sa-r))}
   #hTR{gap:4px}.res div{min-width:34px;padding:2px}.res b{font-size:13px}.res small{font-size:10px}
   #tctl{--fs:112px;--tb:48px;--d:86px;--d45:61px;right:calc(16px + var(--sa-r));bottom:calc(22px + var(--sa-b))}
-  #tUse{right:calc(var(--fs) / 2 + var(--d45) + 6px);bottom:calc(var(--fs) / 2 + var(--d45) + var(--tb) / 2 + 24px);min-width:100px;min-height:56px}
   #tLay{bottom:calc(var(--fs) + 30px)}
   body.touch #log{max-width:calc(100vw - 32px);bottom:calc(250px + var(--sa-b))!important}
   body.touch #hTL{width:150px}
@@ -503,7 +535,7 @@ body.aiming canvas#cv{cursor:none}body.touch #reticle b{left:-34px;top:-38px}
   </div>
   <div id="hTR">
     <div class="res hcard" id="resBox"></div>
-    <div class="tbtn"><button id="tCraft" class="ghost tch hidden">制作</button><button id="tRide" class="ghost tch hidden">骑车</button><button id="tBuild" class="ghost tch">建造</button><button id="vToggle" class="ghost tch">视角</button><button id="muteBtn" class="ghost ptr" title="静音">🔊</button><button id="pauseBtn" class="ghost" title="菜单 (Esc)">❚❚</button></div>
+    <div class="tbtn"><button id="tCraft" class="ghost tch hidden" >商店</button><button id="tRide" class="ghost tch hidden" >载具</button><button id="tBuild" class="ghost tch" >道具</button><button id="vToggle" class="ghost tch" >视角</button><button id="tHelp" class="ghost tch">?</button><div id="gcard" class="tch"><b>右上角</b>商店：买枪、弹药、盾、车 · 载具：点=上下车，长按=换车 · 道具：墙、陷阱、跳板… · 视角：缩放、转镜头<br><b>射击键</b>点=一发 · 按住=连射（按住再拖=边打边转）· 先拖再松手=只选目标<br><b>武器键</b>点=下一把 · 拖出去=一圈武器，滑过去松手<br><b>交互键</b>能搜 / 砍 / 扶时变亮，平时是「跳」<br><small>点任意处关闭 · 随时点「?」再看</small></div><button id="muteBtn" class="ghost ptr" title="静音">🔊</button><button id="pauseBtn" class="ghost" title="菜单 (Esc)">❚❚</button></div>
     <canvas id="mini" width="128" height="128" class="hcard"></canvas>
     <div id="viewBox" class="hcard">
       <div class="vrow"><button id="vZin" title="放大 (滚轮 / +)">＋</button><button id="vZout" title="缩小 (滚轮 / −)">－</button><button id="vRl" title="向左转 (Q)">⟲</button><button id="vRr" title="向右转 (E)">⟳</button></div>
@@ -518,18 +550,19 @@ body.aiming canvas#cv{cursor:none}body.touch #reticle b{left:-34px;top:-38px}
   <div id="reticle" class="hidden"><i class="c"></i><i class="r"></i><i class="d"></i><b id="rtTag"></b></div>
   <div id="wbar"></div>
   <div id="binfo" class="hidden"></div>
+  <div id="bvar" class="hidden"></div>
   <div id="bbar" class="hidden"></div>
   <div id="bconf" class="hidden"><span id="bcTxt"></span><button id="bcOk">✓ 确认 <span class="kbd">Enter</span></button><button id="bcNo" class="ghost">✗ 取消 <span class="kbd">Esc</span></button></div>
 </div>
+<div id="wpick" class="hidden"></div>
 <div id="tctl">
-  <div id="tFire" class="fight"><i></i><span>射击</span></div>
-  <button id="tReload" class="tb fight">换弹</button>
+  <div id="tFire" class="fight" data-g="点=一发 · 按住=连射 · 拖=选目标"><i></i><span>射击</span></div>
+  <button id="tReload" class="tb fight old">换弹</button>
   <button id="tNade" class="tb fight">手雷<small id="tNadeN">1</small></button>
   <button id="tShove" class="tb fight">刀</button>
-  <button id="tJump" class="tb fight">跳</button>
-  <button id="tWpn" class="fight"><b>手枪</b><span>∞</span></button>
-  <div id="wpick" class="hidden"></div>
-  <button id="tUse" class="hidden"><b>点一下</b><span>交互</span></button>
+  <button id="tJump" class="tb fight old">跳</button>
+  <button id="tWpn" class="tb fight" data-g="点=换枪 · 拖=选枪"><b>手枪</b><span>∞</span></button>
+  <button id="tUse" class="tb fight" data-g="交互 / 跳"><b></b><span>跳</span></button>
   <div id="tLay" class="bld"><button id="tLUp">▲</button><span id="tLLbl">1F</span><button id="tLDn">▼</button></div>
 </div>
 
@@ -571,7 +604,15 @@ body.aiming canvas#cv{cursor:none}body.touch #reticle b{left:-34px;top:-38px}
 </div>
 
 <div id="craft" class="modal hidden">
-  <div class="card"><h3>制作 / 购买</h3><div class="lbl">材料全队共用 · 制作的武器和道具归你</div><div class="clist" id="clist"></div><button id="craftClose" class="ghost">关闭 <span class="kbd">(E)</span></button></div>
+  <div class="card shop"><h3>商店</h3><div class="ctabs" id="ctabs"></div><div class="lbl" id="cres"></div><div class="clist" id="clist"></div><button id="craftClose" class="ghost">关闭 <span class="kbd">(C)</span></button></div>
+</div>
+<div id="kit" class="modal hidden">
+  <div class="card kitc"><h3>装备</h3>
+    <div class="lbl">快捷武器（先点一个格子，再点下面的枪放进去）<span class="kbd"> · 电脑按 1–4 切换，Z 切回上一把</span><span class="tch"> · 触屏点武器键换下一把，拖武器键选</span></div>
+    <div class="kslots" id="kslots"></div><div class="kwpn" id="kwpn"></div>
+    <div class="lbl">默认载具（T / 「载具」就上这辆）</div><div class="kveh" id="kveh"></div>
+    <div class="lbl" id="kshield"></div>
+    <button id="kitClose" class="ghost">关闭 <span class="kbd">(I)</span></button></div>
 </div>
 <div id="modesel" class="modal hidden"><div class="card mscard"><h3>选择模式</h3><div class="mgrid" id="mGrid"></div><h3>选择地图 <small id="mapHint" class="lbl"></small></h3><div class="mapgrid" id="mapGrid"></div><button id="msOk" class="primary">确定</button></div></div>
 <div id="bigmap" class="modal hidden"><div class="card bmcard"><div class="bmhead"><h3>地图</h3><span class="bmhint">点任意处关闭 · 电脑按 M / Tab / Esc</span></div><canvas id="bigmapC" width="640" height="640"></canvas><div class="bmleg" id="bmLeg"></div></div></div>
@@ -590,12 +631,18 @@ body.aiming canvas#cv{cursor:none}body.touch #reticle b{left:-34px;top:-38px}
 <div id="help" class="modal hidden">
   <div class="card"><h3>玩法和操作</h3>
     <div class="help">
-      <h4>目标</h4>标题页点「模式」选玩法和地图：<b>尸城求生</b>（默认）丧尸占了半座城——红色标记的楼里睡着尸群（头上「z」）：你在它视线里待久了它会察觉（「?」越变越大，背对你的察觉得慢），开枪会把附近的吵醒（隔着墙听得小一半，弩几乎没声），<b>用刀能悄悄一刀解决睡着的丧尸</b>；清掉一栋楼拿图纸箱和奖励，任何地方都能就地建造临时据点；箱子里能搜到<b>蓝图</b>，解锁砖墙、钢墙、拒马、铁丝网、捕兽夹、探照灯、地雷、机枪塔和自行车 / 摩托车（快 60% / 90%，T 上下车，骑着也能开枪但射速慢很多，摩托车后座能带一个队友（靠近按 T））；搜刮收获翻倍，地上到处有弹药盒；每夜到点就天亮，撑过 10 夜获胜。<b>经典守夜</b>撑过 15 夜；<b>修车逃离</b>找齐 6 个零件修好卡车；<b>摧毁尸巢</b>炸掉 5 个尸巢和母巢；<b>信号塔</b>守住 4 座塔的校准再等直升机；<b>抢空投</b>集齐 6 个空投信标后守住撤离点；<b>尸王狩猎</b>击杀 4 只尸王。当前目标显示在屏幕上方，屏幕边的箭头和大地图（点小地图 / 按 M）指路。所有人同时倒下就失败。丧尸会一路追着离它最近的人，挡路的墙会被砸开。<h4>丧尸</h4>游荡者、疾跑者、攀爬者（翻墙）、喷吐者（吐酸）、重锤（拆墙）、巨尸（血月），还有成群的尸犬、贴地的爬行尸、死了会炸开（连墙一起炸）的爆尸、会尖叫让周围丧尸发狂并引来更多丧尸的尖叫者、正面打不动的防暴尸（绕到侧面后面，或者用狙击枪、弩、火、炸药）。<h4>武器</h4>手枪爆头伤害高；霰弹枪近距离打退打晕；步枪连射越久越散；狙击枪穿透 5 只、带激光；弩穿透 3 只并把丧尸钉住；喷火器点燃一片，火会传染；榴弹发射器落地就炸。后三种在工作台造。<h4>每日任务</h4>每天天亮刷新 3 个小任务（左上角），比如击杀、搜索、建造、今夜无人倒下。完成立刻发奖励：材料、全队弹药、医疗包、手雷或强化弹头。没完成的会在下一个天亮作废。
-      <h4>白天</h4>出门砍树（木材）、采石（砖石），搜汽车、补给箱和废墟瓦砾（钢材、零件、弹药），离家越远收获越多；回来盖楼；在任何建筑里（或营地工作台）都能造枪、买弹药（按 C / 点「制作」）。河上只有两座桥，丧尸也只能从桥上过河。每 5 夜一次血月。
-      <h4>建造</h4>只能在营地周围的黄框里建造。<b>指哪盖哪，不用切楼层</b>：指地面或楼板就盖在上面；指墙顶就往上叠一层；指墙的侧面就贴着它盖；楼板会自动铺成墙上的天花板，站在楼上指外面能往外延伸阳台。<b>按住拖动</b>沿直线一次盖一排。拆除也是指哪拆哪。方块要有<b>支撑</b>：从地面往上传，往旁边每格减 1，支撑断了会连锁坍塌。<b>楼上最外圈、上面没东西的墙是半人高的矮墙</b>：子弹能从上面飞过，贴着矮墙可以探身往下打；地面一层的墙还是整面墙。门让人通过但挡丧尸，射击栅栏能从里面开枪。丧尸会砸墙砸门、走楼梯；攀爬者会翻墙。<h4>爬梯、翻越和跳</h4>楼梯换成了靠墙的爬梯：朝箭头方向走就爬上去，往下爬要继续推一下。丧尸爬梯子很慢（攀爬者除外），所以多放几个梯子方便自己走位，梯子口就是守点。人能<b>翻过</b>沙袋矮墙、拒马、铁皮掩体、栅栏、瓦砾和一人高的墙（贴着推一下，或按跳），也能跳过一格宽的空隙；丧尸不会翻，只能砸。<h4>障碍物</h4>沙袋矮墙（子弹能从上面打过去）、拒马（丧尸砸它会被扎）、铁皮掩体（挡子弹）、捕兽夹（夹住丧尸 2.5 秒，一次性）、铁丝网、探照灯。用矮墙和掩体把楼里隔成一段一段，自己翻来翻去，丧尸只能一路砸过来。<h4>建造确认</h4>点一下或拖一排，先出现绿色预览（拆除是红色），再点 ✓、按 Enter 或再点一下预览才真正建造 / 拆除；建造栏的「二次确认」可以关掉。
-      <h4>视角</h4>滚轮或 ＋/－ 缩放，Q / E 或 ⟲⟳ 转镜头。楼层视图默认跟随你所在的层，上面的楼层会自动隐藏；▲▼ 手动看别的层，「跟随我所在的层」恢复。
-      <h4 class="kbd">键鼠</h4><div class="kbd"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> 移动（相对屏幕）　鼠标瞄准，左键射击<br>瞄准：准星圆圈的大小就是这把枪在那个距离的散布；指在丧尸身上变红，指在它头顶（身形最上面那一截）变黄＝爆头，手枪爆头 ×2.2；离丧尸差一点也会吸过去；虚线＝超出射程。左上角列出所有按键，点「收起」可折叠。<br><kbd>R</kbd> 换弹　<kbd>1</kbd>–<kbd>7</kbd> 换枪　<kbd>空格</kbd> 跳 / 翻越　<kbd>右键</kbd> / <kbd>V</kbd> 刀（自动冲向 2 格内最近的丧尸砍，背刺 ×2，按住连砍）　<kbd>G</kbd> 手雷　<kbd>H</kbd> 医疗包（倒地时自救）<br><kbd>F</kbd> 点一下：砍树 / 采石 / 搜索 / 扶起队友；在工作台按 <kbd>F</kbd> 打开制作<br><kbd>B</kbd> 建造模式：数字键选方块，鼠标指哪盖哪（左键放置或修理，按住拖动盖一排），右键拆除，<kbd>R</kbd> 转楼梯朝向<br><kbd>Q</kbd><kbd>E</kbd> 转镜头　滚轮缩放　<kbd>PageUp</kbd><kbd>PageDown</kbd> 切换楼层视图　<kbd>Home</kbd> 跟随自己<br><kbd>N</kbd> 准备入夜　<kbd>M</kbd> 静音　<kbd>Esc</kbd> 菜单</div>
-      <h4 class="tch">触屏</h4><div class="tch">左半屏任意位置按下就出现摇杆（左下角的虚线圈是提示），拖过圈外摇杆会跟着手指走；靠近横平竖直的方向会自动吸附，沿墙走、过门更稳。右下的红色「射击」键：按住就开火，自动瞄准最近的丧尸（贴身的优先，锁定后不会来回跳，脚下有红圈）；按住拖向某个方向就只打那边约 20° 内的。<b>点一下丧尸 = 选中（脚下蓝圈），再点一下同一只 = 开火</b>，会一直打到它倒下（红圈）；点别的丧尸换目标，点空地停火取消；手指按住拖动是精确瞄准（准心在手指上方，按在丧尸头顶是爆头），松手后瞄着的那只也被选中，再点它一下就开火；选中时按射击键也会打它；什么都不选时直接按射击键会自动瞄最近的，从射击键往外拖可以选方向；射击键旁边是换弹、手雷、「刀」（自动冲向附近的丧尸砍，背后捅伤害翻倍）和「跳」（翻越障碍、跳过空隙），上面的小条点一下换枪。靠近树、石头、汽车、补给箱或倒地的队友时，会冒出一个大按键，按住就砍树 / 搜索 / 扶人；受伤后左上角会出现「用医疗包」。右上角「建造」进出建造模式：在右半屏点哪盖哪，按住拖动盖一排，再点 ✓ 确认；「视角」打开缩放、转镜头和楼层视图。两根手指捏合也能缩放。</div>
+      <p class="hsub">点标题展开 · 触屏随时点右上角「?」看按键说明</p>
+      <details open><summary>目标</summary>标题页点「模式」选玩法和地图：<b>尸城求生</b>（默认）丧尸占了半座城——红色标记的楼里睡着尸群（头上「z」）：你在它视线里待久了它会察觉（「?」越变越大，背对你的察觉得慢），开枪会把附近的吵醒（隔着墙听得小一半，弩几乎没声），<b>用刀能悄悄一刀解决睡着的丧尸</b>；清掉一栋楼拿图纸箱和奖励，任何地方都能就地建造临时据点；箱子里能搜到<b>蓝图</b>，解锁砖墙、钢墙、拒马、铁丝网、捕兽夹、探照灯、地雷、机枪塔和四种载具（见「载具」）；搜刮收获翻倍，地上到处有弹药盒；每夜到点就天亮，撑过 10 夜获胜。<b>经典守夜</b>撑过 15 夜；<b>修车逃离</b>找齐 6 个零件修好卡车；<b>摧毁尸巢</b>炸掉 5 个尸巢和母巢；<b>信号塔</b>守住 4 座塔的校准再等直升机；<b>抢空投</b>集齐 6 个空投信标后守住撤离点；<b>尸王狩猎</b>击杀 4 只尸王。当前目标显示在屏幕上方，屏幕边的箭头和大地图（点小地图 / 按 M）指路。所有人同时倒下就失败。丧尸会一路追着离它最近的人，挡路的墙会被砸开。</details>
+      <details><summary>丧尸</summary>游荡者、疾跑者、攀爬者（翻墙）、喷吐者（吐酸）、重锤（拆墙）、巨尸（血月），还有成群的尸犬、贴地的爬行尸、死了会炸开（连墙一起炸）的爆尸、会尖叫让周围丧尸发狂并引来更多丧尸的尖叫者、正面打不动的防暴尸（绕到侧面后面，或者用狙击枪、弩、火、炸药）。</details>
+      <details><summary>武器和装备</summary>每把枪有自己的用处（切枪时会提示一句）：<b>手枪</b>子弹无限、准，伤害最低；<b>霰弹枪</b>近身清群；<b>步枪</b>持续火力；<b>狙击枪</b>打精英，穿 5 只；<b>弩</b>几乎没声音、钉住丧尸；<b>喷火器</b>堵门，火会传；<b>榴弹发射器</b>炸一片。<br><b>快捷武器</b>：在「装备」（电脑按 <kbd>I</kbd>，触屏拖武器键选「装备…」）里选 4 把放进快捷栏，电脑 <kbd>1</kbd>–<kbd>4</kbd> 切换、<kbd>Z</kbd> 切回上一把。<br><b>防暴盾</b>（商店 → 道具）：正面挨的抓咬和酸液少受 75%，吃满 300 就碎。</details>
+      <details><summary>商店</summary>在任何建筑里（或营地）按 <kbd>C</kbd> / 点「商店」。分四栏：<b>武器 · 弹药</b>（一把枪和它的子弹在同一张卡上）、<b>道具</b>（手雷、医疗包、防暴盾，还有放置类道具的入口）、<b>载具</b>、<b>强化</b>。材料全队共用，买到的东西归你。</details>
+      <details><summary>道具（建造）</summary>按 <kbd>B</kbd> / 点「道具」拿出道具栏：<b>墙、地板、梯子、门、掩体、陷阱、机枪塔、探照灯、跳板</b>，同类的合在一格——<b>再点一次同一格（或点上面的小条）换材料</b>，比如木墙 → 砖墙 → 钢墙。放下去不分朝向：梯子会自己贴到能爬上去的那面墙。指哪放哪，按住拖动放一排；放一个扣一份材料，右键 / 「拆除」拆掉退一半。只能在营地周围的黄框里放（尸城求生哪都能放；<b>跳板</b>哪都能放）。方块要有支撑，断了会连锁坍塌。楼上最外圈的墙是半人高的矮墙，能探身往下打。<br><b>跳板</b>：踩上去把你朝走的方向弹出约 5 格，前面有矮楼顶（最多高 2 层）就弹上去，用一次就没——被围住时的逃生道具。</details>
+      <details><summary>载具</summary><b>自行车</b>快 60%；<b>摩托车</b>快 90%，后座带一个队友；<b>货运三轮</b>坐在车上就能搜东西（够得更远、时间减半、材料 +50%）；<b>装甲车</b>受到的伤害只剩 35%，撞开挡路的丧尸，后座带一个队友。在商店「载具」栏或「装备」里选一辆当默认：<kbd>T</kbd> / 点「载具」就上这辆，再按下车；<kbd>Shift</kbd>+<kbd>T</kbd> / 长按「载具」换车。车上也能开枪，只是射速慢（司机 40%、后座 70%），准度不变。</details>
+      <details><summary>白天和每日任务</summary>出门砍树（木材）、采石（砖石），搜汽车、补给箱和废墟瓦砾（钢材、零件、弹药），离家越远收获越多；回来盖楼；在任何建筑里（或营地工作台）都能造枪、买弹药（按 C / 点「商店」）。河上只有两座桥，丧尸也只能从桥上过河。每 5 夜一次血月。<br>每天天亮刷新 3 个小任务（左上角），比如击杀、搜索、建造、今夜无人倒下。完成立刻发奖励：材料、全队弹药、医疗包、手雷或强化弹头。没完成的会在下一个天亮作废。</details>
+      <details><summary>爬梯、翻越和跳</summary>朝梯子走就爬上去，往下要继续推一下；丧尸爬梯子很慢（攀爬者除外）。人能翻过沙袋、拒马、掩体、栅栏、瓦砾和一人高的墙（贴着推一下，或跳），也能跳过一格宽的空隙；丧尸不会翻，只能砸。</details>
+      <details><summary>视角</summary>滚轮或 ＋/－ 缩放，Q / E 或 ⟲⟳ 转镜头。楼层视图默认跟随你所在的层，上面的楼层会自动隐藏；▲▼ 手动看别的层，「跟随我所在的层」恢复。</details>
+      <details class="kbd"><summary>键鼠</summary><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> 移动　鼠标瞄准，左键射击（准星圆圈 = 散布；变黄 = 爆头）<br><kbd>1</kbd>–<kbd>4</kbd> 快捷武器　<kbd>Z</kbd> 切回上一把　<kbd>I</kbd> 装备　<kbd>R</kbd> 换弹　<kbd>空格</kbd> 跳 / 翻越　<kbd>右键</kbd> / <kbd>V</kbd> 刀　<kbd>G</kbd> 手雷　<kbd>H</kbd> 医疗包<br><kbd>F</kbd> 交互（砍树 / 搜索 / 扶人）　<kbd>C</kbd> 商店　<kbd>T</kbd> 上下车（<kbd>Shift</kbd>+<kbd>T</kbd> 换车）<br><kbd>B</kbd> 道具：<kbd>1</kbd>–<kbd>9</kbd> 选道具，再按一次 / <kbd>R</kbd> 换材料，左键放，右键拆，<kbd>X</kbd> 拆除模式<br><kbd>Q</kbd><kbd>E</kbd> 转镜头　滚轮缩放　<kbd>PageUp</kbd><kbd>PageDown</kbd> 楼层视图　<kbd>M</kbd> / <kbd>Tab</kbd> 大地图　<kbd>N</kbd> 准备入夜　<kbd>Esc</kbd> 菜单</details>
+      <details class="tch" open><summary>触屏</summary><b>左半屏</b>按下就是摇杆。<b>右下角只有一个射击键</b>，四周四个小键：<br>· <b>射击键</b>：点一下 = 打一发；<b>按住不动 = 一直打</b>（自动吸附最近的丧尸），按住后再拖 = 边打边转方向；<b>先拖再松手 = 只选目标</b>（脚下蓝圈），之后按住就打它。<br>· <b>武器键</b>：点一下换下一把快捷武器；<b>按住拖出去</b>弹出一圈武器，滑到想要的那把松手（里面还有「换弹」和「装备…」）。<br>· <b>交互键</b>：旁边有能搜 / 砍 / 扶的东西时变亮，点一下开始；没有时就是「跳」，骑车时是「下车」。<br>· 「刀」（自动冲向附近的丧尸砍）、「手雷」。<br>也可以直接点丧尸：点一下选中，再点同一只开火。右上角：「道具」放墙 / 陷阱 / 跳板，「载具」上下车（长按换车），「商店」（在建筑里出现），「视角」，「?」按键说明。两指捏合缩放。</details>
     </div>
     <button id="helpClose" class="primary">好</button>
   </div>
@@ -4829,12 +4876,35 @@ defB(52, { key: 'turret', name: '机枪塔', cost: { steel: 8, parts: 10 }, hp: 
 defB(53, { key: 'barricade', name: '木板路障', cost: { wood: 3 }, hp: 300, P: 1, Z: 1, B: 1, dep: 1, brk: 1, low: 0.6, vault: 1, col: '#8a6a44', tip: '快速封门洞、窗洞：丧尸要砸，子弹能从上面打过去，人能翻过去' });
 defB(54, { key: 'ammobox', nat: 1, spot: 'ammobox' });
 defB(55, { key: 'bpcase', P: 1, Z: 1, B: 1, nat: 1, spot: 'bpcase', low: 0.7 });
+// (round 22) one-shot jump pad: step on it and it flings you ~5 tiles the way you're going, up onto a roof if there is one; placeable anywhere
+defB(56, { key: 'pad', name: '跳板', cost: { wood: 3, parts: 2 }, hp: 40, dep: 1, pad: 1, any: 1, col: '#d8a03a', tip: '踩上去把你弹出去约 5 格（朝你走的方向，前面有矮楼顶就弹上去），用一次就没；哪里都能放' });
 defB(42, { key: 'rail', P: 1, Z: 1, nat: 1, brk: 1, vault: 1, hp: 120, col: '#6a6f74' }); // balcony / roof / mezzanine railing: low, vaultable, bullets pass
-const PAL = [1, 2, 3, 4, 5, 6, 7, 8, 12, 13, 14, 9, 15, 10, 53, 51, 52];
+// (round 22) the placeables as items: one slot per kind; tap the slot again to switch material / variant. None of them care which way you face
+const ITEMS = [
+  { k: 'wall', name: '墙', ids: [1, 2, 3] },
+  { k: 'floor', name: '地板', ids: [4, 5] },
+  { k: 'ladder', name: '梯子', ids: [6] },
+  { k: 'door', name: '门', ids: [7] },
+  { k: 'cover', name: '掩体', ids: [53, 12, 14, 8] },
+  { k: 'trap', name: '陷阱', ids: [15, 9, 13, 51] },
+  { k: 'turret', name: '机枪塔', ids: [52] },
+  { k: 'lamp', name: '探照灯', ids: [10] },
+  { k: 'pad', name: '跳板', ids: [56] },
+];
+const PAL = ITEMS.flatMap(g => g.ids);
+const itemOf = id => ITEMS.find(g => g.ids.includes(id)) || ITEMS[0];
+// vehicles (round 22: their own category; you pick a default and T gets on it). spd = walking speed multiplier, seats 2 = a pillion seat
+const VEH = [null,
+  { k: 'bike', name: '自行车', spd: 1.6, tag: '便宜轻快：走得快 60%' },
+  { k: 'moto', name: '摩托车', spd: 1.9, seats: 2, tag: '最快：走得快 90%，后座能带一个队友' },
+  { k: 'cargo', name: '货运三轮', spd: 1.45, search: 1, tag: '搜刮用：坐在车上就能搜（够得更远、时间减半），搜到的材料 +50%' },
+  { k: 'armor', name: '装甲车', spd: 1.3, seats: 2, armor: 0.35, ram: 1, tag: '保护用：受到的伤害只剩 35%，撞开挡路的丧尸，后座能带一个队友' },
+];
+const NVEH = VEH.length - 1;
 // blueprints (尸城求生): what you can build / make from the start, and what has to be found first
-const BP_BASE = [1, 4, 6, 7, 12, 53];
-const BP_LIST = [2, 3, 5, 8, 13, 14, 9, 15, 10, 51, 52, 'bike', 'moto'];
-const bpName = k => typeof k === 'number' ? B[k].name : k === 'bike' ? '自行车' : '摩托车';
+const BP_BASE = [1, 4, 6, 7, 12, 53, 56];
+const BP_LIST = [2, 3, 5, 8, 13, 14, 9, 15, 10, 51, 52, 'bike', 'moto', 'cargo', 'armor'];
+const bpName = k => typeof k === 'number' ? B[k].name : (VEH.find(v => v && v.k === k) || { name: k }).name;
 const SLAB_BRIDGE = 11; // slab id for the pre-built bridges (not buildable)
 defB(11, { key: 'bridge', slab: 1, nat: 1, col: '#7e5a36' });
 const RES = [
@@ -4944,22 +5014,25 @@ const GATHER = {
 
 /* ---------- crafting (workbench in the starter house) ---------- */
 const CRAFT = [
-  { id: 'rifle', name: '步枪', desc: '持续火力：单发 34、全自动 30 发，连射越打越散', cost: { parts: 12, steel: 6 }, wpn: 2 },
-  { id: 'sniper', name: '狙击枪', desc: '打精英：一枪 220（爆头 ×2.5）穿 5 只，最远，但慢', cost: { parts: 18, steel: 8 }, wpn: 3 },
-  { id: 'shells', name: '霰弹 ×12', desc: '', cost: { parts: 2 }, ammo: [1, 12] },
-  { id: 'rounds', name: '步枪弹 ×60', desc: '', cost: { parts: 3 }, ammo: [2, 60] },
-  { id: 'slugs', name: '狙击弹 ×10', desc: '', cost: { parts: 3 }, ammo: [3, 10] },
-  { id: 'crossbow', name: '弩', desc: '几乎没声音：一箭 110 穿 3 只，钉住 1 秒，偷偷清楼用', cost: { parts: 12, wood: 12 }, wpn: 4 },
-  { id: 'flamer', name: '喷火器', desc: '近距离喷火，点着的丧尸会烧，火还会传给旁边的', cost: { parts: 20, steel: 10 }, wpn: 5 },
-  { id: 'launcher', name: '榴弹发射器', desc: '打出去落地就炸，炸一片', cost: { parts: 26, steel: 14 }, wpn: 6 },
-  { id: 'bolts', name: '弩箭 ×12', desc: '', cost: { wood: 4, parts: 1 }, ammo: [4, 12] },
-  { id: 'fuel', name: '燃料 ×120', desc: '', cost: { parts: 3, steel: 1 }, ammo: [5, 120] },
-  { id: 'shells40', name: '榴弹 ×4', desc: '', cost: { parts: 5, steel: 2 }, ammo: [6, 4] },
-  { id: 'nade', name: '手雷 ×2', desc: '最多带 6 颗', cost: { parts: 4 }, nade: 2 },
-  { id: 'med', name: '医疗包', desc: '回复 60 生命，最多 3 个', cost: { parts: 3, wood: 2 }, med: 1 },
-  { id: 'bike', name: '自行车', desc: '骑上走得快 60%（T / 「骑车」上下车；骑着也能开枪，但射速只有 40%）', cost: { wood: 6, steel: 6, parts: 4 }, veh: 1, bp: 'bike' },
-  { id: 'moto', name: '摩托车', desc: '走得快 90%，后座能带一个队友（队友靠近按 T 坐上去，后座开枪射速 70%）', cost: { steel: 14, parts: 12 }, veh: 2, bp: 'moto' },
-  { id: 'upg', name: '强化弹头', desc: '全队伤害 +12%（最多 5 级）', cost: { parts: 8 }, upg: 1 },
+  { id: 'rifle', cat: 'gun', name: '步枪', desc: '持续火力：单发 34、全自动 30 发，连射越打越散', cost: { parts: 12, steel: 6 }, wpn: 2 },
+  { id: 'sniper', cat: 'gun', name: '狙击枪', desc: '打精英：一枪 220（爆头 ×2.5）穿 5 只，最远，但慢', cost: { parts: 18, steel: 8 }, wpn: 3 },
+  { id: 'shells', cat: 'gun', name: '霰弹 ×12', desc: '', cost: { parts: 2 }, ammo: [1, 12] },
+  { id: 'rounds', cat: 'gun', name: '步枪弹 ×60', desc: '', cost: { parts: 3 }, ammo: [2, 60] },
+  { id: 'slugs', cat: 'gun', name: '狙击弹 ×10', desc: '', cost: { parts: 3 }, ammo: [3, 10] },
+  { id: 'crossbow', cat: 'gun', name: '弩', desc: '几乎没声音：一箭 110 穿 3 只，钉住 1 秒，偷偷清楼用', cost: { parts: 12, wood: 12 }, wpn: 4 },
+  { id: 'flamer', cat: 'gun', name: '喷火器', desc: '近距离喷火，点着的丧尸会烧，火还会传给旁边的', cost: { parts: 20, steel: 10 }, wpn: 5 },
+  { id: 'launcher', cat: 'gun', name: '榴弹发射器', desc: '打出去落地就炸，炸一片', cost: { parts: 26, steel: 14 }, wpn: 6 },
+  { id: 'bolts', cat: 'gun', name: '弩箭 ×12', desc: '', cost: { wood: 4, parts: 1 }, ammo: [4, 12] },
+  { id: 'fuel', cat: 'gun', name: '燃料 ×120', desc: '', cost: { parts: 3, steel: 1 }, ammo: [5, 120] },
+  { id: 'shells40', cat: 'gun', name: '榴弹 ×4', desc: '', cost: { parts: 5, steel: 2 }, ammo: [6, 4] },
+  { id: 'nade', cat: 'item', name: '手雷 ×2', desc: '最多带 6 颗；G 扔', cost: { parts: 4 }, nade: 2 },
+  { id: 'med', cat: 'item', name: '医疗包', desc: '回复 60 生命，最多 3 个；H 用，也能救回阵亡的队友', cost: { parts: 3, wood: 2 }, med: 1 },
+  { id: 'shield', cat: 'item', name: '防暴盾', desc: '背在手臂上：正面挨的抓咬、酸液少受 75%，盾吃满 300 就碎；买新的会修满', cost: { steel: 6, parts: 4 }, shield: 1 },
+  { id: 'bike', cat: 'veh', name: '自行车', desc: VEH[1].tag, cost: { wood: 6, steel: 6, parts: 4 }, veh: 1, bp: 'bike' },
+  { id: 'moto', cat: 'veh', name: '摩托车', desc: VEH[2].tag, cost: { steel: 14, parts: 12 }, veh: 2, bp: 'moto' },
+  { id: 'cargo', cat: 'veh', name: '货运三轮', desc: VEH[3].tag, cost: { wood: 8, steel: 10, parts: 8 }, veh: 3, bp: 'cargo' },
+  { id: 'armor', cat: 'veh', name: '装甲车', desc: VEH[4].tag, cost: { steel: 24, parts: 16 }, veh: 4, bp: 'armor' },
+  { id: 'upg', cat: 'upg', name: '强化弹头', desc: '全队伤害 +12%（最多 5 级）', cost: { parts: 8 }, upg: 1 },
 ];
 
 /* ---------- balance ---------- */
@@ -4971,6 +5044,10 @@ const BAL = {
   downTime: 30, reviveTime: 2.4, soloDownTime: 8, respawnHp: 0.5,
   respawnDay: 20, respawnNight: 60, rezTime: 6, rezHp: 0.4, // (round 20) a dead teammate comes back by a living one after this long (or at dawn); a medkit at the body brings them back at once
   searchTime: 1.5, healTime: 1.0, medHeal: 60,
+  shieldHp: 300, shieldBlock: 0.75, shieldCos: 0.26,          // (round 22) riot shield: blocks 75% of a hit from within ~75° of where you aim, until it has soaked 300
+  padDist: 5, padUp: 2,                                        // jump pad: how far / how many floors up it can throw you
+  ramDmg: 30, ramCD: 0.7, ramSpd: 2.2,                         // armoured car: hitting a zombie at speed
+  cargoSearch: 0.5, cargoLoot: 1.5, cargoReach: 2.3,           // cargo trike: search time x, loot x, reach from the seat
   knifeDmg: 55, knifeKB: 2.5, knifeCD: 0.5, knifeRange: 2.3, knifeLunge: 1.3, knifeBack: 2, // melee (was a shove: 18 dmg, KB 6, CD 0.55, 1.3 cone)
   nadeDmg: 286, nadeR: 3.4, nadeFuse: 1.6, nadeLand: 0.35, nadeMin: 0.5, // (round 18: radius 2.8 -> 3.4, damage at the edge 35% -> 50%, goes off 0.35 s after landing where you aimed)
   headshot: 1.6,
@@ -5410,12 +5487,20 @@ function supportIf(x, y, L, id) {
 }
 // can block `id` (with stairs dir) go into cell (x,y,L)? returns '' or a reason
 // which way can a ladder in (x,y,L) face? the preferred facing if it works, else any wall next to it
+// (round 22) a ladder picks its own side: the wall with somewhere to stand on top wins, so it doesn't matter which way you face
 function ladderDir(x, y, L, pref) {
-  for (const d of [pref, 0, 1, 2, 3]) if (d != null && !canPlace(x, y, L, 6, d)) return d;
-  return pref;
+  let best = pref, bs = -1;
+  for (let d = 0; d < 4; d++) {
+    if (canPlace(x, y, L, 6, d)) continue;
+    const [dx, dy] = DIRS[d]; let s = 1 + (d === pref ? 0.1 : 0);
+    if (standable(x + dx, y + dy, L + 1, 'p')) s += 2;
+    if (standable(x - dx, y - dy, L, 'p')) s += 0.5;                       // room to step on at the foot
+    if (s > bs) { bs = s; best = d; }
+  }
+  return best;
 }
 function canPlace(x, y, L, id, dir) {
-  if (!inMap(x, y) || !(modeDef().anyBuild || inZone(x, y))) return '只能在营地周围的建造区（黄框）内建造';
+  if (!inMap(x, y) || !(modeDef().anyBuild || inZone(x, y) || (B[id] && B[id].any))) return '只能在营地周围的建造区（黄框）内建造';
   if (!hasBP(id)) return '还没有「' + B[id].name + '」的蓝图：去搜箱子、清理丧尸占着的楼';
   if (L < 0 || L >= ML - 1) return '太高了';
   const g = gAt(x, y), i = ci(x, y, L), Bi = B[id];
@@ -5809,7 +5894,7 @@ function mkPlayer(i, name) {
     i, name, x: RADIO_XY[0] - 0.5 + i * 2, y: RADIO_XY[1] + 0.5 + i, L: 0, z: 0, r: 0.28, h: 1.0, vx: 0, vy: 0, kbx: 0, kby: 0, aim: -Math.PI / 2, aimPt: null,
     hp: BAL.pMaxHp, maxHp: BAL.pMaxHp, down: false, downT: 0, dead: false, gone: false,
     wpn: 1, owned: WPN.map((w, k) => k < 2 ? 1 : 0), mag: WPN.map((w, k) => k === 0 ? 12 : k === 1 ? 6 : 0), ammo: WPN.map((w, k) => k === 1 ? w.start : 0), bloom: 0, reloadT: 0, reloadW: 0, fireCD: 0, shoveCD: 0, shoveT: 0,
-    nades: 1, meds: 1, medT: 0, selfRev: false, useT: 0, useK: '', build: false, sel: 1, demo: false, sdir: 3,
+    nades: 1, meds: 1, medT: 0, selfRev: false, useT: 0, useK: '', build: false, sel: 1, demo: false, sdir: 3, veh: 0, vehs: 0, shield: 0,
     inp: { mx: 0, my: 0, fire: 0, use: 0 }, kills: 0, hurtT: 0, anim: 0, emptyT: 0, ready: false, recoilT: 0,
   };
 }
@@ -5878,19 +5963,19 @@ function stepMove(p, dt) {
   // riding pillion on a teammate's motorbike: sit just behind the driver
   if (p.pass != null && p.pass >= 0) {
     const d = W.p[p.pass];
-    if (!d || !d.ride || d.veh !== 2 || d.dead || d.down || d.gone) p.pass = -1;
+    if (!d || !d.ride || !vehSeats(d) || d.dead || d.down || d.gone) p.pass = -1;
     else { const a = d._ly != null ? -d._ly : Math.atan2(d.vy || 0, d.vx || 1); p.x = d.x - Math.cos(a) * 0.42; p.y = d.y - Math.sin(a) * 0.42; p.L = d.L; p.z = d.z; p.zv = d.zv; p.vx = d.vx; p.vy = d.vy; p._ly = d._ly; return; }
   }
   const I = p.inp, m = Math.hypot(I.mx, I.my), k = m > 1 ? 1 / m : 1;
   if (p.jmp) { // mid-vault / mid-jump: a scripted arc
     const J = p.jmp; J.t += dt; const f = Math.min(1, J.t / J.T);
-    p.x = lerp(J.x0, J.x1, f); p.y = lerp(J.y0, J.y1, f); p.jz = Math.sin(f * Math.PI) * J.h;
+    p.x = lerp(J.x0, J.x1, f); p.y = lerp(J.y0, J.y1, f); p.jz = Math.sin(f * Math.PI) * J.h + (J.up ? J.up * FH * f : 0); // J.up: floors gained (jump pad), eased in so the landing doesn't pop
     p.vx = (J.x1 - J.x0) / J.T; p.vy = (J.y1 - J.y0) / J.T; p.anim += dt * 6;
     if (f >= 1) { const drop = p.L - J.L; p.L = J.L; p.jmp = null; p.jz = 0; p.vx *= 0.3; p.vy *= 0.3; if (drop > 0 || J.k) emitLocal('land'); }
     p.z = pZ(p); return;
   }
   if (p.dash) { const D = p.dash, f = Math.min(dt, D.T - D.t) / D.T; moveEnt(p, D.dx * f, D.dy * f, 'p', true); D.t += dt; if (D.t >= D.T) p.dash = null; p.z = pZ(p); p.anim += dt * 8; return; }
-  const spd = BAL.pSpeed * (p.down ? 0.22 : 1) * (p.medT > 0 ? 0.45 : 1) * (p.build ? 0.9 : 1) * (inMud(p.x, p.y, p.L) ? MUD_SLOW : 1) * (p.ride ? SIEGE.vSpd[p.veh || 0] || 1 : 1);
+  const spd = BAL.pSpeed * (p.down ? 0.22 : 1) * (p.medT > 0 ? 0.45 : 1) * (p.build ? 0.9 : 1) * (inMud(p.x, p.y, p.L) ? MUD_SLOW : 1) * (p.ride && VEH[p.veh] ? VEH[p.veh].spd : 1);
   const tx = I.mx * k * spd, ty = I.my * k * spd, a = Math.min(1, dt * 14);
   p.vx = lerp(p.vx, tx, a); p.vy = lerp(p.vy, ty, a);
   p.kbx *= Math.max(0, 1 - dt * 6); p.kby *= Math.max(0, 1 - dt * 6);
@@ -5905,6 +5990,11 @@ function stepMove(p, dt) {
   }
   if (!vk) p.vaultT = 0; else p.edgeK = 3;
   if (p.dropped) emitLocal('land');
+  // a jump pad under your feet (round 22): fling yourself the way you're going; the host takes the pad away
+  if ((p.padCD = Math.max(0, (p.padCD || 0) - dt)) <= 0 && !p.down && !p.ride && W.blk[ci(Math.floor(p.x), Math.floor(p.y), p.L)] === 56) {
+    const t = padTarget(p), px = Math.floor(p.x), py = Math.floor(p.y), pl = p.L; p.padCD = 0.6;
+    if (t) { p.jmp = { t: 0, T: 0.55 + t.d * 0.05, x0: p.x, y0: p.y, x1: t.x, y1: t.y, L: t.L, h: 1.3 + Math.max(0, t.L - p.L) * 0.4, up: t.L - p.L, k: 4 }; emitLocal('jump'); if (typeof act === 'function' && p.i === ME) act('pad', { x: px, y: py, l: pl }); else doAct(p, 'pad', { x: px, y: py, l: pl }); }
+  }
   const sp = Math.hypot(p.vx, p.vy);
   if (sp > 0.3) p.anim += dt * sp * 2.6; else p.anim = lerp(p.anim, Math.round(p.anim / Math.PI) * Math.PI, Math.min(1, dt * 8));
   p.z = pZ(p);
@@ -5932,6 +6022,27 @@ function startJump(p, dx, dy, hop) {
   p.jmp = { t: 0, T: t.T, x0: p.x, y0: p.y, x1: t.x, y1: t.y, L: t.L, h: t.h + Math.max(0, p.L - t.L) * 0.15, k: t.k };
   emitLocal(t.k === 2 ? 'vault' : 'jump'); return true;
 }
+// where a jump pad throws you: up to BAL.padDist tiles along your walk (else your aim), the highest floor (up to padUp above) with room to land
+function padTarget(p) {
+  let ax = p.inp.mx, ay = p.inp.my; if (Math.hypot(ax, ay) < 0.3) { ax = Math.cos(p.aim); ay = Math.sin(p.aim); }
+  const m = Math.hypot(ax, ay) || 1; ax /= m; ay /= m;
+  const roof = p.L + 1 < ML && !!W.slab[ci(Math.floor(p.x), Math.floor(p.y), p.L + 1)], upMax = roof ? 0 : BAL.padUp;
+  for (let d = BAL.padDist; d >= 1.5; d -= 0.5) {
+    const x = Math.floor(p.x + ax * d), y = Math.floor(p.y + ay * d); if (!inMap(x, y) || (x === Math.floor(p.x) && y === Math.floor(p.y))) continue;
+    for (let l = Math.min(ML - 2, p.L + upMax); l >= Math.max(0, p.L - 2); l--) {
+      if (!standable(x, y, l, 'p')) continue;
+      const top = roof ? p.L : Math.max(l, p.L) + 1; let clear = true;
+      for (let s = 0.5; s < d && clear; s += 0.5) {
+        const xx = Math.floor(p.x + ax * s), yy = Math.floor(p.y + ay * s);
+        if (roof) { if (!enterable(xx, yy, p.L, 'p')) clear = false; }
+        else if (top < ML && (W.slab[ci(xx, yy, top)] || B[W.blk[ci(xx, yy, top)]].P)) clear = false;
+      }
+      if (clear) return { x: x + 0.5, y: y + 0.5, L: l, d };
+      break;
+    }
+  }
+  return null;
+}
 function emitLocal(name) { fxEvent({ k: 'sfx', n: name, local: 1 }); }
 
 /* ---------- player actions (host authoritative) ---------- */
@@ -5942,6 +6053,11 @@ function stepActions(p, dt) {
   p.fireCD -= dt; p.shoveCD -= dt; p.emptyT -= dt; if (p.bloom) p.bloom = Math.max(0, p.bloom - dt * 2.2);
   // each gun has its own fire cooldown, and a reload keeps going in the holster (round 18: was one shared timer, swapping cancelled the reload)
   if (!p.cdW) p.cdW = WPN.map(() => 0); if (!p.rlBg) p.rlBg = WPN.map(() => 0);
+  if (p.ride && VEH[p.veh] && VEH[p.veh].ram && Math.hypot(p.vx, p.vy) > BAL.ramSpd) for (const z of W.zs) { // (round 22) the armoured car shoves zombies aside
+    if (z.hp <= 0 || z.L !== p.L || z.hidden || (z.ramT || 0) > W.t) continue;
+    const dx = z.x - p.x, dy = z.y - p.y, d = Math.hypot(dx, dy) || 0.01;
+    if (d < p.r + z.r + 0.3 && dx * p.vx + dy * p.vy > 0) { z.ramT = W.t + BAL.ramCD; const k = ZT[z.k].boss || z.k === 'brute' ? 1 : 5; hurtZombie(z, BAL.ramDmg, p, dx / d * k, dy / d * k); emit({ k: 'sfx', n: 'bash', x: z.x, y: z.y }); }
+  }
   for (let k = 0; k < NW; k++) { if (p.cdW[k] > 0) p.cdW[k] -= dt; if (p.rlBg[k] > 0) { p.rlBg[k] -= dt; if (p.rlBg[k] <= 0) { p.rlBg[k] = 0; reloadInto(p, k); } } }
   if (p.dead) return;
   if (p.reloadT > 0) { p.reloadT -= dt; if (p.reloadT <= 0) finishReload(p); }
@@ -5972,16 +6088,17 @@ function useTarget(p) {
   if (p.down || p.dead) return null;
   for (const q of W.p) if (q !== p && q.down && !q.dead && !q.gone && q.L === p.L && d2(q.x, q.y, p.x, p.y) < 1.5) return { k: 'rev', i: q.i, t: BAL.reviveTime, name: '扶起 ' + q.name };
   for (const q of W.p) if (q !== p && q.dead && !q.gone && p.meds > 0 && q.L === p.L && d2(q.x, q.y, p.x, p.y) < 1.6) return { k: 'rez', i: q.i, t: BAL.rezTime, name: '用医疗包救回 ' + q.name };
-  let best = null, bd = 1.45;
+  const cargo = p.ride && VEH[p.veh] && VEH[p.veh].search, tk = cargo ? BAL.cargoSearch : 1, R = cargo ? 2 : 1;
+  let best = null, bd = cargo ? BAL.cargoReach : 1.45;
   const px = Math.floor(p.x), py = Math.floor(p.y);
-  for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+  for (let dy = -R; dy <= R; dy++) for (let dx = -R; dx <= R; dx++) {
     const x = px + dx, y = py + dy; if (!inMap(x, y)) continue;
     const i = ci(x, y, p.L), b = W.blk[i]; if (!b) continue;
     const d = d2(x + 0.5, y + 0.5, p.x, p.y);
     if (d > bd) continue;
     if (B[b].obj || B[b].turret) { const t = modeUse(p, i, b); if (t) { bd = d; best = t; } }
-    else if (B[b].spot) { const S = SPOTS[B[b].spot]; if (S && (S.vanish || !W.srch.has(i))) { bd = d; best = { k: 'spot', i, t: BAL.searchTime, name: '搜索' + S.name }; } }
-    else if (GATHER[b]) { bd = d; best = { k: 'gather', i, t: GATHER[b].t, name: GATHER[b].name }; }
+    else if (B[b].spot) { const S = SPOTS[B[b].spot]; if (S && (S.vanish || !W.srch.has(i))) { bd = d; best = { k: 'spot', i, t: BAL.searchTime * tk, name: '搜索' + S.name }; } }
+    else if (GATHER[b]) { bd = d; best = { k: 'gather', i, t: GATHER[b].t * tk, name: GATHER[b].name }; }
   }
   return best;
 }
@@ -5990,10 +6107,10 @@ function completeUse(p, tgt) {
   if (tgt.k === 'rev') { const q = W.p[tgt.i]; if (!q.down) return; q.down = false; q.hp = 35; q.medT = 0; q.selfRev = false; emit({ k: 'revive', p: q.i, by: p.i }); return; }
   if (tgt.k === 'obj') { modeDone(p, tgt); return; }
   const i = tgt.i, x = cx_(i), y = cy_(i), L = cl_(i), wx = x + 0.5, wy = y + 0.5, wz = L * FH + 1;
-  const m = (1 + Math.min(40, Math.max(0, radioDist(x, y) - 8)) / BAL.lootFar) * (isSiege() ? SIEGE.loot : 1); // capped where the old 96-map edge was; 尸城求生 pays double
+  const m = (1 + Math.min(40, Math.max(0, radioDist(x, y) - 8)) / BAL.lootFar) * (isSiege() ? SIEGE.loot : 1) * (p.ride && VEH[p.veh] && VEH[p.veh].search ? BAL.cargoLoot : 1); // capped where the old 96-map edge was; 尸城求生 pays double
   if (tgt.k === 'gather') {
     const g = GATHER[W.blk[i]]; if (!g) return;
-    const n = Math.round(rand(g.n[0], g.n[1])); W.res[g.res] += n;
+    const n = Math.round(rand(g.n[0], g.n[1]) * (p.ride && VEH[p.veh] && VEH[p.veh].search ? BAL.cargoLoot : 1)); W.res[g.res] += n;
     setCell(i, 0, W.slab[i], null, W.blk[i] === 22 ? 'chop' : 'mine'); taskAdd('gather');
     emit({ k: 'loot', p: p.i, x: wx, y: wy, z: wz, text: '+' + n + ' ' + RES.find(r => r.k === g.res).name });
     return;
@@ -6189,16 +6306,23 @@ function killZombie(z, p) {
   emit({ k: 'zdie', x: r2(z.x), y: r2(z.y), z: r2(z.z), t: z.k, f: r2(z.face), id: z.id });
   if (rand() < (z.k === 'boss' ? 1 : z.k === 'brute' ? 0.6 : 0.07)) { const n = z.k === 'boss' ? 15 : z.k === 'brute' ? 3 : 1; W.res.parts += n; emit({ k: 'loot', p: -1, x: z.x, y: z.y, z: z.z + z.h, text: '+' + n + ' 零件' }); }
 }
-function hurtPlayer(p, dmg) {
+function hurtPlayer(p, dmg, src) {
   if (p.gone || p.dead) return;
   if (DBG && DBG.god) return;
+  if (p.ride && VEH[p.veh] && VEH[p.veh].armor) dmg *= VEH[p.veh].armor;                                   // (round 22) inside the armoured car
+  if (src && p.shield > 0 && !p.down && Math.cos(angDiff(p.aim, Math.atan2(src.y - p.y, src.x - p.x))) > BAL.shieldCos) { // riot shield: hits from the front
+    const a = Math.min(p.shield, dmg * BAL.shieldBlock); p.shield -= a; dmg -= a;
+    emit({ k: 'sfx', n: p.shield <= 0 ? 'brkMetal' : 'clank', x: p.x, y: p.y }); if (p.shield <= 0) { p.shield = 0; emit({ k: 'shieldBreak', p: p.i }); }
+  }
   if (p.down) { p.downT -= dmg * 0.18; p.hurtT = 0.3; emit({ k: 'phurt', p: p.i, d: 1 }); return; }
   p.hp -= dmg; p.hurtT = 0.3; emit({ k: 'phurt', p: p.i, d: Math.round(dmg) });
   if (p.hp <= 0) { p.hp = 0; p.down = true; p.ride = false; p.pass = -1; for (const q of W.p) if (q.pass === p.i) q.pass = -1; if (W.phase === 'night') W.clean = false; p.downT = activeP().length > 1 ? BAL.downTime : BAL.soloDownTime; p.reloadT = 0; p.medT = 0; p.build = false; emit({ k: 'down', p: p.i }); checkLose(); }
 }
 function knock(p, kx, ky) { if (p.i === ME && NETROLE !== 'guest') { p.kbx += kx; p.kby += ky; } else emit({ k: 'kb', p: p.i, x: r2(kx), y: r2(ky) }); }
 // a teammate on a motorbike with the back seat free, close enough to climb on
-function pillionFor(p) { return W.p.find(d => d !== p && d.ride && d.veh === 2 && !d.dead && !d.down && !d.gone && d.L === p.L && Math.hypot(d.x - p.x, d.y - p.y) < 1.8 && !W.p.some(q => q.pass === d.i)) || null; }
+const vehSeats = d => !!(VEH[d.veh] && VEH[d.veh].seats);
+const ownsVeh = (p, v) => !!((p.vehs || 0) >> v & 1) || (!p.vehs && v >= 1 && p.veh === v); // vehs = owned bitmask; a bare veh (older state) counts as owned
+function pillionFor(p) { return W.p.find(d => d !== p && d.ride && vehSeats(d) && !d.dead && !d.down && !d.gone && d.L === p.L && Math.hypot(d.x - p.x, d.y - p.y) < 1.8 && !W.p.some(q => q.pass === d.i)) || null; }
 function respawnP(p) {
   let x = W.radio.x - 0.5 + p.i * 2, y = W.radio.y + 0.5, L = gAt(W.radio.x, W.radio.y);
   const mate = activeP().find(q => q !== p && standingP(q));
@@ -6227,8 +6351,10 @@ function doAct(p, a, v) {
   switch (a) {
     case 'ride': if (!p.down && !p.dead) {
       if (p.pass != null && p.pass >= 0) { p.pass = -1; emit({ k: 'sfx', n: 'swap', x: p.x, y: p.y, o: p.i }); break; }     // hop off the back
+      if (v >= 1 && ownsVeh(p, v)) { p.veh = v; p.ride = true; p.build = false; if (!vehSeats(p)) for (const q of W.p) if (q.pass === p.i) q.pass = -1; emit({ k: 'sfx', n: 'swap', x: p.x, y: p.y, o: p.i }); break; }
       const d = pillionFor(p);
       if (d && !p.ride) { p.pass = d.i; p.build = false; emit({ k: 'sfx', n: 'swap', x: p.x, y: p.y, o: p.i }); emit({ k: 'pillion', p: p.i, d: d.i }); break; } // get on behind a teammate
+      if (!ownsVeh(p, p.veh)) p.veh = [4, 2, 3, 1].find(k => ownsVeh(p, k)) || 0;
       if (p.veh) { p.ride = !p.ride; if (p.ride) p.build = false; else for (const q of W.p) if (q.pass === p.i) q.pass = -1; emit({ k: 'sfx', n: 'swap', x: p.x, y: p.y, o: p.i }); }
     } break;
     case 'reload': if (!p.down) startReload(p); else if (p.mag[0] < WPN[0].mag) { p.reloadT = WPN[0].reload; p.reloadW = 0; } break;
@@ -6249,6 +6375,8 @@ function doAct(p, a, v) {
     case 'craft': doCraft(p, v); break;
     case 'build': doBuild(p, v.x, v.y, v.l, v.b, v.d); break;
     case 'demo': doDemolish(p, v.x, v.y, v.l); break;
+    case 'vdef': if (v >= 1 && ownsVeh(p, v)) { p.veh = v; if (p.ride && !vehSeats(p)) for (const q of W.p) if (q.pass === p.i) q.pass = -1; } break; // pick the default vehicle (switches the one you're on too)
+    case 'pad': if (v && inMap(v.x, v.y) && v.l >= 0 && v.l < ML) { const i = ci(v.x, v.y, v.l); if (W.blk[i] === 56) { setCell(i, 0, W.slab[i], null, 'demo'); emit({ k: 'sfx', n: 'jump', x: v.x + 0.5, y: v.y + 0.5 }); } } break;
     case 'mode': p.build = !!v; break;
   }
 }
@@ -6303,7 +6431,8 @@ function canCraft(p) { return !p.down && !p.dead && (nearBench(p) || houseInteri
 const inCamp = p => Math.abs(p.x - W.radio.x - 0.5) <= 6.5 && Math.abs(p.y - W.radio.y - 0.5) <= 5.5;
 function craftBlocked(p, c) {
   if (c.bp && !hasBP(c.bp)) return '需要蓝图';
-  if (c.veh && (p.veh || 0) >= c.veh) return '已拥有';
+  if (c.veh && ownsVeh(p, c.veh)) return '已拥有';
+  if (c.shield && p.shield >= BAL.shieldHp) return '完好';
   if (c.wpn && p.owned[c.wpn]) return '已拥有';
   if (c.ammo && !p.owned[c.ammo[0]]) return '没有这把枪';
   if (c.nade && p.nades >= 6) return '已满';
@@ -6320,7 +6449,8 @@ function doCraft(p, id) {
   if (c.nade) p.nades = Math.min(6, p.nades + c.nade);
   if (c.med) p.meds = Math.min(3, p.meds + 1);
   if (c.upg) W.upg++;
-  if (c.veh) { p.veh = Math.max(p.veh || 0, c.veh); p.ride = true; }
+  if (c.veh) { p.vehs = (p.vehs || 0) | 1 << c.veh; p.veh = c.veh; }                  // (round 22) it becomes your default: T gets on
+  if (c.shield) p.shield = BAL.shieldHp;
   emit({ k: 'craft', p: p.i, id, name: c.name });
 }
 function inReach(p, x, y, L) { return !p.down && Math.hypot(p.x - x - 0.5, p.y - y - 0.5, (pZ(p) - L * FH) * 0.8) <= BAL.pReach; }
@@ -6480,7 +6610,7 @@ function stepProj(dt) {
       const x = Math.floor(b.x), y = Math.floor(b.y), L = Math.floor(b.z / FH), blk = blkAt(x, y, L);
       let hit = false;
       if (solidFor(blk, 'b') || b.z <= floorUnder(b.x, b.y, b.z + 0.3) + 0.02) { if (inMap(x, y) && L >= 0 && L < ML) damageCell(ci(x, y, L), 9 * W.D.dmg); hit = true; }
-      for (const p of W.p) if ((standingP(p) || p.down) && d2(p.x, p.y, b.x, b.y) < p.r + 0.15 && b.z > p.z - 0.1 && b.z < p.z + p.h + 0.1) { hurtPlayer(p, 11 * W.D.dmg); hit = true; }
+      for (const p of W.p) if ((standingP(p) || p.down) && d2(p.x, p.y, b.x, b.y) < p.r + 0.15 && b.z > p.z - 0.1 && b.z < p.z + p.h + 0.1) { hurtPlayer(p, 11 * W.D.dmg, b); hit = true; }
       if (hit || b.z < -2) { b.dead = true; if (b.pool) acidPool(b.x, b.y); emit({ k: 'acid', x: r2(b.x), y: r2(b.y), z: r2(b.z) }); }
     }
   }
@@ -6634,7 +6764,7 @@ function stepZombies(dt) {
       const d = d2(p.x, p.y, z.x, z.y);
       if (d < p.r + z.r + 0.28) {
         z.st = 'attack'; z.atk = 0.3; z.face = Math.atan2(p.y - z.y, p.x - z.x); tx = null;
-        if (z.cd <= 0) { z.cd = Z.cd; hurtPlayer(p, Z.dmg * W.D.dmg); if (Z.kb) knock(p, (p.x - z.x) / (d || 1) * Z.kb, (p.y - z.y) / (d || 1) * Z.kb); }
+        if (z.cd <= 0) { z.cd = Z.cd; hurtPlayer(p, Z.dmg * W.D.dmg, z); if (Z.kb) knock(p, (p.x - z.x) / (d || 1) * Z.kb, (p.y - z.y) / (d || 1) * Z.kb); }
         break;
       }
     }
@@ -6985,7 +7115,7 @@ const SIEGE = {
   noticeRate: 1.4, noticeDecay: 0.4, wallMuffle: 0.6,                     // time to notice you: 2 cells ≈ 1.4 s, 3 cells ≈ 2.3 s, 4 cells ≈ 6 s (×2.2 with its back to you); walls cut hearing to 60%
   gunNoise: { pistol: 8, shotgun: 12, rifle: 11, sniper: 14, crossbow: 2.5, flamer: 6, launcher: 12 },
   tRange: 9, tRate: 0.32, tDmg: 18, tAmmo: 240, tRefill: { parts: 3 },  // turret
-  loot: 2, mineR: 2.4, mineDmg: 200, spawnR: 24, vSpd: [1, 1.6, 1.9],    // search yield multiplier, mines, horde ring radius, vehicle speed (motorbike 2.3 -> 1.9 in round 20)
+  loot: 2, mineR: 2.4, mineDmg: 200, spawnR: 24, vSpd: VEH.map(v => v ? v.spd : 1),    // search yield multiplier, mines, horde ring radius, vehicle speed (motorbike 2.3 -> 1.9 in round 20)
   occFrac: 0.55, clearRw: { parts: 6, steel: 4 },
   bpOdds: { milcrate: 0.5, toolbox: 0.3, backpack: 0.18, cabinet: 0.14, crate: 0.14, car: 0.1, ammobox: 0.08 },
 };
@@ -7099,7 +7229,7 @@ function siegeBlueprint(kind, sure) {
   const O = W.obj, left = BP_LIST.filter(k => !O.bp.includes(k));
   if (!left.length || (!sure && !(rand() < (SIEGE.bpOdds[kind] || 0)))) return '';
   const k = left[Math.floor(rand() * left.length)]; O.bp.push(k); objChanged();
-  modeSay('找到蓝图：' + bpName(k) + (typeof k === 'number' ? '（建造栏里解锁了）' : '（制作里能造了）'), '#7fd0ff', true);
+  modeSay('找到蓝图：' + bpName(k) + (typeof k === 'number' ? '（道具栏里解锁了）' : '（商店 → 载具 里能造了）'), '#7fd0ff', true);
   return '蓝图·' + bpName(k);
 }
 // gunfire and blasts wake sleepers
@@ -7687,6 +7817,7 @@ function fxEvent(e) {
     case 'down': sfx('down', W.p[e.p].x, W.p[e.p].y); uiMsg(e.p === ME ? (W.p.length > 1 ? '你倒地了！等队友扶你，或按 H 用医疗包自救' : '你倒地了！按 H 用医疗包自救') : W.p[e.p].name + ' 倒地了！快去扶（按住 F）', '#ff6b5a'); break;
     case 'revive': sfx('revive'); uiMsg(e.p === e.by ? W.p[e.p].name + ' 自救成功' : W.p[e.by].name + (e.rez ? ' 用医疗包救回了 ' : ' 扶起了 ') + W.p[e.p].name, '#8fe39a'); break;
     case 'dead': uiMsg(W.p[e.p].name + ' 阵亡了：' + (e.t || 60) + ' 秒后（或天亮）在队友身边复活，带医疗包到他倒下的地方能马上救回来', '#ff6b5a'); break;
+    case 'shieldBreak': if (e.p === ME) toast('防暴盾碎了（商店 → 道具 能再买）', '#ff8a7a'); else uiMsg(W.p[e.p].name + ' 的防暴盾碎了', '#ffb38a'); break;
     case 'respawn': uiMsg(W.p[e.p].name + ' 回来了' + (e.near >= 0 ? '（在 ' + W.p[e.near].name + ' 身边）' : '（在营地）'), '#8fe39a'); break;
     case 'task': sfx('craft'); uiMsg('任务完成：' + e.txt + '  奖励 ' + e.rt, '#ffd76a'); toast('任务完成 · ' + e.rt, '#ffd76a'); break;
     case 'tp': if (guest && e.p === ME) { const p = W.p[ME]; p.x = e.x; p.y = e.y; p.L = e.l; p.vx = p.vy = 0; } break;
@@ -8396,7 +8527,9 @@ function mkPlayerModel(i) {
   const medkit = mk([[boxG(0.14, 0.1, 0.2, 0, 0, 0), '#e8e2d6'], [boxG(0.145, 0.03, 0.08, 0, 0, 0), '#c83a32'], [boxG(0.145, 0.08, 0.03, 0, 0, 0), '#c83a32']]);
   const nade = mk([[new THREE.IcosahedronGeometry(0.05, 0), '#3c4a32']]);
   SCN.add(g);
-  return { g, lower, hips, legs, upper, torso, head, aim, arms, gunG, guns, knife, hammer, medkit, nade, mats, i };
+  // (round 22) riot shield strapped to the left forearm side, facing the aim
+  const shield = grp(torso, 0.17, 0.16, -0.19); mesh(boxG(0.035, 0.5, 0.3, 0, 0, 0), '#2e3a44', shield); mesh(boxG(0.04, 0.12, 0.22, 0.005, 0.12, 0), '#8fb4c8', shield); mesh(boxG(0.04, 0.03, 0.3, 0.004, -0.06, 0), '#e8d26a', shield); shield.visible = false;
+  return { g, lower, hips, legs, upper, torso, head, aim, arms, gunG, guns, knife, hammer, medkit, nade, mats, i, shield };
 }
 // two-bone IK inside the aim rig: put the hand of arm A at target T (aim-rig coordinates)
 const _v1 = new THREE.Vector3(), _v2 = new THREE.Vector3(), _v3 = new THREE.Vector3(), _q1 = new THREE.Quaternion(), _down = new THREE.Vector3(0, -1, 0), _pole = new THREE.Vector3();
@@ -8435,7 +8568,18 @@ function mkVehicles() {
   const fm = lam('#c0392b'); bike.add(new THREE.Mesh(boxG(0.7, 0.05, 0.05, 0, 0.42, 0).rotateZ(0.08), fm), new THREE.Mesh(boxG(0.05, 0.36, 0.05, -0.12, 0.3, 0).rotateZ(0.35), fm), new THREE.Mesh(boxG(0.18, 0.04, 0.1, -0.16, 0.52, 0), lam('#222')), new THREE.Mesh(boxG(0.05, 0.05, 0.42, 0.36, 0.62, 0), lam('#888')));
   const moto = new THREE.Group(); moto.add(wheel(0.26, 0.12, 0.5), wheel(0.26, 0.12, -0.5));
   const bm = lam('#2c3e50'); moto.add(new THREE.Mesh(boxG(0.8, 0.22, 0.26, 0, 0.42, 0), bm), new THREE.Mesh(boxG(0.36, 0.08, 0.28, -0.14, 0.56, 0), lam('#151515')), new THREE.Mesh(boxG(0.22, 0.2, 0.24, 0.32, 0.6, 0), lam('#c0392b')), new THREE.Mesh(boxG(0.05, 0.05, 0.5, 0.42, 0.76, 0), lam('#999')), new THREE.Mesh(boxG(0.3, 0.06, 0.08, -0.3, 0.34, 0.16), lam('#777')));
-  g.add(bike, moto); g.userData = { bike, moto }; return g;
+  // (round 22) cargo trike: one wheel in front, a box on two wheels behind; armoured car: an open-topped steel tub with a push bar
+  const cargo = new THREE.Group(), cm = lam('#3f7a5a'); cargo.add(wheel(0.2, 0.08, 0.5));
+  for (const z of [-0.3, 0.3]) { const w = wheel(0.2, 0.08, -0.42); w.position.z = z; cargo.add(w); }
+  cargo.add(new THREE.Mesh(boxG(0.62, 0.05, 0.06, 0.22, 0.4, 0), cm), new THREE.Mesh(boxG(0.2, 0.06, 0.24, 0.0, 0.5, 0), lam('#222')), new THREE.Mesh(boxG(0.05, 0.3, 0.05, 0.46, 0.55, 0).rotateZ(-0.2), cm),
+    new THREE.Mesh(boxG(0.04, 0.04, 0.4, 0.5, 0.72, 0), lam('#222')), new THREE.Mesh(boxG(0.56, 0.06, 0.7, -0.42, 0.36, 0), cm), new THREE.Mesh(boxG(0.56, 0.24, 0.04, -0.42, 0.5, 0.34), cm), new THREE.Mesh(boxG(0.56, 0.24, 0.04, -0.42, 0.5, -0.34), cm),
+    new THREE.Mesh(boxG(0.04, 0.24, 0.7, -0.7, 0.5, 0), cm), new THREE.Mesh(boxG(0.3, 0.16, 0.28, -0.46, 0.48, 0.1), lam('#8a6a44')), new THREE.Mesh(boxG(0.22, 0.12, 0.22, -0.38, 0.46, -0.16), lam('#6a7a86')));
+  const armor = new THREE.Group(), am = lam('#55603a'), ad = lam('#3a4228');
+  for (const x of [0.48, -0.48]) for (const z of [-0.38, 0.38]) { const w = wheel(0.22, 0.14, x); w.position.z = z; armor.add(w); }
+  armor.add(new THREE.Mesh(boxG(1.34, 0.26, 0.74, 0, 0.36, 0), am), new THREE.Mesh(boxG(0.36, 0.3, 0.72, 0.5, 0.62, 0).rotateZ(0.35), am), new THREE.Mesh(boxG(1.0, 0.34, 0.05, -0.12, 0.66, 0.36), am), new THREE.Mesh(boxG(1.0, 0.34, 0.05, -0.12, 0.66, -0.36), am),
+    new THREE.Mesh(boxG(0.05, 0.34, 0.72, -0.64, 0.66, 0), am), new THREE.Mesh(boxG(0.08, 0.12, 0.84, 0.74, 0.3, 0), ad), new THREE.Mesh(boxG(0.06, 0.3, 0.06, 0.74, 0.4, 0.3), ad), new THREE.Mesh(boxG(0.06, 0.3, 0.06, 0.74, 0.4, -0.3), ad),
+    new THREE.Mesh(boxG(0.04, 0.12, 0.5, 0.42, 0.86, 0), lam('#9fc4d8')));
+  g.add(bike, moto, cargo, armor); g.userData = { bike, moto, cargo, armor, all: [null, bike, moto, cargo, armor] }; return g;
 }
 function drawPlayers(vl, dt) {
   while (OBJ.pl.length < W.p.length) OBJ.pl.push(mkPlayerModel(OBJ.pl.length));
@@ -8468,10 +8612,11 @@ function drawPlayers(vl, dt) {
     const wK = down ? 0 : p.wpn, SK = STANCE[wK] || STANCE[0];
     p._kn = lerp(p._kn || 0, SK.kneel && !moving && !p.build && !(p.medT > 0) && !(p.jz > 0.05) && !down ? 1 : 0, Math.min(1, dt * 7));
     if (p._kn > 0.01) { const q = p._kn; aL = lerp(aL, 1.45, q); kL = lerp(kL, 1.45, q); aR = lerp(aR, -0.05, q); kR = lerp(kR, 1.62, q); } // right knee down, left foot forward
-    const pil = p.pass != null && p.pass >= 0 && !down, ride = (!!p.ride || pil) && !down; m.veh.visible = !!p.ride && !down; if (ride) { m.veh.userData.bike.visible = (p.veh || 1) === 1; m.veh.userData.moto.visible = p.veh === 2; m.veh.rotation.y = -p._ly; aL = aR = 1.15; kL = kR = 1.35; }
+    const pil = p.pass != null && p.pass >= 0 && !down, ride = (!!p.ride || pil) && !down; m.veh.visible = !!p.ride && !down; if (ride) { m.veh.userData.all.forEach((q, k) => { if (q) q.visible = k === (p.veh || 1); }); m.veh.rotation.y = -p._ly; aL = aR = 1.15; kL = kR = 1.35; }
+    if (m.shield) m.shield.visible = (p.shield || 0) > 0 && !down && !p.dead;
     const legH = (a, k) => 0.23 * Math.cos(a) + 0.22 * Math.cos(a - k) + 0.03;
     const hipY = down ? 0.2 : Math.max(legH(aL, kL), legH(aR, kR));
-    const seat = ride ? (pil ? 0.46 : p.veh === 2 ? 0.42 : 0.36) : 0; m.hips.position.y = hipY + seat; m.upper.position.y = hipY + seat;
+    const seat = ride ? (pil ? (p.pass >= 0 && W.p[p.pass] && W.p[p.pass].veh === 4 ? 0.34 : 0.46) : p.veh === 2 ? 0.42 : p.veh === 4 ? 0.3 : 0.36) : 0; m.hips.position.y = hipY + seat; m.upper.position.y = hipY + seat;
     m.legs[0].th.rotation.z = aL; m.legs[0].kn.rotation.z = -kL; m.legs[0].ft.rotation.z = kL - aL;
     m.legs[1].th.rotation.z = aR; m.legs[1].kn.rotation.z = -kR; m.legs[1].ft.rotation.z = kR - aR;
     if (down) { m.legs[1].th.rotation.x = 0.6; } else m.legs[1].th.rotation.x = 0;
@@ -8606,8 +8751,9 @@ function propScene() {
     new THREE.CylinderGeometry(0.035, 0.035, 0.56, 6).rotateZ(Math.PI / 2).translate(0.46, 0.7, 0.06), new THREE.CylinderGeometry(0.035, 0.035, 0.56, 6).rotateZ(Math.PI / 2).translate(0.46, 0.7, -0.06), boxG(0.12, 0.14, 0.12, 0.05, 0.86, 0.12)]);
   G[53] = M([boxG(0.1, 0.62, 0.1, 0, 0.31, -0.42), boxG(0.1, 0.62, 0.1, 0, 0.31, 0.42), boxG(0.07, 0.13, 1.0, 0.04, 0.22, 0), boxG(0.07, 0.13, 1.0, 0.04, 0.5, 0), boxG(0.06, 0.12, 1.08, -0.04, 0.36, 0).rotateX(0.38)]);
   G[54] = M([boxG(0.44, 0.24, 0.3, 0, 0.12, 0), boxG(0.46, 0.04, 0.32, 0, 0.2, 0), boxG(0.1, 0.05, 0.05, 0, 0.27, 0)]);
+  G[56] = M([boxG(0.66, 0.06, 0.66, 0, 0.03, 0), cyl(0.08, 0.08, 0.14, 6, -0.2, 0.12, -0.2), cyl(0.08, 0.08, 0.14, 6, 0.2, 0.12, -0.2), cyl(0.08, 0.08, 0.14, 6, -0.2, 0.12, 0.2), cyl(0.08, 0.08, 0.14, 6, 0.2, 0.12, 0.2), boxG(0.6, 0.05, 0.6, 0, 0.21, 0), boxG(0.3, 0.02, 0.08, 0, 0.245, 0), boxG(0.08, 0.02, 0.3, 0, 0.245, 0)]); // jump pad
   G[55] = M([boxG(0.62, 0.64, 0.46, 0, 0.32, 0), boxG(0.52, 0.06, 0.02, 0, 0.52, 0.24), boxG(0.52, 0.06, 0.02, 0, 0.3, 0.24), boxG(0.66, 0.04, 0.5, 0, 0.66, 0)]);
-  const C = { 51: '#4a4a3a', 52: '#5a6670', 53: '#8a6a44', 54: '#4f6a3a', 55: '#2f5f9a', 48: '#7a5a3c', 49: '#8a9096', 43: '#e8b93a', 44: '#6a1f2a', 45: '#7a868f', 46: '#2f5f9a', 47: '#5a6a3a', 42: '#7a8088', 32: '#3f5a3a', 33: '#5a4a2e', 34: '#6a4a30', 35: '#a8322a', 36: '#4f5a32', 37: '#9a3a2a', 38: '#b8333a', 39: '#7a5a44', 40: '#6a4a2c', 41: '#3e5f2e', 12: '#a8946a', 13: '#6a5038', 14: '#7a8590', 15: '#5a5a55', 6: '#8a6440' };
+  const C = { 56: '#d8a03a', 51: '#4a4a3a', 52: '#5a6670', 53: '#8a6a44', 54: '#4f6a3a', 55: '#2f5f9a', 48: '#7a5a3c', 49: '#8a9096', 43: '#e8b93a', 44: '#6a1f2a', 45: '#7a868f', 46: '#2f5f9a', 47: '#5a6a3a', 42: '#7a8088', 32: '#3f5a3a', 33: '#5a4a2e', 34: '#6a4a30', 35: '#a8322a', 36: '#4f5a32', 37: '#9a3a2a', 38: '#b8333a', 39: '#7a5a44', 40: '#6a4a2c', 41: '#3e5f2e', 12: '#a8946a', 13: '#6a5038', 14: '#7a8590', 15: '#5a5a55', 6: '#8a6440' };
   const cap = { 48: 700, 49: 900, 42: 2500, 41: 3000, 40: 600, 39: 600, 12: 1500, 13: 800, 14: 800, 15: 400, 6: 400, 32: 400, 34: 400 };
   for (const id in G) { const m = inst(G[id], lam('#ffffff'), cap[id] || 300); m.castShadow = id == 38 || id == 34; PROP[id] = { m, n: 0, col: C[id], al: id == 12 || id == 13 || id == 14 || id == 53 }; }
   // build-plan ghosts and the x-ray ring that shows survivors through walls
@@ -8800,11 +8946,12 @@ const INP = { keys: {}, mx: 0, my: 0, mL: false, mR: false, mouseT: 0, touch: fa
   move: { id: null, ox: 0, oy: 0, x: 0, y: 0 }, tAim: { id: null, x: 0, y: 0 }, aim: { id: null, ox: 0, oy: 0, x: 0, y: 0, a: 0, t: 0, btn: false }, tp: {}, pinch: null, useHeld: false, bldT: 0, bldLast: '', paint: null, aimT: 0 };
 const KD = k => !!INP.keys[k];
 const inGame = () => STATE.mode === 'play' && W && !W.over;
-const panelOpen = () => !$('bigmap').classList.contains('hidden') || !$('craft').classList.contains('hidden') || !$('pause').classList.contains('hidden') || !$('help').classList.contains('hidden');
+const panelOpen = () => !$('bigmap').classList.contains('hidden') || !$('craft').classList.contains('hidden') || !$('kit').classList.contains('hidden') || !$('pause').classList.contains('hidden') || !$('help').classList.contains('hidden');
 function act(a, v) {
   if (a === 'wpn' && W && W.p[ME] && W.p[ME].owned[v] && v !== W.p[ME].wpn && WPN[v].tag && !W.demo) { const n = (UI.wtip = UI.wtip || {})[v] = (UI.wtip[v] || 0) + 1; if (n <= 3) toast(WPN[v].name + ' · ' + WPN[v].tag); } // what each gun is for (first few times)
   const me = W && W.p[ME]; if (!me) return;
   if (a === 'wpn' && (me.down || !me.owned[v])) return;
+  if (a === 'wpn' && v !== me.wpn) UI.prevW = me.wpn;                        // Z / the weapon menu can flip back to it
   if (NETROLE === 'guest') {
     netSendCtl({ t: 'act', a, v });
     if (a === 'wpn') { me.wpn = v; me.wpnLock = performance.now() + 700; sfx('swap'); }
@@ -8814,11 +8961,34 @@ function act(a, v) {
 }
 function toggleBuild(v) {
   const me = W.p[ME]; if (me.down || me.dead) return;
-  const on = v == null ? !me.build : v; if (on && me.ride) { act('ride'); me.ride = false; } me.build = on; if (!on) me.demo = false; else me.sdir = screenUpDir();
+  UI.lastG = -1; const on = v == null ? !me.build : v; if (on && me.ride) { act('ride'); me.ride = false; } me.build = on; if (!on) me.demo = false; else me.sdir = screenUpDir();
   act('mode', on ? 1 : 0); uiBuildBar(); UI.keysK = ''; uiKeys(me); sfx('click');
 }
 function selBlock(id) { const me = W.p[ME]; me.sel = id; me.demo = false; uiBuildBar(); sfx('click'); }
 function rotStairs() { const me = W.p[ME]; me.sdir = (me.sdir + 1) & 3; uiBuildBar(); sfx('click'); }
+// (round 22) items: pick a slot (entering item mode); the same slot again switches to its next material / variant
+function selItem(n) {
+  const me = W.p[ME], g = ITEMS[n]; if (!g || me.down || me.dead) return;
+  if (!me.build) toggleBuild(true);
+  const cur = !me.demo && itemOf(me.sel) === g && UI.lastG === n, open = g.ids.filter(id => hasBP(id)), list = open.length ? open : g.ids, G = UI.gsel = UI.gsel || {};
+  const id = cur && list.length > 1 ? list[(list.indexOf(me.sel) + 1) % list.length] : list.includes(G[g.k]) ? G[g.k] : list[0];
+  G[g.k] = id; selBlock(id); UI.lastG = n; if (cur && list.length > 1) toast(g.name + '：' + B[id].name + ' · ' + costText(B[id].cost));
+}
+// (round 22) quick weapons: up to 4 picked in the 装备 panel (SET.quick), topped up with whatever else you own
+function quickList(me) {
+  const q = (SET.quick || []).filter((k, j, a) => k >= 0 && k < NW && me.owned[k] && a.indexOf(k) === j).slice(0, 4);
+  for (let k = 0; k < NW && q.length < 4; k++) if (me.owned[k] && !q.includes(k)) q.push(k);
+  return q;
+}
+function quickWpn(n) { const me = W.p[ME], q = quickList(me); if (q[n] == null) return; if (me.build) toggleBuild(false); act('wpn', q[n]); }
+function nextQuick(d) { const me = W.p[ME], q = quickList(me); if (q.length < 2) return; let j = q.indexOf(me.wpn); j = j < 0 ? 0 : (j + d + q.length) % q.length; if (me.build) toggleBuild(false); act('wpn', q[j]); }
+function swapLast() { const me = W.p[ME]; if (UI.prevW != null && me.owned[UI.prevW] && UI.prevW !== me.wpn) { if (me.build) toggleBuild(false); act('wpn', UI.prevW); } else nextQuick(1); }
+// vehicles: T gets on your default one; Shift+T / a long press on 载具 picks another you own (and gets on it)
+function rideKey(pick) {
+  const me = W.p[ME], own = [1, 2, 3, 4].filter(v => (me.vehs || 0) >> v & 1);
+  if (pick && own.length) { const j = own.indexOf(me.veh), v = own[(j + 1) % own.length]; act('ride', v); toast('载具：' + VEH[v].name + ' · ' + VEH[v].tag); return; }
+  if (own.length || me.pass >= 0 || pillionFor(me)) act('ride'); else toast('还没有载具：在「商店 → 载具」里造（尸城求生要先找到蓝图），或者走到队友的摩托 / 装甲车边按 T 坐后座');
+}
 function cycleWpn(d) { const me = W.p[ME]; let w = me.wpn; for (let k = 0; k < NW; k++) { w = (w + d + NW) % NW; if (me.owned[w]) break; } if (w !== me.wpn) act('wpn', w); }
 // knife: find the zombie, turn to it, lunge into reach and slash; the host settles the damage
 function doKnife() {
@@ -8871,24 +9041,26 @@ function onKeyPress(k) {
   if (k === 'PageDown') return viewStep(-1);
   if (k === 'Home') return viewAuto();
   if (k === 'h' && !$('help').classList.contains('hidden')) { closeHelp(); return; }
-  if (panelOpen()) { if (k === 'f' || k === 'c') closeCraft(); return; }
+  if (panelOpen()) { if (k === 'f' || k === 'c') closeCraft(); if (k === 'i') closeKit(); return; }
   if (W.over) return;
   const me = W.p[ME];
   if (k === 'b') return toggleBuild();
   if (me.build) {
-    const n = '1234567890'.indexOf(k); if (n >= 0 && PAL[n]) return selBlock(PAL[n]);
+    const n = '123456789'.indexOf(k); if (n >= 0 && ITEMS[n]) return selItem(n);
     if (k === 'x') { me.demo = !me.demo; uiBuildBar(); return; }
-    if (k === 'r') return rotStairs();
+    if (k === 'r') return selItem(ITEMS.indexOf(itemOf(me.sel)));
+    if (k === 'z') return swapLast();
     if ((k === 'Enter' || k === ' ') && PLAN) return confirmPlan();
-  } else { const n = '1234567'.indexOf(k); if (n >= 0) return act('wpn', n); if (k === 'r') return act('reload'); }
+  } else { const n = '1234'.indexOf(k); if (n >= 0) return quickWpn(n); if (k === 'r') return act('reload'); if (k === 'z') return swapLast(); }
+  if (k === 'i') return openKit();
   if (k === ' ') return doJump();
   if (k === 'v') return doKnife();
   if (k === 'g') return act('nade');
   if (k === 'h') return act('med');
   if (k === 'n') return toggleReady();
   if (k === 'c') return openCraft();
-  if (k === 't') { if (me.veh || me.pass >= 0 || pillionFor(me)) act('ride'); else toast('还没有车：找到自行车 / 摩托车的蓝图后在「制作」里造（或者走到骑摩托的队友身边按 T 坐后座）'); return; }
-  if (k === 'f' && (me.ride || me.pass >= 0)) { act('ride'); return; }
+  if (k === 't') return rideKey(KD('Shift'));
+  if (k === 'f' && (me.ride || me.pass >= 0) && !(me.ride && VEH[me.veh] && VEH[me.veh].search && useTarget(me))) { act('ride'); return; } // the cargo trike searches from the seat
   if (k === 'f') { if (nearBench(me) && !useTarget(me)) return openCraft(); if (INP.useLatch) INP.useLatch = null; else INP.useReq = true; }
 }
 function toggleReady() { const me = W.p[ME]; if (W.phase !== 'day') return; act('ready', me.ready ? 0 : 1); if (NETROLE === 'guest') me.ready = !me.ready; sfx('ready'); }
@@ -9000,16 +9172,24 @@ FIRE.addEventListener('pointerdown', e => {
   e.preventDefault(); e.stopPropagation(); audioInit(); if (!inGame()) return;
   if (INP.aim.id != null && !INP.aim.btn) { INP.aim.id = null; stickDraw(stickR, INP.aim); }
   const r = FIRE.getBoundingClientRect();
-  Object.assign(INP.aim, { id: e.pointerId, ox: r.left + r.width / 2, oy: r.top + r.height / 2, x: 0, y: 0, btn: true });
+  Object.assign(INP.aim, { id: e.pointerId, ox: r.left + r.width / 2, oy: r.top + r.height / 2, x: 0, y: 0, btn: true, t0: performance.now(), far0: false, fireOn: false });
   INP.aimT = 0; W.p[ME].aimPt = null; FIRE.classList.add('on'); fireKnob();
   try { FIRE.setPointerCapture(e.pointerId); } catch (_) { }
 });
 FIRE.addEventListener('pointermove', e => {
   if (INP.aim.id !== e.pointerId || !INP.aim.btn) return; e.preventDefault();
   const R = FIRE.clientWidth * 0.5; INP.aim.x = (e.clientX - INP.aim.ox) / R; INP.aim.y = (e.clientY - INP.aim.oy) / R;
+  if (!INP.aim.fireOn && Math.hypot(e.clientX - INP.aim.ox, e.clientY - INP.aim.oy) > 14) INP.aim.far0 = true; // dragged before the long press: picking a target
   if (Math.hypot(INP.aim.x, INP.aim.y) > 0.3) INP.aim.t = performance.now(); fireKnob();
 });
-function fireEnd(e) { if (INP.aim.id !== e.pointerId || !INP.aim.btn) return; Object.assign(INP.aim, { id: null, x: 0, y: 0, btn: false, t: performance.now() }); FIRE.classList.remove('on'); fireKnob(); }
+function fireEnd(e) {
+  if (INP.aim.id !== e.pointerId || !INP.aim.btn) return;
+  const A = INP.aim, now = performance.now();
+  if (!A.fireOn && inGame()) {
+    if (!A.far0 && now - A.t0 < 300) INP.tapT = 0.14;                                                       // quick tap: one shot
+    else if (A.far0) { const z = W.p[ME].aimPt && W.p[ME].aimPt.zb; if (zAlive(z)) { INP.mark = z; INP.atk = false; INP.markT = now; } } // a drag picks the target; hold the button to shoot it
+  }
+  Object.assign(INP.aim, { id: null, x: 0, y: 0, btn: false, t: performance.now() }); FIRE.classList.remove('on'); fireKnob(); }
 FIRE.addEventListener('pointerup', fireEnd); FIRE.addEventListener('pointercancel', fireEnd);
 CV.addEventListener('pointerup', endPtr); CV.addEventListener('pointercancel', endPtr);
 /* ---------- build targeting: the surface under the cursor / finger decides the cell (no layer switching) ---------- */
@@ -9127,22 +9307,58 @@ function bindBtn(id, down, up) {
   el.addEventListener('pointerup', end); el.addEventListener('pointercancel', end);
 }
 bindBtn('tReload', () => inGame() && (W.p[ME].build ? rotStairs() : act('reload')));
-bindBtn('tWpn', () => { if (!inGame()) return; const me = W.p[ME]; if (me.owned.filter(Boolean).length <= 2) cycleWpn(1); else toggleWpick(); });
-// weapon picker: every gun you own in one tap instead of cycling through them
+// (round 22) the weapon key on the fire ring: tap = next quick weapon; drag (or hold) = a fan of every gun you own — slide onto one and let go
+const WK = document.getElementById('tWpn');
+function wpickItems(me) {
+  const q = quickList(me), out = q.concat(WPN.map((w, k) => k).filter(k => me.owned[k] && !q.includes(k))).map(k => ({ k, t: WPN[k].name, s: WPN[k].inf ? '∞' : me.mag[k] + '/' + me.ammo[k], sel: k === me.wpn, q: q.includes(k) }));
+  const w = WPN[me.wpn]; if (me.mag[me.wpn] < w.mag && (w.inf || me.ammo[me.wpn] > 0)) out.push({ k: 'rl', t: '换弹', s: '' });
+  out.push({ k: 'kit', t: '装备…', s: '选快捷' }); return out;
+}
 function toggleWpick(force) {
   const el = $('wpick'), open = force != null ? force : el.classList.contains('hidden');
-  el.classList.toggle('hidden', !open); if (!open) return;
-  const me = W.p[ME]; el.innerHTML = '';
-  WPN.forEach((w, k) => {
-    if (!me.owned[k]) return;
-    const b = document.createElement('button'); b.className = k === me.wpn ? 'sel' : '';
-    b.innerHTML = '<b>' + w.name + '</b><span>' + (w.inf ? '∞' : me.mag[k] + ' / ' + me.ammo[k]) + '</span>';
-    b.addEventListener('pointerdown', e => { e.stopPropagation(); e.preventDefault(); act('wpn', k); sfx('click'); toggleWpick(false); });
-    el.appendChild(b);
+  el.classList.toggle('hidden', !open); WK.classList.toggle('on', open); if (!open) { UI.wpHi = null; return; }
+  // an outer ring round the fire cluster, from above the weapon key round to the left, clear of the four keys
+  const me = W.p[ME], items = wpickItems(me), fr = $('tFire').getBoundingClientRect(), wr = WK.getBoundingClientRect(), cx = fr.left + fr.width / 2, cy = fr.top + fr.height / 2;
+  const n = items.length, chip = VW >= 760 && VH >= 760 ? 76 : 66, base = Math.hypot(wr.left + wr.width / 2 - cx, wr.top + wr.height / 2 - cy) + wr.width / 2 + chip / 2 + 10;
+  const a0 = 62, a1 = 196, R = Math.max(base, n * (chip + 8) / ((a1 - a0) * Math.PI / 180));
+  el.innerHTML = ''; UI.wpOpts = [];
+  items.forEach((it, j) => {
+    const a = (a0 + (a1 - a0) * (n === 1 ? 0.5 : j / (n - 1))) * Math.PI / 180, x = clamp(cx + Math.cos(a) * R, chip / 2 + 4, VW - chip / 2 - 4), y = clamp(cy - Math.sin(a) * R, chip / 2 + 4, VH - chip / 2 - 4);
+    const b = document.createElement('button'); b.className = 'wo' + (it.sel ? ' sel' : '') + (it.q ? ' q' : '') + (typeof it.k === 'string' ? ' x' : '');
+    b.innerHTML = '<b>' + it.t + '</b><span>' + it.s + '</span>'; b.style.left = x + 'px'; b.style.top = y + 'px';
+    b.addEventListener('pointerup', e => { e.stopPropagation(); e.preventDefault(); wpickDo(it.k); });
+    el.appendChild(b); UI.wpOpts.push({ b, x, y, k: it.k });
   });
-  const r = $('tWpn').getBoundingClientRect(); el.style.right = Math.max(8, VW - r.right) + 'px'; el.style.bottom = (VH - r.top + 8) + 'px';
 }
-document.addEventListener('pointerdown', e => { const el = $('wpick'); if (el && !el.classList.contains('hidden') && !el.contains(e.target) && e.target.id !== 'tWpn' && !$('tWpn').contains(e.target)) toggleWpick(false); }, true);
+function wpickDo(k) { toggleWpick(false); if (!inGame()) return; sfx('click'); if (k === 'rl') act('reload'); else if (k === 'kit') openKit(); else { const me = W.p[ME]; if (me.build) toggleBuild(false); act('wpn', k); } }
+function wpickHover(x, y) { let best = null, bd = 52; for (const o of UI.wpOpts || []) { const d = Math.hypot(o.x - x, o.y - y); if (d < bd) { bd = d; best = o; } } for (const o of UI.wpOpts || []) o.b.classList.toggle('hi', o === best); UI.wpHi = best; }
+WK.addEventListener('pointerdown', e => {
+  e.preventDefault(); e.stopPropagation(); audioInit(); if (!inGame()) return;
+  const was = !$('wpick').classList.contains('hidden'); if (was) { toggleWpick(false); return; }
+  UI.wk = { id: e.pointerId, x: e.clientX, y: e.clientY, open: false, tm: setTimeout(() => { if (UI.wk && !UI.wk.open) { UI.wk.open = true; toggleWpick(true); } }, 380) };
+  WK.classList.add('on'); try { WK.setPointerCapture(e.pointerId); } catch (_) { }
+});
+WK.addEventListener('pointermove', e => {
+  const k = UI.wk; if (!k || k.id !== e.pointerId) return; e.preventDefault();
+  if (!k.open && Math.hypot(e.clientX - k.x, e.clientY - k.y) > 16) { k.open = true; toggleWpick(true); }
+  if (k.open) wpickHover(e.clientX, e.clientY);
+});
+function wkEnd(e) {
+  const k = UI.wk; if (!k || k.id !== e.pointerId) return; clearTimeout(k.tm); UI.wk = null;
+  if (!k.open) { WK.classList.remove('on'); if (inGame()) nextQuick(1); return; }                              // a tap: next quick weapon
+  if (UI.wpHi) wpickDo(UI.wpHi.k);                                                                           // slid onto one and let go
+  else if (Math.hypot(e.clientX - k.x, e.clientY - k.y) > 16) toggleWpick(false);                            // dragged off into nothing: cancel
+  // held without moving: the fan stays open, tap a gun
+}
+WK.addEventListener('pointerup', wkEnd); WK.addEventListener('pointercancel', wkEnd);
+document.addEventListener('pointerdown', e => { const el = $('wpick'); if (el && !el.classList.contains('hidden') && !el.contains(e.target) && e.target !== WK && !WK.contains(e.target)) toggleWpick(false); }, true);
+// vehicle key: tap = on / off your default; hold = pick another vehicle you own
+(() => {
+  const el = document.getElementById('tRide'); let st = null;
+  el.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); audioInit(); if (!inGame()) return; el.classList.add('on'); st = { t: setTimeout(() => { st.long = true; rideKey(true); }, 450) }; });
+  const end = () => { el.classList.remove('on'); if (!st) return; clearTimeout(st.t); if (!st.long && inGame()) rideKey(false); st = null; };
+  el.addEventListener('pointerup', end); el.addEventListener('pointercancel', end);
+})();
 bindBtn('tLUp', () => viewStep(1)); bindBtn('tLDn', () => viewStep(-1));
 bindBtn('vToggle', () => { document.body.classList.toggle('vopen'); $('vToggle').classList.toggle('on', document.body.classList.contains('vopen')); sfx('click'); });
 bindBtn('tShove', () => { if (inGame()) { INP.knHeld = true; doKnife(); } }, () => { INP.knHeld = false; });
@@ -9150,10 +9366,12 @@ bindBtn('tJump', () => inGame() && doJump());
 bindBtn('bcOk', () => confirmPlan()); bindBtn('bcNo', () => cancelPlan());
 bindBtn('tNade', () => inGame() && act('nade'));
 bindBtn('tMed', () => inGame() && act('med'));
-bindBtn('tUse', () => { if (!inGame()) return; const me = W.p[ME]; if (canCraft(me) && !useTarget(me)) openCraft(); else if (INP.useLatch) INP.useLatch = null; else INP.useReq = true; });
+// (round 22) the context key on the fire ring: search / revive / gather when there's something, get off when riding, otherwise jump
+bindBtn('tUse', () => { if (!inGame()) return; const me = W.p[ME], ut = useTarget(me); if (ut && !(me.ride && !(VEH[me.veh] && VEH[me.veh].search))) { if (INP.useLatch) INP.useLatch = null; else INP.useReq = true; } else if (me.ride || me.pass >= 0) act('ride'); else doJump(); });
 bindBtn('tBuild', () => inGame() && toggleBuild());
+bindBtn('tHelp', () => { document.body.classList.toggle('guide'); sfx('click'); });
+document.addEventListener('pointerdown', e => { if (document.body.classList.contains('guide') && e.target.id !== 'tHelp') document.body.classList.remove('guide'); }, true);
 bindBtn('tCraft', () => inGame() && openCraft());
-bindBtn('tRide', () => { if (!inGame()) return; const me = W.p[ME]; if (me.veh || me.pass >= 0 || pillionFor(me)) act('ride'); });
 bindBtn('vZin', () => camZoom(0.8)); bindBtn('vZout', () => camZoom(1.25));
 bindBtn('vRl', () => camRot(-1)); bindBtn('vRr', () => camRot(1));
 bindBtn('vUp', () => viewStep(1)); bindBtn('vDn', () => viewStep(-1)); bindBtn('vAuto', () => viewAuto());
@@ -9234,6 +9452,8 @@ function readInput(dt) {
     } else { BUILD_HOVER = null; INP.bDown = false; if (!me.build && (PLAN || PREV)) cancelPlan(); }
   } else {
     const A = INP.aim, held = A.id != null, active = held && Math.hypot(A.x, A.y) > 0.3, fing = INP.tAim.id != null && !me.build;
+    if (held && A.btn && !A.fireOn && !A.far0 && performance.now() - A.t0 > 300) A.fireOn = true;            // long press: keep firing, dragging now steers
+    INP.tapT = Math.max(0, (INP.tapT || 0) - dt); const tap = INP.tapT > 0, burst = held && A.btn && A.fireOn;
     const mk = !fing && !active && markOK(me) ? INP.mark : null; if (!mk && INP.mark && !markOK(me)) { INP.mark = null; INP.atk = false; }
     const fpy = INP.tAim.y - FINGER_UP;
     if (fing) { const pt = aimPick(INP.tAim.x, fpy, assistLv().mag ? 50 : 0); me.aimPt = pt; me.aim = Math.atan2(pt.y - me.y, pt.x - me.x); }
@@ -9244,18 +9464,18 @@ function readInput(dt) {
     } else if (mk) {
       // a marked zombie: face it, and the fire button shoots it (picked by hand, so no lock-on delay and normal spread)
       me.aimPt = { x: mk.x, y: mk.y, z: mk.z + mk.h * 0.62, zb: mk }; me.aim = Math.atan2(mk.y - me.y, mk.x - me.x);
-    } else if (held && A.btn) {
-      // just holding the fire button: lock on to the nearest zombie, otherwise shoot where you face
+    } else if ((held && A.btn) || tap) {
+      // just holding the fire button (or a quick tap): lock on to the nearest zombie, otherwise shoot where you face
       trackAim(me); INP.aimT -= dt; if (INP.aimT <= 0 || !me.aimPt) { INP.aimT = 0.12; const f = Math.hypot(I.mx, I.my) > 0.2 ? [I.mx, I.my] : [Math.cos(me.aim), Math.sin(me.aim)]; me.aimPt = touchAutoAim(me, f[0], f[1], true, me.aimPt && me.aimPt.zb); }
       me.aim = Math.atan2(me.aimPt.y - me.y, me.aimPt.x - me.x);
     } else if (performance.now() - A.t > 600 && Math.hypot(I.mx, I.my) > 0.2) { me.aim = Math.atan2(I.my, I.mx); me.aimPt = null; }
     drawReticle(me, me.aimPt, fing && !blocked && !me.build && !me.dead, INP.tAim.x, fpy);
     // auto-aim (fire button without a finger on the map): a new target takes a moment to lock on, and the shots are looser
-    const auto = !fing && !mk && (active || (held && A.btn)), AS = assistLv(), lz = auto && me.aimPt && me.aimPt.zb;
+    const auto = !fing && !mk && (active || (held && A.btn) || tap), AS = assistLv(), lz = auto && me.aimPt && me.aimPt.zb;
     if (lz !== INP.lockZ) { INP.lockZ = lz || null; INP.lockT = 0; } else INP.lockT = (INP.lockT || 0) + dt;
     INP.lockAcq = lz && AS.acq ? Math.min(1, INP.lockT / AS.acq) : 1;
     I.auto = auto && lz ? AS.spread : 0;
-    I.fire = !blocked && ((fing && held && A.btn) || (mk && ((held && A.btn) || INP.atk)) || (auto && INP.lockAcq >= 1)) && !me.build ? 1 : 0;
+    I.fire = !blocked && ((fing && held && A.btn) || (mk && (burst || tap || INP.atk)) || (auto && (tap || (burst && INP.lockAcq >= 1)))) && !me.build ? 1 : 0;
     INP.markShow = mk; INP.atkShow = mk && INP.atk;
     CAM.lookX = lerp(CAM.lookX || 0, Math.cos(me.aim) * 1.5, Math.min(1, dt * 2)); CAM.lookY = lerp(CAM.lookY || 0, Math.sin(me.aim) * 1.5, Math.min(1, dt * 2));
     if (!me.build || !BUILD_HOVER || !BUILD_HOVER.t) BUILD_HOVER = me.build ? BUILD_HOVER : null;
@@ -9337,9 +9557,9 @@ function hostStart() {
   startGame(seed, names, SET.diff, 0, mode, map);
 }
 const ZI = ZKEYS;
-function pFlags(p) { return (p.down ? 1 : 0) | (p.dead ? 2 : 0) | (p.gone ? 4 : 0) | (p.build ? 32 : 0) | (p.ready ? 64 : 0) | (p.selfRev ? 128 : 0) | (p.ride ? 256 : 0) | ((p.veh || 0) << 9) | ((p.pass != null && p.pass >= 0 ? p.pass + 1 : 0) << 11); }
+function pFlags(p) { return (p.down ? 1 : 0) | (p.dead ? 2 : 0) | (p.gone ? 4 : 0) | (p.build ? 32 : 0) | (p.ready ? 64 : 0) | (p.selfRev ? 128 : 0) | (p.ride ? 256 : 0) | ((p.veh || 0) << 9) | ((p.pass != null && p.pass >= 0 ? p.pass + 1 : 0) << 12); } // veh: 3 bits (round 22: four vehicles)
 function makeSnap() {
-  const P = p => [r2(p.x), r2(p.y), p.L, r2(p.vx), r2(p.vy), r2(p.aim), Math.ceil(p.hp), pFlags(p), Math.round(p.downT * 10) / 10, p.wpn, p.mag.join(','), p.ammo.join(','), p.owned.join(''), p.nades, p.meds, Math.round(p.useT * 100), Math.round(p.medT * 10) / 10, Math.round(p.reloadT * 10) / 10, p.kills, Math.round(p.anim * 10) / 10, p.sel, p.aimPt ? [r2(p.aimPt.x), r2(p.aimPt.y), r2(p.aimPt.z)] : 0];
+  const P = p => [r2(p.x), r2(p.y), p.L, r2(p.vx), r2(p.vy), r2(p.aim), Math.ceil(p.hp), pFlags(p), Math.round(p.downT * 10) / 10, p.wpn, p.mag.join(','), p.ammo.join(','), p.owned.join(''), p.nades, p.meds, Math.round(p.useT * 100), Math.round(p.medT * 10) / 10, Math.round(p.reloadT * 10) / 10, p.kills, Math.round(p.anim * 10) / 10, p.sel, p.aimPt ? [r2(p.aimPt.x), r2(p.aimPt.y), r2(p.aimPt.z)] : 0, p.vehs || 0, Math.ceil(p.shield || 0)];
   const z = []; for (const q of W.zs) z.push(q.id, ZI.indexOf(q.k), Math.round(q.x * 100), Math.round(q.y * 100), q.L, Math.round(q.z * 100), Math.round(q.face * 100), Math.ceil(q.hp / q.max * 100), (q.climbing ? 1 : 0) | (q.atk > 0 ? 2 : 0) | (q.hitT > 0 ? 4 : 0) | (q.moving ? 8 : 0) | (q.burn > 0 ? 16 : 0) | (q.scr > 0 ? 32 : 0) | (q.rage > 0 ? 64 : 0) | (q.hidden ? 128 : 0) | (q.sleep ? 256 : 0) | ((q.aw || 0) > 0.15 ? 512 : 0));
   const pr = []; for (const b of W.proj) pr.push(b.k === 'nade' ? 0 : b.k === 'gl' ? 2 : 1, r2(b.x), r2(b.y), r2(b.z), r2(b.vx), r2(b.vy), r2(b.vz));
   const d = []; for (const i of W.dirty) d.push(i, Math.round(W.bhp[i]), Math.round(W.shp[i])); W.dirty.clear();
@@ -9393,11 +9613,11 @@ function applySnap(s) {
   RES.forEach((r, i) => W.res[r.k] = s.res[i]); W.spawnLeft = s.sl;
   s.p.forEach((a, i) => {
     const p = W.p[i]; if (!p) return;
-    const [x, y, L, vx, vy, aim, hp, fl, downT, wpn, mag, ammo, owned, nades, meds, useT, medT, reloadT, kills, anim, sel, ap] = a;
+    const [x, y, L, vx, vy, aim, hp, fl, downT, wpn, mag, ammo, owned, nades, meds, useT, medT, reloadT, kills, anim, sel, ap, vehs, shield] = a;
     const mine = i === ME;
-    p.hp = hp; p.down = !!(fl & 1); p.dead = !!(fl & 2); p.gone = !!(fl & 4); p.downT = downT; p.selfRev = !!(fl & 128); p.ride = !!(fl & 256); p.veh = (fl >> 9) & 3; p.pass = ((fl >> 11) & 7) - 1;
+    p.hp = hp; p.down = !!(fl & 1); p.dead = !!(fl & 2); p.gone = !!(fl & 4); p.downT = downT; p.selfRev = !!(fl & 128); p.ride = !!(fl & 256); p.veh = (fl >> 9) & 7; p.pass = ((fl >> 12) & 7) - 1;
     p.mag = mag.split(',').map(Number); p.ammo = ammo.split(',').map(Number); p.owned = owned.split('').map(Number);
-    p.nades = nades; p.meds = meds; p.useT = useT / 100; p.medT = medT; p.reloadT = reloadT; p.kills = kills; p.ready = !!(fl & 64);
+    p.nades = nades; p.meds = meds; p.vehs = vehs || 0; p.shield = shield || 0; p.useT = useT / 100; p.medT = medT; p.reloadT = reloadT; p.kills = kills; p.ready = !!(fl & 64);
     if (!mine) { p.tx = x; p.ty = y; p.L = L; p.vx = vx; p.vy = vy; p.aim = aim; p.build = !!(fl & 32); p.wpn = wpn; p.anim = anim; p.sel = sel; p.aimPt = ap ? { x: ap[0], y: ap[1], z: ap[2] } : null; if (p.x == null || d2(p.x, p.y, x, y) > 4) { p.x = x; p.y = y; } }
     else if (performance.now() > (p.wpnLock || 0)) p.wpn = wpn;
   });
@@ -9455,10 +9675,12 @@ function showScreen(s) {
   for (const id of ['title', 'lobby']) $(id).classList.toggle('hidden', id !== s);
   $('hud').classList.toggle('hidden', s !== 'play');
   $('hubBtn').classList.toggle('hidden', !HUB || s !== 'title');
-  if (s !== 'play') { for (const id of ['craft', 'pause', 'over']) $(id).classList.add('hidden'); }
+  if (s !== 'play') { for (const id of ['craft', 'kit', 'pause', 'over']) $(id).classList.add('hidden'); }
   if (s === 'title' && typeof renderBest === 'function') renderBest();
   if (s === 'title') { STATE.mode = 'title'; renderBest(); }
   if (s === 'lobby') STATE.mode = 'lobby';
+  if (s === 'play' && INP.touch && !SET.guide22) { SET.guide22 = 1; saveSet(); setTimeout(() => document.body.classList.add('guide'), 600); } // (round 22) the first touch game shows what each control does; the next tap hides it
+  if (s !== 'play') document.body.classList.remove('guide');
 }
 function titleStatus(t) { $('tStatus').textContent = t || ''; }
 function renderBest() {
@@ -9509,14 +9731,15 @@ function uiKeys(me) {
   const el = $('keys'); if (!el || INP.touch) return;
   const wi = me.down ? 0 : me.wpn, w = WPN[wi], st = c => c === 1 ? ' class="hot"' : c === 2 ? ' class="warn"' : c === -1 ? ' class="off"' : '';
   let rows;
-  if (me.build) rows = [['左键', '盖（拖动一排）'], ['右键', '拆'], ['1–0', '选材料'], ['R', '转向'], ['X', '拆除模式', me.demo ? 1 : 0], ['Enter', '确认'], ['Esc', '取消'], ['B', '退出建造', 1]];
+  if (me.build) rows = [['左键', '放（拖动一排）'], ['右键', '拆'], ['1–9', '选道具（再按换材料）'], ['R', '换材料'], ['X', '拆除模式', me.demo ? 1 : 0], ['Enter', '确认'], ['Esc', '取消'], ['B', '收起道具', 1]];
   else {
     const canRl = me.mag[wi] < w.mag && (w.inf || me.ammo[wi] > 0) && !(me.reloadT > 0), ut = useTarget(me), bench = canCraft(me);
     rows = [['左键', '射击'], ['R', '换弹', me.mag[wi] === 0 && canRl ? 2 : canRl ? 0 : -1], ['G', '手雷 ×' + me.nades, me.nades ? 0 : -1],
       ['H', me.down ? '自救' : '医疗 ×' + me.meds, !me.meds ? -1 : (me.down || me.hp < me.maxHp * 0.4) ? 2 : me.hp >= me.maxHp ? -1 : 0],
-      ['右键', '刀（自动追，也可按 V）'], ['空格', '跳 / 翻越'], ['F', ut ? ut.name : '交互', ut ? 1 : 0], ['1–' + NW, '换枪'], ['C', '制作 / 购买', bench ? 1 : -1], ['B', '建造']];
+      ['右键', '刀（自动追，也可按 V）'], ['空格', '跳 / 翻越'], ['F', ut ? ut.name : '交互', ut ? 1 : 0], ['1–4', '快捷武器'], ['Z', '切回上一把'], ['I', '装备（选快捷枪 / 默认载具）'], ['C', '商店', bench ? 1 : -1], ['B', '道具（墙、陷阱、跳板…）']];
     const pil = !me.ride && !(me.pass >= 0) && pillionFor(me);
-    if (me.veh || me.pass >= 0 || pil) rows.push(['T', me.ride || me.pass >= 0 ? '下车' : pil ? '坐后座' : (me.veh === 2 ? '骑摩托' : '骑车'), me.ride || me.pass >= 0 || pil ? 1 : 0]);
+    if (me.vehs || me.pass >= 0 || pil) rows.push(['T', me.ride || me.pass >= 0 ? '下车' : pil ? '坐后座' : '上' + (VEH[me.veh] ? VEH[me.veh].name : '车'), me.ride || me.pass >= 0 || pil ? 1 : 0]);
+    if (me.vehs & (me.vehs - 1)) rows.push(['⇧T', '换一辆车']);
     if (W.phase === 'day') rows.push(['N', me.ready ? '取消准备' : '准备入夜', me.ready ? 1 : 0]);
   }
   rows.push(['M', '大地图（也可按 Tab）'], ['Q E', '转镜头'], ['Esc', '菜单']);
@@ -9533,7 +9756,7 @@ function blockIcon(id) {
   const shade = k => { tmpC.set(col).multiplyScalar(k); return '#' + tmpC.getHexString(); };
   const poly = (pts, f) => { g.fillStyle = f; g.beginPath(); pts.forEach(([x, y], i) => i ? g.lineTo(x, y) : g.moveTo(x, y)); g.closePath(); g.fill(); };
   const cube = (h) => { poly([[26, 6 + 30 - h], [46, 16 + 30 - h], [26, 26 + 30 - h], [6, 16 + 30 - h]], shade(1.15)); poly([[6, 46 - h], [26, 56 - h], [26, 56], [6, 46]].map(([x, y]) => [x, y - 6]), shade(0.8)); poly([[26, 56 - h], [46, 46 - h], [46, 46], [26, 56]].map(([x, y]) => [x, y - 6]), shade(0.6)); };
-  if (B[id].slab) cube(6); else if (B[id].dep) { g.fillStyle = col; g.fillRect(22, 14, 8, 30); if (B[id].lamp) { g.fillStyle = '#ffe9a8'; g.fillRect(16, 8, 20, 9); } else { g.strokeStyle = col; g.lineWidth = 2; for (let k = 0; k < 3; k++) { g.beginPath(); g.arc(14 + k * 12, 36, 7, 0, 7); g.stroke(); } } }
+  if (B[id].slab) cube(6); else if (B[id].pad) { cube(8); g.fillStyle = '#2a1e0e'; g.font = 'bold 22px sans-serif'; g.fillText('⤒', 16, 36); } else if (B[id].dep) { g.fillStyle = col; g.fillRect(22, 14, 8, 30); if (B[id].lamp) { g.fillStyle = '#ffe9a8'; g.fillRect(16, 8, 20, 9); } else { g.strokeStyle = col; g.lineWidth = 2; for (let k = 0; k < 3; k++) { g.beginPath(); g.arc(14 + k * 12, 36, 7, 0, 7); g.stroke(); } } }
   else if (B[id].stairs) { for (let k = 0; k < 4; k++) { g.fillStyle = shade(1 - k * 0.08); g.fillRect(8 + k * 9, 40 - k * 9, 36 - k * 9, 9 + k * 9); } }
   else cube(28);
   if (id === 8) { g.fillStyle = 'rgba(0,0,0,.45)'; for (let k = 0; k < 3; k++) g.fillRect(14 + k * 9, 20, 3, 22); }
@@ -9542,38 +9765,45 @@ function blockIcon(id) {
 }
 function buildHudStatic() {
   $('resBox').innerHTML = RES.map(r => `<div id="res_${r.k}"><b style="color:${r.col}">0</b><small>${r.name}</small></div>`).join('');
-  $('wbar').innerHTML = WPN.map((w, i) => `<button data-w="${i}"><span><kbd>${i + 1}</kbd>${w.name}</span><small id="wb${i}"></small></button>`).join('');
-  $('wbar').querySelectorAll('button').forEach(b => b.addEventListener('pointerdown', e => { e.stopPropagation(); if (inGame()) act('wpn', +b.dataset.w); }));
+  UI.wbK = '';
+  // (round 22) the item bar: one slot per kind of placeable; the same slot again (or the chips above it) switches material
   const bb = $('bbar'); bb.innerHTML = '';
-  PAL.forEach((id, n) => {
-    const Bb = B[id], b = document.createElement('button'); b.dataset.b = id;
-    b.innerHTML = `<span class="k kbd">${(n + 1) % 10}</span>`; b.appendChild(blockIcon(id));
-    const nm = document.createElement('span'); nm.textContent = Bb.name; b.appendChild(nm);
-    const sm = document.createElement('small'); sm.textContent = costText(Bb.cost); b.appendChild(sm);
-    b.addEventListener('pointerdown', e => { e.stopPropagation(); selBlock(id); });
+  ITEMS.forEach((g, n) => {
+    const b = document.createElement('button'); b.dataset.g = n;
+    b.innerHTML = `<span class="k kbd">${n + 1}</span><i class="ic"></i><span class="nm">${g.name}</span><small></small>` + (g.ids.length > 1 ? `<em class="vd">${g.ids.map(() => '·').join('')}</em>` : '');
+    b.addEventListener('pointerdown', e => { e.stopPropagation(); selItem(n); });
     bb.appendChild(b);
   });
   const dm = document.createElement('button'); dm.id = 'bDemo'; dm.innerHTML = '<span style="font-size:20px">✕</span><span>拆除</span><small class="kbd">右键 / X</small>';
   dm.addEventListener('pointerdown', e => { e.stopPropagation(); const me = W.p[ME]; me.demo = !me.demo; uiBuildBar(); sfx('click'); }); bb.appendChild(dm);
-  const ro = document.createElement('button'); ro.id = 'bRot'; ro.innerHTML = '<span style="font-size:18px">↻</span><span>楼梯朝向</span><small class="kbd">R</small>';
-  ro.addEventListener('pointerdown', e => { e.stopPropagation(); rotStairs(); }); bb.appendChild(ro);
   const cf = document.createElement('button'); cf.id = 'bConf'; cf.innerHTML = '<span style="font-size:16px">✓✓</span><span>二次确认</span><small></small>';
   cf.addEventListener('pointerdown', e => { e.stopPropagation(); SET.bconf = SET.bconf ? 0 : 1; saveSet(); uiBuildBar(); toast(SET.bconf ? '二次确认：开（先预览，点 ✓ 才建）' : '二次确认：关（点了就建）'); sfx('click'); }); bb.appendChild(cf);
-  const ex = document.createElement('button'); ex.innerHTML = '<span style="font-size:18px">↩</span><span>退出</span><small class="kbd">B</small>';
+  const ex = document.createElement('button'); ex.id = 'bExit'; ex.innerHTML = '<span style="font-size:18px">↩</span><span>收起</span><small class="kbd">B</small>';
   ex.addEventListener('pointerdown', e => { e.stopPropagation(); toggleBuild(false); }); bb.appendChild(ex);
 }
 function uiBuildBar() {
   if (!W) return; const me = W.p[ME];
   $('bbar').classList.toggle('hidden', !me.build); $('binfo').classList.toggle('hidden', !me.build);
   $('wbar').classList.toggle('hidden', !!me.build);
-  $('bbar').querySelectorAll('button[data-b]').forEach(b => { const id = +b.dataset.b; b.classList.toggle('sel', !me.demo && me.sel === id); b.classList.toggle('na', !affordable(W.res, B[id].cost)); b.classList.toggle('lock', !hasBP(id)); b.querySelector('small').textContent = hasBP(id) ? costText(B[id].cost) : '🔒 要蓝图'; });
+  const G = UI.gsel = UI.gsel || {};
+  $('bbar').querySelectorAll('button[data-g]').forEach(b => { const g = ITEMS[+b.dataset.g], on = !me.demo && itemOf(me.sel) === g, open = g.ids.filter(id => hasBP(id)), id = on ? me.sel : open.includes(G[g.k]) ? G[g.k] : (open[0] || g.ids[0]);
+    if (b.dataset.cur !== String(id)) { b.dataset.cur = id; const ic = b.querySelector('.ic'); ic.innerHTML = ''; ic.appendChild(blockIcon(id)); b.querySelector('small').textContent = (g.ids.length > 1 ? B[id].name + ' ' : '') + costText(B[id].cost); const vd = b.querySelector('.vd'); if (vd) vd.innerHTML = g.ids.map(q => q === id ? '●' : '○').join(''); }
+    b.classList.toggle('sel', on); b.classList.toggle('na', !affordable(W.res, B[id].cost)); b.classList.toggle('lock', !open.length); });
+  uiVariants(me);
   $('bDemo').classList.toggle('sel', !!me.demo);
   $('tBuild').classList.toggle('on', !!me.build); document.body.classList.toggle('building', !!me.build);
   const Bs = B[me.sel];
   const why = BUILD_HOVER && !BUILD_HOVER.ok && BUILD_HOVER.why ? ' · ' + BUILD_HOVER.why : '';
   $('binfo').textContent = (me.demo ? '拆除：点（或拖过）要拆的方块，' + (SET.bconf ? '再点 ✓ 确认，' : '') + '退还一半材料（按血量折算）' : Bs.name + ' · ' + costText(Bs.cost) + ' · ' + Bs.tip + (Bs.hp ? ' · 耐久 ' + Bs.hp : '')) + ' · 建在 ' + (buildL() + 1) + 'F' + why;
-  $('bRot').classList.toggle('hidden', me.sel !== 6 || me.demo);
   const cf = $('bConf'); if (cf) { cf.classList.toggle('sel', !!SET.bconf); cf.lastElementChild.textContent = SET.bconf ? '开' : '关'; }
+}
+// the material / variant chips over the item bar (only for slots with more than one)
+function uiVariants(me) {
+  const el = $('bvar'), g = itemOf(me.sel), show = !!me.build && !me.demo && g.ids.length > 1;
+  el.classList.toggle('hidden', !show); if (!show) return;
+  const key = me.sel + ':' + g.ids.map(id => (hasBP(id) ? 1 : 0) + (affordable(W.res, B[id].cost) ? 2 : 0)).join(''); if (UI.bvK === key) return; UI.bvK = key;
+  el.innerHTML = g.ids.map(id => `<button data-v="${id}" class="${id === me.sel ? 'sel' : ''}${hasBP(id) ? '' : ' lock'}${affordable(W.res, B[id].cost) ? '' : ' na'}"><b>${B[id].name}</b><small>${hasBP(id) ? costText(B[id].cost) : '要蓝图'}</small></button>`).join('');
+  el.querySelectorAll('button').forEach(b => b.addEventListener('pointerdown', e => { e.stopPropagation(); const id = +b.dataset.v; (UI.gsel = UI.gsel || {})[g.k] = id; selBlock(id); }));
 }
 // the confirm bar floats next to the waiting plan
 function uiPlan() {
@@ -9598,14 +9828,19 @@ function hudTick(dt) {
     return `<div class="pbar p${p.i % 2}${p.i === ME ? '' : ' small'}"><div class="nm"><span>${p.name}${p.i === ME && W.p.length > 1 ? '（你）' : ''}</span><i>${st}</i></div><div class="bar"><i style="width:${p.dead || p.gone ? 0 : p.down ? 100 * p.downT / BAL.downTime : 100 * p.hp / p.maxHp}%;${p.down ? 'background:#7a2a24' : ''}"></i></div></div>`;
   }).join('');
   const wi = me.down ? 0 : me.wpn, w = WPN[wi];
-  $('wName').textContent = me.build ? '建造中' : w.name;
+  $('wName').textContent = me.build ? '拿着道具' : w.name;
   $('wMag').textContent = me.build ? '' : me.mag[wi];
   $('wRes').textContent = me.build ? '' : '/ ' + (w.inf ? '∞' : me.ammo[wi]);
   const rl = me.reloadT > 0 ? 1 - me.reloadT / WPN[me.reloadW != null ? me.reloadW : wi].reload : me.reloadVis > 0 ? 1 - me.reloadVis / w.reload : me.medT > 0 ? 1 - me.medT / (me.selfRev ? 3 : BAL.healTime) : 0;
   $('wRl').style.width = (rl * 100) + '%';
   $('iNade').textContent = me.nades; $('iMed').textContent = me.meds; $('iKill').textContent = me.kills;
   uiKeys(me);
-  WPN.forEach((w2, i) => { const b = $('wbar').children[i]; b.classList.toggle('hidden', !me.owned[i]); b.classList.toggle('sel', i === me.wpn); $('wb' + i).textContent = (me.rlBg && me.rlBg[i] > 0 ? '⟳ ' : '') + (w2.inf ? '∞' : me.mag[i] + '/' + me.ammo[i]); });
+  const q = quickList(me), qk = q.join(','); if (UI.wbK !== qk) { UI.wbK = qk;
+    $('wbar').innerHTML = q.map((k, j) => `<button data-w="${k}"><span><kbd>${j + 1}</kbd>${WPN[k].name}</span><small id="wb${k}"></small></button>`).join('') + `<button id="wbKit" class="kit"><span><kbd>I</kbd>装备</span><small>换快捷枪</small></button>`;
+    $('wbar').querySelectorAll('button[data-w]').forEach(b => b.addEventListener('pointerdown', e => { e.stopPropagation(); if (inGame()) act('wpn', +b.dataset.w); }));
+    $('wbKit').addEventListener('pointerdown', e => { e.stopPropagation(); openKit(); }); }
+  q.forEach(i => { const b = $('wbar').querySelector('[data-w="' + i + '"]'), w2 = WPN[i]; b.classList.toggle('sel', i === me.wpn); $('wb' + i).textContent = (me.rlBg && me.rlBg[i] > 0 ? '⟳ ' : '') + (w2.inf ? '∞' : me.mag[i] + '/' + me.ammo[i]); });
+  if (!q.includes(me.wpn) && !me.build) { const b = $('wbKit'); if (b) b.lastElementChild.textContent = '在用：' + w.name; }
   // phase
   const ph = $('phase');
   if (W.phase === 'day') {
@@ -9640,8 +9875,8 @@ function hudTick(dt) {
     const key = INP.touch ? '点「交互」' : '按 F ';
     if (tgt) { ptxt = key + tgt.name; prog = me.useT / tgt.t; }
     else if (nearBench(me)) ptxt = (INP.touch ? '点「交互」' : '按 F ') + '打开工作台';
-    else if (canCraft(me) && !INP.touch && W.t - (UI.craftHintT || -99) < 4) ptxt = '在建筑里：按 C 制作 / 买弹药';
-    else if (!me.meds && W.p.some(q => q !== me && q.dead && !q.gone && q.L === me.L && Math.hypot(q.x - me.x, q.y - me.y) < 1.6)) ptxt = '要有医疗包才能把队友救回来（搜背包、柜子，或在「制作」里做）';
+    else if (canCraft(me) && !INP.touch && W.t - (UI.craftHintT || -99) < 4) ptxt = '在建筑里：按 C 逛商店（枪、弹药、盾、载具）';
+    else if (!me.meds && W.p.some(q => q !== me && q.dead && !q.gone && q.L === me.L && Math.hypot(q.x - me.x, q.y - me.y) < 1.6)) ptxt = '要有医疗包才能把队友救回来（搜背包、柜子，或在「商店」里买）';
     if (me.down) ptxt = me.meds > 0 ? (INP.touch ? '点「医疗」' : '按 H ') + '用医疗包自救' : (W.p.length > 1 ? '等待队友来扶你…' : '');
     if (me.medT > 0 && me.selfRev) { ptxt = '正在自救…'; prog = 1 - me.medT / 3; }
   }
@@ -9650,15 +9885,18 @@ function hudTick(dt) {
     sh.classList.toggle('on', on);
     if (on) { const R = STICK_R(), x = Math.max(R + 22, Math.min(VW * 0.16, 170)), y = VH - Math.max(R + 40, Math.min(VH * 0.24, 190)); sh.style.left = x + 'px'; sh.style.top = y + 'px'; sh.style.width = sh.style.height = R * 2 + 'px'; }
     const tgt = !me.dead && !me.build && !me.down ? useTarget(me) : null, bench = !tgt && !me.build && canCraft(me);
-    $('tCraft').classList.toggle('hidden', !canCraft(me) || !!me.build); const pil = !me.ride && !(me.pass >= 0) && pillionFor(me); $('tRide').classList.toggle('hidden', !(me.veh || me.pass >= 0 || pil) || !!me.build); $('tRide').classList.toggle('on', !!me.ride || me.pass >= 0); $('tRide').textContent = me.ride || me.pass >= 0 ? '下车' : pil ? '坐后座' : (me.veh === 2 ? '骑摩托' : '骑车');
-    const u = $('tUse'); u.classList.toggle('hidden', !(tgt || bench));
-    if (tgt) { u.firstElementChild.textContent = INP.useLatch ? '进行中 · 再点停' : '点一下'; u.lastElementChild.textContent = tgt.name; u.style.setProperty('--p', clamp(me.useT / tgt.t, 0, 1)); }
-    else if (bench) { u.firstElementChild.textContent = '点一下'; u.lastElementChild.textContent = '制作 / 购买'; u.style.setProperty('--p', 0); }
-    if (tgt || bench) ptxt = ''; else if (me.down && me.meds > 0) ptxt = '点「自救」用医疗包站起来';
+    $('tCraft').classList.toggle('hidden', !canCraft(me) || !!me.build); const pil = !me.ride && !(me.pass >= 0) && pillionFor(me), tr = $('tRide');
+    tr.classList.toggle('hidden', !(me.vehs || me.pass >= 0 || pil) || !!me.build); tr.classList.toggle('on', !!me.ride || me.pass >= 0);
+    tr.textContent = me.ride || me.pass >= 0 ? '下车' : pil ? '坐后座' : (VEH[me.veh] ? VEH[me.veh].name : '载具');
+    // (round 22) the context key on the ring: what F would do, else get off / jump
+    const u = $('tUse'), useOK = tgt && !(me.ride && !(VEH[me.veh] && VEH[me.veh].search)); u.classList.toggle('hidden', !!me.dead);
+    u.classList.toggle('hot', !!useOK); u.style.setProperty('--p', useOK ? clamp(me.useT / tgt.t, 0, 1) : 0);
+    u.firstElementChild.textContent = useOK ? (INP.useLatch ? '再点停' : '交互') : ''; u.lastElementChild.textContent = useOK ? shortUse(tgt.name) : me.ride || me.pass >= 0 ? '下车' : '跳';
+    if (useOK) ptxt = tgt.name + (INP.useLatch ? ' · 进行中' : ''); else if (me.down && me.meds > 0) ptxt = '点「自救」用医疗包站起来';
     const md = $('tMed'), showMed = me.meds > 0 && !me.dead && me.medT <= 0 && (me.down || me.hp < me.maxHp * 0.7);
     md.classList.toggle('hidden', !showMed); md.textContent = (me.down ? '自救' : '用医疗包') + ' ×' + me.meds;
-    $('tWpn').firstElementChild.textContent = w.name; $('tWpn').lastElementChild.textContent = w.inf ? '∞' : me.mag[wi] + ' / ' + me.ammo[wi];
-    $('tWpn').classList.toggle('hidden', me.down || me.owned.filter(Boolean).length < 2);
+    $('tWpn').firstElementChild.textContent = w.name; $('tWpn').lastElementChild.textContent = w.inf ? '∞' : me.mag[wi] + '/' + me.ammo[wi];
+    $('tWpn').classList.toggle('dim', me.down || me.owned.filter(Boolean).length < 2);
     $('tNadeN').textContent = me.nades; $('tNade').classList.toggle('empty', !me.nades);
     $('tFire').style.setProperty('--rl', rl);
     $('tLLbl').textContent = ((me.build && BUILD_HOVER ? BUILD_HOVER.L : buildL()) + 1) + 'F';
@@ -9669,6 +9907,8 @@ function hudTick(dt) {
   if (me.build) uiBuildBar();
   uiView();
 }
+// a short label for the round context key ('搜索汽车残骸' -> '搜索')
+function shortUse(n) { const m = n.match(/^(搜索|扶起|用医疗包救回|砍树|采石|拆废铁|搬原木|砍灌木|启动|打开|装填|拆)/); return m ? (m[1] === '用医疗包救回' ? '救人' : m[1]) : n.slice(0, 4); }
 function uiView() {
   if (!W) return; const vl = viewL();
   $('vLbl').textContent = (VIEW.auto && vl >= ML - 1 ? '全部' : (vl + 1) + 'F') + ' ' + (VIEW.auto ? '自动' : '手动');
@@ -9677,20 +9917,71 @@ function uiView() {
 /* craft */
 function openCraft() {
   if (!W || W.over) return; const me = W.p[ME];
-  if (!canCraft(me)) { toast('进到任何建筑里（或回营地）才能制作、买弹药'); return; }
+  if (!canCraft(me)) { toast('进到任何建筑里（或回营地）才能逛商店'); return; }
   renderCraft(); $('craft').classList.remove('hidden'); sfx('click');
 }
 function closeCraft() { $('craft').classList.add('hidden'); }
+// (round 22) the shop: tabs by kind; a gun and its ammo share one card; vehicles have their own tab
+const SHOP_TABS = [['gun', '武器 · 弹药'], ['item', '道具'], ['veh', '载具'], ['upg', '强化']];
+function shopBuy(c) {
+  const me = W.p[ME], why = craftBlocked(me, c);
+  if (why) { toast(why, '#ff8a7a'); sfx('deny'); return; }
+  act('craft', c.id); sfx('click');
+  if (NETROLE === 'guest') { for (const k in c.cost) W.res[k] -= c.cost[k]; if (c.wpn) me.owned[c.wpn] = 1; if (c.veh) { me.vehs = (me.vehs || 0) | 1 << c.veh; me.veh = c.veh; } if (c.shield) me.shield = BAL.shieldHp; }
+  setTimeout(() => { if (!$('craft').classList.contains('hidden')) renderCraft(); }, NETROLE === 'guest' ? 250 : 0);
+}
+function shopBtn(c, label) {
+  const me = W.p[ME], why = craftBlocked(me, c), hard = why && why !== '材料不足';
+  return `<button class="sbtn${why ? ' no' : ''}" data-c="${c.id}" ${hard ? 'disabled' : ''}><b>${label || c.name}</b><span>${hard ? why : costText(c.cost) + (why ? ' · 不够' : '')}</span></button>`;
+}
 function renderCraft() {
-  const me = W.p[ME];
-  $('clist').innerHTML = CRAFT.map(c => { const why = craftBlocked(me, c); return `<button class="ci${why ? ' no' : ''}" data-c="${c.id}" ${why && why !== '材料不足' ? 'disabled' : ''}><b>${c.name}</b><small>${c.desc || '&nbsp;'}</small><span class="c">${why && why !== '材料不足' ? why : costText(c.cost)}</span></button>`; }).join('');
-  $('clist').querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
-    const c = CRAFT.find(c => c.id === b.dataset.c), why = craftBlocked(W.p[ME], c);
-    if (why) { toast(why, '#ff8a7a'); sfx('deny'); return; }
-    act('craft', c.id);
-    if (NETROLE === 'guest') { for (const k in c.cost) W.res[k] -= c.cost[k]; if (c.wpn) { W.p[ME].owned[c.wpn] = 1; } }
-    setTimeout(() => { if (!$('craft').classList.contains('hidden')) renderCraft(); }, NETROLE === 'guest' ? 250 : 0);
-  }));
+  const me = W.p[ME], tab = SET.shopTab && SHOP_TABS.some(t => t[0] === SET.shopTab) ? SET.shopTab : 'gun';
+  $('ctabs').innerHTML = SHOP_TABS.map(([k, n]) => `<button data-t="${k}" class="${k === tab ? 'sel' : ''}">${n}</button>`).join('');
+  $('ctabs').querySelectorAll('button').forEach(b => b.onclick = () => { SET.shopTab = b.dataset.t; saveSet(); renderCraft(); sfx('click'); });
+  $('cres').textContent = '全队材料：' + RES.map(r => r.name + ' ' + W.res[r.k]).join(' · ');
+  let h = '';
+  if (tab === 'gun') {
+    h = WPN.map((w, k) => {
+      const buy = CRAFT.find(c => c.wpn === k), am = CRAFT.find(c => c.ammo && c.ammo[0] === k), own = me.owned[k];
+      const st = own ? (w.inf ? '已有 · 子弹无限' : '已有 · ' + me.mag[k] + ' / ' + me.ammo[k]) : '没有';
+      const btns = !own && buy ? shopBtn(buy, '造这把枪') : own && am ? shopBtn(am, '买' + am.name) : own && w.inf ? '<span class="sfree">不用买子弹</span>' : '';
+      return `<div class="sc${own ? ' own' : ''}"><div class="sh"><b>${w.name}</b><em>${st}</em></div><small>${w.tag || ''}</small><div class="sb">${btns}</div></div>`;
+    }).join('');
+  } else if (tab === 'item') {
+    const st = { nade: '带着 ' + me.nades + ' / 6', med: '带着 ' + me.meds + ' / 3', shield: me.shield > 0 ? '耐久 ' + Math.ceil(me.shield) + ' / ' + BAL.shieldHp : '没有' };
+    h = CRAFT.filter(c => c.cat === 'item').map(c => `<div class="sc"><div class="sh"><b>${c.name}</b><em>${st[c.id] || ''}</em></div><small>${c.desc}</small><div class="sb">${shopBtn(c, c.shield && me.shield > 0 ? '修满' : '买')}</div></div>`).join('');
+    h += `<div class="sgrp">放置类道具 · 不用先买：点「去放」，放一个扣一份材料（电脑按 B，触屏点「道具」）</div>`;
+    h += ITEMS.map((g, n) => `<div class="sc mini"><div class="sh"><b>${g.name}</b><em>${g.ids.map(id => B[id].name + (hasBP(id) ? '' : '🔒')).join(' / ')}</em></div><small>${B[g.ids[0]].tip}</small><div class="sb"><button class="sbtn go" data-g="${n}"><b>去放</b><span>${costText(B[g.ids.find(id => hasBP(id)) || g.ids[0]].cost)} 起</span></button></div></div>`).join('');
+  } else if (tab === 'veh') {
+    h = `<div class="sgrp">选一辆当默认：T（触屏点「载具」）就上这辆；Shift+T / 长按「载具」换车</div>`;
+    h += CRAFT.filter(c => c.cat === 'veh').map(c => { const v = c.veh, own = (me.vehs || 0) >> v & 1, def = own && me.veh === v;
+      return `<div class="sc${own ? ' own' : ''}"><div class="sh"><b>${c.name}</b><em>${def ? '默认 ✓' : own ? '已有' : '速度 ×' + VEH[v].spd}</em></div><small>${c.desc}</small><div class="sb">${own ? (def ? '<span class="sfree">按 T 上车</span>' : `<button class="sbtn vdef" data-v="${v}"><b>设为默认</b><span>T 就上这辆</span></button>`) : shopBtn(c, '造')}</div></div>`; }).join('');
+  } else {
+    h = CRAFT.filter(c => c.cat === 'upg').map(c => `<div class="sc"><div class="sh"><b>${c.name}</b><em>${W.upg} / 5 级</em></div><small>${c.desc}</small><div class="sb">${shopBtn(c, '升级')}</div></div>`).join('');
+  }
+  $('clist').innerHTML = h;
+  $('clist').querySelectorAll('button[data-c]').forEach(b => b.addEventListener('click', () => shopBuy(CRAFT.find(c => c.id === b.dataset.c))));
+  $('clist').querySelectorAll('button[data-g]').forEach(b => b.addEventListener('click', () => { closeCraft(); selItem(+b.dataset.g); }));
+  $('clist').querySelectorAll('button.vdef').forEach(b => b.addEventListener('click', () => { const v = +b.dataset.v; act('vdef', v); if (NETROLE === 'guest') me.veh = v; sfx('click'); setTimeout(renderCraft, NETROLE === 'guest' ? 250 : 0); }));
+}
+/* (round 22) 装备: pick the 4 quick weapons and the default vehicle; works anywhere */
+function openKit() { if (!W || W.over) return; UI.kitSlot = UI.kitSlot || 0; renderKit(); $('kit').classList.remove('hidden'); toggleWpick(false); sfx('click'); }
+function closeKit() { $('kit').classList.add('hidden'); }
+function renderKit() {
+  const me = W.p[ME], q = quickList(me), sl = clamp(UI.kitSlot || 0, 0, 3);
+  $('kslots').innerHTML = [0, 1, 2, 3].map(j => `<button data-s="${j}" class="${j === sl ? 'sel' : ''}"><kbd>${j + 1}</kbd><b>${q[j] != null ? WPN[q[j]].name : '空'}</b></button>`).join('');
+  $('kwpn').innerHTML = WPN.map((w, k) => { const own = me.owned[k], j = q.indexOf(k);
+    return `<button data-w="${k}" class="kw${own ? '' : ' no'}${k === me.wpn ? ' cur' : ''}" ${own ? '' : 'disabled'}><b>${w.name}${j >= 0 ? ' <i>' + (j + 1) + '</i>' : ''}</b><small>${own ? (w.inf ? '∞' : me.mag[k] + ' / ' + me.ammo[k]) : '商店里造'}</small><span>${w.tag || ''}</span></button>`; }).join('');
+  $('kveh').innerHTML = [1, 2, 3, 4].map(v => { const own = (me.vehs || 0) >> v & 1;
+    return `<button data-v="${v}" class="${own ? '' : 'no'}${own && me.veh === v ? ' sel' : ''}" ${own ? '' : 'disabled'}><b>${VEH[v].name}</b><small>${own ? (me.veh === v ? '默认 ✓' : '设为默认') : '商店里造'}</small></button>`; }).join('');
+  $('kshield').textContent = me.shield > 0 ? '防暴盾 耐久 ' + Math.ceil(me.shield) + ' / ' + BAL.shieldHp + '（正面挨打少受 75%）' : '没有防暴盾（商店 → 道具）';
+  $('kslots').querySelectorAll('button').forEach(b => b.onclick = () => { UI.kitSlot = +b.dataset.s; renderKit(); sfx('click'); });
+  $('kwpn').querySelectorAll('button[data-w]').forEach(b => b.onclick = () => {
+    const k = +b.dataset.w, cur = quickList(me), j = cur.indexOf(k), s0 = clamp(UI.kitSlot || 0, 0, 3);
+    if (j >= 0 && j !== s0) { cur[j] = cur[s0]; cur[s0] = k; } else if (j < 0) cur[s0] = k;
+    SET.quick = cur.filter(x => x != null); saveSet(); UI.kitSlot = (s0 + 1) % 4; UI.wbK = ''; renderKit(); sfx('click');
+  });
+  $('kveh').querySelectorAll('button[data-v]').forEach(b => b.onclick = () => { const v = +b.dataset.v; act('vdef', v); if (NETROLE === 'guest') me.veh = v; sfx('click'); setTimeout(renderKit, NETROLE === 'guest' ? 250 : 0); });
 }
 /* pause / help / over */
 function togglePause(force) {
@@ -9698,6 +9989,7 @@ function togglePause(force) {
   const el = $('pause'), open = force != null ? force : el.classList.contains('hidden');
   if (!$('help').classList.contains('hidden')) { closeHelp(); return; }
   if (!$('craft').classList.contains('hidden')) { closeCraft(); return; }
+  if (!$('kit').classList.contains('hidden')) { closeKit(); return; }
   el.classList.toggle('hidden', !open);
   $('pauseT').textContent = NETROLE === 'solo' ? '暂停' : '菜单（游戏继续中）'; $('pQual').textContent = qualLabel(); $('pAssist').textContent = '辅助瞄准：' + assistLv().name;
   $('pHub').classList.toggle('hidden', !HUB);
@@ -9787,7 +10079,7 @@ function showOver(e) {
   $('oAgain').classList.toggle('hidden', !(solo || host)); $('oLobby').classList.toggle('hidden', !host);
   $('oEndless').classList.toggle('hidden', !(e.v === 'win' && (solo || host)));
   $('oHub').classList.toggle('hidden', !HUB);
-  closeCraft(); $('pause').classList.add('hidden');
+  closeCraft(); closeKit(); $('pause').classList.add('hidden');
   if (W.p[ME] && W.p[ME].build) toggleBuild(false);
 }
 function initUI() {
@@ -9808,7 +10100,7 @@ function initUI() {
   $('lReady').onclick = () => { NET.ready = !NET.ready; netSendCtl({ t: 'ready', v: NET.ready }); lobbyUI(); sfx('ready'); };
   $('lStart').onclick = () => hostStart();
   $('lLeave').onclick = () => { netLeave(); showScreen('title'); };
-  $('craftClose').onclick = closeCraft;
+  $('craftClose').onclick = closeCraft; $('kitClose').onclick = closeKit;
   $('resumeBtn').onclick = () => togglePause(false);
   confirmBtn($('pTitle'), () => { saveGame(true); netLeave(); W = null; STATE.paused = false; showScreen('title'); renderBest(); });
   $('pSave').onclick = () => { if (NETROLE === 'guest') { toast('联机时由房主存档'); return; } saveGame(false); sfx('click'); };
@@ -10030,7 +10322,7 @@ function saveGame(quiet) {
   const S = {
     v: SAVE_V, mw: MW, at: Date.now(), mode: W.mode, map: W.map, obj: W.obj, seed: W.seed, diff: W.diff, night: W.night, phase: W.phase, clock: W.clock, dayLen: W.dayLen, nightT: W.nightT,
     res: W.res, upg: W.upg, kills: W.kills, stats: W.stats, endless: W.endless, clean: W.clean, tasks: W.tasks, srch: [...W.srch], spotN: W.spotN, t: W.t,
-    p: W.p.filter(p => !p.gone).map(p => ({ name: p.name, x: p.x, y: p.y, L: p.L, hp: p.hp, dead: p.dead, wpn: p.wpn, owned: p.owned, mag: p.mag, ammo: p.ammo, meds: p.meds, nades: p.nades, kills: p.kills, veh: p.veh || 0 })),
+    p: W.p.filter(p => !p.gone).map(p => ({ name: p.name, x: p.x, y: p.y, L: p.L, hp: p.hp, dead: p.dead, wpn: p.wpn, owned: p.owned, mag: p.mag, ammo: p.ammo, meds: p.meds, nades: p.nades, kills: p.kills, veh: p.veh || 0, vehs: p.vehs || 0, shield: Math.ceil(p.shield || 0) })),
     zs: W.zs.filter(z => z.hp > 0).slice(0, 300).map(z => [z.k, +z.x.toFixed(2), +z.y.toFixed(2), z.L, Math.round(z.hp), Math.round(z.max), z.mz ? 1 : 0, z.g || 0, z.sleep ? 1 : 0, z.occ == null ? -1 : z.occ]),
     q: W.spawnQ.slice(0, 500).map(s => [+s.t.toFixed(1), s.k, s.side, s.at == null ? -1 : s.at, s.f ? +s.f.toFixed(2) : 0, s.g || 0]), gid: W.gid || 0,
     g: [rleEnc(W.blk), rleEnc(W.slab), rleEnc(W.bdir), rleEnc(hpPack(W.bhp)), rleEnc(hpPack(W.shp))].map(b64e),
@@ -10058,7 +10350,7 @@ function applySave(S) {
   Object.assign(W, { night: S.night, phase: S.phase, clock: S.clock, dayLen: S.dayLen, nightT: S.nightT || 0, res: S.res, upg: S.upg, kills: S.kills, stats: S.stats, endless: !!S.endless, clean: S.clean !== false, tasks: S.tasks || [], t: S.t || 0 });
   W.srch = new Set(S.srch || []); W.spotN = S.spotN || null; if (!W.spotN) { W.spotN = spotCount(); for (const k in W.spotN) W.spotN[k] = Math.round(W.spotN[k] * 2); } W.tkv++; W.rng = mulberry((S.seed ^ (S.night * 7919) ^ (S.at & 0xffff)) >>> 0);
   const p = W.p[0], P = S.p[0];
-  if (P) { Object.assign(p, { x: P.x, y: P.y, L: P.L, hp: P.dead ? BAL.pMaxHp * 0.5 : P.hp, wpn: P.wpn, owned: P.owned, mag: P.mag, ammo: P.ammo, meds: P.meds, nades: P.nades, kills: P.kills, veh: P.veh || 0 }); p.dead = false; p.down = false; }
+  if (P) { Object.assign(p, { x: P.x, y: P.y, L: P.L, hp: P.dead ? BAL.pMaxHp * 0.5 : P.hp, wpn: P.wpn, owned: P.owned, mag: P.mag, ammo: P.ammo, meds: P.meds, nades: P.nades, kills: P.kills, veh: P.veh || 0, vehs: P.vehs != null ? P.vehs : (P.veh ? 1 << P.veh : 0), shield: P.shield || 0 }); p.dead = false; p.down = false; } // (round 22) vehs = owned bitmask; older saves only knew the best one
   // older saves may have fewer weapons
   for (const k of ['owned', 'mag', 'ammo']) while (p[k].length < NW) p[k].push(0);
   p.z = pZ(p); p.zv = p.z; CAM.tx = p.x; CAM.ty = p.y;

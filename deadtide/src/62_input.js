@@ -3,11 +3,12 @@ const INP = { keys: {}, mx: 0, my: 0, mL: false, mR: false, mouseT: 0, touch: fa
   move: { id: null, ox: 0, oy: 0, x: 0, y: 0 }, tAim: { id: null, x: 0, y: 0 }, aim: { id: null, ox: 0, oy: 0, x: 0, y: 0, a: 0, t: 0, btn: false }, tp: {}, pinch: null, useHeld: false, bldT: 0, bldLast: '', paint: null, aimT: 0 };
 const KD = k => !!INP.keys[k];
 const inGame = () => STATE.mode === 'play' && W && !W.over;
-const panelOpen = () => !$('bigmap').classList.contains('hidden') || !$('craft').classList.contains('hidden') || !$('pause').classList.contains('hidden') || !$('help').classList.contains('hidden');
+const panelOpen = () => !$('bigmap').classList.contains('hidden') || !$('craft').classList.contains('hidden') || !$('kit').classList.contains('hidden') || !$('pause').classList.contains('hidden') || !$('help').classList.contains('hidden');
 function act(a, v) {
   if (a === 'wpn' && W && W.p[ME] && W.p[ME].owned[v] && v !== W.p[ME].wpn && WPN[v].tag && !W.demo) { const n = (UI.wtip = UI.wtip || {})[v] = (UI.wtip[v] || 0) + 1; if (n <= 3) toast(WPN[v].name + ' · ' + WPN[v].tag); } // what each gun is for (first few times)
   const me = W && W.p[ME]; if (!me) return;
   if (a === 'wpn' && (me.down || !me.owned[v])) return;
+  if (a === 'wpn' && v !== me.wpn) UI.prevW = me.wpn;                        // Z / the weapon menu can flip back to it
   if (NETROLE === 'guest') {
     netSendCtl({ t: 'act', a, v });
     if (a === 'wpn') { me.wpn = v; me.wpnLock = performance.now() + 700; sfx('swap'); }
@@ -17,11 +18,34 @@ function act(a, v) {
 }
 function toggleBuild(v) {
   const me = W.p[ME]; if (me.down || me.dead) return;
-  const on = v == null ? !me.build : v; if (on && me.ride) { act('ride'); me.ride = false; } me.build = on; if (!on) me.demo = false; else me.sdir = screenUpDir();
+  UI.lastG = -1; const on = v == null ? !me.build : v; if (on && me.ride) { act('ride'); me.ride = false; } me.build = on; if (!on) me.demo = false; else me.sdir = screenUpDir();
   act('mode', on ? 1 : 0); uiBuildBar(); UI.keysK = ''; uiKeys(me); sfx('click');
 }
 function selBlock(id) { const me = W.p[ME]; me.sel = id; me.demo = false; uiBuildBar(); sfx('click'); }
 function rotStairs() { const me = W.p[ME]; me.sdir = (me.sdir + 1) & 3; uiBuildBar(); sfx('click'); }
+// (round 22) items: pick a slot (entering item mode); the same slot again switches to its next material / variant
+function selItem(n) {
+  const me = W.p[ME], g = ITEMS[n]; if (!g || me.down || me.dead) return;
+  if (!me.build) toggleBuild(true);
+  const cur = !me.demo && itemOf(me.sel) === g && UI.lastG === n, open = g.ids.filter(id => hasBP(id)), list = open.length ? open : g.ids, G = UI.gsel = UI.gsel || {};
+  const id = cur && list.length > 1 ? list[(list.indexOf(me.sel) + 1) % list.length] : list.includes(G[g.k]) ? G[g.k] : list[0];
+  G[g.k] = id; selBlock(id); UI.lastG = n; if (cur && list.length > 1) toast(g.name + '：' + B[id].name + ' · ' + costText(B[id].cost));
+}
+// (round 22) quick weapons: up to 4 picked in the 装备 panel (SET.quick), topped up with whatever else you own
+function quickList(me) {
+  const q = (SET.quick || []).filter((k, j, a) => k >= 0 && k < NW && me.owned[k] && a.indexOf(k) === j).slice(0, 4);
+  for (let k = 0; k < NW && q.length < 4; k++) if (me.owned[k] && !q.includes(k)) q.push(k);
+  return q;
+}
+function quickWpn(n) { const me = W.p[ME], q = quickList(me); if (q[n] == null) return; if (me.build) toggleBuild(false); act('wpn', q[n]); }
+function nextQuick(d) { const me = W.p[ME], q = quickList(me); if (q.length < 2) return; let j = q.indexOf(me.wpn); j = j < 0 ? 0 : (j + d + q.length) % q.length; if (me.build) toggleBuild(false); act('wpn', q[j]); }
+function swapLast() { const me = W.p[ME]; if (UI.prevW != null && me.owned[UI.prevW] && UI.prevW !== me.wpn) { if (me.build) toggleBuild(false); act('wpn', UI.prevW); } else nextQuick(1); }
+// vehicles: T gets on your default one; Shift+T / a long press on 载具 picks another you own (and gets on it)
+function rideKey(pick) {
+  const me = W.p[ME], own = [1, 2, 3, 4].filter(v => (me.vehs || 0) >> v & 1);
+  if (pick && own.length) { const j = own.indexOf(me.veh), v = own[(j + 1) % own.length]; act('ride', v); toast('载具：' + VEH[v].name + ' · ' + VEH[v].tag); return; }
+  if (own.length || me.pass >= 0 || pillionFor(me)) act('ride'); else toast('还没有载具：在「商店 → 载具」里造（尸城求生要先找到蓝图），或者走到队友的摩托 / 装甲车边按 T 坐后座');
+}
 function cycleWpn(d) { const me = W.p[ME]; let w = me.wpn; for (let k = 0; k < NW; k++) { w = (w + d + NW) % NW; if (me.owned[w]) break; } if (w !== me.wpn) act('wpn', w); }
 // knife: find the zombie, turn to it, lunge into reach and slash; the host settles the damage
 function doKnife() {
@@ -74,24 +98,26 @@ function onKeyPress(k) {
   if (k === 'PageDown') return viewStep(-1);
   if (k === 'Home') return viewAuto();
   if (k === 'h' && !$('help').classList.contains('hidden')) { closeHelp(); return; }
-  if (panelOpen()) { if (k === 'f' || k === 'c') closeCraft(); return; }
+  if (panelOpen()) { if (k === 'f' || k === 'c') closeCraft(); if (k === 'i') closeKit(); return; }
   if (W.over) return;
   const me = W.p[ME];
   if (k === 'b') return toggleBuild();
   if (me.build) {
-    const n = '1234567890'.indexOf(k); if (n >= 0 && PAL[n]) return selBlock(PAL[n]);
+    const n = '123456789'.indexOf(k); if (n >= 0 && ITEMS[n]) return selItem(n);
     if (k === 'x') { me.demo = !me.demo; uiBuildBar(); return; }
-    if (k === 'r') return rotStairs();
+    if (k === 'r') return selItem(ITEMS.indexOf(itemOf(me.sel)));
+    if (k === 'z') return swapLast();
     if ((k === 'Enter' || k === ' ') && PLAN) return confirmPlan();
-  } else { const n = '1234567'.indexOf(k); if (n >= 0) return act('wpn', n); if (k === 'r') return act('reload'); }
+  } else { const n = '1234'.indexOf(k); if (n >= 0) return quickWpn(n); if (k === 'r') return act('reload'); if (k === 'z') return swapLast(); }
+  if (k === 'i') return openKit();
   if (k === ' ') return doJump();
   if (k === 'v') return doKnife();
   if (k === 'g') return act('nade');
   if (k === 'h') return act('med');
   if (k === 'n') return toggleReady();
   if (k === 'c') return openCraft();
-  if (k === 't') { if (me.veh || me.pass >= 0 || pillionFor(me)) act('ride'); else toast('还没有车：找到自行车 / 摩托车的蓝图后在「制作」里造（或者走到骑摩托的队友身边按 T 坐后座）'); return; }
-  if (k === 'f' && (me.ride || me.pass >= 0)) { act('ride'); return; }
+  if (k === 't') return rideKey(KD('Shift'));
+  if (k === 'f' && (me.ride || me.pass >= 0) && !(me.ride && VEH[me.veh] && VEH[me.veh].search && useTarget(me))) { act('ride'); return; } // the cargo trike searches from the seat
   if (k === 'f') { if (nearBench(me) && !useTarget(me)) return openCraft(); if (INP.useLatch) INP.useLatch = null; else INP.useReq = true; }
 }
 function toggleReady() { const me = W.p[ME]; if (W.phase !== 'day') return; act('ready', me.ready ? 0 : 1); if (NETROLE === 'guest') me.ready = !me.ready; sfx('ready'); }
@@ -203,16 +229,24 @@ FIRE.addEventListener('pointerdown', e => {
   e.preventDefault(); e.stopPropagation(); audioInit(); if (!inGame()) return;
   if (INP.aim.id != null && !INP.aim.btn) { INP.aim.id = null; stickDraw(stickR, INP.aim); }
   const r = FIRE.getBoundingClientRect();
-  Object.assign(INP.aim, { id: e.pointerId, ox: r.left + r.width / 2, oy: r.top + r.height / 2, x: 0, y: 0, btn: true });
+  Object.assign(INP.aim, { id: e.pointerId, ox: r.left + r.width / 2, oy: r.top + r.height / 2, x: 0, y: 0, btn: true, t0: performance.now(), far0: false, fireOn: false });
   INP.aimT = 0; W.p[ME].aimPt = null; FIRE.classList.add('on'); fireKnob();
   try { FIRE.setPointerCapture(e.pointerId); } catch (_) { }
 });
 FIRE.addEventListener('pointermove', e => {
   if (INP.aim.id !== e.pointerId || !INP.aim.btn) return; e.preventDefault();
   const R = FIRE.clientWidth * 0.5; INP.aim.x = (e.clientX - INP.aim.ox) / R; INP.aim.y = (e.clientY - INP.aim.oy) / R;
+  if (!INP.aim.fireOn && Math.hypot(e.clientX - INP.aim.ox, e.clientY - INP.aim.oy) > 14) INP.aim.far0 = true; // dragged before the long press: picking a target
   if (Math.hypot(INP.aim.x, INP.aim.y) > 0.3) INP.aim.t = performance.now(); fireKnob();
 });
-function fireEnd(e) { if (INP.aim.id !== e.pointerId || !INP.aim.btn) return; Object.assign(INP.aim, { id: null, x: 0, y: 0, btn: false, t: performance.now() }); FIRE.classList.remove('on'); fireKnob(); }
+function fireEnd(e) {
+  if (INP.aim.id !== e.pointerId || !INP.aim.btn) return;
+  const A = INP.aim, now = performance.now();
+  if (!A.fireOn && inGame()) {
+    if (!A.far0 && now - A.t0 < 300) INP.tapT = 0.14;                                                       // quick tap: one shot
+    else if (A.far0) { const z = W.p[ME].aimPt && W.p[ME].aimPt.zb; if (zAlive(z)) { INP.mark = z; INP.atk = false; INP.markT = now; } } // a drag picks the target; hold the button to shoot it
+  }
+  Object.assign(INP.aim, { id: null, x: 0, y: 0, btn: false, t: performance.now() }); FIRE.classList.remove('on'); fireKnob(); }
 FIRE.addEventListener('pointerup', fireEnd); FIRE.addEventListener('pointercancel', fireEnd);
 CV.addEventListener('pointerup', endPtr); CV.addEventListener('pointercancel', endPtr);
 /* ---------- build targeting: the surface under the cursor / finger decides the cell (no layer switching) ---------- */
@@ -330,22 +364,58 @@ function bindBtn(id, down, up) {
   el.addEventListener('pointerup', end); el.addEventListener('pointercancel', end);
 }
 bindBtn('tReload', () => inGame() && (W.p[ME].build ? rotStairs() : act('reload')));
-bindBtn('tWpn', () => { if (!inGame()) return; const me = W.p[ME]; if (me.owned.filter(Boolean).length <= 2) cycleWpn(1); else toggleWpick(); });
-// weapon picker: every gun you own in one tap instead of cycling through them
+// (round 22) the weapon key on the fire ring: tap = next quick weapon; drag (or hold) = a fan of every gun you own — slide onto one and let go
+const WK = document.getElementById('tWpn');
+function wpickItems(me) {
+  const q = quickList(me), out = q.concat(WPN.map((w, k) => k).filter(k => me.owned[k] && !q.includes(k))).map(k => ({ k, t: WPN[k].name, s: WPN[k].inf ? '∞' : me.mag[k] + '/' + me.ammo[k], sel: k === me.wpn, q: q.includes(k) }));
+  const w = WPN[me.wpn]; if (me.mag[me.wpn] < w.mag && (w.inf || me.ammo[me.wpn] > 0)) out.push({ k: 'rl', t: '换弹', s: '' });
+  out.push({ k: 'kit', t: '装备…', s: '选快捷' }); return out;
+}
 function toggleWpick(force) {
   const el = $('wpick'), open = force != null ? force : el.classList.contains('hidden');
-  el.classList.toggle('hidden', !open); if (!open) return;
-  const me = W.p[ME]; el.innerHTML = '';
-  WPN.forEach((w, k) => {
-    if (!me.owned[k]) return;
-    const b = document.createElement('button'); b.className = k === me.wpn ? 'sel' : '';
-    b.innerHTML = '<b>' + w.name + '</b><span>' + (w.inf ? '∞' : me.mag[k] + ' / ' + me.ammo[k]) + '</span>';
-    b.addEventListener('pointerdown', e => { e.stopPropagation(); e.preventDefault(); act('wpn', k); sfx('click'); toggleWpick(false); });
-    el.appendChild(b);
+  el.classList.toggle('hidden', !open); WK.classList.toggle('on', open); if (!open) { UI.wpHi = null; return; }
+  // an outer ring round the fire cluster, from above the weapon key round to the left, clear of the four keys
+  const me = W.p[ME], items = wpickItems(me), fr = $('tFire').getBoundingClientRect(), wr = WK.getBoundingClientRect(), cx = fr.left + fr.width / 2, cy = fr.top + fr.height / 2;
+  const n = items.length, chip = VW >= 760 && VH >= 760 ? 76 : 66, base = Math.hypot(wr.left + wr.width / 2 - cx, wr.top + wr.height / 2 - cy) + wr.width / 2 + chip / 2 + 10;
+  const a0 = 62, a1 = 196, R = Math.max(base, n * (chip + 8) / ((a1 - a0) * Math.PI / 180));
+  el.innerHTML = ''; UI.wpOpts = [];
+  items.forEach((it, j) => {
+    const a = (a0 + (a1 - a0) * (n === 1 ? 0.5 : j / (n - 1))) * Math.PI / 180, x = clamp(cx + Math.cos(a) * R, chip / 2 + 4, VW - chip / 2 - 4), y = clamp(cy - Math.sin(a) * R, chip / 2 + 4, VH - chip / 2 - 4);
+    const b = document.createElement('button'); b.className = 'wo' + (it.sel ? ' sel' : '') + (it.q ? ' q' : '') + (typeof it.k === 'string' ? ' x' : '');
+    b.innerHTML = '<b>' + it.t + '</b><span>' + it.s + '</span>'; b.style.left = x + 'px'; b.style.top = y + 'px';
+    b.addEventListener('pointerup', e => { e.stopPropagation(); e.preventDefault(); wpickDo(it.k); });
+    el.appendChild(b); UI.wpOpts.push({ b, x, y, k: it.k });
   });
-  const r = $('tWpn').getBoundingClientRect(); el.style.right = Math.max(8, VW - r.right) + 'px'; el.style.bottom = (VH - r.top + 8) + 'px';
 }
-document.addEventListener('pointerdown', e => { const el = $('wpick'); if (el && !el.classList.contains('hidden') && !el.contains(e.target) && e.target.id !== 'tWpn' && !$('tWpn').contains(e.target)) toggleWpick(false); }, true);
+function wpickDo(k) { toggleWpick(false); if (!inGame()) return; sfx('click'); if (k === 'rl') act('reload'); else if (k === 'kit') openKit(); else { const me = W.p[ME]; if (me.build) toggleBuild(false); act('wpn', k); } }
+function wpickHover(x, y) { let best = null, bd = 52; for (const o of UI.wpOpts || []) { const d = Math.hypot(o.x - x, o.y - y); if (d < bd) { bd = d; best = o; } } for (const o of UI.wpOpts || []) o.b.classList.toggle('hi', o === best); UI.wpHi = best; }
+WK.addEventListener('pointerdown', e => {
+  e.preventDefault(); e.stopPropagation(); audioInit(); if (!inGame()) return;
+  const was = !$('wpick').classList.contains('hidden'); if (was) { toggleWpick(false); return; }
+  UI.wk = { id: e.pointerId, x: e.clientX, y: e.clientY, open: false, tm: setTimeout(() => { if (UI.wk && !UI.wk.open) { UI.wk.open = true; toggleWpick(true); } }, 380) };
+  WK.classList.add('on'); try { WK.setPointerCapture(e.pointerId); } catch (_) { }
+});
+WK.addEventListener('pointermove', e => {
+  const k = UI.wk; if (!k || k.id !== e.pointerId) return; e.preventDefault();
+  if (!k.open && Math.hypot(e.clientX - k.x, e.clientY - k.y) > 16) { k.open = true; toggleWpick(true); }
+  if (k.open) wpickHover(e.clientX, e.clientY);
+});
+function wkEnd(e) {
+  const k = UI.wk; if (!k || k.id !== e.pointerId) return; clearTimeout(k.tm); UI.wk = null;
+  if (!k.open) { WK.classList.remove('on'); if (inGame()) nextQuick(1); return; }                              // a tap: next quick weapon
+  if (UI.wpHi) wpickDo(UI.wpHi.k);                                                                           // slid onto one and let go
+  else if (Math.hypot(e.clientX - k.x, e.clientY - k.y) > 16) toggleWpick(false);                            // dragged off into nothing: cancel
+  // held without moving: the fan stays open, tap a gun
+}
+WK.addEventListener('pointerup', wkEnd); WK.addEventListener('pointercancel', wkEnd);
+document.addEventListener('pointerdown', e => { const el = $('wpick'); if (el && !el.classList.contains('hidden') && !el.contains(e.target) && e.target !== WK && !WK.contains(e.target)) toggleWpick(false); }, true);
+// vehicle key: tap = on / off your default; hold = pick another vehicle you own
+(() => {
+  const el = document.getElementById('tRide'); let st = null;
+  el.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); audioInit(); if (!inGame()) return; el.classList.add('on'); st = { t: setTimeout(() => { st.long = true; rideKey(true); }, 450) }; });
+  const end = () => { el.classList.remove('on'); if (!st) return; clearTimeout(st.t); if (!st.long && inGame()) rideKey(false); st = null; };
+  el.addEventListener('pointerup', end); el.addEventListener('pointercancel', end);
+})();
 bindBtn('tLUp', () => viewStep(1)); bindBtn('tLDn', () => viewStep(-1));
 bindBtn('vToggle', () => { document.body.classList.toggle('vopen'); $('vToggle').classList.toggle('on', document.body.classList.contains('vopen')); sfx('click'); });
 bindBtn('tShove', () => { if (inGame()) { INP.knHeld = true; doKnife(); } }, () => { INP.knHeld = false; });
@@ -353,10 +423,12 @@ bindBtn('tJump', () => inGame() && doJump());
 bindBtn('bcOk', () => confirmPlan()); bindBtn('bcNo', () => cancelPlan());
 bindBtn('tNade', () => inGame() && act('nade'));
 bindBtn('tMed', () => inGame() && act('med'));
-bindBtn('tUse', () => { if (!inGame()) return; const me = W.p[ME]; if (canCraft(me) && !useTarget(me)) openCraft(); else if (INP.useLatch) INP.useLatch = null; else INP.useReq = true; });
+// (round 22) the context key on the fire ring: search / revive / gather when there's something, get off when riding, otherwise jump
+bindBtn('tUse', () => { if (!inGame()) return; const me = W.p[ME], ut = useTarget(me); if (ut && !(me.ride && !(VEH[me.veh] && VEH[me.veh].search))) { if (INP.useLatch) INP.useLatch = null; else INP.useReq = true; } else if (me.ride || me.pass >= 0) act('ride'); else doJump(); });
 bindBtn('tBuild', () => inGame() && toggleBuild());
+bindBtn('tHelp', () => { document.body.classList.toggle('guide'); sfx('click'); });
+document.addEventListener('pointerdown', e => { if (document.body.classList.contains('guide') && e.target.id !== 'tHelp') document.body.classList.remove('guide'); }, true);
 bindBtn('tCraft', () => inGame() && openCraft());
-bindBtn('tRide', () => { if (!inGame()) return; const me = W.p[ME]; if (me.veh || me.pass >= 0 || pillionFor(me)) act('ride'); });
 bindBtn('vZin', () => camZoom(0.8)); bindBtn('vZout', () => camZoom(1.25));
 bindBtn('vRl', () => camRot(-1)); bindBtn('vRr', () => camRot(1));
 bindBtn('vUp', () => viewStep(1)); bindBtn('vDn', () => viewStep(-1)); bindBtn('vAuto', () => viewAuto());
@@ -437,6 +509,8 @@ function readInput(dt) {
     } else { BUILD_HOVER = null; INP.bDown = false; if (!me.build && (PLAN || PREV)) cancelPlan(); }
   } else {
     const A = INP.aim, held = A.id != null, active = held && Math.hypot(A.x, A.y) > 0.3, fing = INP.tAim.id != null && !me.build;
+    if (held && A.btn && !A.fireOn && !A.far0 && performance.now() - A.t0 > 300) A.fireOn = true;            // long press: keep firing, dragging now steers
+    INP.tapT = Math.max(0, (INP.tapT || 0) - dt); const tap = INP.tapT > 0, burst = held && A.btn && A.fireOn;
     const mk = !fing && !active && markOK(me) ? INP.mark : null; if (!mk && INP.mark && !markOK(me)) { INP.mark = null; INP.atk = false; }
     const fpy = INP.tAim.y - FINGER_UP;
     if (fing) { const pt = aimPick(INP.tAim.x, fpy, assistLv().mag ? 50 : 0); me.aimPt = pt; me.aim = Math.atan2(pt.y - me.y, pt.x - me.x); }
@@ -447,18 +521,18 @@ function readInput(dt) {
     } else if (mk) {
       // a marked zombie: face it, and the fire button shoots it (picked by hand, so no lock-on delay and normal spread)
       me.aimPt = { x: mk.x, y: mk.y, z: mk.z + mk.h * 0.62, zb: mk }; me.aim = Math.atan2(mk.y - me.y, mk.x - me.x);
-    } else if (held && A.btn) {
-      // just holding the fire button: lock on to the nearest zombie, otherwise shoot where you face
+    } else if ((held && A.btn) || tap) {
+      // just holding the fire button (or a quick tap): lock on to the nearest zombie, otherwise shoot where you face
       trackAim(me); INP.aimT -= dt; if (INP.aimT <= 0 || !me.aimPt) { INP.aimT = 0.12; const f = Math.hypot(I.mx, I.my) > 0.2 ? [I.mx, I.my] : [Math.cos(me.aim), Math.sin(me.aim)]; me.aimPt = touchAutoAim(me, f[0], f[1], true, me.aimPt && me.aimPt.zb); }
       me.aim = Math.atan2(me.aimPt.y - me.y, me.aimPt.x - me.x);
     } else if (performance.now() - A.t > 600 && Math.hypot(I.mx, I.my) > 0.2) { me.aim = Math.atan2(I.my, I.mx); me.aimPt = null; }
     drawReticle(me, me.aimPt, fing && !blocked && !me.build && !me.dead, INP.tAim.x, fpy);
     // auto-aim (fire button without a finger on the map): a new target takes a moment to lock on, and the shots are looser
-    const auto = !fing && !mk && (active || (held && A.btn)), AS = assistLv(), lz = auto && me.aimPt && me.aimPt.zb;
+    const auto = !fing && !mk && (active || (held && A.btn) || tap), AS = assistLv(), lz = auto && me.aimPt && me.aimPt.zb;
     if (lz !== INP.lockZ) { INP.lockZ = lz || null; INP.lockT = 0; } else INP.lockT = (INP.lockT || 0) + dt;
     INP.lockAcq = lz && AS.acq ? Math.min(1, INP.lockT / AS.acq) : 1;
     I.auto = auto && lz ? AS.spread : 0;
-    I.fire = !blocked && ((fing && held && A.btn) || (mk && ((held && A.btn) || INP.atk)) || (auto && INP.lockAcq >= 1)) && !me.build ? 1 : 0;
+    I.fire = !blocked && ((fing && held && A.btn) || (mk && (burst || tap || INP.atk)) || (auto && (tap || (burst && INP.lockAcq >= 1)))) && !me.build ? 1 : 0;
     INP.markShow = mk; INP.atkShow = mk && INP.atk;
     CAM.lookX = lerp(CAM.lookX || 0, Math.cos(me.aim) * 1.5, Math.min(1, dt * 2)); CAM.lookY = lerp(CAM.lookY || 0, Math.sin(me.aim) * 1.5, Math.min(1, dt * 2));
     if (!me.build || !BUILD_HOVER || !BUILD_HOVER.t) BUILD_HOVER = me.build ? BUILD_HOVER : null;

@@ -26,7 +26,11 @@ const UA = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/6
     const dragAim = await p.evaluate(() => { const [ux, uy] = camFwd(); return Math.cos(W.p[0].aim) * ux + Math.sin(W.p[0].aim) * uy; });
     const firing = await p.evaluate(() => W.p[0].inp.fire);
     await tch('touchEnd', []);
-    ok(vp + ' drag fire aims screen-up and fires', dragAim > 0.85 && firing === 1, 'dot ' + dragAim.toFixed(2));
+    ok(vp + ' drag fire aims screen-up but only picks (round 22: no shot until a long press)', dragAim > 0.85 && firing === 0, 'dot ' + dragAim.toFixed(2) + ' fire ' + firing);
+    await tch('touchStart', [{ x: fx, y: fy, id: 7 }]); await simWait(0.45); await tch('touchMove', [{ x: fx, y: fy - fw * 0.45, id: 7 }]); await simWait(0.3);
+    const dragAim2 = await p.evaluate(() => { const [ux, uy] = camFwd(); return Math.cos(W.p[0].aim) * ux + Math.sin(W.p[0].aim) * uy; }), firing2 = await p.evaluate(() => W.p[0].inp.fire);
+    await tch('touchEnd', []);
+    ok(vp + ' long press then drag fires and steers screen-up', dragAim2 > 0.85 && firing2 === 1, 'dot ' + dragAim2.toFixed(2) + ' fire ' + firing2);
     // 3. move stick on the left while holding fire (two thumbs)
     const p0 = await p.evaluate(() => [W.p[0].x, W.p[0].y]);
     await tch('touchStart', [{ x: w * 0.2, y: h * 0.75, id: 1 }, { x: fx, y: fy, id: 7 }]);

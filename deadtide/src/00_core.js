@@ -87,12 +87,35 @@ defB(52, { key: 'turret', name: '机枪塔', cost: { steel: 8, parts: 10 }, hp: 
 defB(53, { key: 'barricade', name: '木板路障', cost: { wood: 3 }, hp: 300, P: 1, Z: 1, B: 1, dep: 1, brk: 1, low: 0.6, vault: 1, col: '#8a6a44', tip: '快速封门洞、窗洞：丧尸要砸，子弹能从上面打过去，人能翻过去' });
 defB(54, { key: 'ammobox', nat: 1, spot: 'ammobox' });
 defB(55, { key: 'bpcase', P: 1, Z: 1, B: 1, nat: 1, spot: 'bpcase', low: 0.7 });
+// (round 22) one-shot jump pad: step on it and it flings you ~5 tiles the way you're going, up onto a roof if there is one; placeable anywhere
+defB(56, { key: 'pad', name: '跳板', cost: { wood: 3, parts: 2 }, hp: 40, dep: 1, pad: 1, any: 1, col: '#d8a03a', tip: '踩上去把你弹出去约 5 格（朝你走的方向，前面有矮楼顶就弹上去），用一次就没；哪里都能放' });
 defB(42, { key: 'rail', P: 1, Z: 1, nat: 1, brk: 1, vault: 1, hp: 120, col: '#6a6f74' }); // balcony / roof / mezzanine railing: low, vaultable, bullets pass
-const PAL = [1, 2, 3, 4, 5, 6, 7, 8, 12, 13, 14, 9, 15, 10, 53, 51, 52];
+// (round 22) the placeables as items: one slot per kind; tap the slot again to switch material / variant. None of them care which way you face
+const ITEMS = [
+  { k: 'wall', name: '墙', ids: [1, 2, 3] },
+  { k: 'floor', name: '地板', ids: [4, 5] },
+  { k: 'ladder', name: '梯子', ids: [6] },
+  { k: 'door', name: '门', ids: [7] },
+  { k: 'cover', name: '掩体', ids: [53, 12, 14, 8] },
+  { k: 'trap', name: '陷阱', ids: [15, 9, 13, 51] },
+  { k: 'turret', name: '机枪塔', ids: [52] },
+  { k: 'lamp', name: '探照灯', ids: [10] },
+  { k: 'pad', name: '跳板', ids: [56] },
+];
+const PAL = ITEMS.flatMap(g => g.ids);
+const itemOf = id => ITEMS.find(g => g.ids.includes(id)) || ITEMS[0];
+// vehicles (round 22: their own category; you pick a default and T gets on it). spd = walking speed multiplier, seats 2 = a pillion seat
+const VEH = [null,
+  { k: 'bike', name: '自行车', spd: 1.6, tag: '便宜轻快：走得快 60%' },
+  { k: 'moto', name: '摩托车', spd: 1.9, seats: 2, tag: '最快：走得快 90%，后座能带一个队友' },
+  { k: 'cargo', name: '货运三轮', spd: 1.45, search: 1, tag: '搜刮用：坐在车上就能搜（够得更远、时间减半），搜到的材料 +50%' },
+  { k: 'armor', name: '装甲车', spd: 1.3, seats: 2, armor: 0.35, ram: 1, tag: '保护用：受到的伤害只剩 35%，撞开挡路的丧尸，后座能带一个队友' },
+];
+const NVEH = VEH.length - 1;
 // blueprints (尸城求生): what you can build / make from the start, and what has to be found first
-const BP_BASE = [1, 4, 6, 7, 12, 53];
-const BP_LIST = [2, 3, 5, 8, 13, 14, 9, 15, 10, 51, 52, 'bike', 'moto'];
-const bpName = k => typeof k === 'number' ? B[k].name : k === 'bike' ? '自行车' : '摩托车';
+const BP_BASE = [1, 4, 6, 7, 12, 53, 56];
+const BP_LIST = [2, 3, 5, 8, 13, 14, 9, 15, 10, 51, 52, 'bike', 'moto', 'cargo', 'armor'];
+const bpName = k => typeof k === 'number' ? B[k].name : (VEH.find(v => v && v.k === k) || { name: k }).name;
 const SLAB_BRIDGE = 11; // slab id for the pre-built bridges (not buildable)
 defB(11, { key: 'bridge', slab: 1, nat: 1, col: '#7e5a36' });
 const RES = [
@@ -202,22 +225,25 @@ const GATHER = {
 
 /* ---------- crafting (workbench in the starter house) ---------- */
 const CRAFT = [
-  { id: 'rifle', name: '步枪', desc: '持续火力：单发 34、全自动 30 发，连射越打越散', cost: { parts: 12, steel: 6 }, wpn: 2 },
-  { id: 'sniper', name: '狙击枪', desc: '打精英：一枪 220（爆头 ×2.5）穿 5 只，最远，但慢', cost: { parts: 18, steel: 8 }, wpn: 3 },
-  { id: 'shells', name: '霰弹 ×12', desc: '', cost: { parts: 2 }, ammo: [1, 12] },
-  { id: 'rounds', name: '步枪弹 ×60', desc: '', cost: { parts: 3 }, ammo: [2, 60] },
-  { id: 'slugs', name: '狙击弹 ×10', desc: '', cost: { parts: 3 }, ammo: [3, 10] },
-  { id: 'crossbow', name: '弩', desc: '几乎没声音：一箭 110 穿 3 只，钉住 1 秒，偷偷清楼用', cost: { parts: 12, wood: 12 }, wpn: 4 },
-  { id: 'flamer', name: '喷火器', desc: '近距离喷火，点着的丧尸会烧，火还会传给旁边的', cost: { parts: 20, steel: 10 }, wpn: 5 },
-  { id: 'launcher', name: '榴弹发射器', desc: '打出去落地就炸，炸一片', cost: { parts: 26, steel: 14 }, wpn: 6 },
-  { id: 'bolts', name: '弩箭 ×12', desc: '', cost: { wood: 4, parts: 1 }, ammo: [4, 12] },
-  { id: 'fuel', name: '燃料 ×120', desc: '', cost: { parts: 3, steel: 1 }, ammo: [5, 120] },
-  { id: 'shells40', name: '榴弹 ×4', desc: '', cost: { parts: 5, steel: 2 }, ammo: [6, 4] },
-  { id: 'nade', name: '手雷 ×2', desc: '最多带 6 颗', cost: { parts: 4 }, nade: 2 },
-  { id: 'med', name: '医疗包', desc: '回复 60 生命，最多 3 个', cost: { parts: 3, wood: 2 }, med: 1 },
-  { id: 'bike', name: '自行车', desc: '骑上走得快 60%（T / 「骑车」上下车；骑着也能开枪，但射速只有 40%）', cost: { wood: 6, steel: 6, parts: 4 }, veh: 1, bp: 'bike' },
-  { id: 'moto', name: '摩托车', desc: '走得快 90%，后座能带一个队友（队友靠近按 T 坐上去，后座开枪射速 70%）', cost: { steel: 14, parts: 12 }, veh: 2, bp: 'moto' },
-  { id: 'upg', name: '强化弹头', desc: '全队伤害 +12%（最多 5 级）', cost: { parts: 8 }, upg: 1 },
+  { id: 'rifle', cat: 'gun', name: '步枪', desc: '持续火力：单发 34、全自动 30 发，连射越打越散', cost: { parts: 12, steel: 6 }, wpn: 2 },
+  { id: 'sniper', cat: 'gun', name: '狙击枪', desc: '打精英：一枪 220（爆头 ×2.5）穿 5 只，最远，但慢', cost: { parts: 18, steel: 8 }, wpn: 3 },
+  { id: 'shells', cat: 'gun', name: '霰弹 ×12', desc: '', cost: { parts: 2 }, ammo: [1, 12] },
+  { id: 'rounds', cat: 'gun', name: '步枪弹 ×60', desc: '', cost: { parts: 3 }, ammo: [2, 60] },
+  { id: 'slugs', cat: 'gun', name: '狙击弹 ×10', desc: '', cost: { parts: 3 }, ammo: [3, 10] },
+  { id: 'crossbow', cat: 'gun', name: '弩', desc: '几乎没声音：一箭 110 穿 3 只，钉住 1 秒，偷偷清楼用', cost: { parts: 12, wood: 12 }, wpn: 4 },
+  { id: 'flamer', cat: 'gun', name: '喷火器', desc: '近距离喷火，点着的丧尸会烧，火还会传给旁边的', cost: { parts: 20, steel: 10 }, wpn: 5 },
+  { id: 'launcher', cat: 'gun', name: '榴弹发射器', desc: '打出去落地就炸，炸一片', cost: { parts: 26, steel: 14 }, wpn: 6 },
+  { id: 'bolts', cat: 'gun', name: '弩箭 ×12', desc: '', cost: { wood: 4, parts: 1 }, ammo: [4, 12] },
+  { id: 'fuel', cat: 'gun', name: '燃料 ×120', desc: '', cost: { parts: 3, steel: 1 }, ammo: [5, 120] },
+  { id: 'shells40', cat: 'gun', name: '榴弹 ×4', desc: '', cost: { parts: 5, steel: 2 }, ammo: [6, 4] },
+  { id: 'nade', cat: 'item', name: '手雷 ×2', desc: '最多带 6 颗；G 扔', cost: { parts: 4 }, nade: 2 },
+  { id: 'med', cat: 'item', name: '医疗包', desc: '回复 60 生命，最多 3 个；H 用，也能救回阵亡的队友', cost: { parts: 3, wood: 2 }, med: 1 },
+  { id: 'shield', cat: 'item', name: '防暴盾', desc: '背在手臂上：正面挨的抓咬、酸液少受 75%，盾吃满 300 就碎；买新的会修满', cost: { steel: 6, parts: 4 }, shield: 1 },
+  { id: 'bike', cat: 'veh', name: '自行车', desc: VEH[1].tag, cost: { wood: 6, steel: 6, parts: 4 }, veh: 1, bp: 'bike' },
+  { id: 'moto', cat: 'veh', name: '摩托车', desc: VEH[2].tag, cost: { steel: 14, parts: 12 }, veh: 2, bp: 'moto' },
+  { id: 'cargo', cat: 'veh', name: '货运三轮', desc: VEH[3].tag, cost: { wood: 8, steel: 10, parts: 8 }, veh: 3, bp: 'cargo' },
+  { id: 'armor', cat: 'veh', name: '装甲车', desc: VEH[4].tag, cost: { steel: 24, parts: 16 }, veh: 4, bp: 'armor' },
+  { id: 'upg', cat: 'upg', name: '强化弹头', desc: '全队伤害 +12%（最多 5 级）', cost: { parts: 8 }, upg: 1 },
 ];
 
 /* ---------- balance ---------- */
@@ -229,6 +255,10 @@ const BAL = {
   downTime: 30, reviveTime: 2.4, soloDownTime: 8, respawnHp: 0.5,
   respawnDay: 20, respawnNight: 60, rezTime: 6, rezHp: 0.4, // (round 20) a dead teammate comes back by a living one after this long (or at dawn); a medkit at the body brings them back at once
   searchTime: 1.5, healTime: 1.0, medHeal: 60,
+  shieldHp: 300, shieldBlock: 0.75, shieldCos: 0.26,          // (round 22) riot shield: blocks 75% of a hit from within ~75° of where you aim, until it has soaked 300
+  padDist: 5, padUp: 2,                                        // jump pad: how far / how many floors up it can throw you
+  ramDmg: 30, ramCD: 0.7, ramSpd: 2.2,                         // armoured car: hitting a zombie at speed
+  cargoSearch: 0.5, cargoLoot: 1.5, cargoReach: 2.3,           // cargo trike: search time x, loot x, reach from the seat
   knifeDmg: 55, knifeKB: 2.5, knifeCD: 0.5, knifeRange: 2.3, knifeLunge: 1.3, knifeBack: 2, // melee (was a shove: 18 dmg, KB 6, CD 0.55, 1.3 cone)
   nadeDmg: 286, nadeR: 3.4, nadeFuse: 1.6, nadeLand: 0.35, nadeMin: 0.5, // (round 18: radius 2.8 -> 3.4, damage at the edge 35% -> 50%, goes off 0.35 s after landing where you aimed)
   headshot: 1.6,

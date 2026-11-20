@@ -4,7 +4,7 @@ function mkPlayer(i, name) {
     i, name, x: RADIO_XY[0] - 0.5 + i * 2, y: RADIO_XY[1] + 0.5 + i, L: 0, z: 0, r: 0.28, h: 1.0, vx: 0, vy: 0, kbx: 0, kby: 0, aim: -Math.PI / 2, aimPt: null,
     hp: BAL.pMaxHp, maxHp: BAL.pMaxHp, down: false, downT: 0, dead: false, gone: false,
     wpn: 1, owned: WPN.map((w, k) => k < 2 ? 1 : 0), mag: WPN.map((w, k) => k === 0 ? 12 : k === 1 ? 6 : 0), ammo: WPN.map((w, k) => k === 1 ? w.start : 0), bloom: 0, reloadT: 0, reloadW: 0, fireCD: 0, shoveCD: 0, shoveT: 0,
-    nades: 1, meds: 1, medT: 0, selfRev: false, useT: 0, useK: '', build: false, sel: 1, demo: false, sdir: 3,
+    nades: 1, meds: 1, medT: 0, selfRev: false, useT: 0, useK: '', build: false, sel: 1, demo: false, sdir: 3, veh: 0, vehs: 0, shield: 0,
     inp: { mx: 0, my: 0, fire: 0, use: 0 }, kills: 0, hurtT: 0, anim: 0, emptyT: 0, ready: false, recoilT: 0,
   };
 }
@@ -73,19 +73,19 @@ function stepMove(p, dt) {
   // riding pillion on a teammate's motorbike: sit just behind the driver
   if (p.pass != null && p.pass >= 0) {
     const d = W.p[p.pass];
-    if (!d || !d.ride || d.veh !== 2 || d.dead || d.down || d.gone) p.pass = -1;
+    if (!d || !d.ride || !vehSeats(d) || d.dead || d.down || d.gone) p.pass = -1;
     else { const a = d._ly != null ? -d._ly : Math.atan2(d.vy || 0, d.vx || 1); p.x = d.x - Math.cos(a) * 0.42; p.y = d.y - Math.sin(a) * 0.42; p.L = d.L; p.z = d.z; p.zv = d.zv; p.vx = d.vx; p.vy = d.vy; p._ly = d._ly; return; }
   }
   const I = p.inp, m = Math.hypot(I.mx, I.my), k = m > 1 ? 1 / m : 1;
   if (p.jmp) { // mid-vault / mid-jump: a scripted arc
     const J = p.jmp; J.t += dt; const f = Math.min(1, J.t / J.T);
-    p.x = lerp(J.x0, J.x1, f); p.y = lerp(J.y0, J.y1, f); p.jz = Math.sin(f * Math.PI) * J.h;
+    p.x = lerp(J.x0, J.x1, f); p.y = lerp(J.y0, J.y1, f); p.jz = Math.sin(f * Math.PI) * J.h + (J.up ? J.up * FH * f : 0); // J.up: floors gained (jump pad), eased in so the landing doesn't pop
     p.vx = (J.x1 - J.x0) / J.T; p.vy = (J.y1 - J.y0) / J.T; p.anim += dt * 6;
     if (f >= 1) { const drop = p.L - J.L; p.L = J.L; p.jmp = null; p.jz = 0; p.vx *= 0.3; p.vy *= 0.3; if (drop > 0 || J.k) emitLocal('land'); }
     p.z = pZ(p); return;
   }
   if (p.dash) { const D = p.dash, f = Math.min(dt, D.T - D.t) / D.T; moveEnt(p, D.dx * f, D.dy * f, 'p', true); D.t += dt; if (D.t >= D.T) p.dash = null; p.z = pZ(p); p.anim += dt * 8; return; }
-  const spd = BAL.pSpeed * (p.down ? 0.22 : 1) * (p.medT > 0 ? 0.45 : 1) * (p.build ? 0.9 : 1) * (inMud(p.x, p.y, p.L) ? MUD_SLOW : 1) * (p.ride ? SIEGE.vSpd[p.veh || 0] || 1 : 1);
+  const spd = BAL.pSpeed * (p.down ? 0.22 : 1) * (p.medT > 0 ? 0.45 : 1) * (p.build ? 0.9 : 1) * (inMud(p.x, p.y, p.L) ? MUD_SLOW : 1) * (p.ride && VEH[p.veh] ? VEH[p.veh].spd : 1);
   const tx = I.mx * k * spd, ty = I.my * k * spd, a = Math.min(1, dt * 14);
   p.vx = lerp(p.vx, tx, a); p.vy = lerp(p.vy, ty, a);
   p.kbx *= Math.max(0, 1 - dt * 6); p.kby *= Math.max(0, 1 - dt * 6);
@@ -100,6 +100,11 @@ function stepMove(p, dt) {
   }
   if (!vk) p.vaultT = 0; else p.edgeK = 3;
   if (p.dropped) emitLocal('land');
+  // a jump pad under your feet (round 22): fling yourself the way you're going; the host takes the pad away
+  if ((p.padCD = Math.max(0, (p.padCD || 0) - dt)) <= 0 && !p.down && !p.ride && W.blk[ci(Math.floor(p.x), Math.floor(p.y), p.L)] === 56) {
+    const t = padTarget(p), px = Math.floor(p.x), py = Math.floor(p.y), pl = p.L; p.padCD = 0.6;
+    if (t) { p.jmp = { t: 0, T: 0.55 + t.d * 0.05, x0: p.x, y0: p.y, x1: t.x, y1: t.y, L: t.L, h: 1.3 + Math.max(0, t.L - p.L) * 0.4, up: t.L - p.L, k: 4 }; emitLocal('jump'); if (typeof act === 'function' && p.i === ME) act('pad', { x: px, y: py, l: pl }); else doAct(p, 'pad', { x: px, y: py, l: pl }); }
+  }
   const sp = Math.hypot(p.vx, p.vy);
   if (sp > 0.3) p.anim += dt * sp * 2.6; else p.anim = lerp(p.anim, Math.round(p.anim / Math.PI) * Math.PI, Math.min(1, dt * 8));
   p.z = pZ(p);
@@ -127,6 +132,27 @@ function startJump(p, dx, dy, hop) {
   p.jmp = { t: 0, T: t.T, x0: p.x, y0: p.y, x1: t.x, y1: t.y, L: t.L, h: t.h + Math.max(0, p.L - t.L) * 0.15, k: t.k };
   emitLocal(t.k === 2 ? 'vault' : 'jump'); return true;
 }
+// where a jump pad throws you: up to BAL.padDist tiles along your walk (else your aim), the highest floor (up to padUp above) with room to land
+function padTarget(p) {
+  let ax = p.inp.mx, ay = p.inp.my; if (Math.hypot(ax, ay) < 0.3) { ax = Math.cos(p.aim); ay = Math.sin(p.aim); }
+  const m = Math.hypot(ax, ay) || 1; ax /= m; ay /= m;
+  const roof = p.L + 1 < ML && !!W.slab[ci(Math.floor(p.x), Math.floor(p.y), p.L + 1)], upMax = roof ? 0 : BAL.padUp;
+  for (let d = BAL.padDist; d >= 1.5; d -= 0.5) {
+    const x = Math.floor(p.x + ax * d), y = Math.floor(p.y + ay * d); if (!inMap(x, y) || (x === Math.floor(p.x) && y === Math.floor(p.y))) continue;
+    for (let l = Math.min(ML - 2, p.L + upMax); l >= Math.max(0, p.L - 2); l--) {
+      if (!standable(x, y, l, 'p')) continue;
+      const top = roof ? p.L : Math.max(l, p.L) + 1; let clear = true;
+      for (let s = 0.5; s < d && clear; s += 0.5) {
+        const xx = Math.floor(p.x + ax * s), yy = Math.floor(p.y + ay * s);
+        if (roof) { if (!enterable(xx, yy, p.L, 'p')) clear = false; }
+        else if (top < ML && (W.slab[ci(xx, yy, top)] || B[W.blk[ci(xx, yy, top)]].P)) clear = false;
+      }
+      if (clear) return { x: x + 0.5, y: y + 0.5, L: l, d };
+      break;
+    }
+  }
+  return null;
+}
 function emitLocal(name) { fxEvent({ k: 'sfx', n: name, local: 1 }); }
 
 /* ---------- player actions (host authoritative) ---------- */
@@ -137,6 +163,11 @@ function stepActions(p, dt) {
   p.fireCD -= dt; p.shoveCD -= dt; p.emptyT -= dt; if (p.bloom) p.bloom = Math.max(0, p.bloom - dt * 2.2);
   // each gun has its own fire cooldown, and a reload keeps going in the holster (round 18: was one shared timer, swapping cancelled the reload)
   if (!p.cdW) p.cdW = WPN.map(() => 0); if (!p.rlBg) p.rlBg = WPN.map(() => 0);
+  if (p.ride && VEH[p.veh] && VEH[p.veh].ram && Math.hypot(p.vx, p.vy) > BAL.ramSpd) for (const z of W.zs) { // (round 22) the armoured car shoves zombies aside
+    if (z.hp <= 0 || z.L !== p.L || z.hidden || (z.ramT || 0) > W.t) continue;
+    const dx = z.x - p.x, dy = z.y - p.y, d = Math.hypot(dx, dy) || 0.01;
+    if (d < p.r + z.r + 0.3 && dx * p.vx + dy * p.vy > 0) { z.ramT = W.t + BAL.ramCD; const k = ZT[z.k].boss || z.k === 'brute' ? 1 : 5; hurtZombie(z, BAL.ramDmg, p, dx / d * k, dy / d * k); emit({ k: 'sfx', n: 'bash', x: z.x, y: z.y }); }
+  }
   for (let k = 0; k < NW; k++) { if (p.cdW[k] > 0) p.cdW[k] -= dt; if (p.rlBg[k] > 0) { p.rlBg[k] -= dt; if (p.rlBg[k] <= 0) { p.rlBg[k] = 0; reloadInto(p, k); } } }
   if (p.dead) return;
   if (p.reloadT > 0) { p.reloadT -= dt; if (p.reloadT <= 0) finishReload(p); }
@@ -167,16 +198,17 @@ function useTarget(p) {
   if (p.down || p.dead) return null;
   for (const q of W.p) if (q !== p && q.down && !q.dead && !q.gone && q.L === p.L && d2(q.x, q.y, p.x, p.y) < 1.5) return { k: 'rev', i: q.i, t: BAL.reviveTime, name: '扶起 ' + q.name };
   for (const q of W.p) if (q !== p && q.dead && !q.gone && p.meds > 0 && q.L === p.L && d2(q.x, q.y, p.x, p.y) < 1.6) return { k: 'rez', i: q.i, t: BAL.rezTime, name: '用医疗包救回 ' + q.name };
-  let best = null, bd = 1.45;
+  const cargo = p.ride && VEH[p.veh] && VEH[p.veh].search, tk = cargo ? BAL.cargoSearch : 1, R = cargo ? 2 : 1;
+  let best = null, bd = cargo ? BAL.cargoReach : 1.45;
   const px = Math.floor(p.x), py = Math.floor(p.y);
-  for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+  for (let dy = -R; dy <= R; dy++) for (let dx = -R; dx <= R; dx++) {
     const x = px + dx, y = py + dy; if (!inMap(x, y)) continue;
     const i = ci(x, y, p.L), b = W.blk[i]; if (!b) continue;
     const d = d2(x + 0.5, y + 0.5, p.x, p.y);
     if (d > bd) continue;
     if (B[b].obj || B[b].turret) { const t = modeUse(p, i, b); if (t) { bd = d; best = t; } }
-    else if (B[b].spot) { const S = SPOTS[B[b].spot]; if (S && (S.vanish || !W.srch.has(i))) { bd = d; best = { k: 'spot', i, t: BAL.searchTime, name: '搜索' + S.name }; } }
-    else if (GATHER[b]) { bd = d; best = { k: 'gather', i, t: GATHER[b].t, name: GATHER[b].name }; }
+    else if (B[b].spot) { const S = SPOTS[B[b].spot]; if (S && (S.vanish || !W.srch.has(i))) { bd = d; best = { k: 'spot', i, t: BAL.searchTime * tk, name: '搜索' + S.name }; } }
+    else if (GATHER[b]) { bd = d; best = { k: 'gather', i, t: GATHER[b].t * tk, name: GATHER[b].name }; }
   }
   return best;
 }
@@ -185,10 +217,10 @@ function completeUse(p, tgt) {
   if (tgt.k === 'rev') { const q = W.p[tgt.i]; if (!q.down) return; q.down = false; q.hp = 35; q.medT = 0; q.selfRev = false; emit({ k: 'revive', p: q.i, by: p.i }); return; }
   if (tgt.k === 'obj') { modeDone(p, tgt); return; }
   const i = tgt.i, x = cx_(i), y = cy_(i), L = cl_(i), wx = x + 0.5, wy = y + 0.5, wz = L * FH + 1;
-  const m = (1 + Math.min(40, Math.max(0, radioDist(x, y) - 8)) / BAL.lootFar) * (isSiege() ? SIEGE.loot : 1); // capped where the old 96-map edge was; 尸城求生 pays double
+  const m = (1 + Math.min(40, Math.max(0, radioDist(x, y) - 8)) / BAL.lootFar) * (isSiege() ? SIEGE.loot : 1) * (p.ride && VEH[p.veh] && VEH[p.veh].search ? BAL.cargoLoot : 1); // capped where the old 96-map edge was; 尸城求生 pays double
   if (tgt.k === 'gather') {
     const g = GATHER[W.blk[i]]; if (!g) return;
-    const n = Math.round(rand(g.n[0], g.n[1])); W.res[g.res] += n;
+    const n = Math.round(rand(g.n[0], g.n[1]) * (p.ride && VEH[p.veh] && VEH[p.veh].search ? BAL.cargoLoot : 1)); W.res[g.res] += n;
     setCell(i, 0, W.slab[i], null, W.blk[i] === 22 ? 'chop' : 'mine'); taskAdd('gather');
     emit({ k: 'loot', p: p.i, x: wx, y: wy, z: wz, text: '+' + n + ' ' + RES.find(r => r.k === g.res).name });
     return;
@@ -384,16 +416,23 @@ function killZombie(z, p) {
   emit({ k: 'zdie', x: r2(z.x), y: r2(z.y), z: r2(z.z), t: z.k, f: r2(z.face), id: z.id });
   if (rand() < (z.k === 'boss' ? 1 : z.k === 'brute' ? 0.6 : 0.07)) { const n = z.k === 'boss' ? 15 : z.k === 'brute' ? 3 : 1; W.res.parts += n; emit({ k: 'loot', p: -1, x: z.x, y: z.y, z: z.z + z.h, text: '+' + n + ' 零件' }); }
 }
-function hurtPlayer(p, dmg) {
+function hurtPlayer(p, dmg, src) {
   if (p.gone || p.dead) return;
   if (DBG && DBG.god) return;
+  if (p.ride && VEH[p.veh] && VEH[p.veh].armor) dmg *= VEH[p.veh].armor;                                   // (round 22) inside the armoured car
+  if (src && p.shield > 0 && !p.down && Math.cos(angDiff(p.aim, Math.atan2(src.y - p.y, src.x - p.x))) > BAL.shieldCos) { // riot shield: hits from the front
+    const a = Math.min(p.shield, dmg * BAL.shieldBlock); p.shield -= a; dmg -= a;
+    emit({ k: 'sfx', n: p.shield <= 0 ? 'brkMetal' : 'clank', x: p.x, y: p.y }); if (p.shield <= 0) { p.shield = 0; emit({ k: 'shieldBreak', p: p.i }); }
+  }
   if (p.down) { p.downT -= dmg * 0.18; p.hurtT = 0.3; emit({ k: 'phurt', p: p.i, d: 1 }); return; }
   p.hp -= dmg; p.hurtT = 0.3; emit({ k: 'phurt', p: p.i, d: Math.round(dmg) });
   if (p.hp <= 0) { p.hp = 0; p.down = true; p.ride = false; p.pass = -1; for (const q of W.p) if (q.pass === p.i) q.pass = -1; if (W.phase === 'night') W.clean = false; p.downT = activeP().length > 1 ? BAL.downTime : BAL.soloDownTime; p.reloadT = 0; p.medT = 0; p.build = false; emit({ k: 'down', p: p.i }); checkLose(); }
 }
 function knock(p, kx, ky) { if (p.i === ME && NETROLE !== 'guest') { p.kbx += kx; p.kby += ky; } else emit({ k: 'kb', p: p.i, x: r2(kx), y: r2(ky) }); }
 // a teammate on a motorbike with the back seat free, close enough to climb on
-function pillionFor(p) { return W.p.find(d => d !== p && d.ride && d.veh === 2 && !d.dead && !d.down && !d.gone && d.L === p.L && Math.hypot(d.x - p.x, d.y - p.y) < 1.8 && !W.p.some(q => q.pass === d.i)) || null; }
+const vehSeats = d => !!(VEH[d.veh] && VEH[d.veh].seats);
+const ownsVeh = (p, v) => !!((p.vehs || 0) >> v & 1) || (!p.vehs && v >= 1 && p.veh === v); // vehs = owned bitmask; a bare veh (older state) counts as owned
+function pillionFor(p) { return W.p.find(d => d !== p && d.ride && vehSeats(d) && !d.dead && !d.down && !d.gone && d.L === p.L && Math.hypot(d.x - p.x, d.y - p.y) < 1.8 && !W.p.some(q => q.pass === d.i)) || null; }
 function respawnP(p) {
   let x = W.radio.x - 0.5 + p.i * 2, y = W.radio.y + 0.5, L = gAt(W.radio.x, W.radio.y);
   const mate = activeP().find(q => q !== p && standingP(q));
@@ -422,8 +461,10 @@ function doAct(p, a, v) {
   switch (a) {
     case 'ride': if (!p.down && !p.dead) {
       if (p.pass != null && p.pass >= 0) { p.pass = -1; emit({ k: 'sfx', n: 'swap', x: p.x, y: p.y, o: p.i }); break; }     // hop off the back
+      if (v >= 1 && ownsVeh(p, v)) { p.veh = v; p.ride = true; p.build = false; if (!vehSeats(p)) for (const q of W.p) if (q.pass === p.i) q.pass = -1; emit({ k: 'sfx', n: 'swap', x: p.x, y: p.y, o: p.i }); break; }
       const d = pillionFor(p);
       if (d && !p.ride) { p.pass = d.i; p.build = false; emit({ k: 'sfx', n: 'swap', x: p.x, y: p.y, o: p.i }); emit({ k: 'pillion', p: p.i, d: d.i }); break; } // get on behind a teammate
+      if (!ownsVeh(p, p.veh)) p.veh = [4, 2, 3, 1].find(k => ownsVeh(p, k)) || 0;
       if (p.veh) { p.ride = !p.ride; if (p.ride) p.build = false; else for (const q of W.p) if (q.pass === p.i) q.pass = -1; emit({ k: 'sfx', n: 'swap', x: p.x, y: p.y, o: p.i }); }
     } break;
     case 'reload': if (!p.down) startReload(p); else if (p.mag[0] < WPN[0].mag) { p.reloadT = WPN[0].reload; p.reloadW = 0; } break;
@@ -444,6 +485,8 @@ function doAct(p, a, v) {
     case 'craft': doCraft(p, v); break;
     case 'build': doBuild(p, v.x, v.y, v.l, v.b, v.d); break;
     case 'demo': doDemolish(p, v.x, v.y, v.l); break;
+    case 'vdef': if (v >= 1 && ownsVeh(p, v)) { p.veh = v; if (p.ride && !vehSeats(p)) for (const q of W.p) if (q.pass === p.i) q.pass = -1; } break; // pick the default vehicle (switches the one you're on too)
+    case 'pad': if (v && inMap(v.x, v.y) && v.l >= 0 && v.l < ML) { const i = ci(v.x, v.y, v.l); if (W.blk[i] === 56) { setCell(i, 0, W.slab[i], null, 'demo'); emit({ k: 'sfx', n: 'jump', x: v.x + 0.5, y: v.y + 0.5 }); } } break;
     case 'mode': p.build = !!v; break;
   }
 }
@@ -498,7 +541,8 @@ function canCraft(p) { return !p.down && !p.dead && (nearBench(p) || houseInteri
 const inCamp = p => Math.abs(p.x - W.radio.x - 0.5) <= 6.5 && Math.abs(p.y - W.radio.y - 0.5) <= 5.5;
 function craftBlocked(p, c) {
   if (c.bp && !hasBP(c.bp)) return '需要蓝图';
-  if (c.veh && (p.veh || 0) >= c.veh) return '已拥有';
+  if (c.veh && ownsVeh(p, c.veh)) return '已拥有';
+  if (c.shield && p.shield >= BAL.shieldHp) return '完好';
   if (c.wpn && p.owned[c.wpn]) return '已拥有';
   if (c.ammo && !p.owned[c.ammo[0]]) return '没有这把枪';
   if (c.nade && p.nades >= 6) return '已满';
@@ -515,7 +559,8 @@ function doCraft(p, id) {
   if (c.nade) p.nades = Math.min(6, p.nades + c.nade);
   if (c.med) p.meds = Math.min(3, p.meds + 1);
   if (c.upg) W.upg++;
-  if (c.veh) { p.veh = Math.max(p.veh || 0, c.veh); p.ride = true; }
+  if (c.veh) { p.vehs = (p.vehs || 0) | 1 << c.veh; p.veh = c.veh; }                  // (round 22) it becomes your default: T gets on
+  if (c.shield) p.shield = BAL.shieldHp;
   emit({ k: 'craft', p: p.i, id, name: c.name });
 }
 function inReach(p, x, y, L) { return !p.down && Math.hypot(p.x - x - 0.5, p.y - y - 0.5, (pZ(p) - L * FH) * 0.8) <= BAL.pReach; }
@@ -675,7 +720,7 @@ function stepProj(dt) {
       const x = Math.floor(b.x), y = Math.floor(b.y), L = Math.floor(b.z / FH), blk = blkAt(x, y, L);
       let hit = false;
       if (solidFor(blk, 'b') || b.z <= floorUnder(b.x, b.y, b.z + 0.3) + 0.02) { if (inMap(x, y) && L >= 0 && L < ML) damageCell(ci(x, y, L), 9 * W.D.dmg); hit = true; }
-      for (const p of W.p) if ((standingP(p) || p.down) && d2(p.x, p.y, b.x, b.y) < p.r + 0.15 && b.z > p.z - 0.1 && b.z < p.z + p.h + 0.1) { hurtPlayer(p, 11 * W.D.dmg); hit = true; }
+      for (const p of W.p) if ((standingP(p) || p.down) && d2(p.x, p.y, b.x, b.y) < p.r + 0.15 && b.z > p.z - 0.1 && b.z < p.z + p.h + 0.1) { hurtPlayer(p, 11 * W.D.dmg, b); hit = true; }
       if (hit || b.z < -2) { b.dead = true; if (b.pool) acidPool(b.x, b.y); emit({ k: 'acid', x: r2(b.x), y: r2(b.y), z: r2(b.z) }); }
     }
   }

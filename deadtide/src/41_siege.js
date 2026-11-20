@@ -8,7 +8,7 @@ const SIEGE = {
   noticeRate: 1.4, noticeDecay: 0.4, wallMuffle: 0.6,                     // time to notice you: 2 cells ≈ 1.4 s, 3 cells ≈ 2.3 s, 4 cells ≈ 6 s (×2.2 with its back to you); walls cut hearing to 60%
   gunNoise: { pistol: 8, shotgun: 12, rifle: 11, sniper: 14, crossbow: 2.5, flamer: 6, launcher: 12 },
   tRange: 9, tRate: 0.32, tDmg: 18, tAmmo: 240, tRefill: { parts: 3 },  // turret
-  loot: 2, mineR: 2.4, mineDmg: 200, spawnR: 24, vSpd: [1, 1.6, 1.9],    // search yield multiplier, mines, horde ring radius, vehicle speed (motorbike 2.3 -> 1.9 in round 20)
+  loot: 2, mineR: 2.4, mineDmg: 200, spawnR: 24, vSpd: VEH.map(v => v ? v.spd : 1),    // search yield multiplier, mines, horde ring radius, vehicle speed (motorbike 2.3 -> 1.9 in round 20)
   occFrac: 0.55, clearRw: { parts: 6, steel: 4 },
   bpOdds: { milcrate: 0.5, toolbox: 0.3, backpack: 0.18, cabinet: 0.14, crate: 0.14, car: 0.1, ammobox: 0.08 },
 };
@@ -122,7 +122,7 @@ function siegeBlueprint(kind, sure) {
   const O = W.obj, left = BP_LIST.filter(k => !O.bp.includes(k));
   if (!left.length || (!sure && !(rand() < (SIEGE.bpOdds[kind] || 0)))) return '';
   const k = left[Math.floor(rand() * left.length)]; O.bp.push(k); objChanged();
-  modeSay('找到蓝图：' + bpName(k) + (typeof k === 'number' ? '（建造栏里解锁了）' : '（制作里能造了）'), '#7fd0ff', true);
+  modeSay('找到蓝图：' + bpName(k) + (typeof k === 'number' ? '（道具栏里解锁了）' : '（商店 → 载具 里能造了）'), '#7fd0ff', true);
   return '蓝图·' + bpName(k);
 }
 // gunfire and blasts wake sleepers

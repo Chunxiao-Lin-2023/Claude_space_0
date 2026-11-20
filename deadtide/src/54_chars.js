@@ -346,7 +346,9 @@ function mkPlayerModel(i) {
   const medkit = mk([[boxG(0.14, 0.1, 0.2, 0, 0, 0), '#e8e2d6'], [boxG(0.145, 0.03, 0.08, 0, 0, 0), '#c83a32'], [boxG(0.145, 0.08, 0.03, 0, 0, 0), '#c83a32']]);
   const nade = mk([[new THREE.IcosahedronGeometry(0.05, 0), '#3c4a32']]);
   SCN.add(g);
-  return { g, lower, hips, legs, upper, torso, head, aim, arms, gunG, guns, knife, hammer, medkit, nade, mats, i };
+  // (round 22) riot shield strapped to the left forearm side, facing the aim
+  const shield = grp(torso, 0.17, 0.16, -0.19); mesh(boxG(0.035, 0.5, 0.3, 0, 0, 0), '#2e3a44', shield); mesh(boxG(0.04, 0.12, 0.22, 0.005, 0.12, 0), '#8fb4c8', shield); mesh(boxG(0.04, 0.03, 0.3, 0.004, -0.06, 0), '#e8d26a', shield); shield.visible = false;
+  return { g, lower, hips, legs, upper, torso, head, aim, arms, gunG, guns, knife, hammer, medkit, nade, mats, i, shield };
 }
 // two-bone IK inside the aim rig: put the hand of arm A at target T (aim-rig coordinates)
 const _v1 = new THREE.Vector3(), _v2 = new THREE.Vector3(), _v3 = new THREE.Vector3(), _q1 = new THREE.Quaternion(), _down = new THREE.Vector3(0, -1, 0), _pole = new THREE.Vector3();
@@ -385,7 +387,18 @@ function mkVehicles() {
   const fm = lam('#c0392b'); bike.add(new THREE.Mesh(boxG(0.7, 0.05, 0.05, 0, 0.42, 0).rotateZ(0.08), fm), new THREE.Mesh(boxG(0.05, 0.36, 0.05, -0.12, 0.3, 0).rotateZ(0.35), fm), new THREE.Mesh(boxG(0.18, 0.04, 0.1, -0.16, 0.52, 0), lam('#222')), new THREE.Mesh(boxG(0.05, 0.05, 0.42, 0.36, 0.62, 0), lam('#888')));
   const moto = new THREE.Group(); moto.add(wheel(0.26, 0.12, 0.5), wheel(0.26, 0.12, -0.5));
   const bm = lam('#2c3e50'); moto.add(new THREE.Mesh(boxG(0.8, 0.22, 0.26, 0, 0.42, 0), bm), new THREE.Mesh(boxG(0.36, 0.08, 0.28, -0.14, 0.56, 0), lam('#151515')), new THREE.Mesh(boxG(0.22, 0.2, 0.24, 0.32, 0.6, 0), lam('#c0392b')), new THREE.Mesh(boxG(0.05, 0.05, 0.5, 0.42, 0.76, 0), lam('#999')), new THREE.Mesh(boxG(0.3, 0.06, 0.08, -0.3, 0.34, 0.16), lam('#777')));
-  g.add(bike, moto); g.userData = { bike, moto }; return g;
+  // (round 22) cargo trike: one wheel in front, a box on two wheels behind; armoured car: an open-topped steel tub with a push bar
+  const cargo = new THREE.Group(), cm = lam('#3f7a5a'); cargo.add(wheel(0.2, 0.08, 0.5));
+  for (const z of [-0.3, 0.3]) { const w = wheel(0.2, 0.08, -0.42); w.position.z = z; cargo.add(w); }
+  cargo.add(new THREE.Mesh(boxG(0.62, 0.05, 0.06, 0.22, 0.4, 0), cm), new THREE.Mesh(boxG(0.2, 0.06, 0.24, 0.0, 0.5, 0), lam('#222')), new THREE.Mesh(boxG(0.05, 0.3, 0.05, 0.46, 0.55, 0).rotateZ(-0.2), cm),
+    new THREE.Mesh(boxG(0.04, 0.04, 0.4, 0.5, 0.72, 0), lam('#222')), new THREE.Mesh(boxG(0.56, 0.06, 0.7, -0.42, 0.36, 0), cm), new THREE.Mesh(boxG(0.56, 0.24, 0.04, -0.42, 0.5, 0.34), cm), new THREE.Mesh(boxG(0.56, 0.24, 0.04, -0.42, 0.5, -0.34), cm),
+    new THREE.Mesh(boxG(0.04, 0.24, 0.7, -0.7, 0.5, 0), cm), new THREE.Mesh(boxG(0.3, 0.16, 0.28, -0.46, 0.48, 0.1), lam('#8a6a44')), new THREE.Mesh(boxG(0.22, 0.12, 0.22, -0.38, 0.46, -0.16), lam('#6a7a86')));
+  const armor = new THREE.Group(), am = lam('#55603a'), ad = lam('#3a4228');
+  for (const x of [0.48, -0.48]) for (const z of [-0.38, 0.38]) { const w = wheel(0.22, 0.14, x); w.position.z = z; armor.add(w); }
+  armor.add(new THREE.Mesh(boxG(1.34, 0.26, 0.74, 0, 0.36, 0), am), new THREE.Mesh(boxG(0.36, 0.3, 0.72, 0.5, 0.62, 0).rotateZ(0.35), am), new THREE.Mesh(boxG(1.0, 0.34, 0.05, -0.12, 0.66, 0.36), am), new THREE.Mesh(boxG(1.0, 0.34, 0.05, -0.12, 0.66, -0.36), am),
+    new THREE.Mesh(boxG(0.05, 0.34, 0.72, -0.64, 0.66, 0), am), new THREE.Mesh(boxG(0.08, 0.12, 0.84, 0.74, 0.3, 0), ad), new THREE.Mesh(boxG(0.06, 0.3, 0.06, 0.74, 0.4, 0.3), ad), new THREE.Mesh(boxG(0.06, 0.3, 0.06, 0.74, 0.4, -0.3), ad),
+    new THREE.Mesh(boxG(0.04, 0.12, 0.5, 0.42, 0.86, 0), lam('#9fc4d8')));
+  g.add(bike, moto, cargo, armor); g.userData = { bike, moto, cargo, armor, all: [null, bike, moto, cargo, armor] }; return g;
 }
 function drawPlayers(vl, dt) {
   while (OBJ.pl.length < W.p.length) OBJ.pl.push(mkPlayerModel(OBJ.pl.length));
@@ -418,10 +431,11 @@ function drawPlayers(vl, dt) {
     const wK = down ? 0 : p.wpn, SK = STANCE[wK] || STANCE[0];
     p._kn = lerp(p._kn || 0, SK.kneel && !moving && !p.build && !(p.medT > 0) && !(p.jz > 0.05) && !down ? 1 : 0, Math.min(1, dt * 7));
     if (p._kn > 0.01) { const q = p._kn; aL = lerp(aL, 1.45, q); kL = lerp(kL, 1.45, q); aR = lerp(aR, -0.05, q); kR = lerp(kR, 1.62, q); } // right knee down, left foot forward
-    const pil = p.pass != null && p.pass >= 0 && !down, ride = (!!p.ride || pil) && !down; m.veh.visible = !!p.ride && !down; if (ride) { m.veh.userData.bike.visible = (p.veh || 1) === 1; m.veh.userData.moto.visible = p.veh === 2; m.veh.rotation.y = -p._ly; aL = aR = 1.15; kL = kR = 1.35; }
+    const pil = p.pass != null && p.pass >= 0 && !down, ride = (!!p.ride || pil) && !down; m.veh.visible = !!p.ride && !down; if (ride) { m.veh.userData.all.forEach((q, k) => { if (q) q.visible = k === (p.veh || 1); }); m.veh.rotation.y = -p._ly; aL = aR = 1.15; kL = kR = 1.35; }
+    if (m.shield) m.shield.visible = (p.shield || 0) > 0 && !down && !p.dead;
     const legH = (a, k) => 0.23 * Math.cos(a) + 0.22 * Math.cos(a - k) + 0.03;
     const hipY = down ? 0.2 : Math.max(legH(aL, kL), legH(aR, kR));
-    const seat = ride ? (pil ? 0.46 : p.veh === 2 ? 0.42 : 0.36) : 0; m.hips.position.y = hipY + seat; m.upper.position.y = hipY + seat;
+    const seat = ride ? (pil ? (p.pass >= 0 && W.p[p.pass] && W.p[p.pass].veh === 4 ? 0.34 : 0.46) : p.veh === 2 ? 0.42 : p.veh === 4 ? 0.3 : 0.36) : 0; m.hips.position.y = hipY + seat; m.upper.position.y = hipY + seat;
     m.legs[0].th.rotation.z = aL; m.legs[0].kn.rotation.z = -kL; m.legs[0].ft.rotation.z = kL - aL;
     m.legs[1].th.rotation.z = aR; m.legs[1].kn.rotation.z = -kR; m.legs[1].ft.rotation.z = kR - aR;
     if (down) { m.legs[1].th.rotation.x = 0.6; } else m.legs[1].th.rotation.x = 0;

@@ -573,6 +573,7 @@ function fxEvent(e) {
     case 'down': sfx('down', W.p[e.p].x, W.p[e.p].y); uiMsg(e.p === ME ? (W.p.length > 1 ? '你倒地了！等队友扶你，或按 H 用医疗包自救' : '你倒地了！按 H 用医疗包自救') : W.p[e.p].name + ' 倒地了！快去扶（按住 F）', '#ff6b5a'); break;
     case 'revive': sfx('revive'); uiMsg(e.p === e.by ? W.p[e.p].name + ' 自救成功' : W.p[e.by].name + (e.rez ? ' 用医疗包救回了 ' : ' 扶起了 ') + W.p[e.p].name, '#8fe39a'); break;
     case 'dead': uiMsg(W.p[e.p].name + ' 阵亡了：' + (e.t || 60) + ' 秒后（或天亮）在队友身边复活，带医疗包到他倒下的地方能马上救回来', '#ff6b5a'); break;
+    case 'shieldBreak': if (e.p === ME) toast('防暴盾碎了（商店 → 道具 能再买）', '#ff8a7a'); else uiMsg(W.p[e.p].name + ' 的防暴盾碎了', '#ffb38a'); break;
     case 'respawn': uiMsg(W.p[e.p].name + ' 回来了' + (e.near >= 0 ? '（在 ' + W.p[e.near].name + ' 身边）' : '（在营地）'), '#8fe39a'); break;
     case 'task': sfx('craft'); uiMsg('任务完成：' + e.txt + '  奖励 ' + e.rt, '#ffd76a'); toast('任务完成 · ' + e.rt, '#ffd76a'); break;
     case 'tp': if (guest && e.p === ME) { const p = W.p[ME]; p.x = e.x; p.y = e.y; p.L = e.l; p.vx = p.vy = 0; } break;

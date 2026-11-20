@@ -67,9 +67,9 @@ function hostStart() {
   startGame(seed, names, SET.diff, 0, mode, map);
 }
 const ZI = ZKEYS;
-function pFlags(p) { return (p.down ? 1 : 0) | (p.dead ? 2 : 0) | (p.gone ? 4 : 0) | (p.build ? 32 : 0) | (p.ready ? 64 : 0) | (p.selfRev ? 128 : 0) | (p.ride ? 256 : 0) | ((p.veh || 0) << 9) | ((p.pass != null && p.pass >= 0 ? p.pass + 1 : 0) << 11); }
+function pFlags(p) { return (p.down ? 1 : 0) | (p.dead ? 2 : 0) | (p.gone ? 4 : 0) | (p.build ? 32 : 0) | (p.ready ? 64 : 0) | (p.selfRev ? 128 : 0) | (p.ride ? 256 : 0) | ((p.veh || 0) << 9) | ((p.pass != null && p.pass >= 0 ? p.pass + 1 : 0) << 12); } // veh: 3 bits (round 22: four vehicles)
 function makeSnap() {
-  const P = p => [r2(p.x), r2(p.y), p.L, r2(p.vx), r2(p.vy), r2(p.aim), Math.ceil(p.hp), pFlags(p), Math.round(p.downT * 10) / 10, p.wpn, p.mag.join(','), p.ammo.join(','), p.owned.join(''), p.nades, p.meds, Math.round(p.useT * 100), Math.round(p.medT * 10) / 10, Math.round(p.reloadT * 10) / 10, p.kills, Math.round(p.anim * 10) / 10, p.sel, p.aimPt ? [r2(p.aimPt.x), r2(p.aimPt.y), r2(p.aimPt.z)] : 0];
+  const P = p => [r2(p.x), r2(p.y), p.L, r2(p.vx), r2(p.vy), r2(p.aim), Math.ceil(p.hp), pFlags(p), Math.round(p.downT * 10) / 10, p.wpn, p.mag.join(','), p.ammo.join(','), p.owned.join(''), p.nades, p.meds, Math.round(p.useT * 100), Math.round(p.medT * 10) / 10, Math.round(p.reloadT * 10) / 10, p.kills, Math.round(p.anim * 10) / 10, p.sel, p.aimPt ? [r2(p.aimPt.x), r2(p.aimPt.y), r2(p.aimPt.z)] : 0, p.vehs || 0, Math.ceil(p.shield || 0)];
   const z = []; for (const q of W.zs) z.push(q.id, ZI.indexOf(q.k), Math.round(q.x * 100), Math.round(q.y * 100), q.L, Math.round(q.z * 100), Math.round(q.face * 100), Math.ceil(q.hp / q.max * 100), (q.climbing ? 1 : 0) | (q.atk > 0 ? 2 : 0) | (q.hitT > 0 ? 4 : 0) | (q.moving ? 8 : 0) | (q.burn > 0 ? 16 : 0) | (q.scr > 0 ? 32 : 0) | (q.rage > 0 ? 64 : 0) | (q.hidden ? 128 : 0) | (q.sleep ? 256 : 0) | ((q.aw || 0) > 0.15 ? 512 : 0));
   const pr = []; for (const b of W.proj) pr.push(b.k === 'nade' ? 0 : b.k === 'gl' ? 2 : 1, r2(b.x), r2(b.y), r2(b.z), r2(b.vx), r2(b.vy), r2(b.vz));
   const d = []; for (const i of W.dirty) d.push(i, Math.round(W.bhp[i]), Math.round(W.shp[i])); W.dirty.clear();
@@ -123,11 +123,11 @@ function applySnap(s) {
   RES.forEach((r, i) => W.res[r.k] = s.res[i]); W.spawnLeft = s.sl;
   s.p.forEach((a, i) => {
     const p = W.p[i]; if (!p) return;
-    const [x, y, L, vx, vy, aim, hp, fl, downT, wpn, mag, ammo, owned, nades, meds, useT, medT, reloadT, kills, anim, sel, ap] = a;
+    const [x, y, L, vx, vy, aim, hp, fl, downT, wpn, mag, ammo, owned, nades, meds, useT, medT, reloadT, kills, anim, sel, ap, vehs, shield] = a;
     const mine = i === ME;
-    p.hp = hp; p.down = !!(fl & 1); p.dead = !!(fl & 2); p.gone = !!(fl & 4); p.downT = downT; p.selfRev = !!(fl & 128); p.ride = !!(fl & 256); p.veh = (fl >> 9) & 3; p.pass = ((fl >> 11) & 7) - 1;
+    p.hp = hp; p.down = !!(fl & 1); p.dead = !!(fl & 2); p.gone = !!(fl & 4); p.downT = downT; p.selfRev = !!(fl & 128); p.ride = !!(fl & 256); p.veh = (fl >> 9) & 7; p.pass = ((fl >> 12) & 7) - 1;
     p.mag = mag.split(',').map(Number); p.ammo = ammo.split(',').map(Number); p.owned = owned.split('').map(Number);
-    p.nades = nades; p.meds = meds; p.useT = useT / 100; p.medT = medT; p.reloadT = reloadT; p.kills = kills; p.ready = !!(fl & 64);
+    p.nades = nades; p.meds = meds; p.vehs = vehs || 0; p.shield = shield || 0; p.useT = useT / 100; p.medT = medT; p.reloadT = reloadT; p.kills = kills; p.ready = !!(fl & 64);
     if (!mine) { p.tx = x; p.ty = y; p.L = L; p.vx = vx; p.vy = vy; p.aim = aim; p.build = !!(fl & 32); p.wpn = wpn; p.anim = anim; p.sel = sel; p.aimPt = ap ? { x: ap[0], y: ap[1], z: ap[2] } : null; if (p.x == null || d2(p.x, p.y, x, y) > 4) { p.x = x; p.y = y; } }
     else if (performance.now() > (p.wpnLock || 0)) p.wpn = wpn;
   });
