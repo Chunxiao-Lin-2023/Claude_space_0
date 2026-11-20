@@ -1294,7 +1294,7 @@ const EVO={
  totem:['疾风图腾：周围敌人加速 30%','召兵图腾：改为召唤冲锋兵'],
 };
 const EVO_HP=[1,1.15,1.3],EVO_N=['','二型','三型'];
-function rollEvo(type,w){if(run&&run.diff>=3)w+=2;const E=EVO[type];if(!E||w<6)return 0;const p3=w>=12&&E[1]?Math.min(0.4,0.15+(w-12)*0.07):0,p2=Math.min(0.8-p3,0.15+(w-6)*0.06),r=Math.random();return r<p3?2:r<p3+p2?1:0;}
+function rollEvo(type,w){if(run&&run.diff>=3)w+=run.diff>=4?3:2;const E=EVO[type];if(!E||w<6)return 0;const p3=w>=12&&E[1]?Math.min(0.4,0.15+(w-12)*0.07):0,p2=Math.min(0.8-p3,0.15+(w-6)*0.06),r=Math.random();return r<p3?2:r<p3+p2?1:0;}
 // 小首领：第 4 波一只，第 12 波一只（三阶难度两只）。限时内击杀掉宝箱，否则逃跑
 const MINIS=[
  {key:'grinder',name:'磨刀匠',hp:250,r:38,spd:72,dmg:11,col:'#c9d2d4',base:'brute',d:'转着刀阵直线冲刺，撞到墙或铜柱会眩晕，眩晕时受到的伤害 +60%；每第三轮原地刀阵旋风，向四周甩出螺旋飞刃'},
@@ -2228,7 +2228,9 @@ function drawObstacle2(o){ctx.drawImage(o.img,o.x-o.ox,o.y-o.oy);const t=tGame;
  if(o.eyes)lighter(()=>{for(const[ex,ey] of o.eyes)drawGlow(o.x+ex,o.y+ey,5+Math.sin(t*3)*1.5,GLOW.red,0.6);});}
 
 MAPS.forEach(m=>{const T=m.ter;if(!T)return;m.desc+='。地形：草丛（远处的敌人看不见你）· 石墙（挡敌方子弹）'+(T.river?' · 河道（敌人减速，你加速）':'')+(T.camps.length?' · 红蓝营地（打败守卫拿增益）':'')+(T.rune?' · 神符（治疗 / 护盾交替刷新）':'');});
-const DIFF=[{name:'一阶 · 铜',hp:1,dmg:1,spawn:1},{name:'二阶 · 银',hp:1.55,dmg:1.3,spawn:1.2},{name:'三阶 · 金',hp:2,dmg:1.6,spawn:1.4},{name:'四阶 · 噩梦',hp:2.5,dmg:1.9,spawn:1.6}];
+const DIFF=[{name:'一阶 · 铜',hp:1,dmg:1,spawn:1,d:'入门：防御和吸血上限最宽松'},{name:'二阶 · 银',hp:1.55,dmg:1.3,spawn:1.2,d:'敌人更厚更痛，第 12 波起每波再加伤害'},{name:'三阶 · 金',hp:2,dmg:1.6,spawn:1.4,d:'第 12 波双小首领，精英词缀更常见'},
+ {name:'四阶 · 噩梦',hp:2.5,dmg:1.9,spawn:1.6,d:'敌人进化提前 2 波，第 4 波双小首领，首领开场就有新招'},
+ {name:'五阶 · 炼狱',hp:3.1,dmg:2.25,spawn:1.8,d:'在噩梦基础上：敌人血 ×3.1、伤害 ×2.25，进化提前 3 波，词缀更多；精英怪死后留下一滩火；首领和小首领血量低于 40% 进入狂暴（更快、更痛）；闪避和吸血上限最低'}];
 const FINAL_WAVE=16,ELITE_WAVE=8;
 // balance knobs
 // 最终首领：血量倍数、韧性（每秒承伤超过阈值后按比例减伤，最低 35%）、联机倍数
@@ -2758,7 +2760,7 @@ function addPoison(e,dps,t,src,cap){
 }
 // 防御上限按难度分档：一阶能堆到"站桩无敌"，二阶偶尔成型，三阶以上不行
 // dodge = 闪避上限；ls = 吸血每秒上限 [固定, 最大生命比例]；ak = 护甲常数（越大护甲越不值钱）
-const DEF_CAP=[{dodge:60,ls:[4,0.06],ak:15},{dodge:40,ls:[2,0.03],ak:20},{dodge:35,ls:[1.5,0.024],ak:22},{dodge:30,ls:[1,0.018],ak:25}];
+const DEF_CAP=[{dodge:60,ls:[4,0.06],ak:15},{dodge:40,ls:[2,0.03],ak:20},{dodge:35,ls:[1.5,0.024],ak:22},{dodge:30,ls:[1,0.018],ak:25},{dodge:25,ls:[0.8,0.014],ak:28}];
 const defCap=()=>DEF_CAP[(run&&run.diff)|0]||DEF_CAP[0];
 const armorMul=A=>{const K=defCap().ak;return A>=0?K/(K+A):(15-A)/15;};
 const soft=(x,k,f)=>x>k?k+(x-k)*f:x;
@@ -3098,6 +3100,7 @@ function chestTier(bonus){const r=Math.random()*(1+S.luck/250)+run.wave*0.01;let
 function killEnemy(e,o){
  e.dead=true;run.kills++;burst(e.x,e.y,e.col,e.boss?24:8,e.boss?10:(e.type==='brute'?4:2));
  if(e.camp)grantBuff(e.camp);
+ if(run.diff>=4&&e.aff)addGz('fire',e.x,e.y,55,3,Math.max(1,Math.round(S.hp*0.03)));  // 炼狱：精英怪死后留一滩火
  if(e.den!=null&&MAP.feat&&!enemies.some(o=>!o.dead&&o.den===e.den)){const R=MAP.feat.den.r;pickups.push({type:'chest',x:R[0]+R[2]/2,y:R[1]+R[3]/2,tier:chestTier(1),ph:0});const t='兽栏清空 · 宝箱';banner(t,1300);netEvent({banner:t});}
  dropCoins(e.x,e.y,(e.loot?0:goldFor(e.gold))+(o.coin||0)+(H.coinKill&&Math.random()*100<H.coinKill?1:0));
  if(o.melee&&FX.meleeKB)heal(1,'melee');
@@ -3729,7 +3732,7 @@ function makeEnemy(type,x,y,s){
  if(type==='medic'){e.ai=rand(0.8,1.6);}
  if(type==='layer'){e.ai=rand(1.2,2.4);e.orb=Math.random()<0.5?1:-1;}
  if(s&&s.scale){e.hp*=s.scale;e.max=e.hp;e.r*=0.85;e.scale=0.85;e.gold=Math.ceil(e.gold*0.5);}
- if(!(s&&s.noAff)&&w>=5&&!NOAFF.has(type)&&Math.random()<Math.min(0.15,0.02+0.007*w)*(run.diff>=3?2.2:run.diff>=1?1.2:1)){
+ if(!(s&&s.noAff)&&w>=5&&!NOAFF.has(type)&&Math.random()<Math.min(0.15,0.02+0.007*w)*(run.diff>=4?2.8:run.diff>=3?2.2:run.diff>=1?1.2:1)){
   const k=pick(AFFK);e.aff=k;e.hp*=2.6;e.r*=1.22;e.scale*=1.22;e.gold=Math.ceil(e.gold*2.5);e.xp*=3;
   if(k==='frenzy'){e.spd*=1.45;e.dmg*=1.3;}if(k==='armored'){e.hp*=1.8;e.dr=0.75;}if(k==='swift')e.spd*=1.75;if(k==='regen')e.regen=0.04;
   e.max=e.hp;}
@@ -4048,6 +4051,7 @@ function updateEnemies(dt){
   // each enemy hunts the closest living player (the "current player" context during its update)
   const tp=nearestPL(e.x,e.y);if(!tp)continue;use(tp);
   if(e.seg){contactHurt(e);continue;}
+  if(e.boss&&run.diff>=4&&!e.enr&&e.hp<e.max*0.4){e.enr=1;e.spd*=1.25;e.dmg*=1.15;addText(e.x,e.y-e.r-24,'狂暴！',C.danger,20);shake=Math.max(shake,0.3);ringFx(e.x,e.y,e.r*2.2,'#e05a4b',0.5);}  // 炼狱：首领残血狂暴
   if(e.regen&&e.hp<e.max)e.hp=Math.min(e.max,e.hp+e.max*e.regen*dt);
   if(e.poisonT>0){e.poisonT-=dt;e.ptick-=dt;if(e.pl){let mt=0,sum=0;e.pl=e.pl.filter(l=>(l.t-=dt)>0);for(const l of e.pl){sum+=l.dps;if(l.t>mt)mt=l.t;}e.poison=sum;e.poisonT=mt;}if(e.ptick<=0&&e.poison>0){e.ptick=0.5;hitEnemy(e,e.poison*0.5,{noCrit:1,noSteal:1,noShield:1,col:C.good});if(e.dead)continue;}}
   let dx=P.x-e.x,dy=P.y-e.y,d=Math.hypot(dx,dy)||1;
@@ -4479,7 +4483,7 @@ function renderMenu(){
     <div class="sect"><div class="label">初始武器</div><div class="row">${SHOPK.map(k=>`<button class="chip" data-act="weapon" data-k="${k}" aria-pressed="${k===selWeapon}"><img src="${wic(k,1)}" alt="">${WEAPONS[k].name}${k===h.weapon?'<small>推荐</small>':''}</button>`).join('')}</div>
      <p class="wdesc">${WEAPONS[selWeapon].desc}。${WEAPONS[selWeapon].gold}</p></div>
     <div class="sect"><div class="label">战场${gst?' · 由房主决定':''}</div><div class="row">${MAPS.map((m,i)=>`<button class="chip txt" data-act="map" data-i="${i}" aria-pressed="${i===selMap}" ${gst?'disabled':''}>${m.name}</button>`).join('')}<button class="chip txt" data-act="map" data-i="-1" aria-pressed="${selMap<0}" ${gst?'disabled':''}>随机</button></div><p class="wdesc">${selMap<0?'每局随机抽一张战场':MAPS[selMap].desc}</p></div>
-    <div class="sect"><div class="label">难度${gst?' · 由房主决定':''}</div><div class="row">${DIFF.map((d,i)=>`<button class="chip txt" data-act="diff" data-i="${i}" aria-pressed="${i===selDiff}" ${gst?'disabled':''}>${d.name}</button>`).join('')}</div></div>
+    <div class="sect"><div class="label">难度${gst?' · 由房主决定':''}</div><div class="row">${DIFF.map((d,i)=>`<button class="chip txt" data-act="diff" data-i="${i}" aria-pressed="${i===selDiff}" ${gst?'disabled':''}>${d.name}</button>`).join('')}</div><div class="dim" style="margin-top:6px">${(DIFF[selDiff]||DIFF[0]).d||''}</div></div>
     ${netPanel()}
     <div class="go">${startBtn()}<span class="dim">${best.wins?`已通关 ${best.wins} 次`:best.wave?`最好成绩：第 ${best.wave} 波`:'首次挑战'}</span></div>
    </div>
