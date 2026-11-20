@@ -3,7 +3,7 @@
   /* ---------------- 弹窗：那句话一次比一次长 ---------------- */
   const POP = ['', '你', '你喜欢', '你喜欢红色的', '你喜欢红色的房间', '你喜欢红色的房间吗？'];
   const POPS = ['popD', 'popC', 'popF', 'rpop1', 'rpop2', 'rpop3'];
-  const CC = { 'ムラサキ': '#6a2a90', kaz: '#1e6a2a', 'ちなつ': '#c02850', HARU: '#2040a0', '　': '#a00000', sys: '#7a7a7a' };
+  const CC = { '小紫': '#6a2a90', '阿和': '#1e6a2a', '千夏': '#c02850', '小遥': '#2040a0', '　': '#a00000', sys: '#7a7a7a' };
 
   /* ---------------- 小工具：3×5 像素字（ASCII） ---------------- */
   const FONT = {
@@ -140,14 +140,14 @@
       else if (k === 'lnk') { box(R, 3, 0, 10, 9, '#d0d0d0'); R(4, 1, 8, 2, '#000080'); R(5, 4, 6, 3, '#f0e0a0'); box(R, 3, 6, 4, 4, '#fff'); R(4, 7, 2, 1, '#000'); R(5, 8, 1, 1, '#000'); }
       else if (k === 'exe') { box(R, 3, 0, 10, 9, '#d0d0d0'); R(4, 1, 8, 2, '#800000'); R(5, 4, 6, 3, '#e04040'); }
       else if (k === 'blank') { for (let i = 0; i < 10; i += 2) { R(4, i, 1, 1, '#9a9a9a'); R(11, i + 1, 1, 1, '#9a9a9a'); } for (let i = 0; i < 8; i += 2) { R(4 + i, 0, 1, 1, '#9a9a9a'); R(5 + i, 9, 1, 1, '#9a9a9a'); } R(5, 1, 6, 8, Math.sin(t * 2.3) > .85 ? '#ffd8d8' : '#f4f4f4'); }
-      if (e.lab) { const w = e.lab.length * 4 - 1, x = 8 - (w >> 1); R(x - 1, 11, w + 2, 7, e.sel ? '#000080' : 'rgba(0,40,40,.55)'); TXT(R, x, 12, e.lab, '#fff'); }
+      if (e.lab) { const w = txtCanvas(e.lab, 10, '#ffffff').width - 1, x = 8 - (w >> 1); R(x - 1, 11, w + 2, 12, e.sel ? '#000080' : 'rgba(0,40,40,.55)'); TX(g, e, x, 10, e.lab, 10, '#ffffff'); }
       else if (k === 'blank') { for (let i = 0; i < 10; i += 2) { R(3 + i, 12, 1, 1, '#808080'); R(4 + i, 16, 1, 1, '#808080'); } R(3, 13, 1, 1, '#808080'); R(12, 15, 1, 1, '#808080'); }
     },
     /* 弹窗。e.num = 第几句；e.s.small = 现实里的小窗；e.s.str 覆盖文字 */
     popup(g, e, t, R) {
       const n = clamp(e.num || 1, 1, 5), small = e.small, Wd = (e.w || 4) * 16, red = n >= 5 || e.red2;
       const bob = small ? Math.round(Math.sin(t * 2.2 + e.px * .1) * 1.5) : 0;
-      const top = small ? -10 + bob : -2, H = small ? 24 : (e.h || 2) * 16;
+      const top = small ? -10 + bob : -2, H = small ? 24 : (e.h || 2) * 16 + 6;
       R(3, top + 3, Wd, H, 'rgba(0,0,0,.45)');
       bevel(R, 0, top, Wd, H, '#c0c0c0');
       const tb = red ? ['#800000', '#c82020'] : ['#000080', '#1084d0'];
@@ -158,7 +158,7 @@
       const str = e.str || POP[n];
       TX(g, e, 5, top + 9 + (small ? 1 : 1), str, small ? 9 : 11, red ? '#c80000' : '#b00000', { max: Wd - 9 });
       if (e.str && e.blink && Math.sin(t * 8) > 0) R(5 + Math.min(Wd - 14, str.length * 11), top + 10, 2, 11, '#b00000');
-      if (!small) { const bw = 18, bx = (Wd - bw) >> 1, by = top + H - 9; bevel(R, bx, by, bw, 7, '#c0c0c0'); TXT(R, bx + 6, by + 1, 'OK', '#000'); }
+      if (!small) { const bw = 28, bx = (Wd - bw) >> 1, by = top + H - 14; bevel(R, bx, by, bw, 12, '#c0c0c0'); TX(g, e, bx + 4, by - 1, '确定', 10, '#000000'); }
     },
     /* 弹窗风暴里的小装饰窗 */
     minipop(g, e, t, R) {
@@ -172,11 +172,11 @@
       const Wd = 160, H = 96;
       R(3, 3, Wd, H, 'rgba(0,0,0,.35)'); bevel(R, 0, 0, Wd, H, '#c0c0c0');
       R(2, 2, Wd - 4, 10, '#000080'); R(80, 2, Wd - 82, 10, '#1084d0');
-      R(4, 4, 6, 5, '#f0d060'); TX(g, e, 12, 1, 'スタートアップ', 9, '#ffffff');
-      TXT(R, 4, 15, 'FILE  EDIT  VIEW  HELP', '#000');
-      bevel(R, 3, 21, Wd - 6, H - 35, '#ffffff', true);
+      R(4, 4, 6, 5, '#f0d060'); TX(g, e, 12, 0, '启动', 10, '#ffffff');
+      TX(g, e, 4, 11, '文件　编辑　查看　帮助', 10, '#000000');
+      bevel(R, 3, 25, Wd - 6, H - 39, '#ffffff', true);
       bevel(R, 2, H - 13, Wd - 4, 11, '#c0c0c0', true);
-      TX(g, e, 5, H - 14, (e.cnt ?? 4) + ' 個のオブジェクト', 9, '#000000');
+      TX(g, e, 5, H - 15, (e.cnt ?? 4) + ' 个对象', 10, '#000000');
     },
     xbtn(g, e, t, R) { bevel(R, 3, 3, 11, 9, '#c0c0c0'); for (let i = 0; i < 5; i++) { R(6 + i, 5 + i, 1, 1, '#000'); R(10 - i, 5 + i, 1, 1, '#000'); } },
     /* 聊天记录的一行（贴地，宽 13） */
@@ -194,11 +194,11 @@
       TX(g, e, 4, 2, '（点这里发言）', 9, '#9a9a9a');
       if (Math.sin(t * 6) > 0) R(e.w * 16 - 10, 4, 1, 8, '#000');
     },
-    btn(g, e, t, R) { bevel(R, 0, 2, 16, 12, '#c0c0c0'); TXT(R, 2, 6, e.lab || '', '#000'); },
+    btn(g, e, t, R) { const Wd = (e.w || 1) * 16; bevel(R, 0, 2, Wd, 12, '#c0c0c0'); const tw = txtCanvas(e.lab || ' ', 9, '#000000').width; TX(g, e, (Wd - tw) >> 1, 2, e.lab || '', 9, '#000000'); },
     startbtn(g, e, t, R) {
       bevel(R, 1, 2, 30, 12, '#c0c0c0');
       R(4, 5, 3, 3, '#e03020'); R(7, 5, 3, 3, '#30a030'); R(4, 8, 3, 3, '#2050d0'); R(7, 8, 3, 3, '#e0c020');
-      TXT(R, 11, 6, 'START', '#000');
+      TX(g, e, 12, 2, '开始', 9, '#000000', { bold: true });
     },
     tray(g, e, t, R) {
       const m = e.lit, f = m ? Math.sin(t * (m === 'mad' ? 40 : 7)) : 0;
@@ -210,25 +210,25 @@
     /* 网页 */
     banner(g, e, t, R) {
       const f = Math.random() < .03 ? 1 : 0;
-      TX(g, e, 63 + f, 0, '赤い部屋', 16, '#4a0000', { bold: true });
-      TX(g, e, 62, -1, '赤い部屋', 16, f ? '#ff4040' : '#e01818', { bold: true });
+      TX(g, e, 63 + f, 0, '红色房间', 16, '#4a0000', { bold: true });
+      TX(g, e, 62, -1, '红色房间', 16, f ? '#ff4040' : '#e01818', { bold: true });
     },
     marq(g, e, t, R) {
-      const Wd = e.w * 16, s = 'ようこそ　赤い部屋へ　　　ようこそ　赤い部屋へ', L = 260;
+      const Wd = e.w * 16, s = '欢迎光临　红色房间　　　欢迎光临　红色房间', L = 220;
       const x = Wd - ((t * 18) % (Wd + L));
       TX(g, e, x, 2, s, 10, '#a01010', { l: 0, r: Wd });
     },
     hitcounter(g, e, t, R) {
-      TX(g, e, 0, 2, 'あなたは', 10, '#c8c8c8');
+      TX(g, e, 9, 2, '你是第', 10, '#c8c8c8');
       R(42, 2, 46, 12, '#000'); bevel(R, 41, 1, 48, 14, '#202020', true);
       const d = String(e.n || 4444).padStart(7, '0'); for (let i = 0; i < 7; i++) { R(44 + i * 6, 4, 5, 9, '#0a1a0a'); TXT(R, 45 + i * 6, 6, d[i], '#50ff50'); }
-      TX(g, e, 92, 2, '人目のお客様です', 10, '#c8c8c8');
+      TX(g, e, 92, 2, '位访客', 10, '#c8c8c8');
     },
     link(g, e, t, R) {
       const w = TX(g, e, 4, 1, e.lab || '', 11, e.hot ? '#ff5050' : '#d02020', { bold: true });
       R(4, 14, Math.max(0, w - 2), 1, '#d02020');
     },
-    lhead(g, e, t, R) { TX(g, e, 2, 2, '■ 犠牲者リスト ■', 10, '#909090'); },
+    lhead(g, e, t, R) { TX(g, e, 2, 2, '■ 遇难者名单 ■', 10, '#909090'); },
     vrow(g, e, t, R) {
       const w = TX(g, e, 2, 2, e.text || '', 10, e.me ? '#ff3030' : '#c01818');
       if (e.me && Math.sin(t * 7) > 0) R(2 + w, 4, 5, 10, '#ff3030');
@@ -306,7 +306,7 @@
         for (let i = 0; i < 5; i++) { R(3, 1 + i * 2, 10, 1, '#4a4a4a'); R(4, 1 + i * 2, 1, 1, '#c8a040'); R(11, 1 + i * 2, 1, 1, '#c8a040'); }
         if (!e.cut) { R(5, 1, 6, 1, Math.sin(t * 14) > 0 ? '#ff3030' : '#a01010'); } else { R(5, 1, 2, 1, '#a08060'); R(9, 1, 2, 1, '#a08060'); }
       } else {
-        R(3, 1, 10, 4, '#e8e4d8'); TXT(R, 4, 1, 'TEL', '#333');
+        R(3, 1, 10, 4, '#e8e4d8'); R(5, 1, 6, 1, '#333'); R(5, 2, 1, 1, '#333'); R(10, 2, 1, 1, '#333'); R(6, 3, 4, 1, '#333'); R(7, 2, 2, 1, '#333');   /* 小电话图标 */
         R(2, -1, 1, 1, '#ddd'); R(13, -1, 1, 1, '#ddd'); R(2, 11, 1, 1, '#ddd'); R(13, 11, 1, 1, '#ddd');
         if (e.glow) R(3, 7, 10, 1, Math.sin(t * 9) > 0 ? '#d02020' : '#601010');
       }
@@ -406,11 +406,11 @@
     if (f.page) {
       if (!f.sawName) return S.goal('看看网页上的那张名单');
       if (!f.knowStartup) return S.goal('网页最底下好像藏着什么');
-      return S.goal('打开「我的电脑」（PC），找「启动」文件夹');
+      return S.goal('打开「电脑」图标（我的电脑），找「启动」文件夹');
     }
-    if (!f.readMail) return S.goal('看看千夏寄来的那封邮件（MAIL）');
+    if (!f.readMail) return S.goal('看看千夏寄来的那封邮件（「邮件」图标）');
     if (!f.knowRoom) return S.goal(f.ruleKnown ? '查出千夏家的房间号（楼道门牌／班级联络网）' : '邮件里的地址最后几位是乱码——问问聊天室里的人');
-    return S.goal('用浏览器（WEB）打开那个地址：…/~room/（房间号）/');
+    return S.goal('用「网页」图标打开那个地址：…/~room/（房间号）/');
   }
   function runGoal(S) {
     const f = S.f; if (f.phase !== 'run') return;
@@ -433,7 +433,7 @@
     await S.scare('face', { spr: '@akai', dur: 1 });
     S.fx('blood');
     DIED++;
-    await S.die('最后一个窗口弹了出来。\n你没有按「OK」，也没有按「×」。\n\n身后有人凑到你耳边，替你回答了。', '房间变红了');
+    await S.die('最后一个窗口弹了出来。\n你没有按「确定」，也没有按「×」。\n\n身后有人凑到你耳边，替你回答了。', '房间变红了');
   }
 
   /* ---------------- 环境惊吓（找源头阶段，间歇触发） ---------------- */
@@ -473,7 +473,7 @@
     if (!f.pcOn) {
       await S.narr('你按下电源。\n主机「嗡」地一声，硬盘咔哒咔哒地转了起来。');
       pc.off = false; S.sfx('chime');
-      await S.narr('Windows 98 的启动音。凌晨两点，这声音大得吓人——你赶紧把音箱的音量拧到最小。');
+      await S.narr('视窗 98 的开机音乐响了起来。凌晨两点，这声音大得吓人——你赶紧把音箱的音量拧到最小。');
       f.pcOn = true;
     } else if (f.phase === 'cut' && S.once('pcCut')) {
       await S.narr('屏幕还亮着。调制解调器上的小灯，一盏也不亮了。');
@@ -485,12 +485,12 @@
   /* ---------------- 桌面 ---------------- */
   async function startMenu(S) {
     const f = S.f;
-    const r = await S.ask('「スタート」', ['离开电脑前（回到房间）', 'Windows の終了', 'キャンセル']);
+    const r = await S.ask('「开始」菜单', ['离开电脑前（回到房间）', '关闭系统', '取消']);
     if (r === 2) return;
     if (r === 1) {
       if (f.phase === 'hunt' || f.phase === 'cut') {
         S.sfx('ding');
-        await S.narr('「Windows を終了しています……」\n画面停在这一行，一动不动。\n……半分钟后，桌面又回来了。');
+        await S.narr('「正在关闭系统……」\n画面停在这一行，一动不动。\n……半分钟后，桌面又回来了。');
         if (f.phase === 'hunt') await S.think('（关不掉。……它不让我关。）');
         return;
       }
@@ -501,37 +501,37 @@
   }
   async function dialUse(S) {
     const f = S.f;
-    if (f.phase === 'cut') return S.narr('「接続できません。モデムから応答がありません。」\n……这一次，是真的断了。');
-    if (f.online) return S.narr('右下角的两台小电脑一闪一闪。「56000bps で接続中」。\n现在是テレホーダイ的时间——晚上十一点到早上八点，电话费不涨。');
+    if (f.phase === 'cut') return S.narr('「无法连接：调制解调器没有响应。」\n……这一次，是真的断了。');
+    if (f.online) return S.narr('右下角的两台小电脑一闪一闪。「已连接，速度 56K」。\n现在是「深夜包月」的时间——晚上十一点到早上八点，电话费不涨。');
     if (!f.cordIn) {
-      await S.narr('「ダイヤルアップ接続」——你点了「接続」。');
+      await S.narr('「拨号连接」——你点了「连接」。');
       S.sfx('blip'); await S.wait(500);
       S.sfx('locked');
-      await S.narr('「ダイヤルトーンがありません」\n（没有拨号音。）');
+      await S.narr('「没有拨号音。」');
       await S.think('（电话线……对了，桌子后面空着。线被妈妈收走了。）');
-      await S.think('（得先离开电脑前——点左下角的「START」。）');
+      await S.think('（得先离开电脑前——点左下角的「开始」。）');
       f.noTone = true;
       return S.goal('找到电话线（妈妈收到哪儿去了？）');
     }
-    await S.narr('「ダイヤルアップ接続」——你点了「接続」。');
+    await S.narr('「拨号连接」——你点了「连接」。');
     const d = modemSound(S), t0 = performance.now();
-    await S.narr('ピ、ポ、パ、ポ……\n然后是那串熟悉的尖叫：「ピ——、ギュルルル、ガ——、ザ——」。');
+    await S.narr('嘀、嘟、哒、嘟……\n然后是那串熟悉的尖叫：「嘀——、叽咕噜噜噜、嘎——、沙——」。');
     await S.wait(Math.max(0, d * 1000 - (performance.now() - t0)));
     S.ent('tray').lit = true; S.ent('pc').s.modem = 'on';
     f.online = true;
-    await S.narr('「56000bps で接続しました」');
-    S.goal('去聊天室（CHAT）');
+    await S.narr('「已连接，速度 56K。」');
+    S.goal('去聊天室（「聊天」图标）');
   }
   async function chatIcon(S) {
     const f = S.f;
-    if (f.phase === 'cut') return S.narr('「サーバーに接続できません」\n网已经断了。');
-    if (!f.online) return S.narr('「サーバーに接続できません」\n……得先拨号上网。');
+    if (f.phase === 'cut') return S.narr('「无法连接到服务器。」\n网已经断了。');
+    if (!f.online) return S.narr('「无法连接到服务器。」\n……得先拨号上网。');
     await S.go('chat', 13, 9, 3);
   }
   async function mailUse(S) {
     const f = S.f;
     const ic = S.ent('i_mail'); ic.s.flash = false;
-    await S.narr('Outlook Express。收件箱里只有几封信：班级通知、kaz 的恶作剧，还有……');
+    await S.narr('邮件程序。收件箱里只有几封信：班级通知、阿和的恶作剧，还有……');
     await S.note('mail');
     if (!f.readMail) {
       f.readMail = true;
@@ -542,8 +542,8 @@
   }
   async function ieUse(S) {
     const f = S.f;
-    if (f.phase === 'cut') return S.narr('「ページを表示できません」\n——线已经断了。');
-    if (!f.online) return S.narr('「ページを表示できません」\n没有连上网。');
+    if (f.phase === 'cut') return S.narr('「无法显示网页。」\n——线已经断了。');
+    if (!f.online) return S.narr('「无法显示网页。」\n没有连上网。');
     if (f.page) { S.sfx('blip'); return S.go('page', 9, 6, 3); }
     const v = await S.keypad('地址栏　http://www2.kumo.ne.jp/~room/＿＿＿＿/', ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'], 4);
     if (v == null) return;
@@ -554,22 +554,22 @@
     }
     if (v === '7401') {
       S.sfx('whisper');
-      await S.narr('页面一片白。正中间一行小字：\n「このページは準備中です。もうすぐ完成します。」\n（本页正在准备中。马上就好。）');
+      await S.narr('页面一片白。正中间一行小字：\n「本页正在准备中。马上就好。」');
       return S.think('（7401……是我家。）');
     }
     S.sfx('locked');
-    await S.narr('「404 Not Found」\n……不是这个。');
+    await S.narr('「404 找不到网页」\n……不是这个。');
     if (/402$/.test(v) && f.knowRoom) return S.think('（402……前面还少了栋号。团地的门牌是「栋号-房间号」，千夏家是 7 号栋。）');
     const n = f._addrN = (f._addrN || 0) + 1;
-    if (!f.ruleKnown) return S.think(n < 2 ? '（乱码那几位，到底是什么？……问问聊天室里的人吧。）' : '（瞎猜是猜不中的。ムラサキ好像知道点什么——聊天室，点她的名字。）');
+    if (!f.ruleKnown) return S.think(n < 2 ? '（乱码那几位，到底是什么？……问问聊天室里的人吧。）' : '（瞎猜是猜不中的。小紫好像知道点什么——聊天室，点她的名字。）');
     if (!f.knowRoom) return S.think(n < 2 ? '（「搬到上一个看过的人的房间号」……千夏家是几号来着？门牌上写着。）' : '（千夏家的门牌……出门就是楼道。书包里的联络网上也写着。）');
     await S.think(n < 2 ? '（房间号……团地的写法是「栋号-房间号」，连起来正好四位。）' : '（7 号栋，402。……把横线去掉。）');
   }
   async function myPcUse(S) {
     const f = S.f;
     if (!S.ent('expwin').hidden) return S.narr('「启动」文件夹已经开着了。');
-    if (!f.knowStartup) return S.narr('マイコンピュータ。C 盘里有几千个文件夹……\n不知道该从哪儿找起。');
-    const r = await S.ask('C:\\WINDOWS\\スタートメニュー\\プログラム\\', ['打开「スタートアップ」（启动）', '算了']);
+    if (!f.knowStartup) return S.narr('「我的电脑」。C 盘里有几千个文件夹……\n不知道该从哪儿找起。');
+    const r = await S.ask('C:\\WINDOWS\\「开始」菜单\\程序\\', ['打开「启动」文件夹', '算了']);
     if (r) return;
     S.sfx('open');
     for (const id of ['expwin', 'expx', 'f1', 'f2', 'f3', 'f4']) if (!f['del_' + id]) S.show(id);
@@ -588,7 +588,7 @@
     const f = S.f, n = f.stage;
     await S.narr('一个灰色的小窗口，标题栏上什么都没写。拖不动。');
     await popSay(S, n);
-    const r = await S.ask(n >= 4 ? '……再关一次，下一个就是最后一个了。' : '窗口里只有一行字，和一个「OK」按钮。', ['关掉它（×）', '别管它']);
+    const r = await S.ask(n >= 4 ? '……再关一次，下一个就是最后一个了。' : '窗口里只有一行字，和一个「确定」按钮。', ['关掉它（×）', '别管它']);
     if (r === 1) return S.think(n >= 3 ? '（不能再让它长了。）' : '（不关，它就一直挂在那儿。……也好。）');
     S.sfx('switch'); S.hide('popD');
     await S.wait(900);
@@ -608,7 +608,7 @@
     const f = S.f;
     const r = await S.ask(f.stage >= 4 ? '要删掉它吗？……那句话只差最后一个字了。' : '要删掉它吗？', ['删除', '算了']); if (r) return;
     S.hide(id); f['del_' + id] = true; expCount(S); S.sfx('cut');
-    await S.narr('「ファイルを削除しました」');
+    await S.narr('「文件已删除。」');
     await S.wait(600); S.sfx('laugh');
     if (f.stage >= 4) { await S.narr('「叮」。\n……删错了。'); return lastPopup(S); }
     setStage(S, f.stage + 1);
@@ -620,15 +620,15 @@
   async function fileUse(S, e) {
     const f = S.f, id = e.id;
     if (id === 'f1' || id === 'f2') {
-      await S.narr(id === 'f1' ? '「ATOK12」——日语输入法的常驻程序。\n修改日期：1999/04/02 19:20。买电脑那天，电器店的人装的。' : '「Microsoft Office ショートカット バー」\n修改日期：1999/04/02 19:22。你从来没用过它。');
+      await S.narr(id === 'f1' ? '「日语输入法」——开机就常驻的输入法程序。\n修改日期：1999/04/02 19:20。买电脑那天，电器店的人装的。' : '「办公软件快捷工具栏」\n修改日期：1999/04/02 19:22。你从来没用过它。');
       if (f.phase !== 'hunt') return;
-      return wrongDel(S, id, '（四月份就在了……不是它。kaz 说过：哪天中招，它就是哪天住进来的。）');
+      return wrongDel(S, id, '（四月份就在了……不是它。阿和说过：哪天中招，它就是哪天住进来的。）');
     }
     if (id === 'f3') {
-      await S.narr('「akai_heya.exe」\n修改日期：1999/11/28 23:12　大小：12KB');
-      await S.think(f.kazJoke ? '（kaz 说过，这是他上个月寄来的恶作剧软件。）' : '（akai_heya……赤い部屋？）');
+      await S.narr('「红色房间.exe」\n修改日期：1999/11/28 23:12　大小：12KB');
+      await S.think(f.kazJoke ? '（阿和说过，这是他上个月寄来的恶作剧软件。）' : '（红色房间……？）');
       if (f.phase !== 'hunt') return;
-      return wrongDel(S, id, '（不是这个……！kaz 说过——哪天中招，它就是哪天住进来的。）');
+      return wrongDel(S, id, '（不是这个……！阿和说过——哪天中招，它就是哪天住进来的。）');
     }
     /* f4：没有名字的文件 */
     if (f.phase === 'cut') return finale(S);
@@ -642,9 +642,9 @@
   async function startRun(S) {
     const f = S.f;
     S.sfx('blip');
-    await S.narr('「このファイルを削除しますか？」——你按下了「はい」。');
+    await S.narr('「确实要删除这个文件吗？」——你按下了「是」。');
     S.sfx('locked');
-    await S.narr('「削除できません：ファイルは使用中です。」\n（无法删除：文件正在使用中。）');
+    await S.narr('「无法删除：文件正在使用中。」');
     S.ent('tray').lit = 'mad'; S.ent('pc').s.modem = 'mad'; madModem(S);
     await S.narr('右下角，拨号连接的两台小电脑开始疯狂地闪：送信、送信、送信——\n它在顺着电话线，往外面传什么东西。');
     setStage(S, Math.max(3, f.stage));
@@ -670,7 +670,7 @@
     getEnt('d402', 'corridor').s.glow = true; getEnt('mdf', 'corridor').s.glow = true;
     for (const id of ['fl1', 'fl2', 'fl3']) getEnt(id, 'corridor').s.fl = true;
     S.amb('otherworld'); madModem(S);
-    S.timer(30, '赤い部屋', runTick);   // 实测：知道路的人走路 15 秒到端子盘；不知道螺丝刀的要折返，约 25 秒
+    S.timer(30, '红色房间', runTick);   // 实测：知道路的人走路 15 秒到端子盘；不知道螺丝刀的要折返，约 25 秒
     runGoal(S);
   }
   async function runTick(S) {
@@ -680,7 +680,7 @@
     await popSay(S, 4);
     await S.think('（又长了……只差最后一个字了！）');
     S.show('redwash');
-    S.timer(25, '赤い部屋', runTick);
+    S.timer(25, '红色房间', runTick);
   }
   async function rpopUse(S, e) {
     const f = S.f;
@@ -725,21 +725,21 @@
   /* ---------------- 聊天室 ---------------- */
   async function chatIntro(S) {
     const f = S.f;
-    await S.narr('「深夜零時の怪談部屋」。\n白底黑字的小聊天室。你和千夏，都是这里的常客。');
-    chatPush(S, 'sys', '＊＊＊ HARU さんが入室しました ＊＊＊'); S.sfx('ding');
-    await cs(S, 'ムラサキ', '啊，HARU。考试周还来？');
+    await S.narr('「午夜零点怪谈屋」。\n白底黑字的小聊天室。你和千夏，都是这里的常客。');
+    chatPush(S, 'sys', '＊＊＊ 小遥 进入了聊天室 ＊＊＊'); S.sfx('ding');
+    await cs(S, '小紫', '啊，小遥。考试周还来？');
     const r = await S.ask('（敲键盘）', ['「睡不着。」', '「……千夏的事，你们听说了吗？」']);
     if (r === 0) {
-      await cs(S, 'HARU', '睡不着。');
-      await cs(S, 'ムラサキ', '我也是。……ちなつ呢？上周六之后就没来过。');
-    } else await cs(S, 'HARU', '……千夏的事，你们听说了吗？');
-    await cs(S, 'HARU', '千夏她……上周六夜里走了。告别式是前天。');
+      await cs(S, '小遥', '睡不着。');
+      await cs(S, '小紫', '我也是。……千夏呢？上周六之后就没来过。');
+    } else await cs(S, '小遥', '……千夏的事，你们听说了吗？');
+    await cs(S, '小遥', '千夏她……上周六夜里走了。告别式是前天。');
     await S.wait(900);
-    await cs(S, 'kaz', '……骗人的吧。');
-    await cs(S, 'ムラサキ', '她上周六还在这儿。说找到了「赤い部屋」，要一个人看到最后——');
-    await cs(S, 'ムラサキ', '……你自己看吧。点下面的「LOG」，那天晚上的记录。');
+    await cs(S, '阿和', '……骗人的吧。');
+    await cs(S, '小紫', '她上周六还在这儿。说找到了「红色房间」，要一个人看到最后——');
+    await cs(S, '小紫', '……你自己看吧。点下面的「记录」，那天晚上的聊天记录都在里面。');
     f.phase = 'chat1';
-    S.goal('看看那天晚上的聊天记录（LOG）');
+    S.goal('看看那天晚上的聊天记录（「记录」按钮）');
   }
   async function logUse(S) {
     await S.note('log');
@@ -750,40 +750,40 @@
     f.phase = 'chat2';
     await S.think('（……「看到最后一个之前就关掉嘛」。千夏总是这样，说什么都像在开玩笑。）');
     await S.wait(900);
-    S.sfx('ding'); chatPush(S, 'sys', '＊＊＊ ちなつ さんが入室しました ＊＊＊');
+    S.sfx('ding'); chatPush(S, 'sys', '＊＊＊ 千夏 进入了聊天室 ＊＊＊');
     S.show('av_c');
-    await S.narr('「叮」。\n＊＊＊ ちなつ さんが入室しました ＊＊＊');
+    await S.narr('「叮」。\n＊＊＊ 千夏 进入了聊天室 ＊＊＊');
     getEnt('pager', 'room').lit = true; f.pagerMsg = true;
-    await cs(S, 'kaz', '……谁？');
-    await cs(S, 'ちなつ', '遥', { style: 'whisper' });
-    await cs(S, 'ちなつ', '你　看到了吗', { style: 'whisper' });
-    await cs(S, 'ムラサキ', '谁在用她的名字？这玩笑一点都不好笑！');
-    await cs(S, 'ちなつ', '不要　关　窗口', { style: 'whisper' });
-    S.sfx('ding'); chatPush(S, 'sys', '＊＊＊ ちなつ さんが退室しました ＊＊＊');
+    await cs(S, '阿和', '……谁？');
+    await cs(S, '千夏', '遥', { style: 'whisper' });
+    await cs(S, '千夏', '你　看到了吗', { style: 'whisper' });
+    await cs(S, '小紫', '谁在用她的名字？这玩笑一点都不好笑！');
+    await cs(S, '千夏', '不要　关　窗口', { style: 'whisper' });
+    S.sfx('ding'); chatPush(S, 'sys', '＊＊＊ 千夏 离开了聊天室 ＊＊＊');
     S.hide('av_c');
-    await S.narr('＊＊＊ ちなつ さんが退室しました ＊＊＊');
+    await S.narr('＊＊＊ 千夏 离开了聊天室 ＊＊＊');
     await S.wait(1000);
     setStage(S, 1); S.show('popC'); S.shake(200, 1);
     S.sfx('ding');
     await S.narr('「叮」。\n一个灰色的小窗口，弹在了聊天记录正中间。标题栏上什么都没写。');
     await popSay(S, 1);
-    await S.ask('窗口里只有一个字，和一个「OK」按钮。', ['点「×」关掉它']);
+    await S.ask('窗口里只有一个字，和一个「确定」按钮。', ['点「×」关掉它']);
     S.hide('popC'); S.sfx('switch');
     await S.wait(1100);
     setStage(S, 2); S.show('popC');
     await S.narr('窗口消失了。\n……一秒钟之后，它又弹了出来。');
     await popSay(S, 2);
     await S.think('（……多了两个字。）');
-    await cs(S, 'HARU', '弹出来一个窗口。关掉又出来，字还变多了。');
-    await cs(S, 'ムラサキ', '……是赤い部屋。关一次，长一截。等那句话问完——');
-    await cs(S, 'kaz', '停！那是 Flash 吓人的。真有东西自己弹出来，就是电脑里进了程序。找到本体，删掉。');
-    await cs(S, 'kaz', '最近打开过谁发来的附件没有？');
+    await cs(S, '小遥', '弹出来一个窗口。关掉又出来，字还变多了。');
+    await cs(S, '小紫', '……是红色房间。关一次，长一截。等那句话问完——');
+    await cs(S, '阿和', '停！那是动画里吓人的。真有东西自己弹出来，就是电脑里进了程序。找到本体，删掉。');
+    await cs(S, '阿和', '最近打开过谁发来的附件没有？');
     await S.think('（附件……千夏走的那天早上，给我发过一封邮件。我点开过它的附件。）');
     S.hide('popC'); S.show('popD');
     S.ent('i_mail').s.flash = true;
     await S.narr('灰色的窗口晃了一下，从聊天窗口里滑了出去——落到了桌面上。');
-    S.sfx('whisper'); chatPush(S, 'sys', '＊＊＊ 　 さんが入室しました ＊＊＊'); S.show('av_r');
-    await S.narr('＊＊＊ 　 さんが入室しました ＊＊＊\n\n……名单上，多了一个没有名字的人。');
+    S.sfx('whisper'); chatPush(S, 'sys', '＊＊＊ 　 进入了聊天室 ＊＊＊'); S.show('av_r');
+    await S.narr('＊＊＊ 　 进入了聊天室 ＊＊＊\n\n……名单上，多了一个没有名字的人。');
     f.phase = 'hunt'; f._am = 40;
     getEnt('rwin', 'room').red = true;
     huntGoal(S);
@@ -791,37 +791,37 @@
   }
   async function kazTalk(S) {
     const f = S.f;
-    if (f.phase !== 'hunt') return cs(S, 'kaz', '先看记录吧。……那天晚上的事，我不想再说一遍了。');
+    if (f.phase !== 'hunt') return cs(S, '阿和', '先看记录吧。……那天晚上的事，我不想再说一遍了。');
     if (!f.kazTold) {
       f.kazTold = true; f.knowStartup = true; f.kazJoke = true;
-      await cs(S, 'HARU', 'kaz，那种程序会藏在哪儿？');
-      await cs(S, 'kaz', 'Win98 的话，开机自动跑的东西，一般塞在「スタートアップ」（启动）文件夹里。');
-      await cs(S, 'kaz', '「我的电脑」→ C 盘 → WINDOWS → スタートメニュー → プログラム → スタートアップ。');
-      await cs(S, 'kaz', '名字会伪装的，别看名字。看「修改日期」——你哪天中的招，它就是哪天住进去的。');
-      await cs(S, 'kaz', '对了，里面要是有个 akai_heya.exe，那是我上个月寄给你的恶作剧软件（笑）。删错了别怪我。');
+      await cs(S, '小遥', '阿和，那种程序会藏在哪儿？');
+      await cs(S, '阿和', '98 系统的话，开机自动跑的东西，一般塞在「启动」文件夹里。');
+      await cs(S, '阿和', '「我的电脑」→ C 盘 → WINDOWS →「开始」菜单 → 程序 → 启动。');
+      await cs(S, '阿和', '名字会伪装的，别看名字。看「修改日期」——你哪天中的招，它就是哪天住进去的。');
+      await cs(S, '阿和', '对了，里面要是有个「红色房间.exe」，那是我上个月寄给你的恶作剧软件（笑）。删错了别怪我。');
       return huntGoal(S);
     }
     const L = [];
     if (!f.readMail) L.push('先看邮件。附件是什么，几点寄来的。');
-    else if (!f.explorer) L.push('スタートアップ。从「我的电脑」进去找。');
-    else L.push('看修改日期。哪天中招，就是哪天住进去的。……还有，别删我的 akai_heya.exe（笑）');
-    L.push('……喂，HARU。你那边真的没事吧？');
+    else if (!f.explorer) L.push('「启动」文件夹。从「我的电脑」进去找。');
+    else L.push('看修改日期。哪天中招，就是哪天住进去的。……还有，别删我的「红色房间.exe」（笑）');
+    L.push('……喂，小遥。你那边真的没事吧？');
     f._kz = ((f._kz ?? -1) + 1) % L.length;
-    await cs(S, 'kaz', L[f._kz]);
+    await cs(S, '阿和', L[f._kz]);
   }
   async function muraTalk(S) {
     const f = S.f;
-    if (f.phase !== 'hunt') return cs(S, 'ムラサキ', '……「LOG」。你看了就知道了。');
+    if (f.phase !== 'hunt') return cs(S, '小紫', '……「记录」。你看了就知道了。');
     if (!f.ruleKnown) {
       f.ruleKnown = true;
-      await cs(S, 'ムラサキ', '……我知道的，全都告诉你。');
-      await cs(S, 'ムラサキ', '赤い部屋，最早是在 BBS 上流传的一段文字。后来有人做成了 Flash，到处转来转去。');
-      await cs(S, 'ムラサキ', '上网的时候，弹出一个窗口：「你喜欢红色的房间吗？」关掉，它又弹出来。字一次比一次多。');
-      await cs(S, 'ムラサキ', '看到最后一个窗口的人……会死在自己的房间里。墙是红的。');
-      await cs(S, 'ムラサキ', '网页上还有一张名单。看过的人的名字，会自己出现在上面。');
-      await cs(S, 'ムラサキ', '有人说，回答「不喜欢」就没事；有人说，不管回答什么都一样。……没有人回来说过到底是哪种。');
-      await cs(S, 'ムラサキ', '还有——ちなつ说过一句很怪的话。「它的地址会搬家。搬到上一个看过的人的房间号。」');
-      await cs(S, 'HARU', '……房间号。');
+      await cs(S, '小紫', '……我知道的，全都告诉你。');
+      await cs(S, '小紫', '红色房间，最早是在网络论坛上流传的一段文字。后来有人做成了动画，到处转来转去。');
+      await cs(S, '小紫', '上网的时候，弹出一个窗口：「你喜欢红色的房间吗？」关掉，它又弹出来。字一次比一次多。');
+      await cs(S, '小紫', '看到最后一个窗口的人……会死在自己的房间里。墙是红的。');
+      await cs(S, '小紫', '网页上还有一张名单。看过的人的名字，会自己出现在上面。');
+      await cs(S, '小紫', '有人说，回答「不喜欢」就没事；有人说，不管回答什么都一样。……没有人回来说过到底是哪种。');
+      await cs(S, '小紫', '还有——千夏说过一句很怪的话。「它的地址会搬家。搬到上一个看过的人的房间号。」');
+      await cs(S, '小遥', '……房间号。');
       await S.think('（千夏的邮件里，地址最后那几位是乱码。……如果那是千夏家的房间号——）');
       return huntGoal(S);
     }
@@ -829,8 +829,8 @@
     if (!f.knowRoom) m = '千夏家的房间号……你们是邻居吧？门牌上就写着。';
     else if (!f.page) m = '地址最后那几位，就是房间号。四位数。……你知道的吧。';
     else if (!f.knowStartup) m = '那种网页，常常把字藏起来——黑底黑字。用鼠标刷一下就看到了。';
-    else m = 'HARU，删掉它。然后……今晚别再上网了。好吗？';
-    await cs(S, 'ムラサキ', m);
+    else m = '小遥，删掉它。然后……今晚别再上网了。好吗？';
+    await cs(S, '小紫', m);
   }
   async function avrUse(S) {
     const f = S.f;
@@ -841,8 +841,8 @@
   }
   async function inputUse(S) {
     const f = S.f;
-    if (f.phase === 'chat1') return cs(S, 'HARU', '……LOG，我看看。');
-    const r = await S.ask('（发言）', ['问 kaz：「那种程序会藏在哪儿？」', '问ムラサキ：「赤い部屋到底是什么？」', '算了']);
+    if (f.phase === 'chat1') return cs(S, '小遥', '……聊天记录，我看看。');
+    const r = await S.ask('（发言）', ['问阿和：「那种程序会藏在哪儿？」', '问小紫：「红色房间到底是什么？」', '算了']);
     if (r === 0) return kazTalk(S);
     if (r === 1) return muraTalk(S);
   }
@@ -871,15 +871,15 @@
     e.s.sel = true; S.sfx('select');
     await S.narr('你按住鼠标，从页面最底下那片黑色上拖过去。\n反白的地方，浮出了一行黑色的字：');
     await S.say('', '为什么要关掉窗口呢', { style: 'whisper' });
-    await S.narr('你点了右键——「ソースの表示」。记事本弹了出来。');
+    await S.narr('你点了右键——「查看源文件」。记事本弹了出来。');
     await S.note('source');
     f.readSource = true; f.knowStartup = true;
-    await S.think('（「钥匙住在スタートアップ里」……「它顺着电话线回家」……）');
+    await S.think('（「钥匙住在『启动』里」……「它顺着电话线回家」……）');
     huntGoal(S);
   }
   async function flashUse(S) {
     const f = S.f;
-    await S.narr('「ENTER」——你点了下去。\n屏幕黑了一下，一个 Flash 动画开始加载。进度条是红色的。');
+    await S.narr('「进入」——你点了下去。\n屏幕黑了一下，一段动画开始加载。进度条是红色的。');
     S.amb('none'); S.sfx('tick');
     await S.card('', '', '有一个男孩，在学校里听说了一个传言——\n\n上网的时候，会弹出一个窗口。\n窗口里只有一句话：\n「你喜欢红色的房间吗？」');
     await S.card('', '', '男孩回到家，打开电脑。\n\n窗口真的弹出来了。\n他关掉它，它又弹出来。\n他再关，它再弹。\n每弹一次，那句话就长一点。');
@@ -887,14 +887,14 @@
     await S.card('', '', '第二天，男孩没有来上学。\n\n听说，他房间的墙，\n全部被涂成了红色。');
     S.amb('otherworld');
     f.flash = true;
-    await S.think('（……和ムラサキ说的一样。只是一个吓人的 Flash 而已。）');
-    await S.think('（只是一个吓人的 Flash 而已。……对吧。）');
+    await S.think('（……和小紫说的一样。只是一段吓人的动画而已。）');
+    await S.think('（只是一段吓人的动画而已。……对吧。）');
   }
   async function bbsUse(S) {
     const f = S.f;
-    await S.narr('「ゲストブック」——留言板。\n\n■ k.t　「看过了」　4/4\n■ ゆみ　「看过了」　6/13\n■ しんご　「看过了」　11/28\n　（一模一样的留言，往下拉了很久很久）\n■ ちなつ　「看过了」　12/5');
+    await S.narr('「访客留言簿」。\n\n■ k.t　「看过了」　4/4\n■ 由美　「看过了」　6/13\n■ 慎吾　「看过了」　11/28\n　（一模一样的留言，往下拉了很久很久）\n■ 千夏　「看过了」　12/5');
     S.sfx('whisper');
-    await S.narr('最后一条，是今天的。\n\n■ ちなつ　「遥　最底下　黑色的字」　12/10 02:41');
+    await S.narr('最后一条，是今天的。\n\n■ 千夏　「遥　最底下　黑色的字」　12/10 02:41');
     f.bbs = true;
     await S.think('（千夏……）');
   }
@@ -946,13 +946,13 @@
   async function passEnd(S) {
     const pf = S.ent('popF');
     S.amb('none');
-    await S.narr('你把手从 Delete 上挪开，一个键一个键地敲：\n「い・や・で・す」——不喜欢。');
+    await S.narr('你把手从删除键上挪开，一个键一个键地敲：\n「不、喜、欢」。');
     S.sfx('blip'); await S.wait(900);
-    pf.s.blink = false; pf.s.str = '……そうですか';
+    pf.s.blink = false; pf.s.str = '……是吗';
     S.sfx('whisper');
     await S.say('　', '……是吗。', { style: 'whisper' });
-    pf.s.str = 'では　つぎのへやへ';
-    await S.narr('窗口里的字一个一个地换掉了：\n「では　つぎのへやへ」——那么，去下一个房间吧。');
+    pf.s.str = '那么　去下一个房间';
+    await S.narr('窗口里的字一个一个地换掉了：\n「那么　去下一个房间」。');
     S.ent('tray').lit = true; S.sfx('ding');
     await S.narr('右下角，拨号连接的两台小电脑闪了一下。\n线明明是断的。……「送信」。');
     S.ent('tray').lit = false;
@@ -965,36 +965,36 @@
     const f = S.f;
     S.sfx('cut');
     await S.narr('你闭着眼睛，摸到键盘左下角的 Shift，又摸到右上角的 Delete。\n按下去。');
-    await S.narr('「このファイルを完全に削除しますか？」\n——はい。');
+    await S.narr('「确实要永久删除这个文件吗？」\n——是。');
     S.hide('f4'); S.hide('i_akai'); S.f.del_f4 = true; expCount(S); S.sfx('glass'); S.fx('flash');
     await S.alpha('popF', 0, 900);
     await S.narr('再睁开眼睛的时候，屏幕上只剩下一片蓝绿色的桌面。\n那个窗口，没有再弹出来。');
     f.phase = 'end';
     S.hide('av_m'); S.hide('av_k'); S.hide('av_r');
     await S.go('chat', 13, 9, 3, { ms: 900 });
-    chatPush(S, 'sys', '＊＊＊ 回線が切断されました ＊＊＊');
-    await S.narr('聊天室的窗口，不知道什么时候自己打开了。\n最下面一行：＊＊＊ 回線が切断されました ＊＊＊');
+    chatPush(S, 'sys', '＊＊＊ 线路已断开 ＊＊＊');
+    await S.narr('聊天室的窗口，不知道什么时候自己打开了。\n最下面一行：＊＊＊ 线路已断开 ＊＊＊');
     await S.wait(1200);
-    S.sfx('ding'); chatPush(S, 'sys', '＊＊＊ ちなつ さんが入室しました ＊＊＊'); S.show('av_c');
-    await S.narr('「叮」。\n＊＊＊ ちなつ さんが入室しました ＊＊＊');
+    S.sfx('ding'); chatPush(S, 'sys', '＊＊＊ 千夏 进入了聊天室 ＊＊＊'); S.show('av_c');
+    await S.narr('「叮」。\n＊＊＊ 千夏 进入了聊天室 ＊＊＊');
     await S.think('（……线是断的。）');
-    await cs(S, 'ちなつ', '遥');
-    await cs(S, 'ちなつ', '谢谢你');
-    await cs(S, 'ちなつ', '名单上的大家，都可以回家了');
+    await cs(S, '千夏', '遥');
+    await cs(S, '千夏', '谢谢你');
+    await cs(S, '千夏', '名单上的大家，都可以回家了');
     const r = await S.ask('（敲键盘）', ['「千夏，对不起。那封邮件，我什么都没发现。」', '「……你别走。」']);
-    if (r === 0) { await cs(S, 'HARU', '千夏，对不起。那封邮件，我什么都没发现。'); await cs(S, 'ちなつ', '不是遥的错。是我不该看到最后'); }
-    else { await cs(S, 'HARU', '……你别走。'); await cs(S, 'ちなつ', '笨蛋。下礼拜一还要考数学呢'); }
-    await cs(S, 'ちなつ', '帮我跟妈妈说');
-    await cs(S, 'ちなつ', '房间的墙，不是我涂的');
-    await cs(S, 'ちなつ', '还有，联络网的下一个，以后就不是我了哦');
-    await cs(S, 'ちなつ', '3470');
-    S.sfx('ding'); chatPush(S, 'sys', '＊＊＊ ちなつ さんが退室しました ＊＊＊');
+    if (r === 0) { await cs(S, '小遥', '千夏，对不起。那封邮件，我什么都没发现。'); await cs(S, '千夏', '不是遥的错。是我不该看到最后'); }
+    else { await cs(S, '小遥', '……你别走。'); await cs(S, '千夏', '笨蛋。下礼拜一还要考数学呢'); }
+    await cs(S, '千夏', '帮我跟妈妈说');
+    await cs(S, '千夏', '房间的墙，不是我涂的');
+    await cs(S, '千夏', '还有，联络网的下一个，以后就不是我了哦');
+    await cs(S, '千夏', '3470');
+    S.sfx('ding'); chatPush(S, 'sys', '＊＊＊ 千夏 离开了聊天室 ＊＊＊');
     await S.alpha('av_c', 0, 900);
-    await S.narr('＊＊＊ ちなつ さんが退室しました ＊＊＊');
-    await S.think('（3470。サ、ヨ、ナ、ラ。）');
+    await S.narr('＊＊＊ 千夏 离开了聊天室 ＊＊＊');
+    await S.think('（3470——再见。）');
     await S.fade(1, 1400);
     await S.card('早上七点', '1999年12月10日', '门锁「咔哒」一声。妈妈下夜班回来了。\n「遥？怎么趴在电脑前面睡着了……\n　电话线怎么扔了一地？」\n\n你什么都没有解释。\n你只是抱着她，抱了很久。');
-    await S.end({ id: 'good', title: '第二十三夜　完', text: '那天下午，NTT 的人来修楼道里的端子盘，说线「像是被什么东西咬断的」。\n\n后来，那个地址再也打不开了。\n402 门上的白纸撕掉了。新住户搬进来的那天，你在门口放了一小束满天星。\n\n……只是有时候，深夜一个人上网，右下角的小电脑会无缘无故地闪一下。\n你再也不会点开了。' });
+    await S.end({ id: 'good', title: '第二十三夜　完', text: '那天下午，电话局的人来修楼道里的端子盘，说线「像是被什么东西咬断的」。\n\n后来，那个地址再也打不开了。\n402 门上的白纸撕掉了。新住户搬进来的那天，你在门口放了一小束满天星。\n\n……只是有时候，深夜一个人上网，右下角的小电脑会无缘无故地闪一下。\n你再也不会点开了。' });
   }
 
   /* ---------------- 房间里的小物件 ---------------- */
@@ -1012,13 +1012,13 @@
     const f = S.f, p = S.ent('pager');
     if (f.pagerMsg) {
       p.lit = false;
-      await S.narr('你的 BP 机。屏幕上有一条新消息。\n发信号码那一栏，是一长串「4」。');
+      await S.narr('你的 BP 机。屏幕上有一条新消息，是一行片假名。\n发信号码那一栏，是一长串「4」。');
       S.sfx('whisper');
-      await S.say('', 'ミタ？', { style: 'big' });
-      return S.think('（「看到了吗？」……千夏的 BP 机，告别式那天放进棺材里了。）');
+      await S.say('', '看到了？', { style: 'big' });
+      return S.think('（……千夏的 BP 机，告别式那天放进棺材里了。）');
     }
     await S.narr('粉色的 BP 机。千夏也有一只一模一样的，两个人在车站前的店里一起买的。\n最后一条消息是上周六深夜，千夏发来的：「3470」。');
-    await S.think('（3470，サ・ヨ・ナ・ラ。……我还以为她是在说晚安。）');
+    await S.think('（3470——用日语一个数字一个数字地念，就是「再见」（サ・ヨ・ナ・ラ）。……我还以为她是在说晚安。）');
   }
   async function bagUse(S) {
     const f = S.f;
@@ -1028,28 +1028,28 @@
     huntGoal(S);
   }
   async function memoUse(S) {
-    await S.narr('「memo.txt」——你自己写的东西。\n\n12/5　千夏不接电话。\n12/6　班会。老师说千夏「因病」……没有人信。\n12/8　告别式。千夏的妈妈拉着我的手说，千夏是在自己房间里……她没有说下去。\n　　　有人在走廊里小声说，警察来的时候，千夏房间的墙……\n12/9　不想写了。');
+    await S.narr('「备忘录」——你自己写的东西。\n\n12/5　千夏不接电话。\n12/6　班会。老师说千夏「因病」……没有人信。\n12/8　告别式。千夏的妈妈拉着我的手说，千夏是在自己房间里……她没有说下去。\n　　　有人在走廊里小声说，警察来的时候，千夏房间的墙……\n12/9　不想写了。');
   }
   async function docUse(S) {
     const f = S.f;
-    const r = await S.ask('「My Documents」', ['purikura.bmp（大头贴扫描）', 'kashi.txt（抄的歌词）', '关闭']);
+    const r = await S.ask('「我的文档」', ['大头贴（扫描图）', '歌词（抄的）', '关闭']);
     if (r === 0) {
       if (f.phase === 'hunt' && S.once('puri')) {
         await S.narr('上周六和千夏一起拍的大头贴，用学校的扫描仪扫进来的。\n两个人比着「V」字，背景是粉红色的爱心——');
         S.sfx('sting'); S.fx('red');
         return S.narr('……千夏那一半的背景，是红色的。\n不是粉红。是红。');
       }
-      return S.narr('上周六和千夏一起拍的大头贴。\n千夏在旁边用荧光笔写了一行歪歪扭扭的字：「ずっと友達☆」');
+      return S.narr('上周六和千夏一起拍的大头贴。\n千夏在旁边用荧光笔写了一行歪歪扭扭的字：「永远是好朋友☆」');
     }
     if (r === 1) return S.narr('抄下来的歌词。副歌那一段，你和千夏在卡拉 OK 连唱了三遍。');
   }
   async function binUse(S) {
-    await S.narr('回收站。里面只有一个文件：「nengajo.txt」。\n今年本来说好了，要和千夏一起画年贺状的。');
+    await S.narr('回收站。里面只有一个文件：「贺年卡草稿」。\n今年本来说好了，要和千夏一起画贺年卡的。');
   }
   async function trayUse(S) {
     const f = S.f, l = S.ent('tray').lit;
     if (l === 'mad') return S.narr('两台小电脑疯狂地闪：送信、送信、送信。');
-    return S.narr(l ? '拨号连接的图标。两台小电脑一闪一闪：已连接 56000bps。' : '拨号连接的图标。灰的——没有连接。');
+    return S.narr(l ? '拨号连接的图标。两台小电脑一闪一闪：已连接，速度 56K。' : '拨号连接的图标。灰的——没有连接。');
   }
 
   /* ---------------- 家里 ---------------- */
@@ -1086,7 +1086,7 @@
       S.take('cord'); f.cordIn = true; p.s.cord = true; S.show('cord'); S.sfx('switch');
       await S.narr('你拔下电话机的线，换上那根灰色的长线。\n线沿着走廊一路拖进你的房间，插进电脑后面的调制解调器。「咔」。');
       await S.think('（家里只有这一个插座。我上网的时候，电话就打不进来了。）');
-      return S.goal('回电脑前，拨号上网（DIAL）');
+      return S.goal('回电脑前，拨号上网（「拨号」图标）');
     }
     await S.narr('黑色的按键电话，线插在墙上的电话插座里。\n家里只有这一个插座——电话和电脑，只能用一个。');
     if (f.noTone) await S.think('（电脑的那根长线被妈妈收起来了……在她房间里吧。）');
@@ -1103,9 +1103,9 @@
   }
   async function fridgeUse(S) {
     const f = S.f;
-    await S.narr('冰箱门上，妈妈用磁铁压着一张便条：\n\n「遥へ\n　今晚夜班，早上七点回来。\n　电话费太贵了！テレホーダイ以外的时间不许上网。\n　电话线妈妈先收起来了。考试加油。　母」');
+    await S.narr('冰箱门上，妈妈用磁铁压着一张便条：\n\n「给遥：\n　今晚夜班，早上七点回来。\n　电话费太贵了！深夜包月以外的时间不许上网。\n　电话线妈妈先收起来了。考试加油。　妈妈」');
     if (!f.gotCord) {
-      await S.think('（テレホーダイ是晚上十一点到早上八点……现在明明就是嘛。线应该在妈妈房间里。）');
+      await S.think('（深夜包月是晚上十一点到早上八点……现在明明就是嘛。线应该在妈妈房间里。）');
       if (f.phase === 'night' && !f.cordIn) S.goal('去妈妈的房间找电话线');
     }
   }
@@ -1130,7 +1130,7 @@
     const f = S.f;
     if (f.phase === 'run') return S.narr('门缝底下透出一线红光。\n……你不敢停下来。');
     if (f.phase === 'cut' || f.phase === 'end') return S.narr('「忌中」的白纸，被风吹得轻轻地动。');
-    await S.narr('402。白石家。\n门上贴着一张白纸，黑框里写着两个字：「忌中」。');
+    await S.narr('402。白石家。\n门上贴着一张白纸，黑框里写着两个字：「忌中」——家里在办丧事。');
     await S.narr('门牌：「7-402　白石」。\n门上的报纸投递口里，塞着一份 12 月 5 日的早报，一直没有人拿。');
     if (!f.knowRoom) { f.knowRoom = true; await S.think('（7-402……）'); }
     huntGoal(S);
@@ -1140,7 +1140,7 @@
     if (f.phase === 'cut' || f.phase === 'end') return S.narr('端子盘的盖子掉在地上。\n401 那对端子之间，只剩下一截像是烧焦了的断线。');
     if (f.phase !== 'run') {
       f.sawMdf = true;
-      return S.narr('「電話端子盤」。灰色的铁箱子，盖子用四颗十字螺丝拧着。\n这一层五户人家的电话线，都是从这里分进各家的。');
+      return S.narr('「电话端子盘」。灰色的铁箱子，盖子用四颗十字螺丝拧着。\n这一层五户人家的电话线，都是从这里分进各家的。');
     }
     if (!S.has('driver')) {
       await S.narr('螺丝拧得死死的，指甲都抠翻了——徒手根本打不开！');
@@ -1217,12 +1217,12 @@
       driver: { name: '十字螺丝刀', desc: '厨房抽屉里的螺丝刀，把手上缠着一圈褪色的胶布。' }
     },
     notes: {
-      log: { title: '聊天记录 · 12月4日（土）', text: '＊＊＊ 深夜零時の怪談部屋　ログ ＊＊＊\n\n23:41 ちなつ＞找到了！！赤い部屋！不是 Flash，是个网页，黑底红字\n23:43 ムラサキ＞我听说的是：弹出一个窗口问「你喜欢红色的房间吗？」，关掉又弹，字越来越多。看到最后一个的人，会死在自己房间里，墙是红的\n23:44 kaz＞就是ブラクラ啦（笑）\n23:45 ちなつ＞网页上有张名单，名字后面写着房间号。听说地址还会「搬家」——搬到上一个看过的人的房间号\n23:46 ムラサキ＞……ちなつ，别看了\n23:47 ちなつ＞看到最后一个之前就关掉嘛。明天讲给 HARU 听（笑）\n23:52 ちなつ＞已经出来四个了\n23:58 ちなつ＞关不掉　kaz　关不掉\n23:59 kaz＞拔电源啊！！\n00:31 ムラサキ＞ちなつ？回句话\n\n＊＊＊ ちなつ さんが退室しました ＊＊＊（04:44）' },
-      mail: { title: '千夏的邮件', text: '差出人：ちなつ <chinatsu_s@○○.ne.jp>\n日時：1999/12/05（日）04:44\n件名：みた？\n添付：akai.swf（4,444 バイト）\n\n遥，醒着吗？\n我看到了。赤い部屋。\n我一直关，一直关。最后一个窗口出来之前，我拔了电源。\n\n可是它又弹出来了。电源明明是拔掉的。\n\n地址给你：\nhttp://www2.kumo.ne.jp/~room/縺ゅ°縺/\n\n……不对。不要去。\n遥，不要\n\n（邮件到这里就断了。后面是一大片乱码。\n　那天早上你点开过附件——屏幕白了一下，什么都没有发生。）' },
-      source: { title: '网页源代码（ソースの表示）', text: '\x3chtml>\n\x3chead><title>赤い部屋</title>\x3c/head>\n\x3cbody bgcolor="#000000" text="#ff0000">\n\n<!-- 欢迎光临。你喜欢红色的房间吗？ -->\n<!-- 窗口每被关掉一次，问题就会长一点。问完的时候，房间就打扫好了。 -->\n<!-- 看过这个房间的人，名字会自己写到名单上。 -->\n<!-- 房间的钥匙，装在信里，寄给你最好的朋友。 -->\n<!-- 钥匙住在「スタートアップ」里。它没有名字。 -->\n<!-- 它顺着电话线回家。 -->\n<!-- 地址会搬家：下一个门牌号，就是下一位客人的房间。 -->\n\n<font color="#000000">为什么要关掉窗口呢</font>\n\x3c/body>\n\x3c/html>' },
+      log: { title: '聊天记录 · 12月4日（周六）', text: '＊＊＊ 午夜零点怪谈屋　聊天记录 ＊＊＊\n\n23:41 千夏＞找到了！！红色房间！不是动画，是个网页，黑底红字\n23:43 小紫＞我听说的是：弹出一个窗口问「你喜欢红色的房间吗？」，关掉又弹，字越来越多。看到最后一个的人，会死在自己房间里，墙是红的\n23:44 阿和＞就是浏览器炸弹（ブラクラ）啦（笑）\n23:45 千夏＞网页上有张名单，名字后面写着房间号。听说地址还会「搬家」——搬到上一个看过的人的房间号\n23:46 小紫＞……千夏，别看了\n23:47 千夏＞看到最后一个之前就关掉嘛。明天讲给小遥听（笑）\n23:52 千夏＞已经出来四个了\n23:58 千夏＞关不掉　阿和　关不掉\n23:59 阿和＞拔电源啊！！\n00:31 小紫＞千夏？回句话\n\n＊＊＊ 千夏 离开了聊天室 ＊＊＊（04:44）' },
+      mail: { title: '千夏的邮件', text: '发件人：千夏 <chinatsu_s@○○.ne.jp>\n日　期：1999/12/05（周日）04:44\n主　题：看到了？\n附　件：红色.swf（4,444 字节）\n\n遥，醒着吗？\n我看到了。红色房间。\n我一直关，一直关。最后一个窗口出来之前，我拔了电源。\n\n可是它又弹出来了。电源明明是拔掉的。\n\n地址给你：\nhttp://www2.kumo.ne.jp/~room/锟斤拷锟/\n\n……不对。不要去。\n遥，不要\n\n（邮件到这里就断了。后面是一大片乱码。\n　那天早上你点开过附件——屏幕白了一下，什么都没有发生。）' },
+      source: { title: '网页源代码（查看源文件）', text: '\x3chtml>\n\x3chead><title>红色房间</title>\x3c/head>\n\x3cbody bgcolor="#000000" text="#ff0000">\n\n<!-- 欢迎光临。你喜欢红色的房间吗？ -->\n<!-- 窗口每被关掉一次，问题就会长一点。问完的时候，房间就打扫好了。 -->\n<!-- 看过这个房间的人，名字会自己写到名单上。 -->\n<!-- 房间的钥匙，装在信里，寄给你最好的朋友。 -->\n<!-- 钥匙住在「启动」里。它没有名字。 -->\n<!-- 它顺着电话线回家。 -->\n<!-- 地址会搬家：下一个门牌号，就是下一位客人的房间。 -->\n\n<font color="#000000">为什么要关掉窗口呢</font>\n\x3c/body>\n\x3c/html>' },
       renraku: { title: '2年B组　紧急联络网', text: '（夹在书包里的一张油印纸。联络网是从上往下，一个人打电话给下一个人。）\n\n班主任 → 井上（3-102）→ 佐伯（7-401）→ 白石（7-402）→ 中村（7-508）→ ……\n\n「白石」两个字上，被人用红笔划了一道。\n旁边是班主任的字：\n「白石同学家里，这段时间请不要打电话过去。\n　关于白石同学的事，请不要在电话里或者网上传播没有根据的传言。」\n\n联络网传到你这儿，下一个就是千夏。\n每一次，你在电话里说「下一个是你哦」，她都在那头笑。' }
     },
-    legend: '「赤い部屋」（红色房间）是日本最早的网络怪谈之一。据说它在 1990 年代末先以文字的形式在网上流传，世纪之交前后又出现了被大量转载的 Flash 动画版本（具体年份说法不一）：一个少年上网时，屏幕上弹出一个窗口，只有一句话——「あなたは赤い部屋が好きですか？」（你喜欢红色的房间吗？）。他关掉它，它又弹出来，句子一次比一次长；有的版本说，这句话还会被一个小孩子的声音念出来。最后整个屏幕变成红色，上面列着一串人名，其中有他朋友的名字。第二天，少年死在自己的房间里，墙壁被涂成了红色。\n\n它诞生在拨号上网的年代。深夜的「テレホーダイ」（电话费包月）时段挤满了聊天室和个人主页，而「ブラクラ」（浏览器崩溃程序）——用脚本不停打开新窗口、直到电脑死机的恶作剧网页——让很多人真的被「关不掉的窗口」吓到过。有一种说法认为，赤い部屋的恐怖正是从这种真实的体验里长出来的：你以为自己掌控着屏幕，其实并没有。\n\n流传中出现了许多变体：有的说只要回答「不喜欢」就能得救，有的说怎么回答都一样；有的版本里，名单的最后会出现读者自己的名字；也有人把它和「看了就会被诅咒」的连锁信、诅咒录像带归为同一类。据报道，2004 年日本媒体在报道一起发生在小学里的悲剧时，提到当事人曾浏览过这个 Flash，它因此一度被广泛讨论，很多人也是在那时第一次听说它。\n\n如今，赤い部屋常被看作「网络怪谈」的起点之一：它把古老的「看见了就逃不掉」的禁忌，搬进了每个人家里那块发着光的屏幕。\n\n（本章把故事放在 1999 年末，是为了贴近拨号上网和テレホーダイ的年代。绿台团地、佐伯遥、白石千夏、聊天室「深夜零時の怪談部屋」及其中的人物、「地址会搬到上一位看过的人的房间号」的说法、藏在「启动」文件夹里的无名文件、切断端子盘线路的破解方法，以及回答「不喜欢」之后它会顺着联络网去找下一个人的结局，均为游戏虚构。）',
+    legend: '「红色房间」（赤い部屋）是日本最早的网络怪谈之一。据说它在 1990 年代末先以文字的形式在网上流传，世纪之交前后又出现了被大量转载的网页动画（Flash）版本（具体年份说法不一）：一个少年上网时，屏幕上弹出一个窗口，只有一句话——「你喜欢红色的房间吗？」（あなたは赤い部屋が好きですか？）。他关掉它，它又弹出来，句子一次比一次长；有的版本说，这句话还会被一个小孩子的声音念出来。最后整个屏幕变成红色，上面列着一串人名，其中有他朋友的名字。第二天，少年死在自己的房间里，墙壁被涂成了红色。\n\n它诞生在拨号上网的年代。深夜的「深夜包月」（テレホーダイ，夜里十一点到早上八点电话费封顶）时段挤满了聊天室和个人主页，而「浏览器炸弹」（ブラクラ）——用脚本不停打开新窗口、直到电脑死机的恶作剧网页——让很多人真的被「关不掉的窗口」吓到过。有一种说法认为，红色房间的恐怖正是从这种真实的体验里长出来的：你以为自己掌控着屏幕，其实并没有。\n\n流传中出现了许多变体：有的说只要回答「不喜欢」就能得救，有的说怎么回答都一样；有的版本里，名单的最后会出现读者自己的名字；也有人把它和「看了就会被诅咒」的连锁信、诅咒录像带归为同一类。据报道，2004 年日本媒体在报道一起发生在小学里的悲剧时，提到当事人曾浏览过这段动画，它因此一度被广泛讨论，很多人也是在那时第一次听说它。\n\n如今，红色房间常被看作「网络怪谈」的起点之一：它把古老的「看见了就逃不掉」的禁忌，搬进了每个人家里那块发着光的屏幕。\n\n（本章把故事放在 1999 年末，是为了贴近拨号上网和深夜包月的年代。绿台团地、佐伯遥、白石千夏、聊天室「午夜零点怪谈屋」及其中的人物、「地址会搬到上一位看过的人的房间号」的说法、藏在「启动」文件夹里的无名文件、切断端子盘线路的破解方法，以及回答「不喜欢」之后它会顺着联络网去找下一个人的结局，均为游戏虚构。）',
     start: { map: 'room', x: 6, y: 6, dir: 3 },
     resume: {
       hunt: async S => { huntGoal(S); if (DIED && S.once('deathHintH')) await S.think('（……又回到了这里。那个窗口，不能再关了。删文件之前，先对一对日期。）'); },
@@ -1230,7 +1230,7 @@
       cut: async S => { S.goal('回到电脑前，删掉那个没有名字的文件'); }
     },
     async intro(S) {
-      await S.card('第二十三夜　红色房间', '1999年12月10日　凌晨　千叶县・绿台团地 7号栋 401', '隔壁的千夏，五天前死了。\n大人们什么都不肯说。\n学校里只悄悄地流传着一句话——\n\n她房间的墙，是红色的。');
+      await S.card('第二十三夜　红色房间', '1999年12月10日　凌晨　千叶县·绿台团地 7号栋 401', '隔壁的千夏，五天前死了。\n大人们什么都不肯说。\n学校里只悄悄地流传着一句话——\n\n她房间的墙，是红色的。');
     },
     tick(S, dt) {
       const f = S.f;
@@ -1268,14 +1268,14 @@
           { x: 5, y: 1, spr: 'calendar2', on: S => S.narr('1999年12月。13 号那格写着「期末考·数学」。\n4 号那格画着一颗小小的爱心——那天放学，你和千夏去车站前拍了大头贴。') },
           { id: 'rclock', x: 9, y: 1, spr: 'wallclock', on: clockUse },
           { id: 'pc', x: 7, y: 2, w: 2, spr: 'crt', off: true, s: { modem: null, pop: false }, light: { r: 3.8, col: 'rgba(80,150,255,.22)', dx: 10, dy: 0 }, on: pcUse },
-          { x: 10, y: 2, spr: 'bookshelf', on: S => S.narr('漫画、参考书、几本旧的《ムー》。\n最上面一层夹着一本「赤本」——大学入试真题集，封面是红色的。……你把它转了过去。') },
+          { x: 10, y: 2, spr: 'bookshelf', on: S => S.narr('漫画、参考书、几本旧的神秘学杂志《穆》（ムー）。\n最上面一层夹着一本「赤本」——大学入试真题集，封面是红色的。……你把它转了过去。') },
           { id: 'bed', x: 1, y: 4, h: 2, spr: 'bed', col: '#5a6a8a', on: S => S.narr(S.f.phase === 'run' ? '被子上……落了一层细细的、红色的粉末。' : '被子还是早上起床时的样子。\n你已经三个晚上没怎么睡了。') },
           { id: 'pager', x: 2, y: 4, spr: 'pager', solid: false, on: pagerUse },
           { x: 4, y: 5, w: 2, spr: 'lowtable', col: '#6a5038', on: S => S.narr('矮桌上摊着数学参考书。三角函数那一页，被自动铅笔戳了好几个洞。') },
           { id: 'bag', x: 4, y: 7, spr: 'bag', solid: false, on: bagUse },
           { x: 10, y: 5, spr: 'radicase', on: S => S.narr(S.f.phase === 'hunt' || S.f.phase === 'run' ? 'CD 收录机。你按下播放键。\n……沙沙的杂音里，有人在很小声地数数：一、二、三、四。四。四。' : 'CD 收录机。里面是千夏借你的那张 CD，一直没还。\n现在也还不了了。') },
           { x: 1, y: 8, spr: 'trashcan', on: S => S.narr('垃圾桶里是一团一团的草稿纸。\n其中一张上，你写了好几遍「千夏」，又全部涂掉了。') },
-          { x: 10, y: 8, spr: 'box', on: S => S.narr('纸箱里是爸爸留下的旧电脑杂志。\n最上面一本的封面写着：「今すぐ始めるインターネット」。') },
+          { x: 10, y: 8, spr: 'box', on: S => S.narr('纸箱里是爸爸留下的旧电脑杂志。\n最上面一本的封面写着：「今天就开始上网吧！」。') },
           { id: 'redwash', x: 0, y: 0, w: 12, h: 2, spr: 'redwash', z: 1, solid: false, hidden: true, num: 6 },
           { x: 6, y: 9, spr: 'invisible', to: ['home', 4, 2, 0] }
         ],
@@ -1285,7 +1285,7 @@
             f.phase = 'night'; f.stage = 0;
             await S.narr('凌晨两点零七分。\n妈妈今晚值夜班，整个家里只有你一个人。');
             await S.think('（又睡不着。一闭上眼睛，就是告别式上千夏的照片。）');
-            await S.think('（上网吧。テレホーダイ的时间，聊天室里应该还有人。）');
+            await S.think('（上网吧。现在是「深夜包月」（テレホーダイ）的时间，聊天室里应该还有人。）');
             S.goal('打开电脑');
             return;
           }
@@ -1303,10 +1303,10 @@
           { x: 8, y: 1, spr: 'door', col: '#c8c4b8', on: S => S.narr(S.f.phase === 'run' ? '浴室里有放水的声音。\n……水龙头明明是关着的。' : '浴室。门缝里飘出一点肥皂的味道。') },
           { x: 10, y: 1, spr: 'calendar2', s: { mom: true }, on: S => S.narr('妈妈的排班表。12 月 10 日那一格写着「夜」。\n一个月里，有一半的格子都是「夜」。') },
           { x: 13, y: 1, spr: 'window', on: S => S.narr('和室的窗外，是对面 8 号栋黑漆漆的背影。\n楼下的自行车棚里，一盏灯忽明忽暗。') },
-          { x: 2, y: 2, spr: 'getabako', on: S => S.narr('鞋柜上摆着一只招财猫，和一叠没拆的信。\n最上面一封，是 NTT 寄来的电话费账单。') },
+          { x: 2, y: 2, spr: 'getabako', on: S => S.narr('鞋柜上摆着一只招财猫，和一叠没拆的信。\n最上面一封，是电话局寄来的电话费账单。') },
           { x: 1, y: 3, spr: 'shoes', col: '#3a2a22', decal: true, on: S => S.narr('玄关只有你的乐福鞋。\n妈妈的护士鞋不在——她今晚值班。') },
           { id: 'tvh', x: 1, y: 5, spr: 'crtv', off: true, light: { r: 2.6, col: 'rgba(140,160,255,.15)' }, on: tvhUse },
-          { x: 5, y: 4, w: 2, spr: 'table2', col: '#8a6a48', on: S => S.narr('餐桌上扣着一个盘子，下面是妈妈捏的两个饭团。\n便签：「遥へ　夜食。早点睡。母」') },
+          { x: 5, y: 4, w: 2, spr: 'table2', col: '#8a6a48', on: S => S.narr('餐桌上扣着一个盘子，下面是妈妈捏的两个饭团。\n便签：「给遥：夜宵。早点睡。妈妈」') },
           { id: 'fridge', x: 1, y: 7, spr: 'fridge', on: fridgeUse },
           { x: 2, y: 7, spr: 'stove', on: S => S.narr('煤气灶上的锅里，是没喝完的味噌汤。早就凉了。') },
           { x: 3, y: 7, spr: 'counter', col: '#9a9a92', on: S => S.narr('水槽里泡着一个碗、一双筷子。\n水龙头滴答、滴答。') },
@@ -1395,20 +1395,20 @@
           'BTTTTTTTTTTTTTTTTTTB',
           'BBBBBBBBBBBBBBBBBBBB'],
         ents: [
-          { id: 'i_pc', x: 2, y: 2, spr: 'icon', s: { k: 'pc', lab: 'PC' }, on: myPcUse },
-          { id: 'i_doc', x: 2, y: 4, spr: 'icon', s: { k: 'docs', lab: 'DOCS' }, on: docUse },
-          { id: 'i_bin', x: 2, y: 6, spr: 'icon', s: { k: 'trash', lab: 'BIN' }, on: binUse },
-          { id: 'i_ie', x: 2, y: 8, spr: 'icon', s: { k: 'ie', lab: 'WEB' }, on: ieUse },
-          { id: 'i_chat', x: 4, y: 2, spr: 'icon', s: { k: 'chat', lab: 'CHAT' }, on: chatIcon },
-          { id: 'i_mail', x: 4, y: 4, spr: 'icon', s: { k: 'mail', lab: 'MAIL' }, on: mailUse },
-          { id: 'i_dial', x: 4, y: 6, spr: 'icon', s: { k: 'dial', lab: 'DIAL' }, on: dialUse },
-          { id: 'i_memo', x: 4, y: 8, spr: 'icon', s: { k: 'memo', lab: 'MEMO' }, on: memoUse },
+          { id: 'i_pc', x: 2, y: 2, spr: 'icon', s: { k: 'pc', lab: '电脑' }, on: myPcUse },
+          { id: 'i_doc', x: 2, y: 4, spr: 'icon', s: { k: 'docs', lab: '文档' }, on: docUse },
+          { id: 'i_bin', x: 2, y: 6, spr: 'icon', s: { k: 'trash', lab: '回收站' }, on: binUse },
+          { id: 'i_ie', x: 2, y: 8, spr: 'icon', s: { k: 'ie', lab: '网页' }, on: ieUse },
+          { id: 'i_chat', x: 4, y: 2, spr: 'icon', s: { k: 'chat', lab: '聊天' }, on: chatIcon },
+          { id: 'i_mail', x: 4, y: 4, spr: 'icon', s: { k: 'mail', lab: '邮件' }, on: mailUse },
+          { id: 'i_dial', x: 4, y: 6, spr: 'icon', s: { k: 'dial', lab: '拨号' }, on: dialUse },
+          { id: 'i_memo', x: 4, y: 8, spr: 'icon', s: { k: 'memo', lab: '备忘' }, on: memoUse },
           { id: 'i_akai', x: 6, y: 2, spr: 'icon', s: { k: 'akai', lab: '' }, hidden: true, on: S => S.narr('桌面上多了一个红色的图标。下面的名字是空白的。\n你没有点它。……你不敢点它。') },
           { id: 'expwin', x: 8, y: 4, w: 10, h: 6, spr: 'expwin', decal: true, solid: false, hidden: true },
           { id: 'expx', x: 17, y: 4, spr: 'xsm', hidden: true, on: expClose },
-          { id: 'f1', x: 9, y: 6, spr: 'icon', s: { k: 'lnk', lab: 'ATOK' }, hidden: true, on: fileUse },
-          { id: 'f2', x: 11, y: 6, spr: 'icon', s: { k: 'lnk', lab: 'MSO' }, hidden: true, on: fileUse },
-          { id: 'f3', x: 13, y: 6, spr: 'icon', s: { k: 'exe', lab: 'AKAI' }, hidden: true, on: fileUse },
+          { id: 'f1', x: 9, y: 6, spr: 'icon', s: { k: 'lnk', lab: '输入' }, hidden: true, on: fileUse },
+          { id: 'f2', x: 11, y: 6, spr: 'icon', s: { k: 'lnk', lab: '工具' }, hidden: true, on: fileUse },
+          { id: 'f3', x: 13, y: 6, spr: 'icon', s: { k: 'exe', lab: '红色' }, hidden: true, on: fileUse },
           { id: 'f4', x: 15, y: 6, spr: 'icon', s: { k: 'blank', lab: '' }, hidden: true, on: fileUse },
           { id: 'popD', x: 9, y: 1, w: 8, h: 2, spr: 'popup', hidden: true, num: 2, on: popDUse },
           { id: 'popF', x: 9, y: 7, w: 8, h: 2, spr: 'popup', hidden: true, num: 5, z: 1 },
@@ -1423,10 +1423,10 @@
           if (first) {
             await S.narr('蓝绿色的桌面。\n盯着屏幕太久，你觉得自己好像缩进了里面——变成了那个小小的白色箭头。');
             S.bubble('startbtn', '!', 2500);
-            await S.think('（要离开电脑前，就点左下角的「START」。）');
+            await S.think('（要离开电脑前，就点左下角的「开始」。）');
           }
-          if (f.phase === 'night') return S.goal(f.online ? '去聊天室（CHAT）' : f.cordIn ? '拨号上网（DIAL）' : f.noTone ? '找到电话线（妈妈收到哪儿去了？）' : '连上网（DIAL：拨号连接）');
-          if (f.phase === 'chat1') return S.goal('看看那天晚上的聊天记录（CHAT → LOG）');
+          if (f.phase === 'night') return S.goal(f.online ? '去聊天室（「聊天」图标）' : f.cordIn ? '拨号上网（「拨号」图标）' : f.noTone ? '找到电话线（妈妈收到哪儿去了？）' : '连上网（「拨号」图标：拨号连接）');
+          if (f.phase === 'chat1') return S.goal('看看那天晚上的聊天记录（「聊天」→「记录」）');
           if (f.phase === 'hunt') return huntGoal(S);
           if (f.phase === 'cut' && S.once('cutDesk')) {
             await S.narr('桌面安静得可怕。所有的弹窗都不见了。\n只有「启动」文件夹还开着。那个没有名字的图标，白得刺眼。');
@@ -1453,28 +1453,28 @@
           'BTTTTTTTTTTTTTTTTTTB',
           'BBBBBBBBBBBBBBBBBBBB'],
         ents: [
-          { x: 1, y: 1, w: 17, spr: 'ttl', decal: true, solid: false, s: { str: '深夜零時の怪談部屋 － チャット' } },
+          { x: 1, y: 1, w: 17, spr: 'ttl', decal: true, solid: false, s: { str: '午夜零点怪谈屋 － 聊天室' } },
           { id: 'xbtn', x: 18, y: 1, spr: 'xbtn', on: async S => { if (S.f.phase === 'end') return; await S.go('desk', 4, 3, 0); } },
           ...[
-            ['sys', '＊＊＊ ムラサキ さんが入室しました ＊＊＊'], ['kaz', '十一点了～テレホタイム突入'], ['ムラサキ', '今晚讲点什么好呢'], ['kaz', '讲点不吓人的'],
-            ['ムラサキ', '那就不叫怪谈了（笑）'], ['kaz', '……最近大家都不怎么说话啊'], ['ムラサキ', '考试周嘛'], ['kaz', '嗯']
+            ['sys', '＊＊＊ 小紫 进入了聊天室 ＊＊＊'], ['阿和', '十一点了～包月时段开始！'], ['小紫', '今晚讲点什么好呢'], ['阿和', '讲点不吓人的'],
+            ['小紫', '那就不叫怪谈了（笑）'], ['阿和', '……最近大家都不怎么说话啊'], ['小紫', '考试周嘛'], ['阿和', '嗯']
           ].map(([w, m], i) => ({ id: 'cl' + i, x: 1, y: 2 + i, w: 13, spr: 'cline', decal: true, solid: false, text: w === 'sys' ? m : w + '＞' + m, s: { c: CC[w] }, on: (S, e) => S.narr(e.text || '（空行）') })),
-          { x: 15, y: 2, w: 4, spr: 'ttl', decal: true, solid: false, s: { str: '参加者', c2: '#404040' } },
-          { id: 'av_m', x: 15, y: 3, spr: 'avatar', col: '#9a6ac0', s: { name: 'ムラサキ' }, on: muraTalk },
-          { id: 'av_k', x: 15, y: 4, spr: 'avatar', col: '#5aa05a', s: { name: 'kaz' }, on: kazTalk },
-          { id: 'av_c', x: 15, y: 5, spr: 'avatar', col: '#e07090', s: { name: 'ちなつ' }, hidden: true, on: S => S.narr('「ちなつ」。头像是一只粉色的兔子——千夏自己画的。') },
+          { x: 15, y: 2, w: 4, spr: 'ttl', decal: true, solid: false, s: { str: '在线名单', c2: '#404040' } },
+          { id: 'av_m', x: 15, y: 3, spr: 'avatar', col: '#9a6ac0', s: { name: '小紫' }, on: muraTalk },
+          { id: 'av_k', x: 15, y: 4, spr: 'avatar', col: '#5aa05a', s: { name: '阿和' }, on: kazTalk },
+          { id: 'av_c', x: 15, y: 5, spr: 'avatar', col: '#e07090', s: { name: '千夏' }, hidden: true, on: S => S.narr('「千夏」。头像是一只粉色的兔子——她自己画的。') },
           { id: 'av_r', x: 15, y: 6, spr: 'avatar', col: '#c0c0c0', s: { name: '　', blank: true }, hidden: true, on: avrUse },
           { id: 'inputbox', x: 2, y: 10, w: 9, spr: 'inputbox', decal: true, solid: false, on: inputUse },
-          { id: 'logbtn', x: 12, y: 10, spr: 'btn', s: { lab: 'LOG' }, on: logUse },
+          { id: 'logbtn', x: 12, y: 10, w: 2, spr: 'btn', s: { lab: '记录' }, on: logUse },
           { id: 'popC', x: 3, y: 4, w: 8, h: 2, spr: 'popup', z: 1, solid: false, hidden: true, num: 1 }
         ],
         async enter(S, first) {
           const f = S.f;
           if (f.phase === 'end') return;
           if (f.phase === 'night') return chatIntro(S);
-          if (f.phase === 'chat1') return S.goal('看看那天晚上的聊天记录（LOG）');
+          if (f.phase === 'chat1') return S.goal('看看那天晚上的聊天记录（「记录」按钮）');
           if (f.phase === 'hunt') {
-            if (S.once('chatBack')) await cs(S, 'ムラサキ', 'HARU！你还在吗？……想问什么就问吧。点我们的名字，或者在下面发言。');
+            if (S.once('chatBack')) await cs(S, '小紫', '小遥！你还在吗？……想问什么就问吧。点我们的名字，或者在下面发言。');
             huntGoal(S);
           }
         }
@@ -1502,25 +1502,25 @@
           'BTTTTTTTTTTTTTTTTTTB',
           'BBBBBBBBBBBBBBBBBBBB'],
         ents: [
-          { x: 1, y: 1, w: 17, spr: 'ttl', decal: true, solid: false, s: { str: '赤い部屋 － Microsoft Internet Explorer' } },
+          { x: 1, y: 1, w: 17, spr: 'ttl', decal: true, solid: false, s: { str: '红色房间 － 网页浏览器' } },
           { id: 'pxbtn', x: 18, y: 1, spr: 'xbtn', on: async S => { await S.go('desk', 2, 9, 3); } },
-          { x: 1, y: 2, w: 18, spr: 'ttl', decal: true, solid: false, s: { str: 'アドレス  http://www2.kumo.ne.jp/~room/7402/', c2: '#000000' } },
-          { id: 'banner', x: 4, y: 3, w: 12, spr: 'banner', light: { r: 4, col: 'rgba(255,30,30,.22)', dx: 96, dy: 6 }, on: S => S.narr('「赤い部屋」四个红字，像是用画图软件一笔一笔描出来的，边缘全是锯齿。\n……红色的部分，好像在很慢很慢地往下淌。') },
-          { id: 'marq', x: 1, y: 4, w: 18, spr: 'marq', decal: true, solid: false, on: S => S.narr('一行红字从右往左慢慢滚过去：\n「ようこそ　赤い部屋へ」（欢迎光临红色的房间）') },
-          { id: 'counter', x: 6, y: 5, w: 8, spr: 'hitcounter', s: { n: 4444 }, on: S => S.narr(S.ent('counter').s.n > 4444 ? '访客计数器：0004445。\n刚才是 4444。……多出来的那一个，是你。' : '访客计数器：「あなたは 0004444 人目のお客様です」\n你刷新了一下。数字没有变。') },
-          { id: 'enter', x: 4, y: 7, w: 4, spr: 'link', s: { lab: 'ENTER' }, on: flashUse },
-          { id: 'bbs', x: 12, y: 7, w: 4, spr: 'link', s: { lab: '掲示板' }, on: bbsUse },
+          { x: 1, y: 2, w: 18, spr: 'ttl', decal: true, solid: false, s: { str: '地址  http://www2.kumo.ne.jp/~room/7402/', c2: '#000000' } },
+          { id: 'banner', x: 4, y: 3, w: 12, spr: 'banner', light: { r: 4, col: 'rgba(255,30,30,.22)', dx: 96, dy: 6 }, on: S => S.narr('「红色房间」四个红字，像是用画图软件一笔一笔描出来的，边缘全是锯齿。\n……红色的部分，好像在很慢很慢地往下淌。') },
+          { id: 'marq', x: 1, y: 4, w: 18, spr: 'marq', decal: true, solid: false, on: S => S.narr('一行红字从右往左慢慢滚过去：\n「欢迎光临　红色房间」') },
+          { id: 'counter', x: 6, y: 5, w: 8, spr: 'hitcounter', s: { n: 4444 }, on: S => S.narr(S.ent('counter').s.n > 4444 ? '访客计数器：0004445。\n刚才是 4444。……多出来的那一个，是你。' : '访客计数器：「你是第 0004444 位访客」\n你刷新了一下。数字没有变。') },
+          { id: 'enter', x: 4, y: 7, w: 4, spr: 'link', s: { lab: '进入' }, on: flashUse },
+          { id: 'bbs', x: 12, y: 7, w: 4, spr: 'link', s: { lab: '留言板' }, on: bbsUse },
           { x: 3, y: 8, w: 14, spr: 'lhead', decal: true, solid: false },
           { id: 'r0', x: 3, y: 9, w: 14, spr: 'vrow', decal: true, solid: false, text: '■ 1999.04.04　k.t（2-104）', on: S => S.narr('名单的第一行，日期是今年四月四号。\n名字大多是网名，后面都跟着一对括号——括号里是房间号。') },
-          { id: 'r1', x: 3, y: 10, w: 14, spr: 'vrow', decal: true, solid: false, text: '■ 1999.06.13　ゆみ（5-311）', on: S => S.narr('「ゆみ（5-311）」。\n这一行和下一行之间，还有四十几个名字。你没有一行一行地看。') },
-          { id: 'r2', x: 3, y: 11, w: 14, spr: 'vrow', decal: true, solid: false, text: '■ 1999.11.28　しんご（3-205）', on: S => S.narr('「しんご（3-205）」。\n3 号栋……就在你们团地的东头。') },
+          { id: 'r1', x: 3, y: 10, w: 14, spr: 'vrow', decal: true, solid: false, text: '■ 1999.06.13　由美（5-311）', on: S => S.narr('「由美（5-311）」。\n这一行和下一行之间，还有四十几个名字。你没有一行一行地看。') },
+          { id: 'r2', x: 3, y: 11, w: 14, spr: 'vrow', decal: true, solid: false, text: '■ 1999.11.28　慎吾（3-205）', on: S => S.narr('「慎吾（3-205）」。\n3 号栋……就在你们团地的东头。') },
           { id: 'r3', x: 3, y: 12, w: 14, spr: 'vrow', decal: true, solid: false, text: '■ 1999.12.05　白石千夏（7-402）', on: S => S.narr('千夏的名字。不是网名——是全名。\n……她从来不在网上写自己的全名。') },
           { id: 'r4', x: 3, y: 13, w: 14, spr: 'vrow', decal: true, solid: false, text: '■ 1999.12.1　佐伯 遥（7-40', s: { me: true }, on: nameRow },
           { id: 'secret', x: 6, y: 14, w: 8, spr: 'secret', decal: true, solid: false, on: secretUse }
         ],
         async enter(S, first) {
           if (first) {
-            await S.narr('黑色的网页。\n正中间用红色的字写着——「赤い部屋」。\n背景音乐是一段走了调的八音盒 MIDI，一遍又一遍地循环。');
+            await S.narr('黑色的网页。\n正中间用红色的字写着——「红色房间」。\n背景音乐是一段走了调的八音盒电子乐，一遍又一遍地循环。');
           }
           huntGoal(S);
         }

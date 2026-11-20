@@ -447,7 +447,7 @@
       { x: 20, y: 4, spr: 'pump', on: S => S.narr('一号加油机。油枪上挂着一块牌子：「坏了」。') },
       { id: 'gcar', x: 15, y: 5, w: 2, spr: 'car', col: '#2e7a7a', on: gasCar },
       { x: 17, y: 4, spr: 'invisible', light: { r: 6, col: 'rgba(220,240,255,.1)' } },
-      { x: 11, y: 7, spr: 'icechest', on: S => S.narr('冰柜上印着「ICE」。柜门上结着一层霜。\n冰柜后面那一小块阴影，比别处都要黑。') },
+      { x: 11, y: 7, spr: 'icechest', on: S => S.narr('冰柜上印着大大的「冰块」两个字。柜门上结着一层霜。\n冰柜后面那一小块阴影，比别处都要黑。') },
       { x: 19, y: 7, spr: 'barrel2', on: S => S.narr('垃圾桶边上扔着两个没开封的热狗。还是热的。') },
       { x: 24, y: 9, spr: 'sign', col: '#2a5a3a', on: S => S.narr('「枫林路　12 →」\n过了这块牌子，就再也没有路灯了。') },
       { id: 'clerk2', x: 4, y: 7, spr: '@clerk', dir: 3, hidden: true },

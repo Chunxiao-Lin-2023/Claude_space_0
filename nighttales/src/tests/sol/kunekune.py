@@ -1,4 +1,4 @@
-# 第一夜 くねくね · 自动通关步骤（格式见 tests/play.py 顶部）
+# 第二十一夜 扭扭 · 自动通关步骤（格式见 tests/play.py 顶部）
 SOL = [
     [],
     ['shot', 'house'],

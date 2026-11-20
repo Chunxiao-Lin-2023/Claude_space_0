@@ -40,7 +40,7 @@ SOL = [
     ['use', 'cdoor'],
     ['use', 'route'],
     ['shot', 'cab'],
-    ['use', 'mic', ['見月坂']],
+    ['use', 'mic', ['见月坂']],
     ['expect', "window.__dbg.W.mapId === 'edge'"],
     ['shot', 'edge'],
     ['step', 29, 3],

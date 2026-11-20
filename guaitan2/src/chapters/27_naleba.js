@@ -5,7 +5,7 @@
   const ALIAS = {}; KEYS.forEach((k, i) => { ALIAS[String(i + 1)] = k; });
   const W_OK = 'ನಾ naa|ಳೆ le|ಬಾ baa', W_TODAY = 'ಇಂ in|ದು du|ಬಾ baa', W_YEST = 'ನಿ ni|ನ್ನೆ nne|ಬಾ baa';
   const NALE = 'ನಾಳೆ ಬಾ';
-  let lastDeath = null, hintLv = 0;   // 跨重来保留：死因 / 第二天谜题失败次数（决定阿吉提示到第几级）
+  let lastDeath = null, hintLv = 0;   // 跨重来保留：死因 / 第二天谜题失败次数（决定奶奶提示到第几级）
 
   /* ---------- 小工具 ---------- */
   const N = t => S => S.narr(t);
@@ -78,10 +78,10 @@
   };
 
   const NOTES = {
-    book: { title: '作业本背面（阿吉说的，你记的）', text: '一、她夜里来。敲门，用家里人的声音叫你。\n　　不管是谁的声音——别应，别开门。\n\n二、在门外写：ನಾಳೆ ಬಾ（naa·le·baa，明天再来）。\n　　她看见了，念一声「明天」，就走。\n　　门上没字，她就一直叫，叫到有人忍不住开门。\n\n三、字写在门上，或者门边伸手够得着的墙上、柱子上。\n　　（阿吉说：两家的门挨着，中间那根柱子上写一回，两家都算。）\n\n四、门外头挂着锁的人家，她不停。没人的屋子，她敲给谁听？\n\n五、一个字也不能错。\n　　ಇಂದು（in·du）是「今天」，ನಿನ್ನೆ（ni·nne）是「昨天」。\n　　写成「今天来」，就是请她进门。' },
-    paper1: { title: '《城西晚报》剪报', text: '（茶摊上传了好几手，沾着茶渍。）\n\n【「明天再来」——城西多条街巷夜现怪事】\n近日，本市西区多处住宅区流传一种说法：深夜有女子挨家敲门，用屋内人亲人的声音呼唤。据称开门者「不出一日便会病倒」。\n记者走访发现，不少居民已在门上用粉笔、红漆写上卡纳达文「ನಾಳೆ ಬಾ」（明天再来）。据说「她」读到后便会离去，次日再来，次日又读到……\n多家文具店的粉笔一度卖空。\n警方表示，未接到任何相关伤亡报告，呼吁市民不要轻信谣言，夜间注意门户安全。\n\n（边上有人用圆珠笔补了一句：「我们这条巷子，昨晚也来了。」）' },
+    book: { title: '作业本背面（奶奶说的，你记的）', text: '一、她夜里来。敲门，用家里人的声音叫你。\n　　不管是谁的声音——别应，别开门。\n\n二、在门外写「明天再来」，卡纳达字写作：ನಾಳೆ ಬಾ（naa·le·baa）。\n　　她看见了，念一声「明天」，就走。\n　　门上没字，她就一直叫，叫到有人忍不住开门。\n\n三、字写在门上，或者门边伸手够得着的墙上、柱子上。\n　　（奶奶说：两家的门挨着，中间那根柱子上写一回，两家都算。）\n\n四、门外头挂着锁的人家，她不停。没人的屋子，她敲给谁听？\n\n五、一个字也不能错。\n　　「今天」写作 ಇಂದು（in·du），「昨天」写作 ನಿನ್ನೆ（ni·nne）。\n　　写成「今天来」，就是请她进门。' },
+    paper1: { title: '《城西晚报》剪报', text: '（茶摊上传了好几手，沾着茶渍。）\n\n【「明天再来」——城西多条街巷夜现怪事】\n近日，本市西区多处住宅区流传一种说法：深夜有女子挨家敲门，用屋内人亲人的声音呼唤。据称开门者「不出一日便会病倒」。\n记者走访发现，不少居民已在门上用粉笔、红漆写上卡纳达文「明天再来」（ನಾಳೆ ಬಾ）。据说「她」读到后便会离去，次日再来，次日又读到……\n多家文具店的粉笔一度卖空。\n警方表示，未接到任何相关伤亡报告，呼吁市民不要轻信谣言，夜间注意门户安全。\n\n（边上有人用圆珠笔补了一句：「我们这条巷子，昨晚也来了。」）' },
     letter: { title: '拉朱的航空邮简', text: '（蓝色的航空邮简，边角磨得起毛。穆尼大爷不识字，每回都请人念。）\n\n阿爸：\n我在这边很好，工地管吃管住，就是热。中午太阳底下，钢管烫手。\n钱托同乡带回去了，你别舍不得花，眼睛要去看医生。\n合同还有一年。下个月十五号，我往文卡特的茶摊打电话，你在那儿等我。\n阿爸，夜里有人敲门，你先问是谁。你耳朵不好，别谁叫都开。\n\n　　　　　　　　　　　　儿子　拉朱　于迪拜' },
-    paper2: { title: '《城西晚报》 · 一周以后', text: '【「明天再来」风波渐息】\n持续一周多的「夜叩门」传言，近日明显降温。\n一位不愿具名的大学心理学讲师认为，这类传言在城市迅速扩张、外来人口增多、邻里互不相识的时候尤其容易流行：人们把说不清的不安，讲成一个有规矩可循的故事——只要照着做，就「安全」。\n「故事传得越广，照做的人越多；照做的人越多，故事就越像真的。」\n至今仍无任何因此伤亡的可靠记录。\n\n不过，记者注意到，西区许多老房子门上的「ನಾಳೆ ಬಾ」仍未擦去。一位老太太说：「擦了干什么？万一她明天又来呢。」' }
+    paper2: { title: '《城西晚报》 · 一周以后', text: '【「明天再来」风波渐息】\n持续一周多的「夜叩门」传言，近日明显降温。\n一位不愿具名的大学心理学讲师认为，这类传言在城市迅速扩张、外来人口增多、邻里互不相识的时候尤其容易流行：人们把说不清的不安，讲成一个有规矩可循的故事——只要照着做，就「安全」。\n「故事传得越广，照做的人越多；照做的人越多，故事就越像真的。」\n至今仍无任何因此伤亡的可靠记录。\n\n不过，记者注意到，西区许多老房子门上的「明天再来」（ನಾಳೆ ಬಾ）仍未擦去。一位老太太说：「擦了干什么？万一她明天又来呢。」' }
   };
 
   /* ---------- 惊吓大头像：红纱丽盖头，惨白的脸，晕开的眼线，金鼻环，嘴慢慢张开念「明天」 ---------- */
@@ -293,7 +293,7 @@
     amma1: '卡薇娅——开门，是阿妈。厂里提前放工了……巷子里好黑。',
     raju: '阿爸——！是我，拉朱！我从迪拜回来了！开门呀，阿爸！',
     n2: { dA: '吉塔——是阿妈呀，从迈索尔来看你了，开开门……', dB: '阿妈，开门，是我，苏雷什。我钥匙丢了……', dM: '阿爸——是我，拉朱……', dR: '拉希姆，开门。是哥哥，从海德拉巴来了。' },
-    dorm: { r1: '咚咚——（1 号）「செல்வி……塞尔维……」老妇人的泰米尔话', r2: '咚咚——（2 号）「拉妮，开门，阿爸来接你回家了。」', r3: '咚咚——（3 号）「查房！开门！」宿管大妈的大嗓门', r4: '咚咚——（4 号）「姐姐，是我呀，小妹……」', r5: '咚咚——（5 号）「开门，工头叫你们回车间加班！」', r6: '咚咚——（6 号）「阿妈……」' },
+    dorm: { r1: '咚咚——（1 号）「塞尔维……塞尔维……」一个老妇人用泰米尔话叫着', r2: '咚咚——（2 号）「拉妮，开门，阿爸来接你回家了。」', r3: '咚咚——（3 号）「查房！开门！」宿管大妈的大嗓门', r4: '咚咚——（4 号）「姐姐，是我呀，小妹……」', r5: '咚咚——（5 号）「开门，工头叫你们回车间加班！」', r6: '咚咚——（6 号）「阿妈……」' },
     rain: { dA: '咚咚——「吉塔——雨好大，让阿妈进去躲躲……」', dB: '咚咚——「阿妈，开门，我是苏雷什……」', dM: '咚咚——「阿爸！是我，拉朱！说好今天打电话的……」', dR: '咚咚——「拉希姆——开门——」', dH: '咚咚——「卡薇娅，开门，是阿妈。雨太大了……」' }
   };
   const DOORS = {
@@ -304,7 +304,7 @@
     dM: { name: '穆尼大爷家的门', who: '穆尼大爷', occ: true, exposed: true },
     dL: { name: '纳拉辛哈家的门', occ: false, exposed: true },
     dR: { name: '拉希姆大叔的铁卷帘', who: '拉希姆大叔', occ: true, metal: true },
-    dH: { name: '自家的门', who: '阿吉', occ: true, eave: true },
+    dH: { name: '自家的门', who: '奶奶', occ: true, eave: true },
     r1: { name: '1 号门', dorm: true }, r2: { name: '2 号门', dorm: true }, r3: { name: '3 号门', dorm: true },
     r4: { name: '4 号门', dorm: true }, r5: { name: '5 号门', dorm: true }, r6: { name: '6 号门', dorm: true }
   };
@@ -340,9 +340,9 @@
   async function wrongWrite(S, r) {
     const f = S.f; f.wrongN = (f.wrongN || 0) + 1;
     if (r === W_TODAY) {
-      if (S.once('today')) { S.fx('red'); S.sfx('sting'); heart(S); await S.narr('你退后一步，看清了自己写的字——\n「ಇಂದು ಬಾ」。今天来。\n……你在请她今天来。'); await S.narr('你用袖子发疯似的把那几个字蹭掉了，手一直在抖。'); }
-      else S.toast('写成了「ಇಂದು ಬಾ」（今天来）——赶紧擦掉！');
-    } else if (r === W_YEST) { if (f.rt) S.toast('写成了「ನಿನ್ನೆ ಬಾ」（昨天来）——擦掉重写'); else await S.narr('「ನಿನ್ನೆ ಬಾ」——昨天来。\n昨天已经过去了。她会不会当真？你不敢赌，擦掉了。'); }
+      if (S.once('today')) { S.fx('red'); S.sfx('sting'); heart(S); await S.narr('你退后一步，看清了自己写的字——\n「今天来」（ಇಂದು ಬಾ）。\n……你在请她今天来。'); await S.narr('你用袖子发疯似的把那几个字蹭掉了，手一直在抖。'); }
+      else S.toast('写成了「今天来」（ಇಂದು ಬಾ）——赶紧擦掉！');
+    } else if (r === W_YEST) { if (f.rt) S.toast('写成了「昨天来」（ನಿನ್ನೆ ಬಾ）——擦掉重写'); else await S.narr('「昨天来」（ನಿನ್ನೆ ಬಾ）。\n昨天已经过去了。她会不会当真？你不敢赌，擦掉了。'); }
     else if (f.rt) S.toast('写出来的不成字——擦掉重写');
     else await S.narr('写出来的几个字歪七扭八，连你自己都认不出来。擦掉，重写。');
   }
@@ -389,7 +389,7 @@
     if (m === 'q') S.take('paint2');
     e.s.ink = m; delete e.s.fade; S.sfx('paper');
     if (f.rt) S.toast(D.name + '：写好了' + (m === 'c' ? '' : '（漆，不怕雨）'));
-    else await S.narr(D.name + '上，' + (m === 'c' ? '白色的粉笔字' : m === 'p' ? '红漆写的字' : '黄漆写的字') + '歪歪扭扭：' + NALE + '。\n明天再来。');
+    else await S.narr(D.name + '上，' + (m === 'c' ? '白色的粉笔字' : m === 'p' ? '红漆写的字' : '黄漆写的字') + '歪歪扭扭：「明天再来」（' + NALE + '）。');
     if (id === 'pil' && !f.rt) await S.narr('柱子就在两扇门正中间。\n站在哪一扇门前，都看得见这两个字。');
     if (f.ph === 'd2') {
       goal2(S);
@@ -405,28 +405,28 @@
     const f = S.f;
     if (first) {
       lampOn(S, true);
-      await S.narr('城西，一条窄巷子里的老房子。\n晚上七点四十。又停电了，阿吉点上了煤油马灯。');
-      await S.say('阿吉', '卡薇娅，你过来坐。');
-      f.ph = 'n1a'; S.goal('和阿吉说说话');
+      await S.narr('城西，一条窄巷子里的老房子。\n晚上七点四十。又停电了，奶奶点上了煤油马灯。');
+      await S.say('奶奶', '卡薇娅，你过来坐。');
+      f.ph = 'n1a'; S.goal('和奶奶说说话');
     }
   }
   async function ajjiHome(S) {
     const f = S.f; S.face('ajjiH', 'pl');
     if (f.ph === 'n1a') {
-      await S.say('阿吉', ['今天菜市场的人都在说一件事。', '说是这几天夜里，有个女人挨家挨户敲门。', '她会学你家里人的声音叫你。你阿妈的声音，你阿爸的声音……谁的都会学。', '开了门的人——据说，过不了一天。']);
-      await S.say('阿吉', '有人说她是个新娘，成亲那天夜里就没了，头上还戴着茉莉。……谁知道呢。');
-      await S.say('阿吉', ['破她的法子，菜市场的人也说了：在门外头写上「' + NALE + '」——明天再来。', '她看见了，念一声「明天」，就走。第二天再来，又看见，又走。']);
+      await S.say('奶奶', ['今天菜市场的人都在说一件事。', '说是这几天夜里，有个女人挨家挨户敲门。', '她会学你家里人的声音叫你。你阿妈的声音，你阿爸的声音……谁的都会学。', '开了门的人——据说，过不了一天。']);
+      await S.say('奶奶', '有人说她是个新娘，成亲那天夜里就没了，头上还戴着茉莉。……谁知道呢。');
+      await S.say('奶奶', ['破她的法子，菜市场的人也说了：在门外头写上「明天再来」（' + NALE + '）。', '她看见了，念一声「明天」，就走。第二天再来，又看见，又走。']);
       await S.say('你', '那她……不就永远都在明天？');
-      await S.say('阿吉', ['对。永远在明天。', '……我不认得字。你是学校里卡纳达语写得最好的。给咱家门上写一个吧。']);
-      await S.narr('你翻出作业本，把阿吉说的一条一条记在最后一页。');
+      await S.say('奶奶', ['对。永远在明天。', '……我不认得字。你是学校里卡纳达语写得最好的。给咱家门上写一个吧。']);
+      await S.narr('你翻出作业本，把奶奶说的一条一条记在最后一页。');
       await S.note('book');
       f.ph = 'n1b'; S.goal('从书包里拿粉笔（屋子右边）');
       return;
     }
-    if (f.ph === 'n1b') return S.say('阿吉', '粉笔在你书包里吧？');
-    if (f.ph === 'n1c') return S.say('阿吉', ['写在门外头。一个字都不能错。', '……写完赶紧回来，把门闩上。']);
-    if (f.ph === 'n1d') return S.say('阿吉', '写好了？……好孩子。睡吧，明天还要上学。');
-    await S.say('阿吉', '……');
+    if (f.ph === 'n1b') return S.say('奶奶', '粉笔在你书包里吧？');
+    if (f.ph === 'n1c') return S.say('奶奶', ['写在门外头。一个字都不能错。', '……写完赶紧回来，把门闩上。']);
+    if (f.ph === 'n1d') return S.say('奶奶', '写好了？……好孩子。睡吧，明天还要上学。');
+    await S.say('奶奶', '……');
   }
   async function bagUse(S) {
     const f = S.f;
@@ -435,7 +435,7 @@
   }
   async function homeDoorIn(S) {
     const f = S.f;
-    if (f.ph === 'n1a') return S.narr('先听阿吉把话说完。');
+    if (f.ph === 'n1a') return S.narr('先听奶奶把话说完。');
     if (f.ph === 'n1b') return S.narr('先去书包里拿粉笔。');
     if (f.ph === 'n1c') { S.sfx('open'); return S.go('lane', 23, 3, 3); }
     if (f.ph === 'n1d') return S.narr('门闩上了。外面已经黑透了。');
@@ -446,7 +446,7 @@
     const f = S.f;
     if (f.ph !== 'n1d') return S.narr(f.ph === 'n1a' || f.ph === 'n1b' || f.ph === 'n1c' ? '你的席子。现在还不困。' : '你的席子，卷起来靠在墙边。');
     if (await S.ask('躺下睡觉？', ['躺下', '再等等'])) return;
-    await S.narr('你和阿吉一人一张席子，躺在马灯旁边。\n阿吉把灯芯捻小了。巷子里的狗叫了两声，不叫了。');
+    await S.narr('你和奶奶一人一张席子，躺在马灯旁边。\n奶奶把灯芯捻小了。巷子里的狗叫了两声，不叫了。');
     await S.fade(1, 900);
     S.hide('ajjiH'); S.ent('amat').full = 1; S.ent('kmat').full = 1; S.pos(5, 7, 0); S.hidePlayer(true);
     S.dark(.82, 'home'); S.plr(2.4); lampOn(S, false); S.amb('night');
@@ -464,7 +464,7 @@
     knockW(S); await S.wait(1100);
     await S.say('门外', V.amma1, { style: 'whisper' });
     await S.think('（……阿妈？）');
-    await S.say('阿吉', '……你阿妈这礼拜住厂里宿舍。别出声。', { style: 'whisper' });
+    await S.say('奶奶', '……你阿妈这礼拜住厂里宿舍。别出声。', { style: 'whisper' });
     if (lastDeath === 'n1') { lastDeath = null; await S.think('（不管是谁的声音——别应，别开门。）'); }
     let loops = 0;
     for (;;) {
@@ -493,8 +493,8 @@
         S.sfx('switch');
         await S.narr('你的手碰到了门闩——');
         S.shake(300, 2);
-        await S.say('阿吉', '……你疯了？！', { style: 'whisper' });
-        await S.narr('阿吉一把攥住你的手腕，攥得生疼。');
+        await S.say('奶奶', '……你疯了？！', { style: 'whisper' });
+        await S.narr('奶奶一把攥住你的手腕，攥得生疼。');
         continue;
       }
       break;
@@ -503,13 +503,13 @@
     await S.wait(900);
     await S.narr('敲门声停了。\n门外安静了很久很久——久到你以为她走了。');
     await S.wait(700);
-    await S.say('门外', '……ನಾಳೆ。', { style: 'whisper' });
-    await S.narr('一个女人的声音，贴着门板，轻轻地念。\n「明天。」');
+    await S.say('门外', '……明天（ನಾಳೆ）。', { style: 'whisper' });
+    await S.narr('一个女人的声音，贴着门板，用卡纳达话轻轻地念。');
     jingle(S, .02); await S.wait(500); jingleFar(S);
     await S.narr('叮——叮——\n脚镯声，往巷子那头去了。');
     await S.wait(600); S.sfx('knock');
     await S.narr('远远地，又有人家的门响了。\n「阿爸——」\n……是穆尼大爷家。');
-    await S.say('阿吉', '穆尼耳朵背，听不见的。……睡吧。', { style: 'whisper' });
+    await S.say('奶奶', '穆尼耳朵背，听不见的。……睡吧。', { style: 'whisper' });
     await S.fade(1, 1200);
     await day2(S);
   }
@@ -559,15 +559,15 @@
     S.ent('dH').s.ink = null; S.show('mallige');
     await S.go('lane', 23, 4, 3, { ms: 900 });
     await S.card('第二天', '', '');
-    await S.narr('早上。阿吉在门口洒水、扫地，画新的兰果丽。\n……门板湿漉漉的。你昨晚写的字，一个都不剩了。');
+    await S.narr('早上。奶奶在门口洒水、扫地，画新的兰果丽。\n……门板湿漉漉的。你昨晚写的字，一个都不剩了。');
     S.face('ajjiL', 'pl');
-    await S.say('阿吉', '哎呀——我顺手把门也擦了……四十年的老习惯了。');
+    await S.say('奶奶', '哎呀——我顺手把门也擦了……四十年的老习惯了。');
     await S.think('（粉笔字，一沾水就没了。）');
     S.face('geetha', 'pl');
     await S.say('吉塔', '卡薇娅！昨天夜里有人用我妈妈的声音叫门……我妈在迈索尔呢！给我们家也写一个吧！');
     await S.say('拉希姆大叔', '……也给我写一个。我只认得乌尔都文。');
     S.face('ajjiL', 'pl');
-    await S.say('阿吉', '这罐红漆是过年刷门槛剩下的，只够写一扇门。加上你那两个粉笔头……省着点用。');
+    await S.say('奶奶', '这罐红漆是过年刷门槛剩下的，只够写一扇门。加上你那两个粉笔头……省着点用。');
     S.give('paint');
     f.ph = 'd2';
     await S.think('（两个粉笔头，一扇门的红漆。先挨家问问情况。）');
@@ -578,7 +578,7 @@
     const f = S.f; if (f.ph !== 'd2') return;
     const L = laneLeft(S);
     if (!L.length) return S.goal('该写的都写好了——回家等天黑');
-    S.goal('帮邻居写字（粉笔' + chalkN(S) + '·红漆' + (S.has('paint') ? 1 : 0) + '）还剩 ' + L.length + ' 户' + (f.muniAsk && !f.muniAway ? '·去请阿吉劝穆尼' : '·卡住问阿吉'));
+    S.goal('帮邻居写字（粉笔' + chalkN(S) + '·红漆' + (S.has('paint') ? 1 : 0) + '）还剩 ' + L.length + ' 户' + (f.muniAsk && !f.muniAway ? '·去请奶奶劝穆尼' : '·卡住问奶奶'));
   }
   async function d2Resume(S) {
     const L = lastDeath; lastDeath = null;
@@ -586,7 +586,7 @@
       const id = L.slice(3);
       const why = { dA: '吉塔家', dB: '帕德玛阿姨家', dM: '穆尼大爷家', dR: '拉希姆大叔的卷帘', dH: '咱家' }[id] || '';
       await S.think('（昨晚……要是' + why + '门上有字就好了。重新想想：两个粉笔头，一扇门的红漆，怎么分？）');
-      if (hintLv >= 2) await S.think('（阿吉一定有办法。去问问她。）');
+      if (hintLv >= 2) await S.think('（奶奶一定有办法。去问问她。）');
     }
     goal2(S);
   }
@@ -602,22 +602,22 @@
       const L = laneLeft(S), out = !chalkN(S) && !S.has('paint');
       const lv = Math.min(2, Math.max(f.hA || 0, hintLv, out ? 2 : 0));
       f.hA = (f.hA || 0) + 1;
-      if (!L.length) return S.say('阿吉', '都写好了？……天快黑了，回屋吧。');
-      if (out && !(L.length === 1 && L[0] === 'dM')) return S.say('阿吉', ['粉笔、红漆都用完了，还空着 ' + L.length + ' 户……', '今晚怕是要出事。卡薇娅，要是能重来一回，先数清楚、想明白了再下笔。']);
-      return S.say('阿吉', AJJI_HINT[lv]);
+      if (!L.length) return S.say('奶奶', '都写好了？……天快黑了，回屋吧。');
+      if (out && !(L.length === 1 && L[0] === 'dM')) return S.say('奶奶', ['粉笔、红漆都用完了，还空着 ' + L.length + ' 户……', '今晚怕是要出事。卡薇娅，要是能重来一回，先数清楚、想明白了再下笔。']);
+      return S.say('奶奶', AJJI_HINT[lv]);
     }
-    if (f.ph === 'd3') return S.say('阿吉', '你阿妈打电话找你呢，快去茶摊。');
-    if (f.ph === 'd3go') return S.say('阿吉', ['去吧。到了宿舍，听你阿妈的。', '天黑以后，谁叫门都别应。']);
-    if (f.ph === 'd4') return S.say('阿吉', ['要下雨了。……季风来了。', '粉笔字最怕水。屋檐底下的还好，没遮没挡的……难说。']);
-    if (f.ph === 'd8') return S.say('阿吉', ['擦不擦，听你的。', '……我只记得，她每回走的时候，念的都是「明天」。']);
-    await S.say('阿吉', '……');
+    if (f.ph === 'd3') return S.say('奶奶', '你阿妈打电话找你呢，快去茶摊。');
+    if (f.ph === 'd3go') return S.say('奶奶', ['去吧。到了宿舍，听你阿妈的。', '天黑以后，谁叫门都别应。']);
+    if (f.ph === 'd4') return S.say('奶奶', ['要下雨了。……季风来了。', '粉笔字最怕水。屋檐底下的还好，没遮没挡的……难说。']);
+    if (f.ph === 'd8') return S.say('奶奶', ['擦不擦，听你的。', '……我只记得，她每回走的时候，念的都是「明天」。']);
+    await S.say('奶奶', '……');
   }
   async function persuade(S) {
     const f = S.f;
-    await S.say('你', '阿吉，穆尼大爷一个人住……我想请他今晚来咱家睡，把他的门锁上。可他不肯，说除非你亲自去请。');
-    await S.say('阿吉', '这个犟老头。……我去说。');
+    await S.say('你', '奶奶，穆尼大爷一个人住……我想请他今晚来咱家睡，把他的门锁上。可他不肯，说除非你亲自去请。');
+    await S.say('奶奶', '这个犟老头。……我去说。');
     await S.walk('ajjiL', [14, 5], 3); S.face('ajjiL', 3); S.face('muniL', 0);
-    await S.say('阿吉', ['穆尼！（大声）今晚到我家睡！', '你那个耳朵，半夜有人用拉朱的声音叫你，你开不开？']);
+    await S.say('奶奶', ['穆尼！（大声）今晚到我家睡！', '你那个耳朵，半夜有人用拉朱的声音叫你，你开不开？']);
     await S.say('穆尼大爷', '……拉朱的声音……');
     await S.narr('穆尼大爷低头看着手里那封蓝色的信，看了很久。');
     await S.say('穆尼大爷', ['……好好好。我锁上门就过去。', '你家那个萨姆巴汤，还是四十年前的味道吗？']);
@@ -627,7 +627,7 @@
     await S.walk('muniL', [23, 3], 2.4); S.hide('muniL'); S.sfx('close');
     await S.walk('ajjiL', [22, 4], 3); S.face('ajjiL', 'pl');
     f.muniAway = true;
-    await S.say('阿吉', '这下，他的门用不着写了。');
+    await S.say('奶奶', '这下，他的门用不着写了。');
     goal2(S);
   }
   const EVE = f => f.ph === 'n1c' || f.ph === 'n1d';
@@ -641,7 +641,7 @@
       if (k === 0) {
         f.muniAsk = true;
         await S.say('穆尼大爷', ['啊？……去你家睡？', '不去不去。我在这屋里睡了四十年了。', '拉朱要是哪天半夜回来了，敲门，我不在家怎么行。']);
-        await S.say('穆尼大爷', '……除非你阿吉亲自来请。四十年前她嫁到这条巷子，喜酒还是我帮着摆的。');
+        await S.say('穆尼大爷', '……除非你奶奶亲自来请。四十年前她嫁到这条巷子，喜酒还是我帮着摆的。');
         return goal2(S);
       }
       if (k === 1) return S.say('穆尼大爷', '写字？……写吧写吧。你们年轻人信这个。');
@@ -699,7 +699,7 @@
       return S.toast('油布已经扯下来了');
     }
     if (f.ph === 'd2' || f.ph === 'd4') { const k = await S.ask('茶摊。铜壶里的奶茶还冒着热气。', ['看看', '在茶摊木板上写字']); if (k === 1) return writeAt(S, 'stall'); }
-    if (f.ph === 'd8' && S.has('chalkbox') && !e.s.ink) { e.s.ink = 'c'; S.sfx('paper'); return S.narr('你在茶摊的木板上写了一个小小的「' + NALE + '」。\n文卡特看了半天，笑了。'); }
+    if (f.ph === 'd8' && S.has('chalkbox') && !e.s.ink) { e.s.ink = 'c'; S.sfx('paper'); return S.narr('你在茶摊的木板上写了一个小小的「明天再来」。\n文卡特看了半天，笑了。'); }
     await S.narr(f.ph === 'night' || f.ph === 'n2' ? '茶摊黑着。' : '文卡特的茶摊。铜壶里煮着加了姜的奶茶，玻璃杯一溜倒扣在木板上。\n棚顶上卷着一块蓝色的油布。');
   }
   /* 巷子里的门：按阶段分派 */
@@ -714,7 +714,7 @@
         return writeAt(S, id);
       }
       const e = S.ent(id), D = DOORS[id];
-      await S.narr(D.name + (legible(e) ? '上写着「' + NALE + '」。' : '。') + (id === 'dL' ? '\n门上挂着一把大铁锁。纳拉辛哈一家回乡下吃喜酒了，下礼拜才回来。' : ''));
+      await S.narr(D.name + (legible(e) ? '上写着「明天再来」。' : '。') + (id === 'dL' ? '\n门上挂着一把大铁锁。纳拉辛哈一家回乡下吃喜酒了，下礼拜才回来。' : ''));
     };
   }
   async function homeDoorLane(S) {
@@ -730,7 +730,7 @@
       }
       return;
     }
-    if (f.ph === 'd3' || f.ph === 'd3go') return S.narr('自家的门。粉笔字还在。\n阿吉今天早上洒水的时候，特意绕开了门板。');
+    if (f.ph === 'd3' || f.ph === 'd3go') return S.narr('自家的门。粉笔字还在。\n奶奶今天早上洒水的时候，特意绕开了门板。');
     if (f.ph === 'd4') {
       if (!safeAt(S, 'dM')) return S.narr('先给穆尼大爷的门写上字。');
       const k = await S.ask('天快黑了，乌云压得很低。回屋？', ['回屋', '再看看']);
@@ -773,13 +773,13 @@
       await S.say('门外', V.n2[id], { style: 'whisper' });
       if (!safeAt(S, id)) return n2Fail(S, id);
       if (first) { first = false; await S.narr('她凑近门上的字，歪着头，看了很久。'); }
-      await S.say('门外', '……ನಾಳೆ。', { style: 'whisper' });
-      if (id === 'dA') await S.narr('明天。\n她念完，转身走向下一家。');
+      await S.say('门外', '……明天。', { style: 'whisper' });
+      if (id === 'dA') await S.narr('她念完，转身走向下一家。');
     }
     S.focus(23, 4); await S.walk('nb', [23, 3], spd); S.face('nb', 3);
     knockW(S);
     if (!safeAt(S, 'dH')) return n2Fail(S, 'dH');
-    if (!f.muniAway) { await S.say('门外', V.amma1, { style: 'whisper' }); await S.say('门外', '……ನಾಳೆ。', { style: 'whisper' }); return day3(S); }
+    if (!f.muniAway) { await S.say('门外', V.amma1, { style: 'whisper' }); await S.say('门外', '……明天。', { style: 'whisper' }); return day3(S); }
     await S.say('门外', V.raju, { style: 'whisper' });
     await S.fade(1, 400);
     S.focus(null); S.hidePlayer(false); S.hide('nb');
@@ -800,7 +800,7 @@
     await S.wait(500);
     if (S.ent(id).spr === 'idoor') S.ent(id).open = true;
     S.sfx('open');
-    await S.narr(id === 'dH' ? '……天快亮的时候，阿吉再也受不了了。\n门闩「咔哒」响了一声。' : '……门闩「咔哒」响了一声。');
+    await S.narr(id === 'dH' ? '……天快亮的时候，奶奶再也受不了了。\n门闩「咔哒」响了一声。' : '……门闩「咔哒」响了一声。');
     await S.scare('face', { spr: '@nb', face: 'nb', dur: 1 });
     await S.die(who + '开了门。\n\n第二天早上，那扇门一直没有再打开。', '有人开了门');
   }
@@ -818,11 +818,11 @@
     await S.narr('你一把抱住穆尼大爷的胳膊。');
     await S.say('穆尼大爷', ['放开！是拉朱！我儿子的声音，我还听不出来？', '拉朱——！']);
     S.show('ajjiH'); S.place('ajjiH', 9, 5, 1); S.ent('amat').full = 0;
-    await S.say('阿吉', ['穆尼！', '拉朱在迪拜。他信上怎么说的？「夜里有人敲门，你先问是谁。」']);
+    await S.say('奶奶', ['穆尼！', '拉朱在迪拜。他信上怎么说的？「夜里有人敲门，你先问是谁。」']);
     await S.say('门外', '阿爸——开门呀，阿爸——', { style: 'whisper' });
     await S.narr('穆尼大爷不挣了。他站在那儿，浑身发抖。');
     await S.wait(800);
-    await S.say('门外', '……ನಾಳೆ。', { style: 'whisper' });
+    await S.say('门外', '……明天。', { style: 'whisper' });
     jingle(S, .015); await S.wait(500); jingleFar(S);
     await S.narr('脚镯声，往成衣厂那头去了。');
     await S.say('穆尼大爷', ['……她念「明天」。', '拉朱也老是这么说。「阿爸，明年，明年我就回来。」']);
@@ -850,13 +850,13 @@
     const f = S.f, e = S.ent('pco');
     if (f.ph === 'd3' && e.s.ring) {
       e.s.ring = false;
-      await S.say('阿妈（电话）', ['卡薇娅？是我。……你没事吧？阿吉呢？', '厂里宿舍的姑娘们吓坏了。昨天夜里，好几间屋都有人敲门。', '她们好多是从泰米尔那边、从乡下来的，不会写卡纳达字。宿管大妈也只认得几个。']);
+      await S.say('阿妈（电话）', ['卡薇娅？是我。……你没事吧？奶奶呢？', '厂里宿舍的姑娘们吓坏了。昨天夜里，好几间屋都有人敲门。', '她们好多是从泰米尔那边、从乡下来的，不会写卡纳达字。宿管大妈也只认得几个。']);
       await S.say('阿妈（电话）', ['你下午能不能来一趟？帮她们在门上写字。', '宿舍七点锁大门。你就别回了，跟阿妈挤一晚上。']);
       f.ph = 'd3go'; S.ent('fgate').open = true;
       if (!chalkN(S)) { f.gotC1 = true; S.give('chalk1'); await S.say('文卡特', '粉笔用完了？文具店早卖光了……我这儿还有半截，记账用的，拿去。'); }
       return S.goal('去成衣厂宿舍（巷子东头的铁门）');
     }
-    await S.narr('黄底黑字的牌子：「STD · ISD · PCO」。一部红色的电话，打一分钟一个卢比。');
+    await S.narr('黄底黑字的牌子：「长途 · 国际 · 公用电话」（STD · ISD · PCO）。一部红色的电话，打一分钟一个卢比。');
   }
   async function fgateUse(S) {
     const f = S.f;
@@ -872,7 +872,7 @@
     S.face('ammaD', 'pl');
     await S.say('阿妈', ['卡薇娅！', '就这六间。从大门那头数，一号到六号。阿妈住六号，最里头那间。']);
     S.face('selvi', 'pl');
-    await S.say('塞尔维', ['小妹妹，我们村里也有这个说法——「நாளை வா」，naalai vaa，也是「明天来」。', '可我们不会写你们的字。她要是只认卡纳达字呢？']);
+    await S.say('塞尔维', ['小妹妹，我们村里也有这个说法——泰米尔话也说「明天来」（நாளை வா，naalai vaa）。', '可我们不会写你们的字。她要是只认卡纳达字呢？']);
     await S.say('宿管大妈', '七点锁大门！七点以后，谁也不许进出！');
     S.goal('在 1–6 号六扇门边写字');
   }
@@ -936,7 +936,7 @@
     await S.narr('你钻进六号房。阿妈一把把你搂住，反手闩上了门。\n屋里黑得伸手不见五指。');
     if (lastDeath === 'r6') { lastDeath = null; await S.think('（门外那个，只会学人的声音。……别开门。拉住阿妈。）'); }
     jingle(S, .015); await S.wait(600); S.sfx('knock'); await S.wait(500);
-    await S.narr('脚镯声，一间一间地近了。\n咚咚。……「ನಾಳೆ。」\n咚咚。……「ನಾಳೆ。」');
+    await S.narr('脚镯声，一间一间地近了。\n咚咚。……「明天。」\n咚咚。……「明天。」');
     jingle(S, .03); await S.wait(500);
     knockW(S, .06); await S.wait(1100);
     await S.say('门外', '阿妈，开门。是我，卡薇娅。我写完了……外面好黑。', { style: 'whisper' });
@@ -960,7 +960,7 @@
     }
     await S.narr('你在黑地里摸到阿妈的手，死死攥住。\n阿妈浑身一抖——然后也攥紧了你。');
     await S.wait(800);
-    await S.say('门外', '……ನಾಳೆ。', { style: 'whisper' });
+    await S.say('门外', '……明天。', { style: 'whisper' });
     jingle(S, .015); await S.wait(500); jingleFar(S);
     await S.narr('脚镯声，往厨房那头去了，再也没有回来。');
     await S.fade(1, 1200);
@@ -995,9 +995,9 @@
     await S.fade(0, 500);
     thunder(S); S.fx('flash'); S.shake(500, 2);
     S.ent('sky').s.rain = true; S.amb('rain');
-    await S.say('阿吉（屋里）', '下雨了！门上的粉笔字——！');
+    await S.say('奶奶（屋里）', '下雨了！门上的粉笔字——！');
     await S.narr('雨点砸下来，噼噼啪啪。\n巷子里，没遮没挡的粉笔字，一道一道往下淌。');
-    await S.say('阿吉（屋里）', '屋檐底下的不碍事！没遮没挡的，用漆重写，或者拿东西遮上——快！');
+    await S.say('奶奶（屋里）', '屋檐底下的不碍事！没遮没挡的，用漆重写，或者拿东西遮上——快！');
     f.ph = 'rain';
     S.goal('雨在冲粉笔字！她来前：用漆重写或用油布（茶摊）遮住，再进屋');
     S.cp('rain');
@@ -1041,7 +1041,7 @@
     if (!f.rainPassed) {
       await S.say('门外', '卡薇娅，开门，是阿妈。雨太大了，让阿妈进去……', { style: 'whisper' });
       await S.narr('屋檐底下，门上的粉笔字干干的，一笔都没花。');
-      await S.say('门外', '……ನಾಳೆ。', { style: 'whisper' });
+      await S.say('门外', '……明天。', { style: 'whisper' });
       jingle(S, .015); await S.wait(500); jingleFar(S);
       await S.narr('脚镯声顺着巷子，往成衣厂那头去了。\n雨，下了一整夜。');
     } else await S.narr('你钻进屋里，闩上门。\n脚镯声早已经远了。雨，下了一整夜。');
@@ -1066,17 +1066,17 @@
   async function choose8(S) {
     const f = S.f; S.face('ammaL', 'pl');
     if (!f.read2) { f.read2 = true; await S.say('阿妈', '你看，报纸上都这么说了。'); await S.note('paper2'); }
-    const k = await S.ask('门上的「' + NALE + '」——', ['「阿妈，留着吧。」', '「……擦掉吧。」']);
+    const k = await S.ask('门上的「明天再来」——', ['「阿妈，留着吧。」', '「……擦掉吧。」']);
     if (k === 1) return wiped(S);
     S.face('ajjiL', 'pl');
-    await S.say('阿吉', ['留着。', '她念的是「明天」。明天，可还没过完呢。']);
-    await S.narr('阿妈看了看阿吉，又看了看你。\n她把水盆放下了。');
+    await S.say('奶奶', ['留着。', '她念的是「明天」。明天，可还没过完呢。']);
+    await S.narr('阿妈看了看奶奶，又看了看你。\n她把水盆放下了。');
     await S.fade(1, 1400);
-    return S.end({ id: 'week', title: '第二十七夜　完', text: '那一年的雨季过去以后，「明天再来」的说法，渐渐没人提了。\n可这条巷子里，谁家也没有擦门。\n\n后来，卡薇娅当了小学老师。她教一年级的孩子写的第一个词，是「ನಾಳೆ」。\n明天。\n\n直到今天，城西的老房子门上，有时还能看见那两个褪了色的字。\n据说她每天夜里都来，念一声「明天」，就走了。\n明天再来。' + (f.mallige ? '\n\n每年雨季的头一夜，巷口榕树下的蛇石前，总会多一串新鲜的茉莉。\n没有人知道是谁放的。' : '') });
+    return S.end({ id: 'week', title: '第二十七夜　完', text: '那一年的雨季过去以后，「明天再来」的说法，渐渐没人提了。\n可这条巷子里，谁家也没有擦门。\n\n后来，卡薇娅当了小学老师。她教一年级的孩子写的第一个词，是「明天」（ನಾಳೆ）。\n\n直到今天，城西的老房子门上，有时还能看见那两个褪了色的字。\n据说她每天夜里都来，念一声「明天」，就走了。\n明天再来。' + (f.mallige ? '\n\n每年雨季的头一夜，巷口榕树下的蛇石前，总会多一串新鲜的茉莉。\n没有人知道是谁放的。' : '') });
   }
   async function wiped(S) {
     lastDeath = 'wiped';
-    await S.narr('你和阿妈打了一盆水，把门上的字擦得干干净净。\n阿吉站在一边，什么也没说。');
+    await S.narr('你和阿妈打了一盆水，把门上的字擦得干干净净。\n奶奶站在一边，什么也没说。');
     S.ent('dH').s.ink = null;
     await S.fade(1, 1200);
     S.hide('ammaL'); S.hide('ajjiL'); laneSet(S, 'night'); S.dark(.9, 'lane'); S.amb('night'); S.pos(23, 4, 3); S.hidePlayer(true); S.focus(23, 4);
@@ -1086,7 +1086,7 @@
     jingle(S, .03); await S.wait(600);
     knockW(S, .08); await S.wait(1100);
     await S.say('门外', '……卡薇娅。', { style: 'whisper' });
-    await S.say('门外', ['你写的。「ನಾಳೆ」。', '……今天，就是明天了。'], { style: 'whisper' });
+    await S.say('门外', ['你写的。「明天」。', '……今天，就是明天了。'], { style: 'whisper' });
     await S.scare('face', { spr: '@nb', face: 'nb', dur: 1.2 });
     await S.fade(1, 1200);
     return S.end({ bad: true, id: 'wiped', title: '明天', text: '门上已经没有字了。\n\n第二天早上，巷子里的人发现，你家的门开着。\n门槛上的兰果丽，被一双赤脚踩乱了——\n脚印的脚尖，朝着门外。' });
@@ -1128,7 +1128,7 @@
       g.wait -= dt;
       if (g.wait <= 0 && g.pend) {
         const id = g.pend; g.pend = null; jingle(S, .015); S.ent(id).s.knock = false;
-        S.toast('「……ನಾಳೆ。」她念了一声「明天」，走了');
+        S.toast('「……明天。」她念了一声，走了');
         if (g.kind === 'rain' && id === 'dH' && W.pl.hidden) { g.done = true; return force(S, rainGood); }
       }
       return;
@@ -1213,13 +1213,13 @@
         rows: homeRows(),
         ents: [
           { id: 'cal', x: 3, y: 1, spr: 'cal', on: N('墙上挂着神像挂历。这个月十五号被阿妈用红笔圈了一下：「发工钱」。') },
-          { id: 'puja', x: 6, y: 1, spr: 'puja', light: { r: 2.2, col: 'rgba(255,200,90,.16)', flick: true }, on: N('墙上的小神龛供着象头神的画像，铜油灯里的灯芯快烧完了。\n阿吉每天早晚都在这儿点灯。') },
+          { id: 'puja', x: 6, y: 1, spr: 'puja', light: { r: 2.2, col: 'rgba(255,200,90,.16)', flick: true }, on: N('墙上的小神龛供着象头神的画像，铜油灯里的灯芯快烧完了。\n奶奶每天早晚都在这儿点灯。') },
           { id: 'stoveI', x: 1, y: 2, spr: 'stoveI', on: N('煤油炉上坐着一口锅，锅里还剩半锅米饭和一点萨姆巴汤。') },
           { id: 'kodam', x: 2, y: 2, spr: 'kodam', on: N('一只铜水罐、一只钢水罐。早上从巷口的公用水管接来的。') },
           { id: 'radio', x: 11, y: 2, spr: 'radio', on: S => S.narr(S.f.ph === 'd4' ? '收音机里说：今年的季风来得早。' : '收音机。停电了，什么也听不见。') },
           { id: 'trunk', x: 12, y: 2, spr: 'trunk', on: N('铁皮箱子，装着阿妈的嫁妆纱丽。阿妈说，等你出嫁那天给你。') },
           { id: 'klamp', x: 8, y: 3, spr: 'klamp', light: { r: 3.6, col: 'rgba(255,190,110,.22)', flick: true }, on: N('煤油马灯。玻璃罩被熏黑了一圈。\n这个月已经停了十几回电了。') },
-          { id: 'amat', x: 9, y: 4, w: 2, spr: 'mat', col: '#8a6a9a', solid: false, decal: true, on: N('阿吉的席子，枕头边放着一串念珠。') },
+          { id: 'amat', x: 9, y: 4, w: 2, spr: 'mat', col: '#8a6a9a', solid: false, decal: true, on: N('奶奶的席子，枕头边放着一串念珠。') },
           { id: 'ajjiH', x: 10, y: 4, spr: '@ajji', dir: 0, on: ajjiHome },
           { id: 'kmat', x: 4, y: 6, w: 2, spr: 'mat', solid: false, decal: true, on: n1Sleep },
           { id: 'mmat', x: 1, y: 5, w: 2, spr: 'mat', col: '#c8c0b0', full: 2, solid: false, decal: true, hidden: true, on: N('给穆尼大爷铺的席子。') },
@@ -1254,8 +1254,8 @@
           { id: 'cycle', x: 21, y: 3, spr: 'cycle', on: N('拉希姆大叔的自行车，后座绑着一卷布料。') },
           { id: 'dH', x: 23, y: 2, spr: 'idoor', col: '#7a3a22', toran: true, eave: true, on: LD('dH') },
           { id: 'rangoli', x: 23, y: 3, spr: 'rangoli', solid: false, decal: true },
-          { id: 'hwin', x: 24, y: 2, spr: 'win', on: N('自家的木栅栏窗。窗台上晒着阿吉的老花镜。') },
-          { id: 'mallige', x: 24, y: 3, spr: 'mallige', solid: false, hidden: true, on: async S => { S.hide('mallige'); S.give('mallige'); await S.narr('台阶边上放着一串茉莉，已经蔫了，还是很香。\n巷子里，没有人种茉莉。'); await S.think('（阿吉说，她是个新娘，头上还戴着茉莉……）'); } },
+          { id: 'hwin', x: 24, y: 2, spr: 'win', on: N('自家的木栅栏窗。窗台上晒着奶奶的老花镜。') },
+          { id: 'mallige', x: 24, y: 3, spr: 'mallige', solid: false, hidden: true, on: async S => { S.hide('mallige'); S.give('mallige'); await S.narr('台阶边上放着一串茉莉，已经蔫了，还是很香。\n巷子里，没有人种茉莉。'); await S.think('（奶奶说，她是个新娘，头上还戴着茉莉……）'); } },
           { id: 'fgate', x: 27, y: 2, w: 2, spr: 'fgate', on: fgateUse },
           { id: 'lamp1', x: 7, y: 7, spr: 'streetlamp', solid: false, light: { r: 3, col: 'rgba(255,220,150,.12)' }, on: N('路灯杆上贴满了寻人启事和电影海报。') },
           { id: 'lamp2', x: 15, y: 7, spr: 'streetlamp', solid: false, flicker: true, light: { r: 3, flick: true, col: 'rgba(255,220,150,.12)' }, on: N('这盏路灯一闪一闪的，报修了三个月也没人来。') },
@@ -1292,7 +1292,7 @@
           { id: 'cycleD', x: 20, y: 8, spr: 'cycle', on: N('不知道谁的自行车，车筐里放着一包没吃完的饼干。') },
           { id: 'warden', x: 2, y: 5, spr: '@warden', dir: 2, on: S => S.say('宿管大妈', S.f.ph === 'dorm' ? ['七点锁大门！', '……小姑娘，那几个字，你可得写清楚了。'] : '……') },
           { id: 'selvi', x: 5, y: 5, spr: '@selvi', dir: 3, on: S => S.say('塞尔维', ['我们村里的老人说，她会叫你妈妈的声音。', '我妈妈在坦贾武尔。我已经两年没回家了。']) },
-          { id: 'rani', x: 9, y: 5, spr: '@rani', dir: 3, on: S => S.say('拉妮', ['我住二号。我们屋四个人，就我认得几个英文字母。', '……写英文的「COME TOMORROW」，她看得懂吗？']) },
+          { id: 'rani', x: 9, y: 5, spr: '@rani', dir: 3, on: S => S.say('拉妮', ['我住二号。我们屋四个人，就我认得几个英文字母。', '……用英文写「明天来」（COME TOMORROW），她看得懂吗？']) },
           { id: 'ammaD', x: 18, y: 4, spr: '@amma', dir: 1, on: S => S.say('阿妈', S.f.chalkFail ? '粉笔写在白墙上看不见的——厨房灶膛里有炭！' : ['从一号写起，一间都别落下。', '写完了就进阿妈屋里来。']) },
           { id: 'nb3', x: 0, y: 4, spr: '@nb', hidden: true, solid: false, light: { r: 2, col: 'rgba(190,215,200,.14)' } }
         ],
@@ -1311,7 +1311,7 @@
     await S.narr(e.s.flower ? '蛇石前放着那串茉莉。' : '榕树底下供着两块蛇石，抹着姜黄和朱砂。巷子里的女人每礼拜二来上供。');
   }
 
-  const LEGEND = '「ನಾಳೆ ಬಾ」（Nale Ba，卡纳达语「明天再来」）是 1990 年代在印度南部城市班加罗尔流传的都市传说。说法大致是：深夜有一个女人挨家挨户敲门，用屋里人亲人的声音叫门；开了门的人，据说不出一天就会死去，也有说是被她带走。破解的办法同样简单：在门上写下「ನಾಳೆ ಬಾ」，她看见了，就会离开，第二天再来——然后又读到同一句话。一时间，城里不少人家的门上、墙上都出现了用粉笔或红漆写的这两个词。\n\n她是谁，说法不一：有人说是一个含冤而死的新娘，夜里出来找她的丈夫；有人说是女巫；也有人把她和北印度传说里脚掌反长的女鬼混在一起。类似的传言后来也在印度其他地方出现过。2018 年的印地语电影《Stree》借用了这个传说，片中人们在墙上写的是印地语「O Stree, kal aana」（女人啊，明天再来）。\n\n当时的报纸报道和口耳相传让传言迅速扩散，几个星期到几个月后又渐渐平息，但门上的字迹在不少老房子上留了很多年。评论者多把它看作一次典型的群体性恐慌：在城市迅速扩张、人口大量迁入的年代，一个有明确规矩、照做就能「安全」的故事，比说不清的不安更容易被人接受和传播。查无实据：没有任何可靠记录证明有人因此死亡。\n\n游戏虚构：卡薇娅一家、穆尼大爷和他在迪拜打工的儿子、拉希姆大叔、巷子里的各户人家和成衣厂宿舍；「门外挂锁她就不停」「两扇门中间的柱子写一次两家都算」「粉笔怕雨、在油漆铁皮上写不上」「写成『今天来』等于请她进门」这些规矩；两份报纸的具体内容；以及擦掉门上的字那一夜，都是本章为游戏编写的。';
+  const LEGEND = '「明天再来」（ನಾಳೆ ಬಾ，Nale Ba，卡纳达语）是 1990 年代在印度南部城市班加罗尔流传的都市传说。说法大致是：深夜有一个女人挨家挨户敲门，用屋里人亲人的声音叫门；开了门的人，据说不出一天就会死去，也有说是被她带走。破解的办法同样简单：在门上写下这句话，她看见了，就会离开，第二天再来——然后又读到同一句话。一时间，城里不少人家的门上、墙上都出现了用粉笔或红漆写的这两个词。\n\n她是谁，说法不一：有人说是一个含冤而死的新娘，夜里出来找她的丈夫；有人说是女巫；也有人把她和北印度传说里脚掌反长的女鬼混在一起。类似的传言后来也在印度其他地方出现过。2018 年的印地语电影《斯特里》（Stree，意为「女人」）借用了这个传说，片中人们在墙上写的是印地语「女人啊，明天再来」（O Stree, kal aana）。\n\n当时的报纸报道和口耳相传让传言迅速扩散，几个星期到几个月后又渐渐平息，但门上的字迹在不少老房子上留了很多年。评论者多把它看作一次典型的群体性恐慌：在城市迅速扩张、人口大量迁入的年代，一个有明确规矩、照做就能「安全」的故事，比说不清的不安更容易被人接受和传播。查无实据：没有任何可靠记录证明有人因此死亡。\n\n游戏虚构：卡薇娅一家、穆尼大爷和他在迪拜打工的儿子、拉希姆大叔、巷子里的各户人家和成衣厂宿舍；「门外挂锁她就不停」「两扇门中间的柱子写一次两家都算」「粉笔怕雨、在油漆铁皮上写不上」「写成『今天来』等于请她进门」这些规矩；两份报纸的具体内容；以及擦掉门上的字那一夜，都是本章为游戏编写的。';
 
   defChapter({
     id: 'naleba', n: 27, title: '明天再来', sub: '在门上写「明天再来」。她读了，就走。', origin: '印度班加罗尔都市传说', color: '#5a2418',
@@ -1320,7 +1320,7 @@
     endings: { week: '第二十七夜　完', rain: '雨夜', wiped: '明天' },
     legend: LEGEND,
     start: { map: 'home', x: 7, y: 6, dir: 3 },
-    async intro(S) { await S.card('第二十七夜　明天再来', '1990年代　印度　班加罗尔城西', '那一年，城西的巷子里开始传一句话。\n\n夜里有人敲门，用你家里人的声音叫你——\n别应，别开门。\n\n在门上写两个字：ನಾಳೆ ಬಾ（Nale Ba）。\n明天再来。'); },
+    async intro(S) { await S.card('第二十七夜　明天再来', '1990年代　印度　班加罗尔城西', '那一年，城西的巷子里开始传一句话。\n\n夜里有人敲门，用你家里人的声音叫你——\n别应，别开门。\n\n在门上写一句卡纳达话：\n「明天再来」（ನಾಳೆ ಬಾ，Nale Ba）。'); },
     thumb(g, w, h) {   // 一扇蓝色木门，门上红漆写着「ನಾಳೆ ಬಾ」；门边站着低头的红纱丽女人
       const R = (x, y, ww, hh, c) => { g.fillStyle = c; g.fillRect(x, y, ww, hh); };
       const by = h - 22;
