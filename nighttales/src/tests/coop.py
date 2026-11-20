@@ -35,9 +35,11 @@ try:
             pg.on('pageerror', lambda e, n=name: errs.append(n + ': ' + str(e)))
             pg.goto(url); pg.wait_for_timeout(600); pages.append(pg)
         H_, G = pages
-        H_.click('#tHost'); H_.wait_for_function("document.getElementById('lbCode').textContent.length===4 && !document.getElementById('lbCode').textContent.includes('·')", timeout=10000)
-        code = H_.inner_text('#lbCode'); print('room', code)
-        G.click('#tJoin'); G.fill('#joinCode', code); G.click('#lbGo')
+        # 开始界面是共享的 TitleKit：双人联机 → 创建房间 / 输入房间码加入
+        H_.click('[data-a=go][data-arg=online]'); H_.click('[data-a=host]')
+        H_.wait_for_function("(() => { const e = document.querySelector('.tk-roomcode'); return e && !e.classList.contains('tk-dots') && e.textContent.trim().length === 4; })()", timeout=10000)
+        code = H_.inner_text('.tk-roomcode').strip(); print('room', code)
+        G.click('[data-a=go][data-arg=online]'); G.fill('[data-a=code]', code); G.click('[data-a=join]')
         H_.wait_for_function("window.__dbg.UI.scene==='select'", timeout=15000)
         G.wait_for_function("window.__dbg.UI.scene==='select'", timeout=15000)
         check(True, 'both in chapter select')
