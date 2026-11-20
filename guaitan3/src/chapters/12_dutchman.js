@@ -426,7 +426,7 @@
     S.sfx('cut'); S.take('bag');
     await S.narr('老奈德把帆针塞进你手里。你缝上最后几针，把袋子推过舷墙。\n它几乎没有溅起水花。一小团白色，往下沉，往下沉，沉进了黑得发亮的海水里。');
     S.sfx('splash');
-    await S.say('威廉', 'Dank je.', { style: 'whisper' });
+    await S.say('威廉', '……谢谢。（荷兰话：Dank je.）', { style: 'whisper' });
     await S.alpha('willem', 0, 1500);
     W._camHold = true; S.focus(14, 2);
     for (const id of ['dl1', 'dl2']) { S.hide(id); S.sfx('switch'); await S.wait(700); }

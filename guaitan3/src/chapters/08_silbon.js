@@ -408,7 +408,7 @@
   async function collarUse(S) {
     if (S.f.phase === 'walk') return S.narr('草里有个东西。');
     S.hide('collar'); S.give('collar');
-    await S.narr('沼泽边的泥里，躺着一个皮项圈。铜扣子上刻着「CANELO」。\n……挣断的。泥地上的爪印乱七八糟，一路往棕榈林深处去了。');
+    await S.narr('沼泽边的泥里，躺着一个皮项圈。铜扣子上刻着它的名字：「卡内洛」（CANELO）。\n……挣断的。泥地上的爪印乱七八糟，一路往棕榈林深处去了。');
     await S.think('（卡内洛……你跑哪儿去了。）');
   }
 
@@ -628,7 +628,7 @@
     if (!retry) await S.narr('门外「咚」的一声。\n是一只沉甸甸的口袋，放在了门槛外面。');
     clack(S, 1); await S.wait(500);
     if (!retry) {
-      await S.narr('咔。\n……uno。（一。）');
+      await S.narr('咔。\n……「一」。（uno。）');
       S.focus(null);
       await S.say('外婆', ['他在数。数到最后一根，天一亮，这屋里就要少一个人。', '鞭子、辣椒、狗——照你外公写的，一样一样来。'], { style: 'whisper' });
     } else {
@@ -651,7 +651,7 @@
     const f = S.f; f.counting = false; deaths++;
     S.ent('bones').num = BONES; S.ent('bones').s.scatter = false; S.ent('silbon').s.pose = 'sit';
     clack(S, BONES);
-    await S.narr('……cuarenta。（四十。）');
+    await S.narr('……「四十」。（cuarenta。）');
     S.amb('none'); await S.wait(900);
     await S.narr('门外安静了。\n骨头一根一根地装回口袋里。哗啦。哗啦。');
     S.hide('bones'); S.ent('silbon').s.pose = 'stand'; S.focus(9, 9);
@@ -780,7 +780,7 @@
     await S.narr('门闩拔开了。\n门外的数数声，一下子停了。');
     await S.scare('face', { face: 'silbon', dur: 1.1 });
     deaths++;
-    await S.die('一只又长又冷的手从门缝里伸进来，搭在了你的肩上。\n「……uno。」', '你开了门');
+    await S.die('一只又长又冷的手从门缝里伸进来，搭在了你的肩上。\n「……一。」', '你开了门');
   }
   async function abuelaNight(S) {
     const f = S.f; S.face('abuela_i', 'pl');
@@ -943,7 +943,7 @@
       aji: { name: '辣椒串', desc: '半串晒干的小辣椒，红得发黑。凑近闻一闻就流眼泪。' },
       lena: { name: '一捆干柴', desc: '院子西边柴堆上抱来的干柴。' },
       agua: { name: '一瓢凉水', desc: '葫芦瓢里的井水，凉丝丝的。拉斐尔一直嚷着渴。' },
-      collar: { name: '卡内洛的项圈', desc: '挣断的皮项圈，铜扣上刻着「CANELO」。' }
+      collar: { name: '卡内洛的项圈', desc: '挣断的皮项圈，铜扣上刻着「卡内洛」（CANELO）。' }
     },
     notes: {
       copla: { title: '日历背面的小调', text: '（外婆让人抄在旧日历背面的一首平原小调，字歪歪扭扭的。）\n\n听见口哨贴着耳朵吹，\n别慌，他还在河那边；\n听见口哨远远地飘，\n快熄灯，他就坐在你门前。\n\n哆、来、咪、发、嗦、啦、西，\n一个音一个音往上爬；\n背上的口袋哗啦啦响，\n装的是他亲爹的骨头渣。\n\n喝醉的汉子莫唱歌，\n夜里的草原莫吹哨——\n他循着酒味走过来，\n坐在门口，一根一根地数。' },

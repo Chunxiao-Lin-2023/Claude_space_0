@@ -6,7 +6,7 @@
   const DEAD = 180;                                     // 02:00（从 23:00 起算的分钟）
   const ISLAND = ['i1', 'i2', 'i3', 'i4', 'i5', 'i6', 'i7', 'i8', 'i9', 'i10', 'c1', 'c2', 'c3'];
   const FOES = ['e1', 'e2', 'e3'], DOTS = ['d1', 'd2', 'd3'];
-  const WORDS = ['OBEY', 'NO THOUGHT', 'DO NOT SLEEP', 'FORGET', 'KEEP PLAYING', 'YOU ARE NOT TIRED'];
+  const WORDS = ['服从', '不要思考', '不许睡', '忘掉', '继续玩', '你不累'];   // 潜意识帧里一闪而过的字
   let G = null;            // 当前这一局街机（主机）
   let DIED = 0;            // 危险段里被抓过几次（只影响提示）
   let LASTBAD = '';        // 上一个坏结局（重来时给一句提示）
@@ -27,6 +27,23 @@
     for (let i = 0; i < s.length; i++) { const gl = FONT[s[i]]; if (gl) for (let k = 0; k < 15; k++) if (gl[k] === '1') R(x + (i * 4 + (k % 3)) * sc, y + ((k / 3) | 0) * sc, sc, sc, col); }
   }
   const TW = (s, sc = 1) => (String(s).length * 4 - 1) * sc;
+  /* 中文像素字（屏幕、招牌）：先画到小画布上再二值化，借 R 拿到当前绘制偏移。cx = 文字中心，y = 顶边 */
+  const CJK = '"Noto Sans CJK SC","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif';
+  const CXC = new Map();
+  function cxBmp(s, px, col) {
+    const k = s + '|' + px + '|' + col; let c = CXC.get(k); if (c) return c;
+    const m = mk(8, 8).getContext('2d'); m.font = `bold ${px}px ${CJK}`;
+    const w = Math.ceil(m.measureText(s).width) + 2, h = px + 2;
+    c = mk(w, h); const x = c.getContext('2d');
+    x.font = `bold ${px}px ${CJK}`; x.fillStyle = col; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(s, w / 2, h / 2 + 1);
+    const im = x.getImageData(0, 0, w, h), d = im.data;
+    for (let i = 3; i < d.length; i += 4) d[i] = d[i] >= 110 ? 255 : 0;
+    x.putImageData(im, 0, 0); CXC.set(k, c); return c;
+  }
+  function CX(g, R, cx, y, s, col, px = 8) {
+    let X = 0, Y = 0; const f = g.fillRect; g.fillRect = (a, b) => { X = a; Y = b; }; R(cx, y, 1, 1, '#000'); g.fillRect = f;
+    const c = cxBmp(String(s), px, col); g.drawImage(c, Math.round(X - c.width / 2), Math.round(Y - 1));
+  }
   /* 矢量线：Bresenham */
   function LN(R, x0, y0, x1, y1, c) {
     x0 = Math.round(x0); y0 = Math.round(y0); x1 = Math.round(x1); y1 = Math.round(y1);
@@ -121,7 +138,7 @@
     await S.go('game', SPAWN[0], SPAWN[1], 3);
     jingle(S); hum(S, .06);
     if (S.once('coopTip')) S.toast('双人：一个人握摇杆；另一个人盯着屏幕报数字，顺便盯住分数别过 9990');
-    if (S.once('gameHelp')) await S.narr('屏幕里只有一艘小小的三角形飞船，和几颗一闪一闪的光点。\n吃光点加分。别被那些转来转去的多边形碰到。右下角的「EXIT」是离开。');
+    if (S.once('gameHelp')) await S.narr('屏幕里只有一艘小小的三角形飞船，和几颗一闪一闪的光点。\n吃光点加分。别被那些转来转去的多边形碰到。右下角写着「出」字的方框是出口，碰到就离开。');
     await S.wait(700);
     G.ph = 'play'; hudSet(S, { ph: 'play' });
     chaseFoes(S, false);
@@ -156,7 +173,7 @@
   async function startSpin(S) {
     stopFoes(S);
     S.tone('square', 200, 1600, 1.2, .1);
-    await S.think('（分数自己往上跳了！……它不想让我走。\n趁它破纪录之前——去右下角的 EXIT！）');
+    await S.think('（分数自己往上跳了！……它不想让我走。\n趁它破纪录之前——去右下角的出口！）');
     G.ph = 'spin'; G.rate = Math.max(150, (HI + 1 - G.score) / 8); G.tk = 0;
     hudSet(S, { ph: 'spin' }); S.ent('exitp').s.blink = true;
     for (const id of FOES) getEnt(id, 'game').s.gold = true;
@@ -193,7 +210,7 @@
     G.ph = 'rec'; stopFoes(S); G.score = Math.max(G.score, HI + 10); hudSet(S, { ph: 'rec', sc: G.score });
     [523, 659, 784, 1046, 1318, 1568].forEach((f, i) => bleep(S, f, .12, .12, i * .11));
     await S.wait(1200);
-    await S.narr('分数停了下来。屏幕正中间，一行字慢慢地亮起来：\nNEW RECORD　　ENTER YOUR NAME');
+    await S.narr('分数停了下来。屏幕正中间，一行字慢慢地亮起来：\n新纪录　　请输入你的名字');
     await S.think('（名字……三个字母就行。我叫……我叫……）');
     await S.narr('摇杆停在字母「A」上。\n你想了很久，很久。屏幕上的光标一下一下地闪。');
     await S.scare('face', { face: 'poly', sfx: 'scare', dur: 1.1 });
@@ -212,7 +229,7 @@
     setClock(S); applySym(S);
     await S.go('arcade', 16, 3, 3);
     hum(S, .05);
-    await S.narr((why === 'over' ? 'GAME OVER。你松开摇杆，手心全是汗。\n' : why === 'escape' ? '你把飞船撞进 EXIT 的那一刻，屏幕猛地一黑——\n' : '你松开摇杆。\n') + '墙上的钟：' + clockStr(f.clock) + '。你只觉得玩了三四分钟。');
+    await S.narr((why === 'over' ? '游戏结束。你松开摇杆，手心全是汗。\n' : why === 'escape' ? '你把飞船撞进出口的那一刻，屏幕猛地一黑——\n' : '你松开摇杆。\n') + '墙上的钟：' + clockStr(f.clock) + '。你只觉得玩了三四分钟。');
     if (f.sess === 1) await S.think('（……二十五分钟。时间被它吃掉了一块。）');
     if (why === 'over') { f.mercy = (f.mercy || 0) + 1; if (S.once('overHint')) await S.think('（它们只会直直地朝我冲过来。\n绕着那四根柱子兜圈子，就能把它们甩在后面。）'); }
     if (got > 0 && f.frags < 5) await S.think('（手背上，用圆珠笔写着：' + handTxt(f.frags) + '。\n……还差 ' + (5 - f.frags) + ' 个。）');
@@ -230,7 +247,7 @@
     if (f.phase === 'climax') return S.think('（没时间玩了！背板——就在机器左边！）');
     if (!f.seenPoly) {
       f.seenPoly = true;
-      await S.narr(['一台漆成哑光黑的街机。没有侧板画，没有厂牌，投币口上方连一行字都没有。\n只有屏幕正上方，用细细的矢量线写着：POLYBIUS。', '屏幕里，绿色的线条一圈一圈地往中心转，像一口井。\n最高分：9990。名字那一栏，是空的。']);
+      await S.narr(['一台漆成哑光黑的街机。没有侧板画，没有厂牌，投币口上方连一行字都没有。\n只有屏幕正上方，用细细的矢量线写着：波利比乌斯（POLYBIUS）。', '屏幕里，绿色的线条一圈一圈地往中心转，像一口井。\n最高分：9990。名字那一栏，是空的。']);
       await S.think('（瑞奇说过：分数越高，画面里「眨」得越多。\n……要找到关掉它的办法，也许只能从它自己的画面里找。）');
     } else await S.narr(f.frags >= 3 ? '绿色的线条在屏幕里转。\n你盯着它，想不起来自己上一次眨眼是什么时候。' : '绿色的线条一圈一圈地往里转。最高分 9990，名字那一栏是空的。');
     const r = await S.ask('投一枚二十五美分的硬币？', ['投币', '算了']);
@@ -248,7 +265,7 @@
     if (f.phase === 'climax') { if (!f.seenPanel) { f.seenPanel = true; await S.think('（五排五列的字母键，左上角 A，右下角 Z，没有 J。\n第一下，第三排最左边——）'); } }
     else if (!f.seenPanel) {
       f.seenPanel = true;
-      await S.narr(['机身左侧有一块巴掌大的铁皮背板，四颗螺丝都焊死了。\n侧面靠下烫着一行很小的字：©1981 SINNESLÖSCHEN。你不认识这个词。', '背板上是一片小小的方形按键——五排，每排五个，刻着字母。\n左上角是 A，右下角是 Z。数了一遍：没有 J。']);
+      await S.narr(['机身左侧有一块巴掌大的铁皮背板，四颗螺丝都焊死了。\n侧面靠下烫着一行很小的外文字母（©1981 SINNESLÖSCHEN）。你不认识这个词。', '背板上是一片小小的方形按键——五排，每排五个，刻着字母。\n左上角是 A，右下角是 Z。数了一遍：没有 J。']);
       await S.think('（那天夜里，黑西装就是在这儿按了五下。\n第一下，按在第三排最左边。）');
     }
     if (f.frags < 5 && f.phase !== 'climax') { const r = await S.ask('要试着按吗？', ['按五个键', '算了']); if (r) return; }
@@ -473,11 +490,11 @@
     breaker(g, e, t, R) { R(3, 1, 10, 12, '#6a6e74'); R(4, 2, 8, 10, '#5a5e64'); for (let i = 0; i < 3; i++) R(5 + i * 2, 4, 1, 3, '#2a2a2a'); R(6, 9, 4, 4, '#c8a040'); R(7, 8, 2, 2, '#8a7030'); R(7, 10, 2, 1, '#3a3020'); },
     cal(g, e, t, R) { R(3, 1, 10, 12, '#f0ece0'); R(3, 1, 10, 3, '#2a5a9a'); for (let y = 0; y < 4; y++) for (let x = 0; x < 4; x++) R(4 + x * 2, 5 + y * 2, 1, 1, '#c02020'); },
     neon(g, e, t, R) {
-      R(0, 1, 32, 11, '#120a14');
+      R(0, -1, 32, 14, '#120a14');
       const on = Math.sin(t * 9) > -.7, pOn = Math.sin(t * 23 + Math.sin(t * 3)) > .1;
-      const s = 'STAR PORT';
-      for (let i = 0; i < s.length; i++) { const col = i < 4 ? (on ? '#ff5ab4' : '#5a2440') : (i === 5 && !pOn ? '#183038' : '#5af0ff'); TXT(R, 1 + i * 3.4, 4, s[i], col); }
-      R(0, 12, 32, 1, '#2a1a24');
+      /* 「星港」：「星」粉色，「港」字接触不良、一闪一闪 */
+      CX(g, R, 10, 0, '星', on ? '#ff5ab4' : '#5a2440', 11); CX(g, R, 22, 0, '港', pOn ? '#5af0ff' : '#183038', 11);
+      R(0, 13, 32, 1, '#2a1a24');
     },
     awin(g, e, t, R) { R(1, 1, 14, 12, '#2a2a30'); R(2, 2, 12, 10, '#07080e'); const k = hash(e.px, 3, 1); R(3 + ((k * 6) | 0), 7, 3, 4, ['#2a4a9a', '#9a2a3a', '#2a8a4a'][(k * 3) | 0]); R(4 + ((k * 6) | 0), 8, 1, 1, '#9ff'); R(2, 2, 12, 1, 'rgba(255,255,255,.08)'); if (e.green) R(10, 8, 3, 3, Math.sin(t * 3) > 0 ? '#3f9' : '#1a5'); },
     glassdoor(g, e, t, R) { R(2, -2, 12, 16, '#1a1d22'); R(3, -1, 10, 14, '#0a1220'); R(3, -1, 10, 1, '#2a3a50'); R(7, -1, 1, 14, '#9aa0a8'); R(5, 5, 1, 2, '#ccc'); R(9, 5, 1, 2, '#ccc'); R(4, 0, 1, 5, 'rgba(255,255,255,.18)'); },
@@ -510,7 +527,7 @@
     exitpad(g, e, t, R) {
       const on = !e.blink || Math.sin(t * 10) > -.2, c = on ? '#4dff9a' : '#145a30';
       LN(R, 1, 1, 14, 1, c); LN(R, 1, 14, 14, 14, c); LN(R, 1, 1, 1, 14, c); LN(R, 14, 1, 14, 14, c);
-      TXT(R, 1, 6, 'EXIT', c); if (e.blink) { const k = ((t * 6) | 0) % 3; R(6 + k * 2, 12, 1, 1, '#fff'); }
+      CX(g, R, 8, 2, '出', c, 11); if (e.blink) { const k = ((t * 6) | 0) % 3; R(6 + k * 2, 12, 1, 1, '#fff'); }
     },
     /* HUD：分数、最高分、命，闪过的帧和字；也画外面的显像管边框 */
     hud(g, e, t, R) {
@@ -520,17 +537,17 @@
       const sc = e.sc || 0, ph = e.ph;
       TXT(R, 3, 3, pad5(sc), sc > 9000 ? (Math.sin(t * 14) > 0 ? '#ff4040' : '#ffd040') : '#ffffff', 2);
       const hiC = ph === 'spin' ? (Math.sin(t * 16) > 0 ? '#ff3030' : '#ffffff') : '#ffd040';
-      TXT(R, W2 - 3 - TW('09990', 2), 3, '09990', hiC, 2); TXT(R, W2 - 3 - TW('09990', 2) - 10, 8, 'HI', hiC);
-      TXT(R, W2 / 2 - TW('POLYBIUS') / 2, 1, 'POLYBIUS', '#3a8a5a');
-      for (let i = 0; i < (e.li ?? 3); i++) { const x = W2 / 2 - 10 + i * 8; LN(R, x + 3, 9, x, 14, '#8ff4ff'); LN(R, x + 3, 9, x + 6, 14, '#8ff4ff'); LN(R, x, 14, x + 6, 14, '#8ff4ff'); }
+      TXT(R, W2 - 3 - TW('09990', 2), 3, '09990', hiC, 2); CX(g, R, W2 - 3 - TW('09990', 2) - 12, 2, '最高', hiC, 9);
+      CX(g, R, W2 / 2, -1, '波利比乌斯', '#3a8a5a', 10);
+      for (let i = 0; i < (e.li ?? 3); i++) { const x = W2 / 2 - 10 + i * 8; LN(R, x + 3, 12, x, 17, '#8ff4ff'); LN(R, x + 3, 12, x + 6, 17, '#8ff4ff'); LN(R, x, 17, x + 6, 17, '#8ff4ff'); }
       const M = SPRX._m;
       if (e.flN !== M.flN) { M.flN = e.flN; M.flT = t; }
       if (e.wdN !== M.wdN) { M.wdN = e.wdN; M.wdT = t; }
       const cx = W2 / 2, cy = 104;
-      if (ph === 'ready') { const s = 'READY'; if (Math.sin(t * 8) > -.3) TXT(R, cx - TW(s, 2) / 2, cy - 5, s, '#ffd040', 2); }
-      if (ph === 'over') { const s = 'GAME OVER'; R(cx - 46, cy - 10, 92, 20, '#000'); TXT(R, cx - TW(s, 2) / 2, cy - 5, s, '#ff4040', 2); }
-      if (ph === 'spin') { const s = '> > > EXIT'; if (Math.sin(t * 9) > 0) TXT(R, cx - TW(s) / 2, 22, s, '#4dff9a'); TXT(R, cx - TW('DO NOT LEAVE') / 2, 182, 'DO NOT LEAVE', Math.sin(t * 5) > 0 ? '#ff4060' : '#401020'); }
-      if (ph === 'rec') { R(cx - 70, cy - 22, 140, 44, '#000'); LN(R, cx - 70, cy - 22, cx + 69, cy - 22, '#ffd040'); LN(R, cx - 70, cy + 21, cx + 69, cy + 21, '#ffd040'); TXT(R, cx - TW('NEW RECORD', 2) / 2, cy - 15, 'NEW RECORD', Math.sin(t * 10) > 0 ? '#ffd040' : '#ff5a5a', 2); TXT(R, cx - TW('ENTER YOUR NAME') / 2, cy + 2, 'ENTER YOUR NAME', '#fff'); TXT(R, cx - 13, cy + 11, Math.sin(t * 6) > 0 ? '_ _ _' : '  _ _', '#8ff4ff'); }
+      if (ph === 'ready') { if (Math.sin(t * 8) > -.3) CX(g, R, cx, cy - 6, '准备', '#ffd040', 12); }
+      if (ph === 'over') { R(cx - 46, cy - 10, 92, 20, '#000'); CX(g, R, cx, cy - 7, '游戏结束', '#ff4040', 12); }
+      if (ph === 'spin') { if (Math.sin(t * 9) > 0) { TXT(R, cx - 26, 22, '> > >', '#4dff9a'); CX(g, R, cx + 9, 19, '出口', '#4dff9a', 10); } CX(g, R, cx, 178, '别走', Math.sin(t * 5) > 0 ? '#ff4060' : '#401020', 11); }
+      if (ph === 'rec') { R(cx - 70, cy - 22, 140, 44, '#000'); LN(R, cx - 70, cy - 22, cx + 69, cy - 22, '#ffd040'); LN(R, cx - 70, cy + 21, cx + 69, cy + 21, '#ffd040'); CX(g, R, cx, cy - 18, '新纪录', Math.sin(t * 10) > 0 ? '#ffd040' : '#ff5a5a', 12); CX(g, R, cx, cy - 3, '请输入你的名字', '#fff', 10); TXT(R, cx - 13, cy + 11, Math.sin(t * 6) > 0 ? '_ _ _' : '  _ _', '#8ff4ff'); }
       /* 闪过的数字帧 */
       const fa = t - M.flT;
       if (e.fl && fa >= 0 && fa < 1.25 && ((fa * 9) | 0) % 4 !== 3) {
@@ -541,7 +558,7 @@
       }
       /* 一闪而过的字（真正的「潜意识帧」：只有一两帧那么长） */
       const wa = t - M.wdT;
-      if (e.wdN && wa >= 0 && wa < .14 && ph !== 'rec') { const s = WORDS[(e.wd || 0) % WORDS.length]; const y = 40 + ((e.wdY || 0) % 120); R(0, y - 3, W2, 16, 'rgba(255,255,255,.85)'); TXT(R, cx - TW(s, 2) / 2, y, s, '#000', 2); }
+      if (e.wdN && wa >= 0 && wa < .14 && ph !== 'rec') { const s = WORDS[(e.wd || 0) % WORDS.length]; const y = 40 + ((e.wdY || 0) % 120); R(0, y - 3, W2, 16, 'rgba(255,255,255,.85)'); CX(g, R, cx, y - 2, s, '#000', 12); }
       for (let y = 16; y < H2; y += 2) R(0, y, W2, 1, 'rgba(0,0,0,.16)');
     },
     _m: { flN: null, flT: -9, wdN: null, wdT: -9 }
@@ -599,7 +616,7 @@
       g.strokeStyle = '#59ff9e'; g.lineWidth = 1;
       for (let k = 0; k < 4; k++) { const r = 12 - k * 3, a = k * .5; g.beginPath(); for (let i = 0; i <= 4; i++) { const an = a + i * Math.PI / 2; const px = x + 22 + Math.cos(an) * r, py = y + 29 + Math.sin(an) * r; i ? g.lineTo(px, py) : g.moveTo(px, py); } g.stroke(); }
       g.fillStyle = '#111114'; g.fillRect(x + 3, y + 44, 38, 10);
-      g.fillStyle = '#3a8a5a'; g.font = 'bold 7px monospace'; g.textAlign = 'center'; g.fillText('POLYBIUS', x + 22, y + 11);
+      g.fillStyle = '#3a8a5a'; g.font = 'bold 7px ' + CJK; g.textAlign = 'center'; g.fillText('波利比乌斯', x + 22, y + 12);
       const gr = g.createRadialGradient(x + 22, y + 29, 2, x + 22, y + 29, 46); gr.addColorStop(0, 'rgba(90,255,160,.25)'); gr.addColorStop(1, 'rgba(90,255,160,0)'); g.fillStyle = gr; g.fillRect(0, 0, w, h);
     },
     amb: 'room', floor: 'wood', wall: 'plain', dark: .6, plr: 3.2,
@@ -656,11 +673,11 @@
     },
     notes: {
       n1: { title: '瑞奇的练习本', text: '（前半本是代数作业。后半本，字越写越乱。）\n\n第3晚　打到四千分。回家睡不着，闭眼全是绿线。\n第5晚　分数越高，画面越会「眨」一下。就一帧。好像是数字，两个两个的。\n第6晚　看清了一个：31。写在手背上，洗澡洗掉了。\n第8晚　黑西装的人站在我后面看我玩。一句话都不说。\n第9晚　纪录是 9990，名字那一栏是空的。厄尔说以前有人破过纪录，后来再也没来过。\n第？晚　别过一万。别过一万。别过一万。\n\n（最后一页只有一个名字，划掉又写上，写了一整页：凯尔。凯尔。凯尔。）' },
-      n2: { title: '设备寄放协议（复写纸）', text: '甲方：（空白）\n乙方：星港游戏厅　经营者　厄尔\n\n一、甲方在乙方店内寄放街机一台，型号「POLYBIUS」。乙方不得移动、拆卸、断电。\n二、投币收入全归乙方。甲方另每月付乙方现金四百美元。\n三、甲方人员每晚 02:00 到店维护。乙方须开门，不得旁观，不得询问。\n四、本机不设厂牌。\n\n（甲方签名处没有名字，只盖着一个圆章：一圈一圈往里转的方框。）\n（页脚有一行厄尔的圆珠笔字：「四百块。别问。」）' },
+      n2: { title: '设备寄放协议（复写纸）', text: '甲方：（空白）\n乙方：星港游戏厅　经营者　厄尔\n\n一、甲方在乙方店内寄放街机一台，型号「波利比乌斯」（POLYBIUS）。乙方不得移动、拆卸、断电。\n二、投币收入全归乙方。甲方另每月付乙方现金四百美元。\n三、甲方人员每晚 02:00 到店维护。乙方须开门，不得旁观，不得询问。\n四、本机不设厂牌。\n\n（甲方签名处没有名字，只盖着一个圆章：一圈一圈往里转的方框。）\n（页脚有一行厄尔的圆珠笔字：「四百块。别问。」）' },
       n3: { title: '图书馆的书：《古希腊的史家》', text: '（市立图书馆藏。已逾期十一天。）\n\n「……波利比乌斯（约公元前 200—前 118 年），希腊史家。他在《历史》里记载过一种用火把传信的办法：\n把字母排进一张五行五列的格子。传信的人先举起几支火把，表示第几行；再举起几支，表示这一行的第几个。\n两个数字，就是一个字母。」\n\n（书页边上，有人用铅笔描了一张 5×5 的格子，旁边写着：「先行后列。I 和 J 挤一格。」）\n（夹着一张借书条，背面是瑞奇的字：「它为什么叫这个名字？」）' },
       n4: { title: '被雨泡皱的卡片', text: '（打字机打的，抬头只有一个圆章：一圈一圈往里转的方框。）\n\n站点 7　波特兰／星港\n样本 09　T.—　第 12 晚　失眠　夜惊　→ 停止游玩\n样本 10　（空白）　打破纪录　→ 回收\n样本 11　R.—　第 9 晚　8,750 分　失眠　记忆缺失（开始）\n\n备注：服务码不变。\n　　　勿令样本破纪录（数据溢出）。\n　　　如遇断电——中止，撤收，不留痕迹。' }
     },
-    legend: '「波利比乌斯」（Polybius）是街机时代最有名的都市传说之一。故事说：1981 年，美国俄勒冈州波特兰郊外的几家游戏厅里出现了一台没有厂牌的街机。它的画面是抽象的矢量图形，玩起来让人上瘾；玩过的人开始失眠、做噩梦、失忆，有的人从此再也不碰电子游戏。每到夜里，会有穿黑西装的人来打开机器「收集数据」。几周后，机器消失了，像从来没存在过。有人说那是政府的心理实验，画面里夹着「服从」「别睡」之类的潜意识讯息——这些细节在不同的版本里各不相同。\n\n这个传说可以追溯到的最早出处，是 2000 年前后一个街机资料网站上的一条条目：只有名字、年份，以及一个据说是德语、意思近似「感官删除」的厂商名「Sinneslöschen」。从那以后，各种「我小时候玩过」的回忆层出不穷，但从来没有人拿出过机柜、电路板、照片或任何当年的记录。目前看来，它查无实据。\n\n有人翻出了 1981 年波特兰当地的旧报道，认为传说也许是从这里长出来的：据报道，那一年有少年为了刷纪录在游戏厅里连续玩到病倒，也有年轻人玩街机时头痛发作被送医；同一年，联邦调查人员确实到过当地的游戏厅，调查的是街机被用来非法赌博——「穿西装的人」或许由此而来。那也正是社会上担心「电子游戏会毁掉一代人」的年代。\n\n「波利比乌斯」这个名字，属于古希腊史家波利比乌斯（约公元前 200—前 118 年）。他记载过一种把字母排进五行五列格子、用两个数字表示一个字母的火把传信法，后人称之为「波利比乌斯方阵」。传说流行起来以后，也有人用这个名字做出过真正的游戏。\n\n（本章的星港游戏厅、凯尔、瑞奇、厄尔及其家人，寄放协议与雨中的卡片，「样本」编号，画面里闪过的数字与背板上的方阵密码 LETHE（希腊神话里让人遗忘的河），破纪录会忘记自己名字的规则，以及磁带与各个结局，均为游戏虚构。）',
+    legend: '「波利比乌斯」（Polybius）是街机时代最有名的都市传说之一。故事说：1981 年，美国俄勒冈州波特兰郊外的几家游戏厅里出现了一台没有厂牌的街机。它的画面是抽象的矢量图形，玩起来让人上瘾；玩过的人开始失眠、做噩梦、失忆，有的人从此再也不碰电子游戏。每到夜里，会有穿黑西装的人来打开机器「收集数据」。几周后，机器消失了，像从来没存在过。有人说那是政府的心理实验，画面里夹着「服从」「别睡」之类的潜意识讯息——这些细节在不同的版本里各不相同。\n\n这个传说可以追溯到的最早出处，是 2000 年前后一个街机资料网站上的一条条目：只有名字、年份，以及一个据说是德语、意思近似「感官删除」的厂商名（Sinneslöschen）。从那以后，各种「我小时候玩过」的回忆层出不穷，但从来没有人拿出过机柜、电路板、照片或任何当年的记录。目前看来，它查无实据。\n\n有人翻出了 1981 年波特兰当地的旧报道，认为传说也许是从这里长出来的：据报道，那一年有少年为了刷纪录在游戏厅里连续玩到病倒，也有年轻人玩街机时头痛发作被送医；同一年，联邦调查人员确实到过当地的游戏厅，调查的是街机被用来非法赌博——「穿西装的人」或许由此而来。那也正是社会上担心「电子游戏会毁掉一代人」的年代。\n\n「波利比乌斯」这个名字，属于古希腊史家波利比乌斯（约公元前 200—前 118 年）。他记载过一种把字母排进五行五列格子、用两个数字表示一个字母的火把传信法，后人称之为「波利比乌斯方阵」。传说流行起来以后，也有人用这个名字做出过真正的游戏。\n\n（本章的星港游戏厅、凯尔、瑞奇、厄尔及其家人，寄放协议与雨中的卡片，「样本」编号，画面里闪过的数字与背板上的方阵密码「勒忒」（LETHE，希腊神话里让人遗忘的河），破纪录会忘记自己名字的规则，以及磁带与各个结局，均为游戏虚构。）',
     start: { map: 'arcade', x: 6, y: 8, dir: 3 },
     resume: {
       cab: async S => {
@@ -701,7 +718,7 @@
         ents: [
           { id: 'odoor', x: 2, y: 1, spr: 'door', col: '#3a3048', on: async S => { if (S.f.phase === 'climax') return S.think('（没时间躲了！）'); if (S.f.phase === 'pro') return; S.sfx('open'); await S.go('office', 4, 6, 3); } },
           { id: 'clk', x: 5, y: 1, spr: 'clock2', s: { m: 178 }, on: S => S.narr('墙上的挂钟：' + clockStr(S.f.clock ?? 178) + '。' + ((S.f.frags || 0) >= 3 ? '\n秒针走一下，停一下。……停得越来越久。' : '\n秒针咔哒、咔哒地走。')) },
-          { x: 7, y: 1, spr: 'hiboard', on: S => S.narr('手写的最高分排行榜：\n吃豆子的那台　87,420　J.B.\n陨石　　　　　41,950　DAN\n赛车　　　　　 2\'04"　厄尔\nPOLYBIUS　　　 9,990　———\n最后一行的名字那栏是空的。厄尔用红笔把它圈了起来。') },
+          { x: 7, y: 1, spr: 'hiboard', on: S => S.narr('手写的最高分排行榜：\n吃豆子的那台　87,420　杰比\n陨石　　　　　41,950　阿丹\n赛车　　　　　 2\'04"　厄尔\n波利比乌斯　　 9,990　———\n最后一行的名字那栏是空的。厄尔用红笔把它圈了起来。') },
           { x: 9, y: 1, spr: 'poster', col: '#c8c0a0', on: S => S.narr('一张杂志内页，用图钉钉在墙上：「电子游戏会毁掉一代人吗？」\n有人在标题旁边画了一个笑脸。') },
           { x: 13, y: 1, spr: 'poster', col: '#3a4a7a', on: S => S.narr('「本店营业至午夜 12 点。未满 16 岁请于 10 点前离店。」\n瑞奇十六岁。他已经在这儿待了一整天。') },
           { id: 'c1', x: 10, y: 2, spr: 'cab', col: '#2a4a9a', s: { k: 0 }, light: { r: 1.6, col: 'rgba(120,170,255,.16)', dy: 2 }, on: S => S.narr(S.ent('c1').s.poly ? '外星人一排一排地往下降……\n不对。屏幕里是一圈一圈往里转的绿线。你眨了眨眼，又恢复了。' : '一台太空射击。外星人一排一排地左右平移，永远在往下降。') },
@@ -815,7 +832,7 @@
           '================',
           '::::::::::::::::'],
         ents: [
-          { x: 3, y: 1, w: 2, spr: 'neon', light: { r: 3, col: 'rgba(255,90,180,.18)', dx: 16, dy: 8 }, on: S => S.narr('霓虹灯招牌：STAR PORT。\n「P」那个字母坏了，一闪，一闪。') },
+          { x: 3, y: 1, w: 2, spr: 'neon', light: { r: 3, col: 'rgba(255,90,180,.18)', dx: 16, dy: 8 }, on: S => S.narr('霓虹灯招牌：星港（STAR PORT）。\n「港」字的灯管坏了，一闪，一闪。') },
           { x: 1, y: 1, spr: 'awin', on: S => S.narr('透过玻璃，能看见店里一排排机器的屏幕在黑暗里发光。') },
           { id: 'adoor', x: 7, y: 1, spr: 'glassdoor', sfx: 'open', to: ['arcade', 9, 10, 3] },
           { x: 10, y: 1, spr: 'awin', s: { green: true }, on: S => S.narr('最里面那一块屏幕，是绿色的。\n隔着雨和玻璃，你好像看见那些线在转。') },
