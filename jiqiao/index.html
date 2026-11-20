@@ -1211,8 +1211,8 @@ const HEROES=[
   skill:{n:'雷暴',g:'暴',cd:16,d:'3 秒内每 0.3 秒落下一道雷'}},
  {key:'wind',name:'风行者',color:'#ddd8bf',weapon:'blades',tag:'闪避反击',lore:'来去无影的游侠，闪开一击，就还你十刀。',star:3,pros:['闪避 +15%，移速 +10%','闪避后 2 秒内攻速 +40%，并获得 1 点经验'],cons:[],stats:{dodge:15,speed:10},
   skill:{n:'疾影',g:'影',cd:8,d:'向移动方向冲刺，0.4 秒无敌，划过的敌人受到伤害'}},
- {key:'merchant',name:'豪商',color:'#f0b93a',weapon:'boomerang',tag:'买卖刷钱',lore:'什么都能买，什么都能卖，打仗也要先算账。',star:3,pros:['开局金币 +30','拾取金币 +25%','每波结束拿持有金币 6% 的利息（最多 25）','商店价格 -15%，武器回收价从 40% 提高到 70%','击杀 25% 几率多掉 1 枚金币'],cons:[],coinKill:25,coinPick:25,interest:[0.06,25],
-  skill:{n:'撒钱',g:'钱',cd:14,d:'击退周围敌人并造成伤害（持有金币越多越痛），全场金币飞向你；被撒钱击杀的敌人多掉 2 枚金币'}},
+ {key:'merchant',name:'豪商',color:'#f0b93a',weapon:'boomerang',tag:'买卖刷钱',lore:'什么都能买，什么都能卖，打仗也要先算账。',star:3,pros:['开局金币 +40','拾取金币 +35%','每波结束拿持有金币 8% 的利息（最多 35）','商店价格 -15%，武器回收价从 40% 提高到 70%','击杀 30% 几率多掉 1 枚金币'],cons:[],coinKill:30,coinPick:35,interest:[0.08,35],
+  skill:{n:'撒钱',g:'钱',cd:14,d:'撒出持有金币的 12%（最多 40）砸向周围敌人，造成伤害并击退（持有金币越多越痛）；0.7 秒后撒出去的钱连同全场掉落的金币全部飞回你身上，撒出去的钱多收回 25%，被撒钱击杀的敌人多掉 2 枚金币'}},
 ];
 
 // 英雄进化：第 6 波结束二选一（A / B），第 12 波结束自动升为终阶（C）
@@ -2235,7 +2235,9 @@ const FINAL_WAVE=16,ELITE_WAVE=8;
 // 商店：武器出现几率；武器里「同名同阶可合成」「同名金阶」「已有武器」的比例，其余随机
 const SHOP={wChance:0.4,upgrade:0.22,goldCopy:0.03,ownedKey:0.18};
 // 宝箱：精英怪掉箱几率和每波上限、金色小精灵刷新间隔和每波上限
-const CHEST={eliteP:0.16,eliteCap:3,fairyMin:12,fairyMax:17,fairyCap:3,goldWave:8,goldPerWave:1};
+const CHEST={eliteP:0.16,eliteCap:3,fairyMin:12,fairyMax:17,fairyCap:3,goldWave:8,goldPerWave:1,
+ // 中后期宝箱稍减：第 6 波起精英掉箱 16% → 13%；第 9 波起宝藏兽每波最多 2 只、刷新 14–19 秒；第 11 波起精英掉箱每波最多 2 个
+ elitePWave:6,elitePLate:0.13,eliteCapWave:11,eliteCapLate:2,fairyWave:9,fairyCapLate:2,fairyMinLate:14,fairyMaxLate:19};
 const BOSS={finalMul:60,tough:900,toughMin:0.35,coop:1.6,adds:6,dmgMul:1.3};
 // 逆风保障：每波结束按「击杀率 / 最低血量 / 生命上限」判断这一波打得吃不吃力（0 顺风、1 逆风、2 苦战），缺什么补什么
 // 常驻：生命保底 25+2×波次；波末地上金币自动收 70%
@@ -2243,13 +2245,13 @@ const HELP={floorBase:25,floorWave:2,lowBase:30,lowWave:3,sweep:0.7,
  killLow:0.55,killVeryLow:0.35,hpLow:0.3,     // 击杀率低于 55% / 35%、最低血量低于 30% 各记 1 分；生命上限偏低记 1 分
  subsidy:[0,0.3,0.6],rerolls:[0,1,2],discount:0.7, // 补贴 = 本波收入的 30% / 60%；免费刷新次数；补给商品 7 折
  relief:{spawn:0.8,hp:0.9}};                   // 苦战：下一波敌人刷得少 20%、血量 -10%
-const BAL={hpLin:0.24,hpQuad:0.056,dmgLin:0.14,dmgLate:0.05,goldScale:0.06,baseInc:12,incPerWave:1.5,spawnBase:1.35,spawnSlope:0.05,spawnMin:0.22,batchDiv:5,priceScale:0.17};
+const BAL={hpLin:0.24,hpQuad:0.056,dmgLin:0.14,dmgLate:0.05,goldScale:0.055,earlyGold:0.08,earlyInc:2,baseInc:12,incPerWave:1.5,spawnBase:1.35,spawnSlope:0.05,spawnMin:0.22,batchDiv:5,priceScale:0.17};
 // difficulty multipliers ramp in: 30% of the extra at wave 1, full by wave 16
 const dRamp=(m,w)=>1+(m-1)*(0.3+0.7*Math.min(1,(w-1)/15));
 // 第 12 波起（二阶以上）敌人伤害每波再 +5%：后期装备成型后仍有压力，不会站着无敌
 const lateDmg=w=>1+Math.max(0,w-11)*BAL.dmgLate*(run&&run.diff>=1?1:0.4);
 const hpScale=w=>1+(w-1)*BAL.hpLin+(w-1)*(w-1)*BAL.hpQuad;
-const goldFor=b=>{const v=b*(1+(run.wave-1)*BAL.goldScale);return Math.floor(v)+(Math.random()<v%1?1:0);};
+const goldFor=b=>{const v=b*(1+(run.wave-1)*BAL.goldScale)*(1+Math.max(0,5-run.wave)*BAL.earlyGold);return Math.floor(v)+(Math.random()<v%1?1:0);};
 
 /* ================= art helpers ================= */
 const INK='#1a1307';
@@ -2701,7 +2703,7 @@ let G=null,PL=[],CUR=null;
 const SHARED_KEYS=['diff','wave','map','bosses','minis','victory','waveDur','coins'];
 const PCOL=['#f2cb7a','#7fd6ff'];
 function bindShared(r){for(const k of SHARED_KEYS)Object.defineProperty(r,k,{get(){return G?G[k]:undefined;},set(v){if(G)G[k]=v;},enumerable:false,configurable:true});return r;}
-function newPlayerRun(heroKey,skin){return bindShared({hero:heroKey,skin:skin?1:0,gold:heroKey==='merchant'?30:0,hp:1,xp:0,level:1,pendingLevels:0,lv:{},items:[],weapons:[],chests:[],shop:[],critStack:0,kills:0,earned:0,nextId:1,revived:false,rerollCost:1,lvRerollCost:2,freeUsed:false,maxSlots:6,coinPick:0,lvChoices:null,chestItem:null});}
+function newPlayerRun(heroKey,skin){return bindShared({hero:heroKey,skin:skin?1:0,gold:heroKey==='merchant'?40:0,hp:1,xp:0,level:1,pendingLevels:0,lv:{},items:[],weapons:[],chests:[],shop:[],critStack:0,kills:0,earned:0,nextId:1,revived:false,rerollCost:1,lvRerollCost:2,freeUsed:false,maxSlots:6,coinPick:0,lvChoices:null,chestItem:null});}
 function makePlayer(id,r){return {id,run:r,P:{x:WORLD.w/2,y:WORLD.h/2,r:15,inv:0,face:0,moving:false,anim:0,mface:Math.PI/4,dface:Math.PI/4},S:{},FX:{},H:HEROES[0],dodgeBuff:0,stormCD:0,regenAcc:0,stealPool:0,stealClock:0,trailT:0,down:false,ready:false,summary:{harvest:0,interest:0}};}
 function use(p){
  if(!p||CUR===p)return;
@@ -3112,7 +3114,7 @@ function killEnemy(e,o){
   else for(let k=0;k<(e.ev?3:2);k++)spawns.push({type:'mite',x:e.x+rand(-10,10),y:e.y+rand(-10,10),t:0.05,noAff:true});}
  if(e.type==='crawler'&&e.ev)addGz('shard',e.x,e.y,30,4,0);
  if(!e.boss&&!['mite','fairy','gturret','totem','egg'].includes(e.type)){corpses.push({type:e.type,x:e.x,y:e.y,ev:e.ev||0,t:tGame});if(corpses.length>30)corpses.shift();}
- if(e.aff){if((run.waveChests||0)<CHEST.eliteCap&&Math.random()<CHEST.eliteP){run.waveChests=(run.waveChests||0)+1;pickups.push({type:'chest',x:e.x,y:e.y,tier:chestTier(0),ph:0});}
+ if(e.aff){if((run.waveChests||0)<(run.wave>=CHEST.eliteCapWave?CHEST.eliteCapLate:CHEST.eliteCap)&&Math.random()<(run.wave>=CHEST.elitePWave?CHEST.elitePLate:CHEST.eliteP)){run.waveChests=(run.waveChests||0)+1;pickups.push({type:'chest',x:e.x,y:e.y,tier:chestTier(0),ph:0});}
   if(e.aff==='split')for(let k=0;k<2;k++)spawns.push({type:e.type,x:e.x+rand(-14,14),y:e.y+rand(-14,14),t:0.05,noAff:true,scale:0.45});
   if(e.aff==='volatile'){const x=e.x,y=e.y,dm=e.dmg*1.6;fxs.push({type:'warnc',x,y,r:80,life:0.6,max:0.6});delayed.push({t:0.6,fn:()=>{boomFx(x,y,80);hurtNear(x,y,80,dm);}});}}
  if(e.segs)for(const sg of e.segs){sg.dead=true;burst(sg.x,sg.y,e.col,5,2);}
@@ -3285,9 +3287,13 @@ function castSkill(path){
    if(FX.evoC==='wind')for(const [ax,ay] of [[x0,y0],[x1,y1]]){fxs.push({type:'after',pid:CUR?CUR.id:0,x:ax,y:ay,face:Math.atan2(dy,dx),dface:Math.atan2(dy,dx),life:3,max:3});
     for(let k=1;k<=7;k++)delayed.push({t:k*0.4,pl:CUR,fn:()=>{ringFx(ax,ay,75,'#ddd8bf',0.2);for(const e of enemies)if(!e.dead&&!e.seg&&Math.hypot(e.x-ax,e.y-ay)<75+e.r)hitEnemy(e,skillDmg(3),{melee:1,noSteal:1,col:'#ddd8bf'});}});}
    skSfx('dodge');break;}
-  case 'merchant':{const R=180*rangeMul(),bonus=(1+Math.min(run.gold,200)/200)*(FX.evoC==='merchant'?2:1);ringFx(P.x,P.y,R,C.t4,0.45);fxs.push({type:'coins',x:P.x,y:P.y,r:R,seed:Math.random()*99,life:0.6,max:0.6});
+  case 'merchant':{const R=180*rangeMul(),bonus=(1+Math.min(run.gold,200)/200)*(FX.evoC==='merchant'?2:1),cost=Math.min(40,Math.floor(run.gold*0.12));run.gold-=cost;ringFx(P.x,P.y,R,C.t4,0.45);fxs.push({type:'coins',x:P.x,y:P.y,r:R,seed:Math.random()*99,life:0.6,max:0.6});
    for(const e of near(R)){hitEnemy(e,skillDmg(9)*bonus,{noSteal:1,col:C.t4,coin:FX.evoC==='merchant'?4:2});if(!e.dead)knock(e,100);}
-   for(const c of pickups)if(c.type==='coin')c.mag=true;skSfx('revive');break;}
+   // 撒出去的钱真的落在一圈地上，0.7 秒后连同全场掉落的金币一起飞回豪商（双人时也只回豪商），撒出的钱多回 25%
+   const back=Math.round(cost*1.25),n=back>0?Math.min(14,Math.max(4,Math.ceil(back/3))):0,me=CUR;
+   for(let k=0;k<n;k++){const a=k*TAU/n+rand(-0.2,0.2),d=R*rand(0.55,1),v=Math.floor(back/n)+(k<back%n?1:0);if(v>0)pickups.push({type:'coin',x:clamp(P.x+Math.cos(a)*d,20,WORLD.w-20),y:clamp(P.y+Math.sin(a)*d,20,WORLD.h-20),v,ph:Math.random()*6,own:me.id});}
+   const recall=()=>{for(const c of pickups)if(c.type==='coin'){c.mag=true;c.own=me.id;}};delayed.push({t:0.7,pl:me,fn:recall});delayed.push({t:1.6,pl:me,fn:recall});
+   if(cost>0)addText(P.x,P.y-74,'撒出 '+cost+' · 回收 '+back,C['brass-hi'],14);skSfx('revive');break;}
  }
  if(H.key!=='artificer')coopSkill(path||(H.key==='wind'?[0,0,P.x,P.y]:null));
  return true;
@@ -3946,7 +3952,7 @@ function spawnLogic(dt){
   const n=1+Math.floor(w/BAL.batchDiv)+(Math.random()<0.3?1:0);
   for(let i=0;i<n;i++)if(enemies.length+spawns.length<170)queueSpawn(pickType(w));
  }
- fairyT-=dt;if(fairyT<=0){fairyT=rand(CHEST.fairyMin,CHEST.fairyMax)/(1+S.luck/500);if((run.waveFairies||0)<CHEST.fairyCap){run.waveFairies=(run.waveFairies||0)+1;queueSpawn('fairy');}}
+ fairyT-=dt;if(fairyT<=0){const late=run.wave>=CHEST.fairyWave;fairyT=rand(late?CHEST.fairyMinLate:CHEST.fairyMin,late?CHEST.fairyMaxLate:CHEST.fairyMax)/(1+S.luck/500);if((run.waveFairies||0)<(late?CHEST.fairyCapLate:CHEST.fairyCap)){run.waveFairies=(run.waveFairies||0)+1;queueSpawn('fairy');}}
 }
 function ebullet(x,y,a,spd,dmg,r=6,home=0){ebul.push({x,y,vx:Math.cos(a)*spd,vy:Math.sin(a)*spd,r,dmg,life:home?4.5:5,home});}
 function wyrmAI(e,dt,dx,dy,d,sf){
@@ -4253,6 +4259,7 @@ function update(dt){
  for(const p of pickups){
   let tp=null,bd=Infinity;
   for(const q of alive){if(p.type==='chest'&&((p.tk||0)>>q.id&1))continue;const d=Math.hypot(q.P.x-p.x,q.P.y-p.y);if(d<60*Math.max(0,0.6-0.06*((q.run.wave||1)-1))+60*Math.max(0.2,1+q.S.pickup/100))p.mag=true;/* 前几波自带更大的吸取范围，第 11 波起回到基础值 */if(d<bd){bd=d;tp=q;}}
+  if(p.own!=null){const q=alive.find(q=>q.id===p.own);if(q){tp=q;bd=Math.hypot(q.P.x-p.x,q.P.y-p.y);}else p.own=null;}
   if(!tp)continue;
   const dx=tp.P.x-p.x,dy=tp.P.y-p.y,d=bd||1;
   if(p.mag){p.x+=dx/d*540*dt;p.y+=dy/d*540*dt;}
@@ -4338,7 +4345,7 @@ function endWave(){
   const L=sc===0?0:sc<3?1:2;p.helpL=L;
   run.helpNeed=L?(lowHp()||((run.minHpR??1)<HELP.hpLow&&kr>=HELP.killLow)?'hp':'dmg'):null;
   run.helpRerolls=HELP.rerolls[L];
-  const harvest=Math.round(Math.max(0,Math.round(S.harvest))+BAL.baseInc+run.wave*BAL.incPerWave);
+  const harvest=Math.round(Math.max(0,Math.round(S.harvest))+BAL.baseInc+run.wave*BAL.incPerWave+Math.max(0,6-run.wave)*BAL.earlyInc);
   const interest=(FX.interest?Math.min(30*FX.interest,Math.floor(run.gold*0.1*FX.interest)):0)+(FX.evo==='merchantA'?Math.min(60,Math.floor(run.gold*0.1)):0)+(H.interest?Math.min(H.interest[1],Math.floor(run.gold*H.interest[0])):0);
   const sub=Math.round(harvest*HELP.subsidy[p.helpL]);run.gold+=harvest+interest+sub;run.earned+=harvest+interest+sub;p.summary={harvest,interest,swept:sw,help:p.helpL,sub};p.ready=false;
   run.freeUsed=false;run.rerollCost=1+Math.floor(run.wave*0.6);run.lvRerollCost=2+Math.floor(run.wave/2);run.lvChoices=null;run.chestItem=null;
