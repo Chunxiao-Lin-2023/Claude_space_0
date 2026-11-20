@@ -5,6 +5,7 @@ const KD = k => !!INP.keys[k];
 const inGame = () => STATE.mode === 'play' && W && !W.over;
 const panelOpen = () => !$('bigmap').classList.contains('hidden') || !$('craft').classList.contains('hidden') || !$('pause').classList.contains('hidden') || !$('help').classList.contains('hidden');
 function act(a, v) {
+  if (a === 'wpn' && W && W.p[ME] && W.p[ME].owned[v] && v !== W.p[ME].wpn && WPN[v].tag && !W.demo) { const n = (UI.wtip = UI.wtip || {})[v] = (UI.wtip[v] || 0) + 1; if (n <= 3) toast(WPN[v].name + ' · ' + WPN[v].tag); } // what each gun is for (first few times)
   const me = W && W.p[ME]; if (!me) return;
   if (a === 'wpn' && (me.down || !me.owned[v])) return;
   if (NETROLE === 'guest') {

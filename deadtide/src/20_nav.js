@@ -94,7 +94,7 @@ function navNbrs(x, y, L, climb, cb) {
     else if (L > 0) { const sb = blkAt(nx, ny, L - 1); if (B[sb].stairs) { const d = DIRS[W.bdir[ci(nx, ny, L - 1)]]; if (nx + d[0] === x && ny + d[1] === y && enterable(nx, ny, L, 'z')) cb(nx, ny, L - 1, 0); } }
     if (climb && L + 1 < ML) {
       const nb = W.blk[ci(nx, ny, L)];
-      if (nb && B[nb].top && B[nb].Z && enterable(nx, ny, L + 1, 'z') && enterable(x, y, L + 1, 'z')) cb(nx, ny, L + 1, 1.5);
+      if (nb && B[nb].top && B[nb].Z && enterable(nx, ny, L + 1, 'z') && enterable(x, y, L + 1, 'z') && !W.slab[ci(x, y, L + 1)]) cb(nx, ny, L + 1, 1.5); /* no climbing up through a ceiling: keeps it the mirror of the drop-down below */
       if (L > 0 && B[b].top === 0 && enterable(nx, ny, L, 'z') && !support(nx, ny, L) && navNode(nx, ny, L - 1)) cb(nx, ny, L - 1, 0.5);
     }
   }

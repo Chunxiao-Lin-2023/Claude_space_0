@@ -258,8 +258,8 @@ function zBlast(x, y, z) {
 // what turns up between waves / in daylight
 function strayKind(n) {
   const r = rand();
-  if (n >= 3 && r < 0.12) return 'dog'; if (r < 0.22) return 'crawler'; if (n >= 4 && r < 0.3) return 'runner';
-  if (n >= 5 && r < 0.36) return 'bloater'; if (n >= 6 && r < 0.4) return 'armored'; return 'walker';
+  if (n >= 2 && r < 0.08) return 'dog'; if (r < 0.18) return 'crawler'; if (r < 0.26) return 'runner';
+  if (n >= 2 && r < 0.31) return 'bloater'; if (n >= 3 && r < 0.34) return 'spitter'; if (n >= 4 && r < 0.37) return 'armored'; return 'walker';
 }
 /* ---------- daily restock of searchable containers ---------- */
 const SPOT_IDS = { crate: 26, rubble: 29, trash: 32, backpack: 33, cabinet: 34, toolbox: 35, milcrate: 36, barrel: 37, ammobox: 54 };
@@ -569,8 +569,9 @@ function startNight() {
   const n = W.night, blood = isBlood(n), D = W.D;
   const count = Math.round(BAL.nightSpawn(n) * D.n * (blood ? BAL.bloodMul : 1));
   // (round 18: every kind arrives 1-2 nights earlier; night 1 already has runners)
-  const wts = { walker: 10, runner: n >= 2 ? 2 + n * 0.35 : 1.2, climber: n >= 3 ? 0.8 + n * 0.2 : 0, spitter: n >= 4 ? 1.3 + n * 0.1 : 0, brute: n >= 5 ? (0.5 + n * 0.07) * (blood ? 2 : 1) : n >= 3 ? 0.35 : 0,
-    crawler: 1.4, dog: n >= 2 ? 0.6 + n * 0.07 : 0, bloater: n >= 2 ? 0.8 + n * 0.06 : 0, screamer: n >= 4 ? 0.45 + n * 0.03 : 0, armored: n >= 5 ? 0.8 + n * 0.08 : 0 };
+  // (round 21) every kind can turn up from night 1-2, rarely at first and more each night
+  const wts = { walker: 10, crawler: 1.4, runner: 1 + n * 0.4, dog: 0.35 + n * 0.1, bloater: 0.4 + n * 0.08, climber: 0.35 + n * 0.18,
+    spitter: n >= 2 ? 0.3 + n * 0.14 : 0, screamer: n >= 2 ? 0.2 + n * 0.05 : 0, brute: n >= 2 ? (0.15 + n * 0.07) * (blood ? 2 : 1) : 0, armored: n >= 3 ? 0.3 + n * 0.09 : 0 };
   const tot = Object.values(wts).reduce((a, b) => a + b, 0), dur = BAL.spawnDur(n), q = [];
   const sides = [0, 1, 2, 3].filter(s => W.edges[s].length);
   for (let k = sides.length - 1; k > 0; k--) { const j = Math.floor(rand() * (k + 1)); [sides[k], sides[j]] = [sides[j], sides[k]]; }

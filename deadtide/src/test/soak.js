@@ -43,7 +43,7 @@ const { chromium } = require('playwright'); const NIGHTS = +process.argv[2] || 2
         for (const z of W.zs) {
           if (z.hp <= 0) continue; const q = S.pos.get(z.id);
           if (!q) { S.pos.set(z.id, { x: z.x, y: z.y, t: W.t }); continue; }
-          if (Math.hypot(z.x - q.x, z.y - q.y) > 0.3 || z.st === 'attack' || z.stun > 0 || z.climbing || z.hidden || z.sleep || (ZT[z.k].boss) || W.p.some(q => Math.hypot(q.x - z.x, q.y - z.y) < 2.2)) { S.pos.set(z.id, { x: z.x, y: z.y, t: W.t }); continue; }
+          if (Math.hypot(z.x - q.x, z.y - q.y) > 0.3 || z.st === 'attack' || z.stun > 0 || z.climbing || z.hidden || z.sleep || (ZT[z.k].scream && W.p.some(q => Math.hypot(q.x - z.x, q.y - z.y) < 6.6)) || (ZT[z.k].boss) || W.p.some(q => Math.hypot(q.x - z.x, q.y - z.y) < 2.2)) { S.pos.set(z.id, { x: z.x, y: z.y, t: W.t }); continue; }
           if (W.t - q.t > 20 && !q.rep) { q.rep = 1; S.stuck++; const key = z.k + '@' + Math.floor(z.x) + ',' + Math.floor(z.y) + ',' + z.L + ':' + (B[W.blk[ci(Math.floor(z.x), Math.floor(z.y), z.L)]].key || '-') + ':f' + Math.round(W.ff.pw[ci(Math.floor(z.x), Math.floor(z.y), z.L)]); S.st.push(key); }
         }
       }, 800);

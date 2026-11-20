@@ -4850,33 +4850,33 @@ const affordable = (res, cost) => Object.keys(cost).every(k => (res[k] || 0) >= 
 // each gun has its own trick: pistol headshots, shotgun knock-back + stagger (falls off with range), rifle bloom,
 // sniper pierce + laser, crossbow pins, flamer sets fire, launcher explodes. loot = ammo found per supply pickup.
 const WPN = [
-  { k: 'pistol', name: '手枪', dmg: 34, rate: 0.3, mag: 12, reload: 1.0, spread: 0.03, range: 15, pellets: 1, inf: 1, kick: 0.6, shake: 0.12, hs: 2.2, loot: 0 },
-  { k: 'shotgun', name: '霰弹枪', dmg: 17, rate: 0.72, mag: 6, reload: 1.7, spread: 0.17, range: 8, pellets: 8, pierce: 2, kick: 2.6, shake: 0.35, start: 24, stun: 0.3, falloff: 1, loot: 8 },
-  { k: 'rifle', name: '步枪', dmg: 30, rate: 0.12, mag: 30, reload: 1.6, spread: 0.035, range: 20, pellets: 1, kick: 0.4, shake: 0.12, bloom: 0.22, loot: 30 },
-  { k: 'sniper', name: '狙击枪', dmg: 195, rate: 1.05, mag: 5, reload: 2.1, spread: 0.004, range: 45, pellets: 1, pierce: 5, kick: 4, shake: 0.4, stun: 0.5, laser: 1, loot: 4 },
-  { k: 'crossbow', name: '弩', dmg: 110, rate: 0.75, mag: 6, reload: 1.5, spread: 0.008, range: 26, pellets: 1, pierce: 3, kick: 0.6, shake: 0.06, pin: 1.1, loot: 6 },
-  { k: 'flamer', name: '喷火器', dmg: 12, rate: 0.07, mag: 80, reload: 2.2, spread: 0.5, range: 5.6, pellets: 1, flame: 1, burn: 3.5, kick: 0, shake: 0.02, loot: 40 },
-  { k: 'launcher', name: '榴弹发射器', blastR: 3.0, dmg: 220, rate: 0.9, mag: 4, reload: 2.6, spread: 0.015, range: 22, pellets: 1, gl: 1, kick: 0, shake: 0.3, loot: 2 },
+  { k: 'pistol', name: '手枪', dmg: 26, rate: 0.3, mag: 12, reload: 1.0, spread: 0.03, range: 15, pellets: 1, inf: 1, kick: 0.6, shake: 0.12, hs: 2.0, loot: 0, tag: '子弹无限的备用枪：准，爆头 ×2，伤害最低' },
+  { k: 'shotgun', name: '霰弹枪', dmg: 17, rate: 0.72, mag: 6, reload: 1.7, spread: 0.17, range: 8, pellets: 8, pierce: 2, kick: 2.6, shake: 0.35, start: 24, stun: 0.3, falloff: 1, loot: 8, tag: '近身清群：8 颗弹丸各穿 2 只、打得丧尸一顿，远了就散' },
+  { k: 'rifle', name: '步枪', dmg: 34, rate: 0.12, mag: 30, reload: 1.6, spread: 0.035, range: 20, pellets: 1, kick: 0.4, shake: 0.12, bloom: 0.22, loot: 30, tag: '持续火力：单发比手枪狠、射速快 2.5 倍，连射越打越散' },
+  { k: 'sniper', name: '狙击枪', dmg: 220, rate: 1.05, mag: 5, reload: 2.1, spread: 0.004, range: 45, pellets: 1, pierce: 5, kick: 4, shake: 0.4, stun: 0.5, laser: 1, hs: 2.5, loot: 4, tag: '打精英：一枪 220（爆头 ×2.5）穿 5 只，最远，但慢' },
+  { k: 'crossbow', name: '弩', dmg: 110, rate: 0.75, mag: 6, reload: 1.5, spread: 0.008, range: 26, pellets: 1, pierce: 3, kick: 0.6, shake: 0.06, pin: 1.1, hs: 2.0, loot: 6, tag: '几乎没声音：一箭 110 穿 3 只、把丧尸钉住，偷偷清楼用' },
+  { k: 'flamer', name: '喷火器', dmg: 12, rate: 0.07, mag: 80, reload: 2.2, spread: 0.5, range: 5.6, pellets: 1, flame: 1, burn: 3.5, kick: 0, shake: 0.02, loot: 40, tag: '堵门神器：近距离扇形喷火，着火会传给旁边的' },
+  { k: 'launcher', name: '榴弹发射器', blastR: 3.0, dmg: 220, rate: 0.9, mag: 4, reload: 2.6, spread: 0.015, range: 22, pellets: 1, gl: 1, kick: 0, shake: 0.3, loot: 2, tag: '炸一片：落地就炸，半径 3，扎堆时用' },
 ];
 const NW = WPN.length;
 
 /* ---------- zombies (speeds in tiles/s) ---------- */
 const ZT = {
   walker: { name: '游荡者', hp: 70, spd: 1.0, r: 0.31, h: 1.2, dmg: 12, bdmg: 12, cd: 1.0, sc: 1.2 },
-  runner: { name: '疾跑者', hp: 45, spd: 3.1, r: 0.29, h: 1.14, dmg: 8, bdmg: 7, cd: 0.6, sc: 1.14 },
-  climber: { name: '攀爬者', hp: 50, spd: 2.3, r: 0.29, h: 0.84, dmg: 7, bdmg: 8, cd: 0.7, sc: 1.08, climb: 1 },
-  spitter: { name: '喷吐者', hp: 95, spd: 0.9, r: 0.36, h: 1.26, dmg: 10, bdmg: 8, cd: 1.0, sc: 1.26, range: 9, spitCD: 3 },
-  brute: { name: '重锤', hp: 650, spd: 0.8, r: 0.44, h: 1.74, dmg: 28, bdmg: 75, cd: 1.6, sc: 1.74, kb: 6 },
+  runner: { name: '疾跑者', hp: 55, spd: 3.1, r: 0.29, h: 1.14, dmg: 8, bdmg: 7, cd: 0.6, sc: 1.14 },
+  climber: { name: '攀爬者', hp: 70, spd: 2.3, r: 0.29, h: 0.84, dmg: 7, bdmg: 8, cd: 0.7, sc: 1.08, climb: 1 },
+  spitter: { name: '喷吐者', hp: 170, spd: 0.9, r: 0.36, h: 1.26, dmg: 10, bdmg: 8, cd: 1.0, sc: 1.26, range: 9, spitCD: 3 },
+  brute: { name: '重锤', hp: 800, spd: 0.8, r: 0.44, h: 1.74, dmg: 28, bdmg: 75, cd: 1.6, sc: 1.74, kb: 6 },
   boss: { name: '巨尸', hp: 2600, spd: 0.65, r: 0.69, h: 2.64, dmg: 45, bdmg: 220, cd: 2.0, sc: 2.64, kb: 9 },
   dog: { name: '尸犬', hp: 40, spd: 3.7, r: 0.27, h: 0.66, dmg: 8, bdmg: 3, cd: 0.5, sc: 1.2 },
   crawler: { name: '爬行尸', hp: 60, spd: 0.75, r: 0.3, h: 0.46, dmg: 11, bdmg: 9, cd: 0.9, sc: 1.2 },
-  bloater: { name: '爆尸', hp: 120, spd: 0.75, r: 0.4, h: 1.32, dmg: 10, bdmg: 10, cd: 1.1, sc: 1.32, blast: 1 },
-  screamer: { name: '尖叫者', hp: 80, spd: 1.5, r: 0.3, h: 1.26, dmg: 9, bdmg: 6, cd: 0.9, sc: 1.26, scream: 1 },
+  bloater: { name: '爆尸', hp: 200, spd: 0.75, r: 0.4, h: 1.32, dmg: 10, bdmg: 10, cd: 1.1, sc: 1.32, blast: 1 },
+  screamer: { name: '尖叫者', hp: 150, spd: 1.5, r: 0.3, h: 1.26, dmg: 9, bdmg: 6, cd: 0.9, sc: 1.26, scream: 1 },
   leaper: { name: '飞扑尸王', hp: 2300, spd: 1.15, r: 0.5, h: 2.1, dmg: 30, bdmg: 60, cd: 1.2, sc: 2.0, kb: 7, boss: 1, look: 'boss', skin: '#7a4a3a' },
   digger: { name: '掘地尸王', hp: 2700, spd: 0.95, r: 0.55, h: 2.0, dmg: 34, bdmg: 90, cd: 1.4, sc: 2.0, kb: 8, boss: 1, look: 'brute', skin: '#6a6048' },
   summoner: { name: '召唤尸王', hp: 2100, spd: 0.72, r: 0.5, h: 2.3, dmg: 22, bdmg: 40, cd: 1.4, sc: 2.2, boss: 1, look: 'boss', skin: '#5a5470' },
   venom: { name: '毒液尸王', hp: 2300, spd: 0.85, r: 0.52, h: 2.1, dmg: 26, bdmg: 50, cd: 1.3, sc: 2.1, range: 12, boss: 1, look: 'bloater', skin: '#7a9a3a' },
-  armored: { name: '防暴尸', hp: 170, spd: 0.9, r: 0.36, h: 1.26, dmg: 15, bdmg: 16, cd: 1.1, sc: 1.3, armor: 0.3 },
+  armored: { name: '防暴尸', hp: 260, spd: 0.9, r: 0.36, h: 1.26, dmg: 15, bdmg: 16, cd: 1.1, sc: 1.3, armor: 0.3 },
 };
 // aim assist (SET.assist): fire-button lock range (x weapon range), lock-on time before it fires, spread while auto-aimed, mouse/finger magnet
 const PORT = 1.25; // firing port: your own shots pass a wall / door you built if it is this close to you
@@ -4944,12 +4944,12 @@ const GATHER = {
 
 /* ---------- crafting (workbench in the starter house) ---------- */
 const CRAFT = [
-  { id: 'rifle', name: '步枪', desc: '全自动，30 发弹匣', cost: { parts: 12, steel: 6 }, wpn: 2 },
-  { id: 'sniper', name: '狙击枪', desc: '一枪穿透 5 只', cost: { parts: 18, steel: 8 }, wpn: 3 },
+  { id: 'rifle', name: '步枪', desc: '持续火力：单发 34、全自动 30 发，连射越打越散', cost: { parts: 12, steel: 6 }, wpn: 2 },
+  { id: 'sniper', name: '狙击枪', desc: '打精英：一枪 220（爆头 ×2.5）穿 5 只，最远，但慢', cost: { parts: 18, steel: 8 }, wpn: 3 },
   { id: 'shells', name: '霰弹 ×12', desc: '', cost: { parts: 2 }, ammo: [1, 12] },
   { id: 'rounds', name: '步枪弹 ×60', desc: '', cost: { parts: 3 }, ammo: [2, 60] },
   { id: 'slugs', name: '狙击弹 ×10', desc: '', cost: { parts: 3 }, ammo: [3, 10] },
-  { id: 'crossbow', name: '弩', desc: '穿透 3 只，把丧尸钉在原地 1 秒', cost: { parts: 12, wood: 12 }, wpn: 4 },
+  { id: 'crossbow', name: '弩', desc: '几乎没声音：一箭 110 穿 3 只，钉住 1 秒，偷偷清楼用', cost: { parts: 12, wood: 12 }, wpn: 4 },
   { id: 'flamer', name: '喷火器', desc: '近距离喷火，点着的丧尸会烧，火还会传给旁边的', cost: { parts: 20, steel: 10 }, wpn: 5 },
   { id: 'launcher', name: '榴弹发射器', desc: '打出去落地就炸，炸一片', cost: { parts: 26, steel: 14 }, wpn: 6 },
   { id: 'bolts', name: '弩箭 ×12', desc: '', cost: { wood: 4, parts: 1 }, ammo: [4, 12] },
@@ -5689,7 +5689,7 @@ function navNbrs(x, y, L, climb, cb) {
     else if (L > 0) { const sb = blkAt(nx, ny, L - 1); if (B[sb].stairs) { const d = DIRS[W.bdir[ci(nx, ny, L - 1)]]; if (nx + d[0] === x && ny + d[1] === y && enterable(nx, ny, L, 'z')) cb(nx, ny, L - 1, 0); } }
     if (climb && L + 1 < ML) {
       const nb = W.blk[ci(nx, ny, L)];
-      if (nb && B[nb].top && B[nb].Z && enterable(nx, ny, L + 1, 'z') && enterable(x, y, L + 1, 'z')) cb(nx, ny, L + 1, 1.5);
+      if (nb && B[nb].top && B[nb].Z && enterable(nx, ny, L + 1, 'z') && enterable(x, y, L + 1, 'z') && !W.slab[ci(x, y, L + 1)]) cb(nx, ny, L + 1, 1.5); /* no climbing up through a ceiling: keeps it the mirror of the drop-down below */
       if (L > 0 && B[b].top === 0 && enterable(nx, ny, L, 'z') && !support(nx, ny, L) && navNode(nx, ny, L - 1)) cb(nx, ny, L - 1, 0.5);
     }
   }
@@ -6063,8 +6063,8 @@ function zBlast(x, y, z) {
 // what turns up between waves / in daylight
 function strayKind(n) {
   const r = rand();
-  if (n >= 3 && r < 0.12) return 'dog'; if (r < 0.22) return 'crawler'; if (n >= 4 && r < 0.3) return 'runner';
-  if (n >= 5 && r < 0.36) return 'bloater'; if (n >= 6 && r < 0.4) return 'armored'; return 'walker';
+  if (n >= 2 && r < 0.08) return 'dog'; if (r < 0.18) return 'crawler'; if (r < 0.26) return 'runner';
+  if (n >= 2 && r < 0.31) return 'bloater'; if (n >= 3 && r < 0.34) return 'spitter'; if (n >= 4 && r < 0.37) return 'armored'; return 'walker';
 }
 /* ---------- daily restock of searchable containers ---------- */
 const SPOT_IDS = { crate: 26, rubble: 29, trash: 32, backpack: 33, cabinet: 34, toolbox: 35, milcrate: 36, barrel: 37, ammobox: 54 };
@@ -6374,8 +6374,9 @@ function startNight() {
   const n = W.night, blood = isBlood(n), D = W.D;
   const count = Math.round(BAL.nightSpawn(n) * D.n * (blood ? BAL.bloodMul : 1));
   // (round 18: every kind arrives 1-2 nights earlier; night 1 already has runners)
-  const wts = { walker: 10, runner: n >= 2 ? 2 + n * 0.35 : 1.2, climber: n >= 3 ? 0.8 + n * 0.2 : 0, spitter: n >= 4 ? 1.3 + n * 0.1 : 0, brute: n >= 5 ? (0.5 + n * 0.07) * (blood ? 2 : 1) : n >= 3 ? 0.35 : 0,
-    crawler: 1.4, dog: n >= 2 ? 0.6 + n * 0.07 : 0, bloater: n >= 2 ? 0.8 + n * 0.06 : 0, screamer: n >= 4 ? 0.45 + n * 0.03 : 0, armored: n >= 5 ? 0.8 + n * 0.08 : 0 };
+  // (round 21) every kind can turn up from night 1-2, rarely at first and more each night
+  const wts = { walker: 10, crawler: 1.4, runner: 1 + n * 0.4, dog: 0.35 + n * 0.1, bloater: 0.4 + n * 0.08, climber: 0.35 + n * 0.18,
+    spitter: n >= 2 ? 0.3 + n * 0.14 : 0, screamer: n >= 2 ? 0.2 + n * 0.05 : 0, brute: n >= 2 ? (0.15 + n * 0.07) * (blood ? 2 : 1) : 0, armored: n >= 3 ? 0.3 + n * 0.09 : 0 };
   const tot = Object.values(wts).reduce((a, b) => a + b, 0), dur = BAL.spawnDur(n), q = [];
   const sides = [0, 1, 2, 3].filter(s => W.edges[s].length);
   for (let k = sides.length - 1; k > 0; k--) { const j = Math.floor(rand() * (k + 1)); [sides[k], sides[j]] = [sides[j], sides[k]]; }
@@ -6611,7 +6612,7 @@ function stepZombies(dt) {
     if (field[i] < Infinity && !hold) {
       let bestV = Infinity, bx = -1, by = -1, bl = -1, bex = 0;
       navNbrs(cx, cy, z.L, climbT, (nx, ny, nl, ex) => { const u = ci(nx, ny, nl), v = field[u] + enterCost(u) + ex + hash2(nx * 7 + z.seed, ny) * 0.01; if (v < bestV) { bestV = v; bx = nx; by = ny; bl = nl; bex = ex; } });
-      if (bx >= 0 && bestV <= field[i] + 0.02) {
+      if (bx >= 0 && (bestV <= field[i] + 0.02 || field[ci(bx, by, bl)] < field[i] - 0.01)) { /* the field is built from the target outwards, so a climb-up step (1.5) can look dearer than the climb-down (0.5) it was costed with: still go if it's downhill */
         const u = ci(bx, by, bl), ub = W.blk[u]; planU = u;
         if (bl === z.L + 1 && climbT && bex > 0) {
           if (Math.abs(z.x - (cx + 0.5)) < 0.3 && Math.abs(z.y - (cy + 0.5)) < 0.3 || d2(z.x, z.y, bx + 0.5, by + 0.5) < 0.95) { z.climbing = { t: 0, x0: z.x, y0: z.y, z0: z.z, x1: bx + 0.5, y1: by + 0.5, L: bl }; z.face = Math.atan2(by - cy, bx - cx); continue; }
@@ -6996,7 +6997,7 @@ const isSiege = () => !!(W && W.mode === 'siege');
 const hasBP = k => !isSiege() || BP_BASE.includes(k) || (W.obj && W.obj.bp && W.obj.bp.includes(k));
 // a zombie put straight onto a cell (during world setup the edge spawn lists don't exist yet)
 function putZombie(k, x, y, L) { const keep = W.edges; W.edges = { 0: [[x, y, L]] }; const z = spawnZombie(k, 0); W.edges = keep; z.x = x + 0.3 + rand() * 0.4; z.y = y + 0.3 + rand() * 0.4; z.L = L; z.z = surfZ(z.x, z.y, L); return z; }
-const sleeperKind = () => { const r = rand(); return r < 0.14 ? 'crawler' : r < 0.2 ? 'runner' : r < 0.23 ? 'bloater' : r < 0.25 ? 'armored' : 'walker'; };
+const sleeperKind = () => { const r = rand(); return r < 0.12 ? 'crawler' : r < 0.2 ? 'runner' : r < 0.26 ? 'bloater' : r < 0.31 ? 'spitter' : r < 0.35 ? 'armored' : r < 0.38 ? 'screamer' : r < 0.4 ? 'brute' : r < 0.44 ? 'climber' : 'walker'; };
 Object.assign(MODES.siege, {
   init() {
     const O = W.obj = { bp: [], occ: [], phase: 'siege', tam: {} };
@@ -8801,6 +8802,7 @@ const KD = k => !!INP.keys[k];
 const inGame = () => STATE.mode === 'play' && W && !W.over;
 const panelOpen = () => !$('bigmap').classList.contains('hidden') || !$('craft').classList.contains('hidden') || !$('pause').classList.contains('hidden') || !$('help').classList.contains('hidden');
 function act(a, v) {
+  if (a === 'wpn' && W && W.p[ME] && W.p[ME].owned[v] && v !== W.p[ME].wpn && WPN[v].tag && !W.demo) { const n = (UI.wtip = UI.wtip || {})[v] = (UI.wtip[v] || 0) + 1; if (n <= 3) toast(WPN[v].name + ' · ' + WPN[v].tag); } // what each gun is for (first few times)
   const me = W && W.p[ME]; if (!me) return;
   if (a === 'wpn' && (me.down || !me.owned[v])) return;
   if (NETROLE === 'guest') {

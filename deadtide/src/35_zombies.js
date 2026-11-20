@@ -86,7 +86,7 @@ function stepZombies(dt) {
     if (field[i] < Infinity && !hold) {
       let bestV = Infinity, bx = -1, by = -1, bl = -1, bex = 0;
       navNbrs(cx, cy, z.L, climbT, (nx, ny, nl, ex) => { const u = ci(nx, ny, nl), v = field[u] + enterCost(u) + ex + hash2(nx * 7 + z.seed, ny) * 0.01; if (v < bestV) { bestV = v; bx = nx; by = ny; bl = nl; bex = ex; } });
-      if (bx >= 0 && bestV <= field[i] + 0.02) {
+      if (bx >= 0 && (bestV <= field[i] + 0.02 || field[ci(bx, by, bl)] < field[i] - 0.01)) { /* the field is built from the target outwards, so a climb-up step (1.5) can look dearer than the climb-down (0.5) it was costed with: still go if it's downhill */
         const u = ci(bx, by, bl), ub = W.blk[u]; planU = u;
         if (bl === z.L + 1 && climbT && bex > 0) {
           if (Math.abs(z.x - (cx + 0.5)) < 0.3 && Math.abs(z.y - (cy + 0.5)) < 0.3 || d2(z.x, z.y, bx + 0.5, by + 0.5) < 0.95) { z.climbing = { t: 0, x0: z.x, y0: z.y, z0: z.z, x1: bx + 0.5, y1: by + 0.5, L: bl }; z.face = Math.atan2(by - cy, bx - cx); continue; }

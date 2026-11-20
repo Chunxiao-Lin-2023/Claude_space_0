@@ -108,33 +108,33 @@ const affordable = (res, cost) => Object.keys(cost).every(k => (res[k] || 0) >= 
 // each gun has its own trick: pistol headshots, shotgun knock-back + stagger (falls off with range), rifle bloom,
 // sniper pierce + laser, crossbow pins, flamer sets fire, launcher explodes. loot = ammo found per supply pickup.
 const WPN = [
-  { k: 'pistol', name: '手枪', dmg: 34, rate: 0.3, mag: 12, reload: 1.0, spread: 0.03, range: 15, pellets: 1, inf: 1, kick: 0.6, shake: 0.12, hs: 2.2, loot: 0 },
-  { k: 'shotgun', name: '霰弹枪', dmg: 17, rate: 0.72, mag: 6, reload: 1.7, spread: 0.17, range: 8, pellets: 8, pierce: 2, kick: 2.6, shake: 0.35, start: 24, stun: 0.3, falloff: 1, loot: 8 },
-  { k: 'rifle', name: '步枪', dmg: 30, rate: 0.12, mag: 30, reload: 1.6, spread: 0.035, range: 20, pellets: 1, kick: 0.4, shake: 0.12, bloom: 0.22, loot: 30 },
-  { k: 'sniper', name: '狙击枪', dmg: 195, rate: 1.05, mag: 5, reload: 2.1, spread: 0.004, range: 45, pellets: 1, pierce: 5, kick: 4, shake: 0.4, stun: 0.5, laser: 1, loot: 4 },
-  { k: 'crossbow', name: '弩', dmg: 110, rate: 0.75, mag: 6, reload: 1.5, spread: 0.008, range: 26, pellets: 1, pierce: 3, kick: 0.6, shake: 0.06, pin: 1.1, loot: 6 },
-  { k: 'flamer', name: '喷火器', dmg: 12, rate: 0.07, mag: 80, reload: 2.2, spread: 0.5, range: 5.6, pellets: 1, flame: 1, burn: 3.5, kick: 0, shake: 0.02, loot: 40 },
-  { k: 'launcher', name: '榴弹发射器', blastR: 3.0, dmg: 220, rate: 0.9, mag: 4, reload: 2.6, spread: 0.015, range: 22, pellets: 1, gl: 1, kick: 0, shake: 0.3, loot: 2 },
+  { k: 'pistol', name: '手枪', dmg: 26, rate: 0.3, mag: 12, reload: 1.0, spread: 0.03, range: 15, pellets: 1, inf: 1, kick: 0.6, shake: 0.12, hs: 2.0, loot: 0, tag: '子弹无限的备用枪：准，爆头 ×2，伤害最低' },
+  { k: 'shotgun', name: '霰弹枪', dmg: 17, rate: 0.72, mag: 6, reload: 1.7, spread: 0.17, range: 8, pellets: 8, pierce: 2, kick: 2.6, shake: 0.35, start: 24, stun: 0.3, falloff: 1, loot: 8, tag: '近身清群：8 颗弹丸各穿 2 只、打得丧尸一顿，远了就散' },
+  { k: 'rifle', name: '步枪', dmg: 34, rate: 0.12, mag: 30, reload: 1.6, spread: 0.035, range: 20, pellets: 1, kick: 0.4, shake: 0.12, bloom: 0.22, loot: 30, tag: '持续火力：单发比手枪狠、射速快 2.5 倍，连射越打越散' },
+  { k: 'sniper', name: '狙击枪', dmg: 220, rate: 1.05, mag: 5, reload: 2.1, spread: 0.004, range: 45, pellets: 1, pierce: 5, kick: 4, shake: 0.4, stun: 0.5, laser: 1, hs: 2.5, loot: 4, tag: '打精英：一枪 220（爆头 ×2.5）穿 5 只，最远，但慢' },
+  { k: 'crossbow', name: '弩', dmg: 110, rate: 0.75, mag: 6, reload: 1.5, spread: 0.008, range: 26, pellets: 1, pierce: 3, kick: 0.6, shake: 0.06, pin: 1.1, hs: 2.0, loot: 6, tag: '几乎没声音：一箭 110 穿 3 只、把丧尸钉住，偷偷清楼用' },
+  { k: 'flamer', name: '喷火器', dmg: 12, rate: 0.07, mag: 80, reload: 2.2, spread: 0.5, range: 5.6, pellets: 1, flame: 1, burn: 3.5, kick: 0, shake: 0.02, loot: 40, tag: '堵门神器：近距离扇形喷火，着火会传给旁边的' },
+  { k: 'launcher', name: '榴弹发射器', blastR: 3.0, dmg: 220, rate: 0.9, mag: 4, reload: 2.6, spread: 0.015, range: 22, pellets: 1, gl: 1, kick: 0, shake: 0.3, loot: 2, tag: '炸一片：落地就炸，半径 3，扎堆时用' },
 ];
 const NW = WPN.length;
 
 /* ---------- zombies (speeds in tiles/s) ---------- */
 const ZT = {
   walker: { name: '游荡者', hp: 70, spd: 1.0, r: 0.31, h: 1.2, dmg: 12, bdmg: 12, cd: 1.0, sc: 1.2 },
-  runner: { name: '疾跑者', hp: 45, spd: 3.1, r: 0.29, h: 1.14, dmg: 8, bdmg: 7, cd: 0.6, sc: 1.14 },
-  climber: { name: '攀爬者', hp: 50, spd: 2.3, r: 0.29, h: 0.84, dmg: 7, bdmg: 8, cd: 0.7, sc: 1.08, climb: 1 },
-  spitter: { name: '喷吐者', hp: 95, spd: 0.9, r: 0.36, h: 1.26, dmg: 10, bdmg: 8, cd: 1.0, sc: 1.26, range: 9, spitCD: 3 },
-  brute: { name: '重锤', hp: 650, spd: 0.8, r: 0.44, h: 1.74, dmg: 28, bdmg: 75, cd: 1.6, sc: 1.74, kb: 6 },
+  runner: { name: '疾跑者', hp: 55, spd: 3.1, r: 0.29, h: 1.14, dmg: 8, bdmg: 7, cd: 0.6, sc: 1.14 },
+  climber: { name: '攀爬者', hp: 70, spd: 2.3, r: 0.29, h: 0.84, dmg: 7, bdmg: 8, cd: 0.7, sc: 1.08, climb: 1 },
+  spitter: { name: '喷吐者', hp: 170, spd: 0.9, r: 0.36, h: 1.26, dmg: 10, bdmg: 8, cd: 1.0, sc: 1.26, range: 9, spitCD: 3 },
+  brute: { name: '重锤', hp: 800, spd: 0.8, r: 0.44, h: 1.74, dmg: 28, bdmg: 75, cd: 1.6, sc: 1.74, kb: 6 },
   boss: { name: '巨尸', hp: 2600, spd: 0.65, r: 0.69, h: 2.64, dmg: 45, bdmg: 220, cd: 2.0, sc: 2.64, kb: 9 },
   dog: { name: '尸犬', hp: 40, spd: 3.7, r: 0.27, h: 0.66, dmg: 8, bdmg: 3, cd: 0.5, sc: 1.2 },
   crawler: { name: '爬行尸', hp: 60, spd: 0.75, r: 0.3, h: 0.46, dmg: 11, bdmg: 9, cd: 0.9, sc: 1.2 },
-  bloater: { name: '爆尸', hp: 120, spd: 0.75, r: 0.4, h: 1.32, dmg: 10, bdmg: 10, cd: 1.1, sc: 1.32, blast: 1 },
-  screamer: { name: '尖叫者', hp: 80, spd: 1.5, r: 0.3, h: 1.26, dmg: 9, bdmg: 6, cd: 0.9, sc: 1.26, scream: 1 },
+  bloater: { name: '爆尸', hp: 200, spd: 0.75, r: 0.4, h: 1.32, dmg: 10, bdmg: 10, cd: 1.1, sc: 1.32, blast: 1 },
+  screamer: { name: '尖叫者', hp: 150, spd: 1.5, r: 0.3, h: 1.26, dmg: 9, bdmg: 6, cd: 0.9, sc: 1.26, scream: 1 },
   leaper: { name: '飞扑尸王', hp: 2300, spd: 1.15, r: 0.5, h: 2.1, dmg: 30, bdmg: 60, cd: 1.2, sc: 2.0, kb: 7, boss: 1, look: 'boss', skin: '#7a4a3a' },
   digger: { name: '掘地尸王', hp: 2700, spd: 0.95, r: 0.55, h: 2.0, dmg: 34, bdmg: 90, cd: 1.4, sc: 2.0, kb: 8, boss: 1, look: 'brute', skin: '#6a6048' },
   summoner: { name: '召唤尸王', hp: 2100, spd: 0.72, r: 0.5, h: 2.3, dmg: 22, bdmg: 40, cd: 1.4, sc: 2.2, boss: 1, look: 'boss', skin: '#5a5470' },
   venom: { name: '毒液尸王', hp: 2300, spd: 0.85, r: 0.52, h: 2.1, dmg: 26, bdmg: 50, cd: 1.3, sc: 2.1, range: 12, boss: 1, look: 'bloater', skin: '#7a9a3a' },
-  armored: { name: '防暴尸', hp: 170, spd: 0.9, r: 0.36, h: 1.26, dmg: 15, bdmg: 16, cd: 1.1, sc: 1.3, armor: 0.3 },
+  armored: { name: '防暴尸', hp: 260, spd: 0.9, r: 0.36, h: 1.26, dmg: 15, bdmg: 16, cd: 1.1, sc: 1.3, armor: 0.3 },
 };
 // aim assist (SET.assist): fire-button lock range (x weapon range), lock-on time before it fires, spread while auto-aimed, mouse/finger magnet
 const PORT = 1.25; // firing port: your own shots pass a wall / door you built if it is this close to you
@@ -202,12 +202,12 @@ const GATHER = {
 
 /* ---------- crafting (workbench in the starter house) ---------- */
 const CRAFT = [
-  { id: 'rifle', name: '步枪', desc: '全自动，30 发弹匣', cost: { parts: 12, steel: 6 }, wpn: 2 },
-  { id: 'sniper', name: '狙击枪', desc: '一枪穿透 5 只', cost: { parts: 18, steel: 8 }, wpn: 3 },
+  { id: 'rifle', name: '步枪', desc: '持续火力：单发 34、全自动 30 发，连射越打越散', cost: { parts: 12, steel: 6 }, wpn: 2 },
+  { id: 'sniper', name: '狙击枪', desc: '打精英：一枪 220（爆头 ×2.5）穿 5 只，最远，但慢', cost: { parts: 18, steel: 8 }, wpn: 3 },
   { id: 'shells', name: '霰弹 ×12', desc: '', cost: { parts: 2 }, ammo: [1, 12] },
   { id: 'rounds', name: '步枪弹 ×60', desc: '', cost: { parts: 3 }, ammo: [2, 60] },
   { id: 'slugs', name: '狙击弹 ×10', desc: '', cost: { parts: 3 }, ammo: [3, 10] },
-  { id: 'crossbow', name: '弩', desc: '穿透 3 只，把丧尸钉在原地 1 秒', cost: { parts: 12, wood: 12 }, wpn: 4 },
+  { id: 'crossbow', name: '弩', desc: '几乎没声音：一箭 110 穿 3 只，钉住 1 秒，偷偷清楼用', cost: { parts: 12, wood: 12 }, wpn: 4 },
   { id: 'flamer', name: '喷火器', desc: '近距离喷火，点着的丧尸会烧，火还会传给旁边的', cost: { parts: 20, steel: 10 }, wpn: 5 },
   { id: 'launcher', name: '榴弹发射器', desc: '打出去落地就炸，炸一片', cost: { parts: 26, steel: 14 }, wpn: 6 },
   { id: 'bolts', name: '弩箭 ×12', desc: '', cost: { wood: 4, parts: 1 }, ammo: [4, 12] },

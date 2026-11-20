@@ -20,7 +20,7 @@ const isSiege = () => !!(W && W.mode === 'siege');
 const hasBP = k => !isSiege() || BP_BASE.includes(k) || (W.obj && W.obj.bp && W.obj.bp.includes(k));
 // a zombie put straight onto a cell (during world setup the edge spawn lists don't exist yet)
 function putZombie(k, x, y, L) { const keep = W.edges; W.edges = { 0: [[x, y, L]] }; const z = spawnZombie(k, 0); W.edges = keep; z.x = x + 0.3 + rand() * 0.4; z.y = y + 0.3 + rand() * 0.4; z.L = L; z.z = surfZ(z.x, z.y, L); return z; }
-const sleeperKind = () => { const r = rand(); return r < 0.14 ? 'crawler' : r < 0.2 ? 'runner' : r < 0.23 ? 'bloater' : r < 0.25 ? 'armored' : 'walker'; };
+const sleeperKind = () => { const r = rand(); return r < 0.12 ? 'crawler' : r < 0.2 ? 'runner' : r < 0.26 ? 'bloater' : r < 0.31 ? 'spitter' : r < 0.35 ? 'armored' : r < 0.38 ? 'screamer' : r < 0.4 ? 'brute' : r < 0.44 ? 'climber' : 'walker'; };
 Object.assign(MODES.siege, {
   init() {
     const O = W.obj = { bp: [], occ: [], phase: 'siege', tam: {} };
