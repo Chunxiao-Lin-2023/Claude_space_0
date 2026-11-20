@@ -482,10 +482,10 @@ function drawOverlay() {
     }
   }
   for (const p of W.p) {
-    if (p.i === ME || p.gone || p.dead || W.p.length < 2) continue;
+    if (p.i === ME || p.gone || W.p.length < 2) continue;
     const [sx, sy] = w2s(p.x, p.y, (p.zv != null ? p.zv : p.z) + 1.35);
     const on = sx > 10 && sx < VW - 10 && sy > 10 && sy < VH - 10;
-    if (on) html += `<div class="tag" style="left:${sx | 0}px;top:${sy | 0}px"><span>${p.name}${p.L !== W.p[ME].L ? ' · ' + (p.L + 1) + 'F' : ''}</span><i style="width:${(p.down ? 0 : p.hp / p.maxHp * 100) | 0}%;background:${PCOL[p.i % 2].j}"></i></div>`;
+    if (on) html += `<div class="tag" style="left:${sx | 0}px;top:${sy | 0}px"><span>${p.dead ? '✝ ' : ''}${p.name}${p.dead ? ' · ' + Math.ceil(p.downT) + 's' + (W.p[ME].meds > 0 ? ' · 医疗包救' : '') : ''}${p.L !== W.p[ME].L ? ' · ' + (p.L + 1) + 'F' : ''}</span><i style="width:${(p.down ? 0 : p.hp / p.maxHp * 100) | 0}%;background:${PCOL[p.i % 2].j}"></i></div>`;
     else { const ax = clamp(sx, 26, VW - 26), ay = clamp(sy, 80, VH - 80); const an = Math.atan2(sy - ay, sx - ax); html += `<div class="arr" style="left:${ax | 0}px;top:${ay | 0}px;transform:translate(-50%,-50%) rotate(${an}rad);color:${p.down ? '#ff5a4a' : PCOL[p.i % 2].j}">➤</div>`; }
   }
   // objectives: a label over the ones on screen, an arrow at the edge for the rest (the three nearest)
@@ -571,8 +571,9 @@ function fxEvent(e) {
     case 'phurt': if (e.d > 6 && Math.random() < 0.5) { const q = W.p[e.p]; addDecal(q.x + frnd(-0.2, 0.2), q.y + frnd(-0.2, 0.2), q.z, frnd(0.08, 0.14)); }
       if (e.p === ME) { RND.hurtV = Math.min(1, RND.hurtV + 0.5); CAM.shake = Math.max(CAM.shake, 0.12); if (thr('hurt', 0.25)) sfx('hurt'); } break;
     case 'down': sfx('down', W.p[e.p].x, W.p[e.p].y); uiMsg(e.p === ME ? (W.p.length > 1 ? '你倒地了！等队友扶你，或按 H 用医疗包自救' : '你倒地了！按 H 用医疗包自救') : W.p[e.p].name + ' 倒地了！快去扶（按住 F）', '#ff6b5a'); break;
-    case 'revive': sfx('revive'); uiMsg(e.p === e.by ? W.p[e.p].name + ' 自救成功' : W.p[e.by].name + ' 扶起了 ' + W.p[e.p].name, '#8fe39a'); break;
-    case 'dead': uiMsg(W.p[e.p].name + ' 阵亡了，天亮后会在营地复活', '#ff6b5a'); break;
+    case 'revive': sfx('revive'); uiMsg(e.p === e.by ? W.p[e.p].name + ' 自救成功' : W.p[e.by].name + (e.rez ? ' 用医疗包救回了 ' : ' 扶起了 ') + W.p[e.p].name, '#8fe39a'); break;
+    case 'dead': uiMsg(W.p[e.p].name + ' 阵亡了：' + (e.t || 60) + ' 秒后（或天亮）在队友身边复活，带医疗包到他倒下的地方能马上救回来', '#ff6b5a'); break;
+    case 'respawn': uiMsg(W.p[e.p].name + ' 回来了' + (e.near >= 0 ? '（在 ' + W.p[e.near].name + ' 身边）' : '（在营地）'), '#8fe39a'); break;
     case 'task': sfx('craft'); uiMsg('任务完成：' + e.txt + '  奖励 ' + e.rt, '#ffd76a'); toast('任务完成 · ' + e.rt, '#ffd76a'); break;
     case 'tp': if (guest && e.p === ME) { const p = W.p[ME]; p.x = e.x; p.y = e.y; p.L = e.l; p.vx = p.vy = 0; } break;
     case 'kb': if (guest && e.p === ME) { const p = W.p[ME]; p.kbx += e.x; p.kby += e.y; } break;

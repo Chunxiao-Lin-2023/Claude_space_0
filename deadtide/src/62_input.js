@@ -24,7 +24,7 @@ function rotStairs() { const me = W.p[ME]; me.sdir = (me.sdir + 1) & 3; uiBuildB
 function cycleWpn(d) { const me = W.p[ME]; let w = me.wpn; for (let k = 0; k < NW; k++) { w = (w + d + NW) % NW; if (me.owned[w]) break; } if (w !== me.wpn) act('wpn', w); }
 // knife: find the zombie, turn to it, lunge into reach and slash; the host settles the damage
 function doKnife() {
-  const me = W.p[ME]; if (!me || me.dead || me.down || me.build || me.ride || me.medT > 0 || me.jmp || (me.knCD || 0) > performance.now()) return;
+  const me = W.p[ME]; if (!me || me.dead || me.down || me.build || me.ride || me.pass >= 0 || me.medT > 0 || me.jmp || (me.knCD || 0) > performance.now()) return;
   me.knCD = performance.now() + BAL.knifeCD * 1000;
   const mv = Math.hypot(me.inp.mx, me.inp.my) > 0.3 && INP.touch ? Math.atan2(me.inp.my, me.inp.mx) : me.aim;
   const z = knifeTarget(me, mv);
@@ -89,8 +89,8 @@ function onKeyPress(k) {
   if (k === 'h') return act('med');
   if (k === 'n') return toggleReady();
   if (k === 'c') return openCraft();
-  if (k === 't') { if (me.veh) act('ride'); else toast('还没有车：找到自行车 / 摩托车的蓝图后在「制作」里造'); return; }
-  if (k === 'f' && me.ride) { act('ride'); return; }
+  if (k === 't') { if (me.veh || me.pass >= 0 || pillionFor(me)) act('ride'); else toast('还没有车：找到自行车 / 摩托车的蓝图后在「制作」里造（或者走到骑摩托的队友身边按 T 坐后座）'); return; }
+  if (k === 'f' && (me.ride || me.pass >= 0)) { act('ride'); return; }
   if (k === 'f') { if (nearBench(me) && !useTarget(me)) return openCraft(); if (INP.useLatch) INP.useLatch = null; else INP.useReq = true; }
 }
 function toggleReady() { const me = W.p[ME]; if (W.phase !== 'day') return; act('ready', me.ready ? 0 : 1); if (NETROLE === 'guest') me.ready = !me.ready; sfx('ready'); }
@@ -149,7 +149,7 @@ CV.addEventListener('pointerdown', e => {
   if (nearUI(e.clientX, e.clientY)) { delete INP.tp[e.pointerId]; return; }
   if (moveZone(e.clientX, e.clientY) && INP.move.id == null) { const R = STICK_R(), m = R * 0.6; Object.assign(INP.move, { id: e.pointerId, ox: clamp(e.clientX, m, VW - m), oy: clamp(e.clientY, m, VH - m), x: 0, y: 0, t0: performance.now(), far: false, sx: e.clientX, sy: e.clientY }); INP.move.x = (e.clientX - INP.move.ox) / R; INP.move.y = (e.clientY - INP.move.oy) / R; stickDraw(stickL, INP.move, R); }
   else if (me.build) { INP.paint = e.pointerId; touchBuild(e.clientX, e.clientY, true); }
-  else if (INP.tAim.id == null && e.clientX > VW * (VH > VW ? 0.4 : 0.3)) Object.assign(INP.tAim, { id: e.pointerId, x: e.clientX, y: e.clientY }); // touch the map: shoot where your finger is
+  else if (INP.tAim.id == null && e.clientX > VW * (VH > VW ? 0.4 : 0.3)) Object.assign(INP.tAim, { id: e.pointerId, x: e.clientX, y: e.clientY, sx: e.clientX, sy: e.clientY, t0: e.timeStamp, far: false }); // touch the map: aim / mark a zombie
   else return;
   try { CV.setPointerCapture(e.pointerId); } catch (_) { }
 }, { passive: false });
@@ -167,7 +167,7 @@ CV.addEventListener('pointermove', e => {
   }
   if (INP.aim.id === e.pointerId && Math.hypot(INP.aim.x, INP.aim.y) > 0.25) INP.aim.t = performance.now();
   if (INP.paint === e.pointerId && inGame() && W.p[ME].build) touchBuild(e.clientX, e.clientY, false);
-  if (INP.tAim.id === e.pointerId) { INP.tAim.x = e.clientX; INP.tAim.y = e.clientY; }
+  if (INP.tAim.id === e.pointerId) { INP.tAim.x = e.clientX; INP.tAim.y = e.clientY; if (Math.hypot(e.clientX - INP.tAim.sx, e.clientY - INP.tAim.sy) > 14) INP.tAim.far = true; }
 }, { passive: false });
 function endPtr(e) {
   if (e.pointerType !== 'touch') return;
@@ -176,10 +176,23 @@ function endPtr(e) {
   if (INP.paint === e.pointerId) finishPaint();
   if (INP.move.id === e.pointerId && !INP.move.far && performance.now() - INP.move.t0 < 350 && inGame() && W.p[ME].build) { touchBuild(INP.move.ox, INP.move.oy, true); finishPaint(); }
   if (INP.move.id === e.pointerId) { INP.move.id = null; INP.move.x = INP.move.y = 0; stickDraw(stickL, INP.move); }
-  if (INP.tAim.id === e.pointerId) { INP.tAim.id = null; INP.aim.t = performance.now(); }
+  if (INP.tAim.id === e.pointerId) {
+    // lifting the finger off the map leaves a zombie MARKED, so the same thumb can then press fire:
+    // a quick tap marks the zombie under / near it (tap empty ground to clear); after aiming, the zombie you were on stays marked
+    INP.tAim.id = null; INP.aim.t = performance.now();
+    if (inGame()) { const me = W.p[ME], tap = !INP.tAim.far && e.timeStamp - INP.tAim.t0 < 350;
+      const z = tap ? aimPick(e.clientX, e.clientY, 64).zb : me.aimPt && me.aimPt.zb;
+      if (zAlive(z)) { INP.mark = z; INP.markT = performance.now(); } else if (tap) INP.mark = null; }
+  }
   if (INP.aim.id === e.pointerId && !INP.aim.btn) { INP.aim.id = null; INP.aim.x = INP.aim.y = 0; INP.aim.t = performance.now(); stickDraw(stickR, INP.aim); }
 }
 /* fire stick: hold to shoot (auto-aims at the nearest zombie), drag to choose the direction */
+// is the marked zombie still worth shooting at? (alive, about on your floor, in reach and in sight)
+function markOK(me) {
+  const z = INP.mark; if (!zAlive(z) || z.hidden || me.build || me.dead || me.down || Math.abs(z.L - me.L) > 1) return false;
+  const d = Math.hypot(z.x - me.x, z.y - me.y); if (d > Math.max(10, (WPN[me.wpn] || WPN[0]).range + 4)) return false;
+  const sh = shoulder(me); return d < 1.6 || los(sh[0], sh[1], sh[2], z.x, z.y, z.z + z.h * 0.62, LEAN);
+}
 const FIRE = document.getElementById('tFire');
 function fireKnob() { const k = FIRE.firstElementChild, R = FIRE.clientWidth * 0.36, m = Math.hypot(INP.aim.x, INP.aim.y), f = m > 1 ? 1 / m : 1; k.style.transform = INP.aim.id != null && INP.aim.btn ? `translate(${INP.aim.x * f * R}px,${INP.aim.y * f * R}px)` : ''; }
 FIRE.addEventListener('pointerdown', e => {
@@ -339,7 +352,7 @@ bindBtn('tMed', () => inGame() && act('med'));
 bindBtn('tUse', () => { if (!inGame()) return; const me = W.p[ME]; if (canCraft(me) && !useTarget(me)) openCraft(); else if (INP.useLatch) INP.useLatch = null; else INP.useReq = true; });
 bindBtn('tBuild', () => inGame() && toggleBuild());
 bindBtn('tCraft', () => inGame() && openCraft());
-bindBtn('tRide', () => inGame() && W.p[ME].veh && act('ride'));
+bindBtn('tRide', () => { if (!inGame()) return; const me = W.p[ME]; if (me.veh || me.pass >= 0 || pillionFor(me)) act('ride'); });
 bindBtn('vZin', () => camZoom(0.8)); bindBtn('vZout', () => camZoom(1.25));
 bindBtn('vRl', () => camRot(-1)); bindBtn('vRr', () => camRot(1));
 bindBtn('vUp', () => viewStep(1)); bindBtn('vDn', () => viewStep(-1)); bindBtn('vAuto', () => viewAuto());
@@ -420,12 +433,16 @@ function readInput(dt) {
     } else { BUILD_HOVER = null; INP.bDown = false; if (!me.build && (PLAN || PREV)) cancelPlan(); }
   } else {
     const A = INP.aim, held = A.id != null, active = held && Math.hypot(A.x, A.y) > 0.3, fing = INP.tAim.id != null && !me.build;
+    const mk = !fing && !active && markOK(me) ? INP.mark : null; if (!mk && INP.mark && !markOK(me)) INP.mark = null;
     const fpy = INP.tAim.y - FINGER_UP;
     if (fing) { const pt = aimPick(INP.tAim.x, fpy, assistLv().mag ? 50 : 0); me.aimPt = pt; me.aim = Math.atan2(pt.y - me.y, pt.x - me.x); }
     else if (active) {
       const a = Math.atan2(-A.y, A.x), wx = rx * Math.cos(a) + fx * Math.sin(a), wy = ry * Math.cos(a) + fy * Math.sin(a);
       trackAim(me); INP.aimT -= dt; if (INP.aimT <= 0 || !me.aimPt) { INP.aimT = 0.1; me.aimPt = touchAutoAim(me, wx, wy, false, me.aimPt && me.aimPt.zb); }
       me.aim = Math.atan2(me.aimPt.y - me.y, me.aimPt.x - me.x);
+    } else if (mk) {
+      // a marked zombie: face it, and the fire button shoots it (picked by hand, so no lock-on delay and normal spread)
+      me.aimPt = { x: mk.x, y: mk.y, z: mk.z + mk.h * 0.62, zb: mk }; me.aim = Math.atan2(mk.y - me.y, mk.x - me.x);
     } else if (held && A.btn) {
       // just holding the fire button: lock on to the nearest zombie, otherwise shoot where you face
       trackAim(me); INP.aimT -= dt; if (INP.aimT <= 0 || !me.aimPt) { INP.aimT = 0.12; const f = Math.hypot(I.mx, I.my) > 0.2 ? [I.mx, I.my] : [Math.cos(me.aim), Math.sin(me.aim)]; me.aimPt = touchAutoAim(me, f[0], f[1], true, me.aimPt && me.aimPt.zb); }
@@ -433,17 +450,18 @@ function readInput(dt) {
     } else if (performance.now() - A.t > 600 && Math.hypot(I.mx, I.my) > 0.2) { me.aim = Math.atan2(I.my, I.mx); me.aimPt = null; }
     drawReticle(me, me.aimPt, fing && !blocked && !me.build && !me.dead, INP.tAim.x, fpy);
     // auto-aim (fire button without a finger on the map): a new target takes a moment to lock on, and the shots are looser
-    const auto = !fing && (active || (held && A.btn)), AS = assistLv(), lz = auto && me.aimPt && me.aimPt.zb;
+    const auto = !fing && !mk && (active || (held && A.btn)), AS = assistLv(), lz = auto && me.aimPt && me.aimPt.zb;
     if (lz !== INP.lockZ) { INP.lockZ = lz || null; INP.lockT = 0; } else INP.lockT = (INP.lockT || 0) + dt;
     INP.lockAcq = lz && AS.acq ? Math.min(1, INP.lockT / AS.acq) : 1;
     I.auto = auto && lz ? AS.spread : 0;
-    I.fire = !blocked && ((fing && held && A.btn) || (auto && INP.lockAcq >= 1)) && !me.build ? 1 : 0;
+    I.fire = !blocked && ((fing && held && A.btn) || (mk && held && A.btn) || (auto && INP.lockAcq >= 1)) && !me.build ? 1 : 0;
+    INP.markShow = mk;
     CAM.lookX = lerp(CAM.lookX || 0, Math.cos(me.aim) * 1.5, Math.min(1, dt * 2)); CAM.lookY = lerp(CAM.lookY || 0, Math.sin(me.aim) * 1.5, Math.min(1, dt * 2));
     if (!me.build || !BUILD_HOVER || !BUILD_HOVER.t) BUILD_HOVER = me.build ? BUILD_HOVER : null;
   }
   if (blocked) I.fire = 0;
   if (!blocked && !me.build && (KD('v') || INP.knHeld || (usingMouse && INP.mR))) doKnife(); // right mouse button / V / the 刀 button; hold to keep slashing
   if (me.knT > 0 && zAlive(me.knZ)) me.aim = Math.atan2(me.knZ.y - me.y, me.knZ.x - me.x); // face what you're cutting
-  INP.lockShow = !blocked && !me.build && !me.dead && me.aimPt && zAlive(me.aimPt.zb) && (usingMouse || I.fire || INP.tAim.id != null || INP.aim.id != null) ? me.aimPt : null;
+  INP.lockShow = !blocked && !me.build && !me.dead && me.aimPt && zAlive(me.aimPt.zb) && (usingMouse || I.fire || INP.tAim.id != null || INP.aim.id != null || (INP.markShow && me.aimPt.zb === INP.markShow)) ? me.aimPt : null;
   if (usingMouse) { I.auto = 0; INP.lockAcq = 1; }
 }

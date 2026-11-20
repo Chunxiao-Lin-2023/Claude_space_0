@@ -65,7 +65,8 @@ function uiKeys(me) {
     rows = [['左键', '射击'], ['R', '换弹', me.mag[wi] === 0 && canRl ? 2 : canRl ? 0 : -1], ['G', '手雷 ×' + me.nades, me.nades ? 0 : -1],
       ['H', me.down ? '自救' : '医疗 ×' + me.meds, !me.meds ? -1 : (me.down || me.hp < me.maxHp * 0.4) ? 2 : me.hp >= me.maxHp ? -1 : 0],
       ['右键', '刀（自动追，也可按 V）'], ['空格', '跳 / 翻越'], ['F', ut ? ut.name : '交互', ut ? 1 : 0], ['1–' + NW, '换枪'], ['C', '制作 / 购买', bench ? 1 : -1], ['B', '建造']];
-    if (me.veh) rows.push(['T', me.ride ? '下车' : (me.veh === 2 ? '骑摩托' : '骑车'), me.ride ? 1 : 0]);
+    const pil = !me.ride && !(me.pass >= 0) && pillionFor(me);
+    if (me.veh || me.pass >= 0 || pil) rows.push(['T', me.ride || me.pass >= 0 ? '下车' : pil ? '坐后座' : (me.veh === 2 ? '骑摩托' : '骑车'), me.ride || me.pass >= 0 || pil ? 1 : 0]);
     if (W.phase === 'day') rows.push(['N', me.ready ? '取消准备' : '准备入夜', me.ready ? 1 : 0]);
   }
   rows.push(['M', '大地图（也可按 Tab）'], ['Q E', '转镜头'], ['Esc', '菜单']);
@@ -182,12 +183,15 @@ function hudTick(dt) {
   for (const r of RES) { const el = $('res_' + r.k), v = W.res[r.k]; el.firstElementChild.textContent = v; if (UI.resPrev[r.k] != null && v > UI.resPrev[r.k]) { el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash'); } UI.resPrev[r.k] = v; }
   // prompt
   let ptxt = '', prog = 0;
+  if (!me.dead && !me.build && !me.ride && !(me.pass >= 0) && pillionFor(me)) ptxt = (INP.touch ? '点「坐后座」' : '按 T ') + '坐上 ' + pillionFor(me).name + ' 的摩托后座（后座能开枪）';
+  if (me.dead) ptxt = '你阵亡了 · ' + Math.ceil(me.downT) + ' 秒后（或天亮）在队友身边复活 · 队友带医疗包到你身边按住交互 6 秒能马上救你';
   if (!me.dead && !me.build) {
     const tgt = useTarget(me), inB = canCraft(me); if (inB && !UI.inB) UI.craftHintT = W.t; UI.inB = inB;
     const key = INP.touch ? '点「交互」' : '按 F ';
     if (tgt) { ptxt = key + tgt.name; prog = me.useT / tgt.t; }
     else if (nearBench(me)) ptxt = (INP.touch ? '点「交互」' : '按 F ') + '打开工作台';
     else if (canCraft(me) && !INP.touch && W.t - (UI.craftHintT || -99) < 4) ptxt = '在建筑里：按 C 制作 / 买弹药';
+    else if (!me.meds && W.p.some(q => q !== me && q.dead && !q.gone && q.L === me.L && Math.hypot(q.x - me.x, q.y - me.y) < 1.6)) ptxt = '要有医疗包才能把队友救回来（搜背包、柜子，或在「制作」里做）';
     if (me.down) ptxt = me.meds > 0 ? (INP.touch ? '点「医疗」' : '按 H ') + '用医疗包自救' : (W.p.length > 1 ? '等待队友来扶你…' : '');
     if (me.medT > 0 && me.selfRev) { ptxt = '正在自救…'; prog = 1 - me.medT / 3; }
   }
@@ -196,7 +200,7 @@ function hudTick(dt) {
     sh.classList.toggle('on', on);
     if (on) { const R = STICK_R(), x = Math.max(R + 22, Math.min(VW * 0.16, 170)), y = VH - Math.max(R + 40, Math.min(VH * 0.24, 190)); sh.style.left = x + 'px'; sh.style.top = y + 'px'; sh.style.width = sh.style.height = R * 2 + 'px'; }
     const tgt = !me.dead && !me.build && !me.down ? useTarget(me) : null, bench = !tgt && !me.build && canCraft(me);
-    $('tCraft').classList.toggle('hidden', !canCraft(me) || !!me.build); $('tRide').classList.toggle('hidden', !me.veh || !!me.build); $('tRide').classList.toggle('on', !!me.ride); $('tRide').textContent = me.ride ? '下车' : (me.veh === 2 ? '骑摩托' : '骑车');
+    $('tCraft').classList.toggle('hidden', !canCraft(me) || !!me.build); const pil = !me.ride && !(me.pass >= 0) && pillionFor(me); $('tRide').classList.toggle('hidden', !(me.veh || me.pass >= 0 || pil) || !!me.build); $('tRide').classList.toggle('on', !!me.ride || me.pass >= 0); $('tRide').textContent = me.ride || me.pass >= 0 ? '下车' : pil ? '坐后座' : (me.veh === 2 ? '骑摩托' : '骑车');
     const u = $('tUse'); u.classList.toggle('hidden', !(tgt || bench));
     if (tgt) { u.firstElementChild.textContent = INP.useLatch ? '进行中 · 再点停' : '点一下'; u.lastElementChild.textContent = tgt.name; u.style.setProperty('--p', clamp(me.useT / tgt.t, 0, 1)); }
     else if (bench) { u.firstElementChild.textContent = '点一下'; u.lastElementChild.textContent = '制作 / 购买'; u.style.setProperty('--p', 0); }

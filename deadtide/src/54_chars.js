@@ -389,11 +389,11 @@ function mkVehicles() {
 }
 function drawPlayers(vl, dt) {
   while (OBJ.pl.length < W.p.length) OBJ.pl.push(mkPlayerModel(OBJ.pl.length));
-  OBJ.pl.forEach((m, i) => { const p = W.p[i]; m.g.visible = !!p && !p.gone && !p.dead && p.L <= vl; });
+  OBJ.pl.forEach((m, i) => { const p = W.p[i]; m.g.visible = !!p && !p.gone && p.L <= vl; });
   W.p.forEach((p, i) => {
     const m = OBJ.pl[i]; if (!m.g.visible) return;
     if (!m.veh) { m.veh = mkVehicles(); m.g.add(m.veh); }
-    const zv = (p.zv != null ? p.zv : p.z) + (p.jz || 0); m.g.position.set(p.x, zv, p.y);
+    const zv = (p.zv != null ? p.zv : p.z) + (p.jz || 0); m.g.position.set(p.x, zv, p.y); m.g.rotation.x = p.dead ? -1.45 : 0; // a dead player lies flat until respawn / rescue
     // smoothing state
     if (p._uy == null) { p._uy = p.aim; p._ly = p.aim; p._ph = 0; p._kick = 0; p._spd = 0; p._px = p.x; p._py = p.y; p._st = 0; }
     const sp = dt > 0 ? Math.min(8, Math.hypot(p.x - p._px, p.y - p._py) / dt) : 0, mvx = p.x - p._px, mvy = p.y - p._py; p._px = p.x; p._py = p.y;
@@ -411,17 +411,17 @@ function drawPlayers(vl, dt) {
     p._kick = Math.max(0, p._kick - dt * 9);
     m.lower.rotation.y = -p._ly; m.upper.rotation.y = -p._uy;
     // gait
-    const ph = p._ph, down = p.down, A = 0.62 * amp, K = 1.05 * amp;
+    const ph = p._ph, down = p.down || p.dead, A = 0.62 * amp, K = 1.05 * amp;
     let aL = Math.sin(ph) * A, aR = -Math.sin(ph) * A, kL = 0.08 + Math.max(0, Math.cos(ph)) * K, kR = 0.08 + Math.max(0, -Math.cos(ph)) * K;
     if (p.jz > 0.05) { aL = 0.9; aR = -0.2; kL = 1.5; kR = 0.9; } // tucked legs in the air
     if (down) { aL = 1.35 + Math.sin(ph) * 0.2; aR = 0.2; kL = 2.1; kR = 1.9; }
     const wK = down ? 0 : p.wpn, SK = STANCE[wK] || STANCE[0];
     p._kn = lerp(p._kn || 0, SK.kneel && !moving && !p.build && !(p.medT > 0) && !(p.jz > 0.05) && !down ? 1 : 0, Math.min(1, dt * 7));
     if (p._kn > 0.01) { const q = p._kn; aL = lerp(aL, 1.45, q); kL = lerp(kL, 1.45, q); aR = lerp(aR, -0.05, q); kR = lerp(kR, 1.62, q); } // right knee down, left foot forward
-    const ride = !!p.ride && !down; m.veh.visible = ride; if (ride) { m.veh.userData.bike.visible = (p.veh || 1) === 1; m.veh.userData.moto.visible = p.veh === 2; m.veh.rotation.y = -p._ly; aL = aR = 1.15; kL = kR = 1.35; }
+    const pil = p.pass != null && p.pass >= 0 && !down, ride = (!!p.ride || pil) && !down; m.veh.visible = !!p.ride && !down; if (ride) { m.veh.userData.bike.visible = (p.veh || 1) === 1; m.veh.userData.moto.visible = p.veh === 2; m.veh.rotation.y = -p._ly; aL = aR = 1.15; kL = kR = 1.35; }
     const legH = (a, k) => 0.23 * Math.cos(a) + 0.22 * Math.cos(a - k) + 0.03;
     const hipY = down ? 0.2 : Math.max(legH(aL, kL), legH(aR, kR));
-    const seat = ride ? (p.veh === 2 ? 0.42 : 0.36) : 0; m.hips.position.y = hipY + seat; m.upper.position.y = hipY + seat;
+    const seat = ride ? (pil ? 0.46 : p.veh === 2 ? 0.42 : 0.36) : 0; m.hips.position.y = hipY + seat; m.upper.position.y = hipY + seat;
     m.legs[0].th.rotation.z = aL; m.legs[0].kn.rotation.z = -kL; m.legs[0].ft.rotation.z = kL - aL;
     m.legs[1].th.rotation.z = aR; m.legs[1].kn.rotation.z = -kR; m.legs[1].ft.rotation.z = kR - aR;
     if (down) { m.legs[1].th.rotation.x = 0.6; } else m.legs[1].th.rotation.x = 0;

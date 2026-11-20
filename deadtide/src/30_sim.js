@@ -34,6 +34,8 @@ function newWorld(seed, names, diff, mode) {
 const rand = (a = 0, b = 1) => a + W.rng() * (b - a);
 const activeP = () => W.p.filter(p => !p.gone);
 const standingP = p => !p.gone && !p.dead && !p.down;
+// shooting from a vehicle (round 20): the driver fires at 40% the rate with 1.6x the spread; a pillion rider at 70% / 1.25x
+const rideK = p => p.ride ? { rate: 2.5, spread: 1.6 } : p.pass != null && p.pass >= 0 ? { rate: 1.43, spread: 1.25 } : { rate: 1, spread: 1 };
 function emit(e) { if (!W) return; e.q = ++W.seq; /* NB: `q`, not `s` — cell events carry the slab id in `s` */ fxEvent(e); if (NETROLE === 'host') netSendCtl({ t: 'ev', e }); }
 function say(text, col) { emit({ k: 'say', text, col: col || '' }); }
 const pZ = p => surfZ(p.x, p.y, p.L);
@@ -68,6 +70,12 @@ function collapseCheck() {
 function stepMove(p, dt) {
   if (p.dead || p.gone) return;
   p.hurtT = Math.max(0, p.hurtT - dt);
+  // riding pillion on a teammate's motorbike: sit just behind the driver
+  if (p.pass != null && p.pass >= 0) {
+    const d = W.p[p.pass];
+    if (!d || !d.ride || d.veh !== 2 || d.dead || d.down || d.gone) p.pass = -1;
+    else { const a = d._ly != null ? -d._ly : Math.atan2(d.vy || 0, d.vx || 1); p.x = d.x - Math.cos(a) * 0.42; p.y = d.y - Math.sin(a) * 0.42; p.L = d.L; p.z = d.z; p.zv = d.zv; p.vx = d.vx; p.vy = d.vy; p._ly = d._ly; return; }
+  }
   const I = p.inp, m = Math.hypot(I.mx, I.my), k = m > 1 ? 1 / m : 1;
   if (p.jmp) { // mid-vault / mid-jump: a scripted arc
     const J = p.jmp; J.t += dt; const f = Math.min(1, J.t / J.T);
@@ -139,9 +147,9 @@ function stepActions(p, dt) {
       else { p.hp = Math.min(p.maxHp, p.hp + BAL.medHeal); emit({ k: 'sfx', n: 'heal', x: p.x, y: p.y }); }
     }
   }
-  if (p.down) { p.downT -= dt; if (p.downT <= 0) { p.down = false; p.dead = true; p.reloadT = 0; p.medT = 0; emit({ k: 'dead', p: p.i }); checkLose(); return; } }
+  if (p.down) { p.downT -= dt; if (p.downT <= 0) { p.down = false; p.dead = true; p.reloadT = 0; p.medT = 0; p.ride = false; p.downT = W.phase === 'night' ? BAL.respawnNight : BAL.respawnDay; emit({ k: 'dead', p: p.i, t: Math.round(p.downT) }); checkLose(); return; } }
   const wi = p.down ? 0 : p.wpn, w = WPN[wi];
-  if (I.fire && !p.build && !p.ride && p.fireCD <= 0 && p.cdW[wi] <= 0 && p.reloadT <= 0 && p.medT <= 0) {
+  if (I.fire && !p.build && p.fireCD <= 0 && p.cdW[wi] <= 0 && p.reloadT <= 0 && p.medT <= 0) {
     if (p.mag[wi] > 0) fireWeapon(p, wi);
     else if (w.inf || p.ammo[wi] > 0) startReload(p);
     else if (p.emptyT <= 0) { p.emptyT = 0.5; emit({ k: 'sfx', n: 'empty', x: p.x, y: p.y, o: p.i }); }
@@ -158,6 +166,7 @@ function stepActions(p, dt) {
 function useTarget(p) {
   if (p.down || p.dead) return null;
   for (const q of W.p) if (q !== p && q.down && !q.dead && !q.gone && q.L === p.L && d2(q.x, q.y, p.x, p.y) < 1.5) return { k: 'rev', i: q.i, t: BAL.reviveTime, name: '扶起 ' + q.name };
+  for (const q of W.p) if (q !== p && q.dead && !q.gone && p.meds > 0 && q.L === p.L && d2(q.x, q.y, p.x, p.y) < 1.6) return { k: 'rez', i: q.i, t: BAL.rezTime, name: '用医疗包救回 ' + q.name };
   let best = null, bd = 1.45;
   const px = Math.floor(p.x), py = Math.floor(p.y);
   for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
@@ -172,6 +181,7 @@ function useTarget(p) {
   return best;
 }
 function completeUse(p, tgt) {
+  if (tgt.k === 'rez') { const q = W.p[tgt.i]; if (!q.dead || p.meds <= 0) return; p.meds--; q.dead = false; q.down = false; q.hp = Math.round(q.maxHp * BAL.rezHp); q.medT = 0; q.selfRev = false; emit({ k: 'revive', p: q.i, by: p.i, rez: 1 }); return; }
   if (tgt.k === 'rev') { const q = W.p[tgt.i]; if (!q.down) return; q.down = false; q.hp = 35; q.medT = 0; q.selfRev = false; emit({ k: 'revive', p: q.i, by: p.i }); return; }
   if (tgt.k === 'obj') { modeDone(p, tgt); return; }
   const i = tgt.i, x = cx_(i), y = cy_(i), L = cl_(i), wx = x + 0.5, wy = y + 0.5, wz = L * FH + 1;
@@ -306,7 +316,7 @@ function aimDir(p) {
   const L = Math.hypot(dx, dy, dz); return [dx / L, dy / L, dz / L];
 }
 function fireWeapon(p, wi) {
-  const w = WPN[wi]; if (p.cdW) p.cdW[wi] = w.rate; else p.fireCD = w.rate; p.mag[wi]--;
+  const w = WPN[wi], rk = rideK(p); if (p.cdW) p.cdW[wi] = w.rate * rk.rate; else p.fireCD = w.rate * rk.rate; p.mag[wi]--;
   noiseAt(p.x, p.y, SIEGE.gunNoise[w.k] || SIEGE.noiseR, p.z);
   const [sx, sy, sz] = shoulder(p), [ax, ay, az] = aimDir(p);
   const yaw = Math.atan2(ay, ax), pitch = Math.asin(clamp(az, -1, 1));
@@ -328,7 +338,7 @@ function fireWeapon(p, wi) {
   }
   if (w.bloom) p.bloom = Math.min(2.2, (p.bloom || 0) + w.bloom);
   for (let k = 0; k < w.pellets; k++) {
-    const sp = w.spread * (p.down ? 1.6 : 1) * (1 + (w.bloom ? p.bloom : 0)) * (p.inp.auto ? p.inp.auto : 1); // auto-aim fires looser
+    const sp = w.spread * rk.spread * (p.down ? 1.6 : 1) * (1 + (w.bloom ? p.bloom : 0)) * (p.inp.auto ? p.inp.auto : 1); // auto-aim fires looser
     const yw = yaw + (rand() - 0.5) * 2 * sp, pt = pitch + (rand() - 0.5) * sp;
     const dx = Math.cos(pt) * Math.cos(yw), dy = Math.cos(pt) * Math.sin(yw), dz = Math.sin(pt);
     const wall = rayWorld(sx, sy, sz, dx, dy, dz, w.range, { lean: LEAN });
@@ -379,9 +389,18 @@ function hurtPlayer(p, dmg) {
   if (DBG && DBG.god) return;
   if (p.down) { p.downT -= dmg * 0.18; p.hurtT = 0.3; emit({ k: 'phurt', p: p.i, d: 1 }); return; }
   p.hp -= dmg; p.hurtT = 0.3; emit({ k: 'phurt', p: p.i, d: Math.round(dmg) });
-  if (p.hp <= 0) { p.hp = 0; p.down = true; p.ride = false; if (W.phase === 'night') W.clean = false; p.downT = activeP().length > 1 ? BAL.downTime : BAL.soloDownTime; p.reloadT = 0; p.medT = 0; p.build = false; emit({ k: 'down', p: p.i }); checkLose(); }
+  if (p.hp <= 0) { p.hp = 0; p.down = true; p.ride = false; p.pass = -1; for (const q of W.p) if (q.pass === p.i) q.pass = -1; if (W.phase === 'night') W.clean = false; p.downT = activeP().length > 1 ? BAL.downTime : BAL.soloDownTime; p.reloadT = 0; p.medT = 0; p.build = false; emit({ k: 'down', p: p.i }); checkLose(); }
 }
 function knock(p, kx, ky) { if (p.i === ME && NETROLE !== 'guest') { p.kbx += kx; p.kby += ky; } else emit({ k: 'kb', p: p.i, x: r2(kx), y: r2(ky) }); }
+// a teammate on a motorbike with the back seat free, close enough to climb on
+function pillionFor(p) { return W.p.find(d => d !== p && d.ride && d.veh === 2 && !d.dead && !d.down && !d.gone && d.L === p.L && Math.hypot(d.x - p.x, d.y - p.y) < 1.8 && !W.p.some(q => q.pass === d.i)) || null; }
+function respawnP(p) {
+  let x = W.radio.x - 0.5 + p.i * 2, y = W.radio.y + 0.5, L = gAt(W.radio.x, W.radio.y);
+  const mate = activeP().find(q => q !== p && standingP(q));
+  if (mate) { const mx = Math.floor(mate.x), my = Math.floor(mate.y); let done = false; for (let r = 1; r <= 3 && !done; r++) for (let dy = -r; dy <= r && !done; dy++) for (let dx = -r; dx <= r && !done; dx++) { if (Math.max(Math.abs(dx), Math.abs(dy)) !== r || !inMap(mx + dx, my + dy) || !standable(mx + dx, my + dy, mate.L, 'p')) continue; x = mx + dx + 0.5; y = my + dy + 0.5; L = mate.L; done = true; } if (!done) { x = mate.x; y = mate.y; L = mate.L; } }
+  p.dead = false; p.down = false; p.downT = 0; p.hp = Math.round(p.maxHp * BAL.respawnHp); p.x = x; p.y = y; p.L = L; p.z = surfZ(x, y, L); p.vx = p.vy = 0;
+  emit({ k: 'tp', p: p.i, x: p.x, y: p.y, l: p.L }); emit({ k: 'respawn', p: p.i, near: mate ? mate.i : -1 });
+}
 function checkLose() {
   if (W.over) return;
   const act = activeP(); if (!act.length) return;
@@ -401,7 +420,12 @@ function endGame(kind, why) {
 function doAct(p, a, v) {
   if (!W || W.over || p.gone || p.dead) return;
   switch (a) {
-    case 'ride': if (p.veh && !p.down && !p.dead) { p.ride = !p.ride; if (p.ride) p.build = false; emit({ k: 'sfx', n: 'swap', x: p.x, y: p.y, o: p.i }); } break;
+    case 'ride': if (!p.down && !p.dead) {
+      if (p.pass != null && p.pass >= 0) { p.pass = -1; emit({ k: 'sfx', n: 'swap', x: p.x, y: p.y, o: p.i }); break; }     // hop off the back
+      const d = pillionFor(p);
+      if (d && !p.ride) { p.pass = d.i; p.build = false; emit({ k: 'sfx', n: 'swap', x: p.x, y: p.y, o: p.i }); emit({ k: 'pillion', p: p.i, d: d.i }); break; } // get on behind a teammate
+      if (p.veh) { p.ride = !p.ride; if (p.ride) p.build = false; else for (const q of W.p) if (q.pass === p.i) q.pass = -1; emit({ k: 'sfx', n: 'swap', x: p.x, y: p.y, o: p.i }); }
+    } break;
     case 'reload': if (!p.down) startReload(p); else if (p.mag[0] < WPN[0].mag) { p.reloadT = WPN[0].reload; p.reloadW = 0; } break;
     case 'wpn': if (!p.down && v >= 0 && v < NW && p.owned[v] && p.wpn !== v) {
       if (!p.rlBg) p.rlBg = WPN.map(() => 0); const o = p.wpn, ow = WPN[o];
@@ -585,7 +609,7 @@ function dawn() {
   W.ver++; restockSpots(false);
   for (const p of activeP()) {
     p.ready = false;
-    if (p.dead) { p.dead = false; p.down = false; p.hp = Math.round(p.maxHp * BAL.respawnHp); p.x = W.radio.x - 0.5 + p.i * 2; p.y = W.radio.y + 0.5; p.L = gAt(W.radio.x, W.radio.y); p.vx = p.vy = 0; emit({ k: 'tp', p: p.i, x: p.x, y: p.y, l: p.L }); }
+    if (p.dead) respawnP(p);
     else if (p.down) { p.down = false; p.hp = 30; }
   }
   emit({ k: 'dawn', n: W.night });
@@ -602,6 +626,7 @@ function spawnZombie(k, side, at, f, g) {
 }
 function stepPhase(dt) {
   if (W.over) return;
+  for (const p of activeP()) if (p.dead && (p.downT -= dt) <= 0 && activeP().some(standingP)) respawnP(p); // the dead come back beside a teammate after a while
   if (W.phase === 'day') {
     W.clock -= dt; W.strayT -= dt;
     if (W.strayT <= 0 && W.night >= 1) { W.strayT = BAL.dayStragglerCD; if (W.zs.length < BAL.dayStragglers) spawnZombie(strayKind(W.night), Math.floor(rand() * 4)); }

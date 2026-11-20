@@ -94,7 +94,7 @@ function drawPlan() {
   for (const p of W.p) { if (p.gone || p.dead || !OBJ.pl[p.i] || !OBJ.pl[p.i].g.visible) continue; setInst(X, k++, p.x, (p.zv != null ? p.zv : p.z) + 0.03, p.y, 0, 1, 1, 1, PCOL[p.i % 2].j); }
   X.count = k; X.instanceMatrix.needsUpdate = true; if (X.instanceColor) X.instanceColor.needsUpdate = true;
   const LI = OBJ.lockI, lk = typeof INP !== 'undefined' && INP.lockShow; LI.count = 0;
-  if (lk) { const q = INP.lockAcq == null ? 1 : INP.lockAcq, z = lk.zb, s = z.r * 2.3 * (1 + Math.sin(W.t * 10) * 0.06) * (1 + (1 - q) * 0.8); setInst(LI, 0, z.x, z.z + 0.04, z.y, W.t * 1.5, s, 1, s, q < 1 ? '#b8b8b8' : lk.head ? '#ffd23a' : '#ff4a3a'); LI.count = 1; LI.instanceMatrix.needsUpdate = true; if (LI.instanceColor) LI.instanceColor.needsUpdate = true; }
+  if (lk) { const q = INP.lockAcq == null ? 1 : INP.lockAcq, z = lk.zb, s = z.r * 2.3 * (1 + Math.sin(W.t * 10) * 0.06) * (1 + (1 - q) * 0.8); setInst(LI, 0, z.x, z.z + 0.04, z.y, W.t * 1.5, s, 1, s, q < 1 ? '#b8b8b8' : INP.markShow === z && !(W.p[ME].inp && W.p[ME].inp.fire) ? '#5ad8ff' : lk.head ? '#ffd23a' : '#ff4a3a'); /* cyan = marked (tap a zombie), red = shooting it */ LI.count = 1; LI.instanceMatrix.needsUpdate = true; if (LI.instanceColor) LI.instanceColor.needsUpdate = true; }
   drawModeFx();
   // scream shockwaves
   const R = OBJ.ringI; let r = 0; RND.rings = (RND.rings || []).filter(q => (q.t += 1 / 60) < 0.8);

@@ -215,8 +215,8 @@ const CRAFT = [
   { id: 'shells40', name: '榴弹 ×4', desc: '', cost: { parts: 5, steel: 2 }, ammo: [6, 4] },
   { id: 'nade', name: '手雷 ×2', desc: '最多带 6 颗', cost: { parts: 4 }, nade: 2 },
   { id: 'med', name: '医疗包', desc: '回复 60 生命，最多 3 个', cost: { parts: 3, wood: 2 }, med: 1 },
-  { id: 'bike', name: '自行车', desc: '骑上走得快 60%（T / 「骑车」上下车，骑着不能开枪）', cost: { wood: 6, steel: 6, parts: 4 }, veh: 1, bp: 'bike' },
-  { id: 'moto', name: '摩托车', desc: '走得快 130%（T / 「骑车」上下车，骑着不能开枪）', cost: { steel: 14, parts: 12 }, veh: 2, bp: 'moto' },
+  { id: 'bike', name: '自行车', desc: '骑上走得快 60%（T / 「骑车」上下车；骑着也能开枪，但射速只有 40%）', cost: { wood: 6, steel: 6, parts: 4 }, veh: 1, bp: 'bike' },
+  { id: 'moto', name: '摩托车', desc: '走得快 90%，后座能带一个队友（队友靠近按 T 坐上去，后座开枪射速 70%）', cost: { steel: 14, parts: 12 }, veh: 2, bp: 'moto' },
   { id: 'upg', name: '强化弹头', desc: '全队伤害 +12%（最多 5 级）', cost: { parts: 8 }, upg: 1 },
 ];
 
@@ -227,6 +227,7 @@ const BAL = {
   pMaxHp: 100, pSpeed: 4.4, pReach: 6.5,
   stairHold: 0.18, ledgeHold: 0.45,  // seconds of pushing before you walk down stairs / jump off a ledge
   downTime: 30, reviveTime: 2.4, soloDownTime: 8, respawnHp: 0.5,
+  respawnDay: 20, respawnNight: 60, rezTime: 6, rezHp: 0.4, // (round 20) a dead teammate comes back by a living one after this long (or at dawn); a medkit at the body brings them back at once
   searchTime: 1.5, healTime: 1.0, medHeal: 60,
   knifeDmg: 55, knifeKB: 2.5, knifeCD: 0.5, knifeRange: 2.3, knifeLunge: 1.3, knifeBack: 2, // melee (was a shove: 18 dmg, KB 6, CD 0.55, 1.3 cone)
   nadeDmg: 286, nadeR: 3.4, nadeFuse: 1.6, nadeLand: 0.35, nadeMin: 0.5, // (round 18: radius 2.8 -> 3.4, damage at the edge 35% -> 50%, goes off 0.35 s after landing where you aimed)
