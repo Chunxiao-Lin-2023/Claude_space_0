@@ -181,8 +181,11 @@ function endPtr(e) {
     // a quick tap marks the zombie under / near it (tap empty ground to clear); after aiming, the zombie you were on stays marked
     INP.tAim.id = null; INP.aim.t = performance.now();
     if (inGame()) { const me = W.p[ME], tap = !INP.tAim.far && e.timeStamp - INP.tAim.t0 < 350;
-      const z = tap ? aimPick(e.clientX, e.clientY, 64).zb : me.aimPt && me.aimPt.zb;
-      if (zAlive(z)) { INP.mark = z; INP.markT = performance.now(); } else if (tap) INP.mark = null; }
+      // tap a zombie once = select it (blue ring); tap the SAME zombie again = shoot it, and keep shooting until it drops (red ring);
+      // tap another zombie = select that one instead; tap empty ground = stop and clear
+      const m = INP.mark, onMark = tap && zAlive(m) && (() => { const q = w2s(m.x, m.y, m.z + m.h * 0.55); return Math.hypot(q[0] - e.clientX, q[1] - e.clientY) < 60; })();
+      const z = onMark ? m : tap ? aimPick(e.clientX, e.clientY, 64).zb : me.aimPt && me.aimPt.zb;
+      if (zAlive(z)) { if (tap && z === m) INP.atk = true; else { INP.mark = z; INP.atk = false; } INP.markT = performance.now(); } else if (tap) { INP.mark = null; INP.atk = false; } }
   }
   if (INP.aim.id === e.pointerId && !INP.aim.btn) { INP.aim.id = null; INP.aim.x = INP.aim.y = 0; INP.aim.t = performance.now(); stickDraw(stickR, INP.aim); }
 }
@@ -433,7 +436,7 @@ function readInput(dt) {
     } else { BUILD_HOVER = null; INP.bDown = false; if (!me.build && (PLAN || PREV)) cancelPlan(); }
   } else {
     const A = INP.aim, held = A.id != null, active = held && Math.hypot(A.x, A.y) > 0.3, fing = INP.tAim.id != null && !me.build;
-    const mk = !fing && !active && markOK(me) ? INP.mark : null; if (!mk && INP.mark && !markOK(me)) INP.mark = null;
+    const mk = !fing && !active && markOK(me) ? INP.mark : null; if (!mk && INP.mark && !markOK(me)) { INP.mark = null; INP.atk = false; }
     const fpy = INP.tAim.y - FINGER_UP;
     if (fing) { const pt = aimPick(INP.tAim.x, fpy, assistLv().mag ? 50 : 0); me.aimPt = pt; me.aim = Math.atan2(pt.y - me.y, pt.x - me.x); }
     else if (active) {
@@ -454,8 +457,8 @@ function readInput(dt) {
     if (lz !== INP.lockZ) { INP.lockZ = lz || null; INP.lockT = 0; } else INP.lockT = (INP.lockT || 0) + dt;
     INP.lockAcq = lz && AS.acq ? Math.min(1, INP.lockT / AS.acq) : 1;
     I.auto = auto && lz ? AS.spread : 0;
-    I.fire = !blocked && ((fing && held && A.btn) || (mk && held && A.btn) || (auto && INP.lockAcq >= 1)) && !me.build ? 1 : 0;
-    INP.markShow = mk;
+    I.fire = !blocked && ((fing && held && A.btn) || (mk && ((held && A.btn) || INP.atk)) || (auto && INP.lockAcq >= 1)) && !me.build ? 1 : 0;
+    INP.markShow = mk; INP.atkShow = mk && INP.atk;
     CAM.lookX = lerp(CAM.lookX || 0, Math.cos(me.aim) * 1.5, Math.min(1, dt * 2)); CAM.lookY = lerp(CAM.lookY || 0, Math.sin(me.aim) * 1.5, Math.min(1, dt * 2));
     if (!me.build || !BUILD_HOVER || !BUILD_HOVER.t) BUILD_HOVER = me.build ? BUILD_HOVER : null;
   }

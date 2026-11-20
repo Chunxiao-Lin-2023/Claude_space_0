@@ -34,8 +34,8 @@ function newWorld(seed, names, diff, mode) {
 const rand = (a = 0, b = 1) => a + W.rng() * (b - a);
 const activeP = () => W.p.filter(p => !p.gone);
 const standingP = p => !p.gone && !p.dead && !p.down;
-// shooting from a vehicle (round 20): the driver fires at 40% the rate with 1.6x the spread; a pillion rider at 70% / 1.25x
-const rideK = p => p.ride ? { rate: 2.5, spread: 1.6 } : p.pass != null && p.pass >= 0 ? { rate: 1.43, spread: 1.25 } : { rate: 1, spread: 1 };
+// shooting from a vehicle (round 20): the driver fires at 40% the rate, a pillion rider at 70% (same accuracy as on foot)
+const rideK = p => p.ride ? { rate: 2.5, spread: 1 } : p.pass != null && p.pass >= 0 ? { rate: 1.43, spread: 1 } : { rate: 1, spread: 1 }; // only the rate drops; aim stays as true as on foot
 function emit(e) { if (!W) return; e.q = ++W.seq; /* NB: `q`, not `s` — cell events carry the slab id in `s` */ fxEvent(e); if (NETROLE === 'host') netSendCtl({ t: 'ev', e }); }
 function say(text, col) { emit({ k: 'say', text, col: col || '' }); }
 const pZ = p => surfZ(p.x, p.y, p.L);

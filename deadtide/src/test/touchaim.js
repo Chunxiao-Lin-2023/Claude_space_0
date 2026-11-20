@@ -41,17 +41,18 @@ const UA = 'Mozilla/5.0 (iPad; CPU OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (
     s = await sp(0.6); await tch('touchStart', [{ x: s[0], y: s[1], id: 8 }]); await p.waitForTimeout(90); await tch('touchEnd', []); await p.waitForTimeout(250);
     let mk = await p.evaluate(() => ({ marked: INP.mark === W.zs[0], ring: INP.lockShow && INP.lockShow.zb === W.zs[0] ? 1 : 0, fire: W.p[0].inp.fire }));
     check(vp + ' a quick tap on a zombie marks it (ring shows) without shooting', mk.marked && mk.ring === 1 && mk.fire === 0, JSON.stringify(mk));
-    await tch('touchStart', [{ x: fb2[0], y: fb2[1], id: 9 }]); await simWait(0.12); const m1 = await p.evaluate(() => ({ fire: W.p[0].inp.fire, auto: W.p[0].inp.auto })); await simWait(0.8); await tch('touchEnd', []);
-    const md = await p.evaluate(() => W.zs[0].max - W.zs[0].hp);
-    check(vp + ' then the fire button shoots the marked zombie straight away (no lock-on wait, normal spread)', m1.fire === 1 && !m1.auto && md > 30, JSON.stringify([m1, md]));
+    // tap the same zombie again: fire, and keep firing with no finger on the screen
+    s = await sp(0.6); await tch('touchStart', [{ x: s[0] + 6, y: s[1] + 4, id: 9 }]); await p.waitForTimeout(90); await tch('touchEnd', []); await simWait(1.0);
+    const m1 = await p.evaluate(() => ({ atk: !!INP.atk, fire: W.p[0].inp.fire, auto: W.p[0].inp.auto, dmg: Math.round(W.zs[0].max - W.zs[0].hp), fingers: Object.keys(INP.tp).length }));
+    check(vp + ' tapping the selected zombie again opens fire and keeps firing (no finger down, no lock-on wait)', m1.atk && m1.fire === 1 && !m1.auto && m1.dmg > 60 && m1.fingers === 0, JSON.stringify(m1));
     // aim with the finger, lift it: that zombie stays marked
     await p.evaluate(() => { INP.mark = null; });
     s = await sp(1.0); await tch('touchStart', [{ x: s[0], y: s[1] + 2 + UP, id: 10 }]); await p.waitForTimeout(450); s = await sp(1.0); await tch('touchMove', [{ x: s[0] + 3, y: s[1] + 2 + UP, id: 10 }]); await p.waitForTimeout(300); await tch('touchEnd', []); await p.waitForTimeout(200);
     check(vp + ' aiming with the finger and lifting it leaves that zombie marked', await p.evaluate(() => INP.mark === W.zs[0]));
     // tap empty ground clears the mark
-    const sg = await p.evaluate(() => { for (const [fx, fy] of [[0.6, 0.45], [0.7, 0.35], [0.55, 0.3], [0.65, 0.6], [0.75, 0.5]]) { const x = VW * fx, y = VH * fy; if (!nearUI(x, y) && !aimPick(x, y, 64).zb) return [x, y]; } return [VW * 0.6, VH * 0.4]; });
+    const sg = await p.evaluate(() => { const G = []; for (let fy = 0.38; fy <= 0.7; fy += 0.04) for (let fx = 0.66; fx <= 0.92; fx += 0.06) G.push([fx, fy]); for (const [fx, fy] of G) { const x = VW * fx, y = VH * fy; const z = W.zs[0], q = w2s(z.x, z.y, z.z + z.h * 0.55); if (!nearUI(x, y) && !aimPick(x, y, 64).zb && Math.hypot(q[0] - x, q[1] - y) > 100) return [x, y]; } return [VW * 0.6, VH * 0.4]; });
     await tch('touchStart', [{ x: sg[0], y: sg[1], id: 11 }]); await p.waitForTimeout(90); await tch('touchEnd', []); await p.waitForTimeout(200);
-    check(vp + ' tapping empty ground clears the mark', await p.evaluate(() => INP.mark == null));
+    { const g = await p.evaluate(() => ({ m: INP.mark == null, atk: !!INP.atk, fire: W.p[0].inp.fire })); check(vp + ' tapping empty ground clears the mark and stops firing', g.m && !g.atk && g.fire === 0, JSON.stringify(g) + ' at ' + JSON.stringify(sg) + ' ui ' + await p.evaluate(sg => nearUI(sg[0], sg[1]) + ' vw ' + VW + 'x' + VH + ' left ' + (sg[0] <= VW * (VH > VW ? 0.4 : 0.3)), sg)); }
     await p.evaluate(() => { INP.mark = null; W.p[0].mag[0] = 12; window.__dbg.skipDraw = false; });
     await tch('touchStart', [{ x: fb2[0], y: fb2[1], id: 7 }]); await simWait(0.08);
     const a0 = await p.evaluate(() => ({ fire: W.p[0].inp.fire, acq: INP.lockAcq, lock: !!(W.p[0].aimPt && W.p[0].aimPt.zb) }));
