@@ -494,7 +494,7 @@
           '####################'],
         ents: [
           { id: 'cUp', x: 9, y: 2, w: 2, spr: 'stairsup', solid: false, touch: S => upStairs(S) },
-          { id: 'cSign', x: 11, y: 1, spr: 'board', on: S => S.narr('铁牌子：「玛丽金巷 · 坡陡，请扶好扶手」。\n巷子中间那道石槽，是当年的排水沟——楼上的人家喊一声「gardyloo!」，就把脏水往下倒。') },
+          { id: 'cSign', x: 11, y: 1, spr: 'board', on: S => S.narr('铁牌子：「玛丽金巷 · 坡陡，请扶好扶手」。\n巷子中间那道石槽，是当年的排水沟——楼上的人家喊一声「当心水——」（gardyloo!），就把脏水往下倒。') },
           { id: 'b1', x: 8, y: 4, spr: 'bulb', solid: false, z: 1, light: { r: 4, col: 'rgba(255,220,150,.12)' } },
           { id: 'b2', x: 11, y: 10, spr: 'bulb', solid: false, z: 1, light: { r: 4, col: 'rgba(255,220,150,.12)' } },
           { id: 'b3', x: 8, y: 17, spr: 'bulb', solid: false, z: 1, light: { r: 4, col: 'rgba(255,220,150,.12)' } },
@@ -551,7 +551,7 @@
         rows: UR,
         ents: [
           { id: 'uIn', x: 14, y: 1, spr: 'invisible', solid: false, async touch(S) { await S.narr('身后的洞口……不见了。只有冰凉的砖。'); await S.walk('pl', 'd', 4); } },
-          { id: 'uGraf', x: 13, y: 5, spr: 'invisible', on: S => S.narr('墙上用炭写着一行歪歪扭扭的字：\n「Lord have mercy upon us」——主啊，怜悯我们。') },
+          { id: 'uGraf', x: 13, y: 5, spr: 'invisible', on: S => S.narr('墙上用炭写着一行歪歪扭扭的字：\n「主啊，怜悯我们」（Lord have mercy upon us）。') },
           { id: 'w1', x: 12, y: 6, spr: 'wisp', col: 'rot', decal: true, light: { r: .8, col: 'rgba(130,150,96,.1)' } },
           { id: 'w2', x: 6, y: 8, spr: 'wisp', col: 'rot', decal: true },
           { id: 'w3', x: 24, y: 13, spr: 'wisp', col: 'lav', decal: true, light: { r: .8, col: 'rgba(196,160,236,.12)' } },
@@ -645,7 +645,7 @@
     S.face('doug', 'pl');
     if (S.once('doug1')) {
       await S.say('道格', ['又是给安妮的玩具？上个礼拜有人送了一整套乐高。', '我在这儿值了六年夜班。监控里什么都没拍到过。', '……就是有几回，早上来一看，安妮房间那堆玩具，全都转了个方向。']);
-      await S.say('道格', ['你知道「gardyloo」吧？以前老城的人从楼上往街上倒脏水，倒之前先喊一声。', '你在巷子里要是听见有人喊这个——赶紧往边上躲。', '开玩笑的。……大概是开玩笑的。']);
+      await S.say('道格', ['你知道「当心水」（gardyloo）吧？以前老城的人从楼上往街上倒脏水，倒之前先喊一声。', '你在巷子里要是听见有人喊这个——赶紧往边上躲。', '开玩笑的。……大概是开玩笑的。']);
       return;
     }
     await S.say('道格', cyc(S, '_dg', [
@@ -863,7 +863,7 @@
     S.sfx('chime');
     await S.narr('她把兔子抱进怀里，下巴抵着它的脑袋。\n你第一次看见她笑。');
     hum(S);
-    await S.say('安妮', 'Baloo, baloo, my wee wee thing……\n（睡吧，睡吧，我的小东西……）', { style: 'whisper' });
+    await S.say('安妮', '睡吧，睡吧，我的小东西……\n（Baloo, baloo, my wee wee thing……）', { style: 'whisper' });
     if (S.f.stickIn) return trueEnd(S);
     return goodEnd(S);
   }
