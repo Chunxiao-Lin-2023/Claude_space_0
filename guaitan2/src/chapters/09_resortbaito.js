@@ -47,7 +47,7 @@
   /* ---------- 规则单（每天多一条） ---------- */
   function rulesText(S) {
     const f = S.f, d = f.day || 1;
-    let t = '（老板娘的字，圆珠笔写在便笺上，贴在员工房门外的墙上。）\n\n汐见屋　打工须知\n\n一、二楼最里面的「浜之间」，不许进去。\n二、晚上九点以后，不要上二楼。';
+    let t = '（老板娘的字，圆珠笔写在便笺上，贴在员工房门外的墙上。）\n\n汐见屋　打工须知\n\n一、二楼最里面的「滨之间」，不许进去。\n二、晚上九点以后，不要上二楼。';
     if (d >= 2) t += '\n三、夜里有人隔着门叫你的名字，不要答应。\n四、二楼走廊尽头的镜子，布不要掀开。\n　（三、四两条墨水颜色不一样，是今天早上才添上去的。）';
     if (d >= 3) t += '\n\n五、不要把哥哥带走\n　（这一行是蜡笔写的。字歪歪扭扭，像小孩子写的。最后一个字写出了纸外。）';
     t += '\n\n违反规矩的时候，背后一凉的次数：' + dots(f.gaze || 0);
@@ -71,7 +71,7 @@
       const L = [], r = (f.r1 ? 1 : 0) + (f.r2 ? 1 : 0) + (f.r3 ? 1 : 0);
       setHour(S, [6, 8, 10, 12, 14, 15, 17][Math.min(6, (f.tr || 0) + r)]);
       if ((f.tr || 0) < 3) L.push('海边捡垃圾 ' + (f.tr || 0) + '/3');
-      if (r < 3) L.push('收拾二楼 ' + r + '/3（叠松之间、竹之间的被褥，扫浜之间门口）');
+      if (r < 3) L.push('收拾二楼 ' + r + '/3（叠松之间、竹之间的被褥，扫滨之间门口）');
       if (!L.length) return S.goal(S.map === 'kan1' ? '活干完了' : '活干完了——回旅馆一楼');
       return S.goal('【第二天】今天的活：' + L.join('、'));
     }
@@ -96,7 +96,7 @@
     kama(g, e, t, R) { box(R, 0, 2, 16, 13, '#8a7a62'); R(3, -3, 10, 7, '#2a2624'); R(2, -4, 12, 2, '#4a4440'); R(7, -6, 2, 2, '#6a6460'); if (Math.sin(t * 1.3) > .2) R(7 + Math.round(Math.sin(t * 3)), -11, 1, 4, 'rgba(230,230,230,.35)'); },
     zen(g, e, t, R) { trayDraw(R, 1, 6, e.full !== false); },
     zenspot(g, e, t, R) { trayDraw(R, 1, 6, !!e.full); },
-    fdoor(g, e, t, R) {   // 浜之间的纸门：贴满了御札
+    fdoor(g, e, t, R) {   // 滨之间的纸门：贴满了符纸
       R(0, -2, 16, 16, '#2a1e14'); R(1, -1, 7, 14, '#c9c1aa'); R(8, -1, 7, 14, '#c4bca4');
       if (e.open) { R(6, -1, 4, 14, '#030203'); if (e.eyes) { R(7, 3, 1, 1, '#e8f0f0'); R(9, 3, 1, 1, '#e8f0f0'); } }
       for (const [x, y] of ofudaPos) { if (e.open && x >= 5 && x <= 9) continue; R(x, y, 3, 5, '#f2eee2'); R(x + 1, y + 1, 1, 1, '#a01818'); R(x + 1, y + 3, 1, 1, '#1a1a1a'); }
@@ -167,7 +167,7 @@
       for (let y = -5; y < 8; y += 3) R(7, y, 2, 1, '#3a3a36');
       R(1, 12, 3, 3, '#2a6ab0'); R(1, 11, 1, 1, '#e8f0f8'); R(12, 12, 3, 2, '#e8c040'); R(13, 11, 2, 1, '#3a8ad8');
     },
-    tomyo(g, e, t, R) {   // 灯明台
+    tomyo(g, e, t, R) {   // 长明灯台
       R(4, 13, 8, 2, '#2a1a10'); R(7, 2, 2, 12, '#4a3020'); R(4, 1, 8, 2, '#8a6a3a'); R(7, -4, 2, 5, '#ece6d2');
       if (!e.off) { const f = Math.sin(t * 15 + e.px) > 0 ? 0 : 1; R(7, -9 + f, 2, 5 - f, '#ffcf5a'); R(7, -7, 2, 2, '#fff2b0'); R(8, -10 + f, 1, 1, '#ff8a2a'); }
       else { R(8, -7, 1, 3, 'rgba(200,200,200,.35)'); R(7, -5, 2, 1, '#2a2a2a'); }
@@ -260,14 +260,14 @@
   async function lobbyIntro(S) {
     const f = S.f;
     S.focus(13, 12);
-    await S.narr('门框被海风吹得发白。玄关里一股潮乎乎的榻榻米味，混着线香。\n帐场后面，一个穿和服的女人抬起头，笑了。');
+    await S.narr('门框被海风吹得发白。玄关里一股潮乎乎的榻榻米味，混着线香。\n账房后面，一个穿和服的女人抬起头，笑了。');
     await S.say('老板娘', ['欢迎欢迎。你们就是网上应聘的三位大学生吧？', '我是这里的老板娘。这个暑假，辛苦你们了。']);
     S.bubble('kenta1', '!', 900);
     await S.say('健太', '包吃包住对吧？饭管够吗？');
     await S.say('老板娘', '管够。我们家老板做的饭，香着呢。');
     await S.say('老板娘', ['干活的事，阿兼婆婆会教你们。', '不过有几条规矩，一定要守。']);
     f.day = 1; await showRules(S);
-    await S.say('修一', '……「浜之间」？', { style: 'whisper' });
+    await S.say('修一', '……「滨之间」？', { style: 'whisper' });
     await S.say('健太', '里面藏着宝贝吧！');
     await S.narr('老板娘的笑容一点都没变。');
     await S.say('老板娘', ['……那间屋子，在装修。', '行李先放到员工房的柜子里——走廊东头。放好了，去厨房找老板，帮忙送晚饭。']);
@@ -293,7 +293,7 @@
     if (f.ph === 'd1') {
       if (!f.bag) return S.say('老板', '……先放行李。');
       if (S.has('zenA') || S.has('zenB')) return S.say('老板', S.has('zenA') ? '……松之桌。两位。' : '……竹之桌。一位。');
-      if ((f.srv || 0) === 0) { S.give('zenA'); return S.say('老板', ['……宴会厅，松之桌，两位。刺身定食。', '……别洒了。']); }
+      if ((f.srv || 0) === 0) { S.give('zenA'); return S.say('老板', ['……宴会厅，松之桌，两位。生鱼片套餐。', '……别洒了。']); }
       if (f.srv === 1) { S.give('zenB'); return S.say('老板', '……竹之桌。烤鱼。老先生，饭少盛。'); }
       return S.say('老板', '……辛苦。');
     }
@@ -386,7 +386,7 @@
       await S.narr('你踩上了第一级台阶。木头「吱」地叫了一声。\n第二级。第三级——');
       S.sfx('heart');
       await S.narr('楼梯的尽头，站着老板娘。\n手里端着那个漆盘。碗空了。筷子还竖在空碗里。');
-      await S.say('老板娘', ['……拓海君。', '规矩上写着的吧？'], { style: 'whisper' });
+      await S.say('老板娘', ['……小拓海。', '规矩上写着的吧？'], { style: 'whisper' });
       await gazeUp(S, '九点以后上了二楼');
       await S.narr('她就那么笑着，一直看着你退回楼下，退进员工房。');
       S.pos(24, 6, 3); return;
@@ -497,7 +497,7 @@
     const f = S.f;
     if (f.r3) return S.note('photo');
     f.r3 = true; S.hide('photoF'); S.sfx('paper');
-    await S.narr('你拿扫帚扫到浜之间门口。地板缝里，卡着一张照片。');
+    await S.narr('你拿扫帚扫到滨之间门口。地板缝里，卡着一张照片。');
     await S.note('photo');
     await S.think('（……红凉鞋。晒得黑黑的小男孩。老先生说的，就是他吧。）');
     setGoal(S); return dayCheck2(S);
@@ -516,8 +516,8 @@
     S.place('kenta1', 17, 8, 0); S.place('shu1', 18, 8, 0);
     await S.narr('天色暗下来了。走廊里的灯一盏一盏亮起来。');
     S.face('kaneL', 'pl');
-    await S.say('阿兼婆婆', ['拓海。老板娘烧得厉害，躺在帐场后面的屋里。', '……她叫你过去。叫你一个人。']);
-    S.goal('去帐场后屋看老板娘（走廊东南边）');
+    await S.say('阿兼婆婆', ['拓海。老板娘烧得厉害，躺在账房后面的屋里。', '……她叫你过去。叫你一个人。']);
+    S.goal('去账房后屋看老板娘（走廊东南边）');
   }
 
   /* ================= 第二夜 ================= */
@@ -525,7 +525,7 @@
     const f = S.f; S.face('okamiS', 'pl');
     if (f.ph === 'eve2') {
       await S.narr('老板娘靠坐在被褥边上，头发散着，脸白得像纸。屋里一股退烧膏药的味道。');
-      await S.say('老板娘', ['……拓海君。今晚，你替我把饭端上去。', '九点。到厨房找老板拿膳，端到浜之间门口，放下。', '敲三下门，说：「翔，吃饭了。」']);
+      await S.say('老板娘', ['……小拓海。今晚，你替我把饭端上去。', '九点。到厨房找老板拿膳，端到滨之间门口，放下。', '敲三下门，说：「翔，吃饭了。」']);
       const r = await S.ask('「……翔，吃饭了。」老板娘又小声念了一遍。', ['「……翔是谁？」', '「……好。」'], '老板娘');
       if (r === 0) { await S.narr('老板娘笑了。'); await S.say('老板娘', '我儿子呀。……他怕生。'); }
       await S.say('老板娘', ['放下就走。门里面不管说什么，都不要应。', '走廊尽头那面镜子……布要是掉了，闭上眼睛，摸着盖回去。千万别看。', '下楼的时候——不要回头。']);
@@ -551,7 +551,7 @@
     await S.fade(0, 600);
     await S.say('修一', ['……健太刚才还在这儿的。上厕所去了吧。', '你小心点。'], { style: 'whisper' });
     f.ph = 'n2'; f.n2s = 'up';
-    S.goal('把膳端到二楼最里面的浜之间门口');
+    S.goal('把膳端到二楼最里面的滨之间门口');
     S.cp('n2');
   }
 
@@ -559,19 +559,19 @@
   async function fdoorUse(S) {
     const f = S.f, d = S.ent('fdoor');
     if (f.ph === 'd2') {
-      await S.narr('纸门上贴满了御札。一张压着一张，旧的发黄，新的还白着。门缝里透出一股潮乎乎的海水味。\n门口摆着早上收回来的膳：碗空了，一粒饭都不剩，筷子还竖着插在空碗里。');
-      const r = await S.ask('规矩一：浜之间，不许进去。', ['别碰', '把门拉开一条缝']);
+      await S.narr('纸门上贴满了符纸。一张压着一张，旧的发黄，新的还白着。门缝里透出一股潮乎乎的海水味。\n门口摆着早上收回来的膳：碗空了，一粒饭都不剩，筷子还竖着插在空碗里。');
+      const r = await S.ask('规矩一：滨之间，不许进去。', ['别碰', '把门拉开一条缝']);
       if (r === 0) return;
       d.open = true; S.sfx('open');
       await S.narr('门缝里黑漆漆的。\n榻榻米上，有一串小小的湿脚印，一直走到门边——\n走到你的脚边。');
       d.eyes = true; S.sfx('sting'); await S.wait(500);
       d.open = false; d.eyes = false; S.sfx('close');
       await S.narr('纸门「啪」地自己合上了。');
-      return gazeUp(S, '拉开了浜之间的门');
+      return gazeUp(S, '拉开了滨之间的门');
     }
     if (f.ph === 'n2' && f.n2s === 'up') return placeZen(S);
     if (f.ph === 'n2') { chew(S, .05); return S.narr('纸门关着。门缝底下，什么东西在吧唧吧唧地吃。'); }
-    await S.narr('贴满了御札的纸门。');
+    await S.narr('贴满了符纸的纸门。');
   }
   async function placeZen(S) {
     const f = S.f;
@@ -598,7 +598,7 @@
     S.focus(null);
     f.n2s = 'mirror';
     S.goal('闭着眼，把镜子上的布盖回去！');
-    S.timer(7, '镜子', async S => { lastDeath = 'mirror'; await caught(S, '你还是看见了。\n镜子里，你身后的走廊上，浜之间的纸门开着一条缝。\n一个小小的、湿漉漉的东西，蹲在漆盘前面，慢慢地转过头来——', '它从镜子里看见你了'); }, { during: true });
+    S.timer(7, '镜子', async S => { lastDeath = 'mirror'; await caught(S, '你还是看见了。\n镜子里，你身后的走廊上，滨之间的纸门开着一条缝。\n一个小小的、湿漉漉的东西，蹲在漆盘前面，慢慢地转过头来——', '它从镜子里看见你了'); }, { during: true });
   }
   async function kagamiUse(S) {
     const f = S.f, k = S.ent('kagami');
@@ -624,7 +624,7 @@
       const r = await S.ask('规矩四：镜子上的布，不要掀开。', ['别碰', '掀开一角看看']);
       if (r === 0) return;
       k.covered = false; k.face = true; S.sfx('sting');
-      await S.narr('镜子里是你，和你身后的走廊。\n你身后，浜之间门口，蹲着一个小小的影子。');
+      await S.narr('镜子里是你，和你身后的走廊。\n你身后，滨之间门口，蹲着一个小小的影子。');
       await S.wait(500); S.sfx('heart');
       await S.narr('你猛地回头。\n……走廊上什么都没有。漆盘里的空碗，筷子还竖着。');
       k.covered = true; k.face = false;
@@ -644,7 +644,7 @@
     if (!forced) r = await S.ask('是健太的声音。他什么时候跟上来的？', ['（不回头）「健太！快下来！」', '回头']);
     if (r === 1) {
       S.turn(2); S.place('kenta2', 23, 7, 3); S.ent('fdoor').open = true; S.ent('fdoor').eyes = true; S.focus(22, 7);
-      await S.narr('你回过头。\n走廊尽头，健太站在浜之间的门口，背对着你。\n他的肩膀上，搭着一只很小的、灰白色的手。');
+      await S.narr('你回过头。\n走廊尽头，健太站在滨之间的门口，背对着你。\n他的肩膀上，搭着一只很小的、灰白色的手。');
       await S.wait(600);
       await gazeUp(S, '在二楼回了头');
       S.focus(null);
@@ -710,7 +710,7 @@
       await S.scare('face', { spr: '@kentaPF', dur: 1 });
       await S.say('健太', '……拓海哥哥。', { style: 'whisper' });
       await S.narr('他从来不叫你「哥哥」。你们同岁。');
-      await S.say('老板娘', ['健太君说，今天想一直待在家里。', '……对吧？']);
+      await S.say('老板娘', ['小健太说，今天想一直待在家里。', '……对吧？']);
       await S.walk('okamiD', [14, 11], 2.6); S.hide('okamiD'); S.show('okamiL');
       S.place('shu1', 4, 12, 0); S.face('shu1', 'pl');
       await S.say('修一', '……你看门外那张规矩。最后一行。', { style: 'whisper' });
@@ -735,7 +735,7 @@
     if (!f.sawK) return S.say('阿兼婆婆', '……健太？去宴会厅看看。');
     if (f.askedK) return S.say('阿兼婆婆', f.follow ? '走后门。快。' : '他现在只认吃的。……去找老板。');
     f.askedK = true;
-    await S.narr('阿兼婆婆把手里的碗放下，往帐场那边看了一眼，压低了声音。');
+    await S.narr('阿兼婆婆把手里的碗放下，往账房那边看了一眼，压低了声音。');
     await S.say('阿兼婆婆', [
       '十二年前的夏天，盂兰盆那几天。老板娘的小儿子，翔，一个人跑到海里去游泳。……再也没上来。',
       '老板娘不肯办丧事。不立牌位，不烧纸。每天晚上端饭上楼。',
@@ -760,9 +760,9 @@
     const f = S.f;
     if (f.ph === 'd1' || f.ph === 'd2') return S.go('umibe', 7, 3, 0);
     if (f.ph === 'd3') {
-      if (!f.follow) return S.narr('老板娘坐在帐场里，看着门口。\n……健太还在里面。不能一个人走。');
+      if (!f.follow) return S.narr('老板娘坐在账房里，看着门口。\n……健太还在里面。不能一个人走。');
       S.face('okamiL', 'pl');
-      await S.say('老板娘', ['健太君？', '要去哪儿呀？'], { style: 'whisper' });
+      await S.say('老板娘', ['小健太？', '要去哪儿呀？'], { style: 'whisper' });
       S.follow('kenta1', false); f.follow = false; f.lure = false;
       await S.narr('健太站住了。他看了老板娘一眼，扭头就往宴会厅那边走。');
       S.place('kenta1', 5, 14, 3); S.ent('kenta1').spr = 'crawler';
@@ -809,7 +809,7 @@
     const f = S.f; f.ph = 'tera';
     S.follow('kentaT', false); S.place('kentaT', S.pl.x, 13, 3);
     S.face('jushoY', 'pl'); S.face('shuY', 'pl');
-    await S.narr('杉树围着一座老寺。蝉声一下子远了。\n本堂前面站着一个穿黑衣的老和尚。修一在他身边，满头是汗。');
+    await S.narr('杉树围着一座老寺。蝉声一下子远了。\n大殿前面站着一个穿黑衣的老和尚。修一在他身边，满头是汗。');
     await S.say('住持', '……来了。');
     await S.narr('住持扳开健太的眼皮看了看，又抓起他的手闻了闻。\n健太嘻嘻地笑。');
     await S.say('住持', [
@@ -818,8 +818,8 @@
       '她不知从哪儿学来一个邪门的法子：把孩子的魂关在屋里，天天端饭供着。等到盂兰盆，找一个年纪合适的身子……'
     ]);
     await S.say('修一', '……让他附上去？', { style: 'whisper' });
-    await S.say('住持', ['盂兰盆以前送不走，就再也送不走了。今晚就做。', '得先给那孩子立一块塔婆。写上他的俗名和命日——名字叫得出、日子对得上，他才肯跟我走。']);
-    S.goal('在塔婆上写下那孩子的俗名和命日（跟住持说话）');
+    await S.say('住持', ['盂兰盆以前送不走，就再也送不走了。今晚就做。', '得先给那孩子立一块超度木牌（塔婆）。写上他的俗名和忌日——名字叫得出、日子对得上，他才肯跟我走。']);
+    S.goal('在超度牌上写下那孩子的俗名和忌日（跟住持说话）');
     S.cp('tera');
   }
   function dateHint(v, n) {
@@ -836,18 +836,18 @@
     const f = S.f; S.face('jushoY', 'pl');
     if (f.ph !== 'tera') return S.say('住持', '南无阿弥陀佛……');
     if (!f.nameOK) {
-      const r = await S.ask('「那孩子，叫什么？」', ['翔', '健太', '浜', '……想不起来'], '住持');
+      const r = await S.ask('「那孩子，叫什么？」', ['翔', '健太', '滨', '……想不起来'], '住持');
       if (r !== 0) {
         f.wrongN = (f.wrongN || 0) + 1;
         if (f.wrongN >= 2) return S.say('住持', ['……老板娘让你端饭上楼的时候，叫的是：「翔，吃饭了。」', '那孩子叫翔。']);
-        return S.say('住持', r === 1 ? '那是你朋友的名字。他还活着呢。' : r === 2 ? '「浜之间」，是那间屋子的名字。' : ['……老板娘让你端饭上楼的时候，叫的是哪个名字？', '「□，吃饭了。」——是什么？']);
+        return S.say('住持', r === 1 ? '那是你朋友的名字。他还活着呢。' : r === 2 ? '「滨之间」，是那间屋子的名字。' : ['……老板娘让你端饭上楼的时候，叫的是哪个名字？', '「□，吃饭了。」——是什么？']);
       }
       f.nameOK = true; await S.say('住持', '翔……是了。俗名，翔。');
     }
     await S.narr('住持把一块新削的木牌和蘸好墨的毛笔递给你。');
     if (S.coop && S.once('kpTip')) S.toast('联机：一人翻「笺」里的照片和日记念给对方听，一人写');
-    const v = await S.keypad('塔婆　俗名「翔」\n命日：平成八年 □□月□□日 —— 写四位数（月月日日）\n联机时：一人翻「笺」里的照片和日记，一人写', ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'], 4);
-    if (v == null) return S.say('住持', '想好了再写。写错的塔婆，他不认。');
+    const v = await S.keypad('超度牌　俗名「翔」\n忌日：平成八年 □□月□□日 —— 写四位数（月月日日）\n联机时：一人翻「笺」里的照片和日记，一人写', ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'], 4);
+    if (v == null) return S.say('住持', '想好了再写。写错的超度牌，他不认。');
     if (v !== '0813') {
       f.wrongD = (f.wrongD || 0) + 1; S.sfx('bad');
       if (f.wrongD === 2) { drip(S); await S.narr('木牌上的墨，自己晕开了。像被水泡过。'); }
@@ -871,13 +871,13 @@
     CANDLES.forEach(c => { S.ent(c).off = false; });
     ['doorL', 'doorR'].forEach(i => { const d = S.ent(i); d.open = false; d.solid = true; });
     S.pos(15, 7, 1); S.dark(.8, 'tera'); S.plr(2.4); S.amb('night'); S.give('match', true);
-    await S.card('守夜', '八月十一日　晚上十点', '本堂的门从外面插上了。\n四盏灯明，围着健太的被褥。\n住持坐在佛前，木鱼一声一声地响。\n\n鸡叫以前，谁也不许出去。');
+    await S.card('守夜', '八月十一日　晚上十点', '大殿的门从外面插上了。\n四盏长明灯，围着健太的被褥。\n住持坐在佛前，木鱼一声一声地响。\n\n鸡叫以前，谁也不许出去。');
     await S.fade(0, 800);
     chant(S, 5, .1);
-    await S.say('住持', ['规矩写在柱子上那张纸上。', '灯明灭了，就点上。有人叫，别应。健太要是往外爬——按住他。']);
+    await S.say('住持', ['规矩写在柱子上那张纸上。', '长明灯灭了，就点上。有人叫，别应。健太要是往外爬——按住他。']);
     await S.note('okite');
     f.ph = 'vigil';
-    S.goal('守夜：守着四盏灯明和健太，谁叫都别应');
+    S.goal('守夜：守着四盏长明灯和健太，谁叫都别应');
     S.cp('vigil');
     return vStageA(S);
   }
@@ -886,16 +886,16 @@
     await S.wait(900); chant(S, 4, .08); await S.wait(1600);
     await S.narr('……十一点。\n一阵风从门缝底下钻进来，冷得像海水。');
     S.ent('c1').off = true; S.sfx('switch');
-    await S.narr('东北角的灯明，「噗」地灭了。');
-    S.goal('东北角的灯明灭了——快去点上！');
-    S.timer(8, '灯明', candleFail, { during: true });
+    await S.narr('东北角的长明灯，「噗」地灭了。');
+    S.goal('东北角的长明灯灭了——快去点上！');
+    S.timer(8, '长明灯', candleFail, { during: true });
   }
-  async function candleFail(S) { lastDeath = 'candle'; await caught(S, '你没来得及。\n灯明一灭，结界就开了一道口子。\n黑暗里，有什么湿漉漉的东西，贴着地板爬了进来。', '灯明灭了'); }
+  async function candleFail(S) { lastDeath = 'candle'; await caught(S, '你没来得及。\n长明灯一灭，结界就开了一道口子。\n黑暗里，有什么湿漉漉的东西，贴着地板爬了进来。', '长明灯灭了'); }
   async function kentaFail(S) { lastDeath = 'kenta'; await caught(S, '健太爬过了门槛。\n门外的黑暗里，伸出一只很小的手，拉住了他的手。\n……然后，也拉住了你的脚。', '健太爬出去了'); }
   async function tomyoUse(S, id) {
     const f = S.f, e = S.ent(id);
-    if (f.ph !== 'vigil') return S.narr('灯明台。');
-    if (!e.off) return S.narr('灯明的火苗笔直地立着。');
+    if (f.ph !== 'vigil') return S.narr('长明灯的灯台。');
+    if (!e.off) return S.narr('长明灯的火苗笔直地立着。');
     e.off = false; S.sfx('match'); S.toast('点上了');
     return vCheck(S);
   }
@@ -904,18 +904,18 @@
     const f = S.f;
     if (f.vs === 'A' && allLit(S)) { S.clearTimer(); return vStageB(S); }
     if (f.vs === 'C' && f.held && allLit(S)) { S.clearTimer(); return vStageD(S); }
-    if (f.vs === 'C') S.goal(f.held ? '还有灯明没点上！' : '按住健太！');
+    if (f.vs === 'C') S.goal(f.held ? '还有长明灯没点上！' : '按住健太！');
   }
   async function vStageB(S) {
-    const f = S.f; f.vs = 'B'; S.goal('守夜：守着四盏灯明和健太，谁叫都别应'); S.cp('vB');
+    const f = S.f; f.vs = 'B'; S.goal('守夜：守着四盏长明灯和健太，谁叫都别应'); S.cp('vB');
     await S.fade(1, 500); await S.wait(500); await S.fade(0, 500);
     await S.narr('……一点。木鱼声停了。');
     knock3(S, .12); await S.wait(1200);
-    await S.say('门外', ['健太君——', '回家吃饭了。妈妈今天，做了你最爱吃的。'], { style: 'whisper' });
+    await S.say('门外', ['小健太——', '回家吃饭了。妈妈今天，做了你最爱吃的。'], { style: 'whisper' });
     await S.narr('是老板娘的声音。');
     let r = await S.ask('门外安静了一下。', ['（不出声）', '「……老板娘？」']);
     if (r === 1) { lastDeath = 'voice'; return caught(S, '「老板娘？」\n门外的声音笑了。\n「……不是哦。」', '你应了声'); }
-    await S.say('门外', '……拓海君？你也在里面吧？开开门呀。', { style: 'whisper' });
+    await S.say('门外', '……小拓海？你也在里面吧？开开门呀。', { style: 'whisper' });
     r = await S.ask('门外的人，在等你开门。', ['（不出声）', '去拉门闩']);
     if (r === 1) { lastDeath = 'voice'; return caught(S, '你的手刚碰到门闩，门就从外面被拉开了。\n门外没有老板娘。\n只有一滩水，和水里一串小小的脚印。', '你开了门'); }
     if ((f.gaze || 0) >= 1) {
@@ -926,8 +926,8 @@
       if (r === 1) { lastDeath = 'voice'; return caught(S, '「我没答应过！」\n健太笑了。\n「你答应了。」他说，「你刚才就答应了。」', '你应了声'); }
       k.s.eyes = false;
     }
-    await S.narr('门外的脚步声，绕着本堂走了一圈。又一圈。\n然后没有了。');
-    S.goal('守夜：守着四盏灯明和健太');
+    await S.narr('门外的脚步声，绕着大殿走了一圈。又一圈。\n然后没有了。');
+    S.goal('守夜：守着四盏长明灯和健太');
     S.cp('vC');
     return vStageC(S);
   }
@@ -937,12 +937,12 @@
     await S.narr('……两点半。你靠着柱子，眼皮越来越沉——');
     S.ent('kentaV').s.empty = true; S.place('kentaC', 9, 7, 0); S.ent('kentaC').alpha = 1;
     S.ent('c0').off = true; S.ent('c3').off = true; S.sfx('switch'); S.shake(400, 2);
-    await S.narr('「哗啦」一声，被褥空了。\n健太四肢着地，朝门口爬过去。\n西北角和东南角的灯明，一起灭了！');
+    await S.narr('「哗啦」一声，被褥空了。\n健太四肢着地，朝门口爬过去。\n西北角和东南角的长明灯，一起灭了！');
     await S.say('修一', '我——我动不了！身上像压着什么东西！');
-    S.goal('先按住健太！再点上两盏灯明！');
-    if (S.coop) S.toast('联机：一人盯着健太和灯明报位置，一人跑');
+    S.goal('先按住健太！再点上两盏长明灯！');
+    if (S.coop) S.toast('联机：一人盯着健太和长明灯报位置，一人跑');
     f.crawl = true; f.crawlWait = CRAWL_WAIT;
-    S.timer(C_T, '灯明', candleFail, { during: true });
+    S.timer(C_T, '长明灯', candleFail, { during: true });
   }
   function crawlTick(S, dt) {
     const f = S.f; if (!f.crawl || S.busy) return;
@@ -971,15 +971,15 @@
     S.place('shoV', 10, 9, 3); S.ent('shoV').alpha = 0; await S.alpha('shoV', 1, 1200);
     crawlPat(S, .1);
     await S.narr('一个小小的、湿漉漉的东西，从门缝底下挤了进来。\n它趴在地上，一点一点，朝健太爬过去。');
-    await S.say('住持', '——来了。塔婆！', { style: 'big' });
-    const opts = ['举起塔婆，叫它的名字']; if (S.has('sandal')) opts.push('先把那只红色的小凉鞋，放在它面前');
+    await S.say('住持', '——来了。超度牌！', { style: 'big' });
+    const opts = ['举起超度牌，叫它的名字']; if (S.has('sandal')) opts.push('先把那只红色的小凉鞋，放在它面前');
     const r = await S.ask('它停在结界外面，抬起了头。', opts);
     if (r === 1) {
       f.kuyou = true; S.take('sandal');
       await S.narr('你把那只红色的小凉鞋，轻轻放在地板上。\n那个东西停住了。\n它伸出一只灰白的小手，碰了碰鞋。然后，把鞋抱进了怀里。');
       hum(S, .035);
     }
-    await S.narr('你把塔婆高高举起来。');
+    await S.narr('你把超度牌高高举起来。');
     await S.say('你', '……翔！', { style: 'big' });
     rin(S); chant(S, 8, .12);
     await S.scare('face', { spr: '@shoF', dur: 1.1 });
@@ -1030,8 +1030,8 @@
     return badLeft(S);
   }
   const voiceAt = {
-    16: async S => { await S.say('身后（很远）', ['健太君——', '你的包，忘拿了——'], { style: 'whisper' }); await S.narr('是老板娘的声音。从石阶上面传下来。'); },
-    22: async S => { await S.say('身后（很远）', ['拓海——！等等我！', '你拽着的那个不是我！我在这儿！'], { style: 'whisper' }); await S.narr('是健太的声音。从本堂那边。\n……可是你的衣角，还被一只手攥着。'); await S.think('（别回头。）'); },
+    16: async S => { await S.say('身后（很远）', ['小健太——', '你的包，忘拿了——'], { style: 'whisper' }); await S.narr('是老板娘的声音。从石阶上面传下来。'); },
+    22: async S => { await S.say('身后（很远）', ['拓海——！等等我！', '你拽着的那个不是我！我在这儿！'], { style: 'whisper' }); await S.narr('是健太的声音。从大殿那边。\n……可是你的衣角，还被一只手攥着。'); await S.think('（别回头。）'); },
     28: async S => { drip(S, .07); drip(S, .06, .5); await S.narr('啪嗒、啪嗒。\n身后的脚步声，是光着脚踩在湿石头上的声音。\n攥着你衣角的那只手，越来越凉。'); await S.say('身后（很近）', '……哥哥。', { style: 'whisper' }); },
     31: async S => { S.shake(300, 1); await S.say('身后（贴着耳朵）', ['拓海哥哥。', '你答应过要陪我玩的。你应过我的。'], { style: 'whisper' }); await S.narr('衣角被往后拽了一下。很用力。'); },
     34: async S => { await S.say('修一（山门那边）', '拓海！这边！快到了！'); }
@@ -1042,12 +1042,12 @@
     await S.narr('山门底下，站着老板娘。\n她没有往前走一步。怀里抱着健太的运动包。');
     await S.say('老板娘', ['……你们要走了啊。', '……翔他，吃饱了吗？']);
     if (f.kuyou) {
-      await S.narr('老板娘的另一只手里，攥着一只红色的小凉鞋。泡得发白。\n和你放在本堂地板上的那一只，是一双。');
+      await S.narr('老板娘的另一只手里，攥着一只红色的小凉鞋。泡得发白。\n和你放在大殿地板上的那一只，是一双。');
       await S.say('老板娘', ['这一只，是那年从海里漂回来的。另一只，我找了十二年。', '……他穿上了吗？']);
       await S.say('你', '……穿上了。');
       await S.narr('老板娘捂住了嘴。');
     }
-    if (!(f.gaze || 0)) { await S.say('老板娘', '……拓海君，你一条规矩都没犯呢。', { style: 'whisper' }); await S.narr('她说这句话的时候，像是有点可惜。'); }
+    if (!(f.gaze || 0)) { await S.say('老板娘', '……小拓海，你一条规矩都没犯呢。', { style: 'whisper' }); await S.narr('她说这句话的时候，像是有点可惜。'); }
     const r = await S.ask('健太在你身后，攥着你的衣角。', ['（不说话，拉着健太走出山门）', '「……我留下来。放健太走。」']);
     if (r === 1) return badStay(S);
     return ending(S);
@@ -1080,7 +1080,7 @@
     S.hide('kentaT');
     const fy = Math.max(13, S.pl.y - 6); S.place('kentaFar', 10, fy, 3); S.focus(10, fy - 2);
     await S.walk('kentaFar', [10, Math.max(12, fy - 4)], 1.4);
-    await S.narr('石阶上面，很远的地方，健太正一步一步往回走。\n往本堂。往海那边。\n他没有回头。');
+    await S.narr('石阶上面，很远的地方，健太正一步一步往回走。\n往大殿。往海那边。\n他没有回头。');
     S.focus(null);
     return S.end({ bad: true, id: 'left', title: '留下一个', text: '我和修一走出了山门。\n\n健太的家里人来过好几次。旅馆说，他打完了暑假的工，自己走的。\n\n第二年夏天，网上又挂出了那家旅馆的招聘：\n「海边老旅馆，包吃包住，限男性大学生。有前辈带新人。」\n\n照片上，站在老板娘身边笑着的前辈，是健太。\n他手里端着一个漆盘。' });
   }
@@ -1146,7 +1146,7 @@
     const f = S.f;
     if (f.ph === 'd2') {
       S.dark(.15, 'kan2'); S.plr(null);
-      if (S.once('k2d')) await S.narr('二楼的走廊很长，地板擦得发亮。\n尽头那面大镜子蒙着白布，旁边就是浜之间——纸门上贴满了御札。');
+      if (S.once('k2d')) await S.narr('二楼的走廊很长，地板擦得发亮。\n尽头那面大镜子蒙着白布，旁边就是滨之间——纸门上贴满了符纸。');
       setGoal(S);
     }
     if (f.ph === 'n2' && S.once('k2n')) {
@@ -1196,7 +1196,7 @@
           { x: 5, y: 2, spr: 'stove', on: N('汤锅里是味噌汤。老板一天要煮三大锅。') },
           { x: 6, y: 2, spr: 'shelf', on: N('碗柜里，有一套小小的儿童碗筷，碗上画着一条小鲸鱼。\n洗得很干净。') },
           { x: 7, y: 2, spr: 'kama', on: N('老式的大电饭锅，冒着白气。\n一锅饭，比四个人吃的多得多。') },
-          { id: 'zendai', x: 2, y: 5, w: 2, spr: 'zendai', on: async S => (S.f.ph === 'd1' || S.f.ph === 'n2pre') ? taishoTalk(S) : S.narr('调理台上摞着漆盘。最上面那个，是老板娘每天晚上端上楼的。') },
+          { id: 'zendai', x: 2, y: 5, w: 2, spr: 'zendai', on: async S => (S.f.ph === 'd1' || S.f.ph === 'n2pre') ? taishoTalk(S) : S.narr('料理台上摞着漆盘。最上面那个，是老板娘每天晚上端上楼的。') },
           { id: 'taisho', x: 5, y: 3, spr: '@taisho', dir: 3, on: taishoTalk },
           { id: 'kaneK', x: 7, y: 4, spr: '@kane', dir: 1, on: async S => S.f.ph === 'd3' ? kaneD3(S) : rot('阿兼婆婆', [['我在这家干了四十年了。', '老板娘嫁过来那年，我就在。'], '送完饭，记得去把浴场刷了。', '二楼？……你们老老实实守规矩，就没事。'], '_kk')(S) },
           /* 楼梯间 */
@@ -1230,22 +1230,22 @@
           { x: 8, y: 10, spr: 'scroll', on: N('挂轴上画着一片海。浪里，站着一个小小的人影。') },
           { id: 'zenD', x: 6, y: 14, spr: 'zen', hidden: true, on: N('那个漆盘。碗里的饭被抓得乱七八糟，筷子倒在一边。') },
           { id: 'okamiD', x: 4, y: 14, spr: '@okami', hidden: true, dir: 2, on: S => S.say('老板娘', '……嘘。他在吃饭呢。', { style: 'whisper' }) },
-          /* 帐场 */
-          { id: 'okamiL', x: 12, y: 11, spr: '@okami', dir: 0, on: async S => S.say('老板娘', { d1: '活儿不急，慢慢来。', d2: ['……昨晚睡得好吗？', '规矩，都记住了吧？'][(S.f._ol = ((S.f._ol ?? -1) + 1) % 2)], d3: '……健太君呢？他今天要陪我的。' }[S.f.ph] || '……') },
-          { x: 12, y: 12, spr: 'counter', on: N('帐场的柜台。登记簿摊开着，这个星期的客人只有三组。') },
+          /* 账房 */
+          { id: 'okamiL', x: 12, y: 11, spr: '@okami', dir: 0, on: async S => S.say('老板娘', { d1: '活儿不急，慢慢来。', d2: ['……昨晚睡得好吗？', '规矩，都记住了吧？'][(S.f._ol = ((S.f._ol ?? -1) + 1) % 2)], d3: '……小健太呢？他今天要陪我的。' }[S.f.ph] || '……') },
+          { x: 12, y: 12, spr: 'counter', on: N('账房的柜台。登记簿摊开着，这个星期的客人只有三组。') },
           { x: 13, y: 12, spr: 'counter', col: '#7a6a52', on: N('柜台上摆着一只招财猫。猫的一只眼睛被人用记号笔涂黑了。') },
           { x: 17, y: 11, spr: 'plant', on: N('盆栽的叶子上落了一层盐霜。海风太大了。') },
           { x: 18, y: 14, spr: 'getabako', on: async S => { await S.narr('鞋柜。最下面一格，摆着一双男式运动鞋，落满了灰。\n不是客人的，也不是你们的。'); if (S.f.memo) await S.think('（日记里写着：「他的鞋还在玄关。」）'); } },
           { x: 14, y: 16, spr: 'invisible', touch: frontExit }, { x: 15, y: 16, spr: 'invisible', touch: frontExit },
-          /* 帐场后屋 */
+          /* 账房后屋 */
           { x: 21, y: 10, spr: 'kamidana', on: N('神龛上供着一张黑色的符，上面的字一个也认不得。\n符底下，压着一绺短短的头发。') },
-          { x: 26, y: 11, spr: 'bookshelf', on: N('架子上一排旧宿帐。平成八年八月那一本：\n十二号以前写得满满的，十三号以后，一个字都没有。\n只有一行：「本馆休业」。') },
+          { x: 26, y: 11, spr: 'bookshelf', on: N('架子上一排旧住宿登记簿。平成八年八月那一本：\n十二号以前写得满满的，十三号以后，一个字都没有。\n只有一行：「本馆休业」。') },
           { x: 20, y: 12, spr: 'desk', on: N('老板娘的书桌。抽屉里塞满了招聘广告的底稿。\n每一张都写着：「限男性，十八到二十二岁」。') },
           { id: 'sfuton', x: 24, y: 13, h: 2, spr: 'futon', col: '#8a6a7a', hidden: true, on: N('老板娘的被褥。枕头上落着好多根头发。') },
           { id: 'okamiS', x: 22, y: 13, spr: '@okamiS', dir: 2, hidden: true, on: okamiSick },
           { id: 'kaneL', x: 15, y: 12, spr: '@kane', hidden: true, on: S => S.say('阿兼婆婆', '老板娘在后屋。……快去。') },
           /* 三个人 */
-          { id: 'kenta1', x: 16, y: 14, spr: '@kenta', dir: 3, on: async S => S.f.ph === 'd3' ? kentaD3(S) : rot('健太', { d1: ['我饿了……送完饭能偷吃一口吗？', '浜之间里肯定藏着什么。等着瞧。'], d2: ['（嘴里塞满了）……厨房的饭团太好吃了。', '那张规矩单……肯定是老板娘半夜起来写的。吓唬人。'], n1: ['……猫吧。', '修一你别吓我。'], eve1: ['……猫吧。'], eve2: ['今晚你端饭上去？我跟你去！我就看一眼！', '……修一真没劲。'], n2pre: ['我跟你去！就看一眼！'] }[S.f.ph] || ['……'], '_kt' + S.f.ph)(S) },
+          { id: 'kenta1', x: 16, y: 14, spr: '@kenta', dir: 3, on: async S => S.f.ph === 'd3' ? kentaD3(S) : rot('健太', { d1: ['我饿了……送完饭能偷吃一口吗？', '滨之间里肯定藏着什么。等着瞧。'], d2: ['（嘴里塞满了）……厨房的饭团太好吃了。', '那张规矩单……肯定是老板娘半夜起来写的。吓唬人。'], n1: ['……猫吧。', '修一你别吓我。'], eve1: ['……猫吧。'], eve2: ['今晚你端饭上去？我跟你去！我就看一眼！', '……修一真没劲。'], n2pre: ['我跟你去！就看一眼！'] }[S.f.ph] || ['……'], '_kt' + S.f.ph)(S) },
           { id: 'shu1', x: 14, y: 14, spr: '@shuichi', dir: 3, on: async S => rot('修一', { d1: ['先把活干了吧。', '……规矩写得真怪。'], d2: ['规矩单上的字，是一夜之间多出来的。', '昨晚那个声音……叫我们名字的时候，是从天花板上传下来的。'], n1: ['……别出去。', '九点以后别上楼。写着呢。'], eve1: ['……枕饭。'], eve2: ['别让健太跟着你。', '老板娘让你一个人去？……小心点。'], n2pre: ['别让健太跟着你。'], n2: ['你小心点。'], d3: ['我去寺里。你带健太出来。'] }[S.f.ph] || ['……'], '_st' + S.f.ph)(S) }
         ],
         enter: kan1Enter,
@@ -1289,7 +1289,7 @@
           { x: 20, y: 2, spr: 'vending', col: '#2a6ab0', on: N('自动售货机。弹珠汽水，一百二十日元。') },
           { x: 28, y: 2, spr: 'signT', on: N('路牌：「→ 海云寺　石阶四百级」') },
           { x: 29, y: 3, spr: 'invisible', touch: toTemple }, { x: 29, y: 4, spr: 'invisible', touch: toTemple },
-          { x: 16, y: 6, w: 3, spr: 'uminoie', on: N('海之家关着卷帘门。上面贴着：「盂兰盆期间　禁止游泳」。') },
+          { x: 16, y: 6, w: 3, spr: 'uminoie', on: N('海边小卖部（海之家）关着卷帘门。上面贴着：「盂兰盆期间　禁止游泳」。') },
           { x: 4, y: 8, spr: 'parasol', on: N('沙滩上插着一把遮阳伞，被风吹得歪歪扭扭。') },
           { x: 12, y: 9, spr: 'parasol', col: '#3a8ad8', on: N('遮阳伞底下，有人用沙子堆了一座小山，山顶插着一双筷子。') },
           { x: 1, y: 11, w: 2, spr: 'boat', on: N('翻过来晾着的小渔船。船底长满了藤壶。') },
@@ -1310,11 +1310,11 @@
         tileOpts: { grassC: '#2e4a2a', treeC: '#1e3a24' },
         rows: teraRows(),
         ents: [
-          { x: 9, y: 2, w: 2, spr: 'altar', on: N('本堂的佛坛。金色的佛像半闭着眼睛。') },
+          { x: 9, y: 2, w: 2, spr: 'altar', on: N('大殿的佛坛。金色的佛像半闭着眼睛。') },
           { x: 6, y: 2, spr: 'candles', on: N('一排小蜡烛。火苗一动不动。') }, { x: 13, y: 2, spr: 'candles', on: N('一排小蜡烛。火苗一动不动。') },
           { x: 8, y: 3, spr: 'mokugyo', on: N('木鱼。被敲了几十年，木头都磨亮了。') },
-          { x: 11, y: 3, spr: 'rinS', on: async S => { rin(S, .08); await S.narr('你轻轻碰了一下铜磬。「当——」\n声音在本堂里转了很久，才散。'); } },
-          { id: 'toubaV', x: 12, y: 3, spr: 'touba', hidden: true, on: N('你写的塔婆。「俗名　翔　平成八年八月十三日　殁」') },
+          { x: 11, y: 3, spr: 'rinS', on: async S => { rin(S, .08); await S.narr('你轻轻碰了一下铜磬。「当——」\n声音在大殿里转了很久，才散。'); } },
+          { id: 'toubaV', x: 12, y: 3, spr: 'touba', hidden: true, on: N('你写的超度牌。「俗名　翔　平成八年八月十三日　殁」') },
           { id: 'jushoV', x: 10, y: 3, spr: '@jushoku', dir: 3, hidden: true, on: async S => { chant(S, 3, .07); await S.say('住持', S.f.vs === 'C' ? '按住他！' : '……南无阿弥陀佛。守好灯。'); } },
           { x: 3, y: 1, spr: 'scroll', on: async S => S.f.ph === 'vigil' ? S.note('okite') : S.narr('柱子上贴着一张白纸。') },
           { id: 'kentaV', x: 9, y: 6, h: 2, spr: 'kfuton', hidden: true, on: N('健太躺在被褥上，被子盖到下巴。\n他的嘴在动，像在嚼什么东西。') },
@@ -1322,15 +1322,15 @@
           { id: 'shuV', x: 15, y: 5, spr: '@shuichi', dir: 1, hidden: true, on: S => S.say('修一', S.f.vs === 'C' ? '……我动不了……！' : '……我一闭眼，就听见有人在门外走。', { style: 'whisper' }) },
           { id: 'kentaC', x: 9, y: 7, spr: 'crawler', col: '#b83a2a', hidden: true, solid: false, dir: 0, on: kentaCUse },
           { id: 'shoV', x: 10, y: 9, spr: 'crawler', col: '#5a6a74', s: { kid: true }, hidden: true, solid: false, dir: 3 },
-          { id: 'doorL', x: 9, y: 10, spr: 'sliding', open: true, solid: false, on: N('本堂的拉门。') },
-          { id: 'doorR', x: 10, y: 10, spr: 'sliding', open: true, solid: false, on: N('本堂的拉门。') },
+          { id: 'doorL', x: 9, y: 10, spr: 'sliding', open: true, solid: false, on: N('大殿的拉门。') },
+          { id: 'doorR', x: 10, y: 10, spr: 'sliding', open: true, solid: false, on: N('大殿的拉门。') },
           /* 院子 */
           { x: 5, y: 12, spr: 'shoro', on: N('钟楼。撞木用粗麻绳吊着。') },
           { x: 7, y: 12, spr: 'stonelantern', on: N('石灯笼。底座上刻着「海难供养」。') },
           { x: 12, y: 12, spr: 'stonelantern', off: true, on: N('石灯笼。里面插着一根烧了一半的线香。') },
           { x: 15, y: 12, spr: 'gravestone', flowers: true, on: N('一排小小的墓碑，都朝着海的方向。\n最边上那块，没有刻名字。') },
           { id: 'jushoY', x: 11, y: 11, spr: '@jushoku', dir: 0, on: jushoTalk },
-          { id: 'shuY', x: 13, y: 12, spr: '@shuichi', dir: 1, on: async S => S.say('修一', S.f.ph === 'tera' ? ['塔婆上要写命日……照片背面写的是「盂兰盆的前一天」。', '去年那本日记里，写着盂兰盆是哪天开始的吧？'][(S.f._sy = ((S.f._sy ?? -1) + 1) % 2)] : '……来了。') },
+          { id: 'shuY', x: 13, y: 12, spr: '@shuichi', dir: 1, on: async S => S.say('修一', S.f.ph === 'tera' ? ['超度牌上要写忌日……照片背面写的是「盂兰盆的前一天」。', '去年那本日记里，写着盂兰盆是哪天开始的吧？'][(S.f._sy = ((S.f._sy ?? -1) + 1) % 2)] : '……来了。') },
           { id: 'kentaT', x: 9, y: 42, spr: '@kentaP', hidden: true, on: N('健太。他一直在嚼着什么——嘴里什么都没有。') },
           /* 石阶 */
           ...[16, 22, 28, 34].flatMap(y => [{ x: 8, y, spr: 'stonelantern', on: N('石阶旁的石灯笼。灯里没有火，结着蜘蛛网。') }, { x: 11, y, spr: 'stonelantern', off: true, on: N('石灯笼上落满了杉树的针叶。') }]),
@@ -1375,7 +1375,7 @@
     shoK: { key: 'rb-shoK', child: true, skin: '#c89a72', hair: '#1a1210', hs: 'short', top: '#e8e4d8', bottom: '#3a5a8a', shoes: '#c82a2a', hat: 'straw', hatC: '#d8c070' }
   };
 
-  /* ================= 选章卡片：贴满御札的纸门，门口一碗插着筷子的饭 ================= */
+  /* ================= 选章卡片：贴满符纸的纸门，门口一碗插着筷子的饭 ================= */
   function thumb(g, w, h) {
     const F = (x, y, ww, hh, c) => { g.fillStyle = c; g.fillRect(x, y, ww, hh); };
     F(0, 58, w, 10, '#3a2a1c'); for (let x = 0; x < w; x += 12) F(x, 58, 1, 10, '#2a1e14');
@@ -1394,21 +1394,21 @@
     thumb,
     people: PEOPLE_R,
     items: {
-      zenA: { name: '刺身定食（松之桌）', desc: '两份刺身定食。老板说：松之桌，两位。' },
-      zenB: { name: '烤鱼定食（竹之桌）', desc: '一份烤鱼定食，饭盛得少。老板说：竹之桌，老先生。' },
-      zen: { name: '膳', desc: '漆盘上一碗冒尖的白饭，筷子笔直地插在正中间。一杯清水，一颗水果糖。\n端到浜之间门口，敲三下门。' },
+      zenA: { name: '生鱼片套餐（松之桌）', desc: '两份生鱼片套餐。老板说：松之桌，两位。' },
+      zenB: { name: '烤鱼套餐（竹之桌）', desc: '一份烤鱼套餐，饭盛得少。老板说：竹之桌，老先生。' },
+      zen: { name: '膳', desc: '漆盘上一碗冒尖的白饭，筷子笔直地插在正中间。一杯清水，一颗水果糖。\n端到滨之间门口，敲三下门。' },
       sandal: { name: '红色的小凉鞋', desc: '礁石缝里捡到的，孩子穿的凉鞋。只有一只。泡得发白了。' },
       onigiri: { name: '饭团', desc: '老板攥的饭团，还热乎着。健太现在只认吃的。' },
-      touba: { name: '塔婆', desc: '新削的木牌。「俗名　翔　平成八年八月十三日　殁」' },
-      match: { name: '火柴', desc: '住持给的火柴。灯明灭了，用它点上。' }
+      touba: { name: '超度牌', desc: '新削的木牌。「俗名　翔　平成八年八月十三日　殁」' },
+      match: { name: '火柴', desc: '住持给的火柴。长明灯灭了，用它点上。' }
     },
     notes: {
-      rules: { title: '规则单', text: '（老板娘的字，圆珠笔写在便笺上，贴在员工房门外的墙上。每天早上，都会多一条。）\n\n汐见屋　打工须知\n\n一、二楼最里面的「浜之间」，不许进去。\n二、晚上九点以后，不要上二楼。\n三、夜里有人隔着门叫你的名字，不要答应。\n四、二楼走廊尽头的镜子，布不要掀开。\n\n五、不要把哥哥带走\n　（最后一行是蜡笔写的，字歪歪扭扭，像小孩子写的。）' },
+      rules: { title: '规则单', text: '（老板娘的字，圆珠笔写在便笺上，贴在员工房门外的墙上。每天早上，都会多一条。）\n\n汐见屋　打工须知\n\n一、二楼最里面的「滨之间」，不许进去。\n二、晚上九点以后，不要上二楼。\n三、夜里有人隔着门叫你的名字，不要答应。\n四、二楼走廊尽头的镜子，布不要掀开。\n\n五、不要把哥哥带走\n　（最后一行是蜡笔写的，字歪歪扭扭，像小孩子写的。）' },
       memo: { title: '去年的打工日记', text: '（柜子最里面塞着的小本子。封面写着「汐见屋　打工日记」。是去年在这儿打工的人留下的。）\n\n七月三十日　海很蓝，饭很香。规矩有点怪。\n\n八月二日　半夜天花板上有东西在爬。S说是猫。哪有那么重的猫。\n\n八月五日　规矩单上多了一条。昨晚门外有人叫S的名字，S应了。\n\n八月十日　S不对劲。用手抓饭吃，半夜在走廊上爬。老板娘摸着他的头笑。\n\n八月十三日　盂兰盆头一天（迎火）\n老板娘一早在门口烧了迎火，说「盂兰盆这几天，海里的人会回来」。\nS不见了。老板娘说他家里有事，先走了。\n他的鞋还在玄关。\n\n（后面几页被撕掉了。）' },
-      photo: { title: '浜之间门口的照片', text: '（一张旧照片，卡在浜之间门口的地板缝里。边角被水泡过。）\n\n照片上是一个晒得黑黑的小男孩，戴着草帽，站在汐见屋门口，咧着嘴笑。脚上穿着一双红色的小凉鞋。\n他身后，二楼最里面那间屋子的窗户开着。\n\n照片背面，圆珠笔写着：\n\n「翔　七岁\n　平成八年　盂兰盆的前一天\n　说明天还要去海里游泳」' },
-      okite: { title: '守夜的规矩', text: '（住持用毛笔写在一张白纸上，贴在本堂的柱子上。）\n\n一、灯明四盏，守在结界四角。灭了一盏，立刻点上。\n二、不管谁在门外叫，叫谁的名字，都不要应，不要开门。\n三、健太要是起来往外爬，先按住他。不能让他出这道门。\n四、它来的时候，举起塔婆，叫它的名字。\n五、鸡叫以后，才可以出本堂。\n\n下山的时候，不要回头。出了山门，就到此为止。' }
+      photo: { title: '滨之间门口的照片', text: '（一张旧照片，卡在滨之间门口的地板缝里。边角被水泡过。）\n\n照片上是一个晒得黑黑的小男孩，戴着草帽，站在汐见屋门口，咧着嘴笑。脚上穿着一双红色的小凉鞋。\n他身后，二楼最里面那间屋子的窗户开着。\n\n照片背面，圆珠笔写着：\n\n「翔　七岁\n　平成八年　盂兰盆的前一天\n　说明天还要去海里游泳」' },
+      okite: { title: '守夜的规矩', text: '（住持用毛笔写在一张白纸上，贴在大殿的柱子上。）\n\n一、长明灯四盏，守在结界四角。灭了一盏，立刻点上。\n二、不管谁在门外叫，叫谁的名字，都不要应，不要开门。\n三、健太要是起来往外爬，先按住他。不能让他出这道门。\n四、它来的时候，举起超度牌，叫它的名字。\n五、鸡叫以后，才可以出大殿。\n\n下山的时候，不要回头。出了山门，就到此为止。' }
     },
-    legend: '「リゾートバイト」（度假村打工）是日本网络论坛2ch的オカルト板上流传很广的长篇怪谈，一般认为最早贴出于2009年前后，作者匿名，真实身份不可考。故事的大致框架是：几个大学生暑假到海边的旅馆住店打工，旅馆里有一间不许进的房间，老板娘每天晚上把饭菜端上去；年轻人出于好奇偷偷去看，结果其中一人渐渐变得不对劲，最后不得不求助于寺里的和尚，在一连串严格的禁忌里熬过驱邪——出寺下山的时候，绝对不能回头。原帖篇幅很长，后来的转述、漫画和朗读视频在细节上出入不小，这里只取各版本共有的骨架。\n\n故事里的许多细节，借用了日本真实的民间习俗：竖着插在饭上的筷子是供给死者的「枕饭」，所以日常吃饭忌讳把筷子插在饭里；盂兰盆（多数地方在八月十三日至十六日）有烧迎火、送火迎送祖先的习俗；各地都流传「盂兰盆期间不要下海」的说法——据说那几天回来的亡魂会把人拉下水，也有人认为，这其实是因为八月中旬浪大、水母多的经验之谈。「夜里被叫名字不要随便应」「驱邪之后不能回头」，也是日本怪谈里很常见的禁忌。\n\n这个故事常被列为2ch オカルト板的「名作」之一，与《八尺大人》《子取箱》等一起被反复转载和改编。它吓人的地方不在某一个鬼怪，而在一种慢慢收紧的感觉：一份看起来只是「有点怪」的打工，规矩、饭菜、同伴的变化，一点一点把人往一个早就准备好的位置上推。\n\n（本章中的汐见屋、拓海·健太·修一、老板娘与她的儿子「翔」、阿兼婆婆、老板、海云寺住持，每天多一条的规则单与蜡笔写的第五条，去年打工生的日记，照片与「八月十三日」的命日，塔婆、四盏灯明与守夜，红色的小凉鞋，山门前的几种结局，均为游戏虚构，与原帖情节并不一一对应。）',
+    legend: '「度假村打工」（リゾートバイト）是日本网络论坛 2ch 的灵异版（オカルト板）上流传很广的长篇怪谈，一般认为最早贴出于2009年前后，作者匿名，真实身份不可考。故事的大致框架是：几个大学生暑假到海边的旅馆住店打工，旅馆里有一间不许进的房间，老板娘每天晚上把饭菜端上去；年轻人出于好奇偷偷去看，结果其中一人渐渐变得不对劲，最后不得不求助于寺里的和尚，在一连串严格的禁忌里熬过驱邪——出寺下山的时候，绝对不能回头。原帖篇幅很长，后来的转述、漫画和朗读视频在细节上出入不小，这里只取各版本共有的骨架。\n\n故事里的许多细节，借用了日本真实的民间习俗：竖着插在饭上的筷子是供给死者的「枕饭」，所以日常吃饭忌讳把筷子插在饭里；盂兰盆（多数地方在八月十三日至十六日）有烧迎火、送火迎送祖先的习俗；各地都流传「盂兰盆期间不要下海」的说法——据说那几天回来的亡魂会把人拉下水，也有人认为，这其实是因为八月中旬浪大、水母多的经验之谈。「夜里被叫名字不要随便应」「驱邪之后不能回头」，也是日本怪谈里很常见的禁忌。\n\n这个故事常被列为 2ch 灵异版的「名作」之一，与《八尺大人》《子取箱》等一起被反复转载和改编。它吓人的地方不在某一个鬼怪，而在一种慢慢收紧的感觉：一份看起来只是「有点怪」的打工，规矩、饭菜、同伴的变化，一点一点把人往一个早就准备好的位置上推。\n\n（本章中的汐见屋、拓海·健太·修一、老板娘与她的儿子「翔」、阿兼婆婆、老板、海云寺住持，每天多一条的规则单与蜡笔写的第五条，去年打工生的日记，照片与「八月十三日」的忌日，超度牌、四盏长明灯与守夜，红色的小凉鞋，山门前的几种结局，均为游戏虚构，与原帖情节并不一一对应。）',
     start: { map: 'kan1', x: 15, y: 14, dir: 3 },
     faces: FACES,
     endings: { all3: '第九夜　完', kuyou: '送他回家（隐藏）', left: '留下一个', stay: '替身' },
@@ -1423,7 +1423,7 @@
       },
       d3: async S => { S.amb('room'); lastDeath = null; },
       tera: async S => { S.amb('wind'); lastDeath = null; },
-      vigil: async S => { S.amb('night'); S.f.crawl = false; if (lastDeath === 'candle') await S.think('（灯明一灭，就马上去点。火柴在手里。）'); lastDeath = null; return vStageA(S); },
+      vigil: async S => { S.amb('night'); S.f.crawl = false; if (lastDeath === 'candle') await S.think('（长明灯一灭，就马上去点。火柴在手里。）'); lastDeath = null; return vStageA(S); },
       vB: async S => { S.amb('night'); S.f.crawl = false; if (lastDeath === 'voice') await S.think('（门外不管是谁的声音……都别应，也别开门。）'); lastDeath = null; return vStageB(S); },
       vC: async S => {
         S.amb('night'); S.f.crawl = false;

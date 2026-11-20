@@ -7,7 +7,7 @@ SOL = [
     [],
     ['shot', 'mitsuke'],
     ['use', 'kawaraban'],
-    # 番太让你说「もしもし」：先说错一次（只说一声），再说对
+    # 守夜人让你说「喂喂」（もしもし）：先说错一次（只说一声），再说对
     ['use', 'genroku', [0, 1]],
     ['expect', "window.__dbg.W.inv.includes('chochin') && window.__dbg.W.inv.includes('hiuchi')"],
     ['use', 'hibachi'],

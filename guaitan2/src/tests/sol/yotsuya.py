@@ -8,8 +8,8 @@ SOL = [
     ['use', 'jmaku', [0]],
     ['expect', "window.__dbg.W.mapId === 'taku'"],
     ['shot', 'taku'],
-    ['use', 'kurogo'],                          # 黒衣第一级提示（翻开道具帳）
-    # 行灯：从上手（右）数起应为 壱 弐 参 四。她那盏（f.h1，每局随机）写的是把上手当成左边时的号，
+    ['use', 'kurogo'],                          # 黑衣人第一级提示（翻开道具账）
+    # 行灯：从上手（右）数起应为 壹 贰 叁 四。她那盏（f.h1，每局随机）写的是把上手当成左边时的号，
     # 与另一盏（3-h）重号；只有她那盏和位置对不上
     ['js', "window.__dbg.face('an' + (3 - window.__dbg.W.f.h1)); window.__dbg.doAct('use')", [1]],   # 认错一次：缠一缕
     ['expect', 'window.__dbg.W.f.tangle === 1'],
