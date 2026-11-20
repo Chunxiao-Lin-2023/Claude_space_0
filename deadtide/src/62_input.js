@@ -47,9 +47,22 @@ function rideKey(pick) {
   if (own.length || me.pass >= 0 || pillionFor(me)) act('ride'); else toast('还没有载具：在「商店 → 载具」里造（尸城求生要先找到蓝图），或者走到队友的摩托 / 装甲车边按 T 坐后座');
 }
 function cycleWpn(d) { const me = W.p[ME]; let w = me.wpn; for (let k = 0; k < NW; k++) { w = (w + d + NW) % NW; if (me.owned[w]) break; } if (w !== me.wpn) act('wpn', w); }
+// (round 23) the melee slot: knife or riot shield
+function switchMelee(v) {
+  const me = W.p[ME]; if (!me.shield) { toast('近战只有刀：商店 → 武器 里能买防暴盾（猛推开一片丧尸）'); return; }
+  const m = v != null ? v : me.melee === 1 ? 0 : 1; act('melee', m); me.melee = m; UI.meleeT = performance.now() + 600; toast(m ? '近战：防暴盾 · 推开前面一片丧尸、晕 1 秒，正面挨打少受一半' : '近战：刀 · 冲上去砍一只，背后砍双倍'); sfx('swap');
+}
+function doBash() {
+  const me = W.p[ME]; if ((me.knCD || 0) > performance.now()) return;
+  me.knCD = performance.now() + BAL.bashCD * 1000;
+  let f = Math.hypot(me.inp.mx, me.inp.my) > 0.3 && INP.touch ? Math.atan2(me.inp.my, me.inp.mx) : me.aim;
+  if (INP.touch) { let bd = BAL.bashR + 0.8; for (const z of W.zs) { if (z.hp <= 0 || z.hidden || Math.abs(z.z - me.z) > 0.9) continue; const d = Math.hypot(z.x - me.x, z.y - me.y); if (d < bd) { bd = d; f = Math.atan2(z.y - me.y, z.x - me.x); } } } // on touch: turn to the nearest one
+  me.aim = f; INP.aimT = 0.3; me.knT = 0.3; act('knife', { a: +f.toFixed(3) });
+}
 // knife: find the zombie, turn to it, lunge into reach and slash; the host settles the damage
 function doKnife() {
   const me = W.p[ME]; if (!me || me.dead || me.down || me.build || me.ride || me.pass >= 0 || me.medT > 0 || me.jmp || (me.knCD || 0) > performance.now()) return;
+  if (me.melee === 1 && me.shield) return doBash();
   me.knCD = performance.now() + BAL.knifeCD * 1000;
   const mv = Math.hypot(me.inp.mx, me.inp.my) > 0.3 && INP.touch ? Math.atan2(me.inp.my, me.inp.mx) : me.aim;
   const z = knifeTarget(me, mv);
@@ -86,7 +99,7 @@ addEventListener('keydown', e => {
   INP.keys[k] = true;
   if ([' ', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Tab', 'PageUp', 'PageDown', 'Home'].includes(k)) e.preventDefault();
 });
-addEventListener('keyup', e => { const k = e.key.length === 1 ? e.key.toLowerCase() : e.key; INP.keys[k] = false; });
+addEventListener('keyup', e => { const k = e.key.length === 1 ? e.key.toLowerCase() : e.key; INP.keys[k] = false; if (k === 'g' && INP.nadeAim && INP.nadeAim.pc) nadeRelease(); });
 addEventListener('blur', () => { INP.keys = {}; INP.mL = INP.mR = false; });
 function onKeyPress(k) {
   if (STATE.mode !== 'play' || !W) { if (k === 'Enter' && STATE.mode === 'title') $('soloBtn').click(); return; }
@@ -110,9 +123,9 @@ function onKeyPress(k) {
     if ((k === 'Enter' || k === ' ') && PLAN) return confirmPlan();
   } else { const n = '1234'.indexOf(k); if (n >= 0) return quickWpn(n); if (k === 'r') return act('reload'); if (k === 'z') return swapLast(); }
   if (k === 'i') return openKit();
-  if (k === ' ') return doJump();
+  if (k === 'x' && !me.build) return switchMelee();
   if (k === 'v') return doKnife();
-  if (k === 'g') return act('nade');
+  if (k === 'g') { if (me.nades > 0 && !me.down) INP.nadeAim = { pc: 1 }; else toast('没有手雷了'); return; } // hold G: the landing ring follows the cursor; let go to throw
   if (k === 'h') return act('med');
   if (k === 'n') return toggleReady();
   if (k === 'c') return openCraft();
@@ -367,28 +380,30 @@ bindBtn('tReload', () => inGame() && (W.p[ME].build ? rotStairs() : act('reload'
 // (round 22) the weapon key on the fire ring: tap = next quick weapon; drag (or hold) = a fan of every gun you own — slide onto one and let go
 const WK = document.getElementById('tWpn');
 function wpickItems(me) {
-  const q = quickList(me), out = q.concat(WPN.map((w, k) => k).filter(k => me.owned[k] && !q.includes(k))).map(k => ({ k, t: WPN[k].name, s: WPN[k].inf ? '∞' : me.mag[k] + '/' + me.ammo[k], sel: k === me.wpn, q: q.includes(k) }));
+  const q = quickList(me), out = q.concat(WPN.map((w, k) => k).filter(k => me.owned[k] && !q.includes(k))).map(k => ({ k, t: WPN[k].sn || WPN[k].name, s: WPN[k].inf ? '∞' : String(me.mag[k] + me.ammo[k]), sel: k === me.wpn, q: q.includes(k) }));
   const w = WPN[me.wpn]; if (me.mag[me.wpn] < w.mag && (w.inf || me.ammo[me.wpn] > 0)) out.push({ k: 'rl', t: '换弹', s: '' });
-  out.push({ k: 'kit', t: '装备…', s: '选快捷' }); return out;
+  out.push({ k: 'kit', t: '装备', s: '' }); return out;
 }
 function toggleWpick(force) {
   const el = $('wpick'), open = force != null ? force : el.classList.contains('hidden');
   el.classList.toggle('hidden', !open); WK.classList.toggle('on', open); if (!open) { UI.wpHi = null; return; }
-  // an outer ring round the fire cluster, from above the weapon key round to the left, clear of the four keys
-  const me = W.p[ME], items = wpickItems(me), fr = $('tFire').getBoundingClientRect(), wr = WK.getBoundingClientRect(), cx = fr.left + fr.width / 2, cy = fr.top + fr.height / 2;
-  const n = items.length, chip = VW >= 760 && VH >= 760 ? 76 : 66, base = Math.hypot(wr.left + wr.width / 2 - cx, wr.top + wr.height / 2 - cy) + wr.width / 2 + chip / 2 + 10;
-  const a0 = 62, a1 = 196, R = Math.max(base, n * (chip + 8) / ((a1 - a0) * Math.PI / 180));
+  // (round 23b) a small ring just above the weapon key: short names, the gun you're on at the bottom (nearest the thumb), 装备 in the middle
+  const me = W.p[ME], all = wpickItems(me), kit = all.find(it => it.k === 'kit'), items = all.filter(it => it.k !== 'kit'), wr = WK.getBoundingClientRect();
+  const big = VW >= 760 && VH >= 760, cs = big ? 56 : 48, n = items.length, R = Math.max(cs * 0.95, n * (cs + 6) / (2 * Math.PI)), kx = wr.left + wr.width / 2, kr = wr.width / 2;
+  const cx = clamp(kx - 8, R + cs / 2 + 4, VW - R - cs / 2 - 4), cy = Math.max(R + cs / 2 + 4, wr.top - 6 - R - cs / 2);
   el.innerHTML = ''; UI.wpOpts = [];
-  items.forEach((it, j) => {
-    const a = (a0 + (a1 - a0) * (n === 1 ? 0.5 : j / (n - 1))) * Math.PI / 180, x = clamp(cx + Math.cos(a) * R, chip / 2 + 4, VW - chip / 2 - 4), y = clamp(cy - Math.sin(a) * R, chip / 2 + 4, VH - chip / 2 - 4);
-    const b = document.createElement('button'); b.className = 'wo' + (it.sel ? ' sel' : '') + (it.q ? ' q' : '') + (typeof it.k === 'string' ? ' x' : '');
-    b.innerHTML = '<b>' + it.t + '</b><span>' + it.s + '</span>'; b.style.left = x + 'px'; b.style.top = y + 'px';
+  const put = (it, x, y, size, cls) => {
+    const b = document.createElement('button'); b.className = 'wo' + (it.sel ? ' sel' : '') + (it.q ? ' q' : '') + (typeof it.k === 'string' ? ' x' : '') + (cls || '');
+    b.innerHTML = '<b>' + it.t + '</b>' + (it.s ? '<span>' + it.s + '</span>' : ''); b.style.left = x + 'px'; b.style.top = y + 'px'; b.style.width = b.style.height = size + 'px'; b.style.margin = (-size / 2) + 'px 0 0 ' + (-size / 2) + 'px';
     b.addEventListener('pointerup', e => { e.stopPropagation(); e.preventDefault(); wpickDo(it.k); });
-    el.appendChild(b); UI.wpOpts.push({ b, x, y, k: it.k });
-  });
+    el.appendChild(b); UI.wpOpts.push({ b, x, y, k: it.k, w: size, h: size });
+  };
+  const j0 = Math.max(0, items.findIndex(it => it.sel));
+  items.forEach((it, j) => { const a = Math.PI / 2 + ((j - j0 + n) % n) / n * Math.PI * 2; put(it, cx + Math.cos(a) * R, cy + Math.sin(a) * R, cs); });
+  if (kit) put(kit, cx, cy, Math.round(cs * 0.82), ' mid');
 }
-function wpickDo(k) { toggleWpick(false); if (!inGame()) return; sfx('click'); if (k === 'rl') act('reload'); else if (k === 'kit') openKit(); else { const me = W.p[ME]; if (me.build) toggleBuild(false); act('wpn', k); } }
-function wpickHover(x, y) { let best = null, bd = 52; for (const o of UI.wpOpts || []) { const d = Math.hypot(o.x - x, o.y - y); if (d < bd) { bd = d; best = o; } } for (const o of UI.wpOpts || []) o.b.classList.toggle('hi', o === best); UI.wpHi = best; }
+function wpickDo(k) { toggleWpick(false); if (!inGame()) return; sfx('click'); if (k === 'rl') act('reload'); else if (k === 'kit') openKit(); else if (k === 'melee') switchMelee(); else { const me = W.p[ME]; if (me.build) toggleBuild(false); act('wpn', k); } }
+function wpickHover(x, y) { let best = null, bd = 1e9; for (const o of UI.wpOpts || []) { if (Math.abs(o.x - x) > o.w / 2 + 3 || Math.abs(o.y - y) > o.h / 2 + 3) continue; const d = Math.hypot(o.x - x, o.y - y); if (d < bd) { bd = d; best = o; } } for (const o of UI.wpOpts || []) o.b.classList.toggle('hi', o === best); UI.wpHi = best; }
 WK.addEventListener('pointerdown', e => {
   e.preventDefault(); e.stopPropagation(); audioInit(); if (!inGame()) return;
   const was = !$('wpick').classList.contains('hidden'); if (was) { toggleWpick(false); return; }
@@ -419,12 +434,46 @@ document.addEventListener('pointerdown', e => { const el = $('wpick'); if (el &&
 bindBtn('tLUp', () => viewStep(1)); bindBtn('tLDn', () => viewStep(-1));
 bindBtn('vToggle', () => { document.body.classList.toggle('vopen'); $('vToggle').classList.toggle('on', document.body.classList.contains('vopen')); sfx('click'); });
 bindBtn('tShove', () => { if (inGame()) { INP.knHeld = true; doKnife(); } }, () => { INP.knHeld = false; });
-bindBtn('tJump', () => inGame() && doJump());
+// (round 23b) swipe off the melee key (any direction) = swap knife <-> shield
+(() => {
+  const el = document.getElementById('tShove'); let st = null;
+  el.addEventListener('pointerdown', e => { st = { id: e.pointerId, x: e.clientX, y: e.clientY, done: false }; try { el.setPointerCapture(e.pointerId); } catch (_) { } });
+  el.addEventListener('pointermove', e => { if (!st || st.id !== e.pointerId || st.done || !inGame()) return; if (Math.hypot(e.clientX - st.x, e.clientY - st.y) > 26 && W.p[ME].shield) { st.done = true; INP.knHeld = false; switchMelee(); } });
+  const end = e => { if (st && st.id === e.pointerId) st = null; };
+  el.addEventListener('pointerup', end); el.addEventListener('pointercancel', end);
+})();
 bindBtn('bcOk', () => confirmPlan()); bindBtn('bcNo', () => cancelPlan());
-bindBtn('tNade', () => inGame() && act('nade'));
+// (round 23) grenade key: tap = throw at the biggest bunch in range; drag = put the landing ring where you want (drag back to the middle to cancel)
+(() => {
+  const el = document.getElementById('tNade');
+  el.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); audioInit(); if (!inGame()) return; const me = W.p[ME]; if (me.nades <= 0 || me.down) { toast('没有手雷了（搜补给箱、背包，或商店 → 道具）'); return; }
+    const r = el.getBoundingClientRect(); INP.nadeAim = { id: e.pointerId, ox: r.left + r.width / 2, oy: r.top + r.height / 2, dx: 0, dy: 0, drag: false }; el.classList.add('on'); try { el.setPointerCapture(e.pointerId); } catch (_) { } });
+  el.addEventListener('pointermove', e => { const A = INP.nadeAim; if (!A || A.id !== e.pointerId) return; e.preventDefault(); A.dx = e.clientX - A.ox; A.dy = e.clientY - A.oy; if (Math.hypot(A.dx, A.dy) > 16) A.drag = true; });
+  const end = e => { const A = INP.nadeAim; if (!A || A.id !== e.pointerId) return; el.classList.remove('on'); if (A.drag && Math.hypot(A.dx, A.dy) < 16) { INP.nadeAim = null; INP.nadePt = null; toast('取消扔手雷'); return; } nadeRelease(); };
+  el.addEventListener('pointerup', end); el.addEventListener('pointercancel', e => { INP.nadeAim = null; INP.nadePt = null; el.classList.remove('on'); });
+})();
+// where the grenade would land right now (null = nothing worth it)
+function nadeAimPt(me) {
+  const A = INP.nadeAim; if (!A) return null; const R = BAL.nadeRange;
+  if (A.pc) { const pt = me.aimPt; if (!pt) return null; const d = Math.hypot(pt.x - me.x, pt.y - me.y), k = d > R ? R / d : 1; return { x: me.x + (pt.x - me.x) * k, y: me.y + (pt.y - me.y) * k, z: k < 1 ? null : pt.z }; }
+  if (A.drag) { const [fx, fy] = camFwd(), [rx, ry] = camRight(), len = Math.hypot(A.dx, A.dy), t = clamp((len - 16) / 90, 0, 1), dist = 2 + t * (R - 2), ux = A.dx / len, uy = A.dy / len;
+    const wx = rx * ux - fx * uy, wy = ry * ux - fy * uy, wl = Math.hypot(wx, wy) || 1; return { x: me.x + wx / wl * dist, y: me.y + wy / wl * dist, z: null }; }
+  return nadeAuto(me);
+}
+// the auto pick: the spot (on a zombie in range and in sight) that catches the most of them, not too close to you
+function nadeAuto(me) {
+  const zs = W.zs.filter(z => z.hp > 0 && !z.hidden && !z.sleep && Math.abs(z.z - me.z) < 3 && Math.hypot(z.x - me.x, z.y - me.y) < BAL.nadeRange && Math.hypot(z.x - me.x, z.y - me.y) > 2.6 && los(me.x, me.y, me.z + 1.2, z.x, z.y, z.z + 0.8, 0));
+  let best = null, bs = 0;
+  for (const c of zs) { let s = 0; for (const z of zs) { const d = Math.hypot(z.x - c.x, z.y - c.y); if (d < BAL.nadeR) s += 1 - d / BAL.nadeR * 0.5; } if (s > bs) { bs = s; best = c; } }
+  return best ? { x: best.x, y: best.y, z: best.z, n: bs } : null;
+}
+function nadeRelease() {
+  const me = W.p[ME], pt = inGame() ? nadeAimPt(me) : null; INP.nadeAim = null; INP.nadePt = null; if (!inGame() || me.down || me.nades <= 0) return;
+  if (pt) act('nade', { x: +pt.x.toFixed(2), y: +pt.y.toFixed(2), z: pt.z != null ? +pt.z.toFixed(2) : null }); else act('nade');
+}
 bindBtn('tMed', () => inGame() && act('med'));
-// (round 22) the context key on the fire ring: search / revive / gather when there's something, get off when riding, otherwise jump
-bindBtn('tUse', () => { if (!inGame()) return; const me = W.p[ME], ut = useTarget(me); if (ut && !(me.ride && !(VEH[me.veh] && VEH[me.veh].search))) { if (INP.useLatch) INP.useLatch = null; else INP.useReq = true; } else if (me.ride || me.pass >= 0) act('ride'); else doJump(); });
+// the context key on the fire ring: search / revive / gather when there's something, get off when riding, otherwise heal with a medkit
+bindBtn('tUse', () => { if (!inGame()) return; const me = W.p[ME], ut = useTarget(me); if (ut && !(me.ride && !(VEH[me.veh] && VEH[me.veh].search))) { if (INP.useLatch) INP.useLatch = null; else INP.useReq = true; } else if (me.ride || me.pass >= 0) act('ride'); else if (me.meds > 0 && (me.down || me.hp < me.maxHp)) act('med'); else toast('附近没有能交互的东西'); }); // (round 23) no jump: when idle it's the medkit
 bindBtn('tBuild', () => inGame() && toggleBuild());
 bindBtn('tHelp', () => { document.body.classList.toggle('guide'); sfx('click'); });
 document.addEventListener('pointerdown', e => { if (document.body.classList.contains('guide') && e.target.id !== 'tHelp') document.body.classList.remove('guide'); }, true);
@@ -474,6 +523,7 @@ function drawReticle(me, pt, show, px0, py0) {
 function readInput(dt) {
   const me = W.p[ME], I = me.inp, blocked = panelOpen() || W.over || STATE.paused;
   const [fx, fy] = camFwd(), [rx, ry] = camRight();
+  INP.nadePt = INP.nadeAim && !blocked ? nadeAimPt(me) : null;                              // (round 23) grenade landing ring
   let sx = 0, sy = 0;
   if (!blocked) {
     sx = (KD('d') || KD('ArrowRight') ? 1 : 0) - (KD('a') || KD('ArrowLeft') ? 1 : 0);

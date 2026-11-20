@@ -16,12 +16,12 @@ const UA = 'Mozilla/5.0 (iPad; CPU OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (
     // shop
     let s = await p.evaluate(() => { openCraft(); const tabs = [...document.querySelectorAll('#ctabs button')].map(b => b.textContent), cards = document.querySelectorAll('#clist .sc').length;
       const shot = [...document.querySelectorAll('#clist .sc')][1].textContent; [...document.querySelectorAll('#clist button[data-c="rifle"]')][0].click(); return { tabs, cards, shot, rifle: W.p[0].owned[2] }; });
-    check('shop has 4 tabs; the gun tab has one card per gun, ammo on the gun\'s card', s.tabs.length === 4 && s.cards === 7 && /霰弹/.test(s.shot) && /买霰弹/.test(s.shot), JSON.stringify(s).slice(0, 200));
+    check('shop has 4 tabs; the gun tab has one card per gun, ammo on the gun\'s card', s.tabs.length === 4 && s.cards === 9 && /霰弹/.test(s.shot) && /买霰弹/.test(s.shot), JSON.stringify(s).slice(0, 200));
     check('buying a gun from its card works', s.rifle === 1);
-    s = await p.evaluate(() => { SET.shopTab = 'item'; renderCraft(); document.querySelector('#clist button[data-c="shield"]').click(); const n = document.querySelectorAll('#clist .sc.mini').length;
+    s = await p.evaluate(() => { SET.shopTab = 'gun'; renderCraft(); document.querySelector('#clist button[data-c="shield"]').click(); SET.shopTab = 'item'; renderCraft(); const n = document.querySelectorAll('#clist .sc.mini').length;
       SET.shopTab = 'veh'; renderCraft(); document.querySelector('#clist button[data-c="cargo"]').click(); document.querySelector('#clist button[data-c="armor"]').click(); renderCraft();
       const def = document.querySelector('#clist button.vdef'); if (def) def.click(); return { shield: W.p[0].shield, items: n, vehs: W.p[0].vehs, veh: W.p[0].veh }; });
-    check('item tab: shield bought (300); placeables listed with a 去放 button', s.shield === 300 && s.items === 9, JSON.stringify(s));
+    check('gun tab: shield bought (round 23: a melee weapon); item tab lists placeables with a 去放 button', s.shield === 1 && s.items === 9, JSON.stringify(s));
     check('vehicle tab: cargo + armour owned, default switchable', (s.vehs & 24) === 24 && s.veh >= 3, JSON.stringify(s));
     await p.evaluate(() => closeCraft());
     // kit / quick weapons
@@ -43,7 +43,7 @@ const UA = 'Mozilla/5.0 (iPad; CPU OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (
     // shield / armour
     s = await p.evaluate(() => { const me = W.p[0]; me.hp = 100; me.aim = 0; hurtPlayer(me, 20, { x: me.x + 1, y: me.y }); const front = 100 - me.hp, sh = me.shield; me.hp = 100; hurtPlayer(me, 20, { x: me.x - 1, y: me.y }); const back = 100 - me.hp;
       me.hp = 100; me.veh = 4; me.ride = true; hurtPlayer(me, 20); const arm = 100 - me.hp; me.ride = false; me.hp = 100; return { front, sh, back, arm }; });
-    check('shield: a hit from the front loses 75% (the shield soaks it), from behind full; armoured car takes 35%', Math.abs(s.front - 5) < 0.01 && s.sh === 285 && s.back === 20 && Math.abs(s.arm - 7) < 0.01, JSON.stringify(s));
+    check('shield out: a hit from the front loses half, from behind full; armoured car takes 35%', Math.abs(s.front - 10) < 0.01 && s.sh === 1 && s.back === 20 && Math.abs(s.arm - 7) < 0.01, JSON.stringify(s));
     // armoured car rams
     s = await p.evaluate(async () => { const me = W.p[0]; W.zs.length = 0; W.spawnQ = []; const z = spawnZombie('walker', 0); z.x = me.x + 0.55; z.y = me.y; z.L = me.L; z.z = me.z; z.stun = 99; const h0 = z.hp;
       me.ride = true; me.veh = 4; me.vx = 4; me.vy = 0; stepActions(me, 0.016); me.ride = false; me.vx = 0; return { h0, h: z.hp }; });
@@ -78,7 +78,7 @@ const UA = 'Mozilla/5.0 (iPad; CPU OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (
     const simWait = s => p.evaluate(s => new Promise(r => { const t0 = W.t; const f = () => W.t - t0 >= s ? r() : setTimeout(f, 20); f(); }), s);
     let s = await p.evaluate(() => ({ guide: document.body.classList.contains('guide'), vis: ['tFire', 'tWpn', 'tNade', 'tShove', 'tUse', 'tReload', 'tJump'].map(id => { const r = $(id).getBoundingClientRect(); return r.width > 0; }), use: $('tUse').textContent }));
     check('iPad: the first game shows the guide bubbles', s.guide, JSON.stringify(s));
-    check('iPad: fire + 4 keys (weapon, grenade, knife, context); reload / jump keys gone; context says 跳', s.vis.join() === 'true,true,true,true,true,false,false' && /跳/.test(s.use), JSON.stringify(s));
+    check('iPad: fire + 4 keys (weapon, grenade, knife, context); reload / jump keys gone; context says 交互', s.vis.join() === 'true,true,true,true,true,false,false' && /交互/.test(s.use), JSON.stringify(s));
     await p.evaluate(() => { window.__dbg.skipDraw = true; window.__dbg.god = true; const me = W.p[0]; me.x = W.radio.x + 9.5; me.y = W.radio.y - 8.5; me.L = 0; me.owned[2] = 1; me.ammo[2] = 300; me.mag[2] = 30; doAct(me, 'wpn', 2);
       for (let y = -12; y <= 4; y++) for (let x = -6; x <= 8; x++) { const i = ci(Math.floor(me.x) + x, Math.floor(me.y) + y, 0); if (W.blk[i] && !B[W.blk[i]].cost) W.blk[i] = 0; } W.ver++;
       W.zs.length = 0; W.spawnQ = []; const z = spawnZombie('walker', 0); z.x = me.x + 3; z.y = me.y; z.L = 0; z.z = 0; z.stun = 999; z.hp = z.max = 5000; W.phase = 'day'; });
@@ -99,7 +99,7 @@ const UA = 'Mozilla/5.0 (iPad; CPU OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (
     const opt = await p.evaluate(() => { const o = UI.wpOpts.find(o => o.k === 0); return o ? [o.x, o.y, UI.wpOpts.length] : null; });
     await tch('touchMove', [{ x: opt[0], y: opt[1], id: 2 }]); await p.waitForTimeout(80); await tch('touchEnd', []); await simWait(0.2);
     s = await p.evaluate(() => ({ w: W.p[0].wpn, open: !$('wpick').classList.contains('hidden') }));
-    check('weapon key: drag opens a fan of guns; slide onto the pistol and let go switches to it', opt && opt[2] >= 3 && s.w === 0 && !s.open, JSON.stringify([opt, s]));
+    check('weapon key: drag opens the gun menu; slide onto the pistol and let go switches to it', opt && opt[2] >= 3 && s.w === 0 && !s.open, JSON.stringify([opt, s]));
     await tch('touchStart', [{ x: wk[0], y: wk[1], id: 2 }]); await p.waitForTimeout(60); await tch('touchEnd', []); await simWait(0.2);
     check('weapon key: a tap goes to the next quick weapon', await p.evaluate(() => W.p[0].wpn !== 0));
     check('iPad: no page errors', !errs.length, errs.slice(0, 3).join(' | '));

@@ -4,7 +4,7 @@ function mkPlayer(i, name) {
     i, name, x: RADIO_XY[0] - 0.5 + i * 2, y: RADIO_XY[1] + 0.5 + i, L: 0, z: 0, r: 0.28, h: 1.0, vx: 0, vy: 0, kbx: 0, kby: 0, aim: -Math.PI / 2, aimPt: null,
     hp: BAL.pMaxHp, maxHp: BAL.pMaxHp, down: false, downT: 0, dead: false, gone: false,
     wpn: 1, owned: WPN.map((w, k) => k < 2 ? 1 : 0), mag: WPN.map((w, k) => k === 0 ? 12 : k === 1 ? 6 : 0), ammo: WPN.map((w, k) => k === 1 ? w.start : 0), bloom: 0, reloadT: 0, reloadW: 0, fireCD: 0, shoveCD: 0, shoveT: 0,
-    nades: 1, meds: 1, medT: 0, selfRev: false, useT: 0, useK: '', build: false, sel: 1, demo: false, sdir: 3, veh: 0, vehs: 0, shield: 0,
+    nades: 1, meds: 1, medT: 0, selfRev: false, useT: 0, useK: '', build: false, sel: 1, demo: false, sdir: 3, veh: 0, vehs: 0, shield: 0, melee: 0,
     inp: { mx: 0, my: 0, fire: 0, use: 0 }, kills: 0, hurtT: 0, anim: 0, emptyT: 0, ready: false, recoilT: 0,
   };
 }
@@ -96,9 +96,15 @@ function stepMove(p, dt) {
   let vk = 0;
   if (p.bump >= 0 && m > 0.5 && !p.down) {
     const bx = cx_(p.bump) - Math.floor(p.x), by = cy_(p.bump) - Math.floor(p.y);
-    if (Math.abs(bx) + Math.abs(by) === 1 && (bx * I.mx + by * I.my) / m > 0.7 && jumpTarget(p, bx, by)) { vk = vaultKind(W.blk[p.bump]); p.vaultT = (p.vaultT || 0) + dt; if (p.vaultT >= (vk === 2 ? 0.32 : 0.12)) { p.vaultT = 0; startJump(p, bx, by); } }
+    if (Math.abs(bx) + Math.abs(by) === 1 && (bx * I.mx + by * I.my) / m > 0.7 && jumpTarget(p, bx, by)) { vk = vaultKind(W.blk[p.bump]); p.vaultT = (p.vaultT || 0) + dt; if (p.vaultT >= (vk === 2 ? 0.2 : 0.06)) { p.vaultT = 0; startJump(p, bx, by); } }
   }
   if (!vk) p.vaultT = 0; else p.edgeK = 3;
+  // (round 23, no jump button any more) running at a one-tile gap leaps it; walking up to the edge and pushing still drops you down it
+  p.runT = m > 0.6 ? (p.runT || 0) + dt : 0;
+  if (!vk && p.edgeWant && m > 0.6 && !p.down && !p.ride && p.runT > 0.35 && p.edgeT <= dt * 1.5) {
+    const ax = Math.abs(I.mx), ay = Math.abs(I.my), dx = ax > ay * 1.6 ? Math.sign(I.mx) : 0, dy = ay > ax * 1.6 ? Math.sign(I.my) : 0;
+    if (dx || dy) { const t = jumpTarget(p, dx, dy); if (t && t.k === 3) startJump(p, dx, dy); }
+  }
   if (p.dropped) emitLocal('land');
   // a jump pad under your feet (round 22): fling yourself the way you're going; the host takes the pad away
   if ((p.padCD = Math.max(0, (p.padCD || 0) - dt)) <= 0 && !p.down && !p.ride && W.blk[ci(Math.floor(p.x), Math.floor(p.y), p.L)] === 56) {
@@ -420,9 +426,8 @@ function hurtPlayer(p, dmg, src) {
   if (p.gone || p.dead) return;
   if (DBG && DBG.god) return;
   if (p.ride && VEH[p.veh] && VEH[p.veh].armor) dmg *= VEH[p.veh].armor;                                   // (round 22) inside the armoured car
-  if (src && p.shield > 0 && !p.down && Math.cos(angDiff(p.aim, Math.atan2(src.y - p.y, src.x - p.x))) > BAL.shieldCos) { // riot shield: hits from the front
-    const a = Math.min(p.shield, dmg * BAL.shieldBlock); p.shield -= a; dmg -= a;
-    emit({ k: 'sfx', n: p.shield <= 0 ? 'brkMetal' : 'clank', x: p.x, y: p.y }); if (p.shield <= 0) { p.shield = 0; emit({ k: 'shieldBreak', p: p.i }); }
+  if (src && p.shield && p.melee === 1 && !p.down && !p.ride && Math.cos(angDiff(p.aim, Math.atan2(src.y - p.y, src.x - p.x))) > BAL.shieldCos) { // riot shield out: hits from the front lose half
+    dmg *= 1 - BAL.shieldBlock; emit({ k: 'sfx', n: 'clank', x: p.x, y: p.y });
   }
   if (p.down) { p.downT -= dmg * 0.18; p.hurtT = 0.3; emit({ k: 'phurt', p: p.i, d: 1 }); return; }
   p.hp -= dmg; p.hurtT = 0.3; emit({ k: 'phurt', p: p.i, d: Math.round(dmg) });
@@ -474,8 +479,9 @@ function doAct(p, a, v) {
       else if (p.mag[o] === 0 && (ow.inf || p.ammo[o] > 0)) p.rlBg[o] = ow.reload;                  // an empty gun reloads itself while you use the other
       p.wpn = v; p.reloadT = 0; if (p.rlBg[v] > 0) { p.reloadT = p.rlBg[v]; p.reloadW = v; p.rlBg[v] = 0; } // back to a gun that was reloading: pick up where it was
       p.fireCD = Math.max(p.fireCD, 0.2); emit({ k: 'sfx', n: 'swap', x: p.x, y: p.y, o: p.i }); } break;
-    case 'knife': knife(p, v); break;
-    case 'nade': throwNade(p); break;
+    case 'knife': if (p.melee === 1 && p.shield) bash(p, v); else knife(p, typeof v === 'number' ? v : -1); break;
+    case 'melee': p.melee = v === 1 && p.shield ? 1 : 0; break;
+    case 'nade': throwNade(p, v); break;
     case 'med':
       if (p.medT > 0 || p.meds <= 0) break;
       if (p.down) { p.meds--; p.medT = 3; p.selfRev = true; emit({ k: 'sfx', n: 'med', x: p.x, y: p.y }); }
@@ -502,6 +508,22 @@ function knifeTarget(p, dir) {
   }
   return best;
 }
+// (round 23) riot shield bash: shove everything in front of you back and stun it (dir = where the client faced)
+function bash(p, dir) {
+  if (p.down || p.build || p.medT > 0 || (p.knCDh || 0) > W.t) return;
+  p.knCDh = W.t + BAL.bashCD * 0.8; p.knT = 0.3;
+  const f = dir && dir.a != null ? +dir.a : p.aim, [sx, sy, sz] = shoulder(p); p.aim = f;
+  const hit = W.zs.filter(z => z.hp > 0 && !z.hidden && Math.abs(z.z - p.z) < 0.9).map(z => ({ z, dx: z.x - p.x, dy: z.y - p.y })).map(o => (o.d = Math.hypot(o.dx, o.dy) || 0.01, o))
+    .filter(o => o.d < BAL.bashR + o.z.r && (o.d < p.r + o.z.r + 0.1 || Math.cos(angDiff(f, Math.atan2(o.dy, o.dx))) > BAL.bashCos) && los(sx, sy, sz, o.z.x, o.z.y, o.z.z + o.z.h * 0.5, 0))
+    .sort((a, b) => a.d - b.d).slice(0, BAL.bashMax);
+  for (const { z, dx, dy, d } of hit) {
+    const heavy = ZT[z.k].boss ? 0.15 : z.k === 'brute' ? 0.35 : 1;
+    z.stun = Math.max(z.stun || 0, BAL.bashStun * Math.max(heavy, 0.4)); if (z.sleep) siegeWake && siegeWake(z);
+    hurtZombie(z, BAL.bashDmg * (1 + 0.1 * W.upg), p, dx / d * BAL.bashKB * heavy, dy / d * BAL.bashKB * heavy);
+  }
+  if (hit.length) taskAdd('shove', hit.length);
+  emit({ k: 'sbash', p: p.i, n: hit.length, x: r2(p.x + Math.cos(f) * 0.8), y: r2(p.y + Math.sin(f) * 0.8), z: r2(p.z + 0.9) });
+}
 function knife(p, zid) {
   if (p.down || p.build || p.medT > 0 || (p.knCDh || 0) > W.t) return;
   p.knCDh = W.t + BAL.knifeCD * 0.8; p.knT = 0.28;
@@ -521,11 +543,13 @@ function knife(p, zid) {
   taskAdd('shove', 1);
   emit({ k: 'knife', p: p.i, n: 1, x: r2(z.x), y: r2(z.y), z: r2(z.z + z.h * 0.6), b: back ? 1 : 0, g: z.k === 'spitter' ? 1 : 0 });
 }
-function throwNade(p) {
+// (round 23) v = {x, y, z}: where it should land (the player picked it, or the auto pick for the biggest bunch); else along the aim
+function throwNade(p, v) {
   if (p.down || p.nades <= 0) return;
   p.nades--;
+  if (v && v.x != null) { p.aim = Math.atan2(v.y - p.y, v.x - p.x); p.aimPt = { x: v.x, y: v.y, z: v.z != null ? v.z : surfZ(v.x, v.y, gAt(Math.floor(v.x), Math.floor(v.y))) }; }
   const [sx, sy, sz] = shoulder(p), [ax, ay] = aimDir(p);
-  let dist = p.aimPt ? Math.min(12, d2(p.aimPt.x, p.aimPt.y, sx, sy)) : 6; dist = Math.max(2, dist);
+  let dist = p.aimPt ? Math.min(BAL.nadeRange, d2(p.aimPt.x, p.aimPt.y, sx, sy)) : 6; dist = Math.max(2, dist);
   const T = 0.75 + dist * 0.03, g = 14;
   W.proj.push({ k: 'nade', x: sx, y: sy, z: sz, vx: Math.cos(Math.atan2(ay, ax)) * dist / T, vy: Math.sin(Math.atan2(ay, ax)) * dist / T, vz: g * T / 2 + ((p.aimPt ? p.aimPt.z - 0.5 : sz - 0.72) - sz) / T, t: Math.min(BAL.nadeFuse, T + BAL.nadeLand), o: p.i });
   emit({ k: 'sfx', n: 'throw', x: p.x, y: p.y });
@@ -542,7 +566,7 @@ const inCamp = p => Math.abs(p.x - W.radio.x - 0.5) <= 6.5 && Math.abs(p.y - W.r
 function craftBlocked(p, c) {
   if (c.bp && !hasBP(c.bp)) return '需要蓝图';
   if (c.veh && ownsVeh(p, c.veh)) return '已拥有';
-  if (c.shield && p.shield >= BAL.shieldHp) return '完好';
+  if (c.shield && p.shield) return '已拥有';
   if (c.wpn && p.owned[c.wpn]) return '已拥有';
   if (c.ammo && !p.owned[c.ammo[0]]) return '没有这把枪';
   if (c.nade && p.nades >= 6) return '已满';
@@ -560,7 +584,7 @@ function doCraft(p, id) {
   if (c.med) p.meds = Math.min(3, p.meds + 1);
   if (c.upg) W.upg++;
   if (c.veh) { p.vehs = (p.vehs || 0) | 1 << c.veh; p.veh = c.veh; }                  // (round 22) it becomes your default: T gets on
-  if (c.shield) p.shield = BAL.shieldHp;
+  if (c.shield) { p.shield = 1; p.melee = 1; }
   emit({ k: 'craft', p: p.i, id, name: c.name });
 }
 function inReach(p, x, y, L) { return !p.down && Math.hypot(p.x - x - 0.5, p.y - y - 0.5, (pZ(p) - L * FH) * 0.8) <= BAL.pReach; }
@@ -588,8 +612,9 @@ function doBuild(p, x, y, L, id, dir) {
   recomputeStab();
 }
 function doDemolish(p, x, y, L) {
-  if (!inMap(x, y) || L < 0 || L >= ML || !inReach(p, x, y, L) || !(modeDef().anyBuild || inZone(x, y))) return;
+  if (!inMap(x, y) || L < 0 || L >= ML || !inReach(p, x, y, L)) return;
   const i = ci(x, y, L), b = W.blk[i], s = W.slab[i];
+  if (!(modeDef().anyBuild || inZone(x, y) || (b && B[b].any))) return;
   let Bb, frac;
   if (b && B[b].cost) { Bb = B[b]; frac = W.bhp[i] / Bb.hp; setCell(i, 0, s, null, 'demo'); }
   else if (s && B[s].cost) { Bb = B[s]; frac = W.shp[i] / Bb.hp; const water = L === 0 && ttAt(x, y) === TT.water; setCell(i, water ? 23 : b, 0, null, 'demo'); }

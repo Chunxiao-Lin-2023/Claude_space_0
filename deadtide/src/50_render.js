@@ -367,10 +367,10 @@ function darkness() {
 const C3 = (a, b, t) => new THREE.Color(a).lerp(new THREE.Color(b), t);
 function applyTime(dk) {
   const blood = W.phase === 'night' && isBlood(W.night), dusk = Math.sin(clamp(dk, 0, 1) * Math.PI);
-  let sky = C3('#9fb1c4', '#0a0f1c', dk); sky.lerp(new THREE.Color('#d98a5a'), dusk * 0.35); if (blood) sky = new THREE.Color('#2a070b');
+  let sky = C3('#9fb1c4', '#1a2440', dk); // (round 23) nights brighter: moonlit, not pitch black sky.lerp(new THREE.Color('#d98a5a'), dusk * 0.35); if (blood) sky = new THREE.Color('#2a070b');
   SCN.background = sky;
-  OBJ.hemi.intensity = lerp(1.15, 0.62, dk); OBJ.hemi.color.copy(C3('#d6e2ff', blood ? '#8a3a40' : '#4a5c8c', dk)); OBJ.hemi.groundColor.copy(C3('#4a3c2a', '#141018', dk));
-  OBJ.sun.intensity = lerp(2.3, 0.85, dk); OBJ.sun.color.copy(C3('#fff0d8', blood ? '#ff6a5a' : '#9fb4ff', dk)).lerp(new THREE.Color('#ff9a5a'), dusk * 0.5);
+  OBJ.hemi.intensity = lerp(1.15, 1.0, dk); OBJ.hemi.color.copy(C3('#d6e2ff', blood ? '#b05a62' : '#7f93c8', dk)); OBJ.hemi.groundColor.copy(C3('#4a3c2a', '#2c2834', dk));
+  OBJ.sun.intensity = lerp(2.3, 1.35, dk); OBJ.sun.color.copy(C3('#fff0d8', blood ? '#ff8a7a' : '#b8c8ff', dk)).lerp(new THREE.Color('#ff9a5a'), dusk * 0.5);
   RENDER.toneMappingExposure = lerp(1.25, 1.6, dk);
   const lampOn = dk > 0.3 ? 1 : dk / 0.3;
   const me = W.p[ME], ref = me || { x: CAM.tx, y: CAM.ty };
@@ -445,6 +445,36 @@ function drawGhost(me) {
   E.position.set(H.x + 0.5, H.L * FH, H.y + 0.5); E.material.color.set(me.demo ? '#ff8a7a' : H.ok ? '#ffffff' : '#ffb0a0');
 }
 
+// (round 23) grenade landing ring while aiming one (blast radius, flat on the ground)
+function drawNadeMark() {
+  let M = OBJ.nadeMark;
+  if (!M) {
+    M = OBJ.nadeMark = new THREE.Group(); const mat = new THREE.MeshBasicMaterial({ color: '#ffb347', transparent: true, opacity: 0.85, depthTest: false });
+    const ring = new THREE.Mesh(new THREE.RingGeometry(BAL.nadeR - 0.14, BAL.nadeR, 48), mat); ring.rotation.x = -Math.PI / 2;
+    const dot = new THREE.Mesh(new THREE.CircleGeometry(0.22, 16), mat); dot.rotation.x = -Math.PI / 2;
+    const fill = new THREE.Mesh(new THREE.CircleGeometry(BAL.nadeR, 48), new THREE.MeshBasicMaterial({ color: '#ff7a2a', transparent: true, opacity: 0.16, depthTest: false })); fill.rotation.x = -Math.PI / 2;
+    M.add(fill, ring, dot); M.renderOrder = 999; M.children.forEach(c => c.renderOrder = 999); SCN.add(M);
+  }
+  const pt = INP.nadePt; M.visible = !!pt && STATE.mode === 'play'; if (!pt) return;
+  const z = pt.z != null ? pt.z : surfZ(pt.x, pt.y, gAt(Math.floor(pt.x), Math.floor(pt.y))); M.position.set(pt.x, z + 0.06, pt.y);
+}
+// (round 23) brute tells on the ground: a red lane before a charge, a red ring before a slam
+function drawTells() {
+  let T = OBJ.tells;
+  if (!T) {
+    T = OBJ.tells = []; const lm = new THREE.MeshBasicMaterial({ color: '#ff3a2a', transparent: true, opacity: 0.4, depthTest: false }), rm = new THREE.MeshBasicMaterial({ color: '#ff3a2a', transparent: true, opacity: 0.55, depthTest: false });
+    const lane = new THREE.PlaneGeometry(1, 1).translate(0.5, 0, 0).rotateX(-Math.PI / 2), ring = new THREE.RingGeometry(BAL.slamR - 0.2, BAL.slamR, 40).rotateX(-Math.PI / 2), disc = new THREE.CircleGeometry(BAL.slamR, 40).rotateX(-Math.PI / 2);
+    for (let k = 0; k < 6; k++) { const g = new THREE.Group(), l = new THREE.Mesh(lane, lm), r = new THREE.Mesh(ring, rm), d = new THREE.Mesh(disc, lm); g.add(l, r, d); g.children.forEach(c => c.renderOrder = 998); g.visible = false; SCN.add(g); T.push({ g, l, r, d }); }
+  }
+  let n = 0; const pulse = 0.35 + 0.25 * Math.sin(performance.now() / 70);
+  for (const z of W.zs) {
+    if (n >= T.length) break; if (!z.tl || z.hp <= 0) continue; const t = T[n++], zz = (z.zv != null ? z.zv : z.z) + 0.07;
+    t.g.visible = true; t.g.position.set(z.x, zz, z.y); t.l.visible = z.tl !== 3; t.r.visible = t.d.visible = z.tl === 3;
+    if (z.tl !== 3) { t.l.rotation.y = -z.face; t.l.scale.set(z.tl === 1 ? BAL.chgSpd * BAL.chgTime : 3, 1, 1.0); }
+    t.l.material.opacity = pulse;
+  }
+  for (let k = n; k < T.length; k++) T[k].g.visible = false;
+}
 /* ---------- main draw ---------- */
 let CUT_KEY = '';
 function draw(dt) {
@@ -456,7 +486,7 @@ function draw(dt) {
   if (key !== CUT_KEY) { CUT_KEY = key; rebuildCells(); }
   if (STATE.mode === 'play' && !W.demo) qualTick(dt);
   applyTime(darkness()); archFrame();
-  drawZombies(vl, dt); drawPlayers(vl, dt); drawFx(); drawGhost(me); drawPlan();
+  drawZombies(vl, dt); drawPlayers(vl, dt); drawFx(); drawGhost(me); drawPlan(); drawNadeMark(); drawTells();
   OBJ.zone.visible = (!W.demo && W.phase === 'day' || !!(me && me.build)) && !modeDef().anyBuild;
   RENDER.render(SCN, CAMO);
   drawOverlay();
@@ -573,7 +603,8 @@ function fxEvent(e) {
     case 'down': sfx('down', W.p[e.p].x, W.p[e.p].y); uiMsg(e.p === ME ? (W.p.length > 1 ? '你倒地了！等队友扶你，或按 H 用医疗包自救' : '你倒地了！按 H 用医疗包自救') : W.p[e.p].name + ' 倒地了！快去扶（按住 F）', '#ff6b5a'); break;
     case 'revive': sfx('revive'); uiMsg(e.p === e.by ? W.p[e.p].name + ' 自救成功' : W.p[e.by].name + (e.rez ? ' 用医疗包救回了 ' : ' 扶起了 ') + W.p[e.p].name, '#8fe39a'); break;
     case 'dead': uiMsg(W.p[e.p].name + ' 阵亡了：' + (e.t || 60) + ' 秒后（或天亮）在队友身边复活，带医疗包到他倒下的地方能马上救回来', '#ff6b5a'); break;
-    case 'shieldBreak': if (e.p === ME) toast('防暴盾碎了（商店 → 道具 能再买）', '#ff8a7a'); else uiMsg(W.p[e.p].name + ' 的防暴盾碎了', '#ffb38a'); break;
+    case 'slam': { debrisFx(e.x, e.y, e.z + 0.2, '#9a8a70', e.r > 1 ? 18 : 8); shake(e.x, e.y, e.r > 1 ? 0.5 : 0.3); break; } // brute slam / charge crash
+    case 'sbash': { const q = W.p[e.p]; sfx('bash', q.x, q.y); if (e.p !== ME) q.knT = 0.3; if (e.n) { debrisFx(e.x, e.y, e.z, '#cfd8e0', 6); if (e.p === ME) shake(q.x, q.y, 0.18); } break; } // (round 23) shield bash
     case 'respawn': uiMsg(W.p[e.p].name + ' 回来了' + (e.near >= 0 ? '（在 ' + W.p[e.near].name + ' 身边）' : '（在营地）'), '#8fe39a'); break;
     case 'task': sfx('craft'); uiMsg('任务完成：' + e.txt + '  奖励 ' + e.rt, '#ffd76a'); toast('任务完成 · ' + e.rt, '#ffd76a'); break;
     case 'tp': if (guest && e.p === ME) { const p = W.p[ME]; p.x = e.x; p.y = e.y; p.L = e.l; p.vx = p.vy = 0; } break;

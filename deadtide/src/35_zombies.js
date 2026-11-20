@@ -81,6 +81,35 @@ function stepZombies(dt) {
         emit({ k: 'scream', x: r2(z.x), y: r2(z.y), z: r2(z.z) });
       }
     }
+    // (round 23) brute: wind up (red line on the ground) then a straight rush that flattens you and smashes what it hits; up close, a ground slam (red ring)
+    z.tl = 0; if (z.stun > 0 && (z.chg || z.slam)) { z.chg = z.slam = null; z.chgCD = BAL.chgCD * 0.5; } // a stun breaks the wind-up
+    if (Z.charge && z.stun <= 0 && !z.climbing) {
+      z.chgCD = (z.chgCD == null ? 2 + rand() * 2 : z.chgCD) - dt; z.slamCD = (z.slamCD || 0) - dt;
+      if (z.chg) {
+        const Cg = z.chg; Cg.t += dt; hold = true; z.face = Cg.a;
+        if (Cg.ph === 0) { z.tl = 1; if (Cg.t >= BAL.chgWind) { Cg.ph = 1; Cg.t = 0; emit({ k: 'sfx', n: 'smash', x: z.x, y: z.y }); } }
+        else {
+          z.tl = 2; const ox = z.x, oy = z.y, ca = Math.cos(Cg.a), sa = Math.sin(Cg.a);
+          moveEnt(z, ca * BAL.chgSpd * dt, sa * BAL.chgSpd * dt, 'z', false); z.z = surfZ(z.x, z.y, z.L);
+          for (const p of W.p) { if (p.gone || p.dead || Cg.hit.includes(p.i) || Math.abs(p.z - z.z) > 0.9) continue; if (d2(p.x, p.y, z.x, z.y) < p.r + z.r + 0.35) { Cg.hit.push(p.i); hurtPlayer(p, BAL.chgDmg * W.D.dmg, z); knock(p, ca * BAL.chgKB - sa * 2, sa * BAL.chgKB + ca * 2); emit({ k: 'sfx', n: 'smash', x: p.x, y: p.y }); } }
+          for (const o of zs) { if (o === z || o.hp <= 0 || o.L !== z.L) continue; const dx = o.x - z.x, dy = o.y - z.y, d = Math.hypot(dx, dy); if (d < z.r + o.r + 0.2 && d > 0.01) { const side = dx * -sa + dy * ca >= 0 ? 1 : -1; o.kbx += -sa * side * 6; o.kby += ca * side * 6; } } // shoved aside
+          if (Math.hypot(z.x - ox, z.y - oy) < BAL.chgSpd * dt * 0.35) { // ran into something
+            if (z.bump >= 0 && B[W.blk[z.bump]].brk) { W.bhp[z.bump] -= BAL.chgWall; W.dirty.add(z.bump); if (W.bhp[z.bump] <= 0) destroyBlk(z.bump); }
+            z.stun = BAL.chgStun; z.chg = null; z.chgCD = BAL.chgCD; emit({ k: 'sfx', n: 'smash', x: z.x, y: z.y }); emit({ k: 'slam', x: r2(z.x + ca * 0.5), y: r2(z.y + sa * 0.5), z: r2(z.z), r: 1 });
+          } else if (Cg.t >= BAL.chgTime) { z.chg = null; z.chgCD = BAL.chgCD; }
+        }
+      } else if (z.slam) {
+        hold = true; z.tl = 3; z.slam.t += dt;
+        if (z.slam.t >= BAL.slamWind) {
+          for (const p of W.p) { if (p.gone || p.dead || Math.abs(p.z - z.z) > 1) continue; const dx = p.x - z.x, dy = p.y - z.y, d = Math.hypot(dx, dy); if (d < BAL.slamR) { hurtPlayer(p, BAL.slamDmg * W.D.dmg * (d < 1.4 ? 1 : 0.6)); knock(p, dx / (d || 1) * BAL.slamKB, dy / (d || 1) * BAL.slamKB); } }
+          z.slam = null; z.slamCD = BAL.slamCD; emit({ k: 'sfx', n: 'smash', x: z.x, y: z.y }); emit({ k: 'slam', x: r2(z.x), y: r2(z.y), z: r2(z.z), r: BAL.slamR });
+        }
+      } else {
+        let tp = null, td = 1e9; for (const p of W.p) { if (!standingP(p) || Math.abs(p.z - z.z) > 0.9) continue; const d = d2(p.x, p.y, z.x, z.y); if (d < td) { td = d; tp = p; } }
+        if (tp && td < BAL.slamR - 0.5 && z.slamCD <= 0) { z.slam = { t: 0 }; hold = true; z.tl = 3; z.face = Math.atan2(tp.y - z.y, tp.x - z.x); emit({ k: 'sfx', n: 'groan', x: z.x, y: z.y }); }
+        else if (tp && z.chgCD <= 0 && td > BAL.chgMin && td < BAL.chgMax && los(z.x, z.y, z.z + 1, tp.x, tp.y, tp.z + 0.8)) { z.chg = { ph: 0, t: 0, a: Math.atan2(tp.y - z.y, tp.x - z.x), hit: [] }; hold = true; z.tl = 1; z.face = z.chg.a; emit({ k: 'sfx', n: 'groan', x: z.x, y: z.y }); }
+      }
+    }
     // choose the next step
     let tx = null, ty = null, attackI = -1, planU = -1;
     if (field[i] < Infinity && !hold) {

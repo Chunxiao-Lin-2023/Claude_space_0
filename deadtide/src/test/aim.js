@@ -23,7 +23,7 @@ const { chromium } = require('playwright'); const OUT = process.env.OUT || '/tmp
   check('head shots deal more per shot than body shots', dh > db * 1.4, 'per shot: head ' + dh.toFixed(1) + ' body ' + db.toFixed(1));
   // key legend
   const kl = await p.evaluate(() => document.getElementById('keys').innerText.replace(/\s+/g, ' '));
-  check('key legend lists reload / grenade / meds / jump', /R 换弹/.test(kl) && /G 手雷 ×2/.test(kl) && /H 医疗 ×1/.test(kl) && /空格 跳/.test(kl), kl);
+  check('key legend lists reload / grenade / meds (no jump since round 23)', /R 换弹/.test(kl) && /G 手雷 ×2/.test(kl) && /H 医疗 ×1/.test(kl) && !/空格/.test(kl), kl);
   await p.evaluate(() => { W.p[0].mag[0] = 0; UI.hudT = 0; }); await p.waitForTimeout(400);
   check('empty mag lights R', await p.evaluate(() => !!document.querySelector('#keys kbd.warn')));
   await p.mouse.move(640, 600); await p.keyboard.press('b'); await p.waitForTimeout(600);

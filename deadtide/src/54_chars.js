@@ -432,7 +432,7 @@ function drawPlayers(vl, dt) {
     p._kn = lerp(p._kn || 0, SK.kneel && !moving && !p.build && !(p.medT > 0) && !(p.jz > 0.05) && !down ? 1 : 0, Math.min(1, dt * 7));
     if (p._kn > 0.01) { const q = p._kn; aL = lerp(aL, 1.45, q); kL = lerp(kL, 1.45, q); aR = lerp(aR, -0.05, q); kR = lerp(kR, 1.62, q); } // right knee down, left foot forward
     const pil = p.pass != null && p.pass >= 0 && !down, ride = (!!p.ride || pil) && !down; m.veh.visible = !!p.ride && !down; if (ride) { m.veh.userData.all.forEach((q, k) => { if (q) q.visible = k === (p.veh || 1); }); m.veh.rotation.y = -p._ly; aL = aR = 1.15; kL = kR = 1.35; }
-    if (m.shield) m.shield.visible = (p.shield || 0) > 0 && !down && !p.dead;
+    if (m.shield) m.shield.visible = !!p.shield && p.melee === 1 && !down && !p.dead && !p.ride; // (round 23) shown when it's your melee weapon
     const legH = (a, k) => 0.23 * Math.cos(a) + 0.22 * Math.cos(a - k) + 0.03;
     const hipY = down ? 0.2 : Math.max(legH(aL, kL), legH(aR, kR));
     const seat = ride ? (pil ? (p.pass >= 0 && W.p[p.pass] && W.p[p.pass].veh === 4 ? 0.34 : 0.46) : p.veh === 2 ? 0.42 : p.veh === 4 ? 0.3 : 0.36) : 0; m.hips.position.y = hipY + seat; m.upper.position.y = hipY + seat;
@@ -460,8 +460,8 @@ function drawPlayers(vl, dt) {
     m.aim.position.y = 0.33 + Math.sin(ph * 2) * 0.01 * amp;
     // what's in hand + arm IK
     const reload = p.reloadT > 0 && !p.build, med = p.medT > 0, thr = p._throwT > 0, build = !!p.build;
-    const kn = p.knT > 0 && !build && !med && !p.down ? 1 - p.knT / 0.28 : -1;
-    m.guns.forEach((gm, k) => gm.visible = !build && !med && !thr && kn < 0 && k === wi); m.knife.visible = kn >= 0; m.hammer.visible = build; m.medkit.visible = med; m.nade.visible = thr;
+    const bashing = p.melee === 1 && p.shield, kn = p.knT > 0 && !build && !med && !p.down ? clamp(1 - p.knT / (bashing ? 0.3 : 0.28), 0, 1) : -1;
+    m.guns.forEach((gm, k) => gm.visible = !build && !med && !thr && kn < 0 && k === wi); m.knife.visible = kn >= 0 && !bashing; m.hammer.visible = build; m.medkit.visible = med; m.nade.visible = thr;
     // stance: shouldered up when shooting or standing, low ready (muzzle down, butt still in the shoulder) when on the move
     const S = STANCE[wi], fired = W.t - (p._lastShot || -9) < 1.4, plain = down || build || med || thr;
     p._rdy = lerp(p._rdy == null ? 1 : p._rdy, plain || !moving || fired || (p.inp && p.inp.fire) ? 1 : 0, Math.min(1, dt * 8));
@@ -492,6 +492,7 @@ function drawPlayers(vl, dt) {
       m.knife.position.set(rx, ry, rz); m.knife.rotation.set(lerp(-0.4, 0.5, b), lerp(-0.6, 0.7, b), lerp(lerp(0.2, 1.0, a), -0.9, b));
       m.aim.position.x += Math.sin(b * Math.PI) * 0.08;
     }
+    if (m.shield) { const t = kn >= 0 && bashing ? Math.sin(Math.min(1, kn * 1.6) * Math.PI) : 0; m.shield.position.x = 0.17 + t * 0.3; m.torso.rotation.y += t * -0.25; if (t) { lx = 0.2 + t * 0.25; ly = 0.12; lz = -0.17; } } // shield bash: shove it forward
     ikArm(m.arms[1], rx, ry, rz, 1); ikArm(m.arms[0], lx, ly, lz, -1);
   });
   for (const p of W.p) { if (p._throwT > 0) p._throwT -= dt; if (p._swingT > 0) p._swingT -= dt; }
