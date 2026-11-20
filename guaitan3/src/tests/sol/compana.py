@@ -13,7 +13,7 @@ def follow(path, stop, picks=None, ms=60000):
             f" const P = {json.dumps(path)}, PK = {json.dumps(picks or [])}; let i = 0; IN.run = false;"
             f" while (performance.now() - t0 < {ms}) {{ const w = D.W; if (!w || w.endScreen || ({stop})) break;"
             "  if (w.dlg || w.card || w.note || w.keypad) { IN.stack = []; await window.__auto(PK, 300); continue; }"
-            "  const p = w.pl, cx = p.mv ? p.mv.tx : p.x, cy = p.mv ? p.mv.ty : p.y; while (i < P.length && cx === P[i][0] && cy === P[i][1]) i++;"
+            "  const p = w.pl, q = p.mv && p.mv.p > 0.5, cx = q ? p.mv.tx : p.x, cy = q ? p.mv.ty : p.y; while (i < P.length && cx === P[i][0] && cy === P[i][1]) i++;"
             "  if (i >= P.length) { IN.stack = []; if (!w.busy && !p.mv) break; await sl(30); continue; }"
             "  const dx = P[i][0] - cx, dy = P[i][1] - cy; IN.stack = [dx > 0 ? 2 : dx < 0 ? 1 : dy > 0 ? 0 : 3];"
             "  await sl(8); }"

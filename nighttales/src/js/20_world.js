@@ -145,14 +145,18 @@ function bfsStep(m, sx, sy, tx, ty, who, maxN = 2500) {
  *  - 站定时按另一个方向：立刻转身；按下 0.08 秒后仍按住才迈步（按按下时刻算，不靠逐帧倒数），早松手 = 只转身。
  *  - 连续行走时到格子还按着就直接接着走（换方向也不停顿）。
  *  - 迟松手宽限：自动接上的那一步刚开始（进度 < 0.45 且 < 0.12 秒）就松手/换方向，平滑退回刚到的那一格停下；
- *    退回的到达不再触发该格的踩踏脚本（那一格到达时已经触发过）。新按下开始的一步永远不退回。 */
+ *    退回的到达不再触发该格的踩踏脚本（那一格到达时已经触发过）。新按下开始的一步、退回后迈出的那一步都不退回；
+ *    换方向时只有「起点那格往新方向走得通」才退回（提前按好的拐弯不会被退掉）。 */
 const TURN_HOLD = 80, UNDO_P = 0.5, UNDO_MS = 120, RUN_IDLE = 0.6;
 function updatePlayer(dt) {
   const p = W.pl, m = curMap();
   let chain = null;   // 本帧刚走到格子（连续行走）：刚结束的那一步
   if (p.mv) {
     let mv = p.mv;
-    if (mv.chain && !mv.back && !mv.done && IN.dir() !== mv.d && mv.p < UNDO_P && now() - mv.t0 < UNDO_MS) {
+    const nd = IN.dir();
+    // 只在「松手」或「从起点那格往新方向走得通」时退回：提前按好拐弯方向（起点那格往新方向是墙）不该把走向拐角的这一步退掉
+    if (mv.chain && !mv.back && !mv.done && nd !== mv.d && mv.p < UNDO_P && now() - mv.t0 < UNDO_MS &&
+        (nd < 0 || passable(m, mv.fx + DIRS[nd][0], mv.fy + DIRS[nd][1], p))) {
       mv = p.mv = { fx: mv.tx, fy: mv.ty, tx: mv.fx, ty: mv.fy, p: 1 - mv.p, spd: mv.spd, d: mv.d, t0: mv.t0, back: true };   // 原速退回
       if (mv.prev0) p.prev = mv.prev0;
     }
@@ -178,7 +182,7 @@ function updatePlayer(dt) {
   if (passable(m, tx, ty, p)) {
     const prev0 = p.prev; p.prev = [p.x, p.y]; p.run = IN.running() && !W.noRun;
     const sp = (p.run ? RUN_SPD : WALK_SPD) * (p.speed || 1) * (m.def.speed || 1); startMove(p, d, sp);
-    Object.assign(p.mv, { d, t0: now(), prev0, chain: !!(chain && chain.t0 != null && dT <= chain.t0) });   // 只有「上一步开始前就按住」的才算自动接上
+    Object.assign(p.mv, { d, t0: now(), prev0, chain: !!(chain && !chain.back && chain.t0 != null && dT <= chain.t0) });   // 只有「上一步开始前就按住」的才算自动接上
     if (chain && chain.over > 0) moveEntity(p, Math.min(chain.over, .5 / sp));
   }
   else { p.fr = 0; if (isHost()) onBump(tx, ty); }
