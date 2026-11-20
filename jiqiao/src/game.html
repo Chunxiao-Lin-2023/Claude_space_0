@@ -643,11 +643,11 @@ const EVO_HP=[1,1.15,1.3],EVO_N=['','二型','三型'];
 function rollEvo(type,w){if(run&&run.diff>=3)w+=run.diff>=4?3:2;const E=EVO[type];if(!E||w<6)return 0;const p3=w>=12&&E[1]?Math.min(0.4,0.15+(w-12)*0.07):0,p2=Math.min(0.8-p3,0.15+(w-6)*0.06),r=Math.random();return r<p3?2:r<p3+p2?1:0;}
 // 小首领：第 4 波一只，第 12 波一只（三阶难度两只）。限时内击杀掉宝箱，否则逃跑
 const MINIS=[
- {key:'grinder',name:'磨刀匠',hp:250,r:38,spd:72,dmg:11,col:'#c9d2d4',base:'brute',d:'转着刀阵直线冲刺，撞到墙或铜柱会眩晕，眩晕时受到的伤害 +60%；每第三轮原地刀阵旋风，向四周甩出螺旋飞刃'},
- {key:'gunner',name:'炮手队长',hp:220,r:34,spd:42,dmg:11,col:'#e05a4b',base:'shield',d:'召唤 3 座炮台，炮台没拆完时自己只受 40% 伤害；拆光后有 10 秒破绽。不时朝你落迫击炮（看红圈）'},
+ {key:'grinder',name:'磨刀匠',hp:250,r:38,spd:92,dmg:11,col:'#c9d2d4',base:'brute',d:'转着刀阵直线冲刺，撞到墙或铜柱会眩晕，眩晕时受到的伤害 +60%；每第三轮原地刀阵旋风，向四周甩出螺旋飞刃'},
+ {key:'gunner',name:'炮手队长',hp:220,r:34,spd:70,dmg:11,col:'#e05a4b',base:'shield',d:'召唤 3 座炮台，炮台没拆完时自己只受 40% 伤害；拆光后有 10 秒破绽。不时朝你落迫击炮（看红圈）'},
  {key:'toad',name:'毒蛙王',hp:260,r:40,spd:0,dmg:11,col:'#9ccf5a',base:'spitter',d:'跳到你身边砸地，落点留下毒池，毒池会越积越多；会吐舌头把你拽过去并减速，看到直线预警就侧移'},
- {key:'mirror',name:'镜像刺客',hp:190,r:26,spd:96,dmg:11,col:'#b28ae0',base:'stalker',d:'分出两个幻影一起扑击，只有真身脚下有影子；幻影一碰就散。扑击落地甩出影刃，还会瞬身到你背后横斩'},
- {key:'foreman',name:'熔铁工头',hp:250,r:38,spd:44,dmg:11,col:'#ff9a4a',base:'layer',d:'把地面格子烧红，预警后爆发；每第三轮站定扇形喷铁水（两条预警线之间），半血后烧得更多、双向喷'},
+ {key:'mirror',name:'镜像刺客',hp:190,r:26,spd:110,dmg:11,col:'#b28ae0',base:'stalker',d:'分出两个幻影一起扑击，只有真身脚下有影子；幻影一碰就散。扑击落地甩出影刃，还会瞬身到你背后横斩'},
+ {key:'foreman',name:'熔铁工头',hp:250,r:38,spd:74,dmg:11,col:'#ff9a4a',base:'layer',d:'把地面格子烧红，预警后爆发；每第三轮站定扇形喷铁水（两条预警线之间），半血后烧得更多、双向喷'},
 ];
 const MINI_WAVES=[4,12];
 let gz=[],gzTick=0,corpses=[],mechs=[],debris=[],mechKT=0;
@@ -3181,9 +3181,15 @@ function spawnDen(){
 function runeUpdate(dt){const R=MAP.ter&&MAP.ter.rune;if(!R)return;if(!hz.rune)hz.rune={t:18,on:0,k:1};const r=hz.rune;
  if(!r.on){r.t-=dt;if(r.t<=0){r.on=1;r.k=1-r.k;ringFx(R[0],R[1],50,r.k?'#7fe0cf':'#8cc65a',0.4);}return;}
  for(const p of alivePL()){if(Math.hypot(p.P.x-R[0],p.P.y-R[1])<34){const keep=CUR;use(p);if(r.k===0){heal(Math.round(S.hp*0.3),'rune');addText(P.x,P.y-44,'治疗神符',C.good,15);}else{run.shd=Math.round(S.hp*0.25);run.shdT=10;addText(P.x,P.y-44,'护盾神符',C.verdigris,15);}use(keep);ringFx(R[0],R[1],70,r.k?'#7fe0cf':'#8cc65a',0.35);r.on=0;r.t=25;break;}}}
-function makeMini(key,i){
+// 小首领出生点：沿寻路能走到、离最近玩家路程约 400–650 的空地（不再刷到地图另一头）
+function miniSpot(r){let best=null,bs=1e9;const cs=NAV.cs||25;
+ for(let k=0;k<60;k++){const x=rand(100,WORLD.w-100),y=rand(100,WORLD.h-100);if(!freeSpot(x,y,r))continue;const e2=minPD(x,y);if(e2<330)continue;
+  let pd=e2;if(NAV.dist){const i=clamp((x/cs)|0,0,NAV.gw-1),j=clamp((y/cs)|0,0,NAV.gh-1),dn=NAV.dist[j*NAV.gw+i];if(dn<0)continue;pd=dn*cs;}
+  const sc=Math.abs(pd-520);if(sc<bs){bs=sc;best=[x,y];}}
+ if(best)return best;const p=(alivePL()[0]||ME()).P;return safeSpot(clamp(p.x+(p.x<WORLD.w/2?500:-500),100,WORLD.w-100),p.y,r);}
+function makeMini(key,i,spot){
  const B=MINIS.find(m=>m.key===key)||MINIS[0],D=DIFF[run.diff],w=run.wave,co=PL.length>1?1.5:1,hp=B.hp*hpScale(w)*dRamp(D.hp,w)*co*(w>=12?4.5:run.diff>=1?1.35:1.15)*(run.diff>=1&&w>=8?1.2:1)*(run.diff>=3&&w<MINI_WAVES[1]?0.5:1)*(run.diff>=2?1.25:1);  // 噩梦第 4 波是双小首领，各自血量 ×0.5、伤害 ×0.75
- let x=WORLD.w/2,y=150,best=-1;for(let k=0;k<12;k++){const cx=rand(120,WORLD.w-120),cy=rand(120,WORLD.h-120),dd=minPD(cx,cy);if(dd>best&&freeSpot(cx,cy,B.r)){best=dd;x=cx;y=cy;}}
+ const [x,y]=spot||miniSpot(B.r);
  return {id:++EID,type:'boss',boss:true,mini:key,bkey:key,name:'小首领 · '+B.name,x,y,r:B.r,hp,max:hp,spd:B.spd,dmg:B.dmg*(1+(w-1)*BAL.dmgLin)*dRamp(D.dmg,w)*lateDmg(w)*(w<8?0.7:1)*(run.diff>=3&&w<MINI_WAVES[1]?0.75:1),col:B.col,
   gold:12,xp:12,flash:0,slowT:0,freezeT:0,poison:0,poisonT:0,ptick:0,ocd:{},st:'',ai:1.6+i*0.8,ai2:0,face:Math.PI/2,anim:0,spT:0,spEmit:0,spA:0,scale:1,tough:run.diff>=2?hp/miniMinT(w):0,rec:0,ph:0,jh:0};
 }
@@ -3194,6 +3200,7 @@ function gunnerSummon(e){for(let k=0;k<3;k++){const a=e.anim+k*TAU/3+0.5;spawns.
 // 直线判定（舌头 / 铁水等），cb 对被击中的玩家执行额外效果
 function hurtLine(x,y,a,len,w,d,kind,cb){const keep=CUR,ux=Math.cos(a),uy=Math.sin(a);for(const p of alivePL()){const px=p.P.x-x,py=p.P.y-y,t=px*ux+py*uy;if(t<0||t>len)continue;if(Math.abs(px*uy-py*ux)<w/2+p.P.r){use(p);hurt(d,kind);if(cb)cb(p,t);}}use(keep);}
 function miniAI(e,dt,dx,dy,d,sf){
+ sf*=1+clamp((d-380)/420,0,1)*1.3;  // 离玩家远时追得更快（最多 ×2.3），不会在远处慢慢挪
  e.anim+=dt;const pa=Math.atan2(dy,dx),enr=e.hp<e.max*0.5;
  // 半血铁壁：3.5 秒只受 25% 伤害，并叫来一批小怪（小首领死时一起消失）
  if(!e.shDone&&enr){e.shDone=1;e.shT=3.5;e.flash=0.2;ringFx(e.x,e.y,e.r+70,'#8fb8ff',0.5);addText(e.x,e.y-e.r-16,'铁壁！',C['brass-hi'],17);
@@ -3672,7 +3679,9 @@ function startWave(){
   bn=elite?'精英首领来袭':'最终首领';banner(bn);
  }else if(MINI_WAVES.includes(run.wave)&&run.minis){
   const ks=run.wave===MINI_WAVES[1]&&run.diff>=2?run.minis.slice(1,3):run.wave===MINI_WAVES[0]&&run.diff>=3?[run.minis[0],run.minis[3]||run.minis[1]]:[run.minis[run.wave===MINI_WAVES[0]?0:1]];
-  ks.forEach((k,i)=>delayed.push({t:1.2+i*0.7,fn:()=>{const b=makeMini(k,i);enemies.push(b);boomFx(b.x,b.y,b.r+50);shake=0.3;if(k==='gunner')gunnerSummon(b);}}));
+  ks.forEach((k,i)=>delayed.push({t:0.4+i*0.7,fn:()=>{const B=MINIS.find(m=>m.key===k),sp=miniSpot(B.r);
+   fxs.push({type:'warnc',x:sp[0],y:sp[1],r:B.r+70,life:1.5,max:1.5,bossp:1,col:B.col});addText(sp[0],sp[1]-B.r-30,B.name,B.col,18);
+   delayed.push({t:1.5,fn:()=>{const b=makeMini(k,i,sp);enemies.push(b);boomFx(b.x,b.y,b.r+50);shake=0.3;if(k==='gunner')gunnerSummon(b);}});}}));
   bn='小首领来袭：'+ks.map(k=>MINIS.find(m=>m.key===k).name).join('、');banner(bn,1500);
  }else{bn='第 '+run.wave+' 波';banner(bn,900);}
  if(run.wave===6||run.wave===12){const t='机关兽进化 · '+EVO_N[run.wave===6?1:2];delayed.push({t:run.wave===12?3:1.4,fn:()=>{banner(t,1700);netEvent({banner:t});}});}
@@ -4741,10 +4750,21 @@ function draw(dt){
  if(MAP.ice){const ws=hz.wind?hz.wind.s:0,wx=hz.wind?Math.cos(hz.wind.a):0,wy=hz.wind?Math.sin(hz.wind.a):0;ctx.fillStyle='rgba(235,245,255,.7)';for(const m of motes){m.y+=(m.v*3+wy*260*ws)*dt;m.x+=(Math.sin(tGame*0.8+m.p)*14+wx*260*ws)*dt;if(m.y>Hh+4){m.y=-4;m.x=Math.random()*W;}if(m.y<-6)m.y=Hh+4;if(m.x<-6)m.x=W+4;if(m.x>W+6)m.x=-4;ctx.fillRect(m.x,m.y,m.s+0.6,m.s+0.6);}}
  else if(!nxMotes(dt)){ctx.fillStyle='rgba(242,203,122,.22)';for(const m of motes){m.y-=m.v*dt;m.x+=Math.sin(tGame*0.6+m.p)*6*dt;if(m.y<-4){m.y=Hh+4;m.x=Math.random()*W;}ctx.fillRect(m.x,m.y,m.s,m.s);}}
  
+ if(state==='battle')drawBossArrows(cx,cy,sc);
  if(run.hp<S.hp*0.3&&state==='battle'){ctx.globalAlpha=0.25+Math.sin(tGame*6)*0.1;ctx.strokeStyle=C.danger;ctx.lineWidth=18;ctx.strokeRect(0,0,W,Hh);ctx.globalAlpha=1;}
  if(joy){ctx.globalAlpha=0.55;ctx.beginPath();const JR=joyR();ctx.arc(joy.ox,joy.oy,JR,0,TAU);ctx.fillStyle='rgba(10,16,19,.35)';ctx.fill();ctx.strokeStyle=C.brass;ctx.lineWidth=2;ctx.stroke();
   const jx=joy.x-joy.ox,jy=joy.y-joy.oy,l=Math.hypot(jx,jy),k=l>JR?JR/l:1;ctx.beginPath();ctx.arc(joy.ox+jx*k,joy.oy+jy*k,JR*0.4,0,TAU);ctx.fillStyle=C.brass;ctx.fill();ctx.globalAlpha=1;}
 }
+// 屏幕外的首领 / 小首领（含即将出现的位置）：屏幕边缘画箭头指过去
+const ARW_COARSE=matchMedia('(pointer: coarse)').matches;
+function drawBossArrows(cx,cy,sc){const tg=[];for(const e of enemies)if(e.boss&&!e.dead&&!e.seg)tg.push([e.x,e.y,e.col||(e.mini&&MINIS.find(m=>m.key===e.mini)||{}).col||'#ff7a5c',e.mini?'小首领':'首领']);
+ for(const f of fxs)if(f.bossp)tg.push([f.x,f.y,f.col||'#ff7a5c','即将出现']);if(!tg.length)return;
+ const mx=30,top=bossbar.hidden?86:150,bot=Hh-(ARW_COARSE?170:40);ctx.save();ctx.font='700 11px "Noto Sans SC",sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
+ for(const[x,y,col,lb] of tg){const X=(x-cx)*sc,Y=(y-cy)*sc;if(X>-10&&X<W+10&&Y>-10&&Y<Hh+10)continue;
+  const ox=W/2,oy=(top+bot)/2,ax=X-ox,ay=Y-oy,a=Math.atan2(ay,ax),kx=ax?((ax>0?W-mx:mx)-ox)/ax:1e9,ky=ay?((ay>0?bot:top)-oy)/ay:1e9,k=Math.min(kx,ky),px=ox+ax*k,py=oy+ay*k,pul=1+Math.sin(tGame*6)*0.12;
+  ctx.save();ctx.translate(px,py);ctx.globalAlpha=0.92;ctx.rotate(a);ctx.scale(pul,pul);ctx.beginPath();ctx.moveTo(16,0);ctx.lineTo(-8,-11);ctx.lineTo(-3,0);ctx.lineTo(-8,11);ctx.closePath();ctx.fillStyle=col;ctx.fill();ctx.lineWidth=2;ctx.strokeStyle='rgba(10,8,4,.8)';ctx.stroke();ctx.restore();
+  const lx=px-Math.cos(a)*26,ly=py-Math.sin(a)*22;ctx.globalAlpha=0.9;ctx.lineWidth=3;ctx.strokeStyle='rgba(10,8,4,.75)';const t=lb+' '+Math.round(Math.hypot(x-P.x,y-P.y)/10)+'m';ctx.strokeText(t,lx,ly);ctx.fillStyle=col;ctx.fillText(t,lx,ly);}
+ ctx.restore();}
 function drawGroundHazards(){
  const T=tGame;
  if(MAP.pools)for(const[x,y,r] of MAP.pools){
