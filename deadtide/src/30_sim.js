@@ -4,7 +4,7 @@ function mkPlayer(i, name) {
     i, name, x: RADIO_XY[0] - 0.5 + i * 2, y: RADIO_XY[1] + 0.5 + i, L: 0, z: 0, r: 0.28, h: 1.0, vx: 0, vy: 0, kbx: 0, kby: 0, aim: -Math.PI / 2, aimPt: null,
     hp: BAL.pMaxHp, maxHp: BAL.pMaxHp, down: false, downT: 0, dead: false, gone: false,
     wpn: 1, owned: WPN.map((w, k) => k < 2 ? 1 : 0), mag: WPN.map((w, k) => k === 0 ? 12 : k === 1 ? 6 : 0), ammo: WPN.map((w, k) => k === 1 ? w.start : 0), bloom: 0, reloadT: 0, reloadW: 0, fireCD: 0, shoveCD: 0, shoveT: 0,
-    nades: 2, meds: 2, gn: [1, 1, 1], gt: 0, lives: 3, fuel: 60, land: false, medT: 0, selfRev: false, useT: 0, useK: '', build: false, sel: 1, demo: false, sdir: 3, veh: 0, vehs: 0, shield: 0, melee: 0,
+    nades: 2, meds: 2, gn: [1, 1, 1], gt: 0, lives: 3, fuel: 60, land: false, gam: 0, gcd: 0, medT: 0, selfRev: false, useT: 0, useK: '', build: false, sel: 1, demo: false, sdir: 3, veh: 0, vehs: 0, shield: 0, melee: 0,
     inp: { mx: 0, my: 0, fire: 0, use: 0 }, kills: 0, hurtT: 0, anim: 0, emptyT: 0, ready: false, recoilT: 0,
   };
 }
@@ -70,6 +70,21 @@ function collapseCheck() {
 /* ---------- (round 29) flying: the gyrocopter ---------- */
 const airborne = p => !!(p && p.ride && VEH[p.veh] && VEH[p.veh].fly);
 // the level you would stand on at the top of this column (ground, a roof, a wall top)
+// (round 30) the gyrocopter's chin gun: its own ammo (p.gam), a hitscan burst toward where you aim
+function gyroFire(p) {
+  if (p.gcd > 0) return;
+  if (!(p.gam > 0)) { if (!(p.emptyT > 0)) { p.emptyT = 1.5; emit({ k: 'deny', p: p.i, why: '旋翼机机枪没子弹了：商店「武器 · 弹药」里买' }); } return; }
+  p.gcd = BAL.gyroRate; p.gam--;
+  const a = p.aim, sx = p.x + Math.cos(a) * 0.55, sy = p.y + Math.sin(a) * 0.55, sz = p.z + 0.25;
+  const T = p.aimPt || { x: sx + Math.cos(a) * 6, y: sy + Math.sin(a) * 6, z: Math.max(0, sz - 3) };
+  let dx = T.x - sx, dy = T.y - sy, dz = T.z - sz; const n = Math.hypot(dx, dy, dz) || 1; dx /= n; dy /= n; dz /= n;
+  dx += (rand() - 0.5) * 2 * BAL.gyroSpread; dy += (rand() - 0.5) * 2 * BAL.gyroSpread; dz += (rand() - 0.5) * BAL.gyroSpread; const m = Math.hypot(dx, dy, dz); dx /= m; dy /= m; dz /= m;
+  const wall = rayWorld(sx, sy, sz, dx, dy, dz, BAL.gyroRange, { lean: LEAN }); let best = null, bd = wall.d;
+  for (const z of W.zs) { if (z.hp <= 0) continue; const d = rayBox(sx, sy, sz, dx, dy, dz, z.x - z.r, z.y - z.r, z.z, z.r * 2, z.r * 2, z.h, bd); if (d >= 0 && d < bd) { bd = d; best = z; } }
+  if (best) hurtZombie(best, BAL.gyroDmg * (1 + 0.12 * W.upg), p, dx * 0.4, dy * 0.4);
+  noiseAt(p.x, p.y, 11, p.z);
+  emit({ k: 'gshot', o: p.i, x: r2(sx), y: r2(sy), z: r2(sz), e: [r2(sx + dx * bd), r2(sy + dy * bd), r2(sz + dz * bd)], h: best ? 1 : 0 });
+}
 function skyTop(x, y) {
   x = Math.floor(x); y = Math.floor(y); if (!inMap(x, y)) return 0;
   for (let L = ML - 1; L >= 0; L--) { const i = ci(x, y, L), b = W.blk[i]; if (b && B[b].P) return Math.min(ML - 1, L + 1); if (L > 0 && W.slab[i]) return L; }
@@ -84,7 +99,8 @@ function flyOK(p) {
 // owner-side flight: glide where you steer, hover 2.2 floors over whatever is below (looking ahead so it climbs before a building), come down when landing
 function flyStep(p, dt) {
   const I = p.inp, m = Math.hypot(I.mx, I.my), k = m > 1 ? 1 / m : 1, V = VEH[p.veh];
-  p.alt = clamp((p.alt || 0) + (p.land ? -BAL.flyDrop : BAL.flyClimb) * dt, 0, 1);
+  p.spool = (p.spool || 0) + dt; // (round 30) 1.2 s of rotor spin-up on the ground first: time for a teammate to hop in the back
+  p.alt = clamp((p.alt || 0) + (p.land ? -BAL.flyDrop : p.spool > 1.2 ? BAL.flyClimb : 0) * dt, 0, 1);
   const spd = BAL.pSpeed * V.spd * (0.3 + 0.7 * p.alt) * (p.land ? 0.7 : 1), a = Math.min(1, dt * 3.5);
   p.vx = lerp(p.vx, I.mx * k * spd, a); p.vy = lerp(p.vy, I.my * k * spd, a);
   const nx = clamp(p.x + p.vx * dt, 1.5, MW - 1.5), ny = clamp(p.y + p.vy * dt, 1.5, MH - 1.5);
@@ -109,6 +125,7 @@ function stepMove(p, dt) {
     else { const a = d._ly != null ? d._ly : Math.atan2(d.vy || 0, d.vx || 1); p.x = d.x - Math.cos(a) * PILLION; p.y = d.y - Math.sin(a) * PILLION; /* (round 26) was -d._ly: the pillion sat mirrored, off the bike */ p.L = d.L; p.z = d.z; p.zv = d.zv; p.vx = d.vx; p.vy = d.vy; p._ly = d._ly; return; }
   }
   if (airborne(p)) { flyStep(p, dt); return; } // (round 29)
+  p.spool = 0;
   const I = p.inp, m = Math.hypot(I.mx, I.my), k = m > 1 ? 1 / m : 1;
   if (p.jmp) { // mid-vault / mid-jump: a scripted arc
     const J = p.jmp; J.t += dt; const f = Math.min(1, J.t / J.T);
@@ -196,7 +213,8 @@ function padTarget(p) {
 function emitLocal(name) { fxEvent({ k: 'sfx', n: name, local: 1 }); }
 
 /* ---------- player actions (host authoritative) ---------- */
-const shoulder = p => [p.x, p.y, pZ(p) + (p.down ? 0.25 : 0.72)];
+const inAirZ = p => airborne(p) ? p.z : p.pass != null && p.pass >= 0 && airborne(W.p[p.pass]) ? W.p[p.pass].z : null; // (round 30) the real height of someone flying (pilot) or sitting behind a pilot
+const shoulder = p => { const az = inAirZ(p); return [p.x, p.y, (az != null ? az : pZ(p)) + (p.down ? 0.25 : 0.72)]; };
 function stepActions(p, dt) {
   if (p.gone) return;
   const I = p.inp;
@@ -228,6 +246,7 @@ function stepActions(p, dt) {
   }
   if (p.down) { p.downT -= dt; if (p.downT <= 0) { p.down = false; p.dead = true; p.reloadT = 0; p.medT = 0; p.ride = false; p.downT = W.phase === 'night' ? BAL.respawnNight : BAL.respawnDay; emit({ k: 'dead', p: p.i, t: p.lives > 0 ? Math.round(p.downT) : -1, n: p.lives || 0 }); checkLose(); return; } }
   const wi = p.down ? 0 : p.wpn, w = WPN[wi];
+  p.gcd = (p.gcd || 0) - dt; if (I.fire && airborne(p)) gyroFire(p); // (round 30) in the air the chin gun fires instead
   if (I.fire && !p.build && !airborne(p) && p.fireCD <= 0 && p.cdW[wi] <= 0 && p.reloadT <= 0 && p.medT <= 0) {
     if (p.mag[wi] > 0) fireWeapon(p, wi);
     else if (w.inf || p.ammo[wi] > 0) startReload(p);
@@ -484,7 +503,7 @@ function knock(p, kx, ky) { if (p.i === ME && NETROLE !== 'guest') { p.kbx += kx
 // a teammate on a motorbike with the back seat free, close enough to climb on
 const vehSeats = d => !!(VEH[d.veh] && VEH[d.veh].seats);
 const ownsVeh = (p, v) => !!((p.vehs || 0) >> v & 1) || (!p.vehs && v >= 1 && p.veh === v); // vehs = owned bitmask; a bare veh (older state) counts as owned
-function pillionFor(p) { return W.p.find(d => d !== p && d.ride && vehSeats(d) && !d.dead && !d.down && !d.gone && Math.abs(d.L - p.L) <= 1 && Math.hypot(d.x - p.x, d.y - p.y) < 2.6 && !W.p.some(q => q.pass === d.i)) || null; } // (round 26) 1.8 → 2.6 tiles, a step up/down is fine
+function pillionFor(p) { return W.p.find(d => d !== p && d.ride && vehSeats(d) && !d.dead && !d.down && !d.gone && (airborne(d) ? Math.abs(d.z - (p.z != null ? p.z : pZ(p))) < 2 : Math.abs(d.L - p.L) <= 1) && Math.hypot(d.x - p.x, d.y - p.y) < 2.6 && !W.p.some(q => q.pass === d.i)) || null; } // (round 26) 1.8 → 2.6 tiles, a step up/down is fine
 // (round 24) how many times each player may come back: difficulty, plus a bit more in the long modes
 function livesFor(diff, mode) { return (BAL.lives[diff] != null ? BAL.lives[diff] : BAL.lives.normal) + (mode === 'classic' || mode === 'siege' ? BAL.livesLong : 0); }
 function respawnP(p) {
@@ -518,7 +537,7 @@ function doAct(p, a, v) {
   if (!W || W.over || p.gone || p.dead) return;
   switch (a) {
     case 'ride': if (!p.down && !p.dead) {
-      if (p.pass != null && p.pass >= 0) { p.pass = -1; emit({ k: 'sfx', n: 'swap', x: p.x, y: p.y, o: p.i }); break; }     // hop off the back
+      if (p.pass != null && p.pass >= 0) { const d = W.p[p.pass]; if (airborne(d) && d.z - surfZ(d.x, d.y, skyTop(d.x, d.y)) > 0.5) { emit({ k: 'deny', p: p.i, why: '在天上不能跳下去：等驾驶员降落（落地后自动下来）' }); break; } p.pass = -1; emit({ k: 'sfx', n: 'swap', x: p.x, y: p.y, o: p.i }); break; }     // hop off the back
       if (airborne(p)) { if (!p.land) { p.land = true; emit({ k: 'sfx', n: 'swap', x: p.x, y: p.y, o: p.i }); } break; } // (round 29) in the air: T / F brings it down, you get out on touchdown
       if (v >= 1 && ownsVeh(p, v)) { if (VEH[v].fly && !flyOK(p)) break; p.land = false; p.veh = v; p.ride = true; p.build = false; if (!vehSeats(p)) for (const q of W.p) if (q.pass === p.i) q.pass = -1; emit({ k: 'sfx', n: 'swap', x: p.x, y: p.y, o: p.i }); break; }
       const d = pillionFor(p);
@@ -625,6 +644,10 @@ function craftBlocked(p, c) {
   if (c.shield && p.shield) return '已拥有';
   if (c.wpn && p.owned[c.wpn]) return '已拥有';
   if (c.ammo && !p.owned[c.ammo[0]]) return '没有这把枪';
+  if ((c.gam || c.fuel) && !ownsVeh(p, 5)) return '没有旋翼机';
+  if (c.fuel && airborne(p)) return '先落地';
+  if (c.fuel && (p.fuel || 0) >= VEH[5].fuel - 0.5) return '油是满的';
+  if (c.gam && (p.gam || 0) >= BAL.gyroCap) return '已满';
   if (c.nade && gCount(p, c.gt || 0) >= gCap(c.gt || 0)) return '已满';
   if (c.med && p.meds >= BAL.medCap) return '已满';
   if (c.upg && W.upg >= 5) return '已满级';
@@ -639,7 +662,9 @@ function doCraft(p, id) {
   if (c.nade) { const t = c.gt || 0; if (t) { p.gn = p.gn || [0, 0, 0]; p.gn[t - 1] = Math.min(BAL.gnCap, p.gn[t - 1] + c.nade); } else p.nades = Math.min(BAL.nadeCap, p.nades + c.nade); }
   if (c.med) p.meds = Math.min(BAL.medCap, p.meds + 1);
   if (c.upg) W.upg++;
-  if (c.veh) { p.vehs = (p.vehs || 0) | 1 << c.veh; p.veh = c.veh; }                  // (round 22) it becomes your default: T gets on
+  if (c.gam) p.gam = Math.min(BAL.gyroCap, (p.gam || 0) + c.gam);
+  if (c.fuel) p.fuel = VEH[5].fuel;
+  if (c.veh) { p.vehs = (p.vehs || 0) | 1 << c.veh; p.veh = c.veh; if (VEH[c.veh].fly) p.gam = Math.max(p.gam || 0, BAL.gyroStart); }                  // (round 22) it becomes your default: T gets on
   if (c.shield) { p.shield = 1; p.melee = 1; }
   emit({ k: 'craft', p: p.i, id, name: c.name });
 }
