@@ -5032,8 +5032,8 @@ const CRAFT = [
   { id: 'bolts', cat: 'gun', name: '弩箭 ×12', desc: '', cost: { wood: 4, parts: 1 }, ammo: [4, 12] },
   { id: 'fuel', cat: 'gun', name: '燃料 ×120', desc: '', cost: { parts: 3, steel: 1 }, ammo: [5, 120] },
   { id: 'shells40', cat: 'gun', name: '榴弹 ×4', desc: '', cost: { parts: 5, steel: 2 }, ammo: [6, 4] },
-  { id: 'nade', cat: 'item', name: '手雷 ×2', desc: '最多带 6 颗；G 扔', cost: { parts: 4 }, nade: 2 },
-  { id: 'med', cat: 'item', name: '医疗包', desc: '回复 60 生命，最多 3 个；H 用，也能救回阵亡的队友', cost: { parts: 3, wood: 2 }, med: 1 },
+  { id: 'nade', cat: 'item', name: '手雷 ×2', desc: '最多带 10 颗；按住 G 瞄，松开扔', cost: { parts: 4 }, nade: 2 },
+  { id: 'med', cat: 'item', name: '医疗包', desc: '回复 60 生命，最多带 5 个；H 用，也能救回阵亡的队友', cost: { parts: 3, wood: 2 }, med: 1 },
   { id: 'shield', cat: 'melee', name: '防暴盾', desc: '近战武器（和刀二选一）：猛推前方一片丧尸，撞开 3 格、晕 1 秒；拿着它时正面挨打少受一半', cost: { steel: 6, parts: 4 }, shield: 1 },
   { id: 'bike', cat: 'veh', name: '自行车', desc: VEH[1].tag, cost: { wood: 6, steel: 6, parts: 4 }, veh: 1, bp: 'bike' },
   { id: 'moto', cat: 'veh', name: '摩托车', desc: VEH[2].tag, cost: { steel: 14, parts: 12 }, veh: 2, bp: 'moto' },
@@ -5059,6 +5059,7 @@ const BAL = {
   ramDmg: 30, ramCD: 0.7, ramSpd: 2.2,                         // armoured car: hitting a zombie at speed
   cargoSearch: 0.5, cargoLoot: 1.5, cargoReach: 2.3,           // cargo trike: search time x, loot x, reach from the seat
   knifeDmg: 55, knifeKB: 2.5, knifeCD: 0.5, knifeRange: 2.3, knifeLunge: 1.3, knifeBack: 2, // melee (was a shove: 18 dmg, KB 6, CD 0.55, 1.3 cone)
+  nadeCap: 10, medCap: 5,                                      // (round 23d) how many grenades / medkits you can carry (was 6 / 3)
   nadeRange: 12, nadeDmg: 286, nadeR: 3.4, nadeFuse: 1.6, nadeLand: 0.35, nadeMin: 0.5, // (round 18: radius 2.8 -> 3.4, damage at the edge 35% -> 50%, goes off 0.35 s after landing where you aimed)
   headshot: 1.6,
   radioHp: 1500, radioDmg: 0.5,
@@ -6140,8 +6141,8 @@ function completeUse(p, tgt) {
   if (S.ammo) { for (const q of activeP()) for (let wi = 1; wi < NW; wi++) if (q.owned[wi] || S.allAmmo) q.ammo[wi] += Math.round(WPN[wi].loot * S.ammo * m * (q.owned[wi] ? 1 : 0.5)); got.push(S.allAmmo ? '各种子弹' : '全队弹药'); }
   const bpk = siegeBlueprint(Object.keys(SPOTS).find(k => SPOTS[k] === S), !!S.bp); if (bpk) got.push(bpk);
   if (S.fuel && activeP().some(q => q.owned[5])) { for (const q of activeP()) if (q.owned[5]) q.ammo[5] += Math.round(S.fuel * m); got.push('燃料'); }
-  if (S.med && rand() < S.med && p.meds < 3) { p.meds++; got.push('医疗包'); }
-  if (S.nade && rand() < S.nade && p.nades < 6) { p.nades = Math.min(6, p.nades + (S.nade >= 1 ? 2 : 1)); got.push('手雷'); }
+  if (S.med && rand() < S.med && p.meds < BAL.medCap) { p.meds++; got.push('医疗包'); }
+  if (S.nade && rand() < S.nade && p.nades < BAL.nadeCap) { p.nades = Math.min(BAL.nadeCap, p.nades + (S.nade >= 1 ? 2 : 1)); got.push('手雷'); }
   if (!got.length) got.push('什么也没有');
   emit({ k: 'loot', p: p.i, x: wx, y: wy, z: wz, text: got.join('  ') });
 }
@@ -6175,8 +6176,8 @@ function payTask(t) {
   if (r.res) for (const k in r.res) W.res[k] += r.res[k];
   for (const q of activeP()) {
     if (r.ammo) { for (let wi = 1; wi < NW; wi++) if (q.owned[wi]) q.ammo[wi] += WPN[wi].loot * r.ammo; }
-    if (r.med) q.meds = Math.min(3, q.meds + r.med);
-    if (r.nade) q.nades = Math.min(6, q.nades + r.nade);
+    if (r.med) q.meds = Math.min(BAL.medCap, q.meds + r.med);
+    if (r.nade) q.nades = Math.min(BAL.nadeCap, q.nades + r.nade);
   }
   if (r.upg) W.upg = Math.min(5, W.upg + r.upg);
   emit({ k: 'task', txt: t.txt, rt: t.rt });
@@ -6469,8 +6470,8 @@ function craftBlocked(p, c) {
   if (c.shield && p.shield) return '已拥有';
   if (c.wpn && p.owned[c.wpn]) return '已拥有';
   if (c.ammo && !p.owned[c.ammo[0]]) return '没有这把枪';
-  if (c.nade && p.nades >= 6) return '已满';
-  if (c.med && p.meds >= 3) return '已满';
+  if (c.nade && p.nades >= BAL.nadeCap) return '已满';
+  if (c.med && p.meds >= BAL.medCap) return '已满';
   if (c.upg && W.upg >= 5) return '已满级';
   if (!affordable(W.res, c.cost)) return '材料不足';
   return '';
@@ -6480,8 +6481,8 @@ function doCraft(p, id) {
   for (const k in c.cost) W.res[k] -= c.cost[k];
   if (c.wpn) { p.owned[c.wpn] = 1; p.mag[c.wpn] = WPN[c.wpn].mag; p.ammo[c.wpn] += WPN[c.wpn].loot * 2 || 10; p.wpn = c.wpn; }
   if (c.ammo) p.ammo[c.ammo[0]] += c.ammo[1];
-  if (c.nade) p.nades = Math.min(6, p.nades + c.nade);
-  if (c.med) p.meds = Math.min(3, p.meds + 1);
+  if (c.nade) p.nades = Math.min(BAL.nadeCap, p.nades + c.nade);
+  if (c.med) p.meds = Math.min(BAL.medCap, p.meds + 1);
   if (c.upg) W.upg++;
   if (c.veh) { p.vehs = (p.vehs || 0) | 1 << c.veh; p.veh = c.veh; }                  // (round 22) it becomes your default: T gets on
   if (c.shield) { p.shield = 1; p.melee = 1; }
@@ -10102,7 +10103,7 @@ function renderCraft() {
     h += `<div class="sc own"><div class="sh"><b>刀</b><em>${me.melee !== 1 || !me.shield ? '在用' : '已有'}</em></div><small>冲上去砍一只，背后砍双倍，睡着的一刀死</small><div class="sb">${me.melee === 1 && me.shield ? useBtn(0) : '<span class="sfree">在用</span>'}</div></div>`;
     h += `<div class="sc${me.shield ? ' own' : ''}"><div class="sh"><b>防暴盾</b><em>${me.shield ? (me.melee === 1 ? '在用' : '已有') : '没有'}</em></div><small>${sc.desc}</small><div class="sb">${!me.shield ? shopBtn(sc, '买') : me.melee === 1 ? '<span class="sfree">在用</span>' : useBtn(1)}</div></div>`;
   } else if (tab === 'item') {
-    const st = { nade: '带着 ' + me.nades + ' / 6', med: '带着 ' + me.meds + ' / 3' };
+    const st = { nade: '带着 ' + me.nades + ' / ' + BAL.nadeCap, med: '带着 ' + me.meds + ' / ' + BAL.medCap };
     h = CRAFT.filter(c => c.cat === 'item').map(c => `<div class="sc"><div class="sh"><b>${c.name}</b><em>${st[c.id] || ''}</em></div><small>${c.desc}</small><div class="sb">${shopBtn(c, c.shield && me.shield > 0 ? '修满' : '买')}</div></div>`).join('');
     h += `<div class="sgrp">放置类道具 · 不用先买：点「去放」，放一个扣一份材料（电脑按 B，触屏点「道具」）</div>`;
     h += ITEMS.map((g, n) => `<div class="sc mini"><div class="sh"><b>${g.name}</b><em>${g.ids.map(id => B[id].name + (hasBP(id) ? '' : '🔒')).join(' / ')}</em></div><small>${B[g.ids[0]].tip}</small><div class="sb"><button class="sbtn go" data-g="${n}"><b>去放</b><span>${costText(B[g.ids.find(id => hasBP(id)) || g.ids[0]].cost)} 起</span></button></div></div>`).join('');

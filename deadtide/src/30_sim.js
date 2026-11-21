@@ -240,8 +240,8 @@ function completeUse(p, tgt) {
   if (S.ammo) { for (const q of activeP()) for (let wi = 1; wi < NW; wi++) if (q.owned[wi] || S.allAmmo) q.ammo[wi] += Math.round(WPN[wi].loot * S.ammo * m * (q.owned[wi] ? 1 : 0.5)); got.push(S.allAmmo ? '各种子弹' : '全队弹药'); }
   const bpk = siegeBlueprint(Object.keys(SPOTS).find(k => SPOTS[k] === S), !!S.bp); if (bpk) got.push(bpk);
   if (S.fuel && activeP().some(q => q.owned[5])) { for (const q of activeP()) if (q.owned[5]) q.ammo[5] += Math.round(S.fuel * m); got.push('燃料'); }
-  if (S.med && rand() < S.med && p.meds < 3) { p.meds++; got.push('医疗包'); }
-  if (S.nade && rand() < S.nade && p.nades < 6) { p.nades = Math.min(6, p.nades + (S.nade >= 1 ? 2 : 1)); got.push('手雷'); }
+  if (S.med && rand() < S.med && p.meds < BAL.medCap) { p.meds++; got.push('医疗包'); }
+  if (S.nade && rand() < S.nade && p.nades < BAL.nadeCap) { p.nades = Math.min(BAL.nadeCap, p.nades + (S.nade >= 1 ? 2 : 1)); got.push('手雷'); }
   if (!got.length) got.push('什么也没有');
   emit({ k: 'loot', p: p.i, x: wx, y: wy, z: wz, text: got.join('  ') });
 }
@@ -275,8 +275,8 @@ function payTask(t) {
   if (r.res) for (const k in r.res) W.res[k] += r.res[k];
   for (const q of activeP()) {
     if (r.ammo) { for (let wi = 1; wi < NW; wi++) if (q.owned[wi]) q.ammo[wi] += WPN[wi].loot * r.ammo; }
-    if (r.med) q.meds = Math.min(3, q.meds + r.med);
-    if (r.nade) q.nades = Math.min(6, q.nades + r.nade);
+    if (r.med) q.meds = Math.min(BAL.medCap, q.meds + r.med);
+    if (r.nade) q.nades = Math.min(BAL.nadeCap, q.nades + r.nade);
   }
   if (r.upg) W.upg = Math.min(5, W.upg + r.upg);
   emit({ k: 'task', txt: t.txt, rt: t.rt });
@@ -569,8 +569,8 @@ function craftBlocked(p, c) {
   if (c.shield && p.shield) return '已拥有';
   if (c.wpn && p.owned[c.wpn]) return '已拥有';
   if (c.ammo && !p.owned[c.ammo[0]]) return '没有这把枪';
-  if (c.nade && p.nades >= 6) return '已满';
-  if (c.med && p.meds >= 3) return '已满';
+  if (c.nade && p.nades >= BAL.nadeCap) return '已满';
+  if (c.med && p.meds >= BAL.medCap) return '已满';
   if (c.upg && W.upg >= 5) return '已满级';
   if (!affordable(W.res, c.cost)) return '材料不足';
   return '';
@@ -580,8 +580,8 @@ function doCraft(p, id) {
   for (const k in c.cost) W.res[k] -= c.cost[k];
   if (c.wpn) { p.owned[c.wpn] = 1; p.mag[c.wpn] = WPN[c.wpn].mag; p.ammo[c.wpn] += WPN[c.wpn].loot * 2 || 10; p.wpn = c.wpn; }
   if (c.ammo) p.ammo[c.ammo[0]] += c.ammo[1];
-  if (c.nade) p.nades = Math.min(6, p.nades + c.nade);
-  if (c.med) p.meds = Math.min(3, p.meds + 1);
+  if (c.nade) p.nades = Math.min(BAL.nadeCap, p.nades + c.nade);
+  if (c.med) p.meds = Math.min(BAL.medCap, p.meds + 1);
   if (c.upg) W.upg++;
   if (c.veh) { p.vehs = (p.vehs || 0) | 1 << c.veh; p.veh = c.veh; }                  // (round 22) it becomes your default: T gets on
   if (c.shield) { p.shield = 1; p.melee = 1; }
