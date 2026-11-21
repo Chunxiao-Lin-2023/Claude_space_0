@@ -72,11 +72,15 @@ const UA = 'Mozilla/5.0 (iPad; CPU OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (
       me.owned[2] = me.owned[3] = me.owned[4] = 1; me.ammo[2] = 90; W.zs.length = 0; W.spawnQ = []; }, clearAround);
     // context key heals
     await p.evaluate(() => { const me = W.p[0]; me.hp = 50; me.meds = 2; });
-    await simWait(0.3); let s = await p.evaluate(() => $('tUse').textContent);
+    await simWait(0.3); let s = await p.evaluate(() => { const u = $('tUse').getBoundingClientRect(), m = $('tMed').getBoundingClientRect();
+      return { use: $('tUse').textContent, med: $('tMed').textContent, hot: $('tMed').classList.contains('hot'), left: m.right <= u.left, sameRow: Math.abs((m.top + m.bottom) / 2 - (u.top + u.bottom) / 2) < 4, gap: Math.round(u.left - m.right) }; });
     const ub = await p.evaluate(() => { const r = $('tUse').getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; });
     await tch('touchStart', [{ x: ub[0], y: ub[1], id: 3 }]); await p.waitForTimeout(60); await tch('touchEnd', []); await simWait(0.2);
-    const med = await p.evaluate(() => ({ meds: W.p[0].meds, medT: W.p[0].medT }));
-    check('iPad: hurt with a medkit -> the context key says 治疗 and a tap uses it', /治疗/.test(s) && med.meds === 1, JSON.stringify([s, med]));
+    const afterUse = await p.evaluate(() => W.p[0].meds);
+    const mb = await p.evaluate(() => { const r = $('tMed').getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; });
+    await tch('touchStart', [{ x: mb[0], y: mb[1], id: 3 }]); await p.waitForTimeout(60); await tch('touchEnd', []); await simWait(0.2);
+    const med = await p.evaluate(() => W.p[0].meds);
+    check('iPad: the medkit has its own green key just left of the context key (same row, gap); the context key does not use it', !/治疗/.test(s.use) && /医疗/.test(s.med) && s.hot && s.left && s.sameRow && s.gap >= 8 && afterUse === 2 && med === 1, JSON.stringify([s, afterUse, med]));
     // compact weapon menu
     await p.evaluate(() => toggleWpick(true)); await p.waitForTimeout(100);
     s = await p.evaluate(() => { const k = $('tWpn').getBoundingClientRect(), keys = ['tFire', 'tNade', 'tShove', 'tUse'].map(id => $(id).getBoundingClientRect()), ch = [...document.querySelectorAll('#wpick .wo')].map(e => e.getBoundingClientRect());

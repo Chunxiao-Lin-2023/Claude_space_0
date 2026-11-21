@@ -221,12 +221,12 @@ function hudTick(dt) {
     // (round 22) the context key on the ring: what F would do, else get off / jump
     const u = $('tUse'), useOK = tgt && !(me.ride && !(VEH[me.veh] && VEH[me.veh].search)); u.classList.toggle('hidden', !!me.dead);
     u.classList.toggle('hot', !!useOK); u.style.setProperty('--p', useOK ? clamp(me.useT / tgt.t, 0, 1) : 0);
-    const heal = !useOK && !(me.ride || me.pass >= 0) && me.meds > 0 && (me.down || me.hp < me.maxHp) && !(me.medT > 0);   // (round 23) idle = medkit (no jump any more)
-    u.classList.toggle('dim', !useOK && !heal && !(me.ride || me.pass >= 0)); u.classList.toggle('heal', heal);
-    u.firstElementChild.textContent = useOK ? (INP.useLatch ? '再点停' : '交互') : heal ? '医疗包 ×' + me.meds : ''; u.lastElementChild.textContent = useOK ? shortUse(tgt.name) : me.ride || me.pass >= 0 ? '下车' : heal ? (me.down ? '自救' : '治疗') : '交互';
+    u.classList.toggle('dim', !useOK && !(me.ride || me.pass >= 0)); u.classList.remove('heal');               // (round 23c) the medkit has its own key again
+    u.firstElementChild.textContent = useOK ? (INP.useLatch ? '再点停' : '交互') : ''; u.lastElementChild.textContent = useOK ? shortUse(tgt.name) : me.ride || me.pass >= 0 ? '下车' : '交互';
     if (useOK) ptxt = tgt.name + (INP.useLatch ? ' · 进行中' : ''); else if (me.down && me.meds > 0) ptxt = '点「自救」用医疗包站起来';
-    const md = $('tMed'), showMed = me.meds > 0 && !me.dead && me.medT <= 0 && (me.down || me.hp < me.maxHp * 0.7);
-    md.classList.toggle('hidden', !showMed); md.textContent = (me.down ? '自救' : '用医疗包') + ' ×' + me.meds;
+    const md = $('tMed'), canMed = me.meds > 0 && !me.dead && me.medT <= 0 && (me.down || me.hp < me.maxHp); // (round 23c) its own key left of the context key
+    md.classList.toggle('hidden', !!me.dead || !!me.ride || me.pass >= 0); md.classList.toggle('dim', !canMed); md.classList.toggle('hot', canMed && (me.down || me.hp < me.maxHp * 0.7));
+    md.firstElementChild.textContent = me.down ? '自救' : '医疗'; $('tMedN').textContent = '×' + me.meds;
     $('tWpn').firstElementChild.textContent = w.sn || w.name; $('tWpn').lastElementChild.textContent = w.inf ? '∞' : me.mag[wi] + '/' + me.ammo[wi];
     $('tWpn').classList.toggle('dim', me.down || me.owned.filter(Boolean).length < 2);
     $('tNadeN').textContent = me.nades; $('tNade').classList.toggle('empty', !me.nades);

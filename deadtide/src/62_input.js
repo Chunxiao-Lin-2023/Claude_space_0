@@ -471,9 +471,9 @@ function nadeRelease() {
   const me = W.p[ME], pt = inGame() ? nadeAimPt(me) : null; INP.nadeAim = null; INP.nadePt = null; if (!inGame() || me.down || me.nades <= 0) return;
   if (pt) act('nade', { x: +pt.x.toFixed(2), y: +pt.y.toFixed(2), z: pt.z != null ? +pt.z.toFixed(2) : null }); else act('nade');
 }
-bindBtn('tMed', () => inGame() && act('med'));
+bindBtn('tMed', () => { if (!inGame()) return; const me = W.p[ME]; if (me.meds <= 0) toast('没有医疗包了（搜补给、或商店 → 道具）'); else if (!me.down && me.hp >= me.maxHp) toast('血是满的'); else act('med'); });
 // the context key on the fire ring: search / revive / gather when there's something, get off when riding, otherwise heal with a medkit
-bindBtn('tUse', () => { if (!inGame()) return; const me = W.p[ME], ut = useTarget(me); if (ut && !(me.ride && !(VEH[me.veh] && VEH[me.veh].search))) { if (INP.useLatch) INP.useLatch = null; else INP.useReq = true; } else if (me.ride || me.pass >= 0) act('ride'); else if (me.meds > 0 && (me.down || me.hp < me.maxHp)) act('med'); else toast('附近没有能交互的东西'); }); // (round 23) no jump: when idle it's the medkit
+bindBtn('tUse', () => { if (!inGame()) return; const me = W.p[ME], ut = useTarget(me); if (ut && !(me.ride && !(VEH[me.veh] && VEH[me.veh].search))) { if (INP.useLatch) INP.useLatch = null; else INP.useReq = true; } else if (me.ride || me.pass >= 0) act('ride'); else toast('附近没有能交互的东西'); }); // (round 23c) the medkit is its own key (left of this one), so this never uses it
 bindBtn('tBuild', () => inGame() && toggleBuild());
 bindBtn('tHelp', () => { document.body.classList.toggle('guide'); sfx('click'); });
 document.addEventListener('pointerdown', e => { if (document.body.classList.contains('guide') && e.target.id !== 'tHelp') document.body.classList.remove('guide'); }, true);

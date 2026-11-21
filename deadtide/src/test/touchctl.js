@@ -57,11 +57,11 @@ const UA = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/6
     }
     ok(vp + ' no joystick from near-misses, right side or top HUD', popped === 0, 'popped ' + popped);
     // 5. med button only when hurt
-    const medHidden = await p.evaluate(() => document.getElementById('tMed').classList.contains('hidden'));
+    const medHidden = await p.evaluate(() => document.getElementById('tMed').classList.contains('dim')); // round 23c: its own key on the ring, dim at full health
     await p.evaluate(() => { W.p[0].hp = 40; }); await p.waitForTimeout(250);
-    const medShown = await p.evaluate(() => !document.getElementById('tMed').classList.contains('hidden'));
+    const medShown = await p.evaluate(() => document.getElementById('tMed').classList.contains('hot'));
     await p.tap('#tMed'); await simWait(1.3);
-    ok(vp + ' med button shows when hurt and heals', medHidden && medShown && (await p.evaluate(() => W.p[0].hp)) > 40);
+    ok(vp + ' med key lights up when hurt and heals', medHidden && medShown && (await p.evaluate(() => W.p[0].hp)) > 40);
     // 6. weapon chip cycles
     const wp0 = await p.evaluate(() => W.p[0].wpn); await p.tap('#tWpn'); await simWait(0.2);
     ok(vp + ' weapon chip switches weapon', (await p.evaluate(() => W.p[0].wpn)) !== wp0);

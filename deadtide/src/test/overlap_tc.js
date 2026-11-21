@@ -10,7 +10,7 @@ const UA = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/6
     await p.evaluate(() => (SET.mode = 'classic', SET.map = 'town', $('soloBtn').click())); await p.waitForFunction(() => W && W.t > 0.3, null, { timeout: 90000 });
     const r = await p.evaluate(() => {
       for (const id of ['tUse', 'tMed']) { const e = document.getElementById(id); e.classList.remove('hidden'); e.style.display = 'flex'; }
-      const ids = ['tFire', 'tReload', 'tNade', 'tShove', 'tJump', 'tWpn', 'tUse', 'tMed'], R = {};
+      const ids = ['tFire', 'tNade', 'tShove', 'tWpn', 'tUse', 'tMed'] /* round 22+: reload and jump keys are gone */, R = {};
       for (const id of ids) { const e = document.getElementById(id); if (!e || getComputedStyle(e).display === 'none') continue; R[id] = e.getBoundingClientRect(); }
       const bad = []; const k = Object.keys(R);
       for (let i = 0; i < k.length; i++) for (let j = i + 1; j < k.length; j++) { const a = R[k[i]], c = R[k[j]]; const ox = Math.min(a.right, c.right) - Math.max(a.left, c.left), oy = Math.min(a.bottom, c.bottom) - Math.max(a.top, c.top); if (!(ox > 1 && oy > 1)) continue;
@@ -20,7 +20,7 @@ const UA = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/6
         else if (f) { const cx = (f.left + f.right) / 2, cy = (f.top + f.bottom) / 2, rr = f.width / 2, nx = Math.max(o.left, Math.min(cx, o.right)), ny = Math.max(o.top, Math.min(cy, o.bottom)); if (Math.hypot(nx - cx, ny - cy) >= rr - 1) continue; } // the fire button is round
         bad.push(k[i] + '/' + k[j]); }
       const off = k.filter(id => R[id].left < 0 || R[id].top < 0 || R[id].right > innerWidth || R[id].bottom > innerHeight);
-      return { bad, off, jump: [R.tJump.left | 0, R.tJump.top | 0], use: [R.tUse.left | 0, R.tUse.top | 0, R.tUse.width | 0] };
+      return { bad, off, use: [R.tUse.left | 0, R.tUse.top | 0, R.tUse.width | 0] };
     });
     const ok = !r.bad.length && !r.off.length; if (!ok) fails++;
     console.log((ok ? 'PASS ' : 'FAIL ') + vp, JSON.stringify(r));
