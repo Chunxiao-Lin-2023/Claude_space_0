@@ -212,10 +212,45 @@ function mkArmor() {
   S.dust = [-0.5, 0.02, 0.43]; v.userData.S = S; return v;
 }
 
+// (round 29) gyrocopter: open pod, seat, stick and throttle, mast with a two-blade rotor, pusher prop, tail boom with fins, tricycle gear
+function mkGyro() {
+  const v = new THREE.Group(), S = { spin: [], steer: [] }, bd = lam('#e0b030'), dk = lam('#24262a'), cr = lam('#b8bcc2'), rd = lam('#c0392b');
+  S.spin.push(vWheel(v, 0.5, 0, 0.08, 0.04, 'bike'));
+  for (const z of [-0.32, 0.32]) { const w = vWheel(v, -0.12, z, 0.1, 0.05, 'bike'); S.spin.push(w); vRod(v, dk, [-0.08, 0.32, z * 0.55], [-0.12, 0.1, z], 0.014); }
+  vRod(v, dk, [0.42, 0.3, 0], [0.5, 0.08, 0], 0.014);
+  // pod: tub, nose, side stripes, windscreen, instrument pod
+  vBox(v, bd, 0.82, 0.3, 0.5, 0.02, 0.42, 0); vBox(v, bd, 0.3, 0.24, 0.42, 0.5, 0.4, 0, -0.35); vBox(v, bd, 0.16, 0.16, 0.3, 0.66, 0.34, 0, -0.7);
+  for (const s of [-1, 1]) vBox(v, rd, 0.84, 0.04, 0.004, 0.06, 0.48, s * 0.252);
+  vBox(v, lam('#9fc4d8'), 0.012, 0.2, 0.36, 0.42, 0.66, 0, 0.6); vBox(v, dk, 0.1, 0.08, 0.2, 0.34, 0.6, 0);
+  vBox(v, vLit('#a8e0a0', '#7aff6a', 0.35), 0.004, 0.04, 0.12, 0.29, 0.62, 0);
+  // seat with backrest and harness, stick, throttle
+  vBox(v, dk, 0.24, 0.05, 0.3, -0.04, 0.53, 0); vBox(v, dk, 0.05, 0.3, 0.3, -0.17, 0.68, 0, 0.12);
+  for (const s of [-1, 1]) vBox(v, rd, 0.008, 0.26, 0.03, -0.14, 0.7, s * 0.08, 0.12);
+  vRod(v, dk, [0.2, 0.45, 0.04], [0.16, 0.68, 0.04], 0.012); vCyl(v, lam('#111'), 0.018, 0.018, 0.06, 0.16, 0.7, 0.04, 'y', 6);
+  vRod(v, cr, [0.02, 0.5, -0.21], [0.08, 0.63, -0.21], 0.01); vBox(v, rd, 0.03, 0.03, 0.03, 0.08, 0.64, -0.21);
+  for (const s of [-1, 1]) vBox(v, cr, 0.06, 0.012, 0.07, 0.42, 0.36, s * 0.1);                             // pedals
+  // mast + rotor head, two long blades (spin), pusher engine + prop (spin), exhaust
+  vRod(v, cr, [-0.22, 0.56, 0], [-0.13, 1.42, 0], 0.025); vRod(v, cr, [-0.32, 0.56, 0.1], [-0.15, 1.2, 0], 0.012); vRod(v, cr, [-0.32, 0.56, -0.1], [-0.15, 1.2, 0], 0.012);
+  const rh = new THREE.Group(); rh.position.set(-0.13, 1.46, 0); rh.rotation.z = 0.06; v.add(rh); vCyl(rh, dk, 0.05, 0.05, 0.06, 0, 0, 0, 'y', 8);
+  const ro = new THREE.Group(); rh.add(ro); vBox(ro, dk, 2.0, 0.018, 0.11, 0, 0.03, 0); for (const s of [-1, 1]) vBox(ro, rd, 0.12, 0.02, 0.112, s * 0.94, 0.031, 0); S.rotor = ro;
+  vBox(v, lam('#3a3d42'), 0.3, 0.28, 0.32, -0.38, 0.6, 0); for (let k = 0; k < 4; k++) vBox(v, lam('#55595f'), 0.31, 0.012, 0.36, -0.38, 0.5 + k * 0.06, 0);
+  const pr = new THREE.Group(); pr.position.set(-0.58, 0.62, 0); v.add(pr); vCyl(pr, dk, 0.04, 0.04, 0.06, 0, 0, 0, 'x', 8); vBox(pr, lam('#6a4a2e'), 0.02, 0.72, 0.07, -0.02, 0, 0); S.prop = pr;
+  vRod(v, dk, [-0.4, 0.78, 0.12], [-0.46, 0.86, 0.12], 0.018); S.exh = vMark(v, -0.46, 0.88, 0.12);
+  // tail: boom, fin (red tip), stabiliser, nav lights
+  vRod(v, cr, [-0.3, 0.38, 0.06], [-1.18, 0.5, 0], 0.016); vRod(v, cr, [-0.3, 0.38, -0.06], [-1.18, 0.5, 0], 0.016);
+  vBox(v, bd, 0.26, 0.34, 0.03, -1.14, 0.68, 0, 0.15); vBox(v, rd, 0.1, 0.08, 0.032, -1.18, 0.82, 0, 0.15); vBox(v, bd, 0.2, 0.02, 0.44, -1.12, 0.5, 0);
+  const tl = vLit('#c0201a', '#ff2010', 0.35); vBox(v, tl, 0.03, 0.03, 0.03, -1.24, 0.86, 0);
+  vBox(v, vLit('#2aa04a', '#3aff6a', 0.6), 0.03, 0.03, 0.02, -1.12, 0.5, 0.23); vBox(v, vLit('#c0201a', '#ff3020', 0.6), 0.03, 0.03, 0.02, -1.12, 0.5, -0.23);
+  const hl = vLit('#fff4cf', '#ffe08a', 0.5); vBox(v, hl, 0.03, 0.05, 0.08, 0.7, 0.3, 0, -0.7);       // landing light
+  S.grip = [vMark(v, 0.08, 0.645, -0.21), vMark(v, 0.16, 0.7, 0.04)];
+  vLights(S, v, [hl], [tl], [0.7, 0.3, 0]); if (S.beam) S.beam.rotation.z = -0.6;
+  S.dust = [-0.12, 0.02, 0.32]; v.userData.S = S; return v;
+}
+
 function mkVehicles() {
-  const g = new THREE.Group(), bike = mkBike(), moto = mkMoto(), cargo = mkCargo(), armor = mkArmor();
-  for (const q of [bike, moto, cargo, armor]) q.traverse(o => { if (o.isMesh && !o.material.transparent) { o.castShadow = true; } });
-  g.add(bike, moto, cargo, armor); g.userData = { bike, moto, cargo, armor, all: [null, bike, moto, cargo, armor] }; return g;
+  const g = new THREE.Group(), bike = mkBike(), moto = mkMoto(), cargo = mkCargo(), armor = mkArmor(), gyro = mkGyro();
+  for (const q of [bike, moto, cargo, armor, gyro]) q.traverse(o => { if (o.isMesh && !o.material.transparent) { o.castShadow = true; } });
+  g.add(bike, moto, cargo, armor, gyro); g.userData = { bike, moto, cargo, armor, gyro, all: [null, bike, moto, cargo, armor, gyro] }; return g;
 }
 
 // how a rider sits on each vehicle: H = hip height, lean = torso pitch (negative = forward), pedal = [x, y, crank radius] or peg = [x, y, half-width],
@@ -226,6 +261,7 @@ const VPOSE = [null,
   { H: 0.7, lean: -0.22, peg: [0.06, 0.3, 0.15], pH: 0.77, pLean: -0.26, pPeg: [-0.31, 0.38, 0.16], hold: [0.3, 0.83, 0.16], roll: 1.3, foot: 1, drop: 0.1, slide: 0 },
   { H: 0.66, lean: -0.22, pedal: [0.12, 0.27, 0.1], roll: 0.12 },
   { H: 0.55, lean: -0.06, peg: [0.3, 0.41, 0.1], pH: 0.55, pLean: -0.02, pPeg: [-0.08, 0.41, 0.11], hold: [0.06, 0.78, 0.34], roll: -0.15 },
+  { H: 0.58, lean: -0.08, peg: [0.42, 0.36, 0.1], roll: 0.9, fly: 1 },                                          // (round 29) gyrocopter: banks and noses down in flight
 ];
 // two-bone leg IK: put the ankle of leg L at (tx, ty, tz) in the lower-body frame, hip pivot at (hx, hy, hz); the thigh abducts (rotation.x) for sideways targets
 function legIK(L, hx, hy, hz, tx, ty, tz, toe) {
@@ -256,6 +292,7 @@ function rideState(p, dt) {
   p._roll = lerp(p._roll || 0, clamp(p._yr * 0.09 * fast * RP.roll, -0.36, 0.36) + p._stopK * 0.28, Math.min(1, dt * 8)); // stopped: leans onto the foot that's down
   p._steer = lerp(p._steer || 0, clamp(-p._yr * 0.11, -0.45, 0.45), Math.min(1, dt * 8));
   p._crank = (p._crank || 0) + Math.min(p._spd, 6) * dt / 0.22 * 0.5;
+  p._pitch = lerp(p._pitch || 0, RP.fly ? -clamp(p._spd / 4, 0, 1) * 0.16 : 0, Math.min(1, dt * 4));
   const dec = dt > 0 ? ((p._spdP || 0) - p._spd) / dt : 0; p._spdP = p._spd;
   p._brake = lerp(p._brake || 0, dec > 1.2 || (p._spd < 0.3 && p._stopK < 0.9) ? 1 : 0, Math.min(1, dt * 10));
 }
@@ -266,6 +303,8 @@ function vehTick(p, m, dt, dk) {
   if (S.crank) { S.crank.rotation.z = -(p._crank || 0); for (const q of S.pedals) q.rotation.z = p._crank || 0; }
   for (const s of S.steer) s.rotation.y = p._steer || 0;
   if (S.wheel) S.wheel.rotation.x = -(p._steer || 0) * 3;
+  if (S.rotor) { const air = p.z - surfZ(p.x, p.y, skyTop(p.x, p.y)); p._rot = lerp(p._rot || 0, p.land && air < 0.15 ? 6 : 30, Math.min(1, dt * 1.5)); S.rotor.rotation.y += p._rot * dt; S.prop.rotation.x += p._rot * 1.4 * dt;
+    if (air < 3.5 && air > 0.05 && FXR() < dt * 30) { const a = FXR() * 6.28, r = 0.6 + FXR() * 0.8, gz = p.z - air; addP({ x: p.x + Math.cos(a) * r, y: p.y + Math.sin(a) * r, z: gz + 0.05, vx: Math.cos(a) * 2.2, vy: Math.sin(a) * 2.2, vz: 0.15, g: -0.1, col: '#8a7e6a', s: 0.08, life: 0.5, smoke: 1 }); } } // rotor + prop spin; downwash kicks up dust close to the ground
   if (S.flag) S.flag.rotation.y = Math.sin(W.t * (6 + sp * 2) + p.i) * (0.2 + Math.min(0.3, sp * 0.06)) + Math.min(0.6, sp * 0.12);
   const hk = 0.35 + dk * 1.2; for (const mt of S.head) mt.emissiveIntensity = hk;
   const tk = 0.25 + dk * 0.35 + (p._brake || 0) * 1.1; for (const mt of S.tail) mt.emissiveIntensity = tk;
@@ -280,4 +319,5 @@ function vehTick(p, m, dt, dk) {
   }
 }
 // the whole rider (and their vehicle) banks about the forward axis
-function rideBank(m, ly, roll) { _vax.set(Math.cos(ly), 0, Math.sin(ly)); m.g.quaternion.setFromAxisAngle(_vax, roll); }
+const _vq = new THREE.Quaternion(), _vax2 = new THREE.Vector3();
+function rideBank(m, ly, roll, pitch) { _vax.set(Math.cos(ly), 0, Math.sin(ly)); m.g.quaternion.setFromAxisAngle(_vax, roll || 0); if (pitch) { _vax2.set(-Math.sin(ly), 0, Math.cos(ly)); _vq.setFromAxisAngle(_vax2, pitch); m.g.quaternion.premultiply(_vq); } } // pitch (nose down < 0) about the rider's left-right axis

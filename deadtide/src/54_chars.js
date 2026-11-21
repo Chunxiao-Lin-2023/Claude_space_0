@@ -395,7 +395,7 @@ function drawPlayers(vl, dt) {
     if (drv && drv.ride && !drv.gone && drv._ly != null) { gx = drv.x - Math.cos(drv._ly) * PILLION; gy = drv.y - Math.sin(drv._ly) * PILLION; zv = (drv.zv != null ? drv.zv : drv.z) + (drv.jz || 0); }
     m.g.position.set(gx, zv, gy);
     const vr = drv && drv.ride ? drv : p.ride && !p.down && !p.dead ? p : null; // (round 27) whose vehicle this player is on
-    if (p.dead) m.g.rotation.set(-1.45, 0, 0); else if (vr && vr._ly != null && vr._roll) rideBank(m, vr._ly, vr._roll); else m.g.rotation.set(0, 0, 0); // a dead player lies flat until respawn / rescue
+    if (p.dead) m.g.rotation.set(-1.45, 0, 0); else if (vr && vr._ly != null && (vr._roll || vr._pitch)) rideBank(m, vr._ly, vr._roll, vr._pitch); else m.g.rotation.set(0, 0, 0); // a dead player lies flat until respawn / rescue
     // smoothing state
     if (p._uy == null) { p._uy = p.aim; p._ly = p.aim; p._ph = 0; p._kick = 0; p._spd = 0; p._px = p.x; p._py = p.y; p._st = 0; }
     const sp = dt > 0 ? Math.min(8, Math.hypot(p.x - p._px, p.y - p._py) / dt) : 0, mvx = p.x - p._px, mvy = p.y - p._py; p._px = p.x; p._py = p.y;
@@ -410,7 +410,7 @@ function drawPlayers(vl, dt) {
     if (drv && drv.ride && drv._ly != null) { p._ly = drv._ly; back = false; }                 // sit facing the way the bike goes
     // keep the hips within ~100 degrees of the chest
     const tw = angDiff(p._uy, p._ly); if (!vr && Math.abs(tw) > 1.75) p._ly = p._uy - Math.sign(tw) * 1.75; // (round 27) not on a vehicle: the vehicle sets the hips
-    if (p.ride && !p.down && !p.dead) rideState(p, dt); else { p._roll = 0; p._stopK = 0; p._lyP = null; }
+    if (p.ride && !p.down && !p.dead) rideState(p, dt); else { p._roll = 0; p._pitch = 0; p._stopK = 0; p._lyP = null; }
     p._ph += dt * p._spd * 2.1 * (back ? -1 : 1);
     p._kick = Math.max(0, p._kick - dt * 9);
     m.lower.rotation.y = -p._ly; m.upper.rotation.y = -p._uy;

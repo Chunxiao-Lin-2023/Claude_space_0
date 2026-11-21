@@ -529,7 +529,7 @@ body.aiming canvas#cv{cursor:none}body.touch #reticle b{left:-34px;top:-38px}
     <div class="hcard">
       <div class="wpn ptr"><b id="wName">手枪</b><span class="am" id="wMag">12</span><span class="rs" id="wRes">/ ∞</span></div>
       <div class="rl ptr"><i id="wRl"></i></div>
-      <div class="items"><div><span id="iNadeL">手雷</span> <span id="iNade">1</span></div><div>医疗包 <span id="iMed">1</span></div><div>击杀 <span id="iKill">0</span></div><div>复活 <span id="iLife">3</span></div></div>
+      <div class="items"><div><span id="iNadeL">手雷</span> <span id="iNade">1</span></div><div>医疗包 <span id="iMed">1</span></div><div>击杀 <span id="iKill">0</span></div><div>复活 <span id="iLife">3</span></div><div id="iFuelW" class="hidden">油 <span id="iFuel">60</span></div></div>
     </div>
     <div class="hcard ptr" id="keys"></div>
   </div>
@@ -644,7 +644,7 @@ body.aiming canvas#cv{cursor:none}body.touch #reticle b{left:-34px;top:-38px}
       <details><summary>武器和装备</summary>每把枪有自己的用处（切枪时会提示一句）：<b>手枪</b>子弹无限、准，伤害最低；<b>霰弹枪</b>近身清群；<b>步枪</b>持续火力；<b>狙击枪</b>打精英，穿 5 只；<b>弩</b>几乎没声音、钉住丧尸；<b>喷火器</b>堵门，火会传；<b>榴弹发射器</b>炸一片。<br><b>快捷武器</b>：在「装备」（电脑按 <kbd>I</kbd>，触屏拖武器键选「装备…」）里选 4 把放进快捷栏，电脑 <kbd>1</kbd>–<kbd>4</kbd> 切换、<kbd>Z</kbd> 切回上一把。<br><b>近战</b>：刀或<b>防暴盾</b>（商店 → 武器 里买，二选一，<kbd>X</kbd> / 触屏在「刀 / 盾」键上滑一下切换）。盾推：把前面一片丧尸（最多 8 只）推开约 3 格、晕 1 秒；拿着盾时正面挨打少受一半。<br><b>手雷</b>：电脑按住 <kbd>G</kbd> 会在光标处显示落点圈（爆炸范围），松开扔；触屏点一下自动扔向射程内最大的尸堆，拖动手雷键放落点圈，松手扔。</details>
       <details><summary>商店</summary>在任何建筑里（或营地）按 <kbd>C</kbd> / 点「商店」。分四栏：<b>武器 · 弹药</b>（一把枪和它的子弹在同一张卡上）、<b>道具</b>（四种手雷、医疗包）；放置类道具不在商店，见下面「道具」、<b>载具</b>、<b>强化</b>。材料全队共用，买到的东西归你。</details>
       <details><summary>道具（建造）</summary>按 <kbd>B</kbd> / 点「道具」拿出道具栏：<b>墙、地板、梯子、门、掩体、陷阱、机枪塔、探照灯、跳板</b>，同类的合在一格——<b>再点一次同一格（或点上面的小条）换材料</b>，比如木墙 → 砖墙 → 钢墙。放下去不分朝向：梯子会自己贴到能爬上去的那面墙。指哪放哪，按住拖动放一排；放一个扣一份材料，右键 / 「拆除」拆掉退一半。墙、地板、梯子、门只能在营地周围的黄框里放（尸城求生哪都能放）；<b>掩体、陷阱、地雷、机枪塔、探照灯、跳板哪都能放</b>（尸城求生里有些要先找到蓝图）。方块要有支撑，断了会连锁坍塌。楼上最外圈的墙是半人高的矮墙，能探身往下打。<br><b>跳板</b>：踩上去把你朝走的方向弹出约 5 格，前面有矮楼顶（最多高 2 层）就弹上去，用一次就没——被围住时的逃生道具。</details>
-      <details><summary>载具</summary><b>自行车</b>快 60%；<b>摩托车</b>快 90%，后座带一个队友；<b>货运三轮</b>坐在车上就能搜东西（够得更远、时间减半、材料 +50%）；<b>装甲车</b>受到的伤害只剩 35%，撞开挡路的丧尸，后座带一个队友。在商店「载具」栏或「装备」里选一辆当默认：<kbd>T</kbd> / 点「载具」就上这辆，再按下车；<kbd>Shift</kbd>+<kbd>T</kbd> / 长按「载具」换车。车上也能开枪，只是射速慢（司机 40%、后座 70%），准度不变。</details>
+      <details><summary>载具</summary><b>自行车</b>快 60%；<b>摩托车</b>快 90%，后座带一个队友；<b>货运三轮</b>坐在车上就能搜东西（够得更远、时间减半、材料 +50%）；<b>装甲车</b>受到的伤害只剩 35%，撞开挡路的丧尸，后座带一个队友；<b>旋翼机</b>会飞，越过屋顶和尸群（丧尸咬不到，喷吐者还能打到），只能在地面或楼顶起飞（头顶不能有屋顶），一箱油飞 60 秒、进楼里按 <kbd>F</kbd> 加满，飞着不能开枪（手雷能扔），再按 <kbd>T</kbd> 降落，没油会自己降落。在商店「载具」栏或「装备」里选一辆当默认：<kbd>T</kbd> / 点「载具」就上这辆，再按下车；<kbd>Shift</kbd>+<kbd>T</kbd> / 长按「载具」换车。车上也能开枪，只是射速慢（司机 40%、后座 70%），准度不变。</details>
       <details><summary>白天和每日任务</summary>出门砍树（木材）、采石（砖石），搜汽车、补给箱和废墟瓦砾（钢材、零件、弹药），离家越远收获越多；回来盖楼；在任何建筑里（或营地工作台）都能造枪、买弹药（按 C / 点「商店」）。河上只有两座桥，丧尸也只能从桥上过河。每 5 夜一次血月。<br>每天天亮刷新 3 个小任务（左上角），比如击杀、搜索、建造、今夜无人倒下。完成立刻发奖励：材料、全队弹药、医疗包、手雷或强化弹头。没完成的会在下一个天亮作废。</details>
       <details><summary>爬梯和翻越</summary>朝梯子走就爬上去，往下要继续推一下；丧尸爬梯子很慢（攀爬者除外）。没有跳键：走路碰到沙袋、拒马、掩体、栅栏、瓦砾和一人高的墙会自己翻过去，朝一格宽的空隙走会自己跳过去；丧尸不会翻，只能砸。</details>
       <details><summary>视角</summary>滚轮或 ＋/－ 缩放，Q / E 或 ⟲⟳ 转镜头。楼层视图默认跟随你所在的层，上面的楼层会自动隐藏；▲▼ 手动看别的层，「跟随我所在的层」恢复。</details>
@@ -4918,6 +4918,7 @@ const VEH = [null,
   { k: 'moto', name: '摩托车', spd: 1.9, seats: 2, tag: '最快：走得快 90%，后座能带一个队友' },
   { k: 'cargo', name: '货运三轮', spd: 1.45, search: 1, tag: '搜刮用：坐在车上就能搜（够得更远、时间减半），搜到的材料 +50%' },
   { k: 'armor', name: '装甲车', spd: 1.3, seats: 2, armor: 0.35, ram: 1, tag: '保护用：受到的伤害只剩 35%，撞开挡路的丧尸，后座能带一个队友' },
+  { k: 'gyro', name: '旋翼机', spd: 1.9, fly: 1, fuel: 60, tag: '会飞：越过屋顶和尸群。只能从地面或楼顶起飞（头顶不能有屋顶）；一箱油飞 60 秒，油要进楼里按 F 加；飞着不能开枪（手雷能扔）' }, // (round 29)
 ];
 const NVEH = VEH.length - 1;
 const PILLION = 0.38;                                   // how far behind the driver the back-seat rider sits
@@ -4932,7 +4933,7 @@ const gCount = (p, t) => t ? ((p.gn || [])[t - 1] || 0) : p.nades;
 const gCap = t => t ? BAL.gnCap : BAL.nadeCap;
 // blueprints (尸城求生): what you can build / make from the start, and what has to be found first
 const BP_BASE = [1, 4, 6, 7, 12, 53, 56];
-const BP_LIST = [2, 3, 5, 8, 13, 14, 9, 15, 51, 52, 57, 58, 59, 'bike', 'moto', 'cargo', 'armor'];
+const BP_LIST = [2, 3, 5, 8, 13, 14, 9, 15, 51, 52, 57, 58, 59, 'bike', 'moto', 'cargo', 'armor', 'gyro'];
 const bpName = k => typeof k === 'number' ? B[k].name : (VEH.find(v => v && v.k === k) || { name: k }).name;
 const SLAB_BRIDGE = 11; // slab id for the pre-built bridges (not buildable)
 defB(11, { key: 'bridge', slab: 1, nat: 1, col: '#7e5a36' });
@@ -5064,6 +5065,7 @@ const CRAFT = [
   { id: 'moto', cat: 'veh', name: '摩托车', desc: VEH[2].tag, cost: { steel: 14, parts: 12 }, veh: 2, bp: 'moto' },
   { id: 'cargo', cat: 'veh', name: '货运三轮', desc: VEH[3].tag, cost: { wood: 8, steel: 10, parts: 8 }, veh: 3, bp: 'cargo' },
   { id: 'armor', cat: 'veh', name: '装甲车', desc: VEH[4].tag, cost: { steel: 24, parts: 16 }, veh: 4, bp: 'armor' },
+  { id: 'gyro', cat: 'veh', name: '旋翼机', desc: VEH[5].tag, cost: { steel: 20, parts: 24 }, veh: 5, bp: 'gyro' },
   { id: 'upg', cat: 'upg', name: '强化弹头', desc: '全队伤害 +12%（最多 5 级）', cost: { parts: 8 }, upg: 1 },
 ];
 
@@ -5088,6 +5090,7 @@ const BAL = {
   slowR: 3.6, slowT: 8, slowMul: 0.3,                           // slow grenade: a sticky field, zombies inside crawl at 30%
   smokeR: 3.8, smokeT: 10, smokeConf: 1.2,                      // smoke: zombies in the cloud lose you, wander and don't bite (and for 1.2 s after leaving)
   blastR: 4.4, blastDmg: 70, blastKB: 24, blastStun: 1.6,       // blast: little damage, throws everything out of the way (clears a path)
+  flyHover: 2.2, flyClimb: 0.8, flyDrop: 0.6, fuelLow: 10, refuelT: 4, // (round 29) gyrocopter: cruise 2.2 floors over whatever is below, climb / descend rate (of the take-off curve per second), warn at 10 s of fuel, 4 s to refuel indoors
   nadeRange: 12, nadeDmg: 286, nadeR: 3.4, nadeFuse: 1.6, nadeLand: 0.35, nadeMin: 0.5, // (round 18: radius 2.8 -> 3.4, damage at the edge 35% -> 50%, goes off 0.35 s after landing where you aimed)
   headshot: 1.6,
   radioHp: 1500, radioDmg: 0.5,
@@ -5847,7 +5850,7 @@ function updateFields(dt, force) {
   if ((W.navDirty && F.rT <= 0) || force) { buildField(F.rw, radioSources(), false); if (W.zs.some(z => z.k === 'climber')) buildField(F.rc, radioSources(), true); else F.rc.set(F.rw); W.navDirty = false; F.rT = 0.4; }
   if (F.pT <= 0 || force) {
     F.pT = 0.35;
-    const src = W.p.filter(p => !p.gone && !p.dead).map(p => ci(Math.floor(p.x), Math.floor(p.y), p.L));
+    const src = W.p.filter(p => !p.gone && !p.dead).map(p => ci(Math.floor(p.x), Math.floor(p.y), airborne(p) ? skyTop(p.x, p.y) : p.L)); // (round 29) a flying player: they crowd the spot under it
     buildField(F.pw, src, false);
     if (W.zs.some(z => z.k === 'climber')) buildField(F.pc, src, true); else F.pc.set(F.pw);
   }
@@ -5937,7 +5940,7 @@ function mkPlayer(i, name) {
     i, name, x: RADIO_XY[0] - 0.5 + i * 2, y: RADIO_XY[1] + 0.5 + i, L: 0, z: 0, r: 0.28, h: 1.0, vx: 0, vy: 0, kbx: 0, kby: 0, aim: -Math.PI / 2, aimPt: null,
     hp: BAL.pMaxHp, maxHp: BAL.pMaxHp, down: false, downT: 0, dead: false, gone: false,
     wpn: 1, owned: WPN.map((w, k) => k < 2 ? 1 : 0), mag: WPN.map((w, k) => k === 0 ? 12 : k === 1 ? 6 : 0), ammo: WPN.map((w, k) => k === 1 ? w.start : 0), bloom: 0, reloadT: 0, reloadW: 0, fireCD: 0, shoveCD: 0, shoveT: 0,
-    nades: 2, meds: 2, gn: [1, 1, 1], gt: 0, lives: 3, medT: 0, selfRev: false, useT: 0, useK: '', build: false, sel: 1, demo: false, sdir: 3, veh: 0, vehs: 0, shield: 0, melee: 0,
+    nades: 2, meds: 2, gn: [1, 1, 1], gt: 0, lives: 3, fuel: 60, land: false, medT: 0, selfRev: false, useT: 0, useK: '', build: false, sel: 1, demo: false, sdir: 3, veh: 0, vehs: 0, shield: 0, melee: 0,
     inp: { mx: 0, my: 0, fire: 0, use: 0 }, kills: 0, hurtT: 0, anim: 0, emptyT: 0, ready: false, recoilT: 0,
   };
 }
@@ -6000,6 +6003,37 @@ function collapseCheck() {
   }
 }
 
+/* ---------- (round 29) flying: the gyrocopter ---------- */
+const airborne = p => !!(p && p.ride && VEH[p.veh] && VEH[p.veh].fly);
+// the level you would stand on at the top of this column (ground, a roof, a wall top)
+function skyTop(x, y) {
+  x = Math.floor(x); y = Math.floor(y); if (!inMap(x, y)) return 0;
+  for (let L = ML - 1; L >= 0; L--) { const i = ci(x, y, L), b = W.blk[i]; if (b && B[b].P) return Math.min(ML - 1, L + 1); if (L > 0 && W.slab[i]) return L; }
+  return 0;
+}
+// take off only from the ground or a roof: nothing overhead, and some fuel
+function flyOK(p) {
+  if (skyTop(p.x, p.y) > p.L) { emit({ k: 'deny', p: p.i, why: '旋翼机只能在地面或楼顶起飞：头顶不能有屋顶' }); return false; }
+  if (!(p.fuel > 0.5)) { emit({ k: 'deny', p: p.i, why: '旋翼机没油了：进楼里按 F 加油' }); return false; }
+  return true;
+}
+// owner-side flight: glide where you steer, hover 2.2 floors over whatever is below (looking ahead so it climbs before a building), come down when landing
+function flyStep(p, dt) {
+  const I = p.inp, m = Math.hypot(I.mx, I.my), k = m > 1 ? 1 / m : 1, V = VEH[p.veh];
+  p.alt = clamp((p.alt || 0) + (p.land ? -BAL.flyDrop : BAL.flyClimb) * dt, 0, 1);
+  const spd = BAL.pSpeed * V.spd * (0.3 + 0.7 * p.alt) * (p.land ? 0.7 : 1), a = Math.min(1, dt * 3.5);
+  p.vx = lerp(p.vx, I.mx * k * spd, a); p.vy = lerp(p.vy, I.my * k * spd, a);
+  const nx = clamp(p.x + p.vx * dt, 1.5, MW - 1.5), ny = clamp(p.y + p.vy * dt, 1.5, MH - 1.5);
+  if (skyTop(nx, ny) * FH <= p.z + 0.25) { p.x = nx; p.y = ny; } else { p.vx *= 0.3; p.vy *= 0.3; }  // low down, a wall still stops you
+  let top = 0; const ax = p.x + p.vx * 0.7, ay = p.y + p.vy * 0.7;
+  for (const [qx, qy] of [[p.x, p.y], [ax, ay]]) for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) top = Math.max(top, skyTop(qx + dx, qy + dy));
+  const g = skyTop(p.x, p.y), gz = surfZ(p.x, p.y, g), cz = (top + BAL.flyHover) * FH;
+  p._cz = p._cz == null ? cz : lerp(p._cz, cz, Math.min(1, dt * (cz > p._cz ? 3 : 0.7)));
+  p.z = lerp(gz, Math.max(p._cz, gz + 0.6), ease(p.alt)); p.zv = p.z; p.jz = 0;
+  p.L = p.alt <= 0 ? g : clamp(Math.floor(p.z / FH + 0.01), g, ML - 1);
+  p.anim += dt * 3;
+}
+
 /* ---------- player movement (owner-side) ---------- */
 function stepMove(p, dt) {
   if (p.dead || p.gone) return;
@@ -6010,6 +6044,7 @@ function stepMove(p, dt) {
     if (!d || !d.ride || !vehSeats(d) || d.dead || d.down || d.gone) p.pass = -1;
     else { const a = d._ly != null ? d._ly : Math.atan2(d.vy || 0, d.vx || 1); p.x = d.x - Math.cos(a) * PILLION; p.y = d.y - Math.sin(a) * PILLION; /* (round 26) was -d._ly: the pillion sat mirrored, off the bike */ p.L = d.L; p.z = d.z; p.zv = d.zv; p.vx = d.vx; p.vy = d.vy; p._ly = d._ly; return; }
   }
+  if (airborne(p)) { flyStep(p, dt); return; } // (round 29)
   const I = p.inp, m = Math.hypot(I.mx, I.my), k = m > 1 ? 1 / m : 1;
   if (p.jmp) { // mid-vault / mid-jump: a scripted arc
     const J = p.jmp; J.t += dt; const f = Math.min(1, J.t / J.T);
@@ -6102,6 +6137,13 @@ function stepActions(p, dt) {
   if (p.gone) return;
   const I = p.inp;
   p.fireCD -= dt; p.shoveCD -= dt; p.emptyT -= dt; if (p.bloom) p.bloom = Math.max(0, p.bloom - dt * 2.2);
+  // (round 29) gyrocopter: burns fuel while you're in it; empty → it comes down by itself; touching down gets you out
+  if (airborne(p)) {
+    p.fuel = Math.max(0, (p.fuel != null ? p.fuel : VEH[p.veh].fuel) - dt);
+    if (p.fuel < BAL.fuelLow && !p._lowF) { p._lowF = 1; emit({ k: 'deny', p: p.i, why: '旋翼机油快没了（还剩 ' + Math.ceil(p.fuel) + ' 秒），没油会自己降落' }); }
+    if (p.fuel <= 0 && !p.land) { p.land = true; emit({ k: 'deny', p: p.i, why: '旋翼机没油了，正在降落：进楼里按 F 加油' }); }
+    const g = skyTop(p.x, p.y); if (p.land && p.z - surfZ(p.x, p.y, g) < 0.08) { p.ride = false; p.land = false; p.L = g; p.z = surfZ(p.x, p.y, g); p.alt = 0; emit({ k: 'sfx', n: 'land', x: p.x, y: p.y, o: p.i }); }
+  } else { p._lowF = p.fuel < BAL.fuelLow ? p._lowF : 0; if (p.land) p.land = false; }
   // each gun has its own fire cooldown, and a reload keeps going in the holster (round 18: was one shared timer, swapping cancelled the reload)
   if (!p.cdW) p.cdW = WPN.map(() => 0); if (!p.rlBg) p.rlBg = WPN.map(() => 0);
   if (p.ride && VEH[p.veh] && VEH[p.veh].ram && Math.hypot(p.vx, p.vy) > BAL.ramSpd) for (const z of W.zs) { // (round 22) the armoured car shoves zombies aside
@@ -6122,7 +6164,7 @@ function stepActions(p, dt) {
   }
   if (p.down) { p.downT -= dt; if (p.downT <= 0) { p.down = false; p.dead = true; p.reloadT = 0; p.medT = 0; p.ride = false; p.downT = W.phase === 'night' ? BAL.respawnNight : BAL.respawnDay; emit({ k: 'dead', p: p.i, t: p.lives > 0 ? Math.round(p.downT) : -1, n: p.lives || 0 }); checkLose(); return; } }
   const wi = p.down ? 0 : p.wpn, w = WPN[wi];
-  if (I.fire && !p.build && p.fireCD <= 0 && p.cdW[wi] <= 0 && p.reloadT <= 0 && p.medT <= 0) {
+  if (I.fire && !p.build && !airborne(p) && p.fireCD <= 0 && p.cdW[wi] <= 0 && p.reloadT <= 0 && p.medT <= 0) {
     if (p.mag[wi] > 0) fireWeapon(p, wi);
     else if (w.inf || p.ammo[wi] > 0) startReload(p);
     else if (p.emptyT <= 0) { p.emptyT = 0.5; emit({ k: 'sfx', n: 'empty', x: p.x, y: p.y, o: p.i }); }
@@ -6153,12 +6195,14 @@ function useTarget(p) {
     else if (B[b].spot) { const S = SPOTS[B[b].spot]; if (S && (S.vanish || !W.srch.has(i))) { bd = d; best = { k: 'spot', i, t: BAL.searchTime * tk, name: '搜索' + S.name }; } }
     else if (GATHER[b]) { bd = d; best = { k: 'gather', i, t: GATHER[b].t * tk, name: GATHER[b].name }; }
   }
+  if (!best && !p.ride && ownsVeh(p, 5) && (p.fuel || 0) < VEH[5].fuel - 1 && skyTop(p.x, p.y) > p.L) best = { k: 'fuel', i: -1, t: BAL.refuelT, name: '给旋翼机加油（' + Math.floor(p.fuel || 0) + '/' + VEH[5].fuel + ' 秒）' }; // (round 29) any roofed room refuels the gyrocopter
   return best;
 }
 function completeUse(p, tgt) {
   if (tgt.k === 'rez') { const q = W.p[tgt.i]; if (!q.dead || p.meds <= 0) return; p.meds--; q.dead = false; q.down = false; q.hp = Math.round(q.maxHp * BAL.rezHp); q.medT = 0; q.selfRev = false; emit({ k: 'revive', p: q.i, by: p.i, rez: 1 }); return; }
   if (tgt.k === 'rev') { const q = W.p[tgt.i]; if (!q.down) return; q.down = false; q.hp = 35; q.medT = 0; q.selfRev = false; emit({ k: 'revive', p: q.i, by: p.i }); return; }
   if (tgt.k === 'tur') { turretDone(p, tgt); return; }
+  if (tgt.k === 'fuel') { p.fuel = VEH[5].fuel; emit({ k: 'sfx', n: 'reload', x: p.x, y: p.y }); return; } // (round 29)
   if (tgt.k === 'obj') { modeDone(p, tgt); return; }
   const i = tgt.i, x = cx_(i), y = cy_(i), L = cl_(i), wx = x + 0.5, wy = y + 0.5, wz = L * FH + 1;
   const m = (1 + Math.min(40, Math.max(0, radioDist(x, y) - 8)) / BAL.lootFar) * (isSiege() ? SIEGE.loot : 1) * (p.ride && VEH[p.veh] && VEH[p.veh].search ? BAL.cargoLoot : 1); // capped where the old 96-map edge was; 尸城求生 pays double
@@ -6411,11 +6455,13 @@ function doAct(p, a, v) {
   switch (a) {
     case 'ride': if (!p.down && !p.dead) {
       if (p.pass != null && p.pass >= 0) { p.pass = -1; emit({ k: 'sfx', n: 'swap', x: p.x, y: p.y, o: p.i }); break; }     // hop off the back
-      if (v >= 1 && ownsVeh(p, v)) { p.veh = v; p.ride = true; p.build = false; if (!vehSeats(p)) for (const q of W.p) if (q.pass === p.i) q.pass = -1; emit({ k: 'sfx', n: 'swap', x: p.x, y: p.y, o: p.i }); break; }
+      if (airborne(p)) { if (!p.land) { p.land = true; emit({ k: 'sfx', n: 'swap', x: p.x, y: p.y, o: p.i }); } break; } // (round 29) in the air: T / F brings it down, you get out on touchdown
+      if (v >= 1 && ownsVeh(p, v)) { if (VEH[v].fly && !flyOK(p)) break; p.land = false; p.veh = v; p.ride = true; p.build = false; if (!vehSeats(p)) for (const q of W.p) if (q.pass === p.i) q.pass = -1; emit({ k: 'sfx', n: 'swap', x: p.x, y: p.y, o: p.i }); break; }
       const d = pillionFor(p);
       if (d && !p.ride) { p.pass = d.i; p.build = false; emit({ k: 'sfx', n: 'swap', x: p.x, y: p.y, o: p.i }); emit({ k: 'pillion', p: p.i, d: d.i }); break; } // get on behind a teammate
-      if (!ownsVeh(p, p.veh)) p.veh = [4, 2, 3, 1].find(k => ownsVeh(p, k)) || 0;
-      if (p.veh) { p.ride = !p.ride; if (p.ride) p.build = false; else for (const q of W.p) if (q.pass === p.i) q.pass = -1; emit({ k: 'sfx', n: 'swap', x: p.x, y: p.y, o: p.i }); }
+      if (!ownsVeh(p, p.veh)) p.veh = [4, 2, 3, 1, 5].find(k => ownsVeh(p, k)) || 0;
+      if (p.veh && !p.ride && VEH[p.veh].fly && !flyOK(p)) break;
+      if (p.veh) { p.land = false; p.ride = !p.ride; if (p.ride) p.build = false; else for (const q of W.p) if (q.pass === p.i) q.pass = -1; emit({ k: 'sfx', n: 'swap', x: p.x, y: p.y, o: p.i }); }
     } break;
     case 'reload': if (!p.down) startReload(p); else if (p.mag[0] < WPN[0].mag) { p.reloadT = WPN[0].reload; p.reloadW = 0; } break;
     case 'wpn': if (!p.down && v >= 0 && v < NW && p.owned[v] && p.wpn !== v) {
@@ -6436,7 +6482,7 @@ function doAct(p, a, v) {
     case 'craft': doCraft(p, v); break;
     case 'build': doBuild(p, v.x, v.y, v.l, v.b, v.d); break;
     case 'demo': doDemolish(p, v.x, v.y, v.l); break;
-    case 'vdef': if (v >= 1 && ownsVeh(p, v)) { p.veh = v; if (p.ride && !vehSeats(p)) for (const q of W.p) if (q.pass === p.i) q.pass = -1; } break; // pick the default vehicle (switches the one you're on too)
+    case 'vdef': if (v >= 1 && ownsVeh(p, v) && p.ride && (airborne(p) || VEH[v].fly) && v !== p.veh) { emit({ k: 'deny', p: p.i, why: airborne(p) ? '先落地再换车' : '先下车，再坐旋翼机起飞' }); break; } if (v >= 1 && ownsVeh(p, v)) { p.veh = v; if (p.ride && !vehSeats(p)) for (const q of W.p) if (q.pass === p.i) q.pass = -1; } break; // pick the default vehicle (switches the one you're on too)
     case 'pad': if (v && inMap(v.x, v.y) && v.l >= 0 && v.l < ML) { const i = ci(v.x, v.y, v.l); if (W.blk[i] === 56) { setCell(i, 0, W.slab[i], null, 'demo'); emit({ k: 'sfx', n: 'jump', x: v.x + 0.5, y: v.y + 0.5 }); } } break;
     case 'mode': p.build = !!v; break;
   }
@@ -8821,7 +8867,7 @@ function drawPlayers(vl, dt) {
     if (drv && drv.ride && !drv.gone && drv._ly != null) { gx = drv.x - Math.cos(drv._ly) * PILLION; gy = drv.y - Math.sin(drv._ly) * PILLION; zv = (drv.zv != null ? drv.zv : drv.z) + (drv.jz || 0); }
     m.g.position.set(gx, zv, gy);
     const vr = drv && drv.ride ? drv : p.ride && !p.down && !p.dead ? p : null; // (round 27) whose vehicle this player is on
-    if (p.dead) m.g.rotation.set(-1.45, 0, 0); else if (vr && vr._ly != null && vr._roll) rideBank(m, vr._ly, vr._roll); else m.g.rotation.set(0, 0, 0); // a dead player lies flat until respawn / rescue
+    if (p.dead) m.g.rotation.set(-1.45, 0, 0); else if (vr && vr._ly != null && (vr._roll || vr._pitch)) rideBank(m, vr._ly, vr._roll, vr._pitch); else m.g.rotation.set(0, 0, 0); // a dead player lies flat until respawn / rescue
     // smoothing state
     if (p._uy == null) { p._uy = p.aim; p._ly = p.aim; p._ph = 0; p._kick = 0; p._spd = 0; p._px = p.x; p._py = p.y; p._st = 0; }
     const sp = dt > 0 ? Math.min(8, Math.hypot(p.x - p._px, p.y - p._py) / dt) : 0, mvx = p.x - p._px, mvy = p.y - p._py; p._px = p.x; p._py = p.y;
@@ -8836,7 +8882,7 @@ function drawPlayers(vl, dt) {
     if (drv && drv.ride && drv._ly != null) { p._ly = drv._ly; back = false; }                 // sit facing the way the bike goes
     // keep the hips within ~100 degrees of the chest
     const tw = angDiff(p._uy, p._ly); if (!vr && Math.abs(tw) > 1.75) p._ly = p._uy - Math.sign(tw) * 1.75; // (round 27) not on a vehicle: the vehicle sets the hips
-    if (p.ride && !p.down && !p.dead) rideState(p, dt); else { p._roll = 0; p._stopK = 0; p._lyP = null; }
+    if (p.ride && !p.down && !p.dead) rideState(p, dt); else { p._roll = 0; p._pitch = 0; p._stopK = 0; p._lyP = null; }
     p._ph += dt * p._spd * 2.1 * (back ? -1 : 1);
     p._kick = Math.max(0, p._kick - dt * 9);
     m.lower.rotation.y = -p._ly; m.upper.rotation.y = -p._uy;
@@ -9185,10 +9231,45 @@ function mkArmor() {
   S.dust = [-0.5, 0.02, 0.43]; v.userData.S = S; return v;
 }
 
+// (round 29) gyrocopter: open pod, seat, stick and throttle, mast with a two-blade rotor, pusher prop, tail boom with fins, tricycle gear
+function mkGyro() {
+  const v = new THREE.Group(), S = { spin: [], steer: [] }, bd = lam('#e0b030'), dk = lam('#24262a'), cr = lam('#b8bcc2'), rd = lam('#c0392b');
+  S.spin.push(vWheel(v, 0.5, 0, 0.08, 0.04, 'bike'));
+  for (const z of [-0.32, 0.32]) { const w = vWheel(v, -0.12, z, 0.1, 0.05, 'bike'); S.spin.push(w); vRod(v, dk, [-0.08, 0.32, z * 0.55], [-0.12, 0.1, z], 0.014); }
+  vRod(v, dk, [0.42, 0.3, 0], [0.5, 0.08, 0], 0.014);
+  // pod: tub, nose, side stripes, windscreen, instrument pod
+  vBox(v, bd, 0.82, 0.3, 0.5, 0.02, 0.42, 0); vBox(v, bd, 0.3, 0.24, 0.42, 0.5, 0.4, 0, -0.35); vBox(v, bd, 0.16, 0.16, 0.3, 0.66, 0.34, 0, -0.7);
+  for (const s of [-1, 1]) vBox(v, rd, 0.84, 0.04, 0.004, 0.06, 0.48, s * 0.252);
+  vBox(v, lam('#9fc4d8'), 0.012, 0.2, 0.36, 0.42, 0.66, 0, 0.6); vBox(v, dk, 0.1, 0.08, 0.2, 0.34, 0.6, 0);
+  vBox(v, vLit('#a8e0a0', '#7aff6a', 0.35), 0.004, 0.04, 0.12, 0.29, 0.62, 0);
+  // seat with backrest and harness, stick, throttle
+  vBox(v, dk, 0.24, 0.05, 0.3, -0.04, 0.53, 0); vBox(v, dk, 0.05, 0.3, 0.3, -0.17, 0.68, 0, 0.12);
+  for (const s of [-1, 1]) vBox(v, rd, 0.008, 0.26, 0.03, -0.14, 0.7, s * 0.08, 0.12);
+  vRod(v, dk, [0.2, 0.45, 0.04], [0.16, 0.68, 0.04], 0.012); vCyl(v, lam('#111'), 0.018, 0.018, 0.06, 0.16, 0.7, 0.04, 'y', 6);
+  vRod(v, cr, [0.02, 0.5, -0.21], [0.08, 0.63, -0.21], 0.01); vBox(v, rd, 0.03, 0.03, 0.03, 0.08, 0.64, -0.21);
+  for (const s of [-1, 1]) vBox(v, cr, 0.06, 0.012, 0.07, 0.42, 0.36, s * 0.1);                             // pedals
+  // mast + rotor head, two long blades (spin), pusher engine + prop (spin), exhaust
+  vRod(v, cr, [-0.22, 0.56, 0], [-0.13, 1.42, 0], 0.025); vRod(v, cr, [-0.32, 0.56, 0.1], [-0.15, 1.2, 0], 0.012); vRod(v, cr, [-0.32, 0.56, -0.1], [-0.15, 1.2, 0], 0.012);
+  const rh = new THREE.Group(); rh.position.set(-0.13, 1.46, 0); rh.rotation.z = 0.06; v.add(rh); vCyl(rh, dk, 0.05, 0.05, 0.06, 0, 0, 0, 'y', 8);
+  const ro = new THREE.Group(); rh.add(ro); vBox(ro, dk, 2.0, 0.018, 0.11, 0, 0.03, 0); for (const s of [-1, 1]) vBox(ro, rd, 0.12, 0.02, 0.112, s * 0.94, 0.031, 0); S.rotor = ro;
+  vBox(v, lam('#3a3d42'), 0.3, 0.28, 0.32, -0.38, 0.6, 0); for (let k = 0; k < 4; k++) vBox(v, lam('#55595f'), 0.31, 0.012, 0.36, -0.38, 0.5 + k * 0.06, 0);
+  const pr = new THREE.Group(); pr.position.set(-0.58, 0.62, 0); v.add(pr); vCyl(pr, dk, 0.04, 0.04, 0.06, 0, 0, 0, 'x', 8); vBox(pr, lam('#6a4a2e'), 0.02, 0.72, 0.07, -0.02, 0, 0); S.prop = pr;
+  vRod(v, dk, [-0.4, 0.78, 0.12], [-0.46, 0.86, 0.12], 0.018); S.exh = vMark(v, -0.46, 0.88, 0.12);
+  // tail: boom, fin (red tip), stabiliser, nav lights
+  vRod(v, cr, [-0.3, 0.38, 0.06], [-1.18, 0.5, 0], 0.016); vRod(v, cr, [-0.3, 0.38, -0.06], [-1.18, 0.5, 0], 0.016);
+  vBox(v, bd, 0.26, 0.34, 0.03, -1.14, 0.68, 0, 0.15); vBox(v, rd, 0.1, 0.08, 0.032, -1.18, 0.82, 0, 0.15); vBox(v, bd, 0.2, 0.02, 0.44, -1.12, 0.5, 0);
+  const tl = vLit('#c0201a', '#ff2010', 0.35); vBox(v, tl, 0.03, 0.03, 0.03, -1.24, 0.86, 0);
+  vBox(v, vLit('#2aa04a', '#3aff6a', 0.6), 0.03, 0.03, 0.02, -1.12, 0.5, 0.23); vBox(v, vLit('#c0201a', '#ff3020', 0.6), 0.03, 0.03, 0.02, -1.12, 0.5, -0.23);
+  const hl = vLit('#fff4cf', '#ffe08a', 0.5); vBox(v, hl, 0.03, 0.05, 0.08, 0.7, 0.3, 0, -0.7);       // landing light
+  S.grip = [vMark(v, 0.08, 0.645, -0.21), vMark(v, 0.16, 0.7, 0.04)];
+  vLights(S, v, [hl], [tl], [0.7, 0.3, 0]); if (S.beam) S.beam.rotation.z = -0.6;
+  S.dust = [-0.12, 0.02, 0.32]; v.userData.S = S; return v;
+}
+
 function mkVehicles() {
-  const g = new THREE.Group(), bike = mkBike(), moto = mkMoto(), cargo = mkCargo(), armor = mkArmor();
-  for (const q of [bike, moto, cargo, armor]) q.traverse(o => { if (o.isMesh && !o.material.transparent) { o.castShadow = true; } });
-  g.add(bike, moto, cargo, armor); g.userData = { bike, moto, cargo, armor, all: [null, bike, moto, cargo, armor] }; return g;
+  const g = new THREE.Group(), bike = mkBike(), moto = mkMoto(), cargo = mkCargo(), armor = mkArmor(), gyro = mkGyro();
+  for (const q of [bike, moto, cargo, armor, gyro]) q.traverse(o => { if (o.isMesh && !o.material.transparent) { o.castShadow = true; } });
+  g.add(bike, moto, cargo, armor, gyro); g.userData = { bike, moto, cargo, armor, gyro, all: [null, bike, moto, cargo, armor, gyro] }; return g;
 }
 
 // how a rider sits on each vehicle: H = hip height, lean = torso pitch (negative = forward), pedal = [x, y, crank radius] or peg = [x, y, half-width],
@@ -9199,6 +9280,7 @@ const VPOSE = [null,
   { H: 0.7, lean: -0.22, peg: [0.06, 0.3, 0.15], pH: 0.77, pLean: -0.26, pPeg: [-0.31, 0.38, 0.16], hold: [0.3, 0.83, 0.16], roll: 1.3, foot: 1, drop: 0.1, slide: 0 },
   { H: 0.66, lean: -0.22, pedal: [0.12, 0.27, 0.1], roll: 0.12 },
   { H: 0.55, lean: -0.06, peg: [0.3, 0.41, 0.1], pH: 0.55, pLean: -0.02, pPeg: [-0.08, 0.41, 0.11], hold: [0.06, 0.78, 0.34], roll: -0.15 },
+  { H: 0.58, lean: -0.08, peg: [0.42, 0.36, 0.1], roll: 0.9, fly: 1 },                                          // (round 29) gyrocopter: banks and noses down in flight
 ];
 // two-bone leg IK: put the ankle of leg L at (tx, ty, tz) in the lower-body frame, hip pivot at (hx, hy, hz); the thigh abducts (rotation.x) for sideways targets
 function legIK(L, hx, hy, hz, tx, ty, tz, toe) {
@@ -9229,6 +9311,7 @@ function rideState(p, dt) {
   p._roll = lerp(p._roll || 0, clamp(p._yr * 0.09 * fast * RP.roll, -0.36, 0.36) + p._stopK * 0.28, Math.min(1, dt * 8)); // stopped: leans onto the foot that's down
   p._steer = lerp(p._steer || 0, clamp(-p._yr * 0.11, -0.45, 0.45), Math.min(1, dt * 8));
   p._crank = (p._crank || 0) + Math.min(p._spd, 6) * dt / 0.22 * 0.5;
+  p._pitch = lerp(p._pitch || 0, RP.fly ? -clamp(p._spd / 4, 0, 1) * 0.16 : 0, Math.min(1, dt * 4));
   const dec = dt > 0 ? ((p._spdP || 0) - p._spd) / dt : 0; p._spdP = p._spd;
   p._brake = lerp(p._brake || 0, dec > 1.2 || (p._spd < 0.3 && p._stopK < 0.9) ? 1 : 0, Math.min(1, dt * 10));
 }
@@ -9239,6 +9322,8 @@ function vehTick(p, m, dt, dk) {
   if (S.crank) { S.crank.rotation.z = -(p._crank || 0); for (const q of S.pedals) q.rotation.z = p._crank || 0; }
   for (const s of S.steer) s.rotation.y = p._steer || 0;
   if (S.wheel) S.wheel.rotation.x = -(p._steer || 0) * 3;
+  if (S.rotor) { const air = p.z - surfZ(p.x, p.y, skyTop(p.x, p.y)); p._rot = lerp(p._rot || 0, p.land && air < 0.15 ? 6 : 30, Math.min(1, dt * 1.5)); S.rotor.rotation.y += p._rot * dt; S.prop.rotation.x += p._rot * 1.4 * dt;
+    if (air < 3.5 && air > 0.05 && FXR() < dt * 30) { const a = FXR() * 6.28, r = 0.6 + FXR() * 0.8, gz = p.z - air; addP({ x: p.x + Math.cos(a) * r, y: p.y + Math.sin(a) * r, z: gz + 0.05, vx: Math.cos(a) * 2.2, vy: Math.sin(a) * 2.2, vz: 0.15, g: -0.1, col: '#8a7e6a', s: 0.08, life: 0.5, smoke: 1 }); } } // rotor + prop spin; downwash kicks up dust close to the ground
   if (S.flag) S.flag.rotation.y = Math.sin(W.t * (6 + sp * 2) + p.i) * (0.2 + Math.min(0.3, sp * 0.06)) + Math.min(0.6, sp * 0.12);
   const hk = 0.35 + dk * 1.2; for (const mt of S.head) mt.emissiveIntensity = hk;
   const tk = 0.25 + dk * 0.35 + (p._brake || 0) * 1.1; for (const mt of S.tail) mt.emissiveIntensity = tk;
@@ -9253,7 +9338,8 @@ function vehTick(p, m, dt, dk) {
   }
 }
 // the whole rider (and their vehicle) banks about the forward axis
-function rideBank(m, ly, roll) { _vax.set(Math.cos(ly), 0, Math.sin(ly)); m.g.quaternion.setFromAxisAngle(_vax, roll); }
+const _vq = new THREE.Quaternion(), _vax2 = new THREE.Vector3();
+function rideBank(m, ly, roll, pitch) { _vax.set(Math.cos(ly), 0, Math.sin(ly)); m.g.quaternion.setFromAxisAngle(_vax, roll || 0); if (pitch) { _vax2.set(-Math.sin(ly), 0, Math.cos(ly)); _vq.setFromAxisAngle(_vax2, pitch); m.g.quaternion.premultiply(_vq); } } // pitch (nose down < 0) about the rider's left-right axis
 
 /* ---- 56_props.js ---- */
 /* ================= props: new searchables / gatherables, buildable obstacles, ladders, build-plan ghosts, x-ray ring ================= */
@@ -9537,7 +9623,7 @@ function nextQuick(d) { const me = W.p[ME], q = quickList(me); if (q.length < 2)
 function swapLast() { const me = W.p[ME]; if (UI.prevW != null && me.owned[UI.prevW] && UI.prevW !== me.wpn) { if (me.build) toggleBuild(false); act('wpn', UI.prevW); } else nextQuick(1); }
 // vehicles: T gets on your default one; Shift+T / a long press on 载具 picks another you own (and gets on it)
 function rideKey(pick) {
-  const me = W.p[ME], own = [1, 2, 3, 4].filter(v => (me.vehs || 0) >> v & 1);
+  const me = W.p[ME], own = [1, 2, 3, 4, 5].filter(v => (me.vehs || 0) >> v & 1);
   // (round 26) next to a teammate who is riding: their back seat comes first (T on PC, 载具 on touch); say so when their vehicle has none
   if (!me.ride && !(me.pass >= 0) && !pick) {
     if (pillionFor(me)) { act('ride'); return; }
@@ -10169,7 +10255,7 @@ function hostRecv(m) {
   const p = W.p[1];
   if (m.t === 'i') {
     if (m.n < (p.inSeq || 0)) return; p.inSeq = m.n;
-    if (!p.dead) { p.x = m.x; p.y = m.y; p.L = m.l; p.vx = m.vx; p.vy = m.vy; p.z = surfZ(p.x, p.y, p.L); }
+    if (!p.dead) { p.x = m.x; p.y = m.y; p.L = m.l; p.vx = m.vx; p.vy = m.vy; p.z = airborne(p) && m.fz ? m.fz : surfZ(p.x, p.y, p.L); }
     p.aim = m.a; p.anim = m.an; p.sel = m.sel || 1; p.aimPt = m.ap ? { x: m.ap[0], y: m.ap[1], z: m.ap[2] } : null;
     p.inp.fire = m.f; p.inp.use = m.u; p.build = !!m.b; p.inp.auto = m.au || 0;
   } else if (m.t === 'act') doAct(p, m.a, m.v);
@@ -10189,9 +10275,9 @@ function hostStart() {
   startGame(seed, names, SET.diff, 0, mode, map);
 }
 const ZI = ZKEYS;
-function pFlags(p) { return (p.down ? 1 : 0) | (p.dead ? 2 : 0) | (p.gone ? 4 : 0) | (p.build ? 32 : 0) | (p.ready ? 64 : 0) | (p.selfRev ? 128 : 0) | (p.ride ? 256 : 0) | ((p.veh || 0) << 9) | ((p.pass != null && p.pass >= 0 ? p.pass + 1 : 0) << 12); } // veh: 3 bits (round 22: four vehicles)
+function pFlags(p) { return (p.down ? 1 : 0) | (p.dead ? 2 : 0) | (p.gone ? 4 : 0) | (p.build ? 32 : 0) | (p.ready ? 64 : 0) | (p.selfRev ? 128 : 0) | (p.ride ? 256 : 0) | ((p.veh || 0) << 9) | ((p.pass != null && p.pass >= 0 ? p.pass + 1 : 0) << 12) | (p.land ? 1 << 15 : 0); } // (round 29) bit 15: the gyrocopter is coming down // veh: 3 bits (round 22: four vehicles)
 function makeSnap() {
-  const P = p => [r2(p.x), r2(p.y), p.L, r2(p.vx), r2(p.vy), r2(p.aim), Math.ceil(p.hp), pFlags(p), Math.round(p.downT * 10) / 10, p.wpn, p.mag.join(','), p.ammo.join(','), p.owned.join(''), p.nades, p.meds, Math.round(p.useT * 100), Math.round(p.medT * 10) / 10, Math.round(p.reloadT * 10) / 10, p.kills, Math.round(p.anim * 10) / 10, p.sel, p.aimPt ? [r2(p.aimPt.x), r2(p.aimPt.y), r2(p.aimPt.z)] : 0, p.vehs || 0, p.shield ? 1 : 0, p.melee || 0, p.gn || [0, 0, 0], p.lives || 0];
+  const P = p => [r2(p.x), r2(p.y), p.L, r2(p.vx), r2(p.vy), r2(p.aim), Math.ceil(p.hp), pFlags(p), Math.round(p.downT * 10) / 10, p.wpn, p.mag.join(','), p.ammo.join(','), p.owned.join(''), p.nades, p.meds, Math.round(p.useT * 100), Math.round(p.medT * 10) / 10, Math.round(p.reloadT * 10) / 10, p.kills, Math.round(p.anim * 10) / 10, p.sel, p.aimPt ? [r2(p.aimPt.x), r2(p.aimPt.y), r2(p.aimPt.z)] : 0, p.vehs || 0, p.shield ? 1 : 0, p.melee || 0, p.gn || [0, 0, 0], p.lives || 0, Math.round((p.fuel || 0) * 10) / 10, airborne(p) ? r2(p.z) : 0];
   const z = []; for (const q of W.zs) z.push(q.id, ZI.indexOf(q.k), Math.round(q.x * 100), Math.round(q.y * 100), q.L, Math.round(q.z * 100), Math.round(q.face * 100), Math.ceil(q.hp / q.max * 100), (q.climbing ? 1 : 0) | (q.atk > 0 ? 2 : 0) | (q.hitT > 0 ? 4 : 0) | (q.moving ? 8 : 0) | (q.burn > 0 ? 16 : 0) | (q.scr > 0 ? 32 : 0) | (q.rage > 0 ? 64 : 0) | (q.hidden ? 128 : 0) | (q.sleep ? 256 : 0) | ((q.aw || 0) > 0.15 ? 512 : 0) | ((q.tl || 0) << 10)); // tl (round 23): brute tells, 2 bits
   const pr = []; for (const b of W.proj) pr.push(b.k === 'nade' ? (b.gt ? 2 + b.gt : 0) : b.k === 'gl' ? 2 : 1, r2(b.x), r2(b.y), r2(b.z), r2(b.vx), r2(b.vy), r2(b.vz));
   const d = []; for (const i of W.dirty) d.push(i, Math.round(W.bhp[i]), Math.round(W.shp[i])); W.dirty.clear();
@@ -10245,9 +10331,9 @@ function applySnap(s) {
   RES.forEach((r, i) => W.res[r.k] = s.res[i]); W.spawnLeft = s.sl;
   s.p.forEach((a, i) => {
     const p = W.p[i]; if (!p) return;
-    const [x, y, L, vx, vy, aim, hp, fl, downT, wpn, mag, ammo, owned, nades, meds, useT, medT, reloadT, kills, anim, sel, ap, vehs, shield, melee, gn, lives] = a;
+    const [x, y, L, vx, vy, aim, hp, fl, downT, wpn, mag, ammo, owned, nades, meds, useT, medT, reloadT, kills, anim, sel, ap, vehs, shield, melee, gn, lives, fuel, fz] = a;
     const mine = i === ME;
-    p.hp = hp; p.down = !!(fl & 1); p.dead = !!(fl & 2); p.gone = !!(fl & 4); p.downT = downT; p.selfRev = !!(fl & 128); p.ride = !!(fl & 256); p.veh = (fl >> 9) & 7; p.pass = ((fl >> 12) & 7) - 1;
+    p.hp = hp; p.down = !!(fl & 1); p.dead = !!(fl & 2); p.gone = !!(fl & 4); p.downT = downT; p.selfRev = !!(fl & 128); p.ride = !!(fl & 256); p.veh = (fl >> 9) & 7; p.pass = ((fl >> 12) & 7) - 1; p.land = !!(fl & 32768); p.fuel = fuel || 0; p.fz = fz || 0;
     p.mag = mag.split(',').map(Number); p.ammo = ammo.split(',').map(Number); p.owned = owned.split('').map(Number);
     p.nades = nades; p.meds = meds; p.vehs = vehs || 0; p.shield = shield ? 1 : 0; p.gn = gn || [0, 0, 0]; p.lives = lives || 0; if (p.i !== ME || !(UI.meleeT > performance.now())) p.melee = melee || 0; p.useT = useT / 100; p.medT = medT; p.reloadT = reloadT; p.kills = kills; p.ready = !!(fl & 64);
     if (!mine) { p.tx = x; p.ty = y; p.L = L; p.vx = vx; p.vy = vy; p.aim = aim; p.build = !!(fl & 32); p.wpn = wpn; p.anim = anim; p.sel = sel; p.aimPt = ap ? { x: ap[0], y: ap[1], z: ap[2] } : null; if (p.x == null || d2(p.x, p.y, x, y) > 4) { p.x = x; p.y = y; } }
@@ -10272,13 +10358,13 @@ function guestNetTick(dt) {
   if (!NET.ctl || !NET.ctl.open || !W) return;
   if (performance.now() - NET.seen > 9000) { hostGone(); return; }
   if (W.stabDirty) { W.stabDirty = false; recomputeStab(); }
-  for (const p of W.p) if (p.i !== ME && p.tx != null) { const k = Math.min(1, dt * 14); p.x = lerp(p.x, p.tx + p.vx * 0.03, k); p.y = lerp(p.y, p.ty + p.vy * 0.03, k); p.z = surfZ(p.x, p.y, p.L); }
+  for (const p of W.p) if (p.i !== ME && p.tx != null) { const k = Math.min(1, dt * 14); p.x = lerp(p.x, p.tx + p.vx * 0.03, k); p.y = lerp(p.y, p.ty + p.vy * 0.03, k); p.z = airborne(p) && p.fz ? lerp(p.z || p.fz, p.fz, k) : surfZ(p.x, p.y, p.L); }
   for (const z of W.zs) { z.anim += dt; z.hitT -= dt; z.atk -= dt; if (z.tx != null) { const k = Math.min(1, dt * 10); z.x = lerp(z.x, z.tx, k); z.y = lerp(z.y, z.ty, k); z.z = lerp(z.z, z.tz, k); } }
   for (const b of W.proj) { b.x += b.vx * dt; b.y += b.vy * dt; b.z += b.vz * dt; b.vz -= 12 * dt; }
   NET.iT -= dt;
   if (NET.iT <= 0) {
     NET.iT = 1 / 30; const p = W.p[ME], i = p.inp;
-    netSendFast({ t: 'i', n: ++NET.inN, x: r3(p.x), y: r3(p.y), l: p.L, vx: r2(p.vx), vy: r2(p.vy), a: r2(p.aim), ap: p.aimPt ? [r2(p.aimPt.x), r2(p.aimPt.y), r2(p.aimPt.z)] : 0, an: Math.round(p.anim * 10) / 10, f: i.fire, u: i.use, b: p.build ? 1 : 0, sel: p.sel, au: i.auto || 0 });
+    netSendFast({ t: 'i', n: ++NET.inN, x: r3(p.x), y: r3(p.y), l: p.L, vx: r2(p.vx), vy: r2(p.vy), a: r2(p.aim), ap: p.aimPt ? [r2(p.aimPt.x), r2(p.aimPt.y), r2(p.aimPt.z)] : 0, an: Math.round(p.anim * 10) / 10, f: i.fire, u: i.use, b: p.build ? 1 : 0, sel: p.sel, au: i.auto || 0, fz: airborne(p) ? r2(p.z) : 0 });
   }
 }
 function guestPredictFire(dt) {
@@ -10468,6 +10554,7 @@ function hudTick(dt) {
   const rl = me.reloadT > 0 ? 1 - me.reloadT / WPN[me.reloadW != null ? me.reloadW : wi].reload : me.reloadVis > 0 ? 1 - me.reloadVis / w.reload : me.medT > 0 ? 1 - me.medT / (me.selfRev ? 3 : BAL.healTime) : 0;
   $('wRl').style.width = (rl * 100) + '%';
   $('iNadeL').textContent = GREN[me.gt || 0].sn; $('iNade').textContent = gCount(me, me.gt || 0); $('iMed').textContent = me.meds; $('iKill').textContent = me.kills; $('iLife').textContent = me.lives != null ? me.lives : '-';
+  { const fw = $('iFuelW'), has = ownsVeh(me, 5); fw.classList.toggle('hidden', !has); if (has) { const f = Math.ceil(me.fuel || 0); $('iFuel').textContent = f + ' 秒'; fw.style.color = f < BAL.fuelLow ? '#ff7a6a' : airborne(me) ? '#9fe0ff' : ''; } } // (round 29) gyrocopter fuel
   uiKeys(me);
   const q = quickList(me), qk = q.join(','); if (UI.wbK !== qk) { UI.wbK = qk;
     $('wbar').innerHTML = q.map((k, j) => `<button data-w="${k}"><span><kbd>${j + 1}</kbd>${WPN[k].name}</span><small id="wb${k}"></small></button>`).join('') + `<i class="wsep"></i><button id="wbMel" class="mel"><span><kbd>X</kbd><b>刀</b></span><small>右键 / V</small></button>` + GREN.map((g, t) => `<button data-g="${t}" class="gr"><span><kbd>${t + 5}</kbd>${g.sn}</span><small id="wg${t}"></small></button>`).join('') + `<button id="wbKit" class="kit"><span><kbd>I</kbd>装备</span><small>换快捷枪</small></button><button id="wbItem" class="kit item"><span><kbd>B</kbd>道具</span><small>墙 · 陷阱 · 跳板</small></button>`;
@@ -10619,7 +10706,7 @@ function renderKit() {
   $('kslots').innerHTML = [0, 1, 2, 3].map(j => `<button data-s="${j}" class="${j === sl ? 'sel' : ''}"><kbd>${j + 1}</kbd><b>${q[j] != null ? WPN[q[j]].name : '空'}</b></button>`).join('');
   $('kwpn').innerHTML = WPN.map((w, k) => { const own = me.owned[k], j = q.indexOf(k);
     return `<button data-w="${k}" class="kw${own ? '' : ' no'}${k === me.wpn ? ' cur' : ''}" ${own ? '' : 'disabled'}><b>${w.name}${j >= 0 ? ' <i>' + (j + 1) + '</i>' : ''}</b><small>${own ? (w.inf ? '∞' : me.mag[k] + ' / ' + me.ammo[k]) : '商店里造'}</small><span>${w.tag || ''}</span></button>`; }).join('');
-  $('kveh').innerHTML = [1, 2, 3, 4].map(v => { const own = (me.vehs || 0) >> v & 1;
+  $('kveh').innerHTML = [1, 2, 3, 4, 5].map(v => { const own = (me.vehs || 0) >> v & 1;
     return `<button data-v="${v}" class="${own ? '' : 'no'}${own && me.veh === v ? ' sel' : ''}" ${own ? '' : 'disabled'}><b>${VEH[v].name}</b><small>${own ? (me.veh === v ? '默认 ✓' : '设为默认') : '商店里造'}</small></button>`; }).join('');
   $('kshield').innerHTML = [0, 1].map(m => { const own = !m || me.shield, on = (me.melee === 1 && me.shield ? 1 : 0) === m; return `<button data-m="${m}" class="${on ? 'sel' : ''}${own ? '' : ' no'}" ${own ? '' : 'disabled'}><b>${m ? '防暴盾' : '刀'}</b><small>${!own ? '商店 → 武器 里买' : on ? '在用 ✓' : '换成它'}</small></button>`; }).join('');
   $('kshield').querySelectorAll('button[data-m]').forEach(b => b.onclick = () => { switchMelee(+b.dataset.m); renderKit(); });
@@ -10972,7 +11059,7 @@ function saveGame(quiet) {
   const S = {
     v: SAVE_V, mw: MW, at: Date.now(), mode: W.mode, map: W.map, obj: W.obj, seed: W.seed, diff: W.diff, night: W.night, phase: W.phase, clock: W.clock, dayLen: W.dayLen, nightT: W.nightT,
     res: W.res, upg: W.upg, kills: W.kills, stats: W.stats, endless: W.endless, clean: W.clean, tasks: W.tasks, srch: [...W.srch], spotN: W.spotN, t: W.t,
-    p: W.p.filter(p => !p.gone).map(p => ({ name: p.name, x: p.x, y: p.y, L: p.L, hp: p.hp, dead: p.dead, wpn: p.wpn, owned: p.owned, mag: p.mag, ammo: p.ammo, meds: p.meds, nades: p.nades, kills: p.kills, veh: p.veh || 0, vehs: p.vehs || 0, shield: p.shield ? 1 : 0, melee: p.melee || 0, gn: p.gn || [0, 0, 0], lives: p.lives || 0 })),
+    p: W.p.filter(p => !p.gone).map(p => ({ name: p.name, x: p.x, y: p.y, L: p.L, hp: p.hp, dead: p.dead, wpn: p.wpn, owned: p.owned, mag: p.mag, ammo: p.ammo, meds: p.meds, nades: p.nades, kills: p.kills, veh: p.veh || 0, vehs: p.vehs || 0, shield: p.shield ? 1 : 0, melee: p.melee || 0, gn: p.gn || [0, 0, 0], lives: p.lives || 0, fuel: p.fuel != null ? +p.fuel.toFixed(1) : 60 })),
     zs: W.zs.filter(z => z.hp > 0).slice(0, 300).map(z => [z.k, +z.x.toFixed(2), +z.y.toFixed(2), z.L, Math.round(z.hp), Math.round(z.max), z.mz ? 1 : 0, z.g || 0, z.sleep ? 1 : 0, z.occ == null ? -1 : z.occ]),
     q: W.spawnQ.slice(0, 500).map(s => [+s.t.toFixed(1), s.k, s.side, s.at == null ? -1 : s.at, s.f ? +s.f.toFixed(2) : 0, s.g || 0]), gid: W.gid || 0,
     g: [rleEnc(W.blk), rleEnc(W.slab), rleEnc(W.bdir), rleEnc(hpPack(W.bhp)), rleEnc(hpPack(W.shp))].map(b64e),
@@ -11014,7 +11101,7 @@ function applySave(S) {
   Object.assign(W, { night: S.night, phase: S.phase, clock: S.clock, dayLen: S.dayLen, nightT: S.nightT || 0, res: S.res, upg: S.upg, kills: S.kills, stats: S.stats, endless: !!S.endless, clean: S.clean !== false, tasks: S.tasks || [], t: S.t || 0 });
   W.srch = new Set(S.srch || []); W.spotN = S.spotN || null; if (!W.spotN) { W.spotN = spotCount(); for (const k in W.spotN) W.spotN[k] = Math.round(W.spotN[k] * 2); } W.tkv++; W.rng = mulberry((S.seed ^ (S.night * 7919) ^ (S.at & 0xffff)) >>> 0);
   const p = W.p[0], P = S.p[0];
-  if (P) { Object.assign(p, { x: P.x, y: P.y, L: P.L, hp: P.dead ? BAL.pMaxHp * 0.5 : P.hp, wpn: P.wpn, owned: P.owned, mag: P.mag, ammo: P.ammo, meds: P.meds, nades: P.nades, kills: P.kills, veh: P.veh || 0, vehs: P.vehs != null ? P.vehs : (P.veh ? 1 << P.veh : 0), shield: P.shield ? 1 : 0, melee: P.shield ? P.melee || 0 : 0, gn: P.gn || [0, 0, 0], lives: P.lives != null ? P.lives : livesFor(W.diff, W.mode) }); p.dead = false; p.down = false; } // (round 22) vehs = owned bitmask; older saves only knew the best one
+  if (P) { Object.assign(p, { x: P.x, y: P.y, L: P.L, hp: P.dead ? BAL.pMaxHp * 0.5 : P.hp, wpn: P.wpn, owned: P.owned, mag: P.mag, ammo: P.ammo, meds: P.meds, nades: P.nades, kills: P.kills, veh: P.veh || 0, vehs: P.vehs != null ? P.vehs : (P.veh ? 1 << P.veh : 0), shield: P.shield ? 1 : 0, melee: P.shield ? P.melee || 0 : 0, gn: P.gn || [0, 0, 0], lives: P.lives != null ? P.lives : livesFor(W.diff, W.mode), fuel: P.fuel != null ? P.fuel : 60 }); p.dead = false; p.down = false; } // (round 22) vehs = owned bitmask; older saves only knew the best one
   // older saves may have fewer weapons
   for (const k of ['owned', 'mag', 'ammo']) while (p[k].length < NW) p[k].push(0);
   p.z = pZ(p); p.zv = p.z; CAM.tx = p.x; CAM.ty = p.y;

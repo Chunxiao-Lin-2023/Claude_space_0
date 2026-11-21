@@ -42,7 +42,7 @@ function nextQuick(d) { const me = W.p[ME], q = quickList(me); if (q.length < 2)
 function swapLast() { const me = W.p[ME]; if (UI.prevW != null && me.owned[UI.prevW] && UI.prevW !== me.wpn) { if (me.build) toggleBuild(false); act('wpn', UI.prevW); } else nextQuick(1); }
 // vehicles: T gets on your default one; Shift+T / a long press on 载具 picks another you own (and gets on it)
 function rideKey(pick) {
-  const me = W.p[ME], own = [1, 2, 3, 4].filter(v => (me.vehs || 0) >> v & 1);
+  const me = W.p[ME], own = [1, 2, 3, 4, 5].filter(v => (me.vehs || 0) >> v & 1);
   // (round 26) next to a teammate who is riding: their back seat comes first (T on PC, 载具 on touch); say so when their vehicle has none
   if (!me.ride && !(me.pass >= 0) && !pick) {
     if (pillionFor(me)) { act('ride'); return; }

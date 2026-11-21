@@ -124,7 +124,7 @@ function updateFields(dt, force) {
   if ((W.navDirty && F.rT <= 0) || force) { buildField(F.rw, radioSources(), false); if (W.zs.some(z => z.k === 'climber')) buildField(F.rc, radioSources(), true); else F.rc.set(F.rw); W.navDirty = false; F.rT = 0.4; }
   if (F.pT <= 0 || force) {
     F.pT = 0.35;
-    const src = W.p.filter(p => !p.gone && !p.dead).map(p => ci(Math.floor(p.x), Math.floor(p.y), p.L));
+    const src = W.p.filter(p => !p.gone && !p.dead).map(p => ci(Math.floor(p.x), Math.floor(p.y), airborne(p) ? skyTop(p.x, p.y) : p.L)); // (round 29) a flying player: they crowd the spot under it
     buildField(F.pw, src, false);
     if (W.zs.some(z => z.k === 'climber')) buildField(F.pc, src, true); else F.pc.set(F.pw);
   }
